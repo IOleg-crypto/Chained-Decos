@@ -15,6 +15,10 @@ void InspectorPanel::OnImGuiRender(bool readOnly)
         return;
 
     ImGui::Begin(m_Name.c_str(), &m_IsOpen);
+
+    if (m_SelectedEntity && m_SelectedEntity.GetScene() != m_Context.get())
+        m_SelectedEntity = {};
+
     if (m_SelectedEntity && m_SelectedEntity.IsValid())
     {
         ImGui::BeginDisabled(readOnly);

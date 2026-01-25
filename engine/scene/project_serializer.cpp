@@ -5,7 +5,7 @@
 
 namespace CHEngine
 {
-ProjectSerializer::ProjectSerializer(Ref<Project> project) : m_Project(project)
+ProjectSerializer::ProjectSerializer(std::shared_ptr<Project> project) : m_Project(project)
 {
 }
 

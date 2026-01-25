@@ -14,7 +14,7 @@ namespace CHEngine
 
 std::unordered_map<std::thread::id, Profiler::ThreadContext> Profiler::s_ThreadContexts;
 std::mutex Profiler::s_ContextMutex;
-std::vector<Ref<ProfileResult>> Profiler::s_LastFrameResults;
+std::vector<std::shared_ptr<ProfileResult>> Profiler::s_LastFrameResults;
 std::vector<float> Profiler::s_FrameTimeHistory;
 ProfilerStats Profiler::s_Stats;
 
@@ -121,7 +121,7 @@ void Profiler::BeginScope(const std::string &name)
     std::lock_guard<std::mutex> lock(s_ContextMutex);
     auto &context = s_ThreadContexts[threadId];
 
-    auto res = CreateRef<ProfileResult>();
+    auto res = std::make_shared<ProfileResult>();
     res->Name = name;
     res->StartTime = std::chrono::duration_cast<std::chrono::microseconds>(
         std::chrono::high_resolution_clock::now().time_since_epoch());
@@ -158,7 +158,7 @@ void Profiler::EndScope()
     context.Stack.pop_back();
 }
 
-const std::vector<Ref<ProfileResult>> &Profiler::GetLastFrameResults()
+const std::vector<std::shared_ptr<ProfileResult>> &Profiler::GetLastFrameResults()
 {
     return s_LastFrameResults;
 }

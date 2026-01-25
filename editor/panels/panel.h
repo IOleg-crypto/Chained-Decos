@@ -19,7 +19,7 @@ public:
     virtual void OnEvent(Event &e)
     {
     }
-    virtual void SetContext(const Ref<Scene> &context)
+    virtual void SetContext(const std::shared_ptr<Scene> &context)
     {
         m_Context = context;
     }
@@ -35,7 +35,7 @@ public:
 
 protected:
     std::string m_Name;
-    Ref<Scene> m_Context;
+    std::shared_ptr<Scene> m_Context;
     bool m_IsOpen = true;
 };
 } // namespace CHEngine

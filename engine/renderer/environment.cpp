@@ -12,49 +12,56 @@ namespace CHEngine
 // Using those from SceneSerializer if possible, but for a standalone asset
 // we might need them here too if they are not in a common header.
 
-Ref<EnvironmentAsset> EnvironmentAsset::Load(const std::string &path)
+std::shared_ptr<EnvironmentAsset> EnvironmentAsset::Load(const std::string &path)
+{
+    auto asset = std::make_shared<EnvironmentAsset>();
+    if (asset->Deserialize(path))
+    {
+        asset->SetPath(path);
+        return asset;
+    }
+    return nullptr;
+}
+
+bool EnvironmentAsset::Deserialize(const std::string &path)
 {
     auto fullPath = Assets::ResolvePath(path);
     std::ifstream stream(fullPath);
     if (!stream.is_open())
     {
         CH_CORE_ERROR("Failed to open environment file: {0}", path);
-        return nullptr;
+        return false;
     }
 
     try
     {
         YAML::Node data = YAML::Load(stream);
         if (!data["Environment"])
-            return nullptr;
+            return false;
 
-        auto asset = std::make_shared<EnvironmentAsset>();
-        auto &settings = asset->m_Settings;
+        auto envNode = data["Environment"];
+        if (envNode["LightDirection"])
+            m_Settings.LightDirection = envNode["LightDirection"].as<Vector3>();
+        if (envNode["LightColor"])
+            m_Settings.LightColor = envNode["LightColor"].as<Color>();
+        if (envNode["AmbientIntensity"])
+            m_Settings.AmbientIntensity = envNode["AmbientIntensity"].as<float>();
 
-        auto env = data["Environment"];
-        if (env["LightDirection"])
-            settings.LightDirection = env["LightDirection"].as<Vector3>();
-        if (env["LightColor"])
-            settings.LightColor = env["LightColor"].as<Color>();
-        if (env["AmbientIntensity"])
-            settings.AmbientIntensity = env["AmbientIntensity"].as<float>();
-
-        auto skybox = env["Skybox"];
+        auto skybox = envNode["Skybox"];
         if (skybox)
         {
-            settings.Skybox.TexturePath = skybox["TexturePath"].as<std::string>();
-            settings.Skybox.Exposure = skybox["Exposure"].as<float>();
-            settings.Skybox.Brightness = skybox["Brightness"].as<float>();
-            settings.Skybox.Contrast = skybox["Contrast"].as<float>();
+            m_Settings.Skybox.TexturePath = skybox["TexturePath"].as<std::string>();
+            m_Settings.Skybox.Exposure = skybox["Exposure"].as<float>();
+            m_Settings.Skybox.Brightness = skybox["Brightness"].as<float>();
+            m_Settings.Skybox.Contrast = skybox["Contrast"].as<float>();
         }
 
-        asset->SetPath(path);
-        return asset;
+        return true;
     }
     catch (const std::exception &e)
     {
         CH_CORE_ERROR("Failed to parse environment file {0}: {1}", path, e.what());
-        return nullptr;
+        return false;
     }
 }
 

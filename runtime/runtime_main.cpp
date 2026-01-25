@@ -15,7 +15,7 @@ Application *CreateApplication()
 {
     RegisterGameScripts();
     Application::Config config;
-    config.Title = "Chained Runtime";
+    // config.Title = "Chained e";
     config.Width = 1280;
     config.Height = 720;
 

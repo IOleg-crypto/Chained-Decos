@@ -1,12 +1,17 @@
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include "component_ui.h"
 #include "editor_layer.h"
 #include "engine/renderer/asset_manager.h"
+#include "engine/renderer/render_types.h"
+#include "engine/renderer/texture_asset.h"
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
 #include "engine/scene/script_registry.h"
+#include "engine/ui/imgui_raylib_ui.h"
 #include "undo/transform_command.h"
 #include <filesystem>
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <nfd.h>
 #include <raymath.h>
 #include <set>
@@ -15,6 +20,25 @@
 namespace CHEngine
 {
 std::unordered_map<entt::id_type, std::function<void(Entity)>> ComponentUI::s_DrawerRegistry;
+
+// Forward declarations of drawer functions
+static void DrawTransform(Entity entity);
+static void DrawModel(Entity entity);
+static void DrawCollider(Entity entity);
+static void DrawRigidBody(Entity entity);
+static void DrawSpawn(Entity entity);
+static void DrawPlayer(Entity entity);
+static void DrawPointLight(Entity entity);
+static void DrawAudio(Entity entity);
+static void DrawHierarchy(Entity entity);
+static void DrawNativeScript(Entity entity);
+static void DrawAnimation(Entity entity);
+static void DrawWidget(Entity entity);
+static void DrawImageWidget(Entity entity);
+static void DrawTextWidget(Entity entity);
+static void DrawButtonWidget(Entity entity);
+static void DrawSliderWidget(Entity entity);
+static void DrawCheckboxWidget(Entity entity);
 
 void ComponentUI::RegisterDrawer(entt::id_type typeId, std::function<void(Entity)> drawer)
 {
@@ -27,10 +51,45 @@ void ComponentUI::DrawEntityComponents(Entity entity)
         return;
 
     auto &registry = entity.GetScene()->GetRegistry();
+    SceneType sceneType = entity.GetScene()->GetType();
+
+    bool isUIEntity = entity.HasComponent<WidgetComponent>() &&
+                      (entity.GetComponent<WidgetComponent>().HiddenInHierarchy ||
+                       sceneType == SceneType::SceneUI);
+
     for (auto [typeId, storage] : registry.storage())
     {
         if (storage.contains((entt::entity)entity))
         {
+            // Filter components based on context
+            if (sceneType == SceneType::SceneUI)
+            {
+                // In UI scenes, we ONLY show ID, Tag, and WidgetComponent
+                if (typeId != entt::type_hash<IDComponent>::value() &&
+                    typeId != entt::type_hash<TagComponent>::value() &&
+                    typeId != entt::type_hash<WidgetComponent>::value() &&
+                    typeId != entt::type_hash<ImageWidget>::value() &&
+                    typeId != entt::type_hash<TextWidget>::value() &&
+                    typeId != entt::type_hash<ButtonWidget>::value() &&
+                    typeId != entt::type_hash<SliderWidget>::value() &&
+                    typeId != entt::type_hash<CheckboxWidget>::value() &&
+                    typeId != entt::type_hash<NativeScriptComponent>::value())
+                {
+                    continue;
+                }
+            }
+            else if (isUIEntity)
+            {
+                // If it's a "UI element" in a 3D scene, hide 3D bits to keep it clean
+                if (typeId == entt::type_hash<TransformComponent>::value() ||
+                    typeId == entt::type_hash<ModelComponent>::value() ||
+                    typeId == entt::type_hash<RigidBodyComponent>::value() ||
+                    typeId == entt::type_hash<ColliderComponent>::value())
+                {
+                    continue;
+                }
+            }
+
             if (s_DrawerRegistry.count(typeId))
             {
                 s_DrawerRegistry[typeId](entity);
@@ -52,6 +111,12 @@ void ComponentUI::Init()
     Register<HierarchyComponent>([](Entity e) { DrawHierarchy(e); });
     Register<NativeScriptComponent>([](Entity e) { DrawNativeScript(e); });
     Register<AnimationComponent>([](Entity e) { DrawAnimation(e); });
+    Register<WidgetComponent>([](Entity e) { DrawWidget(e); });
+    Register<ImageWidget>([](Entity e) { DrawImageWidget(e); });
+    Register<TextWidget>([](Entity e) { DrawTextWidget(e); });
+    Register<ButtonWidget>([](Entity e) { DrawButtonWidget(e); });
+    Register<SliderWidget>([](Entity e) { DrawSliderWidget(e); });
+    Register<CheckboxWidget>([](Entity e) { DrawCheckboxWidget(e); });
 }
 static bool DrawVec3Control(const std::string &label, Vector3 &values, float resetValue = 0.0f,
                             float columnWidth = 100.0f)
@@ -112,6 +177,94 @@ static bool DrawVec3Control(const std::string &label, Vector3 &values, float res
     ImGui::PopStyleVar();
     ImGui::Columns(1);
     ImGui::PopID();
+    return modified;
+}
+
+static void BeginProperties(float columnWidth = 100.0f)
+{
+    ImGui::Columns(2);
+    ImGui::SetColumnWidth(0, columnWidth);
+}
+
+static void EndProperties()
+{
+    ImGui::Columns(1);
+}
+
+static bool Property(const char *label, bool &value)
+{
+    bool modified = false;
+    ImGui::Text(label);
+    ImGui::NextColumn();
+    ImGui::PushID(label);
+    if (ImGui::Checkbox("##prop", &value))
+        modified = true;
+    ImGui::PopID();
+    ImGui::NextColumn();
+    return modified;
+}
+
+static bool Property(const char *label, std::string &value, bool multiline = false)
+{
+    bool modified = false;
+    ImGui::Text(label);
+    ImGui::NextColumn();
+    ImGui::PushID(label);
+    char buffer[256];
+    memset(buffer, 0, sizeof(buffer));
+    strncpy(buffer, value.c_str(), sizeof(buffer) - 1);
+
+    if (multiline)
+    {
+        if (ImGui::InputTextMultiline("##prop", buffer, sizeof(buffer),
+                                      ImVec2(-1, ImGui::GetTextLineHeight() * 3)))
+        {
+            value = buffer;
+            modified = true;
+        }
+    }
+    else
+    {
+        if (ImGui::InputText("##prop", buffer, sizeof(buffer)))
+        {
+            value = buffer;
+            modified = true;
+        }
+    }
+    ImGui::PopID();
+    ImGui::NextColumn();
+    return modified;
+}
+
+static bool Property(const char *label, float &value, float speed = 0.1f, float min = 0.0f,
+                     float max = 0.0f)
+{
+    bool modified = false;
+    ImGui::Text(label);
+    ImGui::NextColumn();
+    ImGui::PushID(label);
+    if (ImGui::DragFloat("##prop", &value, speed, min, max))
+        modified = true;
+    ImGui::PopID();
+    ImGui::NextColumn();
+    return modified;
+}
+
+static bool PropertyColor(const char *label, Color &value)
+{
+    bool modified = false;
+    ImGui::Text(label);
+    ImGui::NextColumn();
+    ImGui::PushID(label);
+    float col[4] = {value.r / 255.0f, value.g / 255.0f, value.b / 255.0f, value.a / 255.0f};
+    if (ImGui::ColorEdit4("##prop", col))
+    {
+        value = {(unsigned char)(col[0] * 255), (unsigned char)(col[1] * 255),
+                 (unsigned char)(col[2] * 255), (unsigned char)(col[3] * 255)};
+        modified = true;
+    }
+    ImGui::PopID();
+    ImGui::NextColumn();
     return modified;
 }
 
@@ -304,6 +457,19 @@ void ComponentUI::DrawModel(Entity entity)
                                     else
                                         material.AlbedoPath = fullPath.string();
                                     NFD_FreePath(outPath);
+                                }
+                            }
+
+                            // Texture Preview
+                            if (!material.AlbedoPath.empty())
+                            {
+                                auto texAsset = Assets::Get<TextureAsset>(material.AlbedoPath);
+                                if (texAsset)
+                                {
+                                    ImGui::Text("Preview:");
+                                    rlImGuiImageSize(&texAsset->GetTexture(), 64, 64);
+                                    ImGui::SameLine();
+                                    ImGui::TextDisabled("(ID: %u)", texAsset->GetTexture().id);
                                 }
                             }
                         }
@@ -511,26 +677,163 @@ void ComponentUI::DrawAnimation(Entity entity)
         });
 }
 
+static void DrawWidget(Entity entity)
+{
+    DrawComponent<WidgetComponent>(
+        "Widget Component", entity,
+        [](auto &ui)
+        {
+            if (ImGui::CollapsingHeader("Rect Transform", ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                BeginProperties(120.0f);
+
+                ImGui::Text("Anchors");
+                ImGui::NextColumn();
+                ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.45f);
+                ImGui::DragFloat2("Min##anchors", &ui.Transform.AnchorMin.x, 0.01f, 0.0f, 1.0f);
+                ImGui::SameLine();
+                ImGui::DragFloat2("Max##anchors", &ui.Transform.AnchorMax.x, 0.01f, 0.0f, 1.0f);
+                ImGui::PopItemWidth();
+                ImGui::NextColumn();
+
+                ImGui::Text("Offsets");
+                ImGui::NextColumn();
+                ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.45f);
+                ImGui::DragFloat2("Min##offsets", &ui.Transform.OffsetMin.x, 1.0f);
+                ImGui::SameLine();
+                ImGui::DragFloat2("Max##offsets", &ui.Transform.OffsetMax.x, 1.0f);
+                ImGui::PopItemWidth();
+                ImGui::NextColumn();
+
+                ImGui::Text("Pivot");
+                ImGui::NextColumn();
+                ImGui::DragFloat2("##Pivot", &ui.Transform.Pivot.x, 0.01f, 0.0f, 1.0f);
+                ImGui::NextColumn();
+
+                EndProperties();
+            }
+
+            BeginProperties(120.0f);
+            Property("Is Active", ui.IsActive);
+            Property("Hide in Hierarchy", ui.HiddenInHierarchy);
+            EndProperties();
+        });
+}
+
+static void DrawImageWidget(Entity entity)
+{
+    DrawComponent<ImageWidget>("Image Widget", entity,
+                               [](auto &ui)
+                               {
+                                   const char *scaleModes[] = {"Stretch", "Fit", "Fill"};
+                                   int currentScale = (int)ui.ScaleMode;
+                                   BeginProperties(120.0f);
+                                   if (ImGui::Combo("Scale Mode", &currentScale, scaleModes, 3))
+                                       ui.ScaleMode = (ImageWidget::ImageScaleMode)currentScale;
+
+                                   PropertyColor("Color", ui.BackgroundColor);
+                                   Property("Rounding", ui.Rounding, 0.1f, 0.0f, 20.0f);
+                                   Property("Use Background", ui.UseBackground);
+
+                                   ImGui::Text("Texture");
+                                   ImGui::NextColumn();
+                                   char texBuf[256];
+                                   memset(texBuf, 0, sizeof(texBuf));
+                                   strncpy(texBuf, ui.TexturePath.c_str(), sizeof(texBuf) - 1);
+                                   if (ImGui::InputText("##tex", texBuf, sizeof(texBuf)))
+                                       ui.TexturePath = texBuf;
+                                   ImGui::NextColumn();
+
+                                   EndProperties();
+                               });
+}
+
+static void DrawTextWidget(Entity entity)
+{
+    DrawComponent<TextWidget>("Text Widget", entity,
+                              [](auto &ui)
+                              {
+                                  BeginProperties(120.0f);
+                                  Property("Text", ui.Text);
+                                  PropertyColor("Color", ui.Color);
+                                  Property("Font Size", ui.FontSize, 0.1f, 1.0f, 100.0f);
+                                  EndProperties();
+                              });
+}
+
+static void DrawButtonWidget(Entity entity)
+{
+    DrawComponent<ButtonWidget>("Button Widget", entity,
+                                [](auto &btn)
+                                {
+                                    BeginProperties(120.0f);
+                                    Property("Interactable", btn.Interactable);
+                                    ImGui::Text("Pressed");
+                                    ImGui::NextColumn();
+                                    ImGui::Text(btn.Pressed ? "Yes" : "No");
+                                    ImGui::NextColumn();
+                                    EndProperties();
+                                });
+}
+
+static void DrawSliderWidget(Entity entity)
+{
+    DrawComponent<SliderWidget>("Slider Widget", entity,
+                                [](auto &ui)
+                                {
+                                    BeginProperties(120.0f);
+                                    Property("Value", ui.Value, 0.01f);
+                                    Property("Min", ui.Min, 0.1f);
+                                    Property("Max", ui.Max, 0.1f);
+                                    EndProperties();
+                                });
+}
+
+static void DrawCheckboxWidget(Entity entity)
+{
+    DrawComponent<CheckboxWidget>("Checkbox Widget", entity,
+                                  [](auto &ui)
+                                  {
+                                      BeginProperties(120.0f);
+                                      Property("Checked", ui.Checked);
+                                      EndProperties();
+                                  });
+}
+
 void ComponentUI::DrawAddComponentPopup(Entity entity)
 {
     if (ImGui::BeginPopup("AddComponent"))
     {
+        // Determine scene type
+        bool isUIScene = entity.GetScene() && entity.GetScene()->GetType() == SceneType::SceneUI;
+
+        // Common components (available in all scene types)
         if (ImGui::MenuItem("Transform") && !entity.HasComponent<TransformComponent>())
             entity.AddComponent<TransformComponent>();
-        if (ImGui::MenuItem("Model") && !entity.HasComponent<ModelComponent>())
-            entity.AddComponent<ModelComponent>();
-        if (ImGui::MenuItem("Material") && !entity.HasComponent<MaterialComponent>())
-            entity.AddComponent<MaterialComponent>();
-        if (ImGui::MenuItem("Collider") && !entity.HasComponent<ColliderComponent>())
-            entity.AddComponent<ColliderComponent>();
-        if (ImGui::MenuItem("RigidBody") && !entity.HasComponent<RigidBodyComponent>())
-            entity.AddComponent<RigidBodyComponent>();
-        if (ImGui::MenuItem("Player") && !entity.HasComponent<PlayerComponent>())
-            entity.AddComponent<PlayerComponent>();
-        if (ImGui::MenuItem("Animation") && !entity.HasComponent<AnimationComponent>())
-            entity.AddComponent<AnimationComponent>();
         if (ImGui::MenuItem("Native Script") && !entity.HasComponent<NativeScriptComponent>())
             entity.AddComponent<NativeScriptComponent>();
+
+        // UI-specific components
+        if (ImGui::MenuItem("Widget Component") && !entity.HasComponent<WidgetComponent>())
+            entity.AddComponent<WidgetComponent>();
+
+        // 3D-specific components (hide in UI scenes)
+        if (!isUIScene)
+        {
+            if (ImGui::MenuItem("Model") && !entity.HasComponent<ModelComponent>())
+                entity.AddComponent<ModelComponent>();
+            if (ImGui::MenuItem("Material") && !entity.HasComponent<MaterialComponent>())
+                entity.AddComponent<MaterialComponent>();
+            if (ImGui::MenuItem("Collider") && !entity.HasComponent<ColliderComponent>())
+                entity.AddComponent<ColliderComponent>();
+            if (ImGui::MenuItem("RigidBody") && !entity.HasComponent<RigidBodyComponent>())
+                entity.AddComponent<RigidBodyComponent>();
+            if (ImGui::MenuItem("Player") && !entity.HasComponent<PlayerComponent>())
+                entity.AddComponent<PlayerComponent>();
+            if (ImGui::MenuItem("Animation") && !entity.HasComponent<AnimationComponent>())
+                entity.AddComponent<AnimationComponent>();
+        }
+
         ImGui::EndPopup();
     }
 }

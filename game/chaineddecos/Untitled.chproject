@@ -1,8 +1,8 @@
 Project:
   Name: Untitled
-  StartScene: Untitled.chscene
+  StartScene: Untitled100.chscene
   AssetDirectory: assets
-  ActiveScene: assets\scenes\Untitled.chscene
+  ActiveScene: assets\scenes\Untitled100.chscene
   Physics:
     Gravity: 20
   Animation:

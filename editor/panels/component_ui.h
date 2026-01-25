@@ -35,6 +35,7 @@ public:
     static void DrawHierarchy(Entity entity);
     static void DrawNativeScript(Entity entity);
     static void DrawAnimation(Entity entity);
+    static void DrawUI(Entity entity);
 
     static void DrawAddComponentPopup(Entity entity);
 

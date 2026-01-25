@@ -1,72 +1,92 @@
 #include "model_asset.h"
 #include "asset_manager.h"
 #include "engine/core/log.h"
+#include "engine/physics/bvh/bvh.h"
 #include "texture_asset.h"
 #include <filesystem>
 #include <raylib.h>
 
 namespace CHEngine
 {
-Ref<ModelAsset> ModelAsset::Load(const std::string &path)
+std::shared_ptr<ModelAsset> ModelAsset::Load(const std::string &path)
 {
     if (path.empty())
         return nullptr;
-
-    // Check for procedural models first
     if (path.starts_with(":"))
-    {
         return CreateProcedural(path);
-    }
 
     auto fullPath = Assets::ResolvePath(path);
-    CH_CORE_INFO("Loading model: {} (resolved: {})", path, fullPath.string());
-
     if (!std::filesystem::exists(fullPath))
-    {
-        CH_CORE_ERROR("Model file not found: {}", fullPath.string());
         return nullptr;
-    }
 
     Model model = ::LoadModel(fullPath.string().c_str());
     if (model.meshCount == 0)
-    {
-        CH_CORE_ERROR("Failed to load model meshes: {}", path);
         return nullptr;
-    }
 
-    CH_CORE_INFO("Model loaded successfully: {} (meshes: {}, materials: {})", path, model.meshCount,
-                 model.materialCount);
-
-    auto asset = CreateRef<ModelAsset>();
+    auto asset = std::make_shared<ModelAsset>();
     asset->m_Model = model;
     asset->SetPath(path);
+    asset->SetState(AssetState::Ready);
 
-    // Register textures with AssetManager to ensure they are tracked
+    asset->m_BVHFuture = BVHBuilder::BuildAsync(model);
+
+    // Track internal textures
     for (int i = 0; i < model.materialCount; i++)
     {
-        for (int j = 0; j < 12; j++) // MAX_MATERIAL_MAPS is 12 in Raylib
+        for (int j = 0; j < 12; j++)
         {
             Texture2D tex = model.materials[i].maps[j].texture;
             if (tex.id > 0)
             {
-                // We create a wrapper but we don't know the original path here unfortunately
-                // However, we can track it as a managed texture
-                auto texAsset = CreateRef<TextureAsset>();
+                auto texAsset = std::make_shared<TextureAsset>();
                 texAsset->SetTexture(tex);
+                texAsset->SetState(AssetState::Ready);
                 asset->m_Textures.push_back(texAsset);
             }
         }
     }
-
-    // Load animations - Raylib animations are sometimes problematic with GLB
-    CH_CORE_INFO("Loading animations for: {}", path);
-    asset->m_Animations = ::LoadModelAnimations(fullPath.string().c_str(), &asset->m_AnimCount);
-    CH_CORE_INFO("Animations loaded for: {} (count: {})", path, asset->m_AnimCount);
-
     return asset;
 }
 
-Ref<ModelAsset> ModelAsset::CreateProcedural(const std::string &type)
+void ModelAsset::LoadAsync(const std::string &path)
+{
+    // For now, simpler models just load synchronously in background thread
+    // then upload to GPU using a simplified approach
+    // Raylib's LoadModel is mostly CPU until the final VBO upload
+    auto asset = AssetManager::Get<ModelAsset>(path);
+    if (!asset)
+        return;
+
+    auto fullPath = Assets::ResolvePath(path);
+    if (!std::filesystem::exists(fullPath))
+    {
+        asset->SetState(AssetState::Failed);
+        return;
+    }
+
+    // NOTE: LoadModel will perform GPU allocation if called on background thread in standard
+    // setups, but in our ChainedThread system we need to be careful. Ideally we'd use LoadMesh
+    // directly then upload. For simplicity, we'll keep it as a managed sync for now, but the
+    // AssetManager::Update will call UploadToGPU if we split it.
+
+    // For this refactor, we'll focus on the TextureAsset first as proof of concept.
+    // ModelAsset Load will stay as-is but marked Ready.
+    auto loaded = Load(path);
+    if (loaded)
+    {
+        asset->m_Model = loaded->m_Model;
+        asset->m_Animations = loaded->m_Animations;
+        asset->m_AnimCount = loaded->m_AnimCount;
+        asset->m_Textures = loaded->m_Textures;
+        asset->SetState(AssetState::Ready);
+    }
+}
+
+void ModelAsset::UploadToGPU()
+{
+}
+
+std::shared_ptr<ModelAsset> ModelAsset::CreateProcedural(const std::string &type)
 {
     Mesh mesh = {0};
     if (type == ":cube:")
@@ -81,9 +101,11 @@ Ref<ModelAsset> ModelAsset::CreateProcedural(const std::string &type)
     if (mesh.vertexCount == 0)
         return nullptr;
 
-    auto asset = CreateRef<ModelAsset>();
+    auto asset = std::make_shared<ModelAsset>();
     asset->m_Model = LoadModelFromMesh(mesh);
     asset->SetPath(type);
+    asset->SetState(AssetState::Ready);
+    asset->m_BVHFuture = BVHBuilder::BuildAsync(asset->m_Model);
     return asset;
 }
 
@@ -93,16 +115,12 @@ ModelAsset::~ModelAsset()
         ::UnloadModel(m_Model);
     if (m_Animations)
         ::UnloadModelAnimations(m_Animations, m_AnimCount);
-
-    CH_CORE_TRACE("ModelAsset Unloaded: {}", GetPath());
 }
 
 void ModelAsset::UpdateAnimation(int animIndex, int frame)
 {
     if (m_Animations && animIndex < m_AnimCount)
-    {
         UpdateModelAnimation(m_Model, m_Animations[animIndex], frame);
-    }
 }
 
 ModelAnimation *ModelAsset::GetAnimations(int *count)
@@ -116,5 +134,4 @@ BoundingBox ModelAsset::GetBoundingBox() const
 {
     return ::GetModelBoundingBox(m_Model);
 }
-
 } // namespace CHEngine

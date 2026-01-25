@@ -16,14 +16,14 @@ SoundAsset::~SoundAsset()
     }
 }
 
-Ref<SoundAsset> SoundAsset::Load(const std::string &path)
+std::shared_ptr<SoundAsset> SoundAsset::Load(const std::string &path)
 {
     auto absolutePath = Assets::ResolvePath(path);
     Sound sound = ::LoadSound(absolutePath.string().c_str());
 
     if (sound.frameCount > 0)
     {
-        auto asset = CreateRef<SoundAsset>(sound);
+        auto asset = std::make_shared<SoundAsset>(sound);
         asset->SetPath(path);
         return asset;
     }

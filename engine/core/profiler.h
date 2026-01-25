@@ -19,7 +19,7 @@ struct ProfileResult
     std::chrono::microseconds Duration;
     uint32_t ThreadID;
     uint32_t Color = 0;
-    std::vector<Ref<ProfileResult>> Children;
+    std::vector<std::shared_ptr<ProfileResult>> Children;
 };
 
 struct ProfilerStats
@@ -55,7 +55,7 @@ public:
     static void BeginScope(const std::string &name);
     static void EndScope();
 
-    static const std::vector<Ref<ProfileResult>> &GetLastFrameResults();
+    static const std::vector<std::shared_ptr<ProfileResult>> &GetLastFrameResults();
 
     static const ProfilerStats &GetStats()
     {
@@ -72,13 +72,13 @@ public:
 private:
     struct ThreadContext
     {
-        std::vector<Ref<ProfileResult>> Stack;
-        std::vector<Ref<ProfileResult>> CurrentFrame;
+        std::vector<std::shared_ptr<ProfileResult>> Stack;
+        std::vector<std::shared_ptr<ProfileResult>> CurrentFrame;
     };
 
     static std::unordered_map<std::thread::id, ThreadContext> s_ThreadContexts;
     static std::mutex s_ContextMutex;
-    static std::vector<Ref<ProfileResult>> s_LastFrameResults;
+    static std::vector<std::shared_ptr<ProfileResult>> s_LastFrameResults;
     static std::vector<float> s_FrameTimeHistory;
     static ProfilerStats s_Stats;
 };

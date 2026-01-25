@@ -1,3 +1,4 @@
+#include "engine/physics/collision/collision.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
@@ -14,18 +15,18 @@ TEST(PhysicsTest, AABBIntersection)
     Vector3 maxB = {1.5f, 1.5f, 1.5f};
 
     // Obvious overlap
-    EXPECT_TRUE(Physics::CheckAABB(minA, maxA, minB, maxB));
-    EXPECT_TRUE(Physics::CheckAABB(minB, maxB, minA, maxA));
+    EXPECT_TRUE(Collision::CheckAABB(minA, maxA, minB, maxB));
+    EXPECT_TRUE(Collision::CheckAABB(minB, maxB, minA, maxA));
 
     // Touching on edge (should be true based on <= and >=)
     Vector3 minC = {1.0f, 0.0f, 0.0f};
     Vector3 maxC = {2.0f, 1.0f, 1.0f};
-    EXPECT_TRUE(Physics::CheckAABB(minA, maxA, minC, maxC));
+    EXPECT_TRUE(Collision::CheckAABB(minA, maxA, minC, maxC));
 
     // No overlap
     Vector3 minD = {1.1f, 0.0f, 0.0f};
     Vector3 maxD = {2.1f, 1.0f, 1.0f};
-    EXPECT_FALSE(Physics::CheckAABB(minA, maxA, minD, maxD));
+    EXPECT_FALSE(Collision::CheckAABB(minA, maxA, minD, maxD));
 }
 
 TEST(PhysicsTest, Raycast)

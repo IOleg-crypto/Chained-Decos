@@ -13,9 +13,12 @@
 
 namespace CHEngine
 {
-class SceneScripting;
-class SceneAnimator;
-class SceneAudio;
+
+enum class SceneType : uint8_t
+{
+    Scene3D,
+    SceneUI
+};
 
 class Scene
 {
@@ -23,7 +26,16 @@ public:
     Scene();
     virtual ~Scene();
 
-    static Ref<Scene> Copy(Ref<Scene> other);
+    SceneType GetType() const
+    {
+        return m_Type;
+    }
+    void SetType(SceneType type)
+    {
+        m_Type = type;
+    }
+
+    static std::shared_ptr<Scene> Copy(std::shared_ptr<Scene> other);
 
     Entity CreateEntity(const std::string &name = "Entity");
     Entity CreateEntityWithUUID(UUID uuid, const std::string &name = "Entity");
@@ -34,6 +46,7 @@ public:
 
     void OnUpdateRuntime(float deltaTime);
     void OnUpdateEditor(float deltaTime);
+    void OnRender(const Camera3D &camera, const struct DebugRenderFlags *debugFlags = nullptr);
     void OnRuntimeStart();
     void OnRuntimeStop();
     bool IsSimulationRunning() const
@@ -41,6 +54,11 @@ public:
         return m_IsSimulationRunning;
     }
     void OnEvent(Event &e);
+    void OnImGuiRender(const ImVec2 &refPos = {0, 0}, const ImVec2 &refSize = {0, 0},
+                       uint32_t viewportID = 0, bool editMode = false);
+
+    void RequestSceneChange(const std::string &path);
+    void UpdateProfilerStats();
 
     // Entt-compatible wrappers
     void OnModelComponentAdded(entt::registry &reg, entt::entity entity);
@@ -69,28 +87,25 @@ public:
         return m_Skybox;
     }
 
-    Ref<EnvironmentAsset> GetEnvironment()
+    std::shared_ptr<EnvironmentAsset> GetEnvironment()
     {
         return m_Environment;
     }
-    const Ref<EnvironmentAsset> GetEnvironment() const
+    const std::shared_ptr<EnvironmentAsset> GetEnvironment() const
     {
         return m_Environment;
     }
-    void SetEnvironment(Ref<EnvironmentAsset> env)
+    void SetEnvironment(std::shared_ptr<EnvironmentAsset> environment)
     {
-        m_Environment = env;
+        m_Environment = environment;
     }
 
 private:
     entt::registry m_Registry;
-    Ref<EnvironmentAsset> m_Environment;
+    std::shared_ptr<EnvironmentAsset> m_Environment;
     struct SkyboxComponent m_Skybox;
+    SceneType m_Type = SceneType::Scene3D;
     bool m_IsSimulationRunning = false;
-
-    Scope<SceneScripting> m_Scripting;
-    Scope<SceneAnimator> m_Animator;
-    Scope<SceneAudio> m_Audio;
 
     friend class Entity;
     friend class SceneSerializer;

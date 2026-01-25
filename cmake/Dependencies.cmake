@@ -100,15 +100,16 @@ endif()
 # ImGui + rlImGui + ImGuizmo
 # ============================================================================
 set(IMGUI_SOURCES
-    include/rlImGui/rlImGui.cpp
-    include/rlImGui/rlImGui.h
-    include/rlImGui/imgui_impl_raylib.h
     include/imgui/imgui.cpp
     include/imgui/imgui_draw.cpp
     include/imgui/imgui_widgets.cpp
     include/imgui/imgui_tables.cpp
     include/imgui/imgui_demo.cpp
     include/imgui/misc/cpp/imgui_stdlib.cpp
+    include/imgui/backends/imgui_impl_glfw.cpp
+    include/imgui/backends/imgui_impl_glfw.h
+    include/imgui/backends/imgui_impl_opengl3.cpp
+    include/imgui/backends/imgui_impl_opengl3.h
     ${imguizmo_SOURCE_DIR}/ImGuizmo.cpp
     ${imguizmo_SOURCE_DIR}/ImGuizmo.h
 )
@@ -118,12 +119,16 @@ add_library(imguilib STATIC ${IMGUI_SOURCES})
 target_include_directories(imguilib PUBLIC
     ${CMAKE_SOURCE_DIR}/include/imgui
     ${CMAKE_SOURCE_DIR}/include/rlImGui
+    ${CMAKE_SOURCE_DIR}/include/raylib/src/external/glfw/include
     ${imguizmo_SOURCE_DIR}
 )
 target_link_libraries(imguilib PRIVATE raylib)
 
-# Define IMGUI math operators before including imgui.h
-target_compile_definitions(imguilib PRIVATE IMGUI_DEFINE_MATH_OPERATORS)
+# Define IMGUI math operators and GLFW settings
+target_compile_definitions(imguilib PRIVATE 
+    IMGUI_DEFINE_MATH_OPERATORS
+    GLFW_INCLUDE_NONE
+)
 
 # Disable unity build for imguilib to avoid GLAD header conflicts
 set_target_properties(imguilib PROPERTIES UNITY_BUILD OFF)

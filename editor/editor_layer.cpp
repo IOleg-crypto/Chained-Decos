@@ -8,13 +8,12 @@
 #include "engine/physics/physics.h"
 #include "engine/renderer/asset_manager.h"
 #include "engine/renderer/render.h"
-#include "engine/renderer/render_state.h"
-#include "engine/renderer/scene_render.h"
 #include "engine/scene/components.h"
 #include "engine/scene/project_serializer.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_serializer.h"
 #include "engine/scene/scriptable_entity.h"
+#include "engine/ui/imgui_raylib_ui.h"
 #include "raylib.h"
 #include "ui/menu_bar.h"
 #include "ui/toolbar.h"
@@ -22,8 +21,13 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <nfd.h>
-#include <rlImGui.h>
 
+// GLFW and OpenGL for context management
+#define GLFW_INCLUDE_NONE
+#include "external/glfw/include/GLFW/glfw3.h"
+#include <rlgl.h>
+
+#include "engine/ui/imgui_raylib_ui.h"
 #include "panels/component_ui.h"
 #include "panels/console_panel.h"
 #include <cstdarg>
@@ -31,7 +35,8 @@
 
 namespace CHEngine
 {
-static EditorLayer *s_Instance = nullptr;
+EditorLayer *EditorLayer::s_Instance = nullptr;
+ImVec2 EditorLayer::s_ViewportSize = {1280, 720};
 
 EditorLayer::EditorLayer() : Layer("EditorLayer")
 {
@@ -61,8 +66,6 @@ void EditorLayer::OnAttach()
             ConsolePanel::AddLog(buffer, level);
         });
 
-    rlImGuiBeginInitImGui();
-
     ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
@@ -83,7 +86,6 @@ void EditorLayer::OnAttach()
     io.Fonts->AddFontFromFileTTF(
         AssetManager::ResolvePath("engine:font/lato/Lato-Bold.ttf").string().c_str(), 26.0f);
 
-    rlImGuiEndInitImGui();
     SetDarkThemeColors();
 
     NFD_Init();
@@ -93,8 +95,8 @@ void EditorLayer::OnAttach()
     AddPanel<ViewportPanel>()->SetDebugFlags(&m_DebugRenderFlags);
     AddPanel<SceneHierarchyPanel>();
     AddPanel<InspectorPanel>();
-    AddPanel<ContentBrowserPanel>()->SetSceneOpenCallback(
-        [](const std::filesystem::path &path) { EditorUtils::SceneUtils::OpenScene(path); });
+    AddPanel<ContentBrowserPanel>()->SetSceneOpenCallback([](const std::filesystem::path &path)
+                                                          { SceneUtils::OpenScene(path); });
     AddPanel<ConsolePanel>();
     AddPanel<EnvironmentPanel>()->SetDebugFlags(&m_DebugRenderFlags);
     AddPanel<ProfilerPanel>();
@@ -113,7 +115,6 @@ void EditorLayer::OnAttach()
 void EditorLayer::OnDetach()
 {
     NFD_Quit();
-    rlImGuiShutdown();
 }
 
 void EditorLayer::OnUpdate(float deltaTime)
@@ -141,25 +142,19 @@ void EditorLayer::OnUpdate(float deltaTime)
                 if (IsKeyPressed(KEY_Y))
                     m_CommandHistory.Redo();
                 if (IsKeyPressed(KEY_S))
-                    EditorUtils::SceneUtils::SaveScene();
+                    SceneUtils::SaveScene();
                 if (IsKeyPressed(KEY_O))
-                    EditorUtils::SceneUtils::OpenScene();
+                    SceneUtils::OpenScene();
                 if (IsKeyPressed(KEY_N))
-                    EditorUtils::SceneUtils::NewScene();
+                    SceneUtils::NewScene();
             }
         }
 
         for (auto &panel : m_Panels)
             panel->OnUpdate(deltaTime);
+    }
 
-        // Edit mode: only process internal physics/colliders
-        Physics::Update(activeScene.get(), deltaTime, false);
-    }
-    else if (m_SceneState == SceneState::Play)
-    {
-        // Play mode: Scene handles its own internal lifecycle (Physics, Scripts, Audio, etc.)
-        activeScene->OnUpdateRuntime(deltaTime);
-    }
+    // Standalone rendering logic removed in favor of ImGui Viewports
 }
 
 void EditorLayer::OnRender()
@@ -169,26 +164,33 @@ void EditorLayer::OnRender()
 
 void EditorLayer::OnImGuiRender()
 {
-    rlImGuiBegin();
-
     ImGuizmo::SetImGuiContext(ImGui::GetCurrentContext());
     ImGuizmo::BeginFrame();
 
     if (Project::GetActive())
     {
-        UI_DrawDockSpace();
-        UI_DrawPanels();
-        UI_DrawScriptUI();
+        if (m_FullscreenGame)
+        {
+            // Fullscreen mode: only render viewport
+            auto viewportPanel = GetPanel<ViewportPanel>();
+            if (viewportPanel)
+                viewportPanel->OnImGuiRender(true);
+        }
+        else
+        {
+            // Normal editor mode
+            UI_DrawDockSpace();
+            UI_DrawPanels();
+            UI_DrawScriptUI();
 
-        ImGui::End(); // End DockSpace window (started in UI_DrawDockSpace)
+            ImGui::End(); // End DockSpace window (started in UI_DrawDockSpace)
+        }
     }
     else
     {
         if (auto projectBrowser = GetPanel<ProjectBrowserPanel>())
             projectBrowser->OnImGuiRender();
     }
-
-    rlImGuiEnd();
 }
 
 void EditorLayer::UI_DrawDockSpace()
@@ -267,6 +269,12 @@ void EditorLayer::UI_DrawPanels()
         if (panel->GetName() == "Project Browser")
             continue;
 
+        // Skip Environment settings for UI scenes
+        auto activeScene = Application::Get().GetActiveScene();
+        if (panel->GetName() == "Environment" && activeScene &&
+            activeScene->GetType() == SceneType::SceneUI)
+            continue;
+
         panel->OnImGuiRender(readOnly);
     }
 }
@@ -274,7 +282,7 @@ void EditorLayer::UI_DrawPanels()
 void EditorLayer::LaunchStandalone()
 {
     // Auto-save project and scene
-    EditorUtils::ProjectUtils::SaveProject();
+    ProjectUtils::SaveProject();
 
     auto project = Project::GetActive();
     if (project)
@@ -370,7 +378,7 @@ void EditorLayer::ResetLayout()
     ImGui::DockBuilderDockWindow("Viewport", dock_main_id);
     ImGui::DockBuilderDockWindow("Scene Hierarchy", dock_left);
     ImGui::DockBuilderDockWindow("Inspector", dock_right);
-    ImGui::DockBuilderDockWindow("Skybox", dock_right);
+    ImGui::DockBuilderDockWindow("Environment", dock_right);
     ImGui::DockBuilderDockWindow("Profiler", dock_right);
     ImGui::DockBuilderDockWindow("Content Browser", dock_down);
     ImGui::DockBuilderDockWindow("Console", dock_down);
@@ -404,6 +412,15 @@ bool EditorLayer::OnSceneOpened(SceneOpenedEvent &e)
         panel->SetContext(activeScene);
 
     m_SelectedEntity = {};
+
+    // Sync project path
+    auto project = Project::GetActive();
+    if (project && !e.GetPath().empty())
+    {
+        project->SetActiveScenePath(
+            std::filesystem::relative(e.GetPath(), project->GetProjectDirectory()));
+        ProjectUtils::SaveProject();
+    }
     return false;
 }
 
@@ -416,7 +433,7 @@ void EditorLayer::OnEvent(CHEngine::Event &e)
         [this](ProjectCreatedEvent &ev)
         {
             CH_CORE_INFO("EditorLayer: Handling ProjectCreatedEvent");
-            EditorUtils::ProjectUtils::NewProject(ev.GetProjectName(), ev.GetPath());
+            ProjectUtils::NewProject(ev.GetProjectName(), ev.GetPath());
             return true;
         });
     dispatcher.Dispatch<SceneOpenedEvent>(CH_BIND_EVENT_FN(EditorLayer::OnSceneOpened));
@@ -425,7 +442,16 @@ void EditorLayer::OnEvent(CHEngine::Event &e)
     dispatcher.Dispatch<AppLaunchRuntimeEvent>(
         [this](AppLaunchRuntimeEvent &ev)
         {
-            LaunchStandalone();
+            if (m_SceneState == SceneState::Edit)
+            {
+                ScenePlayEvent spe;
+                OnScenePlay(spe);
+            }
+
+            // Create standalone window
+            // Rocket button logic will be moved to separate process launch later
+            CH_CORE_INFO("Launching Standalone mode via process launch (TBD)...");
+            CH_CORE_INFO("Standalone Window Created");
             return true;
         });
     dispatcher.Dispatch<AppResetLayoutEvent>(
@@ -449,7 +475,15 @@ void EditorLayer::OnEvent(CHEngine::Event &e)
 
     auto activeScene = Application::Get().GetActiveScene();
     if (e.GetEventType() == EventType::KeyPressed)
+    {
+        auto &ke = (KeyPressedEvent &)e;
+        if (ke.GetKeyCode() == KEY_ESCAPE && m_FullscreenGame)
+        {
+            m_FullscreenGame = false;
+            e.Handled = true;
+        }
         activeScene->OnEvent(e);
+    }
 
     if (e.Handled)
         return;

@@ -15,7 +15,7 @@ namespace UI
 struct MenuBarState
 {
     bool IsPlaying = false;
-    std::vector<Ref<Panel>> *Panels = nullptr;
+    std::vector<std::shared_ptr<Panel>> *Panels = nullptr;
 };
 
 void DrawMenuBar(const MenuBarState &state, const EventCallbackFn &callback);

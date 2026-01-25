@@ -10,9 +10,9 @@ class SceneHierarchyPanel : public Panel
 {
 public:
     SceneHierarchyPanel();
-    SceneHierarchyPanel(const Ref<Scene> &context);
+    SceneHierarchyPanel(const std::shared_ptr<Scene> &context);
 
-    virtual void SetContext(const Ref<Scene> &context) override;
+    virtual void SetContext(const std::shared_ptr<Scene> &context) override;
     virtual void OnImGuiRender(bool readOnly = false) override;
 
     void SetSelectedEntity(Entity entity)

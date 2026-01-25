@@ -6,7 +6,6 @@
 #include "engine/core/layer.h"
 #include "engine/core/layer_stack.h"
 #include "engine/core/window.h"
-#include "engine/renderer/render_state.h"
 #include "engine/scene/scene.h"
 #include <atomic>
 #include <mutex>
@@ -52,8 +51,6 @@ public:
     virtual void PostInitialize()
     {
     }
-    virtual void OnUpdate(float deltaTime);
-    virtual void OnRender();
 
     LayerStack &GetLayerStack()
     {
@@ -68,19 +65,25 @@ public:
         return *s_Instance;
     }
 
-    Scope<Window> &GetWindow()
+    std::unique_ptr<Window> &GetWindow()
     {
         return m_Window;
     }
 
-    Ref<Scene> GetActiveScene()
+    std::shared_ptr<Scene> GetActiveScene()
     {
         return m_ActiveScene;
     }
-    void SetActiveScene(Ref<Scene> scene)
+    void SetActiveScene(std::shared_ptr<Scene> scene)
     {
         m_ActiveScene = scene;
     }
+
+    void RequestSceneChange(const std::string &path)
+    {
+        m_NextScenePath = path;
+    }
+
     void LoadScene(const std::string &path);
 
     const Config &GetConfig() const
@@ -88,14 +91,10 @@ public:
         return m_Config;
     }
 
-    // Threading access
-    std::mutex &GetSimMutex()
-    {
-        return m_SimMutex;
-    }
-
 private:
-    void UpdateSimulation();
+    void OnUpdate(float deltaTime);
+    void OnRender();
+
     static Application *s_Instance;
 
     Config m_Config;
@@ -103,24 +102,11 @@ private:
     bool m_Minimized = false;
     float m_DeltaTime = 0.0f;
     float m_LastFrameTime = 0.0f;
-    float m_FixedTimeAccumulator = 0.0f;
-    const float m_FixedStep = 1.0f / 60.0f;
 
     LayerStack m_LayerStack;
-    Scope<Window> m_Window;
-    Ref<Scene> m_ActiveScene;
-
-    // Simulation Threading
-    std::thread m_SimulationThread;
-    std::mutex m_SimMutex;
-    std::atomic<bool> m_IsSimulating{false};
-
-    // Render Snapshotting
-    RenderState m_RenderStates[3];
-    uint32_t m_SimBufferIndex = 0;
-    uint32_t m_RenderBufferIndex = 1;
-    uint32_t m_PendingBufferIndex = 2;
-    std::atomic<bool> m_NewStateAvailable{false};
+    std::unique_ptr<Window> m_Window;
+    std::shared_ptr<Scene> m_ActiveScene;
+    std::string m_NextScenePath;
 };
 
 // To be defined by CLIENT

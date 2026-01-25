@@ -1,10 +1,10 @@
 #ifndef CH_EDITOR_LAYER_H
 #define CH_EDITOR_LAYER_H
 
+#include "engine/core/application.h"
 #include "engine/core/base.h"
 #include "engine/core/layer.h"
 #include "engine/renderer/render.h"
-#include "engine/renderer/scene_render.h"
 #include "engine/scene/scene.h"
 #include "panels/console_panel.h"
 #include "panels/content_browser_panel.h"
@@ -21,6 +21,7 @@
 #include <filesystem>
 #include <imgui.h>
 #include <raylib.h>
+
 
 namespace CHEngine
 {
@@ -43,14 +44,24 @@ public:
     virtual void OnImGuiRender() override;
     virtual void OnEvent(Event &e) override;
 
-    template <typename T, typename... Args> Ref<T> AddPanel(Args &&...args)
+    static float GetViewportHeight()
+    {
+        return s_ViewportSize.y;
+    }
+
+    static std::shared_ptr<Scene> GetActiveScene()
+    {
+        return Application::Get().GetActiveScene();
+    }
+
+    template <typename T, typename... Args> std::shared_ptr<T> AddPanel(Args &&...args)
     {
         auto panel = std::make_shared<T>(std::forward<Args>(args)...);
         m_Panels.push_back(panel);
         return panel;
     }
 
-    template <typename T> Ref<T> GetPanel()
+    template <typename T> std::shared_ptr<T> GetPanel()
     {
         for (auto &panel : m_Panels)
         {
@@ -68,6 +79,7 @@ private:
 
     void ResetLayout();
     void LaunchStandalone();
+
     void SetDarkThemeColors();
     Camera3D GetActiveCamera();
 
@@ -80,17 +92,32 @@ public:
     static SceneState GetSceneState();
     static EditorLayer &Get();
 
+    void ToggleFullscreenGame(bool enabled)
+    {
+        m_FullscreenGame = enabled;
+    }
+    bool IsFullscreenGame() const
+    {
+        return m_FullscreenGame;
+    }
+
 private:
-    std::vector<Ref<Panel>> m_Panels;
+    std::vector<std::shared_ptr<Panel>> m_Panels;
 
     Entity m_SelectedEntity;
     SceneState m_SceneState = SceneState::Edit;
-    DebugRenderFlags m_DebugRenderFlags;
+    bool m_FullscreenGame = false;
     int m_LastHitMeshIndex = -1;
-    Ref<Scene> m_EditorScene;
+    std::shared_ptr<Scene> m_EditorScene;
+
+    // Raylib Debug Render Flags
+    DebugRenderFlags m_DebugRenderFlags;
 
 private:
     CommandHistory m_CommandHistory;
+
+    static EditorLayer *s_Instance;
+    static ImVec2 s_ViewportSize;
 };
 } // namespace CHEngine
 

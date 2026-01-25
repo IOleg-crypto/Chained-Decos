@@ -12,8 +12,12 @@ struct BVHNode
     Vector3 min;
     Vector3 max;
     std::vector<CollisionTriangle> triangles;
-    Ref<BVHNode> left;
-    Ref<BVHNode> right;
+    std::shared_ptr<BVHNode> left;
+    std::shared_ptr<BVHNode> right;
+
+    // Two-Level support
+    bool isSubBVH = false;
+    int meshIndex = -1;
 
     BVHNode() = default;
     bool IsLeaf() const

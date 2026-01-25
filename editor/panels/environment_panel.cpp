@@ -11,7 +11,7 @@ namespace CHEngine
 
 EnvironmentPanel::EnvironmentPanel()
 {
-    m_Name = "Skybox";
+    m_Name = "Environment";
 }
 
 void EnvironmentPanel::OnImGuiRender(bool readOnly)
@@ -24,6 +24,21 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
     if (!m_Context)
     {
         ImGui::Text("No active scene.");
+        ImGui::End();
+        return;
+    }
+
+    if (m_Context->GetType() == SceneType::SceneUI)
+    {
+        ImGui::TextDisabled("UI Scene Context");
+        ImGui::Separator();
+        ImGui::TextWrapped("Global 3D lighting and skybox settings are disabled for UI Scenes.");
+
+        if (ImGui::Button("Convert to 3D Scene"))
+        {
+            m_Context->SetType(SceneType::Scene3D);
+        }
+
         ImGui::End();
         return;
     }
@@ -82,7 +97,7 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
         }
     }
 
-    if (m_DebugFlags)
+    if (m_DebugFlags && m_Context->GetType() == SceneType::Scene3D)
     {
         ImGui::Separator();
         ImGui::Text("Debug Rendering");
@@ -95,7 +110,7 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
     ImGui::End();
 }
 
-void EnvironmentPanel::DrawEnvironmentSettings(Ref<EnvironmentAsset> env, bool readOnly)
+void EnvironmentPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, bool readOnly)
 {
     auto &settings = env->GetSettings();
 

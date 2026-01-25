@@ -13,8 +13,8 @@ public:
     ShaderAsset(Shader shader);
     virtual ~ShaderAsset();
 
-    static Ref<ShaderAsset> Load(const std::string &vsPath, const std::string &fsPath);
-    static Ref<ShaderAsset> Load(const std::string &chshaderPath);
+    static std::shared_ptr<ShaderAsset> Load(const std::string &vsPath, const std::string &fsPath);
+    static std::shared_ptr<ShaderAsset> Load(const std::string &chshaderPath);
 
     virtual AssetType GetType() const override
     {

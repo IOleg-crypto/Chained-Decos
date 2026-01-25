@@ -98,6 +98,16 @@ void Render::EndScene()
     EndMode3D();
 }
 
+void Render::BeginToTexture(RenderTexture2D target)
+{
+    BeginTextureMode(target);
+}
+
+void Render::EndToTexture()
+{
+    EndTextureMode();
+}
+
 void Render::DrawLine(Vector3 start, Vector3 end, Color color)
 {
     ::DrawLine3D(start, end, color);
@@ -120,7 +130,7 @@ void Render::DrawModel(const std::string &path, const Matrix &transform,
     DrawModel(asset, transform, overrides);
 }
 
-void Render::DrawModel(Ref<ModelAsset> asset, const Matrix &transform,
+void Render::DrawModel(std::shared_ptr<ModelAsset> asset, const Matrix &transform,
                        const std::vector<MaterialSlot> &overrides)
 {
     if (!asset)
@@ -195,6 +205,8 @@ void Render::DrawModel(Ref<ModelAsset> asset, const Matrix &transform,
             }
         }
 
+        CH_CORE_TRACE("Render: Drawing submesh {} of {} with material index {}", i, model.meshCount,
+                      matIndex);
         DrawMesh(model.meshes[i], mat, MatrixIdentity());
     }
 
@@ -285,7 +297,8 @@ void Render::DrawSkybox(const SkyboxComponent &skybox, const Camera3D &camera)
     // Actually, let's just try to be smart: if it's a regular LoadTexture, it's 2D.
     // If we'll have a LoadCubemap later that sets a flag, we'll use that.
 
-    Ref<ShaderAsset> shaderAsset = usePanorama ? s_State.PanoramaShader : s_State.SkyboxShader;
+    std::shared_ptr<ShaderAsset> shaderAsset =
+        usePanorama ? s_State.PanoramaShader : s_State.SkyboxShader;
     if (!shaderAsset)
         return;
 
@@ -359,6 +372,97 @@ void Render::BeginUI()
 
 void Render::EndUI()
 {
+}
+
+void Render::DrawCubeTexture(Texture2D texture, Vector3 position, float width, float height,
+                             float length, Color color)
+{
+    float x = position.x;
+    float y = position.y;
+    float z = position.z;
+
+    // Set desired texture to be enabled while drawing following vertex data
+    rlSetTexture(texture.id);
+
+    // Vertex data transformation can be defined with the commented lines,
+    // but in this example we calculate the transformed vertex data directly when calling
+    // rlVertex3f()
+    // rlPushMatrix();
+    // NOTE: Transformation is applied in inverse order (scale -> rotate -> translate)
+    // rlTranslatef(2.0f, 0.0f, 0.0f);
+    // rlRotatef(45, 0, 1, 0);
+    // rlScalef(2.0f, 2.0f, 2.0f);
+
+    rlBegin(RL_QUADS);
+    rlColor4ub(color.r, color.g, color.b, color.a);
+    // Front Face (Flipped Vertical UVs)
+    rlNormal3f(0.0f, 0.0f, 1.0f);
+    rlTexCoord2f(0.0f, 1.0f);
+    rlVertex3f(x - width / 2, y - height / 2, z + length / 2);
+    rlTexCoord2f(1.0f, 1.0f);
+    rlVertex3f(x + width / 2, y - height / 2, z + length / 2);
+    rlTexCoord2f(1.0f, 0.0f);
+    rlVertex3f(x + width / 2, y + height / 2, z + length / 2);
+    rlTexCoord2f(0.0f, 0.0f);
+    rlVertex3f(x - width / 2, y + height / 2, z + length / 2);
+
+    // Back Face (Flipped Vertical UVs)
+    rlNormal3f(0.0f, 0.0f, -1.0f);
+    rlTexCoord2f(1.0f, 1.0f);
+    rlVertex3f(x - width / 2, y - height / 2, z - length / 2);
+    rlTexCoord2f(1.0f, 0.0f);
+    rlVertex3f(x - width / 2, y + height / 2, z - length / 2);
+    rlTexCoord2f(0.0f, 0.0f);
+    rlVertex3f(x + width / 2, y + height / 2, z - length / 2);
+    rlTexCoord2f(0.0f, 1.0f);
+    rlVertex3f(x + width / 2, y - height / 2, z - length / 2);
+
+    // Top Face (Flipped Vertical UVs)
+    rlNormal3f(0.0f, 1.0f, 0.0f);
+    rlTexCoord2f(0.0f, 0.0f);
+    rlVertex3f(x - width / 2, y + height / 2, z - length / 2);
+    rlTexCoord2f(0.0f, 1.0f);
+    rlVertex3f(x - width / 2, y + height / 2, z + length / 2);
+    rlTexCoord2f(1.0f, 1.0f);
+    rlVertex3f(x + width / 2, y + height / 2, z + length / 2);
+    rlTexCoord2f(1.0f, 0.0f);
+    rlVertex3f(x + width / 2, y + height / 2, z - length / 2);
+
+    // Bottom Face (Flipped Vertical UVs)
+    rlNormal3f(0.0f, -1.0f, 0.0f);
+    rlTexCoord2f(1.0f, 0.0f);
+    rlVertex3f(x - width / 2, y - height / 2, z - length / 2);
+    rlTexCoord2f(0.0f, 0.0f);
+    rlVertex3f(x + width / 2, y - height / 2, z - length / 2);
+    rlTexCoord2f(0.0f, 1.0f);
+    rlVertex3f(x + width / 2, y - height / 2, z + length / 2);
+    rlTexCoord2f(1.0f, 1.0f);
+    rlVertex3f(x - width / 2, y - height / 2, z + length / 2);
+
+    // Right face (Flipped Vertical UVs)
+    rlNormal3f(1.0f, 0.0f, 0.0f);
+    rlTexCoord2f(1.0f, 1.0f);
+    rlVertex3f(x + width / 2, y - height / 2, z - length / 2);
+    rlTexCoord2f(1.0f, 0.0f);
+    rlVertex3f(x + width / 2, y + height / 2, z - length / 2);
+    rlTexCoord2f(0.0f, 0.0f);
+    rlVertex3f(x + width / 2, y + height / 2, z + length / 2);
+    rlTexCoord2f(0.0f, 1.0f);
+    rlVertex3f(x + width / 2, y - height / 2, z + length / 2);
+
+    // Left Face (Flipped Vertical UVs)
+    rlNormal3f(-1.0f, 0.0f, 0.0f);
+    rlTexCoord2f(0.0f, 1.0f);
+    rlVertex3f(x - width / 2, y - height / 2, z - length / 2);
+    rlTexCoord2f(1.0f, 1.0f);
+    rlVertex3f(x - width / 2, y - height / 2, z + length / 2);
+    rlTexCoord2f(1.0f, 0.0f);
+    rlVertex3f(x - width / 2, y + height / 2, z + length / 2);
+    rlTexCoord2f(0.0f, 0.0f);
+    rlVertex3f(x - width / 2, y + height / 2, z - length / 2);
+    rlEnd();
+
+    rlSetTexture(0);
 }
 
 } // namespace CHEngine

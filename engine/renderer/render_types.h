@@ -38,9 +38,9 @@ struct ShaderLightLocs
 struct RendererState
 {
     // Shaders
-    Ref<ShaderAsset> LightingShader;
-    Ref<ShaderAsset> SkyboxShader;
-    Ref<ShaderAsset> PanoramaShader;
+    std::shared_ptr<ShaderAsset> LightingShader;
+    std::shared_ptr<ShaderAsset> SkyboxShader;
+    std::shared_ptr<ShaderAsset> PanoramaShader;
 
     // Shared Resources
     Model SkyboxCube;

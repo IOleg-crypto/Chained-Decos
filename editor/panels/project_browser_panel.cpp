@@ -96,7 +96,7 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
             if (ImGui::Button(fileName.c_str(), ImVec2(sidebarWidth - 60, 60)))
             {
                 // Call EditorUtils directly - it will dispatch the event after loading
-                EditorUtils::ProjectUtils::OpenProject(lastPath);
+                ProjectUtils::OpenProject(lastPath);
             }
             if (ImGui::IsItemHovered())
             {
@@ -230,7 +230,7 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
                            {
                                // Call EditorUtils directly - it will dispatch the event after
                                // loading
-                               EditorUtils::ProjectUtils::OpenProject(outPath);
+                               ProjectUtils::OpenProject(outPath);
                                NFD_FreePath(outPath);
                            }
                        });

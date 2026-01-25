@@ -144,7 +144,7 @@ EditorAssetType ContentBrowserPanel::DetermineAssetType(const std::filesystem::p
         return EditorAssetType::Directory;
 
     std::string ext = path.extension().string();
-    if (ext == ".chscene")
+    if (ext == ".chscene" || ext == ".chmap")
         return EditorAssetType::Scene;
     if (ext == ".h" || ext == ".cpp")
         return EditorAssetType::Script;

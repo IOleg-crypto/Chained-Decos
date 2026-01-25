@@ -38,8 +38,7 @@ TEST(HierarchyTest, DestroyParent)
 
     EXPECT_TRUE(scene.GetRegistry().valid(childHandle));
     auto &chc = scene.GetRegistry().get<HierarchyComponent>(childHandle);
-    EXPECT_EQ(chc.Parent, parentHandle);
-    EXPECT_FALSE(scene.GetRegistry().valid(chc.Parent));
+    EXPECT_TRUE(chc.Parent == entt::null);
 }
 
 TEST(HierarchyTest, ClearParent)

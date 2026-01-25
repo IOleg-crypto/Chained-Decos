@@ -17,7 +17,7 @@ ShaderAsset::~ShaderAsset()
     }
 }
 
-Ref<ShaderAsset> ShaderAsset::Load(const std::string &vsPath, const std::string &fsPath)
+std::shared_ptr<ShaderAsset> ShaderAsset::Load(const std::string &vsPath, const std::string &fsPath)
 {
     auto vsAbs = Assets::ResolvePath(vsPath);
     auto fsAbs = Assets::ResolvePath(fsPath);
@@ -25,7 +25,7 @@ Ref<ShaderAsset> ShaderAsset::Load(const std::string &vsPath, const std::string 
     Shader shader = ::LoadShader(vsAbs.string().c_str(), fsAbs.string().c_str());
     if (shader.id > 0)
     {
-        auto asset = CreateRef<ShaderAsset>(shader);
+        auto asset = std::make_shared<ShaderAsset>(shader);
         asset->SetPath(vsPath + "|" + fsPath);
         return asset;
     }
@@ -34,7 +34,7 @@ Ref<ShaderAsset> ShaderAsset::Load(const std::string &vsPath, const std::string 
     return nullptr;
 }
 
-Ref<ShaderAsset> ShaderAsset::Load(const std::string &chshaderPath)
+std::shared_ptr<ShaderAsset> ShaderAsset::Load(const std::string &chshaderPath)
 {
     auto absolutePath = Assets::ResolvePath(chshaderPath);
     if (!std::filesystem::exists(absolutePath))
@@ -49,7 +49,7 @@ Ref<ShaderAsset> ShaderAsset::Load(const std::string &chshaderPath)
         std::string vsRel = config["VertexShader"].as<std::string>();
         std::string fsRel = config["FragmentShader"].as<std::string>();
 
-        Ref<ShaderAsset> asset = Load(vsRel, fsRel);
+        std::shared_ptr<ShaderAsset> asset = Load(vsRel, fsRel);
         if (asset)
         {
             asset->SetPath(chshaderPath);

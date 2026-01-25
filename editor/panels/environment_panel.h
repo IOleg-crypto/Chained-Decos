@@ -4,7 +4,6 @@
 #include "engine/renderer/render.h"
 #include "panel.h"
 
-
 namespace CHEngine
 {
 class EnvironmentPanel : public Panel
@@ -19,7 +18,7 @@ public:
     }
 
 private:
-    void DrawEnvironmentSettings(Ref<EnvironmentAsset> env, bool readOnly);
+    void DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, bool readOnly);
 
 private:
     DebugRenderFlags *m_DebugFlags = nullptr;
