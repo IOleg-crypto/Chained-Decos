@@ -1,7 +1,6 @@
 #include "scene_serializer.h"
 #include "components.h"
 #include "engine/core/log.h"
-#include "engine/core/main_thread_queue.h"
 #include "engine/physics/bvh/bvh.h"
 #include "engine/renderer/asset_manager.h"
 #include "engine/renderer/render.h"
@@ -234,14 +233,90 @@ static void SerializeEntity(YAML::Emitter &out, Entity entity)
         out << YAML::EndMap;
     }
 
+    if (entity.HasComponent<WidgetComponent>())
+    {
+        out << YAML::Key << "WidgetComponent";
+        auto &ui = entity.GetComponent<WidgetComponent>();
+        out << YAML::BeginMap;
+        out << YAML::Key << "IsActive" << YAML::Value << ui.IsActive;
+        out << YAML::Key << "HiddenInHierarchy" << YAML::Value << ui.HiddenInHierarchy;
+
+        out << YAML::Key << "RectTransform" << YAML::BeginMap;
+        out << YAML::Key << "AnchorMin" << YAML::Value << ui.Transform.AnchorMin;
+        out << YAML::Key << "AnchorMax" << YAML::Value << ui.Transform.AnchorMax;
+        out << YAML::Key << "OffsetMin" << YAML::Value << ui.Transform.OffsetMin;
+        out << YAML::Key << "OffsetMax" << YAML::Value << ui.Transform.OffsetMax;
+        out << YAML::Key << "Pivot" << YAML::Value << ui.Transform.Pivot;
+        out << YAML::EndMap;
+        out << YAML::EndMap;
+    }
+
+    if (entity.HasComponent<ImageWidget>())
+    {
+        out << YAML::Key << "ImageWidget";
+        auto &img = entity.GetComponent<ImageWidget>();
+        out << YAML::BeginMap;
+        out << YAML::Key << "ScaleMode" << YAML::Value << (int)img.ScaleMode;
+        out << YAML::Key << "BackgroundColor" << YAML::Value << img.BackgroundColor;
+        out << YAML::Key << "Rounding" << YAML::Value << img.Rounding;
+        out << YAML::Key << "Padding" << YAML::Value << img.Padding;
+        out << YAML::Key << "UseBackground" << YAML::Value << img.UseBackground;
+        out << YAML::Key << "TexturePath" << YAML::Value << img.TexturePath;
+        out << YAML::EndMap;
+    }
+
+    if (entity.HasComponent<TextWidget>())
+    {
+        out << YAML::Key << "TextWidget";
+        auto &txt = entity.GetComponent<TextWidget>();
+        out << YAML::BeginMap;
+        out << YAML::Key << "Text" << YAML::Value << txt.Text;
+        out << YAML::Key << "FontPath" << YAML::Value << txt.FontPath;
+        out << YAML::Key << "FontSize" << YAML::Value << txt.FontSize;
+        out << YAML::Key << "Color" << YAML::Value << txt.Color;
+        out << YAML::EndMap;
+    }
+
+    if (entity.HasComponent<ButtonWidget>())
+    {
+        out << YAML::Key << "ButtonWidget";
+        auto &btn = entity.GetComponent<ButtonWidget>();
+        out << YAML::BeginMap;
+        out << YAML::Key << "Interactable" << YAML::Value << btn.Interactable;
+        out << YAML::EndMap;
+    }
+
+    if (entity.HasComponent<SliderWidget>())
+    {
+        out << YAML::Key << "SliderWidget";
+        auto &sl = entity.GetComponent<SliderWidget>();
+        out << YAML::BeginMap;
+        out << YAML::Key << "Value" << YAML::Value << sl.Value;
+        out << YAML::Key << "Min" << YAML::Value << sl.Min;
+        out << YAML::Key << "Max" << YAML::Value << sl.Max;
+        out << YAML::EndMap;
+    }
+
+    if (entity.HasComponent<CheckboxWidget>())
+    {
+        out << YAML::Key << "CheckboxWidget";
+        auto &cb = entity.GetComponent<CheckboxWidget>();
+        out << YAML::BeginMap;
+        out << YAML::Key << "Checked" << YAML::Value << cb.Checked;
+        out << YAML::EndMap;
+    }
     out << YAML::EndMap; // Entity
 }
 
 std::string SceneSerializer::SerializeToString()
 {
+    if (!m_Scene)
+        return "";
+
     YAML::Emitter out;
     out << YAML::BeginMap;
     out << YAML::Key << "Scene" << YAML::Value << "Untitled";
+    out << YAML::Key << "Type" << YAML::Value << (int)m_Scene->GetType();
 
     // Serialize Environment
     if (m_Scene->m_Environment)
@@ -283,12 +358,12 @@ bool SceneSerializer::Serialize(const std::string &filepath)
     if (fout.is_open())
     {
         fout << yaml;
-        CH_CORE_INFO("Scene saved successfully to: %s", filepath.c_str());
+        CH_CORE_INFO("Scene saved successfully to: {}", filepath.c_str());
         return true;
     }
     else
     {
-        CH_CORE_ERROR("Failed to save scene to: %s", filepath.c_str());
+        CH_CORE_ERROR("Failed to save scene to: {}", filepath.c_str());
         return false;
     }
 }
@@ -298,7 +373,7 @@ bool SceneSerializer::Deserialize(const std::string &filepath)
     std::ifstream stream(filepath);
     if (!stream.is_open())
     {
-        CH_CORE_ERROR("Failed to open scene file: %s", filepath.c_str());
+        CH_CORE_ERROR("Failed to open scene file: {}", filepath.c_str());
         return false;
     }
 
@@ -315,7 +390,10 @@ bool SceneSerializer::DeserializeFromString(const std::string &yaml)
         return false;
 
     std::string sceneName = data["Scene"].as<std::string>();
-    CH_CORE_INFO("Deserializing scene '%s'", sceneName.c_str());
+    CH_CORE_INFO("Deserializing scene '{}'", sceneName.c_str());
+
+    if (data["Type"])
+        m_Scene->SetType((SceneType)data["Type"].as<int>());
 
     // Deserialize Environment
     auto envPath = data["EnvironmentPath"];
@@ -338,29 +416,6 @@ bool SceneSerializer::DeserializeFromString(const std::string &yaml)
     auto entities = data["Entities"];
     if (entities)
     {
-        // Phase 1: Pre-collect and pre-load all assets asynchronously
-        std::set<std::string> modelPaths;
-        for (auto entity : entities)
-        {
-            auto mc = entity["ModelComponent"];
-            if (mc)
-                modelPaths.insert(mc["ModelPath"].as<std::string>());
-            auto cc = entity["ColliderComponent"];
-            if (cc && cc["Type"].as<int>() == (int)ColliderType::Mesh)
-                modelPaths.insert(cc["ModelPath"].as<std::string>());
-        }
-
-        // Trigger batch async load
-        for (const auto &path : modelPaths)
-        {
-            if (!path.empty())
-                Assets::LoadModelAsync(path);
-        }
-
-        // Drain the main thread queue immediately to start loading these models
-        // while the background IO warmup for others might still be happening.
-        MainThread::ProcessAll();
-
         struct HierarchyTask
         {
             Entity entity;
@@ -368,15 +423,6 @@ bool SceneSerializer::DeserializeFromString(const std::string &yaml)
             std::vector<uint64_t> children;
         };
         std::vector<HierarchyTask> hierarchyTasks;
-
-        struct BVHTask
-        {
-            Entity entity;
-            std::string path;
-            std::shared_future<Ref<BVHNode>> future;
-        };
-        std::vector<BVHTask> bvhTasks;
-        std::map<std::string, std::shared_future<Ref<BVHNode>>> bvhFutureMap;
 
         std::set<uint64_t> seenUUIDs;
         for (auto entity : entities)
@@ -398,7 +444,7 @@ bool SceneSerializer::DeserializeFromString(const std::string &yaml)
             if (tagComponent)
                 name = tagComponent["Tag"].as<std::string>();
 
-            CH_CORE_TRACE("Deserialized entity with ID = %llu, name = %s", uuid, name.c_str());
+            CH_CORE_TRACE("Deserialized entity with ID = {}, name = {}", uuid, name.c_str());
 
             Entity deserializedEntity = m_Scene->CreateEntityWithUUID(uuid, name);
 
@@ -417,6 +463,9 @@ bool SceneSerializer::DeserializeFromString(const std::string &yaml)
             {
                 auto &mc = deserializedEntity.AddComponent<ModelComponent>();
                 mc.ModelPath = modelComponent["ModelPath"].as<std::string>();
+
+                // Manual refresh to ensure assets are loaded even if path was set after signal
+                m_Scene->OnModelComponentAdded(m_Scene->GetRegistry(), deserializedEntity);
 
                 auto materials = modelComponent["Materials"];
                 if (materials && materials.IsSequence())
@@ -535,30 +584,9 @@ bool SceneSerializer::DeserializeFromString(const std::string &yaml)
 
                 if (cc.Type == ColliderType::Mesh && !cc.ModelPath.empty())
                 {
-                    // Block until model is loaded (it might be in cache or loading async)
                     auto asset = Assets::Get<ModelAsset>(cc.ModelPath);
-                    if (asset && asset->GetModel().meshCount > 0)
-                    {
-                        // Check model's persistent cache first
-                        auto existingBVH = asset->GetBVHCache();
-                        if (existingBVH)
-                        {
-                            cc.BVHRoot = existingBVH;
-                        }
-                        else
-                        {
-                            // Check if a build task is already in flight for this mesh
-                            if (bvhFutureMap.find(cc.ModelPath) == bvhFutureMap.end())
-                            {
-                                bvhFutureMap[cc.ModelPath] =
-                                    BVHBuilder::BuildAsync(asset->GetModel());
-                            }
-
-                            // Track that this entity needs to receive the BVH result
-                            bvhTasks.push_back(
-                                {deserializedEntity, cc.ModelPath, bvhFutureMap[cc.ModelPath]});
-                        }
-                    }
+                    if (asset)
+                        cc.BVHRoot = asset->GetBVHCache();
                 }
             }
 
@@ -641,6 +669,161 @@ bool SceneSerializer::DeserializeFromString(const std::string &yaml)
                 rb.Mass = rigidBodyComponent["Mass"].as<float>();
             }
 
+            auto widgetNode = entity["WidgetComponent"];
+            if (widgetNode)
+            {
+                auto &ui = deserializedEntity.AddComponent<WidgetComponent>();
+                if (widgetNode["IsActive"])
+                    ui.IsActive = widgetNode["IsActive"].as<bool>();
+                if (widgetNode["HiddenInHierarchy"])
+                    ui.HiddenInHierarchy = widgetNode["HiddenInHierarchy"].as<bool>();
+
+                auto rectNode = widgetNode["RectTransform"];
+                if (rectNode)
+                {
+                    ui.Transform.AnchorMin = rectNode["AnchorMin"].as<Vector2>();
+                    ui.Transform.AnchorMax = rectNode["AnchorMax"].as<Vector2>();
+                    ui.Transform.OffsetMin = rectNode["OffsetMin"].as<Vector2>();
+                    ui.Transform.OffsetMax = rectNode["OffsetMax"].as<Vector2>();
+                    ui.Transform.Pivot = rectNode["Pivot"].as<Vector2>();
+                }
+
+                // --- LEGACY HIERARCHICAL MIGRATION ---
+                if (widgetNode["Type"])
+                {
+                    int type = widgetNode["Type"]
+                                   .as<int>(); // 0:Button, 1:Text, 2:Checkbox, 3:Slider, 4:Image
+
+                    auto linkParent = [&](Entity child, Entity parent)
+                    {
+                        auto &chc = child.HasComponent<HierarchyComponent>()
+                                        ? child.GetComponent<HierarchyComponent>()
+                                        : child.AddComponent<HierarchyComponent>();
+                        chc.Parent = parent;
+                        auto &phc = parent.HasComponent<HierarchyComponent>()
+                                        ? parent.GetComponent<HierarchyComponent>()
+                                        : parent.AddComponent<HierarchyComponent>();
+                        phc.Children.push_back(child);
+                    };
+
+                    // Add Image component as child if it's an image or has background
+                    bool hasBg =
+                        widgetNode["UseBackground"] && widgetNode["UseBackground"].as<bool>();
+                    if (type == 4 || hasBg)
+                    {
+                        Entity bgEntity = m_Scene->CreateEntity("Background");
+                        auto &bgUI = bgEntity.AddComponent<WidgetComponent>();
+                        bgUI.Transform.AnchorMin = {0.0f, 0.0f};
+                        bgUI.Transform.AnchorMax = {1.0f, 1.0f};
+                        bgUI.Transform.OffsetMin = {0.0f, 0.0f};
+                        bgUI.Transform.OffsetMax = {0.0f, 0.0f};
+
+                        auto &img = bgEntity.AddComponent<ImageWidget>();
+                        if (widgetNode["BackgroundColor"])
+                            img.BackgroundColor = widgetNode["BackgroundColor"].as<Color>();
+                        if (widgetNode["Rounding"])
+                            img.Rounding = widgetNode["Rounding"].as<float>();
+                        if (widgetNode["Padding"])
+                            img.Padding = widgetNode["Padding"].as<Vector2>();
+                        if (widgetNode["BackgroundTexturePath"])
+                            img.TexturePath = widgetNode["BackgroundTexturePath"].as<std::string>();
+                        img.UseBackground = hasBg;
+                        linkParent(bgEntity, deserializedEntity);
+                    }
+
+                    // Add Text component as child
+                    if (type == 1 || type == 0 || type == 2)
+                    {
+                        Entity textEntity = m_Scene->CreateEntity("Label");
+                        auto &txtUI = textEntity.AddComponent<WidgetComponent>();
+                        txtUI.Transform.AnchorMin = {0.5f, 0.5f};
+                        txtUI.Transform.AnchorMax = {0.5f, 0.5f};
+                        txtUI.Transform.OffsetMin = {-50.0f, -20.0f};
+                        txtUI.Transform.OffsetMax = {50.0f, 20.0f};
+                        txtUI.Transform.Pivot = {0.5f, 0.5f};
+
+                        auto &txt = textEntity.AddComponent<TextWidget>();
+                        if (widgetNode["Label"])
+                            txt.Text = widgetNode["Label"].as<std::string>();
+                        if (widgetNode["FontPath"])
+                            txt.FontPath = widgetNode["FontPath"].as<std::string>();
+                        if (widgetNode["FontSize"])
+                            txt.FontSize = widgetNode["FontSize"].as<float>();
+                        linkParent(textEntity, deserializedEntity);
+                    }
+
+                    // Add Button component logic to parent
+                    if (type == 0)
+                        deserializedEntity.AddComponent<ButtonWidget>();
+
+                    // Add Slider component logic to parent
+                    if (type == 3)
+                    {
+                        auto &sl = deserializedEntity.AddComponent<SliderWidget>();
+                        if (widgetNode["Value"])
+                            sl.Value = widgetNode["Value"].as<float>();
+                        if (widgetNode["Min"])
+                            sl.Min = widgetNode["Min"].as<float>();
+                        if (widgetNode["Max"])
+                            sl.Max = widgetNode["Max"].as<float>();
+                    }
+
+                    // Add Checkbox component logic to parent
+                    if (type == 2)
+                    {
+                        auto &cb = deserializedEntity.AddComponent<CheckboxWidget>();
+                        if (widgetNode["Value"])
+                            cb.Checked = widgetNode["Value"].as<float>() > 0.5f;
+                    }
+                }
+            }
+
+            auto imgNode = entity["ImageWidget"];
+            if (imgNode)
+            {
+                auto &img = deserializedEntity.AddComponent<ImageWidget>();
+                img.ScaleMode = (ImageWidget::ImageScaleMode)imgNode["ScaleMode"].as<int>();
+                img.BackgroundColor = imgNode["BackgroundColor"].as<Color>();
+                img.Rounding = imgNode["Rounding"].as<float>();
+                img.Padding = imgNode["Padding"].as<Vector2>();
+                img.UseBackground = imgNode["UseBackground"].as<bool>();
+                img.TexturePath = imgNode["TexturePath"].as<std::string>();
+            }
+
+            auto txtNode = entity["TextWidget"];
+            if (txtNode)
+            {
+                auto &txt = deserializedEntity.AddComponent<TextWidget>();
+                txt.Text = txtNode["Text"].as<std::string>();
+                txt.FontPath = txtNode["FontPath"].as<std::string>();
+                txt.FontSize = txtNode["FontSize"].as<float>();
+                txt.Color = txtNode["Color"].as<Color>();
+            }
+
+            auto btnNode = entity["ButtonWidget"];
+            if (btnNode)
+            {
+                auto &btn = deserializedEntity.AddComponent<ButtonWidget>();
+                if (btnNode["Interactable"])
+                    btn.Interactable = btnNode["Interactable"].as<bool>();
+            }
+
+            auto sliderNode = entity["SliderWidget"];
+            if (sliderNode)
+            {
+                auto &sl = deserializedEntity.AddComponent<SliderWidget>();
+                sl.Value = sliderNode["Value"].as<float>();
+                sl.Min = sliderNode["Min"].as<float>();
+                sl.Max = sliderNode["Max"].as<float>();
+            }
+
+            auto cbNode = entity["CheckboxWidget"];
+            if (cbNode)
+            {
+                auto &cb = deserializedEntity.AddComponent<CheckboxWidget>();
+                cb.Checked = cbNode["Checked"].as<bool>();
+            }
+
             auto playerComponent = entity["PlayerComponent"];
             if (playerComponent)
             {
@@ -671,23 +854,6 @@ bool SceneSerializer::DeserializeFromString(const std::string &yaml)
                 Entity child = m_Scene->GetEntityByUUID(childUUID);
                 if (child)
                     hc.Children.push_back(child);
-            }
-        }
-
-        // Phase 4: Finalize all BVH tasks
-        for (auto &task : bvhTasks)
-        {
-            if (task.entity.HasComponent<ColliderComponent>())
-            {
-                auto bvh = task.future.get();
-                task.entity.GetComponent<ColliderComponent>().BVHRoot = bvh;
-
-                // Also update the ModelAsset's persistent cache if not already set
-                auto asset = Assets::Get<ModelAsset>(task.path);
-                if (asset && !asset->GetBVHCache())
-                    asset->SetBVHCache(bvh);
-
-                CH_CORE_INFO("BVH Construction complete for: %s", task.path.c_str());
             }
         }
     }

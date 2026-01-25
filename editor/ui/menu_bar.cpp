@@ -16,24 +16,30 @@ static void MenuFile(const EventCallbackFn &callback)
     if (ImGui::BeginMenu("File"))
     {
         if (ImGui::MenuItem(ICON_FA_FILE " New Project", "Ctrl+Shift+N"))
-            EditorUtils::ProjectUtils::NewProject();
+            ProjectUtils::NewProject();
         if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open Project", "Ctrl+O"))
-            EditorUtils::ProjectUtils::OpenProject();
+            ProjectUtils::OpenProject();
         if (ImGui::MenuItem(ICON_FA_FLOPPY_DISK " Save Project"))
-            EditorUtils::ProjectUtils::SaveProject();
+            ProjectUtils::SaveProject();
         if (ImGui::MenuItem(ICON_FA_XMARK " Close Project"))
             Project::SetActive(nullptr);
 
         ImGui::Separator();
 
-        if (ImGui::MenuItem(ICON_FA_FILE_CODE " New Scene", "Ctrl+N"))
-            EditorUtils::SceneUtils::NewScene();
+        if (ImGui::BeginMenu(ICON_FA_FILE_CODE " New Scene"))
+        {
+            if (ImGui::MenuItem("3D Scene"))
+                SceneUtils::NewScene(SceneType::Scene3D);
+            if (ImGui::MenuItem("UI Menu"))
+                SceneUtils::NewScene(SceneType::SceneUI);
+            ImGui::EndMenu();
+        }
         if (ImGui::MenuItem(ICON_FA_FLOPPY_DISK " Save Scene", "Ctrl+S"))
-            EditorUtils::SceneUtils::SaveScene();
+            SceneUtils::SaveScene();
         if (ImGui::MenuItem(ICON_FA_FILE_EXPORT " Save Scene As...", "Ctrl+Shift+S"))
-            EditorUtils::SceneUtils::SaveSceneAs();
+            SceneUtils::SaveSceneAs();
         if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Load Scene", "Ctrl+L"))
-            EditorUtils::SceneUtils::OpenScene();
+            SceneUtils::OpenScene();
 
         ImGui::Separator();
 

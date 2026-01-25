@@ -1,21 +1,27 @@
-#include "scene.h"
+#include "engine/scene/scene.h"
+#include "engine/audio/sound_asset.h"
+#include "engine/core/application.h"
 #include "engine/core/profiler.h"
 #include "engine/physics/physics.h"
 #include "engine/renderer/asset_manager.h"
-#include "scene_animator.h"
-#include "scene_audio.h"
-#include "scene_scripting.h"
+#include "engine/renderer/model_asset.h"
+#include "engine/renderer/render.h"
+#include "engine/ui/canvas_renderer.h"
+#include "project.h"
+#include "raylib.h"
 #include "scene_serializer.h"
 #include "scriptable_entity.h"
+#include <raymath.h>
 
 namespace CHEngine
 {
+void Scene::RequestSceneChange(const std::string &path)
+{
+    Application::Get().RequestSceneChange(path);
+}
 Scene::Scene()
 {
-    m_Scripting = CreateScope<SceneScripting>(this);
-    m_Animator = CreateScope<SceneAnimator>(this);
-    m_Audio = CreateScope<SceneAudio>(this);
-
+    m_Type = SceneType::Scene3D;
     m_Registry.on_construct<ModelComponent>().connect<&Scene::OnModelComponentAdded>(this);
     m_Registry.on_update<ModelComponent>().connect<&Scene::OnModelComponentAdded>(this);
 
@@ -30,9 +36,9 @@ Scene::~Scene()
 {
 }
 
-Ref<Scene> Scene::Copy(Ref<Scene> other)
+std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
 {
-    Ref<Scene> newScene = CreateRef<Scene>();
+    std::shared_ptr<Scene> newScene = std::make_shared<Scene>();
 
     SceneSerializer serializer(other.get());
     std::string yaml = serializer.SerializeToString();
@@ -53,8 +59,7 @@ Entity Scene::CreateEntity(const std::string &name)
     entity.AddComponent<TagComponent>(name.empty() ? "Entity" : name);
     entity.AddComponent<TransformComponent>();
 
-    CH_CORE_INFO("Entity Created: %s (%llu)", name,
-                 (uint64_t)entity.GetComponent<IDComponent>().ID);
+    CH_CORE_INFO("Entity Created: {} ({})", name, (uint64_t)entity.GetComponent<IDComponent>().ID);
     return entity;
 }
 
@@ -65,7 +70,7 @@ Entity Scene::CreateEntityWithUUID(UUID uuid, const std::string &name)
     entity.AddComponent<TagComponent>(name.empty() ? "Entity" : name);
     entity.AddComponent<TransformComponent>();
 
-    CH_CORE_INFO("Entity Created with UUID: %s (%llu)", name, (uint64_t)uuid);
+    CH_CORE_INFO("Entity Created with UUID: {} ({})", name, (uint64_t)uuid);
     return entity;
 }
 
@@ -80,26 +85,30 @@ void Scene::DestroyEntity(Entity entity)
     if (entity.HasComponent<HierarchyComponent>())
     {
         auto &hc = entity.GetComponent<HierarchyComponent>();
+
+        // 1. Detach from parent
         if (hc.Parent != entt::null)
         {
-            Entity parent{hc.Parent, this};
-            if (parent.HasComponent<HierarchyComponent>())
+            if (m_Registry.valid(hc.Parent) && m_Registry.all_of<HierarchyComponent>(hc.Parent))
             {
-                auto &phc = parent.GetComponent<HierarchyComponent>();
+                auto &phc = m_Registry.get<HierarchyComponent>(hc.Parent);
                 auto it = std::find(phc.Children.begin(), phc.Children.end(), (entt::entity)entity);
                 if (it != phc.Children.end())
                     phc.Children.erase(it);
             }
         }
 
-        std::vector<entt::entity> children = hc.Children;
-        for (auto child : children)
+        // 2. Clear parent link in children (detaching them, not destroying)
+        for (auto child : hc.Children)
         {
-            DestroyEntity({child, this});
+            if (m_Registry.valid(child) && m_Registry.all_of<HierarchyComponent>(child))
+            {
+                m_Registry.get<HierarchyComponent>(child).Parent = entt::null;
+            }
         }
     }
 
-    CH_CORE_INFO("Entity Destroyed: %d", (uint32_t)entity);
+    CH_CORE_INFO("Entity Destroyed: {}", (uint32_t)entity);
     m_Registry.destroy(entity);
 }
 
@@ -163,10 +172,210 @@ template <> void Scene::OnComponentAdded<AudioComponent>(Entity entity, AudioCom
 void Scene::OnUpdateRuntime(float deltaTime)
 {
     CH_PROFILE_FUNCTION();
+    // Physics is currently called from Application::OnUpdate
 
-    m_Scripting->OnUpdate(deltaTime);
-    m_Animator->OnUpdate(deltaTime);
-    m_Audio->OnUpdate(deltaTime);
+    // 1. Scripting
+    m_Registry.view<NativeScriptComponent>().each(
+        [this, deltaTime](auto entity, auto &nsc)
+        {
+            for (auto &script : nsc.Scripts)
+            {
+                if (!script.Instance)
+                {
+                    script.Instance = script.InstantiateScript();
+                    script.Instance->m_Entity = Entity{entity, this};
+                    CH_CORE_INFO("Scripting: Instantiating script '{0}' for entity '{1}'",
+                                 script.ScriptName, m_Registry.get<TagComponent>(entity).Tag);
+                    script.Instance->OnCreate();
+                }
+                script.Instance->OnUpdate(deltaTime);
+            }
+        });
+
+    // 2. Animation
+    auto animView = m_Registry.view<AnimationComponent, ModelComponent>();
+    for (auto entity : animView)
+    {
+        auto &anim = animView.get<AnimationComponent>(entity);
+        auto &model = animView.get<ModelComponent>(entity);
+
+        if (anim.IsPlaying && model.Asset)
+        {
+            int animCount = 0;
+            auto *animations = model.Asset->GetAnimations(&animCount);
+
+            if (animations && anim.CurrentAnimationIndex < animCount)
+            {
+                anim.FrameTimeCounter += deltaTime;
+                float targetFPS = 30.0f;
+                if (Project::GetActive())
+                    targetFPS = Project::GetActive()->GetConfig().Animation.TargetFPS;
+
+                float frameTime = 1.0f / targetFPS;
+                if (anim.FrameTimeCounter >= frameTime)
+                {
+                    anim.CurrentFrame++;
+                    anim.FrameTimeCounter = 0;
+                    if (anim.CurrentFrame >= animations[anim.CurrentAnimationIndex].frameCount)
+                    {
+                        if (anim.IsLooping)
+                            anim.CurrentFrame = 0;
+                        else
+                        {
+                            anim.CurrentFrame =
+                                animations[anim.CurrentAnimationIndex].frameCount - 1;
+                            anim.IsPlaying = false;
+                        }
+                    }
+                    model.Asset->UpdateAnimation(anim.CurrentAnimationIndex, anim.CurrentFrame);
+                }
+            }
+        }
+    }
+
+    // 3. Audio
+    m_Registry.view<AudioComponent>().each(
+        [](auto entity, auto &audio)
+        {
+            if (audio.Asset && audio.PlayOnStart)
+            {
+                Sound &sound = audio.Asset->GetSound();
+                SetSoundVolume(sound, audio.Volume);
+                SetSoundPitch(sound, audio.Pitch);
+                ::PlaySound(sound);
+                audio.PlayOnStart = false;
+            }
+        });
+}
+
+void Scene::OnRender(const Camera3D &camera, const DebugRenderFlags *debugFlags)
+{
+    CH_PROFILE_FUNCTION();
+    UpdateProfilerStats();
+
+    // 1. Render Environment/Skybox
+    if (m_Type == SceneType::Scene3D)
+    {
+        if (m_Environment)
+        {
+            Render::ApplyEnvironment(m_Environment->GetSettings());
+            Render::DrawSkybox(m_Environment->GetSettings(), camera);
+        }
+        else
+        {
+            Render::DrawSkybox(m_Skybox, camera);
+        }
+    }
+
+    // 2. Render Opaque Meshes
+    auto meshView = m_Registry.view<TransformComponent, ModelComponent>();
+    for (auto entity : meshView)
+    {
+        auto &transform = meshView.get<TransformComponent>(entity);
+        auto &model = meshView.get<ModelComponent>(entity);
+
+        std::string tag = "Unknown Entity";
+        if (m_Registry.all_of<TagComponent>(entity))
+            tag = m_Registry.get<TagComponent>(entity).Tag;
+
+        if (!model.Asset && !model.ModelPath.empty())
+        {
+            CH_CORE_INFO("Scene: Lazy-loading asset for entity '{}': {}", tag, model.ModelPath);
+            model.Asset = Assets::Get<ModelAsset>(model.ModelPath);
+        }
+
+        if (model.Asset && model.Asset->IsReady())
+        {
+            Render::DrawModel(model.Asset, transform.GetTransform(), model.Materials);
+        }
+    }
+
+    // 3. Debug Rendering (Hidden in UI mode)
+    const DebugRenderFlags *actualDebugFlags =
+        (m_Type == SceneType::SceneUI) ? nullptr : debugFlags;
+
+    if (actualDebugFlags && actualDebugFlags->IsAnyEnabled())
+    {
+        if (actualDebugFlags->DrawColliders)
+        {
+            auto colView = m_Registry.view<TransformComponent, ColliderComponent>();
+            for (auto entity : colView)
+            {
+                auto [transform, collider] =
+                    colView.get<TransformComponent, ColliderComponent>(entity);
+
+                Vector3 scale = transform.Scale;
+                Vector3 scaledSize = Vector3Multiply(collider.Size, scale);
+                Vector3 scaledOffset = Vector3Multiply(collider.Offset, scale);
+
+                Vector3 minCorner = Vector3Add(transform.Translation, scaledOffset);
+                Vector3 center = Vector3Add(minCorner, Vector3Scale(scaledSize, 0.5f));
+
+                Color tint = collider.IsColliding ? RED : (collider.bEnabled ? GREEN : GRAY);
+
+                if (collider.Type == ColliderType::Mesh)
+                {
+                    if (!collider.ModelPath.empty())
+                    {
+                        auto asset = Assets::Get<ModelAsset>(collider.ModelPath);
+                        if (asset)
+                        {
+                            Model &m = asset->GetModel();
+                            Matrix original = m.transform;
+                            m.transform = MatrixMultiply(original, transform.GetTransform());
+                            ::DrawModelWires(m, {0, 0, 0}, 1.0f, SKYBLUE);
+                            m.transform = original;
+                        }
+                    }
+                }
+                else
+                {
+                    ::DrawCubeWires(center, scaledSize.x, scaledSize.y, scaledSize.z, tint);
+                }
+            }
+        }
+
+        if (actualDebugFlags->DrawLights)
+        {
+            auto lightView = m_Registry.view<TransformComponent, PointLightComponent>();
+            for (auto entity : lightView)
+            {
+                auto [transform, light] =
+                    lightView.get<TransformComponent, PointLightComponent>(entity);
+                ::DrawSphereWires(transform.Translation, 0.2f, 8, 8, light.LightColor);
+                ::DrawSphereWires(transform.Translation, light.Radius, 16, 16,
+                                  ColorAlpha(light.LightColor, 0.3f));
+            }
+        }
+
+        if (actualDebugFlags->DrawSpawnZones)
+        {
+            auto spawnView = m_Registry.view<TransformComponent, SpawnComponent>();
+            for (auto entity : spawnView)
+            {
+                auto [transform, spawn] = spawnView.get<TransformComponent, SpawnComponent>(entity);
+                ::DrawCubeWires(transform.Translation, spawn.ZoneSize.x, spawn.ZoneSize.y,
+                                spawn.ZoneSize.z, {0, 255, 255, 128});
+
+                if (!spawn.Texture && !spawn.TexturePath.empty())
+                {
+                    spawn.Texture = Assets::Get<TextureAsset>(spawn.TexturePath);
+                }
+
+                if (spawn.Texture)
+                {
+                    Render::DrawCubeTexture(spawn.Texture->GetTexture(), transform.Translation,
+                                            spawn.ZoneSize.x, spawn.ZoneSize.y, spawn.ZoneSize.z,
+                                            {255, 255, 255, 255});
+                }
+                else
+                {
+                    DrawCube(transform.Translation, spawn.ZoneSize.x, spawn.ZoneSize.y,
+                             spawn.ZoneSize.z, {0, 255, 255, 128});
+                }
+            }
+        }
+    }
 }
 
 void Scene::OnUpdateEditor(float deltaTime)
@@ -177,7 +386,7 @@ void Scene::OnUpdateEditor(float deltaTime)
 void Scene::OnRuntimeStart()
 {
     m_IsSimulationRunning = true;
-    CH_CORE_INFO("Scene '{0}' simulation started.",
+    CH_CORE_INFO("Scene '{}' simulation started.",
                  m_Registry.view<TagComponent>()
                      .get<TagComponent>(m_Registry.view<TagComponent>().front())
                      .Tag);
@@ -191,8 +400,60 @@ void Scene::OnRuntimeStop()
 
 void Scene::OnEvent(Event &e)
 {
-    m_Scripting->OnEvent(e);
+    m_Registry.view<NativeScriptComponent>().each(
+        [&](auto entity, auto &nsc)
+        {
+            for (auto &script : nsc.Scripts)
+            {
+                if (script.Instance)
+                {
+                    script.Instance->OnEvent(e);
+                }
+            }
+        });
 }
+
+void Scene::OnImGuiRender(const ImVec2 &refPos, const ImVec2 &refSize, uint32_t viewportID,
+                          bool editMode)
+{
+    UpdateProfilerStats();
+    ImVec2 referenceSize = refSize;
+    if (referenceSize.x <= 0 || referenceSize.y <= 0)
+        referenceSize = ImGui::GetIO().DisplaySize;
+
+    // Iterate through only ROOT entities with WidgetComponent
+    m_Registry.view<WidgetComponent>().each(
+        [&](auto entityID, auto &ui)
+        {
+            Entity entity{entityID, this};
+
+            // Check if this is a root widget
+            bool isRoot = true;
+            if (entity.HasComponent<HierarchyComponent>())
+            {
+                auto parent = entity.GetComponent<HierarchyComponent>().Parent;
+                if (parent != entt::null && m_Registry.all_of<WidgetComponent>(parent))
+                    isRoot = false;
+            }
+
+            if (isRoot)
+                CanvasRenderer::DrawEntity(entity, refPos, referenceSize, editMode);
+        });
+
+    // Scripted UI elements
+    m_Registry.view<NativeScriptComponent>().each(
+        [&](auto entity, auto &nsc)
+        {
+            for (auto &script : nsc.Scripts)
+            {
+                if (script.Instance)
+                {
+                    script.Instance->OnImGuiRender();
+                }
+            }
+        });
+}
+
 Entity Scene::FindEntityByTag(const std::string &tag)
 {
     auto view = m_Registry.view<TagComponent>();
@@ -228,6 +489,25 @@ void Scene::OnModelComponentAdded(entt::registry &reg, entt::entity entity)
 void Scene::OnAnimationComponentAdded(entt::registry &reg, entt::entity entity)
 {
     OnComponentAdded<AnimationComponent>(Entity{entity, this}, reg.get<AnimationComponent>(entity));
+}
+
+void Scene::UpdateProfilerStats()
+{
+    static int frameCounter = 0;
+    if (frameCounter++ % 1 != 0) // Could throttle if needed, for now every frame
+        return;
+
+    ProfilerStats stats;
+    stats.EntityCount = (uint32_t)m_Registry.storage<entt::entity>().size();
+
+    m_Registry.view<ColliderComponent>().each(
+        [&](auto entity, auto &col)
+        {
+            stats.ColliderCount++;
+            stats.ColliderTypeCounts[(int)col.Type]++;
+        });
+
+    Profiler::UpdateStats(stats);
 }
 
 } // namespace CHEngine

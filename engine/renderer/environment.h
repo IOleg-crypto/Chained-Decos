@@ -32,7 +32,8 @@ public:
     EnvironmentAsset() = default;
     virtual ~EnvironmentAsset() = default;
 
-    static Ref<EnvironmentAsset> Load(const std::string &path);
+    static std::shared_ptr<EnvironmentAsset> Load(const std::string &path);
+    bool Deserialize(const std::string &path);
     bool Save(const std::string &path);
 
     virtual AssetType GetType() const override

@@ -40,7 +40,8 @@ private:
     static ConsolePanel *s_Instance;
     std::deque<ConsoleLogEntry> m_Messages;
     std::mutex m_LogMutex;
-    static constexpr size_t MAX_MESSAGES = 500;
+    int m_LogLevel = 3; // Default to LOG_INFO
+    static constexpr size_t MAX_MESSAGES = 1000;
 };
 } // namespace CHEngine
 

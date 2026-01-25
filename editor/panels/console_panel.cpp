@@ -1,4 +1,5 @@
 #include "console_panel.h"
+#include "raylib.h"
 #include <imgui.h>
 
 namespace CHEngine
@@ -21,7 +22,17 @@ void ConsolePanel::OnImGuiRender(bool readOnly)
 
     ImGui::BeginDisabled(readOnly);
     if (ImGui::Button("Clear"))
+    {
         Clear();
+    }
+    ImGui::SameLine();
+
+    const char *levels[] = {"TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "FATAL", "NONE"};
+    ImGui::SetNextItemWidth(150);
+    if (ImGui::Combo("Log Level", &m_LogLevel, levels, IM_ARRAYSIZE(levels)))
+    {
+        SetTraceLogLevel(m_LogLevel);
+    }
     ImGui::EndDisabled();
 
     ImGui::Separator();

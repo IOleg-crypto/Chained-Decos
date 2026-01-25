@@ -6,4 +6,7 @@ set(GAME_SOURCES
 
 add_library(ChainedDecosGame STATIC ${GAME_SOURCES})
 target_link_libraries(ChainedDecosGame PUBLIC engine)
-target_include_directories(ChainedDecosGame PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(ChainedDecosGame PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}
+)

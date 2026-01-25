@@ -13,7 +13,7 @@ bool EditorLayer::OnScenePlay(ScenePlayEvent &e)
     if (!m_EditorScene)
         return false;
 
-    Ref<Scene> runtimeScene = Scene::Copy(m_EditorScene);
+    std::shared_ptr<Scene> runtimeScene = Scene::Copy(m_EditorScene);
     if (!runtimeScene)
     {
         CH_CORE_ERROR("Failed to clone scene for play mode!");
@@ -35,6 +35,7 @@ bool EditorLayer::OnScenePlay(ScenePlayEvent &e)
 bool EditorLayer::OnSceneStop(SceneStopEvent &e)
 {
     CH_CORE_INFO("Scene Stop Event");
+    m_FullscreenGame = false;
 
     auto runtimeScene = Application::Get().GetActiveScene();
     if (runtimeScene)

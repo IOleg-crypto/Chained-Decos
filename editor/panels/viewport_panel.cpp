@@ -1,11 +1,11 @@
 #include "viewport_panel.h"
 #include "editor/editor_layer.h"
+#include "engine/core/application.h"
 #include "engine/core/input.h"
 #include "engine/physics/physics.h"
 #include "engine/renderer/render.h"
-#include "engine/renderer/scene_render.h"
+#include "engine/ui/imgui_raylib_ui.h"
 #include <imgui.h>
-#include <rlImGui.h>
 
 namespace CHEngine
 {
@@ -28,7 +28,21 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
 {
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
-    ImGui::Begin("Viewport");
+
+    if (EditorLayer::Get().IsFullscreenGame())
+    {
+        ImGuiViewport *viewport = ImGui::GetMainViewport();
+        ImGui::SetNextWindowPos(viewport->WorkPos);
+        ImGui::SetNextWindowSize(viewport->WorkSize);
+        ImGui::SetNextWindowViewport(viewport->ID);
+        ImGui::Begin("Viewport", nullptr,
+                     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize |
+                         ImGuiWindowFlags_NoMove);
+    }
+    else
+    {
+        ImGui::Begin("Viewport");
+    }
 
     m_Focused = ImGui::IsWindowFocused();
     m_Hovered = ImGui::IsWindowHovered();
@@ -48,8 +62,13 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
     }
 
     // Render scene to texture
-    BeginTextureMode(m_ViewportTexture);
-    ClearBackground(DARKGRAY);
+    Render::BeginToTexture(m_ViewportTexture);
+
+    // Use white background for UI scenes, dark gray for 3D
+    Color bgColor = (m_Context && m_Context->GetType() == SceneType::SceneUI)
+                        ? Color{245, 245, 245, 255} // Light gray (UI canvas)
+                        : DARKGRAY;                 // Dark gray (3D viewport)
+    ClearBackground(bgColor);
 
     auto camera = m_EditorCamera.GetRaylibCamera();
 
@@ -80,16 +99,33 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
                 camera.projection = CAMERA_PERSPECTIVE;
             }
         }
+        else if (m_Context->GetType() == SceneType::SceneUI)
+        {
+            // Pixel-perfect mapping for UI editing
+            camera.target = {m_ViewportSize.x * 0.5f, m_ViewportSize.y * 0.5f, 0.0f};
+            camera.position = {m_ViewportSize.x * 0.5f, m_ViewportSize.y * 0.5f, 10.0f};
+            camera.up = {0.0f, -1.0f, 0.0f}; // Invert Y for screen space (0,0 is top-left)
+            camera.fovy = m_ViewportSize.y;
+            camera.projection = CAMERA_ORTHOGRAPHIC;
+        }
 
-        RenderState viewportState;
-        SceneRender::CreateSnapshot(m_Context.get(), camera, viewportState, 1.0f, m_DebugFlags);
+        Render::BeginScene(camera);
 
-        SceneRender::BeginScene(viewportState);
-        if (m_DebugFlags && m_DebugFlags->DrawGrid)
+        bool is3D = m_Context->GetType() == SceneType::Scene3D;
+
+        if (m_DebugFlags && m_DebugFlags->DrawGrid && is3D)
             ::DrawGrid(10, 1.0f);
-        SceneRender::SubmitScene(viewportState);
-        SceneRender::EndScene();
+
+        // BVH/Collision wires
+        if (m_DebugFlags && m_DebugFlags->DrawColliders && is3D)
+        {
+            // m_Context->OnDebugRender(m_DebugFlags);
+        }
+        m_Context->OnRender(camera, m_DebugFlags);
+        Render::EndScene();
     }
+
+    Render::EndToTexture();
 
     // --- Picking Logic ---
     bool allowTools = !readOnly;
@@ -238,66 +274,83 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
     rlImGuiImageRenderTextureFit(&m_ViewportTexture, true);
 
     // Gizmos
-    if (m_SelectedEntity && allowTools)
+    if (m_SelectedEntity && m_SelectedEntity.GetScene() != m_Context.get())
+        m_SelectedEntity = {};
+
+    bool isUIEntity = m_SelectedEntity && m_SelectedEntity.HasComponent<WidgetComponent>();
+    if (m_SelectedEntity && allowTools && !isUIEntity && m_Context &&
+        m_Context->GetType() != SceneType::SceneUI)
     {
         m_Gizmo.RenderAndHandle(m_Context.get(), camera, m_SelectedEntity, m_CurrentTool,
                                 viewportPos, ImVec2{m_ViewportSize.x, m_ViewportSize.y});
     }
 
     // --- Gizmo Toolbar Overlay ---
-    ImGui::SetCursorPos(ImVec2(10, 30));                          // Slightly below top-left
-    ImGui::BeginChild("GizmoToolbar", ImVec2(160, 40), false, 0); // Transparent background
-
-    auto drawToolButton = [&](const char *label, GizmoType type, GizmoType target)
+    if (m_Context && m_Context->GetType() == SceneType::Scene3D)
     {
-        bool active = (type == target);
-        if (active)
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.4f, 0.8f, 1.0f));
-        else
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0.5f));
+        ImGui::SetCursorPos(ImVec2(10, 30));                          // Slightly below top-left
+        ImGui::BeginChild("GizmoToolbar", ImVec2(160, 40), false, 0); // Transparent background
 
-        if (ImGui::Button(label, ImVec2(30, 30)))
-            m_CurrentTool = target;
+        auto drawToolButton = [&](const char *label, GizmoType type, GizmoType target)
+        {
+            bool active = (type == target);
+            if (active)
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.4f, 0.8f, 1.0f));
+            else
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0.5f));
 
-        ImGui::PopStyleColor();
-    };
+            if (ImGui::Button(label, ImVec2(30, 30)))
+                m_CurrentTool = target;
 
-    drawToolButton("T", m_CurrentTool, GizmoType::TRANSLATE);
-    ImGui::SameLine();
-    drawToolButton("R", m_CurrentTool, GizmoType::ROTATE);
-    ImGui::SameLine();
-    drawToolButton("S", m_CurrentTool, GizmoType::SCALE);
+            ImGui::PopStyleColor();
+        };
 
-    ImGui::SameLine();
-    bool isLocal = m_Gizmo.IsLocalSpace();
-    if (ImGui::Button(isLocal ? "L" : "W", ImVec2(30, 30)))
-        m_Gizmo.SetLocalSpace(!isLocal);
+        drawToolButton("T", m_CurrentTool, GizmoType::TRANSLATE);
+        ImGui::SameLine();
+        drawToolButton("R", m_CurrentTool, GizmoType::ROTATE);
+        ImGui::SameLine();
+        drawToolButton("S", m_CurrentTool, GizmoType::SCALE);
 
-    if (ImGui::IsItemHovered())
-        ImGui::SetTooltip(isLocal ? "Local Space" : "World Space");
+        ImGui::SameLine();
+        bool isLocal = m_Gizmo.IsLocalSpace();
+        if (ImGui::Button(isLocal ? "L" : "W", ImVec2(30, 30)))
+            m_Gizmo.SetLocalSpace(!isLocal);
 
-    ImGui::EndChild();
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip(isLocal ? "Local Space" : "World Space");
 
-    // Reset cursor for overlay logic if needed, but EndChild handles it.
+        ImGui::EndChild();
 
-    // --- Snapping / Overlay Toolbar ---
-    ImGui::SetCursorPos(ImVec2(10, 10));
-    ImGui::BeginChild("ViewportToolbar", ImVec2(0, 0),
-                      ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY |
-                          ImGuiChildFlags_AlwaysAutoResize | ImGuiChildFlags_Borders,
-                      ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+        // --- Snapping / Overlay Toolbar ---
+        ImGui::SetCursorPos(ImVec2(10, 10));
+        ImGui::BeginChild("ViewportToolbar", ImVec2(0, 0),
+                          ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY |
+                              ImGuiChildFlags_AlwaysAutoResize | ImGuiChildFlags_Borders,
+                          ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
-    bool snapping = m_Gizmo.IsSnappingEnabled();
-    if (ImGui::Checkbox("Snap", &snapping))
-        m_Gizmo.SetSnapping(snapping);
+        bool snapping = m_Gizmo.IsSnappingEnabled();
+        if (ImGui::Checkbox("Snap", &snapping))
+            m_Gizmo.SetSnapping(snapping);
 
-    ImGui::SameLine();
-    ImGui::SetNextItemWidth(40);
-    float grid = m_Gizmo.GetGridSize();
-    if (ImGui::DragFloat("##Grid", &grid, 0.1f, 0.1f, 10.0f, "Grid: %.1f"))
-        m_Gizmo.SetGridSize(grid);
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(40);
+        float grid = m_Gizmo.GetGridSize();
+        if (ImGui::DragFloat("##Grid", &grid, 0.1f, 0.1f, 10.0f, "Grid: %.1f"))
+            m_Gizmo.SetGridSize(grid);
 
-    ImGui::EndChild();
+        ImGui::EndChild();
+    }
+
+    if (m_Context)
+    {
+        if (EditorLayer::GetSceneState() == SceneState::Play ||
+            m_Context->GetType() == SceneType::SceneUI)
+        {
+            bool editMode = EditorLayer::GetSceneState() == SceneState::Edit;
+            m_Context->OnImGuiRender(viewportPos, viewportPanelSize, ImGui::GetWindowViewport()->ID,
+                                     editMode);
+        }
+    }
 
     ImGui::End();
     ImGui::PopStyleVar();

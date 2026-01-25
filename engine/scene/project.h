@@ -3,6 +3,7 @@
 
 #include "engine/core/base.h"
 #include <filesystem>
+#include <memory>
 #include <string>
 
 namespace CHEngine
@@ -63,15 +64,23 @@ public:
     {
         return m_Config;
     }
+    ProjectConfig &GetConfig()
+    {
+        return m_Config;
+    }
 
-    static Ref<Project> GetActive()
+    static std::shared_ptr<Project> GetActive()
     {
         return s_ActiveProject;
     }
-    static void SetActive(Ref<Project> project)
+    static void SetActive(std::shared_ptr<Project> project)
     {
         s_ActiveProject = project;
     }
+
+    static std::shared_ptr<Project> New();
+    static std::shared_ptr<Project> Load(const std::filesystem::path &path);
+    static bool SaveActive(const std::filesystem::path &path);
 
     static std::filesystem::path GetAssetDirectory()
     {
@@ -86,6 +95,11 @@ public:
         if (s_ActiveProject)
             return s_ActiveProject->m_Config.ProjectDirectory;
         return "";
+    }
+
+    static std::filesystem::path GetAssetPath(const std::filesystem::path &relative)
+    {
+        return GetAssetDirectory() / relative;
     }
 
     void SetActiveScenePath(const std::filesystem::path &path)
@@ -105,7 +119,7 @@ public:
 
 private:
     ProjectConfig m_Config;
-    static Ref<Project> s_ActiveProject;
+    static std::shared_ptr<Project> s_ActiveProject;
 
     friend class ProjectSerializer;
 };

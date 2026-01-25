@@ -21,11 +21,22 @@ bool EditorGizmo::RenderAndHandle(Scene *scene, const Camera3D &camera, Entity e
     ImGuizmo::SetRect(viewportPos.x, viewportPos.y, viewportSize.x, viewportSize.y);
 
     // 2. Prepare View/Projection matrices
-    // Raylib is row-major in memory, ImGuizmo is column-major.
-    // Transpose them for ImGuizmo.
     Matrix view = MatrixTranspose(GetCameraMatrix(camera));
-    Matrix projection = MatrixTranspose(
-        MatrixPerspective(camera.fovy * DEG2RAD, viewportSize.x / viewportSize.y, 0.01f, 1000.0f));
+    Matrix projection;
+    if (camera.projection == CAMERA_PERSPECTIVE)
+    {
+        projection = MatrixTranspose(MatrixPerspective(
+            camera.fovy * DEG2RAD, viewportSize.x / viewportSize.y, 0.01f, 1000.0f));
+    }
+    else
+    {
+        float aspect = viewportSize.x / viewportSize.y;
+        float right = camera.fovy * aspect * 0.5f;
+        float left = -right;
+        float top = camera.fovy * 0.5f;
+        float bottom = -top;
+        projection = MatrixTranspose(MatrixOrtho(left, right, bottom, top, 0.01f, 1000.0f));
+    }
 
     // 3. Prepare Model matrix
     Matrix model = MatrixTranspose(transform.GetTransform());
@@ -38,7 +49,6 @@ bool EditorGizmo::RenderAndHandle(Scene *scene, const Camera3D &camera, Entity e
     ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
     ImGuizmo::SetID(0);
 
-    // Check for Start of Drag (Undo)
     if (ImGuizmo::IsUsing())
     {
         if (!m_WasUsing)
@@ -51,29 +61,22 @@ bool EditorGizmo::RenderAndHandle(Scene *scene, const Camera3D &camera, Entity e
     ImGuizmo::Manipulate((float *)&view, (float *)&projection, (ImGuizmo::OPERATION)type, mode,
                          (float *)&model, NULL, snap);
 
-    // 6. Apply back to transform if used
     if (ImGuizmo::IsUsing())
     {
         Vector3 translation, rotation, scale;
-        // ImGuizmo expects column-major input, and we just manipulated a column-major 'model'
         ImGuizmo::DecomposeMatrixToComponents((float *)&model, (float *)&translation,
                                               (float *)&rotation, (float *)&scale);
 
         transform.Translation = translation;
-        // ImGuizmo returns rotation in DEGREES, TransformComponent uses RADIANS
         transform.Rotation.x = rotation.x * DEG2RAD;
         transform.Rotation.y = rotation.y * DEG2RAD;
         transform.Rotation.z = rotation.z * DEG2RAD;
-
-        // Update Quaternion for internal precision and smooth interpolation
         transform.RotationQuat =
             QuaternionFromEuler(transform.Rotation.x, transform.Rotation.y, transform.Rotation.z);
-
         transform.Scale = scale;
     }
     else if (m_WasUsing)
     {
-        // End of drag - Push Undo
         m_WasUsing = false;
         EditorLayer::GetCommandHistory().PushCommand(
             std::make_unique<TransformCommand>(entity, m_OldTransform, transform));
