@@ -54,8 +54,9 @@ jobs:
 
       - name: Setup GCC
         run: |
-          echo "CC=gcc-11" >> "$GITHUB_ENV"
-          echo "CXX=g++-11" >> "$GITHUB_ENV"
+          sudo apt-get install -y gcc-13 g++-13
+          echo "CC=gcc-13" >> "$GITHUB_ENV"
+          echo "CXX=g++-13" >> "$GITHUB_ENV"
 
       - name: Configure
         run: |
@@ -126,8 +127,11 @@ jobs:
 
       - name: Setup Clang
         run: |
-          echo "CC=clang-14" >> "$GITHUB_ENV"
-          echo "CXX=clang++-14" >> "$GITHUB_ENV"
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 17
+          echo "CC=clang-17" >> "$GITHUB_ENV"
+          echo "CXX=clang++-17" >> "$GITHUB_ENV"
 
       - name: Configure
         run: |
