@@ -9,6 +9,9 @@ namespace CHEngine
 {
 void RegisterGameScripts()
 {
+    // Example: Launching a scene without editor via code
+    // Application::SetStartupScene("assets/scenes/start menu.chscene");
+
     ScriptRegistry::Register<PlayerController>("PlayerController");
     ScriptRegistry::Register<CameraController>("CameraController");
     ScriptRegistry::Register<GameHUD>("GameHUD");

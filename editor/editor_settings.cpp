@@ -41,6 +41,8 @@ void EditorSettings::Load()
                 s_Data.VSync = node["VSync"].as<bool>();
             if (node["LastProjectPath"])
                 s_Data.LastProjectPath = node["LastProjectPath"].as<std::string>();
+            if (node["LastScenePath"])
+                s_Data.LastScenePath = node["LastScenePath"].as<std::string>();
         }
     }
     catch (const std::exception &e)
@@ -60,6 +62,7 @@ void EditorSettings::Save()
     out << YAML::Key << "TargetFPS" << YAML::Value << s_Data.TargetFPS;
     out << YAML::Key << "VSync" << YAML::Value << s_Data.VSync;
     out << YAML::Key << "LastProjectPath" << YAML::Value << s_Data.LastProjectPath;
+    out << YAML::Key << "LastScenePath" << YAML::Value << s_Data.LastScenePath;
     out << YAML::EndMap;
     out << YAML::EndMap;
 
