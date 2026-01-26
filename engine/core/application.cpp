@@ -4,8 +4,8 @@
 #include "engine/core/profiler.h"
 #include "engine/core/task_system.h"
 #include "engine/physics/physics.h"
-#include "engine/renderer/asset_manager.h"
-#include "engine/renderer/render.h"
+#include "engine/render/asset_manager.h"
+#include "engine/render/render.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene_serializer.h"
 #include "engine/scene/script_registry.h"
@@ -22,6 +22,7 @@
 namespace CHEngine
 {
 Application *Application::s_Instance = nullptr;
+std::string Application::s_StartupScenePath = "";
 
 Application::Application(const Config &config) : m_Config(config)
 {
@@ -281,6 +282,7 @@ void Application::LoadScene(const std::string &path)
     SceneSerializer serializer(newScene.get());
     if (serializer.Deserialize(path))
     {
+        newScene->SetScenePath(path);
         m_ActiveScene = newScene;
 
         // Notify system that scene is opened

@@ -1,12 +1,17 @@
 #include "viewport_panel.h"
+#include "render/environment.h"
+#include "scene/scene.h"
+#define GLFW_INCLUDE_NONE
 #include "editor/editor_layer.h"
 #include "engine/core/application.h"
 #include "engine/core/input.h"
 #include "engine/physics/physics.h"
-#include "engine/renderer/asset_manager.h"
-#include "engine/renderer/render.h"
+#include "engine/render/asset_manager.h"
+#include "engine/render/render.h"
 #include "engine/ui/imgui_raylib_ui.h"
+#include "external/glfw/include/GLFW/glfw3.h"
 #include <imgui.h>
+#include <rlgl.h>
 
 namespace CHEngine
 {
@@ -139,13 +144,15 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
 
         Visuals::BeginScene(camera);
 
-        if (m_DebugFlags && m_DebugFlags->DrawGrid)
+        // Only draw grid in 3D environment mode
+        if (m_DebugFlags && m_DebugFlags->DrawGrid &&
+            m_Context->GetBackgroundMode() == BackgroundMode::Environment3D)
             ::DrawGrid(10, 1.0f);
 
         // BVH/Collision wires
         if (m_DebugFlags && m_DebugFlags->DrawColliders)
         {
-            // m_Context->OnDebugRender(m_DebugFlags);
+            // \m_Context->OnDebugRender(m_DebugFlags);
         }
         m_Context->OnRender(camera, m_DebugFlags);
         Visuals::EndScene();
@@ -330,40 +337,43 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
             ImGui::PopStyleColor();
         };
 
-        drawToolButton("T", m_CurrentTool, GizmoType::TRANSLATE);
-        ImGui::SameLine();
-        drawToolButton("R", m_CurrentTool, GizmoType::ROTATE);
-        ImGui::SameLine();
-        drawToolButton("S", m_CurrentTool, GizmoType::SCALE);
+        if (m_Context->GetBackgroundMode() == BackgroundMode::Environment3D)
+        {
+            drawToolButton("T", m_CurrentTool, GizmoType::TRANSLATE);
+            ImGui::SameLine();
+            drawToolButton("R", m_CurrentTool, GizmoType::ROTATE);
+            ImGui::SameLine();
+            drawToolButton("S", m_CurrentTool, GizmoType::SCALE);
 
-        ImGui::SameLine();
-        bool isLocal = m_Gizmo.IsLocalSpace();
-        if (ImGui::Button(isLocal ? "L" : "W", ImVec2(30, 30)))
-            m_Gizmo.SetLocalSpace(!isLocal);
+            ImGui::SameLine();
+            bool isLocal = m_Gizmo.IsLocalSpace();
+            if (ImGui::Button(isLocal ? "L" : "W", ImVec2(30, 30)))
+                m_Gizmo.SetLocalSpace(!isLocal);
 
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip(isLocal ? "Local Space" : "World Space");
-
-        ImGui::EndChild();
-
-        // --- Snapping / Overlay Toolbar ---
-        ImGui::SetCursorPos(ImVec2(10, 10));
-        ImGui::BeginChild("ViewportToolbar", ImVec2(0, 0),
-                          ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY |
-                              ImGuiChildFlags_AlwaysAutoResize | ImGuiChildFlags_Borders,
-                          ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-
-        bool snapping = m_Gizmo.IsSnappingEnabled();
-        if (ImGui::Checkbox("Snap", &snapping))
-            m_Gizmo.SetSnapping(snapping);
-
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(40);
-        float grid = m_Gizmo.GetGridSize();
-        if (ImGui::DragFloat("##Grid", &grid, 0.1f, 0.1f, 10.0f, "Grid: %.1f"))
-            m_Gizmo.SetGridSize(grid);
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip(isLocal ? "Local Space" : "World Space");
+        }
 
         ImGui::EndChild();
+
+        // // --- Snapping / Overlay Toolbar ---
+        // ImGui::SetCursorPos(ImVec2(10, 10));
+        // ImGui::BeginChild("ViewportToolbar", ImVec2(0, 0),
+        //                   ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY |
+        //                       ImGuiChildFlags_AlwaysAutoResize | ImGuiChildFlags_Borders,
+        //                   ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+        // bool snapping = m_Gizmo.IsSnappingEnabled();
+        // if (ImGui::Checkbox("Snap", &snapping))
+        //     m_Gizmo.SetSnapping(snapping);
+
+        // ImGui::SameLine();
+        // ImGui::SetNextItemWidth(40);
+        // float grid = m_Gizmo.GetGridSize();
+        // if (ImGui::DragFloat("##Grid", &grid, 0.1f, 0.1f, 10.0f, "Grid: %.1f"))
+        //     m_Gizmo.SetGridSize(grid);
+
+        // ImGui::EndChild();
     }
 
     if (m_Context)

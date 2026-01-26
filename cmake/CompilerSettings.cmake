@@ -67,3 +67,67 @@ if(WIN32)
     add_compile_definitions(NOMINMAX)
     add_compile_definitions(_WIN32_WINNT=0x0601)  # Windows 7+
 endif()
+
+# Optimized Build Settings
+option(ENABLE_UNITY_BUILD "Enable Unity Builds for faster compilation" ON)
+option(ENABLE_PCH "Enable Precompiled Headers for faster compilation" ON)
+
+if(ENABLE_UNITY_BUILD)
+    set(CMAKE_UNITY_BUILD ON)
+    set(CMAKE_UNITY_BUILD_BATCH_SIZE 16)
+endif()
+
+# Function to apply common engine optimizations to a target
+function(apply_engine_optimizations target_name)
+    if(ENABLE_PCH)
+        # We use a header file for PCH to handle complex logic like undefining Windows macros
+        set(PCH_HEADER_CONTENT "
+#include <memory>
+#include <vector>
+#include <string>
+#include <unordered_map>
+#include <algorithm>
+#include <functional>
+#include <raylib.h>
+#define IMGUI_DEFINE_MATH_OPERATORS
+#include <imgui.h>
+
+#ifdef _WIN32
+  #define WIN32_LEAN_AND_MEAN
+  #define NOMINMAX
+  
+  // Temporarily rename Windows functions that conflict with Raylib
+  #define ShowCursor _win_ShowCursor
+  #define CloseWindow _win_CloseWindow
+  #define Rectangle _win_Rectangle
+  #define DrawText _win_DrawText
+  #define DrawTextEx _win_DrawTextEx
+  #define LoadImage _win_LoadImage
+  
+  #include <windows.h>
+  
+  // Restore names so Raylib can use them
+  #undef ShowCursor
+  #undef CloseWindow
+  #undef Rectangle
+  #undef DrawText
+  #undef DrawTextEx
+  #undef LoadImage
+#endif
+
+#include <raylib.h>
+#include <imgui.h>
+#include <algorithm>
+#include <functional>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <vector>
+")
+        # Create a temp file for PCH
+        set(PCH_FILE "${CMAKE_BINARY_DIR}/engine_pch.h")
+        file(WRITE "${PCH_FILE}" "${PCH_HEADER_CONTENT}")
+        
+        target_precompile_headers(${target_name} PUBLIC "${PCH_FILE}")
+    endif()
+endfunction()

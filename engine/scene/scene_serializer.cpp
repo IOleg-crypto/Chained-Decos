@@ -1,12 +1,12 @@
 #include "scene_serializer.h"
 #include "components.h"
 #include "engine/core/log.h"
+#include "engine/core/yaml_utils.h"
 #include "engine/physics/bvh/bvh.h"
-#include "engine/renderer/asset_manager.h"
-#include "engine/renderer/render.h"
+#include "engine/render/asset_manager.h"
+#include "engine/render/render.h"
 #include "scene.h"
 #include "script_registry.h"
-#include "yaml_utils.h"
 
 #include <fstream>
 #include <yaml-cpp/yaml.h>

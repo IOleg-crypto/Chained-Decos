@@ -42,6 +42,7 @@ bool EditorLayer::OnSceneStop(SceneStopEvent &e)
         runtimeScene->OnRuntimeStop();
 
     m_SceneState = SceneState::Edit;
+    m_StandaloneActive = false;
 
     if (m_EditorScene)
     {
