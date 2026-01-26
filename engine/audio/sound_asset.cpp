@@ -18,7 +18,7 @@ SoundAsset::~SoundAsset()
 
 std::shared_ptr<SoundAsset> SoundAsset::Load(const std::string &path)
 {
-    auto absolutePath = Assets::ResolvePath(path);
+    auto absolutePath = AssetManager::ResolvePath(path);
     Sound sound = ::LoadSound(absolutePath.string().c_str());
 
     if (sound.frameCount > 0)

@@ -21,7 +21,6 @@ void Scene::RequestSceneChange(const std::string &path)
 }
 Scene::Scene()
 {
-    m_Type = SceneType::Scene3D;
     m_Registry.on_construct<ModelComponent>().connect<&Scene::OnModelComponentAdded>(this);
     m_Registry.on_update<ModelComponent>().connect<&Scene::OnModelComponentAdded>(this);
 
@@ -30,6 +29,9 @@ Scene::Scene()
 
     m_Registry.on_construct<AudioComponent>().connect<&Scene::OnAudioComponentAdded>(this);
     m_Registry.on_update<AudioComponent>().connect<&Scene::OnAudioComponentAdded>(this);
+
+    // Every scene must have its own environment to avoid skybox leaking/bugs
+    m_Environment = std::make_shared<EnvironmentAsset>();
 }
 
 Scene::~Scene()
@@ -123,7 +125,7 @@ template <> void Scene::OnComponentAdded<ModelComponent>(Entity entity, ModelCom
 
         if (pathChanged)
         {
-            component.Asset = Assets::Get<ModelAsset>(component.ModelPath);
+            component.Asset = AssetManager::Get<ModelAsset>(component.ModelPath);
             component.MaterialsInitialized = false; // Reset materials if asset changed
         }
 
@@ -156,7 +158,7 @@ void Scene::OnComponentAdded<AnimationComponent>(Entity entity, AnimationCompone
         auto &mc = entity.GetComponent<ModelComponent>();
         if (!mc.Asset && !mc.ModelPath.empty())
         {
-            mc.Asset = Assets::Get<ModelAsset>(mc.ModelPath);
+            mc.Asset = AssetManager::Get<ModelAsset>(mc.ModelPath);
         }
     }
 }
@@ -165,7 +167,7 @@ template <> void Scene::OnComponentAdded<AudioComponent>(Entity entity, AudioCom
 {
     if (!component.SoundPath.empty())
     {
-        component.Asset = Assets::Get<SoundAsset>(component.SoundPath);
+        component.Asset = AssetManager::Get<SoundAsset>(component.SoundPath);
     }
 }
 
@@ -252,131 +254,26 @@ void Scene::OnRender(const Camera3D &camera, const DebugRenderFlags *debugFlags)
 {
     CH_PROFILE_FUNCTION();
     UpdateProfilerStats();
+    m_ActiveCamera = camera;
 
-    // 1. Render Environment/Skybox
-    if (m_Type == SceneType::Scene3D)
-    {
-        if (m_Environment)
-        {
-            Render::ApplyEnvironment(m_Environment->GetSettings());
-            Render::DrawSkybox(m_Environment->GetSettings(), camera);
-        }
-        else
-        {
-            Render::DrawSkybox(m_Skybox, camera);
-        }
-    }
-
-    // 2. Render Opaque Meshes
-    auto meshView = m_Registry.view<TransformComponent, ModelComponent>();
-    for (auto entity : meshView)
-    {
-        auto &transform = meshView.get<TransformComponent>(entity);
-        auto &model = meshView.get<ModelComponent>(entity);
-
-        std::string tag = "Unknown Entity";
-        if (m_Registry.all_of<TagComponent>(entity))
-            tag = m_Registry.get<TagComponent>(entity).Tag;
-
-        if (!model.Asset && !model.ModelPath.empty())
-        {
-            CH_CORE_INFO("Scene: Lazy-loading asset for entity '{}': {}", tag, model.ModelPath);
-            model.Asset = Assets::Get<ModelAsset>(model.ModelPath);
-        }
-
-        if (model.Asset && model.Asset->IsReady())
-        {
-            Render::DrawModel(model.Asset, transform.GetTransform(), model.Materials);
-        }
-    }
-
-    // 3. Debug Rendering (Hidden in UI mode)
-    const DebugRenderFlags *actualDebugFlags =
-        (m_Type == SceneType::SceneUI) ? nullptr : debugFlags;
-
-    if (actualDebugFlags && actualDebugFlags->IsAnyEnabled())
-    {
-        if (actualDebugFlags->DrawColliders)
-        {
-            auto colView = m_Registry.view<TransformComponent, ColliderComponent>();
-            for (auto entity : colView)
-            {
-                auto [transform, collider] =
-                    colView.get<TransformComponent, ColliderComponent>(entity);
-
-                Vector3 scale = transform.Scale;
-                Vector3 scaledSize = Vector3Multiply(collider.Size, scale);
-                Vector3 scaledOffset = Vector3Multiply(collider.Offset, scale);
-
-                Vector3 minCorner = Vector3Add(transform.Translation, scaledOffset);
-                Vector3 center = Vector3Add(minCorner, Vector3Scale(scaledSize, 0.5f));
-
-                Color tint = collider.IsColliding ? RED : (collider.bEnabled ? GREEN : GRAY);
-
-                if (collider.Type == ColliderType::Mesh)
-                {
-                    if (!collider.ModelPath.empty())
-                    {
-                        auto asset = Assets::Get<ModelAsset>(collider.ModelPath);
-                        if (asset)
-                        {
-                            Model &m = asset->GetModel();
-                            Matrix original = m.transform;
-                            m.transform = MatrixMultiply(original, transform.GetTransform());
-                            ::DrawModelWires(m, {0, 0, 0}, 1.0f, SKYBLUE);
-                            m.transform = original;
-                        }
-                    }
-                }
-                else
-                {
-                    ::DrawCubeWires(center, scaledSize.x, scaledSize.y, scaledSize.z, tint);
-                }
-            }
-        }
-
-        if (actualDebugFlags->DrawLights)
-        {
-            auto lightView = m_Registry.view<TransformComponent, PointLightComponent>();
-            for (auto entity : lightView)
-            {
-                auto [transform, light] =
-                    lightView.get<TransformComponent, PointLightComponent>(entity);
-                ::DrawSphereWires(transform.Translation, 0.2f, 8, 8, light.LightColor);
-                ::DrawSphereWires(transform.Translation, light.Radius, 16, 16,
-                                  ColorAlpha(light.LightColor, 0.3f));
-            }
-        }
-
-        if (actualDebugFlags->DrawSpawnZones)
-        {
-            auto spawnView = m_Registry.view<TransformComponent, SpawnComponent>();
-            for (auto entity : spawnView)
-            {
-                auto [transform, spawn] = spawnView.get<TransformComponent, SpawnComponent>(entity);
-                ::DrawCubeWires(transform.Translation, spawn.ZoneSize.x, spawn.ZoneSize.y,
-                                spawn.ZoneSize.z, {0, 255, 255, 128});
-
-                if (!spawn.Texture && !spawn.TexturePath.empty())
-                {
-                    spawn.Texture = Assets::Get<TextureAsset>(spawn.TexturePath);
-                }
-
-                if (spawn.Texture)
-                {
-                    Render::DrawCubeTexture(spawn.Texture->GetTexture(), transform.Translation,
-                                            spawn.ZoneSize.x, spawn.ZoneSize.y, spawn.ZoneSize.z,
-                                            {255, 255, 255, 255});
-                }
-                else
-                {
-                    DrawCube(transform.Translation, spawn.ZoneSize.x, spawn.ZoneSize.y,
-                             spawn.ZoneSize.z, {0, 255, 255, 128});
-                }
-            }
-        }
-    }
+    Visuals::DrawScene(this, debugFlags);
 }
+
+EnvironmentSettings Scene::GetEnvironmentSettings() const
+{
+    if (m_Environment)
+        return m_Environment->GetSettings();
+
+    EnvironmentSettings settings;
+    settings.Skybox.TexturePath = m_Skybox.TexturePath;
+    settings.Skybox.Exposure = m_Skybox.Exposure;
+    settings.Skybox.Brightness = m_Skybox.Brightness;
+    settings.Skybox.Contrast = m_Skybox.Contrast;
+    // Default values if no environment
+    return settings;
+}
+
+// -------------------------------------------------------------------------------------------------------------------
 
 void Scene::OnUpdateEditor(float deltaTime)
 {
@@ -493,21 +390,20 @@ void Scene::OnAnimationComponentAdded(entt::registry &reg, entt::entity entity)
 
 void Scene::UpdateProfilerStats()
 {
-    static int frameCounter = 0;
-    if (frameCounter++ % 1 != 0) // Could throttle if needed, for now every frame
-        return;
+    CH_PROFILE_FUNCTION();
 
-    ProfilerStats stats;
+    ::CHEngine::ProfilerStats stats;
     stats.EntityCount = (uint32_t)m_Registry.storage<entt::entity>().size();
 
-    m_Registry.view<ColliderComponent>().each(
-        [&](auto entity, auto &col)
-        {
-            stats.ColliderCount++;
-            stats.ColliderTypeCounts[(int)col.Type]++;
-        });
+    auto view = m_Registry.view<::CHEngine::ColliderComponent>();
+    stats.ColliderCount = (uint32_t)view.size();
 
-    Profiler::UpdateStats(stats);
+    for (auto entity : view)
+    {
+        auto &col = view.get<::CHEngine::ColliderComponent>(entity);
+        stats.ColliderTypeCounts[(int)col.Type]++;
+    }
+
+    ::CHEngine::Profiler::UpdateStats(stats);
 }
-
 } // namespace CHEngine

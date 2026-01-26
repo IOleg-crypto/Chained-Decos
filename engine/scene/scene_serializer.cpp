@@ -247,33 +247,37 @@ static void SerializeEntity(YAML::Emitter &out, Entity entity)
         out << YAML::Key << "OffsetMin" << YAML::Value << ui.Transform.OffsetMin;
         out << YAML::Key << "OffsetMax" << YAML::Value << ui.Transform.OffsetMax;
         out << YAML::Key << "Pivot" << YAML::Value << ui.Transform.Pivot;
+        out << YAML::Key << "RectCoordinates" << YAML::Value << ui.Transform.RectCoordinates;
         out << YAML::EndMap;
         out << YAML::EndMap;
     }
 
-    if (entity.HasComponent<ImageWidget>())
+    if (entity.HasComponent<PanelWidget>())
     {
-        out << YAML::Key << "ImageWidget";
-        auto &img = entity.GetComponent<ImageWidget>();
+        out << YAML::Key << "PanelWidget";
+        auto &panel = entity.GetComponent<PanelWidget>();
         out << YAML::BeginMap;
-        out << YAML::Key << "ScaleMode" << YAML::Value << (int)img.ScaleMode;
-        out << YAML::Key << "BackgroundColor" << YAML::Value << img.BackgroundColor;
-        out << YAML::Key << "Rounding" << YAML::Value << img.Rounding;
-        out << YAML::Key << "Padding" << YAML::Value << img.Padding;
-        out << YAML::Key << "UseBackground" << YAML::Value << img.UseBackground;
-        out << YAML::Key << "TexturePath" << YAML::Value << img.TexturePath;
+        out << YAML::Key << "FullScreen" << YAML::Value << panel.FullScreen;
+        out << YAML::Key << "TexturePath" << YAML::Value << panel.TexturePath;
+
+        out << YAML::Key << "Style" << YAML::Value;
+        out << YAML::BeginMap;
+        out << YAML::Key << "BackgroundColor" << YAML::Value << panel.Style.BackgroundColor;
+        out << YAML::Key << "Rounding" << YAML::Value << panel.Style.Rounding;
+        out << YAML::Key << "BorderSize" << YAML::Value << panel.Style.BorderSize;
+        out << YAML::Key << "BorderColor" << YAML::Value << panel.Style.BorderColor;
+        out << YAML::EndMap;
         out << YAML::EndMap;
     }
 
-    if (entity.HasComponent<TextWidget>())
+    if (entity.HasComponent<LabelWidget>())
     {
-        out << YAML::Key << "TextWidget";
-        auto &txt = entity.GetComponent<TextWidget>();
+        out << YAML::Key << "LabelWidget";
+        auto &lbl = entity.GetComponent<LabelWidget>();
         out << YAML::BeginMap;
-        out << YAML::Key << "Text" << YAML::Value << txt.Text;
-        out << YAML::Key << "FontPath" << YAML::Value << txt.FontPath;
-        out << YAML::Key << "FontSize" << YAML::Value << txt.FontSize;
-        out << YAML::Key << "Color" << YAML::Value << txt.Color;
+        out << YAML::Key << "Text" << YAML::Value << lbl.Text;
+        out << YAML::Key << "FontSize" << YAML::Value << lbl.Style.FontSize;
+        out << YAML::Key << "TextColor" << YAML::Value << lbl.Style.TextColor;
         out << YAML::EndMap;
     }
 
@@ -282,7 +286,15 @@ static void SerializeEntity(YAML::Emitter &out, Entity entity)
         out << YAML::Key << "ButtonWidget";
         auto &btn = entity.GetComponent<ButtonWidget>();
         out << YAML::BeginMap;
-        out << YAML::Key << "Interactable" << YAML::Value << btn.Interactable;
+        out << YAML::Key << "Label" << YAML::Value << btn.Label;
+        out << YAML::Key << "Interactable" << YAML::Value << btn.IsInteractable;
+
+        out << YAML::Key << "Style" << YAML::Value;
+        out << YAML::BeginMap;
+        out << YAML::Key << "BackgroundColor" << YAML::Value << btn.Style.BackgroundColor;
+        out << YAML::Key << "HoverColor" << YAML::Value << btn.Style.HoverColor;
+        out << YAML::Key << "PressedColor" << YAML::Value << btn.Style.PressedColor;
+        out << YAML::EndMap;
         out << YAML::EndMap;
     }
 
@@ -316,7 +328,14 @@ std::string SceneSerializer::SerializeToString()
     YAML::Emitter out;
     out << YAML::BeginMap;
     out << YAML::Key << "Scene" << YAML::Value << "Untitled";
-    out << YAML::Key << "Type" << YAML::Value << (int)m_Scene->GetType();
+
+    // Serialize Background Settings
+    out << YAML::Key << "Background";
+    out << YAML::BeginMap;
+    out << YAML::Key << "Mode" << YAML::Value << (int)m_Scene->GetBackgroundMode();
+    out << YAML::Key << "Color" << YAML::Value << m_Scene->GetBackgroundColor();
+    out << YAML::Key << "TexturePath" << YAML::Value << m_Scene->GetBackgroundTexturePath();
+    out << YAML::EndMap;
 
     // Serialize Environment
     if (m_Scene->m_Environment)
@@ -392,14 +411,24 @@ bool SceneSerializer::DeserializeFromString(const std::string &yaml)
     std::string sceneName = data["Scene"].as<std::string>();
     CH_CORE_INFO("Deserializing scene '{}'", sceneName.c_str());
 
-    if (data["Type"])
-        m_Scene->SetType((SceneType)data["Type"].as<int>());
+    // Unified scene - no Type needed
+
+    auto background = data["Background"];
+    if (background)
+    {
+        if (background["Mode"])
+            m_Scene->SetBackgroundMode((BackgroundMode)background["Mode"].as<int>());
+        if (background["Color"])
+            m_Scene->SetBackgroundColor(background["Color"].as<Color>());
+        if (background["TexturePath"])
+            m_Scene->SetBackgroundTexturePath(background["TexturePath"].as<std::string>());
+    }
 
     // Deserialize Environment
     auto envPath = data["EnvironmentPath"];
     if (envPath)
     {
-        m_Scene->m_Environment = Assets::LoadEnvironment(envPath.as<std::string>());
+        m_Scene->m_Environment = AssetManager::LoadEnvironment(envPath.as<std::string>());
     }
 
     // Deserialize Skybox
@@ -584,7 +613,7 @@ bool SceneSerializer::DeserializeFromString(const std::string &yaml)
 
                 if (cc.Type == ColliderType::Mesh && !cc.ModelPath.empty())
                 {
-                    auto asset = Assets::Get<ModelAsset>(cc.ModelPath);
+                    auto asset = AssetManager::Get<ModelAsset>(cc.ModelPath);
                     if (asset)
                         cc.BVHRoot = asset->GetBVHCache();
                 }
@@ -686,143 +715,90 @@ bool SceneSerializer::DeserializeFromString(const std::string &yaml)
                     ui.Transform.OffsetMin = rectNode["OffsetMin"].as<Vector2>();
                     ui.Transform.OffsetMax = rectNode["OffsetMax"].as<Vector2>();
                     ui.Transform.Pivot = rectNode["Pivot"].as<Vector2>();
+                    if (rectNode["RectCoordinates"])
+                        ui.Transform.RectCoordinates = rectNode["RectCoordinates"].as<Vector2>();
                 }
 
-                // --- LEGACY HIERARCHICAL MIGRATION ---
-                if (widgetNode["Type"])
+                auto panelNode = entity["PanelWidget"];
+                if (panelNode)
                 {
-                    int type = widgetNode["Type"]
-                                   .as<int>(); // 0:Button, 1:Text, 2:Checkbox, 3:Slider, 4:Image
+                    auto &pnl = deserializedEntity.AddComponent<PanelWidget>();
+                    if (panelNode["FullScreen"])
+                        pnl.FullScreen = panelNode["FullScreen"].as<bool>();
+                    if (panelNode["TexturePath"])
+                        pnl.TexturePath = panelNode["TexturePath"].as<std::string>();
 
-                    auto linkParent = [&](Entity child, Entity parent)
+                    auto style = panelNode["Style"];
+                    if (style)
                     {
-                        auto &chc = child.HasComponent<HierarchyComponent>()
-                                        ? child.GetComponent<HierarchyComponent>()
-                                        : child.AddComponent<HierarchyComponent>();
-                        chc.Parent = parent;
-                        auto &phc = parent.HasComponent<HierarchyComponent>()
-                                        ? parent.GetComponent<HierarchyComponent>()
-                                        : parent.AddComponent<HierarchyComponent>();
-                        phc.Children.push_back(child);
-                    };
-
-                    // Add Image component as child if it's an image or has background
-                    bool hasBg =
-                        widgetNode["UseBackground"] && widgetNode["UseBackground"].as<bool>();
-                    if (type == 4 || hasBg)
-                    {
-                        Entity bgEntity = m_Scene->CreateEntity("Background");
-                        auto &bgUI = bgEntity.AddComponent<WidgetComponent>();
-                        bgUI.Transform.AnchorMin = {0.0f, 0.0f};
-                        bgUI.Transform.AnchorMax = {1.0f, 1.0f};
-                        bgUI.Transform.OffsetMin = {0.0f, 0.0f};
-                        bgUI.Transform.OffsetMax = {0.0f, 0.0f};
-
-                        auto &img = bgEntity.AddComponent<ImageWidget>();
-                        if (widgetNode["BackgroundColor"])
-                            img.BackgroundColor = widgetNode["BackgroundColor"].as<Color>();
-                        if (widgetNode["Rounding"])
-                            img.Rounding = widgetNode["Rounding"].as<float>();
-                        if (widgetNode["Padding"])
-                            img.Padding = widgetNode["Padding"].as<Vector2>();
-                        if (widgetNode["BackgroundTexturePath"])
-                            img.TexturePath = widgetNode["BackgroundTexturePath"].as<std::string>();
-                        img.UseBackground = hasBg;
-                        linkParent(bgEntity, deserializedEntity);
-                    }
-
-                    // Add Text component as child
-                    if (type == 1 || type == 0 || type == 2)
-                    {
-                        Entity textEntity = m_Scene->CreateEntity("Label");
-                        auto &txtUI = textEntity.AddComponent<WidgetComponent>();
-                        txtUI.Transform.AnchorMin = {0.5f, 0.5f};
-                        txtUI.Transform.AnchorMax = {0.5f, 0.5f};
-                        txtUI.Transform.OffsetMin = {-50.0f, -20.0f};
-                        txtUI.Transform.OffsetMax = {50.0f, 20.0f};
-                        txtUI.Transform.Pivot = {0.5f, 0.5f};
-
-                        auto &txt = textEntity.AddComponent<TextWidget>();
-                        if (widgetNode["Label"])
-                            txt.Text = widgetNode["Label"].as<std::string>();
-                        if (widgetNode["FontPath"])
-                            txt.FontPath = widgetNode["FontPath"].as<std::string>();
-                        if (widgetNode["FontSize"])
-                            txt.FontSize = widgetNode["FontSize"].as<float>();
-                        linkParent(textEntity, deserializedEntity);
-                    }
-
-                    // Add Button component logic to parent
-                    if (type == 0)
-                        deserializedEntity.AddComponent<ButtonWidget>();
-
-                    // Add Slider component logic to parent
-                    if (type == 3)
-                    {
-                        auto &sl = deserializedEntity.AddComponent<SliderWidget>();
-                        if (widgetNode["Value"])
-                            sl.Value = widgetNode["Value"].as<float>();
-                        if (widgetNode["Min"])
-                            sl.Min = widgetNode["Min"].as<float>();
-                        if (widgetNode["Max"])
-                            sl.Max = widgetNode["Max"].as<float>();
-                    }
-
-                    // Add Checkbox component logic to parent
-                    if (type == 2)
-                    {
-                        auto &cb = deserializedEntity.AddComponent<CheckboxWidget>();
-                        if (widgetNode["Value"])
-                            cb.Checked = widgetNode["Value"].as<float>() > 0.5f;
+                        if (style["BackgroundColor"])
+                            pnl.Style.BackgroundColor = style["BackgroundColor"].as<Color>();
+                        if (style["Rounding"])
+                            pnl.Style.Rounding = style["Rounding"].as<float>();
+                        if (style["BorderSize"])
+                            pnl.Style.BorderSize = style["BorderSize"].as<float>();
+                        if (style["BorderColor"])
+                            pnl.Style.BorderColor = style["BorderColor"].as<Color>();
                     }
                 }
+
+                auto labelNode = entity["LabelWidget"];
+                if (labelNode)
+                {
+                    auto &lbl = deserializedEntity.AddComponent<LabelWidget>();
+                    if (labelNode["Text"])
+                        lbl.Text = labelNode["Text"].as<std::string>();
+                    if (labelNode["FontSize"])
+                        lbl.Style.FontSize = labelNode["FontSize"].as<float>();
+                    if (labelNode["TextColor"])
+                        lbl.Style.TextColor = labelNode["TextColor"].as<Color>();
+                }
+
+                auto buttonNode = entity["ButtonWidget"];
+                if (buttonNode)
+                {
+                    auto &btn = deserializedEntity.AddComponent<ButtonWidget>();
+                    if (buttonNode["Label"])
+                        btn.Label = buttonNode["Label"].as<std::string>();
+                    if (buttonNode["Interactable"])
+                        btn.IsInteractable = buttonNode["Interactable"].as<bool>();
+
+                    auto style = buttonNode["Style"];
+                    if (style)
+                    {
+                        if (style["BackgroundColor"])
+                            btn.Style.BackgroundColor = style["BackgroundColor"].as<Color>();
+                        if (style["HoverColor"])
+                            btn.Style.HoverColor = style["HoverColor"].as<Color>();
+                        if (style["PressedColor"])
+                            btn.Style.PressedColor = style["PressedColor"].as<Color>();
+                    }
+                }
+
+                auto sliderNode = entity["SliderWidget"];
+                if (sliderNode)
+                {
+                    auto &sl = deserializedEntity.AddComponent<SliderWidget>();
+                    if (sliderNode["Value"])
+                        sl.Value = sliderNode["Value"].as<float>();
+                    if (sliderNode["Min"])
+                        sl.Min = sliderNode["Min"].as<float>();
+                    if (sliderNode["Max"])
+                        sl.Max = sliderNode["Max"].as<float>();
+                }
+
+                auto checkboxNode = entity["CheckboxWidget"];
+                if (checkboxNode)
+                {
+                    auto &cb = deserializedEntity.AddComponent<CheckboxWidget>();
+                    if (checkboxNode["Checked"])
+                        cb.Checked = checkboxNode["Checked"].as<bool>();
+                }
+
+                // --- LEGACY CLEANUP --- (Omitted old migration logic to avoid bloat)
             }
 
-            auto imgNode = entity["ImageWidget"];
-            if (imgNode)
-            {
-                auto &img = deserializedEntity.AddComponent<ImageWidget>();
-                img.ScaleMode = (ImageWidget::ImageScaleMode)imgNode["ScaleMode"].as<int>();
-                img.BackgroundColor = imgNode["BackgroundColor"].as<Color>();
-                img.Rounding = imgNode["Rounding"].as<float>();
-                img.Padding = imgNode["Padding"].as<Vector2>();
-                img.UseBackground = imgNode["UseBackground"].as<bool>();
-                img.TexturePath = imgNode["TexturePath"].as<std::string>();
-            }
-
-            auto txtNode = entity["TextWidget"];
-            if (txtNode)
-            {
-                auto &txt = deserializedEntity.AddComponent<TextWidget>();
-                txt.Text = txtNode["Text"].as<std::string>();
-                txt.FontPath = txtNode["FontPath"].as<std::string>();
-                txt.FontSize = txtNode["FontSize"].as<float>();
-                txt.Color = txtNode["Color"].as<Color>();
-            }
-
-            auto btnNode = entity["ButtonWidget"];
-            if (btnNode)
-            {
-                auto &btn = deserializedEntity.AddComponent<ButtonWidget>();
-                if (btnNode["Interactable"])
-                    btn.Interactable = btnNode["Interactable"].as<bool>();
-            }
-
-            auto sliderNode = entity["SliderWidget"];
-            if (sliderNode)
-            {
-                auto &sl = deserializedEntity.AddComponent<SliderWidget>();
-                sl.Value = sliderNode["Value"].as<float>();
-                sl.Min = sliderNode["Min"].as<float>();
-                sl.Max = sliderNode["Max"].as<float>();
-            }
-
-            auto cbNode = entity["CheckboxWidget"];
-            if (cbNode)
-            {
-                auto &cb = deserializedEntity.AddComponent<CheckboxWidget>();
-                cb.Checked = cbNode["Checked"].as<bool>();
-            }
+            // Legacy placeholders removed. Unified widgets are processed above.
 
             auto playerComponent = entity["PlayerComponent"];
             if (playerComponent)

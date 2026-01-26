@@ -100,7 +100,7 @@ protected:
     {
         Entity e = m_Entity.GetScene()->FindEntityByTag(tagName);
         if (e && e.HasComponent<ButtonWidget>())
-            return e.GetComponent<ButtonWidget>().Pressed;
+            return e.GetComponent<ButtonWidget>().PressedThisFrame;
         return false;
     }
 

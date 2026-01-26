@@ -26,7 +26,7 @@ public:
     }
 
 private:
-    bool DrawEntityNode(Entity entity);
+    entt::entity DrawEntityNodeRecursive(Entity entity);
 
 private:
     Entity m_SelectionContext;

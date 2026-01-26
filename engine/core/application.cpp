@@ -59,10 +59,10 @@ bool Application::Initialize(const Config &config)
     m_Running = true;
 
     TaskSystem::Init();
-    Render::Init();
+    Visuals::Init();
     Physics::Init();
     Profiler::Init();
-    Assets::Init();
+    AssetManager::Init();
     InitAudioDevice();
     if (IsAudioDeviceReady())
         CH_CORE_INFO("Audio Device Initialized Successfully");
@@ -70,8 +70,6 @@ bool Application::Initialize(const Config &config)
         CH_CORE_ERROR("Failed to initialize Audio Device!");
 
     // ImGui is now initialized in Window constructor
-
-    RegisterGameScripts();
 
     CH_CORE_INFO("Application Initialized: {}", config.Title);
 
@@ -94,9 +92,9 @@ void Application::Shutdown()
     CH_CORE_INFO("Shutting down Engine...");
     CloseAudioDevice();
     // ImGui shutdown is handled in Window destructor
-    Assets::Shutdown();
+    AssetManager::Shutdown();
     Physics::Shutdown();
-    Render::Shutdown();
+    Visuals::Shutdown();
     TaskSystem::Shutdown();
 
     m_Window.reset();
@@ -141,8 +139,6 @@ void Application::EndFrame()
     CH_PROFILE_FUNCTION();
 
     // 1. Flush Raylib's internal drawing batch to the backbuffer
-    // We do this manually so we can draw ImGui on top BEFORE the swap buffers call inside
-    // EndDrawing()
     rlDrawRenderBatchActive();
 
     // 2. Render ImGui on top of the flushed Raylib content
@@ -160,7 +156,6 @@ void Application::EndFrame()
     }
 
     // 4. Finally call EndDrawing() which will perform the actual SwapBuffers()
-    // Since we already called rlglDraw(), this will just handle the swap and timing
     s_Instance->m_Window->EndFrame();
 
     // 5. Handle deferred scene change
@@ -179,9 +174,6 @@ bool Application::ShouldClose()
 
 void Application::OnEvent(Event &e)
 {
-    // Optional: too verbose?
-    // CH_CORE_TRACE("Event: %s", e.GetName());
-
     for (auto it = s_Instance->m_LayerStack.rbegin(); it != s_Instance->m_LayerStack.rend(); ++it)
     {
         if (e.Handled)
@@ -200,68 +192,75 @@ void Application::Run()
 {
     while (m_Running && !m_Window->ShouldClose())
     {
-        m_Window->PollEvents();
-
-        float time = (float)GetTime();
-        m_DeltaTime = time - m_LastFrameTime;
-        m_LastFrameTime = time;
-
-        Profiler::BeginFrame();
-        Assets::Update(); // Synchronize GPU resources
-        {
-            CH_PROFILE_SCOPE("MainThread_Frame");
-
-            if (!m_Minimized)
-            {
-                BeginFrame(); // Start ImGui frame before Update
-                OnUpdate(m_DeltaTime);
-                OnRender();
-                EndFrame();
-            }
-        }
-        Profiler::EndFrame();
+        ProcessEvents();
+        Simulate();
+        Animate();
+        Render();
     }
 }
 
-void Application::OnUpdate(float deltaTime)
+void Application::ProcessEvents()
 {
-    CH_PROFILE_FUNCTION();
+    m_Window->PollEvents();
+    float time = (float)GetTime();
+    m_DeltaTime = time - m_LastFrameTime;
+    m_LastFrameTime = time;
+}
 
+void Application::Simulate()
+{
+    Profiler::BeginFrame();
+    AssetManager::Update(); // Synchronize GPU resources
+    {
+        CH_PROFILE_SCOPE("MainThread_Frame");
+        if (!m_Minimized)
+        {
+            if (m_ActiveScene)
+            {
+                bool isSim = m_ActiveScene->IsSimulationRunning();
+                Physics::Update(m_ActiveScene.get(), m_DeltaTime, isSim);
+                if (isSim)
+                    m_ActiveScene->OnUpdateRuntime(m_DeltaTime);
+            }
+
+            for (auto layer : m_LayerStack)
+                if (layer->IsEnabled())
+                    layer->OnUpdate(m_DeltaTime);
+        }
+    }
+}
+
+void Application::Animate()
+{
+    // Animations are currently handled in Scene::OnUpdateRuntime
+}
+
+void Application::Render()
+{
+    if (m_Minimized)
+        return;
+
+    BeginFrame();
+
+    // 1. Scene Rendering
     if (m_ActiveScene)
     {
-        bool isSim = m_ActiveScene->IsSimulationRunning();
-        Physics::Update(m_ActiveScene.get(), deltaTime, isSim);
-
-        if (isSim)
-            m_ActiveScene->OnUpdateRuntime(deltaTime);
+        // This is where high-level orchestration happens
+        // Layers could have their own viewport drawing logic
     }
 
+    // 2. Layer Rendering
     for (auto layer : m_LayerStack)
-    {
-        if (layer->IsEnabled())
-            layer->OnUpdate(deltaTime);
-    }
-}
-
-void Application::OnRender()
-{
-    CH_PROFILE_FUNCTION();
-    // BeginFrame() and EndFrame() moved to Run() to encapsulate Update
-
-    // Render logic moved to layers and scene directly in orchestrated frame
-
-    // Layers still need to render (mostly ImGui)
-    for (auto layer : m_LayerStack)
-    {
         if (layer->IsEnabled())
             layer->OnRender();
-    }
 
+    // 3. ImGui Rendering
     for (auto layer : m_LayerStack)
-    {
         if (layer->IsEnabled())
             layer->OnImGuiRender();
-    }
+
+    EndFrame();
+    Profiler::EndFrame();
 }
 
 bool Application::IsRunning()
