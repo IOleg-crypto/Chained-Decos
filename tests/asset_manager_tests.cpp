@@ -1,5 +1,5 @@
 #include "engine/core/base.h"
-#include "engine/renderer/asset_manager.h"
+#include "engine/render/asset_manager.h"
 #include <gtest/gtest.h>
 
 using namespace CHEngine;

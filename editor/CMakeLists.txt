@@ -1,60 +1,62 @@
-set(EDITOR_SOURCES
-    editor.h
-    editor.cpp
-    editor_main.cpp
-    editor_layer.h
-    editor_layer.cpp
-    editor_layer_events.cpp
-    editor_utils.h
-    editor_utils.cpp
-    editor_settings.cpp
+# Define the Editor executable
+add_executable(ChainedEditor)
+
+# Main Editor Sources
+target_sources(ChainedEditor PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_layer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_layer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_layer_events.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_utils.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_utils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_settings.cpp
 
     # Viewport
-    viewport/editor_gizmo.h
-    viewport/editor_gizmo.cpp
-    viewport/editor_camera.h
-    viewport/editor_camera.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/viewport/editor_gizmo.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/viewport/editor_gizmo.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/viewport/editor_camera.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/viewport/editor_camera.cpp
 
     # Panels
-    panels/scene_hierarchy_panel.h
-    panels/scene_hierarchy_panel.cpp
-    panels/inspector_panel.h
-    panels/inspector_panel.cpp
-    panels/component_ui.h
-    panels/component_ui.cpp
-    panels/content_browser_panel.h
-    panels/content_browser_panel.cpp
-    panels/console_panel.h
-    panels/console_panel.cpp
-    panels/profiler_panel.h
-    panels/profiler_panel.cpp
-    panels/viewport_panel.h
-    panels/viewport_panel.cpp
-    panels/project_browser_panel.cpp
-    panels/project_settings_panel.h
-    panels/project_settings_panel.cpp
-    panels/environment_panel.h
-    panels/environment_panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/scene_hierarchy_panel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/scene_hierarchy_panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/inspector_panel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/inspector_panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/component_ui.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/component_ui.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/content_browser_panel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/content_browser_panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/console_panel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/console_panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/profiler_panel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/profiler_panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/viewport_panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/project_browser_panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/project_settings_panel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/project_settings_panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/environment_panel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/environment_panel.cpp
 
     # Undo
-    undo/command_history.h
-    undo/command_history.cpp
-    undo/editor_command.h
-    undo/transform_command.h
-    undo/entity_commands.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/undo/command_history.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/undo/command_history.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/undo/editor_command.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/undo/transform_command.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/undo/entity_commands.h
 
     # UI
-    ui/toolbar.h
-    ui/toolbar.cpp
-    ui/project_selector.h
-    ui/project_selector.cpp
-    ui/menu_bar.h
-    ui/menu_bar.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/toolbar.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/toolbar.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/project_selector.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/project_selector.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/menu_bar.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/menu_bar.cpp
 )
 
-add_executable(ChainedEditor ${EDITOR_SOURCES})
-
 target_link_libraries(ChainedEditor PUBLIC engine ChainedDecosGame nfd)
+apply_engine_optimizations(ChainedEditor)
 target_include_directories(ChainedEditor PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}

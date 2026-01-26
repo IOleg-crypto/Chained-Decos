@@ -4,7 +4,7 @@
 #include "engine/core/application.h"
 #include "engine/core/base.h"
 #include "engine/core/layer.h"
-#include "engine/renderer/render.h"
+#include "engine/render/render.h"
 #include "engine/scene/scene.h"
 #include "panels/console_panel.h"
 #include "panels/content_browser_panel.h"
@@ -21,7 +21,6 @@
 #include <filesystem>
 #include <imgui.h>
 #include <raylib.h>
-
 
 namespace CHEngine
 {
@@ -100,6 +99,10 @@ public:
     {
         return m_FullscreenGame;
     }
+    bool IsStandaloneActive() const
+    {
+        return m_StandaloneActive;
+    }
 
 private:
     std::vector<std::shared_ptr<Panel>> m_Panels;
@@ -107,6 +110,7 @@ private:
     Entity m_SelectedEntity;
     SceneState m_SceneState = SceneState::Edit;
     bool m_FullscreenGame = false;
+    bool m_StandaloneActive = false;
     int m_LastHitMeshIndex = -1;
     std::shared_ptr<Scene> m_EditorScene;
 

@@ -39,12 +39,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-22.04
+          - os: ubuntu-latest
             name: linux
             extension: ""
-            generator: "Unix Makefiles"
+            generator: "Ninja"
 
-          - os: windows-2022
+          - os: windows-latest
             name: windows
             extension: ".exe"
             generator: "Ninja"
@@ -93,7 +93,7 @@ jobs:
 
       # Linux setup
       - name: Install dependencies (Ubuntu)
-        if: matrix.os == 'ubuntu-22.04'
+        if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential cmake ninja-build \
@@ -140,14 +140,14 @@ jobs:
       - name: Configure CMake for release
         shell: bash
         run: |
-          echo "🔧 Configuring CMake for release build on ${{ matrix.os }}"
+          echo "Configuring CMake for release build on ${{ matrix.os }}"
           if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
             GENERATOR="Ninja"
           else
-            GENERATOR="Unix Makefiles"
+            GENERATOR="Ninja"
           fi
           cmake -B "${{ steps.build-env.outputs.build-output-dir }}" \
-            -G "$GENERATOR" \
+            -G Ninja \
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
@@ -177,7 +177,7 @@ jobs:
             --parallel "$PARALLEL_JOBS"
 
       - name: Run Tests (Linux)
-        if: matrix.os == 'ubuntu-22.04'
+        if: matrix.os == 'ubuntu-latest'
         run: |
           xvfb-run ./build/tests/EngineTests
 

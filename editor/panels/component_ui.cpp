@@ -1,12 +1,13 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "component_ui.h"
 #include "editor_layer.h"
-#include "engine/renderer/asset_manager.h"
-#include "engine/renderer/render_types.h"
-#include "engine/renderer/texture_asset.h"
+#include "engine/render/asset_manager.h"
+#include "engine/render/render_types.h"
+#include "engine/render/texture_asset.h"
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
 #include "engine/scene/script_registry.h"
+#include "engine/ui/font_manager.h"
 #include "engine/ui/imgui_raylib_ui.h"
 #include "nfd.hpp"
 #include "undo/transform_command.h"
@@ -16,7 +17,6 @@
 #include <raymath.h>
 #include <set>
 #include <unordered_map>
-
 
 namespace CHEngine
 {
@@ -634,11 +634,18 @@ void ComponentUI::DrawTextStyle(TextStyle &style)
 {
     if (ImGui::TreeNode("Text Style"))
     {
-        BeginProperties();
-
-        Property("Font Path", style.FontPath);
+        ImGui::Text("Font Path");
+        ImGui::NextColumn();
+        ImGui::PushID("FontPathRow");
+        char buffer[256];
+        memset(buffer, 0, sizeof(buffer));
+        strncpy(buffer, style.FontPath.c_str(), sizeof(buffer) - 1);
+        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 35);
+        if (ImGui::InputText("##path", buffer, sizeof(buffer)))
+            style.FontPath = buffer;
+        ImGui::PopItemWidth();
         ImGui::SameLine();
-        if (ImGui::Button("...##font"))
+        if (ImGui::Button("...##font", ImVec2(30, 0)))
         {
             NFD::UniquePath outPath;
             nfdfilteritem_t filterList[1] = {{"Fonts", "ttf,otf"}};
@@ -648,6 +655,8 @@ void ComponentUI::DrawTextStyle(TextStyle &style)
                 style.FontPath = outPath.get();
             }
         }
+        ImGui::PopID();
+        ImGui::NextColumn();
 
         Property("Font Size", style.FontSize, 0.1f, 1.0f, 150.0f);
         PropertyColor("Text Color", style.TextColor);
@@ -656,10 +665,11 @@ void ComponentUI::DrawTextStyle(TextStyle &style)
 
         if (ImGui::Button("Apply Font Settings"))
         {
-            // Note: In a real engine, font loading should be handled by AssetManager
-            // and atlas should be rebuilt only when needed.
-            // For now, this is a placeholder for actual font registration.
-            CH_CORE_INFO("Applying font: {}", style.FontPath);
+            if (!style.FontPath.empty())
+            {
+                FontManager::LoadFont(style.FontPath, style.FontSize);
+            }
+            CH_CORE_INFO("Applying font: {} size {}", style.FontPath, style.FontSize);
         }
 
         ImGui::TreePop();

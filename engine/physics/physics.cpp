@@ -1,12 +1,11 @@
 #include "physics.h"
 #include "dynamics.h"
 #include "engine/core/profiler.h"
-#include "engine/renderer/asset_manager.h"
+#include "engine/render/asset_manager.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
 #include "narrow_phase.h"
 #include "scene_trace.h"
-
 
 namespace CHEngine
 {

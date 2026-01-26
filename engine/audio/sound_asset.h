@@ -1,6 +1,7 @@
-#pragma once
+#ifndef CH_SOUND_ASSET_H
+#define CH_SOUND_ASSET_H
 #include "engine/core/base.h"
-#include "engine/renderer/asset.h"
+#include "engine/render/asset.h"
 #include <raylib.h>
 #include <string>
 
@@ -32,3 +33,4 @@ private:
     Sound m_Sound;
 };
 } // namespace CHEngine
+#endif // CH_SOUND_ASSET_H

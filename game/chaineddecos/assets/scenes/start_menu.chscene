@@ -26,7 +26,7 @@ Entities:
         OffsetMin: [-80, -25]
         OffsetMax: [80, 25]
         Pivot: [0.5, 0.5]
-        RectCoordinates: [67, 89]
+        RectCoordinates: [65, 46]
     ButtonWidget:
       Label: Info
       Interactable: true
@@ -50,7 +50,7 @@ Entities:
         OffsetMin: [-50, -20]
         OffsetMax: [50, 20]
         Pivot: [0.5, 0.5]
-        RectCoordinates: [-134, 292]
+        RectCoordinates: [-119, 302]
     LabelWidget:
       Text: Some functionality or aspects can be changed in final version.
       FontSize: 22
@@ -83,6 +83,9 @@ Entities:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
+    NativeScriptComponent:
+      Scripts:
+        - ExitScript
     WidgetComponent:
       IsActive: true
       HiddenInHierarchy: false
@@ -92,7 +95,7 @@ Entities:
         OffsetMin: [-80, -25]
         OffsetMax: [80, 25]
         Pivot: [0.5, 0.5]
-        RectCoordinates: [67, 159]
+        RectCoordinates: [65, 115]
     ButtonWidget:
       Label: Exit
       Interactable: true
@@ -116,11 +119,11 @@ Entities:
         OffsetMin: [-50, -20]
         OffsetMax: [50, 20]
         Pivot: [0.5, 0.5]
-        RectCoordinates: [2, 0]
+        RectCoordinates: [-310, 6]
     LabelWidget:
       Text: Chained Decos
-      FontSize: 22
-      TextColor: [189, 175, 175, 255]
+      FontSize: 36.5999985
+      TextColor: [189, 206, 175, 255]
   - Entity: 13765047633248252361
     TagComponent:
       Tag: start_game_menu_options
@@ -137,7 +140,7 @@ Entities:
         OffsetMin: [-80, -34]
         OffsetMax: [87, 21]
         Pivot: [0.0900000036, 0]
-        RectCoordinates: [4, 1]
+        RectCoordinates: [3, -28]
     ButtonWidget:
       Label: Options
       Interactable: true
@@ -161,7 +164,7 @@ Entities:
         OffsetMin: [-80, -15]
         OffsetMax: [56, 25]
         Pivot: [0.140000001, 1]
-        RectCoordinates: [14, -46]
+        RectCoordinates: [13, -64]
     ButtonWidget:
       Label: Start
       Interactable: true

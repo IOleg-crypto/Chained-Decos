@@ -1,7 +1,7 @@
 #include "environment.h"
 #include "asset_manager.h"
 #include "engine/core/log.h"
-#include "engine/scene/yaml_utils.h"
+#include "engine/core/yaml_utils.h"
 #include <fstream>
 #include <yaml-cpp/yaml.h>
 

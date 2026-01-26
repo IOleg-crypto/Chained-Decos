@@ -1,7 +1,8 @@
 #include "runtime_application.h"
 #include "engine/core/input.h"
 #include "engine/core/log.h"
-#include "engine/renderer/render.h"
+#include "engine/render/asset_manager.h"
+#include "engine/render/render.h"
 #include "engine/scene/project.h"
 #include "engine/scene/project_serializer.h"
 #include "engine/scene/scene_serializer.h"
@@ -66,6 +67,42 @@ public:
             camera.projection = CAMERA_PERSPECTIVE;
         }
 
+        // 1. Clear Background based on scene settings
+        auto mode = scene->GetBackgroundMode();
+        if (mode == BackgroundMode::Color)
+        {
+            ClearBackground(scene->GetBackgroundColor());
+        }
+        else if (mode == BackgroundMode::Texture)
+        {
+            auto path = scene->GetBackgroundTexturePath();
+            if (!path.empty())
+            {
+                auto tex = AssetManager::Get<TextureAsset>(path);
+                if (tex && tex->IsReady())
+                {
+                    DrawTexturePro(
+                        tex->GetTexture(),
+                        {0, 0, (float)tex->GetTexture().width, (float)tex->GetTexture().height},
+                        {0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()}, {0, 0}, 0.0f,
+                        WHITE);
+                }
+                else
+                {
+                    ClearBackground(scene->GetBackgroundColor());
+                }
+            }
+            else
+            {
+                ClearBackground(scene->GetBackgroundColor());
+            }
+        }
+        else // Environment3D
+        {
+            // Skybox handles background in DrawScene usually
+            ClearBackground(BLACK);
+        }
+
         Visuals::BeginScene(camera);
         scene->OnRender(camera);
         Visuals::EndScene();
@@ -75,7 +112,28 @@ public:
     {
         auto scene = Application::Get().GetActiveScene();
         if (scene)
-            scene->OnImGuiRender();
+        {
+            // Setup a fullscreen transparent window for the game UI
+            ImGuiViewport *viewport = ImGui::GetMainViewport();
+            ImGui::SetNextWindowPos(viewport->WorkPos);
+            ImGui::SetNextWindowSize(viewport->WorkSize);
+            ImGui::SetNextWindowViewport(viewport->ID);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+
+            ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoNav |
+                                            ImGuiWindowFlags_NoBringToFrontOnFocus |
+                                            ImGuiWindowFlags_NoBackground;
+
+            ImGui::Begin("##GameUI", nullptr, window_flags);
+            // Explicitly pass full screen size to ensure UI anchors work correctly
+            scene->OnImGuiRender(ImGui::GetWindowPos(), ImGui::GetWindowSize(),
+                                 ImGui::GetWindowViewport()->ID, false);
+            ImGui::End();
+
+            ImGui::PopStyleVar(3);
+        }
     }
 };
 
@@ -88,6 +146,13 @@ RuntimeApplication::RuntimeApplication(const Application::Config &config,
 
 void RuntimeApplication::PostInitialize()
 {
+    if (!GetStartupScene().empty())
+    {
+        CH_CORE_INFO("Runtime: Using programmatically set startup scene: {}", GetStartupScene());
+        LoadScene(GetStartupScene());
+        return;
+    }
+
     if (!m_ProjectPath.empty())
     {
         std::filesystem::path absolutePath = std::filesystem::absolute(m_ProjectPath);

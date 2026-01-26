@@ -3,7 +3,7 @@
 
 #include "components.h"
 #include "engine/core/base.h"
-#include "engine/renderer/environment.h"
+#include "engine/render/environment.h"
 #include "entity.h"
 #include <entt/entt.hpp>
 #include <imgui.h>
@@ -79,6 +79,15 @@ public:
     void RequestSceneChange(const std::string &path);
     void UpdateProfilerStats();
 
+    const std::string &GetScenePath() const
+    {
+        return m_ScenePath;
+    }
+    void SetScenePath(const std::string &path)
+    {
+        m_ScenePath = path;
+    }
+
     // Entt-compatible wrappers
     void OnModelComponentAdded(entt::registry &reg, entt::entity entity);
     void OnAnimationComponentAdded(entt::registry &reg, entt::entity entity);
@@ -133,6 +142,7 @@ private:
     BackgroundMode m_BackgroundMode = BackgroundMode::Environment3D;
     Color m_BackgroundColor = {245, 245, 245, 255};
     std::string m_BackgroundTexturePath = "";
+    std::string m_ScenePath = "";
 
     bool m_IsSimulationRunning = false;
 

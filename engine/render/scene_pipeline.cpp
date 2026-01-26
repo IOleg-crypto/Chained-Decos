@@ -30,7 +30,7 @@ static void RenderOpaque(entt::registry &registry)
         auto &transform = meshView.get<TransformComponent>(entity);
         auto &model = meshView.get<ModelComponent>(entity);
 
-        if (model.Asset && model.Asset->IsReady())
+        if (!model.ModelPath.empty() && model.Asset && model.Asset->IsReady())
         {
             DrawCommand::DrawModel(model.ModelPath, transform.GetTransform(), model.Materials);
         }
