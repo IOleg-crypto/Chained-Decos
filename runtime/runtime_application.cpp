@@ -66,9 +66,9 @@ public:
             camera.projection = CAMERA_PERSPECTIVE;
         }
 
-        Render::BeginScene(camera);
+        Visuals::BeginScene(camera);
         scene->OnRender(camera);
-        Render::EndScene();
+        Visuals::EndScene();
     }
 
     virtual void OnImGuiRender() override
@@ -93,7 +93,7 @@ void RuntimeApplication::PostInitialize()
         std::filesystem::path absolutePath = std::filesystem::absolute(m_ProjectPath);
         if (std::filesystem::exists(absolutePath))
         {
-            Ref<Project> project = CreateRef<Project>();
+            std::shared_ptr<Project> project = std::make_shared<Project>();
             ProjectSerializer serializer(project);
             if (serializer.Deserialize(absolutePath))
             {
@@ -131,7 +131,7 @@ void RuntimeApplication::PostInitialize()
     else
     {
         // Try fallback to project.chproj in CWD
-        if (std::filesystem::exists("project.chproj"))
+        if (std::filesystem::exists("project.chproject"))
         {
             LoadScene("assets/scenes/default.chscene"); // Placeholder
         }

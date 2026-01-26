@@ -23,7 +23,7 @@ public:
 class SceneUtils
 {
 public:
-    static void NewScene(SceneType type = SceneType::Scene3D);
+    static void NewScene();
     static void OpenScene();
     static void OpenScene(const std::filesystem::path &path);
     static void SaveScene();
@@ -35,8 +35,8 @@ class WidgetFactory
 {
 public:
     static Entity CreateButton(Scene *scene, const std::string &label = "Button");
-    static Entity CreateText(Scene *scene, const std::string &text = "Text");
-    static Entity CreateImage(Scene *scene, const std::string &name = "Image");
+    static Entity CreateLabel(Scene *scene, const std::string &text = "Text Label");
+    static Entity CreatePanel(Scene *scene, const std::string &name = "Panel");
     static Entity CreateSlider(Scene *scene, const std::string &label = "Slider");
     static Entity CreateCheckbox(Scene *scene, const std::string &label = "Checkbox");
 };

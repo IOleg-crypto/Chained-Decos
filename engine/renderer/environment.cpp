@@ -25,7 +25,7 @@ std::shared_ptr<EnvironmentAsset> EnvironmentAsset::Load(const std::string &path
 
 bool EnvironmentAsset::Deserialize(const std::string &path)
 {
-    auto fullPath = Assets::ResolvePath(path);
+    auto fullPath = AssetManager::ResolvePath(path);
     std::ifstream stream(fullPath);
     if (!stream.is_open())
     {
@@ -85,7 +85,7 @@ bool EnvironmentAsset::Save(const std::string &path)
     out << YAML::EndMap;
     out << YAML::EndMap;
 
-    auto fullPath = Assets::ResolvePath(path);
+    auto fullPath = AssetManager::ResolvePath(path);
     std::filesystem::create_directories(fullPath.parent_path());
     std::ofstream fout(fullPath);
     if (fout.is_open())

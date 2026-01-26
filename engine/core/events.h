@@ -33,7 +33,8 @@ enum class EventType
     SceneStop,
     AppLaunchRuntime,
     AppResetLayout,
-    EntitySelected
+    EntitySelected,
+    ButtonPressed
 };
 
 enum EventCategory
@@ -43,7 +44,8 @@ enum EventCategory
     EventCategoryInput = 1 << 1,
     EventCategoryKeyboard = 1 << 2,
     EventCategoryMouse = 1 << 3,
-    EventCategoryMouseButton = 1 << 4
+    EventCategoryMouseButton = 1 << 4,
+    EventCategoryButton = 1 << 5
 };
 
 #define EVENT_CLASS_TYPE(type)                                                                     \

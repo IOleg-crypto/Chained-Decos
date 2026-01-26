@@ -1,4 +1,5 @@
 #include "CameraController.h"
+#include "ExitScript.h"
 #include "PlayerController.h"
 #include "SpawnZone.h"
 #include "UIExample.h"
@@ -12,5 +13,6 @@ void RegisterGameScripts()
     ScriptRegistry::Register<CameraController>("CameraController");
     ScriptRegistry::Register<GameHUD>("GameHUD");
     ScriptRegistry::Register<SpawnZoneRespawn>("SpawnZoneRespawn");
+    ScriptRegistry::Register<ExitScript>("ExitScript");
 }
 } // namespace CHEngine

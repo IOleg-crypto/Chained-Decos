@@ -31,7 +31,7 @@ TEST(PhysicsTest, AABBIntersection)
 
 TEST(PhysicsTest, Raycast)
 {
-    auto scene = CreateRef<Scene>();
+    auto scene = std::make_shared<Scene>();
     auto entity = scene->CreateEntity("Test Entity");
     auto &transform = entity.GetComponent<TransformComponent>();
     transform.Translation = {0.0f, 0.0f, 5.0f};

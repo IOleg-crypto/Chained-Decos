@@ -8,37 +8,19 @@
 #include "engine/scene/project.h"
 #include "engine/scene/script_registry.h"
 #include "engine/ui/imgui_raylib_ui.h"
+#include "nfd.hpp"
 #include "undo/transform_command.h"
 #include <filesystem>
 #include <imgui.h>
 #include <imgui_internal.h>
-#include <nfd.h>
 #include <raymath.h>
 #include <set>
 #include <unordered_map>
 
+
 namespace CHEngine
 {
 std::unordered_map<entt::id_type, std::function<void(Entity)>> ComponentUI::s_DrawerRegistry;
-
-// Forward declarations of drawer functions
-static void DrawTransform(Entity entity);
-static void DrawModel(Entity entity);
-static void DrawCollider(Entity entity);
-static void DrawRigidBody(Entity entity);
-static void DrawSpawn(Entity entity);
-static void DrawPlayer(Entity entity);
-static void DrawPointLight(Entity entity);
-static void DrawAudio(Entity entity);
-static void DrawHierarchy(Entity entity);
-static void DrawNativeScript(Entity entity);
-static void DrawAnimation(Entity entity);
-static void DrawWidget(Entity entity);
-static void DrawImageWidget(Entity entity);
-static void DrawTextWidget(Entity entity);
-static void DrawButtonWidget(Entity entity);
-static void DrawSliderWidget(Entity entity);
-static void DrawCheckboxWidget(Entity entity);
 
 void ComponentUI::RegisterDrawer(entt::id_type typeId, std::function<void(Entity)> drawer)
 {
@@ -47,49 +29,19 @@ void ComponentUI::RegisterDrawer(entt::id_type typeId, std::function<void(Entity
 
 void ComponentUI::DrawEntityComponents(Entity entity)
 {
-    if (!entity)
+    if (!entity || !entity.IsValid())
         return;
 
     auto &registry = entity.GetScene()->GetRegistry();
-    SceneType sceneType = entity.GetScene()->GetType();
-
-    bool isUIEntity = entity.HasComponent<WidgetComponent>() &&
-                      (entity.GetComponent<WidgetComponent>().HiddenInHierarchy ||
-                       sceneType == SceneType::SceneUI);
 
     for (auto [typeId, storage] : registry.storage())
     {
+        // Safety check: entity might have been destroyed by a previous drawer in the loop
+        if (!entity.IsValid())
+            break;
+
         if (storage.contains((entt::entity)entity))
         {
-            // Filter components based on context
-            if (sceneType == SceneType::SceneUI)
-            {
-                // In UI scenes, we ONLY show ID, Tag, and WidgetComponent
-                if (typeId != entt::type_hash<IDComponent>::value() &&
-                    typeId != entt::type_hash<TagComponent>::value() &&
-                    typeId != entt::type_hash<WidgetComponent>::value() &&
-                    typeId != entt::type_hash<ImageWidget>::value() &&
-                    typeId != entt::type_hash<TextWidget>::value() &&
-                    typeId != entt::type_hash<ButtonWidget>::value() &&
-                    typeId != entt::type_hash<SliderWidget>::value() &&
-                    typeId != entt::type_hash<CheckboxWidget>::value() &&
-                    typeId != entt::type_hash<NativeScriptComponent>::value())
-                {
-                    continue;
-                }
-            }
-            else if (isUIEntity)
-            {
-                // If it's a "UI element" in a 3D scene, hide 3D bits to keep it clean
-                if (typeId == entt::type_hash<TransformComponent>::value() ||
-                    typeId == entt::type_hash<ModelComponent>::value() ||
-                    typeId == entt::type_hash<RigidBodyComponent>::value() ||
-                    typeId == entt::type_hash<ColliderComponent>::value())
-                {
-                    continue;
-                }
-            }
-
             if (s_DrawerRegistry.count(typeId))
             {
                 s_DrawerRegistry[typeId](entity);
@@ -112,8 +64,8 @@ void ComponentUI::Init()
     Register<NativeScriptComponent>([](Entity e) { DrawNativeScript(e); });
     Register<AnimationComponent>([](Entity e) { DrawAnimation(e); });
     Register<WidgetComponent>([](Entity e) { DrawWidget(e); });
-    Register<ImageWidget>([](Entity e) { DrawImageWidget(e); });
-    Register<TextWidget>([](Entity e) { DrawTextWidget(e); });
+    Register<PanelWidget>([](Entity e) { DrawImageWidget(e); });
+    Register<LabelWidget>([](Entity e) { DrawTextWidget(e); });
     Register<ButtonWidget>([](Entity e) { DrawButtonWidget(e); });
     Register<SliderWidget>([](Entity e) { DrawSliderWidget(e); });
     Register<CheckboxWidget>([](Entity e) { DrawCheckboxWidget(e); });
@@ -463,7 +415,8 @@ void ComponentUI::DrawModel(Entity entity)
                             // Texture Preview
                             if (!material.AlbedoPath.empty())
                             {
-                                auto texAsset = Assets::Get<TextureAsset>(material.AlbedoPath);
+                                auto texAsset =
+                                    AssetManager::Get<TextureAsset>(material.AlbedoPath);
                                 if (texAsset)
                                 {
                                     ImGui::Text("Preview:");
@@ -677,7 +630,66 @@ void ComponentUI::DrawAnimation(Entity entity)
         });
 }
 
-static void DrawWidget(Entity entity)
+void ComponentUI::DrawTextStyle(TextStyle &style)
+{
+    if (ImGui::TreeNode("Text Style"))
+    {
+        BeginProperties();
+
+        Property("Font Path", style.FontPath);
+        ImGui::SameLine();
+        if (ImGui::Button("...##font"))
+        {
+            NFD::UniquePath outPath;
+            nfdfilteritem_t filterList[1] = {{"Fonts", "ttf,otf"}};
+            auto result = NFD::OpenDialog(outPath, filterList, 1);
+            if (result == NFD_OKAY)
+            {
+                style.FontPath = outPath.get();
+            }
+        }
+
+        Property("Font Size", style.FontSize, 0.1f, 1.0f, 150.0f);
+        PropertyColor("Text Color", style.TextColor);
+        Property("Shadow", style.bShadow);
+        EndProperties();
+
+        if (ImGui::Button("Apply Font Settings"))
+        {
+            // Note: In a real engine, font loading should be handled by AssetManager
+            // and atlas should be rebuilt only when needed.
+            // For now, this is a placeholder for actual font registration.
+            CH_CORE_INFO("Applying font: {}", style.FontPath);
+        }
+
+        ImGui::TreePop();
+    }
+}
+
+void ComponentUI::DrawUIStyle(UIStyle &style)
+{
+    if (ImGui::TreeNode("Visual Style"))
+    {
+        BeginProperties();
+        PropertyColor("Background", style.BackgroundColor);
+        PropertyColor("Hover", style.HoverColor);
+        PropertyColor("Pressed", style.PressedColor);
+        Property("Rounding", style.Rounding, 0.1f, 0.0f, 50.0f);
+
+        ImGui::Separator();
+        Property("Border Size", style.BorderSize, 0.1f, 0.0f, 10.0f);
+        PropertyColor("Border Color", style.BorderColor);
+
+        ImGui::Separator();
+        Property("Use Gradient", style.bUseGradient);
+        PropertyColor("Grad Color", style.GradientColor);
+
+        EndProperties();
+        ImGui::TreePop();
+    }
+}
+
+void ComponentUI::DrawWidget(Entity entity)
 {
     DrawComponent<WidgetComponent>(
         "Widget Component", entity,
@@ -693,6 +705,13 @@ static void DrawWidget(Entity entity)
                 ImGui::DragFloat2("Min##anchors", &ui.Transform.AnchorMin.x, 0.01f, 0.0f, 1.0f);
                 ImGui::SameLine();
                 ImGui::DragFloat2("Max##anchors", &ui.Transform.AnchorMax.x, 0.01f, 0.0f, 1.0f);
+                ImGui::PopItemWidth();
+                ImGui::NextColumn();
+
+                ImGui::Text("Position (Shift)");
+                ImGui::NextColumn();
+                ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.95f);
+                ImGui::DragFloat2("##coordinates", &ui.Transform.RectCoordinates.x, 1.0f);
                 ImGui::PopItemWidth();
                 ImGui::NextColumn();
 
@@ -720,63 +739,54 @@ static void DrawWidget(Entity entity)
         });
 }
 
-static void DrawImageWidget(Entity entity)
+void ComponentUI::DrawImageWidget(Entity entity)
 {
-    DrawComponent<ImageWidget>("Image Widget", entity,
+    DrawComponent<PanelWidget>("Panel Widget", entity,
                                [](auto &ui)
                                {
-                                   const char *scaleModes[] = {"Stretch", "Fit", "Fill"};
-                                   int currentScale = (int)ui.ScaleMode;
-                                   BeginProperties(120.0f);
-                                   if (ImGui::Combo("Scale Mode", &currentScale, scaleModes, 3))
-                                       ui.ScaleMode = (ImageWidget::ImageScaleMode)currentScale;
-
-                                   PropertyColor("Color", ui.BackgroundColor);
-                                   Property("Rounding", ui.Rounding, 0.1f, 0.0f, 20.0f);
-                                   Property("Use Background", ui.UseBackground);
-
-                                   ImGui::Text("Texture");
-                                   ImGui::NextColumn();
-                                   char texBuf[256];
-                                   memset(texBuf, 0, sizeof(texBuf));
-                                   strncpy(texBuf, ui.TexturePath.c_str(), sizeof(texBuf) - 1);
-                                   if (ImGui::InputText("##tex", texBuf, sizeof(texBuf)))
-                                       ui.TexturePath = texBuf;
-                                   ImGui::NextColumn();
-
+                                   BeginProperties();
+                                   Property("Full Screen", ui.FullScreen);
+                                   Property("Texture Path", ui.TexturePath);
                                    EndProperties();
+
+                                   DrawUIStyle(ui.Style);
                                });
 }
 
-static void DrawTextWidget(Entity entity)
+void ComponentUI::DrawTextWidget(Entity entity)
 {
-    DrawComponent<TextWidget>("Text Widget", entity,
-                              [](auto &ui)
-                              {
-                                  BeginProperties(120.0f);
-                                  Property("Text", ui.Text);
-                                  PropertyColor("Color", ui.Color);
-                                  Property("Font Size", ui.FontSize, 0.1f, 1.0f, 100.0f);
-                                  EndProperties();
-                              });
+    DrawComponent<LabelWidget>("Label Widget", entity,
+                               [](auto &ui)
+                               {
+                                   BeginProperties();
+                                   Property("Text", ui.Text);
+                                   EndProperties();
+
+                                   DrawTextStyle(ui.Style);
+                               });
 }
 
-static void DrawButtonWidget(Entity entity)
+void ComponentUI::DrawButtonWidget(Entity entity)
 {
-    DrawComponent<ButtonWidget>("Button Widget", entity,
-                                [](auto &btn)
-                                {
-                                    BeginProperties(120.0f);
-                                    Property("Interactable", btn.Interactable);
-                                    ImGui::Text("Pressed");
-                                    ImGui::NextColumn();
-                                    ImGui::Text(btn.Pressed ? "Yes" : "No");
-                                    ImGui::NextColumn();
-                                    EndProperties();
-                                });
+    DrawComponent<ButtonWidget>(
+        "Button Widget", entity,
+        [](auto &btn)
+        {
+            BeginProperties();
+            Property("Label", btn.Label);
+            Property("Interactable", btn.IsInteractable);
+            ImGui::Text("Pressed State");
+            ImGui::NextColumn();
+            ImGui::Text(btn.IsDown ? "DOWN" : (btn.PressedThisFrame ? "CLICK" : "IDLE"));
+            ImGui::NextColumn();
+            EndProperties();
+
+            DrawTextStyle(btn.Text);
+            DrawUIStyle(btn.Style);
+        });
 }
 
-static void DrawSliderWidget(Entity entity)
+void ComponentUI::DrawSliderWidget(Entity entity)
 {
     DrawComponent<SliderWidget>("Slider Widget", entity,
                                 [](auto &ui)
@@ -789,7 +799,7 @@ static void DrawSliderWidget(Entity entity)
                                 });
 }
 
-static void DrawCheckboxWidget(Entity entity)
+void ComponentUI::DrawCheckboxWidget(Entity entity)
 {
     DrawComponent<CheckboxWidget>("Checkbox Widget", entity,
                                   [](auto &ui)
@@ -804,35 +814,27 @@ void ComponentUI::DrawAddComponentPopup(Entity entity)
 {
     if (ImGui::BeginPopup("AddComponent"))
     {
-        // Determine scene type
-        bool isUIScene = entity.GetScene() && entity.GetScene()->GetType() == SceneType::SceneUI;
-
-        // Common components (available in all scene types)
+        // Common components
         if (ImGui::MenuItem("Transform") && !entity.HasComponent<TransformComponent>())
             entity.AddComponent<TransformComponent>();
         if (ImGui::MenuItem("Native Script") && !entity.HasComponent<NativeScriptComponent>())
             entity.AddComponent<NativeScriptComponent>();
-
-        // UI-specific components
         if (ImGui::MenuItem("Widget Component") && !entity.HasComponent<WidgetComponent>())
             entity.AddComponent<WidgetComponent>();
 
-        // 3D-specific components (hide in UI scenes)
-        if (!isUIScene)
-        {
-            if (ImGui::MenuItem("Model") && !entity.HasComponent<ModelComponent>())
-                entity.AddComponent<ModelComponent>();
-            if (ImGui::MenuItem("Material") && !entity.HasComponent<MaterialComponent>())
-                entity.AddComponent<MaterialComponent>();
-            if (ImGui::MenuItem("Collider") && !entity.HasComponent<ColliderComponent>())
-                entity.AddComponent<ColliderComponent>();
-            if (ImGui::MenuItem("RigidBody") && !entity.HasComponent<RigidBodyComponent>())
-                entity.AddComponent<RigidBodyComponent>();
-            if (ImGui::MenuItem("Player") && !entity.HasComponent<PlayerComponent>())
-                entity.AddComponent<PlayerComponent>();
-            if (ImGui::MenuItem("Animation") && !entity.HasComponent<AnimationComponent>())
-                entity.AddComponent<AnimationComponent>();
-        }
+        // All other components
+        if (ImGui::MenuItem("Model") && !entity.HasComponent<ModelComponent>())
+            entity.AddComponent<ModelComponent>();
+        if (ImGui::MenuItem("Material") && !entity.HasComponent<MaterialComponent>())
+            entity.AddComponent<MaterialComponent>();
+        if (ImGui::MenuItem("Collider") && !entity.HasComponent<ColliderComponent>())
+            entity.AddComponent<ColliderComponent>();
+        if (ImGui::MenuItem("RigidBody") && !entity.HasComponent<RigidBodyComponent>())
+            entity.AddComponent<RigidBodyComponent>();
+        if (ImGui::MenuItem("Player") && !entity.HasComponent<PlayerComponent>())
+            entity.AddComponent<PlayerComponent>();
+        if (ImGui::MenuItem("Animation") && !entity.HasComponent<AnimationComponent>())
+            entity.AddComponent<AnimationComponent>();
 
         ImGui::EndPopup();
     }

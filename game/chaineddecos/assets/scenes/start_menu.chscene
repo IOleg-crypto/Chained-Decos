@@ -1,0 +1,171 @@
+Scene: Untitled
+Background:
+  Mode: 0
+  Color: [0, 0, 0, 255]
+  TexturePath: ""
+EnvironmentPath: ""
+Skybox:
+  TexturePath: ""
+  Exposure: 1
+  Brightness: 0
+  Contrast: 1
+Entities:
+  - Entity: 15051911593141375302
+    TagComponent:
+      Tag: start_menu_game_info
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    WidgetComponent:
+      IsActive: true
+      HiddenInHierarchy: false
+      RectTransform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-80, -25]
+        OffsetMax: [80, 25]
+        Pivot: [0.5, 0.5]
+        RectCoordinates: [67, 89]
+    ButtonWidget:
+      Label: Info
+      Interactable: true
+      Style:
+        BackgroundColor: [60, 60, 65, 255]
+        HoverColor: [80, 80, 85, 255]
+        PressedColor: [40, 40, 45, 255]
+  - Entity: 6090748651460201744
+    TagComponent:
+      Tag: start_game_info_2
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    WidgetComponent:
+      IsActive: true
+      HiddenInHierarchy: false
+      RectTransform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-50, -20]
+        OffsetMax: [50, 20]
+        Pivot: [0.5, 0.5]
+        RectCoordinates: [-134, 292]
+    LabelWidget:
+      Text: Some functionality or aspects can be changed in final version.
+      FontSize: 22
+      TextColor: [255, 255, 255, 255]
+  - Entity: 15500646445384167357
+    TagComponent:
+      Tag: start_game_info
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    WidgetComponent:
+      IsActive: true
+      HiddenInHierarchy: false
+      RectTransform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-30, 276]
+        OffsetMax: [50, 20]
+        Pivot: [1, 0.5]
+        RectCoordinates: [-187, -25]
+    LabelWidget:
+      Text: "The game is currently in development. "
+      FontSize: 22
+      TextColor: [255, 255, 255, 255]
+  - Entity: 12750009872668354234
+    TagComponent:
+      Tag: start_button_exit
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    WidgetComponent:
+      IsActive: true
+      HiddenInHierarchy: false
+      RectTransform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-80, -25]
+        OffsetMax: [80, 25]
+        Pivot: [0.5, 0.5]
+        RectCoordinates: [67, 159]
+    ButtonWidget:
+      Label: Exit
+      Interactable: true
+      Style:
+        BackgroundColor: [60, 60, 65, 255]
+        HoverColor: [80, 80, 85, 255]
+        PressedColor: [40, 40, 45, 255]
+  - Entity: 17600595323765651257
+    TagComponent:
+      Tag: start_title_menu
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    WidgetComponent:
+      IsActive: true
+      HiddenInHierarchy: false
+      RectTransform:
+        AnchorMin: [0.540000021, 0.180000007]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-50, -20]
+        OffsetMax: [50, 20]
+        Pivot: [0.5, 0.5]
+        RectCoordinates: [2, 0]
+    LabelWidget:
+      Text: Chained Decos
+      FontSize: 22
+      TextColor: [189, 175, 175, 255]
+  - Entity: 13765047633248252361
+    TagComponent:
+      Tag: start_game_menu_options
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    WidgetComponent:
+      IsActive: true
+      HiddenInHierarchy: false
+      RectTransform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.479999989, 0.479999989]
+        OffsetMin: [-80, -34]
+        OffsetMax: [87, 21]
+        Pivot: [0.0900000036, 0]
+        RectCoordinates: [4, 1]
+    ButtonWidget:
+      Label: Options
+      Interactable: true
+      Style:
+        BackgroundColor: [60, 60, 65, 255]
+        HoverColor: [80, 80, 85, 255]
+        PressedColor: [40, 40, 45, 255]
+  - Entity: 11188570711873615005
+    TagComponent:
+      Tag: start_button_start
+    TransformComponent:
+      Translation: [0, -1.10000002, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    WidgetComponent:
+      IsActive: true
+      HiddenInHierarchy: false
+      RectTransform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.50999999, 0.5]
+        OffsetMin: [-80, -15]
+        OffsetMax: [56, 25]
+        Pivot: [0.140000001, 1]
+        RectCoordinates: [14, -46]
+    ButtonWidget:
+      Label: Start
+      Interactable: true
+      Style:
+        BackgroundColor: [60, 60, 65, 255]
+        HoverColor: [80, 80, 85, 255]
+        PressedColor: [40, 40, 71, 255]

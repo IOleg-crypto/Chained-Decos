@@ -70,7 +70,9 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
         if (ImGui::Button("Save Project Settings"))
         {
             ProjectSerializer serializer(project);
-            serializer.Serialize(project->GetProjectDirectory() / "project.chproj");
+            std::filesystem::path path =
+                project->GetProjectDirectory() / (project->GetConfig().Name + ".chproject");
+            serializer.Serialize(path);
         }
     }
     ImGui::End();

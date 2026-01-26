@@ -2,16 +2,20 @@
 #include "engine/renderer/asset_manager.h"
 #include "engine/renderer/font_asset.h"
 #include "engine/renderer/texture_asset.h"
+#include "engine/scene/components.h"
 #include "engine/scene/components/hierarchy_component.h"
 #include "engine/scene/entity.h"
+#include "engine/scene/scene.h"
+#include <algorithm>
 #include <imgui_internal.h>
 
 namespace CHEngine
 {
+
 void CanvasRenderer::DrawEntity(Entity entity, const ImVec2 &parentPos, const ImVec2 &parentSize,
                                 bool editMode)
 {
-    if (!entity || !entity.HasComponent<WidgetComponent>())
+    if (!entity || !entity.IsValid() || !entity.HasComponent<WidgetComponent>())
         return;
 
     auto &base = entity.GetComponent<WidgetComponent>();
@@ -20,7 +24,7 @@ void CanvasRenderer::DrawEntity(Entity entity, const ImVec2 &parentPos, const Im
 
     ImGui::PushID((int)(uint32_t)entity);
 
-    // 0. Calculate Absolute Position relative to parent container
+    // 1. Calculate RectTransform
     ImVec2 anchorMin = {parentPos.x + base.Transform.AnchorMin.x * parentSize.x,
                         parentPos.y + base.Transform.AnchorMin.y * parentSize.y};
     ImVec2 anchorMax = {parentPos.x + base.Transform.AnchorMax.x * parentSize.x,
@@ -34,160 +38,208 @@ void CanvasRenderer::DrawEntity(Entity entity, const ImVec2 &parentPos, const Im
     ImVec2 size = {p1.x - p0.x, p1.y - p0.y};
     ImVec2 pivotOffset = {size.x * base.Transform.Pivot.x, size.y * base.Transform.Pivot.y};
 
-    ImVec2 finalAbsPos = {p0.x - pivotOffset.x, p0.y - pivotOffset.y};
-
-    // Store for children
-    ImVec2 selfAbsPos = finalAbsPos;
-    ImVec2 selfSize = size;
+    // Position Bias (Additive shift relative to anchors)
+    ImVec2 finalAbsPos = {p0.x - pivotOffset.x + base.Transform.RectCoordinates.x,
+                          p0.y - pivotOffset.y + base.Transform.RectCoordinates.y};
 
     ImGui::SetCursorScreenPos(finalAbsPos);
 
-    // Pre-declare button state for visual feedback
-    bool isHovered = false;
-    bool isClicked = false;
+    // 2. Specialized Handling
+    if (entity.HasComponent<PanelWidget>())
+        HandlePanel(entity, finalAbsPos, size);
 
-    // Pre-calculate button state if present
     if (entity.HasComponent<ButtonWidget>())
+        HandleButton(entity, finalAbsPos, size);
+
+    if (entity.HasComponent<LabelWidget>())
+        HandleLabel(entity, finalAbsPos, size);
+
+    // 3. Edit Mode Dragging
+    if (editMode)
     {
-        auto &btn = entity.GetComponent<ButtonWidget>();
-
-        // Create hit test rect early to determine hover state
-        ImRect bb(finalAbsPos, ImVec2(finalAbsPos.x + size.x, finalAbsPos.y + size.y));
-        ImGui::ItemAdd(bb, ImGui::GetID("##btn"));
-
-        if (btn.Interactable)
+        ImRect bb(finalAbsPos, {finalAbsPos.x + size.x, finalAbsPos.y + size.y});
+        ImGui::ItemAdd(bb, ImGui::GetID("##drag_handle"));
+        if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
         {
-            isHovered = ImGui::IsItemHovered();
-            isClicked = isHovered && ImGui::IsMouseClicked(0);
+            ImVec2 delta = ImGui::GetIO().MouseDelta;
+            base.Transform.OffsetMin.x += delta.x;
+            base.Transform.OffsetMin.y += delta.y;
+            base.Transform.OffsetMax.x += delta.x;
+            base.Transform.OffsetMax.y += delta.y;
         }
     }
 
-    // 1. Draw Image Background if present
-    if (entity.HasComponent<ImageWidget>())
-    {
-        auto &img = entity.GetComponent<ImageWidget>();
-
-        // Apply visual feedback for button states
-        Color finalColor = img.BackgroundColor;
-        if (entity.HasComponent<ButtonWidget>())
-        {
-            auto &btn = entity.GetComponent<ButtonWidget>();
-            if (!btn.Interactable)
-            {
-                // Disabled: gray out
-                finalColor = Color{128, 128, 128, 255};
-            }
-            else if (isHovered)
-            {
-                // Hovered: brighten
-                finalColor = Color{(unsigned char)std::min(255, img.BackgroundColor.r + 30),
-                                   (unsigned char)std::min(255, img.BackgroundColor.g + 30),
-                                   (unsigned char)std::min(255, img.BackgroundColor.b + 30),
-                                   img.BackgroundColor.a};
-            }
-        }
-
-        DrawImage(img, finalAbsPos, size, finalColor);
-    }
-
-    // 2. Draw Text if present
-    if (entity.HasComponent<TextWidget>())
-    {
-        auto &txt = entity.GetComponent<TextWidget>();
-        DrawText(txt, finalAbsPos, size);
-    }
-
-    // 3. Handle button click event
-    if (entity.HasComponent<ButtonWidget>() && isClicked)
-    {
-        auto &btn = entity.GetComponent<ButtonWidget>();
-        btn.Pressed = true;
-        if (btn.OnPressed)
-            btn.OnPressed();
-    }
-
-    if (entity.HasComponent<SliderWidget>())
-    {
-        auto &slider = entity.GetComponent<SliderWidget>();
-        if (ImGui::SliderFloat("##slider", &slider.Value, slider.Min, slider.Max))
-            slider.Changed = true;
-    }
-
-    if (entity.HasComponent<CheckboxWidget>())
-    {
-        auto &cb = entity.GetComponent<CheckboxWidget>();
-        if (ImGui::Checkbox("##cb", &cb.Checked))
-            cb.Changed = true;
-    }
-
-    // 4. Edit mode dragging
-    if (editMode && ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
-    {
-        ImVec2 delta = ImGui::GetIO().MouseDelta;
-        base.Transform.OffsetMin.x += delta.x;
-        base.Transform.OffsetMin.y += delta.y;
-        base.Transform.OffsetMax.x += delta.x;
-        base.Transform.OffsetMax.y += delta.y;
-    }
-
-    // 5. Recursive render children
+    // 4. Recursive Children with Layout Support
     if (entity.HasComponent<HierarchyComponent>())
     {
         auto &hc = entity.GetComponent<HierarchyComponent>();
+        ImVec2 currentChildPos = finalAbsPos;
+
+        bool isVertical = entity.HasComponent<VerticalLayoutGroup>();
+        float spacing = isVertical ? entity.GetComponent<VerticalLayoutGroup>().Spacing : 0.0f;
+        Vector2 padding =
+            isVertical ? entity.GetComponent<VerticalLayoutGroup>().Padding : Vector2{0, 0};
+
+        if (isVertical)
+            currentChildPos.y += padding.y;
+
         for (auto childID : hc.Children)
         {
             Entity child{childID, entity.GetScene()};
-            DrawEntity(child, selfAbsPos, selfSize, editMode);
+            if (!child.IsValid() || !child.HasComponent<WidgetComponent>())
+                continue;
+
+            DrawEntity(child, isVertical ? currentChildPos : finalAbsPos, size, editMode);
+
+            if (isVertical)
+            {
+                auto &childBase = child.GetComponent<WidgetComponent>();
+                float childHeight =
+                    (childBase.Transform.OffsetMax.y - childBase.Transform.OffsetMin.y);
+                currentChildPos.y += childHeight + spacing;
+            }
         }
     }
 
     ImGui::PopID();
 }
 
-void CanvasRenderer::DrawImage(ImageWidget &img, const ImVec2 &absPos, const ImVec2 &size,
-                               const Color &overrideColor)
+void CanvasRenderer::HandleButton(Entity entity, const ImVec2 &pos, const ImVec2 &size)
 {
-    if (!img.BackgroundColor.a && !img.Texture)
+    auto &btn = entity.GetComponent<ButtonWidget>();
+    if (!btn.IsInteractable)
         return;
 
-    // Lazy load
-    if (!img.Texture && !img.TexturePath.empty())
-        img.Texture = Assets::Get<TextureAsset>(img.TexturePath);
+    ImRect bb(pos, {pos.x + size.x, pos.y + size.y});
+    ImGui::ItemAdd(bb, ImGui::GetID("##btn_logic"));
 
-    ImVec2 p_min = absPos;
-    ImVec2 p_max = {p_min.x + size.x + img.Padding.x * 2, p_min.y + size.y + img.Padding.y * 2};
+    btn.IsHovered = ImGui::IsItemHovered();
+    btn.IsDown = btn.IsHovered && ImGui::IsMouseDown(0);
+    btn.PressedThisFrame = btn.IsHovered && ImGui::IsMouseReleased(0);
 
-    ImDrawList *drawList = ImGui::GetWindowDrawList();
+    // Render Background
+    DrawStyledRect(pos, {pos.x + size.x, pos.y + size.y}, btn.Style, btn.IsHovered, btn.IsDown);
 
-    if (img.Texture && img.Texture->IsReady())
+    // Render Label
+    if (!btn.Label.empty())
     {
-        ImVec2 uv0 = {0, 0}, uv1 = {1, 1};
-        // Reuse aspect ratio logic...
-        drawList->AddImageRounded(
-            (ImTextureID)(uintptr_t)img.Texture->GetTexture().id, p_min, p_max, uv0, uv1,
-            IM_COL32(overrideColor.r, overrideColor.g, overrideColor.b, overrideColor.a),
-            img.Rounding);
-    }
-    else
-    {
-        drawList->AddRectFilled(
-            p_min, p_max,
-            IM_COL32(overrideColor.r, overrideColor.g, overrideColor.b, overrideColor.a),
-            img.Rounding);
+        DrawStyledText(btn.Label, pos, size, btn.Text);
     }
 }
 
-void CanvasRenderer::DrawText(TextWidget &txt, const ImVec2 &absPos, const ImVec2 &size)
+void CanvasRenderer::HandlePanel(Entity entity, const ImVec2 &pos, const ImVec2 &size)
 {
-    // Lazy load font
-    if (!txt.Font && !txt.FontPath.empty())
-        txt.Font = Assets::Get<FontAsset>(txt.FontPath);
+    auto &panel = entity.GetComponent<PanelWidget>();
 
-    // Simple text draw for now
-    ImGui::SetCursorScreenPos(absPos);
-    ImGui::TextColored(ImVec4(txt.Color.r / 255.0f, txt.Color.g / 255.0f, txt.Color.b / 255.0f,
-                              txt.Color.a / 255.0f),
-                       "%s", txt.Text.c_str());
+    // Full screen override
+    ImVec2 p_min = pos;
+    ImVec2 p_max = {pos.x + size.x, pos.y + size.y};
+
+    if (panel.FullScreen)
+    {
+        p_min = {0, 0};
+        p_max = ImGui::GetIO().DisplaySize;
+    }
+
+    if (!panel.TexturePath.empty() && !panel.Texture)
+    {
+        panel.Texture = AssetManager::Get<TextureAsset>(panel.TexturePath);
+    }
+
+    if (panel.Texture && panel.Texture->IsReady())
+    {
+        ImDrawList *drawList = ImGui::GetWindowDrawList();
+        drawList->AddImageRounded(
+            (ImTextureID)(uintptr_t)panel.Texture->GetTexture().id, p_min, p_max, {0, 0}, {1, 1},
+            IM_COL32(255, 255, 255, panel.Style.BackgroundColor.a), panel.Style.Rounding);
+    }
+    else
+    {
+        DrawStyledRect(p_min, p_max, panel.Style, false, false);
+    }
+}
+
+void CanvasRenderer::HandleLabel(Entity entity, const ImVec2 &pos, const ImVec2 &size)
+{
+    auto &label = entity.GetComponent<LabelWidget>();
+    DrawStyledText(label.Text, pos, size, label.Style);
+}
+
+void CanvasRenderer::DrawStyledRect(const ImVec2 &p_min, const ImVec2 &p_max, const UIStyle &style,
+                                    bool isHovered, bool isPressed)
+{
+    ImDrawList *drawList = ImGui::GetWindowDrawList();
+
+    Color col = style.BackgroundColor;
+    if (isPressed)
+        col = style.PressedColor;
+    else if (isHovered)
+        col = style.HoverColor;
+
+    ImU32 col32 = IM_COL32(col.r, col.g, col.b, col.a);
+
+    if (style.bUseGradient)
+    {
+        ImU32 colBg2 = IM_COL32(style.GradientColor.r, style.GradientColor.g, style.GradientColor.b,
+                                style.GradientColor.a);
+        drawList->AddRectFilledMultiColor(p_min, p_max, col32, col32, colBg2, colBg2);
+    }
+    else
+    {
+        drawList->AddRectFilled(p_min, p_max, col32, style.Rounding);
+    }
+
+    if (style.BorderSize > 0)
+    {
+        drawList->AddRect(p_min, p_max,
+                          IM_COL32(style.BorderColor.r, style.BorderColor.g, style.BorderColor.b,
+                                   style.BorderColor.a),
+                          style.Rounding, 0, style.BorderSize);
+    }
+}
+
+void CanvasRenderer::DrawStyledText(const std::string &text, const ImVec2 &absPos,
+                                    const ImVec2 &size, const TextStyle &style)
+{
+    ImDrawList *drawList = ImGui::GetWindowDrawList();
+
+    // Simple centering for now
+    ImVec2 textSize = ImGui::CalcTextSize(text.c_str());
+    ImVec2 textPos = {absPos.x + (size.x - textSize.x) * 0.5f,
+                      absPos.y + (size.y - textSize.y) * 0.5f};
+
+    // Support for Raylib Fonts
+    if (!style.FontPath.empty())
+    {
+        auto fontAsset = AssetManager::Get<FontAsset>(style.FontPath);
+        if (fontAsset && fontAsset->IsReady())
+        {
+            // Use Raylib Font directly via ImGui Callback
+            // Note: This requires the correct GL context and state management.
+            // Since rlImGui manages the atlas, we draw this AFTER ImGui's own text if we want.
+            // For now, let's use a simpler approach: use Raylib's text rendering if possible.
+
+            // We draw directly into the current render target (which is likely the Viewport
+            // texture) if we are called within the viewport scope.
+
+            float spacing = style.LetterSpacing;
+            float fontSize = style.FontSize;
+            ::DrawTextEx(fontAsset->GetFont(), text.c_str(), {textPos.x, textPos.y}, fontSize,
+                         spacing, style.TextColor);
+            return;
+        }
+    }
+
+    if (style.bShadow)
+    {
+        drawList->AddText(ImVec2(textPos.x + 1, textPos.y + 1), IM_COL32(0, 0, 0, 150),
+                          text.c_str());
+    }
+
+    drawList->AddText(
+        textPos,
+        IM_COL32(style.TextColor.r, style.TextColor.g, style.TextColor.b, style.TextColor.a),
+        text.c_str());
 }
 
 } // namespace CHEngine

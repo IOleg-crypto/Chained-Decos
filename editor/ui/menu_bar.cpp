@@ -26,14 +26,8 @@ static void MenuFile(const EventCallbackFn &callback)
 
         ImGui::Separator();
 
-        if (ImGui::BeginMenu(ICON_FA_FILE_CODE " New Scene"))
-        {
-            if (ImGui::MenuItem("3D Scene"))
-                SceneUtils::NewScene(SceneType::Scene3D);
-            if (ImGui::MenuItem("UI Menu"))
-                SceneUtils::NewScene(SceneType::SceneUI);
-            ImGui::EndMenu();
-        }
+        if (ImGui::MenuItem(ICON_FA_FILE_CODE " New Scene", "Ctrl+N"))
+            SceneUtils::NewScene();
         if (ImGui::MenuItem(ICON_FA_FLOPPY_DISK " Save Scene", "Ctrl+S"))
             SceneUtils::SaveScene();
         if (ImGui::MenuItem(ICON_FA_FILE_EXPORT " Save Scene As...", "Ctrl+Shift+S"))

@@ -19,8 +19,8 @@ ShaderAsset::~ShaderAsset()
 
 std::shared_ptr<ShaderAsset> ShaderAsset::Load(const std::string &vsPath, const std::string &fsPath)
 {
-    auto vsAbs = Assets::ResolvePath(vsPath);
-    auto fsAbs = Assets::ResolvePath(fsPath);
+    auto vsAbs = AssetManager::ResolvePath(vsPath);
+    auto fsAbs = AssetManager::ResolvePath(fsPath);
 
     Shader shader = ::LoadShader(vsAbs.string().c_str(), fsAbs.string().c_str());
     if (shader.id > 0)
@@ -36,7 +36,7 @@ std::shared_ptr<ShaderAsset> ShaderAsset::Load(const std::string &vsPath, const 
 
 std::shared_ptr<ShaderAsset> ShaderAsset::Load(const std::string &chshaderPath)
 {
-    auto absolutePath = Assets::ResolvePath(chshaderPath);
+    auto absolutePath = AssetManager::ResolvePath(chshaderPath);
     if (!std::filesystem::exists(absolutePath))
     {
         CH_CORE_ERROR("CHShader not found: {}", chshaderPath);

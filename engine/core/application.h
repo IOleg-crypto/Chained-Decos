@@ -92,6 +92,11 @@ public:
     }
 
 private:
+    void ProcessEvents();
+    void Simulate();
+    void Animate();
+    void Render();
+
     void OnUpdate(float deltaTime);
     void OnRender();
 

@@ -14,9 +14,14 @@ public:
                            bool editMode = false);
 
 private:
-    static void DrawImage(struct ImageWidget &img, const ImVec2 &absPos, const ImVec2 &size,
-                          const Color &overrideColor);
-    static void DrawText(struct TextWidget &txt, const ImVec2 &absPos, const ImVec2 &size);
+    static void DrawStyledRect(const ImVec2 &p_min, const ImVec2 &p_max, const UIStyle &style,
+                               bool isHovered, bool isPressed);
+    static void DrawStyledText(const std::string &text, const ImVec2 &absPos, const ImVec2 &size,
+                               const TextStyle &style);
+
+    static void HandleButton(Entity entity, const ImVec2 &pos, const ImVec2 &size);
+    static void HandlePanel(Entity entity, const ImVec2 &pos, const ImVec2 &size);
+    static void HandleLabel(Entity entity, const ImVec2 &pos, const ImVec2 &size);
 };
 } // namespace CHEngine
 

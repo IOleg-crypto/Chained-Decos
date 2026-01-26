@@ -51,12 +51,24 @@ set(ENGINE_SOURCES
     scene/components/animation_component.h
 
     # Renderer
-    renderer/render.cpp
+    renderer/visuals.cpp
+    renderer/visuals.h
+    renderer/api_context.cpp
+    renderer/api_context.h
+    renderer/draw_command.cpp
+    renderer/draw_command.h
+    renderer/scene_pipeline.cpp
+    renderer/scene_pipeline.h
     renderer/render.h
     renderer/render_types.h
 
     renderer/asset_manager.cpp
     renderer/asset_manager.h
+    renderer/asset_archive.cpp
+    renderer/asset_archive.h
+    renderer/resource_provider.cpp
+    renderer/resource_provider.h
+
     renderer/model_asset.cpp
     renderer/model_asset.h
     renderer/texture_asset.cpp
@@ -74,6 +86,13 @@ set(ENGINE_SOURCES
     # Physics
     physics/physics.cpp
     physics/physics.h
+    physics/dynamics.cpp
+    physics/dynamics.h
+    physics/narrow_phase.cpp
+    physics/narrow_phase.h
+    physics/scene_trace.cpp
+    physics/scene_trace.h
+
     physics/collision/collision.h
     physics/collision/collision_triangle.h
     physics/bvh/bvh.cpp

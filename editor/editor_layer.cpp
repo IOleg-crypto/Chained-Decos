@@ -269,12 +269,6 @@ void EditorLayer::UI_DrawPanels()
         if (panel->GetName() == "Project Browser")
             continue;
 
-        // Skip Environment settings for UI scenes
-        auto activeScene = Application::Get().GetActiveScene();
-        if (panel->GetName() == "Environment" && activeScene &&
-            activeScene->GetType() == SceneType::SceneUI)
-            continue;
-
         panel->OnImGuiRender(readOnly);
     }
 }
@@ -288,7 +282,7 @@ void EditorLayer::LaunchStandalone()
     if (project)
     {
         std::filesystem::path projectFile =
-            project->GetProjectDirectory() / (project->GetConfig().Name + ".chproj");
+            project->GetProjectDirectory() / (project->GetConfig().Name + ".chproject");
         std::string projectPathStr = std::filesystem::absolute(projectFile).string();
 
         // Robust runtime discovery
