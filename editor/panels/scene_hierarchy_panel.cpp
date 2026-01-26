@@ -32,20 +32,11 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
     ImGui::BeginDisabled(readOnly);
     if (m_Context)
     {
-        const char *sceneTypes[] = {"3D Scene", "UI Menu"};
-        int currentType = (int)m_Context->GetType();
-        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
-        if (ImGui::Combo("##SceneType", &currentType, sceneTypes, 2))
-        {
-            m_Context->SetType((SceneType)currentType);
-        }
-        ImGui::PopItemWidth();
-        ImGui::Separator();
 
         m_DrawnEntities.clear();
         auto &registry = m_Context->GetRegistry();
 
-        entt::entity entityToDelete = entt::null;
+        std::vector<entt::entity> entitiesToDelete;
         registry.view<TagComponent>().each(
             [&](auto entityID, auto &tag)
             {
@@ -65,14 +56,16 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
 
                 if (!isChild)
                 {
-                    if (DrawEntityNode(entity))
-                        entityToDelete = entityID;
+                    // I'll simplify: DrawEntityNode will return entity to delete
+                    entt::entity toDel = DrawEntityNodeRecursive(entity);
+                    if (toDel != entt::null)
+                        entitiesToDelete.push_back(toDel);
                 }
             });
 
-        if (entityToDelete != entt::null)
+        for (auto ent : entitiesToDelete)
         {
-            Entity entity{entityToDelete, m_Context.get()};
+            Entity entity{ent, m_Context.get()};
             EditorLayer::GetCommandHistory().PushCommand(
                 std::make_unique<DestroyEntityCommand>(entity));
 
@@ -147,12 +140,12 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
 
             if (ImGui::BeginMenu("Widget"))
             {
-                if (ImGui::MenuItem("Image"))
-                    WidgetFactory::CreateImage(m_Context.get());
+                if (ImGui::MenuItem("Panel"))
+                    WidgetFactory::CreatePanel(m_Context.get());
                 if (ImGui::MenuItem("Button"))
                     WidgetFactory::CreateButton(m_Context.get());
-                if (ImGui::MenuItem("Text"))
-                    WidgetFactory::CreateText(m_Context.get());
+                if (ImGui::MenuItem("Label"))
+                    WidgetFactory::CreateLabel(m_Context.get());
                 if (ImGui::MenuItem("Slider"))
                     WidgetFactory::CreateSlider(m_Context.get());
                 if (ImGui::MenuItem("Checkbox"))
@@ -169,13 +162,13 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
     ImGui::End();
 }
 
-bool SceneHierarchyPanel::DrawEntityNode(Entity entity)
+entt::entity SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity)
 {
     if (!entity || !entity.IsValid())
-        return false;
+        return entt::null;
 
     if (m_DrawnEntities.find(entity) != m_DrawnEntities.end())
-        return false;
+        return entt::null;
 
     m_DrawnEntities.insert(entity);
 
@@ -195,11 +188,11 @@ bool SceneHierarchyPanel::DrawEntityNode(Entity entity)
         Application::Get().OnEvent(e);
     }
 
-    bool entityDeleted = false;
+    entt::entity signaledForDelete = entt::null;
     if (ImGui::BeginPopupContextItem())
     {
         if (ImGui::MenuItem("Delete Entity"))
-            entityDeleted = true;
+            signaledForDelete = (entt::entity)entity;
 
         ImGui::EndPopup();
     }
@@ -209,16 +202,19 @@ bool SceneHierarchyPanel::DrawEntityNode(Entity entity)
         if (entity.HasComponent<HierarchyComponent>())
         {
             auto &hc = entity.GetComponent<HierarchyComponent>();
-            for (auto childID : hc.Children)
+            auto childrenCopy = hc.Children; // Copy to avoid iteration issues if destroyed
+            for (auto childID : childrenCopy)
             {
                 Entity child{childID, m_Context.get()};
-                DrawEntityNode(child);
+                entt::entity childDel = DrawEntityNodeRecursive(child);
+                if (childDel != entt::null)
+                    signaledForDelete = childDel;
             }
         }
         ImGui::TreePop();
     }
     ImGui::PopID();
 
-    return entityDeleted;
+    return signaledForDelete;
 }
 } // namespace CHEngine

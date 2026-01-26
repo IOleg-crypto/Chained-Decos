@@ -3,6 +3,7 @@
 #include "engine/core/application.h"
 #include "engine/core/input.h"
 #include "engine/physics/physics.h"
+#include "engine/renderer/asset_manager.h"
 #include "engine/renderer/render.h"
 #include "engine/ui/imgui_raylib_ui.h"
 #include <imgui.h>
@@ -62,13 +63,49 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
     }
 
     // Render scene to texture
-    Render::BeginToTexture(m_ViewportTexture);
+    Visuals::BeginToTexture(m_ViewportTexture);
 
-    // Use white background for UI scenes, dark gray for 3D
-    Color bgColor = (m_Context && m_Context->GetType() == SceneType::SceneUI)
-                        ? Color{245, 245, 245, 255} // Light gray (UI canvas)
-                        : DARKGRAY;                 // Dark gray (3D viewport)
-    ClearBackground(bgColor);
+    // Use background settings from scene
+    if (m_Context)
+    {
+        auto mode = m_Context->GetBackgroundMode();
+        if (mode == BackgroundMode::Color)
+        {
+            ClearBackground(m_Context->GetBackgroundColor());
+        }
+        else if (mode == BackgroundMode::Texture)
+        {
+            auto path = m_Context->GetBackgroundTexturePath();
+            if (!path.empty())
+            {
+                auto tex = AssetManager::Get<TextureAsset>(path);
+                if (tex && tex->IsReady())
+                {
+                    // Draw texture stretched to viewport
+                    DrawTexturePro(
+                        tex->GetTexture(),
+                        {0, 0, (float)tex->GetTexture().width, (float)tex->GetTexture().height},
+                        {0, 0, m_ViewportSize.x, m_ViewportSize.y}, {0, 0}, 0.0f, WHITE);
+                }
+                else
+                {
+                    ClearBackground(m_Context->GetBackgroundColor());
+                }
+            }
+            else
+            {
+                ClearBackground(m_Context->GetBackgroundColor());
+            }
+        }
+        else // Environment3D
+        {
+            ClearBackground(DARKGRAY);
+        }
+    }
+    else
+    {
+        ClearBackground(DARKGRAY);
+    }
 
     auto camera = m_EditorCamera.GetRaylibCamera();
 
@@ -99,33 +136,22 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
                 camera.projection = CAMERA_PERSPECTIVE;
             }
         }
-        else if (m_Context->GetType() == SceneType::SceneUI)
-        {
-            // Pixel-perfect mapping for UI editing
-            camera.target = {m_ViewportSize.x * 0.5f, m_ViewportSize.y * 0.5f, 0.0f};
-            camera.position = {m_ViewportSize.x * 0.5f, m_ViewportSize.y * 0.5f, 10.0f};
-            camera.up = {0.0f, -1.0f, 0.0f}; // Invert Y for screen space (0,0 is top-left)
-            camera.fovy = m_ViewportSize.y;
-            camera.projection = CAMERA_ORTHOGRAPHIC;
-        }
 
-        Render::BeginScene(camera);
+        Visuals::BeginScene(camera);
 
-        bool is3D = m_Context->GetType() == SceneType::Scene3D;
-
-        if (m_DebugFlags && m_DebugFlags->DrawGrid && is3D)
+        if (m_DebugFlags && m_DebugFlags->DrawGrid)
             ::DrawGrid(10, 1.0f);
 
         // BVH/Collision wires
-        if (m_DebugFlags && m_DebugFlags->DrawColliders && is3D)
+        if (m_DebugFlags && m_DebugFlags->DrawColliders)
         {
             // m_Context->OnDebugRender(m_DebugFlags);
         }
         m_Context->OnRender(camera, m_DebugFlags);
-        Render::EndScene();
+        Visuals::EndScene();
     }
 
-    Render::EndToTexture();
+    Visuals::EndToTexture();
 
     // --- Picking Logic ---
     bool allowTools = !readOnly;
@@ -278,15 +304,14 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         m_SelectedEntity = {};
 
     bool isUIEntity = m_SelectedEntity && m_SelectedEntity.HasComponent<WidgetComponent>();
-    if (m_SelectedEntity && allowTools && !isUIEntity && m_Context &&
-        m_Context->GetType() != SceneType::SceneUI)
+    if (m_SelectedEntity && allowTools && !isUIEntity && m_Context)
     {
         m_Gizmo.RenderAndHandle(m_Context.get(), camera, m_SelectedEntity, m_CurrentTool,
                                 viewportPos, ImVec2{m_ViewportSize.x, m_ViewportSize.y});
     }
 
     // --- Gizmo Toolbar Overlay ---
-    if (m_Context && m_Context->GetType() == SceneType::Scene3D)
+    if (m_Context)
     {
         ImGui::SetCursorPos(ImVec2(10, 30));                          // Slightly below top-left
         ImGui::BeginChild("GizmoToolbar", ImVec2(160, 40), false, 0); // Transparent background
@@ -343,13 +368,10 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
 
     if (m_Context)
     {
-        if (EditorLayer::GetSceneState() == SceneState::Play ||
-            m_Context->GetType() == SceneType::SceneUI)
-        {
-            bool editMode = EditorLayer::GetSceneState() == SceneState::Edit;
-            m_Context->OnImGuiRender(viewportPos, viewportPanelSize, ImGui::GetWindowViewport()->ID,
-                                     editMode);
-        }
+        // Always draw UI on top in the viewport
+        bool editMode = EditorLayer::GetSceneState() == SceneState::Edit;
+        m_Context->OnImGuiRender(viewportPos, viewportPanelSize, ImGui::GetWindowViewport()->ID,
+                                 editMode);
     }
 
     ImGui::End();
