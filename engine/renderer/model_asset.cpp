@@ -15,7 +15,7 @@ std::shared_ptr<ModelAsset> ModelAsset::Load(const std::string &path)
     if (path.starts_with(":"))
         return CreateProcedural(path);
 
-    auto fullPath = Assets::ResolvePath(path);
+    auto fullPath = AssetManager::ResolvePath(path);
     if (!std::filesystem::exists(fullPath))
         return nullptr;
 
@@ -57,7 +57,7 @@ void ModelAsset::LoadAsync(const std::string &path)
     if (!asset)
         return;
 
-    auto fullPath = Assets::ResolvePath(path);
+    auto fullPath = AssetManager::ResolvePath(path);
     if (!std::filesystem::exists(fullPath))
     {
         asset->SetState(AssetState::Failed);

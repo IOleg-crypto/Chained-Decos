@@ -164,7 +164,7 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
                                   ImGuiWindowFlags_NoScrollbar |
                                       ImGuiWindowFlags_NoScrollWithMouse))
             {
-                auto texAsset = Assets::Get<TextureAsset>(iconPath);
+                auto texAsset = AssetManager::Get<TextureAsset>(iconPath);
                 Texture2D tex = texAsset ? texAsset->GetTexture() : Texture2D{0};
                 ImVec2 imageSize = {160, 160};
                 ImGui::SetCursorPosX((cardWidth - imageSize.x) * 0.5f);

@@ -1,6 +1,7 @@
 #include "editor_utils.h"
 #include "editor/editor_settings.h"
 #include "engine/core/application.h"
+#include "engine/core/events.h"
 #include "engine/core/log.h"
 #include "engine/scene/components/widget_component.h"
 #include "engine/scene/project_serializer.h"
@@ -15,8 +16,8 @@ namespace CHEngine
 void ProjectUtils::NewProject()
 {
     NFD::UniquePath outPath;
-    nfdfilteritem_t filterItem[1] = {{"Chained Project", "chproj"}};
-    auto result = NFD::SaveDialog(outPath, filterItem, 1, nullptr, "Untitled.chproj");
+    nfdfilteritem_t filterItem[1] = {{"Chained Project", "chproject"}};
+    auto result = NFD::SaveDialog(outPath, filterItem, 1, nullptr, "Untitled.chproject");
     if (result == NFD_OKAY)
     {
         std::filesystem::path p = outPath.get();
@@ -31,12 +32,17 @@ void ProjectUtils::NewProject(const std::string &name, const std::string &path)
     project->SetProjectDirectory(path);
     Project::SetActive(project);
     ProjectUtils::SaveProject();
+
+    // Dispatch event so panels can update
+    std::filesystem::path projectFile = std::filesystem::path(path) / (name + ".chproject");
+    ProjectOpenedEvent e(projectFile.string());
+    Application::Get().OnEvent(e);
 }
 
 void ProjectUtils::OpenProject()
 {
     NFD::UniquePath outPath;
-    nfdfilteritem_t filterItem[1] = {{"Chained Project", "chproj"}};
+    nfdfilteritem_t filterItem[1] = {{"Chained Project", "chproject"}};
     auto result = NFD::OpenDialog(outPath, filterItem, 1);
     if (result == NFD_OKAY)
     {
@@ -51,6 +57,8 @@ void ProjectUtils::OpenProject(const std::filesystem::path &path)
     if (serializer.Deserialize(path))
     {
         Project::SetActive(project);
+        ProjectOpenedEvent e(path.string());
+        Application::Get().OnEvent(e);
     }
 }
 
@@ -60,16 +68,15 @@ void ProjectUtils::SaveProject()
     {
         ProjectSerializer serializer(project);
         std::filesystem::path path =
-            project->GetProjectDirectory() / (project->GetConfig().Name + ".chproj");
+            project->GetProjectDirectory() / (project->GetConfig().Name + ".chproject");
         serializer.Serialize(path);
     }
 }
 
 // --- SceneUtils ---
-void SceneUtils::NewScene(SceneType type)
+void SceneUtils::NewScene()
 {
     auto scene = std::make_shared<Scene>();
-    scene->SetType(type);
     Application::Get().SetActiveScene(scene);
 
     // Notify system (Panels need this to update context)
@@ -137,90 +144,69 @@ Entity WidgetFactory::CreateButton(Scene *scene, const std::string &label)
 {
     auto entity = scene->CreateEntity(label);
 
-    // Base
     auto &ui = entity.AddComponent<WidgetComponent>();
-    ui.Transform.OffsetMin = {-100.0f, -40.0f};
-    ui.Transform.OffsetMax = {100.0f, 40.0f};
+    ui.Transform.OffsetMin = {-80.0f, -25.0f};
+    ui.Transform.OffsetMax = {80.0f, 25.0f};
 
-    // Visual: Background
-    auto &img = entity.AddComponent<ImageWidget>();
-    img.BackgroundColor = {60, 60, 60, 255};
-    img.Rounding = 4.0f;
-
-    // Visual: Text
-    auto &txt = entity.AddComponent<TextWidget>();
-    txt.Text = label;
-    txt.FontSize = 18.0f;
-    txt.Color = {255, 255, 255, 255};
-
-    // Logic: Button
     auto &btn = entity.AddComponent<ButtonWidget>();
-    btn.Interactable = true;
+    btn.Label = label;
+
+    // Modern default style
+    btn.Style.BackgroundColor = {60, 60, 65, 255};
+    btn.Style.HoverColor = {80, 80, 85, 255};
+    btn.Style.PressedColor = {40, 40, 45, 255};
+    btn.Style.Rounding = 6.0f;
+
+    btn.Text.FontSize = 20.0f;
+    btn.Text.TextColor = WHITE;
+    btn.Text.bShadow = true;
 
     return entity;
 }
 
-Entity WidgetFactory::CreateText(Scene *scene, const std::string &text)
+Entity WidgetFactory::CreateLabel(Scene *scene, const std::string &text)
 {
     auto entity = scene->CreateEntity(text);
     entity.AddComponent<WidgetComponent>();
-    auto &txt = entity.AddComponent<TextWidget>();
-    txt.Text = text;
+    auto &lbl = entity.AddComponent<LabelWidget>();
+    lbl.Text = text;
+    lbl.Style.FontSize = 22.0f;
+    lbl.Style.TextColor = WHITE;
     return entity;
 }
 
-Entity WidgetFactory::CreateImage(Scene *scene, const std::string &name)
+Entity WidgetFactory::CreatePanel(Scene *scene, const std::string &name)
 {
     auto entity = scene->CreateEntity(name);
-    entity.AddComponent<WidgetComponent>();
-    auto &img = entity.AddComponent<ImageWidget>();
-    img.BackgroundColor = {255, 255, 255, 255};
+    auto &ui = entity.AddComponent<WidgetComponent>();
+    ui.Transform.OffsetMin = {-200.0f, -150.0f};
+    ui.Transform.OffsetMax = {200.0f, 150.0f};
+
+    auto &pnl = entity.AddComponent<PanelWidget>();
+    pnl.Style.BackgroundColor = {30, 30, 32, 180}; // Semi-transparent dark
+    pnl.Style.Rounding = 12.0f;
+    pnl.Style.BorderSize = 1.0f;
+    pnl.Style.BorderColor = {100, 100, 105, 255};
+
     return entity;
 }
 
 Entity WidgetFactory::CreateSlider(Scene *scene, const std::string &label)
 {
-    // 1. Root Slider
-    auto sliderEntity = scene->CreateEntity(label);
-    sliderEntity.AddComponent<WidgetComponent>();
-    auto &slider = sliderEntity.AddComponent<SliderWidget>();
+    auto entity = scene->CreateEntity(label);
+    entity.AddComponent<WidgetComponent>();
+    auto &slider = entity.AddComponent<SliderWidget>();
     slider.Min = 0.0f;
     slider.Max = 1.0f;
-
-    // 2. Label Child
-    auto textEntity = scene->CreateEntity("Label");
-    auto &txtUI = textEntity.AddComponent<WidgetComponent>();
-    txtUI.Transform.AnchorMin = {0.0f, 0.5f};
-    txtUI.Transform.AnchorMax = {0.0f, 0.5f};
-    txtUI.Transform.OffsetMin = {-100.00f, -10.0f};
-    txtUI.Transform.OffsetMax = {-10.0f, 10.0f};
-    txtUI.Transform.Pivot = {1.0f, 0.5f};
-    auto &txt = textEntity.AddComponent<TextWidget>();
-    txt.Text = label;
-    SceneUtils::SetParent(textEntity, sliderEntity);
-
-    return sliderEntity;
+    slider.Value = 0.5f;
+    return entity;
 }
 
 Entity WidgetFactory::CreateCheckbox(Scene *scene, const std::string &label)
 {
-    // 1. Root Checkbox
-    auto checkboxEntity = scene->CreateEntity(label);
-    checkboxEntity.AddComponent<WidgetComponent>();
-    checkboxEntity.AddComponent<CheckboxWidget>();
-
-    // 2. Label Child
-    auto textEntity = scene->CreateEntity("Label");
-    auto &txtUI = textEntity.AddComponent<WidgetComponent>();
-    txtUI.Transform.AnchorMin = {1.0f, 0.5f}; // Right of checkbox
-    txtUI.Transform.AnchorMax = {1.0f, 0.5f};
-    txtUI.Transform.OffsetMin = {10.0f, -10.0f};
-    txtUI.Transform.OffsetMax = {100.0f, 10.0f};
-    txtUI.Transform.Pivot = {0.0f, 0.5f};
-    auto &txt = textEntity.AddComponent<TextWidget>();
-    txt.Text = label;
-    SceneUtils::SetParent(textEntity, checkboxEntity);
-
-    return checkboxEntity;
+    auto entity = scene->CreateEntity(label);
+    entity.AddComponent<WidgetComponent>();
+    entity.AddComponent<CheckboxWidget>();
+    return entity;
 }
 } // namespace CHEngine

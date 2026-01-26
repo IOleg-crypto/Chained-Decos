@@ -14,10 +14,11 @@
 namespace CHEngine
 {
 
-enum class SceneType : uint8_t
+enum class BackgroundMode : uint8_t
 {
-    Scene3D,
-    SceneUI
+    Color,
+    Texture,
+    Environment3D
 };
 
 class Scene
@@ -26,13 +27,31 @@ public:
     Scene();
     virtual ~Scene();
 
-    SceneType GetType() const
+    BackgroundMode GetBackgroundMode() const
     {
-        return m_Type;
+        return m_BackgroundMode;
     }
-    void SetType(SceneType type)
+    void SetBackgroundMode(BackgroundMode mode)
     {
-        m_Type = type;
+        m_BackgroundMode = mode;
+    }
+
+    Color GetBackgroundColor() const
+    {
+        return m_BackgroundColor;
+    }
+    void SetBackgroundColor(Color color)
+    {
+        m_BackgroundColor = color;
+    }
+
+    const std::string &GetBackgroundTexturePath() const
+    {
+        return m_BackgroundTexturePath;
+    }
+    void SetBackgroundTexturePath(const std::string &path)
+    {
+        m_BackgroundTexturePath = path;
     }
 
     static std::shared_ptr<Scene> Copy(std::shared_ptr<Scene> other);
@@ -100,15 +119,27 @@ public:
         m_Environment = environment;
     }
 
+    const Camera3D &GetActiveCamera() const
+    {
+        return m_ActiveCamera;
+    }
+    EnvironmentSettings GetEnvironmentSettings() const;
+
 private:
     entt::registry m_Registry;
     std::shared_ptr<EnvironmentAsset> m_Environment;
     struct SkyboxComponent m_Skybox;
-    SceneType m_Type = SceneType::Scene3D;
+
+    BackgroundMode m_BackgroundMode = BackgroundMode::Environment3D;
+    Color m_BackgroundColor = {245, 245, 245, 255};
+    std::string m_BackgroundTexturePath = "";
+
     bool m_IsSimulationRunning = false;
 
     friend class Entity;
     friend class SceneSerializer;
+
+    Camera3D m_ActiveCamera;
 };
 
 // Template specializations (must be in namespace scope)
@@ -120,7 +151,10 @@ template <> void Scene::OnComponentAdded<AudioComponent>(Entity entity, AudioCom
 // Entity Template Implementations
 template <typename T, typename... Args> T &Entity::AddComponent(Args &&...args)
 {
-    return m_Scene->m_Registry.emplace<T>(m_EntityHandle, std::forward<Args>(args)...);
+    CH_CORE_ASSERT(!HasComponent<T>(), "Entity already has component!");
+    T &component = m_Scene->m_Registry.emplace<T>(m_EntityHandle, std::forward<Args>(args)...);
+    m_Scene->OnComponentAdded<T>(*this, component);
+    return component;
 }
 
 inline bool Entity::IsValid() const

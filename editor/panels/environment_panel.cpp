@@ -2,9 +2,10 @@
 #include "engine/renderer/asset_manager.h"
 #include "engine/renderer/render.h"
 #include "engine/scene/project.h"
+#include "scene/scene.h"
 #include <filesystem>
 #include <imgui.h>
-#include <nfd.h>
+#include <nfd.hpp>
 
 namespace CHEngine
 {
@@ -28,20 +29,59 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
         return;
     }
 
-    if (m_Context->GetType() == SceneType::SceneUI)
+    if (ImGui::CollapsingHeader("Scene Background", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        ImGui::TextDisabled("UI Scene Context");
-        ImGui::Separator();
-        ImGui::TextWrapped("Global 3D lighting and skybox settings are disabled for UI Scenes.");
+        if (readOnly)
+            ImGui::BeginDisabled();
 
-        if (ImGui::Button("Convert to 3D Scene"))
+        const char *bgModes[] = {"Solid Color", "Texture", "3D Environment"};
+        int currentMode = (int)m_Context->GetBackgroundMode();
+        if (ImGui::Combo("Background Mode", &currentMode, bgModes, 3))
+            m_Context->SetBackgroundMode((BackgroundMode)currentMode);
+
+        if (m_Context->GetBackgroundMode() == BackgroundMode::Color)
         {
-            m_Context->SetType(SceneType::Scene3D);
+            Color color = m_Context->GetBackgroundColor();
+            float c[4] = {color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f};
+            if (ImGui::ColorEdit4("Color", c))
+            {
+                m_Context->SetBackgroundColor(
+                    {(unsigned char)(c[0] * 255), (unsigned char)(c[1] * 255),
+                     (unsigned char)(c[2] * 255), (unsigned char)(c[3] * 255)});
+            }
+        }
+        else if (m_Context->GetBackgroundMode() == BackgroundMode::Texture)
+        {
+            char buffer[256];
+            memset(buffer, 0, sizeof(buffer));
+            strncpy(buffer, m_Context->GetBackgroundTexturePath().c_str(), sizeof(buffer) - 1);
+            if (ImGui::InputText("Texture Path", buffer, sizeof(buffer)))
+                m_Context->SetBackgroundTexturePath(buffer);
+
+            ImGui::SameLine();
+            if (ImGui::Button("..."))
+            {
+                nfdu8char_t *outPath = NULL;
+                nfdu8filteritem_t filterList[1] = {{"Textures", "png,jpg,tga,bmp"}};
+                nfdresult_t result = NFD_OpenDialog(&outPath, filterList, 1, NULL);
+                if (result == NFD_OKAY)
+                {
+                    std::filesystem::path p = outPath;
+                    if (Project::GetActive())
+                        m_Context->SetBackgroundTexturePath(
+                            std::filesystem::relative(p, Project::GetAssetDirectory()).string());
+                    else
+                        m_Context->SetBackgroundTexturePath(p.filename().string());
+                    NFD_FreePath(outPath);
+                }
+            }
         }
 
-        ImGui::End();
-        return;
+        if (readOnly)
+            ImGui::EndDisabled();
     }
+
+    ImGui::Separator();
 
     auto env = m_Context->GetEnvironment();
 
@@ -54,7 +94,7 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
             nfdresult_t result = NFD_OpenDialog(&outPath, filterList, 1, NULL);
             if (result == NFD_OKAY)
             {
-                m_Context->SetEnvironment(Assets::LoadEnvironment(outPath));
+                m_Context->SetEnvironment(AssetManager::LoadEnvironment(outPath));
                 NFD_FreePath(outPath);
             }
         }
@@ -62,9 +102,15 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
         ImGui::SameLine();
         if (ImGui::Button("New Environment"))
         {
-            auto newEnv = std::make_shared<EnvironmentAsset>();
-            newEnv->SetPath("environments/new_environment.chenv");
-            m_Context->SetEnvironment(newEnv);
+            NFD::UniquePath outPath;
+            nfdfilteritem_t filterItem[1] = {{"Environment", "chenv"}};
+            auto result = NFD::SaveDialog(outPath, filterItem, 1, nullptr, "Untitled.chenv");
+            if (result == NFD_OKAY)
+            {
+                auto newEnv = std::make_shared<EnvironmentAsset>();
+                newEnv->SetPath(outPath.get());
+                m_Context->SetEnvironment(newEnv);
+            }
         }
     }
 
@@ -83,21 +129,8 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
 
         DrawEnvironmentSettings(env, readOnly);
     }
-    else
-    {
-        ImGui::Text("No Environment Asset assigned.");
-        if (!readOnly)
-        {
-            if (ImGui::Button("Create Default"))
-            {
-                auto defaultEnv = std::make_shared<EnvironmentAsset>();
-                defaultEnv->SetPath("assets/environments/default.chenv");
-                m_Context->SetEnvironment(defaultEnv);
-            }
-        }
-    }
 
-    if (m_DebugFlags && m_Context->GetType() == SceneType::Scene3D)
+    if (m_DebugFlags)
     {
         ImGui::Separator();
         ImGui::Text("Debug Rendering");

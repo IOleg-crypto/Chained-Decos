@@ -2,6 +2,7 @@
 #define CH_ASSET_MANAGER_H
 
 #include "asset.h"
+#include "asset_archive.h"
 #include "engine/audio/sound_asset.h"
 #include "engine/core/task_system.h"
 #include "environment.h"
@@ -16,7 +17,7 @@
 namespace CHEngine
 {
 
-class Assets
+class AssetManager
 {
 public:
     static void Init();
@@ -28,18 +29,15 @@ public:
     {
         static_assert(std::is_base_of<Asset, T>::value, "T must inherit from Asset");
 
-        std::lock_guard<std::mutex> lock(s_AssetsMutex);
-
-        if (s_Assets.find(path) != s_Assets.end())
-        {
-            return std::static_pointer_cast<T>(s_Assets[path]);
-        }
+        auto cached = AssetArchive::Get(path);
+        if (cached)
+            return std::static_pointer_cast<T>(cached);
 
         auto asset = T::Load(path);
         if (asset)
         {
             asset->SetState(AssetState::Ready);
-            s_Assets[path] = asset;
+            AssetArchive::Add(path, asset);
         }
         return asset;
     }
@@ -48,28 +46,20 @@ public:
     {
         static_assert(std::is_base_of<Asset, T>::value, "T must inherit from Asset");
 
-        {
-            std::lock_guard<std::mutex> lock(s_AssetsMutex);
-            if (s_Assets.find(path) != s_Assets.end())
-                return std::static_pointer_cast<T>(s_Assets[path]);
+        auto cached = AssetArchive::Get(path);
+        if (cached)
+            return std::static_pointer_cast<T>(cached);
 
-            // Create placeholder
-            auto asset = std::make_shared<T>();
-            asset->SetPath(path);
-            asset->SetState(AssetState::Loading);
-            s_Assets[path] = asset;
-        }
+        // Create placeholder
+        auto asset = std::make_shared<T>();
+        asset->SetPath(path);
+        asset->SetState(AssetState::Loading);
+        AssetArchive::Add(path, asset);
 
         // Push loading job to TaskSystem
-        TaskSystem::PushTask(
-            [path]()
-            {
-                // T::LoadParse will do the CPU heavy work
-                // Then we queue it for GPU upload in Update()
-                T::LoadAsync(path);
-            });
+        TaskSystem::PushTask([path]() { T::LoadAsync(path); });
 
-        return std::static_pointer_cast<T>(s_Assets[path]);
+        return asset;
     }
 
     // Helpers
@@ -83,24 +73,11 @@ public:
     static void QueueForGPUUpload(std::shared_ptr<Asset> asset);
 
 private:
-    struct StringHash
-    {
-        using is_transparent = void;
-        size_t operator()(std::string_view txt) const
-        {
-            return std::hash<std::string_view>{}(txt);
-        }
-    };
-
-    static std::unordered_map<std::string, std::shared_ptr<Asset>, StringHash, std::equal_to<>>
-        s_Assets;
-    static std::mutex s_AssetsMutex;
-
     static std::vector<std::shared_ptr<Asset>> s_GPUUploadQueue;
     static std::mutex s_GPUQueueMutex;
 };
 
-using AssetManager = Assets;
+using Assets = AssetManager;
 
 } // namespace CHEngine
 
