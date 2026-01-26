@@ -2,13 +2,12 @@
 #define CH_VISUALS_H
 
 #include "engine/core/math_types.h"
-#include "engine/renderer/material.h"
+#include "engine/render/material.h"
 #include "engine/scene/scene.h"
 #include "render_types.h"
 #include <memory>
 #include <string>
 #include <vector>
-
 
 namespace CHEngine
 {

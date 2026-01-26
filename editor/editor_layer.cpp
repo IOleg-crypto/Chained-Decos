@@ -6,8 +6,8 @@
 #include "engine/core/process_utils.h"
 #include "engine/core/profiler.h"
 #include "engine/physics/physics.h"
-#include "engine/renderer/asset_manager.h"
-#include "engine/renderer/render.h"
+#include "engine/render/asset_manager.h"
+#include "engine/render/render.h"
 #include "engine/scene/components.h"
 #include "engine/scene/project_serializer.h"
 #include "engine/scene/scene.h"
@@ -27,7 +27,6 @@
 #include "external/glfw/include/GLFW/glfw3.h"
 #include <rlgl.h>
 
-#include "engine/ui/imgui_raylib_ui.h"
 #include "panels/component_ui.h"
 #include "panels/console_panel.h"
 #include <cstdarg>
@@ -69,22 +68,7 @@ void EditorLayer::OnAttach()
     ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-    io.Fonts->Clear();
-    io.Fonts->AddFontFromFileTTF(
-        AssetManager::ResolvePath("engine:font/lato/Lato-Regular.ttf").string().c_str(), 18.0f);
-
-    static const ImWchar icons_ranges[] = {0xe005, 0xf8ff, 0};
-    ImFontConfig icons_config;
-    icons_config.MergeMode = true;
-    icons_config.PixelSnapH = true;
-    io.Fonts->AddFontFromFileTTF(
-        AssetManager::ResolvePath("engine:font/fa-solid-900.ttf").string().c_str(), 18.0f,
-        &icons_config, icons_ranges);
-
-    io.Fonts->AddFontFromFileTTF(
-        AssetManager::ResolvePath("engine:font/lato/Lato-Bold.ttf").string().c_str(), 20.0f);
-    io.Fonts->AddFontFromFileTTF(
-        AssetManager::ResolvePath("engine:font/lato/Lato-Bold.ttf").string().c_str(), 26.0f);
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     SetDarkThemeColors();
 
@@ -106,8 +90,24 @@ void EditorLayer::OnAttach()
     m_CommandHistory.SetNotifyCallback(
         [this]() { CH_CORE_TRACE("CommandHistory: Scene state changed, notifying editor..."); });
 
-    // Clear project at start to show project browser
-    Project::SetActive(nullptr);
+    // Auto-load last project/scene
+    const auto &settings = EditorSettings::Get();
+    if (!settings.LastProjectPath.empty() && std::filesystem::exists(settings.LastProjectPath))
+    {
+        CH_CORE_INFO("Auto-loading last project: {}", settings.LastProjectPath);
+        ProjectUtils::OpenProject(settings.LastProjectPath);
+
+        if (!settings.LastScenePath.empty() && std::filesystem::exists(settings.LastScenePath))
+        {
+            CH_CORE_INFO("Auto-loading last scene: {}", settings.LastScenePath);
+            SceneUtils::OpenScene(settings.LastScenePath);
+        }
+    }
+    else
+    {
+        // Clear project at start to show project browser if no auto-load
+        Project::SetActive(nullptr);
+    }
 
     CH_CORE_INFO("EditorLayer Attached with {} modular panels.", m_Panels.size());
 }
@@ -142,7 +142,17 @@ void EditorLayer::OnUpdate(float deltaTime)
                 if (IsKeyPressed(KEY_Y))
                     m_CommandHistory.Redo();
                 if (IsKeyPressed(KEY_S))
-                    SceneUtils::SaveScene();
+                {
+                    if (activeScene->GetScenePath().empty())
+                    {
+                        // If scene is unsaved, treat Ctrl+S as Save As
+                        SceneUtils::SaveSceneAs();
+                    }
+                    else
+                    {
+                        SceneUtils::SaveScene();
+                    }
+                }
                 if (IsKeyPressed(KEY_O))
                     SceneUtils::OpenScene();
                 if (IsKeyPressed(KEY_N))
@@ -436,16 +446,7 @@ void EditorLayer::OnEvent(CHEngine::Event &e)
     dispatcher.Dispatch<AppLaunchRuntimeEvent>(
         [this](AppLaunchRuntimeEvent &ev)
         {
-            if (m_SceneState == SceneState::Edit)
-            {
-                ScenePlayEvent spe;
-                OnScenePlay(spe);
-            }
-
-            // Create standalone window
-            // Rocket button logic will be moved to separate process launch later
-            CH_CORE_INFO("Launching Standalone mode via process launch (TBD)...");
-            CH_CORE_INFO("Standalone Window Created");
+            LaunchStandalone();
             return true;
         });
     dispatcher.Dispatch<AppResetLayoutEvent>(

@@ -1,7 +1,7 @@
 #ifndef CH_ENVIRONMENT_PANEL_H
 #define CH_ENVIRONMENT_PANEL_H
 
-#include "engine/renderer/render.h"
+#include "engine/render/render.h"
 #include "panel.h"
 
 namespace CHEngine

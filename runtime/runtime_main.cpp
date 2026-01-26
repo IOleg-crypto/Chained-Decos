@@ -15,7 +15,7 @@ Application *CreateApplication()
 {
     RegisterGameScripts();
     Application::Config config;
-    // config.Title = "Chained e";
+    config.Title = "Chained Decos";
     config.Width = 1280;
     config.Height = 720;
 

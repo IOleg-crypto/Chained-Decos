@@ -1,5 +1,6 @@
 #include "window.h"
 #include "engine/core/log.h"
+#include "engine/ui/font_manager.h"
 #include <raylib.h>
 
 // ImGui
@@ -71,6 +72,8 @@ Window::Window(const WindowConfig &config)
 
     // Setup style
     ImGui::StyleColorsDark();
+
+    FontManager::Init();
 
     // When viewports are enabled, tweak WindowRounding/WindowBg
     ImGuiStyle &style = ImGui::GetStyle();

@@ -6,7 +6,6 @@
 #include "engine/core/layer.h"
 #include "engine/core/layer_stack.h"
 #include "engine/core/window.h"
-#include "engine/scene/scene.h"
 #include <atomic>
 #include <mutex>
 #include <string>
@@ -14,10 +13,11 @@
 
 namespace CHEngine
 {
+class Scene;
 
 struct ApplicationConfig
 {
-    std::string Title = "Chained Engine";
+    std::string Title;
     int Width = 1280;
     int Height = 720;
     bool Fullscreen = false;
@@ -86,6 +86,15 @@ public:
 
     void LoadScene(const std::string &path);
 
+    static void SetStartupScene(const std::string &path)
+    {
+        s_StartupScenePath = path;
+    }
+    static const std::string &GetStartupScene()
+    {
+        return s_StartupScenePath;
+    }
+
     const Config &GetConfig() const
     {
         return m_Config;
@@ -101,6 +110,7 @@ private:
     void OnRender();
 
     static Application *s_Instance;
+    static std::string s_StartupScenePath;
 
     Config m_Config;
     bool m_Running = false;

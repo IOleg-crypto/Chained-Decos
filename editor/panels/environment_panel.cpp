@@ -1,6 +1,6 @@
 #include "environment_panel.h"
-#include "engine/renderer/asset_manager.h"
-#include "engine/renderer/render.h"
+#include "engine/render/asset_manager.h"
+#include "engine/render/render.h"
 #include "engine/scene/project.h"
 #include "scene/scene.h"
 #include <filesystem>
@@ -43,7 +43,7 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
         {
             Color color = m_Context->GetBackgroundColor();
             float c[4] = {color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f};
-            if (ImGui::ColorEdit4("Color", c))
+            if (ImGui::ColorEdit4("Background Color", c))
             {
                 m_Context->SetBackgroundColor(
                     {(unsigned char)(c[0] * 255), (unsigned char)(c[1] * 255),
@@ -132,12 +132,23 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
 
     if (m_DebugFlags)
     {
+        bool is3D = m_Context->GetBackgroundMode() == BackgroundMode::Environment3D;
         ImGui::Separator();
         ImGui::Text("Debug Rendering");
+
+        if (!is3D)
+            ImGui::BeginDisabled();
+
         ImGui::Checkbox("Colliders", &m_DebugFlags->DrawColliders);
         ImGui::Checkbox("Lights", &m_DebugFlags->DrawLights);
         ImGui::Checkbox("Spawn Zones", &m_DebugFlags->DrawSpawnZones);
         ImGui::Checkbox("Draw Grid", &m_DebugFlags->DrawGrid);
+
+        if (!is3D)
+        {
+            ImGui::EndDisabled();
+            ImGui::TextDisabled("(Hiding 3D Debug in UI Mode)");
+        }
     }
 
     ImGui::End();
@@ -156,7 +167,7 @@ void EnvironmentPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset>
 
         float color[4] = {settings.LightColor.r / 255.0f, settings.LightColor.g / 255.0f,
                           settings.LightColor.b / 255.0f, settings.LightColor.a / 255.0f};
-        if (ImGui::ColorEdit4("Color", color))
+        if (ImGui::ColorEdit4("Light Color", color))
         {
             settings.LightColor.r = (unsigned char)(color[0] * 255.0f);
             settings.LightColor.g = (unsigned char)(color[1] * 255.0f);

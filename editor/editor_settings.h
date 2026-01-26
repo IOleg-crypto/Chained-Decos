@@ -5,7 +5,6 @@
 #include <filesystem>
 #include <string>
 
-
 namespace CHEngine
 {
 struct EditorSettingsData
@@ -16,6 +15,7 @@ struct EditorSettingsData
     int TargetFPS = 144;
     bool VSync = true;
     std::string LastProjectPath = "";
+    std::string LastScenePath = "";
 };
 
 class EditorSettings
@@ -43,6 +43,10 @@ public:
     static void SetLastProjectPath(const std::string &path)
     {
         s_Data.LastProjectPath = path;
+    }
+    static void SetLastScenePath(const std::string &path)
+    {
+        s_Data.LastScenePath = path;
     }
 
 private:

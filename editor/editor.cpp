@@ -1,7 +1,7 @@
 #include "editor.h"
 #include "editor_layer.h"
 #include "editor_settings.h"
-#include "engine/renderer/asset_manager.h"
+#include "engine/render/asset_manager.h"
 #include <raylib.h>
 
 namespace CHEngine

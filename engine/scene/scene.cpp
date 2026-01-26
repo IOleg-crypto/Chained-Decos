@@ -3,15 +3,16 @@
 #include "engine/core/application.h"
 #include "engine/core/profiler.h"
 #include "engine/physics/physics.h"
-#include "engine/renderer/asset_manager.h"
-#include "engine/renderer/model_asset.h"
-#include "engine/renderer/render.h"
+#include "engine/render/asset_manager.h"
+#include "engine/render/model_asset.h"
+#include "engine/render/render.h"
 #include "engine/ui/canvas_renderer.h"
 #include "project.h"
 #include "raylib.h"
 #include "scene_serializer.h"
 #include "scriptable_entity.h"
 #include <raymath.h>
+
 
 namespace CHEngine
 {

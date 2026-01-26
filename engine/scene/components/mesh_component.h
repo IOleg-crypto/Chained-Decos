@@ -2,7 +2,7 @@
 #define CH_MESH_COMPONENT_H
 
 #include "engine/core/base.h"
-#include "engine/renderer/material.h"
+#include "engine/render/material.h"
 #include <string>
 #include <vector>
 

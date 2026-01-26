@@ -1,9 +1,8 @@
 #ifndef CH_API_CONTEXT_H
 #define CH_API_CONTEXT_H
 
-#include "engine/renderer/environment.h"
+#include "engine/render/environment.h"
 #include "render_types.h"
-
 
 namespace CHEngine
 {

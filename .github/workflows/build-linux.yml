@@ -54,34 +54,23 @@ jobs:
 
       - name: Setup GCC
         run: |
+          sudo apt-get update
           sudo apt-get install -y gcc-13 g++-13
-          echo "CC=gcc-13" >> "$GITHUB_ENV"
-          echo "CXX=g++-13" >> "$GITHUB_ENV"
+          echo "CC=gcc-13" >> $GITHUB_ENV
+          echo "CXX=g++-13" >> $GITHUB_ENV
 
       - name: Configure
-        run: |
-          cmake -B build \
-            -G "Ninja" \
-            -DCMAKE_BUILD_TYPE=${{ inputs.build_type }} \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DBUILD_TESTS=ON \
-            -DBUILD_MAP_EDITOR=ON \
-            -DDISABLE_ALL_WARNINGS=ON
+        run: cmake --preset ci-linux-gcc
 
       - name: Build
-        run: |
-          cmake --build build \
-            --config ${{ inputs.build_type }} \
-            --target ChainedEditor EngineTests \
-            --parallel $(nproc)
+        run: cmake --build --preset ci-linux-gcc --parallel $(nproc)
 
       - name: Test
         run: |
-          if [[ -f "build/tests/EngineTests" ]]; then
-            xvfb-run ./build/tests/EngineTests
-          elif [[ -f "build/bin/EngineTests" ]]; then
-            xvfb-run ./build/bin/EngineTests
+          if [[ -f "build/ci-linux-gcc/tests/EngineTests" ]]; then
+            xvfb-run ./build/ci-linux-gcc/tests/EngineTests
+          elif [[ -f "build/ci-linux-gcc/bin/EngineTests" ]]; then
+            xvfb-run ./build/ci-linux-gcc/bin/EngineTests
           else
              echo "EngineTests not found."
              exit 1
@@ -92,9 +81,9 @@ jobs:
         with:
           name: linux-gcc-${{ inputs.build_type }}
           path: |
-            build/editor/ChainedEditor
-            build/runtime/ChainedRuntime
-            build/tests/EngineTests
+            build/ci-linux-gcc/editor/ChainedEditor
+            build/ci-linux-gcc/runtime/ChainedRuntime
+            build/ci-linux-gcc/tests/EngineTests
           retention-days: 7
 
   build-clang:
@@ -138,28 +127,16 @@ jobs:
           echo "CXX=clang++-17" >> "$GITHUB_ENV"
 
       - name: Configure
-        run: |
-          cmake -B build \
-            -G "Ninja" \
-            -DCMAKE_BUILD_TYPE=${{ inputs.build_type }} \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DBUILD_TESTS=ON \
-            -DBUILD_MAP_EDITOR=ON \
-            -DDISABLE_ALL_WARNINGS=ON
+        run: cmake --preset ci-linux-clang
 
       - name: Build
-        run: |
-          cmake --build build \
-            --config ${{ inputs.build_type }} \
-            --target ChainedEditor EngineTests \
-            --parallel $(nproc)
+        run: cmake --build --preset ci-linux-clang --parallel $(nproc)
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: linux-clang-${{ inputs.build_type }}
           path: |
-            build/editor/ChainedEditor
-            build/runtime/ChainedRuntime
+            build/ci-linux-clang/editor/ChainedEditor
+            build/ci-linux-clang/runtime/ChainedRuntime
           retention-days: 7

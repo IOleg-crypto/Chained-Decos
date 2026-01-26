@@ -57,6 +57,8 @@ void ProjectUtils::OpenProject(const std::filesystem::path &path)
     if (serializer.Deserialize(path))
     {
         Project::SetActive(project);
+        EditorSettings::SetLastProjectPath(path.string());
+        EditorSettings::Save();
         ProjectOpenedEvent e(path.string());
         Application::Get().OnEvent(e);
     }
@@ -98,6 +100,8 @@ void SceneUtils::OpenScene()
 void SceneUtils::OpenScene(const std::filesystem::path &path)
 {
     Application::Get().LoadScene(path.string());
+    EditorSettings::SetLastScenePath(path.string());
+    EditorSettings::Save();
 }
 
 void SceneUtils::SaveScene()

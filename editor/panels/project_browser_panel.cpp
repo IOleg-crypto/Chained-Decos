@@ -1,7 +1,7 @@
 #include "project_browser_panel.h"
 #include "editor/editor_utils.h"
 #include "editor_settings.h"
-#include "engine/renderer/asset_manager.h"
+#include "engine/render/asset_manager.h"
 #include "nfd.h"
 #include "raylib.h"
 #include <extras/IconsFontAwesome6.h>

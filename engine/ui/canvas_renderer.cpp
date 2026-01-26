@@ -1,11 +1,12 @@
 #include "canvas_renderer.h"
-#include "engine/renderer/asset_manager.h"
-#include "engine/renderer/font_asset.h"
-#include "engine/renderer/texture_asset.h"
+#include "engine/render/asset_manager.h"
+#include "engine/render/font_asset.h"
+#include "engine/render/texture_asset.h"
 #include "engine/scene/components.h"
 #include "engine/scene/components/hierarchy_component.h"
 #include "engine/scene/entity.h"
 #include "engine/scene/scene.h"
+#include "font_manager.h"
 #include <algorithm>
 #include <imgui_internal.h>
 
@@ -57,16 +58,32 @@ void CanvasRenderer::DrawEntity(Entity entity, const ImVec2 &parentPos, const Im
     // 3. Edit Mode Dragging
     if (editMode)
     {
-        ImRect bb(finalAbsPos, {finalAbsPos.x + size.x, finalAbsPos.y + size.y});
-        ImGui::ItemAdd(bb, ImGui::GetID("##drag_handle"));
-        if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+        ImGui::SetCursorScreenPos(finalAbsPos);
+        ImGui::InvisibleButton("##drag_handle", size);
+
+        bool hovered = ImGui::IsItemHovered();
+        bool active = ImGui::IsItemActive();
+
+        if (active && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
         {
             ImVec2 delta = ImGui::GetIO().MouseDelta;
-            base.Transform.OffsetMin.x += delta.x;
-            base.Transform.OffsetMin.y += delta.y;
-            base.Transform.OffsetMax.x += delta.x;
-            base.Transform.OffsetMax.y += delta.y;
+            base.Transform.RectCoordinates.x += delta.x;
+            base.Transform.RectCoordinates.y += delta.y;
         }
+
+        // Visual Feedback in Editor
+        if (hovered || active)
+        {
+            ImDrawList *fgList = ImGui::GetForegroundDrawList();
+            fgList->AddRect(finalAbsPos, {finalAbsPos.x + size.x, finalAbsPos.y + size.y},
+                            active ? IM_COL32(0, 255, 0, 255) : IM_COL32(255, 255, 0, 150), 0.0f, 0,
+                            2.0f);
+        }
+    }
+    else
+    {
+        // Register space used so ImGui doesn't think SetCursorPos was wasted
+        ImGui::Dummy(size);
     }
 
     // 4. Recursive Children with Layout Support
@@ -203,8 +220,14 @@ void CanvasRenderer::DrawStyledText(const std::string &text, const ImVec2 &absPo
 {
     ImDrawList *drawList = ImGui::GetWindowDrawList();
 
+    // 1. Pick the best font from atlas
+    ImFont *font = FontManager::GetFont(style.FontPath, style.FontSize);
+
     // Simple centering for now
+    ImGui::PushFont(font);
     ImVec2 textSize = ImGui::CalcTextSize(text.c_str());
+    ImGui::PopFont();
+
     ImVec2 textPos = {absPos.x + (size.x - textSize.x) * 0.5f,
                       absPos.y + (size.y - textSize.y) * 0.5f};
 
@@ -232,14 +255,18 @@ void CanvasRenderer::DrawStyledText(const std::string &text, const ImVec2 &absPo
 
     if (style.bShadow)
     {
+        ImGui::PushFont(font);
         drawList->AddText(ImVec2(textPos.x + 1, textPos.y + 1), IM_COL32(0, 0, 0, 150),
                           text.c_str());
+        ImGui::PopFont();
     }
 
+    ImGui::PushFont(font);
     drawList->AddText(
         textPos,
         IM_COL32(style.TextColor.r, style.TextColor.g, style.TextColor.b, style.TextColor.a),
         text.c_str());
+    ImGui::PopFont();
 }
 
 } // namespace CHEngine

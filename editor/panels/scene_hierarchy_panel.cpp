@@ -54,6 +54,21 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
                         return;
                 }
 
+                // Recursive search for entities to delete
+                auto collectDeletions = [&](Entity e, auto &self) -> void
+                {
+                    if (DrawEntityNodeRecursive(e) != entt::null)
+                        entitiesToDelete.push_back((entt::entity)e);
+                    else if (m_Context->GetRegistry().valid(e) &&
+                             e.HasComponent<HierarchyComponent>())
+                    {
+                        auto children = e.GetComponent<HierarchyComponent>().Children;
+                        // Note: we don't recurse here because DrawEntityNode already recurse!
+                        // We only need to check if DrawEntityNode(root) or its children inside
+                        // DrawEntityNode returned true.
+                    }
+                };
+
                 if (!isChild)
                 {
                     // I'll simplify: DrawEntityNode will return entity to delete

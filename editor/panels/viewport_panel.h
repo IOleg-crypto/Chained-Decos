@@ -1,7 +1,7 @@
 #ifndef CH_VIEWPORT_PANEL_H
 #define CH_VIEWPORT_PANEL_H
 
-#include "engine/renderer/render.h"
+#include "engine/render/render.h"
 #include "panel.h"
 #include "viewport/editor_camera.h"
 #include "viewport/editor_gizmo.h"
