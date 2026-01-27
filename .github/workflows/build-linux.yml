@@ -54,10 +54,10 @@ jobs:
 
       - name: Setup Compilers
         run: |
-          sudo apt-get install -y gcc-13 g++-13
+          sudo apt-get install -y gcc-12 g++-12
           if [[ "${{ matrix.preset }}" == *"gcc"* || "${{ matrix.preset }}" == *"make"* ]]; then  
-            echo "CC=gcc-13" >> $GITHUB_ENV
-            echo "CXX=g++-13" >> $GITHUB_ENV
+            echo "CC=gcc-12" >> $GITHUB_ENV
+            echo "CXX=g++-12" >> $GITHUB_ENV
           fi
           if [[ "${{ matrix.preset }}" == *"clang"* ]]; then
             wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
