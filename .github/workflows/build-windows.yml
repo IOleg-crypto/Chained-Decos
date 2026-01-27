@@ -2,11 +2,6 @@ name: Build Windows
 
 on:
   workflow_call:
-    inputs:
-      build_type:
-        required: true
-        type: string
-        default: "Release"
 
 env:
   CI: true
