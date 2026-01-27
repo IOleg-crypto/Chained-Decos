@@ -179,12 +179,20 @@ jobs:
             --config Debug \
             --component Runtime
 
+      - name: Get current date
+        id: date
+        shell: bash
+        run: echo "date=$(date +'%d.%m.%y')" >> $GITHUB_OUTPUT
+
       - name: Package binaries
         shell: bash
         run: |
           cd "${{ steps.build-env.outputs.package-dir }}"
-          PACKAGE_NAME="ChainedDecos-${{ steps.version.outputs.version }}-${{ matrix.name }}"
+          # Sanitize branch/ref name (remove /)
+          CLEAN_REF=$(echo "${{ github.ref_name }}" | sed 's/\//-/g')
+          PACKAGE_NAME="Chained Engine(Chained Decos) SDK ${{ steps.date.outputs.date }} ($CLEAN_REF)"
           echo "📦 Creating package: $PACKAGE_NAME"
+          
           if [[ "${{ matrix.os }}" == "windows-2022" || "${{ matrix.os }}" == "windows-latest" ]]; then
             powershell -Command "
               Compress-Archive -Path 'bin/*','share/' -DestinationPath '${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.zip' -Force
@@ -195,46 +203,10 @@ jobs:
           fi
           echo "✅ Package created"
 
-      - name: Create source code archive
-        if: matrix.os == 'ubuntu-22.04'
-        shell: bash
-        run: |
-          echo "📦 Creating source code archive..."
-          SOURCE_ARCHIVE="ChainedDecos-${{ steps.version.outputs.version }}-source.zip"
-          zip -r "${{ steps.build-env.outputs.package-dir }}/$SOURCE_ARCHIVE" \
-            . -x "*.git*" "build*" ".deps*" "cmake-build*" "*.tmp" "*.temp" \
-            ".vscode/settings.json" ".vs/*" "*/__pycache__/*" "*.pyc"
-          echo "✅ Created source archive: $SOURCE_ARCHIVE"
-
-      - name: Upload release assets
+      - name: Upload debug artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: release-assets-${{ matrix.name }}
-          path: |
-            ${{ steps.build-env.outputs.package-dir }}/*.zip
-            ${{ steps.build-env.outputs.package-dir }}/*.tar.gz
-          retention-days: 30
+          name: debug-package-${{ matrix.name }}
+          path: ${{ steps.build-env.outputs.package-dir }}/*.zip
+          retention-days: 7
 
-      - name: Create release tag
-        if: github.ref == 'refs/heads/main'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          TAG="v$(date +'%Y.%m.%d.%H%M%S')"
-          git tag $TAG
-          git push origin $TAG
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish debugrelease to GitHub
-        if: matrix.os == 'ubuntu-22.04'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.version.outputs.version }}
-          name: "Release ${{ steps.version.outputs.version }}"
-          files: |
-            ${{ steps.build-env.outputs.package-dir }}/*.zip
-            ${{ steps.build-env.outputs.package-dir }}/*.tar.gz
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
