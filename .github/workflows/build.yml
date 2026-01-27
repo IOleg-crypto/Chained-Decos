@@ -5,9 +5,11 @@ on:
     branches:
       - main
       - develop
+      - chained-gui
+      - refactor-branch
   workflow_dispatch:
   push:
-    branches: [main, develop]
+    branches: [main, develop , chained-gui , refactor-branch]
     paths:
       - "**/*.cpp"
       - "**/*.h"

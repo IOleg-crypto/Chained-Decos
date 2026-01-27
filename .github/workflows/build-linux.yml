@@ -55,14 +55,18 @@ jobs:
       - name: Setup Compilers
         run: |
           sudo apt-get update
-          if [[ "${{ matrix.preset }}" == *"gcc"* ]]; then
+          if [[ "${{ matrix.preset }}" == *"gcc"* || "${{ matrix.preset }}" == *"make"* ]]; then
             sudo apt-get install -y gcc-13 g++-13
+            echo "CC=gcc-13" >> $GITHUB_ENV
+            echo "CXX=g++-13" >> $GITHUB_ENV
           fi
           if [[ "${{ matrix.preset }}" == *"clang"* ]]; then
             wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
             sudo add-apt-repository "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main"
             sudo apt-get update
-            sudo apt-get install -y clang-17 clang++-17
+            sudo apt-get install -y clang-17 clang++-17 clang-tools-17
+            echo "CC=clang-17" >> $GITHUB_ENV
+            echo "CXX=clang++-17" >> $GITHUB_ENV
           fi
 
       - name: Configure

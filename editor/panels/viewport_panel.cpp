@@ -355,25 +355,6 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         }
 
         ImGui::EndChild();
-
-        // // --- Snapping / Overlay Toolbar ---
-        // ImGui::SetCursorPos(ImVec2(10, 10));
-        // ImGui::BeginChild("ViewportToolbar", ImVec2(0, 0),
-        //                   ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY |
-        //                       ImGuiChildFlags_AlwaysAutoResize | ImGuiChildFlags_Borders,
-        //                   ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-
-        // bool snapping = m_Gizmo.IsSnappingEnabled();
-        // if (ImGui::Checkbox("Snap", &snapping))
-        //     m_Gizmo.SetSnapping(snapping);
-
-        // ImGui::SameLine();
-        // ImGui::SetNextItemWidth(40);
-        // float grid = m_Gizmo.GetGridSize();
-        // if (ImGui::DragFloat("##Grid", &grid, 0.1f, 0.1f, 10.0f, "Grid: %.1f"))
-        //     m_Gizmo.SetGridSize(grid);
-
-        // ImGui::EndChild();
     }
 
     if (m_Context)
