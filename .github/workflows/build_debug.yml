@@ -141,26 +141,11 @@ jobs:
         shell: bash
         run: |
           echo "Configuring CMake for release build on ${{ matrix.os }}"
-          if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
-            GENERATOR="Ninja"
-          else
-            GENERATOR="Ninja"
-          fi
-          cmake -B "${{ steps.build-env.outputs.build-output-dir }}" \
-            -G Ninja \
-            -DCMAKE_BUILD_TYPE=Debug \
+          cmake --preset ninja-debug \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_INSTALL_PREFIX="${{ steps.build-env.outputs.package-dir }}" \
-            -DBUILD_TESTS=OFF \
-            -DBUILD_MAP_EDITOR=ON \
-            -DENABLE_OPTIMIZATIONS=OFF \
-            -DENABLE_UNITY_BUILD=OFF \
-            -DENABLE_WARNINGS=OFF \
-            -DENABLE_DEV_TOOLS=OFF \
-            -DENABLE_DEBUG_INFO=ON \
-            -DCPACK_PACKAGE_VERSION="${{ steps.version.outputs.version }}" \
-            -S "${{ github.workspace }}"
+            -DBUILD_TESTS=ON
 
       - name: Build Debug binaries
         shell: bash
@@ -170,28 +155,27 @@ jobs:
           else
             PARALLEL_JOBS=$(nproc 2>/dev/null || echo 4)
           fi
-          echo "Building release targets with $PARALLEL_JOBS parallel jobs..."
-          cmake --build "${{ steps.build-env.outputs.build-output-dir }}" \
-            --config Debug \
-            --target ChainedEditor EngineTests \
+          echo "Building debug release targets with $PARALLEL_JOBS parallel jobs..."
+          cmake --build --preset ninja-debug \
+            --target ChainedEditor ChainedRuntime EngineTests \
             --parallel "$PARALLEL_JOBS"
 
       - name: Run Tests (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
-          xvfb-run ./build/tests/EngineTests
+          xvfb-run ./build/ninja-debug/bin/EngineTests
 
       - name: Run Tests (Windows)
         if: matrix.os == 'windows-2022'
         shell: pwsh
         run: |
-          $testExe = Get-ChildItem -Path build -Filter EngineTests.exe -Recurse | Select-Object -First 1 -ExpandProperty FullName
-          if ($testExe) { & $testExe } else { exit 1 }
+          $testExe = "build/ninja-debug/bin/EngineTests.exe"
+          if (Test-Path $testExe) { & $testExe } else { exit 1 }
 
       - name: Install to package directory
         shell: bash
         run: |
-          cmake --install "${{ steps.build-env.outputs.build-output-dir }}" \
+          cmake --install build/ninja-debug \
             --config Debug \
             --component Runtime
 
@@ -201,7 +185,7 @@ jobs:
           cd "${{ steps.build-env.outputs.package-dir }}"
           PACKAGE_NAME="ChainedDecos-${{ steps.version.outputs.version }}-${{ matrix.name }}"
           echo "📦 Creating package: $PACKAGE_NAME"
-          if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
+          if [[ "${{ matrix.os }}" == "windows-2022" || "${{ matrix.os }}" == "windows-latest" ]]; then
             powershell -Command "
               Compress-Archive -Path 'bin/*','share/' -DestinationPath '${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.zip' -Force
             "

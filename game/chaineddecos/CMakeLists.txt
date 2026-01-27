@@ -14,3 +14,10 @@ target_include_directories(ChainedDecosGame PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}
 )
+
+# Create the project-specific runtime executable
+chained_add_game(ChainedRuntime 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/runtime_entry.cpp
+    ChainedDecosGame
+)

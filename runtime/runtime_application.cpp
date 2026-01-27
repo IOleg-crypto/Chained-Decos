@@ -22,8 +22,7 @@ public:
     {
         auto scene = Application::Get().GetActiveScene();
         if (scene)
-            scene->OnUpdateRuntime(
-                deltaTime); // This now handles Physics, Scripting, Animation, etc.
+            scene->OnUpdateRuntime(deltaTime);
     }
 
     virtual void OnRender() override
@@ -32,7 +31,6 @@ public:
         if (!scene)
             return;
 
-        // Runtime Camera - looking for player
         auto view = scene->GetRegistry().view<PlayerComponent, TransformComponent>();
         Camera3D camera = {0};
 
@@ -59,7 +57,6 @@ public:
         }
         else
         {
-            // Fallback camera
             camera.position = {10, 10, 10};
             camera.target = {0, 0, 0};
             camera.up = {0, 1, 0};
@@ -67,7 +64,6 @@ public:
             camera.projection = CAMERA_PERSPECTIVE;
         }
 
-        // 1. Clear Background based on scene settings
         auto mode = scene->GetBackgroundMode();
         if (mode == BackgroundMode::Color)
         {
@@ -97,9 +93,8 @@ public:
                 ClearBackground(scene->GetBackgroundColor());
             }
         }
-        else // Environment3D
+        else
         {
-            // Skybox handles background in DrawScene usually
             ClearBackground(BLACK);
         }
 
@@ -113,7 +108,6 @@ public:
         auto scene = Application::Get().GetActiveScene();
         if (scene)
         {
-            // Setup a fullscreen transparent window for the game UI
             ImGuiViewport *viewport = ImGui::GetMainViewport();
             ImGui::SetNextWindowPos(viewport->WorkPos);
             ImGui::SetNextWindowSize(viewport->WorkSize);
@@ -127,7 +121,6 @@ public:
                                             ImGuiWindowFlags_NoBackground;
 
             ImGui::Begin("##GameUI", nullptr, window_flags);
-            // Explicitly pass full screen size to ensure UI anchors work correctly
             scene->OnImGuiRender(ImGui::GetWindowPos(), ImGui::GetWindowSize(),
                                  ImGui::GetWindowViewport()->ID, false);
             ImGui::End();
@@ -153,56 +146,68 @@ void RuntimeApplication::PostInitialize()
         return;
     }
 
-    if (!m_ProjectPath.empty())
-    {
-        std::filesystem::path absolutePath = std::filesystem::absolute(m_ProjectPath);
-        if (std::filesystem::exists(absolutePath))
-        {
-            std::shared_ptr<Project> project = std::make_shared<Project>();
-            ProjectSerializer serializer(project);
-            if (serializer.Deserialize(absolutePath))
-            {
-                Project::SetActive(project);
-                std::filesystem::path startScene = project->GetConfig().StartScene;
-                std::filesystem::path startScenePath = project->GetAssetDirectory() / startScene;
+    std::filesystem::path projectToLoad = m_ProjectPath;
 
-                if (std::filesystem::exists(startScenePath))
+    if (projectToLoad.empty())
+    {
+        for (const auto &entry : std::filesystem::directory_iterator("."))
+        {
+            if (entry.path().extension() == ".chproject")
+            {
+                projectToLoad = entry.path();
+                break;
+            }
+        }
+
+        if (projectToLoad.empty() && std::filesystem::exists("game"))
+        {
+            for (const auto &gameEntry : std::filesystem::recursive_directory_iterator("game"))
+            {
+                if (gameEntry.path().extension() == ".chproject")
                 {
-                    LoadScene(startScenePath.string());
+                    projectToLoad = gameEntry.path();
+                    CH_CORE_INFO("Runtime: Discovered project in game folder: {}",
+                                 projectToLoad.string());
+                    break;
                 }
-                else
-                {
-                    // Try searching in the same directory as the project
-                    std::filesystem::path fallbackScene =
-                        absolutePath.parent_path() / "assets" / "scenes" / startScene;
-                    if (std::filesystem::exists(fallbackScene))
-                    {
-                        LoadScene(fallbackScene.string());
-                    }
-                    else
-                    {
-                        CH_CORE_WARN("Runtime: Project start scene not found: {}",
-                                     startScenePath.string().c_str());
-                    }
-                }
+            }
+        }
+    }
+
+    if (!projectToLoad.empty() && std::filesystem::exists(projectToLoad))
+    {
+        auto project = Project::Load(projectToLoad);
+        if (project)
+        {
+            CH_CORE_INFO("Runtime: Loaded project: {}", project->GetConfig().Name);
+
+            std::string sceneToLoad = project->GetConfig().StartScene;
+            if (sceneToLoad.empty())
+                sceneToLoad = project->GetConfig().ActiveScenePath.string();
+
+            if (!sceneToLoad.empty())
+            {
+                LoadScene(sceneToLoad);
             }
             else
             {
-                CH_CORE_ERROR("Runtime: Failed to deserialize project: {}",
-                              absolutePath.string().c_str());
+                CH_CORE_ERROR("Runtime: No scene specified in project configuration.");
             }
+        }
+        else
+        {
+            CH_CORE_ERROR("Runtime: Failed to load project file.");
         }
     }
     else
     {
-        // Try fallback to project.chproj in CWD
-        if (std::filesystem::exists("project.chproject"))
-        {
-            LoadScene("assets/scenes/default.chscene"); // Placeholder
-        }
-        else if (std::filesystem::exists("assets/scenes/default.chscene"))
+        if (std::filesystem::exists("assets/scenes/default.chscene"))
         {
             LoadScene("assets/scenes/default.chscene");
+        }
+        else
+        {
+            CH_CORE_ERROR("Runtime: No project or default scene found to launch.");
         }
     }
 }

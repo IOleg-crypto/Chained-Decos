@@ -14,6 +14,7 @@ target_include_directories(engine PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}
 )
+add_compile_definitions(_GNU_SOURCE)
 
 # External Dependencies (Propagated through engine)
 target_link_libraries(engine PUBLIC 
@@ -22,6 +23,13 @@ target_link_libraries(engine PUBLIC
     EnTT
     imguilib
 )
+
+if(MSVC)
+    target_compile_options(engine PRIVATE /bigobj)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    # For GCC/MinGW, large projects might need this
+    target_compile_options(engine PRIVATE -Wa,-mbig-obj)
+endif()
 
 # Apply Unity Build & PCH
 apply_engine_optimizations(engine)

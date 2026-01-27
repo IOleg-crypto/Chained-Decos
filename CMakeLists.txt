@@ -14,10 +14,16 @@ option(BUILD_TESTS "Build unit tests" ON)
 # Dependencies
 include(cmake/CompilerSettings.cmake)
 include(cmake/Dependencies.cmake)
+include(cmake/ProjectHelpers.cmake)
 
 # Useful definitions
 file(TO_CMAKE_PATH "${CMAKE_SOURCE_DIR}" PROJECT_ROOT_DIR_ESCAPED)
 add_compile_definitions(PROJECT_ROOT_DIR="${PROJECT_ROOT_DIR_ESCAPED}")
+
+# Standardize output directories for all targets
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 
 add_subdirectory(engine)
 add_subdirectory(game/chaineddecos)

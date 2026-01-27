@@ -14,11 +14,6 @@ CH_SCRIPT(ExitScript){CH_UPDATE(dt){// Check if this entity has a ButtonWidget c
                                         auto &button = GetEntity().GetComponent<ButtonWidget>();
 
 // If button was pressed this frame, close the application
-if (button.PressedThisFrame)
-{
-    CH_CORE_INFO("Exit button pressed - closing application");
-    Application::Get().Close();
-}
 } // namespace CHEngine
 }
 }

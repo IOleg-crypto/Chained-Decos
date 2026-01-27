@@ -5,14 +5,13 @@ on:
     branches:
       - main
       - develop
-      - chained-gui
-      - refactor-branch
   workflow_dispatch:
   push:
-    branches: [main, develop, chained-gui, refactor-branch]
+    branches: [main, develop]
     paths:
       - "**/*.cpp"
       - "**/*.h"
+      - "**/CMakeLists.txt"
       - ".github/workflows/*.yml"
 
 env:
@@ -21,25 +20,11 @@ env:
 jobs:
   linux:
     uses: ./.github/workflows/build-linux.yml
-    with:
-      build_type: Release
-
-  linux-debug:
-    uses: ./.github/workflows/build-linux.yml
-    with:
-      build_type: Debug
 
   windows:
     uses: ./.github/workflows/build-windows.yml
-    with:
-      build_type: Release
 
-  windows-debug:
-    uses: ./.github/workflows/build-windows.yml
-    with:
-      build_type: Debug
-
-  tests:
+  completed:
     needs: [linux, windows]
     runs-on: ubuntu-latest
     steps:
