@@ -4,12 +4,12 @@ add_library(ChainedDecosGame STATIC)
 # Game Sources
 target_sources(ChainedDecosGame PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/game_scripts.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/playerController.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/cameraController.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/exitScript.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/playerGui.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/sceneScript.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/spawnZoneRespawn.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/playercontroller.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/cameracontroller.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/exitscript.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/playergui.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/scenescript.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/spawnzone.h
 )
 
 target_link_libraries(ChainedDecosGame PUBLIC engine)
