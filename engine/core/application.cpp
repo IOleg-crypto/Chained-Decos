@@ -91,6 +91,7 @@ void Application::Shutdown()
         return;
 
     CH_CORE_INFO("Shutting down Engine...");
+
     CloseAudioDevice();
     // ImGui shutdown is handled in Window destructor
     AssetManager::Shutdown();
@@ -124,12 +125,10 @@ void Application::BeginFrame()
     CH_PROFILE_FUNCTION();
     Input::UpdateState();
 
-    // Poll input
     Input::PollEvents(Application::OnEvent);
-
     s_Instance->m_DeltaTime = GetFrameTime();
     s_Instance->m_Window->BeginFrame();
-    // Start ImGui frame
+
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
@@ -137,16 +136,11 @@ void Application::BeginFrame()
 
 void Application::EndFrame()
 {
-    CH_PROFILE_FUNCTION();
-
-    // 1. Flush Raylib's internal drawing batch to the backbuffer
     rlDrawRenderBatchActive();
 
-    // 2. Render ImGui on top of the flushed Raylib content
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-    // 3. Update and Render additional Platform Windows (Viewports)
     ImGuiIO &io = ImGui::GetIO();
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
@@ -156,10 +150,8 @@ void Application::EndFrame()
         glfwMakeContextCurrent(backup_current_context);
     }
 
-    // 4. Finally call EndDrawing() which will perform the actual SwapBuffers()
     s_Instance->m_Window->EndFrame();
 
-    // 5. Handle deferred scene change
     if (!s_Instance->m_NextScenePath.empty())
     {
         std::string nextPath = s_Instance->m_NextScenePath;
@@ -243,19 +235,10 @@ void Application::Render()
 
     BeginFrame();
 
-    // 1. Scene Rendering
-    if (m_ActiveScene)
-    {
-        // This is where high-level orchestration happens
-        // Layers could have their own viewport drawing logic
-    }
-
-    // 2. Layer Rendering
     for (auto layer : m_LayerStack)
         if (layer->IsEnabled())
             layer->OnRender();
 
-    // 3. ImGui Rendering
     for (auto layer : m_LayerStack)
         if (layer->IsEnabled())
             layer->OnImGuiRender();
@@ -271,18 +254,19 @@ bool Application::IsRunning()
 
 void Application::LoadScene(const std::string &path)
 {
-    CH_CORE_INFO("Loading scene: {0}", path);
+    auto resolvedPath = AssetManager::ResolvePath(path);
+    std::string pathStr = resolvedPath.string();
 
-    // 1. Shutdown current scene
+    CH_CORE_INFO("Loading scene: {0}", pathStr);
+
     if (m_ActiveScene)
         m_ActiveScene->OnRuntimeStop();
 
-    // 2. Load and deserialize new scene
     std::shared_ptr<Scene> newScene = std::make_shared<Scene>();
     SceneSerializer serializer(newScene.get());
-    if (serializer.Deserialize(path))
+    if (serializer.Deserialize(pathStr))
     {
-        newScene->SetScenePath(path);
+        newScene->SetScenePath(pathStr);
         m_ActiveScene = newScene;
 
         // Notify system that scene is opened
