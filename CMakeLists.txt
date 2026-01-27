@@ -19,6 +19,10 @@ include(cmake/Dependencies.cmake)
 include(cmake/ProjectHelpers.cmake)
 
 # Useful definitions
+if(UNIX AND NOT APPLE)
+    add_compile_definitions(_GNU_SOURCE)
+endif()
+
 file(TO_CMAKE_PATH "${CMAKE_SOURCE_DIR}" PROJECT_ROOT_DIR_ESCAPED)
 add_compile_definitions(PROJECT_ROOT_DIR="${PROJECT_ROOT_DIR_ESCAPED}")
 
