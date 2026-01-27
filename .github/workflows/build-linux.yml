@@ -54,9 +54,8 @@ jobs:
 
       - name: Setup Compilers
         run: |
-          sudo apt-get update
-          if [[ "${{ matrix.preset }}" == *"gcc"* || "${{ matrix.preset }}" == *"make"* ]]; then
-            sudo apt-get install -y gcc-13 g++-13
+          sudo apt-get install -y gcc-13 g++-13
+          if [[ "${{ matrix.preset }}" == *"gcc"* || "${{ matrix.preset }}" == *"make"* ]]; then  
             echo "CC=gcc-13" >> $GITHUB_ENV
             echo "CXX=g++-13" >> $GITHUB_ENV
           fi
