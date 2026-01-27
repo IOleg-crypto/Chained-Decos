@@ -14,7 +14,7 @@ env:
 jobs:
   build-windows:
     name: Windows (${{ matrix.preset }})
-    runs-on: windows-дф
+    runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
