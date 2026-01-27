@@ -16,84 +16,19 @@ env:
   CI: true
 
 jobs:
-  build-gcc:
-    name: Linux GCC (${{ inputs.build_type }})
+  build-linux:
+    name: Linux (${{ matrix.preset }})
     runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [ci-linux-gcc, ci-linux-clang, make-debug, make-release]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-
-      - name: Fast parallel submodules
-        run: |
-          git submodule update --init --recursive --depth 1 --jobs $(nproc)
-
-      - name: Cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.ccache
-            build/_deps
-            build/CMakeFiles
-          key: linux-gcc-${{ inputs.build_type }}-${{ hashFiles('**/CMakeLists.txt') }}
-          restore-keys: |
-            linux-gcc-${{ inputs.build_type }}-
-            linux-gcc-
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential cmake ninja-build ccache \
-            libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
-            libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
-            libwayland-dev libxkbcommon-dev libegl1-mesa-dev \
-            pkg-config libgtk-3-dev libdrm-dev libgbm-dev \
-            xvfb libxkbcommon-x11-0
-
-      - name: Setup GCC
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-13 g++-13
-          echo "CC=gcc-13" >> $GITHUB_ENV
-          echo "CXX=g++-13" >> $GITHUB_ENV
-
-      - name: Configure
-        run: cmake --preset ci-linux-gcc
-
-      - name: Build
-        run: cmake --build --preset ci-linux-gcc --parallel $(nproc)
-
-      - name: Test
-        run: |
-          if [[ -f "build/ci-linux-gcc/tests/EngineTests" ]]; then
-            xvfb-run ./build/ci-linux-gcc/tests/EngineTests
-          elif [[ -f "build/ci-linux-gcc/bin/EngineTests" ]]; then
-            xvfb-run ./build/ci-linux-gcc/bin/EngineTests
-          else
-             echo "EngineTests not found."
-             exit 1
-          fi
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-gcc-${{ inputs.build_type }}
-          path: |
-            build/ci-linux-gcc/editor/ChainedEditor
-            build/ci-linux-gcc/runtime/ChainedRuntime
-            build/ci-linux-gcc/tests/EngineTests
-          retention-days: 7
-
-  build-clang:
-    name: Linux Clang (${{ inputs.build_type }})
-    runs-on: ubuntu-22.04
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
           submodules: recursive
 
       - name: Cache
@@ -101,8 +36,11 @@ jobs:
         with:
           path: |
             ~/.ccache
-            .deps
-          key: linux-clang-${{ inputs.build_type }}-${{ hashFiles('**/CMakeLists.txt') }}
+            build/${{ matrix.preset }}/_deps
+            build/${{ matrix.preset }}/CMakeFiles
+          key: linux-${{ matrix.preset }}-${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: |
+            linux-${{ matrix.preset }}-
 
       - name: Install dependencies
         run: |
@@ -114,29 +52,41 @@ jobs:
             pkg-config libgtk-3-dev libdrm-dev libgbm-dev \
             xvfb libxkbcommon-x11-0
 
-      - name: Setup Clang
+      - name: Setup Compilers
         run: |
-          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-          sudo add-apt-repository "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main"
           sudo apt-get update
-          sudo apt-get install -y clang-17 clang++-17 clang-tools-17 libc++-17-dev libc++abi-17-dev
-          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-17 100
-          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-17 100
-          sudo update-alternatives --install /usr/bin/clang-scan-deps clang-scan-deps /usr/bin/clang-scan-deps-17 100
-          echo "CC=clang-17" >> "$GITHUB_ENV"
-          echo "CXX=clang++-17" >> "$GITHUB_ENV"
+          if [[ "${{ matrix.preset }}" == *"gcc"* ]]; then
+            sudo apt-get install -y gcc-13 g++-13
+          fi
+          if [[ "${{ matrix.preset }}" == *"clang"* ]]; then
+            wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+            sudo add-apt-repository "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main"
+            sudo apt-get update
+            sudo apt-get install -y clang-17 clang++-17
+          fi
 
       - name: Configure
-        run: cmake --preset ci-linux-clang
+        run: cmake --preset ${{ matrix.preset }} -DBUILD_TESTS=ON
 
       - name: Build
-        run: cmake --build --preset ci-linux-clang --parallel $(nproc)
+        run: cmake --build --preset ${{ matrix.preset }} --target ChainedEditor ChainedRuntime EngineTests --parallel $(nproc)
+
+      - name: Test
+        run: |
+          test_exe="build/${{ matrix.preset }}/bin/EngineTests"
+          if [[ -f "$test_exe" ]]; then
+            xvfb-run "$test_exe"
+          else
+             echo "EngineTests not found at $test_exe"
+             exit 1
+          fi
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: linux-clang-${{ inputs.build_type }}
+          name: linux-${{ matrix.preset }}
           path: |
-            build/ci-linux-clang/editor/ChainedEditor
-            build/ci-linux-clang/runtime/ChainedRuntime
+            build/${{ matrix.preset }}/bin/ChainedEditor
+            build/${{ matrix.preset }}/bin/ChainedRuntime
+            build/${{ matrix.preset }}/bin/EngineTests
           retention-days: 7
