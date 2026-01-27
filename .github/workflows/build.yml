@@ -9,7 +9,7 @@ on:
       - refactor-branch
   workflow_dispatch:
   push:
-    branches: [main, develop , chained-gui , refactor-branch]
+    branches: [main, develop, chained-gui, refactor-branch]
     paths:
       - "**/*.cpp"
       - "**/*.h"
