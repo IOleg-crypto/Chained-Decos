@@ -14,7 +14,6 @@ target_include_directories(engine PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}
 )
-add_compile_definitions(_GNU_SOURCE)
 
 # External Dependencies (Propagated through engine)
 target_link_libraries(engine PUBLIC 
@@ -22,6 +21,7 @@ target_link_libraries(engine PUBLIC
     yaml-cpp
     EnTT
     imguilib
+    glm
 )
 
 if(MSVC)
