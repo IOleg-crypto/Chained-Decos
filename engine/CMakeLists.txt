@@ -28,7 +28,7 @@ if(MSVC)
     target_compile_options(engine PRIVATE /bigobj)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     # For GCC/MinGW, large projects might need this
-    target_compile_options(engine PRIVATE -Wa)
+    target_compile_options(engine PRIVATE -W)
 endif()
 
 # Apply Unity Build & PCH
