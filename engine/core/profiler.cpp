@@ -1,7 +1,12 @@
 #ifndef GL_RENDERER
 #define GL_RENDERER 0x1F01
 #endif
+
+#ifdef _WIN32
 extern "C" const unsigned char *__stdcall glGetString(unsigned int name);
+#else
+extern "C" const unsigned char *glGetString(unsigned int name);
+#endif
 
 #include "profiler.h"
 #include "process_utils.h"
