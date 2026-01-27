@@ -6,8 +6,6 @@
 #include "engine/core/layer.h"
 #include "engine/core/layer_stack.h"
 #include "engine/core/window.h"
-#include <atomic>
-#include <mutex>
 #include <string>
 #include <thread>
 
@@ -22,6 +20,9 @@ struct ApplicationConfig
     int Height = 720;
     bool Fullscreen = false;
     int TargetFPS = 60;
+
+    int Argc = 0;
+    char **Argv = nullptr;
 };
 
 class Application
@@ -48,6 +49,7 @@ public:
 
     void Run();
 
+public:
     virtual void PostInitialize()
     {
     }
@@ -124,8 +126,7 @@ private:
     std::string m_NextScenePath;
 };
 
-// To be defined by CLIENT
-Application *CreateApplication();
+Application *CreateApplication(int argc, char **argv);
 } // namespace CHEngine
 
 #endif // CH_APPLICATION_H

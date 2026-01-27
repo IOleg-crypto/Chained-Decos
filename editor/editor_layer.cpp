@@ -390,15 +390,12 @@ void EditorLayer::ResetLayout()
     ImGui::DockBuilderFinish(dockspace_id);
 }
 
-extern void RegisterGameScripts();
-
 bool EditorLayer::OnProjectOpened(ProjectOpenedEvent &e)
 {
     CH_CORE_INFO("EditorLayer: Handling ProjectOpenedEvent - {}", e.GetPath());
 
     // Project is already loaded by EditorUtils::ProjectUtils::OpenProject
     // or by the ProjectBrowserPanel. Just update UI panels.
-    RegisterGameScripts();
 
     auto project = Project::GetActive();
     if (project)
