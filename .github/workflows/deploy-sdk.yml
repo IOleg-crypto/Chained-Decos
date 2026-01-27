@@ -16,12 +16,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-2022]
+        os: [ubuntu-latest, windows-latest]
         include:
           - os: ubuntu-latest
             name: linux
             preset: ci-linux-gcc
-          - os: windows-2022
+          - os: windows-latest
             name: windows
             preset: ninja-release
 
@@ -61,7 +61,7 @@ jobs:
           echo "CXX=g++-13" >> $GITHUB_ENV
 
       - name: Install dependencies (Windows)
-        if: matrix.os == 'windows-2022'
+        if: matrix.os == 'windows-latest'
         run: choco install cmake ninja ccache --no-progress
 
       - name: Configure CMake
@@ -92,9 +92,9 @@ jobs:
           cd "${{ steps.build-env.outputs.package-dir }}"
           # Exact naming from screenshot: Chained Engine(Chained Decos) SDK DD.MM.YY
           PACKAGE_NAME="Chained Engine(Chained Decos) SDK ${{ steps.info.outputs.date }}"
-          echo "📦 Creating SDK package: $PACKAGE_NAME"
+          echo "Creating SDK package: $PACKAGE_NAME"
           
-          if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
             powershell -Command "
               Compress-Archive -Path 'bin/*','share/' -DestinationPath '${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.zip' -Force
             "
