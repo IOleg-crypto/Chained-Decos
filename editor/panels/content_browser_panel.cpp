@@ -1,9 +1,9 @@
 #include "content_browser_panel.h"
 #include "engine/core/base.h"
 #include "engine/core/log.h"
-#include <algorithm>
-#include <extras/IconsFontAwesome6.h>
-#include <imgui.h>
+#include "algorithm"
+#include "extras/iconsfontawesome6.h"
+#include "imgui.h"
 
 namespace CHEngine
 {

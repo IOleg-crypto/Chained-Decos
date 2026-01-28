@@ -3,7 +3,7 @@
 
 #include "engine/core/application.h"
 #include "engine/scene/script_registry.h"
-#include <raylib.h>
+#include "raylib.h"
 
 extern CHEngine::Application *CHEngine::CreateApplication(int argc, char **argv);
 

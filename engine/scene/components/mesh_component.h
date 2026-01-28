@@ -2,9 +2,9 @@
 #define CH_MESH_COMPONENT_H
 
 #include "engine/core/base.h"
-#include "engine/render/material.h"
-#include <string>
-#include <vector>
+#include "engine/graphics/material.h"
+#include "string"
+#include "vector"
 
 namespace CHEngine
 {

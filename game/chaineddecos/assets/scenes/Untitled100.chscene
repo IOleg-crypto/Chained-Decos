@@ -14,7 +14,7 @@ Entities:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
-    WidgetComponent:
+    ControlComponent:
       Type: 4
       Label: Button
       IsActive: true
@@ -40,7 +40,7 @@ Entities:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
-    WidgetComponent:
+    ControlComponent:
       Type: 0
       Label: Button
       IsActive: true
@@ -66,7 +66,7 @@ Entities:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
-    WidgetComponent:
+    ControlComponent:
       Type: 0
       Label: Button
       IsActive: true

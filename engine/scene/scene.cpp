@@ -2,17 +2,13 @@
 #include "engine/audio/sound_asset.h"
 #include "engine/core/application.h"
 #include "engine/core/profiler.h"
+#include "engine/graphics/model_asset.h"
 #include "engine/physics/physics.h"
-#include "engine/render/asset_manager.h"
-#include "engine/render/model_asset.h"
-#include "engine/render/render.h"
-#include "engine/ui/canvas_renderer.h"
 #include "project.h"
 #include "raylib.h"
+#include "raymath.h"
 #include "scene_serializer.h"
 #include "scriptable_entity.h"
-#include <raymath.h>
-
 
 namespace CHEngine
 {
@@ -77,6 +73,25 @@ Entity Scene::CreateEntityWithUUID(UUID uuid, const std::string &name)
     return entity;
 }
 
+Entity Scene::CreateUIEntity(const std::string &type, const std::string &name)
+{
+    Entity entity = CreateEntity(name.empty() ? type : name);
+    entity.AddComponent<ControlComponent>();
+
+    if (type == "Button")
+        entity.AddComponent<ButtonControl>();
+    else if (type == "Panel")
+        entity.AddComponent<PanelControl>();
+    else if (type == "Label")
+        entity.AddComponent<LabelControl>();
+    else if (type == "Slider")
+        entity.AddComponent<SliderControl>();
+    else if (type == "CheckBox")
+        entity.AddComponent<CheckboxControl>();
+
+    return entity;
+}
+
 void Scene::DestroyEntity(Entity entity)
 {
     if (!entity || !m_Registry.valid(entity))
@@ -115,8 +130,6 @@ void Scene::DestroyEntity(Entity entity)
     m_Registry.destroy(entity);
 }
 
-// (Old hardcoded player movement removed in favor of NativeScriptComponent)
-
 template <> void Scene::OnComponentAdded<ModelComponent>(Entity entity, ModelComponent &component)
 {
     if (!component.ModelPath.empty())
@@ -126,7 +139,8 @@ template <> void Scene::OnComponentAdded<ModelComponent>(Entity entity, ModelCom
 
         if (pathChanged)
         {
-            component.Asset = AssetManager::Get<ModelAsset>(component.ModelPath);
+            // component.Asset = AssetManager::Get<ModelAsset>(component.ModelPath);
+            component.Asset = nullptr;
             component.MaterialsInitialized = false; // Reset materials if asset changed
         }
 
@@ -159,7 +173,8 @@ void Scene::OnComponentAdded<AnimationComponent>(Entity entity, AnimationCompone
         auto &mc = entity.GetComponent<ModelComponent>();
         if (!mc.Asset && !mc.ModelPath.empty())
         {
-            mc.Asset = AssetManager::Get<ModelAsset>(mc.ModelPath);
+            // mc.Asset = AssetManager::Get<ModelAsset>(mc.ModelPath);
+            mc.Asset = nullptr;
         }
     }
 }
@@ -168,7 +183,8 @@ template <> void Scene::OnComponentAdded<AudioComponent>(Entity entity, AudioCom
 {
     if (!component.SoundPath.empty())
     {
-        component.Asset = AssetManager::Get<SoundAsset>(component.SoundPath);
+        // component.Asset = AssetManager::Get<SoundAsset>(component.SoundPath);
+        component.Asset = nullptr;
     }
 }
 
@@ -255,11 +271,49 @@ void Scene::OnRender(const Camera3D &camera, const DebugRenderFlags *debugFlags)
 {
     CH_PROFILE_FUNCTION();
     UpdateProfilerStats();
-    m_ActiveCamera = camera;
-
-    Visuals::DrawScene(this, debugFlags);
+    // Rendering will be handled by the Renderer module later
+    // For now, we skip Visuals::DrawScene
 }
 
+Camera3D Scene::GetActiveCamera() const
+{
+    auto view = m_Registry.view<PlayerComponent, TransformComponent>();
+
+    if (view.begin() != view.end())
+    {
+        auto entity = *view.begin();
+        auto &transform = view.get<TransformComponent>(entity);
+        auto &player = view.get<PlayerComponent>(entity);
+
+        Vector3 target = transform.Translation;
+        target.y += 1.0f;
+
+        float yawRad = player.CameraYaw * DEG2RAD;
+        float pitchRad = player.CameraPitch * DEG2RAD;
+
+        Vector3 offset;
+        offset.x = player.CameraDistance * cosf(pitchRad) * sinf(yawRad);
+        offset.y = player.CameraDistance * sinf(pitchRad);
+        offset.z = player.CameraDistance * cosf(pitchRad) * cosf(yawRad);
+
+        Camera3D camera = {0};
+        camera.position = Vector3Add(target, offset);
+        camera.target = target;
+        camera.up = {0.0f, 1.0f, 0.0f};
+        camera.fovy = 90.0f;
+        camera.projection = CAMERA_PERSPECTIVE;
+        return camera;
+    }
+
+    // Default fallback
+    Camera3D camera = {0};
+    camera.position = {10.0f, 10.0f, 10.0f};
+    camera.target = {0.0f, 0.0f, 0.0f};
+    camera.up = {0.0f, 1.0f, 0.0f};
+    camera.fovy = 45.0f;
+    camera.projection = CAMERA_PERSPECTIVE;
+    return camera;
+}
 EnvironmentSettings Scene::GetEnvironmentSettings() const
 {
     if (m_Environment)
@@ -319,23 +373,27 @@ void Scene::OnImGuiRender(const ImVec2 &refPos, const ImVec2 &refSize, uint32_t 
     if (referenceSize.x <= 0 || referenceSize.y <= 0)
         referenceSize = ImGui::GetIO().DisplaySize;
 
-    // Iterate through only ROOT entities with WidgetComponent
-    m_Registry.view<WidgetComponent>().each(
-        [&](auto entityID, auto &ui)
+    // Iterate through only ROOT entities with ControlComponent
+    m_Registry.view<ControlComponent>().each(
+        [&](auto entityID, auto &cc)
         {
             Entity entity{entityID, this};
 
-            // Check if this is a root widget
+            // Check if this is a root control
             bool isRoot = true;
             if (entity.HasComponent<HierarchyComponent>())
             {
                 auto parent = entity.GetComponent<HierarchyComponent>().Parent;
-                if (parent != entt::null && m_Registry.all_of<WidgetComponent>(parent))
+                if (parent != entt::null && m_Registry.all_of<ControlComponent>(parent))
                     isRoot = false;
             }
 
             if (isRoot)
-                CanvasRenderer::DrawEntity(entity, refPos, referenceSize, editMode);
+            {
+                // TODO: Implement new Control rendering
+                // CanvasRenderer::DrawEntity(entity, refPos, referenceSize, m_CanvasSettings,
+                // editMode);
+            }
         });
 
     // Scripted UI elements
@@ -398,12 +456,6 @@ void Scene::UpdateProfilerStats()
 
     auto view = m_Registry.view<::CHEngine::ColliderComponent>();
     stats.ColliderCount = (uint32_t)view.size();
-
-    for (auto entity : view)
-    {
-        auto &col = view.get<::CHEngine::ColliderComponent>(entity);
-        stats.ColliderTypeCounts[(int)col.Type]++;
-    }
 
     ::CHEngine::Profiler::UpdateStats(stats);
 }

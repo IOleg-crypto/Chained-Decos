@@ -1,7 +1,7 @@
 #ifndef CH_COLLISION_TRIANGLE_H
 #define CH_COLLISION_TRIANGLE_H
 
-#include <raylib.h>
+#include "raylib.h"
 
 namespace CHEngine
 {
