@@ -3,11 +3,11 @@
 
 #include "components.h"
 #include "engine/core/base.h"
-#include "engine/render/environment.h"
+#include "engine/graphics/environment.h"
 #include "entity.h"
-#include <entt/entt.hpp>
-#include <imgui.h>
-#include <string>
+#include "entt/entt.hpp"
+#include "imgui.h"
+#include "string"
 
 #include "engine/core/events.h"
 
@@ -58,6 +58,7 @@ public:
 
     Entity CreateEntity(const std::string &name = "Entity");
     Entity CreateEntityWithUUID(UUID uuid, const std::string &name = "Entity");
+    Entity CreateUIEntity(const std::string &type, const std::string &name = "");
     void DestroyEntity(Entity entity);
 
     Entity FindEntityByTag(const std::string &tag);
@@ -128,11 +129,17 @@ public:
         m_Environment = environment;
     }
 
-    const Camera3D &GetActiveCamera() const
-    {
-        return m_ActiveCamera;
-    }
+    Camera3D GetActiveCamera() const;
     EnvironmentSettings GetEnvironmentSettings() const;
+
+    CanvasSettings &GetCanvasSettings()
+    {
+        return m_CanvasSettings;
+    }
+    const CanvasSettings &GetCanvasSettings() const
+    {
+        return m_CanvasSettings;
+    }
 
 private:
     entt::registry m_Registry;
@@ -143,13 +150,12 @@ private:
     Color m_BackgroundColor = {245, 245, 245, 255};
     std::string m_BackgroundTexturePath = "";
     std::string m_ScenePath = "";
+    CanvasSettings m_CanvasSettings;
 
     bool m_IsSimulationRunning = false;
 
     friend class Entity;
     friend class SceneSerializer;
-
-    Camera3D m_ActiveCamera;
 };
 
 // Template specializations (must be in namespace scope)

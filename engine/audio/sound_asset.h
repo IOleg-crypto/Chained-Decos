@@ -1,15 +1,16 @@
 #ifndef CH_SOUND_ASSET_H
 #define CH_SOUND_ASSET_H
 #include "engine/core/base.h"
-#include "engine/render/asset.h"
-#include <raylib.h>
-#include <string>
+#include "engine/graphics/asset.h"
+#include "raylib.h"
+#include "string"
 
 namespace CHEngine
 {
 class SoundAsset : public Asset
 {
 public:
+    SoundAsset() = default;
     SoundAsset(Sound sound);
     virtual ~SoundAsset();
 

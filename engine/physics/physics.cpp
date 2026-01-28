@@ -1,11 +1,13 @@
 #include "physics.h"
 #include "dynamics.h"
 #include "engine/core/profiler.h"
-#include "engine/render/asset_manager.h"
+// Removed redundant include: engine/graphics/asset_manager.h
+#include "engine/graphics/model_asset.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
 #include "narrow_phase.h"
 #include "scene_trace.h"
+
 
 namespace CHEngine
 {
@@ -37,25 +39,27 @@ void Physics::Update(Scene *scene, float deltaTime, bool runtime)
     for (auto entity : genView)
     {
         auto &collider = genView.get<ColliderComponent>(entity);
-        if (collider.Type == ColliderType::Box && collider.bAutoCalculate)
+        if (collider.Type == ColliderType::Box && collider.AutoCalculate)
         {
             if (registry.all_of<ModelComponent>(entity))
             {
                 auto &model = registry.get<ModelComponent>(entity);
-                auto asset = AssetManager::Get<ModelAsset>(model.ModelPath);
+                // auto asset = AssetManager::Get<ModelAsset>(model.ModelPath);
+                std::shared_ptr<ModelAsset> asset = nullptr;
                 if (asset)
                 {
                     BoundingBox box = asset->GetBoundingBox();
                     collider.Size = Vector3Subtract(box.max, box.min);
                     collider.Offset = box.min;
-                    collider.bAutoCalculate = false;
+                    collider.AutoCalculate = false;
                 }
             }
         }
         else if (collider.Type == ColliderType::Mesh && !collider.BVHRoot &&
                  !collider.ModelPath.empty())
         {
-            auto asset = AssetManager::Get<ModelAsset>(collider.ModelPath);
+            // auto asset = AssetManager::Get<ModelAsset>(collider.ModelPath);
+            std::shared_ptr<ModelAsset> asset = nullptr;
             if (asset && asset->GetModel().meshCount > 0)
             {
                 collider.BVHRoot = asset->GetBVHCache();

@@ -8,10 +8,8 @@ target_sources(ChainedEditor PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_layer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_layer.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/editor_layer_events.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/editor_utils.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/editor_utils.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/editor_settings.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/actions/project_actions.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/actions/scene_actions.cpp
 
     # Viewport
     ${CMAKE_CURRENT_SOURCE_DIR}/viewport/editor_gizmo.h
@@ -22,10 +20,10 @@ target_sources(ChainedEditor PRIVATE
     # Panels
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/scene_hierarchy_panel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/scene_hierarchy_panel.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/inspector_panel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/inspector_panel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/component_ui.h
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/component_ui.cpp
+    
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/content_browser_panel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/content_browser_panel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/console_panel.h
@@ -47,12 +45,10 @@ target_sources(ChainedEditor PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/undo/entity_commands.h
 
     # UI
-    ${CMAKE_CURRENT_SOURCE_DIR}/ui/toolbar.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/ui/toolbar.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/ui/project_selector.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/ui/project_selector.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/ui/menu_bar.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/ui/menu_bar.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/editor_gui.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/editor_gui.cpp
+    # External
+    ${CMAKE_SOURCE_DIR}/include/rlImGui/rlimgui.cpp
 )
 
 target_link_libraries(ChainedEditor PUBLIC engine ChainedDecosGame nfd)

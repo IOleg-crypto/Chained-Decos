@@ -1,15 +1,16 @@
 #include "scene_serializer.h"
 #include "components.h"
 #include "engine/core/log.h"
-#include "engine/core/yaml_utils.h"
+#include "engine/core/yaml.h"
 #include "engine/physics/bvh/bvh.h"
-#include "engine/render/asset_manager.h"
-#include "engine/render/render.h"
+// Removed redundant include: engine/graphics/asset_manager.h
+// Removed redundant include: engine/graphics/render.h
+#include "engine/graphics/model_asset.h"
 #include "scene.h"
 #include "script_registry.h"
 
-#include <fstream>
-#include <yaml-cpp/yaml.h>
+#include "fstream"
+#include "yaml-cpp/yaml.h"
 
 namespace CHEngine
 {
@@ -80,8 +81,9 @@ static void SerializeEntity(YAML::Emitter &out, Entity entity)
                 out << YAML::Key << "EmissivePath" << YAML::Value << slot.Material.EmissivePath;
                 out << YAML::Key << "OverrideEmissive" << YAML::Value
                     << slot.Material.OverrideEmissive;
-                out << YAML::Key << "Metalness" << YAML::Value << slot.Material.Metalness;
                 out << YAML::Key << "Roughness" << YAML::Value << slot.Material.Roughness;
+                out << YAML::Key << "ShaderPath" << YAML::Value << slot.Material.ShaderPath;
+                out << YAML::Key << "OverrideShader" << YAML::Value << slot.Material.OverrideShader;
                 out << YAML::EndMap;
                 out << YAML::EndMap;
             }
@@ -102,19 +104,16 @@ static void SerializeEntity(YAML::Emitter &out, Entity entity)
         out << YAML::EndMap;
     }
 
-    // MaterialComponent is now deprecated and merged into ModelComponent
-    // if (entity.HasComponent<MaterialComponent>()) ...
-
     if (entity.HasComponent<ColliderComponent>())
     {
         out << YAML::Key << "ColliderComponent";
         auto &cc = entity.GetComponent<ColliderComponent>();
         out << YAML::BeginMap;
         out << YAML::Key << "Type" << YAML::Value << (int)cc.Type;
-        out << YAML::Key << "bEnabled" << YAML::Value << cc.bEnabled;
+        out << YAML::Key << "Enabled" << YAML::Value << cc.Enabled;
         out << YAML::Key << "Offset" << YAML::Value << cc.Offset;
         out << YAML::Key << "Size" << YAML::Value << cc.Size;
-        out << YAML::Key << "bAutoCalculate" << YAML::Value << cc.bAutoCalculate;
+        out << YAML::Key << "AutoCalculate" << YAML::Value << cc.AutoCalculate;
         out << YAML::Key << "ModelPath" << YAML::Value << cc.ModelPath;
         out << YAML::EndMap;
     }
@@ -233,63 +232,48 @@ static void SerializeEntity(YAML::Emitter &out, Entity entity)
         out << YAML::EndMap;
     }
 
-    if (entity.HasComponent<WidgetComponent>())
+    if (entity.HasComponent<ControlComponent>())
     {
-        out << YAML::Key << "WidgetComponent";
-        auto &ui = entity.GetComponent<WidgetComponent>();
+        out << YAML::Key << "ControlComponent";
+        auto &cc = entity.GetComponent<ControlComponent>();
         out << YAML::BeginMap;
-        out << YAML::Key << "IsActive" << YAML::Value << ui.IsActive;
-        out << YAML::Key << "HiddenInHierarchy" << YAML::Value << ui.HiddenInHierarchy;
+        out << YAML::Key << "IsActive" << YAML::Value << cc.IsActive;
+        out << YAML::Key << "HiddenInHierarchy" << YAML::Value << cc.HiddenInHierarchy;
 
-        out << YAML::Key << "RectTransform" << YAML::BeginMap;
-        out << YAML::Key << "AnchorMin" << YAML::Value << ui.Transform.AnchorMin;
-        out << YAML::Key << "AnchorMax" << YAML::Value << ui.Transform.AnchorMax;
-        out << YAML::Key << "OffsetMin" << YAML::Value << ui.Transform.OffsetMin;
-        out << YAML::Key << "OffsetMax" << YAML::Value << ui.Transform.OffsetMax;
-        out << YAML::Key << "Pivot" << YAML::Value << ui.Transform.Pivot;
-        out << YAML::Key << "RectCoordinates" << YAML::Value << ui.Transform.RectCoordinates;
+        out << YAML::Key << "RectTransform";
+        out << YAML::BeginMap;
+        out << YAML::Key << "AnchorMin" << YAML::Value << cc.Transform.AnchorMin;
+        out << YAML::Key << "AnchorMax" << YAML::Value << cc.Transform.AnchorMax;
+        out << YAML::Key << "OffsetMin" << YAML::Value << cc.Transform.OffsetMin;
+        out << YAML::Key << "OffsetMax" << YAML::Value << cc.Transform.OffsetMax;
+        out << YAML::Key << "Pivot" << YAML::Value << cc.Transform.Pivot;
+        out << YAML::Key << "RectCoordinates" << YAML::Value << cc.Transform.RectCoordinates;
         out << YAML::EndMap;
+
         out << YAML::EndMap;
     }
 
-    if (entity.HasComponent<PanelWidget>())
+    if (entity.HasComponent<LabelControl>())
     {
-        out << YAML::Key << "PanelWidget";
-        auto &panel = entity.GetComponent<PanelWidget>();
-        out << YAML::BeginMap;
-        out << YAML::Key << "FullScreen" << YAML::Value << panel.FullScreen;
-        out << YAML::Key << "TexturePath" << YAML::Value << panel.TexturePath;
-
-        out << YAML::Key << "Style" << YAML::Value;
-        out << YAML::BeginMap;
-        out << YAML::Key << "BackgroundColor" << YAML::Value << panel.Style.BackgroundColor;
-        out << YAML::Key << "Rounding" << YAML::Value << panel.Style.Rounding;
-        out << YAML::Key << "BorderSize" << YAML::Value << panel.Style.BorderSize;
-        out << YAML::Key << "BorderColor" << YAML::Value << panel.Style.BorderColor;
-        out << YAML::EndMap;
-        out << YAML::EndMap;
-    }
-
-    if (entity.HasComponent<LabelWidget>())
-    {
-        out << YAML::Key << "LabelWidget";
-        auto &lbl = entity.GetComponent<LabelWidget>();
+        out << YAML::Key << "LabelControl";
+        auto &lbl = entity.GetComponent<LabelControl>();
         out << YAML::BeginMap;
         out << YAML::Key << "Text" << YAML::Value << lbl.Text;
-        out << YAML::Key << "FontSize" << YAML::Value << lbl.Style.FontSize;
+        if (lbl.Style.FontSize > 0)
+            out << YAML::Key << "FontSize" << YAML::Value << lbl.Style.FontSize;
         out << YAML::Key << "TextColor" << YAML::Value << lbl.Style.TextColor;
         out << YAML::EndMap;
     }
 
-    if (entity.HasComponent<ButtonWidget>())
+    if (entity.HasComponent<ButtonControl>())
     {
-        out << YAML::Key << "ButtonWidget";
-        auto &btn = entity.GetComponent<ButtonWidget>();
+        out << YAML::Key << "ButtonControl";
+        auto &btn = entity.GetComponent<ButtonControl>();
         out << YAML::BeginMap;
         out << YAML::Key << "Label" << YAML::Value << btn.Label;
         out << YAML::Key << "Interactable" << YAML::Value << btn.IsInteractable;
 
-        out << YAML::Key << "Style" << YAML::Value;
+        out << YAML::Key << "Style";
         out << YAML::BeginMap;
         out << YAML::Key << "BackgroundColor" << YAML::Value << btn.Style.BackgroundColor;
         out << YAML::Key << "HoverColor" << YAML::Value << btn.Style.HoverColor;
@@ -298,10 +282,19 @@ static void SerializeEntity(YAML::Emitter &out, Entity entity)
         out << YAML::EndMap;
     }
 
-    if (entity.HasComponent<SliderWidget>())
+    if (entity.HasComponent<PanelControl>())
     {
-        out << YAML::Key << "SliderWidget";
-        auto &sl = entity.GetComponent<SliderWidget>();
+        out << YAML::Key << "PanelControl";
+        auto &pnl = entity.GetComponent<PanelControl>();
+        out << YAML::BeginMap;
+        out << YAML::Key << "Color" << YAML::Value << pnl.Style.BackgroundColor;
+        out << YAML::EndMap;
+    }
+
+    if (entity.HasComponent<SliderControl>())
+    {
+        out << YAML::Key << "SliderControl";
+        auto &sl = entity.GetComponent<SliderControl>();
         out << YAML::BeginMap;
         out << YAML::Key << "Value" << YAML::Value << sl.Value;
         out << YAML::Key << "Min" << YAML::Value << sl.Min;
@@ -309,10 +302,10 @@ static void SerializeEntity(YAML::Emitter &out, Entity entity)
         out << YAML::EndMap;
     }
 
-    if (entity.HasComponent<CheckboxWidget>())
+    if (entity.HasComponent<CheckboxControl>())
     {
-        out << YAML::Key << "CheckboxWidget";
-        auto &cb = entity.GetComponent<CheckboxWidget>();
+        out << YAML::Key << "CheckboxControl";
+        auto &cb = entity.GetComponent<CheckboxControl>();
         out << YAML::BeginMap;
         out << YAML::Key << "Checked" << YAML::Value << cb.Checked;
         out << YAML::EndMap;
@@ -354,6 +347,18 @@ std::string SceneSerializer::SerializeToString()
         out << YAML::Key << "Contrast" << YAML::Value << sc.Contrast;
         out << YAML::EndMap;
     }
+
+    out << YAML::EndMap;
+
+    // Serialize Canvas Settings
+    out << YAML::Key << "CanvasSettings";
+    out << YAML::BeginMap;
+    out << YAML::Key << "ReferenceResolution" << YAML::Value
+        << m_Scene->m_CanvasSettings.ReferenceResolution;
+    out << YAML::Key << "ScaleMode" << YAML::Value << (int)m_Scene->m_CanvasSettings.ScaleMode;
+    out << YAML::Key << "MatchWidthOrHeight" << YAML::Value
+        << m_Scene->m_CanvasSettings.MatchWidthOrHeight;
+    out << YAML::EndMap;
 
     out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
 
@@ -428,7 +433,7 @@ bool SceneSerializer::DeserializeFromString(const std::string &yaml)
     auto envPath = data["EnvironmentPath"];
     if (envPath)
     {
-        m_Scene->m_Environment = AssetManager::LoadEnvironment(envPath.as<std::string>());
+        // m_Scene->m_Environment = AssetManager::LoadEnvironment(envPath.as<std::string>());
     }
 
     // Deserialize Skybox
@@ -440,6 +445,18 @@ bool SceneSerializer::DeserializeFromString(const std::string &yaml)
         sc.Exposure = skybox["Exposure"].as<float>();
         sc.Brightness = skybox["Brightness"].as<float>();
         sc.Contrast = skybox["Contrast"].as<float>();
+    }
+
+    auto canvas = data["CanvasSettings"];
+    if (canvas)
+    {
+        if (canvas["ReferenceResolution"])
+            m_Scene->m_CanvasSettings.ReferenceResolution =
+                canvas["ReferenceResolution"].as<glm::vec2>();
+        if (canvas["ScaleMode"])
+            m_Scene->m_CanvasSettings.ScaleMode = (CanvasScaleMode)canvas["ScaleMode"].as<int>();
+        if (canvas["MatchWidthOrHeight"])
+            m_Scene->m_CanvasSettings.MatchWidthOrHeight = canvas["MatchWidthOrHeight"].as<float>();
     }
 
     auto entities = data["Entities"];
@@ -585,6 +602,10 @@ bool SceneSerializer::DeserializeFromString(const std::string &yaml)
                             slot.Material.Metalness = mat["Metalness"].as<float>();
                         if (mat["Roughness"])
                             slot.Material.Roughness = mat["Roughness"].as<float>();
+                        if (mat["ShaderPath"])
+                            slot.Material.ShaderPath = mat["ShaderPath"].as<std::string>();
+                        if (mat["OverrideShader"])
+                            slot.Material.OverrideShader = mat["OverrideShader"].as<bool>();
 
                         mc.Slots.push_back(slot);
                     }
@@ -605,15 +626,16 @@ bool SceneSerializer::DeserializeFromString(const std::string &yaml)
             {
                 auto &cc = deserializedEntity.AddComponent<ColliderComponent>();
                 cc.Type = (ColliderType)colliderComponent["Type"].as<int>();
-                cc.bEnabled = colliderComponent["bEnabled"].as<bool>();
+                cc.Enabled = colliderComponent["Enabled"].as<bool>();
                 cc.Offset = colliderComponent["Offset"].as<Vector3>();
                 cc.Size = colliderComponent["Size"].as<Vector3>();
-                cc.bAutoCalculate = colliderComponent["bAutoCalculate"].as<bool>();
+                cc.AutoCalculate = colliderComponent["AutoCalculate"].as<bool>();
                 cc.ModelPath = colliderComponent["ModelPath"].as<std::string>();
 
                 if (cc.Type == ColliderType::Mesh && !cc.ModelPath.empty())
                 {
-                    auto asset = AssetManager::Get<ModelAsset>(cc.ModelPath);
+                    // auto asset = AssetManager::Get<ModelAsset>(cc.ModelPath);
+                    std::shared_ptr<ModelAsset> asset = nullptr;
                     if (asset)
                         cc.BVHRoot = asset->GetBVHCache();
                 }
@@ -698,31 +720,31 @@ bool SceneSerializer::DeserializeFromString(const std::string &yaml)
                 rb.Mass = rigidBodyComponent["Mass"].as<float>();
             }
 
-            auto widgetNode = entity["WidgetComponent"];
-            if (widgetNode)
+            auto controlNode = entity["ControlComponent"];
+            if (controlNode)
             {
-                auto &ui = deserializedEntity.AddComponent<WidgetComponent>();
-                if (widgetNode["IsActive"])
-                    ui.IsActive = widgetNode["IsActive"].as<bool>();
-                if (widgetNode["HiddenInHierarchy"])
-                    ui.HiddenInHierarchy = widgetNode["HiddenInHierarchy"].as<bool>();
+                auto &cc = deserializedEntity.AddComponent<ControlComponent>();
+                if (controlNode["IsActive"])
+                    cc.IsActive = controlNode["IsActive"].as<bool>();
+                if (controlNode["HiddenInHierarchy"])
+                    cc.HiddenInHierarchy = controlNode["HiddenInHierarchy"].as<bool>();
 
-                auto rectNode = widgetNode["RectTransform"];
+                auto rectNode = controlNode["RectTransform"];
                 if (rectNode)
                 {
-                    ui.Transform.AnchorMin = rectNode["AnchorMin"].as<Vector2>();
-                    ui.Transform.AnchorMax = rectNode["AnchorMax"].as<Vector2>();
-                    ui.Transform.OffsetMin = rectNode["OffsetMin"].as<Vector2>();
-                    ui.Transform.OffsetMax = rectNode["OffsetMax"].as<Vector2>();
-                    ui.Transform.Pivot = rectNode["Pivot"].as<Vector2>();
+                    cc.Transform.AnchorMin = rectNode["AnchorMin"].as<glm::vec2>();
+                    cc.Transform.AnchorMax = rectNode["AnchorMax"].as<glm::vec2>();
+                    cc.Transform.OffsetMin = rectNode["OffsetMin"].as<glm::vec2>();
+                    cc.Transform.OffsetMax = rectNode["OffsetMax"].as<glm::vec2>();
+                    cc.Transform.Pivot = rectNode["Pivot"].as<glm::vec2>();
                     if (rectNode["RectCoordinates"])
-                        ui.Transform.RectCoordinates = rectNode["RectCoordinates"].as<Vector2>();
+                        cc.Transform.RectCoordinates = rectNode["RectCoordinates"].as<glm::vec2>();
                 }
 
-                auto panelNode = entity["PanelWidget"];
+                auto panelNode = entity["PanelControl"];
                 if (panelNode)
                 {
-                    auto &pnl = deserializedEntity.AddComponent<PanelWidget>();
+                    auto &pnl = deserializedEntity.AddComponent<PanelControl>();
                     if (panelNode["FullScreen"])
                         pnl.FullScreen = panelNode["FullScreen"].as<bool>();
                     if (panelNode["TexturePath"])
@@ -742,10 +764,10 @@ bool SceneSerializer::DeserializeFromString(const std::string &yaml)
                     }
                 }
 
-                auto labelNode = entity["LabelWidget"];
+                auto labelNode = entity["LabelControl"];
                 if (labelNode)
                 {
-                    auto &lbl = deserializedEntity.AddComponent<LabelWidget>();
+                    auto &lbl = deserializedEntity.AddComponent<LabelControl>();
                     if (labelNode["Text"])
                         lbl.Text = labelNode["Text"].as<std::string>();
                     if (labelNode["FontSize"])
@@ -754,10 +776,10 @@ bool SceneSerializer::DeserializeFromString(const std::string &yaml)
                         lbl.Style.TextColor = labelNode["TextColor"].as<Color>();
                 }
 
-                auto buttonNode = entity["ButtonWidget"];
+                auto buttonNode = entity["ButtonControl"];
                 if (buttonNode)
                 {
-                    auto &btn = deserializedEntity.AddComponent<ButtonWidget>();
+                    auto &btn = deserializedEntity.AddComponent<ButtonControl>();
                     if (buttonNode["Label"])
                         btn.Label = buttonNode["Label"].as<std::string>();
                     if (buttonNode["Interactable"])
@@ -775,10 +797,10 @@ bool SceneSerializer::DeserializeFromString(const std::string &yaml)
                     }
                 }
 
-                auto sliderNode = entity["SliderWidget"];
+                auto sliderNode = entity["SliderControl"];
                 if (sliderNode)
                 {
-                    auto &sl = deserializedEntity.AddComponent<SliderWidget>();
+                    auto &sl = deserializedEntity.AddComponent<SliderControl>();
                     if (sliderNode["Value"])
                         sl.Value = sliderNode["Value"].as<float>();
                     if (sliderNode["Min"])
@@ -787,18 +809,14 @@ bool SceneSerializer::DeserializeFromString(const std::string &yaml)
                         sl.Max = sliderNode["Max"].as<float>();
                 }
 
-                auto checkboxNode = entity["CheckboxWidget"];
+                auto checkboxNode = entity["CheckboxControl"];
                 if (checkboxNode)
                 {
-                    auto &cb = deserializedEntity.AddComponent<CheckboxWidget>();
+                    auto &cb = deserializedEntity.AddComponent<CheckboxControl>();
                     if (checkboxNode["Checked"])
                         cb.Checked = checkboxNode["Checked"].as<bool>();
                 }
-
-                // --- LEGACY CLEANUP --- (Omitted old migration logic to avoid bloat)
             }
-
-            // Legacy placeholders removed. Unified widgets are processed above.
 
             auto playerComponent = entity["PlayerComponent"];
             if (playerComponent)

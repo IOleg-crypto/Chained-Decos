@@ -2,9 +2,9 @@
 #define CH_GAME_COMPONENTS_H
 
 #include "engine/core/base.h"
-#include "scene/components/widget_component.h"
-#include <raylib.h>
-#include <string>
+#include "engine/scene/components/control_component.h"
+#include "raylib.h"
+#include "string"
 
 namespace CHEngine
 {
@@ -17,7 +17,7 @@ struct SpawnComponent
 
     std::string TexturePath =
         PROJECT_ROOT_DIR "/game/chaineddecos/assets/boxes/PlayerSpawnTexture.png";
-    std::shared_ptr<class TextureAsset> Texture;
+    std::shared_ptr<TextureAsset> Texture;
 
     SpawnComponent() = default;
     SpawnComponent(const SpawnComponent &) = default;

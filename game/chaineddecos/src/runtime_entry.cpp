@@ -1,6 +1,8 @@
 #include "engine/core/application.h"
+// Removed redundant include: engine/graphics/asset_manager.h
+#include "engine/core/entry_point.h"
 #include "runtime/runtime_application.h"
-#include <engine/core/entry_point.h>
+
 
 namespace CHEngine
 {
@@ -15,6 +17,12 @@ Application *CreateApplication(int argc, char **argv)
     config.Height = 720;
     config.Argc = argc;
     config.Argv = argv;
+
+    // Set window icon (safe to do after window is created)
+    // Image icon =
+    //     LoadImage(AssetManager::ResolvePath("engine:icons/СhainedDecos.jpg").string().c_str());
+    // SetWindowIcon(icon);
+    // UnloadImage(icon);
 
     RegisterProjectScripts();
 

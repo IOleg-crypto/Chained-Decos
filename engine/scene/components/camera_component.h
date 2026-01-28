@@ -1,7 +1,7 @@
 #ifndef CH_CAMERA_COMPONENT_H
 #define CH_CAMERA_COMPONENT_H
 
-#include <raylib.h>
+#include "raylib.h"
 
 namespace CHEngine
 {

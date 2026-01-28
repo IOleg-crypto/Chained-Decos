@@ -1,11 +1,11 @@
 #include "narrow_phase.h"
 #include "bvh/bvh.h"
+#include "cfloat"
 #include "collision/collision.h"
 #include "engine/core/log.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
-#include <cfloat>
-#include <raymath.h>
+#include "raymath.h"
 
 namespace CHEngine
 {
@@ -28,7 +28,7 @@ void NarrowPhase::ResolveCollisions(Scene *scene, const std::vector<entt::entity
                 continue;
 
             auto &otherCollider = colliders.get<ColliderComponent>(otherEntity);
-            if (!otherCollider.bEnabled)
+            if (!otherCollider.Enabled)
                 continue;
 
             if (otherCollider.Type == ColliderType::Box)
@@ -160,7 +160,7 @@ void NarrowPhase::ResolveBoxMesh(entt::registry &registry, entt::entity rbEntity
 
     Vector3 localNormal;
     float overlapDepth = -1.0f;
-    if (BVHBuilder::IntersectAABB(otherCollider.BVHRoot.get(), localBox, localNormal, overlapDepth))
+    if (otherCollider.BVHRoot->IntersectAABB(localBox, localNormal, overlapDepth))
     {
         if (overlapDepth > 0.0001f)
         {

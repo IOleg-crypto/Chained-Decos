@@ -1,8 +1,8 @@
 #ifndef CH_SCRIPTING_COMPONENTS_H
 #define CH_SCRIPTING_COMPONENTS_H
 
-#include <string>
-#include <vector>
+#include "string"
+#include "vector"
 
 namespace CHEngine
 {

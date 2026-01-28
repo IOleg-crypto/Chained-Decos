@@ -2,39 +2,63 @@
 #define CH_PHYSICS_BVH_H
 
 #include "engine/core/base.h"
-#include <future>
-#include <raylib.h>
-#include <raymath.h>
-#include <vector>
+#include "future"
+#include "raylib.h"
+#include "raymath.h"
+#include "vector"
 
 #include "bvh_node.h"
 #include "engine/physics/collision/collision_triangle.h"
 
 namespace CHEngine
 {
-class BVHBuilder
+
+struct BuildContext
+{
+    std::vector<CollisionTriangle> &AllTriangles;
+    std::vector<uint32_t> TriIndices;
+
+    BuildContext(std::vector<CollisionTriangle> &tris) : AllTriangles(tris)
+    {
+        TriIndices.resize(tris.size());
+        for (uint32_t i = 0; i < tris.size(); ++i)
+            TriIndices[i] = i;
+    }
+};
+
+class BVH
 {
 public:
+    BVH() = default;
+
     // Synchronous API
-    static std::shared_ptr<BVHNode> Build(const Model &model,
-                                          const Matrix &transform = MatrixIdentity());
+    static std::shared_ptr<BVH> Build(const Model &model,
+                                      const Matrix &transform = MatrixIdentity());
 
     // Asynchronous API
-    static std::future<std::shared_ptr<BVHNode>>
-    BuildAsync(const Model &model, const Matrix &transform = MatrixIdentity());
+    static std::future<std::shared_ptr<BVH>> BuildAsync(const Model &model,
+                                                        const Matrix &transform = MatrixIdentity());
 
-    static bool Raycast(const BVHNode *node, const Ray &ray, float &t, Vector3 &normal,
-                        int &meshIndex);
-    static bool IntersectAABB(const BVHNode *node, const BoundingBox &box,
-                              Vector3 &outOverlapNormal, float &outOverlapDepth);
+    bool Raycast(const Ray &ray, float &t, Vector3 &normal, int &meshIndex) const;
+    bool IntersectAABB(const BoundingBox &box, Vector3 &outOverlapNormal,
+                       float &outOverlapDepth) const;
+
+    const std::vector<BVHNode> &GetNodes() const
+    {
+        return m_Nodes;
+    }
+    const std::vector<CollisionTriangle> &GetTriangles() const
+    {
+        return m_Triangles;
+    }
 
 private:
-    static std::shared_ptr<BVHNode> BuildTopLevel(std::vector<std::shared_ptr<BVHNode>> &roots,
-                                                  size_t start, size_t end);
-    static std::shared_ptr<BVHNode> BuildRecursive(std::vector<CollisionTriangle> &tris,
-                                                   size_t start, size_t end, int depth);
-    static bool RayInternal(const BVHNode *node, const Ray &ray, float &t, Vector3 &normal,
-                            int &meshIndex);
+    void BuildRecursive(BuildContext &ctx, uint32_t nodeIdx, size_t triStart, size_t triCount,
+                        int depth);
+    void UpdateNodeBounds(uint32_t nodeIdx, size_t triStart, size_t triCount);
+
+    std::vector<BVHNode> m_Nodes;
+    std::vector<CollisionTriangle> m_Triangles;
 };
 } // namespace CHEngine
 

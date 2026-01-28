@@ -1,7 +1,7 @@
 #ifndef CH_WINDOW_H
 #define CH_WINDOW_H
 
-#include <string>
+#include "string"
 
 // Forward declare GLFWwindow
 struct GLFWwindow;
@@ -47,6 +47,10 @@ public:
 
     void SetTitle(const std::string &title);
     void ToggleFullscreen();
+
+    void SetVSync(bool enabled);
+    void SetTargetFPS(int fps);
+    void SetWindowIcon(Image icon);
 
 private:
     GLFWwindow *m_Window = nullptr;

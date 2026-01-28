@@ -1,11 +1,11 @@
 #ifndef CH_CONSOLE_PANEL_H
 #define CH_CONSOLE_PANEL_H
 
-#include <cstdint>
-#include <deque>
-#include <mutex>
-#include <string>
-#include <vector>
+#include "cstdint"
+#include "deque"
+#include "mutex"
+#include "string"
+#include "vector"
 
 #include "panel.h" // Added include for Panel
 

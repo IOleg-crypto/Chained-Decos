@@ -1,10 +1,9 @@
 #include "scene_hierarchy_panel.h"
 #include "editor_layer.h"
-#include "editor_utils.h"
 #include "engine/core/application.h"
 #include "engine/scene/components.h"
+#include "imgui.h"
 #include "undo/entity_commands.h"
-#include <imgui.h>
 
 namespace CHEngine
 {
@@ -48,9 +47,9 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
                         isChild = true;
                 }
 
-                if (entity.HasComponent<WidgetComponent>())
+                if (entity.HasComponent<ControlComponent>())
                 {
-                    if (entity.GetComponent<WidgetComponent>().HiddenInHierarchy)
+                    if (entity.GetComponent<ControlComponent>().HiddenInHierarchy)
                         return;
                 }
 
@@ -105,7 +104,7 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
                     auto entity = m_Context->CreateEntity("Static Collider");
                     auto &collider = entity.AddComponent<ColliderComponent>();
                     collider.Type = ColliderType::Box;
-                    collider.bAutoCalculate = false; // Important: Manual size
+                    collider.AutoCalculate = false; // Important: Manual size
                     collider.Size = {1.0f, 1.0f, 1.0f};
                     collider.Offset = {0.0f, 0.0f, 0.0f};
                 }
@@ -153,22 +152,21 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
                 ImGui::EndMenu();
             }
 
-            if (ImGui::BeginMenu("Widget"))
+            if (ImGui::BeginMenu("Control"))
             {
                 if (ImGui::MenuItem("Panel"))
-                    WidgetFactory::CreatePanel(m_Context.get());
+                    m_Context->CreateUIEntity("Panel");
                 if (ImGui::MenuItem("Button"))
-                    WidgetFactory::CreateButton(m_Context.get());
+                    m_Context->CreateUIEntity("Button");
                 if (ImGui::MenuItem("Label"))
-                    WidgetFactory::CreateLabel(m_Context.get());
+                    m_Context->CreateUIEntity("Label");
                 if (ImGui::MenuItem("Slider"))
-                    WidgetFactory::CreateSlider(m_Context.get());
+                    m_Context->CreateUIEntity("Slider");
                 if (ImGui::MenuItem("Checkbox"))
-                    WidgetFactory::CreateCheckbox(m_Context.get());
+                    m_Context->CreateUIEntity("CheckBox");
 
                 ImGui::EndMenu();
             }
-
             ImGui::EndPopup();
         }
     }

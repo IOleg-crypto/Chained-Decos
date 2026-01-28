@@ -2,7 +2,7 @@
 #define CH_AUDIO_COMPONENT_H
 
 #include "engine/core/base.h"
-#include <string>
+#include "string"
 
 namespace CHEngine
 {

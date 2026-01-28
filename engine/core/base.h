@@ -2,7 +2,7 @@
 #define CH_BASE_H
 
 #include "engine/core/log.h"
-#include <memory>
+#include "memory"
 
 // Platform detection
 #if defined(_WIN32) || defined(_WIN64)
@@ -25,7 +25,7 @@
 #if defined(CH_PLATFORM_WINDOWS)
 #define CH_DEBUGBREAK() __debugbreak()
 #elif defined(CH_PLATFORM_LINUX)
-#include <signal.h>
+#include "signal.h"
 #define CH_DEBUGBREAK() raise(SIGTRAP)
 #else
 #define CH_DEBUGBREAK()

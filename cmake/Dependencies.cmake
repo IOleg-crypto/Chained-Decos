@@ -27,7 +27,16 @@ FetchContent_Declare(
     GIT_TAG master
 )
 
-FetchContent_MakeAvailable(yaml-cpp imguizmo)
+
+FetchContent_Declare(
+	glm
+	GIT_REPOSITORY	https://github.com/g-truc/glm.git
+	GIT_TAG 	0af55ccecd98d4e5a8d1fad7de25ba429d60e863 #refs/tags/1.0.1
+)
+
+
+
+FetchContent_MakeAvailable(yaml-cpp imguizmo glm)
 
 # ============================================================================
 # Raylib
@@ -58,6 +67,16 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/include/raylib/CMakeLists.txt")
     
     # Disable unity build for raylib to avoid GLAD header conflicts
     set_target_properties(raylib PROPERTIES UNITY_BUILD OFF)
+    
+    # Suppress warnings for raylib and glfw on Linux (fixes CI with strict compiler flags)
+    if(UNIX AND NOT APPLE)
+        if(TARGET raylib)
+            target_compile_options(raylib PRIVATE -Wno-implicit-function-declaration -Wno-error)
+        endif()
+        if(TARGET glfw)
+            target_compile_options(glfw PRIVATE -Wno-implicit-function-declaration -Wno-error)
+        endif()
+    endif()
 else()
     message(FATAL_ERROR "Raylib submodule not found. Run: git submodule update --init --recursive")
 endif()

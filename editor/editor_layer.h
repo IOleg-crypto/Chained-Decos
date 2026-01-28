@@ -4,8 +4,12 @@
 #include "engine/core/application.h"
 #include "engine/core/base.h"
 #include "engine/core/layer.h"
-#include "engine/render/render.h"
+// Removed redundant include: engine/graphics/render.h
+#include "editor_types.h"
+#include "engine/graphics/render_types.h"
 #include "engine/scene/scene.h"
+#include "filesystem"
+#include "imgui.h"
 #include "panels/console_panel.h"
 #include "panels/content_browser_panel.h"
 #include "panels/environment_panel.h"
@@ -15,21 +19,13 @@
 #include "panels/project_settings_panel.h"
 #include "panels/scene_hierarchy_panel.h"
 #include "panels/viewport_panel.h"
+#include "raylib.h"
 #include "undo/command_history.h"
 #include "viewport/editor_camera.h"
 #include "viewport/editor_gizmo.h"
-#include <filesystem>
-#include <imgui.h>
-#include <raylib.h>
 
 namespace CHEngine
 {
-enum class SceneState : uint8_t
-{
-    Edit = 0,
-    Play = 1
-};
-
 class EditorLayer : public Layer
 {
 public:
@@ -77,19 +73,20 @@ private:
     bool OnSceneStop(SceneStopEvent &e);
 
     void ResetLayout();
-    void LaunchStandalone();
-
-    void SetDarkThemeColors();
-    Camera3D GetActiveCamera();
-
-    void UI_DrawDockSpace();
-    void UI_DrawPanels();
-    void UI_DrawScriptUI();
+    void DrawDockSpace();
+    void DrawPanels();
+    void DrawScriptUI();
 
 public:
     static CommandHistory &GetCommandHistory();
     static SceneState GetSceneState();
     static EditorLayer &Get();
+
+    Camera3D GetActiveCamera();
+    DebugRenderFlags &GetDebugRenderFlags()
+    {
+        return m_DebugRenderFlags;
+    }
 
     void ToggleFullscreenGame(bool enabled)
     {

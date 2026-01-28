@@ -2,9 +2,9 @@
 #define CH_SCRIPT_REGISTRY_H
 
 #include "components/scripting_components.h"
-#include <functional>
-#include <string>
-#include <unordered_map>
+#include "functional"
+#include "string"
+#include "unordered_map"
 
 namespace CHEngine
 {

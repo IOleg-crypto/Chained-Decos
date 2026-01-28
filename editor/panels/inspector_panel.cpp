@@ -1,6 +1,6 @@
 #include "inspector_panel.h"
 #include "component_ui.h"
-#include <imgui.h>
+#include "imgui.h"
 
 namespace CHEngine
 {

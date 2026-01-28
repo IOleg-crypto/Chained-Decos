@@ -2,22 +2,23 @@
 #include "engine/core/input.h"
 #include "engine/core/log.h"
 #include "engine/core/profiler.h"
-#include "engine/core/task_system.h"
+// Removed redundant include: engine/core/task_system.h
 #include "engine/physics/physics.h"
-#include "engine/render/asset_manager.h"
-#include "engine/render/render.h"
+// Removed redundant include: engine/graphics/asset_manager.h
+// Removed redundant include: engine/graphics/render.h
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_opengl3.h"
+#include "engine/graphics/draw_command.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene_serializer.h"
 #include "engine/scene/script_registry.h"
-#include <backends/imgui_impl_glfw.h>
-#include <backends/imgui_impl_opengl3.h>
-#include <imgui.h>
-#include <raylib.h>
-#include <rlgl.h>
+#include "imgui.h"
+#include "raylib.h"
+#include "rlgl.h"
 
 // GLFW
 #define GLFW_INCLUDE_NONE
-#include "external/glfw/include/GLFW/glfw3.h"
+#include "external/glfw/include/glfw/glfw3.h"
 
 namespace CHEngine
 {
@@ -59,11 +60,12 @@ bool Application::Initialize(const Config &config)
     m_Window = std::make_unique<Window>(windowConfig);
     m_Running = true;
 
-    TaskSystem::Init();
-    Visuals::Init();
+    if (config.WindowIcon.data != nullptr)
+    {
+        m_Window->SetWindowIcon(config.WindowIcon);
+    }
+    DrawCommand::Init();
     Physics::Init();
-    Profiler::Init();
-    AssetManager::Init();
     InitAudioDevice();
     if (IsAudioDeviceReady())
         CH_CORE_INFO("Audio Device Initialized Successfully");
@@ -94,11 +96,8 @@ void Application::Shutdown()
 
     CloseAudioDevice();
     // ImGui shutdown is handled in Window destructor
-    AssetManager::Shutdown();
     Physics::Shutdown();
-    Visuals::Shutdown();
-    TaskSystem::Shutdown();
-
+    DrawCommand::Shutdown();
     m_Window.reset();
     m_Running = false;
     CH_CORE_INFO("Engine Shutdown Successfully.");
@@ -125,7 +124,6 @@ void Application::BeginFrame()
     CH_PROFILE_FUNCTION();
     Input::UpdateState();
 
-    Input::PollEvents(Application::OnEvent);
     s_Instance->m_DeltaTime = GetFrameTime();
     s_Instance->m_Window->BeginFrame();
 
@@ -167,6 +165,8 @@ bool Application::ShouldClose()
 
 void Application::OnEvent(Event &e)
 {
+    Input::OnEvent(e);
+
     for (auto it = s_Instance->m_LayerStack.rbegin(); it != s_Instance->m_LayerStack.rend(); ++it)
     {
         if (e.Handled)
@@ -195,6 +195,62 @@ void Application::Run()
 void Application::ProcessEvents()
 {
     m_Window->PollEvents();
+
+    // Hazel-style: Generate input events from Raylib here
+    // 1. Keyboard
+    int key = GetKeyPressed();
+    while (key != 0)
+    {
+        KeyPressedEvent e(key, false);
+        OnEvent(e);
+        key = GetKeyPressed();
+    }
+
+    // Detect releases for a range of common keys (simplification for Raylib) or track them.
+    // For now, checking the standard 512 keys range for state changes.
+    // This ensures we get release events even if we didn't track them specifically in a vector.
+    for (int k = 1; k < 512; k++)
+    {
+        if (::IsKeyReleased(k))
+        {
+            KeyReleasedEvent e(k);
+            OnEvent(e);
+        }
+    }
+    // 2. Mouse
+    auto handleMouse = [&](int button)
+    {
+        if (::IsMouseButtonPressed(button))
+        {
+            MouseButtonPressedEvent e(button);
+            OnEvent(e);
+        }
+        if (::IsMouseButtonReleased(button))
+        {
+            MouseButtonReleasedEvent e(button);
+            OnEvent(e);
+        }
+    };
+    handleMouse(MOUSE_BUTTON_LEFT);
+    handleMouse(MOUSE_BUTTON_RIGHT);
+    handleMouse(MOUSE_BUTTON_MIDDLE);
+
+    Vector2 currentMousePos = ::GetMousePosition();
+    static Vector2 lastMousePos = {0, 0};
+    if (currentMousePos.x != lastMousePos.x || currentMousePos.y != lastMousePos.y)
+    {
+        MouseMovedEvent e(currentMousePos.x, currentMousePos.y);
+        OnEvent(e);
+        lastMousePos = currentMousePos;
+    }
+
+    float wheel = ::GetMouseWheelMove();
+    if (wheel != 0)
+    {
+        MouseScrolledEvent e(0, wheel);
+        OnEvent(e);
+    }
+
     float time = (float)GetTime();
     m_DeltaTime = time - m_LastFrameTime;
     m_LastFrameTime = time;
@@ -203,7 +259,6 @@ void Application::ProcessEvents()
 void Application::Simulate()
 {
     Profiler::BeginFrame();
-    AssetManager::Update(); // Synchronize GPU resources
     {
         CH_PROFILE_SCOPE("MainThread_Frame");
         if (!m_Minimized)
@@ -226,6 +281,16 @@ void Application::Simulate()
 void Application::Animate()
 {
     // Animations are currently handled in Scene::OnUpdateRuntime
+}
+
+void Application::OnRender()
+{
+}
+
+void Application::SetWindowIcon(Image icon)
+{
+    if (m_Window)
+        m_Window->SetWindowIcon(icon);
 }
 
 void Application::Render()
@@ -254,8 +319,7 @@ bool Application::IsRunning()
 
 void Application::LoadScene(const std::string &path)
 {
-    auto resolvedPath = AssetManager::ResolvePath(path);
-    std::string pathStr = resolvedPath.string();
+    std::string pathStr = path;
 
     CH_CORE_INFO("Loading scene: {0}", pathStr);
 

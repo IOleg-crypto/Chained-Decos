@@ -12,6 +12,41 @@ public:
     virtual ~Editor() = default;
 
     virtual void PostInitialize() override;
+    void Shutdown();
+
+    static Editor &Get()
+    {
+        return *(Editor *)&Application::Get();
+    }
+
+    struct EditorConfig
+    {
+        int WindowWidth = 1600;
+        int WindowHeight = 900;
+        bool Fullscreen = false;
+        int TargetFPS = 144;
+        std::string LastProjectPath = "";
+        std::string LastScenePath = "";
+    };
+
+    const EditorConfig &GetEditorConfig() const
+    {
+        return m_EditorConfig;
+    }
+    void SetLastProjectPath(const std::string &path)
+    {
+        m_EditorConfig.LastProjectPath = path;
+    }
+    void SetLastScenePath(const std::string &path)
+    {
+        m_EditorConfig.LastScenePath = path;
+    }
+
+    void LoadConfig();
+    void SaveConfig();
+
+private:
+    EditorConfig m_EditorConfig;
 };
 } // namespace CHEngine
 

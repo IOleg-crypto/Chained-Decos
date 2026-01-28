@@ -1,36 +1,29 @@
 #include "editor_layer.h"
-#include "editor_settings.h"
-#include "editor_utils.h"
+#include "editor/actions/project_actions.h"
+#include "editor/actions/scene_actions.h"
 #include "engine/core/application.h"
 #include "engine/core/input.h"
-#include "engine/core/process_utils.h"
+#include "ui/editor_gui.h"
+
+// Removed redundant include: engine/core/process_utils.h
 #include "engine/core/profiler.h"
 #include "engine/physics/physics.h"
-#include "engine/render/asset_manager.h"
-#include "engine/render/render.h"
+// Removed redundant include: engine/graphics/asset_manager.h
+// Removed redundant include: engine/graphics/render.h
 #include "engine/scene/components.h"
 #include "engine/scene/project_serializer.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_serializer.h"
 #include "engine/scene/scriptable_entity.h"
-#include "engine/ui/imgui_raylib_ui.h"
-#include "raylib.h"
-#include "ui/menu_bar.h"
-#include "ui/toolbar.h"
-#include <extras/IconsFontAwesome6.h>
-#include <imgui.h>
-#include <imgui_internal.h>
-#include <nfd.h>
 
-// GLFW and OpenGL for context management
-#define GLFW_INCLUDE_NONE
-#include "external/glfw/include/GLFW/glfw3.h"
-#include <rlgl.h>
-
+#include "cstdarg"
+#include "extras/iconsfontawesome6.h"
+#include "imgui.h"
+#include "imgui_internal.h"
+#include "nfd.h"
 #include "panels/component_ui.h"
 #include "panels/console_panel.h"
-#include <cstdarg>
-#include <cstdio>
+#include "raylib.h"
 
 namespace CHEngine
 {
@@ -70,7 +63,7 @@ void EditorLayer::OnAttach()
 
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-    SetDarkThemeColors();
+    EditorUI::GUI::SetDarkThemeColors();
 
     NFD_Init();
     ComponentUI::Init();
@@ -80,7 +73,7 @@ void EditorLayer::OnAttach()
     AddPanel<SceneHierarchyPanel>();
     AddPanel<InspectorPanel>();
     AddPanel<ContentBrowserPanel>()->SetSceneOpenCallback([](const std::filesystem::path &path)
-                                                          { SceneUtils::OpenScene(path); });
+                                                          { SceneActions::Open(path); });
     AddPanel<ConsolePanel>();
     AddPanel<EnvironmentPanel>()->SetDebugFlags(&m_DebugRenderFlags);
     AddPanel<ProfilerPanel>();
@@ -91,16 +84,16 @@ void EditorLayer::OnAttach()
         [this]() { CH_CORE_TRACE("CommandHistory: Scene state changed, notifying editor..."); });
 
     // Auto-load last project/scene
-    const auto &settings = EditorSettings::Get();
-    if (!settings.LastProjectPath.empty() && std::filesystem::exists(settings.LastProjectPath))
+    const auto &config = Editor::Get().GetEditorConfig();
+    if (!config.LastProjectPath.empty() && std::filesystem::exists(config.LastProjectPath))
     {
-        CH_CORE_INFO("Auto-loading last project: {}", settings.LastProjectPath);
-        ProjectUtils::OpenProject(settings.LastProjectPath);
+        CH_CORE_INFO("Auto-loading last project: {}", config.LastProjectPath);
+        ProjectActions::Open(config.LastProjectPath);
 
-        if (!settings.LastScenePath.empty() && std::filesystem::exists(settings.LastScenePath))
+        if (!config.LastScenePath.empty() && std::filesystem::exists(config.LastScenePath))
         {
-            CH_CORE_INFO("Auto-loading last scene: {}", settings.LastScenePath);
-            SceneUtils::OpenScene(settings.LastScenePath);
+            CH_CORE_INFO("Auto-loading last scene: {}", config.LastScenePath);
+            SceneActions::Open(config.LastScenePath);
         }
     }
     else
@@ -121,7 +114,7 @@ void EditorLayer::OnUpdate(float deltaTime)
 {
     CH_PROFILE_FUNCTION();
 
-    if (IsKeyPressed(KEY_F11))
+    if (Input::IsKeyPressed(KEY_F11))
     {
         ToggleFullscreen();
     }
@@ -146,17 +139,17 @@ void EditorLayer::OnUpdate(float deltaTime)
                     if (activeScene->GetScenePath().empty())
                     {
                         // If scene is unsaved, treat Ctrl+S as Save As
-                        SceneUtils::SaveSceneAs();
+                        SceneActions::SaveAs();
                     }
                     else
                     {
-                        SceneUtils::SaveScene();
+                        SceneActions::Save();
                     }
                 }
-                if (IsKeyPressed(KEY_O))
-                    SceneUtils::OpenScene();
+                if (Input::IsKeyPressed(KeyboardKey::KEY_F5))
+                    ProjectActions::LaunchStandalone();
                 if (IsKeyPressed(KEY_N))
-                    SceneUtils::NewScene();
+                    SceneActions::New();
             }
         }
 
@@ -189,11 +182,11 @@ void EditorLayer::OnImGuiRender()
         else
         {
             // Normal editor mode
-            UI_DrawDockSpace();
-            UI_DrawPanels();
-            UI_DrawScriptUI();
+            DrawDockSpace();
+            DrawPanels();
+            DrawScriptUI();
 
-            ImGui::End(); // End DockSpace window (started in UI_DrawDockSpace)
+            ImGui::End(); // End DockSpace window (started in DrawDockSpace)
         }
     }
     else
@@ -203,7 +196,7 @@ void EditorLayer::OnImGuiRender()
     }
 }
 
-void EditorLayer::UI_DrawDockSpace()
+void EditorLayer::DrawDockSpace()
 {
     static bool dockspaceOpen = true;
     static bool opt_fullscreen_persistant = true;
@@ -234,21 +227,45 @@ void EditorLayer::UI_DrawDockSpace()
     if (opt_fullscreen)
         ImGui::PopStyleVar(2);
 
-    UI::MenuBarState menuBarState;
-    menuBarState.IsPlaying = m_SceneState == SceneState::Play;
-    menuBarState.Panels = &m_Panels;
+    // Draw Menu Bar
+    EditorUI::MenuBarState menuState;
+    menuState.IsPlaying = (m_SceneState == SceneState::Play);
+    menuState.Panels = &m_Panels;
+    EditorUI::GUI::DrawMenuBar(menuState, CH_BIND_EVENT_FN(EditorLayer::OnEvent));
 
-    UI::DrawMenuBar(menuBarState, [this](Event &e) { OnEvent(e); });
+    // Draw Toolbar
+    EditorUI::GUI::DrawToolbar(m_SceneState == SceneState::Play,
+                               CH_BIND_EVENT_FN(EditorLayer::OnEvent));
 
-    ImGuiIO &io = ImGui::GetIO();
-    if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
+    // Draw Central UI
+    if (!Project::GetActive())
     {
-        ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-        ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+        EditorUI::GUI::DrawProjectSelector(
+            Project::GetActive() != nullptr, {0}, []() { ProjectActions::Open(); },
+            []() { ProjectActions::Open(); }, []() { Application::Get().Close(); });
+    }
+    else
+    {
+        ImGuiIO &io = ImGui::GetIO();
+        if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
+        {
+            ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+            ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+        }
+
+        bool readOnly = m_SceneState == SceneState::Play;
+        for (auto &panel : m_Panels)
+        {
+            // Project Browser is handled separately
+            if (panel->GetName() == "Project Browser")
+                continue;
+
+            panel->OnImGuiRender(readOnly);
+        }
     }
 }
 
-void EditorLayer::UI_DrawScriptUI()
+void EditorLayer::DrawScriptUI()
 {
     if (m_SceneState != SceneState::Play)
         return;
@@ -268,10 +285,9 @@ void EditorLayer::UI_DrawScriptUI()
         });
 }
 
-void EditorLayer::UI_DrawPanels()
+void EditorLayer::DrawPanels()
 {
-    UI::DrawToolbar(m_SceneState == SceneState::Play, [this](Event &e) { OnEvent(e); });
-
+    EditorUI::GUI::DrawToolbar(m_SceneState == SceneState::Play, [this](Event &e) { OnEvent(e); });
     bool readOnly = m_SceneState == SceneState::Play;
     for (auto &panel : m_Panels)
     {
@@ -280,86 +296,6 @@ void EditorLayer::UI_DrawPanels()
             continue;
 
         panel->OnImGuiRender(readOnly);
-    }
-}
-
-void EditorLayer::LaunchStandalone()
-{
-    // Auto-save project and scene
-    ProjectUtils::SaveProject();
-
-    auto project = Project::GetActive();
-    if (project)
-    {
-        std::filesystem::path projectFile =
-            project->GetProjectDirectory() / (project->GetConfig().Name + ".chproject");
-        std::string projectPathStr = std::filesystem::absolute(projectFile).string();
-
-        // Robust runtime discovery
-        std::filesystem::path runtimePath;
-        Configuration buildConfig = project->GetConfig().BuildConfig;
-        std::string configStr = (buildConfig == Configuration::Release) ? "Release" : "Debug";
-
-        CH_CORE_INFO("LaunchStandalone: Searching for {0} configuration runtime...", configStr);
-
-        std::filesystem::path exePath = ProcessUtils::GetExecutablePath();
-        std::filesystem::path buildDir = exePath.parent_path().parent_path(); // Likely 'build/'
-        std::filesystem::path cwd = std::filesystem::current_path();
-
-        std::vector<std::filesystem::path> searchBases = {
-            buildDir,    buildDir / "bin",  buildDir / "runtime", cwd,
-            cwd / "bin", cwd / "build/bin", exePath.parent_path()};
-
-        std::vector<std::string> targetNames = {project->GetConfig().Name + ".exe",
-                                                "ChainedRuntime.exe", "Runtime.exe"};
-
-        for (const auto &base : searchBases)
-        {
-            for (const auto &name : targetNames)
-            {
-                // 1. Try nested (multi-config): base/config/name
-                std::filesystem::path nested = base / configStr / name;
-                if (std::filesystem::exists(nested))
-                {
-                    runtimePath = nested;
-                    break;
-                }
-
-                // 2. Try flat (single-config): base/name
-                std::filesystem::path flat = base / name;
-                if (std::filesystem::exists(flat))
-                {
-                    runtimePath = flat;
-                    break;
-                }
-            }
-            if (!runtimePath.empty())
-                break;
-        }
-
-        if (runtimePath.empty())
-        {
-            CH_CORE_ERROR("LaunchStandalone: Failed to find runtime executable.");
-            CH_CORE_INFO("Searched locations for '{0}' or 'ChainedRuntime.exe':",
-                         project->GetConfig().Name);
-            for (const auto &base : searchBases)
-                CH_CORE_INFO("  - {0}", base.string());
-            return;
-        }
-
-        if (!std::filesystem::exists(projectPathStr))
-        {
-            CH_CORE_ERROR("LaunchStandalone: Project file not found: {0}", projectPathStr);
-            return;
-        }
-
-        std::string command = std::format("\"{}\" \"{}\"", runtimePath.string(), projectPathStr);
-        CH_CORE_INFO("Launching Standalone: {0}", command);
-
-        if (!ProcessUtils::LaunchProcess(command))
-        {
-            CH_CORE_ERROR("LaunchStandalone: Failed to launch process: {0}", command);
-        }
     }
 }
 
@@ -394,7 +330,7 @@ bool EditorLayer::OnProjectOpened(ProjectOpenedEvent &e)
 {
     CH_CORE_INFO("EditorLayer: Handling ProjectOpenedEvent - {}", e.GetPath());
 
-    // Project is already loaded by EditorUtils::ProjectUtils::OpenProject
+    // Project is already loaded by EditorUtils::ProjectActions::OpenProject
     // or by the ProjectBrowserPanel. Just update UI panels.
 
     auto project = Project::GetActive();
@@ -420,7 +356,7 @@ bool EditorLayer::OnSceneOpened(SceneOpenedEvent &e)
     {
         project->SetActiveScenePath(
             std::filesystem::relative(e.GetPath(), project->GetProjectDirectory()));
-        ProjectUtils::SaveProject();
+        ProjectActions::Save();
     }
     return false;
 }
@@ -434,7 +370,7 @@ void EditorLayer::OnEvent(CHEngine::Event &e)
         [this](ProjectCreatedEvent &ev)
         {
             CH_CORE_INFO("EditorLayer: Handling ProjectCreatedEvent");
-            ProjectUtils::NewProject(ev.GetProjectName(), ev.GetPath());
+            ProjectActions::New(ev.GetProjectName(), ev.GetPath());
             return true;
         });
     dispatcher.Dispatch<SceneOpenedEvent>(CH_BIND_EVENT_FN(EditorLayer::OnSceneOpened));
@@ -443,7 +379,7 @@ void EditorLayer::OnEvent(CHEngine::Event &e)
     dispatcher.Dispatch<AppLaunchRuntimeEvent>(
         [this](AppLaunchRuntimeEvent &ev)
         {
-            LaunchStandalone();
+            ProjectActions::LaunchStandalone();
             return true;
         });
     dispatcher.Dispatch<AppResetLayoutEvent>(
@@ -489,91 +425,46 @@ void EditorLayer::OnEvent(CHEngine::Event &e)
                 OnEvent(stopEv);
                 return true;
             }
+
+            // Shortcuts
+            bool control = Input::IsKeyDown(KeyboardKey::KEY_LEFT_CONTROL) ||
+                           Input::IsKeyDown(KeyboardKey::KEY_RIGHT_CONTROL);
+            bool shift = Input::IsKeyDown(KeyboardKey::KEY_LEFT_SHIFT) ||
+                         Input::IsKeyDown(KeyboardKey::KEY_RIGHT_SHIFT);
+
+            if (control)
+            {
+                switch (ev.GetKeyCode())
+                {
+                case KeyboardKey::KEY_N:
+                    SceneActions::New();
+                    return true;
+                case KeyboardKey::KEY_O:
+                    SceneActions::Open();
+                    return true;
+                case KeyboardKey::KEY_S:
+                    if (shift)
+                        SceneActions::SaveAs();
+                    else
+                        SceneActions::Save();
+                    return true;
+                }
+            }
+
+            if (ev.GetKeyCode() == KeyboardKey::KEY_F5)
+            {
+                ProjectActions::LaunchStandalone();
+                return true;
+            }
+
             return false;
         });
-}
-
-void EditorLayer::SetDarkThemeColors()
-{
-    auto &colors = ImGui::GetStyle().Colors;
-    colors[ImGuiCol_WindowBg] = ImVec4{0.1f, 0.105f, 0.11f, 1.0f};
-    colors[ImGuiCol_Header] = ImVec4{0.2f, 0.205f, 0.21f, 1.0f};
-    colors[ImGuiCol_HeaderHovered] = ImVec4{0.3f, 0.305f, 0.31f, 1.0f};
-    colors[ImGuiCol_HeaderActive] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
-    colors[ImGuiCol_Button] = ImVec4{0.2f, 0.205f, 0.21f, 1.0f};
-    colors[ImGuiCol_ButtonHovered] = ImVec4{0.3f, 0.305f, 0.31f, 1.0f};
-    colors[ImGuiCol_ButtonActive] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
-    colors[ImGuiCol_FrameBg] = ImVec4{0.2f, 0.205f, 0.21f, 1.0f};
-    colors[ImGuiCol_FrameBgHovered] = ImVec4{0.3f, 0.305f, 0.31f, 1.0f};
-    colors[ImGuiCol_FrameBgActive] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
-    colors[ImGuiCol_Tab] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
-    colors[ImGuiCol_TabHovered] = ImVec4{0.38f, 0.3805f, 0.381f, 1.0f};
-    colors[ImGuiCol_TabActive] = ImVec4{0.28f, 0.2805f, 0.281f, 1.0f};
-    colors[ImGuiCol_TabUnfocused] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
-    colors[ImGuiCol_TabUnfocusedActive] = ImVec4{0.2f, 0.205f, 0.21f, 1.0f};
-    colors[ImGuiCol_TitleBg] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
-    colors[ImGuiCol_TitleBgActive] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
-    colors[ImGuiCol_TitleBgCollapsed] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
 }
 
 CommandHistory &EditorLayer::GetCommandHistory()
 {
     auto &layers = Application::Get().GetLayerStack().GetLayers();
     return ((EditorLayer *)layers.back())->m_CommandHistory;
-}
-
-Camera3D EditorLayer::GetActiveCamera()
-{
-    if (m_SceneState == SceneState::Edit)
-    {
-        if (auto viewport = GetPanel<ViewportPanel>())
-            return viewport->GetCamera().GetRaylibCamera();
-    }
-
-    auto activeScene = Application::Get().GetActiveScene();
-    if (!activeScene)
-    {
-        Camera3D camera = {0};
-        camera.position = {10.0f, 10.0f, 10.0f};
-        camera.target = {0.0f, 0.0f, 0.0f};
-        camera.up = {0.0f, 1.0f, 0.0f};
-        camera.fovy = 45.0f;
-        camera.projection = CAMERA_PERSPECTIVE;
-        return camera;
-    }
-
-    auto view = activeScene->GetRegistry().view<PlayerComponent, TransformComponent>();
-    if (view.begin() != view.end())
-    {
-        auto entity = *view.begin();
-        auto &transform = view.get<TransformComponent>(entity);
-        auto &player = view.get<PlayerComponent>(entity);
-
-        Vector3 target = transform.Translation;
-        target.y += 1.0f;
-        float yawRad = player.CameraYaw * DEG2RAD;
-        float pitchRad = player.CameraPitch * DEG2RAD;
-        Vector3 offset;
-        offset.x = player.CameraDistance * cosf(pitchRad) * sinf(yawRad);
-        offset.y = player.CameraDistance * sinf(pitchRad);
-        offset.z = player.CameraDistance * cosf(pitchRad) * cosf(yawRad);
-        Camera3D camera = {0};
-        camera.position = Vector3Add(target, offset);
-        camera.target = target;
-        camera.up = {0.0f, 1.0f, 0.0f};
-        camera.fovy = 90.0f;
-        camera.projection = CAMERA_PERSPECTIVE;
-        return camera;
-    }
-
-    // Default fallback
-    Camera3D camera = {0};
-    camera.position = {10.0f, 10.0f, 10.0f};
-    camera.target = {0.0f, 0.0f, 0.0f};
-    camera.up = {0.0f, 1.0f, 0.0f};
-    camera.fovy = 45.0f;
-    camera.projection = CAMERA_PERSPECTIVE;
-    return camera;
 }
 
 SceneState EditorLayer::GetSceneState()
@@ -584,6 +475,57 @@ SceneState EditorLayer::GetSceneState()
 EditorLayer &EditorLayer::Get()
 {
     return *s_Instance;
+}
+
+bool EditorLayer::OnScenePlay(ScenePlayEvent &e)
+{
+    CH_CORE_INFO("Scene Play Event");
+
+    m_EditorScene = Application::Get().GetActiveScene();
+    if (!m_EditorScene)
+        return false;
+
+    std::shared_ptr<Scene> runtimeScene = Scene::Copy(m_EditorScene);
+    if (!runtimeScene)
+    {
+        CH_CORE_ERROR("Failed to clone scene for play mode!");
+        return false;
+    }
+
+    m_SceneState = SceneState::Play;
+    Application::Get().SetActiveScene(runtimeScene);
+
+    // Update panels context
+    for (auto &panel : m_Panels)
+        panel->SetContext(runtimeScene);
+
+    runtimeScene->OnRuntimeStart();
+
+    return false;
+}
+
+bool EditorLayer::OnSceneStop(SceneStopEvent &e)
+{
+    CH_CORE_INFO("Scene Stop Event");
+    m_FullscreenGame = false;
+
+    auto runtimeScene = Application::Get().GetActiveScene();
+    if (runtimeScene)
+        runtimeScene->OnRuntimeStop();
+
+    m_SceneState = SceneState::Edit;
+    m_StandaloneActive = false;
+
+    if (m_EditorScene)
+    {
+        Application::Get().SetActiveScene(m_EditorScene);
+        for (auto &panel : m_Panels)
+            panel->SetContext(m_EditorScene);
+
+        m_EditorScene = nullptr;
+    }
+
+    return false;
 }
 
 } // namespace CHEngine

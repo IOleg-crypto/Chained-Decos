@@ -38,7 +38,7 @@ jobs:
             ~/.ccache
             build/${{ matrix.preset }}/_deps
             build/${{ matrix.preset }}/CMakeFiles
-          key: linux-${{ matrix.preset }}-${{ hashFiles('**/CMakeLists.txt') }}
+          key: linux-${{ matrix.preset }}-${{ hashFiles('**/CMakeLists.txt', 'include/raylib/**') }}
           restore-keys: |
             linux-${{ matrix.preset }}-
 

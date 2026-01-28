@@ -1,8 +1,8 @@
 #ifndef CH_LIGHTING_COMPONENTS_H
 #define CH_LIGHTING_COMPONENTS_H
 
-#include <raylib.h>
-#include <string>
+#include "raylib.h"
+#include "string"
 
 namespace CHEngine
 {

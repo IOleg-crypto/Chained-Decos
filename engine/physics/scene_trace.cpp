@@ -1,10 +1,9 @@
 #include "scene_trace.h"
 #include "bvh/bvh.h"
+#include "cfloat"
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
-#include <cfloat>
-#include <raymath.h>
-
+#include "raymath.h"
 
 namespace CHEngine
 {
@@ -21,7 +20,7 @@ RaycastResult SceneTrace::Raycast(Scene *scene, Ray ray)
         auto &entityTransform = view.get<TransformComponent>(entity);
         auto &colliderComp = view.get<ColliderComponent>(entity);
 
-        if (!colliderComp.bEnabled)
+        if (!colliderComp.Enabled)
             continue;
 
         if (colliderComp.Type == ColliderType::Box)
@@ -57,8 +56,7 @@ RaycastResult SceneTrace::Raycast(Scene *scene, Ray ray)
             float t_local = FLT_MAX;
             Vector3 localNormal = {0, 0, 0};
             int localMeshIndex = -1;
-            if (BVHBuilder::Raycast(colliderComp.BVHRoot.get(), localRay, t_local, localNormal,
-                                    localMeshIndex))
+            if (colliderComp.BVHRoot->Raycast(localRay, t_local, localNormal, localMeshIndex))
             {
                 Vector3 hitPosLocal = Vector3Add(localOrigin, Vector3Scale(localDir, t_local));
                 Vector3 hitPosWorld = Vector3Transform(hitPosLocal, modelTransform);

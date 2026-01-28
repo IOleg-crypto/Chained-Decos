@@ -99,38 +99,38 @@ protected:
     bool IsButtonClicked(const std::string &tagName)
     {
         Entity e = m_Entity.GetScene()->FindEntityByTag(tagName);
-        if (e && e.HasComponent<ButtonWidget>())
-            return e.GetComponent<ButtonWidget>().PressedThisFrame;
+        if (e && e.HasComponent<ButtonControl>())
+            return e.GetComponent<ButtonControl>().PressedThisFrame;
         return false;
     }
 
-    bool IsUIActive(const std::string &tagName)
+    bool IsUIControlActive(const std::string &tagName)
     {
         Entity e = m_Entity.GetScene()->FindEntityByTag(tagName);
-        if (e && e.HasComponent<WidgetComponent>())
-            return e.GetComponent<WidgetComponent>().IsActive;
+        if (e && e.HasComponent<ControlComponent>())
+            return e.GetComponent<ControlComponent>().IsActive;
         return false;
     }
 
-    void SetUIActive(const std::string &tagName, bool active)
+    void SetUIControlActive(const std::string &tagName, bool active)
     {
         Entity e = m_Entity.GetScene()->FindEntityByTag(tagName);
-        if (e && e.HasComponent<WidgetComponent>())
-            e.GetComponent<WidgetComponent>().IsActive = active;
+        if (e && e.HasComponent<ControlComponent>())
+            e.GetComponent<ControlComponent>().IsActive = active;
     }
 
-    void SetUIValue(const std::string &tagName, float value)
+    void SetUIControlValue(const std::string &tagName, float value)
     {
         Entity e = m_Entity.GetScene()->FindEntityByTag(tagName);
-        if (e && e.HasComponent<SliderWidget>())
-            e.GetComponent<SliderWidget>().Value = value;
+        if (e && e.HasComponent<SliderControl>())
+            e.GetComponent<SliderControl>().Value = value;
     }
 
-    float GetUIValue(const std::string &tagName)
+    float GetUIControlValue(const std::string &tagName)
     {
         Entity e = m_Entity.GetScene()->FindEntityByTag(tagName);
-        if (e && e.HasComponent<SliderWidget>())
-            return e.GetComponent<SliderWidget>().Value;
+        if (e && e.HasComponent<SliderControl>())
+            return e.GetComponent<SliderControl>().Value;
         return 0.0f;
     }
 
