@@ -12,9 +12,9 @@ CH_SCRIPT(SceneScript){CH_START(){CH_CORE_INFO("SceneScript: Initialized");
 
 CH_UPDATE(dt)
 {
-    if (HasComponent<ButtonWidget>())
+    if (HasComponent<ButtonControl>())
     {
-        auto &button = GetComponent<ButtonWidget>();
+        auto &button = GetComponent<ButtonControl>();
         if (button.PressedThisFrame)
         {
             CH_CORE_INFO("SceneScript: Button pressed, requesting scene change...");

@@ -2,13 +2,13 @@
 #define CH_PHYSICS_COMPONENTS_H
 
 #include "engine/core/base.h"
-#include <future>
-#include <raylib.h>
-#include <string>
+#include "future"
+#include "raylib.h"
+#include "string"
 
 namespace CHEngine
 {
-struct BVHNode;
+class BVH;
 
 enum class ColliderType : uint8_t
 {
@@ -19,16 +19,16 @@ enum class ColliderType : uint8_t
 struct ColliderComponent
 {
     ColliderType Type = ColliderType::Box;
-    bool bEnabled = true;
+    bool Enabled = true;
 
     // Common/Box fields
     Vector3 Offset = {0.0f, 0.0f, 0.0f};
     Vector3 Size = {1.0f, 1.0f, 1.0f};
-    bool bAutoCalculate = true;
+    bool AutoCalculate = true;
 
     // Mesh (BVH) fields
     std::string ModelPath;
-    std::shared_ptr<BVHNode> BVHRoot = nullptr;
+    std::shared_ptr<BVH> BVHRoot = nullptr;
 
     bool IsColliding = false;
 

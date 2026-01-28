@@ -1,13 +1,13 @@
 #ifndef CH_INPUT_H
 #define CH_INPUT_H
 
-#include <array>
-#include <functional>
-#include <mutex>
-#include <raylib.h>
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include "array"
+#include "functional"
+#include "mutex"
+#include "raylib.h"
+#include "string"
+#include "unordered_map"
+#include "vector"
 
 namespace CHEngine
 {
@@ -40,13 +40,14 @@ public:
     static bool IsActionDown(const std::string &action);
     static Vector2 GetActionAxis(const std::string &action);
 
+    // Event Handling
+    static void OnEvent(class Event &e);
+
     // Internal state management (called by Application)
-    static void PollEvents(std::function<void(class Event &)> eventCallback);
     static void UpdateState();
-    static void OnKeyPressed(int key);
-    static void OnKeyReleased(int key);
-    static void OnMouseButtonPressed(int button);
-    static void OnMouseButtonReleased(int button);
+
+private:
+    static void MapDefaults();
 
 private:
     Input() = default;
@@ -74,6 +75,10 @@ private:
     static bool s_IsAltDown;
 
     static std::mutex s_InputMutex;
+
+    // Action Mapping
+    static std::unordered_map<std::string, std::vector<int>> s_ActionKeyMap;
+    static std::unordered_map<std::string, std::vector<int>> s_ActionMouseMap;
 };
 } // namespace CHEngine
 

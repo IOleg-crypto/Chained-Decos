@@ -1,13 +1,14 @@
 #ifndef CH_PROFILER_H
 #define CH_PROFILER_H
 
+#include "chrono"
 #include "engine/core/base.h"
-#include <chrono>
-#include <mutex>
-#include <string>
-#include <thread>
-#include <unordered_map>
-#include <vector>
+#include "mutex"
+#include "string"
+#include "thread"
+#include "unordered_map"
+#include "vector"
+
 
 namespace CHEngine
 {
@@ -15,21 +16,12 @@ namespace CHEngine
 struct ProfileResult
 {
     std::string Name;
-    std::chrono::microseconds StartTime;
-    std::chrono::microseconds Duration;
+    float DurationMS;
     uint32_t ThreadID;
-    uint32_t Color = 0;
-    std::vector<std::shared_ptr<ProfileResult>> Children;
 };
 
 struct ProfilerStats
 {
-    // Hardware
-    std::string CPU;
-    std::string GPU;
-    uint64_t TotalRAM = 0;
-    uint64_t UsedRAM = 0;
-
     // Rendering
     uint32_t DrawCalls = 0;
     uint32_t PolyCount = 0;
@@ -39,23 +31,16 @@ struct ProfilerStats
     // Scene
     uint32_t EntityCount = 0;
     uint32_t ColliderCount = 0;
-    std::unordered_map<int, uint32_t> ColliderTypeCounts; // Type -> Count
-
-    // History
-    std::vector<float> FrameTimeHistory;
 };
 
 class Profiler
 {
 public:
-    static void Init();
     static void BeginFrame();
     static void EndFrame();
 
-    static void BeginScope(const std::string &name);
+    static void BeginScope(const char *name);
     static void EndScope();
-
-    static const std::vector<std::shared_ptr<ProfileResult>> &GetLastFrameResults();
 
     static const ProfilerStats &GetStats()
     {
@@ -64,22 +49,26 @@ public:
     static void UpdateStats(const ProfilerStats &stats);
     static void ResetFrameStats();
 
-    static const std::vector<float> &GetFrameTimeHistory()
+    static const std::vector<ProfileResult> &GetLastFrameScopes()
     {
-        return s_FrameTimeHistory;
+        return s_LastFrameScopes;
     }
 
 private:
     struct ThreadContext
     {
-        std::vector<std::shared_ptr<ProfileResult>> Stack;
-        std::vector<std::shared_ptr<ProfileResult>> CurrentFrame;
+        struct ScopeInfo
+        {
+            const char *Name;
+            std::chrono::high_resolution_clock::time_point Start;
+        };
+        std::vector<ScopeInfo> Stack;
     };
 
     static std::unordered_map<std::thread::id, ThreadContext> s_ThreadContexts;
-    static std::mutex s_ContextMutex;
-    static std::vector<std::shared_ptr<ProfileResult>> s_LastFrameResults;
-    static std::vector<float> s_FrameTimeHistory;
+    static std::vector<ProfileResult> s_CurrentFrameScopes;
+    static std::vector<ProfileResult> s_LastFrameScopes;
+    static std::mutex s_Mutex;
     static ProfilerStats s_Stats;
 };
 

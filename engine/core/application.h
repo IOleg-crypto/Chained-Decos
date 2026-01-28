@@ -6,8 +6,9 @@
 #include "engine/core/layer.h"
 #include "engine/core/layer_stack.h"
 #include "engine/core/window.h"
-#include <string>
-#include <thread>
+#include "raylib.h"
+#include "string"
+#include "thread"
 
 namespace CHEngine
 {
@@ -20,7 +21,7 @@ struct ApplicationConfig
     int Height = 720;
     bool Fullscreen = false;
     int TargetFPS = 60;
-
+    Image WindowIcon;
     int Argc = 0;
     char **Argv = nullptr;
 };
@@ -101,6 +102,8 @@ public:
     {
         return m_Config;
     }
+
+    void SetWindowIcon(Image icon);
 
 private:
     void ProcessEvents();
