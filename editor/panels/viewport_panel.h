@@ -1,11 +1,11 @@
 #ifndef CH_VIEWPORT_PANEL_H
 #define CH_VIEWPORT_PANEL_H
 
-#include "engine/render/render.h"
+// Removed redundant include: engine/graphics/render.h
 #include "panel.h"
 #include "viewport/editor_camera.h"
 #include "viewport/editor_gizmo.h"
-#include <raylib.h>
+#include "raylib.h"
 
 namespace CHEngine
 {

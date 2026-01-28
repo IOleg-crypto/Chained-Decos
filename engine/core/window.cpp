@@ -1,16 +1,15 @@
 #include "window.h"
 #include "engine/core/log.h"
-#include "engine/ui/font_manager.h"
-#include <raylib.h>
+#include "raylib.h"
 
 // ImGui
-#include <backends/imgui_impl_glfw.h>
-#include <backends/imgui_impl_opengl3.h>
-#include <imgui.h>
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_opengl3.h"
+#include "imgui.h"
 
 // GLFW for getting native handle
 #define GLFW_INCLUDE_NONE
-#include "external/glfw/include/GLFW/glfw3.h"
+#include "external/glfw/include/glfw/glfw3.h"
 
 namespace CHEngine
 {
@@ -35,8 +34,6 @@ Window::Window(const WindowConfig &config)
         SetTargetFPS(config.TargetFPS);
 
     // Get the actual GLFW window handle.
-    // In Raylib, GetWindowHandle() returns HWND on Windows, but we need GLFWwindow*.
-    // Since InitWindow makes the context current, we can get the GLFW handle this way:
     m_Window = glfwGetCurrentContext();
 
     CH_CORE_INFO("GLFW Window Handle obtained: {}", (void *)m_Window);
@@ -57,7 +54,6 @@ Window::Window(const WindowConfig &config)
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     // Setup Platform/Renderer backends
-    // Now that we have the correct GLFWwindow*, we can install callbacks (true)
     if (!ImGui_ImplGlfw_InitForOpenGL(m_Window, true))
     {
         CH_CORE_ERROR("Failed to initialize ImGui GLFW backend");
@@ -72,8 +68,6 @@ Window::Window(const WindowConfig &config)
 
     // Setup style
     ImGui::StyleColorsDark();
-
-    FontManager::Init();
 
     // When viewports are enabled, tweak WindowRounding/WindowBg
     ImGuiStyle &style = ImGui::GetStyle();
@@ -115,7 +109,6 @@ bool Window::ShouldClose() const
 void Window::BeginFrame()
 {
     BeginDrawing();
-    // Use a simpler clear if needed, but DARKGRAY is Raylib default
     ClearBackground(DARKGRAY);
 }
 
@@ -133,6 +126,25 @@ void Window::SetTitle(const std::string &title)
 void Window::ToggleFullscreen()
 {
     ::ToggleFullscreen();
+}
+
+void Window::SetVSync(bool enabled)
+{
+    m_VSync = enabled;
+    if (m_VSync)
+        ::SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
+}
+
+void Window::SetTargetFPS(int fps)
+{
+    if (!m_VSync)
+        ::SetTargetFPS(fps);
+}
+
+void Window::SetWindowIcon(Image icon)
+{
+    if (m_Window)
+        ::SetWindowIcon(icon);
 }
 
 } // namespace CHEngine

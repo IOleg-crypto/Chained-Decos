@@ -1,6 +1,6 @@
 #include "engine/core/events.h"
 #include "engine/core/input.h"
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 using namespace CHEngine;
 
@@ -113,8 +113,10 @@ protected:
 TEST_F(InputSystemTest, KeyPressedThisFrame)
 {
     // Simulate key press
-    Input::OnKeyPressed(KEY_W);
-
+    {
+        KeyPressedEvent e(KEY_W, false);
+        Input::OnEvent(e);
+    }
     EXPECT_TRUE(Input::IsKeyPressed(KEY_W));
     EXPECT_TRUE(Input::IsKeyDown(KEY_W));
     EXPECT_FALSE(Input::IsKeyReleased(KEY_W));
@@ -124,10 +126,15 @@ TEST_F(InputSystemTest, KeyPressedThisFrame)
 TEST_F(InputSystemTest, KeyReleasedThisFrame)
 {
     // Simulate press then release
-    Input::OnKeyPressed(KEY_W);
+    {
+        KeyPressedEvent e(KEY_W, false);
+        Input::OnEvent(e);
+    }
     Input::UpdateState(); // Clear per-frame flags
-    Input::OnKeyReleased(KEY_W);
-
+    {
+        KeyReleasedEvent e(KEY_W);
+        Input::OnEvent(e);
+    }
     EXPECT_FALSE(Input::IsKeyPressed(KEY_W));
     EXPECT_FALSE(Input::IsKeyDown(KEY_W));
     EXPECT_TRUE(Input::IsKeyReleased(KEY_W));
@@ -137,7 +144,10 @@ TEST_F(InputSystemTest, KeyReleasedThisFrame)
 TEST_F(InputSystemTest, KeyHeldAcrossFrames)
 {
     // Frame 1: Press
-    Input::OnKeyPressed(KEY_W);
+    {
+        KeyPressedEvent e(KEY_W, false);
+        Input::OnEvent(e);
+    }
     EXPECT_TRUE(Input::IsKeyPressed(KEY_W));
     EXPECT_TRUE(Input::IsKeyDown(KEY_W));
 
@@ -149,8 +159,10 @@ TEST_F(InputSystemTest, KeyHeldAcrossFrames)
 
 TEST_F(InputSystemTest, MouseButtonPressed)
 {
-    Input::OnMouseButtonPressed(MOUSE_BUTTON_LEFT);
-
+    {
+        MouseButtonPressedEvent e(MOUSE_BUTTON_LEFT);
+        Input::OnEvent(e);
+    }
     EXPECT_TRUE(Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT));
     EXPECT_TRUE(Input::IsMouseButtonDown(MOUSE_BUTTON_LEFT));
     EXPECT_FALSE(Input::IsMouseButtonReleased(MOUSE_BUTTON_LEFT));
@@ -158,10 +170,15 @@ TEST_F(InputSystemTest, MouseButtonPressed)
 
 TEST_F(InputSystemTest, MouseButtonReleased)
 {
-    Input::OnMouseButtonPressed(MOUSE_BUTTON_LEFT);
+    {
+        MouseButtonPressedEvent e(MOUSE_BUTTON_LEFT);
+        Input::OnEvent(e);
+    }
     Input::UpdateState();
-    Input::OnMouseButtonReleased(MOUSE_BUTTON_LEFT);
-
+    {
+        MouseButtonReleasedEvent e(MOUSE_BUTTON_LEFT);
+        Input::OnEvent(e);
+    }
     EXPECT_FALSE(Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT));
     EXPECT_FALSE(Input::IsMouseButtonDown(MOUSE_BUTTON_LEFT));
     EXPECT_TRUE(Input::IsMouseButtonReleased(MOUSE_BUTTON_LEFT));
@@ -169,13 +186,21 @@ TEST_F(InputSystemTest, MouseButtonReleased)
 
 TEST_F(InputSystemTest, MultipleKeysSimultaneous)
 {
-    Input::OnKeyPressed(KEY_W);
-    Input::OnKeyPressed(KEY_LEFT_SHIFT);
-
+    {
+        KeyPressedEvent e(KEY_W, false);
+        Input::OnEvent(e);
+    }
+    {
+        KeyPressedEvent e(KEY_LEFT_SHIFT, false);
+        Input::OnEvent(e);
+    }
     EXPECT_TRUE(Input::IsKeyDown(KEY_W));
     EXPECT_TRUE(Input::IsKeyDown(KEY_LEFT_SHIFT));
 
-    Input::OnKeyReleased(KEY_W);
+    {
+        KeyReleasedEvent e(KEY_W);
+        Input::OnEvent(e);
+    }
     EXPECT_FALSE(Input::IsKeyDown(KEY_W));
     EXPECT_TRUE(Input::IsKeyDown(KEY_LEFT_SHIFT)); // Still held
 }
@@ -201,10 +226,12 @@ TEST_F(InputSystemTest, InvalidMouseButton)
 
 TEST(EventInputIntegrationTest, KeyPressGeneratesEvent)
 {
-    // Simulate the flow: Input state update -> Event generation
+    // Simulate the flow: Event dispatch -> Input state update
     Input::UpdateState();
-    Input::OnKeyPressed(KEY_SPACE);
-
+    {
+        KeyPressedEvent e(KEY_SPACE, false);
+        Input::OnEvent(e);
+    }
     KeyPressedEvent event(KEY_SPACE, false);
     bool jumpTriggered = false;
 
@@ -227,9 +254,14 @@ TEST(EventInputIntegrationTest, MovementPolling)
 {
     // Simulate WSAD movement (polling pattern)
     Input::UpdateState();
-    Input::OnKeyPressed(KEY_W);
-    Input::OnKeyPressed(KEY_D);
-
+    {
+        KeyPressedEvent e(KEY_W, false);
+        Input::OnEvent(e);
+    }
+    {
+        KeyPressedEvent e(KEY_D, false);
+        Input::OnEvent(e);
+    }
     // Movement should be detected via polling
     bool movingForward = Input::IsKeyDown(KEY_W);
     bool movingRight = Input::IsKeyDown(KEY_D);

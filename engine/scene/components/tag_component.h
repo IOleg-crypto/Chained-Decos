@@ -1,7 +1,7 @@
 #ifndef CH_TAG_COMPONENT_H
 #define CH_TAG_COMPONENT_H
 
-#include <string>
+#include "string"
 
 namespace CHEngine
 {

@@ -1,9 +1,9 @@
 #ifndef CH_ANIMATION_COMPONENT_H
 #define CH_ANIMATION_COMPONENT_H
 
-#include <raylib.h>
-#include <string>
-#include <vector>
+#include "raylib.h"
+#include "string"
+#include "vector"
 
 namespace CHEngine
 {

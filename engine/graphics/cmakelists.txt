@@ -1,0 +1,21 @@
+# Register Graphics sources to the unified engine target
+target_sources(engine PRIVATE
+    # Renderer Core
+    ${CMAKE_CURRENT_SOURCE_DIR}/draw_command.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/draw_command.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/render_types.h
+
+    # Assets
+    ${CMAKE_CURRENT_SOURCE_DIR}/model_asset.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/model_asset.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/texture_asset.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/texture_asset.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/shader_asset.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shader_asset.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/environment.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/environment.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/font_asset.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/font_asset.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/asset.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/material.h
+)

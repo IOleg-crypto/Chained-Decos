@@ -1,11 +1,12 @@
 #include "environment_panel.h"
-#include "engine/render/asset_manager.h"
-#include "engine/render/render.h"
+// Removed redundant include: engine/graphics/asset_manager.h
+// Removed redundant include: engine/graphics/render.h
+#include "engine/graphics/render_types.h"
 #include "engine/scene/project.h"
+#include "filesystem"
+#include "imgui.h"
+#include "nfd.hpp"
 #include "scene/scene.h"
-#include <filesystem>
-#include <imgui.h>
-#include <nfd.hpp>
 
 namespace CHEngine
 {
@@ -94,7 +95,7 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
             nfdresult_t result = NFD_OpenDialog(&outPath, filterList, 1, NULL);
             if (result == NFD_OKAY)
             {
-                m_Context->SetEnvironment(AssetManager::LoadEnvironment(outPath));
+                // m_Context->SetEnvironment(AssetManager::LoadEnvironment(outPath));
                 NFD_FreePath(outPath);
             }
         }

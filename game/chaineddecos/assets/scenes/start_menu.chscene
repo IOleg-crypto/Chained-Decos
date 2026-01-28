@@ -16,7 +16,7 @@ Entities:
       Translation: [0, -1.10000002, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
-    WidgetComponent:
+    ControlComponent:
       IsActive: true
       HiddenInHierarchy: false
       RectTransform:
@@ -25,8 +25,8 @@ Entities:
         OffsetMin: [-80, -15]
         OffsetMax: [56, 25]
         Pivot: [0.140000001, 1]
-        RectCoordinates: [13, -64]
-    ButtonWidget:
+        RectCoordinates: [1, -132]
+    ButtonControl:
       Label: Start
       Interactable: true
       Style:
@@ -40,7 +40,7 @@ Entities:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
-    WidgetComponent:
+    ControlComponent:
       IsActive: true
       HiddenInHierarchy: false
       RectTransform:
@@ -49,8 +49,8 @@ Entities:
         OffsetMin: [-80, -34]
         OffsetMax: [87, 21]
         Pivot: [0.0900000036, 0]
-        RectCoordinates: [3, -28]
-    ButtonWidget:
+        RectCoordinates: [1, -49]
+    ButtonControl:
       Label: Options
       Interactable: true
       Style:
@@ -64,7 +64,7 @@ Entities:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
-    WidgetComponent:
+    ControlComponent:
       IsActive: true
       HiddenInHierarchy: false
       RectTransform:
@@ -73,8 +73,8 @@ Entities:
         OffsetMin: [-50, -20]
         OffsetMax: [50, 20]
         Pivot: [0.5, 0.5]
-        RectCoordinates: [-310, 6]
-    LabelWidget:
+        RectCoordinates: [-363, -157]
+    LabelControl:
       Text: Chained Decos
       FontSize: 36.5999985
       TextColor: [189, 206, 175, 255]
@@ -88,7 +88,7 @@ Entities:
     NativeScriptComponent:
       Scripts:
         - ExitScript
-    WidgetComponent:
+    ControlComponent:
       IsActive: true
       HiddenInHierarchy: false
       RectTransform:
@@ -97,8 +97,8 @@ Entities:
         OffsetMin: [-80, -25]
         OffsetMax: [80, 25]
         Pivot: [0.5, 0.5]
-        RectCoordinates: [65, 115]
-    ButtonWidget:
+        RectCoordinates: [-6, 81]
+    ButtonControl:
       Label: Exit
       Interactable: true
       Style:
@@ -109,20 +109,20 @@ Entities:
     TagComponent:
       Tag: start_game_info
     TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
+      Translation: [0, 0.300000012, 0]
+      Rotation: [0, 1.5, 0]
       Scale: [1, 1, 1]
-    WidgetComponent:
+    ControlComponent:
       IsActive: true
       HiddenInHierarchy: false
       RectTransform:
-        AnchorMin: [0.5, 0.5]
+        AnchorMin: [0.25999999, 0.879999995]
         AnchorMax: [0.5, 0.5]
         OffsetMin: [-30, 276]
         OffsetMax: [50, 20]
         Pivot: [1, 0.5]
         RectCoordinates: [-187, -25]
-    LabelWidget:
+    LabelControl:
       Text: "The game is currently in development. "
       FontSize: 22
       TextColor: [255, 255, 255, 255]
@@ -133,7 +133,7 @@ Entities:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
-    WidgetComponent:
+    ControlComponent:
       IsActive: true
       HiddenInHierarchy: false
       RectTransform:
@@ -142,8 +142,8 @@ Entities:
         OffsetMin: [-50, -20]
         OffsetMax: [50, 20]
         Pivot: [0.5, 0.5]
-        RectCoordinates: [-119, 302]
-    LabelWidget:
+        RectCoordinates: [-208, 286]
+    LabelControl:
       Text: Some functionality or aspects can be changed in final version.
       FontSize: 22
       TextColor: [255, 255, 255, 255]
@@ -154,7 +154,7 @@ Entities:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
-    WidgetComponent:
+    ControlComponent:
       IsActive: true
       HiddenInHierarchy: false
       RectTransform:
@@ -163,8 +163,8 @@ Entities:
         OffsetMin: [-80, -25]
         OffsetMax: [80, 25]
         Pivot: [0.5, 0.5]
-        RectCoordinates: [65, 46]
-    ButtonWidget:
+        RectCoordinates: [-5, 4]
+    ButtonControl:
       Label: Info
       Interactable: true
       Style:
