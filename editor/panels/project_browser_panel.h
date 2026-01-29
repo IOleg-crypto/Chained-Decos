@@ -6,7 +6,6 @@
 #include "string"
 #include "vector"
 
-
 // Helper: Draw premium action card
 enum class CardIconType
 {
@@ -20,7 +19,7 @@ class ProjectBrowserPanel : public Panel
 {
 public:
     ProjectBrowserPanel();
-    ~ProjectBrowserPanel() = default;
+    ~ProjectBrowserPanel();
 
     virtual void OnImGuiRender(bool readOnly = false) override;
 
@@ -40,6 +39,11 @@ private:
     bool m_OpenCreatePopupRequest = false;
     char m_ProjectNameBuffer[256] = "MyProject";
     char m_ProjectLocationBuffer[512] = "";
+
+    void *m_NewProjectIcon =
+        nullptr; // Using void* or Texture2D depends on headers, but we have raylib.h in cpp
+    void *m_OpenProjectIcon = nullptr;
+    bool m_IconsLoaded = false;
 };
 } // namespace CHEngine
 

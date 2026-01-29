@@ -42,23 +42,6 @@ public:
             ImVec2 displaySize = ImGui::GetIO().DisplaySize;
             activeScene->OnImGuiRender({0, 0}, displaySize, 0, false);
         }
-        else
-        {
-            // Simple Splash Screen / Loading
-            ImGui::SetNextWindowPos({0, 0});
-            ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-            ImGui::Begin("Splash", nullptr,
-                         ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs |
-                             ImGuiWindowFlags_NoBackground);
-
-            const char *text = "Chained Decos - Loading...";
-            ImVec2 textSize = ImGui::CalcTextSize(text);
-            ImGui::SetCursorPos({(ImGui::GetIO().DisplaySize.x - textSize.x) * 0.5f,
-                                 (ImGui::GetIO().DisplaySize.y - textSize.y) * 0.5f});
-            ImGui::Text("%s", text);
-
-            ImGui::End();
-        }
     }
 
     Camera3D GetActiveCamera()
@@ -78,11 +61,42 @@ public:
     }
 };
 
+class SplashOverlay : public Layer
+{
+public:
+    SplashOverlay() : Layer("SplashOverlay")
+    {
+    }
+
+    virtual void OnImGuiRender() override
+    {
+        if (Application::Get().GetActiveScene())
+            return;
+
+        ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs |
+                                 ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove |
+                                 ImGuiWindowFlags_NoSavedSettings;
+
+        ImGui::SetNextWindowPos({0, 0});
+        ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+        ImGui::Begin("SplashOverlay", nullptr, flags);
+
+        const char *text = "Chained Decos - Loading...";
+        ImVec2 textSize = ImGui::CalcTextSize(text);
+        ImGui::SetCursorPos({(ImGui::GetIO().DisplaySize.x - textSize.x) * 0.5f,
+                             (ImGui::GetIO().DisplaySize.y - textSize.y) * 0.5f});
+        ImGui::TextColored({1.0f, 1.0f, 1.0f, 0.8f}, "%s", text);
+
+        ImGui::End();
+    }
+};
+
 RuntimeApplication::RuntimeApplication(const Application::Config &config,
                                        const std::string &projectPath)
     : Application(config), m_ProjectPath(projectPath)
 {
     PushLayer(new RuntimeLayer());
+    PushOverlay(new SplashOverlay());
 }
 
 void RuntimeApplication::PostInitialize()

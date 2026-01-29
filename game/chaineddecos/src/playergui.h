@@ -28,15 +28,10 @@ CH_SCRIPT(GameHUD)
         auto *scene = GetEntity().GetScene();
         if (scene)
         {
-            auto &registry = scene->GetRegistry();
-            auto playerView = registry.view<CHEngine::PlayerComponent>();
-            if (!playerView.empty())
+            Entity player = scene->FindEntityByTag("Player");
+            if (player && player.HasComponent<TransformComponent>())
             {
-                auto entity = playerView.front();
-                if (registry.all_of<CHEngine::TransformComponent>(entity))
-                {
-                    altitude = registry.get<CHEngine::TransformComponent>(entity).Translation.y;
-                }
+                altitude = player.GetComponent<TransformComponent>().Translation.y;
             }
         }
 

@@ -8,8 +8,12 @@ target_sources(ChainedEditor PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_layer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_layer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_panels.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_panels.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/actions/project_actions.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/actions/scene_actions.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/actions/editor_actions.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/actions/editor_actions.cpp
 
     # Viewport
     ${CMAKE_CURRENT_SOURCE_DIR}/viewport/editor_gizmo.h
@@ -41,12 +45,15 @@ target_sources(ChainedEditor PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/undo/command_history.h
     ${CMAKE_CURRENT_SOURCE_DIR}/undo/command_history.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/undo/editor_command.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/undo/transform_command.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/undo/modify_component_command.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/undo/lambda_command.h
     ${CMAKE_CURRENT_SOURCE_DIR}/undo/entity_commands.h
 
     # UI
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/editor_gui.h
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/editor_gui.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/editor_layout.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/editor_layout.cpp
     # External
     ${CMAKE_SOURCE_DIR}/include/rlImGui/rlimgui.cpp
 )

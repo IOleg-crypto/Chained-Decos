@@ -8,7 +8,7 @@
 // Removed redundant include: engine/graphics/render.h
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
-#include "engine/graphics/draw_command.h"
+#include "engine/graphics/visuals.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene_serializer.h"
 #include "engine/scene/script_registry.h"
@@ -64,7 +64,7 @@ bool Application::Initialize(const Config &config)
     {
         m_Window->SetWindowIcon(config.WindowIcon);
     }
-    DrawCommand::Init();
+    Visuals::Init();
     Physics::Init();
     InitAudioDevice();
     if (IsAudioDeviceReady())
@@ -97,7 +97,7 @@ void Application::Shutdown()
     CloseAudioDevice();
     // ImGui shutdown is handled in Window destructor
     Physics::Shutdown();
-    DrawCommand::Shutdown();
+    Visuals::Shutdown();
     m_Window.reset();
     m_Running = false;
     CH_CORE_INFO("Engine Shutdown Successfully.");
@@ -122,7 +122,6 @@ void Application::PushOverlay(Layer *overlay)
 void Application::BeginFrame()
 {
     CH_PROFILE_FUNCTION();
-    Input::UpdateState();
 
     s_Instance->m_DeltaTime = GetFrameTime();
     s_Instance->m_Window->BeginFrame();
@@ -165,8 +164,6 @@ bool Application::ShouldClose()
 
 void Application::OnEvent(Event &e)
 {
-    Input::OnEvent(e);
-
     for (auto it = s_Instance->m_LayerStack.rbegin(); it != s_Instance->m_LayerStack.rend(); ++it)
     {
         if (e.Handled)

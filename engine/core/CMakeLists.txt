@@ -9,7 +9,6 @@ target_sources(engine PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/profiler.h
     ${CMAKE_CURRENT_SOURCE_DIR}/uuid.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/uuid.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/input.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/input.h
     ${CMAKE_CURRENT_SOURCE_DIR}/layer_stack.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/layer_stack.h

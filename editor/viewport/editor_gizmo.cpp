@@ -1,17 +1,27 @@
 #include "editor_gizmo.h"
+#include "editor/actions/editor_actions.h"
 #include "editor_layer.h"
 #include "engine/scene/components.h"
-#include "undo/transform_command.h"
 #include "raymath.h"
+#include "ui/editor_gui.h"
+#include "undo/modify_component_command.h"
+
 
 namespace CHEngine
 {
 
-bool EditorGizmo::RenderAndHandle(Scene *scene, const Camera3D &camera, Entity entity,
-                                  GizmoType type, ImVec2 viewportPos, ImVec2 viewportSize)
+bool EditorGizmo::RenderAndHandle(GizmoType type)
 {
+    auto &layer = EditorLayer::Get();
+    Scene *scene = Application::Get().GetActiveScene().get();
+    Entity entity = layer.GetSelectedEntity();
+    Camera3D camera = EditorUI::GUI::GetActiveCamera(layer.GetSceneState());
+
     if (!scene || !entity || !entity.HasComponent<TransformComponent>() || type == GizmoType::NONE)
         return false;
+
+    ImVec2 viewportPos = ImGui::GetWindowPos();
+    ImVec2 viewportSize = ImGui::GetContentRegionAvail();
 
     auto &transform = entity.GetComponent<TransformComponent>();
 
@@ -78,8 +88,8 @@ bool EditorGizmo::RenderAndHandle(Scene *scene, const Camera3D &camera, Entity e
     else if (m_WasUsing)
     {
         m_WasUsing = false;
-        EditorLayer::GetCommandHistory().PushCommand(
-            std::make_unique<TransformCommand>(entity, m_OldTransform, transform));
+        EditorActions::PushCommand(std::make_unique<ModifyComponentCommand<TransformComponent>>(
+            entity, m_OldTransform, transform, "Transform Entity"));
     }
 
     return ImGuizmo::IsOver() || ImGuizmo::IsUsing();

@@ -5,6 +5,9 @@
 #include "engine/core/base.h"
 #include "engine/core/layer.h"
 // Removed redundant include: engine/graphics/render.h
+#include "editor/actions/editor_actions.h"
+#include "editor/editor_panels.h"
+#include "editor/ui/editor_layout.h"
 #include "editor_types.h"
 #include "engine/graphics/render_types.h"
 #include "engine/scene/scene.h"
@@ -49,22 +52,9 @@ public:
         return Application::Get().GetActiveScene();
     }
 
-    template <typename T, typename... Args> std::shared_ptr<T> AddPanel(Args &&...args)
-    {
-        auto panel = std::make_shared<T>(std::forward<Args>(args)...);
-        m_Panels.push_back(panel);
-        return panel;
-    }
-
-    template <typename T> std::shared_ptr<T> GetPanel()
-    {
-        for (auto &panel : m_Panels)
-        {
-            if (auto p = std::dynamic_pointer_cast<T>(panel))
-                return p;
-        }
-        return nullptr;
-    }
+    void ResetLayout();
+    void DrawDockSpace();
+    void DrawScriptUI();
 
 private:
     bool OnProjectOpened(ProjectOpenedEvent &e);
@@ -72,15 +62,22 @@ private:
     bool OnScenePlay(ScenePlayEvent &e);
     bool OnSceneStop(SceneStopEvent &e);
 
-    void ResetLayout();
-    void DrawDockSpace();
-    void DrawPanels();
-    void DrawScriptUI();
-
 public:
+    static EditorLayer *s_Instance;
+    static ImVec2 s_ViewportSize;
+
     static CommandHistory &GetCommandHistory();
     static SceneState GetSceneState();
     static EditorLayer &Get();
+
+    EditorPanels &GetPanels()
+    {
+        return *m_Panels;
+    }
+    Entity GetSelectedEntity() const
+    {
+        return m_SelectedEntity;
+    }
 
     Camera3D GetActiveCamera();
     DebugRenderFlags &GetDebugRenderFlags()
@@ -102,7 +99,9 @@ public:
     }
 
 private:
-    std::vector<std::shared_ptr<Panel>> m_Panels;
+    std::unique_ptr<EditorPanels> m_Panels;
+    std::unique_ptr<EditorLayout> m_Layout;
+    std::unique_ptr<EditorActions> m_Actions;
 
     Entity m_SelectedEntity;
     SceneState m_SceneState = SceneState::Edit;
@@ -116,9 +115,6 @@ private:
 
 private:
     CommandHistory m_CommandHistory;
-
-    static EditorLayer *s_Instance;
-    static ImVec2 s_ViewportSize;
 };
 } // namespace CHEngine
 

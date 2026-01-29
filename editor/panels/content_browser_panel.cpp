@@ -1,9 +1,11 @@
 #include "content_browser_panel.h"
+#include "algorithm"
+#include "editor/actions/scene_actions.h"
 #include "engine/core/base.h"
 #include "engine/core/log.h"
-#include "algorithm"
 #include "extras/iconsfontawesome6.h"
 #include "imgui.h"
+
 
 namespace CHEngine
 {
@@ -28,6 +30,7 @@ void ContentBrowserPanel::OnImGuiRender(bool readOnly)
     if (!m_IsOpen)
         return;
     ImGui::Begin(m_Name.c_str(), &m_IsOpen);
+    ImGui::PushID(this);
 
     ImGui::BeginDisabled(readOnly);
     RenderToolbar();
@@ -35,6 +38,7 @@ void ContentBrowserPanel::OnImGuiRender(bool readOnly)
     RenderGridView();
 
     ImGui::EndDisabled();
+    ImGui::PopID();
     ImGui::End();
 }
 
@@ -108,9 +112,9 @@ void ContentBrowserPanel::OnAssetDoubleClicked(AssetEntry &entry)
         m_CurrentDirectory = entry.path;
         RefreshDirectory();
     }
-    else if (entry.type == EditorAssetType::Scene && m_OnSceneOpenCallback)
+    else if (entry.type == EditorAssetType::Scene)
     {
-        m_OnSceneOpenCallback(entry.path);
+        SceneActions::Open(entry.path);
     }
 }
 

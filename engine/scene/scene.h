@@ -21,6 +21,17 @@ enum class BackgroundMode : uint8_t
     Environment3D
 };
 
+struct SceneSettings
+{
+    BackgroundMode Mode = BackgroundMode::Environment3D;
+    Color BackgroundColor;
+    std::string BackgroundTexturePath;
+    std::string ScenePath;
+    CanvasSettings Canvas;
+    std::shared_ptr<EnvironmentAsset> Environment;
+    SkyboxComponent Skybox;
+};
+
 class Scene
 {
 public:
@@ -29,29 +40,29 @@ public:
 
     BackgroundMode GetBackgroundMode() const
     {
-        return m_BackgroundMode;
+        return m_Settings.Mode;
     }
     void SetBackgroundMode(BackgroundMode mode)
     {
-        m_BackgroundMode = mode;
+        m_Settings.Mode = mode;
     }
 
     Color GetBackgroundColor() const
     {
-        return m_BackgroundColor;
+        return m_Settings.BackgroundColor;
     }
     void SetBackgroundColor(Color color)
     {
-        m_BackgroundColor = color;
+        m_Settings.BackgroundColor = color;
     }
 
     const std::string &GetBackgroundTexturePath() const
     {
-        return m_BackgroundTexturePath;
+        return m_Settings.BackgroundTexturePath;
     }
     void SetBackgroundTexturePath(const std::string &path)
     {
-        m_BackgroundTexturePath = path;
+        m_Settings.BackgroundTexturePath = path;
     }
 
     static std::shared_ptr<Scene> Copy(std::shared_ptr<Scene> other);
@@ -82,18 +93,14 @@ public:
 
     const std::string &GetScenePath() const
     {
-        return m_ScenePath;
+        return m_Settings.ScenePath;
     }
     void SetScenePath(const std::string &path)
     {
-        m_ScenePath = path;
+        m_Settings.ScenePath = path;
     }
 
-    // Entt-compatible wrappers
-    void OnModelComponentAdded(entt::registry &reg, entt::entity entity);
-    void OnAnimationComponentAdded(entt::registry &reg, entt::entity entity);
-    void OnAudioComponentAdded(entt::registry &reg, entt::entity entity);
-
+    // Generic component added handling (templated)
     template <typename T> void OnComponentAdded(Entity entity, T &component)
     {
     }
@@ -109,24 +116,24 @@ public:
 
     struct SkyboxComponent &GetSkybox()
     {
-        return m_Skybox;
+        return m_Settings.Skybox;
     }
     const struct SkyboxComponent &GetSkybox() const
     {
-        return m_Skybox;
+        return m_Settings.Skybox;
     }
 
     std::shared_ptr<EnvironmentAsset> GetEnvironment()
     {
-        return m_Environment;
+        return m_Settings.Environment;
     }
     const std::shared_ptr<EnvironmentAsset> GetEnvironment() const
     {
-        return m_Environment;
+        return m_Settings.Environment;
     }
     void SetEnvironment(std::shared_ptr<EnvironmentAsset> environment)
     {
-        m_Environment = environment;
+        m_Settings.Environment = environment;
     }
 
     Camera3D GetActiveCamera() const;
@@ -134,25 +141,36 @@ public:
 
     CanvasSettings &GetCanvasSettings()
     {
-        return m_CanvasSettings;
+        return m_Settings.Canvas;
     }
     const CanvasSettings &GetCanvasSettings() const
     {
-        return m_CanvasSettings;
+        return m_Settings.Canvas;
     }
 
 private:
     entt::registry m_Registry;
-    std::shared_ptr<EnvironmentAsset> m_Environment;
-    struct SkyboxComponent m_Skybox;
-
-    BackgroundMode m_BackgroundMode = BackgroundMode::Environment3D;
-    Color m_BackgroundColor = {245, 245, 245, 255};
-    std::string m_BackgroundTexturePath = "";
-    std::string m_ScenePath = "";
-    CanvasSettings m_CanvasSettings;
+    std::unordered_map<UUID, entt::entity> m_EntityMap;
+    SceneSettings m_Settings;
 
     bool m_IsSimulationRunning = false;
+
+    // Declarative internal pipeline
+    void UpdateScripting(float deltaTime);
+    void UpdateAnimation(float deltaTime);
+    void UpdateAudio(float deltaTime);
+
+    // Reactive signals handlers
+    void OnModelComponentAdded(entt::registry &reg, entt::entity entity);
+    void OnAnimationComponentAdded(entt::registry &reg, entt::entity entity);
+    void OnAudioComponentAdded(entt::registry &reg, entt::entity entity);
+
+    // UUID Map Handlers
+    void OnIDConstruct(entt::registry &reg, entt::entity entity);
+    void OnIDDestroy(entt::registry &reg, entt::entity entity);
+
+    // Hierarchy Handlers
+    void OnHierarchyDestroy(entt::registry &reg, entt::entity entity);
 
     friend class Entity;
     friend class SceneSerializer;
@@ -169,7 +187,6 @@ template <typename T, typename... Args> T &Entity::AddComponent(Args &&...args)
 {
     CH_CORE_ASSERT(!HasComponent<T>(), "Entity already has component!");
     T &component = m_Scene->m_Registry.emplace<T>(m_EntityHandle, std::forward<Args>(args)...);
-    m_Scene->OnComponentAdded<T>(*this, component);
     return component;
 }
 

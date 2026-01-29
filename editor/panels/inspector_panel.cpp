@@ -15,6 +15,7 @@ void InspectorPanel::OnImGuiRender(bool readOnly)
         return;
 
     ImGui::Begin(m_Name.c_str(), &m_IsOpen);
+    ImGui::PushID(this);
 
     if (m_SelectedEntity && m_SelectedEntity.GetScene() != m_Context.get())
         m_SelectedEntity = {};
@@ -30,6 +31,7 @@ void InspectorPanel::OnImGuiRender(bool readOnly)
         ImGui::Text("Selection: None");
         ImGui::TextDisabled("Select an entity in the Hierarchy to view its components.");
     }
+    ImGui::PopID();
     ImGui::End();
 }
 
@@ -47,6 +49,8 @@ void InspectorPanel::OnEvent(Event &e)
 
 void InspectorPanel::DrawComponents(Entity entity)
 {
+    ImGui::PushID((uint32_t)entity);
+
     if (entity.HasComponent<IDComponent>())
     {
         uint64_t uuid = (uint64_t)entity.GetComponent<IDComponent>().ID;
@@ -67,5 +71,7 @@ void InspectorPanel::DrawComponents(Entity entity)
 
     // Some special cases that might not be in the registry or need extra data
     ComponentUI::DrawMaterial(entity, m_SelectedMeshIndex);
+
+    ImGui::PopID();
 }
 } // namespace CHEngine

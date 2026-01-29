@@ -19,7 +19,7 @@ static void ClearSceneBackground(Scene *scene, Vector2 size)
     }
     else if (mode == BackgroundMode::Texture)
     {
-        auto path = scene->GetBackgroundTexturePath();
+        auto &path = scene->GetBackgroundTexturePath();
         if (!path.empty())
         {
             // Fallback for now
@@ -35,7 +35,9 @@ static void ClearSceneBackground(Scene *scene, Vector2 size)
 ViewportPanel::ViewportPanel()
 {
     m_Name = "Viewport";
-    m_ViewportTexture = LoadRenderTexture(GetScreenWidth(), GetScreenHeight());
+    int w = GetScreenWidth();
+    int h = GetScreenHeight();
+    m_ViewportTexture = LoadRenderTexture(w > 0 ? w : 1280, h > 0 ? h : 720);
 }
 
 ViewportPanel::~ViewportPanel()
@@ -50,6 +52,9 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
     ImGui::Begin(m_Name.c_str(), &m_IsOpen);
+    ImGui::PushID(this);
+
+    m_Gizmo.RenderAndHandle(m_CurrentTool);
 
     ImVec2 viewportSize = ImGui::GetContentRegionAvail();
     if (viewportSize.x != m_ViewportTexture.texture.width ||
@@ -59,12 +64,14 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         {
             UnloadRenderTexture(m_ViewportTexture);
             m_ViewportTexture = LoadRenderTexture((int)viewportSize.x, (int)viewportSize.y);
+            EditorLayer::Get().s_ViewportSize = viewportSize;
         }
     }
 
     auto activeScene = Application::Get().GetActiveScene();
     if (!activeScene)
     {
+        ImGui::PopID();
         ImGui::End();
         ImGui::PopStyleVar();
         return;
@@ -74,13 +81,14 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
     BeginTextureMode(m_ViewportTexture);
     ClearSceneBackground(activeScene.get(), {viewportSize.x, viewportSize.y});
 
-    Camera3D camera = EditorUI::GUI::GetActiveCamera(EditorLayer::GetSceneState());
+    Camera3D camera = EditorUI::GUI::GetActiveCamera(EditorLayer::Get().GetSceneState());
     activeScene->OnRender(camera, &EditorLayer::Get().GetDebugRenderFlags());
 
     EndTextureMode();
 
     rlImGuiImageRenderTextureFit(&m_ViewportTexture, true);
 
+    ImGui::PopID();
     ImGui::End();
     ImGui::PopStyleVar();
 }

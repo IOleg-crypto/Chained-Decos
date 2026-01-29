@@ -1,6 +1,6 @@
 #include "console_panel.h"
-#include "raylib.h"
 #include "imgui.h"
+#include "raylib.h"
 
 namespace CHEngine
 {
@@ -19,6 +19,7 @@ void ConsolePanel::OnImGuiRender(bool readOnly)
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10));
     ImGui::Begin(m_Name.c_str(), &m_IsOpen);
+    ImGui::PushID(this);
 
     ImGui::BeginDisabled(readOnly);
     if (ImGui::Button("Clear"))
@@ -60,6 +61,7 @@ void ConsolePanel::OnImGuiRender(bool readOnly)
         ImGui::SetScrollHereY(1.0f);
 
     ImGui::EndChild();
+    ImGui::PopID();
     ImGui::End();
     ImGui::PopStyleVar();
 }

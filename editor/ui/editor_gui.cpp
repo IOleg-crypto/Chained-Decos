@@ -187,7 +187,7 @@ Camera3D GUI::GetActiveCamera(SceneState state)
 {
     if (state == SceneState::Edit)
     {
-        if (auto viewport = EditorLayer::Get().GetPanel<ViewportPanel>())
+        if (auto viewport = EditorLayer::Get().GetPanels().Get<ViewportPanel>())
             return viewport->GetCamera().GetRaylibCamera();
     }
 

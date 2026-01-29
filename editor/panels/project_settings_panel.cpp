@@ -25,6 +25,7 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
 
     if (ImGui::Begin("Project Settings", &m_IsOpen))
     {
+        ImGui::PushID(this);
         auto &config = const_cast<ProjectConfig &>(project->GetConfig());
 
         if (ImGui::CollapsingHeader("General", ImGuiTreeNodeFlags_DefaultOpen))
@@ -74,6 +75,7 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
                 project->GetProjectDirectory() / (project->GetConfig().Name + ".chproject");
             serializer.Serialize(path);
         }
+        ImGui::PopID();
     }
     ImGui::End();
 }

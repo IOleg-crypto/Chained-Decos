@@ -26,23 +26,14 @@ void ProfilerPanel::OnImGuiRender(bool readOnly)
     UpdateHistory();
 
     ImGui::Begin(m_Name.c_str(), &m_IsOpen);
+    ImGui::PushID(this);
 
     const auto &stats = Profiler::GetStats();
 
     if (ImGui::CollapsingHeader("Hardware & System", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        if (!m_HardwareGathered)
-        {
-            const char *renderer = (const char *)glGetString(GL_RENDERER); // GL_RENDERER
-            if (renderer)
-                m_GPUInfo = renderer;
-            m_HardwareGathered = true;
-        }
-
-        ImGui::Text("GPU: %s", m_GPUInfo.c_str());
-        ImGui::Text("CPU: %s", m_CPUInfo.c_str());
-        ImGui::Separator();
-        ImGui::Text("Memory usage tracking moved to OS-level tools.");
+        ImGui::Text("GPU: %s", glGetString(GL_RENDERER));
+        ImGui::Text("Driver: %s", glGetString(GL_VERSION));
     }
 
     if (ImGui::CollapsingHeader("Scene Statistics", ImGuiTreeNodeFlags_DefaultOpen))
@@ -104,6 +95,7 @@ void ProfilerPanel::OnImGuiRender(bool readOnly)
         }
     }
 
+    ImGui::PopID();
     ImGui::End();
 }
 

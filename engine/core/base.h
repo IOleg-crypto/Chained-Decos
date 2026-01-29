@@ -1,6 +1,7 @@
 #ifndef CH_BASE_H
 #define CH_BASE_H
 
+#define GLM_ENABLE_EXPERIMENTAL
 #include "engine/core/log.h"
 #include "memory"
 
