@@ -3,13 +3,12 @@
 #include "editor.h"
 #include "editor_layer.h"
 
-
 // Removed redundant include: engine/graphics/asset_manager.h
 #include "extras/iconsfontawesome6.h"
 #include "filesystem"
 #include "imgui.h"
 #include "nfd.h"
-#include "raylib.h"
+#include "rlimgui.h"
 
 namespace CHEngine
 {
@@ -18,6 +17,38 @@ ProjectBrowserPanel::ProjectBrowserPanel()
     m_Name = "Project Browser";
     std::string cwd = std::filesystem::current_path().string();
     strncpy(m_ProjectLocationBuffer, cwd.c_str(), sizeof(m_ProjectLocationBuffer));
+
+    // Load icons
+    const char *newProjectIconPath = PROJECT_ROOT_DIR "/engine/resources/icons/newproject.jpg";
+    const char *openProjectIconPath = PROJECT_ROOT_DIR "/engine/resources/icons/folder.png";
+
+    if (std::filesystem::exists(newProjectIconPath))
+    {
+        Texture2D *tex = new Texture2D(LoadTexture(newProjectIconPath));
+        m_NewProjectIcon = tex;
+    }
+
+    if (std::filesystem::exists(openProjectIconPath))
+    {
+        Texture2D *tex = new Texture2D(LoadTexture(openProjectIconPath));
+        m_OpenProjectIcon = tex;
+    }
+
+    m_IconsLoaded = (m_NewProjectIcon != nullptr && m_OpenProjectIcon != nullptr);
+}
+
+ProjectBrowserPanel::~ProjectBrowserPanel()
+{
+    if (m_NewProjectIcon)
+    {
+        UnloadTexture(*(Texture2D *)m_NewProjectIcon);
+        delete (Texture2D *)m_NewProjectIcon;
+    }
+    if (m_OpenProjectIcon)
+    {
+        UnloadTexture(*(Texture2D *)m_OpenProjectIcon);
+        delete (Texture2D *)m_OpenProjectIcon;
+    }
 }
 
 void ProjectBrowserPanel::OnImGuiRender(bool readOnly)
@@ -36,6 +67,7 @@ void ProjectBrowserPanel::OnImGuiRender(bool readOnly)
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 
     ImGui::Begin("Project Browser", nullptr, windowFlags);
+    ImGui::PushID(this);
 
     if (m_OpenCreatePopupRequest)
     {
@@ -48,6 +80,7 @@ void ProjectBrowserPanel::OnImGuiRender(bool readOnly)
     if (m_ShowCreateDialog)
         DrawCreateProjectDialog();
 
+    ImGui::PopID();
     ImGui::End();
     ImGui::PopStyleVar(3);
 }
@@ -104,7 +137,7 @@ static void DrawSidebar(ImDrawList *drawList, ImVec2 pMin, ImVec2 pMax, float si
 
 static bool DrawActionCard(ImDrawList *drawList, ImVec2 cardMin, float cardWidth, float cardHeight,
                            const char *title, const char *desc1, const char *desc2,
-                           CardIconType iconType, const char *buttonId)
+                           Texture2D *iconTexture, const char *buttonId)
 {
     ImVec2 cardMax = ImVec2(cardMin.x + cardWidth, cardMin.y + cardHeight);
     bool hovered = ImGui::IsMouseHoveringRect(cardMin, cardMax);
@@ -114,39 +147,42 @@ static bool DrawActionCard(ImDrawList *drawList, ImVec2 cardMin, float cardWidth
     drawList->AddRectFilled(cardMin, cardMax, cardColor, 15.0f);
     drawList->AddRect(cardMin, cardMax, borderColor, 15.0f, 0, 2.0f);
 
-    // Icon
-    float iconSize = 60.0f;
-    ImVec2 iconPos = ImVec2(cardMin.x + (cardWidth - iconSize) * 0.5f, cardMin.y + 30.0f);
-    drawList->AddRectFilled(iconPos, ImVec2(iconPos.x + iconSize, iconPos.y + iconSize * 0.8f),
-                            ImColor(80, 80, 90), 8.0f);
-    drawList->AddRect(iconPos, ImVec2(iconPos.x + iconSize, iconPos.y + iconSize * 0.8f),
-                      ImColor(120, 120, 130), 8.0f, 0, 2.0f);
+    // Icon Rendering - Using Image Textures instead of ImDrawList drawings
+    float textureSize = 160.0f; // Increased for better visibility as per design
+    ImVec2 texturePos = ImVec2(cardMin.x + (cardWidth - textureSize) * 0.5f, cardMin.y + 15.0f);
 
-    float cx = iconPos.x + iconSize * 0.5f;
-    float cy = iconPos.y + iconSize * 0.4f;
-    if (iconType == CardIconType::NewProject)
+    if (iconTexture && iconTexture->id > 0)
     {
-        drawList->AddLine(ImVec2(cx - 10, cy), ImVec2(cx + 10, cy), ImColor(200, 200, 210), 3.0f);
-        drawList->AddLine(ImVec2(cx, cy - 10), ImVec2(cx, cy + 10), ImColor(200, 200, 210), 3.0f);
+        ImGui::SetCursorScreenPos(texturePos);
+        rlImGuiImageSize(iconTexture, (int)textureSize, (int)textureSize);
     }
     else
     {
-        drawList->AddTriangleFilled(ImVec2(cx - 12, cy + 5), ImVec2(cx + 12, cy + 5),
-                                    ImVec2(cx, cy - 10), ImColor(200, 200, 210));
+        // Fallback or empty space
+        drawList->AddRectFilled(texturePos,
+                                ImVec2(texturePos.x + textureSize, texturePos.y + textureSize),
+                                ImColor(50, 50, 55, 255), 12.0f);
     }
 
     // Title
+    ImGui::SetWindowFontScale(1.4f);
     ImVec2 titleSize = ImGui::CalcTextSize(title);
-    drawList->AddText(ImVec2(cardMin.x + (cardWidth - titleSize.x) * 0.5f, cardMin.y + 105.0f),
-                      ImColor(230, 230, 235), title);
+    drawList->AddText(ImVec2(cardMin.x + (cardWidth - titleSize.x) * 0.5f, cardMin.y + 175.0f),
+                      ImColor(240, 240, 245), title);
+    ImGui::SetWindowFontScale(1.0f);
 
     // Description
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.6f, 0.62f, 1.0f));
+    float descStartY = cardMin.y + 195.0f;
+
     ImVec2 d1Size = ImGui::CalcTextSize(desc1);
+    drawList->AddText(ImVec2(cardMin.x + (cardWidth - d1Size.x) * 0.5f, descStartY),
+                      ImColor(100, 100, 105), desc1);
+
     ImVec2 d2Size = ImGui::CalcTextSize(desc2);
-    drawList->AddText(ImVec2(cardMin.x + (cardWidth - d1Size.x) * 0.5f, cardMin.y + 130.0f),
-                      ImColor(140, 140, 145), desc1);
-    drawList->AddText(ImVec2(cardMin.x + (cardWidth - d2Size.x) * 0.5f, cardMin.y + 145.0f),
-                      ImColor(140, 140, 145), desc2);
+    drawList->AddText(ImVec2(cardMin.x + (cardWidth - d2Size.x) * 0.5f, descStartY + 26.0f),
+                      ImColor(100, 100, 105), desc2);
+    ImGui::PopStyleColor();
 
     ImGui::SetCursorScreenPos(cardMin);
     return ImGui::InvisibleButton(buttonId, ImVec2(cardWidth, cardHeight));
@@ -171,7 +207,7 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
                           ImColor(255, 255, 255, 10));
 
     // Action Cards Layout
-    float cardWidth = 180.0f, cardHeight = 180.0f, gap = 40.0f;
+    float cardWidth = 260.0f, cardHeight = 260.0f, gap = 150.0f;
     float totalWidth = (cardWidth * 2) + gap;
     float mainAreaWidth = windowSize.x - sidebarWidth;
     float startX = pMin.x + sidebarWidth + (mainAreaWidth - totalWidth) * 0.5f;
@@ -180,14 +216,14 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
     ImVec2 card1Min = ImVec2(startX, centerY - cardHeight * 0.5f);
     if (DrawActionCard(drawList, card1Min, cardWidth, cardHeight, "New Project",
                        "Start a fresh journey with a dedicated",
-                       "project folder and optimized settings.", CardIconType::NewProject,
+                       "project folder and optimized settings.", (Texture2D *)m_NewProjectIcon,
                        "##NewProjectCard"))
         m_ShowCreateDialog = true;
 
     ImVec2 card2Min = ImVec2(startX + cardWidth + gap, centerY - cardHeight * 0.5f);
     if (DrawActionCard(drawList, card2Min, cardWidth, cardHeight, "Open Project",
                        "Browse and load an existing Chained", "Engine project (.chproject) file.",
-                       CardIconType::OpenProject, "##OpenProjectCard"))
+                       (Texture2D *)m_OpenProjectIcon, "##OpenProjectCard"))
         ProjectActions::Open();
 }
 

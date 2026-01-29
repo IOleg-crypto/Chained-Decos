@@ -9,32 +9,31 @@
 
 namespace CHEngine
 {
-std::unordered_map<entt::id_type, std::function<void(Entity)>> ComponentUI::s_DrawerRegistry;
+std::unordered_map<entt::id_type, ComponentUI::ComponentMetadata> ComponentUI::s_ComponentRegistry;
 
-void ComponentUI::RegisterDrawer(entt::id_type typeId, std::function<void(Entity)> drawer)
+void ComponentUI::RegisterComponent(entt::id_type typeId, const ComponentMetadata &metadata)
 {
-    s_DrawerRegistry[typeId] = drawer;
+    s_ComponentRegistry[typeId] = metadata;
 }
 
 void ComponentUI::Init()
 {
-    Register<TransformComponent>(DrawTransform);
-    Register<ModelComponent>(DrawModel);
-    Register<ColliderComponent>(DrawCollider);
-    Register<RigidBodyComponent>(DrawRigidBody);
-    Register<SpawnComponent>(DrawSpawn);
-    Register<PlayerComponent>(DrawPlayer);
-    Register<PointLightComponent>(DrawPointLight);
-    Register<AudioComponent>(DrawAudio);
-    Register<HierarchyComponent>(DrawHierarchy);
-    Register<NativeScriptComponent>(DrawNativeScript);
-    Register<AnimationComponent>(DrawAnimation);
-    Register<ControlComponent>(DrawControl);
-    Register<PanelControl>(DrawPanelControl);
-    Register<LabelControl>(DrawLabelControl);
-    Register<ButtonControl>(DrawButtonControl);
-    Register<SliderControl>(DrawSliderControl);
-    Register<CheckboxControl>(DrawCheckboxControl);
+    Register<TransformComponent>("Transform", DrawTransform);
+    Register<ModelComponent>("Model", DrawModel);
+    Register<ColliderComponent>("Collider", DrawCollider);
+    Register<RigidBodyComponent>("RigidBody", DrawRigidBody);
+    Register<PointLightComponent>("Point Light", DrawPointLight);
+    Register<AudioComponent>("Audio", DrawAudio);
+    Register<AnimationComponent>("Animation", DrawAnimation);
+    Register<NativeScriptComponent>("Native Script", DrawNativeScript);
+
+    // UI Components
+    Register<ControlComponent>("Control", DrawControl);
+    Register<PanelControl>("UI Panel", DrawPanelControl);
+    Register<LabelControl>("UI Label", DrawLabelControl);
+    Register<ButtonControl>("UI Button", DrawButtonControl);
+    Register<SliderControl>("UI Slider", DrawSliderControl);
+    Register<CheckboxControl>("UI Checkbox", DrawCheckboxControl);
 }
 
 void ComponentUI::DrawEntityComponents(Entity entity)
@@ -44,10 +43,10 @@ void ComponentUI::DrawEntityComponents(Entity entity)
     {
         if (storage.contains(entity))
         {
-            if (s_DrawerRegistry.find(id) != s_DrawerRegistry.end())
+            if (s_ComponentRegistry.find(id) != s_ComponentRegistry.end())
             {
                 ImGui::PushID((int)id);
-                s_DrawerRegistry[id](entity);
+                s_ComponentRegistry[id].Draw(entity);
                 ImGui::PopID();
             }
         }
@@ -71,39 +70,18 @@ void ComponentUI::DrawAddComponentPopup(Entity entity)
 {
     if (ImGui::BeginPopup("AddComponent"))
     {
-        if (ImGui::MenuItem("Transform") && !entity.HasComponent<TransformComponent>())
-            entity.AddComponent<TransformComponent>();
-        if (ImGui::MenuItem("Model") && !entity.HasComponent<ModelComponent>())
-            entity.AddComponent<ModelComponent>();
-        if (ImGui::MenuItem("Collider") && !entity.HasComponent<ColliderComponent>())
-            entity.AddComponent<ColliderComponent>();
-        if (ImGui::MenuItem("RigidBody") && !entity.HasComponent<RigidBodyComponent>())
-            entity.AddComponent<RigidBodyComponent>();
-        if (ImGui::MenuItem("Point Light") && !entity.HasComponent<PointLightComponent>())
-            entity.AddComponent<PointLightComponent>();
-        if (ImGui::MenuItem("Audio") && !entity.HasComponent<AudioComponent>())
-            entity.AddComponent<AudioComponent>();
-
-        ImGui::Separator();
-        if (ImGui::MenuItem("Native Script") && !entity.HasComponent<NativeScriptComponent>())
-            entity.AddComponent<NativeScriptComponent>();
-
-        ImGui::Separator();
-        if (ImGui::BeginMenu("UI Controls"))
+        for (auto &[id, metadata] : s_ComponentRegistry)
         {
-            if (ImGui::MenuItem("Control Component") && !entity.HasComponent<ControlComponent>())
-                entity.AddComponent<ControlComponent>();
-            if (ImGui::MenuItem("Button") && !entity.HasComponent<ButtonControl>())
-                entity.AddComponent<ButtonControl>();
-            if (ImGui::MenuItem("Label") && !entity.HasComponent<LabelControl>())
-                entity.AddComponent<LabelControl>();
-            if (ImGui::MenuItem("Panel") && !entity.HasComponent<PanelControl>())
-                entity.AddComponent<PanelControl>();
-            if (ImGui::MenuItem("Slider") && !entity.HasComponent<SliderControl>())
-                entity.AddComponent<SliderControl>();
-            if (ImGui::MenuItem("Checkbox") && !entity.HasComponent<CheckboxControl>())
-                entity.AddComponent<CheckboxControl>();
-            ImGui::EndMenu();
+            // Skip components the entity already has
+            auto &registry = entity.GetScene()->GetRegistry();
+            if (registry.storage(id)->contains(entity))
+                continue;
+
+            if (ImGui::MenuItem(metadata.Name.c_str()))
+            {
+                metadata.Add(entity);
+                ImGui::CloseCurrentPopup();
+            }
         }
         ImGui::EndPopup();
     }
