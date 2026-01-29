@@ -5,11 +5,13 @@
 #include "engine/core/input.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scriptable_entity.h"
+#include "glm/glm.hpp"
 #include "raymath.h"
 
 namespace CHEngine
 {
-CH_SCRIPT(SpawnZoneRespawn){CH_START(){CH_CORE_INFO("Spawn Zone (Teleporter) Initialized!");
+CH_SCRIPT(SpawnZoneRespawn){public :
+                                CH_START(){CH_CORE_INFO("Spawn Zone (Teleporter) Initialized!");
 }
 
 CH_UPDATE(dt)
@@ -37,8 +39,14 @@ void Respawn()
         {
             auto &spawnTransform = spawnZoneView.get<TransformComponent>(spawnEntity);
 
-            // Teleport to the entity's position + the local offset
-            Translation() = Vector3Add(spawnTransform.Translation, spawnComp.SpawnPoint);
+            // Teleport to the entity's position + the local offset (using GLM-style addition)
+            glm::vec3 worldPos = {spawnTransform.Translation.x, spawnTransform.Translation.y,
+                                  spawnTransform.Translation.z};
+            glm::vec3 localOffset = {spawnComp.SpawnPoint.x, spawnComp.SpawnPoint.y,
+                                     spawnComp.SpawnPoint.z};
+            glm::vec3 result = worldPos + localOffset;
+
+            Translation() = {result.x, result.y, result.z};
 
             // Reset velocity if we have a RigidBody
             if (HasComponent<RigidBodyComponent>())
@@ -69,4 +77,4 @@ CH_EVENT(e)
 ;
 } // namespace CHEngine
 
-#endif
+#endif // CH_SPAWNZONE_H

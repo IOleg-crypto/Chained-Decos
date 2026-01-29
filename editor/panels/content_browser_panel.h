@@ -1,12 +1,13 @@
 #ifndef CH_CONTENT_BROWSER_PANEL_H
 #define CH_CONTENT_BROWSER_PANEL_H
 
-#include "panel.h"
 #include "filesystem"
 #include "functional"
+#include "panel.h"
 #include "raylib.h"
 #include "string"
 #include "vector"
+
 
 namespace CHEngine
 {
@@ -39,12 +40,6 @@ public:
     virtual void OnImGuiRender(bool readOnly = false) override;
     void SetRootDirectory(const std::filesystem::path &path);
 
-    using SceneOpenCallback = std::function<void(const std::filesystem::path &)>;
-    void SetSceneOpenCallback(SceneOpenCallback callback)
-    {
-        m_OnSceneOpenCallback = callback;
-    }
-
 private:
     void RenderToolbar();
     void RenderGridView();
@@ -65,7 +60,6 @@ private:
 
     Texture2D m_FolderIcon;
     Texture2D m_FileIcon;
-    SceneOpenCallback m_OnSceneOpenCallback;
 };
 } // namespace CHEngine
 

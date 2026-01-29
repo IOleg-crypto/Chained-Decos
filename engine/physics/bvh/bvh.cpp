@@ -42,19 +42,6 @@ bool CollisionTriangle::IntersectsRay(const Ray &ray, float &t) const
     return t > 0.000001f;
 }
 
-struct BVH::BuildContext
-{
-    std::vector<CollisionTriangle> &AllTriangles;
-    std::vector<uint32_t> TriIndices;
-
-    BuildContext(std::vector<CollisionTriangle> &tris) : AllTriangles(tris)
-    {
-        TriIndices.resize(tris.size());
-        for (uint32_t i = 0; i < tris.size(); ++i)
-            TriIndices[i] = i;
-    }
-};
-
 std::shared_ptr<BVH> BVH::Build(const Model &model, const Matrix &transform)
 {
     if (model.meshCount == 0)

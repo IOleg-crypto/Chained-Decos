@@ -1,0 +1,54 @@
+#ifndef CH_EDITOR_PANELS_H
+#define CH_EDITOR_PANELS_H
+
+#include "panels/panel.h"
+#include <memory>
+#include <typeindex>
+#include <vector>
+
+namespace CHEngine
+{
+
+class EditorPanels
+{
+public:
+    EditorPanels() = default;
+    ~EditorPanels() = default;
+
+public:
+    void Init();
+
+    template <typename T, typename... Args> std::shared_ptr<T> Register(Args &&...args)
+    {
+        auto panel = std::make_shared<T>(std::forward<Args>(args)...);
+        m_Panels.push_back(panel);
+        return panel;
+    }
+
+    template <typename T> std::shared_ptr<T> Get()
+    {
+        for (auto &panel : m_Panels)
+        {
+            if (auto p = std::dynamic_pointer_cast<T>(panel))
+                return p;
+        }
+        return nullptr;
+    }
+
+    void OnUpdate(float deltaTime);
+    void OnImGuiRender(bool readOnly);
+    void OnEvent(Event &e);
+    void SetContext(const std::shared_ptr<Scene> &context);
+
+    std::vector<std::shared_ptr<Panel>> &GetPanels()
+    {
+        return m_Panels;
+    }
+
+private:
+    std::vector<std::shared_ptr<Panel>> m_Panels;
+};
+
+} // namespace CHEngine
+
+#endif // CH_EDITOR_PANELS_H

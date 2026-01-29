@@ -331,33 +331,31 @@ std::string SceneSerializer::SerializeToString()
     out << YAML::EndMap;
 
     // Serialize Environment
-    if (m_Scene->m_Environment)
+    if (m_Scene->m_Settings.Environment)
     {
-        out << YAML::Key << "EnvironmentPath" << YAML::Value << m_Scene->m_Environment->GetPath();
+        out << YAML::Key << "EnvironmentPath" << YAML::Value
+            << m_Scene->m_Settings.Environment->GetPath();
     }
 
     // Keep legacy Skybox for now to avoid breaking existing scenes
     {
         auto &sc = m_Scene->GetSkybox();
+        auto &skybox = m_Scene->m_Settings.Skybox;
         out << YAML::Key << "Skybox";
         out << YAML::BeginMap;
-        out << YAML::Key << "TexturePath" << YAML::Value << sc.TexturePath;
-        out << YAML::Key << "Exposure" << YAML::Value << sc.Exposure;
-        out << YAML::Key << "Brightness" << YAML::Value << sc.Brightness;
-        out << YAML::Key << "Contrast" << YAML::Value << sc.Contrast;
+        out << YAML::Key << "TexturePath" << YAML::Value << skybox.TexturePath;
+        out << YAML::Key << "Exposure" << YAML::Value << skybox.Exposure;
+        out << YAML::Key << "Brightness" << YAML::Value << skybox.Brightness;
+        out << YAML::Key << "Contrast" << YAML::Value << skybox.Contrast;
         out << YAML::EndMap;
     }
 
-    out << YAML::EndMap;
-
-    // Serialize Canvas Settings
-    out << YAML::Key << "CanvasSettings";
-    out << YAML::BeginMap;
+    out << YAML::Key << "Canvas" << YAML::BeginMap;
     out << YAML::Key << "ReferenceResolution" << YAML::Value
-        << m_Scene->m_CanvasSettings.ReferenceResolution;
-    out << YAML::Key << "ScaleMode" << YAML::Value << (int)m_Scene->m_CanvasSettings.ScaleMode;
+        << m_Scene->m_Settings.Canvas.ReferenceResolution;
+    out << YAML::Key << "ScaleMode" << YAML::Value << (int)m_Scene->m_Settings.Canvas.ScaleMode;
     out << YAML::Key << "MatchWidthOrHeight" << YAML::Value
-        << m_Scene->m_CanvasSettings.MatchWidthOrHeight;
+        << m_Scene->m_Settings.Canvas.MatchWidthOrHeight;
     out << YAML::EndMap;
 
     out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
@@ -418,45 +416,49 @@ bool SceneSerializer::DeserializeFromString(const std::string &yaml)
 
     // Unified scene - no Type needed
 
-    auto background = data["Background"];
-    if (background)
+    // Deserialize Scene Settings
+    if (data["Background"])
     {
-        if (background["Mode"])
-            m_Scene->SetBackgroundMode((BackgroundMode)background["Mode"].as<int>());
-        if (background["Color"])
-            m_Scene->SetBackgroundColor(background["Color"].as<Color>());
-        if (background["TexturePath"])
-            m_Scene->SetBackgroundTexturePath(background["TexturePath"].as<std::string>());
+        auto bg = data["Background"];
+        if (bg["Mode"])
+            m_Scene->m_Settings.Mode = (BackgroundMode)bg["Mode"].as<int>();
+        if (bg["Color"])
+            m_Scene->m_Settings.BackgroundColor = bg["Color"].as<Color>();
+        if (bg["TexturePath"])
+            m_Scene->m_Settings.BackgroundTexturePath = bg["TexturePath"].as<std::string>();
     }
 
-    // Deserialize Environment
-    auto envPath = data["EnvironmentPath"];
-    if (envPath)
+    if (data["EnvironmentPath"])
     {
-        // m_Scene->m_Environment = AssetManager::LoadEnvironment(envPath.as<std::string>());
+        // m_Scene->m_Settings.Environment =
+        // AssetManager::LoadEnvironment(data["EnvironmentPath"].as<std::string>());
     }
 
-    // Deserialize Skybox
-    auto skybox = data["Skybox"];
-    if (skybox)
+    if (data["Skybox"])
     {
-        auto &sc = m_Scene->GetSkybox();
-        sc.TexturePath = skybox["TexturePath"].as<std::string>();
-        sc.Exposure = skybox["Exposure"].as<float>();
-        sc.Brightness = skybox["Brightness"].as<float>();
-        sc.Contrast = skybox["Contrast"].as<float>();
+        auto skybox = data["Skybox"];
+        auto &skyboxComp = m_Scene->m_Settings.Skybox;
+        if (skybox["TexturePath"])
+            skyboxComp.TexturePath = skybox["TexturePath"].as<std::string>();
+        if (skybox["Exposure"])
+            skyboxComp.Exposure = skybox["Exposure"].as<float>();
+        if (skybox["Brightness"])
+            skyboxComp.Brightness = skybox["Brightness"].as<float>();
+        if (skybox["Contrast"])
+            skyboxComp.Contrast = skybox["Contrast"].as<float>();
     }
 
-    auto canvas = data["CanvasSettings"];
-    if (canvas)
+    if (data["Canvas"])
     {
+        auto canvas = data["Canvas"];
         if (canvas["ReferenceResolution"])
-            m_Scene->m_CanvasSettings.ReferenceResolution =
+            m_Scene->m_Settings.Canvas.ReferenceResolution =
                 canvas["ReferenceResolution"].as<glm::vec2>();
         if (canvas["ScaleMode"])
-            m_Scene->m_CanvasSettings.ScaleMode = (CanvasScaleMode)canvas["ScaleMode"].as<int>();
+            m_Scene->m_Settings.Canvas.ScaleMode = (CanvasScaleMode)canvas["ScaleMode"].as<int>();
         if (canvas["MatchWidthOrHeight"])
-            m_Scene->m_CanvasSettings.MatchWidthOrHeight = canvas["MatchWidthOrHeight"].as<float>();
+            m_Scene->m_Settings.Canvas.MatchWidthOrHeight =
+                canvas["MatchWidthOrHeight"].as<float>();
     }
 
     auto entities = data["Entities"];

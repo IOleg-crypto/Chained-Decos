@@ -1,4 +1,11 @@
+#include "project_actions.h"
 #include "editor.h"
+#include "engine/scene/project.h"
+#include "engine/scene/project_serializer.h"
+#include "nfd.h"
+#include <filesystem>
+#include <format>
+
 
 namespace CHEngine
 {

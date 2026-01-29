@@ -27,6 +27,7 @@ void SceneHierarchyPanel::SetContext(const std::shared_ptr<Scene> &context)
 void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
 {
     ImGui::Begin("Scene Hierarchy");
+    ImGui::PushID(this);
 
     ImGui::BeginDisabled(readOnly);
     if (m_Context)
@@ -172,6 +173,7 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
     }
 
     ImGui::EndDisabled();
+    ImGui::PopID();
     ImGui::End();
 }
 

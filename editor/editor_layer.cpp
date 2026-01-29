@@ -1,15 +1,17 @@
 #include "editor_layer.h"
+#include "editor/actions/editor_actions.h"
 #include "editor/actions/project_actions.h"
 #include "editor/actions/scene_actions.h"
+#include "editor/editor.h"
+#include "editor/editor_panels.h"
+#include "editor/ui/editor_layout.h"
 #include "engine/core/application.h"
 #include "engine/core/input.h"
 #include "ui/editor_gui.h"
 
-// Removed redundant include: engine/core/process_utils.h
+
 #include "engine/core/profiler.h"
 #include "engine/physics/physics.h"
-// Removed redundant include: engine/graphics/asset_manager.h
-// Removed redundant include: engine/graphics/render.h
 #include "engine/scene/components.h"
 #include "engine/scene/project_serializer.h"
 #include "engine/scene/scene.h"
@@ -23,6 +25,14 @@
 #include "nfd.h"
 #include "panels/component_ui.h"
 #include "panels/console_panel.h"
+#include "panels/content_browser_panel.h"
+#include "panels/environment_panel.h"
+#include "panels/inspector_panel.h"
+#include "panels/profiler_panel.h"
+#include "panels/project_browser_panel.h"
+#include "panels/project_settings_panel.h"
+#include "panels/scene_hierarchy_panel.h"
+#include "panels/viewport_panel.h"
 #include "raylib.h"
 
 namespace CHEngine
@@ -33,6 +43,10 @@ ImVec2 EditorLayer::s_ViewportSize = {1280, 720};
 EditorLayer::EditorLayer() : Layer("EditorLayer")
 {
     s_Instance = this;
+    m_Panels = std::make_unique<EditorPanels>();
+    m_Layout = std::make_unique<EditorLayout>();
+    m_Actions = std::make_unique<EditorActions>();
+
     m_DebugRenderFlags.DrawColliders = true;
     m_DebugRenderFlags.DrawLights = true;
     m_DebugRenderFlags.DrawSpawnZones = true;
@@ -61,24 +75,13 @@ void EditorLayer::OnAttach()
     ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-
     EditorUI::GUI::SetDarkThemeColors();
 
     NFD_Init();
     ComponentUI::Init();
 
     // Register Panels
-    AddPanel<ViewportPanel>()->SetDebugFlags(&m_DebugRenderFlags);
-    AddPanel<SceneHierarchyPanel>();
-    AddPanel<InspectorPanel>();
-    AddPanel<ContentBrowserPanel>()->SetSceneOpenCallback([](const std::filesystem::path &path)
-                                                          { SceneActions::Open(path); });
-    AddPanel<ConsolePanel>();
-    AddPanel<EnvironmentPanel>()->SetDebugFlags(&m_DebugRenderFlags);
-    AddPanel<ProfilerPanel>();
-    AddPanel<ProjectBrowserPanel>();
-    AddPanel<ProjectSettingsPanel>();
+    m_Panels->Init();
 
     m_CommandHistory.SetNotifyCallback(
         [this]() { CH_CORE_TRACE("CommandHistory: Scene state changed, notifying editor..."); });
@@ -102,7 +105,13 @@ void EditorLayer::OnAttach()
         Project::SetActive(nullptr);
     }
 
-    CH_CORE_INFO("EditorLayer Attached with {} modular panels.", m_Panels.size());
+    // Ensure layout is initialized
+    if (!std::filesystem::exists("imgui.ini"))
+    {
+        m_Layout->ResetLayout();
+    }
+
+    CH_CORE_INFO("EditorLayer Attached with modular panels.");
 }
 
 void EditorLayer::OnDetach()
@@ -125,39 +134,8 @@ void EditorLayer::OnUpdate(float deltaTime)
 
     if (m_SceneState == SceneState::Edit)
     {
-        if (!Input::IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
-        {
-            bool control = IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL);
-            if (control)
-            {
-                if (IsKeyPressed(KEY_Z))
-                    m_CommandHistory.Undo();
-                if (IsKeyPressed(KEY_Y))
-                    m_CommandHistory.Redo();
-                if (IsKeyPressed(KEY_S))
-                {
-                    if (activeScene->GetScenePath().empty())
-                    {
-                        // If scene is unsaved, treat Ctrl+S as Save As
-                        SceneActions::SaveAs();
-                    }
-                    else
-                    {
-                        SceneActions::Save();
-                    }
-                }
-                if (Input::IsKeyPressed(KeyboardKey::KEY_F5))
-                    ProjectActions::LaunchStandalone();
-                if (IsKeyPressed(KEY_N))
-                    SceneActions::New();
-            }
-        }
-
-        for (auto &panel : m_Panels)
-            panel->OnUpdate(deltaTime);
+        m_Panels->OnUpdate(deltaTime);
     }
-
-    // Standalone rendering logic removed in favor of ImGui Viewports
 }
 
 void EditorLayer::OnRender()
@@ -174,94 +152,28 @@ void EditorLayer::OnImGuiRender()
     {
         if (m_FullscreenGame)
         {
-            // Fullscreen mode: only render viewport
-            auto viewportPanel = GetPanel<ViewportPanel>();
+            auto viewportPanel = m_Panels->Get<ViewportPanel>();
             if (viewportPanel)
                 viewportPanel->OnImGuiRender(true);
         }
         else
         {
-            // Normal editor mode
-            DrawDockSpace();
-            DrawPanels();
+            m_Layout->BeginWorkspace();
+
+            m_Layout->DrawInterface();
+
+            bool readOnly = m_SceneState == SceneState::Play;
+            m_Panels->OnImGuiRender(readOnly);
+
             DrawScriptUI();
 
-            ImGui::End(); // End DockSpace window (started in DrawDockSpace)
+            m_Layout->EndWorkspace();
         }
     }
     else
     {
-        if (auto projectBrowser = GetPanel<ProjectBrowserPanel>())
+        if (auto projectBrowser = m_Panels->Get<ProjectBrowserPanel>())
             projectBrowser->OnImGuiRender();
-    }
-}
-
-void EditorLayer::DrawDockSpace()
-{
-    static bool dockspaceOpen = true;
-    static bool opt_fullscreen_persistant = true;
-    bool opt_fullscreen = opt_fullscreen_persistant;
-    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
-
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-    if (opt_fullscreen)
-    {
-        ImGuiViewport *viewport = ImGui::GetMainViewport();
-        ImGui::SetNextWindowPos(viewport->Pos);
-        ImGui::SetNextWindowSize(viewport->Size);
-        ImGui::SetNextWindowViewport(viewport->ID);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-        window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
-                        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-        window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-    }
-
-    if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
-        window_flags |= ImGuiWindowFlags_NoBackground;
-
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin("DockSpace Demo", &dockspaceOpen, window_flags);
-    ImGui::PopStyleVar();
-
-    if (opt_fullscreen)
-        ImGui::PopStyleVar(2);
-
-    // Draw Menu Bar
-    EditorUI::MenuBarState menuState;
-    menuState.IsPlaying = (m_SceneState == SceneState::Play);
-    menuState.Panels = &m_Panels;
-    EditorUI::GUI::DrawMenuBar(menuState, CH_BIND_EVENT_FN(EditorLayer::OnEvent));
-
-    // Draw Toolbar
-    EditorUI::GUI::DrawToolbar(m_SceneState == SceneState::Play,
-                               CH_BIND_EVENT_FN(EditorLayer::OnEvent));
-
-    // Draw Central UI
-    if (!Project::GetActive())
-    {
-        EditorUI::GUI::DrawProjectSelector(
-            Project::GetActive() != nullptr, {0}, []() { ProjectActions::Open(); },
-            []() { ProjectActions::Open(); }, []() { Application::Get().Close(); });
-    }
-    else
-    {
-        ImGuiIO &io = ImGui::GetIO();
-        if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
-        {
-            ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-            ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-        }
-
-        bool readOnly = m_SceneState == SceneState::Play;
-        for (auto &panel : m_Panels)
-        {
-            // Project Browser is handled separately
-            if (panel->GetName() == "Project Browser")
-                continue;
-
-            panel->OnImGuiRender(readOnly);
-        }
     }
 }
 
@@ -285,47 +197,6 @@ void EditorLayer::DrawScriptUI()
         });
 }
 
-void EditorLayer::DrawPanels()
-{
-    EditorUI::GUI::DrawToolbar(m_SceneState == SceneState::Play, [this](Event &e) { OnEvent(e); });
-    bool readOnly = m_SceneState == SceneState::Play;
-    for (auto &panel : m_Panels)
-    {
-        // Project Browser is handled separately
-        if (panel->GetName() == "Project Browser")
-            continue;
-
-        panel->OnImGuiRender(readOnly);
-    }
-}
-
-void EditorLayer::ResetLayout()
-{
-    ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-    ImGui::DockBuilderRemoveNode(dockspace_id);
-    ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace |
-                                                ImGuiDockNodeFlags_PassthruCentralNode);
-    ImGui::DockBuilderSetNodeSize(dockspace_id, ImGui::GetMainViewport()->Size);
-
-    ImGuiID dock_main_id = dockspace_id;
-    ImGuiID dock_right =
-        ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.25f, nullptr, &dock_main_id);
-    ImGuiID dock_left =
-        ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.25f, nullptr, &dock_main_id);
-    ImGuiID dock_down =
-        ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Down, 0.30f, nullptr, &dock_main_id);
-
-    ImGui::DockBuilderDockWindow("Viewport", dock_main_id);
-    ImGui::DockBuilderDockWindow("Scene Hierarchy", dock_left);
-    ImGui::DockBuilderDockWindow("Inspector", dock_right);
-    ImGui::DockBuilderDockWindow("Environment", dock_right);
-    ImGui::DockBuilderDockWindow("Profiler", dock_right);
-    ImGui::DockBuilderDockWindow("Content Browser", dock_down);
-    ImGui::DockBuilderDockWindow("Console", dock_down);
-
-    ImGui::DockBuilderFinish(dockspace_id);
-}
-
 bool EditorLayer::OnProjectOpened(ProjectOpenedEvent &e)
 {
     CH_CORE_INFO("EditorLayer: Handling ProjectOpenedEvent - {}", e.GetPath());
@@ -336,7 +207,7 @@ bool EditorLayer::OnProjectOpened(ProjectOpenedEvent &e)
     auto project = Project::GetActive();
     if (project)
     {
-        if (auto contentBrowser = GetPanel<ContentBrowserPanel>())
+        if (auto contentBrowser = m_Panels->Get<ContentBrowserPanel>())
             contentBrowser->SetRootDirectory(Project::GetAssetDirectory());
     }
     return false;
@@ -345,8 +216,7 @@ bool EditorLayer::OnProjectOpened(ProjectOpenedEvent &e)
 bool EditorLayer::OnSceneOpened(SceneOpenedEvent &e)
 {
     auto activeScene = Application::Get().GetActiveScene();
-    for (auto &panel : m_Panels)
-        panel->SetContext(activeScene);
+    m_Panels->SetContext(activeScene);
 
     m_SelectedEntity = {};
 
@@ -363,7 +233,6 @@ bool EditorLayer::OnSceneOpened(SceneOpenedEvent &e)
 
 void EditorLayer::OnEvent(CHEngine::Event &e)
 {
-
     EventDispatcher dispatcher(e);
     dispatcher.Dispatch<ProjectOpenedEvent>(CH_BIND_EVENT_FN(EditorLayer::OnProjectOpened));
     dispatcher.Dispatch<ProjectCreatedEvent>(
@@ -385,7 +254,7 @@ void EditorLayer::OnEvent(CHEngine::Event &e)
     dispatcher.Dispatch<AppResetLayoutEvent>(
         [this](AppResetLayoutEvent &ev)
         {
-            ResetLayout();
+            m_Layout->ResetLayout();
             return true;
         });
 
@@ -398,8 +267,14 @@ void EditorLayer::OnEvent(CHEngine::Event &e)
         });
 
     // Propagate events to all panels
-    for (auto &panel : m_Panels)
-        panel->OnEvent(e);
+    m_Panels->OnEvent(e);
+
+    if (e.Handled)
+        return;
+
+    // Handle actions
+    if (m_Actions->OnEvent(e))
+        return;
 
     auto activeScene = Application::Get().GetActiveScene();
     if (e.GetEventType() == EventType::KeyPressed)
@@ -412,53 +287,6 @@ void EditorLayer::OnEvent(CHEngine::Event &e)
         }
         activeScene->OnEvent(e);
     }
-
-    if (e.Handled)
-        return;
-
-    dispatcher.Dispatch<KeyPressedEvent>(
-        [this](KeyPressedEvent &ev)
-        {
-            if (m_SceneState == SceneState::Play && ev.GetKeyCode() == KEY_ESCAPE)
-            {
-                SceneStopEvent stopEv;
-                OnEvent(stopEv);
-                return true;
-            }
-
-            // Shortcuts
-            bool control = Input::IsKeyDown(KeyboardKey::KEY_LEFT_CONTROL) ||
-                           Input::IsKeyDown(KeyboardKey::KEY_RIGHT_CONTROL);
-            bool shift = Input::IsKeyDown(KeyboardKey::KEY_LEFT_SHIFT) ||
-                         Input::IsKeyDown(KeyboardKey::KEY_RIGHT_SHIFT);
-
-            if (control)
-            {
-                switch (ev.GetKeyCode())
-                {
-                case KeyboardKey::KEY_N:
-                    SceneActions::New();
-                    return true;
-                case KeyboardKey::KEY_O:
-                    SceneActions::Open();
-                    return true;
-                case KeyboardKey::KEY_S:
-                    if (shift)
-                        SceneActions::SaveAs();
-                    else
-                        SceneActions::Save();
-                    return true;
-                }
-            }
-
-            if (ev.GetKeyCode() == KeyboardKey::KEY_F5)
-            {
-                ProjectActions::LaunchStandalone();
-                return true;
-            }
-
-            return false;
-        });
 }
 
 CommandHistory &EditorLayer::GetCommandHistory()
@@ -496,8 +324,7 @@ bool EditorLayer::OnScenePlay(ScenePlayEvent &e)
     Application::Get().SetActiveScene(runtimeScene);
 
     // Update panels context
-    for (auto &panel : m_Panels)
-        panel->SetContext(runtimeScene);
+    m_Panels->SetContext(runtimeScene);
 
     runtimeScene->OnRuntimeStart();
 
@@ -519,8 +346,7 @@ bool EditorLayer::OnSceneStop(SceneStopEvent &e)
     if (m_EditorScene)
     {
         Application::Get().SetActiveScene(m_EditorScene);
-        for (auto &panel : m_Panels)
-            panel->SetContext(m_EditorScene);
+        m_Panels->SetContext(m_EditorScene);
 
         m_EditorScene = nullptr;
     }
