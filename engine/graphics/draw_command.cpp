@@ -1,5 +1,6 @@
 #include "engine/graphics/draw_command.h"
 #include "engine/core/profiler.h"
+#include "engine/graphics/api_context.h"
 #include "engine/graphics/model_asset.h"
 #include "engine/graphics/shader_asset.h"
 #include "engine/graphics/texture_asset.h"
@@ -11,121 +12,35 @@
 
 namespace CHEngine
 {
-RendererState DrawCommand::s_State;
 
-static void InitLights(RendererState &state)
+RendererState &DrawCommand::GetState()
 {
-    // state.LightingShader = AssetManager::Get<ShaderAsset>("engine:shaders/lighting.chshader");
-    if (false) // state.LightingShader
-    {
-        state.LightDirLoc = state.LightingShader->GetLocation("lightDir");
-        state.LightColorLoc = state.LightingShader->GetLocation("lightColor");
-        state.AmbientLoc = state.LightingShader->GetLocation("ambient");
-
-        for (int i = 0; i < 8; i++)
-        {
-            std::string base = "lights[" + std::to_string(i) + "].";
-            state.LightLocs[i].position = state.LightingShader->GetLocation(base + "position");
-            state.LightLocs[i].color = state.LightingShader->GetLocation(base + "color");
-            state.LightLocs[i].radius = state.LightingShader->GetLocation(base + "radius");
-            state.LightLocs[i].radiance = state.LightingShader->GetLocation(base + "radiance");
-            state.LightLocs[i].falloff = state.LightingShader->GetLocation(base + "falloff");
-            state.LightLocs[i].enabled = state.LightingShader->GetLocation(base + "enabled");
-        }
-    }
-}
-
-static void InitSkybox(RendererState &state)
-{
-    // state.SkyboxShader = AssetManager::Get<ShaderAsset>("engine:shaders/skybox.chshader");
-    state.SkyboxCube = LoadModelFromMesh(GenMeshCube(1.0f, 1.0f, 1.0f));
-
-    if (false) // state.SkyboxShader
-    {
-        auto &shader = state.SkyboxShader->GetShader();
-        state.SkyboxCube.materials[0].shader = shader;
-        state.SkyboxVflippedLoc = state.SkyboxShader->GetLocation("vflipped");
-        state.SkyboxDoGammaLoc = state.SkyboxShader->GetLocation("doGamma");
-        state.SkyboxFragGammaLoc = state.SkyboxShader->GetLocation("fragGamma");
-        state.SkyboxExposureLoc = state.SkyboxShader->GetLocation("exposure");
-        state.SkyboxBrightnessLoc = state.SkyboxShader->GetLocation("brightness");
-        state.SkyboxContrastLoc = state.SkyboxShader->GetLocation("contrast");
-
-        int environmentMapLoc = state.SkyboxShader->GetLocation("environmentMap");
-        if (environmentMapLoc >= 0)
-        {
-            shader.locs[SHADER_LOC_MAP_CUBEMAP] = environmentMapLoc;
-            int envMapValue[1] = {MATERIAL_MAP_CUBEMAP};
-            SetShaderValue(shader, environmentMapLoc, envMapValue, SHADER_UNIFORM_INT);
-        }
-    }
-}
-
-static void InitPanorama(RendererState &state)
-{
-    // state.PanoramaShader = AssetManager::Get<ShaderAsset>("engine:shaders/panorama.chshader");
-    if (false) // state.PanoramaShader
-    {
-        state.PanoDoGammaLoc = state.PanoramaShader->GetLocation("doGamma");
-        state.PanoFragGammaLoc = state.PanoramaShader->GetLocation("fragGamma");
-        state.PanoExposureLoc = state.PanoramaShader->GetLocation("exposure");
-        state.PanoBrightnessLoc = state.PanoramaShader->GetLocation("brightness");
-        state.PanoContrastLoc = state.PanoramaShader->GetLocation("contrast");
-    }
+    return APIContext::GetState();
 }
 
 void DrawCommand::Init()
 {
-    InitLights(s_State);
-    InitSkybox(s_State);
-    InitPanorama(s_State);
-
-    float ambient = 0.3f;
-    if (Project::GetActive())
-        ambient = Project::GetActive()->GetConfig().Render.AmbientIntensity;
-
-    SetDirectionalLight({-1.0f, -1.0f, -1.0f}, WHITE);
-    SetAmbientLight(ambient);
+    // High-level init now handled by Visuals/APIContext
 }
 
 void DrawCommand::Shutdown()
 {
-    s_State.LightingShader = nullptr;
-    s_State.SkyboxShader = nullptr;
-    s_State.PanoramaShader = nullptr;
-    UnloadModel(s_State.SkyboxCube);
+    // High-level shutdown now handled by Visuals/APIContext
 }
 
 void DrawCommand::SetDirectionalLight(Vector3 direction, Color color)
 {
-    s_State.CurrentLightDir = direction;
-    s_State.CurrentLightColor = color;
-
-    if (s_State.LightingShader)
-    {
-        float dir[3] = {direction.x, direction.y, direction.z};
-        float col[4] = {color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f};
-        SetShaderValue(s_State.LightingShader->GetShader(), s_State.LightDirLoc, dir,
-                       SHADER_UNIFORM_VEC3);
-        SetShaderValue(s_State.LightingShader->GetShader(), s_State.LightColorLoc, col,
-                       SHADER_UNIFORM_VEC4);
-    }
+    APIContext::SetDirectionalLight(direction, color);
 }
 
 void DrawCommand::SetAmbientLight(float intensity)
 {
-    s_State.CurrentAmbientIntensity = intensity;
-    if (s_State.LightingShader)
-    {
-        SetShaderValue(s_State.LightingShader->GetShader(), s_State.AmbientLoc, &intensity,
-                       SHADER_UNIFORM_FLOAT);
-    }
+    APIContext::SetAmbientLight(intensity);
 }
 
 void DrawCommand::ApplyEnvironment(const EnvironmentSettings &settings)
 {
-    SetDirectionalLight(settings.LightDirection, settings.LightColor);
-    SetAmbientLight(settings.AmbientIntensity);
+    APIContext::ApplyEnvironment(settings);
 }
 void DrawCommand::Clear(Color color)
 {
@@ -208,8 +123,9 @@ void DrawCommand::DrawModel(const std::string &path, const Matrix &transform,
         Material mat = model.materials[matIndex]; // Copy
 
         // Default global lighting shader if none specified in materials
-        if (s_State.LightingShader)
-            mat.shader = s_State.LightingShader->GetShader();
+        auto &state = APIContext::GetState();
+        if (state.LightingShader)
+            mat.shader = state.LightingShader->GetShader();
 
         ApplyMaterialOverrides(mat, i, matIndex, overrides);
         ::DrawMesh(model.meshes[i], mat, MatrixIdentity());
@@ -233,7 +149,7 @@ void DrawCommand::DrawSkybox(const SkyboxComponent &skybox, const Camera3D &came
     if (!texAsset)
         return;
 
-    auto &state = s_State;
+    auto &state = APIContext::GetState();
     bool usePanorama = std::filesystem::path(skybox.TexturePath).extension() != ".hdr";
 
     std::shared_ptr<ShaderAsset> shaderAsset =

@@ -17,7 +17,6 @@ target_include_directories(engine PUBLIC
 target_sources(engine PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/core/application.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/uuid.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/input.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/window.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/layer_stack.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/profiler.cpp

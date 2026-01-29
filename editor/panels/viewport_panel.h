@@ -3,9 +3,10 @@
 
 // Removed redundant include: engine/graphics/render.h
 #include "panel.h"
+#include "raylib.h"
 #include "viewport/editor_camera.h"
 #include "viewport/editor_gizmo.h"
-#include "raylib.h"
+
 
 namespace CHEngine
 {
@@ -40,10 +41,6 @@ public:
     {
         return m_CurrentTool;
     }
-    void SetDebugFlags(DebugRenderFlags *flags)
-    {
-        m_DebugFlags = flags;
-    }
 
 private:
     RenderTexture2D m_ViewportTexture;
@@ -54,7 +51,6 @@ private:
     EditorCamera m_EditorCamera;
     EditorGizmo m_Gizmo;
     GizmoType m_CurrentTool = GizmoType::TRANSLATE;
-    DebugRenderFlags *m_DebugFlags = nullptr;
     Entity m_SelectedEntity;
 };
 

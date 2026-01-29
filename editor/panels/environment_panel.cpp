@@ -1,6 +1,5 @@
 #include "environment_panel.h"
-// Removed redundant include: engine/graphics/asset_manager.h
-// Removed redundant include: engine/graphics/render.h
+#include "editor/editor_layer.h"
 #include "engine/graphics/render_types.h"
 #include "engine/scene/project.h"
 #include "filesystem"
@@ -22,10 +21,12 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
         return;
 
     ImGui::Begin(m_Name.c_str(), &m_IsOpen);
+    ImGui::PushID(this);
 
     if (!m_Context)
     {
         ImGui::Text("No active scene.");
+        ImGui::PopID();
         ImGui::End();
         return;
     }
@@ -131,7 +132,7 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
         DrawEnvironmentSettings(env, readOnly);
     }
 
-    if (m_DebugFlags)
+    // Replaced m_DebugFlags with EditorLayer::Get().GetDebugRenderFlags()
     {
         bool is3D = m_Context->GetBackgroundMode() == BackgroundMode::Environment3D;
         ImGui::Separator();
@@ -140,10 +141,14 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
         if (!is3D)
             ImGui::BeginDisabled();
 
-        ImGui::Checkbox("Colliders", &m_DebugFlags->DrawColliders);
-        ImGui::Checkbox("Lights", &m_DebugFlags->DrawLights);
-        ImGui::Checkbox("Spawn Zones", &m_DebugFlags->DrawSpawnZones);
-        ImGui::Checkbox("Draw Grid", &m_DebugFlags->DrawGrid);
+        if (ImGui::CollapsingHeader("Debug Visualization", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            auto &debugFlags = EditorLayer::Get().GetDebugRenderFlags();
+            ImGui::Checkbox("Colliders", &debugFlags.DrawColliders);
+            ImGui::Checkbox("Lights", &debugFlags.DrawLights);
+            ImGui::Checkbox("Spawn Zones", &debugFlags.DrawSpawnZones);
+            ImGui::Checkbox("Draw Grid", &debugFlags.DrawGrid);
+        }
 
         if (!is3D)
         {
@@ -152,6 +157,7 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
         }
     }
 
+    ImGui::PopID();
     ImGui::End();
 }
 

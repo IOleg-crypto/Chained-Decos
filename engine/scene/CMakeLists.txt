@@ -7,6 +7,8 @@ target_sources(engine PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/components.h
     ${CMAKE_CURRENT_SOURCE_DIR}/scene_serializer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/scene_serializer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/scene_scripting.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scene_scripting.h
     ${CMAKE_CURRENT_SOURCE_DIR}/project.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/project.h
     ${CMAKE_CURRENT_SOURCE_DIR}/project_serializer.cpp

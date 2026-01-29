@@ -3,9 +3,9 @@
 
 #include "engine/scene/entity.h"
 #include "engine/scene/scene.h"
-#include "raylib.h"
-#include "imguizmo.h"
 #include "imgui.h"
+#include "imguizmo.h"
+#include "raylib.h"
 
 namespace CHEngine
 {
@@ -26,11 +26,10 @@ public:
     ~EditorGizmo() = default;
 
     /**
-     * @brief Render and handle gizmo interaction
-     * @return true if the gizmo is being used (captured mouse)
+     * Render and handle gizmo interaction
+     * true if the gizmo is being used (captured mouse)
      */
-    bool RenderAndHandle(Scene *scene, const Camera3D &camera, Entity entity, GizmoType type,
-                         ImVec2 viewportPos, ImVec2 viewportSize);
+    bool RenderAndHandle(GizmoType type);
 
     bool IsHovered() const
     {

@@ -16,10 +16,7 @@ public:
     static void Init();
     static void Shutdown();
 
-    static RendererState &GetState()
-    {
-        return s_State;
-    }
+    static RendererState &GetState();
 
     static void SetDirectionalLight(Vector3 direction, Color color);
     static void SetAmbientLight(float intensity);
@@ -36,7 +33,6 @@ public:
                                 float length, Color color);
 
 private:
-    static RendererState s_State;
 };
 } // namespace CHEngine
 

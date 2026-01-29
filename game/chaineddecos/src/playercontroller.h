@@ -4,13 +4,14 @@
 #include "engine/core/input.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scriptable_entity.h"
+#include "glm/glm.hpp"
+#include "glm/gtx/quaternion.hpp"
 #include "raymath.h"
 
 namespace CHEngine
 {
-CH_SCRIPT(PlayerController){
-    public : CH_UPDATE(deltaTime){// CH_CORE_INFO("PlayerController: OnUpdate running...");
-                                  auto &player = GetComponent<PlayerComponent>();
+CH_SCRIPT(PlayerController){public :
+                                CH_UPDATE(deltaTime){auto &player = GetComponent<PlayerComponent>();
 auto &rigidBody = RigidBody();
 
 float currentSpeed = player.MovementSpeed;
@@ -18,25 +19,22 @@ if (Input::IsKeyDown(KEY_LEFT_SHIFT))
     currentSpeed *= 2.0f;
 
 float yawRadians = player.CameraYaw * DEG2RAD;
-Vector3 forwardDir = {-sinf(yawRadians), 0.0f, -cosf(yawRadians)};
-Vector3 rightDir = {cosf(yawRadians), 0.0f, -sinf(yawRadians)};
+glm::vec3 forwardDir = {-sinf(yawRadians), 0.0f, -cosf(yawRadians)};
+glm::vec3 rightDir = {cosf(yawRadians), 0.0f, -sinf(yawRadians)};
 
-Vector3 movementVector = {0.0f, 0.0f, 0.0f};
+glm::vec3 movementVector = {0.0f, 0.0f, 0.0f};
 if (Input::IsKeyDown(KEY_W))
-    movementVector = Vector3Add(movementVector, forwardDir);
+    movementVector += forwardDir;
 if (Input::IsKeyDown(KEY_S))
-    movementVector = Vector3Subtract(movementVector, forwardDir);
+    movementVector -= forwardDir;
 if (Input::IsKeyDown(KEY_A))
-    movementVector = Vector3Subtract(movementVector, rightDir);
+    movementVector -= rightDir;
 if (Input::IsKeyDown(KEY_D))
-    movementVector = Vector3Add(movementVector, rightDir);
+    movementVector += rightDir;
 
-float magSq = movementVector.x * movementVector.x + movementVector.z * movementVector.z;
-if (magSq > 0.01f)
+if (glm::length2(movementVector) > 0.0001f)
 {
-    float mag = sqrtf(magSq);
-    movementVector.x /= mag;
-    movementVector.z /= mag;
+    movementVector = glm::normalize(movementVector);
 
     Velocity().x = movementVector.x * currentSpeed;
     Velocity().z = movementVector.z * currentSpeed;
@@ -96,23 +94,6 @@ CH_EVENT(e)
             }
             return false;
         });
-
-    // // Example: Trigger Animation on 'E' press
-    // dispatcher.Dispatch<KeyPressedEvent>(
-    //     [this](KeyPressedEvent &ev)
-    //     {
-    //         if (ev.GetKeyCode() == KEY_E)
-    //         {
-    //             if (HasComponent<AnimationComponent>())
-    //             {
-    //                 auto &animation = GetComponent<AnimationComponent>();
-    //                 animation.Play(1); // Play second animation (e.g. Interact/Attack)
-    //                 CH_CORE_INFO("Player triggered animation!");
-    //                 return true;
-    //             }
-    //         }
-    //         return false;
-    //     });
 }
 }
 ;

@@ -57,6 +57,7 @@ private:
                         int depth);
     void UpdateNodeBounds(uint32_t nodeIdx, size_t triStart, size_t triCount);
 
+private:
     std::vector<BVHNode> m_Nodes;
     std::vector<CollisionTriangle> m_Triangles;
 };

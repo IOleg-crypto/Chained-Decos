@@ -3,7 +3,9 @@
 #include "engine/core/application.h"
 #include "engine/core/profiler.h"
 #include "engine/graphics/model_asset.h"
+#include "engine/graphics/visuals.h"
 #include "engine/physics/physics.h"
+#include "engine/scene/scene_scripting.h"
 #include "project.h"
 #include "raylib.h"
 #include "raymath.h"
@@ -18,6 +20,7 @@ void Scene::RequestSceneChange(const std::string &path)
 }
 Scene::Scene()
 {
+    // Declarative signals binding
     m_Registry.on_construct<ModelComponent>().connect<&Scene::OnModelComponentAdded>(this);
     m_Registry.on_update<ModelComponent>().connect<&Scene::OnModelComponentAdded>(this);
 
@@ -27,8 +30,15 @@ Scene::Scene()
     m_Registry.on_construct<AudioComponent>().connect<&Scene::OnAudioComponentAdded>(this);
     m_Registry.on_update<AudioComponent>().connect<&Scene::OnAudioComponentAdded>(this);
 
+    // UUID Mapping
+    m_Registry.on_construct<IDComponent>().connect<&Scene::OnIDConstruct>(this);
+    m_Registry.on_destroy<IDComponent>().connect<&Scene::OnIDDestroy>(this);
+
+    // Hierarchy Mapping
+    m_Registry.on_destroy<HierarchyComponent>().connect<&Scene::OnHierarchyDestroy>(this);
+
     // Every scene must have its own environment to avoid skybox leaking/bugs
-    m_Environment = std::make_shared<EnvironmentAsset>();
+    m_Settings.Environment = std::make_shared<EnvironmentAsset>();
 }
 
 Scene::~Scene()
@@ -78,56 +88,50 @@ Entity Scene::CreateUIEntity(const std::string &type, const std::string &name)
     Entity entity = CreateEntity(name.empty() ? type : name);
     entity.AddComponent<ControlComponent>();
 
-    if (type == "Button")
-        entity.AddComponent<ButtonControl>();
-    else if (type == "Panel")
-        entity.AddComponent<PanelControl>();
-    else if (type == "Label")
-        entity.AddComponent<LabelControl>();
-    else if (type == "Slider")
-        entity.AddComponent<SliderControl>();
-    else if (type == "CheckBox")
-        entity.AddComponent<CheckboxControl>();
+    using UIFactoryFn = void (*)(Entity);
+    static const std::unordered_map<std::string_view, UIFactoryFn> dispatchTable = {
+        {"Button", [](Entity e) { e.AddComponent<ButtonControl>(); }},
+        {"Panel", [](Entity e) { e.AddComponent<PanelControl>(); }},
+        {"Label", [](Entity e) { e.AddComponent<LabelControl>(); }},
+        {"Slider", [](Entity e) { e.AddComponent<SliderControl>(); }},
+        {"CheckBox", [](Entity e) { e.AddComponent<CheckboxControl>(); }},
+    };
+
+    if (auto it = dispatchTable.find(type); it != dispatchTable.end())
+        it->second(entity);
 
     return entity;
 }
 
 void Scene::DestroyEntity(Entity entity)
 {
-    if (!entity || !m_Registry.valid(entity))
-    {
-        CH_CORE_WARN("Attempted to destroy invalid entity");
-        return;
-    }
-
-    if (entity.HasComponent<HierarchyComponent>())
-    {
-        auto &hc = entity.GetComponent<HierarchyComponent>();
-
-        // 1. Detach from parent
-        if (hc.Parent != entt::null)
-        {
-            if (m_Registry.valid(hc.Parent) && m_Registry.all_of<HierarchyComponent>(hc.Parent))
-            {
-                auto &phc = m_Registry.get<HierarchyComponent>(hc.Parent);
-                auto it = std::find(phc.Children.begin(), phc.Children.end(), (entt::entity)entity);
-                if (it != phc.Children.end())
-                    phc.Children.erase(it);
-            }
-        }
-
-        // 2. Clear parent link in children (detaching them, not destroying)
-        for (auto child : hc.Children)
-        {
-            if (m_Registry.valid(child) && m_Registry.all_of<HierarchyComponent>(child))
-            {
-                m_Registry.get<HierarchyComponent>(child).Parent = entt::null;
-            }
-        }
-    }
-
+    CH_CORE_ASSERT(entity, "Entity is null!");
     CH_CORE_INFO("Entity Destroyed: {}", (uint32_t)entity);
     m_Registry.destroy(entity);
+}
+
+void Scene::OnHierarchyDestroy(entt::registry &reg, entt::entity entity)
+{
+    auto &hc = reg.get<HierarchyComponent>(entity);
+
+    // 1. Detach from parent
+    if (hc.Parent != entt::null && reg.valid(hc.Parent) &&
+        reg.all_of<HierarchyComponent>(hc.Parent))
+    {
+        auto &phc = reg.get<HierarchyComponent>(hc.Parent);
+        auto it = std::find(phc.Children.begin(), phc.Children.end(), entity);
+        if (it != phc.Children.end())
+            phc.Children.erase(it);
+    }
+
+    // 2. Clear parent link in children (detaching them, not destroying)
+    for (auto child : hc.Children)
+    {
+        if (reg.valid(child) && reg.all_of<HierarchyComponent>(child))
+        {
+            reg.get<HierarchyComponent>(child).Parent = entt::null;
+        }
+    }
 }
 
 template <> void Scene::OnComponentAdded<ModelComponent>(Entity entity, ModelComponent &component)
@@ -191,27 +195,32 @@ template <> void Scene::OnComponentAdded<AudioComponent>(Entity entity, AudioCom
 void Scene::OnUpdateRuntime(float deltaTime)
 {
     CH_PROFILE_FUNCTION();
-    // Physics is currently called from Application::OnUpdate
 
-    // 1. Scripting
-    m_Registry.view<NativeScriptComponent>().each(
-        [this, deltaTime](auto entity, auto &nsc)
+    // Declarative Pipeline
+    SceneScripting::Update(this, deltaTime);
+    UpdateAnimation(deltaTime);
+    UpdateAudio(deltaTime);
+
+    // Declarative Scene Transitions
+    auto view = m_Registry.view<SceneTransitionComponent>();
+    for (auto entity : view)
+    {
+        auto &transition = view.get<SceneTransitionComponent>(entity);
+        if (transition.Triggered && !transition.TargetScenePath.empty())
         {
-            for (auto &script : nsc.Scripts)
-            {
-                if (!script.Instance)
-                {
-                    script.Instance = script.InstantiateScript();
-                    script.Instance->m_Entity = Entity{entity, this};
-                    CH_CORE_INFO("Scripting: Instantiating script '{0}' for entity '{1}'",
-                                 script.ScriptName, m_Registry.get<TagComponent>(entity).Tag);
-                    script.Instance->OnCreate();
-                }
-                script.Instance->OnUpdate(deltaTime);
-            }
-        });
+            RequestSceneChange(transition.TargetScenePath);
+            break; // Only one transition at a time
+        }
+    }
+}
 
-    // 2. Animation
+void Scene::UpdateScripting(float deltaTime)
+{
+    // High-level scripting logic now handled by SceneScripting
+}
+
+void Scene::UpdateAnimation(float deltaTime)
+{
     auto animView = m_Registry.view<AnimationComponent, ModelComponent>();
     for (auto entity : animView)
     {
@@ -251,8 +260,10 @@ void Scene::OnUpdateRuntime(float deltaTime)
             }
         }
     }
+}
 
-    // 3. Audio
+void Scene::UpdateAudio(float deltaTime)
+{
     m_Registry.view<AudioComponent>().each(
         [](auto entity, auto &audio)
         {
@@ -270,9 +281,7 @@ void Scene::OnUpdateRuntime(float deltaTime)
 void Scene::OnRender(const Camera3D &camera, const DebugRenderFlags *debugFlags)
 {
     CH_PROFILE_FUNCTION();
-    UpdateProfilerStats();
-    // Rendering will be handled by the Renderer module later
-    // For now, we skip Visuals::DrawScene
+    Visuals::DrawScene(this, camera, debugFlags);
 }
 
 Camera3D Scene::GetActiveCamera() const
@@ -316,15 +325,14 @@ Camera3D Scene::GetActiveCamera() const
 }
 EnvironmentSettings Scene::GetEnvironmentSettings() const
 {
-    if (m_Environment)
-        return m_Environment->GetSettings();
+    if (m_Settings.Environment)
+        return m_Settings.Environment->GetSettings();
 
     EnvironmentSettings settings;
-    settings.Skybox.TexturePath = m_Skybox.TexturePath;
-    settings.Skybox.Exposure = m_Skybox.Exposure;
-    settings.Skybox.Brightness = m_Skybox.Brightness;
-    settings.Skybox.Contrast = m_Skybox.Contrast;
-    // Default values if no environment
+    settings.Skybox.TexturePath = m_Settings.Skybox.TexturePath;
+    settings.Skybox.Exposure = m_Settings.Skybox.Exposure;
+    settings.Skybox.Brightness = m_Settings.Skybox.Brightness;
+    settings.Skybox.Contrast = m_Settings.Skybox.Contrast;
     return settings;
 }
 
@@ -352,17 +360,7 @@ void Scene::OnRuntimeStop()
 
 void Scene::OnEvent(Event &e)
 {
-    m_Registry.view<NativeScriptComponent>().each(
-        [&](auto entity, auto &nsc)
-        {
-            for (auto &script : nsc.Scripts)
-            {
-                if (script.Instance)
-                {
-                    script.Instance->OnEvent(e);
-                }
-            }
-        });
+    SceneScripting::DispatchEvent(this, e);
 }
 
 void Scene::OnImGuiRender(const ImVec2 &refPos, const ImVec2 &refSize, uint32_t viewportID,
@@ -397,17 +395,7 @@ void Scene::OnImGuiRender(const ImVec2 &refPos, const ImVec2 &refSize, uint32_t 
         });
 
     // Scripted UI elements
-    m_Registry.view<NativeScriptComponent>().each(
-        [&](auto entity, auto &nsc)
-        {
-            for (auto &script : nsc.Scripts)
-            {
-                if (script.Instance)
-                {
-                    script.Instance->OnImGuiRender();
-                }
-            }
-        });
+    SceneScripting::RenderUI(this);
 }
 
 Entity Scene::FindEntityByTag(const std::string &tag)
@@ -423,13 +411,21 @@ Entity Scene::FindEntityByTag(const std::string &tag)
 }
 Entity Scene::GetEntityByUUID(UUID uuid)
 {
-    auto view = m_Registry.view<IDComponent>();
-    for (auto entity : view)
-    {
-        if (view.get<IDComponent>(entity).ID == uuid)
-            return {entity, this};
-    }
+    if (m_EntityMap.find(uuid) != m_EntityMap.end())
+        return {m_EntityMap.at(uuid), this};
     return {};
+}
+
+void Scene::OnIDConstruct(entt::registry &reg, entt::entity entity)
+{
+    auto &id = reg.get<IDComponent>(entity).ID;
+    m_EntityMap[id] = entity;
+}
+
+void Scene::OnIDDestroy(entt::registry &reg, entt::entity entity)
+{
+    auto &id = reg.get<IDComponent>(entity).ID;
+    m_EntityMap.erase(id);
 }
 
 void Scene::OnAudioComponentAdded(entt::registry &reg, entt::entity entity)

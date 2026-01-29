@@ -11,15 +11,28 @@ namespace CHEngine
 class ComponentUI
 {
 public:
+    struct ComponentMetadata
+    {
+        std::string Name;
+        std::function<void(Entity)> Draw;
+        std::function<void(Entity)> Add;
+    };
+
     static void Init();
 
     // Registry-based API
-    static void RegisterDrawer(entt::id_type typeId, std::function<void(Entity)> drawer);
+    static void RegisterComponent(entt::id_type typeId, const ComponentMetadata &metadata);
     static void DrawEntityComponents(Entity entity);
+    static void DrawAddComponentPopup(Entity entity);
 
-    template <typename T> static void Register(std::function<void(Entity)> drawer)
+    template <typename T>
+    static void Register(const std::string &name, std::function<void(Entity)> drawer)
     {
-        RegisterDrawer(entt::type_hash<T>::value(), drawer);
+        ComponentMetadata metadata;
+        metadata.Name = name;
+        metadata.Draw = drawer;
+        metadata.Add = [](Entity e) { e.AddComponent<T>(); };
+        RegisterComponent(entt::type_hash<T>::value(), metadata);
     }
 
     // Shared Template for Drawers
@@ -30,8 +43,6 @@ public:
     // (Deprecated: Use EditorUI::GUI::Property for Color)
 
     static void DrawTag(Entity entity);
-    static void DrawAddComponentPopup(Entity entity);
-
     static void DrawTransform(Entity entity);
     static void DrawModel(Entity entity);
     static void DrawMaterial(Entity entity, int hitMeshIndex = -1);
@@ -58,7 +69,7 @@ public:
     static void DrawCheckboxControl(Entity entity);
 
 private:
-    static std::unordered_map<entt::id_type, std::function<void(Entity)>> s_DrawerRegistry;
+    static std::unordered_map<entt::id_type, ComponentMetadata> s_ComponentRegistry;
 };
 
 // --- Inline Implementations ---
@@ -81,6 +92,7 @@ inline void ComponentUI::DrawComponent(const std::string &name, Entity entity,
         ImGui::Separator();
 
         // --- Header with Removal Button ---
+        ImGui::PushID(name.c_str());
         bool open = ImGui::TreeNodeEx((void *)typeid(T).hash_code(), treeNodeFlags, name.c_str());
 
         ImGui::SameLine(ImGui::GetWindowWidth() - 35);
@@ -98,6 +110,7 @@ inline void ComponentUI::DrawComponent(const std::string &name, Entity entity,
                 removeComponent = true;
             ImGui::EndPopup();
         }
+        ImGui::PopID();
 
         ImGui::PopStyleVar();
 

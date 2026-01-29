@@ -4,6 +4,7 @@
 #include "engine/core/input.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scriptable_entity.h"
+#include "glm/glm.hpp"
 
 namespace CHEngine
 {
@@ -20,10 +21,7 @@ if (Input::IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
     player.CameraPitch -= mouseDelta.y * player.LookSensitivity;
 
     // Clamp pitch to prevent flipping
-    if (player.CameraPitch > 89.0f)
-        player.CameraPitch = 89.0f;
-    if (player.CameraPitch < -10.0f)
-        player.CameraPitch = -10.0f;
+    player.CameraPitch = glm::clamp(player.CameraPitch, -10.0f, 89.0f);
 }
 
 // Zoom control (Mouse Wheel)
@@ -31,12 +29,10 @@ float wheelMovement = Input::GetMouseWheelMove();
 player.CameraDistance -= wheelMovement * 2.0f;
 
 // Clamp distance to reasonable limits
-if (player.CameraDistance < 2.0f)
-    player.CameraDistance = 2.0f;
-if (player.CameraDistance > 40.0f)
-    player.CameraDistance = 40.0f;
+player.CameraDistance = glm::clamp(player.CameraDistance, 2.0f, 40.0f);
 } // namespace CHEngine
 }
+;
 ;
 } // namespace CHEngine
 

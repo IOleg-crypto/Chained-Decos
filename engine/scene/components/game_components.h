@@ -37,6 +37,17 @@ struct PlayerComponent
 
     PlayerComponent() = default;
 };
+
+struct SceneTransitionComponent
+{
+    std::string TargetScenePath;
+    bool Triggered = false;
+
+    SceneTransitionComponent() = default;
+    SceneTransitionComponent(const std::string &path) : TargetScenePath(path)
+    {
+    }
+};
 } // namespace CHEngine
 
 #endif // CH_GAME_COMPONENTS_H
