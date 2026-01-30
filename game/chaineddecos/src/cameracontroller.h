@@ -16,12 +16,12 @@ auto &player = GetComponent<PlayerComponent>();
 // Rotation control (Right Mouse Button)
 if (Input::IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
 {
-    Vector2 mouseDelta = Input::GetMouseDelta();
-    player.CameraYaw -= mouseDelta.x * player.LookSensitivity;
-    player.CameraPitch -= mouseDelta.y * player.LookSensitivity;
+        Vector2 mouseDelta = Input::GetMouseDelta();
+        player.CameraYaw -= mouseDelta.x * player.LookSensitivity;
+        player.CameraPitch -= mouseDelta.y * player.LookSensitivity;
 
-    // Clamp pitch to prevent flipping
-    player.CameraPitch = glm::clamp(player.CameraPitch, -10.0f, 89.0f);
+        // Clamp pitch to prevent flipping
+        player.CameraPitch = glm::clamp(player.CameraPitch, -10.0f, 89.0f);
 }
 
 // Zoom control (Mouse Wheel)

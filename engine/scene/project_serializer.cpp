@@ -43,6 +43,12 @@ bool ProjectSerializer::Serialize(const std::filesystem::path &filepath)
         out << YAML::Key << "Resizable" << YAML::Value << config.Window.Resizable;
         out << YAML::EndMap;
 
+        out << YAML::Key << "Runtime" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "Fullscreen" << YAML::Value << config.Runtime.Fullscreen;
+        out << YAML::Key << "ShowStats" << YAML::Value << config.Runtime.ShowStats;
+        out << YAML::Key << "EnableConsole" << YAML::Value << config.Runtime.EnableConsole;
+        out << YAML::EndMap;
+
         out << YAML::Key << "BuildConfig" << YAML::Value << (int)config.BuildConfig;
 
         out << YAML::EndMap;
@@ -102,6 +108,13 @@ bool ProjectSerializer::Deserialize(const std::filesystem::path &filepath)
         config.Window.Height = projectNode["Window"]["Height"].as<int>();
         config.Window.VSync = projectNode["Window"]["VSync"].as<bool>();
         config.Window.Resizable = projectNode["Window"]["Resizable"].as<bool>();
+    }
+
+    if (projectNode["Runtime"])
+    {
+        config.Runtime.Fullscreen = projectNode["Runtime"]["Fullscreen"].as<bool>();
+        config.Runtime.ShowStats = projectNode["Runtime"]["ShowStats"].as<bool>();
+        config.Runtime.EnableConsole = projectNode["Runtime"]["EnableConsole"].as<bool>();
     }
 
     if (projectNode["BuildConfig"])

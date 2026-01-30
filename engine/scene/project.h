@@ -32,6 +32,13 @@ struct WindowSettings
     bool Resizable = true;
 };
 
+struct RuntimeSettings
+{
+    bool Fullscreen = false;
+    bool ShowStats = true;
+    bool EnableConsole = false;
+};
+
 enum class Configuration
 {
     Debug = 0,
@@ -50,6 +57,7 @@ struct ProjectConfig
     AnimationSettings Animation;
     RenderSettings Render;
     WindowSettings Window;
+    RuntimeSettings Runtime;
 
     Configuration BuildConfig = Configuration::Debug;
 };

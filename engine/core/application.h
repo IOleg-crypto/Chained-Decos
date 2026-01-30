@@ -12,124 +12,124 @@
 
 namespace CHEngine
 {
-class Scene;
+    class Scene;
 
-struct ApplicationConfig
-{
-    std::string Title;
-    int Width = 1280;
-    int Height = 720;
-    bool Fullscreen = false;
-    int TargetFPS = 60;
-    Image WindowIcon;
-    int Argc = 0;
-    char **Argv = nullptr;
-};
-
-class Application
-{
-public:
-    using Config = ApplicationConfig;
-
-public:
-    Application(const Config &config = Config());
-    virtual ~Application();
-
-    bool Initialize(const Config &config);
-    void Shutdown();
-    void Close();
-
-    static void PushLayer(Layer *layer);
-    static void PushOverlay(Layer *overlay);
-
-    static bool ShouldClose();
-    static void BeginFrame();
-    static void EndFrame();
-    static void PollEvents();
-    static void OnEvent(Event &e);
-
-    void Run();
-
-public:
-    virtual void PostInitialize()
+    struct ApplicationConfig
     {
-    }
+        std::string Title;
+        int Width = 1280;
+        int Height = 720;
+        bool Fullscreen = false;
+        int TargetFPS = 60;
+        Image WindowIcon = {0};
+        int Argc = 0;
+        char **Argv = nullptr;
+    };
 
-    LayerStack &GetLayerStack()
+    class Application
     {
-        return m_LayerStack;
-    }
+    public:
+        using Config = ApplicationConfig;
 
-    static bool IsRunning();
-    static float GetDeltaTime();
+    public:
+        Application(const Config &config = Config());
+        virtual ~Application();
 
-    static Application &Get()
-    {
-        return *s_Instance;
-    }
+        bool Initialize(const Config &config);
+        void Shutdown();
+        void Close();
 
-    std::unique_ptr<Window> &GetWindow()
-    {
-        return m_Window;
-    }
+        static void PushLayer(Layer *layer);
+        static void PushOverlay(Layer *overlay);
 
-    std::shared_ptr<Scene> GetActiveScene()
-    {
-        return m_ActiveScene;
-    }
-    void SetActiveScene(std::shared_ptr<Scene> scene)
-    {
-        m_ActiveScene = scene;
-    }
+        static bool ShouldClose();
+        static void BeginFrame();
+        static void EndFrame();
+        static void PollEvents();
+        static void OnEvent(Event &e);
 
-    void RequestSceneChange(const std::string &path)
-    {
-        m_NextScenePath = path;
-    }
+        void Run();
 
-    void LoadScene(const std::string &path);
+    public:
+        virtual void PostInitialize()
+        {
+        }
 
-    static void SetStartupScene(const std::string &path)
-    {
-        s_StartupScenePath = path;
-    }
-    static const std::string &GetStartupScene()
-    {
-        return s_StartupScenePath;
-    }
+        LayerStack &GetLayerStack()
+        {
+            return m_LayerStack;
+        }
 
-    const Config &GetConfig() const
-    {
-        return m_Config;
-    }
+        static bool IsRunning();
+        static float GetDeltaTime();
 
-    void SetWindowIcon(Image icon);
+        static Application &Get()
+        {
+            return *s_Instance;
+        }
 
-private:
-    void ProcessEvents();
-    void Simulate();
-    void Animate();
-    void Render();
+        std::unique_ptr<Window> &GetWindow()
+        {
+            return m_Window;
+        }
 
-    void OnUpdate(float deltaTime);
-    void OnRender();
+        std::shared_ptr<Scene> GetActiveScene()
+        {
+            return m_ActiveScene;
+        }
+        void SetActiveScene(std::shared_ptr<Scene> scene)
+        {
+            m_ActiveScene = scene;
+        }
 
-    static Application *s_Instance;
-    static std::string s_StartupScenePath;
+        void RequestSceneChange(const std::string &path)
+        {
+            m_NextScenePath = path;
+        }
 
-    Config m_Config;
-    bool m_Running = false;
-    bool m_Minimized = false;
-    float m_DeltaTime = 0.0f;
-    float m_LastFrameTime = 0.0f;
+        void LoadScene(const std::string &path);
 
-    LayerStack m_LayerStack;
-    std::unique_ptr<Window> m_Window;
-    std::shared_ptr<Scene> m_ActiveScene;
-    std::string m_NextScenePath;
-};
+        static void SetStartupScene(const std::string &path)
+        {
+            s_StartupScenePath = path;
+        }
+        static const std::string &GetStartupScene()
+        {
+            return s_StartupScenePath;
+        }
 
-Application *CreateApplication(int argc, char **argv);
+        const Config &GetConfig() const
+        {
+            return m_Config;
+        }
+
+        void SetWindowIcon(const Image &icon) const;
+
+    private:
+        void ProcessEvents();
+        void Simulate();
+        void Animate();
+        void Render();
+
+        void OnUpdate(float deltaTime);
+        void OnRender();
+
+        static Application *s_Instance;
+        static std::string s_StartupScenePath;
+
+        Config m_Config;
+        bool m_Running = false;
+        bool m_Minimized = false;
+        float m_DeltaTime = 0.0f;
+        float m_LastFrameTime = 0.0f;
+
+        LayerStack m_LayerStack;
+        std::unique_ptr<Window> m_Window;
+        std::shared_ptr<Scene> m_ActiveScene;
+        std::string m_NextScenePath;
+    };
+
+    Application *CreateApplication(int argc, char **argv);
 } // namespace CHEngine
 
 #endif // CH_APPLICATION_H

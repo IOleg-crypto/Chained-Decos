@@ -2,6 +2,8 @@
 #define CH_EDITOR_H
 
 #include "engine/core/application.h"
+#include <string>
+
 
 namespace CHEngine
 {
@@ -27,6 +29,7 @@ public:
         int TargetFPS = 144;
         std::string LastProjectPath = "";
         std::string LastScenePath = "";
+        bool LoadLastProjectOnStartup = false;
     };
 
     const EditorConfig &GetEditorConfig() const

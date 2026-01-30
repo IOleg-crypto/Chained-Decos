@@ -15,4 +15,8 @@ Project:
     Height: 720
     VSync: false
     Resizable: true
+  Runtime:
+    Fullscreen: false
+    ShowStats: true
+    EnableConsole: false
   BuildConfig: 0

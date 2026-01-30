@@ -1,13 +1,33 @@
 BasedOnStyle: LLVM
 IndentWidth: 4
 AccessModifierOffset: -4
-TabWidth: 8
+TabWidth: 4
 ContinuationIndentWidth: 4
 UseTab: Never
 AllowShortIfStatementsOnASingleLine: false
-ColumnLimit: 100
+ColumnLimit: 120
 BreakBeforeBraces: Allman
 AlignConsecutiveAssignments: false
 BraceWrapping:
+  AfterClass: true
+  AfterControlStatement: true
+  AfterEnum: true
   AfterFunction: true
+  AfterNamespace: true
+  AfterObjCDeclaration: true
+  AfterStruct: true
+  AfterUnion: true
+  BeforeCatch: true
+  BeforeElse: true
+  IndentBraces: false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
 AllowShortFunctionsOnASingleLine: None
+NamespaceIndentation: All
+StatementMacros:
+  - CH_START
+  - CH_UPDATE
+  - CH_EVENT
+  - CH_GUI
+  - CH_SCRIPT

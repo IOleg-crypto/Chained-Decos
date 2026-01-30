@@ -12,7 +12,7 @@ class SoundAsset : public Asset
 public:
     SoundAsset() = default;
     SoundAsset(Sound sound);
-    virtual ~SoundAsset();
+    ~SoundAsset() override;
 
     static std::shared_ptr<SoundAsset> Load(const std::string &path);
 

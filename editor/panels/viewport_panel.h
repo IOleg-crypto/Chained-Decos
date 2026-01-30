@@ -7,7 +7,6 @@
 #include "viewport/editor_camera.h"
 #include "viewport/editor_gizmo.h"
 
-
 namespace CHEngine
 {
 class ViewportPanel : public Panel
@@ -16,10 +15,12 @@ public:
     ViewportPanel();
     ~ViewportPanel();
 
+public:
     virtual void OnImGuiRender(bool readOnly = false) override;
     virtual void OnUpdate(float deltaTime) override;
     virtual void OnEvent(Event &e) override;
 
+public:
     bool IsFocused() const
     {
         return m_Focused;

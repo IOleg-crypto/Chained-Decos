@@ -1,12 +1,13 @@
 CompileFlags:
-  Add: [-Wall, -Wextra, -std=c++20]
-  Remove: [-W*, -std=*]
+  CompilationDatabase: build/ninja-debug
+  Add: [-Wall, -Wextra]
+  Remove: [-fmodules-ts, -fmodule-mapper=*, -fdeps-format=*]
 
 Diagnostics:
   ClangTidy:
-    Add: [modernize*, performance*]
+    Add: [modernize-*, performance-*]
     Remove: [modernize-use-trailing-return-type]
-  UnusedIncludes: Strict
 
 Index:
-  Background: Build
+  Background: Skip
+  

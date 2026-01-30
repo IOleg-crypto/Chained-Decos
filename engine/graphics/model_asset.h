@@ -60,7 +60,7 @@ public:
         }
         return m_BVHCache;
     }
-    void SetBVHCache(std::shared_ptr<class BVH> bvh)
+    void SetBVHCache(std::shared_ptr<BVH> bvh)
     {
         m_BVHCache = bvh;
     }

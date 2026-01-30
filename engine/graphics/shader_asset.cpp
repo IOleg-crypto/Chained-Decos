@@ -1,5 +1,6 @@
 #include "shader_asset.h"
 #include "engine/core/log.h"
+#include "engine/graphics/asset_manager.h"
 #include "yaml-cpp/yaml.h"
 #include <filesystem>
 
@@ -50,7 +51,7 @@ std::shared_ptr<ShaderAsset> ShaderAsset::Load(const std::string &chshaderPath)
         std::string vsRel = config["VertexShader"].as<std::string>();
         std::string fsRel = config["FragmentShader"].as<std::string>();
 
-        std::shared_ptr<ShaderAsset> asset = Load(vsRel, fsRel);
+        std::shared_ptr<ShaderAsset> asset = Load(AssetManager::ResolvePath(vsRel), AssetManager::ResolvePath(fsRel));
         if (asset)
         {
             asset->SetPath(chshaderPath);

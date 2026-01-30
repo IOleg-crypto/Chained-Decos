@@ -7,11 +7,12 @@ set(CMAKE_C_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Generate compile_commands.json")
+
+
 # Options
 option(BUILD_TESTS "Build unit tests" ON)
 
-# Global Include Paths - Removed in favor of target_include_directories
-# include_directories(${CMAKE_SOURCE_DIR})
 
 # Dependencies
 include(cmake/CompilerSettings.cmake)

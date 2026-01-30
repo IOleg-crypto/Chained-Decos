@@ -9,6 +9,8 @@ class ProjectSettingsPanel : public Panel
 {
 public:
     ProjectSettingsPanel();
+
+public:
     virtual void OnImGuiRender(bool readOnly = false) override;
 };
 } // namespace CHEngine

@@ -29,93 +29,94 @@
 
 namespace CHEngine
 {
-class EditorLayer : public Layer
-{
-public:
-    EditorLayer();
-    virtual ~EditorLayer() = default;
-
-    virtual void OnAttach() override;
-    virtual void OnDetach() override;
-    virtual void OnUpdate(float deltaTime) override;
-    virtual void OnRender() override;
-    virtual void OnImGuiRender() override;
-    virtual void OnEvent(Event &e) override;
-
-    static float GetViewportHeight()
+    class EditorLayer : public Layer
     {
-        return s_ViewportSize.y;
-    }
+    public:
+        EditorLayer();
+        virtual ~EditorLayer() = default;
 
-    static std::shared_ptr<Scene> GetActiveScene()
-    {
-        return Application::Get().GetActiveScene();
-    }
+        virtual void OnAttach() override;
+        virtual void OnDetach() override;
+        virtual void OnUpdate(float deltaTime) override;
+        virtual void OnRender() override;
+        virtual void OnImGuiRender() override;
+        virtual void OnEvent(Event &e) override;
 
-    void ResetLayout();
-    void DrawDockSpace();
-    void DrawScriptUI();
+        static float GetViewportHeight()
+        {
+            return s_ViewportSize.y;
+        }
 
-private:
-    bool OnProjectOpened(ProjectOpenedEvent &e);
-    bool OnSceneOpened(SceneOpenedEvent &e);
-    bool OnScenePlay(ScenePlayEvent &e);
-    bool OnSceneStop(SceneStopEvent &e);
+        static std::shared_ptr<Scene> GetActiveScene()
+        {
+            return Application::Get().GetActiveScene();
+        }
 
-public:
-    static EditorLayer *s_Instance;
-    static ImVec2 s_ViewportSize;
+        void ResetLayout();
+        void DrawDockSpace();
+        void DrawScriptUI();
 
-    static CommandHistory &GetCommandHistory();
-    static SceneState GetSceneState();
-    static EditorLayer &Get();
+    private:
+        bool OnProjectOpened(ProjectOpenedEvent &e);
+        bool OnSceneOpened(SceneOpenedEvent &e);
+        bool OnScenePlay(ScenePlayEvent &e);
+        bool OnSceneStop(SceneStopEvent &e);
 
-    EditorPanels &GetPanels()
-    {
-        return *m_Panels;
-    }
-    Entity GetSelectedEntity() const
-    {
-        return m_SelectedEntity;
-    }
+    public:
+        static EditorLayer *s_Instance;
+        static ImVec2 s_ViewportSize;
 
-    Camera3D GetActiveCamera();
-    DebugRenderFlags &GetDebugRenderFlags()
-    {
-        return m_DebugRenderFlags;
-    }
+        static CommandHistory &GetCommandHistory();
+        static SceneState GetSceneState();
+        static EditorLayer &Get();
 
-    void ToggleFullscreenGame(bool enabled)
-    {
-        m_FullscreenGame = enabled;
-    }
-    bool IsFullscreenGame() const
-    {
-        return m_FullscreenGame;
-    }
-    bool IsStandaloneActive() const
-    {
-        return m_StandaloneActive;
-    }
+        EditorPanels &GetPanels()
+        {
+            return *m_Panels;
+        }
+        Entity GetSelectedEntity() const
+        {
+            return m_SelectedEntity;
+        }
 
-private:
-    std::unique_ptr<EditorPanels> m_Panels;
-    std::unique_ptr<EditorLayout> m_Layout;
-    std::unique_ptr<EditorActions> m_Actions;
+        Camera3D GetActiveCamera();
+        DebugRenderFlags &GetDebugRenderFlags()
+        {
+            return m_DebugRenderFlags;
+        }
 
-    Entity m_SelectedEntity;
-    SceneState m_SceneState = SceneState::Edit;
-    bool m_FullscreenGame = false;
-    bool m_StandaloneActive = false;
-    int m_LastHitMeshIndex = -1;
-    std::shared_ptr<Scene> m_EditorScene;
+        void ToggleFullscreenGame(bool enabled)
+        {
+            m_FullscreenGame = enabled;
+        }
+        bool IsFullscreenGame() const
+        {
+            return m_FullscreenGame;
+        }
+        bool IsStandaloneActive() const
+        {
+            return m_StandaloneActive;
+        }
 
-    // Raylib Debug Render Flags
-    DebugRenderFlags m_DebugRenderFlags;
+    private:
+        std::unique_ptr<EditorPanels> m_Panels;
+        std::unique_ptr<EditorLayout> m_Layout;
+        std::unique_ptr<EditorActions> m_Actions;
 
-private:
-    CommandHistory m_CommandHistory;
-};
+        Entity m_SelectedEntity;
+        SceneState m_SceneState = SceneState::Edit;
+        bool m_FullscreenGame = false;
+        bool m_StandaloneActive = false;
+        bool m_NeedsLayoutReset = false;
+        int m_LastHitMeshIndex = -1;
+        std::shared_ptr<Scene> m_EditorScene;
+
+        // Raylib Debug Render Flags
+        DebugRenderFlags m_DebugRenderFlags;
+
+    private:
+        CommandHistory m_CommandHistory;
+    };
 } // namespace CHEngine
 
 #endif // CH_EDITOR_LAYER_H

@@ -18,6 +18,7 @@ public:
 public:
     void Init();
 
+public:
     template <typename T, typename... Args> std::shared_ptr<T> Register(Args &&...args)
     {
         auto panel = std::make_shared<T>(std::forward<Args>(args)...);
@@ -35,6 +36,7 @@ public:
         return nullptr;
     }
 
+public:
     void OnUpdate(float deltaTime);
     void OnImGuiRender(bool readOnly);
     void OnEvent(Event &e);

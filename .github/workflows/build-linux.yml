@@ -5,12 +5,9 @@ on:
     branches:
       - main
       - develop
+      - chained-gui
+      - refactor-branch
   workflow_call:
-    inputs:
-      build_type:
-        required: true
-        type: string
-        default: "Release"
 
 env:
   CI: true

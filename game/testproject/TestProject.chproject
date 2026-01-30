@@ -2,7 +2,7 @@ Project:
   Name: TestProject
   StartScene: ""
   AssetDirectory: assets
-  ActiveScene: ..\testproject\assets\scenes\Untitled.chscene
+  ActiveScene: assets\scenes\untitled.chscene
   Physics:
     Gravity: 20
   Animation:
@@ -15,3 +15,8 @@ Project:
     Height: 720
     VSync: true
     Resizable: true
+  Runtime:
+    Fullscreen: false
+    ShowStats: true
+    EnableConsole: false
+  BuildConfig: 0

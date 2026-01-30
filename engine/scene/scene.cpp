@@ -2,6 +2,7 @@
 #include "engine/audio/sound_asset.h"
 #include "engine/core/application.h"
 #include "engine/core/profiler.h"
+#include "engine/graphics/asset_manager.h"
 #include "engine/graphics/model_asset.h"
 #include "engine/graphics/visuals.h"
 #include "engine/physics/physics.h"
@@ -88,17 +89,11 @@ Entity Scene::CreateUIEntity(const std::string &type, const std::string &name)
     Entity entity = CreateEntity(name.empty() ? type : name);
     entity.AddComponent<ControlComponent>();
 
-    using UIFactoryFn = void (*)(Entity);
-    static const std::unordered_map<std::string_view, UIFactoryFn> dispatchTable = {
-        {"Button", [](Entity e) { e.AddComponent<ButtonControl>(); }},
-        {"Panel", [](Entity e) { e.AddComponent<PanelControl>(); }},
-        {"Label", [](Entity e) { e.AddComponent<LabelControl>(); }},
-        {"Slider", [](Entity e) { e.AddComponent<SliderControl>(); }},
-        {"CheckBox", [](Entity e) { e.AddComponent<CheckboxControl>(); }},
-    };
-
-    if (auto it = dispatchTable.find(type); it != dispatchTable.end())
-        it->second(entity);
+    if (type == "Button") entity.AddComponent<ButtonControl>();
+    else if (type == "Panel") entity.AddComponent<PanelControl>();
+    else if (type == "Label") entity.AddComponent<LabelControl>();
+    else if (type == "Slider") entity.AddComponent<SliderControl>();
+    else if (type == "CheckBox") entity.AddComponent<CheckboxControl>();
 
     return entity;
 }
@@ -143,8 +138,7 @@ template <> void Scene::OnComponentAdded<ModelComponent>(Entity entity, ModelCom
 
         if (pathChanged)
         {
-            // component.Asset = AssetManager::Get<ModelAsset>(component.ModelPath);
-            component.Asset = nullptr;
+            component.Asset = AssetManager::Get<ModelAsset>(component.ModelPath);
             component.MaterialsInitialized = false; // Reset materials if asset changed
         }
 
@@ -177,8 +171,7 @@ void Scene::OnComponentAdded<AnimationComponent>(Entity entity, AnimationCompone
         auto &mc = entity.GetComponent<ModelComponent>();
         if (!mc.Asset && !mc.ModelPath.empty())
         {
-            // mc.Asset = AssetManager::Get<ModelAsset>(mc.ModelPath);
-            mc.Asset = nullptr;
+            mc.Asset = AssetManager::Get<ModelAsset>(mc.ModelPath);
         }
     }
 }
@@ -187,8 +180,7 @@ template <> void Scene::OnComponentAdded<AudioComponent>(Entity entity, AudioCom
 {
     if (!component.SoundPath.empty())
     {
-        // component.Asset = AssetManager::Get<SoundAsset>(component.SoundPath);
-        component.Asset = nullptr;
+        component.Asset = AssetManager::Get<SoundAsset>(component.SoundPath);
     }
 }
 
@@ -323,6 +315,26 @@ Camera3D Scene::GetActiveCamera() const
     camera.projection = CAMERA_PERSPECTIVE;
     return camera;
 }
+
+const struct SkyboxComponent &Scene::GetSkybox() const
+{
+    if (m_Settings.Environment)
+    {
+        // Proxy from environment
+        const auto &envSky = m_Settings.Environment->GetSettings().Skybox;
+        const_cast<Scene *>(this)->m_ProxySkybox.TexturePath = envSky.TexturePath;
+        const_cast<Scene *>(this)->m_ProxySkybox.Exposure = envSky.Exposure;
+        const_cast<Scene *>(this)->m_ProxySkybox.Brightness = envSky.Brightness;
+        const_cast<Scene *>(this)->m_ProxySkybox.Contrast = envSky.Contrast;
+        return m_ProxySkybox;
+    }
+    return m_Settings.Skybox;
+}
+
+struct SkyboxComponent &Scene::GetSkybox()
+{
+    return m_Settings.Skybox;
+}
 EnvironmentSettings Scene::GetEnvironmentSettings() const
 {
     if (m_Settings.Environment)
@@ -340,7 +352,7 @@ EnvironmentSettings Scene::GetEnvironmentSettings() const
 
 void Scene::OnUpdateEditor(float deltaTime)
 {
-    // TODO: Editor specific updates
+    // Assets are now managed declaratively via entt signals
 }
 
 void Scene::OnRuntimeStart()
@@ -371,28 +383,106 @@ void Scene::OnImGuiRender(const ImVec2 &refPos, const ImVec2 &refSize, uint32_t 
     if (referenceSize.x <= 0 || referenceSize.y <= 0)
         referenceSize = ImGui::GetIO().DisplaySize;
 
-    // Iterate through only ROOT entities with ControlComponent
-    m_Registry.view<ControlComponent>().each(
-        [&](auto entityID, auto &cc)
-        {
-            Entity entity{entityID, this};
+    // --- Declarative GUISystem ---
+    float scaleX = 1.0f;
+    float scaleY = 1.0f;
 
-            // Check if this is a root control
-            bool isRoot = true;
-            if (entity.HasComponent<HierarchyComponent>())
-            {
-                auto parent = entity.GetComponent<HierarchyComponent>().Parent;
-                if (parent != entt::null && m_Registry.all_of<ControlComponent>(parent))
-                    isRoot = false;
-            }
+    if (m_Settings.Canvas.ScaleMode == CanvasScaleMode::ScaleWithScreenSize)
+    {
+        scaleX = referenceSize.x / m_Settings.Canvas.ReferenceResolution.x;
+        scaleY = referenceSize.y / m_Settings.Canvas.ReferenceResolution.y;
 
-            if (isRoot)
+        float scale = scaleX * (1.0f - m_Settings.Canvas.MatchWidthOrHeight) +
+                      scaleY * m_Settings.Canvas.MatchWidthOrHeight;
+        scaleX = scale;
+        scaleY = scale;
+    }
+
+    auto view = m_Registry.view<ControlComponent>();
+    
+    // Sort by ZOrder
+    std::vector<entt::entity> sortedEntities(view.begin(), view.end());
+    std::sort(sortedEntities.begin(), sortedEntities.end(), [&](entt::entity a, entt::entity b) {
+        return view.get<ControlComponent>(a).ZOrder < view.get<ControlComponent>(b).ZOrder;
+    });
+
+    for (auto entityID : sortedEntities)
+    {
+        Entity entity{entityID, this};
+        auto &cc = view.get<ControlComponent>(entityID);
+        if (!cc.IsActive) continue;
+
+        // Position based on RectTransform and Scaling
+        ImVec2 pos;
+        pos.x = cc.Transform.AnchorMin.x * refSize.x + cc.Transform.OffsetMin.x * scaleX;
+        pos.y = cc.Transform.AnchorMin.y * refSize.y + cc.Transform.OffsetMin.y * scaleY;
+        
+        ImVec2 size;
+        size.x = (cc.Transform.AnchorMax.x * refSize.x + cc.Transform.OffsetMax.x * scaleX) - pos.x;
+        size.y = (cc.Transform.AnchorMax.y * refSize.y + cc.Transform.OffsetMax.y * scaleY) - pos.y;
+
+        ImGui::SetCursorPos(pos);
+        ImGui::BeginGroup();
+        ImGui::PushID((int)entityID);
+        
+        // Declarative UI Rendering
+        auto draw = [&](auto type, auto&& func) {
+            using T = std::decay_t<decltype(type)>;
+            if (entity.HasComponent<T>()) func(entity.GetComponent<T>());
+        };
+
+        draw(PanelControl{}, [&](auto &pnl) {
+            ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4{pnl.Style.BackgroundColor.r / 255.0f, pnl.Style.BackgroundColor.g / 255.0f, pnl.Style.BackgroundColor.b / 255.0f, pnl.Style.BackgroundColor.a / 255.0f});
+            ImGui::BeginChild("Panel", size, true); 
+            ImGui::EndChild();
+            ImGui::PopStyleColor();
+        });
+
+        draw(LabelControl{}, [&](auto &lbl) {
+            ImGui::Text("%s", lbl.Text.c_str());
+        });
+
+        draw(ButtonControl{}, [&](auto &btn) {
+            if (ImGui::Button(btn.Label.c_str(), size)) 
             {
-                // TODO: Implement new Control rendering
-                // CanvasRenderer::DrawEntity(entity, refPos, referenceSize, m_CanvasSettings,
-                // editMode);
+                btn.PressedThisFrame = true;
+                
+                // Execute built-in actions
+                if (btn.Action == ButtonAction::LoadScene && !btn.TargetScene.empty())
+                {
+                    RequestSceneChange(btn.TargetScene);
+                }
+                else if (btn.Action == ButtonAction::Quit)
+                {
+                    Application::Get().Close();
+                }
             }
         });
+
+        draw(SliderControl{}, [&](auto &sl) {
+            sl.Changed = ImGui::SliderFloat("##Slider", &sl.Value, sl.Min, sl.Max);
+        });
+
+        draw(CheckboxControl{}, [&](auto &cb) {
+            cb.Changed = ImGui::Checkbox("##Checkbox", &cb.Checked);
+        });
+
+        ImGui::PopID();
+        ImGui::EndGroup();
+
+        // Drag-to-move logic (Editor only)
+        if (editMode && ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+        {
+            ImVec2 delta = ImGui::GetIO().MouseDelta;
+            cc.Transform.OffsetMin.x += delta.x / scaleX;
+            cc.Transform.OffsetMax.x += delta.x / scaleX;
+            cc.Transform.OffsetMin.y += delta.y / scaleY;
+            cc.Transform.OffsetMax.y += delta.y / scaleY;
+            
+            // Trigger registry patch
+            m_Registry.patch<ControlComponent>(entityID);
+        }
+    }
 
     // Scripted UI elements
     SceneScripting::RenderUI(this);
