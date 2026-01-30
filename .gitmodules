@@ -13,12 +13,6 @@
 	url = https://github.com/raylib-extras/rlImGui.git
 	branch = main
 
-[submodule "include/raygui"]
-	path = include/raygui
-	url = https://github.com/raysan5/raygui.git
-	branch = master
-
-# --- File Dialogs ---
 [submodule "include/nfd"]
 	path = include/nfd
 	url = https://github.com/btzy/nativefiledialog-extended.git
@@ -29,11 +23,6 @@
 	path = include/raylib
 	url = https://github.com/raysan5/raylib.git
 	branch = master
-
-[submodule "include/json"]
-	path = include/json
-	url = https://github.com/nlohmann/json.git
-	branch = develop
 
 [submodule "include/googletest"]
 	path = include/googletest

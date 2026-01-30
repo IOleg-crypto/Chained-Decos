@@ -9,7 +9,7 @@ namespace CHEngine
 class ScriptableEntity;
 
 /**
- * @brief Component that enables Native (C++) scripting for an entity.
+ * Component that enables Native (C++) scripting for an entity.
  */
 struct ScriptInstance
 {

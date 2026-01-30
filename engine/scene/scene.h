@@ -114,14 +114,8 @@ public:
         return m_Registry;
     }
 
-    struct SkyboxComponent &GetSkybox()
-    {
-        return m_Settings.Skybox;
-    }
-    const struct SkyboxComponent &GetSkybox() const
-    {
-        return m_Settings.Skybox;
-    }
+    struct SkyboxComponent &GetSkybox();
+    const struct SkyboxComponent &GetSkybox() const;
 
     std::shared_ptr<EnvironmentAsset> GetEnvironment()
     {
@@ -152,6 +146,7 @@ private:
     entt::registry m_Registry;
     std::unordered_map<UUID, entt::entity> m_EntityMap;
     SceneSettings m_Settings;
+    SkyboxComponent m_ProxySkybox; // For environment-driven skybox
 
     bool m_IsSimulationRunning = false;
 
