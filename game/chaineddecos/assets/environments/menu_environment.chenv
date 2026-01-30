@@ -1,0 +1,9 @@
+Environment:
+  LightDirection: [-1, -1, -1]
+  LightColor: [255, 255, 255, 255]
+  AmbientIntensity: 0.300000012
+  Skybox:
+    TexturePath: ""
+    Exposure: 1
+    Brightness: 0
+    Contrast: 1

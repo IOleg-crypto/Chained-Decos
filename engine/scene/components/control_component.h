@@ -40,8 +40,17 @@ struct TextStyle
     float FontSize = 18.0f;
     Color TextColor = WHITE;
     bool Shadow = false;
+    float ShadowOffset = 2.0f;
+    Color ShadowColor = BLACK;
     float LetterSpacing = 1.0f;
     TextAlignment Alignment = TextAlignment::Center;
+};
+
+enum class ButtonAction : uint8_t
+{
+    None = 0,
+    LoadScene,
+    Quit
 };
 
 struct UIStyle
@@ -89,6 +98,9 @@ struct ButtonControl
 
     bool IsInteractable = true;
     bool PressedThisFrame = false;
+
+    ButtonAction Action = ButtonAction::None;
+    std::string TargetScene = "";
 
     // Internal state
     bool IsHovered = false;

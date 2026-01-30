@@ -28,6 +28,7 @@ public:
     static void DrawModel(const std::string &path, const Matrix &transform,
                           const std::vector<MaterialSlot> &overrides);
     static void DrawLine(Vector3 start, Vector3 end, Color color);
+    static void DrawGrid(int slices, float spacing);
     static void DrawSkybox(const SkyboxComponent &skybox, const Camera3D &camera);
     static void DrawCubeTexture(Texture2D texture, Vector3 position, float width, float height,
                                 float length, Color color);

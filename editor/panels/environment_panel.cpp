@@ -1,6 +1,7 @@
 #include "environment_panel.h"
 #include "editor/editor_layer.h"
-#include "engine/graphics/render_types.h"
+#include "engine/graphics/environment.h"
+#include "engine/graphics/asset_manager.h"
 #include "engine/scene/project.h"
 #include "filesystem"
 #include "imgui.h"
@@ -96,7 +97,7 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
             nfdresult_t result = NFD_OpenDialog(&outPath, filterList, 1, NULL);
             if (result == NFD_OKAY)
             {
-                // m_Context->SetEnvironment(AssetManager::LoadEnvironment(outPath));
+                m_Context->SetEnvironment(AssetManager::Get<EnvironmentAsset>(outPath));
                 NFD_FreePath(outPath);
             }
         }

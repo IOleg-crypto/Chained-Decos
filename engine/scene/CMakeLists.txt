@@ -15,9 +15,7 @@ target_sources(engine PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/project_serializer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/script_registry.h
     ${CMAKE_CURRENT_SOURCE_DIR}/scriptable_entity.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/control.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/control_base.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/controls.h
+
 
     # Components (Subfolders)
     ${CMAKE_CURRENT_SOURCE_DIR}/components/audio_component.h
