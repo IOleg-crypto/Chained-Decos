@@ -37,10 +37,12 @@ public:
     static bool DrawVec3Control(const std::string &label, Vector3 &values, float resetValue = 0.0f,
                                 float columnWidth = 100.0f);
     static bool Property(const char *label, bool &value);
+    static bool Property(const char *label, int &value);
     static bool Property(const char *label, float &value, float speed = 0.1f, float min = 0.0f,
                          float max = 0.0f);
     static bool Property(const char *label, std::string &value, bool multiline = false);
     static bool Property(const char *label, Color &value);
+    static bool Property(const char *label, int &value, const char **items, int itemCount);
 
     static Camera3D GetActiveCamera(SceneState state);
     static Ray GetMouseRay(const Camera3D &camera, Vector2 viewportPos, Vector2 viewportSize);

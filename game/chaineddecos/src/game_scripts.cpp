@@ -10,15 +10,15 @@
 
 namespace CHEngine
 {
-void RegisterProjectScripts()
-{
-    CH_CORE_INFO("ChainedDecos: Registering Project Scripts...");
+    void RegisterProjectScripts()
+    {
+        CH_CORE_INFO("ChainedDecos: Registering Project Scripts...");
 
-    ScriptRegistry::Register<PlayerController>("PlayerController");
-    ScriptRegistry::Register<CameraController>("CameraController");
-    ScriptRegistry::Register<GameHUD>("GameHUD");
-    ScriptRegistry::Register<SpawnZoneRespawn>("SpawnZoneRespawn");
-    ScriptRegistry::Register<ExitScript>("ExitScript");
-    ScriptRegistry::Register<SceneScript>("SceneScript");
-}
+        ScriptRegistry::Register<PlayerController>("PlayerController");
+        ScriptRegistry::Register<CameraController>("CameraController");
+        ScriptRegistry::Register<GameHUD>("GameHUD");
+        ScriptRegistry::Register<SpawnZoneRespawn>("SpawnZoneRespawn");
+        ScriptRegistry::Register<ExitScript>("ExitScript");
+        ScriptRegistry::Register<SceneScript>("SceneScript");
+    }
 } // namespace CHEngine

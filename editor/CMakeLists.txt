@@ -25,8 +25,8 @@ target_sources(ChainedEditor PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/scene_hierarchy_panel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/scene_hierarchy_panel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/inspector_panel.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/component_ui.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/component_ui.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/property_editor.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/property_editor.cpp
     
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/content_browser_panel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/content_browser_panel.cpp
