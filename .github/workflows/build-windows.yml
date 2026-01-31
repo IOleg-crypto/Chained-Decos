@@ -19,7 +19,23 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        preset: [ninja-debug, ninja-release, vs2022-debug, vs2022-release, vs2019-debug, vs2019-release]
+        include:
+          - preset: ninja-debug
+            build_dir: build/ninja-debug
+            binary_path: build/ninja-debug/bin
+          - preset: ninja-release
+            build_dir: build/ninja-release
+            binary_path: build/ninja-release/bin
+          - preset: vs2022-debug
+            build_dir: build/vs2022
+            binary_path: build/vs2022/bin/Debug
+          - preset: vs2022-release
+            build_dir: build/vs2022
+            binary_path: build/vs2022/bin/Release
+
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - name: Checkout
@@ -33,8 +49,8 @@ jobs:
         with:
           path: |
             C:/ccache
-            build/${{ matrix.preset }}/_deps
-            build/${{ matrix.preset }}/CMakeFiles
+            ${{ matrix.build_dir }}/_deps
+            ${{ matrix.build_dir }}/CMakeFiles
           key: windows-${{ matrix.preset }}-${{ hashFiles('**/CMakeLists.txt') }}
           restore-keys: |
             windows-${{ matrix.preset }}-
@@ -44,41 +60,37 @@ jobs:
           choco install cmake ninja ccache --no-progress
 
       - name: Configure
-        shell: pwsh
         run: |
-          cmake --preset ${{ matrix.preset }} `
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache `
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache `
+          cmake --preset ${{ matrix.preset }} \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DBUILD_TESTS=ON
 
       - name: Build
-        shell: pwsh
         run: |
           cmake --build --preset ${{ matrix.preset }} --target ChainedEditor ChainedRuntime EngineTests --parallel 8
 
       - name: List Build Files
-        shell: pwsh
         run: |
-          Get-ChildItem -Path build/${{ matrix.preset }}/bin -Recurse
+          ls -R ${{ matrix.binary_path }}
 
       - name: Test
-        shell: pwsh
         run: |
-          $testExe = "build/${{ matrix.preset }}/bin/EngineTests.exe"
-          if (Test-Path $testExe) {
-            Write-Host "Running tests: $testExe"
-            & $testExe
-          } else {
-            Write-Error "EngineTests.exe not found at $testExe"
+          test_exe="${{ matrix.binary_path }}/EngineTests.exe"
+          if [ -f "$test_exe" ]; then
+            echo "Running tests: $test_exe"
+            ./"$test_exe"
+          else
+            echo "::error::EngineTests.exe not found at $test_exe"
             exit 1
-          }
+          fi
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: windows-${{ matrix.preset }}
           path: |
-            build/${{ matrix.preset }}/bin/ChainedEditor.exe
-            build/${{ matrix.preset }}/bin/ChainedRuntime.exe
-            build/${{ matrix.preset }}/bin/EngineTests.exe
+            ${{ matrix.binary_path }}/ChainedEditor.exe
+            ${{ matrix.binary_path }}/ChainedRuntime.exe
+            ${{ matrix.binary_path }}/EngineTests.exe
           retention-days: 7
