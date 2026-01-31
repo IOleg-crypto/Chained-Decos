@@ -1,11 +1,9 @@
-# Define the Editor executable
-add_executable(ChainedEditor)
+# Create a library for editor core logic to allow linking in tests
+add_library(EditorCore STATIC)
 
-# Main Editor Sources
-target_sources(ChainedEditor PRIVATE
+target_sources(EditorCore PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/editor.h
     ${CMAKE_CURRENT_SOURCE_DIR}/editor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/editor_main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_layer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_layer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_panels.h
@@ -58,19 +56,38 @@ target_sources(ChainedEditor PRIVATE
     ${CMAKE_SOURCE_DIR}/include/rlImGui/rlImGui.cpp
 )
 
-target_link_libraries(ChainedEditor PUBLIC engine ChainedDecosGame nfd)
-apply_engine_optimizations(ChainedEditor)
-target_include_directories(ChainedEditor PUBLIC 
+target_link_libraries(EditorCore PUBLIC engine ChainedDecosGame nfd)
+target_include_directories(EditorCore PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}
 )
 
-# Copy resources to build directory
-if(EXISTS "${CMAKE_SOURCE_DIR}/resources")
-    file(COPY "${CMAKE_SOURCE_DIR}/resources" DESTINATION "${CMAKE_BINARY_DIR}")
+# Define the Editor executable
+add_executable(ChainedEditor ${CMAKE_CURRENT_SOURCE_DIR}/editor_main.cpp)
+target_link_libraries(ChainedEditor PRIVATE EditorCore)
+target_include_directories(ChainedEditor PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}
+)
+
+# Apply optimizations
+if(COMMAND apply_engine_optimizations)
+    apply_engine_optimizations(EditorCore)
+    apply_engine_optimizations(ChainedEditor)
 endif()
 
-# Copy assets to build directory
+# Installation
+install(TARGETS ChainedEditor EditorCore
+    RUNTIME DESTINATION bin
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+)
+
+# Copy global resources/assets to the install directory
+if(EXISTS "${CMAKE_SOURCE_DIR}/resources")
+    install(DIRECTORY "${CMAKE_SOURCE_DIR}/resources/" DESTINATION resources)
+endif()
+
 if(EXISTS "${CMAKE_SOURCE_DIR}/assets")
-    file(COPY "${CMAKE_SOURCE_DIR}/assets" DESTINATION "${CMAKE_BINARY_DIR}")
+    install(DIRECTORY "${CMAKE_SOURCE_DIR}/assets/" DESTINATION assets)
 endif()
