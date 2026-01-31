@@ -12,6 +12,9 @@ class EditorIntegrationTest : public ::testing::Test
 protected:
     void SetUp() override
     {
+#if defined(CH_CI) && defined(CH_PLATFORM_WINDOWS)
+        GTEST_SKIP() << "Skipping UI integration tests on Windows CI due to lack of OpenGL support.";
+#endif
     }
 };
 

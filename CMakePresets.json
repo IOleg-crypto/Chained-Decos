@@ -192,6 +192,48 @@
     {
       "name": "ci-windows-ninja",
       "configurePreset": "ci-windows-ninja"
+    },
+    {
+      "name": "debug",
+      "configurePreset": "ninja-debug",
+      "condition": {
+        "type": "not",
+        "operand": {
+            "type": "equals",
+            "lhs": "${hostSystemName}",
+            "rhs": "Windows"
+        }
+      }
+    },
+    {
+        "name": "debug",
+        "configurePreset": "vs2022-debug",
+        "condition": {
+          "type": "equals",
+          "lhs": "${hostSystemName}",
+          "rhs": "Windows"
+        }
+    },
+    {
+      "name": "release",
+      "configurePreset": "ninja-release",
+      "condition": {
+        "type": "not",
+        "operand": {
+            "type": "equals",
+            "lhs": "${hostSystemName}",
+            "rhs": "Windows"
+        }
+      }
+    },
+    {
+        "name": "release",
+        "configurePreset": "vs2022-release",
+        "condition": {
+          "type": "equals",
+          "lhs": "${hostSystemName}",
+          "rhs": "Windows"
+        }
     }
   ]
 }
