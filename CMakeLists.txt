@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Generate compile_commands.json")
+set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
 
 
 # Options
@@ -42,5 +43,3 @@ if(BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
-# Legacy support (optional, commented out)
-# add_subdirectory(v1_legacy)

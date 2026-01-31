@@ -5,7 +5,7 @@
 #include "editor_layer.h"
 #include "engine/core/application.h"
 #include "engine/scene/components.h"
-#include "extras/iconsfontawesome6.h"
+#include "extras/IconsFontAwesome6.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "panels/panel.h"

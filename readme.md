@@ -1,4 +1,4 @@
-# Chained Decos ⛓️
+# Chained Decos 
 
 ### _A High-Performance 3D Parkour Engine & Game Powered by Chained Engine_
 
@@ -25,6 +25,7 @@ Chained Engine follows a modern, modular design inspired by professional game en
 - **Virtual File System**: Unified asset access with support for engine-relative paths and project-relative assets.(Planned)
 - **Advanced Physics**: BVH-accelerated collision detection with robust world-to-local coordinate transformations.
 - **Project Hub**: Integrated project browser with recent project tracking and intelligent path resolution.
+- **Cross-Platform Core**: Designed for portability; current support for Windows and Linux, with an architecture that allows for easy integration of **new platforms**.
 
 ## Editor & Simulation Workflow
 
@@ -45,7 +46,7 @@ _GUI Development is currently in progress and may be unstable. It is recommended
 ![Editor Screenshot#4](https://i.postimg.cc/dQWHQYdN/Znimok-ekrana-2026-01-26-143013.png)
 
 > [!WARNING]
-> **Standalone Runtime**: Standalone executable (`Runtime.exe`) is currently in development and may be unstable. It is recommended to run courses via the **ChainedEditor**.
+> **Standalone Runtime**: The `ChainedRuntime` acts as a specialized **wrapper** for your games. It is designed to load and execute your custom projects directly. While it now supports Linux and Windows, it is still under active development.
 
 ---
 
@@ -65,52 +66,103 @@ _GUI Development is currently in progress and may be unstable. It is recommended
 
 ### Prerequisites
 
-- **CMake**: 3.25 or higher
-- **Ninja Build System**: (Recommended for fast builds)
-- **C++23 compatible compiler**: Clang 17+, GCC 13+, or MSVC 19.36+
-- **Raylib Dependencies**: Standard OpenGL/X11 libraries on Linux.
+| Tool | Version | Notes |
+| :--- | :--- | :--- |
+| **CMake** | 3.25+ | Required for build configuration. |
+| **Ninja** | Latest | Highly recommended for fast, parallel builds. |
+| **Compiler** | C++23 | Clang 18+, GCC 14+, or MSVC 2022 (17.6+). |
+| **Vulkan/GL** | - | OpenGL 4.3+ compatible drivers. |
 
-### Quick Start
+#### Linux Dependencies
+On Ubuntu/Debian, install the required development libraries:
+```bash
+sudo apt-get update
+sudo apt-get install -y build-essential cmake ninja-build \
+    libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
+    libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
+    pkg-config
+```
+
+### Build Using CMake Presets
+
+The project uses [CMake Presets](https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html) to simplify cross-platform configuration.
+
+#### 1. Configuration
+Choose a preset based on your OS and preferred compiler:
+
+| OS | Compiler | Build Type | Preset Name |
+| :--- | :--- | :--- | :--- |
+| **Linux** | **Clang** | Release | `linux-clang-release` |
+| **Linux** | **Clang** | Debug | `linux-clang-debug` |
+| **Linux** | **GCC** | Release | `linux-gcc-release` |
+| **Linux** | **GCC** | Debug | `linux-gcc-debug` |
+| **Windows** | **MSVC** | Logic | `windows-vs2022` |
+| **Windows** | **Ninja** | Release | `windows-ninja-release` |
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/IOleg-crypto/Chained-Decos.git
-cd Chained-Decos
+# Example: Configure for Linux using Clang 19
+cmake --preset linux-clang-release
+```
 
-# 2. Build using CMake Presets (Choose one)
+#### 2. Compilation
+Compile all targets (Editor, Runtime, Tests) using a build preset:
 
-# Option A: Ninja (Recommended for fast builds)
-cmake --preset ninja-release
-cmake --build --preset ninja-release
+```bash
+# Example: Build the release version
+cmake --build --preset linux-clang-release -j $(nproc)
+```
 
-# Option B: Visual Studio 2022
-cmake --preset vs2022
-cmake --build --preset vs2022-release
+### Launching the Application
 
-# Option C: Linux (Makefiles)
-cmake --preset make-release
-cmake --build --preset make-release
+Binaries are located in `build/<preset-name>/bin/`.
 
-# 3. Run the Editor
-./build/release/bin/ChainedEditor.exe # Path may vary based on preset
+#### Running the Editor
+The **Chained Editor** is the primary tool for course creation and live simulation.
+```bash
+# Linux
+./build/linux-clang-release/bin/ChainedEditor
+
+# Windows
+.\build\windows-ninja-release\bin\ChainedEditor.exe
+```
+
+#### Running the Standalone Runtime
+The **Chained Runtime** is a lightweight wrapper that loads and runs your own projects/games without the editor's UI overhead. By passing your project file as an argument, you can test the final "player experience" of your game.
+```bash
+# Linux
+./build/linux-clang-release/bin/ChainedRuntime path/to/your.chproject
+
+# Windows
+.\build\windows-ninja-release\bin\ChainedRuntime.exe path\to\your.chproject
 ```
 
 ---
 
 ## Testing & CI
 
-We use **Google Test** for engine validation. The project includes automated CI workflows via GitHub Actions for Windows and Linux.
+We use **Google Test** for engine and scene validation.
 
+### Running Tests Locally
+After building, you can run the test suite:
 ```bash
-# Run unit and integration tests
-./build/bin/tests/EngineUnityTests.exe
-./build/bin/tests/SceneEntityTest.exe
+# Run all tests via CTest
+ctest --preset linux-clang-release
+
+# Or run individual test binaries
+./build/linux-clang-release/bin/tests/EngineTests
 ```
 
 ---
 
-## Contributing & License
+## Contributing & Community
 
-Contributions are welcome! This project is licensed under the **MIT License**.
+Contributions are welcome! As a project in active development, especially regarding the newly added **Linux support**, you may encounter bugs or platform-specific issues.
 
-Made with ❤️ using **Raylib**, **ImGui**, and **Chained Engine** (Modern C++23).
+### How to Help
+- **Bug Reports**: Open an issue describing the problem.
+- **Pull Requests**: We highly encourage you to help maintain and improve the engine by creating branches and submitting **Pull Requests**.
+- **Platform Support**: If you are a Linux developer, your expertise in refining the build process and runtime compatibility is greatly appreciated.
+
+This project is licensed under the **MIT License**.
+
+Made with using **Raylib**, **ImGui**, and **Chained Engine** (Modern C++23).
