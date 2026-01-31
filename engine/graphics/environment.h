@@ -6,7 +6,7 @@
 #include "asset.h"
 #include "engine/core/base.h"
 // Removed redundant include: engine/core/math_types.h
-#include "string"
+#include <string>
 
 namespace CHEngine
 {

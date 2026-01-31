@@ -1,8 +1,8 @@
 #ifndef CH_UUID_H
 #define CH_UUID_H
 
-#include "cstdint"
-#include "functional"
+#include <cstdint>
+#include <functional>
 
 namespace CHEngine
 {
@@ -25,13 +25,11 @@ private:
 
 namespace std
 {
-template <typename T> struct hash;
-
 template <> struct hash<CHEngine::UUID>
 {
     std::size_t operator()(const CHEngine::UUID &uuid) const
     {
-        return hash<uint64_t>()((uint64_t)uuid);
+        return std::hash<uint64_t>()((uint64_t)uuid);
     }
 };
 } // namespace std
