@@ -1,7 +1,7 @@
 #include "bvh.h"
-#include "algorithm"
+#include <algorithm>
 #include "cfloat"
-#include "future"
+#include <future>
 #include "raymath.h"
 
 namespace CHEngine

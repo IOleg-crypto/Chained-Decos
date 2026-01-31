@@ -1,7 +1,7 @@
 #ifndef CH_WINDOW_H
 #define CH_WINDOW_H
 
-#include "string"
+#include <string>
 
 // Forward declare GLFWwindow
 struct GLFWwindow;
