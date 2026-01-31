@@ -53,7 +53,7 @@ target_sources(editor_core PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/editor_layout.h
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/editor_layout.cpp
     # External
-    ${CMAKE_SOURCE_DIR}/include/rlImGui/rlimgui.cpp
+    ${CMAKE_SOURCE_DIR}/include/rlImGui/rlImGui.cpp
 )
 
 
