@@ -198,7 +198,7 @@
       "configurePreset": "ninja-debug",
       "condition": {
         "type": "not",
-        "operand": {
+        "condition": {
             "type": "equals",
             "lhs": "${hostSystemName}",
             "rhs": "Windows"
@@ -206,7 +206,7 @@
       }
     },
     {
-        "name": "debug",
+        "name": "vs-debug",
         "configurePreset": "vs2022-debug",
         "condition": {
           "type": "equals",
@@ -219,7 +219,7 @@
       "configurePreset": "ninja-release",
       "condition": {
         "type": "not",
-        "operand": {
+        "condition": {
             "type": "equals",
             "lhs": "${hostSystemName}",
             "rhs": "Windows"
@@ -227,7 +227,7 @@
       }
     },
     {
-        "name": "release",
+        "name": "vs-release",
         "configurePreset": "vs2022-release",
         "condition": {
           "type": "equals",
