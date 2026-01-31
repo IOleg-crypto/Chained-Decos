@@ -41,7 +41,6 @@
       "description": "Visual Studio 2022 multi-config generator",
       "inherits": "base",
       "generator": "Visual Studio 17 2022",
-      "binaryDir": "${sourceDir}/build/vs2022",
       "architecture": {
         "value": "x64",
         "strategy": "set"

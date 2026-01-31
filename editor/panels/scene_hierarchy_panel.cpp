@@ -1,6 +1,8 @@
 #include "scene_hierarchy_panel.h"
 #include "editor_layer.h"
 #include "engine/core/application.h"
+#include "engine/core/application.h"
+#include "engine/scene/scene_events.h"
 #include "engine/scene/components.h"
 #include "extras/iconsfontawesome6.h"
 #include "imgui.h"

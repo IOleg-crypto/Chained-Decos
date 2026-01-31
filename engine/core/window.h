@@ -19,6 +19,7 @@ struct WindowConfig
     int TargetFPS = 60;
     bool EnableViewports = true;
     bool EnableDocking = true;
+    std::string IniFilename = "imgui.ini";
 };
 
 class Window
@@ -59,6 +60,7 @@ private:
     int m_Width, m_Height;
     std::string m_Title;
     bool m_VSync = true;
+    std::string m_IniFilename;
 };
 } // namespace CHEngine
 

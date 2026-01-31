@@ -1,4 +1,5 @@
 #include "application.h"
+#include "engine/scene/scene_events.h"
 
 #include <ranges>
 #include "engine/core/input.h"
@@ -56,6 +57,17 @@ namespace CHEngine
         windowConfig.TargetFPS = config.TargetFPS;
         windowConfig.EnableViewports = config.EnableViewports;
         windowConfig.EnableDocking = config.EnableDocking;
+        
+        // Setup persistent ImGui ini file path
+        std::string iniName = config.Title;
+        std::replace(iniName.begin(), iniName.end(), ' ', '_');
+        std::transform(iniName.begin(), iniName.end(), iniName.begin(), ::tolower);
+        
+        #ifdef PROJECT_ROOT_DIR
+        windowConfig.IniFilename = std::string(PROJECT_ROOT_DIR) + "/imgui_" + iniName + ".ini";
+        #else
+        windowConfig.IniFilename = "imgui_" + iniName + ".ini";
+        #endif
 
         if (Project::GetActive())
         {

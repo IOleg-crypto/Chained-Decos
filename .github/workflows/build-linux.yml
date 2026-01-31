@@ -19,7 +19,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        preset: [ci-linux-gcc, ci-linux-clang, make-debug, make-release]
+        include:
+          - preset: ci-linux-gcc
+            configuration: Release
+          - preset: ci-linux-clang
+            configuration: Release
+          - preset: make-debug
+            configuration: Debug
+          - preset: make-release
+            configuration: Release
 
     defaults:
       run:
@@ -76,7 +84,7 @@ jobs:
 
       - name: Install
         run: |
-          cmake --install build/${{ matrix.preset }} --prefix ${{ github.workspace }}/install/${{ matrix.preset }}
+          cmake --install build/${{ matrix.preset }} --prefix ${{ github.workspace }}/install/${{ matrix.preset }} --config ${{ matrix.configuration }}
 
       - name: Test
         run: |

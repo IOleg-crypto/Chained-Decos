@@ -1,7 +1,7 @@
-# Create a library for editor core logic to allow linking in tests
-add_library(EditorCore STATIC)
+# Editor Core Library (Static) for testability
+add_library(editor_core STATIC)
 
-target_sources(EditorCore PRIVATE
+target_sources(editor_core PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/editor.h
     ${CMAKE_CURRENT_SOURCE_DIR}/editor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_layer.h
@@ -56,15 +56,21 @@ target_sources(EditorCore PRIVATE
     ${CMAKE_SOURCE_DIR}/include/rlImGui/rlImGui.cpp
 )
 
-target_link_libraries(EditorCore PUBLIC engine ChainedDecosGame nfd)
-target_include_directories(EditorCore PUBLIC 
+
+target_link_libraries(editor_core PUBLIC 
+    engine
+    ChainedDecosGame
+    nfd
+)
+target_include_directories(editor_core PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/engine
 )
 
 # Define the Editor executable
 add_executable(ChainedEditor ${CMAKE_CURRENT_SOURCE_DIR}/editor_main.cpp)
-target_link_libraries(ChainedEditor PRIVATE EditorCore)
+target_link_libraries(ChainedEditor PRIVATE editor_core)
 target_include_directories(ChainedEditor PRIVATE 
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}
@@ -72,12 +78,12 @@ target_include_directories(ChainedEditor PRIVATE
 
 # Apply optimizations
 if(COMMAND apply_engine_optimizations)
-    apply_engine_optimizations(EditorCore)
+    apply_engine_optimizations(editor_core)
     apply_engine_optimizations(ChainedEditor)
 endif()
 
 # Installation
-install(TARGETS ChainedEditor EditorCore
+install(TARGETS ChainedEditor editor_core
     RUNTIME DESTINATION bin
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib

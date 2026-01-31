@@ -13,6 +13,7 @@
 #include "engine/graphics/model_asset.h"
 #include "engine/core/input.h"
 #include "engine/core/events.h"
+#include "engine/scene/scene_events.h"
 #include "engine/scene/ui_math.h"
 
 
