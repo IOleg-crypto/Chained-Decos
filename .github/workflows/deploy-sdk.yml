@@ -20,10 +20,10 @@ jobs:
         include:
           - os: ubuntu-latest
             name: linux
-            preset: ci-linux-gcc
+            preset: linux-gcc-release
           - os: windows-latest
             name: windows
-            preset: ninja-release
+            preset: windows-ninja-release
 
     steps:
       - name: Checkout
@@ -56,9 +56,9 @@ jobs:
             libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
             libwayland-dev libxkbcommon-dev libegl1-mesa-dev \
             pkg-config libgtk-3-dev libdrm-dev libgbm-dev \
-            xvfb libxkbcommon-x11-0 gcc-13 g++-13
-          echo "CC=gcc-13" >> $GITHUB_ENV
-          echo "CXX=g++-13" >> $GITHUB_ENV
+            xvfb libxkbcommon-x11-0 gcc-14 g++-14
+          echo "CC=gcc-14" >> $GITHUB_ENV
+          echo "CXX=g++-14" >> $GITHUB_ENV
 
       - name: Install dependencies (Windows)
         if: matrix.os == 'windows-latest'
@@ -67,11 +67,17 @@ jobs:
       - name: Configure CMake
         shell: bash
         run: |
+          extra_flags=""
+          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+            extra_flags="-DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX"
+          fi
+          
           cmake --preset ${{ matrix.preset }} \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_INSTALL_PREFIX="${{ steps.build-env.outputs.package-dir }}" \
-            -DBUILD_TESTS=OFF
+            -DBUILD_TESTS=OFF \
+            $extra_flags
 
       - name: Build binaries
         shell: bash
@@ -96,11 +102,11 @@ jobs:
           
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
             powershell -Command "
-              Compress-Archive -Path 'bin/*','share/' -DestinationPath '${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.zip' -Force
+              Compress-Archive -Path '*' -DestinationPath '${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.zip' -Force
             "
             echo "p-file=$PACKAGE_NAME.zip" >> $GITHUB_ENV
           else
-            tar -czf "$PACKAGE_NAME.tar.gz" -C bin . -C ../share .
+            tar -czf "$PACKAGE_NAME.tar.gz" .
             echo "p-file=$PACKAGE_NAME.tar.gz" >> $GITHUB_ENV
           fi
 

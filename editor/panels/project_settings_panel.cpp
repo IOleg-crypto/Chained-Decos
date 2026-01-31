@@ -2,7 +2,7 @@
 #include "engine/scene/project.h"
 #include "engine/scene/project_serializer.h"
 #include "editor/utils/scene_registry.h"
-#include "rlImGui/extras/iconsfontawesome6.h"
+#include "rlImGui/extras/IconsFontAwesome6.h"
 #include "imgui.h"
 
 namespace CHEngine
