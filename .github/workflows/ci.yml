@@ -52,10 +52,6 @@ jobs:
             preset: windows-vs2022-release
             config_preset: windows-vs2022
 
-    defaults:
-      run:
-        shell: bash
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -68,10 +64,10 @@ jobs:
           path: |
             ~/.ccache
             C:/ccache
-            build/${{ matrix.preset }}/_deps
-          key: ${{ runner.os }}-${{ matrix.preset }}-${{ hashFiles('**/CMakeLists.txt', 'CMakePresets.json') }}
+            build/${{ matrix.config_preset }}/_deps
+          key: ${{ runner.os }}-${{ matrix.config_preset }}-${{ hashFiles('**/CMakeLists.txt', 'CMakePresets.json') }}
           restore-keys: |
-            ${{ runner.os }}-${{ matrix.preset }}-
+            ${{ runner.os }}-${{ matrix.config_preset }}-
 
       - name: Install Linux Dependencies
         if: runner.os == 'Linux'
@@ -115,7 +111,8 @@ jobs:
           fi
 
           cmake --preset ${{ matrix.config_preset }} \
-            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
+            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" \
+            -DCH_CI=ON \
             $extra_flags
 
       - name: Build
@@ -127,24 +124,20 @@ jobs:
           config="Release"
           if [[ "${{ matrix.preset }}" == *"debug"* ]]; then config="Debug"; fi
           
+          # Using relative path for discovery to avoid backslash escaping issues on Windows
           BUILD_DIR="build/${{ matrix.config_preset }}"
           echo "Searching for test binary in $BUILD_DIR..."
           
-          # Find the test binary reliably
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            # Search for .exe, preferring the one in the config subfolder if it exists (for VS)
-            TEST_BIN=$(find "$BUILD_DIR" -name "EngineTests.exe" | grep -i "$config" | head -n 1)
-            if [[ -z "$TEST_BIN" ]]; then
-               TEST_BIN=$(find "$BUILD_DIR" -name "EngineTests.exe" | head -n 1)
-            fi
+            TEST_BIN=$(find "$BUILD_DIR" -maxdepth 5 -name "EngineTests.exe" | grep -i "$config" | head -n 1)
+            [[ -z "$TEST_BIN" ]] && TEST_BIN=$(find "$BUILD_DIR" -maxdepth 5 -name "EngineTests.exe" | head -n 1)
           else
-            # On Linux, find the executable binary
-            TEST_BIN=$(find "$BUILD_DIR" -name "EngineTests" -type f -executable | head -n 1)
+            TEST_BIN=$(find "$BUILD_DIR" -maxdepth 5 -name "EngineTests" -type f -executable | head -n 1)
           fi
           
           if [[ -z "$TEST_BIN" ]]; then
             echo "::error::EngineTests not found!"
-            find "$BUILD_DIR" -maxdepth 4 || true
+            ls -R "$BUILD_DIR" || true
             exit 1
           fi
           
@@ -155,13 +148,13 @@ jobs:
           cd "$TEST_DIR"
           
           if [[ "${{ runner.os }}" == "Linux" ]]; then
-            xvfb-run "./$TEST_EXE"
+            xvfb-run -a "./$TEST_EXE"
           else
             ./"$TEST_EXE"
           fi
 
       - name: Upload Artifacts
-        if: success()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ${{ runner.os }}-${{ matrix.preset }}

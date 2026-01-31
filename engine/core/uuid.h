@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <cstddef>
 
 namespace CHEngine
 {
