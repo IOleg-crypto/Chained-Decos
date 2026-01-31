@@ -1,7 +1,6 @@
 add_executable(EngineTests
     scene_tests.cpp
     physics_tests.cpp
-#    asset_manager_tests.cpp
     hierarchy_tests.cpp
     event_input_tests.cpp
     asset_manager_tests.cpp
