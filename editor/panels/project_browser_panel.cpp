@@ -3,6 +3,8 @@
 #include "engine/scene/scene_events.h"
 #include "engine/scene/project.h"
 #include "editor_layer.h"
+#include "editor.h"
+#include "actions/project_actions.h"
 
 // Removed redundant include: engine/graphics/asset_manager.h
 #include "extras/iconsfontawesome6.h"

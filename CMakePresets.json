@@ -77,50 +77,6 @@
       }
     },
     {
-      "name": "ci-linux-gcc",
-      "displayName": "CI Linux GCC",
-      "description": "CI build using GCC-13 with ccache",
-      "inherits": "base",
-      "generator": "Ninja",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_C_COMPILER": "gcc-13",
-        "CMAKE_CXX_COMPILER": "g++-13",
-        "CMAKE_C_COMPILER_LAUNCHER": "ccache",
-        "CMAKE_CXX_COMPILER_LAUNCHER": "ccache",
-        "BUILD_TESTS": "ON",
-        "BUILD_MAP_EDITOR": "ON",
-        "DISABLE_ALL_WARNINGS": "ON"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
-      }
-    },
-    {
-      "name": "ci-linux-clang",
-      "displayName": "CI Linux Clang",
-      "description": "CI build using Clang-17 with ccache",
-      "inherits": "base",
-      "generator": "Ninja",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_C_COMPILER": "clang-17",
-        "CMAKE_CXX_COMPILER": "clang++-17",
-        "CMAKE_C_COMPILER_LAUNCHER": "ccache",
-        "CMAKE_CXX_COMPILER_LAUNCHER": "ccache",
-        "BUILD_TESTS": "ON",
-        "BUILD_MAP_EDITOR": "ON",
-        "DISABLE_ALL_WARNINGS": "ON"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
-      }
-    },
-    {
       "name": "vs2022-debug",
       "displayName": "Visual Studio 2022 Debug",
       "description": "Visual Studio 2022 Debug multi-config",
@@ -137,6 +93,65 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
       }
+    },
+    {
+      "name": "ci-base",
+      "hidden": true,
+      "inherits": "base",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_COMPILER_LAUNCHER": "ccache",
+        "CMAKE_CXX_COMPILER_LAUNCHER": "ccache",
+        "CMAKE_CXX_EXTENSIONS": "OFF",
+        "BUILD_TESTS": "ON",
+        "BUILD_MAP_EDITOR": "ON",
+        "DISABLE_ALL_WARNINGS": "ON"
+      }
+    },
+    {
+      "name": "ci-linux-gcc",
+      "displayName": "CI Linux GCC",
+      "description": "CI build using GCC-13 with ccache",
+      "inherits": "ci-base",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc-13",
+        "CMAKE_CXX_COMPILER": "g++-13"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "ci-linux-clang",
+      "displayName": "CI Linux Clang",
+      "description": "CI build using Clang-17 with ccache",
+      "inherits": "ci-base",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang-17",
+        "CMAKE_CXX_COMPILER": "clang++-17"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+        "name": "ci-windows-ninja",
+        "displayName": "CI Windows Ninja",
+        "description": "CI build on Windows using Ninja and ccache",
+        "inherits": "ci-base",
+        "cacheVariables": {
+            "CMAKE_BUILD_TYPE": "Debug"
+        },
+        "condition": {
+            "type": "equals",
+            "lhs": "${hostSystemName}",
+            "rhs": "Windows"
+        }
     }
   ],
   "buildPresets": [
@@ -173,6 +188,10 @@
     {
       "name": "ci-linux-clang",
       "configurePreset": "ci-linux-clang"
+    },
+    {
+      "name": "ci-windows-ninja",
+      "configurePreset": "ci-windows-ninja"
     }
   ]
 }
