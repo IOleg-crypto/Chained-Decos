@@ -1,9 +1,0 @@
-Scene: Untitled
-Type: 1
-Skybox:
-  TexturePath: ""
-  Exposure: 1
-  Brightness: 0
-  Contrast: 1
-Entities:
-  []
