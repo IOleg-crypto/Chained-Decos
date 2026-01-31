@@ -16,7 +16,7 @@
 namespace CHEngine
 {
 Window::Window(const WindowConfig &config)
-    : m_Width(config.Width), m_Height(config.Height), m_Title(config.Title), m_VSync(config.VSync)
+    : m_Width(config.Width), m_Height(config.Height), m_Title(config.Title), m_VSync(config.VSync), m_IniFilename(config.IniFilename)
 {
     CH_CORE_INFO("Initializing Window: {} ({}x{})", m_Title, m_Width, m_Height);
 
@@ -50,6 +50,7 @@ Window::Window(const WindowConfig &config)
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
+    io.IniFilename = m_IniFilename.c_str();
 
     // Enable docking and viewports
     if (config.EnableDocking)
