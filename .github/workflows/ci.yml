@@ -20,6 +20,9 @@ jobs:
   build:
     name: ${{ matrix.os }} / ${{ matrix.preset }}
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: false
       matrix:
@@ -145,12 +148,16 @@ jobs:
             exit 1
           fi
           
-          echo "Running tests: $TEST_BIN"
+          TEST_DIR=$(dirname "$TEST_BIN")
+          TEST_EXE=$(basename "$TEST_BIN")
+          
+          echo "Running tests: $TEST_BIN (in $TEST_DIR)"
+          cd "$TEST_DIR"
+          
           if [[ "${{ runner.os }}" == "Linux" ]]; then
-            xvfb-run "$TEST_BIN"
+            xvfb-run "./$TEST_EXE"
           else
-            # Ensure path is handled correctly on Windows bash
-            "./$TEST_BIN"
+            ./"$TEST_EXE"
           fi
 
       - name: Upload Artifacts
