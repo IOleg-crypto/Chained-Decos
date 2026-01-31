@@ -19,7 +19,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        preset: [ninja-debug, ninja-release, vs2022-debug, vs2022-release]
+        include:
+          - preset: ninja-debug
+            configuration: Debug
+          - preset: ninja-release
+            configuration: Release
+          - preset: vs2022-debug
+            configuration: Debug
+          - preset: vs2022-release
+            configuration: Release
 
     defaults:
       run:
@@ -59,7 +67,7 @@ jobs:
 
       - name: Install
         run: |
-          cmake --install build/${{ matrix.preset }} --prefix ${{ github.workspace }}/install/${{ matrix.preset }}
+          cmake --install build/${{ matrix.preset }} --prefix ${{ github.workspace }}/install/${{ matrix.preset }} --config ${{ matrix.configuration }}
 
       - name: Test
         run: |

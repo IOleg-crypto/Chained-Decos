@@ -8,7 +8,7 @@ add_executable(EngineTests
     
 )
 
-target_link_libraries(EngineTests PRIVATE engine EditorCore GTest::gmock_main GTest::gtest_main)
+target_link_libraries(EngineTests PRIVATE engine editor_core GTest::gmock_main GTest::gtest_main)
 target_include_directories(EngineTests PRIVATE 
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/editor

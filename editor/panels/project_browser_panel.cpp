@@ -1,6 +1,7 @@
 #include "project_browser_panel.h"
-#include "actions/project_actions.h"
-#include "editor.h"
+#include "engine/core/application.h"
+#include "engine/scene/scene_events.h"
+#include "engine/scene/project.h"
 #include "editor_layer.h"
 
 // Removed redundant include: engine/graphics/asset_manager.h
