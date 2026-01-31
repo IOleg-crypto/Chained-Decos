@@ -1,3 +1,4 @@
+#include "engine/core/base.h"
 #include "gtest/gtest.h"
 #include "editor/panels/project_browser_panel.h"
 #include "editor/editor_panels.h"
