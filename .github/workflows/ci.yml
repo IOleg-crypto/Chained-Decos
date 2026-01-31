@@ -122,21 +122,28 @@ jobs:
       - name: Test
         run: |
           config="Release"
-          if [[ "${{ matrix.preset }}" == *"debug"* ]]; then config="Debug"; fi
+          if [[ "${{ matrix.preset }}" == *debug* ]]; then config="Debug"; fi
           
-          # Using relative path for discovery to avoid backslash escaping issues on Windows
+          echo "Matrix Preset: ${{ matrix.preset }}"
+          echo "Detected Config: $config"
+          
           BUILD_DIR="build/${{ matrix.config_preset }}"
           echo "Searching for test binary in $BUILD_DIR..."
           
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            TEST_BIN=$(find "$BUILD_DIR" -maxdepth 5 -name "EngineTests.exe" | grep -i "$config" | head -n 1)
-            [[ -z "$TEST_BIN" ]] && TEST_BIN=$(find "$BUILD_DIR" -maxdepth 5 -name "EngineTests.exe" | head -n 1)
+            # Search for EngineTests.exe, prioritizing the one matching the configuration
+            TEST_BIN=$(find "$BUILD_DIR" -maxdepth 8 -name "EngineTests.exe" | grep -i "$config" | head -n 1)
+            if [[ -z "$TEST_BIN" ]]; then
+              echo "Binary not found with config grep, falling back to any EngineTests.exe..."
+              TEST_BIN=$(find "$BUILD_DIR" -maxdepth 8 -name "EngineTests.exe" | head -n 1)
+            fi
           else
-            TEST_BIN=$(find "$BUILD_DIR" -maxdepth 5 -name "EngineTests" -type f -executable | head -n 1)
+            TEST_BIN=$(find "$BUILD_DIR" -maxdepth 8 -name "EngineTests" -type f -executable | head -n 1)
           fi
           
           if [[ -z "$TEST_BIN" ]]; then
             echo "::error::EngineTests not found!"
+            echo "Directory contents of $BUILD_DIR:"
             ls -R "$BUILD_DIR" || true
             exit 1
           fi
