@@ -1,10 +1,10 @@
 #ifndef CH_PROJECT_BROWSER_PANEL_H
 #define CH_PROJECT_BROWSER_PANEL_H
 
-#include "functional"
+#include <functional>
 #include "panel.h"
-#include "string"
-#include "vector"
+#include <string>
+#include <vector>
 
 // Helper: Draw premium action card
 enum class CardIconType

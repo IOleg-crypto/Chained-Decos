@@ -13,6 +13,10 @@ if(MSVC)
         $<$<CONFIG:Debug>:/Od> $<$<CONFIG:Debug>:/MTd>
         $<$<CONFIG:Release>:/O2> $<$<CONFIG:Release>:/MT> $<$<CONFIG:Release>:/DNDEBUG>
         /Zi /EHsc
+        /MP                  # Multi-processor compilation
+        /Zc:preprocessor     # Modern preprocessor
+        /Gm-                 # Disable minimal rebuild (it's slower)
+        /utf-8               # Use UTF-8 character set
     )
 
     if(ENABLE_WARNINGS)
