@@ -19,19 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - preset: ninja-debug
-            build_dir: build/ninja-debug
-            binary_path: build/ninja-debug/bin
-          - preset: ninja-release
-            build_dir: build/ninja-release
-            binary_path: build/ninja-release/bin
-          - preset: vs2022-debug
-            build_dir: build/vs2022
-            binary_path: build/vs2022/bin/Debug
-          - preset: vs2022-release
-            build_dir: build/vs2022
-            binary_path: build/vs2022/bin/Release
+        preset: [ninja-debug, ninja-release, vs2022-debug, vs2022-release]
 
     defaults:
       run:
@@ -41,7 +29,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
           submodules: recursive
 
       - name: Cache
@@ -49,8 +36,7 @@ jobs:
         with:
           path: |
             C:/ccache
-            ${{ matrix.build_dir }}/_deps
-            ${{ matrix.build_dir }}/CMakeFiles
+            build/${{ matrix.preset }}/_deps
           key: windows-${{ matrix.preset }}-${{ hashFiles('**/CMakeLists.txt') }}
           restore-keys: |
             windows-${{ matrix.preset }}-
@@ -64,40 +50,38 @@ jobs:
           cmake --preset ${{ matrix.preset }} \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DBUILD_TESTS=ON
+            -DBUILD_TESTS=ON \
+            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install/${{ matrix.preset }}
 
       - name: Build
         run: |
           cmake --build --preset ${{ matrix.preset }} --target ChainedEditor ChainedRuntime EngineTests --parallel 8
 
-      - name: List Build Files
+      - name: Install
         run: |
-          ls -R ${{ matrix.binary_path }}
+          cmake --install build/${{ matrix.preset }} --prefix ${{ github.workspace }}/install/${{ matrix.preset }}
 
       - name: Test
         run: |
-          set -e
-
-          BIN_DIR="${{ matrix.binary_path }}"
-          echo "Looking for test binary in: $BIN_DIR"
-          test_exe=$(find "$BIN_DIR" -maxdepth 1 -type f -iname "EngineTests*" | head -n 1)
-
-          if [ -n "$test_exe" ]; then
-            echo "Found test binary: $test_exe"
-            chmod +x "$test_exe"
+          # Use the installed binaries for testing to ensure they are relocatable
+          test_exe="${{ github.workspace }}/install/${{ matrix.preset }}/bin/EngineTests.exe"
+          if [ -f "$test_exe" ]; then
+            echo "Running tests: $test_exe"
             "$test_exe"
           else
-            echo "::error::EngineTests binary not found in $BIN_DIR"
-            ls -la "$BIN_DIR"
-            exit 1
+            # Try build directory if install failed or structure differs
+            test_exe="build/${{ matrix.preset }}/bin/EngineTests.exe"
+            if [ -f "$test_exe" ]; then
+                "$test_exe"
+            else
+                echo "::error::EngineTests.exe not found"
+                exit 1
+            fi
           fi
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: windows-${{ matrix.preset }}
-          path: |
-            ${{ matrix.binary_path }}/ChainedEditor.exe
-            ${{ matrix.binary_path }}/ChainedRuntime.exe
-            ${{ matrix.binary_path }}/EngineTests.exe
+          path: ${{ github.workspace }}/install/${{ matrix.preset }}
           retention-days: 7
