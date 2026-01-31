@@ -165,42 +165,6 @@
       "name": "windows-vs2022-release",
       "configurePreset": "windows-vs2022",
       "configuration": "Release"
-    },
-    {
-      "name": "debug",
-      "configurePreset": "linux-gcc-debug",
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
-      }
-    },
-    {
-      "name": "debug",
-      "configurePreset": "windows-ninja-debug",
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Windows"
-      }
-    },
-    {
-      "name": "release",
-      "configurePreset": "linux-gcc-release",
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
-      }
-    },
-    {
-      "name": "release",
-      "configurePreset": "windows-ninja-release",
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Windows"
-      }
     }
   ]
 }
