@@ -199,16 +199,28 @@
       "configurePreset": "make-release"
     },
     {
-      "name": "ci-linux-gcc",
-      "configurePreset": "ci-linux-gcc"
+      "name": "ci-linux-gcc-debug",
+      "configurePreset": "ci-linux-gcc-debug"
     },
     {
-      "name": "ci-linux-clang",
-      "configurePreset": "ci-linux-clang"
+      "name": "ci-linux-gcc-release",
+      "configurePreset": "ci-linux-gcc-release"
     },
     {
-      "name": "ci-windows-ninja",
-      "configurePreset": "ci-windows-ninja"
+      "name": "ci-linux-clang-debug",
+      "configurePreset": "ci-linux-clang-debug"
+    },
+    {
+      "name": "ci-linux-clang-release",
+      "configurePreset": "ci-linux-clang-release"
+    },
+    {
+      "name": "ci-windows-ninja-debug",
+      "configurePreset": "ci-windows-ninja-debug"
+    },
+    {
+      "name": "ci-windows-ninja-release",
+      "configurePreset": "ci-windows-ninja-release"
     },
     {
       "name": "debug",
