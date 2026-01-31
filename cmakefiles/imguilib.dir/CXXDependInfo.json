@@ -1,0 +1,62 @@
+{
+	"bmi-installation" : null,
+	"compiler-frontend-variant" : "GNU",
+	"compiler-id" : "GNU",
+	"compiler-simulate-id" : "",
+	"config" : "Debug",
+	"cxx-modules" : {},
+	"database-info" : null,
+	"dir-cur-bld" : "D:/gitnext/Chained Decos",
+	"dir-cur-src" : "D:/gitnext/Chained Decos",
+	"dir-top-bld" : "D:/gitnext/Chained Decos",
+	"dir-top-src" : "D:/gitnext/Chained Decos",
+	"exports" : [],
+	"forward-modules-from-target-dirs" : [],
+	"include-dirs" : 
+	[
+		"include\\imgui",
+		"include\\rlImGui",
+		"include\\raylib\\src"
+	],
+	"language" : "CXX",
+	"linked-target-dirs" : [],
+	"module-dir" : "D:/gitnext/Chained Decos/CMakeFiles/imguilib.dir",
+	"sources" : 
+	{
+		"CMakeFiles/imguilib.dir/include/imgui/imgui.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "D:/gitnext/Chained Decos/include/imgui/imgui.cpp"
+		},
+		"CMakeFiles/imguilib.dir/include/imgui/imgui_demo.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "D:/gitnext/Chained Decos/include/imgui/imgui_demo.cpp"
+		},
+		"CMakeFiles/imguilib.dir/include/imgui/imgui_draw.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "D:/gitnext/Chained Decos/include/imgui/imgui_draw.cpp"
+		},
+		"CMakeFiles/imguilib.dir/include/imgui/imgui_tables.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "D:/gitnext/Chained Decos/include/imgui/imgui_tables.cpp"
+		},
+		"CMakeFiles/imguilib.dir/include/imgui/imgui_widgets.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "D:/gitnext/Chained Decos/include/imgui/imgui_widgets.cpp"
+		},
+		"CMakeFiles/imguilib.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "D:/gitnext/Chained Decos/include/imgui/misc/cpp/imgui_stdlib.cpp"
+		},
+		"CMakeFiles/imguilib.dir/include/rlImGui/rlImGui.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "D:/gitnext/Chained Decos/include/rlImGui/rlImGui.cpp"
+		}
+	}
+}

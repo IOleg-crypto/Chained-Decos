@@ -1,0 +1,898 @@
+Scene: Untitled
+Background:
+  Mode: 2
+  Color: [0, 123, 0, 124]
+  TexturePath: ""
+EnvironmentPath: D:\gitnext\Chained Decos\game\chaineddecos\assets\environments/new_environment.chenv
+Skybox:
+  TexturePath: skyboxes\Starry night preview4.png
+  Exposure: 1
+  Brightness: 0
+  Contrast: 1
+Canvas:
+  ReferenceResolution: [1920, 1080]
+  ScaleMode: 0
+  MatchWidthOrHeight: 0.5
+Entities:
+  - Entity: 1326311650816898569
+    TagComponent:
+      Tag: Player
+    TransformComponent:
+      Translation: [0, 18.7588005, -1.1920929e-07]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelPath: Models\player_low.glb
+      Materials:
+        - Name: Material 0
+          Index: 0
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+    ColliderComponent:
+      Type: 0
+      Enabled: true
+      Offset: [-1.0896225, 0.00202974328, -0.293091357]
+      Size: [2.179245, 6.18353701, 1.20018852]
+      AutoCalculate: false
+      ModelPath: ""
+    RigidBodyComponent:
+      Velocity: [0, 0, 0]
+      UseGravity: true
+      IsKinematic: false
+      Mass: 39.4000015
+    PlayerComponent:
+      MovementSpeed: 15
+      LookSensitivity: 0.899999976
+      CameraYaw: 0
+      CameraPitch: 20
+      CameraDistance: 10
+      JumpForce: 10
+    NativeScriptComponent:
+      Scripts:
+        - ScriptName: PlayerController
+        - ScriptName: CameraController
+        - ScriptName: GameHUD
+        - ScriptName: SpawnZoneRespawn
+  - Entity: 1283719283719284
+    TagComponent:
+      Tag: Castle
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelPath: Models\TaverGLTF.gltf
+      Materials:
+        - Name: Material 1
+          Index: 1
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 2
+          Index: 2
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 3
+          Index: 3
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 4
+          Index: 4
+          Target: 0
+          Material:
+            AlbedoColor: [228, 239, 243, 2]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 5
+          Index: 5
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 6
+          Index: 6
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 7
+          Index: 7
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 8
+          Index: 8
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 9
+          Index: 9
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 10
+          Index: 10
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 11
+          Index: 11
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 12
+          Index: 12
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 13
+          Index: 13
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 14
+          Index: 14
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 15
+          Index: 15
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 16
+          Index: 16
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 17
+          Index: 17
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 18
+          Index: 18
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 19
+          Index: 19
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 20
+          Index: 20
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 21
+          Index: 21
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 22
+          Index: 22
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 23
+          Index: 23
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 24
+          Index: 24
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 25
+          Index: 25
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 26
+          Index: 26
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 27
+          Index: 27
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 28
+          Index: 28
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 29
+          Index: 29
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 30
+          Index: 30
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 31
+          Index: 31
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 32
+          Index: 32
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 33
+          Index: 33
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 34
+          Index: 34
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 35
+          Index: 35
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+    ColliderComponent:
+      Type: 1
+      Enabled: true
+      Offset: [-141.248138, -2.58676767, -9.35314369]
+      Size: [86.9047241, 20.7643909, 83.494278]
+      AutoCalculate: true
+      ModelPath: Models\TaverGLTF.gltf
+  - Entity: 1283719283719285
+    TagComponent:
+      Tag: Arena
+    TransformComponent:
+      Translation: [0, 6.69923544, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1.20000005, 1]
+    ModelComponent:
+      ModelPath: Models\arena.glb
+      Materials:
+        - Name: Material 1
+          Index: 1
+          Target: 0
+          Material:
+            AlbedoColor: [143, 0, 0, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 2
+          Index: 2
+          Target: 0
+          Material:
+            AlbedoColor: [7, 233, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 3
+          Index: 3
+          Target: 0
+          Material:
+            AlbedoColor: [90, 84, 77, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 4
+          Index: 4
+          Target: 0
+          Material:
+            AlbedoColor: [91, 86, 85, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 5
+          Index: 5
+          Target: 0
+          Material:
+            AlbedoColor: [102, 70, 58, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 6
+          Index: 6
+          Target: 0
+          Material:
+            AlbedoColor: [119, 111, 102, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 7
+          Index: 7
+          Target: 0
+          Material:
+            AlbedoColor: [119, 111, 102, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 8
+          Index: 8
+          Target: 0
+          Material:
+            AlbedoColor: [83, 57, 47, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+    ColliderComponent:
+      Type: 1
+      Enabled: true
+      Offset: [-43.8236694, -46.1545258, -25.5901108]
+      Size: [86.6819458, 89.0095215, 94.478302]
+      AutoCalculate: true
+      ModelPath: Models\arena.glb
+  - Entity: 1283719283719286
+    TagComponent:
+      Tag: Plane
+    TransformComponent:
+      Translation: [0, 14.8000002, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelPath: ":plane:"
+      Materials:
+        - Name: Material 0
+          Index: 0
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+    ColliderComponent:
+      Type: 0
+      Enabled: true
+      Offset: [-5, 0, -5]
+      Size: [10, 0, 10]
+      AutoCalculate: false
+      ModelPath: ""
+  - Entity: 1283719283719287
+    TagComponent:
+      Tag: Torus
+    TransformComponent:
+      Translation: [-0.146718025, 6.0999999, 37]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelPath: ":torus:"
+      Materials:
+        - Name: Material 0
+          Index: 0
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+    ColliderComponent:
+      Type: 1
+      Enabled: true
+      Offset: [-0.24000001, -0.24000001, -0.0400000028]
+      Size: [0.480000019, 0.480000019, 0.0800000057]
+      AutoCalculate: true
+      ModelPath: ":torus:"
+  - Entity: 1283719283719288
+    TagComponent:
+      Tag: Plane
+    TransformComponent:
+      Translation: [0, 9.89999962, 19.7999992]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelPath: ":plane:"
+      Materials:
+        - Name: Material 0
+          Index: 0
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+    ColliderComponent:
+      Type: 0
+      Enabled: true
+      Offset: [-5, 0, -5]
+      Size: [10, 0, 10]
+      AutoCalculate: false
+      ModelPath: ""
+  - Entity: 1283719283719289
+    TagComponent:
+      Tag: Spawn Zone
+    TransformComponent:
+      Translation: [29.6833439, 22.4699993, 17.3089523]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    SpawnComponent:
+      IsActive: true
+      ZoneSize: [6.0999999, 6.4000001, 5.0999999]
