@@ -1,16 +1,13 @@
-# Define the unified engine target
-add_library(engine STATIC)
+# Define the core infrastructure library (Stable, low-level)
+add_library(engine_core STATIC)
 
-# Common Engine Properties
-target_include_directories(engine PUBLIC 
+target_include_directories(engine_core PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}
 )
 
-target_sources(engine PRIVATE
+target_sources(engine_core PRIVATE
     # --- CORE ---
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/application.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/application.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core/base.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core/entry_point.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core/events.h
@@ -26,6 +23,33 @@ target_sources(engine PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/core/window.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/core/window.h
     ${CMAKE_CURRENT_SOURCE_DIR}/core/yaml.h
+)
+
+# Core dependencies
+target_link_libraries(engine_core PUBLIC 
+    raylib
+    yaml-cpp
+    imguilib
+    glm
+)
+
+# Apply optimizations to engine_core
+if(COMMAND apply_engine_optimizations)
+    apply_engine_optimizations(engine_core)
+endif()
+
+# Define the high-level engine library
+add_library(engine STATIC)
+
+target_include_directories(engine PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}
+)
+
+target_sources(engine PRIVATE
+    # --- CORE (high-level) ---
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/application.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/application.h
 
     # --- GRAPHICS ---
     ${CMAKE_CURRENT_SOURCE_DIR}/graphics/api_context.cpp
@@ -55,6 +79,7 @@ target_sources(engine PRIVATE
     # --- SCENE ---
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/scene.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/scene.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/scene/scene_events.h
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/entity.h
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/project.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/project.h
@@ -103,13 +128,10 @@ target_sources(engine PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/audio/sound_asset.h
 )
 
-# External Dependencies (Propagated through engine)
+# Engine depends on Core and EnTT
 target_link_libraries(engine PUBLIC 
-    raylib
-    yaml-cpp
+    engine_core
     EnTT
-    imguilib
-    glm
 )
 
 if(MSVC)
@@ -125,7 +147,7 @@ if(COMMAND apply_engine_optimizations)
 endif()
 
 # Installation
-install(TARGETS engine
+install(TARGETS engine engine_core
     EXPORT ChainedEngineTargets
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib

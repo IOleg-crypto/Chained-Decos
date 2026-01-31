@@ -10,6 +10,8 @@
 #include "engine/core/application.h"
 #include "engine/core/input.h"
 #include "ui/editor_gui.h"
+#include "ui/editor_gui.h"
+#include "engine/scene/scene_events.h"
 
 #include "engine/core/profiler.h"
 #include "engine/physics/physics.h"

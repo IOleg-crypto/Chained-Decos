@@ -1,6 +1,7 @@
 #include "inspector_panel.h"
 #include "imgui.h"
 #include "property_editor.h"
+#include "engine/scene/scene_events.h"
 
 
 namespace CHEngine
