@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        preset: [ninja-debug, ninja-release, vs2022, vs2019]
+        preset: [ninja-debug, ninja-release, vs2022-debug, vs2022-release, vs2019-debug, vs2019-release]
 
     steps:
       - name: Checkout

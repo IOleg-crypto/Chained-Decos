@@ -1,14 +1,15 @@
 Project:
   Name: ChainedDecos
-  StartScene: start_menu.chscene
+  StartScene: scenes\start_menu.chscene
   AssetDirectory: assets
-  ActiveScene: assets\scenes\start_menu.chscene
+  ActiveScene: assets\scenes\untitled1.chscene
+  Environment: ""
   Physics:
     Gravity: 20
   Animation:
     TargetFPS: 30
   Render:
-    AmbientIntensity: 0.300000012
+    AmbientIntensity: 0.74000001
     DefaultExposure: 1
   Window:
     Width: 1601
@@ -16,7 +17,7 @@ Project:
     VSync: false
     Resizable: true
   Runtime:
-    Fullscreen: false
+    Fullscreen: true
     ShowStats: true
-    EnableConsole: false
+    EnableConsole: true
   BuildConfig: 0

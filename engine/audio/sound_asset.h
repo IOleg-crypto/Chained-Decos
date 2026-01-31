@@ -21,6 +21,9 @@ public:
         return AssetType::Audio;
     }
 
+    void UploadToGPU();
+    void LoadFromFile(const std::string &path);
+
     Sound &GetSound()
     {
         return m_Sound;
@@ -31,7 +34,9 @@ public:
     }
 
 private:
-    Sound m_Sound;
+    Sound m_Sound = { 0 };
+    Wave m_PendingWave = {0};
+    bool m_HasPendingWave = false;
 };
 } // namespace CHEngine
 #endif // CH_SOUND_ASSET_H

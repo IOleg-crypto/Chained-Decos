@@ -17,8 +17,13 @@ void APIContext::Init()
     s_State.SkyboxShader = AssetManager::Get<ShaderAsset>("engine:shaders/skybox.chshader");
     s_State.PanoramaShader = AssetManager::Get<ShaderAsset>("engine:shaders/panorama.chshader");
 
-    if (s_State.LightingShader) CH_CORE_INFO("APIContext: Lighting shader loaded.");
-    else CH_CORE_ERROR("APIContext: FAILED to load Lighting shader!");
+    if (s_State.LightingShader) {
+        CH_CORE_INFO("APIContext: Lighting shader loaded.");
+    }
+    else
+    { 
+        CH_CORE_ERROR("APIContext: FAILED to load Lighting shader!");
+    }
 
     InitShaders();
     InitSkybox();

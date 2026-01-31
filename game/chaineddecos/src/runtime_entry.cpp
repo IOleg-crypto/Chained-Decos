@@ -1,47 +1,48 @@
 #include "engine/core/application.h"
-// Removed redundant include: engine/graphics/asset_manager.h
 #include "engine/core/entry_point.h"
 #include "runtime/runtime_application.h"
+#include <filesystem>
 
 
 namespace CHEngine
 {
-extern void RegisterProjectScripts();
+    extern void RegisterGameScripts();
 
-Application *CreateApplication(int argc, char **argv)
-{
-    // 1. Setup Project-specific configuration (Title, Icon, etc.)
-    Application::Config config;
-    config.Title = "Chained Decos";
-    config.Width = 1280;
-    config.Height = 720;
-    config.Argc = argc;
-    config.Argv = argv;
-
-    // Set window icon (safe to do after window is created)
-    // Image icon =
-    //     LoadImage(AssetManager::ResolvePath("engine:icons/СhainedDecos.jpg").string().c_str());
-    // SetWindowIcon(icon);
-    // UnloadImage(icon);
-
-    RegisterProjectScripts();
-
-    // 3. Resolve project path (specific to this standalone build)
-    std::string projectPath = PROJECT_ROOT_DIR "/game/chaineddecos/ChainedDecos.chproject";
-
-    // Handle CLI overrides
-    for (int i = 1; i < argc; ++i)
+    Application *CreateApplication(int argc, char **argv)
     {
-        std::string arg = argv[i];
-        if (arg == "--project" && i + 1 < argc)
-            projectPath = argv[++i];
-        else if (arg == "--scene" && i + 1 < argc)
-            Application::SetStartupScene(argv[++i]);
-        else if (i == 1 && arg[0] != '-')
-            projectPath = arg;
-    }
+        // 1. Setup Project-specific configuration (Title, Icon, etc.)
+        Application::Config config;
+        config.Title = "Chained Decos";
+        config.Width = 1280;
+        config.Height = 720;
+        config.Argc = argc;
+        config.Argv = argv;
 
-    // 4. Create the generic runtime host with this project configuration
-    return new RuntimeApplication(config, projectPath);
-}
+        RegisterGameScripts();
+
+        // 2. Project Selection
+        std::string projectPath = ""; // RuntimeApplication will auto-discover if empty
+
+        // Handle CLI overrides
+        for (int i = 1; i < argc; ++i)
+        {
+            std::string arg = argv[i];
+            if (arg == "--project" && i + 1 < argc)
+            {
+                projectPath = argv[++i];
+            }
+            else if (arg == "--scene" && i + 1 < argc)
+            {
+                Application::SetStartupScene(argv[++i]);
+            }
+            else if (i == 1 && arg[0] != '-')
+            {
+                projectPath = arg;
+            }
+        }
+
+        // 3. Create the generic runtime host
+        // Automated discovery will happen inside RuntimeApplication
+        return new RuntimeApplication(config, projectPath);
+    }
 } // namespace CHEngine

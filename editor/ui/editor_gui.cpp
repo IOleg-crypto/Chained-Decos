@@ -12,6 +12,7 @@
 #include "panels/viewport_panel.h"
 #include "raymath.h"
 #include "rlimgui.h"
+#include "engine/scene/components/control_component.h"
 
 namespace CHEngine::EditorUI
 {
@@ -101,6 +102,63 @@ namespace CHEngine::EditorUI
         return changed;
     }
 
+    bool GUI::DrawVec2Control(const std::string &label, glm::vec2 &values, float resetValue, float columnWidth)
+    {
+        bool changed = false;
+        ImGui::PushID(label.c_str());
+
+        ImGui::Columns(2);
+        ImGui::SetColumnWidth(0, columnWidth);
+        ImGui::Text(label.c_str());
+        ImGui::NextColumn();
+
+        ImGui::PushMultiItemsWidths(2, ImGui::CalcItemWidth());
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0, 0});
+
+        float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
+        ImVec2 buttonSize = {lineHeight + 3.0f, lineHeight};
+
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.9f, 0.2f, 0.2f, 1.0f});
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
+        if (ImGui::Button("X", buttonSize))
+        {
+            values.x = resetValue;
+            changed = true;
+        }
+        ImGui::PopStyleColor(3);
+
+        ImGui::SameLine();
+        if (ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f"))
+            changed = true;
+        ImGui::PopItemWidth();
+        ImGui::SameLine();
+
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.3f, 0.8f, 0.3f, 1.0f});
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
+        if (ImGui::Button("Y", buttonSize))
+        {
+            values.y = resetValue;
+            changed = true;
+        }
+        ImGui::PopStyleColor(3);
+
+        ImGui::SameLine();
+        if (ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f"))
+            changed = true;
+        ImGui::PopItemWidth();
+
+        ImGui::PopStyleVar();
+
+        ImGui::Columns(1);
+
+        ImGui::PopID();
+
+        return changed;
+    }
+    
+
     bool GUI::Property(const char *label, bool &value)
     {
         bool changed = false;
@@ -122,6 +180,98 @@ namespace CHEngine::EditorUI
         ImGui::PushID(label);
         if (ImGui::DragFloat("##prop", &value, speed, min, max))
             changed = true;
+        ImGui::PopID();
+        ImGui::NextColumn();
+        return changed;
+    }
+
+    bool GUI::Property(const char *label, Vector2 &value, float speed, float min, float max)
+    {
+        bool changed = false;
+        ImGui::Text(label);
+        ImGui::NextColumn();
+        ImGui::PushID(label);
+
+        ImGui::PushMultiItemsWidths(2, ImGui::CalcItemWidth());
+        if (ImGui::DragFloat("##X", &value.x, speed, min, max, "X: %.2f"))
+            changed = true;
+        ImGui::PopItemWidth();
+        ImGui::SameLine();
+        if (ImGui::DragFloat("##Y", &value.y, speed, min, max, "Y: %.2f"))
+            changed = true;
+        ImGui::PopItemWidth();
+
+        ImGui::PopID();
+        ImGui::NextColumn();
+        return changed;
+    }
+
+    bool GUI::Property(const char *label, Vector3 &value, float speed, float min, float max)
+    {
+        bool changed = false;
+        ImGui::Text(label);
+        ImGui::NextColumn();
+        ImGui::PushID(label);
+
+        ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
+        if (ImGui::DragFloat("##X", &value.x, speed, min, max, "X: %.2f"))
+            changed = true;
+        ImGui::PopItemWidth();
+        ImGui::SameLine();
+        if (ImGui::DragFloat("##Y", &value.y, speed, min, max, "Y: %.2f"))
+            changed = true;
+        ImGui::PopItemWidth();
+        ImGui::SameLine();
+        if (ImGui::DragFloat("##Z", &value.z, speed, min, max, "Z: %.2f"))
+            changed = true;
+        ImGui::PopItemWidth();
+
+        ImGui::PopID();
+        ImGui::NextColumn();
+        return changed;
+    }
+
+    bool GUI::Property(const char *label, glm::vec2 &value, float speed, float min, float max)
+    {
+        bool changed = false;
+        ImGui::Text(label);
+        ImGui::NextColumn();
+        ImGui::PushID(label);
+
+        ImGui::PushMultiItemsWidths(2, ImGui::CalcItemWidth());
+        if (ImGui::DragFloat("##X", &value.x, speed, min, max, "X: %.2f"))
+            changed = true;
+        ImGui::PopItemWidth();
+        ImGui::SameLine();
+        if (ImGui::DragFloat("##Y", &value.y, speed, min, max, "Y: %.2f"))
+            changed = true;
+        ImGui::PopItemWidth();
+
+        ImGui::PopID();
+        ImGui::NextColumn();
+        return changed;
+    }
+
+    bool GUI::Property(const char *label, glm::vec3 &value, float speed, float min, float max)
+    {
+        bool changed = false;
+        ImGui::Text(label);
+        ImGui::NextColumn();
+        ImGui::PushID(label);
+
+        ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
+        if (ImGui::DragFloat("##X", &value.x, speed, min, max, "X: %.2f"))
+            changed = true;
+        ImGui::PopItemWidth();
+        ImGui::SameLine();
+        if (ImGui::DragFloat("##Y", &value.y, speed, min, max, "Y: %.2f"))
+            changed = true;
+        ImGui::PopItemWidth();
+        ImGui::SameLine();
+        if (ImGui::DragFloat("##Z", &value.z, speed, min, max, "Z: %.2f"))
+            changed = true;
+        ImGui::PopItemWidth();
+
         ImGui::PopID();
         ImGui::NextColumn();
         return changed;
@@ -246,37 +396,46 @@ namespace CHEngine::EditorUI
     {
     }
 
+
     void GUI::SetDarkThemeColors()
     {
         auto &colors = ImGui::GetStyle().Colors;
-        colors[ImGuiCol_WindowBg] = ImVec4{0.1f, 0.105f, 0.11f, 1.0f};
+        colors[ImGuiCol_WindowBg] = ImVec4{0.08f, 0.085f, 0.09f, 1.0f};
 
         // Headers
-        colors[ImGuiCol_Header] = ImVec4{0.2f, 0.205f, 0.21f, 1.0f};
-        colors[ImGuiCol_HeaderHovered] = ImVec4{0.3f, 0.305f, 0.31f, 1.0f};
+        colors[ImGuiCol_Header] = ImVec4{0.13f, 0.135f, 0.14f, 1.0f};
+        colors[ImGuiCol_HeaderHovered] = ImVec4{0.19f, 0.2f, 0.21f, 1.0f};
         colors[ImGuiCol_HeaderActive] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
 
         // Buttons
-        colors[ImGuiCol_Button] = ImVec4{0.2f, 0.205f, 0.21f, 1.0f};
-        colors[ImGuiCol_ButtonHovered] = ImVec4{0.3f, 0.305f, 0.31f, 1.0f};
+        colors[ImGuiCol_Button] = ImVec4{0.13f, 0.135f, 0.14f, 1.0f};
+        colors[ImGuiCol_ButtonHovered] = ImVec4{0.19f, 0.2f, 0.21f, 1.0f};
         colors[ImGuiCol_ButtonActive] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
 
         // Frame BG
-        colors[ImGuiCol_FrameBg] = ImVec4{0.2f, 0.205f, 0.21f, 1.0f};
-        colors[ImGuiCol_FrameBgHovered] = ImVec4{0.3f, 0.305f, 0.31f, 1.0f};
+        colors[ImGuiCol_FrameBg] = ImVec4{0.13f, 0.135f, 0.14f, 1.0f};
+        colors[ImGuiCol_FrameBgHovered] = ImVec4{0.19f, 0.2f, 0.21f, 1.0f};
         colors[ImGuiCol_FrameBgActive] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
 
         // Tabs
-        colors[ImGuiCol_Tab] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
-        colors[ImGuiCol_TabHovered] = ImVec4{0.38f, 0.3805f, 0.381f, 1.0f};
-        colors[ImGuiCol_TabActive] = ImVec4{0.28f, 0.2805f, 0.281f, 1.0f};
-        colors[ImGuiCol_TabUnfocused] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
-        colors[ImGuiCol_TabUnfocusedActive] = ImVec4{0.2f, 0.205f, 0.21f, 1.0f};
+        colors[ImGuiCol_Tab] = ImVec4{0.1f, 0.105f, 0.11f, 1.0f};
+        colors[ImGuiCol_TabHovered] = ImVec4{0.25f, 0.26f, 0.27f, 1.0f};
+        colors[ImGuiCol_TabActive] = ImVec4{0.18f, 0.19f, 0.2f, 1.0f};
+        colors[ImGuiCol_TabUnfocused] = ImVec4{0.1f, 0.105f, 0.11f, 1.0f};
+        colors[ImGuiCol_TabUnfocusedActive] = ImVec4{0.13f, 0.135f, 0.14f, 1.0f};
 
         // Title
-        colors[ImGuiCol_TitleBg] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
-        colors[ImGuiCol_TitleBgActive] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
-        colors[ImGuiCol_TitleBgCollapsed] = ImVec4{0.15f, 0.1505f, 0.151f, 1.0f};
+        colors[ImGuiCol_TitleBg] = ImVec4{0.1f, 0.105f, 0.11f, 1.0f};
+        colors[ImGuiCol_TitleBgActive] = ImVec4{0.1f, 0.105f, 0.11f, 1.0f};
+        colors[ImGuiCol_TitleBgCollapsed] = ImVec4{0.1f, 0.105f, 0.11f, 1.0f};
+
+        // Styling tweaks
+        auto& style = ImGui::GetStyle();
+        style.WindowRounding = 6.0f;
+        style.FrameRounding = 4.0f;
+        style.PopupRounding = 4.0f;
+        style.GrabRounding = 4.0f;
+        style.TabRounding = 4.0f;
     }
     static void MenuFile(const EventCallbackFn &callback)
     {
