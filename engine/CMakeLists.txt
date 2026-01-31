@@ -149,12 +149,13 @@ endif()
 # Installation
 install(TARGETS engine engine_core
     EXPORT ChainedEngineTargets
-    ARCHIVE DESTINATION lib
-    LIBRARY DESTINATION lib
-    RUNTIME DESTINATION bin
+    ARCHIVE DESTINATION lib COMPONENT Runtime
+    LIBRARY DESTINATION lib COMPONENT Runtime
+    RUNTIME DESTINATION bin COMPONENT Runtime
 )
 
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/resources"
     DESTINATION engine
     USE_SOURCE_PERMISSIONS
+    COMPONENT Runtime
 )

@@ -87,16 +87,12 @@ endif()
 
 # Installation
 install(TARGETS ChainedEditor editor_core
-    RUNTIME DESTINATION bin
-    ARCHIVE DESTINATION lib
-    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin COMPONENT Runtime
+    ARCHIVE DESTINATION lib COMPONENT Runtime
+    LIBRARY DESTINATION lib COMPONENT Runtime
 )
 
-# Copy global resources/assets to the install directory
-if(EXISTS "${CMAKE_SOURCE_DIR}/resources")
-    install(DIRECTORY "${CMAKE_SOURCE_DIR}/resources/" DESTINATION resources)
-endif()
-
+# Copy global assets to the install directory if they exist
 if(EXISTS "${CMAKE_SOURCE_DIR}/assets")
-    install(DIRECTORY "${CMAKE_SOURCE_DIR}/assets/" DESTINATION assets)
+    install(DIRECTORY "${CMAKE_SOURCE_DIR}/assets/" DESTINATION assets COMPONENT Runtime)
 endif()
