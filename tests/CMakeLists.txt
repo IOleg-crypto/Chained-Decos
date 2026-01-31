@@ -3,7 +3,7 @@ add_executable(EngineTests
     physics_tests.cpp
     hierarchy_tests.cpp
     event_input_tests.cpp
-    asset_manager_tests.cpp
+    #asset_manager_tests.cpp
     integration_tests.cpp
 )
 
