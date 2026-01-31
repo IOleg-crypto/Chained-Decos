@@ -110,6 +110,8 @@
     },
     {
       "name": "ci-linux-gcc-debug",
+      "displayName": "CI Linux GCC Debug",
+      "description": "CI Debug build using GCC-13",
       "inherits": "ci-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
@@ -119,6 +121,8 @@
     },
     {
       "name": "ci-linux-gcc-release",
+      "displayName": "CI Linux GCC Release",
+      "description": "CI Release build using GCC-13",
       "inherits": "ci-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
@@ -128,6 +132,8 @@
     },
     {
       "name": "ci-linux-clang-debug",
+      "displayName": "CI Linux Clang Debug",
+      "description": "CI Debug build using Clang-17",
       "inherits": "ci-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
@@ -137,6 +143,8 @@
     },
     {
       "name": "ci-linux-clang-release",
+      "displayName": "CI Linux Clang Release",
+      "description": "CI Release build using Clang-17",
       "inherits": "ci-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
@@ -146,6 +154,8 @@
     },
     {
       "name": "ci-windows-ninja-debug",
+      "displayName": "CI Windows Ninja Debug",
+      "description": "CI Debug build on Windows using Ninja",
       "inherits": "ci-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
@@ -153,6 +163,8 @@
     },
     {
       "name": "ci-windows-ninja-release",
+      "displayName": "CI Windows Ninja Release",
+      "description": "CI Release build on Windows using Ninja",
       "inherits": "ci-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
