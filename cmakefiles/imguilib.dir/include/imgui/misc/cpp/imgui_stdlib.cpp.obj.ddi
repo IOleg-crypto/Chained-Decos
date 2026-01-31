@@ -1,0 +1,11 @@
+{
+"rules": [
+{
+"primary-output": "CMakeFiles\\imguilib.dir\\include\\imgui\\misc\\cpp\\imgui_stdlib.cpp.obj",
+"requires": [
+]
+}
+],
+"version": 0,
+"revision": 0
+}

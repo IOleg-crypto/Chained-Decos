@@ -1,0 +1,179 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "installDir": "${sourceDir}/install/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "ninja-debug",
+      "displayName": "Ninja Debug",
+      "description": "Debug build using Ninja generator",
+      "inherits": "base",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "ninja-release",
+      "displayName": "Ninja Release",
+      "description": "Release build using Ninja generator",
+      "inherits": "base",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "vs2022",
+      "displayName": "Visual Studio 2022",
+      "description": "Visual Studio 2022 multi-config generator",
+      "inherits": "base",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}/build/vs2022",
+      "architecture": {
+        "value": "x64",
+        "strategy": "set"
+      }
+    },
+    {
+      "name": "make-debug",
+      "displayName": "Unix Makefiles Debug",
+      "description": "Debug build using Unix Makefiles (Linux)",
+      "inherits": "base",
+      "generator": "Unix Makefiles",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "make-release",
+      "displayName": "Unix Makefiles Release",
+      "description": "Release build using Unix Makefiles (Linux)",
+      "inherits": "base",
+      "generator": "Unix Makefiles",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "ci-linux-gcc",
+      "displayName": "CI Linux GCC",
+      "description": "CI build using GCC-13 with ccache",
+      "inherits": "base",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_COMPILER": "gcc-13",
+        "CMAKE_CXX_COMPILER": "g++-13",
+        "CMAKE_C_COMPILER_LAUNCHER": "ccache",
+        "CMAKE_CXX_COMPILER_LAUNCHER": "ccache",
+        "BUILD_TESTS": "ON",
+        "BUILD_MAP_EDITOR": "ON",
+        "DISABLE_ALL_WARNINGS": "ON"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "ci-linux-clang",
+      "displayName": "CI Linux Clang",
+      "description": "CI build using Clang-17 with ccache",
+      "inherits": "base",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_COMPILER": "clang-17",
+        "CMAKE_CXX_COMPILER": "clang++-17",
+        "CMAKE_C_COMPILER_LAUNCHER": "ccache",
+        "CMAKE_CXX_COMPILER_LAUNCHER": "ccache",
+        "BUILD_TESTS": "ON",
+        "BUILD_MAP_EDITOR": "ON",
+        "DISABLE_ALL_WARNINGS": "ON"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "vs2022-debug",
+      "displayName": "Visual Studio 2022 Debug",
+      "description": "Visual Studio 2022 Debug multi-config",
+      "inherits": "vs2022",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "vs2022-release",
+      "displayName": "Visual Studio 2022 Release",
+      "description": "Visual Studio 2022 Release multi-config",
+      "inherits": "vs2022",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "ninja-debug",
+      "configurePreset": "ninja-debug"
+    },
+    {
+      "name": "ninja-release",
+      "configurePreset": "ninja-release"
+    },
+    {
+      "name": "vs2022-debug",
+      "configurePreset": "vs2022-debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "vs2022-release",
+      "configurePreset": "vs2022-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "make-debug",
+      "configurePreset": "make-debug"
+    },
+    {
+      "name": "make-release",
+      "configurePreset": "make-release"
+    },
+    {
+      "name": "ci-linux-gcc",
+      "configurePreset": "ci-linux-gcc"
+    },
+    {
+      "name": "ci-linux-clang",
+      "configurePreset": "ci-linux-clang"
+    }
+  ]
+}
