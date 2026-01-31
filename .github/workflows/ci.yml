@@ -26,20 +26,28 @@ jobs:
         include:
           - os: ubuntu-latest
             preset: linux-gcc-debug
+            config_preset: linux-gcc-debug
           - os: ubuntu-latest
             preset: linux-gcc-release
+            config_preset: linux-gcc-release
           - os: ubuntu-latest
             preset: linux-clang-debug
+            config_preset: linux-clang-debug
           - os: ubuntu-latest
             preset: linux-clang-release
+            config_preset: linux-clang-release
           - os: windows-latest
             preset: windows-ninja-debug
+            config_preset: windows-ninja-debug
           - os: windows-latest
             preset: windows-ninja-release
+            config_preset: windows-ninja-release
           - os: windows-latest
             preset: windows-vs2022-debug
+            config_preset: windows-vs2022
           - os: windows-latest
             preset: windows-vs2022-release
+            config_preset: windows-vs2022
 
     defaults:
       run:
@@ -76,10 +84,14 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           if [[ "${{ matrix.preset }}" == *"gcc"* ]]; then
-            sudo apt-get install -y gcc-13 g++-13
+            sudo apt-get install -y gcc-14 g++-14
+            echo "CC=gcc-14" >> $GITHUB_ENV
+            echo "CXX=g++-14" >> $GITHUB_ENV
           elif [[ "${{ matrix.preset }}" == *"clang"* ]]; then
             # Use libc++ to avoid conflicts with GCC 14 headers in C++23 mode
-            sudo apt-get install -y clang-17 clang++-17 libc++-17-dev libc++abi-17-dev
+            sudo apt-get install -y clang-18 clang++-18 libc++-18-dev libc++abi-18-dev
+            echo "CC=clang-18" >> $GITHUB_ENV
+            echo "CXX=clang++-18" >> $GITHUB_ENV
           fi
 
       - name: Install Windows Dependencies
@@ -93,7 +105,13 @@ jobs:
           if [[ "${{ matrix.preset }}" == *"clang"* ]]; then
             extra_flags="-DCMAKE_CXX_FLAGS=-stdlib=libc++ -DCMAKE_EXE_LINKER_FLAGS=-stdlib=libc++"
           fi
-          cmake --preset ${{ matrix.preset }} \
+          
+          # Only override compilers on Linux to match installed versions
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
+            extra_flags="$extra_flags -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX"
+          fi
+
+          cmake --preset ${{ matrix.config_preset }} \
             -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
             $extra_flags
 

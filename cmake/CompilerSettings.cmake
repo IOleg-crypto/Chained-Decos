@@ -2,6 +2,11 @@
 # Extracted from root CMakeLists.txt for modularity
 
 # Compiler-specific settings
+find_program(CCACHE_FOUND ccache)
+if(CCACHE_FOUND)
+    set(CMAKE_C_COMPILER_LAUNCHER ccache)
+    set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
+endif()
 if(MSVC)
     # MSVC-specific settings
     add_compile_options(
@@ -82,6 +87,7 @@ function(apply_engine_optimizations target_name)
     if(ENABLE_PCH)
         # We use a header file for PCH to handle complex logic like undefining Windows macros
         set(PCH_HEADER_CONTENT "
+#include \"engine/core/base.h\"
 #include <memory>
 #include <vector>
 #include <string>
@@ -92,7 +98,7 @@ function(apply_engine_optimizations target_name)
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui.h>
 
-#ifdef _WIN32
+#ifdef CH_PLATFORM_WINDOWS
   #define WIN32_LEAN_AND_MEAN
   #define NOMINMAX
   

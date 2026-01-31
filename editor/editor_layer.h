@@ -4,7 +4,6 @@
 #include "engine/core/application.h"
 #include "engine/core/base.h"
 #include "engine/core/layer.h"
-// Removed redundant include: engine/graphics/render.h
 #include "editor/actions/editor_actions.h"
 #include "editor/editor_panels.h"
 #include "editor/ui/editor_layout.h"

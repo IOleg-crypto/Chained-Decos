@@ -22,7 +22,7 @@
 #include "engine/scene/scriptable_entity.h"
 
 #include "cstdarg"
-#include "extras/iconsfontawesome6.h"
+#include "extras/IconsFontAwesome6.h"
 #include "imgui.h"
 #include "nfd.h"
 #include "panels/console_panel.h"

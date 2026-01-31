@@ -4,7 +4,7 @@
 #include "engine/scene/entity.h"
 #include "engine/scene/scene.h"
 #include "imgui.h"
-#include "imguizmo.h"
+#include "ImGuizmo.h"
 #include "raylib.h"
 
 namespace CHEngine

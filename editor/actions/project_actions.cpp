@@ -6,6 +6,7 @@
 #include "nfd.h"
 #include <filesystem>
 #include <format>
+#include "engine/core/base.h"
 
 namespace CHEngine
 {
@@ -59,7 +60,11 @@ namespace CHEngine
         std::vector<std::filesystem::path> searchBases = {cwd, exePath.parent_path(), buildDir, buildDir / "bin", 
                                                           buildDir / "runtime", cwd / "bin", cwd / "build/bin"};
 
+#ifdef CH_PLATFORM_WINDOWS
         std::vector<std::string> targetNames = {projectName + ".exe", "ChainedRuntime.exe", "Runtime.exe"};
+#else
+        std::vector<std::string> targetNames = {projectName, "ChainedRuntime", "Runtime"};
+#endif
 
         for (const auto &base : searchBases)
         {
@@ -99,7 +104,11 @@ namespace CHEngine
         if (runtimePath.empty())
             return;
 
+#ifdef CH_PLATFORM_WINDOWS
         std::string command = std::format("start \"\" \"{}\" \"{}\"", runtimePath.string(), projectPathStr);
+#else
+        std::string command = std::format("\"{}\" \"{}\" &", runtimePath.string(), projectPathStr);
+#endif
         CH_CORE_INFO("Launching Standalone: {}", command);
 
         system(command.c_str());

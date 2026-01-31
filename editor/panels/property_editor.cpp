@@ -2,7 +2,7 @@
 #include "editor/ui/editor_gui.h"
 #include "engine/scene/components.h"
 #include "engine/scene/script_registry.h"
-#include "extras/iconsfontawesome6.h"
+#include "extras/IconsFontAwesome6.h"
 #include "imgui.h"
 #include "raymath.h"
 

@@ -1,7 +1,11 @@
 #include "profiler_panel.h"
 #include "engine/core/profiler.h"
 #include "format"
-#include "gl/GL.h"
+#if defined(CH_PLATFORM_WINDOWS)
+#include <GL/gl.h>
+#else
+#include <GL/gl.h>
+#endif
 #include "imgui.h"
 #include "rlgl.h"
 

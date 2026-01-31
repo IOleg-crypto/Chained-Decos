@@ -28,7 +28,7 @@ chained_add_game(ChainedRuntime
 
 # Installation
 install(TARGETS ChainedDecosGame ChainedRuntime
-    ARCHIVE DESTINATION lib
-    LIBRARY DESTINATION lib
-    RUNTIME DESTINATION bin
+    ARCHIVE DESTINATION lib COMPONENT Runtime
+    LIBRARY DESTINATION lib COMPONENT Runtime
+    RUNTIME DESTINATION bin COMPONENT Runtime
 )

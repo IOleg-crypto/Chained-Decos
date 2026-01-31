@@ -3,7 +3,7 @@
 #include "engine/core/application.h"
 #include "engine/graphics/draw_command.h"
 #include "engine/scene/scene.h"
-#include "extras/iconsfontawesome6.h"
+#include "extras/IconsFontAwesome6.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "raylib.h"

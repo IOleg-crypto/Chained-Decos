@@ -4,7 +4,7 @@
 #include "engine/core/application.h"
 #include "engine/scene/scene_events.h"
 #include "engine/scene/components.h"
-#include "extras/iconsfontawesome6.h"
+#include "extras/IconsFontAwesome6.h"
 #include "imgui.h"
 #include "undo/entity_commands.h"
 

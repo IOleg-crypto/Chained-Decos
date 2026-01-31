@@ -7,7 +7,7 @@
 #include "actions/project_actions.h"
 
 // Removed redundant include: engine/graphics/asset_manager.h
-#include "extras/iconsfontawesome6.h"
+#include "extras/IconsFontAwesome6.h"
 #include "filesystem"
 #include "imgui.h"
 #include "nfd.h"
