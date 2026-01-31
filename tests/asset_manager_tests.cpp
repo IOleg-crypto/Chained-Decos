@@ -1,5 +1,5 @@
 #include "engine/core/base.h"
-// Removed redundant include: engine/graphics/asset_manager.h
+#include "engine/graphics/asset_manager.h
 #include "gtest/gtest.h"
 
 using namespace CHEngine;
