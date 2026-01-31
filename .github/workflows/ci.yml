@@ -25,21 +25,21 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            preset: ci-linux-gcc-debug
+            preset: linux-gcc-debug
           - os: ubuntu-latest
-            preset: ci-linux-gcc-release
+            preset: linux-gcc-release
           - os: ubuntu-latest
-            preset: ci-linux-clang-debug
+            preset: linux-clang-debug
           - os: ubuntu-latest
-            preset: ci-linux-clang-release
+            preset: linux-clang-release
           - os: windows-latest
-            preset: ci-windows-ninja-debug
+            preset: windows-ninja-debug
           - os: windows-latest
-            preset: ci-windows-ninja-release
+            preset: windows-ninja-release
           - os: windows-latest
-            preset: vs2022-debug
+            preset: windows-vs2022-debug
           - os: windows-latest
-            preset: vs2022-release
+            preset: windows-vs2022-release
 
     defaults:
       run:
