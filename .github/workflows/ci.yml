@@ -70,8 +70,8 @@ jobs:
           if [[ "${{ matrix.preset }}" == *"gcc"* ]]; then
             sudo apt-get install -y gcc-13 g++-13
           elif [[ "${{ matrix.preset }}" == *"clang"* ]]; then
-            # We use GCC 13 as the backend for Clang to avoid GCC 14 header issues with C++23
-            sudo apt-get install -y clang-17 clang++-17 gcc-13 g++-13
+            # Use libc++ to avoid conflicts with GCC 14 headers in C++23 mode
+            sudo apt-get install -y clang-17 clang++-17 libc++-17-dev libc++abi-17-dev
           fi
 
       - name: Install Windows Dependencies
@@ -81,8 +81,13 @@ jobs:
 
       - name: Configure
         run: |
+          extra_flags=""
+          if [[ "${{ matrix.preset }}" == *"clang"* ]]; then
+            extra_flags="-DCMAKE_CXX_FLAGS=-stdlib=libc++ -DCMAKE_EXE_LINKER_FLAGS=-stdlib=libc++"
+          fi
           cmake --preset ${{ matrix.preset }} \
-            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install
+            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install \
+            $extra_flags
 
       - name: Build
         run: |
