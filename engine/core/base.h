@@ -3,7 +3,7 @@
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include "engine/core/log.h"
-#include "memory"
+#include <memory>
 
 // Platform detection
 #if defined(_WIN32) || defined(_WIN64)

@@ -8,7 +8,7 @@
 
 // Removed redundant include: engine/graphics/asset_manager.h
 #include "extras/IconsFontAwesome6.h"
-#include "filesystem"
+#include <filesystem>
 #include "imgui.h"
 #include "nfd.h"
 #include "rlImGui.h"
@@ -22,20 +22,23 @@ namespace CHEngine
         memset(m_ProjectLocationBuffer, 0, sizeof(m_ProjectLocationBuffer));
         cwd.copy(m_ProjectLocationBuffer, sizeof(m_ProjectLocationBuffer) - 1);
 
-        // Load icons
-        const char *newProjectIconPath = PROJECT_ROOT_DIR "/engine/resources/icons/newproject.jpg";
-        const char *openProjectIconPath = PROJECT_ROOT_DIR "/engine/resources/icons/folder.png";
-
-        if (std::filesystem::exists(newProjectIconPath))
+        // Load icons only if window is ready (Raylib requires GL context for textures)
+        if (IsWindowReady())
         {
-            Texture2D *tex = new Texture2D(LoadTexture(newProjectIconPath));
-            m_NewProjectIcon = tex;
-        }
+            const char *newProjectIconPath = PROJECT_ROOT_DIR "/engine/resources/icons/newproject.jpg";
+            const char *openProjectIconPath = PROJECT_ROOT_DIR "/engine/resources/icons/folder.png";
 
-        if (std::filesystem::exists(openProjectIconPath))
-        {
-            Texture2D *tex = new Texture2D(LoadTexture(openProjectIconPath));
-            m_OpenProjectIcon = tex;
+            if (std::filesystem::exists(newProjectIconPath))
+            {
+                Texture2D *tex = new Texture2D(LoadTexture(newProjectIconPath));
+                m_NewProjectIcon = tex;
+            }
+
+            if (std::filesystem::exists(openProjectIconPath))
+            {
+                Texture2D *tex = new Texture2D(LoadTexture(openProjectIconPath));
+                m_OpenProjectIcon = tex;
+            }
         }
 
         m_IconsLoaded = (m_NewProjectIcon != nullptr && m_OpenProjectIcon != nullptr);

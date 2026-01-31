@@ -2,7 +2,7 @@
 #define CH_LIGHTING_COMPONENTS_H
 
 #include "raylib.h"
-#include "string"
+#include <string>
 
 namespace CHEngine
 {

@@ -124,29 +124,24 @@ jobs:
           config="Release"
           if [[ "${{ matrix.preset }}" == *"debug"* ]]; then config="Debug"; fi
           
-          echo "Current working directory: $(pwd)"
-          echo "Looking for EngineTests in build/${{ matrix.preset }}/bin..."
+          BUILD_DIR="build/${{ matrix.config_preset }}"
+          echo "Searching for test binary in $BUILD_DIR..."
           
-          # Check paths for both single and multi-config generators
-          # Use absolute paths to avoid bash's command lookup ambiguity (exit code 127)
-          SEARCH_PATHS=(
-            "${{ github.workspace }}/build/${{ matrix.preset }}/bin/EngineTests"
-            "${{ github.workspace }}/build/${{ matrix.preset }}/bin/EngineTests.exe"
-            "${{ github.workspace }}/build/${{ matrix.preset }}/bin/$config/EngineTests"
-            "${{ github.workspace }}/build/${{ matrix.preset }}/bin/$config/EngineTests.exe"
-          )
-          
-          TEST_BIN=""
-          for p in "${SEARCH_PATHS[@]}"; do
-            if [ -f "$p" ]; then
-              TEST_BIN="$p"
-              break
+          # Find the test binary reliably
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            # Search for .exe, preferring the one in the config subfolder if it exists (for VS)
+            TEST_BIN=$(find "$BUILD_DIR" -name "EngineTests.exe" | grep -i "$config" | head -n 1)
+            if [[ -z "$TEST_BIN" ]]; then
+               TEST_BIN=$(find "$BUILD_DIR" -name "EngineTests.exe" | head -n 1)
             fi
-          done
+          else
+            # On Linux, find the executable binary
+            TEST_BIN=$(find "$BUILD_DIR" -name "EngineTests" -type f -executable | head -n 1)
+          fi
           
-          if [ -z "$TEST_BIN" ]; then
-            echo "::error::EngineTests not found in any expected location"
-            ls -R build/${{ matrix.preset }}/bin || true
+          if [[ -z "$TEST_BIN" ]]; then
+            echo "::error::EngineTests not found!"
+            find "$BUILD_DIR" -maxdepth 4 || true
             exit 1
           fi
           
@@ -154,7 +149,8 @@ jobs:
           if [[ "${{ runner.os }}" == "Linux" ]]; then
             xvfb-run "$TEST_BIN"
           else
-            "$TEST_BIN"
+            # Ensure path is handled correctly on Windows bash
+            "./$TEST_BIN"
           fi
 
       - name: Upload Artifacts
@@ -162,5 +158,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ runner.os }}-${{ matrix.preset }}
-          path: build/${{ matrix.preset }}/bin
+          path: build/${{ matrix.config_preset }}/bin
           retention-days: 7

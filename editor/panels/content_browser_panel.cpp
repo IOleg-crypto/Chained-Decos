@@ -1,5 +1,5 @@
 #include "content_browser_panel.h"
-#include "algorithm"
+#include <algorithm>
 #include "editor/actions/scene_actions.h"
 #include "engine/core/base.h"
 #include "engine/core/log.h"

@@ -3,9 +3,9 @@
 
 #include "editor_command.h"
 #include "deque"
-#include "functional"
-#include "memory"
-#include "string"
+#include <functional>
+#include <memory>
+#include <string>
 
 namespace CHEngine
 {

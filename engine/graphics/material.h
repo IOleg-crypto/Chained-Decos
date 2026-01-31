@@ -4,7 +4,7 @@
 #define CH_MATERIAL_H
 
 // Removed redundant include: engine/core/math_types.h
-#include "string"
+#include <string>
 
 namespace CHEngine
 {
