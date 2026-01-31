@@ -7,7 +7,7 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "raylib.h"
-#include "rlimgui.h"
+#include "rlImGui.h"
 #include "ui/editor_gui.h"
 #include "engine/graphics/asset_manager.h"
 #include "engine/graphics/model_asset.h"

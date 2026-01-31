@@ -11,7 +11,7 @@
 #include "panels/panel.h"
 #include "panels/viewport_panel.h"
 #include "raymath.h"
-#include "rlimgui.h"
+#include "rlImGui.h"
 #include "engine/scene/components/control_component.h"
 
 namespace CHEngine::EditorUI
