@@ -12,8 +12,12 @@ namespace CHEngine
 class ShaderAsset : public Asset
 {
 public:
+    ShaderAsset() = default;
     ShaderAsset(Shader shader);
     virtual ~ShaderAsset();
+
+    void UploadToGPU();
+    void LoadFromFile(const std::string &path);
 
     static std::shared_ptr<ShaderAsset> Load(const std::string &vsPath, const std::string &fsPath);
     static std::shared_ptr<ShaderAsset> Load(const std::string &chshaderPath);
@@ -37,7 +41,7 @@ public:
     void SetUniform(const std::string &name, const void *value, int type);
 
 private:
-    Shader m_Shader;
+    Shader m_Shader = { 0 };
     std::unordered_map<std::string, int> m_UniformCache;
 };
 } // namespace CHEngine

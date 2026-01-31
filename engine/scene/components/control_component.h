@@ -30,27 +30,22 @@ enum class CanvasScaleMode : uint8_t
 struct CanvasSettings
 {
     vec2 ReferenceResolution = {1920.0f, 1080.0f};
-    CanvasScaleMode ScaleMode = CanvasScaleMode::ScaleWithScreenSize;
-    float MatchWidthOrHeight = 0.5f; // 0 = match width, 1 = match height, 0.5 = blend
+    CanvasScaleMode ScaleMode = CanvasScaleMode::ConstantPixelSize; // No scaling, anchors relative to viewport
+    float MatchWidthOrHeight = 0.5f; // Only used with ScaleWithScreenSize
 };
 
 struct TextStyle
 {
-    std::string FontPath = "";
+    std::string FontName = "Default";
     float FontSize = 18.0f;
     Color TextColor = WHITE;
     bool Shadow = false;
     float ShadowOffset = 2.0f;
     Color ShadowColor = BLACK;
     float LetterSpacing = 1.0f;
-    TextAlignment Alignment = TextAlignment::Center;
-};
-
-enum class ButtonAction : uint8_t
-{
-    None = 0,
-    LoadScene,
-    Quit
+    float LineHeight = 1.2f;
+    TextAlignment HorizontalAlignment = TextAlignment::Center;
+    TextAlignment VerticalAlignment = TextAlignment::Center;
 };
 
 struct UIStyle
@@ -65,6 +60,12 @@ struct UIStyle
 
     bool UseGradient = false;
     Color GradientColor = {20, 20, 20, 255};
+
+    float Padding = 4.0f;
+    
+    float HoverScale = 1.0f;
+    float PressedScale = 1.0f;
+    float TransitionSpeed = 0.1f;
 };
 
 struct RectTransform
@@ -74,7 +75,8 @@ struct RectTransform
     vec2 OffsetMin = {-50.0f, -20.0f};
     vec2 OffsetMax = {50.0f, 20.0f};
     vec2 Pivot = {0.5f, 0.5f};
-    vec2 RectCoordinates = {0.0f, 0.0f};
+    float Rotation = 0.0f;
+    vec2 Scale = {1.0f, 1.0f};
 };
 
 // Base Component
@@ -98,9 +100,6 @@ struct ButtonControl
 
     bool IsInteractable = true;
     bool PressedThisFrame = false;
-
-    ButtonAction Action = ButtonAction::None;
-    std::string TargetScene = "";
 
     // Internal state
     bool IsHovered = false;
@@ -134,6 +133,8 @@ struct LabelControl
 
 struct SliderControl
 {
+    std::string Label = "Slider";
+    TextStyle Text;
     float Value = 0.5f;
     float Min = 0.0f;
     float Max = 1.0f;
@@ -144,6 +145,8 @@ struct SliderControl
 
 struct CheckboxControl
 {
+    std::string Label = "Checkbox";
+    TextStyle Text;
     bool Checked = false;
     bool Changed = false;
 

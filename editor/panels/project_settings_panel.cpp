@@ -1,6 +1,8 @@
 #include "project_settings_panel.h"
 #include "engine/scene/project.h"
 #include "engine/scene/project_serializer.h"
+#include "editor/utils/scene_registry.h"
+#include "extras/iconsfontawesome6.h"
 #include "imgui.h"
 
 namespace CHEngine
@@ -26,19 +28,37 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
     if (ImGui::Begin("Project Settings", &m_IsOpen))
     {
         ImGui::PushID(this);
-        auto &config = const_cast<ProjectConfig &>(project->GetConfig());
+        auto &config = project->GetConfig();
 
-        if (ImGui::CollapsingHeader("General", ImGuiTreeNodeFlags_DefaultOpen))
+        if (ImGui::CollapsingHeader(ICON_FA_GEARS " General", ImGuiTreeNodeFlags_DefaultOpen))
         {
             char nameBuf[256];
             strncpy(nameBuf, config.Name.c_str(), 255);
             if (ImGui::InputText("Project Name", nameBuf, 255))
+            {
                 config.Name = nameBuf;
+            }
 
-            char sceneBuf[256];
-            strncpy(sceneBuf, config.StartScene.c_str(), 255);
-            if (ImGui::InputText("Start Scene", sceneBuf, 255))
-                config.StartScene = sceneBuf;
+            // --- Declarative Scene Selection ---
+            auto availableScenes = SceneRegistry::GetAvailableScenes();
+            const char* currentScene = config.StartScene.c_str();
+            
+            if (ImGui::BeginCombo("Start Scene", currentScene))
+            {
+                for (const auto& scenePath : availableScenes)
+                {
+                    bool isSelected = (config.StartScene == scenePath);
+                    if (ImGui::Selectable(scenePath.c_str(), isSelected))
+                    {
+                        config.StartScene = scenePath;
+                    }
+                    if (isSelected)
+                    {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
 
             ImGui::Separator();
             ImGui::Text("Build & Run Settings");
@@ -50,21 +70,29 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
                 config.BuildConfig = (Configuration)currentConfig;
             }
             if (ImGui::IsItemHovered())
-                ImGui::SetTooltip("Select which runtime version to launch when clicking 'Build & "
-                                  "Run Standalone'.");
+            {
+                ImGui::SetTooltip("Select which runtime version to launch when clicking 'Build & Run Standalone'.");
+            }
         }
 
-        if (ImGui::CollapsingHeader("Physics", ImGuiTreeNodeFlags_DefaultOpen))
+        if (ImGui::CollapsingHeader(ICON_FA_CUBES " Physics", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            ImGui::DragFloat("World Gravity", &config.Physics.Gravity, 0.1f, 0.0f, 100.0f);
+            config.Physics.DrawUI();
         }
 
-        if (ImGui::CollapsingHeader("Window", ImGuiTreeNodeFlags_DefaultOpen))
+        if (ImGui::CollapsingHeader(ICON_FA_WINDOW_RESTORE " Window", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            ImGui::DragInt("Width", &config.Window.Width, 1, 800, 3840);
-            ImGui::DragInt("Height", &config.Window.Height, 1, 600, 2160);
-            ImGui::Checkbox("VSync", &config.Window.VSync);
-            ImGui::Checkbox("Resizable", &config.Window.Resizable);
+            config.Window.DrawUI();
+        }
+        
+        if (ImGui::CollapsingHeader(ICON_FA_PLAY " Runtime", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            config.Runtime.DrawUI();
+        }
+
+        if (ImGui::CollapsingHeader(ICON_FA_MOUNTAIN_SUN " Rendering", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            config.Render.DrawUI();
         }
 
         ImGui::Separator();

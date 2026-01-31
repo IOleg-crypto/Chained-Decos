@@ -119,4 +119,26 @@ void ShaderAsset::SetUniform(const std::string &name, const void *value, int typ
     if (loc >= 0)
         SetShaderValue(m_Shader, loc, value, type);
 }
+void ShaderAsset::LoadFromFile(const std::string &path)
+{
+    if (m_State == AssetState::Ready) return;
+
+    auto loaded = Load(path);
+    if (loaded)
+    {
+        m_Shader = loaded->m_Shader;
+        loaded->m_Shader.id = 0; // Prevent double unload
+        m_UniformCache = std::move(loaded->m_UniformCache);
+        SetState(AssetState::Ready);
+    }
+    else
+    {
+        SetState(AssetState::Failed);
+    }
+}
+
+void ShaderAsset::UploadToGPU()
+{
+    // Shader is usually loaded on main thread or already uploaded in LoadFromFile (via Raylib)
+}
 } // namespace CHEngine

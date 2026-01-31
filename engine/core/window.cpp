@@ -50,8 +50,10 @@ Window::Window(const WindowConfig &config)
     ImGuiIO &io = ImGui::GetIO();
 
     // Enable docking and viewports
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    if (config.EnableDocking)
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    if (config.EnableViewports)
+        io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     // Setup Platform/Renderer backends
     if (!ImGui_ImplGlfw_InitForOpenGL(m_Window, true))

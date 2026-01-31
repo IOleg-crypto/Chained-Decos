@@ -39,4 +39,24 @@ FontAsset::~FontAsset()
         UnloadFont(m_Font);
     }
 }
+void FontAsset::LoadFromFile(const std::string &path)
+{
+    if (m_State == AssetState::Ready) return;
+
+    auto loaded = Load(path);
+    if (loaded)
+    {
+        m_Font = loaded->m_Font;
+        loaded->m_Font.texture.id = 0; // Prevent double unload
+        SetState(AssetState::Ready);
+    }
+    else
+    {
+        SetState(AssetState::Failed);
+    }
+}
+
+void FontAsset::UploadToGPU()
+{
+}
 } // namespace CHEngine

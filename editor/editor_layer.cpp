@@ -27,6 +27,14 @@
 #include "panels/property_editor.h"
 #include "raylib.h"
 
+// Font Awesome fallback if extras/iconsfontawesome6.h is missing or defines different macros
+#ifndef ICON_MIN_FA
+#define ICON_MIN_FA 0xf000
+#endif
+#ifndef ICON_MAX_16_FA
+#define ICON_MAX_16_FA 0xf8ff
+#endif
+
 
 namespace CHEngine
 {
@@ -67,19 +75,6 @@ namespace CHEngine
 
         ImGuiIO &io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-
-        // Set font
-        float fontSize = 16.0f;
-        io.Fonts->AddFontFromFileTTF(PROJECT_ROOT_DIR "/engine/resources/font/lato/lato-bold.ttf", fontSize);
-
-        // Add FontAwesome icons
-        static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
-        ImFontConfig icons_config;
-        icons_config.MergeMode = true;
-        icons_config.PixelSnapH = true;
-        icons_config.GlyphMinAdvanceX = fontSize;
-        io.Fonts->AddFontFromFileTTF(PROJECT_ROOT_DIR "/engine/resources/font/fa-solid-900.ttf", fontSize,
-                                     &icons_config, icons_ranges);
 
         EditorUI::GUI::SetDarkThemeColors();
 

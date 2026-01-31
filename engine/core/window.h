@@ -17,6 +17,8 @@ struct WindowConfig
     bool Resizable = true;
     bool Fullscreen = false;
     int TargetFPS = 60;
+    bool EnableViewports = true;
+    bool EnableDocking = true;
 };
 
 class Window

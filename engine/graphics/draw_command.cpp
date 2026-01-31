@@ -102,8 +102,17 @@ namespace CHEngine
         auto asset = AssetManager::Get<ModelAsset>(path);
         if (!asset)
             return;
+        
+        // ✅ CRITICAL: Don't render if asset is still loading!
+        if (asset->GetState() != AssetState::Ready)
+            return;
 
         Model &model = asset->GetModel();
+        
+        // Additional safety: check if model is valid
+        if (model.meshCount == 0)
+            return;
+            
         Matrix finalTransform = MatrixMultiply(model.transform, transform);
 
         // Stats
@@ -146,17 +155,27 @@ namespace CHEngine
             return;
 
         auto texAsset = AssetManager::Get<TextureAsset>(skybox.TexturePath);
-        if (!texAsset)
+        if (!texAsset || texAsset->GetState() != AssetState::Ready)
             return;
 
         auto &state = APIContext::GetState();
+        
+        // Validate skybox cube is initialized
+        if (state.SkyboxCube.meshCount == 0)
+            return;
+            
         bool usePanorama = std::filesystem::path(skybox.TexturePath).extension() != ".hdr";
 
         std::shared_ptr<ShaderAsset> shaderAsset = usePanorama ? state.PanoramaShader : state.SkyboxShader;
-        if (!shaderAsset)
+        if (!shaderAsset || shaderAsset->GetState() != AssetState::Ready)
             return;
 
         auto &shader = shaderAsset->GetShader();
+        
+        // Validate shader is loaded
+        if (shader.id == 0)
+            return;
+            
         state.SkyboxCube.materials[0].shader = shader;
         SetMaterialTexture(&state.SkyboxCube.materials[0], usePanorama ? MATERIAL_MAP_ALBEDO : MATERIAL_MAP_CUBEMAP,
                            texAsset->GetTexture());

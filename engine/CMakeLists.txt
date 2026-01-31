@@ -23,6 +23,7 @@ target_sources(engine PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/graphics/draw_command.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/graphics/environment.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/graphics/shader_asset.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/asset_manager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/graphics/texture_asset.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/graphics/model_asset.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/graphics/font_asset.cpp
@@ -36,6 +37,7 @@ target_sources(engine PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/project.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/project_serializer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/scene_serializer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scene/component_serializer.cpp
 )
 
 # External Dependencies (Propagated through engine)

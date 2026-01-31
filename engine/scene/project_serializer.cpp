@@ -22,6 +22,7 @@ bool ProjectSerializer::Serialize(const std::filesystem::path &filepath)
         out << YAML::Key << "StartScene" << YAML::Value << config.StartScene;
         out << YAML::Key << "AssetDirectory" << YAML::Value << config.AssetDirectory.string();
         out << YAML::Key << "ActiveScene" << YAML::Value << config.ActiveScenePath.string();
+        out << YAML::Key << "Environment" << YAML::Value << config.EnvironmentPath.string();
 
         out << YAML::Key << "Physics" << YAML::Value << YAML::BeginMap;
         out << YAML::Key << "Gravity" << YAML::Value << config.Physics.Gravity;
@@ -87,6 +88,8 @@ bool ProjectSerializer::Deserialize(const std::filesystem::path &filepath)
     config.Name = projectNode["Name"].as<std::string>();
     config.StartScene = projectNode["StartScene"].as<std::string>();
     config.AssetDirectory = projectNode["AssetDirectory"].as<std::string>();
+    if (projectNode["Environment"])
+        config.EnvironmentPath = projectNode["Environment"].as<std::string>();
     if (projectNode["ActiveScene"])
         config.ActiveScenePath = projectNode["ActiveScene"].as<std::string>();
 

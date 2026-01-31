@@ -2,26 +2,33 @@
 #define CH_PROJECT_H
 
 #include "engine/core/base.h"
-#include "filesystem"
-#include "memory"
-#include "string"
+#include "engine/graphics/environment.h"
+#include <filesystem>
+#include <memory>
+#include <string>
 
 namespace CHEngine
 {
 struct PhysicsSettings
 {
     float Gravity = 20.0f;
+
+    bool DrawUI();
 };
 
 struct AnimationSettings
 {
     float TargetFPS = 30.0f;
+
+    bool DrawUI();
 };
 
 struct RenderSettings
 {
     float AmbientIntensity = 0.3f;
     float DefaultExposure = 1.0f;
+
+    bool DrawUI();
 };
 
 struct WindowSettings
@@ -30,6 +37,8 @@ struct WindowSettings
     int Height = 720;
     bool VSync = true;
     bool Resizable = true;
+
+    bool DrawUI();
 };
 
 struct RuntimeSettings
@@ -37,6 +46,8 @@ struct RuntimeSettings
     bool Fullscreen = false;
     bool ShowStats = true;
     bool EnableConsole = false;
+
+    bool DrawUI();
 };
 
 enum class Configuration
@@ -52,6 +63,7 @@ struct ProjectConfig
     std::filesystem::path AssetDirectory = "assets";
     std::filesystem::path ProjectDirectory;
     std::filesystem::path ActiveScenePath;
+    std::filesystem::path EnvironmentPath;
 
     PhysicsSettings Physics;
     AnimationSettings Animation;
@@ -81,6 +93,7 @@ public:
     {
         return s_ActiveProject;
     }
+
     static void SetActive(std::shared_ptr<Project> project)
     {
         s_ActiveProject = project;
@@ -93,15 +106,19 @@ public:
     static std::filesystem::path GetAssetDirectory()
     {
         if (s_ActiveProject)
+        {
             return s_ActiveProject->m_Config.ProjectDirectory /
                    s_ActiveProject->m_Config.AssetDirectory;
+        }
         return "";
     }
 
     static std::filesystem::path GetProjectDirectory()
     {
         if (s_ActiveProject)
+        {
             return s_ActiveProject->m_Config.ProjectDirectory;
+        }
         return "";
     }
 
@@ -125,8 +142,19 @@ public:
         m_Config.ProjectDirectory = path;
     }
 
+    void SetEnvironment(const std::filesystem::path &path)
+    {
+        m_Config.EnvironmentPath = path;
+    }
+
+    std::shared_ptr<EnvironmentAsset> GetEnvironment() const
+    {
+        return m_Environment;
+    }
+
 private:
     ProjectConfig m_Config;
+    std::shared_ptr<EnvironmentAsset> m_Environment;
     static std::shared_ptr<Project> s_ActiveProject;
 
     friend class ProjectSerializer;

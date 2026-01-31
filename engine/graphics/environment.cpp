@@ -92,4 +92,21 @@ bool EnvironmentAsset::Save(const std::string &path)
     return false;
 }
 
+void EnvironmentAsset::LoadFromFile(const std::string &path)
+{
+    if (m_State == AssetState::Ready) return;
+
+    if (Deserialize(path))
+    {
+        SetState(AssetState::Ready);
+    }
+    else
+    {
+        SetState(AssetState::Failed);
+    }
+}
+
+void EnvironmentAsset::UploadToGPU()
+{
+}
 } // namespace CHEngine

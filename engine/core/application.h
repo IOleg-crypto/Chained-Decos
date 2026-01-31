@@ -6,14 +6,13 @@
 #include "engine/core/layer.h"
 #include "engine/core/layer_stack.h"
 #include "engine/core/window.h"
+#include "engine/scene/scene.h"
 #include "raylib.h"
-#include "string"
-#include "thread"
+#include <string>
+#include <thread>
 
 namespace CHEngine
 {
-    class Scene;
-
     struct ApplicationConfig
     {
         std::string Title;
@@ -21,6 +20,8 @@ namespace CHEngine
         int Height = 720;
         bool Fullscreen = false;
         int TargetFPS = 60;
+        bool EnableViewports = true;
+        bool EnableDocking = true;
         Image WindowIcon = {0};
         int Argc = 0;
         char **Argv = nullptr;
@@ -77,6 +78,7 @@ namespace CHEngine
         {
             return m_ActiveScene;
         }
+
         void SetActiveScene(std::shared_ptr<Scene> scene)
         {
             m_ActiveScene = scene;
@@ -93,6 +95,7 @@ namespace CHEngine
         {
             s_StartupScenePath = path;
         }
+
         static const std::string &GetStartupScene()
         {
             return s_StartupScenePath;
@@ -106,6 +109,7 @@ namespace CHEngine
         void SetWindowIcon(const Image &icon) const;
 
     private:
+        void LoadEngineFonts();
         void ProcessEvents();
         void Simulate();
         void Animate();

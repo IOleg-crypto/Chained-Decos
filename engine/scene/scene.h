@@ -42,6 +42,7 @@ public:
     {
         return m_Settings.Mode;
     }
+
     void SetBackgroundMode(BackgroundMode mode)
     {
         m_Settings.Mode = mode;
@@ -51,19 +52,22 @@ public:
     {
         return m_Settings.BackgroundColor;
     }
+
     void SetBackgroundColor(Color color)
     {
         m_Settings.BackgroundColor = color;
     }
 
-    const std::string &GetBackgroundTexturePath() const
+    const std::string& GetBackgroundTexturePath() const
     {
         return m_Settings.BackgroundTexturePath;
     }
-    void SetBackgroundTexturePath(const std::string &path)
+
+    void SetBackgroundTexturePath(const std::string& path)
     {
         m_Settings.BackgroundTexturePath = path;
     }
+    
 
     static std::shared_ptr<Scene> Copy(std::shared_ptr<Scene> other);
 
@@ -91,11 +95,12 @@ public:
     void RequestSceneChange(const std::string &path);
     void UpdateProfilerStats();
 
-    const std::string &GetScenePath() const
+    const std::string& GetScenePath() const
     {
         return m_Settings.ScenePath;
     }
-    void SetScenePath(const std::string &path)
+
+    void SetScenePath(const std::string& path)
     {
         m_Settings.ScenePath = path;
     }
@@ -121,10 +126,12 @@ public:
     {
         return m_Settings.Environment;
     }
+
     const std::shared_ptr<EnvironmentAsset> GetEnvironment() const
     {
         return m_Settings.Environment;
     }
+
     void SetEnvironment(std::shared_ptr<EnvironmentAsset> environment)
     {
         m_Settings.Environment = environment;
@@ -133,11 +140,12 @@ public:
     Camera3D GetActiveCamera() const;
     EnvironmentSettings GetEnvironmentSettings() const;
 
-    CanvasSettings &GetCanvasSettings()
+    CanvasSettings& GetCanvasSettings()
     {
         return m_Settings.Canvas;
     }
-    const CanvasSettings &GetCanvasSettings() const
+
+    const CanvasSettings& GetCanvasSettings() const
     {
         return m_Settings.Canvas;
     }

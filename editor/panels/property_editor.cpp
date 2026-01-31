@@ -1,6 +1,8 @@
 #include "property_editor.h"
 #include "editor/ui/editor_gui.h"
 #include "engine/scene/components.h"
+#include "engine/scene/script_registry.h"
+#include "extras/iconsfontawesome6.h"
 #include "imgui.h"
 #include "raymath.h"
 
@@ -15,280 +17,359 @@ namespace CHEngine
         s_ComponentRegistry[typeId] = metadata;
     }
 
-    // --- Declarative UI Property Helpers ---
-    static bool DrawRectTransform(RectTransform &transform)
+    static bool DrawTextStyle(TextStyle &style)
     {
-        bool changed = false;
+        PropertyEditor::MetaBuilder mb(style);
+        if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            mb.Prop("Font Size", style.FontSize).Prop("Text Color", style.TextColor);
 
-        // Anchors
-        ImGui::Text("Anchors");
-        ImGui::SameLine(100);
-        ImGui::PushItemWidth(50);
-        if (ImGui::DragFloat("##AnchorMinX", &transform.AnchorMin.x, 0.01f)) changed = true; ImGui::SameLine();
-        if (ImGui::DragFloat("##AnchorMinY", &transform.AnchorMin.y, 0.01f)) changed = true;
-        ImGui::SameLine(); ImGui::Text("Min"); ImGui::SameLine();
-        if (ImGui::DragFloat("##AnchorMaxX", &transform.AnchorMax.x, 0.01f)) changed = true; ImGui::SameLine();
-        if (ImGui::DragFloat("##AnchorMaxY", &transform.AnchorMax.y, 0.01f)) changed = true;
-        ImGui::PopItemWidth();
+            const char *alignments[] = {"Left", "Center", "Right"};
+            int hAlign = (int)style.HorizontalAlignment;
+            if (mb.Prop("H Align", hAlign, alignments, 3)) style.HorizontalAlignment = (TextAlignment)hAlign;
 
-        // Position (Shift)
-        ImGui::Text("Position (Shift)");
-        ImGui::SameLine(100);
-        ImGui::PushItemWidth(60);
-        if (ImGui::DragFloat("##RectX", &transform.RectCoordinates.x, 0.1f)) changed = true; ImGui::SameLine();
-        if (ImGui::DragFloat("##RectY", &transform.RectCoordinates.y, 0.1f)) changed = true;
-        ImGui::PopItemWidth();
+            int vAlign = (int)style.VerticalAlignment;
+            if (mb.Prop("V Align", vAlign, alignments, 3)) style.VerticalAlignment = (TextAlignment)vAlign;
 
-        // Offsets
-        ImGui::Text("Offsets");
-        ImGui::SameLine(100);
-        ImGui::PushItemWidth(50);
-        if (ImGui::DragFloat("##OffsetMinX", &transform.OffsetMin.x, 1.0f)) changed = true; ImGui::SameLine();
-        if (ImGui::DragFloat("##OffsetMinY", &transform.OffsetMin.y, 1.0f)) changed = true;
-        ImGui::SameLine(); ImGui::Text("Min"); ImGui::SameLine();
-        if (ImGui::DragFloat("##OffsetMaxX", &transform.OffsetMax.x, 1.0f)) changed = true; ImGui::SameLine();
-        if (ImGui::DragFloat("##OffsetMaxY", &transform.OffsetMax.y, 1.0f)) changed = true;
-        ImGui::PopItemWidth();
-
-        // Pivot
-        ImGui::Text("Pivot");
-        ImGui::SameLine(100);
-        ImGui::PushItemWidth(60);
-        if (ImGui::DragFloat("##PivotX", &transform.Pivot.x, 0.01f)) changed = true; ImGui::SameLine();
-        if (ImGui::DragFloat("##PivotY", &transform.Pivot.y, 0.01f)) changed = true;
-        ImGui::PopItemWidth();
-
-        return changed;
+            mb.Prop("Letter Spacing", style.LetterSpacing).Prop("Line Height", style.LineHeight);
+            if (mb.Prop("Shadow", style.Shadow) && style.Shadow)
+            {
+                mb.Prop("Shadow Offset", style.ShadowOffset).Prop("Shadow Color", style.ShadowColor);
+            }
+            ImGui::TreePop();
+        }
+        return (bool)mb;
     }
 
     static bool DrawUIStyle(UIStyle &style)
     {
+        PropertyEditor::MetaBuilder mb(style);
+        if (ImGui::TreeNodeEx("Visual Style", ImGuiTreeNodeFlags_Framed))
+        {
+            mb.Prop("Background", style.BackgroundColor)
+              .Prop("Hover", style.HoverColor)
+              .Prop("Pressed", style.PressedColor)
+              .Prop("Rounding", style.Rounding)
+              .Prop("Border", style.BorderSize)
+              .Prop("Border Color", style.BorderColor)
+              .Prop("Padding", style.Padding);
+            ImGui::TreePop();
+        }
+        return (bool)mb;
+    }
+
+    static bool DrawControlComponentUI(ControlComponent &comp)
+    {
         bool changed = false;
-        if (GUI::Property("BackgroundColor", style.BackgroundColor)) changed = true;
-        if (GUI::Property("Rounding", style.Rounding)) changed = true;
+        auto &rt = comp.Transform;
+
+        // --- Anchor Presets ---
+        ImGui::Text("Presets:"); ImGui::SameLine();
+        if (ImGui::Button("Center")) {
+            rt.AnchorMin = {0.5f, 0.5f}; rt.AnchorMax = {0.5f, 0.5f};
+            rt.OffsetMin = {-50, -50}; rt.OffsetMax = {50, 50};
+            changed = true;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Stretch")) {
+            rt.AnchorMin = {0.0f, 0.0f}; rt.AnchorMax = {1.0f, 1.0f};
+            rt.OffsetMin = {0, 0}; rt.OffsetMax = {0, 0};
+            changed = true;
+        }
+
+        GUI::BeginProperties();
+        // Use compact Property instead of Vec2Control to reduce X/Y label clutter
+        if (GUI::Property("Pivot", rt.Pivot)) changed = true;
+        if (GUI::Property("Anchor Min", rt.AnchorMin, 0.01f, 0.0f, 1.0f)) changed = true;
+        if (GUI::Property("Anchor Max", rt.AnchorMax, 0.01f, 0.0f, 1.0f)) changed = true;
+
+        bool isPoint = (rt.AnchorMin.x == rt.AnchorMax.x && rt.AnchorMin.y == rt.AnchorMax.y);
+        if (isPoint)
+        {
+            float width = rt.OffsetMax.x - rt.OffsetMin.x;
+            float height = rt.OffsetMax.y - rt.OffsetMin.y;
+            float posX = rt.OffsetMin.x + width * rt.Pivot.x;
+            float posY = rt.OffsetMin.y + height * rt.Pivot.y;
+            
+            glm::vec2 pos = {posX, posY};
+            glm::vec2 size = {width, height};
+
+            if (GUI::Property("Pos", pos)) {
+                rt.OffsetMin.x = pos.x - size.x * rt.Pivot.x;
+                rt.OffsetMin.y = pos.y - size.y * rt.Pivot.y;
+                rt.OffsetMax.x = pos.x + size.x * (1.0f - rt.Pivot.x);
+                rt.OffsetMax.y = pos.y + size.y * (1.0f - rt.Pivot.y);
+                changed = true;
+            }
+            if (GUI::Property("Size", size)) {
+                rt.OffsetMin.x = pos.x - size.x * rt.Pivot.x;
+                rt.OffsetMin.y = pos.y - size.y * rt.Pivot.y;
+                rt.OffsetMax.x = pos.x + size.x * (1.0f - rt.Pivot.x);
+                rt.OffsetMax.y = pos.y + size.y * (1.0f - rt.Pivot.y);
+                changed = true;
+            }
+        }
+        else
+        {
+            // For stretch, show padding (intuitive positive values)
+            float rightPadding = -rt.OffsetMax.x;
+            float bottomPadding = -rt.OffsetMax.y;
+
+            if (GUI::Property("Left", rt.OffsetMin.x)) changed = true;
+            if (GUI::Property("Top", rt.OffsetMin.y)) changed = true;
+            if (GUI::Property("Right", rightPadding)) { rt.OffsetMax.x = -rightPadding; changed = true; }
+            if (GUI::Property("Bottom", bottomPadding)) { rt.OffsetMax.y = -bottomPadding; changed = true; }
+        }
+        GUI::EndProperties();
+
+        if (ImGui::TreeNodeEx("Extra Layout Settings", ImGuiTreeNodeFlags_SpanAvailWidth))
+        {
+            GUI::BeginProperties();
+            if (GUI::Property("Rotation", rt.Rotation)) changed = true;
+            if (GUI::Property("Scale", rt.Scale)) changed = true;
+            if (GUI::Property("Z Order", comp.ZOrder)) changed = true;
+            if (GUI::Property("Visible", comp.IsActive)) changed = true;
+            GUI::EndProperties();
+            ImGui::TreePop();
+        }
         return changed;
     }
 
     void PropertyEditor::Init()
     {
         // --- Core & Rendering ---
-        Register<TransformComponent>("Transform",
-                                     [](auto &comp)
-                                     {
-                                         bool changed = false;
-                                         GUI::BeginProperties();
-                                         if (GUI::DrawVec3Control("Translation", comp.Translation)) changed = true;
-                                         Vector3 rot = Vector3Scale(comp.Rotation, RAD2DEG);
-                                         if (GUI::DrawVec3Control("Rotation", rot))
-                                         {
-                                             comp.Rotation = Vector3Scale(rot, DEG2RAD);
-                                             changed = true;
-                                         }
-                                         if (GUI::DrawVec3Control("Scale", comp.Scale, 1.0f)) changed = true;
-                                         GUI::EndProperties();
-                                         return changed;
-                                     });
+        Register<TransformComponent>("Transform", [](auto &comp) {
+            MetaBuilder mb(comp);
+            mb.Vec3("Translation", comp.Translation);
+            Vector3 rot = Vector3Scale(comp.Rotation, RAD2DEG);
+            if (mb.Vec3("Rotation", rot)) comp.Rotation = Vector3Scale(rot, DEG2RAD);
+            mb.Vec3("Scale", comp.Scale, 1.0f);
+            return (bool)mb;
+        });
 
-        Register<ModelComponent>("Model",
-                                 [](auto &comp)
-                                 {
-                                     bool changed = false;
-                                     GUI::BeginProperties();
-                                     if (GUI::Property("Path", comp.ModelPath)) changed = true;
-                                     GUI::EndProperties();
-                                     return changed;
-                                 });
+        Register<ModelComponent>("Model", [](auto &comp) {
+            return (bool)MetaBuilder(comp).Prop("Path", comp.ModelPath);
+        });
 
-        Register<PointLightComponent>("Point Light",
-                                      [](auto &comp)
-                                      {
-                                          bool changed = false;
-                                          GUI::BeginProperties();
-                                          if (GUI::Property("Radiance", comp.Radiance)) changed = true;
-                                          if (GUI::Property("Radius", comp.Radius)) changed = true;
-                                          if (GUI::Property("Falloff", comp.Falloff)) changed = true;
-                                          if (GUI::Property("Color", comp.LightColor)) changed = true;
-                                          GUI::EndProperties();
-                                          return changed;
-                                      });
+        Register<PointLightComponent>("Point Light", [](auto &comp) {
+            MetaBuilder mb(comp);
+            mb.Prop("Color", comp.LightColor).Prop("Intensity", comp.Intensity).Prop("Radius", comp.Radius);
+            return (bool)mb;
+        });
 
-        Register<AnimationComponent>("Animation",
-                                     [](auto &comp)
-                                     {
-                                         bool changed = false;
-                                         GUI::BeginProperties();
-                                         if (GUI::Property("Playing", comp.IsPlaying)) changed = true;
-                                         GUI::EndProperties();
-                                         return changed;
-                                     });
+        Register<SpotLightComponent>("Spot Light", [](auto &comp) {
+            MetaBuilder mb(comp);
+            mb.Prop("Color", comp.LightColor).Prop("Intensity", comp.Intensity).Prop("Range", comp.Range);
+            mb.Prop("Inner Cutoff", comp.InnerCutoff).Prop("Outer Cutoff", comp.OuterCutoff);
+            return (bool)mb;
+        });
+
+        Register<AnimationComponent>("Animation", [](auto &comp) {
+            return (bool)MetaBuilder(comp).Prop("Playing", comp.IsPlaying);
+        });
 
         // --- Physics ---
-        Register<ColliderComponent>("Collider",
-                                    [](auto &comp)
-                                    {
-                                        bool changed = false;
-                                        GUI::BeginProperties();
-                                        if (GUI::Property("Enabled", comp.Enabled)) changed = true;
-                                        if (GUI::DrawVec3Control("Offset", comp.Offset)) changed = true;
-                                        if (GUI::DrawVec3Control("Size", comp.Size, 1.0f)) changed = true;
-                                        if (GUI::Property("Auto Calculate", comp.AutoCalculate)) changed = true;
-                                        GUI::EndProperties();
-                                        return changed;
-                                    });
+        Register<ColliderComponent>("Collider", [](auto &comp) {
+            MetaBuilder mb(comp);
+            mb.Prop("Enabled", comp.Enabled);
+            const char* types[] = { "Box", "Mesh (BVH)" };
+            int currentType = (int)comp.Type;
+            if (mb.Prop("Type", currentType, types, 2)) comp.Type = (ColliderType)currentType;
 
-        Register<RigidBodyComponent>("RigidBody",
-                                     [](auto &comp)
-                                     {
-                                         bool changed = false;
-                                         GUI::BeginProperties();
-                                         if (GUI::Property("Mass", comp.Mass)) changed = true;
-                                         if (GUI::Property("Gravity", comp.UseGravity)) changed = true;
-                                         if (GUI::Property("Kinematic", comp.IsKinematic)) changed = true;
-                                         GUI::EndProperties();
-                                         return changed;
-                                     });
+            if (comp.Type == ColliderType::Box) {
+                mb.Vec3("Offset", comp.Offset);
+                mb.Vec3("Size", comp.Size, 1.0f);
+                mb.Prop("Auto Calculate", comp.AutoCalculate);
+            } else {
+                mb.Prop("Model Path", comp.ModelPath);
+                ImGui::Text("BVH Status"); ImGui::NextColumn();
+                ImGui::TextDisabled(comp.BVHRoot ? "Loaded" : "Not Built"); ImGui::NextColumn();
+                if (ImGui::Button("Build/Rebuild BVH")) mb.Changed = true;
+            }
+            return (bool)mb;
+        });
 
-        // --- Scripts & Gameplay ---
-        Register<PlayerComponent>("Player",
-                                  [](auto &comp)
-                                  {
-                                      bool changed = false;
-                                      GUI::BeginProperties();
-                                      if (GUI::Property("Speed", comp.MovementSpeed)) changed = true;
-                                      if (GUI::Property("Jump", comp.JumpForce)) changed = true;
-                                      if (GUI::Property("Sensitivity", comp.LookSensitivity)) changed = true;
-                                      GUI::EndProperties();
-                                      return changed;
-                                  });
+        Register<BillboardComponent>("Billboard", [](auto &comp) {
+            MetaBuilder mb(comp);
+            mb.Prop("Icon Texture", comp.TexturePath).Prop("Tint", comp.Tint).Prop("Size", comp.Size);
+            return (bool)mb;
+        });
 
-        Register<AudioComponent>("Audio",
-                                 [](auto &comp)
-                                 {
-                                     bool changed = false;
-                                     GUI::BeginProperties();
-                                     if (GUI::Property("Path", comp.SoundPath)) changed = true;
-                                     if (GUI::Property("Volume", comp.Volume)) changed = true;
-                                     GUI::EndProperties();
-                                     return changed;
-                                 });
 
-        Register<NativeScriptComponent>("Native Script",
-                                        [](auto &comp)
-                                        {
-                                            for (auto &script : comp.Scripts)
-                                            {
-                                                ImGui::TextDisabled("Script:");
-                                                ImGui::SameLine();
-                                                ImGui::Text("%s", script.ScriptName.c_str());
-                                            }
-                                            return false;
-                                        });
+        Register<RigidBodyComponent>("RigidBody", [](auto &comp) {
+            MetaBuilder mb(comp);
+            mb.Prop("Mass", comp.Mass).Prop("Gravity", comp.UseGravity).Prop("Kinematic", comp.IsKinematic);
+            return (bool)mb;
+        });
 
-        Register<SpawnComponent>("Spawn",
-                                 [](auto &comp)
-                                 {
-                                     bool changed = false;
-                                     GUI::BeginProperties();
-                                     if (GUI::Property("Active", comp.IsActive)) changed = true;
-                                     if (GUI::DrawVec3Control("Zone Size", comp.ZoneSize, 1.0f)) changed = true;
-                                     if (GUI::DrawVec3Control("Spawn Point", comp.SpawnPoint)) changed = true;
-                                     GUI::EndProperties();
-                                     return changed;
-                                 });
+        Register<SceneTransitionComponent>("Scene Transition", [](auto &comp) {
+            MetaBuilder mb(comp);
+            mb.Prop("Target Scene", comp.TargetScenePath).Prop("Triggered", comp.Triggered);
+            return (bool)mb;
+        });
+
+        Register<AudioComponent>("Audio", [](auto &comp) {
+            MetaBuilder mb(comp);
+            mb.Prop("Path", comp.SoundPath).Prop("Volume", comp.Volume);
+            return (bool)mb;
+        });
+
+        Register<NativeScriptComponent>("Native Script", [](auto &comp) {
+            bool changed = false;
+            for (size_t i = 0; i < comp.Scripts.size(); ++i) {
+                auto& script = comp.Scripts[i];
+                ImGui::TextDisabled("Script: %s", script.ScriptName.c_str());
+                ImGui::SameLine();
+                ImGui::PushID((int)i);
+                if (ImGui::Button(ICON_FA_TRASH)) {
+                    comp.Scripts.erase(comp.Scripts.begin() + i);
+                    changed = true;
+                    ImGui::PopID(); break; 
+                }
+                ImGui::PopID();
+            }
+            if (ImGui::Button("Add Script")) ImGui::OpenPopup("AddScriptPopup");
+            if (ImGui::BeginPopup("AddScriptPopup")) {
+                for (const auto& [name, funcs] : ScriptRegistry::GetScripts()) {
+                    if (ImGui::MenuItem(name.c_str())) {
+                        ScriptRegistry::AddScript(name, comp); changed = true;
+                    }
+                }
+                ImGui::EndPopup();
+            }
+            return changed;
+        });
 
         // --- UI Widgets (Classic Look) ---
-        Register<ControlComponent>("Widget Component",
-                                   [](auto &comp)
+        Register<ControlComponent>("Rect Transform",
+                                   [](auto &comp, Entity e)
                                    {
-                                       bool changed = false;
-                                       GUI::BeginProperties();
-                                       if (GUI::Property("Z Order", comp.ZOrder)) changed = true;
-                                       GUI::EndProperties();
-
-                                       if (DrawRectTransform(comp.Transform)) changed = true;
-
-                                       GUI::BeginProperties();
-                                       if (GUI::Property("Is Active", comp.IsActive)) changed = true;
-                                       if (GUI::Property("Hide in Hierarchy", comp.HiddenInHierarchy)) changed = true;
-                                       GUI::EndProperties();
-                                       return changed;
+                                       return DrawControlComponentUI(comp);
                                    });
 
         Register<ButtonControl>("Button Widget",
-                                 [](auto &comp)
+                                 [](auto &comp, Entity e)
                                  {
                                      bool changed = false;
                                      GUI::BeginProperties();
                                      if (GUI::Property("Label", comp.Label)) changed = true;
                                      if (GUI::Property("Interactable", comp.IsInteractable)) changed = true;
-
-                                     // Button Actions
-                                     const char* actions[] = { "None", "Load Scene", "Quit" };
-                                     int currentAction = (int)comp.Action;
-                                     if (GUI::Property("On Click", currentAction, actions, 3))
-                                     {
-                                         comp.Action = (ButtonAction)currentAction;
-                                         changed = true;
-                                     }
-
-                                     if (comp.Action == ButtonAction::LoadScene)
-                                     {
-                                         if (GUI::Property("Target Scene", comp.TargetScene)) changed = true;
-                                     }
-                                     
-                                     ImGui::Text("Pressed State");
-                                     ImGui::NextColumn();
-                                     ImGui::TextDisabled(comp.IsDown ? "PRESSED" : "IDLE");
-                                     ImGui::NextColumn();
-
                                      GUI::EndProperties();
+
+                                     if (DrawUIStyle(comp.Style)) changed = true;
+                                     if (DrawTextStyle(comp.Text)) changed = true;
+                                     
+                                     if (e.HasComponent<ControlComponent>())
+                                     {
+                                         if (ImGui::TreeNodeEx("Layout", ImGuiTreeNodeFlags_Framed))
+                                         {
+                                             if (DrawControlComponentUI(e.GetComponent<ControlComponent>())) changed = true;
+                                             ImGui::TreePop();
+                                         }
+                                     }
                                      return changed;
                                  });
 
         Register<PanelControl>("Panel Widget",
-                                [](auto &comp)
+                                [](auto &comp, Entity e)
                                 {
                                     bool changed = false;
                                     GUI::BeginProperties();
-                                    if (DrawUIStyle(comp.Style)) changed = true;
+                                    if (GUI::Property("Fullscreen", comp.FullScreen)) changed = true;
                                     GUI::EndProperties();
+
+                                    if (DrawUIStyle(comp.Style)) changed = true;
+
+                                    if (e.HasComponent<ControlComponent>())
+                                    {
+                                        if (ImGui::TreeNodeEx("Layout", ImGuiTreeNodeFlags_Framed))
+                                        {
+                                            if (DrawControlComponentUI(e.GetComponent<ControlComponent>())) changed = true;
+                                            ImGui::TreePop();
+                                        }
+                                    }
                                     return changed;
                                 });
 
         Register<LabelControl>("Label Widget",
-                                [](auto &comp)
+                                [](auto &comp, Entity e)
                                 {
                                     bool changed = false;
                                     GUI::BeginProperties();
                                     if (GUI::Property("Text", comp.Text)) changed = true;
                                     GUI::EndProperties();
+
+                                    if (DrawTextStyle(comp.Style)) changed = true;
+
+                                    if (e.HasComponent<ControlComponent>())
+                                    {
+                                        if (ImGui::TreeNodeEx("Layout", ImGuiTreeNodeFlags_Framed))
+                                        {
+                                            if (DrawControlComponentUI(e.GetComponent<ControlComponent>())) changed = true;
+                                            ImGui::TreePop();
+                                        }
+                                    }
                                     return changed;
                                 });
 
         Register<SliderControl>("Slider Widget",
-                                 [](auto &comp)
+                                 [](auto &comp, Entity e)
                                  {
                                      bool changed = false;
                                      GUI::BeginProperties();
+                                     if (GUI::Property("Label", comp.Label)) changed = true;
                                      if (GUI::Property("Min", comp.Min)) changed = true;
                                      if (GUI::Property("Max", comp.Max)) changed = true;
                                      if (GUI::Property("Value", comp.Value)) changed = true;
                                      GUI::EndProperties();
+                                     
+                                     if (DrawUIStyle(comp.Style)) changed = true;
+                                     if (DrawTextStyle(comp.Text)) changed = true;
+
+                                     if (e.HasComponent<ControlComponent>())
+                                     {
+                                         if (ImGui::TreeNodeEx("Layout", ImGuiTreeNodeFlags_Framed))
+                                         {
+                                             if (DrawControlComponentUI(e.GetComponent<ControlComponent>())) changed = true;
+                                             ImGui::TreePop();
+                                         }
+                                     }
                                      return changed;
                                  });
 
         Register<CheckboxControl>("Checkbox Widget",
-                                  [](auto &comp)
+                                  [](auto &comp, Entity e)
                                   {
                                       bool changed = false;
                                       GUI::BeginProperties();
+                                      if (GUI::Property("Label", comp.Label)) changed = true;
                                       if (GUI::Property("Value", comp.Checked)) changed = true;
                                       GUI::EndProperties();
+
+                                      if (DrawUIStyle(comp.Style)) changed = true;
+                                      if (DrawTextStyle(comp.Text)) changed = true;
+
+                                      if (e.HasComponent<ControlComponent>())
+                                      {
+                                          if (ImGui::TreeNodeEx("Layout", ImGuiTreeNodeFlags_Framed))
+                                          {
+                                              if (DrawControlComponentUI(e.GetComponent<ControlComponent>())) changed = true;
+                                              ImGui::TreePop();
+                                          }
+                                      }
                                       return changed;
                                   });
 
         // Hide UI internal components from generic "Add Component" menu
         s_ComponentRegistry[entt::type_hash<ControlComponent>::value()].AllowAdd = false;
+        
+        // Mark Widgets
+        s_ComponentRegistry[entt::type_hash<PanelControl>::value()].IsWidget = true;
+        s_ComponentRegistry[entt::type_hash<LabelControl>::value()].IsWidget = true;
+        s_ComponentRegistry[entt::type_hash<ButtonControl>::value()].IsWidget = true;
+        s_ComponentRegistry[entt::type_hash<SliderControl>::value()].IsWidget = true;
+        s_ComponentRegistry[entt::type_hash<CheckboxControl>::value()].IsWidget = true;
+
         s_ComponentRegistry[entt::type_hash<PanelControl>::value()].AllowAdd = false;
         s_ComponentRegistry[entt::type_hash<LabelControl>::value()].AllowAdd = false;
         s_ComponentRegistry[entt::type_hash<ButtonControl>::value()].AllowAdd = false;
@@ -296,10 +377,23 @@ namespace CHEngine
         s_ComponentRegistry[entt::type_hash<CheckboxControl>::value()].AllowAdd = false;
     }
 
-    void PropertyEditor::DrawEntityProperties(Entity entity)
+    void PropertyEditor::DrawEntityProperties(CHEngine::Entity entity)
     {
         auto &registry = entity.GetScene()->GetRegistry();
         bool isUI = entity.HasComponent<ControlComponent>();
+        
+        bool hasWidget = false;
+        for (auto [id, storage] : registry.storage())
+        {
+            if (storage.contains(entity) && s_ComponentRegistry.contains(id))
+            {
+                if (s_ComponentRegistry[id].IsWidget)
+                {
+                    hasWidget = true;
+                    break;
+                }
+            }
+        }
 
         for (auto [id, storage] : registry.storage())
         {
@@ -311,8 +405,11 @@ namespace CHEngine
                     if (!metadata.Visible)
                         continue;
 
-                    // Special Rule: Hide Transform for UI elements if you want to declutter
+                    // Logic to reduce clutter
                     if (isUI && id == entt::type_hash<TransformComponent>::value())
+                        continue;
+                    
+                    if (hasWidget && id == entt::type_hash<ControlComponent>::value())
                         continue;
 
                     ImGui::PushID((int)id);
@@ -323,7 +420,7 @@ namespace CHEngine
         }
     }
 
-    void PropertyEditor::DrawTag(Entity entity)
+    void PropertyEditor::DrawTag(CHEngine::Entity entity)
     {
         if (entity.HasComponent<TagComponent>())
         {
@@ -339,12 +436,11 @@ namespace CHEngine
         }
     }
 
-    void PropertyEditor::DrawMaterial(Entity entity, int hitMeshIndex)
+    void PropertyEditor::DrawMaterial(CHEngine::Entity entity, int hitMeshIndex)
     {
-        // Reserved for future material property editing
     }
 
-    void PropertyEditor::DrawAddComponentPopup(Entity entity)
+    void PropertyEditor::DrawAddComponentPopup(CHEngine::Entity entity)
     {
         if (ImGui::BeginPopup("AddComponent"))
         {
@@ -367,5 +463,4 @@ namespace CHEngine
             ImGui::EndPopup();
         }
     }
-
 } // namespace CHEngine

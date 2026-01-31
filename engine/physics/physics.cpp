@@ -1,7 +1,7 @@
 #include "physics.h"
 #include "dynamics.h"
 #include "engine/core/profiler.h"
-// Removed redundant include: engine/graphics/asset_manager.h
+#include "engine/graphics/asset_manager.h"
 #include "engine/graphics/model_asset.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
@@ -44,9 +44,8 @@ void Physics::Update(Scene *scene, float deltaTime, bool runtime)
             if (registry.all_of<ModelComponent>(entity))
             {
                 auto &model = registry.get<ModelComponent>(entity);
-                // auto asset = AssetManager::Get<ModelAsset>(model.ModelPath);
-                std::shared_ptr<ModelAsset> asset = nullptr;
-                if (asset)
+                auto asset = AssetManager::Get<ModelAsset>(model.ModelPath);
+                if (asset && asset->GetState() == AssetState::Ready)
                 {
                     BoundingBox box = asset->GetBoundingBox();
                     collider.Size = Vector3Subtract(box.max, box.min);
@@ -58,9 +57,8 @@ void Physics::Update(Scene *scene, float deltaTime, bool runtime)
         else if (collider.Type == ColliderType::Mesh && !collider.BVHRoot &&
                  !collider.ModelPath.empty())
         {
-            // auto asset = AssetManager::Get<ModelAsset>(collider.ModelPath);
-            std::shared_ptr<ModelAsset> asset = nullptr;
-            if (asset && asset->GetModel().meshCount > 0)
+            auto asset = AssetManager::Get<ModelAsset>(collider.ModelPath);
+            if (asset && asset->GetState() == AssetState::Ready && asset->GetModel().meshCount > 0)
             {
                 collider.BVHRoot = asset->GetBVHCache();
                 BoundingBox box = asset->GetBoundingBox();

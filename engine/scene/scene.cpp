@@ -12,6 +12,7 @@
 #include "raymath.h"
 #include "scene_serializer.h"
 #include "scriptable_entity.h"
+#include "ui_math.h"
 
 namespace CHEngine
 {
@@ -89,11 +90,26 @@ Entity Scene::CreateUIEntity(const std::string &type, const std::string &name)
     Entity entity = CreateEntity(name.empty() ? type : name);
     entity.AddComponent<ControlComponent>();
 
-    if (type == "Button") entity.AddComponent<ButtonControl>();
-    else if (type == "Panel") entity.AddComponent<PanelControl>();
-    else if (type == "Label") entity.AddComponent<LabelControl>();
-    else if (type == "Slider") entity.AddComponent<SliderControl>();
-    else if (type == "CheckBox") entity.AddComponent<CheckboxControl>();
+    if (type == "Button")
+    {
+        entity.AddComponent<ButtonControl>();
+    }
+    else if (type == "Panel")
+    {
+        entity.AddComponent<PanelControl>();
+    }
+    else if (type == "Label")
+    {
+        entity.AddComponent<LabelControl>();
+    }
+    else if (type == "Slider")
+    {
+        entity.AddComponent<SliderControl>();
+    }
+    else if (type == "CheckBox")
+    {
+        entity.AddComponent<CheckboxControl>();
+    }
 
     return entity;
 }
@@ -116,7 +132,9 @@ void Scene::OnHierarchyDestroy(entt::registry &reg, entt::entity entity)
         auto &phc = reg.get<HierarchyComponent>(hc.Parent);
         auto it = std::find(phc.Children.begin(), phc.Children.end(), entity);
         if (it != phc.Children.end())
+        {
             phc.Children.erase(it);
+        }
     }
 
     // 2. Clear parent link in children (detaching them, not destroying)
@@ -148,7 +166,9 @@ template <> void Scene::OnComponentAdded<ModelComponent>(Entity entity, ModelCom
             component.Materials.clear();
             std::set<int> uniqueIndices;
             for (int i = 0; i < model.meshCount; i++)
+            {
                 uniqueIndices.insert(model.meshMaterial[i]);
+            }
 
             for (int idx : uniqueIndices)
             {
@@ -273,6 +293,19 @@ void Scene::UpdateAudio(float deltaTime)
 void Scene::OnRender(const Camera3D &camera, const DebugRenderFlags *debugFlags)
 {
     CH_PROFILE_FUNCTION();
+
+    // Late initialization for async loaded models
+    auto view = m_Registry.view<ModelComponent>();
+    for (auto entityID : view)
+    {
+        auto &mc = view.get<ModelComponent>(entityID);
+        if (mc.Asset && mc.Asset->IsReady() && !mc.MaterialsInitialized)
+        {
+            Entity entity = {entityID, this};
+            OnComponentAdded<ModelComponent>(entity, mc);
+        }
+    }
+
     Visuals::DrawScene(this, camera, debugFlags);
 }
 
@@ -383,104 +416,132 @@ void Scene::OnImGuiRender(const ImVec2 &refPos, const ImVec2 &refSize, uint32_t 
     if (referenceSize.x <= 0 || referenceSize.y <= 0)
         referenceSize = ImGui::GetIO().DisplaySize;
 
-    // --- Declarative GUISystem ---
-    float scaleX = 1.0f;
-    float scaleY = 1.0f;
+    // --- UI Layout System ---
+    // Pure pixel values and anchors, no custom ReferenceResolution scaling for now
+    auto uiView = m_Registry.view<ControlComponent>();
+    
+    // Process UI elements by ZOrder
+    std::vector<entt::entity> sortedList;
+    for (auto entityID : uiView) sortedList.push_back(entityID);
 
-    if (m_Settings.Canvas.ScaleMode == CanvasScaleMode::ScaleWithScreenSize)
-    {
-        scaleX = referenceSize.x / m_Settings.Canvas.ReferenceResolution.x;
-        scaleY = referenceSize.y / m_Settings.Canvas.ReferenceResolution.y;
-
-        float scale = scaleX * (1.0f - m_Settings.Canvas.MatchWidthOrHeight) +
-                      scaleY * m_Settings.Canvas.MatchWidthOrHeight;
-        scaleX = scale;
-        scaleY = scale;
+    // Simple bubble sort to avoid lambdas
+    for (size_t i = 0; i < sortedList.size(); i++) {
+        for (size_t j = i + 1; j < sortedList.size(); j++) {
+            if (uiView.get<ControlComponent>(sortedList[i]).ZOrder > uiView.get<ControlComponent>(sortedList[j]).ZOrder) {
+                std::swap(sortedList[i], sortedList[j]);
+            }
+        }
     }
 
-    auto view = m_Registry.view<ControlComponent>();
-    
-    // Sort by ZOrder
-    std::vector<entt::entity> sortedEntities(view.begin(), view.end());
-    std::sort(sortedEntities.begin(), sortedEntities.end(), [&](entt::entity a, entt::entity b) {
-        return view.get<ControlComponent>(a).ZOrder < view.get<ControlComponent>(b).ZOrder;
-    });
-
-    for (auto entityID : sortedEntities)
+    for (entt::entity entityID : sortedList)
     {
         Entity entity{entityID, this};
-        auto &cc = view.get<ControlComponent>(entityID);
+        auto &cc = uiView.get<ControlComponent>(entityID);
         if (!cc.IsActive) continue;
 
-        // Position based on RectTransform and Scaling
-        ImVec2 pos;
-        pos.x = cc.Transform.AnchorMin.x * refSize.x + cc.Transform.OffsetMin.x * scaleX;
-        pos.y = cc.Transform.AnchorMin.y * refSize.y + cc.Transform.OffsetMin.y * scaleY;
+        if (entity.HasComponent<ButtonControl>())
+            entity.GetComponent<ButtonControl>().PressedThisFrame = false;
+
+        // --- Uniform UI Math using helper ---
+        auto rect = UIMath::CalculateRect(cc.Transform,
+            {referenceSize.x, referenceSize.y},
+            {refPos.x, refPos.y});
         
-        ImVec2 size;
-        size.x = (cc.Transform.AnchorMax.x * refSize.x + cc.Transform.OffsetMax.x * scaleX) - pos.x;
-        size.y = (cc.Transform.AnchorMax.y * refSize.y + cc.Transform.OffsetMax.y * scaleY) - pos.y;
+        ImVec2 pos = {rect.Min.x - refPos.x, rect.Min.y - refPos.y};
+        ImVec2 size = {rect.Size().x, rect.Size().y};
 
         ImGui::SetCursorPos(pos);
         ImGui::BeginGroup();
-        ImGui::PushID((int)entityID);
+        ImGui::PushID((int)entityID); // Use stable entity ID
         
-        // Declarative UI Rendering
-        auto draw = [&](auto type, auto&& func) {
-            using T = std::decay_t<decltype(type)>;
-            if (entity.HasComponent<T>()) func(entity.GetComponent<T>());
-        };
-
-        draw(PanelControl{}, [&](auto &pnl) {
+        // Render Panel
+        if (entity.HasComponent<PanelControl>())
+        {
+            auto& pnl = entity.GetComponent<PanelControl>();
             ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4{pnl.Style.BackgroundColor.r / 255.0f, pnl.Style.BackgroundColor.g / 255.0f, pnl.Style.BackgroundColor.b / 255.0f, pnl.Style.BackgroundColor.a / 255.0f});
+            ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, pnl.Style.Rounding);
             ImGui::BeginChild("Panel", size, true); 
             ImGui::EndChild();
+            ImGui::PopStyleVar();
             ImGui::PopStyleColor();
-        });
+        }
 
-        draw(LabelControl{}, [&](auto &lbl) {
-            ImGui::Text("%s", lbl.Text.c_str());
-        });
+        // Render Label
+        if (entity.HasComponent<LabelControl>())
+        {
+            auto& lbl = entity.GetComponent<LabelControl>();
+            ImVec4 color = {lbl.Style.TextColor.r / 255.0f, lbl.Style.TextColor.g / 255.0f, lbl.Style.TextColor.b / 255.0f, lbl.Style.TextColor.a / 255.0f};
+            ImGui::PushStyleColor(ImGuiCol_Text, color);
+            ImGui::PushTextWrapPos(pos.x + size.x);
 
-        draw(ButtonControl{}, [&](auto &btn) {
-            if (ImGui::Button(btn.Label.c_str(), size)) 
-            {
-                btn.PressedThisFrame = true;
-                
-                // Execute built-in actions
-                if (btn.Action == ButtonAction::LoadScene && !btn.TargetScene.empty())
-                {
-                    RequestSceneChange(btn.TargetScene);
-                }
-                else if (btn.Action == ButtonAction::Quit)
-                {
-                    Application::Get().Close();
-                }
-            }
-        });
+            ImVec2 textSize = ImGui::CalcTextSize(lbl.Text.c_str(), nullptr, true, size.x);
+            float startX = pos.x;
+            if (lbl.Style.HorizontalAlignment == TextAlignment::Center) startX += (size.x - textSize.x) * 0.5f;
+            else if (lbl.Style.HorizontalAlignment == TextAlignment::Right) startX += (size.x - textSize.x);
 
-        draw(SliderControl{}, [&](auto &sl) {
-            sl.Changed = ImGui::SliderFloat("##Slider", &sl.Value, sl.Min, sl.Max);
-        });
+            float startY = pos.y;
+            if (lbl.Style.VerticalAlignment == TextAlignment::Center) startY += (size.y - textSize.y) * 0.5f;
+            else if (lbl.Style.VerticalAlignment == TextAlignment::Right) startY += (size.y - textSize.y);
 
-        draw(CheckboxControl{}, [&](auto &cb) {
-            cb.Changed = ImGui::Checkbox("##Checkbox", &cb.Checked);
-        });
+            ImGui::SetCursorPos({startX, startY});
+            ImGui::TextUnformatted(lbl.Text.c_str());
+            ImGui::PopTextWrapPos();
+            ImGui::PopStyleColor();
+        }
+
+        // Render Button
+        if (entity.HasComponent<ButtonControl>())
+        {
+            auto& btn = entity.GetComponent<ButtonControl>();
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{btn.Style.BackgroundColor.r / 255.0f, btn.Style.BackgroundColor.g / 255.0f, btn.Style.BackgroundColor.b / 255.0f, btn.Style.BackgroundColor.a / 255.0f});
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{btn.Style.HoverColor.r / 255.0f, btn.Style.HoverColor.g / 255.0f, btn.Style.HoverColor.b / 255.0f, btn.Style.HoverColor.a / 255.0f});
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{btn.Style.PressedColor.r / 255.0f, btn.Style.PressedColor.g / 255.0f, btn.Style.PressedColor.b / 255.0f, btn.Style.PressedColor.a / 255.0f});
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{btn.Text.TextColor.r / 255.0f, btn.Text.TextColor.g / 255.0f, btn.Text.TextColor.b / 255.0f, btn.Text.TextColor.a / 255.0f});
+            
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, btn.Style.Rounding);
+            ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2{
+                btn.Text.HorizontalAlignment == TextAlignment::Left ? 0.0f : (btn.Text.HorizontalAlignment == TextAlignment::Center ? 0.5f : 1.0f),
+                btn.Text.VerticalAlignment == TextAlignment::Left ? 0.0f : (btn.Text.VerticalAlignment == TextAlignment::Center ? 0.5f : 1.0f)
+            });
+            
+            if (ImGui::Button(btn.Label.c_str(), size)) btn.PressedThisFrame = true;
+
+            ImGui::PopStyleVar(2);
+            ImGui::PopStyleColor(4);
+        }
+
+        if (entity.HasComponent<SliderControl>())
+        {
+            auto& sl = entity.GetComponent<SliderControl>();
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{sl.Text.TextColor.r / 255.0f, sl.Text.TextColor.g / 255.0f, sl.Text.TextColor.b / 255.0f, sl.Text.TextColor.a / 255.0f});
+            ImGui::SetNextItemWidth(size.x * 0.7f); // Make slider 70% of width to leave space for label
+            sl.Changed = ImGui::SliderFloat(sl.Label.c_str(), &sl.Value, sl.Min, sl.Max);
+            ImGui::PopStyleColor();
+        }
+
+        if (entity.HasComponent<CheckboxControl>())
+        {
+            auto& cb = entity.GetComponent<CheckboxControl>();
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{cb.Text.TextColor.r / 255.0f, cb.Text.TextColor.g / 255.0f, cb.Text.TextColor.b / 255.0f, cb.Text.TextColor.a / 255.0f});
+            cb.Changed = ImGui::Checkbox(cb.Label.c_str(), &cb.Checked);
+            ImGui::PopStyleColor();
+        }
 
         ImGui::PopID();
         ImGui::EndGroup();
 
-        // Drag-to-move logic (Editor only)
-        if (editMode && ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
-        {
-            ImVec2 delta = ImGui::GetIO().MouseDelta;
-            cc.Transform.OffsetMin.x += delta.x / scaleX;
-            cc.Transform.OffsetMax.x += delta.x / scaleX;
-            cc.Transform.OffsetMin.y += delta.y / scaleY;
-            cc.Transform.OffsetMax.y += delta.y / scaleY;
-            
-            // Trigger registry patch
-            m_Registry.patch<ControlComponent>(entityID);
+        // Editor selection and drag support
+        if (editMode) {
+            ImGui::SetCursorPos(pos);
+            ImGui::InvisibleButton("##SelectionZone", size);
+            if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+                ImVec2 delta = ImGui::GetIO().MouseDelta;
+                cc.Transform.OffsetMin.x += delta.x;
+                cc.Transform.OffsetMax.x += delta.x;
+                cc.Transform.OffsetMin.y += delta.y;
+                cc.Transform.OffsetMax.y += delta.y;
+                m_Registry.patch<ControlComponent>(entityID);
+            }
         }
     }
 

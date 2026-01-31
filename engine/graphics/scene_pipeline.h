@@ -17,6 +17,7 @@ private:
     static void RenderSkybox(Scene *scene, const Camera3D &camera);
     static void RenderModels(Scene *scene);
     static void RenderDebug(Scene *scene, const DebugRenderFlags *debugFlags);
+    static void RenderEditorIcons(Scene *scene, const Camera3D &camera);
 };
 } // namespace CHEngine
 

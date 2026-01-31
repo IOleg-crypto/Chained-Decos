@@ -3,6 +3,7 @@
 
 #include "editor/ui/editor_gui.h"
 #include "engine/scene/entity.h"
+#include "extras/iconsfontawesome6.h"
 #include <functional>
 #include <string>
 #include <unordered_map>
@@ -19,6 +20,7 @@ namespace CHEngine
             std::function<bool(Entity)> Add;
             bool Visible = true;
             bool AllowAdd = true;
+            bool IsWidget = false;
         };
 
         static void Init();
@@ -29,7 +31,7 @@ namespace CHEngine
         static void DrawAddComponentPopup(Entity entity);
 
         // Template helper for easy registration
-        template <typename T> static void Register(const std::string &name, std::function<bool(T &)> drawer)
+        template <typename T> static void Register(const std::string &name, std::function<bool(T &, Entity)> drawer)
         {
             ComponentMetadata metadata;
             metadata.Name = name;
@@ -45,6 +47,12 @@ namespace CHEngine
             RegisterComponent(entt::type_hash<T>::value(), metadata);
         }
 
+        // Backward compatibility for simple drawers
+        template <typename T> static void Register(const std::string &name, std::function<bool(T &)> drawer)
+        {
+            Register<T>(name, [drawer](T &comp, Entity e) { return drawer(comp); });
+        }
+
         // High-level UI Primitives (Special cases or reused structures)
         static void DrawTag(Entity entity);
         static void DrawMaterial(Entity entity, int hitMeshIndex = -1);
@@ -52,7 +60,7 @@ namespace CHEngine
     private:
         // Shared Container for all components (Handles headers, removal button, etc)
         template <typename T>
-        static void DrawComponentContainer(const std::string &name, Entity entity, std::function<bool(T &)> drawer)
+        static void DrawComponentContainer(const std::string &name, Entity entity, std::function<bool(T &, Entity)> drawer)
         {
             const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
                                                      ImGuiTreeNodeFlags_SpanAvailWidth |
@@ -60,41 +68,50 @@ namespace CHEngine
 
             if (entity.HasComponent<T>())
             {
-                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
                 ImGui::Separator();
-
+                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
+                
                 // Unique ID for the header
                 ImGui::PushID(name.c_str());
+                
+                float contentWidth = ImGui::GetContentRegionAvail().x;
+                
+                // Draw the header
                 bool open = ImGui::TreeNodeEx((void *)entt::type_hash<T>::value(), treeNodeFlags, name.c_str());
 
-                // Management button (X)
-                ImGui::SameLine(ImGui::GetWindowWidth() - 35);
-                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.7f, 0.1f, 0.1f, 0.6f});
-                if (ImGui::Button("X", ImVec2{20, 20}))
+                // Management button (Gear Icon)
+                ImGui::SameLine(contentWidth - 22.0f);
+                
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0, 0, 0, 0});
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{1, 1, 1, 0.1f});
+                if (ImGui::Button(ICON_FA_GEAR, ImVec2{22, 22}))
                 {
                     ImGui::OpenPopup("ComponentSettings");
                 }
-                ImGui::PopStyleColor();
+                ImGui::PopStyleColor(2);
 
                 bool removeComponent = false;
                 if (ImGui::BeginPopup("ComponentSettings"))
                 {
-                    if (ImGui::MenuItem("Remove Component"))
+                    if (ImGui::MenuItem(ICON_FA_TRASH " Remove Component"))
                         removeComponent = true;
                     ImGui::EndPopup();
                 }
+                
                 ImGui::PopID();
                 ImGui::PopStyleVar();
 
                 if (open)
                 {
+                    ImGui::Spacing();
                     T &component = entity.GetComponent<T>();
                     T componentCopy = component;
-                    if (drawer(componentCopy))
+                    if (drawer(componentCopy, entity))
                     {
                         entity.GetScene()->GetRegistry().patch<T>(
                             entity, [&componentCopy](T &comp) { comp = componentCopy; });
                     }
+                    ImGui::Spacing();
                     ImGui::TreePop();
                 }
 
@@ -104,6 +121,40 @@ namespace CHEngine
                 }
             }
         }
+
+    public:
+        // Declarative Builder for simple components
+        template <typename T>
+        struct MetaBuilder
+        {
+            T& Component;
+            bool Changed = false;
+
+            MetaBuilder(T& comp) : Component(comp) { EditorUI::GUI::BeginProperties(); }
+            ~MetaBuilder() { EditorUI::GUI::EndProperties(); }
+
+            template <typename... Args>
+            MetaBuilder& Prop(const char* label, Args&&... args)
+            {
+                if (EditorUI::GUI::Property(label, std::forward<Args>(args)...)) Changed = true;
+                return *this;
+            }
+
+            // For Vec3/Vec2 controls
+            MetaBuilder& Vec3(const char* label, Vector3& v, float reset = 0.0f)
+            {
+                if (EditorUI::GUI::DrawVec3Control(label, v, reset)) Changed = true;
+                return *this;
+            }
+
+            MetaBuilder& Vec2(const char* label, glm::vec2& v, float reset = 0.0f)
+            {
+                if (EditorUI::GUI::DrawVec2Control(label, v, reset)) Changed = true;
+                return *this;
+            }
+            
+            operator bool() const { return Changed; }
+        };
 
     private:
         static std::unordered_map<entt::id_type, ComponentMetadata> s_ComponentRegistry;
