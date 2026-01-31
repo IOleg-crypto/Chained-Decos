@@ -106,14 +106,16 @@ jobs:
           config="Release"
           if [[ "${{ matrix.preset }}" == *"debug"* ]]; then config="Debug"; fi
           
+          echo "Current working directory: $(pwd)"
           echo "Looking for EngineTests in build/${{ matrix.preset }}/bin..."
           
           # Check paths for both single and multi-config generators
+          # Use absolute paths to avoid bash's command lookup ambiguity (exit code 127)
           SEARCH_PATHS=(
-            "build/${{ matrix.preset }}/bin/EngineTests"
-            "build/${{ matrix.preset }}/bin/EngineTests.exe"
-            "build/${{ matrix.preset }}/bin/$config/EngineTests"
-            "build/${{ matrix.preset }}/bin/$config/EngineTests.exe"
+            "${{ github.workspace }}/build/${{ matrix.preset }}/bin/EngineTests"
+            "${{ github.workspace }}/build/${{ matrix.preset }}/bin/EngineTests.exe"
+            "${{ github.workspace }}/build/${{ matrix.preset }}/bin/$config/EngineTests"
+            "${{ github.workspace }}/build/${{ matrix.preset }}/bin/$config/EngineTests.exe"
           )
           
           TEST_BIN=""
@@ -126,11 +128,12 @@ jobs:
           
           if [ -z "$TEST_BIN" ]; then
             echo "::error::EngineTests not found in any expected location"
+            ls -R build/${{ matrix.preset }}/bin || true
             exit 1
           fi
           
           echo "Running tests: $TEST_BIN"
-          if [[ "$RUNNER_OS" == "Linux" ]]; then
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
             xvfb-run "$TEST_BIN"
           else
             "$TEST_BIN"
