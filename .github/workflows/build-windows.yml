@@ -76,12 +76,19 @@ jobs:
 
       - name: Test
         run: |
-          test_exe="${{ matrix.binary_path }}/EngineTests.exe"
-          if [ -f "$test_exe" ]; then
-            echo "Running tests: $test_exe"
-            ./"$test_exe"
+          set -e
+
+          BIN_DIR="${{ matrix.binary_path }}"
+          echo "Looking for test binary in: $BIN_DIR"
+          test_exe=$(find "$BIN_DIR" -maxdepth 1 -type f -iname "EngineTests*" | head -n 1)
+
+          if [ -n "$test_exe" ]; then
+            echo "Found test binary: $test_exe"
+            chmod +x "$test_exe"
+            "$test_exe"
           else
-            echo "::error::EngineTests.exe not found at $test_exe"
+            echo "::error::EngineTests binary not found in $BIN_DIR"
+            ls -la "$BIN_DIR"
             exit 1
           fi
 
