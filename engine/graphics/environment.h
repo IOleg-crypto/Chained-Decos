@@ -40,6 +40,9 @@ public:
     bool Deserialize(const std::string &path);
     bool Save(const std::string &path);
 
+    void UploadToGPU();
+    void LoadFromFile(const std::string &path);
+
     virtual AssetType GetType() const override
     {
         return AssetType::Environment;

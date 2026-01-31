@@ -15,6 +15,9 @@ public:
 
     static std::shared_ptr<FontAsset> Load(const std::string &path);
 
+    void UploadToGPU();
+    void LoadFromFile(const std::string &path);
+
     Font &GetFont()
     {
         return m_Font;
@@ -30,7 +33,7 @@ public:
     }
 
 private:
-    Font m_Font;
+    Font m_Font = { 0 };
 };
 } // namespace CHEngine
 

@@ -26,6 +26,7 @@ public:
     }
 
     void UploadToGPU(); // Main thread
+    void LoadFromFile(const std::string &path);
     Model &GetModel()
     {
         return m_Model;
@@ -72,6 +73,12 @@ private:
     std::vector<std::shared_ptr<class TextureAsset>> m_Textures;
     std::shared_ptr<class BVH> m_BVHCache;
     std::shared_future<std::shared_ptr<class BVH>> m_BVHFuture;
+    
+    // Deferred loading: CPU work done in background, GPU upload on main thread
+    Mesh m_PendingMesh = {0};
+    bool m_HasPendingMesh = false;
+    std::string m_PendingModelPath;
+    bool m_HasPendingModel = false;
 };
 } // namespace CHEngine
 

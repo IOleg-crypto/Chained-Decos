@@ -32,11 +32,50 @@ std::shared_ptr<SoundAsset> SoundAsset::Load(const std::string &path)
     return asset;
 }
 
+void SoundAsset::LoadFromFile(const std::string &path)
+{
+    if (m_State == AssetState::Ready) return;
+
+    std::filesystem::path fullPath(path);
+    if (!std::filesystem::exists(fullPath))
+    {
+        SetState(AssetState::Failed);
+        return;
+    }
+
+    // This runs on background thread (std::async)
+    m_PendingWave = ::LoadWave(path.c_str());
+    
+    if (m_PendingWave.frameCount > 0)
+        m_HasPendingWave = true;
+    else
+        SetState(AssetState::Failed);
+}
+
+void SoundAsset::UploadToGPU()
+{
+    // This MUST run on main thread (where Audio device is initialized)
+    if (m_HasPendingWave && m_PendingWave.frameCount > 0)
+    {
+        if (m_Sound.stream.buffer != nullptr)
+            ::UnloadSound(m_Sound);
+            
+        m_Sound = ::LoadSoundFromWave(m_PendingWave);
+        ::UnloadWave(m_PendingWave);
+        
+        m_PendingWave.frameCount = 0;
+        m_HasPendingWave = false;
+        
+        SetState(AssetState::Ready);
+    }
+}
+
 SoundAsset::~SoundAsset()
 {
     if (m_Sound.stream.buffer != nullptr)
     {
-        UnloadSound(m_Sound);
+        ::UnloadSound(m_Sound);
     }
 }
+
 } // namespace CHEngine

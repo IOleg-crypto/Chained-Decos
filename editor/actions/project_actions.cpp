@@ -55,8 +55,8 @@ namespace CHEngine
         std::filesystem::path buildDir = exePath.parent_path().parent_path();
         std::filesystem::path cwd = std::filesystem::current_path();
 
-        std::vector<std::filesystem::path> searchBases = {buildDir,    buildDir / "bin",  buildDir / "runtime", cwd,
-                                                          cwd / "bin", cwd / "build/bin", exePath.parent_path()};
+        std::vector<std::filesystem::path> searchBases = {cwd, exePath.parent_path(), buildDir, buildDir / "bin", 
+                                                          buildDir / "runtime", cwd / "bin", cwd / "build/bin"};
 
         std::vector<std::string> targetNames = {projectName + ".exe", "ChainedRuntime.exe", "Runtime.exe"};
 
@@ -98,11 +98,9 @@ namespace CHEngine
         if (runtimePath.empty())
             return;
 
-        std::string command = std::format("\"{}\" \"{}\"", runtimePath.string(), projectPathStr);
+        std::string command = std::format("start \"\" \"{}\" \"{}\"", runtimePath.string(), projectPathStr);
         CH_CORE_INFO("Launching Standalone: {}", command);
 
-        // Note: In Windows, we can use system() for now or a proper process launch utility if
-        // available.
         system(command.c_str());
     }
 } // namespace CHEngine
