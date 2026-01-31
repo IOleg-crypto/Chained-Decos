@@ -66,6 +66,8 @@ target_include_directories(editor_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/engine
+    ${CMAKE_SOURCE_DIR}/include/rlImGui
+    ${imguizmo_SOURCE_DIR}
 )
 
 # Define the Editor executable

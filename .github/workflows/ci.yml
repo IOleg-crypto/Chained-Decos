@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop, chained-gui, refactor-branch]
+    paths:
+      - "**/*.cpp"
+      - "**/*.h"
+      - "**/CMakeLists.txt"
+      - "**/CMakePresets.json"
+      - ".github/workflows/ci.yml"
+  pull_request:
+    branches: [main, develop, chained-gui, refactor-branch]
+  workflow_dispatch:
+
+env:
+  CI: true
+
+jobs:
+  build:
+    name: ${{ matrix.os }} / ${{ matrix.preset }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            preset: ci-linux-gcc
+          - os: ubuntu-latest
+            preset: ci-linux-clang
+          - os: windows-latest
+            preset: ci-windows-ninja
+          - os: windows-latest
+            preset: vs2022-debug
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.ccache
+            C:/ccache
+            build/${{ matrix.preset }}/_deps
+          key: ${{ runner.os }}-${{ matrix.preset }}-${{ hashFiles('**/CMakeLists.txt', 'CMakePresets.json') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.preset }}-
+
+      - name: Install Linux Dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ninja-build ccache \
+            libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
+            libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
+            pkg-config libgtk-3-dev libdrm-dev libgbm-dev \
+            xvfb libxkbcommon-x11-0
+
+      - name: Setup Linux Compilers
+        if: runner.os == 'Linux'
+        run: |
+          if [[ "${{ matrix.preset }}" == *"gcc"* ]]; then
+            sudo apt-get install -y gcc-13 g++-13
+          elif [[ "${{ matrix.preset }}" == *"clang"* ]]; then
+            # We use GCC 13 as the backend for Clang to avoid GCC 14 header issues with C++23
+            sudo apt-get install -y clang-17 clang++-17 gcc-13 g++-13
+          fi
+
+      - name: Install Windows Dependencies
+        if: runner.os == 'Windows'
+        run: |
+          choco install cmake ninja ccache --no-progress
+
+      - name: Configure
+        run: |
+          cmake --preset ${{ matrix.preset }} \
+            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install
+
+      - name: Build
+        run: |
+          cmake --build --preset ${{ matrix.preset }} --parallel $(nproc 2>/dev/null || echo 8)
+
+      - name: Test
+        run: |
+          config="Release"
+          if [[ "${{ matrix.preset }}" == *"debug"* ]]; then config="Debug"; fi
+          
+          # Handle multi-config generators like VS
+          if [ -f "build/${{ matrix.preset }}/bin/$config/EngineTests.exe" ]; then
+            ./build/${{ matrix.preset }}/bin/$config/EngineTests.exe
+          elif [ -f "build/${{ matrix.preset }}/bin/EngineTests.exe" ]; then
+            ./build/${{ matrix.preset }}/bin/EngineTests.exe
+          elif [ -f "build/${{ matrix.preset }}/bin/EngineTests" ]; then
+            xvfb-run ./build/${{ matrix.preset }}/bin/EngineTests
+          else
+            echo "::warning::EngineTests not found"
+          fi
+
+      - name: Upload Artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ runner.os }}-${{ matrix.preset }}
+          path: build/${{ matrix.preset }}/bin
+          retention-days: 7
