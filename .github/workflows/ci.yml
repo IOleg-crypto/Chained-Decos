@@ -127,37 +127,45 @@ jobs:
           echo "Matrix Preset: ${{ matrix.preset }}"
           echo "Detected Config: $config"
           
-          BUILD_DIR="build/${{ matrix.config_preset }}"
+          BUILD_DIR="${{ github.workspace }}/build/${{ matrix.config_preset }}"
           echo "Searching for test binary in $BUILD_DIR..."
           
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            # Search for EngineTests.exe, prioritizing the one matching the configuration
             TEST_BIN=$(find "$BUILD_DIR" -maxdepth 8 -name "EngineTests.exe" | grep -i "$config" | head -n 1)
-            if [[ -z "$TEST_BIN" ]]; then
-              echo "Binary not found with config grep, falling back to any EngineTests.exe..."
-              TEST_BIN=$(find "$BUILD_DIR" -maxdepth 8 -name "EngineTests.exe" | head -n 1)
-            fi
+            [[ -z "$TEST_BIN" ]] && TEST_BIN=$(find "$BUILD_DIR" -maxdepth 8 -name "EngineTests.exe" | head -n 1)
           else
             TEST_BIN=$(find "$BUILD_DIR" -maxdepth 8 -name "EngineTests" -type f -executable | head -n 1)
           fi
           
           if [[ -z "$TEST_BIN" ]]; then
             echo "::error::EngineTests not found!"
-            echo "Directory contents of $BUILD_DIR:"
             ls -R "$BUILD_DIR" || true
             exit 1
           fi
           
+          # Convert to absolute path to avoid ambiguity
+          TEST_BIN=$(readlink -f "$TEST_BIN")
           TEST_DIR=$(dirname "$TEST_BIN")
           TEST_EXE=$(basename "$TEST_BIN")
           
-          echo "Running tests: $TEST_BIN (in $TEST_DIR)"
-          cd "$TEST_DIR"
+          echo "Test Binary: $TEST_BIN"
+          echo "Test Directory: $TEST_DIR"
           
+          echo "--- Directory Contents ---"
+          ls -la "$TEST_DIR"
+          
+          if command -v ldd >/dev/null 2>&1; then
+            echo "--- Dependencies (ldd) ---"
+            ldd "$TEST_BIN" || true
+          fi
+          
+          echo "--- Execution ---"
+          cd "$TEST_DIR"
           if [[ "${{ runner.os }}" == "Linux" ]]; then
             xvfb-run -a "./$TEST_EXE"
           else
-            ./"$TEST_EXE"
+            # Try running without ./ just in case, or with absolute path
+            "./$TEST_EXE"
           fi
 
       - name: Upload Artifacts
