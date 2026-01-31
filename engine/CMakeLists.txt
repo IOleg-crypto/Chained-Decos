@@ -120,7 +120,19 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 # Apply Unity Build & PCH
-apply_engine_optimizations(engine)
+if(COMMAND apply_engine_optimizations)
+    apply_engine_optimizations(engine)
+endif()
 
-# Copy engine resources to the build directory
-file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/resources" DESTINATION "${CMAKE_BINARY_DIR}/engine")
+# Installation
+install(TARGETS engine
+    EXPORT ChainedEngineTargets
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin
+)
+
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/resources"
+    DESTINATION engine
+    USE_SOURCE_PERMISSIONS
+)

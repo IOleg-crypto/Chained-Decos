@@ -21,11 +21,14 @@ jobs:
       matrix:
         preset: [ci-linux-gcc, ci-linux-clang, make-debug, make-release]
 
+    defaults:
+      run:
+        shell: bash
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
           submodules: recursive
 
       - name: Cache
@@ -34,7 +37,6 @@ jobs:
           path: |
             ~/.ccache
             build/${{ matrix.preset }}/_deps
-            build/${{ matrix.preset }}/CMakeFiles
           key: linux-${{ matrix.preset }}-${{ hashFiles('**/CMakeLists.txt', 'include/raylib/**') }}
           restore-keys: |
             linux-${{ matrix.preset }}-
@@ -51,7 +53,6 @@ jobs:
 
       - name: Setup Compilers
         run: |
-          sudo apt-get update
           if [[ "${{ matrix.preset }}" == *"gcc"* || "${{ matrix.preset }}" == *"make"* ]]; then
             sudo apt-get install -y gcc-13 g++-13
             echo "CC=gcc-13" >> $GITHUB_ENV
@@ -64,27 +65,40 @@ jobs:
           fi
 
       - name: Configure
-        run: cmake --preset ${{ matrix.preset }} -DBUILD_TESTS=ON
+        run: |
+          cmake --preset ${{ matrix.preset }} \
+            -DBUILD_TESTS=ON \
+            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install/${{ matrix.preset }}
 
       - name: Build
-        run: cmake --build --preset ${{ matrix.preset }} --target ChainedEditor ChainedRuntime EngineTests --parallel $(nproc)
+        run: |
+          cmake --build --preset ${{ matrix.preset }} --target ChainedEditor ChainedRuntime EngineTests --parallel $(nproc)
+
+      - name: Install
+        run: |
+          cmake --install build/${{ matrix.preset }} --prefix ${{ github.workspace }}/install/${{ matrix.preset }}
 
       - name: Test
         run: |
-          test_exe="build/${{ matrix.preset }}/bin/EngineTests"
-          if [[ -f "$test_exe" ]]; then
+          test_exe="${{ github.workspace }}/install/${{ matrix.preset }}/bin/EngineTests"
+          if [ -f "$test_exe" ]; then
+            echo "Running tests: $test_exe"
+            chmod +x "$test_exe"
             xvfb-run "$test_exe"
           else
-             echo "EngineTests not found at $test_exe"
-             exit 1
+            test_exe="build/${{ matrix.preset }}/bin/EngineTests"
+            if [ -f "$test_exe" ]; then
+              chmod +x "$test_exe"
+              xvfb-run "$test_exe"
+            else
+              echo "::error::EngineTests not found"
+              exit 1
+            fi
           fi
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: linux-${{ matrix.preset }}
-          path: |
-            build/${{ matrix.preset }}/bin/ChainedEditor
-            build/${{ matrix.preset }}/bin/ChainedRuntime
-            build/${{ matrix.preset }}/bin/EngineTests
+          path: ${{ github.workspace }}/install/${{ matrix.preset }}
           retention-days: 7

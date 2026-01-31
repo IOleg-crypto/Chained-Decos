@@ -213,14 +213,17 @@ namespace CHEngine
         ImVec2 card1Min = ImVec2(startX, centerY - cardHeight * 0.5f);
         if (DrawActionCard(drawList, card1Min, cardWidth, cardHeight, "New Project",
                            "Start a fresh journey with a dedicated", "project folder and optimized settings.",
-                           (Texture2D *)m_NewProjectIcon, "##NewProjectCard"))
+                           (Texture2D *)m_NewProjectIcon, "##NewProjectCard")){
+            m_OpenCreatePopupRequest = true;
             m_ShowCreateDialog = true;
+        }
 
         ImVec2 card2Min = ImVec2(startX + cardWidth + gap, centerY - cardHeight * 0.5f);
         if (DrawActionCard(drawList, card2Min, cardWidth, cardHeight, "Open Project",
                            "Browse and load an existing Chained", "Engine project (.chproject) file.",
-                           (Texture2D *)m_OpenProjectIcon, "##OpenProjectCard"))
+                           (Texture2D *)m_OpenProjectIcon, "##OpenProjectCard")){
             ProjectActions::Open();
+        }
     }
 
     void ProjectBrowserPanel::DrawCreateProjectDialog()

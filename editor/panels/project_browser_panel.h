@@ -29,6 +29,11 @@ public:
         m_EventCallback = callback;
     }
 
+    // Testing accessors
+    bool IsCreateDialogVisible() const { return m_ShowCreateDialog; }
+    void SetCreateDialogVisible(bool visible) { m_ShowCreateDialog = visible; }
+    bool HasPendingCreatePopupRequest() const { return m_OpenCreatePopupRequest; }
+
 private:
     void DrawWelcomeScreen();
     void DrawCreateProjectDialog();

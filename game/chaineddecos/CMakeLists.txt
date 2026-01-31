@@ -25,3 +25,10 @@ chained_add_game(ChainedRuntime
     ${CMAKE_CURRENT_SOURCE_DIR}/src/runtime_entry.cpp
     ChainedDecosGame
 )
+
+# Installation
+install(TARGETS ChainedDecosGame ChainedRuntime
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin
+)
