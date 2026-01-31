@@ -42,15 +42,41 @@ void TextureAsset::LoadAsync(const std::string &path)
     auto loaded = Load(path);
 }
 
+void TextureAsset::LoadFromFile(const std::string &path)
+{
+    if (m_State == AssetState::Ready) return;
+
+    std::filesystem::path fullPath(path);
+    if (!std::filesystem::exists(fullPath))
+    {
+        SetState(AssetState::Failed);
+        return;
+    }
+
+    // This runs on background thread (std::async)
+    // Raylib's LoadImage only does CPU work and memory allocation
+    m_PendingImage = ::LoadImage(path.c_str());
+    
+    if (m_PendingImage.data != nullptr)
+        m_HasPendingImage = true;
+    else
+        SetState(AssetState::Failed);
+}
+
 void TextureAsset::UploadToGPU()
 {
-    if (m_PendingImage.data != nullptr)
+    // This MUST run on main thread (where OpenGL context is)
+    if (m_HasPendingImage && m_PendingImage.data != nullptr)
     {
         if (m_Texture.id > 0)
-            UnloadTexture(m_Texture);
-        m_Texture = LoadTextureFromImage(m_PendingImage);
-        UnloadImage(m_PendingImage);
+            ::UnloadTexture(m_Texture);
+            
+        m_Texture = ::LoadTextureFromImage(m_PendingImage);
+        ::UnloadImage(m_PendingImage);
+        
         m_PendingImage.data = nullptr;
+        m_HasPendingImage = false;
+        
         SetState(AssetState::Ready);
     }
 }
@@ -61,11 +87,6 @@ TextureAsset::~TextureAsset()
     {
         ::UnloadTexture(m_Texture);
     }
-}
-
-void TextureAsset::LoadFromFile(const std::string &path)
-{
-    // This was used for async loading, simplified for now
 }
 
 } // namespace CHEngine

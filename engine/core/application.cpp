@@ -12,6 +12,8 @@
 #include "backends/imgui_impl_opengl3.h"
 #include "engine/graphics/visuals.h"
 #include "engine/graphics/asset_manager.h"
+#include "engine/graphics/environment.h"
+#include "engine/graphics/font_asset.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene_serializer.h"
 #include "engine/scene/script_registry.h"
@@ -50,6 +52,8 @@ namespace CHEngine
         windowConfig.Height = config.Height;
         windowConfig.Fullscreen = config.Fullscreen;
         windowConfig.TargetFPS = config.TargetFPS;
+        windowConfig.EnableViewports = config.EnableViewports;
+        windowConfig.EnableDocking = config.EnableDocking;
 
         if (Project::GetActive())
         {
@@ -67,8 +71,8 @@ namespace CHEngine
         {
             m_Window->SetWindowIcon(config.WindowIcon);
         }
-        Visuals::Init();
         AssetManager::Init();
+        Visuals::Init();
         Physics::Init();
         InitAudioDevice();
         if (IsAudioDeviceReady())
@@ -77,6 +81,7 @@ namespace CHEngine
             CH_CORE_ERROR("Failed to initialize Audio Device!");
 
         // ImGui is now initialized in Window constructor
+        LoadEngineFonts();
 
         CH_CORE_INFO("Application Initialized: {}", config.Title);
 
@@ -94,7 +99,9 @@ namespace CHEngine
     void Application::Shutdown()
     {
         if (!m_Running)
+        {
             return;
+        }
 
         CH_CORE_INFO("Shutting down Engine...");
 
@@ -251,6 +258,7 @@ namespace CHEngine
 
     void Application::Simulate()
     {
+        AssetManager::Update();
         Profiler::BeginFrame();
         {
             CH_PROFILE_SCOPE("MainThread_Frame");
@@ -261,12 +269,18 @@ namespace CHEngine
                     bool isSim = m_ActiveScene->IsSimulationRunning();
                     Physics::Update(m_ActiveScene.get(), m_DeltaTime, isSim);
                     if (isSim)
+                    {
                         m_ActiveScene->OnUpdateRuntime(m_DeltaTime);
+                    }
                 }
 
                 for (auto layer : m_LayerStack)
+                {
                     if (layer->IsEnabled())
+                    {
                         layer->OnUpdate(m_DeltaTime);
+                    }
+                }
             }
         }
     }
@@ -289,7 +303,9 @@ namespace CHEngine
     void Application::Render()
     {
         if (m_Minimized)
+        {
             return;
+        }
 
         BeginFrame();
 
@@ -302,12 +318,20 @@ namespace CHEngine
         }
 
         for (auto layer : m_LayerStack)
+        {
             if (layer->IsEnabled())
+            {
                 layer->OnRender();
+            }
+        }
 
         for (auto layer : m_LayerStack)
+        {
             if (layer->IsEnabled())
+            {
                 layer->OnImGuiRender();
+            }
+        }
 
         EndFrame();
         Profiler::EndFrame();
@@ -325,7 +349,9 @@ namespace CHEngine
         CH_CORE_INFO("Loading scene: {0}", pathStr);
 
         if (m_ActiveScene)
+        {
             m_ActiveScene->OnRuntimeStop();
+        }
 
         std::shared_ptr<Scene> newScene = std::make_shared<Scene>();
         SceneSerializer serializer(newScene.get());
@@ -333,6 +359,17 @@ namespace CHEngine
         {
             newScene->SetScenePath(pathStr);
             m_ActiveScene = newScene;
+
+            // Apply project environment if scene doesn't have its own
+            if (Project::GetActive() && Project::GetActive()->GetEnvironment())
+            {
+                if (newScene->GetEnvironment()->GetPath().empty() && 
+                    newScene->GetSkybox().TexturePath.empty())
+                {
+                    newScene->SetEnvironment(Project::GetActive()->GetEnvironment());
+                    CH_CORE_INFO("Applied project environment to scene: {}", pathStr);
+                }
+            }
 
             // Notify system that scene is opened
             SceneOpenedEvent e(path);
@@ -342,5 +379,41 @@ namespace CHEngine
         {
             CH_CORE_ERROR("Failed to load scene: {}", path);
         }
+    }
+
+    void Application::LoadEngineFonts()
+    {
+        ImGuiIO &io = ImGui::GetIO();
+        float fontSize = 16.0f;
+
+        // Try to load Lato-Bold as the default UI font
+        std::string fontPath = AssetManager::ResolvePath("engine:font/lato/lato-bold.ttf");
+        if (std::filesystem::exists(fontPath))
+        {
+            io.Fonts->AddFontFromFileTTF(fontPath.c_str(), fontSize);
+            CH_CORE_INFO("Loaded engine font: {}", fontPath);
+        }
+        else
+        {
+            CH_CORE_WARN("Engine font not found: {}. Using default ImGui font.", fontPath);
+            io.Fonts->AddFontDefault();
+        }
+
+        // Try to load FontAwesome for icons
+        std::string faPath = AssetManager::ResolvePath("engine:font/fa-solid-900.ttf");
+        if (std::filesystem::exists(faPath))
+        {
+            static const ImWchar icons_ranges[] = {0xf000, 0xf8ff, 0}; // FontAwesome solid
+            ImFontConfig icons_config;
+            icons_config.MergeMode = true;
+            icons_config.PixelSnapH = true;
+            io.Fonts->AddFontFromFileTTF(faPath.c_str(), fontSize, &icons_config, icons_ranges);
+            CH_CORE_INFO("Loaded and merged FontAwesome: {}", faPath);
+        }
+
+        // Build atlas
+        unsigned char *pixels;
+        int width, height;
+        io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
     }
 } // namespace CHEngine

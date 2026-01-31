@@ -53,6 +53,10 @@ private:
     EditorGizmo m_Gizmo;
     GizmoType m_CurrentTool = GizmoType::TRANSLATE;
     Entity m_SelectedEntity;
+    
+    // UI Interaction state
+    bool m_DraggingUI = false;
+    ImVec2 m_UIDragOffset = {0, 0};
 };
 
 } // namespace CHEngine

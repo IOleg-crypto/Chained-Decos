@@ -10,7 +10,7 @@
 
 namespace CHEngine
 {
-    void RegisterProjectScripts()
+    void RegisterGameScripts()
     {
         CH_CORE_INFO("ChainedDecos: Registering Project Scripts...");
 

@@ -4,6 +4,6 @@ Environment:
   AmbientIntensity: 0.300000012
   Skybox:
     TexturePath: ""
-    Exposure: 1
+    Exposure: 0.99000001
     Brightness: 0
     Contrast: 1

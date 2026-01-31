@@ -13,8 +13,8 @@ Application *CreateApplication(int argc, char **argv)
     config.TargetFPS = 144;
 
     // Register project scripts so they appear in Inspector
-    extern void RegisterProjectScripts();
-    RegisterProjectScripts();
+    extern void RegisterGameScripts();
+    RegisterGameScripts();
 
     return new Editor(config);
 }

@@ -47,20 +47,109 @@ std::shared_ptr<ModelAsset> ModelAsset::Load(const std::string &path)
     return asset;
 }
 
-void ModelAsset::LoadAsync(const std::string &path)
+void ModelAsset::LoadFromFile(const std::string &path)
 {
-    // For now, simpler models just load synchronously in background thread
-    // then upload to GPU using a simplified approach
-    // Raylib's LoadModel is mostly CPU until the final VBO upload
+    if (m_State == AssetState::Ready) return;
 
-    // AssetManager is gone, so for now we just load and throw away or implement new system
-    // But since this is a static method, we don't have a place to stash it yet.
-    // For baseline build, we just load.
-    auto loaded = Load(path);
+    if (path.starts_with(":"))
+    {
+        // Procedural models: Create mesh on CPU (safe in background thread)
+        // GenMesh* functions only allocate CPU memory, no GPU upload
+        Mesh mesh = {0};
+        if (path == ":cube:")
+            mesh = GenMeshCube(1.0f, 1.0f, 1.0f);
+        else if (path == ":sphere:")
+            mesh = GenMeshSphere(0.5f, 16, 16);
+        else if (path == ":plane:")
+            mesh = GenMeshPlane(10.0f, 10.0f, 10, 10);
+        else if (path == ":torus:")
+            mesh = GenMeshTorus(0.2f, 0.4f, 16, 16);
+        
+        if (mesh.vertexCount > 0)
+        {
+            m_PendingMesh = mesh;
+            m_HasPendingMesh = true;
+            // Stay in Loading state until UploadToGPU completes
+        }
+        else
+        {
+            SetState(AssetState::Failed);
+        }
+        return;
+    }
+
+    // File-based models: Raylib's LoadModel does GPU upload, so we can't call it here
+    // Instead, just validate file exists and defer loading to UploadToGPU
+    std::filesystem::path fullPath(path);
+    if (!std::filesystem::exists(fullPath))
+    {
+        SetState(AssetState::Failed);
+        return;
+    }
+
+    m_PendingModelPath = path;
+    m_HasPendingModel = true;
+    // Stay in Loading state until UploadToGPU completes on main thread
 }
 
 void ModelAsset::UploadToGPU()
 {
+    // This MUST run on main thread where OpenGL context exists
+    
+    if (m_HasPendingMesh)
+    {
+        // Upload procedural mesh to GPU
+        m_Model = LoadModelFromMesh(m_PendingMesh);
+        m_HasPendingMesh = false;
+        m_PendingMesh = {0};
+        
+        if (m_Model.meshCount > 0)
+        {
+            // Start BVH build async (CPU work, safe)
+            m_BVHFuture = BVH::BuildAsync(m_Model).share();
+            SetState(AssetState::Ready);  // ✅ NOW it's ready for rendering
+        }
+        else
+        {
+            SetState(AssetState::Failed);
+        }
+    }
+    
+    if (m_HasPendingModel)
+    {
+        // Load file-based model (includes GPU upload by Raylib)
+        m_Model = ::LoadModel(m_PendingModelPath.c_str());
+        m_HasPendingModel = false;
+        m_PendingModelPath.clear();
+        
+        if (m_Model.meshCount > 0)
+        {
+            // Start BVH build async
+            m_BVHFuture = BVH::BuildAsync(m_Model).share();
+            
+            // Track internal textures
+            for (int i = 0; i < m_Model.materialCount; i++)
+            {
+                for (int j = 0; j < 12; j++)
+                {
+                    Texture2D tex = m_Model.materials[i].maps[j].texture;
+                    if (tex.id > 0)
+                    {
+                        auto texAsset = std::make_shared<TextureAsset>();
+                        texAsset->SetTexture(tex);
+                        texAsset->SetState(AssetState::Ready);
+                        m_Textures.push_back(texAsset);
+                    }
+                }
+            }
+            
+            SetState(AssetState::Ready);  
+        }
+        else
+        {
+            SetState(AssetState::Failed);
+        }
+    }
 }
 
 std::shared_ptr<ModelAsset> ModelAsset::CreateProcedural(const std::string &type)

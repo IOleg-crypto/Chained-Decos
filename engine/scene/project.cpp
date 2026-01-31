@@ -1,8 +1,85 @@
 #include "project.h"
 #include "project_serializer.h"
+#include "engine/graphics/asset_manager.h"
+#include "engine/graphics/environment.h"
+#include "imgui.h"
 
 namespace CHEngine
 {
+bool PhysicsSettings::DrawUI()
+{
+    bool changed = false;
+    if (ImGui::DragFloat("World Gravity", &Gravity, 0.1f, 0.0f, 100.0f))
+    {
+        changed = true;
+    }
+    return changed;
+}
+
+bool AnimationSettings::DrawUI()
+{
+    bool changed = false;
+    if (ImGui::DragFloat("Target FPS", &TargetFPS, 1.0f, 1.0f, 240.0f))
+    {
+        changed = true;
+    }
+    return changed;
+}
+
+bool RenderSettings::DrawUI()
+{
+    bool changed = false;
+    if (ImGui::DragFloat("Ambient Intensity", &AmbientIntensity, 0.01f, 0.0f, 1.0f))
+    {
+        changed = true;
+    }
+    if (ImGui::DragFloat("Default Exposure", &DefaultExposure, 0.01f, 0.0f, 10.0f))
+    {
+        changed = true;
+    }
+    return changed;
+}
+
+bool WindowSettings::DrawUI()
+{
+    bool changed = false;
+    if (ImGui::DragInt("Width", &Width, 1, 800, 3840))
+    {
+        changed = true;
+    }
+    if (ImGui::DragInt("Height", &Height, 1, 600, 2160))
+    {
+        changed = true;
+    }
+    if (ImGui::Checkbox("VSync", &VSync))
+    {
+        changed = true;
+    }
+    if (ImGui::Checkbox("Resizable", &Resizable))
+    {
+        changed = true;
+    }
+    return changed;
+}
+
+bool RuntimeSettings::DrawUI()
+{
+    bool changed = false;
+    if (ImGui::Checkbox("Fullscreen", &Fullscreen))
+    {
+        changed = true;
+    }
+    if (ImGui::Checkbox("Show Stats", &ShowStats))
+    {
+        changed = true;
+    }
+    if (ImGui::Checkbox("Enable Console", &EnableConsole))
+    {
+        changed = true;
+    }
+    return changed;
+}
+
 std::shared_ptr<Project> Project::s_ActiveProject = nullptr;
 
 std::shared_ptr<Project> Project::New()
@@ -19,6 +96,13 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path &path)
     {
         project->m_Config.ProjectDirectory = path.parent_path();
         s_ActiveProject = project;
+        
+        // Load environment if specified
+        if (!project->m_Config.EnvironmentPath.empty())
+        {
+            project->m_Environment = AssetManager::Get<EnvironmentAsset>(project->m_Config.EnvironmentPath.string());
+        }
+
         return s_ActiveProject;
     }
 
