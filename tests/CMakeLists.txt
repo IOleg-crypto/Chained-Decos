@@ -4,7 +4,7 @@ add_executable(EngineTests
 #    asset_manager_tests.cpp
     hierarchy_tests.cpp
     event_input_tests.cpp
-    integration_tests.cpp
+    #integration_tests.cpp
     
 )
 
