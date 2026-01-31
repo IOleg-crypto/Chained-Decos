@@ -4,8 +4,8 @@ add_executable(EngineTests
 #    asset_manager_tests.cpp
     hierarchy_tests.cpp
     event_input_tests.cpp
+    asset_manager_tests.cpp
     integration_tests.cpp
-    
 )
 
 target_link_libraries(EngineTests PRIVATE engine editor_core GTest::gmock_main GTest::gtest_main)

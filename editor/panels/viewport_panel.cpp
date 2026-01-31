@@ -44,14 +44,22 @@ namespace CHEngine
     ViewportPanel::ViewportPanel()
     {
         m_Name = "Viewport";
-        int w = GetScreenWidth();
-        int h = GetScreenHeight();
-        m_ViewportTexture = LoadRenderTexture(w > 0 ? w : 1280, h > 0 ? h : 720);
+        m_ViewportTexture = { 0 }; // Initialize to empty
+        
+        if (IsWindowReady())
+        {
+            int w = GetScreenWidth();
+            int h = GetScreenHeight();
+            m_ViewportTexture = LoadRenderTexture(w > 0 ? w : 1280, h > 0 ? h : 720);
+        }
     }
 
     ViewportPanel::~ViewportPanel()
     {
-        UnloadRenderTexture(m_ViewportTexture);
+        if (IsWindowReady() && m_ViewportTexture.id > 0)
+        {
+            UnloadRenderTexture(m_ViewportTexture);
+        }
     }
 
     void ViewportPanel::OnImGuiRender(bool readOnly)
