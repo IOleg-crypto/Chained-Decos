@@ -17,7 +17,8 @@ if(DEFINED ENV{CI})
     target_compile_definitions(EngineTests PRIVATE CH_CI)
 endif()
 
-add_test(NAME EngineTests COMMAND EngineTests)
+include(GoogleTest)
+gtest_discover_tests(EngineTests CONFIGURATION_VAR CMAKE_BUILD_TYPE)
 
 # Installation
 install(TARGETS EngineTests
