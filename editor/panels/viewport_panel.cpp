@@ -1,261 +1,414 @@
 #include "viewport_panel.h"
-#include "engine/physics/physics.h"
-#include "engine/renderer/renderer.h"
-#include <imgui.h>
-#include <rlImGui.h>
+#include "editor_layer.h"
+#include "engine/core/application.h"
+#include "engine/graphics/draw_command.h"
+#include "engine/scene/scene.h"
+#include "extras/IconsFontAwesome6.h"
+#include "imgui.h"
+#include "imgui_internal.h"
+#include "raylib.h"
+#include "rlImGui.h"
+#include "ui/editor_gui.h"
+#include "engine/graphics/asset_manager.h"
+#include "engine/graphics/model_asset.h"
+#include "engine/core/input.h"
+#include "engine/core/events.h"
+#include "engine/scene/scene_events.h"
+#include "engine/scene/ui_math.h"
 
-namespace CH
+
+namespace CHEngine
 {
-ViewportPanel::ViewportPanel()
-{
-    m_ViewportTexture = LoadRenderTexture(GetScreenWidth(), GetScreenHeight());
-}
-
-ViewportPanel::~ViewportPanel()
-{
-    UnloadRenderTexture(m_ViewportTexture);
-}
-
-Entity ViewportPanel::OnImGuiRender(Scene *scene, const Camera3D &camera, Entity selectedEntity,
-                                    GizmoType &currentTool, EditorGizmo &gizmo,
-                                    const DebugRenderFlags *debugFlags, bool allowTools)
-{
-    Entity pickedEntity = {};
-
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
-    ImGui::Begin("Viewport");
-
-    m_Focused = ImGui::IsWindowFocused();
-    m_Hovered = ImGui::IsWindowHovered();
-    ImVec2 viewportPos = ImGui::GetCursorScreenPos(); // Absolute position of viewport content
-
-    ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-    if (m_ViewportSize.x != viewportPanelSize.x || m_ViewportSize.y != viewportPanelSize.y)
+    static void ClearSceneBackground(Scene *scene, Vector2 size)
     {
-        if (viewportPanelSize.x > 0 && viewportPanelSize.y > 0)
+        auto mode = scene->GetBackgroundMode();
+        if (mode == BackgroundMode::Color)
         {
-            // Resize RenderTexture
+            ClearBackground(scene->GetBackgroundColor());
+        }
+        else if (mode == BackgroundMode::Texture)
+        {
+            auto &path = scene->GetBackgroundTexturePath();
+            if (!path.empty())
+            {
+                // Fallback for now
+                ClearBackground(scene->GetBackgroundColor());
+            }
+        }
+        else if (mode == BackgroundMode::Environment3D)
+        {
+            ClearBackground(BLACK);
+        }
+    }
+
+    ViewportPanel::ViewportPanel()
+    {
+        m_Name = "Viewport";
+        m_ViewportTexture = { 0 }; // Initialize to empty
+        
+        if (IsWindowReady())
+        {
+            int w = GetScreenWidth();
+            int h = GetScreenHeight();
+            m_ViewportTexture = LoadRenderTexture(w > 0 ? w : 1280, h > 0 ? h : 720);
+        }
+    }
+
+    ViewportPanel::~ViewportPanel()
+    {
+        if (IsWindowReady() && m_ViewportTexture.id > 0)
+        {
             UnloadRenderTexture(m_ViewportTexture);
-            m_ViewportTexture =
-                LoadRenderTexture((int)viewportPanelSize.x, (int)viewportPanelSize.y);
-            m_ViewportSize = {viewportPanelSize.x, viewportPanelSize.y};
         }
     }
 
-    // Render scene to texture
+    void ViewportPanel::OnImGuiRender(bool readOnly)
+{
+    if (!m_IsOpen)
+    {
+        return;
+    }
+
+    // Remove window padding to let the image fill the entire window area
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
+    ImGui::Begin(m_Name.c_str(), &m_IsOpen);
+    ImGui::PushID(this);
+
+    // Important: ImGuizmo needs to begin frame at the start of the window
+    ImGuizmo::BeginFrame();
+
+    // Get available content region dimensions (excluding window title/decorations)
+    ImVec2 viewportSize = ImGui::GetContentRegionAvail();
+    ImVec2 viewportScreenPos = ImGui::GetCursorScreenPos(); // Global top-left corner position
+
+    // --- 0. FLOATING TOOLBAR ---
+    // Floating style for cleaner viewport
+    ImVec2 toolbarPos = { viewportScreenPos.x + 10.0f, viewportScreenPos.y + 10.0f };
+    ImGui::SetNextWindowPos(toolbarPos);
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.12f, 0.8f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5, 5));
+    
+    if (ImGui::BeginChild("##FloatingToolbar", ImVec2(320, 38), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
+    {
+        // Gizmo Buttons (No labels, icons only)
+        auto& activeTool = m_CurrentTool;
+        
+        // Select Tool - capture state BEFORE button to keep Push/Pop balanced
+        bool wasSelect = (activeTool == GizmoType::NONE);
+        if (wasSelect) 
+        {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.85f, 0.45f, 0.0f, 1.0f));
+        }
+        if (ImGui::Button(ICON_FA_ARROW_POINTER, ImVec2(28, 28))) 
+        {
+            activeTool = GizmoType::NONE;
+        }
+        if (wasSelect) 
+        {
+            ImGui::PopStyleColor();
+        }
+        if (ImGui::IsItemHovered()) 
+        {
+            ImGui::SetTooltip("Select (Q)");
+        }
+        ImGui::SameLine();
+
+        // Translate Tool
+        bool wasTranslate = (activeTool == GizmoType::TRANSLATE);
+        if (wasTranslate) 
+        {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.85f, 0.45f, 0.0f, 1.0f));
+        }
+        if (ImGui::Button(ICON_FA_UP_DOWN_LEFT_RIGHT, ImVec2(28, 28))) 
+        {
+            activeTool = GizmoType::TRANSLATE;
+        }
+        if (wasTranslate) 
+        {
+            ImGui::PopStyleColor();
+        }
+        if (ImGui::IsItemHovered()) 
+        {
+            ImGui::SetTooltip("Translate (W)");
+        }
+        ImGui::SameLine();
+
+        // Rotate Tool
+        bool wasRotate = (activeTool == GizmoType::ROTATE);
+        if (wasRotate) 
+        {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.85f, 0.45f, 0.0f, 1.0f));
+        }
+        if (ImGui::Button(ICON_FA_ARROWS_ROTATE, ImVec2(28, 28))) 
+        {
+            activeTool = GizmoType::ROTATE;
+        }
+        if (wasRotate) 
+        {
+            ImGui::PopStyleColor();
+        }
+        if (ImGui::IsItemHovered()) 
+        {
+            ImGui::SetTooltip("Rotate (E)");
+        }
+        ImGui::SameLine();
+
+        // Scale Tool
+        bool wasScale = (activeTool == GizmoType::SCALE);
+        if (wasScale) 
+        {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.85f, 0.45f, 0.0f, 1.0f));
+        }
+        if (ImGui::Button(ICON_FA_UP_RIGHT_FROM_SQUARE, ImVec2(28, 28))) 
+        {
+            activeTool = GizmoType::SCALE;
+        }
+        if (wasScale) 
+        {
+            ImGui::PopStyleColor();
+        }
+        if (ImGui::IsItemHovered()) 
+        {
+            ImGui::SetTooltip("Scale (R)");
+        }
+        ImGui::SameLine();
+
+        ImGui::SameLine(0, 15);
+        ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+        ImGui::SameLine(0, 15);
+
+        // Playback Tools
+        SceneState sceneState = EditorLayer::Get().GetSceneState();
+        bool isPlaying = (sceneState == SceneState::Play);
+
+        if (isPlaying) 
+        {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 1.0f, 0.3f, 1.0f));
+        }
+        if (ImGui::Button(ICON_FA_PLAY, ImVec2(28, 28))) 
+        { 
+            ScenePlayEvent e; 
+            EditorLayer::Get().OnEvent(e); 
+        }
+        if (isPlaying) 
+        {
+            ImGui::PopStyleColor();
+        }
+        ImGui::SameLine();
+
+        if (ImGui::Button(isPlaying ? ICON_FA_STOP : ICON_FA_PAUSE, ImVec2(28, 28))) 
+        {
+            if (isPlaying) 
+            { 
+                SceneStopEvent e; 
+                EditorLayer::Get().OnEvent(e); 
+            }
+        }
+    }
+    ImGui::EndChild();
+    ImGui::PopStyleVar(2);
+    ImGui::PopStyleColor();
+
+    // Rocket Launch button (Top Right)
+    ImGui::SetCursorScreenPos({ viewportScreenPos.x + viewportSize.x - 100.0f, viewportScreenPos.y + 10.0f });
+    if (ImGui::Button(ICON_FA_ROCKET " Launch", ImVec2(90, 28)))
+    {
+        AppLaunchRuntimeEvent e;
+        Application::OnEvent(e);
+    }
+
+    // --- 1. PREPARE SCENE RENDER ---
+    auto selectedEntity = EditorLayer::Get().GetSelectedEntity();
+    bool isUISelected = selectedEntity && selectedEntity.HasComponent<ControlComponent>();
+    
+    // Disable grid when editing UI
+    auto &debugFlags = EditorLayer::Get().GetDebugRenderFlags();
+    bool oldGrid = debugFlags.DrawGrid;
+    if (isUISelected)
+    {
+        debugFlags.DrawGrid = false;
+    }
+
+    // Gizmo rendering
+    m_Gizmo.RenderAndHandle(!isUISelected ? m_CurrentTool : GizmoType::NONE);
+
+    // Framebuffer management
+    if (viewportSize.x != m_ViewportTexture.texture.width || viewportSize.y != m_ViewportTexture.texture.height)
+    {
+        if (viewportSize.x > 0 && viewportSize.y > 0)
+        {
+            UnloadRenderTexture(m_ViewportTexture);
+            m_ViewportTexture = LoadRenderTexture((int)viewportSize.x, (int)viewportSize.y);
+            EditorLayer::Get().s_ViewportSize = viewportSize;
+        }
+    }
+
+    auto activeScene = Application::Get().GetActiveScene();
+    if (!activeScene || viewportSize.x <= 0 || viewportSize.y <= 0)
+    {
+        ImGui::PopID();
+        ImGui::End();
+        ImGui::PopStyleVar();
+        return;
+    }
+
+    // Scene Rendering
     BeginTextureMode(m_ViewportTexture);
-    ClearBackground(DARKGRAY);
-
-    if (scene && m_ViewportSize.x > 0)
-    {
-        Renderer::BeginScene(camera);
-        Renderer::DrawGrid(20, 1.0f);
-        Renderer::DrawScene(scene, debugFlags);
-
-        // Gizmos
-        if (selectedEntity && allowTools)
-        {
-            gizmo.RenderAndHandle(scene, camera, selectedEntity, currentTool,
-                                  {m_ViewportSize.x, m_ViewportSize.y}, m_Hovered);
-        }
-
-        Renderer::EndScene();
-    }
-
-    // --- Picking Logic ---
-    if (allowTools && m_Hovered && !gizmo.IsHovered() && ImGui::IsMouseClicked(0) && scene)
-    {
-        ImVec2 mousePos = ImGui::GetMousePos();
-        Vector2 relativeMousePos = {mousePos.x - viewportPos.x, mousePos.y - viewportPos.y};
-
-        // Get Ray from Camera
-        // Note: Raylib's GetMouseRay uses GetWindowSize, which is wrong for ImGui Viewport.
-        // We must calculate it manually or pretend window size is viewport size.
-        // Manual Ray Calculation:
-        Ray ray = {0};
-        ray.position = camera.position;
-
-        // Normalized Device Coordinates
-        float x = (2.0f * relativeMousePos.x) / m_ViewportSize.x - 1.0f;
-        float y = 1.0f - (2.0f * relativeMousePos.y) / m_ViewportSize.y;
-        float z = 1.0f;
-
-        // Inverse Projection and View Matrix
-        Matrix matView = GetCameraMatrix(camera);
-        Matrix matProj = MatrixPerspective(camera.fovy * DEG2RAD,
-                                           m_ViewportSize.x / m_ViewportSize.y, 0.01f, 1000.0f);
-        Matrix matViewProj = MatrixMultiply(matView, matProj);
-        Matrix matInvViewProj = MatrixInvert(matViewProj);
-
-        // Unproject
-        Vector4 clipCoords = {x, y, z, 1.0f};
-        // Transform to World
-        // Note: Raylib matrix math might be column/row major specific.
-        // Simplest fallback: usage of CameraUnproject if we can set window size context? No.
-
-        // Alternative: Use Raylib's GetMouseRay but temporary set window dimensions? Dangerous.
-        // Let's rely on GetMouseRay by converting relative pos to "Window" pos if the viewport
-        // WAS the window. Actually, let's implement the Ray calculation directly using Raylib
-        // math.
-
-        Vector3 deviceCoords = {x, y, 1.0f};
-        Vector3 farPoint = Vector3Transform(deviceCoords, matInvViewProj);
-        // Perspective divide
-        // Wait, Vector3Transform assumes w=1. For projection we need Vector4 mul.
-        // Let's use Raylib GetMouseRay logic adapted:
-
-        // Proper way using Raylib API:
-        // We can't easily change global window state.
-        // But we can reproduce `GetMouseRay`:
-        // It uses `GetCameraMatrix` (View) and `MatrixPerspective` (Proj).
-        // Let's use the exact same logic.
-
-        // Calculate direction
-        Vector3 target =
-            Vector3Unproject({relativeMousePos.x, relativeMousePos.y, 1.0f}, matProj, matView);
-        // Wait, Vector3Unproject doesn't take viewport size? In Raylib it assumes screen size?
-        // Let's check Raylib source mentally:
-        // Vector3Unproject(source, proj, view) assumes viewport is 0,0,width,height?
-        // Raylib 5.0 Vector3Unproject:
-        //   Calculate MatrixInv(View * Proj)
-        //   Transform vector.
-        //   Divide by w.
-        //   However, input X,Y are expected in Screen Coordinates?
-        //   NO, it expects viewport relative coordinates if we constructs the matrix correctly?
-        //   Raylib internal implementation uses GetScreenWidth/Height for viewport mapping if
-        //   not provided? Actually Raylib's Vector3Unproject doesn't take viewport rect. It
-        //   takes source x,y which it maps from Viewport to NDC? No, Vector3Unproject inputs
-        //   ARE coordinates. Wait, Raylib's Unproject assumes (0,0,w,h) viewport?
-
-        // Let's use simpler approach:
-        // Since we have Physics::Raycast, let's use a "Center Screen" ray for testing if
-        // needed, but for Picking we need exact mouse ray.
-
-        // Let's trust Raylib's picking ONLY IF we can offset picking?
-        // No.
-
-        // Let's Try:
-        ray = GetMouseRay({relativeMousePos.x, relativeMousePos.y}, camera);
-        // But Update Raylib's concept of screen size?
-        // No, `GetMouseRay` internally calls `GetMousePosition()`? No, we pass mousePosition.
-        // But it uses `GetScreenWidth()` for aspect ratio and normalization.
-
-        // If we want correct ray, we should manually construct it.
-        // Ray direction = Normalize(Unproject(MouseX, MouseY, 1.0f) - CameraPos)
-
-        // Custom Unproject:
-        // 1. NDC
-        float ndc_x = (2.0f * relativeMousePos.x) / m_ViewportSize.x - 1.0f;
-        float ndc_y = 1.0f - (2.0f * relativeMousePos.y) / m_ViewportSize.y; // Invert Y
-
-        // 2. Clip Space
-        Vector4 clip = {ndc_x, ndc_y, 1.0f, 1.0f}; // Forward
-
-        // 3. World Space
-        // We need MatrixMultiply(View, Proj) -> Invert.
-        // Raylib Match:
-        Matrix proj = MatrixPerspective(camera.fovy * DEG2RAD, m_ViewportSize.x / m_ViewportSize.y,
-                                        0.01f, 1000.0f);
-        Matrix view = GetCameraMatrix(camera);
-        Matrix invVP = MatrixInvert(MatrixMultiply(view, proj));
-
-        // Transform
-        Quaternion q;        // Unused
-        Vector3 scale;       // Unused
-        Vector3 translation; // Unused
-        // Just raw matrix mul
-        // Manually:
-        Vector4 worldPos;
-        worldPos.x = clip.x * invVP.m0 + clip.y * invVP.m4 + clip.z * invVP.m8 + clip.w * invVP.m12;
-        worldPos.y = clip.x * invVP.m1 + clip.y * invVP.m5 + clip.z * invVP.m9 + clip.w * invVP.m13;
-        worldPos.z =
-            clip.x * invVP.m2 + clip.y * invVP.m6 + clip.z * invVP.m10 + clip.w * invVP.m14;
-        worldPos.w =
-            clip.x * invVP.m3 + clip.y * invVP.m7 + clip.z * invVP.m11 + clip.w * invVP.m15;
-
-        // Perspective Divide
-        if (worldPos.w != 0.0f)
-        {
-            worldPos.x /= worldPos.w;
-            worldPos.y /= worldPos.w;
-            worldPos.z /= worldPos.w;
-        }
-
-        ray.position = camera.position;
-        ray.direction = Vector3Normalize(
-            Vector3Subtract({worldPos.x, worldPos.y, worldPos.z}, camera.position));
-
-        // Perform Raycast
-        RaycastResult res = Physics::Raycast(scene, ray);
-        if (res.Hit)
-        {
-            pickedEntity = Entity{res.Entity, scene};
-        }
-        else
-        {
-            pickedEntity = {}; // Deselect if clicked empty space
-        }
-    }
-
+    ClearSceneBackground(activeScene.get(), {viewportSize.x, viewportSize.y});
+    Camera3D camera = EditorUI::GUI::GetActiveCamera(EditorLayer::Get().GetSceneState());
+    activeScene->OnRender(camera, &EditorLayer::Get().GetDebugRenderFlags());
     EndTextureMode();
 
-    // Draw texture in ImGui
-    rlImGuiImageRenderTextureFit(&m_ViewportTexture, true);
+    rlImGuiImageRenderTexture(&m_ViewportTexture);
 
-    // --- Gizmo Toolbar Overlay ---
-    ImGui::SetCursorPos(ImVec2(10, 30));                          // Slightly below top-left
-    ImGui::BeginChild("GizmoToolbar", ImVec2(120, 40), false, 0); // Transparent background
-    // Transparent style
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0.5f));
+    // --- 2. UI OVERLAY & SELECTION ---
+    ImGui::SetCursorScreenPos(viewportScreenPos);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    
+    if (ImGui::BeginChild("##SceneUI", viewportSize, false, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoInputs))
+    {
+        // Render Game UI Overlay
+        activeScene->OnImGuiRender(viewportScreenPos, viewportSize, 0, EditorLayer::Get().GetSceneState() == SceneState::Edit);
 
-    if (ImGui::Button("T", ImVec2(30, 30)))
-        currentTool = GizmoType::TRANSLATE;
-    ImGui::SameLine();
-    if (ImGui::Button("R", ImVec2(30, 30)))
-        currentTool = GizmoType::ROTATE;
-    ImGui::SameLine();
-    if (ImGui::Button("S", ImVec2(30, 30)))
-        currentTool = GizmoType::SCALE;
+        // Selection Highlight
+        if (isUISelected)
+        {
+            auto &cc = selectedEntity.GetComponent<ControlComponent>();
+            auto& canvas = activeScene->GetCanvasSettings();
+            
+            // Use UIMath helper for simple anchoring
+            auto rect = UIMath::CalculateRect(cc.Transform, 
+                {viewportSize.x, viewportSize.y}, 
+                {viewportScreenPos.x, viewportScreenPos.y});
+            
+            ImVec2 p1 = {rect.Min.x, rect.Min.y};
+            ImVec2 p2 = {rect.Max.x, rect.Max.y};
 
-    ImGui::PopStyleColor();
+            // Selection Frame
+            ImDrawList* drawList = ImGui::GetWindowDrawList();
+            drawList->AddRect(p1, p2, IM_COL32(255, 255, 0, 255), 0, 0, 2.0f);
+
+            // Simple Drag support
+            if (ImGui::IsMouseHoveringRect(p1, p2) && ImGui::IsMouseClicked(0)) 
+            {
+                m_DraggingUI = true;
+            }
+            
+            if (m_DraggingUI)
+            {
+                if (ImGui::IsMouseDown(0)) 
+                {
+                    ImVec2 delta = ImGui::GetIO().MouseDelta;
+                    // No scale used now, pure pixel movement
+                    cc.Transform.OffsetMin.x += delta.x;
+                    cc.Transform.OffsetMax.x += delta.x;
+                    cc.Transform.OffsetMin.y += delta.y;
+                    cc.Transform.OffsetMax.y += delta.y;
+                }
+                else 
+                {
+                    m_DraggingUI = false;
+                }
+            }
+        }
+    }
     ImGui::EndChild();
-
-    // Reset cursor for overlay logic if needed, but EndChild handles it.
-
-    // --- Snapping / Overlay Toolbar ---
-    ImGui::SetCursorPos(ImVec2(10, 10));
-    ImGui::BeginChild("ViewportToolbar", ImVec2(0, 0),
-                      ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY |
-                          ImGuiChildFlags_AlwaysAutoResize | ImGuiChildFlags_Borders,
-                      ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-
-    bool snapping = gizmo.IsSnappingEnabled();
-    if (ImGui::Checkbox("Snap", &snapping))
-        gizmo.SetSnapping(snapping);
-
-    ImGui::SameLine();
-    ImGui::SetNextItemWidth(80);
-    float grid = gizmo.GetGridSize();
-    if (ImGui::DragFloat("##Grid", &grid, 0.1f, 0.1f, 10.0f, "Grid: %.1f"))
-        gizmo.SetGridSize(grid);
-
-    ImGui::EndChild();
-
-    ImGui::End();
     ImGui::PopStyleVar();
 
-    return pickedEntity;
+    // --- 3. OBJECT PICKING ---
+    if (EditorLayer::Get().GetSceneState() == SceneState::Edit && ImGui::IsWindowHovered() &&
+        ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && !m_DraggingUI && !ImGui::IsAnyItemActive())
+    {
+        ImVec2 mousePos = ImGui::GetMousePos();
+        ImVec2 localMouseImGui = {mousePos.x - viewportScreenPos.x, mousePos.y - viewportScreenPos.y};
+        Vector2 localMouse = {localMouseImGui.x, localMouseImGui.y};
+
+        Ray ray = GetMouseRay(localMouse, camera);
+        Entity bestHit = {};
+        float minDistance = FLT_MAX;
+
+        // UI Picking
+        auto uiView = activeScene->GetRegistry().view<ControlComponent>();
+        for (auto entityID : uiView)
+        {
+            Entity entity{entityID, activeScene.get()};
+            auto &cc = uiView.get<ControlComponent>(entityID);
+            if (!cc.IsActive) 
+            {
+                continue;
+            }
+
+            auto rect = UIMath::CalculateRect(cc.Transform,
+                {viewportSize.x, viewportSize.y},
+                {viewportScreenPos.x, viewportScreenPos.y});
+
+            glm::vec2 mouse = {mousePos.x, mousePos.y};
+            if (rect.Contains(mouse))
+            {
+                bestHit = entity;
+            }
+        }
+
+        // 3D Picking (if no UI hit)
+        if (!bestHit)
+        {
+            auto view = activeScene->GetRegistry().view<TransformComponent, ModelComponent>();
+            for (auto entityID : view)
+            {
+                Entity entity{entityID, activeScene.get()};
+                auto &modelComp = view.get<ModelComponent>(entityID);
+                if (modelComp.ModelPath.empty()) continue;
+
+                auto modelAsset = AssetManager::Get<ModelAsset>(modelComp.ModelPath);
+                if (!modelAsset || !modelAsset->IsReady()) continue;
+
+                Model &model = modelAsset->GetModel();
+                for (int m = 0; m < model.meshCount; m++)
+                {
+                    RayCollision collision = GetRayCollisionMesh(ray, model.meshes[m], model.transform);
+                    if (collision.hit && collision.distance < minDistance)
+                    {
+                        minDistance = collision.distance;
+                        bestHit = entity;
+                    }
+                }
+            }
+        }
+
+        if (bestHit) {
+            EntitySelectedEvent e((entt::entity)bestHit, activeScene.get());
+            EditorLayer::Get().OnEvent(e);
+        }
+        else {
+            EntitySelectedEvent e(entt::null, activeScene.get());
+            EditorLayer::Get().OnEvent(e);
+        }
+    }
+
+    ImGui::PopID();
+    ImGui::End();
+    ImGui::PopStyleVar();
+    debugFlags.DrawGrid = oldGrid;
+
+    // Shortcuts
+    if (ImGui::IsWindowFocused() || ImGui::IsWindowHovered())
+    {
+        if (CHEngine::Input::IsKeyPressed(KEY_W)) m_CurrentTool = GizmoType::TRANSLATE;
+        if (CHEngine::Input::IsKeyPressed(KEY_E)) m_CurrentTool = GizmoType::ROTATE;
+        if (CHEngine::Input::IsKeyPressed(KEY_R)) m_CurrentTool = GizmoType::SCALE;
+        if (CHEngine::Input::IsKeyPressed(KEY_Q)) m_CurrentTool = GizmoType::NONE;
+    }
 }
-bool ViewportPanel::IsFocused() const
-{
-    return m_Focused;
-}
-bool ViewportPanel::IsHovered() const
-{
-    return m_Hovered;
-}
-Vector2 ViewportPanel::GetSize() const
-{
-    return m_ViewportSize;
-}
-} // namespace CH
+
+    void ViewportPanel::OnUpdate(float deltaTime)
+    {
+        m_EditorCamera.OnUpdate(deltaTime);
+    }
+
+    void ViewportPanel::OnEvent(Event &e)
+    {
+        // m_EditorCamera doesn't have OnEvent yet, so we just let it be for now
+    }
+
+} // namespace CHEngine

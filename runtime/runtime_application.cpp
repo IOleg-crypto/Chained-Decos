@@ -1,114 +1,269 @@
 #include "runtime_application.h"
-#include "engine/core/input.h"
-#include "engine/renderer/renderer.h"
-#include "engine/scene/scene_serializer.h"
+#include "engine/core/application.h"
+#include "engine/core/window.h"
+#include "engine/graphics/asset_manager.h"
+#include "engine/graphics/texture_asset.h"
+#include "engine/scene/project.h"
+#include "engine/scene/scene.h"
+#include "imgui.h"
+#include "raymath.h"
 #include <filesystem>
 
-namespace CH
+namespace CHEngine
 {
 class RuntimeLayer : public Layer
 {
 public:
-    RuntimeLayer(Ref<Scene> scene) : Layer("RuntimeLayer"), m_Scene(scene)
+    RuntimeLayer() : Layer("RuntimeLayer")
     {
     }
 
-    virtual void OnUpdate(float deltaTime) override;
+    virtual void OnUpdate(float deltaTime) override
+    {
+        auto scene = Application::Get().GetActiveScene();
+        if (scene)
+            scene->OnUpdateRuntime(deltaTime);
+    }
 
-    virtual void OnRender() override;
+    virtual void OnRender() override
+    {
+        auto activeScene = Application::Get().GetActiveScene();
+        if (!activeScene)
+            return;
 
-private:
-    Ref<Scene> m_Scene;
+        auto camera = GetActiveCamera();
+        activeScene->OnRender(camera);
+    }
+
+    virtual void OnImGuiRender() override
+    {
+        auto activeScene = Application::Get().GetActiveScene();
+        if (activeScene)
+        {
+            ImVec2 displaySize = ImGui::GetIO().DisplaySize;
+            
+            // Create a fullscreen background window for the UI
+            ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | 
+                                     ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove | 
+                                     ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar | 
+                                     ImGuiWindowFlags_NoBringToFrontOnFocus;
+
+            // Note: We want inputs to pass through to the game, but UI elements need to capture mouse.
+            // ImGuiWindowFlags_NoInputs prevents ANY interaction, so we should NOT use it if we want buttons to work.
+            // Instead, we use NoBackground and make it full screen.
+            flags &= ~ImGuiWindowFlags_NoInputs; // Allow inputs
+
+            ImGui::SetNextWindowPos({0, 0});
+            ImGui::SetNextWindowSize(displaySize);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+            
+            if (ImGui::Begin("RuntimeUI", nullptr, flags))
+            {
+                activeScene->OnImGuiRender({0, 0}, displaySize, 0, false);
+            }
+            ImGui::End();
+            ImGui::PopStyleVar(2);
+        }
+    }
+
+    Camera3D GetActiveCamera()
+    {
+        auto activeScene = Application::Get().GetActiveScene();
+        if (activeScene)
+            return activeScene->GetActiveCamera();
+
+        // Fallback
+        Camera3D camera = {0};
+        camera.position = {10.0f, 10.0f, 10.0f};
+        camera.target = {0.0f, 0.0f, 0.0f};
+        camera.up = {0.0f, 1.0f, 0.0f};
+        camera.fovy = 45.0f;
+        camera.projection = CAMERA_PERSPECTIVE;
+        return camera;
+    }
 };
 
-void RuntimeLayer::OnUpdate(float deltaTime)
-{
-    if (m_Scene)
-        m_Scene->OnUpdateRuntime(deltaTime);
-}
 
-void RuntimeLayer::OnRender()
-{
-    if (m_Scene)
+    RuntimeApplication::RuntimeApplication(const Application::Config &config,
+                                           const std::string &projectPath)
+        : Application(([&config]() {
+              Application::Config c = config;
+              c.EnableViewports = false;
+              c.EnableDocking = false;
+              return c;
+          })()),
+          m_ProjectPath(projectPath)
     {
-        // Runtime Camera - looking for player
-        auto view = m_Scene->GetRegistry().view<PlayerComponent, TransformComponent>();
-        Camera3D camera = {0};
-        bool playerFound = false;
-
-        if (view.begin() != view.end())
+        // For standalone, try to find the project root relative to the executable
+        std::filesystem::path exePath = std::filesystem::absolute(std::filesystem::path(config.Argv[0]));
+        std::filesystem::path current = exePath.parent_path();
+        
+        bool projectFound = false;
+        while (current.has_parent_path())
         {
-            auto entity = *view.begin();
-            auto &transform = view.get<TransformComponent>(entity);
-            auto &player = view.get<PlayerComponent>(entity);
-
-            // Mouse/Zoom control
-            if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+            // Search for project file if not yet found
+            if (!projectFound)
             {
-                Vector2 mouseDelta = GetMouseDelta();
-                player.CameraYaw -= mouseDelta.x * player.LookSensitivity;
-                player.CameraPitch -= mouseDelta.y * player.LookSensitivity;
+                std::error_code ec;
+                // 1. Try immediate parent directory (typical for production distribution)
+                if (std::filesystem::exists(current, ec))
+                {
+                    for (const auto& entry : std::filesystem::directory_iterator(current, ec))
+                    {
+                        if (entry.path().extension() == ".chproject")
+                        {
+                            m_ProjectPath = entry.path().string();
+                            CH_CORE_INFO("Standalone: Auto-discovered project file: {}", m_ProjectPath);
+                            projectFound = true;
+                            break;
+                        }
+                    }
+                }
 
-                if (player.CameraPitch > 89.0f)
-                    player.CameraPitch = 89.0f;
-                if (player.CameraPitch < -10.0f)
-                    player.CameraPitch = -10.0f;
+                // 2. Try searching subdirectories (useful for dev environments like build/bin/ or root/)
+                if (!projectFound)
+                {
+                    auto it = std::filesystem::recursive_directory_iterator(current, std::filesystem::directory_options::skip_permission_denied, ec);
+                    auto end = std::filesystem::recursive_directory_iterator();
+                    
+                    while (it != end)
+                    {
+                        if (ec) 
+                        { 
+                            ec.clear(); 
+                            it.disable_recursion_pending(); 
+                            if (++it == end) break;
+                            continue; 
+                        }
+                        
+                        // Limit depth to avoid walking the whole drive
+                        if (it.depth() > 2) 
+                        {
+                            it.disable_recursion_pending();
+                            if (++it == end) break;
+                            continue;
+                        }
+
+                        if (it->path().extension() == ".chproject")
+                        {
+                            m_ProjectPath = it->path().string();
+                            CH_CORE_INFO("Standalone: Auto-discovered project file in subdirectory: {}", m_ProjectPath);
+                            projectFound = true;
+                            break;
+                        }
+                        
+                        if (++it == end) break;
+                    }
+                }
             }
-            player.CameraDistance -= GetMouseWheelMove() * 2.0f;
-            if (player.CameraDistance < 2.0f)
-                player.CameraDistance = 2.0f;
-            if (player.CameraDistance > 40.0f)
-                player.CameraDistance = 40.0f;
 
-            Vector3 target = transform.Translation;
-            target.y += 1.0f;
-
-            float yawRad = player.CameraYaw * DEG2RAD;
-            float pitchRad = player.CameraPitch * DEG2RAD;
-            Vector3 offset = {player.CameraDistance * cosf(pitchRad) * sinf(yawRad),
-                              player.CameraDistance * sinf(pitchRad),
-                              player.CameraDistance * cosf(pitchRad) * cosf(yawRad)};
-
-            camera.position = Vector3Add(target, offset);
-            camera.target = target;
-            camera.up = {0.0f, 1.0f, 0.0f};
-            camera.fovy = 60.0f;
-            camera.projection = CAMERA_PERSPECTIVE;
-            playerFound = true;
-        }
-        else
-        {
-            // Fallback camera
-            camera.position = {10, 10, 10};
-            camera.target = {0, 0, 0};
-            camera.up = {0, 1, 0};
-            camera.fovy = 45;
-            camera.projection = CAMERA_PERSPECTIVE;
+            // Engine assets discovery (shaders, default fonts)
+            if (std::filesystem::exists(current / "engine/resources"))
+            {
+                AssetManager::SetRootPath(current);
+                // If we also found the project, we can stop here
+                if (projectFound)
+                {
+                    break;
+                }
+            }
+            
+            // If we've already found a project file, we might be done, 
+            // but we still want to find the engine root (engine/resources) if possible.
+            // If we just hit the root and found nothing new, break.
+            current = current.parent_path();
         }
 
-        Renderer::BeginScene(camera);
-        Renderer::DrawScene(m_Scene.get());
-        Renderer::EndScene();
+        PushLayer(new RuntimeLayer());
     }
-}
 
-RuntimeApplication::RuntimeApplication(const Application::Config &config) : Application(config)
+void RuntimeApplication::PostInitialize()
 {
-    m_ActiveScene = CreateRef<Scene>();
-
-    // Load default scene if exists
-    std::string scenePath = "assets/scenes/default.chscene";
-    if (std::filesystem::exists(scenePath))
+    if (!m_ProjectPath.empty())
     {
-        SceneSerializer serializer(m_ActiveScene.get());
-        serializer.Deserialize(scenePath);
-        CH_CORE_INFO("Loaded default runtime scene: {0}", scenePath);
+        auto project = Project::Load(m_ProjectPath);
+        if (project)
+        {
+            // Apply Project Settings
+            auto &config = project->GetConfig();
+
+            // Note: Window size is usually set in CreateApplication, but we can sync VSync/FPS here
+            if (auto &window = GetWindow())
+            {
+                window->SetVSync(config.Window.VSync);
+                
+                // Set window icon if available
+                std::filesystem::path iconPath = AssetManager::ResolvePath("engine:icons/chaineddecos.jpg");
+                if (std::filesystem::exists(iconPath))
+                {
+                    Image icon = LoadImage(iconPath.string().c_str());
+                    if (icon.data != nullptr)
+                    {
+                        window->SetWindowIcon(icon);
+                        UnloadImage(icon);
+                    }
+                }
+            }
+            SetTargetFPS(60); 
+
+            std::string sceneToLoad = config.StartScene;
+            if (sceneToLoad.empty())
+            {
+                sceneToLoad = config.ActiveScenePath.string();
+            }
+
+            // FALLBACK: If no scene specified in project, try to find any scene in assets/scenes
+            if (sceneToLoad.empty())
+            {
+                std::filesystem::path scenesDir = Project::GetAssetDirectory() / "scenes";
+                if (std::filesystem::exists(scenesDir))
+                {
+                    for (const auto& entry : std::filesystem::recursive_directory_iterator(scenesDir))
+                    {
+                        if (entry.path().extension() == ".chscene")
+                        {
+                            sceneToLoad = std::filesystem::relative(entry.path(), Project::GetAssetDirectory()).string();
+                            CH_CORE_INFO("Standalone: Start scene not set. Falling back to: {}", sceneToLoad);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!sceneToLoad.empty())
+            {
+                // Resolve the path relative to the project assets
+                std::filesystem::path fullPath = Project::GetAssetPath(sceneToLoad);
+                CH_CORE_INFO("Standalone: Loading start scene: {}", fullPath.string());
+                LoadScene(fullPath.string());
+
+                auto activeScene = GetActiveScene();
+                if (activeScene && project->GetEnvironment())
+                {
+                    if (activeScene->GetEnvironment()->GetPath().empty() && 
+                        activeScene->GetSkybox().TexturePath.empty())
+                    {
+                        activeScene->SetEnvironment(project->GetEnvironment());
+                        CH_CORE_INFO("Standalone: Applied project environment to scene");
+                    }
+                }
+
+                if (activeScene)
+                {
+                    activeScene->OnRuntimeStart();
+                }
+            }
+            else
+            {
+                CH_CORE_ERROR("Standalone: No scene found to load!");
+            }
+        }
     }
     else
     {
-        CH_CORE_WARN("No default scene found at {0}. Starting empty.", scenePath);
+        CH_CORE_ERROR("Standalone: No project file found!");
     }
-
-    PushLayer(new RuntimeLayer(m_ActiveScene));
 }
-} // namespace CH
+
+} // namespace CHEngine

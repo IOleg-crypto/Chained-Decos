@@ -1,0 +1,130 @@
+name: Deploy SDK
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+env:
+  CI: true
+
+jobs:
+  deploy:
+    name: Deploy SDK (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            name: linux
+            preset: linux-gcc-release
+          - os: windows-latest
+            name: windows
+            preset: windows-ninja-release
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Get current version/date
+        id: info
+        shell: bash
+        run: |
+          echo "date=$(date +'%d.%m.%y')" >> $GITHUB_OUTPUT
+          TAG_VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=${TAG_VERSION:-manual}" >> $GITHUB_OUTPUT
+
+      - name: Setup environment
+        id: build-env
+        shell: bash
+        run: |
+          mkdir -p build/${{ matrix.preset }}
+          mkdir -p package/bin
+          echo "package-dir=$(pwd)/package" >> $GITHUB_OUTPUT
+
+      - name: Install dependencies (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ninja-build ccache \
+            libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
+            libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
+            libwayland-dev libxkbcommon-dev libegl1-mesa-dev \
+            pkg-config libgtk-3-dev libdrm-dev libgbm-dev \
+            xvfb libxkbcommon-x11-0 gcc-14 g++-14
+          echo "CC=gcc-14" >> $GITHUB_ENV
+          echo "CXX=g++-14" >> $GITHUB_ENV
+
+      - name: Install dependencies (Windows)
+        if: matrix.os == 'windows-latest'
+        run: choco install cmake ninja ccache --no-progress
+
+      - name: Configure CMake
+        shell: bash
+        run: |
+          extra_flags=""
+          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+            extra_flags="-DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX"
+          fi
+          
+          cmake --preset ${{ matrix.preset }} \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_INSTALL_PREFIX="${{ steps.build-env.outputs.package-dir }}" \
+            -DBUILD_TESTS=OFF \
+            $extra_flags
+
+      - name: Build binaries
+        shell: bash
+        run: |
+          cmake --build --preset ${{ matrix.preset }} \
+            --target ChainedEditor ChainedRuntime \
+            --parallel $(nproc 2>/dev/null || echo 8)
+
+      - name: Install to package directory
+        shell: bash
+        run: |
+          cmake --install build/${{ matrix.preset }} \
+            --component Runtime
+
+      - name: Package SDK
+        shell: bash
+        run: |
+          cd "${{ steps.build-env.outputs.package-dir }}"
+          # Exact naming from screenshot: Chained Engine(Chained Decos) SDK DD.MM.YY
+          PACKAGE_NAME="Chained Engine(Chained Decos) SDK ${{ steps.info.outputs.date }}"
+          echo "Creating SDK package: $PACKAGE_NAME"
+          
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            powershell -Command "
+              Compress-Archive -Path '*' -DestinationPath '${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.zip' -Force
+            "
+            echo "p-file=$PACKAGE_NAME.zip" >> $GITHUB_ENV
+          else
+            tar -czf "$PACKAGE_NAME.tar.gz" .
+            echo "p-file=$PACKAGE_NAME.tar.gz" >> $GITHUB_ENV
+          fi
+
+      - name: Create Release
+        if: matrix.os == 'ubuntu-latest'
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Chained Engine(Chained Decos) SDK ${{ steps.info.outputs.date }}"
+          tag_name: "release-sdk-${{ steps.info.outputs.date }}"
+          files: |
+            package/*.zip
+            package/*.tar.gz
+          body: |
+            ### Chained Engine SDK Update
+            - **Version**: ${{ steps.info.outputs.version }}
+            - **Build Date**: ${{ steps.info.outputs.date }}
+            - **Architecture**: Rebuilded architecture and made engine editor
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

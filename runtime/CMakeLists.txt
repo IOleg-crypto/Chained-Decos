@@ -1,18 +1,16 @@
-add_executable(ChainedRuntime
-    runtime_main.cpp
-    runtime_application.cpp
-    runtime_application.h
+add_library(RuntimeCore STATIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/runtime_application.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/runtime_application.cpp
 )
 
-target_link_libraries(ChainedRuntime PRIVATE engine)
-target_include_directories(ChainedRuntime PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(RuntimeCore PUBLIC engine)
+target_include_directories(RuntimeCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-# Copy resources to build directory
-if(EXISTS "${CMAKE_SOURCE_DIR}/resources")
-    file(COPY "${CMAKE_SOURCE_DIR}/resources" DESTINATION "${CMAKE_BINARY_DIR}")
-endif()
-
-# Copy assets to build directory
-if(EXISTS "${CMAKE_SOURCE_DIR}/assets")
-    file(COPY "${CMAKE_SOURCE_DIR}/assets" DESTINATION "${CMAKE_BINARY_DIR}")
-endif()
+# Set PCH for RuntimeCore
+target_precompile_headers(RuntimeCore PRIVATE 
+    <string>
+    <vector>
+    <memory>
+    <filesystem>
+    "../engine/core/application.h"
+)

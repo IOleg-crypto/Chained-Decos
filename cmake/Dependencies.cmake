@@ -6,6 +6,39 @@ include(FetchContent)
 find_package(Threads REQUIRED)
 
 # ============================================================================
+# FetchContent Dependencies
+# ============================================================================
+
+# yaml-cpp
+set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+set(YAML_CPP_BUILD_CONTRIB OFF CACHE BOOL "" FORCE)
+
+FetchContent_Declare(
+    yaml-cpp
+    GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
+    GIT_TAG 0.8.0
+)
+
+# ImGuizmo (Manipulators)
+FetchContent_Declare(
+    imguizmo
+    GIT_REPOSITORY https://github.com/CedricGuillemet/ImGuizmo.git
+    GIT_TAG master
+)
+
+
+FetchContent_Declare(
+	glm
+	GIT_REPOSITORY	https://github.com/g-truc/glm.git
+	GIT_TAG 	0af55ccecd98d4e5a8d1fad7de25ba429d60e863 #refs/tags/1.0.1
+)
+
+
+
+FetchContent_MakeAvailable(yaml-cpp imguizmo glm)
+
+# ============================================================================
 # Raylib
 # ============================================================================
 if(EXISTS "${CMAKE_SOURCE_DIR}/include/raylib/CMakeLists.txt")
@@ -34,20 +67,21 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/include/raylib/CMakeLists.txt")
     
     # Disable unity build for raylib to avoid GLAD header conflicts
     set_target_properties(raylib PROPERTIES UNITY_BUILD OFF)
+    
+    # Suppress warnings for raylib and glfw on Linux (fixes CI with strict compiler flags)
+    if(UNIX AND NOT APPLE)
+        if(TARGET raylib)
+            target_compile_options(raylib PRIVATE -Wno-implicit-function-declaration -Wno-error)
+            find_package(X11 REQUIRED)
+            target_link_libraries(raylib PUBLIC ${X11_LIBRARIES})
+        endif()
+        if(TARGET glfw)
+            target_compile_options(glfw PRIVATE -Wno-implicit-function-declaration -Wno-error)
+        endif()
+    endif()
 else()
     message(FATAL_ERROR "Raylib submodule not found. Run: git submodule update --init --recursive")
 endif()
-
-# ============================================================================
-# nlohmann_json (DEPRECATED - Using YAML instead)
-# ============================================================================
-# if(EXISTS "${CMAKE_SOURCE_DIR}/include/json/CMakeLists.txt")
-#     message(STATUS "Loading nlohmann_json from submodule...")
-#     add_subdirectory(include/json)
-#     message(STATUS "nlohmann_json loaded from submodule")
-# else()
-#     message(FATAL_ERROR "nlohmann_json submodule not found. Run: git submodule update --init --recursive")
-# endif()
 
 # ============================================================================
 # GoogleTest (for unit tests)
@@ -84,18 +118,21 @@ else()
 endif()
 
 # ============================================================================
-# ImGui + rlImGui
+# ImGui + rlImGui + ImGuizmo
 # ============================================================================
 set(IMGUI_SOURCES
-    include/rlImGui/rlImGui.cpp
-    include/rlImGui/rlImGui.h
-    include/rlImGui/imgui_impl_raylib.h
     include/imgui/imgui.cpp
     include/imgui/imgui_draw.cpp
     include/imgui/imgui_widgets.cpp
     include/imgui/imgui_tables.cpp
     include/imgui/imgui_demo.cpp
     include/imgui/misc/cpp/imgui_stdlib.cpp
+    include/imgui/backends/imgui_impl_glfw.cpp
+    include/imgui/backends/imgui_impl_glfw.h
+    include/imgui/backends/imgui_impl_opengl3.cpp
+    include/imgui/backends/imgui_impl_opengl3.h
+    ${imguizmo_SOURCE_DIR}/ImGuizmo.cpp
+    ${imguizmo_SOURCE_DIR}/ImGuizmo.h
 )
 
 add_library(imguilib STATIC ${IMGUI_SOURCES})
@@ -103,11 +140,16 @@ add_library(imguilib STATIC ${IMGUI_SOURCES})
 target_include_directories(imguilib PUBLIC
     ${CMAKE_SOURCE_DIR}/include/imgui
     ${CMAKE_SOURCE_DIR}/include/rlImGui
+    ${CMAKE_SOURCE_DIR}/include/raylib/src/external/glfw/include
+    ${imguizmo_SOURCE_DIR}
 )
 target_link_libraries(imguilib PRIVATE raylib)
 
-# Define IMGUI math operators before including imgui.h
-target_compile_definitions(imguilib PRIVATE IMGUI_DEFINE_MATH_OPERATORS)
+# Define IMGUI math operators and GLFW settings
+target_compile_definitions(imguilib PRIVATE 
+    IMGUI_DEFINE_MATH_OPERATORS
+    GLFW_INCLUDE_NONE
+)
 
 # Disable unity build for imguilib to avoid GLAD header conflicts
 set_target_properties(imguilib PROPERTIES UNITY_BUILD OFF)
@@ -121,22 +163,3 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/include/nfd/CMakeLists.txt")
     add_subdirectory(include/nfd)
     message(STATUS "nfd loaded from submodule")
 endif()
-
-# ============================================================================
-# yaml-cpp (via FetchContent)
-# ============================================================================
-message(STATUS "Fetching yaml-cpp...")
-
-# Set options before fetching
-set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
-set(YAML_CPP_BUILD_CONTRIB OFF CACHE BOOL "" FORCE)
-
-FetchContent_Declare(
-    yaml-cpp
-    GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
-    GIT_TAG 0.8.0
-)
-
-FetchContent_MakeAvailable(yaml-cpp)
-

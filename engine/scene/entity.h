@@ -1,9 +1,9 @@
 #ifndef CH_ENTITY_H
 #define CH_ENTITY_H
 
-#include <entt/entt.hpp>
+#include "entt/entt.hpp"
 
-namespace CH
+namespace CHEngine
 {
 class Scene;
 
@@ -24,10 +24,13 @@ public:
 
     template <typename T> void RemoveComponent();
 
+    template <typename T, typename... Func> void Patch(Func &&...func);
+
     operator bool() const
     {
-        return m_EntityHandle != entt::null;
+        return m_EntityHandle != entt::null && m_Scene != nullptr;
     }
+    bool IsValid() const;
     operator entt::entity() const
     {
         return m_EntityHandle;
@@ -59,6 +62,6 @@ private:
     entt::entity m_EntityHandle{entt::null};
     Scene *m_Scene = nullptr;
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_ENTITY_H

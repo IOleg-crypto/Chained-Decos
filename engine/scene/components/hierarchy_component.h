@@ -1,12 +1,11 @@
 #ifndef CH_HIERARCHY_COMPONENT_H
 #define CH_HIERARCHY_COMPONENT_H
 
-#include <entt/entt.hpp>
+#include "entt/entt.hpp"
 #include <string>
 #include <vector>
 
-
-namespace CH
+namespace CHEngine
 {
 struct HierarchyComponent
 {
@@ -26,6 +25,6 @@ struct NameComponent
     {
     }
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_HIERARCHY_COMPONENT_H
