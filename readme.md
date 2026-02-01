@@ -39,11 +39,11 @@ The Chained Editor provides a high-fidelity environment for creating and testing
 
 ![Editor Screenshot#1](https://i.postimg.cc/CMrw4RW5/Znimok-ekrana-2026-01-18-115501.png)
 ![Editor Screenshot#2](https://i.postimg.cc/1XhrxmdQ/Znimok-ekrana-2026-01-18-122026.png)
-![Editor Screenshot#3](https://i.postimg.cc/KzJxwjj9/Znimok-ekrana-2026-01-18-122532.png)
+![Editor Screenshot#3](https://i.postimg.cc/ZK3tPGXk/Znimok-ekrana-2026-02-01-125758.png)
 
 _GUI Development is currently in progress and may be unstable. It is recommended to use the **ChainedEditor** for GUI development._
 
-![Editor Screenshot#4](https://i.postimg.cc/dQWHQYdN/Znimok-ekrana-2026-01-26-143013.png)
+[![Editor Screenshot#4](https://i.postimg.cc/dtRNVwzr/Znimok-ekrana-2026-02-01-133334.png)](https://postimg.cc/4mdQ8k4x)
 
 > [!WARNING]
 > **Standalone Runtime**: The `ChainedRuntime` acts as a specialized **wrapper** for your games. It is designed to load and execute your custom projects directly. While it now supports Linux and Windows, it is still under active development.
@@ -103,6 +103,16 @@ Choose a preset based on your OS and preferred compiler:
 # Example: Configure for Linux using Clang 19
 cmake --preset linux-clang-release
 ```
+
+> [!CAUTION]
+> **Switching Presets**: When switching between different presets (e.g., from `windows-ninja-debug` to `windows-vs2022`), you **must delete the `CMakeCache.txt`** in the corresponding build directory. CMake caches compiler and generator settings that can conflict when switching presets.
+> ```bash
+> # Delete cache before switching presets
+> rm -rf build/<old-preset>/CMakeCache.txt
+> # Or delete the entire build directory for a clean slate
+> rm -rf build/<old-preset>
+> ```
+
 
 #### 2. Compilation
 Compile all targets (Editor, Runtime, Tests) using a build preset:
