@@ -124,48 +124,14 @@ jobs:
           config="Release"
           if [[ "${{ matrix.preset }}" == *debug* ]]; then config="Debug"; fi
           
-          echo "Matrix Preset: ${{ matrix.preset }}"
-          echo "Detected Config: $config"
-          
           BUILD_DIR="${{ github.workspace }}/build/${{ matrix.config_preset }}"
-          echo "Searching for test binary in $BUILD_DIR..."
           
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            TEST_BIN=$(find "$BUILD_DIR" -maxdepth 8 -name "EngineTests.exe" | grep -i "$config" | head -n 1)
-            [[ -z "$TEST_BIN" ]] && TEST_BIN=$(find "$BUILD_DIR" -maxdepth 8 -name "EngineTests.exe" | head -n 1)
-          else
-            TEST_BIN=$(find "$BUILD_DIR" -maxdepth 8 -name "EngineTests" -type f -executable | head -n 1)
-          fi
+          echo "Running CTest in $BUILD_DIR for config $config"
           
-          if [[ -z "$TEST_BIN" ]]; then
-            echo "::error::EngineTests not found!"
-            ls -R "$BUILD_DIR" || true
-            exit 1
-          fi
-          
-          # Convert to absolute path to avoid ambiguity
-          TEST_BIN=$(readlink -f "$TEST_BIN")
-          TEST_DIR=$(dirname "$TEST_BIN")
-          TEST_EXE=$(basename "$TEST_BIN")
-          
-          echo "Test Binary: $TEST_BIN"
-          echo "Test Directory: $TEST_DIR"
-          
-          echo "--- Directory Contents ---"
-          ls -la "$TEST_DIR"
-          
-          if command -v ldd >/dev/null 2>&1; then
-            echo "--- Dependencies (ldd) ---"
-            ldd "$TEST_BIN" || true
-          fi
-          
-          echo "--- Execution ---"
-          cd "$TEST_DIR"
           if [[ "${{ runner.os }}" == "Linux" ]]; then
-            xvfb-run -a "./$TEST_EXE"
+            xvfb-run -a ctest --test-dir "$BUILD_DIR" -C "$config" --output-on-failure
           else
-            # Try running without ./ just in case, or with absolute path
-            "./$TEST_EXE"
+            ctest --test-dir "$BUILD_DIR" -C "$config" --output-on-failure
           fi
 
       - name: Upload Artifacts
