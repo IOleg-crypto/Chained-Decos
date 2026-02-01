@@ -59,9 +59,36 @@ namespace CHEngine
 
     void ScenePipeline::RenderDebug(Scene *scene, const DebugRenderFlags *debugFlags)
     {
-        if (debugFlags && debugFlags->DrawGrid && scene->GetBackgroundMode() != BackgroundMode::Color)
+        if (!debugFlags) return;
+
+        if (debugFlags->DrawGrid && scene->GetBackgroundMode() != BackgroundMode::Color)
         {
-            DrawCommand::DrawGrid(20, 1.0f);
+            DrawCommand::DrawGrid(999999, 1.0f); // Yea , I know , it's a bit much , but it works
+        }
+
+        if (debugFlags->DrawSpawnZones)
+        {
+            auto view = scene->GetRegistry().view<TransformComponent, SpawnComponent>();
+            for (auto entity : view)
+            {
+                auto &tc = view.get<TransformComponent>(entity);
+                auto &sc = view.get<SpawnComponent>(entity);
+
+                if (sc.RenderSpawnZoneInScene)
+                {
+                    // Draw a semi-transparent box for the spawn zone
+                    DrawCubeWires(tc.Translation, sc.ZoneSize.x, sc.ZoneSize.y, sc.ZoneSize.z, GREEN);
+                    DrawCubeV(tc.Translation, sc.ZoneSize, Fade(GREEN, 0.2f));
+                    
+                    // Draw a line to the actual spawn point if offset
+                    if (Vector3Length(sc.SpawnPoint) > 0.001f)
+                    {
+                        Vector3 worldSpawn = Vector3Add(tc.Translation, sc.SpawnPoint);
+                        DrawLine3D(tc.Translation, worldSpawn, YELLOW);
+                        DrawSphere(worldSpawn, 0.1f, YELLOW);
+                    }
+                }
+            }
         }
     }
 

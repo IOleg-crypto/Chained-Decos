@@ -28,6 +28,7 @@ struct AnimationComponent
 
     void Play(int index, bool loop = true)
     {
+        if (CurrentAnimationIndex == index && IsPlaying) return;
         CurrentAnimationIndex = index;
         CurrentFrame = 0;
         FrameTimeCounter = 0.0f;
@@ -35,9 +36,29 @@ struct AnimationComponent
         IsPlaying = true;
     }
 
+    void CrossFade(int index, float duration = 0.5f, bool loop = true)
+    {
+        // Simple implementation: just switch for now, but API is ready
+        Play(index, loop);
+    }
+
+    void SetAnimation(const std::string& name)
+    {
+        // To be implemented using model asset lookup
+    }
+
     void Stop()
     {
         IsPlaying = false;
+    }
+
+    // Scripting helper
+    void PlayOnMovement(bool isMoving, int moveAnim = 1, int idleAnim = 0)
+    {
+        if (isMoving)
+            Play(moveAnim, true);
+        else
+            Play(idleAnim, true);
     }
 };
 } // namespace CHEngine

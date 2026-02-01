@@ -191,8 +191,14 @@ namespace CHEngine
 
         Register<CameraComponent>("Camera", [](auto &comp) {
             MetaBuilder mb(comp);
+            mb.Prop("Primary", comp.IsPrimary);
+            mb.Prop("Active", comp.IsActive);
             mb.Prop("FOV", comp.Fov);
             mb.Vec3("Offset", comp.Offset);
+            mb.Prop("Near Plane", comp.NearPlane);
+            mb.Prop("Far Plane", comp.FarPlane);
+            const char* projections[] = { "Perspective", "Orthographic" };
+            mb.Prop("Projection", comp.Projection, projections, 2);
             return (bool)mb;
         });
 
@@ -201,6 +207,8 @@ namespace CHEngine
             mb.Prop("Playing", comp.IsPlaying);
             mb.Prop("Looping", comp.IsLooping);
             mb.Prop("Animation Index", comp.CurrentAnimationIndex);
+            mb.Prop("Frame Time", comp.FrameTimeCounter);
+            mb.Prop("Current Frame", comp.CurrentFrame);
             return (bool)mb;
         });
 
