@@ -69,6 +69,13 @@ namespace CHEngine
         windowConfig.IniFilename = "imgui_" + iniName + ".ini";
         #endif
 
+        // Ensure directory exists for ini file
+        std::filesystem::path iniPath(windowConfig.IniFilename);
+        if (iniPath.has_parent_path() && !std::filesystem::exists(iniPath.parent_path()))
+        {
+            std::filesystem::create_directories(iniPath.parent_path());
+        }
+
         if (Project::GetActive())
         {
             auto &projConfig = Project::GetActive()->GetConfig();
