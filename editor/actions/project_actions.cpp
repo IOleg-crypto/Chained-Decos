@@ -6,6 +6,8 @@
 #include "nfd.h"
 #include <filesystem>
 #include <format>
+#include "engine/core/log.h"
+#include "engine/core/profiler.h"
 #include "engine/core/base.h"
 
 namespace CHEngine
@@ -53,12 +55,24 @@ namespace CHEngine
 
     static std::filesystem::path FindRuntimeExecutable(const std::string &projectName, const std::string &configStr)
     {
-        std::filesystem::path exePath = std::filesystem::current_path();
-        std::filesystem::path buildDir = exePath.parent_path().parent_path();
-        std::filesystem::path cwd = std::filesystem::current_path();
+        CH_PROFILE_FUNCTION();
+        
+        std::filesystem::path root;
+#ifdef PROJECT_ROOT_DIR
+        root = PROJECT_ROOT_DIR;
+#else
+        root = std::filesystem::current_path();
+        while (root.has_parent_path() && !std::filesystem::exists(root / "CMakeLists.txt"))
+            root = root.parent_path();
+#endif
 
-        std::vector<std::filesystem::path> searchBases = {cwd, exePath.parent_path(), buildDir, buildDir / "bin", 
-                                                          buildDir / "runtime", cwd / "bin", cwd / "build/bin"};
+        if (!std::filesystem::exists(root))
+        {
+            CH_CORE_ERROR("FindRuntimeExecutable: Root path not found: {}", root.string());
+            return {};
+        }
+
+        CH_CORE_INFO("Searching for runtime in: {}", root.string());
 
 #ifdef CH_PLATFORM_WINDOWS
         std::vector<std::string> targetNames = {projectName + ".exe", "ChainedRuntime.exe", "Runtime.exe"};
@@ -66,18 +80,33 @@ namespace CHEngine
         std::vector<std::string> targetNames = {projectName, "ChainedRuntime", "Runtime"};
 #endif
 
-        for (const auto &base : searchBases)
+        // Declarative search: try each name in order of priority
+        for (const auto &name : targetNames)
         {
-            for (const auto &name : targetNames)
-            {
-                if (auto nested = base / configStr / name; std::filesystem::exists(nested))
-                    return nested;
-                if (auto flat = base / name; std::filesystem::exists(flat))
-                    return flat;
+            try {
+                for (const auto& entry : std::filesystem::recursive_directory_iterator(root))
+                {
+                    // Optimization: ignore large unrelated folders
+                    const auto& path = entry.path();
+                    auto folderName = path.parent_path().filename().string();
+                    
+                    if (entry.is_regular_file() && path.filename() == name)
+                    {
+                        // Check if it's in a 'bin' or 'build' folder to avoid picking up source files or assets
+                        std::string pathStr = path.string();
+                        if (pathStr.find("build") != std::string::npos || pathStr.find("bin") != std::string::npos)
+                        {
+                            CH_CORE_INFO("Found runtime candidate: {}", pathStr);
+                            return path;
+                        }
+                    }
+                }
+            } catch (const std::exception& e) {
+                CH_CORE_WARN("Error during runtime search: {}", e.what());
             }
         }
 
-        CH_CORE_ERROR("Failed to find runtime executable.");
+        CH_CORE_ERROR("Failed to find runtime executable among: {}", projectName);
         return {};
     }
 
