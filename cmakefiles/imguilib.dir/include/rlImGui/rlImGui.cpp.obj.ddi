@@ -1,0 +1,11 @@
+{
+"rules": [
+{
+"primary-output": "CMakeFiles\\imguilib.dir\\include\\rlImGui\\rlImGui.cpp.obj",
+"requires": [
+]
+}
+],
+"version": 0,
+"revision": 0
+}

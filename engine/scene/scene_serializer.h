@@ -1,23 +1,25 @@
 #ifndef CH_SCENE_SERIALIZER_H
 #define CH_SCENE_SERIALIZER_H
 
-#include <string>
+#include "engine/scene/scene.h"
 
-namespace CH
+namespace CHEngine
 {
-class Scene;
 
 class SceneSerializer
 {
 public:
     SceneSerializer(Scene *scene);
 
-    void Serialize(const std::string &filepath);
+    bool Serialize(const std::string &filepath);
     bool Deserialize(const std::string &filepath);
+
+    std::string SerializeToString();
+    bool DeserializeFromString(const std::string &yaml);
 
 private:
     Scene *m_Scene;
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_SCENE_SERIALIZER_H

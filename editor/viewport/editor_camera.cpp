@@ -1,7 +1,7 @@
 #include "editor_camera.h"
 #include "engine/core/input.h"
 
-namespace CH
+namespace CHEngine
 {
 
 EditorCamera::EditorCamera()
@@ -41,4 +41,4 @@ const Camera3D &EditorCamera::GetRaylibCamera() const
 {
     return m_Camera;
 }
-} // namespace CH
+} // namespace CHEngine

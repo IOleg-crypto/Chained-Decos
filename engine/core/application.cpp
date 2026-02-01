@@ -1,208 +1,433 @@
 #include "application.h"
-#include "engine/audio/audio_manager.h"
+#include "engine/scene/scene_events.h"
+
+#include <ranges>
 #include "engine/core/input.h"
 #include "engine/core/log.h"
+#include "engine/core/profiler.h"
+// Removed redundant include: engine/core/task_system.h
 #include "engine/physics/physics.h"
-#include "engine/renderer/asset_manager.h"
-#include "engine/renderer/renderer.h"
-#include <raylib.h>
-#include <rlImGui.h>
+// Removed redundant include: engine/graphics/asset_manager.h
+// Removed redundant include: engine/graphics/render.h
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_opengl3.h"
+#include "engine/graphics/visuals.h"
+#include "engine/graphics/asset_manager.h"
+#include "engine/graphics/environment.h"
+#include "engine/graphics/font_asset.h"
+#include "engine/scene/project.h"
+#include "engine/scene/scene_serializer.h"
+#include "engine/scene/script_registry.h"
+#include "imgui.h"
+#include "raylib.h"
+#include "rlgl.h"
 
-namespace CH
+// GLFW
+#ifndef GLFW_INCLUDE_NONE
+    #define GLFW_INCLUDE_NONE
+#endif
+#include <GLFW/glfw3.h>
+
+namespace CHEngine
 {
-Application *Application::s_Instance = nullptr;
+    Application *Application::s_Instance = nullptr;
+    std::string Application::s_StartupScenePath = "";
 
-Application::Application(const Config &config)
-{
-    CH_CORE_ASSERT(!s_Instance, "Application already exists!");
-    s_Instance = this;
-
-    // Log::Init(); // Removed
-    CH_CORE_INFO("Initializing Engine..."); // Added
-
-    InitWindow(config.Width, config.Height, config.Title.c_str());
-    SetTargetFPS(60);
-    SetExitKey(KEY_NULL); // Prevent ESC from closing the app
-    rlImGuiSetup(true);   // Added
-    m_Running = true;
-
-    Renderer::Init();
-    Physics::Init();
-    AssetManager::Init();
-    AudioManager::Init(); // Added
-
-    CH_CORE_INFO("Application Initialized: %s (%dx%d)", config.Title, config.Width, config.Height);
-}
-
-Application::~Application()
-{
-    AssetManager::Shutdown();
-    Physics::Shutdown();
-    Renderer::Shutdown();
-    CloseWindow();
-    s_Instance = nullptr;
-}
-
-void Application::Init(const Config &config)
-{
-    // For static access if needed, though constructor handles it
-}
-
-void Application::Shutdown()
-{
-    CH_CORE_INFO("Shutting down Engine...");
-
-    AudioManager::Shutdown();
-    rlImGuiShutdown();
-    CloseWindow();
-
-    CH_CORE_INFO("Engine Shutdown Successfully.");
-}
-
-void Application::PushLayer(Layer *layer)
-{
-    CH_CORE_ASSERT(layer, "Layer is null!");
-    s_Instance->m_LayerStack.PushLayer(layer);
-    layer->OnAttach();
-    CH_CORE_INFO("Layer Pushed: %s", layer->GetName());
-}
-
-void Application::PushOverlay(Layer *overlay)
-{
-    CH_CORE_ASSERT(overlay, "Overlay is null!");
-    s_Instance->m_LayerStack.PushOverlay(overlay);
-    overlay->OnAttach();
-    CH_CORE_INFO("Overlay Pushed: %s", overlay->GetName());
-}
-
-void Application::BeginFrame()
-{
-    // Clear per-frame input state
-    Input::UpdateState();
-
-    PollEvents();
-
-    s_Instance->m_DeltaTime = GetFrameTime();
-
-    for (Layer *layer : s_Instance->m_LayerStack)
-        layer->OnUpdate(s_Instance->m_DeltaTime);
-
-    BeginDrawing();
-    ClearBackground(DARKGRAY);
-
-    for (Layer *layer : s_Instance->m_LayerStack)
-        layer->OnRender();
-
-    for (Layer *layer : s_Instance->m_LayerStack)
-        layer->OnImGuiRender();
-}
-
-void Application::EndFrame()
-{
-    EndDrawing();
-}
-
-void Application::PollEvents()
-{
-    // 1. Keyboard Events
-    int key = GetKeyPressed();
-    while (key != 0)
+    Application::Application(const Config &config) : m_Config(config)
     {
-        Input::OnKeyPressed(key);
-        KeyPressedEvent e(key, false);
-        OnEvent(e);
-        key = GetKeyPressed();
+        CH_CORE_ASSERT(!s_Instance, "Application already exists!");
+        s_Instance = this;
     }
 
-    // Track key releases
-    static bool s_KeysDown[512] = {false};
-    for (int i = 32; i < 349; i++)
+    Application::~Application()
     {
-        if (IsKeyDown(i))
+        Shutdown();
+        s_Instance = nullptr;
+    }
+
+    bool Application::Initialize(const Config &config)
+    {
+        CH_CORE_INFO("Initializing Engine...");
+
+        WindowConfig windowConfig;
+        windowConfig.Title = config.Title;
+        windowConfig.Width = config.Width;
+        windowConfig.Height = config.Height;
+        windowConfig.Fullscreen = config.Fullscreen;
+        windowConfig.TargetFPS = config.TargetFPS;
+        windowConfig.EnableViewports = config.EnableViewports;
+        windowConfig.EnableDocking = config.EnableDocking;
+        
+        // Setup persistent ImGui ini file path
+        std::string iniName = config.Title;
+        std::replace(iniName.begin(), iniName.end(), ' ', '_');
+        std::transform(iniName.begin(), iniName.end(), iniName.begin(), ::tolower);
+        
+        #ifdef PROJECT_ROOT_DIR
+        windowConfig.IniFilename = std::string(PROJECT_ROOT_DIR) + "/imgui_" + iniName + ".ini";
+        #else
+        windowConfig.IniFilename = "imgui_" + iniName + ".ini";
+        #endif
+
+        if (Project::GetActive())
         {
-            if (!s_KeysDown[i])
-                s_KeysDown[i] = true;
+            auto &projConfig = Project::GetActive()->GetConfig();
+            windowConfig.Width = projConfig.Window.Width;
+            windowConfig.Height = projConfig.Window.Height;
+            windowConfig.VSync = projConfig.Window.VSync;
+            windowConfig.Resizable = projConfig.Window.Resizable;
         }
-        else
+
+        m_Window = std::make_unique<Window>(windowConfig);
+        m_Running = true;
+
+        if (config.WindowIcon.data != nullptr)
         {
-            if (s_KeysDown[i])
+            m_Window->SetWindowIcon(config.WindowIcon);
+        }
+        AssetManager::Init();
+        Visuals::Init();
+        Physics::Init();
+        InitAudioDevice();
+        if (IsAudioDeviceReady())
+            CH_CORE_INFO("Audio Device Initialized Successfully");
+        else
+            CH_CORE_ERROR("Failed to initialize Audio Device!");
+
+        // ImGui is now initialized in Window constructor
+        LoadEngineFonts();
+
+        CH_CORE_INFO("Application Initialized: {}", config.Title);
+
+        // Auto-start runtime for standalone apps
+        if (m_Config.Title != "Chained Editor")
+        {
+            if (m_ActiveScene)
+                m_ActiveScene->OnRuntimeStart();
+        }
+
+        PostInitialize();
+        return true;
+    }
+
+    void Application::Shutdown()
+    {
+        if (!m_Running)
+        {
+            return;
+        }
+
+        CH_CORE_INFO("Shutting down Engine...");
+
+        CloseAudioDevice();
+        m_LayerStack.Shutdown();
+        // ImGui shutdown is handled in Window destructor
+        Physics::Shutdown();
+        AssetManager::Shutdown();
+        Visuals::Shutdown();
+        m_Window.reset();
+        m_Running = false;
+        CH_CORE_INFO("Engine Shutdown Successfully.");
+    }
+
+    void Application::PushLayer(Layer *layer)
+    {
+        CH_CORE_ASSERT(layer, "Layer is null!");
+        s_Instance->m_LayerStack.PushLayer(layer);
+        layer->OnAttach();
+        CH_CORE_INFO("Layer Pushed: {}", layer->GetName());
+    }
+
+    void Application::PushOverlay(Layer *overlay)
+    {
+        CH_CORE_ASSERT(overlay, "Overlay is null!");
+        s_Instance->m_LayerStack.PushOverlay(overlay);
+        overlay->OnAttach();
+        CH_CORE_INFO("Overlay Pushed: {}", overlay->GetName());
+    }
+
+    void Application::BeginFrame()
+    {
+        CH_PROFILE_FUNCTION();
+
+        s_Instance->m_DeltaTime = GetFrameTime();
+        s_Instance->m_Window->BeginFrame();
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+    }
+
+    void Application::EndFrame()
+    {
+        rlDrawRenderBatchActive();
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        ImGuiIO &io = ImGui::GetIO();
+        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+        {
+            GLFWwindow *backup_current_context = glfwGetCurrentContext();
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+            glfwMakeContextCurrent(backup_current_context);
+        }
+
+        s_Instance->m_Window->EndFrame();
+    }
+
+    bool Application::ShouldClose()
+    {
+        return !s_Instance->m_Running || s_Instance->m_Window->ShouldClose();
+    }
+
+    void Application::OnEvent(Event &e)
+    {
+        for (const auto & it : std::ranges::reverse_view(s_Instance->m_LayerStack))
+        {
+            if (e.Handled)
+                break;
+            if (it->IsEnabled())
+                it->OnEvent(e);
+        }
+    }
+
+    void Application::Close()
+    {
+        m_Running = false;
+    }
+
+    void Application::Run()
+    {
+        while (m_Running && !m_Window->ShouldClose())
+        {
+            ProcessEvents();
+            Simulate();
+            Animate();
+            Render();
+        }
+    }
+
+    void Application::ProcessEvents()
+    {
+        m_Window->PollEvents();
+        int key = GetKeyPressed();
+        while (key != 0)
+        {
+            KeyPressedEvent e(key, false);
+            OnEvent(e);
+            key = GetKeyPressed();
+        }
+
+        // Detect releases for a range of common keys (simplification for Raylib) or track them.
+        // For now, checking the standard 512 keys range for state changes.
+        // This ensures we get release events even if we didn't track them specifically in a vector.
+        for (int k = 1; k < 512; k++)
+        {
+            if (::IsKeyReleased(k))
             {
-                Input::OnKeyReleased(i);
-                KeyReleasedEvent e(i);
+                KeyReleasedEvent e(k);
                 OnEvent(e);
-                s_KeysDown[i] = false;
+            }
+        }
+        // 2. Mouse
+        auto handleMouse = [&](int button)
+        {
+            if (::IsMouseButtonPressed(button))
+            {
+                MouseButtonPressedEvent e(button);
+                OnEvent(e);
+            }
+            if (::IsMouseButtonReleased(button))
+            {
+                MouseButtonReleasedEvent e(button);
+                OnEvent(e);
+            }
+        };
+        handleMouse(MOUSE_BUTTON_LEFT);
+        handleMouse(MOUSE_BUTTON_RIGHT);
+        handleMouse(MOUSE_BUTTON_MIDDLE);
+
+        Vector2 currentMousePos = ::GetMousePosition();
+        static Vector2 lastMousePos = {0, 0};
+        if (currentMousePos.x != lastMousePos.x || currentMousePos.y != lastMousePos.y)
+        {
+            MouseMovedEvent e(currentMousePos.x, currentMousePos.y);
+            OnEvent(e);
+            lastMousePos = currentMousePos;
+        }
+
+        float wheel = ::GetMouseWheelMove();
+        if (wheel != 0)
+        {
+            MouseScrolledEvent e(0, wheel);
+            OnEvent(e);
+        }
+
+        float time = (float)GetTime();
+        m_DeltaTime = time - m_LastFrameTime;
+        m_LastFrameTime = time;
+    }
+
+    void Application::Simulate()
+    {
+        AssetManager::Update();
+        Profiler::BeginFrame();
+        {
+            CH_PROFILE_SCOPE("MainThread_Frame");
+            if (!m_Minimized)
+            {
+                if (m_ActiveScene)
+                {
+                    bool isSim = m_ActiveScene->IsSimulationRunning();
+                    Physics::Update(m_ActiveScene.get(), m_DeltaTime, isSim);
+                    if (isSim)
+                    {
+                        m_ActiveScene->OnUpdateRuntime(m_DeltaTime);
+                    }
+                }
+
+                for (auto layer : m_LayerStack)
+                {
+                    if (layer->IsEnabled())
+                    {
+                        layer->OnUpdate(m_DeltaTime);
+                    }
+                }
             }
         }
     }
 
-    // 2. Mouse Events
-    for (int i = 0; i < 7; i++)
+    void Application::Animate()
     {
-        if (IsMouseButtonPressed(i))
-        {
-            Input::OnMouseButtonPressed(i);
-            MouseButtonPressedEvent e(i);
-            OnEvent(e);
-        }
-        if (IsMouseButtonReleased(i))
-        {
-            Input::OnMouseButtonReleased(i);
-            MouseButtonReleasedEvent e(i);
-            OnEvent(e);
+        // Animations are currently handled in Scene::OnUpdateRuntime
+    }
+
+    void Application::OnRender()
+    {
+    }
+
+    void Application::SetWindowIcon(const Image &icon) const {
+        if (m_Window) {
+            m_Window->SetWindowIcon(icon);
         }
     }
 
-    static Vector2 lastMousePos = {-1, -1};
-    Vector2 currentMousePos = GetMousePosition();
-    if (currentMousePos.x != lastMousePos.x || currentMousePos.y != lastMousePos.y)
+    void Application::Render()
     {
-        MouseMovedEvent e(currentMousePos.x, currentMousePos.y);
-        OnEvent(e);
-        lastMousePos = currentMousePos;
-    }
+        if (m_Minimized)
+        {
+            return;
+        }
 
-    float wheel = GetMouseWheelMove();
-    if (wheel != 0)
-    {
-        MouseScrolledEvent e(0, wheel);
-        OnEvent(e);
-    }
-}
-
-bool Application::ShouldClose()
-{
-    return !s_Instance->m_Running || WindowShouldClose();
-}
-
-void Application::OnEvent(Event &e)
-{
-    // Optional: too verbose?
-    // CH_CORE_TRACE("Event: %s", e.GetName());
-
-    for (auto it = s_Instance->m_LayerStack.rbegin(); it != s_Instance->m_LayerStack.rend(); ++it)
-    {
-        if (e.Handled)
-            break;
-        (*it)->OnEvent(e);
-    }
-}
-
-void Application::Run()
-{
-    while (!ShouldClose())
-    {
         BeginFrame();
+
+        // Process scene change requests AFTER BeginFrame (ImGui context is active)
+        if (!m_NextScenePath.empty())
+        {
+            std::string nextPath = m_NextScenePath;
+            m_NextScenePath.clear();
+            LoadScene(nextPath);
+        }
+
+        for (auto layer : m_LayerStack)
+        {
+            if (layer->IsEnabled())
+            {
+                layer->OnRender();
+            }
+        }
+
+        for (auto layer : m_LayerStack)
+        {
+            if (layer->IsEnabled())
+            {
+                layer->OnImGuiRender();
+            }
+        }
+
         EndFrame();
+        Profiler::EndFrame();
     }
-}
 
-bool Application::IsRunning()
-{
-    return s_Instance->m_Running;
-}
+    bool Application::IsRunning()
+    {
+        return s_Instance->m_Running;
+    }
 
-float Application::GetDeltaTime()
-{
-    return s_Instance->m_DeltaTime;
-}
-} // namespace CH
+    void Application::LoadScene(const std::string &path)
+    {
+        std::string pathStr = path;
+
+        CH_CORE_INFO("Loading scene: {0}", pathStr);
+
+        if (m_ActiveScene)
+        {
+            m_ActiveScene->OnRuntimeStop();
+        }
+
+        std::shared_ptr<Scene> newScene = std::make_shared<Scene>();
+        SceneSerializer serializer(newScene.get());
+        if (serializer.Deserialize(pathStr))
+        {
+            newScene->SetScenePath(pathStr);
+            m_ActiveScene = newScene;
+
+            // Apply project environment if scene doesn't have its own
+            if (Project::GetActive() && Project::GetActive()->GetEnvironment())
+            {
+                if (newScene->GetEnvironment()->GetPath().empty() && 
+                    newScene->GetSkybox().TexturePath.empty())
+                {
+                    newScene->SetEnvironment(Project::GetActive()->GetEnvironment());
+                    CH_CORE_INFO("Applied project environment to scene: {}", pathStr);
+                }
+            }
+
+            // Notify system that scene is opened
+            SceneOpenedEvent e(path);
+            Application::OnEvent(e);
+        }
+        else
+        {
+            CH_CORE_ERROR("Failed to load scene: {}", path);
+        }
+    }
+
+    void Application::LoadEngineFonts()
+    {
+        ImGuiIO &io = ImGui::GetIO();
+        float fontSize = 16.0f;
+
+        // Try to load Lato-Bold as the default UI font
+        std::string fontPath = AssetManager::ResolvePath("engine:font/lato/lato-bold.ttf");
+        if (std::filesystem::exists(fontPath))
+        {
+            io.Fonts->AddFontFromFileTTF(fontPath.c_str(), fontSize);
+            CH_CORE_INFO("Loaded engine font: {}", fontPath);
+        }
+        else
+        {
+            CH_CORE_WARN("Engine font not found: {}. Using default ImGui font.", fontPath);
+            io.Fonts->AddFontDefault();
+        }
+
+        // Try to load FontAwesome for icons
+        std::string faPath = AssetManager::ResolvePath("engine:font/fa-solid-900.ttf");
+        if (std::filesystem::exists(faPath))
+        {
+            static const ImWchar icons_ranges[] = {0xf000, 0xf8ff, 0}; // FontAwesome solid
+            ImFontConfig icons_config;
+            icons_config.MergeMode = true;
+            icons_config.PixelSnapH = true;
+            io.Fonts->AddFontFromFileTTF(faPath.c_str(), fontSize, &icons_config, icons_ranges);
+            CH_CORE_INFO("Loaded and merged FontAwesome: {}", faPath);
+        }
+
+        // Build atlas
+        unsigned char *pixels;
+        int width, height;
+        io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
+    }
+} // namespace CHEngine

@@ -4,7 +4,7 @@
 #include <functional>
 #include <string>
 
-namespace CH
+namespace CHEngine
 {
 enum class EventType
 {
@@ -23,7 +23,17 @@ enum class EventType
     MouseButtonPressed,
     MouseButtonReleased,
     MouseMoved,
-    MouseScrolled
+    MouseScrolled,
+    ProjectCreated,
+    ProjectOpened,
+    SceneOpened,
+    SceneSaved,
+    ScenePlay,
+    SceneStop,
+    AppLaunchRuntime,
+    AppResetLayout,
+    EntitySelected,
+    ButtonPressed
 };
 
 enum EventCategory
@@ -33,7 +43,8 @@ enum EventCategory
     EventCategoryInput = 1 << 1,
     EventCategoryKeyboard = 1 << 2,
     EventCategoryMouse = 1 << 3,
-    EventCategoryMouseButton = 1 << 4
+    EventCategoryMouseButton = 1 << 4,
+    EventCategoryButton = 1 << 5
 };
 
 #define EVENT_CLASS_TYPE(type)                                                                     \
@@ -97,6 +108,8 @@ public:
 private:
     Event &m_Event;
 };
+
+using EventCallbackFn = std::function<void(Event &)>;
 
 // Keyboard Events
 class KeyEvent : public Event
@@ -237,6 +250,6 @@ public:
     EVENT_CLASS_TYPE(MouseButtonReleased)
 };
 
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_EVENTS_H

@@ -1,9 +1,9 @@
 #ifndef CH_EDITOR_CAMERA_H
 #define CH_EDITOR_CAMERA_H
 
-#include <raylib.h>
+#include "raylib.h"
 
-namespace CH
+namespace CHEngine
 {
 
 class EditorCamera
@@ -25,6 +25,6 @@ private:
     Camera3D m_Camera;
 };
 
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_EDITOR_CAMERA_H

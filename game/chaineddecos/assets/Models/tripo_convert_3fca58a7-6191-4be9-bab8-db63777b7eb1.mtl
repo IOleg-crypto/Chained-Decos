@@ -1,0 +1,16 @@
+# Blender 4.5.0 MTL File: 'None'
+# www.blender.org
+
+newmtl tripo_mat_3fca58a7-6191-4be9-bab8-db63777b7eb1
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd boy_basecolor.JPEG
+map_Ns boy_roughness.JPEG
+map_Pr boy_roughness.JPEG
+map_refl boy_metallic.JPEG
+map_Pm boy_metallic.JPEG
+map_Bump -bm 1.000000 boy_normal.JPEG

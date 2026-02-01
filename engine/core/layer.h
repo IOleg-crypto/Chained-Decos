@@ -1,11 +1,11 @@
 #ifndef CH_LAYER_H
 #define CH_LAYER_H
 
+#include "engine/core/base.h"
 #include "engine/core/events.h"
-#include "engine/core/types.h"
 #include <string>
 
-namespace CH
+namespace CHEngine
 {
 class Layer
 {
@@ -21,6 +21,16 @@ public:
     virtual void OnDetach()
     {
     }
+
+    bool IsEnabled() const
+    {
+        return m_Enabled;
+    }
+    void SetEnabled(bool enabled)
+    {
+        m_Enabled = enabled;
+    }
+
     virtual void OnUpdate(float deltaTime)
     {
     }
@@ -41,7 +51,8 @@ public:
 
 protected:
     std::string m_DebugName;
+    bool m_Enabled = true;
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_LAYER_H

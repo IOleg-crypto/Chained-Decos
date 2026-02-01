@@ -1,17 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="VcsDirectoryMappings">
-    <mapping directory="$PROJECT_DIR$" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_deps/lua-src" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_deps/sol2-src" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_deps/yaml-cpp-src" vcs="Git" />
+    <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build/_deps/glm-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build/_deps/imguizmo-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/build/_deps/yaml-cpp-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build/ninja-debug/_deps/glm-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build/ninja-debug/_deps/imguizmo-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build/ninja-debug/_deps/yaml-cpp-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build/ninja-release/_deps/glm-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build/ninja-release/_deps/imguizmo-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build/ninja-release/_deps/yaml-cpp-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/glm-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/imguizmo-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/yaml-cpp-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/include/entt" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/include/googletest" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/include/imgui" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/include/json" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/include/nfd" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/include/raygui" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/include/raylib" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/include/rlImGui" vcs="Git" />
   </component>
