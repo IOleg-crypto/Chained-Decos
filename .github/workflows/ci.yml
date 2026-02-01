@@ -125,33 +125,13 @@ jobs:
           if [[ "${{ matrix.preset }}" == *debug* ]]; then config="Debug"; fi
           
           BUILD_DIR="${{ github.workspace }}/build/${{ matrix.config_preset }}"
-          BIN_DIR="$BUILD_DIR/bin"
           
-          echo "Matrix Preset: ${{ matrix.preset }}"
-          echo "Detected Config: $config"
-          echo "Build Directory: $BUILD_DIR"
+          echo "Running CTest in $BUILD_DIR for config $config..."
           
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            echo "--- Bin Directory Contents ---"
-            ls -la "$BIN_DIR" || true
-            
-            # Check for any .dll files that might be causing issues
-            echo "--- DLL Check ---"
-            find "$BIN_DIR" -maxdepth 2 -name "*.dll" || echo "No DLLs found in bin"
-            
-            # Use ldd (from Git Bash) to check dependencies of the test executable
-            TEST_EXE_PATH=$(find "$BIN_DIR" -name "EngineTests.exe" | head -n 1)
-            if [[ -n "$TEST_EXE_PATH" ]]; then
-              echo "--- Dependencies for $TEST_EXE_PATH ---"
-              ldd "$TEST_EXE_PATH" || true
-            fi
-          fi
-          
-          echo "Running CTest..."
           if [[ "${{ runner.os }}" == "Linux" ]]; then
-            xvfb-run -a ctest --test-dir "$BUILD_DIR" -C "$config" --output-on-failure
+            xvfb-run -a ctest --test-dir "$BUILD_DIR" -C "$config" --output-on-failure --timeout 300
           else
-            ctest --test-dir "$BUILD_DIR" -C "$config" --output-on-failure
+            ctest --test-dir "$BUILD_DIR" -C "$config" --output-on-failure --timeout 300
           fi
 
       - name: Upload Artifacts
