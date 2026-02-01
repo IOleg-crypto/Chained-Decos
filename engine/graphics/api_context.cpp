@@ -11,6 +11,15 @@ RendererState APIContext::s_State;
 void APIContext::Init()
 {
     CH_CORE_INFO("APIContext: Initializing Renderer...");
+    CH_CORE_INFO("APIContext: AssetManager RootPath = {}", AssetManager::GetRootPath().string());
+    
+    // Debug: show resolved paths
+    std::string lightingPath = AssetManager::ResolvePath("engine:shaders/lighting.chshader");
+    std::string skyboxPath = AssetManager::ResolvePath("engine:shaders/skybox.chshader");
+    std::string panoramaPath = AssetManager::ResolvePath("engine:shaders/panorama.chshader");
+    CH_CORE_INFO("APIContext: Resolved lighting shader = {}", lightingPath);
+    CH_CORE_INFO("APIContext: Resolved skybox shader = {}", skyboxPath);
+    CH_CORE_INFO("APIContext: Resolved panorama shader = {}", panoramaPath);
     
     // Try to load default shaders
     s_State.LightingShader = AssetManager::Get<ShaderAsset>("engine:shaders/lighting.chshader");
@@ -18,11 +27,27 @@ void APIContext::Init()
     s_State.PanoramaShader = AssetManager::Get<ShaderAsset>("engine:shaders/panorama.chshader");
 
     if (s_State.LightingShader) {
-        CH_CORE_INFO("APIContext: Lighting shader loaded.");
+        CH_CORE_INFO("APIContext: Lighting shader loaded (state={}).", (int)s_State.LightingShader->GetState());
     }
     else
     { 
         CH_CORE_ERROR("APIContext: FAILED to load Lighting shader!");
+    }
+
+    if (s_State.SkyboxShader) {
+        CH_CORE_INFO("APIContext: Skybox shader loaded (state={}).", (int)s_State.SkyboxShader->GetState());
+    }
+    else
+    { 
+        CH_CORE_ERROR("APIContext: FAILED to load Skybox shader!");
+    }
+
+    if (s_State.PanoramaShader) {
+        CH_CORE_INFO("APIContext: Panorama shader loaded (state={}).", (int)s_State.PanoramaShader->GetState());
+    }
+    else
+    { 
+        CH_CORE_ERROR("APIContext: FAILED to load Panorama shader!");
     }
 
     InitShaders();
