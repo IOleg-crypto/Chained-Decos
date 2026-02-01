@@ -1,0 +1,34 @@
+# Define the Game module
+add_library(ChainedDecosGame STATIC)
+
+# Game Sources
+target_sources(ChainedDecosGame PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/game_scripts.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/playercontroller.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/cameracontroller.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/exitscript.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/playergui.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/scenescript.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/spawnzone.h
+)
+
+target_link_libraries(ChainedDecosGame PUBLIC engine)
+apply_engine_optimizations(ChainedDecosGame)
+target_include_directories(ChainedDecosGame PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}
+)
+
+# Create the project-specific runtime executable
+chained_add_game(ChainedRuntime 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/runtime_entry.cpp
+    ChainedDecosGame
+)
+
+# Installation
+install(TARGETS ChainedDecosGame ChainedRuntime
+    ARCHIVE DESTINATION lib COMPONENT Runtime
+    LIBRARY DESTINATION lib COMPONENT Runtime
+    RUNTIME DESTINATION bin COMPONENT Runtime
+)

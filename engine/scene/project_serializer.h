@@ -2,20 +2,21 @@
 #define CH_PROJECT_SERIALIZER_H
 
 #include "project.h"
+#include <filesystem>
 
-namespace CH
+namespace CHEngine
 {
-class ProjectSerializer
-{
-public:
-    ProjectSerializer(Ref<Project> project);
+    class ProjectSerializer
+    {
+    public:
+        ProjectSerializer(std::shared_ptr<Project> project);
 
-    void Serialize(const std::filesystem::path &filepath);
-    bool Deserialize(const std::filesystem::path &filepath);
+        bool Serialize(const std::filesystem::path &filepath);
+        bool Deserialize(const std::filesystem::path &filepath);
 
-private:
-    Ref<Project> m_Project;
-};
-} // namespace CH
+    private:
+        std::shared_ptr<Project> m_Project;
+    };
+} // namespace CHEngine
 
 #endif // CH_PROJECT_SERIALIZER_H

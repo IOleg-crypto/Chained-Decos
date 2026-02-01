@@ -1,0 +1,11 @@
+{
+"rules": [
+{
+"primary-output": "CMakeFiles/imguilib.dir/include/imgui/imgui_widgets.cpp.o",
+"requires": [
+]
+}
+],
+"version": 0,
+"revision": 0
+}
