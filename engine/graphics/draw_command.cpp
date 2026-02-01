@@ -103,7 +103,7 @@ namespace CHEngine
         if (!asset)
             return;
         
-        // ✅ CRITICAL: Don't render if asset is still loading!
+        //CRITICAL: Don't render if asset is still loading!
         if (asset->GetState() != AssetState::Ready)
             return;
 
