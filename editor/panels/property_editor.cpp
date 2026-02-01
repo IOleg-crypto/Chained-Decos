@@ -4,6 +4,7 @@
 #include "engine/scene/script_registry.h"
 #include "extras/IconsFontAwesome6.h"
 #include "imgui.h"
+#include "nfd.h"
 #include "raymath.h"
 
 namespace CHEngine
@@ -148,7 +149,32 @@ namespace CHEngine
         });
 
         Register<ModelComponent>("Model", [](auto &comp) {
-            return (bool)MetaBuilder(comp).Prop("Path", comp.ModelPath);
+            MetaBuilder mb(comp);
+            mb.Prop("Path", comp.ModelPath);
+            
+            // Browse button for model files
+            ImGui::SameLine();
+            if (ImGui::Button(ICON_FA_FOLDER_OPEN "##BrowseModel"))
+            {
+                nfdchar_t *outPath = nullptr;
+                nfdfilteritem_t filterItem[1] = {{"3D Models", "glb,gltf,obj,fbx"}};
+                if (NFD_OpenDialog(&outPath, filterItem, 1, nullptr) == NFD_OKAY)
+                {
+                    comp.ModelPath = outPath;
+                    comp.Asset = nullptr; // Force reload
+                    NFD_FreePath(outPath);
+                    mb.Changed = true;
+                }
+            }
+            
+            // Reload button
+            if (ImGui::Button(ICON_FA_ROTATE "Reload"))
+            {
+                comp.Asset = nullptr;
+                mb.Changed = true;
+            }
+            
+            return (bool)mb;
         });
 
         Register<PointLightComponent>("Point Light", [](auto &comp) {
@@ -211,6 +237,24 @@ namespace CHEngine
         Register<AudioComponent>("Audio", [](auto &comp) {
             MetaBuilder mb(comp);
             mb.Prop("Path", comp.SoundPath).Prop("Volume", comp.Volume);
+            return (bool)mb;
+        });
+
+        Register<SpawnComponent>("Spawn Zone", [](auto &comp) {
+            MetaBuilder mb(comp);
+            mb.Prop("Active", comp.IsActive);
+            mb.Vec3("Zone Size", comp.ZoneSize, 1.0f);
+            mb.Vec3("Spawn Point", comp.SpawnPoint);
+            mb.Prop("Show in Scene", comp.RenderSpawnZoneInScene);
+            return (bool)mb;
+        });
+
+        Register<PlayerComponent>("Player", [](auto &comp) {
+            MetaBuilder mb(comp);
+            mb.Prop("Movement Speed", comp.MovementSpeed);
+            mb.Prop("Look Sensitivity", comp.LookSensitivity);
+            mb.Prop("Jump Force", comp.JumpForce);
+            mb.Prop("Camera Distance", comp.CameraDistance);
             return (bool)mb;
         });
 
