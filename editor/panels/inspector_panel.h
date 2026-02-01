@@ -1,37 +1,29 @@
 #ifndef CH_INSPECTOR_PANEL_H
 #define CH_INSPECTOR_PANEL_H
 
-#include "engine/core/base.h"
-#include "engine/scene/entity.h"
-#include "engine/scene/scene.h"
+#include "panel.h"
 
-namespace CH
+namespace CHEngine
 {
-class InspectorPanel
+class InspectorPanel : public Panel
 {
 public:
-    InspectorPanel() = default;
+    InspectorPanel();
+    virtual void OnImGuiRender(bool readOnly = false) override;
+    virtual void OnEvent(Event &e) override;
 
-public:
-    void OnImGuiRender(Scene *scene, Entity entity, bool readOnly = false);
+    void SetSelectedMeshIndex(int index)
+    {
+        m_SelectedMeshIndex = index;
+    }
 
 private:
     void DrawComponents(Entity entity);
-    void DrawTagComponent(Entity entity);
-    void DrawTransformComponent(Entity entity);
-    void DrawModelComponent(Entity entity);
-    void DrawColliderComponent(Entity entity);
-    void DrawRigidBodyComponent(Entity entity);
-    void DrawSpawnComponent(Entity entity);
-    void DrawPlayerComponent(Entity entity);
-    void DrawMaterialComponent(Entity entity);
-    void DrawPointLightComponent(Entity entity);
-    void DrawAudioComponent(Entity entity);
-    void DrawHierarchyComponent(Entity entity);
-    void DrawCSharpScriptComponent(Entity entity);
 
-    void DrawAddComponentPopup(Entity entity);
+private:
+    Entity m_SelectedEntity;
+    int m_SelectedMeshIndex = -1;
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_INSPECTOR_PANEL_H

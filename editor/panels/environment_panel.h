@@ -1,29 +1,21 @@
 #ifndef CH_ENVIRONMENT_PANEL_H
 #define CH_ENVIRONMENT_PANEL_H
 
-#include "engine/renderer/renderer.h"
-#include "engine/scene/components.h"
-#include "engine/scene/scene.h"
+#include "panel.h"
 
-namespace CH
+namespace CHEngine
 {
-class EnvironmentPanel
+class EnvironmentPanel : public Panel
 {
 public:
-    EnvironmentPanel() = default;
-    ~EnvironmentPanel() = default;
+    EnvironmentPanel();
 
-    void OnImGuiRender(Scene *scene, bool readOnly, DebugRenderFlags *debugFlags);
+public:
+    virtual void OnImGuiRender(bool readOnly = false) override;
 
 private:
-    bool m_IsOpen = true;
-
-public:
-    bool &IsOpen()
-    {
-        return m_IsOpen;
-    }
+    void DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, bool readOnly);
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_ENVIRONMENT_PANEL_H

@@ -1,9 +1,9 @@
 #ifndef CH_COLLISION_H
 #define CH_COLLISION_H
 
-#include <raylib.h>
+#include "raylib.h"
 
-namespace CH
+namespace CHEngine
 {
 namespace Collision
 {
@@ -14,6 +14,6 @@ static bool CheckAABB(const Vector3 &minA, const Vector3 &maxA, const Vector3 &m
            (minA.z <= maxB.z && maxA.z >= minB.z);
 }
 } // namespace Collision
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_COLLISION_H

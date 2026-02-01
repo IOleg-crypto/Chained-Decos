@@ -1,6 +1,8 @@
 #ifndef CH_BASE_H
 #define CH_BASE_H
 
+#define GLM_ENABLE_EXPERIMENTAL
+#include "engine/core/log.h"
 #include <memory>
 
 // Platform detection
@@ -24,7 +26,7 @@
 #if defined(CH_PLATFORM_WINDOWS)
 #define CH_DEBUGBREAK() __debugbreak()
 #elif defined(CH_PLATFORM_LINUX)
-#include <signal.h>
+#include "signal.h"
 #define CH_DEBUGBREAK() raise(SIGTRAP)
 #else
 #define CH_DEBUGBREAK()
@@ -42,19 +44,31 @@
     [this](auto &&...args) -> decltype(auto)                                                       \
     { return this->fn(std::forward<decltype(args)>(args)...); }
 
-namespace CH
+namespace CHEngine
 {
-template <typename T> using Scope = std::unique_ptr<T>;
-template <typename T, typename... Args> constexpr Scope<T> CreateScope(Args &&...args)
-{
-    return std::make_unique<T>(std::forward<Args>(args)...);
-}
+// Assertions
+#ifdef CH_ENABLE_ASSERTS
+#define CH_ASSERT(x, ...)                                                                          \
+    {                                                                                              \
+        if (!(x))                                                                                  \
+        {                                                                                          \
+            CH_ERROR("Assertion Failed: {0}", ##__VA_ARGS__);                                      \
+            CH_DEBUGBREAK();                                                                       \
+        }                                                                                          \
+    }
+#define CH_CORE_ASSERT(x, ...)                                                                     \
+    {                                                                                              \
+        if (!(x))                                                                                  \
+        {                                                                                          \
+            CH_CORE_ERROR("Assertion Failed: {0}", ##__VA_ARGS__);                                 \
+            CH_DEBUGBREAK();                                                                       \
+        }                                                                                          \
+    }
+#else
+#define CH_ASSERT(x, ...)
+#define CH_CORE_ASSERT(x, ...)
+#endif
 
-template <typename T> using Ref = std::shared_ptr<T>;
-template <typename T, typename... Args> constexpr Ref<T> CreateRef(Args &&...args)
-{
-    return std::make_shared<T>(std::forward<Args>(args)...);
-}
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_BASE_H

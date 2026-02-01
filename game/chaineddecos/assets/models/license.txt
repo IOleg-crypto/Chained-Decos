@@ -1,0 +1,11 @@
+Model Information:
+* title:	Sarah
+* source:	https://sketchfab.com/3d-models/sarah-493d091b49c64ec196f08ea74f6f6771
+* author:	Casttelan2 (https://sketchfab.com/Casttelan2)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Sarah" (https://sketchfab.com/3d-models/sarah-493d091b49c64ec196f08ea74f6f6771) by Casttelan2 (https://sketchfab.com/Casttelan2) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

@@ -3,29 +3,20 @@
 
 #include "engine/scene/entity.h"
 #include "engine/scene/scene.h"
+#include "imgui.h"
+#include "ImGuizmo.h"
 #include "raylib.h"
-#include <imgui.h>
 
-namespace CH
+namespace CHEngine
 {
-
-enum class GizmoAxis
-{
-    NONE,
-    X,
-    Y,
-    Z,
-    XY,
-    YZ,
-    XZ
-};
 
 enum class GizmoType
 {
-    SELECT,
-    TRANSLATE,
-    ROTATE,
-    SCALE
+    NONE = -1,
+    TRANSLATE = ImGuizmo::OPERATION::TRANSLATE,
+    ROTATE = ImGuizmo::OPERATION::ROTATE,
+    SCALE = ImGuizmo::OPERATION::SCALE,
+    BOUNDS = ImGuizmo::OPERATION::BOUNDS
 };
 
 class EditorGizmo
@@ -34,16 +25,19 @@ public:
     EditorGizmo() = default;
     ~EditorGizmo() = default;
 
-    bool RenderAndHandle(Scene *scene, const Camera3D &camera, Entity entity, GizmoType type,
-                         ImVec2 viewportSize, bool isHovered);
+    /**
+     * Render and handle gizmo interaction
+     * true if the gizmo is being used (captured mouse)
+     */
+    bool RenderAndHandle(GizmoType type);
 
     bool IsHovered() const
     {
-        return m_GizmoHovered;
+        return ImGuizmo::IsOver();
     }
     bool IsDragging() const
     {
-        return m_DraggingAxis != GizmoAxis::NONE;
+        return ImGuizmo::IsUsing();
     }
 
     // Snapping
@@ -53,11 +47,11 @@ public:
     }
     void SetGridSize(float size)
     {
-        m_GridSize = size;
+        m_SnapValues[0] = m_SnapValues[1] = m_SnapValues[2] = size;
     }
     void SetRotationStep(float step)
     {
-        m_RotationStep = step;
+        m_SnapValues[0] = m_SnapValues[1] = m_SnapValues[2] = step;
     }
 
     bool IsSnappingEnabled() const
@@ -66,35 +60,29 @@ public:
     }
     float GetGridSize() const
     {
-        return m_GridSize;
+        return m_SnapValues[0];
     }
-    float GetRotationStep() const
+
+    void SetLocalSpace(bool local)
     {
-        return m_RotationStep;
+        m_IsLocalSpace = local;
+    }
+    bool IsLocalSpace() const
+    {
+        return m_IsLocalSpace;
     }
 
 private:
-    // Gizmo state
-    GizmoAxis m_DraggingAxis = GizmoAxis::NONE;
-    bool m_GizmoHovered = false;
-
-    // Drag (ray → plane)
-    Vector3 m_DragPlaneNormal{};
-    Vector3 m_DragPlanePos{};
-    Vector3 m_DragStartHit{};
-    Vector3 m_DragStartValue{};
-
-    // Undo
-    TransformComponent m_OldTransform;
-
     // Snapping
     bool m_SnappingEnabled = false;
-    float m_GridSize = 1.0f;
-    float m_RotationStep = 15.0f; // degrees
+    float m_SnapValues[3] = {1.0f, 1.0f, 1.0f};
+    bool m_IsLocalSpace = false;
 
-    static float SnapValue(float value, float step);
+    // Undo state
+    TransformComponent m_OldTransform;
+    bool m_WasUsing = false;
 };
 
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_EDITOR_GIZMO_H

@@ -2,58 +2,65 @@
 #define CH_PHYSICS_BVH_H
 
 #include "engine/core/base.h"
-#include "engine/core/thread_pool.h"
 #include <future>
-#include <raylib.h>
-#include <raymath.h>
+#include "raylib.h"
+#include "raymath.h"
 #include <vector>
 
-namespace CH
-{
-struct CollisionTriangle
-{
-    Vector3 v0, v1, v2;
-    Vector3 min, max;
-    Vector3 center;
+#include "bvh_node.h"
+#include "engine/physics/collision/collision_triangle.h"
 
-    CollisionTriangle(const Vector3 &a, const Vector3 &b, const Vector3 &c);
-    bool IntersectsRay(const Ray &ray, float &t) const;
-};
-
-struct BVHNode
+namespace CHEngine
 {
-    Vector3 min;
-    Vector3 max;
-    std::vector<CollisionTriangle> triangles;
-    Scope<BVHNode> left;
-    Scope<BVHNode> right;
 
-    BVHNode() = default;
-    bool IsLeaf() const
+struct BuildContext
+{
+    std::vector<CollisionTriangle> &AllTriangles;
+    std::vector<uint32_t> TriIndices;
+
+    BuildContext(std::vector<CollisionTriangle> &tris) : AllTriangles(tris)
     {
-        return !left && !right;
+        TriIndices.resize(tris.size());
+        for (uint32_t i = 0; i < tris.size(); ++i)
+            TriIndices[i] = i;
     }
 };
 
-class BVHBuilder
+class BVH
 {
 public:
+    BVH() = default;
+
     // Synchronous API
-    static Scope<BVHNode> Build(const Model &model, const Matrix &transform = MatrixIdentity());
+    static std::shared_ptr<BVH> Build(const Model &model,
+                                      const Matrix &transform = MatrixIdentity());
 
     // Asynchronous API
-    static std::future<Scope<BVHNode>> BuildAsync(const Model &model,
-                                                  const Matrix &transform = MatrixIdentity());
+    static std::future<std::shared_ptr<BVH>> BuildAsync(const Model &model,
+                                                        const Matrix &transform = MatrixIdentity());
 
-    static bool Raycast(const BVHNode *node, const Ray &ray, float &t, Vector3 &normal);
+    bool Raycast(const Ray &ray, float &t, Vector3 &normal, int &meshIndex) const;
+    bool IntersectAABB(const BoundingBox &box, Vector3 &outOverlapNormal,
+                       float &outOverlapDepth) const;
 
-    // Thread pool access
-    static ThreadPool &GetThreadPool();
+    const std::vector<BVHNode> &GetNodes() const
+    {
+        return m_Nodes;
+    }
+    const std::vector<CollisionTriangle> &GetTriangles() const
+    {
+        return m_Triangles;
+    }
 
 private:
-    static Scope<BVHNode> BuildRecursive(std::vector<CollisionTriangle> &tris, int depth);
-    static bool RayInternal(const BVHNode *node, const Ray &ray, float &t, Vector3 &normal);
+    void BuildRecursive(BuildContext &ctx, uint32_t nodeIdx, size_t triStart, size_t triCount,
+                        int depth);
+    void UpdateNodeBounds(uint32_t nodeIdx, size_t triStart, size_t triCount);
+
+private:
+    std::vector<BVHNode> m_Nodes;
+    std::vector<CollisionTriangle> m_Triangles;
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_BVH_H

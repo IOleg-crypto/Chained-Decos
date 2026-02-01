@@ -1,0 +1,267 @@
+Scene: Untitled
+Background:
+  Mode: 0
+  Color: [0, 0, 0, 255]
+  TexturePath: ""
+EnvironmentPath: ""
+Skybox:
+  TexturePath: ""
+  Exposure: 1
+  Brightness: 0
+  Contrast: 1
+Canvas:
+  ReferenceResolution: [1920, 1080]
+  ScaleMode: 1
+  MatchWidthOrHeight: 0.5
+Entities:
+  - Entity: 15051911593141375302
+    TagComponent:
+      Tag: start_menu_game_info
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ControlComponent:
+      IsActive: true
+      HiddenInHierarchy: false
+      ZOrder: 0
+      RectTransform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-60, 0]
+        OffsetMax: [60, 40]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+    ButtonControl:
+      Label: Info
+      Interactable: true
+      Style:
+        BackgroundColor: [60, 60, 65, 255]
+        HoverColor: [80, 80, 85, 255]
+        PressedColor: [40, 40, 45, 255]
+        Rounding: 4
+        BorderSize: 0
+        BorderColor: [255, 255, 255, 255]
+        Padding: 4
+      Text:
+        FontName: Default
+        FontSize: 18
+        TextColor: [255, 255, 255, 255]
+        LetterSpacing: 1
+        LineHeight: 1.20000005
+        HorizontalAlignment: 1
+        VerticalAlignment: 1
+  - Entity: 6090748651460201744
+    TagComponent:
+      Tag: start_game_info_2
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ControlComponent:
+      IsActive: true
+      HiddenInHierarchy: false
+      ZOrder: 0
+      RectTransform:
+        AnchorMin: [0.100000001, 0.899999976]
+        AnchorMax: [0.100000001, 0.899999976]
+        OffsetMin: [-68, 4]
+        OffsetMax: [282, 34]
+        Pivot: [0, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+    LabelControl:
+      Text: Some functionality or aspects can be changed in final version.
+      Style:
+        FontName: Default
+        FontSize: 14
+        TextColor: [180, 180, 180, 255]
+        Shadow: false
+        ShadowOffset: 2
+        ShadowColor: [0, 0, 0, 255]
+        LetterSpacing: 1
+        LineHeight: 1.20000005
+        HorizontalAlignment: 0
+        VerticalAlignment: 1
+  - Entity: 15500646445384167357
+    TagComponent:
+      Tag: start_game_info
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ControlComponent:
+      IsActive: true
+      HiddenInHierarchy: false
+      ZOrder: 0
+      RectTransform:
+        AnchorMin: [0.100000001, 0.850000024]
+        AnchorMax: [0.100000001, 0.850000024]
+        OffsetMin: [-66, 0]
+        OffsetMax: [234, 30]
+        Pivot: [0, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+    LabelControl:
+      Text: The game is currently in development.
+      Style:
+        FontName: Default
+        FontSize: 16
+        TextColor: [200, 200, 200, 255]
+        Shadow: false
+        ShadowOffset: 2
+        ShadowColor: [0, 0, 0, 255]
+        LetterSpacing: 1
+        LineHeight: 1.20000005
+        HorizontalAlignment: 0
+        VerticalAlignment: 1
+  - Entity: 12750009872668354234
+    TagComponent:
+      Tag: start_button_exit
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    NativeScriptComponent:
+      Scripts:
+        - ScriptName: ExitScript
+    ControlComponent:
+      IsActive: true
+      HiddenInHierarchy: false
+      ZOrder: 0
+      RectTransform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-60, 60]
+        OffsetMax: [60, 100]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+    ButtonControl:
+      Label: Exit
+      Interactable: true
+      Style:
+        BackgroundColor: [60, 60, 65, 255]
+        HoverColor: [80, 80, 85, 255]
+        PressedColor: [40, 40, 45, 255]
+        Rounding: 4
+        BorderSize: 0
+        BorderColor: [255, 255, 255, 255]
+        Padding: 4
+      Text:
+        FontName: Default
+        FontSize: 18
+        TextColor: [255, 255, 255, 255]
+        LetterSpacing: 1
+        LineHeight: 1.20000005
+        HorizontalAlignment: 1
+        VerticalAlignment: 1
+  - Entity: 17600595323765651257
+    TagComponent:
+      Tag: start_title_menu
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ControlComponent:
+      IsActive: true
+      HiddenInHierarchy: false
+      ZOrder: 0
+      RectTransform:
+        AnchorMin: [0.5, 0.100000001]
+        AnchorMax: [0.5, 0.100000001]
+        OffsetMin: [-100, 0]
+        OffsetMax: [100, 40]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+    LabelControl:
+      Text: Chained Decos
+      Style:
+        FontName: Default
+        FontSize: 32
+        TextColor: [189, 206, 175, 255]
+        Shadow: false
+        ShadowOffset: 2
+        ShadowColor: [0, 0, 0, 255]
+        LetterSpacing: 1
+        LineHeight: 1.20000005
+        HorizontalAlignment: 1
+        VerticalAlignment: 1
+  - Entity: 13765047633248252361
+    TagComponent:
+      Tag: start_game_menu_options
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ControlComponent:
+      IsActive: true
+      HiddenInHierarchy: false
+      ZOrder: 0
+      RectTransform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-60, -60]
+        OffsetMax: [60, -20]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+    ButtonControl:
+      Label: Options
+      Interactable: true
+      Style:
+        BackgroundColor: [60, 60, 65, 255]
+        HoverColor: [80, 80, 85, 255]
+        PressedColor: [40, 40, 45, 255]
+        Rounding: 4
+        BorderSize: 0
+        BorderColor: [255, 255, 255, 255]
+        Padding: 4
+      Text:
+        FontName: Default
+        FontSize: 18
+        TextColor: [255, 255, 255, 255]
+        LetterSpacing: 1
+        LineHeight: 1.20000005
+        HorizontalAlignment: 1
+        VerticalAlignment: 1
+  - Entity: 11188570711873615005
+    TagComponent:
+      Tag: start_button_start
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ControlComponent:
+      IsActive: true
+      HiddenInHierarchy: false
+      ZOrder: 0
+      RectTransform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-60, -120]
+        OffsetMax: [60, -80]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+    ButtonControl:
+      Label: Start
+      Interactable: true
+      Style:
+        BackgroundColor: [60, 60, 65, 255]
+        HoverColor: [80, 80, 85, 255]
+        PressedColor: [40, 40, 71, 255]
+        Rounding: 4
+        BorderSize: 0
+        BorderColor: [255, 255, 255, 255]
+        Padding: 4
+      Text:
+        FontName: Default
+        FontSize: 18
+        TextColor: [255, 255, 255, 255]
+        LetterSpacing: 1
+        LineHeight: 1.20000005
+        HorizontalAlignment: 1
+        VerticalAlignment: 1

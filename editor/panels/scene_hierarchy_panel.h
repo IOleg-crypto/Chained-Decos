@@ -1,21 +1,19 @@
 #ifndef CH_SCENE_HIERARCHY_PANEL_H
 #define CH_SCENE_HIERARCHY_PANEL_H
 
-#include "engine/core/base.h"
-#include "engine/scene/entity.h"
-#include "engine/scene/scene.h"
+#include "panel.h"
+#include "unordered_set"
 
-namespace CH
+namespace CHEngine
 {
-class SceneHierarchyPanel
+class SceneHierarchyPanel : public Panel
 {
 public:
-    SceneHierarchyPanel() = default;
-    SceneHierarchyPanel(const Ref<Scene> &context);
+    SceneHierarchyPanel();
+    SceneHierarchyPanel(const std::shared_ptr<Scene> &context);
 
-    void SetContext(const Ref<Scene> &context);
-
-    void OnImGuiRender(bool readOnly = false);
+    virtual void SetContext(const std::shared_ptr<Scene> &context) override;
+    virtual void OnImGuiRender(bool readOnly = false) override;
 
     void SetSelectedEntity(Entity entity)
     {
@@ -28,13 +26,13 @@ public:
     }
 
 private:
-    bool DrawEntityNode(Entity entity);
+    entt::entity DrawEntityNodeRecursive(Entity entity);
 
 private:
-    Ref<Scene> m_Context;
     Entity m_SelectionContext;
     std::unordered_set<entt::entity> m_DrawnEntities;
 };
-} // namespace CH
+
+} // namespace CHEngine
 
 #endif // CH_SCENE_HIERARCHY_PANEL_H

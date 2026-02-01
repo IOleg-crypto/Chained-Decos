@@ -1,9 +1,9 @@
 #include "engine/scene/components.h"
 #include "engine/scene/entity.h"
 #include "engine/scene/scene.h"
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
-using namespace CH;
+using namespace CHEngine;
 
 TEST(HierarchyTest, BasicParenting)
 {
@@ -38,8 +38,7 @@ TEST(HierarchyTest, DestroyParent)
 
     EXPECT_TRUE(scene.GetRegistry().valid(childHandle));
     auto &chc = scene.GetRegistry().get<HierarchyComponent>(childHandle);
-    EXPECT_EQ(chc.Parent, parentHandle);
-    EXPECT_FALSE(scene.GetRegistry().valid(chc.Parent));
+    EXPECT_TRUE(chc.Parent == entt::null);
 }
 
 TEST(HierarchyTest, ClearParent)

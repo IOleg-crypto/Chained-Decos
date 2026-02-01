@@ -4,17 +4,18 @@
 #include "engine/core/application.h"
 #include "engine/scene/scene.h"
 
-namespace CH
+namespace CHEngine
 {
 class RuntimeApplication : public Application
 {
 public:
-    RuntimeApplication(const Application::Config &config);
+    RuntimeApplication(const Application::Config &config, const std::string &projectPath = "");
+    virtual void PostInitialize() override;
     virtual ~RuntimeApplication() = default;
 
 private:
-    Ref<Scene> m_ActiveScene;
+    std::string m_ProjectPath;
 };
-} // namespace CH
+} // namespace CHEngine
 
 #endif // CH_RUNTIME_APPLICATION_H

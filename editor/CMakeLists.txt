@@ -1,48 +1,98 @@
-set(EDITOR_SOURCES
-    editor.h
-    editor.cpp
-    editor_main.cpp
-    editor_layer.h
-    editor_layer.cpp
-    viewport/editor_gizmo.h
-    viewport/editor_gizmo.cpp
-    viewport/editor_camera.h
-    viewport/editor_camera.cpp
-    panels/scene_hierarchy_panel.h
-    panels/scene_hierarchy_panel.cpp
-    panels/inspector_panel.h
-    panels/inspector_panel.cpp
-    logic/undo/command_history.cpp
-    logic/undo/command_history.h
-    logic/undo/editor_command.h
-    logic/undo/transform_command.h
-    logic/undo/entity_commands.h
-    panels/content_browser_panel.h
-    panels/content_browser_panel.cpp
-    panels/console_panel.h
-    panels/console_panel.cpp
-    panels/viewport_panel.cpp
-    panels/project_browser_panel.cpp
-    panels/viewport_panel.h
-    panels/environment_panel.h
-    panels/environment_panel.cpp
-    ui/toolbar.h
-    ui/toolbar.cpp
-    ui/project_selector.h
-    ui/project_selector.cpp
+# Editor Core Library (Static) for testability
+add_library(editor_core STATIC)
+
+target_sources(editor_core PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_layer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_layer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_panels.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_panels.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/actions/project_actions.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/actions/scene_actions.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/actions/editor_actions.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/actions/editor_actions.cpp
+
+    # Viewport
+    ${CMAKE_CURRENT_SOURCE_DIR}/viewport/editor_gizmo.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/viewport/editor_gizmo.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/viewport/editor_camera.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/viewport/editor_camera.cpp
+
+    # Panels
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/scene_hierarchy_panel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/scene_hierarchy_panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/inspector_panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/property_editor.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/property_editor.cpp
+    
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/content_browser_panel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/content_browser_panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/console_panel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/console_panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/profiler_panel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/profiler_panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/viewport_panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/project_browser_panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/project_settings_panel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/project_settings_panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/environment_panel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/environment_panel.cpp
+
+    # Undo
+    ${CMAKE_CURRENT_SOURCE_DIR}/undo/command_history.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/undo/command_history.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/undo/editor_command.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/undo/modify_component_command.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/undo/lambda_command.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/undo/entity_commands.h
+
+    # UI
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/editor_gui.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/editor_gui.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/editor_layout.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/editor_layout.cpp
+    # External
+    ${CMAKE_SOURCE_DIR}/include/rlImGui/rlImGui.cpp
 )
 
-add_executable(ChainedEditor ${EDITOR_SOURCES})
 
-target_link_libraries(ChainedEditor PUBLIC engine nfd)
-target_include_directories(ChainedEditor PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(editor_core PUBLIC 
+    engine
+    ChainedDecosGame
+    nfd
+)
+target_include_directories(editor_core PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/engine
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/include/rlImGui
+    ${imguizmo_SOURCE_DIR}
+)
 
-# Copy resources to build directory
-if(EXISTS "${CMAKE_SOURCE_DIR}/resources")
-    file(COPY "${CMAKE_SOURCE_DIR}/resources" DESTINATION "${CMAKE_BINARY_DIR}")
+# Define the Editor executable
+add_executable(ChainedEditor ${CMAKE_CURRENT_SOURCE_DIR}/editor_main.cpp)
+target_link_libraries(ChainedEditor PRIVATE editor_core)
+target_include_directories(ChainedEditor PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}
+)
+
+# Apply optimizations
+if(COMMAND apply_engine_optimizations)
+    apply_engine_optimizations(editor_core)
+    apply_engine_optimizations(ChainedEditor)
 endif()
 
-# Copy assets to build directory
+# Installation
+install(TARGETS ChainedEditor editor_core
+    RUNTIME DESTINATION bin COMPONENT Runtime
+    ARCHIVE DESTINATION lib COMPONENT Runtime
+    LIBRARY DESTINATION lib COMPONENT Runtime
+)
+
+# Copy global assets to the install directory if they exist
 if(EXISTS "${CMAKE_SOURCE_DIR}/assets")
-    file(COPY "${CMAKE_SOURCE_DIR}/assets" DESTINATION "${CMAKE_BINARY_DIR}")
+    install(DIRECTORY "${CMAKE_SOURCE_DIR}/assets/" DESTINATION assets COMPONENT Runtime)
 endif()
