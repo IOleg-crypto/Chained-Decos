@@ -13,6 +13,7 @@ set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
 
 # Options
 option(BUILD_TESTS "Build unit tests" ON)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "Force static linkage" FORCE)
 option(CH_CI "Set to ON for CI environments" OFF)
 
 if(CH_CI)
