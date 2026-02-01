@@ -100,6 +100,8 @@ namespace CHEngine
             std::string resolved = ResolvePath(path);
             
             auto& cache = GetCache<T>();
+            
+            // Deduplication: check cache first
             if (auto it = cache.find(resolved); it != cache.end())
             {
                 return it->second;
@@ -118,12 +120,12 @@ namespace CHEngine
             }
             else
             {
-                // Check if already loading
+                // Check if already loading to prevent duplicate async tasks
                 auto& loading = GetLoadingMap<T>();
                 if (loading.contains(resolved))
                 {
-                    // Asset is being loaded in background
-                    return nullptr; 
+                    // Asset is being loaded, return the placeholder from cache
+                    return cache[resolved]; 
                 }
 
                 CH_CORE_INFO("AssetManager: Starting async load for {} from: {}", typeid(T).name(), resolved);
