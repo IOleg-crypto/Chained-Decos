@@ -67,6 +67,11 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         add_compile_options(-pg)
         add_link_options(-pg)
     endif()
+
+    if(WIN32)
+        # Force static linkage of runtimes for MinGW/GCC to avoid DLL entry point mismatches in CI/Bash environments
+        add_link_options(-static -static-libgcc -static-libstdc++)
+    endif()
 endif()
 
 # Platform-specific settings
