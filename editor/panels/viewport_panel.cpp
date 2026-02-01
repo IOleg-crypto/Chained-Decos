@@ -230,9 +230,6 @@ namespace CHEngine
         debugFlags.DrawGrid = false;
     }
 
-    // Gizmo rendering
-    m_Gizmo.RenderAndHandle(!isUISelected ? m_CurrentTool : GizmoType::NONE);
-
     // Framebuffer management
     if (viewportSize.x != m_ViewportTexture.texture.width || viewportSize.y != m_ViewportTexture.texture.height)
     {
@@ -261,6 +258,9 @@ namespace CHEngine
     EndTextureMode();
 
     rlImGuiImageRenderTexture(&m_ViewportTexture);
+
+    // Gizmo rendering (after scene image so it overlays properly)
+    m_Gizmo.RenderAndHandle(!isUISelected ? m_CurrentTool : GizmoType::NONE);
 
     // --- 2. UI OVERLAY & SELECTION ---
     ImGui::SetCursorScreenPos(viewportScreenPos);
