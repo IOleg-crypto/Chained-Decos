@@ -62,7 +62,7 @@ namespace CHEngine
             dispatcher.Dispatch<KeyPressedEvent>(
                 [this](KeyPressedEvent &ev)
                 {
-                    if (Input::IsKeyDown(KEY_SPACE))
+                    if (ev.GetKeyCode() == KEY_SPACE)
                     {
                         auto &player = GetComponent<PlayerComponent>();
                         auto &rb = RigidBody();

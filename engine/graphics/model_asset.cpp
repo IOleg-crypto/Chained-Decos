@@ -64,6 +64,14 @@ void ModelAsset::LoadFromFile(const std::string &path)
             mesh = GenMeshPlane(10.0f, 10.0f, 10, 10);
         else if (path == ":torus:")
             mesh = GenMeshTorus(0.2f, 0.4f, 16, 16);
+        else if (path == ":cylinder:")
+            mesh = GenMeshCylinder(0.5f, 1.0f, 16);
+        else if (path == ":cone:")
+            mesh = GenMeshCone(0.5f, 1.0f, 16);
+        else if (path == ":knot:")
+            mesh = GenMeshKnot(0.5f, 0.2f, 16, 128);
+        else if (path == ":hemisphere:")
+            mesh = GenMeshHemiSphere(0.5f, 16, 16);
         
         if (mesh.vertexCount > 0)
         {
@@ -107,7 +115,7 @@ void ModelAsset::UploadToGPU()
         {
             // Start BVH build async (CPU work, safe)
             m_BVHFuture = BVH::BuildAsync(m_Model).share();
-            SetState(AssetState::Ready);  // ✅ NOW it's ready for rendering
+            SetState(AssetState::Ready);  // NOW it's ready for rendering
         }
         else
         {
@@ -163,6 +171,14 @@ std::shared_ptr<ModelAsset> ModelAsset::CreateProcedural(const std::string &type
         mesh = GenMeshPlane(10.0f, 10.0f, 10, 10);
     else if (type == ":torus:")
         mesh = GenMeshTorus(0.2f, 0.4f, 16, 16);
+    else if (type == ":cylinder:")
+        mesh = GenMeshCylinder(0.5f, 1.0f, 16);
+    else if (type == ":cone:")
+        mesh = GenMeshCone(0.5f, 1.0f, 16);
+    else if (type == ":knot:")
+        mesh = GenMeshKnot(0.5f, 0.2f, 16, 128);
+    else if (type == ":hemisphere:")
+        mesh = GenMeshHemiSphere(0.5f, 16, 16);
 
     if (mesh.vertexCount == 0)
         return nullptr;
