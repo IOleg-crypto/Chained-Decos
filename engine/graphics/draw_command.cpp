@@ -152,29 +152,45 @@ namespace CHEngine
     void DrawCommand::DrawSkybox(const SkyboxComponent &skybox, const Camera3D &camera)
     {
         if (skybox.TexturePath.empty())
+        {
+            CH_CORE_WARN("DrawSkybox: TexturePath is empty");
             return;
+        }
 
         auto texAsset = AssetManager::Get<TextureAsset>(skybox.TexturePath);
         if (!texAsset || texAsset->GetState() != AssetState::Ready)
+        {
+            CH_CORE_WARN("DrawSkybox: Texture '{}' not loaded (state={})", 
+                skybox.TexturePath, texAsset ? (int)texAsset->GetState() : -1);
             return;
+        }
 
         auto &state = APIContext::GetState();
         
         // Validate skybox cube is initialized
         if (state.SkyboxCube.meshCount == 0)
+        {
+            CH_CORE_WARN("DrawSkybox: SkyboxCube mesh not initialized");
             return;
+        }
             
         bool usePanorama = std::filesystem::path(skybox.TexturePath).extension() != ".hdr";
 
         std::shared_ptr<ShaderAsset> shaderAsset = usePanorama ? state.PanoramaShader : state.SkyboxShader;
         if (!shaderAsset || shaderAsset->GetState() != AssetState::Ready)
+        {
+            CH_CORE_WARN("DrawSkybox: {} shader not loaded", usePanorama ? "Panorama" : "Skybox");
             return;
+        }
 
         auto &shader = shaderAsset->GetShader();
         
         // Validate shader is loaded
         if (shader.id == 0)
+        {
+            CH_CORE_WARN("DrawSkybox: Shader ID is 0");
             return;
+        }
             
         state.SkyboxCube.materials[0].shader = shader;
         SetMaterialTexture(&state.SkyboxCube.materials[0], usePanorama ? MATERIAL_MAP_ALBEDO : MATERIAL_MAP_CUBEMAP,
