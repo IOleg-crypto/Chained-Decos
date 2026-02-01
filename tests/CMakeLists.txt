@@ -18,7 +18,11 @@ if(DEFINED ENV{CI})
 endif()
 
 include(GoogleTest)
-gtest_discover_tests(EngineTests CONFIGURATION_VAR CMAKE_BUILD_TYPE)
+gtest_discover_tests(EngineTests 
+    CONFIGURATION_VAR CMAKE_BUILD_TYPE
+    DISCOVERY_MODE PRE_TEST
+    WORKING_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+)
 
 # Installation
 install(TARGETS EngineTests
