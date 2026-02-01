@@ -311,8 +311,36 @@ void Scene::OnRender(const Camera3D &camera, const DebugRenderFlags *debugFlags)
 
 Camera3D Scene::GetActiveCamera() const
 {
-    auto view = m_Registry.view<PlayerComponent, TransformComponent>();
+    // First: Check for primary camera entity
+    auto cameraView = m_Registry.view<CameraComponent, TransformComponent>();
+    for (auto entity : cameraView)
+    {
+        auto &cam = cameraView.get<CameraComponent>(entity);
+        if (cam.IsActive && cam.IsPrimary)
+        {
+            auto &transform = cameraView.get<TransformComponent>(entity);
+            
+            Camera3D camera = {0};
+            camera.position = transform.Translation;
+            
+            // Calculate target from rotation
+            float yaw = transform.Rotation.y;
+            float pitch = transform.Rotation.x;
+            camera.target = {
+                transform.Translation.x - sinf(yaw) * cosf(pitch),
+                transform.Translation.y + sinf(pitch),
+                transform.Translation.z - cosf(yaw) * cosf(pitch)
+            };
+            
+            camera.up = {0.0f, 1.0f, 0.0f};
+            camera.fovy = cam.Fov;
+            camera.projection = cam.Projection == 0 ? CAMERA_PERSPECTIVE : CAMERA_ORTHOGRAPHIC;
+            return camera;
+        }
+    }
 
+    // Fallback: Use PlayerComponent third-person camera
+    auto view = m_Registry.view<PlayerComponent, TransformComponent>();
     if (view.begin() != view.end())
     {
         auto entity = *view.begin();
