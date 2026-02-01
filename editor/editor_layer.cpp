@@ -111,9 +111,10 @@ namespace CHEngine
         }
 
         // Ensure layout is initialized
-        if (!std::filesystem::exists("imgui.ini"))
+        const char* iniPath = ImGui::GetIO().IniFilename;
+        if (iniPath && !std::filesystem::exists(iniPath))
         {
-            CH_CORE_INFO("OnAttach: Layout will be reset on first frame");
+            CH_CORE_INFO("OnAttach: Layout file '{}' not found, will be reset on first frame", iniPath);
             m_NeedsLayoutReset = true;
         }
 
