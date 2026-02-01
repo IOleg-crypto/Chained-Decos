@@ -152,23 +152,22 @@ namespace CHEngine
             MetaBuilder mb(comp);
             mb.Prop("Path", comp.ModelPath);
             
-            // Browse button for model files
-            ImGui::SameLine();
-            if (ImGui::Button(ICON_FA_FOLDER_OPEN "##BrowseModel"))
+            // Action buttons on separate row
+            if (ImGui::Button(ICON_FA_FOLDER_OPEN " Browse##Model"))
             {
                 nfdchar_t *outPath = nullptr;
                 nfdfilteritem_t filterItem[1] = {{"3D Models", "glb,gltf,obj,fbx"}};
-                if (NFD_OpenDialog(&outPath, filterItem, 1, nullptr) == NFD_OKAY)
+                nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, nullptr);
+                if (result == NFD_OKAY && outPath)
                 {
                     comp.ModelPath = outPath;
-                    comp.Asset = nullptr; // Force reload
+                    comp.Asset = nullptr;
                     NFD_FreePath(outPath);
                     mb.Changed = true;
                 }
             }
-            
-            // Reload button
-            if (ImGui::Button(ICON_FA_ROTATE "Reload"))
+            ImGui::SameLine();
+            if (ImGui::Button(ICON_FA_ROTATE " Reload##Model"))
             {
                 comp.Asset = nullptr;
                 mb.Changed = true;
@@ -190,8 +189,19 @@ namespace CHEngine
             return (bool)mb;
         });
 
+        Register<CameraComponent>("Camera", [](auto &comp) {
+            MetaBuilder mb(comp);
+            mb.Prop("FOV", comp.Fov);
+            mb.Vec3("Offset", comp.Offset);
+            return (bool)mb;
+        });
+
         Register<AnimationComponent>("Animation", [](auto &comp) {
-            return (bool)MetaBuilder(comp).Prop("Playing", comp.IsPlaying);
+            MetaBuilder mb(comp);
+            mb.Prop("Playing", comp.IsPlaying);
+            mb.Prop("Looping", comp.IsLooping);
+            mb.Prop("Animation Index", comp.CurrentAnimationIndex);
+            return (bool)mb;
         });
 
         // --- Physics ---
@@ -255,6 +265,41 @@ namespace CHEngine
             mb.Prop("Look Sensitivity", comp.LookSensitivity);
             mb.Prop("Jump Force", comp.JumpForce);
             mb.Prop("Camera Distance", comp.CameraDistance);
+            return (bool)mb;
+        });
+
+        Register<ShaderComponent>("Shader", [](auto &comp) {
+            MetaBuilder mb(comp);
+            mb.Prop("Enabled", comp.Enabled);
+            mb.Prop("Shader Path", comp.ShaderPath);
+            
+            // Browse button for shader
+            if (ImGui::Button(ICON_FA_FOLDER_OPEN " Browse##Shader"))
+            {
+                nfdchar_t *outPath = nullptr;
+                nfdfilteritem_t filterItem[1] = {{"Shader Files", "glsl,vs,fs,vert,frag"}};
+                nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, nullptr);
+                if (result == NFD_OKAY && outPath)
+                {
+                    comp.ShaderPath = outPath;
+                    NFD_FreePath(outPath);
+                    mb.Changed = true;
+                }
+            }
+            
+            // Uniforms list
+            if (!comp.Uniforms.empty())
+            {
+                ImGui::Text("Uniforms: %d", (int)comp.Uniforms.size());
+            }
+            
+            return (bool)mb;
+        });
+
+        Register<NavigationComponent>("UI Navigation", [](auto &comp) {
+            MetaBuilder mb(comp);
+            mb.Prop("Is Default Focus", comp.IsDefaultFocus);
+            ImGui::TextDisabled("Navigation links set via code");
             return (bool)mb;
         });
 
