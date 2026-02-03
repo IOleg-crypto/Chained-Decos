@@ -37,11 +37,13 @@ namespace CHEngine
     {
         CH_CORE_INFO("AssetManager: Shutting down...");
         ClearSearchPaths();
-        // Static caches are naturally preserved but could be explicitly cleared if needed.
-        // In an instance-based world, these static caches in the template methods
-        // should ideally be members, but since GetCache is static within a template,
-        // it remains shared. Moving them to actual members requires a different approach
-        // for template-based dispatching without a full Type-Erasure system.
+        
+        m_ModelCache.clear();
+        m_TextureCache.clear();
+        m_ShaderCache.clear();
+        m_SoundCache.clear();
+        m_FontCache.clear();
+        m_EnvironmentCache.clear();
     }
 
     void AssetManager::SetRootPath(const std::filesystem::path& path)
@@ -124,6 +126,7 @@ namespace CHEngine
         UpdateCache<SoundAsset>();
         UpdateCache<ShaderAsset>();
         UpdateCache<EnvironmentAsset>();
+        UpdateCache<FontAsset>();
     }
 
 } // namespace CHEngine

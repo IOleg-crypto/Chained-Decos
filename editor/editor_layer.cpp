@@ -97,6 +97,52 @@ namespace CHEngine
         }
 
         CH_CORE_INFO("EditorLayer Attached with modular panels.");
+        
+        LoadEditorFonts();
+    }
+
+    void EditorLayer::LoadEditorFonts()
+    {
+        ImGuiIO &io = ImGui::GetIO();
+        float fontSize = 16.0f;
+        auto assetManager = Project::GetActive() ? Project::GetActive()->GetAssetManager() : nullptr;
+
+        // Use a temporary asset manager if no project is active yet (for startup screen)
+        std::unique_ptr<AssetManager> tempManager;
+        if (!assetManager) {
+            tempManager = std::make_unique<AssetManager>();
+            tempManager->Initialize();
+            assetManager = tempManager.get();
+        }
+
+        // --- Default UI Font (Lato) ---
+        std::string fontPath = assetManager->ResolvePath("engine/resources/font/lato/lato-bold.ttf");
+        if (std::filesystem::exists(fontPath))
+        {
+            io.Fonts->AddFontFromFileTTF(fontPath.c_str(), fontSize);
+            CH_CORE_INFO("Loaded editor font: {}", fontPath);
+        }
+        else
+        {
+            CH_CORE_WARN("Editor font not found: {}. Using default ImGui font.", fontPath);
+            io.Fonts->AddFontDefault();
+        }
+
+        // --- Icon Font (FontAwesome) ---
+        std::string faPath = assetManager->ResolvePath("engine/resources/font/fa-solid-900.ttf");
+        if (std::filesystem::exists(faPath))
+        {
+            static const ImWchar icons_ranges[] = {0xf000, 0xf8ff, 0}; 
+            ImFontConfig icons_config;
+            icons_config.MergeMode = true;
+            icons_config.PixelSnapH = true;
+            io.Fonts->AddFontFromFileTTF(faPath.c_str(), fontSize, &icons_config, icons_ranges);
+            CH_CORE_INFO("Loaded and merged FontAwesome for editor: {}", faPath);
+        }
+
+        unsigned char *pixels;
+        int width, height;
+        io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
     }
 
     void EditorLayer::OnDetach()
@@ -123,7 +169,7 @@ namespace CHEngine
         }
     }
 
-    void EditorLayer::OnRender()
+    void EditorLayer::OnRender(Timestep ts)
     {
         ClearBackground(BLACK);
     }

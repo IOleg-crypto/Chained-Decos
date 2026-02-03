@@ -2,6 +2,7 @@
 #define CH_RENDER_H
 
 #include "engine/core/base.h"
+#include "engine/core/timestep.h"
 #include "engine/graphics/render_types.h"
 #include "engine/graphics/environment.h"
 #include "engine/scene/scene.h"
@@ -33,7 +34,7 @@ namespace CHEngine
         static void EndScene();
 
         /** High-level method to render an entire scene with optional debug flags. */
-        static void DrawScene(Scene* scene, const Camera3D& camera, const DebugRenderFlags* debugFlags = nullptr);
+        static void DrawScene(Scene* scene, const Camera3D& camera, Timestep ts = 0, const DebugRenderFlags* debugFlags = nullptr);
 
     public: // Direct Draw Commands
         /** Clears the screen buffer with the specified color. */
@@ -58,7 +59,7 @@ namespace CHEngine
 
     public: // UI Rendering (Consolidated)
         /** Draws UI elements for the scene. */
-        static void DrawUI(Scene* scene);
+        static void DrawUI(Scene* scene, const ImVec2& refPos = {0, 0}, const ImVec2& refSize = {0, 0}, bool editMode = false);
 
     public: // State Management
         /** Returns the current internal state of the renderer. */
@@ -74,7 +75,7 @@ namespace CHEngine
         static void ApplyEnvironment(const EnvironmentSettings& settings);
 
     private: // Internal Helpers
-        static void RenderModels(Scene* scene);
+        static void RenderModels(Scene* scene, Timestep ts);
         static void RenderDebug(Scene* scene, const DebugRenderFlags* debugFlags);
         static void RenderEditorIcons(Scene* scene, const Camera3D& camera);
         static void InitSkybox();

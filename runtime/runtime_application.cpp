@@ -25,13 +25,13 @@ public:
             m_Scene->OnUpdateRuntime(deltaTime);
     }
 
-    virtual void OnRender() override
+    virtual void OnRender(Timestep ts) override
     {
         if (!m_Scene)
             return;
 
         auto camera = GetActiveCamera();
-        m_Scene->OnRender(camera);
+        m_Scene->OnRender(camera, ts);
     }
 
     virtual void OnImGuiRender() override

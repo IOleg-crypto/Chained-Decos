@@ -38,35 +38,14 @@ public:
     Scene();
     ~Scene();
 
-    BackgroundMode GetBackgroundMode() const
-    {
-        return m_Settings.Mode;
-    }
+    BackgroundMode GetBackgroundMode() const;
+    void SetBackgroundMode(BackgroundMode mode);
 
-    void SetBackgroundMode(BackgroundMode mode)
-    {
-        m_Settings.Mode = mode;
-    }
+    Color GetBackgroundColor() const;
+    void SetBackgroundColor(Color color);
 
-    Color GetBackgroundColor() const
-    {
-        return m_Settings.BackgroundColor;
-    }
-
-    void SetBackgroundColor(Color color)
-    {
-        m_Settings.BackgroundColor = color;
-    }
-
-    const std::string& GetBackgroundTexturePath() const
-    {
-        return m_Settings.BackgroundTexturePath;
-    }
-
-    void SetBackgroundTexturePath(const std::string& path)
-    {
-        m_Settings.BackgroundTexturePath = path;
-    }
+    const std::string& GetBackgroundTexturePath() const;
+    void SetBackgroundTexturePath(const std::string& path);
     
 
     static std::shared_ptr<Scene> Copy(std::shared_ptr<Scene> other);
@@ -80,13 +59,10 @@ public:
     Entity GetEntityByUUID(UUID uuid);
 
     void OnUpdateRuntime(float deltaTime);
-    void OnRender(const Camera3D &camera, const struct DebugRenderFlags *debugFlags = nullptr);
+    void OnRender(const Camera3D &camera, Timestep ts = 0, const struct DebugRenderFlags *debugFlags = nullptr);
     void OnRuntimeStart();
     void OnRuntimeStop();
-    bool IsSimulationRunning() const
-    {
-        return m_IsSimulationRunning;
-    }
+    bool IsSimulationRunning() const;
     void OnEvent(Event &e);
     void OnImGuiRender(const ImVec2 &refPos = {0, 0}, const ImVec2 &refSize = {0, 0},
                        uint32_t viewportID = 0, bool editMode = false);
@@ -94,15 +70,8 @@ public:
     void RequestSceneChange(const std::string &path);
     void UpdateProfilerStats();
 
-    const std::string& GetScenePath() const
-    {
-        return m_Settings.ScenePath;
-    }
-
-    void SetScenePath(const std::string& path)
-    {
-        m_Settings.ScenePath = path;
-    }
+    const std::string& GetScenePath() const;
+    void SetScenePath(const std::string& path);
 
     // Generic component added handling (templated)
     template <typename T> void OnComponentAdded(Entity entity, T &component)
@@ -118,33 +87,12 @@ public:
         return m_Registry;
     }
 
-    std::shared_ptr<EnvironmentAsset> GetEnvironment()
-    {
-        return m_Settings.Environment;
-    }
+    std::shared_ptr<EnvironmentAsset> GetEnvironment();
+    const std::shared_ptr<EnvironmentAsset> GetEnvironment() const;
+    void SetEnvironment(std::shared_ptr<EnvironmentAsset> environment);
 
-    const std::shared_ptr<EnvironmentAsset> GetEnvironment() const
-    {
-        return m_Settings.Environment;
-    }
-
-    void SetEnvironment(std::shared_ptr<EnvironmentAsset> environment)
-    {
-        m_Settings.Environment = environment;
-    }
-
-    Camera3D GetActiveCamera() const;
-    EnvironmentSettings GetEnvironmentSettings() const;
-
-    CanvasSettings& GetCanvasSettings()
-    {
-        return m_Settings.Canvas;
-    }
-
-    const CanvasSettings& GetCanvasSettings() const
-    {
-        return m_Settings.Canvas;
-    }
+    CanvasSettings& GetCanvasSettings();
+    const CanvasSettings& GetCanvasSettings() const;
 
     Physics& GetPhysics() { return *m_Physics; }
     const Physics& GetPhysics() const { return *m_Physics; }
@@ -190,10 +138,7 @@ template <typename T, typename... Args> T &Entity::AddComponent(Args &&...args)
     return component;
 }
 
-inline bool Entity::IsValid() const
-{
-    return m_Scene && m_Scene->m_Registry.valid(m_EntityHandle);
-}
+
 
 template <typename T> T &Entity::GetComponent()
 {

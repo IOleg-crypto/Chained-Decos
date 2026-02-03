@@ -97,9 +97,6 @@ namespace CHEngine
         else
             CH_CORE_ERROR("Failed to initialize Audio Device!");
 
-        // Engine-specific assets
-        LoadEngineFonts();
-
         CH_CORE_INFO("Application Initialized: {}", config.Title);
 
         // Client-side initialization hook
@@ -223,17 +220,10 @@ namespace CHEngine
             OnEvent(e);
         }
 
-        // For releases, Raylib doesn't have a "GetKeyReleased" queue, 
-        // but we can optimize by checking only common engine/game keys if performance is a concern.
-        // For now, keeping a streamlined loop for broad coverage.
-        for (int k = 1; k < 512; k++)
-        {
-            if (::IsKeyReleased(k))
-            {
-                KeyReleasedEvent e(k);
-                OnEvent(e);
-            }
-        }
+        // For releases, we use a more efficient approach in the future (e.g. only checking keys known to be down),
+        // but for Phase 6 we are minimizing the 'brute force' 512-poll.
+        // For now, removing the heavy 512-poll completely.
+        // If a layer needs 'KeyReleased', it should be handled via a more specific mechanism.
 
         // 2. Mouse Events
         auto handleMouse = [&](int button)
@@ -301,7 +291,7 @@ namespace CHEngine
         // Layer rendering
         for (auto layer : m_LayerStack)
         {
-            if (layer->IsEnabled()) layer->OnRender();
+            if (layer->IsEnabled()) layer->OnRender(m_DeltaTime);
         }
 
         // ImGui rendering
@@ -317,43 +307,6 @@ namespace CHEngine
     void Application::SetWindowIcon(const Image &icon) const 
     {
         if (m_Window) m_Window->SetWindowIcon(icon);
-    }
-
-    void Application::LoadEngineFonts()
-    {
-        ImGuiIO &io = ImGui::GetIO();
-        float fontSize = 16.0f;
-
-        // --- Default UI Font (Lato) ---
-        std::string fontPath = AssetManager::ResolvePath("engine/resources/font/lato/lato-bold.ttf");
-        if (std::filesystem::exists(fontPath))
-        {
-            io.Fonts->AddFontFromFileTTF(fontPath.c_str(), fontSize);
-            CH_CORE_INFO("Loaded engine font: {}", fontPath);
-        }
-        else
-        {
-            CH_CORE_WARN("Engine font not found: {}. Using default ImGui font.", fontPath);
-            io.Fonts->AddFontDefault();
-        }
-
-        // --- Icon Font (FontAwesome) ---
-        std::string faPath = AssetManager::ResolvePath("engine/resources/font/fa-solid-900.ttf");
-        if (std::filesystem::exists(faPath))
-        {
-            static const ImWchar icons_ranges[] = {0xf000, 0xf8ff, 0}; 
-            ImFontConfig icons_config;
-            icons_config.MergeMode = true;
-            icons_config.PixelSnapH = true;
-            io.Fonts->AddFontFromFileTTF(faPath.c_str(), fontSize, &icons_config, icons_ranges);
-            CH_CORE_INFO("Loaded and merged FontAwesome: {}", faPath);
-        }
-
-        // Rebuild the atlas is handled by the ImGui backend automatically usually,
-        // but we ensure it's ready.
-        unsigned char *pixels;
-        int width, height;
-        io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
     }
 
 } // namespace CHEngine

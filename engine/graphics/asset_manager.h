@@ -157,26 +157,46 @@ namespace CHEngine
             }
         }
 
-    private: // Internal State
-        template <typename T>
-        std::map<std::string, std::shared_ptr<T>>& GetCache()
-        {
-            static std::map<std::string, std::shared_ptr<T>> cache;
-            return cache;
-        }
-
-        template <typename T>
-        std::map<std::string, std::future<std::shared_ptr<T>>>& GetLoadingMap()
-        {
-            static std::map<std::string, std::future<std::shared_ptr<T>>> loading;
-            return loading;
-        }
+    private: // Internal State Accessors (Specialized per type)
+        template <typename T> std::map<std::string, std::shared_ptr<T>>& GetCache();
+        template <typename T> std::map<std::string, std::future<std::shared_ptr<T>>>& GetLoadingMap();
 
     private: // Members
         std::filesystem::path m_RootPath;
         std::vector<std::filesystem::path> m_SearchPaths;
         mutable std::recursive_mutex m_AssetLock;
+
+        // Per-type caches (Instance-based)
+        std::map<std::string, std::shared_ptr<ModelAsset>> m_ModelCache;
+        std::map<std::string, std::shared_ptr<TextureAsset>> m_TextureCache;
+        std::map<std::string, std::shared_ptr<ShaderAsset>> m_ShaderCache;
+        std::map<std::string, std::shared_ptr<SoundAsset>> m_SoundCache;
+        std::map<std::string, std::shared_ptr<FontAsset>> m_FontCache;
+        std::map<std::string, std::shared_ptr<EnvironmentAsset>> m_EnvironmentCache;
+
+        // Loading maps
+        std::map<std::string, std::future<std::shared_ptr<ModelAsset>>> m_ModelLoading;
+        std::map<std::string, std::future<std::shared_ptr<TextureAsset>>> m_TextureLoading;
+        std::map<std::string, std::future<std::shared_ptr<ShaderAsset>>> m_ShaderLoading;
+        std::map<std::string, std::future<std::shared_ptr<SoundAsset>>> m_SoundLoading;
+        std::map<std::string, std::future<std::shared_ptr<FontAsset>>> m_FontLoading;
+        std::map<std::string, std::future<std::shared_ptr<EnvironmentAsset>>> m_EnvironmentLoading;
     };
+
+    // Specializations for GetCache and GetLoadingMap
+    template<> inline std::map<std::string, std::shared_ptr<ModelAsset>>& AssetManager::GetCache() { return m_ModelCache; }
+    template<> inline std::map<std::string, std::shared_ptr<TextureAsset>>& AssetManager::GetCache() { return m_TextureCache; }
+    template<> inline std::map<std::string, std::shared_ptr<ShaderAsset>>& AssetManager::GetCache() { return m_ShaderCache; }
+    template<> inline std::map<std::string, std::shared_ptr<SoundAsset>>& AssetManager::GetCache() { return m_SoundCache; }
+    template<> inline std::map<std::string, std::shared_ptr<FontAsset>>& AssetManager::GetCache() { return m_FontCache; }
+    template<> inline std::map<std::string, std::shared_ptr<EnvironmentAsset>>& AssetManager::GetCache() { return m_EnvironmentCache; }
+
+    template<> inline std::map<std::string, std::future<std::shared_ptr<ModelAsset>>>& AssetManager::GetLoadingMap() { return m_ModelLoading; }
+    template<> inline std::map<std::string, std::future<std::shared_ptr<TextureAsset>>>& AssetManager::GetLoadingMap() { return m_TextureLoading; }
+    template<> inline std::map<std::string, std::future<std::shared_ptr<ShaderAsset>>>& AssetManager::GetLoadingMap() { return m_ShaderLoading; }
+    template<> inline std::map<std::string, std::future<std::shared_ptr<SoundAsset>>>& AssetManager::GetLoadingMap() { return m_SoundLoading; }
+    template<> inline std::map<std::string, std::future<std::shared_ptr<FontAsset>>>& AssetManager::GetLoadingMap() { return m_FontLoading; }
+    template<> inline std::map<std::string, std::future<std::shared_ptr<EnvironmentAsset>>>& AssetManager::GetLoadingMap() { return m_EnvironmentLoading; }
 }
 
 #endif // CH_ASSET_MANAGER_H
