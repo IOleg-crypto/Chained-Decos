@@ -29,7 +29,7 @@ namespace CHEngine
         virtual void OnAttach() override;
         virtual void OnDetach() override;
         virtual void OnUpdate(float deltaTime) override;
-        virtual void OnRender() override;
+        virtual void OnRender(Timestep ts) override;
         virtual void OnImGuiRender() override;
         virtual void OnEvent(Event &e) override;
 
@@ -44,6 +44,9 @@ namespace CHEngine
         void SetScene(std::shared_ptr<Scene> scene);
         void DrawDockSpace();
         void DrawScriptUI();
+
+    private:
+        void LoadEditorFonts();
 
         void SetViewportSize(const ImVec2& size) { m_ViewportSize = size; }
         const ImVec2& GetViewportSize() const { return m_ViewportSize; }

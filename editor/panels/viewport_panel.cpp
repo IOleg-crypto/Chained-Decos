@@ -204,7 +204,7 @@ namespace CHEngine
     BeginTextureMode(m_ViewportTexture);
     ClearSceneBackground(activeScene.get(), {viewportSize.x, viewportSize.y});
     Camera3D camera = EditorGUI::GetActiveCamera(EditorLayer::Get().GetSceneState());
-    activeScene->OnRender(camera, &EditorLayer::Get().GetDebugRenderFlags());
+    activeScene->OnRender(camera, Application::GetDeltaTime(), &EditorLayer::Get().GetDebugRenderFlags());
     EndTextureMode();
 
     rlImGuiImageRenderTexture(&m_ViewportTexture);

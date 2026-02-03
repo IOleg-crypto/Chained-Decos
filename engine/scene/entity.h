@@ -49,14 +49,11 @@ public:
         return !(*this == other);
     }
 
-    Scene *GetScene()
-    {
-        return m_Scene;
-    }
-    const Scene *GetScene() const
-    {
-        return m_Scene;
-    }
+    Scene *GetScene() { return m_Scene; }
+    const Scene *GetScene() const { return m_Scene; }
+
+    UUID GetUUID();
+    const std::string &GetName();
 
 private:
     entt::entity m_EntityHandle{entt::null};
