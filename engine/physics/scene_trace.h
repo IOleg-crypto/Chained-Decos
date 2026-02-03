@@ -8,10 +8,12 @@ namespace CHEngine
 {
 class Scene;
 
+class Physics;
+
 class SceneTrace
 {
 public:
-    static RaycastResult Raycast(Scene *scene, Ray ray);
+    static RaycastResult Raycast(Scene *scene, Ray ray, Physics* physics);
 };
 } // namespace CHEngine
 

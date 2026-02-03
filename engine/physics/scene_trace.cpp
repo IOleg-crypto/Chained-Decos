@@ -49,7 +49,7 @@ static bool RayAABB(glm::vec3 origin, glm::vec3 dir, glm::vec3 min, glm::vec3 ma
     return false;
 }
 
-RaycastResult SceneTrace::Raycast(Scene *scene, Ray ray)
+RaycastResult SceneTrace::Raycast(Scene *scene, Ray ray, Physics* physics)
 {
     RaycastResult result;
     result.Hit = false;
@@ -103,8 +103,11 @@ RaycastResult SceneTrace::Raycast(Scene *scene, Ray ray)
             auto modelComp = scene->GetRegistry().try_get<ModelComponent>(entity);
             if (!modelComp || modelComp->ModelPath.empty()) continue;
 
-            auto asset = AssetManager::Get<ModelAsset>(modelComp->ModelPath);
-            auto bvh = Physics::GetBVH(asset.get());
+            auto project = Project::GetActive();
+            if (!project || !project->GetAssetManager()) continue;
+
+            auto asset = project->GetAssetManager()->Get<ModelAsset>(modelComp->ModelPath);
+            auto bvh = physics->GetBVH(asset.get());
             if (!bvh) continue;
 
             Ray localRayRaylib = { {localOrigin.x, localOrigin.y, localOrigin.z}, {localDir.x, localDir.y, localDir.z} };
