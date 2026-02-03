@@ -12,13 +12,15 @@
 #include "raymath.h"
 #include "scene_serializer.h"
 #include "scriptable_entity.h"
-#include "ui_math.h"
+#include "engine/scene/scene_events.h"
 
 namespace CHEngine
 {
 void Scene::RequestSceneChange(const std::string &path)
 {
-    Application::Get().RequestSceneChange(path);
+    // Decoupled transition request via Event System
+    SceneChangeRequestEvent e(path);
+    Application::OnEvent(e);
 }
 Scene::Scene()
 {
@@ -41,10 +43,6 @@ Scene::Scene()
 
     // Every scene must have its own environment to avoid skybox leaking/bugs
     m_Settings.Environment = std::make_shared<EnvironmentAsset>();
-}
-
-Scene::~Scene()
-{
 }
 
 std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
@@ -164,18 +162,25 @@ template <> void Scene::OnComponentAdded<ModelComponent>(Entity entity, ModelCom
         {
             Model &model = component.Asset->GetModel();
             component.Materials.clear();
-            std::set<int> uniqueIndices;
-            for (int i = 0; i < model.meshCount; i++)
+            
+            if (model.materials != nullptr)
             {
-                uniqueIndices.insert(model.meshMaterial[i]);
-            }
+                std::set<int> uniqueIndices;
+                for (int i = 0; i < model.meshCount; i++)
+                {
+                    uniqueIndices.insert(model.meshMaterial[i]);
+                }
 
-            for (int idx : uniqueIndices)
-            {
-                MaterialSlot slot("Material " + std::to_string(idx), idx);
-                slot.Target = MaterialSlotTarget::MaterialIndex;
-                slot.Material.AlbedoColor = model.materials[idx].maps[MATERIAL_MAP_ALBEDO].color;
-                component.Materials.push_back(slot);
+                for (int idx : uniqueIndices)
+                {
+                    if (idx >= 0 && idx < model.materialCount)
+                    {
+                        MaterialSlot slot("Material " + std::to_string(idx), idx);
+                        slot.Target = MaterialSlotTarget::MaterialIndex;
+                        slot.Material.AlbedoColor = model.materials[idx].maps[MATERIAL_MAP_ALBEDO].color;
+                        component.Materials.push_back(slot);
+                    }
+                }
             }
             component.MaterialsInitialized = true;
         }
@@ -208,7 +213,9 @@ void Scene::OnUpdateRuntime(float deltaTime)
 {
     CH_PROFILE_FUNCTION();
 
-    // Declarative Pipeline
+    bool isSim = IsSimulationRunning();
+    Physics::Update(this, deltaTime, isSim);
+
     SceneScripting::Update(this, deltaTime);
     UpdateAnimation(deltaTime);
     UpdateAudio(deltaTime);
@@ -226,10 +233,6 @@ void Scene::OnUpdateRuntime(float deltaTime)
     }
 }
 
-void Scene::UpdateScripting(float deltaTime)
-{
-    // High-level scripting logic now handled by SceneScripting
-}
 
 void Scene::UpdateAnimation(float deltaTime)
 {
@@ -252,23 +255,37 @@ void Scene::UpdateAnimation(float deltaTime)
                     targetFPS = Project::GetActive()->GetConfig().Animation.TargetFPS;
 
                 float frameTime = 1.0f / targetFPS;
-                if (anim.FrameTimeCounter >= frameTime)
+                bool frameChanged = false;
+                while (anim.FrameTimeCounter >= frameTime)
                 {
                     anim.CurrentFrame++;
-                    anim.FrameTimeCounter = 0;
+                    anim.FrameTimeCounter -= frameTime;
+                    frameChanged = true;
+
                     if (anim.CurrentFrame >= animations[anim.CurrentAnimationIndex].frameCount)
                     {
                         if (anim.IsLooping)
+                        {
                             anim.CurrentFrame = 0;
+                        }
                         else
                         {
-                            anim.CurrentFrame =
-                                animations[anim.CurrentAnimationIndex].frameCount - 1;
+                            anim.CurrentFrame = animations[anim.CurrentAnimationIndex].frameCount - 1;
                             anim.IsPlaying = false;
+                            anim.FrameTimeCounter = 0; // Reset counter if stopped
+                            break;
                         }
                     }
-                    model.Asset->UpdateAnimation(anim.CurrentAnimationIndex, anim.CurrentFrame);
                 }
+
+                if (frameChanged)
+                {
+                    // Frame updated, DrawCommand will handle the actual posing during render
+                }
+            }
+            else if (anim.IsPlaying)
+            {
+                // Animation component exists but no skeleton data
             }
         }
     }
@@ -377,44 +394,15 @@ Camera3D Scene::GetActiveCamera() const
     return camera;
 }
 
-const struct SkyboxComponent &Scene::GetSkybox() const
-{
-    if (m_Settings.Environment)
-    {
-        // Proxy from environment
-        const auto &envSky = m_Settings.Environment->GetSettings().Skybox;
-        const_cast<Scene *>(this)->m_ProxySkybox.TexturePath = envSky.TexturePath;
-        const_cast<Scene *>(this)->m_ProxySkybox.Exposure = envSky.Exposure;
-        const_cast<Scene *>(this)->m_ProxySkybox.Brightness = envSky.Brightness;
-        const_cast<Scene *>(this)->m_ProxySkybox.Contrast = envSky.Contrast;
-        return m_ProxySkybox;
-    }
-    return m_Settings.Skybox;
-}
-
-struct SkyboxComponent &Scene::GetSkybox()
-{
-    return m_Settings.Skybox;
-}
 EnvironmentSettings Scene::GetEnvironmentSettings() const
 {
     if (m_Settings.Environment)
         return m_Settings.Environment->GetSettings();
 
-    EnvironmentSettings settings;
-    settings.Skybox.TexturePath = m_Settings.Skybox.TexturePath;
-    settings.Skybox.Exposure = m_Settings.Skybox.Exposure;
-    settings.Skybox.Brightness = m_Settings.Skybox.Brightness;
-    settings.Skybox.Contrast = m_Settings.Skybox.Contrast;
-    return settings;
+    return EnvironmentSettings();
 }
 
 // -------------------------------------------------------------------------------------------------------------------
-
-void Scene::OnUpdateEditor(float deltaTime)
-{
-    // Assets are now managed declaratively via entt signals
-}
 
 void Scene::OnRuntimeStart()
 {
@@ -470,8 +458,8 @@ void Scene::OnImGuiRender(const ImVec2 &refPos, const ImVec2 &refSize, uint32_t 
         if (entity.HasComponent<ButtonControl>())
             entity.GetComponent<ButtonControl>().PressedThisFrame = false;
 
-        // --- Uniform UI Math using helper ---
-        auto rect = UIMath::CalculateRect(cc.Transform,
+        // --- Uniform UI Math using member function ---
+        auto rect = cc.Transform.CalculateRect(
             {referenceSize.x, referenceSize.y},
             {refPos.x, refPos.y});
         
@@ -504,12 +492,24 @@ void Scene::OnImGuiRender(const ImVec2 &refPos, const ImVec2 &refSize, uint32_t 
 
             ImVec2 textSize = ImGui::CalcTextSize(lbl.Text.c_str(), nullptr, true, size.x);
             float startX = pos.x;
-            if (lbl.Style.HorizontalAlignment == TextAlignment::Center) startX += (size.x - textSize.x) * 0.5f;
-            else if (lbl.Style.HorizontalAlignment == TextAlignment::Right) startX += (size.x - textSize.x);
+            if (lbl.Style.HorizontalAlignment == TextAlignment::Center) 
+            {
+                startX += (size.x - textSize.x) * 0.5f;
+            }
+            else if (lbl.Style.HorizontalAlignment == TextAlignment::Right) 
+            {
+                startX += (size.x - textSize.x);
+            }
 
             float startY = pos.y;
-            if (lbl.Style.VerticalAlignment == TextAlignment::Center) startY += (size.y - textSize.y) * 0.5f;
-            else if (lbl.Style.VerticalAlignment == TextAlignment::Right) startY += (size.y - textSize.y);
+            if (lbl.Style.VerticalAlignment == TextAlignment::Center) 
+            {
+                startY += (size.y - textSize.y) * 0.5f;
+            }
+            else if (lbl.Style.VerticalAlignment == TextAlignment::Right) 
+            {
+                startY += (size.y - textSize.y);
+            }
 
             ImGui::SetCursorPos({startX, startY});
             ImGui::TextUnformatted(lbl.Text.c_str());

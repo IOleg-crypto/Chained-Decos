@@ -24,24 +24,7 @@ namespace CHEngine
         out << YAML::BeginMap; // Entity
         
         ComponentSerializer::SerializeID(out, entity);
-        ComponentSerializer::SerializeTag(out, entity);
-        ComponentSerializer::SerializeTransform(out, entity);
-        ComponentSerializer::SerializeModel(out, entity);
-        ComponentSerializer::SerializeSpawn(out, entity);
-        ComponentSerializer::SerializeCollider(out, entity);
-        ComponentSerializer::SerializePointLight(out, entity);
-        ComponentSerializer::SerializeRigidBody(out, entity);
-        ComponentSerializer::SerializePlayer(out, entity);
-        ComponentSerializer::SerializeSceneTransition(out, entity);
-        ComponentSerializer::SerializeBillboard(out, entity);
-        ComponentSerializer::SerializeNavigation(out, entity);
-        ComponentSerializer::SerializeShader(out, entity);
-        ComponentSerializer::SerializeAnimation(out, entity);
-        ComponentSerializer::SerializeHierarchy(out, entity);
-        ComponentSerializer::SerializeAudio(out, entity);
-        ComponentSerializer::SerializeCamera(out, entity);
-        ComponentSerializer::SerializeNativeScript(out, entity);
-        ComponentSerializer::SerializeUI(out, entity);
+        ComponentSerializer::SerializeAll(out, entity);
 
         out << YAML::EndMap; // Entity
     }
@@ -69,18 +52,7 @@ namespace CHEngine
             out << YAML::Key << "EnvironmentPath" << YAML::Value << m_Scene->m_Settings.Environment->GetPath();
         }
 
-        // Keep legacy Skybox for now to avoid breaking existing scenes
-        {
-            auto &sc = m_Scene->GetSkybox();
-            auto &skybox = m_Scene->m_Settings.Skybox;
-            out << YAML::Key << "Skybox";
-            out << YAML::BeginMap;
-            out << YAML::Key << "TexturePath" << YAML::Value << skybox.TexturePath;
-            out << YAML::Key << "Exposure" << YAML::Value << skybox.Exposure;
-            out << YAML::Key << "Brightness" << YAML::Value << skybox.Brightness;
-            out << YAML::Key << "Contrast" << YAML::Value << skybox.Contrast;
-            out << YAML::EndMap;
-        }
+
 
         out << YAML::Key << "Canvas" << YAML::BeginMap;
         out << YAML::Key << "ReferenceResolution" << YAML::Value << m_Scene->m_Settings.Canvas.ReferenceResolution;
@@ -165,19 +137,34 @@ namespace CHEngine
                 m_Scene->SetEnvironment(AssetManager::Get<EnvironmentAsset>(envPath));
             }
 
-            // Deserialize Skybox (legacy / scene-specific)
+            // Deserialize Skybox (legacy migration)
             if (data["Skybox"])
             {
-                auto skybox = data["Skybox"];
-                auto &s = m_Scene->GetSkybox();
-                if (skybox["TexturePath"] && skybox["TexturePath"].IsScalar())
-                    s.TexturePath = skybox["TexturePath"].as<std::string>();
-                if (skybox["Exposure"])
-                    s.Exposure = skybox["Exposure"].as<float>();
-                if (skybox["Brightness"])
-                    s.Brightness = skybox["Brightness"].as<float>();
-                if (skybox["Contrast"])
-                    s.Contrast = skybox["Contrast"].as<float>();
+                // Only migrate if we haven't already loaded an EnvironmentAsset
+                if (!m_Scene->GetEnvironment())
+                {
+                    CH_CORE_WARN("SceneSerializer: Migrating legacy Skybox to EnvironmentAsset...");
+                    auto skybox = data["Skybox"];
+                    
+                    auto env = std::make_shared<EnvironmentAsset>();
+                    auto& settings = env->GetSettings();
+                    
+                    if (skybox["TexturePath"] && skybox["TexturePath"].IsScalar())
+                        settings.Skybox.TexturePath = skybox["TexturePath"].as<std::string>();
+                    if (skybox["Exposure"])
+                        settings.Skybox.Exposure = skybox["Exposure"].as<float>();
+                    if (skybox["Brightness"])
+                        settings.Skybox.Brightness = skybox["Brightness"].as<float>();
+                    if (skybox["Contrast"])
+                        settings.Skybox.Contrast = skybox["Contrast"].as<float>();
+                        
+                    // Initialize default environment settings for migration
+                    settings.AmbientIntensity = 0.5f; 
+                    settings.LightColor = {255, 255, 255, 255};
+                    settings.LightDirection = {-0.5f, -1.0f, -0.5f};
+
+                    m_Scene->SetEnvironment(env);
+                }
             }
 
             // Deserialize Canvas
@@ -223,24 +210,8 @@ namespace CHEngine
 
                     Entity deserializedEntity = m_Scene->CreateEntityWithUUID(uuid, name);
 
-                    // Use ComponentSerializer for all components
-                    ComponentSerializer::DeserializeTag(deserializedEntity, entity);
-                    ComponentSerializer::DeserializeTransform(deserializedEntity, entity);
-                    ComponentSerializer::DeserializeModel(deserializedEntity, entity);
-                    ComponentSerializer::DeserializeSpawn(deserializedEntity, entity);
-                    ComponentSerializer::DeserializeCollider(deserializedEntity, entity);
-                    ComponentSerializer::DeserializePointLight(deserializedEntity, entity);
-                    ComponentSerializer::DeserializeRigidBody(deserializedEntity, entity);
-                    ComponentSerializer::DeserializePlayer(deserializedEntity, entity);
-                    ComponentSerializer::DeserializeSceneTransition(deserializedEntity, entity);
-                    ComponentSerializer::DeserializeBillboard(deserializedEntity, entity);
-                    ComponentSerializer::DeserializeNavigation(deserializedEntity, entity);
-                    ComponentSerializer::DeserializeShader(deserializedEntity, entity);
-                    ComponentSerializer::DeserializeAnimation(deserializedEntity, entity);
-                    ComponentSerializer::DeserializeAudio(deserializedEntity, entity);
-                    ComponentSerializer::DeserializeCamera(deserializedEntity, entity);
-                    ComponentSerializer::DeserializeNativeScript(deserializedEntity, entity);
-                    ComponentSerializer::DeserializeUI(deserializedEntity, entity);
+                    // Use ComponentSerializer registry for all components
+                    ComponentSerializer::DeserializeAll(deserializedEntity, entity);
 
                     // Hierarchy task
                     HierarchyTask task;

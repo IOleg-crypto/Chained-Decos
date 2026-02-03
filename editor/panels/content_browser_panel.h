@@ -18,6 +18,7 @@ namespace CHEngine
         Model,
         Texture,
         Audio,
+        Prefab,
         Other
     };
 
@@ -37,6 +38,7 @@ namespace CHEngine
         ~ContentBrowserPanel();
 
         virtual void OnImGuiRender(bool readOnly = false) override;
+        virtual void OnEvent(Event &e) override;
         void SetRootDirectory(const std::filesystem::path &path);
 
     private:
@@ -58,6 +60,10 @@ namespace CHEngine
 
         float m_ThumbnailSize = 96.0f;
         float m_Padding = 16.0f;
+
+        // Filtering
+        char m_FilterBuffer[128] = "";
+        int m_FilterType = 0; // 0 = All, or specific type
 
         Texture2D m_FolderIcon;
         Texture2D m_FileIcon;

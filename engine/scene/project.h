@@ -56,6 +56,15 @@ enum class Configuration
     Release = 1
 };
 
+struct EditorSettings
+{
+    float CameraMoveSpeed = 10.0f;
+    float CameraRotationSpeed = 0.1f;
+    float CameraBoostMultiplier = 5.0f;
+
+    bool DrawUI();
+};
+
 struct ProjectConfig
 {
     std::string Name = "Untitled";
@@ -70,6 +79,7 @@ struct ProjectConfig
     RenderSettings Render;
     WindowSettings Window;
     RuntimeSettings Runtime;
+    EditorSettings Editor;
 
     Configuration BuildConfig = Configuration::Debug;
 };
@@ -102,6 +112,8 @@ public:
     static std::shared_ptr<Project> New();
     static std::shared_ptr<Project> Load(const std::filesystem::path &path);
     static bool SaveActive(const std::filesystem::path &path);
+
+    static std::vector<std::string> GetAvailableScenes();
 
     static std::filesystem::path GetAssetDirectory()
     {

@@ -93,7 +93,13 @@ std::shared_ptr<ShaderAsset> ShaderAsset::Load(const std::string &chshaderPath)
                         asset->m_Shader.locs[SHADER_LOC_MAP_ALBEDO] = loc;
                     else if (name == "environmentMap")
                         asset->m_Shader.locs[SHADER_LOC_MAP_CUBEMAP] = loc;
+                    else if (name == "boneMatrices")
+                        asset->m_Shader.locs[SHADER_LOC_BONE_MATRICES] = loc;
                 }
+                
+                // Also auto-map attributes if names follow Raylib convention
+                asset->m_Shader.locs[SHADER_LOC_VERTEX_BONEIDS] = GetShaderLocationAttrib(asset->m_Shader, "vertexBoneIds");
+                asset->m_Shader.locs[SHADER_LOC_VERTEX_BONEWEIGHTS] = GetShaderLocationAttrib(asset->m_Shader, "vertexBoneWeights");
             }
         }
         return asset;
@@ -149,4 +155,67 @@ void ShaderAsset::UploadToGPU()
 {
     // Shader is usually loaded on main thread or already uploaded in LoadFromFile (via Raylib)
 }
+
+// Type-safe helper methods
+void ShaderAsset::SetFloat(const std::string& name, float value)
+{
+    int loc = GetLocation(name);
+    if (loc >= 0)
+        SetShaderValue(m_Shader, loc, &value, SHADER_UNIFORM_FLOAT);
+}
+
+void ShaderAsset::SetInt(const std::string& name, int value)
+{
+    int loc = GetLocation(name);
+    if (loc >= 0)
+        SetShaderValue(m_Shader, loc, &value, SHADER_UNIFORM_INT);
+}
+
+void ShaderAsset::SetVec2(const std::string& name, const Vector2& value)
+{
+    int loc = GetLocation(name);
+    if (loc >= 0)
+    {
+        float v[2] = {value.x, value.y};
+        SetShaderValue(m_Shader, loc, v, SHADER_UNIFORM_VEC2);
+    }
+}
+
+void ShaderAsset::SetVec3(const std::string& name, const Vector3& value)
+{
+    int loc = GetLocation(name);
+    if (loc >= 0)
+    {
+        float v[3] = {value.x, value.y, value.z};
+        SetShaderValue(m_Shader, loc, v, SHADER_UNIFORM_VEC3);
+    }
+}
+
+void ShaderAsset::SetVec4(const std::string& name, const Vector4& value)
+{
+    int loc = GetLocation(name);
+    if (loc >= 0)
+    {
+        float v[4] = {value.x, value.y, value.z, value.w};
+        SetShaderValue(m_Shader, loc, v, SHADER_UNIFORM_VEC4);
+    }
+}
+
+void ShaderAsset::SetColor(const std::string& name, const Color& value)
+{
+    int loc = GetLocation(name);
+    if (loc >= 0)
+    {
+        float c[4] = {value.r / 255.0f, value.g / 255.0f, value.b / 255.0f, value.a / 255.0f};
+        SetShaderValue(m_Shader, loc, c, SHADER_UNIFORM_VEC4);
+    }
+}
+
+void ShaderAsset::SetMatrix(const std::string& name, const Matrix& value)
+{
+    int loc = GetLocation(name);
+    if (loc >= 0)
+        SetShaderValueMatrix(m_Shader, loc, value);
+}
+
 } // namespace CHEngine

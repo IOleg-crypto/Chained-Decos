@@ -33,7 +33,7 @@ namespace CHEngine
             }
             else if (arg == "--scene" && i + 1 < argc)
             {
-                Application::SetStartupScene(argv[++i]);
+                config.StartScene = argv[++i];
             }
             else if (i == 1 && arg[0] != '-')
             {

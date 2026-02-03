@@ -6,13 +6,6 @@
 #include <string>
 #include <vector>
 
-// Helper: Draw premium action card
-enum class CardIconType
-{
-    NewProject,
-    OpenProject
-};
-
 namespace CHEngine
 {
 class ProjectBrowserPanel : public Panel
@@ -40,15 +33,15 @@ private:
 
     EventCallbackFn m_EventCallback;
 
+    // Simplified state
     bool m_ShowCreateDialog = false;
     bool m_OpenCreatePopupRequest = false;
     char m_ProjectNameBuffer[256] = "MyProject";
     char m_ProjectLocationBuffer[512] = "";
 
-    void *m_NewProjectIcon =
-        nullptr; // Using void* or Texture2D depends on headers, but we have raylib.h in cpp
-    void *m_OpenProjectIcon = nullptr;
-    bool m_IconsLoaded = false;
+    // Icons
+    Texture2D m_NewProjectIcon;
+    Texture2D m_OpenProjectIcon;
 };
 } // namespace CHEngine
 

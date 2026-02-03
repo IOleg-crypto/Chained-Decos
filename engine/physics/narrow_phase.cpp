@@ -9,7 +9,7 @@
 
 namespace CHEngine
 {
-void NarrowPhase::ResolveCollisions(Scene *scene, const std::vector<entt::entity> &entities)
+void NarrowPhase::ResolveCollisions(Scene *scene, const std::vector<::entt::entity> &entities)
 {
     auto &registry = scene->GetRegistry();
     auto colliders = registry.view<TransformComponent, ColliderComponent>();
@@ -39,8 +39,8 @@ void NarrowPhase::ResolveCollisions(Scene *scene, const std::vector<entt::entity
     }
 }
 
-void NarrowPhase::ResolveBoxBox(entt::registry &registry, entt::entity rbEntity,
-                                entt::entity otherEntity)
+void NarrowPhase::ResolveBoxBox(::entt::registry &registry, ::entt::entity rbEntity,
+                                ::entt::entity otherEntity)
 {
     auto &entityTransform = registry.get<TransformComponent>(rbEntity);
     auto &rigidBody = registry.get<RigidBodyComponent>(rbEntity);
@@ -94,10 +94,11 @@ void NarrowPhase::ResolveBoxBox(entt::registry &registry, entt::entity rbEntity,
             else if (axis == 2)
             {
                 mtv.y = minDepth;
-                if (rigidBody.Velocity.y < 0)
+                if (rigidBody.Velocity.y <= 0.01f)
                 {
                     rigidBody.IsGrounded = true;
-                    rigidBody.Velocity.y = 0;
+                    if (rigidBody.Velocity.y < 0)
+                        rigidBody.Velocity.y = 0;
                 }
             }
             else if (axis == 3)
@@ -117,8 +118,8 @@ void NarrowPhase::ResolveBoxBox(entt::registry &registry, entt::entity rbEntity,
     }
 }
 
-void NarrowPhase::ResolveBoxMesh(entt::registry &registry, entt::entity rbEntity,
-                                 entt::entity otherEntity)
+void NarrowPhase::ResolveBoxMesh(::entt::registry &registry, ::entt::entity rbEntity,
+                                 ::entt::entity otherEntity)
 {
     auto &entityTransform = registry.get<TransformComponent>(rbEntity);
     auto &rigidBody = registry.get<RigidBodyComponent>(rbEntity);

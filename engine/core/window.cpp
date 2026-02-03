@@ -15,7 +15,7 @@
 
 namespace CHEngine
 {
-Window::Window(const WindowConfig &config)
+Window::Window(const WindowProps &config)
     : m_Width(config.Width), m_Height(config.Height), m_Title(config.Title), m_VSync(config.VSync), m_IniFilename(config.IniFilename)
 {
     CH_CORE_INFO("Initializing Window: {} ({}x{})", m_Title, m_Width, m_Height);
@@ -101,11 +101,6 @@ Window::~Window()
     CH_CORE_INFO("Window Closed");
 }
 
-void Window::PollEvents()
-{
-    // Raylib polls events internally
-}
-
 bool Window::ShouldClose() const
 {
     return WindowShouldClose();
@@ -151,5 +146,6 @@ void Window::SetWindowIcon(Image icon)
     if (m_Window)
         ::SetWindowIcon(icon);
 }
+
 
 } // namespace CHEngine

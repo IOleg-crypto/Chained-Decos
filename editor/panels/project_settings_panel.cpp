@@ -1,7 +1,6 @@
 #include "project_settings_panel.h"
 #include "engine/scene/project.h"
 #include "engine/scene/project_serializer.h"
-#include "editor/utils/scene_registry.h"
 #include "rlImGui/extras/IconsFontAwesome6.h"
 #include "imgui.h"
 
@@ -39,8 +38,7 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
                 config.Name = nameBuf;
             }
 
-            // --- Declarative Scene Selection ---
-            auto availableScenes = SceneRegistry::GetAvailableScenes();
+            auto availableScenes = Project::GetAvailableScenes();
             const char* currentScene = config.StartScene.c_str();
             
             if (ImGui::BeginCombo("Start Scene", currentScene))
@@ -88,6 +86,11 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
         if (ImGui::CollapsingHeader(ICON_FA_PLAY " Runtime", ImGuiTreeNodeFlags_DefaultOpen))
         {
             config.Runtime.DrawUI();
+        }
+
+        if (ImGui::CollapsingHeader(ICON_FA_CAMERA " Editor", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            config.Editor.DrawUI();
         }
 
         if (ImGui::CollapsingHeader(ICON_FA_MOUNTAIN_SUN " Rendering", ImGuiTreeNodeFlags_DefaultOpen))

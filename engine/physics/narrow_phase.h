@@ -11,13 +11,13 @@ class Scene;
 class NarrowPhase
 {
 public:
-    static void ResolveCollisions(Scene *scene, const std::vector<entt::entity> &entities);
+    static void ResolveCollisions(Scene *scene, const std::vector<::entt::entity> &entities);
 
 private:
-    static void ResolveBoxBox(entt::registry &registry, entt::entity rbEntity,
-                              entt::entity otherEntity);
-    static void ResolveBoxMesh(entt::registry &registry, entt::entity rbEntity,
-                               entt::entity otherEntity);
+    static void ResolveBoxBox(::entt::registry &registry, ::entt::entity rbEntity,
+                              ::entt::entity otherEntity);
+    static void ResolveBoxMesh(::entt::registry &registry, ::entt::entity rbEntity,
+                               ::entt::entity otherEntity);
 };
 } // namespace CHEngine
 

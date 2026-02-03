@@ -1,13 +1,23 @@
 CompileFlags:
   CompilationDatabase: build/ninja-debug
-  Add: [-Wall, -Wextra]
-  Remove: [-fmodules-ts, -fmodule-mapper=*, -fdeps-format=*]
+  Add:
+    - -Wall
+    - -Wextra
+  Remove:
+    - -fmodules-ts
+    - -fmodule-mapper=*
+    - -fdeps-format=*
+    - -Winvalid-pch
+    - -Winvalid-offsetof
 
 Diagnostics:
   ClangTidy:
-    Add: [modernize-*, performance-*]
-    Remove: [modernize-use-trailing-return-type]
+    Add:
+      - modernize-use-nullptr
+      - modernize-use-override
+      - modernize-use-default-member-init
+    Remove:
+      - modernize-use-trailing-return-type
+      - performance-*
+  UnusedIncludes: None
 
-Index:
-  Background: Skip
-  

@@ -4,6 +4,8 @@
 #include "raylib.h"
 #include <string>
 
+#include "engine/scene/reflect.h"
+
 namespace CHEngine
 {
 struct PointLightComponent
@@ -17,6 +19,13 @@ struct PointLightComponent
     PointLightComponent(const PointLightComponent &) = default;
 };
 
+BEGIN_REFLECT(PointLightComponent)
+    PROPERTY(Color, LightColor, "Color")
+    PROPERTY(float, Intensity, "Intensity")
+    PROPERTY(float, Radius, "Radius")
+    PROPERTY(float, Falloff, "Falloff")
+END_REFLECT()
+
 struct SpotLightComponent
 {
     Color LightColor = WHITE;
@@ -29,16 +38,7 @@ struct SpotLightComponent
     SpotLightComponent(const SpotLightComponent &) = default;
 };
 
-struct SkyboxComponent
-{
-    std::string TexturePath;
-    float Exposure = 1.0f;
-    float Brightness = 0.0f;
-    float Contrast = 1.0f;
 
-    SkyboxComponent() = default;
-    SkyboxComponent(const SkyboxComponent &) = default;
-};
 } // namespace CHEngine
 
 #endif // CH_LIGHTING_COMPONENTS_H

@@ -8,7 +8,7 @@ struct GLFWwindow;
 
 namespace CHEngine
 {
-struct WindowConfig
+struct WindowProps
 {
     std::string Title;
     int Width = 1280;
@@ -17,20 +17,22 @@ struct WindowConfig
     bool Resizable = true;
     bool Fullscreen = false;
     int TargetFPS = 60;
+    
+    // UI / Docking
     bool EnableViewports = true;
     bool EnableDocking = true;
     std::string IniFilename = "imgui.ini";
+
+    WindowProps(const std::string& title = "Chained Engine", int width = 1280, int height = 720)
+        : Title(title), Width(width), Height(height) {}
 };
 
 class Window
 {
 public:
-    Window(const WindowConfig &config);
+    Window(const WindowProps &props);
     ~Window();
-
-    void PollEvents();
     bool ShouldClose() const;
-
     void BeginFrame();
     void EndFrame();
 

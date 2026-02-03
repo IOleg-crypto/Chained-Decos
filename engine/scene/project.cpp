@@ -80,6 +80,24 @@ bool RuntimeSettings::DrawUI()
     return changed;
 }
 
+bool EditorSettings::DrawUI()
+{
+    bool changed = false;
+    if (ImGui::DragFloat("Camera Speed", &CameraMoveSpeed, 0.1f, 0.1f, 100.0f))
+    {
+        changed = true;
+    }
+    if (ImGui::DragFloat("Rotation Speed", &CameraRotationSpeed, 0.01f, 0.01f, 1.0f))
+    {
+        changed = true;
+    }
+    if (ImGui::DragFloat("Boost Multiplier", &CameraBoostMultiplier, 0.1f, 1.0f, 20.0f))
+    {
+        changed = true;
+    }
+    return changed;
+}
+
 std::shared_ptr<Project> Project::s_ActiveProject = nullptr;
 
 std::shared_ptr<Project> Project::New()
@@ -96,6 +114,10 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path &path)
     {
         project->m_Config.ProjectDirectory = path.parent_path();
         s_ActiveProject = project;
+        
+        // Register asset search path
+        AssetManager::ClearSearchPaths();
+        AssetManager::AddSearchPath(project->m_Config.ProjectDirectory / project->m_Config.AssetDirectory);
         
         // Load environment if specified
         if (!project->m_Config.EnvironmentPath.empty())
@@ -120,4 +142,26 @@ bool Project::SaveActive(const std::filesystem::path &path)
 
     return false;
 }
+    std::vector<std::string> Project::GetAvailableScenes()
+    {
+        std::vector<std::string> scenes;
+        if (!s_ActiveProject)
+            return scenes;
+
+        auto assetDir = GetAssetDirectory();
+        auto scenesDir = assetDir / "scenes";
+
+        if (std::filesystem::exists(scenesDir))
+        {
+            for (auto &entry : std::filesystem::recursive_directory_iterator(scenesDir))
+            {
+                if (entry.path().extension() == ".chscene")
+                {
+                    std::string relPath = std::filesystem::relative(entry.path(), assetDir).string();
+                    scenes.push_back(relPath);
+                }
+            }
+        }
+        return scenes;
+    }
 } // namespace CHEngine

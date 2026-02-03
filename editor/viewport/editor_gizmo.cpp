@@ -3,25 +3,22 @@
 #include "editor_layer.h"
 #include "engine/scene/components.h"
 #include "raymath.h"
-#include "ui/editor_gui.h"
+#include "editor_gui.h"
 #include "undo/modify_component_command.h"
 
 
 namespace CHEngine
 {
 
-bool EditorGizmo::RenderAndHandle(GizmoType type)
+bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 viewportSize)
 {
     auto &layer = EditorLayer::Get();
-    Scene *scene = Application::Get().GetActiveScene().get();
+    Scene *scene = layer.GetActiveScene().get();
     Entity entity = layer.GetSelectedEntity();
-    Camera3D camera = EditorUI::GUI::GetActiveCamera(layer.GetSceneState());
+    Camera3D camera = EditorGUI::GetActiveCamera(layer.GetSceneState());
 
     if (!scene || !entity || !entity.HasComponent<TransformComponent>() || type == GizmoType::NONE)
         return false;
-
-    ImVec2 viewportPos = ImGui::GetWindowPos();
-    ImVec2 viewportSize = ImGui::GetContentRegionAvail();
 
     auto &transform = entity.GetComponent<TransformComponent>();
 

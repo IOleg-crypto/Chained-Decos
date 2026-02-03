@@ -7,6 +7,8 @@
 #include "glm/glm.hpp"
 #include "glm/gtx/quaternion.hpp"
 #include "raymath.h"
+#include "engine/core/application.h"
+#include <cmath>
 
 namespace CHEngine
 {
@@ -17,6 +19,18 @@ namespace CHEngine
         {
             auto &player = GetComponent<PlayerComponent>();
             auto &rigidBody = RigidBody();
+
+            // Mouse look (rotate camera)
+            if (Input::IsMouseButtonDown(MOUSE_BUTTON_RIGHT) || !Application::Get().GetLayerStack().HasLayer("EditorLayer"))
+            {
+                Vector2 mouseDelta = Input::GetMouseDelta();
+                player.CameraYaw -= mouseDelta.x * player.LookSensitivity;
+                player.CameraPitch -= mouseDelta.y * player.LookSensitivity;
+
+                // Clamp pitch to avoid flipping
+                if (player.CameraPitch > 89.0f) player.CameraPitch = 89.0f;
+                if (player.CameraPitch < -89.0f) player.CameraPitch = -89.0f;
+            }
 
             float currentSpeed = player.MovementSpeed;
             if (Input::IsKeyDown(KEY_LEFT_SHIFT))
@@ -52,36 +66,24 @@ namespace CHEngine
                 Velocity().x = 0;
                 Velocity().z = 0;
             }
-        } // namespace CHEngine
+
+            // Jump handling (polling is more reliable for gameplay controls)
+            if (Input::IsKeyPressed(KEY_SPACE) && rigidBody.IsGrounded)
+            {
+                rigidBody.Velocity.y = player.JumpForce;
+                rigidBody.IsGrounded = false;
+            }
+        }
 
         CH_EVENT(e)
         {
             EventDispatcher dispatcher(e);
 
-            // Handle Jump
-            dispatcher.Dispatch<KeyPressedEvent>(
-                [this](KeyPressedEvent &ev)
-                {
-                    if (ev.GetKeyCode() == KEY_SPACE)
-                    {
-                        auto &player = GetComponent<PlayerComponent>();
-                        auto &rb = RigidBody();
-
-                        if (rb.IsGrounded)
-                        {
-                            rb.Velocity.y = player.JumpForce;
-                            rb.IsGrounded = false;
-                            return true;
-                        }
-                    }
-                    return false;
-                });
-
             // Handle Teleport to Spawn
             dispatcher.Dispatch<KeyPressedEvent>(
                 [this](KeyPressedEvent &ev)
                 {
-                    if (Input::IsKeyDown(KEY_T))
+                    if (ev.GetKeyCode() == KEY_T)
                     {
                         auto &sceneRegistry = GetEntity().GetScene()->GetRegistry();
                         auto spawnZoneView = sceneRegistry.view<SpawnComponent>();

@@ -4,6 +4,7 @@
 #include "engine/core/application.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scriptable_entity.h"
+#include "engine/scene/scene_events.h"
 
 namespace CHEngine
 {
@@ -18,8 +19,8 @@ CH_UPDATE(dt)
         if (button.PressedThisFrame)
         {
             CH_CORE_INFO("SceneScript: Button pressed, requesting scene change...");
-            Application::Get().RequestSceneChange(
-                PROJECT_ROOT_DIR "/game/chaineddecos/assets/scenes/Untitled1.chscene");
+            SceneChangeRequestEvent e(PROJECT_ROOT_DIR "/game/chaineddecos/assets/scenes/Untitled1.chscene");
+            Application::OnEvent(e);
         }
     }
 }

@@ -8,11 +8,21 @@
 #include <string>
 #include <vector>
 
+
 namespace CHEngine
 {
+
+    struct RenderExtraState
+    {
+        bool DoubleSided = false;
+        bool Transparent = false;
+        float Alpha = 1.0f;
+    };
+
 class DrawCommand
 {
 public:
+    // Note: Init and Shutdown are now handled by Visuals/APIContext
     static void Init();
     static void Shutdown();
 
@@ -26,10 +36,11 @@ public:
     static void SetViewport(int x, int y, int width, int height);
 
     static void DrawModel(const std::string &path, const Matrix &transform,
-                          const std::vector<MaterialSlot> &overrides);
+                          const std::vector<MaterialSlot> &overrides = {},
+                          int animIndex = -1, int frame = 0);
     static void DrawLine(Vector3 start, Vector3 end, Color color);
     static void DrawGrid(int slices, float spacing);
-    static void DrawSkybox(const SkyboxComponent &skybox, const Camera3D &camera);
+    static void DrawSkybox(const SkyboxSettings &skybox, const Camera3D &camera);
     static void DrawCubeTexture(Texture2D texture, Vector3 position, float width, float height,
                                 float length, Color color);
 

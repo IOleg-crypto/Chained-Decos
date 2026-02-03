@@ -23,10 +23,6 @@ public:
 
     struct EditorConfig
     {
-        int WindowWidth = 1600;
-        int WindowHeight = 900;
-        bool Fullscreen = false;
-        int TargetFPS = 144;
         std::string LastProjectPath = "";
         std::string LastScenePath = "";
         bool LoadLastProjectOnStartup = false;
@@ -36,10 +32,12 @@ public:
     {
         return m_EditorConfig;
     }
+    
     void SetLastProjectPath(const std::string &path)
     {
         m_EditorConfig.LastProjectPath = path;
     }
+    
     void SetLastScenePath(const std::string &path)
     {
         m_EditorConfig.LastScenePath = path;

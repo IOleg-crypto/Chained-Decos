@@ -135,6 +135,35 @@ public:
     EVENT_CLASS_CATEGORY(EventCategoryApplication)
 };
 
+class AppSaveLayoutEvent : public Event
+{
+public:
+    AppSaveLayoutEvent() = default;
+    EVENT_CLASS_TYPE(AppSaveLayout)
+    EVENT_CLASS_CATEGORY(EventCategoryApplication)
+};
+
+class SceneChangeRequestEvent : public Event
+{
+public:
+    SceneChangeRequestEvent(const std::string &path) : m_Path(path)
+    {
+    }
+
+    const std::string &GetPath() const
+    {
+        return m_Path;
+    }
+
+    EVENT_CLASS_TYPE(SceneChangeRequest)
+    EVENT_CLASS_CATEGORY(EventCategoryApplication)
+
+private:
+    std::string m_Path;
+};
+
+
+
 } // namespace CHEngine
 
 #endif // CH_SCENE_EVENTS_H

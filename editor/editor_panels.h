@@ -36,6 +36,18 @@ public:
         return nullptr;
     }
 
+    std::shared_ptr<Panel> Get(const std::string &name)
+    {
+        for (auto &panel : m_Panels)
+            if (panel->GetName() == name) return panel;
+        return nullptr;
+    }
+
+    template <typename F> void ForEach(F &&func)
+    {
+        for (auto &panel : m_Panels) func(panel);
+    }
+
 public:
     void OnUpdate(float deltaTime);
     void OnImGuiRender(bool readOnly);

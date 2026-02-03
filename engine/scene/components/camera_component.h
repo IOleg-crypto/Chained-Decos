@@ -2,6 +2,7 @@
 #define CH_CAMERA_COMPONENT_H
 
 #include "raylib.h"
+#include "../reflect.h"
 
 namespace CHEngine
 {
@@ -20,6 +21,16 @@ struct CameraComponent
 
     CameraComponent() = default;
 };
+
+BEGIN_REFLECT(CameraComponent)
+    PROPERTY(bool, IsPrimary, "Primary")
+    PROPERTY(bool, IsActive, "Active")
+    PROPERTY(float, Fov, "FOV")
+    PROPERTY(Vector3, Offset, "Offset")
+    PROPERTY(float, NearPlane, "Near Plane")
+    PROPERTY(float, FarPlane, "Far Plane")
+    PROPERTY(int, Projection, "Projection")
+END_REFLECT()
 } // namespace CHEngine
 
 #endif // CH_CAMERA_COMPONENT_H

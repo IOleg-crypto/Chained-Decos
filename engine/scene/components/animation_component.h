@@ -4,6 +4,7 @@
 #include "raylib.h"
 #include <string>
 #include <vector>
+#include "../reflect.h"
 
 namespace CHEngine
 {
@@ -15,10 +16,6 @@ struct AnimationComponent
     int CurrentFrame = 0;
     bool IsLooping = true;
     bool IsPlaying = true;
-
-    // Runtime data (not serialized directly or handled by AssetManager)
-    // ModelAnimation *Animations = nullptr;
-    // int AnimationCount = 0;
 
     AnimationComponent() = default;
     AnimationComponent(const AnimationComponent &) = default;
@@ -38,29 +35,27 @@ struct AnimationComponent
 
     void CrossFade(int index, float duration = 0.5f, bool loop = true)
     {
-        // Simple implementation: just switch for now, but API is ready
         Play(index, loop);
     }
 
     void SetAnimation(const std::string& name)
     {
-        // To be implemented using model asset lookup
     }
 
     void Stop()
     {
         IsPlaying = false;
     }
-
-    // Scripting helper
-    void PlayOnMovement(bool isMoving, int moveAnim = 1, int idleAnim = 0)
-    {
-        if (isMoving)
-            Play(moveAnim, true);
-        else
-            Play(idleAnim, true);
-    }
 };
+
+BEGIN_REFLECT(AnimationComponent)
+    PROPERTY(bool, IsPlaying, "Playing")
+    PROPERTY(bool, IsLooping, "Looping")
+    PROPERTY(int, CurrentAnimationIndex, "Animation Index")
+    PROPERTY(float, FrameTimeCounter, "Frame Time")
+    PROPERTY(int, CurrentFrame, "Current Frame")
+END_REFLECT()
+
 } // namespace CHEngine
 
 #endif // CH_ANIMATION_COMPONENT_H

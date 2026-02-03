@@ -1,6 +1,6 @@
 # Skybox Shader Metadata
-VertexShader: "engine:shaders/skybox.vs"
-FragmentShader: "engine:shaders/skybox.fs"
+VertexShader: "engine/resources/shaders/skybox.vs"
+FragmentShader: "engine/resources/shaders/skybox.fs"
 
 Uniforms:
   - matProjection

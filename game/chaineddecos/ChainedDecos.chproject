@@ -9,8 +9,8 @@ Project:
   Animation:
     TargetFPS: 30
   Render:
-    AmbientIntensity: 0.74000001
-    DefaultExposure: 1
+    AmbientIntensity: 0
+    DefaultExposure: 1.23000002
   Window:
     Width: 1601
     Height: 720
@@ -20,4 +20,8 @@ Project:
     Fullscreen: true
     ShowStats: true
     EnableConsole: true
+  Editor:
+    CameraMoveSpeed: 10
+    CameraRotationSpeed: 1
+    CameraBoostMultiplier: 5
   BuildConfig: 0

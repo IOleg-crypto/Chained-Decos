@@ -12,6 +12,12 @@
 
 namespace CHEngine
 {
+    void ProjectActions::New()
+    {
+        // Simple default: close active project to show Project Browser
+        Project::SetActive(nullptr);
+    }
+
     void ProjectActions::New(const std::string &name, const std::string &path)
     {
         Project::New();

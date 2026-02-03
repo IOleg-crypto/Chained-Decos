@@ -9,8 +9,15 @@
 #include "scene_trace.h"
 
 
+#include "engine/physics/bvh/bvh.h"
+#include <unordered_map>
+#include <mutex>
+
 namespace CHEngine
 {
+static std::unordered_map<ModelAsset*, std::shared_future<std::shared_ptr<BVH>>> s_BVHFutureCache;
+static std::mutex s_BVHMutex;
+
 void Physics::Init()
 {
 }
@@ -60,10 +67,13 @@ void Physics::Update(Scene *scene, float deltaTime, bool runtime)
             auto asset = AssetManager::Get<ModelAsset>(collider.ModelPath);
             if (asset && asset->GetState() == AssetState::Ready && asset->GetModel().meshCount > 0)
             {
-                collider.BVHRoot = asset->GetBVHCache();
-                BoundingBox box = asset->GetBoundingBox();
-                collider.Offset = box.min;
-                collider.Size = Vector3Subtract(box.max, box.min);
+                collider.BVHRoot = Physics::GetBVH(asset.get());
+                if (collider.BVHRoot)
+                {
+                    BoundingBox box = asset->GetBoundingBox();
+                    collider.Offset = box.min;
+                    collider.Size = Vector3Subtract(box.max, box.min);
+                }
             }
         }
     }
@@ -89,5 +99,28 @@ void Physics::Update(Scene *scene, float deltaTime, bool runtime)
 RaycastResult Physics::Raycast(Scene *scene, Ray ray)
 {
     return SceneTrace::Raycast(scene, ray);
+}
+
+std::shared_ptr<BVH> Physics::GetBVH(ModelAsset *asset)
+{
+    if (!asset || asset->GetState() != AssetState::Ready) return nullptr;
+
+    std::lock_guard<std::mutex> lock(s_BVHMutex);
+    
+    auto it = s_BVHFutureCache.find(asset);
+    if (it == s_BVHFutureCache.end())
+    {
+        // Start building in background
+        s_BVHFutureCache[asset] = BVH::BuildAsync(asset->GetModel()).share();
+        return nullptr;
+    }
+
+    // Check if ready
+    if (it->second.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+    {
+        return it->second.get();
+    }
+
+    return nullptr;
 }
 } // namespace CHEngine

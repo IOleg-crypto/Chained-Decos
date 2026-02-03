@@ -5,31 +5,21 @@
 #include "engine/core/base.h"
 #include "engine/core/layer.h"
 #include "editor/actions/editor_actions.h"
-#include "editor/editor_panels.h"
-#include "editor/ui/editor_layout.h"
-#include "editor_types.h"
-#include "engine/graphics/render_types.h"
+#include "editor_panels.h"
+#include "editor_layout.h"
 #include "engine/graphics/render_types.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_events.h"
-#include <filesystem>
-#include "imgui.h"
-#include "panels/console_panel.h"
-#include "panels/content_browser_panel.h"
-#include "panels/environment_panel.h"
-#include "panels/inspector_panel.h"
-#include "panels/profiler_panel.h"
-#include "panels/project_browser_panel.h"
-#include "panels/project_settings_panel.h"
-#include "panels/scene_hierarchy_panel.h"
-#include "panels/viewport_panel.h"
-#include "raylib.h"
 #include "undo/command_history.h"
-#include "viewport/editor_camera.h"
-#include "viewport/editor_gizmo.h"
+#include "imgui.h"
 
 namespace CHEngine
 {
+    enum class SceneState : uint8_t
+    {
+        Edit = 0,
+        Play = 1
+    };
     class EditorLayer : public Layer
     {
     public:
@@ -43,80 +33,67 @@ namespace CHEngine
         virtual void OnImGuiRender() override;
         virtual void OnEvent(Event &e) override;
 
-        static float GetViewportHeight()
-        {
-            return s_ViewportSize.y;
-        }
-
-        static std::shared_ptr<Scene> GetActiveScene()
-        {
-            return Application::Get().GetActiveScene();
-        }
+        static float GetViewportWidth() { return s_Instance->m_ViewportSize.x; }
+        static float GetViewportHeight() { return s_Instance->m_ViewportSize.y; }
 
         void ResetLayout();
+        void SetSceneState(SceneState state);
+        SceneState GetSceneState() const { return m_SceneState; }
+        
+        static EditorLayer& Get() { return *s_Instance; }
+        void SetScene(std::shared_ptr<Scene> scene);
         void DrawDockSpace();
         void DrawScriptUI();
+
+        void SetViewportSize(const ImVec2& size) { m_ViewportSize = size; }
+        const ImVec2& GetViewportSize() const { return m_ViewportSize; }
+
+    public:
+        static EditorLayer *s_Instance;
+
+        static CommandHistory &GetCommandHistory();
+        static CommandHistory &History() { return GetCommandHistory(); }
+        EditorPanels &GetPanels() { return *m_Panels; }
+        
+        SceneState GetState() const { return m_SceneState; }
+        
+        Entity GetSelectedEntity() const { return m_State.SelectedEntity; }
+        DebugRenderFlags &GetDebugRenderFlags() { return m_State.DebugRenderFlags; }
+
+        void ToggleFullscreenGame(bool enabled) { m_State.FullscreenGame = enabled; }
+        bool IsFullscreenGame() const { return m_State.FullscreenGame; }
+        bool IsStandaloneActive() const { return m_State.StandaloneActive; }
+
+        std::shared_ptr<Scene> GetActiveScene() const 
+        { 
+            return (m_SceneState == SceneState::Play) ? m_RuntimeScene : m_EditorScene; 
+        }
 
     private:
         bool OnProjectOpened(ProjectOpenedEvent &e);
         bool OnSceneOpened(SceneOpenedEvent &e);
-        bool OnScenePlay(ScenePlayEvent &e);
-        bool OnSceneStop(SceneStopEvent &e);
-
-    public:
-        static EditorLayer *s_Instance;
-        static ImVec2 s_ViewportSize;
-
-        static CommandHistory &GetCommandHistory();
-        static SceneState GetSceneState();
-        static EditorLayer &Get();
-
-        EditorPanels &GetPanels()
-        {
-            return *m_Panels;
-        }
-        Entity GetSelectedEntity() const
-        {
-            return m_SelectedEntity;
-        }
-
-        Camera3D GetActiveCamera();
-        DebugRenderFlags &GetDebugRenderFlags()
-        {
-            return m_DebugRenderFlags;
-        }
-
-        void ToggleFullscreenGame(bool enabled)
-        {
-            m_FullscreenGame = enabled;
-        }
-        bool IsFullscreenGame() const
-        {
-            return m_FullscreenGame;
-        }
-        bool IsStandaloneActive() const
-        {
-            return m_StandaloneActive;
-        }
 
     private:
         std::unique_ptr<EditorPanels> m_Panels;
         std::unique_ptr<EditorLayout> m_Layout;
         std::unique_ptr<EditorActions> m_Actions;
 
-        Entity m_SelectedEntity;
         SceneState m_SceneState = SceneState::Edit;
-        bool m_FullscreenGame = false;
-        bool m_StandaloneActive = false;
-        bool m_NeedsLayoutReset = false;
-        int m_LastHitMeshIndex = -1;
         std::shared_ptr<Scene> m_EditorScene;
+        std::shared_ptr<Scene> m_RuntimeScene;
 
-        // Raylib Debug Render Flags
-        DebugRenderFlags m_DebugRenderFlags;
+        struct EditorState
+        {
+            Entity SelectedEntity;
+            bool FullscreenGame = false;
+            bool StandaloneActive = false;
+            bool NeedsLayoutReset = false;
+            int LastHitMeshIndex = -1;
+            DebugRenderFlags DebugRenderFlags;
+        } m_State;
 
-    private:
         CommandHistory m_CommandHistory;
+        ImVec2 m_ViewportSize = {1280, 720};
     };
 } // namespace CHEngine
 

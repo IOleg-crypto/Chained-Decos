@@ -22,40 +22,28 @@ namespace CHEngine
         memset(m_ProjectLocationBuffer, 0, sizeof(m_ProjectLocationBuffer));
         cwd.copy(m_ProjectLocationBuffer, sizeof(m_ProjectLocationBuffer) - 1);
 
-        // Load icons only if window is ready (Raylib requires GL context for textures)
-        if (IsWindowReady())
-        {
-            const char *newProjectIconPath = PROJECT_ROOT_DIR "/engine/resources/icons/newproject.jpg";
-            const char *openProjectIconPath = PROJECT_ROOT_DIR "/engine/resources/icons/folder.png";
+        // Load icons from specific paths
+        // Try absolute path first if debugging, but relative is better for portability.
+        // Based on search: d:\gitnext\Chained Decos\engine\resources\icons\newproject.jpg
+        
+        std::string root = PROJECT_ROOT_DIR; // Use the macro defined in CMake
+        m_NewProjectIcon = LoadTexture((root + "/engine/resources/icons/newproject.jpg").c_str());
+        m_OpenProjectIcon = LoadTexture((root + "/engine/resources/icons/folder.png").c_str());
 
-            if (std::filesystem::exists(newProjectIconPath))
-            {
-                Texture2D *tex = new Texture2D(LoadTexture(newProjectIconPath));
-                m_NewProjectIcon = tex;
-            }
-
-            if (std::filesystem::exists(openProjectIconPath))
-            {
-                Texture2D *tex = new Texture2D(LoadTexture(openProjectIconPath));
-                m_OpenProjectIcon = tex;
-            }
+        // Fallback to internal icons if failed (but do not generate ugly white squares)
+        if (m_NewProjectIcon.id == 0) {
+             // Try relative path
+             m_NewProjectIcon = LoadTexture("engine/resources/icons/newproject.jpg");
         }
-
-        m_IconsLoaded = (m_NewProjectIcon != nullptr && m_OpenProjectIcon != nullptr);
+        if (m_OpenProjectIcon.id == 0) {
+             m_OpenProjectIcon = LoadTexture("engine/resources/icons/folder.png");
+        }
     }
 
     ProjectBrowserPanel::~ProjectBrowserPanel()
     {
-        if (m_NewProjectIcon)
-        {
-            UnloadTexture(*(Texture2D *)m_NewProjectIcon);
-            delete (Texture2D *)m_NewProjectIcon;
-        }
-        if (m_OpenProjectIcon)
-        {
-            UnloadTexture(*(Texture2D *)m_OpenProjectIcon);
-            delete (Texture2D *)m_OpenProjectIcon;
-        }
+        if (m_NewProjectIcon.id != 0) UnloadTexture(m_NewProjectIcon);
+        if (m_OpenProjectIcon.id != 0) UnloadTexture(m_OpenProjectIcon);
     }
 
     void ProjectBrowserPanel::OnImGuiRender(bool readOnly)
@@ -92,26 +80,24 @@ namespace CHEngine
         ImGui::PopStyleVar(3);
     }
 
-    // Helper: Draw sidebar with recent projects
-    static void DrawSidebar(ImDrawList *drawList, ImVec2 pMin, ImVec2 pMax, float sidebarWidth)
+    void ProjectBrowserPanel::DrawWelcomeScreen()
     {
-        // Gradient background
-        drawList->AddRectFilledMultiColor(pMin, ImVec2(pMin.x + sidebarWidth, pMax.y), ImColor(10, 15, 25),
-                                          ImColor(5, 7, 12), ImColor(2, 3, 5), ImColor(8, 10, 18));
-        drawList->AddLine(ImVec2(pMin.x + sidebarWidth, pMin.y), ImVec2(pMin.x + sidebarWidth, pMax.y),
-                          ImColor(255, 255, 255, 20));
-
-        ImGui::SetCursorPos(ImVec2(40, 60));
-        ImGui::SetWindowFontScale(3.0f);
-        ImGui::TextColored(ImVec4(0.2f, 0.7f, 1.0f, 1.0f), "Chained Engine");
+        // 1. Sidebar (Recent Projects)
+        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.02f, 0.02f, 0.02f, 1.0f));
+        ImGui::BeginChild("Sidebar", ImVec2(300, 0), true);
+        
+        ImGui::Spacing();
+        ImGui::SetCursorPosX(20);
+        ImGui::SetWindowFontScale(1.5f);
+        ImGui::TextColored(ImVec4(0.2f, 0.7f, 1.0f, 1.0f), ICON_FA_LINK " Chained");
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Engine");
         ImGui::SetWindowFontScale(1.0f);
-
-        ImGui::SetCursorPosY(180);
-        ImGui::SetCursorPosX(40);
-        ImGui::TextColored(ImVec4(0.4f, 0.4f, 0.4f, 1.0f), "RECENT PROJECTS");
-
-        ImGui::SetCursorPosY(210);
-        ImGui::SetCursorPosX(30);
+        ImGui::Separator();
+        
+        ImGui::Spacing();
+        ImGui::TextDisabled("   RECENT PROJECTS");
+        ImGui::Spacing();
 
         std::string lastPath = Editor::Get().GetEditorConfig().LastProjectPath;
         if (!lastPath.empty())
@@ -119,117 +105,87 @@ namespace CHEngine
             std::string fileName = std::filesystem::path(lastPath).filename().string();
             std::string dirName = std::filesystem::path(lastPath).parent_path().string();
 
-            ImGui::BeginChild("##RecentList", ImVec2(sidebarWidth - 60, 200), false);
-            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f);
-            if (ImGui::Button(fileName.c_str(), ImVec2(sidebarWidth - 60, 60)))
-                ProjectActions::Open(lastPath);
-            if (ImGui::IsItemHovered())
+            // Custom Button Style for Recent Project
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+            ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.5f, 0.5f));
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 5.0f);
+            
+            // Draw a big button that looks like the card in the screenshot
+            if (ImGui::Button(fileName.c_str(), ImVec2(-1, 50)))
             {
-                ImGui::BeginTooltip();
-                ImGui::Text("%s", lastPath.c_str());
-                ImGui::EndTooltip();
+                ProjectActions::Open(lastPath);
             }
-            ImGui::PopStyleVar();
-            ImGui::SetCursorPosX(10);
-            ImGui::TextColored(ImVec4(0.3f, 0.3f, 0.3f, 1.0f), "%s", dirName.c_str());
-            ImGui::EndChild();
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", lastPath.c_str());
+
+            ImGui::PopStyleVar(2);
+            ImGui::PopStyleColor();
+            
+            ImGui::TextDisabled("   %s", dirName.c_str());
         }
         else
         {
-            ImGui::SetCursorPosX(40);
-            ImGui::TextDisabled("No recent projects found.");
-        }
-    }
-
-    static bool DrawActionCard(ImDrawList *drawList, ImVec2 cardMin, float cardWidth, float cardHeight,
-                               const char *title, const char *desc1, const char *desc2, Texture2D *iconTexture,
-                               const char *buttonId)
-    {
-        ImVec2 cardMax = ImVec2(cardMin.x + cardWidth, cardMin.y + cardHeight);
-        bool hovered = ImGui::IsMouseHoveringRect(cardMin, cardMax);
-        ImU32 cardColor = hovered ? ImColor(55, 55, 60, 255) : ImColor(40, 40, 45, 255);
-        ImU32 borderColor = hovered ? ImColor(100, 180, 255, 200) : ImColor(70, 70, 75, 255);
-
-        drawList->AddRectFilled(cardMin, cardMax, cardColor, 15.0f);
-        drawList->AddRect(cardMin, cardMax, borderColor, 15.0f, 0, 2.0f);
-
-        // Icon Rendering - Using Image Textures instead of ImDrawList drawings
-        float textureSize = 160.0f; // Increased for better visibility as per design
-        ImVec2 texturePos = ImVec2(cardMin.x + (cardWidth - textureSize) * 0.5f, cardMin.y + 15.0f);
-
-        if (iconTexture && iconTexture->id > 0)
-        {
-            ImGui::SetCursorScreenPos(texturePos);
-            rlImGuiImageSize(iconTexture, (int)textureSize, (int)textureSize);
-        }
-        else
-        {
-            // Fallback or empty space
-            drawList->AddRectFilled(texturePos, ImVec2(texturePos.x + textureSize, texturePos.y + textureSize),
-                                    ImColor(50, 50, 55, 255), 12.0f);
+            ImGui::TextDisabled("   No recent projects.");
         }
 
-        // Title
-        ImGui::SetWindowFontScale(1.4f);
-        ImVec2 titleSize = ImGui::CalcTextSize(title);
-        drawList->AddText(ImVec2(cardMin.x + (cardWidth - titleSize.x) * 0.5f, cardMin.y + 175.0f),
-                          ImColor(240, 240, 245), title);
-        ImGui::SetWindowFontScale(1.0f);
-
-        // Description
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.6f, 0.62f, 1.0f));
-        float descStartY = cardMin.y + 195.0f;
-
-        ImVec2 d1Size = ImGui::CalcTextSize(desc1);
-        drawList->AddText(ImVec2(cardMin.x + (cardWidth - d1Size.x) * 0.5f, descStartY), ImColor(100, 100, 105), desc1);
-
-        ImVec2 d2Size = ImGui::CalcTextSize(desc2);
-        drawList->AddText(ImVec2(cardMin.x + (cardWidth - d2Size.x) * 0.5f, descStartY + 26.0f), ImColor(100, 100, 105),
-                          desc2);
+        ImGui::EndChild();
         ImGui::PopStyleColor();
 
-        ImGui::SetCursorScreenPos(cardMin);
-        return ImGui::InvisibleButton(buttonId, ImVec2(cardWidth, cardHeight));
-    }
+        ImGui::SameLine();
 
-    void ProjectBrowserPanel::DrawWelcomeScreen()
-    {
-        ImVec2 windowSize = ImGui::GetWindowSize();
-        ImDrawList *drawList = ImGui::GetWindowDrawList();
-        ImVec2 pMin = ImGui::GetWindowPos();
-        ImVec2 pMax = ImVec2(pMin.x + windowSize.x, pMin.y + windowSize.y);
-        float sidebarWidth = 350.0f;
+        // 2. Main Area (Actions)
+        // Darker background for main area to match screenshot
+        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.08f, 0.08f, 0.08f, 1.0f)); 
+        ImGui::BeginChild("MainArea", ImVec2(0, 0), false);
+        
+        float centerX = ImGui::GetContentRegionAvail().x * 0.5f;
+        float centerY = ImGui::GetContentRegionAvail().y * 0.5f;
+        
+        ImGui::SetCursorPos(ImVec2(centerX - 350, centerY - 150));
+        
+        // Large Card Style
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(20, 20));
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 12.0f);
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.12f, 0.12f, 0.13f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.18f, 0.18f, 0.19f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.9f, 0.9f, 1.0f));
 
-        DrawSidebar(drawList, pMin, pMax, sidebarWidth);
-
-        // Main Area - Background Grid
-        float gridSize = 50.0f;
-        for (float x = pMin.x + sidebarWidth + gridSize; x < pMax.x; x += gridSize)
-            drawList->AddLine(ImVec2(x, pMin.y), ImVec2(x, pMax.y), ImColor(255, 255, 255, 10));
-        for (float y = pMin.y + gridSize; y < pMax.y; y += gridSize)
-            drawList->AddLine(ImVec2(pMin.x + sidebarWidth, y), ImVec2(pMax.x, y), ImColor(255, 255, 255, 10));
-
-        // Action Cards Layout
-        float cardWidth = 260.0f, cardHeight = 260.0f, gap = 150.0f;
-        float totalWidth = (cardWidth * 2) + gap;
-        float mainAreaWidth = windowSize.x - sidebarWidth;
-        float startX = pMin.x + sidebarWidth + (mainAreaWidth - totalWidth) * 0.5f;
-        float centerY = pMin.y + windowSize.y * 0.45f;
-
-        ImVec2 card1Min = ImVec2(startX, centerY - cardHeight * 0.5f);
-        if (DrawActionCard(drawList, card1Min, cardWidth, cardHeight, "New Project",
-                           "Start a fresh journey with a dedicated", "project folder and optimized settings.",
-                           (Texture2D *)m_NewProjectIcon, "##NewProjectCard")){
+        ImGui::BeginGroup();
+        if (rlImGuiImageButtonSize("##NewProject", &m_NewProjectIcon, {300, 300}))
+        {
             m_OpenCreatePopupRequest = true;
             m_ShowCreateDialog = true;
         }
+        ImGui::SetWindowFontScale(1.3f);
+        ImGui::Text("New Project");
+        ImGui::SetWindowFontScale(1.0f);
+        ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + 280);
+        ImGui::TextDisabled("Start a fresh journey with a dedicated");
+        ImGui::TextDisabled("project folder and optimized settings.");
+        ImGui::PopTextWrapPos();
+        ImGui::EndGroup();
 
-        ImVec2 card2Min = ImVec2(startX + cardWidth + gap, centerY - cardHeight * 0.5f);
-        if (DrawActionCard(drawList, card2Min, cardWidth, cardHeight, "Open Project",
-                           "Browse and load an existing Chained", "Engine project (.chproject) file.",
-                           (Texture2D *)m_OpenProjectIcon, "##OpenProjectCard")){
+        ImGui::SameLine(0, 40);
+
+        ImGui::BeginGroup();
+        if (rlImGuiImageButtonSize("##OpenProject", &m_OpenProjectIcon, {300, 300}))
+        {
             ProjectActions::Open();
         }
+        ImGui::SetWindowFontScale(1.3f);
+        ImGui::Text("Open Project");
+        ImGui::SetWindowFontScale(1.0f);
+        ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + 280);
+        ImGui::TextDisabled("Browse and load an existing Chained");
+        ImGui::TextDisabled("Engine project (.chproject) file.");
+        ImGui::PopTextWrapPos();
+        ImGui::EndGroup();
+        
+        ImGui::PopStyleColor(4);
+        ImGui::PopStyleVar(2);
+
+        ImGui::EndChild();
+        ImGui::PopStyleColor(); // ChildBg
     }
 
     void ProjectBrowserPanel::DrawCreateProjectDialog()

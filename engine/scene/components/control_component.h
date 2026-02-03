@@ -7,9 +7,26 @@
 #include <string>
 #include <vector>
 
+#include "engine/scene/reflect.h"
+
 namespace CHEngine
 {
 using vec2 = glm::vec2;
+
+// Screen-space rectangle (absolute pixel coordinates)
+struct Rect
+{
+    vec2 Min; // Top-left
+    vec2 Max; // Bottom-right
+
+    vec2 Size() const { return Max - Min; }
+    vec2 Center() const { return (Min + Max) * 0.5f; }
+
+    bool Contains(vec2 point) const
+    {
+        return point.x >= Min.x && point.x <= Max.x && point.y >= Min.y && point.y <= Max.y;
+    }
+};
 
 // Typography & Visual Styles
 enum class TextAlignment
@@ -77,6 +94,32 @@ struct RectTransform
     vec2 Pivot = {0.5f, 0.5f};
     float Rotation = 0.0f;
     vec2 Scale = {1.0f, 1.0f};
+
+    Rect CalculateRect(vec2 viewportSize, vec2 viewportOffset = {0.0f, 0.0f}) const
+    {
+        // 1. Calculate the box defined by anchors (clamped to 0..1)
+        vec2 clAnchMin = glm::clamp(AnchorMin, vec2(0.0f), vec2(1.0f));
+        vec2 clAnchMax = glm::clamp(AnchorMax, vec2(0.0f), vec2(1.0f));
+
+        vec2 anchorMinPos = {viewportSize.x * clAnchMin.x, viewportSize.y * clAnchMin.y};
+        vec2 anchorMaxPos = {viewportSize.x * clAnchMax.x, viewportSize.y * clAnchMax.y};
+
+        // 2. Add offsets (absolute pixels)
+        vec2 pMin = anchorMinPos + OffsetMin;
+        vec2 pMax = anchorMaxPos + OffsetMax;
+
+        // 3. Apply Pivot (for fixed-size elements where AnchorMin == AnchorMax)
+        if (AnchorMin == AnchorMax)
+        {
+            // The OffsetMin/Max are already defined relative to the anchors.
+            // Pivot mostly affects rotation and scaling center in a full UI system,
+            // but for absolute Rect calculation, pMin/pMax are usually sufficient
+            // if they define the final box.
+        }
+
+        return Rect{{viewportOffset.x + pMin.x, viewportOffset.y + pMin.y},
+                    {viewportOffset.x + pMax.x, viewportOffset.y + pMax.y}};
+    }
 };
 
 // Base Component
@@ -89,6 +132,22 @@ struct ControlComponent
 
     ControlComponent() = default;
 };
+
+
+BEGIN_REFLECT(RectTransform)
+    PROPERTY(vec2, AnchorMin, "Anchor Min")
+    PROPERTY(vec2, AnchorMax, "Anchor Max")
+    PROPERTY(vec2, OffsetMin, "Offset Min")
+    PROPERTY(vec2, OffsetMax, "Offset Max")
+    PROPERTY(vec2, Pivot, "Pivot")
+    PROPERTY(float, Rotation, "Rotation")
+    PROPERTY(vec2, Scale, "Scale")
+END_REFLECT()
+
+BEGIN_REFLECT(ControlComponent)
+    PROPERTY(int, ZOrder, "Z Order")
+    PROPERTY(bool, IsActive, "Active")
+END_REFLECT()
 
 // --- Unified Specialized Widgets ---
 
@@ -130,6 +189,16 @@ struct LabelControl
     {
     }
 };
+
+BEGIN_REFLECT(LabelControl)
+    PROPERTY(std::string, Text, "Text")
+    // Note: Style is complex, but we can reflect its basic fields if needed
+END_REFLECT()
+
+BEGIN_REFLECT(ButtonControl)
+    PROPERTY(std::string, Label, "Label")
+    PROPERTY(bool, IsInteractable, "Interactable")
+END_REFLECT()
 
 struct SliderControl
 {

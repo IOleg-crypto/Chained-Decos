@@ -26,6 +26,7 @@ public:
 
     static void Update(Scene *scene, float deltaTime, bool runtime = false);
     static RaycastResult Raycast(Scene *scene, Ray ray);
+    static std::shared_ptr<class BVH> GetBVH(class ModelAsset *asset);
 };
 } // namespace CHEngine
 
