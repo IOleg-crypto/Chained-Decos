@@ -38,18 +38,9 @@ public:
     Scene();
     ~Scene();
 
-    BackgroundMode GetBackgroundMode() const;
-    void SetBackgroundMode(BackgroundMode mode);
-
-    Color GetBackgroundColor() const;
-    void SetBackgroundColor(Color color);
-
-    const std::string& GetBackgroundTexturePath() const;
-    void SetBackgroundTexturePath(const std::string& path);
-    
-
     static std::shared_ptr<Scene> Copy(std::shared_ptr<Scene> other);
 
+public: // Entity Management
     Entity CreateEntity(const std::string &name = "Entity");
     Entity CreateEntityWithUUID(UUID uuid, const std::string &name = "Entity");
     Entity CreateUIEntity(const std::string &type, const std::string &name = "");
@@ -58,34 +49,30 @@ public:
     Entity FindEntityByTag(const std::string &tag);
     Entity GetEntityByUUID(UUID uuid);
 
-    void OnUpdateRuntime(float deltaTime);
-    void OnRender(const Camera3D &camera, Timestep ts = 0, const struct DebugRenderFlags *debugFlags = nullptr);
+public: // Runtime & Simulation
     void OnRuntimeStart();
     void OnRuntimeStop();
+    void OnUpdateRuntime(float deltaTime);
+    void OnRender(const Camera3D &camera, Timestep ts = 0, const struct DebugRenderFlags *debugFlags = nullptr);
+    
     bool IsSimulationRunning() const;
     void OnEvent(Event &e);
-    void OnImGuiRender(const ImVec2 &refPos = {0, 0}, const ImVec2 &refSize = {0, 0},
-                       uint32_t viewportID = 0, bool editMode = false);
-
+    
     void RequestSceneChange(const std::string &path);
     void UpdateProfilerStats();
 
+public: // Scene Settings & Environment
+    BackgroundMode GetBackgroundMode() const;
+    void SetBackgroundMode(BackgroundMode mode);
+
+    Color GetBackgroundColor() const;
+    void SetBackgroundColor(Color color);
+
+    const std::string& GetBackgroundTexturePath() const;
+    void SetBackgroundTexturePath(const std::string& path);
+
     const std::string& GetScenePath() const;
     void SetScenePath(const std::string& path);
-
-    // Generic component added handling (templated)
-    template <typename T> void OnComponentAdded(Entity entity, T &component)
-    {
-    }
-
-    entt::registry &GetRegistry()
-    {
-        return m_Registry;
-    }
-    const entt::registry &GetRegistry() const
-    {
-        return m_Registry;
-    }
 
     std::shared_ptr<EnvironmentAsset> GetEnvironment();
     const std::shared_ptr<EnvironmentAsset> GetEnvironment() const;
@@ -97,6 +84,13 @@ public:
     Physics& GetPhysics() { return *m_Physics; }
     const Physics& GetPhysics() const { return *m_Physics; }
 
+public: // Systems & Tools
+    void OnImGuiRender(const ImVec2 &refPos = {0, 0}, const ImVec2 &refSize = {0, 0},
+                       uint32_t viewportID = 0, bool editMode = false);
+
+    entt::registry &GetRegistry() { return m_Registry; }
+    const entt::registry &GetRegistry() const { return m_Registry; }
+
 private:
     entt::registry m_Registry;
     std::unordered_map<UUID, entt::entity> m_EntityMap;
@@ -105,6 +99,7 @@ private:
 
     bool m_IsSimulationRunning = false;
 
+private: // Internal Event Handlers
     // Reactive signals handlers
     void OnModelComponentAdded(entt::registry &reg, entt::entity entity);
     void OnAnimationComponentAdded(entt::registry &reg, entt::entity entity);
@@ -116,6 +111,9 @@ private:
 
     // Hierarchy Handlers
     void OnHierarchyDestroy(entt::registry &reg, entt::entity entity);
+
+    // Generic component added handling (templated)
+    template <typename T> void OnComponentAdded(Entity entity, T &component) {}
 
     friend class Entity;
     friend class SceneSerializer;
