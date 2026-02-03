@@ -86,7 +86,6 @@ namespace CHEngine
             m_Window->SetWindowIcon(config.WindowIcon);
         }
 
-        AssetManager::Init();
         ComponentSerializer::Init();
         Render::Init();
         Physics::Init();
@@ -119,7 +118,6 @@ namespace CHEngine
         m_LayerStack.Shutdown();
         
         Physics::Shutdown();
-        AssetManager::Shutdown();
         Render::Shutdown();
         
         m_Window.reset();

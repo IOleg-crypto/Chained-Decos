@@ -154,8 +154,12 @@ template <> void Scene::OnComponentAdded<ModelComponent>(Entity entity, ModelCom
 
         if (pathChanged)
         {
-            component.Asset = AssetManager::Get<ModelAsset>(component.ModelPath);
-            component.MaterialsInitialized = false; // Reset materials if asset changed
+            auto project = Project::GetActive();
+            if (project && project->GetAssetManager())
+            {
+                component.Asset = project->GetAssetManager()->Get<ModelAsset>(component.ModelPath);
+            }
+            component.MaterialsInitialized = false; 
         }
 
         if (component.Asset && !component.MaterialsInitialized)
@@ -196,7 +200,11 @@ void Scene::OnComponentAdded<AnimationComponent>(Entity entity, AnimationCompone
         auto &mc = entity.GetComponent<ModelComponent>();
         if (!mc.Asset && !mc.ModelPath.empty())
         {
-            mc.Asset = AssetManager::Get<ModelAsset>(mc.ModelPath);
+            auto project = Project::GetActive();
+            if (project && project->GetAssetManager())
+            {
+                mc.Asset = project->GetAssetManager()->Get<ModelAsset>(mc.ModelPath);
+            }
         }
     }
 }
@@ -205,7 +213,11 @@ template <> void Scene::OnComponentAdded<AudioComponent>(Entity entity, AudioCom
 {
     if (!component.SoundPath.empty())
     {
-        component.Asset = AssetManager::Get<SoundAsset>(component.SoundPath);
+        auto project = Project::GetActive();
+        if (project && project->GetAssetManager())
+        {
+            component.Asset = project->GetAssetManager()->Get<SoundAsset>(component.SoundPath);
+        }
     }
 }
 
@@ -323,7 +335,7 @@ void Scene::OnRender(const Camera3D &camera, const DebugRenderFlags *debugFlags)
         }
     }
 
-    Visuals::DrawScene(this, camera, debugFlags);
+    Render::DrawScene(this, camera, debugFlags);
 }
 
 Camera3D Scene::GetActiveCamera() const
