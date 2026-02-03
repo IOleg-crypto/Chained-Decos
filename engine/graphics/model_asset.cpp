@@ -2,213 +2,137 @@
 #include "engine/core/log.h"
 #include "engine/physics/bvh/bvh.h"
 #include "raylib.h"
+#include "shader_asset.h"
 #include "texture_asset.h"
+#include "engine/graphics/api_context.h"
 #include <filesystem>
+#include <functional>
+#include <unordered_map>
 
 namespace CHEngine
 {
 std::shared_ptr<ModelAsset> ModelAsset::Load(const std::string &path)
 {
-    if (path.empty())
-        return nullptr;
-    if (path.starts_with(":"))
-        return CreateProcedural(path);
-
-    std::filesystem::path fullPath(path);
-    if (!std::filesystem::exists(fullPath))
-        return nullptr;
-
-    Model model = ::LoadModel(fullPath.string().c_str());
-    if (model.meshCount == 0)
-        return nullptr;
-
     auto asset = std::make_shared<ModelAsset>();
-    asset->m_Model = model;
     asset->SetPath(path);
-    asset->SetState(AssetState::Ready);
-
-    asset->m_BVHFuture = BVH::BuildAsync(model).share();
-
-    // Track internal textures
-    for (int i = 0; i < model.materialCount; i++)
-    {
-        for (int j = 0; j < 12; j++)
-        {
-            Texture2D tex = model.materials[i].maps[j].texture;
-            if (tex.id > 0)
-            {
-                auto texAsset = std::make_shared<TextureAsset>();
-                texAsset->SetTexture(tex);
-                texAsset->SetState(AssetState::Ready);
-                asset->m_Textures.push_back(texAsset);
-            }
-        }
-    }
-    return asset;
+    asset->LoadFromFile(path);
+    if (asset->GetState() == AssetState::Ready) return asset;
+    return nullptr;
 }
 
 void ModelAsset::LoadFromFile(const std::string &path)
 {
-    if (m_State == AssetState::Ready) return;
-
-    if (path.starts_with(":"))
-    {
-        // Procedural models: Create mesh on CPU (safe in background thread)
-        // GenMesh* functions only allocate CPU memory, no GPU upload
-        Mesh mesh = {0};
-        if (path == ":cube:")
-            mesh = GenMeshCube(1.0f, 1.0f, 1.0f);
-        else if (path == ":sphere:")
-            mesh = GenMeshSphere(0.5f, 16, 16);
-        else if (path == ":plane:")
-            mesh = GenMeshPlane(10.0f, 10.0f, 10, 10);
-        else if (path == ":torus:")
-            mesh = GenMeshTorus(0.2f, 0.4f, 16, 16);
-        else if (path == ":cylinder:")
-            mesh = GenMeshCylinder(0.5f, 1.0f, 16);
-        else if (path == ":cone:")
-            mesh = GenMeshCone(0.5f, 1.0f, 16);
-        else if (path == ":knot:")
-            mesh = GenMeshKnot(0.5f, 0.2f, 16, 128);
-        else if (path == ":hemisphere:")
-            mesh = GenMeshHemiSphere(0.5f, 16, 16);
-        
-        if (mesh.vertexCount > 0)
-        {
-            m_PendingMesh = mesh;
-            m_HasPendingMesh = true;
-            // Stay in Loading state until UploadToGPU completes
-        }
-        else
-        {
-            SetState(AssetState::Failed);
-        }
-        return;
-    }
-
-    // File-based models: Raylib's LoadModel does GPU upload, so we can't call it here
-    // Instead, just validate file exists and defer loading to UploadToGPU
-    std::filesystem::path fullPath(path);
-    if (!std::filesystem::exists(fullPath))
+    if (path.empty()) 
     {
         SetState(AssetState::Failed);
         return;
     }
 
-    m_PendingModelPath = path;
-    m_HasPendingModel = true;
-    // Stay in Loading state until UploadToGPU completes on main thread
+    if (path.starts_with(":"))
+    {
+        this->m_Model = GenerateProceduralModel(path);
+        if (this->m_Model.meshCount > 0)
+        {
+            SetState(AssetState::Ready);
+        }
+        else SetState(AssetState::Failed);
+        return;
+    }
+
+    std::filesystem::path fullPath(path);
+    if (!std::filesystem::exists(fullPath))
+    {
+        CH_CORE_ERROR("ModelAsset: Path does not exist: '{}'", path);
+        SetState(AssetState::Failed);
+        return;
+    }
+
+    std::string pathStr = std::filesystem::absolute(fullPath).string();
+    Model model = ::LoadModel(pathStr.c_str());
+    
+    if (model.meshCount == 0)
+    {
+        CH_CORE_ERROR("ModelAsset: ::LoadModel failed for '{}'", path);
+        SetState(AssetState::Failed);
+        return;
+    }
+
+    this->m_Model = model;
+    this->SetPath(path);
+
+    // Load animations
+    int animsCount = 0;
+    this->m_Animations = LoadModelAnimations(pathStr.c_str(), &animsCount);
+    this->m_AnimCount = animsCount;
+
+    // Ensure materials have a shader
+    auto &state = APIContext::GetState();
+    if (this->m_Model.materials)
+    {
+        for (int i = 0; i < this->m_Model.materialCount; i++)
+        {
+            if (this->m_Model.materials[i].shader.id == 0 && state.LightingShader)
+                this->m_Model.materials[i].shader = state.LightingShader->GetShader();
+        }
+    }
+
+    SetState(AssetState::Ready);
 }
 
 void ModelAsset::UploadToGPU()
 {
-    // This MUST run on main thread where OpenGL context exists
-    
-    if (m_HasPendingMesh)
-    {
-        // Upload procedural mesh to GPU
-        m_Model = LoadModelFromMesh(m_PendingMesh);
-        m_HasPendingMesh = false;
-        m_PendingMesh = {0};
-        
-        if (m_Model.meshCount > 0)
-        {
-            // Start BVH build async (CPU work, safe)
-            m_BVHFuture = BVH::BuildAsync(m_Model).share();
-            SetState(AssetState::Ready);  // NOW it's ready for rendering
-        }
-        else
-        {
-            SetState(AssetState::Failed);
-        }
-    }
-    
-    if (m_HasPendingModel)
-    {
-        // Load file-based model (includes GPU upload by Raylib)
-        m_Model = ::LoadModel(m_PendingModelPath.c_str());
-        m_HasPendingModel = false;
-        m_PendingModelPath.clear();
-        
-        if (m_Model.meshCount > 0)
-        {
-            // Start BVH build async
-            m_BVHFuture = BVH::BuildAsync(m_Model).share();
-            
-            // Track internal textures
-            for (int i = 0; i < m_Model.materialCount; i++)
-            {
-                for (int j = 0; j < 12; j++)
-                {
-                    Texture2D tex = m_Model.materials[i].maps[j].texture;
-                    if (tex.id > 0)
-                    {
-                        auto texAsset = std::make_shared<TextureAsset>();
-                        texAsset->SetTexture(tex);
-                        texAsset->SetState(AssetState::Ready);
-                        m_Textures.push_back(texAsset);
-                    }
-                }
-            }
-            
-            SetState(AssetState::Ready);  
-        }
-        else
-        {
-            SetState(AssetState::Failed);
-        }
-    }
+    // All work is done in Load/LoadFromFile in this simplified version
+}
+
+Model ModelAsset::GenerateProceduralModel(const std::string &type)
+{
+    static const std::unordered_map<std::string, std::function<Mesh()>> s_Generators = {
+        {":cube:",       []() { return GenMeshCube(1.0f, 1.0f, 1.0f); }},
+        {":sphere:",     []() { return GenMeshSphere(0.5f, 16, 16); }},
+        {":plane:",      []() { return GenMeshPlane(10.0f, 10.0f, 10, 10); }},
+        {":torus:",      []() { return GenMeshTorus(0.2f, 0.4f, 16, 16); }},
+        {":cylinder:",   []() { return GenMeshCylinder(0.5f, 1.0f, 16); }},
+        {":cone:",       []() { return GenMeshCone(0.5f, 1.0f, 16); }},
+        {":knot:",       []() { return GenMeshKnot(0.5f, 0.2f, 16, 128); }},
+        {":hemisphere:", []() { return GenMeshHemiSphere(0.5f, 16, 16); }}
+    };
+
+    auto it = s_Generators.find(type);
+    if (it == s_Generators.end()) return {0};
+
+    Mesh mesh = it->second();
+    if (mesh.vertexCount == 0) return {0};
+
+    return LoadModelFromMesh(mesh);
 }
 
 std::shared_ptr<ModelAsset> ModelAsset::CreateProcedural(const std::string &type)
 {
-    Mesh mesh = {0};
-    if (type == ":cube:")
-        mesh = GenMeshCube(1.0f, 1.0f, 1.0f);
-    else if (type == ":sphere:")
-        mesh = GenMeshSphere(0.5f, 16, 16);
-    else if (type == ":plane:")
-        mesh = GenMeshPlane(10.0f, 10.0f, 10, 10);
-    else if (type == ":torus:")
-        mesh = GenMeshTorus(0.2f, 0.4f, 16, 16);
-    else if (type == ":cylinder:")
-        mesh = GenMeshCylinder(0.5f, 1.0f, 16);
-    else if (type == ":cone:")
-        mesh = GenMeshCone(0.5f, 1.0f, 16);
-    else if (type == ":knot:")
-        mesh = GenMeshKnot(0.5f, 0.2f, 16, 128);
-    else if (type == ":hemisphere:")
-        mesh = GenMeshHemiSphere(0.5f, 16, 16);
-
-    if (mesh.vertexCount == 0)
-        return nullptr;
+    Model model = GenerateProceduralModel(type);
+    if (model.meshCount == 0) return nullptr;
 
     auto asset = std::make_shared<ModelAsset>();
-    asset->m_Model = LoadModelFromMesh(mesh);
+    asset->m_Model = model;
     asset->SetPath(type);
     asset->SetState(AssetState::Ready);
-    asset->m_BVHFuture = BVH::BuildAsync(asset->m_Model).share();
     return asset;
 }
 
 ModelAsset::~ModelAsset()
 {
-    if (m_Model.meshCount > 0)
-        ::UnloadModel(m_Model);
-    if (m_Animations)
-        ::UnloadModelAnimations(m_Animations, m_AnimCount);
+    if (m_Model.meshCount > 0) ::UnloadModel(m_Model);
+    if (m_Animations) ::UnloadModelAnimations(m_Animations, m_AnimCount);
 }
 
 void ModelAsset::UpdateAnimation(int animIndex, int frame)
 {
-    if (m_Animations && animIndex < m_AnimCount)
+    if (m_Animations && animIndex < m_AnimCount && m_Model.boneCount > 0)
         UpdateModelAnimation(m_Model, m_Animations[animIndex], frame);
 }
 
 ModelAnimation *ModelAsset::GetAnimations(int *count)
 {
-    if (count)
-        *count = m_AnimCount;
+    if (count) *count = m_AnimCount;
     return m_Animations;
 }
 
@@ -216,4 +140,31 @@ BoundingBox ModelAsset::GetBoundingBox() const
 {
     return ::GetModelBoundingBox(m_Model);
 }
+
+
+AssetType ModelAsset::GetType() const
+{
+    return AssetType::Model;
+}
+
+Model &ModelAsset::GetModel()
+{
+    return m_Model;
+}
+
+const Model &ModelAsset::GetModel() const
+{
+    return m_Model;
+}
+
+int ModelAsset::GetAnimationCount() const
+{
+    return m_AnimCount;
+}
+
+const std::vector<std::shared_ptr<TextureAsset>> &ModelAsset::GetTextures() const
+{
+    return m_Textures;
+}
+
 } // namespace CHEngine

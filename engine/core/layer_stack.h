@@ -19,6 +19,14 @@ namespace CHEngine
         void PopLayer(Layer *layer);
         void PopOverlay(Layer *overlay);
 
+        bool HasLayer(const std::string &name) const
+        {
+            for (auto layer : m_Layers)
+                if (layer && layer->GetName() == name)
+                    return true;
+            return false;
+        }
+
     public:
         std::vector<Layer *>::iterator begin()
         {

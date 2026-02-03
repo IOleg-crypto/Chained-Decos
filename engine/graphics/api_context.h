@@ -23,7 +23,6 @@ public:
     static void SetAmbientLight(float intensity);
 
 private:
-    static void InitShaders();
     static void InitSkybox();
 
     static RendererState s_State;

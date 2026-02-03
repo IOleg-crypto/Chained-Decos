@@ -14,10 +14,7 @@ public:
     virtual ~FontAsset();
 
     static std::shared_ptr<FontAsset> Load(const std::string &path);
-
-    void UploadToGPU();
     void LoadFromFile(const std::string &path);
-
     Font &GetFont()
     {
         return m_Font;

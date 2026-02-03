@@ -27,19 +27,31 @@ namespace CHEngine
         RenderSkybox(scene, camera);
         RenderModels(scene);
 
-        if (debugFlags && debugFlags->IsAnyEnabled())
+        // Render debug overlays
+        bool hasDebugFlags = debugFlags && (debugFlags->DrawColliders || debugFlags->DrawLights ||
+                                            debugFlags->DrawSpawnZones || debugFlags->DrawSkeleton ||
+                                            debugFlags->DrawBoundingBoxes || debugFlags->DrawIcons ||
+                                            debugFlags->DrawNavMesh || debugFlags->DrawGrid);
+        if (hasDebugFlags)
+        {
             RenderDebug(scene, debugFlags);
+        }
 
         // 3. Render Editor Icons (Billboards)
-        RenderEditorIcons(scene, camera);
+        if (debugFlags && debugFlags->DrawIcons)
+            RenderEditorIcons(scene, camera);
 
         ::EndMode3D();
     }
 
     void ScenePipeline::RenderSkybox(Scene *scene, const Camera3D &camera)
     {
-        // Use Global Scene Skybox settings
-        DrawCommand::DrawSkybox(scene->GetSkybox(), camera);
+        // Only Draw Skybox if the background mode requires it
+        if (scene->GetBackgroundMode() == BackgroundMode::Environment3D || 
+            scene->GetBackgroundMode() == BackgroundMode::Texture)
+        {
+            DrawCommand::DrawSkybox(scene->GetEnvironmentSettings().Skybox, camera);
+        }
     }
 
     void ScenePipeline::RenderModels(Scene *scene)
@@ -52,7 +64,17 @@ namespace CHEngine
 
             if (!model.ModelPath.empty())
             {
-                DrawCommand::DrawModel(model.ModelPath, transform.GetTransform(), model.Materials);
+                int animIndex = -1;
+                int frame = 0;
+
+                if (scene->GetRegistry().all_of<AnimationComponent>(entity))
+                {
+                    auto &anim = scene->GetRegistry().get<AnimationComponent>(entity);
+                    animIndex = anim.CurrentAnimationIndex;
+                    frame = anim.CurrentFrame;
+                }
+
+                DrawCommand::DrawModel(model.ModelPath, transform.GetTransform(), model.Materials, animIndex, frame);
             }
         }
     }
@@ -63,7 +85,7 @@ namespace CHEngine
 
         if (debugFlags->DrawGrid && scene->GetBackgroundMode() != BackgroundMode::Color)
         {
-            DrawCommand::DrawGrid(999999, 1.0f); // Yea , I know , it's a bit much , but it works
+            DrawCommand::DrawGrid(999, 6.0f); // Yea , I know , it's a bit much , but it works
         }
 
         if (debugFlags->DrawSpawnZones)

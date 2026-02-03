@@ -53,8 +53,10 @@ namespace CHEngine
         rlViewport(x, y, width, height);
     }
 
+    
     static void ApplyMaterialOverrides(Material &mat, int meshIndex, int matIndex,
-                                       const std::vector<MaterialSlot> &overrides)
+                                       const std::vector<MaterialSlot> &overrides,
+                                       RenderExtraState &extra)
     {
         for (const auto &slot : overrides)
         {
@@ -67,6 +69,11 @@ namespace CHEngine
             if (matches)
             {
                 const auto &material = slot.Material;
+                
+                // Custom Graphics State
+                extra.DoubleSided = material.DoubleSided;
+                extra.Transparent = material.Transparent;
+                extra.Alpha = material.Alpha;
 
                 // Apply custom shader if provided
                 if (material.OverrideShader && !material.ShaderPath.empty())
@@ -78,6 +85,9 @@ namespace CHEngine
 
                 if (material.OverrideAlbedo)
                     mat.maps[MATERIAL_MAP_ALBEDO].color = material.AlbedoColor;
+
+                // Apply alpha to albedo color
+                mat.maps[MATERIAL_MAP_ALBEDO].color.a = (unsigned char)(mat.maps[MATERIAL_MAP_ALBEDO].color.a * extra.Alpha);
 
                 if (!material.AlbedoPath.empty())
                 {
@@ -97,25 +107,28 @@ namespace CHEngine
     }
 
     void DrawCommand::DrawModel(const std::string &path, const Matrix &transform,
-                                const std::vector<MaterialSlot> &overrides)
+                                const std::vector<MaterialSlot> &overrides,
+                                int animIndex, int frame)
     {
         auto asset = AssetManager::Get<ModelAsset>(path);
-        if (!asset)
-            return;
-        
-        //CRITICAL: Don't render if asset is still loading!
-        if (asset->GetState() != AssetState::Ready)
+        if (!asset || asset->GetState() != AssetState::Ready)
             return;
 
         Model &model = asset->GetModel();
-        
-        // Additional safety: check if model is valid
-        if (model.meshCount == 0)
-            return;
-            
-        Matrix finalTransform = MatrixMultiply(model.transform, transform);
+        if (model.meshCount == 0) return;
 
-        // Stats
+        // Apply animation to CPU mesh data if requested
+        if (animIndex != -1)
+        {
+            asset->UpdateAnimation(animIndex, frame);
+        }
+
+        Matrix finalTransform = MatrixMultiply(model.transform, transform);
+        auto &state = APIContext::GetState();
+
+        
+
+        // Update Profiler
         ProfilerStats stats;
         stats.DrawCalls++;
         stats.MeshCount += model.meshCount;
@@ -123,19 +136,25 @@ namespace CHEngine
             stats.PolyCount += model.meshes[i].triangleCount;
         Profiler::UpdateStats(stats);
 
-        auto &state = APIContext::GetState();
-
         for (int i = 0; i < model.meshCount; i++)
         {
             int matIndex = model.meshMaterial[i];
-            Material mat = model.materials[matIndex]; // Copy
+            Material mat = model.materials[matIndex]; // Copy of asset material
 
-            // Default global lighting shader if none specified in materials
-            if (state.LightingShader)
+            // Use custom lighting shader ONLY for file-based models that don't have one
+            if (mat.shader.id == 0 && state.LightingShader && !path.starts_with(":"))
                 mat.shader = state.LightingShader->GetShader();
 
-            ApplyMaterialOverrides(mat, i, matIndex, overrides);
+            // Apply overrides to our local material instance
+            RenderExtraState extra;
+            ApplyMaterialOverrides(mat, i, matIndex, overrides, extra);
+
+            // Adjust alpha in the actual material color
+            mat.maps[MATERIAL_MAP_ALBEDO].color.a = (unsigned char)(mat.maps[MATERIAL_MAP_ALBEDO].color.a * extra.Alpha);
+
+            // Perform the draw
             ::DrawMesh(model.meshes[i], mat, finalTransform);
+
         }
     }
 
@@ -149,7 +168,7 @@ namespace CHEngine
         ::DrawGrid(slices, spacing);
     }
 
-    void DrawCommand::DrawSkybox(const SkyboxComponent &skybox, const Camera3D &camera)
+    void DrawCommand::DrawSkybox(const SkyboxSettings &skybox, const Camera3D &camera)
     {
         if (skybox.TexturePath.empty())
         {
@@ -197,25 +216,22 @@ namespace CHEngine
                            texAsset->GetTexture());
 
         // Set Uniforms
-        int doGamma = 1;
-        float fragGamma = 2.2f;
         if (usePanorama)
         {
-            SetShaderValue(shader, state.PanoDoGammaLoc, &doGamma, SHADER_UNIFORM_INT);
-            SetShaderValue(shader, state.PanoFragGammaLoc, &fragGamma, SHADER_UNIFORM_FLOAT);
-            SetShaderValue(shader, state.PanoExposureLoc, &skybox.Exposure, SHADER_UNIFORM_FLOAT);
-            SetShaderValue(shader, state.PanoBrightnessLoc, &skybox.Brightness, SHADER_UNIFORM_FLOAT);
-            SetShaderValue(shader, state.PanoContrastLoc, &skybox.Contrast, SHADER_UNIFORM_FLOAT);
+            shaderAsset->SetInt("doGamma", 1);
+            shaderAsset->SetFloat("fragGamma", 2.2f);
+            shaderAsset->SetFloat("exposure", skybox.Exposure);
+            shaderAsset->SetFloat("brightness", skybox.Brightness);
+            shaderAsset->SetFloat("contrast", skybox.Contrast);
         }
         else
         {
-            int vflipped = 0;
-            SetShaderValue(shader, state.SkyboxVflippedLoc, &vflipped, SHADER_UNIFORM_INT);
-            SetShaderValue(shader, state.SkyboxDoGammaLoc, &doGamma, SHADER_UNIFORM_INT);
-            SetShaderValue(shader, state.SkyboxFragGammaLoc, &fragGamma, SHADER_UNIFORM_FLOAT);
-            SetShaderValue(shader, state.SkyboxExposureLoc, &skybox.Exposure, SHADER_UNIFORM_FLOAT);
-            SetShaderValue(shader, state.SkyboxBrightnessLoc, &skybox.Brightness, SHADER_UNIFORM_FLOAT);
-            SetShaderValue(shader, state.SkyboxContrastLoc, &skybox.Contrast, SHADER_UNIFORM_FLOAT);
+            shaderAsset->SetInt("vflipped", 0);
+            shaderAsset->SetInt("doGamma", 1);
+            shaderAsset->SetFloat("fragGamma", 2.2f);
+            shaderAsset->SetFloat("exposure", skybox.Exposure);
+            shaderAsset->SetFloat("brightness", skybox.Brightness);
+            shaderAsset->SetFloat("contrast", skybox.Contrast);
         }
 
         rlDisableBackfaceCulling();

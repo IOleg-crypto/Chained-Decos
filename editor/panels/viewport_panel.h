@@ -9,6 +9,8 @@
 
 namespace CHEngine
 {
+struct GizmoBtn { GizmoType type; const char* icon; const char* tooltip; int key; };
+
 class ViewportPanel : public Panel
 {
 public:
@@ -18,7 +20,6 @@ public:
 public:
     virtual void OnImGuiRender(bool readOnly = false) override;
     virtual void OnUpdate(float deltaTime) override;
-    virtual void OnEvent(Event &e) override;
 
 public:
     bool IsFocused() const
@@ -42,6 +43,8 @@ public:
     {
         return m_CurrentTool;
     }
+public: 
+    void DrawGizmoButtons();
 
 private:
     RenderTexture2D m_ViewportTexture;

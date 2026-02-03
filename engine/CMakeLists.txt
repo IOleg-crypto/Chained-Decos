@@ -88,6 +88,8 @@ target_sources(engine PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/scene_serializer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/scene_serializer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/component_serializer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scene/prefab_serializer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scene/prefab_serializer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/scene_scripting.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/scene_scripting.h
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/script_registry.h

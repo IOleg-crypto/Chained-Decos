@@ -1,6 +1,7 @@
 #include "scene_actions.h"
 #include "editor_layer.h"
 #include "engine/core/application.h"
+#include "engine/scene/project.h"
 #include "engine/scene/scene_serializer.h"
 #include "nfd.h"
 
@@ -9,7 +10,7 @@ namespace CHEngine
     void SceneActions::New()
     {
         auto newScene = std::make_shared<Scene>();
-        Application::Get().SetActiveScene(newScene);
+        EditorLayer::Get().SetScene(newScene);
     }
 
     void SceneActions::Open()
@@ -30,7 +31,19 @@ namespace CHEngine
         SceneSerializer serializer(newScene.get());
         if (serializer.Deserialize(path.string()))
         {
-            Application::Get().SetActiveScene(newScene);
+            // Sync environment if needed (optional, logic from Application::LoadScene can be moved here or to a helper)
+            if (Project::GetActive() && Project::GetActive()->GetEnvironment())
+            { 
+                 if (newScene->GetEnvironment()->GetPath().empty() && newScene->GetEnvironment()->GetSettings().Skybox.TexturePath.empty())
+                 {
+                     newScene->SetEnvironment(Project::GetActive()->GetEnvironment());
+                 }
+            }
+
+            // Sync with EditorLayer which manages the scene now
+            // Assumes EditorLayer is active (SceneActions is editor-only code)
+            EditorLayer::Get().SetScene(newScene);
+
             SceneOpenedEvent e(path.string());
             Application::OnEvent(e);
         }
@@ -38,7 +51,7 @@ namespace CHEngine
 
     void SceneActions::Save()
     {
-        auto scene = Application::Get().GetActiveScene();
+        auto scene = EditorLayer::Get().GetActiveScene();
         SceneSerializer serializer(scene.get());
         // serializer.Serialize(scene->GetPath());
     }
@@ -50,7 +63,7 @@ namespace CHEngine
         nfdresult_t result = NFD_SaveDialog(&outPath, filterItem, 1, NULL, NULL);
         if (result == NFD_OKAY)
         {
-            auto scene = Application::Get().GetActiveScene();
+            auto scene = EditorLayer::Get().GetActiveScene();
             SceneSerializer serializer(scene.get());
             serializer.Serialize(outPath);
             NFD_FreePath(outPath);

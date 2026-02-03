@@ -23,6 +23,12 @@ public:
 
 private:
     Camera3D m_Camera;
+    float m_MoveSpeed = 10.0f;
+    float m_RotationSpeed = 0.1f;
+    float m_BoostMultiplier = 5.0f;
+
+    float m_Yaw = 0.0f;
+    float m_Pitch = 0.0f;
 };
 
 } // namespace CHEngine

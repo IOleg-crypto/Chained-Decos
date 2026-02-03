@@ -1,4 +1,5 @@
 #include "prefab_serializer.h"
+#include "engine/scene/scene.h"
 #include "components.h"
 #include "engine/core/yaml.h"
 #include <fstream>

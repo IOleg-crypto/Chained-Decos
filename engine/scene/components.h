@@ -1,6 +1,8 @@
 #ifndef CH_COMPONENTS_H
 #define CH_COMPONENTS_H
 
+#include "reflect.h"
+
 // Master header for all components
 #include "components/animation_component.h"
 #include "components/audio_component.h"
