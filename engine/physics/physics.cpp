@@ -94,51 +94,52 @@ namespace CHEngine
     {
         auto& registry = m_Scene->GetRegistry();
         
-        // State Reset
+        // 1. Reset Collision State
         auto collView = registry.view<ColliderComponent>();
         for (auto entity : collView)
             collView.get<ColliderComponent>(entity).IsColliding = false;
 
-        // Collider Generation & BVH Linking
-        auto genView = registry.view<ColliderComponent, TransformComponent>();
+        // 2. Auto-Calculate Colliders from Assets
         auto project = Project::GetActive();
-        
+        if (!project || !project->GetAssetManager()) return;
+
+        auto genView = registry.view<ColliderComponent, TransformComponent>();
         for (auto entity : genView)
         {
             auto &collider = genView.get<ColliderComponent>(entity);
             
+            // Case A: Box Collider (Auto)
             if (collider.Type == ColliderType::Box && collider.AutoCalculate)
             {
-                if (registry.all_of<ModelComponent>(entity))
+                if (!registry.all_of<ModelComponent>(entity)) continue;
+
+                auto &model = registry.get<ModelComponent>(entity);
+                auto asset = project->GetAssetManager()->Get<ModelAsset>(model.ModelPath);
+                
+                if (asset && asset->GetState() == AssetState::Ready)
                 {
-                    auto &model = registry.get<ModelComponent>(entity);
-                    if (project && project->GetAssetManager())
-                    {
-                        auto asset = project->GetAssetManager()->Get<ModelAsset>(model.ModelPath);
-                        if (asset && asset->GetState() == AssetState::Ready)
-                        {
-                            BoundingBox box = asset->GetBoundingBox();
-                            collider.Size = Vector3Subtract(box.max, box.min);
-                            collider.Offset = box.min;
-                            collider.AutoCalculate = false;
-                        }
-                    }
+                    BoundingBox box = asset->GetBoundingBox();
+                    collider.Size = Vector3Subtract(box.max, box.min);
+                    collider.Offset = box.min;
+                    collider.AutoCalculate = false;
                 }
+                continue;
             }
-            else if (collider.Type == ColliderType::Mesh && !collider.BVHRoot && !collider.ModelPath.empty())
+
+            // Case B: Mesh Collider (BVH)
+            if (collider.Type == ColliderType::Mesh && !collider.ModelPath.empty())
             {
-                if (project && project->GetAssetManager())
+                if (collider.BVHRoot) continue; // Already generated
+
+                auto asset = project->GetAssetManager()->Get<ModelAsset>(collider.ModelPath);
+                if (asset && asset->GetState() == AssetState::Ready && asset->GetModel().meshCount > 0)
                 {
-                    auto asset = project->GetAssetManager()->Get<ModelAsset>(collider.ModelPath);
-                    if (asset && asset->GetState() == AssetState::Ready && asset->GetModel().meshCount > 0)
+                    collider.BVHRoot = GetBVH(asset.get());
+                    if (collider.BVHRoot)
                     {
-                        collider.BVHRoot = GetBVH(asset.get());
-                        if (collider.BVHRoot)
-                        {
-                            BoundingBox box = asset->GetBoundingBox();
-                            collider.Offset = box.min;
-                            collider.Size = Vector3Subtract(box.max, box.min);
-                        }
+                        BoundingBox box = asset->GetBoundingBox();
+                        collider.Offset = box.min;
+                        collider.Size = Vector3Subtract(box.max, box.min);
                     }
                 }
             }

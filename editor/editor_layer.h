@@ -7,7 +7,7 @@
 #include "editor/actions/editor_actions.h"
 #include "editor_panels.h"
 #include "editor_layout.h"
-#include "engine/graphics/render_types.h"
+#include "engine/graphics/render.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_events.h"
 #include "undo/command_history.h"
