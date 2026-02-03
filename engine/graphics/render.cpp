@@ -176,8 +176,9 @@ namespace CHEngine
                 {referenceSize.x, referenceSize.y},
                 {refPos.x, refPos.y});
             
-            ImVec2 pos = {rect.Min.x - refPos.x, rect.Min.y - refPos.y};
-            ImVec2 size = {rect.Size().x, rect.Size().y};
+            // Library-First: Direct mapping from Raylib Rectangle to ImGui
+            ImVec2 pos = {rect.x - refPos.x, rect.y - refPos.y};
+            ImVec2 size = {rect.width, rect.height};
 
             ImGui::SetCursorPos(pos);
             ImGui::BeginGroup();
