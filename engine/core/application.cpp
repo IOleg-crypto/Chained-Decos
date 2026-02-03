@@ -294,6 +294,9 @@ namespace CHEngine
             if (layer->IsEnabled()) layer->OnRender(m_DeltaTime);
         }
 
+        // Execute Scene Rendering Commands
+        Render::WaitAndRender();
+
         // ImGui rendering
         for (auto layer : m_LayerStack)
         {

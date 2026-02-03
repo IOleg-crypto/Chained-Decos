@@ -5,6 +5,7 @@
 #include "engine/core/timestep.h"
 #include "engine/core/timestep.h"
 #include "engine/graphics/environment.h"
+#include "engine/graphics/render_command_queue.h"
 #include "engine/scene/scene.h"
 #include "raylib.h"
 #include <string>
@@ -109,6 +110,26 @@ namespace CHEngine
         /** Applies environment-wide settings (fog, lighting, skybox). */
         static void ApplyEnvironment(const EnvironmentSettings& settings);
 
+    public: // Command Queue
+        /** Executes all commands in the render queue. Call this at the end of the frame. */
+        static void WaitAndRender();
+
+        /** Internal method to allocate a command in the queue. */
+        static void* AllocateCommand(RenderCommandQueue::RenderCommandFn func, uint32_t size);
+
+        /** Helper to submit a command with data. */
+        template<typename FuncT>
+        static void Submit(FuncT func)
+        {
+            auto renderCmd = [](void* ptr) {
+                auto pFunc = (FuncT*)ptr;
+                (*pFunc)();
+                pFunc->~FuncT();
+            };
+            auto storageBuffer = AllocateCommand(renderCmd, sizeof(func));
+            new (storageBuffer) FuncT(std::move(func));
+        }
+
     private: // Internal Helpers
         static void RenderModels(Scene* scene, Timestep ts);
         static void RenderDebug(Scene* scene, const DebugRenderFlags* debugFlags);
@@ -117,6 +138,7 @@ namespace CHEngine
 
     private: // Internal State
         static RenderState s_State;
+        static RenderCommandQueue* s_CommandQueue;
     };
 }
 

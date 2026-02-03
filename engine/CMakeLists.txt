@@ -52,13 +52,9 @@ target_sources(engine PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/core/application.h
 
     # --- GRAPHICS ---
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/api_context.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/api_context.h
     ${CMAKE_CURRENT_SOURCE_DIR}/graphics/asset.h
     ${CMAKE_CURRENT_SOURCE_DIR}/graphics/asset_manager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/graphics/asset_manager.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/draw_command.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/draw_command.h
     ${CMAKE_CURRENT_SOURCE_DIR}/graphics/environment.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/graphics/environment.h
     ${CMAKE_CURRENT_SOURCE_DIR}/graphics/font_asset.cpp
@@ -66,15 +62,15 @@ target_sources(engine PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/graphics/material.h
     ${CMAKE_CURRENT_SOURCE_DIR}/graphics/model_asset.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/graphics/model_asset.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/render_types.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/scene_pipeline.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/scene_pipeline.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/model_asset.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/model_asset.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/render.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/render.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/render_command_queue.h
     ${CMAKE_CURRENT_SOURCE_DIR}/graphics/shader_asset.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/graphics/shader_asset.h
     ${CMAKE_CURRENT_SOURCE_DIR}/graphics/texture_asset.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/graphics/texture_asset.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/visuals.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/visuals.h
 
     # --- SCENE ---
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/scene.cpp

@@ -12,6 +12,7 @@
 namespace CHEngine
 {
     RenderState Render::s_State;
+    RenderCommandQueue* Render::s_CommandQueue = nullptr;
 
     void Render::Init()
     {
@@ -20,6 +21,7 @@ namespace CHEngine
         // Initialize underlying API context if needed
         // For Raylib/OpenGL, we ensure initial state is clean
         s_State = RenderState();
+        s_CommandQueue = new RenderCommandQueue();
         
         InitSkybox();
         
@@ -29,18 +31,31 @@ namespace CHEngine
     void Render::Shutdown()
     {
         CH_CORE_INFO("Shutting down Render System...");
-        // Cleanup resources
+        delete s_CommandQueue;
+    }
+
+    void Render::WaitAndRender()
+    {
+        s_CommandQueue->Execute();
+    }
+
+    void* Render::AllocateCommand(RenderCommandQueue::RenderCommandFn func, uint32_t size)
+    {
+        return s_CommandQueue->Allocate(func, size);
     }
 
     void Render::BeginScene(const Camera3D& camera)
     {
-        // Preparation for scene rendering (e.g. updating internal buffers)
-        BeginMode3D(camera);
+        Submit([camera]() {
+            BeginMode3D(camera);
+        });
     }
 
     void Render::EndScene()
     {
-        EndMode3D();
+        Submit([]() {
+            EndMode3D();
+        });
     }
 
     void Render::DrawScene(Scene* scene, const Camera3D& camera, Timestep ts, const DebugRenderFlags* debugFlags)
@@ -67,35 +82,58 @@ namespace CHEngine
 
     void Render::Clear(Color color)
     {
-        ClearBackground(color);
+        Submit([color]() {
+            ClearBackground(color);
+        });
     }
 
     void Render::SetViewport(int x, int y, int width, int height)
     {
-        // Raylib/OpenGL Viewport
-        rlViewport(x, y, width, height);
+        Submit([x, y, width, height]() {
+            rlViewport(x, y, width, height);
+        });
     }
 
     void Render::DrawModel(const std::string& path, const Matrix& transform, 
                          const std::vector<MaterialSlot>& overrides, 
                          int animIndex, int frame)
     {
+        // Asset retrieval happens on the Calling Thread (App Thread) to safely check existence
+        // But the actual binding and drawing happens on Execute
+        // NOTE: We need to be careful about pointer validity if Assets are deleted. 
+        // For now, we assume assets are kept alive by AssetManager.
+        
+        // We capture by value or verify existence inside the command?
+        // Better: Find the asset HERE, and if it exists, submit the raw mesh/material data or a reference.
+        // However, ModelAsset is a shared_ptr, so capturing it is safe!
+        
         auto modelAsset = AssetManager::Get<ModelAsset>(path);
         if (!modelAsset) return;
 
-        // Implementation of model drawing with overrides
-        // ... (Transplanted logic from DrawCommand)
-        DrawMesh(modelAsset->GetModel().meshes[0], modelAsset->GetModel().materials[0], transform);
+        // Capture shared_ptr to keep it alive until render
+        Submit([modelAsset, transform]() {
+            if (modelAsset && modelAsset->GetState() == AssetState::Ready)
+            {
+                 // Temporary single-mesh assumption for simplicity in this refactor
+                 // Real engine would iterate meshes
+                 if (modelAsset->GetModel().meshCount > 0)
+                    DrawMesh(modelAsset->GetModel().meshes[0], modelAsset->GetModel().materials[0], transform);
+            }
+        });
     }
 
     void Render::DrawLine(Vector3 start, Vector3 end, Color color)
     {
-        DrawLine3D(start, end, color);
+        Submit([start, end, color]() {
+            DrawLine3D(start, end, color);
+        });
     }
 
     void Render::DrawGrid(int slices, float spacing)
     {
-        DrawGrid(slices, spacing); // Raylib built-in
+        Submit([slices, spacing]() {
+            ::DrawGrid(slices, spacing);
+        });
     }
 
     void Render::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
