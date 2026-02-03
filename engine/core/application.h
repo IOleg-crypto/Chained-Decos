@@ -85,8 +85,6 @@ namespace CHEngine
         void Simulate();
         void Render();
 
-        /** Internal helper to load engine-specific fonts and icons. */
-        void LoadEngineFonts();
 
     private: // Global State
         static Application *s_Instance;

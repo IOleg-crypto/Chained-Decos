@@ -1,8 +1,6 @@
-#ifndef CH_LAYER_H
-#define CH_LAYER_H
-
 #include "engine/core/base.h"
 #include "engine/core/events.h"
+#include "engine/core/timestep.h"
 #include <string>
 
 namespace CHEngine
@@ -34,7 +32,7 @@ public:
     virtual void OnUpdate(float deltaTime)
     {
     }
-    virtual void OnRender()
+    virtual void OnRender(Timestep ts)
     {
     }
     virtual void OnImGuiRender()
