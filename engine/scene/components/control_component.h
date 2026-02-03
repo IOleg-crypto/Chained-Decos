@@ -13,20 +13,8 @@ namespace CHEngine
 {
 using vec2 = glm::vec2;
 
-// Screen-space rectangle (absolute pixel coordinates)
-struct Rect
-{
-    vec2 Min; // Top-left
-    vec2 Max; // Bottom-right
-
-    vec2 Size() const { return Max - Min; }
-    vec2 Center() const { return (Min + Max) * 0.5f; }
-
-    bool Contains(vec2 point) const
-    {
-        return point.x >= Min.x && point.x <= Max.x && point.y >= Min.y && point.y <= Max.y;
-    }
-};
+// Screen-space rectangle (Using Raylib's Rectangle: x, y, width, height)
+// Removed custom Rect struct in favor of Library-First approach.
 
 // Typography & Visual Styles
 enum class TextAlignment
@@ -95,7 +83,7 @@ struct RectTransform
     float Rotation = 0.0f;
     vec2 Scale = {1.0f, 1.0f};
 
-    Rect CalculateRect(vec2 viewportSize, vec2 viewportOffset = {0.0f, 0.0f}) const
+    Rectangle CalculateRect(vec2 viewportSize, vec2 viewportOffset = {0.0f, 0.0f}) const
     {
         // 1. Calculate the box defined by anchors (clamped to 0..1)
         vec2 clAnchMin = glm::clamp(AnchorMin, vec2(0.0f), vec2(1.0f));
@@ -108,17 +96,14 @@ struct RectTransform
         vec2 pMin = anchorMinPos + OffsetMin;
         vec2 pMax = anchorMaxPos + OffsetMax;
 
-        // 3. Apply Pivot (for fixed-size elements where AnchorMin == AnchorMax)
-        if (AnchorMin == AnchorMax)
-        {
-            // The OffsetMin/Max are already defined relative to the anchors.
-            // Pivot mostly affects rotation and scaling center in a full UI system,
-            // but for absolute Rect calculation, pMin/pMax are usually sufficient
-            // if they define the final box.
-        }
-
-        return Rect{{viewportOffset.x + pMin.x, viewportOffset.y + pMin.y},
-                    {viewportOffset.x + pMax.x, viewportOffset.y + pMax.y}};
+        // 3. Return generic Raylib Rectangle (x, y, w, h)
+        // Note: We ignore Pivot for pure rect calculation unless we handle rotation later.
+        return Rectangle{
+            viewportOffset.x + pMin.x, 
+            viewportOffset.y + pMin.y, 
+            pMax.x - pMin.x, 
+            pMax.y - pMin.y
+        };
     }
 };
 
