@@ -4,6 +4,8 @@
 #include "raylib.h"
 #include "raymath.h"
 
+#include "engine/scene/reflect.h"
+
 namespace CHEngine
 {
 struct TransformComponent
@@ -61,6 +63,13 @@ struct TransformComponent
     Quaternion PrevRotationQuat = {0.0f, 0.0f, 0.0f, 1.0f};
     Vector3 PrevScale = {1, 1, 1};
 };
+
+BEGIN_REFLECT(TransformComponent)
+    PROPERTY(Vector3, Translation, "Translation")
+    PROPERTY(Vector3, Rotation, "Rotation")
+    PROPERTY(Vector3, Scale, "Scale")
+END_REFLECT()
+
 } // namespace CHEngine
 
 #endif // CH_TRANSFORM_COMPONENT_H

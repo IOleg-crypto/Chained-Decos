@@ -1,8 +1,4 @@
-# ==========================================
-# Git Submodules Configuration
-# ==========================================
 
-# --- UI Libraries ---
 [submodule "include/imgui"]
 	path = include/imgui
 	url = https://github.com/ocornut/imgui.git

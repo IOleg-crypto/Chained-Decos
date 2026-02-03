@@ -29,7 +29,7 @@
       "name": "Debug Editor with LLDB",
       "type": "lldb",
       "request": "launch",
-      "program": "${workspaceFolder}/build/ninja-debug/bin/ChainedEditor.exe",
+      "program": "${workspaceFolder}/build/windows-ninja-release/bin/ChainedEditor.exe",
       "args": [],
       "cwd": "${workspaceFolder}",
       "stopOnEntry": true,

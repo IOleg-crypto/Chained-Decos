@@ -32,7 +32,9 @@ enum class EventType
     SceneStop,
     AppLaunchRuntime,
     AppResetLayout,
+    AppSaveLayout,
     EntitySelected,
+    SceneChangeRequest,
     ButtonPressed
 };
 

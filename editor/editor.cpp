@@ -4,6 +4,7 @@
 #include "engine/core/yaml.h"
 #include "raylib.h"
 #include <fstream>
+#include <filesystem>
 
 namespace CHEngine
 {
@@ -46,10 +47,6 @@ namespace CHEngine
                 return;
 
             auto node = data["Editor"];
-            m_EditorConfig.WindowWidth = node["WindowWidth"].as<int>(1600);
-            m_EditorConfig.WindowHeight = node["WindowHeight"].as<int>(900);
-            m_EditorConfig.Fullscreen = node["Fullscreen"].as<bool>(false);
-            m_EditorConfig.TargetFPS = node["TargetFPS"].as<int>(144);
             m_EditorConfig.LastProjectPath = node["LastProjectPath"].as<std::string>("");
             m_EditorConfig.LastScenePath = node["LastScenePath"].as<std::string>("");
             m_EditorConfig.LoadLastProjectOnStartup = node["LoadLastProjectOnStartup"].as<bool>(false);
@@ -65,12 +62,9 @@ namespace CHEngine
         YAML::Emitter out;
         out << YAML::BeginMap;
         out << YAML::Key << "Editor" << YAML::Value << YAML::BeginMap;
-        out << YAML::Key << "WindowWidth" << YAML::Value << m_EditorConfig.WindowWidth;
-        out << YAML::Key << "WindowHeight" << YAML::Value << m_EditorConfig.WindowHeight;
-        out << YAML::Key << "Fullscreen" << YAML::Value << m_EditorConfig.Fullscreen;
-        out << YAML::Key << "TargetFPS" << YAML::Value << m_EditorConfig.TargetFPS;
         out << YAML::Key << "LastProjectPath" << YAML::Value << m_EditorConfig.LastProjectPath;
         out << YAML::Key << "LastScenePath" << YAML::Value << m_EditorConfig.LastScenePath;
+        out << YAML::Key << "LoadLastProjectOnStartup" << YAML::Value << m_EditorConfig.LoadLastProjectOnStartup;
         out << YAML::EndMap;
         out << YAML::EndMap;
 

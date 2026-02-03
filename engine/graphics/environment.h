@@ -1,8 +1,8 @@
-#include <glm/glm.hpp>
-#include <raylib.h>
 #ifndef CH_ENVIRONMENT_H
 #define CH_ENVIRONMENT_H
 
+#include <glm/glm.hpp>
+#include <raylib.h>
 #include "asset.h"
 #include "engine/core/base.h"
 // Removed redundant include: engine/core/math_types.h

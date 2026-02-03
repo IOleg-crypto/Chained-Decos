@@ -29,14 +29,13 @@ struct SceneSettings
     std::string ScenePath;
     CanvasSettings Canvas;
     std::shared_ptr<EnvironmentAsset> Environment;
-    SkyboxComponent Skybox;
 };
 
 class Scene
 {
 public:
     Scene();
-    virtual ~Scene();
+    ~Scene();
 
     BackgroundMode GetBackgroundMode() const
     {
@@ -80,7 +79,6 @@ public:
     Entity GetEntityByUUID(UUID uuid);
 
     void OnUpdateRuntime(float deltaTime);
-    void OnUpdateEditor(float deltaTime);
     void OnRender(const Camera3D &camera, const struct DebugRenderFlags *debugFlags = nullptr);
     void OnRuntimeStart();
     void OnRuntimeStop();
@@ -119,9 +117,6 @@ public:
         return m_Registry;
     }
 
-    struct SkyboxComponent &GetSkybox();
-    const struct SkyboxComponent &GetSkybox() const;
-
     std::shared_ptr<EnvironmentAsset> GetEnvironment()
     {
         return m_Settings.Environment;
@@ -154,12 +149,9 @@ private:
     entt::registry m_Registry;
     std::unordered_map<UUID, entt::entity> m_EntityMap;
     SceneSettings m_Settings;
-    SkyboxComponent m_ProxySkybox; // For environment-driven skybox
 
     bool m_IsSimulationRunning = false;
 
-    // Declarative internal pipeline
-    void UpdateScripting(float deltaTime);
     void UpdateAnimation(float deltaTime);
     void UpdateAudio(float deltaTime);
 

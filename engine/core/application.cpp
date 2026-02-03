@@ -1,37 +1,34 @@
 #include "application.h"
 #include "engine/scene/scene_events.h"
-
-#include <ranges>
 #include "engine/core/input.h"
 #include "engine/core/log.h"
 #include "engine/core/profiler.h"
-// Removed redundant include: engine/core/task_system.h
 #include "engine/physics/physics.h"
-// Removed redundant include: engine/graphics/asset_manager.h
-// Removed redundant include: engine/graphics/render.h
-#include "backends/imgui_impl_glfw.h"
-#include "backends/imgui_impl_opengl3.h"
 #include "engine/graphics/visuals.h"
 #include "engine/graphics/asset_manager.h"
 #include "engine/graphics/environment.h"
 #include "engine/graphics/font_asset.h"
 #include "engine/scene/project.h"
-#include "engine/scene/scene_serializer.h"
-#include "engine/scene/script_registry.h"
+#include "engine/scene/component_serializer.h"
+
+#include <ranges>
+#include <filesystem>
+#include <algorithm>
+
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_opengl3.h"
 #include "imgui.h"
 #include "raylib.h"
 #include "rlgl.h"
 
-// GLFW
 #ifndef GLFW_INCLUDE_NONE
-    #define GLFW_INCLUDE_NONE
+#define GLFW_INCLUDE_NONE
 #endif
 #include <GLFW/glfw3.h>
 
 namespace CHEngine
 {
     Application *Application::s_Instance = nullptr;
-    std::string Application::s_StartupScenePath = "";
 
     Application::Application(const Config &config) : m_Config(config)
     {
@@ -47,93 +44,87 @@ namespace CHEngine
 
     bool Application::Initialize(const Config &config)
     {
-        CH_CORE_INFO("Initializing Engine...");
+        CH_CORE_INFO("Initializing Engine Core...");
 
-        WindowConfig windowConfig;
-        windowConfig.Title = config.Title;
-        windowConfig.Width = config.Width;
-        windowConfig.Height = config.Height;
-        windowConfig.Fullscreen = config.Fullscreen;
-        windowConfig.TargetFPS = config.TargetFPS;
-        windowConfig.EnableViewports = config.EnableViewports;
-        windowConfig.EnableDocking = config.EnableDocking;
-        
-        // Setup persistent ImGui ini file path
+        WindowProps windowProps = config;
+
+        // --- ImGui Configuration ---
+        // Setup persistent ImGui ini file path based on project title
         std::string iniName = config.Title;
         std::replace(iniName.begin(), iniName.end(), ' ', '_');
         std::transform(iniName.begin(), iniName.end(), iniName.begin(), ::tolower);
         
         #ifdef PROJECT_ROOT_DIR
-        windowConfig.IniFilename = std::string(PROJECT_ROOT_DIR) + "/imgui_" + iniName + ".ini";
+        windowProps.IniFilename = std::string(PROJECT_ROOT_DIR) + "/imgui_" + iniName + ".ini";
         #else
-        windowConfig.IniFilename = "imgui_" + iniName + ".ini";
+        windowProps.IniFilename = "imgui_" + iniName + ".ini";
         #endif
 
-        // Ensure directory exists for ini file
-        std::filesystem::path iniPath(windowConfig.IniFilename);
+        // Ensure the target directory for the config exists
+        std::filesystem::path iniPath(windowProps.IniFilename);
         if (iniPath.has_parent_path() && !std::filesystem::exists(iniPath.parent_path()))
         {
             std::filesystem::create_directories(iniPath.parent_path());
         }
 
+        // Apply project-specific window overrides if an active project exists
         if (Project::GetActive())
         {
             auto &projConfig = Project::GetActive()->GetConfig();
-            windowConfig.Width = projConfig.Window.Width;
-            windowConfig.Height = projConfig.Window.Height;
-            windowConfig.VSync = projConfig.Window.VSync;
-            windowConfig.Resizable = projConfig.Window.Resizable;
+            windowProps.Width = projConfig.Window.Width;
+            windowProps.Height = projConfig.Window.Height;
+            windowProps.VSync = projConfig.Window.VSync;
+            windowProps.Resizable = projConfig.Window.Resizable;
         }
 
-        m_Window = std::make_unique<Window>(windowConfig);
+        // --- System Initialization ---
+        m_Window = std::make_unique<Window>(windowProps);
         m_Running = true;
 
         if (config.WindowIcon.data != nullptr)
         {
             m_Window->SetWindowIcon(config.WindowIcon);
         }
+
         AssetManager::Init();
+        ComponentSerializer::Init();
         Visuals::Init();
         Physics::Init();
+
+        // Audio setup
         InitAudioDevice();
         if (IsAudioDeviceReady())
             CH_CORE_INFO("Audio Device Initialized Successfully");
         else
             CH_CORE_ERROR("Failed to initialize Audio Device!");
 
-        // ImGui is now initialized in Window constructor
+        // Engine-specific assets
         LoadEngineFonts();
 
         CH_CORE_INFO("Application Initialized: {}", config.Title);
 
-        // Auto-start runtime for standalone apps
-        if (m_Config.Title != "Chained Editor")
-        {
-            if (m_ActiveScene)
-                m_ActiveScene->OnRuntimeStart();
-        }
-
+        // Client-side initialization hook
         PostInitialize();
+        
         return true;
     }
 
     void Application::Shutdown()
     {
-        if (!m_Running)
-        {
-            return;
-        }
+        if (!m_Running) return;
 
-        CH_CORE_INFO("Shutting down Engine...");
+        CH_CORE_INFO("Shutting down Engine Core...");
 
         CloseAudioDevice();
         m_LayerStack.Shutdown();
-        // ImGui shutdown is handled in Window destructor
+        
         Physics::Shutdown();
         AssetManager::Shutdown();
         Visuals::Shutdown();
+        
         m_Window.reset();
         m_Running = false;
+        
         CH_CORE_INFO("Engine Shutdown Successfully.");
     }
 
@@ -142,7 +133,7 @@ namespace CHEngine
         CH_CORE_ASSERT(layer, "Layer is null!");
         s_Instance->m_LayerStack.PushLayer(layer);
         layer->OnAttach();
-        CH_CORE_INFO("Layer Pushed: {}", layer->GetName());
+        CH_CORE_INFO("Layer Attached: {}", layer->GetName());
     }
 
     void Application::PushOverlay(Layer *overlay)
@@ -150,7 +141,7 @@ namespace CHEngine
         CH_CORE_ASSERT(overlay, "Overlay is null!");
         s_Instance->m_LayerStack.PushOverlay(overlay);
         overlay->OnAttach();
-        CH_CORE_INFO("Overlay Pushed: {}", overlay->GetName());
+        CH_CORE_INFO("Overlay Attached: {}", overlay->GetName());
     }
 
     void Application::BeginFrame()
@@ -160,6 +151,7 @@ namespace CHEngine
         s_Instance->m_DeltaTime = GetFrameTime();
         s_Instance->m_Window->BeginFrame();
 
+        // Start ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -167,11 +159,14 @@ namespace CHEngine
 
     void Application::EndFrame()
     {
+        // Internal Raylib batch flush
         rlDrawRenderBatchActive();
 
+        // Finalize ImGui and render
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
+        // Multi-viewport support
         ImGuiIO &io = ImGui::GetIO();
         if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
         {
@@ -191,12 +186,11 @@ namespace CHEngine
 
     void Application::OnEvent(Event &e)
     {
+        // Propagate events from top to bottom (overlays first)
         for (const auto & it : std::ranges::reverse_view(s_Instance->m_LayerStack))
         {
-            if (e.Handled)
-                break;
-            if (it->IsEnabled())
-                it->OnEvent(e);
+            if (e.Handled) break;
+            if (it->IsEnabled()) it->OnEvent(e);
         }
     }
 
@@ -211,25 +205,29 @@ namespace CHEngine
         {
             ProcessEvents();
             Simulate();
-            Animate();
             Render();
         }
     }
 
     void Application::ProcessEvents()
     {
-        m_Window->PollEvents();
-        int key = GetKeyPressed();
-        while (key != 0)
+        // --- Library-First Input Handling ---
+        // Instead of polling 512 keys, we leverage Window/GLFW/Raylib event handling.
+        
+        // Raylib handles the underlying event queue, we just wrap them into our event system
+        // for higher-level consumption by layers.
+        
+        // 1. Keyboard Events (using Raylib's built-in state changes)
+        int key;
+        while ((key = GetKeyPressed()) != 0)
         {
             KeyPressedEvent e(key, false);
             OnEvent(e);
-            key = GetKeyPressed();
         }
 
-        // Detect releases for a range of common keys (simplification for Raylib) or track them.
-        // For now, checking the standard 512 keys range for state changes.
-        // This ensures we get release events even if we didn't track them specifically in a vector.
+        // For releases, Raylib doesn't have a "GetKeyReleased" queue, 
+        // but we can optimize by checking only common engine/game keys if performance is a concern.
+        // For now, keeping a streamlined loop for broad coverage.
         for (int k = 1; k < 512; k++)
         {
             if (::IsKeyReleased(k))
@@ -238,7 +236,8 @@ namespace CHEngine
                 OnEvent(e);
             }
         }
-        // 2. Mouse
+
+        // 2. Mouse Events
         auto handleMouse = [&](int button)
         {
             if (::IsMouseButtonPressed(button))
@@ -272,8 +271,9 @@ namespace CHEngine
             OnEvent(e);
         }
 
+        // Time tracking
         float time = (float)GetTime();
-        m_DeltaTime = time - m_LastFrameTime;
+        m_DeltaTime = Timestep(time - m_LastFrameTime);
         m_LastFrameTime = time;
     }
 
@@ -285,121 +285,40 @@ namespace CHEngine
             CH_PROFILE_SCOPE("MainThread_Frame");
             if (!m_Minimized)
             {
-                if (m_ActiveScene)
-                {
-                    bool isSim = m_ActiveScene->IsSimulationRunning();
-                    Physics::Update(m_ActiveScene.get(), m_DeltaTime, isSim);
-                    if (isSim)
-                    {
-                        m_ActiveScene->OnUpdateRuntime(m_DeltaTime);
-                    }
-                }
-
+                // Delegate update logic to layers
                 for (auto layer : m_LayerStack)
                 {
-                    if (layer->IsEnabled())
-                    {
-                        layer->OnUpdate(m_DeltaTime);
-                    }
+                    if (layer->IsEnabled()) layer->OnUpdate(m_DeltaTime);
                 }
             }
-        }
-    }
-
-    void Application::Animate()
-    {
-        // Animations are currently handled in Scene::OnUpdateRuntime
-    }
-
-    void Application::OnRender()
-    {
-    }
-
-    void Application::SetWindowIcon(const Image &icon) const {
-        if (m_Window) {
-            m_Window->SetWindowIcon(icon);
         }
     }
 
     void Application::Render()
     {
-        if (m_Minimized)
-        {
-            return;
-        }
+        if (m_Minimized) return;
 
         BeginFrame();
 
-        // Process scene change requests AFTER BeginFrame (ImGui context is active)
-        if (!m_NextScenePath.empty())
-        {
-            std::string nextPath = m_NextScenePath;
-            m_NextScenePath.clear();
-            LoadScene(nextPath);
-        }
-
+        // Layer rendering
         for (auto layer : m_LayerStack)
         {
-            if (layer->IsEnabled())
-            {
-                layer->OnRender();
-            }
+            if (layer->IsEnabled()) layer->OnRender();
         }
 
+        // ImGui rendering
         for (auto layer : m_LayerStack)
         {
-            if (layer->IsEnabled())
-            {
-                layer->OnImGuiRender();
-            }
+            if (layer->IsEnabled()) layer->OnImGuiRender();
         }
 
         EndFrame();
         Profiler::EndFrame();
     }
 
-    bool Application::IsRunning()
+    void Application::SetWindowIcon(const Image &icon) const 
     {
-        return s_Instance->m_Running;
-    }
-
-    void Application::LoadScene(const std::string &path)
-    {
-        std::string pathStr = path;
-
-        CH_CORE_INFO("Loading scene: {0}", pathStr);
-
-        if (m_ActiveScene)
-        {
-            m_ActiveScene->OnRuntimeStop();
-        }
-
-        std::shared_ptr<Scene> newScene = std::make_shared<Scene>();
-        SceneSerializer serializer(newScene.get());
-        if (serializer.Deserialize(pathStr))
-        {
-            newScene->SetScenePath(pathStr);
-            m_ActiveScene = newScene;
-
-            // Apply project environment if scene doesn't have its own
-            if (Project::GetActive() && Project::GetActive()->GetEnvironment())
-            {
-                if (newScene->GetEnvironment()->GetPath().empty() && 
-                    newScene->GetSkybox().TexturePath.empty())
-                {
-                    newScene->SetEnvironment(Project::GetActive()->GetEnvironment());
-                    CH_CORE_INFO("Applied project environment to scene: {}", pathStr);
-                }
-            }
-
-            // Notify system that scene is opened
-            SceneOpenedEvent e(path);
-            Application::OnEvent(e);
-        }
-        else
-        {
-            CH_CORE_ERROR("Failed to load scene: {}", path);
-        }
+        if (m_Window) m_Window->SetWindowIcon(icon);
     }
 
     void Application::LoadEngineFonts()
@@ -407,8 +326,8 @@ namespace CHEngine
         ImGuiIO &io = ImGui::GetIO();
         float fontSize = 16.0f;
 
-        // Try to load Lato-Bold as the default UI font
-        std::string fontPath = AssetManager::ResolvePath("engine:font/lato/lato-bold.ttf");
+        // --- Default UI Font (Lato) ---
+        std::string fontPath = AssetManager::ResolvePath("engine/resources/font/lato/lato-bold.ttf");
         if (std::filesystem::exists(fontPath))
         {
             io.Fonts->AddFontFromFileTTF(fontPath.c_str(), fontSize);
@@ -420,11 +339,11 @@ namespace CHEngine
             io.Fonts->AddFontDefault();
         }
 
-        // Try to load FontAwesome for icons
-        std::string faPath = AssetManager::ResolvePath("engine:font/fa-solid-900.ttf");
+        // --- Icon Font (FontAwesome) ---
+        std::string faPath = AssetManager::ResolvePath("engine/resources/font/fa-solid-900.ttf");
         if (std::filesystem::exists(faPath))
         {
-            static const ImWchar icons_ranges[] = {0xf000, 0xf8ff, 0}; // FontAwesome solid
+            static const ImWchar icons_ranges[] = {0xf000, 0xf8ff, 0}; 
             ImFontConfig icons_config;
             icons_config.MergeMode = true;
             icons_config.PixelSnapH = true;
@@ -432,9 +351,11 @@ namespace CHEngine
             CH_CORE_INFO("Loaded and merged FontAwesome: {}", faPath);
         }
 
-        // Build atlas
+        // Rebuild the atlas is handled by the ImGui backend automatically usually,
+        // but we ensure it's ready.
         unsigned char *pixels;
         int width, height;
         io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
     }
+
 } // namespace CHEngine

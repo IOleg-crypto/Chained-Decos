@@ -3,6 +3,7 @@
 
 #include "engine/core/base.h"
 #include <string>
+#include "../reflect.h"
 
 namespace CHEngine
 {
@@ -19,6 +20,14 @@ struct AudioComponent
     // Runtime
     std::shared_ptr<SoundAsset> Asset;
 };
+
+BEGIN_REFLECT(AudioComponent)
+    PROPERTY(std::string, SoundPath, "Path")
+    PROPERTY(float, Volume, "Volume")
+    PROPERTY(float, Pitch, "Pitch")
+    PROPERTY(bool, Loop, "Looping")
+    PROPERTY(bool, PlayOnStart, "Play On Start")
+END_REFLECT()
 } // namespace CHEngine
 
 #endif // CH_AUDIO_COMPONENT_H

@@ -5,6 +5,7 @@
 #include "engine/graphics/texture_asset.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene.h"
+#include "engine/scene/scene_events.h"
 #include "imgui.h"
 #include "raymath.h"
 #include <filesystem>
@@ -20,25 +21,22 @@ public:
 
     virtual void OnUpdate(float deltaTime) override
     {
-        auto scene = Application::Get().GetActiveScene();
-        if (scene)
-            scene->OnUpdateRuntime(deltaTime);
+        if (m_Scene)
+            m_Scene->OnUpdateRuntime(deltaTime);
     }
 
     virtual void OnRender() override
     {
-        auto activeScene = Application::Get().GetActiveScene();
-        if (!activeScene)
+        if (!m_Scene)
             return;
 
         auto camera = GetActiveCamera();
-        activeScene->OnRender(camera);
+        m_Scene->OnRender(camera);
     }
 
     virtual void OnImGuiRender() override
     {
-        auto activeScene = Application::Get().GetActiveScene();
-        if (activeScene)
+        if (m_Scene)
         {
             ImVec2 displaySize = ImGui::GetIO().DisplaySize;
             
@@ -48,9 +46,6 @@ public:
                                      ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar | 
                                      ImGuiWindowFlags_NoBringToFrontOnFocus;
 
-            // Note: We want inputs to pass through to the game, but UI elements need to capture mouse.
-            // ImGuiWindowFlags_NoInputs prevents ANY interaction, so we should NOT use it if we want buttons to work.
-            // Instead, we use NoBackground and make it full screen.
             flags &= ~ImGuiWindowFlags_NoInputs; // Allow inputs
 
             ImGui::SetNextWindowPos({0, 0});
@@ -60,18 +55,59 @@ public:
             
             if (ImGui::Begin("RuntimeUI", nullptr, flags))
             {
-                activeScene->OnImGuiRender({0, 0}, displaySize, 0, false);
+                m_Scene->OnImGuiRender({0, 0}, displaySize, 0, false);
             }
             ImGui::End();
             ImGui::PopStyleVar(2);
         }
     }
 
+    virtual void OnEvent(Event &e) override
+    {
+        EventDispatcher dispatcher(e);
+        dispatcher.Dispatch<SceneChangeRequestEvent>([this](auto& ev) {
+            LoadScene(ev.GetPath());
+            return true;
+        });
+
+        if (m_Scene)
+            m_Scene->OnEvent(e);
+    }
+
+    void LoadScene(const std::string& path)
+    {
+        if (m_Scene)
+            m_Scene->OnRuntimeStop();
+
+        m_Scene = std::make_shared<Scene>();
+        SceneSerializer serializer(m_Scene.get());
+        if (serializer.Deserialize(path))
+        {
+             m_Scene->SetScenePath(path);
+             
+             // Apply project environment if needed
+             if (Project::GetActive() && Project::GetActive()->GetEnvironment())
+             {
+                 if (m_Scene->GetEnvironment()->GetPath().empty() && 
+                     m_Scene->GetEnvironment()->GetSettings().Skybox.TexturePath.empty())
+                 {
+                     m_Scene->SetEnvironment(Project::GetActive()->GetEnvironment());
+                 }
+             }
+             
+             m_Scene->OnRuntimeStart();
+        }
+        else
+        {
+            CH_CORE_ERROR("Runtime: Failed to load scene: {}", path);
+            m_Scene = nullptr;
+        }
+    }
+
     Camera3D GetActiveCamera()
     {
-        auto activeScene = Application::Get().GetActiveScene();
-        if (activeScene)
-            return activeScene->GetActiveCamera();
+        if (m_Scene)
+            return m_Scene->GetActiveCamera();
 
         // Fallback
         Camera3D camera = {0};
@@ -82,6 +118,9 @@ public:
         camera.projection = CAMERA_PERSPECTIVE;
         return camera;
     }
+
+private:
+    std::shared_ptr<Scene> m_Scene;
 };
 
 
@@ -175,7 +214,8 @@ public:
             current = current.parent_path();
         }
 
-        PushLayer(new RuntimeLayer());
+        m_RuntimeLayer = new RuntimeLayer();
+        PushLayer(m_RuntimeLayer);
     }
 
 void RuntimeApplication::PostInitialize()
@@ -194,7 +234,7 @@ void RuntimeApplication::PostInitialize()
                 window->SetVSync(config.Window.VSync);
                 
                 // Set window icon if available
-                std::filesystem::path iconPath = AssetManager::ResolvePath("engine:icons/chaineddecos.jpg");
+                std::filesystem::path iconPath = AssetManager::ResolvePath("engine/resources/icons/chaineddecos.jpg");
                 if (std::filesystem::exists(iconPath))
                 {
                     Image icon = LoadImage(iconPath.string().c_str());
@@ -207,7 +247,16 @@ void RuntimeApplication::PostInitialize()
             }
             SetTargetFPS(60); 
 
-            std::string sceneToLoad = config.StartScene;
+            // 1. CLI Override
+            std::string sceneToLoad = GetConfig().StartScene;
+            
+            // 2. Project Config
+            if (sceneToLoad.empty())
+            {
+                sceneToLoad = config.StartScene;
+            }
+
+            // 3. Fallback to Active Scene
             if (sceneToLoad.empty())
             {
                 sceneToLoad = config.ActiveScenePath.string();
@@ -236,23 +285,9 @@ void RuntimeApplication::PostInitialize()
                 // Resolve the path relative to the project assets
                 std::filesystem::path fullPath = Project::GetAssetPath(sceneToLoad);
                 CH_CORE_INFO("Standalone: Loading start scene: {}", fullPath.string());
-                LoadScene(fullPath.string());
-
-                auto activeScene = GetActiveScene();
-                if (activeScene && project->GetEnvironment())
-                {
-                    if (activeScene->GetEnvironment()->GetPath().empty() && 
-                        activeScene->GetSkybox().TexturePath.empty())
-                    {
-                        activeScene->SetEnvironment(project->GetEnvironment());
-                        CH_CORE_INFO("Standalone: Applied project environment to scene");
-                    }
-                }
-
-                if (activeScene)
-                {
-                    activeScene->OnRuntimeStart();
-                }
+                
+                // Use the layer to load
+                ((RuntimeLayer*)m_RuntimeLayer)->LoadScene(fullPath.string());
             }
             else
             {

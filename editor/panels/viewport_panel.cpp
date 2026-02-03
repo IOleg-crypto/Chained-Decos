@@ -8,13 +8,18 @@
 #include "imgui_internal.h"
 #include "raylib.h"
 #include "rlImGui.h"
-#include "ui/editor_gui.h"
+#include "editor_gui.h"
+#include "editor_layout.h"
 #include "engine/graphics/asset_manager.h"
 #include "engine/graphics/model_asset.h"
 #include "engine/core/input.h"
 #include "engine/core/events.h"
 #include "engine/scene/scene_events.h"
-#include "engine/scene/ui_math.h"
+#include "engine/scene/prefab_serializer.h"
+#include "engine/scene/components.h"
+#include "engine/physics/physics.h"
+#include "engine/physics/bvh/bvh.h"
+#include "editor/actions/scene_actions.h"
 
 
 namespace CHEngine
@@ -39,6 +44,32 @@ namespace CHEngine
         {
             ClearBackground(BLACK);
         }
+    }
+
+    static const GizmoBtn s_GizmoBtns[] = {
+        { GizmoType::NONE,      ICON_FA_ARROW_POINTER,         "Select (Q)",    KEY_Q },
+        { GizmoType::TRANSLATE, ICON_FA_UP_DOWN_LEFT_RIGHT,    "Translate (W)", KEY_W },
+        { GizmoType::ROTATE,    ICON_FA_ARROWS_ROTATE,         "Rotate (E)",    KEY_E },
+        { GizmoType::SCALE,     ICON_FA_UP_RIGHT_FROM_SQUARE,  "Scale (R)",     KEY_R }
+    };
+
+    void ViewportPanel::DrawGizmoButtons()
+    {
+        ImGui::PushStyleColor(ImGuiCol_Button, {0.1f, 0.1f, 0.1f, 0.0f}); // Transparent buttons in toolbar
+        
+        for (const auto& btn : s_GizmoBtns)
+        {
+            bool selected = (m_CurrentTool == btn.type);
+            if (selected) ImGui::PushStyleColor(ImGuiCol_Button, {0.9f, 0.45f, 0.0f, 1.0f});
+
+            if (ImGui::Button(btn.icon, {28, 28})) m_CurrentTool = btn.type;
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", btn.tooltip);
+            
+            if (selected) ImGui::PopStyleColor();
+            ImGui::SameLine(0, 5);
+        }
+
+        ImGui::PopStyleColor();
     }
 
     ViewportPanel::ViewportPanel()
@@ -89,94 +120,16 @@ namespace CHEngine
     ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5, 5));
     
-    if (ImGui::BeginChild("##FloatingToolbar", ImVec2(320, 38), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
+    if (ImGui::BeginChild("##FloatingToolbar", ImVec2(280, 40), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
     {
-        // Gizmo Buttons (No labels, icons only)
-        auto& activeTool = m_CurrentTool;
+        ImGui::SetCursorPosY(6); // Center align vertically-ish
+        ImGui::Indent(5);
         
-        // Select Tool - capture state BEFORE button to keep Push/Pop balanced
-        bool wasSelect = (activeTool == GizmoType::NONE);
-        if (wasSelect) 
-        {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.85f, 0.45f, 0.0f, 1.0f));
-        }
-        if (ImGui::Button(ICON_FA_ARROW_POINTER, ImVec2(28, 28))) 
-        {
-            activeTool = GizmoType::NONE;
-        }
-        if (wasSelect) 
-        {
-            ImGui::PopStyleColor();
-        }
-        if (ImGui::IsItemHovered()) 
-        {
-            ImGui::SetTooltip("Select (Q)");
-        }
-        ImGui::SameLine();
-
-        // Translate Tool
-        bool wasTranslate = (activeTool == GizmoType::TRANSLATE);
-        if (wasTranslate) 
-        {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.85f, 0.45f, 0.0f, 1.0f));
-        }
-        if (ImGui::Button(ICON_FA_UP_DOWN_LEFT_RIGHT, ImVec2(28, 28))) 
-        {
-            activeTool = GizmoType::TRANSLATE;
-        }
-        if (wasTranslate) 
-        {
-            ImGui::PopStyleColor();
-        }
-        if (ImGui::IsItemHovered()) 
-        {
-            ImGui::SetTooltip("Translate (W)");
-        }
-        ImGui::SameLine();
-
-        // Rotate Tool
-        bool wasRotate = (activeTool == GizmoType::ROTATE);
-        if (wasRotate) 
-        {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.85f, 0.45f, 0.0f, 1.0f));
-        }
-        if (ImGui::Button(ICON_FA_ARROWS_ROTATE, ImVec2(28, 28))) 
-        {
-            activeTool = GizmoType::ROTATE;
-        }
-        if (wasRotate) 
-        {
-            ImGui::PopStyleColor();
-        }
-        if (ImGui::IsItemHovered()) 
-        {
-            ImGui::SetTooltip("Rotate (E)");
-        }
-        ImGui::SameLine();
-
-        // Scale Tool
-        bool wasScale = (activeTool == GizmoType::SCALE);
-        if (wasScale) 
-        {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.85f, 0.45f, 0.0f, 1.0f));
-        }
-        if (ImGui::Button(ICON_FA_UP_RIGHT_FROM_SQUARE, ImVec2(28, 28))) 
-        {
-            activeTool = GizmoType::SCALE;
-        }
-        if (wasScale) 
-        {
-            ImGui::PopStyleColor();
-        }
-        if (ImGui::IsItemHovered()) 
-        {
-            ImGui::SetTooltip("Scale (R)");
-        }
-        ImGui::SameLine();
-
-        ImGui::SameLine(0, 15);
+        DrawGizmoButtons();
+        
+        ImGui::SameLine(0, 10);
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
-        ImGui::SameLine(0, 15);
+        ImGui::SameLine(0, 10);
 
         // Playback Tools
         SceneState sceneState = EditorLayer::Get().GetSceneState();
@@ -186,24 +139,22 @@ namespace CHEngine
         {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 1.0f, 0.3f, 1.0f));
         }
-        if (ImGui::Button(ICON_FA_PLAY, ImVec2(28, 28))) 
+        if (ImGui::Button(isPlaying ? ICON_FA_STOP : ICON_FA_PLAY, ImVec2(28, 28))) 
         { 
-            ScenePlayEvent e; 
-            EditorLayer::Get().OnEvent(e); 
-        }
-        if (isPlaying) 
-        {
-            ImGui::PopStyleColor();
-        }
-        ImGui::SameLine();
-
-        if (ImGui::Button(isPlaying ? ICON_FA_STOP : ICON_FA_PAUSE, ImVec2(28, 28))) 
-        {
             if (isPlaying) 
             { 
                 SceneStopEvent e; 
                 EditorLayer::Get().OnEvent(e); 
             }
+            else 
+            { 
+                ScenePlayEvent e; 
+                EditorLayer::Get().OnEvent(e); 
+            }
+        }
+        if (isPlaying) 
+        {
+            ImGui::PopStyleColor();
         }
     }
     ImGui::EndChild();
@@ -237,11 +188,11 @@ namespace CHEngine
         {
             UnloadRenderTexture(m_ViewportTexture);
             m_ViewportTexture = LoadRenderTexture((int)viewportSize.x, (int)viewportSize.y);
-            EditorLayer::Get().s_ViewportSize = viewportSize;
+            EditorLayer::Get().SetViewportSize(viewportSize);
         }
     }
 
-    auto activeScene = Application::Get().GetActiveScene();
+    auto activeScene = EditorLayer::Get().GetActiveScene();
     if (!activeScene || viewportSize.x <= 0 || viewportSize.y <= 0)
     {
         ImGui::PopID();
@@ -250,17 +201,50 @@ namespace CHEngine
         return;
     }
 
-    // Scene Rendering
     BeginTextureMode(m_ViewportTexture);
     ClearSceneBackground(activeScene.get(), {viewportSize.x, viewportSize.y});
-    Camera3D camera = EditorUI::GUI::GetActiveCamera(EditorLayer::Get().GetSceneState());
+    Camera3D camera = EditorGUI::GetActiveCamera(EditorLayer::Get().GetSceneState());
     activeScene->OnRender(camera, &EditorLayer::Get().GetDebugRenderFlags());
     EndTextureMode();
 
     rlImGuiImageRenderTexture(&m_ViewportTexture);
 
+    // Drag & Drop Target
+    if (ImGui::BeginDragDropTarget())
+    {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+        {
+            const char* path = (const char*)payload->Data;
+            std::filesystem::path filepath = std::filesystem::path(path); // Ensure cross-platform path handling
+            std::string ext = filepath.extension().string();
+            std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+            if (ext == ".chscene")
+            {
+                SceneActions::Open(filepath);
+            }
+            else if (ext == ".chprefab")
+            {
+                 PrefabSerializer::Deserialize(activeScene.get(), filepath.string());
+            }
+            else if (ext == ".gltf" || ext == ".glb" || ext == ".obj")
+            {
+                 std::string filename = filepath.stem().string();
+                 Entity entity = activeScene->CreateEntity(filename);
+                 auto& mc = entity.AddComponent<ModelComponent>();
+                 // Use generic string for consistent paths
+                 mc.ModelPath = filepath.generic_string();
+                 
+                 // Select the new entity
+                 EntitySelectedEvent e((entt::entity)entity, activeScene.get());
+                 EditorLayer::Get().OnEvent(e);
+            }
+        }
+        ImGui::EndDragDropTarget();
+    }
+
     // Gizmo rendering (after scene image so it overlays properly)
-    m_Gizmo.RenderAndHandle(!isUISelected ? m_CurrentTool : GizmoType::NONE);
+    m_Gizmo.RenderAndHandle(!isUISelected ? m_CurrentTool : GizmoType::NONE, viewportScreenPos, viewportSize);
 
     // --- 2. UI OVERLAY & SELECTION ---
     ImGui::SetCursorScreenPos(viewportScreenPos);
@@ -277,8 +261,8 @@ namespace CHEngine
             auto &cc = selectedEntity.GetComponent<ControlComponent>();
             auto& canvas = activeScene->GetCanvasSettings();
             
-            // Use UIMath helper for simple anchoring
-            auto rect = UIMath::CalculateRect(cc.Transform, 
+            // Use member function for simple anchoring
+            auto rect = cc.Transform.CalculateRect( 
                 {viewportSize.x, viewportSize.y}, 
                 {viewportScreenPos.x, viewportScreenPos.y});
             
@@ -324,7 +308,7 @@ namespace CHEngine
         ImVec2 localMouseImGui = {mousePos.x - viewportScreenPos.x, mousePos.y - viewportScreenPos.y};
         Vector2 localMouse = {localMouseImGui.x, localMouseImGui.y};
 
-        Ray ray = GetMouseRay(localMouse, camera);
+        Ray ray = EditorGUI::GetMouseRay(camera, {viewportScreenPos.x, viewportScreenPos.y}, {viewportSize.x, viewportSize.y});
         Entity bestHit = {};
         float minDistance = FLT_MAX;
 
@@ -332,14 +316,14 @@ namespace CHEngine
         auto uiView = activeScene->GetRegistry().view<ControlComponent>();
         for (auto entityID : uiView)
         {
-            Entity entity{entityID, activeScene.get()};
+            Entity entity(entityID, activeScene.get());
             auto &cc = uiView.get<ControlComponent>(entityID);
             if (!cc.IsActive) 
             {
                 continue;
             }
 
-            auto rect = UIMath::CalculateRect(cc.Transform,
+            auto rect = cc.Transform.CalculateRect(
                 {viewportSize.x, viewportSize.y},
                 {viewportScreenPos.x, viewportScreenPos.y});
 
@@ -350,26 +334,78 @@ namespace CHEngine
             }
         }
 
-        // 3D Picking (if no UI hit)
+        // 3D Picking
         if (!bestHit)
         {
-            auto view = activeScene->GetRegistry().view<TransformComponent, ModelComponent>();
-            for (auto entityID : view)
+            // 1. Physics Picking (Colliders: Box, Mesh BVH)
+            RaycastResult result = Physics::Raycast(activeScene.get(), ray);
+            if (result.Hit)
             {
-                Entity entity{entityID, activeScene.get()};
-                auto &modelComp = view.get<ModelComponent>(entityID);
+                bestHit = Entity(result.Entity, activeScene.get());
+                minDistance = result.Distance;
+            }
+
+            // 2. Visual Picking Fallback (Meshes without colliders)
+            // Only run if we don't have a very close physics hit, or to find things without colliders
+            auto modelView = activeScene->GetRegistry().view<TransformComponent, ModelComponent>();
+            for (auto entityID : modelView)
+            {
+                // Skip if already hit by physics (unless we want to prioritize visuals?)
+                // Usually physics is the intended interaction volume.
+                if (bestHit && (entt::entity)bestHit == entityID) continue;
+
+                Entity entity(entityID, activeScene.get());
+                auto &modelComp = modelView.get<ModelComponent>(entityID);
                 if (modelComp.ModelPath.empty()) continue;
 
                 auto modelAsset = AssetManager::Get<ModelAsset>(modelComp.ModelPath);
                 if (!modelAsset || !modelAsset->IsReady()) continue;
 
-                Model &model = modelAsset->GetModel();
-                for (int m = 0; m < model.meshCount; m++)
+                auto &tc = modelView.get<TransformComponent>(entityID);
+                Matrix modelTransform = tc.GetTransform();
+                Matrix invTransform = MatrixInvert(modelTransform);
+
+                // Transform ray to local space for BVH/Mesh check
+                Ray localRay;
+                localRay.position = Vector3Transform(ray.position, invTransform);
+                Vector3 localTarget = Vector3Transform(Vector3Add(ray.position, ray.direction), invTransform);
+                localRay.direction = Vector3Normalize(Vector3Subtract(localTarget, localRay.position));
+
+                float t_local = FLT_MAX;
+                Vector3 localNormal = {0, 0, 0};
+                int localMeshIndex = -1;
+
+                bool hit = false;
+                auto bvh = Physics::GetBVH(modelAsset.get());
+                if (bvh)
                 {
-                    RayCollision collision = GetRayCollisionMesh(ray, model.meshes[m], model.transform);
-                    if (collision.hit && collision.distance < minDistance)
+                    hit = bvh->Raycast(localRay, t_local, localNormal, localMeshIndex);
+                }
+                else
+                {
+                    // Fallback to per-mesh ray testing if no BVH (slow but accurate)
+                    Model &model = modelAsset->GetModel();
+                    for (int m = 0; m < model.meshCount; m++)
                     {
-                        minDistance = collision.distance;
+                        RayCollision collision = GetRayCollisionMesh(localRay, model.meshes[m], MatrixIdentity());
+                        if (collision.hit && collision.distance < t_local)
+                        {
+                            t_local = collision.distance;
+                            hit = true;
+                        }
+                    }
+                }
+
+                if (hit)
+                {
+                    // Convert hit distance back to world space
+                    Vector3 hitPosLocal = Vector3Add(localRay.position, Vector3Scale(localRay.direction, t_local));
+                    Vector3 hitPosWorld = Vector3Transform(hitPosLocal, modelTransform);
+                    float distWorld = Vector3Distance(ray.position, hitPosWorld);
+
+                    if (distWorld < minDistance)
+                    {
+                        minDistance = distWorld;
                         bestHit = entity;
                     }
                 }
@@ -394,21 +430,17 @@ namespace CHEngine
     // Shortcuts
     if (ImGui::IsWindowFocused() || ImGui::IsWindowHovered())
     {
-        if (CHEngine::Input::IsKeyPressed(KEY_W)) m_CurrentTool = GizmoType::TRANSLATE;
-        if (CHEngine::Input::IsKeyPressed(KEY_E)) m_CurrentTool = GizmoType::ROTATE;
-        if (CHEngine::Input::IsKeyPressed(KEY_R)) m_CurrentTool = GizmoType::SCALE;
-        if (CHEngine::Input::IsKeyPressed(KEY_Q)) m_CurrentTool = GizmoType::NONE;
+        for (const auto& btn : s_GizmoBtns)
+        {
+            if (CHEngine::Input::IsKeyPressed(btn.key)) 
+                m_CurrentTool = btn.type;
+        }
     }
 }
 
     void ViewportPanel::OnUpdate(float deltaTime)
     {
         m_EditorCamera.OnUpdate(deltaTime);
-    }
-
-    void ViewportPanel::OnEvent(Event &e)
-    {
-        // m_EditorCamera doesn't have OnEvent yet, so we just let it be for now
     }
 
 } // namespace CHEngine
