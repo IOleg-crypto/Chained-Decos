@@ -10,6 +10,7 @@
 #include <string>
 
 #include "engine/core/events.h"
+#include "engine/physics/physics.h"
 
 namespace CHEngine
 {
@@ -145,10 +146,14 @@ public:
         return m_Settings.Canvas;
     }
 
+    Physics& GetPhysics() { return *m_Physics; }
+    const Physics& GetPhysics() const { return *m_Physics; }
+
 private:
     entt::registry m_Registry;
     std::unordered_map<UUID, entt::entity> m_EntityMap;
     SceneSettings m_Settings;
+    std::unique_ptr<Physics> m_Physics;
 
     bool m_IsSimulationRunning = false;
 
