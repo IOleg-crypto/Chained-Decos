@@ -45,13 +45,13 @@ TEST(PhysicsTest, Raycast)
     ray.position = {0.0f, 0.0f, 0.0f};
     ray.direction = {0.0f, 0.0f, 1.0f};
 
-    RaycastResult result = Physics::Raycast(scene.get(), ray);
+    RaycastResult result = scene->GetPhysics().Raycast(ray);
     EXPECT_TRUE(result.Hit);
     EXPECT_NEAR(result.Distance, 4.5f, 0.001f);
     EXPECT_EQ(result.Entity, (entt::entity)entity);
 
     // Ray looking away
     ray.direction = {0.0f, 0.0f, -1.0f};
-    result = Physics::Raycast(scene.get(), ray);
+    result = scene->GetPhysics().Raycast(ray);
     EXPECT_FALSE(result.Hit);
 }

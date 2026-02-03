@@ -43,6 +43,9 @@ Scene::Scene()
 
     // Every scene must have its own environment to avoid skybox leaking/bugs
     m_Settings.Environment = std::make_shared<EnvironmentAsset>();
+    
+    // Create physics instance
+    m_Physics = std::make_unique<Physics>(this);
 }
 
 std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
@@ -226,7 +229,7 @@ void Scene::OnUpdateRuntime(float deltaTime)
     CH_PROFILE_FUNCTION();
 
     bool isSim = IsSimulationRunning();
-    Physics::Update(this, deltaTime, isSim);
+    m_Physics->Update(deltaTime, isSim);
 
     SceneScripting::Update(this, deltaTime);
     UpdateAnimation(deltaTime);
