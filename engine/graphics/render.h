@@ -3,7 +3,7 @@
 
 #include "engine/core/base.h"
 #include "engine/core/timestep.h"
-#include "engine/graphics/render_types.h"
+#include "engine/core/timestep.h"
 #include "engine/graphics/environment.h"
 #include "engine/scene/scene.h"
 #include "raylib.h"
@@ -12,6 +12,41 @@
 
 namespace CHEngine
 {
+    class ShaderAsset;
+    class ModelAsset;
+    class TextureAsset;
+    class EnvironmentAsset;
+
+    struct DebugRenderFlags
+    {
+        bool DrawColliders = false;
+        bool DrawLights = false;
+        bool DrawSpawnZones = false;
+        bool DrawGrid = true;
+        bool DrawAxes = true;
+        bool DrawSkeleton = false;
+        bool DrawBoundingBoxes = false;
+        bool DrawIcons = true;
+        bool DrawNavMesh = false;
+    };
+
+    struct RendererState
+    {
+        // Shaders
+        std::shared_ptr<ShaderAsset> LightingShader;
+        std::shared_ptr<ShaderAsset> SkyboxShader;
+        std::shared_ptr<ShaderAsset> PanoramaShader;
+
+        // Shared Resources
+        Model SkyboxCube = { 0 };
+
+        // Scene Data
+        Color CurrentLightColor = WHITE;
+        Vector3 CurrentLightDir = {0.0f, -1.0f, 0.0f};
+        float CurrentAmbientIntensity = 0.2f;
+        Camera3D ActiveCamera = { 0 };
+    };
+
     /**
      * The primary interface for all rendering operations in the engine.
      * Consolidates scene rendering, primitive drawing, and low-level API management.
