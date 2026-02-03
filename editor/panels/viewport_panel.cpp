@@ -338,7 +338,7 @@ namespace CHEngine
         if (!bestHit)
         {
             // 1. Physics Picking (Colliders: Box, Mesh BVH)
-            RaycastResult result = Physics::Raycast(activeScene.get(), ray);
+            RaycastResult result = activeScene->GetPhysics().Raycast(ray);
             if (result.Hit)
             {
                 bestHit = Entity(result.Entity, activeScene.get());
@@ -376,7 +376,7 @@ namespace CHEngine
                 int localMeshIndex = -1;
 
                 bool hit = false;
-                auto bvh = Physics::GetBVH(modelAsset.get());
+                auto bvh = activeScene->GetPhysics().GetBVH(modelAsset.get());
                 if (bvh)
                 {
                     hit = bvh->Raycast(localRay, t_local, localNormal, localMeshIndex);
