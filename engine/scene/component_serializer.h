@@ -3,6 +3,8 @@
 
 #include "engine/scene/entity.h"
 #include <yaml-cpp/yaml.h>
+#include <functional>
+#include <unordered_map>
 #include <vector>
 
 namespace CHEngine
@@ -14,52 +16,73 @@ namespace CHEngine
         std::vector<uint64_t> children;
     };
 
+    // Declarative serialization registry
+    struct ComponentSerializerEntry
+    {
+        std::string YamlKey;
+        std::function<void(YAML::Emitter&, Entity)> Serialize;
+        std::function<void(Entity, YAML::Node)> Deserialize;
+    };
+
     class ComponentSerializer
     {
     public:
-        // Serialization
-        static void SerializeID(YAML::Emitter& out, Entity entity);
-        static void SerializeTag(YAML::Emitter& out, Entity entity);
-        static void SerializeTransform(YAML::Emitter& out, Entity entity);
-        static void SerializeModel(YAML::Emitter& out, Entity entity);
-        static void SerializeSpawn(YAML::Emitter& out, Entity entity);
-        static void SerializeCollider(YAML::Emitter& out, Entity entity);
-        static void SerializePointLight(YAML::Emitter& out, Entity entity);
-        static void SerializeSpotLight(YAML::Emitter& out, Entity entity);
-        static void SerializeRigidBody(YAML::Emitter& out, Entity entity);
-        static void SerializePlayer(YAML::Emitter& out, Entity entity);
-        static void SerializeSceneTransition(YAML::Emitter& out, Entity entity);
-        static void SerializeBillboard(YAML::Emitter& out, Entity entity);
-        static void SerializeNavigation(YAML::Emitter& out, Entity entity);
-        static void SerializeShader(YAML::Emitter& out, Entity entity);
-        static void SerializeAnimation(YAML::Emitter& out, Entity entity);
-        static void SerializeHierarchy(YAML::Emitter& out, Entity entity);
-        static void SerializeAudio(YAML::Emitter& out, Entity entity);
-        static void SerializeCamera(YAML::Emitter& out, Entity entity);
-        static void SerializeNativeScript(YAML::Emitter& out, Entity entity);
-        static void SerializeUI(YAML::Emitter& out, Entity entity);
+        // Initialize the registry with all component types
+        static void Init();
 
-        // Deserialization
-        static void DeserializeTag(Entity entity, YAML::Node node);
-        static void DeserializeTransform(Entity entity, YAML::Node node);
-        static void DeserializeModel(Entity entity, YAML::Node node);
-        static void DeserializeSpawn(Entity entity, YAML::Node node);
-        static void DeserializeCollider(Entity entity, YAML::Node node);
-        static void DeserializePointLight(Entity entity, YAML::Node node);
-        static void DeserializeSpotLight(Entity entity, YAML::Node node);
-        static void DeserializeRigidBody(Entity entity, YAML::Node node);
-        static void DeserializePlayer(Entity entity, YAML::Node node);
-        static void DeserializeSceneTransition(Entity entity, YAML::Node node);
-        static void DeserializeBillboard(Entity entity, YAML::Node node);
-        static void DeserializeNavigation(Entity entity, YAML::Node node);
-        static void DeserializeShader(Entity entity, YAML::Node node);
-        static void DeserializeAnimation(Entity entity, YAML::Node node);
+        // Register a component serializer
+        template<typename T>
+        static void Register(
+            const std::string& yamlKey,
+            std::function<void(YAML::Emitter&, T&)> serialize,
+            std::function<void(T&, YAML::Node)> deserialize);
+
+        // Serialize all registered components for an entity
+        static void SerializeAll(YAML::Emitter& out, Entity entity);
+
+        // Deserialize all registered components from YAML node
+        static void DeserializeAll(Entity entity, YAML::Node node);
+
+        // Special cases that need custom handling
+        static void SerializeID(YAML::Emitter& out, Entity entity);
+        static void SerializeHierarchy(YAML::Emitter& out, Entity entity);
         static void DeserializeHierarchyTask(Entity entity, YAML::Node node, HierarchyTask& outTask);
-        static void DeserializeAudio(Entity entity, YAML::Node node);
-        static void DeserializeCamera(Entity entity, YAML::Node node);
-        static void DeserializeNativeScript(Entity entity, YAML::Node node);
-        static void DeserializeUI(Entity entity, YAML::Node node);
+
+    private:
+        static std::vector<ComponentSerializerEntry> s_Registry;
     };
+
+    // Template implementation
+    template<typename T>
+    void ComponentSerializer::Register(
+        const std::string& yamlKey,
+        std::function<void(YAML::Emitter&, T&)> serialize,
+        std::function<void(T&, YAML::Node)> deserialize)
+    {
+        ComponentSerializerEntry entry;
+        entry.YamlKey = yamlKey;
+        
+        // Wrap to check HasComponent and get/add component
+        entry.Serialize = [yamlKey, serialize](YAML::Emitter& out, Entity entity) {
+            if (entity.HasComponent<T>()) {
+                out << YAML::Key << yamlKey;
+                out << YAML::BeginMap;
+                serialize(out, entity.GetComponent<T>());
+                out << YAML::EndMap;
+            }
+        };
+        
+        entry.Deserialize = [yamlKey, deserialize](Entity entity, YAML::Node node) {
+            auto componentNode = node[yamlKey];
+            if (componentNode) {
+                if (!entity.HasComponent<T>())
+                    entity.AddComponent<T>();
+                deserialize(entity.GetComponent<T>(), componentNode);
+            }
+        };
+        
+        s_Registry.push_back(entry);
+    }
 }
 
 #endif // CH_COMPONENT_SERIALIZER_H

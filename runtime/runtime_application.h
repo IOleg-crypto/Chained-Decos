@@ -15,6 +15,7 @@ public:
 
 private:
     std::string m_ProjectPath;
+    class Layer* m_RuntimeLayer = nullptr;
 };
 } // namespace CHEngine
 

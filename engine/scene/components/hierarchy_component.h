@@ -2,8 +2,8 @@
 #define CH_HIERARCHY_COMPONENT_H
 
 #include "entt/entt.hpp"
-#include <string>
 #include <vector>
+#include "../reflect.h"
 
 namespace CHEngine
 {
@@ -25,6 +25,11 @@ struct NameComponent
     {
     }
 };
+
+BEGIN_REFLECT(NameComponent)
+    PROPERTY(std::string, Name, "Name")
+END_REFLECT()
+
 } // namespace CHEngine
 
 #endif // CH_HIERARCHY_COMPONENT_H

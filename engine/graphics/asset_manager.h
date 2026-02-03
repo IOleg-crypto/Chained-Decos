@@ -2,8 +2,7 @@
 #define CH_ASSET_MANAGER_H
 
 #include "engine/graphics/asset.h"
-#include "engine/graphics/model_asset.h"
-#include "engine/graphics/shader_asset.h"
+#include "engine/graphics/asset.h"
 #include <map>
 #include <memory>
 #include <string>
@@ -11,86 +10,32 @@
 #include <future>
 #include <variant>
 #include <unordered_map>
+#include <mutex>
+#include <algorithm>
 #include "engine/core/log.h"
-#include "engine/scene/project.h"
 
-// Forward declarations or includes for template specialization in Update()
-namespace CHEngine {
-    class TextureAsset;
-    class ModelAsset;
-    class SoundAsset;
-    class ShaderAsset;
-    class EnvironmentAsset;
-    class FontAsset;
-}
+#include "engine/graphics/texture_asset.h"
+#include "engine/graphics/model_asset.h"
+#include "engine/graphics/shader_asset.h"
+#include "engine/graphics/environment.h"
+#include "engine/graphics/font_asset.h"
+#include "engine/audio/sound_asset.h"
 
 namespace CHEngine
 {
     class AssetManager
     {
     public:
-        static void Init()
-        {
-            if (s_RootPath.empty())
-                s_RootPath = PROJECT_ROOT_DIR;
-            CH_CORE_INFO("AssetManager: Initialized. Root: {}", s_RootPath.string());
-        }
+        static void Init();
+        static void SetRootPath(const std::filesystem::path& path);
+        static std::filesystem::path GetRootPath();
+        
+        static void AddSearchPath(const std::filesystem::path& path);
+        static void ClearSearchPaths();
+        
+        static void Shutdown();
 
-        static void SetRootPath(const std::filesystem::path& path)
-        {
-            s_RootPath = path;
-            CH_CORE_INFO("AssetManager: Root path changed to: {}", s_RootPath.string());
-        }
-
-        static std::filesystem::path GetRootPath()
-        {
-            return s_RootPath;
-        }
-
-        static void Shutdown()
-        {
-            CH_CORE_INFO("AssetManager: Shutting down");
-            // Caches will be cleared automatically when static members destroyed
-        }
-
-        static std::string ResolvePath(const std::string& path)
-        {
-            if (path.empty()) return "";
-            if (path.starts_with(":")) return path; // Procedural
-
-            // Handle virtual prefixes (engine: or engine/)
-            if (path.starts_with("engine:") || path.starts_with("engine/"))
-            {
-                std::string sub = path.substr(7);
-                std::filesystem::path res = s_RootPath / "engine" / "resources" / sub;
-                
-                // Fallback to non-resource location for legacy compatibility 
-                if (!std::filesystem::exists(res))
-                {
-                    std::filesystem::path legacy = s_RootPath / "engine" / sub;
-                    if (std::filesystem::exists(legacy)) return legacy.string();
-                }
-                return res.string();
-            }
-
-            std::filesystem::path p(path);
-            if (p.is_absolute()) return path;
-
-            // Try relative to active project assets
-            if (Project::GetActive())
-            {
-                std::filesystem::path assetPath = Project::GetAssetPath(p);
-                if (std::filesystem::exists(assetPath))
-                    return assetPath.string();
-            }
-
-            // Try relative to project root (system-wide resources)
-            std::filesystem::path rootRel = s_RootPath / p;
-            if (std::filesystem::exists(rootRel))
-                return rootRel.string();
-
-            return path;
-        }
+        static std::string ResolvePath(const std::string& path);
 
         template <typename T>
         static std::shared_ptr<T> Get(const std::string& path)
@@ -99,6 +44,7 @@ namespace CHEngine
 
             std::string resolved = ResolvePath(path);
             
+            std::lock_guard<std::recursive_mutex> lock(s_AssetLock);
             auto& cache = GetCache<T>();
             
             // Deduplication: check cache first
@@ -107,8 +53,12 @@ namespace CHEngine
                 return it->second;
             }
 
-            // For ModelAsset and ShaderAsset: Load synchronously (Raylib uses GPU)
-            if constexpr (std::is_same_v<T, ModelAsset> || std::is_same_v<T, ShaderAsset>)
+            // For assets that touch GPU: Load synchronously (Raylib uses OpenGL context)
+            if constexpr (std::is_same_v<T, ShaderAsset> || 
+                          std::is_same_v<T, FontAsset> || 
+                          std::is_same_v<T, ModelAsset> || 
+                          std::is_same_v<T, TextureAsset> ||
+                          std::is_same_v<T, EnvironmentAsset>)
             {
                 CH_CORE_INFO("AssetManager: Loading {} synchronously: {}", typeid(T).name(), resolved);
                 auto asset = T::Load(resolved);
@@ -147,24 +97,45 @@ namespace CHEngine
         }
 
         template <typename T>
+        static void Clear(const std::string& path)
+        {
+            if (path.empty()) return;
+            std::string resolved = ResolvePath(path);
+            
+            std::lock_guard<std::recursive_mutex> lock(s_AssetLock);
+            GetCache<T>().erase(resolved);
+            GetLoadingMap<T>().erase(resolved);
+        }
+
+        template <typename T>
         static void UpdateCache()
         {
+            std::unique_lock<std::recursive_mutex> lock(s_AssetLock);
             auto& loading = GetLoadingMap<T>();
-            for (auto it = loading.begin(); it != loading.end();)
+            
+            // Collect ready items first to avoid iterator invalidation when releasing lock
+            std::vector<std::string> readyPaths;
+            for (auto it = loading.begin(); it != loading.end(); ++it)
             {
                 if (it->second.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+                    readyPaths.push_back(it->first);
+            }
+
+            for (const auto& path : readyPaths)
+            {
+                auto it = loading.find(path);
+                if (it == loading.end()) continue;
+
+                auto asset = it->second.get();
+                loading.erase(it);
+
+                if (asset)
                 {
-                    auto asset = it->second.get();
-                    if (asset)
-                    {
-                        asset->UploadToGPU(); 
-                        CH_CORE_INFO("AssetManager: Async load finished for {}", it->first);
-                    }
-                    it = loading.erase(it);
-                }
-                else
-                {
-                    ++it;
+                    // Release lock before GPU upload to allow other threads/nested Get() calls
+                    lock.unlock();
+                    asset->UploadToGPU(); 
+                    lock.lock();
+                    CH_CORE_INFO("AssetManager: Async load finished for {}", path);
                 }
             }
         }
@@ -172,6 +143,10 @@ namespace CHEngine
         static void Update();
 
     private:
+        static std::filesystem::path s_RootPath;
+        static std::vector<std::filesystem::path> s_SearchPaths;
+        static std::recursive_mutex s_AssetLock;
+
         template <typename T>
         static std::map<std::string, std::shared_ptr<T>>& GetCache()
         {
@@ -186,7 +161,6 @@ namespace CHEngine
             return loading;
         }
 
-        inline static std::filesystem::path s_RootPath;
     };
 }
 

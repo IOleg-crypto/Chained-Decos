@@ -3,7 +3,7 @@ Background:
   Mode: 2
   Color: [0, 123, 0, 124]
   TexturePath: ""
-EnvironmentPath: D:\gitnext\Chained Decos\game\chaineddecos\assets\environments/new_environment.chenv
+EnvironmentPath: d:/gitnext/chained decos/game/chaineddecos/assets/environments/new_environment.chenv
 Skybox:
   TexturePath: skyboxes\Starry night preview4.png
   Exposure: 1
@@ -14,15 +14,56 @@ Canvas:
   ScaleMode: 0
   MatchWidthOrHeight: 0.5
 Entities:
-  - Entity: 1326311650816898569
+  - Entity: 6428169142076434776
     TagComponent:
-      Tag: Player
+      Tag: Empty Entity
     TransformComponent:
-      Translation: [0, 18.7588005, -1.1920929e-07]
-      Rotation: [0, -0, 0]
+      Translation: [27.7000008, 18.8999996, 0]
+      Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     ModelComponent:
-      ModelPath: Models\player_low.glb
+      ModelPath: D:\gitnext\Chained Decos\game\chaineddecos\assets\models\Untitled.obj
+      Materials:
+        - Name: Material 0
+          Index: 0
+          Target: 0
+          Material:
+            AlbedoColor: [204, 204, 204, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+    AnimationComponent:
+      AnimationPath: ""
+      CurrentAnimationIndex: 0
+      IsLooping: true
+      IsPlaying: true
+  - Entity: 1283719283719289
+    TagComponent:
+      Tag: Spawn Zone
+    TransformComponent:
+      Translation: [29.6833439, 22.4699993, 17.3089523]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    SpawnComponent:
+      IsActive: true
+      ZoneSize: [6.0999999, 6.4000001, 5.0999999]
+  - Entity: 1283719283719288
+    TagComponent:
+      Tag: Plane
+    TransformComponent:
+      Translation: [0, 9.89999962, 19.7999992]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelPath: ":plane:"
       Materials:
         - Name: Material 0
           Index: 0
@@ -43,28 +84,221 @@ Entities:
     ColliderComponent:
       Type: 0
       Enabled: true
-      Offset: [-1.0896225, 0.00202974328, -0.293091357]
-      Size: [2.179245, 6.18353701, 1.20018852]
+      Offset: [-5, 0, -5]
+      Size: [10, 0, 10]
       AutoCalculate: false
       ModelPath: ""
-    RigidBodyComponent:
-      Velocity: [0, 0, 0]
-      UseGravity: true
-      IsKinematic: false
-      Mass: 39.4000015
-    PlayerComponent:
-      MovementSpeed: 15
-      LookSensitivity: 0.899999976
-      CameraYaw: 0
-      CameraPitch: 20
-      CameraDistance: 10
-      JumpForce: 10
-    NativeScriptComponent:
-      Scripts:
-        - ScriptName: PlayerController
-        - ScriptName: CameraController
-        - ScriptName: GameHUD
-        - ScriptName: SpawnZoneRespawn
+  - Entity: 1283719283719287
+    TagComponent:
+      Tag: Torus
+    TransformComponent:
+      Translation: [-0.146718025, 6.0999999, 37]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelPath: ":torus:"
+      Materials:
+        - Name: Material 0
+          Index: 0
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+    ColliderComponent:
+      Type: 1
+      Enabled: true
+      Offset: [-0.24000001, -0.24000001, -0.0400000028]
+      Size: [0.480000019, 0.480000019, 0.0800000057]
+      AutoCalculate: true
+      ModelPath: ":torus:"
+  - Entity: 1283719283719286
+    TagComponent:
+      Tag: Plane
+    TransformComponent:
+      Translation: [0, 14.8000002, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelPath: ":plane:"
+      Materials:
+        - Name: Material 0
+          Index: 0
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+    ColliderComponent:
+      Type: 0
+      Enabled: true
+      Offset: [-5, 0, -5]
+      Size: [10, 0, 10]
+      AutoCalculate: false
+      ModelPath: ""
+  - Entity: 1283719283719285
+    TagComponent:
+      Tag: Arena
+    TransformComponent:
+      Translation: [0, 6.69923544, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1.20000005, 1]
+    ModelComponent:
+      ModelPath: Models\arena.glb
+      Materials:
+        - Name: Material 1
+          Index: 1
+          Target: 0
+          Material:
+            AlbedoColor: [143, 0, 0, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 2
+          Index: 2
+          Target: 0
+          Material:
+            AlbedoColor: [7, 233, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 3
+          Index: 3
+          Target: 0
+          Material:
+            AlbedoColor: [90, 84, 77, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 4
+          Index: 4
+          Target: 0
+          Material:
+            AlbedoColor: [91, 86, 85, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 5
+          Index: 5
+          Target: 0
+          Material:
+            AlbedoColor: [102, 70, 58, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 6
+          Index: 6
+          Target: 0
+          Material:
+            AlbedoColor: [119, 111, 102, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 7
+          Index: 7
+          Target: 0
+          Material:
+            AlbedoColor: [119, 111, 102, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+        - Name: Material 8
+          Index: 8
+          Target: 0
+          Material:
+            AlbedoColor: [83, 57, 47, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            EmissivePath: ""
+            OverrideEmissive: false
+            Roughness: 0.5
+            ShaderPath: ""
+            OverrideShader: false
+    ColliderComponent:
+      Type: 1
+      Enabled: true
+      Offset: [-43.8236694, -46.1545258, -25.5901108]
+      Size: [86.6819458, 89.0095215, 94.478302]
+      AutoCalculate: true
+      ModelPath: Models\arena.glb
   - Entity: 1283719283719284
     TagComponent:
       Tag: Castle
@@ -642,160 +876,15 @@ Entities:
       Size: [86.9047241, 20.7643909, 83.494278]
       AutoCalculate: true
       ModelPath: Models\TaverGLTF.gltf
-  - Entity: 1283719283719285
+  - Entity: 1326311650816898569
     TagComponent:
-      Tag: Arena
+      Tag: Player
     TransformComponent:
-      Translation: [0, 6.69923544, 0]
+      Translation: [0, 18.7588005, -1.1920929e-07]
       Rotation: [0, -0, 0]
-      Scale: [1, 1.20000005, 1]
-    ModelComponent:
-      ModelPath: Models\arena.glb
-      Materials:
-        - Name: Material 1
-          Index: 1
-          Target: 0
-          Material:
-            AlbedoColor: [143, 0, 0, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            EmissivePath: ""
-            OverrideEmissive: false
-            Roughness: 0.5
-            ShaderPath: ""
-            OverrideShader: false
-        - Name: Material 2
-          Index: 2
-          Target: 0
-          Material:
-            AlbedoColor: [7, 233, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            EmissivePath: ""
-            OverrideEmissive: false
-            Roughness: 0.5
-            ShaderPath: ""
-            OverrideShader: false
-        - Name: Material 3
-          Index: 3
-          Target: 0
-          Material:
-            AlbedoColor: [90, 84, 77, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            EmissivePath: ""
-            OverrideEmissive: false
-            Roughness: 0.5
-            ShaderPath: ""
-            OverrideShader: false
-        - Name: Material 4
-          Index: 4
-          Target: 0
-          Material:
-            AlbedoColor: [91, 86, 85, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            EmissivePath: ""
-            OverrideEmissive: false
-            Roughness: 0.5
-            ShaderPath: ""
-            OverrideShader: false
-        - Name: Material 5
-          Index: 5
-          Target: 0
-          Material:
-            AlbedoColor: [102, 70, 58, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            EmissivePath: ""
-            OverrideEmissive: false
-            Roughness: 0.5
-            ShaderPath: ""
-            OverrideShader: false
-        - Name: Material 6
-          Index: 6
-          Target: 0
-          Material:
-            AlbedoColor: [119, 111, 102, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            EmissivePath: ""
-            OverrideEmissive: false
-            Roughness: 0.5
-            ShaderPath: ""
-            OverrideShader: false
-        - Name: Material 7
-          Index: 7
-          Target: 0
-          Material:
-            AlbedoColor: [119, 111, 102, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            EmissivePath: ""
-            OverrideEmissive: false
-            Roughness: 0.5
-            ShaderPath: ""
-            OverrideShader: false
-        - Name: Material 8
-          Index: 8
-          Target: 0
-          Material:
-            AlbedoColor: [83, 57, 47, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            EmissivePath: ""
-            OverrideEmissive: false
-            Roughness: 0.5
-            ShaderPath: ""
-            OverrideShader: false
-    ColliderComponent:
-      Type: 1
-      Enabled: true
-      Offset: [-43.8236694, -46.1545258, -25.5901108]
-      Size: [86.6819458, 89.0095215, 94.478302]
-      AutoCalculate: true
-      ModelPath: Models\arena.glb
-  - Entity: 1283719283719286
-    TagComponent:
-      Tag: Plane
-    TransformComponent:
-      Translation: [0, 14.8000002, 0]
-      Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     ModelComponent:
-      ModelPath: ":plane:"
+      ModelPath: Models\player_low.glb
       Materials:
         - Name: Material 0
           Index: 0
@@ -816,83 +905,25 @@ Entities:
     ColliderComponent:
       Type: 0
       Enabled: true
-      Offset: [-5, 0, -5]
-      Size: [10, 0, 10]
+      Offset: [-1.0896225, 0.00202974328, -0.293091357]
+      Size: [2.179245, 6.18353701, 1.20018852]
       AutoCalculate: false
       ModelPath: ""
-  - Entity: 1283719283719287
-    TagComponent:
-      Tag: Torus
-    TransformComponent:
-      Translation: [-0.146718025, 6.0999999, 37]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ModelComponent:
-      ModelPath: ":torus:"
-      Materials:
-        - Name: Material 0
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            EmissivePath: ""
-            OverrideEmissive: false
-            Roughness: 0.5
-            ShaderPath: ""
-            OverrideShader: false
-    ColliderComponent:
-      Type: 1
-      Enabled: true
-      Offset: [-0.24000001, -0.24000001, -0.0400000028]
-      Size: [0.480000019, 0.480000019, 0.0800000057]
-      AutoCalculate: true
-      ModelPath: ":torus:"
-  - Entity: 1283719283719288
-    TagComponent:
-      Tag: Plane
-    TransformComponent:
-      Translation: [0, 9.89999962, 19.7999992]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ModelComponent:
-      ModelPath: ":plane:"
-      Materials:
-        - Name: Material 0
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            EmissivePath: ""
-            OverrideEmissive: false
-            Roughness: 0.5
-            ShaderPath: ""
-            OverrideShader: false
-    ColliderComponent:
-      Type: 0
-      Enabled: true
-      Offset: [-5, 0, -5]
-      Size: [10, 0, 10]
-      AutoCalculate: false
-      ModelPath: ""
-  - Entity: 1283719283719289
-    TagComponent:
-      Tag: Spawn Zone
-    TransformComponent:
-      Translation: [29.6833439, 22.4699993, 17.3089523]
-      Rotation: [0, -0, 0]
-      Scale: [1, 1, 1]
-    SpawnComponent:
-      IsActive: true
-      ZoneSize: [6.0999999, 6.4000001, 5.0999999]
+    RigidBodyComponent:
+      Velocity: [0, 0, 0]
+      UseGravity: true
+      IsKinematic: false
+      Mass: 39.4000015
+    PlayerComponent:
+      MovementSpeed: 15
+      LookSensitivity: 0.899999976
+      CameraYaw: 0
+      CameraPitch: 20
+      CameraDistance: 10
+      JumpForce: 10
+    NativeScriptComponent:
+      Scripts:
+        - ScriptName: PlayerController
+        - ScriptName: CameraController
+        - ScriptName: GameHUD
+        - ScriptName: SpawnZoneRespawn

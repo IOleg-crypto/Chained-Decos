@@ -1,8 +1,9 @@
 #ifndef CH_PROPERTY_EDITOR_H
 #define CH_PROPERTY_EDITOR_H
 
-#include "editor/ui/editor_gui.h"
+#include "editor_gui.h"
 #include "engine/scene/entity.h"
+#include "engine/scene/scene.h"
 #include "extras/IconsFontAwesome6.h"
 #include <functional>
 #include <string>
@@ -47,6 +48,43 @@ namespace CHEngine
             RegisterComponent(entt::type_hash<T>::value(), metadata);
         }
 
+        // Automated registration via reflection
+        template <typename T> static void Register(const std::string &name)
+        {
+            Register<T>(name, [](T &comp, Entity e) {
+                return DrawReflectedProperties<T>(comp);
+            });
+        }
+
+        template <typename T> static bool DrawReflectedProperties(T &instance)
+        {
+            if constexpr (ReflectData<T>::Registered)
+            {
+                bool changed = false;
+                auto &props = ReflectData<T>::GetProperties();
+                for (const auto &prop : props)
+                {
+                    void *ptr = (char *)&instance + prop.Offset;
+
+                    // Manual dispatch for common types
+                    if (std::string(prop.TypeName) == "Vector3")
+                        changed |= EditorGUI::Property(prop.Name, *(Vector3 *)ptr);
+                    else if (std::string(prop.TypeName) == "float")
+                        changed |= EditorGUI::Property(prop.Name, *(float *)ptr);
+                    else if (std::string(prop.TypeName) == "Color")
+                        changed |= EditorGUI::Property(prop.Name, *(Color *)ptr);
+                    else if (std::string(prop.TypeName) == "bool")
+                        changed |= EditorGUI::Property(prop.Name, *(bool *)ptr);
+                    else if (std::string(prop.TypeName) == "int")
+                        changed |= EditorGUI::Property(prop.Name, *(int *)ptr);
+                    else if (std::string(prop.TypeName) == "std::string")
+                        changed |= EditorGUI::Property(prop.Name, *(std::string *)ptr);
+                }
+                return changed;
+            }
+            return false;
+        }
+
         // Backward compatibility for simple drawers
         template <typename T> static void Register(const std::string &name, std::function<bool(T &)> drawer)
         {
@@ -68,7 +106,6 @@ namespace CHEngine
 
             if (entity.HasComponent<T>())
             {
-                ImGui::Separator();
                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
                 
                 // Unique ID for the header
@@ -108,7 +145,7 @@ namespace CHEngine
                     T componentCopy = component;
                     if (drawer(componentCopy, entity))
                     {
-                        entity.GetScene()->GetRegistry().patch<T>(
+                        entity.GetScene()->GetRegistry().template patch<T>(
                             entity, [&componentCopy](T &comp) { comp = componentCopy; });
                     }
                     ImGui::Spacing();
@@ -117,44 +154,10 @@ namespace CHEngine
 
                 if (removeComponent)
                 {
-                    entity.GetScene()->GetRegistry().remove<T>(entity);
+                    entity.GetScene()->GetRegistry().template remove<T>(entity);
                 }
             }
         }
-
-    public:
-        // Declarative Builder for simple components
-        template <typename T>
-        struct MetaBuilder
-        {
-            T& Component;
-            bool Changed = false;
-
-            MetaBuilder(T& comp) : Component(comp) { EditorUI::GUI::BeginProperties(); }
-            ~MetaBuilder() { EditorUI::GUI::EndProperties(); }
-
-            template <typename... Args>
-            MetaBuilder& Prop(const char* label, Args&&... args)
-            {
-                if (EditorUI::GUI::Property(label, std::forward<Args>(args)...)) Changed = true;
-                return *this;
-            }
-
-            // For Vec3/Vec2 controls
-            MetaBuilder& Vec3(const char* label, Vector3& v, float reset = 0.0f)
-            {
-                if (EditorUI::GUI::DrawVec3Control(label, v, reset)) Changed = true;
-                return *this;
-            }
-
-            MetaBuilder& Vec2(const char* label, glm::vec2& v, float reset = 0.0f)
-            {
-                if (EditorUI::GUI::DrawVec2Control(label, v, reset)) Changed = true;
-                return *this;
-            }
-            
-            operator bool() const { return Changed; }
-        };
 
     private:
         static std::unordered_map<entt::id_type, ComponentMetadata> s_ComponentRegistry;

@@ -55,8 +55,4 @@ void FontAsset::LoadFromFile(const std::string &path)
         SetState(AssetState::Failed);
     }
 }
-
-void FontAsset::UploadToGPU()
-{
-}
 } // namespace CHEngine

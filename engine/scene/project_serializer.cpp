@@ -50,6 +50,12 @@ bool ProjectSerializer::Serialize(const std::filesystem::path &filepath)
         out << YAML::Key << "EnableConsole" << YAML::Value << config.Runtime.EnableConsole;
         out << YAML::EndMap;
 
+        out << YAML::Key << "Editor" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "CameraMoveSpeed" << YAML::Value << config.Editor.CameraMoveSpeed;
+        out << YAML::Key << "CameraRotationSpeed" << YAML::Value << config.Editor.CameraRotationSpeed;
+        out << YAML::Key << "CameraBoostMultiplier" << YAML::Value << config.Editor.CameraBoostMultiplier;
+        out << YAML::EndMap;
+
         out << YAML::Key << "BuildConfig" << YAML::Value << (int)config.BuildConfig;
 
         out << YAML::EndMap;
@@ -118,6 +124,13 @@ bool ProjectSerializer::Deserialize(const std::filesystem::path &filepath)
         config.Runtime.Fullscreen = projectNode["Runtime"]["Fullscreen"].as<bool>();
         config.Runtime.ShowStats = projectNode["Runtime"]["ShowStats"].as<bool>();
         config.Runtime.EnableConsole = projectNode["Runtime"]["EnableConsole"].as<bool>();
+    }
+
+    if (projectNode["Editor"])
+    {
+        config.Editor.CameraMoveSpeed = projectNode["Editor"]["CameraMoveSpeed"].as<float>();
+        config.Editor.CameraRotationSpeed = projectNode["Editor"]["CameraRotationSpeed"].as<float>();
+        config.Editor.CameraBoostMultiplier = projectNode["Editor"]["CameraBoostMultiplier"].as<float>();
     }
 
     if (projectNode["BuildConfig"])

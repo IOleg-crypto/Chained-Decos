@@ -1,4 +1,4 @@
-# Editor Core Library (Static) for testability
+
 add_library(editor_core STATIC)
 
 target_sources(editor_core PRIVATE
@@ -48,10 +48,10 @@ target_sources(editor_core PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/undo/entity_commands.h
 
     # UI
-    ${CMAKE_CURRENT_SOURCE_DIR}/ui/editor_gui.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/ui/editor_gui.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/ui/editor_layout.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/ui/editor_layout.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_gui.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_gui.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_layout.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_layout.cpp
     # External
     ${CMAKE_SOURCE_DIR}/include/rlImGui/rlImGui.cpp
 )
