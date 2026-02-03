@@ -102,29 +102,35 @@ std::shared_ptr<Project> Project::s_ActiveProject = nullptr;
 
 std::shared_ptr<Project> Project::New()
 {
-    s_ActiveProject = std::make_shared<Project>();
+    auto project = std::make_shared<Project>();
+    project->m_AssetManager = std::make_shared<AssetManager>();
+    project->m_AssetManager->Initialize();
+    s_ActiveProject = project;
     return s_ActiveProject;
 }
 
 std::shared_ptr<Project> Project::Load(const std::filesystem::path &path)
 {
     std::shared_ptr<Project> project = std::make_shared<Project>();
+    project->m_AssetManager = std::make_shared<AssetManager>();
+    project->m_AssetManager->Initialize(path.parent_path());
+    
     ProjectSerializer serializer(project);
     if (serializer.Deserialize(path))
     {
         project->m_Config.ProjectDirectory = path.parent_path();
-        s_ActiveProject = project;
         
         // Register asset search path
-        AssetManager::ClearSearchPaths();
-        AssetManager::AddSearchPath(project->m_Config.ProjectDirectory / project->m_Config.AssetDirectory);
+        project->m_AssetManager->ClearSearchPaths();
+        project->m_AssetManager->AddSearchPath(project->m_Config.ProjectDirectory / project->m_Config.AssetDirectory);
         
         // Load environment if specified
         if (!project->m_Config.EnvironmentPath.empty())
         {
-            project->m_Environment = AssetManager::Get<EnvironmentAsset>(project->m_Config.EnvironmentPath.string());
+            project->m_Environment = project->m_AssetManager->Get<EnvironmentAsset>(project->m_Config.EnvironmentPath.string());
         }
 
+        s_ActiveProject = project;
         return s_ActiveProject;
     }
 
