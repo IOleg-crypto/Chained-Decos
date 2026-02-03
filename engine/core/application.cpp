@@ -4,7 +4,7 @@
 #include "engine/core/log.h"
 #include "engine/core/profiler.h"
 #include "engine/physics/physics.h"
-#include "engine/graphics/visuals.h"
+#include "engine/graphics/render.h"
 #include "engine/graphics/asset_manager.h"
 #include "engine/graphics/environment.h"
 #include "engine/graphics/font_asset.h"
@@ -88,7 +88,7 @@ namespace CHEngine
 
         AssetManager::Init();
         ComponentSerializer::Init();
-        Visuals::Init();
+        Render::Init();
         Physics::Init();
 
         // Audio setup
@@ -120,7 +120,7 @@ namespace CHEngine
         
         Physics::Shutdown();
         AssetManager::Shutdown();
-        Visuals::Shutdown();
+        Render::Shutdown();
         
         m_Window.reset();
         m_Running = false;
