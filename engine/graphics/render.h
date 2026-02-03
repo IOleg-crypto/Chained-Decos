@@ -30,7 +30,7 @@ namespace CHEngine
         bool DrawNavMesh = false;
     };
 
-    struct RendererState
+    struct RenderState
     {
         // Shaders
         std::shared_ptr<ShaderAsset> LightingShader;
@@ -98,7 +98,7 @@ namespace CHEngine
 
     public: // State Management
         /** Returns the current internal state of the renderer. */
-        static RendererState& GetState();
+        static RenderState& GetState();
 
         /** Configures the primary directional light source. */
         static void SetDirectionalLight(Vector3 direction, Color color);
@@ -116,7 +116,7 @@ namespace CHEngine
         static void InitSkybox();
 
     private: // Internal State
-        static RendererState s_State;
+        static RenderState s_State;
     };
 }
 

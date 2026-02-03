@@ -11,7 +11,7 @@
 
 namespace CHEngine
 {
-    RendererState Render::s_State;
+    RenderState Render::s_State;
 
     void Render::Init()
     {
@@ -19,7 +19,7 @@ namespace CHEngine
         
         // Initialize underlying API context if needed
         // For Raylib/OpenGL, we ensure initial state is clean
-        s_State = RendererState();
+        s_State = RenderState();
         
         InitSkybox();
         
@@ -235,7 +235,7 @@ namespace CHEngine
         }
     }
 
-    RendererState& Render::GetState()
+    RenderState& Render::GetState()
     {
         return s_State;
     }
