@@ -105,9 +105,6 @@ private:
 
     bool m_IsSimulationRunning = false;
 
-    void UpdateAnimation(float deltaTime);
-    void UpdateAudio(float deltaTime);
-
     // Reactive signals handlers
     void OnModelComponentAdded(entt::registry &reg, entt::entity entity);
     void OnAnimationComponentAdded(entt::registry &reg, entt::entity entity);
