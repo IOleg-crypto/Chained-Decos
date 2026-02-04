@@ -1,20 +1,22 @@
 #include "viewport_panel.h"
 #include "editor_layer.h"
 #include "engine/core/application.h"
-#include "engine/graphics/draw_command.h"
 #include "engine/scene/scene.h"
 #include "extras/IconsFontAwesome6.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "raylib.h"
 #include "rlImGui.h"
+#include "engine/graphics/scene_renderer.h"
 #include "editor_gui.h"
 #include "editor_layout.h"
 #include "engine/graphics/asset_manager.h"
 #include "engine/graphics/model_asset.h"
+#include "engine/scene/project.h"
 #include "engine/core/input.h"
 #include "engine/core/events.h"
 #include "engine/scene/scene_events.h"
+#include "editor_events.h"
 #include "engine/scene/prefab_serializer.h"
 #include "engine/scene/components.h"
 #include "engine/physics/physics.h"
@@ -26,18 +28,18 @@ namespace CHEngine
 {
     static void ClearSceneBackground(Scene *scene, Vector2 size)
     {
-        auto mode = scene->GetBackgroundMode();
+        auto mode = scene->GetSettings().Mode;
         if (mode == BackgroundMode::Color)
         {
-            ClearBackground(scene->GetBackgroundColor());
+            ClearBackground(scene->GetSettings().BackgroundColor);
         }
         else if (mode == BackgroundMode::Texture)
         {
-            auto &path = scene->GetBackgroundTexturePath();
+            auto &path = scene->GetSettings().BackgroundTexturePath;
             if (!path.empty())
             {
                 // Fallback for now
-                ClearBackground(scene->GetBackgroundColor());
+                ClearBackground(scene->GetSettings().BackgroundColor);
             }
         }
         else if (mode == BackgroundMode::Environment3D)
@@ -112,63 +114,6 @@ namespace CHEngine
     ImVec2 viewportSize = ImGui::GetContentRegionAvail();
     ImVec2 viewportScreenPos = ImGui::GetCursorScreenPos(); // Global top-left corner position
 
-    // --- 0. FLOATING TOOLBAR ---
-    // Floating style for cleaner viewport
-    ImVec2 toolbarPos = { viewportScreenPos.x + 10.0f, viewportScreenPos.y + 10.0f };
-    ImGui::SetNextWindowPos(toolbarPos);
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.12f, 0.8f));
-    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5, 5));
-    
-    if (ImGui::BeginChild("##FloatingToolbar", ImVec2(280, 40), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
-    {
-        ImGui::SetCursorPosY(6); // Center align vertically-ish
-        ImGui::Indent(5);
-        
-        DrawGizmoButtons();
-        
-        ImGui::SameLine(0, 10);
-        ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
-        ImGui::SameLine(0, 10);
-
-        // Playback Tools
-        SceneState sceneState = EditorLayer::Get().GetSceneState();
-        bool isPlaying = (sceneState == SceneState::Play);
-
-        if (isPlaying) 
-        {
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 1.0f, 0.3f, 1.0f));
-        }
-        if (ImGui::Button(isPlaying ? ICON_FA_STOP : ICON_FA_PLAY, ImVec2(28, 28))) 
-        { 
-            if (isPlaying) 
-            { 
-                SceneStopEvent e; 
-                EditorLayer::Get().OnEvent(e); 
-            }
-            else 
-            { 
-                ScenePlayEvent e; 
-                EditorLayer::Get().OnEvent(e); 
-            }
-        }
-        if (isPlaying) 
-        {
-            ImGui::PopStyleColor();
-        }
-    }
-    ImGui::EndChild();
-    ImGui::PopStyleVar(2);
-    ImGui::PopStyleColor();
-
-    // Rocket Launch button (Top Right)
-    ImGui::SetCursorScreenPos({ viewportScreenPos.x + viewportSize.x - 100.0f, viewportScreenPos.y + 10.0f });
-    if (ImGui::Button(ICON_FA_ROCKET " Launch", ImVec2(90, 28)))
-    {
-        AppLaunchRuntimeEvent e;
-        Application::OnEvent(e);
-    }
-
     // --- 1. PREPARE SCENE RENDER ---
     auto selectedEntity = EditorLayer::Get().GetSelectedEntity();
     bool isUISelected = selectedEntity && selectedEntity.HasComponent<ControlComponent>();
@@ -204,7 +149,8 @@ namespace CHEngine
     BeginTextureMode(m_ViewportTexture);
     ClearSceneBackground(activeScene.get(), {viewportSize.x, viewportSize.y});
     Camera3D camera = EditorGUI::GetActiveCamera(EditorLayer::Get().GetSceneState());
-    activeScene->OnRender(camera, Application::GetDeltaTime(), &EditorLayer::Get().GetDebugRenderFlags());
+
+    SceneRenderer::RenderScene(activeScene.get(), camera, GetFrameTime(), &EditorLayer::Get().GetDebugRenderFlags());
     EndTextureMode();
 
     rlImGuiImageRenderTexture(&m_ViewportTexture);
@@ -250,24 +196,24 @@ namespace CHEngine
     ImGui::SetCursorScreenPos(viewportScreenPos);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     
-    if (ImGui::BeginChild("##SceneUI", viewportSize, false, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoInputs))
+    if (ImGui::BeginChild("##SceneUI", viewportSize, false, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground))
     {
-        // Render Game UI Overlay
-        activeScene->OnImGuiRender(viewportScreenPos, viewportSize, 0, EditorLayer::Get().GetSceneState() == SceneState::Edit);
+        // Render Game UI Overlay (moved from Scene to keep Engine clean)
+        Render::DrawUI(activeScene.get(), viewportScreenPos, viewportSize, EditorLayer::Get().GetSceneState() == SceneState::Edit);
 
         // Selection Highlight
         if (isUISelected)
         {
             auto &cc = selectedEntity.GetComponent<ControlComponent>();
-            auto& canvas = activeScene->GetCanvasSettings();
+            auto& canvas = activeScene->GetSettings().Canvas;
             
             // Use member function for simple anchoring
             auto rect = cc.Transform.CalculateRect( 
                 {viewportSize.x, viewportSize.y}, 
                 {viewportScreenPos.x, viewportScreenPos.y});
             
-            ImVec2 p1 = {rect.Min.x, rect.Min.y};
-            ImVec2 p2 = {rect.Max.x, rect.Max.y};
+            ImVec2 p1 = {rect.x, rect.y};
+            ImVec2 p2 = {rect.x + rect.width, rect.y + rect.height};
 
             // Selection Frame
             ImDrawList* drawList = ImGui::GetWindowDrawList();
@@ -328,7 +274,8 @@ namespace CHEngine
                 {viewportScreenPos.x, viewportScreenPos.y});
 
             glm::vec2 mouse = {mousePos.x, mousePos.y};
-            if (rect.Contains(mouse))
+            Vector2 mouseRaylib = {mouse.x, mouse.y};
+            if (CheckCollisionPointRec(mouseRaylib, rect))
             {
                 bestHit = entity;
             }
@@ -358,7 +305,7 @@ namespace CHEngine
                 auto &modelComp = modelView.get<ModelComponent>(entityID);
                 if (modelComp.ModelPath.empty()) continue;
 
-                auto modelAsset = AssetManager::Get<ModelAsset>(modelComp.ModelPath);
+                auto modelAsset = Project::GetActive()->GetAssetManager()->Get<ModelAsset>(modelComp.ModelPath);
                 if (!modelAsset || !modelAsset->IsReady()) continue;
 
                 auto &tc = modelView.get<TransformComponent>(entityID);
@@ -420,6 +367,63 @@ namespace CHEngine
             EntitySelectedEvent e(entt::null, activeScene.get());
             EditorLayer::Get().OnEvent(e);
         }
+    }
+
+    // --- 4. FLOATING HUD (Drawn last to be on top of SceneUI) ---
+    // Floating style for cleaner viewport
+    ImVec2 toolbarPos = { viewportScreenPos.x + 10.0f, viewportScreenPos.y + 10.0f };
+    ImGui::SetNextWindowPos(toolbarPos);
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.12f, 0.8f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5, 5));
+    
+    if (ImGui::BeginChild("##FloatingToolbar", ImVec2(280, 40), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
+    {
+        ImGui::SetCursorPosY(6); // Center align vertically-ish
+        ImGui::Indent(5);
+        
+        DrawGizmoButtons();
+        
+        ImGui::SameLine(0, 10);
+        ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+        ImGui::SameLine(0, 10);
+
+        // Playback Tools
+        SceneState sceneState = EditorLayer::Get().GetSceneState();
+        bool isPlaying = (sceneState == SceneState::Play);
+
+        if (isPlaying) 
+        {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 1.0f, 0.3f, 1.0f));
+        }
+        if (ImGui::Button(isPlaying ? ICON_FA_STOP : ICON_FA_PLAY, ImVec2(28, 28))) 
+        { 
+            if (isPlaying) 
+            { 
+                SceneStopEvent e; 
+                EditorLayer::Get().OnEvent(e); 
+            }
+            else 
+            { 
+                ScenePlayEvent e; 
+                EditorLayer::Get().OnEvent(e); 
+            }
+        }
+        if (isPlaying) 
+        {
+            ImGui::PopStyleColor();
+        }
+    }
+    ImGui::EndChild();
+    ImGui::PopStyleVar(2);
+    ImGui::PopStyleColor();
+
+    // Rocket Launch button (Top Right)
+    ImGui::SetCursorScreenPos({ viewportScreenPos.x + viewportSize.x - 100.0f, viewportScreenPos.y + 10.0f });
+    if (ImGui::Button(ICON_FA_ROCKET " Launch", ImVec2(90, 28)))
+    {
+        AppLaunchRuntimeEvent e;
+        Application::Get().OnEvent(e);
     }
 
     ImGui::PopID();
