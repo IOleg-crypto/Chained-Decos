@@ -7,6 +7,7 @@
 #include "engine/graphics/model_asset.h"
 #include "engine/graphics/environment.h"
 #include "engine/graphics/asset_manager.h"
+#include "engine/scene/project.h"
 #include "scene.h"
 #include "script_registry.h"
 
@@ -39,20 +40,31 @@ namespace CHEngine
         out << YAML::Key << "Scene" << YAML::Value << "Untitled";
 
         // Serialize Background Settings
-        out << YAML::Key << "Background";
-        out << YAML::BeginMap;
-        out << YAML::Key << "Mode" << YAML::Value << (int)m_Scene->GetBackgroundMode();
-        out << YAML::Key << "Color" << YAML::Value << m_Scene->GetBackgroundColor();
-        out << YAML::Key << "TexturePath" << YAML::Value << m_Scene->GetBackgroundTexturePath();
+        out << YAML::Key << "Background" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "Mode" << YAML::Value << (int)m_Scene->m_Settings.Mode;
+        out << YAML::Key << "Color" << YAML::Value << m_Scene->m_Settings.BackgroundColor;
+        out << YAML::Key << "TexturePath" << YAML::Value << m_Scene->m_Settings.BackgroundTexturePath;
         out << YAML::EndMap;
 
         // Serialize Environment
         if (m_Scene->m_Settings.Environment)
         {
             out << YAML::Key << "EnvironmentPath" << YAML::Value << m_Scene->m_Settings.Environment->GetPath();
+            
+            // Also serialize the current settings for quick preview/fallback
+            auto& settings = m_Scene->m_Settings.Environment->GetSettings();
+            out << YAML::Key << "Skybox" << YAML::Value << YAML::BeginMap;
+            out << YAML::Key << "TexturePath" << YAML::Value << settings.Skybox.TexturePath;
+            out << YAML::Key << "Exposure" << YAML::Value << settings.Skybox.Exposure;
+            out << YAML::Key << "Brightness" << YAML::Value << settings.Skybox.Brightness;
+            out << YAML::Key << "Contrast" << YAML::Value << settings.Skybox.Contrast;
+            out << YAML::EndMap;
         }
-
-
+        else
+        {
+            // Fallback: If no environment asset, we might still have a default or temporary skybox
+            // (Though in this engine, Environment objects are usually used)
+        }
 
         out << YAML::Key << "Canvas" << YAML::BeginMap;
         out << YAML::Key << "ReferenceResolution" << YAML::Value << m_Scene->m_Settings.Canvas.ReferenceResolution;
@@ -123,25 +135,26 @@ namespace CHEngine
             {
                 auto background = data["Background"];
                 if (background["Mode"])
-                    m_Scene->SetBackgroundMode((BackgroundMode)background["Mode"].as<int>());
+                    m_Scene->m_Settings.Mode = (BackgroundMode)background["Mode"].as<int>();
                 if (background["Color"])
-                    m_Scene->SetBackgroundColor(background["Color"].as<Color>());
+                    m_Scene->m_Settings.BackgroundColor = background["Color"].as<Color>();
                 if (background["TexturePath"] && background["TexturePath"].IsScalar())
-                    m_Scene->SetBackgroundTexturePath(background["TexturePath"].as<std::string>());
+                    m_Scene->m_Settings.BackgroundTexturePath = background["TexturePath"].as<std::string>();
             }
 
             // Deserialize Environment
             if (data["EnvironmentPath"] && data["EnvironmentPath"].IsScalar())
             {
                 std::string envPath = data["EnvironmentPath"].as<std::string>();
-                m_Scene->SetEnvironment(AssetManager::Get<EnvironmentAsset>(envPath));
+                if (auto project = Project::GetActive())
+                    m_Scene->m_Settings.Environment = project->GetAssetManager()->Get<EnvironmentAsset>(envPath);
             }
 
             // Deserialize Skybox (legacy migration)
             if (data["Skybox"])
             {
                 // Only migrate if we haven't already loaded an EnvironmentAsset
-                if (!m_Scene->GetEnvironment())
+                if (!m_Scene->m_Settings.Environment)
                 {
                     CH_CORE_WARN("SceneSerializer: Migrating legacy Skybox to EnvironmentAsset...");
                     auto skybox = data["Skybox"];
@@ -163,7 +176,7 @@ namespace CHEngine
                     settings.LightColor = {255, 255, 255, 255};
                     settings.LightDirection = {-0.5f, -1.0f, -0.5f};
 
-                    m_Scene->SetEnvironment(env);
+                    m_Scene->GetSettings().Environment = env;
                 }
             }
 
@@ -171,7 +184,7 @@ namespace CHEngine
             if (data["Canvas"])
             {
                 auto canvas = data["Canvas"];
-                auto &c = m_Scene->GetCanvasSettings();
+                auto &c = m_Scene->m_Settings.Canvas;
                 if (canvas["ReferenceResolution"])
                     c.ReferenceResolution = canvas["ReferenceResolution"].as<glm::vec2>();
                 if (canvas["ScaleMode"])
