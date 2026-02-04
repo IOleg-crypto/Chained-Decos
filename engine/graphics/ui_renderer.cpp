@@ -2,6 +2,8 @@
 #include "engine/scene/components.h"
 #include "engine/scene/entity.h"
 #include "engine/scene/project.h"
+#include "engine/graphics/asset_manager.h"
+#include "engine/graphics/texture_asset.h"
 #include "engine/core/profiler.h"
 #include <algorithm>
 #include <map>
