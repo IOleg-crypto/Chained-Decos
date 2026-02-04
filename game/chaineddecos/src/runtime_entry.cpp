@@ -8,15 +8,12 @@ namespace CHEngine
 {
     extern void RegisterGameScripts();
 
-    Application *CreateApplication(int argc, char **argv)
+    Application *CreateApplication(ApplicationCommandLineArgs args)
     {
         // 1. Setup Project-specific configuration (Title, Icon, etc.)
-        Application::Config config;
-        config.Title = "Chained Decos";
-        config.Width = 1280;
-        config.Height = 720;
-        config.Argc = argc;
-        config.Argv = argv;
+        ApplicationSpecification spec;
+        spec.Name = "Chained Decos";
+        spec.CommandLineArgs = args;
 
         RegisterGameScripts();
 
@@ -24,16 +21,16 @@ namespace CHEngine
         std::string projectPath = ""; // RuntimeApplication will auto-discover if empty
 
         // Handle CLI overrides
-        for (int i = 1; i < argc; ++i)
+        for (int i = 1; i < args.Count; ++i)
         {
-            std::string arg = argv[i];
-            if (arg == "--project" && i + 1 < argc)
+            std::string arg = args.Args[i];
+            if (arg == "--project" && i + 1 < args.Count)
             {
-                projectPath = argv[++i];
+                projectPath = args.Args[++i];
             }
-            else if (arg == "--scene" && i + 1 < argc)
+            else if (arg == "--scene" && i + 1 < args.Count)
             {
-                config.StartScene = argv[++i];
+                // Note: Scene overrides should probably be handled by the layer or project loader
             }
             else if (i == 1 && arg[0] != '-')
             {
@@ -43,6 +40,6 @@ namespace CHEngine
 
         // 3. Create the generic runtime host
         // Automated discovery will happen inside RuntimeApplication
-        return new RuntimeApplication(config, projectPath);
+        return new RuntimeApplication(spec, projectPath);
     }
 } // namespace CHEngine

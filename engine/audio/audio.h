@@ -10,26 +10,23 @@ namespace CHEngine
 {
     class SoundAsset;
 
-    /**
-     * Stateless action class for global audio management.
-     * Following the 'Action-Based' naming convention.
-     */
+    // Stateless action class for global audio management.
     class Audio
     {
     public:
-        /** Initializes the audio backend. */
+        // Initializes the audio backend.
         static void Init();
 
-        /** Shuts down the audio backend. */
+        // Shuts down the audio backend.
         static void Shutdown();
 
-        /** Updates all active audio sources in the scene. */
+        // Updates all active audio sources in the scene.
         static void Update(Scene* scene, Timestep ts);
 
-        /** Plays a specified sound asset. */
+        // Plays a specified sound asset.
         static void Play(std::shared_ptr<SoundAsset> asset, float volume = 1.0f, float pitch = 1.0f, bool loop = false);
         
-        /** Stops a specified sound asset. */
+        // Stops a specified sound asset.
         static void Stop(std::shared_ptr<SoundAsset> asset);
     };
 }

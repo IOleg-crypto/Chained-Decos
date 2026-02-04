@@ -1,3 +1,6 @@
+#ifndef CH_LAYER_H
+#define CH_LAYER_H
+
 #include "engine/core/base.h"
 #include "engine/core/events.h"
 #include "engine/core/timestep.h"
@@ -29,7 +32,7 @@ public:
         m_Enabled = enabled;
     }
 
-    virtual void OnUpdate(float deltaTime)
+    virtual void OnUpdate(Timestep ts)
     {
     }
     virtual void OnRender(Timestep ts)

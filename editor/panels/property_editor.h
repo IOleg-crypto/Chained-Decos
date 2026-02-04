@@ -48,43 +48,6 @@ namespace CHEngine
             RegisterComponent(entt::type_hash<T>::value(), metadata);
         }
 
-        // Automated registration via reflection
-        template <typename T> static void Register(const std::string &name)
-        {
-            Register<T>(name, [](T &comp, Entity e) {
-                return DrawReflectedProperties<T>(comp);
-            });
-        }
-
-        template <typename T> static bool DrawReflectedProperties(T &instance)
-        {
-            if constexpr (ReflectData<T>::Registered)
-            {
-                bool changed = false;
-                auto &props = ReflectData<T>::GetProperties();
-                for (const auto &prop : props)
-                {
-                    void *ptr = (char *)&instance + prop.Offset;
-
-                    // Manual dispatch for common types
-                    if (std::string(prop.TypeName) == "Vector3")
-                        changed |= EditorGUI::Property(prop.Name, *(Vector3 *)ptr);
-                    else if (std::string(prop.TypeName) == "float")
-                        changed |= EditorGUI::Property(prop.Name, *(float *)ptr);
-                    else if (std::string(prop.TypeName) == "Color")
-                        changed |= EditorGUI::Property(prop.Name, *(Color *)ptr);
-                    else if (std::string(prop.TypeName) == "bool")
-                        changed |= EditorGUI::Property(prop.Name, *(bool *)ptr);
-                    else if (std::string(prop.TypeName) == "int")
-                        changed |= EditorGUI::Property(prop.Name, *(int *)ptr);
-                    else if (std::string(prop.TypeName) == "std::string")
-                        changed |= EditorGUI::Property(prop.Name, *(std::string *)ptr);
-                }
-                return changed;
-            }
-            return false;
-        }
-
         // Backward compatibility for simple drawers
         template <typename T> static void Register(const std::string &name, std::function<bool(T &)> drawer)
         {

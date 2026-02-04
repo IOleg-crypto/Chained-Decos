@@ -2,7 +2,6 @@
 #define CH_TAG_COMPONENT_H
 
 #include <string>
-#include "engine/scene/reflect.h"
 
 namespace CHEngine
 {
@@ -17,9 +16,6 @@ struct TagComponent
     }
 };
 
-BEGIN_REFLECT(TagComponent)
-    PROPERTY(std::string, Tag, "Tag")
-END_REFLECT()
 } // namespace CHEngine
 
 #endif // CH_TAG_COMPONENT_H

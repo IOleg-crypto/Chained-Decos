@@ -4,7 +4,6 @@
 #include "raylib.h"
 #include <string>
 #include <vector>
-#include "../reflect.h"
 
 namespace CHEngine
 {
@@ -47,14 +46,6 @@ struct AnimationComponent
         IsPlaying = false;
     }
 };
-
-BEGIN_REFLECT(AnimationComponent)
-    PROPERTY(bool, IsPlaying, "Playing")
-    PROPERTY(bool, IsLooping, "Looping")
-    PROPERTY(int, CurrentAnimationIndex, "Animation Index")
-    PROPERTY(float, FrameTimeCounter, "Frame Time")
-    PROPERTY(int, CurrentFrame, "Current Frame")
-END_REFLECT()
 
 } // namespace CHEngine
 

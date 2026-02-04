@@ -7,6 +7,8 @@
 #include "nfd.h"
 #include "raymath.h"
 #include "engine/graphics/asset_manager.h"
+#include "engine/graphics/model_asset.h"
+#include "engine/scene/project.h"
 
 namespace CHEngine
 {
@@ -53,7 +55,66 @@ namespace CHEngine
 
     static bool DrawTransform(TransformComponent& comp)
     {
-        return PropertyEditor::DrawReflectedProperties<TransformComponent>(comp);
+        bool changed = false;
+        changed |= EditorGUI::DrawVec3("Position", comp.Translation);
+        changed |= EditorGUI::DrawVec3("Rotation", comp.Rotation);
+        changed |= EditorGUI::DrawVec3("Scale", comp.Scale, 1.0f);
+        return changed;
+    }
+
+    static bool DrawAudio(AudioComponent& comp)
+    {
+        auto pb = EditorGUI::Begin();
+        pb.String("Sound Path", comp.SoundPath)
+          .Bool("Loop", comp.Loop)
+          .Bool("Play On Start", comp.PlayOnStart)
+          .Float("Volume", comp.Volume, 0.05f, 0.0f, 2.0f)
+          .Float("Pitch", comp.Pitch, 0.05f, 0.1f, 5.0f);
+        return pb.Changed;
+    }
+
+    static bool DrawPointLight(PointLightComponent& comp)
+    {
+        auto pb = EditorGUI::Begin();
+        pb.Color("Color", comp.LightColor)
+          .Float("Intensity", comp.Intensity, 0.1f, 0.0f, 100.0f)
+          .Float("Radius", comp.Radius, 0.1f, 0.0f, 1000.0f);
+        return pb.Changed;
+    }
+
+    static bool DrawCamera(CameraComponent& comp)
+    {
+        auto pb = EditorGUI::Begin();
+        pb.Float("FOV", comp.Fov, 1.0f, 1.0f, 120.0f)
+          .Float("Near", comp.NearPlane, 0.1f)
+          .Float("Far", comp.FarPlane, 1.0f);
+        return pb.Changed;
+    }
+
+    static bool DrawRigidBody(RigidBodyComponent& comp)
+    {
+        auto pb = EditorGUI::Begin();
+        pb.Float("Mass", comp.Mass, 0.1f, 0.0f)
+          .Bool("Use Gravity", comp.UseGravity);
+        return pb.Changed;
+    }
+
+    static bool DrawSpawn(SpawnComponent& comp)
+    {
+        auto pb = EditorGUI::Begin();
+        pb.Bool("Active", comp.IsActive)
+          .Vec3("Zone Size", comp.ZoneSize)
+          .Vec3("Spawn Point", comp.SpawnPoint);
+        return pb.Changed;
+    }
+
+    static bool DrawPlayer(PlayerComponent& comp)
+    {
+        auto pb = EditorGUI::Begin();
+        pb.Float("Speed", comp.MovementSpeed)
+          .Float("Sensitivity", comp.LookSensitivity)
+          .Float("Jump Force", comp.JumpForce);
+        return pb.Changed;
     }
 
     static bool DrawModel(ModelComponent& comp)
@@ -77,7 +138,8 @@ namespace CHEngine
         ImGui::SameLine();
         if (ImGui::Button(ICON_FA_ROTATE " Reload##Model"))
         {
-            AssetManager::Clear<ModelAsset>(comp.ModelPath);
+            if (auto project = Project::GetActive())
+                project->GetAssetManager()->Remove<ModelAsset>(comp.ModelPath);
             comp.Asset = nullptr;
             changed = true;
         }
@@ -113,7 +175,7 @@ namespace CHEngine
 
     static bool DrawLight(PointLightComponent& comp)
     {
-        return PropertyEditor::DrawReflectedProperties<PointLightComponent>(comp);
+        return DrawPointLight(comp);
     }
 
 
@@ -246,27 +308,694 @@ namespace CHEngine
         return changed;
     }
 
-    // ... similarly for other widgets if needed. For now I'll just clean up the ones I have.
+    static bool DrawPanelWidget(PanelControl& comp, Entity e)
+    {
+        bool changed = false;
+        auto pb = EditorGUI::Begin();
+        pb.String("Texture Path", comp.TexturePath)
+          .Bool("Full Screen", comp.FullScreen);
+        if (pb.Changed) changed = true;
+
+        if (ImGui::TreeNodeEx("Style", ImGuiTreeNodeFlags_Framed))
+        {
+            if (DrawUIStyle(comp.Style)) changed = true;
+            ImGui::TreePop();
+        }
+
+        if (e.HasComponent<ControlComponent>())
+        {
+            if (ImGui::TreeNodeEx("Layout", ImGuiTreeNodeFlags_Framed))
+            {
+                if (DrawControlComponentUI(e.GetComponent<ControlComponent>())) changed = true;
+                ImGui::TreePop();
+            }
+        }
+        return changed;
+    }
+
+    static bool DrawLabelWidget(LabelControl& comp, Entity e)
+    {
+        bool changed = false;
+        auto pb = EditorGUI::Begin();
+        pb.String("Text", comp.Text);
+        if (pb.Changed) changed = true;
+
+        if (ImGui::TreeNodeEx("Style", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            if (DrawTextStyle(comp.Style)) changed = true;
+            ImGui::TreePop();
+        }
+
+        if (e.HasComponent<ControlComponent>())
+        {
+            if (ImGui::TreeNodeEx("Layout", ImGuiTreeNodeFlags_Framed))
+            {
+                if (DrawControlComponentUI(e.GetComponent<ControlComponent>())) changed = true;
+                ImGui::TreePop();
+            }
+        }
+        return changed;
+    }
+
+    static bool DrawSliderWidget(SliderControl& comp, Entity e)
+    {
+        bool changed = false;
+        auto pb = EditorGUI::Begin();
+        pb.String("Label", comp.Label)
+          .Float("Value", comp.Value)
+          .Float("Min", comp.Min)
+          .Float("Max", comp.Max);
+        if (pb.Changed) changed = true;
+
+        if (ImGui::TreeNodeEx("Style", ImGuiTreeNodeFlags_Framed))
+        {
+            if (DrawUIStyle(comp.Style)) changed = true;
+            ImGui::TreePop();
+        }
+
+        if (e.HasComponent<ControlComponent>())
+        {
+            if (ImGui::TreeNodeEx("Layout", ImGuiTreeNodeFlags_Framed))
+            {
+                if (DrawControlComponentUI(e.GetComponent<ControlComponent>())) changed = true;
+                ImGui::TreePop();
+            }
+        }
+        return changed;
+    }
+
+    static bool DrawCheckboxWidget(CheckboxControl& comp, Entity e)
+    {
+        bool changed = false;
+        auto pb = EditorGUI::Begin();
+        pb.String("Label", comp.Label)
+          .Bool("Checked", comp.Checked);
+        if (pb.Changed) changed = true;
+
+        if (ImGui::TreeNodeEx("Style", ImGuiTreeNodeFlags_Framed))
+        {
+            if (DrawUIStyle(comp.Style)) changed = true;
+            ImGui::TreePop();
+        }
+
+        if (e.HasComponent<ControlComponent>())
+        {
+            if (ImGui::TreeNodeEx("Layout", ImGuiTreeNodeFlags_Framed))
+            {
+                if (DrawControlComponentUI(e.GetComponent<ControlComponent>())) changed = true;
+                ImGui::TreePop();
+            }
+        }
+        return changed;
+    }
+
+    static bool DrawInputTextWidget(InputTextControl& comp, Entity e)
+    {
+        bool changed = false;
+        auto pb = EditorGUI::Begin();
+        pb.String("Label", comp.Label)
+          .String("Text", comp.Text)
+          .String("Placeholder", comp.Placeholder)
+          .Int("Max Length", comp.MaxLength)
+          .Bool("Multiline", comp.Multiline)
+          .Bool("Read Only", comp.ReadOnly)
+          .Bool("Password", comp.Password);
+        if (pb.Changed) changed = true;
+
+        if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed))
+        {
+            if (DrawTextStyle(comp.Style)) changed = true;
+            ImGui::TreePop();
+        }
+
+        if (ImGui::TreeNodeEx("Box Style", ImGuiTreeNodeFlags_Framed))
+        {
+            if (DrawUIStyle(comp.BoxStyle)) changed = true;
+            ImGui::TreePop();
+        }
+
+        if (e.HasComponent<ControlComponent>())
+        {
+            if (ImGui::TreeNodeEx("Layout", ImGuiTreeNodeFlags_Framed))
+            {
+                if (DrawControlComponentUI(e.GetComponent<ControlComponent>())) changed = true;
+                ImGui::TreePop();
+            }
+        }
+        return changed;
+    }
+
+    static bool DrawComboBoxWidget(ComboBoxControl& comp, Entity e)
+    {
+        bool changed = false;
+        auto pb = EditorGUI::Begin();
+        pb.String("Label", comp.Label)
+          .Int("Selected Index", comp.SelectedIndex);
+        if (pb.Changed) changed = true;
+
+        if (ImGui::TreeNodeEx("Items", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            for (int i = 0; i < comp.Items.size(); i++)
+            {
+                ImGui::PushID(i);
+                char buf[256];
+                strncpy(buf, comp.Items[i].c_str(), sizeof(buf) - 1);
+                if (ImGui::InputText("##item", buf, sizeof(buf)))
+                {
+                    comp.Items[i] = buf;
+                    changed = true;
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("X"))
+                {
+                    comp.Items.erase(comp.Items.begin() + i);
+                    changed = true;
+                    ImGui::PopID();
+                    break;
+                }
+                ImGui::PopID();
+            }
+            if (ImGui::Button("Add Item"))
+            {
+                comp.Items.push_back("New Option");
+                changed = true;
+            }
+            ImGui::TreePop();
+        }
+
+        if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed))
+        {
+            if (DrawTextStyle(comp.Style)) changed = true;
+            ImGui::TreePop();
+        }
+
+        if (ImGui::TreeNodeEx("Box Style", ImGuiTreeNodeFlags_Framed))
+        {
+            if (DrawUIStyle(comp.BoxStyle)) changed = true;
+            ImGui::TreePop();
+        }
+
+        if (e.HasComponent<ControlComponent>())
+        {
+            if (ImGui::TreeNodeEx("Layout", ImGuiTreeNodeFlags_Framed))
+            {
+                if (DrawControlComponentUI(e.GetComponent<ControlComponent>())) changed = true;
+                ImGui::TreePop();
+            }
+        }
+        return changed;
+    }
+
+    static bool DrawProgressBarWidget(ProgressBarControl& comp, Entity e)
+    {
+        bool changed = false;
+        auto pb = EditorGUI::Begin();
+        pb.Float("Progress", comp.Progress, 0.0f, 1.0f)
+          .String("Overlay Text", comp.OverlayText)
+          .Bool("Show Percentage", comp.ShowPercentage);
+        if (pb.Changed) changed = true;
+
+        if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed))
+        {
+            if (DrawTextStyle(comp.Style)) changed = true;
+            ImGui::TreePop();
+        }
+
+        if (ImGui::TreeNodeEx("Bar Style", ImGuiTreeNodeFlags_Framed))
+        {
+            if (DrawUIStyle(comp.BarStyle)) changed = true;
+            ImGui::TreePop();
+        }
+
+        if (e.HasComponent<ControlComponent>())
+        {
+            if (ImGui::TreeNodeEx("Layout", ImGuiTreeNodeFlags_Framed))
+            {
+                if (DrawControlComponentUI(e.GetComponent<ControlComponent>())) changed = true;
+                ImGui::TreePop();
+            }
+        }
+        return changed;
+    }
+
+    static bool DrawImageWidget(ImageControl& comp, Entity e)
+    {
+        bool changed = false;
+        auto pb = EditorGUI::Begin();
+        pb.String("Texture Path", comp.TexturePath)
+          .Vec2("Size", comp.Size)
+          .Color("Tint Color", comp.TintColor)
+          .Color("Border Color", comp.BorderColor);
+        if (pb.Changed) changed = true;
+
+        if (ImGui::TreeNodeEx("Style", ImGuiTreeNodeFlags_Framed))
+        {
+            if (DrawUIStyle(comp.Style)) changed = true;
+            ImGui::TreePop();
+        }
+
+        if (e.HasComponent<ControlComponent>())
+        {
+            if (ImGui::TreeNodeEx("Layout", ImGuiTreeNodeFlags_Framed))
+            {
+                if (DrawControlComponentUI(e.GetComponent<ControlComponent>())) changed = true;
+                ImGui::TreePop();
+            }
+        }
+        return changed;
+    }
+
+    static bool DrawImageButtonWidget(ImageButtonControl& comp, Entity e)
+    {
+        bool changed = false;
+        auto pb = EditorGUI::Begin();
+        pb.String("Label", comp.Label)
+          .String("Texture Path", comp.TexturePath)
+          .Vec2("Size", comp.Size)
+          .Color("Tint Color", comp.TintColor)
+          .Color("Background Color", comp.BackgroundColor)
+          .Int("Frame Padding", comp.FramePadding);
+        if (pb.Changed) changed = true;
+
+        if (ImGui::TreeNodeEx("Style", ImGuiTreeNodeFlags_Framed))
+        {
+            if (DrawUIStyle(comp.Style)) changed = true;
+            ImGui::TreePop();
+        }
+
+        if (e.HasComponent<ControlComponent>())
+        {
+            if (ImGui::TreeNodeEx("Layout", ImGuiTreeNodeFlags_Framed))
+            {
+                if (DrawControlComponentUI(e.GetComponent<ControlComponent>())) changed = true;
+                ImGui::TreePop();
+            }
+        }
+        return changed;
+    }
+
+    static bool DrawSeparatorWidget(SeparatorControl& comp, Entity e)
+    {
+        bool changed = false;
+        auto pb = EditorGUI::Begin();
+        pb.Float("Thickness", comp.Thickness)
+          .Color("Color", comp.LineColor);
+        if (pb.Changed) changed = true;
+
+        if (e.HasComponent<ControlComponent>())
+        {
+            if (ImGui::TreeNodeEx("Layout", ImGuiTreeNodeFlags_Framed))
+            {
+                if (DrawControlComponentUI(e.GetComponent<ControlComponent>())) changed = true;
+                ImGui::TreePop();
+            }
+        }
+        return changed;
+    }
+
+    static bool DrawRadioButtonWidget(RadioButtonControl& comp, Entity e)
+    {
+        bool changed = false;
+        auto pb = EditorGUI::Begin();
+        pb.String("Label", comp.Label)
+          .Int("Selected Index", comp.SelectedIndex)
+          .Bool("Horizontal", comp.Horizontal);
+        if (pb.Changed) changed = true;
+
+        if (ImGui::TreeNodeEx("Options", ImGuiTreeNodeFlags_Framed))
+        {
+            for (int i = 0; i < comp.Options.size(); i++)
+            {
+                ImGui::PushID(i);
+                char buf[256];
+                strncpy(buf, comp.Options[i].c_str(), 255);
+                if (ImGui::InputText("##opt", buf, 255)) {
+                    comp.Options[i] = buf;
+                    changed = true;
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("X")) {
+                    comp.Options.erase(comp.Options.begin() + i);
+                    changed = true;
+                    ImGui::PopID();
+                    break;
+                }
+                ImGui::PopID();
+            }
+            if (ImGui::Button("Add Option")) {
+                comp.Options.push_back("New Option");
+                changed = true;
+            }
+            ImGui::TreePop();
+        }
+
+        if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed))
+        {
+            if (DrawTextStyle(comp.Style)) changed = true;
+            ImGui::TreePop();
+        }
+
+        if (e.HasComponent<ControlComponent>())
+        {
+            if (ImGui::TreeNodeEx("Layout", ImGuiTreeNodeFlags_Framed))
+            {
+                if (DrawControlComponentUI(e.GetComponent<ControlComponent>())) changed = true;
+                ImGui::TreePop();
+            }
+        }
+        return changed;
+    }
+
+    static bool DrawColorPickerWidget(ColorPickerControl& comp, Entity e)
+    {
+        bool changed = false;
+        auto pb = EditorGUI::Begin();
+        pb.String("Label", comp.Label)
+          .Color("Color", comp.SelectedColor)
+          .Bool("Show Alpha", comp.ShowAlpha)
+          .Bool("Show Picker", comp.ShowPicker);
+        if (pb.Changed) changed = true;
+
+        if (ImGui::TreeNodeEx("Style", ImGuiTreeNodeFlags_Framed))
+        {
+            if (DrawUIStyle(comp.Style)) changed = true;
+            ImGui::TreePop();
+        }
+
+        if (e.HasComponent<ControlComponent>())
+        {
+            if (ImGui::TreeNodeEx("Layout", ImGuiTreeNodeFlags_Framed))
+            {
+                if (DrawControlComponentUI(e.GetComponent<ControlComponent>())) changed = true;
+                ImGui::TreePop();
+            }
+        }
+        return changed;
+    }
+
+    static bool DrawDragFloatWidget(DragFloatControl& comp, Entity e)
+    {
+        bool changed = false;
+        auto pb = EditorGUI::Begin();
+        pb.String("Label", comp.Label)
+          .Float("Value", comp.Value)
+          .Float("Speed", comp.Speed)
+          .Float("Min", comp.Min)
+          .Float("Max", comp.Max)
+          .String("Format", comp.Format);
+        if (pb.Changed) changed = true;
+
+        if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed))
+        {
+            if (DrawTextStyle(comp.Style)) changed = true;
+            ImGui::TreePop();
+        }
+
+        if (ImGui::TreeNodeEx("Box Style", ImGuiTreeNodeFlags_Framed))
+        {
+            if (DrawUIStyle(comp.BoxStyle)) changed = true;
+            ImGui::TreePop();
+        }
+
+        if (e.HasComponent<ControlComponent>())
+        {
+            if (ImGui::TreeNodeEx("Layout", ImGuiTreeNodeFlags_Framed))
+            {
+                if (DrawControlComponentUI(e.GetComponent<ControlComponent>())) changed = true;
+                ImGui::TreePop();
+            }
+        }
+        return changed;
+    }
+
+    static bool DrawDragIntWidget(DragIntControl& comp, Entity e)
+    {
+        bool changed = false;
+        auto pb = EditorGUI::Begin();
+        pb.String("Label", comp.Label)
+          .Int("Value", comp.Value)
+          .Float("Speed", comp.Speed)
+          .Int("Min", comp.Min)
+          .Int("Max", comp.Max)
+          .String("Format", comp.Format);
+        if (pb.Changed) changed = true;
+
+        if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed))
+        {
+            if (DrawTextStyle(comp.Style)) changed = true;
+            ImGui::TreePop();
+        }
+
+        if (ImGui::TreeNodeEx("Box Style", ImGuiTreeNodeFlags_Framed))
+        {
+            if (DrawUIStyle(comp.BoxStyle)) changed = true;
+            ImGui::TreePop();
+        }
+
+        if (e.HasComponent<ControlComponent>())
+        {
+            if (ImGui::TreeNodeEx("Layout", ImGuiTreeNodeFlags_Framed))
+            {
+                if (DrawControlComponentUI(e.GetComponent<ControlComponent>())) changed = true;
+                ImGui::TreePop();
+            }
+        }
+        return changed;
+    }
+
+    static bool DrawTreeNodeWidget(TreeNodeControl& comp, Entity e)
+    {
+        bool changed = false;
+        auto pb = EditorGUI::Begin();
+        pb.String("Label", comp.Label)
+          .Bool("Default Open", comp.DefaultOpen)
+          .Bool("Is Leaf", comp.IsLeaf);
+        if (pb.Changed) changed = true;
+
+        if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed))
+        {
+            if (DrawTextStyle(comp.Style)) changed = true;
+            ImGui::TreePop();
+        }
+
+        if (e.HasComponent<ControlComponent>())
+        {
+            if (ImGui::TreeNodeEx("Layout", ImGuiTreeNodeFlags_Framed))
+            {
+                if (DrawControlComponentUI(e.GetComponent<ControlComponent>())) changed = true;
+                ImGui::TreePop();
+            }
+        }
+        return changed;
+    }
+
+    static bool DrawTabBarWidget(TabBarControl& comp, Entity e)
+    {
+        bool changed = false;
+        auto pb = EditorGUI::Begin();
+        pb.String("Label", comp.Label)
+          .Bool("Reorderable", comp.Reorderable)
+          .Bool("Auto Select New Tabs", comp.AutoSelectNewTabs);
+        if (pb.Changed) changed = true;
+
+        if (ImGui::TreeNodeEx("Style", ImGuiTreeNodeFlags_Framed))
+        {
+            if (DrawUIStyle(comp.Style)) changed = true;
+            ImGui::TreePop();
+        }
+
+        if (e.HasComponent<ControlComponent>())
+        {
+            if (ImGui::TreeNodeEx("Layout", ImGuiTreeNodeFlags_Framed))
+            {
+                if (DrawControlComponentUI(e.GetComponent<ControlComponent>())) changed = true;
+                ImGui::TreePop();
+            }
+        }
+        return changed;
+    }
+
+    static bool DrawTabItemWidget(TabItemControl& comp, Entity e)
+    {
+        bool changed = false;
+        auto pb = EditorGUI::Begin();
+        pb.String("Label", comp.Label)
+          .Bool("Is Open", comp.IsOpen);
+        if (pb.Changed) changed = true;
+
+        if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed))
+        {
+            if (DrawTextStyle(comp.Style)) changed = true;
+            ImGui::TreePop();
+        }
+
+        if (e.HasComponent<ControlComponent>())
+        {
+            if (ImGui::TreeNodeEx("Layout", ImGuiTreeNodeFlags_Framed))
+            {
+                if (DrawControlComponentUI(e.GetComponent<ControlComponent>())) changed = true;
+                ImGui::TreePop();
+            }
+        }
+        return changed;
+    }
+
+    static bool DrawCollapsingHeaderWidget(CollapsingHeaderControl& comp, Entity e)
+    {
+        bool changed = false;
+        auto pb = EditorGUI::Begin();
+        pb.String("Label", comp.Label)
+          .Bool("Default Open", comp.DefaultOpen);
+        if (pb.Changed) changed = true;
+
+        if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed))
+        {
+            if (DrawTextStyle(comp.Style)) changed = true;
+            ImGui::TreePop();
+        }
+
+        if (e.HasComponent<ControlComponent>())
+        {
+            if (ImGui::TreeNodeEx("Layout", ImGuiTreeNodeFlags_Framed))
+            {
+                if (DrawControlComponentUI(e.GetComponent<ControlComponent>())) changed = true;
+                ImGui::TreePop();
+            }
+        }
+        return changed;
+    }
+
+    static bool DrawPlotLinesWidget(PlotLinesControl& comp, Entity e)
+    {
+        bool changed = false;
+        auto pb = EditorGUI::Begin();
+        pb.String("Label", comp.Label)
+          .String("Overlay Text", comp.OverlayText)
+          .Float("Scale Min", comp.ScaleMin)
+          .Float("ScaleMax", comp.ScaleMax)
+          .Vec2("Graph Size", comp.GraphSize);
+        if (pb.Changed) changed = true;
+
+        if (ImGui::TreeNodeEx("Values", ImGuiTreeNodeFlags_Framed))
+        {
+            for (int i = 0; i < comp.Values.size(); i++)
+            {
+                ImGui::PushID(i);
+                if (ImGui::DragFloat("##val", &comp.Values[i], 0.01f)) changed = true;
+                ImGui::SameLine();
+                if (ImGui::Button("X")) {
+                    comp.Values.erase(comp.Values.begin() + i);
+                    changed = true; ImGui::PopID(); break;
+                }
+                ImGui::PopID();
+            }
+            if (ImGui::Button("Add Value")) {
+                comp.Values.push_back(0.0f);
+                changed = true;
+            }
+            ImGui::TreePop();
+        }
+
+        if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed))
+        {
+            if (DrawTextStyle(comp.Style)) changed = true;
+            ImGui::TreePop();
+        }
+
+        if (ImGui::TreeNodeEx("Box Style", ImGuiTreeNodeFlags_Framed))
+        {
+            if (DrawUIStyle(comp.BoxStyle)) changed = true;
+            ImGui::TreePop();
+        }
+
+        if (e.HasComponent<ControlComponent>())
+        {
+            if (ImGui::TreeNodeEx("Layout", ImGuiTreeNodeFlags_Framed))
+            {
+                if (DrawControlComponentUI(e.GetComponent<ControlComponent>())) changed = true;
+                ImGui::TreePop();
+            }
+        }
+        return changed;
+    }
+
+    static bool DrawPlotHistogramWidget(PlotHistogramControl& comp, Entity e)
+    {
+        bool changed = false;
+        auto pb = EditorGUI::Begin();
+        pb.String("Label", comp.Label)
+          .String("Overlay Text", comp.OverlayText)
+          .Float("Scale Min", comp.ScaleMin)
+          .Float("ScaleMax", comp.ScaleMax)
+          .Vec2("Graph Size", comp.GraphSize);
+        if (pb.Changed) changed = true;
+
+        if (ImGui::TreeNodeEx("Values", ImGuiTreeNodeFlags_Framed))
+        {
+            for (int i = 0; i < comp.Values.size(); i++)
+            {
+                ImGui::PushID(i);
+                if (ImGui::DragFloat("##val", &comp.Values[i], 0.01f)) changed = true;
+                ImGui::SameLine();
+                if (ImGui::Button("X")) {
+                    comp.Values.erase(comp.Values.begin() + i);
+                    changed = true; ImGui::PopID(); break;
+                }
+                ImGui::PopID();
+            }
+            if (ImGui::Button("Add Value")) {
+                comp.Values.push_back(0.0f);
+                changed = true;
+            }
+            ImGui::TreePop();
+        }
+
+        if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed))
+        {
+            if (DrawTextStyle(comp.Style)) changed = true;
+            ImGui::TreePop();
+        }
+
+        if (ImGui::TreeNodeEx("Box Style", ImGuiTreeNodeFlags_Framed))
+        {
+            if (DrawUIStyle(comp.BoxStyle)) changed = true;
+            ImGui::TreePop();
+        }
+
+        if (e.HasComponent<ControlComponent>())
+        {
+            if (ImGui::TreeNodeEx("Layout", ImGuiTreeNodeFlags_Framed))
+            {
+                if (DrawControlComponentUI(e.GetComponent<ControlComponent>())) changed = true;
+                ImGui::TreePop();
+            }
+        }
+        return changed;
+    }
 
 
     void PropertyEditor::Init()
     {
         // --- Core & Rendering ---
-        Register<TransformComponent>("Transform");
+        Register<TransformComponent>("Transform", DrawTransform);
         Register<ModelComponent>("Model", DrawModel);
-        Register<PointLightComponent>("Point Light");
-        Register<CameraComponent>("Camera");
-        Register<AnimationComponent>("Animation");
+        Register<PointLightComponent>("Point Light", DrawPointLight);
+        Register<CameraComponent>("Camera", DrawCamera);
+        Register<AnimationComponent>("Animation", [](auto& comp) { return false; }); 
 
         // --- Physics ---
         Register<ColliderComponent>("Collider", DrawCollider);
-        Register<RigidBodyComponent>("RigidBody");
+        Register<RigidBodyComponent>("RigidBody", DrawRigidBody);
 
-        Register<AudioComponent>("Audio");
-        Register<SpawnComponent>("Spawn Zone");
-        Register<PlayerComponent>("Player");
-        Register<SceneTransitionComponent>("Scene Transition");
-        Register<BillboardComponent>("Billboard");
+        Register<AudioComponent>("Audio", DrawAudio);
+        Register<SpawnComponent>("Spawn Zone", DrawSpawn);
+        Register<PlayerComponent>("Player", DrawPlayer);
+        Register<SceneTransitionComponent>("Scene Transition", [](SceneTransitionComponent& comp) { 
+            return EditorGUI::Property("Target Scene", comp.TargetScenePath); 
+        });
+        Register<BillboardComponent>("Billboard", [](BillboardComponent& comp) { 
+            return EditorGUI::Property("Texture", comp.TexturePath); 
+        });
 
         Register<NativeScriptComponent>("Native Script", [](auto &comp) {
             bool changed = false;
@@ -296,14 +1025,65 @@ namespace CHEngine
         // --- UI Widgets (Classic Look) ---
         Register<ControlComponent>("Rect Transform", DrawControlWidget);
         Register<ButtonControl>("Button Widget", DrawButtonWidget);
+        Register<PanelControl>("Panel Widget", DrawPanelWidget);
+        Register<LabelControl>("Label Widget", DrawLabelWidget);
+        Register<SliderControl>("Slider Widget", DrawSliderWidget);
+        Register<CheckboxControl>("Checkbox Widget", DrawCheckboxWidget);
+        Register<InputTextControl>("Input Text Widget", DrawInputTextWidget);
+        Register<ComboBoxControl>("ComboBox Widget", DrawComboBoxWidget);
+        Register<ProgressBarControl>("ProgressBar Widget", DrawProgressBarWidget);
+        Register<ImageControl>("Image Widget", DrawImageWidget);
+        Register<ImageButtonControl>("Image Button Widget", DrawImageButtonWidget);
+        Register<SeparatorControl>("Separator Widget", DrawSeparatorWidget);
+        Register<RadioButtonControl>("RadioButton Widget", DrawRadioButtonWidget);
+        Register<ColorPickerControl>("ColorPicker Widget", DrawColorPickerWidget);
+        Register<DragFloatControl>("DragFloat Widget", DrawDragFloatWidget);
+        Register<DragIntControl>("DragInt Widget", DrawDragIntWidget);
+        Register<TreeNodeControl>("TreeNode Widget", DrawTreeNodeWidget);
+        Register<TabBarControl>("TabBar Widget", DrawTabBarWidget);
+        Register<TabItemControl>("TabItem Widget", DrawTabItemWidget);
+        Register<CollapsingHeaderControl>("CollapsingHeader Widget", DrawCollapsingHeaderWidget);
+        Register<PlotLinesControl>("PlotLines Widget", DrawPlotLinesWidget);
+        Register<PlotHistogramControl>("PlotHistogram Widget", DrawPlotHistogramWidget);
 
-        // Hide UI internal components from generic "Add Component" menu
-        s_ComponentRegistry[entt::type_hash<ControlComponent>::value()].AllowAdd = false;
-        
-        // Mark Widgets
-        s_ComponentRegistry[entt::type_hash<ButtonControl>::value()].IsWidget = true;
+        // Helper to setup widgets
+        auto setupWidget = [](entt::id_type id) {
+            auto& metadata = s_ComponentRegistry[id];
+            metadata.IsWidget = true;
+            metadata.AllowAdd = true;
+            auto originalAdd = metadata.Add;
+            metadata.Add = [originalAdd](Entity e) {
+                bool added = originalAdd(e);
+                if (added && !e.HasComponent<ControlComponent>())
+                    e.AddComponent<ControlComponent>();
+                return added;
+            };
+        };
 
-        s_ComponentRegistry[entt::type_hash<ButtonControl>::value()].AllowAdd = false;
+        setupWidget(entt::type_hash<ButtonControl>::value());
+        setupWidget(entt::type_hash<PanelControl>::value());
+        setupWidget(entt::type_hash<LabelControl>::value());
+        setupWidget(entt::type_hash<SliderControl>::value());
+        setupWidget(entt::type_hash<CheckboxControl>::value());
+        setupWidget(entt::type_hash<InputTextControl>::value());
+        setupWidget(entt::type_hash<ComboBoxControl>::value());
+        setupWidget(entt::type_hash<ProgressBarControl>::value());
+        setupWidget(entt::type_hash<ImageControl>::value());
+        setupWidget(entt::type_hash<ImageButtonControl>::value());
+        setupWidget(entt::type_hash<SeparatorControl>::value());
+        setupWidget(entt::type_hash<RadioButtonControl>::value());
+        setupWidget(entt::type_hash<ColorPickerControl>::value());
+        setupWidget(entt::type_hash<DragFloatControl>::value());
+        setupWidget(entt::type_hash<DragIntControl>::value());
+        setupWidget(entt::type_hash<TreeNodeControl>::value());
+        setupWidget(entt::type_hash<TabBarControl>::value());
+        setupWidget(entt::type_hash<TabItemControl>::value());
+        setupWidget(entt::type_hash<CollapsingHeaderControl>::value());
+        setupWidget(entt::type_hash<PlotLinesControl>::value());
+        setupWidget(entt::type_hash<PlotHistogramControl>::value());
+
+        // Allow adding Rect Transform directly too
+        s_ComponentRegistry[entt::type_hash<ControlComponent>::value()].AllowAdd = true;
     }
 
     void PropertyEditor::DrawEntityProperties(CHEngine::Entity entity)
