@@ -4,7 +4,6 @@
 #include "engine/core/application.h"
 #include "engine/core/profiler.h"
 #include "engine/graphics/asset_manager.h"
-#include "engine/graphics/render.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/scene_scripting.h"
 #include "project.h"
@@ -16,12 +15,7 @@
 
 namespace CHEngine
 {
-void Scene::RequestSceneChange(const std::string &path)
-{
-    // Decoupled transition request via Event System
-    SceneChangeRequestEvent e(path);
-    Application::OnEvent(e);
-}
+// Scene implementation
 Scene::Scene()
 {
     // Declarative signals binding
@@ -43,6 +37,12 @@ Scene::Scene()
 
     // Create physics instance
     m_Physics = std::make_unique<Physics>(this);
+}
+
+Scene::~Scene()
+{
+    // Clean up active signals
+    m_Registry.clear();
 }
 
 std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
@@ -108,6 +108,70 @@ Entity Scene::CreateUIEntity(const std::string &type, const std::string &name)
     {
         entity.AddComponent<CheckboxControl>();
     }
+    else if (type == "InputText")
+    {
+        entity.AddComponent<InputTextControl>();
+    }
+    else if (type == "ComboBox")
+    {
+        entity.AddComponent<ComboBoxControl>();
+    }
+    else if (type == "ProgressBar")
+    {
+        entity.AddComponent<ProgressBarControl>();
+    }
+    else if (type == "Image")
+    {
+        entity.AddComponent<ImageControl>();
+    }
+    else if (type == "ImageButton")
+    {
+        entity.AddComponent<ImageButtonControl>();
+    }
+    else if (type == "Separator")
+    {
+        entity.AddComponent<SeparatorControl>();
+    }
+    else if (type == "RadioButton")
+    {
+        entity.AddComponent<RadioButtonControl>();
+    }
+    else if (type == "ColorPicker")
+    {
+        entity.AddComponent<ColorPickerControl>();
+    }
+    else if (type == "DragFloat")
+    {
+        entity.AddComponent<DragFloatControl>();
+    }
+    else if (type == "DragInt")
+    {
+        entity.AddComponent<DragIntControl>();
+    }
+    else if (type == "TreeNode")
+    {
+        entity.AddComponent<TreeNodeControl>();
+    }
+    else if (type == "TabBar")
+    {
+        entity.AddComponent<TabBarControl>();
+    }
+    else if (type == "TabItem")
+    {
+        entity.AddComponent<TabItemControl>();
+    }
+    else if (type == "CollapsingHeader")
+    {
+        entity.AddComponent<CollapsingHeaderControl>();
+    }
+    else if (type == "PlotLines")
+    {
+        entity.AddComponent<PlotLinesControl>();
+    }
+    else if (type == "PlotHistogram")
+    {
+        entity.AddComponent<PlotHistogramControl>();
+    }
 
     return entity;
 }
@@ -147,8 +211,103 @@ void Scene::OnHierarchyDestroy(entt::registry &reg, entt::entity entity)
     // Children are handled by recursive DestroyEntity call
 }
 
-template <> void Scene::OnComponentAdded<ModelComponent>(Entity entity, ModelComponent &component)
+void Scene::OnUpdateRuntime(Timestep ts)
 {
+    float deltaTime = ts;
+    CH_PROFILE_FUNCTION();
+
+    bool isSim = IsSimulationRunning();
+    m_Physics->Update(deltaTime, isSim);
+
+    SceneScripting::Update(this, deltaTime);
+    Audio::Update(this, deltaTime);
+
+    // Declarative Scene Transitions (Reactive Logic)
+    m_Registry.view<SceneTransitionComponent>().each([&](auto entity, auto& tr) {
+        if (tr.Triggered && !tr.TargetScenePath.empty())
+        {
+            SceneChangeRequestEvent e(tr.TargetScenePath);
+            Application::Get().OnEvent(e);
+        }
+    });
+}
+
+
+// -------------------------------------------------------------------------------------------------------------------
+
+void Scene::OnRuntimeStart()
+{
+    m_IsSimulationRunning = true;
+    CH_CORE_INFO("Scene '{}' simulation started.",
+                 m_Registry.view<TagComponent>()
+                     .get<TagComponent>(m_Registry.view<TagComponent>().front())
+                     .Tag);
+}
+
+void Scene::OnRuntimeStop()
+{
+    m_IsSimulationRunning = false;
+    // TODO: Cleanup runtime state
+}
+
+void Scene::OnEvent(Event &e)
+{
+    SceneScripting::DispatchEvent(this, e);
+}
+
+Entity Scene::FindEntityByTag(const std::string &tag)
+{
+    auto view = m_Registry.view<TagComponent>();
+    for (auto entity : view)
+    {
+        const auto &tagComp = view.get<TagComponent>(entity);
+        if (tagComp.Tag == tag)
+            return {entity, this};
+    }
+    return {};
+}
+Entity Scene::GetEntityByUUID(UUID uuid)
+{
+    if (m_EntityMap.find(uuid) != m_EntityMap.end())
+        return {m_EntityMap.at(uuid), this};
+    return {};
+}
+
+void Scene::OnIDConstruct(entt::registry &reg, entt::entity entity)
+{
+    auto &id = reg.get<IDComponent>(entity).ID;
+    m_EntityMap[id] = entity;
+}
+
+void Scene::OnIDDestroy(entt::registry &reg, entt::entity entity)
+{
+    auto &id = reg.get<IDComponent>(entity).ID;
+    m_EntityMap.erase(id);
+}
+
+void Scene::OnAudioComponentAdded(entt::registry &reg, entt::entity entity)
+{
+    auto &audio = reg.get<AudioComponent>(entity);
+    
+    if (!audio.SoundPath.empty())
+    {
+        auto project = Project::GetActive();
+        if (project && project->GetAssetManager())
+        {
+            audio.Asset = project->GetAssetManager()->Get<SoundAsset>(audio.SoundPath);
+        }
+    }
+    
+    // Reactive Sound Playback
+    if (audio.PlayOnStart && !audio.IsPlaying) {
+        audio.IsPlaying = true;
+        if (audio.Asset) Audio::Play(audio.Asset, audio.Volume, audio.Pitch, audio.Loop);
+    }
+}
+
+void Scene::OnModelComponentAdded(entt::registry &reg, entt::entity entity)
+{
+    auto &component = reg.get<ModelComponent>(entity);
     if (!component.ModelPath.empty())
     {
         // Check if we need to (re)load the asset
@@ -193,13 +352,13 @@ template <> void Scene::OnComponentAdded<ModelComponent>(Entity entity, ModelCom
     }
 }
 
-template <>
-void Scene::OnComponentAdded<AnimationComponent>(Entity entity, AnimationComponent &component)
+void Scene::OnAnimationComponentAdded(entt::registry &reg, entt::entity entity)
 {
+    auto &component = reg.get<AnimationComponent>(entity);
     // Animation component might need the model asset to perform calculations
-    if (entity.HasComponent<ModelComponent>())
+    if (reg.all_of<ModelComponent>(entity))
     {
-        auto &mc = entity.GetComponent<ModelComponent>();
+        auto &mc = reg.get<ModelComponent>(entity);
         if (!mc.Asset && !mc.ModelPath.empty())
         {
             auto project = Project::GetActive();
@@ -211,251 +370,42 @@ void Scene::OnComponentAdded<AnimationComponent>(Entity entity, AnimationCompone
     }
 }
 
-template <> void Scene::OnComponentAdded<AudioComponent>(Entity entity, AudioComponent &component)
+Camera3D Scene::GetActiveCamera()
 {
-    if (!component.SoundPath.empty())
+    auto view = m_Registry.view<CameraComponent, TransformComponent>();
+    for (auto entity : view)
     {
-        auto project = Project::GetActive();
-        if (project && project->GetAssetManager())
+        auto [camera, transform] = view.get<CameraComponent, TransformComponent>(entity);
+        if (camera.IsPrimary)
         {
-            component.Asset = project->GetAssetManager()->Get<SoundAsset>(component.SoundPath);
-        }
-    }
-}
-
-void Scene::OnUpdateRuntime(float deltaTime)
-{
-    CH_PROFILE_FUNCTION();
-
-    bool isSim = IsSimulationRunning();
-    m_Physics->Update(deltaTime, isSim);
-
-    SceneScripting::Update(this, deltaTime);
-    Audio::Update(this, deltaTime);
-
-    // Declarative Scene Transitions (Reactive Logic)
-    m_Registry.view<SceneTransitionComponent>().each([&](auto entity, auto& tr) {
-        if (tr.Triggered && !tr.TargetScenePath.empty())
-            RequestSceneChange(tr.TargetScenePath);
-    });
-}
-
-
-// Logic moved to Render phase (Declarative Posing)
-
-void Scene::OnRender(const Camera3D &camera, Timestep ts, const DebugRenderFlags *debugFlags)
-{
-    CH_PROFILE_FUNCTION();
-
-    // Late initialization for async loaded models
-    auto view = m_Registry.view<ModelComponent>();
-    for (auto entityID : view)
-    {
-        auto &mc = view.get<ModelComponent>(entityID);
-        if (mc.Asset && mc.Asset->IsReady() && !mc.MaterialsInitialized)
-        {
-            Entity entity = {entityID, this};
-            OnComponentAdded<ModelComponent>(entity, mc);
-        }
-    }
-
-    Render::DrawScene(this, camera, ts, debugFlags);
-}
-
-Camera3D Scene::GetActiveCamera() const
-{
-    // First: Check for primary camera entity
-    auto cameraView = m_Registry.view<CameraComponent, TransformComponent>();
-    for (auto entity : cameraView)
-    {
-        auto &cam = cameraView.get<CameraComponent>(entity);
-        if (cam.IsActive && cam.IsPrimary)
-        {
-            auto &transform = cameraView.get<TransformComponent>(entity);
+            Camera3D cam3d = { 0 };
+            cam3d.position = transform.Translation;
             
-            Camera3D camera = {0};
-            camera.position = transform.Translation;
-            
-            // Calculate target from rotation
+            // Convert Euler angles to target vector
             float yaw = transform.Rotation.y;
             float pitch = transform.Rotation.x;
-            camera.target = {
+            
+            cam3d.target = {
                 transform.Translation.x - sinf(yaw) * cosf(pitch),
                 transform.Translation.y + sinf(pitch),
                 transform.Translation.z - cosf(yaw) * cosf(pitch)
             };
             
-            camera.up = {0.0f, 1.0f, 0.0f};
-            camera.fovy = cam.Fov;
-            camera.projection = cam.Projection == 0 ? CAMERA_PERSPECTIVE : CAMERA_ORTHOGRAPHIC;
-            return camera;
+            cam3d.up = { 0, 1, 0 };
+            cam3d.fovy = camera.Fov;
+            cam3d.projection = camera.Projection == 0 ? CAMERA_PERSPECTIVE : CAMERA_ORTHOGRAPHIC;
+            return cam3d;
         }
     }
 
-    // Fallback: Use PlayerComponent third-person camera
-    auto view = m_Registry.view<PlayerComponent, TransformComponent>();
-    if (view.begin() != view.end())
-    {
-        auto entity = *view.begin();
-        auto &transform = view.get<TransformComponent>(entity);
-        auto &player = view.get<PlayerComponent>(entity);
-
-        Vector3 target = transform.Translation;
-        target.y += 1.0f;
-
-        float yawRad = player.CameraYaw * DEG2RAD;
-        float pitchRad = player.CameraPitch * DEG2RAD;
-
-        Vector3 offset;
-        offset.x = player.CameraDistance * cosf(pitchRad) * sinf(yawRad);
-        offset.y = player.CameraDistance * sinf(pitchRad);
-        offset.z = player.CameraDistance * cosf(pitchRad) * cosf(yawRad);
-
-        Camera3D camera = {0};
-        camera.position = Vector3Add(target, offset);
-        camera.target = target;
-        camera.up = {0.0f, 1.0f, 0.0f};
-        camera.fovy = 90.0f;
-        camera.projection = CAMERA_PERSPECTIVE;
-        return camera;
-    }
-
-    // Default fallback
-    Camera3D camera = {0};
-    camera.position = {10.0f, 10.0f, 10.0f};
-    camera.target = {0.0f, 0.0f, 0.0f};
-    camera.up = {0.0f, 1.0f, 0.0f};
-    camera.fovy = 45.0f;
-    camera.projection = CAMERA_PERSPECTIVE;
-    return camera;
+    // Default fallback camera
+    Camera3D fallback = { 0 };
+    fallback.position = { 0, 10, 10 };
+    fallback.target = { 0, 0, 0 };
+    fallback.up = { 0, 1, 0 };
+    fallback.fovy = 60.0f;
+    fallback.projection = CAMERA_PERSPECTIVE;
+    return fallback;
 }
-
-EnvironmentSettings Scene::GetEnvironmentSettings() const
-{
-    if (m_Settings.Environment)
-        return m_Settings.Environment->GetSettings();
-
-    return EnvironmentSettings();
-}
-
-// -------------------------------------------------------------------------------------------------------------------
-
-void Scene::OnRuntimeStart()
-{
-    m_IsSimulationRunning = true;
-    CH_CORE_INFO("Scene '{}' simulation started.",
-                 m_Registry.view<TagComponent>()
-                     .get<TagComponent>(m_Registry.view<TagComponent>().front())
-                     .Tag);
-}
-
-void Scene::OnRuntimeStop()
-{
-    m_IsSimulationRunning = false;
-    // TODO: Cleanup runtime state
-}
-
-void Scene::OnEvent(Event &e)
-{
-    SceneScripting::DispatchEvent(this, e);
-}
-
-void Scene::OnImGuiRender(const ImVec2 &refPos, const ImVec2 &refSize, uint32_t viewportID,
-                          bool editMode)
-{
-    UpdateProfilerStats();
-    
-    // Delegate complex UI logic to Render action class
-    Render::DrawUI(this, refPos, refSize, editMode);
-
-    // Scripted UI elements (legacy support)
-    //SceneScripting::RenderUI(this);
-}
-
-Entity Scene::FindEntityByTag(const std::string &tag)
-{
-    auto view = m_Registry.view<TagComponent>();
-    for (auto entity : view)
-    {
-        const auto &tagComp = view.get<TagComponent>(entity);
-        if (tagComp.Tag == tag)
-            return {entity, this};
-    }
-    return {};
-}
-Entity Scene::GetEntityByUUID(UUID uuid)
-{
-    if (m_EntityMap.find(uuid) != m_EntityMap.end())
-        return {m_EntityMap.at(uuid), this};
-    return {};
-}
-
-void Scene::OnIDConstruct(entt::registry &reg, entt::entity entity)
-{
-    auto &id = reg.get<IDComponent>(entity).ID;
-    m_EntityMap[id] = entity;
-}
-
-void Scene::OnIDDestroy(entt::registry &reg, entt::entity entity)
-{
-    auto &id = reg.get<IDComponent>(entity).ID;
-    m_EntityMap.erase(id);
-}
-
-void Scene::OnAudioComponentAdded(entt::registry &reg, entt::entity entity)
-{
-    auto &audio = reg.get<AudioComponent>(entity);
-    OnComponentAdded<AudioComponent>(Entity{entity, this}, audio);
-    
-    // Reactive Sound Playback
-    if (audio.PlayOnStart && !audio.IsPlaying) {
-        audio.IsPlaying = true;
-        if (audio.Asset) Audio::Play(audio.Asset, audio.Volume, audio.Pitch, audio.Loop);
-    }
-}
-
-void Scene::OnModelComponentAdded(entt::registry &reg, entt::entity entity)
-{
-    OnComponentAdded<ModelComponent>(Entity{entity, this}, reg.get<ModelComponent>(entity));
-}
-
-void Scene::OnAnimationComponentAdded(entt::registry &reg, entt::entity entity)
-{
-    OnComponentAdded<AnimationComponent>(Entity{entity, this}, reg.get<AnimationComponent>(entity));
-}
-
-void Scene::UpdateProfilerStats()
-{
-    CH_PROFILE_FUNCTION();
-
-    ::CHEngine::ProfilerStats stats;
-    stats.EntityCount = (uint32_t)m_Registry.storage<entt::entity>().size();
-
-    auto view = m_Registry.view<::CHEngine::ColliderComponent>();
-    stats.ColliderCount = (uint32_t)view.size();
-
-    ::CHEngine::Profiler::UpdateStats(stats);
-}
-
-BackgroundMode Scene::GetBackgroundMode() const { return m_Settings.Mode; }
-void Scene::SetBackgroundMode(BackgroundMode mode) { m_Settings.Mode = mode; }
-
-Color Scene::GetBackgroundColor() const { return m_Settings.BackgroundColor; }
-void Scene::SetBackgroundColor(Color color) { m_Settings.BackgroundColor = color; }
-
-const std::string& Scene::GetBackgroundTexturePath() const { return m_Settings.BackgroundTexturePath; }
-void Scene::SetBackgroundTexturePath(const std::string& path) { m_Settings.BackgroundTexturePath = path; }
-
-bool Scene::IsSimulationRunning() const { return m_IsSimulationRunning; }
-
-const std::string& Scene::GetScenePath() const { return m_Settings.ScenePath; }
-void Scene::SetScenePath(const std::string& path) { m_Settings.ScenePath = path; }
-
-std::shared_ptr<EnvironmentAsset> Scene::GetEnvironment() { return m_Settings.Environment; }
-const std::shared_ptr<EnvironmentAsset> Scene::GetEnvironment() const { return m_Settings.Environment; }
-void Scene::SetEnvironment(std::shared_ptr<EnvironmentAsset> environment) { m_Settings.Environment = environment; }
-
-CanvasSettings& Scene::GetCanvasSettings() { return m_Settings.Canvas; }
-const CanvasSettings& Scene::GetCanvasSettings() const { return m_Settings.Canvas; }
 
 } // namespace CHEngine

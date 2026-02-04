@@ -5,7 +5,6 @@
 #include "engine/graphics/material.h"
 #include <string>
 #include <vector>
-#include "../reflect.h"
 
 namespace CHEngine
 {
@@ -51,10 +50,6 @@ struct MaterialComponent
     MaterialComponent() = default;
     MaterialComponent(const MaterialComponent &) = default;
 };
-
-BEGIN_REFLECT(ModelComponent)
-    PROPERTY(std::string, ModelPath, "Model Path")
-END_REFLECT()
 
 } // namespace CHEngine
 

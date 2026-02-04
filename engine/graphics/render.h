@@ -3,142 +3,85 @@
 
 #include "engine/core/base.h"
 #include "engine/core/timestep.h"
-#include "engine/core/timestep.h"
 #include "engine/graphics/environment.h"
-#include "engine/graphics/render_command_queue.h"
-#include "engine/scene/scene.h"
+#include "engine/scene/components/mesh_component.h" // For MaterialSlot
 #include "raylib.h"
+#include "raymath.h"
+#include "imgui.h"
 #include <string>
 #include <vector>
+#include <memory>
+#include <functional>
 
 namespace CHEngine
 {
+    class Scene;
     class ShaderAsset;
-    class ModelAsset;
-    class TextureAsset;
-    class EnvironmentAsset;
+
+    struct RenderState
+    {
+        std::shared_ptr<ShaderAsset> LightingShader;
+        std::shared_ptr<ShaderAsset> SkyboxShader;
+        Model SkyboxCube;
+
+        Vector3 CurrentLightDir = {-0.5f, -1.0f, -0.5f};
+        Color CurrentLightColor = WHITE;
+        float CurrentAmbientIntensity = 0.5f;
+    };
 
     struct DebugRenderFlags
     {
         bool DrawColliders = false;
-        bool DrawLights = false;
-        bool DrawSpawnZones = false;
+        bool DrawHierarchy = false;
+        bool DrawAABB = false;
         bool DrawGrid = true;
-        bool DrawAxes = true;
-        bool DrawSkeleton = false;
-        bool DrawBoundingBoxes = false;
-        bool DrawIcons = true;
-        bool DrawNavMesh = false;
+        bool DrawSelection = true;
+        bool DrawLights = true;
+        bool DrawSpawnZones = true;
     };
 
-    struct RenderState
-    {
-        // Shaders
-        std::shared_ptr<ShaderAsset> LightingShader;
-        std::shared_ptr<ShaderAsset> SkyboxShader;
-        std::shared_ptr<ShaderAsset> PanoramaShader;
-
-        // Shared Resources
-        Model SkyboxCube = { 0 };
-
-        // Scene Data
-        Color CurrentLightColor = WHITE;
-        Vector3 CurrentLightDir = {0.0f, -1.0f, 0.0f};
-        float CurrentAmbientIntensity = 0.2f;
-        Camera3D ActiveCamera = { 0 };
-    };
-
-    /**
-     * The primary interface for all rendering operations in the engine.
-     * Consolidates scene rendering, primitive drawing, and low-level API management.
-     * Following the 'Action-Based' naming convention (Render instead of Renderer).
-     */
     class Render
     {
-    public: // Life Cycle
-        /** Initializes the rendering engine and underlying hardware context. */
+    public:
         static void Init();
-
-        /** Shuts down the rendering engine and releases all GPU resources. */
         static void Shutdown();
 
-    public: // Scene Rendering (Hazel-style)
-        /** Prepares the renderer for a new scene using the specified camera. */
         static void BeginScene(const Camera3D& camera);
-
-        /** Finalizes the scene rendering and submits all commands to the GPU. */
         static void EndScene();
 
-        /** High-level method to render an entire scene with optional debug flags. */
-        static void DrawScene(Scene* scene, const Camera3D& camera, Timestep ts = 0, const DebugRenderFlags* debugFlags = nullptr);
+        // High-level entry points (delegates to SceneRenderer/UIRenderer)
+        static void DrawScene(Scene* scene, const Camera3D& camera, Timestep ts, const DebugRenderFlags* debugFlags = nullptr);
+        static void DrawUI(Scene* scene, const ImVec2& refPos, const ImVec2& refSize, bool editMode = false);
 
-    public: // Direct Draw Commands
-        /** Clears the screen buffer with the specified color. */
-        static void Clear(Color color = BLACK);
-
-        /** Sets the current rendering viewport. */
+        static void Clear(Color color);
         static void SetViewport(int x, int y, int width, int height);
 
-        /** Draws a model at a specific transform with optional material overrides. */
-        static void DrawModel(const std::string& path, const Matrix& transform, 
+        static void DrawModel(const std::string& path, const Matrix& transform = MatrixIdentity(), 
                              const std::vector<MaterialSlot>& overrides = {}, 
-                             int animIndex = -1, int frame = 0);
-
-        /** Draws a lines in 3D space. */
+                             int animIndex = 0, int frame = 0);
+        
         static void DrawLine(Vector3 start, Vector3 end, Color color);
-
-        /** Draws a 3D grid for editor visualization. */
         static void DrawGrid(int slices, float spacing);
-
-        /** Renders a skybox using the provided settings. */
         static void DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera);
 
-    public: // UI Rendering (Consolidated)
-        /** Draws UI elements for the scene. */
-        static void DrawUI(Scene* scene, const ImVec2& refPos = {0, 0}, const ImVec2& refSize = {0, 0}, bool editMode = false);
-
-    public: // State Management
-        /** Returns the current internal state of the renderer. */
-        static RenderState& GetState();
-
-        /** Configures the primary directional light source. */
         static void SetDirectionalLight(Vector3 direction, Color color);
-
-        /** Sets the ambient light intensity for the scene. */
         static void SetAmbientLight(float intensity);
-
-        /** Applies environment-wide settings (fog, lighting, skybox). */
         static void ApplyEnvironment(const EnvironmentSettings& settings);
 
-    public: // Command Queue
-        /** Executes all commands in the render queue. Call this at the end of the frame. */
-        static void WaitAndRender();
+        static RenderState& GetState();
 
-        /** Internal method to allocate a command in the queue. */
-        static void* AllocateCommand(RenderCommandQueue::RenderCommandFn func, uint32_t size);
-
-        /** Helper to submit a command with data. */
-        template<typename FuncT>
-        static void Submit(FuncT func)
+        // Submit a command to the render queue (immediate execution for now)
+        template<typename F>
+        static void Submit(F&& func)
         {
-            auto renderCmd = [](void* ptr) {
-                auto pFunc = (FuncT*)ptr;
-                (*pFunc)();
-                pFunc->~FuncT();
-            };
-            auto storageBuffer = AllocateCommand(renderCmd, sizeof(func));
-            new (storageBuffer) FuncT(std::move(func));
+            func();
         }
 
-    private: // Internal Helpers
-        static void RenderModels(Scene* scene, Timestep ts);
-        static void RenderDebug(Scene* scene, const DebugRenderFlags* debugFlags);
-        static void RenderEditorIcons(Scene* scene, const Camera3D& camera);
+    private:
         static void InitSkybox();
 
-    private: // Internal State
+    private:
         static RenderState s_State;
-        static RenderCommandQueue* s_CommandQueue;
     };
 }
 

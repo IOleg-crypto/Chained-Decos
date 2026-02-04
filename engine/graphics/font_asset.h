@@ -28,6 +28,8 @@ public:
     {
         return AssetType::Font;
     }
+    
+    void UploadToGPU() {} // Required by AssetManager::UpdateCache
 
 private:
     Font m_Font = { 0 };

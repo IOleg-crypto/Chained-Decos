@@ -2,7 +2,6 @@
 #define CH_CAMERA_COMPONENT_H
 
 #include "raylib.h"
-#include "../reflect.h"
 
 namespace CHEngine
 {
@@ -12,7 +11,7 @@ struct CameraComponent
     Vector3 Offset = {0.0f, 2.0f, -5.0f};
     Vector2 MousePosition = {0.0f, 0.0f};
     
-    // New: Camera control flags
+    // Camera control flags
     bool IsActive = true;
     bool IsPrimary = false;  // If true, this is the main game camera
     float NearPlane = 0.1f;
@@ -22,15 +21,6 @@ struct CameraComponent
     CameraComponent() = default;
 };
 
-BEGIN_REFLECT(CameraComponent)
-    PROPERTY(bool, IsPrimary, "Primary")
-    PROPERTY(bool, IsActive, "Active")
-    PROPERTY(float, Fov, "FOV")
-    PROPERTY(Vector3, Offset, "Offset")
-    PROPERTY(float, NearPlane, "Near Plane")
-    PROPERTY(float, FarPlane, "Far Plane")
-    PROPERTY(int, Projection, "Projection")
-END_REFLECT()
 } // namespace CHEngine
 
 #endif // CH_CAMERA_COMPONENT_H

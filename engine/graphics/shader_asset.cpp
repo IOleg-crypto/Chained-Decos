@@ -52,8 +52,10 @@ std::shared_ptr<ShaderAsset> ShaderAsset::Load(const std::string &chshaderPath)
         std::string vsRel = config["VertexShader"].as<std::string>();
         std::string fsRel = config["FragmentShader"].as<std::string>();
 
-        std::string vsPath = AssetManager::ResolvePath(vsRel);
-        std::string fsPath = AssetManager::ResolvePath(fsRel);
+        // Paths are relative to the chshader file
+        std::filesystem::path basePath = std::filesystem::path(chshaderPath).parent_path();
+        std::string vsPath = (basePath / vsRel).string();
+        std::string fsPath = (basePath / fsRel).string();
         
         CH_CORE_INFO("ShaderAsset: Loading from {}", chshaderPath);
         CH_CORE_INFO("  VertexShader: {} -> {} (exists={})", vsRel, vsPath, std::filesystem::exists(vsPath));

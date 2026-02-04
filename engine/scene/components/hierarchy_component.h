@@ -3,7 +3,7 @@
 
 #include "entt/entt.hpp"
 #include <vector>
-#include "../reflect.h"
+#include <string>
 
 namespace CHEngine
 {
@@ -25,10 +25,6 @@ struct NameComponent
     {
     }
 };
-
-BEGIN_REFLECT(NameComponent)
-    PROPERTY(std::string, Name, "Name")
-END_REFLECT()
 
 } // namespace CHEngine
 

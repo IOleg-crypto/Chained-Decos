@@ -47,7 +47,7 @@ namespace CHEngine
         {
             Editor::Get().SetLastProjectPath(path.string());
             ProjectOpenedEvent e(path.string());
-            Application::OnEvent(e);
+            Application::Get().OnEvent(e);
         }
     }
 

@@ -184,11 +184,52 @@ namespace CHEngine
 
         if (ImGui::BeginMenu("Control"))
         {
-            if (ImGui::MenuItem("Panel"))    m_Context->CreateUIEntity("Panel");
-            if (ImGui::MenuItem("Button"))   m_Context->CreateUIEntity("Button");
-            if (ImGui::MenuItem("Label"))    m_Context->CreateUIEntity("Label");
-            if (ImGui::MenuItem("Slider"))   m_Context->CreateUIEntity("Slider");
-            if (ImGui::MenuItem("Checkbox")) m_Context->CreateUIEntity("CheckBox");
+            if (ImGui::BeginMenu("Basic"))
+            {
+                if (ImGui::MenuItem("Panel"))       m_Context->CreateUIEntity("Panel");
+                if (ImGui::MenuItem("Button"))      m_Context->CreateUIEntity("Button");
+                if (ImGui::MenuItem("Label"))       m_Context->CreateUIEntity("Label");
+                if (ImGui::MenuItem("Slider"))      m_Context->CreateUIEntity("Slider");
+                if (ImGui::MenuItem("Checkbox"))    m_Context->CreateUIEntity("CheckBox");
+                if (ImGui::MenuItem("InputText"))   m_Context->CreateUIEntity("InputText");
+                if (ImGui::MenuItem("ComboBox"))    m_Context->CreateUIEntity("ComboBox");
+                if (ImGui::MenuItem("ProgressBar")) m_Context->CreateUIEntity("ProgressBar");
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Visual"))
+            {
+                if (ImGui::MenuItem("Image"))        m_Context->CreateUIEntity("Image");
+                if (ImGui::MenuItem("Image Button")) m_Context->CreateUIEntity("ImageButton");
+                if (ImGui::MenuItem("Separator"))    m_Context->CreateUIEntity("Separator");
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Input"))
+            {
+                if (ImGui::MenuItem("RadioButton")) m_Context->CreateUIEntity("RadioButton");
+                if (ImGui::MenuItem("ColorPicker")) m_Context->CreateUIEntity("ColorPicker");
+                if (ImGui::MenuItem("Drag Float"))  m_Context->CreateUIEntity("DragFloat");
+                if (ImGui::MenuItem("Drag Int"))    m_Context->CreateUIEntity("DragInt");
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Structural"))
+            {
+                if (ImGui::MenuItem("Tree Node"))        m_Context->CreateUIEntity("TreeNode");
+                if (ImGui::MenuItem("Tab Bar"))          m_Context->CreateUIEntity("TabBar");
+                if (ImGui::MenuItem("Tab Item"))         m_Context->CreateUIEntity("TabItem");
+                if (ImGui::MenuItem("Collapsing Header")) m_Context->CreateUIEntity("CollapsingHeader");
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Charts"))
+            {
+                if (ImGui::MenuItem("Plot Lines"))      m_Context->CreateUIEntity("PlotLines");
+                if (ImGui::MenuItem("Plot Histogram"))  m_Context->CreateUIEntity("PlotHistogram");
+                ImGui::EndMenu();
+            }
+            
             ImGui::EndMenu();
         }
     }

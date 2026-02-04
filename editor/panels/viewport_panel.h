@@ -6,6 +6,7 @@
 #include "raylib.h"
 #include "viewport/editor_camera.h"
 #include "viewport/editor_gizmo.h"
+#include "engine/core/timestep.h"
 
 namespace CHEngine
 {
@@ -19,7 +20,7 @@ public:
 
 public:
     virtual void OnImGuiRender(bool readOnly = false) override;
-    virtual void OnUpdate(float deltaTime) override;
+    virtual void OnUpdate(Timestep ts) override;
 
 public:
     bool IsFocused() const

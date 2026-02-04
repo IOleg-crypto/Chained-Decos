@@ -5,6 +5,7 @@
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
 #include "engine/graphics/asset_manager.h"
+#include "engine/scene/project.h"
 #include "raymath.h"
 
 #include <glm/glm.hpp>

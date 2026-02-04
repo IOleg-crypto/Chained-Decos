@@ -1,5 +1,6 @@
 #include "editor.h"
 #include "core/application.h"
+#include "engine/core/window.h"
 #include "editor_layer.h"
 #include "engine/core/yaml.h"
 #include "raylib.h"
@@ -8,28 +9,25 @@
 
 namespace CHEngine
 {
-    Editor::Editor(const Application::Config &config) : Application(config)
+    Editor::Editor(const ApplicationSpecification &specification) : Application(specification)
     {
         CH_CORE_INFO("Editor Started");
         LoadConfig();
-    }
 
-    void Editor::PostInitialize()
-    {
-        CH_CORE_INFO("Editor PostInitialize - Setting window icon");
+        CH_CORE_INFO("Editor - Setting window icon");
         Image icon = LoadImage(PROJECT_ROOT_DIR
                                "/engine/resources/icons/game-engine-icon-featuring-a-game-controller-with-.png");
         if (icon.data != nullptr)
             ImageFormat(&icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
 
-        SetWindowIcon(icon);
+        GetWindow().SetWindowIcon(icon);
         UnloadImage(icon);
 
-        CH_CORE_INFO("Editor PostInitialize - Pushing EditorLayer");
+        CH_CORE_INFO("Editor - Pushing EditorLayer");
         PushLayer(new EditorLayer());
     }
 
-    void Editor::Shutdown()
+    Editor::~Editor()
     {
         SaveConfig();
     }

@@ -1,151 +1,194 @@
-# Define the core infrastructure library (Stable, low-level)
-add_library(engine_core STATIC)
 
-target_include_directories(engine_core PUBLIC 
-    ${CMAKE_CURRENT_SOURCE_DIR}
+# Common include directories for all engine targets
+set(ENGINE_INCLUDE_DIRS
     ${CMAKE_SOURCE_DIR}
-)
-
-target_sources(engine_core PRIVATE
-    # --- CORE ---
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/base.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/entry_point.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/events.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/input.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/layer.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/layer_stack.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/layer_stack.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/log.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/profiler.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/profiler.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/uuid.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/uuid.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/window.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/window.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/yaml.h
-)
-
-# Core dependencies
-target_link_libraries(engine_core PUBLIC 
-    raylib
-    yaml-cpp
-    imguilib
-    glm
-)
-
-# Apply optimizations to engine_core
-if(COMMAND apply_engine_optimizations)
-    apply_engine_optimizations(engine_core)
-endif()
-
-# Define the high-level engine library
-add_library(engine STATIC)
-
-target_include_directories(engine PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}
 )
 
-target_sources(engine PRIVATE
-    # --- CORE (high-level) ---
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/application.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/core/application.h
 
-    # --- GRAPHICS ---
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/asset.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/asset_manager.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/asset_manager.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/environment.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/environment.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/font_asset.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/font_asset.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/material.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/model_asset.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/model_asset.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/model_asset.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/model_asset.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/render.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/render.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/render_command_queue.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/shader_asset.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/shader_asset.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/texture_asset.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/graphics/texture_asset.h
-
-    # --- SCENE ---
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/scene.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/scene.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/scene_events.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/entity.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/project.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/project.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/project_serializer.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/project_serializer.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/scene_serializer.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/scene_serializer.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/component_serializer.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/prefab_serializer.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/prefab_serializer.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/scene_scripting.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/scene_scripting.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/script_registry.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/scriptable_entity.h
+add_library(engine_core STATIC
+    # Sources
+    core/layer_stack.cpp
+    core/profiler.cpp
+    core/uuid.cpp
+    core/window.cpp
+    core/input.cpp
+    core/imgui_layer.cpp
+    core/thread_pool.cpp
     
-    # Components
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/components/audio_component.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/components/camera_component.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/components/game_components.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/components/hierarchy_component.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/components/id_component.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/components/lighting_component.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/components/mesh_component.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/components/physics_component.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/components/scripting_components.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/components/tag_component.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/components/transform_component.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/components/control_component.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene/components/animation_component.h
-
-    # --- PHYSICS ---
-    ${CMAKE_CURRENT_SOURCE_DIR}/physics/physics.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/physics/physics.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/physics/dynamics.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/physics/dynamics.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/physics/narrow_phase.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/physics/narrow_phase.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/physics/scene_trace.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/physics/scene_trace.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/physics/collision/collision.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/physics/collision/collision_triangle.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/physics/bvh/bvh.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/physics/bvh/bvh.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/physics/bvh/bvh_node.h
-
-    # --- AUDIO ---
-    ${CMAKE_CURRENT_SOURCE_DIR}/audio/sound_asset.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/audio/sound_asset.h
+    # Headers
+    core/application.h
+    core/imgui_layer.h
+    core/base.h
+    core/assert.h
+    core/platform_detection.h
+    core/thread_pool.h
+    core/entry_point.h
+    core/events.h
+    core/input.h
+    core/layer.h
+    core/layer_stack.h
+    core/log.h
+    core/profiler.h
+    core/timestep.h
+    core/uuid.h
+    core/window.h
+    core/yaml.h
 )
 
-# Engine depends on Core and EnTT
-target_link_libraries(engine PUBLIC 
+target_include_directories(engine_core PUBLIC ${ENGINE_INCLUDE_DIRS})
+target_link_libraries(engine_core PUBLIC raylib yaml-cpp imguilib glm EnTT)
+
+
+add_library(engine_graphics STATIC
+    # Sources
+    graphics/render.cpp
+    graphics/render_command.cpp
+    graphics/ui_renderer.cpp
+    graphics/asset_manager.cpp
+    graphics/shader_asset.cpp
+    graphics/texture_asset.cpp
+    graphics/model_asset.cpp
+    graphics/font_asset.cpp
+    graphics/environment.cpp
+    graphics/scene_renderer.cpp
+    
+    # Headers
+    graphics/render.h
+    graphics/render_command.h
+    graphics/scene_renderer.h
+    graphics/ui_renderer.h
+    graphics/asset.h
+    graphics/asset_manager.h
+    graphics/shader_asset.h
+    graphics/texture_asset.h
+    graphics/model_asset.h
+    graphics/font_asset.h
+    graphics/environment.h
+    graphics/material.h
+    graphics/scene_renderer.h
+)
+
+target_include_directories(engine_graphics PUBLIC ${ENGINE_INCLUDE_DIRS})
+target_link_libraries(engine_graphics PUBLIC engine_core)
+
+
+add_library(engine_audio STATIC
+    audio/audio.cpp
+    audio/sound_asset.cpp
+    audio/audio.h
+    audio/sound_asset.h
+)
+
+target_include_directories(engine_audio PUBLIC ${ENGINE_INCLUDE_DIRS})
+target_link_libraries(engine_audio PUBLIC engine_core)
+
+
+add_library(engine_physics STATIC
+    # Sources
+    physics/physics.cpp
+    physics/dynamics.cpp
+    physics/narrow_phase.cpp
+    physics/scene_trace.cpp
+    physics/bvh/bvh.cpp
+    
+    # Headers
+    physics/physics.h
+    physics/dynamics.h
+    physics/narrow_phase.h
+    physics/scene_trace.h
+    physics/bvh/bvh.h
+    physics/bvh/bvh_node.h
+    physics/collision/collision.h
+    physics/collision/collision_triangle.h
+)
+
+target_include_directories(engine_physics PUBLIC ${ENGINE_INCLUDE_DIRS})
+target_link_libraries(engine_physics PUBLIC engine_core)
+
+add_library(engine_scene STATIC
+    # Sources
+    scene/scene.cpp
+    scene/entity.cpp
+    scene/project.cpp
+    scene/project_serializer.cpp
+    scene/scene_serializer.cpp
+    scene/component_serializer.cpp
+    scene/prefab_serializer.cpp
+    scene/scene_scripting.cpp
+    
+    # Headers
+    scene/scene.h
+    scene/scene_events.h
+    scene/entity.h
+    scene/project.h
+    scene/project_serializer.h
+    scene/scene_serializer.h
+    scene/component_serializer.h
+    scene/prefab_serializer.h
+    scene/scene_scripting.h
+    scene/script_registry.h
+    scene/scriptable_entity.h
+    scene/components.h
+    
+    # Component Headers
+    scene/components/animation_component.h
+    scene/components/audio_component.h
+    scene/components/billboard_component.h
+    scene/components/camera_component.h
+    scene/components/control_component.h
+    scene/components/game_components.h
+    scene/components/hierarchy_component.h
+    scene/components/id_component.h
+    scene/components/lighting_component.h
+    scene/components/mesh_component.h
+    scene/components/navigation_component.h
+    scene/components/physics_component.h
+    scene/components/scripting_components.h
+    scene/components/shader_component.h
+    scene/components/tag_component.h
+    scene/components/transform_component.h
+)
+
+target_include_directories(engine_scene PUBLIC ${ENGINE_INCLUDE_DIRS})
+target_link_libraries(engine_scene PUBLIC 
     engine_core
-    EnTT
+    engine_graphics
+    engine_physics
+    engine_audio
 )
 
-if(MSVC)
-    target_compile_options(engine PRIVATE /bigobj)
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    # For GCC/MinGW, large projects might need this
-    target_compile_options(engine PRIVATE -W)
-endif()
+add_library(engine_application STATIC
+    core/application.cpp
+)
+target_include_directories(engine_application PUBLIC ${ENGINE_INCLUDE_DIRS})
+target_link_libraries(engine_application PUBLIC engine_scene)
 
-# Apply Unity Build & PCH
-if(COMMAND apply_engine_optimizations)
-    apply_engine_optimizations(engine)
-endif()
 
-# Installation
-install(TARGETS engine engine_core
+add_library(engine INTERFACE)
+target_link_libraries(engine INTERFACE
+    engine_core
+    engine_graphics
+    engine_audio
+    engine_physics
+    engine_scene
+    engine_application
+)
+
+set(ENGINE_TARGETS engine_core engine_graphics engine_audio engine_physics engine_scene engine_application)
+
+foreach(target ${ENGINE_TARGETS})
+    if(MSVC)
+        target_compile_options(${target} PRIVATE /bigobj)
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(${target} PRIVATE -W)
+    endif()
+    if(COMMAND apply_engine_optimizations)
+        apply_engine_optimizations(${target})
+    endif()
+endforeach()
+
+install(TARGETS ${ENGINE_TARGETS}
     EXPORT ChainedEngineTargets
     ARCHIVE DESTINATION lib COMPONENT Runtime
     LIBRARY DESTINATION lib COMPONENT Runtime

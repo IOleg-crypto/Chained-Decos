@@ -3,158 +3,138 @@
 
 #include "components.h"
 #include "engine/core/base.h"
+#include "engine/core/assert.h"
+#include "engine/core/events.h"
+#include "engine/core/timestep.h"
 #include "engine/graphics/environment.h"
 #include "entity.h"
 #include "entt/entt.hpp"
-#include "imgui.h"
 #include <string>
-
-#include "engine/core/events.h"
-#include "engine/physics/physics.h"
+#include <unordered_map>
+#include <memory>
 
 namespace CHEngine
 {
+    class Entity;
+    class SceneSerializer;
+    class Physics;
 
-enum class BackgroundMode : uint8_t
-{
-    Color,
-    Texture,
-    Environment3D
-};
+    enum class BackgroundMode
+    {
+        Color = 0,
+        Texture = 1,
+        Environment3D = 2
+    };
 
-struct SceneSettings
-{
-    BackgroundMode Mode = BackgroundMode::Environment3D;
-    Color BackgroundColor;
-    std::string BackgroundTexturePath;
-    std::string ScenePath;
-    CanvasSettings Canvas;
-    std::shared_ptr<EnvironmentAsset> Environment;
-};
+    struct SceneSettings
+    {
+        std::string Name = "Untitled Scene";
+        std::string ScenePath;
+        std::shared_ptr<EnvironmentAsset> Environment;
+        
+        BackgroundMode Mode = BackgroundMode::Environment3D;
+        Color BackgroundColor = {30, 30, 30, 255};
+        std::string BackgroundTexturePath;
 
-class Scene
-{
-public:
-    Scene();
-    ~Scene();
+        CanvasSettings Canvas;
 
-    static std::shared_ptr<Scene> Copy(std::shared_ptr<Scene> other);
+        bool GravityEnabled = true;
+        Vector3 Gravity = {0, -9.81f, 0};
+        
+        float AmbientIntensity = 0.5f;
+    };
 
-public: // Entity Management
-    Entity CreateEntity(const std::string &name = "Entity");
-    Entity CreateEntityWithUUID(UUID uuid, const std::string &name = "Entity");
-    Entity CreateUIEntity(const std::string &type, const std::string &name = "");
-    void DestroyEntity(Entity entity);
+    class Scene : public std::enable_shared_from_this<Scene>
+    {
+    public:
+        Scene();
+        ~Scene();
 
-    Entity FindEntityByTag(const std::string &tag);
-    Entity GetEntityByUUID(UUID uuid);
+        static std::shared_ptr<Scene> Copy(std::shared_ptr<Scene> other);
 
-public: // Runtime & Simulation
-    void OnRuntimeStart();
-    void OnRuntimeStop();
-    void OnUpdateRuntime(float deltaTime);
-    void OnRender(const Camera3D &camera, Timestep ts = 0, const struct DebugRenderFlags *debugFlags = nullptr);
-    
-    bool IsSimulationRunning() const;
-    void OnEvent(Event &e);
-    
-    void RequestSceneChange(const std::string &path);
-    void UpdateProfilerStats();
+        Entity CreateEntity(const std::string &name = std::string());
+        Entity CreateEntityWithUUID(UUID uuid, const std::string &name = std::string());
+        Entity CreateUIEntity(const std::string &type, const std::string &name = std::string());
+        void DestroyEntity(Entity entity);
 
-public: // Scene Settings & Environment
-    BackgroundMode GetBackgroundMode() const;
-    void SetBackgroundMode(BackgroundMode mode);
+        Entity FindEntityByTag(const std::string &tag);
+        Entity GetEntityByUUID(UUID uuid);
 
-    Color GetBackgroundColor() const;
-    void SetBackgroundColor(Color color);
+    public: // Life Cycle & Simulation
+        void OnRuntimeStart();
+        void OnRuntimeStop();
+        void OnUpdateRuntime(Timestep ts);
+        
+        bool IsSimulationRunning() const { return m_IsSimulationRunning; }
+        void OnEvent(Event &e);
 
-    const std::string& GetBackgroundTexturePath() const;
-    void SetBackgroundTexturePath(const std::string& path);
+    public: // Scene Settings
+        SceneSettings& GetSettings() { return m_Settings; }
+        const SceneSettings& GetSettings() const { return m_Settings; }
 
-    const std::string& GetScenePath() const;
-    void SetScenePath(const std::string& path);
+        Physics& GetPhysics() { return *m_Physics; }
+        const Physics& GetPhysics() const { return *m_Physics; }
 
-    std::shared_ptr<EnvironmentAsset> GetEnvironment();
-    const std::shared_ptr<EnvironmentAsset> GetEnvironment() const;
-    void SetEnvironment(std::shared_ptr<EnvironmentAsset> environment);
+    public: // Systems & Tools
+        entt::registry &GetRegistry() { return m_Registry; }
+        const entt::registry &GetRegistry() const { return m_Registry; }
 
-    CanvasSettings& GetCanvasSettings();
-    const CanvasSettings& GetCanvasSettings() const;
+        Camera3D GetActiveCamera();
 
-    Physics& GetPhysics() { return *m_Physics; }
-    const Physics& GetPhysics() const { return *m_Physics; }
+    private:
+        entt::registry m_Registry;
+        std::unordered_map<UUID, entt::entity> m_EntityMap;
+        SceneSettings m_Settings;
+        std::unique_ptr<Physics> m_Physics;
 
-public: // Systems & Tools
-    void OnImGuiRender(const ImVec2 &refPos = {0, 0}, const ImVec2 &refSize = {0, 0},
-                       uint32_t viewportID = 0, bool editMode = false);
+        bool m_IsSimulationRunning = false;
 
-    entt::registry &GetRegistry() { return m_Registry; }
-    const entt::registry &GetRegistry() const { return m_Registry; }
+    private: // Internal Event Handlers
+        // Reactive signals handlers
+        void OnModelComponentAdded(entt::registry &reg, entt::entity entity);
+        void OnAnimationComponentAdded(entt::registry &reg, entt::entity entity);
+        void OnAudioComponentAdded(entt::registry &reg, entt::entity entity);
 
-private:
-    entt::registry m_Registry;
-    std::unordered_map<UUID, entt::entity> m_EntityMap;
-    SceneSettings m_Settings;
-    std::unique_ptr<Physics> m_Physics;
+        void OnIDConstruct(entt::registry &reg, entt::entity entity);
+        void OnIDDestroy(entt::registry &reg, entt::entity entity);
 
-    bool m_IsSimulationRunning = false;
+        // Hierarchy Handlers
+        void OnHierarchyDestroy(entt::registry &reg, entt::entity entity);
 
-private: // Internal Event Handlers
-    // Reactive signals handlers
-    void OnModelComponentAdded(entt::registry &reg, entt::entity entity);
-    void OnAnimationComponentAdded(entt::registry &reg, entt::entity entity);
-    void OnAudioComponentAdded(entt::registry &reg, entt::entity entity);
+        friend class Entity;
+        friend class SceneSerializer;
+    };
 
-    // UUID Map Handlers
-    void OnIDConstruct(entt::registry &reg, entt::entity entity);
-    void OnIDDestroy(entt::registry &reg, entt::entity entity);
+    // Entity Template Implementations
+    template <typename T, typename... Args> T &Entity::AddComponent(Args &&...args)
+    {
+        CH_CORE_ASSERT(!HasComponent<T>(), "Entity already has component!");
+        T &component = m_Scene->m_Registry.emplace<T>(m_EntityHandle, std::forward<Args>(args)...);
+        return component;
+    }
 
-    // Hierarchy Handlers
-    void OnHierarchyDestroy(entt::registry &reg, entt::entity entity);
+    template <typename T, typename... Args> T &Entity::AddOrReplaceComponent(Args &&...args)
+    {
+        T &component = m_Scene->m_Registry.emplace_or_replace<T>(m_EntityHandle, std::forward<Args>(args)...);
+        return component;
+    }
 
-    // Generic component added handling (templated)
-    template <typename T> void OnComponentAdded(Entity entity, T &component) {}
+    template <typename T> T &Entity::GetComponent()
+    {
+        CH_CORE_ASSERT(HasComponent<T>(), "Entity does not have component!");
+        return m_Scene->m_Registry.get<T>(m_EntityHandle);
+    }
 
-    friend class Entity;
-    friend class SceneSerializer;
-};
+    template <typename T> bool Entity::HasComponent()
+    {
+        return m_Scene->m_Registry.all_of<T>(m_EntityHandle);
+    }
 
-// Template specializations (must be in namespace scope)
-template <> void Scene::OnComponentAdded<ModelComponent>(Entity entity, ModelComponent &component);
-template <>
-void Scene::OnComponentAdded<AnimationComponent>(Entity entity, AnimationComponent &component);
-template <> void Scene::OnComponentAdded<AudioComponent>(Entity entity, AudioComponent &component);
-
-// Entity Template Implementations
-template <typename T, typename... Args> T &Entity::AddComponent(Args &&...args)
-{
-    CH_CORE_ASSERT(!HasComponent<T>(), "Entity already has component!");
-    T &component = m_Scene->m_Registry.emplace<T>(m_EntityHandle, std::forward<Args>(args)...);
-    return component;
-}
-
-
-
-template <typename T> T &Entity::GetComponent()
-{
-    return m_Scene->m_Registry.get<T>(m_EntityHandle);
-}
-
-template <typename T> bool Entity::HasComponent()
-{
-    return m_Scene->m_Registry.all_of<T>(m_EntityHandle);
-}
-
-template <typename T> void Entity::RemoveComponent()
-{
-    m_Scene->m_Registry.remove<T>(m_EntityHandle);
-}
-
-template <typename T, typename... Func> void Entity::Patch(Func &&...func)
-{
-    m_Scene->m_Registry.patch<T>(m_EntityHandle, std::forward<Func>(func)...);
-}
-
+    template <typename T> void Entity::RemoveComponent()
+    {
+        CH_CORE_ASSERT(HasComponent<T>(), "Entity does not have component!");
+        m_Scene->m_Registry.remove<T>(m_EntityHandle);
+    }
 } // namespace CHEngine
 
 #endif // CH_SCENE_H

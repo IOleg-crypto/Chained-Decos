@@ -25,10 +25,8 @@ public:
     EditorGizmo() = default;
     ~EditorGizmo() = default;
 
-    /**
-     * Render and handle gizmo interaction
-     * true if the gizmo is being used (captured mouse)
-     */
+    // Render and handle gizmo interaction
+    // true if the gizmo is being used (captured mouse)
     bool RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 viewportSize);
 
     bool IsHovered() const

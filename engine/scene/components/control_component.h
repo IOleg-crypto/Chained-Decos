@@ -7,21 +7,18 @@
 #include <string>
 #include <vector>
 
-#include "engine/scene/reflect.h"
-
 namespace CHEngine
 {
 using vec2 = glm::vec2;
-
-// Screen-space rectangle (Using Raylib's Rectangle: x, y, width, height)
-// Removed custom Rect struct in favor of Library-First approach.
 
 // Typography & Visual Styles
 enum class TextAlignment
 {
     Left = 0,
-    Center,
-    Right
+    Center = 1,
+    Right = 2,
+    Top = 0,
+    Bottom = 2
 };
 
 // Canvas scaling modes for Reference Resolution system
@@ -97,7 +94,6 @@ struct RectTransform
         vec2 pMax = anchorMaxPos + OffsetMax;
 
         // 3. Return generic Raylib Rectangle (x, y, w, h)
-        // Note: We ignore Pivot for pure rect calculation unless we handle rotation later.
         return Rectangle{
             viewportOffset.x + pMin.x, 
             viewportOffset.y + pMin.y, 
@@ -117,22 +113,6 @@ struct ControlComponent
 
     ControlComponent() = default;
 };
-
-
-BEGIN_REFLECT(RectTransform)
-    PROPERTY(vec2, AnchorMin, "Anchor Min")
-    PROPERTY(vec2, AnchorMax, "Anchor Max")
-    PROPERTY(vec2, OffsetMin, "Offset Min")
-    PROPERTY(vec2, OffsetMax, "Offset Max")
-    PROPERTY(vec2, Pivot, "Pivot")
-    PROPERTY(float, Rotation, "Rotation")
-    PROPERTY(vec2, Scale, "Scale")
-END_REFLECT()
-
-BEGIN_REFLECT(ControlComponent)
-    PROPERTY(int, ZOrder, "Z Order")
-    PROPERTY(bool, IsActive, "Active")
-END_REFLECT()
 
 // --- Unified Specialized Widgets ---
 
@@ -175,16 +155,6 @@ struct LabelControl
     }
 };
 
-BEGIN_REFLECT(LabelControl)
-    PROPERTY(std::string, Text, "Text")
-    // Note: Style is complex, but we can reflect its basic fields if needed
-END_REFLECT()
-
-BEGIN_REFLECT(ButtonControl)
-    PROPERTY(std::string, Label, "Label")
-    PROPERTY(bool, IsInteractable, "Interactable")
-END_REFLECT()
-
 struct SliderControl
 {
     std::string Label = "Slider";
@@ -207,12 +177,197 @@ struct CheckboxControl
     UIStyle Style;
 };
 
+struct InputTextControl
+{
+    std::string Label = "Input";
+    std::string Text = "";
+    std::string Placeholder = "Enter text...";
+    int MaxLength = 256;
+    bool Multiline = false;
+    bool ReadOnly = false;
+    bool Password = false;
+    bool Changed = false;
+    
+    TextStyle Style;
+    UIStyle BoxStyle;
+};
+
+struct ComboBoxControl
+{
+    std::string Label = "Combo";
+    std::vector<std::string> Items = {"Option 1", "Option 2", "Option 3"};
+    int SelectedIndex = 0;
+    bool Changed = false;
+    
+    TextStyle Style;
+    UIStyle BoxStyle;
+};
+
+struct ProgressBarControl
+{
+    float Progress = 0.5f; // 0.0 - 1.0
+    std::string OverlayText = "";
+    bool ShowPercentage = true;
+    
+    TextStyle Style;
+    UIStyle BarStyle;
+};
+
+// === Visual Widgets ===
+
+struct ImageControl
+{
+    std::string TexturePath = "";
+    Vector2 Size = {100, 100};
+    Color TintColor = {255, 255, 255, 255};
+    Color BorderColor = {0, 0, 0, 0};
+    
+    UIStyle Style;
+};
+
+struct ImageButtonControl
+{
+    std::string TexturePath = "";
+    std::string Label = "ImageButton";
+    Vector2 Size = {100, 100};
+    Color TintColor = {255, 255, 255, 255};
+    Color BackgroundColor = {0, 0, 0, 0};
+    int FramePadding = -1;  // -1 = use default
+    bool PressedThisFrame = false;
+    
+    UIStyle Style;
+};
+
+struct SeparatorControl
+{
+    float Thickness = 1.0f;
+    Color LineColor = {127, 127, 127, 255};
+};
+
+// === Input Widgets ===
+
+struct RadioButtonControl
+{
+    std::string Label = "RadioGroup";
+    std::vector<std::string> Options = {"Option 1", "Option 2", "Option 3"};
+    int SelectedIndex = 0;
+    bool Changed = false;
+    bool Horizontal = false;  // Layout direction
+    
+    TextStyle Style;
+};
+
+struct ColorPickerControl
+{
+    std::string Label = "Color";
+    Color SelectedColor = {255, 255, 255, 255};
+    bool ShowAlpha = true;
+    bool ShowPicker = true;  // vs just color edit
+    bool Changed = false;
+    
+    UIStyle Style;
+};
+
+struct DragFloatControl
+{
+    std::string Label = "DragFloat";
+    float Value = 0.0f;
+    float Speed = 0.1f;
+    float Min = 0.0f;
+    float Max = 100.0f;
+    std::string Format = "%.3f";
+    bool Changed = false;
+    
+    TextStyle Style;
+    UIStyle BoxStyle;
+};
+
+struct DragIntControl
+{
+    std::string Label = "DragInt";
+    int Value = 0;
+    float Speed = 1.0f;
+    int Min = 0;
+    int Max = 100;
+    std::string Format = "%d";
+    bool Changed = false;
+    
+    TextStyle Style;
+    UIStyle BoxStyle;
+};
+
+// === Structural Widgets ===
+
+struct TreeNodeControl
+{
+    std::string Label = "TreeNode";
+    bool IsOpen = false;
+    bool DefaultOpen = false;
+    bool IsLeaf = false;  // No arrow
+    
+    TextStyle Style;
+};
+
+struct TabBarControl
+{
+    std::string Label = "TabBar";
+    bool Reorderable = true;
+    bool AutoSelectNewTabs = true;
+    
+    UIStyle Style;
+};
+
+struct TabItemControl
+{
+    std::string Label = "Tab";
+    bool IsOpen = true;
+    bool Selected = false;
+    
+    TextStyle Style;
+};
+
+struct CollapsingHeaderControl
+{
+    std::string Label = "Header";
+    bool IsOpen = false;
+    bool DefaultOpen = false;
+    
+    TextStyle Style;
+};
+
+// === Data Visualization ===
+
+struct PlotLinesControl
+{
+    std::string Label = "Plot";
+    std::vector<float> Values = {0.0f, 0.5f, 1.0f, 0.5f, 0.0f};
+    std::string OverlayText = "";
+    float ScaleMin = 0.0f;
+    float ScaleMax = 1.0f;
+    Vector2 GraphSize = {0, 80};  // 0 = auto width
+    
+    TextStyle Style;
+    UIStyle BoxStyle;
+};
+
+struct PlotHistogramControl
+{
+    std::string Label = "Histogram";
+    std::vector<float> Values = {0.2f, 0.5f, 0.8f, 0.4f, 0.6f};
+    std::string OverlayText = "";
+    float ScaleMin = 0.0f;
+    float ScaleMax = 1.0f;
+    Vector2 GraphSize = {0, 80};
+    
+    TextStyle Style;
+    UIStyle BoxStyle;
+};
+
 // Layouts
 struct VerticalLayoutGroup
 {
     float Spacing = 10.0f;
     Vector2 Padding = {10, 10};
-    // Future: Alignment
 };
 
 } // namespace CHEngine

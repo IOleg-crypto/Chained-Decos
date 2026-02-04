@@ -19,10 +19,10 @@ public:
     {
     }
 
-    virtual void OnUpdate(float deltaTime) override
+    virtual void OnUpdate(Timestep ts) override
     {
         if (m_Scene)
-            m_Scene->OnUpdateRuntime(deltaTime);
+            m_Scene->OnUpdateRuntime(ts);
     }
 
     virtual void OnRender(Timestep ts) override
@@ -83,15 +83,15 @@ public:
         SceneSerializer serializer(m_Scene.get());
         if (serializer.Deserialize(path))
         {
-             m_Scene->SetScenePath(path);
+             m_Scene->GetSettings().ScenePath = path;
              
              // Apply project environment if needed
              if (Project::GetActive() && Project::GetActive()->GetEnvironment())
              {
-                 if (m_Scene->GetEnvironment()->GetPath().empty() && 
-                     m_Scene->GetEnvironment()->GetSettings().Skybox.TexturePath.empty())
+                 if (m_Scene->GetSettings().Environment->GetPath().empty() && 
+                     m_Scene->GetSettings().Environment->GetSettings().Skybox.TexturePath.empty())
                  {
-                     m_Scene->SetEnvironment(Project::GetActive()->GetEnvironment());
+                     m_Scene->GetSettings().Environment = Project::GetActive()->GetEnvironment();
                  }
              }
              
@@ -124,18 +124,13 @@ private:
 };
 
 
-    RuntimeApplication::RuntimeApplication(const Application::Config &config,
-                                           const std::string &projectPath)
-        : Application(([&config]() {
-              Application::Config c = config;
-              c.EnableViewports = false;
-              c.EnableDocking = false;
-              return c;
-          })()),
+    RuntimeApplication::RuntimeApplication(const ApplicationSpecification& specification,
+                                           const std::string& projectPath)
+        : Application(specification),
           m_ProjectPath(projectPath)
     {
         // For standalone, try to find the project root relative to the executable
-        std::filesystem::path exePath = std::filesystem::absolute(std::filesystem::path(config.Argv[0]));
+        std::filesystem::path exePath = std::filesystem::absolute(std::filesystem::path(specification.CommandLineArgs.Args[0]));
         std::filesystem::path current = exePath.parent_path();
         
         bool projectFound = false;
@@ -216,89 +211,66 @@ private:
 
         m_RuntimeLayer = new RuntimeLayer();
         PushLayer(m_RuntimeLayer);
-    }
 
-void RuntimeApplication::PostInitialize()
-{
-    if (!m_ProjectPath.empty())
-    {
-        auto project = Project::Load(m_ProjectPath);
-        if (project)
+        // --- PostInitialize logic moved here ---
+        if (!m_ProjectPath.empty())
         {
-            // Apply Project Settings
-            auto &config = project->GetConfig();
-
-            // Note: Window size is usually set in CreateApplication, but we can sync VSync/FPS here
-            if (auto &window = GetWindow())
+            auto project = Project::Load(m_ProjectPath);
+            if (project)
             {
-                window->SetVSync(config.Window.VSync);
+                auto &config = project->GetConfig();
+                Window& window = GetWindow();
+                window.SetVSync(config.Window.VSync);
                 
-                // Set window icon if available
                 std::filesystem::path iconPath = AssetManager::ResolvePath("engine/resources/icons/chaineddecos.jpg");
                 if (std::filesystem::exists(iconPath))
                 {
                     Image icon = LoadImage(iconPath.string().c_str());
                     if (icon.data != nullptr)
                     {
-                        window->SetWindowIcon(icon);
+                        window.SetWindowIcon(icon);
                         UnloadImage(icon);
                     }
                 }
-            }
-            SetTargetFPS(60); 
+                ::SetTargetFPS(60); 
 
-            // 1. CLI Override
-            std::string sceneToLoad = GetConfig().StartScene;
-            
-            // 2. Project Config
-            if (sceneToLoad.empty())
-            {
-                sceneToLoad = config.StartScene;
-            }
+                std::string sceneToLoad = GetConfig().StartScene;
+                if (sceneToLoad.empty()) sceneToLoad = config.StartScene;
+                if (sceneToLoad.empty()) sceneToLoad = config.ActiveScenePath.string();
 
-            // 3. Fallback to Active Scene
-            if (sceneToLoad.empty())
-            {
-                sceneToLoad = config.ActiveScenePath.string();
-            }
-
-            // FALLBACK: If no scene specified in project, try to find any scene in assets/scenes
-            if (sceneToLoad.empty())
-            {
-                std::filesystem::path scenesDir = Project::GetAssetDirectory() / "scenes";
-                if (std::filesystem::exists(scenesDir))
+                if (sceneToLoad.empty())
                 {
-                    for (const auto& entry : std::filesystem::recursive_directory_iterator(scenesDir))
+                    std::filesystem::path scenesDir = Project::GetAssetDirectory() / "scenes";
+                    if (std::filesystem::exists(scenesDir))
                     {
-                        if (entry.path().extension() == ".chscene")
+                        for (const auto& entry : std::filesystem::recursive_directory_iterator(scenesDir))
                         {
-                            sceneToLoad = std::filesystem::relative(entry.path(), Project::GetAssetDirectory()).string();
-                            CH_CORE_INFO("Standalone: Start scene not set. Falling back to: {}", sceneToLoad);
-                            break;
+                            if (entry.path().extension() == ".chscene")
+                            {
+                                sceneToLoad = std::filesystem::relative(entry.path(), Project::GetAssetDirectory()).string();
+                                CH_CORE_INFO("Standalone: Start scene not set. Falling back to: {}", sceneToLoad);
+                                break;
+                            }
                         }
                     }
                 }
-            }
 
-            if (!sceneToLoad.empty())
-            {
-                // Resolve the path relative to the project assets
-                std::filesystem::path fullPath = Project::GetAssetPath(sceneToLoad);
-                CH_CORE_INFO("Standalone: Loading start scene: {}", fullPath.string());
-                
-                // Use the layer to load
-                ((RuntimeLayer*)m_RuntimeLayer)->LoadScene(fullPath.string());
-            }
-            else
-            {
-                CH_CORE_ERROR("Standalone: No scene found to load!");
+                if (!sceneToLoad.empty())
+                {
+                    std::filesystem::path fullPath = Project::GetAssetPath(sceneToLoad);
+                    CH_CORE_INFO("Standalone: Loading start scene: {}", fullPath.string());
+                    ((RuntimeLayer*)m_RuntimeLayer)->LoadScene(fullPath.string());
+                }
+                else
+                {
+                    CH_CORE_ERROR("Standalone: No scene found to load!");
+                }
             }
         }
+        else
+        {
+            CH_CORE_ERROR("Standalone: No project file found!");
+        }
     }
-    else
-    {
-        CH_CORE_ERROR("Standalone: No project file found!");
-    }
-}
 
 } // namespace CHEngine

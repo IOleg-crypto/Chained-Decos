@@ -5,14 +5,8 @@
 #include "engine/core/log.h"
 #include <memory>
 
-// Platform detection
-#if defined(_WIN32) || defined(_WIN64)
-#define CH_PLATFORM_WINDOWS
-#elif defined(__linux__)
-#define CH_PLATFORM_LINUX
-#else
-#error "Unknown platform!"
-#endif
+
+#include "engine/core/platform_detection.h"
 
 // Debug/Release detection
 #ifdef _DEBUG
@@ -36,6 +30,17 @@
 #define CH_DEBUGBREAK()
 #endif
 
+// Macro helpers
+#define CH_EXPAND_MACRO(x) x
+#define CH_STRINGIFY_MACRO(x) #x
+
+#ifdef CH_DEBUG
+    #define CH_ENABLE_ASSERTS
+#endif
+
+
+#include <memory>
+
 // Bit manipulation
 #define BIT(x) (1 << (x))
 
@@ -43,32 +48,5 @@
 #define CH_BIND_EVENT_FN(fn)                                                                       \
     [this](auto &&...args) -> decltype(auto)                                                       \
     { return this->fn(std::forward<decltype(args)>(args)...); }
-
-namespace CHEngine
-{
-// Assertions
-#ifdef CH_ENABLE_ASSERTS
-#define CH_ASSERT(x, ...)                                                                          \
-    {                                                                                              \
-        if (!(x))                                                                                  \
-        {                                                                                          \
-            CH_ERROR("Assertion Failed: {0}", ##__VA_ARGS__);                                      \
-            CH_DEBUGBREAK();                                                                       \
-        }                                                                                          \
-    }
-#define CH_CORE_ASSERT(x, ...)                                                                     \
-    {                                                                                              \
-        if (!(x))                                                                                  \
-        {                                                                                          \
-            CH_CORE_ERROR("Assertion Failed: {0}", ##__VA_ARGS__);                                 \
-            CH_DEBUGBREAK();                                                                       \
-        }                                                                                          \
-    }
-#else
-#define CH_ASSERT(x, ...)
-#define CH_CORE_ASSERT(x, ...)
-#endif
-
-} // namespace CHEngine
 
 #endif // CH_BASE_H

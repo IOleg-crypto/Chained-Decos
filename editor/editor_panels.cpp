@@ -26,10 +26,10 @@ void EditorPanels::Init()
     Register<ProjectSettingsPanel>();
 }
 
-void EditorPanels::OnUpdate(float deltaTime)
+void EditorPanels::OnUpdate(Timestep ts)
 {
     for (auto &panel : m_Panels)
-        panel->OnUpdate(deltaTime);
+        panel->OnUpdate(ts);
 }
 
 void EditorPanels::OnImGuiRender(bool readOnly)

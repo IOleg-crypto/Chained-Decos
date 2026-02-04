@@ -9,6 +9,7 @@
 
 namespace CHEngine
 {
+class AssetManager;
 struct PhysicsSettings
 {
     float Gravity = 20.0f;

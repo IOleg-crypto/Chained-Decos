@@ -442,8 +442,9 @@ namespace CHEngine
     }
 }
 
-    void ViewportPanel::OnUpdate(float deltaTime)
+    void ViewportPanel::OnUpdate(Timestep ts)
     {
+        float deltaTime = ts;
         m_EditorCamera.OnUpdate(deltaTime);
     }
 

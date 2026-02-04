@@ -1,4 +1,5 @@
 #include "application.h"
+#include "engine/core/assert.h"
 #include "engine/scene/scene_events.h"
 #include "engine/core/input.h"
 #include "engine/core/log.h"
@@ -10,16 +11,15 @@
 #include "engine/graphics/font_asset.h"
 #include "engine/scene/project.h"
 #include "engine/scene/component_serializer.h"
+#include "engine/core/imgui_layer.h"
+#include "engine/core/window.h"
+#include "engine/core/thread_pool.h"
+#include "engine/core/layer.h"
+#include "rlgl.h"
 
 #include <ranges>
 #include <filesystem>
 #include <algorithm>
-
-#include "backends/imgui_impl_glfw.h"
-#include "backends/imgui_impl_opengl3.h"
-#include "imgui.h"
-#include "raylib.h"
-#include "rlgl.h"
 
 #ifndef GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_NONE
@@ -30,27 +30,23 @@ namespace CHEngine
 {
     Application *Application::s_Instance = nullptr;
 
-    Application::Application(const Config &config) : m_Config(config)
+    Application::Application(const ApplicationSpecification& specification)
+        : m_Specification(specification)
     {
         CH_CORE_ASSERT(!s_Instance, "Application already exists!");
         s_Instance = this;
-    }
 
-    Application::~Application()
-    {
-        Shutdown();
-        s_Instance = nullptr;
-    }
+        if (!m_Specification.WorkingDirectory.empty())
+            std::filesystem::current_path(m_Specification.WorkingDirectory);
 
-    bool Application::Initialize(const Config &config)
-    {
         CH_CORE_INFO("Initializing Engine Core...");
 
-        WindowProps windowProps = config;
-
-        // --- ImGui Configuration ---
-        // Setup persistent ImGui ini file path based on project title
-        std::string iniName = config.Title;
+        // --- Window Setup ---
+        WindowProps windowProps;
+        windowProps.Title = m_Specification.Name;
+        
+        // ImGui Ini path setup
+        std::string iniName = m_Specification.Name;
         std::replace(iniName.begin(), iniName.end(), ' ', '_');
         std::transform(iniName.begin(), iniName.end(), iniName.begin(), ::tolower);
         
@@ -60,14 +56,6 @@ namespace CHEngine
         windowProps.IniFilename = "imgui_" + iniName + ".ini";
         #endif
 
-        // Ensure the target directory for the config exists
-        std::filesystem::path iniPath(windowProps.IniFilename);
-        if (iniPath.has_parent_path() && !std::filesystem::exists(iniPath.parent_path()))
-        {
-            std::filesystem::create_directories(iniPath.parent_path());
-        }
-
-        // Apply project-specific window overrides if an active project exists
         if (Project::GetActive())
         {
             auto &projConfig = Project::GetActive()->GetConfig();
@@ -78,13 +66,9 @@ namespace CHEngine
         }
 
         // --- System Initialization ---
+        m_ThreadPool = std::make_unique<ThreadPool>();
         m_Window = std::make_unique<Window>(windowProps);
         m_Running = true;
-
-        if (config.WindowIcon.data != nullptr)
-        {
-            m_Window->SetWindowIcon(config.WindowIcon);
-        }
 
         ComponentSerializer::Init();
         Render::Init();
@@ -96,37 +80,32 @@ namespace CHEngine
             CH_CORE_INFO("Audio Device Initialized Successfully");
         else
             CH_CORE_ERROR("Failed to initialize Audio Device!");
-
-        CH_CORE_INFO("Application Initialized: {}", config.Title);
-
-        // Client-side initialization hook
-        PostInitialize();
         
-        return true;
+        // ImGui Layer setup
+        m_ImGuiLayer = new ImGuiLayer();
+        PushOverlay(m_ImGuiLayer);
+
+        CH_CORE_INFO("Application Initialized: {}", m_Specification.Name);
     }
 
-    void Application::Shutdown()
+    Application::~Application()
     {
-        if (!m_Running) return;
-
-        CH_CORE_INFO("Shutting down Engine Core...");
-
-        CloseAudioDevice();
-        m_LayerStack.Shutdown();
+        if (m_Running)
+        {
+            CH_CORE_INFO("Shutting down Application...");
+            CloseAudioDevice();
+            m_LayerStack.Shutdown();
+            m_Window.reset();
+        }
         
-        Physics::Shutdown();
-        Render::Shutdown();
-        
-        m_Window.reset();
-        m_Running = false;
-        
+        s_Instance = nullptr;
         CH_CORE_INFO("Engine Shutdown Successfully.");
     }
 
     void Application::PushLayer(Layer *layer)
     {
         CH_CORE_ASSERT(layer, "Layer is null!");
-        s_Instance->m_LayerStack.PushLayer(layer);
+        m_LayerStack.PushLayer(layer);
         layer->OnAttach();
         CH_CORE_INFO("Layer Attached: {}", layer->GetName());
     }
@@ -134,182 +113,114 @@ namespace CHEngine
     void Application::PushOverlay(Layer *overlay)
     {
         CH_CORE_ASSERT(overlay, "Overlay is null!");
-        s_Instance->m_LayerStack.PushOverlay(overlay);
+        m_LayerStack.PushOverlay(overlay);
         overlay->OnAttach();
         CH_CORE_INFO("Overlay Attached: {}", overlay->GetName());
     }
 
-    void Application::BeginFrame()
-    {
-        CH_PROFILE_FUNCTION();
-
-        s_Instance->m_DeltaTime = GetFrameTime();
-        s_Instance->m_Window->BeginFrame();
-
-        // Start ImGui frame
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-    }
-
-    void Application::EndFrame()
-    {
-        // Internal Raylib batch flush
-        rlDrawRenderBatchActive();
-
-        // Finalize ImGui and render
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        // Multi-viewport support
-        ImGuiIO &io = ImGui::GetIO();
-        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-        {
-            GLFWwindow *backup_current_context = glfwGetCurrentContext();
-            ImGui::UpdatePlatformWindows();
-            ImGui::RenderPlatformWindowsDefault();
-            glfwMakeContextCurrent(backup_current_context);
-        }
-
-        s_Instance->m_Window->EndFrame();
-    }
-
-    bool Application::ShouldClose()
-    {
-        return !s_Instance->m_Running || s_Instance->m_Window->ShouldClose();
-    }
-
     void Application::OnEvent(Event &e)
     {
+        EventDispatcher dispatcher(e);
+        dispatcher.Dispatch<WindowCloseEvent>(CH_BIND_EVENT_FN(Application::OnWindowClose));
+        dispatcher.Dispatch<WindowResizeEvent>(CH_BIND_EVENT_FN(Application::OnWindowResize));
+
         // Propagate events from top to bottom (overlays first)
-        for (const auto & it : std::ranges::reverse_view(s_Instance->m_LayerStack))
+        for (const auto & it : std::ranges::reverse_view(m_LayerStack))
         {
             if (e.Handled) break;
             if (it->IsEnabled()) it->OnEvent(e);
         }
     }
 
-    void Application::Close()
+    bool Application::OnWindowClose(WindowCloseEvent& e)
     {
         m_Running = false;
+        return true;
+    }
+
+    bool Application::OnWindowResize(WindowResizeEvent& e)
+    {
+        if (e.GetWidth() == 0 || e.GetHeight() == 0)
+        {
+            m_Minimized = true;
+            return false;
+        }
+
+        m_Minimized = false;
+        Render::SetViewport(0, 0, e.GetWidth(), e.GetHeight());
+
+        return false;
+    }
+
+    void Application::SubmitToMainThread(const std::function<void()>& function)
+    {
+        std::scoped_lock<std::mutex> lock(m_MainThreadQueueMutex);
+        m_MainThreadQueue.emplace_back(function);
+    }
+
+    void Application::ExecuteMainThreadQueue()
+    {
+        std::vector<std::function<void()>> localQueue;
+        {
+            std::scoped_lock<std::mutex> lock(m_MainThreadQueueMutex);
+            localQueue = std::move(m_MainThreadQueue);
+        }
+
+        for (auto& func : localQueue)
+            func();
     }
 
     void Application::Run()
     {
+        ::SetExitKey(NULL);
+
         while (m_Running && !m_Window->ShouldClose())
         {
-            ProcessEvents();
-            Simulate();
-            Render();
-        }
-    }
+            CH_PROFILE_FUNCTION();
 
-    void Application::ProcessEvents()
-    {
-        // --- Library-First Input Handling ---
-        // Instead of polling 512 keys, we leverage Window/GLFW/Raylib event handling.
-        
-        // Raylib handles the underlying event queue, we just wrap them into our event system
-        // for higher-level consumption by layers.
-        
-        // 1. Keyboard Events (using Raylib's built-in state changes)
-        int key;
-        while ((key = GetKeyPressed()) != 0)
-        {
-            KeyPressedEvent e(key, false);
-            OnEvent(e);
-        }
+            ExecuteMainThreadQueue();
 
-        // For releases, we use a more efficient approach in the future (e.g. only checking keys known to be down),
-        // but for Phase 6 we are minimizing the 'brute force' 512-poll.
-        // For now, removing the heavy 512-poll completely.
-        // If a layer needs 'KeyReleased', it should be handled via a more specific mechanism.
+            // 1. Time Tracking
+            float time = (float)GetTime();
+            m_DeltaTime = Timestep(time - m_LastFrameTime);
+            m_LastFrameTime = time;
 
-        // 2. Mouse Events
-        auto handleMouse = [&](int button)
-        {
-            if (::IsMouseButtonPressed(button))
+            // 2. Input Polling
+            Input::PollEvents();
+
+            // 3. Core Systems Update
+            if (auto project = Project::GetActive())
+                if (auto assetManager = project->GetAssetManager())
+                    assetManager->Update();
+
+            // 4. Layers Update & Rendering
+            Profiler::BeginFrame();
             {
-                MouseButtonPressedEvent e(button);
-                OnEvent(e);
-            }
-            if (::IsMouseButtonReleased(button))
-            {
-                MouseButtonReleasedEvent e(button);
-                OnEvent(e);
-            }
-        };
-        handleMouse(MOUSE_BUTTON_LEFT);
-        handleMouse(MOUSE_BUTTON_RIGHT);
-        handleMouse(MOUSE_BUTTON_MIDDLE);
+                CH_PROFILE_SCOPE("MainThread_Frame");
 
-        Vector2 currentMousePos = ::GetMousePosition();
-        static Vector2 lastMousePos = {0, 0};
-        if (currentMousePos.x != lastMousePos.x || currentMousePos.y != lastMousePos.y)
-        {
-            MouseMovedEvent e(currentMousePos.x, currentMousePos.y);
-            OnEvent(e);
-            lastMousePos = currentMousePos;
-        }
-
-        float wheel = ::GetMouseWheelMove();
-        if (wheel != 0)
-        {
-            MouseScrolledEvent e(0, wheel);
-            OnEvent(e);
-        }
-
-        // Time tracking
-        float time = (float)GetTime();
-        m_DeltaTime = Timestep(time - m_LastFrameTime);
-        m_LastFrameTime = time;
-    }
-
-    void Application::Simulate()
-    {
-        AssetManager::Update();
-        Profiler::BeginFrame();
-        {
-            CH_PROFILE_SCOPE("MainThread_Frame");
-            if (!m_Minimized)
-            {
-                // Delegate update logic to layers
-                for (auto layer : m_LayerStack)
+                if (!m_Minimized)
                 {
-                    if (layer->IsEnabled()) layer->OnUpdate(m_DeltaTime);
+                    // Logic/Simulation
+                    for (auto layer : m_LayerStack)
+                        if (layer->IsEnabled()) layer->OnUpdate(m_DeltaTime);
+
+                    // Rendering
+                    m_Window->BeginFrame();
+                    
+                    for (auto layer : m_LayerStack)
+                        if (layer->IsEnabled()) layer->OnRender(m_DeltaTime);
+
+                    // ImGui
+                    m_ImGuiLayer->Begin();
+                    for (auto layer : m_LayerStack)
+                        if (layer->IsEnabled()) layer->OnImGuiRender();
+                    m_ImGuiLayer->End();
+
+                    m_Window->EndFrame();
                 }
             }
+            Profiler::EndFrame();
         }
-    }
-
-    void Application::Render()
-    {
-        if (m_Minimized) return;
-
-        BeginFrame();
-
-        // Layer rendering
-        for (auto layer : m_LayerStack)
-        {
-            if (layer->IsEnabled()) layer->OnRender(m_DeltaTime);
-        }
-
-        // Execute Scene Rendering Commands
-        Render::WaitAndRender();
-
-        // ImGui rendering
-        for (auto layer : m_LayerStack)
-        {
-            if (layer->IsEnabled()) layer->OnImGuiRender();
-        }
-
-        EndFrame();
-        Profiler::EndFrame();
-    }
-
-    void Application::SetWindowIcon(const Image &icon) const 
-    {
-        if (m_Window) m_Window->SetWindowIcon(icon);
     }
 
 } // namespace CHEngine

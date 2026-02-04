@@ -120,31 +120,7 @@ template <> struct convert<Vector4>
     }
 };
 
-template <> struct convert<Quaternion>
-{
-    static Node encode(const Quaternion &rhs)
-    {
-        Node node;
-        node.push_back(rhs.x);
-        node.push_back(rhs.y);
-        node.push_back(rhs.z);
-        node.push_back(rhs.w);
-        return node;
-    }
-
-    static bool decode(const Node &node, Quaternion &rhs)
-    {
-        if (node.IsSequence() && node.size() == 4)
-        {
-            rhs.x = node[0].as<float>();
-            rhs.y = node[1].as<float>();
-            rhs.z = node[2].as<float>();
-            rhs.w = node[3].as<float>();
-            return true;
-        }
-        return false;
-    }
-};
+// Quaternion is a typedef of Vector4 in Raylib, so it uses the Vector4 specialization.
 
 template <> struct convert<glm::vec3>
 {
@@ -235,12 +211,7 @@ inline YAML::Emitter &operator<<(YAML::Emitter &out, const Vector4 &v)
     return out;
 }
 
-inline YAML::Emitter &operator<<(YAML::Emitter &out, const Quaternion &v)
-{
-    out << YAML::Flow;
-    out << YAML::BeginSeq << v.x << v.y << v.z << v.w << YAML::EndSeq;
-    return out;
-}
+// operator<< for Quaternion uses Vector4 overload
 
 inline YAML::Emitter &operator<<(YAML::Emitter &out, const glm::vec3 &v)
 {

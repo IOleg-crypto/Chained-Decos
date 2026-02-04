@@ -8,9 +8,7 @@ namespace CHEngine
 {
 class ScriptableEntity;
 
-/**
- * Component that enables Native (C++) scripting for an entity.
- */
+// Component that enables Native (C++) scripting for an entity.
 struct ScriptInstance
 {
     ScriptableEntity *Instance = nullptr;
