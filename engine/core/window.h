@@ -17,6 +17,7 @@ struct WindowProps
     bool Resizable = true;
     bool Fullscreen = false;
     int TargetFPS = 60;
+    std::string IconPath = "";
     
     // UI / Docking
     bool EnableViewports = true;

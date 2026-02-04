@@ -119,30 +119,6 @@ public:
     EVENT_CLASS_CATEGORY(EventCategoryApplication)
 };
 
-class AppLaunchRuntimeEvent : public Event
-{
-public:
-    AppLaunchRuntimeEvent() = default;
-    EVENT_CLASS_TYPE(AppLaunchRuntime)
-    EVENT_CLASS_CATEGORY(EventCategoryApplication)
-};
-
-class AppResetLayoutEvent : public Event
-{
-public:
-    AppResetLayoutEvent() = default;
-    EVENT_CLASS_TYPE(AppResetLayout)
-    EVENT_CLASS_CATEGORY(EventCategoryApplication)
-};
-
-class AppSaveLayoutEvent : public Event
-{
-public:
-    AppSaveLayoutEvent() = default;
-    EVENT_CLASS_TYPE(AppSaveLayout)
-    EVENT_CLASS_CATEGORY(EventCategoryApplication)
-};
-
 class SceneChangeRequestEvent : public Event
 {
 public:

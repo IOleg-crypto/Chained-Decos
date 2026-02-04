@@ -9,9 +9,8 @@ namespace CHEngine
 class RuntimeApplication : public Application
 {
 public:
-    RuntimeApplication(const Application::Config &config, const std::string &projectPath = "");
-    virtual void PostInitialize() override;
-    virtual ~RuntimeApplication() = default;
+    RuntimeApplication(const ApplicationSpecification &specification, const std::string &projectPath = "");
+    ~RuntimeApplication() override = default;
 
 private:
     std::string m_ProjectPath;

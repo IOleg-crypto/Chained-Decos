@@ -5,7 +5,6 @@
 #include <future>
 #include "raylib.h"
 #include <string>
-#include "../reflect.h"
 
 namespace CHEngine
 {
@@ -37,13 +36,6 @@ struct ColliderComponent
     ColliderComponent(const ColliderComponent &) = default;
 };
 
-BEGIN_REFLECT(ColliderComponent)
-    PROPERTY(bool, Enabled, "Enabled")
-    PROPERTY(Vector3, Offset, "Offset")
-    PROPERTY(Vector3, Size, "Size")
-    PROPERTY(bool, AutoCalculate, "Auto Calculate")
-    PROPERTY(std::string, ModelPath, "Model Path")
-END_REFLECT()
 
 struct RigidBodyComponent
 {
@@ -56,13 +48,6 @@ struct RigidBodyComponent
     RigidBodyComponent() = default;
 };
 
-BEGIN_REFLECT(RigidBodyComponent)
-    PROPERTY(Vector3, Velocity, "Velocity")
-    PROPERTY(bool, UseGravity, "Gravity")
-    PROPERTY(bool, IsGrounded, "Grounded")
-    PROPERTY(bool, IsKinematic, "Kinematic")
-    PROPERTY(float, Mass, "Mass")
-END_REFLECT()
 } // namespace CHEngine
 
 #endif // CH_PHYSICS_COMPONENTS_H

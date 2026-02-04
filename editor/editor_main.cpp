@@ -3,19 +3,16 @@
 
 namespace CHEngine
 {
-Application *CreateApplication(int argc, char **argv)
+Application *CreateApplication(ApplicationCommandLineArgs args)
 {
-    Application::Config config;
-    config.Title = "Chained Editor";
-    config.Width = 1600;
-    config.Height = 900;
-    config.Fullscreen = false;
-    config.TargetFPS = 144;
+    ApplicationSpecification spec;
+    spec.Name = "Chained Editor";
+    spec.CommandLineArgs = args;
 
     // Register project scripts so they appear in Inspector
     extern void RegisterGameScripts();
     RegisterGameScripts();
 
-    return new Editor(config);
+    return new Editor(spec);
 }
 } // namespace CHEngine

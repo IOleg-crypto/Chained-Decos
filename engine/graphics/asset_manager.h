@@ -9,6 +9,7 @@
 #include "engine/graphics/environment.h"
 #include "engine/graphics/font_asset.h"
 #include "engine/audio/sound_asset.h"
+#include "engine/core/thread_pool.h"
 
 #include <map>
 #include <memory>
@@ -20,21 +21,20 @@
 
 namespace CHEngine
 {
-    /**
-     * Manages the lifecycle, loading, and caching of all engine assets.
-     * Assets can be loaded synchronously or asynchronously.
-     * Each instance maintains its own cache and search paths.
-     */
+
+    // Manages the lifecycle, loading, and caching of all engine assets.
+    // Assets can be loaded synchronously or asynchronously.
+    // Each instance maintains its own cache and search paths.
     class AssetManager
     {
     public: // Life Cycle
         AssetManager();
         ~AssetManager();
 
-        /** Initializes the manager with a root directory. */
+        // Initializes the manager with a root directory.
         void Initialize(const std::filesystem::path& rootPath = "");
 
-        /** Shuts down the manager and releases all cached assets. */
+        // Shuts down the manager and releases all cached assets.
         void Shutdown();
 
     public: // Configuration
@@ -45,15 +45,11 @@ namespace CHEngine
         void ClearSearchPaths();
 
     public: // Asset Retrieval
-        /**
-         * Resolves a relative path to an absolute path based on search paths.
-         */
+        // Resolves a relative path to an absolute path based on search paths.
         std::string ResolvePath(const std::string& path) const;
 
-        /**
-         * Retrieves an asset of type T. If not cached, it starts loading.
-         * For GPU-dependent assets (Textured, Models, Fonts), loading is synchronous.
-         */
+        // Retrieves an asset of type T. If not cached, it starts loading.
+        // For GPU-dependent assets (Textured, Models, Fonts), loading is synchronous.
         template <typename T>
         std::shared_ptr<T> Get(const std::string& path)
         {
@@ -94,14 +90,14 @@ namespace CHEngine
                     return cache[resolved]; 
                 }
 
-                CH_CORE_INFO("AssetManager: Starting async load for {} from: {}", typeid(T).name(), resolved);
+                CH_CORE_INFO("AssetManager: Starting threadpool load for {} from: {}", typeid(T).name(), resolved);
                 
                 auto asset = std::make_shared<T>();
                 asset->SetPath(resolved);
                 asset->SetState(AssetState::Loading);
                 cache[resolved] = asset;
 
-                loading[resolved] = std::async(std::launch::async, [asset, resolved]() {
+                loading[resolved] = ThreadPool::Get().Enqueue([asset, resolved]() {
                     asset->LoadFromFile(resolved);
                     return asset;
                 });
@@ -110,7 +106,7 @@ namespace CHEngine
             }
         }
 
-        /** Removes an asset from the cache. */
+        // Removes an asset from the cache.
         template <typename T>
         void Remove(const std::string& path)
         {
@@ -122,7 +118,7 @@ namespace CHEngine
             GetLoadingMap<T>().erase(resolved);
         }
 
-        /** Performs maintenance tasks like processing async load results. */
+        // Performs maintenance tasks like processing async load results.
         void Update();
 
     private: // Internal Processing

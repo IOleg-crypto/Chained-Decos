@@ -4,7 +4,6 @@
 #include "raylib.h"
 #include "shader_asset.h"
 #include "texture_asset.h"
-#include "engine/graphics/api_context.h"
 #include <filesystem>
 #include <functional>
 #include <unordered_map>
@@ -65,16 +64,8 @@ void ModelAsset::LoadFromFile(const std::string &path)
     this->m_Animations = LoadModelAnimations(pathStr.c_str(), &animsCount);
     this->m_AnimCount = animsCount;
 
-    // Ensure materials have a shader
-    auto &state = APIContext::GetState();
-    if (this->m_Model.materials)
-    {
-        for (int i = 0; i < this->m_Model.materialCount; i++)
-        {
-            if (this->m_Model.materials[i].shader.id == 0 && state.LightingShader)
-                this->m_Model.materials[i].shader = state.LightingShader->GetShader();
-        }
-    }
+    // Note: Material shader assignment is now handled by the render pipeline, not the asset loader.
+    // This simplifies asset loading and removes APIContext dependency.
 
     SetState(AssetState::Ready);
 }

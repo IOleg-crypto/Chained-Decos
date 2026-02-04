@@ -1,4 +1,5 @@
 #include "editor_gui.h"
+#include "editor_events.h"
 #include "editor/actions/project_actions.h"
 #include "editor/actions/scene_actions.h"
 #include "editor/editor_layer.h"
@@ -332,7 +333,30 @@ namespace CHEngine
         }
 
         auto activeScene = EditorLayer::Get().GetActiveScene();
-        return activeScene ? activeScene->GetActiveCamera() : Camera3D{{10, 10, 10}, {0, 0, 0}, {0, 1, 0}, 45, CAMERA_PERSPECTIVE};
+        if (activeScene)
+        {
+            auto view = activeScene->GetRegistry().view<TransformComponent, CameraComponent>();
+            for (auto entity : view)
+            {
+                const auto& [tc, cc] = view.get<TransformComponent, CameraComponent>(entity);
+                if (cc.IsPrimary)
+                {
+                    Camera3D cam = { 0 };
+                    cam.position = tc.Translation;
+                    
+                    // improved forward calculation using raymath
+                    Matrix rotMat = QuaternionToMatrix(tc.RotationQuat);
+                    Vector3 forward = Vector3Transform({0, 0, -1}, rotMat);
+                    cam.target = Vector3Add(cam.position, forward);
+                    
+                    cam.up = Vector3Transform({0, 1, 0}, rotMat);
+                    cam.fovy = cc.Fov;
+                    cam.projection = cc.Projection == 0 ? CAMERA_PERSPECTIVE : CAMERA_ORTHOGRAPHIC;
+                    return cam;
+                }
+            }
+        }
+        return Camera3D{{10, 10, 10}, {0, 0, 0}, {0, 1, 0}, 45, CAMERA_PERSPECTIVE};
     }
 
     Ray EditorGUI::GetMouseRay(const Camera3D &camera, Vector2 viewportPos, Vector2 viewportSize)

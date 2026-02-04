@@ -5,11 +5,14 @@
 #include "engine/core/log.h"
 #include "engine/scene/components.h"
 #include "engine/scene/entity.h"
+#include "engine/scene/scene_events.h"
+#include "engine/core/application.h"
 #include "engine/scene/scene.h"
+#include "engine/core/timestep.h"
 
 #define CH_SCRIPT(name) class name : public CHEngine::ScriptableEntity
 #define CH_START() void OnCreate() override
-#define CH_UPDATE(dt) void OnUpdate(float dt) override
+#define CH_UPDATE(dt) void OnUpdate(CHEngine::Timestep dt) override
 #define CH_EVENT(e) void OnEvent(CHEngine::Event &e) override
 #define CH_GUI() void OnImGuiRender() override
 
@@ -43,7 +46,7 @@ public:
     virtual void OnDestroy()
     {
     }
-    virtual void OnUpdate(float deltaTime)
+    virtual void OnUpdate(Timestep deltaTime)
     {
     }
     virtual void OnImGuiRender()
@@ -136,7 +139,8 @@ protected:
 
     void ChangeScene(const std::string &path)
     {
-        m_Entity.GetScene()->RequestSceneChange(path);
+        SceneChangeRequestEvent e(path);
+        Application::Get().OnEvent(e);
     }
 
     ScriptableEntity *GetScript(const std::string &name)

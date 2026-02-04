@@ -46,56 +46,13 @@ Window::Window(const WindowProps &config)
         return;
     }
 
-    // Setup ImGui with GLFW backend
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO &io = ImGui::GetIO();
-    io.IniFilename = m_IniFilename.c_str();
-
-    // Enable docking and viewports
-    if (config.EnableDocking)
-        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    if (config.EnableViewports)
-        io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-
-    // Setup Platform/Renderer backends
-    if (!ImGui_ImplGlfw_InitForOpenGL(m_Window, true))
-    {
-        CH_CORE_ERROR("Failed to initialize ImGui GLFW backend");
-        return;
-    }
-
-    if (!ImGui_ImplOpenGL3_Init("#version 430"))
-    {
-        CH_CORE_ERROR("Failed to initialize ImGui OpenGL3 backend");
-        return;
-    }
-
-    // Setup style
-    ImGui::StyleColorsDark();
-
-    // When viewports are enabled, tweak WindowRounding/WindowBg
-    ImGuiStyle &style = ImGui::GetStyle();
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-    {
-        style.WindowRounding = 0.0f;
-        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-    }
-
     SetExitKey(KEY_NULL); // Prevent ESC from closing the app
 
-    CH_CORE_INFO("Window Initialized with native ImGui backends: {} ({}x{})", m_Title, m_Width,
-                 m_Height);
-    CH_CORE_INFO("ImGui Viewports: {}",
-                 (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) ? "Enabled" : "Disabled");
+    CH_CORE_INFO("Window Initialized: {} ({}x{})", m_Title, m_Width, m_Height);
 }
 
 Window::~Window()
 {
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-
     CloseWindow();
     m_Window = nullptr;
     CH_CORE_INFO("Window Closed");

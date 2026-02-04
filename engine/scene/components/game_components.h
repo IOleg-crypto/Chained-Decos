@@ -4,7 +4,6 @@
 #include "engine/core/base.h"
 #include "engine/scene/components/control_component.h"
 #include "raylib.h"
-#include "../reflect.h"
 #include <string>
 
 namespace CHEngine
@@ -24,14 +23,6 @@ struct SpawnComponent
     SpawnComponent(const SpawnComponent &) = default;
 };
 
-BEGIN_REFLECT(SpawnComponent)
-    PROPERTY(bool, IsActive, "Active")
-    PROPERTY(Vector3, ZoneSize, "Zone Size")
-    PROPERTY(bool, RenderSpawnZoneInScene, "Show In Scene")
-    PROPERTY(Vector3, SpawnPoint, "Spawn Point")
-    PROPERTY(std::string, TexturePath, "Texture Path")
-END_REFLECT()
-
 struct PlayerComponent
 {
     float MovementSpeed = 15.0f;
@@ -47,15 +38,6 @@ struct PlayerComponent
     PlayerComponent() = default;
 };
 
-BEGIN_REFLECT(PlayerComponent)
-    PROPERTY(float, MovementSpeed, "Speed")
-    PROPERTY(float, LookSensitivity, "Sensitivity")
-    PROPERTY(float, CameraYaw, "Yaw")
-    PROPERTY(float, CameraPitch, "Pitch")
-    PROPERTY(float, CameraDistance, "Cam Distance")
-    PROPERTY(float, JumpForce, "Jump Force")
-END_REFLECT()
-
 struct SceneTransitionComponent
 {
     std::string TargetScenePath;
@@ -67,10 +49,6 @@ struct SceneTransitionComponent
     }
 };
 
-BEGIN_REFLECT(SceneTransitionComponent)
-    PROPERTY(std::string, TargetScenePath, "Target Scene")
-    PROPERTY(bool, Triggered, "Triggered")
-END_REFLECT()
 } // namespace CHEngine
 
 #endif // CH_GAME_COMPONENTS_H

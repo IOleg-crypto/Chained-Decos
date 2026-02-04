@@ -1,6 +1,7 @@
 #ifndef CH_ENTITY_H
 #define CH_ENTITY_H
 
+#include "engine/core/uuid.h"
 #include "entt/entt.hpp"
 
 namespace CHEngine
@@ -17,6 +18,7 @@ public:
     Entity(const Entity &other) = default;
 
     template <typename T, typename... Args> T &AddComponent(Args &&...args);
+    template <typename T, typename... Args> T &AddOrReplaceComponent(Args &&...args);
 
     template <typename T> T &GetComponent();
 

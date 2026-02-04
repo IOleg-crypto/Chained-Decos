@@ -38,28 +38,28 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
             ImGui::BeginDisabled();
 
         const char *bgModes[] = {"Solid Color", "Texture", "3D Environment"};
-        int currentMode = (int)m_Context->GetBackgroundMode();
+        int currentMode = (int)m_Context->GetSettings().Mode;
         if (ImGui::Combo("Background Mode", &currentMode, bgModes, 3))
-            m_Context->SetBackgroundMode((BackgroundMode)currentMode);
+            m_Context->GetSettings().Mode = (BackgroundMode)currentMode;
 
-        if (m_Context->GetBackgroundMode() == BackgroundMode::Color)
+        if (m_Context->GetSettings().Mode == BackgroundMode::Color)
         {
-            Color color = m_Context->GetBackgroundColor();
+            Color color = m_Context->GetSettings().BackgroundColor;
             float c[4] = {color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f};
             if (ImGui::ColorEdit4("Background Color", c))
             {
-                m_Context->SetBackgroundColor(
+                m_Context->GetSettings().BackgroundColor =
                     {(unsigned char)(c[0] * 255), (unsigned char)(c[1] * 255),
-                     (unsigned char)(c[2] * 255), (unsigned char)(c[3] * 255)});
+                     (unsigned char)(c[2] * 255), (unsigned char)(c[3] * 255)};
             }
         }
-        else if (m_Context->GetBackgroundMode() == BackgroundMode::Texture)
+        else if (m_Context->GetSettings().Mode == BackgroundMode::Texture)
         {
             char buffer[256];
             memset(buffer, 0, sizeof(buffer));
-            strncpy(buffer, m_Context->GetBackgroundTexturePath().c_str(), sizeof(buffer) - 1);
+            strncpy(buffer, m_Context->GetSettings().BackgroundTexturePath.c_str(), sizeof(buffer) - 1);
             if (ImGui::InputText("Texture Path", buffer, sizeof(buffer)))
-                m_Context->SetBackgroundTexturePath(buffer);
+                m_Context->GetSettings().BackgroundTexturePath = buffer;
 
             ImGui::SameLine();
             if (ImGui::Button("..."))
@@ -71,10 +71,10 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
                 {
                     std::filesystem::path p = outPath;
                     if (Project::GetActive())
-                        m_Context->SetBackgroundTexturePath(
-                            std::filesystem::relative(p, Project::GetAssetDirectory()).string());
+                        m_Context->GetSettings().BackgroundTexturePath =
+                            std::filesystem::relative(p, Project::GetAssetDirectory()).string();
                     else
-                        m_Context->SetBackgroundTexturePath(p.filename().string());
+                        m_Context->GetSettings().BackgroundTexturePath = p.filename().string();
                     NFD_FreePath(outPath);
                 }
             }
@@ -86,7 +86,7 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
 
     ImGui::Separator();
 
-    auto env = m_Context->GetEnvironment();
+    auto env = m_Context->GetSettings().Environment;
 
     if (!readOnly)
     {
@@ -95,11 +95,12 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
             nfdu8char_t *outPath = NULL;
             nfdu8filteritem_t filterList[1] = {{"Environment", "chenv"}};
             nfdresult_t result = NFD_OpenDialog(&outPath, filterList, 1, NULL);
-            if (result == NFD_OKAY)
-            {
-                m_Context->SetEnvironment(AssetManager::Get<EnvironmentAsset>(outPath));
-                NFD_FreePath(outPath);
-            }
+                if (result == NFD_OKAY)
+                {
+                    if (auto project = Project::GetActive())
+                       m_Context->GetSettings().Environment = project->GetAssetManager()->Get<EnvironmentAsset>(outPath);
+                    NFD_FreePath(outPath);
+                }
         }
 
         ImGui::SameLine();
@@ -108,12 +109,12 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
             NFD::UniquePath outPath;
             nfdfilteritem_t filterItem[1] = {{"Environment", "chenv"}};
             auto result = NFD::SaveDialog(outPath, filterItem, 1, nullptr, "Untitled.chenv");
-            if (result == NFD_OKAY)
-            {
-                auto newEnv = std::make_shared<EnvironmentAsset>();
-                newEnv->SetPath(outPath.get());
-                m_Context->SetEnvironment(newEnv);
-            }
+                if (result == NFD_OKAY)
+                {
+                    auto newEnv = std::make_shared<EnvironmentAsset>();
+                    newEnv->SetPath(outPath.get());
+                    m_Context->GetSettings().Environment = newEnv;
+                }
         }
     }
 
@@ -135,7 +136,7 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
 
     // Replaced m_DebugFlags with EditorLayer::Get().GetDebugRenderFlags()
     {
-        bool is3D = m_Context->GetBackgroundMode() == BackgroundMode::Environment3D;
+        bool is3D = m_Context->GetSettings().Mode == BackgroundMode::Environment3D;
         ImGui::Separator();
         ImGui::Text("Debug Rendering");
 

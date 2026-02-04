@@ -9,32 +9,26 @@ namespace CHEngine
 enum class EventType
 {
     None = 0,
-    WindowClose,
-    WindowResize,
-    WindowFocus,
-    WindowLostFocus,
-    WindowMoved,
-    AppTick,
-    AppUpdate,
-    AppRender,
-    KeyPressed,
-    KeyReleased,
-    KeyTyped,
-    MouseButtonPressed,
-    MouseButtonReleased,
-    MouseMoved,
-    MouseScrolled,
-    ProjectCreated,
-    ProjectOpened,
-    SceneOpened,
-    SceneSaved,
-    ScenePlay,
-    SceneStop,
-    AppLaunchRuntime,
-    AppResetLayout,
-    AppSaveLayout,
-    EntitySelected,
+    // Window Events
+    WindowClose, WindowResize, WindowFocus, WindowLostFocus, WindowMoved,
+    
+    // App Events
+    AppTick, AppUpdate, AppRender,
+    
+    // Input Events
+    KeyPressed, KeyReleased, KeyTyped,
+    MouseButtonPressed, MouseButtonReleased, MouseMoved, MouseScrolled,
+
+    // --- Project & Scene Events (Engine Level) ---
+    ProjectCreated, ProjectOpened,
+    SceneOpened, SceneSaved, ScenePlay, SceneStop,
     SceneChangeRequest,
+
+    // --- Editor Events (UI/Editor Level) ---
+    AppLaunchRuntime, AppResetLayout, AppSaveLayout,
+    EntitySelected,
+    
+    // UI Events
     ButtonPressed
 };
 
@@ -251,6 +245,35 @@ public:
     }
     EVENT_CLASS_TYPE(MouseButtonReleased)
 };
+
+    class WindowResizeEvent : public Event
+    {
+    public:
+        WindowResizeEvent(unsigned int width, unsigned int height)
+            : m_Width(width), m_Height(height) {}
+
+        unsigned int GetWidth() const { return m_Width; }
+        unsigned int GetHeight() const { return m_Height; }
+
+        std::string ToString() const override
+        {
+            return "WindowResizeEvent: " + std::to_string(m_Width) + ", " + std::to_string(m_Height);
+        }
+
+        EVENT_CLASS_TYPE(WindowResize)
+        EVENT_CLASS_CATEGORY(EventCategoryApplication)
+    private:
+        unsigned int m_Width, m_Height;
+    };
+
+    class WindowCloseEvent : public Event
+    {
+    public:
+        WindowCloseEvent() = default;
+
+        EVENT_CLASS_TYPE(WindowClose)
+        EVENT_CLASS_CATEGORY(EventCategoryApplication)
+    };
 
 } // namespace CHEngine
 

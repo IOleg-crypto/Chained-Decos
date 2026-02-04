@@ -1,6 +1,7 @@
 #ifndef CH_EDITOR_PANELS_H
 #define CH_EDITOR_PANELS_H
 
+#include "engine/core/timestep.h"
 #include "panels/panel.h"
 #include <memory>
 #include <typeindex>
@@ -49,7 +50,7 @@ public:
     }
 
 public:
-    void OnUpdate(float deltaTime);
+    void OnUpdate(Timestep ts);
     void OnImGuiRender(bool readOnly);
     void OnEvent(Event &e);
     void SetContext(const std::shared_ptr<Scene> &context);

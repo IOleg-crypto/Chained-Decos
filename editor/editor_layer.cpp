@@ -3,6 +3,7 @@
 #include "editor/actions/scene_actions.h"
 #include "editor/editor.h"
 #include "editor_gui.h"
+#include "editor_events.h"
 #include "engine/core/input.h"
 
 #include "engine/core/profiler.h"
@@ -11,6 +12,7 @@
 #include "engine/scene/project_serializer.h"
 #include "engine/scene/scene_serializer.h"
 #include "engine/scene/scriptable_entity.h"
+#include "engine/graphics/asset_manager.h"
 
 #include "cstdarg"
 #include "extras/IconsFontAwesome6.h"
@@ -30,14 +32,10 @@ namespace CHEngine
     EditorLayer::EditorLayer() : Layer("EditorLayer")
     {
         s_Instance = this;
-        m_Panels = std::make_unique<EditorPanels>();
+        EditorContext::Init();
         m_Panels = std::make_unique<EditorPanels>();
         m_Layout = std::make_unique<EditorLayout>();
         m_Actions = std::make_unique<EditorActions>();
-
-        m_State.DebugRenderFlags.DrawColliders = true;
-        m_State.DebugRenderFlags.DrawLights = true;
-        m_State.DebugRenderFlags.DrawSpawnZones = true;
     }
 
     void EditorLayer::OnAttach()
@@ -56,10 +54,10 @@ namespace CHEngine
                 ConsolePanel::AddLog(buffer, level);
             });
 
+        NFD_Init(); 
         ImGuiIO &io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
         EditorGUI::ApplyTheme();
-        NFD_Init();
         PropertyEditor::Init();
 
         // Register Panels
@@ -93,7 +91,7 @@ namespace CHEngine
         if (iniPath && !std::filesystem::exists(iniPath))
         {
             CH_CORE_INFO("OnAttach: Layout file '{}' not found, will be reset on first frame", iniPath);
-            m_State.NeedsLayoutReset = true;
+            EditorContext::GetState().NeedsLayoutReset = true;
         }
 
         CH_CORE_INFO("EditorLayer Attached with modular panels.");
@@ -112,7 +110,7 @@ namespace CHEngine
         if (!assetManager) {
             tempManager = std::make_unique<AssetManager>();
             tempManager->Initialize();
-            assetManager = tempManager.get();
+            assetManager = std::move(tempManager);
         }
 
         // --- Default UI Font (Lato) ---
@@ -147,11 +145,12 @@ namespace CHEngine
 
     void EditorLayer::OnDetach()
     {
+        EditorContext::Shutdown();
         SetTraceLogCallback(nullptr);
         NFD_Quit();
     }
 
-    void EditorLayer::OnUpdate(float deltaTime)
+    void EditorLayer::OnUpdate(Timestep ts)
     {
         CH_PROFILE_FUNCTION();
 
@@ -162,10 +161,10 @@ namespace CHEngine
 
         if (auto scene = GetActiveScene())
         {
-            if (m_SceneState == SceneState::Play)
-                scene->OnUpdateRuntime(deltaTime);
+            if (EditorContext::GetSceneState() == SceneState::Play)
+                scene->OnUpdateRuntime(ts);
             
-            m_Panels->OnUpdate(deltaTime);
+            m_Panels->OnUpdate(ts);
         }
     }
 
@@ -179,15 +178,15 @@ namespace CHEngine
         ImGuizmo::SetImGuiContext(ImGui::GetCurrentContext());
         ImGuizmo::BeginFrame();
 
-        if (m_State.NeedsLayoutReset)
+        if (EditorContext::GetState().NeedsLayoutReset)
         {
             ResetLayout();
-            m_State.NeedsLayoutReset = false;
+            EditorContext::GetState().NeedsLayoutReset = false;
         }
 
         if (Project::GetActive())
         {
-            if (m_State.FullscreenGame)
+            if (EditorContext::GetState().FullscreenGame)
             {
                 if (auto viewportPanel = m_Panels->Get<ViewportPanel>())
                     viewportPanel->OnImGuiRender(true);
@@ -214,7 +213,7 @@ namespace CHEngine
         m_Layout->BeginWorkspace();
         m_Layout->DrawInterface();
 
-        bool readOnly = m_SceneState == SceneState::Play;
+        bool readOnly = EditorContext::GetSceneState() == SceneState::Play;
         m_Panels->OnImGuiRender(readOnly);
 
         DrawScriptUI();
@@ -224,7 +223,7 @@ namespace CHEngine
 
     void EditorLayer::DrawScriptUI()
     {
-        if (m_SceneState != SceneState::Play)
+        if (EditorContext::GetSceneState() != SceneState::Play)
             return;
 
         auto scene = GetActiveScene();
@@ -260,7 +259,7 @@ namespace CHEngine
         auto activeScene = GetActiveScene();
         m_Panels->SetContext(activeScene);
 
-        m_State.SelectedEntity = {};
+        EditorContext::SetSelectedEntity({});
 
         // Sync project path
         auto project = Project::GetActive();
@@ -293,8 +292,8 @@ namespace CHEngine
 
         // 4. Selections/Picking
         dispatcher.Dispatch<EntitySelectedEvent>([this](auto& ev) {
-            m_State.SelectedEntity = Entity{ev.GetEntity(), ev.GetScene()};
-            m_State.LastHitMeshIndex = ev.GetMeshIndex();
+            EditorContext::SetSelectedEntity(Entity{ev.GetEntity(), ev.GetScene()});
+            EditorContext::GetState().LastHitMeshIndex = ev.GetMeshIndex();
             return false;
         });
 
@@ -307,9 +306,9 @@ namespace CHEngine
         if (e.GetEventType() == EventType::KeyPressed)
         {
             auto &ke = (KeyPressedEvent &)e;
-            if (ke.GetKeyCode() == KEY_ESCAPE && m_State.FullscreenGame)
+            if (ke.GetKeyCode() == KEY_ESCAPE && EditorContext::GetState().FullscreenGame)
             {
-                m_State.FullscreenGame = false;
+                EditorContext::GetState().FullscreenGame = false;
                 e.Handled = true;
             }
             if (auto activeScene = GetActiveScene())
@@ -326,20 +325,20 @@ namespace CHEngine
     {
         if (state == SceneState::Play)
         {
-            if (m_SceneState == SceneState::Play) return;
+            if (EditorContext::GetSceneState() == SceneState::Play) return;
 
             CH_CORE_INFO("Editor: Play Mode Started");
             m_RuntimeScene = Scene::Copy(m_EditorScene);
             if (m_RuntimeScene)
             {
-                m_SceneState = SceneState::Play;
+                EditorContext::SetSceneState(SceneState::Play);
                 m_RuntimeScene->OnRuntimeStart();
                 m_Panels->SetContext(m_RuntimeScene);
             }
         }
         else
         {
-            if (m_SceneState == SceneState::Edit) return;
+            if (EditorContext::GetSceneState() == SceneState::Edit) return;
 
             CH_CORE_INFO("Editor: Play Mode Stopped");
             if (m_RuntimeScene)
@@ -348,7 +347,7 @@ namespace CHEngine
                 m_RuntimeScene = nullptr;
             }
 
-            m_SceneState = SceneState::Edit;
+            EditorContext::SetSceneState(SceneState::Edit);
             m_Panels->SetContext(m_EditorScene);
         }
     }
@@ -356,8 +355,8 @@ namespace CHEngine
     void EditorLayer::SetScene(std::shared_ptr<Scene> scene)
     {
         m_EditorScene = scene;
-        m_State.SelectedEntity = {};
-        if (m_SceneState == SceneState::Edit)
+        EditorContext::SetSelectedEntity({});
+        if (EditorContext::GetSceneState() == SceneState::Edit)
             m_Panels->SetContext(m_EditorScene);
     }
 

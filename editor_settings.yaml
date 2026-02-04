@@ -1,9 +1,4 @@
 Editor:
-  WindowWidth: 1600
-  WindowHeight: 900
-  Fullscreen: false
-  TargetFPS: 144
-  VSync: true
   LastProjectPath: D:\gitnext\Chained Decos\game\chaineddecos\chaineddecos.chproject
   LastScenePath: ""
   LoadLastProjectOnStartup: false
