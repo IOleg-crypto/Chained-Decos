@@ -3,13 +3,14 @@
 
 #include "engine/core/base.h"
 #include "engine/graphics/environment.h"
+#include "engine/graphics/asset_manager.h"
+#include "engine/graphics/texture_asset.h"
 #include <filesystem>
 #include <memory>
 #include <string>
 
 namespace CHEngine
 {
-class AssetManager;
 struct PhysicsSettings
 {
     float Gravity = 20.0f;
