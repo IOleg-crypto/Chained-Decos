@@ -6,6 +6,8 @@ target_sources(editor_core PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/editor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_layer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_layer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_context.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_context.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_panels.h
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_panels.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/actions/project_actions.cpp

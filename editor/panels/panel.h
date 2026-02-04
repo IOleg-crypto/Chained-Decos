@@ -3,6 +3,7 @@
 
 #include "engine/core/base.h"
 #include "engine/core/events.h"
+#include "engine/core/timestep.h"
 #include "engine/scene/scene.h"
 
 namespace CHEngine
@@ -13,7 +14,7 @@ public:
     virtual ~Panel() = default;
 
     virtual void OnImGuiRender(bool readOnly = false) = 0;
-    virtual void OnUpdate(float deltaTime)
+    virtual void OnUpdate(Timestep ts)
     {
     }
     virtual void OnEvent(Event &e)

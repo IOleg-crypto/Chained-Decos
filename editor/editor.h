@@ -10,11 +10,8 @@ namespace CHEngine
 class Editor : public Application
 {
 public:
-    Editor(const Application::Config &config);
-    virtual ~Editor() = default;
-
-    virtual void PostInitialize() override;
-    void Shutdown();
+    Editor(const ApplicationSpecification &specification);
+    ~Editor() override;
 
     static Editor &Get()
     {

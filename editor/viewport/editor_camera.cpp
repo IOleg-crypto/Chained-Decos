@@ -21,8 +21,9 @@ EditorCamera::EditorCamera()
     m_Pitch = asinf(dir.y / fmaxf(0.001f, Vector3Length(dir)));
 }
 
-void EditorCamera::OnUpdate(float deltaTime)
+void EditorCamera::OnUpdate(Timestep ts)
 {
+    float deltaTime = ts;
     // Sync from project settings if available
     float moveSpeed = m_MoveSpeed;
     float rotationSpeed = m_RotationSpeed;

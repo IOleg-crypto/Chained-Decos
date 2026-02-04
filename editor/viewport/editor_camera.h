@@ -2,6 +2,7 @@
 #define CH_EDITOR_CAMERA_H
 
 #include "raylib.h"
+#include "engine/core/timestep.h"
 
 namespace CHEngine
 {
@@ -12,7 +13,7 @@ public:
     EditorCamera();
     ~EditorCamera() = default;
 
-    void OnUpdate(float deltaTime);
+    void OnUpdate(Timestep ts);
 
     const Camera3D &GetRaylibCamera() const;
     Camera3D &GetRaylibCamera();

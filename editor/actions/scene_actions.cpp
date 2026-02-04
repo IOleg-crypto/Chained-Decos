@@ -34,9 +34,9 @@ namespace CHEngine
             // Sync environment if needed (optional, logic from Application::LoadScene can be moved here or to a helper)
             if (Project::GetActive() && Project::GetActive()->GetEnvironment())
             { 
-                 if (newScene->GetEnvironment()->GetPath().empty() && newScene->GetEnvironment()->GetSettings().Skybox.TexturePath.empty())
+                 if (newScene->GetSettings().Environment->GetPath().empty() && newScene->GetSettings().Environment->GetSettings().Skybox.TexturePath.empty())
                  {
-                     newScene->SetEnvironment(Project::GetActive()->GetEnvironment());
+                     newScene->GetSettings().Environment = Project::GetActive()->GetEnvironment();
                  }
             }
 
@@ -45,7 +45,7 @@ namespace CHEngine
             EditorLayer::Get().SetScene(newScene);
 
             SceneOpenedEvent e(path.string());
-            Application::OnEvent(e);
+            Application::Get().OnEvent(e);
         }
     }
 

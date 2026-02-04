@@ -15,11 +15,9 @@ namespace CHEngine
     class ModelAsset;
     class BVH;
 
-    /**
-     * Represents the physics simulation and spatial query context for a specific scene.
-     * Following the 'Action-Based' naming convention (Physics instead of PhysicsSystem).
-     * Organized with encapsulated instance state.
-     */
+    // Represents the physics simulation and spatial query context for a specific scene.
+    // Following the 'Action-Based' naming convention (Physics instead of PhysicsSystem).
+    // Organized with encapsulated instance state.
     struct RaycastResult
     {
         bool Hit = false;
@@ -36,20 +34,20 @@ namespace CHEngine
         Physics(Scene* scene);
         ~Physics();
 
-        /** Initializes the physics context for the scene. */
+        // Initializes the physics context for the scene.
         static void Init(); // Global engine-level init if needed
         
-        /** Shuts down global physics resources. */
+        // Shuts down global physics resources.
         static void Shutdown();
 
     public: // Simulation & Queries
-        /** Steps the physics simulation and updates collider states. */
+        // Steps the physics simulation and updates collider states.
         void Update(float deltaTime, bool runtime = false);
 
-        /** Performs a spatial raycast query within the owned scene. */
+        // Performs a spatial raycast query within the owned scene.
         RaycastResult Raycast(Ray ray);
 
-        /** Retrieves or starts building a BVH for a model asset. */
+        // Retrieves or starts building a BVH for a model asset.
         std::shared_ptr<BVH> GetBVH(ModelAsset* asset);
 
     private: // Internal Helpers

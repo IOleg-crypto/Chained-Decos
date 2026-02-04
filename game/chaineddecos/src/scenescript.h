@@ -20,7 +20,7 @@ CH_UPDATE(dt)
         {
             CH_CORE_INFO("SceneScript: Button pressed, requesting scene change...");
             SceneChangeRequestEvent e(PROJECT_ROOT_DIR "/game/chaineddecos/assets/scenes/Untitled1.chscene");
-            Application::OnEvent(e);
+            Application::Get().OnEvent(e);
         }
     }
 }
