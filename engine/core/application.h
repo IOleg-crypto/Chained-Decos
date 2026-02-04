@@ -6,6 +6,9 @@
 #include "engine/core/events.h"
 #include "engine/core/layer_stack.h"
 #include "engine/core/timestep.h"
+#include "engine/core/window.h"
+#include "engine/core/thread_pool.h"
+#include "engine/core/imgui_layer.h"
 
 #include <string>
 #include <memory>
@@ -15,10 +18,6 @@
 
 namespace CHEngine
 {
-    class Window;
-    class ThreadPool;
-    class ImGuiLayer;
-    class Layer;
 
     struct ApplicationCommandLineArgs
     {
