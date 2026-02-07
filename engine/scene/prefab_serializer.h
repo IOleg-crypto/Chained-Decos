@@ -1,7 +1,7 @@
 #ifndef CH_PREFAB_SERIALIZER_H
 #define CH_PREFAB_SERIALIZER_H
 
-#include "engine/scene/entity.h"
+#include "engine/scene/scene.h"
 #include <string>
 
 namespace CHEngine

@@ -11,26 +11,28 @@
 
 namespace CHEngine
 {
+struct LaunchProfile
+{
+    std::string Name;
+    std::string BinaryPath;
+    std::string Arguments;
+    bool UseDefaultArgs = true;
+};
+
 struct PhysicsSettings
 {
     float Gravity = 20.0f;
-
-    bool DrawUI();
 };
 
 struct AnimationSettings
 {
     float TargetFPS = 30.0f;
-
-    bool DrawUI();
 };
 
 struct RenderSettings
 {
     float AmbientIntensity = 0.3f;
     float DefaultExposure = 1.0f;
-
-    bool DrawUI();
 };
 
 struct WindowSettings
@@ -39,8 +41,6 @@ struct WindowSettings
     int Height = 720;
     bool VSync = true;
     bool Resizable = true;
-
-    bool DrawUI();
 };
 
 struct RuntimeSettings
@@ -48,8 +48,6 @@ struct RuntimeSettings
     bool Fullscreen = false;
     bool ShowStats = true;
     bool EnableConsole = false;
-
-    bool DrawUI();
 };
 
 enum class Configuration
@@ -63,8 +61,6 @@ struct EditorSettings
     float CameraMoveSpeed = 10.0f;
     float CameraRotationSpeed = 0.1f;
     float CameraBoostMultiplier = 5.0f;
-
-    bool DrawUI();
 };
 
 struct ProjectConfig
@@ -82,6 +78,9 @@ struct ProjectConfig
     WindowSettings Window;
     RuntimeSettings Runtime;
     EditorSettings Editor;
+
+    std::vector<LaunchProfile> LaunchProfiles;
+    int ActiveLaunchProfileIndex = 0;
 
     Configuration BuildConfig = Configuration::Debug;
 };
@@ -141,6 +140,32 @@ public:
         return GetAssetDirectory() / relative;
     }
 
+    static std::string GetRelativePath(const std::filesystem::path &path)
+    {
+        if (path.empty()) 
+            return "";
+        
+        if (path.is_relative()) 
+            return path.generic_string();
+
+        auto absolutePath = NormalizePath(path);
+        std::string finalPath = absolutePath.generic_string();
+        
+        // Try relative to assets directory first
+        if (auto rel = TryMakeRelative(absolutePath, GetAssetDirectory()))
+            finalPath = *rel;
+        // Fallback to project root
+        else if (auto rel = TryMakeRelative(absolutePath, GetProjectDirectory()))
+            finalPath = *rel;
+
+        #ifdef CH_PLATFORM_WINDOWS
+        std::transform(finalPath.begin(), finalPath.end(), finalPath.begin(), ::tolower);
+        std::replace(finalPath.begin(), finalPath.end(), '\\', '/');
+        #endif
+
+        return finalPath;
+    }
+
     void SetActiveScenePath(const std::filesystem::path &path)
     {
         m_Config.ActiveScenePath = path;
@@ -176,6 +201,12 @@ private:
     std::shared_ptr<EnvironmentAsset> m_Environment;
     std::shared_ptr<AssetManager> m_AssetManager;
     static std::shared_ptr<Project> s_ActiveProject;
+    
+    // Path utility helpers
+    static std::filesystem::path NormalizePath(const std::filesystem::path& path);
+    static std::optional<std::string> TryMakeRelative(
+        const std::filesystem::path& absolutePath,
+        const std::filesystem::path& basePath);
 
     friend class ProjectSerializer;
 };

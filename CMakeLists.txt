@@ -20,6 +20,20 @@ if(CH_CI)
     add_compile_definitions(CH_CI)
 endif()
 
+# Optional: ccache support for faster rebuilds
+# Install ccache: choco install ccache (Windows) or apt install ccache (Linux)
+option(USE_CCACHE "Use ccache if available" ON)
+if(USE_CCACHE)
+    find_program(CCACHE_PROGRAM ccache)
+    if(CCACHE_PROGRAM)
+        set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+        set(CMAKE_C_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+        message(STATUS "Using ccache: ${CCACHE_PROGRAM}")
+    else()
+        message(STATUS "ccache not found - install with: choco install ccache")
+    endif()
+endif()
+
 
 # Dependencies
 include(cmake/CompilerSettings.cmake)

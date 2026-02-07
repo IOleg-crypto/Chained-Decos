@@ -5,7 +5,6 @@
 #include <raylib.h>
 #include "asset.h"
 #include "engine/core/base.h"
-// Removed redundant include: engine/core/math_types.h
 #include <string>
 
 namespace CHEngine
@@ -19,6 +18,15 @@ struct SkyboxSettings
     float Contrast = 1.0f;
 };
 
+struct FogSettings
+{
+    bool Enabled = false;
+    Color FogColor = GRAY;
+    float Density = 0.01f;
+    float Start = 10.0f;
+    float End = 100.0f;
+};
+
 struct EnvironmentSettings
 {
     Vector3 LightDirection = {-1.0f, -1.0f, -1.0f};
@@ -26,8 +34,7 @@ struct EnvironmentSettings
     float AmbientIntensity = 0.3f;
 
     SkyboxSettings Skybox;
-
-    // Future: Fog, PostProcessing, etc.
+    FogSettings Fog;
 };
 
 class EnvironmentAsset : public Asset

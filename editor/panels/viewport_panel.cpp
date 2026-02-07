@@ -8,6 +8,7 @@
 #include "raylib.h"
 #include "rlImGui.h"
 #include "engine/graphics/scene_renderer.h"
+#include "engine/graphics/ui_renderer.h"
 #include "editor_gui.h"
 #include "editor_layout.h"
 #include "engine/graphics/asset_manager.h"
@@ -107,9 +108,7 @@ namespace CHEngine
     ImGui::Begin(m_Name.c_str(), &m_IsOpen);
     ImGui::PushID(this);
 
-    // Important: ImGuizmo needs to begin frame at the start of the window
-    ImGuizmo::BeginFrame();
-
+    // --- 1. PREPARE SCENE RENDER ---
     // Get available content region dimensions (excluding window title/decorations)
     ImVec2 viewportSize = ImGui::GetContentRegionAvail();
     ImVec2 viewportScreenPos = ImGui::GetCursorScreenPos(); // Global top-left corner position
@@ -154,6 +153,7 @@ namespace CHEngine
     EndTextureMode();
 
     rlImGuiImageRenderTexture(&m_ViewportTexture);
+    bool isViewportHovered = ImGui::IsItemHovered();
 
     // Drag & Drop Target
     if (ImGui::BeginDragDropTarget())
@@ -177,9 +177,9 @@ namespace CHEngine
             {
                  std::string filename = filepath.stem().string();
                  Entity entity = activeScene->CreateEntity(filename);
-                 auto& mc = entity.AddComponent<ModelComponent>();
-                 // Use generic string for consistent paths
-                 mc.ModelPath = filepath.generic_string();
+                 auto& modelcomp = entity.AddComponent<ModelComponent>();
+                 // Use relative path if possible to satisfy portability
+                 modelcomp.ModelPath = Project::GetRelativePath(filepath);
                  
                  // Select the new entity
                  EntitySelectedEvent e((entt::entity)entity, activeScene.get());
@@ -189,57 +189,39 @@ namespace CHEngine
         ImGui::EndDragDropTarget();
     }
 
-    // Gizmo rendering (after scene image so it overlays properly)
-    m_Gizmo.RenderAndHandle(!isUISelected ? m_CurrentTool : GizmoType::NONE, viewportScreenPos, viewportSize);
-
     // --- 2. UI OVERLAY & SELECTION ---
     ImGui::SetCursorScreenPos(viewportScreenPos);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     
-    if (ImGui::BeginChild("##SceneUI", viewportSize, false, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground))
-    {
-        // Render Game UI Overlay (moved from Scene to keep Engine clean)
-        Render::DrawUI(activeScene.get(), viewportScreenPos, viewportSize, EditorLayer::Get().GetSceneState() == SceneState::Edit);
+    bool isUIChildHovered = false;
+    bool isGizmoActive = false;
+    bool isGizmoHovered = false;
 
-        // Selection Highlight
-        if (isUISelected)
+    if (ImGui::BeginChild("##SceneUI", viewportSize, false, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
+    {
+        // 1. Gizmo handling (inside child window for input priority)
+        isGizmoActive = m_Gizmo.RenderAndHandle(!isUISelected ? m_CurrentTool : GizmoType::NONE, viewportScreenPos, viewportSize);
+        isGizmoHovered = m_Gizmo.IsHovered();
+
+        // 2. Game UI Overlay
+        UIRenderer::DrawCanvas(activeScene.get(), {0, 0}, viewportSize, EditorLayer::Get().GetSceneState() == SceneState::Edit);
+        isUIChildHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByPopup);
+
+        // 3. Selection Highlight
+        if (isUISelected && selectedEntity)
         {
             auto &cc = selectedEntity.GetComponent<ControlComponent>();
-            auto& canvas = activeScene->GetSettings().Canvas;
+            auto rect = cc.Transform.CalculateRect({viewportSize.x, viewportSize.y}, {0, 0});
             
-            // Use member function for simple anchoring
-            auto rect = cc.Transform.CalculateRect( 
-                {viewportSize.x, viewportSize.y}, 
-                {viewportScreenPos.x, viewportScreenPos.y});
-            
-            ImVec2 p1 = {rect.x, rect.y};
-            ImVec2 p2 = {rect.x + rect.width, rect.y + rect.height};
+            ImVec2 p1 = {viewportScreenPos.x + rect.x, viewportScreenPos.y + rect.y};
+            ImVec2 p2 = {p1.x + rect.width, p1.y + rect.height};
 
-            // Selection Frame
-            ImDrawList* drawList = ImGui::GetWindowDrawList();
-            drawList->AddRect(p1, p2, IM_COL32(255, 255, 0, 255), 0, 0, 2.0f);
+            ImGui::GetWindowDrawList()->AddRect(p1, p2, IM_COL32(255, 255, 0, 255), 0, 0, 2.0f);
 
             // Simple Drag support
             if (ImGui::IsMouseHoveringRect(p1, p2) && ImGui::IsMouseClicked(0)) 
             {
                 m_DraggingUI = true;
-            }
-            
-            if (m_DraggingUI)
-            {
-                if (ImGui::IsMouseDown(0)) 
-                {
-                    ImVec2 delta = ImGui::GetIO().MouseDelta;
-                    // No scale used now, pure pixel movement
-                    cc.Transform.OffsetMin.x += delta.x;
-                    cc.Transform.OffsetMax.x += delta.x;
-                    cc.Transform.OffsetMin.y += delta.y;
-                    cc.Transform.OffsetMax.y += delta.y;
-                }
-                else 
-                {
-                    m_DraggingUI = false;
-                }
             }
         }
     }
@@ -247,14 +229,36 @@ namespace CHEngine
     ImGui::PopStyleVar();
 
     // --- 3. OBJECT PICKING ---
-    if (EditorLayer::Get().GetSceneState() == SceneState::Edit && ImGui::IsWindowHovered() &&
-        ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && !m_DraggingUI && !ImGui::IsAnyItemActive())
+    bool isHovered = isUIChildHovered; 
+    bool isClicked = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
+    bool isDragging = m_DraggingUI;
+    SceneState sceneState = EditorLayer::Get().GetSceneState();
+
+    if (isClicked) {
+        CH_CORE_WARN("[Viewport] Click: Hovered={}, GizmoActive={}, GizmoHovered={}, Dragging={}, SceneState={}", 
+            isHovered, isGizmoActive, isGizmoHovered, isDragging, (int)sceneState);
+    }
+
+    if (sceneState == SceneState::Edit && isHovered && isClicked && !isGizmoActive && !isGizmoHovered && !isDragging)
     {
         ImVec2 mousePos = ImGui::GetMousePos();
         ImVec2 localMouseImGui = {mousePos.x - viewportScreenPos.x, mousePos.y - viewportScreenPos.y};
         Vector2 localMouse = {localMouseImGui.x, localMouseImGui.y};
 
-        Ray ray = EditorGUI::GetMouseRay(camera, {viewportScreenPos.x, viewportScreenPos.y}, {viewportSize.x, viewportSize.y});
+        Ray ray = EditorGUI::GetMouseRay(camera, {localMouse.x, localMouse.y}, {viewportSize.x, viewportSize.y});
+        
+        bool isClicked = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
+        if (isClicked)
+        {
+             static int clickCount = 0;
+             CH_CORE_WARN("PICKING DEBUG #{}", ++clickCount);
+             CH_CORE_INFO("Viewport: Pos({},{}), Size({},{})", viewportScreenPos.x, viewportScreenPos.y, viewportSize.x, viewportSize.y);
+             CH_CORE_INFO("Mouse: ImGui({},{}), Local({},{})", mousePos.x, mousePos.y, localMouseImGui.x, localMouseImGui.y);
+             CH_CORE_INFO("Ray: Origin({:.2f}, {:.2f}, {:.2f}), Dir({:.2f}, {:.2f}, {:.2f})", 
+                 ray.position.x, ray.position.y, ray.position.z,
+                 ray.direction.x, ray.direction.y, ray.direction.z);
+        }
+        
         Entity bestHit = {};
         float minDistance = FLT_MAX;
 
@@ -264,10 +268,7 @@ namespace CHEngine
         {
             Entity entity(entityID, activeScene.get());
             auto &cc = uiView.get<ControlComponent>(entityID);
-            if (!cc.IsActive) 
-            {
-                continue;
-            }
+            if (!cc.IsActive) continue;
 
             auto rect = cc.Transform.CalculateRect(
                 {viewportSize.x, viewportSize.y},
@@ -278,41 +279,55 @@ namespace CHEngine
             if (CheckCollisionPointRec(mouseRaylib, rect))
             {
                 bestHit = entity;
+                CH_CORE_INFO("HIT UI: {}", entity.GetComponent<TagComponent>().Tag);
             }
         }
 
         // 3D Picking
         if (!bestHit)
         {
-            // 1. Physics Picking (Colliders: Box, Mesh BVH)
+            // 1. Physics Picking
             RaycastResult result = activeScene->GetPhysics().Raycast(ray);
             if (result.Hit)
             {
                 bestHit = Entity(result.Entity, activeScene.get());
                 minDistance = result.Distance;
+                CH_CORE_INFO("HIT PHYSICS: {} at Dist {}", bestHit.GetComponent<TagComponent>().Tag, minDistance);
+            }
+            else
+            {
+                CH_CORE_TRACE("Physics Raycast missed.");
             }
 
-            // 2. Visual Picking Fallback (Meshes without colliders)
-            // Only run if we don't have a very close physics hit, or to find things without colliders
+            // 2. Visual Picking Fallback
             auto modelView = activeScene->GetRegistry().view<TransformComponent, ModelComponent>();
+            int visualCandidates = 0;
+            
             for (auto entityID : modelView)
             {
-                // Skip if already hit by physics (unless we want to prioritize visuals?)
-                // Usually physics is the intended interaction volume.
+                visualCandidates++;
                 if (bestHit && (entt::entity)bestHit == entityID) continue;
 
                 Entity entity(entityID, activeScene.get());
                 auto &modelComp = modelView.get<ModelComponent>(entityID);
-                if (modelComp.ModelPath.empty()) continue;
+                auto &tag = entity.GetComponent<TagComponent>().Tag;
+
+                if (modelComp.ModelPath.empty()) {
+                    CH_CORE_TRACE("Skip {}: No model path", tag);
+                    continue;
+                }
 
                 auto modelAsset = Project::GetActive()->GetAssetManager()->Get<ModelAsset>(modelComp.ModelPath);
-                if (!modelAsset || !modelAsset->IsReady()) continue;
+                if (!modelAsset || !modelAsset->IsReady()) {
+                    CH_CORE_TRACE("Skip {}: Asset not ready", tag);
+                    continue;
+                }
 
                 auto &tc = modelView.get<TransformComponent>(entityID);
                 Matrix modelTransform = tc.GetTransform();
                 Matrix invTransform = MatrixInvert(modelTransform);
 
-                // Transform ray to local space for BVH/Mesh check
+                // Transform ray to local space
                 Ray localRay;
                 localRay.position = Vector3Transform(ray.position, invTransform);
                 Vector3 localTarget = Vector3Transform(Vector3Add(ray.position, ray.direction), invTransform);
@@ -324,13 +339,13 @@ namespace CHEngine
 
                 bool hit = false;
                 auto bvh = activeScene->GetPhysics().GetBVH(modelAsset.get());
+                
                 if (bvh)
                 {
                     hit = bvh->Raycast(localRay, t_local, localNormal, localMeshIndex);
                 }
                 else
                 {
-                    // Fallback to per-mesh ray testing if no BVH (slow but accurate)
                     Model &model = modelAsset->GetModel();
                     for (int m = 0; m < model.meshCount; m++)
                     {
@@ -345,10 +360,11 @@ namespace CHEngine
 
                 if (hit)
                 {
-                    // Convert hit distance back to world space
                     Vector3 hitPosLocal = Vector3Add(localRay.position, Vector3Scale(localRay.direction, t_local));
                     Vector3 hitPosWorld = Vector3Transform(hitPosLocal, modelTransform);
                     float distWorld = Vector3Distance(ray.position, hitPosWorld);
+                    
+                    CH_CORE_INFO("VISUAL HIT Candidate: {} (Dist: {:.2f})", tag, distWorld);
 
                     if (distWorld < minDistance)
                     {
@@ -357,13 +373,17 @@ namespace CHEngine
                     }
                 }
             }
+            CH_CORE_TRACE("Checked {} visual candidates", visualCandidates);
         }
 
         if (bestHit) {
+            CH_CORE_WARN("FINAL SELECTION: {}", bestHit.GetComponent<TagComponent>().Tag);
             EntitySelectedEvent e((entt::entity)bestHit, activeScene.get());
             EditorLayer::Get().OnEvent(e);
         }
         else {
+            CH_CORE_WARN("FINAL SELECTION: NONE");
+            // Only deselect if we actually clicked and missed everything
             EntitySelectedEvent e(entt::null, activeScene.get());
             EditorLayer::Get().OnEvent(e);
         }
@@ -400,11 +420,13 @@ namespace CHEngine
         { 
             if (isPlaying) 
             { 
+                CH_CORE_INFO("ViewportPanel: Stop Button Clicked");
                 SceneStopEvent e; 
                 EditorLayer::Get().OnEvent(e); 
             }
             else 
             { 
+                CH_CORE_INFO("ViewportPanel: Play Button Clicked");
                 ScenePlayEvent e; 
                 EditorLayer::Get().OnEvent(e); 
             }
@@ -418,13 +440,31 @@ namespace CHEngine
     ImGui::PopStyleVar(2);
     ImGui::PopStyleColor();
 
-    // Rocket Launch button (Top Right)
-    ImGui::SetCursorScreenPos({ viewportScreenPos.x + viewportSize.x - 100.0f, viewportScreenPos.y + 10.0f });
-    if (ImGui::Button(ICON_FA_ROCKET " Launch", ImVec2(90, 28)))
+    // --- 5. ROCKET LAUNCH BUTTON (Top Right Overlay) ---
+    // Wrapped in a child window to ensure input priority over full-screen overlays (like ##SceneUI)
+    ImGui::SetCursorScreenPos({ viewportScreenPos.x + viewportSize.x - 110.0f, viewportScreenPos.y + 10.0f });
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.12f, 0.8f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5, 5));
+    
+    if (ImGui::BeginChild("##LaunchHUD", ImVec2(100, 40), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
     {
-        AppLaunchRuntimeEvent e;
-        Application::Get().OnEvent(e);
+        ImGui::SetCursorPosY(6);
+        ImGui::Indent(5);
+        if (ImGui::Button(ICON_FA_ROCKET " Launch", ImVec2(90, 28)))
+        {
+            CH_CORE_INFO("Viewport: Launch button clicked");
+            AppLaunchRuntimeEvent e;
+            Application::Get().OnEvent(e);
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("Build & Run Standalone project (F5)");
+        }
     }
+    ImGui::EndChild();
+    ImGui::PopStyleVar(2);
+    ImGui::PopStyleColor();
 
     ImGui::PopID();
     ImGui::End();
@@ -444,8 +484,13 @@ namespace CHEngine
 
     void ViewportPanel::OnUpdate(Timestep ts)
     {
-        float deltaTime = ts;
-        m_EditorCamera.OnUpdate(deltaTime);
+        // Only update editor camera in Edit mode
+        // In Play mode, the runtime scene's camera (Player/CameraController) should be used
+        if (EditorLayer::Get().GetSceneState() == SceneState::Edit)
+        {
+            float deltaTime = ts;
+            m_EditorCamera.OnUpdate(deltaTime);
+        }
     }
 
 } // namespace CHEngine

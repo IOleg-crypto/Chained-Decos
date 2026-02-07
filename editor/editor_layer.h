@@ -45,7 +45,7 @@ namespace CHEngine
         void LoadEditorFonts();
 
     public:
-        void SetViewportSize(const ImVec2& size) { m_ViewportSize = size; }
+        void SetViewportSize(const ImVec2& size);
         const ImVec2& GetViewportSize() const { return m_ViewportSize; }
 
     public:

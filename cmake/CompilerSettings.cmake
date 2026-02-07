@@ -2,11 +2,6 @@
 # Extracted from root CMakeLists.txt for modularity
 
 # Compiler-specific settings
-find_program(CCACHE_FOUND ccache)
-if(CCACHE_FOUND)
-    set(CMAKE_C_COMPILER_LAUNCHER ccache)
-    set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
-endif()
 if(MSVC)
     # MSVC-specific settings
     add_compile_options(

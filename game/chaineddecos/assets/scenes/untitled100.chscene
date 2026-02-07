@@ -1,87 +1,226 @@
-Scene: Untitled
-Type: 1
-EnvironmentPath: environments/new_environment.chenv
-Skybox:
+Scene: Untitled Scene
+Background:
+  Mode: 2
+  Color: [0, 123, 0, 124]
   TexturePath: ""
+EnvironmentPath: environments/new_environment.chenv
+LightDirection: [-1, -1, -1]
+LightColor: [255, 255, 255, 255]
+AmbientIntensity: 0.300000012
+Skybox:
+  TexturePath: skyboxes/Starry night preview4.png
   Exposure: 1
   Brightness: 0
   Contrast: 1
+Fog:
+  Enabled: false
+  Color: [130, 130, 130, 255]
+  Density: 0.00999999978
+  Start: 10
+  End: 100
+Canvas:
+  ReferenceResolution: [1920, 1080]
+  ScaleMode: 0
+  MatchWidthOrHeight: 0.5
 Entities:
-  - Entity: 6090179507782839674
+  - Entity: 7935884460455885952
     TagComponent:
-      Tag: background_start_menu
+      Tag: Main Camera
+    TransformComponent:
+      Translation: [2.43798065, 16.1520882, 78.5092926]
+      Rotation: [-13.4000015, 1.80052602, 0]
+      Scale: [1, 1, 1]
+    CameraComponent:
+      ProjectionType: 0
+      PerspectiveFOV: 1.04719758
+      PerspectiveNear: 0.100000001
+      PerspectiveFar: 1000
+      OrthographicSize: 10
+      OrthographicNear: -1
+      OrthographicFar: 1
+      Primary: true
+      FixedAspectRatio: false
+      IsOrbitCamera: true
+      TargetEntityTag: Player
+      OrbitDistance: 32
+      OrbitYaw: 1.80052602
+      OrbitPitch: 13.4000015
+      LookSensitivity: 0.899999976
+    NativeScriptComponent:
+      Scripts:
+        - ScriptName: OrbitCameraController
+  - Entity: 6428169142076434776
+    TagComponent:
+      Tag: stairsaw
+    TransformComponent:
+      Translation: [-50.6539459, 0.631593704, 10.243227]
+      Rotation: [-3.14159083, 1.55226898, -3.14159083]
+      Scale: [0.999882996, 1, 0.97942549]
+    ColliderComponent:
+      Type: 1
+      Enabled: true
+      Offset: [0, 0, 0]
+      Size: [1, 1, 1]
+      AutoCalculate: true
+      ModelPath: D:\gitnext\Chained Decos\game\chaineddecos\assets\models\stairs.glb
+    ModelComponent:
+      ModelPath: models/stairs.glb
+      Materials:
+        - Name: Material 0
+          Index: 0
+          AlbedoColor: [91, 21, 21, 255]
+          Metalness: 0
+          Roughness: 0.5
+          DoubleSided: true
+          Transparent: true
+          Alpha: 1
+  - Entity: 1283719283719289
+    TagComponent:
+      Tag: Entity
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
-    ControlComponent:
-      Type: 4
-      Label: Button
-      IsActive: true
-      HiddenInHierarchy: false
-      RectTransform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [1, 1]
-        OffsetMin: [-50, -20]
-        OffsetMax: [1422, 525]
-        Pivot: [0.5, 0.5]
-      Value: 0
-      Min: 0
-      Max: 1
-      UseBackground: true
-      BackgroundColor: [40, 40, 40, 200]
-      Rounding: 5
-      Padding: [10, 10]
-      BackgroundTexturePath: background\background_menu.jpg
-  - Entity: 14988540662264022618
+  - Entity: 1326311650816898569
     TagComponent:
-      Tag: text_menu_start
+      Tag: Player
     TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
+      Translation: [1.45991492, 7.26814604, 47.3958359]
+      Rotation: [0, -0, 0]
       Scale: [1, 1, 1]
-    ControlComponent:
+    RigidBodyComponent:
+      Mass: 2.9000001
+      UseGravity: true
+      IsKinematic: false
+      IsCharacterController: true
+      Velocity: [0, 0, 0]
+    ColliderComponent:
       Type: 0
-      Label: Button
-      IsActive: true
-      HiddenInHierarchy: false
-      RectTransform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [-50, -20]
-        OffsetMax: [50, 20]
-        Pivot: [0.5, 0.5]
-      Value: 0
-      Min: 0
-      Max: 1
-      UseBackground: true
-      BackgroundColor: [40, 40, 40, 200]
-      Rounding: 5
-      Padding: [10, 10]
-      BackgroundTexturePath: ""
-  - Entity: 4279070665990606080
+      Enabled: true
+      Offset: [0, 2.20000005, -0.293091357]
+      Size: [2.179245, 6.18353701, 1.20018852]
+      AutoCalculate: false
+      ModelPath: models/player_low.glb
+    NativeScriptComponent:
+      Scripts:
+        - ScriptName: PlayerController
+        - ScriptName: CameraController
+        - ScriptName: SpawnZoneRespawn
+    PlayerComponent:
+      MovementSpeed: 15
+      LookSensitivity: 0.899999976
+      JumpForce: 10
+    ModelComponent:
+      ModelPath: models/player_low.glb
+      Materials:
+        - Name: Material 0
+          Index: 0
+          AlbedoColor: [255, 255, 255, 255]
+          Metalness: 0
+          Roughness: 0.5
+          DoubleSided: false
+          Transparent: false
+          Alpha: 1
+  - Entity: 1283719283719287
     TagComponent:
-      Tag: start_button_menu
+      Tag: Entity
+    TransformComponent:
+      Translation: [28.8506241, 16.7000008, 27.7648582]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    SpawnComponent:
+      SpawnZoneSize: [1, 1, 1]
+      SpawnTexturePath: boxes/playerspawntexture.png
+      RenderSpawnZoneInScene: true
+    ModelComponent:
+      ModelPath: ""
+      Materials:
+        - Name: Material 0
+          Index: 0
+          AlbedoColor: [255, 255, 255, 255]
+          Metalness: 0
+          Roughness: 0.5
+          DoubleSided: false
+          Transparent: false
+          Alpha: 1
+  - Entity: 1283719283719285
+    TagComponent:
+      Tag: Arena
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
-    ControlComponent:
-      Type: 0
-      Label: Button
-      IsActive: true
-      HiddenInHierarchy: false
-      RectTransform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [-50, -20]
-        OffsetMax: [50, 20]
-        Pivot: [0.479999989, 0.980000019]
-      Value: 0
-      Min: 0
-      Max: 1
-      UseBackground: true
-      BackgroundColor: [40, 40, 40, 200]
-      Rounding: 5
-      Padding: [10, 0]
-      BackgroundTexturePath: ""
+    ColliderComponent:
+      Type: 1
+      Enabled: true
+      Offset: [0, 0, 0]
+      Size: [1, 1, 1]
+      AutoCalculate: true
+      ModelPath: Models\arena.glb
+    ModelComponent:
+      ModelPath: models/arena.glb
+      Materials:
+        - Name: Material 0
+          Index: 0
+          AlbedoColor: [143, 0, 0, 255]
+          Metalness: 0
+          Roughness: 0.5
+          DoubleSided: false
+          Transparent: false
+          Alpha: 1
+        - Name: Material 1
+          Index: 1
+          AlbedoColor: [7, 233, 255, 255]
+          Metalness: 0
+          Roughness: 0.5
+          DoubleSided: false
+          Transparent: false
+          Alpha: 1
+        - Name: Material 2
+          Index: 2
+          AlbedoColor: [90, 84, 77, 255]
+          Metalness: 0
+          Roughness: 0.5
+          DoubleSided: false
+          Transparent: false
+          Alpha: 1
+        - Name: Material 3
+          Index: 3
+          AlbedoColor: [91, 86, 85, 255]
+          Metalness: 0
+          Roughness: 0.5
+          DoubleSided: false
+          Transparent: false
+          Alpha: 1
+        - Name: Material 4
+          Index: 4
+          AlbedoColor: [102, 70, 58, 255]
+          Metalness: 0
+          Roughness: 0.5
+          DoubleSided: false
+          Transparent: false
+          Alpha: 1
+        - Name: Material 5
+          Index: 5
+          AlbedoColor: [119, 111, 102, 255]
+          Metalness: 0
+          Roughness: 0.5
+          DoubleSided: false
+          Transparent: false
+          Alpha: 1
+        - Name: Material 6
+          Index: 6
+          AlbedoColor: [119, 111, 102, 255]
+          Metalness: 0
+          Roughness: 0.5
+          DoubleSided: false
+          Transparent: false
+          Alpha: 1
+        - Name: Material 7
+          Index: 7
+          AlbedoColor: [83, 57, 47, 255]
+          Metalness: 0
+          Roughness: 0.5
+          DoubleSided: false
+          Transparent: false
+          Alpha: 1

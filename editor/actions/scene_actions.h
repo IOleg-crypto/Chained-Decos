@@ -1,7 +1,7 @@
 #ifndef CH_SCENE_ACTIONS_H
 #define CH_SCENE_ACTIONS_H
 
-#include "engine/scene/entity.h"
+#include "engine/scene/scene.h"
 #include <filesystem>
 
 namespace CHEngine

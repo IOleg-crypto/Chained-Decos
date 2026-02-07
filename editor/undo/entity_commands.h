@@ -3,7 +3,6 @@
 
 #include "editor_command.h"
 #include "engine/scene/components.h"
-#include "engine/scene/entity.h"
 #include "engine/scene/scene.h"
 
 namespace CHEngine

@@ -8,16 +8,16 @@ namespace CHEngine
     class RenderCommand
     {
     public:
-        static void Init();
+        static void Initialize();
         static void Shutdown();
 
         static void Clear(Color color);
         static void SetViewport(int x, int y, int width, int height);
         
-        static void DrawLine(Vector3 start, Vector3 end, Color color);
-        static void DrawGrid(int slices, float spacing);
+        static void DrawLine(Vector3 startPosition, Vector3 endPosition, Color color);
+        static void DrawGrid(int sliceCount, float spacing);
         
-        static void SetBlendMode(int mode);
+        static void SetBlendMode(int blendMode);
         static void EnableDepthTest();
         static void DisableDepthTest();
         static void EnableBackfaceCulling();

@@ -55,12 +55,15 @@ namespace CHEngine
         // --- Utils ---
         static void ApplyTheme();
         static Camera3D GetActiveCamera(SceneState state);
-        static Ray GetMouseRay(const Camera3D &camera, Vector2 viewportPos, Vector2 viewportSize);
+        static Ray GetMouseRay(const Camera3D &camera, Vector2 localMousePos, Vector2 viewportSize);
         
         static bool DrawVec3(const std::string &label, Vector3 &values, float resetValue = 0.0f);
         static bool DrawVec3(const std::string &label, glm::vec3 &values, float resetValue = 0.0f);
         static bool DrawVec2(const std::string &label, Vector2 &values, float resetValue = 0.0f);
         static bool DrawVec2(const std::string &label, glm::vec2 &values, float resetValue = 0.0f);
+
+        // --- Action Widgets ---
+        static bool ActionButton(const char* icon, const char* label);
     };
 
 } // namespace CHEngine

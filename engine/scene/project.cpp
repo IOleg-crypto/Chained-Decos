@@ -6,98 +6,6 @@
 
 namespace CHEngine
 {
-bool PhysicsSettings::DrawUI()
-{
-    bool changed = false;
-    if (ImGui::DragFloat("World Gravity", &Gravity, 0.1f, 0.0f, 100.0f))
-    {
-        changed = true;
-    }
-    return changed;
-}
-
-bool AnimationSettings::DrawUI()
-{
-    bool changed = false;
-    if (ImGui::DragFloat("Target FPS", &TargetFPS, 1.0f, 1.0f, 240.0f))
-    {
-        changed = true;
-    }
-    return changed;
-}
-
-bool RenderSettings::DrawUI()
-{
-    bool changed = false;
-    if (ImGui::DragFloat("Ambient Intensity", &AmbientIntensity, 0.01f, 0.0f, 1.0f))
-    {
-        changed = true;
-    }
-    if (ImGui::DragFloat("Default Exposure", &DefaultExposure, 0.01f, 0.0f, 10.0f))
-    {
-        changed = true;
-    }
-    return changed;
-}
-
-bool WindowSettings::DrawUI()
-{
-    bool changed = false;
-    if (ImGui::DragInt("Width", &Width, 1, 800, 3840))
-    {
-        changed = true;
-    }
-    if (ImGui::DragInt("Height", &Height, 1, 600, 2160))
-    {
-        changed = true;
-    }
-    if (ImGui::Checkbox("VSync", &VSync))
-    {
-        changed = true;
-    }
-    if (ImGui::Checkbox("Resizable", &Resizable))
-    {
-        changed = true;
-    }
-    return changed;
-}
-
-bool RuntimeSettings::DrawUI()
-{
-    bool changed = false;
-    if (ImGui::Checkbox("Fullscreen", &Fullscreen))
-    {
-        changed = true;
-    }
-    if (ImGui::Checkbox("Show Stats", &ShowStats))
-    {
-        changed = true;
-    }
-    if (ImGui::Checkbox("Enable Console", &EnableConsole))
-    {
-        changed = true;
-    }
-    return changed;
-}
-
-bool EditorSettings::DrawUI()
-{
-    bool changed = false;
-    if (ImGui::DragFloat("Camera Speed", &CameraMoveSpeed, 0.1f, 0.1f, 100.0f))
-    {
-        changed = true;
-    }
-    if (ImGui::DragFloat("Rotation Speed", &CameraRotationSpeed, 0.01f, 0.01f, 1.0f))
-    {
-        changed = true;
-    }
-    if (ImGui::DragFloat("Boost Multiplier", &CameraBoostMultiplier, 0.1f, 1.0f, 20.0f))
-    {
-        changed = true;
-    }
-    return changed;
-}
-
 std::shared_ptr<Project> Project::s_ActiveProject = nullptr;
 
 std::shared_ptr<Project> Project::New()
@@ -115,11 +23,12 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path &path)
     project->m_AssetManager = std::make_shared<AssetManager>();
     project->m_AssetManager->Initialize(path.parent_path());
     
+    project->m_Config.ProjectDirectory = path.parent_path();
+    s_ActiveProject = project;
+
     ProjectSerializer serializer(project);
     if (serializer.Deserialize(path))
     {
-        project->m_Config.ProjectDirectory = path.parent_path();
-        
         // Register asset search path
         project->m_AssetManager->ClearSearchPaths();
         project->m_AssetManager->AddSearchPath(project->m_Config.ProjectDirectory / project->m_Config.AssetDirectory);
@@ -130,10 +39,10 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path &path)
             project->m_Environment = project->m_AssetManager->Get<EnvironmentAsset>(project->m_Config.EnvironmentPath.string());
         }
 
-        s_ActiveProject = project;
         return s_ActiveProject;
     }
 
+    s_ActiveProject = nullptr;
     return nullptr;
 }
 
@@ -169,5 +78,42 @@ bool Project::SaveActive(const std::filesystem::path &path)
             }
         }
         return scenes;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------------
+    // Path Utility Helpers
+    // -------------------------------------------------------------------------------------------------------------------
+
+    std::filesystem::path Project::NormalizePath(const std::filesystem::path& path)
+    {
+        std::filesystem::path normalized = std::filesystem::absolute(path).lexically_normal();
+        
+        #ifdef CH_PLATFORM_WINDOWS
+        // Normalize drive letter to lowercase for consistent comparison
+        std::string pathStr = normalized.generic_string();
+        std::transform(pathStr.begin(), pathStr.end(), pathStr.begin(), ::tolower);
+        normalized = pathStr;
+        #endif
+        
+        return normalized;
+    }
+
+    std::optional<std::string> Project::TryMakeRelative(
+        const std::filesystem::path& absolutePath,
+        const std::filesystem::path& basePath)
+    {
+        if (basePath.empty())
+            return std::nullopt;
+        
+        auto normalizedBase = NormalizePath(basePath);
+        std::filesystem::path rel = std::filesystem::relative(absolutePath, normalizedBase);
+        std::string relStr = rel.generic_string();
+            
+        // Only return if path doesn't escape the base directory
+        if (relStr.find("..") == std::string::npos) {
+            return relStr;
+        }
+        
+        return std::nullopt;
     }
 } // namespace CHEngine
