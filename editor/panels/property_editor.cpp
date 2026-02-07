@@ -90,8 +90,8 @@ namespace CHEngine
             float posX = rectTransform.OffsetMin.x + width * rectTransform.Pivot.x;
             float posY = rectTransform.OffsetMin.y + height * rectTransform.Pivot.y;
             
-            glm::vec2 pos = {posX, posY};
-            glm::vec2 size = {width, height};
+            Vector2 pos = {posX, posY};
+            Vector2 size = {width, height};
 
             if (EditorGUI::Property("Pos", pos)) {
                 rectTransform.OffsetMin.x = pos.x - size.x * rectTransform.Pivot.x;
@@ -268,7 +268,7 @@ namespace CHEngine
     {
         bool changed = false;
         auto pb = EditorGUI::Begin();
-        pb.String("Texture Path", component.TexturePath)
+        pb.File("Texture Path", component.TexturePath, "png,jpg,tga")
           .Vec2("Size", component.Size)
           .Color("Tint Color", component.TintColor)
           .Color("Border Color", component.BorderColor);
@@ -296,7 +296,7 @@ namespace CHEngine
         bool changed = false;
         auto pb = EditorGUI::Begin();
         pb.String("Label", component.Label)
-          .String("Texture Path", component.TexturePath)
+          .File("Texture Path", component.TexturePath, "png,jpg,tga")
           .Vec2("Size", component.Size)
           .Color("Tint Color", component.TintColor)
           .Color("Background Color", component.BackgroundColor)

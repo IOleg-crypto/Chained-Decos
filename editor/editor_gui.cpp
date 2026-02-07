@@ -12,6 +12,8 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "raymath.h"
+#include "nfd.h"
+#include <filesystem>
 
 namespace CHEngine
 {
@@ -95,6 +97,11 @@ namespace CHEngine
         ImGui::EndMenuBar();
     }
 
+    PropertyBuilder EditorGUI::Begin()
+    {
+        return PropertyBuilder();
+    }
+
     // --- Property Widgets Implementation ---
 
     bool EditorGUI::Property(const char *label, bool &value)
@@ -157,35 +164,7 @@ namespace CHEngine
         return changed;
     }
 
-    bool EditorGUI::Property(const char *label, glm::vec2 &value, float speed, float min, float max)
-    {
-        DrawPropertyLabel(label);
-        ImGui::PushID(label);
-        ImGui::PushMultiItemsWidths(2, ImGui::CalcItemWidth());
-        bool changed = false;
-        if (ImGui::DragFloat("##X", &value.x, speed, min, max, "X: %.2f")) changed = true;
-        ImGui::PopItemWidth(); ImGui::SameLine();
-        if (ImGui::DragFloat("##Y", &value.y, speed, min, max, "Y: %.2f")) changed = true;
-        ImGui::PopItemWidth();
-        ImGui::PopID();
-        return changed;
-    }
 
-    bool EditorGUI::Property(const char *label, glm::vec3 &value, float speed, float min, float max)
-    {
-        DrawPropertyLabel(label);
-        ImGui::PushID(label);
-        ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
-        bool changed = false;
-        if (ImGui::DragFloat("##X", &value.x, speed, min, max, "X: %.2f")) changed = true;
-        ImGui::PopItemWidth(); ImGui::SameLine();
-        if (ImGui::DragFloat("##Y", &value.y, speed, min, max, "Y: %.2f")) changed = true;
-        ImGui::PopItemWidth(); ImGui::SameLine();
-        if (ImGui::DragFloat("##Z", &value.z, speed, min, max, "Z: %.2f")) changed = true;
-        ImGui::PopItemWidth();
-        ImGui::PopID();
-        return changed;
-    }
 
     bool EditorGUI::Property(const char *label, Vector2 &value, float speed, float min, float max)
     {
@@ -208,6 +187,82 @@ namespace CHEngine
         return changed;
     }
 
+    bool EditorGUI::Property(const char *label, std::string &value, const std::string& filter)
+    {
+        DrawPropertyLabel(label);
+        ImGui::PushID(label);
+        
+        float width = ImGui::GetContentRegionAvail().x;
+        float buttonSize = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
+        
+        ImGui::PushItemWidth(width - buttonSize - 5.0f);
+        
+        char buffer[256];
+        memset(buffer, 0, sizeof(buffer));
+        strncpy(buffer, value.c_str(), sizeof(buffer) - 1);
+        
+        bool changed = false;
+        if (ImGui::InputText("##prop", buffer, sizeof(buffer)))
+        {
+            value = buffer;
+            changed = true;
+        }
+        
+        // Drag & Drop Target
+        if (ImGui::BeginDragDropTarget())
+        {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+            {
+                const char* path = (const char*)payload->Data;
+                std::filesystem::path p = path;
+                auto projectPath = Project::GetAssetDirectory();
+                
+                std::filesystem::path relativePath = std::filesystem::relative(p, projectPath);
+                
+                if (!relativePath.empty() && relativePath != ".")
+                    value = relativePath.string();
+                else
+                    value = path; // Fallback
+                
+                changed = true;
+            }
+            ImGui::EndDragDropTarget();
+        }
+
+        ImGui::PopItemWidth();
+        ImGui::SameLine();
+        
+        if (ImGui::Button(ICON_FA_FOLDER_OPEN, {buttonSize, buttonSize}))
+        {
+            nfdu8char_t* outPath = NULL;
+            nfdu8filteritem_t args[] = { { "Files", filter.c_str() } };
+            
+            nfdresult_t result;
+            if (filter.empty())
+                result = NFD_OpenDialogU8(&outPath, NULL, 0, NULL);
+            else
+                result = NFD_OpenDialogU8(&outPath, args, 1, NULL);
+            
+            if (result == NFD_OKAY)
+            {
+                std::filesystem::path p = outPath;
+                auto projectPath = Project::GetAssetDirectory();
+                std::filesystem::path relativePath = std::filesystem::relative(p, projectPath);
+                
+                if (!relativePath.empty() && relativePath != ".")
+                    value = relativePath.string();
+                else
+                    value = outPath;
+                    
+                NFD_FreePathU8(outPath);
+                changed = true;
+            }
+        }
+        
+        ImGui::PopID();
+        return changed;
+    }
+
     static void DrawPropertyControl(const char* id, float& val, ImVec4 color, const char* label, ImVec2 buttonSize, float resetValue, bool& changed)
     {
         ImGui::PushStyleColor(ImGuiCol_Button, color);
@@ -220,45 +275,11 @@ namespace CHEngine
         ImGui::PopItemWidth();
     }
 
-    bool EditorGUI::DrawVec3(const std::string &label, Vector3 &values, float resetValue)
+    bool EditorGUI::DrawVec2(const char* label, Vector2 &values, float resetValue)
     {
         bool changed = false;
-        ImGui::PushID(label.c_str());
-        DrawPropertyLabel(label.c_str());
-
-        ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0, 0});
-
-        float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
-        ImVec2 buttonSize = {lineHeight + 3.0f, lineHeight};
-
-        DrawPropertyControl("##X", values.x, {0.8f, 0.1f, 0.15f, 1.0f}, "X", buttonSize, resetValue, changed); ImGui::SameLine();
-        DrawPropertyControl("##Y", values.y, {0.2f, 0.7f, 0.2f, 1.0f}, "Y", buttonSize, resetValue, changed); ImGui::SameLine();
-        DrawPropertyControl("##Z", values.z, {0.1f, 0.25f, 0.8f, 1.0f}, "Z", buttonSize, resetValue, changed);
-
-        ImGui::PopStyleVar();
-        ImGui::PopID();
-        return changed;
-    }
-
-    bool EditorGUI::DrawVec3(const std::string &label, glm::vec3 &values, float resetValue)
-    {
-        Vector3 v = {values.x, values.y, values.z};
-        if (DrawVec3(label, v, resetValue))
-        {
-            values.x = v.x;
-            values.y = v.y;
-            values.z = v.z;
-            return true;
-        }
-        return false;
-    }
-
-    bool EditorGUI::DrawVec2(const std::string &label, Vector2 &values, float resetValue)
-    {
-        bool changed = false;
-        ImGui::PushID(label.c_str());
-        DrawPropertyLabel(label.c_str());
+        ImGui::PushID(label);
+        DrawPropertyLabel(label);
 
         ImGui::PushMultiItemsWidths(2, ImGui::CalcItemWidth());
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0, 0});
@@ -273,18 +294,6 @@ namespace CHEngine
         return changed;
     }
 
-    bool EditorGUI::DrawVec2(const std::string &label, glm::vec2 &values, float resetValue)
-    {
-        Vector2 v = {values.x, values.y};
-        if (DrawVec2(label, v, resetValue))
-        {
-            values.x = v.x;
-            values.y = v.y;
-            return true;
-        }
-        return false;
-    }
-
     bool EditorGUI::ActionButton(const char* icon, const char* label)
     {
         std::string fullLabel = std::string(icon) + " " + label;
@@ -293,112 +302,139 @@ namespace CHEngine
 
     void EditorGUI::ApplyTheme()
     {
-        auto &style = ImGui::GetStyle();
-        auto &colors = style.Colors;
-
-        colors[ImGuiCol_WindowBg] = ImVec4{0.08f, 0.085f, 0.09f, 1.0f};
-
-        // Standard theme for headers/buttons/frames
-        ImVec4 baseColor = {0.13f, 0.135f, 0.14f, 1.0f};
-        ImVec4 hoverColor = {0.19f, 0.2f, 0.21f, 1.0f};
-        ImVec4 activeColor = {0.15f, 0.1505f, 0.151f, 1.0f};
-
-        colors[ImGuiCol_Header] = baseColor;
-        colors[ImGuiCol_HeaderHovered] = hoverColor;
-        colors[ImGuiCol_HeaderActive] = activeColor;
-
-        colors[ImGuiCol_Button] = baseColor;
-        colors[ImGuiCol_ButtonHovered] = hoverColor;
-        colors[ImGuiCol_ButtonActive] = activeColor;
-
-        colors[ImGuiCol_FrameBg] = baseColor;
-        colors[ImGuiCol_FrameBgHovered] = hoverColor;
-        colors[ImGuiCol_FrameBgActive] = activeColor;
-
-        colors[ImGuiCol_Tab] = ImVec4{0.1f, 0.105f, 0.11f, 1.0f};
-        colors[ImGuiCol_TabHovered] = ImVec4{0.25f, 0.26f, 0.27f, 1.0f};
-        colors[ImGuiCol_TabActive] = ImVec4{0.18f, 0.19f, 0.2f, 1.0f};
-        colors[ImGuiCol_TabUnfocused] = colors[ImGuiCol_Tab];
-        colors[ImGuiCol_TabUnfocusedActive] = baseColor;
-
-        colors[ImGuiCol_TitleBg] = ImVec4{0.1f, 0.105f, 0.11f, 1.0f};
-        colors[ImGuiCol_TitleBgActive] = colors[ImGuiCol_TitleBg];
-        colors[ImGuiCol_TitleBgCollapsed] = colors[ImGuiCol_TitleBg];
-
-        style.WindowRounding = 6.0f;
+        ImGuiStyle& style = ImGui::GetStyle();
+        style.WindowRounding = 5.0f;
         style.FrameRounding = 4.0f;
         style.PopupRounding = 4.0f;
+        style.ScrollbarRounding = 12.0f;
         style.GrabRounding = 4.0f;
         style.TabRounding = 4.0f;
+
+        ImVec4* colors = style.Colors;
+        colors[ImGuiCol_Text] = ImVec4(0.95f, 0.96f, 0.98f, 1.00f);
+        colors[ImGuiCol_TextDisabled] = ImVec4(0.36f, 0.42f, 0.47f, 1.00f);
+        colors[ImGuiCol_WindowBg] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);
+        colors[ImGuiCol_ChildBg] = ImVec4(0.15f, 0.18f, 0.22f, 1.00f);
+        colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
+        colors[ImGuiCol_Border] = ImVec4(0.08f, 0.10f, 0.12f, 1.00f);
+        colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+        colors[ImGuiCol_FrameBg] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
+        colors[ImGuiCol_FrameBgHovered] = ImVec4(0.12f, 0.20f, 0.28f, 1.00f);
+        colors[ImGuiCol_FrameBgActive] = ImVec4(0.09f, 0.12f, 0.14f, 1.00f);
+        colors[ImGuiCol_TitleBg] = ImVec4(0.09f, 0.12f, 0.14f, 1.00f);
+        colors[ImGuiCol_TitleBgActive] = ImVec4(0.08f, 0.10f, 0.12f, 1.00f);
+        colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
+        colors[ImGuiCol_MenuBarBg] = ImVec4(0.15f, 0.18f, 0.22f, 1.00f);
+        colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.53f);
+        colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
+        colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.18f, 0.22f, 0.25f, 1.00f);
+        colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.09f, 0.12f, 0.14f, 1.00f);
+        colors[ImGuiCol_CheckMark] = ImVec4(0.28f, 0.56f, 1.00f, 1.00f);
+        colors[ImGuiCol_SliderGrab] = ImVec4(0.28f, 0.56f, 1.00f, 1.00f);
+        colors[ImGuiCol_SliderGrabActive] = ImVec4(0.37f, 0.61f, 1.00f, 1.00f);
+        colors[ImGuiCol_Button] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
+        colors[ImGuiCol_ButtonHovered] = ImVec4(0.28f, 0.56f, 1.00f, 1.00f);
+        colors[ImGuiCol_ButtonActive] = ImVec4(0.06f, 0.53f, 0.98f, 1.00f);
+        colors[ImGuiCol_Header] = ImVec4(0.20f, 0.25f, 0.29f, 0.55f);
+        colors[ImGuiCol_HeaderHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.80f);
+        colors[ImGuiCol_HeaderActive] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
+        colors[ImGuiCol_Separator] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
+        colors[ImGuiCol_SeparatorHovered] = ImVec4(0.10f, 0.40f, 0.75f, 0.78f);
+        colors[ImGuiCol_SeparatorActive] = ImVec4(0.10f, 0.40f, 0.75f, 1.00f);
+        colors[ImGuiCol_ResizeGrip] = ImVec4(0.26f, 0.59f, 0.98f, 0.25f);
+        colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
+        colors[ImGuiCol_ResizeGripActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
+        colors[ImGuiCol_Tab] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);
+        colors[ImGuiCol_TabHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.80f);
+        colors[ImGuiCol_TabActive] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
+        colors[ImGuiCol_TabUnfocused] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);
+        colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);
+        colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
+        colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
+        colors[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
+        colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
+        colors[ImGuiCol_TextSelectedBg] = ImVec4(0.26f, 0.59f, 0.98f, 0.35f);
+        colors[ImGuiCol_DragDropTarget] = ImVec4(1.00f, 1.00f, 0.00f, 0.90f);
+        colors[ImGuiCol_NavHighlight] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
+        colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
+        colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
+        colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
     }
 
-    Camera3D EditorGUI::GetActiveCamera(SceneState state)
+    bool EditorGUI::DrawVec3(const char* label, Vector3& values, float resetValue)
     {
-        if (state == SceneState::Edit)
-        {
-            if (auto viewport = EditorLayer::Get().GetPanels().Get<ViewportPanel>())
-                return viewport->GetCamera().GetRaylibCamera();
-        }
-
-        auto activeScene = EditorLayer::Get().GetActiveScene();
-        if (activeScene)
-        {
-            // Find primary camera
-            auto view = activeScene->GetRegistry().view<TransformComponent, CameraComponent>();
-            
-            CH_CORE_INFO("GetActiveCamera: Searching for primary camera, found {} cameras", view.size_hint());
-            
-            for (auto entity : view)
-            {
-                const auto& [tc, cc] = view.get<TransformComponent, CameraComponent>(entity);
-                Entity e{entity, activeScene.get()};
-                std::string entityName = e.HasComponent<TagComponent>() ? e.GetComponent<TagComponent>().Tag : "Unknown";
-                
-                CH_CORE_INFO("  Camera entity: '{}', Primary: {}, Position: [{}, {}, {}]", 
-                    entityName, cc.Primary, tc.Translation.x, tc.Translation.y, tc.Translation.z);
-                
-                if (cc.Primary)
-                {
-                    Camera3D cam = { 0 };
-                    cam.position = tc.Translation;
-                    Matrix rotMat = QuaternionToMatrix(tc.RotationQuat);
-                    Vector3 forward = Vector3Transform({0, 0, -1}, rotMat);
-                    cam.target = Vector3Add(cam.position, forward);
-                    cam.up = Vector3Transform({0, 1, 0}, rotMat);
-                    
-                    if (cc.Camera.GetProjectionType() == CHEngine::ProjectionType::Perspective)
-                    {
-                        cam.fovy = cc.Camera.GetPerspectiveVerticalFOV() * RAD2DEG;
-                        cam.projection = CAMERA_PERSPECTIVE;
-                    }
-                    else
-                    {
-                        cam.fovy = cc.Camera.GetOrthographicSize();
-                        cam.projection = CAMERA_ORTHOGRAPHIC;
-                    }
-                    
-                    CH_CORE_INFO("  Using primary camera: '{}', FOV: {}", entityName, cam.fovy);
-                    return cam;
-                }
-            }
-        }
+        bool changed = false;
+        ImGui::PushID(label);
         
-        // Fallback: default camera with warning
-        CH_CORE_WARN("No primary camera found in scene! Add a Camera entity with CameraComponent.");
-        return Camera3D{{10, 10, 10}, {0, 0, 0}, {0, 1, 0}, 45, CAMERA_PERSPECTIVE};
+        ImGui::Columns(2);
+        ImGui::SetColumnWidth(0, 100.0f);
+        ImGui::Text(label);
+        ImGui::NextColumn();
+
+        ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0, 0});
+
+        float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
+        ImVec2 buttonSize = {lineHeight + 3.0f, lineHeight};
+
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.9f, 0.2f, 0.2f, 1.0f});
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
+        if (ImGui::Button("X", buttonSize)) 
+        {
+            values.x = resetValue;
+            changed = true;
+        }
+        ImGui::PopStyleColor(3);
+
+        ImGui::SameLine();
+        if (ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f")) changed = true;
+        ImGui::PopItemWidth();
+        ImGui::SameLine();
+
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.3f, 0.8f, 0.3f, 1.0f});
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
+        if (ImGui::Button("Y", buttonSize)) 
+        {
+            values.y = resetValue;
+            changed = true;
+        }
+        ImGui::PopStyleColor(3);
+
+        ImGui::SameLine();
+        if (ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f")) changed = true;
+        ImGui::PopItemWidth();
+        ImGui::SameLine();
+
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.2f, 0.35f, 0.9f, 1.0f});
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
+        if (ImGui::Button("Z", buttonSize)) 
+        {
+            values.z = resetValue;
+            changed = true;
+        }
+        ImGui::PopStyleColor(3);
+
+        ImGui::SameLine();
+        if (ImGui::DragFloat("##Z", &values.z, 0.1f, 0.0f, 0.0f, "%.2f")) changed = true;
+        ImGui::PopItemWidth();
+
+        ImGui::PopStyleVar();
+        ImGui::Columns(1);
+        ImGui::PopID();
+        
+        return changed;
     }
 
-    Ray EditorGUI::GetMouseRay(const Camera3D &camera, Vector2 localMousePos, Vector2 viewportSize)
+    Ray EditorGUI::GetMouseRay(const Camera3D &camera, const Vector2& localMousePos, const Vector2& viewportSize)
     {
-        // Calculate Normalized Device Coordinates (NDC)
-        // Range: [-1, 1] for x, y, z
-        // Viewport Top-Left is (-1, 1) in OpenGL NDC (Y-up)
-        // ImGui/Local Mouse Top-Left is (0, 0) (Y-down)
-        
+        // NDC: [-1, 1], Y-up
         float ndc_x = (2.0f * localMousePos.x) / viewportSize.x - 1.0f;
         float ndc_y = 1.0f - (2.0f * localMousePos.y) / viewportSize.y;
 
-        // Get View-Projection Matrix
+        // View-Projection Matrix
         Matrix projection = MatrixPerspective(camera.fovy * DEG2RAD, viewportSize.x / viewportSize.y, 0.01f, 1000.0f);
         if (camera.projection == CAMERA_ORTHOGRAPHIC)
         {
@@ -409,22 +445,51 @@ namespace CHEngine
         }
 
         Matrix view = GetCameraMatrix(camera);
-
-        // Calculate Ray using Raylib's math (to ensure matrix compatibility)
-        // Note: Vector3Unproject uses MatrixMultiply(view, projection) internally and unprojects.
-        // It expects source coordinates to be in [-1, 1] range (NDC) if viewport is not passed?
-        // Wait, Raylib's Vector3Unproject implementation assumes source is NDC?
-        // Let's verify standard Raylib GetMouseRay logic.
-        // It does: ndc = ...; Unproject(ndc, proj, view);
+        Matrix viewProj = MatrixMultiply(view, projection);
+        Matrix invViewProj = MatrixInvert(viewProj);
         
-        Vector3 nearPoint = Vector3Unproject({ndc_x, ndc_y, -1.0f}, projection, view);
-        Vector3 farPoint = Vector3Unproject({ndc_x, ndc_y, 1.0f}, projection, view);
+        // Unproject Near/Far points
+        auto Unproject = [&](float x, float y, float z) -> Vector3 {
+            float coords[4] = { x, y, z, 1.0f };
+            float result[4] = { 0 };
+            
+            float resPoints[4] = {0};
+            // Manual 4x4 multiplication for W component
+            resPoints[0] = coords[0]*invViewProj.m0 + coords[1]*invViewProj.m4 + coords[2]*invViewProj.m8 + coords[3]*invViewProj.m12;
+            resPoints[1] = coords[0]*invViewProj.m1 + coords[1]*invViewProj.m5 + coords[2]*invViewProj.m9 + coords[3]*invViewProj.m13;
+            resPoints[2] = coords[0]*invViewProj.m2 + coords[1]*invViewProj.m6 + coords[2]*invViewProj.m10 + coords[3]*invViewProj.m14;
+            resPoints[3] = coords[0]*invViewProj.m3 + coords[1]*invViewProj.m7 + coords[2]*invViewProj.m11 + coords[3]*invViewProj.m15;
+            
+            if (resPoints[3] == 0.0f) return {0,0,0};
+            
+            // Perspective division
+            if (fabs(resPoints[3]) > 0.00001f)
+                return { resPoints[0]/resPoints[3], resPoints[1]/resPoints[3], resPoints[2]/resPoints[3] };
+            return {0,0,0};
+        };
+
+        Vector3 nearPoint = Unproject(ndc_x, ndc_y, -1.0f);
+        Vector3 farPoint = Unproject(ndc_x, ndc_y, 1.0f);
 
         Ray ray;
         ray.position = nearPoint;
-        ray.direction = Vector3Normalize(Vector3Subtract(farPoint, nearPoint));
+        
+        // Manual vector math to avoid potential signature issues
+        float dx = farPoint.x - nearPoint.x;
+        float dy = farPoint.y - nearPoint.y;
+        float dz = farPoint.z - nearPoint.z;
+        float len = sqrtf(dx*dx + dy*dy + dz*dz);
+        
+        if (len > 0.0f)
+        {
+            ray.direction = { dx/len, dy/len, dz/len };
+        }
+        else
+        {
+            ray.direction = { 0, 0, -1 }; // Default forward?
+        }
 
         return ray;
     }
+}
 
-} // namespace CHEngine

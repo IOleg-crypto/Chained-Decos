@@ -237,7 +237,7 @@ namespace CHEngine
         // ========================================================================
         DrawComponent<ShaderComponent>("Shader", entity, [](auto& component)
         {
-            EditorGUI::Property("Shader Path", component.ShaderPath);
+            EditorGUI::Begin().File("Shader Path", component.ShaderPath, "glsl,vert,frag");
             
             if (ImGui::TreeNodeEx("Uniforms", ImGuiTreeNodeFlags_DefaultOpen))
             {
@@ -255,16 +255,7 @@ namespace CHEngine
             auto pb = EditorGUI::Begin();
             pb.Float("Mass", component.Mass, 0.1f, 0.0f, 1000.0f)
               .Bool("Use Gravity", component.UseGravity)
-              .Bool("Is Kinematic", component.IsKinematic)
-              .Bool("Character Controller", component.IsCharacterController);
-            
-            if (component.IsCharacterController)
-                ImGui::TextDisabled("Using Sphere-Mesh integration for smooth movement.");
-            
-            // if (EditorGUI::ActionButton(ICON_FA_ROTATE_LEFT, "Reset Velocity"))
-            // {
-            //     // Velocity reset logic would go here
-            // }
+              .Bool("Is Kinematic", component.IsKinematic);
         });
 
         // ========================================================================
@@ -286,7 +277,7 @@ namespace CHEngine
             }
             else if (component.Type == ColliderType::Mesh)
             {
-                EditorGUI::Property("Model Path", component.ModelPath);
+                EditorGUI::Begin().File("Model Path", component.ModelPath, "obj,gltf,glb");
                 
                 ImGui::Text("BVH Status: %s", component.BVHRoot ? "Built" : "Missing");
                 if (ImGui::Button(ICON_FA_HAMMER " Rebuild BVH"))
@@ -309,7 +300,7 @@ namespace CHEngine
         DrawComponent<AudioComponent>("Audio", entity, [](auto& component)
         {
             auto pb = EditorGUI::Begin();
-            pb.String("Sound Path", component.SoundPath)
+            pb.File("Sound Path", component.SoundPath, "wav,ogg,mp3")
               .Bool("Loop", component.Loop)
               .Bool("Play On Start", component.PlayOnStart)
               .Float("Volume", component.Volume, 0.05f, 0.0f, 2.0f)
@@ -354,7 +345,7 @@ namespace CHEngine
         // ========================================================================
         DrawComponent<ModelComponent>("Model", entity, [](auto& component)
         {
-            EditorGUI::Property("Model Path", component.ModelPath);
+            EditorGUI::Begin().File("Model Path", component.ModelPath, "obj,gltf,glb");
 
             if (ImGui::TreeNodeEx("Materials", ImGuiTreeNodeFlags_Framed))
             {
@@ -388,7 +379,7 @@ namespace CHEngine
         {
             auto pb = EditorGUI::Begin();
             pb.Vec3("Zone Size", component.ZoneSize)
-              .String("Spawn Texture", component.TexturePath)
+              .File("Spawn Texture", component.TexturePath, "png,jpg,tga")
               .Bool("Render Zone", component.RenderSpawnZoneInScene);
         });
 
@@ -409,7 +400,7 @@ namespace CHEngine
         DrawComponent<BillboardComponent>("Billboard", entity, [](auto& component)
         {
             auto pb = EditorGUI::Begin();
-            pb.String("Texture", component.TexturePath)
+            pb.File("Texture", component.TexturePath, "png,jpg,tga")
               .Float("Size", component.Size);
         });
 
@@ -418,7 +409,7 @@ namespace CHEngine
         // ========================================================================
         DrawComponent<SceneTransitionComponent>("Scene Transition", entity, [](auto& component)
         {
-            EditorGUI::Property("Target Scene", component.TargetScenePath);
+            EditorGUI::Begin().File("Target Scene", component.TargetScenePath, "chscene");
         });
 
         // ========================================================================
@@ -506,7 +497,7 @@ namespace CHEngine
         DrawComponent<PanelControl>("Panel Widget", entity, [&DrawUIStyle](auto& component)
         {
             auto pb = EditorGUI::Begin();
-            pb.String("Texture", component.TexturePath)
+            pb.File("Texture", component.TexturePath, "png,jpg,tga")
               .Bool("Full Screen", component.FullScreen);
             
             if (ImGui::TreeNodeEx("Style", ImGuiTreeNodeFlags_Framed))
