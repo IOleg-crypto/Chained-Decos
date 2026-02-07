@@ -42,6 +42,9 @@ public:
     bool Raycast(const Ray &ray, float &t, Vector3 &normal, int &meshIndex) const;
     bool IntersectAABB(const BoundingBox &box, Vector3 &outOverlapNormal,
                        float &outOverlapDepth) const;
+    
+    // Returns triangles that intersect the AABB
+    void QueryAABB(const BoundingBox &box, std::vector<const CollisionTriangle*> &outTriangles) const;
 
     const std::vector<BVHNode> &GetNodes() const
     {

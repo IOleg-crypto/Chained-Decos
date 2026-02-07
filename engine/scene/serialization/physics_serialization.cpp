@@ -32,6 +32,8 @@ namespace CHEngine
                 SerializeProperty(emitter, "Enabled", component.Enabled);
                 SerializeProperty(emitter, "Offset", component.Offset);
                 SerializeProperty(emitter, "Size", component.Size);
+                SerializeProperty(emitter, "Radius", component.Radius);
+                SerializeProperty(emitter, "Height", component.Height);
                 SerializeProperty(emitter, "AutoCalculate", component.AutoCalculate);
                 SerializeProperty(emitter, "ModelPath", component.ModelPath);
             },
@@ -43,6 +45,8 @@ namespace CHEngine
                 DeserializeProperty(yamlNode, "Enabled", component.Enabled);
                 DeserializeProperty(yamlNode, "Offset", component.Offset);
                 DeserializeProperty(yamlNode, "Size", component.Size);
+                DeserializeProperty(yamlNode, "Radius", component.Radius);
+                DeserializeProperty(yamlNode, "Height", component.Height);
                 DeserializeProperty(yamlNode, "AutoCalculate", component.AutoCalculate);
                 DeserializeProperty(yamlNode, "ModelPath", component.ModelPath);
             }

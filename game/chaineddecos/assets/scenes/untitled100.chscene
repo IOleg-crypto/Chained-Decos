@@ -23,6 +23,129 @@ Canvas:
   ScaleMode: 0
   MatchWidthOrHeight: 0.5
 Entities:
+  - Entity: 7935884460455885952
+    TagComponent:
+      Tag: Main Camera
+    TransformComponent:
+      Translation: [2.43798065, 16.1520882, 78.5092926]
+      Rotation: [-13.4000015, 1.80052602, 0]
+      Scale: [1, 1, 1]
+    CameraComponent:
+      ProjectionType: 0
+      PerspectiveFOV: 1.04719758
+      PerspectiveNear: 0.100000001
+      PerspectiveFar: 1000
+      OrthographicSize: 10
+      OrthographicNear: -1
+      OrthographicFar: 1
+      Primary: true
+      FixedAspectRatio: false
+      IsOrbitCamera: true
+      TargetEntityTag: Player
+      OrbitDistance: 32
+      OrbitYaw: 1.80052602
+      OrbitPitch: 13.4000015
+      LookSensitivity: 0.899999976
+    NativeScriptComponent:
+      Scripts:
+        - ScriptName: OrbitCameraController
+  - Entity: 6428169142076434776
+    TagComponent:
+      Tag: stairsaw
+    TransformComponent:
+      Translation: [-50.6539459, 0.631593704, 10.243227]
+      Rotation: [-3.14159083, 1.55226898, -3.14159083]
+      Scale: [0.999882996, 1, 0.97942549]
+    ColliderComponent:
+      Type: 1
+      Enabled: true
+      Offset: [0, 0, 0]
+      Size: [1, 1, 1]
+      Radius: 0.5
+      Height: 2
+      AutoCalculate: true
+      ModelPath: D:\gitnext\Chained Decos\game\chaineddecos\assets\models\stairs.glb
+    ModelComponent:
+      ModelPath: models/stairs.glb
+      Materials:
+        - Name: Material 0
+          Index: 0
+          AlbedoColor: [91, 21, 21, 255]
+          Metalness: 0
+          Roughness: 0.5
+          DoubleSided: true
+          Transparent: true
+          Alpha: 1
+  - Entity: 1283719283719289
+    TagComponent:
+      Tag: Entity
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+  - Entity: 1326311650816898569
+    TagComponent:
+      Tag: Player
+    TransformComponent:
+      Translation: [0.995983839, 7.26814604, 47.3958359]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    RigidBodyComponent:
+      Mass: 2.9000001
+      UseGravity: true
+      IsKinematic: false
+      Velocity: [0, 0, 0]
+    ColliderComponent:
+      Type: 2
+      Enabled: true
+      Offset: [0, 0, -0.293091357]
+      Size: [2.48000002, 5.67999983, 7.4000001]
+      Radius: 0.25
+      Height: 2
+      AutoCalculate: true
+      ModelPath: models/player_low.glb
+    NativeScriptComponent:
+      Scripts:
+        - ScriptName: PlayerController
+        - ScriptName: CameraController
+        - ScriptName: SpawnZoneRespawn
+    PlayerComponent:
+      MovementSpeed: 15
+      LookSensitivity: 0.899999976
+      JumpForce: 10
+    ModelComponent:
+      ModelPath: models/player_low.glb
+      Materials:
+        - Name: Material 0
+          Index: 0
+          AlbedoColor: [255, 255, 255, 255]
+          Metalness: 0
+          Roughness: 0.5
+          DoubleSided: false
+          Transparent: false
+          Alpha: 1
+  - Entity: 1283719283719287
+    TagComponent:
+      Tag: Entity
+    TransformComponent:
+      Translation: [28.8506241, 16.7000008, 27.7648582]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    SpawnComponent:
+      SpawnZoneSize: [1, 1, 1]
+      SpawnTexturePath: boxes/playerspawntexture.png
+      RenderSpawnZoneInScene: true
+    ModelComponent:
+      ModelPath: ""
+      Materials:
+        - Name: Material 0
+          Index: 0
+          AlbedoColor: [255, 255, 255, 255]
+          Metalness: 0
+          Roughness: 0.5
+          DoubleSided: false
+          Transparent: false
+          Alpha: 1
   - Entity: 1283719283719285
     TagComponent:
       Tag: Arena
@@ -35,6 +158,8 @@ Entities:
       Enabled: true
       Offset: [0, 0, 0]
       Size: [1, 1, 1]
+      Radius: 0.5
+      Height: 2
       AutoCalculate: true
       ModelPath: Models\arena.glb
     ModelComponent:
@@ -104,122 +229,3 @@ Entities:
           DoubleSided: false
           Transparent: false
           Alpha: 1
-  - Entity: 1283719283719287
-    TagComponent:
-      Tag: Entity
-    TransformComponent:
-      Translation: [28.8506241, 16.7000008, 27.7648582]
-      Rotation: [0, -0, 0]
-      Scale: [1, 1, 1]
-    SpawnComponent:
-      SpawnZoneSize: [1, 1, 1]
-      SpawnTexturePath: boxes/playerspawntexture.png
-      RenderSpawnZoneInScene: true
-    ModelComponent:
-      ModelPath: ""
-      Materials:
-        - Name: Material 0
-          Index: 0
-          AlbedoColor: [255, 255, 255, 255]
-          Metalness: 0
-          Roughness: 0.5
-          DoubleSided: false
-          Transparent: false
-          Alpha: 1
-  - Entity: 1326311650816898569
-    TagComponent:
-      Tag: Player
-    TransformComponent:
-      Translation: [0.995983839, 7.26814604, 47.3958359]
-      Rotation: [0, -0, 0]
-      Scale: [1, 1, 1]
-    RigidBodyComponent:
-      Mass: 2.9000001
-      UseGravity: true
-      IsKinematic: false
-      Velocity: [0, 0, 0]
-    ColliderComponent:
-      Type: 0
-      Enabled: true
-      Offset: [0, 0, -0.293091357]
-      Size: [2.48000002, 5.67999983, 7.4000001]
-      AutoCalculate: true
-      ModelPath: models/player_low.glb
-    NativeScriptComponent:
-      Scripts:
-        - ScriptName: PlayerController
-        - ScriptName: CameraController
-        - ScriptName: SpawnZoneRespawn
-    PlayerComponent:
-      MovementSpeed: 15
-      LookSensitivity: 0.899999976
-      JumpForce: 10
-    ModelComponent:
-      ModelPath: models/player_low.glb
-      Materials:
-        - Name: Material 0
-          Index: 0
-          AlbedoColor: [255, 255, 255, 255]
-          Metalness: 0
-          Roughness: 0.5
-          DoubleSided: false
-          Transparent: false
-          Alpha: 1
-  - Entity: 1283719283719289
-    TagComponent:
-      Tag: Entity
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-  - Entity: 6428169142076434776
-    TagComponent:
-      Tag: stairsaw
-    TransformComponent:
-      Translation: [-50.6539459, 0.631593704, 10.243227]
-      Rotation: [-3.14159083, 1.55226898, -3.14159083]
-      Scale: [0.999882996, 1, 0.97942549]
-    ColliderComponent:
-      Type: 1
-      Enabled: true
-      Offset: [0, 0, 0]
-      Size: [1, 1, 1]
-      AutoCalculate: true
-      ModelPath: D:\gitnext\Chained Decos\game\chaineddecos\assets\models\stairs.glb
-    ModelComponent:
-      ModelPath: models/stairs.glb
-      Materials:
-        - Name: Material 0
-          Index: 0
-          AlbedoColor: [91, 21, 21, 255]
-          Metalness: 0
-          Roughness: 0.5
-          DoubleSided: true
-          Transparent: true
-          Alpha: 1
-  - Entity: 7935884460455885952
-    TagComponent:
-      Tag: Main Camera
-    TransformComponent:
-      Translation: [2.43798065, 16.1520882, 78.5092926]
-      Rotation: [-13.4000015, 1.80052602, 0]
-      Scale: [1, 1, 1]
-    CameraComponent:
-      ProjectionType: 0
-      PerspectiveFOV: 1.04719758
-      PerspectiveNear: 0.100000001
-      PerspectiveFar: 1000
-      OrthographicSize: 10
-      OrthographicNear: -1
-      OrthographicFar: 1
-      Primary: true
-      FixedAspectRatio: false
-      IsOrbitCamera: true
-      TargetEntityTag: Player
-      OrbitDistance: 32
-      OrbitYaw: 1.80052602
-      OrbitPitch: 13.4000015
-      LookSensitivity: 0.899999976
-    NativeScriptComponent:
-      Scripts:
-        - ScriptName: OrbitCameraController

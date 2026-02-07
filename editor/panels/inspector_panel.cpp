@@ -263,9 +263,9 @@ namespace CHEngine
         // ========================================================================
         DrawComponent<ColliderComponent>("Collider", entity, [](auto& component)
         {
-            const char* types[] = {"Box", "Mesh (BVH)"};
+            const char* types[] = {"Box", "Mesh (BVH)", "Capsule"};
             int type = (int)component.Type;
-            if (EditorGUI::Property("Type", type, types, 2))
+            if (EditorGUI::Property("Type", type, types, 3))
                 component.Type = (ColliderType)type;
             
             EditorGUI::Property("Enabled", component.Enabled);
@@ -274,6 +274,11 @@ namespace CHEngine
             if (component.Type == ColliderType::Box)
             {
                 EditorGUI::DrawVec3("Size", component.Size, 1.0f);
+            }
+            else if (component.Type == ColliderType::Capsule)
+            {
+                EditorGUI::Property("Radius", component.Radius, 0.05f);
+                EditorGUI::Property("Height", component.Height, 0.05f);
             }
             else if (component.Type == ColliderType::Mesh)
             {

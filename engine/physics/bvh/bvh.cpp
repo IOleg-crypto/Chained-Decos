@@ -368,4 +368,42 @@ std::future<std::shared_ptr<BVH>> BVH::BuildAsync(const Model &model, const Matr
 {
     return std::async(std::launch::async, [model, transform]() { return Build(model, transform); });
 }
+
+void BVH::QueryAABB(const BoundingBox &box, std::vector<const CollisionTriangle*> &outTriangles) const
+{
+    if (m_Nodes.empty())
+        return;
+
+    uint32_t stack[64];
+    uint32_t stackPtr = 0;
+    stack[stackPtr++] = 0;
+
+    while (stackPtr > 0)
+    {
+        const BVHNode &node = m_Nodes[stack[--stackPtr]];
+
+        // AABB-AABB check
+        if (!(node.Min.x <= box.max.x && node.Max.x >= box.min.x && node.Min.y <= box.max.y &&
+              node.Max.y >= box.min.y && node.Min.z <= box.max.z && node.Max.z >= box.min.z))
+            continue;
+
+        if (node.IsLeaf())
+        {
+            for (uint32_t i = 0; i < node.TriangleCount; ++i)
+            {
+                const auto &tri = m_Triangles[node.LeftOrFirst + i];
+                if (TriangleIntersectAABB(tri, box))
+                {
+                    outTriangles.push_back(&tri);
+                }
+            }
+        }
+        else
+        {
+            stack[stackPtr++] = node.LeftOrFirst;
+            stack[stackPtr++] = node.LeftOrFirst + 1;
+        }
+    }
+}
+
 } // namespace CHEngine
