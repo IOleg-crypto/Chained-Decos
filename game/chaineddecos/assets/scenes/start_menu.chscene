@@ -3,7 +3,7 @@ Background:
   Mode: 0
   Color: [0, 0, 0, 255]
   TexturePath: ""
-EnvironmentPath: d:/gitnext/chained decos/game/chaineddecos/assets/environments/menu_environment.chenv
+EnvironmentPath: environments/menu_environment.chenv
 LightDirection: [-1, -1, -1]
 LightColor: [255, 255, 255, 255]
 AmbientIntensity: 0.300000012
@@ -36,8 +36,8 @@ Entities:
       RectTransform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-60, 0]
-        OffsetMax: [60, 40]
+        OffsetMin: [388, 107]
+        OffsetMax: [508, 147]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -116,7 +116,7 @@ Entities:
       Text: The game is currently in development.
       Style:
         ? FontName: Default
-          FontSize: 18
+          FontSize: 21.8999996
           TextColor: [255, 255, 255, 255]
           Shadow: false
           ShadowOffset: 2
@@ -138,8 +138,8 @@ Entities:
       RectTransform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-60, 60]
-        OffsetMax: [60, 100]
+        OffsetMin: [387, 171]
+        OffsetMax: [507, 211]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -181,8 +181,8 @@ Entities:
       RectTransform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-60, -120]
-        OffsetMax: [60, -80]
+        OffsetMin: [386, -39]
+        OffsetMax: [506, 1]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -221,8 +221,8 @@ Entities:
       RectTransform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-60, -60]
-        OffsetMax: [60, -20]
+        OffsetMin: [378, 31]
+        OffsetMax: [498, 71]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -267,7 +267,7 @@ Entities:
         Rotation: 0
         Scale: [1, 1]
     ImageControl:
-      TexturePath: materials/unnamed_1.jpg
+      TexturePath: materials/unnamed.png
       Size: [256.200012, 96.3000031]
       TintColor: [255, 255, 255, 255]
       BorderColor: [0, 0, 0, 0]

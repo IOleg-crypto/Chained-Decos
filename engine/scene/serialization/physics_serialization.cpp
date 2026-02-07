@@ -15,14 +15,12 @@ namespace CHEngine
                 SerializeProperty(emitter, "Mass", component.Mass);
                 SerializeProperty(emitter, "UseGravity", component.UseGravity);
                 SerializeProperty(emitter, "IsKinematic", component.IsKinematic);
-                SerializeProperty(emitter, "IsCharacterController", component.IsCharacterController);
                 SerializeProperty(emitter, "Velocity", component.Velocity);
             },
             [](auto& component, auto yamlNode) {
                 DeserializeProperty(yamlNode, "Mass", component.Mass);
                 DeserializeProperty(yamlNode, "UseGravity", component.UseGravity);
                 DeserializeProperty(yamlNode, "IsKinematic", component.IsKinematic);
-                DeserializeProperty(yamlNode, "IsCharacterController", component.IsCharacterController);
                 DeserializeProperty(yamlNode, "Velocity", component.Velocity);
             }
         );

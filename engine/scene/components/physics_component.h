@@ -43,7 +43,6 @@ struct RigidBodyComponent
     bool UseGravity = true;
     bool IsGrounded = false;
     bool IsKinematic = false;
-    bool IsCharacterController = false;
     float Mass = 1.0f;
 
     RigidBodyComponent() = default;

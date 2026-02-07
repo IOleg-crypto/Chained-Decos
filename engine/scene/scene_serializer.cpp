@@ -73,11 +73,6 @@ namespace CHEngine
             out << YAML::Key << "End" << YAML::Value << settings.Fog.End;
             out << YAML::EndMap;
         }
-        else
-        {
-            // Fallback: If no environment asset, we might still have a default or temporary skybox
-            // (Though in this engine, Environment objects are usually used)
-        }
 
         out << YAML::Key << "Canvas" << YAML::BeginMap;
         out << YAML::Key << "ReferenceResolution" << YAML::Value << m_Scene->m_Settings.Canvas.ReferenceResolution;
@@ -205,7 +200,7 @@ namespace CHEngine
                 auto canvas = data["Canvas"];
                 auto &c = m_Scene->m_Settings.Canvas;
                 if (canvas["ReferenceResolution"])
-                    c.ReferenceResolution = canvas["ReferenceResolution"].as<glm::vec2>();
+                    c.ReferenceResolution = canvas["ReferenceResolution"].as<Vector2>();
                 if (canvas["ScaleMode"])
                     c.ScaleMode = (CanvasScaleMode)canvas["ScaleMode"].as<int>();
                 if (canvas["MatchWidthOrHeight"])

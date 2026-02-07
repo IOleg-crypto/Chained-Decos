@@ -120,6 +120,7 @@ namespace CHEngine
         const entt::registry& GetRegistry() const { return m_Registry; }
 
         Camera3D GetActiveCamera();
+        Entity GetPrimaryCameraEntity();
 
     private:
         entt::registry m_Registry;

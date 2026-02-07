@@ -4,12 +4,13 @@
 #include <glm/glm.hpp>
 #include <memory>
 #include <raylib.h>
+#include <raymath.h>
 #include <string>
 #include <vector>
 
 namespace CHEngine
 {
-using vec2 = glm::vec2;
+using vec2 = Vector2;
 
 // Typography & Visual Styles
 enum class TextAlignment
@@ -83,8 +84,8 @@ struct RectTransform
     Rectangle CalculateRect(vec2 viewportSize, vec2 viewportOffset = {0.0f, 0.0f}) const
     {
         // 1. Calculate the box defined by anchors (clamped to 0..1)
-        vec2 clAnchMin = glm::clamp(AnchorMin, vec2(0.0f), vec2(1.0f));
-        vec2 clAnchMax = glm::clamp(AnchorMax, vec2(0.0f), vec2(1.0f));
+        vec2 clAnchMin = { Clamp(AnchorMin.x, 0.0f, 1.0f), Clamp(AnchorMin.y, 0.0f, 1.0f) };
+        vec2 clAnchMax = { Clamp(AnchorMax.x, 0.0f, 1.0f), Clamp(AnchorMax.y, 0.0f, 1.0f) };
 
         vec2 anchorMinPos = {viewportSize.x * clAnchMin.x, viewportSize.y * clAnchMin.y};
         vec2 anchorMaxPos = {viewportSize.x * clAnchMax.x, viewportSize.y * clAnchMax.y};

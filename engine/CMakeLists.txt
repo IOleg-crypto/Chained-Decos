@@ -91,7 +91,6 @@ add_library(engine_physics STATIC
     physics/narrow_phase.cpp
     physics/scene_trace.cpp
     physics/bvh/bvh.cpp
-    physics/collision/collision.cpp
     
     # Headers
     physics/physics.h

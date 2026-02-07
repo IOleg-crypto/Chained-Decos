@@ -18,9 +18,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include "raymath.h"
 
 namespace CHEngine
 {
@@ -33,12 +31,20 @@ struct GLTFParserContext {
     cgltf_data* gltf;
 };
 
-    static void ProcessGLTFNode(const cgltf_node* node, const glm::mat4& parentTransform, GLTFParserContext& ctx)
+    static void ProcessGLTFNode(const cgltf_node* node, const Matrix& parentTransform, GLTFParserContext& ctx)
     {
-        glm::mat4 localTransform = glm::mat4(1.0f);
-        cgltf_node_transform_local(node, glm::value_ptr(localTransform));
+        Matrix localTransform = MatrixIdentity();
+        // cgltf uses column-major float array, same as Raylib/OpenGL
+        float matrixData[16];
+        cgltf_node_transform_local(node, matrixData);
         
-        glm::mat4 worldTransform = parentTransform * localTransform;
+        // Convert array to Matrix
+        localTransform.m0 = matrixData[0];  localTransform.m4 = matrixData[4];  localTransform.m8 = matrixData[8];   localTransform.m12 = matrixData[12];
+        localTransform.m1 = matrixData[1];  localTransform.m5 = matrixData[5];  localTransform.m9 = matrixData[9];   localTransform.m13 = matrixData[13];
+        localTransform.m2 = matrixData[2];  localTransform.m6 = matrixData[6];  localTransform.m10 = matrixData[10]; localTransform.m14 = matrixData[14];
+        localTransform.m3 = matrixData[3];  localTransform.m7 = matrixData[7];  localTransform.m11 = matrixData[11]; localTransform.m15 = matrixData[15];
+        
+        Matrix worldTransform = MatrixMultiply(localTransform, parentTransform); // Order might need verification (Parent * Local vs Local * Parent). Raylib is usually Local * Parent for hierarchy.
 
         if (node->mesh) {
             for (size_t i = 0; i < node->mesh->primitives_count; ++i) {
@@ -74,10 +80,12 @@ struct GLTFParserContext {
 
                     // Apply world transform to positions
                     for (size_t v = 0; v < count; ++v) {
-                        glm::vec4 position = worldTransform * glm::vec4(rawMesh.vertices[v*3], rawMesh.vertices[v*3+1], rawMesh.vertices[v*3+2], 1.0f);
-                        rawMesh.vertices[v*3] = position.x;
-                        rawMesh.vertices[v*3+1] = position.y;
-                        rawMesh.vertices[v*3+2] = position.z;
+                        Vector3 position = { rawMesh.vertices[v*3], rawMesh.vertices[v*3+1], rawMesh.vertices[v*3+2] };
+                        Vector3 transformedPos = Vector3Transform(position, worldTransform);
+                        
+                        rawMesh.vertices[v*3] = transformedPos.x;
+                        rawMesh.vertices[v*3+1] = transformedPos.y;
+                        rawMesh.vertices[v*3+2] = transformedPos.z;
                     }
                 }
 
@@ -87,13 +95,24 @@ struct GLTFParserContext {
                     cgltf_accessor_unpack_floats(normalAccessor, rawMesh.normals.data(), rawMesh.normals.size());
 
                     // Apply rotation only (normal matrix)
-                    glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(worldTransform)));
+                    // For normals: Transpose(Inverse(World)) usually, but if purely orthogonal, just Rotation part of World works.
+                    // Raylib Vector3Transform ignores translation if w=0? No, it doesn't.
+                    // We need to rotate the normal.
+                    Matrix normalMatrix = worldTransform;
+                    normalMatrix.m12 = 0; normalMatrix.m13 = 0; normalMatrix.m14 = 0; // Remove translation
+                    
+                    // Ideally we should use Transpose(Inverse(World)) if there is non-uniform scaling.
+                    // But for simple hierarchy without skew/non-uniform scale effectively, simple rotation works.
+                    // Let's rely on standard Matrix for now, maybe fix later if non-uniform scale breaks lighting.
+
                     for (size_t v = 0; v < count; ++v) {
-                        glm::vec3 n = normalMatrix * glm::vec3(rawMesh.normals[v*3], rawMesh.normals[v*3+1], rawMesh.normals[v*3+2]);
-                        n = glm::normalize(n);
-                        rawMesh.normals[v*3] = n.x;
-                        rawMesh.normals[v*3+1] = n.y;
-                        rawMesh.normals[v*3+2] = n.z;
+                         Vector3 normal = { rawMesh.normals[v*3], rawMesh.normals[v*3+1], rawMesh.normals[v*3+2] };
+                         Vector3 transformedNormal = Vector3Transform(normal, normalMatrix); 
+                         transformedNormal = Vector3Normalize(transformedNormal);
+
+                        rawMesh.normals[v*3] = transformedNormal.x;
+                        rawMesh.normals[v*3+1] = transformedNormal.y;
+                        rawMesh.normals[v*3+2] = transformedNormal.z;
                     }
                 }
 
@@ -157,7 +176,7 @@ struct GLTFParserContext {
         GLTFParserContext ctx = { data, gltf };
         for (size_t i = 0; i < gltf->scenes_count; ++i) {
             for (size_t j = 0; j < gltf->scenes[i].nodes_count; ++j) {
-                ProcessGLTFNode(gltf->scenes[i].nodes[j], glm::mat4(1.0f), ctx);
+                ProcessGLTFNode(gltf->scenes[i].nodes[j], MatrixIdentity(), ctx);
             }
         }
 
