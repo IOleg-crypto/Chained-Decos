@@ -18,6 +18,11 @@ private:
                               ::entt::entity otherEntity);
     static void ResolveBoxMesh(::entt::registry &registry, ::entt::entity rbEntity,
                                ::entt::entity otherEntity);
+
+    static void ResolveCapsuleBox(::entt::registry &registry, ::entt::entity rbEntity,
+                                  ::entt::entity otherEntity);
+    static void ResolveCapsuleMesh(::entt::registry &registry, ::entt::entity rbEntity,
+                                   ::entt::entity otherEntity);
 };
 } // namespace CHEngine
 
