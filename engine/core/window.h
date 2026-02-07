@@ -8,7 +8,7 @@ struct GLFWwindow;
 
 namespace CHEngine
 {
-struct WindowProps
+struct WindowProperties
 {
     std::string Title;
     int Width = 1280;
@@ -16,22 +16,22 @@ struct WindowProps
     bool VSync = true;
     bool Resizable = true;
     bool Fullscreen = false;
-    int TargetFPS = 60;
+    int TargetFramesPerSecond = 60;
     std::string IconPath = "";
     
     // UI / Docking
     bool EnableViewports = true;
     bool EnableDocking = true;
-    std::string IniFilename = "imgui.ini";
+    std::string ImGuiConfigurationPath = "imgui.ini";
 
-    WindowProps(const std::string& title = "Chained Engine", int width = 1280, int height = 720)
+    WindowProperties(const std::string& title = "Chained Engine", int width = 1280, int height = 720)
         : Title(title), Width(width), Height(height) {}
 };
 
 class Window
 {
 public:
-    Window(const WindowProps &props);
+    Window(const WindowProperties &properties);
     ~Window();
     bool ShouldClose() const;
     void BeginFrame();
@@ -48,22 +48,22 @@ public:
 
     GLFWwindow *GetNativeWindow() const
     {
-        return m_Window;
+        return m_WindowHandle;
     }
 
     void SetTitle(const std::string &title);
     void ToggleFullscreen();
 
     void SetVSync(bool enabled);
-    void SetTargetFPS(int fps);
+    void SetTargetFramesPerSecond(int framesPerSecond);
     void SetWindowIcon(Image icon);
 
 private:
-    GLFWwindow *m_Window = nullptr;
+    GLFWwindow *m_WindowHandle = nullptr;
     int m_Width, m_Height;
     std::string m_Title;
     bool m_VSync = true;
-    std::string m_IniFilename;
+    std::string m_ImGuiConfigurationPath;
 };
 } // namespace CHEngine
 

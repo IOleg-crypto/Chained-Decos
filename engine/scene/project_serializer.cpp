@@ -1,10 +1,12 @@
 #include "project_serializer.h"
 #include "engine/core/log.h"
+#include "engine/scene/serialization_utils.h"
 #include "fstream"
 #include "yaml-cpp/yaml.h"
 
 namespace CHEngine
 {
+    using namespace SerializationUtils;
 ProjectSerializer::ProjectSerializer(std::shared_ptr<Project> project) : m_Project(project)
 {
 }
@@ -21,8 +23,9 @@ bool ProjectSerializer::Serialize(const std::filesystem::path &filepath)
         out << YAML::Key << "Name" << YAML::Value << config.Name;
         out << YAML::Key << "StartScene" << YAML::Value << config.StartScene;
         out << YAML::Key << "AssetDirectory" << YAML::Value << config.AssetDirectory.string();
-        out << YAML::Key << "ActiveScene" << YAML::Value << config.ActiveScenePath.string();
-        out << YAML::Key << "Environment" << YAML::Value << config.EnvironmentPath.string();
+        
+        SerializePath(out, "ActiveScene", config.ActiveScenePath.string());
+        SerializePath(out, "Environment", config.EnvironmentPath.string());
 
         out << YAML::Key << "Physics" << YAML::Value << YAML::BeginMap;
         out << YAML::Key << "Gravity" << YAML::Value << config.Physics.Gravity;
@@ -56,6 +59,19 @@ bool ProjectSerializer::Serialize(const std::filesystem::path &filepath)
         out << YAML::Key << "CameraBoostMultiplier" << YAML::Value << config.Editor.CameraBoostMultiplier;
         out << YAML::EndMap;
 
+        out << YAML::Key << "LaunchProfiles" << YAML::Value << YAML::BeginSeq;
+        for (const auto& profile : config.LaunchProfiles)
+        {
+            out << YAML::BeginMap;
+            out << YAML::Key << "Name" << YAML::Value << profile.Name;
+            out << YAML::Key << "BinaryPath" << YAML::Value << profile.BinaryPath;
+            out << YAML::Key << "Arguments" << YAML::Value << profile.Arguments;
+            out << YAML::Key << "UseDefaultArgs" << YAML::Value << profile.UseDefaultArgs;
+            out << YAML::EndMap;
+        }
+        out << YAML::EndSeq;
+
+        out << YAML::Key << "ActiveLaunchProfile" << YAML::Value << config.ActiveLaunchProfileIndex;
         out << YAML::Key << "BuildConfig" << YAML::Value << (int)config.BuildConfig;
 
         out << YAML::EndMap;
@@ -94,10 +110,9 @@ bool ProjectSerializer::Deserialize(const std::filesystem::path &filepath)
     config.Name = projectNode["Name"].as<std::string>();
     config.StartScene = projectNode["StartScene"].as<std::string>();
     config.AssetDirectory = projectNode["AssetDirectory"].as<std::string>();
-    if (projectNode["Environment"])
-        config.EnvironmentPath = projectNode["Environment"].as<std::string>();
-    if (projectNode["ActiveScene"])
-        config.ActiveScenePath = projectNode["ActiveScene"].as<std::string>();
+    
+    DeserializePath(projectNode, "Environment", config.EnvironmentPath);
+    DeserializePath(projectNode, "ActiveScene", config.ActiveScenePath);
 
     if (projectNode["Physics"])
         config.Physics.Gravity = projectNode["Physics"]["Gravity"].as<float>();
@@ -132,6 +147,24 @@ bool ProjectSerializer::Deserialize(const std::filesystem::path &filepath)
         config.Editor.CameraRotationSpeed = projectNode["Editor"]["CameraRotationSpeed"].as<float>();
         config.Editor.CameraBoostMultiplier = projectNode["Editor"]["CameraBoostMultiplier"].as<float>();
     }
+
+    if (projectNode["LaunchProfiles"])
+    {
+        for (auto profileNode : projectNode["LaunchProfiles"])
+        {
+            LaunchProfile profile;
+            profile.Name = profileNode["Name"].as<std::string>();
+            profile.BinaryPath = profileNode["BinaryPath"].as<std::string>();
+            profile.Arguments = profileNode["Arguments"].as<std::string>();
+            if (profileNode["UseDefaultArgs"])
+                profile.UseDefaultArgs = profileNode["UseDefaultArgs"].as<bool>();
+            
+            config.LaunchProfiles.push_back(profile);
+        }
+    }
+
+    if (projectNode["ActiveLaunchProfile"])
+        config.ActiveLaunchProfileIndex = projectNode["ActiveLaunchProfile"].as<int>();
 
     if (projectNode["BuildConfig"])
         config.BuildConfig = (Configuration)projectNode["BuildConfig"].as<int>();

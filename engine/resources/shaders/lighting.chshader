@@ -1,6 +1,6 @@
 # Lighting Shader Metadata
-VertexShader: "engine/resources/shaders/lighting.vs"
-FragmentShader: "engine/resources/shaders/lighting.fs"
+VertexShader: "lighting.vs"
+FragmentShader: "lighting.fs"
 
 Uniforms:
   - mvp
@@ -61,3 +61,9 @@ Uniforms:
   - lights[7].radiance
   - lights[7].falloff
   - lights[7].enabled
+  - fogEnabled
+  - fogColor
+  - fogDensity
+  - fogStart
+  - fogEnd
+  - viewPos

@@ -31,6 +31,32 @@ struct Light {
 
 uniform Light lights[MAX_LIGHTS];
 
+// Fog data
+uniform int fogEnabled;
+uniform vec4 fogColor;
+uniform float fogDensity;
+uniform float fogStart;
+uniform float fogEnd;
+
+uniform vec3 viewPos;
+uniform float uTime;
+
+float hash(vec3 p) {
+    p = fract(p * 0.3183099 + 0.1);
+    p *= 17.0;
+    return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+
+float noise(vec3 x) {
+    vec3 p = floor(x);
+    vec3 f = fract(x);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(mix(hash(p + vec3(0, 0, 0)), hash(p + vec3(1, 0, 0)), f.x),
+                   mix(hash(p + vec3(0, 1, 0)), hash(p + vec3(1, 1, 0)), f.x), f.y),
+               mix(mix(hash(p + vec3(0, 0, 1)), hash(p + vec3(1, 0, 1)), f.x),
+                   mix(hash(p + vec3(0, 1, 1)), hash(p + vec3(1, 1, 1)), f.x), f.y), f.z);
+}
+
 void main()
 {
     // Texel color fetching from texture sampler
@@ -65,6 +91,33 @@ void main()
         }
     }
 
-    // Final color
-    finalColor = (ambientColor + diffuseColor + pointLightsColor) * texelColor;
+    // Final color before fog
+    vec4 finalColorPreFog = (ambientColor + diffuseColor + pointLightsColor) * texelColor;
+
+    if (fogEnabled == 1)
+    {
+        // Distance-based fog from camera position
+        float dist = length(viewPos - fragPosition);
+        
+        // Multi-frequency noise for volumetric feel
+        vec3 noisePos = fragPosition * 0.05 + vec3(uTime * 0.1, 0.0, uTime * 0.05);
+        float volumetricFactor = 0.5 + noise(noisePos) * 1.0;
+        
+        // 1. Linear fog factor
+        float linearFog = clamp((fogEnd - dist) / (fogEnd - fogStart), 0.0, 1.0);
+        
+        // 2. Exponential fog factor (modulated by noise)
+        float expFog = exp(-dist * fogDensity * volumetricFactor);
+        expFog = clamp(expFog, 0.0, 1.0);
+        
+        // Combine: we take the most "foggy" result
+        float fogFactor = min(linearFog, expFog);
+        
+        finalColor = mix(fogColor, finalColorPreFog, fogFactor);
+        finalColor.a = mix(fogColor.a, finalColorPreFog.a, fogFactor);
+    }
+    else
+    {
+        finalColor = finalColorPreFog;
+    }
 }

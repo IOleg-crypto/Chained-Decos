@@ -58,6 +58,13 @@ target_sources(editor_core PRIVATE
     ${CMAKE_SOURCE_DIR}/include/rlImGui/rlImGui.cpp
 )
 
+# Handle large translation units (required for PropertyEditor and Unity builds)
+if(MSVC)
+    target_compile_options(editor_core PRIVATE /bigobj)
+else()
+    target_compile_options(editor_core PRIVATE -Wa,-mbig-obj)
+endif()
+
 
 target_link_libraries(editor_core PUBLIC 
     engine
