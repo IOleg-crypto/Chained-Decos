@@ -13,7 +13,8 @@ class BVH;
 enum class ColliderType : uint8_t
 {
     Box = 0,
-    Mesh = 1
+    Mesh = 1,
+    Capsule = 2
 };
 
 struct ColliderComponent
@@ -23,7 +24,14 @@ struct ColliderComponent
 
     // Common/Box fields
     Vector3 Offset = {0.0f, 0.0f, 0.0f};
+    
+    // Box
     Vector3 Size = {1.0f, 1.0f, 1.0f};
+    
+    // Capsule
+    float Radius = 0.5f;
+    float Height = 2.0f;
+
     bool AutoCalculate = true;
 
     // Mesh (BVH) fields
