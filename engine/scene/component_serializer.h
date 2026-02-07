@@ -1,7 +1,7 @@
 #ifndef CH_COMPONENT_SERIALIZER_H
 #define CH_COMPONENT_SERIALIZER_H
 
-#include "engine/scene/entity.h"
+#include "engine/scene/scene.h"
 #include <yaml-cpp/yaml.h>
 #include <functional>
 #include <unordered_map>
@@ -22,13 +22,14 @@ namespace CHEngine
         std::string YamlKey;
         std::function<void(YAML::Emitter&, Entity)> Serialize;
         std::function<void(Entity, YAML::Node)> Deserialize;
+        std::function<void(Entity, Entity)> Copy;
     };
 
     class ComponentSerializer
     {
     public:
         // Initialize the registry with all component types
-        static void Init();
+        static void Initialize();
 
         // Register a component serializer
         template<typename T>
@@ -42,6 +43,18 @@ namespace CHEngine
 
         // Deserialize all registered components from YAML node
         static void DeserializeAll(Entity entity, YAML::Node node);
+
+        // Copy all registered components from source to destination
+        static void CopyAll(Entity source, Entity destination);
+
+        // Helper to register UI components (implementation in component_serializer_ui.cpp)
+        static void RegisterUIComponents();
+        
+        // Modular registration functions
+        static void RegisterGraphicsComponents();
+        static void RegisterPhysicsComponents();
+        static void RegisterAudioComponents();
+        static void RegisterGameplayComponents();
 
         // Special cases that need custom handling
         static void SerializeID(YAML::Emitter& out, Entity entity);
@@ -77,7 +90,16 @@ namespace CHEngine
             if (componentNode) {
                 if (!entity.HasComponent<T>())
                     entity.AddComponent<T>();
-                deserialize(entity.GetComponent<T>(), componentNode);
+                
+                entity.Patch<T>([&](auto& component) {
+                    deserialize(component, componentNode);
+                });
+            }
+        };
+
+        entry.Copy = [](Entity source, Entity destination) {
+            if (source.HasComponent<T>()) {
+                destination.AddOrReplaceComponent<T>(source.GetComponent<T>());
             }
         };
         

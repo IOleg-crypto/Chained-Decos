@@ -8,28 +8,10 @@ namespace CHEngine
 {
 std::shared_ptr<FontAsset> FontAsset::Load(const std::string &path)
 {
-    if (path.empty())
-        return nullptr;
-
-    std::filesystem::path fullPath(path);
-    if (!std::filesystem::exists(fullPath))
-    {
-        CH_CORE_ERROR("Font file not found: {}", path);
-        return nullptr;
-    }
-
     auto asset = std::make_shared<FontAsset>();
     asset->SetPath(path);
-    asset->SetState(AssetState::Ready);
-    asset->m_Font = LoadFont(fullPath.string().c_str());
-
-    if (asset->m_Font.texture.id == 0)
-    {
-        CH_CORE_ERROR("Failed to load font: {}", path);
-        return nullptr;
-    }
-
-    return asset;
+    asset->LoadFromFile(path);
+    return asset->GetState() == AssetState::Ready ? asset : nullptr;
 }
 
 FontAsset::~FontAsset()
@@ -43,15 +25,27 @@ void FontAsset::LoadFromFile(const std::string &path)
 {
     if (m_State == AssetState::Ready) return;
 
-    auto loaded = Load(path);
-    if (loaded)
+    if (path.empty())
     {
-        m_Font = loaded->m_Font;
-        loaded->m_Font.texture.id = 0; // Prevent double unload
-        SetState(AssetState::Ready);
+        SetState(AssetState::Failed);
+        return;
     }
+
+    std::filesystem::path fullPath(path);
+    if (!std::filesystem::exists(fullPath))
+    {
+        CH_CORE_ERROR("Font file not found: {}", path);
+        SetState(AssetState::Failed);
+        return;
+    }
+
+    m_Font = ::LoadFont(fullPath.string().c_str());
+
+    if (m_Font.texture.id > 0)
+        SetState(AssetState::Ready);
     else
     {
+        CH_CORE_ERROR("Failed to load font: {}", path);
         SetState(AssetState::Failed);
     }
 }

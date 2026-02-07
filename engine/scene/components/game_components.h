@@ -26,14 +26,8 @@ struct SpawnComponent
 struct PlayerComponent
 {
     float MovementSpeed = 15.0f;
-    float LookSensitivity = 0.9f;
-
-    // Camera Sync
-    float CameraYaw = 0.0f;
-    float CameraPitch = 20.0f;
-    float CameraDistance = 10.0f;
-
     float JumpForce = 10.0f;
+    float LookSensitivity = 0.9f;
 
     PlayerComponent() = default;
 };

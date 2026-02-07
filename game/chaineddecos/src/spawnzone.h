@@ -21,7 +21,7 @@ namespace CHEngine
         CH_UPDATE(dt)
         {
             // Auto-respawn if falling too deep
-            if (Translation().y < -100.0f)
+            if (GetComponent<TransformComponent>().Translation.y < -100.0f)
                 Respawn();
         }
 
@@ -49,11 +49,11 @@ namespace CHEngine
                     glm::vec3 localOffset = {spawnComp.SpawnPoint.x, spawnComp.SpawnPoint.y, spawnComp.SpawnPoint.z};
                     glm::vec3 result = worldPos + localOffset;
 
-                    Translation() = {result.x, result.y, result.z};
+                    GetComponent<TransformComponent>().Translation = {result.x, result.y, result.z};
 
                     // Reset velocity if we have a RigidBody
                     if (HasComponent<RigidBodyComponent>())
-                        RigidBody().Velocity = {0, 0, 0};
+                        GetComponent<RigidBodyComponent>().Velocity = {0, 0, 0};
 
                     CH_CORE_INFO("SpawnZone: Player teleported to entity world position.");
                     return;

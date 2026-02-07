@@ -2,7 +2,7 @@
 #define CH_PROPERTY_EDITOR_H
 
 #include "editor_gui.h"
-#include "engine/scene/entity.h"
+#include "engine/scene/scene.h"
 #include "engine/scene/scene.h"
 #include "extras/IconsFontAwesome6.h"
 #include <functional>
@@ -30,6 +30,8 @@ namespace CHEngine
         static void RegisterComponent(entt::id_type typeId, const ComponentMetadata &metadata);
         static void DrawEntityProperties(Entity entity);
         static void DrawAddComponentPopup(Entity entity);
+
+
 
         // Template helper for easy registration
         template <typename T> static void Register(const std::string &name, std::function<bool(T &, Entity)> drawer)

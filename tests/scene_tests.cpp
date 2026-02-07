@@ -1,5 +1,5 @@
 #include "engine/scene/components.h"
-#include "engine/scene/entity.h"
+#include "engine/scene/scene.h"
 #include "engine/scene/scene.h"
 #include "gtest/gtest.h"
 

@@ -7,7 +7,7 @@
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/project.h"
-#include "engine/scene/entity.h"
+#include "engine/scene/scene.h"
 #include "engine/core/profiler.h"
 #include "imgui.h"
 #include "rlgl.h"
@@ -19,61 +19,68 @@ namespace CHEngine
 {
     RenderState Render::s_State;
 
-    void Render::Init()
+    void Render::Initialize()
     {
         CH_CORE_INFO("Initializing Render System...");
         s_State = RenderState();
-        
-        RenderCommand::Init();
-        
-        AssetManager am;
-        am.Initialize();
-        
-        std::string lightingPath = am.ResolvePath("engine/resources/shaders/lighting.chshader");
-        std::string skyboxPath = am.ResolvePath("engine/resources/shaders/skybox.chshader");
+
+        RenderCommand::Initialize();
+
+        // Engine resources are loaded with absolute paths (no Project needed yet)
+        std::string lightingPath = PROJECT_ROOT_DIR "/engine/resources/shaders/lighting.chshader";
+        std::string skyboxPath = PROJECT_ROOT_DIR "/engine/resources/shaders/skybox.chshader";
 
         if (std::filesystem::exists(lightingPath))
             s_State.LightingShader = ShaderAsset::Load(lightingPath);
         else
-            CH_CORE_WARN("Render::Init: Lighting shader not found at {}", lightingPath);
-            
+            CH_CORE_WARN("Render::Initialize: Lighting shader not found at {}", lightingPath);
+
         if (std::filesystem::exists(skyboxPath))
             s_State.SkyboxShader = ShaderAsset::Load(skyboxPath);
         else
-            CH_CORE_WARN("Render::Init: Skybox shader not found at {}", skyboxPath);
-            
-        InitSkybox();
+            CH_CORE_WARN("Render::Initialize: Skybox shader not found at {}", skyboxPath);
+
+        // Load editor icons with absolute paths
+        std::string lightIconPath = PROJECT_ROOT_DIR "/engine/resources/icons/light_bulb.png";
+        std::string spawnIconPath = PROJECT_ROOT_DIR "/engine/resources/icons/leaf_icon.png";
+        std::string cameraIconPath = PROJECT_ROOT_DIR "/engine/resources/icons/minimalist-geometric-logo-design--letter-c-made-of.png";
+
+        s_State.LightIcon = ::LoadTexture(lightIconPath.c_str());
+        s_State.SpawnIcon = ::LoadTexture(spawnIconPath.c_str());
+        s_State.CameraIcon = ::LoadTexture(cameraIconPath.c_str());
+
+        CH_CORE_INFO("Render::Initialize: Editor Icon Diagnostics:");
+        CH_CORE_INFO("  - Light: {} (ID: {})", lightIconPath, s_State.LightIcon.id);
+        CH_CORE_INFO("  - Spawn: {} (ID: {})", spawnIconPath, s_State.SpawnIcon.id);
+        CH_CORE_INFO("  - Camera: {} (ID: {})", cameraIconPath, s_State.CameraIcon.id);
+
+        if (s_State.LightIcon.id == 0) CH_CORE_ERROR("Render::Initialize: FAILED to load light icon from '{}'", lightIconPath);
+        if (s_State.SpawnIcon.id == 0) CH_CORE_ERROR("Render::Initialize: FAILED to load spawn icon from '{}'", spawnIconPath);
+
+        InitializeSkybox();
         CH_CORE_INFO("Render System Initialized.");
     }
 
     void Render::Shutdown()
     {
         CH_CORE_INFO("Shutting down Render System...");
+
+        if (s_State.LightIcon.id > 0) ::UnloadTexture(s_State.LightIcon);
+        if (s_State.SpawnIcon.id > 0) ::UnloadTexture(s_State.SpawnIcon);
+        if (s_State.CameraIcon.id > 0) ::UnloadTexture(s_State.CameraIcon);
+
         RenderCommand::Shutdown();
     }
 
     void Render::BeginScene(const Camera3D& camera)
     {
-        Submit([camera]() {
-            BeginMode3D(camera);
-        });
+        s_State.CurrentCameraPosition = camera.position;
+        BeginMode3D(camera);
     }
 
     void Render::EndScene()
     {
-        Submit([]() {
-            EndMode3D();
-        });
-    }
-
-    void Render::DrawScene(Scene* scene, const Camera3D& camera, Timestep ts, const DebugRenderFlags* debugFlags)
-    {
-        SceneRenderer::RenderScene(scene, camera, ts, debugFlags);
-    }
-
-    void Render::DrawUI(Scene* scene, const ImVec2& refPos, const ImVec2& refSize, bool editMode)
-    {
-        UIRenderer::DrawCanvas(scene, refPos, refSize, editMode);
+        EndMode3D();
     }
 
     void Render::Clear(Color color)
@@ -86,86 +93,174 @@ namespace CHEngine
         RenderCommand::SetViewport(x, y, width, height);
     }
 
-    void Render::DrawModel(const std::string& path, const Matrix& transform, 
-                         const std::vector<MaterialSlot>& overrides, 
-                         int animIndex, int frame)
+    void Render::DrawModel(const std::string& path, const Matrix& transform,
+        const std::vector<MaterialSlot>& materialSlotOverrides,
+        int animationIndex, int frameIndex)
     {
         auto project = Project::GetActive();
-        if (!project) return;
-        
+        if (!project)
+        {
+            CH_CORE_WARN("Render::DrawModel - No active project!");
+            return;
+        }
+
         auto modelAsset = project->GetAssetManager()->Get<ModelAsset>(path);
-        if (!modelAsset) return;
+        if (!modelAsset)
+        {
+            CH_CORE_WARN("Render::DrawModel - Failed to get asset by path: '{}'", path);
+            return;
+        }
 
-        Submit([modelAsset, transform]() {
-            if (modelAsset && modelAsset->GetState() == AssetState::Ready)
+        DrawModel(modelAsset, transform, materialSlotOverrides, animationIndex, frameIndex);
+    }
+
+    void Render::DrawModel(std::shared_ptr<ModelAsset> modelAsset, const Matrix& transform,
+        const std::vector<MaterialSlot>& materialSlotOverrides,
+        int animationIndex, int frameIndex)
+    {
+        if (modelAsset && modelAsset->GetState() == AssetState::Ready)
+        {
+            Model& model = modelAsset->GetModel();
+            CH_CORE_TRACE("Render::DrawModel - Rendering: {} ({} meshes)", modelAsset->GetPath(), model.meshCount);
+
+            // Apply animation if needed
+            if (animationIndex >= 0)
             {
-                Model& model = modelAsset->GetModel();
-                for (int i = 0; i < model.meshCount; i++)
+                int animationCount = 0;
+                auto* animations = modelAsset->GetAnimations(&animationCount);
+                if (animations && animationIndex < animationCount)
                 {
-                    Material& mat = model.materials[model.meshMaterial[i]];
-                    
-                    if (mat.shader.id == 0 && s_State.LightingShader)
-                        mat.shader = s_State.LightingShader->GetShader();
-
-                    if (s_State.LightingShader && mat.shader.id == s_State.LightingShader->GetShader().id)
-                    {
-                        s_State.LightingShader->SetVec3("lightDir", s_State.CurrentLightDir);
-                        s_State.LightingShader->SetColor("lightColor", s_State.CurrentLightColor);
-                        s_State.LightingShader->SetFloat("ambient", s_State.CurrentAmbientIntensity);
-                    }
-
-                    ProfilerStats stats;
-                    stats.DrawCalls++;
-                    stats.MeshCount++;
-                    stats.PolyCount += model.meshes[i].triangleCount;
-                    Profiler::UpdateStats(stats);
-
-                    DrawMesh(model.meshes[i], mat, transform);
+                    UpdateModelAnimation(model, animations[animationIndex], frameIndex);
                 }
             }
-        });
+
+            for (int i = 0; i < model.meshCount; i++)
+            {
+                Material& material = model.materials[model.meshMaterial[i]];
+
+                if (material.shader.id == 0 && s_State.LightingShader)
+                    material.shader = s_State.LightingShader->GetShader();
+
+                if (s_State.LightingShader && material.shader.id == s_State.LightingShader->GetShader().id)
+                {
+                    s_State.LightingShader->SetVec3("lightDir", s_State.CurrentLightDirection);
+                    s_State.LightingShader->SetColor("lightColor", s_State.CurrentLightColor);
+                    s_State.LightingShader->SetFloat("ambient", s_State.CurrentAmbientIntensity);
+
+                    // Fog uniforms
+                    s_State.LightingShader->SetInt("fogEnabled", s_State.FogEnabled ? 1 : 0);
+                    if (s_State.FogEnabled)
+                    {
+                        s_State.LightingShader->SetColor("fogColor", s_State.FogColor);
+                        s_State.LightingShader->SetFloat("fogDensity", s_State.FogDensity);
+                        s_State.LightingShader->SetFloat("fogStart", s_State.FogStart);
+                        s_State.LightingShader->SetFloat("fogEnd", s_State.FogEnd);
+                    }
+
+                    s_State.LightingShader->SetVec3("viewPos", s_State.CurrentCameraPosition);
+                    s_State.LightingShader->SetFloat("uTime", s_State.Time);
+                }
+
+                ProfilerStats stats;
+                stats.DrawCalls++;
+                stats.MeshCount++;
+                stats.PolyCount += model.meshes[i].triangleCount;
+                Profiler::UpdateStats(stats);
+
+                // Combine model base transform with entity transform
+                Matrix meshTransform = MatrixMultiply(model.transform, transform);
+
+                DrawMesh(model.meshes[i], material, meshTransform);
+            }
+        }
+        else
+        {
+            static int logCount = 0;
+            if (logCount++ < 10) // Limit spam
+            {
+                std::string path = modelAsset ? modelAsset->GetPath() : "NULL";
+                int state = modelAsset ? (int)modelAsset->GetState() : -1;
+                CH_CORE_WARN("Render::DrawModel - Asset not ready: {} (state: {})", path, state);
+            }
+        }
     }
 
-    void Render::DrawLine(Vector3 start, Vector3 end, Color color)
+    void Render::DrawLine(Vector3 startPosition, Vector3 endPosition, Color color)
     {
-        RenderCommand::DrawLine(start, end, color);
+        RenderCommand::DrawLine(startPosition, endPosition, color);
     }
 
-    void Render::DrawGrid(int slices, float spacing)
+    void Render::DrawGrid(int sliceCount, float spacing)
     {
-        RenderCommand::DrawGrid(slices, spacing);
+        RenderCommand::DrawGrid(sliceCount, spacing);
+    }
+
+    void Render::DrawCubeWires(const Matrix& transform, Vector3 size, Color color)
+    {
+        // Draw oriented wireframe box using transform matrix
+        rlPushMatrix();
+        rlMultMatrixf(MatrixToFloat(transform));
+
+        ::DrawCubeWires({0.0f, 0.0f, 0.0f}, size.x, size.y, size.z, color);
+
+        rlPopMatrix();
     }
 
     void Render::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
     {
         if (!s_State.SkyboxShader || skybox.TexturePath.empty()) return;
 
-        Submit([skybox, camera]() {
-            auto project = Project::GetActive();
-            if (!project) return;
-            
-            auto textureAsset = project->GetAssetManager()->Get<TextureAsset>(skybox.TexturePath);
-            if (!textureAsset || textureAsset->GetState() != AssetState::Ready) return;
+        auto project = Project::GetActive();
+        if (!project) return;
 
-            RenderCommand::DisableBackfaceCulling();
-            RenderCommand::DisableDepthMask();
+        auto textureAsset = project->GetAssetManager()->Get<TextureAsset>(skybox.TexturePath);
+        if (!textureAsset)
+        {
+            CH_CORE_WARN("Render::DrawSkybox: Failed to get texture asset: {}", skybox.TexturePath);
+            return;
+        }
 
-            Material mat = LoadMaterialDefault();
-            mat.shader = s_State.SkyboxShader->GetShader();
-            mat.maps[MATERIAL_MAP_ALBEDO].texture = textureAsset->GetTexture();
-            
-            s_State.SkyboxShader->SetFloat("exposure", skybox.Exposure);
-            s_State.SkyboxShader->SetFloat("brightness", skybox.Brightness);
-            s_State.SkyboxShader->SetFloat("contrast", skybox.Contrast);
-            s_State.SkyboxShader->SetInt("vflipped", 0);
-            s_State.SkyboxShader->SetInt("doGamma", 0);
-            s_State.SkyboxShader->SetFloat("fragGamma", 2.2f);
+        if (textureAsset->GetState() != AssetState::Ready) return;
 
-            DrawMesh(s_State.SkyboxCube.meshes[0], mat, MatrixTranslate(camera.position.x, camera.position.y, camera.position.z));
+        RenderCommand::DisableBackfaceCulling();
+        RenderCommand::DisableDepthMask();
 
-            RenderCommand::EnableBackfaceCulling();
-            RenderCommand::EnableDepthMask();
-        });
+        Material material = LoadMaterialDefault();
+        material.shader = s_State.SkyboxShader->GetShader();
+        Texture2D skyTexture = textureAsset->GetTexture();
+        ::SetTextureFilter(skyTexture, TEXTURE_FILTER_BILINEAR);
+        ::SetTextureWrap(skyTexture, TEXTURE_WRAP_CLAMP);
+        material.maps[MATERIAL_MAP_ALBEDO].texture = skyTexture;
+
+        s_State.SkyboxShader->SetFloat("exposure", skybox.Exposure);
+        s_State.SkyboxShader->SetFloat("brightness", skybox.Brightness);
+        s_State.SkyboxShader->SetFloat("contrast", skybox.Contrast);
+        s_State.SkyboxShader->SetInt("vflipped", 0);
+        s_State.SkyboxShader->SetInt("doGamma", 0);
+        s_State.SkyboxShader->SetFloat("fragGamma", 2.2f);
+
+        // Fog uniforms
+        s_State.SkyboxShader->SetInt("fogEnabled", s_State.FogEnabled ? 1 : 0);
+        if (s_State.FogEnabled)
+        {
+            s_State.SkyboxShader->SetColor("fogColor", s_State.FogColor);
+            s_State.SkyboxShader->SetFloat("fogDensity", s_State.FogDensity);
+            s_State.SkyboxShader->SetFloat("fogStart", s_State.FogStart);
+            s_State.SkyboxShader->SetFloat("fogEnd", s_State.FogEnd);
+        }
+
+        s_State.SkyboxShader->SetFloat("uTime", s_State.Time);
+
+        DrawMesh(s_State.SkyboxCube.meshes[0], material, MatrixTranslate(camera.position.x, camera.position.y, camera.position.z));
+
+        RenderCommand::EnableBackfaceCulling();
+        RenderCommand::EnableDepthMask();
+    }
+
+    void Render::DrawBillboard(const Camera3D& camera, Texture2D texture, Vector3 position, float size, Color color)
+    {
+        if (texture.id == 0) return;
+        ::DrawBillboard(camera, texture, position, size, color);
     }
 
     RenderState& Render::GetState()
@@ -175,7 +270,7 @@ namespace CHEngine
 
     void Render::SetDirectionalLight(Vector3 direction, Color color)
     {
-        s_State.CurrentLightDir = direction;
+        s_State.CurrentLightDirection = direction;
         s_State.CurrentLightColor = color;
     }
 
@@ -188,11 +283,23 @@ namespace CHEngine
     {
         SetAmbientLight(settings.AmbientIntensity);
         SetDirectionalLight(settings.LightDirection, settings.LightColor);
+
+        // Sync Fog to State
+        s_State.FogEnabled = settings.Fog.Enabled;
+        s_State.FogColor = settings.Fog.FogColor;
+        s_State.FogDensity = settings.Fog.Density;
+        s_State.FogStart = settings.Fog.Start;
+        s_State.FogEnd = settings.Fog.End;
     }
 
-    void Render::InitSkybox()
+    void Render::UpdateTime(float time)
     {
-        Mesh cube = GenMeshCube(1.0f, 1.0f, 1.0f);
+        s_State.Time = time;
+    }
+
+    void Render::InitializeSkybox()
+    {
+        Mesh cube = GenMeshCube(100.0f, 100.0f, 100.0f);
         s_State.SkyboxCube = LoadModelFromMesh(cube);
     }
 }

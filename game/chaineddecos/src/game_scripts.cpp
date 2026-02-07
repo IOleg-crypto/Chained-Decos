@@ -2,6 +2,7 @@
 #include "runtime/runtime_application.h"
 
 #include "cameracontroller.h"
+#include "orbitcameracontroller.h"
 #include "exitscript.h"
 #include "playercontroller.h"
 #include "playergui.h"
@@ -16,6 +17,7 @@ namespace CHEngine
 
         ScriptRegistry::Register<PlayerController>("PlayerController");
         ScriptRegistry::Register<CameraController>("CameraController");
+        ScriptRegistry::Register<OrbitCameraController>("OrbitCameraController");
         ScriptRegistry::Register<GameHUD>("GameHUD");
         ScriptRegistry::Register<SpawnZoneRespawn>("SpawnZoneRespawn");
         ScriptRegistry::Register<ExitScript>("ExitScript");

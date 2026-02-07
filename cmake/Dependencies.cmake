@@ -27,16 +27,27 @@ FetchContent_Declare(
     GIT_TAG master
 )
 
-
 FetchContent_Declare(
-	glm
-	GIT_REPOSITORY	https://github.com/g-truc/glm.git
-	GIT_TAG 	0af55ccecd98d4e5a8d1fad7de25ba429d60e863 #refs/tags/1.0.1
+    glm
+    GIT_REPOSITORY https://github.com/g-truc/glm.git
+    GIT_TAG 0af55ccecd98d4e5a8d1fad7de25ba429d60e863 #refs/tags/1.0.1
 )
 
+# cgltf (glTF/GLB)
+FetchContent_Declare(
+    cgltf
+    GIT_REPOSITORY https://github.com/jkuhlmann/cgltf.git
+    GIT_TAG v1.14
+)
 
+# tinyobjloader (OBJ)
+FetchContent_Declare(
+    tinyobjloader
+    GIT_REPOSITORY https://github.com/tinyobjloader/tinyobjloader.git
+    GIT_TAG v1.0.6
+)
 
-FetchContent_MakeAvailable(yaml-cpp imguizmo glm)
+FetchContent_MakeAvailable(yaml-cpp imguizmo glm cgltf tinyobjloader)
 
 # ============================================================================
 # Raylib

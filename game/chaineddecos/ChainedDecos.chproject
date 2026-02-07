@@ -1,8 +1,8 @@
 Project:
   Name: ChainedDecos
-  StartScene: scenes\untitled1.chscene
+  StartScene: scenes\scene_tem.chscene
   AssetDirectory: assets
-  ActiveScene: assets\scenes\start_menu.chscene
+  ActiveScene: assets/scenes/untitled100.chscene
   Environment: ""
   Physics:
     Gravity: 20
@@ -21,7 +21,13 @@ Project:
     ShowStats: true
     EnableConsole: true
   Editor:
-    CameraMoveSpeed: 10
+    CameraMoveSpeed: 6.80000019
     CameraRotationSpeed: 1
-    CameraBoostMultiplier: 5
+    CameraBoostMultiplier: 2.29999995
+  LaunchProfiles:
+    - Name: Debug Runtime
+      BinaryPath: D:\gitnext\Chained Decos\build\bin\ChainedRuntime.exe
+      Arguments: --project "${PROJECT_FILE}"
+      UseDefaultArgs: true
+  ActiveLaunchProfile: 0
   BuildConfig: 0

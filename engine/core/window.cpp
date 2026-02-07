@@ -15,32 +15,32 @@
 
 namespace CHEngine
 {
-Window::Window(const WindowProps &config)
-    : m_Width(config.Width), m_Height(config.Height), m_Title(config.Title), m_VSync(config.VSync), m_IniFilename(config.IniFilename)
+Window::Window(const WindowProperties &windowProperties)
+    : m_Width(windowProperties.Width), m_Height(windowProperties.Height), m_Title(windowProperties.Title), m_VSync(windowProperties.VSync), m_ImGuiConfigurationPath(windowProperties.ImGuiConfigurationPath)
 {
     CH_CORE_INFO("Initializing Window: {} ({}x{})", m_Title, m_Width, m_Height);
 
     // Use Raylib to create the window (it manages GLFW internally)
     unsigned int flags = FLAG_MSAA_4X_HINT;
-    if (config.Resizable)
+    if (windowProperties.Resizable)
         flags |= FLAG_WINDOW_RESIZABLE;
-    if (config.Fullscreen)
+    if (windowProperties.Fullscreen)
         flags |= FLAG_FULLSCREEN_MODE;
 
     SetConfigFlags(flags);
     InitWindow(m_Width, m_Height, m_Title.c_str());
 
-    if (config.VSync)
-        SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
+    if (windowProperties.VSync)
+        SetTargetFramesPerSecond(GetMonitorRefreshRate(GetCurrentMonitor()));
     else
-        SetTargetFPS(config.TargetFPS);
+        SetTargetFramesPerSecond(windowProperties.TargetFramesPerSecond);
 
     // Get the actual GLFW window handle.
-    m_Window = glfwGetCurrentContext();
+    m_WindowHandle = glfwGetCurrentContext();
 
-    CH_CORE_INFO("GLFW Window Handle obtained: {}", (void *)m_Window);
+    CH_CORE_INFO("GLFW Window Handle obtained: {}", (void *)m_WindowHandle);
 
-    if (!m_Window)
+    if (!m_WindowHandle)
     {
         CH_CORE_ERROR("Failed to get GLFW window handle! Is GLFW initialized?");
         return;
@@ -54,7 +54,7 @@ Window::Window(const WindowProps &config)
 Window::~Window()
 {
     CloseWindow();
-    m_Window = nullptr;
+    m_WindowHandle = nullptr;
     CH_CORE_INFO("Window Closed");
 }
 
@@ -92,15 +92,15 @@ void Window::SetVSync(bool enabled)
         ::SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
 }
 
-void Window::SetTargetFPS(int fps)
+void Window::SetTargetFramesPerSecond(int framesPerSecond)
 {
     if (!m_VSync)
-        ::SetTargetFPS(fps);
+        ::SetTargetFPS(framesPerSecond);
 }
 
 void Window::SetWindowIcon(Image icon)
 {
-    if (m_Window)
+    if (m_WindowHandle)
         ::SetWindowIcon(icon);
 }
 

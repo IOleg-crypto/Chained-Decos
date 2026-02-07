@@ -17,61 +17,103 @@ namespace CHEngine
     public:
         CH_UPDATE(deltaTime)
         {
-            auto &player = GetComponent<PlayerComponent>();
-            auto &rigidBody = RigidBody();
+            auto scene = GetEntity().GetScene();
+            if (!scene) return;
 
-            // Mouse look (rotate camera)
-            if (Input::IsMouseButtonDown(MOUSE_BUTTON_RIGHT) || !Application::Get().GetLayerStack().HasLayer("EditorLayer"))
-            {
-                Vector2 mouseDelta = Input::GetMouseDelta();
-                player.CameraYaw -= mouseDelta.x * player.LookSensitivity;
-                player.CameraPitch -= mouseDelta.y * player.LookSensitivity;
-
-                // Clamp pitch to avoid flipping
-                if (player.CameraPitch > 89.0f) player.CameraPitch = 89.0f;
-                if (player.CameraPitch < -89.0f) player.CameraPitch = -89.0f;
+            static int frame = 0;
+            bool hasPlayer = HasComponent<PlayerComponent>();
+            bool hasRigidBody = HasComponent<RigidBodyComponent>();
+            
+            if (frame % 60 == 0) {
+                CH_CORE_INFO("[DIAG] PlayerController Update - Frame: {}, HasPlayer: {}, HasRB: {}", frame, hasPlayer, hasRigidBody);
             }
 
-            float currentSpeed = player.MovementSpeed;
+            if (!hasPlayer)
+                return;
+
+            float currentSpeed = 15.0f;
+            float jumpForce = 10.0f;
+            
+            if (hasPlayer)
+            {
+                auto &player = GetComponent<PlayerComponent>();
+                currentSpeed = player.MovementSpeed;
+                jumpForce = player.JumpForce;
+            }
+            else if (frame % 300 == 0)
+            {
+                CH_CORE_WARN("PlayerController: Missing PlayerComponent on entity '{}'. Using default speed (15.0).", 
+                    GetEntity().GetComponent<TagComponent>().Tag);
+            }
+
+            if (!hasRigidBody)
+            {
+                if (frame % 60 == 0) CH_CORE_WARN("PlayerController: Missing RigidBodyComponent on entity '{}'. Movement disabled.", 
+                    GetEntity().GetComponent<TagComponent>().Tag);
+                return;
+            }
+            auto &rigidBody = GetComponent<RigidBodyComponent>();
+
+            bool wDown = Input::IsKeyDown(KEY_W);
+            bool sDown = Input::IsKeyDown(KEY_S);
+            bool aDown = Input::IsKeyDown(KEY_A);
+            bool dDown = Input::IsKeyDown(KEY_D);
+
             if (Input::IsKeyDown(KEY_LEFT_SHIFT))
                 currentSpeed *= 2.0f;
 
-            float yawRadians = player.CameraYaw * DEG2RAD;
-            glm::vec3 forwardDir = {-sinf(yawRadians), 0.0f, -cosf(yawRadians)};
-            glm::vec3 rightDir = {cosf(yawRadians), 0.0f, -sinf(yawRadians)};
+            // 1. Get orientation from the active camera (Hazel Style)
+            Camera3D camera = scene->GetActiveCamera();
+            Vector3 cameraForward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
+            Vector3 cameraRight = Vector3Normalize(Vector3CrossProduct(cameraForward, camera.up));
+            
+            // 2. Flatten for ground movement (XZ Plane)
+            glm::vec3 forward = { cameraForward.x, 0.0f, cameraForward.z };
+            glm::vec3 right = { cameraRight.x, 0.0f, cameraRight.z };
+            
+            if (glm::length2(forward) > 0.0001f) forward = glm::normalize(forward);
+            if (glm::length2(right) > 0.0001f) right = glm::normalize(right);
 
             glm::vec3 movementVector = {0.0f, 0.0f, 0.0f};
-            if (Input::IsKeyDown(KEY_W))
-                movementVector += forwardDir;
-            if (Input::IsKeyDown(KEY_S))
-                movementVector -= forwardDir;
-            if (Input::IsKeyDown(KEY_A))
-                movementVector -= rightDir;
-            if (Input::IsKeyDown(KEY_D))
-                movementVector += rightDir;
+            if (wDown) movementVector += forward;
+            if (sDown) movementVector -= forward;
+            if (aDown) movementVector -= right;
+            if (dDown) movementVector += right;
 
             if (glm::length2(movementVector) > 0.0001f)
             {
                 movementVector = glm::normalize(movementVector);
 
-                Velocity().x = movementVector.x * currentSpeed;
-                Velocity().z = movementVector.z * currentSpeed;
+                rigidBody.Velocity.x = movementVector.x * currentSpeed;
+                rigidBody.Velocity.z = movementVector.z * currentSpeed;
 
-                Vector3 euler = Rotation();
-                euler.y = atan2f(movementVector.x, movementVector.z);
-                Transform().SetRotation(euler);
+                auto &transform = GetComponent<TransformComponent>();
+                // atan2f(x, z) gives angle in radians. Convert to degrees.
+                // We want the player to look where they move.
+                float targetYaw = atan2f(movementVector.x, movementVector.z) * RAD2DEG;
+                transform.Rotation.y = targetYaw;
+                
+                // Sync Quaternion
+                transform.RotationQuat = QuaternionFromEuler(
+                    transform.Rotation.x * DEG2RAD,
+                    transform.Rotation.y * DEG2RAD,
+                    transform.Rotation.z * DEG2RAD
+                );
             }
             else
             {
-                Velocity().x = 0;
-                Velocity().z = 0;
+                rigidBody.Velocity.x = 0;
+                rigidBody.Velocity.z = 0;
             }
+
+            frame++;
 
             // Jump handling (polling is more reliable for gameplay controls)
             if (Input::IsKeyPressed(KEY_SPACE) && rigidBody.IsGrounded)
             {
-                rigidBody.Velocity.y = player.JumpForce;
+                rigidBody.Velocity.y = jumpForce;
                 rigidBody.IsGrounded = false;
+                CH_CORE_INFO("Jump triggered! Force: {}", jumpForce);
             }
         }
 
@@ -93,7 +135,7 @@ namespace CHEngine
                             auto &spawnZone = spawnZoneView.get<SpawnComponent>(spawnEntity);
                             if (spawnZone.IsActive)
                             {
-                                Translation() = spawnZone.SpawnPoint;
+                                GetComponent<TransformComponent>().Translation = spawnZone.SpawnPoint;
                                 return true;
                             }
                         }

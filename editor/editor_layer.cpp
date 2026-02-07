@@ -154,6 +154,12 @@ namespace CHEngine
     {
         CH_PROFILE_FUNCTION();
 
+        static int editorFrame = 0;
+        if (editorFrame % 180 == 0) {
+            //CH_CORE_INFO("[EDITOR_DIAG] OnUpdate - SceneState: {}", (int)EditorContext::GetSceneState());
+        }
+        editorFrame++;
+
         if (Input::IsKeyPressed(KEY_F11))
         {
             ToggleFullscreen();
@@ -164,6 +170,12 @@ namespace CHEngine
             if (EditorContext::GetSceneState() == SceneState::Play)
                 scene->OnUpdateRuntime(ts);
             
+            if (Input::IsKeyPressed(KEY_F5))
+            {
+                AppLaunchRuntimeEvent e;
+                OnEvent(e);
+            }
+
             m_Panels->OnUpdate(ts);
         }
     }
@@ -277,7 +289,11 @@ namespace CHEngine
         
         // 1. Scene Management
         dispatcher.Dispatch<SceneOpenedEvent>(CH_BIND_EVENT_FN(EditorLayer::OnSceneOpened));
-        dispatcher.Dispatch<ScenePlayEvent>([this](auto& e) { SetSceneState(SceneState::Play); return true; });
+        dispatcher.Dispatch<ScenePlayEvent>([this](auto& e) { 
+            CH_CORE_INFO("EditorLayer::OnEvent - ScenePlayEvent Received");
+            SetSceneState(SceneState::Play); 
+            return true; 
+        });
         dispatcher.Dispatch<SceneStopEvent>([this](auto& e) { SetSceneState(SceneState::Edit); return true; });
 
         // 2. Project Management
@@ -288,7 +304,24 @@ namespace CHEngine
         // 3. Layout/System
         dispatcher.Dispatch<AppResetLayoutEvent>([this](auto& ev) { ResetLayout(); return true; });
         dispatcher.Dispatch<AppSaveLayoutEvent>([this](auto& ev) { m_Layout->SaveDefaultLayout(); return true; });
-        dispatcher.Dispatch<SceneChangeRequestEvent>([](auto& ev) { SceneActions::Open(ev.GetPath()); return true; });
+        dispatcher.Dispatch<SceneChangeRequestEvent>([this](auto& ev) { 
+            if (EditorContext::GetSceneState() == SceneState::Play)
+            {
+                auto newScene = std::make_shared<Scene>();
+                SceneSerializer serializer(newScene.get());
+                if (serializer.Deserialize(ev.GetPath()))
+                {
+                    if (m_RuntimeScene) m_RuntimeScene->OnRuntimeStop();
+                    m_RuntimeScene = newScene;
+                    m_RuntimeScene->OnRuntimeStart();
+                    m_Panels->SetContext(m_RuntimeScene);
+                    CH_CORE_INFO("Play Mode: Transitioned to scene {}", ev.GetPath());
+                }
+                return true;
+            }
+            SceneActions::Open(ev.GetPath()); 
+            return true; 
+        });
 
         // 4. Selections/Picking
         dispatcher.Dispatch<EntitySelectedEvent>([this](auto& ev) {
@@ -303,7 +336,12 @@ namespace CHEngine
         if (m_Actions->OnEvent(e)) return;
 
         // 6. Raw Input Overrides
-        if (e.GetEventType() == EventType::KeyPressed)
+        if (EditorContext::GetSceneState() == SceneState::Play)
+        {
+            if (auto activeScene = GetActiveScene())
+                activeScene->OnEvent(e);
+        }
+        else if (e.GetEventType() == EventType::KeyPressed)
         {
             auto &ke = (KeyPressedEvent &)e;
             if (ke.GetKeyCode() == KEY_ESCAPE && EditorContext::GetState().FullscreenGame)
@@ -323,6 +361,8 @@ namespace CHEngine
 
     void EditorLayer::SetSceneState(SceneState state)
     {
+        CH_CORE_INFO("EditorLayer::SetSceneState - Pending State: {}", (int)state);
+        
         if (state == SceneState::Play)
         {
             if (EditorContext::GetSceneState() == SceneState::Play) return;
@@ -334,6 +374,10 @@ namespace CHEngine
                 EditorContext::SetSceneState(SceneState::Play);
                 m_RuntimeScene->OnRuntimeStart();
                 m_Panels->SetContext(m_RuntimeScene);
+            }
+            else
+            {
+               CH_CORE_ERROR("EditorLayer::SetSceneState - Failed to copy scene!");
             }
         }
         else
@@ -359,7 +403,15 @@ namespace CHEngine
         if (EditorContext::GetSceneState() == SceneState::Edit)
             m_Panels->SetContext(m_EditorScene);
     }
-
-    // Simplified Transition logic is now in EditorSceneManager
-    // Removed TransitionToPlay/Edit and OnScenePlay/Stop overrides from EditorLayer
+    void EditorLayer::SetViewportSize(const ImVec2& size)
+    {
+        m_ViewportSize = size;
+        
+        // Propagate to scenes to update camera aspect ratios
+        if (m_EditorScene)
+            m_EditorScene->OnViewportResize((uint32_t)size.x, (uint32_t)size.y);
+            
+        if (m_RuntimeScene)
+            m_RuntimeScene->OnViewportResize((uint32_t)size.x, (uint32_t)size.y);
+    }
 } // namespace CHEngine

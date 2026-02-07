@@ -76,7 +76,7 @@ void ProfilerPanel::OnImGuiRender(bool readOnly)
         ImGui::Columns(1);
     }
 
-    const auto &results = Profiler::GetLastFrameScopes();
+    const auto &results = Profiler::GetLastFrameResults();
     if (ImGui::CollapsingHeader("Execution Timeline", ImGuiTreeNodeFlags_DefaultOpen))
     {
         if (!m_FrameTimeHistory.empty())
@@ -111,7 +111,7 @@ void ProfilerPanel::DrawProfileResult(const ProfileResult &result)
 
 void ProfilerPanel::UpdateHistory()
 {
-    const auto &results = Profiler::GetLastFrameScopes();
+    const auto &results = Profiler::GetLastFrameResults();
     float frameMS = 0.0f;
 
     for (const auto &res : results)

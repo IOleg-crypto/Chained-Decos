@@ -73,10 +73,15 @@ namespace CHEngine
                           std::is_same_v<T, TextureAsset> ||
                           std::is_same_v<T, EnvironmentAsset>)
             {
-                CH_CORE_INFO("AssetManager: Loading {} synchronously: {}", typeid(T).name(), resolved);
+                //CH_CORE_INFO("AssetManager: Loading {} synchronously: {}", typeid(T).name(), resolved);
                 auto asset = T::Load(resolved);
                 if (asset)
                 {
+                    // For assets that use deferred GPU upload (m_PendingData pattern)
+                    if constexpr (std::is_same_v<T, ModelAsset> || std::is_same_v<T, TextureAsset>)
+                    {
+                        asset->UploadToGPU();
+                    }
                     cache[resolved] = asset;
                 }
                 return asset;
@@ -90,7 +95,7 @@ namespace CHEngine
                     return cache[resolved]; 
                 }
 
-                CH_CORE_INFO("AssetManager: Starting threadpool load for {} from: {}", typeid(T).name(), resolved);
+                //CH_CORE_INFO("AssetManager: Starting threadpool load for {} from: {}", typeid(T).name(), resolved);
                 
                 auto asset = std::make_shared<T>();
                 asset->SetPath(resolved);
@@ -148,7 +153,7 @@ namespace CHEngine
                     lock.unlock();
                     asset->UploadToGPU(); 
                     lock.lock();
-                    CH_CORE_INFO("AssetManager: Async load finished for {}", path);
+                    //CH_CORE_INFO("AssetManager: Async load finished for {}", path);
                 }
             }
         }

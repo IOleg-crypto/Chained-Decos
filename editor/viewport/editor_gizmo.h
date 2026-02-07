@@ -1,7 +1,6 @@
 #ifndef CH_EDITOR_GIZMO_H
 #define CH_EDITOR_GIZMO_H
 
-#include "engine/scene/entity.h"
 #include "engine/scene/scene.h"
 #include "imgui.h"
 #include "ImGuizmo.h"

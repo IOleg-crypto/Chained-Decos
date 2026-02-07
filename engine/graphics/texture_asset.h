@@ -30,9 +30,9 @@ public:
     {
         return m_Texture;
     }
-    void SetTexture(Texture2D tex)
+    void SetTexture(Texture2D texture)
     {
-        m_Texture = tex;
+        m_Texture = texture;
     }
 
 private:

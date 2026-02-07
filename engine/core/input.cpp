@@ -59,7 +59,11 @@ namespace CHEngine
     }
 
     bool Input::IsKeyPressed(int key) { return ::IsKeyPressed(key); }
-    bool Input::IsKeyDown(int key) { return ::IsKeyDown(key); }
+    bool Input::IsKeyDown(int key) { 
+        bool down = ::IsKeyDown(key);
+        if (down) CH_CORE_INFO("Input::IsKeyDown(key={}) -> true", key);
+        return down; 
+    }
     bool Input::IsKeyReleased(int key) { return ::IsKeyReleased(key); }
     bool Input::IsKeyUp(int key) { return ::IsKeyUp(key); }
 

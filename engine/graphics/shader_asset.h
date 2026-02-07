@@ -19,7 +19,7 @@ public:
     void UploadToGPU();
     void LoadFromFile(const std::string &path);
 
-    static std::shared_ptr<ShaderAsset> Load(const std::string &vsPath, const std::string &fsPath);
+    static std::shared_ptr<ShaderAsset> Load(const std::string &vertexShaderPath, const std::string &fragmentShaderPath);
     static std::shared_ptr<ShaderAsset> Load(const std::string &chshaderPath);
 
     virtual AssetType GetType() const override
@@ -37,7 +37,7 @@ public:
     }
 
     int GetLocation(const std::string &name);
-    void SetUniform(int loc, const void *value, int type);
+    void SetUniform(int location, const void *value, int type);
     void SetUniform(const std::string &name, const void *value, int type);
 
     // Type-safe helper methods

@@ -2,7 +2,7 @@
 #define CH_MODIFY_COMPONENT_COMMAND_H
 
 #include "editor_command.h"
-#include "engine/scene/entity.h"
+#include "engine/scene/scene.h"
 #include "engine/scene/scene.h"
 #include <string>
 

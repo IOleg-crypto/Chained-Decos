@@ -4,11 +4,28 @@
 #include "collision/collision.h"
 #include "engine/core/log.h"
 #include "engine/scene/components.h"
+#include "engine/scene/components/hierarchy_component.h"
 #include "engine/scene/scene.h"
 #include "raymath.h"
 
 namespace CHEngine
 {
+static Matrix GetWorldTransform(::entt::registry &registry, ::entt::entity entity)
+{
+    auto &transform = registry.get<TransformComponent>(entity);
+    Matrix matrix = transform.GetTransform();
+
+    if (registry.all_of<HierarchyComponent>(entity))
+    {
+        auto &hierarchy = registry.get<HierarchyComponent>(entity);
+        if (hierarchy.Parent != ::entt::null)
+        {
+            matrix = MatrixMultiply(matrix, GetWorldTransform(registry, hierarchy.Parent));
+        }
+    }
+    return matrix;
+}
+
 void NarrowPhase::ResolveCollisions(Scene *scene, const std::vector<::entt::entity> &entities)
 {
     auto &registry = scene->GetRegistry();
@@ -68,7 +85,7 @@ void NarrowPhase::ResolveBoxBox(::entt::registry &registry, ::entt::entity rbEnt
         Vector3Add(otherTransform.Translation, Vector3Multiply(otherCollider.Offset, otherScale));
     Vector3 otherMax = Vector3Add(otherMin, Vector3Multiply(otherCollider.Size, otherScale));
 
-    if (Collision::CheckAABB(rbMin, rbMax, otherMin, otherMax))
+    if (CheckCollisionBoxes({rbMin, rbMax}, {otherMin, otherMax}))
     {
         float depths[6] = {otherMax.x - rbMin.x, rbMax.x - otherMin.x, otherMax.y - rbMin.y,
                            rbMax.y - otherMin.y, otherMax.z - rbMin.z, rbMax.z - otherMin.z};
@@ -87,30 +104,24 @@ void NarrowPhase::ResolveBoxBox(::entt::registry &registry, ::entt::entity rbEnt
         if (axis != -1 && minDepth > 0)
         {
             Vector3 mtv = {0, 0, 0};
-            if (axis == 0)
-                mtv.x = minDepth;
-            else if (axis == 1)
-                mtv.x = -minDepth;
+            if (axis == 0) mtv.x = minDepth;
+            else if (axis == 1) mtv.x = -minDepth;
             else if (axis == 2)
             {
                 mtv.y = minDepth;
-                if (rigidBody.Velocity.y <= 0.01f)
+                if (rigidBody.Velocity.y <= 0.05f)
                 {
                     rigidBody.IsGrounded = true;
-                    if (rigidBody.Velocity.y < 0)
-                        rigidBody.Velocity.y = 0;
+                    if (rigidBody.Velocity.y < 0) rigidBody.Velocity.y = 0;
                 }
             }
             else if (axis == 3)
             {
                 mtv.y = -minDepth;
-                if (rigidBody.Velocity.y > 0)
-                    rigidBody.Velocity.y = 0;
+                if (rigidBody.Velocity.y > 0) rigidBody.Velocity.y = 0;
             }
-            else if (axis == 4)
-                mtv.z = minDepth;
-            else if (axis == 5)
-                mtv.z = -minDepth;
+            else if (axis == 4) mtv.z = minDepth;
+            else if (axis == 5) mtv.z = -minDepth;
 
             entityTransform.Translation = Vector3Add(entityTransform.Translation, mtv);
             otherCollider.IsColliding = true;

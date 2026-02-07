@@ -4,6 +4,7 @@
 #include "engine/core/profiler.h"
 
 #include "imgui.h"
+#include "ImGuizmo.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 
@@ -31,7 +32,7 @@ namespace CHEngine
         
         auto& app = Application::Get();
         const auto& spec = app.GetSpecification();
-        io.IniFilename = spec.IniFilename.c_str();
+        io.IniFilename = spec.ImGuiConfigurationPath.c_str();
 
         // Enable docking and viewports
         if (spec.EnableDocking)
@@ -71,6 +72,7 @@ namespace CHEngine
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+        ImGuizmo::BeginFrame();
     }
 
     void ImGuiLayer::End()

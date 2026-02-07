@@ -7,9 +7,11 @@
 #include "editor/panels/viewport_panel.h"
 #include "engine/core/application.h"
 #include "engine/scene/project.h"
+#include "engine/scene/components.h"
 #include "extras/IconsFontAwesome6.h"
 #include "imgui.h"
 #include "imgui_internal.h"
+#include "raymath.h"
 
 namespace CHEngine
 {
@@ -283,6 +285,12 @@ namespace CHEngine
         return false;
     }
 
+    bool EditorGUI::ActionButton(const char* icon, const char* label)
+    {
+        std::string fullLabel = std::string(icon) + " " + label;
+        return ImGui::Button(fullLabel.c_str());
+    }
+
     void EditorGUI::ApplyTheme()
     {
         auto &style = ImGui::GetStyle();
@@ -335,43 +343,62 @@ namespace CHEngine
         auto activeScene = EditorLayer::Get().GetActiveScene();
         if (activeScene)
         {
+            // Find primary camera
             auto view = activeScene->GetRegistry().view<TransformComponent, CameraComponent>();
+            
+            CH_CORE_INFO("GetActiveCamera: Searching for primary camera, found {} cameras", view.size_hint());
+            
             for (auto entity : view)
             {
                 const auto& [tc, cc] = view.get<TransformComponent, CameraComponent>(entity);
-                if (cc.IsPrimary)
+                Entity e{entity, activeScene.get()};
+                std::string entityName = e.HasComponent<TagComponent>() ? e.GetComponent<TagComponent>().Tag : "Unknown";
+                
+                CH_CORE_INFO("  Camera entity: '{}', Primary: {}, Position: [{}, {}, {}]", 
+                    entityName, cc.Primary, tc.Translation.x, tc.Translation.y, tc.Translation.z);
+                
+                if (cc.Primary)
                 {
                     Camera3D cam = { 0 };
                     cam.position = tc.Translation;
-                    
-                    // improved forward calculation using raymath
                     Matrix rotMat = QuaternionToMatrix(tc.RotationQuat);
                     Vector3 forward = Vector3Transform({0, 0, -1}, rotMat);
                     cam.target = Vector3Add(cam.position, forward);
-                    
                     cam.up = Vector3Transform({0, 1, 0}, rotMat);
-                    cam.fovy = cc.Fov;
-                    cam.projection = cc.Projection == 0 ? CAMERA_PERSPECTIVE : CAMERA_ORTHOGRAPHIC;
+                    
+                    if (cc.Camera.GetProjectionType() == CHEngine::ProjectionType::Perspective)
+                    {
+                        cam.fovy = cc.Camera.GetPerspectiveVerticalFOV() * RAD2DEG;
+                        cam.projection = CAMERA_PERSPECTIVE;
+                    }
+                    else
+                    {
+                        cam.fovy = cc.Camera.GetOrthographicSize();
+                        cam.projection = CAMERA_ORTHOGRAPHIC;
+                    }
+                    
+                    CH_CORE_INFO("  Using primary camera: '{}', FOV: {}", entityName, cam.fovy);
                     return cam;
                 }
             }
         }
+        
+        // Fallback: default camera with warning
+        CH_CORE_WARN("No primary camera found in scene! Add a Camera entity with CameraComponent.");
         return Camera3D{{10, 10, 10}, {0, 0, 0}, {0, 1, 0}, 45, CAMERA_PERSPECTIVE};
     }
 
-    Ray EditorGUI::GetMouseRay(const Camera3D &camera, Vector2 viewportPos, Vector2 viewportSize)
+    Ray EditorGUI::GetMouseRay(const Camera3D &camera, Vector2 localMousePos, Vector2 viewportSize)
     {
-        Vector2 mouse = GetMousePosition();
+        // Calculate Normalized Device Coordinates (NDC)
+        // Range: [-1, 1] for x, y, z
+        // Viewport Top-Left is (-1, 1) in OpenGL NDC (Y-up)
+        // ImGui/Local Mouse Top-Left is (0, 0) (Y-down)
         
-        // Normalize mouse coordinates to [0, 1] within the viewport
-        float x = (mouse.x - viewportPos.x) / viewportSize.x;
-        float y = (mouse.y - viewportPos.y) / viewportSize.y;
+        float ndc_x = (2.0f * localMousePos.x) / viewportSize.x - 1.0f;
+        float ndc_y = 1.0f - (2.0f * localMousePos.y) / viewportSize.y;
 
-        // Convert to Normalized Device Coordinates (NDC) [-1, 1]
-        // Note: Y is inverted in screen space vs NDC
-        Vector2 ndc = {x * 2.0f - 1.0f, 1.0f - y * 2.0f};
-
-        // Get camera projection and view matrix
+        // Get View-Projection Matrix
         Matrix projection = MatrixPerspective(camera.fovy * DEG2RAD, viewportSize.x / viewportSize.y, 0.01f, 1000.0f);
         if (camera.projection == CAMERA_ORTHOGRAPHIC)
         {
@@ -382,11 +409,16 @@ namespace CHEngine
         }
 
         Matrix view = GetCameraMatrix(camera);
-        Matrix invViewProj = MatrixInvert(MatrixMultiply(view, projection));
 
-        // Unproject two points to get ray direction
-        Vector3 nearPoint = Vector3Transform({ndc.x, ndc.y, 0.0f}, invViewProj);
-        Vector3 farPoint = Vector3Transform({ndc.x, ndc.y, 1.0f}, invViewProj);
+        // Calculate Ray using Raylib's math (to ensure matrix compatibility)
+        // Note: Vector3Unproject uses MatrixMultiply(view, projection) internally and unprojects.
+        // It expects source coordinates to be in [-1, 1] range (NDC) if viewport is not passed?
+        // Wait, Raylib's Vector3Unproject implementation assumes source is NDC?
+        // Let's verify standard Raylib GetMouseRay logic.
+        // It does: ndc = ...; Unproject(ndc, proj, view);
+        
+        Vector3 nearPoint = Vector3Unproject({ndc_x, ndc_y, -1.0f}, projection, view);
+        Vector3 farPoint = Vector3Unproject({ndc_x, ndc_y, 1.0f}, projection, view);
 
         Ray ray;
         ray.position = nearPoint;

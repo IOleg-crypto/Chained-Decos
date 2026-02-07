@@ -41,19 +41,16 @@ target_link_libraries(engine_core PUBLIC raylib yaml-cpp imguilib glm EnTT)
 
 
 add_library(engine_graphics STATIC
-    # Sources
     graphics/render.cpp
     graphics/render_command.cpp
     graphics/ui_renderer.cpp
     graphics/asset_manager.cpp
     graphics/shader_asset.cpp
-    graphics/texture_asset.cpp
+    graphics/scene_renderer.cpp
     graphics/model_asset.cpp
+    graphics/texture_asset.cpp
     graphics/font_asset.cpp
     graphics/environment.cpp
-    graphics/scene_renderer.cpp
-    
-    # Headers
     graphics/render.h
     graphics/render_command.h
     graphics/scene_renderer.h
@@ -61,16 +58,19 @@ add_library(engine_graphics STATIC
     graphics/asset.h
     graphics/asset_manager.h
     graphics/shader_asset.h
-    graphics/texture_asset.h
     graphics/model_asset.h
+    graphics/texture_asset.h
     graphics/font_asset.h
     graphics/environment.h
     graphics/material.h
-    graphics/scene_renderer.h
 )
 
-target_include_directories(engine_graphics PUBLIC ${ENGINE_INCLUDE_DIRS})
-target_link_libraries(engine_graphics PUBLIC engine_core)
+target_include_directories(engine_graphics PUBLIC 
+    ${ENGINE_INCLUDE_DIRS}
+    ${cgltf_SOURCE_DIR}
+    ${tinyobjloader_SOURCE_DIR}
+)
+target_link_libraries(engine_graphics PUBLIC engine_core raylib)
 
 
 add_library(engine_audio STATIC
@@ -91,6 +91,7 @@ add_library(engine_physics STATIC
     physics/narrow_phase.cpp
     physics/scene_trace.cpp
     physics/bvh/bvh.cpp
+    physics/collision/collision.cpp
     
     # Headers
     physics/physics.h
@@ -114,13 +115,17 @@ add_library(engine_scene STATIC
     scene/project_serializer.cpp
     scene/scene_serializer.cpp
     scene/component_serializer.cpp
+    scene/component_serializer_ui.cpp
+    scene/serialization/graphics_serialization.cpp
+    scene/serialization/physics_serialization.cpp
+    scene/serialization/audio_gameplay_serialization.cpp
     scene/prefab_serializer.cpp
     scene/scene_scripting.cpp
+    scene/scene_camera.cpp
     
     # Headers
     scene/scene.h
     scene/scene_events.h
-    scene/entity.h
     scene/project.h
     scene/project_serializer.h
     scene/scene_serializer.h
@@ -129,6 +134,7 @@ add_library(engine_scene STATIC
     scene/scene_scripting.h
     scene/script_registry.h
     scene/scriptable_entity.h
+    scene/scene_camera.h
     scene/components.h
     
     # Component Headers

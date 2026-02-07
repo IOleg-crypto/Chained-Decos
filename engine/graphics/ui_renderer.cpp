@@ -1,6 +1,6 @@
 #include "ui_renderer.h"
 #include "engine/scene/components.h"
-#include "engine/scene/entity.h"
+#include "engine/scene/scene.h"
 #include "engine/scene/project.h"
 #include "engine/graphics/asset_manager.h"
 #include "engine/graphics/texture_asset.h"
@@ -83,20 +83,17 @@ namespace CHEngine
         }
     };
 
-    void UIRenderer::DrawCanvas(Scene* scene, const ImVec2& refPos, const ImVec2& refSize, bool editMode)
+    void UIRenderer::DrawCanvas(Scene* scene, const ImVec2& referencePosition, const ImVec2& referenceSize, bool editMode)
     {
         CH_CORE_ASSERT(scene, "Scene is null!");
         
-        ImVec2 referenceSize = refSize;
-        if (referenceSize.x <= 0 || referenceSize.y <= 0)
-            referenceSize = ImGui::GetIO().DisplaySize;
+        ImVec2 currentReferenceSize = referenceSize;
+        if (currentReferenceSize.x <= 0 || currentReferenceSize.y <= 0)
+            currentReferenceSize = ImGui::GetIO().DisplaySize;
 
         auto& registry = scene->GetRegistry();
         auto uiView = registry.view<ControlComponent>();
         
-        CH_CORE_TRACE("DrawUI: UI Entities={0}, RefPos=({1},{2}), RefSize=({3},{4})", 
-            uiView.size(), refPos.x, refPos.y, referenceSize.x, referenceSize.y);
-
         // Process UI elements by ZOrder
         std::vector<entt::entity> sortedList;
         sortedList.reserve(uiView.size());
@@ -110,21 +107,21 @@ namespace CHEngine
         for (entt::entity entityID : sortedList)
         {
             Entity entity{entityID, scene};
-            auto &cc = uiView.get<ControlComponent>(entityID);
-            if (!cc.IsActive) continue;
+            auto &controlComponent = uiView.get<ControlComponent>(entityID);
+            if (!controlComponent.IsActive) continue;
 
             if (entity.HasComponent<ButtonControl>())
                 entity.GetComponent<ButtonControl>().PressedThisFrame = false;
 
-            auto rect = cc.Transform.CalculateRect(
-                {referenceSize.x, referenceSize.y},
-                {refPos.x, refPos.y});
+            auto rect = controlComponent.Transform.CalculateRect(
+                {currentReferenceSize.x, currentReferenceSize.y},
+                {referencePosition.x, referencePosition.y});
             
             // Use Screen Coordinates for absolute overlay positioning
-            ImVec2 screenPos = {rect.x, rect.y};
+            ImVec2 screenPosition = {rect.x, rect.y};
             ImVec2 size = {rect.width, rect.height};
 
-            ImGui::SetCursorScreenPos(screenPos);
+            ImGui::SetCursorScreenPos(screenPosition);
             ImGui::BeginGroup();
             ImGui::PushID((int)entityID);
             
@@ -133,112 +130,133 @@ namespace CHEngine
             // Render Panel
             if (entity.HasComponent<PanelControl>())
             {
-                auto& pnl = entity.GetComponent<PanelControl>();
-                UIStyleScope style(pnl.Style);
+                auto& panel = entity.GetComponent<PanelControl>();
+                UIStyleScope style(panel.Style);
                 
                 ImDrawList* drawList = ImGui::GetWindowDrawList();
-                drawList->AddRectFilled(screenPos, {screenPos.x + size.x, screenPos.y + size.y}, 
-                    ImGui::GetColorU32(ImGuiCol_ChildBg), pnl.Style.Rounding);
                 
-                if (pnl.Style.BorderSize > 0.0f)
+                // Draw texture if available
+                if (panel.Texture && panel.Texture->IsReady())
                 {
-                    drawList->AddRect(screenPos, {screenPos.x + size.x, screenPos.y + size.y}, 
-                        ImGui::GetColorU32(ImGuiCol_Border), pnl.Style.Rounding, 0, pnl.Style.BorderSize);
+                    Texture2D& tex = panel.Texture->GetTexture();
+                    ImTextureID texID = (ImTextureID)(intptr_t)tex.id;
+                    
+                    drawList->AddImageRounded(
+                        texID,
+                        screenPosition,
+                        {screenPosition.x + size.x, screenPosition.y + size.y},
+                        {0, 0}, {1, 1},
+                        IM_COL32_WHITE,
+                        panel.Style.Rounding
+                    );
+                }
+                else
+                {
+                    // Fallback to solid color if texture not ready
+                    drawList->AddRectFilled(screenPosition, {screenPosition.x + size.x, screenPosition.y + size.y}, 
+                        ImGui::GetColorU32(ImGuiCol_ChildBg), panel.Style.Rounding);
+                }
+                
+                // Border
+                if (panel.Style.BorderSize > 0.0f)
+                {
+                    drawList->AddRect(screenPosition, {screenPosition.x + size.x, screenPosition.y + size.y}, 
+                        ImGui::GetColorU32(ImGuiCol_Border), panel.Style.Rounding, 0, panel.Style.BorderSize);
                 }
             }
 
             // Render Label
             if (entity.HasComponent<LabelControl>())
             {
-                auto& lbl = entity.GetComponent<LabelControl>();
-                UIStyleScope style(lbl.Style);
-                style.PushText(lbl.Style);
+                auto& label = entity.GetComponent<LabelControl>();
+                UIStyleScope style(label.Style);
+                style.PushText(label.Style);
 
-                ImGui::PushTextWrapPos(screenPos.x + size.x);
-                ImVec2 textSize = ImGui::CalcTextSize(lbl.Text.c_str(), nullptr, true, size.x);
+                ImGui::PushTextWrapPos(screenPosition.x + size.x);
+                ImVec2 textSize = ImGui::CalcTextSize(label.Text.c_str(), nullptr, true, size.x);
                 
                 float startX = 0; 
-                if (lbl.Style.HorizontalAlignment == TextAlignment::Center) startX += (size.x - textSize.x) * 0.5f;
-                else if (lbl.Style.HorizontalAlignment == TextAlignment::Right) startX += (size.x - textSize.x);
+                if (label.Style.HorizontalAlignment == TextAlignment::Center) startX += (size.x - textSize.x) * 0.5f;
+                else if (label.Style.HorizontalAlignment == TextAlignment::Right) startX += (size.x - textSize.x);
 
                 float startY = 0;
-                if (lbl.Style.VerticalAlignment == TextAlignment::Center) startY += (size.y - textSize.y) * 0.5f;
-                else if (lbl.Style.VerticalAlignment == TextAlignment::Bottom) startY += (size.y - textSize.y);
+                if (label.Style.VerticalAlignment == TextAlignment::Center) startY += (size.y - textSize.y) * 0.5f;
+                else if (label.Style.VerticalAlignment == TextAlignment::Bottom) startY += (size.y - textSize.y);
 
                 ImVec2 currentCursor = ImGui::GetCursorPos();
                 ImGui::SetCursorPos({currentCursor.x + startX, currentCursor.y + startY});
                 
-                ImGui::TextUnformatted(lbl.Text.c_str());
+                ImGui::TextUnformatted(label.Text.c_str());
                 ImGui::PopTextWrapPos();
             }
 
             // Render Button
             if (entity.HasComponent<ButtonControl>())
             {
-                auto& btn = entity.GetComponent<ButtonControl>();
-                UIStyleScope style(btn.Style, btn.IsInteractable);
-                style.PushText(btn.Text);
+                auto& button = entity.GetComponent<ButtonControl>();
+                UIStyleScope style(button.Style, button.IsInteractable);
+                style.PushText(button.Text);
                 
-                if (ImGui::Button(btn.Label.c_str(), size)) btn.PressedThisFrame = true;
+                if (ImGui::Button(button.Label.c_str(), size)) button.PressedThisFrame = true;
                 if (ImGui::IsItemActive()) itemHandled = true;
             }
 
             // Render Slider
             if (entity.HasComponent<SliderControl>())
             {
-                auto& sl = entity.GetComponent<SliderControl>();
-                UIStyleScope style(sl.Style);
-                style.PushText(sl.Text);
+                auto& slider = entity.GetComponent<SliderControl>();
+                UIStyleScope style(slider.Style);
+                style.PushText(slider.Text);
 
                 ImGui::SetNextItemWidth(size.x);
-                sl.Changed = ImGui::SliderFloat(sl.Label.c_str(), &sl.Value, sl.Min, sl.Max);
+                slider.Changed = ImGui::SliderFloat(slider.Label.c_str(), &slider.Value, slider.Min, slider.Max);
                 if (ImGui::IsItemActive()) itemHandled = true;
             }
 
             // Render Checkbox
             if (entity.HasComponent<CheckboxControl>())
             {
-                auto& cb = entity.GetComponent<CheckboxControl>();
-                UIStyleScope style(cb.Style);
-                style.PushText(cb.Text);
+                auto& checkbox = entity.GetComponent<CheckboxControl>();
+                UIStyleScope style(checkbox.Style);
+                style.PushText(checkbox.Text);
 
-                cb.Changed = ImGui::Checkbox(cb.Label.c_str(), &cb.Checked);
+                checkbox.Changed = ImGui::Checkbox(checkbox.Label.c_str(), &checkbox.Checked);
                 if (ImGui::IsItemActive()) itemHandled = true;
             }
 
             // Render InputText
             if (entity.HasComponent<InputTextControl>())
             {
-                auto& input = entity.GetComponent<InputTextControl>();
-                UIStyleScope style(input.BoxStyle, !input.ReadOnly);
-                style.PushText(input.Style);
+                auto& inputText = entity.GetComponent<InputTextControl>();
+                UIStyleScope style(inputText.BoxStyle, !inputText.ReadOnly);
+                style.PushText(inputText.Style);
 
                 static std::map<entt::entity, std::vector<char>> buffers;
                 auto& buffer = buffers[entityID];
-                if (buffer.empty() || buffer.size() != input.MaxLength + 1)
+                if (buffer.empty() || buffer.size() != inputText.MaxLength + 1)
                 {
-                    buffer.resize(input.MaxLength + 1, '\0');
-                    if (!input.Text.empty())
-                        strncpy(buffer.data(), input.Text.c_str(), input.MaxLength);
+                    buffer.resize(inputText.MaxLength + 1, '\0');
+                    if (!inputText.Text.empty())
+                        strncpy(buffer.data(), inputText.Text.c_str(), inputText.MaxLength);
                 }
 
                 ImGuiInputTextFlags flags = 0;
-                if (input.ReadOnly) flags |= ImGuiInputTextFlags_ReadOnly;
-                if (input.Password) flags |= ImGuiInputTextFlags_Password;
+                if (inputText.ReadOnly) flags |= ImGuiInputTextFlags_ReadOnly;
+                if (inputText.Password) flags |= ImGuiInputTextFlags_Password;
 
-                if (input.Multiline)
+                if (inputText.Multiline)
                 {
-                    if (ImGui::InputTextMultiline(input.Label.c_str(), buffer.data(), buffer.size(), size, flags))
+                    if (ImGui::InputTextMultiline(inputText.Label.c_str(), buffer.data(), buffer.size(), size, flags))
                     {
-                        input.Text = buffer.data();
-                        input.Changed = true;
+                        inputText.Text = buffer.data();
+                        inputText.Changed = true;
                     }
                 } else {
                     ImGui::SetNextItemWidth(size.x);
-                    if (ImGui::InputText(input.Label.c_str(), buffer.data(), buffer.size(), flags))
+                    if (ImGui::InputText(inputText.Label.c_str(), buffer.data(), buffer.size(), flags))
                     {
-                        input.Text = buffer.data();
-                        input.Changed = true;
+                        inputText.Text = buffer.data();
+                        inputText.Changed = true;
                     }
                 }
                 if (ImGui::IsItemActive()) itemHandled = true;
@@ -247,24 +265,24 @@ namespace CHEngine
             // Render ComboBox
             if (entity.HasComponent<ComboBoxControl>())
             {
-                auto& combo = entity.GetComponent<ComboBoxControl>();
-                UIStyleScope style(combo.BoxStyle);
-                style.PushText(combo.Style);
+                auto& comboBox = entity.GetComponent<ComboBoxControl>();
+                UIStyleScope style(comboBox.BoxStyle);
+                style.PushText(comboBox.Style);
 
                 ImGui::SetNextItemWidth(size.x);
-                const char* preview = combo.SelectedIndex >= 0 && combo.SelectedIndex < combo.Items.size() 
-                    ? combo.Items[combo.SelectedIndex].c_str() 
+                const char* preview = comboBox.SelectedIndex >= 0 && comboBox.SelectedIndex < comboBox.Items.size() 
+                    ? comboBox.Items[comboBox.SelectedIndex].c_str() 
                     : "";
                 
-                if (ImGui::BeginCombo(combo.Label.c_str(), preview))
+                if (ImGui::BeginCombo(comboBox.Label.c_str(), preview))
                 {
-                    for (int i = 0; i < combo.Items.size(); i++)
+                    for (int i = 0; i < comboBox.Items.size(); i++)
                     {
-                        bool isSelected = (i == combo.SelectedIndex);
-                        if (ImGui::Selectable(combo.Items[i].c_str(), isSelected))
+                        bool isSelected = (i == comboBox.SelectedIndex);
+                        if (ImGui::Selectable(comboBox.Items[i].c_str(), isSelected))
                         {
-                            combo.SelectedIndex = i;
-                            combo.Changed = true;
+                            comboBox.SelectedIndex = i;
+                            comboBox.Changed = true;
                         }
                         if (isSelected)
                             ImGui::SetItemDefaultFocus();
@@ -277,39 +295,39 @@ namespace CHEngine
             // Render ProgressBar
             if (entity.HasComponent<ProgressBarControl>())
             {
-                auto& prog = entity.GetComponent<ProgressBarControl>();
-                UIStyleScope style(prog.BarStyle);
-                style.PushText(prog.Style);
+                auto& progressBar = entity.GetComponent<ProgressBarControl>();
+                UIStyleScope style(progressBar.BarStyle);
+                style.PushText(progressBar.Style);
 
-                std::string overlayText = prog.OverlayText;
-                if (overlayText.empty() && prog.ShowPercentage)
+                std::string overlayText = progressBar.OverlayText;
+                if (overlayText.empty() && progressBar.ShowPercentage)
                 {
-                    char buf[32];
-                    snprintf(buf, sizeof(buf), "%.0f%%", prog.Progress * 100.0f);
-                    overlayText = buf;
+                    char buffer[32];
+                    snprintf(buffer, sizeof(buffer), "%.0f%%", progressBar.Progress * 100.0f);
+                    overlayText = buffer;
                 }
 
-                ImGui::ProgressBar(prog.Progress, size, overlayText.c_str());
+                ImGui::ProgressBar(progressBar.Progress, size, overlayText.c_str());
             }
 
             // Render Image
             if (entity.HasComponent<ImageControl>())
             {
-                auto& img = entity.GetComponent<ImageControl>();
-                UIStyleScope style(img.Style);
+                auto& image = entity.GetComponent<ImageControl>();
+                UIStyleScope style(image.Style);
 
-                auto am = Project::GetActive() ? Project::GetActive()->GetAssetManager() : nullptr;
-                if (am && !img.TexturePath.empty())
+                auto assetManager = Project::GetActive() ? Project::GetActive()->GetAssetManager() : nullptr;
+                if (assetManager && !image.TexturePath.empty())
                 {
-                    auto texAsset = am->Get<TextureAsset>(img.TexturePath);
-                    if (texAsset)
+                    auto textureAsset = assetManager->Get<TextureAsset>(image.TexturePath);
+                    if (textureAsset)
                     {
-                        Texture2D& tex = texAsset->GetTexture();
-                        ImGui::Image((ImTextureID)(intptr_t)tex.id, 
-                            { img.Size.x, img.Size.y }, 
+                        Texture2D& texture = textureAsset->GetTexture();
+                        ImGui::Image((ImTextureID)(intptr_t)texture.id, 
+                            { image.Size.x, image.Size.y }, 
                             {0, 0}, {1, 1}, 
-                            ColorToImVec4(img.TintColor),
-                            ColorToImVec4(img.BorderColor));
+                            ColorToImVec4(image.TintColor),
+                            ColorToImVec4(image.BorderColor));
                     }
                 }
             }
@@ -317,23 +335,23 @@ namespace CHEngine
             // Render ImageButton
             if (entity.HasComponent<ImageButtonControl>())
             {
-                auto& btn = entity.GetComponent<ImageButtonControl>();
-                UIStyleScope style(btn.Style);
+                auto& imageButton = entity.GetComponent<ImageButtonControl>();
+                UIStyleScope style(imageButton.Style);
 
-                auto am = Project::GetActive() ? Project::GetActive()->GetAssetManager() : nullptr;
-                if (am && !btn.TexturePath.empty())
+                auto assetManager = Project::GetActive() ? Project::GetActive()->GetAssetManager() : nullptr;
+                if (assetManager && !imageButton.TexturePath.empty())
                 {
-                    auto texAsset = am->Get<TextureAsset>(btn.TexturePath);
-                    if (texAsset)
+                    auto textureAsset = assetManager->Get<TextureAsset>(imageButton.TexturePath);
+                    if (textureAsset)
                     {
-                        Texture2D& tex = texAsset->GetTexture();
-                        if (ImGui::ImageButton(btn.Label.c_str(), (ImTextureID)(intptr_t)tex.id, 
-                            { btn.Size.x, btn.Size.y }, 
+                        Texture2D& texture = textureAsset->GetTexture();
+                        if (ImGui::ImageButton(imageButton.Label.c_str(), (ImTextureID)(intptr_t)texture.id, 
+                            { imageButton.Size.x, imageButton.Size.y }, 
                             {0, 0}, {1, 1}, 
-                            ColorToImVec4(btn.BackgroundColor),
-                            ColorToImVec4(btn.TintColor)))
+                            ColorToImVec4(imageButton.BackgroundColor),
+                            ColorToImVec4(imageButton.TintColor)))
                         {
-                            btn.PressedThisFrame = true;
+                            imageButton.PressedThisFrame = true;
                         }
                         if (ImGui::IsItemActive()) itemHandled = true;
                     }
@@ -343,8 +361,8 @@ namespace CHEngine
             // Render Separator
             if (entity.HasComponent<SeparatorControl>())
             {
-                auto& sep = entity.GetComponent<SeparatorControl>();
-                ImGui::PushStyleColor(ImGuiCol_Separator, ColorToImVec4(sep.LineColor));
+                auto& separator = entity.GetComponent<SeparatorControl>();
+                ImGui::PushStyleColor(ImGuiCol_Separator, ColorToImVec4(separator.LineColor));
                 ImGui::Separator();
                 ImGui::PopStyleColor();
             }
@@ -352,17 +370,17 @@ namespace CHEngine
             // Render RadioButton
             if (entity.HasComponent<RadioButtonControl>())
             {
-                auto& rb = entity.GetComponent<RadioButtonControl>();
-                UIStyleScope style(rb.Style);
+                auto& radioButton = entity.GetComponent<RadioButtonControl>();
+                UIStyleScope style(radioButton.Style);
 
-                for (int i = 0; i < rb.Options.size(); i++)
+                for (int i = 0; i < radioButton.Options.size(); i++)
                 {
-                    if (ImGui::RadioButton(rb.Options[i].c_str(), rb.SelectedIndex == i))
+                    if (ImGui::RadioButton(radioButton.Options[i].c_str(), radioButton.SelectedIndex == i))
                     {
-                        rb.SelectedIndex = i;
-                        rb.Changed = true;
+                        radioButton.SelectedIndex = i;
+                        radioButton.Changed = true;
                     }
-                    if (rb.Horizontal && i < (int)rb.Options.size() - 1) ImGui::SameLine();
+                    if (radioButton.Horizontal && i < (int)radioButton.Options.size() - 1) ImGui::SameLine();
                     if (ImGui::IsItemActive()) itemHandled = true;
                 }
             }
@@ -370,20 +388,20 @@ namespace CHEngine
             // Render ColorPicker
             if (entity.HasComponent<ColorPickerControl>())
             {
-                auto& cp = entity.GetComponent<ColorPickerControl>();
-                UIStyleScope style(cp.Style);
+                auto& colorPicker = entity.GetComponent<ColorPickerControl>();
+                UIStyleScope style(colorPicker.Style);
 
-                float col[4] = { cp.SelectedColor.r / 255.0f, cp.SelectedColor.g / 255.0f, cp.SelectedColor.b / 255.0f, cp.SelectedColor.a / 255.0f };
-                ImGuiColorEditFlags flags = cp.ShowAlpha ? ImGuiColorEditFlags_AlphaBar : 0;
+                float color[4] = { colorPicker.SelectedColor.r / 255.0f, colorPicker.SelectedColor.g / 255.0f, colorPicker.SelectedColor.b / 255.0f, colorPicker.SelectedColor.a / 255.0f };
+                ImGuiColorEditFlags flags = colorPicker.ShowAlpha ? ImGuiColorEditFlags_AlphaBar : 0;
                 
-                if (cp.ShowPicker)
-                    cp.Changed = ImGui::ColorPicker4(cp.Label.c_str(), col, flags);
+                if (colorPicker.ShowPicker)
+                    colorPicker.Changed = ImGui::ColorPicker4(colorPicker.Label.c_str(), color, flags);
                 else
-                    cp.Changed = ImGui::ColorEdit4(cp.Label.c_str(), col, flags);
+                    colorPicker.Changed = ImGui::ColorEdit4(colorPicker.Label.c_str(), color, flags);
 
-                if (cp.Changed)
+                if (colorPicker.Changed)
                 {
-                    cp.SelectedColor = { (unsigned char)(col[0] * 255), (unsigned char)(col[1] * 255), (unsigned char)(col[2] * 255), (unsigned char)(col[3] * 255) };
+                    colorPicker.SelectedColor = { (unsigned char)(color[0] * 255), (unsigned char)(color[1] * 255), (unsigned char)(color[2] * 255), (unsigned char)(color[3] * 255) };
                 }
                 if (ImGui::IsItemActive()) itemHandled = true;
             }
@@ -391,52 +409,52 @@ namespace CHEngine
             // Render DragFloat
             if (entity.HasComponent<DragFloatControl>())
             {
-                auto& df = entity.GetComponent<DragFloatControl>();
-                UIStyleScope style(df.BoxStyle);
-                style.PushText(df.Style);
+                auto& dragFloat = entity.GetComponent<DragFloatControl>();
+                UIStyleScope style(dragFloat.BoxStyle);
+                style.PushText(dragFloat.Style);
 
                 ImGui::SetNextItemWidth(size.x);
-                df.Changed = ImGui::DragFloat(df.Label.c_str(), &df.Value, df.Speed, df.Min, df.Max, df.Format.c_str());
+                dragFloat.Changed = ImGui::DragFloat(dragFloat.Label.c_str(), &dragFloat.Value, dragFloat.Speed, dragFloat.Min, dragFloat.Max, dragFloat.Format.c_str());
                 if (ImGui::IsItemActive()) itemHandled = true;
             }
 
             // Render DragInt
             if (entity.HasComponent<DragIntControl>())
             {
-                auto& di = entity.GetComponent<DragIntControl>();
-                UIStyleScope style(di.BoxStyle);
-                style.PushText(di.Style);
+                auto& dragInt = entity.GetComponent<DragIntControl>();
+                UIStyleScope style(dragInt.BoxStyle);
+                style.PushText(dragInt.Style);
 
                 ImGui::SetNextItemWidth(size.x);
-                di.Changed = ImGui::DragInt(di.Label.c_str(), &di.Value, di.Speed, di.Min, di.Max, di.Format.c_str());
+                dragInt.Changed = ImGui::DragInt(dragInt.Label.c_str(), &dragInt.Value, dragInt.Speed, dragInt.Min, dragInt.Max, dragInt.Format.c_str());
                 if (ImGui::IsItemActive()) itemHandled = true;
             }
 
             // Render TreeNode
             if (entity.HasComponent<TreeNodeControl>())
             {
-                auto& tn = entity.GetComponent<TreeNodeControl>();
-                UIStyleScope style(tn.Style);
+                auto& treeNode = entity.GetComponent<TreeNodeControl>();
+                UIStyleScope style(treeNode.Style);
 
                 ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth;
-                if (tn.DefaultOpen) flags |= ImGuiTreeNodeFlags_DefaultOpen;
-                if (tn.IsLeaf) flags |= ImGuiTreeNodeFlags_Leaf;
+                if (treeNode.DefaultOpen) flags |= ImGuiTreeNodeFlags_DefaultOpen;
+                if (treeNode.IsLeaf) flags |= ImGuiTreeNodeFlags_Leaf;
                 
-                tn.IsOpen = ImGui::TreeNodeEx(tn.Label.c_str(), flags);
+                treeNode.IsOpen = ImGui::TreeNodeEx(treeNode.Label.c_str(), flags);
                 if (ImGui::IsItemActive()) itemHandled = true;
             }
 
             // Render TabBar
             if (entity.HasComponent<TabBarControl>())
             {
-                auto& tb = entity.GetComponent<TabBarControl>();
-                UIStyleScope style(tb.Style);
+                auto& tabBar = entity.GetComponent<TabBarControl>();
+                UIStyleScope style(tabBar.Style);
 
                 ImGuiTabBarFlags flags = ImGuiTabBarFlags_None;
-                if (tb.Reorderable) flags |= ImGuiTabBarFlags_Reorderable;
-                if (tb.AutoSelectNewTabs) flags |= ImGuiTabBarFlags_AutoSelectNewTabs;
+                if (tabBar.Reorderable) flags |= ImGuiTabBarFlags_Reorderable;
+                if (tabBar.AutoSelectNewTabs) flags |= ImGuiTabBarFlags_AutoSelectNewTabs;
 
-                if (ImGui::BeginTabBar(tb.Label.c_str(), flags))
+                if (ImGui::BeginTabBar(tabBar.Label.c_str(), flags))
                 {
                     ImGui::EndTabBar();
                 }
@@ -445,51 +463,51 @@ namespace CHEngine
             // Render TabItem
             if (entity.HasComponent<TabItemControl>())
             {
-                auto& ti = entity.GetComponent<TabItemControl>();
-                UIStyleScope style(ti.Style);
+                auto& tabItem = entity.GetComponent<TabItemControl>();
+                UIStyleScope style(tabItem.Style);
 
-                if (ImGui::BeginTabItem(ti.Label.c_str(), &ti.IsOpen))
+                if (ImGui::BeginTabItem(tabItem.Label.c_str(), &tabItem.IsOpen))
                 {
-                    ti.Selected = true;
+                    tabItem.Selected = true;
                     ImGui::EndTabItem();
                 }
-                else ti.Selected = false;
+                else tabItem.Selected = false;
             }
 
             // Render CollapsingHeader
             if (entity.HasComponent<CollapsingHeaderControl>())
             {
-                auto& ch = entity.GetComponent<CollapsingHeaderControl>();
-                UIStyleScope style(ch.Style);
+                auto& collapsingHeader = entity.GetComponent<CollapsingHeaderControl>();
+                UIStyleScope style(collapsingHeader.Style);
 
                 ImGuiTreeNodeFlags flags = 0;
-                if (ch.DefaultOpen) flags |= ImGuiTreeNodeFlags_DefaultOpen;
+                if (collapsingHeader.DefaultOpen) flags |= ImGuiTreeNodeFlags_DefaultOpen;
 
-                ch.IsOpen = ImGui::CollapsingHeader(ch.Label.c_str(), flags);
+                collapsingHeader.IsOpen = ImGui::CollapsingHeader(collapsingHeader.Label.c_str(), flags);
                 if (ImGui::IsItemActive()) itemHandled = true;
             }
 
             // Render PlotLines
             if (entity.HasComponent<PlotLinesControl>())
             {
-                auto& plot = entity.GetComponent<PlotLinesControl>();
-                UIStyleScope style(plot.BoxStyle);
-                style.PushText(plot.Style);
+                auto& plotLines = entity.GetComponent<PlotLinesControl>();
+                UIStyleScope style(plotLines.BoxStyle);
+                style.PushText(plotLines.Style);
 
-                ImGui::PlotLines(plot.Label.c_str(), plot.Values.data(), (int)plot.Values.size(), 
-                    0, plot.OverlayText.c_str(), plot.ScaleMin, plot.ScaleMax, {plot.GraphSize.x, plot.GraphSize.y});
+                ImGui::PlotLines(plotLines.Label.c_str(), plotLines.Values.data(), (int)plotLines.Values.size(), 
+                    0, plotLines.OverlayText.c_str(), plotLines.ScaleMin, plotLines.ScaleMax, {plotLines.GraphSize.x, plotLines.GraphSize.y});
                 if (ImGui::IsItemActive()) itemHandled = true;
             }
 
             // Render PlotHistogram
             if (entity.HasComponent<PlotHistogramControl>())
             {
-                auto& hist = entity.GetComponent<PlotHistogramControl>();
-                UIStyleScope style(hist.BoxStyle);
-                style.PushText(hist.Style);
+                auto& plotHistogram = entity.GetComponent<PlotHistogramControl>();
+                UIStyleScope style(plotHistogram.BoxStyle);
+                style.PushText(plotHistogram.Style);
 
-                ImGui::PlotHistogram(hist.Label.c_str(), hist.Values.data(), (int)hist.Values.size(), 
-                    0, hist.OverlayText.c_str(), hist.ScaleMin, hist.ScaleMax, {hist.GraphSize.x, hist.GraphSize.y});
+                ImGui::PlotHistogram(plotHistogram.Label.c_str(), plotHistogram.Values.data(), (int)plotHistogram.Values.size(), 
+                    0, plotHistogram.OverlayText.c_str(), plotHistogram.ScaleMin, plotHistogram.ScaleMax, {plotHistogram.GraphSize.x, plotHistogram.GraphSize.y});
                 if (ImGui::IsItemActive()) itemHandled = true;
             }
 
@@ -504,7 +522,7 @@ namespace CHEngine
                         delta = ImGui::GetIO().MouseDelta;
                     }
                 } else {
-                    ImGui::SetCursorScreenPos(screenPos);
+                    ImGui::SetCursorScreenPos(screenPosition);
                     ImGui::InvisibleButton("##SelectionZone", size);
                     if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left, 2.0f)) {
                         dragging = true;
@@ -513,10 +531,10 @@ namespace CHEngine
                 }
 
                 if (dragging) {
-                    cc.Transform.OffsetMin.x += delta.x;
-                    cc.Transform.OffsetMax.x += delta.x;
-                    cc.Transform.OffsetMin.y += delta.y;
-                    cc.Transform.OffsetMax.y += delta.y;
+                    controlComponent.Transform.OffsetMin.x += delta.x;
+                    controlComponent.Transform.OffsetMax.x += delta.x;
+                    controlComponent.Transform.OffsetMin.y += delta.y;
+                    controlComponent.Transform.OffsetMax.y += delta.y;
                 }
             }
 

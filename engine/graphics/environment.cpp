@@ -52,6 +52,16 @@ bool EnvironmentAsset::Deserialize(const std::string &path)
             m_Settings.Skybox.Contrast = skybox["Contrast"].as<float>();
         }
 
+        auto fog = envNode["Fog"];
+        if (fog)
+        {
+            m_Settings.Fog.Enabled = fog["Enabled"].as<bool>();
+            m_Settings.Fog.FogColor = fog["Color"].as<Color>();
+            m_Settings.Fog.Density = fog["Density"].as<float>();
+            m_Settings.Fog.Start = fog["Start"].as<float>();
+            m_Settings.Fog.End = fog["End"].as<float>();
+        }
+
         return true;
     }
     catch (const std::exception &e)
@@ -76,6 +86,14 @@ bool EnvironmentAsset::Save(const std::string &path)
     out << YAML::Key << "Exposure" << YAML::Value << m_Settings.Skybox.Exposure;
     out << YAML::Key << "Brightness" << YAML::Value << m_Settings.Skybox.Brightness;
     out << YAML::Key << "Contrast" << YAML::Value << m_Settings.Skybox.Contrast;
+    out << YAML::EndMap;
+
+    out << YAML::Key << "Fog" << YAML::BeginMap;
+    out << YAML::Key << "Enabled" << YAML::Value << m_Settings.Fog.Enabled;
+    out << YAML::Key << "Color" << YAML::Value << m_Settings.Fog.FogColor;
+    out << YAML::Key << "Density" << YAML::Value << m_Settings.Fog.Density;
+    out << YAML::Key << "Start" << YAML::Value << m_Settings.Fog.Start;
+    out << YAML::Key << "End" << YAML::Value << m_Settings.Fog.End;
     out << YAML::EndMap;
 
     out << YAML::EndMap;
