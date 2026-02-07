@@ -26,7 +26,7 @@ public:
 
     // Render and handle gizmo interaction
     // true if the gizmo is being used (captured mouse)
-    bool RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 viewportSize);
+    bool RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 viewportSize, const Camera3D& camera);
 
     bool IsHovered() const
     {

@@ -147,7 +147,13 @@ namespace CHEngine
 
     BeginTextureMode(m_ViewportTexture);
     ClearSceneBackground(activeScene.get(), {viewportSize.x, viewportSize.y});
-    Camera3D camera = EditorGUI::GetActiveCamera(EditorLayer::Get().GetSceneState());
+    Camera3D camera = m_EditorCamera.GetRaylibCamera();
+    if (EditorLayer::Get().GetSceneState() == SceneState::Play)
+    {
+         // Use the scene's active camera (which handles conversion from SceneCamera to Camera3D)
+         auto scene = EditorLayer::Get().GetActiveScene();
+         camera = scene->GetActiveCamera();
+    }
 
     SceneRenderer::RenderScene(activeScene.get(), camera, GetFrameTime(), &EditorLayer::Get().GetDebugRenderFlags());
     EndTextureMode();
@@ -200,7 +206,7 @@ namespace CHEngine
     if (ImGui::BeginChild("##SceneUI", viewportSize, false, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
     {
         // 1. Gizmo handling (inside child window for input priority)
-        isGizmoActive = m_Gizmo.RenderAndHandle(!isUISelected ? m_CurrentTool : GizmoType::NONE, viewportScreenPos, viewportSize);
+        isGizmoActive = m_Gizmo.RenderAndHandle(!isUISelected ? m_CurrentTool : GizmoType::NONE, viewportScreenPos, viewportSize, camera);
         isGizmoHovered = m_Gizmo.IsHovered();
 
         // 2. Game UI Overlay
@@ -274,7 +280,7 @@ namespace CHEngine
                 {viewportSize.x, viewportSize.y},
                 {viewportScreenPos.x, viewportScreenPos.y});
 
-            glm::vec2 mouse = {mousePos.x, mousePos.y};
+            Vector2 mouse = {mousePos.x, mousePos.y};
             Vector2 mouseRaylib = {mouse.x, mouse.y};
             if (CheckCollisionPointRec(mouseRaylib, rect))
             {
