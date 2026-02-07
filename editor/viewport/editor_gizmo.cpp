@@ -10,12 +10,11 @@
 namespace CHEngine
 {
 
-bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 viewportSize)
+bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 viewportSize, const Camera3D& camera)
 {
     auto &layer = EditorLayer::Get();
     Scene *scene = layer.GetActiveScene().get();
     Entity entity = layer.GetSelectedEntity();
-    Camera3D camera = EditorGUI::GetActiveCamera(layer.GetSceneState());
 
     if (!scene || !entity || !entity.HasComponent<TransformComponent>() || type == GizmoType::NONE || layer.GetSceneState() == SceneState::Play)
     {
