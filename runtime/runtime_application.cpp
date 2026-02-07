@@ -3,9 +3,13 @@
 #include "engine/core/window.h"
 #include "engine/graphics/asset_manager.h"
 #include "engine/graphics/texture_asset.h"
+#include "engine/graphics/render.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene.h"
+#include "engine/scene/scene_serializer.h"
 #include "engine/scene/scene_events.h"
+#include "engine/graphics/scene_renderer.h"
+#include "engine/graphics/ui_renderer.h"
 #include "imgui.h"
 #include "raymath.h"
 #include <filesystem>
@@ -31,7 +35,7 @@ public:
             return;
 
         auto camera = GetActiveCamera();
-        m_Scene->OnRender(camera, ts);
+        SceneRenderer::RenderScene(m_Scene.get(), camera, ts);
     }
 
     virtual void OnImGuiRender() override
@@ -55,7 +59,7 @@ public:
             
             if (ImGui::Begin("RuntimeUI", nullptr, flags))
             {
-                m_Scene->OnImGuiRender({0, 0}, displaySize, 0, false);
+                UIRenderer::DrawCanvas(m_Scene.get(), {0, 0}, displaySize, false);
             }
             ImGui::End();
             ImGui::PopStyleVar(2);
@@ -195,7 +199,7 @@ private:
             // Engine assets discovery (shaders, default fonts)
             if (std::filesystem::exists(current / "engine/resources"))
             {
-                AssetManager::SetRootPath(current);
+                // AssetManager::SetRootPath(current); // Removed: AssetManager is now per-project
                 // If we also found the project, we can stop here
                 if (projectFound)
                 {
@@ -222,7 +226,7 @@ private:
                 Window& window = GetWindow();
                 window.SetVSync(config.Window.VSync);
                 
-                std::filesystem::path iconPath = AssetManager::ResolvePath("engine/resources/icons/chaineddecos.jpg");
+                std::filesystem::path iconPath = project->GetAssetManager()->ResolvePath("engine/resources/icons/chaineddecos.jpg");
                 if (std::filesystem::exists(iconPath))
                 {
                     Image icon = LoadImage(iconPath.string().c_str());
@@ -234,7 +238,7 @@ private:
                 }
                 ::SetTargetFPS(60); 
 
-                std::string sceneToLoad = GetConfig().StartScene;
+                std::string sceneToLoad = config.StartScene;
                 if (sceneToLoad.empty()) sceneToLoad = config.StartScene;
                 if (sceneToLoad.empty()) sceneToLoad = config.ActiveScenePath.string();
 

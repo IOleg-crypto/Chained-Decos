@@ -42,6 +42,7 @@ namespace CHEngine
 
             // Sync with EditorLayer which manages the scene now
             // Assumes EditorLayer is active (SceneActions is editor-only code)
+            newScene->GetSettings().ScenePath = path.string();
             EditorLayer::Get().SetScene(newScene);
 
             SceneOpenedEvent e(path.string());
@@ -52,8 +53,14 @@ namespace CHEngine
     void SceneActions::Save()
     {
         auto scene = EditorLayer::Get().GetActiveScene();
+        if (scene->GetSettings().ScenePath.empty())
+        {
+            SaveAs();
+            return;
+        }
+
         SceneSerializer serializer(scene.get());
-        // serializer.Serialize(scene->GetPath());
+        serializer.Serialize(scene->GetSettings().ScenePath);
     }
 
     void SceneActions::SaveAs()
@@ -64,6 +71,7 @@ namespace CHEngine
         if (result == NFD_OKAY)
         {
             auto scene = EditorLayer::Get().GetActiveScene();
+            scene->GetSettings().ScenePath = outPath;
             SceneSerializer serializer(scene.get());
             serializer.Serialize(outPath);
             NFD_FreePath(outPath);

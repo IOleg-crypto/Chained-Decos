@@ -147,6 +147,7 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
         {
             auto &debugFlags = EditorLayer::Get().GetDebugRenderFlags();
             ImGui::Checkbox("Colliders", &debugFlags.DrawColliders);
+            ImGui::Checkbox("Mesh Hierarchy", &debugFlags.DrawAABB); // Hierarchy visualization
             ImGui::Checkbox("Lights", &debugFlags.DrawLights);
             ImGui::Checkbox("Spawn Zones", &debugFlags.DrawSpawnZones);
             ImGui::Checkbox("Draw Grid", &debugFlags.DrawGrid);
@@ -225,6 +226,32 @@ void EnvironmentPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset>
         ImGui::DragFloat("Exposure", &settings.Skybox.Exposure, 0.01f, 0.0f, 10.0f);
         ImGui::DragFloat("Brightness", &settings.Skybox.Brightness, 0.01f, -2.0f, 2.0f);
         ImGui::DragFloat("Contrast", &settings.Skybox.Contrast, 0.01f, 0.0f, 5.0f);
+
+        if (readOnly)
+            ImGui::EndDisabled();
+    }
+
+    if (ImGui::CollapsingHeader("Fog Visualization", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        if (readOnly)
+            ImGui::BeginDisabled();
+
+        auto &fog = settings.Fog;
+        ImGui::Checkbox("Fog Enabled", &fog.Enabled);
+        
+        float fogColor[4] = {fog.FogColor.r / 255.0f, fog.FogColor.g / 255.0f,
+                            fog.FogColor.b / 255.0f, fog.FogColor.a / 255.0f};
+        if (ImGui::ColorEdit4("Fog Color", fogColor))
+        {
+            fog.FogColor.r = (unsigned char)(fogColor[0] * 255.0f);
+            fog.FogColor.g = (unsigned char)(fogColor[1] * 255.0f);
+            fog.FogColor.b = (unsigned char)(fogColor[2] * 255.0f);
+            fog.FogColor.a = (unsigned char)(fogColor[3] * 255.0f);
+        }
+
+        ImGui::DragFloat("Density", &fog.Density, 0.001f, 0.0f, 1.0f);
+        ImGui::DragFloat("Start", &fog.Start, 0.1f, 0.0f, 1000.0f);
+        ImGui::DragFloat("End", &fog.End, 0.1f, 0.0f, 1000.0f);
 
         if (readOnly)
             ImGui::EndDisabled();

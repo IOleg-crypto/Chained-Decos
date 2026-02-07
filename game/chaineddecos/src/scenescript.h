@@ -8,24 +8,28 @@
 
 namespace CHEngine
 {
-CH_SCRIPT(SceneScript){CH_START(){CH_CORE_INFO("SceneScript: Initialized");
-}
-
-CH_UPDATE(dt)
-{
-    if (HasComponent<ButtonControl>())
+    CH_SCRIPT(SceneScript)
     {
-        auto &button = GetComponent<ButtonControl>();
-        if (button.PressedThisFrame)
+    public:
+        CH_START()
         {
-            CH_CORE_INFO("SceneScript: Button pressed, requesting scene change...");
-            SceneChangeRequestEvent e(PROJECT_ROOT_DIR "/game/chaineddecos/assets/scenes/Untitled1.chscene");
-            Application::Get().OnEvent(e);
+            CH_CORE_INFO("SceneScript: Initialized");
         }
-    }
-}
-}
-;
+
+        CH_UPDATE(dt)
+        {
+            if (HasComponent<ButtonControl>())
+            {
+                auto &button = GetComponent<ButtonControl>();
+                if (button.PressedThisFrame)
+                {
+                    CH_CORE_INFO("SceneScript: Button pressed, requesting scene change...");
+                    SceneChangeRequestEvent e(PROJECT_ROOT_DIR "/game/chaineddecos/assets/scenes/Untitled1.chscene");
+                    Application::Get().OnEvent(e);
+                }
+            }
+        }
+    };
 } // namespace CHEngine
 
 #endif // CH_SCENE_SCRIPT_H

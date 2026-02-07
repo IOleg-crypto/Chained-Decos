@@ -39,7 +39,7 @@ namespace CHEngine
 
         bool EnableDocking = true;
         bool EnableViewports = true;
-        std::string IniFilename = "imgui.ini";
+        std::string ImGuiConfigurationPath = "imgui.ini";
     };
 
     // The main entry point and controller for the engine life cycle.

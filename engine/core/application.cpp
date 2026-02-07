@@ -30,9 +30,11 @@ namespace CHEngine
 {
     Application *Application::s_Instance = nullptr;
 
-    Application::Application(const ApplicationSpecification& specification)
-        : m_Specification(specification)
+    Application::Application(const ApplicationSpecification& applicationSpecification)
+        : m_Specification(applicationSpecification)
     {
+        CH_PROFILE_BEGIN_SESSION("Startup", "CHProfiling-Startup.json");
+
         CH_CORE_ASSERT(!s_Instance, "Application already exists!");
         s_Instance = this;
 
@@ -42,54 +44,61 @@ namespace CHEngine
         CH_CORE_INFO("Initializing Engine Core...");
 
         // --- Window Setup ---
-        WindowProps windowProps;
-        windowProps.Title = m_Specification.Name;
+        WindowProperties windowProperties;
+        windowProperties.Title = m_Specification.Name;
         
         // ImGui Ini path setup
-        std::string iniName = m_Specification.Name;
-        std::replace(iniName.begin(), iniName.end(), ' ', '_');
-        std::transform(iniName.begin(), iniName.end(), iniName.begin(), ::tolower);
+        std::string imguiInitializationName = m_Specification.Name;
+        std::replace(imguiInitializationName.begin(), imguiInitializationName.end(), ' ', '_');
+        std::transform(imguiInitializationName.begin(), imguiInitializationName.end(), imguiInitializationName.begin(), ::tolower);
         
         #ifdef PROJECT_ROOT_DIR
-        windowProps.IniFilename = std::string(PROJECT_ROOT_DIR) + "/imgui_" + iniName + ".ini";
+        windowProperties.ImGuiConfigurationPath = std::string(PROJECT_ROOT_DIR) + "/imgui_" + imguiInitializationName + ".ini";
         #else
-        windowProps.IniFilename = "imgui_" + iniName + ".ini";
+        windowProperties.ImGuiConfigurationPath = "imgui_" + imguiInitializationName + ".ini";
         #endif
 
         if (Project::GetActive())
         {
-            auto &projConfig = Project::GetActive()->GetConfig();
-            windowProps.Width = projConfig.Window.Width;
-            windowProps.Height = projConfig.Window.Height;
-            windowProps.VSync = projConfig.Window.VSync;
-            windowProps.Resizable = projConfig.Window.Resizable;
+            auto &projectConfiguration = Project::GetActive()->GetConfig();
+            windowProperties.Width = projectConfiguration.Window.Width;
+            windowProperties.Height = projectConfiguration.Window.Height;
+            windowProperties.VSync = projectConfiguration.Window.VSync;
+            windowProperties.Resizable = projectConfiguration.Window.Resizable;
         }
 
         // --- System Initialization ---
         m_ThreadPool = std::make_unique<ThreadPool>();
-        m_Window = std::make_unique<Window>(windowProps);
+        m_Window = std::make_unique<Window>(windowProperties);
         m_Running = true;
 
-        ComponentSerializer::Init();
-        Render::Init();
+        ComponentSerializer::Initialize();
+        Render::Initialize();
         Physics::Init();
 
         // Audio setup
         InitAudioDevice();
-        if (IsAudioDeviceReady())
+        if (IsAudioDeviceReady()){
             CH_CORE_INFO("Audio Device Initialized Successfully");
-        else
+        }
+        else{
             CH_CORE_ERROR("Failed to initialize Audio Device!");
+        }
         
         // ImGui Layer setup
         m_ImGuiLayer = new ImGuiLayer();
         PushOverlay(m_ImGuiLayer);
 
         CH_CORE_INFO("Application Initialized: {}", m_Specification.Name);
+
+        CH_PROFILE_END_SESSION();
+        CH_PROFILE_BEGIN_SESSION("Runtime", "CHProfiling-Runtime.json");
     }
 
     Application::~Application()
     {
+        CH_PROFILE_BEGIN_SESSION("Shutdown", "CHProfiling-Shutdown.json");
+
         if (m_Running)
         {
             CH_CORE_INFO("Shutting down Application...");
@@ -100,10 +109,13 @@ namespace CHEngine
         
         s_Instance = nullptr;
         CH_CORE_INFO("Engine Shutdown Successfully.");
+
+        CH_PROFILE_END_SESSION();
     }
 
     void Application::PushLayer(Layer *layer)
     {
+        CH_PROFILE_FUNCTION();
         CH_CORE_ASSERT(layer, "Layer is null!");
         m_LayerStack.PushLayer(layer);
         layer->OnAttach();
@@ -112,6 +124,7 @@ namespace CHEngine
 
     void Application::PushOverlay(Layer *overlay)
     {
+        CH_PROFILE_FUNCTION();
         CH_CORE_ASSERT(overlay, "Overlay is null!");
         m_LayerStack.PushOverlay(overlay);
         overlay->OnAttach();
@@ -120,6 +133,7 @@ namespace CHEngine
 
     void Application::OnEvent(Event &e)
     {
+        CH_PROFILE_FUNCTION();
         EventDispatcher dispatcher(e);
         dispatcher.Dispatch<WindowCloseEvent>(CH_BIND_EVENT_FN(Application::OnWindowClose));
         dispatcher.Dispatch<WindowResizeEvent>(CH_BIND_EVENT_FN(Application::OnWindowResize));
@@ -160,6 +174,7 @@ namespace CHEngine
 
     void Application::ExecuteMainThreadQueue()
     {
+        CH_PROFILE_FUNCTION();
         std::vector<std::function<void()>> localQueue;
         {
             std::scoped_lock<std::mutex> lock(m_MainThreadQueueMutex);

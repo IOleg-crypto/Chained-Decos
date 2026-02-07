@@ -3,7 +3,7 @@
 
 namespace CHEngine
 {
-    void RenderCommand::Init()
+    void RenderCommand::Initialize()
     {
     }
 
@@ -21,19 +21,19 @@ namespace CHEngine
         rlViewport(x, y, width, height);
     }
 
-    void RenderCommand::DrawLine(Vector3 start, Vector3 end, Color color)
+    void RenderCommand::DrawLine(Vector3 startPosition, Vector3 endPosition, Color color)
     {
-        DrawLine3D(start, end, color);
+        DrawLine3D(startPosition, endPosition, color);
     }
 
-    void RenderCommand::DrawGrid(int slices, float spacing)
+    void RenderCommand::DrawGrid(int sliceCount, float spacing)
     {
-        ::DrawGrid(slices, spacing);
+        ::DrawGrid(sliceCount, spacing);
     }
 
-    void RenderCommand::SetBlendMode(int mode)
+    void RenderCommand::SetBlendMode(int blendMode)
     {
-        rlSetBlendMode(mode);
+        rlSetBlendMode(blendMode);
     }
 
     void RenderCommand::EnableDepthTest()

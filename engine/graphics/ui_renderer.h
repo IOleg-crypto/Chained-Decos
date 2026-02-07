@@ -10,7 +10,7 @@ namespace CHEngine
     {
     public:
         // Main entry point for drawing UI for a scene.
-        static void DrawCanvas(Scene* scene, const ImVec2& refPos, const ImVec2& refSize, bool editMode = false);
+        static void DrawCanvas(Scene* scene, const ImVec2& referencePosition, const ImVec2& referenceSize, bool editMode = false);
 
     private:
         // Helper scope for UI styling

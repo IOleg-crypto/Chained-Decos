@@ -49,7 +49,7 @@ namespace CHEngine
     void AssetManager::SetRootPath(const std::filesystem::path& path)
     {
         m_RootPath = path;
-        CH_CORE_INFO("AssetManager: Root path changed to: {}", m_RootPath.string());
+        //Manager: Root path changed to: {}", m_RootPath.string());
     }
 
     std::filesystem::path AssetManager::GetRootPath() const
@@ -65,7 +65,7 @@ namespace CHEngine
         if (it != m_SearchPaths.end()) return;
         
         m_SearchPaths.push_back(path);
-        CH_CORE_INFO("AssetManager: Added search path: {}", path.string());
+        //CH_CORE_INFO("AssetManager: Added search path: {}", path.string());
     }
 
     void AssetManager::ClearSearchPaths()
@@ -83,13 +83,18 @@ namespace CHEngine
         if (p.is_absolute()) return path;
 
         std::string foundPath = "";
+        std::string pStr = p.generic_string();
+        if (!pStr.empty() && (pStr[0] == '/' || pStr[0] == '\\'))
+            pStr = pStr.substr(1);
+
+        std::filesystem::path normalizedP(pStr);
 
         // 1. Try registered search paths
         {
             std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
             for (const auto& searchPath : m_SearchPaths)
             {
-                 std::filesystem::path assetPath = searchPath / p;
+                 std::filesystem::path assetPath = searchPath / normalizedP;
                  if (std::filesystem::exists(assetPath))
                  {
                      foundPath = assetPath.string();
@@ -101,7 +106,7 @@ namespace CHEngine
         // 2. Try root relative path
         if (foundPath.empty())
         {
-            std::filesystem::path rootRel = m_RootPath / p;
+            std::filesystem::path rootRel = m_RootPath / normalizedP;
             if (std::filesystem::exists(rootRel))
                 foundPath = rootRel.string();
         }
@@ -116,6 +121,8 @@ namespace CHEngine
         std::transform(normalized.begin(), normalized.end(), normalized.begin(), ::tolower);
         std::replace(normalized.begin(), normalized.end(), '\\', '/');
         #endif
+
+        //CH_CORE_INFO("AssetManager:  '{}' -> '{}'", path, normalized);
         return normalized;
     }
 

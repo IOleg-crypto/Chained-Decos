@@ -1,4 +1,3 @@
-#include "entity.h"
 #include "scene.h"
 #include "components/id_component.h"
 #include "components/tag_component.h"

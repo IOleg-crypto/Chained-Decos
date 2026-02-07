@@ -9,12 +9,13 @@ namespace CHEngine
     class SceneRenderer
     {
     public:
-        static void RenderScene(Scene* scene, const Camera3D& camera, Timestep ts, const DebugRenderFlags* debugFlags = nullptr);
+        static void RenderScene(Scene* scene, const Camera3D& camera, Timestep timestep, const DebugRenderFlags* debugFlags = nullptr);
         
         // Internal methods used by RenderScene
-        static void RenderModels(Scene* scene, Timestep ts);
+        static void RenderModels(Scene* scene, Timestep timestep);
         static void RenderDebug(Scene* scene, const DebugRenderFlags* debugFlags);
         static void RenderEditorIcons(Scene* scene, const Camera3D& camera);
+        static void RenderBillboards(Scene* scene, const Camera3D& camera);
     };
 }
 

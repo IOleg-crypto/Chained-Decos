@@ -81,68 +81,163 @@ namespace CHEngine
         CH_CORE_INFO("Searching for runtime in: {}", root.string());
 
 #ifdef CH_PLATFORM_WINDOWS
-        std::vector<std::string> targetNames = {projectName + ".exe", "ChainedRuntime.exe", "Runtime.exe"};
+        std::string targetName = "ChainedRuntime.exe";
 #else
-        std::vector<std::string> targetNames = {projectName, "ChainedRuntime", "Runtime"};
+        std::string targetName = "ChainedRuntime";
 #endif
 
-        // Declarative search: try each name in order of priority
-        for (const auto &name : targetNames)
+        // 1. Fast path: check common output locations first
+        std::vector<std::string> searchSubdirs = {
+            "build/bin", "bin", "out/bin", 
+            "cmake-build-debug/bin", "cmake-build-release/bin"
+        };
+
+        for (const auto& sub : searchSubdirs)
         {
-            try {
-                for (const auto& entry : std::filesystem::recursive_directory_iterator(root))
-                {
-                    // Optimization: ignore large unrelated folders
-                    const auto& path = entry.path();
-                    auto folderName = path.parent_path().filename().string();
-                    
-                    if (entry.is_regular_file() && path.filename() == name)
-                    {
-                        // Check if it's in a 'bin' or 'build' folder to avoid picking up source files or assets
-                        std::string pathStr = path.string();
-                        if (pathStr.find("build") != std::string::npos || pathStr.find("bin") != std::string::npos)
-                        {
-                            CH_CORE_INFO("Found runtime candidate: {}", pathStr);
-                            return path;
-                        }
-                    }
-                }
-            } catch (const std::exception& e) {
-                CH_CORE_WARN("Error during runtime search: {}", e.what());
+            std::filesystem::path p = root / sub / targetName;
+            if (std::filesystem::exists(p))
+            {
+                CH_CORE_INFO("FindRuntimeExecutable: Fast path found at: {}", p.string());
+                return p;
             }
         }
 
-        CH_CORE_ERROR("Failed to find runtime executable among: {}", projectName);
+        // 2. Fallback: careful recursive search excluding noisy folders
+        CH_CORE_INFO("FindRuntimeExecutable: Fast path failed, starting scoped recursive search...");
+        try {
+            for (auto it = std::filesystem::recursive_directory_iterator(root); it != std::filesystem::recursive_directory_iterator(); ++it)
+            {
+                const auto& entry = *it;
+                auto filename = entry.path().filename().string();
+                auto pathStr = entry.path().string();
+
+                // Skip noisy/irrelevant directories
+                if (entry.is_directory())
+                {
+                    if (filename == ".git" || filename == ".cache" || filename == ".idea" || filename == "include")
+                    {
+                        it.disable_recursion_pending();
+                        continue;
+                    }
+                }
+
+                if (entry.is_regular_file() && filename == targetName)
+                {
+                    CH_CORE_INFO("FindRuntimeExecutable: Deep search found at: {}", pathStr);
+                    return entry.path();
+                }
+            }
+        } catch (const std::exception& e) {
+            CH_CORE_WARN("FindRuntimeExecutable: Deep search error: {}", e.what());
+        }
+
+        CH_CORE_ERROR("FindRuntimeExecutable: Failed to find '{}' in {}", targetName, root.string());
         return {};
     }
 
-    void ProjectActions::LaunchStandalone()
+    static std::string ResolveLaunchVariables(std::string str)
     {
-        Save();
-
+        CH_PROFILE_FUNCTION();
+        
         auto project = Project::GetActive();
-        if (!project)
-            return;
+        if (!project) return str;
+
+        std::filesystem::path root;
+#ifdef PROJECT_ROOT_DIR
+        root = PROJECT_ROOT_DIR;
+#else
+        root = std::filesystem::current_path();
+#endif
 
         std::filesystem::path projectFile = project->GetProjectDirectory() / (project->GetConfig().Name + ".chproject");
         std::string projectPathStr = std::filesystem::absolute(projectFile).string();
 
-        if (!std::filesystem::exists(projectPathStr))
+        // 1. Resolve ${ROOT}
+        size_t pos = 0;
+        while ((pos = str.find("${ROOT}")) != std::string::npos)
         {
-            CH_CORE_ERROR("LaunchStandalone: Project file not found: {}", projectPathStr);
+            str.replace(pos, 7, std::filesystem::absolute(root).string());
+        }
+
+        // 2. Resolve ${PROJECT_FILE}
+        while ((pos = str.find("${PROJECT_FILE}")) != std::string::npos)
+        {
+            str.replace(pos, 15, projectPathStr);
+        }
+
+        // 3. Resolve ${BUILD}
+        if (str.find("${BUILD}") != std::string::npos)
+        {
+            std::filesystem::path buildPath = "";
+            std::vector<std::string> searchSubdirs = {
+                "build/bin", "bin", "out/bin", 
+                "cmake-build-debug/bin", "cmake-build-release/bin"
+            };
+
+            for (const auto& sub : searchSubdirs)
+            {
+                if (std::filesystem::exists(root / sub))
+                {
+                    buildPath = root / sub;
+                    break;
+                }
+            }
+
+            while ((pos = str.find("${BUILD}")) != std::string::npos)
+            {
+                str.replace(pos, 8, std::filesystem::absolute(buildPath).string());
+            }
+        }
+
+        return str;
+    }
+
+    void ProjectActions::LaunchStandalone()
+    {
+        CH_PROFILE_FUNCTION();
+        Save();
+
+        auto project = Project::GetActive();
+        if (!project) return;
+
+        auto& config = project->GetConfig();
+        
+        std::string runtimePath;
+        std::string arguments;
+
+        if (!config.LaunchProfiles.empty() && config.ActiveLaunchProfileIndex >= 0 && config.ActiveLaunchProfileIndex < (int)config.LaunchProfiles.size())
+        {
+            const auto& profile = config.LaunchProfiles[config.ActiveLaunchProfileIndex];
+            runtimePath = ResolveLaunchVariables(profile.BinaryPath);
+            arguments = ResolveLaunchVariables(profile.Arguments);
+
+            if (profile.UseDefaultArgs)
+            {
+                std::filesystem::path projectFile = project->GetProjectDirectory() / (project->GetConfig().Name + ".chproject");
+                arguments += std::format(" \"{}\"", std::filesystem::absolute(projectFile).string());
+            }
+        }
+        else
+        {
+            // Fallback to old heuristic if no profiles
+            CH_CORE_WARN("LaunchStandalone: No active launch profile. Falling back to heuristic search.");
+            std::string configStr = (config.BuildConfig == Configuration::Release) ? "Release" : "Debug";
+            runtimePath = FindRuntimeExecutable(config.Name, configStr).string();
+            
+            std::filesystem::path projectFile = project->GetProjectDirectory() / (project->GetConfig().Name + ".chproject");
+            arguments = std::format("\"{}\"", std::filesystem::absolute(projectFile).string());
+        }
+
+        if (runtimePath.empty() || !std::filesystem::exists(runtimePath))
+        {
+            CH_CORE_ERROR("LaunchStandalone: Runtime executable not found: {}", runtimePath);
             return;
         }
 
-        std::string configStr = (project->GetConfig().BuildConfig == Configuration::Release) ? "Release" : "Debug";
-        auto runtimePath = FindRuntimeExecutable(project->GetConfig().Name, configStr);
-
-        if (runtimePath.empty())
-            return;
-
 #ifdef CH_PLATFORM_WINDOWS
-        std::string command = std::format("start \"\" \"{}\" \"{}\"", runtimePath.string(), projectPathStr);
+        std::string command = std::format("start \"\" \"{}\" {}", runtimePath, arguments);
 #else
-        std::string command = std::format("\"{}\" \"{}\" &", runtimePath.string(), projectPathStr);
+        std::string command = std::format("\"{}\" {} &", runtimePath, arguments);
 #endif
         CH_CORE_INFO("Launching Standalone: {}", command);
 
