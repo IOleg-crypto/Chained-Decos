@@ -234,7 +234,7 @@ namespace CHEngine
             if (texture && texture->IsReady()) state.SpawnIcon = texture->GetTexture();
         }
         if (state.CameraIcon.id == 0 && assetManager) {
-            auto texture = assetManager->Get<TextureAsset>(PROJECT_ROOT_DIR "/engine/resources/icons/minimalist-geometric-logo-design--letter-c-made-of.png");
+            auto texture = assetManager->Get<TextureAsset>(PROJECT_ROOT_DIR "/engine/resources/icons/icon_camera.jpg");
             if (texture && texture->IsReady()) state.CameraIcon = texture->GetTexture();
         }
 

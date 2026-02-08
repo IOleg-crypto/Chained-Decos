@@ -849,6 +849,99 @@ namespace CHEngine
 
     void PropertyEditor::DrawMaterial(CHEngine::Entity entity, int hitMeshIndex)
     {
+        if (!entity.HasComponent<ModelComponent>())
+            return;
+
+        auto &mc = entity.GetComponent<ModelComponent>();
+        if (!mc.Asset)
+            return;
+
+        const Model &model = mc.Asset->GetModel();
+        
+        // Helper to draw a single material instance
+        auto DrawMaterialInstance = [](MaterialInstance &mat, int index) {
+            std::string header = "Material " + std::to_string(index);
+            if (ImGui::CollapsingHeader(header.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                ImGui::PushID(index);
+                
+                // Albedo
+                ImGui::Text("Albedo");
+                EditorGUI::Property("Color", mat.AlbedoColor);
+                EditorGUI::Property("Texture", mat.AlbedoPath, "Texture Files (*.png *.jpg *.tga *.bmp)\0*.png;*.jpg;*.tga;*.bmp\0");
+                EditorGUI::Property("Use Texture", mat.OverrideAlbedo);
+                
+                ImGui::Separator();
+                
+                // PBR
+                ImGui::Text("PBR Properties");
+                EditorGUI::Property("Metalness", mat.Metalness, 0.01f, 0.0f, 1.0f);
+                EditorGUI::Property("Roughness", mat.Roughness, 0.01f, 0.0f, 1.0f);
+                EditorGUI::Property("Normal Map", mat.NormalMapPath, "Texture Files (*.png *.jpg *.tga *.bmp)\0*.png;*.jpg;*.tga;*.bmp\0");
+                
+                // Rendering
+                ImGui::Separator();
+                ImGui::Text("Rendering");
+                EditorGUI::Property("Double Sided", mat.DoubleSided);
+                
+                ImGui::PopID();
+            }
+        };
+
+        if (hitMeshIndex >= 0 && hitMeshIndex < model.meshCount)
+        {
+            // Find specific material for this mesh
+            // 1. Check for Mesh Index override
+            int slotIndex = -1;
+            for (int i = 0; i < mc.Materials.size(); i++)
+            {
+                if (mc.Materials[i].Target == MaterialSlotTarget::MeshIndex && mc.Materials[i].Index == hitMeshIndex)
+                {
+                    slotIndex = i;
+                    break;
+                }
+            }
+            
+            // 2. Check for Material Index override
+            if (slotIndex == -1 && model.meshMaterial)
+            {
+                int matIndex = model.meshMaterial[hitMeshIndex];
+                for (int i = 0; i < mc.Materials.size(); i++)
+                {
+                    if (mc.Materials[i].Target == MaterialSlotTarget::MaterialIndex && mc.Materials[i].Index == matIndex)
+                    {
+                        slotIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            if (slotIndex != -1)
+            {
+                DrawMaterialInstance(mc.Materials[slotIndex].Material, slotIndex);
+            }
+            else
+            {
+                ImGui::Text("No Material Slot assigned to this mesh.");
+                if (ImGui::Button("Create Override"))
+                {
+                    // Create new slot for this mesh
+                    MaterialSlot newSlot;
+                    newSlot.Name = "Mesh Override " + std::to_string(hitMeshIndex);
+                    newSlot.Target = MaterialSlotTarget::MeshIndex;
+                    newSlot.Index = hitMeshIndex;
+                    mc.Materials.push_back(newSlot);
+                }
+            }
+        }
+        else
+        {
+            // Show all materials
+            for (int i = 0; i < mc.Materials.size(); i++)
+            {
+                DrawMaterialInstance(mc.Materials[i].Material, i);
+            }
+        }
     }
 
     void PropertyEditor::DrawAddComponentPopup(CHEngine::Entity entity)

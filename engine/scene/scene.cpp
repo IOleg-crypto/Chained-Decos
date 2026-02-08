@@ -195,6 +195,7 @@ void Scene::OnUpdateRuntime(Timestep ts)
     UpdateScripting(deltaTime);
     UpdateAnimations(deltaTime);
     UpdateAudio(deltaTime);
+    UpdateCameras(deltaTime);
     UpdateTransitions();
     UpdatePhysics(deltaTime);
 }
@@ -272,6 +273,101 @@ void Scene::UpdateTransitions()
         }
     });
 }
+
+void Scene::UpdateCameras(float deltaTime)
+{
+    m_Registry.view<TransformComponent, CameraComponent>().each([&](auto entity, auto& tc, auto& cc) {
+        if (cc.IsOrbitCamera && !cc.TargetEntityTag.empty())
+        {
+            Entity target = FindEntityByTag(cc.TargetEntityTag);
+            if (target)
+            {
+                auto& targetTc = target.GetComponent<TransformComponent>();
+                
+                // Calculate orbit position
+                float dist = cc.OrbitDistance;
+                float yaw = cc.OrbitYaw * DEG2RAD;
+                float pitch = cc.OrbitPitch * DEG2RAD;
+
+                // Spherical coordinates
+                float x = dist * sin(yaw) * cos(pitch);
+                float y = dist * sin(pitch);
+                float z = dist * cos(yaw) * cos(pitch);
+
+                Vector3 offset = {x, y, z};
+                Vector3 newPos = Vector3Add(targetTc.Translation, offset);
+                
+                // Update transform
+                tc.Translation = newPos;
+                
+                // Look at target
+                Vector3 direction = Vector3Normalize(Vector3Subtract(targetTc.Translation, newPos));
+                
+                // Calculate rotation quaternion (LookAt equivalent)
+                Matrix lookAt = MatrixLookAt(newPos, targetTc.Translation, {0, 1, 0});
+                // MatrixLookAt returns a view matrix (inverse camera transform). 
+                // We need the camera's world transform.
+                // Invert it (or just use LookAt logic to get Frame)
+                
+                // Actually, QuaternionFromVector3ToVector3 or similar might be better.
+                // Or simplified: Just set the rotation to face the target.
+                // Easiest is to construct a rotation matrix from forward/up/right
+                
+                // Forward is direction to target
+                Vector3 forward = direction;
+                Vector3 up = {0, 1, 0};
+                Vector3 right = Vector3Normalize(Vector3CrossProduct(forward, up));
+                // Re-calculate up to be orthogonal
+                up = Vector3CrossProduct(right, forward);
+                
+                // Matrix (Column Major for Raylib?)
+                // Raylib Matrix is row-major in memory but math assumes column vectors?
+                // Actually Raylib is column-major.
+                
+                // Let's use QuaternionFromMatrix
+                Matrix transform = MatrixIdentity();
+                transform.m0 = right.x; transform.m4 = up.x; transform.m8 = -forward.x; // Render forward is -Z
+                transform.m1 = right.y; transform.m5 = up.y; transform.m9 = -forward.y;
+                transform.m2 = right.z; transform.m6 = up.z; transform.m10 = -forward.z;
+                
+                // Wait, MatrixLookAt gives View Matrix. Inverse of View Matrix is Camera World Matrix.
+                // MatrixLookAt:
+                // zaxis = normal(eye - target)
+                // xaxis = normal(cross(up, zaxis))
+                // yaxis = cross(zaxis, xaxis)
+                // View = { xaxis, yaxis, zaxis }...
+                
+                // Direct approach:
+                // Forward = Target - Pos
+                // If we want Forward to be -Z (OpenGL convention):
+                // Z = -(Target - Pos) = Pos - Target
+                
+                // Let's try simple LookAt logic:
+                // We want the camera to look AT the target.
+                // We can just calculate the rotation from the position and target.
+                
+                // Simpler: QuaternionLookAt
+                // Assuming we want the camera's local -Z to point directly at the target.
+                
+                // Let's stick to Euler for now if Quaternion is complex?
+                // No, we use RotationQuat.
+                
+                // Raymath MatrixLookAt is:
+                // MatrixLookAt(eye, target, up)
+                Matrix viewMat = MatrixLookAt(newPos, targetTc.Translation, {0, 1, 0});
+                Matrix worldMat = MatrixInvert(viewMat);
+                tc.RotationQuat = QuaternionFromMatrix(worldMat);
+                
+                // Update Euler for Inspector (optional but good for debugging)
+                tc.Rotation = QuaternionToEuler(tc.RotationQuat);
+                tc.Rotation.x *= RAD2DEG;
+                tc.Rotation.y *= RAD2DEG;
+                tc.Rotation.z *= RAD2DEG;
+            }
+        }
+    });
+}
+
 
 // -------------------------------------------------------------------------------------------------------------------
 
