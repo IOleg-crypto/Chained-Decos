@@ -269,36 +269,28 @@ namespace CHEngine
     // Registration of UI components (using PropertyArchive)
     // ========================================================================
 
-    #define REGISTER_UI_COMPONENT(Type, LayoutFunc) \
-        Register<Type>(#Type, \
-            [](auto& emitter, auto& component) { PropertyArchive archive(emitter); LayoutFunc(archive, component); }, \
-            [](auto& component, auto yamlNode) { PropertyArchive archive(yamlNode); LayoutFunc(archive, component); } \
-        )
-
     void ComponentSerializer::RegisterUIComponents()
     {
-        REGISTER_UI_COMPONENT(ButtonControl, LayoutButtonControl);
-        REGISTER_UI_COMPONENT(PanelControl, LayoutPanelControl);
-        REGISTER_UI_COMPONENT(LabelControl, LayoutLabelControl);
-        REGISTER_UI_COMPONENT(SliderControl, LayoutSliderControl);
-        REGISTER_UI_COMPONENT(CheckboxControl, LayoutCheckboxControl);
-        REGISTER_UI_COMPONENT(InputTextControl, LayoutInputTextControl);
-        REGISTER_UI_COMPONENT(ComboBoxControl, LayoutComboBoxControl);
-        REGISTER_UI_COMPONENT(ProgressBarControl, LayoutProgressBarControl);
-        REGISTER_UI_COMPONENT(ImageControl, LayoutImageControl);
-        REGISTER_UI_COMPONENT(ImageButtonControl, LayoutImageButtonControl);
-        REGISTER_UI_COMPONENT(SeparatorControl, LayoutSeparatorControl);
-        REGISTER_UI_COMPONENT(RadioButtonControl, LayoutRadioButtonControl);
-        REGISTER_UI_COMPONENT(ColorPickerControl, LayoutColorPickerControl);
-        REGISTER_UI_COMPONENT(DragFloatControl, LayoutDragFloatControl);
-        REGISTER_UI_COMPONENT(DragIntControl, LayoutDragIntControl);
-        REGISTER_UI_COMPONENT(TreeNodeControl, LayoutTreeNodeControl);
-        REGISTER_UI_COMPONENT(TabBarControl, LayoutTabBarControl);
-        REGISTER_UI_COMPONENT(TabItemControl, LayoutTabItemControl);
-        REGISTER_UI_COMPONENT(CollapsingHeaderControl, LayoutCollapsingHeaderControl);
-        REGISTER_UI_COMPONENT(PlotLinesControl, LayoutPlotLinesControl);
-        REGISTER_UI_COMPONENT(PlotHistogramControl, LayoutPlotHistogramControl);
+        Register<ButtonControl>("ButtonControl", LayoutButtonControl);
+        Register<PanelControl>("PanelControl", LayoutPanelControl);
+        Register<LabelControl>("LabelControl", LayoutLabelControl);
+        Register<SliderControl>("SliderControl", LayoutSliderControl);
+        Register<CheckboxControl>("CheckboxControl", LayoutCheckboxControl);
+        Register<InputTextControl>("InputTextControl", LayoutInputTextControl);
+        Register<ComboBoxControl>("ComboBoxControl", LayoutComboBoxControl);
+        Register<ProgressBarControl>("ProgressBarControl", LayoutProgressBarControl);
+        Register<ImageControl>("ImageControl", LayoutImageControl);
+        Register<ImageButtonControl>("ImageButtonControl", LayoutImageButtonControl);
+        Register<SeparatorControl>("SeparatorControl", LayoutSeparatorControl);
+        Register<RadioButtonControl>("RadioButtonControl", LayoutRadioButtonControl);
+        Register<ColorPickerControl>("ColorPickerControl", LayoutColorPickerControl);
+        Register<DragFloatControl>("DragFloatControl", LayoutDragFloatControl);
+        Register<DragIntControl>("DragIntControl", LayoutDragIntControl);
+        Register<TreeNodeControl>("TreeNodeControl", LayoutTreeNodeControl);
+        Register<TabBarControl>("TabBarControl", LayoutTabBarControl);
+        Register<TabItemControl>("TabItemControl", LayoutTabItemControl);
+        Register<CollapsingHeaderControl>("CollapsingHeaderControl", LayoutCollapsingHeaderControl);
+        Register<PlotLinesControl>("PlotLinesControl", LayoutPlotLinesControl);
+        Register<PlotHistogramControl>("PlotHistogramControl", LayoutPlotHistogramControl);
     }
-
-    #undef REGISTER_UI_COMPONENT
 }
