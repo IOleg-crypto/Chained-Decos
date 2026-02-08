@@ -115,9 +115,6 @@ add_library(engine_scene STATIC
     scene/scene_serializer.cpp
     scene/component_serializer.cpp
     scene/component_serializer_ui.cpp
-    scene/serialization/graphics_serialization.cpp
-    scene/serialization/physics_serialization.cpp
-    scene/serialization/audio_gameplay_serialization.cpp
     scene/prefab_serializer.cpp
     scene/scene_scripting.cpp
     scene/scene_camera.cpp

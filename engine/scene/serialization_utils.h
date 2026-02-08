@@ -101,7 +101,15 @@ namespace CHEngine::SerializationUtils
         PropertyArchive(YAML::Node node) 
             : m_Mode(Deserialize), m_Out(nullptr), m_Node(node) {}
 
-        // Generic property (string, int, float, bool, Color, Vector2, Vector3, etc.)
+        // Check if property exists (for backwards compatibility/migrations)
+        bool HasProperty(const char* name)
+        {
+            if (m_Mode == Serialize) return true; // Always "has" property in serialize mode (conceptually) or return false? 
+                                                  // Actually for migration checks we usually check if generic properties exist in READ mode.
+            return m_Node[name].IsDefined();
+        }
+
+        // Generic property handler
         template<typename T>
         PropertyArchive& operator()(const char* name, T& value)
         {
@@ -110,6 +118,13 @@ namespace CHEngine::SerializationUtils
             else
                 DeserializeProperty(m_Node, name, value);
             return *this;
+        }
+
+        // Fluent alias for property
+        template<typename T>
+        PropertyArchive& Property(const char* name, T& value)
+        {
+            return (*this)(name, value);
         }
 
         // Path property (handles relative/absolute conversion)

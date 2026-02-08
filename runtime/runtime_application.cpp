@@ -32,7 +32,19 @@ public:
     virtual void OnRender(Timestep ts) override
     {
         if (!m_Scene)
+        {
+            ::ClearBackground(BLACK);
             return;
+        }
+
+        // Clear background with fog color or black
+        Color bgColor = BLACK;
+        if (m_Scene->GetSettings().Environment)
+        {
+            auto& env = m_Scene->GetSettings().Environment->GetSettings();
+            if (env.Fog.Enabled) bgColor = env.Fog.FogColor;
+        }
+        ::ClearBackground(bgColor);
 
         auto camera = GetActiveCamera();
         SceneRenderer::RenderScene(m_Scene.get(), camera, ts);
@@ -137,7 +149,9 @@ private:
         std::filesystem::path exePath = std::filesystem::absolute(std::filesystem::path(specification.CommandLineArgs.Args[0]));
         std::filesystem::path current = exePath.parent_path();
         
-        bool projectFound = false;
+        bool projectFound = !m_ProjectPath.empty();
+        std::filesystem::path engineRoot = "";
+
         while (current.has_parent_path())
         {
             // Search for project file if not yet found
@@ -199,17 +213,15 @@ private:
             // Engine assets discovery (shaders, default fonts)
             if (std::filesystem::exists(current / "engine/resources"))
             {
-                // AssetManager::SetRootPath(current); // Removed: AssetManager is now per-project
-                // If we also found the project, we can stop here
+                engineRoot = current;
+                CH_CORE_INFO("Standalone: Found engine root at: {}", engineRoot.string());
                 if (projectFound)
                 {
                     break;
                 }
             }
             
-            // If we've already found a project file, we might be done, 
-            // but we still want to find the engine root (engine/resources) if possible.
-            // If we just hit the root and found nothing new, break.
+            // Walk up
             current = current.parent_path();
         }
 
@@ -222,6 +234,13 @@ private:
             auto project = Project::Load(m_ProjectPath);
             if (project)
             {
+                // Register engine resources in asset manager search paths
+                if (!engineRoot.empty())
+                {
+                    project->GetAssetManager()->AddSearchPath(engineRoot);
+                    CH_CORE_INFO("Standalone: Added engine root to asset search paths: {}", engineRoot.string());
+                }
+
                 auto &config = project->GetConfig();
                 Window& window = GetWindow();
                 window.SetVSync(config.Window.VSync);
