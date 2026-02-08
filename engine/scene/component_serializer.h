@@ -2,6 +2,7 @@
 #define CH_COMPONENT_SERIALIZER_H
 
 #include "engine/scene/scene.h"
+#include "engine/scene/serialization_utils.h"
 #include <yaml-cpp/yaml.h>
 #include <functional>
 #include <unordered_map>
@@ -31,12 +32,16 @@ namespace CHEngine
         // Initialize the registry with all component types
         static void Initialize();
 
-        // Register a component serializer
+        // Register a component serializer (Template implementation below)
         template<typename T>
         static void Register(
             const std::string& yamlKey,
             std::function<void(YAML::Emitter&, T&)> serialize,
             std::function<void(T&, YAML::Node)> deserialize);
+
+        // Register a component serializer using a declarative schema (PropertyBuilder style)
+        template<typename T>
+        static void Register(const std::string& yamlKey, std::function<void(SerializationUtils::PropertyArchive&, T&)> schema);
 
         // Serialize all registered components for an entity
         static void SerializeAll(YAML::Emitter& out, Entity entity);
@@ -47,16 +52,10 @@ namespace CHEngine
         // Copy all registered components from source to destination
         static void CopyAll(Entity source, Entity destination);
 
-        // Helper to register UI components (implementation in component_serializer_ui.cpp)
-        static void RegisterUIComponents();
-        
-        // Modular registration functions
-        static void RegisterGraphicsComponents();
-        static void RegisterPhysicsComponents();
-        static void RegisterAudioComponents();
-        static void RegisterGameplayComponents();
+        // Helper to register UI components
+        static void RegisterUIComponents(); 
 
-        // Special cases that need custom handling
+        // Special cases
         static void SerializeID(YAML::Emitter& out, Entity entity);
         static void SerializeHierarchy(YAML::Emitter& out, Entity entity);
         static void DeserializeHierarchyTask(Entity entity, YAML::Node node, HierarchyTask& outTask);
@@ -66,6 +65,21 @@ namespace CHEngine
     };
 
     // Template implementation
+    template<typename T>
+    void ComponentSerializer::Register(const std::string& yamlKey, std::function<void(SerializationUtils::PropertyArchive&, T&)> schema)
+    {
+        Register<T>(yamlKey,
+            [schema](YAML::Emitter& out, T& component) {
+                SerializationUtils::PropertyArchive archive(out);
+                schema(archive, component);
+            },
+            [schema](T& component, YAML::Node node) {
+                SerializationUtils::PropertyArchive archive(node);
+                schema(archive, component);
+            }
+        );
+    }
+
     template<typename T>
     void ComponentSerializer::Register(
         const std::string& yamlKey,

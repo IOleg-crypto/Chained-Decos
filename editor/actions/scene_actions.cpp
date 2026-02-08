@@ -61,6 +61,7 @@ namespace CHEngine
 
         SceneSerializer serializer(scene.get());
         serializer.Serialize(scene->GetSettings().ScenePath);
+        CH_INFO("Scene saved to {0}", scene->GetSettings().ScenePath);
     }
 
     void SceneActions::SaveAs()

@@ -26,9 +26,25 @@ namespace CHEngine
 
         RenderCommand::Initialize();
 
-        // Engine resources are loaded with absolute paths (no Project needed yet)
-        std::string lightingPath = PROJECT_ROOT_DIR "/engine/resources/shaders/lighting.chshader";
-        std::string skyboxPath = PROJECT_ROOT_DIR "/engine/resources/shaders/skybox.chshader";
+        // Helper to find resources relative to current path or PROJECT_ROOT_DIR
+        auto findRes = [](const std::string& relPath) -> std::string {
+            #ifdef PROJECT_ROOT_DIR
+            std::string p = std::string(PROJECT_ROOT_DIR) + "/" + relPath;
+            if (std::filesystem::exists(p)) return p;
+            #endif
+            if (std::filesystem::exists(relPath)) return relPath;
+            
+            // Try walking up to find engine/resources
+            std::filesystem::path current = std::filesystem::current_path();
+            for (int i = 0; i < 5 && current.has_parent_path(); ++i) {
+                if (std::filesystem::exists(current / relPath)) return (current / relPath).string();
+                current = current.parent_path();
+            }
+            return relPath;
+        };
+
+        std::string lightingPath = findRes("engine/resources/shaders/lighting.chshader");
+        std::string skyboxPath = findRes("engine/resources/shaders/skybox.chshader");
 
         if (std::filesystem::exists(lightingPath))
             s_State.LightingShader = ShaderAsset::Load(lightingPath);
@@ -40,22 +56,14 @@ namespace CHEngine
         else
             CH_CORE_WARN("Render::Initialize: Skybox shader not found at {}", skyboxPath);
 
-        // Load editor icons with absolute paths
-        std::string lightIconPath = PROJECT_ROOT_DIR "/engine/resources/icons/light_bulb.png";
-        std::string spawnIconPath = PROJECT_ROOT_DIR "/engine/resources/icons/leaf_icon.png";
-        std::string cameraIconPath = PROJECT_ROOT_DIR "/engine/resources/icons/minimalist-geometric-logo-design--letter-c-made-of.png";
+        // Load editor icons with robust paths
+        std::string lightIconPath = findRes("engine/resources/icons/light_bulb.png");
+        std::string spawnIconPath = findRes("engine/resources/icons/leaf_icon.png");
+        std::string cameraIconPath = findRes("engine/resources/icons/camera_icon.png");
 
         s_State.LightIcon = ::LoadTexture(lightIconPath.c_str());
         s_State.SpawnIcon = ::LoadTexture(spawnIconPath.c_str());
         s_State.CameraIcon = ::LoadTexture(cameraIconPath.c_str());
-
-        CH_CORE_INFO("Render::Initialize: Editor Icon Diagnostics:");
-        CH_CORE_INFO("  - Light: {} (ID: {})", lightIconPath, s_State.LightIcon.id);
-        CH_CORE_INFO("  - Spawn: {} (ID: {})", spawnIconPath, s_State.SpawnIcon.id);
-        CH_CORE_INFO("  - Camera: {} (ID: {})", cameraIconPath, s_State.CameraIcon.id);
-
-        if (s_State.LightIcon.id == 0) CH_CORE_ERROR("Render::Initialize: FAILED to load light icon from '{}'", lightIconPath);
-        if (s_State.SpawnIcon.id == 0) CH_CORE_ERROR("Render::Initialize: FAILED to load spawn icon from '{}'", spawnIconPath);
 
         InitializeSkybox();
         CH_CORE_INFO("Render System Initialized.");

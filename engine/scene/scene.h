@@ -149,6 +149,7 @@ namespace CHEngine
         void UpdateAnimations(float deltaTime);
         void UpdateScripting(float deltaTime);
         void UpdateAudio(float deltaTime);
+        void UpdateCameras(float deltaTime);
         void UpdateTransitions();
 
         friend class Entity;
