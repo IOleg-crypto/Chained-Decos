@@ -224,10 +224,48 @@ namespace CHEngine
 
             ImGui::GetWindowDrawList()->AddRect(p1, p2, IM_COL32(255, 255, 0, 255), 0, 0, 2.0f);
 
-            // Simple Drag support
-            if (ImGui::IsMouseHoveringRect(p1, p2) && ImGui::IsMouseClicked(0)) 
+            // UI Dragging Logic
+            if (m_DraggingUI)
             {
-                m_DraggingUI = true;
+                if (ImGui::IsMouseDown(0))
+                {
+                    ImVec2 mouseDragDelta = ImGui::GetIO().MouseDelta;
+                    if (mouseDragDelta.x != 0 || mouseDragDelta.y != 0)
+                    {
+                        cc.Transform.OffsetMin.x += mouseDragDelta.x;
+                        cc.Transform.OffsetMin.y += mouseDragDelta.y;
+                        cc.Transform.OffsetMax.x += mouseDragDelta.x;
+                        cc.Transform.OffsetMax.y += mouseDragDelta.y;
+                    }
+                }
+                else
+                {
+                    m_DraggingUI = false;
+                    CH_CORE_INFO("Stopped dragging UI");
+                }
+            }
+            else
+            {
+                // Start dragging
+                if (ImGui::IsMouseHoveringRect(p1, p2) && ImGui::IsMouseClicked(0)) 
+                {
+                    m_DraggingUI = true;
+                    CH_CORE_INFO("Started dragging UI: {}", selectedEntity.GetComponent<TagComponent>().Tag);
+                }
+            }
+            
+            // Debug info
+            if (ImGui::IsMouseHoveringRect(p1, p2))
+            {
+                ImGui::GetWindowDrawList()->AddRect(p1, p2, IM_COL32(0, 255, 0, 255), 0, 0, 1.0f);
+            }
+        }
+        else
+        {
+            if (m_DraggingUI) 
+            {
+                m_DraggingUI = false;
+                CH_CORE_INFO("Reset dragging UI (deselected)");
             }
         }
     }

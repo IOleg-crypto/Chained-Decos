@@ -1,6 +1,6 @@
 Project:
   Name: ChainedDecos
-  StartScene: scenes\scene_tem.chscene
+  StartScene: scenes\main_menu.chscene
   AssetDirectory: assets
   ActiveScene: assets/scenes/untitled100.chscene
   Environment: ""
