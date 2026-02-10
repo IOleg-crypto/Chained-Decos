@@ -10,8 +10,8 @@ Application *CreateApplication(ApplicationCommandLineArgs args)
     spec.CommandLineArgs = args;
 
     // Register project scripts so they appear in Inspector
-    extern void RegisterGameScripts();
-    RegisterGameScripts();
+    //extern void RegisterGameScripts();
+    //RegisterGameScripts();
 
     return new Editor(spec);
 }

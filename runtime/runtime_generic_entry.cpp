@@ -6,19 +6,18 @@
 
 namespace CHEngine
 {
-    extern void RegisterGameScripts();
+    // No manual RegisterGameScripts here! It's loaded dynamically.
 
     Application *CreateApplication(ApplicationCommandLineArgs args)
     {
         // 1. Setup Project-specific configuration (Title, Icon, etc.)
+        // These could eventually be loaded from a config file before App creation
         ApplicationSpecification spec;
-        spec.Name = "Chained Decos";
+        spec.Name = "Chained Runtime";
         spec.CommandLineArgs = args;
 
-        RegisterGameScripts();
-
         // 2. Project Selection
-        std::string projectPath = ""; // RuntimeApplication will auto-discover if empty
+        std::string projectPath = ""; 
 
         // Handle CLI overrides
         for (int i = 1; i < args.Count; ++i)
@@ -27,10 +26,10 @@ namespace CHEngine
             if (arg == "--project" && i + 1 < args.Count)
             {
                 projectPath = args.Args[++i];
-            }
-            else if (arg == "--scene" && i + 1 < args.Count)
-            {
-                // Note: Scene overrides should probably be handled by the layer or project loader
+                // Strip quotes if present
+                if (projectPath.size() >= 2 && projectPath.front() == '"' && projectPath.back() == '"') {
+                    projectPath = projectPath.substr(1, projectPath.size() - 2);
+                }
             }
             else if (i == 1 && arg[0] != '-')
             {
