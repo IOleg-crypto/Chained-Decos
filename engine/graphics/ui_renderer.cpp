@@ -104,6 +104,9 @@ namespace CHEngine
             return uiView.get<ControlComponent>(a).ZOrder < uiView.get<ControlComponent>(b).ZOrder;
         });
 
+        // Map to store world-space rects for hierarchical calculation
+        std::map<entt::entity, Rectangle> finalRects;
+
         for (entt::entity entityID : sortedList)
         {
             Entity entity{entityID, scene};
@@ -113,10 +116,24 @@ namespace CHEngine
             if (entity.HasComponent<ButtonControl>())
                 entity.GetComponent<ButtonControl>().PressedThisFrame = false;
 
-            auto rect = controlComponent.Transform.CalculateRect(
-                {currentReferenceSize.x, currentReferenceSize.y},
-                {referencePosition.x, referencePosition.y});
+            // --- 1. Hierarchical Rect Calculation ---
+            Rectangle parentRect = { referencePosition.x, referencePosition.y, currentReferenceSize.x, currentReferenceSize.y };
             
+            if (entity.HasComponent<HierarchyComponent>())
+            {
+                auto& hc = entity.GetComponent<HierarchyComponent>();
+                if (hc.Parent != entt::null && finalRects.count(hc.Parent))
+                {
+                    parentRect = finalRects[hc.Parent];
+                }
+            }
+
+            Rectangle rect = controlComponent.Transform.CalculateRect(
+                {parentRect.width, parentRect.height},
+                {parentRect.x, parentRect.y});
+            
+            finalRects[entityID] = rect;
+
             // Use Screen Coordinates for absolute overlay positioning
             ImVec2 screenPosition = {rect.x, rect.y};
             ImVec2 size = {rect.width, rect.height};
@@ -233,7 +250,7 @@ namespace CHEngine
 
                 static std::map<entt::entity, std::vector<char>> buffers;
                 auto& buffer = buffers[entityID];
-                if (buffer.empty() || buffer.size() != inputText.MaxLength + 1)
+                if (buffer.empty() || buffer.size() != (size_t)inputText.MaxLength + 1)
                 {
                     buffer.resize(inputText.MaxLength + 1, '\0');
                     if (!inputText.Text.empty())
@@ -270,13 +287,13 @@ namespace CHEngine
                 style.PushText(comboBox.Style);
 
                 ImGui::SetNextItemWidth(size.x);
-                const char* preview = comboBox.SelectedIndex >= 0 && comboBox.SelectedIndex < comboBox.Items.size() 
+                const char* preview = comboBox.SelectedIndex >= 0 && comboBox.SelectedIndex < (int)comboBox.Items.size() 
                     ? comboBox.Items[comboBox.SelectedIndex].c_str() 
                     : "";
                 
                 if (ImGui::BeginCombo(comboBox.Label.c_str(), preview))
                 {
-                    for (int i = 0; i < comboBox.Items.size(); i++)
+                    for (int i = 0; i < (int)comboBox.Items.size(); i++)
                     {
                         bool isSelected = (i == comboBox.SelectedIndex);
                         if (ImGui::Selectable(comboBox.Items[i].c_str(), isSelected))
@@ -324,7 +341,7 @@ namespace CHEngine
                     {
                         Texture2D& texture = textureAsset->GetTexture();
                         ImGui::Image((ImTextureID)(intptr_t)texture.id, 
-                            { image.Size.x, image.Size.y }, 
+                            size, 
                             {0, 0}, {1, 1}, 
                             ColorToImVec4(image.TintColor),
                             ColorToImVec4(image.BorderColor));
@@ -346,7 +363,7 @@ namespace CHEngine
                     {
                         Texture2D& texture = textureAsset->GetTexture();
                         if (ImGui::ImageButton(imageButton.Label.c_str(), (ImTextureID)(intptr_t)texture.id, 
-                            { imageButton.Size.x, imageButton.Size.y }, 
+                            size, 
                             {0, 0}, {1, 1}, 
                             ColorToImVec4(imageButton.BackgroundColor),
                             ColorToImVec4(imageButton.TintColor)))
@@ -373,7 +390,7 @@ namespace CHEngine
                 auto& radioButton = entity.GetComponent<RadioButtonControl>();
                 UIStyleScope style(radioButton.Style);
 
-                for (int i = 0; i < radioButton.Options.size(); i++)
+                for (int i = 0; i < (int)radioButton.Options.size(); i++)
                 {
                     if (ImGui::RadioButton(radioButton.Options[i].c_str(), radioButton.SelectedIndex == i))
                     {

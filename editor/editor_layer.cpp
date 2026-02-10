@@ -13,6 +13,7 @@
 #include "engine/scene/scene_serializer.h"
 #include "engine/scene/scriptable_entity.h"
 #include "engine/graphics/asset_manager.h"
+#include "engine/core/module_loader.h"
 
 #include "cstdarg"
 #include "extras/IconsFontAwesome6.h"
@@ -402,6 +403,25 @@ namespace CHEngine
         EditorContext::SetSelectedEntity({});
         if (EditorContext::GetSceneState() == SceneState::Edit)
             m_Panels->SetContext(m_EditorScene);
+            
+        // Load Game Module if not already loaded (or reload for new scene context)
+        // Assume executable directory for DLL search
+        std::string dllName = "ChainedDecosGame.dll";
+        std::filesystem::path dllPath = std::filesystem::current_path() / dllName;
+        
+        if (!std::filesystem::exists(dllPath)) {
+             // Fallback: Try parent directory if running from within a subdir
+             dllPath = std::filesystem::absolute(std::filesystem::path(Application::Get().GetSpecification().CommandLineArgs.Args[0])).parent_path() / dllName;
+        }
+
+        if (std::filesystem::exists(dllPath)) {
+            // Note: ModuleLoader handles multiple loads safely (ref counting for LoadLibrary)
+            // But we must call LoadGame for the specific scene instance to register scripts
+             ModuleLoader::LoadGameModule(dllPath.string(), m_EditorScene.get());
+             CH_CORE_INFO("EditorLayer: Loaded Game Module from {}", dllPath.string());
+        } else {
+             CH_CORE_WARN("EditorLayer: Game Module DLL not found at {}", dllPath.string());
+        }
     }
     void EditorLayer::SetViewportSize(const ImVec2& size)
     {

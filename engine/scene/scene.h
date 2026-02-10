@@ -17,6 +17,7 @@ namespace CHEngine
     class Scene;
     class SceneSerializer;
     class Physics;
+    class ScriptRegistry;
 
     enum class BackgroundMode
     {
@@ -115,6 +116,9 @@ namespace CHEngine
         Physics& GetPhysics() { return *m_Physics; }
         const Physics& GetPhysics() const { return *m_Physics; }
 
+        ScriptRegistry& GetScriptRegistry() { return *m_ScriptRegistry; }
+        const ScriptRegistry& GetScriptRegistry() const { return *m_ScriptRegistry; }
+
     public: // Systems & Tools
         entt::registry& GetRegistry() { return m_Registry; }
         const entt::registry& GetRegistry() const { return m_Registry; }
@@ -127,6 +131,7 @@ namespace CHEngine
         std::unordered_map<UUID, entt::entity> m_EntityMap;
         SceneSettings m_Settings;
         std::unique_ptr<Physics> m_Physics;
+        std::unique_ptr<ScriptRegistry> m_ScriptRegistry;
 
         bool m_IsSimulationRunning = false;
 

@@ -11,7 +11,7 @@ namespace CHEngine
     using namespace SerializationUtils;
 
     // ========================================================================
-    // Допоміжні функції для TextStyle та UIStyle (залишаємо для Nested)
+    // TextStyle та UIStyle ( Nested)
     // ========================================================================
     
     static void serializeTextStyle(YAML::Emitter& out, const TextStyle& style) {
@@ -46,6 +46,36 @@ namespace CHEngine
         else if (node["VAlign"]) style.VerticalAlignment = (TextAlignment)node["VAlign"].template as<int>();
     }
 
+    static void serializeRectTransform(YAML::Emitter& out, const RectTransform& transform) {
+        out << YAML::BeginMap;
+        out << YAML::Key << "AnchorMin" << YAML::Value << transform.AnchorMin;
+        out << YAML::Key << "AnchorMax" << YAML::Value << transform.AnchorMax;
+        out << YAML::Key << "OffsetMin" << YAML::Value << transform.OffsetMin;
+        out << YAML::Key << "OffsetMax" << YAML::Value << transform.OffsetMax;
+        out << YAML::Key << "Pivot" << YAML::Value << transform.Pivot;
+        out << YAML::Key << "Rotation" << YAML::Value << transform.Rotation;
+        out << YAML::Key << "Scale" << YAML::Value << transform.Scale;
+        out << YAML::EndMap;
+    }
+
+    static void deserializeRectTransform(RectTransform& transform, YAML::Node node) {
+        if (node["AnchorMin"]) transform.AnchorMin = node["AnchorMin"].template as<vec2>();
+        if (node["AnchorMax"]) transform.AnchorMax = node["AnchorMax"].template as<vec2>();
+        if (node["OffsetMin"]) transform.OffsetMin = node["OffsetMin"].template as<vec2>();
+        if (node["OffsetMax"]) transform.OffsetMax = node["OffsetMax"].template as<vec2>();
+        if (node["Pivot"]) transform.Pivot = node["Pivot"].template as<vec2>();
+        if (node["Rotation"]) transform.Rotation = node["Rotation"].template as<float>();
+        if (node["Scale"]) transform.Scale = node["Scale"].template as<vec2>();
+    }
+
+    static void LayoutControlComponent(PropertyArchive& archive, ControlComponent& component)
+    {
+        archive.Nested("Transform", component.Transform, serializeRectTransform, deserializeRectTransform);
+        archive("ZOrder", component.ZOrder)
+               ("IsActive", component.IsActive)
+               ("HiddenInHierarchy", component.HiddenInHierarchy);
+    }
+
     static void serializeUIStyle(YAML::Emitter& out, const UIStyle& style) {
         out << YAML::BeginMap;
         out << YAML::Key << "BackgroundColor" << YAML::Value << style.BackgroundColor;
@@ -71,7 +101,7 @@ namespace CHEngine
     }
 
     // ========================================================================
-    // Декларативні описи компонентів (Layout Functions)
+    // (Layout Functions)
     // ========================================================================
 
     static void LayoutButtonControl(PropertyArchive& archive, ButtonControl& component)
@@ -146,8 +176,7 @@ namespace CHEngine
     static void LayoutImageControl(PropertyArchive& archive, ImageControl& component)
     {
         archive.Path("TexturePath", component.TexturePath);
-        archive("Size", component.Size)
-               ("TintColor", component.TintColor)
+        archive("TintColor", component.TintColor)
                ("BorderColor", component.BorderColor);
         archive.Nested("Style", component.Style, serializeUIStyle, deserializeUIStyle);
     }
@@ -156,8 +185,7 @@ namespace CHEngine
     {
         archive("Label", component.Label);
         archive.Path("TexturePath", component.TexturePath);
-        archive("Size", component.Size)
-               ("TintColor", component.TintColor)
+        archive("TintColor", component.TintColor)
                ("BackgroundColor", component.BackgroundColor)
                ("FramePadding", component.FramePadding);
         archive.Nested("Style", component.Style, serializeUIStyle, deserializeUIStyle);
@@ -271,6 +299,7 @@ namespace CHEngine
 
     void ComponentSerializer::RegisterUIComponents()
     {
+        Register<ControlComponent>("ControlComponent", LayoutControlComponent);
         Register<ButtonControl>("ButtonControl", LayoutButtonControl);
         Register<PanelControl>("PanelControl", LayoutPanelControl);
         Register<LabelControl>("LabelControl", LayoutLabelControl);

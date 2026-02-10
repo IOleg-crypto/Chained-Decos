@@ -315,7 +315,7 @@ namespace CHEngine
         // ========================================================================
         // NATIVE SCRIPT COMPONENT
         // ========================================================================
-        DrawComponent<NativeScriptComponent>("Native Script", entity, [](auto& component)
+        DrawComponent<NativeScriptComponent>("Native Script", entity, [entity](auto& component) mutable
         {
             for (size_t i = 0; i < component.Scripts.size(); ++i)
             {
@@ -336,10 +336,14 @@ namespace CHEngine
 
             if (ImGui::BeginPopup("AddScriptPopup"))
             {
-                for (const auto& [name, funcs] : ScriptRegistry::GetScripts())
+                if (auto scene = entity.GetScene())
                 {
-                    if (ImGui::MenuItem(name.c_str()))
-                        ScriptRegistry::AddScript(name, component);
+                    auto& registry = scene->GetScriptRegistry();
+                    for (const auto& [name, funcs] : registry.GetScripts())
+                    {
+                        if (ImGui::MenuItem(name.c_str()))
+                            registry.AddScript(name, component);
+                    }
                 }
                 ImGui::EndPopup();
             }

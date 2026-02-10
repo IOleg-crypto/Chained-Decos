@@ -269,10 +269,37 @@ namespace CHEngine
         bool changed = false;
         auto pb = EditorGUI::Begin();
         pb.File("Texture Path", component.TexturePath, "png,jpg,tga")
-          .Vec2("Size", component.Size)
           .Color("Tint Color", component.TintColor)
           .Color("Border Color", component.BorderColor);
         if (pb.Changed) changed = true;
+
+        if (!component.TexturePath.empty() && e.HasComponent<ControlComponent>())
+        {
+            if (ImGui::Button("Set Native Size"))
+            {
+                auto assetManager = Project::GetActive() ? Project::GetActive()->GetAssetManager() : nullptr;
+                if (assetManager)
+                {
+                    auto textureAsset = assetManager->Get<TextureAsset>(component.TexturePath);
+                    if (textureAsset)
+                    {
+                        auto& texture = textureAsset->GetTexture();
+                        auto& rt = e.GetComponent<ControlComponent>().Transform;
+                        
+                        // Calculate width and height
+                        float w = (float)texture.width;
+                        float h = (float)texture.height;
+                        
+                        // Update offsets based on pivot to maintain position
+                        rt.OffsetMin.x = -w * rt.Pivot.x;
+                        rt.OffsetMax.x =  w * (1.0f - rt.Pivot.x);
+                        rt.OffsetMin.y = -h * rt.Pivot.y;
+                        rt.OffsetMax.y =  h * (1.0f - rt.Pivot.y);
+                        changed = true;
+                    }
+                }
+            }
+        }
 
         if (ImGui::TreeNodeEx("Style", ImGuiTreeNodeFlags_Framed))
         {
@@ -297,11 +324,34 @@ namespace CHEngine
         auto pb = EditorGUI::Begin();
         pb.String("Label", component.Label)
           .File("Texture Path", component.TexturePath, "png,jpg,tga")
-          .Vec2("Size", component.Size)
           .Color("Tint Color", component.TintColor)
           .Color("Background Color", component.BackgroundColor)
           .Int("Frame Padding", component.FramePadding);
         if (pb.Changed) changed = true;
+
+        if (!component.TexturePath.empty() && e.HasComponent<ControlComponent>())
+        {
+            if (ImGui::Button("Set Native Size"))
+            {
+                auto assetManager = Project::GetActive() ? Project::GetActive()->GetAssetManager() : nullptr;
+                if (assetManager)
+                {
+                    auto textureAsset = assetManager->Get<TextureAsset>(component.TexturePath);
+                    if (textureAsset)
+                    {
+                        auto& texture = textureAsset->GetTexture();
+                        auto& rt = e.GetComponent<ControlComponent>().Transform;
+                        float w = (float)texture.width;
+                        float h = (float)texture.height;
+                        rt.OffsetMin.x = -w * rt.Pivot.x;
+                        rt.OffsetMax.x =  w * (1.0f - rt.Pivot.x);
+                        rt.OffsetMin.y = -h * rt.Pivot.y;
+                        rt.OffsetMax.y =  h * (1.0f - rt.Pivot.y);
+                        changed = true;
+                    }
+                }
+            }
+        }
 
         if (ImGui::TreeNodeEx("Style", ImGuiTreeNodeFlags_Framed))
         {

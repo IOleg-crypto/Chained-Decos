@@ -263,32 +263,55 @@ namespace CHEngine
                    .Property("RenderSpawnZoneInScene", component.RenderSpawnZoneInScene);
         });
 
-        Register<NativeScriptComponent>("NativeScriptComponent", [](auto& archive, auto& component) {
-            if (archive.GetMode() == PropertyArchive::Serialize)
-            {
-                std::vector<std::string> scriptNames;
-                for (const auto& script : component.Scripts)
-                    scriptNames.push_back(script.ScriptName);
-                archive.Sequence("Scripts", scriptNames);
-            }
-            else
-            {
-                std::vector<std::string> scriptNames;
-                archive.Sequence("Scripts", scriptNames);
-                component.Scripts.clear();
-                for (const auto& name : scriptNames)
-                    ScriptRegistry::AddScript(name, component);
-            }
-        });
+        // Manual registration for NativeScriptComponent to access Entity during deserialization
+        {
+            ComponentSerializerEntry entry;
+            entry.YamlKey = "NativeScriptComponent";
+            entry.Serialize = [](YAML::Emitter& out, Entity entity) {
+                if (entity.HasComponent<NativeScriptComponent>()) {
+                    out << YAML::Key << "NativeScriptComponent";
+                    out << YAML::BeginMap;
+                    
+                    auto& component = entity.GetComponent<NativeScriptComponent>();
+                    std::vector<std::string> scriptNames;
+                    for (const auto& script : component.Scripts)
+                        scriptNames.push_back(script.ScriptName);
+                    
+                    out << YAML::Key << "Scripts" << YAML::Value << YAML::BeginSeq;
+                    for (const auto& item : scriptNames) out << item;
+                    out << YAML::EndSeq;
 
-        // ==========================================
-        // UI COMPONENTS (Forwarding to external file if kept, or Inline)
-        // ==========================================
-        // Note: For now invoking the RegisterUIComponents from the other file if we decide to keep it separated
-        // BUT user asked to consolidate. Let's assume we want to call RegisterUIComponents() 
-        // which IS defined in component_serializer_ui.cpp.
-        // If we want to fully remove the header splitting, we should move that content here too.
-        // For this step, I will call the function. Use 'SerializeUIComponents' or similar if necessary.
+                    out << YAML::EndMap;
+                }
+            };
+            entry.Deserialize = [](Entity entity, YAML::Node node) {
+                 auto componentNode = node["NativeScriptComponent"];
+                 if (componentNode) {
+                    if (!entity.HasComponent<NativeScriptComponent>())
+                        entity.AddComponent<NativeScriptComponent>();
+                    
+                    auto& component = entity.GetComponent<NativeScriptComponent>();
+                    
+                    std::vector<std::string> scriptNames;
+                    if (componentNode["Scripts"]) {
+                        for (auto item : componentNode["Scripts"])
+                            scriptNames.push_back(item.as<std::string>());
+                    }
+
+                    component.Scripts.clear();
+                    if (entity.GetScene()) {
+                        for (const auto& name : scriptNames)
+                            entity.GetScene()->GetScriptRegistry().AddScript(name, component);
+                    }
+                 }
+            };
+            entry.Copy = [](Entity source, Entity destination) {
+                if (source.HasComponent<NativeScriptComponent>()) {
+                     destination.AddOrReplaceComponent<NativeScriptComponent>(source.GetComponent<NativeScriptComponent>());
+                }
+            };
+            s_Registry.push_back(entry);
+        }
         
         RegisterUIComponents(); // Defined in component_serializer_ui.cpp (or moved here later)
     }

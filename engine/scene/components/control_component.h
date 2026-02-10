@@ -219,7 +219,6 @@ struct ProgressBarControl
 struct ImageControl
 {
     std::string TexturePath = "";
-    Vector2 Size = {100, 100};
     Color TintColor = {255, 255, 255, 255};
     Color BorderColor = {0, 0, 0, 0};
     
@@ -230,7 +229,6 @@ struct ImageButtonControl
 {
     std::string TexturePath = "";
     std::string Label = "ImageButton";
-    Vector2 Size = {100, 100};
     Color TintColor = {255, 255, 255, 255};
     Color BackgroundColor = {0, 0, 0, 0};
     int FramePadding = -1;  // -1 = use default

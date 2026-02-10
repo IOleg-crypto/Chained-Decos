@@ -10,6 +10,8 @@
 #include "engine/scene/scene_events.h"
 #include "engine/graphics/scene_renderer.h"
 #include "engine/graphics/ui_renderer.h"
+#include "engine/scene/scene_scripting.h"
+#include "engine/core/module_loader.h"
 #include "imgui.h"
 #include "raymath.h"
 #include <filesystem>
@@ -21,6 +23,11 @@ class RuntimeLayer : public Layer
 public:
     RuntimeLayer() : Layer("RuntimeLayer")
     {
+    }
+
+    ~RuntimeLayer()
+    {
+        ModuleLoader::UnloadGameModule();
     }
 
     virtual void OnUpdate(Timestep ts) override
@@ -71,7 +78,8 @@ public:
             
             if (ImGui::Begin("RuntimeUI", nullptr, flags))
             {
-                UIRenderer::DrawCanvas(m_Scene.get(), {0, 0}, displaySize, false);
+                // UIRenderer::DrawCanvas(m_Scene.get(), {0, 0}, displaySize, false);
+                SceneScripting::RenderUI(m_Scene.get());
             }
             ImGui::End();
             ImGui::PopStyleVar(2);
@@ -112,6 +120,22 @@ public:
              }
              
              m_Scene->OnRuntimeStart();
+             
+             // Dynamic Game Module Loading
+             // Find DLL next to executable
+             // Setup in runtime_application.h or pass via args?
+             // For now, assuming hardcoded name for this project "ChainedDecosGame.dll"
+              std::filesystem::path dllPath = std::filesystem::current_path() / "ChainedDecosGame.dll";
+             if (!std::filesystem::exists(dllPath)) {
+                 // Try relative to executable
+                  dllPath = std::filesystem::absolute(std::filesystem::path(Application::Get().GetSpecification().CommandLineArgs.Args[0])).parent_path() / "ChainedDecosGame.dll";
+             }
+
+             if (std::filesystem::exists(dllPath)) {
+                 ModuleLoader::LoadGameModule(dllPath.string(), m_Scene.get());
+             } else {
+                 CH_CORE_WARN("Runtime: Could not find Game Module DLL at {}", dllPath.string());
+             }
         }
         else
         {

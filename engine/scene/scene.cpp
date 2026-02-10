@@ -13,7 +13,9 @@
 #include "scriptable_entity.h"
 #include "engine/scene/scene_events.h"
 #include "engine/physics/bvh/bvh.h"
+#include "engine/physics/bvh/bvh.h"
 #include "engine/scene/component_serializer.h"
+#include "engine/scene/script_registry.h"
 
 namespace CHEngine
 {
@@ -44,7 +46,11 @@ Scene::Scene()
     m_Registry.on_destroy<HierarchyComponent>().connect<&Scene::OnHierarchyDestroy>(this);
 
     // Create physics instance
+    // Create physics instance
     m_Physics = std::make_unique<Physics>(this);
+
+    // Create script registry
+    m_ScriptRegistry = std::make_unique<ScriptRegistry>();
 }
 
 Scene::~Scene()
@@ -62,6 +68,10 @@ std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
 
     // 1. Copy Scene Settings
     newScene->m_Settings = other->m_Settings;
+    
+    // 2. Copy Script Registry
+    if (other->m_ScriptRegistry)
+        newScene->m_ScriptRegistry->CopyFrom(*other->m_ScriptRegistry);
     
     // 2. Copy Entities (Direct Memory Copy)
     auto &srcRegistry = other->m_Registry;
@@ -114,8 +124,6 @@ Entity Scene::CreateEntityWithUUID(UUID uuid, const std::string &name)
 
 Entity Scene::CreateUIEntity(const std::string &type, const std::string &name)
 {
-    // Note: C++ does not support switch statements on strings.
-    // Using if-else chain for readability as requested.
 
     Entity entity = CreateEntity(name.empty() ? type : name);
     entity.AddComponent<ControlComponent>();

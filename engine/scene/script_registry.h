@@ -8,7 +8,7 @@
 
 namespace CHEngine
 {
-void RegisterGameScripts(); // Implemented by the game
+// void RegisterGameScripts(); // Deprecated
 
 class ScriptRegistry
 {
@@ -22,9 +22,9 @@ public:
         DestroyFn Destroy;
     };
 
-    template <typename T> static void Register(const std::string &name)
+    template <typename T> void Register(const std::string &name)
     {
-        s_Registry[name] = {[]() { return static_cast<ScriptableEntity *>(new T()); },
+        m_Registry[name] = {[]() { return static_cast<ScriptableEntity *>(new T()); },
                             [](ScriptInstance *si)
                             {
                                 delete si->Instance;
@@ -32,25 +32,30 @@ public:
                             }};
     }
 
-    static void AddScript(const std::string &name, NativeScriptComponent &nsc)
+    void AddScript(const std::string &name, NativeScriptComponent &nsc)
     {
-        if (s_Registry.find(name) != s_Registry.end())
+        if (m_Registry.find(name) != m_Registry.end())
         {
             ScriptInstance si;
             si.ScriptName = name;
-            si.InstantiateScript = s_Registry[name].Instantiate;
-            si.DestroyScript = s_Registry[name].Destroy;
+            si.InstantiateScript = m_Registry[name].Instantiate;
+            si.DestroyScript = m_Registry[name].Destroy;
             nsc.Scripts.push_back(si);
         }
     }
 
-    static const std::unordered_map<std::string, ScriptFunctions> &GetScripts()
+    const std::unordered_map<std::string, ScriptFunctions> &GetScripts() const
     {
-        return s_Registry;
+        return m_Registry;
+    }
+
+    void CopyFrom(const ScriptRegistry& other)
+    {
+        m_Registry = other.m_Registry;
     }
 
 private:
-    inline static std::unordered_map<std::string, ScriptFunctions> s_Registry;
+    std::unordered_map<std::string, ScriptFunctions> m_Registry;
 };
 } // namespace CHEngine
 

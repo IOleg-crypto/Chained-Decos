@@ -45,6 +45,10 @@ if(UNIX AND NOT APPLE)
     add_compile_definitions(_GNU_SOURCE)
 endif()
 
+if(MINGW)
+    add_compile_options(-Wa,-mbig-obj)
+endif()
+
 file(TO_CMAKE_PATH "${CMAKE_SOURCE_DIR}" PROJECT_ROOT_DIR_ESCAPED)
 add_compile_definitions(PROJECT_ROOT_DIR="${PROJECT_ROOT_DIR_ESCAPED}")
 

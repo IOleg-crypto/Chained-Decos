@@ -14,3 +14,15 @@ target_precompile_headers(RuntimeCore PRIVATE
     <filesystem>
     "../engine/core/application.h"
 )
+
+# Generic Runtime Executable
+add_executable(ChainedRuntime
+    runtime_generic_entry.cpp
+)
+
+target_link_libraries(ChainedRuntime PRIVATE RuntimeCore)
+apply_engine_optimizations(ChainedRuntime)
+
+install(TARGETS ChainedRuntime
+    RUNTIME DESTINATION bin COMPONENT Runtime
+)
