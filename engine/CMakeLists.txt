@@ -5,9 +5,9 @@ set(ENGINE_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-
-add_library(engine_core STATIC
-    # Sources
+# Build entire engine as one SHARED library
+add_library(engine SHARED
+    # Core
     core/layer_stack.cpp
     core/profiler.cpp
     core/uuid.cpp
@@ -15,8 +15,45 @@ add_library(engine_core STATIC
     core/input.cpp
     core/imgui_layer.cpp
     core/thread_pool.cpp
+    core/module_loader.cpp
+    core/application.cpp
     
-    # Headers
+    # Graphics
+    graphics/render.cpp
+    graphics/render_command.cpp
+    graphics/ui_renderer.cpp
+    graphics/asset_manager.cpp
+    graphics/shader_asset.cpp
+    graphics/scene_renderer.cpp
+    graphics/model_asset.cpp
+    graphics/texture_asset.cpp
+    graphics/font_asset.cpp
+    graphics/environment.cpp
+    
+    # Audio
+    audio/audio.cpp
+    audio/sound_asset.cpp
+    
+    # Physics
+    physics/physics.cpp
+    physics/dynamics.cpp
+    physics/narrow_phase.cpp
+    physics/scene_trace.cpp
+    physics/bvh/bvh.cpp
+    
+    # Scene
+    scene/scene.cpp
+    scene/entity.cpp
+    scene/project.cpp
+    scene/project_serializer.cpp
+    scene/scene_serializer.cpp
+    scene/component_serializer.cpp
+    scene/component_serializer_ui.cpp
+    scene/prefab_serializer.cpp
+    scene/scene_scripting.cpp
+    scene/scene_camera.cpp
+    
+    # All headers (for IDE support)
     core/application.h
     core/imgui_layer.h
     core/base.h
@@ -34,23 +71,8 @@ add_library(engine_core STATIC
     core/uuid.h
     core/window.h
     core/yaml.h
-)
-
-target_include_directories(engine_core PUBLIC ${ENGINE_INCLUDE_DIRS})
-target_link_libraries(engine_core PUBLIC raylib yaml-cpp imguilib glm EnTT)
-
-
-add_library(engine_graphics STATIC
-    graphics/render.cpp
-    graphics/render_command.cpp
-    graphics/ui_renderer.cpp
-    graphics/asset_manager.cpp
-    graphics/shader_asset.cpp
-    graphics/scene_renderer.cpp
-    graphics/model_asset.cpp
-    graphics/texture_asset.cpp
-    graphics/font_asset.cpp
-    graphics/environment.cpp
+    core/module_loader.h
+    
     graphics/render.h
     graphics/render_command.h
     graphics/scene_renderer.h
@@ -63,36 +85,10 @@ add_library(engine_graphics STATIC
     graphics/font_asset.h
     graphics/environment.h
     graphics/material.h
-)
-
-target_include_directories(engine_graphics PUBLIC 
-    ${ENGINE_INCLUDE_DIRS}
-    ${cgltf_SOURCE_DIR}
-    ${tinyobjloader_SOURCE_DIR}
-)
-target_link_libraries(engine_graphics PUBLIC engine_core raylib)
-
-
-add_library(engine_audio STATIC
-    audio/audio.cpp
-    audio/sound_asset.cpp
+    
     audio/audio.h
     audio/sound_asset.h
-)
-
-target_include_directories(engine_audio PUBLIC ${ENGINE_INCLUDE_DIRS})
-target_link_libraries(engine_audio PUBLIC engine_core)
-
-
-add_library(engine_physics STATIC
-    # Sources
-    physics/physics.cpp
-    physics/dynamics.cpp
-    physics/narrow_phase.cpp
-    physics/scene_trace.cpp
-    physics/bvh/bvh.cpp
     
-    # Headers
     physics/physics.h
     physics/dynamics.h
     physics/narrow_phase.h
@@ -101,25 +97,7 @@ add_library(engine_physics STATIC
     physics/bvh/bvh_node.h
     physics/collision/collision.h
     physics/collision/collision_triangle.h
-)
-
-target_include_directories(engine_physics PUBLIC ${ENGINE_INCLUDE_DIRS})
-target_link_libraries(engine_physics PUBLIC engine_core)
-
-add_library(engine_scene STATIC
-    # Sources
-    scene/scene.cpp
-    scene/entity.cpp
-    scene/project.cpp
-    scene/project_serializer.cpp
-    scene/scene_serializer.cpp
-    scene/component_serializer.cpp
-    scene/component_serializer_ui.cpp
-    scene/prefab_serializer.cpp
-    scene/scene_scripting.cpp
-    scene/scene_camera.cpp
     
-    # Headers
     scene/scene.h
     scene/scene_events.h
     scene/project.h
@@ -132,8 +110,6 @@ add_library(engine_scene STATIC
     scene/scriptable_entity.h
     scene/scene_camera.h
     scene/components.h
-    
-    # Component Headers
     scene/components/animation_component.h
     scene/components/audio_component.h
     scene/components/billboard_component.h
@@ -152,45 +128,36 @@ add_library(engine_scene STATIC
     scene/components/transform_component.h
 )
 
-target_include_directories(engine_scene PUBLIC ${ENGINE_INCLUDE_DIRS})
-target_link_libraries(engine_scene PUBLIC 
-    engine_core
-    engine_graphics
-    engine_physics
-    engine_audio
+target_include_directories(engine PUBLIC
+    ${ENGINE_INCLUDE_DIRS}
+    ${cgltf_SOURCE_DIR}
+    ${tinyobjloader_SOURCE_DIR}
+INTERFACE
+    ${yaml-cpp_SOURCE_DIR}/include
 )
 
-add_library(engine_application STATIC
-    core/application.cpp
-)
-target_include_directories(engine_application PUBLIC ${ENGINE_INCLUDE_DIRS})
-target_link_libraries(engine_application PUBLIC engine_scene)
-
-
-add_library(engine INTERFACE)
-target_link_libraries(engine INTERFACE
-    engine_core
-    engine_graphics
-    engine_audio
-    engine_physics
-    engine_scene
-    engine_application
+target_link_libraries(engine 
+PUBLIC 
+    raylib 
+    glm 
+    EnTT
+    imguilib
+PRIVATE
+    yaml-cpp
 )
 
-set(ENGINE_TARGETS engine_core engine_graphics engine_audio engine_physics engine_scene engine_application)
+# Compiler flags
+if(MSVC)
+    target_compile_options(engine PRIVATE /bigobj)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(engine PRIVATE -Wa,-mbig-obj)
+endif()
 
-foreach(target ${ENGINE_TARGETS})
-    if(MSVC)
-        target_compile_options(${target} PRIVATE /bigobj)
-    elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-        target_compile_options(${target} PRIVATE -W)
-    endif()
-    if(COMMAND apply_engine_optimizations)
-        apply_engine_optimizations(${target})
-    endif()
-endforeach()
+if(COMMAND apply_engine_optimizations)
+    apply_engine_optimizations(engine)
+endif()
 
-install(TARGETS ${ENGINE_TARGETS}
+install(TARGETS engine
     EXPORT ChainedEngineTargets
     ARCHIVE DESTINATION lib COMPONENT Runtime
     LIBRARY DESTINATION lib COMPONENT Runtime

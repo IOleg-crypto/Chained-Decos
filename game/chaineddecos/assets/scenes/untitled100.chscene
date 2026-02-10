@@ -23,15 +23,41 @@ Canvas:
   ScaleMode: 0
   MatchWidthOrHeight: 0.5
 Entities:
-  - Entity: 1283719283719285
+  - Entity: 7935884460455885952
     TagComponent:
-      Tag: Arena
+      Tag: Main Camera
     TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
+      Translation: [1.7195313, 9.51923943, 78.5091171]
+      Rotation: [-13.4000006, 1.8005259, 2.66936055e-08]
       Scale: [1, 1, 1]
+    CameraComponent:
+      ProjectionType: 0
+      PerspectiveFOV: 1.81512499
+      PerspectiveNear: 0.460000008
+      PerspectiveFar: 1000
+      OrthographicSize: 10
+      OrthographicNear: -1
+      OrthographicFar: 1
+      Primary: true
+      FixedAspectRatio: false
+      IsOrbitCamera: true
+      TargetEntityTag: Player
+      OrbitDistance: 32
+      OrbitYaw: 1.80052602
+      OrbitPitch: 13.4000015
+      LookSensitivity: 0.899999976
+    NativeScriptComponent:
+      Scripts:
+        - OrbitCameraController
+  - Entity: 6428169142076434776
+    TagComponent:
+      Tag: stairsaw
+    TransformComponent:
+      Translation: [-50.6539459, 0.631593704, 10.243227]
+      Rotation: [-3.14159083, 78.4499969, -3.14159083]
+      Scale: [0.999882996, 1, 0.97942549]
     ModelComponent:
-      ModelPath: models/arena.glb
+      ModelPath: models/stairs.glb
     ColliderComponent:
       Type: 1
       Enabled: true
@@ -40,20 +66,14 @@ Entities:
       Radius: 0.5
       Height: 2
       AutoCalculate: true
-      ModelPath: Models\arena.glb
-  - Entity: 1283719283719287
+      ModelPath: D:\gitnext\Chained Decos\game\chaineddecos\assets\models\stairs.glb
+  - Entity: 1283719283719289
     TagComponent:
       Tag: Entity
     TransformComponent:
-      Translation: [28.8506241, 16.7000008, 27.7648582]
-      Rotation: [0, -0, 0]
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
-    ModelComponent:
-      ModelPath: ""
-    SpawnComponent:
-      SpawnZoneSize: [1, 1, 1]
-      SpawnTexturePath: boxes/playerspawntexture.png
-      RenderSpawnZoneInScene: true
   - Entity: 1326311650816898569
     TagComponent:
       Tag: Player
@@ -83,26 +103,31 @@ Entities:
       JumpForce: 10
     NativeScriptComponent:
       Scripts:
-        - GameHUD
         - CameraController
         - PlayerController
-        - SpawnZoneRespawn
-  - Entity: 1283719283719289
+        - GameHUD
+  - Entity: 1283719283719287
     TagComponent:
       Tag: Entity
+    TransformComponent:
+      Translation: [28.8506241, 16.7000008, 27.7648582]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelPath: ""
+    SpawnComponent:
+      SpawnZoneSize: [1, 1, 1]
+      SpawnTexturePath: boxes/playerspawntexture.png
+      RenderSpawnZoneInScene: true
+  - Entity: 1283719283719285
+    TagComponent:
+      Tag: Arena
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
-  - Entity: 6428169142076434776
-    TagComponent:
-      Tag: stairsaw
-    TransformComponent:
-      Translation: [-50.6539459, 0.631593704, 10.243227]
-      Rotation: [-3.14159083, 78.4499969, -3.14159083]
-      Scale: [0.999882996, 1, 0.97942549]
     ModelComponent:
-      ModelPath: models/stairs.glb
+      ModelPath: models/arena.glb
     ColliderComponent:
       Type: 1
       Enabled: true
@@ -111,30 +136,4 @@ Entities:
       Radius: 0.5
       Height: 2
       AutoCalculate: true
-      ModelPath: D:\gitnext\Chained Decos\game\chaineddecos\assets\models\stairs.glb
-  - Entity: 7935884460455885952
-    TagComponent:
-      Tag: Main Camera
-    TransformComponent:
-      Translation: [1.7195313, 9.51923943, 78.5091171]
-      Rotation: [-13.4000006, 1.8005259, 2.66936055e-08]
-      Scale: [1, 1, 1]
-    CameraComponent:
-      ProjectionType: 0
-      PerspectiveFOV: 1.81512499
-      PerspectiveNear: 0.460000008
-      PerspectiveFar: 1000
-      OrthographicSize: 10
-      OrthographicNear: -1
-      OrthographicFar: 1
-      Primary: true
-      FixedAspectRatio: false
-      IsOrbitCamera: true
-      TargetEntityTag: Player
-      OrbitDistance: 32
-      OrbitYaw: 1.80052602
-      OrbitPitch: 13.4000015
-      LookSensitivity: 0.899999976
-    NativeScriptComponent:
-      Scripts:
-        - OrbitCameraController
+      ModelPath: Models\arena.glb
