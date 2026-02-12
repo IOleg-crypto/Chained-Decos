@@ -9,7 +9,7 @@ namespace CHEngine
 class SceneScripting
 {
 public:
-    static void Update(Scene *scene, float deltaTime);
+    static void Update(Scene *scene, Timestep deltaTime);
     static void DispatchEvent(Scene *scene, Event &e);
     static void RenderUI(Scene *scene);
 };

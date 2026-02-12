@@ -28,7 +28,10 @@ namespace CHEngine
     void SceneActions::Open(const std::filesystem::path &path)
     {
         auto newScene = std::make_shared<Scene>();
+        // KISS: Load Game Module BEFORE deserialization to ensure ScriptRegistry is populated
+        EditorLayer::Get().SetScene(newScene);
         SceneSerializer serializer(newScene.get());
+
         if (serializer.Deserialize(path.string()))
         {
             // Sync environment if needed (optional, logic from Application::LoadScene can be moved here or to a helper)
@@ -43,7 +46,6 @@ namespace CHEngine
             // Sync with EditorLayer which manages the scene now
             // Assumes EditorLayer is active (SceneActions is editor-only code)
             newScene->GetSettings().ScenePath = path.string();
-            EditorLayer::Get().SetScene(newScene);
 
             SceneOpenedEvent e(path.string());
             Application::Get().OnEvent(e);

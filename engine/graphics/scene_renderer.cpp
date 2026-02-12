@@ -1,7 +1,11 @@
+#include "engine/graphics/renderer.h"
+#include "engine/graphics/model_asset.h"
 #include "scene_renderer.h"
 #include "engine/scene/components.h"
 #include "engine/physics/bvh/bvh.h"
 #include "engine/core/profiler.h"
+#include "engine/core/assert.h"
+#include "engine/graphics/renderer2d.h"
 #include "engine/scene/project.h"
 #include "render_command.h"
 #include <raymath.h>
@@ -12,17 +16,22 @@ namespace CHEngine
     void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, Timestep timestep, const DebugRenderFlags* debugFlags)
     {
         CH_PROFILE_FUNCTION();
-        
+        CH_CORE_ASSERT(Renderer::s_Instance, "Renderer not initialized!");
         CH_CORE_ASSERT(scene, "Scene is null!");
         
         // 1. Environmental setup
         auto environment = scene->GetSettings().Environment;
+        
+        // Fallback to project environment if not set in scene
+        if (!environment && Project::GetActive())
+            environment = Project::GetActive()->GetEnvironment();
+
         if (environment)
         {
-            Render::ApplyEnvironment(environment->GetSettings());
+            Renderer::Get().ApplyEnvironment(environment->GetSettings());
         }
 
-        Render::UpdateTime((float)GetTime());
+        Renderer::Get().UpdateTime(Timestep((float)GetTime()));
 
         // --- Update Profiler Stats ---
         ProfilerStats stats;
@@ -30,7 +39,7 @@ namespace CHEngine
         Profiler::UpdateStats(stats);
         
         // 2. Scene rendering flow
-        Render::BeginScene(camera);
+        Renderer::Get().BeginScene(camera);
         {
             if (environment)
             {
@@ -42,7 +51,7 @@ namespace CHEngine
                         warned = true;
                     }
                 }
-                Render::DrawSkybox(environment->GetSettings().Skybox, camera);
+                Renderer::Get().DrawSkybox(environment->GetSettings().Skybox, camera);
             }
             else
             {
@@ -54,14 +63,15 @@ namespace CHEngine
             }
 
             RenderModels(scene, timestep);
-            RenderBillboards(scene, camera);
             
             if (debugFlags)
                 RenderDebug(scene, debugFlags);
                 
-            RenderEditorIcons(scene, camera);
+            RenderSprites(scene);
+
+        RenderEditorIcons(scene, camera);
         }
-        Render::EndScene();
+        Renderer::Get().EndScene();
     }
 
     void SceneRenderer::RenderModels(Scene* scene, Timestep timestep)
@@ -70,13 +80,11 @@ namespace CHEngine
         auto view = registry.view<TransformComponent, ModelComponent>();
         
         float targetFPS = 30.0f;
-        if (Project::GetActive())
+        if (Project::GetActive()){
             targetFPS = Project::GetActive()->GetConfig().Animation.TargetFPS;
+        }
         float frameTime = 1.0f / (targetFPS > 0 ? targetFPS : 30.0f);
         
-        static int frameCounter = 0;
-        bool shouldLog = (frameCounter++ % 60 == 0); // Log once per second-ish
-        int modelCount = 0;
 
         for (auto entity : view)
         {
@@ -88,26 +96,14 @@ namespace CHEngine
             if (registry.all_of<AnimationComponent>(entity))
             {
                 auto& animation = registry.get<AnimationComponent>(entity);
-                Render::DrawModel(model.Asset, transform.GetTransform(), {}, animation.CurrentAnimationIndex, animation.CurrentFrame);
+                Renderer::Get().DrawModel(model.Asset, transform.GetTransform(), {}, animation.CurrentAnimationIndex, animation.CurrentFrame);
             }
             else
             {
-                Render::DrawModel(model.Asset, transform.GetTransform());
-            }
-            modelCount++;
-            
-            if (shouldLog)
-            {
-                //CH_CORE_INFO("RenderModels Loop ({}): Entity={}, Path={}, AssetPtr={}, State={}", 
-                    //modelCount, (uint32_t)entity, model.ModelPath, (void*)model.Asset.get(), 
-                    //.Asset ? (int)model.Asset->GetState() : -1);
+                Renderer::Get().DrawModel(model.Asset, transform.GetTransform());
             }
         }
         
-        if (shouldLog && modelCount == 0)
-        {
-            //CH_CORE_WARN("RenderModels: NO ENTITIES FOUND in view<Transform, Model>!");
-        }
     }
 
     static void RenderBVHNode(const BVH* bvh, uint32_t nodeIndex, const Matrix& transform, Color color, int depth = 0)
@@ -133,7 +129,7 @@ namespace CHEngine
 
         // Transform is already in world space
         Matrix nodeTransform = MatrixMultiply(transform, MatrixTranslate(center.x, center.y, center.z));
-        Render::DrawCubeWires(nodeTransform, size, nodeColor);
+        Renderer::Get().DrawCubeWires(nodeTransform, size, nodeColor);
 
         if (!node.IsLeaf() && depth < 8) // Limit depth for performance and clarity
         {
@@ -179,7 +175,7 @@ namespace CHEngine
                             Vector3 center = Vector3Scale(Vector3Add(nodes[0].Min, nodes[0].Max), 0.5f);
                             Vector3 size = Vector3Subtract(nodes[0].Max, nodes[0].Min);
                             Matrix rootTransform = MatrixMultiply(worldTransform, MatrixTranslate(center.x, center.y, center.z));
-                            Render::DrawCubeWires(rootTransform, size, color);
+                            Renderer::Get().DrawCubeWires(rootTransform, size, color);
                         }
 
                         // Also draw a few triangles if close? 
@@ -191,7 +187,7 @@ namespace CHEngine
                 {
                     Matrix colliderTransform = MatrixMultiply(transform.GetTransform(), MatrixTranslate(collider.Offset.x, collider.Offset.y, collider.Offset.z));
                     // Draw oriented bounding box (OBB)
-                    Render::DrawCubeWires(colliderTransform, collider.Size, color);
+                    Renderer::Get().DrawCubeWires(colliderTransform, collider.Size, color);
                 }
             }
         }
@@ -206,7 +202,7 @@ namespace CHEngine
                 if (spawn.RenderSpawnZoneInScene)
                 {
                     // Draw a more visible oriented box for the zone
-                    Render::DrawCubeWires(transform.GetTransform(), spawn.ZoneSize, {255, 255, 0, 200});
+                    Renderer::Get().DrawCubeWires(transform.GetTransform(), spawn.ZoneSize, {255, 255, 0, 200});
                 }
             }
         }
@@ -214,17 +210,17 @@ namespace CHEngine
         // 3. Draw Grid
         if (debugFlags->DrawGrid && scene->GetSettings().Mode == BackgroundMode::Environment3D)
         {
-            Render::DrawGrid(20, 1.0f);
+            Renderer::Get().DrawGrid(20, 1.0f);
         }
     }
 
     void SceneRenderer::RenderEditorIcons(Scene* scene, const Camera3D& camera)
     {
         auto& registry = scene->GetRegistry();
-        auto& state = Render::GetState();
+        auto& state = Renderer::Get().GetData();
         auto assetManager = Project::GetActive() ? Project::GetActive()->GetAssetManager() : nullptr;
 
-        // Ensure we have icons (fallback to AssetManager if Render::Initialize failed sync load)
+        // Ensure we have icons (fallback to AssetManager if Renderer::Get().Initialize failed sync load)
         if (state.LightIcon.id == 0 && assetManager) {
             auto texture = assetManager->Get<TextureAsset>(PROJECT_ROOT_DIR "/engine/resources/icons/light_bulb.png");
             if (texture && texture->IsReady()) state.LightIcon = texture->GetTexture();
@@ -247,7 +243,7 @@ namespace CHEngine
             for (auto entity : view)
             {
                 auto& transform = view.get<TransformComponent>(entity);
-                Render::DrawBillboard(camera, state.LightIcon, transform.Translation, 1.5f, WHITE);
+                Renderer::Get().DrawBillboard(camera, state.LightIcon, transform.Translation, 1.5f, WHITE);
             }
         }
 
@@ -257,7 +253,7 @@ namespace CHEngine
             for (auto entity : view)
             {
                 auto& transform = view.get<TransformComponent>(entity);
-                Render::DrawBillboard(camera, state.SpawnIcon, transform.Translation, 1.5f, WHITE);
+                Renderer::Get().DrawBillboard(camera, state.SpawnIcon, transform.Translation, 1.5f, WHITE);
             }
         }
 
@@ -267,32 +263,47 @@ namespace CHEngine
             for (auto entity : view)
             {
                 auto& transform = view.get<TransformComponent>(entity);
-                Render::DrawBillboard(camera, state.CameraIcon, transform.Translation, 1.5f, WHITE);
+                Renderer::Get().DrawBillboard(camera, state.CameraIcon, transform.Translation, 1.5f, WHITE);
             }
         }
 
         rlEnableDepthTest();
     }
 
-    void SceneRenderer::RenderBillboards(Scene* scene, const Camera3D& camera)
+    void SceneRenderer::RenderSprites(Scene* scene)
     {
+        CH_CORE_ASSERT(scene, "Scene is null!");
+        CH_CORE_ASSERT(Renderer2D::s_Instance, "Renderer2D not initialized!");
         auto& registry = scene->GetRegistry();
-        auto view = registry.view<TransformComponent, BillboardComponent>();
+        auto view = registry.view<TransformComponent, SpriteComponent>();
 
-        for (auto entity : view)
+        // Sort by ZOrder
+        std::vector<entt::entity> sortedEntities;
+        for (auto entity : view) sortedEntities.push_back(entity);
+
+        if (sortedEntities.empty()) return;
+
+        std::sort(sortedEntities.begin(), sortedEntities.end(), [&](entt::entity a, entt::entity b) {
+            return view.get<SpriteComponent>(a).ZOrder < view.get<SpriteComponent>(b).ZOrder;
+        });
+
+        Renderer2D::Get().BeginCanvas();
+        for (auto entityID : sortedEntities)
         {
-            auto [transform, billboard] = view.get<TransformComponent, BillboardComponent>(entity);
-            if (billboard.TexturePath.empty()) continue;
+            auto& transform = view.get<TransformComponent>(entityID);
+            auto& sprite = view.get<SpriteComponent>(entityID);
 
-            auto textureAsset = Project::GetActive()->GetAssetManager()->Get<TextureAsset>(billboard.TexturePath);
-            if (!textureAsset || !textureAsset->IsReady()) continue;
+            if (sprite.TexturePath.empty()) continue;
 
-            // Draw as billboard
-            Render::DrawBillboard(camera, 
-                            textureAsset->GetTexture(), 
-                            transform.Translation, 
-                            billboard.Size, 
-                            billboard.Tint);
+            if (!sprite.Texture && Project::GetActive())
+                sprite.Texture = Project::GetActive()->GetAssetManager()->Get<TextureAsset>(sprite.TexturePath);
+
+            // Draw as 2D overlay
+            Renderer2D::Get().DrawSprite(Vector2{transform.Translation.x, transform.Translation.y}, 
+                                    Vector2{transform.Scale.x, transform.Scale.y}, 
+                                    transform.Rotation.z, 
+                                    sprite.Texture, sprite.Tint);
         }
+        Renderer2D::Get().EndCanvas();
     }
 }

@@ -10,11 +10,10 @@ namespace CHEngine
 class FontAsset : public Asset
 {
 public:
-    FontAsset() = default;
-    virtual ~FontAsset();
+    static AssetType GetStaticType() { return AssetType::Font; }
 
-    static std::shared_ptr<FontAsset> Load(const std::string &path);
-    void LoadFromFile(const std::string &path);
+    FontAsset() : Asset(GetStaticType()) {}
+    virtual ~FontAsset();
     Font &GetFont()
     {
         return m_Font;
@@ -22,11 +21,6 @@ public:
     const Font &GetFont() const
     {
         return m_Font;
-    }
-
-    virtual AssetType GetType() const override
-    {
-        return AssetType::Font;
     }
     
     void UploadToGPU() {} // Required by AssetManager::UpdateCache

@@ -3,6 +3,7 @@
 
 #include "asset.h"
 #include "engine/core/base.h"
+#include "model_data.h"
 #include <future>
 #include "raylib.h"
 #include <string>
@@ -14,18 +15,16 @@ namespace CHEngine
 class ModelAsset : public Asset
 {
 public:
-    static std::shared_ptr<ModelAsset> Load(const std::string &path);
-    static void LoadAsync(const std::string &path);
-    static std::shared_ptr<ModelAsset> CreateProcedural(const std::string &type);
-    static Model GenerateProceduralModel(const std::string &type);
-
-    ModelAsset() = default;
+    ModelAsset() : Asset(GetStaticType()) {}
     virtual ~ModelAsset();
 
-    virtual AssetType GetType() const override;
+    static AssetType GetStaticType() { return AssetType::Model; }
 
     void UploadToGPU(); // Main thread
-    void LoadFromFile(const std::string &path);
+    
+    // For internal use by MeshImporter
+    void SetPendingData(const PendingModelData& data) { m_PendingData = data; m_HasPendingData = true; }
+
     Model &GetModel();
     const Model &GetModel() const;
 
@@ -39,31 +38,6 @@ public:
 
     const std::vector<std::shared_ptr<class TextureAsset>> &GetTextures() const;
 
-    struct RawMesh {
-        std::vector<float> vertices;
-        std::vector<float> texcoords;
-        std::vector<float> normals;
-        std::vector<unsigned char> colors;
-        std::vector<unsigned short> indices;
-        int materialIndex = -1;
-    };
-
-    struct RawMaterial {
-        std::string albedoPath;
-        Color albedoColor = WHITE;
-    };
-
-    // CPU-side data for async loading (loaded in worker thread)
-    struct PendingModelData {
-        std::string fullPath;   
-        std::vector<RawMesh> meshes;
-        std::vector<RawMaterial> materials;
-        
-        ModelAnimation* animations = nullptr;
-        int animationCount = 0;
-        bool isValid = false;
-    };
-
 private:
     Model m_Model = {0};
     ModelAnimation *m_Animations = nullptr;
@@ -76,10 +50,6 @@ private:
     bool m_HasPendingData = false;
     
     // Track textures that are still loading
-    struct PendingTexture {
-        int materialIndex;
-        std::string path;
-    };
     std::vector<PendingTexture> m_PendingTextures;
 };
 } // namespace CHEngine

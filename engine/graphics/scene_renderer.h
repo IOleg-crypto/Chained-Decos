@@ -2,20 +2,23 @@
 #define CH_SCENE_RENDERER_H
 
 #include "engine/scene/scene.h"
-#include "engine/graphics/render.h"
+#include "engine/graphics/renderer.h"
 
 namespace CHEngine
 {
     class SceneRenderer
     {
     public:
-        static void RenderScene(Scene* scene, const Camera3D& camera, Timestep timestep, const DebugRenderFlags* debugFlags = nullptr);
+        SceneRenderer() = default;
+        ~SceneRenderer() = default;
+    public:
+        void RenderScene(Scene* scene, const Camera3D& camera, Timestep timestep, const DebugRenderFlags* debugFlags = nullptr);
         
         // Internal methods used by RenderScene
-        static void RenderModels(Scene* scene, Timestep timestep);
-        static void RenderDebug(Scene* scene, const DebugRenderFlags* debugFlags);
-        static void RenderEditorIcons(Scene* scene, const Camera3D& camera);
-        static void RenderBillboards(Scene* scene, const Camera3D& camera);
+        void RenderModels(Scene* scene, Timestep timestep);
+        void RenderDebug(Scene* scene, const DebugRenderFlags* debugFlags);
+        void RenderEditorIcons(Scene* scene, const Camera3D& camera);
+        void RenderSprites(Scene* scene);
     };
 }
 

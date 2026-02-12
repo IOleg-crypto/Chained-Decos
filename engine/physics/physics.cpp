@@ -17,6 +17,9 @@ namespace CHEngine
     Physics::Physics(Scene* scene)
         : m_Scene(scene)
     {
+        m_NarrowPhase = std::make_unique<NarrowPhase>(this);
+        m_Dynamics = std::make_unique<Dynamics>();
+        m_SceneTrace = std::make_unique<SceneTrace>(this);
     }
 
     Physics::~Physics()
@@ -34,7 +37,7 @@ namespace CHEngine
         CH_CORE_INFO("Global Physics System Shutdown.");
     }
 
-    void Physics::Update(float deltaTime, bool runtime)
+    void Physics::Update(Timestep deltaTime, bool runtime)
     {
         CH_PROFILE_FUNCTION();
         CH_CORE_ASSERT(m_Scene, "Physics Scene is null!");
@@ -45,18 +48,8 @@ namespace CHEngine
         if (!runtime)
             return;
 
-        // 2. Collect Simulation Entities
-        auto& registry = m_Scene->GetRegistry();
-        auto rbView = registry.view<TransformComponent, RigidBodyComponent>();
-        std::vector<entt::entity> rbEntities;
-        rbEntities.reserve(rbView.size_hint());
+        // 2. Collect Simulation Entities (already done in Update, but let's look at ResolveSimulation)
         
-        for (auto entity : rbView)
-            rbEntities.push_back(entity);
-
-        if (rbEntities.empty())
-            return;
-
         // 3. Simulation & Resolution
         ResolveSimulation(deltaTime);
     }
@@ -64,7 +57,7 @@ namespace CHEngine
     RaycastResult Physics::Raycast(Ray ray)
     {
         CH_CORE_ASSERT(m_Scene, "Physics Scene is null!");
-        return SceneTrace::Raycast(m_Scene, ray, this);
+        return m_SceneTrace->Raycast(m_Scene, ray);
     }
 
     std::shared_ptr<BVH> Physics::GetBVH(ModelAsset* asset)
@@ -146,17 +139,21 @@ namespace CHEngine
         }
     }
 
-    void Physics::ResolveSimulation(float deltaTime)
+    void Physics::ResolveSimulation(Timestep deltaTime)
     {
         auto& registry = m_Scene->GetRegistry();
         auto rbView = registry.view<TransformComponent, RigidBodyComponent>();
         std::vector<entt::entity> rbEntities;
+        rbEntities.reserve(rbView.size_hint());
         
         for (auto entity : rbView)
             rbEntities.push_back(entity);
 
-        Dynamics::Update(m_Scene, rbEntities, deltaTime);
-        NarrowPhase::ResolveCollisions(m_Scene, rbEntities);
+        if (rbEntities.empty())
+            return;
+
+        m_Dynamics->Update(m_Scene, rbEntities, deltaTime);
+        m_NarrowPhase->ResolveCollisions(m_Scene, rbEntities);
     }
 
 } // namespace CHEngine

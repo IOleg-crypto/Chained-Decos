@@ -110,7 +110,7 @@ namespace CHEngine
                     T componentCopy = component;
                     if (drawer(componentCopy, entity))
                     {
-                        entity.GetScene()->GetRegistry().template patch<T>(
+                        entity.GetRegistry().template patch<T>(
                             entity, [&componentCopy](T &comp) { comp = componentCopy; });
                     }
                     ImGui::Spacing();
@@ -119,7 +119,7 @@ namespace CHEngine
 
                 if (removeComponent)
                 {
-                    entity.GetScene()->GetRegistry().template remove<T>(entity);
+                    entity.GetRegistry().template remove<T>(entity);
                 }
             }
         }

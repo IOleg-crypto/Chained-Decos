@@ -25,7 +25,7 @@ CH_SCRIPT(GameHUD)
     {
         // 1. Calculate Player Altitude
         float altitude = 0.0f;
-        auto *scene = GetEntity().GetScene();
+        auto *scene = GetScene();
         if (scene)
         {
             Entity player = scene->FindEntityByTag("Player");

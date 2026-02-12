@@ -5,7 +5,6 @@
 #include "engine/core/input.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scriptable_entity.h"
-#include "glm/glm.hpp"
 #include "raymath.h"
 
 namespace CHEngine
@@ -27,7 +26,7 @@ namespace CHEngine
 
         void Respawn()
         {
-            auto scene = GetEntity().GetScene();
+            auto scene = GetScene();
             if (!scene)
                 return;
 
@@ -43,13 +42,12 @@ namespace CHEngine
                 {
                     auto &spawnTransform = spawnZoneView.get<TransformComponent>(spawnEntity);
 
-                    // Teleport to the entity's position + the local offset (using GLM-style addition)
-                    glm::vec3 worldPos = {spawnTransform.Translation.x, spawnTransform.Translation.y,
-                                          spawnTransform.Translation.z};
-                    glm::vec3 localOffset = {spawnComp.SpawnPoint.x, spawnComp.SpawnPoint.y, spawnComp.SpawnPoint.z};
-                    glm::vec3 result = worldPos + localOffset;
+                    // Teleporter logic using Vector3
+                    Vector3 worldPos = spawnTransform.Translation;
+                    Vector3 localOffset = spawnComp.SpawnPoint;
+                    Vector3 result = Vector3Add(worldPos, localOffset);
 
-                    GetComponent<TransformComponent>().Translation = {result.x, result.y, result.z};
+                    GetComponent<TransformComponent>().Translation = result;
 
                     // Reset velocity if we have a RigidBody
                     if (HasComponent<RigidBodyComponent>())

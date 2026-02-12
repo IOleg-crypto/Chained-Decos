@@ -2,12 +2,14 @@
 #define CH_WINDOW_H
 
 #include <string>
+#include <memory>
 
 // Forward declare GLFWwindow
 struct GLFWwindow;
 
 namespace CHEngine
 {
+    class GraphicsContext;
 struct WindowProperties
 {
     std::string Title;
@@ -59,6 +61,7 @@ public:
     void SetWindowIcon(Image icon);
 
 private:
+    std::unique_ptr<GraphicsContext> m_Context;
     GLFWwindow *m_WindowHandle = nullptr;
     int m_Width, m_Height;
     std::string m_Title;
