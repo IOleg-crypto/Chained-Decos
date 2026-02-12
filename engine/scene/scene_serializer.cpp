@@ -44,6 +44,14 @@ namespace CHEngine
         out << YAML::Key << "Mode" << YAML::Value << (int)m_Scene->m_Settings.Mode;
         out << YAML::Key << "Color" << YAML::Value << m_Scene->m_Settings.BackgroundColor;
         out << YAML::Key << "TexturePath" << YAML::Value << Project::GetRelativePath(m_Scene->m_Settings.BackgroundTexturePath);
+        out << YAML::Key << "AmbientIntensity" << YAML::Value << m_Scene->m_Settings.AmbientIntensity;
+        out << YAML::EndMap;
+
+        // Serialize Canvas Settings
+        out << YAML::Key << "Canvas" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "ReferenceResolution" << YAML::Value << m_Scene->m_Settings.Canvas.ReferenceResolution;
+        out << YAML::Key << "ScaleMode" << YAML::Value << (int)m_Scene->m_Settings.Canvas.ScaleMode;
+        out << YAML::Key << "MatchWidthOrHeight" << YAML::Value << m_Scene->m_Settings.Canvas.MatchWidthOrHeight;
         out << YAML::EndMap;
  
         // Serialize Environment
@@ -74,18 +82,12 @@ namespace CHEngine
             out << YAML::EndMap;
         }
 
-        out << YAML::Key << "Canvas" << YAML::BeginMap;
-        out << YAML::Key << "ReferenceResolution" << YAML::Value << m_Scene->m_Settings.Canvas.ReferenceResolution;
-        out << YAML::Key << "ScaleMode" << YAML::Value << (int)m_Scene->m_Settings.Canvas.ScaleMode;
-        out << YAML::Key << "MatchWidthOrHeight" << YAML::Value << m_Scene->m_Settings.Canvas.MatchWidthOrHeight;
-        out << YAML::EndMap;
-
         out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
 
         m_Scene->GetRegistry().view<IDComponent>().each(
             [&](auto entityID, auto &id)
             {
-                Entity entity = {entityID, m_Scene};
+                Entity entity(entityID, &m_Scene->GetRegistry());
                 SerializeEntity(out, entity);
             });
 
@@ -148,6 +150,20 @@ namespace CHEngine
                     m_Scene->m_Settings.BackgroundColor = background["Color"].as<Color>();
                 if (background["TexturePath"] && background["TexturePath"].IsScalar())
                     m_Scene->m_Settings.BackgroundTexturePath = background["TexturePath"].as<std::string>();
+                if (background["AmbientIntensity"])
+                    m_Scene->m_Settings.AmbientIntensity = background["AmbientIntensity"].as<float>();
+            }
+
+            // Deserialize Canvas
+            if (data["Canvas"])
+            {
+                auto canvas = data["Canvas"];
+                if (canvas["ReferenceResolution"])
+                    m_Scene->m_Settings.Canvas.ReferenceResolution = canvas["ReferenceResolution"].as<Vector2>();
+                if (canvas["ScaleMode"])
+                    m_Scene->m_Settings.Canvas.ScaleMode = (CanvasScaleMode)canvas["ScaleMode"].as<int>();
+                if (canvas["MatchWidthOrHeight"])
+                    m_Scene->m_Settings.Canvas.MatchWidthOrHeight = canvas["MatchWidthOrHeight"].as<float>();
             }
 
             // Deserialize Environment
@@ -192,19 +208,6 @@ namespace CHEngine
                     if (fog["Start"]) settings.Fog.Start = fog["Start"].as<float>();
                     if (fog["End"]) settings.Fog.End = fog["End"].as<float>();
                 }
-            }
-
-            // Deserialize Canvas
-            if (data["Canvas"])
-            {
-                auto canvas = data["Canvas"];
-                auto &c = m_Scene->m_Settings.Canvas;
-                if (canvas["ReferenceResolution"])
-                    c.ReferenceResolution = canvas["ReferenceResolution"].as<Vector2>();
-                if (canvas["ScaleMode"])
-                    c.ScaleMode = (CanvasScaleMode)canvas["ScaleMode"].as<int>();
-                if (canvas["MatchWidthOrHeight"])
-                    c.MatchWidthOrHeight = canvas["MatchWidthOrHeight"].as<float>();
             }
 
             auto entities = data["Entities"];
@@ -257,7 +260,7 @@ namespace CHEngine
                 // Phase 3: Finalize Hierarchy
                 for (auto &task : hierarchyTasks)
                 {
-                    auto &hc = task.entity.AddComponent<HierarchyComponent>();
+                    auto &hc = task.entity.GetComponent<HierarchyComponent>();
                     if (task.parent != 0)
                     {
                         CHEngine::Entity parent = m_Scene->GetEntityByUUID(task.parent);

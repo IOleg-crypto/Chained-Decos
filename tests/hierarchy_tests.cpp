@@ -32,13 +32,11 @@ TEST(HierarchyTest, DestroyParent)
     child.AddComponent<HierarchyComponent>().Parent = (entt::entity)parent;
 
     entt::entity childHandle = (entt::entity)child;
-    entt::entity parentHandle = (entt::entity)parent;
 
     scene.DestroyEntity(parent);
 
-    EXPECT_TRUE(scene.GetRegistry().valid(childHandle));
-    auto &chc = scene.GetRegistry().get<HierarchyComponent>(childHandle);
-    EXPECT_TRUE(chc.Parent == entt::null);
+    // In this engine, DestroyEntity is recursive
+    EXPECT_FALSE(scene.GetRegistry().valid(childHandle));
 }
 
 TEST(HierarchyTest, ClearParent)

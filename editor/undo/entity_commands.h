@@ -10,7 +10,8 @@ namespace CHEngine
 class DestroyEntityCommand : public IEditorCommand
 {
 public:
-    DestroyEntityCommand(Entity entity) : m_Entity(entity), m_Scene(entity.GetScene())
+    DestroyEntityCommand(Entity entity) 
+        : m_Entity(entity), m_Scene(entity.GetRegistry().ctx().get<Scene*>())
     {
     }
 

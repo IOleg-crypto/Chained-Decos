@@ -7,6 +7,7 @@
 namespace CHEngine
 {
 std::shared_ptr<Project> Project::s_ActiveProject = nullptr;
+std::filesystem::path Project::s_EngineRoot = "";
 
 std::shared_ptr<Project> Project::New()
 {
@@ -26,6 +27,24 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path &path)
     project->m_Config.ProjectDirectory = path.parent_path();
     s_ActiveProject = project;
 
+    // Discover Engine Root if not set or invalid
+    if (s_EngineRoot.empty() || !std::filesystem::exists(s_EngineRoot / "engine/resources"))
+    {
+        s_EngineRoot = Discover(path.parent_path()); // Discover might return project path, let's refine
+        
+        // Better discovery for EngineRoot specifically
+        std::filesystem::path current = path.parent_path();
+        while (current.has_parent_path())
+        {
+            if (std::filesystem::exists(current / "engine/resources"))
+            {
+                s_EngineRoot = current;
+                break;
+            }
+            current = current.parent_path();
+        }
+    }
+
     ProjectSerializer serializer(project);
     if (serializer.Deserialize(path))
     {
@@ -33,6 +52,12 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path &path)
         project->m_AssetManager->ClearSearchPaths();
         project->m_AssetManager->AddSearchPath(project->m_Config.ProjectDirectory / project->m_Config.AssetDirectory);
         
+        if (!s_EngineRoot.empty())
+        {
+            project->m_AssetManager->AddSearchPath(s_EngineRoot);
+            project->m_AssetManager->AddSearchPath(s_EngineRoot / "engine/resources");
+        }
+
         // Load environment if specified
         if (!project->m_Config.EnvironmentPath.empty())
         {
@@ -44,6 +69,45 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path &path)
 
     s_ActiveProject = nullptr;
     return nullptr;
+}
+
+std::filesystem::path Project::Discover(const std::filesystem::path &startPath)
+{
+    std::filesystem::path current = startPath.empty() ? std::filesystem::current_path() : startPath;
+    if (std::filesystem::is_regular_file(current)) current = current.parent_path();
+
+    CH_CORE_INFO("Project: Discovering project starting from: {}", current.string());
+
+    while (true)
+    {
+        CH_CORE_INFO("Project: Checking directory: {}", current.string());
+        std::error_code ec;
+        if (std::filesystem::exists(current, ec))
+        {
+            // 1. Check current directory
+            for (const auto& entry : std::filesystem::directory_iterator(current, ec))
+            {
+                if (entry.path().extension() == ".chproject")
+                    return entry.path();
+            }
+
+            // 2. Check "game" subdirectory (KISS for our structure)
+            std::filesystem::path gameDir = current / "game";
+            if (std::filesystem::exists(gameDir, ec))
+            {
+                for (const auto& entry : std::filesystem::recursive_directory_iterator(gameDir, ec))
+                {
+                    if (entry.path().extension() == ".chproject")
+                        return entry.path();
+                }
+            }
+        }
+        
+        if (!current.has_parent_path() || current == current.root_path()) break;
+        current = current.parent_path();
+    }
+
+    return "";
 }
 
 bool Project::SaveActive(const std::filesystem::path &path)

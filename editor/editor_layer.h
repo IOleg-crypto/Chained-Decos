@@ -8,7 +8,7 @@
 #include "editor_panels.h"
 #include "editor_layout.h"
 #include "editor_context.h"
-#include "engine/graphics/render.h"
+#include "engine/graphics/renderer.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_events.h"
 #include "undo/command_history.h"

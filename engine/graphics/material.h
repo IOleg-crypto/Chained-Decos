@@ -1,7 +1,6 @@
 #ifndef CH_MATERIAL_H
 #define CH_MATERIAL_H
 
-#include <glm/glm.hpp>
 #include <raylib.h>
 #include <string>
 

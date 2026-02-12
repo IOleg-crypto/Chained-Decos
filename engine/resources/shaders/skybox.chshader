@@ -5,7 +5,7 @@ FragmentShader: "skybox.fs"
 Uniforms:
   - matProjection
   - matView
-  - environmentMap
+  - texture0
   - vflipped
   - doGamma
   - fragGamma

@@ -2,6 +2,7 @@
 #define CH_MESH_COMPONENT_H
 
 #include "engine/core/base.h"
+#include "engine/graphics/asset.h"
 #include "engine/graphics/material.h"
 #include <string>
 #include <vector>
@@ -31,6 +32,7 @@ struct MaterialSlot
 
 struct ModelComponent
 {
+    AssetHandle ModelHandle = 0;
     std::string ModelPath;
     std::shared_ptr<ModelAsset> Asset; // Cached asset reference
     std::vector<MaterialSlot> Materials;
@@ -38,6 +40,7 @@ struct ModelComponent
 
     ModelComponent() = default;
     ModelComponent(const ModelComponent &) = default;
+    ModelComponent(AssetHandle handle) : ModelHandle(handle) {}
     ModelComponent(const std::string &path) : ModelPath(path)
     {
     }

@@ -84,7 +84,7 @@ namespace CHEngine
         bool m_Minimized = false;
         
         Timestep m_DeltaTime = 0.0f;
-        float m_LastFrameTime = 0.0f;
+        Timestep m_LastFrameTime = 0.0f;
 
         LayerStack m_LayerStack;
 

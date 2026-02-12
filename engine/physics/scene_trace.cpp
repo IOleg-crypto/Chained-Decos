@@ -5,6 +5,7 @@
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
 #include "engine/graphics/asset_manager.h"
+#include "engine/graphics/model_asset.h"
 #include "engine/scene/project.h"
 #include "raymath.h"
 
@@ -43,7 +44,7 @@ static bool RayAABB(Vector3 origin, Vector3 dir, Vector3 min, Vector3 max, float
     return false;
 }
 
-RaycastResult SceneTrace::Raycast(Scene *scene, Ray ray, Physics* physics)
+RaycastResult SceneTrace::Raycast(Scene *scene, Ray ray)
 {
     RaycastResult result;
     result.Hit = false;
@@ -103,7 +104,7 @@ RaycastResult SceneTrace::Raycast(Scene *scene, Ray ray, Physics* physics)
             if (!project || !project->GetAssetManager()) continue;
 
             auto asset = project->GetAssetManager()->Get<ModelAsset>(modelComp->ModelPath);
-            auto bvh = physics->GetBVH(asset.get());
+            auto bvh = m_Physics->GetBVH(asset.get());
             if (!bvh) continue;
 
             Ray localRayRaylib = { localOrigin, localDir };

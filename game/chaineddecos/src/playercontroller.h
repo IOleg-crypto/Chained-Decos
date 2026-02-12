@@ -4,8 +4,6 @@
 #include "engine/core/input.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scriptable_entity.h"
-#include "glm/glm.hpp"
-#include "glm/gtx/quaternion.hpp"
 #include "raymath.h"
 #include "engine/core/application.h"
 #include <cmath>
@@ -17,7 +15,7 @@ namespace CHEngine
     public:
         CH_UPDATE(deltaTime)
         {
-            auto scene = GetEntity().GetScene();
+            auto scene = GetScene();
             if (!scene) return;
 
             static int frame = 0;
@@ -68,28 +66,27 @@ namespace CHEngine
             Vector3 cameraRight = Vector3Normalize(Vector3CrossProduct(cameraForward, camera.up));
             
             // 2. Flatten for ground movement (XZ Plane)
-            glm::vec3 forward = { cameraForward.x, 0.0f, cameraForward.z };
-            glm::vec3 right = { cameraRight.x, 0.0f, cameraRight.z };
+            Vector3 forward = { cameraForward.x, 0.0f, cameraForward.z };
+            Vector3 right = { cameraRight.x, 0.0f, cameraRight.z };
             
-            if (glm::length2(forward) > 0.0001f) forward = glm::normalize(forward);
-            if (glm::length2(right) > 0.0001f) right = glm::normalize(right);
+            if (Vector3LengthSqr(forward) > 0.0001f) forward = Vector3Normalize(forward);
+            if (Vector3LengthSqr(right) > 0.0001f) right = Vector3Normalize(right);
 
-            glm::vec3 movementVector = {0.0f, 0.0f, 0.0f};
-            if (wDown) movementVector += forward;
-            if (sDown) movementVector -= forward;
-            if (aDown) movementVector -= right;
-            if (dDown) movementVector += right;
+            Vector3 movementVector = {0.0f, 0.0f, 0.0f};
+            if (wDown) movementVector = Vector3Add(movementVector, forward);
+            if (sDown) movementVector = Vector3Subtract(movementVector, forward);
+            if (aDown) movementVector = Vector3Subtract(movementVector, right);
+            if (dDown) movementVector = Vector3Add(movementVector, right);
 
-            if (glm::length2(movementVector) > 0.0001f)
+            if (Vector3LengthSqr(movementVector) > 0.0001f)
             {
-                movementVector = glm::normalize(movementVector);
+                movementVector = Vector3Normalize(movementVector);
 
                 rigidBody.Velocity.x = movementVector.x * currentSpeed;
                 rigidBody.Velocity.z = movementVector.z * currentSpeed;
 
                 auto &transform = GetComponent<TransformComponent>();
                 // atan2f(x, z) gives angle in radians. Convert to degrees.
-                // We want the player to look where they move.
                 float targetYaw = atan2f(movementVector.x, movementVector.z) * RAD2DEG;
                 transform.Rotation.y = targetYaw;
                 
@@ -108,7 +105,7 @@ namespace CHEngine
 
             frame++;
 
-            // Jump handling (polling is more reliable for gameplay controls)
+            // Jump handling
             if (Input::IsKeyPressed(KEY_SPACE) && rigidBody.IsGrounded)
             {
                 rigidBody.Velocity.y = jumpForce;
@@ -127,7 +124,7 @@ namespace CHEngine
                 {
                     if (ev.GetKeyCode() == KEY_T)
                     {
-                        auto &sceneRegistry = GetEntity().GetScene()->GetRegistry();
+                        auto &sceneRegistry = GetScene()->GetRegistry();
                         auto spawnZoneView = sceneRegistry.view<SpawnComponent>();
 
                         for (auto spawnEntity : spawnZoneView)
