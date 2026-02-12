@@ -3,7 +3,7 @@
 #include "engine/core/window.h"
 #include "engine/graphics/asset_manager.h"
 #include "engine/graphics/texture_asset.h"
-#include "engine/graphics/render.h"
+#include "engine/graphics/renderer.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_serializer.h"
@@ -21,13 +21,14 @@ namespace CHEngine
 class RuntimeLayer : public Layer
 {
 public:
-    RuntimeLayer() : Layer("RuntimeLayer")
+    RuntimeLayer(RuntimeApplication::ScriptRegistrationCallback callback) 
+        : Layer("RuntimeLayer"), m_ScriptCallback(callback)
     {
+        m_SceneRenderer = std::make_unique<SceneRenderer>();
     }
 
     ~RuntimeLayer()
     {
-        ModuleLoader::UnloadGameModule();
     }
 
     virtual void OnUpdate(Timestep ts) override
@@ -54,31 +55,32 @@ public:
         ::ClearBackground(bgColor);
 
         auto camera = GetActiveCamera();
-        SceneRenderer::RenderScene(m_Scene.get(), camera, ts);
+        m_SceneRenderer->RenderScene(m_Scene.get(), camera, ts);
     }
 
     virtual void OnImGuiRender() override
     {
         if (m_Scene)
         {
-            ImVec2 displaySize = ImGui::GetIO().DisplaySize;
+            ImGuiViewport* viewport = ImGui::GetMainViewport();
+            ImGui::SetNextWindowPos(viewport->WorkPos);
+            ImGui::SetNextWindowSize(viewport->WorkSize);
+            ImGui::SetNextWindowViewport(viewport->ID);
             
-            // Create a fullscreen background window for the UI
             ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | 
                                      ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove | 
                                      ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar | 
-                                     ImGuiWindowFlags_NoBringToFrontOnFocus;
+                                     ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNav |
+                                     ImGuiWindowFlags_NoDocking;
 
             flags &= ~ImGuiWindowFlags_NoInputs; // Allow inputs
 
-            ImGui::SetNextWindowPos({0, 0});
-            ImGui::SetNextWindowSize(displaySize);
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
             ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
             
             if (ImGui::Begin("RuntimeUI", nullptr, flags))
             {
-                // UIRenderer::DrawCanvas(m_Scene.get(), {0, 0}, displaySize, false);
+                UIRenderer::Get().DrawCanvas(m_Scene.get(), {0, 0}, viewport->WorkSize, false);
                 SceneScripting::RenderUI(m_Scene.get());
             }
             ImGui::End();
@@ -100,46 +102,39 @@ public:
 
     void LoadScene(const std::string& path)
     {
+        std::filesystem::path scenePath = path;
+        // If the path is relative, resolve it via Project::GetAssetPath
+        if (scenePath.is_relative() && Project::GetActive())
+        {
+            scenePath = Project::GetAssetPath(path);
+        }
+        
+        std::string finalPath = scenePath.string();
+
         if (m_Scene)
             m_Scene->OnRuntimeStop();
 
         m_Scene = std::make_shared<Scene>();
-        SceneSerializer serializer(m_Scene.get());
-        if (serializer.Deserialize(path))
-        {
-             m_Scene->GetSettings().ScenePath = path;
-             
-             // Apply project environment if needed
-             if (Project::GetActive() && Project::GetActive()->GetEnvironment())
-             {
-                 if (m_Scene->GetSettings().Environment->GetPath().empty() && 
-                     m_Scene->GetSettings().Environment->GetSettings().Skybox.TexturePath.empty())
-                 {
-                     m_Scene->GetSettings().Environment = Project::GetActive()->GetEnvironment();
-                 }
-             }
-             
-             m_Scene->OnRuntimeStart();
-             
-             // Dynamic Game Module Loading
-             // Find DLL next to executable
-             // Setup in runtime_application.h or pass via args?
-             // For now, assuming hardcoded name for this project "ChainedDecosGame.dll"
-              std::filesystem::path dllPath = std::filesystem::current_path() / "ChainedDecosGame.dll";
-             if (!std::filesystem::exists(dllPath)) {
-                 // Try relative to executable
-                  dllPath = std::filesystem::absolute(std::filesystem::path(Application::Get().GetSpecification().CommandLineArgs.Args[0])).parent_path() / "ChainedDecosGame.dll";
-             }
+        
+        // 1. Register Scripts BEFORE deserialization
+        if (m_ScriptCallback) {
+            m_ScriptCallback(m_Scene.get());
+        } else {
+            CH_CORE_WARN("Runtime: No script registration callback provided!");
+        }
 
-             if (std::filesystem::exists(dllPath)) {
-                 ModuleLoader::LoadGameModule(dllPath.string(), m_Scene.get());
-             } else {
-                 CH_CORE_WARN("Runtime: Could not find Game Module DLL at {}", dllPath.string());
-             }
+        // 2. Deserialize scene (NativeScriptComponent will now find registered factories)
+        SceneSerializer serializer(m_Scene.get());
+        if (serializer.Deserialize(finalPath))
+        {
+             m_Scene->GetSettings().ScenePath = finalPath;
+             
+             // 3. Start runtime AFTER everything is loaded and registered
+             m_Scene->OnRuntimeStart();
         }
         else
         {
-            CH_CORE_ERROR("Runtime: Failed to load scene: {}", path);
+            CH_CORE_ERROR("Runtime: Failed to load scene: {}", finalPath);
             m_Scene = nullptr;
         }
     }
@@ -161,162 +156,133 @@ public:
 
 private:
     std::shared_ptr<Scene> m_Scene;
+    std::unique_ptr<SceneRenderer> m_SceneRenderer;
+    RuntimeApplication::ScriptRegistrationCallback m_ScriptCallback;
 };
 
 
     RuntimeApplication::RuntimeApplication(const ApplicationSpecification& specification,
-                                           const std::string& projectPath)
+                                           const std::string& projectPath,
+                                           ScriptRegistrationCallback scriptCallback)
         : Application(specification),
-          m_ProjectPath(projectPath)
+          m_ProjectPath(projectPath),
+          m_ScriptCallback(scriptCallback)
     {
-        // For standalone, try to find the project root relative to the executable
-        std::filesystem::path exePath = std::filesystem::absolute(std::filesystem::path(specification.CommandLineArgs.Args[0]));
-        std::filesystem::path current = exePath.parent_path();
-        
-        bool projectFound = !m_ProjectPath.empty();
-        std::filesystem::path engineRoot = "";
-
-        while (current.has_parent_path())
-        {
-            // Search for project file if not yet found
-            if (!projectFound)
-            {
-                std::error_code ec;
-                // 1. Try immediate parent directory (typical for production distribution)
-                if (std::filesystem::exists(current, ec))
-                {
-                    for (const auto& entry : std::filesystem::directory_iterator(current, ec))
-                    {
-                        if (entry.path().extension() == ".chproject")
-                        {
-                            m_ProjectPath = entry.path().string();
-                            CH_CORE_INFO("Standalone: Auto-discovered project file: {}", m_ProjectPath);
-                            projectFound = true;
-                            break;
-                        }
-                    }
-                }
-
-                // 2. Try searching subdirectories (useful for dev environments like build/bin/ or root/)
-                if (!projectFound)
-                {
-                    auto it = std::filesystem::recursive_directory_iterator(current, std::filesystem::directory_options::skip_permission_denied, ec);
-                    auto end = std::filesystem::recursive_directory_iterator();
-                    
-                    while (it != end)
-                    {
-                        if (ec) 
-                        { 
-                            ec.clear(); 
-                            it.disable_recursion_pending(); 
-                            if (++it == end) break;
-                            continue; 
-                        }
-                        
-                        // Limit depth to avoid walking the whole drive
-                        if (it.depth() > 2) 
-                        {
-                            it.disable_recursion_pending();
-                            if (++it == end) break;
-                            continue;
-                        }
-
-                        if (it->path().extension() == ".chproject")
-                        {
-                            m_ProjectPath = it->path().string();
-                            CH_CORE_INFO("Standalone: Auto-discovered project file in subdirectory: {}", m_ProjectPath);
-                            projectFound = true;
-                            break;
-                        }
-                        
-                        if (++it == end) break;
-                    }
-                }
-            }
-
-            // Engine assets discovery (shaders, default fonts)
-            if (std::filesystem::exists(current / "engine/resources"))
-            {
-                engineRoot = current;
-                CH_CORE_INFO("Standalone: Found engine root at: {}", engineRoot.string());
-                if (projectFound)
-                {
-                    break;
-                }
-            }
-            
-            // Walk up
-            current = current.parent_path();
-        }
-
-        m_RuntimeLayer = new RuntimeLayer();
+        m_RuntimeLayer = new RuntimeLayer(m_ScriptCallback);
         PushLayer(m_RuntimeLayer);
 
-        // --- PostInitialize logic moved here ---
-        if (!m_ProjectPath.empty())
+        if (InitProject(projectPath))
         {
-            auto project = Project::Load(m_ProjectPath);
-            if (project)
+            if (LoadModule())
             {
-                // Register engine resources in asset manager search paths
-                if (!engineRoot.empty())
-                {
-                    project->GetAssetManager()->AddSearchPath(engineRoot);
-                    CH_CORE_INFO("Standalone: Added engine root to asset search paths: {}", engineRoot.string());
-                }
+                // Initial scene loading is handled by InitProject as part of bootstrap
+            }
+        }
+    }
 
-                auto &config = project->GetConfig();
-                Window& window = GetWindow();
-                window.SetVSync(config.Window.VSync);
-                
-                std::filesystem::path iconPath = project->GetAssetManager()->ResolvePath("engine/resources/icons/chaineddecos.jpg");
-                if (std::filesystem::exists(iconPath))
+    bool RuntimeApplication::InitProject(const std::string& projectPath)
+    {
+        // 1. Discovery & Loading
+        std::filesystem::path discoveryPath = projectPath;
+        if (discoveryPath.empty())
+        {
+            std::filesystem::path exePath = std::filesystem::absolute(std::filesystem::path(GetSpecification().CommandLineArgs.Args[0]));
+            discoveryPath = exePath.parent_path();
+        }
+
+        m_ProjectPath = Project::Discover(discoveryPath).string();
+        if (m_ProjectPath.empty())
+        {
+            CH_CORE_ERROR("Runtime: No project file found!");
+            return false;
+        }
+
+        auto project = Project::Load(m_ProjectPath);
+        if (!project)
+        {
+            CH_CORE_ERROR("Runtime: Failed to load project: {}", m_ProjectPath);
+            return false;
+        }
+
+        // Re-initialize Render system with the now-active project for engine resources (shaders, icons)
+        // Renderer::Init(); // This is a singleton, so we should check if it's already init.
+        // For now, let's just make sure we are not calling a static Initialize that doesn't exist.
+        if (Renderer::Get().GetData().LightingShader == nullptr) {
+             // If not fully setup, maybe call Init, but Application usually does it.
+        }
+
+        // 2. Window Setup
+        auto &config = project->GetConfig();
+        Window& window = GetWindow();
+        window.SetVSync(config.Window.VSync);
+        
+        std::filesystem::path iconPath = project->GetAssetManager()->ResolvePath("engine/resources/icons/chaineddecos.jpg");
+        if (std::filesystem::exists(iconPath))
+        {
+            Image icon = LoadImage(iconPath.string().c_str());
+            if (icon.data != nullptr)
+            {
+                window.SetWindowIcon(icon);
+                UnloadImage(icon);
+            }
+        }
+        ::SetTargetFPS(60); 
+
+        // 3. Initial Scene Load
+        std::string sceneToLoad = config.StartScene;
+        if (sceneToLoad.empty()) sceneToLoad = config.ActiveScenePath.string();
+
+        if (sceneToLoad.empty())
+        {
+            std::filesystem::path scenesDir = Project::GetAssetDirectory() / "scenes";
+            if (std::filesystem::exists(scenesDir))
+            {
+                for (const auto& entry : std::filesystem::recursive_directory_iterator(scenesDir))
                 {
-                    Image icon = LoadImage(iconPath.string().c_str());
-                    if (icon.data != nullptr)
+                    if (entry.path().extension() == ".chscene")
                     {
-                        window.SetWindowIcon(icon);
-                        UnloadImage(icon);
+                        sceneToLoad = std::filesystem::relative(entry.path(), Project::GetAssetDirectory()).string();
+                        break;
                     }
-                }
-                ::SetTargetFPS(60); 
-
-                std::string sceneToLoad = config.StartScene;
-                if (sceneToLoad.empty()) sceneToLoad = config.StartScene;
-                if (sceneToLoad.empty()) sceneToLoad = config.ActiveScenePath.string();
-
-                if (sceneToLoad.empty())
-                {
-                    std::filesystem::path scenesDir = Project::GetAssetDirectory() / "scenes";
-                    if (std::filesystem::exists(scenesDir))
-                    {
-                        for (const auto& entry : std::filesystem::recursive_directory_iterator(scenesDir))
-                        {
-                            if (entry.path().extension() == ".chscene")
-                            {
-                                sceneToLoad = std::filesystem::relative(entry.path(), Project::GetAssetDirectory()).string();
-                                CH_CORE_INFO("Standalone: Start scene not set. Falling back to: {}", sceneToLoad);
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                if (!sceneToLoad.empty())
-                {
-                    std::filesystem::path fullPath = Project::GetAssetPath(sceneToLoad);
-                    CH_CORE_INFO("Standalone: Loading start scene: {}", fullPath.string());
-                    ((RuntimeLayer*)m_RuntimeLayer)->LoadScene(fullPath.string());
-                }
-                else
-                {
-                    CH_CORE_ERROR("Standalone: No scene found to load!");
                 }
             }
+        }
+
+        if (!sceneToLoad.empty())
+        {
+            std::filesystem::path fullPath = Project::GetAssetPath(sceneToLoad);
+            LoadScene(fullPath.string());
+        }
+
+        return true;
+    }
+
+    bool RuntimeApplication::LoadModule()
+    {
+        // For now Module loading is tied to Scene loading in RuntimeLayer::LoadScene
+        return true;
+    }
+
+    void RuntimeApplication::LoadScene(const std::string& scenePath)
+    {
+        if (m_RuntimeLayer)
+            ((RuntimeLayer*)m_RuntimeLayer)->LoadScene(scenePath);
+    }
+
+    void RuntimeApplication::LoadScene(int index)
+    {
+        auto project = Project::GetActive();
+        if (!project) return;
+        
+        const auto& buildScenes = project->GetConfig().BuildScenes;
+        if (index >= 0 && index < buildScenes.size())
+        {
+            std::filesystem::path fullPath = Project::GetAssetPath(buildScenes[index]);
+            LoadScene(fullPath.string());
         }
         else
         {
-            CH_CORE_ERROR("Standalone: No project file found!");
+            CH_CORE_ERROR("Runtime: Invalid scene index {} (BuildScenes count: {})", index, buildScenes.size());
         }
     }
 

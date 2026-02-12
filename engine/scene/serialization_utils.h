@@ -2,6 +2,7 @@
 #define CH_SERIALIZATION_UTILS_H
 
 #include "engine/core/yaml.h"
+#include "engine/core/uuid.h"
 #include "engine/scene/project.h"
 #include <filesystem>
 
@@ -24,6 +25,11 @@ namespace CHEngine::SerializationUtils
 
         std::string relativePath = Project::GetRelativePath(path);
         out << YAML::Key << name << YAML::Value << relativePath;
+    }
+
+    inline void SerializeHandle(YAML::Emitter& out, const char* name, uint64_t handle)
+    {
+        out << YAML::Key << name << YAML::Value << handle;
     }
 
     // --- YAML Deserialization Helpers ---
@@ -66,6 +72,12 @@ namespace CHEngine::SerializationUtils
             std::transform(path.begin(), path.end(), path.begin(), ::tolower);
             #endif
         }
+    }
+
+    inline void DeserializeHandle(YAML::Node node, const char* name, uint64_t& handle)
+    {
+        if (node[name])
+            handle = node[name].as<uint64_t>();
     }
 
     inline void DeserializePath(YAML::Node node, const char* name, std::filesystem::path& path)
@@ -146,16 +158,33 @@ namespace CHEngine::SerializationUtils
             return *this;
         }
 
+        PropertyArchive& Handle(const char* name, uint64_t& handle)
+        {
+            if (m_Mode == Serialize)
+                SerializeHandle(*m_Out, name, handle);
+            else
+                DeserializeHandle(m_Node, name, handle);
+            return *this;
+        }
+
+        PropertyArchive& Handle(const char* name, UUID& handle)
+        {
+            uint64_t& id = (uint64_t&)handle;
+            if (m_Mode == Serialize)
+                SerializeHandle(*m_Out, name, id);
+            else
+                DeserializeHandle(m_Node, name, id);
+            return *this;
+        }
+
         // Nested structure (TextStyle, UIStyle, etc.)
         template<typename T, typename SerFunc, typename DeserFunc>
         PropertyArchive& Nested(const char* name, T& value, SerFunc serializeFunc, DeserFunc deserializeFunc)
         {
             if (m_Mode == Serialize)
             {
-                *m_Out << YAML::Key << name;
-                *m_Out << YAML::BeginMap;
+                *m_Out << YAML::Key << name << YAML::Value;
                 serializeFunc(*m_Out, value);
-                *m_Out << YAML::EndMap;
             }
             else
             {

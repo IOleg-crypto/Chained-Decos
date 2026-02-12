@@ -2,8 +2,10 @@ Project:
   Name: ChainedDecos
   StartScene: scenes\main_menu.chscene
   AssetDirectory: assets
-  ActiveScene: assets/scenes/untitled100.chscene
+  ActiveScene: assets/scenes/main_menu.chscene
   Environment: ""
+  BuildScenes:
+    []
   Physics:
     Gravity: 20
   Animation:

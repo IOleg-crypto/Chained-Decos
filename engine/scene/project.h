@@ -72,6 +72,8 @@ struct ProjectConfig
     std::filesystem::path ActiveScenePath;
     std::filesystem::path EnvironmentPath;
 
+    std::vector<std::string> BuildScenes; // List of scenes included in build
+
     PhysicsSettings Physics;
     AnimationSettings Animation;
     RenderSettings Render;
@@ -112,6 +114,11 @@ public:
 
     static std::shared_ptr<Project> New();
     static std::shared_ptr<Project> Load(const std::filesystem::path &path);
+    static std::filesystem::path Discover(const std::filesystem::path &startPath = "");
+    
+    static std::filesystem::path GetEngineRoot() { return s_EngineRoot; }
+    static void SetEngineRoot(const std::filesystem::path& path) { s_EngineRoot = path; }
+
     static bool SaveActive(const std::filesystem::path &path);
 
     static std::vector<std::string> GetAvailableScenes();
@@ -201,6 +208,7 @@ private:
     std::shared_ptr<EnvironmentAsset> m_Environment;
     std::shared_ptr<AssetManager> m_AssetManager;
     static std::shared_ptr<Project> s_ActiveProject;
+    static std::filesystem::path s_EngineRoot;
     
     // Path utility helpers
     static std::filesystem::path NormalizePath(const std::filesystem::path& path);

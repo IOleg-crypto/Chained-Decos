@@ -1,10 +1,15 @@
 add_executable(EngineTests
+    uuid_tests.cpp
+    serialization_tests.cpp
     scene_tests.cpp
     physics_tests.cpp
     hierarchy_tests.cpp
     event_input_tests.cpp
-    #asset_manager_tests.cpp
+    asset_manager_tests.cpp
     integration_tests.cpp
+    importer_tests.cpp
+    renderer_tests.cpp
+    scene_serialization_tests.cpp
 )
 
 target_link_libraries(EngineTests PRIVATE engine editor_core GTest::gmock_main GTest::gtest_main)

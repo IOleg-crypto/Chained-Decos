@@ -9,26 +9,22 @@ namespace CHEngine
 enum class EventType
 {
     None = 0,
-    // Window Events
+
+    // --- Core System Events (classes defined below) ---
     WindowClose, WindowResize, WindowFocus, WindowLostFocus, WindowMoved,
-    
-    // App Events
-    AppTick, AppUpdate, AppRender,
-    
-    // Input Events
     KeyPressed, KeyReleased, KeyTyped,
     MouseButtonPressed, MouseButtonReleased, MouseMoved, MouseScrolled,
-
-    // --- Project & Scene Events (Engine Level) ---
+    
+    // --- Scene Events (classes in engine/scene/scene_events.h) ---
     ProjectCreated, ProjectOpened,
     SceneOpened, SceneSaved, ScenePlay, SceneStop,
     SceneChangeRequest,
-
-    // --- Editor Events (UI/Editor Level) ---
-    AppLaunchRuntime, AppResetLayout, AppSaveLayout,
     EntitySelected,
+
+    // --- Editor Events (classes in editor/editor_events.h) ---
+    AppLaunchRuntime, AppResetLayout, AppSaveLayout,
     
-    // UI Events
+    // --- UI Events ---
     ButtonPressed
 };
 

@@ -13,7 +13,8 @@
 #include "engine/scene/scene_serializer.h"
 #include "engine/scene/scriptable_entity.h"
 #include "engine/graphics/asset_manager.h"
-#include "engine/core/module_loader.h"
+// Forward declaration: statically linked game scripts (defined in game_module.cpp)
+extern void RegisterGameScripts(CHEngine::Scene* scene);
 
 #include "cstdarg"
 #include "extras/IconsFontAwesome6.h"
@@ -306,27 +307,37 @@ namespace CHEngine
         dispatcher.Dispatch<AppResetLayoutEvent>([this](auto& ev) { ResetLayout(); return true; });
         dispatcher.Dispatch<AppSaveLayoutEvent>([this](auto& ev) { m_Layout->SaveDefaultLayout(); return true; });
         dispatcher.Dispatch<SceneChangeRequestEvent>([this](auto& ev) { 
+            std::filesystem::path scenePath = ev.GetPath();
+            // If the path is relative, resolve it via Project::GetAssetPath
+            if (scenePath.is_relative() && Project::GetActive())
+            {
+                scenePath = Project::GetAssetPath(ev.GetPath());
+            }
+            
+            std::string finalPath = scenePath.string();
+
             if (EditorContext::GetSceneState() == SceneState::Play)
             {
                 auto newScene = std::make_shared<Scene>();
+                RegisterGameScripts(newScene.get()); // Pre-register scripts for NativeScriptComponent
                 SceneSerializer serializer(newScene.get());
-                if (serializer.Deserialize(ev.GetPath()))
+                if (serializer.Deserialize(finalPath))
                 {
                     if (m_RuntimeScene) m_RuntimeScene->OnRuntimeStop();
                     m_RuntimeScene = newScene;
                     m_RuntimeScene->OnRuntimeStart();
                     m_Panels->SetContext(m_RuntimeScene);
-                    CH_CORE_INFO("Play Mode: Transitioned to scene {}", ev.GetPath());
+                    CH_CORE_INFO("Play Mode: Transitioned to scene {}", finalPath);
                 }
                 return true;
             }
-            SceneActions::Open(ev.GetPath()); 
+            SceneActions::Open(finalPath); 
             return true; 
         });
 
         // 4. Selections/Picking
         dispatcher.Dispatch<EntitySelectedEvent>([this](auto& ev) {
-            EditorContext::SetSelectedEntity(Entity{ev.GetEntity(), ev.GetScene()});
+            EditorContext::SetSelectedEntity(Entity(ev.GetEntity(), &ev.GetScene()->GetRegistry()));
             EditorContext::GetState().LastHitMeshIndex = ev.GetMeshIndex();
             return false;
         });
@@ -378,7 +389,7 @@ namespace CHEngine
             }
             else
             {
-               CH_CORE_ERROR("EditorLayer::SetSceneState - Failed to copy scene!");
+                CH_CORE_ERROR("EditorLayer::SetSceneState - Failed to copy scene!");
             }
         }
         else
@@ -397,31 +408,15 @@ namespace CHEngine
         }
     }
 
+    // Register game scripts (statically linked, defined in game_module.cpp outside any namespace)
     void EditorLayer::SetScene(std::shared_ptr<Scene> scene)
     {
         m_EditorScene = scene;
         EditorContext::SetSelectedEntity({});
         if (EditorContext::GetSceneState() == SceneState::Edit)
             m_Panels->SetContext(m_EditorScene);
-            
-        // Load Game Module if not already loaded (or reload for new scene context)
-        // Assume executable directory for DLL search
-        std::string dllName = "ChainedDecosGame.dll";
-        std::filesystem::path dllPath = std::filesystem::current_path() / dllName;
-        
-        if (!std::filesystem::exists(dllPath)) {
-             // Fallback: Try parent directory if running from within a subdir
-             dllPath = std::filesystem::absolute(std::filesystem::path(Application::Get().GetSpecification().CommandLineArgs.Args[0])).parent_path() / dllName;
-        }
 
-        if (std::filesystem::exists(dllPath)) {
-            // Note: ModuleLoader handles multiple loads safely (ref counting for LoadLibrary)
-            // But we must call LoadGame for the specific scene instance to register scripts
-             ModuleLoader::LoadGameModule(dllPath.string(), m_EditorScene.get());
-             CH_CORE_INFO("EditorLayer: Loaded Game Module from {}", dllPath.string());
-        } else {
-             CH_CORE_WARN("EditorLayer: Game Module DLL not found at {}", dllPath.string());
-        }
+        RegisterGameScripts(m_EditorScene.get());
     }
     void EditorLayer::SetViewportSize(const ImVec2& size)
     {

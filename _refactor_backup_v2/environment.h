@@ -1,0 +1,73 @@
+#ifndef CH_ENVIRONMENT_H
+#define CH_ENVIRONMENT_H
+
+#include <glm/glm.hpp>
+#include <raylib.h>
+#include "asset.h"
+#include "engine/core/base.h"
+#include <string>
+
+namespace CHEngine
+{
+
+struct SkyboxSettings
+{
+    std::string TexturePath;
+    float Exposure = 1.0f;
+    float Brightness = 0.0f;
+    float Contrast = 1.0f;
+};
+
+struct FogSettings
+{
+    bool Enabled = false;
+    Color FogColor = GRAY;
+    float Density = 0.01f;
+    float Start = 10.0f;
+    float End = 100.0f;
+};
+
+struct EnvironmentSettings
+{
+    Vector3 LightDirection = {-1.0f, -1.0f, -1.0f};
+    Color LightColor = WHITE;
+    float AmbientIntensity = 0.3f;
+
+    SkyboxSettings Skybox;
+    FogSettings Fog;
+};
+
+class EnvironmentAsset : public Asset
+{
+public:
+    EnvironmentAsset() = default;
+    virtual ~EnvironmentAsset() = default;
+
+    static std::shared_ptr<EnvironmentAsset> Load(const std::string &path);
+    bool Deserialize(const std::string &path);
+    bool Save(const std::string &path);
+
+    void UploadToGPU();
+    void LoadFromFile(const std::string &path);
+
+    virtual AssetType GetType() const override
+    {
+        return AssetType::Environment;
+    }
+
+    const EnvironmentSettings &GetSettings() const
+    {
+        return m_Settings;
+    }
+    EnvironmentSettings &GetSettings()
+    {
+        return m_Settings;
+    }
+
+private:
+    EnvironmentSettings m_Settings;
+};
+
+} // namespace CHEngine
+
+#endif // CH_ENVIRONMENT_H

@@ -12,20 +12,13 @@ namespace CHEngine
 class ShaderAsset : public Asset
 {
 public:
-    ShaderAsset() = default;
-    ShaderAsset(Shader shader);
+    static AssetType GetStaticType() { return AssetType::Shader; }
+
+    ShaderAsset() : Asset(GetStaticType()) {}
+    ShaderAsset(Shader shader) : Asset(GetStaticType()), m_Shader(shader) {}
     virtual ~ShaderAsset();
 
-    void UploadToGPU();
-    void LoadFromFile(const std::string &path);
-
-    static std::shared_ptr<ShaderAsset> Load(const std::string &vertexShaderPath, const std::string &fragmentShaderPath);
-    static std::shared_ptr<ShaderAsset> Load(const std::string &chshaderPath);
-
-    virtual AssetType GetType() const override
-    {
-        return AssetType::Shader;
-    }
+    void UploadToGPU() {}
 
     Shader &GetShader()
     {

@@ -33,6 +33,7 @@ public:
 protected:
     // Core entity access
     Entity& GetEntity() { return m_Entity; }
+    Scene* GetScene() { return m_Scene; }
     
     // Component access helpers
     template<typename T>
@@ -57,6 +58,7 @@ protected:
 
 private:
     Entity m_Entity;
+    Scene* m_Scene = nullptr;
     friend class Scene;
     friend class SceneScripting;
 };

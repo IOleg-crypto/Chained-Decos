@@ -1,6 +1,7 @@
 #include "window.h"
 #include "engine/core/log.h"
 #include "raylib.h"
+#include "engine/graphics/raylib_context.h"
 
 // ImGui
 #include "backends/imgui_impl_glfw.h"
@@ -35,7 +36,6 @@ Window::Window(const WindowProperties &windowProperties)
     else
         SetTargetFramesPerSecond(windowProperties.TargetFramesPerSecond);
 
-    // Get the actual GLFW window handle.
     m_WindowHandle = glfwGetCurrentContext();
 
     CH_CORE_INFO("GLFW Window Handle obtained: {}", (void *)m_WindowHandle);
@@ -45,6 +45,9 @@ Window::Window(const WindowProperties &windowProperties)
         CH_CORE_ERROR("Failed to get GLFW window handle! Is GLFW initialized?");
         return;
     }
+
+    m_Context = std::make_unique<RaylibContext>(m_WindowHandle);
+    m_Context->Init();
 
     SetExitKey(KEY_NULL); // Prevent ESC from closing the app
 

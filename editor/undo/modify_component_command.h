@@ -42,9 +42,9 @@ public:
 private:
     bool Validate()
     {
-        return m_Entity && m_Entity.GetScene() &&
-               m_Entity.GetScene()->GetRegistry().valid(static_cast<entt::entity>(m_Entity)) &&
-               m_Entity.HasComponent<T>();
+        if (!m_Entity) return false;
+        auto* registry = &m_Entity.GetRegistry();
+        return registry->valid(static_cast<entt::entity>(m_Entity)) && m_Entity.HasComponent<T>();
     }
 
 private:

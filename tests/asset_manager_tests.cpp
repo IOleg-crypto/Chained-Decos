@@ -1,5 +1,6 @@
 #include "engine/core/base.h"
 #include "engine/graphics/asset_manager.h"
+#include "engine/graphics/model_asset.h"
 #include "gtest/gtest.h"
 
 using namespace CHEngine;
@@ -16,24 +17,30 @@ protected:
         SetConfigFlags(FLAG_WINDOW_HIDDEN);
         InitWindow(1, 1, "AssetManagerTest");
 
-        // Final check if InitWindow actually worked (might fail on headless environments)
-        if (!IsWindowReady())
+        m_AssetManager = std::make_unique<AssetManager>();
+        
+        // Final check if InitWindow actually worked
+        if (IsWindowReady())
         {
-            AssetManager::Init(); // Still init logic if possible, or skip
-            return;
+            m_AssetManager->Initialize();
         }
-
-        AssetManager::Init();
     }
 
     void TearDown() override
     {
+        if (m_AssetManager)
+        {
+            m_AssetManager->Shutdown();
+            m_AssetManager.reset();
+        }
+
         if (IsWindowReady())
         {
-            AssetManager::Shutdown();
             CloseWindow();
         }
     }
+
+    std::unique_ptr<AssetManager> m_AssetManager;
 };
 
 // These tests require a working OpenGL context
@@ -41,24 +48,21 @@ protected:
 
 TEST_F(AssetManagerTest, ProceduralModelLoading)
 {
-    if (!IsWindowReady())
+    if (!IsWindowReady() || !m_AssetManager)
         return;
 
-    auto cube = AssetManager::Get<ModelAsset>(":cube:");
+    auto cube = m_AssetManager->Get<ModelAsset>(":cube:");
     EXPECT_TRUE(cube);
     EXPECT_GT(cube->GetModel().meshCount, 0);
-
-    // AssetManager is now Assets, we can check its storage if needed,
-    // but usually LoadModel itself verifies existence.
 }
 
 TEST_F(AssetManagerTest, ModelCaching)
 {
-    if (!IsWindowReady())
+    if (!IsWindowReady() || !m_AssetManager)
         return;
 
-    auto cube1 = AssetManager::Get<ModelAsset>(":cube:");
-    auto cube2 = AssetManager::Get<ModelAsset>(":cube:");
+    auto cube1 = m_AssetManager->Get<ModelAsset>(":cube:");
+    auto cube2 = m_AssetManager->Get<ModelAsset>(":cube:");
 
     EXPECT_EQ(cube1, cube2);
     EXPECT_EQ(cube1->GetModel().meshes, cube2->GetModel().meshes);
@@ -66,13 +70,30 @@ TEST_F(AssetManagerTest, ModelCaching)
 
 TEST_F(AssetManagerTest, Unloading)
 {
-    if (!IsWindowReady())
+    if (!IsWindowReady() || !m_AssetManager)
         return;
 
-    AssetManager::Get<ModelAsset>(":cube:");
-    // The current Assets system doesn't expose HasModel/UnloadModel directly like this anymore
-    // without more complex interaction with the asset library, but we'll leave it for now
-    // or just check that re-loading works.
+    auto cube = m_AssetManager->Get<ModelAsset>(":cube:");
+    EXPECT_TRUE(cube);
+    
+    m_AssetManager->Remove<ModelAsset>(":cube:");
+    // Cube shouldn't be in the cache, but since we didn't add a 'HasInCache' check yet, 
+    // we'll just check that it loads again.
+}
+
+TEST_F(AssetManagerTest, AsyncLoading)
+{
+    if (!IsWindowReady() || !m_AssetManager)
+        return;
+
+    // Test async loading of a procedural model
+    auto cubeFuture = std::async(std::launch::async, [this]() {
+        return m_AssetManager->Get<ModelAsset>(":cube:");
+    });
+
+    auto cube = cubeFuture.get();
+    ASSERT_TRUE(cube);
+    EXPECT_TRUE(cube->IsReady());
 }
 
 #endif

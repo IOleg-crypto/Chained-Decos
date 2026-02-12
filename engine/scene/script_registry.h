@@ -8,8 +8,6 @@
 
 namespace CHEngine
 {
-// void RegisterGameScripts(); // Deprecated
-
 class ScriptRegistry
 {
 public:
@@ -52,6 +50,12 @@ public:
     void CopyFrom(const ScriptRegistry& other)
     {
         m_Registry = other.m_Registry;
+    }
+
+    static ScriptRegistry& GetGlobalRegistry()
+    {
+        static ScriptRegistry s_GlobalRegistry;
+        return s_GlobalRegistry;
     }
 
 private:

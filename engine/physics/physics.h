@@ -2,6 +2,7 @@
 #define CH_PHYSICS_H
 
 #include "engine/core/base.h"
+#include "engine/core/timestep.h"
 #include "entt/entt.hpp"
 #include "raylib.h"
 #include <memory>
@@ -42,7 +43,7 @@ namespace CHEngine
 
     public: // Simulation & Queries
         // Steps the physics simulation and updates collider states.
-        void Update(float deltaTime, bool runtime = false);
+        void Update(Timestep deltaTime, bool runtime = false);
 
         // Performs a spatial raycast query within the owned scene.
         RaycastResult Raycast(Ray ray);
@@ -52,11 +53,15 @@ namespace CHEngine
 
     private: // Internal Helpers
         void UpdateColliders();
-        void ResolveSimulation(float deltaTime);
+        void ResolveSimulation(Timestep deltaTime);
 
     private: // Members
         Scene* m_Scene = nullptr;
         
+        std::unique_ptr<class NarrowPhase> m_NarrowPhase;
+        std::unique_ptr<class Dynamics> m_Dynamics;
+        std::unique_ptr<class SceneTrace> m_SceneTrace;
+
         // Localized BVH cache to avoid global static state
         std::unordered_map<ModelAsset*, std::shared_future<std::shared_ptr<BVH>>> m_BVHCache;
         mutable std::mutex m_BVHMutex;

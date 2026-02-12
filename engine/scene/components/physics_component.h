@@ -2,6 +2,7 @@
 #define CH_PHYSICS_COMPONENTS_H
 
 #include "engine/core/base.h"
+#include "engine/graphics/asset.h"
 #include <future>
 #include "raylib.h"
 #include <string>
@@ -35,6 +36,7 @@ struct ColliderComponent
     bool AutoCalculate = true;
 
     // Mesh (BVH) fields
+    AssetHandle ModelHandle = 0;
     std::string ModelPath;
     std::shared_ptr<BVH> BVHRoot = nullptr;
 

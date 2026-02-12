@@ -13,7 +13,7 @@ namespace CHEngine
     public:
         CH_START()
         {
-            CH_CORE_INFO("SceneScript: Initialized");
+            CH_CORE_INFO("SceneScript: Initialized on entity '{}'", GetEntity().GetComponent<TagComponent>().Tag);
         }
 
         CH_UPDATE(dt)
@@ -23,8 +23,26 @@ namespace CHEngine
                 auto &button = GetComponent<ButtonControl>();
                 if (button.PressedThisFrame)
                 {
-                    CH_CORE_INFO("SceneScript: Button pressed, requesting scene change...");
-                    SceneChangeRequestEvent e(PROJECT_ROOT_DIR "/game/chaineddecos/assets/scenes/Untitled1.chscene");
+                    CH_CORE_INFO("SceneScript: Button '{}' pressed!", GetEntity().GetComponent<TagComponent>().Tag);
+                    
+                    std::string targetScene = "";
+                    
+                    // 1. Try to get path from SceneTransitionComponent if it exists on the same entity
+                    if (HasComponent<SceneTransitionComponent>())
+                    {
+                        auto& transition = GetComponent<SceneTransitionComponent>();
+                        targetScene = transition.TargetScenePath;
+                        CH_CORE_INFO("SceneScript: Found SceneTransitionComponent, target: {}", targetScene);
+                    }
+                    
+                    // 2. Fallback to hardcoded path if empty
+                    if (targetScene.empty())
+                    {
+                        targetScene = "scenes/main_menu.chscene"; // Default fallback
+                        CH_CORE_WARN("SceneScript: No TargetScenePath found, using fallback: {}", targetScene);
+                    }
+
+                    SceneChangeRequestEvent e(targetScene);
                     Application::Get().OnEvent(e);
                 }
             }

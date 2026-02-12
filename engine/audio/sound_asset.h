@@ -10,19 +10,16 @@ namespace CHEngine
 class SoundAsset : public Asset
 {
 public:
-    SoundAsset() = default;
-    SoundAsset(Sound sound);
+    static AssetType GetStaticType() { return AssetType::Audio; }
+
+    SoundAsset() : Asset(GetStaticType()) {}
+    SoundAsset(Sound sound) : Asset(GetStaticType()), m_Sound(sound) {}
     ~SoundAsset() override;
 
-    static std::shared_ptr<SoundAsset> Load(const std::string &path);
-
-    virtual AssetType GetType() const override
-    {
-        return AssetType::Audio;
-    }
-
     void UploadToGPU();
-    void LoadFromFile(const std::string &path);
+    
+    // For internal use by AudioImporter
+    void SetPendingWave(Wave wave) { m_PendingWave = wave; m_HasPendingWave = true; }
 
     Sound &GetSound()
     {

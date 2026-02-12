@@ -5,7 +5,7 @@
 #include "engine/core/application.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scriptable_entity.h"
-#include "glm/glm.hpp"
+#include "raymath.h" // Added raymath for Clamp
 
 namespace CHEngine
 {
@@ -14,7 +14,7 @@ namespace CHEngine
     public:
         CH_UPDATE(deltaTime)
         {
-            auto scene = GetEntity().GetScene();
+            auto scene = GetScene();
             if (!scene) return;
 
             // Get camera component
@@ -38,7 +38,7 @@ namespace CHEngine
                 // Fallback: search for entity with PlayerComponent
                 auto playerView = scene->GetRegistry().view<PlayerComponent>();
                 if (playerView.begin() != playerView.end())
-                    targetEntity = { *playerView.begin(), scene };
+                    targetEntity = Entity(*playerView.begin(), &scene->GetRegistry());
             }
 
             if (!targetEntity || !targetEntity.HasComponent<TransformComponent>())
@@ -58,12 +58,12 @@ namespace CHEngine
                 camera.OrbitPitch -= mouseDelta.y * camera.LookSensitivity;
 
                 // Clamp pitch to prevent flipping
-                camera.OrbitPitch = glm::clamp(camera.OrbitPitch, -10.0f, 85.0f);
+                camera.OrbitPitch = Clamp(camera.OrbitPitch, -10.0f, 85.0f);
             }
 
             float wheelMovement = Input::GetMouseWheelMove();
             camera.OrbitDistance -= wheelMovement * 2.0f;
-            camera.OrbitDistance = glm::clamp(camera.OrbitDistance, 2.0f, 40.0f);
+            camera.OrbitDistance = Clamp(camera.OrbitDistance, 2.0f, 40.0f);
 
             // 3. Calculate Camera Position (Spherical Coordinates)
             float yawRad = camera.OrbitYaw * DEG2RAD;

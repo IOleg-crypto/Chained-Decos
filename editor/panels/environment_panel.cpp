@@ -1,6 +1,7 @@
 #include "environment_panel.h"
 #include "editor/editor_layer.h"
 #include "engine/graphics/environment.h"
+#include "engine/graphics/environment_importer.h"
 #include "engine/graphics/asset_manager.h"
 #include "engine/scene/project.h"
 #include <filesystem>
@@ -127,7 +128,7 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
 
             if (ImGui::Button("Save"))
             {
-                env->Save(env->GetPath());
+                EnvironmentImporter::SaveEnvironment(env, env->GetPath());
             }
         }
 

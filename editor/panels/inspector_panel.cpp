@@ -27,7 +27,7 @@ namespace CHEngine
         ImGui::Begin(m_Name.c_str(), &m_IsOpen);
         ImGui::PushID(this);
 
-        if (m_SelectedEntity && m_SelectedEntity.GetScene() != m_Context.get())
+        if (m_SelectedEntity && m_SelectedEntity.GetRegistry().ctx().get<Scene*>() != m_Context.get())
             m_SelectedEntity = {};
 
         if (m_SelectedEntity && m_SelectedEntity.IsValid())
@@ -51,15 +51,12 @@ namespace CHEngine
         dispatcher.Dispatch<EntitySelectedEvent>(
             [this](EntitySelectedEvent &ev)
             {
-                m_SelectedEntity = Entity{ev.GetEntity(), ev.GetScene()};
+                m_SelectedEntity = Entity(ev.GetEntity(), &ev.GetScene()->GetRegistry());
                 m_SelectedMeshIndex = ev.GetMeshIndex();
                 return false;
             });
     }
 
-    // ============================================================================
-    // HAZEL-STYLE TEMPLATE COMPONENT DRAWER
-    // ============================================================================
     
     template<typename T, typename UIFunction>
     static void DrawComponent(const std::string& name, Entity entity, UIFunction uiFunction)
@@ -105,10 +102,6 @@ namespace CHEngine
                 entity.RemoveComponent<T>();
         }
     }
-
-    // ============================================================================
-    // DRAW ALL COMPONENTS (Hazel-style with lambdas)
-    // ============================================================================
     
     void InspectorPanel::DrawComponents(Entity entity)
     {
@@ -336,13 +329,14 @@ namespace CHEngine
 
             if (ImGui::BeginPopup("AddScriptPopup"))
             {
-                if (auto scene = entity.GetScene())
+                auto* scene = entity.GetRegistry().ctx().get<Scene*>();
+                if (scene)
                 {
-                    auto& registry = scene->GetScriptRegistry();
-                    for (const auto& [name, funcs] : registry.GetScripts())
+                    auto& scriptRegistry = scene->GetScriptRegistry();
+                    for (const auto& [name, funcs] : scriptRegistry.GetScripts())
                     {
                         if (ImGui::MenuItem(name.c_str()))
-                            registry.AddScript(name, component);
+                            scriptRegistry.AddScript(name, component);
                     }
                 }
                 ImGui::EndPopup();
@@ -404,21 +398,24 @@ namespace CHEngine
         });
 
         // ========================================================================
-        // BILLBOARD COMPONENT
-        // ========================================================================
-        DrawComponent<BillboardComponent>("Billboard", entity, [](auto& component)
-        {
-            auto pb = EditorGUI::Begin();
-            pb.File("Texture", component.TexturePath, "png,jpg,tga")
-              .Float("Size", component.Size);
-        });
-
-        // ========================================================================
         // SCENE TRANSITION COMPONENT
         // ========================================================================
         DrawComponent<SceneTransitionComponent>("Scene Transition", entity, [](auto& component)
         {
             EditorGUI::Begin().File("Target Scene", component.TargetScenePath, "chscene");
+        });
+
+        // ========================================================================
+        // SPRITE COMPONENT
+        // ========================================================================
+        DrawComponent<SpriteComponent>("Sprite", entity, [](auto& component)
+        {
+            auto pb = EditorGUI::Begin();
+            pb.File("Texture", component.TexturePath, "png,jpg,tga")
+              .Color("Tint", component.Tint)
+              .Bool("Flip X", component.FlipX)
+              .Bool("Flip Y", component.FlipY)
+              .Int("Z Order", component.ZOrder);
         });
 
         // ========================================================================
@@ -434,7 +431,12 @@ namespace CHEngine
               .Float("Rounding", style.Rounding)
               .Float("Border", style.BorderSize)
               .Color("Border Color", style.BorderColor)
-              .Float("Padding", style.Padding);
+              .Float("Padding", style.Padding)
+              .Bool("Use Gradient", style.UseGradient)
+              .Color("Gradient Color", style.GradientColor)
+              .Float("Hover Scale", style.HoverScale, 0.01f, 0.5f, 2.0f)
+              .Float("Pressed Scale", style.PressedScale, 0.01f, 0.5f, 2.0f)
+              .Float("Transition Speed", style.TransitionSpeed, 0.01f, 0.0f, 1.0f);
             return pb.Changed;
         };
 
@@ -474,20 +476,76 @@ namespace CHEngine
         // CONTROL COMPONENT (Rect Transform)
         DrawComponent<ControlComponent>("Rect Transform", entity, [](auto& component)
         {
-            auto pb = EditorGUI::Begin();
-            pb.Vec2("Anchor Min", component.Transform.AnchorMin)
-              .Vec2("Anchor Max", component.Transform.AnchorMax)
-              .Vec2("Offset Min", component.Transform.OffsetMin)
-              .Vec2("Offset Max", component.Transform.OffsetMax)
-              .Vec2("Pivot", component.Transform.Pivot)
-              .Float("Rotation", component.Transform.Rotation)
-              .Vec2("Scale", component.Transform.Scale);
+            auto& rectTransform = component.Transform;
+            
+            // --- Anchor Presets ---
+            ImGui::Text("Presets:"); ImGui::SameLine();
+            if (ImGui::Button("Center")) {
+                rectTransform.AnchorMin = {0.5f, 0.5f}; rectTransform.AnchorMax = {0.5f, 0.5f};
+                rectTransform.OffsetMin = {-50, -50}; rectTransform.OffsetMax = {50, 50};
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Stretch")) {
+                rectTransform.AnchorMin = {0.0f, 0.0f}; rectTransform.AnchorMax = {1.0f, 1.0f};
+                rectTransform.OffsetMin = {0, 0}; rectTransform.OffsetMax = {0, 0};
+            }
+
+            // KISS: Basic Pos/Size first
+            bool isPoint = (rectTransform.AnchorMin.x == rectTransform.AnchorMax.x && rectTransform.AnchorMin.y == rectTransform.AnchorMax.y);
+            if (isPoint)
+            {
+                float width = rectTransform.OffsetMax.x - rectTransform.OffsetMin.x;
+                float height = rectTransform.OffsetMax.y - rectTransform.OffsetMin.y;
+                float posX = rectTransform.OffsetMin.x + width * rectTransform.Pivot.x;
+                float posY = rectTransform.OffsetMin.y + height * rectTransform.Pivot.y;
+                
+                Vector2 pos = {posX, posY};
+                Vector2 size = {width, height};
+
+                if (EditorGUI::Property("Pos", pos)) {
+                    rectTransform.OffsetMin.x = pos.x - size.x * rectTransform.Pivot.x;
+                    rectTransform.OffsetMin.y = pos.y - size.y * rectTransform.Pivot.y;
+                    rectTransform.OffsetMax.x = pos.x + size.x * (1.0f - rectTransform.Pivot.x);
+                    rectTransform.OffsetMax.y = pos.y + size.y * (1.0f - rectTransform.Pivot.y);
+                }
+                if (EditorGUI::Property("Size", size)) {
+                    rectTransform.OffsetMin.x = pos.x - size.x * rectTransform.Pivot.x;
+                    rectTransform.OffsetMin.y = pos.y - size.y * rectTransform.Pivot.y;
+                    rectTransform.OffsetMax.x = pos.x + size.x * (1.0f - rectTransform.Pivot.x);
+                    rectTransform.OffsetMax.y = pos.y + size.y * (1.0f - rectTransform.Pivot.y);
+                }
+            }
+            else
+            {
+                float rightPadding = -rectTransform.OffsetMax.x;
+                float bottomPadding = -rectTransform.OffsetMax.y;
+
+                if (EditorGUI::Property("Left", rectTransform.OffsetMin.x)) {}
+                if (EditorGUI::Property("Top", rectTransform.OffsetMin.y)) {}
+                if (EditorGUI::Property("Right", rightPadding)) { rectTransform.OffsetMax.x = -rightPadding; }
+                if (EditorGUI::Property("Bottom", bottomPadding)) { rectTransform.OffsetMax.y = -bottomPadding; }
+            }
+
+            // Advanced settings hidden by default
+            if (ImGui::TreeNodeEx("Advanced Layout Settings", ImGuiTreeNodeFlags_SpanAvailWidth))
+            {
+                EditorGUI::Property("Pivot", rectTransform.Pivot);
+                EditorGUI::Property("Anchor Min", rectTransform.AnchorMin);
+                EditorGUI::Property("Anchor Max", rectTransform.AnchorMax);
+                EditorGUI::Property("Rotation", rectTransform.Rotation);
+                EditorGUI::Property("Scale", rectTransform.Scale);
+                EditorGUI::Property("Z Order", component.ZOrder);
+                EditorGUI::Property("Visible", component.IsActive);
+                ImGui::TreePop();
+            }
         });
 
         // BUTTON WIDGET
         DrawComponent<ButtonControl>("Button Widget", entity, [&DrawUIStyle, &DrawTextStyle](auto& component)
         {
             EditorGUI::Property("Label", component.Label);
+            ImGui::Checkbox("Interactable", &component.IsInteractable);
+            ImGui::Checkbox("Auto Size", &component.AutoSize);
             
             if (ImGui::TreeNodeEx("Style", ImGuiTreeNodeFlags_Framed))
             {
@@ -520,6 +578,7 @@ namespace CHEngine
         DrawComponent<LabelControl>("Label Widget", entity, [&DrawTextStyle](auto& component)
         {
             EditorGUI::Property("Text", component.Text);
+            ImGui::Checkbox("Auto Size", &component.AutoSize);
             
             if (ImGui::TreeNodeEx("Style", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
             {
@@ -554,6 +613,191 @@ namespace CHEngine
                 DrawUIStyle(component.Style);
                 ImGui::TreePop();
             }
+        });
+
+        // INPUT TEXT WIDGET
+        DrawComponent<InputTextControl>("Input Text Widget", entity, [&DrawUIStyle, &DrawTextStyle](auto& component)
+        {
+            auto pb = EditorGUI::Begin();
+            pb.String("Label", component.Label)
+              .String("Text", component.Text)
+              .String("Placeholder", component.Placeholder)
+              .Int("Max Length", component.MaxLength)
+              .Bool("Multiline", component.Multiline)
+              .Bool("Read Only", component.ReadOnly)
+              .Bool("Password", component.Password);
+
+            if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed)) { DrawTextStyle(component.Style); ImGui::TreePop(); }
+            if (ImGui::TreeNodeEx("Box Style", ImGuiTreeNodeFlags_Framed)) { DrawUIStyle(component.BoxStyle); ImGui::TreePop(); }
+        });
+
+        // COMBO BOX WIDGET
+        DrawComponent<ComboBoxControl>("ComboBox Widget", entity, [&DrawUIStyle, &DrawTextStyle](auto& component)
+        {
+            auto pb = EditorGUI::Begin();
+            pb.String("Label", component.Label)
+              .Int("Selected Index", component.SelectedIndex);
+
+            if (ImGui::TreeNodeEx("Items", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                for (int i = 0; i < (int)component.Items.size(); i++)
+                {
+                    ImGui::PushID(i);
+                    char buf[256];
+                    strncpy(buf, component.Items[i].c_str(), sizeof(buf) - 1);
+                    if (ImGui::InputText("##item", buf, sizeof(buf))) component.Items[i] = buf;
+                    ImGui::SameLine();
+                    if (ImGui::Button("X")) { component.Items.erase(component.Items.begin() + i); ImGui::PopID(); break; }
+                    ImGui::PopID();
+                }
+                if (ImGui::Button("Add Item")) component.Items.push_back("New Option");
+                ImGui::TreePop();
+            }
+
+            if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed)) { DrawTextStyle(component.Style); ImGui::TreePop(); }
+            if (ImGui::TreeNodeEx("Box Style", ImGuiTreeNodeFlags_Framed)) { DrawUIStyle(component.BoxStyle); ImGui::TreePop(); }
+        });
+
+        // PROGRESS BAR WIDGET
+        DrawComponent<ProgressBarControl>("ProgressBar Widget", entity, [&DrawUIStyle, &DrawTextStyle](auto& component)
+        {
+            auto pb = EditorGUI::Begin();
+            pb.Float("Progress", component.Progress, 0.0f, 1.0f)
+              .String("Overlay Text", component.OverlayText)
+              .Bool("Show Percentage", component.ShowPercentage);
+
+            if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed)) { DrawTextStyle(component.Style); ImGui::TreePop(); }
+            if (ImGui::TreeNodeEx("Bar Style", ImGuiTreeNodeFlags_Framed)) { DrawUIStyle(component.BarStyle); ImGui::TreePop(); }
+        });
+
+        // IMAGE WIDGET
+        DrawComponent<ImageControl>("Image Widget", entity, [&DrawUIStyle](auto& component)
+        {
+            EditorGUI::Begin().File("Texture Path", component.TexturePath, "png,jpg,tga")
+                               .Color("Tint Color", component.TintColor)
+                               .Color("Border Color", component.BorderColor);
+
+            if (ImGui::TreeNodeEx("Style", ImGuiTreeNodeFlags_Framed)) { DrawUIStyle(component.Style); ImGui::TreePop(); }
+        });
+
+        // IMAGE BUTTON WIDGET
+        DrawComponent<ImageButtonControl>("Image Button Widget", entity, [&DrawUIStyle](auto& component)
+        {
+            EditorGUI::Begin().String("Label", component.Label)
+                               .File("Texture Path", component.TexturePath, "png,jpg,tga")
+                               .Color("Tint Color", component.TintColor)
+                               .Color("Background Color", component.BackgroundColor)
+                               .Int("Frame Padding", component.FramePadding);
+
+            if (ImGui::TreeNodeEx("Style", ImGuiTreeNodeFlags_Framed)) { DrawUIStyle(component.Style); ImGui::TreePop(); }
+        });
+
+        // SEPARATOR WIDGET
+        DrawComponent<SeparatorControl>("Separator Widget", entity, [](auto& component)
+        {
+            auto pb = EditorGUI::Begin();
+            pb.Float("Thickness", component.Thickness)
+              .Color("Color", component.LineColor);
+        });
+
+        // RADIO BUTTON WIDGET
+        DrawComponent<RadioButtonControl>("RadioButton Widget", entity, [&DrawTextStyle](auto& component)
+        {
+            auto pb = EditorGUI::Begin();
+            pb.String("Label", component.Label)
+              .Int("Selected Index", component.SelectedIndex)
+              .Bool("Horizontal", component.Horizontal);
+
+            if (ImGui::TreeNodeEx("Options", ImGuiTreeNodeFlags_Framed))
+            {
+                for (int i = 0; i < (int)component.Options.size(); i++)
+                {
+                    ImGui::PushID(i);
+                    char buf[256];
+                    strncpy(buf, component.Options[i].c_str(), 255);
+                    if (ImGui::InputText("##opt", buf, 255)) component.Options[i] = buf;
+                    ImGui::SameLine();
+                    if (ImGui::Button("X")) { component.Options.erase(component.Options.begin() + i); ImGui::PopID(); break; }
+                    ImGui::PopID();
+                }
+                if (ImGui::Button("Add Option")) component.Options.push_back("New Option");
+                ImGui::TreePop();
+            }
+            if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed)) { DrawTextStyle(component.Style); ImGui::TreePop(); }
+        });
+
+        // COLOR PICKER WIDGET
+        DrawComponent<ColorPickerControl>("ColorPicker Widget", entity, [&DrawUIStyle](auto& component)
+        {
+            EditorGUI::Begin().String("Label", component.Label)
+                               .Color("Color", component.SelectedColor)
+                               .Bool("Show Alpha", component.ShowAlpha)
+                               .Bool("Show Picker", component.ShowPicker);
+
+            if (ImGui::TreeNodeEx("Style", ImGuiTreeNodeFlags_Framed)) { DrawUIStyle(component.Style); ImGui::TreePop(); }
+        });
+
+        // DRAG FLOAT WIDGET
+        DrawComponent<DragFloatControl>("DragFloat Widget", entity, [&DrawUIStyle, &DrawTextStyle](auto& component)
+        {
+            EditorGUI::Begin().String("Label", component.Label)
+                               .Float("Value", component.Value)
+                               .Float("Speed", component.Speed)
+                               .Float("Min", component.Min)
+                               .Float("Max", component.Max)
+                               .String("Format", component.Format);
+
+            if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed)) { DrawTextStyle(component.Style); ImGui::TreePop(); }
+            if (ImGui::TreeNodeEx("Box Style", ImGuiTreeNodeFlags_Framed)) { DrawUIStyle(component.BoxStyle); ImGui::TreePop(); }
+        });
+
+        // DRAG INT WIDGET
+        DrawComponent<DragIntControl>("DragInt Widget", entity, [&DrawUIStyle, &DrawTextStyle](auto& component)
+        {
+            EditorGUI::Begin().String("Label", component.Label)
+                               .Int("Value", component.Value)
+                               .Float("Speed", component.Speed)
+                               .Int("Min", component.Min)
+                               .Int("Max", component.Max)
+                               .String("Format", component.Format);
+
+            if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed)) { DrawTextStyle(component.Style); ImGui::TreePop(); }
+            if (ImGui::TreeNodeEx("Box Style", ImGuiTreeNodeFlags_Framed)) { DrawUIStyle(component.BoxStyle); ImGui::TreePop(); }
+        });
+
+        // TAB BAR WIDGET
+        DrawComponent<TabBarControl>("TabBar Widget", entity, [&DrawUIStyle](auto& component)
+        {
+            EditorGUI::Begin().String("Label", component.Label)
+                               .Bool("Reorderable", component.Reorderable)
+                               .Bool("Auto Select New Tabs", component.AutoSelectNewTabs);
+
+            if (ImGui::TreeNodeEx("Style", ImGuiTreeNodeFlags_Framed)) { DrawUIStyle(component.Style); ImGui::TreePop(); }
+        });
+
+        // TAB ITEM WIDGET
+        DrawComponent<TabItemControl>("Tab Item Widget", entity, [&DrawTextStyle](auto& component)
+        {
+            EditorGUI::Begin().String("Label", component.Label)
+                               .Bool("Is Open", component.IsOpen);
+
+            if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed)) { DrawTextStyle(component.Style); ImGui::TreePop(); }
+        });
+
+        // COLLAPSING HEADER WIDGET
+        DrawComponent<CollapsingHeaderControl>("CollapsingHeader Widget", entity, [&DrawTextStyle](auto& component)
+        {
+            EditorGUI::Begin().String("Label", component.Label)
+                               .Bool("Default Open", component.DefaultOpen);
+
+            if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed)) { DrawTextStyle(component.Style); ImGui::TreePop(); }
+        });
+
+        DrawComponent<VerticalLayoutGroup>("Vertical Layout Group", entity, [](auto& component)
+        {
+            auto pb = EditorGUI::Begin();
+            pb.Float("Spacing", component.Spacing)
+              .Vec2("Padding", component.Padding);
         });
 
         // ========================================================================

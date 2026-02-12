@@ -13,7 +13,12 @@ class Physics;
 class SceneTrace
 {
 public:
-    static RaycastResult Raycast(Scene *scene, Ray ray, Physics* physics);
+    SceneTrace(Physics* physics) : m_Physics(physics) {}
+
+    RaycastResult Raycast(Scene *scene, Ray ray);
+
+private:
+    Physics* m_Physics;
 };
 } // namespace CHEngine
 

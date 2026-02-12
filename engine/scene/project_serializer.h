@@ -10,7 +10,7 @@ namespace CHEngine
     {
     public:
         ProjectSerializer(std::shared_ptr<Project> project);
-
+    public:
         bool Serialize(const std::filesystem::path &filepath);
         bool Deserialize(const std::filesystem::path &filepath);
 

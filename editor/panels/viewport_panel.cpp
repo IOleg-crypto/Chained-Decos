@@ -9,6 +9,7 @@
 #include "rlImGui.h"
 #include "engine/graphics/scene_renderer.h"
 #include "engine/graphics/ui_renderer.h"
+#include "editor/viewport/ui_manipulator.h"
 #include "editor_gui.h"
 #include "editor_layout.h"
 #include "engine/graphics/asset_manager.h"
@@ -86,6 +87,8 @@ namespace CHEngine
             int h = GetScreenHeight();
             m_ViewportTexture = LoadRenderTexture(w > 0 ? w : 1280, h > 0 ? h : 720);
         }
+
+        m_SceneRenderer = std::make_unique<SceneRenderer>();
     }
 
     ViewportPanel::~ViewportPanel()
@@ -155,7 +158,7 @@ namespace CHEngine
          camera = scene->GetActiveCamera();
     }
 
-    SceneRenderer::RenderScene(activeScene.get(), camera, GetFrameTime(), &EditorLayer::Get().GetDebugRenderFlags());
+    m_SceneRenderer->RenderScene(activeScene.get(), camera, GetFrameTime(), &EditorLayer::Get().GetDebugRenderFlags());
     EndTextureMode();
 
     rlImGuiImageRenderTexture(&m_ViewportTexture);
@@ -210,62 +213,26 @@ namespace CHEngine
         isGizmoHovered = m_Gizmo.IsHovered();
 
         // 2. Game UI Overlay
-        UIRenderer::DrawCanvas(activeScene.get(), {0, 0}, viewportSize, EditorLayer::Get().GetSceneState() == SceneState::Edit);
+        UIRenderer::Get().DrawCanvas(activeScene.get(), viewportScreenPos, viewportSize, EditorLayer::Get().GetSceneState() == SceneState::Edit);
         isUIChildHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByPopup);
 
         // 3. Selection Highlight
         if (isUISelected && selectedEntity)
         {
-            auto &cc = selectedEntity.GetComponent<ControlComponent>();
-            auto rect = cc.Transform.CalculateRect({viewportSize.x, viewportSize.y}, {0, 0});
+            auto rect = UIRenderer::Get().GetEntityRect(selectedEntity, viewportSize, viewportScreenPos);
             
-            ImVec2 p1 = {viewportScreenPos.x + rect.x, viewportScreenPos.y + rect.y};
-            ImVec2 p2 = {p1.x + rect.width, p1.y + rect.height};
+            ImVec2 p1 = ImVec2(rect.x, rect.y);
+            ImVec2 p2 = ImVec2(p1.x + rect.width, p1.y + rect.height);
 
             ImGui::GetWindowDrawList()->AddRect(p1, p2, IM_COL32(255, 255, 0, 255), 0, 0, 2.0f);
 
-            // UI Dragging Logic
-            if (m_DraggingUI)
-            {
-                if (ImGui::IsMouseDown(0))
-                {
-                    ImVec2 mouseDragDelta = ImGui::GetIO().MouseDelta;
-                    if (mouseDragDelta.x != 0 || mouseDragDelta.y != 0)
-                    {
-                        cc.Transform.OffsetMin.x += mouseDragDelta.x;
-                        cc.Transform.OffsetMin.y += mouseDragDelta.y;
-                        cc.Transform.OffsetMax.x += mouseDragDelta.x;
-                        cc.Transform.OffsetMax.y += mouseDragDelta.y;
-                    }
-                }
-                else
-                {
-                    m_DraggingUI = false;
-                    CH_CORE_INFO("Stopped dragging UI");
-                }
-            }
-            else
-            {
-                // Start dragging
-                if (ImGui::IsMouseHoveringRect(p1, p2) && ImGui::IsMouseClicked(0)) 
-                {
-                    m_DraggingUI = true;
-                    CH_CORE_INFO("Started dragging UI: {}", selectedEntity.GetComponent<TagComponent>().Tag);
-                }
-            }
+            // Use the new UI Manipulator
+            m_UIManipulator.OnImGuiRender(selectedEntity, viewportScreenPos, viewportSize);
             
             // Debug info
             if (ImGui::IsMouseHoveringRect(p1, p2))
             {
                 ImGui::GetWindowDrawList()->AddRect(p1, p2, IM_COL32(0, 255, 0, 255), 0, 0, 1.0f);
-            }
-        }
-        else
-        {
-            if (m_DraggingUI) 
-            {
-                m_DraggingUI = false;
-                CH_CORE_INFO("Reset dragging UI (deselected)");
             }
         }
     }
@@ -275,7 +242,7 @@ namespace CHEngine
     // --- 3. OBJECT PICKING ---
     bool isHovered = isUIChildHovered; 
     bool isClicked = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
-    bool isDragging = m_DraggingUI;
+    bool isDragging = m_UIManipulator.IsActive();
     SceneState sceneState = EditorLayer::Get().GetSceneState();
 
     if (isClicked) {
@@ -310,13 +277,11 @@ namespace CHEngine
         auto uiView = activeScene->GetRegistry().view<ControlComponent>();
         for (auto entityID : uiView)
         {
-            Entity entity(entityID, activeScene.get());
+            Entity entity(entityID, &activeScene->GetRegistry());
             auto &cc = uiView.get<ControlComponent>(entityID);
             if (!cc.IsActive) continue;
 
-            auto rect = cc.Transform.CalculateRect(
-                {viewportSize.x, viewportSize.y},
-                {viewportScreenPos.x, viewportScreenPos.y});
+            auto rect = UIRenderer::Get().GetEntityRect(entity, viewportSize, viewportScreenPos);
 
             Vector2 mouse = {mousePos.x, mousePos.y};
             Vector2 mouseRaylib = {mouse.x, mouse.y};
@@ -334,7 +299,7 @@ namespace CHEngine
             RaycastResult result = activeScene->GetPhysics().Raycast(ray);
             if (result.Hit)
             {
-                bestHit = Entity(result.Entity, activeScene.get());
+                bestHit = Entity(result.Entity, &activeScene->GetRegistry());
                 minDistance = result.Distance;
                 CH_CORE_INFO("HIT PHYSICS: {} at Dist {}", bestHit.GetComponent<TagComponent>().Tag, minDistance);
             }
@@ -352,7 +317,7 @@ namespace CHEngine
                 visualCandidates++;
                 if (bestHit && (entt::entity)bestHit == entityID) continue;
 
-                Entity entity(entityID, activeScene.get());
+                Entity entity(entityID, &activeScene->GetRegistry());
                 auto &modelComp = modelView.get<ModelComponent>(entityID);
                 auto &tag = entity.GetComponent<TagComponent>().Tag;
 

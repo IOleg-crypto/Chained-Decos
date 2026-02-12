@@ -2,6 +2,7 @@
 #define CH_GAME_COMPONENTS_H
 
 #include "engine/core/base.h"
+#include "engine/graphics/asset.h"
 #include "engine/scene/components/control_component.h"
 #include "raylib.h"
 #include <string>
@@ -11,6 +12,7 @@ namespace CHEngine
 struct SpawnComponent
 {
     bool IsActive = true;
+    AssetHandle TextureHandle = 0;
     Vector3 ZoneSize = {1.0f, 1.0f, 1.0f};
     bool RenderSpawnZoneInScene = true;
     Vector3 SpawnPoint = {0.0f, 0.0f, 0.0f};

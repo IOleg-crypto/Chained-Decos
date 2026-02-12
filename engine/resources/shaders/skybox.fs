@@ -4,7 +4,7 @@
 layout(location = 0) in vec3 fragPosition;
 
 // Input uniform values
-layout(binding = 0) uniform sampler2D environmentMap;
+layout(binding = 0) uniform sampler2D texture0;
 uniform bool vflipped;
 uniform bool doGamma;
 uniform float fragGamma;
@@ -55,7 +55,7 @@ void main()
     
     if (vflipped) uv.y = 1.0 - uv.y;
 
-    vec3 color = texture(environmentMap, uv).rgb;
+    vec3 color = texture(texture0, uv).rgb;
 
     // Apply exposure
     color *= exposure;

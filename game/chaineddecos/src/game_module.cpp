@@ -11,29 +11,22 @@
 #include "spawnzone.h"
 #include "orbitcameracontroller.h"
 
-extern "C" {
+// Standard C++ function for static linking
+void RegisterGameScripts(CHEngine::Scene* scene) {
+    if (!scene) return;
 
-    CH_GAME_API void LoadGame(CHEngine::Scene* scene) {
-        if (!scene) return;
+    CH_CORE_INFO("Game Logic Registering...");
 
-        CH_CORE_INFO("Game Module Loaded!");
+    // Register Scripts
+    auto& registry = scene->GetScriptRegistry();
+    
+    registry.Register<CHEngine::PlayerController>("PlayerController");
+    registry.Register<CHEngine::CameraController>("CameraController");
+    registry.Register<CHEngine::GameHUD>("GameHUD");
+    registry.Register<CHEngine::SceneScript>("SceneScript");
+    registry.Register<CHEngine::ExitScript>("ExitScript");
+    registry.Register<CHEngine::SpawnZoneRespawn>("SpawnZoneRespawn");
+    registry.Register<CHEngine::OrbitCameraController>("OrbitCameraController");
 
-        // Register Scripts
-        auto& registry = scene->GetScriptRegistry();
-        
-        registry.Register<CHEngine::PlayerController>("PlayerController");
-        registry.Register<CHEngine::CameraController>("CameraController");
-        registry.Register<CHEngine::GameHUD>("GameHUD");
-        registry.Register<CHEngine::SceneScript>("SceneScript");
-        registry.Register<CHEngine::ExitScript>("ExitScript");
-        registry.Register<CHEngine::SpawnZoneRespawn>("SpawnZoneRespawn");
-        registry.Register<CHEngine::OrbitCameraController>("OrbitCameraController");
-
-        CH_CORE_INFO("Game Scripts Registered: PlayerController, CameraController, GameHUD, SceneScript, ExitScript, SpawnZone, SpawnZoneRespawn, OrbitCameraController");
-    }
-
-    CH_GAME_API void UnloadGame() {
-        CH_CORE_INFO("Game Module Unloaded!");
-    }
-
+    CH_CORE_INFO("Game Scripts Registered successfully!");
 }
