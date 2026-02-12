@@ -6,6 +6,7 @@
 #include "raylib.h"
 #include "viewport/editor_camera.h"
 #include "viewport/editor_gizmo.h"
+#include "viewport/ui_manipulator.h"
 #include "engine/core/timestep.h"
 
 namespace CHEngine
@@ -55,11 +56,12 @@ private:
 
     EditorCamera m_EditorCamera;
     EditorGizmo m_Gizmo;
+    EditorUIManipulator m_UIManipulator;
     GizmoType m_CurrentTool = GizmoType::TRANSLATE;
     Entity m_SelectedEntity;
+    std::unique_ptr<class SceneRenderer> m_SceneRenderer;
     
     // UI Interaction state
-    bool m_DraggingUI = false;
     ImVec2 m_UIDragOffset = {0, 0};
 };
 

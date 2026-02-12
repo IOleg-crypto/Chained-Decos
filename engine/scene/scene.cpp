@@ -4,6 +4,7 @@
 #include "engine/core/application.h"
 #include "engine/core/profiler.h"
 #include "engine/graphics/asset_manager.h"
+#include "engine/graphics/model_asset.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/scene_scripting.h"
 #include "project.h"
@@ -13,7 +14,6 @@
 #include "scriptable_entity.h"
 #include "engine/scene/scene_events.h"
 #include "engine/physics/bvh/bvh.h"
-#include "engine/physics/bvh/bvh.h"
 #include "engine/scene/component_serializer.h"
 #include "engine/scene/script_registry.h"
 
@@ -22,6 +22,8 @@ namespace CHEngine
 // Scene implementation
 Scene::Scene()
 {
+    m_Registry.ctx().emplace<Scene*>(this);
+
     // Declarative signals binding
     m_Registry.on_construct<ModelComponent>().connect<&Scene::OnModelComponentAdded>(this);
     m_Registry.on_update<ModelComponent>().connect<&Scene::OnModelComponentAdded>(this);
@@ -71,7 +73,10 @@ std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
     
     // 2. Copy Script Registry
     if (other->m_ScriptRegistry)
+    {
         newScene->m_ScriptRegistry->CopyFrom(*other->m_ScriptRegistry);
+        CH_CORE_INFO("Scene::Copy - Script registry copied successfully.");
+    }
     
     // 2. Copy Entities (Direct Memory Copy)
     auto &srcRegistry = other->m_Registry;
@@ -83,7 +88,7 @@ std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
         [&](auto entityHandle, auto& id)
         {
             entityCount++;
-            Entity srcEntity = {entityHandle, other.get()};
+            Entity srcEntity = {entityHandle, &other->m_Registry};
             Entity dstEntity = newScene->CreateEntityWithUUID(id.ID);
 
             ComponentSerializer::CopyAll(srcEntity, dstEntity);
@@ -102,7 +107,7 @@ std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
 
 Entity Scene::CreateEntity(const std::string &name)
 {
-    Entity entity(m_Registry.create(), this);
+    Entity entity(m_Registry.create(), &m_Registry);
     entity.AddComponent<IDComponent>();
     entity.AddComponent<TagComponent>(name.empty() ? "Entity" : name);
     entity.AddComponent<TransformComponent>();
@@ -113,7 +118,7 @@ Entity Scene::CreateEntity(const std::string &name)
 
 Entity Scene::CreateEntityWithUUID(UUID uuid, const std::string &name)
 {
-    Entity entity(m_Registry.create(), this);
+    Entity entity(m_Registry.create(), &m_Registry);
     entity.AddComponent<IDComponent>(uuid);
     entity.AddComponent<TagComponent>(name.empty() ? "Entity" : name);
     entity.AddComponent<TransformComponent>();
@@ -162,7 +167,7 @@ void Scene::DestroyEntity(Entity entity)
     {
         auto children = entity.GetComponent<HierarchyComponent>().Children;
         for (auto childHandle : children)
-            DestroyEntity({childHandle, this});
+            DestroyEntity(Entity(childHandle, &m_Registry));
     }
 
     CH_CORE_INFO("Entity Destroyed: {} ({})", entity.GetName(), (uint32_t)entity);
@@ -188,24 +193,23 @@ void Scene::OnHierarchyDestroy(entt::registry &reg, entt::entity entity)
     // Children are handled by recursive DestroyEntity call
 }
 
-void Scene::OnUpdateRuntime(Timestep ts)
+void Scene::OnUpdateRuntime(Timestep timestep)
 {
-    float deltaTime = ts;
     CH_PROFILE_FUNCTION();
 
     static int frameCount = 0;
     bool isSim = IsSimulationRunning();
     if (frameCount % 60 == 0) {
-        CH_CORE_INFO("[SCENE_DIAG] OnUpdateRuntime - dt={}, Sim={}", deltaTime, isSim);
+        CH_CORE_INFO("[SCENE_DIAG] OnUpdateRuntime - dt={}, Sim={}", (float)timestep, isSim);
     }
     frameCount++;
     
-    UpdateScripting(deltaTime);
-    UpdateAnimations(deltaTime);
-    UpdateAudio(deltaTime);
-    UpdateCameras(deltaTime);
+    UpdateScripting(timestep);
+    UpdateAnimations(timestep);
+    UpdateAudio(timestep);
+    UpdateCameras(timestep);
     UpdateTransitions();
-    UpdatePhysics(deltaTime);
+    UpdatePhysics(timestep);
 }
 
 void Scene::OnViewportResize(uint32_t width, uint32_t height)
@@ -223,12 +227,12 @@ void Scene::OnViewportResize(uint32_t width, uint32_t height)
 // Update Logic Implementation
 // -------------------------------------------------------------------------------------------------------------------
 
-void Scene::UpdatePhysics(float deltaTime)
+void Scene::UpdatePhysics(Timestep deltaTime)
 {
     m_Physics->Update(deltaTime, IsSimulationRunning());
 }
 
-void Scene::UpdateAnimations(float deltaTime)
+void Scene::UpdateAnimations(Timestep deltaTime)
 {
     m_Registry.view<ModelComponent, AnimationComponent>().each([&](auto entity, auto& mc, auto& anim) {
         if (anim.IsPlaying && mc.Asset)
@@ -261,12 +265,12 @@ void Scene::UpdateAnimations(float deltaTime)
     });
 }
 
-void Scene::UpdateScripting(float deltaTime)
+void Scene::UpdateScripting(Timestep deltaTime)
 {
     SceneScripting::Update(this, deltaTime);
 }
 
-void Scene::UpdateAudio(float deltaTime)
+void Scene::UpdateAudio(Timestep deltaTime)
 {
     Audio::Update(this, deltaTime);
 }
@@ -282,96 +286,35 @@ void Scene::UpdateTransitions()
     });
 }
 
-void Scene::UpdateCameras(float deltaTime)
+void Scene::UpdateCameras(Timestep deltaTime)
 {
     m_Registry.view<TransformComponent, CameraComponent>().each([&](auto entity, auto& tc, auto& cc) {
         if (cc.IsOrbitCamera && !cc.TargetEntityTag.empty())
         {
             Entity target = FindEntityByTag(cc.TargetEntityTag);
-            if (target)
-            {
-                auto& targetTc = target.GetComponent<TransformComponent>();
-                
-                // Calculate orbit position
-                float dist = cc.OrbitDistance;
-                float yaw = cc.OrbitYaw * DEG2RAD;
-                float pitch = cc.OrbitPitch * DEG2RAD;
+            if (!target) return;
 
-                // Spherical coordinates
-                float x = dist * sin(yaw) * cos(pitch);
-                float y = dist * sin(pitch);
-                float z = dist * cos(yaw) * cos(pitch);
-
-                Vector3 offset = {x, y, z};
-                Vector3 newPos = Vector3Add(targetTc.Translation, offset);
-                
-                // Update transform
-                tc.Translation = newPos;
-                
-                // Look at target
-                Vector3 direction = Vector3Normalize(Vector3Subtract(targetTc.Translation, newPos));
-                
-                // Calculate rotation quaternion (LookAt equivalent)
-                Matrix lookAt = MatrixLookAt(newPos, targetTc.Translation, {0, 1, 0});
-                // MatrixLookAt returns a view matrix (inverse camera transform). 
-                // We need the camera's world transform.
-                // Invert it (or just use LookAt logic to get Frame)
-                
-                // Actually, QuaternionFromVector3ToVector3 or similar might be better.
-                // Or simplified: Just set the rotation to face the target.
-                // Easiest is to construct a rotation matrix from forward/up/right
-                
-                // Forward is direction to target
-                Vector3 forward = direction;
-                Vector3 up = {0, 1, 0};
-                Vector3 right = Vector3Normalize(Vector3CrossProduct(forward, up));
-                // Re-calculate up to be orthogonal
-                up = Vector3CrossProduct(right, forward);
-                
-                // Matrix (Column Major for Raylib?)
-                // Raylib Matrix is row-major in memory but math assumes column vectors?
-                // Actually Raylib is column-major.
-                
-                // Let's use QuaternionFromMatrix
-                Matrix transform = MatrixIdentity();
-                transform.m0 = right.x; transform.m4 = up.x; transform.m8 = -forward.x; // Render forward is -Z
-                transform.m1 = right.y; transform.m5 = up.y; transform.m9 = -forward.y;
-                transform.m2 = right.z; transform.m6 = up.z; transform.m10 = -forward.z;
-                
-                // Wait, MatrixLookAt gives View Matrix. Inverse of View Matrix is Camera World Matrix.
-                // MatrixLookAt:
-                // zaxis = normal(eye - target)
-                // xaxis = normal(cross(up, zaxis))
-                // yaxis = cross(zaxis, xaxis)
-                // View = { xaxis, yaxis, zaxis }...
-                
-                // Direct approach:
-                // Forward = Target - Pos
-                // If we want Forward to be -Z (OpenGL convention):
-                // Z = -(Target - Pos) = Pos - Target
-                
-                // Let's try simple LookAt logic:
-                // We want the camera to look AT the target.
-                // We can just calculate the rotation from the position and target.
-                
-                // Simpler: QuaternionLookAt
-                // Assuming we want the camera's local -Z to point directly at the target.
-                
-                // Let's stick to Euler for now if Quaternion is complex?
-                // No, we use RotationQuat.
-                
-                // Raymath MatrixLookAt is:
-                // MatrixLookAt(eye, target, up)
-                Matrix viewMat = MatrixLookAt(newPos, targetTc.Translation, {0, 1, 0});
-                Matrix worldMat = MatrixInvert(viewMat);
-                tc.RotationQuat = QuaternionFromMatrix(worldMat);
-                
-                // Update Euler for Inspector (optional but good for debugging)
-                tc.Rotation = QuaternionToEuler(tc.RotationQuat);
-                tc.Rotation.x *= RAD2DEG;
-                tc.Rotation.y *= RAD2DEG;
-                tc.Rotation.z *= RAD2DEG;
-            }
+            auto& targetTc = target.GetComponent<TransformComponent>();
+            
+            // Spherical coordinates → orbit position
+            float yaw = cc.OrbitYaw * DEG2RAD;
+            float pitch = cc.OrbitPitch * DEG2RAD;
+            Vector3 offset = {
+                cc.OrbitDistance * sin(yaw) * cos(pitch),
+                cc.OrbitDistance * sin(pitch),
+                cc.OrbitDistance * cos(yaw) * cos(pitch)
+            };
+            tc.Translation = Vector3Add(targetTc.Translation, offset);
+            
+            // LookAt → quaternion rotation
+            Matrix viewMat = MatrixLookAt(tc.Translation, targetTc.Translation, {0, 1, 0});
+            tc.RotationQuat = QuaternionFromMatrix(MatrixInvert(viewMat));
+            
+            // Sync Euler angles for Inspector display
+            tc.Rotation = QuaternionToEuler(tc.RotationQuat);
+            tc.Rotation.x *= RAD2DEG;
+            tc.Rotation.y *= RAD2DEG;
+            tc.Rotation.z *= RAD2DEG;
         }
     });
 }
@@ -395,50 +338,13 @@ void Scene::OnRuntimeStart()
     int collidersBuilt = 0, collidersFailed = 0;
     int scriptsCreated = 0;
     
-    // Phase 1: Initialize ModelComponents (must load first - other components may depend on models)
-    std::vector<std::shared_ptr<ModelAsset>> modelsToWait;
+    // Phase 1: Load models (other components may depend on them)
     m_Registry.view<ModelComponent>().each([&](auto entity, auto& component) {
         if (!component.ModelPath.empty()) {
             OnModelComponentAdded(m_Registry, entity);
-            if (component.Asset) {
-                modelsToWait.push_back(component.Asset);
-            }
-        }
-    });
-
-    // // Wait for models to be ready (with a timeout of 2 seconds)
-    // if (!modelsToWait.empty())
-    // {
-    //     CH_CORE_INFO("Scene: Waiting for {} models to load...", modelsToWait.size());
-    //     auto startWait = std::chrono::steady_clock::now();
-    //     bool allReady = false;
-    //     while (!allReady)
-    //     {
-    //         allReady = true;
-    //         for (auto& asset : modelsToWait) {
-    //             if (!asset->IsReady()) {
-    //                 allReady = false;
-    //                 break;
-    //             }
-    //         }
-
-    //         auto now = std::chrono::steady_clock::now();
-    //         if (std::chrono::duration_cast<std::chrono::seconds>(now - startWait).count() > 2) {
-    //             CH_CORE_WARN("Scene: Timeout waiting for models!");
-    //             break;
-    //         }
-            
-    //         // Avoid tight loop
-    //         std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    //     }
-    // }
-
-    // Re-verify model states and log results
-    m_Registry.view<ModelComponent>().each([&](auto entity, auto& component) {
-        if (!component.ModelPath.empty()) {
-            if (component.Asset && component.Asset->IsReady()) {
+            if (component.Asset && component.Asset->IsReady())
                 modelsLoaded++;
-            } else {
+            else {
                 modelsFailed++;
                 CH_CORE_ERROR("Failed to load model: {}", component.ModelPath);
             }
@@ -460,19 +366,24 @@ void Scene::OnRuntimeStart()
 
     // Phase 3: Initialize NativeScripts
     m_Registry.view<NativeScriptComponent>().each([&](auto entity, auto& nsc) {
+        std::string entityTag = m_Registry.any_of<TagComponent>(entity) ? m_Registry.get<TagComponent>(entity).Tag : "Unnamed";
         for (auto& script : nsc.Scripts) {
             if (script.InstantiateScript) {
                 script.Instance = script.InstantiateScript();
                 if (script.Instance) {
-                    script.Instance->m_Entity = Entity{entity, this};
-                    CH_CORE_INFO("  - Script '{}' instantiated successfully for entity '{}'", 
-                                script.ScriptName, m_Registry.get<TagComponent>(entity).Tag);
+                    script.Instance->m_Entity = Entity(entity, &m_Registry);
+                    script.Instance->m_Scene = this;
+                    CH_CORE_INFO("[SCRIPT_DIAG] Scene: '{}' - Script '{}' instantiated for entity '{}'", 
+                                sceneName, script.ScriptName, entityTag);
                     script.Instance->OnCreate();
                     scriptsCreated++;
                 } else {
-                    CH_CORE_ERROR("Failed to instantiate script: {} for entity '{}'", 
-                                script.ScriptName, m_Registry.get<TagComponent>(entity).Tag);
+                    CH_CORE_ERROR("[SCRIPT_DIAG] Scene: '{}' - Failed to instantiate script: {} for entity '{}'", 
+                                sceneName, script.ScriptName, entityTag);
                 }
+            } else {
+                CH_CORE_WARN("[SCRIPT_DIAG] Scene: '{}' - Entity '{}' has script '{}' but no InstantiateScript func!",
+                            sceneName, entityTag, script.ScriptName);
             }
         }
     });
@@ -520,14 +431,14 @@ Entity Scene::FindEntityByTag(const std::string &tag)
     {
         const auto &tagComp = view.get<TagComponent>(entity);
         if (tagComp.Tag == tag)
-            return {entity, this};
+            return {entity, &m_Registry};
     }
     return {};
 }
 Entity Scene::GetEntityByUUID(UUID uuid)
 {
     if (m_EntityMap.find(uuid) != m_EntityMap.end())
-        return {m_EntityMap.at(uuid), this};
+        return {m_EntityMap.at(uuid), &m_Registry};
     return {};
 }
 
@@ -566,21 +477,13 @@ void Scene::OnAudioComponentAdded(entt::registry &reg, entt::entity entity)
 void Scene::OnModelComponentAdded(entt::registry &reg, entt::entity entity)
 {
     auto &component = reg.get<ModelComponent>(entity);
-    CH_CORE_INFO(">>> Scene::OnModelComponentAdded called for entity {}. Path={}, ExistingAsset={}", 
-        (uint32_t)entity, component.ModelPath, (void*)component.Asset.get());
     if (component.ModelPath.empty())
-    {
-        CH_CORE_TRACE("Scene::OnModelComponentAdded - Empty ModelPath, skipping");
         return;
-    }
 
-    // Check if we need to (re)load the asset
     auto project = Project::GetActive();
     std::string resolvedPath = component.ModelPath;
     if (project && project->GetAssetManager())
-    {
         resolvedPath = project->GetAssetManager()->ResolvePath(component.ModelPath);
-    }
     
     bool pathChanged = !component.Asset || (component.Asset->GetPath() != resolvedPath);
 
@@ -588,74 +491,44 @@ void Scene::OnModelComponentAdded(entt::registry &reg, entt::entity entity)
     {
         if (project && project->GetAssetManager())
         {
-            CH_CORE_WARN(">>> LOADING ASSET: {}", component.ModelPath);
             component.Asset = project->GetAssetManager()->Get<ModelAsset>(component.ModelPath);
-            
-            if (component.Asset)
-            {
-                CH_CORE_WARN(">>> ASSET STATE: {}", (int)component.Asset->GetState());
-            }
-            else
-            {
-                CH_CORE_ERROR("Scene::OnModelComponentAdded - Failed to get asset: {}", component.ModelPath);
-            }
+            if (!component.Asset)
+                CH_CORE_ERROR("Failed to load model asset: {}", component.ModelPath);
         }
         else
         {
-            CH_CORE_ERROR("Scene::OnModelComponentAdded - No active project or AssetManager!");
+            CH_CORE_ERROR("No active project or AssetManager!");
         }
         
-        // BUG FIX: Only reset MaterialsInitialized if we don't have deserialized materials
-        // This prevents discarding materials that were loaded from the scene file
+        // Only reset materials if we don't have deserialized ones
         if (component.Materials.empty())
-        {
             component.MaterialsInitialized = false;
-        }
-        else
-        {
-            CH_CORE_WARN(">>> PRESERVING {} MATERIALS", component.Materials.size());
-        }
     }
 
     if (component.Asset && !component.MaterialsInitialized)
     {
         if (component.Asset->GetState() != AssetState::Ready)
-        {
-            CH_CORE_TRACE("Scene::OnModelComponentAdded - Asset not ready yet, skipping material init");
             return;
-        }
         
         Model &model = component.Asset->GetModel();
         
-        // Protect manually loaded materials if they already exist
-        if (component.Materials.empty())
+        // Initialize default materials from model if none were deserialized
+        if (component.Materials.empty() && model.materials != nullptr)
         {
-            CH_CORE_INFO("Scene::OnModelComponentAdded - Initializing materials from model");
-            
-            if (model.materials != nullptr)
-            {
-                std::set<int> uniqueIndices;
-                for (int i = 0; i < model.meshCount; i++)
-                {
-                    uniqueIndices.insert(model.meshMaterial[i]);
-                }
+            std::set<int> uniqueIndices;
+            for (int i = 0; i < model.meshCount; i++)
+                uniqueIndices.insert(model.meshMaterial[i]);
 
-                for (int idx : uniqueIndices)
+            for (int idx : uniqueIndices)
+            {
+                if (idx >= 0 && idx < model.materialCount)
                 {
-                    if (idx >= 0 && idx < model.materialCount)
-                    {
-                        MaterialSlot slot("Material " + std::to_string(idx), idx);
-                        slot.Target = MaterialSlotTarget::MaterialIndex;
-                        slot.Material.AlbedoColor = model.materials[idx].maps[MATERIAL_MAP_ALBEDO].color;
-                        component.Materials.push_back(slot);
-                    }
+                    MaterialSlot slot("Material " + std::to_string(idx), idx);
+                    slot.Target = MaterialSlotTarget::MaterialIndex;
+                    slot.Material.AlbedoColor = model.materials[idx].maps[MATERIAL_MAP_ALBEDO].color;
+                    component.Materials.push_back(slot);
                 }
-                CH_CORE_INFO("Scene::OnModelComponentAdded - Created {} material slots", component.Materials.size());
             }
-        }
-        else
-        {
-            CH_CORE_INFO("Scene::OnModelComponentAdded - Keeping existing {} materials", component.Materials.size());
         }
         component.MaterialsInitialized = true;
     }
@@ -790,7 +663,7 @@ Entity Scene::GetPrimaryCameraEntity()
     {
         const auto& camera = view.get<CameraComponent>(entity);
         if (camera.Primary)
-            return Entity{entity, this};
+            return Entity(entity, &m_Registry);
     }
     return {};
 }

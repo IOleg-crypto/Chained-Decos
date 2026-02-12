@@ -6,23 +6,29 @@
 
 namespace CHEngine
 {
+class Physics;
 class Scene;
 
 class NarrowPhase
 {
 public:
-    static void ResolveCollisions(Scene *scene, const std::vector<::entt::entity> &entities);
+    NarrowPhase(Physics* physics) : m_Physics(physics) {}
+
+    void ResolveCollisions(Scene *scene, const std::vector<::entt::entity> &entities);
 
 private:
-    static void ResolveBoxBox(::entt::registry &registry, ::entt::entity rbEntity,
+    void ResolveBoxBox(::entt::registry &registry, ::entt::entity rbEntity,
                               ::entt::entity otherEntity);
-    static void ResolveBoxMesh(::entt::registry &registry, ::entt::entity rbEntity,
+    void ResolveBoxMesh(::entt::registry &registry, ::entt::entity rbEntity,
                                ::entt::entity otherEntity);
 
-    static void ResolveCapsuleBox(::entt::registry &registry, ::entt::entity rbEntity,
+    void ResolveCapsuleBox(::entt::registry &registry, ::entt::entity rbEntity,
                                   ::entt::entity otherEntity);
-    static void ResolveCapsuleMesh(::entt::registry &registry, ::entt::entity rbEntity,
+    void ResolveCapsuleMesh(::entt::registry &registry, ::entt::entity rbEntity,
                                    ::entt::entity otherEntity);
+
+private:
+    Physics* m_Physics;
 };
 } // namespace CHEngine
 

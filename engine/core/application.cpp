@@ -5,7 +5,7 @@
 #include "engine/core/log.h"
 #include "engine/core/profiler.h"
 #include "engine/physics/physics.h"
-#include "engine/graphics/render.h"
+#include "engine/graphics/renderer.h"
 #include "engine/graphics/asset_manager.h"
 #include "engine/graphics/environment.h"
 #include "engine/graphics/font_asset.h"
@@ -25,6 +25,9 @@
 #define GLFW_INCLUDE_NONE
 #endif
 #include <GLFW/glfw3.h>
+#include "engine/graphics/renderer.h"
+#include "engine/graphics/render_command.h"
+#include "engine/graphics/renderer2d.h"
 
 namespace CHEngine
 {
@@ -38,8 +41,6 @@ namespace CHEngine
 
         if (!m_Specification.WorkingDirectory.empty())
             std::filesystem::current_path(m_Specification.WorkingDirectory);
-
-        CH_CORE_INFO("Initializing Engine Core...");
 
         // --- Window Setup ---
         WindowProperties windowProps;
@@ -71,7 +72,7 @@ namespace CHEngine
         m_Running = true;
 
         ComponentSerializer::Initialize();
-        Render::Initialize();
+        Renderer::Init();
         Physics::Init();
 
         // Audio setup
@@ -147,7 +148,7 @@ namespace CHEngine
         }
 
         m_Minimized = false;
-        Render::SetViewport(0, 0, e.GetWidth(), e.GetHeight());
+        Renderer::Get().SetViewport(0, 0, e.GetWidth(), e.GetHeight());
 
         return false;
     }
@@ -181,7 +182,7 @@ namespace CHEngine
             ExecuteMainThreadQueue();
 
             // 1. Time Tracking
-            float time = (float)GetTime();
+            Timestep time = (float)GetTime();
             m_DeltaTime = Timestep(time - m_LastFrameTime);
             m_LastFrameTime = time;
 

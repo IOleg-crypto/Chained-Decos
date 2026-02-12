@@ -1,0 +1,151 @@
+#include "engine/graphics/asset_manager.h"
+#include "engine/core/log.h"
+#include <algorithm>
+
+namespace CHEngine
+{
+    AssetManager::AssetManager()
+    {
+    }
+
+    AssetManager::~AssetManager()
+    {
+        Shutdown();
+    }
+
+    void AssetManager::Initialize(const std::filesystem::path& rootPath)
+    {
+        CH_CORE_INFO("AssetManager: Initializing...");
+        
+        if (rootPath.empty())
+        {
+            #ifdef PROJECT_ROOT_DIR
+            m_RootPath = PROJECT_ROOT_DIR;
+            #else
+            m_RootPath = std::filesystem::current_path();
+            #endif
+        }
+        else
+        {
+            m_RootPath = rootPath;
+        }
+        
+        CH_CORE_INFO("AssetManager: Initialized. Root: {}", m_RootPath.string());
+    }
+
+    void AssetManager::Shutdown()
+    {
+        CH_CORE_INFO("AssetManager: Shutting down...");
+        ClearSearchPaths();
+        
+        m_ModelCache.clear();
+        m_TextureCache.clear();
+        m_ShaderCache.clear();
+        m_SoundCache.clear();
+        m_FontCache.clear();
+        m_EnvironmentCache.clear();
+    }
+
+    void AssetManager::SetRootPath(const std::filesystem::path& path)
+    {
+        m_RootPath = path;
+        //Manager: Root path changed to: {}", m_RootPath.string());
+    }
+
+    std::filesystem::path AssetManager::GetRootPath() const
+    {
+        return m_RootPath;
+    }
+
+    void AssetManager::AddSearchPath(const std::filesystem::path& path)
+    {
+        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+        
+        auto it = std::find(m_SearchPaths.begin(), m_SearchPaths.end(), path);
+        if (it != m_SearchPaths.end()) return;
+        
+        m_SearchPaths.push_back(path);
+        //CH_CORE_INFO("AssetManager: Added search path: {}", path.string());
+    }
+
+    void AssetManager::ClearSearchPaths()
+    {
+        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+        m_SearchPaths.clear();
+        CH_CORE_INFO("AssetManager: Cleared search paths.");
+    }
+
+    std::string AssetManager::ResolvePath(const std::string& path) const
+    {
+        if (path.empty()) return "";
+        
+        std::filesystem::path p(path);
+        if (p.is_absolute()) return path;
+
+        std::string foundPath = "";
+        std::string pStr = p.generic_string();
+        if (!pStr.empty() && (pStr[0] == '/' || pStr[0] == '\\'))
+            pStr = pStr.substr(1);
+
+        std::filesystem::path normalizedP(pStr);
+
+        // 1. Try registered search paths
+        {
+            std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+            for (const auto& searchPath : m_SearchPaths)
+            {
+                 std::filesystem::path assetPath = searchPath / normalizedP;
+                 if (std::filesystem::exists(assetPath))
+                 {
+                     foundPath = assetPath.string();
+                     break;
+                 }
+            }
+        }
+        
+        // 2. Try root relative path
+        if (foundPath.empty())
+        {
+            std::filesystem::path rootRel = m_RootPath / normalizedP;
+            if (std::filesystem::exists(rootRel))
+                foundPath = rootRel.string();
+        }
+
+        // 3. Fallback
+        if (foundPath.empty())
+            foundPath = path;
+
+        // Normalize
+        std::string normalized = foundPath;
+        #ifdef CH_PLATFORM_WINDOWS
+        std::transform(normalized.begin(), normalized.end(), normalized.begin(), ::tolower);
+        std::replace(normalized.begin(), normalized.end(), '\\', '/');
+        #endif
+
+        //CH_CORE_INFO("AssetManager:  '{}' -> '{}'", path, normalized);
+        return normalized;
+    }
+
+    void AssetManager::Update()
+    {
+        UpdateCache<TextureAsset>();
+        UpdateCache<ModelAsset>();
+        UpdateCache<SoundAsset>();
+        UpdateCache<ShaderAsset>();
+        UpdateCache<EnvironmentAsset>();
+        UpdateCache<FontAsset>();
+    }
+
+    const AssetMetadata& AssetManager::GetMetadata(AssetHandle handle) const
+    {
+        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+        auto it = m_AssetMetadata.find(handle);
+        if (it == m_AssetMetadata.end())
+        {
+            static AssetMetadata s_EmptyMetadata;
+            return s_EmptyMetadata;
+        }
+        return it->second;
+    }
+
+} // namespace CHEngine

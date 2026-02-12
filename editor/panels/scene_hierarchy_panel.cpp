@@ -41,7 +41,7 @@ namespace CHEngine
             auto view = m_Context->GetRegistry().view<IDComponent>();
             for (auto entityID : view)
             {
-                Entity entity{entityID, m_Context.get()};
+                Entity entity(entityID, &m_Context->GetRegistry());
                 
                 // Skip child entities, they will be drawn recursively
                 if (entity.HasComponent<HierarchyComponent>() && entity.GetComponent<HierarchyComponent>().Parent != entt::null)
@@ -58,7 +58,7 @@ namespace CHEngine
             // Execute deletions via commands
             for (auto ent : entitiesToDelete)
             {
-                Entity entity{ent, m_Context.get()};
+                Entity entity(ent, &m_Context->GetRegistry());
                 EditorLayer::GetCommandHistory().PushCommand(std::make_unique<DestroyEntityCommand>(entity));
             }
 
@@ -134,7 +134,7 @@ namespace CHEngine
                 auto children = entity.GetComponent<HierarchyComponent>().Children; // Copy to avoid iteration issues
                 for (auto childID : children)
                 {
-                    entt::entity childDel = DrawEntityNodeRecursive({childID, m_Context.get()});
+                    entt::entity childDel = DrawEntityNodeRecursive(Entity(childID, &m_Context->GetRegistry()));
                     if (childDel != entt::null) signaledForDelete = childDel;
                 }
             }

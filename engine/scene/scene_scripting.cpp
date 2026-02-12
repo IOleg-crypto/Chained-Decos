@@ -3,7 +3,7 @@
 
 namespace CHEngine
 {
-void SceneScripting::Update(Scene *scene, float deltaTime)
+void SceneScripting::Update(Scene *scene, Timestep deltaTime)
 {
     static int systemFrame = 0;
     int scriptableEntities = 0;
@@ -20,7 +20,8 @@ void SceneScripting::Update(Scene *scene, float deltaTime)
                 if (!script.Instance && script.InstantiateScript)
                 {
                     script.Instance = script.InstantiateScript();
-                    script.Instance->m_Entity = Entity{entity, scene};
+                    script.Instance->m_Entity = Entity(entity, &scene->GetRegistry());
+                    script.Instance->m_Scene = scene;
                     CH_CORE_INFO("[SCRIPT_DIAG] NativeScript: {} - Lazy-instantiating script '{}'", tagName, script.ScriptName);
                     script.Instance->OnCreate();
                 }
@@ -37,8 +38,8 @@ void SceneScripting::Update(Scene *scene, float deltaTime)
             }
         });
 
-    if (systemFrame % 60 == 0) {
-        CH_CORE_INFO("[SCRIPT_DIAG] Update - Entities: {}, Scripts: {}", scriptableEntities, scriptsUpdated);
+    if (systemFrame % 120 == 0) {
+        CH_CORE_INFO("[SCRIPT_DIAG] Update - Active Scripts: {}, Entities with NativeScript: {}", scriptsUpdated, scriptableEntities);
     }
     systemFrame++;
 }

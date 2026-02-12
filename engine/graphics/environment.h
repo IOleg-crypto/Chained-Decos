@@ -1,7 +1,6 @@
 #ifndef CH_ENVIRONMENT_H
 #define CH_ENVIRONMENT_H
 
-#include <glm/glm.hpp>
 #include <raylib.h>
 #include "asset.h"
 #include "engine/core/base.h"
@@ -40,20 +39,10 @@ struct EnvironmentSettings
 class EnvironmentAsset : public Asset
 {
 public:
-    EnvironmentAsset() = default;
+    EnvironmentAsset() : Asset(GetStaticType()) {}
     virtual ~EnvironmentAsset() = default;
 
-    static std::shared_ptr<EnvironmentAsset> Load(const std::string &path);
-    bool Deserialize(const std::string &path);
-    bool Save(const std::string &path);
-
-    void UploadToGPU();
-    void LoadFromFile(const std::string &path);
-
-    virtual AssetType GetType() const override
-    {
-        return AssetType::Environment;
-    }
+    static AssetType GetStaticType() { return AssetType::Environment; }
 
     const EnvironmentSettings &GetSettings() const
     {

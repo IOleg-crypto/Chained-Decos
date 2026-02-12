@@ -20,6 +20,8 @@ target_sources(editor_core PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/viewport/editor_gizmo.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/viewport/editor_camera.h
     ${CMAKE_CURRENT_SOURCE_DIR}/viewport/editor_camera.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/viewport/ui_manipulator.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/viewport/ui_manipulator.cpp
 
     # Panels
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/scene_hierarchy_panel.h

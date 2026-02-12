@@ -19,20 +19,28 @@ add_library(engine SHARED
     core/application.cpp
     
     # Graphics
-    graphics/render.cpp
+    graphics/renderer.cpp
     graphics/render_command.cpp
     graphics/ui_renderer.cpp
     graphics/asset_manager.cpp
     graphics/shader_asset.cpp
     graphics/scene_renderer.cpp
+    graphics/renderer2d.cpp
     graphics/model_asset.cpp
     graphics/texture_asset.cpp
     graphics/font_asset.cpp
     graphics/environment.cpp
+    graphics/mesh_importer.cpp
+    graphics/texture_importer.cpp
+    graphics/shader_importer.cpp
+    graphics/font_importer.cpp
+    graphics/environment_importer.cpp
+    graphics/raylib_context.cpp
     
     # Audio
     audio/audio.cpp
     audio/sound_asset.cpp
+    audio/audio_importer.cpp
     
     # Physics
     physics/physics.cpp
@@ -43,15 +51,14 @@ add_library(engine SHARED
     
     # Scene
     scene/scene.cpp
-    scene/entity.cpp
     scene/project.cpp
     scene/project_serializer.cpp
     scene/scene_serializer.cpp
     scene/component_serializer.cpp
-    scene/component_serializer_ui.cpp
     scene/prefab_serializer.cpp
     scene/scene_scripting.cpp
     scene/scene_camera.cpp
+    scene/entity.cpp
     
     # All headers (for IDE support)
     core/application.h
@@ -73,7 +80,7 @@ add_library(engine SHARED
     core/yaml.h
     core/module_loader.h
     
-    graphics/render.h
+    graphics/renderer.h
     graphics/render_command.h
     graphics/scene_renderer.h
     graphics/ui_renderer.h
@@ -85,9 +92,18 @@ add_library(engine SHARED
     graphics/font_asset.h
     graphics/environment.h
     graphics/material.h
+    graphics/mesh_importer.h
+    graphics/texture_importer.h
+    graphics/shader_importer.h
+    graphics/font_importer.h
+    graphics/environment_importer.h
+    graphics/asset_importer.h
+    graphics/graphics_context.h
+    graphics/raylib_context.h
     
     audio/audio.h
     audio/sound_asset.h
+    audio/audio_importer.h
     
     physics/physics.h
     physics/dynamics.h
@@ -112,7 +128,6 @@ add_library(engine SHARED
     scene/components.h
     scene/components/animation_component.h
     scene/components/audio_component.h
-    scene/components/billboard_component.h
     scene/components/camera_component.h
     scene/components/control_component.h
     scene/components/game_components.h
@@ -126,6 +141,7 @@ add_library(engine SHARED
     scene/components/shader_component.h
     scene/components/tag_component.h
     scene/components/transform_component.h
+    scene/entity.h
 )
 
 target_include_directories(engine PUBLIC
@@ -139,7 +155,6 @@ INTERFACE
 target_link_libraries(engine 
 PUBLIC 
     raylib 
-    glm 
     EnTT
     imguilib
 PRIVATE

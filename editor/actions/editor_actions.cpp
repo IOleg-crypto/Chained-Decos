@@ -30,27 +30,28 @@ bool EditorActions::OnEvent(Event &e)
 
         bool ctrl = Input::IsKeyDown(KeyboardKey::KEY_LEFT_CONTROL) || Input::IsKeyDown(KeyboardKey::KEY_RIGHT_CONTROL);
         bool shift = Input::IsKeyDown(KeyboardKey::KEY_LEFT_SHIFT) || Input::IsKeyDown(KeyboardKey::KEY_RIGHT_SHIFT);
-        bool alt = Input::IsKeyDown(KeyboardKey::KEY_LEFT_ALT) || Input::IsKeyDown(KeyboardKey::KEY_RIGHT_ALT);
-
-        struct Shortcut { KeyboardKey Key; bool Ctrl, Shift, Alt; std::function<void()> Action; };
         
-        static const Shortcut shortcuts[] = {
-            { KEY_N,  true,  false, false, []() { SceneActions::New(); } },
-            { KEY_O,  true,  false, false, []() { SceneActions::Open(); } },
-            { KEY_S,  true,  false, false, []() { SceneActions::Save(); } },
-            { KEY_S,  true,  true,  false, []() { SceneActions::SaveAs(); } },
-            { KEY_Z,  true,  false, false, []() { EditorLayer::GetCommandHistory().Undo(); } },
-            { KEY_Y,  true,  false, false, []() { EditorLayer::GetCommandHistory().Redo(); } },
-            { KEY_F5, false, false, false, []() { ProjectActions::LaunchStandalone(); } }
-        };
+        auto keyCode = e.GetKeyCode();
 
-        for (auto& s : shortcuts)
+        if (ctrl)
         {
-            if (e.GetKeyCode() == s.Key && ctrl == s.Ctrl && shift == s.Shift && alt == s.Alt)
+            switch (keyCode)
             {
-                s.Action();
-                return true;
+                case KEY_N: SceneActions::New(); return true;
+                case KEY_O: SceneActions::Open(); return true;
+                case KEY_S:
+                    if (shift) SceneActions::SaveAs();
+                    else SceneActions::Save();
+                    return true;
+                case KEY_Z: EditorLayer::GetCommandHistory().Undo(); return true;
+                case KEY_Y: EditorLayer::GetCommandHistory().Redo(); return true;
             }
+        }
+
+        if (keyCode == KEY_F5)
+        {
+            ProjectActions::LaunchStandalone();
+            return true;
         }
 
         return false;
