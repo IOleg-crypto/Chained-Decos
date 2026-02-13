@@ -54,7 +54,10 @@ public:
     }
 
     void SetTitle(const std::string &title);
+    void SetSize(int width, int height);
+
     void ToggleFullscreen();
+    void SetFullscreen(bool enabled);
 
     void SetVSync(bool enabled);
     void SetTargetFramesPerSecond(int framesPerSecond);

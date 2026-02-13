@@ -71,12 +71,12 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path &path)
     return nullptr;
 }
 
-std::filesystem::path Project::Discover(const std::filesystem::path &startPath)
+std::filesystem::path Project::Discover(const std::filesystem::path &startPath, const std::string& hintName)
 {
     std::filesystem::path current = startPath.empty() ? std::filesystem::current_path() : startPath;
     if (std::filesystem::is_regular_file(current)) current = current.parent_path();
 
-    CH_CORE_INFO("Project: Discovering project starting from: {}", current.string());
+    CH_CORE_INFO("Project: Discovering project starting from: {} (Hint: {})", current.string(), hintName);
 
     while (true)
     {
@@ -84,17 +84,46 @@ std::filesystem::path Project::Discover(const std::filesystem::path &startPath)
         std::error_code ec;
         if (std::filesystem::exists(current, ec))
         {
-            // 1. Check current directory
+            // 1. Check for {hintName}.chproject (Priority 1)
+            if (!hintName.empty())
+            {
+                std::filesystem::path hintPath = current / (hintName + ".chproject");
+                if (std::filesystem::exists(hintPath, ec))
+                {
+                    CH_CORE_INFO("Project: Found hinted project: {}", hintPath.string());
+                    return hintPath;
+                }
+            }
+
+            // 2. Check for any .chproject (Priority 2)
             for (const auto& entry : std::filesystem::directory_iterator(current, ec))
             {
                 if (entry.path().extension() == ".chproject")
+                {
+                    CH_CORE_INFO("Project: Found project: {}", entry.path().string());
                     return entry.path();
+                }
             }
 
-            // 2. Check "game" subdirectory (KISS for our structure)
+            // 3. Check "game" subdirectory for nested structures
             std::filesystem::path gameDir = current / "game";
             if (std::filesystem::exists(gameDir, ec))
             {
+                for (const auto& entry : std::filesystem::recursive_directory_iterator(gameDir, ec))
+                {
+                    const auto& p = entry.path();
+                    if (p.extension() == ".chproject")
+                    {
+                        // Even here, prioritize hintName if found
+                        if (!hintName.empty() && p.stem().string() == hintName)
+                        {
+                            CH_CORE_INFO("Project: Found hinted project in game dir: {}", p.string());
+                            return p;
+                        }
+                    }
+                }
+                
+                // If nested search didn't find the hint, return the first found .chproject in gameDir
                 for (const auto& entry : std::filesystem::recursive_directory_iterator(gameDir, ec))
                 {
                     if (entry.path().extension() == ".chproject")

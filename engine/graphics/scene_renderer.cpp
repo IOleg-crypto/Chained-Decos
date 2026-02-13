@@ -16,7 +16,7 @@ namespace CHEngine
     void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, Timestep timestep, const DebugRenderFlags* debugFlags)
     {
         CH_PROFILE_FUNCTION();
-        CH_CORE_ASSERT(Renderer::s_Instance, "Renderer not initialized!");
+        CH_CORE_ASSERT(Renderer::IsInitialized(), "Renderer not initialized!");
         CH_CORE_ASSERT(scene, "Scene is null!");
         
         // 1. Environmental setup
@@ -273,7 +273,7 @@ namespace CHEngine
     void SceneRenderer::RenderSprites(Scene* scene)
     {
         CH_CORE_ASSERT(scene, "Scene is null!");
-        CH_CORE_ASSERT(Renderer2D::s_Instance, "Renderer2D not initialized!");
+        CH_CORE_ASSERT(Renderer2D::IsInitialized(), "Renderer2D not initialized!");
         auto& registry = scene->GetRegistry();
         auto view = registry.view<TransformComponent, SpriteComponent>();
 

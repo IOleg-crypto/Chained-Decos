@@ -10,35 +10,45 @@ namespace CHEngine
 
     Application *CreateApplication(ApplicationCommandLineArgs args)
     {
-        // 1. Setup Project-specific configuration (Title, Icon, etc.)
-        // These could eventually be loaded from a config file before App creation
         ApplicationSpecification spec;
-        spec.Name = "Chained Runtime";
         spec.CommandLineArgs = args;
 
-        // 2. Project Selection
+        // 1. Initial Project Path (can be empty for auto-discovery)
         std::string projectPath = ""; 
+        std::string appName = "Chained Runtime";
 
-        // Handle CLI overrides
+        // 2. Minimal CLI parsing for bootstrapping
+        // (Full parsing happens inside RuntimeApplication::InitProject)
         for (int i = 1; i < args.Count; ++i)
         {
             std::string arg = args.Args[i];
-            if (arg == "--project" && i + 1 < args.Count)
+            if ((arg == "--project" || arg == "-p") && i + 1 < args.Count)
             {
                 projectPath = args.Args[++i];
-                // Strip quotes if present
                 if (projectPath.size() >= 2 && projectPath.front() == '"' && projectPath.back() == '"') {
                     projectPath = projectPath.substr(1, projectPath.size() - 2);
                 }
+            }
+            else if (arg == "--name" && i + 1 < args.Count)
+            {
+                appName = args.Args[++i];
             }
             else if (i == 1 && arg[0] != '-')
             {
                 projectPath = arg;
             }
         }
+        
+        // 3. Post-discovery hint for App Name
+        if (!projectPath.empty() && appName == "Chained Runtime")
+        {
+            std::filesystem::path p = projectPath;
+            appName = p.stem().string();
+        }
+
+        spec.Name = appName;
 
         // 3. Create the generic runtime host
-        // Automated discovery will happen inside RuntimeApplication
         return new RuntimeApplication(spec, projectPath);
     }
 } // namespace CHEngine
