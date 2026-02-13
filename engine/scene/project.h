@@ -66,6 +66,7 @@ struct EditorSettings
 struct ProjectConfig
 {
     std::string Name = "Untitled";
+    std::string IconPath;
     std::string StartScene;
     std::filesystem::path AssetDirectory = "assets";
     std::filesystem::path ProjectDirectory;
@@ -114,7 +115,7 @@ public:
 
     static std::shared_ptr<Project> New();
     static std::shared_ptr<Project> Load(const std::filesystem::path &path);
-    static std::filesystem::path Discover(const std::filesystem::path &startPath = "");
+    static std::filesystem::path Discover(const std::filesystem::path &startPath = "", const std::string& hintName = "");
     
     static std::filesystem::path GetEngineRoot() { return s_EngineRoot; }
     static void SetEngineRoot(const std::filesystem::path& path) { s_EngineRoot = path; }

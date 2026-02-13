@@ -11,7 +11,7 @@ class Scene;
 class Dynamics
 {
 public:
-    Dynamics() {}
+    Dynamics() = default;
 
     void Update(Scene *scene, const std::vector<entt::entity> &entities, float deltaTime);
 

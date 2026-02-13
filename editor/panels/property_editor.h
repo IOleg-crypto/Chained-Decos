@@ -56,6 +56,10 @@ namespace CHEngine
             Register<T>(name, [drawer](T &comp, Entity e) { return drawer(comp); });
         }
 
+        // Shared style drawers (used by inspector_panel and property_editor)
+        static bool DrawTextStyle(TextStyle &style);
+        static bool DrawUIStyle(UIStyle &style);
+
         // High-level UI Primitives (Special cases or reused structures)
         static void DrawTag(Entity entity);
         static void DrawMaterial(Entity entity, int hitMeshIndex = -1);

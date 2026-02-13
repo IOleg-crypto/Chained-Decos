@@ -40,6 +40,26 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
                 config.Name = nameBuf;
             }
 
+            char iconBuf[512];
+            strncpy(iconBuf, config.IconPath.c_str(), 511);
+            iconBuf[511] = '\0';
+            if (ImGui::InputText("Icon Path", iconBuf, 511))
+            {
+                config.IconPath = iconBuf;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("...###IconBrowse"))
+            {
+                nfdu8char_t *outPath = NULL;
+                nfdu8filteritem_t filterItem[1] = {{"Image Files", "png,jpg,jpeg"}};
+                nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, NULL);
+                if (result == NFD_OKAY)
+                {
+                    config.IconPath = Project::GetRelativePath(outPath);
+                    NFD_FreePath(outPath);
+                }
+            }
+
             auto availableScenes = Project::GetAvailableScenes();
             const char* currentScene = config.StartScene.c_str();
             

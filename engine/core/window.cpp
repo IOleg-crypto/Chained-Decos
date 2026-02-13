@@ -83,9 +83,22 @@ void Window::SetTitle(const std::string &title)
     ::SetWindowTitle(m_Title.c_str());
 }
 
+void Window::SetSize(int width, int height)
+{
+    m_Width = width;
+    m_Height = height;
+    ::SetWindowSize(m_Width, m_Height);
+}
+
 void Window::ToggleFullscreen()
 {
     ::ToggleFullscreen();
+}
+
+void Window::SetFullscreen(bool enabled)
+{
+    if (::IsWindowFullscreen() != enabled)
+        ::ToggleFullscreen();
 }
 
 void Window::SetVSync(bool enabled)

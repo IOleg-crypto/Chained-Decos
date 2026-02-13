@@ -52,7 +52,10 @@ namespace CHEngine
                     continue;
 
                 entt::entity toDelete = DrawEntityNodeRecursive(entity);
-                if (toDelete != entt::null) entitiesToDelete.push_back(toDelete);
+                if (toDelete != entt::null) 
+                {
+                    entitiesToDelete.push_back(toDelete);
+                }
             }
 
             // Execute deletions via commands
@@ -109,6 +112,18 @@ namespace CHEngine
         auto selectedEntity = EditorLayer::Get().GetSelectedEntity();
         ImGuiTreeNodeFlags flags = ((selectedEntity == entity) ? ImGuiTreeNodeFlags_Selected : 0);
         flags |= ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+        
+        // // FIX : not replace buttons while you in edit mode
+        // if(EditorLayer::Get().GetSceneState() == SceneState::Play)
+        // {
+        //     flags |= ImGuiTreeNodeFlags_Disabled;
+        // }
+        // else
+        // {
+        //     flags |= ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+        // }
+
+
 
         ImGui::PushID((int)(uint32_t)entity);
         bool opened = ImGui::TreeNodeEx(label.c_str(), flags);

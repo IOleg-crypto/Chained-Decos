@@ -2,15 +2,16 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build/_deps/cgltf-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/build/_deps/glm-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/build/_deps/imguizmo-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build/_deps/tinyobjloader-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/build/_deps/yaml-cpp-src" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/build/ninja-debug/_deps/glm-src" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/build/ninja-debug/_deps/imguizmo-src" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/build/ninja-debug/_deps/yaml-cpp-src" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/build/ninja-release/_deps/glm-src" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/build/ninja-release/_deps/imguizmo-src" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/build/ninja-release/_deps/yaml-cpp-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build/windows-ninja-release/_deps/cgltf-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build/windows-ninja-release/_deps/glm-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build/windows-ninja-release/_deps/imguizmo-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build/windows-ninja-release/_deps/tinyobjloader-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build/windows-ninja-release/_deps/yaml-cpp-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/glm-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/imguizmo-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/yaml-cpp-src" vcs="Git" />

@@ -1,5 +1,6 @@
 Project:
   Name: ChainedDecos
+  IconPath: d:/gitnext/chained decos/engine/resources/icons/chaineddecos.jpg
   StartScene: scenes\main_menu.chscene
   AssetDirectory: assets
   ActiveScene: assets/scenes/main_menu.chscene
@@ -14,8 +15,8 @@ Project:
     AmbientIntensity: 0
     DefaultExposure: 1.23000002
   Window:
-    Width: 1601
-    Height: 720
+    Width: 1920
+    Height: 1080
     VSync: false
     Resizable: true
   Runtime:
@@ -28,8 +29,8 @@ Project:
     CameraBoostMultiplier: 2.29999995
   LaunchProfiles:
     - Name: Debug Runtime
-      BinaryPath: D:\gitnext\Chained Decos\build\bin\ChainedRuntime.exe
+      BinaryPath: ${BUILD}/ChainedRuntime.exe
       Arguments: --project "${PROJECT_FILE}"
-      UseDefaultArgs: true
+      UseDefaultArgs: false
   ActiveLaunchProfile: 0
   BuildConfig: 0

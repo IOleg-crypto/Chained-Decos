@@ -216,8 +216,8 @@ namespace CHEngine
         UIRenderer::Get().DrawCanvas(activeScene.get(), viewportScreenPos, viewportSize, EditorLayer::Get().GetSceneState() == SceneState::Edit);
         isUIChildHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByPopup);
 
-        // 3. Selection Highlight
-        if (isUISelected && selectedEntity)
+        // 3. Selection Highlight (FIX for play mode)
+        if (isUISelected && selectedEntity && EditorLayer::Get().GetSceneState() == SceneState::Edit)
         {
             auto rect = UIRenderer::Get().GetEntityRect(selectedEntity, viewportSize, viewportScreenPos);
             

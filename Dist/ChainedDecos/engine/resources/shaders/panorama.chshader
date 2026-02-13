@@ -1,0 +1,13 @@
+# Panorama Shader Metadata
+VertexShader: "engine/resources/shaders/skybox.vs"
+FragmentShader: "engine/resources/shaders/skybox_panorama.fs"
+
+Uniforms:
+  - matProjection
+  - matView
+  - panorama
+  - doGamma
+  - fragGamma
+  - exposure
+  - brightness
+  - contrast

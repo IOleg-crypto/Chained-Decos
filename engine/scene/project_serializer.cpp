@@ -21,6 +21,7 @@ bool ProjectSerializer::Serialize(const std::filesystem::path &filepath)
     {
         out << YAML::BeginMap;
         out << YAML::Key << "Name" << YAML::Value << config.Name;
+        out << YAML::Key << "IconPath" << YAML::Value << config.IconPath;
         out << YAML::Key << "StartScene" << YAML::Value << config.StartScene;
         out << YAML::Key << "AssetDirectory" << YAML::Value << config.AssetDirectory.string();
         
@@ -115,6 +116,8 @@ bool ProjectSerializer::Deserialize(const std::filesystem::path &filepath)
 
     auto &config = m_Project->m_Config;
     config.Name = projectNode["Name"].as<std::string>();
+    if (projectNode["IconPath"])
+        config.IconPath = projectNode["IconPath"].as<std::string>();
     config.StartScene = projectNode["StartScene"].as<std::string>();
     config.AssetDirectory = projectNode["AssetDirectory"].as<std::string>();
     

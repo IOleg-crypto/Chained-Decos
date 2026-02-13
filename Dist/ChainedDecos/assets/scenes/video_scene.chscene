@@ -1,0 +1,124 @@
+Scene: Untitled Scene
+Background:
+  Mode: 0
+  Color: [0, 0, 0, 255]
+  TexturePath: ""
+  AmbientIntensity: 0.5
+Canvas:
+  ReferenceResolution: [1920, 1080]
+  ScaleMode: 0
+  MatchWidthOrHeight: 0.5
+EnvironmentPath: ""
+LightDirection: [-1, -1, -1]
+LightColor: [255, 255, 255, 255]
+AmbientIntensity: 0.300000012
+Skybox:
+  TexturePath: ""
+  Exposure: 1
+  Brightness: 0
+  Contrast: 1
+Fog:
+  Enabled: false
+  Color: [130, 130, 130, 255]
+  Density: 0.00999999978
+  Start: 10
+  End: 100
+Entities:
+  - Entity: 17129118224082506760
+    TagComponent:
+      Tag: resolution
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-462, -114]
+        OffsetMax: [256, -74]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+    ComboBoxControl:
+      Label: Resolution
+      Items:
+        - 800x600
+        - 1280x720
+        - 1440x900
+        - 1920x1080
+        - 1920x1200
+      SelectedIndex: 2
+      TextStyle:
+        FontName: Default
+        FontSize: 28.7999992
+        TextColor: [222, 222, 222, 255]
+        Shadow: false
+        ShadowOffset: 2
+        ShadowColor: [0, 0, 0, 255]
+        LetterSpacing: 1
+        LineHeight: 1.20000005
+        HorizontalAlignment: 1
+        VerticalAlignment: 1
+      BoxStyle:
+        BackgroundColor: [40, 40, 40, 255]
+        HoverColor: [60, 60, 60, 255]
+        PressedColor: [30, 30, 30, 255]
+        Rounding: 4
+        BorderSize: 0
+        BorderColor: [255, 255, 255, 255]
+        Padding: 4
+        UseGradient: false
+        GradientColor: [20, 20, 20, 255]
+        HoverScale: 1
+        PressedScale: 1
+        TransitionSpeed: 0.100000001
+  - Entity: 16516555726583183032
+    TagComponent:
+      Tag: option_fullscreen
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-462, 266]
+        OffsetMax: [-339, 306]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+    CheckboxControl:
+      Label: Fullscreen
+      Checked: true
+      Text:
+        FontName: Default
+        FontSize: 18
+        TextColor: [255, 255, 255, 255]
+        Shadow: false
+        ShadowOffset: 2
+        ShadowColor: [0, 0, 0, 255]
+        LetterSpacing: 1
+        LineHeight: 1.20000005
+        HorizontalAlignment: 1
+        VerticalAlignment: 1
+      Style:
+        BackgroundColor: [183, 183, 183, 255]
+        HoverColor: [60, 60, 60, 255]
+        PressedColor: [30, 30, 30, 255]
+        Rounding: 4
+        BorderSize: 0
+        BorderColor: [255, 255, 255, 255]
+        Padding: 4
+        UseGradient: true
+        GradientColor: [20, 20, 20, 255]
+        HoverScale: 1.84000003
+        PressedScale: 1.38
+        TransitionSpeed: 0.100000001

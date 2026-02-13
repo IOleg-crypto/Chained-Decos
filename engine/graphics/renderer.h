@@ -62,6 +62,8 @@ namespace CHEngine
         static void Init();
         static void Shutdown();
 
+        static bool IsInitialized() { return s_Instance != nullptr; }
+
         Renderer();
         ~Renderer();
 

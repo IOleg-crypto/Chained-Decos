@@ -86,23 +86,48 @@ namespace CHEngine
         std::string targetName = "ChainedRuntime";
 #endif
 
-        // 1. Fast path: check common output locations first
+        // 1. Check directory of currently running editor (most reliable for portability)
+        // We can't easily get the process handle here without platform code, 
+        // but we can check the current working directory bin folder
+        std::filesystem::path currentBin = std::filesystem::current_path() / targetName;
+        if (std::filesystem::exists(currentBin))
+        {
+             CH_CORE_INFO("FindRuntimeExecutable: Found in current directory: {}", currentBin.string());
+             return currentBin;
+        }
+
+        // 2. Fast path: check common output locations including build presets
         std::vector<std::string> searchSubdirs = {
             "build/bin", "bin", "out/bin", 
             "cmake-build-debug/bin", "cmake-build-release/bin"
         };
+        
+        // Add dynamic preset search build/*/bin
+        if (std::filesystem::exists(root / "build"))
+        {
+            for (const auto& entry : std::filesystem::directory_iterator(root / "build"))
+            {
+                if (entry.is_directory())
+                {
+                    std::filesystem::path p = entry.path() / "bin" / targetName;
+                    if (std::filesystem::exists(p))
+                         searchSubdirs.push_back("build/" + entry.path().filename().string() + "/bin");
+                }
+            }
+        }
 
+        // Search collected paths
         for (const auto& sub : searchSubdirs)
         {
             std::filesystem::path p = root / sub / targetName;
             if (std::filesystem::exists(p))
             {
-                CH_CORE_INFO("FindRuntimeExecutable: Fast path found at: {}", p.string());
+                CH_CORE_INFO("FindRuntimeExecutable: Path found at: {}", p.string());
                 return p;
             }
         }
 
-        // 2. Fallback: careful recursive search excluding noisy folders
+        // 3. Fallback: careful recursive search excluding noisy folders
         CH_CORE_INFO("FindRuntimeExecutable: Fast path failed, starting scoped recursive search...");
         try {
             for (auto it = std::filesystem::recursive_directory_iterator(root); it != std::filesystem::recursive_directory_iterator(); ++it)
@@ -114,7 +139,7 @@ namespace CHEngine
                 // Skip noisy/irrelevant directories
                 if (entry.is_directory())
                 {
-                    if (filename == ".git" || filename == ".cache" || filename == ".idea" || filename == "include")
+                    if (filename == ".git" || filename == ".cache" || filename == ".idea" || filename == "include" || filename == "engine")
                     {
                         it.disable_recursion_pending();
                         continue;
@@ -147,6 +172,8 @@ namespace CHEngine
         root = PROJECT_ROOT_DIR;
 #else
         root = std::filesystem::current_path();
+        while (root.has_parent_path() && !std::filesystem::exists(root / "CMakeLists.txt"))
+            root = root.parent_path();
 #endif
 
         std::filesystem::path projectFile = project->GetProjectDirectory() / (project->GetConfig().Name + ".chproject");
@@ -165,21 +192,28 @@ namespace CHEngine
             str.replace(pos, 15, projectPathStr);
         }
 
-        // 3. Resolve ${BUILD}
+        // 3. Resolve ${BUILD} - Intelligent discovery
         if (str.find("${BUILD}") != std::string::npos)
         {
-            std::filesystem::path buildPath = "";
-            std::vector<std::string> searchSubdirs = {
-                "build/bin", "bin", "out/bin", 
-                "cmake-build-debug/bin", "cmake-build-release/bin"
-            };
+            std::string configStr = (project->GetConfig().BuildConfig == Configuration::Release) ? "Release" : "Debug";
+            std::filesystem::path exePath = FindRuntimeExecutable(project->GetConfig().Name, configStr);
+            std::filesystem::path buildPath = exePath.parent_path();
 
-            for (const auto& sub : searchSubdirs)
+            if (buildPath.empty())
             {
-                if (std::filesystem::exists(root / sub))
+                // Last ditch effort if FindRuntimeExecutable failed
+                std::vector<std::string> searchSubdirs = {
+                    "build/bin", "bin", "out/bin", 
+                    "cmake-build-debug/bin", "cmake-build-release/bin"
+                };
+
+                for (const auto& sub : searchSubdirs)
                 {
-                    buildPath = root / sub;
-                    break;
+                    if (std::filesystem::exists(root / sub))
+                    {
+                        buildPath = root / sub;
+                        break;
+                    }
                 }
             }
 
@@ -230,8 +264,15 @@ namespace CHEngine
 
         if (runtimePath.empty() || !std::filesystem::exists(runtimePath))
         {
-            CH_CORE_ERROR("LaunchStandalone: Runtime executable not found: {}", runtimePath);
-            return;
+            CH_CORE_WARN("LaunchStandalone: Profile binary not found at '{}'. Searching heuristic...", runtimePath);
+            std::string configStr = (config.BuildConfig == Configuration::Release) ? "Release" : "Debug";
+            runtimePath = FindRuntimeExecutable(config.Name, configStr).string();
+            
+            if (runtimePath.empty())
+            {
+                CH_CORE_ERROR("LaunchStandalone: Runtime executable not found!");
+                return;
+            }
         }
 
 #ifdef CH_PLATFORM_WINDOWS

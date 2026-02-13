@@ -31,9 +31,20 @@ class BVH
 public:
     BVH() = default;
 
+    // Snapshot of geometry data for thread-safe async building
+    struct BVHMeshSnapshot {
+        std::vector<Vector3> Vertices;
+        std::vector<uint32_t> Indices;
+    };
+    
+    struct BVHModelSnapshot {
+        std::vector<BVHMeshSnapshot> Meshes;
+        Matrix Transform;
+    };
+
     // Synchronous API
-    static std::shared_ptr<BVH> Build(const Model &model,
-                                      const Matrix &transform = MatrixIdentity());
+    static std::shared_ptr<BVH> Build(const BVHModelSnapshot &model);
+    static std::shared_ptr<BVH> Build(const Model &model, const Matrix &transform = MatrixIdentity());
 
     // Asynchronous API
     static std::future<std::shared_ptr<BVH>> BuildAsync(const Model &model,
@@ -56,9 +67,7 @@ public:
     }
 
 private:
-    void BuildRecursive(BuildContext &ctx, uint32_t nodeIdx, size_t triStart, size_t triCount,
-                        int depth);
-    void UpdateNodeBounds(uint32_t nodeIdx, size_t triStart, size_t triCount);
+    void BuildIterative(BuildContext &ctx, size_t totalTriCount);
 
 private:
     std::vector<BVHNode> m_Nodes;
