@@ -1,0 +1,144 @@
+Scene: Untitled Scene
+Background:
+  Mode: 2
+  Color: [0, 123, 0, 124]
+  TexturePath: ""
+  AmbientIntensity: 0.5
+Canvas:
+  ReferenceResolution: [1920, 1080]
+  ScaleMode: 0
+  MatchWidthOrHeight: 0.5
+EnvironmentPath: environments/new_environment.chenv
+LightDirection: [-1, -1, -1]
+LightColor: [200, 170, 170, 255]
+AmbientIntensity: 0.300000012
+Skybox:
+  TexturePath: skyboxes/Starry night preview4.png
+  Exposure: 1
+  Brightness: 0
+  Contrast: 1
+Fog:
+  Enabled: true
+  Color: [130, 130, 130, 255]
+  Density: 0.00999999978
+  Start: 10
+  End: 100
+Entities:
+  - Entity: 7935884460455885952
+    TagComponent:
+      Tag: Entity
+    TransformComponent:
+      Translation: [-0.175495267, 5.20984507, 46.9903793]
+      Rotation: [-10.7000151, 351.900116, 0]
+      Scale: [1, 1, 1]
+    CameraComponent:
+      Primary: true
+      FixedAspectRatio: false
+      IsOrbitCamera: true
+      OrbitDistance: 10
+      OrbitYaw: 351.900116
+      OrbitPitch: 10.7000151
+      LookSensitivity: 0.899999976
+      TargetEntityTag: Player
+      ProjectionType: 0
+      PerspectiveFOV: 1.81512499
+      PerspectiveNear: 0.460000008
+      PerspectiveFar: 1000
+    NativeScriptComponent:
+      Scripts:
+        - OrbitCameraController
+  - Entity: 6428169142076434776
+    TagComponent:
+      Tag: Entity
+    TransformComponent:
+      Translation: [-50.6539459, 0.631593704, 10.243227]
+      Rotation: [-3.14159083, 78.4499969, -3.14159083]
+      Scale: [0.999882996, 1, 0.97942549]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/stairs.glb
+    ColliderComponent:
+      Type: -1076756223
+      Enabled: true
+      Offset: [0, 0, 0]
+      Size: [1, 1, 1]
+      Radius: 0.5
+      Height: 2
+      ModelHandle: 0
+      ModelPath: models/stairs.glb
+      AutoCalculate: true
+  - Entity: 1283719283719289
+    TagComponent:
+      Tag: Entity
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+  - Entity: 1326311650816898569
+    TagComponent:
+      Tag: Entity
+    TransformComponent:
+      Translation: [1.20899844, 1.85317636, 37.2622757]
+      Rotation: [0, 89.1000595, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/player_low.glb
+    ColliderComponent:
+      Type: -1058471678
+      Enabled: true
+      Offset: [0, 0, -0.293091357]
+      Size: [2.48000002, 5.67999983, 7.4000001]
+      Radius: 0.100000001
+      Height: 1.60000002
+      ModelHandle: 0
+      ModelPath: models/player_low.glb
+      AutoCalculate: true
+    RigidBodyComponent:
+      Mass: 2.9000001
+      UseGravity: true
+      IsKinematic: false
+    PlayerComponent:
+      MovementSpeed: 15
+      LookSensitivity: 0.899999976
+      JumpForce: 10
+    NativeScriptComponent:
+      Scripts:
+        - PlayerController
+        - CameraController
+        - SpawnZoneRespawn
+  - Entity: 1283719283719287
+    TagComponent:
+      Tag: Entity
+    TransformComponent:
+      Translation: [28.8506241, 16.7000008, 27.7648582]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: ""
+    SpawnComponent:
+      SpawnZoneSize: [1, 1, 1]
+      SpawnTextureHandle: 0
+      SpawnTexturePath: boxes/playerspawntexture.png
+      RenderSpawnZoneInScene: true
+  - Entity: 1283719283719285
+    TagComponent:
+      Tag: Entity
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/arena.glb
+    ColliderComponent:
+      Type: -1289682687
+      Enabled: true
+      Offset: [0, 0, 0]
+      Size: [1, 1, 1]
+      Radius: 0.5
+      Height: 2
+      ModelHandle: 0
+      ModelPath: models/arena.glb
+      AutoCalculate: true

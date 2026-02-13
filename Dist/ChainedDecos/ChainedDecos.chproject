@@ -1,0 +1,36 @@
+Project:
+  Name: ChainedDecos
+  IconPath: d:/gitnext/chained decos/engine/resources/icons/chaineddecos.jpg
+  StartScene: scenes\main_menu.chscene
+  AssetDirectory: assets
+  ActiveScene: assets/scenes/untitled100.chscene
+  Environment: ""
+  BuildScenes:
+    []
+  Physics:
+    Gravity: 20
+  Animation:
+    TargetFPS: 30
+  Render:
+    AmbientIntensity: 0
+    DefaultExposure: 1.23000002
+  Window:
+    Width: 1920
+    Height: 1080
+    VSync: false
+    Resizable: true
+  Runtime:
+    Fullscreen: true
+    ShowStats: true
+    EnableConsole: true
+  Editor:
+    CameraMoveSpeed: 6.80000019
+    CameraRotationSpeed: 1
+    CameraBoostMultiplier: 2.29999995
+  LaunchProfiles:
+    - Name: Debug Runtime
+      BinaryPath: ${BUILD}/ChainedRuntime.exe
+      Arguments: --project "${PROJECT_FILE}"
+      UseDefaultArgs: false
+  ActiveLaunchProfile: 0
+  BuildConfig: 0

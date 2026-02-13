@@ -42,53 +42,56 @@ bool CollisionTriangle::IntersectsRay(const Ray &ray, float &t) const
     return t > 0.000001f;
 }
 
-std::shared_ptr<BVH> BVH::Build(const Model &model, const Matrix &transform)
+std::shared_ptr<BVH> BVH::Build(const BVHModelSnapshot &snapshot)
 {
-    if (model.meshCount == 0)
+    if (snapshot.Meshes.empty())
         return nullptr;
 
     auto bvh = std::make_shared<BVH>();
     std::vector<CollisionTriangle> allTris;
 
-    for (int i = 0; i < model.meshCount; i++)
+    for (const auto& mesh : snapshot.Meshes)
     {
-        Mesh &mesh = model.meshes[i];
-        if (mesh.vertices == nullptr)
+        if (mesh.Vertices.empty())
             continue;
 
-        Matrix meshTransform = MatrixMultiply(model.transform, transform);
+        Matrix meshTransform = snapshot.Transform; 
 
-        if (mesh.indices != nullptr && mesh.triangleCount > 0)
+        if (!mesh.Indices.empty())
         {
-            for (int k = 0; k < mesh.triangleCount * 3; k += 3)
+            for (size_t k = 0; k < mesh.Indices.size(); k += 3)
             {
-                uint32_t idx0 = mesh.indices[k];
-                uint32_t idx1 = mesh.indices[k + 1];
-                uint32_t idx2 = mesh.indices[k + 2];
+                uint32_t idx0 = mesh.Indices[k];
+                uint32_t idx1 = mesh.Indices[k + 1];
+                uint32_t idx2 = mesh.Indices[k + 2];
 
-                Vector3 v0 = {mesh.vertices[idx0 * 3], mesh.vertices[idx0 * 3 + 1],
-                              mesh.vertices[idx0 * 3 + 2]};
-                Vector3 v1 = {mesh.vertices[idx1 * 3], mesh.vertices[idx1 * 3 + 1],
-                              mesh.vertices[idx1 * 3 + 2]};
-                Vector3 v2 = {mesh.vertices[idx2 * 3], mesh.vertices[idx2 * 3 + 1],
-                              mesh.vertices[idx2 * 3 + 2]};
+                if (idx0 >= mesh.Vertices.size() || 
+                    idx1 >= mesh.Vertices.size() || 
+                    idx2 >= mesh.Vertices.size())
+                    continue;
+
+                Vector3 v0 = mesh.Vertices[idx0];
+                Vector3 v1 = mesh.Vertices[idx1];
+                Vector3 v2 = mesh.Vertices[idx2];
 
                 allTris.emplace_back(Vector3Transform(v0, meshTransform),
                                      Vector3Transform(v1, meshTransform),
-                                     Vector3Transform(v2, meshTransform), i);
+                                     Vector3Transform(v2, meshTransform), 0);
             }
         }
         else
         {
-            for (int k = 0; k < mesh.vertexCount * 3; k += 9)
+            for (size_t k = 0; k < mesh.Vertices.size(); k += 3)
             {
-                Vector3 v0 = {mesh.vertices[k], mesh.vertices[k + 1], mesh.vertices[k + 2]};
-                Vector3 v1 = {mesh.vertices[k + 3], mesh.vertices[k + 4], mesh.vertices[k + 5]};
-                Vector3 v2 = {mesh.vertices[k + 6], mesh.vertices[k + 7], mesh.vertices[k + 8]};
+                if (k + 2 >= mesh.Vertices.size()) break;
+                
+                Vector3 v0 = mesh.Vertices[k];
+                Vector3 v1 = mesh.Vertices[k + 1];
+                Vector3 v2 = mesh.Vertices[k + 2];
 
                 allTris.emplace_back(Vector3Transform(v0, meshTransform),
                                      Vector3Transform(v1, meshTransform),
-                                     Vector3Transform(v2, meshTransform), i);
+                                     Vector3Transform(v2, meshTransform), 0);
             }
         }
     }
@@ -101,7 +104,7 @@ std::shared_ptr<BVH> BVH::Build(const Model &model, const Matrix &transform)
     bvh->m_Nodes.emplace_back(); // Root
 
     BuildContext ctx(bvh->m_Triangles);
-    bvh->BuildRecursive(ctx, 0, 0, bvh->m_Triangles.size(), 0);
+    bvh->BuildIterative(ctx, bvh->m_Triangles.size());
 
     // Reorder triangles based on serial indices
     std::vector<CollisionTriangle> reorderedTris;
@@ -113,98 +116,133 @@ std::shared_ptr<BVH> BVH::Build(const Model &model, const Matrix &transform)
     return bvh;
 }
 
-void BVH::BuildRecursive(BuildContext &ctx, uint32_t nodeIdx, size_t triStart, size_t triCount,
-                         int depth)
+std::shared_ptr<BVH> BVH::Build(const Model &model, const Matrix &transform)
 {
-    BVHNode &node = m_Nodes[nodeIdx];
+    // ... Legacy implementation redirecting to snapshot or just keeping as is? 
+    // Keeping as is for synchronous calls (safe if main thread) or redirecting.
+    // Redirecting is safer to maintain one logic.
+    
+    BVHModelSnapshot snapshot;
+    snapshot.Transform = MatrixMultiply(model.transform, transform);
 
-    // Calculate bounds
-    node.Min = {FLT_MAX, FLT_MAX, FLT_MAX};
-    node.Max = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
-    Vector3 centroidMin = {FLT_MAX, FLT_MAX, FLT_MAX};
-    Vector3 centroidMax = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
-
-    for (size_t i = 0; i < triCount; ++i)
+    for (int i = 0; i < model.meshCount; i++)
     {
-        const auto &tri = ctx.AllTriangles[ctx.TriIndices[triStart + i]];
-        node.Min = Vector3Min(node.Min, tri.min);
-        node.Max = Vector3Max(node.Max, tri.max);
-        centroidMin = Vector3Min(centroidMin, tri.center);
-        centroidMax = Vector3Max(centroidMax, tri.center);
-    }
+        Mesh &mesh = model.meshes[i];
+        if (mesh.vertexCount == 0 || mesh.vertices == nullptr) continue;
 
-    if (triCount <= 4 || depth > 32)
-    {
-        node.LeftOrFirst = (uint32_t)triStart;
-        node.TriangleCount = (uint16_t)triCount;
-        return;
-    }
-
-    // Split based on centroids
-    Vector3 size = Vector3Subtract(centroidMax, centroidMin);
-    int axis = 0;
-    if (size.y > size.x && size.y > size.z)
-        axis = 1;
-    else if (size.z > size.x && size.z > size.y)
-        axis = 2;
-
-    float splitPos = centroidMin.x + size.x * 0.5f;
-    if (axis == 1)
-        splitPos = centroidMin.y + size.y * 0.5f;
-    else if (axis == 2)
-        splitPos = centroidMin.z + size.z * 0.5f;
-
-    // Partition
-    size_t i = triStart;
-    size_t j = triStart + triCount - 1;
-    while (i <= j)
-    {
-        float val = ctx.AllTriangles[ctx.TriIndices[i]].center.x;
-        if (axis == 1)
-            val = ctx.AllTriangles[ctx.TriIndices[i]].center.y;
-        else if (axis == 2)
-            val = ctx.AllTriangles[ctx.TriIndices[i]].center.z;
-
-        if (val < splitPos)
-            i++;
-        else
+        BVHMeshSnapshot meshSnap;
+        meshSnap.Vertices.resize(mesh.vertexCount);
+        for (int v = 0; v < mesh.vertexCount; v++)
         {
-            std::swap(ctx.TriIndices[i], ctx.TriIndices[j]);
-            if (j == 0)
-                break;
-            j--;
+            meshSnap.Vertices[v] = {mesh.vertices[v*3], mesh.vertices[v*3+1], mesh.vertices[v*3+2]};
         }
-    }
 
-    size_t leftCount = i - triStart;
-    if (leftCount == 0 || leftCount == triCount)
+        if (mesh.triangleCount > 0 && mesh.indices != nullptr)
+        {
+             meshSnap.Indices.resize(mesh.triangleCount * 3);
+             for (int idx = 0; idx < mesh.triangleCount * 3; idx++)
+             {
+                 meshSnap.Indices[idx] = (uint32_t)mesh.indices[idx];
+             }
+        }
+        snapshot.Meshes.push_back(std::move(meshSnap));
+    }
+    return Build(snapshot);
+}
+
+void BVH::BuildIterative(BuildContext &ctx, size_t totalTriCount)
+{
+    // Explicit work stack instead of recursion
+    struct WorkItem { uint32_t nodeIdx; size_t triStart; size_t triCount; };
+    std::vector<WorkItem> stack;
+    stack.push_back({0, 0, totalTriCount});
+
+    while (!stack.empty())
     {
-        leftCount = triCount / 2;
-        std::nth_element(ctx.TriIndices.begin() + triStart,
-                         ctx.TriIndices.begin() + triStart + leftCount,
-                         ctx.TriIndices.begin() + triStart + triCount,
-                         [&](uint32_t a, uint32_t b)
-                         {
-                             const auto &triA = ctx.AllTriangles[a];
-                             const auto &triB = ctx.AllTriangles[b];
-                             if (axis == 0)
-                                 return triA.center.x < triB.center.x;
-                             if (axis == 1)
-                                 return triA.center.y < triB.center.y;
-                             return triA.center.z < triB.center.z;
-                         });
+        auto [nodeIdx, triStart, triCount] = stack.back();
+        stack.pop_back();
+
+        BVHNode &node = m_Nodes[nodeIdx];
+
+        // Calculate bounds + centroid extents
+        node.Min = {FLT_MAX, FLT_MAX, FLT_MAX};
+        node.Max = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
+        Vector3 cMin = {FLT_MAX, FLT_MAX, FLT_MAX};
+        Vector3 cMax = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
+
+        for (size_t i = 0; i < triCount; ++i)
+        {
+            const auto &tri = ctx.AllTriangles[ctx.TriIndices[triStart + i]];
+            node.Min = Vector3Min(node.Min, tri.min);
+            node.Max = Vector3Max(node.Max, tri.max);
+            cMin = Vector3Min(cMin, tri.center);
+            cMax = Vector3Max(cMax, tri.center);
+        }
+
+        // Leaf if few triangles
+        if (triCount <= 4)
+        {
+            node.LeftOrFirst = (uint32_t)triStart;
+            node.TriangleCount = (uint16_t)triCount;
+            continue;
+        }
+
+        // Pick longest axis
+        Vector3 extent = Vector3Subtract(cMax, cMin);
+        int axis = 0;
+        if (extent.y > extent.x && extent.y > extent.z) axis = 1;
+        else if (extent.z > extent.x && extent.z > extent.y) axis = 2;
+
+        auto getAxis = [axis](const Vector3 &v) {
+            return (axis == 0) ? v.x : (axis == 1) ? v.y : v.z;
+        };
+
+        float splitPos = getAxis(cMin) + getAxis(extent) * 0.5f;
+
+        // Partition triangles
+        size_t i = triStart;
+        size_t j = triStart + triCount - 1;
+        while (i <= j)
+        {
+            if (getAxis(ctx.AllTriangles[ctx.TriIndices[i]].center) < splitPos)
+                i++;
+            else
+            {
+                std::swap(ctx.TriIndices[i], ctx.TriIndices[j]);
+                if (j == 0) break;
+                j--;
+            }
+        }
+
+        size_t leftCount = i - triStart;
+
+        // Fallback: median split if partition failed
+        if (leftCount == 0 || leftCount == triCount)
+        {
+            leftCount = triCount / 2;
+            std::nth_element(
+                ctx.TriIndices.begin() + triStart,
+                ctx.TriIndices.begin() + triStart + leftCount,
+                ctx.TriIndices.begin() + triStart + triCount,
+                [&](uint32_t a, uint32_t b) {
+                    return getAxis(ctx.AllTriangles[a].center) < getAxis(ctx.AllTriangles[b].center);
+                });
+        }
+
+        // Allocate child nodes
+        uint32_t leftIdx = (uint32_t)m_Nodes.size();
+        m_Nodes.emplace_back();
+        m_Nodes.emplace_back();
+
+        // IMPORTANT: re-fetch node ref — emplace_back may have invalidated it
+        m_Nodes[nodeIdx].LeftOrFirst = leftIdx;
+        m_Nodes[nodeIdx].TriangleCount = 0;
+        m_Nodes[nodeIdx].Axis = (uint16_t)axis;
+
+        // Push children (right first so left is processed first)
+        stack.push_back({leftIdx + 1, triStart + leftCount, triCount - leftCount});
+        stack.push_back({leftIdx, triStart, leftCount});
     }
-
-    uint32_t leftIdx = (uint32_t)m_Nodes.size();
-    m_Nodes.emplace_back();
-    m_Nodes.emplace_back();
-
-    node.LeftOrFirst = leftIdx;
-    node.TriangleCount = 0;
-    node.Axis = (uint16_t)axis;
-
-    BuildRecursive(ctx, leftIdx, triStart, leftCount, depth + 1);
-    BuildRecursive(ctx, leftIdx + 1, triStart + leftCount, triCount - leftCount, depth + 1);
 }
 
 bool BVH::Raycast(const Ray &ray, float &t, Vector3 &normal, int &meshIndex) const
@@ -366,7 +404,39 @@ bool BVH::IntersectAABB(const BoundingBox &box, Vector3 &outNormal, float &outDe
 
 std::future<std::shared_ptr<BVH>> BVH::BuildAsync(const Model &model, const Matrix &transform)
 {
-    return std::async(std::launch::async, [model, transform]() { return Build(model, transform); });
+    // Deep copy geometry on the calling thread (Main Thread)
+    // This avoids race conditions if the model is modified (e.g. animation) or destroyed during async build.
+    BVHModelSnapshot snapshot;
+    snapshot.Transform = MatrixMultiply(model.transform, transform);
+
+    for (int i = 0; i < model.meshCount; i++)
+    {
+        Mesh &mesh = model.meshes[i];
+        if (mesh.vertexCount == 0 || mesh.vertices == nullptr) continue;
+
+        BVHMeshSnapshot meshSnap;
+        meshSnap.Vertices.resize(mesh.vertexCount);
+        for (int v = 0; v < mesh.vertexCount; v++)
+        {
+            meshSnap.Vertices[v] = {mesh.vertices[v*3], mesh.vertices[v*3+1], mesh.vertices[v*3+2]};
+        }
+
+        if (mesh.triangleCount > 0 && mesh.indices != nullptr)
+        {
+             meshSnap.Indices.resize(mesh.triangleCount * 3);
+             for (int idx = 0; idx < mesh.triangleCount * 3; idx++)
+             {
+                 meshSnap.Indices[idx] = (uint32_t)mesh.indices[idx];
+             }
+        }
+        
+        snapshot.Meshes.push_back(std::move(meshSnap));
+    }
+    
+    // Capture snapshot by value (move)
+    return std::async(std::launch::async, [snapshot = std::move(snapshot)]() { 
+        return Build(snapshot); 
+    });
 }
 
 void BVH::QueryAABB(const BoundingBox &box, std::vector<const CollisionTriangle*> &outTriangles) const
