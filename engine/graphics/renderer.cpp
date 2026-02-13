@@ -168,7 +168,17 @@ namespace CHEngine
         }
         else
         {
-            CH_CORE_WARN("Renderer::DrawModel - Model asset not ready!");
+            if (modelAsset && modelAsset->GetState() == AssetState::Failed)
+            {
+                // Only log if we haven't logged recently? For now, just change to Trace or Debug to reduce spam.
+                // Or check if we should warn.
+                static std::string lastFailed = "";
+                if (lastFailed != modelAsset->GetPath()) {
+                    CH_CORE_WARN("Renderer::DrawModel - Model asset failed to load: {}", modelAsset->GetPath());
+                    lastFailed = modelAsset->GetPath();
+                }
+            }
+            // If Loading or None, just return silently.
         }
     }
 

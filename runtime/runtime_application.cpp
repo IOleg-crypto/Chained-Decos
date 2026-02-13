@@ -190,7 +190,9 @@ private:
             discoveryPath = exePath.parent_path();
         }
 
-        m_ProjectPath = Project::Discover(discoveryPath).string();
+        // Use Speicification name (App Title) as discovery hint
+        m_ProjectPath = Project::Discover(discoveryPath, GetSpecification().Name).string();
+        
         if (m_ProjectPath.empty())
         {
             CH_CORE_ERROR("Runtime: No project file found!");
@@ -204,19 +206,59 @@ private:
             return false;
         }
 
-        // Re-initialize Render system with the now-active project for engine resources (shaders, icons)
-        // Renderer::Init(); // This is a singleton, so we should check if it's already init.
-        // For now, let's just make sure we are not calling a static Initialize that doesn't exist.
-        if (Renderer::Get().GetData().LightingShader == nullptr) {
-             // If not fully setup, maybe call Init, but Application usually does it.
-        }
-
-        // 2. Window Setup
+        // 2. Window Setup & CLI Overrides
         auto &config = project->GetConfig();
         Window& window = GetWindow();
-        window.SetVSync(config.Window.VSync);
         
-        std::filesystem::path iconPath = project->GetAssetManager()->ResolvePath("engine/resources/icons/chaineddecos.jpg");
+        // Default from config
+        bool vsync = config.Window.VSync;
+        int width = config.Window.Width;
+        int height = config.Window.Height;
+        bool fullscreen = config.Runtime.Fullscreen;
+
+        // CLI Overrides (Priority: CLI > Config)
+        const auto& args = GetSpecification().CommandLineArgs;
+        for (int i = 1; i < args.Count; ++i)
+        {
+            std::string arg = args.Args[i];
+            if (arg == "--width" && i + 1 < args.Count) width = std::stoi(args.Args[++i]);
+            else if (arg == "--height" && i + 1 < args.Count) height = std::stoi(args.Args[++i]);
+            else if (arg == "--fullscreen") fullscreen = true;
+            else if (arg == "--windowed") fullscreen = false;
+            else if (arg == "--vsync" && i + 1 < args.Count) vsync = (std::string(args.Args[++i]) == "on");
+        }
+
+        window.SetVSync(vsync);
+        if (width != config.Window.Width || height != config.Window.Height)
+        {
+            window.SetSize(width, height);
+        }
+        window.SetFullscreen(fullscreen);
+
+        // Dynamic Branding: Name & Icon
+        window.SetTitle(config.Name);
+
+        std::filesystem::path iconPath = "";
+        if (!config.IconPath.empty())
+        {
+            iconPath = project->GetAssetManager()->ResolvePath(config.IconPath);
+        }
+
+        // Fallback icon discovery in project root/assets if not explicitly set
+        if (iconPath.empty() || !std::filesystem::exists(iconPath))
+        {
+             std::vector<std::string> iconNames = {"icon.png", "icon.jpg", "assets/icon.png", "engine/resources/icons/chaineddecos.jpg"};
+             for (const auto& name : iconNames)
+             {
+                 std::filesystem::path p = project->GetAssetManager()->ResolvePath(name);
+                 if (std::filesystem::exists(p))
+                 {
+                     iconPath = p;
+                     break;
+                 }
+             }
+        }
+
         if (std::filesystem::exists(iconPath))
         {
             Image icon = LoadImage(iconPath.string().c_str());
@@ -226,14 +268,28 @@ private:
                 UnloadImage(icon);
             }
         }
-        ::SetTargetFPS(60); 
+        
+        // FPS setup (from config)
+        ::SetTargetFPS((int)config.Animation.TargetFPS > 0 ? (int)config.Animation.TargetFPS : 60); 
 
         // 3. Initial Scene Load
         std::string sceneToLoad = config.StartScene;
+        
+        // CLI Scene Override
+        for (int i = 1; i < args.Count; ++i)
+        {
+            if (std::string(args.Args[i]) == "--scene" && i + 1 < args.Count)
+            {
+                sceneToLoad = args.Args[++i];
+                break;
+            }
+        }
+
         if (sceneToLoad.empty()) sceneToLoad = config.ActiveScenePath.string();
 
         if (sceneToLoad.empty())
         {
+            // Final fallback: any scene
             std::filesystem::path scenesDir = Project::GetAssetDirectory() / "scenes";
             if (std::filesystem::exists(scenesDir))
             {
@@ -251,6 +307,7 @@ private:
         if (!sceneToLoad.empty())
         {
             std::filesystem::path fullPath = Project::GetAssetPath(sceneToLoad);
+            CH_CORE_INFO("Runtime: Loading start scene: {}", fullPath.string());
             LoadScene(fullPath.string());
         }
 
