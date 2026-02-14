@@ -48,7 +48,7 @@ Entities:
       AutoSize: false
       Style:
         FontName: Default
-        FontSize: 18
+        FontSize: 22
         TextColor: [175, 158, 158, 255]
         Shadow: false
         ShadowOffset: 2
@@ -68,8 +68,8 @@ Entities:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-505, 256]
-        OffsetMax: [-198, 296]
+        OffsetMin: [-490, 260]
+        OffsetMax: [-58, 300]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -81,14 +81,14 @@ Entities:
       AutoSize: false
       Style:
         FontName: Default
-        FontSize: 19.2999992
+        FontSize: 25.2999992
         TextColor: [132, 111, 111, 255]
         Shadow: false
         ShadowOffset: 2
         ShadowColor: [0, 0, 0, 255]
         LetterSpacing: 1
         LineHeight: 1.20000005
-        HorizontalAlignment: 1
+        HorizontalAlignment: 0
         VerticalAlignment: 1
   - Entity: 17229056952832949834
     TagComponent:
@@ -128,8 +128,8 @@ Entities:
         TransitionSpeed: 0.100000001
       Text:
         FontName: Default
-        FontSize: 18
-        TextColor: [255, 255, 255, 255]
+        FontSize: 32
+        TextColor: [172, 155, 155, 255]
         Shadow: false
         ShadowOffset: 2
         ShadowColor: [0, 0, 0, 255]
@@ -144,6 +144,9 @@ Entities:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
+    SceneTransitionComponent:
+      TargetScenePath: scenes\video_scene.chscene
+      Triggered: false
     ControlComponent:
       Transform:
         AnchorMin: [0.5, 0.5]
@@ -175,7 +178,7 @@ Entities:
         TransitionSpeed: 0.100000001
       Text:
         FontName: Default
-        FontSize: 18
+        FontSize: 27
         TextColor: [255, 255, 255, 255]
         Shadow: false
         ShadowOffset: 2
@@ -184,6 +187,9 @@ Entities:
         LineHeight: 1.20000005
         HorizontalAlignment: 1
         VerticalAlignment: 1
+    NativeScriptComponent:
+      Scripts:
+        - SceneScript
   - Entity: 17694975162465223617
     TagComponent:
       Tag: title_image
@@ -262,7 +268,7 @@ Entities:
         TransitionSpeed: 0.50999999
       Text:
         FontName: Default
-        FontSize: 25.7999992
+        FontSize: 19.7999992
         TextColor: [255, 255, 255, 255]
         Shadow: false
         ShadowOffset: 2

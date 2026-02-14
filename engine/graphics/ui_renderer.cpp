@@ -66,6 +66,7 @@ namespace CHEngine
     {
         if (Disabled) ImGui::EndDisabled();
         while (FontPushCount > 0) { ImGui::PopFont(); FontPushCount--; }
+        if (OldFontScale != 1.0f) ImGui::SetWindowFontScale(OldFontScale);
         ImGui::PopStyleVar(VarPushCount);
         ImGui::PopStyleColor(ColorPushCount);
     }
@@ -110,10 +111,26 @@ namespace CHEngine
         {
             PushFont(text.FontName, text.FontSize);
         }
+        else if (text.FontSize > 0.0f)
+        {
+            PushFont("", text.FontSize);
+        }
     }
 
     void UIRenderer::UIStyleScope::PushFont(const std::string& fontName, float fontSize)
     {
+        if (fontSize > 0.0f)
+        {
+            OldFontScale = ImGui::GetIO().FontGlobalScale; // Or current window scale
+            // If we don't have multiple fonts loaded in the atlas yet, 
+            // the best we can do is scale the current window font.
+            // Default size in editor is usually 18.0f or 20.0f (BaseFontSize)
+            float baseSize = 20.0f; // This should ideally come from EditorLayer or EditorGUI
+            ImGui::SetWindowFontScale(fontSize / baseSize);
+        }
+
+        if (fontName.empty() || fontName == "Default") return;
+
         auto project = Project::GetActive();
         if (!project) return;
 
@@ -121,6 +138,7 @@ namespace CHEngine
         auto fontAsset = am->Get<FontAsset>(fontName);
         
         // Note: For real ImGui font switching, we need to ensure the font is loaded into ImGui atlas.
+        // For now we rely on SetWindowFontScale as requested.
     }
 
     // --- Modular Rendering Helpers ---
