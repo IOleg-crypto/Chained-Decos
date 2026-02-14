@@ -9,12 +9,10 @@
 #include "engine/core/profiler.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/components.h"
-#include "engine/scene/project_serializer.h"
 #include "engine/scene/scene_serializer.h"
 #include "engine/scene/scriptable_entity.h"
+#include "engine/scene/project.h"
 #include "engine/graphics/asset_manager.h"
-// Forward declaration: statically linked game scripts (defined in game_module.cpp)
-extern void RegisterGameScripts(CHEngine::Scene* scene);
 
 #include "cstdarg"
 #include "extras/IconsFontAwesome6.h"
@@ -26,6 +24,8 @@ extern void RegisterGameScripts(CHEngine::Scene* scene);
 #include "panels/viewport_panel.h"
 #include "panels/property_editor.h"
 #include "raylib.h"
+// Forward declaration: statically linked game scripts (defined in game_module.cpp)
+extern void RegisterGameScripts(CHEngine::Scene* scene);
 
 namespace CHEngine
 {

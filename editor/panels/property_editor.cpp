@@ -25,7 +25,11 @@ namespace CHEngine
     {
         bool changed = false;
         auto pb = EditorGUI::Begin();
-        pb.Float("Font Size", style.FontSize, 1).Color("Text Color", style.TextColor);
+        if (pb.Float("Font Size", style.FontSize, 1).Color("Text Color", style.TextColor).Changed)
+        {
+            if (style.FontSize < 0.0f) style.FontSize = 0.0f;
+            changed = true;
+        }
 
         const char *alignments[] = {"Left", "Center", "Right"};
         int hAlign = (int)style.HorizontalAlignment;
@@ -441,6 +445,7 @@ namespace CHEngine
             if (EditorGUI::Property("Label", component.Label)) changed = true;
             if (EditorGUI::Property("Interactable", component.IsInteractable)) changed = true;
             if (EditorGUI::Property("Auto Size", component.AutoSize)) changed = true;
+         
             
             if (ImGui::TreeNodeEx("Style", ImGuiTreeNodeFlags_Framed))
             {

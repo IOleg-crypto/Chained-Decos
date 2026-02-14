@@ -24,56 +24,41 @@ Fog:
   Start: 10
   End: 100
 Entities:
-  - Entity: 7935884460455885952
-    TagComponent:
-      Tag: Entity
-    TransformComponent:
-      Translation: [-0.175495267, 5.20984507, 46.9903793]
-      Rotation: [-10.7000151, 351.900116, 0]
-      Scale: [1, 1, 1]
-    CameraComponent:
-      Primary: true
-      FixedAspectRatio: false
-      IsOrbitCamera: true
-      OrbitDistance: 10
-      OrbitYaw: 351.900116
-      OrbitPitch: 10.7000151
-      LookSensitivity: 0.899999976
-      TargetEntityTag: Player
-      ProjectionType: 0
-      PerspectiveFOV: 1.81512499
-      PerspectiveNear: 0.460000008
-      PerspectiveFar: 1000
-    NativeScriptComponent:
-      Scripts:
-        - OrbitCameraController
-  - Entity: 6428169142076434776
-    TagComponent:
-      Tag: Entity
-    TransformComponent:
-      Translation: [-50.6539459, 0.631593704, 10.243227]
-      Rotation: [-3.14159083, 78.4499969, -3.14159083]
-      Scale: [0.999882996, 1, 0.97942549]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/stairs.glb
-    ColliderComponent:
-      Type: -1076756223
-      Enabled: true
-      Offset: [0, 0, 0]
-      Size: [1, 1, 1]
-      Radius: 0.5
-      Height: 2
-      ModelHandle: 0
-      ModelPath: models/stairs.glb
-      AutoCalculate: true
-  - Entity: 1283719283719289
+  - Entity: 1283719283719285
     TagComponent:
       Tag: Entity
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/arena.glb
+    ColliderComponent:
+      Type: -1289682687
+      Enabled: true
+      Offset: [0, 0, 0]
+      Size: [1, 1, 1]
+      Radius: 0.5
+      Height: 2
+      ModelHandle: 0
+      ModelPath: models/arena.glb
+      AutoCalculate: true
+  - Entity: 1283719283719287
+    TagComponent:
+      Tag: Entity
+    TransformComponent:
+      Translation: [28.8506241, 16.7000008, 27.7648582]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: ""
+    SpawnComponent:
+      SpawnZoneSize: [1, 1, 1]
+      SpawnTextureHandle: 0
+      SpawnTexturePath: boxes/playerspawntexture.png
+      RenderSpawnZoneInScene: true
   - Entity: 1326311650816898569
     TagComponent:
       Tag: Entity
@@ -84,6 +69,8 @@ Entities:
     ModelComponent:
       ModelHandle: 0
       ModelPath: models/player_low.glb
+    ShaderComponent:
+      ShaderPath: ../../../engine/resources/shaders/player_effect.fs
     ColliderComponent:
       Type: -1058471678
       Enabled: true
@@ -107,38 +94,53 @@ Entities:
         - PlayerController
         - CameraController
         - SpawnZoneRespawn
-  - Entity: 1283719283719287
-    TagComponent:
-      Tag: Entity
-    TransformComponent:
-      Translation: [28.8506241, 16.7000008, 27.7648582]
-      Rotation: [0, -0, 0]
-      Scale: [1, 1, 1]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: ""
-    SpawnComponent:
-      SpawnZoneSize: [1, 1, 1]
-      SpawnTextureHandle: 0
-      SpawnTexturePath: boxes/playerspawntexture.png
-      RenderSpawnZoneInScene: true
-  - Entity: 1283719283719285
+  - Entity: 1283719283719289
     TagComponent:
       Tag: Entity
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
+  - Entity: 6428169142076434776
+    TagComponent:
+      Tag: Entity
+    TransformComponent:
+      Translation: [-50.6539459, 0.631593704, 10.243227]
+      Rotation: [-3.14159083, 78.4499969, -3.14159083]
+      Scale: [0.999882996, 1, 0.97942549]
     ModelComponent:
       ModelHandle: 0
-      ModelPath: models/arena.glb
+      ModelPath: models/stairs.glb
     ColliderComponent:
-      Type: -1289682687
+      Type: -1076756223
       Enabled: true
       Offset: [0, 0, 0]
       Size: [1, 1, 1]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
-      ModelPath: models/arena.glb
+      ModelPath: models/stairs.glb
       AutoCalculate: true
+  - Entity: 7935884460455885952
+    TagComponent:
+      Tag: Entity
+    TransformComponent:
+      Translation: [-0.175495267, 5.20984507, 46.9903793]
+      Rotation: [-10.7000151, 351.900116, 0]
+      Scale: [1, 1, 1]
+    CameraComponent:
+      Primary: true
+      FixedAspectRatio: false
+      IsOrbitCamera: true
+      OrbitDistance: 10
+      OrbitYaw: 351.900116
+      OrbitPitch: 10.7000151
+      LookSensitivity: 0.899999976
+      TargetEntityTag: Player
+      ProjectionType: 0
+      PerspectiveFOV: 1.81512499
+      PerspectiveNear: 0.460000008
+      PerspectiveFar: 1000
+    NativeScriptComponent:
+      Scripts:
+        - OrbitCameraController

@@ -44,6 +44,7 @@ namespace CHEngine
             int ColorPushCount = 0;
             int VarPushCount = 0;
             int FontPushCount = 0;
+            float OldFontScale = 1.0f;
             bool Disabled = false;
 
             UIStyleScope() {}
