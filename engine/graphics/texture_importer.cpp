@@ -19,6 +19,9 @@ namespace CHEngine
             return asset;
         }
 
+        // Ensure we always have RGBA for consistency and GLFW/Raylib compatibility
+        ImageFormat(&image, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+
         Texture2D texture = LoadTextureFromImage(image);
         UnloadImage(image);
 

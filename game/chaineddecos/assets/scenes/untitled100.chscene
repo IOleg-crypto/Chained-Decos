@@ -10,7 +10,7 @@ Canvas:
   MatchWidthOrHeight: 0.5
 EnvironmentPath: environments/new_environment.chenv
 LightDirection: [-1, -1, -1]
-LightColor: [200, 170, 170, 255]
+LightColor: [175, 93, 93, 255]
 AmbientIntensity: 0.300000012
 Skybox:
   TexturePath: skyboxes/Starry night preview4.png
@@ -22,105 +22,21 @@ Fog:
   Color: [130, 130, 130, 255]
   Density: 0.00999999978
   Start: 10
-  End: 100
+  End: 500
 Entities:
-  - Entity: 1283719283719285
+  - Entity: 11929288971603114526
     TagComponent:
-      Tag: Entity
+      Tag: Empty Entity
     TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/arena.glb
-    ColliderComponent:
-      Type: -1289682687
-      Enabled: true
-      Offset: [0, 0, 0]
-      Size: [1, 1, 1]
-      Radius: 0.5
-      Height: 2
-      ModelHandle: 0
-      ModelPath: models/arena.glb
-      AutoCalculate: true
-  - Entity: 1283719283719287
-    TagComponent:
-      Tag: Entity
-    TransformComponent:
-      Translation: [28.8506241, 16.7000008, 27.7648582]
+      Translation: [0.935241938, 16.0948315, 0.604247808]
       Rotation: [0, -0, 0]
       Scale: [1, 1, 1]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: ""
-    SpawnComponent:
-      SpawnZoneSize: [1, 1, 1]
-      SpawnTextureHandle: 0
-      SpawnTexturePath: boxes/playerspawntexture.png
-      RenderSpawnZoneInScene: true
-  - Entity: 1326311650816898569
-    TagComponent:
-      Tag: Entity
-    TransformComponent:
-      Translation: [1.20899844, 1.85317636, 37.2622757]
-      Rotation: [0, 89.1000595, 0]
-      Scale: [1, 1, 1]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/player_low.glb
+    PointLightComponent:
+      LightColor: [21, 10, 10, 255]
+      Intensity: 0
+      Radius: 0
     ShaderComponent:
-      ShaderPath: ../../../engine/resources/shaders/player_effect.fs
-    ColliderComponent:
-      Type: -1058471678
-      Enabled: true
-      Offset: [0, 0, -0.293091357]
-      Size: [2.48000002, 5.67999983, 7.4000001]
-      Radius: 0.100000001
-      Height: 1.60000002
-      ModelHandle: 0
-      ModelPath: models/player_low.glb
-      AutoCalculate: true
-    RigidBodyComponent:
-      Mass: 2.9000001
-      UseGravity: true
-      IsKinematic: false
-    PlayerComponent:
-      MovementSpeed: 15
-      LookSensitivity: 0.899999976
-      JumpForce: 10
-    NativeScriptComponent:
-      Scripts:
-        - PlayerController
-        - CameraController
-        - SpawnZoneRespawn
-  - Entity: 1283719283719289
-    TagComponent:
-      Tag: Entity
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-  - Entity: 6428169142076434776
-    TagComponent:
-      Tag: Entity
-    TransformComponent:
-      Translation: [-50.6539459, 0.631593704, 10.243227]
-      Rotation: [-3.14159083, 78.4499969, -3.14159083]
-      Scale: [0.999882996, 1, 0.97942549]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/stairs.glb
-    ColliderComponent:
-      Type: -1076756223
-      Enabled: true
-      Offset: [0, 0, 0]
-      Size: [1, 1, 1]
-      Radius: 0.5
-      Height: 2
-      ModelHandle: 0
-      ModelPath: models/stairs.glb
-      AutoCalculate: true
+      ShaderPath: ../../../engine/resources/shaders/lighting.chshader
   - Entity: 7935884460455885952
     TagComponent:
       Tag: Entity
@@ -144,3 +60,109 @@ Entities:
     NativeScriptComponent:
       Scripts:
         - OrbitCameraController
+  - Entity: 6428169142076434776
+    TagComponent:
+      Tag: Entity
+    TransformComponent:
+      Translation: [-50.6539459, 0.631593704, 10.243227]
+      Rotation: [-3.14159083, 78.4499969, -3.14159083]
+      Scale: [0.999882996, 1, 0.97942549]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/stairs.glb
+    ColliderComponent:
+      Type: -1076756223
+      Enabled: true
+      Offset: [0, 0, 0]
+      Size: [1, 1, 1]
+      Radius: 0.5
+      Height: 2
+      ModelHandle: 0
+      ModelPath: models/stairs.glb
+      AutoCalculate: true
+  - Entity: 1283719283719289
+    TagComponent:
+      Tag: Entity
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+  - Entity: 1326311650816898569
+    TagComponent:
+      Tag: Entity
+    TransformComponent:
+      Translation: [29.6749401, 14.5260134, 19.3268509]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/player_low.glb
+    ShaderComponent:
+      ShaderPath: shaders/player_effect.chshader
+    ColliderComponent:
+      Type: -1058471678
+      Enabled: true
+      Offset: [0, 0, -0.293091357]
+      Size: [2.48000002, 5.67999983, 7.4000001]
+      Radius: 1.29999995
+      Height: 1.60000002
+      ModelHandle: 0
+      ModelPath: models/player_low.glb
+      AutoCalculate: true
+    RigidBodyComponent:
+      Mass: 2.9000001
+      UseGravity: true
+      IsKinematic: false
+    AudioComponent:
+      SoundHandle: 0
+      SoundPath: audio/storegraphic-soft-wind-477404.mp3
+      Loop: true
+      PlayOnStart: false
+      Volume: 0.850000024
+      Pitch: 1
+    PlayerComponent:
+      MovementSpeed: 15
+      LookSensitivity: 0.899999976
+      JumpForce: 10
+    NativeScriptComponent:
+      Scripts:
+        - PlayerController
+        - CameraController
+        - PlayerFall
+        - GameHUD
+        - ScreenFallEffect
+  - Entity: 1283719283719287
+    TagComponent:
+      Tag: Entity
+    TransformComponent:
+      Translation: [29.006649, 14.1767006, 17.6547604]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: ""
+    SpawnComponent:
+      SpawnZoneSize: [1, 1, 1]
+      SpawnTextureHandle: 0
+      SpawnTexturePath: boxes/playerspawntexture.png
+      RenderSpawnZoneInScene: true
+  - Entity: 1283719283719285
+    TagComponent:
+      Tag: Entity
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/arena.glb
+    ColliderComponent:
+      Type: -1289682687
+      Enabled: true
+      Offset: [0, 0, 0]
+      Size: [1, 1, 1]
+      Radius: 0.5
+      Height: 2
+      ModelHandle: 0
+      ModelPath: models/arena.glb
+      AutoCalculate: true

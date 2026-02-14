@@ -22,6 +22,8 @@ struct MaterialInstance
 
     // Optional Emissive
     std::string EmissivePath = "";
+    Color EmissiveColor = BLACK;
+    float EmissiveIntensity = 0.0f;
     bool OverrideEmissive = false;
 
     // Shader
