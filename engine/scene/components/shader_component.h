@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <algorithm>
 #include "raylib.h"
 
 namespace CHEngine
@@ -22,6 +23,28 @@ namespace CHEngine
 
         ShaderComponent() = default;
         ShaderComponent(const ShaderComponent&) = default;
+
+        void SetFloat(const std::string& name, float value)
+        {
+            auto it = std::find_if(Uniforms.begin(), Uniforms.end(), [&](const auto& u) { return u.Name == name; });
+            if (it != Uniforms.end()) {
+                it->Value[0] = value;
+            } else {
+                Uniforms.push_back({name, 0, {value, 0, 0, 0}});
+            }
+        }
+
+        void SetVec3(const std::string& name, Vector3 value)
+        {
+            auto it = std::find_if(Uniforms.begin(), Uniforms.end(), [&](const auto& u) { return u.Name == name; });
+            if (it != Uniforms.end()) {
+                it->Value[0] = value.x;
+                it->Value[1] = value.y;
+                it->Value[2] = value.z;
+            } else {
+                Uniforms.push_back({name, 2, {value.x, value.y, value.z, 0}});
+            }
+        }
     };
 }
 

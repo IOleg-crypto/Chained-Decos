@@ -1,5 +1,6 @@
 #include "engine/graphics/renderer.h"
 #include "engine/graphics/model_asset.h"
+#include "engine/graphics/shader_asset.h"
 #include "scene_renderer.h"
 #include "engine/scene/components.h"
 #include "engine/physics/bvh/bvh.h"
@@ -13,6 +14,30 @@
 
 namespace CHEngine
 {
+    static Matrix GetWorldTransform(entt::registry& registry, entt::entity entity)
+    {
+        Matrix transform = MatrixIdentity();
+        if (registry.all_of<TransformComponent>(entity))
+        {
+            transform = registry.get<TransformComponent>(entity).GetTransform();
+        }
+
+        if (registry.all_of<HierarchyComponent>(entity))
+        {
+            entt::entity parent = registry.get<HierarchyComponent>(entity).Parent;
+            if (parent != entt::null)
+            {
+                transform = MatrixMultiply(transform, GetWorldTransform(registry, parent));
+            }
+        }
+        return transform;
+    }
+
+    static Vector3 GetWorldPosition(entt::registry& registry, entt::entity entity)
+    {
+        Matrix transform = GetWorldTransform(registry, entity);
+        return { transform.m12, transform.m13, transform.m14 };
+    }
     void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, Timestep timestep, const DebugRenderFlags* debugFlags)
     {
         CH_PROFILE_FUNCTION();
@@ -78,14 +103,48 @@ namespace CHEngine
     {
         auto& registry = scene->GetRegistry();
         auto view = registry.view<TransformComponent, ModelComponent>();
-        
-        float targetFPS = 30.0f;
-        if (Project::GetActive()){
-            targetFPS = Project::GetActive()->GetConfig().Animation.TargetFPS;
-        }
-        float frameTime = 1.0f / (targetFPS > 0 ? targetFPS : 30.0f);
-        
 
+        // 1. Collect Lights
+        Renderer::Get().ClearPointLights();
+        Renderer::Get().ClearSpotLights();
+        
+        int pLightCount = 0;
+        auto pLightView = registry.view<PointLightComponent>();
+        for (auto entity : pLightView)
+        {
+            if (pLightCount >= RendererData::MaxLights) break;
+            auto& light = pLightView.get<PointLightComponent>(entity);
+            Vector3 worldPos = GetWorldPosition(registry, entity);
+            
+            // Safety: Ensure intensity is at least 1.0 if it's set to 0 by mistake,
+            // or if the user wants light to be visible.
+            float intensity = light.Intensity;
+            if (intensity <= 0.0f) intensity = 1.0f;
+
+            Renderer::Get().SetPointLight(pLightCount++, worldPos, light.LightColor, intensity, light.Radius);
+        }
+
+        int sLightCount = 0;
+        auto sLightView = registry.view<SpotLightComponent>();
+        for (auto entity : sLightView)
+        {
+            if (sLightCount >= RendererData::MaxLights) break;
+            auto& light = sLightView.get<SpotLightComponent>(entity);
+            Vector3 worldPos = GetWorldPosition(registry, entity);
+            
+            // Calculate world direction from rotation
+            Matrix worldTransform = GetWorldTransform(registry, entity);
+            Vector3 worldDir = Vector3Transform({ 0, -1, 0 }, worldTransform); // Default raylib spot dir is down? 
+            worldDir = Vector3Subtract(worldDir, worldPos);
+            worldDir = Vector3Normalize(worldDir);
+
+            float intensity = light.Intensity;
+            if (intensity <= 0.0f) intensity = 1.0f;
+
+            Renderer::Get().SetSpotLight(sLightCount++, worldPos, worldDir, light.LightColor, intensity, light.Range, light.InnerCutoff, light.OuterCutoff);
+        }
+
+        // 2. Render Models
         for (auto entity : view)
         {
             auto [transform, model] = view.get<TransformComponent, ModelComponent>(entity);
@@ -93,14 +152,30 @@ namespace CHEngine
             // Check for deferred texture updates
             if (model.Asset) model.Asset->OnUpdate();
 
+            std::shared_ptr<ShaderAsset> shaderOverride = nullptr;
+            std::vector<ShaderUniform> customUniforms;
+
+            if (registry.all_of<ShaderComponent>(entity))
+            {
+                auto& shaderComp = registry.get<ShaderComponent>(entity);
+                if (shaderComp.Enabled && !shaderComp.ShaderPath.empty())
+                {
+                    if (Project::GetActive())
+                    {
+                        shaderOverride = Project::GetActive()->GetAssetManager()->Get<ShaderAsset>(shaderComp.ShaderPath);
+                        customUniforms = shaderComp.Uniforms;
+                    }
+                }
+            }
+
             if (registry.all_of<AnimationComponent>(entity))
             {
                 auto& animation = registry.get<AnimationComponent>(entity);
-                Renderer::Get().DrawModel(model.Asset, transform.GetTransform(), {}, animation.CurrentAnimationIndex, animation.CurrentFrame);
+                Renderer::Get().DrawModel(model.Asset, transform.GetTransform(), model.Materials, animation.CurrentAnimationIndex, animation.CurrentFrame, shaderOverride, customUniforms);
             }
             else
             {
-                Renderer::Get().DrawModel(model.Asset, transform.GetTransform());
+                Renderer::Get().DrawModel(model.Asset, transform.GetTransform(), model.Materials, 0, 0, shaderOverride, customUniforms);
             }
         }
         

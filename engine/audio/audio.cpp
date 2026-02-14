@@ -56,6 +56,14 @@ namespace CHEngine
             SetSoundPitch(asset->GetSound(), pitch);
             PlaySound(asset->GetSound());
         }
+        else if (!asset)
+        {
+            CH_CORE_WARN("Audio::Play: Asset is null!");
+        }
+        else
+        {
+            CH_CORE_WARN("Audio::Play: Asset '{}' is not ready (State: {})", asset->GetPath(), (int)asset->GetState());
+        }
     }
 
     void Audio::Stop(std::shared_ptr<SoundAsset> asset)

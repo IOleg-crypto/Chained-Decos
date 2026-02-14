@@ -134,6 +134,25 @@ namespace CHEngine
                 material.albedoColor.b = (unsigned char)(pbr.base_color_factor[2] * 255);
                 material.albedoColor.a = (unsigned char)(pbr.base_color_factor[3] * 255);
             }
+
+            if (gltf_material.has_emissive_strength) {
+                material.emissiveIntensity = gltf_material.emissive_strength.emissive_strength;
+            }
+
+            if (gltf_material.emissive_texture.texture && gltf_material.emissive_texture.texture->image && gltf_material.emissive_texture.texture->image->uri) {
+                material.emissivePath = (modelDir / gltf_material.emissive_texture.texture->image->uri).string();
+            }
+
+            material.emissiveColor.r = (unsigned char)(gltf_material.emissive_factor[0] * 255);
+            material.emissiveColor.g = (unsigned char)(gltf_material.emissive_factor[1] * 255);
+            material.emissiveColor.b = (unsigned char)(gltf_material.emissive_factor[2] * 255);
+            material.emissiveColor.a = 255;
+
+            // If we have emissive color but no strength, default to 1.0 (or higher if colors > 1.0 were used in GLTF)
+            if (material.emissiveIntensity == 0.0f && (material.emissiveColor.r > 0 || material.emissiveColor.g > 0 || material.emissiveColor.b > 0)) {
+                material.emissiveIntensity = 1.0f;
+            }
+
             data.materials.push_back(material);
         }
 
