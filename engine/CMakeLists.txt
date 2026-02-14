@@ -164,7 +164,7 @@ PRIVATE
 # Compiler flags
 if(MSVC)
     target_compile_options(engine PRIVATE /bigobj)
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+elseif(MINGW)
     target_compile_options(engine PRIVATE -Wa,-mbig-obj)
 endif()
 
