@@ -22,6 +22,7 @@ struct LaunchProfile
 struct PhysicsSettings
 {
     float Gravity = 20.0f;
+    float FixedTimestep = 1.0f / 60.0f;
 };
 
 struct AnimationSettings
@@ -48,6 +49,13 @@ struct RuntimeSettings
     bool Fullscreen = false;
     bool ShowStats = true;
     bool EnableConsole = false;
+};
+
+struct ScriptingSettings
+{
+    std::string ModuleName;
+    std::filesystem::path ModuleDirectory;
+    bool AutoLoad = true;
 };
 
 enum class Configuration
@@ -81,6 +89,7 @@ struct ProjectConfig
     WindowSettings Window;
     RuntimeSettings Runtime;
     EditorSettings Editor;
+    ScriptingSettings Scripting;
 
     std::vector<LaunchProfile> LaunchProfiles;
     int ActiveLaunchProfileIndex = 0;

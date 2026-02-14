@@ -136,7 +136,7 @@ jobs:
             ### Chained Engine SDK Update
             - **Version**: ${{ steps.info.outputs.version }}
             - **Build Date**: ${{ steps.info.outputs.date }}
-            - **Architecture**: Rebuilded architecture and made engine editor
+            - **Architecture**: ${{steps.build-env}}
           draft: false
           prerelease: false
         env:

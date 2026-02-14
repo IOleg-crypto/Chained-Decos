@@ -48,10 +48,18 @@ namespace CHEngine
         if (!runtime)
             return;
 
-        // 2. Collect Simulation Entities (already done in Update, but let's look at ResolveSimulation)
-        
-        // 3. Simulation & Resolution
-        ResolveSimulation(deltaTime);
+        // 3. Simulation & Resolution (Fixed Timestep)
+        float fixedTimestep = 1.0f / 60.0f;
+        auto project = Project::GetActive();
+        if (project)
+            fixedTimestep = project->GetConfig().Physics.FixedTimestep;
+
+        m_Accumulator += deltaTime;
+        while (m_Accumulator >= fixedTimestep)
+        {
+            ResolveSimulation(fixedTimestep);
+            m_Accumulator -= fixedTimestep;
+        }
     }
 
     RaycastResult Physics::Raycast(Ray ray)

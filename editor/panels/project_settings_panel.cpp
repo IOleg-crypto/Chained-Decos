@@ -171,9 +171,42 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             }
         }
 
+        if (ImGui::CollapsingHeader(ICON_FA_CODE " Scripting", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            char moduleNameBuf[256];
+            strncpy(moduleNameBuf, config.Scripting.ModuleName.c_str(), 255);
+            moduleNameBuf[255] = '\0';
+            if (ImGui::InputText("Module Name", moduleNameBuf, 255))
+            {
+                config.Scripting.ModuleName = moduleNameBuf;
+            }
+
+            char moduleDirBuf[512];
+            strncpy(moduleDirBuf, config.Scripting.ModuleDirectory.string().c_str(), 511);
+            moduleDirBuf[511] = '\0';
+            if (ImGui::InputText("Module Directory", moduleDirBuf, 511))
+            {
+                config.Scripting.ModuleDirectory = moduleDirBuf;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("...###ModuleDirBrowse"))
+            {
+                nfdu8char_t *outPath = NULL;
+                nfdresult_t result = NFD_PickFolder(&outPath, NULL);
+                if (result == NFD_OKAY)
+                {
+                    config.Scripting.ModuleDirectory = Project::GetRelativePath(outPath);
+                    NFD_FreePath(outPath);
+                }
+            }
+
+            ImGui::Checkbox("Auto Load Module", &config.Scripting.AutoLoad);
+        }
+
         if (ImGui::CollapsingHeader(ICON_FA_CUBES " Physics", ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::DragFloat("World Gravity", &config.Physics.Gravity, 0.1f, 0.0f, 100.0f);
+            ImGui::DragFloat("Fixed Timestep", &config.Physics.FixedTimestep, 0.001f, 0.001f, 0.1f, "%.4f");
         }
 
         if (ImGui::CollapsingHeader(ICON_FA_WINDOW_RESTORE " Window", ImGuiTreeNodeFlags_DefaultOpen))

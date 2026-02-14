@@ -30,6 +30,12 @@ public:
                             }};
     }
 
+    // ABI-safe registration: called from EXE side with raw function pointers
+    void RegisterDirect(const std::string& name, InstantiateFn instantiate, DestroyFn destroy)
+    {
+        m_Registry[name] = { instantiate, destroy };
+    }
+
     void AddScript(const std::string &name, NativeScriptComponent &nsc)
     {
         if (m_Registry.find(name) != m_Registry.end())
