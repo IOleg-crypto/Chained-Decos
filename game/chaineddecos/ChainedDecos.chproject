@@ -1,6 +1,6 @@
 Project:
   Name: ChainedDecos
-  IconPath: d:/gitnext/chained decos/engine/resources/icons/chaineddecos.jpg
+  IconPath: engine/resources/icons/chaineddecos.jpg
   StartScene: scenes\main_menu.chscene
   AssetDirectory: assets
   ActiveScene: assets/scenes/main_menu.chscene
@@ -9,6 +9,7 @@ Project:
     []
   Physics:
     Gravity: 20
+    FixedTimestep: 0.0166666675
   Animation:
     TargetFPS: 30
   Render:
@@ -20,13 +21,17 @@ Project:
     VSync: false
     Resizable: true
   Runtime:
-    Fullscreen: true
-    ShowStats: true
-    EnableConsole: true
+    Fullscreen: false
+    ShowStats: false
+    EnableConsole: false
   Editor:
     CameraMoveSpeed: 6.80000019
     CameraRotationSpeed: 1
     CameraBoostMultiplier: 2.29999995
+  Scripting:
+    ModuleName: libChainedDecosGame
+    ModuleDirectory: bin
+    AutoLoad: true
   LaunchProfiles:
     - Name: Debug Runtime
       BinaryPath: ${BUILD}/ChainedRuntime.exe
