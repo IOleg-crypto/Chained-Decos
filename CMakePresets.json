@@ -16,7 +16,8 @@
         "CMAKE_CXX_EXTENSIONS": "OFF",
         "BUILD_TESTS": "ON",
         "BUILD_MAP_EDITOR": "ON",
-        "DISABLE_ALL_WARNINGS": "ON"
+        "DISABLE_ALL_WARNINGS": "ON",
+        "CH_ENGINE_SHARED": "OFF"
       }
     },
     {
@@ -91,7 +92,8 @@
       "displayName": "Windows Ninja Debug",
       "inherits": "ninja-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CH_ENGINE_SHARED": "ON"
       },
       "condition": {
         "type": "equals",
@@ -104,7 +106,8 @@
       "displayName": "Windows Ninja Release",
       "inherits": "ninja-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
+        "CMAKE_BUILD_TYPE": "Release",
+        "CH_ENGINE_SHARED": "ON"
       },
       "condition": {
         "type": "equals",

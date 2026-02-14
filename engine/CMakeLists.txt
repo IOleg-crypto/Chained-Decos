@@ -5,8 +5,15 @@ set(ENGINE_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-# Build entire engine as one SHARED library
-add_library(engine SHARED
+# SHARED for local development (hot-reload), STATIC for CI/distribution
+option(CH_ENGINE_SHARED "Build engine as shared library (DLL)" ON)
+if(CH_ENGINE_SHARED)
+    set(ENGINE_LIB_TYPE SHARED)
+else()
+    set(ENGINE_LIB_TYPE STATIC)
+endif()
+
+add_library(engine ${ENGINE_LIB_TYPE}
     # Core
     core/layer_stack.cpp
     core/profiler.cpp
@@ -143,6 +150,9 @@ add_library(engine SHARED
     scene/components/transform_component.h
     scene/entity.h
 )
+
+# MSVC needs exported symbols to generate the .lib import library
+set_target_properties(engine PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 target_include_directories(engine PUBLIC
     ${ENGINE_INCLUDE_DIRS}
