@@ -57,10 +57,10 @@ TEST_F(SceneIntegrationTest, EntityComponentLifecycle)
     EXPECT_FLOAT_EQ(entity.GetComponent<TransformComponent>().Translation.x, 10.0f);
     
     // Add and remove a component
-    entity.AddComponent<PhysicsBodyComponent>();
-    EXPECT_TRUE(entity.HasComponent<PhysicsBodyComponent>());
-    entity.RemoveComponent<PhysicsBodyComponent>();
-    EXPECT_FALSE(entity.HasComponent<PhysicsBodyComponent>());
+    entity.AddComponent<RigidBodyComponent>();
+    EXPECT_TRUE(entity.HasComponent<RigidBodyComponent>());
+    entity.RemoveComponent<RigidBodyComponent>();
+    EXPECT_FALSE(entity.HasComponent<RigidBodyComponent>());
 }
 
 TEST_F(SceneIntegrationTest, FindEntityByTag)
