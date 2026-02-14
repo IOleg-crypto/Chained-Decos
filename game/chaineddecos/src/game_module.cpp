@@ -12,6 +12,8 @@
 #include "exitscript.h"
 #include "spawnzone.h"
 #include "orbitcameracontroller.h"
+#include "player_fall.h"
+#include "screen_fall_effect.h"
 
 // Standard C++ function for static linking (used by Editor)
 void RegisterGameScripts(CHEngine::Scene* scene) {
@@ -28,6 +30,8 @@ void RegisterGameScripts(CHEngine::Scene* scene) {
     registry.Register<CHEngine::ExitScript>("ExitScript");
     registry.Register<CHEngine::SpawnZoneRespawn>("SpawnZoneRespawn");
     registry.Register<CHEngine::OrbitCameraController>("OrbitCameraController");
+    registry.Register<CHEngine::PlayerFall>("PlayerFall");
+    registry.Register<CHEngine::ScreenFallEffect>("ScreenFallEffect");
 
     CH_CORE_INFO("Game Scripts Registered successfully!");
 }
@@ -46,6 +50,8 @@ extern "C" {
         CH_REGISTER_SCRIPT(registerCallback, userData, CHEngine::ExitScript, "ExitScript");
         CH_REGISTER_SCRIPT(registerCallback, userData, CHEngine::SpawnZoneRespawn, "SpawnZoneRespawn");
         CH_REGISTER_SCRIPT(registerCallback, userData, CHEngine::OrbitCameraController, "OrbitCameraController");
+        CH_REGISTER_SCRIPT(registerCallback, userData, CHEngine::PlayerFall, "PlayerFall");
+        CH_REGISTER_SCRIPT(registerCallback, userData, CHEngine::ScreenFallEffect, "ScreenFallEffect");
 
         CH_CORE_INFO("Game Scripts Registered successfully!");
     }

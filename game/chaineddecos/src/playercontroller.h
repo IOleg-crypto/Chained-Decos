@@ -112,6 +112,22 @@ namespace CHEngine
                 rigidBody.IsGrounded = false;
                 CH_CORE_INFO("Jump triggered! Force: {}", jumpForce);
             }
+
+            // Shader Uniform Sync
+            if (HasComponent<ShaderComponent>())
+            {
+                auto& shaderComp = GetComponent<ShaderComponent>();
+                
+                // fallSpeed: use vertical velocity absolute value if falling
+                float fallSpeedValue = rigidBody.Velocity.y < 0 ? -rigidBody.Velocity.y : 0.0f;
+                shaderComp.SetFloat("fallSpeed", fallSpeedValue);
+                
+                // time: sync with engine time
+                shaderComp.SetFloat("time", (float)GetTime());
+                
+                // windDirection: default or based on movement
+                shaderComp.SetVec3("windDirection", {1.0f, 0.0f, 0.5f});
+            }
         }
 
         CH_EVENT(e)

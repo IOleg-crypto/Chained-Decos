@@ -108,7 +108,9 @@ namespace CHEngine
 
     void Renderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const Matrix& transform,
         const std::vector<MaterialSlot>& materialSlotOverrides,
-        int animationIndex, int frameIndex)
+        int animationIndex, int frameIndex,
+        const std::shared_ptr<ShaderAsset>& shaderOverride,
+        const std::vector<ShaderUniform>& shaderUniformOverrides)
     {
         CH_CORE_ASSERT(s_Instance, "Renderer not initialized!");
         if (modelAsset && modelAsset->GetState() == AssetState::Ready)
@@ -129,41 +131,160 @@ namespace CHEngine
 
             for (int i = 0; i < model.meshCount; i++)
             {
-                Material& material = model.materials[model.meshMaterial[i]];
-
-                if (material.shader.id == 0 && m_Data->LightingShader)
-                    material.shader = m_Data->LightingShader->GetShader();
-
-                if (m_Data->LightingShader && material.shader.id == m_Data->LightingShader->GetShader().id)
+                // Start with the default material for this mesh
+                Material material = model.materials[model.meshMaterial[i]];
+                
+                // Apply overrides from the component
+                for (const auto& slot : materialSlotOverrides)
                 {
-                    m_Data->LightingShader->SetVec3("lightDir", m_Data->CurrentLightDirection);
-                    m_Data->LightingShader->SetColor("lightColor", m_Data->CurrentLightColor);
-                    m_Data->LightingShader->SetFloat("ambient", m_Data->CurrentAmbientIntensity);
+                    bool match = false;
+                    if (slot.Target == MaterialSlotTarget::MeshIndex && slot.Index == i) match = true;
+                    else if (slot.Target == MaterialSlotTarget::MaterialIndex && slot.Index == model.meshMaterial[i]) match = true;
 
-                    // Fog uniforms
-                    m_Data->LightingShader->SetInt("fogEnabled", m_Data->FogEnabled ? 1 : 0);
-                    if (m_Data->FogEnabled)
+                    if (match)
                     {
-                        m_Data->LightingShader->SetColor("fogColor", m_Data->FogColor);
-                        m_Data->LightingShader->SetFloat("fogDensity", m_Data->FogDensity);
-                        m_Data->LightingShader->SetFloat("fogStart", m_Data->FogStart);
-                        m_Data->LightingShader->SetFloat("fogEnd", m_Data->FogEnd);
+                        material.maps[MATERIAL_MAP_ALBEDO].color = slot.Material.AlbedoColor;
+                        if (slot.Material.OverrideAlbedo && !slot.Material.AlbedoPath.empty())
+                        {
+                            if (Project::GetActive())
+                            {
+                                auto textureAsset = Project::GetActive()->GetAssetManager()->Get<TextureAsset>(slot.Material.AlbedoPath);
+                                if (textureAsset && textureAsset->IsReady())
+                                    material.maps[MATERIAL_MAP_ALBEDO].texture = textureAsset->GetTexture();
+                            }
+                        }
+                        break;
                     }
-
-                    m_Data->LightingShader->SetVec3("viewPos", m_Data->CurrentCameraPosition);
-                    m_Data->LightingShader->SetFloat("uTime", m_Data->Time);
                 }
 
-                ProfilerStats stats;
-                stats.DrawCalls++;
-                stats.MeshCount++;
-                stats.PolyCount += model.meshes[i].triangleCount;
-                Profiler::UpdateStats(stats);
+                auto activeShader = shaderOverride;
 
-                // Combine model base transform with entity transform
+                if (!activeShader && material.shader.id == 0)
+                    activeShader = m_Data->LightingShader;
+
                 Matrix meshTransform = MatrixMultiply(model.transform, transform);
 
-                DrawMesh(model.meshes[i], material, meshTransform);
+                if (activeShader)
+                {
+                    // Apply standard engine uniforms to custom shaders too (if they want them)
+                    activeShader->SetVec3("lightDir", m_Data->CurrentLightDirection);
+                    activeShader->SetColor("lightColor", m_Data->CurrentLightColor);
+                    activeShader->SetFloat("ambient", m_Data->CurrentAmbientIntensity);
+                    
+                    activeShader->SetInt("fogEnabled", m_Data->FogEnabled ? 1 : 0);
+                    if (m_Data->FogEnabled)
+                    {
+                        activeShader->SetColor("fogColor", m_Data->FogColor);
+                        activeShader->SetFloat("fogDensity", m_Data->FogDensity);
+                        activeShader->SetFloat("fogStart", m_Data->FogStart);
+                        activeShader->SetFloat("fogEnd", m_Data->FogEnd);
+                    }
+
+                    activeShader->SetVec3("viewPos", m_Data->CurrentCameraPosition);
+                    activeShader->SetFloat("uTime", m_Data->Time);
+                    
+                    // Set lights
+                    for (int l = 0; l < RendererData::MaxLights; l++)
+                    {
+                        std::string base = "pointLights[" + std::to_string(l) + "].";
+                        activeShader->SetColor(base + "color", m_Data->PointLights[l].color);
+                        activeShader->SetVec3(base + "position", m_Data->PointLights[l].position);
+                        activeShader->SetFloat(base + "intensity", m_Data->PointLights[l].intensity);
+                        activeShader->SetFloat(base + "radius", m_Data->PointLights[l].radius);
+                        activeShader->SetInt(base + "enabled", m_Data->PointLights[l].enabled ? 1 : 0);
+                    }
+
+                    for (int l = 0; l < RendererData::MaxLights; l++)
+                    {
+                        std::string base = "spotLights[" + std::to_string(l) + "].";
+                        activeShader->SetColor(base + "color", m_Data->SpotLights[l].color);
+                        activeShader->SetVec3(base + "position", m_Data->SpotLights[l].position);
+                        activeShader->SetVec3(base + "direction", m_Data->SpotLights[l].direction);
+                        activeShader->SetFloat(base + "intensity", m_Data->SpotLights[l].intensity);
+                        activeShader->SetFloat(base + "range", m_Data->SpotLights[l].range);
+                        activeShader->SetFloat(base + "innerCutoff", m_Data->SpotLights[l].innerCutoff);
+                        activeShader->SetFloat(base + "outerCutoff", m_Data->SpotLights[l].outerCutoff);
+                        activeShader->SetInt(base + "enabled", m_Data->SpotLights[l].enabled ? 1 : 0);
+                    }
+
+                    // Set untextured support hint
+                    activeShader->SetInt("useTexture", material.maps[MATERIAL_MAP_ALBEDO].texture.id > 0 ? 1 : 0);
+                    
+                    // Set material properties
+                    activeShader->SetColor("colDiffuse", material.maps[MATERIAL_MAP_ALBEDO].color);
+                    
+                    // Set emissive properties
+                    Color colEmissive = material.maps[MATERIAL_MAP_EMISSION].color;
+                    float emissiveIntensity = 0.0f;
+                    int useEmissiveTexture = material.maps[MATERIAL_MAP_EMISSION].texture.id > 0 ? 1 : 0;
+
+                    // Sync with custom MaterialInstance if available
+                    for (const auto& slot : materialSlotOverrides) {
+                        bool match = false;
+                        if (slot.Target == MaterialSlotTarget::MeshIndex && slot.Index == i) match = true;
+                        else if (slot.Target == MaterialSlotTarget::MaterialIndex && slot.Index == model.meshMaterial[i]) match = true;
+                        if (match) {
+                            emissiveIntensity = slot.Material.EmissiveIntensity;
+                            if (slot.Material.OverrideEmissive) colEmissive = slot.Material.EmissiveColor;
+                            break;
+                        }
+                    }
+
+                    // Fallback: If emissive color is set but intensity is 0, default to 1.0
+                    if (emissiveIntensity == 0.0f && (colEmissive.r > 0 || colEmissive.g > 0 || colEmissive.b > 0)) {
+                        emissiveIntensity = 1.0f;
+                    }
+
+                    activeShader->SetColor("colEmissive", colEmissive);
+                    activeShader->SetFloat("emissiveIntensity", emissiveIntensity);
+                    activeShader->SetInt("useEmissiveTexture", useEmissiveTexture);
+                    
+                    // Map Roughness to Shininess for Phong shaders
+                    float shininess = 32.0f; // Default
+                    for (const auto& slot : materialSlotOverrides) {
+                        bool match = false;
+                        if (slot.Target == MaterialSlotTarget::MeshIndex && slot.Index == i) match = true;
+                        else if (slot.Target == MaterialSlotTarget::MaterialIndex && slot.Index == model.meshMaterial[i]) match = true;
+                        if (match) {
+                            shininess = (1.0f - slot.Material.Roughness) * 128.0f;
+                            if (shininess < 1.0f) shininess = 1.0f;
+                            break;
+                        }
+                    }
+                    activeShader->SetFloat("shininess", shininess);
+
+                    // Set global diagnostic mode
+                    activeShader->SetFloat("uMode", m_Data->DiagnosticMode);
+
+                    // Apply custom uniforms from ShaderComponent
+                    for (const auto& u : shaderUniformOverrides)
+                    {
+                        if (u.Type == 0) activeShader->SetFloat(u.Name, u.Value[0]);
+                        else if (u.Type == 1) activeShader->SetVec2(u.Name, {u.Value[0], u.Value[1]});
+                        else if (u.Type == 2) activeShader->SetVec3(u.Name, {u.Value[0], u.Value[1], u.Value[2]});
+                        else if (u.Type == 3) activeShader->SetVec4(u.Name, {u.Value[0], u.Value[1], u.Value[2], u.Value[3]});
+                        else if (u.Type == 4) activeShader->SetColor(u.Name, Color{(unsigned char)(u.Value[0]*255), (unsigned char)(u.Value[1]*255), (unsigned char)(u.Value[2]*255), (unsigned char)(u.Value[3]*255)});
+                    }
+
+                    // Actually apply the shader to the material for this draw call
+                    Shader originalShader = material.shader;
+                    material.shader = activeShader->GetShader();
+                    
+                    ProfilerStats stats;
+                    stats.DrawCalls++;
+                    stats.MeshCount++;
+                    stats.PolyCount += model.meshes[i].triangleCount;
+                    Profiler::UpdateStats(stats);
+
+                    DrawMesh(model.meshes[i], material, meshTransform);
+                    
+                    material.shader = originalShader;
+                }
+                else
+                {
+                    // Fallback DrawMesh
+                    DrawMesh(model.meshes[i], material, meshTransform);
+                }
             }
         }
         else
@@ -297,6 +418,41 @@ namespace CHEngine
         m_Data->CurrentAmbientIntensity = intensity;
     }
 
+    void Renderer::SetPointLight(int index, Vector3 position, Color color, float intensity, float radius)
+    {
+        if (index < 0 || index >= RendererData::MaxLights) return;
+        m_Data->PointLights[index].position = position;
+        m_Data->PointLights[index].color = color;
+        m_Data->PointLights[index].intensity = intensity;
+        m_Data->PointLights[index].radius = radius;
+        m_Data->PointLights[index].enabled = true;
+    }
+
+    void Renderer::SetSpotLight(int index, Vector3 position, Vector3 direction, Color color, float intensity, float range, float innerCutoff, float outerCutoff)
+    {
+        if (index < 0 || index >= RendererData::MaxLights) return;
+        m_Data->SpotLights[index].position = position;
+        m_Data->SpotLights[index].direction = direction;
+        m_Data->SpotLights[index].color = color;
+        m_Data->SpotLights[index].intensity = intensity;
+        m_Data->SpotLights[index].range = range;
+        m_Data->SpotLights[index].innerCutoff = innerCutoff;
+        m_Data->SpotLights[index].outerCutoff = outerCutoff;
+        m_Data->SpotLights[index].enabled = true;
+    }
+
+    void Renderer::ClearPointLights()
+    {
+        for (int i = 0; i < RendererData::MaxLights; i++)
+            m_Data->PointLights[i].enabled = false;
+    }
+
+    void Renderer::ClearSpotLights()
+    {
+        for (int i = 0; i < RendererData::MaxLights; i++)
+            m_Data->SpotLights[i].enabled = false;
+    }
+
     void Renderer::ApplyEnvironment(const EnvironmentSettings& settings)
     {
         SetAmbientLight(settings.AmbientIntensity);
@@ -308,6 +464,11 @@ namespace CHEngine
         m_Data->FogDensity = settings.Fog.Density;
         m_Data->FogStart = settings.Fog.Start;
         m_Data->FogEnd = settings.Fog.End;
+    }
+
+    void Renderer::SetDiagnosticMode(float mode)
+    {
+        m_Data->DiagnosticMode = mode;
     }
 
     void Renderer::UpdateTime(Timestep time)

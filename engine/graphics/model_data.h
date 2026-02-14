@@ -19,12 +19,17 @@ namespace CHEngine
     struct RawMaterial {
         std::string albedoPath;
         Color albedoColor = WHITE;
+
+        std::string emissivePath;
+        Color emissiveColor = BLACK;
+        float emissiveIntensity = 0.0f;
     };
 
     // Track textures that are still loading
     struct PendingTexture {
         int materialIndex;
         std::string path;
+        int mapIndex; // MATERIAL_MAP_ALBEDO, MATERIAL_MAP_EMISSION, etc.
     };
 
     // CPU-side data for async loading (loaded in worker thread)

@@ -10,6 +10,7 @@
 #include "engine/graphics/model_asset.h"
 #include "engine/scene/project.h"
 #include "engine/physics/bvh/bvh.h"
+#include <yaml-cpp/yaml.h>
 
 namespace CHEngine
 {
@@ -175,19 +176,29 @@ namespace CHEngine
 
         Register<PointLightComponent>("Point Light", [](auto& component, auto entity) {
             auto pb = EditorGUI::Begin();
+            ImGui::TextDisabled("Omnidirectional light source");
             pb.Color("Color", component.LightColor)
               .Float("Intensity", component.Intensity, 0.1f, 0.0f, 100.0f)
               .Float("Radius", component.Radius, 0.1f, 0.0f, 1000.0f);
+            
+            if (component.Radius <= 0.01f)
+                ImGui::TextColored({1, 1, 0, 1}, ICON_FA_CIRCLE_EXCLAMATION " Radius is 0 (Invisible!)");
+
             return pb.Changed;
         });
 
         Register<SpotLightComponent>("Spot Light", [](auto& component, auto entity) {
             auto pb = EditorGUI::Begin();
+            ImGui::TextDisabled("Directional cone light source");
             pb.Color("Color", component.LightColor)
               .Float("Intensity", component.Intensity, 0.1f, 0.0f, 100.0f)
               .Float("Range", component.Range, 0.1f, 0.0f, 1000.0f)
               .Float("Inner Cutoff", component.InnerCutoff, 0.1f, 0.0f, 90.0f)
               .Float("Outer Cutoff", component.OuterCutoff, 0.1f, 0.0f, 90.0f);
+            
+            if (component.Range <= 0.01f)
+                ImGui::TextColored({1, 1, 0, 1}, ICON_FA_CIRCLE_EXCLAMATION " Range is 0 (Invisible!)");
+
             return pb.Changed;
         });
 
@@ -242,6 +253,91 @@ namespace CHEngine
             
             if (EditorGUI::Property("Auto Calculate", component.AutoCalculate)) changed = true;
             return changed;
+        });
+
+        Register<ShaderComponent>("Shader", [](auto& component, auto entity) {
+            auto pb = EditorGUI::Begin();
+            pb.File("Shader Path", component.ShaderPath, "chshader")
+              .Bool("Enabled", component.Enabled);
+            
+            if (!component.Uniforms.empty() && ImGui::TreeNodeEx("Uniforms", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                for (auto& u : component.Uniforms)
+                {
+                    ImGui::PushID(u.Name.c_str());
+                    if (u.Type == 0) { if (ImGui::DragFloat(u.Name.c_str(), &u.Value[0], 0.05f)) pb.Changed = true; }
+                    else if (u.Type == 1) { if (ImGui::DragFloat2(u.Name.c_str(), u.Value, 0.05f)) pb.Changed = true; }
+                    else if (u.Type == 2) { if (ImGui::DragFloat3(u.Name.c_str(), u.Value, 0.05f)) pb.Changed = true; }
+                    else if (u.Type == 3) { if (ImGui::DragFloat4(u.Name.c_str(), u.Value, 0.05f)) pb.Changed = true; }
+                    else if (u.Type == 4) { if (ImGui::ColorEdit4(u.Name.c_str(), u.Value)) pb.Changed = true; }
+                    ImGui::PopID();
+                }
+                ImGui::TreePop();
+            }
+
+            ImGui::Separator();
+            if (ImGui::Button(ICON_FA_ARROWS_ROTATE " Sync Uniforms"))
+            {
+                if (auto project = Project::GetActive())
+                {
+                    std::string fullPath = project->GetAssetManager()->ResolvePath(component.ShaderPath);
+                    if (std::filesystem::exists(fullPath))
+                    {
+                        try {
+                            YAML::Node config = YAML::LoadFile(fullPath);
+                            if (config["Uniforms"])
+                            {
+                                // We don't want to lose values if possible, 
+                                // but we want to match the metadata list.
+                                std::vector<ShaderUniform> newUniforms;
+                                for (auto uNode : config["Uniforms"])
+                                {
+                                    std::string name = uNode.as<std::string>();
+                                    // Skip standard uniforms that are managed by engine
+                                    if (name == "mvp" || name == "matModel" || name == "matNormal" || 
+                                        name == "viewPos" || name == "lightDir" || name == "lightColor" || 
+                                        name == "ambient" || name == "uTime" || name == "useTexture" ||
+                                        name == "colDiffuse" || name == "texture0" || name == "shininess" ||
+                                        name == "fogEnabled" || name == "fogColor" || name == "fogDensity" ||
+                                        name == "fogStart" || name == "fogEnd" ||
+                                        name.find("pointLights") != std::string::npos ||
+                                        name.find("spotLights") != std::string::npos ||
+                                        name == "boneMatrices")
+                                        continue;
+
+                                    // Find existing to preserve value
+                                    auto it = std::find_if(component.Uniforms.begin(), component.Uniforms.end(), [&](const auto& existing) { return existing.Name == name; });
+                                    if (it != component.Uniforms.end())
+                                    {
+                                        newUniforms.push_back(*it);
+                                    }
+                                    else
+                                    {
+                                        // Default to float for now, user can change if we add type detection
+                                        // or if we add type to .chshader
+                                        ShaderUniform u;
+                                        u.Name = name;
+                                        u.Type = name.find("Color") != std::string::npos ? 4 : 0; // Guess type
+                                        newUniforms.push_back(u);
+                                    }
+                                }
+                                component.Uniforms = newUniforms;
+                                pb.Changed = true;
+                            }
+                        } catch (...) {
+                            CH_CORE_ERROR("PropertyEditor: Failed to sync uniforms from {}", component.ShaderPath);
+                        }
+                    }
+                }
+            }
+            ImGui::SameLine();
+            if (ImGui::Button(ICON_FA_TRASH " Clear"))
+            {
+                component.Uniforms.clear();
+                pb.Changed = true;
+            }
+
+            return pb.Changed;
         });
 
         Register<AudioComponent>("Audio", [](auto& component, auto entity) {
@@ -359,16 +455,6 @@ namespace CHEngine
             return pb.Changed;
         });
 
-        Register<ShaderComponent>("Shader", [](auto& component, auto entity) {
-            bool changed = EditorGUI::Begin().File("Shader Path", component.ShaderPath, "glsl,vert,frag");
-            if (ImGui::TreeNodeEx("Uniforms", ImGuiTreeNodeFlags_DefaultOpen))
-            {
-                for (auto& u : component.Uniforms)
-                    ImGui::Text("%s", u.Name.c_str());
-                ImGui::TreePop();
-            }
-            return changed;
-        });
 
         // --- UI Widgets ---
         Register<ControlComponent>("Rect Transform", [](auto& component, auto entity) {
@@ -837,11 +923,11 @@ namespace CHEngine
                 
                 ImGui::Separator();
                 
-                // PBR
-                ImGui::Text("PBR Properties");
-                EditorGUI::Property("Metalness", mat.Metalness, 0.01f, 0.0f, 1.0f);
-                EditorGUI::Property("Roughness", mat.Roughness, 0.01f, 0.0f, 1.0f);
-                EditorGUI::Property("Normal Map", mat.NormalMapPath, "Texture Files (*.png *.jpg *.tga *.bmp)\0*.png;*.jpg;*.tga;*.bmp\0");
+                // Emissive
+                ImGui::Text("Emissive Bloom");
+                if (EditorGUI::Property("Emissive Color", mat.EmissiveColor)) mat.OverrideEmissive = true;
+                EditorGUI::Property("Intensity", mat.EmissiveIntensity, 0.1f, 0.0f, 100.0f);
+                EditorGUI::Property("Texture", mat.EmissivePath, "Texture Files (*.png *.jpg *.tga *.bmp)\0*.png;*.jpg;*.tga;*.bmp\0");
                 
                 // Rendering
                 ImGui::Separator();

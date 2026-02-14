@@ -52,10 +52,24 @@ namespace CHEngine
                     else if (textureAsset) {
                         CH_CORE_WARN("ModelAsset: Texture '{}' exists but not ready (state: {}). Adding to pending.", 
                             rawMaterial.albedoPath, (int)textureAsset->GetState());
-                        m_PendingTextures.push_back({i, rawMaterial.albedoPath});
+                        m_PendingTextures.push_back({i, rawMaterial.albedoPath, MATERIAL_MAP_ALBEDO});
                     }
                     else {
                         CH_CORE_WARN("ModelAsset: Failed to load texture '{}'", rawMaterial.albedoPath);
+                    }
+                }
+
+                // Handle Emissive
+                model.materials[i].maps[MATERIAL_MAP_EMISSION].color = rawMaterial.emissiveColor;
+                
+                if (!rawMaterial.emissivePath.empty() && project) {
+                    auto textureAsset = project->GetAssetManager()->Get<TextureAsset>(rawMaterial.emissivePath);
+                    if (textureAsset && textureAsset->IsReady()) {
+                        model.materials[i].maps[MATERIAL_MAP_EMISSION].texture = textureAsset->GetTexture();
+                        m_Textures.push_back(textureAsset);
+                    }
+                    else if (textureAsset) {
+                        m_PendingTextures.push_back({i, rawMaterial.emissivePath, MATERIAL_MAP_EMISSION});
                     }
                 }
             }
@@ -143,7 +157,7 @@ namespace CHEngine
                 
                 if (it->materialIndex >= 0 && it->materialIndex < m_Model.materialCount)
                 {
-                    m_Model.materials[it->materialIndex].maps[MATERIAL_MAP_ALBEDO].texture = textureAsset->GetTexture();
+                    m_Model.materials[it->materialIndex].maps[it->mapIndex].texture = textureAsset->GetTexture();
                     m_Textures.push_back(textureAsset);
                 }
                 

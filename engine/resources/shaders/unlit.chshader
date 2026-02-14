@@ -1,0 +1,22 @@
+# KISS Unlit Shader
+VertexShader: lighting.vs
+FragmentShader: unlit.fs
+
+Uniforms:
+  - mvp
+  - matModel
+  - matNormal
+  - viewPos
+  - texture0
+  - texture1
+  - colDiffuse
+  - colEmissive
+  - useTexture
+  - useEmissiveTexture
+  - emissiveIntensity
+  - fogEnabled
+  - fogColor
+  - fogDensity
+  - fogStart
+  - fogEnd
+  - uTime

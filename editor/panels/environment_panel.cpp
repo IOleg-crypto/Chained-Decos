@@ -139,6 +139,16 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
     {
         bool is3D = m_Context->GetSettings().Mode == BackgroundMode::Environment3D;
         ImGui::Separator();
+        ImGui::Text("Viewport Tools");
+
+        const char* diagnosticModes[] = { "Normal Render", "Normals visualization", "Lighting only", "Albedo only" };
+        int currentDiag = (int)Renderer::Get().GetData().DiagnosticMode;
+        if (ImGui::Combo("Diagnostic Mode", &currentDiag, diagnosticModes, 4))
+        {
+            Renderer::Get().SetDiagnosticMode((float)currentDiag);
+        }
+
+        ImGui::Separator();
         ImGui::Text("Debug Rendering");
 
         if (!is3D)
