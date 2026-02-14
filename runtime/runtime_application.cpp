@@ -33,6 +33,14 @@ public:
 
     virtual void OnUpdate(Timestep ts) override
     {
+        // Process deferred scene transition (safe - not inside scene update)
+        if (!m_PendingScenePath.empty())
+        {
+            std::string path = m_PendingScenePath;
+            m_PendingScenePath.clear();
+            LoadScene(path);
+        }
+
         if (m_Scene)
             m_Scene->OnUpdateRuntime(ts);
     }
@@ -80,7 +88,10 @@ public:
             
             if (ImGui::Begin("RuntimeUI", nullptr, flags))
             {
-                UIRenderer::Get().DrawCanvas(m_Scene.get(), {0, 0}, viewport->WorkSize, false);
+                // Use ImGui's content area coordinates — same as editor viewport
+                ImVec2 canvasPos = ImGui::GetCursorScreenPos();
+                ImVec2 canvasSize = ImGui::GetContentRegionAvail();
+                UIRenderer::Get().DrawCanvas(m_Scene.get(), canvasPos, canvasSize, false);
                 SceneScripting::RenderUI(m_Scene.get());
             }
             ImGui::End();
@@ -92,7 +103,8 @@ public:
     {
         EventDispatcher dispatcher(e);
         dispatcher.Dispatch<SceneChangeRequestEvent>([this](auto& ev) {
-            LoadScene(ev.GetPath());
+            // Defer scene load to next frame to avoid destroying scene mid-update
+            m_PendingScenePath = ev.GetPath();
             return true;
         });
 
@@ -119,8 +131,64 @@ public:
         // 1. Register Scripts BEFORE deserialization
         if (m_ScriptCallback) {
             m_ScriptCallback(m_Scene.get());
+            CH_CORE_INFO("Runtime: Registered scripts via static callback for: {}", finalPath);
         } else {
-            CH_CORE_WARN("Runtime: No script registration callback provided!");
+            // Attempt to load game module dynamically
+            auto project = Project::GetActive();
+            
+            if (project && project->GetConfig().Scripting.AutoLoad)
+            {
+                const auto& scripting = project->GetConfig().Scripting;
+                std::string moduleName = scripting.ModuleName;
+                if (moduleName.empty())
+                    moduleName = project->GetConfig().Name + "game";
+
+                #ifdef CH_PLATFORM_WINDOWS
+                std::string dllName = moduleName + ".dll";
+                #else
+                std::string dllName = "lib" + moduleName + ".so";
+                #endif
+
+                std::filesystem::path binDir = std::filesystem::path(Application::Get().GetSpecification().CommandLineArgs.Args[0]).parent_path();
+                std::filesystem::path projectDir = project->GetProjectDirectory();
+                
+                std::vector<std::filesystem::path> searchPaths;
+                
+                // 1. Explicit ModuleDirectory (relative to project)
+                if (!scripting.ModuleDirectory.empty())
+                {
+                    if (scripting.ModuleDirectory.is_absolute())
+                        searchPaths.push_back(scripting.ModuleDirectory / dllName);
+                    else
+                        searchPaths.push_back(projectDir / scripting.ModuleDirectory / dllName);
+                }
+
+                // 2. Project Root / bin
+                searchPaths.push_back(projectDir / "bin" / dllName);
+                searchPaths.push_back(projectDir / dllName);
+
+                // 3. Executable Directory
+                searchPaths.push_back(binDir / dllName);
+
+                bool loaded = false;
+                for (const auto& path : searchPaths)
+                {
+                    if (std::filesystem::exists(path))
+                    {
+                        if (ModuleLoader::LoadGameModule(path.string(), &m_Scene->GetScriptRegistry()))
+                        {
+                            CH_CORE_INFO("Runtime: Loaded scripts from: {}", path.string());
+                            loaded = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!loaded)
+                {
+                    CH_CORE_WARN("Runtime: Failed to find or load game module '{}'. Checked {} locations.", moduleName, searchPaths.size());
+                }
+            }
         }
 
         // 2. Deserialize scene (NativeScriptComponent will now find registered factories)
@@ -158,6 +226,7 @@ private:
     std::shared_ptr<Scene> m_Scene;
     std::unique_ptr<SceneRenderer> m_SceneRenderer;
     RuntimeApplication::ScriptRegistrationCallback m_ScriptCallback;
+    std::string m_PendingScenePath;
 };
 
 
@@ -241,30 +310,86 @@ private:
         std::filesystem::path iconPath = "";
         if (!config.IconPath.empty())
         {
-            iconPath = project->GetAssetManager()->ResolvePath(config.IconPath);
+            CH_CORE_INFO("Icon: Trying to resolve '{}'", config.IconPath);
+
+            // Try resolving via AssetManager search paths
+            std::string resolved = project->GetAssetManager()->ResolvePath(config.IconPath);
+            if (std::filesystem::exists(resolved))
+            {
+                iconPath = resolved;
+                CH_CORE_INFO("Icon: Found via AssetManager: {}", resolved);
+            }
+            else
+            {
+                CH_CORE_WARN("Icon: AssetManager resolved to '{}' but it doesn't exist", resolved);
+                
+                // Try relative to project directory
+                std::filesystem::path projectRelative = project->GetProjectDirectory() / config.IconPath;
+                if (std::filesystem::exists(projectRelative))
+                {
+                    iconPath = projectRelative;
+                    CH_CORE_INFO("Icon: Found relative to project: {}", projectRelative.string());
+                }
+                // Try relative to engine root
+                else if (!Project::GetEngineRoot().empty())
+                {
+                    std::filesystem::path engineRelative = Project::GetEngineRoot() / config.IconPath;
+                    if (std::filesystem::exists(engineRelative))
+                    {
+                        iconPath = engineRelative;
+                        CH_CORE_INFO("Icon: Found relative to engine root: {}", engineRelative.string());
+                    }
+                    else
+                    {
+                        CH_CORE_WARN("Icon: Not found at engine root: {}", engineRelative.string());
+                    }
+                }
+                
+                // Try relative to executable directory
+                if (iconPath.empty())
+                {
+                    std::filesystem::path exeDir = std::filesystem::path(
+                        Application::Get().GetSpecification().CommandLineArgs.Args[0]).parent_path();
+                    std::filesystem::path exeRelative = exeDir / config.IconPath;
+                    if (std::filesystem::exists(exeRelative))
+                    {
+                        iconPath = exeRelative;
+                        CH_CORE_INFO("Icon: Found relative to exe: {}", exeRelative.string());
+                    }
+                }
+            }
         }
 
-        // Fallback icon discovery in project root/assets if not explicitly set
+        // Fallback icon discovery
         if (iconPath.empty() || !std::filesystem::exists(iconPath))
         {
-             std::vector<std::string> iconNames = {"icon.png", "icon.jpg", "assets/icon.png", "engine/resources/icons/chaineddecos.jpg"};
+             std::vector<std::string> iconNames = {"icon.png", "icon.jpg", "assets/icon.png"};
              for (const auto& name : iconNames)
              {
-                 std::filesystem::path p = project->GetAssetManager()->ResolvePath(name);
+                 std::filesystem::path p = project->GetProjectDirectory() / name;
                  if (std::filesystem::exists(p))
                  {
                      iconPath = p;
                      break;
                  }
              }
+             if (iconPath.empty())
+                 CH_CORE_WARN("Icon: No icon found (config='{}', engineRoot='{}')", 
+                     config.IconPath, Project::GetEngineRoot().string());
         }
 
         if (std::filesystem::exists(iconPath))
         {
             Image icon = LoadImage(iconPath.string().c_str());
+            
             if (icon.data != nullptr)
             {
+                // GLFW requires RGBA format for window icons
+                if (icon.format != PIXELFORMAT_UNCOMPRESSED_R8G8B8A8)
+                    ImageFormat(&icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+                
                 window.SetWindowIcon(icon);
+                CH_CORE_INFO("Loaded icon {}" , iconPath.string());
                 UnloadImage(icon);
             }
         }

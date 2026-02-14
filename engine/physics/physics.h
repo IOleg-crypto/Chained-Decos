@@ -65,6 +65,7 @@ namespace CHEngine
         // Localized BVH cache to avoid global static state
         std::unordered_map<ModelAsset*, std::shared_future<std::shared_ptr<BVH>>> m_BVHCache;
         mutable std::mutex m_BVHMutex;
+        float m_Accumulator = 0.0f;
     };
 }
 

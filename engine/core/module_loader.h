@@ -1,14 +1,16 @@
 #ifndef CH_MODULE_LOADER_H
 #define CH_MODULE_LOADER_H
 
-#include "engine/scene/scene.h"
 #include <string>
 
 namespace CHEngine {
 
+    class ScriptRegistry;
+
     class ModuleLoader {
     public:
-        static bool LoadGameModule(const std::string& dllPath, Scene* scene);
+        // ABI-safe: loads DLL, passes a C-callback for script registration
+        static bool LoadGameModule(const std::string& dllPath, ScriptRegistry* registry);
         static void UnloadGameModule();
     };
 

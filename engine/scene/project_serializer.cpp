@@ -37,6 +37,7 @@ bool ProjectSerializer::Serialize(const std::filesystem::path &filepath)
 
         out << YAML::Key << "Physics" << YAML::Value << YAML::BeginMap;
         out << YAML::Key << "Gravity" << YAML::Value << config.Physics.Gravity;
+        out << YAML::Key << "FixedTimestep" << YAML::Value << config.Physics.FixedTimestep;
         out << YAML::EndMap;
 
         out << YAML::Key << "Animation" << YAML::Value << YAML::BeginMap;
@@ -65,6 +66,12 @@ bool ProjectSerializer::Serialize(const std::filesystem::path &filepath)
         out << YAML::Key << "CameraMoveSpeed" << YAML::Value << config.Editor.CameraMoveSpeed;
         out << YAML::Key << "CameraRotationSpeed" << YAML::Value << config.Editor.CameraRotationSpeed;
         out << YAML::Key << "CameraBoostMultiplier" << YAML::Value << config.Editor.CameraBoostMultiplier;
+        out << YAML::EndMap;
+
+        out << YAML::Key << "Scripting" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "ModuleName" << YAML::Value << config.Scripting.ModuleName;
+        out << YAML::Key << "ModuleDirectory" << YAML::Value << config.Scripting.ModuleDirectory.string();
+        out << YAML::Key << "AutoLoad" << YAML::Value << config.Scripting.AutoLoad;
         out << YAML::EndMap;
 
         out << YAML::Key << "LaunchProfiles" << YAML::Value << YAML::BeginSeq;
@@ -132,7 +139,11 @@ bool ProjectSerializer::Deserialize(const std::filesystem::path &filepath)
     }
 
     if (projectNode["Physics"])
+    {
         config.Physics.Gravity = projectNode["Physics"]["Gravity"].as<float>();
+        if (projectNode["Physics"]["FixedTimestep"])
+            config.Physics.FixedTimestep = projectNode["Physics"]["FixedTimestep"].as<float>();
+    }
 
     if (projectNode["Animation"])
         config.Animation.TargetFPS = projectNode["Animation"]["TargetFPS"].as<float>();
@@ -163,6 +174,15 @@ bool ProjectSerializer::Deserialize(const std::filesystem::path &filepath)
         config.Editor.CameraMoveSpeed = projectNode["Editor"]["CameraMoveSpeed"].as<float>();
         config.Editor.CameraRotationSpeed = projectNode["Editor"]["CameraRotationSpeed"].as<float>();
         config.Editor.CameraBoostMultiplier = projectNode["Editor"]["CameraBoostMultiplier"].as<float>();
+    }
+
+    if (projectNode["Scripting"])
+    {
+        config.Scripting.ModuleName = projectNode["Scripting"]["ModuleName"].as<std::string>();
+        if (projectNode["Scripting"]["ModuleDirectory"])
+            config.Scripting.ModuleDirectory = projectNode["Scripting"]["ModuleDirectory"].as<std::string>();
+        if (projectNode["Scripting"]["AutoLoad"])
+            config.Scripting.AutoLoad = projectNode["Scripting"]["AutoLoad"].as<bool>();
     }
 
     if (projectNode["LaunchProfiles"])
