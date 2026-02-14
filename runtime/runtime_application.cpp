@@ -242,10 +242,7 @@ private:
 
         if (InitProject(projectPath))
         {
-            if (LoadModule())
-            {
-                // Initial scene loading is handled by InitProject as part of bootstrap
-            }
+            LoadModule();
         }
     }
 

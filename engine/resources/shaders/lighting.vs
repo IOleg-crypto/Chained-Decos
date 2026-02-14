@@ -46,7 +46,7 @@ void main()
     fragPosition = vec3(matModel * vec4(vPos, 1.0));
     fragTexCoord = vertexTexCoord;
     
-    // Default to white if vertex color is likely uninitialized/black
+    // Default to white if vertex color is absent or black with zero alpha
     if (vertexColor.a > 0.0) fragColor = vertexColor;
     else fragColor = vec4(1.0, 1.0, 1.0, 1.0);
 
