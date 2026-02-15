@@ -11,7 +11,7 @@ Canvas:
 EnvironmentPath: environments/new_environment.chenv
 LightDirection: [0.0799999982, 1, 1]
 LightColor: [255, 244, 244, 255]
-AmbientIntensity: 0
+AmbientIntensity: 1.14999998
 Skybox:
   TexturePath: skyboxes/starry night preview4.png
   Exposure: 1
@@ -28,8 +28,8 @@ Entities:
     TagComponent:
       Tag: SceneCamera
     TransformComponent:
-      Translation: [74.4722366, 94.6113586, 228.781982]
-      Rotation: [-24.7999821, 9.60002518, 0]
+      Translation: [-64.4896774, 44.312294, 10.1151295]
+      Rotation: [-24.7999649, -88.7998962, 0]
       Scale: [1, 1, 1]
     CameraComponent:
       Primary: true
@@ -328,3 +328,18 @@ Entities:
     NativeScriptComponent:
       Scripts:
         - OrbitCameraController
+  - Entity: 11545798621230647676
+    TagComponent:
+      Tag: Empty Entity
+    TransformComponent:
+      Translation: [0, 12.199892, -4.79324722]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/ghost/Untitledb.glb
+    AnimationComponent:
+      AnimationPath: models\ghost\Untitledb.glb
+      CurrentAnimationIndex: 0
+      IsLooping: true
+      IsPlaying: true

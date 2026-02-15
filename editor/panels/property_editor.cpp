@@ -479,6 +479,36 @@ namespace CHEngine
             return changed;
         });
 
+        Register<AnimationComponent>("Animation", [](auto& component, auto entity) {
+            auto pb = EditorGUI::Begin();
+            bool changed = false;
+
+            if (pb.File("Animation Source", component.AnimationPath, "glb,gltf,iqm,m3d").Changed) changed = true;
+
+            int animCount = 0;
+            if (entity.template HasComponent<ModelComponent>())
+            {
+                auto& mc = entity.template GetComponent<ModelComponent>();
+                if (mc.Asset) animCount = mc.Asset->GetAnimationCount();
+            }
+
+            if (animCount > 0)
+            {
+                if (pb.Int("Animation Index", component.CurrentAnimationIndex, 0, animCount - 1).Changed) changed = true;
+            }
+            else
+            {
+                ImGui::TextDisabled(ICON_FA_CIRCLE_EXCLAMATION " No animations found in ModelAsset.");
+            }
+
+            if (pb.Bool("Loop", component.IsLooping).Changed) changed = true;
+            if (pb.Bool("Playing", component.IsPlaying).Changed) changed = true;
+
+            ImGui::Text("Current Frame: %d", component.CurrentFrame);
+
+            return changed || pb.Changed;
+        });
+
         Register<ModelComponent>("Model", [](auto& component, auto entity) {
             bool changed = false;
             if (EditorGUI::Begin().File("Model Path", component.ModelPath, "obj,gltf,glb")) changed = true;
