@@ -41,6 +41,7 @@ public:
     void SetVec4(const std::string& name, const Vector4& value);
     void SetColor(const std::string& name, const Color& value);
     void SetMatrix(const std::string& name, const Matrix& value);
+    void SetMatrices(const std::string& name, const Matrix* values, int count);
 
 private:
     Shader m_Shader = { 0 };
