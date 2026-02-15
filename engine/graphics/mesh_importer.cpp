@@ -42,13 +42,17 @@ namespace CHEngine
 
                 cgltf_accessor* positionAccessor = nullptr;
                 cgltf_accessor* normalAccessor = nullptr;
+                cgltf_accessor* tangentAccessor = nullptr;
                 cgltf_accessor* texCoordAccessor = nullptr;
+                cgltf_accessor* colorAccessor = nullptr;
 
                 for (size_t k = 0; k < primitive.attributes_count; ++k) {
                     const cgltf_attribute& attribute = primitive.attributes[k];
                     if (attribute.type == cgltf_attribute_type_position) positionAccessor = attribute.data;
                     else if (attribute.type == cgltf_attribute_type_normal) normalAccessor = attribute.data;
+                    else if (attribute.type == cgltf_attribute_type_tangent) tangentAccessor = attribute.data;
                     else if (attribute.type == cgltf_attribute_type_texcoord) texCoordAccessor = attribute.data;
+                    else if (attribute.type == cgltf_attribute_type_color) colorAccessor = attribute.data;
                 }
 
                 if (positionAccessor) {
@@ -83,11 +87,52 @@ namespace CHEngine
                     }
                 }
 
+                if (tangentAccessor) {
+                    size_t count = tangentAccessor->count;
+                    rawMesh.tangents.resize(count * 4);
+                    cgltf_accessor_unpack_floats(tangentAccessor, rawMesh.tangents.data(), rawMesh.tangents.size());
+
+                    Matrix normalMatrix = worldTransform;
+                    normalMatrix.m12 = 0; normalMatrix.m13 = 0; normalMatrix.m14 = 0;
+
+                    for (size_t v = 0; v < count; ++v) {
+                        Vector3 tangent = { rawMesh.tangents[v*4], rawMesh.tangents[v*4+1], rawMesh.tangents[v*4+2] };
+                        float w = rawMesh.tangents[v*4+3];
+                        
+                        Vector3 transformedTangent = Vector3Transform(tangent, normalMatrix);
+                        transformedTangent = Vector3Normalize(transformedTangent);
+                        
+                        rawMesh.tangents[v*4] = transformedTangent.x;
+                        rawMesh.tangents[v*4+1] = transformedTangent.y;
+                        rawMesh.tangents[v*4+2] = transformedTangent.z;
+                        rawMesh.tangents[v*4+3] = w;
+                    }
+                }
+
                 if (texCoordAccessor) {
                     rawMesh.texcoords.resize(texCoordAccessor->count * 2);
                     cgltf_accessor_unpack_floats(texCoordAccessor, rawMesh.texcoords.data(), rawMesh.texcoords.size());
                     for (size_t v = 1; v < rawMesh.texcoords.size(); v += 2) {
                         rawMesh.texcoords[v] = 1.0f - rawMesh.texcoords[v];
+                    }
+                }
+
+                if (colorAccessor) {
+                    size_t count = colorAccessor->count;
+                    std::vector<float> tempColors;
+                    int components = (colorAccessor->type == cgltf_type_vec4) ? 4 : 3;
+                    tempColors.resize(count * components);
+                    cgltf_accessor_unpack_floats(colorAccessor, tempColors.data(), tempColors.size());
+
+                    rawMesh.colors.resize(count * 4); // Always RGBA for Raylib
+                    for (size_t v = 0; v < count; ++v) {
+                        rawMesh.colors[v*4+0] = (unsigned char)(tempColors[v*components+0] * 255.0f);
+                        rawMesh.colors[v*4+1] = (unsigned char)(tempColors[v*components+1] * 255.0f);
+                        rawMesh.colors[v*4+2] = (unsigned char)(tempColors[v*components+2] * 255.0f);
+                        if (components == 4)
+                            rawMesh.colors[v*4+3] = (unsigned char)(tempColors[v*components+3] * 255.0f);
+                        else
+                            rawMesh.colors[v*4+3] = 255;
                     }
                 }
 
@@ -133,6 +178,20 @@ namespace CHEngine
                 material.albedoColor.g = (unsigned char)(pbr.base_color_factor[1] * 255);
                 material.albedoColor.b = (unsigned char)(pbr.base_color_factor[2] * 255);
                 material.albedoColor.a = (unsigned char)(pbr.base_color_factor[3] * 255);
+
+                if (pbr.metallic_roughness_texture.texture && pbr.metallic_roughness_texture.texture->image && pbr.metallic_roughness_texture.texture->image->uri) {
+                    material.metallicRoughnessPath = (modelDir / pbr.metallic_roughness_texture.texture->image->uri).string();
+                }
+                material.metalness = pbr.metallic_factor;
+                material.roughness = pbr.roughness_factor;
+            }
+
+            if (gltf_material.normal_texture.texture && gltf_material.normal_texture.texture->image && gltf_material.normal_texture.texture->image->uri) {
+                material.normalPath = (modelDir / gltf_material.normal_texture.texture->image->uri).string();
+            }
+
+            if (gltf_material.occlusion_texture.texture && gltf_material.occlusion_texture.texture->image && gltf_material.occlusion_texture.texture->image->uri) {
+                material.occlusionPath = (modelDir / gltf_material.occlusion_texture.texture->image->uri).string();
             }
 
             if (gltf_material.has_emissive_strength) {

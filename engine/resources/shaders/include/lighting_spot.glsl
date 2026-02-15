@@ -1,11 +1,11 @@
-vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 baseColor, float shininess)
+vec3 CalcSpotLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 baseColor, float shininess)
 {
     if (light.enabled == 0) return vec3(0.0);
 
     vec3 lightVector = light.position - fragPos;
     float distance = length(lightVector);
 
-    if (distance >= light.range) return vec3(0.0);
+    if (distance >= light.radius) return vec3(0.0);
 
     vec3 L = normalize(lightVector);
     float cosTheta = dot(L, normalize(-light.direction));
@@ -18,7 +18,7 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec
     float NdotL = max(dot(normal, L), 0.0);
     
     // Attenuation
-    float attenuation = max(0.0, 1.0 - (distance / light.range));
+    float attenuation = max(0.0, 1.0 - (distance / light.radius));
     attenuation = pow(attenuation, 1.5);
     
     // Diffuse

@@ -174,6 +174,12 @@ namespace CHEngine
             archive.Property("Translation", component.Translation)
                    .Property("Rotation", component.Rotation)
                    .Property("Scale", component.Scale);
+            
+            // Recalculate Quat from Euler after deserialization
+            if (archive.GetMode() == SerializationUtils::PropertyArchive::Deserialize)
+            {
+                component.SetRotation(component.Rotation);
+            }
         });
 
         Register<ModelComponent>("ModelComponent", [](auto& archive, auto& component) {
@@ -181,16 +187,11 @@ namespace CHEngine
                    .Path("ModelPath", component.ModelPath);
         });
 
-        Register<PointLightComponent>("PointLightComponent", [](auto& archive, auto& component) {
-            archive.Property("LightColor", component.LightColor)
+        Register<LightComponent>("LightComponent", [](auto& archive, auto& component) {
+            archive.Property("Type", (int&)component.Type)
+                   .Property("LightColor", component.LightColor)
                    .Property("Intensity", component.Intensity)
-                   .Property("Radius", component.Radius);
-        });
-
-        Register<SpotLightComponent>("SpotLightComponent", [](auto& archive, auto& component) {
-            archive.Property("LightColor", component.LightColor)
-                   .Property("Intensity", component.Intensity)
-                   .Property("Range", component.Range)
+                   .Property("Radius", component.Radius)
                    .Property("InnerCutoff", component.InnerCutoff)
                    .Property("OuterCutoff", component.OuterCutoff);
         });

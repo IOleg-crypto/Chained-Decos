@@ -92,7 +92,7 @@ namespace CHEngine
         if (entity.HasComponent<SliderControl>())   return ICON_FA_SLIDERS;
         if (entity.HasComponent<CheckboxControl>()) return ICON_FA_SQUARE_CHECK;
         if (entity.HasComponent<ControlComponent>())return ICON_FA_SHAPES;
-        if (entity.HasComponent<PointLightComponent>()) return ICON_FA_LIGHTBULB;
+        if (entity.HasComponent<LightComponent>()) return ICON_FA_LIGHTBULB;
         if (entity.HasComponent<CameraComponent>()) return ICON_FA_VIDEO;
         if (entity.HasComponent<AudioComponent>())  return ICON_FA_VOLUME_HIGH;
         
@@ -113,18 +113,6 @@ namespace CHEngine
         ImGuiTreeNodeFlags flags = ((selectedEntity == entity) ? ImGuiTreeNodeFlags_Selected : 0);
         flags |= ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
         
-        // // FIX : not replace buttons while you in edit mode
-        // if(EditorLayer::Get().GetSceneState() == SceneState::Play)
-        // {
-        //     flags |= ImGuiTreeNodeFlags_Disabled;
-        // }
-        // else
-        // {
-        //     flags |= ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-        // }
-
-
-
         ImGui::PushID((int)(uint32_t)entity);
         bool opened = ImGui::TreeNodeEx(label.c_str(), flags);
 
@@ -135,10 +123,19 @@ namespace CHEngine
         }
 
         entt::entity signaledForDelete = entt::null;
+        entt::entity signaledForCopy = entt::null;
         if (ImGui::BeginPopupContextItem())
         {
-            if (ImGui::MenuItem("Delete Entity"))
+            if (ImGui::MenuItem("Delete Entity")){
                 signaledForDelete = (entt::entity)entity;
+            }
+            // Copy entity
+            if (ImGui::MenuItem("Copy Entity")){
+                signaledForCopy = (entt::entity)entity;
+                m_Context->CopyEntity(signaledForCopy);
+            }
+            
+            
             ImGui::EndPopup();
         }
 

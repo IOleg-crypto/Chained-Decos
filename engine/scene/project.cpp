@@ -1,6 +1,7 @@
 #include "project.h"
 #include "project_serializer.h"
 #include "engine/graphics/asset_manager.h"
+#include "engine/graphics/renderer.h"
 #include "engine/graphics/environment.h"
 #include "imgui.h"
 
@@ -30,18 +31,27 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path &path)
     // Discover Engine Root if not set or invalid
     if (s_EngineRoot.empty() || !std::filesystem::exists(s_EngineRoot / "engine/resources"))
     {
-        s_EngineRoot = Discover(path.parent_path()); // Discover might return project path, let's refine
-        
-        // Better discovery for EngineRoot specifically
-        std::filesystem::path current = path.parent_path();
-        while (current.has_parent_path())
+        // 1. Try development root macro
+#ifdef PROJECT_ROOT_DIR
+        if (std::filesystem::exists(std::filesystem::path(PROJECT_ROOT_DIR) / "engine/resources"))
         {
-            if (std::filesystem::exists(current / "engine/resources"))
+            s_EngineRoot = PROJECT_ROOT_DIR;
+        }
+#endif
+
+        // 2. Try traversing up from project file
+        if (s_EngineRoot.empty())
+        {
+            std::filesystem::path current = path.parent_path();
+            while (current.has_parent_path())
             {
-                s_EngineRoot = current;
-                break;
+                if (std::filesystem::exists(current / "engine/resources"))
+                {
+                    s_EngineRoot = current;
+                    break;
+                }
+                current = current.parent_path();
             }
-            current = current.parent_path();
         }
     }
 
@@ -62,6 +72,30 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path &path)
         if (!project->m_Config.EnvironmentPath.empty())
         {
             project->m_Environment = project->m_AssetManager->Get<EnvironmentAsset>(project->m_Config.EnvironmentPath.string());
+        }
+
+        // --- Automated Shader Discovery ---
+        if (Renderer::IsInitialized())
+        {
+            auto shaderDir = project->m_Config.ProjectDirectory / project->m_Config.AssetDirectory / "shaders";
+            if (std::filesystem::exists(shaderDir))
+            {
+                auto& lib = Renderer::Get().GetShaderLibrary();
+                for (const auto& entry : std::filesystem::recursive_directory_iterator(shaderDir))
+                {
+                    if (entry.path().extension() == ".chshader")
+                    {
+                        std::string name = entry.path().stem().string();
+                        std::string relPath = project->GetRelativePath(entry.path());
+                        
+                        if (!lib.Exists(name))
+                        {
+                            lib.Load(name, relPath);
+                            CH_CORE_INFO("Project: Discovered and loaded shader: {} ({})", name, relPath);
+                        }
+                    }
+                }
+            }
         }
 
         return s_ActiveProject;

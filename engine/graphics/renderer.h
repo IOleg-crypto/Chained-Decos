@@ -7,6 +7,7 @@
 #include "engine/graphics/environment.h"
 #include "engine/scene/components/mesh_component.h" // For MaterialSlot
 #include "engine/scene/components/shader_component.h" // For ShaderUniform
+#include "engine/graphics/shader_library.h"
 #include "raylib.h"
 #include "raymath.h"
 #include "imgui.h"
@@ -24,37 +25,28 @@ namespace CHEngine
     {
         Color color = WHITE;
         Vector3 position = {0,0,0};
+        Vector3 direction = {0, -1, 0}; // Used for Spot
         float intensity = 1.0f;
-        float radius = 10.0f;
-        bool enabled = false;
-    };
-
-    struct RenderSpotLight
-    {
-        Color color = WHITE;
-        Vector3 position = {0,0,0};
-        Vector3 direction = {0, -1, 0};
-        float intensity = 1.0f;
-        float range = 20.0f;
-        float innerCutoff = 15.0f;
-        float outerCutoff = 20.0f;
+        float radius = 10.0f;           // Used for Point (radius) and Spot (range)
+        float innerCutoff = 15.0f;      // Spot only
+        float outerCutoff = 20.0f;      // Spot only
+        int type = 0;                   // 0: Point, 1: Spot
         bool enabled = false;
     };
 
     struct RendererData
     {
-        std::shared_ptr<ShaderAsset> LightingShader;
-        std::shared_ptr<ShaderAsset> SkyboxShader;
         Model SkyboxCube;
+
+        std::unique_ptr<ShaderLibrary> Shaders;
 
         Vector3 CurrentLightDirection = {-0.5f, -1.0f, -0.5f};
         Color CurrentLightColor = WHITE;
         float CurrentAmbientIntensity = 0.5f;
 
-        // Lights for the scene
-        static const int MaxLights = 8;
-        RenderLight PointLights[MaxLights];
-        RenderSpotLight SpotLights[MaxLights];
+        // Unified Lights for the scene
+        static const int MaxLights = 16;
+        RenderLight Lights[MaxLights];
 
         // Editor Icons
         Texture2D LightIcon = { 0 };
@@ -111,19 +103,21 @@ namespace CHEngine
         void DrawSkybox(const SkyboxSettings& settings, const Camera3D& camera);
         void DrawBillboard(const Camera3D& camera, Texture2D texture, Vector3 position, float size, Color tint);
         void DrawCubeWires(const Matrix& transform, Vector3 size, Color color);
+        void DrawCapsuleWires(const Matrix& transform, float radius, float height, Color color);
+        void DrawSphereWires(const Matrix& transform, float radius, Color color);
 
         void SetDirectionalLight(Vector3 direction, Color color);
         void SetAmbientLight(float intensity);
-        void SetPointLight(int index, Vector3 position, Color color, float intensity, float radius);
-        void SetSpotLight(int index, Vector3 position, Vector3 direction, Color color, float intensity, float range, float innerCutoff, float outerCutoff);
-        void ClearPointLights();
-        void ClearSpotLights();
+        void SetLight(int index, const RenderLight& light);
+        void ClearLights();
         void ApplyEnvironment(const EnvironmentSettings& settings);
         void SetDiagnosticMode(float mode);
         void UpdateTime(Timestep time);
 
         inline RendererData& GetData() { return *m_Data; }
         inline const RendererData& GetData() const { return *m_Data; }
+        
+        inline ShaderLibrary& GetShaderLibrary() { return *m_Data->Shaders; }
         
         static Renderer& Get() 
         { 

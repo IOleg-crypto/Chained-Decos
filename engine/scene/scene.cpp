@@ -48,7 +48,6 @@ Scene::Scene()
     m_Registry.on_destroy<HierarchyComponent>().connect<&Scene::OnHierarchyDestroy>(this);
 
     // Create physics instance
-    // Create physics instance
     m_Physics = std::make_unique<Physics>(this);
 
     // Create script registry
@@ -114,6 +113,18 @@ Entity Scene::CreateEntity(const std::string &name)
 
     CH_CORE_INFO("Entity Created: {} ({})", name, (uint64_t)entity.GetComponent<IDComponent>().ID);
     return entity;
+}
+
+Entity Scene::CopyEntity(entt::entity copyEntity)
+{
+    Entity srcEntity(copyEntity, &m_Registry);
+    std::string name = srcEntity.GetName();
+    Entity dstEntity = CreateEntity(name);
+    
+    // Copy components
+    ComponentSerializer::CopyAll(srcEntity, dstEntity);
+    
+    return dstEntity;
 }
 
 Entity Scene::CreateEntityWithUUID(UUID uuid, const std::string &name)
@@ -197,18 +208,20 @@ void Scene::OnUpdateRuntime(Timestep timestep)
 {
     CH_PROFILE_FUNCTION();
 
-    static int frameCount = 0;
-    bool isSim = IsSimulationRunning();
-    if (frameCount % 60 == 0) {
-        CH_CORE_INFO("[SCENE_DIAG] OnUpdateRuntime - dt={}, Sim={}", (float)timestep, isSim);
-    }
-    frameCount++;
-    
     UpdateScripting(timestep);
     UpdateAnimations(timestep);
     UpdateAudio(timestep);
     UpdateCameras(timestep);
     UpdateTransitions();
+    UpdatePhysics(timestep);
+}
+
+void Scene::OnUpdateEditor(Timestep timestep)
+{
+    CH_PROFILE_FUNCTION();
+
+    UpdateAnimations(timestep);
+    UpdateCameras(timestep);
     UpdatePhysics(timestep);
 }
 
@@ -595,64 +608,59 @@ void Scene::OnPanelControlAdded(entt::registry &reg, entt::entity entity)
     }
 }
 
-Camera3D Scene::GetActiveCamera()
+std::optional<Camera3D> Scene::GetActiveCamera()
 {
-    // 1. Search for a primary camera component
     auto view = m_Registry.view<TransformComponent, CameraComponent>();
+    
+    entt::entity fallbackEntity = entt::null;
+
     for (auto entityHandle : view)
     {
         auto &cc = view.get<CameraComponent>(entityHandle);
+        if (fallbackEntity == entt::null) fallbackEntity = entityHandle;
+
         if (cc.Primary)
         {
-            auto &tc = view.get<TransformComponent>(entityHandle);
-            
-            Camera3D camera = {0};
-            camera.position = tc.Translation;
-            
-            // Calculate forward vector from rotation
-            Matrix frame = QuaternionToMatrix(tc.RotationQuat);
-            Vector3 forward = Vector3Transform({ 0, 0, -1 }, frame);
-            
-            camera.target = Vector3Add(camera.position, forward);
-            camera.up = Vector3Transform({ 0, 1, 0 }, frame);
-            
-            // Map Hazel-style SceneCamera properties to Raylib's Camera3D
-            if (cc.Camera.GetProjectionType() == ProjectionType::Perspective)
-            {
-                camera.fovy = cc.Camera.GetPerspectiveVerticalFOV() * RAD2DEG;
-                camera.projection = CAMERA_PERSPECTIVE;
-            }
-            else
-            {
-                camera.fovy = cc.Camera.GetOrthographicSize();
-                camera.projection = CAMERA_ORTHOGRAPHIC;
-            }
-
-            static entt::entity lastActive = entt::null;
-            if (lastActive != entityHandle)
-            {
-                std::string name = m_Registry.any_of<TagComponent>(entityHandle) ? m_Registry.get<TagComponent>(entityHandle).Tag : "Unnamed Camera";
-                CH_CORE_INFO("Active Scene Camera: '{}' (Entity ID: {})", name, (uint32_t)entityHandle);
-                lastActive = entityHandle;
-            }
-
-            return camera;
+            return GetCameraFromEntity(entityHandle);
         }
     }
 
-    // 3. Absolute Fallback
-    static bool warned = false;
-    if (!warned)
+    // Fallback to first available camera if no primary set
+    if (fallbackEntity != entt::null)
     {
-        CH_CORE_WARN("No Primary Camera found in scene! Using absolute fallback at (10, 10, 10). Please mark a CameraComponent as 'Primary'.");
-        warned = true;
+        return GetCameraFromEntity(fallbackEntity);
     }
+
+    return std::nullopt;
+}
+
+Camera3D Scene::GetCameraFromEntity(entt::entity entityHandle)
+{
+    auto &tc = m_Registry.get<TransformComponent>(entityHandle);
+    auto &cc = m_Registry.get<CameraComponent>(entityHandle);
+    
     Camera3D camera = {0};
-    camera.position = {10.0f, 10.0f, 10.0f};
-    camera.target = {0.0f, 0.0f, 0.0f};
-    camera.up = {0.0f, 1.0f, 0.0f};
-    camera.fovy = 45.0f;
-    camera.projection = CAMERA_PERSPECTIVE;
+    camera.position = tc.Translation;
+    
+    // Calculate forward vector from rotation
+    Matrix frame = QuaternionToMatrix(tc.RotationQuat);
+    Vector3 forward = Vector3Transform({ 0, 0, -1 }, frame);
+    
+    camera.target = Vector3Add(camera.position, forward);
+    camera.up = Vector3Transform({ 0, 1, 0 }, frame);
+    
+    // Map Hazel-style SceneCamera properties to Raylib's Camera3D
+    if (cc.Camera.GetProjectionType() == ProjectionType::Perspective)
+    {
+        camera.fovy = cc.Camera.GetPerspectiveVerticalFOV() * RAD2DEG;
+        camera.projection = CAMERA_PERSPECTIVE;
+    }
+    else
+    {
+        camera.fovy = cc.Camera.GetOrthographicSize();
+        camera.projection = CAMERA_ORTHOGRAPHIC;
+    }
+
     return camera;
 }
 
