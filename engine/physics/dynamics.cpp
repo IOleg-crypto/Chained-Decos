@@ -47,19 +47,5 @@ void Dynamics::IntegrateVelocity(entt::registry &registry, entt::entity entity, 
 
 void Dynamics::LogDiagnostics(entt::registry &registry, entt::entity entity)
 {
-    if (registry.all_of<PlayerComponent>(entity))
-    {
-        auto &rigidBody = registry.get<RigidBodyComponent>(entity);
-        static int skipCounter = 0;
-        if (skipCounter++ % 120 == 0)
-        {
-            std::string tag = registry.all_of<TagComponent>(entity)
-                                  ? registry.get<TagComponent>(entity).Tag
-                                  : "Unnamed";
-            CH_CORE_INFO("Physics State: {} | Grav={} | Grnd={} | Kin={} | V.y={:0.2f}", tag,
-                         rigidBody.UseGravity, rigidBody.IsGrounded, rigidBody.IsKinematic,
-                         rigidBody.Velocity.y);
-        }
-    }
 }
 } // namespace CHEngine

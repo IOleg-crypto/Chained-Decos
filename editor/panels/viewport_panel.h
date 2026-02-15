@@ -37,16 +37,13 @@ public:
         return m_ViewportSize;
     }
 
-    EditorCamera &GetCamera()
-    {
-        return m_EditorCamera;
-    }
     GizmoType &GetCurrentTool()
     {
         return m_CurrentTool;
     }
 public: 
     void DrawGizmoButtons();
+    void DrawCameraSelector(class Scene* scene);
 
 private:
     RenderTexture2D m_ViewportTexture;
@@ -54,7 +51,7 @@ private:
     bool m_Focused = false;
     bool m_Hovered = false;
 
-    EditorCamera m_EditorCamera;
+    std::unique_ptr<EditorCameraController> m_CameraController;
     EditorGizmo m_Gizmo;
     EditorUIManipulator m_UIManipulator;
     GizmoType m_CurrentTool = GizmoType::TRANSLATE;
@@ -63,6 +60,9 @@ private:
     
     // UI Interaction state
     ImVec2 m_UIDragOffset = {0, 0};
+    
+    // Viewport Camera State
+    uint64_t m_ViewportCameraEntityUUID = 0; // 0 = Editor Camera
 };
 
 } // namespace CHEngine

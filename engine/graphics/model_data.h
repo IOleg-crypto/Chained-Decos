@@ -11,6 +11,7 @@ namespace CHEngine
         std::vector<float> vertices;
         std::vector<float> texcoords;
         std::vector<float> normals;
+        std::vector<float> tangents;
         std::vector<unsigned char> colors;
         std::vector<unsigned short> indices;
         int materialIndex = -1;
@@ -23,6 +24,13 @@ namespace CHEngine
         std::string emissivePath;
         Color emissiveColor = BLACK;
         float emissiveIntensity = 0.0f;
+
+        std::string normalPath;
+        std::string metallicRoughnessPath;
+        std::string occlusionPath;
+
+        float metalness = 0.0f;
+        float roughness = 0.5f;
     };
 
     // Track textures that are still loading

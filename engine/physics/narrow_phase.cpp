@@ -150,6 +150,8 @@ void NarrowPhase::ResolveCollisions(Scene *scene, const std::vector<::entt::enti
                     ResolveBoxBox(registry, rbEntity, otherEntity);
                 else if (rbCollider.Type == ColliderType::Capsule)
                     ResolveCapsuleBox(registry, rbEntity, otherEntity);
+                else if (rbCollider.Type == ColliderType::Sphere)
+                    ResolveSphereBox(registry, rbEntity, otherEntity);
             }
             else if (otherCollider.Type == ColliderType::Mesh && otherCollider.BVHRoot)
             {
@@ -157,6 +159,13 @@ void NarrowPhase::ResolveCollisions(Scene *scene, const std::vector<::entt::enti
                     ResolveBoxMesh(registry, rbEntity, otherEntity);
                 else if (rbCollider.Type == ColliderType::Capsule)
                     ResolveCapsuleMesh(registry, rbEntity, otherEntity);
+                else if (rbCollider.Type == ColliderType::Sphere)
+                    ResolveSphereMesh(registry, rbEntity, otherEntity);
+            }
+            else if (otherCollider.Type == ColliderType::Sphere)
+            {
+                 if (rbCollider.Type == ColliderType::Sphere)
+                    ResolveSphereSphere(registry, rbEntity, otherEntity);
             }
         }
     }
@@ -374,6 +383,125 @@ void NarrowPhase::ResolveCapsuleMesh(::entt::registry &registry, ::entt::entity 
         // Update capsule position for stacking contacts
         seg = GetCapsuleSegment(tc, capsule);
     }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Sphere vs Box
+// ═══════════════════════════════════════════════════════════════════════════════
+
+void NarrowPhase::ResolveSphereBox(::entt::registry &registry, ::entt::entity rbEntity,
+                                   ::entt::entity otherEntity)
+{
+    auto &tc = registry.get<TransformComponent>(rbEntity);
+    auto &rb = registry.get<RigidBodyComponent>(rbEntity);
+    auto &sphere = registry.get<ColliderComponent>(rbEntity);
+    auto &box = registry.get<ColliderComponent>(otherEntity);
+    auto &otherTc = registry.get<TransformComponent>(otherEntity);
+
+    WorldAABB boxAABB = GetWorldAABB(otherTc, box);
+    Vector3 spherePos = Vector3Add(tc.Translation, sphere.Offset);
+
+    Vector3 closestOnBox = {
+        fmaxf(boxAABB.min.x, fminf(spherePos.x, boxAABB.max.x)),
+        fmaxf(boxAABB.min.y, fminf(spherePos.y, boxAABB.max.y)),
+        fmaxf(boxAABB.min.z, fminf(spherePos.z, boxAABB.max.z))
+    };
+
+    Vector3 diff = Vector3Subtract(spherePos, closestOnBox);
+    float distSq = Vector3DotProduct(diff, diff);
+
+    if (distSq >= sphere.Radius * sphere.Radius) return;
+
+    float dist = sqrtf(distSq);
+    float penetration = sphere.Radius - dist;
+    Vector3 normal = (dist > 0.0001f) ? Vector3Scale(diff, 1.0f / dist) : Vector3{0, 1, 0};
+
+    ApplyResponse(tc, rb, box, normal, penetration);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Sphere vs Mesh
+// ═══════════════════════════════════════════════════════════════════════════════
+
+void NarrowPhase::ResolveSphereMesh(::entt::registry &registry, ::entt::entity rbEntity,
+                                    ::entt::entity otherEntity)
+{
+    auto &tc = registry.get<TransformComponent>(rbEntity);
+    auto &rb = registry.get<RigidBodyComponent>(rbEntity);
+    auto &sphere = registry.get<ColliderComponent>(rbEntity);
+    auto &otherCollider = registry.get<ColliderComponent>(otherEntity);
+    auto &otherTc = registry.get<TransformComponent>(otherEntity);
+
+    Matrix meshMatrix = otherTc.GetTransform();
+    Matrix invMeshMatrix = MatrixInvert(meshMatrix);
+
+    Vector3 sphereWorldPos = Vector3Add(tc.Translation, sphere.Offset);
+    Vector3 sphereLocalPos = Vector3Transform(sphereWorldPos, invMeshMatrix);
+
+    float maxScale = fmaxf(otherTc.Scale.x, fmaxf(otherTc.Scale.y, otherTc.Scale.z));
+    float localRadius = (maxScale > 0.0001f) ? sphere.Radius / maxScale : sphere.Radius;
+
+    BoundingBox queryBox = {
+        {sphereLocalPos.x - localRadius, sphereLocalPos.y - localRadius, sphereLocalPos.z - localRadius},
+        {sphereLocalPos.x + localRadius, sphereLocalPos.y + localRadius, sphereLocalPos.z + localRadius}
+    };
+
+    std::vector<const CollisionTriangle *> candidates;
+    otherCollider.BVHRoot->QueryAABB(queryBox, candidates);
+    if (candidates.empty()) return;
+
+    for (const auto *tri : candidates)
+    {
+        Vector3 v0 = Vector3Transform(tri->v0, meshMatrix);
+        Vector3 v1 = Vector3Transform(tri->v1, meshMatrix);
+        Vector3 v2 = Vector3Transform(tri->v2, meshMatrix);
+
+        Vector3 triPoint = ClosestPointTriangle(sphereWorldPos, v0, v1, v2);
+        Vector3 diff = Vector3Subtract(sphereWorldPos, triPoint);
+        float distSq = Vector3DotProduct(diff, diff);
+
+        if (distSq >= sphere.Radius * sphere.Radius) continue;
+
+        float dist = sqrtf(distSq);
+        float penetration = sphere.Radius - dist;
+        Vector3 normal;
+        if (dist > 0.0001f)
+            normal = Vector3Scale(diff, 1.0f / dist);
+        else
+            normal = Vector3Normalize(Vector3CrossProduct(Vector3Subtract(v1, v0), Vector3Subtract(v2, v0)));
+
+        ApplyResponse(tc, rb, otherCollider, normal, penetration);
+        sphereWorldPos = Vector3Add(tc.Translation, sphere.Offset); // Update for stacked contacts
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Sphere vs Sphere
+// ═══════════════════════════════════════════════════════════════════════════════
+
+void NarrowPhase::ResolveSphereSphere(::entt::registry &registry, ::entt::entity rbEntity,
+                                      ::entt::entity otherEntity)
+{
+    auto &tc = registry.get<TransformComponent>(rbEntity);
+    auto &rb = registry.get<RigidBodyComponent>(rbEntity);
+    auto &s1 = registry.get<ColliderComponent>(rbEntity);
+    auto &s2 = registry.get<ColliderComponent>(otherEntity);
+    auto &tc2 = registry.get<TransformComponent>(otherEntity);
+
+    Vector3 p1 = Vector3Add(tc.Translation, s1.Offset);
+    Vector3 p2 = Vector3Add(tc2.Translation, s2.Offset);
+
+    Vector3 diff = Vector3Subtract(p1, p2);
+    float distSq = Vector3DotProduct(diff, diff);
+    float radiusSum = s1.Radius + s2.Radius;
+
+    if (distSq >= radiusSum * radiusSum) return;
+
+    float dist = sqrtf(distSq);
+    float penetration = radiusSum - dist;
+    Vector3 normal = (dist > 0.0001f) ? Vector3Scale(diff, 1.0f / dist) : Vector3{0, 1, 0};
+
+    ApplyResponse(tc, rb, s2, normal, penetration);
 }
 
 } // namespace CHEngine

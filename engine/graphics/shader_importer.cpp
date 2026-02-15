@@ -87,25 +87,53 @@ namespace CHEngine
                 auto asset = std::make_shared<ShaderAsset>(shader);
                 asset->SetPath(path);
 
-                // Map uniforms if present
+                // --- Automatic Mapping of Standard Uniforms ---
+                // We always try to find these common names to ensure raylib's internal
+                // model drawing logic (DrawMesh, etc.) can set them automatically.
+                auto& locs = asset->GetShader().locs;
+                
+                auto MapStandard = [&](int locIndex, const std::string& name) {
+                    int loc = asset->GetLocation(name);
+                    if (loc >= 0) locs[locIndex] = loc;
+                };
+
+                MapStandard(SHADER_LOC_MATRIX_MVP, "mvp");
+                MapStandard(SHADER_LOC_MATRIX_MODEL, "matModel");
+                MapStandard(SHADER_LOC_MATRIX_NORMAL, "matNormal");
+                MapStandard(SHADER_LOC_MATRIX_VIEW, "matView");
+                MapStandard(SHADER_LOC_MATRIX_PROJECTION, "matProjection");
+                MapStandard(SHADER_LOC_VECTOR_VIEW, "viewPos");
+                MapStandard(SHADER_LOC_MAP_ALBEDO, "texture0");
+                MapStandard(SHADER_LOC_MAP_METALNESS, "texture1");
+                MapStandard(SHADER_LOC_MAP_NORMAL, "texture2");
+                MapStandard(SHADER_LOC_MAP_ROUGHNESS, "texture3");
+                MapStandard(SHADER_LOC_MAP_OCCLUSION, "texture4");
+                MapStandard(SHADER_LOC_MAP_EMISSION, "texture5");
+                MapStandard(SHADER_LOC_COLOR_DIFFUSE, "colDiffuse");
+                MapStandard(SHADER_LOC_BONE_MATRICES, "boneMatrices");
+                
+                // Legacy/Specific mappings
+                int panoLoc = asset->GetLocation("panorama");
+                if (panoLoc >= 0) locs[SHADER_LOC_MAP_ALBEDO] = panoLoc;
+
+                int envLoc = asset->GetLocation("environmentMap");
+                if (envLoc >= 0) locs[SHADER_LOC_MAP_CUBEMAP] = envLoc;
+
+                // --- Manual Override from metadata ---
+                // (In case the user used non-standard names but wants them mapped to standard slots)
                 if (config["Uniforms"])
                 {
                     for (auto uniform : config["Uniforms"])
                     {
                         std::string name = uniform.as<std::string>();
                         int location = asset->GetLocation(name);
+                        if (location < 0) continue;
 
-                        if (name == "mvp") asset->GetShader().locs[SHADER_LOC_MATRIX_MVP] = location;
-                        else if (name == "matModel") asset->GetShader().locs[SHADER_LOC_MATRIX_MODEL] = location;
-                        else if (name == "matNormal") asset->GetShader().locs[SHADER_LOC_MATRIX_NORMAL] = location;
-                        else if (name == "matView") asset->GetShader().locs[SHADER_LOC_MATRIX_VIEW] = location;
-                        else if (name == "matProjection") asset->GetShader().locs[SHADER_LOC_MATRIX_PROJECTION] = location;
-                        else if (name == "viewPos") asset->GetShader().locs[SHADER_LOC_VECTOR_VIEW] = location;
-                        else if (name == "texture0") asset->GetShader().locs[SHADER_LOC_MAP_DIFFUSE] = location;
-                        else if (name == "colDiffuse") asset->GetShader().locs[SHADER_LOC_COLOR_DIFFUSE] = location;
-                        else if (name == "panorama") asset->GetShader().locs[SHADER_LOC_MAP_ALBEDO] = location;
-                        else if (name == "environmentMap") asset->GetShader().locs[SHADER_LOC_MAP_CUBEMAP] = location;
-                        else if (name == "boneMatrices") asset->GetShader().locs[SHADER_LOC_BONE_MATRICES] = location;
+                        if (name == "mvp") locs[SHADER_LOC_MATRIX_MVP] = location;
+                        else if (name == "matModel") locs[SHADER_LOC_MATRIX_MODEL] = location;
+                        else if (name == "matNormal") locs[SHADER_LOC_MATRIX_NORMAL] = location;
+                        else if (name == "viewPos") locs[SHADER_LOC_VECTOR_VIEW] = location;
+                        // ...
                     }
                 }
 
