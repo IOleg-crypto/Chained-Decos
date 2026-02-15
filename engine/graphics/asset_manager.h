@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <mutex>
 #include <unordered_map>
+#include <future>
 
 namespace CHEngine
 {
@@ -70,6 +71,13 @@ namespace CHEngine
         // Unified cache: Type -> Path -> Asset
         std::map<AssetType, std::map<std::string, std::shared_ptr<Asset>>> m_AssetCaches;
         std::unordered_map<AssetHandle, AssetMetadata> m_AssetMetadata;
+
+        // Async loading support
+        std::vector<std::shared_ptr<Asset>> m_PendingUploads;
+        mutable std::mutex m_PendingUploadsMutex;
+
+        std::vector<std::future<void>> m_Futures;
+        mutable std::mutex m_FuturesMutex;
     };
 }
 

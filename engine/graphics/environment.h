@@ -12,6 +12,7 @@ namespace CHEngine
 struct SkyboxSettings
 {
     std::string TexturePath;
+    int Mode = 0; // 0: Equirectangular, 1: Cross (Horizontal)
     float Exposure = 1.0f;
     float Brightness = 0.0f;
     float Contrast = 1.0f;

@@ -31,6 +31,7 @@ add_library(engine ${ENGINE_LIB_TYPE}
     graphics/ui_renderer.cpp
     graphics/asset_manager.cpp
     graphics/shader_asset.cpp
+    graphics/shader_library.cpp
     graphics/scene_renderer.cpp
     graphics/renderer2d.cpp
     graphics/model_asset.cpp
@@ -94,6 +95,7 @@ add_library(engine ${ENGINE_LIB_TYPE}
     graphics/asset.h
     graphics/asset_manager.h
     graphics/shader_asset.h
+    graphics/shader_library.h
     graphics/model_asset.h
     graphics/texture_asset.h
     graphics/font_asset.h
@@ -140,7 +142,7 @@ add_library(engine ${ENGINE_LIB_TYPE}
     scene/components/game_components.h
     scene/components/hierarchy_component.h
     scene/components/id_component.h
-    scene/components/lighting_component.h
+    scene/components/light_component.h
     scene/components/mesh_component.h
     scene/components/navigation_component.h
     scene/components/physics_component.h

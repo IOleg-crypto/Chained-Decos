@@ -156,12 +156,6 @@ namespace CHEngine
     {
         CH_PROFILE_FUNCTION();
 
-        static int editorFrame = 0;
-        if (editorFrame % 180 == 0) {
-            //CH_CORE_INFO("[EDITOR_DIAG] OnUpdate - SceneState: {}", (int)EditorContext::GetSceneState());
-        }
-        editorFrame++;
-
         if (Input::IsKeyPressed(KEY_F11))
         {
             ToggleFullscreen();
@@ -171,6 +165,8 @@ namespace CHEngine
         {
             if (EditorContext::GetSceneState() == SceneState::Play)
                 scene->OnUpdateRuntime(ts);
+            else
+                scene->OnUpdateEditor(ts);
             
             if (Input::IsKeyPressed(KEY_F5))
             {
