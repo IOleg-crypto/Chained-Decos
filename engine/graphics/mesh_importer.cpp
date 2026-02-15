@@ -45,6 +45,8 @@ namespace CHEngine
                 cgltf_accessor* tangentAccessor = nullptr;
                 cgltf_accessor* texCoordAccessor = nullptr;
                 cgltf_accessor* colorAccessor = nullptr;
+                cgltf_accessor* jointsAccessor = nullptr;
+                cgltf_accessor* weightsAccessor = nullptr;
 
                 for (size_t k = 0; k < primitive.attributes_count; ++k) {
                     const cgltf_attribute& attribute = primitive.attributes[k];
@@ -53,6 +55,8 @@ namespace CHEngine
                     else if (attribute.type == cgltf_attribute_type_tangent) tangentAccessor = attribute.data;
                     else if (attribute.type == cgltf_attribute_type_texcoord) texCoordAccessor = attribute.data;
                     else if (attribute.type == cgltf_attribute_type_color) colorAccessor = attribute.data;
+                    else if (attribute.type == cgltf_attribute_type_joints) jointsAccessor = attribute.data;
+                    else if (attribute.type == cgltf_attribute_type_weights) weightsAccessor = attribute.data;
                 }
 
                 if (positionAccessor) {
@@ -141,6 +145,25 @@ namespace CHEngine
                     for (size_t idx = 0; idx < primitive.indices->count; ++idx) {
                         rawMesh.indices[idx] = (unsigned short)cgltf_accessor_read_index(primitive.indices, idx);
                     }
+                }
+
+                if (jointsAccessor) {
+                    size_t count = jointsAccessor->count;
+                    rawMesh.joints.resize(count * 4);
+                    for (size_t v = 0; v < count; ++v) {
+                        cgltf_uint joints[4];
+                        cgltf_accessor_read_uint(jointsAccessor, v, joints, 4);
+                        rawMesh.joints[v*4+0] = (unsigned char)joints[0];
+                        rawMesh.joints[v*4+1] = (unsigned char)joints[1];
+                        rawMesh.joints[v*4+2] = (unsigned char)joints[2];
+                        rawMesh.joints[v*4+3] = (unsigned char)joints[3];
+                    }
+                }
+
+                if (weightsAccessor) {
+                    size_t count = weightsAccessor->count;
+                    rawMesh.weights.resize(count * 4);
+                    cgltf_accessor_unpack_floats(weightsAccessor, rawMesh.weights.data(), rawMesh.weights.size());
                 }
 
                 ctx.data.meshes.push_back(std::move(rawMesh));
@@ -338,6 +361,16 @@ namespace CHEngine
         if (success) {
             data.fullPath = absolutePath;
             data.isValid = true;
+
+            // Load animations if supported
+            if (extension == ".gltf" || extension == ".glb" || extension == ".iqm" || extension == ".m3d")
+            {
+                data.animations = LoadModelAnimations(absolutePath.c_str(), &data.animationCount);
+                if (data.animationCount > 0)
+                {
+                    CH_CORE_INFO("MeshImporter: Loaded {} animations for {}", data.animationCount, pathStr);
+                }
+            }
         }
         return data;
     }
