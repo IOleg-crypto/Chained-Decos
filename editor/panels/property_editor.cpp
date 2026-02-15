@@ -174,30 +174,29 @@ namespace CHEngine
             return changed;
         });
 
-        Register<PointLightComponent>("Point Light", [](auto& component, auto entity) {
+        Register<LightComponent>("Light", [](auto& component, auto entity) {
             auto pb = EditorGUI::Begin();
-            ImGui::TextDisabled("Omnidirectional light source");
+            
+            const char* lightTypeStrings[] = { "Point", "Spot" };
+            int lightType = (int)component.Type;
+            if (EditorGUI::Property("Type", lightType, lightTypeStrings, 2))
+            {
+                component.Type = (LightType)lightType;
+                pb.Changed = true;
+            }
+
             pb.Color("Color", component.LightColor)
               .Float("Intensity", component.Intensity, 0.1f, 0.0f, 100.0f)
               .Float("Radius", component.Radius, 0.1f, 0.0f, 1000.0f);
             
+            if (component.Type == LightType::Spot)
+            {
+                pb.Float("Inner Cutoff", component.InnerCutoff, 0.1f, 0.0f, 90.0f)
+                  .Float("Outer Cutoff", component.OuterCutoff, 0.1f, 0.0f, 90.0f);
+            }
+
             if (component.Radius <= 0.01f)
-                ImGui::TextColored({1, 1, 0, 1}, ICON_FA_CIRCLE_EXCLAMATION " Radius is 0 (Invisible!)");
-
-            return pb.Changed;
-        });
-
-        Register<SpotLightComponent>("Spot Light", [](auto& component, auto entity) {
-            auto pb = EditorGUI::Begin();
-            ImGui::TextDisabled("Directional cone light source");
-            pb.Color("Color", component.LightColor)
-              .Float("Intensity", component.Intensity, 0.1f, 0.0f, 100.0f)
-              .Float("Range", component.Range, 0.1f, 0.0f, 1000.0f)
-              .Float("Inner Cutoff", component.InnerCutoff, 0.1f, 0.0f, 90.0f)
-              .Float("Outer Cutoff", component.OuterCutoff, 0.1f, 0.0f, 90.0f);
-            
-            if (component.Range <= 0.01f)
-                ImGui::TextColored({1, 1, 0, 1}, ICON_FA_CIRCLE_EXCLAMATION " Range is 0 (Invisible!)");
+                ImGui::TextColored({ 1, 1, 0, 1 }, ICON_FA_CIRCLE_EXCLAMATION " Radius is 0 (Invisible!)");
 
             return pb.Changed;
         });
@@ -257,9 +256,74 @@ namespace CHEngine
 
         Register<ShaderComponent>("Shader", [](auto& component, auto entity) {
             auto pb = EditorGUI::Begin();
-            pb.File("Shader Path", component.ShaderPath, "chshader")
-              .Bool("Enabled", component.Enabled);
             
+            // Hazel-style Shader Selection
+            if (Renderer::IsInitialized())
+            {
+                auto& lib = Renderer::Get().GetShaderLibrary();
+                std::vector<std::string> names = lib.GetNames();
+                std::sort(names.begin(), names.end());
+                
+                // Find current name by path
+                std::string currentName = "Custom";
+                for (const auto& name : names)
+                {
+                    if (lib.Get(name)->GetPath() == component.ShaderPath)
+                    {
+                        currentName = name;
+                        break;
+                    }
+                }
+
+                if (ImGui::BeginCombo("Shader", currentName.c_str()))
+                {
+                    if (ImGui::Selectable("Custom", currentName == "Custom"))
+                    {
+                        // Keep current path
+                    }
+
+                    for (const auto& name : names)
+                    {
+                        if (ImGui::Selectable(name.c_str(), currentName == name))
+                        {
+                            component.ShaderPath = lib.Get(name)->GetPath();
+                            pb.Changed = true;
+                            
+                            // Auto-sync uniforms on change
+                            // (We'll trigger the sync button logic below)
+                            ImGui::SetItemDefaultFocus();
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
+            }
+
+            if (EditorGUI::Begin().File("Shader Path", component.ShaderPath, "chshader")) pb.Changed = true;
+            
+            pb.Bool("Enabled", component.Enabled);
+            
+            // Automatic Pruning of engine-managed uniforms
+            if (!component.Uniforms.empty())
+            {
+                auto it = std::remove_if(component.Uniforms.begin(), component.Uniforms.end(), [](const auto& u) {
+                    std::string name = u.Name;
+                    return name == "mvp" || name == "matModel" || name == "matNormal" || 
+                           name == "viewPos" || name == "lightDir" || name == "lightColor" || 
+                           name == "ambient" || name == "uTime" || name == "useTexture" ||
+                           name == "colDiffuse" || name == "texture0" || name == "shininess" ||
+                           name == "fogEnabled" || name == "fogColor" || name == "fogDensity" ||
+                           name == "fogStart" || name == "fogEnd" || name == "uMode" ||
+                           name.find("lights[") != std::string::npos ||
+                           name.find("pointLights") != std::string::npos ||
+                           name.find("spotLights") != std::string::npos ||
+                           name == "boneMatrices";
+                });
+                if (it != component.Uniforms.end()) {
+                    component.Uniforms.erase(it, component.Uniforms.end());
+                    pb.Changed = true;
+                }
+            }
+
             if (!component.Uniforms.empty() && ImGui::TreeNodeEx("Uniforms", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
             {
                 for (auto& u : component.Uniforms)
@@ -294,15 +358,19 @@ namespace CHEngine
                                 {
                                     std::string name = uNode.as<std::string>();
                                     // Skip standard uniforms that are managed by engine
-                                    if (name == "mvp" || name == "matModel" || name == "matNormal" || 
+                                    bool isEngineManaged = 
+                                        name == "mvp" || name == "matModel" || name == "matNormal" || 
                                         name == "viewPos" || name == "lightDir" || name == "lightColor" || 
                                         name == "ambient" || name == "uTime" || name == "useTexture" ||
                                         name == "colDiffuse" || name == "texture0" || name == "shininess" ||
                                         name == "fogEnabled" || name == "fogColor" || name == "fogDensity" ||
                                         name == "fogStart" || name == "fogEnd" ||
-                                        name.find("pointLights") != std::string::npos ||
-                                        name.find("spotLights") != std::string::npos ||
-                                        name == "boneMatrices")
+                                        name.find("lights[") != std::string::npos ||
+                                        name.find("pointLights") != std::string::npos || // Legacy
+                                        name.find("spotLights") != std::string::npos ||  // Legacy
+                                        name == "boneMatrices";
+
+                                    if (isEngineManaged)
                                         continue;
 
                                     // Find existing to preserve value
@@ -415,27 +483,7 @@ namespace CHEngine
             bool changed = false;
             if (EditorGUI::Begin().File("Model Path", component.ModelPath, "obj,gltf,glb")) changed = true;
 
-            if (ImGui::TreeNodeEx("Materials", ImGuiTreeNodeFlags_Framed))
-            {
-                for (auto& slot : component.Materials)
-                {
-                    ImGui::PushID(slot.Index);
-                    if (ImGui::TreeNodeEx(slot.Name.c_str(), ImGuiTreeNodeFlags_Framed))
-                    {
-                        auto pb = EditorGUI::Begin();
-                        pb.Color("Albedo", slot.Material.AlbedoColor)
-                          .Float("Metalness", slot.Material.Metalness, 0.02f, 0.0f, 1.0f)
-                          .Float("Roughness", slot.Material.Roughness, 0.02f, 0.0f, 1.0f)
-                          .Bool("Double Sided", slot.Material.DoubleSided)
-                          .Bool("Transparent", slot.Material.Transparent)
-                          .Float("Alpha", slot.Material.Alpha, 0.01f, 0.0f, 1.0f);
-                        if (pb.Changed) changed = true;
-                        ImGui::TreePop();
-                    }
-                    ImGui::PopID();
-                }
-                ImGui::TreePop();
-            }
+
 
             if (EditorGUI::ActionButton(ICON_FA_DOWNLOAD, "Reload Model"))
             {

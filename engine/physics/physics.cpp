@@ -144,6 +144,25 @@ namespace CHEngine
                     }
                 }
             }
+
+            // Case C: Sphere Collider (Auto)
+            if (collider.Type == ColliderType::Sphere && collider.AutoCalculate)
+            {
+                if (!registry.all_of<ModelComponent>(entity)) continue;
+
+                auto &model = registry.get<ModelComponent>(entity);
+                auto asset = project->GetAssetManager()->Get<ModelAsset>(model.ModelPath);
+                
+                if (asset && asset->GetState() == AssetState::Ready)
+                {
+                    BoundingBox box = asset->GetBoundingBox();
+                    Vector3 size = Vector3Subtract(box.max, box.min);
+                    collider.Radius = fmaxf(size.x, fmaxf(size.y, size.z)) * 0.5f;
+                    collider.Offset = Vector3Scale(Vector3Add(box.min, box.max), 0.5f);
+                    collider.AutoCalculate = false;
+                }
+                continue;
+            }
         }
     }
 

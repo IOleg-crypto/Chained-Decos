@@ -10,6 +10,13 @@ namespace CHEngine
     void SceneActions::New()
     {
         auto newScene = std::make_shared<Scene>();
+        
+        // Ensure every scene starts with a Main Camera
+        Entity camera = newScene->CreateEntity("Main Camera");
+        auto& cc = camera.AddComponent<CameraComponent>();
+        cc.Primary = true;
+        camera.GetComponent<TransformComponent>().Translation = { 0, 5, 10 };
+
         EditorLayer::Get().SetScene(newScene);
     }
 

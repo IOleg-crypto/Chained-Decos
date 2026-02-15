@@ -10,7 +10,7 @@
 #include "components/game_components.h"
 #include "components/hierarchy_component.h"
 #include "components/id_component.h"
-#include "components/lighting_component.h"
+#include "components/light_component.h"
 #include "components/mesh_component.h"
 #include "components/navigation_component.h"
 #include "components/physics_component.h"

@@ -234,6 +234,9 @@ void EnvironmentPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset>
             }
         }
 
+        const char* skyboxModes[] = { "Equirectangular (Sphere)", "Horizontal Cross (Cube)" };
+        ImGui::Combo("Mapping Mode", &settings.Skybox.Mode, skyboxModes, 2);
+
         ImGui::DragFloat("Exposure", &settings.Skybox.Exposure, 0.01f, 0.0f, 10.0f);
         ImGui::DragFloat("Brightness", &settings.Skybox.Brightness, 0.01f, -2.0f, 2.0f);
         ImGui::DragFloat("Contrast", &settings.Skybox.Contrast, 0.01f, 0.0f, 5.0f);

@@ -10,33 +10,38 @@ uniform float uMode; // 0: Normal, 1: Normals Visualized, 2: Lighting only, 3: A
 
 // Material properties
 uniform sampler2D texture0; // Albedo
-uniform sampler2D texture1; // Emissive
+uniform sampler2D texture1; // Metallic
+uniform sampler2D texture2; // Normal
+uniform sampler2D texture3; // Roughness
+uniform sampler2D texture4; // Occlusion
+uniform sampler2D texture5; // Emission
+
 uniform vec4 colDiffuse;
 uniform vec4 colEmissive;
+
 uniform int useTexture;
+uniform int useNormalMap;
+uniform int useMetallicMap;
+uniform int useRoughnessMap;
+uniform int useOcclusionMap;
 uniform int useEmissiveTexture;
-uniform float shininess;
+
+uniform float metalness;
+uniform float roughness;
+uniform float shininess; // Legacy support (derived from roughness)
 uniform float emissiveIntensity;
 
-struct PointLight {
-    vec4 color;
-    vec3 position;
-    float intensity;
-    float radius;
-    int enabled;
-};
-
-struct SpotLight {
+struct Light {
     vec4 color;
     vec3 position;
     vec3 direction;
     float intensity;
-    float range;
+    float radius;
     float innerCutoff;
     float outerCutoff;
+    int type;       // 0: Point, 1: Spot
     int enabled;
 };
 
-#define MAX_LIGHTS 8
-uniform PointLight pointLights[MAX_LIGHTS];
-uniform SpotLight spotLights[MAX_LIGHTS];
+#define MAX_LIGHTS 16
+uniform Light lights[MAX_LIGHTS];

@@ -5,7 +5,6 @@ namespace CHEngine
 {
 void SceneScripting::Update(Scene *scene, Timestep deltaTime)
 {
-    static int systemFrame = 0;
     int scriptableEntities = 0;
     int scriptsUpdated = 0;
     
@@ -37,11 +36,6 @@ void SceneScripting::Update(Scene *scene, Timestep deltaTime)
                 }
             }
         });
-
-    if (systemFrame % 120 == 0) {
-        CH_CORE_INFO("[SCRIPT_DIAG] Update - Active Scripts: {}, Entities with NativeScript: {}", scriptsUpdated, scriptableEntities);
-    }
-    systemFrame++;
 }
 
 void SceneScripting::DispatchEvent(Scene *scene, Event &e)

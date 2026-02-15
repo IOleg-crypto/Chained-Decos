@@ -57,6 +57,45 @@ namespace CHEngine
         { GizmoType::SCALE,     ICON_FA_UP_RIGHT_FROM_SQUARE,  "Scale (R)",     KEY_R }
     };
 
+    void ViewportPanel::DrawCameraSelector(Scene* scene)
+    {
+        if (!scene) return;
+
+        ImGui::PushStyleColor(ImGuiCol_Button, {0.1f, 0.1f, 0.12f, 0.0f});
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 4.0f);
+
+        auto view = scene->GetRegistry().view<CameraComponent>();
+        Entity primaryCam = scene->GetPrimaryCameraEntity();
+        std::string currentLabel = primaryCam ? primaryCam.GetComponent<TagComponent>().Tag : "No Camera";
+
+        ImGui::SetNextItemWidth(150);
+        if (ImGui::BeginCombo("##CameraSelector", (ICON_FA_VIDEO "  " + currentLabel).c_str(), ImGuiComboFlags_None))
+        {
+            for (auto entityHandle : view)
+            {
+                Entity entity(entityHandle, &scene->GetRegistry());
+                bool isSelected = (entity == primaryCam);
+                std::string tag = entity.GetComponent<TagComponent>().Tag;
+
+                if (ImGui::Selectable(tag.c_str(), isSelected))
+                {
+                    // Unset all and set this one as primary
+                    for (auto otherHandle : view)
+                    {
+                        scene->GetRegistry().get<CameraComponent>(otherHandle).Primary = false;
+                    }
+                    entity.GetComponent<CameraComponent>().Primary = true;
+                }
+
+                if (isSelected) ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+
+        ImGui::PopStyleVar();
+        ImGui::PopStyleColor();
+    }
+
     void ViewportPanel::DrawGizmoButtons()
     {
         ImGui::PushStyleColor(ImGuiCol_Button, {0.1f, 0.1f, 0.1f, 0.0f}); // Transparent buttons in toolbar
@@ -89,6 +128,7 @@ namespace CHEngine
         }
 
         m_SceneRenderer = std::make_unique<SceneRenderer>();
+        m_CameraController = std::make_unique<EditorCameraController>();
     }
 
     ViewportPanel::~ViewportPanel()
@@ -129,6 +169,7 @@ namespace CHEngine
     }
 
     // Framebuffer management
+    auto activeScene = EditorLayer::Get().GetActiveScene();
     if (viewportSize.x != m_ViewportTexture.texture.width || viewportSize.y != m_ViewportTexture.texture.height)
     {
         if (viewportSize.x > 0 && viewportSize.y > 0)
@@ -136,10 +177,10 @@ namespace CHEngine
             UnloadRenderTexture(m_ViewportTexture);
             m_ViewportTexture = LoadRenderTexture((int)viewportSize.x, (int)viewportSize.y);
             EditorLayer::Get().SetViewportSize(viewportSize);
+            if (activeScene) activeScene->OnViewportResize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
         }
     }
 
-    auto activeScene = EditorLayer::Get().GetActiveScene();
     if (!activeScene || viewportSize.x <= 0 || viewportSize.y <= 0)
     {
         ImGui::PopID();
@@ -149,16 +190,37 @@ namespace CHEngine
     }
 
     BeginTextureMode(m_ViewportTexture);
-    ClearSceneBackground(activeScene.get(), {viewportSize.x, viewportSize.y});
-    Camera3D camera = m_EditorCamera.GetRaylibCamera();
-    if (EditorLayer::Get().GetSceneState() == SceneState::Play)
-    {
-         // Use the scene's active camera (which handles conversion from SceneCamera to Camera3D)
-         auto scene = EditorLayer::Get().GetActiveScene();
-         camera = scene->GetActiveCamera();
-    }
+    auto activeScene_raw = activeScene.get();
+    ClearSceneBackground(activeScene_raw, {viewportSize.x, viewportSize.y});
+    
+    auto activeCameraOpt = activeScene_raw->GetActiveCamera();
+    bool cameraFound = activeCameraOpt.has_value();
+    Camera3D camera = cameraFound ? activeCameraOpt.value() : Camera3D{0};
 
-    m_SceneRenderer->RenderScene(activeScene.get(), camera, GetFrameTime(), &EditorLayer::Get().GetDebugRenderFlags());
+    if (cameraFound)
+    {
+        m_SceneRenderer->RenderScene(activeScene.get(), camera, GetFrameTime(), &EditorLayer::Get().GetDebugRenderFlags());
+    }
+    else
+    {
+        // Only show warning if the scene actually expects 3D content
+        bool has3DContent = !activeScene->GetRegistry().view<ModelComponent>().empty() ||
+                            !activeScene->GetRegistry().view<SpriteComponent>().empty() ||
+                            !activeScene->GetRegistry().view<LightComponent>().empty();
+        
+        bool is3DBackground = activeScene->GetSettings().Mode == BackgroundMode::Environment3D;
+
+        if (has3DContent || is3DBackground)
+        {
+            // Draw black background or specific message
+            ClearBackground(BLACK);
+            const char* msg = "No Primary Camera Found in Scene!";
+            int fontSize = 20;
+            int textWidth = MeasureText(msg, fontSize);
+            DrawText(msg, (int)viewportSize.x / 2 - textWidth / 2, (int)viewportSize.y / 2 - 10, fontSize, GRAY);
+        }
+        // Otherwise: UI-only scene with flat background, no warning needed
+    }
     EndTextureMode();
 
     rlImGuiImageRenderTexture(&m_ViewportTexture);
@@ -406,13 +468,19 @@ namespace CHEngine
     ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5, 5));
     
-    if (ImGui::BeginChild("##FloatingToolbar", ImVec2(280, 40), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
+    if (ImGui::BeginChild("##FloatingToolbar", ImVec2(450, 40), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
     {
         ImGui::SetCursorPosY(6); // Center align vertically-ish
         ImGui::Indent(5);
         
         DrawGizmoButtons();
         
+        ImGui::SameLine(0, 10);
+        ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+        ImGui::SameLine(0, 10);
+
+        DrawCameraSelector(activeScene.get());
+
         ImGui::SameLine(0, 10);
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
         ImGui::SameLine(0, 10);
@@ -443,6 +511,21 @@ namespace CHEngine
         if (isPlaying) 
         {
             ImGui::PopStyleColor();
+        }
+
+        ImGui::SameLine(0, 15);
+        ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+        ImGui::SameLine(0, 15);
+
+        // Camera Info (Read-only status)
+        Entity primaryCam = activeScene->GetPrimaryCameraEntity();
+        if (primaryCam)
+        {
+            ImGui::TextDisabled(ICON_FA_CAMERA " %s", primaryCam.GetComponent<TagComponent>().Tag.c_str());
+        }
+        else
+        {
+            ImGui::TextColored({1, 0, 0, 1}, ICON_FA_CIRCLE_EXCLAMATION " No Primary Camera");
         }
     }
     ImGui::EndChild();
@@ -494,11 +577,17 @@ namespace CHEngine
     void ViewportPanel::OnUpdate(Timestep ts)
     {
         // Only update editor camera in Edit mode
-        // In Play mode, the runtime scene's camera (Player/CameraController) should be used
         if (EditorLayer::Get().GetSceneState() == SceneState::Edit)
         {
-            float deltaTime = ts;
-            m_EditorCamera.OnUpdate(deltaTime);
+            auto activeScene = EditorLayer::Get().GetActiveScene();
+            if (activeScene)
+            {
+                Entity primaryCamera = activeScene->GetPrimaryCameraEntity();
+                if (primaryCamera)
+                {
+                    m_CameraController->OnUpdate(primaryCamera, ts);
+                }
+            }
         }
     }
 

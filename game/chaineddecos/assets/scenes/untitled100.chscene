@@ -9,143 +9,41 @@ Canvas:
   ScaleMode: 0
   MatchWidthOrHeight: 0.5
 EnvironmentPath: environments/new_environment.chenv
-LightDirection: [-1, -1, -1]
-LightColor: [175, 93, 93, 255]
-AmbientIntensity: 0.300000012
+LightDirection: [0.0799999982, 1, 1]
+LightColor: [255, 244, 244, 255]
+AmbientIntensity: 0
 Skybox:
-  TexturePath: skyboxes/Starry night preview4.png
+  TexturePath: skyboxes/starry night preview4.png
   Exposure: 1
   Brightness: 0
   Contrast: 1
 Fog:
-  Enabled: true
-  Color: [130, 130, 130, 255]
-  Density: 0.00999999978
-  Start: 10
-  End: 500
+  Enabled: false
+  Color: [128, 123, 123, 255]
+  Density: 0.0480000004
+  Start: 0
+  End: 170.5
 Entities:
-  - Entity: 11929288971603114526
+  - Entity: 5150207293164281694
     TagComponent:
-      Tag: Empty Entity
+      Tag: SceneCamera
     TransformComponent:
-      Translation: [0.935241938, 16.0948315, 0.604247808]
-      Rotation: [0, -0, 0]
-      Scale: [1, 1, 1]
-    PointLightComponent:
-      LightColor: [21, 10, 10, 255]
-      Intensity: 0
-      Radius: 0
-    ShaderComponent:
-      ShaderPath: ../../../engine/resources/shaders/lighting.chshader
-  - Entity: 7935884460455885952
-    TagComponent:
-      Tag: Entity
-    TransformComponent:
-      Translation: [-0.175495267, 5.20984507, 46.9903793]
-      Rotation: [-10.7000151, 351.900116, 0]
+      Translation: [74.4722366, 94.6113586, 228.781982]
+      Rotation: [-24.7999821, 9.60002518, 0]
       Scale: [1, 1, 1]
     CameraComponent:
       Primary: true
       FixedAspectRatio: false
-      IsOrbitCamera: true
+      IsOrbitCamera: false
       OrbitDistance: 10
-      OrbitYaw: 351.900116
-      OrbitPitch: 10.7000151
+      OrbitYaw: 0
+      OrbitPitch: 20
       LookSensitivity: 0.899999976
       TargetEntityTag: Player
       ProjectionType: 0
-      PerspectiveFOV: 1.81512499
-      PerspectiveNear: 0.460000008
-      PerspectiveFar: 1000
-    NativeScriptComponent:
-      Scripts:
-        - OrbitCameraController
-  - Entity: 6428169142076434776
-    TagComponent:
-      Tag: Entity
-    TransformComponent:
-      Translation: [-50.6539459, 0.631593704, 10.243227]
-      Rotation: [-3.14159083, 78.4499969, -3.14159083]
-      Scale: [0.999882996, 1, 0.97942549]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/stairs.glb
-    ColliderComponent:
-      Type: -1076756223
-      Enabled: true
-      Offset: [0, 0, 0]
-      Size: [1, 1, 1]
-      Radius: 0.5
-      Height: 2
-      ModelHandle: 0
-      ModelPath: models/stairs.glb
-      AutoCalculate: true
-  - Entity: 1283719283719289
-    TagComponent:
-      Tag: Entity
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-  - Entity: 1326311650816898569
-    TagComponent:
-      Tag: Entity
-    TransformComponent:
-      Translation: [29.6749401, 14.5260134, 19.3268509]
-      Rotation: [0, -0, 0]
-      Scale: [1, 1, 1]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/player_low.glb
-    ShaderComponent:
-      ShaderPath: shaders/player_effect.chshader
-    ColliderComponent:
-      Type: -1058471678
-      Enabled: true
-      Offset: [0, 0, -0.293091357]
-      Size: [2.48000002, 5.67999983, 7.4000001]
-      Radius: 1.29999995
-      Height: 1.60000002
-      ModelHandle: 0
-      ModelPath: models/player_low.glb
-      AutoCalculate: true
-    RigidBodyComponent:
-      Mass: 2.9000001
-      UseGravity: true
-      IsKinematic: false
-    AudioComponent:
-      SoundHandle: 0
-      SoundPath: audio/storegraphic-soft-wind-477404.mp3
-      Loop: true
-      PlayOnStart: false
-      Volume: 0.850000024
-      Pitch: 1
-    PlayerComponent:
-      MovementSpeed: 15
-      LookSensitivity: 0.899999976
-      JumpForce: 10
-    NativeScriptComponent:
-      Scripts:
-        - PlayerController
-        - CameraController
-        - PlayerFall
-        - GameHUD
-        - ScreenFallEffect
-  - Entity: 1283719283719287
-    TagComponent:
-      Tag: Entity
-    TransformComponent:
-      Translation: [29.006649, 14.1767006, 17.6547604]
-      Rotation: [0, -0, 0]
-      Scale: [1, 1, 1]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: ""
-    SpawnComponent:
-      SpawnZoneSize: [1, 1, 1]
-      SpawnTextureHandle: 0
-      SpawnTexturePath: boxes/playerspawntexture.png
-      RenderSpawnZoneInScene: true
+      PerspectiveFOV: 0.680678427
+      PerspectiveNear: 0.25999999
+      PerspectiveFar: 1021
   - Entity: 1283719283719285
     TagComponent:
       Tag: Entity
@@ -157,12 +55,276 @@ Entities:
       ModelHandle: 0
       ModelPath: models/arena.glb
     ColliderComponent:
-      Type: -1289682687
+      Type: 257
       Enabled: true
-      Offset: [0, 0, 0]
-      Size: [1, 1, 1]
+      Offset: [-43.8236694, -46.1545258, -25.5901108]
+      Size: [86.6819458, 89.0095215, 94.478302]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
       ModelPath: models/arena.glb
       AutoCalculate: true
+  - Entity: 6428169142076434776
+    TagComponent:
+      Tag: Entity
+    TransformComponent:
+      Translation: [-50.6539459, 0.631593704, 19.7977505]
+      Rotation: [0, -0, 0]
+      Scale: [0.999882996, 1, 0.97942549]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/stairs.glb
+    ColliderComponent:
+      Type: 328597761
+      Enabled: true
+      Offset: [-14.1946049, -9.53674316e-07, -8.94524384]
+      Size: [34.1756821, 8.59185219, 22.6057091]
+      Radius: 0.5
+      Height: 2
+      ModelHandle: 0
+      ModelPath: models/stairs.glb
+      AutoCalculate: true
+  - Entity: 7254091853376171669
+    TagComponent:
+      Tag: Empty Entity
+    TransformComponent:
+      Translation: [67.6158752, 21.137598, 0]
+      Rotation: [0, -0, 0]
+      Scale: [0.200000003, 0.699999988, 1]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/cannon_01_1k.glb
+  - Entity: 1326311650816898569
+    TagComponent:
+      Tag: Player
+    TransformComponent:
+      Translation: [148.543503, 17.4170303, 26.5466709]
+      Rotation: [0, 1.4813509, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/player_low.glb
+    ShaderComponent:
+      ShaderPath: shaders/player_effect.chshader
+    ColliderComponent:
+      Type: 258
+      Enabled: true
+      Offset: [0.400000006, 2.9000001, -0.189999998]
+      Size: [2.48000002, 5.67999983, 7.4000001]
+      Radius: 0.850000024
+      Height: 7.30000019
+      ModelHandle: 0
+      ModelPath: models/player_low.glb
+      AutoCalculate: true
+    RigidBodyComponent:
+      Mass: 22.5
+      UseGravity: true
+      IsKinematic: false
+    AudioComponent:
+      SoundHandle: 0
+      SoundPath: audio/storegraphic-soft-wind-477404.mp3
+      Loop: true
+      PlayOnStart: false
+      Volume: 0.0666666999
+      Pitch: 1
+    PlayerComponent:
+      MovementSpeed: 15
+      LookSensitivity: 11.6000004
+      JumpForce: 53.2999992
+    NativeScriptComponent:
+      Scripts:
+        - PlayerController
+        - CameraController
+        - PlayerFall
+  - Entity: 1283719283719287
+    TagComponent:
+      Tag: Entity
+    TransformComponent:
+      Translation: [29.006649, 14.1767006, 17.6547604]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    SpawnComponent:
+      SpawnZoneSize: [1, 1, 1]
+      SpawnTextureHandle: 0
+      SpawnTexturePath: boxes/playerspawntexture.png
+      RenderSpawnZoneInScene: true
+  - Entity: 15242469730101395648
+    TagComponent:
+      Tag: Empty Entity
+    TransformComponent:
+      Translation: [1914.93005, -18.0200005, 77.3300018]
+      Rotation: [2.04422998, 1.51431203, 2.11483955]
+      Scale: [0.999981284, 0.999967575, 1.99592865]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/island/scene.gltf
+    ColliderComponent:
+      Type: 257
+      Enabled: true
+      Offset: [-18203.7422, -18237.1973, -18203.748]
+      Size: [36407.4922, 36661.4023, 36407.4844]
+      Radius: 0.5
+      Height: 2
+      ModelHandle: 0
+      ModelPath: models/island/scene.gltf
+      AutoCalculate: true
+  - Entity: 2700381502322294943
+    TagComponent:
+      Tag: rail
+    TransformComponent:
+      Translation: [64.8685074, 3.31698322, 17.91469]
+      Rotation: [3.14027047, -1.54398882, -3.14008403]
+      Scale: [2.81846547, 1.27921426, 1.24591637]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/train/scene.gltf
+    ColliderComponent:
+      Type: 1202848001
+      Enabled: true
+      Offset: [-1.23656988, -0.214926094, -8.88051033]
+      Size: [2.47655535, 0.44796145, 34.5889435]
+      Radius: 0.5
+      Height: 2
+      ModelHandle: 0
+      ModelPath: models/train/scene.gltf
+      AutoCalculate: true
+  - Entity: 2996550670976369937
+    TagComponent:
+      Tag: Empty Entity
+    TransformComponent:
+      Translation: [92.4755707, -11.0651646, 24.0801792]
+      Rotation: [0, -0, 0]
+      Scale: [35.4588318, 28.9697456, 12.7861452]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/building/scene.gltf
+    ColliderComponent:
+      Type: 257
+      Enabled: true
+      Offset: [-0.470180094, -1.86820998e-05, -2.96693921]
+      Size: [4.61537361, 1.63612497, 3.86329746]
+      Radius: 0.5
+      Height: 2
+      ModelHandle: 0
+      ModelPath: models/building/scene.gltf
+      AutoCalculate: true
+  - Entity: 3012313505211892935
+    TagComponent:
+      Tag: rail#3d
+    TransformComponent:
+      Translation: [708.529236, -28.0378571, 14.3776398]
+      Rotation: [3.14027047, -1.54398882, -3.14008403]
+      Scale: [2.93703127, 1.83832991, 8.07292271]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/train/scene.gltf
+    ColliderComponent:
+      Type: -1059258111
+      Enabled: true
+      Offset: [-1.23656988, -0.214926094, -8.88051033]
+      Size: [2.47655535, 0.44796145, 34.5889435]
+      Radius: 0.5
+      Height: 2
+      ModelHandle: 0
+      ModelPath: models/train/scene.gltf
+      AutoCalculate: true
+  - Entity: 6476044873312290418
+    TagComponent:
+      Tag: rail#2
+    TransformComponent:
+      Translation: [131.229553, 2.18234825, 18.5800953]
+      Rotation: [3.14027047, -1.54398894, -3.14008403]
+      Scale: [2.81845117, 1.27921426, 1.24591303]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/train/scene.gltf
+    ColliderComponent:
+      Type: 1090453761
+      Enabled: true
+      Offset: [-1.23656988, -0.214926094, -8.88051033]
+      Size: [2.47655535, 0.44796145, 34.5889435]
+      Radius: 0.5
+      Height: 2
+      ModelHandle: 0
+      ModelPath: models/train/scene.gltf
+      AutoCalculate: true
+  - Entity: 11765662603609844984
+    TagComponent:
+      Tag: rail#3d2
+    TransformComponent:
+      Translation: [187.766449, 2.06890726, 19.5122986]
+      Rotation: [3.14027047, -1.54398894, -3.14008403]
+      Scale: [2.81845117, 1.27921426, 1.24591303]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/train/scene.gltf
+    ColliderComponent:
+      Type: 1073348865
+      Enabled: true
+      Offset: [-1.23656988, -0.214926094, -8.88051033]
+      Size: [2.47655535, 0.44796145, 34.5889435]
+      Radius: 0.5
+      Height: 2
+      ModelHandle: 0
+      ModelPath: models/train/scene.gltf
+      AutoCalculate: true
+  - Entity: 16525386420936395396
+    TagComponent:
+      Tag: rail#3d
+    TransformComponent:
+      Translation: [434.188782, -19.7128429, 5.74443913]
+      Rotation: [3.14027047, -1.54398882, -3.14008403]
+      Scale: [3.65221, 1.83832991, 8.07292271]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/train/scene.gltf
+    ColliderComponent:
+      Type: -1047199487
+      Enabled: true
+      Offset: [-1.23656988, -0.214926094, -8.88051033]
+      Size: [2.47655535, 0.44796145, 34.5889435]
+      Radius: 0.5
+      Height: 2
+      ModelHandle: 0
+      ModelPath: models/train/scene.gltf
+      AutoCalculate: true
+  - Entity: 9126340763932821310
+    TagComponent:
+      Tag: Light
+    TransformComponent:
+      Translation: [-13.6915407, 81.3352585, 57.2093506]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: ":cube:"
+    LightComponent:
+      Type: 0
+      LightColor: [96, 95, 96, 255]
+      Intensity: 2.5999999
+      Radius: 135.800003
+      InnerCutoff: 15
+      OuterCutoff: 20
+  - Entity: 5796298439135209667
+    TagComponent:
+      Tag: CameraPlayer
+    TransformComponent:
+      Translation: [148.543503, 24.082674, 43.9112663]
+      Rotation: [-21.0000019, -0, 0]
+      Scale: [1, 1, 1]
+    CameraComponent:
+      Primary: true
+      FixedAspectRatio: false
+      IsOrbitCamera: true
+      OrbitDistance: 18.6000004
+      OrbitYaw: 0
+      OrbitPitch: 21
+      LookSensitivity: 0.899999976
+      TargetEntityTag: Player
+      ProjectionType: 0
+      PerspectiveFOV: 1.55334306
+      PerspectiveNear: 0.00999999978
+      PerspectiveFar: 1000
+    NativeScriptComponent:
+      Scripts:
+        - OrbitCameraController

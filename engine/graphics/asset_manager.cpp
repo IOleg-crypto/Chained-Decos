@@ -14,6 +14,7 @@
 #include "engine/graphics/mesh_importer.h"
 
 #include <algorithm>
+#include <future>
 
 namespace CHEngine
 {
@@ -131,24 +132,95 @@ namespace CHEngine
 
         std::string resolved = ResolvePath(path);
         
-        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
-        auto& cache = m_AssetCaches[type];
-        
-        if (auto it = cache.find(resolved); it != cache.end())
         {
-            return it->second;
+            std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+            auto& cache = m_AssetCaches[type];
+            if (auto it = cache.find(resolved); it != cache.end())
+            {
+                return it->second;
+            }
         }
 
         std::shared_ptr<Asset> asset = nullptr;
 
+        // Async path for specific types
+        if (type == AssetType::Texture || type == AssetType::Model || type == AssetType::Audio)
+        {
+            if (type == AssetType::Texture) asset = std::make_shared<TextureAsset>();
+            else if (type == AssetType::Model) asset = std::make_shared<ModelAsset>();
+            else asset = std::make_shared<SoundAsset>();
+
+            asset->SetPath(resolved);
+            asset->SetState(AssetState::Loading);
+
+            // Cache immediately to prevent duplicate requests
+            {
+                std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+                m_AssetCaches[type][resolved] = asset;
+            }
+
+            // Start background load
+            std::string pathCopy = resolved;
+            std::weak_ptr<Asset> weakAsset = asset;
+            
+            auto future = std::async(std::launch::async, [this, pathCopy, type, weakAsset]() {
+                auto sharedAsset = weakAsset.lock();
+                if (!sharedAsset) return;
+
+                bool success = false;
+                if (type == AssetType::Texture)
+                {
+                    auto texAsset = std::static_pointer_cast<TextureAsset>(sharedAsset);
+                    Image img = TextureImporter::LoadImageFromDisk(pathCopy);
+                    if (img.data != nullptr)
+                    {
+                        // Ensure RGBA (moved from importer to background task)
+                        ImageFormat(&img, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+                        texAsset->SetPendingImage(img);
+                        success = true;
+                    }
+                }
+                else if (type == AssetType::Model)
+                {
+                    auto modelAsset = std::static_pointer_cast<ModelAsset>(sharedAsset);
+                    auto pendingData = MeshImporter::LoadMeshDataFromDisk(pathCopy);
+                    if (pendingData.isValid)
+                    {
+                        modelAsset->SetPendingData(pendingData);
+                        success = true;
+                    }
+                }
+                else if (type == AssetType::Audio)
+                {
+                    auto soundAsset = std::static_pointer_cast<SoundAsset>(sharedAsset);
+                    AudioImporter::ImportSoundAsync(soundAsset, pathCopy);
+                    if (soundAsset->GetState() != AssetState::Failed)
+                        success = true;
+                }
+
+                if (success)
+                {
+                    std::lock_guard<std::mutex> lock(m_PendingUploadsMutex);
+                    m_PendingUploads.push_back(sharedAsset);
+                }
+                else
+                {
+                    sharedAsset->SetState(AssetState::Failed);
+                    CH_CORE_ERROR("AssetManager: Background load FAILED for '{}'", pathCopy);
+                }
+            });
+
+            {
+                std::lock_guard<std::mutex> lock(m_FuturesMutex);
+                m_Futures.push_back(std::move(future));
+            }
+
+            return asset;
+        }
+
+        // Sync path for others
         switch (type)
         {
-            case AssetType::Texture:
-                asset = std::static_pointer_cast<Asset>(TextureImporter::ImportTexture(resolved));
-                break;
-            case AssetType::Model:
-                asset = std::static_pointer_cast<Asset>(MeshImporter::ImportMesh(resolved));
-                break;
             case AssetType::Shader:
                 asset = std::static_pointer_cast<Asset>(ShaderImporter::ImportShader(resolved));
                 break;
@@ -173,8 +245,9 @@ namespace CHEngine
             metadata.FilePath = resolved;
             metadata.Type = type;
             
+            std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
             m_AssetMetadata[metadata.Handle] = metadata;
-            cache[resolved] = asset;
+            m_AssetCaches[type][resolved] = asset;
         }
 
         return asset;
@@ -209,7 +282,37 @@ namespace CHEngine
 
     void AssetManager::Update()
     {
-        // For now, mostly synchronous, but we can add async processing here
+        // 1. Clean up finished futures
+        {
+            std::lock_guard<std::mutex> lock(m_FuturesMutex);
+            m_Futures.erase(
+                std::remove_if(m_Futures.begin(), m_Futures.end(),
+                    [](std::future<void>& f) {
+                        return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+                    }),
+                m_Futures.end());
+        }
+
+        // 2. Process finished background loads on the main thread (GPU upload)
+        std::vector<std::shared_ptr<Asset>> toUpload;
+        {
+            std::lock_guard<std::mutex> lock(m_PendingUploadsMutex);
+            if (m_PendingUploads.empty()) return;
+            toUpload = std::move(m_PendingUploads);
+            m_PendingUploads.clear();
+        }
+
+        for (auto& asset : toUpload)
+        {
+            if (asset->GetType() == AssetType::Texture)
+                std::static_pointer_cast<TextureAsset>(asset)->UploadToGPU();
+            else if (asset->GetType() == AssetType::Model)
+                std::static_pointer_cast<ModelAsset>(asset)->UploadToGPU();
+            else if (asset->GetType() == AssetType::Audio)
+                std::static_pointer_cast<SoundAsset>(asset)->UploadToGPU();
+            
+            CH_CORE_INFO("AssetManager: Background load completed and uploaded to GPU for '{}'", asset->GetPath());
+        }
     }
 
     const AssetMetadata& AssetManager::GetMetadata(AssetHandle handle) const

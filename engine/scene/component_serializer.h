@@ -17,7 +17,7 @@ namespace CHEngine
         std::vector<uint64_t> children;
     };
 
-    // Опис серіалізатора для конкретного компонента
+    // Serializer description for a specific component
     struct ComponentSerializerEntry
     {
         std::string Key;
@@ -29,27 +29,27 @@ namespace CHEngine
     class ComponentSerializer
     {
     public:
-        // Ініціалізація реєстру всіма типами компонентів
+        // Initialize registry with all component types
         static void Initialize();
 
-        // Реєстрація компонента через декларативну схему (PropertyArchive)
-        // Це основний метод, який автоматично створює логіку серіалізації, десеріалізації та копіювання.
+        // Register component via declarative schema (PropertyArchive)
+        // This is the primary method that automatically creates serialization, deserialization, and copy logic.
         template<typename T>
         static void Register(const std::string& key, std::function<void(SerializationUtils::PropertyArchive&, T&)> schema);
 
-        // Реєстрація з кастомною логікою (для складних випадків)
+        // Register with custom logic (for complex cases)
         static void RegisterCustom(const ComponentSerializerEntry& entry);
 
-        // Серіалізація всіх зареєстрованих компонентів сутності
+        // Serialize all registered components of an entity
         static void SerializeAll(YAML::Emitter& out, Entity entity);
 
-        // Десеріалізація всіх зареєстрованих компонентів з YAML
+        // Deserialize all registered components from YAML
         static void DeserializeAll(Entity entity, YAML::Node node);
 
-        // Копіювання всіх компонентів від джерела до цілі (клонування)
+        // Copy all components from source to destination (cloning)
         static void CopyAll(Entity source, Entity destination);
 
-        // Спеціальні випадки (ID та ієрархія)
+        // Special cases (ID and hierarchy)
         static void SerializeID(YAML::Emitter& out, Entity entity);
         static void SerializeHierarchy(YAML::Emitter& out, Entity entity);
         static void DeserializeHierarchyTask(Entity entity, YAML::Node node, HierarchyTask& outTask);
@@ -58,14 +58,14 @@ namespace CHEngine
         static std::vector<ComponentSerializerEntry> s_Registry;
     };
 
-    // Реалізація шаблонів
+    // Template implementation
     template<typename T>
     void ComponentSerializer::Register(const std::string& key, std::function<void(SerializationUtils::PropertyArchive&, T&)> schema)
     {
         ComponentSerializerEntry entry;
         entry.Key = key;
         
-        // Серіалізація: перевіряємо наявність і записуємо як Map
+        // Serialization: check for presence and write as a Map
         entry.Serialize = [key, schema](YAML::Emitter& out, Entity entity) {
             if (entity.HasComponent<T>()) {
                 out << YAML::Key << key << YAML::Value << YAML::BeginMap;
@@ -75,7 +75,7 @@ namespace CHEngine
             }
         };
         
-        // Десеріалізація: додаємо компонент та наповнюємо даними
+        // Deserialization: add component and populate with data
         entry.Deserialize = [key, schema](Entity entity, YAML::Node node) {
             if (node[key]) {
                 if (!entity.HasComponent<T>())
@@ -88,7 +88,7 @@ namespace CHEngine
             }
         };
 
-        // Копіювання: автоматичне клонування через EnTT
+        // Copying: automatic cloning via EnTT
         entry.Copy = [](Entity source, Entity destination) {
             if (source.HasComponent<T>()) {
                 destination.AddOrReplaceComponent<T>(source.GetComponent<T>());

@@ -12,6 +12,8 @@
 #include <string>
 #include <unordered_map>
 #include <memory>
+#include <optional>
+#include <raylib.h>
 
 namespace CHEngine
 {
@@ -30,6 +32,7 @@ namespace CHEngine
         Entity CreateEntity(const std::string& name = std::string());
         Entity CreateEntityWithUUID(UUID uuid, const std::string& name = std::string());
         Entity CreateUIEntity(const std::string& type, const std::string& name = std::string());
+        Entity CopyEntity(entt::entity copyEntity);
         void DestroyEntity(Entity entity);
 
         Entity FindEntityByTag(const std::string& tag);
@@ -39,6 +42,7 @@ namespace CHEngine
         void OnRuntimeStart();
         void OnRuntimeStop();
         void OnUpdateRuntime(Timestep timestep);
+        void OnUpdateEditor(Timestep timestep);
         void OnViewportResize(uint32_t width, uint32_t height);
         
         bool IsSimulationRunning() const { return m_IsSimulationRunning; }
@@ -58,8 +62,11 @@ namespace CHEngine
         entt::registry& GetRegistry() { return m_Registry; }
         const entt::registry& GetRegistry() const { return m_Registry; }
 
-        Camera3D GetActiveCamera();
+        std::optional<Camera3D> GetActiveCamera();
         Entity GetPrimaryCameraEntity();
+
+    private:
+        Camera3D GetCameraFromEntity(entt::entity entityHandle);
 
     private:
         entt::registry m_Registry;

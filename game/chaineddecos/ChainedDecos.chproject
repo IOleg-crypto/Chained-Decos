@@ -25,9 +25,9 @@ Project:
     ShowStats: false
     EnableConsole: false
   Editor:
-    CameraMoveSpeed: 6.80000019
+    CameraMoveSpeed: 13.5
     CameraRotationSpeed: 1
-    CameraBoostMultiplier: 2.29999995
+    CameraBoostMultiplier: 20
   Scripting:
     ModuleName: libChainedDecosGame
     ModuleDirectory: bin

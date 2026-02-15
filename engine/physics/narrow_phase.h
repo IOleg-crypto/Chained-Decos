@@ -27,6 +27,13 @@ private:
     void ResolveCapsuleMesh(::entt::registry &registry, ::entt::entity rbEntity,
                                    ::entt::entity otherEntity);
 
+    void ResolveSphereBox(::entt::registry& registry, ::entt::entity rbEntity,
+                                 ::entt::entity otherEntity);
+    void ResolveSphereMesh(::entt::registry& registry, ::entt::entity rbEntity,
+                                  ::entt::entity otherEntity);
+    void ResolveSphereSphere(::entt::registry& registry, ::entt::entity rbEntity,
+                                    ::entt::entity otherEntity);
+
 private:
     Physics* m_Physics;
 };

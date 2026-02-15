@@ -1,4 +1,4 @@
-vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 baseColor, float shininess)
+vec3 CalcPointLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 baseColor, float shininess)
 {
     if (light.enabled == 0) return vec3(0.0);
 

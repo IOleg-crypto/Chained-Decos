@@ -18,14 +18,9 @@ namespace CHEngine
             auto scene = GetScene();
             if (!scene) return;
 
-            static int frame = 0;
             bool hasPlayer = HasComponent<PlayerComponent>();
             bool hasRigidBody = HasComponent<RigidBodyComponent>();
             
-            if (frame % 60 == 0) {
-                CH_CORE_INFO("[DIAG] PlayerController Update - Frame: {}, HasPlayer: {}, HasRB: {}", frame, hasPlayer, hasRigidBody);
-            }
-
             if (!hasPlayer)
                 return;
 
@@ -38,18 +33,6 @@ namespace CHEngine
                 currentSpeed = player.MovementSpeed;
                 jumpForce = player.JumpForce;
             }
-            else if (frame % 300 == 0)
-            {
-                CH_CORE_WARN("PlayerController: Missing PlayerComponent on entity '{}'. Using default speed (15.0).", 
-                    GetEntity().GetComponent<TagComponent>().Tag);
-            }
-
-            if (!hasRigidBody)
-            {
-                if (frame % 60 == 0) CH_CORE_WARN("PlayerController: Missing RigidBodyComponent on entity '{}'. Movement disabled.", 
-                    GetEntity().GetComponent<TagComponent>().Tag);
-                return;
-            }
             auto &rigidBody = GetComponent<RigidBodyComponent>();
 
             bool wDown = Input::IsKeyDown(KEY_W);
@@ -61,7 +44,11 @@ namespace CHEngine
                 currentSpeed *= 2.0f;
 
             // 1. Get orientation from the active camera (Hazel Style)
-            Camera3D camera = scene->GetActiveCamera();
+            auto sceneCamera = scene->GetActiveCamera();
+            if (!sceneCamera.has_value())
+                return;
+
+            Camera3D camera = sceneCamera.value();
             Vector3 cameraForward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
             Vector3 cameraRight = Vector3Normalize(Vector3CrossProduct(cameraForward, camera.up));
             
@@ -103,7 +90,6 @@ namespace CHEngine
                 rigidBody.Velocity.z = 0;
             }
 
-            frame++;
 
             // Jump handling
             if (Input::IsKeyPressed(KEY_SPACE) && rigidBody.IsGrounded)

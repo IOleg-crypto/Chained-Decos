@@ -63,7 +63,10 @@ public:
         ::ClearBackground(bgColor);
 
         auto camera = GetActiveCamera();
-        m_SceneRenderer->RenderScene(m_Scene.get(), camera, ts);
+        if (camera.has_value())
+        {
+            m_SceneRenderer->RenderScene(m_Scene.get(), camera.value(), ts);
+        }
     }
 
     virtual void OnImGuiRender() override
@@ -207,19 +210,12 @@ public:
         }
     }
 
-    Camera3D GetActiveCamera()
+    std::optional<Camera3D> GetActiveCamera()
     {
         if (m_Scene)
             return m_Scene->GetActiveCamera();
 
-        // Fallback
-        Camera3D camera = {0};
-        camera.position = {10.0f, 10.0f, 10.0f};
-        camera.target = {0.0f, 0.0f, 0.0f};
-        camera.up = {0.0f, 1.0f, 0.0f};
-        camera.fovy = 45.0f;
-        camera.projection = CAMERA_PERSPECTIVE;
-        return camera;
+        return std::nullopt;
     }
 
 private:

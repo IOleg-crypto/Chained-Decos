@@ -36,11 +36,19 @@ namespace CHEngine
         auto project = Project::GetActive();
         auto assetManager = project ? project->GetAssetManager() : nullptr;
 
-        // Shaders loading - either through AssetManager or fallback
+        // Shaders loading - through AssetManager into the Library
         if (assetManager)
         {
-            s_Instance->m_Data->LightingShader = assetManager->Get<ShaderAsset>("engine/resources/shaders/lighting.chshader");
-            s_Instance->m_Data->SkyboxShader = assetManager->Get<ShaderAsset>("engine/resources/shaders/skybox.chshader");
+            auto& lib = s_Instance->GetShaderLibrary();
+            
+            auto lightingShader = assetManager->Get<ShaderAsset>("engine/resources/shaders/lighting.chshader");
+            if (lightingShader) lib.Add("Lighting", lightingShader);
+
+            auto skyboxShader = assetManager->Get<ShaderAsset>("engine/resources/shaders/skybox.chshader");
+            if (skyboxShader) lib.Add("Skybox", skyboxShader);
+            
+            auto unlitShader = assetManager->Get<ShaderAsset>("engine/resources/shaders/unlit.chshader");
+            if (unlitShader) lib.Add("Unlit", unlitShader);
 
             // Icons
             auto lightIcon = assetManager->Get<TextureAsset>("engine/resources/icons/light_bulb.png");
@@ -71,6 +79,7 @@ namespace CHEngine
     Renderer::Renderer()
     {
         m_Data = std::make_unique<RendererData>();
+        m_Data->Shaders = std::make_unique<ShaderLibrary>();
     }
 
     Renderer::~Renderer()
@@ -116,7 +125,7 @@ namespace CHEngine
         if (modelAsset && modelAsset->GetState() == AssetState::Ready)
         {
             Model& model = modelAsset->GetModel();
-            CH_CORE_TRACE("Renderer::DrawModel - Rendering: {} ({} meshes)", modelAsset->GetPath(), model.meshCount);
+            //CH_CORE_TRACE("Renderer::DrawModel - Rendering: {} ({} meshes)", modelAsset->GetPath(), model.meshCount);
 
             // Apply animation if needed
             if (animationIndex >= 0)
@@ -159,8 +168,11 @@ namespace CHEngine
 
                 auto activeShader = shaderOverride;
 
-                if (!activeShader && material.shader.id == 0)
-                    activeShader = m_Data->LightingShader;
+                if (!activeShader)
+                {
+                    if (m_Data->Shaders->Exists("Lighting"))
+                        activeShader = m_Data->Shaders->Get("Lighting");
+                }
 
                 Matrix meshTransform = MatrixMultiply(model.transform, transform);
 
@@ -183,28 +195,19 @@ namespace CHEngine
                     activeShader->SetVec3("viewPos", m_Data->CurrentCameraPosition);
                     activeShader->SetFloat("uTime", m_Data->Time);
                     
-                    // Set lights
+                    // Set lights (Unified)
                     for (int l = 0; l < RendererData::MaxLights; l++)
                     {
-                        std::string base = "pointLights[" + std::to_string(l) + "].";
-                        activeShader->SetColor(base + "color", m_Data->PointLights[l].color);
-                        activeShader->SetVec3(base + "position", m_Data->PointLights[l].position);
-                        activeShader->SetFloat(base + "intensity", m_Data->PointLights[l].intensity);
-                        activeShader->SetFloat(base + "radius", m_Data->PointLights[l].radius);
-                        activeShader->SetInt(base + "enabled", m_Data->PointLights[l].enabled ? 1 : 0);
-                    }
-
-                    for (int l = 0; l < RendererData::MaxLights; l++)
-                    {
-                        std::string base = "spotLights[" + std::to_string(l) + "].";
-                        activeShader->SetColor(base + "color", m_Data->SpotLights[l].color);
-                        activeShader->SetVec3(base + "position", m_Data->SpotLights[l].position);
-                        activeShader->SetVec3(base + "direction", m_Data->SpotLights[l].direction);
-                        activeShader->SetFloat(base + "intensity", m_Data->SpotLights[l].intensity);
-                        activeShader->SetFloat(base + "range", m_Data->SpotLights[l].range);
-                        activeShader->SetFloat(base + "innerCutoff", m_Data->SpotLights[l].innerCutoff);
-                        activeShader->SetFloat(base + "outerCutoff", m_Data->SpotLights[l].outerCutoff);
-                        activeShader->SetInt(base + "enabled", m_Data->SpotLights[l].enabled ? 1 : 0);
+                        std::string base = "lights[" + std::to_string(l) + "].";
+                        activeShader->SetColor(base + "color", m_Data->Lights[l].color);
+                        activeShader->SetVec3(base + "position", m_Data->Lights[l].position);
+                        activeShader->SetVec3(base + "direction", m_Data->Lights[l].direction);
+                        activeShader->SetFloat(base + "intensity", m_Data->Lights[l].intensity);
+                        activeShader->SetFloat(base + "radius", m_Data->Lights[l].radius);
+                        activeShader->SetFloat(base + "innerCutoff", m_Data->Lights[l].innerCutoff);
+                        activeShader->SetFloat(base + "outerCutoff", m_Data->Lights[l].outerCutoff);
+                        activeShader->SetInt(base + "type", m_Data->Lights[l].type);
+                        activeShader->SetInt(base + "enabled", m_Data->Lights[l].enabled ? 1 : 0);
                     }
 
                     // Set untextured support hint
@@ -213,11 +216,29 @@ namespace CHEngine
                     // Set material properties
                     activeShader->SetColor("colDiffuse", material.maps[MATERIAL_MAP_ALBEDO].color);
                     
-                    // Set emissive properties
-                    Color colEmissive = material.maps[MATERIAL_MAP_EMISSION].color;
-                    float emissiveIntensity = 0.0f;
+                    // PBR Maps & Uniforms
+                    int useNormalMap = material.maps[MATERIAL_MAP_NORMAL].texture.id > 0 ? 1 : 0;
+                    int useMetallicMap = material.maps[MATERIAL_MAP_METALNESS].texture.id > 0 ? 1 : 0;
+                    int useRoughnessMap = material.maps[MATERIAL_MAP_ROUGHNESS].texture.id > 0 ? 1 : 0;
+                    int useOcclusionMap = material.maps[MATERIAL_MAP_OCCLUSION].texture.id > 0 ? 1 : 0;
                     int useEmissiveTexture = material.maps[MATERIAL_MAP_EMISSION].texture.id > 0 ? 1 : 0;
 
+                    activeShader->SetInt("useNormalMap", useNormalMap);
+                    activeShader->SetInt("useMetallicMap", useMetallicMap);
+                    activeShader->SetInt("useRoughnessMap", useRoughnessMap);
+                    activeShader->SetInt("useOcclusionMap", useOcclusionMap);
+                    activeShader->SetInt("useEmissiveTexture", useEmissiveTexture);
+
+                    float metalness = material.maps[MATERIAL_MAP_METALNESS].value;
+                    float roughness = material.maps[MATERIAL_MAP_ROUGHNESS].value;
+
+                    activeShader->SetFloat("metalness", metalness);
+                    activeShader->SetFloat("roughness", roughness);
+
+                    // Emissive
+                    Color colEmissive = material.maps[MATERIAL_MAP_EMISSION].color;
+                    float emissiveIntensity = 0.0f;
+                    
                     // Sync with custom MaterialInstance if available
                     for (const auto& slot : materialSlotOverrides) {
                         bool match = false;
@@ -226,6 +247,10 @@ namespace CHEngine
                         if (match) {
                             emissiveIntensity = slot.Material.EmissiveIntensity;
                             if (slot.Material.OverrideEmissive) colEmissive = slot.Material.EmissiveColor;
+                            
+                            // Also potential overrides for roughness/metalness if we add them to MaterialInstance
+                            roughness = slot.Material.Roughness;
+                            activeShader->SetFloat("roughness", roughness);
                             break;
                         }
                     }
@@ -237,20 +262,10 @@ namespace CHEngine
 
                     activeShader->SetColor("colEmissive", colEmissive);
                     activeShader->SetFloat("emissiveIntensity", emissiveIntensity);
-                    activeShader->SetInt("useEmissiveTexture", useEmissiveTexture);
                     
-                    // Map Roughness to Shininess for Phong shaders
-                    float shininess = 32.0f; // Default
-                    for (const auto& slot : materialSlotOverrides) {
-                        bool match = false;
-                        if (slot.Target == MaterialSlotTarget::MeshIndex && slot.Index == i) match = true;
-                        else if (slot.Target == MaterialSlotTarget::MaterialIndex && slot.Index == model.meshMaterial[i]) match = true;
-                        if (match) {
-                            shininess = (1.0f - slot.Material.Roughness) * 128.0f;
-                            if (shininess < 1.0f) shininess = 1.0f;
-                            break;
-                        }
-                    }
+                    // Map Roughness to Shininess for legacy parts (if any)
+                    float shininess = (1.0f - roughness) * 128.0f;
+                    if (shininess < 1.0f) shininess = 1.0f;
                     activeShader->SetFloat("shininess", shininess);
 
                     // Set global diagnostic mode
@@ -324,9 +339,43 @@ namespace CHEngine
         rlPopMatrix();
     }
 
+    void Renderer::DrawCapsuleWires(const Matrix& transform, float radius, float height, Color color)
+    {
+        rlPushMatrix();
+        rlMultMatrixf(MatrixToFloat(transform));
+
+        float cylinderHeight = height - 2.0f * radius;
+        if (cylinderHeight < 0) cylinderHeight = 0;
+        float halfCylinder = cylinderHeight * 0.5f;
+
+        // Draw Cylinder (aligned to Y axis)
+        if (cylinderHeight > 0)
+        {
+            Vector3 start = {0, -halfCylinder, 0};
+            Vector3 end = {0, halfCylinder, 0};
+            ::DrawCylinderWiresEx(start, end, radius, radius, 8, color);
+        }
+
+        // Draw Caps
+        ::DrawSphereWires({0, -halfCylinder, 0}, radius, 8, 8, color);
+        ::DrawSphereWires({0, halfCylinder, 0}, radius, 8, 8, color);
+
+        rlPopMatrix();
+    }
+
+    void Renderer::DrawSphereWires(const Matrix& transform, float radius, Color color)
+    {
+        rlPushMatrix();
+        rlMultMatrixf(MatrixToFloat(transform));
+
+        ::DrawSphereWires({0, 0, 0}, radius, 8, 8, color);
+
+        rlPopMatrix();
+    }
+
     void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
     {
-        if (!m_Data->SkyboxShader || skybox.TexturePath.empty()) return;
+        if (skybox.TexturePath.empty()) return;
 
         auto project = Project::GetActive();
         if (!project) return;
@@ -351,13 +400,14 @@ namespace CHEngine
             if (!textureAsset->IsReady()) return;
         }
         
-        if (m_Data->SkyboxShader->GetShader().id == 0) return;
+        auto skyboxShader = m_Data->Shaders->Exists("Skybox") ? m_Data->Shaders->Get("Skybox") : nullptr;
+        if (!skyboxShader || skyboxShader->GetShader().id == 0) return;
 
         RenderCommand::DisableBackfaceCulling();
         RenderCommand::DisableDepthMask();
 
         Material material = LoadMaterialDefault();
-        material.shader = m_Data->SkyboxShader->GetShader();
+        material.shader = skyboxShader->GetShader();
         Texture2D skyTexture = textureAsset->GetTexture();
         
         if (skyTexture.id == 0)
@@ -373,27 +423,28 @@ namespace CHEngine
         material.maps[MATERIAL_MAP_ALBEDO].texture = skyTexture;
 
         // Pass missing matrices to shader (required by skybox.vs)
-        m_Data->SkyboxShader->SetMatrix("matProjection", rlGetMatrixProjection());
-        m_Data->SkyboxShader->SetMatrix("matView", rlGetMatrixModelview());
+        skyboxShader->SetMatrix("matProjection", rlGetMatrixProjection());
+        skyboxShader->SetMatrix("matView", rlGetMatrixModelview());
 
-        m_Data->SkyboxShader->SetFloat("exposure", skybox.Exposure);
-        m_Data->SkyboxShader->SetFloat("brightness", skybox.Brightness);
-        m_Data->SkyboxShader->SetFloat("contrast", skybox.Contrast);
-        m_Data->SkyboxShader->SetInt("vflipped", 0);
-        m_Data->SkyboxShader->SetInt("doGamma", 0);
-        m_Data->SkyboxShader->SetFloat("fragGamma", 2.2f);
+        skyboxShader->SetFloat("exposure", skybox.Exposure);
+        skyboxShader->SetFloat("brightness", skybox.Brightness);
+        skyboxShader->SetFloat("contrast", skybox.Contrast);
+        skyboxShader->SetInt("vflipped", 0);
+        skyboxShader->SetInt("skyboxMode", skybox.Mode); // 0: Equirect, 1: Cross
+        skyboxShader->SetInt("doGamma", 0);
+        skyboxShader->SetFloat("fragGamma", 2.2f);
 
         // Fog uniforms
-        m_Data->SkyboxShader->SetInt("fogEnabled", m_Data->FogEnabled ? 1 : 0);
+        skyboxShader->SetInt("fogEnabled", m_Data->FogEnabled ? 1 : 0);
         if (m_Data->FogEnabled)
         {
-            m_Data->SkyboxShader->SetColor("fogColor", m_Data->FogColor);
-            m_Data->SkyboxShader->SetFloat("fogDensity", m_Data->FogDensity);
-            m_Data->SkyboxShader->SetFloat("fogStart", m_Data->FogStart);
-            m_Data->SkyboxShader->SetFloat("fogEnd", m_Data->FogEnd);
+            skyboxShader->SetColor("fogColor", m_Data->FogColor);
+            skyboxShader->SetFloat("fogDensity", m_Data->FogDensity);
+            skyboxShader->SetFloat("fogStart", m_Data->FogStart);
+            skyboxShader->SetFloat("fogEnd", m_Data->FogEnd);
         }
 
-        m_Data->SkyboxShader->SetFloat("uTime", m_Data->Time);
+        skyboxShader->SetFloat("uTime", m_Data->Time);
 
         DrawMesh(m_Data->SkyboxCube.meshes[0], material, MatrixTranslate(camera.position.x, camera.position.y, camera.position.z));
 
@@ -418,39 +469,16 @@ namespace CHEngine
         m_Data->CurrentAmbientIntensity = intensity;
     }
 
-    void Renderer::SetPointLight(int index, Vector3 position, Color color, float intensity, float radius)
+    void Renderer::SetLight(int index, const RenderLight& light)
     {
         if (index < 0 || index >= RendererData::MaxLights) return;
-        m_Data->PointLights[index].position = position;
-        m_Data->PointLights[index].color = color;
-        m_Data->PointLights[index].intensity = intensity;
-        m_Data->PointLights[index].radius = radius;
-        m_Data->PointLights[index].enabled = true;
+        m_Data->Lights[index] = light;
     }
 
-    void Renderer::SetSpotLight(int index, Vector3 position, Vector3 direction, Color color, float intensity, float range, float innerCutoff, float outerCutoff)
-    {
-        if (index < 0 || index >= RendererData::MaxLights) return;
-        m_Data->SpotLights[index].position = position;
-        m_Data->SpotLights[index].direction = direction;
-        m_Data->SpotLights[index].color = color;
-        m_Data->SpotLights[index].intensity = intensity;
-        m_Data->SpotLights[index].range = range;
-        m_Data->SpotLights[index].innerCutoff = innerCutoff;
-        m_Data->SpotLights[index].outerCutoff = outerCutoff;
-        m_Data->SpotLights[index].enabled = true;
-    }
-
-    void Renderer::ClearPointLights()
+    void Renderer::ClearLights()
     {
         for (int i = 0; i < RendererData::MaxLights; i++)
-            m_Data->PointLights[i].enabled = false;
-    }
-
-    void Renderer::ClearSpotLights()
-    {
-        for (int i = 0; i < RendererData::MaxLights; i++)
-            m_Data->SpotLights[i].enabled = false;
+            m_Data->Lights[i].enabled = false;
     }
 
     void Renderer::ApplyEnvironment(const EnvironmentSettings& settings)
@@ -484,27 +512,34 @@ namespace CHEngine
 
     void Renderer::EnsureShadersLoaded()
     {
-        if (m_Data->LightingShader && m_Data->SkyboxShader && m_Data->LightingShader->GetShader().id != 0 && m_Data->SkyboxShader->GetShader().id != 0)
-            return;
-
         auto project = Project::GetActive();
         if (!project) return;
 
         auto assetManager = project->GetAssetManager();
         if (!assetManager) return;
+        
+        auto& lib = s_Instance->GetShaderLibrary();
 
-        if (!m_Data->LightingShader || m_Data->LightingShader->GetShader().id == 0)
+        // 1. Lighting Shader
+        if (!lib.Exists("Lighting"))
         {
-            m_Data->LightingShader = assetManager->Get<ShaderAsset>("engine/resources/shaders/lighting.chshader");
-            if (m_Data->LightingShader)
-                CH_CORE_INFO("Renderer: Lighting shader loaded lazily.");
+            auto shader = assetManager->Get<ShaderAsset>("engine/resources/shaders/lighting.chshader");
+            if (shader) 
+            {
+                lib.Add("Lighting", shader);
+                CH_CORE_INFO("Renderer: 'Lighting' shader loaded lazily.");
+            }
         }
 
-        if (!m_Data->SkyboxShader || m_Data->SkyboxShader->GetShader().id == 0)
+        // 2. Skybox Shader
+        if (!lib.Exists("Skybox"))
         {
-            m_Data->SkyboxShader = assetManager->Get<ShaderAsset>("engine/resources/shaders/skybox.chshader");
-            if (m_Data->SkyboxShader)
-                CH_CORE_INFO("Renderer: Skybox shader loaded lazily.");
+            auto shader = assetManager->Get<ShaderAsset>("engine/resources/shaders/skybox.chshader");
+            if (shader) 
+            {
+                lib.Add("Skybox", shader);
+                CH_CORE_INFO("Renderer: 'Skybox' shader loaded lazily.");
+            }
         }
     }
 }

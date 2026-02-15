@@ -72,6 +72,47 @@ namespace CHEngine
                         m_PendingTextures.push_back({i, rawMaterial.emissivePath, MATERIAL_MAP_EMISSION});
                     }
                 }
+
+                // Handle Normal
+                if (!rawMaterial.normalPath.empty() && project) {
+                    auto textureAsset = project->GetAssetManager()->Get<TextureAsset>(rawMaterial.normalPath);
+                    if (textureAsset && textureAsset->IsReady()) {
+                        model.materials[i].maps[MATERIAL_MAP_NORMAL].texture = textureAsset->GetTexture();
+                        m_Textures.push_back(textureAsset);
+                    }
+                    else if (textureAsset) {
+                        m_PendingTextures.push_back({i, rawMaterial.normalPath, MATERIAL_MAP_NORMAL});
+                    }
+                }
+
+                // Handle Metallic/Roughness (Packed)
+                model.materials[i].maps[MATERIAL_MAP_METALNESS].value = rawMaterial.metalness;
+                model.materials[i].maps[MATERIAL_MAP_ROUGHNESS].value = rawMaterial.roughness;
+
+                if (!rawMaterial.metallicRoughnessPath.empty() && project) {
+                    auto textureAsset = project->GetAssetManager()->Get<TextureAsset>(rawMaterial.metallicRoughnessPath);
+                    if (textureAsset && textureAsset->IsReady()) {
+                        model.materials[i].maps[MATERIAL_MAP_METALNESS].texture = textureAsset->GetTexture();
+                        model.materials[i].maps[MATERIAL_MAP_ROUGHNESS].texture = textureAsset->GetTexture();
+                        m_Textures.push_back(textureAsset);
+                    }
+                    else if (textureAsset) {
+                        m_PendingTextures.push_back({i, rawMaterial.metallicRoughnessPath, MATERIAL_MAP_METALNESS});
+                        m_PendingTextures.push_back({i, rawMaterial.metallicRoughnessPath, MATERIAL_MAP_ROUGHNESS});
+                    }
+                }
+
+                // Handle Occlusion
+                if (!rawMaterial.occlusionPath.empty() && project) {
+                    auto textureAsset = project->GetAssetManager()->Get<TextureAsset>(rawMaterial.occlusionPath);
+                    if (textureAsset && textureAsset->IsReady()) {
+                        model.materials[i].maps[MATERIAL_MAP_OCCLUSION].texture = textureAsset->GetTexture();
+                        m_Textures.push_back(textureAsset);
+                    }
+                    else if (textureAsset) {
+                        m_PendingTextures.push_back({i, rawMaterial.occlusionPath, MATERIAL_MAP_OCCLUSION});
+                    }
+                }
             }
         }
 
@@ -101,7 +142,24 @@ namespace CHEngine
                     std::memcpy(mesh.indices, rawMesh.indices.data(), rawMesh.indices.size() * sizeof(unsigned short));
                 }
 
+                if (!rawMesh.colors.empty()) {
+                    mesh.colors = (unsigned char*)RL_MALLOC(rawMesh.colors.size() * sizeof(unsigned char));
+                    std::memcpy(mesh.colors, rawMesh.colors.data(), rawMesh.colors.size() * sizeof(unsigned char));
+                }
+
+                if (!rawMesh.tangents.empty()) {
+                    mesh.tangents = (float*)RL_MALLOC(rawMesh.tangents.size() * sizeof(float));
+                    std::memcpy(mesh.tangents, rawMesh.tangents.data(), rawMesh.tangents.size() * sizeof(float));
+                }
+
                 UploadMesh(&mesh, false);
+
+                // If no tangents but we have normals and texcoords, generate them
+                if (mesh.tangents == nullptr && mesh.normals != nullptr && mesh.texcoords != nullptr) {
+                    GenMeshTangents(&mesh);
+                    // Re-upload with tangents
+                    UpdateMeshBuffer(mesh, 4, mesh.tangents, mesh.vertexCount * 4 * sizeof(float), 0);
+                }
             }
             
             model.meshes[i] = mesh;

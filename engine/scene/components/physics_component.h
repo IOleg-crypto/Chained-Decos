@@ -15,7 +15,8 @@ enum class ColliderType : uint8_t
 {
     Box = 0,
     Mesh = 1,
-    Capsule = 2
+    Capsule = 2,
+    Sphere = 3
 };
 
 struct ColliderComponent
