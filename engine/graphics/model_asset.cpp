@@ -152,6 +152,16 @@ namespace CHEngine
                     std::memcpy(mesh.tangents, rawMesh.tangents.data(), rawMesh.tangents.size() * sizeof(float));
                 }
 
+                if (!rawMesh.joints.empty()) {
+                    mesh.boneIds = (unsigned char*)RL_MALLOC(rawMesh.joints.size() * sizeof(unsigned char));
+                    std::memcpy(mesh.boneIds, rawMesh.joints.data(), rawMesh.joints.size() * sizeof(unsigned char));
+                }
+
+                if (!rawMesh.weights.empty()) {
+                    mesh.boneWeights = (float*)RL_MALLOC(rawMesh.weights.size() * sizeof(float));
+                    std::memcpy(mesh.boneWeights, rawMesh.weights.data(), rawMesh.weights.size() * sizeof(float));
+                }
+
                 UploadMesh(&mesh, false);
 
                 // If no tangents but we have normals and texcoords, generate them
@@ -172,6 +182,22 @@ namespace CHEngine
         {
             std::lock_guard<std::mutex> lock(m_ModelMutex);
             m_Model = model;
+            
+            // Transfer animations
+            m_Animations = m_PendingData.animations;
+            m_AnimationCount = m_PendingData.animationCount;
+            
+            // If we have animations, the model needs bones for UpdateModelAnimation to work
+            if (m_AnimationCount > 0 && m_Animations[0].boneCount > 0)
+            {
+                m_Model.boneCount = m_Animations[0].boneCount;
+                m_Model.bones = (BoneInfo*)RL_MALLOC(m_Model.boneCount * sizeof(BoneInfo));
+                std::memcpy(m_Model.bones, m_Animations[0].bones, m_Model.boneCount * sizeof(BoneInfo));
+                
+                // Use first frame of first animation as bind pose if no better option
+                m_Model.bindPose = (Transform*)RL_MALLOC(m_Model.boneCount * sizeof(Transform));
+                std::memcpy(m_Model.bindPose, m_Animations[0].framePoses[0], m_Model.boneCount * sizeof(Transform));
+            }
         }
         
         m_PendingData = PendingModelData();

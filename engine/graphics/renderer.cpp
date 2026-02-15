@@ -127,14 +127,36 @@ namespace CHEngine
             Model& model = modelAsset->GetModel();
             //CH_CORE_TRACE("Renderer::DrawModel - Rendering: {} ({} meshes)", modelAsset->GetPath(), model.meshCount);
 
-            // Apply animation if needed
+            // Apply animation matrices for GPU skinning
+            std::vector<Matrix> boneMatrices;
             if (animationIndex >= 0)
             {
                 int animationCount = 0;
                 auto* animations = modelAsset->GetAnimations(&animationCount);
                 if (animations && animationIndex < animationCount)
                 {
-                    UpdateModelAnimation(model, animations[animationIndex], frameIndex);
+                    ModelAnimation anim = animations[animationIndex];
+                    boneMatrices.resize(anim.boneCount);
+                    
+                    std::vector<Matrix> globalPose(anim.boneCount);
+                    for (int i = 0; i < anim.boneCount; i++)
+                    {
+                        Matrix localMat = QuaternionToMatrix(anim.framePoses[frameIndex][i].rotation);
+                        localMat = MatrixMultiply(localMat, MatrixTranslate(anim.framePoses[frameIndex][i].translation.x, anim.framePoses[frameIndex][i].translation.y, anim.framePoses[frameIndex][i].translation.z));
+                        // localMat = MatrixMultiply(MatrixScale(...), localMat);
+
+                        int parent = anim.bones[i].parent;
+                        if (parent == -1) globalPose[i] = localMat;
+                        else globalPose[i] = MatrixMultiply(globalPose[parent], localMat);
+                    }
+
+                    for (int i = 0; i < anim.boneCount; i++)
+                    {
+                        Matrix bindMat = QuaternionToMatrix(model.bindPose[i].rotation);
+                        bindMat = MatrixMultiply(bindMat, MatrixTranslate(model.bindPose[i].translation.x, model.bindPose[i].translation.y, model.bindPose[i].translation.z));
+                        
+                        boneMatrices[i] = MatrixMultiply(MatrixInvert(bindMat), globalPose[i]);
+                    }
                 }
             }
 
@@ -190,6 +212,11 @@ namespace CHEngine
                         activeShader->SetFloat("fogDensity", m_Data->FogDensity);
                         activeShader->SetFloat("fogStart", m_Data->FogStart);
                         activeShader->SetFloat("fogEnd", m_Data->FogEnd);
+                    }
+
+                    if (!boneMatrices.empty())
+                    {
+                        activeShader->SetMatrices("boneMatrices", boneMatrices.data(), (int)boneMatrices.size());
                     }
 
                     activeShader->SetVec3("viewPos", m_Data->CurrentCameraPosition);

@@ -1,5 +1,6 @@
 #include "shader_asset.h"
 #include "engine/core/log.h"
+#include "rlgl.h"
 
 namespace CHEngine
 {
@@ -92,7 +93,20 @@ void ShaderAsset::SetMatrix(const std::string& name, const Matrix& value)
 {
     int location = GetLocation(name);
     if (location >= 0)
+    {
         SetShaderValueMatrix(m_Shader, location, value);
+    }
 }
 
+void ShaderAsset::SetMatrices(const std::string& name, const Matrix* values, int count)
+{
+    int location = GetLocation(name);
+    if (location >= 0)
+    {
+        // SetShaderValueV doesn't seem to support matrices in this Raylib version
+        // We use rlgl directly. rlEnableShader handles state caching internally.
+        rlEnableShader(m_Shader.id);
+        rlSetUniformMatrices(location, values, count);
+    }
+}
 } // namespace CHEngine

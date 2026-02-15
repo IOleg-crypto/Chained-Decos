@@ -14,6 +14,11 @@ namespace CHEngine
         std::vector<float> tangents;
         std::vector<unsigned char> colors;
         std::vector<unsigned short> indices;
+        
+        // Skinning data
+        std::vector<unsigned char> joints;  // 4 joints per vertex
+        std::vector<float> weights;        // 4 weights per vertex
+
         int materialIndex = -1;
     };
 

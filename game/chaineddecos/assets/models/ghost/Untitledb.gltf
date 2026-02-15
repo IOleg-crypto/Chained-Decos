@@ -1,0 +1,23 @@
+{
+	"asset":{
+		"generator":"Khronos glTF Blender I/O v4.5.47",
+		"version":"2.0"
+	},
+	"scene":0,
+	"scenes":[
+		{
+			"extras":{
+				"gltf_action_filter":[]
+			},
+			"name":"Scene",
+			"nodes":[
+				0
+			]
+		}
+	],
+	"nodes":[
+		{
+			"name":"Scene Collection"
+		}
+	]
+}
