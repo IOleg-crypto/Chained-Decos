@@ -168,7 +168,13 @@ namespace CHEngine
             if (registry.all_of<AnimationComponent>(entity))
             {
                 auto& animation = registry.get<AnimationComponent>(entity);
-                Renderer::Get().DrawModel(model.Asset, worldTransform, model.Materials, animation.CurrentAnimationIndex, animation.CurrentFrame, shaderOverride, customUniforms);
+                float targetFPS = 30.0f;
+                if (Project::GetActive())
+                    targetFPS = Project::GetActive()->GetConfig().Animation.TargetFPS;
+                float frameTime = 1.0f / (targetFPS > 0 ? targetFPS : 30.0f);
+                
+                float fractionalFrame = (float)animation.CurrentFrame + (animation.FrameTimeCounter / frameTime);
+                Renderer::Get().DrawModel(model.Asset, worldTransform, model.Materials, animation.CurrentAnimationIndex, fractionalFrame, shaderOverride, customUniforms);
             }
             else
             {
@@ -210,91 +216,80 @@ namespace CHEngine
         if (!debugFlags) return;
         auto& registry = scene->GetRegistry();
 
-        // Disable depth test to ensure colliders are visible even inside models
         rlDisableDepthTest();
 
-        // 1. Draw Colliders (OBB / Shapes)
-        if (debugFlags->DrawColliders)
+        if (debugFlags->DrawColliders) DrawColliderDebug(registry, debugFlags);
+        if (debugFlags->DrawAABB) DrawAABBDebug(registry, debugFlags);
+        if (debugFlags->DrawSpawnZones) DrawSpawnDebug(registry, debugFlags);
+
+        if (debugFlags->DrawGrid && scene->GetSettings().Mode == BackgroundMode::Environment3D)
         {
-            auto view = registry.view<TransformComponent, ColliderComponent>();
-            for (auto entity : view)
-            {
-                auto [transform, collider] = view.get<TransformComponent, ColliderComponent>(entity);
-                if (!collider.Enabled) continue;
-
-                Matrix worldTransform = GetWorldTransform(registry, entity);
-                Color color = GREEN;
-
-                if (collider.Type == ColliderType::Mesh && collider.BVHRoot)
-                {
-                    RenderBVHNode(collider.BVHRoot.get(), 0, worldTransform, color);
-                }
-                else if (collider.Type == ColliderType::Box)
-                {
-                    Vector3 center = Vector3Add(collider.Offset, Vector3Scale(collider.Size, 0.5f));
-                    Matrix colliderTransform = MatrixMultiply(MatrixTranslate(center.x, center.y, center.z), worldTransform);
-                    Renderer::Get().DrawCubeWires(colliderTransform, collider.Size, color);
-                }
-                else if (collider.Type == ColliderType::Capsule)
-                {
-                    Matrix colliderTransform = MatrixMultiply(MatrixTranslate(collider.Offset.x, collider.Offset.y, collider.Offset.z), worldTransform);
-                    Renderer::Get().DrawCapsuleWires(colliderTransform, collider.Radius, collider.Height, color);
-                }
-                else if (collider.Type == ColliderType::Sphere)
-                {
-                    Matrix colliderTransform = MatrixMultiply(MatrixTranslate(collider.Offset.x, collider.Offset.y, collider.Offset.z), worldTransform);
-                    Renderer::Get().DrawSphereWires(colliderTransform, collider.Radius, color);
-                }
-            }
+            Renderer::Get().DrawGrid(20, 1.0f);
         }
 
-        // 1.5 Draw World AABBs (Axis-Aligned)
-        if (debugFlags->DrawAABB)
+        rlEnableDepthTest();
+    }
+
+    void SceneRenderer::DrawColliderDebug(entt::registry& registry, const DebugRenderFlags* debugFlags)
+    {
+        auto view = registry.view<TransformComponent, ColliderComponent>();
+        for (auto entity : view)
         {
-            auto view = registry.view<TransformComponent, ColliderComponent>();
-            for (auto entity : view)
+            auto [transform, collider] = view.get<TransformComponent, ColliderComponent>(entity);
+            if (!collider.Enabled) continue;
+
+            Matrix worldTransform = GetWorldTransform(registry, entity);
+            Color color = GREEN;
+
+            if (collider.Type == ColliderType::Mesh && collider.BVHRoot)
             {
-                auto [transform, collider] = view.get<TransformComponent, ColliderComponent>(entity);
-                if (!collider.Enabled) continue;
+                RenderBVHNode(collider.BVHRoot.get(), 0, worldTransform, color);
+            }
+            else if (collider.Type == ColliderType::Box)
+            {
+                Vector3 center = Vector3Add(collider.Offset, Vector3Scale(collider.Size, 0.5f));
+                Matrix colliderTransform = MatrixMultiply(MatrixTranslate(center.x, center.y, center.z), worldTransform);
+                Renderer::Get().DrawCubeWires(colliderTransform, collider.Size, color);
+            }
+            else if (collider.Type == ColliderType::Capsule)
+            {
+                Matrix colliderTransform = MatrixMultiply(MatrixTranslate(collider.Offset.x, collider.Offset.y, collider.Offset.z), worldTransform);
+                Renderer::Get().DrawCapsuleWires(colliderTransform, collider.Radius, collider.Height, color);
+            }
+            else if (collider.Type == ColliderType::Sphere)
+            {
+                Matrix colliderTransform = MatrixMultiply(MatrixTranslate(collider.Offset.x, collider.Offset.y, collider.Offset.z), worldTransform);
+                Renderer::Get().DrawSphereWires(colliderTransform, collider.Radius, color);
+            }
+        }
+    }
 
-                Matrix worldTransform = GetWorldTransform(registry, entity);
-                BoundingBox worldAABB = {{0,0,0}, {0,0,0}};
-                bool hasBounds = false;
+    void SceneRenderer::DrawAABBDebug(entt::registry& registry, const DebugRenderFlags* debugFlags)
+    {
+        auto view = registry.view<TransformComponent, ColliderComponent>();
+        for (auto entity : view)
+        {
+            auto [transform, collider] = view.get<TransformComponent, ColliderComponent>(entity);
+            if (!collider.Enabled) continue;
 
-                if (collider.Type == ColliderType::Mesh && collider.BVHRoot)
-                {
-                    const auto& nodes = collider.BVHRoot->GetNodes();
-                    if (!nodes.empty())
-                    {
-                        Vector3 corners[8] = {
-                            Vector3Transform({nodes[0].Min.x, nodes[0].Min.y, nodes[0].Min.z}, worldTransform),
-                            Vector3Transform({nodes[0].Max.x, nodes[0].Min.y, nodes[0].Min.z}, worldTransform),
-                            Vector3Transform({nodes[0].Min.x, nodes[0].Max.y, nodes[0].Min.z}, worldTransform),
-                            Vector3Transform({nodes[0].Max.x, nodes[0].Max.y, nodes[0].Min.z}, worldTransform),
-                            Vector3Transform({nodes[0].Min.x, nodes[0].Min.y, nodes[0].Max.z}, worldTransform),
-                            Vector3Transform({nodes[0].Max.x, nodes[0].Min.y, nodes[0].Max.z}, worldTransform),
-                            Vector3Transform({nodes[0].Min.x, nodes[0].Max.y, nodes[0].Max.z}, worldTransform),
-                            Vector3Transform({nodes[0].Max.x, nodes[0].Max.y, nodes[0].Max.z}, worldTransform)
-                        };
-                        worldAABB.min = corners[0]; worldAABB.max = corners[0];
-                        for(int i=1; i<8; i++) {
-                            worldAABB.min = Vector3Min(worldAABB.min, corners[i]);
-                            worldAABB.max = Vector3Max(worldAABB.max, corners[i]);
-                        }
-                        hasBounds = true;
-                    }
-                }
-                else if (collider.Type == ColliderType::Box)
+            Matrix worldTransform = GetWorldTransform(registry, entity);
+            BoundingBox worldAABB = {{0,0,0}, {0,0,0}};
+            bool hasBounds = false;
+
+            if (collider.Type == ColliderType::Mesh && collider.BVHRoot)
+            {
+                const auto& nodes = collider.BVHRoot->GetNodes();
+                if (!nodes.empty())
                 {
                     Vector3 corners[8] = {
-                         Vector3Transform(collider.Offset, worldTransform),
-                         Vector3Transform(Vector3Add(collider.Offset, {collider.Size.x, 0, 0}), worldTransform),
-                         Vector3Transform(Vector3Add(collider.Offset, {0, collider.Size.y, 0}), worldTransform),
-                         Vector3Transform(Vector3Add(collider.Offset, {collider.Size.x, collider.Size.y, 0}), worldTransform),
-                         Vector3Transform(Vector3Add(collider.Offset, {0, 0, collider.Size.z}), worldTransform),
-                         Vector3Transform(Vector3Add(collider.Offset, {collider.Size.x, 0, collider.Size.z}), worldTransform),
-                         Vector3Transform(Vector3Add(collider.Offset, {0, collider.Size.y, collider.Size.z}), worldTransform),
-                         Vector3Transform(Vector3Add(collider.Offset, {collider.Size.x, collider.Size.y, collider.Size.z}), worldTransform)
+                        Vector3Transform({nodes[0].Min.x, nodes[0].Min.y, nodes[0].Min.z}, worldTransform),
+                        Vector3Transform({nodes[0].Max.x, nodes[0].Min.y, nodes[0].Min.z}, worldTransform),
+                        Vector3Transform({nodes[0].Min.x, nodes[0].Max.y, nodes[0].Min.z}, worldTransform),
+                        Vector3Transform({nodes[0].Max.x, nodes[0].Max.y, nodes[0].Min.z}, worldTransform),
+                        Vector3Transform({nodes[0].Min.x, nodes[0].Min.y, nodes[0].Max.z}, worldTransform),
+                        Vector3Transform({nodes[0].Max.x, nodes[0].Min.y, nodes[0].Max.z}, worldTransform),
+                        Vector3Transform({nodes[0].Min.x, nodes[0].Max.y, nodes[0].Max.z}, worldTransform),
+                        Vector3Transform({nodes[0].Max.x, nodes[0].Max.y, nodes[0].Max.z}, worldTransform)
                     };
                     worldAABB.min = corners[0]; worldAABB.max = corners[0];
                     for(int i=1; i<8; i++) {
@@ -303,57 +298,67 @@ namespace CHEngine
                     }
                     hasBounds = true;
                 }
-                else if (collider.Type == ColliderType::Capsule)
-                {
-                    float halfSeg = fmaxf(0.0f, collider.Height * 0.5f - collider.Radius);
-                    Vector3 worldA = Vector3Transform(Vector3Add(collider.Offset, {0, -halfSeg, 0}), worldTransform);
-                    Vector3 worldB = Vector3Transform(Vector3Add(collider.Offset, {0, halfSeg, 0}), worldTransform);
-                    
-                    float r = collider.Radius;
-                    worldAABB.min = Vector3Subtract(Vector3Min(worldA, worldB), {r, r, r});
-                    worldAABB.max = Vector3Add(Vector3Max(worldA, worldB), {r, r, r});
-                    hasBounds = true;
-                }
-                else if (collider.Type == ColliderType::Sphere)
-                {
-                    Vector3 worldPos = Vector3Transform(collider.Offset, worldTransform);
-                    float r = collider.Radius;
-                    worldAABB.min = Vector3Subtract(worldPos, {r, r, r});
-                    worldAABB.max = Vector3Add(worldPos, {r, r, r});
-                    hasBounds = true;
-                }
-
-                if (hasBounds)
-                {
-                    Vector3 center = Vector3Scale(Vector3Add(worldAABB.min, worldAABB.max), 0.5f);
-                    Vector3 size = Vector3Subtract(worldAABB.max, worldAABB.min);
-                    Renderer::Get().DrawCubeWires(MatrixTranslate(center.x, center.y, center.z), size, RED);
-                }
             }
-        }
-
-        // 2. Draw Spawn Zones
-        if (debugFlags->DrawSpawnZones)
-        {
-            auto view = registry.view<TransformComponent, SpawnComponent>();
-            for (auto entity : view)
+            else if (collider.Type == ColliderType::Box)
             {
-                auto [transform, spawn] = view.get<TransformComponent, SpawnComponent>(entity);
-                if (spawn.RenderSpawnZoneInScene)
-                {
-                    Matrix worldTransform = GetWorldTransform(registry, entity);
-                    Renderer::Get().DrawCubeWires(worldTransform, spawn.ZoneSize, {255, 255, 0, 200});
+                Vector3 corners[8] = {
+                    Vector3Transform(collider.Offset, worldTransform),
+                    Vector3Transform(Vector3Add(collider.Offset, {collider.Size.x, 0, 0}), worldTransform),
+                    Vector3Transform(Vector3Add(collider.Offset, {0, collider.Size.y, 0}), worldTransform),
+                    Vector3Transform(Vector3Add(collider.Offset, {collider.Size.x, collider.Size.y, 0}), worldTransform),
+                    Vector3Transform(Vector3Add(collider.Offset, {0, 0, collider.Size.z}), worldTransform),
+                    Vector3Transform(Vector3Add(collider.Offset, {collider.Size.x, 0, collider.Size.z}), worldTransform),
+                    Vector3Transform(Vector3Add(collider.Offset, {0, collider.Size.y, collider.Size.z}), worldTransform),
+                    Vector3Transform(Vector3Add(collider.Offset, {collider.Size.x, collider.Size.y, collider.Size.z}), worldTransform)
+                };
+                worldAABB.min = corners[0]; worldAABB.max = corners[0];
+                for(int i=1; i<8; i++) {
+                    worldAABB.min = Vector3Min(worldAABB.min, corners[i]);
+                    worldAABB.max = Vector3Max(worldAABB.max, corners[i]);
                 }
+                hasBounds = true;
+            }
+            else if (collider.Type == ColliderType::Capsule)
+            {
+                float halfSeg = fmaxf(0.0f, collider.Height * 0.5f - collider.Radius);
+                Vector3 worldA = Vector3Transform(Vector3Add(collider.Offset, {0, -halfSeg, 0}), worldTransform);
+                Vector3 worldB = Vector3Transform(Vector3Add(collider.Offset, {0, halfSeg, 0}), worldTransform);
+                
+                float r = collider.Radius;
+                worldAABB.min = Vector3Subtract(Vector3Min(worldA, worldB), {r, r, r});
+                worldAABB.max = Vector3Add(Vector3Max(worldA, worldB), {r, r, r});
+                hasBounds = true;
+            }
+            else if (collider.Type == ColliderType::Sphere)
+            {
+                Vector3 worldPos = Vector3Transform(collider.Offset, worldTransform);
+                float r = collider.Radius;
+                worldAABB.min = Vector3Subtract(worldPos, {r, r, r});
+                worldAABB.max = Vector3Add(worldPos, {r, r, r});
+                hasBounds = true;
+            }
+
+            if (hasBounds)
+            {
+                Vector3 center = Vector3Scale(Vector3Add(worldAABB.min, worldAABB.max), 0.5f);
+                Vector3 size = Vector3Subtract(worldAABB.max, worldAABB.min);
+                Renderer::Get().DrawCubeWires(MatrixTranslate(center.x, center.y, center.z), size, RED);
             }
         }
+    }
 
-        // 3. Draw Grid
-        if (debugFlags->DrawGrid && scene->GetSettings().Mode == BackgroundMode::Environment3D)
+    void SceneRenderer::DrawSpawnDebug(entt::registry& registry, const DebugRenderFlags* debugFlags)
+    {
+        auto view = registry.view<TransformComponent, SpawnComponent>();
+        for (auto entity : view)
         {
-            Renderer::Get().DrawGrid(20, 1.0f);
+            auto [transform, spawn] = view.get<TransformComponent, SpawnComponent>(entity);
+            if (spawn.RenderSpawnZoneInScene)
+            {
+                Matrix worldTransform = GetWorldTransform(registry, entity);
+                Renderer::Get().DrawCubeWires(worldTransform, spawn.ZoneSize, {255, 255, 0, 200});
+            }
         }
-
-        rlEnableDepthTest();
     }
 
     void SceneRenderer::RenderEditorIcons(Scene* scene, const Camera3D& camera)

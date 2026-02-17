@@ -117,231 +117,54 @@ namespace CHEngine
 
     void Renderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const Matrix& transform,
         const std::vector<MaterialSlot>& materialSlotOverrides,
-        int animationIndex, int frameIndex,
+        int animationIndex, float frameIndex,
         const std::shared_ptr<ShaderAsset>& shaderOverride,
         const std::vector<ShaderUniform>& shaderUniformOverrides)
     {
         CH_CORE_ASSERT(s_Instance, "Renderer not initialized!");
-        if (modelAsset && modelAsset->GetState() == AssetState::Ready)
-        {
-            Model& model = modelAsset->GetModel();
-            //CH_CORE_TRACE("Renderer::DrawModel - Rendering: {} ({} meshes)", modelAsset->GetPath(), model.meshCount);
-
-            // Apply animation matrices for GPU skinning
-            std::vector<Matrix> boneMatrices;
-            if (animationIndex >= 0)
-            {
-                int animationCount = 0;
-                auto* animations = modelAsset->GetAnimations(&animationCount);
-                if (animations && animationIndex < animationCount)
-                {
-                    ModelAnimation anim = animations[animationIndex];
-                    boneMatrices.resize(anim.boneCount);
-                    
-                    std::vector<Matrix> globalPose(anim.boneCount);
-                    for (int i = 0; i < anim.boneCount; i++)
-                    {
-                        Matrix localMat = QuaternionToMatrix(anim.framePoses[frameIndex][i].rotation);
-                        localMat = MatrixMultiply(localMat, MatrixTranslate(anim.framePoses[frameIndex][i].translation.x, anim.framePoses[frameIndex][i].translation.y, anim.framePoses[frameIndex][i].translation.z));
-                        // localMat = MatrixMultiply(MatrixScale(...), localMat);
-
-                        int parent = anim.bones[i].parent;
-                        if (parent == -1) globalPose[i] = localMat;
-                        else globalPose[i] = MatrixMultiply(globalPose[parent], localMat);
-                    }
-
-                    for (int i = 0; i < anim.boneCount; i++)
-                    {
-                        Matrix bindMat = QuaternionToMatrix(model.bindPose[i].rotation);
-                        bindMat = MatrixMultiply(bindMat, MatrixTranslate(model.bindPose[i].translation.x, model.bindPose[i].translation.y, model.bindPose[i].translation.z));
-                        
-                        boneMatrices[i] = MatrixMultiply(MatrixInvert(bindMat), globalPose[i]);
-                    }
-                }
-            }
-
-            for (int i = 0; i < model.meshCount; i++)
-            {
-                // Start with the default material for this mesh
-                Material material = model.materials[model.meshMaterial[i]];
-                
-                // Apply overrides from the component
-                for (const auto& slot : materialSlotOverrides)
-                {
-                    bool match = false;
-                    if (slot.Target == MaterialSlotTarget::MeshIndex && slot.Index == i) match = true;
-                    else if (slot.Target == MaterialSlotTarget::MaterialIndex && slot.Index == model.meshMaterial[i]) match = true;
-
-                    if (match)
-                    {
-                        material.maps[MATERIAL_MAP_ALBEDO].color = slot.Material.AlbedoColor;
-                        if (slot.Material.OverrideAlbedo && !slot.Material.AlbedoPath.empty())
-                        {
-                            if (Project::GetActive())
-                            {
-                                auto textureAsset = Project::GetActive()->GetAssetManager()->Get<TextureAsset>(slot.Material.AlbedoPath);
-                                if (textureAsset && textureAsset->IsReady())
-                                    material.maps[MATERIAL_MAP_ALBEDO].texture = textureAsset->GetTexture();
-                            }
-                        }
-                        break;
-                    }
-                }
-
-                auto activeShader = shaderOverride;
-
-                if (!activeShader)
-                {
-                    if (m_Data->Shaders->Exists("Lighting"))
-                        activeShader = m_Data->Shaders->Get("Lighting");
-                }
-
-                Matrix meshTransform = MatrixMultiply(model.transform, transform);
-
-                if (activeShader)
-                {
-                    // Apply standard engine uniforms to custom shaders too (if they want them)
-                    activeShader->SetVec3("lightDir", m_Data->CurrentLightDirection);
-                    activeShader->SetColor("lightColor", m_Data->CurrentLightColor);
-                    activeShader->SetFloat("ambient", m_Data->CurrentAmbientIntensity);
-                    
-                    activeShader->SetInt("fogEnabled", m_Data->FogEnabled ? 1 : 0);
-                    if (m_Data->FogEnabled)
-                    {
-                        activeShader->SetColor("fogColor", m_Data->FogColor);
-                        activeShader->SetFloat("fogDensity", m_Data->FogDensity);
-                        activeShader->SetFloat("fogStart", m_Data->FogStart);
-                        activeShader->SetFloat("fogEnd", m_Data->FogEnd);
-                    }
-
-                    if (!boneMatrices.empty())
-                    {
-                        activeShader->SetMatrices("boneMatrices", boneMatrices.data(), (int)boneMatrices.size());
-                    }
-
-                    activeShader->SetVec3("viewPos", m_Data->CurrentCameraPosition);
-                    activeShader->SetFloat("uTime", m_Data->Time);
-                    
-                    // Set lights (Unified)
-                    for (int l = 0; l < RendererData::MaxLights; l++)
-                    {
-                        std::string base = "lights[" + std::to_string(l) + "].";
-                        activeShader->SetColor(base + "color", m_Data->Lights[l].color);
-                        activeShader->SetVec3(base + "position", m_Data->Lights[l].position);
-                        activeShader->SetVec3(base + "direction", m_Data->Lights[l].direction);
-                        activeShader->SetFloat(base + "intensity", m_Data->Lights[l].intensity);
-                        activeShader->SetFloat(base + "radius", m_Data->Lights[l].radius);
-                        activeShader->SetFloat(base + "innerCutoff", m_Data->Lights[l].innerCutoff);
-                        activeShader->SetFloat(base + "outerCutoff", m_Data->Lights[l].outerCutoff);
-                        activeShader->SetInt(base + "type", m_Data->Lights[l].type);
-                        activeShader->SetInt(base + "enabled", m_Data->Lights[l].enabled ? 1 : 0);
-                    }
-
-                    // Set untextured support hint
-                    activeShader->SetInt("useTexture", material.maps[MATERIAL_MAP_ALBEDO].texture.id > 0 ? 1 : 0);
-                    
-                    // Set material properties
-                    activeShader->SetColor("colDiffuse", material.maps[MATERIAL_MAP_ALBEDO].color);
-                    
-                    // PBR Maps & Uniforms
-                    int useNormalMap = material.maps[MATERIAL_MAP_NORMAL].texture.id > 0 ? 1 : 0;
-                    int useMetallicMap = material.maps[MATERIAL_MAP_METALNESS].texture.id > 0 ? 1 : 0;
-                    int useRoughnessMap = material.maps[MATERIAL_MAP_ROUGHNESS].texture.id > 0 ? 1 : 0;
-                    int useOcclusionMap = material.maps[MATERIAL_MAP_OCCLUSION].texture.id > 0 ? 1 : 0;
-                    int useEmissiveTexture = material.maps[MATERIAL_MAP_EMISSION].texture.id > 0 ? 1 : 0;
-
-                    activeShader->SetInt("useNormalMap", useNormalMap);
-                    activeShader->SetInt("useMetallicMap", useMetallicMap);
-                    activeShader->SetInt("useRoughnessMap", useRoughnessMap);
-                    activeShader->SetInt("useOcclusionMap", useOcclusionMap);
-                    activeShader->SetInt("useEmissiveTexture", useEmissiveTexture);
-
-                    float metalness = material.maps[MATERIAL_MAP_METALNESS].value;
-                    float roughness = material.maps[MATERIAL_MAP_ROUGHNESS].value;
-
-                    activeShader->SetFloat("metalness", metalness);
-                    activeShader->SetFloat("roughness", roughness);
-
-                    // Emissive
-                    Color colEmissive = material.maps[MATERIAL_MAP_EMISSION].color;
-                    float emissiveIntensity = 0.0f;
-                    
-                    // Sync with custom MaterialInstance if available
-                    for (const auto& slot : materialSlotOverrides) {
-                        bool match = false;
-                        if (slot.Target == MaterialSlotTarget::MeshIndex && slot.Index == i) match = true;
-                        else if (slot.Target == MaterialSlotTarget::MaterialIndex && slot.Index == model.meshMaterial[i]) match = true;
-                        if (match) {
-                            emissiveIntensity = slot.Material.EmissiveIntensity;
-                            if (slot.Material.OverrideEmissive) colEmissive = slot.Material.EmissiveColor;
-                            
-                            // Also potential overrides for roughness/metalness if we add them to MaterialInstance
-                            roughness = slot.Material.Roughness;
-                            activeShader->SetFloat("roughness", roughness);
-                            break;
-                        }
-                    }
-
-                    // Fallback: If emissive color is set but intensity is 0, default to 1.0
-                    if (emissiveIntensity == 0.0f && (colEmissive.r > 0 || colEmissive.g > 0 || colEmissive.b > 0)) {
-                        emissiveIntensity = 1.0f;
-                    }
-
-                    activeShader->SetColor("colEmissive", colEmissive);
-                    activeShader->SetFloat("emissiveIntensity", emissiveIntensity);
-                    
-                    // Map Roughness to Shininess for legacy parts (if any)
-                    float shininess = (1.0f - roughness) * 128.0f;
-                    if (shininess < 1.0f) shininess = 1.0f;
-                    activeShader->SetFloat("shininess", shininess);
-
-                    // Set global diagnostic mode
-                    activeShader->SetFloat("uMode", m_Data->DiagnosticMode);
-
-                    // Apply custom uniforms from ShaderComponent
-                    for (const auto& u : shaderUniformOverrides)
-                    {
-                        if (u.Type == 0) activeShader->SetFloat(u.Name, u.Value[0]);
-                        else if (u.Type == 1) activeShader->SetVec2(u.Name, {u.Value[0], u.Value[1]});
-                        else if (u.Type == 2) activeShader->SetVec3(u.Name, {u.Value[0], u.Value[1], u.Value[2]});
-                        else if (u.Type == 3) activeShader->SetVec4(u.Name, {u.Value[0], u.Value[1], u.Value[2], u.Value[3]});
-                        else if (u.Type == 4) activeShader->SetColor(u.Name, Color{(unsigned char)(u.Value[0]*255), (unsigned char)(u.Value[1]*255), (unsigned char)(u.Value[2]*255), (unsigned char)(u.Value[3]*255)});
-                    }
-
-                    // Actually apply the shader to the material for this draw call
-                    Shader originalShader = material.shader;
-                    material.shader = activeShader->GetShader();
-                    
-                    ProfilerStats stats;
-                    stats.DrawCalls++;
-                    stats.MeshCount++;
-                    stats.PolyCount += model.meshes[i].triangleCount;
-                    Profiler::UpdateStats(stats);
-
-                    DrawMesh(model.meshes[i], material, meshTransform);
-                    
-                    material.shader = originalShader;
-                }
-                else
-                {
-                    // Fallback DrawMesh
-                    DrawMesh(model.meshes[i], material, meshTransform);
-                }
-            }
-        }
-        else
+        if (!modelAsset || modelAsset->GetState() != AssetState::Ready)
         {
             if (modelAsset && modelAsset->GetState() == AssetState::Failed)
             {
-                // Only log if we haven't logged recently? For now, just change to Trace or Debug to reduce spam.
-                // Or check if we should warn.
                 static std::string lastFailed = "";
                 if (lastFailed != modelAsset->GetPath()) {
                     CH_CORE_WARN("Renderer::DrawModel - Model asset failed to load: {}", modelAsset->GetPath());
                     lastFailed = modelAsset->GetPath();
                 }
             }
-            // If Loading or None, just return silently.
+            return;
+        }
+
+        Model& model = modelAsset->GetModel();
+        std::vector<Matrix> boneMatrices = ComputeBoneMatrices(modelAsset, animationIndex, frameIndex);
+
+        for (int i = 0; i < model.meshCount; i++)
+        {
+            Material material = ResolveMaterialForMesh(i, model, materialSlotOverrides);
+            auto activeShader = shaderOverride ? shaderOverride : (m_Data->Shaders->Exists("Lighting") ? m_Data->Shaders->Get("Lighting") : nullptr);
+            Matrix meshTransform = MatrixMultiply(model.transform, transform);
+
+            if (activeShader)
+            {
+                BindShaderUniforms(activeShader.get(), boneMatrices, shaderUniformOverrides);
+                BindMaterialUniforms(activeShader.get(), material, i, model, materialSlotOverrides);
+
+                Shader originalShader = material.shader;
+                material.shader = activeShader->GetShader();
+                
+                ProfilerStats stats;
+                stats.DrawCalls++;
+                stats.MeshCount++;
+                stats.PolyCount += model.meshes[i].triangleCount;
+                Profiler::UpdateStats(stats);
+
+                DrawMesh(model.meshes[i], material, meshTransform);
+                material.shader = originalShader;
+            }
+            else
+            {
+                DrawMesh(model.meshes[i], material, meshTransform);
+            }
         }
     }
 
@@ -462,14 +285,7 @@ namespace CHEngine
         skyboxShader->SetFloat("fragGamma", 2.2f);
 
         // Fog uniforms
-        skyboxShader->SetInt("fogEnabled", m_Data->FogEnabled ? 1 : 0);
-        if (m_Data->FogEnabled)
-        {
-            skyboxShader->SetColor("fogColor", m_Data->FogColor);
-            skyboxShader->SetFloat("fogDensity", m_Data->FogDensity);
-            skyboxShader->SetFloat("fogStart", m_Data->FogStart);
-            skyboxShader->SetFloat("fogEnd", m_Data->FogEnd);
-        }
+        ApplyFogUniforms(skyboxShader.get());
 
         skyboxShader->SetFloat("uTime", m_Data->Time);
 
@@ -485,15 +301,29 @@ namespace CHEngine
         ::DrawBillboard(camera, texture, position, size, color);
     }
 
+    void Renderer::ApplyFogUniforms(ShaderAsset* shader)
+    {
+        if (!shader) return;
+        auto& fog = m_Data->CurrentFog;
+        shader->SetInt("fogEnabled", fog.Enabled ? 1 : 0);
+        if (fog.Enabled)
+        {
+            shader->SetColor("fogColor", fog.FogColor);
+            shader->SetFloat("fogDensity", fog.Density);
+            shader->SetFloat("fogStart", fog.Start);
+            shader->SetFloat("fogEnd", fog.End);
+        }
+    }
+
     void Renderer::SetDirectionalLight(Vector3 direction, Color color)
     {
-        m_Data->CurrentLightDirection = direction;
-        m_Data->CurrentLightColor = color;
+        m_Data->CurrentLighting.Direction = direction;
+        m_Data->CurrentLighting.LightColor = color;
     }
 
     void Renderer::SetAmbientLight(float intensity)
     {
-        m_Data->CurrentAmbientIntensity = intensity;
+        m_Data->CurrentLighting.Ambient = intensity;
     }
 
     void Renderer::SetLight(int index, const RenderLight& light)
@@ -510,15 +340,8 @@ namespace CHEngine
 
     void Renderer::ApplyEnvironment(const EnvironmentSettings& settings)
     {
-        SetAmbientLight(settings.AmbientIntensity);
-        SetDirectionalLight(settings.LightDirection, settings.LightColor);
-
-        // Sync Fog to State
-        m_Data->FogEnabled = settings.Fog.Enabled;
-        m_Data->FogColor = settings.Fog.FogColor;
-        m_Data->FogDensity = settings.Fog.Density;
-        m_Data->FogStart = settings.Fog.Start;
-        m_Data->FogEnd = settings.Fog.End;
+        m_Data->CurrentLighting = settings.Lighting;
+        m_Data->CurrentFog = settings.Fog;
     }
 
     void Renderer::SetDiagnosticMode(float mode)
@@ -568,5 +391,212 @@ namespace CHEngine
                 CH_CORE_INFO("Renderer: 'Skybox' shader loaded lazily.");
             }
         }
+    }
+
+    std::vector<Matrix> Renderer::ComputeBoneMatrices(const std::shared_ptr<ModelAsset>& modelAsset, int animationIndex, float frameIndex)
+    {
+        if (!modelAsset) return {};
+
+        Model& model = modelAsset->GetModel();
+        if (model.boneCount <= 0) return {};
+
+        const auto& offsetMatrices = modelAsset->GetOffsetMatrices();
+        if (offsetMatrices.empty()) {
+            CH_CORE_WARN("ModelAsset '{}' has bones but no offset matrices loaded.", modelAsset->GetPath());
+            return {};
+        }
+
+        std::vector<Matrix> boneMatrices(model.boneCount);
+        std::vector<Matrix> globalPose(model.boneCount);
+
+        // 1. Calculate Global Animation Pose with Interpolation
+        const auto& animations = modelAsset->GetRawAnimations();
+        
+        if (animationIndex >= 0 && animationIndex < (int)animations.size())
+        {
+            const auto& anim = animations[animationIndex];
+            int currentFrame = (int)frameIndex % anim.frameCount;
+            int nextFrame = (currentFrame + 1) % anim.frameCount;
+            float interp = frameIndex - (float)((int)frameIndex);
+            
+            for (int i = 0; i < anim.boneCount; i++)
+            {
+                Transform t = anim.framePoses[currentFrame * anim.boneCount + i];
+                Transform tNext = anim.framePoses[nextFrame * anim.boneCount + i];
+
+                Vector3 translation = Vector3Lerp(t.translation, tNext.translation, interp);
+                Quaternion rotation = QuaternionSlerp(t.rotation, tNext.rotation, interp);
+                Vector3 scale = Vector3Lerp(t.scale, tNext.scale, interp);
+
+                Matrix localMat = MatrixMultiply(QuaternionToMatrix(rotation), MatrixTranslate(translation.x, translation.y, translation.z));
+                localMat = MatrixMultiply(MatrixScale(scale.x, scale.y, scale.z), localMat);
+
+                int parent = model.bones[i].parent;
+                if (parent == -1) globalPose[i] = localMat;
+                else globalPose[i] = MatrixMultiply(globalPose[parent], localMat);
+            }
+        }
+        else
+        {
+            // Use global bind poses if no animation
+            // Actually, for KISS: just use local transforms from bindPose
+            for (int i = 0; i < model.boneCount; i++) {
+                Matrix localBind = MatrixMultiply(QuaternionToMatrix(model.bindPose[i].rotation), MatrixTranslate(model.bindPose[i].translation.x, model.bindPose[i].translation.y, model.bindPose[i].translation.z));
+                int parent = model.bones[i].parent;
+                if (parent == -1) globalPose[i] = localBind;
+                else globalPose[i] = MatrixMultiply(localBind, globalPose[parent]);
+            }
+        }
+
+        // 3. Compute final skinning matrices (OffsetMatrix * GlobalPose)
+        // Order depends on convention. Assimp: Final = GlobalTransform * OffsetMatrix
+        for (int i = 0; i < model.boneCount; i++)
+        {
+            if (i < (int)offsetMatrices.size()) {
+                boneMatrices[i] = MatrixMultiply(offsetMatrices[i], globalPose[i]);
+            } else {
+                boneMatrices[i] = MatrixIdentity();
+            }
+        }
+
+        return boneMatrices;
+    }
+
+    Material Renderer::ResolveMaterialForMesh(int meshIndex, const Model& model, const std::vector<MaterialSlot>& materialSlotOverrides)
+    {
+        Material material = model.materials[model.meshMaterial[meshIndex]];
+        
+        for (const auto& slot : materialSlotOverrides)
+        {
+            bool match = false;
+            if (slot.Target == MaterialSlotTarget::MeshIndex && slot.Index == meshIndex) match = true;
+            else if (slot.Target == MaterialSlotTarget::MaterialIndex && slot.Index == model.meshMaterial[meshIndex]) match = true;
+
+            if (match)
+            {
+                material.maps[MATERIAL_MAP_ALBEDO].color = slot.Material.AlbedoColor;
+                if (slot.Material.OverrideAlbedo && !slot.Material.AlbedoPath.empty())
+                {
+                    if (Project::GetActive())
+                    {
+                        auto textureAsset = Project::GetActive()->GetAssetManager()->Get<TextureAsset>(slot.Material.AlbedoPath);
+                        if (textureAsset && textureAsset->IsReady())
+                            material.maps[MATERIAL_MAP_ALBEDO].texture = textureAsset->GetTexture();
+                    }
+                }
+                break;
+            }
+        }
+        return material;
+    }
+
+    void Renderer::BindShaderUniforms(ShaderAsset* activeShader, const std::vector<Matrix>& boneMatrices, const std::vector<ShaderUniform>& shaderUniformOverrides)
+    {
+        if (!activeShader) return;
+
+        activeShader->SetVec3("lightDir", m_Data->CurrentLighting.Direction);
+        activeShader->SetColor("lightColor", m_Data->CurrentLighting.LightColor);
+        activeShader->SetFloat("ambient", m_Data->CurrentLighting.Ambient);
+        
+        ApplyFogUniforms(activeShader);
+
+        if (!boneMatrices.empty())
+        {
+            int count = (int)boneMatrices.size();
+            if (count > 128) count = 128; // Shader limit
+            activeShader->SetMatrices("boneMatrices", boneMatrices.data(), count);
+        }
+
+        activeShader->SetVec3("viewPos", m_Data->CurrentCameraPosition);
+        activeShader->SetFloat("uTime", m_Data->Time);
+        
+        // Set lights (Unified)
+        for (int l = 0; l < RendererData::MaxLights; l++)
+        {
+            std::string base = "lights[" + std::to_string(l) + "].";
+            activeShader->SetColor(base + "color", m_Data->Lights[l].color);
+            activeShader->SetVec3(base + "position", m_Data->Lights[l].position);
+            activeShader->SetVec3(base + "direction", m_Data->Lights[l].direction);
+            activeShader->SetFloat(base + "intensity", m_Data->Lights[l].intensity);
+            activeShader->SetFloat(base + "radius", m_Data->Lights[l].radius);
+            activeShader->SetFloat(base + "innerCutoff", m_Data->Lights[l].innerCutoff);
+            activeShader->SetFloat(base + "outerCutoff", m_Data->Lights[l].outerCutoff);
+            activeShader->SetInt(base + "type", m_Data->Lights[l].type);
+            activeShader->SetInt(base + "enabled", m_Data->Lights[l].enabled ? 1 : 0);
+        }
+
+        // Set global diagnostic mode
+        activeShader->SetFloat("uMode", m_Data->DiagnosticMode);
+
+        // Apply custom uniforms from ShaderComponent
+        for (const auto& u : shaderUniformOverrides)
+        {
+            if (u.Type == 0) activeShader->SetFloat(u.Name, u.Value[0]);
+            else if (u.Type == 1) activeShader->SetVec2(u.Name, {u.Value[0], u.Value[1]});
+            else if (u.Type == 2) activeShader->SetVec3(u.Name, {u.Value[0], u.Value[1], u.Value[2]});
+            else if (u.Type == 3) activeShader->SetVec4(u.Name, {u.Value[0], u.Value[1], u.Value[2], u.Value[3]});
+            else if (u.Type == 4) activeShader->SetColor(u.Name, Color{(unsigned char)(u.Value[0]*255), (unsigned char)(u.Value[1]*255), (unsigned char)(u.Value[2]*255), (unsigned char)(u.Value[3]*255)});
+        }
+    }
+
+    void Renderer::BindMaterialUniforms(ShaderAsset* activeShader, const Material& material, int meshIndex, const Model& model, const std::vector<MaterialSlot>& materialSlotOverrides)
+    {
+        if (!activeShader) return;
+
+        // Set untextured support hint
+        activeShader->SetInt("useTexture", material.maps[MATERIAL_MAP_ALBEDO].texture.id > 0 ? 1 : 0);
+        
+        // Set material properties
+        activeShader->SetColor("colDiffuse", material.maps[MATERIAL_MAP_ALBEDO].color);
+        
+        // PBR Maps & Uniforms
+        int useNormalMap = material.maps[MATERIAL_MAP_NORMAL].texture.id > 0 ? 1 : 0;
+        int useMetallicMap = material.maps[MATERIAL_MAP_METALNESS].texture.id > 0 ? 1 : 0;
+        int useRoughnessMap = material.maps[MATERIAL_MAP_ROUGHNESS].texture.id > 0 ? 1 : 0;
+        int useOcclusionMap = material.maps[MATERIAL_MAP_OCCLUSION].texture.id > 0 ? 1 : 0;
+        int useEmissiveTexture = material.maps[MATERIAL_MAP_EMISSION].texture.id > 0 ? 1 : 0;
+
+        activeShader->SetInt("useNormalMap", useNormalMap);
+        activeShader->SetInt("useMetallicMap", useMetallicMap);
+        activeShader->SetInt("useRoughnessMap", useRoughnessMap);
+        activeShader->SetInt("useOcclusionMap", useOcclusionMap);
+        activeShader->SetInt("useEmissiveTexture", useEmissiveTexture);
+
+        float metalness = material.maps[MATERIAL_MAP_METALNESS].value;
+        float roughness = material.maps[MATERIAL_MAP_ROUGHNESS].value;
+
+        // Emissive defaults
+        Color colEmissive = material.maps[MATERIAL_MAP_EMISSION].color;
+        float emissiveIntensity = 0.0f;
+        
+        // Sync with custom MaterialInstance overrides
+        for (const auto& slot : materialSlotOverrides) {
+            bool match = false;
+            if (slot.Target == MaterialSlotTarget::MeshIndex && slot.Index == meshIndex) match = true;
+            else if (slot.Target == MaterialSlotTarget::MaterialIndex && slot.Index == model.meshMaterial[meshIndex]) match = true;
+            if (match) {
+                emissiveIntensity = slot.Material.EmissiveIntensity;
+                if (slot.Material.OverrideEmissive) colEmissive = slot.Material.EmissiveColor;
+                metalness = slot.Material.Metalness;
+                roughness = slot.Material.Roughness;
+                break;
+            }
+        }
+
+        activeShader->SetFloat("metalness", metalness);
+        activeShader->SetFloat("roughness", roughness);
+
+        // Fallback: If emissive color is set but intensity is 0, default to 1.0
+        if (emissiveIntensity == 0.0f && (colEmissive.r > 0 || colEmissive.g > 0 || colEmissive.b > 0)) {
+            emissiveIntensity = 1.0f;
+        }
+
+        activeShader->SetColor("colEmissive", colEmissive);
+        activeShader->SetFloat("emissiveIntensity", emissiveIntensity);
+        
+        // Map Roughness to Shininess for legacy parts (if any)
+        float shininess = (1.0f - roughness) * 128.0f;
+        if (shininess < 1.0f) shininess = 1.0f;
+        activeShader->SetFloat("shininess", shininess);
     }
 }

@@ -3,7 +3,6 @@
 #include "engine/scene/scene_events.h"
 #include "engine/scene/project.h"
 #include "editor_layer.h"
-#include "editor.h"
 #include "actions/project_actions.h"
 
 // Removed redundant include: engine/graphics/asset_manager.h
@@ -99,7 +98,7 @@ namespace CHEngine
         ImGui::TextDisabled("   RECENT PROJECTS");
         ImGui::Spacing();
 
-        std::string lastPath = Editor::Get().GetEditorConfig().LastProjectPath;
+        std::string lastPath = EditorLayer::Get().GetConfig().LastProjectPath;
         if (!lastPath.empty())
         {
             std::string fileName = std::filesystem::path(lastPath).filename().string();

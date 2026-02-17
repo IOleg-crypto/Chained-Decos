@@ -40,9 +40,8 @@ namespace CHEngine
 
         std::unique_ptr<ShaderLibrary> Shaders;
 
-        Vector3 CurrentLightDirection = {-0.5f, -1.0f, -0.5f};
-        Color CurrentLightColor = WHITE;
-        float CurrentAmbientIntensity = 0.5f;
+        LightingSettings CurrentLighting;
+        FogSettings CurrentFog;
 
         // Unified Lights for the scene
         static const int MaxLights = 16;
@@ -52,13 +51,6 @@ namespace CHEngine
         Texture2D LightIcon = { 0 };
         Texture2D SpawnIcon = { 0 };
         Texture2D CameraIcon = { 0 };
-
-        // Fog settings for shader
-        bool FogEnabled = false;
-        Color FogColor = GRAY;
-        float FogDensity = 0.01f;
-        float FogStart = 10.0f;
-        float FogEnd = 100.0f;
 
         float DiagnosticMode = 0.0f; // 0: Normal, 1: Normals, 2: Lighting, 3: Albedo
         Vector3 CurrentCameraPosition = { 0.0f, 0.0f, 0.0f };
@@ -95,7 +87,7 @@ namespace CHEngine
 
         void DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const Matrix& transform = MatrixIdentity(),
             const std::vector<MaterialSlot>& materialSlotOverrides = {},
-            int animationIndex = 0, int frameIndex = 0,
+            int animationIndex = 0, float frameIndex = 0.0f,
             const std::shared_ptr<ShaderAsset>& shaderOverride = nullptr,
             const std::vector<ShaderUniform>& shaderUniformOverrides = {});
         void DrawLine(Vector3 startPosition, Vector3 endPosition, Color color);
@@ -126,8 +118,15 @@ namespace CHEngine
         }
 
     private:
+        void ApplyFogUniforms(ShaderAsset* shader);
         void EnsureShadersLoaded();
         void InitializeSkybox();
+
+        // DrawModel decomposition helpers
+        std::vector<Matrix> ComputeBoneMatrices(const std::shared_ptr<ModelAsset>& modelAsset, int animationIndex, float frameIndex);
+        Material ResolveMaterialForMesh(int meshIndex, const Model& model, const std::vector<MaterialSlot>& materialSlotOverrides);
+        void BindShaderUniforms(ShaderAsset* shader, const std::vector<Matrix>& boneMatrices, const std::vector<ShaderUniform>& shaderUniformOverrides);
+        void BindMaterialUniforms(ShaderAsset* shader, const Material& material, int meshIndex, const Model& model, const std::vector<MaterialSlot>& materialSlotOverrides);
 
     private:
         static Renderer* s_Instance;

@@ -156,6 +156,79 @@ namespace CHEngine
         if (node["TransitionSpeed"]) style.TransitionSpeed = node["TransitionSpeed"].as<float>();
     }
 
+    static void serializeMaterialInstance(YAML::Emitter& out, const MaterialInstance& mat) {
+        out << YAML::BeginMap;
+        out << YAML::Key << "AlbedoColor" << YAML::Value << mat.AlbedoColor;
+        out << YAML::Key << "AlbedoPath" << YAML::Value << Project::GetRelativePath(mat.AlbedoPath);
+        out << YAML::Key << "OverrideAlbedo" << YAML::Value << mat.OverrideAlbedo;
+        
+        out << YAML::Key << "NormalMapPath" << YAML::Value << Project::GetRelativePath(mat.NormalMapPath);
+        out << YAML::Key << "OverrideNormal" << YAML::Value << mat.OverrideNormal;
+        
+        out << YAML::Key << "MetallicRoughnessPath" << YAML::Value << Project::GetRelativePath(mat.MetallicRoughnessPath);
+        out << YAML::Key << "OverrideMetallicRoughness" << YAML::Value << mat.OverrideMetallicRoughness;
+        
+        out << YAML::Key << "OcclusionMapPath" << YAML::Value << Project::GetRelativePath(mat.OcclusionMapPath);
+        out << YAML::Key << "OverrideOcclusion" << YAML::Value << mat.OverrideOcclusion;
+        
+        out << YAML::Key << "EmissivePath" << YAML::Value << Project::GetRelativePath(mat.EmissivePath);
+        out << YAML::Key << "EmissiveColor" << YAML::Value << mat.EmissiveColor;
+        out << YAML::Key << "EmissiveIntensity" << YAML::Value << mat.EmissiveIntensity;
+        out << YAML::Key << "OverrideEmissive" << YAML::Value << mat.OverrideEmissive;
+        
+        out << YAML::Key << "Metalness" << YAML::Value << mat.Metalness;
+        out << YAML::Key << "Roughness" << YAML::Value << mat.Roughness;
+        
+        out << YAML::Key << "DoubleSided" << YAML::Value << mat.DoubleSided;
+        out << YAML::Key << "Transparent" << YAML::Value << mat.Transparent;
+        out << YAML::Key << "Alpha" << YAML::Value << mat.Alpha;
+        out << YAML::EndMap;
+    }
+
+    static void deserializeMaterialInstance(MaterialInstance& mat, YAML::Node node) {
+        if (node["AlbedoColor"]) mat.AlbedoColor = node["AlbedoColor"].as<Color>();
+        if (node["AlbedoPath"]) mat.AlbedoPath = node["AlbedoPath"].as<std::string>();
+        if (node["OverrideAlbedo"]) mat.OverrideAlbedo = node["OverrideAlbedo"].as<bool>();
+        
+        if (node["NormalMapPath"]) mat.NormalMapPath = node["NormalMapPath"].as<std::string>();
+        if (node["OverrideNormal"]) mat.OverrideNormal = node["OverrideNormal"].as<bool>();
+        
+        if (node["MetallicRoughnessPath"]) mat.MetallicRoughnessPath = node["MetallicRoughnessPath"].as<std::string>();
+        if (node["OverrideMetallicRoughness"]) mat.OverrideMetallicRoughness = node["OverrideMetallicRoughness"].as<bool>();
+        
+        if (node["OcclusionMapPath"]) mat.OcclusionMapPath = node["OcclusionMapPath"].as<std::string>();
+        if (node["OverrideOcclusion"]) mat.OverrideOcclusion = node["OverrideOcclusion"].as<bool>();
+        
+        if (node["EmissivePath"]) mat.EmissivePath = node["EmissivePath"].as<std::string>();
+        if (node["EmissiveColor"]) mat.EmissiveColor = node["EmissiveColor"].as<Color>();
+        if (node["EmissiveIntensity"]) mat.EmissiveIntensity = node["EmissiveIntensity"].as<float>();
+        if (node["OverrideEmissive"]) mat.OverrideEmissive = node["OverrideEmissive"].as<bool>();
+        
+        if (node["Metalness"]) mat.Metalness = node["Metalness"].as<float>();
+        if (node["Roughness"]) mat.Roughness = node["Roughness"].as<float>();
+        
+        if (node["DoubleSided"]) mat.DoubleSided = node["DoubleSided"].as<bool>();
+        if (node["Transparent"]) mat.Transparent = node["Transparent"].as<bool>();
+        if (node["Alpha"]) mat.Alpha = node["Alpha"].as<float>();
+    }
+
+    static void serializeMaterialSlot(YAML::Emitter& out, const MaterialSlot& slot) {
+        out << YAML::BeginMap;
+        out << YAML::Key << "Name" << YAML::Value << slot.Name;
+        out << YAML::Key << "Index" << YAML::Value << slot.Index;
+        out << YAML::Key << "Target" << YAML::Value << (int)slot.Target;
+        out << YAML::Key << "Material" << YAML::Value;
+        serializeMaterialInstance(out, slot.Material);
+        out << YAML::EndMap;
+    }
+
+    static void deserializeMaterialSlot(MaterialSlot& slot, YAML::Node node) {
+        if (node["Name"]) slot.Name = node["Name"].as<std::string>();
+        if (node["Index"]) slot.Index = node["Index"].as<int>();
+        if (node["Target"]) slot.Target = (MaterialSlotTarget)node["Target"].as<int>();
+        if (node["Material"]) deserializeMaterialInstance(slot.Material, node["Material"]);
+    }
+
     // ========================================================================
     // Initialize Registry
     // ========================================================================
@@ -185,6 +258,30 @@ namespace CHEngine
         Register<ModelComponent>("ModelComponent", [](auto& archive, auto& component) {
             archive.Handle("ModelHandle", component.ModelHandle)
                    .Path("ModelPath", component.ModelPath);
+
+            if (archive.GetMode() == SerializationUtils::PropertyArchive::Serialize)
+            {
+                auto& out = *archive.GetEmitter();
+                out << YAML::Key << "Materials" << YAML::Value << YAML::BeginSeq;
+                for (const auto& slot : component.Materials)
+                    serializeMaterialSlot(out, slot);
+                out << YAML::EndSeq;
+            }
+            else
+            {
+                auto node = archive.GetNode();
+                if (node["Materials"] && node["Materials"].IsSequence())
+                {
+                    component.Materials.clear();
+                    for (auto slotNode : node["Materials"])
+                    {
+                        MaterialSlot slot;
+                        deserializeMaterialSlot(slot, slotNode);
+                        component.Materials.push_back(slot);
+                    }
+                    component.MaterialsInitialized = true;
+                }
+            }
         });
 
         Register<LightComponent>("LightComponent", [](auto& archive, auto& component) {
@@ -522,8 +619,13 @@ namespace CHEngine
                     component.Scripts.clear();
                     auto* scene = entity.GetRegistry().ctx().get<Scene*>();
                     if (scene && componentNode["Scripts"]) {
-                        for (auto item : componentNode["Scripts"])
-                            scene->GetScriptRegistry().AddScript(item.as<std::string>(), component);
+                        for (auto item : componentNode["Scripts"]) {
+                            std::string scriptName = item.as<std::string>();
+                            CH_CORE_INFO("ComponentSerializer: Adding script '{}' to entity '{}'", scriptName, entity.GetName());
+                            scene->GetScriptRegistry().AddScript(scriptName, component);
+                        }
+                    } else if (!scene) {
+                        CH_CORE_WARN("ComponentSerializer: Could not find Scene in registry context!");
                     }
                  }
             };

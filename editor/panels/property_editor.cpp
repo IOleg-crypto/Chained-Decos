@@ -243,7 +243,13 @@ namespace CHEngine
                         auto asset = project->GetAssetManager()->Get<ModelAsset>(component.ModelPath);
                         if (asset)
                         {
-                            component.BVHRoot = BVH::Build(asset->GetModel());
+                            component.BVHRoot = BVH::Build(asset);
+                            if (component.AutoCalculate)
+                            {
+                                BoundingBox box = asset->GetBoundingBox();
+                                component.Offset = box.min;
+                                component.Size = Vector3Subtract(box.max, box.min);
+                            }
                             changed = true;
                         }
                     }
@@ -494,7 +500,23 @@ namespace CHEngine
 
             if (animCount > 0)
             {
-                if (pb.Int("Animation Index", component.CurrentAnimationIndex, 0, animCount - 1).Changed) changed = true;
+                std::shared_ptr<ModelAsset> asset = entity.template GetComponent<ModelComponent>().Asset;
+                std::string currentAnimName = asset->GetAnimationName(component.CurrentAnimationIndex);
+
+                if (ImGui::BeginCombo("Current Animation", currentAnimName.c_str()))
+                {
+                    for (int i = 0; i < animCount; i++)
+                    {
+                        bool isSelected = (component.CurrentAnimationIndex == i);
+                        if (ImGui::Selectable(asset->GetAnimationName(i).c_str(), isSelected))
+                        {
+                            component.CurrentAnimationIndex = i;
+                            changed = true;
+                        }
+                        if (isSelected) ImGui::SetItemDefaultFocus();
+                    }
+                    ImGui::EndCombo();
+                }
             }
             else
             {
@@ -995,23 +1017,53 @@ namespace CHEngine
                 
                 // Albedo
                 ImGui::Text("Albedo");
+                ImGui::PushID("Albedo");
                 EditorGUI::Property("Color", mat.AlbedoColor);
-                EditorGUI::Property("Texture", mat.AlbedoPath, "Texture Files (*.png *.jpg *.tga *.bmp)\0*.png;*.jpg;*.tga;*.bmp\0");
+                EditorGUI::Property("Texture", mat.AlbedoPath, "png,jpg,tga,bmp");
                 EditorGUI::Property("Use Texture", mat.OverrideAlbedo);
+                ImGui::PopID();
+                
+                // PBR Maps
+                ImGui::Text("PBR Maps");
+                ImGui::PushID("PBRMaps");
+                EditorGUI::Property("Normal Map", mat.NormalMapPath, "png,jpg,tga,bmp");
+                EditorGUI::Property("Metallic/Roughness", mat.MetallicRoughnessPath, "png,jpg,tga,bmp");
+                EditorGUI::Property("Occlusion", mat.OcclusionMapPath, "png,jpg,tga,bmp");
+                ImGui::PopID();
                 
                 ImGui::Separator();
                 
+                // Parameters
+                ImGui::Text("Parameters");
+                ImGui::PushID("Parameters");
+                EditorGUI::Property("Metalness", mat.Metalness, 0.01f, 0.0f, 1.0f);
+                EditorGUI::Property("Roughness", mat.Roughness, 0.01f, 0.0f, 1.0f);
+                ImGui::PopID();
+
+                ImGui::Separator();
+
                 // Emissive
                 ImGui::Text("Emissive Bloom");
-                if (EditorGUI::Property("Emissive Color", mat.EmissiveColor)) mat.OverrideEmissive = true;
+                ImGui::PushID("Emissive");
+                if (EditorGUI::Property("Emissive Color", mat.EmissiveColor))
+                {
+                    mat.OverrideEmissive = true;
+                }
                 EditorGUI::Property("Intensity", mat.EmissiveIntensity, 0.1f, 0.0f, 100.0f);
-                EditorGUI::Property("Texture", mat.EmissivePath, "Texture Files (*.png *.jpg *.tga *.bmp)\0*.png;*.jpg;*.tga;*.bmp\0");
+                EditorGUI::Property("Texture", mat.EmissivePath, "png,jpg,tga,bmp");
+                ImGui::PopID();
                 
                 // Rendering
                 ImGui::Separator();
                 ImGui::Text("Rendering");
+                ImGui::PushID("Rendering");
                 EditorGUI::Property("Double Sided", mat.DoubleSided);
-                
+                EditorGUI::Property("Transparent", mat.Transparent);
+                if (mat.Transparent)
+                {
+                    EditorGUI::Property("Alpha", mat.Alpha, 0.01f, 0.0f, 1.0f);
+                }
+                ImGui::PopID();
                 ImGui::PopID();
             }
         };

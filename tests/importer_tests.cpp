@@ -38,8 +38,8 @@ TEST_F(ImporterTest, EnvironmentImporter_SaveAndLoad)
     std::string testPath = "test_assets/test.chenv";
     
     auto env = std::make_shared<EnvironmentAsset>();
-    env->GetSettings().AmbientIntensity = 0.5f;
-    env->GetSettings().LightColor = RED;
+    env->GetSettings().Lighting.Ambient = 0.5f;
+    env->GetSettings().Lighting.LightColor = RED;
     env->GetSettings().Fog.Enabled = true;
 
     // Test Saving
@@ -49,10 +49,10 @@ TEST_F(ImporterTest, EnvironmentImporter_SaveAndLoad)
     // Test Loading
     auto loadedEnv = EnvironmentImporter::ImportEnvironment(testPath);
     ASSERT_TRUE(loadedEnv);
-    EXPECT_FLOAT_EQ(loadedEnv->GetSettings().AmbientIntensity, 0.5f);
+    EXPECT_FLOAT_EQ(loadedEnv->GetSettings().Lighting.Ambient, 0.5f);
     
     Color expectedColor = RED;
-    EXPECT_EQ(loadedEnv->GetSettings().LightColor.r, expectedColor.r);
+    EXPECT_EQ(loadedEnv->GetSettings().Lighting.LightColor.r, expectedColor.r);
     EXPECT_TRUE(loadedEnv->GetSettings().Fog.Enabled);
 }
 

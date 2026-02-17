@@ -56,6 +56,12 @@ namespace CHEngine
         };
 
     private:
+        // DrawCanvas decomposition helpers
+        std::vector<entt::entity> SortUIEntities(entt::registry& registry);
+        Rectangle CalculateEntityRect(Entity entity, const Rectangle& parentRect, std::map<entt::entity, Rectangle>& rectCache);
+        bool RenderUIComponent(Entity entity, const ImVec2& screenPos, const ImVec2& size, bool editMode);
+
+    private:
         static UIRenderer* s_Instance;
         std::unique_ptr<UIRendererData> m_Data;
     };

@@ -1,3 +1,4 @@
+
 # Chained Engine - Dependencies
 # Extracted from root CMakeLists.txt for modularity
 
@@ -33,21 +34,29 @@ FetchContent_Declare(
     GIT_TAG 0af55ccecd98d4e5a8d1fad7de25ba429d60e863 #refs/tags/1.0.1
 )
 
-# cgltf (glTF/GLB)
+# assimp (Asset Importer Library)
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ZLIB ON CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_DRACO OFF CACHE BOOL "" FORCE)
+set(ASSIMP_NO_EXPORT ON CACHE BOOL "" FORCE)
+
+# Ensure no unity build for assimp or its subprojects
+set(CMAKE_UNITY_BUILD OFF) 
+
 FetchContent_Declare(
-    cgltf
-    GIT_REPOSITORY https://github.com/jkuhlmann/cgltf.git
-    GIT_TAG v1.14
+    assimp
+    GIT_REPOSITORY https://github.com/assimp/assimp.git
+    GIT_TAG v5.3.1
 )
 
-# tinyobjloader (OBJ)
-FetchContent_Declare(
-    tinyobjloader
-    GIT_REPOSITORY https://github.com/tinyobjloader/tinyobjloader.git
-    GIT_TAG v1.0.6
-)
+FetchContent_MakeAvailable(yaml-cpp imguizmo glm assimp)
 
-FetchContent_MakeAvailable(yaml-cpp imguizmo glm cgltf tinyobjloader)
+# Disable unity build for assimp to avoid header/namespace conflicts
+if(TARGET assimp)
+    set_target_properties(assimp PROPERTIES UNITY_BUILD OFF)
+endif()
 
 # ============================================================================
 # Raylib

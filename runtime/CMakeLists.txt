@@ -1,6 +1,6 @@
 add_library(RuntimeCore STATIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/runtime_application.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/runtime_application.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/runtime_layer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/runtime_layer.cpp
 )
 
 target_link_libraries(RuntimeCore PUBLIC engine)

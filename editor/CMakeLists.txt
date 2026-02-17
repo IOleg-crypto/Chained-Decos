@@ -2,8 +2,6 @@
 add_library(editor_core STATIC)
 
 target_sources(editor_core PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/editor.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/editor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_layer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_layer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_context.h

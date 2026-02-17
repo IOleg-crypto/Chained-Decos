@@ -250,10 +250,11 @@ void Scene::UpdateAnimations(Timestep deltaTime)
     m_Registry.view<ModelComponent, AnimationComponent>().each([&](auto entity, auto& mc, auto& anim) {
         if (anim.IsPlaying && mc.Asset)
         {
-            int animCount = 0;
-            auto* anims = mc.Asset->GetAnimations(&animCount);
-            if (anims && anim.CurrentAnimationIndex < animCount)
+            const auto& anims = mc.Asset->GetRawAnimations();
+            int animCount = (int)anims.size();
+            if (anim.CurrentAnimationIndex >= 0 && anim.CurrentAnimationIndex < animCount)
             {
+                const auto& rawAnim = anims[anim.CurrentAnimationIndex];
                 float targetFPS = 30.0f;
                 if (Project::GetActive())
                     targetFPS = Project::GetActive()->GetConfig().Animation.TargetFPS;
@@ -264,11 +265,11 @@ void Scene::UpdateAnimations(Timestep deltaTime)
                 {
                     anim.CurrentFrame++;
                     anim.FrameTimeCounter -= frameTime;
-                    if (anim.CurrentFrame >= anims[anim.CurrentAnimationIndex].frameCount)
+                    if (anim.CurrentFrame >= rawAnim.frameCount)
                     {
                         if (anim.IsLooping) anim.CurrentFrame = 0;
                         else {
-                            anim.CurrentFrame = anims[anim.CurrentAnimationIndex].frameCount - 1;
+                            anim.CurrentFrame = rawAnim.frameCount - 1;
                             anim.IsPlaying = false;
                         }
                     }
@@ -344,7 +345,6 @@ void Scene::OnRuntimeStart()
     if (!view.empty())
         sceneName = view.get<TagComponent>(view.front()).Tag;
 
-    CH_CORE_INFO("Scene '{}' - Starting runtime simulation", sceneName);
     
     // Track initialization statistics
     int modelsLoaded = 0, modelsFailed = 0;
@@ -580,7 +580,7 @@ void Scene::OnColliderComponentAdded(entt::registry &reg, entt::entity entity)
                 auto modelAsset = project->GetAssetManager()->Get<ModelAsset>(collider.ModelPath);
                 if (modelAsset && modelAsset->IsReady())
                 {
-                    collider.BVHRoot = BVH::Build(modelAsset->GetModel(), MatrixIdentity());
+                    collider.BVHRoot = BVH::Build(modelAsset);
                 }
             }
         }

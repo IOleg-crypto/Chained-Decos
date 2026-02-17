@@ -26,7 +26,6 @@ namespace CHEngine
         Color BackgroundColor = {30, 30, 30, 255};
         std::string BackgroundTexturePath;
 
-        float AmbientIntensity = 0.5f;
         CanvasSettings Canvas;
     };
 

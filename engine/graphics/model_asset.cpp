@@ -2,6 +2,7 @@
 #include "engine/core/log.h"
 #include "engine/physics/bvh/bvh.h"
 #include "raylib.h"
+#include "raymath.h"
 #include "shader_asset.h"
 #include "texture_asset.h"
 #include <filesystem>
@@ -33,7 +34,8 @@ namespace CHEngine
         
         // Load Materials
         auto project = Project::GetActive();
-        m_PendingTextures.clear(); // Clear any old pending ones
+        std::vector<std::shared_ptr<TextureAsset>> localTextures;
+        std::vector<PendingTexture> localPendingTextures;
 
         for (int i = 0; i < model.materialCount; ++i) {
             model.materials[i] = LoadMaterialDefault();
@@ -46,16 +48,10 @@ namespace CHEngine
                     auto textureAsset = project->GetAssetManager()->Get<TextureAsset>(rawMaterial.albedoPath);
                     if (textureAsset && textureAsset->IsReady()) {
                         model.materials[i].maps[MATERIAL_MAP_ALBEDO].texture = textureAsset->GetTexture();
-                        m_Textures.push_back(textureAsset);
-                        CH_CORE_INFO("ModelAsset: Loaded texture '{}' for material {}", rawMaterial.albedoPath, i);
+                        localTextures.push_back(textureAsset);
                     }
                     else if (textureAsset) {
-                        CH_CORE_WARN("ModelAsset: Texture '{}' exists but not ready (state: {}). Adding to pending.", 
-                            rawMaterial.albedoPath, (int)textureAsset->GetState());
-                        m_PendingTextures.push_back({i, rawMaterial.albedoPath, MATERIAL_MAP_ALBEDO});
-                    }
-                    else {
-                        CH_CORE_WARN("ModelAsset: Failed to load texture '{}'", rawMaterial.albedoPath);
+                        localPendingTextures.push_back({i, rawMaterial.albedoPath, MATERIAL_MAP_ALBEDO});
                     }
                 }
 
@@ -66,10 +62,10 @@ namespace CHEngine
                     auto textureAsset = project->GetAssetManager()->Get<TextureAsset>(rawMaterial.emissivePath);
                     if (textureAsset && textureAsset->IsReady()) {
                         model.materials[i].maps[MATERIAL_MAP_EMISSION].texture = textureAsset->GetTexture();
-                        m_Textures.push_back(textureAsset);
+                        localTextures.push_back(textureAsset);
                     }
                     else if (textureAsset) {
-                        m_PendingTextures.push_back({i, rawMaterial.emissivePath, MATERIAL_MAP_EMISSION});
+                        localPendingTextures.push_back({i, rawMaterial.emissivePath, MATERIAL_MAP_EMISSION});
                     }
                 }
 
@@ -78,10 +74,10 @@ namespace CHEngine
                     auto textureAsset = project->GetAssetManager()->Get<TextureAsset>(rawMaterial.normalPath);
                     if (textureAsset && textureAsset->IsReady()) {
                         model.materials[i].maps[MATERIAL_MAP_NORMAL].texture = textureAsset->GetTexture();
-                        m_Textures.push_back(textureAsset);
+                        localTextures.push_back(textureAsset);
                     }
                     else if (textureAsset) {
-                        m_PendingTextures.push_back({i, rawMaterial.normalPath, MATERIAL_MAP_NORMAL});
+                        localPendingTextures.push_back({i, rawMaterial.normalPath, MATERIAL_MAP_NORMAL});
                     }
                 }
 
@@ -94,11 +90,11 @@ namespace CHEngine
                     if (textureAsset && textureAsset->IsReady()) {
                         model.materials[i].maps[MATERIAL_MAP_METALNESS].texture = textureAsset->GetTexture();
                         model.materials[i].maps[MATERIAL_MAP_ROUGHNESS].texture = textureAsset->GetTexture();
-                        m_Textures.push_back(textureAsset);
+                        localTextures.push_back(textureAsset);
                     }
                     else if (textureAsset) {
-                        m_PendingTextures.push_back({i, rawMaterial.metallicRoughnessPath, MATERIAL_MAP_METALNESS});
-                        m_PendingTextures.push_back({i, rawMaterial.metallicRoughnessPath, MATERIAL_MAP_ROUGHNESS});
+                        localPendingTextures.push_back({i, rawMaterial.metallicRoughnessPath, MATERIAL_MAP_METALNESS});
+                        localPendingTextures.push_back({i, rawMaterial.metallicRoughnessPath, MATERIAL_MAP_ROUGHNESS});
                     }
                 }
 
@@ -107,10 +103,10 @@ namespace CHEngine
                     auto textureAsset = project->GetAssetManager()->Get<TextureAsset>(rawMaterial.occlusionPath);
                     if (textureAsset && textureAsset->IsReady()) {
                         model.materials[i].maps[MATERIAL_MAP_OCCLUSION].texture = textureAsset->GetTexture();
-                        m_Textures.push_back(textureAsset);
+                        localTextures.push_back(textureAsset);
                     }
                     else if (textureAsset) {
-                        m_PendingTextures.push_back({i, rawMaterial.occlusionPath, MATERIAL_MAP_OCCLUSION});
+                        localPendingTextures.push_back({i, rawMaterial.occlusionPath, MATERIAL_MAP_OCCLUSION});
                     }
                 }
             }
@@ -181,23 +177,43 @@ namespace CHEngine
         // Lock and transfer
         {
             std::lock_guard<std::mutex> lock(m_ModelMutex);
+            
+            // Phase 11: Prevent leaks during re-upload
+            if (m_Model.meshCount > 0) ::UnloadModel(m_Model);
+            
             m_Model = model;
+            m_Textures = std::move(localTextures);
+            m_PendingTextures = std::move(localPendingTextures);
             
-            // Transfer animations
-            m_Animations = m_PendingData.animations;
-            m_AnimationCount = m_PendingData.animationCount;
-            
-            // If we have animations, the model needs bones for UpdateModelAnimation to work
-            if (m_AnimationCount > 0 && m_Animations[0].boneCount > 0)
+            // Phase 10: Robust bones (RAII safe)
+            if (!m_PendingData.bones.empty())
             {
-                m_Model.boneCount = m_Animations[0].boneCount;
+                m_Model.boneCount = (int)m_PendingData.bones.size();
                 m_Model.bones = (BoneInfo*)RL_MALLOC(m_Model.boneCount * sizeof(BoneInfo));
-                std::memcpy(m_Model.bones, m_Animations[0].bones, m_Model.boneCount * sizeof(BoneInfo));
+                std::memcpy(m_Model.bones, m_PendingData.bones.data(), m_Model.boneCount * sizeof(BoneInfo));
                 
-                // Use first frame of first animation as bind pose if no better option
                 m_Model.bindPose = (Transform*)RL_MALLOC(m_Model.boneCount * sizeof(Transform));
-                std::memcpy(m_Model.bindPose, m_Animations[0].framePoses[0], m_Model.boneCount * sizeof(Transform));
+                for (int i = 0; i < m_Model.boneCount; i++) {
+                    Matrix mat = m_PendingData.nodeLocalTransforms[i];
+                    m_Model.bindPose[i].translation = { mat.m12, mat.m13, mat.m14 };
+                    m_Model.bindPose[i].rotation = QuaternionFromMatrix(mat);
+                    m_Model.bindPose[i].scale = { 
+                        Vector3Length({mat.m0, mat.m1, mat.m2}), 
+                        Vector3Length({mat.m4, mat.m5, mat.m6}), 
+                        Vector3Length({mat.m8, mat.m9, mat.m10}) 
+                    };
+                }
             }
+
+            // Transfer animations (RAII safe)
+            m_Animations = std::move(m_PendingData.animations);
+
+            // Transfer KISS data
+            m_OffsetMatrices = std::move(m_PendingData.offsetMatrices);
+            m_NodeNames = std::move(m_PendingData.nodeNames);
+            m_NodeParents = std::move(m_PendingData.nodeParents);
+            m_MeshToNode = std::move(m_PendingData.meshToNode);
+            m_GlobalNodeTransforms = std::move(m_PendingData.globalBindPoses);
         }
         
         m_PendingData = PendingModelData();
@@ -210,15 +226,12 @@ namespace CHEngine
     ModelAsset::~ModelAsset()
     {
         if (m_Model.meshCount > 0) ::UnloadModel(m_Model);
-        if (m_Animations) ::UnloadModelAnimations(m_Animations, m_AnimationCount);
+        // m_Animations is std::vector, no need for UnloadModelAnimations
     }
 
     void ModelAsset::UpdateAnimation(int animationIndex, int frame)
     {
-        if (m_Animations && animationIndex < m_AnimationCount)
-        {
-            ::UpdateModelAnimation(m_Model, m_Animations[animationIndex], frame);
-        }
+        // Custom system uses MeshImporter logic directly in the renderer
     }
 
     void ModelAsset::OnUpdate()
@@ -253,12 +266,6 @@ namespace CHEngine
             }
         }
     }
-    ModelAnimation *ModelAsset::GetAnimations(int *count)
-    {
-        if (count) *count = m_AnimationCount;
-        return m_Animations;
-    }
-
     BoundingBox ModelAsset::GetBoundingBox() const
     {
         return ::GetModelBoundingBox(m_Model);
@@ -276,15 +283,10 @@ namespace CHEngine
         return m_Model;
     }
 
-    int ModelAsset::GetAnimationCount() const
+    std::vector<std::shared_ptr<TextureAsset>> ModelAsset::GetTextures() const
     {
-        return m_AnimationCount;
-    }
-
-    const std::vector<std::shared_ptr<TextureAsset>> &ModelAsset::GetTextures() const
-    {
+        std::lock_guard<std::mutex> lock(m_ModelMutex);
         return m_Textures;
     }
 
 } // namespace CHEngine
-

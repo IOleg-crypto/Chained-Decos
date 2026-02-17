@@ -184,19 +184,19 @@ void EnvironmentPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset>
         if (readOnly)
             ImGui::BeginDisabled();
 
-        ImGui::DragFloat3("Direction", &settings.LightDirection.x, 0.01f, -1.0f, 1.0f);
+        ImGui::DragFloat3("Direction", &settings.Lighting.Direction.x, 0.01f, -1.0f, 1.0f);
 
-        float color[4] = {settings.LightColor.r / 255.0f, settings.LightColor.g / 255.0f,
-                          settings.LightColor.b / 255.0f, settings.LightColor.a / 255.0f};
+        float color[4] = {settings.Lighting.LightColor.r / 255.0f, settings.Lighting.LightColor.g / 255.0f,
+                          settings.Lighting.LightColor.b / 255.0f, settings.Lighting.LightColor.a / 255.0f};
         if (ImGui::ColorEdit4("Light Color", color))
         {
-            settings.LightColor.r = (unsigned char)(color[0] * 255.0f);
-            settings.LightColor.g = (unsigned char)(color[1] * 255.0f);
-            settings.LightColor.b = (unsigned char)(color[2] * 255.0f);
-            settings.LightColor.a = (unsigned char)(color[3] * 255.0f);
+            settings.Lighting.LightColor.r = (unsigned char)(color[0] * 255.0f);
+            settings.Lighting.LightColor.g = (unsigned char)(color[1] * 255.0f);
+            settings.Lighting.LightColor.b = (unsigned char)(color[2] * 255.0f);
+            settings.Lighting.LightColor.a = (unsigned char)(color[3] * 255.0f);
         }
 
-        ImGui::DragFloat("Ambient", &settings.AmbientIntensity, 0.005f, 0.0f, 2.0f);
+        ImGui::DragFloat("Ambient", &settings.Lighting.Ambient, 0.005f, 0.0f, 2.0f);
 
         if (readOnly)
             ImGui::EndDisabled();

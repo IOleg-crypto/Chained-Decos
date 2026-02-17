@@ -14,12 +14,12 @@
 #include "orbitcameracontroller.h"
 #include "player_fall.h"
 #include "screen_fall_effect.h"
+#include "settings_script.h"
 
 // Standard C++ function for static linking (used by Editor)
 void RegisterGameScripts(CHEngine::Scene* scene) {
-    if (!scene) return;
-
-    CH_CORE_INFO("Game Logic Registering (static)...");
+    if (!scene) { CH_CORE_ERROR("RegisterGameScripts: SCENE IS NULL!"); return; }
+    CH_CORE_INFO("RegisterGameScripts: Called for scene '{}' (ptr: {})", scene->GetSettings().Name, (void*)scene);
 
     auto& registry = scene->GetScriptRegistry();
     
@@ -32,6 +32,7 @@ void RegisterGameScripts(CHEngine::Scene* scene) {
     registry.Register<CHEngine::OrbitCameraController>("OrbitCameraController");
     registry.Register<CHEngine::PlayerFall>("PlayerFall");
     registry.Register<CHEngine::ScreenFallEffect>("ScreenFallEffect");
+    registry.Register<CHEngine::SettingsScript>("SettingsScript");
 
     CH_CORE_INFO("Game Scripts Registered successfully!");
 }
@@ -52,6 +53,7 @@ extern "C" {
         CH_REGISTER_SCRIPT(registerCallback, userData, CHEngine::OrbitCameraController, "OrbitCameraController");
         CH_REGISTER_SCRIPT(registerCallback, userData, CHEngine::PlayerFall, "PlayerFall");
         CH_REGISTER_SCRIPT(registerCallback, userData, CHEngine::ScreenFallEffect, "ScreenFallEffect");
+        CH_REGISTER_SCRIPT(registerCallback, userData, CHEngine::SettingsScript, "SettingsScript");
 
         CH_CORE_INFO("Game Scripts Registered successfully!");
     }

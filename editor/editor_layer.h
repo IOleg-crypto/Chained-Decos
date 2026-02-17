@@ -62,12 +62,26 @@ namespace CHEngine
         bool IsFullscreenGame() const { return EditorContext::GetState().FullscreenGame; }
         bool IsStandaloneActive() const { return EditorContext::GetState().StandaloneActive; }
 
+        struct EditorLayerConfig
+        {
+            std::string LastProjectPath = "";
+            std::string LastScenePath = "";
+            bool LoadLastProjectOnStartup = false;
+        };
+
+        void LoadConfig();
+        void SaveConfig();
+        const EditorLayerConfig& GetConfig() const { return m_Config; }
+        void SetLastProjectPath(const std::string& path) { m_Config.LastProjectPath = path; }
+        void SetLastScenePath(const std::string& path) { m_Config.LastScenePath = path; }
+
         std::shared_ptr<Scene> GetActiveScene() const 
         { 
             return (EditorContext::GetSceneState() == SceneState::Play) ? m_RuntimeScene : m_EditorScene; 
         }
 
     private:
+        EditorLayerConfig m_Config;
         bool OnProjectOpened(ProjectOpenedEvent &e);
         bool OnSceneOpened(SceneOpenedEvent &e);
 

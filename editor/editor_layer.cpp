@@ -1,7 +1,6 @@
 #include "editor_layer.h"
 #include "editor/actions/project_actions.h"
 #include "editor/actions/scene_actions.h"
-#include "editor/editor.h"
 #include "editor_gui.h"
 #include "editor_events.h"
 #include "engine/core/input.h"
@@ -13,6 +12,8 @@
 #include "engine/scene/scriptable_entity.h"
 #include "engine/scene/project.h"
 #include "engine/graphics/asset_manager.h"
+#include "engine/core/yaml.h"
+#include <fstream>
 
 #include "cstdarg"
 #include "extras/IconsFontAwesome6.h"
@@ -38,6 +39,46 @@ namespace CHEngine
         m_Panels = std::make_unique<EditorPanels>();
         m_Layout = std::make_unique<EditorLayout>();
         m_Actions = std::make_unique<EditorActions>();
+        
+        LoadConfig();
+    }
+
+    void EditorLayer::LoadConfig()
+    {
+        std::string configPath = PROJECT_ROOT_DIR "/editor_settings.yaml";
+        if (!std::filesystem::exists(configPath))
+            return;
+
+        try
+        {
+            YAML::Node data = YAML::LoadFile(configPath);
+            if (!data["Editor"])
+                return;
+
+            auto node = data["Editor"];
+            m_Config.LastProjectPath = node["LastProjectPath"].as<std::string>("");
+            m_Config.LastScenePath = node["LastScenePath"].as<std::string>("");
+            m_Config.LoadLastProjectOnStartup = node["LoadLastProjectOnStartup"].as<bool>(false);
+        }
+        catch (std::exception &e)
+        {
+            CH_CORE_ERROR("Failed to load editor config: {}", e.what());
+        }
+    }
+
+    void EditorLayer::SaveConfig()
+    {
+        YAML::Emitter out;
+        out << YAML::BeginMap;
+        out << YAML::Key << "Editor" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "LastProjectPath" << YAML::Value << m_Config.LastProjectPath;
+        out << YAML::Key << "LastScenePath" << YAML::Value << m_Config.LastScenePath;
+        out << YAML::Key << "LoadLastProjectOnStartup" << YAML::Value << m_Config.LoadLastProjectOnStartup;
+        out << YAML::EndMap;
+        out << YAML::EndMap;
+
+        std::ofstream fout(PROJECT_ROOT_DIR "/editor_settings.yaml");
+        fout << out.c_str();
     }
 
     void EditorLayer::OnAttach()
@@ -69,7 +110,7 @@ namespace CHEngine
             []() { CH_CORE_TRACE("CommandHistory: Scene state changed, notifying editor..."); });
 
         // Auto-load last project/scene
-        const auto &config = Editor::Get().GetEditorConfig();
+        const auto &config = GetConfig();
 
         if (config.LoadLastProjectOnStartup && !config.LastProjectPath.empty() &&
             std::filesystem::exists(config.LastProjectPath))
@@ -96,6 +137,16 @@ namespace CHEngine
             EditorContext::GetState().NeedsLayoutReset = true;
         }
 
+        CH_CORE_INFO("EditorLayer - Setting window icon");
+        Image icon = LoadImage(PROJECT_ROOT_DIR
+                               "/engine/resources/icons/game-engine-icon-featuring-a-game-controller-with-.png");
+        if (icon.data != nullptr)
+        {
+            ImageFormat(&icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+            Application::Get().GetWindow().SetWindowIcon(icon);
+            UnloadImage(icon);
+        }
+
         CH_CORE_INFO("EditorLayer Attached with modular panels.");
         
         LoadEditorFonts();
@@ -103,6 +154,7 @@ namespace CHEngine
 
     void EditorLayer::LoadEditorFonts()
     {
+
         ImGuiIO &io = ImGui::GetIO();
         float fontSize = 16.0f;
         auto assetManager = Project::GetActive() ? Project::GetActive()->GetAssetManager() : nullptr;
@@ -147,6 +199,7 @@ namespace CHEngine
 
     void EditorLayer::OnDetach()
     {
+        SaveConfig();
         EditorContext::Shutdown();
         SetTraceLogCallback(nullptr);
         NFD_Quit();

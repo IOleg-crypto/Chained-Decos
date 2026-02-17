@@ -1,4 +1,5 @@
-#include "editor.h"
+#include "engine/core/application.h"
+#include "editor_layer.h"
 #include "engine/core/entry_point.h"
 
 namespace CHEngine
@@ -9,10 +10,8 @@ Application *CreateApplication(ApplicationCommandLineArgs args)
     spec.Name = "Chained Editor";
     spec.CommandLineArgs = args;
 
-    // Register project scripts so they appear in Inspector
-    //extern void RegisterGameScripts();
-    //RegisterGameScripts();
-
-    return new Editor(spec);
+    auto app = new Application(spec);
+    app->PushLayer(new EditorLayer());
+    return app;
 }
 } // namespace CHEngine
