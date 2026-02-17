@@ -130,19 +130,22 @@ namespace CHEngine
             // Case B: Mesh Collider (BVH)
             if (collider.Type == ColliderType::Mesh && !collider.ModelPath.empty())
             {
-                if (collider.BVHRoot) continue; // Already generated
-
                 auto asset = project->GetAssetManager()->Get<ModelAsset>(collider.ModelPath);
                 if (asset && asset->GetState() == AssetState::Ready && asset->GetModel().meshCount > 0)
                 {
-                    collider.BVHRoot = GetBVH(asset.get());
-                    if (collider.BVHRoot)
+                    if (!collider.BVHRoot)
+                    {
+                        collider.BVHRoot = GetBVH(asset.get());
+                    }
+
+                    if (collider.BVHRoot && collider.AutoCalculate)
                     {
                         BoundingBox box = asset->GetBoundingBox();
                         collider.Offset = box.min;
                         collider.Size = Vector3Subtract(box.max, box.min);
                     }
                 }
+                continue;
             }
 
             // Case C: Sphere Collider (Auto)

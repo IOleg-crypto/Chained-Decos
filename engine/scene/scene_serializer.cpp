@@ -44,7 +44,6 @@ namespace CHEngine
         out << YAML::Key << "Mode" << YAML::Value << (int)m_Scene->m_Settings.Mode;
         out << YAML::Key << "Color" << YAML::Value << m_Scene->m_Settings.BackgroundColor;
         out << YAML::Key << "TexturePath" << YAML::Value << Project::GetRelativePath(m_Scene->m_Settings.BackgroundTexturePath);
-        out << YAML::Key << "AmbientIntensity" << YAML::Value << m_Scene->m_Settings.AmbientIntensity;
         out << YAML::EndMap;
 
         // Serialize Canvas Settings
@@ -62,9 +61,11 @@ namespace CHEngine
             // Also serialize the current settings for quick preview/fallback
             auto& settings = m_Scene->m_Settings.Environment->GetSettings();
             
-            out << YAML::Key << "LightDirection" << YAML::Value << settings.LightDirection;
-            out << YAML::Key << "LightColor" << YAML::Value << settings.LightColor;
-            out << YAML::Key << "AmbientIntensity" << YAML::Value << settings.AmbientIntensity;
+            out << YAML::Key << "Lighting" << YAML::BeginMap;
+            out << YAML::Key << "Direction" << YAML::Value << settings.Lighting.Direction;
+            out << YAML::Key << "LightColor" << YAML::Value << settings.Lighting.LightColor;
+            out << YAML::Key << "Ambient" << YAML::Value << settings.Lighting.Ambient;
+            out << YAML::EndMap;
  
             out << YAML::Key << "Skybox" << YAML::Value << YAML::BeginMap;
             out << YAML::Key << "TexturePath" << YAML::Value << Project::GetRelativePath(settings.Skybox.TexturePath);
@@ -150,8 +151,7 @@ namespace CHEngine
                     m_Scene->m_Settings.BackgroundColor = background["Color"].as<Color>();
                 if (background["TexturePath"] && background["TexturePath"].IsScalar())
                     m_Scene->m_Settings.BackgroundTexturePath = background["TexturePath"].as<std::string>();
-                if (background["AmbientIntensity"])
-                    m_Scene->m_Settings.AmbientIntensity = background["AmbientIntensity"].as<float>();
+                // Legacy AmbientIntensity in Background block is silently ignored
             }
 
             // Deserialize Canvas
@@ -184,10 +184,21 @@ namespace CHEngine
                 auto env = m_Scene->m_Settings.Environment;
                 auto& settings = env->GetSettings();
                 
-                // Lighting
-                if (data["LightDirection"]) settings.LightDirection = data["LightDirection"].as<Vector3>();
-                if (data["LightColor"]) settings.LightColor = data["LightColor"].as<Color>();
-                if (data["AmbientIntensity"]) settings.AmbientIntensity = data["AmbientIntensity"].as<float>();
+                // Lighting (new format with Lighting section, or backward-compat flat fields)
+                if (data["Lighting"])
+                {
+                    auto lighting = data["Lighting"];
+                    if (lighting["Direction"]) settings.Lighting.Direction = lighting["Direction"].as<Vector3>();
+                    if (lighting["LightColor"]) settings.Lighting.LightColor = lighting["LightColor"].as<Color>();
+                    if (lighting["Ambient"]) settings.Lighting.Ambient = lighting["Ambient"].as<float>();
+                }
+                else
+                {
+                    // Backward compat: old flat field names
+                    if (data["LightDirection"]) settings.Lighting.Direction = data["LightDirection"].as<Vector3>();
+                    if (data["LightColor"]) settings.Lighting.LightColor = data["LightColor"].as<Color>();
+                    if (data["AmbientIntensity"]) settings.Lighting.Ambient = data["AmbientIntensity"].as<float>();
+                }
 
                 // Skybox
                 if (auto skybox = data["Skybox"])

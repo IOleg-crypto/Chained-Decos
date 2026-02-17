@@ -33,17 +33,27 @@ public:
     void OnUpdate(); // Check if textures loaded and apply them
     
     void UpdateAnimation(int animationIndex, int frame);
-    ModelAnimation *GetAnimations(int *count);
-    int GetAnimationCount() const;
+    const std::vector<RawAnimation>& GetRawAnimations() const { return m_Animations; }
+    int GetAnimationCount() const { return (int)m_Animations.size(); }
+    std::string GetAnimationName(int index) const { return (index >= 0 && index < (int)m_Animations.size()) ? m_Animations[index].name : ""; }
 
-    const std::vector<std::shared_ptr<class TextureAsset>> &GetTextures() const;
+    std::vector<std::shared_ptr<class TextureAsset>> GetTextures() const;
+    const std::vector<Matrix>& GetOffsetMatrices() const { return m_OffsetMatrices; }
+    const std::vector<int>& GetMeshToNode() const { return m_MeshToNode; }
+    const std::vector<Matrix>& GetGlobalNodeTransforms() const { return m_GlobalNodeTransforms; }
 
 private:
     Model m_Model = {0};
-    ModelAnimation *m_Animations = nullptr;
-    int m_AnimationCount = 0;
+    std::vector<RawAnimation> m_Animations;
     std::vector<std::shared_ptr<class TextureAsset>> m_Textures;
-    
+
+    // KISS additions
+    std::vector<Matrix> m_OffsetMatrices;
+    std::vector<std::string> m_NodeNames;
+    std::vector<int> m_NodeParents;
+    std::vector<int> m_MeshToNode;
+    std::vector<Matrix> m_GlobalNodeTransforms;
+
     mutable std::mutex m_ModelMutex;  // Protect Model access during async loading
     
     PendingModelData m_PendingData;

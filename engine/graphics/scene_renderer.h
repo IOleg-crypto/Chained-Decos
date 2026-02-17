@@ -19,6 +19,11 @@ namespace CHEngine
         void RenderDebug(Scene* scene, const DebugRenderFlags* debugFlags);
         void RenderEditorIcons(Scene* scene, const Camera3D& camera);
         void RenderSprites(Scene* scene);
+
+    private:
+        void DrawColliderDebug(entt::registry& registry, const DebugRenderFlags* debugFlags);
+        void DrawAABBDebug(entt::registry& registry, const DebugRenderFlags* debugFlags);
+        void DrawSpawnDebug(entt::registry& registry, const DebugRenderFlags* debugFlags);
     };
 }
 

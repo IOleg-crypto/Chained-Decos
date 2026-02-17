@@ -1,5 +1,5 @@
 #include "project_actions.h"
-#include "editor.h"
+#include "editor_layer.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene_events.h"
 #include "engine/scene/project_serializer.h"
@@ -45,7 +45,7 @@ namespace CHEngine
     {
         if (Project::Load(path))
         {
-            Editor::Get().SetLastProjectPath(path.string());
+            EditorLayer::Get().SetLastProjectPath(path.string());
             ProjectOpenedEvent e(path.string());
             Application::Get().OnEvent(e);
         }
