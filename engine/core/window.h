@@ -9,7 +9,6 @@ struct GLFWwindow;
 
 namespace CHEngine
 {
-    class GraphicsContext;
 struct WindowProperties
 {
     std::string Title;
@@ -55,6 +54,7 @@ public:
 
     void SetTitle(const std::string &title);
     void SetSize(int width, int height);
+    void SetSizeDirect(int width, int height) { m_Width = width; m_Height = height; }
 
     void ToggleFullscreen();
     void SetFullscreen(bool enabled);
@@ -64,7 +64,6 @@ public:
     void SetWindowIcon(Image icon);
 
 private:
-    std::unique_ptr<GraphicsContext> m_Context;
     GLFWwindow *m_WindowHandle = nullptr;
     int m_Width, m_Height;
     std::string m_Title;

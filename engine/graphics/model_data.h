@@ -45,14 +45,32 @@ namespace CHEngine
         int mapIndex; // MATERIAL_MAP_ALBEDO, MATERIAL_MAP_EMISSION, etc.
     };
 
+    struct RawAnimation {
+        std::string name;
+        int frameCount;
+        int boneCount;
+        std::vector<Transform> framePoses; // flattened [frameCount * boneCount]
+    };
+
     // CPU-side data for async loading (loaded in worker thread)
     struct PendingModelData {
         std::string fullPath;   
         std::vector<RawMesh> meshes;
         std::vector<RawMaterial> materials;
         
-        ModelAnimation* animations = nullptr;
-        int animationCount = 0;
+        // Skeletal / Hierarchy data (RAII)
+        std::vector<BoneInfo> bones;
+        std::vector<Transform> bindPose; 
+        
+        // KISS additions
+        std::vector<std::string> nodeNames;
+        std::vector<int> nodeParents;
+        std::vector<Matrix> nodeLocalTransforms;
+        std::vector<Matrix> globalBindPoses; // Computed world-space bind poses
+        std::vector<Matrix> offsetMatrices;  // per-bone offset matrices (Inverse Bind)
+        std::vector<int> meshToNode;
+
+        std::vector<RawAnimation> animations;
         bool isValid = false;
     };
 }

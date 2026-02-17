@@ -27,12 +27,16 @@ struct FogSettings
     float End = 100.0f;
 };
 
+struct LightingSettings
+{
+    Vector3 Direction = {-1.0f, -1.0f, -1.0f};
+    Color LightColor = WHITE;
+    float Ambient = 0.3f;
+};
+
 struct EnvironmentSettings
 {
-    Vector3 LightDirection = {-1.0f, -1.0f, -1.0f};
-    Color LightColor = WHITE;
-    float AmbientIntensity = 0.3f;
-
+    LightingSettings Lighting;
     SkyboxSettings Skybox;
     FogSettings Fog;
 };

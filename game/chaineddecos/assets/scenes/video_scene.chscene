@@ -1,17 +1,17 @@
 Scene: Untitled Scene
 Background:
   Mode: 0
-  Color: [0, 0, 0, 255]
+  Color: [15, 15, 20, 255]
   TexturePath: ""
-  AmbientIntensity: 0.5
 Canvas:
   ReferenceResolution: [1920, 1080]
   ScaleMode: 0
   MatchWidthOrHeight: 0.5
 EnvironmentPath: ""
-LightDirection: [-1, -1, -1]
-LightColor: [255, 255, 255, 255]
-AmbientIntensity: 0.300000012
+Lighting:
+  Direction: [-1, -1, -1]
+  LightColor: [255, 255, 255, 255]
+  Ambient: 0.300000012
 Skybox:
   TexturePath: ""
   Exposure: 1
@@ -26,7 +26,7 @@ Fog:
 Entities:
   - Entity: 18170181542896433609
     TagComponent:
-      Tag: back_button_to_main_menu
+      Tag: back_button
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -38,8 +38,8 @@ Entities:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-458, 267]
-        OffsetMax: [-358, 307]
+        OffsetMin: [-100, 250]
+        OffsetMax: [100, 300]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -47,14 +47,14 @@ Entities:
       IsActive: true
       HiddenInHierarchy: false
     ButtonControl:
-      Label: Back
+      Label: BACK
       Interactable: true
       AutoSize: false
       Style:
-        BackgroundColor: [40, 40, 40, 255]
+        BackgroundColor: [60, 60, 60, 255]
         HoverColor: [60, 60, 60, 255]
         PressedColor: [30, 30, 30, 255]
-        Rounding: 4
+        Rounding: 8
         BorderSize: 0
         BorderColor: [255, 255, 255, 255]
         Padding: 4
@@ -66,7 +66,7 @@ Entities:
       Text:
         FontName: Default
         FontSize: 18
-        TextColor: [203, 187, 187, 255]
+        TextColor: [255, 255, 255, 255]
         Shadow: false
         ShadowOffset: 2
         ShadowColor: [0, 0, 0, 255]
@@ -77,9 +77,9 @@ Entities:
     NativeScriptComponent:
       Scripts:
         - SceneScript
-  - Entity: 17615517667390034193
+  - Entity: 1004
     TagComponent:
-      Tag: title_menu_video
+      Tag: btn_apply_settings
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -88,31 +88,48 @@ Entities:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-457, -266]
-        OffsetMax: [395, -212]
+        OffsetMin: [-100, 150]
+        OffsetMax: [100, 200]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-    LabelControl:
-      Text: Video
+    ButtonControl:
+      Label: APPLY
+      Interactable: true
       AutoSize: false
       Style:
+        BackgroundColor: [40, 100, 40, 255]
+        HoverColor: [60, 60, 60, 255]
+        PressedColor: [30, 30, 30, 255]
+        Rounding: 8
+        BorderSize: 0
+        BorderColor: [255, 255, 255, 255]
+        Padding: 4
+        UseGradient: false
+        GradientColor: [20, 20, 20, 255]
+        HoverScale: 1
+        PressedScale: 1
+        TransitionSpeed: 0.100000001
+      Text:
         FontName: Default
-        FontSize: 27.2999992
-        TextColor: [241, 214, 214, 255]
+        FontSize: 18
+        TextColor: [255, 255, 255, 255]
         Shadow: false
         ShadowOffset: 2
         ShadowColor: [0, 0, 0, 255]
         LetterSpacing: 1
         LineHeight: 1.20000005
-        HorizontalAlignment: 0
+        HorizontalAlignment: 1
         VerticalAlignment: 1
-  - Entity: 16516555726583183032
+    NativeScriptComponent:
+      Scripts:
+        - SettingsScript
+  - Entity: 1002
     TagComponent:
-      Tag: option_fullscreen
+      Tag: option_aa
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -121,8 +138,8 @@ Entities:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-454, -99]
-        OffsetMax: [-331, -59]
+        OffsetMin: [-150, 30]
+        OffsetMax: [150, 70]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -130,8 +147,8 @@ Entities:
       IsActive: true
       HiddenInHierarchy: false
     CheckboxControl:
-      Label: Fullscreen
-      Checked: true
+      Label: Anti-aliasing (Coming Soon)
+      Checked: false
       Text:
         FontName: Default
         FontSize: 18
@@ -144,21 +161,21 @@ Entities:
         HorizontalAlignment: 1
         VerticalAlignment: 1
       Style:
-        BackgroundColor: [183, 183, 183, 255]
+        BackgroundColor: [30, 30, 30, 150]
         HoverColor: [60, 60, 60, 255]
         PressedColor: [30, 30, 30, 255]
         Rounding: 4
         BorderSize: 0
         BorderColor: [255, 255, 255, 255]
         Padding: 4
-        UseGradient: true
+        UseGradient: false
         GradientColor: [20, 20, 20, 255]
-        HoverScale: 1.84000003
-        PressedScale: 1.38
+        HoverScale: 1
+        PressedScale: 1
         TransitionSpeed: 0.100000001
-  - Entity: 17129118224082506760
+  - Entity: 1003
     TagComponent:
-      Tag: resolution
+      Tag: quality_preset
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -167,8 +184,8 @@ Entities:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-457, -160]
-        OffsetMax: [261, -120]
+        OffsetMin: [-150, -40]
+        OffsetMax: [150, 0]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -176,18 +193,17 @@ Entities:
       IsActive: true
       HiddenInHierarchy: false
     ComboBoxControl:
-      Label: Resolution
+      Label: Quality
       Items:
-        - 800x600
-        - 1280x720
-        - 1440x900
-        - 1920x1080
-        - 1920x1200
+        - Low
+        - Medium
+        - High
+        - Ultra
       SelectedIndex: 2
       TextStyle:
         FontName: Default
-        FontSize: 28.7999992
-        TextColor: [222, 222, 222, 255]
+        FontSize: 18
+        TextColor: [255, 255, 255, 255]
         Shadow: false
         ShadowOffset: 2
         ShadowColor: [0, 0, 0, 255]
@@ -208,3 +224,191 @@ Entities:
         HoverScale: 1
         PressedScale: 1
         TransitionSpeed: 0.100000001
+    NativeScriptComponent:
+      Scripts:
+        - SettingsScript
+  - Entity: 1001
+    TagComponent:
+      Tag: option_vsync
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-150, -110]
+        OffsetMax: [150, -70]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+    CheckboxControl:
+      Label: VSync
+      Checked: true
+      Text:
+        FontName: Default
+        FontSize: 18
+        TextColor: [255, 255, 255, 255]
+        Shadow: false
+        ShadowOffset: 2
+        ShadowColor: [0, 0, 0, 255]
+        LetterSpacing: 1
+        LineHeight: 1.20000005
+        HorizontalAlignment: 1
+        VerticalAlignment: 1
+      Style:
+        BackgroundColor: [40, 40, 40, 255]
+        HoverColor: [60, 60, 60, 255]
+        PressedColor: [30, 30, 30, 255]
+        Rounding: 4
+        BorderSize: 0
+        BorderColor: [255, 255, 255, 255]
+        Padding: 4
+        UseGradient: false
+        GradientColor: [20, 20, 20, 255]
+        HoverScale: 1
+        PressedScale: 1
+        TransitionSpeed: 0.100000001
+    NativeScriptComponent:
+      Scripts:
+        - SettingsScript
+  - Entity: 16516555726583183032
+    TagComponent:
+      Tag: option_fullscreen
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-150, -180]
+        OffsetMax: [150, -140]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+    CheckboxControl:
+      Label: Fullscreen
+      Checked: false
+      Text:
+        FontName: Default
+        FontSize: 18
+        TextColor: [255, 255, 255, 255]
+        Shadow: false
+        ShadowOffset: 2
+        ShadowColor: [0, 0, 0, 255]
+        LetterSpacing: 1
+        LineHeight: 1.20000005
+        HorizontalAlignment: 1
+        VerticalAlignment: 1
+      Style:
+        BackgroundColor: [40, 40, 40, 255]
+        HoverColor: [60, 60, 60, 255]
+        PressedColor: [30, 30, 30, 255]
+        Rounding: 4
+        BorderSize: 0
+        BorderColor: [255, 255, 255, 255]
+        Padding: 4
+        UseGradient: false
+        GradientColor: [20, 20, 20, 255]
+        HoverScale: 1
+        PressedScale: 1
+        TransitionSpeed: 0.100000001
+    NativeScriptComponent:
+      Scripts:
+        - SettingsScript
+  - Entity: 17129118224082506760
+    TagComponent:
+      Tag: resolution
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-150, -250]
+        OffsetMax: [150, -210]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+    ComboBoxControl:
+      Label: Resolution
+      Items:
+        - 1280x720
+        - 1440x900
+        - 1600x900
+        - 1920x1080
+      SelectedIndex: 0
+      TextStyle:
+        FontName: Default
+        FontSize: 24
+        TextColor: [220, 220, 220, 255]
+        Shadow: false
+        ShadowOffset: 2
+        ShadowColor: [0, 0, 0, 255]
+        LetterSpacing: 1
+        LineHeight: 1.20000005
+        HorizontalAlignment: 1
+        VerticalAlignment: 1
+      BoxStyle:
+        BackgroundColor: [40, 40, 40, 255]
+        HoverColor: [60, 60, 60, 255]
+        PressedColor: [30, 30, 30, 255]
+        Rounding: 4
+        BorderSize: 0
+        BorderColor: [255, 255, 255, 255]
+        Padding: 4
+        UseGradient: false
+        GradientColor: [20, 20, 20, 255]
+        HoverScale: 1
+        PressedScale: 1
+        TransitionSpeed: 0.100000001
+    NativeScriptComponent:
+      Scripts:
+        - SettingsScript
+  - Entity: 17615517667390034193
+    TagComponent:
+      Tag: title_menu_video
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-195, -332]
+        OffsetMax: [205, -272]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+    LabelControl:
+      Text: Video Settings
+      AutoSize: false
+      Style:
+        FontName: Default
+        FontSize: 48
+        TextColor: [255, 255, 255, 255]
+        Shadow: false
+        ShadowOffset: 2
+        ShadowColor: [0, 0, 0, 255]
+        LetterSpacing: 1
+        LineHeight: 1.20000005
+        HorizontalAlignment: 1
+        VerticalAlignment: 1

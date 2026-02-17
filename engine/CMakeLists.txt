@@ -37,13 +37,11 @@ add_library(engine ${ENGINE_LIB_TYPE}
     graphics/model_asset.cpp
     graphics/texture_asset.cpp
     graphics/font_asset.cpp
-    graphics/environment.cpp
     graphics/mesh_importer.cpp
     graphics/texture_importer.cpp
     graphics/shader_importer.cpp
     graphics/font_importer.cpp
     graphics/environment_importer.cpp
-    graphics/raylib_context.cpp
     
     # Audio
     audio/audio.cpp
@@ -107,8 +105,6 @@ add_library(engine ${ENGINE_LIB_TYPE}
     graphics/font_importer.h
     graphics/environment_importer.h
     graphics/asset_importer.h
-    graphics/graphics_context.h
-    graphics/raylib_context.h
     
     audio/audio.h
     audio/sound_asset.h
@@ -158,8 +154,8 @@ set_target_properties(engine PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 target_include_directories(engine PUBLIC
     ${ENGINE_INCLUDE_DIRS}
-    ${cgltf_SOURCE_DIR}
-    ${tinyobjloader_SOURCE_DIR}
+    ${assimp_SOURCE_DIR}/include
+    ${assimp_BINARY_DIR}/include
 INTERFACE
     ${yaml-cpp_SOURCE_DIR}/include
 )
@@ -171,6 +167,7 @@ PUBLIC
     imguilib
 PRIVATE
     yaml-cpp
+    assimp::assimp
 )
 
 # Compiler flags

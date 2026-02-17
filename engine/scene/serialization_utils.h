@@ -218,6 +218,8 @@ namespace CHEngine::SerializationUtils
         }
 
         Mode GetMode() const { return m_Mode; }
+        YAML::Emitter* GetEmitter() { return m_Out; }
+        YAML::Node GetNode() { return m_Node; }
 
     private:
         Mode m_Mode;

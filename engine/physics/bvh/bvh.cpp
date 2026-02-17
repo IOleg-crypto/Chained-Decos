@@ -3,6 +3,7 @@
 #include "cfloat"
 #include <future>
 #include "raymath.h"
+#include "engine/graphics/model_asset.h"
 
 namespace CHEngine
 {
@@ -15,31 +16,52 @@ CollisionTriangle::CollisionTriangle(const Vector3 &a, const Vector3 &b, const V
     center = Vector3Scale(Vector3Add(Vector3Add(v0, v1), v2), 1.0f / 3.0f);
 }
 
-bool CollisionTriangle::IntersectsRay(const Ray &ray, float &t) const
+bool CollisionTriangle::IntersectsRay(const Ray &ray, float &t, Vector3 &normal) const
 {
     Vector3 edge1 = Vector3Subtract(v1, v0);
     Vector3 edge2 = Vector3Subtract(v2, v0);
     Vector3 pvec = Vector3CrossProduct(ray.direction, edge2);
     float det = Vector3DotProduct(edge1, pvec);
 
-    if (det > -0.000001f && det < 0.000001f)
+    // Using a smaller epsilon for better precision
+    if (fabsf(det) < 1e-7f)
+    {
         return false;
+    }
 
     float invDet = 1.0f / det;
     Vector3 tvec = Vector3Subtract(ray.position, v0);
     float u = Vector3DotProduct(tvec, pvec) * invDet;
 
     if (u < 0.0f || u > 1.0f)
+    {
         return false;
+    }
 
     Vector3 qvec = Vector3CrossProduct(tvec, edge1);
     float v = Vector3DotProduct(ray.direction, qvec) * invDet;
 
     if (v < 0.0f || u + v > 1.0f)
+    {
         return false;
+    }
 
-    t = Vector3DotProduct(edge2, qvec) * invDet;
-    return t > 0.000001f;
+    float tempT = Vector3DotProduct(edge2, qvec) * invDet;
+    if (tempT < 1e-6f)
+    {
+        return false;
+    }
+
+    t = tempT;
+    normal = Vector3Normalize(Vector3CrossProduct(edge1, edge2));
+    
+    // Ensure normal points against ray
+    if (Vector3DotProduct(normal, ray.direction) > 0)
+    {
+        normal = Vector3Scale(normal, -1.0f);
+    }
+
+    return true;
 }
 
 std::shared_ptr<BVH> BVH::Build(const BVHModelSnapshot &snapshot)
@@ -55,7 +77,7 @@ std::shared_ptr<BVH> BVH::Build(const BVHModelSnapshot &snapshot)
         if (mesh.Vertices.empty())
             continue;
 
-        Matrix meshTransform = snapshot.Transform; 
+        Matrix meshTransform = mesh.Transform; 
 
         if (!mesh.Indices.empty())
         {
@@ -76,7 +98,7 @@ std::shared_ptr<BVH> BVH::Build(const BVHModelSnapshot &snapshot)
 
                 allTris.emplace_back(Vector3Transform(v0, meshTransform),
                                      Vector3Transform(v1, meshTransform),
-                                     Vector3Transform(v2, meshTransform), 0);
+                                     Vector3Transform(v2, meshTransform), mesh.MeshIndex);
             }
         }
         else
@@ -91,7 +113,7 @@ std::shared_ptr<BVH> BVH::Build(const BVHModelSnapshot &snapshot)
 
                 allTris.emplace_back(Vector3Transform(v0, meshTransform),
                                      Vector3Transform(v1, meshTransform),
-                                     Vector3Transform(v2, meshTransform), 0);
+                                     Vector3Transform(v2, meshTransform), mesh.MeshIndex);
             }
         }
     }
@@ -116,34 +138,43 @@ std::shared_ptr<BVH> BVH::Build(const BVHModelSnapshot &snapshot)
     return bvh;
 }
 
-std::shared_ptr<BVH> BVH::Build(const Model &model, const Matrix &transform)
-{
-    // ... Legacy implementation redirecting to snapshot or just keeping as is? 
-    // Keeping as is for synchronous calls (safe if main thread) or redirecting.
-    // Redirecting is safer to maintain one logic.
-    
-    BVHModelSnapshot snapshot;
-    snapshot.Transform = MatrixMultiply(model.transform, transform);
 
+std::shared_ptr<BVH> BVH::Build(std::shared_ptr<ModelAsset> asset, const Matrix& transform)
+{
+    if (!asset || !asset->IsReady()) return nullptr;
+    return Build(asset->GetModel(), asset->GetGlobalNodeTransforms(), asset->GetMeshToNode(), transform);
+}
+
+std::shared_ptr<BVH> BVH::Build(const Model &model, const std::vector<Matrix>& globalTransforms, const std::vector<int>& meshToNode, const Matrix &transform)
+{
+    BVHModelSnapshot snapshot;
     for (int i = 0; i < model.meshCount; i++)
     {
         Mesh &mesh = model.meshes[i];
         if (mesh.vertexCount == 0 || mesh.vertices == nullptr) continue;
 
         BVHMeshSnapshot meshSnap;
+        meshSnap.MeshIndex = i;
+        
+        Matrix nodeTransform = MatrixIdentity();
+        if (i < (int)meshToNode.size())
+        {
+            int nodeIdx = meshToNode[i];
+            if (nodeIdx >= 0 && nodeIdx < (int)globalTransforms.size())
+                nodeTransform = globalTransforms[nodeIdx];
+        }
+        
+        meshSnap.Transform = MatrixMultiply(MatrixMultiply(nodeTransform, model.transform), transform);
+        
         meshSnap.Vertices.resize(mesh.vertexCount);
         for (int v = 0; v < mesh.vertexCount; v++)
-        {
             meshSnap.Vertices[v] = {mesh.vertices[v*3], mesh.vertices[v*3+1], mesh.vertices[v*3+2]};
-        }
 
         if (mesh.triangleCount > 0 && mesh.indices != nullptr)
         {
              meshSnap.Indices.resize(mesh.triangleCount * 3);
              for (int idx = 0; idx < mesh.triangleCount * 3; idx++)
-             {
                  meshSnap.Indices[idx] = (uint32_t)mesh.indices[idx];
-             }
         }
         snapshot.Meshes.push_back(std::move(meshSnap));
     }
@@ -268,11 +299,12 @@ bool BVH::Raycast(const Ray &ray, float &t, Vector3 &normal, int &meshIndex) con
             for (uint32_t i = 0; i < node.TriangleCount; ++i)
             {
                 const auto &tri = m_Triangles[node.LeftOrFirst + i];
-                RayCollision triHit = GetRayCollisionTriangle(ray, tri.v0, tri.v1, tri.v2);
-                if (triHit.hit && triHit.distance < t)
+                float triT = t;
+                Vector3 triNormal;
+                if (tri.IntersectsRay(ray, triT, triNormal) && triT < t)
                 {
-                    t = triHit.distance;
-                    normal = triHit.normal;
+                    t = triT;
+                    normal = triNormal;
                     meshIndex = tri.meshIndex;
                     hit = true;
                 }
@@ -280,8 +312,36 @@ bool BVH::Raycast(const Ray &ray, float &t, Vector3 &normal, int &meshIndex) con
         }
         else
         {
-            stack[stackPtr++] = node.LeftOrFirst;
-            stack[stackPtr++] = node.LeftOrFirst + 1;
+            uint32_t left = node.LeftOrFirst;
+            uint32_t right = left + 1;
+
+            RayCollision leftHit = GetRayCollisionBox(ray, {m_Nodes[left].Min, m_Nodes[left].Max});
+            RayCollision rightHit = GetRayCollisionBox(ray, {m_Nodes[right].Min, m_Nodes[right].Max});
+
+            bool leftValid = leftHit.hit && leftHit.distance < t;
+            bool rightValid = rightHit.hit && rightHit.distance < t;
+
+            if (leftValid && rightValid)
+            {
+                if (leftHit.distance < rightHit.distance)
+                {
+                    stack[stackPtr++] = right;
+                    stack[stackPtr++] = left;
+                }
+                else
+                {
+                    stack[stackPtr++] = left;
+                    stack[stackPtr++] = right;
+                }
+            }
+            else if (leftValid)
+            {
+                stack[stackPtr++] = left;
+            }
+            else if (rightValid)
+            {
+                stack[stackPtr++] = right;
+            }
         }
     }
     return hit;
@@ -407,7 +467,7 @@ std::future<std::shared_ptr<BVH>> BVH::BuildAsync(const Model &model, const Matr
     // Deep copy geometry on the calling thread (Main Thread)
     // This avoids race conditions if the model is modified (e.g. animation) or destroyed during async build.
     BVHModelSnapshot snapshot;
-    snapshot.Transform = MatrixMultiply(model.transform, transform);
+    Matrix modelTransform = MatrixMultiply(model.transform, transform);
 
     for (int i = 0; i < model.meshCount; i++)
     {
@@ -415,6 +475,8 @@ std::future<std::shared_ptr<BVH>> BVH::BuildAsync(const Model &model, const Matr
         if (mesh.vertexCount == 0 || mesh.vertices == nullptr) continue;
 
         BVHMeshSnapshot meshSnap;
+        meshSnap.MeshIndex = i;
+        meshSnap.Transform = modelTransform;
         meshSnap.Vertices.resize(mesh.vertexCount);
         for (int v = 0; v < mesh.vertexCount; v++)
         {
@@ -434,6 +496,52 @@ std::future<std::shared_ptr<BVH>> BVH::BuildAsync(const Model &model, const Matr
     }
     
     // Capture snapshot by value (move)
+    return std::async(std::launch::async, [snapshot = std::move(snapshot)]() { 
+        return Build(snapshot); 
+    });
+}
+
+std::future<std::shared_ptr<BVH>> BVH::BuildAsync(std::shared_ptr<ModelAsset> asset, const Matrix& transform)
+{
+    return std::async(std::launch::async, [asset, transform]() {
+        return Build(asset, transform);
+    });
+}
+
+std::future<std::shared_ptr<BVH>> BVH::BuildAsync(const Model &model, const std::vector<Matrix>& globalTransforms, const std::vector<int>& meshToNode, const Matrix &transform)
+{
+    BVHModelSnapshot snapshot;
+    for (int i = 0; i < model.meshCount; i++)
+    {
+        Mesh &mesh = model.meshes[i];
+        if (mesh.vertexCount == 0 || mesh.vertices == nullptr) continue;
+
+        BVHMeshSnapshot meshSnap;
+        meshSnap.MeshIndex = i;
+        
+        Matrix nodeTransform = MatrixIdentity();
+        if (i < (int)meshToNode.size())
+        {
+            int nodeIdx = meshToNode[i];
+            if (nodeIdx >= 0 && nodeIdx < (int)globalTransforms.size())
+                nodeTransform = globalTransforms[nodeIdx];
+        }
+        
+        meshSnap.Transform = MatrixMultiply(MatrixMultiply(nodeTransform, model.transform), transform);
+        
+        meshSnap.Vertices.resize(mesh.vertexCount);
+        for (int v = 0; v < mesh.vertexCount; v++)
+            meshSnap.Vertices[v] = {mesh.vertices[v*3], mesh.vertices[v*3+1], mesh.vertices[v*3+2]};
+
+        if (mesh.triangleCount > 0 && mesh.indices != nullptr)
+        {
+             meshSnap.Indices.resize(mesh.triangleCount * 3);
+             for (int idx = 0; idx < mesh.triangleCount * 3; idx++)
+                 meshSnap.Indices[idx] = (uint32_t)mesh.indices[idx];
+        }
+        snapshot.Meshes.push_back(std::move(meshSnap));
+    }
+    
     return std::async(std::launch::async, [snapshot = std::move(snapshot)]() { 
         return Build(snapshot); 
     });

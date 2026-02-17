@@ -1,13 +1,11 @@
 #include "engine/core/application.h"
 #include "engine/core/entry_point.h"
-#include "runtime/runtime_application.h"
+#include "runtime/runtime_layer.h"
 #include <filesystem>
 
 
 namespace CHEngine
 {
-    // No manual RegisterGameScripts here! It's loaded dynamically.
-
     Application *CreateApplication(ApplicationCommandLineArgs args)
     {
         ApplicationSpecification spec;
@@ -17,8 +15,6 @@ namespace CHEngine
         std::string projectPath = ""; 
         std::string appName = "Chained Runtime";
 
-        // 2. Minimal CLI parsing for bootstrapping
-        // (Full parsing happens inside RuntimeApplication::InitProject)
         for (int i = 1; i < args.Count; ++i)
         {
             std::string arg = args.Args[i];
@@ -39,7 +35,6 @@ namespace CHEngine
             }
         }
         
-        // 3. Post-discovery hint for App Name
         if (!projectPath.empty() && appName == "Chained Runtime")
         {
             std::filesystem::path p = projectPath;
@@ -48,7 +43,8 @@ namespace CHEngine
 
         spec.Name = appName;
 
-        // 3. Create the generic runtime host
-        return new RuntimeApplication(spec, projectPath);
+        auto app = new Application(spec);
+        app->PushLayer(new RuntimeLayer(projectPath));
+        return app;
     }
 } // namespace CHEngine
