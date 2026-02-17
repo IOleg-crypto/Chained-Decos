@@ -1,0 +1,392 @@
+#include "runtime_layer.h"
+#include "engine/core/application.h"
+#include "engine/core/window.h"
+#include "engine/graphics/asset_manager.h"
+#include "engine/graphics/renderer.h"
+#include "engine/scene/project.h"
+#include "engine/scene/scene_serializer.h"
+#include "engine/scene/scene_events.h"
+#include "engine/graphics/scene_renderer.h"
+#include "engine/graphics/ui_renderer.h"
+#include "engine/scene/scene_scripting.h"
+#include "engine/core/module_loader.h"
+#include "imgui.h"
+#include "raymath.h"
+#include <filesystem>
+
+namespace CHEngine
+{
+    RuntimeLayer::RuntimeLayer(const std::string& projectPath, ScriptRegistrationCallback callback) 
+        : Layer("RuntimeLayer"), m_ProjectPath(projectPath), m_ScriptCallback(callback)
+    {
+        m_SceneRenderer = std::make_unique<SceneRenderer>();
+    }
+
+    RuntimeLayer::~RuntimeLayer()
+    {
+    }
+
+    void RuntimeLayer::OnAttach()
+    {
+        if (InitProject(m_ProjectPath))
+        {
+            // Initial scene/module load is handled by InitProject calling LoadInitialScene
+        }
+        ImGuiIO &io = ImGui::GetIO();
+        float fontSize = 16.0f;
+        auto assetManager = Project::GetActive() ? Project::GetActive()->GetAssetManager() : nullptr;
+
+        // Use a temporary asset manager if no project is active yet (for startup screen)
+        std::unique_ptr<AssetManager> tempManager;
+        if (!assetManager) {
+            tempManager = std::make_unique<AssetManager>();
+            tempManager->Initialize();
+            assetManager = std::move(tempManager);
+        }
+
+        // --- Default UI Font (Lato) ---
+        std::string fontPath = assetManager->ResolvePath("engine/resources/font/lato/lato-bold.ttf");
+        if (std::filesystem::exists(fontPath))
+        {
+            io.Fonts->AddFontFromFileTTF(fontPath.c_str(), fontSize);
+            CH_CORE_INFO("Loaded editor font: {}", fontPath);
+        }
+        else
+        {
+            CH_CORE_WARN("Editor font not found: {}. Using default ImGui font.", fontPath);
+            io.Fonts->AddFontDefault();
+        }
+    }
+
+    void RuntimeLayer::OnDetach()
+    {
+        if (m_Scene)
+            m_Scene->OnRuntimeStop();
+    }
+
+    void RuntimeLayer::OnUpdate(Timestep ts)
+    {
+        if (!m_PendingScenePath.empty())
+        {
+            std::string path = m_PendingScenePath;
+            m_PendingScenePath.clear();
+            LoadScene(path);
+        }
+
+        if (m_Scene)
+            m_Scene->OnUpdateRuntime(ts);
+    }
+
+    void RuntimeLayer::OnRender(Timestep ts)
+    {
+        if (!m_Scene)
+        {
+            ::ClearBackground(BLACK);
+            return;
+        }
+
+        Color bgColor = BLACK;
+        if (m_Scene->GetSettings().Environment)
+        {
+            auto& env = m_Scene->GetSettings().Environment->GetSettings();
+            if (env.Fog.Enabled) bgColor = env.Fog.FogColor;
+        }
+        ::ClearBackground(bgColor);
+
+        auto camera = GetActiveCamera();
+        if (camera.has_value())
+        {
+            m_SceneRenderer->RenderScene(m_Scene.get(), camera.value(), ts);
+        }
+    }
+
+    void RuntimeLayer::OnImGuiRender()
+    {
+        if (m_Scene)
+        {
+            ImGuiViewport* viewport = ImGui::GetMainViewport();
+            ImGui::SetNextWindowPos(viewport->WorkPos);
+            ImGui::SetNextWindowSize(viewport->WorkSize);
+            ImGui::SetNextWindowViewport(viewport->ID);
+            
+            ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | 
+                                     ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove | 
+                                     ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar | 
+                                     ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNav |
+                                     ImGuiWindowFlags_NoDocking;
+
+            // Allow inputs for runtime UI
+            flags &= ~ImGuiWindowFlags_NoInputs; 
+
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+            
+            if (ImGui::Begin("RuntimeUI", nullptr, flags))
+            {
+                ImVec2 canvasPos = ImGui::GetCursorScreenPos();
+                ImVec2 canvasSize = ImGui::GetContentRegionAvail();
+                UIRenderer::Get().DrawCanvas(m_Scene.get(), canvasPos, canvasSize, false);
+                SceneScripting::RenderUI(m_Scene.get());
+            }
+            ImGui::End();
+            ImGui::PopStyleVar(2);
+        }
+    }
+
+    void RuntimeLayer::OnEvent(Event &e)
+    {
+        EventDispatcher dispatcher(e);
+        dispatcher.Dispatch<SceneChangeRequestEvent>([this](auto& ev) {
+            m_PendingScenePath = ev.GetPath();
+            return true;
+        });
+
+        if (m_Scene)
+            m_Scene->OnEvent(e);
+    }
+
+    void RuntimeLayer::LoadScene(const std::string& path)
+    {
+        std::filesystem::path scenePath = path;
+        if (scenePath.is_relative() && Project::GetActive())
+            scenePath = Project::GetAssetPath(path);
+        
+        std::string finalPath = scenePath.string();
+
+        if (m_Scene)
+            m_Scene->OnRuntimeStop();
+
+        m_Scene = std::make_shared<Scene>();
+        
+        if (m_ScriptCallback) {
+            m_ScriptCallback(m_Scene.get());
+        } else {
+            auto project = Project::GetActive();
+            if (project && project->GetConfig().Scripting.AutoLoad)
+            {
+                const auto& scripting = project->GetConfig().Scripting;
+                std::string moduleName = scripting.ModuleName;
+                if (moduleName.empty()) moduleName = project->GetConfig().Name + "game";
+
+                #ifdef CH_PLATFORM_WINDOWS
+                std::string dllName = moduleName + ".dll";
+                #else
+                std::string dllName = "lib" + moduleName + ".so";
+                #endif
+
+                std::filesystem::path binDir = std::filesystem::path(Application::Get().GetSpecification().CommandLineArgs.Args[0]).parent_path();
+                std::filesystem::path projectDir = project->GetProjectDirectory();
+                
+                std::vector<std::filesystem::path> searchPaths;
+                if (!scripting.ModuleDirectory.empty())
+                {
+                    if (scripting.ModuleDirectory.is_absolute()) searchPaths.push_back(scripting.ModuleDirectory / dllName);
+                    else searchPaths.push_back(projectDir / scripting.ModuleDirectory / dllName);
+                }
+                searchPaths.push_back(projectDir / "bin" / dllName);
+                searchPaths.push_back(projectDir / dllName);
+                searchPaths.push_back(binDir / dllName);
+
+                for (const auto& path : searchPaths)
+                {
+                    if (std::filesystem::exists(path))
+                    {
+                        if (ModuleLoader::LoadGameModule(path.string(), &m_Scene->GetScriptRegistry()))
+                        {
+                            CH_CORE_INFO("RuntimeLayer: Loaded scripts from: {}", path.string());
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        SceneSerializer serializer(m_Scene.get());
+        if (serializer.Deserialize(finalPath))
+        {
+             m_Scene->GetSettings().ScenePath = finalPath;
+             m_Scene->OnRuntimeStart();
+        }
+        else
+        {
+            CH_CORE_ERROR("RuntimeLayer: Failed to load scene: {}", finalPath);
+            m_Scene = nullptr;
+        }
+    }
+
+    void RuntimeLayer::LoadScene(int index)
+    {
+        auto project = Project::GetActive();
+        if (!project) return;
+        
+        const auto& buildScenes = project->GetConfig().BuildScenes;
+        if (index >= 0 && index < (int)buildScenes.size())
+        {
+            std::filesystem::path fullPath = Project::GetAssetPath(buildScenes[index]);
+            LoadScene(fullPath.string());
+        }
+    }
+
+    bool RuntimeLayer::InitProject(const std::string& projectPath)
+    {
+        if (!DiscoverAndLoadProject(projectPath))
+            return false;
+
+        auto project = Project::GetActive();
+        ApplyWindowConfiguration();
+        SetupBrandingAndIcon();
+
+        auto& config = project->GetConfig();
+        ::SetTargetFPS((int)config.Animation.TargetFPS > 0 ? (int)config.Animation.TargetFPS : 60);
+
+        LoadInitialScene();
+
+        return true;
+    }
+
+    bool RuntimeLayer::DiscoverAndLoadProject(const std::string& projectPath)
+    {
+        std::filesystem::path discoveryPath = projectPath;
+        if (discoveryPath.empty())
+        {
+            std::filesystem::path exePath = std::filesystem::absolute(std::filesystem::path(Application::Get().GetSpecification().CommandLineArgs.Args[0]));
+            discoveryPath = exePath.parent_path();
+        }
+
+        m_ProjectPath = Project::Discover(discoveryPath, Application::Get().GetSpecification().Name).string();
+        
+        if (m_ProjectPath.empty()) return false;
+
+        auto project = Project::Load(m_ProjectPath);
+        return project != nullptr;
+    }
+
+    void RuntimeLayer::ApplyWindowConfiguration()
+    {
+        auto project = Project::GetActive();
+        if (!project) return;
+
+        auto &config = project->GetConfig();
+        Window& window = Application::Get().GetWindow();
+        
+        bool vsync = config.Window.VSync;
+        int width = config.Window.Width;
+        int height = config.Window.Height;
+        bool fullscreen = config.Runtime.Fullscreen;
+
+        const auto& args = Application::Get().GetSpecification().CommandLineArgs;
+        for (int i = 1; i < args.Count; ++i)
+        {
+            std::string arg = args.Args[i];
+            if (arg == "--width" && i + 1 < args.Count)
+            {
+                width = std::stoi(args.Args[++i]);
+            }
+            else if (arg == "--height" && i + 1 < args.Count) 
+            {
+                height = std::stoi(args.Args[++i]);
+            }
+            else if (arg == "--fullscreen") 
+            {
+                fullscreen = true;
+            }
+            else if (arg == "--windowed") 
+            {
+                fullscreen = false;
+            }
+            else if (arg == "--vsync" && i + 1 < args.Count) 
+            {
+                vsync = (std::string(args.Args[++i]) == "on");
+            }
+        }
+
+        window.SetVSync(vsync);
+        if (width != config.Window.Width || height != config.Window.Height)
+            window.SetSize(width, height);
+        window.SetFullscreen(fullscreen);
+    }
+
+    void RuntimeLayer::SetupBrandingAndIcon()
+    {
+        auto project = Project::GetActive();
+        if (!project) return;
+
+        auto &config = project->GetConfig();
+        Window& window = Application::Get().GetWindow();
+        window.SetTitle(config.Name);
+
+        if (config.IconPath.empty()) return;
+
+        std::filesystem::path iconPath = "";
+        std::string resolved = project->GetAssetManager()->ResolvePath(config.IconPath);
+        if (std::filesystem::exists(resolved)) iconPath = resolved;
+
+        if (iconPath.empty())
+        {
+            std::filesystem::path p = project->GetProjectDirectory() / config.IconPath;
+            if (std::filesystem::exists(p)) iconPath = p;
+        }
+
+        if (!iconPath.empty() && std::filesystem::exists(iconPath))
+        {
+            Image icon = LoadImage(iconPath.string().c_str());
+            if (icon.data != nullptr)
+            {
+                if (icon.format != PIXELFORMAT_UNCOMPRESSED_R8G8B8A8)
+                    ImageFormat(&icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+                
+                window.SetWindowIcon(icon);
+                UnloadImage(icon);
+            }
+        }
+    }
+
+    void RuntimeLayer::LoadInitialScene()
+    {
+        auto project = Project::GetActive();
+        if (!project) return;
+
+        auto &config = project->GetConfig();
+        std::string sceneToLoad = config.StartScene;
+        
+        const auto& args = Application::Get().GetSpecification().CommandLineArgs;
+        for (int i = 1; i < args.Count; ++i)
+        {
+            if (std::string(args.Args[i]) == "--scene" && i + 1 < args.Count)
+            {
+                sceneToLoad = args.Args[++i];
+                break;
+            }
+        }
+
+        if (sceneToLoad.empty()) sceneToLoad = config.ActiveScenePath.string();
+
+        if (sceneToLoad.empty())
+        {
+            std::filesystem::path scenesDir = Project::GetAssetDirectory() / "scenes";
+            if (std::filesystem::exists(scenesDir))
+            {
+                for (const auto& entry : std::filesystem::recursive_directory_iterator(scenesDir))
+                {
+                    if (entry.path().extension() == ".chscene")
+                    {
+                        sceneToLoad = std::filesystem::relative(entry.path(), Project::GetAssetDirectory()).string();
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!sceneToLoad.empty())
+        {
+            std::filesystem::path fullPath = Project::GetAssetPath(sceneToLoad);
+            LoadScene(fullPath.string());
+        }
+    }
+
+    std::optional<Camera3D> RuntimeLayer::GetActiveCamera()
+    {
+        if (m_Scene) return m_Scene->GetActiveCamera();
+        return std::nullopt;
+    }
+}

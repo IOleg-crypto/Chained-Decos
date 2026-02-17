@@ -1,7 +1,6 @@
 #include "window.h"
 #include "engine/core/log.h"
 #include "raylib.h"
-#include "engine/graphics/raylib_context.h"
 
 // ImGui
 #include "backends/imgui_impl_glfw.h"
@@ -46,8 +45,6 @@ Window::Window(const WindowProperties &windowProperties)
         return;
     }
 
-    m_Context = std::make_unique<RaylibContext>(m_WindowHandle);
-    m_Context->Init();
 
     SetExitKey(KEY_NULL); // Prevent ESC from closing the app
 

@@ -144,11 +144,14 @@ namespace CHEngine
         if (e.GetWidth() == 0 || e.GetHeight() == 0)
         {
             m_Minimized = true;
+            CH_CORE_WARN("Window minimized or dimensions are zero ({}x{})", e.GetWidth(), e.GetHeight());
             return false;
         }
 
         m_Minimized = false;
+        m_Window->SetSizeDirect(e.GetWidth(), e.GetHeight());
         Renderer::Get().SetViewport(0, 0, e.GetWidth(), e.GetHeight());
+        CH_CORE_INFO("Window resized to {}x{}", e.GetWidth(), e.GetHeight());
 
         return false;
     }

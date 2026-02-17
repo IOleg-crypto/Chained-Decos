@@ -55,6 +55,7 @@ namespace CHEngine
             newScene->GetSettings().ScenePath = path.string();
 
             SceneOpenedEvent e(path.string());
+            EditorLayer::Get().SetLastScenePath(path.string());
             Application::Get().OnEvent(e);
         }
     }

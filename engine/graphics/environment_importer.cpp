@@ -29,12 +29,21 @@ namespace CHEngine
             auto envNode = data["Environment"];
             auto& settings = asset->GetSettings();
 
-            if (envNode["LightDirection"])
-                settings.LightDirection = envNode["LightDirection"].as<Vector3>();
-            if (envNode["LightColor"])
-                settings.LightColor = envNode["LightColor"].as<Color>();
-            if (envNode["AmbientIntensity"])
-                settings.AmbientIntensity = envNode["AmbientIntensity"].as<float>();
+            // New format: Lighting section
+            if (envNode["Lighting"])
+            {
+                auto lighting = envNode["Lighting"];
+                if (lighting["Direction"]) settings.Lighting.Direction = lighting["Direction"].as<Vector3>();
+                if (lighting["LightColor"]) settings.Lighting.LightColor = lighting["LightColor"].as<Color>();
+                if (lighting["Ambient"]) settings.Lighting.Ambient = lighting["Ambient"].as<float>();
+            }
+            else
+            {
+                // Backward compat: old flat field names
+                if (envNode["LightDirection"]) settings.Lighting.Direction = envNode["LightDirection"].as<Vector3>();
+                if (envNode["LightColor"]) settings.Lighting.LightColor = envNode["LightColor"].as<Color>();
+                if (envNode["AmbientIntensity"]) settings.Lighting.Ambient = envNode["AmbientIntensity"].as<float>();
+            }
 
             auto skybox = envNode["Skybox"];
             if (skybox)
@@ -76,9 +85,11 @@ namespace CHEngine
         out << YAML::BeginMap;
         out << YAML::Key << "Environment" << YAML::BeginMap;
 
-        out << YAML::Key << "LightDirection" << YAML::Value << settings.LightDirection;
-        out << YAML::Key << "LightColor" << YAML::Value << settings.LightColor;
-        out << YAML::Key << "AmbientIntensity" << YAML::Value << settings.AmbientIntensity;
+        out << YAML::Key << "Lighting" << YAML::BeginMap;
+        out << YAML::Key << "Direction" << YAML::Value << settings.Lighting.Direction;
+        out << YAML::Key << "LightColor" << YAML::Value << settings.Lighting.LightColor;
+        out << YAML::Key << "Ambient" << YAML::Value << settings.Lighting.Ambient;
+        out << YAML::EndMap;
 
         out << YAML::Key << "Skybox" << YAML::BeginMap;
         out << YAML::Key << "TexturePath" << YAML::Value << settings.Skybox.TexturePath;

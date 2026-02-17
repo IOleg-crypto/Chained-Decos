@@ -20,6 +20,9 @@ struct MaterialInstance
     std::string MetallicRoughnessPath = "";
     bool OverrideMetallicRoughness = false;
 
+    std::string OcclusionMapPath = "";
+    bool OverrideOcclusion = false;
+
     // Optional Emissive
     std::string EmissivePath = "";
     Color EmissiveColor = BLACK;

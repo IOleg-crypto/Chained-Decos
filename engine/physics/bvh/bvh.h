@@ -35,20 +35,24 @@ public:
     struct BVHMeshSnapshot {
         std::vector<Vector3> Vertices;
         std::vector<uint32_t> Indices;
+        int MeshIndex = 0;
+        Matrix Transform = MatrixIdentity();
     };
     
     struct BVHModelSnapshot {
         std::vector<BVHMeshSnapshot> Meshes;
-        Matrix Transform;
     };
 
     // Synchronous API
     static std::shared_ptr<BVH> Build(const BVHModelSnapshot &model);
     static std::shared_ptr<BVH> Build(const Model &model, const Matrix &transform = MatrixIdentity());
+    static std::shared_ptr<BVH> Build(const Model &model, const std::vector<Matrix>& offsetMatrices, const std::vector<int>& meshToNode, const Matrix &transform = MatrixIdentity());
+    static std::shared_ptr<BVH> Build(std::shared_ptr<class ModelAsset> asset, const Matrix &transform = MatrixIdentity());
 
     // Asynchronous API
-    static std::future<std::shared_ptr<BVH>> BuildAsync(const Model &model,
-                                                        const Matrix &transform = MatrixIdentity());
+    static std::future<std::shared_ptr<BVH>> BuildAsync(const Model &model, const Matrix &transform = MatrixIdentity());
+    static std::future<std::shared_ptr<BVH>> BuildAsync(const Model &model, const std::vector<Matrix>& offsetMatrices, const std::vector<int>& meshToNode, const Matrix &transform = MatrixIdentity());
+    static std::future<std::shared_ptr<BVH>> BuildAsync(std::shared_ptr<class ModelAsset> asset, const Matrix &transform = MatrixIdentity());
 
     bool Raycast(const Ray &ray, float &t, Vector3 &normal, int &meshIndex) const;
     bool IntersectAABB(const BoundingBox &box, Vector3 &outOverlapNormal,

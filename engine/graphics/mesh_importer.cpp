@@ -1,317 +1,414 @@
-#define TINYOBJLOADER_IMPLEMENTATION
 #include "mesh_importer.h"
 #include "model_asset.h"
 #include "engine/core/log.h"
 #include "raylib.h"
 #include "raymath.h"
-#include "cgltf.h"
-#include "tiny_obj_loader.h"
 #include <filesystem>
 #include <algorithm>
+#include <map>
+
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+#include <fstream>
 
 namespace CHEngine
 {
-    
-
-    static void ProcessGLTFNode(const cgltf_node* node, const Matrix& parentTransform, GLTFParserContext& ctx)
+    // Matrix conversion: Assimp (Row-Major) to Raylib (Column-Major storage)
+    Matrix MeshImporter::ConvertMatrix(const aiMatrix4x4& m)
     {
-        Matrix localTransform = MatrixIdentity();
-        float matrixData[16];
-        cgltf_node_transform_local(node, matrixData);
-        
-        localTransform.m0 = matrixData[0];  localTransform.m4 = matrixData[4];  localTransform.m8 = matrixData[8];   localTransform.m12 = matrixData[12];
-        localTransform.m1 = matrixData[1];  localTransform.m5 = matrixData[5];  localTransform.m9 = matrixData[9];   localTransform.m13 = matrixData[13];
-        localTransform.m2 = matrixData[2];  localTransform.m6 = matrixData[6];  localTransform.m10 = matrixData[10]; localTransform.m14 = matrixData[14];
-        localTransform.m3 = matrixData[3];  localTransform.m7 = matrixData[7];  localTransform.m11 = matrixData[11]; localTransform.m15 = matrixData[15];
-        
-        Matrix worldTransform = MatrixMultiply(localTransform, parentTransform);
+        Matrix res;
+        res.m0 = m.a1; res.m4 = m.a2; res.m8 = m.a3;  res.m12 = m.a4;
+        res.m1 = m.b1; res.m5 = m.b2; res.m9 = m.b3;  res.m13 = m.b4;
+        res.m2 = m.c1; res.m6 = m.c2; res.m10 = m.c3; res.m14 = m.c4;
+        res.m3 = m.d1; res.m7 = m.d2; res.m11 = m.d3; res.m15 = m.d4;
+        return res;
+    }
 
-        if (node->mesh) {
-            for (size_t i = 0; i < node->mesh->primitives_count; ++i) {
-                const cgltf_primitive& primitive = node->mesh->primitives[i];
-                RawMesh rawMesh;
+    Vector3 MeshImporter::ConvertVector3(const aiVector3D& v) { return { v.x, v.y, v.z }; }
+    Quaternion MeshImporter::ConvertQuaternion(const aiQuaternion& q) { return { q.x, q.y, q.z, q.w }; }
+    Color MeshImporter::ConvertColor(const aiColor4D& c) { return { (unsigned char)(c.r * 255), (unsigned char)(c.g * 255), (unsigned char)(c.b * 255), (unsigned char)(c.a * 255) }; }
 
-                if (primitive.material) {
-                    for (size_t m = 0; m < ctx.gltf->materials_count; ++m) {
-                        if (&ctx.gltf->materials[m] == primitive.material) {
-                            rawMesh.materialIndex = (int)m;
-                            break;
+    // --- Helper Functions for LoadMeshDataFromDisk ---
+
+    void MeshImporter::ProcessHierarchy(aiNode* node, int parent, PendingModelData& data, std::map<aiNode*, int>& nodeToBone, std::vector<int>& meshToNode)
+    {
+        int index = (int)data.nodeNames.size();
+        nodeToBone[node] = index;
+        data.nodeNames.push_back(node->mName.C_Str());
+        data.nodeParents.push_back(parent);
+        data.nodeLocalTransforms.push_back(ConvertMatrix(node->mTransformation));
+
+        for (unsigned int i = 0; i < node->mNumMeshes; i++)
+        {
+            meshToNode[node->mMeshes[i]] = index;
+        }
+
+        for (unsigned int i = 0; i < node->mNumChildren; i++)
+        {
+            ProcessHierarchy(node->mChildren[i], index, data, nodeToBone, meshToNode);
+        }
+    }
+
+    void MeshImporter::ProcessMaterials(const aiScene* scene, const std::filesystem::path& modelDir, PendingModelData& data)
+    {
+        for (unsigned int i = 0; i < scene->mNumMaterials; i++)
+        {
+            aiMaterial* aiMat = scene->mMaterials[i];
+            RawMaterial mat;
+            aiColor4D color;
+            if (aiMat->Get(AI_MATKEY_COLOR_DIFFUSE, color) == AI_SUCCESS)
+            {
+                mat.albedoColor = ConvertColor(color);
+            }
+            mat.albedoPath = ResolveTexturePath(scene, aiMat, aiTextureType_BASE_COLOR, modelDir);
+            if (mat.albedoPath.empty())
+            {
+                mat.albedoPath = ResolveTexturePath(scene, aiMat, aiTextureType_DIFFUSE, modelDir);
+            }
+            mat.normalPath = ResolveTexturePath(scene, aiMat, aiTextureType_NORMALS, modelDir);
+            mat.emissivePath = ResolveTexturePath(scene, aiMat, aiTextureType_EMISSIVE, modelDir);
+            data.materials.push_back(mat);
+        }
+    }
+
+    void MeshImporter::ProcessMeshes(const aiScene* scene, const std::vector<int>& meshToNode, PendingModelData& data)
+    {
+        data.offsetMatrices.assign(data.nodeNames.size(), MatrixIdentity());
+        
+        for (unsigned int m = 0; m < scene->mNumMeshes; m++)
+        {
+            aiMesh* aiMesh = scene->mMeshes[m];
+            RawMesh mesh;
+            mesh.materialIndex = aiMesh->mMaterialIndex;
+
+            int owningNodeIdx = meshToNode[m];
+
+            for (unsigned int v = 0; v < aiMesh->mNumVertices; v++)
+            {
+                mesh.vertices.push_back(aiMesh->mVertices[v].x);
+                mesh.vertices.push_back(aiMesh->mVertices[v].y);
+                mesh.vertices.push_back(aiMesh->mVertices[v].z);
+                if (aiMesh->HasNormals())
+                {
+                    mesh.normals.push_back(aiMesh->mNormals[v].x);
+                    mesh.normals.push_back(aiMesh->mNormals[v].y);
+                    mesh.normals.push_back(aiMesh->mNormals[v].z);
+                }
+                if (aiMesh->mTextureCoords[0])
+                {
+                    mesh.texcoords.push_back(aiMesh->mTextureCoords[0][v].x);
+                    mesh.texcoords.push_back(aiMesh->mTextureCoords[0][v].y);
+                }
+                mesh.joints.insert(mesh.joints.end(), 4, (unsigned char)(owningNodeIdx != -1 ? owningNodeIdx : 0));
+                mesh.weights.insert(mesh.weights.end(), 4, 0.0f);
+                mesh.weights[mesh.weights.size() - 4] = 1.0f;
+            }
+
+            if (owningNodeIdx != -1 && !aiMesh->HasBones())
+            {
+                data.offsetMatrices[owningNodeIdx] = MatrixIdentity();
+            }
+
+            if (aiMesh->HasBones())
+            {
+                std::fill(mesh.weights.begin(), mesh.weights.end(), 0.0f);
+                std::vector<int> weightCount(aiMesh->mNumVertices, 0);
+
+                for (unsigned int b = 0; b < aiMesh->mNumBones; b++)
+                {
+                    aiBone* bone = aiMesh->mBones[b];
+                    int boneIdx = -1;
+                    auto it = std::find(data.nodeNames.begin(), data.nodeNames.end(), bone->mName.C_Str());
+                    if (it != data.nodeNames.end())
+                    {
+                        boneIdx = (int)std::distance(data.nodeNames.begin(), it);
+                    }
+                    
+                    if (boneIdx != -1)
+                    {
+                        data.offsetMatrices[boneIdx] = ConvertMatrix(bone->mOffsetMatrix);
+                        for (unsigned int w = 0; w < bone->mNumWeights; w++)
+                        {
+                            unsigned int vIdx = bone->mWeights[w].mVertexId;
+                            if (weightCount[vIdx] < 4)
+                            {
+                                mesh.joints[vIdx * 4 + weightCount[vIdx]] = (unsigned char)boneIdx;
+                                mesh.weights[vIdx * 4 + weightCount[vIdx]] = bone->mWeights[w].mWeight;
+                                weightCount[vIdx]++;
+                            }
                         }
                     }
                 }
 
-                cgltf_accessor* positionAccessor = nullptr;
-                cgltf_accessor* normalAccessor = nullptr;
-                cgltf_accessor* tangentAccessor = nullptr;
-                cgltf_accessor* texCoordAccessor = nullptr;
-                cgltf_accessor* colorAccessor = nullptr;
-                cgltf_accessor* jointsAccessor = nullptr;
-                cgltf_accessor* weightsAccessor = nullptr;
+                for (unsigned int v = 0; v < aiMesh->mNumVertices; v++)
+                {
+                    float totalWeight = 0.0f;
+                    for (int i = 0; i < 4; i++)
+                    {
+                        totalWeight += mesh.weights[v * 4 + i];
+                    }
 
-                for (size_t k = 0; k < primitive.attributes_count; ++k) {
-                    const cgltf_attribute& attribute = primitive.attributes[k];
-                    if (attribute.type == cgltf_attribute_type_position) positionAccessor = attribute.data;
-                    else if (attribute.type == cgltf_attribute_type_normal) normalAccessor = attribute.data;
-                    else if (attribute.type == cgltf_attribute_type_tangent) tangentAccessor = attribute.data;
-                    else if (attribute.type == cgltf_attribute_type_texcoord) texCoordAccessor = attribute.data;
-                    else if (attribute.type == cgltf_attribute_type_color) colorAccessor = attribute.data;
-                    else if (attribute.type == cgltf_attribute_type_joints) jointsAccessor = attribute.data;
-                    else if (attribute.type == cgltf_attribute_type_weights) weightsAccessor = attribute.data;
-                }
+                    if (totalWeight <= 0.001f)
+                    {
+                        int fallbackBone = (owningNodeIdx != -1) ? owningNodeIdx : 0;
+                        mesh.joints[v * 4] = (unsigned char)fallbackBone;
+                        mesh.weights[v * 4] = 1.0f;
+                        totalWeight = 1.0f;
+                    }
 
-                if (positionAccessor) {
-                    size_t count = positionAccessor->count;
-                    rawMesh.vertices.resize(count * 3);
-                    cgltf_accessor_unpack_floats(positionAccessor, rawMesh.vertices.data(), rawMesh.vertices.size());
-
-                    for (size_t v = 0; v < count; ++v) {
-                        Vector3 position = { rawMesh.vertices[v*3], rawMesh.vertices[v*3+1], rawMesh.vertices[v*3+2] };
-                        Vector3 transformedPos = Vector3Transform(position, worldTransform);
-                        rawMesh.vertices[v*3] = transformedPos.x;
-                        rawMesh.vertices[v*3+1] = transformedPos.y;
-                        rawMesh.vertices[v*3+2] = transformedPos.z;
+                    if (totalWeight > 0.0f)
+                    {
+                        for (int i = 0; i < 4; i++)
+                        {
+                            mesh.weights[v * 4 + i] /= totalWeight;
+                        }
                     }
                 }
+            }
 
-                if (normalAccessor) {
-                    size_t count = normalAccessor->count;
-                    rawMesh.normals.resize(count * 3);
-                    cgltf_accessor_unpack_floats(normalAccessor, rawMesh.normals.data(), rawMesh.normals.size());
+            for (unsigned int f = 0; f < aiMesh->mNumFaces; f++)
+            {
+                for (unsigned int i = 0; i < aiMesh->mFaces[f].mNumIndices; i++)
+                {
+                    mesh.indices.push_back((unsigned short)aiMesh->mFaces[f].mIndices[i]);
+                }
+            }
+            data.meshes.push_back(std::move(mesh));
+        }
+    }
 
-                    Matrix normalMatrix = worldTransform;
-                    normalMatrix.m12 = 0; normalMatrix.m13 = 0; normalMatrix.m14 = 0;
-                    
-                    for (size_t v = 0; v < count; ++v) {
-                         Vector3 normal = { rawMesh.normals[v*3], rawMesh.normals[v*3+1], rawMesh.normals[v*3+2] };
-                         Vector3 transformedNormal = Vector3Transform(normal, normalMatrix); 
-                         transformedNormal = Vector3Normalize(transformedNormal);
-                        rawMesh.normals[v*3] = transformedNormal.x;
-                        rawMesh.normals[v*3+1] = transformedNormal.y;
-                        rawMesh.normals[v*3+2] = transformedNormal.z;
+    void MeshImporter::BuildSkeleton(PendingModelData& data)
+    {
+        data.bones.resize(data.nodeNames.size());
+        data.bindPose.resize(data.nodeNames.size());
+
+        for (int i = 0; i < (int)data.nodeNames.size(); i++)
+        {
+            strncpy(data.bones[i].name, data.nodeNames[i].c_str(), 31);
+            data.bones[i].parent = data.nodeParents[i];
+            
+            Matrix mat = data.nodeLocalTransforms[i];
+            data.bindPose[i].translation = { mat.m12, mat.m13, mat.m14 };
+            data.bindPose[i].rotation = QuaternionFromMatrix(mat);
+            data.bindPose[i].scale = { Vector3Length({mat.m0, mat.m1, mat.m2}), Vector3Length({mat.m4, mat.m5, mat.m6}), Vector3Length({mat.m8, mat.m9, mat.m10}) };
+        }
+    }
+
+    void MeshImporter::ProcessAnimations(const aiScene* scene, PendingModelData& data, int samplingFPS)
+    {
+        for (unsigned int a = 0; a < scene->mNumAnimations; a++)
+        {
+            aiAnimation* aiAnim = scene->mAnimations[a];
+            RawAnimation rawAnim;
+            rawAnim.name = aiAnim->mName.C_Str();
+
+            double ticksPerSecond = aiAnim->mTicksPerSecond != 0 ? aiAnim->mTicksPerSecond : 25.0;
+            double durationInSeconds = aiAnim->mDuration / ticksPerSecond;
+            int frameCount = (int)(durationInSeconds * (double)samplingFPS) + 1;
+            int boneCount = (int)data.nodeNames.size();
+
+            rawAnim.frameCount = frameCount;
+            rawAnim.boneCount = boneCount;
+            rawAnim.framePoses.resize(frameCount * boneCount);
+
+            std::vector<aiNodeAnim*> boneToChannel(boneCount, nullptr);
+            for (unsigned int c = 0; c < aiAnim->mNumChannels; c++)
+            {
+                aiNodeAnim* channel = aiAnim->mChannels[c];
+                for (int i = 0; i < boneCount; i++)
+                {
+                    if (channel->mNodeName == aiString(data.nodeNames[i]))
+                    {
+                        boneToChannel[i] = channel;
+                        break;
                     }
                 }
+            }
 
-                if (tangentAccessor) {
-                    size_t count = tangentAccessor->count;
-                    rawMesh.tangents.resize(count * 4);
-                    cgltf_accessor_unpack_floats(tangentAccessor, rawMesh.tangents.data(), rawMesh.tangents.size());
-
-                    Matrix normalMatrix = worldTransform;
-                    normalMatrix.m12 = 0; normalMatrix.m13 = 0; normalMatrix.m14 = 0;
-
-                    for (size_t v = 0; v < count; ++v) {
-                        Vector3 tangent = { rawMesh.tangents[v*4], rawMesh.tangents[v*4+1], rawMesh.tangents[v*4+2] };
-                        float w = rawMesh.tangents[v*4+3];
-                        
-                        Vector3 transformedTangent = Vector3Transform(tangent, normalMatrix);
-                        transformedTangent = Vector3Normalize(transformedTangent);
-                        
-                        rawMesh.tangents[v*4] = transformedTangent.x;
-                        rawMesh.tangents[v*4+1] = transformedTangent.y;
-                        rawMesh.tangents[v*4+2] = transformedTangent.z;
-                        rawMesh.tangents[v*4+3] = w;
+            for (int f = 0; f < frameCount; f++)
+            {
+                double timeInTicks = (double)f / (double)samplingFPS * ticksPerSecond;
+                for (int i = 0; i < boneCount; i++)
+                {
+                    aiNodeAnim* channel = boneToChannel[i];
+                    if (channel)
+                    {
+                        aiVector3D pos = channel->mPositionKeys[0].mValue;
+                        if (channel->mNumPositionKeys > 1)
+                        {
+                            for (unsigned int k = 0; k < channel->mNumPositionKeys - 1; k++)
+                            {
+                                if (timeInTicks < channel->mPositionKeys[k + 1].mTime)
+                                {
+                                    float factor = (float)((timeInTicks - channel->mPositionKeys[k].mTime) / (channel->mPositionKeys[k+1].mTime - channel->mPositionKeys[k].mTime));
+                                    pos = channel->mPositionKeys[k].mValue + (channel->mPositionKeys[k+1].mValue - channel->mPositionKeys[k].mValue) * factor;
+                                    break;
+                                }
+                            }
+                        }
+                        aiQuaternion rot = channel->mRotationKeys[0].mValue;
+                        if (channel->mNumRotationKeys > 1)
+                        {
+                            for (unsigned int k = 0; k < channel->mNumRotationKeys - 1; k++)
+                            {
+                                if (timeInTicks < channel->mRotationKeys[k + 1].mTime)
+                                {
+                                    float factor = (float)((timeInTicks - channel->mRotationKeys[k].mTime) / (channel->mRotationKeys[k+1].mTime - channel->mRotationKeys[k].mTime));
+                                    aiQuaternion::Interpolate(rot, channel->mRotationKeys[k].mValue, channel->mRotationKeys[k+1].mValue, factor);
+                                    break;
+                                }
+                            }
+                        }
+                        aiVector3D scl = { 1, 1, 1 };
+                        if (channel->mNumScalingKeys > 0)
+                        {
+                            scl = channel->mScalingKeys[0].mValue;
+                            if (channel->mNumScalingKeys > 1)
+                            {
+                                for (unsigned int k = 0; k < channel->mNumScalingKeys - 1; k++)
+                                {
+                                    if (timeInTicks < channel->mScalingKeys[k + 1].mTime)
+                                    {
+                                        float factor = (float)((timeInTicks - channel->mScalingKeys[k].mTime) / (channel->mScalingKeys[k+1].mTime - channel->mScalingKeys[k].mTime));
+                                        scl = channel->mScalingKeys[k].mValue + (channel->mScalingKeys[k+1].mValue - channel->mScalingKeys[k].mValue) * factor;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        rawAnim.framePoses[f * boneCount + i] = { ConvertVector3(pos), ConvertQuaternion(rot), ConvertVector3(scl) };
+                    }
+                    else
+                    {
+                        rawAnim.framePoses[f * boneCount + i] = data.bindPose[i];
                     }
                 }
+            }
+            data.animations.push_back(std::move(rawAnim));
+        }
+    }
 
-                if (texCoordAccessor) {
-                    rawMesh.texcoords.resize(texCoordAccessor->count * 2);
-                    cgltf_accessor_unpack_floats(texCoordAccessor, rawMesh.texcoords.data(), rawMesh.texcoords.size());
-                    for (size_t v = 1; v < rawMesh.texcoords.size(); v += 2) {
-                        rawMesh.texcoords[v] = 1.0f - rawMesh.texcoords[v];
-                    }
+    std::string MeshImporter::ResolveTexturePath(const aiScene* scene, const aiMaterial* aiMat, aiTextureType type, const std::filesystem::path& modelDir)
+    {
+        aiString texPath;
+        if (aiMat->GetTexture(type, 0, &texPath) != AI_SUCCESS)
+        {
+            return "";
+        }
+
+        std::string pathString = texPath.C_Str();
+        if (pathString.empty())
+        {
+            return "";
+        }
+
+        // Handle embedded textures (starts with *)
+        if (pathString[0] == '*')
+        {
+            const char* str = pathString.c_str() + 1;
+            char* endPtr = nullptr;
+            long index = strtol(str, &endPtr, 10);
+
+            if (endPtr != str && index >= 0 && index < (long)scene->mNumTextures)
+            {
+                aiTexture* tex = scene->mTextures[index];
+                
+                std::string ext = (tex->achFormatHint[0] != '\0') ? std::string(".") + tex->achFormatHint : ".png";
+                std::string filename = std::string("embedded_") + std::to_string(index) + ext;
+                
+                std::filesystem::path texturesDir = modelDir / "textures";
+                if (!std::filesystem::exists(texturesDir))
+                {
+                    std::filesystem::create_directories(texturesDir);
                 }
-
-                if (colorAccessor) {
-                    size_t count = colorAccessor->count;
-                    std::vector<float> tempColors;
-                    int components = (colorAccessor->type == cgltf_type_vec4) ? 4 : 3;
-                    tempColors.resize(count * components);
-                    cgltf_accessor_unpack_floats(colorAccessor, tempColors.data(), tempColors.size());
-
-                    rawMesh.colors.resize(count * 4); // Always RGBA for Raylib
-                    for (size_t v = 0; v < count; ++v) {
-                        rawMesh.colors[v*4+0] = (unsigned char)(tempColors[v*components+0] * 255.0f);
-                        rawMesh.colors[v*4+1] = (unsigned char)(tempColors[v*components+1] * 255.0f);
-                        rawMesh.colors[v*4+2] = (unsigned char)(tempColors[v*components+2] * 255.0f);
-                        if (components == 4)
-                            rawMesh.colors[v*4+3] = (unsigned char)(tempColors[v*components+3] * 255.0f);
+                
+                std::filesystem::path targetPath = texturesDir / filename;
+                
+                if (!std::filesystem::exists(targetPath))
+                {
+                    std::ofstream ofs(targetPath, std::ios::binary);
+                    if (ofs)
+                    {
+                        if (tex->mHeight == 0)
+                        {
+                            ofs.write((const char*)tex->pcData, tex->mWidth);
+                        }
                         else
-                            rawMesh.colors[v*4+3] = 255;
+                        {
+                            ofs.write((const char*)tex->pcData, tex->mWidth * tex->mHeight * 4);
+                        }
                     }
                 }
-
-                if (primitive.indices) {
-                    rawMesh.indices.resize(primitive.indices->count);
-                    for (size_t idx = 0; idx < primitive.indices->count; ++idx) {
-                        rawMesh.indices[idx] = (unsigned short)cgltf_accessor_read_index(primitive.indices, idx);
-                    }
-                }
-
-                if (jointsAccessor) {
-                    size_t count = jointsAccessor->count;
-                    rawMesh.joints.resize(count * 4);
-                    for (size_t v = 0; v < count; ++v) {
-                        cgltf_uint joints[4];
-                        cgltf_accessor_read_uint(jointsAccessor, v, joints, 4);
-                        rawMesh.joints[v*4+0] = (unsigned char)joints[0];
-                        rawMesh.joints[v*4+1] = (unsigned char)joints[1];
-                        rawMesh.joints[v*4+2] = (unsigned char)joints[2];
-                        rawMesh.joints[v*4+3] = (unsigned char)joints[3];
-                    }
-                }
-
-                if (weightsAccessor) {
-                    size_t count = weightsAccessor->count;
-                    rawMesh.weights.resize(count * 4);
-                    cgltf_accessor_unpack_floats(weightsAccessor, rawMesh.weights.data(), rawMesh.weights.size());
-                }
-
-                ctx.data.meshes.push_back(std::move(rawMesh));
+                return targetPath.string();
             }
         }
 
-        for (size_t i = 0; i < node->children_count; ++i) {
-            ProcessGLTFNode(node->children[i], worldTransform, ctx);
+        std::filesystem::path fullPath = modelDir / pathString;
+        if (std::filesystem::exists(fullPath))
+        {
+            return fullPath.string();
         }
+        return "";
     }
 
-    static bool ParseGLTF(const std::string& path, PendingModelData& data)
+    PendingModelData MeshImporter::LoadMeshDataFromDisk(const std::filesystem::path& path, int samplingFPS)
     {
-        cgltf_options options = {};
-        cgltf_data* gltf = nullptr;
-        
-        if (cgltf_parse_file(&options, path.c_str(), &gltf) != cgltf_result_success) return false;
-        if (cgltf_load_buffers(&options, gltf, path.c_str()) != cgltf_result_success) {
-            cgltf_free(gltf);
-            return false;
+        PendingModelData data{};
+        data.fullPath = std::filesystem::absolute(path).string();
+        std::filesystem::path modelDir = path.parent_path();
+
+        Assimp::Importer importer;
+        const aiScene* scene = importer.ReadFile(path.string(), 
+            aiProcess_Triangulate | 
+            aiProcess_GenSmoothNormals | 
+            aiProcess_CalcTangentSpace | 
+            aiProcess_LimitBoneWeights | 
+            aiProcess_JoinIdenticalVertices |
+            aiProcess_PopulateArmatureData
+        );
+
+        if (!scene || !scene->mRootNode)
+        {
+            CH_CORE_ERROR("Assimp Importer: {}", importer.GetErrorString());
+            return data;
         }
 
-        std::filesystem::path modelDir = std::filesystem::path(path).parent_path();
+        // 1. Hierarchy & Mesh-to-Node Mapping
+        std::map<aiNode*, int> nodeToBone;
+        data.meshToNode.assign(scene->mNumMeshes, -1);
+        ProcessHierarchy(scene->mRootNode, -1, data, nodeToBone, data.meshToNode);
 
-        for (size_t i = 0; i < gltf->materials_count; ++i) {
-            RawMaterial material;
-            const auto& gltf_material = gltf->materials[i];
-            
-            if (gltf_material.has_pbr_metallic_roughness) {
-                const auto& pbr = gltf_material.pbr_metallic_roughness;
-                if (pbr.base_color_texture.texture && pbr.base_color_texture.texture->image && pbr.base_color_texture.texture->image->uri) {
-                    material.albedoPath = (modelDir / pbr.base_color_texture.texture->image->uri).string();
-                }
-                material.albedoColor.r = (unsigned char)(pbr.base_color_factor[0] * 255);
-                material.albedoColor.g = (unsigned char)(pbr.base_color_factor[1] * 255);
-                material.albedoColor.b = (unsigned char)(pbr.base_color_factor[2] * 255);
-                material.albedoColor.a = (unsigned char)(pbr.base_color_factor[3] * 255);
-
-                if (pbr.metallic_roughness_texture.texture && pbr.metallic_roughness_texture.texture->image && pbr.metallic_roughness_texture.texture->image->uri) {
-                    material.metallicRoughnessPath = (modelDir / pbr.metallic_roughness_texture.texture->image->uri).string();
-                }
-                material.metalness = pbr.metallic_factor;
-                material.roughness = pbr.roughness_factor;
+        // 2. Compute Global Bind Pose Transforms
+        data.globalBindPoses.resize(data.nodeNames.size());
+        for (size_t i = 0; i < data.nodeNames.size(); i++)
+        {
+            int parent = data.nodeParents[i];
+            if (parent == -1)
+            {
+                data.globalBindPoses[i] = data.nodeLocalTransforms[i];
             }
-
-            if (gltf_material.normal_texture.texture && gltf_material.normal_texture.texture->image && gltf_material.normal_texture.texture->image->uri) {
-                material.normalPath = (modelDir / gltf_material.normal_texture.texture->image->uri).string();
-            }
-
-            if (gltf_material.occlusion_texture.texture && gltf_material.occlusion_texture.texture->image && gltf_material.occlusion_texture.texture->image->uri) {
-                material.occlusionPath = (modelDir / gltf_material.occlusion_texture.texture->image->uri).string();
-            }
-
-            if (gltf_material.has_emissive_strength) {
-                material.emissiveIntensity = gltf_material.emissive_strength.emissive_strength;
-            }
-
-            if (gltf_material.emissive_texture.texture && gltf_material.emissive_texture.texture->image && gltf_material.emissive_texture.texture->image->uri) {
-                material.emissivePath = (modelDir / gltf_material.emissive_texture.texture->image->uri).string();
-            }
-
-            material.emissiveColor.r = (unsigned char)(gltf_material.emissive_factor[0] * 255);
-            material.emissiveColor.g = (unsigned char)(gltf_material.emissive_factor[1] * 255);
-            material.emissiveColor.b = (unsigned char)(gltf_material.emissive_factor[2] * 255);
-            material.emissiveColor.a = 255;
-
-            // If we have emissive color but no strength, default to 1.0 (or higher if colors > 1.0 were used in GLTF)
-            if (material.emissiveIntensity == 0.0f && (material.emissiveColor.r > 0 || material.emissiveColor.g > 0 || material.emissiveColor.b > 0)) {
-                material.emissiveIntensity = 1.0f;
-            }
-
-            data.materials.push_back(material);
-        }
-
-        GLTFParserContext ctx = { data, gltf };
-        for (size_t i = 0; i < gltf->scenes_count; ++i) {
-            for (size_t j = 0; j < gltf->scenes[i].nodes_count; ++j) {
-                ProcessGLTFNode(gltf->scenes[i].nodes[j], MatrixIdentity(), ctx);
+            else
+            {
+                data.globalBindPoses[i] = MatrixMultiply(data.globalBindPoses[parent], data.nodeLocalTransforms[i]);
             }
         }
 
-        cgltf_free(gltf);
-        return true;
+        // 3. Sequential Processing
+        ProcessMaterials(scene, modelDir, data);
+        ProcessMeshes(scene, data.meshToNode, data);
+        BuildSkeleton(data);
+        ProcessAnimations(scene, data, samplingFPS);
+
+        data.isValid = true;
+        return data;
     }
 
-    static bool ParseOBJ(const std::string& path, PendingModelData& data)
-    {
-        tinyobj::attrib_t attrib;
-        std::vector<tinyobj::shape_t> shapes;
-        std::vector<tinyobj::material_t> materials;
-        std::string errorMessage;
-
-        std::filesystem::path modelDir = std::filesystem::path(path).parent_path();
-        std::string materialDirectory = modelDir.string() + "/";
-
-        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &errorMessage, path.c_str(), materialDirectory.c_str(), true)) {
-            CH_CORE_ERROR("OBJ failed: {}", errorMessage);
-            return false;
-        }
-
-        for (const auto& material : materials) {
-            RawMaterial rawMaterial;
-            rawMaterial.albedoColor.r = (unsigned char)(material.diffuse[0] * 255);
-            rawMaterial.albedoColor.g = (unsigned char)(material.diffuse[1] * 255);
-            rawMaterial.albedoColor.b = (unsigned char)(material.diffuse[2] * 255);
-            rawMaterial.albedoColor.a = 255;
-            
-            if (!material.diffuse_texname.empty()) {
-                rawMaterial.albedoPath = (modelDir / material.diffuse_texname).string();
-            }
-            data.materials.push_back(rawMaterial);
-        }
-
-        for (const auto& shape : shapes) {
-            RawMesh rawMesh;
-            for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); ++f) {
-                int materialId = (f < shape.mesh.material_ids.size()) ? shape.mesh.material_ids[f] : 0;
-                rawMesh.materialIndex = materialId;
-
-                for (size_t v = 0; v < 3; ++v) {
-                    tinyobj::index_t index = shape.mesh.indices[f * 3 + v];
-                    rawMesh.vertices.push_back(attrib.vertices[3 * index.vertex_index + 0]);
-                    rawMesh.vertices.push_back(attrib.vertices[3 * index.vertex_index + 1]);
-                    rawMesh.vertices.push_back(attrib.vertices[3 * index.vertex_index + 2]);
-
-                    if (index.normal_index >= 0) {
-                        rawMesh.normals.push_back(attrib.normals[3 * index.normal_index + 0]);
-                        rawMesh.normals.push_back(attrib.normals[3 * index.normal_index + 1]);
-                        rawMesh.normals.push_back(attrib.normals[3 * index.normal_index + 2]);
-                    }
-
-                    if (index.texcoord_index >= 0) {
-                        rawMesh.texcoords.push_back(attrib.texcoords[2 * index.texcoord_index + 0]);
-                        rawMesh.texcoords.push_back(attrib.texcoords[2 * index.texcoord_index + 1]);
-                    }
-                    rawMesh.indices.push_back((unsigned short)(f * 3 + v));
-                }
-            }
-            data.meshes.push_back(std::move(rawMesh));
-        }
-        return true;
-    }
 
     std::shared_ptr<ModelAsset> MeshImporter::ImportMesh(const std::filesystem::path& path)
     {
         std::string pathStr = path.string();
-        if (pathStr.starts_with(":"))
-        {
+        if (pathStr.starts_with(":")) {
             auto asset = std::make_shared<ModelAsset>();
             asset->SetPath(pathStr);
             asset->GetModel() = GenerateProceduralModel(pathStr);
@@ -319,66 +416,24 @@ namespace CHEngine
             return asset;
         }
 
-        CH_CORE_INFO("MeshImporter: Importing mesh from {}", pathStr);
+        CH_CORE_INFO("MeshImporter: Importing via Assimp: {}", pathStr);
         auto asset = std::make_shared<ModelAsset>();
         asset->SetPath(pathStr);
         
         auto pendingData = LoadMeshDataFromDisk(path);
-        if (pendingData.isValid)
-        {
+        if (pendingData.isValid) {
             asset->SetPendingData(pendingData);
             asset->UploadToGPU(); 
-        }
-        else
-        {
+        } else {
             asset->SetState(AssetState::Failed);
         }
         
         return asset;
     }
 
-    PendingModelData MeshImporter::LoadMeshDataFromDisk(const std::filesystem::path& path)
-{
-    PendingModelData data;
-        
-        std::string pathStr = path.string();
-        if (pathStr.starts_with(":"))
-        {
-            data.isValid = true;
-            return data;
-        }
-
-        if (!std::filesystem::exists(path)) return data;
-
-        std::string absolutePath = std::filesystem::absolute(path).string();
-        std::string extension = path.extension().string();
-        std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
-
-        bool success = false;
-        if (extension == ".gltf" || extension == ".glb") success = ParseGLTF(absolutePath, data);
-        else if (extension == ".obj") success = ParseOBJ(absolutePath, data);
-
-        if (success) {
-            data.fullPath = absolutePath;
-            data.isValid = true;
-
-            // Load animations if supported
-            if (extension == ".gltf" || extension == ".glb" || extension == ".iqm" || extension == ".m3d")
-            {
-                data.animations = LoadModelAnimations(absolutePath.c_str(), &data.animationCount);
-                if (data.animationCount > 0)
-                {
-                    CH_CORE_INFO("MeshImporter: Loaded {} animations for {}", data.animationCount, pathStr);
-                }
-            }
-        }
-        return data;
-    }
-
     Model MeshImporter::GenerateProceduralModel(const std::string& type)
     {
         Mesh mesh = { 0 };
-
         if      (type == ":cube:")       mesh = GenMeshCube(1.0f, 1.0f, 1.0f);
         else if (type == ":sphere:")     mesh = GenMeshSphere(0.5f, 16, 16);
         else if (type == ":plane:")      mesh = GenMeshPlane(10.0f, 10.0f, 10, 10);
@@ -389,7 +444,7 @@ namespace CHEngine
         else if (type == ":hemisphere:") mesh = GenMeshHemiSphere(0.5f, 16, 16);
 
         if (mesh.vertexCount == 0) return { 0 };
-
         return LoadModelFromMesh(mesh);
     }
 }
+
