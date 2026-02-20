@@ -51,6 +51,12 @@ namespace CHEngine
         // Retrieves or starts building a BVH for a model asset.
         std::shared_ptr<BVH> GetBVH(ModelAsset* asset);
 
+        // Invalidates the cached BVH for a specific asset, forcing a rebuild on next update.
+        void InvalidateBVH(ModelAsset* asset);
+
+        // Directly updates the cache with a pre-built BVH.
+        void UpdateBVHCache(ModelAsset* asset, std::shared_ptr<BVH> bvh);
+
     private: // Internal Helpers
         void UpdateColliders();
         void ResolveSimulation(Timestep deltaTime);
