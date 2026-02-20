@@ -81,39 +81,34 @@ std::shared_ptr<BVH> BVH::Build(const BVHModelSnapshot &snapshot)
 
         if (!mesh.Indices.empty())
         {
-            for (size_t k = 0; k < mesh.Indices.size(); k += 3)
+            // Ensure we have complete triangles
+            for (size_t k = 0; (k + 2) < mesh.Indices.size(); k += 3)
             {
                 uint32_t idx0 = mesh.Indices[k];
                 uint32_t idx1 = mesh.Indices[k + 1];
                 uint32_t idx2 = mesh.Indices[k + 2];
-
+ 
                 if (idx0 >= mesh.Vertices.size() || 
                     idx1 >= mesh.Vertices.size() || 
                     idx2 >= mesh.Vertices.size())
+                {
+                    CH_CORE_WARN("BVH::Build: Index out of vertex bounds in mesh {}", mesh.MeshIndex);
                     continue;
-
-                Vector3 v0 = mesh.Vertices[idx0];
-                Vector3 v1 = mesh.Vertices[idx1];
-                Vector3 v2 = mesh.Vertices[idx2];
-
-                allTris.emplace_back(Vector3Transform(v0, meshTransform),
-                                     Vector3Transform(v1, meshTransform),
-                                     Vector3Transform(v2, meshTransform), mesh.MeshIndex);
+                }
+ 
+                allTris.emplace_back(Vector3Transform(mesh.Vertices[idx0], meshTransform),
+                                     Vector3Transform(mesh.Vertices[idx1], meshTransform),
+                                     Vector3Transform(mesh.Vertices[idx2], meshTransform), mesh.MeshIndex);
             }
         }
         else
         {
-            for (size_t k = 0; k < mesh.Vertices.size(); k += 3)
+            // Non-indexed: Ensure we have complete triangles
+            for (size_t k = 0; (k + 2) < mesh.Vertices.size(); k += 3)
             {
-                if (k + 2 >= mesh.Vertices.size()) break;
-                
-                Vector3 v0 = mesh.Vertices[k];
-                Vector3 v1 = mesh.Vertices[k + 1];
-                Vector3 v2 = mesh.Vertices[k + 2];
-
-                allTris.emplace_back(Vector3Transform(v0, meshTransform),
-                                     Vector3Transform(v1, meshTransform),
-                                     Vector3Transform(v2, meshTransform), mesh.MeshIndex);
+                allTris.emplace_back(Vector3Transform(mesh.Vertices[k], meshTransform),
+                                     Vector3Transform(mesh.Vertices[k + 1], meshTransform),
+                                     Vector3Transform(mesh.Vertices[k + 2], meshTransform), mesh.MeshIndex);
             }
         }
     }

@@ -349,6 +349,17 @@ namespace CHEngine
         {
             return fullPath.string();
         }
+
+        // Fallback: search for the filename in the model directory
+        std::string filename = std::filesystem::path(pathString).filename().string();
+        std::filesystem::path fallbackPath = modelDir / filename;
+        if (std::filesystem::exists(fallbackPath))
+        {
+            CH_CORE_WARN("MeshImporter: Texture {} not found at specified path, but found in model directory: {}", pathString, fallbackPath.string());
+            return fallbackPath.string();
+        }
+
+        CH_CORE_ERROR("MeshImporter: Could not resolve texture path: {} (Searched in: {})", pathString, modelDir.string());
         return "";
     }
 
@@ -359,13 +370,31 @@ namespace CHEngine
         std::filesystem::path modelDir = path.parent_path();
 
         Assimp::Importer importer;
+        
+        // Configure to remove non-triangle primitives (points/lines)
+        importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
+        
+        // CRITICAL: Set vertex limit for SplitLargeMeshes to match Raylib's 16-bit indices (unsigned short)
+        importer.SetPropertyInteger(AI_CONFIG_PP_SLM_VERTEX_LIMIT, 65535);
+        
         const aiScene* scene = importer.ReadFile(path.string(), 
             aiProcess_Triangulate | 
             aiProcess_GenSmoothNormals | 
             aiProcess_CalcTangentSpace | 
             aiProcess_LimitBoneWeights | 
             aiProcess_JoinIdenticalVertices |
-            aiProcess_PopulateArmatureData
+            aiProcess_PopulateArmatureData |
+            aiProcess_FlipUVs |
+            aiProcess_ValidateDataStructure |
+            // aiProcess_GlobalScale | // Removed: can cause issues with animations and manual scaling
+            aiProcess_SortByPType |           // Needed for point/line removal
+            aiProcess_SplitLargeMeshes |     // Critical for 16-bit index systems like Raylib
+            aiProcess_ImproveCacheLocality | // Performance optimization
+            aiProcess_RemoveRedundantMaterials |
+            aiProcess_FindInstances |        // Optimize: find identical meshes
+            aiProcess_FindInvalidData |      // Clean up the import
+            aiProcess_OptimizeGraph |        // Simplify hierarchy
+            aiProcess_OptimizeMeshes         // Combine small meshes where possible
         );
 
         if (!scene || !scene->mRootNode)

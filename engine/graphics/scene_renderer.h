@@ -22,7 +22,7 @@ namespace CHEngine
 
     private:
         void DrawColliderDebug(entt::registry& registry, const DebugRenderFlags* debugFlags);
-        void DrawAABBDebug(entt::registry& registry, const DebugRenderFlags* debugFlags);
+        void DrawCollisionModelBoxDebug(entt::registry& registry, const DebugRenderFlags* debugFlags);
         void DrawSpawnDebug(entt::registry& registry, const DebugRenderFlags* debugFlags);
     };
 }

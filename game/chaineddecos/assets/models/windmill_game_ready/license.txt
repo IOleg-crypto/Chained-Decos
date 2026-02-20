@@ -1,0 +1,11 @@
+Model Information:
+* title:	Windmill (game ready)
+* source:	https://sketchfab.com/3d-models/windmill-game-ready-6a006afce57a447baa60c7a6791f0086
+* author:	LamedeFeu (https://sketchfab.com/lamedefeu)
+
+Model License:
+* license type:	CC-BY-NC-SA-4.0 (http://creativecommons.org/licenses/by-nc-sa/4.0/)
+* requirements:	Author must be credited. No commercial use. Modified versions must have the same license.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Windmill (game ready)" (https://sketchfab.com/3d-models/windmill-game-ready-6a006afce57a447baa60c7a6791f0086) by LamedeFeu (https://sketchfab.com/lamedefeu) licensed under CC-BY-NC-SA-4.0 (http://creativecommons.org/licenses/by-nc-sa/4.0/)

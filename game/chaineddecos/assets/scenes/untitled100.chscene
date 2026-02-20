@@ -18,12 +18,639 @@ Skybox:
   Brightness: 0.0700000003
   Contrast: 1
 Fog:
-  Enabled: true
+  Enabled: false
   Color: [128, 123, 123, 255]
   Density: 0.0480000004
   Start: 0
   End: 170.5
 Entities:
+  - Entity: 11499449198343814881
+    TagComponent:
+      Tag: anim_mode#3
+    TransformComponent:
+      Translation: [440.960266, 32.5502625, 581.221497]
+      Rotation: [-1.59236383, 0.0545778051, 0.0118374834]
+      Scale: [0.999992847, 0.999961555, 0.999930501]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/bridge.glb
+      Materials:
+        - Name: Material 0
+          Index: 0
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: models/images.jpg
+            OverrideAlbedo: true
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [62, 46, 60, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: true
+            Metalness: 0.920000017
+            Roughness: 0.910000026
+            DoubleSided: true
+            Transparent: true
+            Alpha: 1
+    ColliderComponent:
+      Type: 257
+      Enabled: true
+      Offset: [-10.1186838, -142.921936, -4.77685642]
+      Size: [20.2556896, 277.196045, 14.2480249]
+      Radius: 0.5
+      Height: 2
+      ModelHandle: 0
+      ModelPath: models/bridge.glb
+      AutoCalculate: true
+    AnimationComponent:
+      AnimationPath: ""
+      CurrentAnimationIndex: 0
+      IsLooping: true
+      IsPlaying: false
+  - Entity: 17079309488884899572
+    TagComponent:
+      Tag: anim_mode#4
+    TransformComponent:
+      Translation: [456.769592, 92.3261108, 838.863159]
+      Rotation: [-1.9903754, 0.0549046658, -0.0102301203]
+      Scale: [0.999980867, 1.0000428, 1.00002789]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/bridge.glb
+      Materials:
+        - Name: Material 0
+          Index: 0
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: models/images.jpg
+            OverrideAlbedo: true
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [62, 46, 60, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: true
+            Metalness: 0.920000017
+            Roughness: 0.910000026
+            DoubleSided: true
+            Transparent: true
+            Alpha: 1
+    ColliderComponent:
+      Type: 257
+      Enabled: true
+      Offset: [-10.1186838, -142.921936, -4.77685642]
+      Size: [20.2556896, 277.196045, 14.2480249]
+      Radius: 0.5
+      Height: 2
+      ModelHandle: 0
+      ModelPath: models/bridge.glb
+      AutoCalculate: true
+    AnimationComponent:
+      AnimationPath: ""
+      CurrentAnimationIndex: 0
+      IsLooping: true
+      IsPlaying: false
+  - Entity: 18441510849027507452
+    TagComponent:
+      Tag: anim_mode#2
+    TransformComponent:
+      Translation: [424.876801, 17.5073452, 22.4167747]
+      Rotation: [-1.59236383, 0.0545778051, 0.0118374834]
+      Scale: [0.999992847, 0.999961555, 0.999930501]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/bridge.glb
+      Materials:
+        - Name: Material 0
+          Index: 0
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: models/images.jpg
+            OverrideAlbedo: true
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [62, 46, 60, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: true
+            Metalness: 0.920000017
+            Roughness: 0.910000026
+            DoubleSided: true
+            Transparent: true
+            Alpha: 1
+    ColliderComponent:
+      Type: 257
+      Enabled: true
+      Offset: [-10.1186838, -142.921936, -4.77685642]
+      Size: [20.2556896, 277.196045, 14.2480249]
+      Radius: 0.5
+      Height: 2
+      ModelHandle: 0
+      ModelPath: models/bridge.glb
+      AutoCalculate: true
+    AnimationComponent:
+      AnimationPath: ""
+      CurrentAnimationIndex: 0
+      IsLooping: true
+      IsPlaying: false
+  - Entity: 10005787973448775183
+    TagComponent:
+      Tag: Island
+    TransformComponent:
+      Translation: [2994.3999, 137.100006, 1500]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/island.glb
+      Materials:
+        - Name: Material 0
+          Index: 0
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: Material 1
+          Index: 1
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 5]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: Material 2
+          Index: 2
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: Material 3
+          Index: 3
+          Target: 0
+          Material:
+            AlbedoColor: [2, 123, 22, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: Material 4
+          Index: 4
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: Material 5
+          Index: 5
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: Material 6
+          Index: 6
+          Target: 0
+          Material:
+            AlbedoColor: [255, 7, 234, 56]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: Material 7
+          Index: 7
+          Target: 0
+          Material:
+            AlbedoColor: [99, 1, 135, 56]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: Material 8
+          Index: 8
+          Target: 0
+          Material:
+            AlbedoColor: [15, 11, 11, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: Material 9
+          Index: 9
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: Material 10
+          Index: 10
+          Target: 0
+          Material:
+            AlbedoColor: [5, 31, 65, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: Material 11
+          Index: 11
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: Material 12
+          Index: 12
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: Material 13
+          Index: 13
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 35]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: Material 14
+          Index: 14
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: Material 15
+          Index: 15
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: Material 16
+          Index: 16
+          Target: 0
+          Material:
+            AlbedoColor: [15, 64, 227, 76]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: Material 17
+          Index: 17
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: Material 18
+          Index: 18
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: Material 19
+          Index: 19
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: Material 20
+          Index: 20
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+    ColliderComponent:
+      Type: 257
+      Enabled: true
+      Offset: [-18203.7422, -18203.7383, -18237.1973]
+      Size: [36407.4922, 36407.4844, 36661.4023]
+      Radius: 0.5
+      Height: 2
+      ModelHandle: 0
+      ModelPath: models/island.glb
+      AutoCalculate: true
   - Entity: 193077798077705471
     TagComponent:
       Tag: rail#3d
@@ -102,7 +729,7 @@ Entities:
             Transparent: false
             Alpha: 1
     ColliderComponent:
-      Type: -76545791
+      Type: -2048655103
       Enabled: true
       Offset: [-1.23756766, -0.447188109, -3.16349196]
       Size: [2.47513533, 0.44796145, 34.5888672]
@@ -189,7 +816,7 @@ Entities:
             Transparent: false
             Alpha: 1
     ColliderComponent:
-      Type: 3473665
+      Type: 257
       Enabled: true
       Offset: [-1.23756766, -0.447188109, -3.16349196]
       Size: [2.47513533, 0.44796145, 34.5888672]
@@ -202,7 +829,7 @@ Entities:
     TagComponent:
       Tag: Light
     TransformComponent:
-      Translation: [-13.6915407, 81.3352585, 57.2093506]
+      Translation: [8.6416502, 43.367569, 55.2477837]
       Rotation: [0, -0, 0]
       Scale: [1, 1, 1]
     ModelComponent:
@@ -211,26 +838,26 @@ Entities:
       Materials:
         []
     LightComponent:
-      Type: 0
-      LightColor: [96, 95, 96, 255]
+      Type: 1
+      LightColor: [173, 85, 173, 255]
       Intensity: 2.5999999
-      Radius: 135.800003
+      Radius: 164.5
       InnerCutoff: 15
       OuterCutoff: 20
   - Entity: 5796298439135209667
     TagComponent:
       Tag: CameraPlayer
     TransformComponent:
-      Translation: [-5.07147026, 66.5297241, 4.50255299]
-      Rotation: [150.400024, -69.2999344, 179.999985]
+      Translation: [512.477722, 179.892288, 1099.9386]
+      Rotation: [-45.7999878, -81, 1.09153516e-05]
       Scale: [1, 1, 1]
     CameraComponent:
       Primary: false
       FixedAspectRatio: false
       IsOrbitCamera: true
-      OrbitDistance: 36.5999985
-      OrbitYaw: -110.700066
-      OrbitPitch: 29.5999908
+      OrbitDistance: 16.5999985
+      OrbitYaw: -81.0000763
+      OrbitPitch: 45.799984
       LookSensitivity: 0.899999976
       TargetEntityTag: Player
       ProjectionType: 0
@@ -318,7 +945,7 @@ Entities:
             Transparent: false
             Alpha: 1
     ColliderComponent:
-      Type: 6881537
+      Type: 257
       Enabled: true
       Offset: [-1.23756766, -0.447188109, -3.16349196]
       Size: [2.47513533, 0.44796145, 34.5888672]
@@ -405,7 +1032,7 @@ Entities:
             Transparent: false
             Alpha: 1
     ColliderComponent:
-      Type: 10289409
+      Type: 257
       Enabled: true
       Offset: [-1.23756766, -0.447188109, -3.16349196]
       Size: [2.47513533, 0.44796145, 34.5888672]
@@ -492,7 +1119,7 @@ Entities:
             Transparent: false
             Alpha: 1
     ColliderComponent:
-      Type: 13697281
+      Type: 257
       Enabled: true
       Offset: [-1.23756766, -0.447188109, -3.16349196]
       Size: [2.47513533, 0.44796145, 34.5888672]
@@ -505,8 +1132,8 @@ Entities:
     TagComponent:
       Tag: SceneCamera
     TransformComponent:
-      Translation: [-61.7079315, 126.821793, 134.423584]
-      Rotation: [-1476.79102, -7596.7251, 0]
+      Translation: [96.0394363, 151.26561, 971.266113]
+      Rotation: [-713.590393, -8019.09814, 0]
       Scale: [1, 1, 1]
     CameraComponent:
       Primary: true
@@ -599,7 +1226,7 @@ Entities:
             Transparent: false
             Alpha: 1
     ColliderComponent:
-      Type: 17105153
+      Type: 257
       Enabled: true
       Offset: [-1.23756766, -0.447188109, -3.16349196]
       Size: [2.47513533, 0.44796145, 34.5888672]
@@ -796,7 +1423,7 @@ Entities:
             Transparent: false
             Alpha: 1
     ColliderComponent:
-      Type: 20513025
+      Type: 257
       Enabled: true
       Offset: [-43.8236694, -68.8881912, -46.1545258]
       Size: [86.6819458, 94.478302, 89.0095215]
@@ -821,9 +1448,9 @@ Entities:
     TagComponent:
       Tag: Player
     TransformComponent:
-      Translation: [24.6976357, 48.4514618, 15.7514]
-      Rotation: [0, 0.23533386, 0]
-      Scale: [1, 1, 1]
+      Translation: [523.908203, 167.991577, 1098.12817]
+      Rotation: [0, -1.53101778, 0]
+      Scale: [0.999971211, 1, 0.999971211]
     ModelComponent:
       ModelHandle: 0
       ModelPath: models/player_low.glb
@@ -853,7 +1480,7 @@ Entities:
     ShaderComponent:
       ShaderPath: shaders/player_effect.chshader
     ColliderComponent:
-      Type: 23920898
+      Type: 258
       Enabled: true
       Offset: [0.400000006, 2.9000001, -0.189999998]
       Size: [2.48000002, 5.67999983, 7.4000001]
@@ -871,7 +1498,7 @@ Entities:
       SoundPath: audio/storegraphic-soft-wind-477404.mp3
       Loop: true
       PlayOnStart: false
-      Volume: 0.0423915088
+      Volume: 0.293693691
       Pitch: 1
     PlayerComponent:
       MovementSpeed: 15
@@ -888,7 +1515,7 @@ Entities:
     TagComponent:
       Tag: anim_mode
     TransformComponent:
-      Translation: [424.876801, 17.5073452, 22.4167747]
+      Translation: [428.76062, 30.1878853, 305.481506]
       Rotation: [-1.59236383, 0.0545778051, 0.0118374834]
       Scale: [0.999992847, 0.999961555, 0.999930501]
     ModelComponent:
@@ -918,10 +1545,10 @@ Entities:
             Transparent: true
             Alpha: 1
     ColliderComponent:
-      Type: 27328769
+      Type: 257
       Enabled: true
-      Offset: [-10.1186838, -142.921936, -9.73842907]
-      Size: [20.2556896, 277.196045, 13.8547134]
+      Offset: [-10.1186838, -142.921936, -4.77685642]
+      Size: [20.2556896, 277.196045, 14.2480249]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
@@ -936,7 +1563,7 @@ Entities:
     TagComponent:
       Tag: Entity
     TransformComponent:
-      Translation: [-59.5187531, 0.631593704, 19.7977505]
+      Translation: [-56.0625648, 0.688478768, 20.357626]
       Rotation: [0, 1.54954553, 0]
       Scale: [0.999881089, 1, 0.979426801]
     ModelComponent:
@@ -947,7 +1574,7 @@ Entities:
           Index: 0
           Target: 0
           Material:
-            AlbedoColor: [255, 255, 255, 255]
+            AlbedoColor: [120, 73, 73, 255]
             AlbedoPath: ""
             OverrideAlbedo: false
             NormalMapPath: ""
@@ -966,7 +1593,7 @@ Entities:
             Transparent: false
             Alpha: 1
     ColliderComponent:
-      Type: 30736641
+      Type: 257
       Enabled: true
       Offset: [-17.087841, -4.29592609, -11.3028545]
       Size: [34.1756821, 8.59185219, 22.6057091]
@@ -975,3 +1602,172 @@ Entities:
       ModelHandle: 0
       ModelPath: models/stairs.glb
       AutoCalculate: true
+  - Entity: 10653066213482940164
+    TagComponent:
+      Tag: minecrafthouse
+    TransformComponent:
+      Translation: [588.537659, 128.444199, 1086.87195]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/rung/house.obj
+      Materials:
+        - Name: Material 0
+          Index: 0
+          Target: 0
+          Material:
+            AlbedoColor: [17, 3, 3, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: Material 1
+          Index: 1
+          Target: 0
+          Material:
+            AlbedoColor: [145, 145, 145, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: Material 2
+          Index: 2
+          Target: 0
+          Material:
+            AlbedoColor: [19, 17, 15, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+    ColliderComponent:
+      Type: 257
+      Enabled: true
+      Offset: [-36, 0, -30]
+      Size: [73, 48, 61]
+      Radius: 0.5
+      Height: 2
+      ModelHandle: 0
+      ModelPath: models/rung/house.obj
+      AutoCalculate: true
+  - Entity: 7679083394874763101
+    TagComponent:
+      Tag: Empty Entity
+    TransformComponent:
+      Translation: [432.889709, 231.793762, 1301.40198]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/ghost (2).glb
+      Materials:
+        - Name: Material 0
+          Index: 0
+          Target: 0
+          Material:
+            AlbedoColor: [17, 3, 3, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: Material 1
+          Index: 1
+          Target: 0
+          Material:
+            AlbedoColor: [145, 145, 145, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: Material 2
+          Index: 2
+          Target: 0
+          Material:
+            AlbedoColor: [19, 17, 15, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+    AnimationComponent:
+      AnimationPath: ""
+      CurrentAnimationIndex: 0
+      IsLooping: true
+      IsPlaying: true

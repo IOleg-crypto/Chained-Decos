@@ -10,6 +10,8 @@
 #include "engine/graphics/model_asset.h"
 #include "engine/scene/project.h"
 #include "engine/physics/bvh/bvh.h"
+#include "engine/physics/physics.h"
+#include "editor/editor_layer.h"
 #include <yaml-cpp/yaml.h>
 
 namespace CHEngine
@@ -220,21 +222,32 @@ namespace CHEngine
             }
             
             if (EditorGUI::Property("Enabled", component.Enabled)) changed = true;
+
+            ImGui::BeginDisabled(component.AutoCalculate);
             if (EditorGUI::DrawVec3("Offset", component.Offset)) changed = true;
+            ImGui::EndDisabled();
             
             if (component.Type == ColliderType::Box)
             {
+                ImGui::BeginDisabled(component.AutoCalculate);
                 if (EditorGUI::DrawVec3("Size", component.Size, 1.0f)) changed = true;
+                ImGui::EndDisabled();
             }
             else if (component.Type == ColliderType::Capsule)
             {
+                ImGui::BeginDisabled(component.AutoCalculate);
                 if (EditorGUI::Property("Radius", component.Radius, 0.05f)) changed = true;
                 if (EditorGUI::Property("Height", component.Height, 0.05f)) changed = true;
+                ImGui::EndDisabled();
             }
             else if (component.Type == ColliderType::Mesh)
             {
                 if (EditorGUI::Begin().File("Model Path", component.ModelPath, "obj,gltf,glb")) changed = true;
                 
+                ImGui::BeginDisabled(component.AutoCalculate);
+                if (EditorGUI::DrawVec3("Size", component.Size, 1.0f)) changed = true;
+                ImGui::EndDisabled();
+
                 ImGui::Text("BVH Status: %s", component.BVHRoot ? "Built" : "Missing");
                 if (ImGui::Button(ICON_FA_HAMMER " Rebuild BVH"))
                 {
@@ -243,7 +256,14 @@ namespace CHEngine
                         auto asset = project->GetAssetManager()->Get<ModelAsset>(component.ModelPath);
                         if (asset)
                         {
+                            // Invalidate the physics cache so UpdateColliders picks up the new BVH
+                            auto scene = EditorLayer::Get().GetActiveScene();
+                            if (scene)
+                                scene->GetPhysics().InvalidateBVH(asset.get());
+
+                            // Synchronous build for immediate visual feedback
                             component.BVHRoot = BVH::Build(asset);
+                            
                             if (component.AutoCalculate)
                             {
                                 BoundingBox box = asset->GetBoundingBox();

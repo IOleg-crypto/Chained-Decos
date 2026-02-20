@@ -199,12 +199,11 @@ namespace CHEngine
             Vector3 center = Vector3Scale(Vector3Add(node.Min, node.Max), 0.5f);
             Vector3 size = Vector3Subtract(node.Max, node.Min);
 
-            // Transform is already in world space
             Matrix nodeTransform = MatrixMultiply(MatrixTranslate(center.x, center.y, center.z), transform);
             Renderer::Get().DrawCubeWires(nodeTransform, size, nodeColor);
         }
 
-        if (!isLeaf && depth < 20) // Increased depth for more detail if needed
+        if (!isLeaf && depth < 20)
         {
             RenderBVHNode(bvh, node.LeftOrFirst, transform, color, depth + 1);
             RenderBVHNode(bvh, node.LeftOrFirst + 1, transform, color, depth + 1);
@@ -219,7 +218,7 @@ namespace CHEngine
         rlDisableDepthTest();
 
         if (debugFlags->DrawColliders) DrawColliderDebug(registry, debugFlags);
-        if (debugFlags->DrawAABB) DrawAABBDebug(registry, debugFlags);
+        if (debugFlags->DrawCollisionModelBox) DrawCollisionModelBoxDebug(registry, debugFlags);
         if (debugFlags->DrawSpawnZones) DrawSpawnDebug(registry, debugFlags);
 
         if (debugFlags->DrawGrid && scene->GetSettings().Mode == BackgroundMode::Environment3D)
@@ -264,7 +263,7 @@ namespace CHEngine
         }
     }
 
-    void SceneRenderer::DrawAABBDebug(entt::registry& registry, const DebugRenderFlags* debugFlags)
+    void SceneRenderer::DrawCollisionModelBoxDebug(entt::registry& registry, const DebugRenderFlags* debugFlags)
     {
         auto view = registry.view<TransformComponent, ColliderComponent>();
         for (auto entity : view)
