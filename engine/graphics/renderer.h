@@ -61,7 +61,7 @@ namespace CHEngine
     {
         bool DrawColliders = false;
         bool DrawHierarchy = false;
-        bool DrawAABB = false;
+        bool DrawCollisionModelBox = false;
         bool DrawGrid = false;
         bool DrawSelection = true;
         bool DrawLights = true;

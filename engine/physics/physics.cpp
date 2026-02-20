@@ -77,8 +77,8 @@ namespace CHEngine
         auto it = m_BVHCache.find(asset);
         if (it == m_BVHCache.end())
         {
-            // Start building in background
-            m_BVHCache[asset] = BVH::BuildAsync(asset->GetModel()).share();
+            // Start building in background using full model data (node transforms)
+            m_BVHCache[asset] = BVH::BuildAsync(asset->GetModel(), asset->GetGlobalNodeTransforms(), asset->GetMeshToNode()).share();
             return nullptr;
         }
 
@@ -89,6 +89,23 @@ namespace CHEngine
         }
 
         return nullptr;
+    }
+
+    void Physics::InvalidateBVH(ModelAsset* asset)
+    {
+        if (!asset) return;
+        std::lock_guard<std::mutex> lock(m_BVHMutex);
+        m_BVHCache.erase(asset);
+    }
+
+    void Physics::UpdateBVHCache(ModelAsset* asset, std::shared_ptr<BVH> bvh)
+    {
+        if (!asset || !bvh) return;
+        std::lock_guard<std::mutex> lock(m_BVHMutex);
+        
+        std::promise<std::shared_ptr<BVH>> promise;
+        promise.set_value(bvh);
+        m_BVHCache[asset] = promise.get_future().share();
     }
 
     void Physics::UpdateColliders()
@@ -122,7 +139,6 @@ namespace CHEngine
                     BoundingBox box = asset->GetBoundingBox();
                     collider.Size = Vector3Subtract(box.max, box.min);
                     collider.Offset = box.min;
-                    collider.AutoCalculate = false;
                 }
                 continue;
             }
@@ -133,12 +149,14 @@ namespace CHEngine
                 auto asset = project->GetAssetManager()->Get<ModelAsset>(collider.ModelPath);
                 if (asset && asset->GetState() == AssetState::Ready && asset->GetModel().meshCount > 0)
                 {
-                    if (!collider.BVHRoot)
+                    // Always try to fetch BVH - if asset changed, GetBVH will return the new one (or null if building)
+                    auto bvh = GetBVH(asset.get());
+                    if (bvh)
                     {
-                        collider.BVHRoot = GetBVH(asset.get());
+                        collider.BVHRoot = bvh;
                     }
 
-                    if (collider.BVHRoot && collider.AutoCalculate)
+                    if (collider.AutoCalculate && collider.BVHRoot)
                     {
                         BoundingBox box = asset->GetBoundingBox();
                         collider.Offset = box.min;
@@ -162,7 +180,6 @@ namespace CHEngine
                     Vector3 size = Vector3Subtract(box.max, box.min);
                     collider.Radius = fmaxf(size.x, fmaxf(size.y, size.z)) * 0.5f;
                     collider.Offset = Vector3Scale(Vector3Add(box.min, box.max), 0.5f);
-                    collider.AutoCalculate = false;
                 }
                 continue;
             }

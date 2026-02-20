@@ -158,7 +158,7 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
         {
             auto &debugFlags = EditorLayer::Get().GetDebugRenderFlags();
             ImGui::Checkbox("Colliders", &debugFlags.DrawColliders);
-            ImGui::Checkbox("Mesh Hierarchy", &debugFlags.DrawAABB); // Hierarchy visualization
+            ImGui::Checkbox("Mesh Hierarchy", &debugFlags.DrawCollisionModelBox); // Hierarchy visualization
             ImGui::Checkbox("Lights", &debugFlags.DrawLights);
             ImGui::Checkbox("Spawn Zones", &debugFlags.DrawSpawnZones);
             ImGui::Checkbox("Draw Grid", &debugFlags.DrawGrid);
