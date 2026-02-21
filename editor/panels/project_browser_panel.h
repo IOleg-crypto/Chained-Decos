@@ -1,8 +1,8 @@
 #ifndef CH_PROJECT_BROWSER_PANEL_H
 #define CH_PROJECT_BROWSER_PANEL_H
 
-#include <functional>
 #include "panel.h"
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -16,16 +16,25 @@ public:
 
     virtual void OnImGuiRender(bool readOnly = false) override;
 
-    using EventCallbackFn = std::function<void(Event &)>;
-    void SetEventCallback(const EventCallbackFn &callback)
+    using EventCallbackFn = std::function<void(Event&)>;
+    void SetEventCallback(const EventCallbackFn& callback)
     {
         m_EventCallback = callback;
     }
 
     // Testing accessors
-    bool IsCreateDialogVisible() const { return m_ShowCreateDialog; }
-    void SetCreateDialogVisible(bool visible) { m_ShowCreateDialog = visible; }
-    bool HasPendingCreatePopupRequest() const { return m_OpenCreatePopupRequest; }
+    bool IsCreateDialogVisible() const
+    {
+        return m_ShowCreateDialog;
+    }
+    void SetCreateDialogVisible(bool visible)
+    {
+        m_ShowCreateDialog = visible;
+    }
+    bool HasPendingCreatePopupRequest() const
+    {
+        return m_OpenCreatePopupRequest;
+    }
 
 private:
     void DrawWelcomeScreen();

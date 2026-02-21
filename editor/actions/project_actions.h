@@ -11,9 +11,9 @@ class ProjectActions
 {
 public:
     static void New();
-    static void New(const std::string &name, const std::string &path);
+    static void New(const std::string& name, const std::string& path);
     static void Open();
-    static void Open(const std::filesystem::path &path);
+    static void Open(const std::filesystem::path& path);
     static void Save();
     static void LaunchStandalone();
 };

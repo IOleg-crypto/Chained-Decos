@@ -1,449 +1,623 @@
-#include "engine/graphics/renderer.h"
-#include "engine/graphics/model_asset.h"
-#include "engine/graphics/shader_asset.h"
 #include "scene_renderer.h"
-#include "engine/scene/components.h"
-#include "engine/physics/bvh/bvh.h"
-#include "engine/core/profiler.h"
 #include "engine/core/assert.h"
+#include "engine/core/profiler.h"
+#include "engine/graphics/frustum.h"
+#include "engine/graphics/model_asset.h"
+#include "engine/graphics/renderer.h"
 #include "engine/graphics/renderer2d.h"
+#include "engine/graphics/shader_asset.h"
+#include "engine/physics/bvh/bvh.h"
+#include "engine/scene/components.h"
 #include "engine/scene/project.h"
 #include "render_command.h"
 #include <raymath.h>
 #include <rlgl.h>
 
+namespace
+{
+using namespace CHEngine;
+
+struct AnimatedEntry
+{
+    std::shared_ptr<ModelAsset>  asset;
+    Matrix                       worldTransform;
+    std::vector<MaterialSlot>    materials;
+    std::shared_ptr<ShaderAsset> shaderOverride;
+    std::vector<ShaderUniform>   customUniforms;
+    AnimationComponent           animation; // copy — avoids holding a registry reference across iterations
+};
+
+struct InstanceKey
+{
+    std::string modelPath;
+    bool operator<(const InstanceKey& o) const { return modelPath < o.modelPath; }
+};
+
+struct InstanceGroup
+{
+    std::shared_ptr<ModelAsset> asset;
+    std::vector<Matrix>         transforms;
+    std::vector<MaterialSlot>   materials; // taken from the first entity in the group
+};
+} // namespace
+
 namespace CHEngine
 {
-    static Matrix GetWorldTransform(entt::registry& registry, entt::entity entity)
+Matrix SceneRenderer::GetWorldTransform(entt::registry& registry, entt::entity entity)
+{
+    Matrix transform = MatrixIdentity();
+    if (registry.all_of<TransformComponent>(entity))
     {
-        Matrix transform = MatrixIdentity();
-        if (registry.all_of<TransformComponent>(entity))
-        {
-            transform = registry.get<TransformComponent>(entity).GetTransform();
-        }
-
-        if (registry.all_of<HierarchyComponent>(entity))
-        {
-            entt::entity parent = registry.get<HierarchyComponent>(entity).Parent;
-            if (parent != entt::null)
-            {
-                transform = MatrixMultiply(transform, GetWorldTransform(registry, parent));
-            }
-        }
-        return transform;
+        transform = registry.get<TransformComponent>(entity).GetTransform();
     }
 
-    static Vector3 GetWorldPosition(entt::registry& registry, entt::entity entity)
+    if (registry.all_of<HierarchyComponent>(entity))
     {
-        Matrix transform = GetWorldTransform(registry, entity);
-        return { transform.m12, transform.m13, transform.m14 };
+        entt::entity parent = registry.get<HierarchyComponent>(entity).Parent;
+        if (parent != entt::null)
+        {
+            transform = MatrixMultiply(transform, GetWorldTransform(registry, parent));
+        }
+    }
+    return transform;
+}
+
+Vector3 SceneRenderer::GetWorldPosition(entt::registry& registry, entt::entity entity)
+{
+    Matrix transform = GetWorldTransform(registry, entity);
+    return {transform.m12, transform.m13, transform.m14};
+}
+
+void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, Timestep timestep,
+                                const DebugRenderFlags* debugFlags)
+{
+    CH_PROFILE_FUNCTION();
+    CH_CORE_ASSERT(Renderer::IsInitialized(), "Renderer not initialized!");
+    CH_CORE_ASSERT(scene, "Scene is null!");
+
+    // 1. Environmental setup
+    auto environment = scene->GetSettings().Environment;
+
+    // Fallback to project environment if not set in scene
+    if (!environment && Project::GetActive())
+    {
+        environment = Project::GetActive()->GetEnvironment();
     }
 
-    void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, Timestep timestep, const DebugRenderFlags* debugFlags)
+    if (environment)
     {
-        CH_PROFILE_FUNCTION();
-        CH_CORE_ASSERT(Renderer::IsInitialized(), "Renderer not initialized!");
-        CH_CORE_ASSERT(scene, "Scene is null!");
-        
-        // 1. Environmental setup
-        auto environment = scene->GetSettings().Environment;
-        
-        // Fallback to project environment if not set in scene
-        if (!environment && Project::GetActive())    
-        {
-            environment = Project::GetActive()->GetEnvironment();
-        }
+        Renderer::Get().ApplyEnvironment(environment->GetSettings());
+    }
 
+    Renderer::Get().UpdateTime(Timestep((float)GetTime()));
+
+    // --- Update Profiler Stats ---
+    ProfilerStats stats;
+    stats.EntityCount = (uint32_t)scene->GetRegistry().storage<entt::entity>().size();
+    Profiler::UpdateStats(stats);
+
+    // 2. Scene rendering flow
+    Renderer::Get().BeginScene(camera);
+    {
         if (environment)
         {
-            Renderer::Get().ApplyEnvironment(environment->GetSettings());
-        }
-
-        Renderer::Get().UpdateTime(Timestep((float)GetTime()));
-
-        // --- Update Profiler Stats ---
-        ProfilerStats stats;
-        stats.EntityCount = (uint32_t)scene->GetRegistry().storage<entt::entity>().size();
-        Profiler::UpdateStats(stats);
-        
-        // 2. Scene rendering flow
-        Renderer::Get().BeginScene(camera);
-        {
-            if (environment)
-            {
-                if (environment->GetSettings().Skybox.TexturePath.empty())
-                {
-                    static bool warned = false;
-                    if (!warned) {
-                        CH_CORE_WARN("SceneRenderer: Environment exists but Skybox.TexturePath is empty!");
-                        warned = true;
-                    }
-                }
-                Renderer::Get().DrawSkybox(environment->GetSettings().Skybox, camera);
-            }
-            else
+            if (environment->GetSettings().Skybox.TexturePath.empty())
             {
                 static bool warned = false;
-                if (!warned) {
-                    CH_CORE_WARN("SceneRenderer: No environment asset for scene!");
+                if (!warned)
+                {
+                    CH_CORE_WARN("SceneRenderer: Environment exists but Skybox.TexturePath is empty!");
                     warned = true;
                 }
             }
-
-            RenderModels(scene, timestep);
-            
-            if (debugFlags)
-                RenderDebug(scene, debugFlags);
-                
-            RenderSprites(scene);
-
-            RenderEditorIcons(scene, camera);
+            Renderer::Get().DrawSkybox(environment->GetSettings().Skybox, camera);
         }
-        Renderer::Get().EndScene();
+        else
+        {
+            static bool warned = false;
+            if (!warned)
+            {
+                CH_CORE_WARN("SceneRenderer: No environment asset for scene!");
+                warned = true;
+            }
+        }
+
+        RenderModels(scene, timestep);
+
+        if (debugFlags)
+        {
+            RenderDebug(scene, debugFlags);
+        }
+
+        RenderSprites(scene);
+
+        RenderEditorIcons(scene, camera);
     }
+    Renderer::Get().EndScene();
+}
 
-    void SceneRenderer::RenderModels(Scene* scene, Timestep timestep)
+void SceneRenderer::RenderModels(Scene* scene, Timestep timestep)
+{
+    auto& registry = scene->GetRegistry();
+    auto view = registry.view<TransformComponent, ModelComponent>();
+
+    // 1. Collect Lights
+    Renderer::Get().ClearLights();
+
+    int lightCount = 0;
+    auto lightView = registry.view<LightComponent>();
+    for (auto entity : lightView)
     {
-        auto& registry = scene->GetRegistry();
-        auto view = registry.view<TransformComponent, ModelComponent>();
-
-        // 1. Collect Lights
-        Renderer::Get().ClearLights();
-        
-        int lightCount = 0;
-        auto lightView = registry.view<LightComponent>();
-        for (auto entity : lightView)
+        if (lightCount >= RendererData::MaxLights)
         {
-            if (lightCount >= RendererData::MaxLights) break;
-            auto& light = lightView.get<LightComponent>(entity);
-            Vector3 worldPos = GetWorldPosition(registry, entity);
-            
-            RenderLight rl;
-            rl.color = light.LightColor;
-            rl.position = worldPos;
-            rl.intensity = (light.Intensity <= 0.0f) ? 1.0f : light.Intensity;
-            rl.radius = light.Radius;
-            rl.innerCutoff = light.InnerCutoff;
-            rl.outerCutoff = light.OuterCutoff;
-            rl.type = (int)light.Type;
-            rl.enabled = true;
-
-            if (light.Type == LightType::Spot)
-            {
-                Matrix worldTransform = GetWorldTransform(registry, entity);
-                Vector3 worldDir = Vector3Transform({ 0, -1, 0 }, worldTransform);
-                rl.direction = Vector3Normalize(Vector3Subtract(worldDir, worldPos));
-            }
-
-            Renderer::Get().SetLight(lightCount++, rl);
+            break;
         }
+        auto& light = lightView.get<LightComponent>(entity);
+        Vector3 worldPos = GetWorldPosition(registry, entity);
 
-        // 2. Render Models
-        for (auto entity : view)
+        RenderLight rl;
+        rl.color[0] = light.LightColor.r / 255.0f;
+        rl.color[1] = light.LightColor.g / 255.0f;
+        rl.color[2] = light.LightColor.b / 255.0f;
+        rl.color[3] = light.LightColor.a / 255.0f;
+
+        rl.position = worldPos;
+        rl.intensity = (light.Intensity <= 0.0f) ? 1.0f : light.Intensity;
+        rl.radius = light.Radius;
+        rl.innerCutoff = light.InnerCutoff;
+        rl.outerCutoff = light.OuterCutoff;
+        rl.type = (int)light.Type;
+        rl.enabled = 1;
+
+        if (light.Type == LightType::Spot)
         {
-            auto [transform, model] = view.get<TransformComponent, ModelComponent>(entity);
-            
-            // Check for deferred texture updates
-            if (model.Asset) model.Asset->OnUpdate();
-
-            std::shared_ptr<ShaderAsset> shaderOverride = nullptr;
-            std::vector<ShaderUniform> customUniforms;
-
-            if (registry.all_of<ShaderComponent>(entity))
-            {
-                auto& shaderComp = registry.get<ShaderComponent>(entity);
-                if (shaderComp.Enabled && !shaderComp.ShaderPath.empty())
-                {
-                    if (Project::GetActive())
-                    {
-                        shaderOverride = Project::GetActive()->GetAssetManager()->Get<ShaderAsset>(shaderComp.ShaderPath);
-                        customUniforms = shaderComp.Uniforms;
-                    }
-                }
-            }
-
-            // Use World Transform for correct hierarchy visualization
             Matrix worldTransform = GetWorldTransform(registry, entity);
+            Vector3 worldDir = Vector3Transform({0, -1, 0}, worldTransform);
+            rl.direction = Vector3Normalize(Vector3Subtract(worldDir, worldPos));
+        }
 
-            if (registry.all_of<AnimationComponent>(entity))
+        Renderer::Get().SetLight(lightCount++, rl);
+    }
+
+    // ---- Pass A: Collect visible entities, split into animated vs. static ----
+    Frustum frustum;
+    {
+        Matrix matVP = MatrixMultiply(rlGetMatrixModelview(), rlGetMatrixProjection());
+        frustum.Extract(matVP);
+    }
+    std::vector<AnimatedEntry>           animatedEntries;
+    std::map<InstanceKey, InstanceGroup> instanceGroups;
+
+    for (auto entity : view)
+    {
+        auto [transform, model] = view.get<TransformComponent, ModelComponent>(entity);
+
+        if (!model.Asset || model.Asset->GetState() != AssetState::Ready)
+        {
+            continue;
+        }
+
+        // Frustum Culling
+        Matrix worldTransform = GetWorldTransform(registry, entity);
+        if (!frustum.IsBoxVisible(model.Asset->GetBoundingBox(), worldTransform))
+        {
+            continue;
+        }
+
+        // Distance Culling
+        if (model.CullDistance > 0.0f)
+        {
+            Vector3 entityPos = {worldTransform.m12, worldTransform.m13, worldTransform.m14};
+            Vector3 camPos    = Renderer::Get().GetData().CurrentCameraPosition;
+            float distSq      = Vector3LengthSqr(Vector3Subtract(entityPos, camPos));
+            if (distSq > model.CullDistance * model.CullDistance)
             {
-                auto& animation = registry.get<AnimationComponent>(entity);
-                float targetFPS = 30.0f;
-                if (Project::GetActive())
-                    targetFPS = Project::GetActive()->GetConfig().Animation.TargetFPS;
-                float frameTime = 1.0f / (targetFPS > 0 ? targetFPS : 30.0f);
-                
-                float fractionalFrame = (float)animation.CurrentFrame + (animation.FrameTimeCounter / frameTime);
-                Renderer::Get().DrawModel(model.Asset, worldTransform, model.Materials, animation.CurrentAnimationIndex, fractionalFrame, shaderOverride, customUniforms);
+                continue;
             }
-            else
+        }
+
+        model.Asset->OnUpdate();
+
+        // Resolve optional shader override
+        std::shared_ptr<ShaderAsset> shaderOverride;
+        std::vector<ShaderUniform>   customUniforms;
+        bool hasShaderOverride = false;
+        if (registry.all_of<ShaderComponent>(entity))
+        {
+            auto& shaderComp = registry.get<ShaderComponent>(entity);
+            if (shaderComp.Enabled && !shaderComp.ShaderPath.empty() && Project::GetActive())
             {
-                Renderer::Get().DrawModel(model.Asset, worldTransform, model.Materials, 0, 0, shaderOverride, customUniforms);
+                shaderOverride = Project::GetActive()->GetAssetManager()->Get<ShaderAsset>(shaderComp.ShaderPath);
+                customUniforms = shaderComp.Uniforms;
+                hasShaderOverride = true;
             }
+        }
+
+        const bool isAnimated = registry.all_of<AnimationComponent>(entity);
+
+        if (isAnimated)
+        {
+            AnimatedEntry entry;
+            entry.asset          = model.Asset;
+            entry.worldTransform = worldTransform;
+            entry.materials      = model.Materials;
+            entry.shaderOverride = shaderOverride;
+            entry.customUniforms = customUniforms;
+            entry.animation      = registry.get<AnimationComponent>(entity);
+            animatedEntries.push_back(std::move(entry));
+        }
+        else if (!hasShaderOverride)
+        {
+            // Batch static entities by model path
+            InstanceKey key{model.ModelPath};
+            auto& group = instanceGroups[key];
+            if (group.transforms.empty())
+            {
+                group.asset      = model.Asset;
+                group.materials  = model.Materials;
+            }
+            group.transforms.push_back(worldTransform);
+        }
+        else
+        {
+            // Static with shader override — draw individually
+            Renderer::Get().DrawModel(model.Asset, worldTransform, model.Materials, 0, 0.0f, -1, 0.0f, 0.0f,
+                                      shaderOverride, customUniforms);
         }
     }
 
-    static void RenderBVHNode(const BVH* bvh, uint32_t nodeIndex, const Matrix& transform, Color color, int depth = 0)
+    // ---- Pass B: Draw animated individually ----
+    for (auto& entry : animatedEntries)
     {
-        const auto& nodes = bvh->GetNodes();
-        if (nodeIndex >= nodes.size()) return;
-
-        const auto& node = nodes[nodeIndex];
-        bool isLeaf = node.IsLeaf();
-
-        // Only draw root or leaves to reduce clutter in the editor
-        if (depth == 0 || isLeaf)
+        float targetFPS = 30.0f;
+        if (Project::GetActive())
         {
-            Color nodeColor = isLeaf ? ORANGE : color;
-            
-            Vector3 center = Vector3Scale(Vector3Add(node.Min, node.Max), 0.5f);
-            Vector3 size = Vector3Subtract(node.Max, node.Min);
+            targetFPS = Project::GetActive()->GetConfig().Animation.TargetFPS;
+        }
+        float frameTime       = 1.0f / (targetFPS > 0 ? targetFPS : 30.0f);
+        float fractionalFrame = (float)entry.animation.CurrentFrame + (entry.animation.FrameTimeCounter / frameTime);
 
-            Matrix nodeTransform = MatrixMultiply(MatrixTranslate(center.x, center.y, center.z), transform);
-            Renderer::Get().DrawCubeWires(nodeTransform, size, nodeColor);
+        int   targetAnim           = -1;
+        float targetFractionalFrame = 0.0f;
+        float blendWeight          = 0.0f;
+        if (entry.animation.Blending)
+        {
+            targetAnim            = entry.animation.TargetAnimationIndex;
+            targetFractionalFrame = (float)entry.animation.TargetFrame + (entry.animation.FrameTimeCounter / frameTime);
+            blendWeight           = entry.animation.BlendTimer / entry.animation.BlendDuration;
         }
 
-        if (!isLeaf && depth < 20)
-        {
-            RenderBVHNode(bvh, node.LeftOrFirst, transform, color, depth + 1);
-            RenderBVHNode(bvh, node.LeftOrFirst + 1, transform, color, depth + 1);
-        }
+        Renderer::Get().DrawModel(entry.asset, entry.worldTransform, entry.materials,
+                                  entry.animation.CurrentAnimationIndex, fractionalFrame,
+                                  targetAnim, targetFractionalFrame, blendWeight,
+                                  entry.shaderOverride, entry.customUniforms);
     }
 
-    void SceneRenderer::RenderDebug(Scene* scene, const DebugRenderFlags* debugFlags)
+    // ---- Pass B continued: Draw static groups (instanced if ≥2, single otherwise) ----
+    for (auto& [key, group] : instanceGroups)
     {
-        if (!debugFlags) return;
-        auto& registry = scene->GetRegistry();
-
-        rlDisableDepthTest();
-
-        if (debugFlags->DrawColliders) DrawColliderDebug(registry, debugFlags);
-        if (debugFlags->DrawCollisionModelBox) DrawCollisionModelBoxDebug(registry, debugFlags);
-        if (debugFlags->DrawSpawnZones) DrawSpawnDebug(registry, debugFlags);
-
-        if (debugFlags->DrawGrid && scene->GetSettings().Mode == BackgroundMode::Environment3D)
+        if (group.transforms.size() == 1)
         {
-            Renderer::Get().DrawGrid(20, 1.0f);
+            Renderer::Get().DrawModel(group.asset, group.transforms[0], group.materials,
+                                      0, 0.0f, -1, 0.0f, 0.0f, nullptr, {});
         }
-
-        rlEnableDepthTest();
-    }
-
-    void SceneRenderer::DrawColliderDebug(entt::registry& registry, const DebugRenderFlags* debugFlags)
-    {
-        auto view = registry.view<TransformComponent, ColliderComponent>();
-        for (auto entity : view)
+        else
         {
-            auto [transform, collider] = view.get<TransformComponent, ColliderComponent>(entity);
-            if (!collider.Enabled) continue;
-
-            Matrix worldTransform = GetWorldTransform(registry, entity);
-            Color color = GREEN;
-
-            if (collider.Type == ColliderType::Mesh && collider.BVHRoot)
-            {
-                RenderBVHNode(collider.BVHRoot.get(), 0, worldTransform, color);
-            }
-            else if (collider.Type == ColliderType::Box)
-            {
-                Vector3 center = Vector3Add(collider.Offset, Vector3Scale(collider.Size, 0.5f));
-                Matrix colliderTransform = MatrixMultiply(MatrixTranslate(center.x, center.y, center.z), worldTransform);
-                Renderer::Get().DrawCubeWires(colliderTransform, collider.Size, color);
-            }
-            else if (collider.Type == ColliderType::Capsule)
-            {
-                Matrix colliderTransform = MatrixMultiply(MatrixTranslate(collider.Offset.x, collider.Offset.y, collider.Offset.z), worldTransform);
-                Renderer::Get().DrawCapsuleWires(colliderTransform, collider.Radius, collider.Height, color);
-            }
-            else if (collider.Type == ColliderType::Sphere)
-            {
-                Matrix colliderTransform = MatrixMultiply(MatrixTranslate(collider.Offset.x, collider.Offset.y, collider.Offset.z), worldTransform);
-                Renderer::Get().DrawSphereWires(colliderTransform, collider.Radius, color);
-            }
+            Renderer::Get().DrawModelInstanced(group.asset, group.transforms, group.materials);
         }
     }
+}
 
-    void SceneRenderer::DrawCollisionModelBoxDebug(entt::registry& registry, const DebugRenderFlags* debugFlags)
+void SceneRenderer::RenderBVHNode(const BVH* bvh, uint32_t nodeIndex, const Matrix& transform, Color color,
+                                 int depth)
+{
+    const auto& nodes = bvh->GetNodes();
+    if (nodeIndex >= nodes.size())
     {
-        auto view = registry.view<TransformComponent, ColliderComponent>();
-        for (auto entity : view)
+        return;
+    }
+
+    const auto& node = nodes[nodeIndex];
+    bool isLeaf = node.IsLeaf();
+
+    // Only draw root or leaves to reduce clutter in the editor
+    if (depth == 0 || isLeaf)
+    {
+        Color nodeColor = isLeaf ? ORANGE : color;
+
+        Vector3 center = Vector3Scale(Vector3Add(node.Min, node.Max), 0.5f);
+        Vector3 size = Vector3Subtract(node.Max, node.Min);
+
+        Matrix nodeTransform = MatrixMultiply(MatrixTranslate(center.x, center.y, center.z), transform);
+        Renderer::Get().DrawCubeWires(nodeTransform, size, nodeColor);
+    }
+
+    if (!isLeaf && depth < 20)
+    {
+        RenderBVHNode(bvh, node.LeftOrFirst, transform, color, depth + 1);
+        RenderBVHNode(bvh, node.LeftOrFirst + 1, transform, color, depth + 1);
+    }
+}
+
+void SceneRenderer::RenderDebug(Scene* scene, const DebugRenderFlags* debugFlags)
+{
+    if (!debugFlags)
+    {
+        return;
+    }
+    auto& registry = scene->GetRegistry();
+
+    rlDisableDepthTest();
+
+    if (debugFlags->DrawColliders)
+    {
+        DrawColliderDebug(registry, debugFlags);
+    }
+    if (debugFlags->DrawCollisionModelBox)
+    {
+        DrawCollisionModelBoxDebug(registry, debugFlags);
+    }
+    if (debugFlags->DrawSpawnZones)
+    {
+        DrawSpawnDebug(registry, debugFlags);
+    }
+
+    if (debugFlags->DrawGrid && scene->GetSettings().Mode == BackgroundMode::Environment3D)
+    {
+        const auto& grid = scene->GetSettings().Grid;
+        Renderer::Get().DrawGrid(grid.Slices, grid.Spacing);
+    }
+
+    rlEnableDepthTest();
+}
+
+void SceneRenderer::DrawColliderDebug(entt::registry& registry, const DebugRenderFlags* debugFlags)
+{
+    auto view = registry.view<TransformComponent, ColliderComponent>();
+    for (auto entity : view)
+    {
+        auto [transform, collider] = view.get<TransformComponent, ColliderComponent>(entity);
+        if (!collider.Enabled)
         {
-            auto [transform, collider] = view.get<TransformComponent, ColliderComponent>(entity);
-            if (!collider.Enabled) continue;
+            continue;
+        }
 
-            Matrix worldTransform = GetWorldTransform(registry, entity);
-            BoundingBox worldAABB = {{0,0,0}, {0,0,0}};
-            bool hasBounds = false;
+        Matrix worldTransform = GetWorldTransform(registry, entity);
+        Color color = GREEN;
 
-            if (collider.Type == ColliderType::Mesh && collider.BVHRoot)
-            {
-                const auto& nodes = collider.BVHRoot->GetNodes();
-                if (!nodes.empty())
-                {
-                    Vector3 corners[8] = {
-                        Vector3Transform({nodes[0].Min.x, nodes[0].Min.y, nodes[0].Min.z}, worldTransform),
-                        Vector3Transform({nodes[0].Max.x, nodes[0].Min.y, nodes[0].Min.z}, worldTransform),
-                        Vector3Transform({nodes[0].Min.x, nodes[0].Max.y, nodes[0].Min.z}, worldTransform),
-                        Vector3Transform({nodes[0].Max.x, nodes[0].Max.y, nodes[0].Min.z}, worldTransform),
-                        Vector3Transform({nodes[0].Min.x, nodes[0].Min.y, nodes[0].Max.z}, worldTransform),
-                        Vector3Transform({nodes[0].Max.x, nodes[0].Min.y, nodes[0].Max.z}, worldTransform),
-                        Vector3Transform({nodes[0].Min.x, nodes[0].Max.y, nodes[0].Max.z}, worldTransform),
-                        Vector3Transform({nodes[0].Max.x, nodes[0].Max.y, nodes[0].Max.z}, worldTransform)
-                    };
-                    worldAABB.min = corners[0]; worldAABB.max = corners[0];
-                    for(int i=1; i<8; i++) {
-                        worldAABB.min = Vector3Min(worldAABB.min, corners[i]);
-                        worldAABB.max = Vector3Max(worldAABB.max, corners[i]);
-                    }
-                    hasBounds = true;
-                }
-            }
-            else if (collider.Type == ColliderType::Box)
+        if (collider.Type == ColliderType::Mesh && collider.BVHRoot)
+        {
+            RenderBVHNode(collider.BVHRoot.get(), 0, worldTransform, color);
+        }
+        else if (collider.Type == ColliderType::Box)
+        {
+            Vector3 center = Vector3Add(collider.Offset, Vector3Scale(collider.Size, 0.5f));
+            Matrix colliderTransform = MatrixMultiply(MatrixTranslate(center.x, center.y, center.z), worldTransform);
+            Renderer::Get().DrawCubeWires(colliderTransform, collider.Size, color);
+        }
+        else if (collider.Type == ColliderType::Capsule)
+        {
+            Matrix colliderTransform = MatrixMultiply(
+                MatrixTranslate(collider.Offset.x, collider.Offset.y, collider.Offset.z), worldTransform);
+            Renderer::Get().DrawCapsuleWires(colliderTransform, collider.Radius, collider.Height, color);
+        }
+        else if (collider.Type == ColliderType::Sphere)
+        {
+            Matrix colliderTransform = MatrixMultiply(
+                MatrixTranslate(collider.Offset.x, collider.Offset.y, collider.Offset.z), worldTransform);
+            Renderer::Get().DrawSphereWires(colliderTransform, collider.Radius, color);
+        }
+    }
+}
+
+void SceneRenderer::DrawCollisionModelBoxDebug(entt::registry& registry, const DebugRenderFlags* debugFlags)
+{
+    auto view = registry.view<TransformComponent, ColliderComponent>();
+    for (auto entity : view)
+    {
+        auto [transform, collider] = view.get<TransformComponent, ColliderComponent>(entity);
+        if (!collider.Enabled)
+        {
+            continue;
+        }
+
+        Matrix worldTransform = GetWorldTransform(registry, entity);
+        BoundingBox worldAABB = {{0, 0, 0}, {0, 0, 0}};
+        bool hasBounds = false;
+
+        if (collider.Type == ColliderType::Mesh && collider.BVHRoot)
+        {
+            const auto& nodes = collider.BVHRoot->GetNodes();
+            if (!nodes.empty())
             {
                 Vector3 corners[8] = {
-                    Vector3Transform(collider.Offset, worldTransform),
-                    Vector3Transform(Vector3Add(collider.Offset, {collider.Size.x, 0, 0}), worldTransform),
-                    Vector3Transform(Vector3Add(collider.Offset, {0, collider.Size.y, 0}), worldTransform),
-                    Vector3Transform(Vector3Add(collider.Offset, {collider.Size.x, collider.Size.y, 0}), worldTransform),
-                    Vector3Transform(Vector3Add(collider.Offset, {0, 0, collider.Size.z}), worldTransform),
-                    Vector3Transform(Vector3Add(collider.Offset, {collider.Size.x, 0, collider.Size.z}), worldTransform),
-                    Vector3Transform(Vector3Add(collider.Offset, {0, collider.Size.y, collider.Size.z}), worldTransform),
-                    Vector3Transform(Vector3Add(collider.Offset, {collider.Size.x, collider.Size.y, collider.Size.z}), worldTransform)
-                };
-                worldAABB.min = corners[0]; worldAABB.max = corners[0];
-                for(int i=1; i<8; i++) {
+                    Vector3Transform({nodes[0].Min.x, nodes[0].Min.y, nodes[0].Min.z}, worldTransform),
+                    Vector3Transform({nodes[0].Max.x, nodes[0].Min.y, nodes[0].Min.z}, worldTransform),
+                    Vector3Transform({nodes[0].Min.x, nodes[0].Max.y, nodes[0].Min.z}, worldTransform),
+                    Vector3Transform({nodes[0].Max.x, nodes[0].Max.y, nodes[0].Min.z}, worldTransform),
+                    Vector3Transform({nodes[0].Min.x, nodes[0].Min.y, nodes[0].Max.z}, worldTransform),
+                    Vector3Transform({nodes[0].Max.x, nodes[0].Min.y, nodes[0].Max.z}, worldTransform),
+                    Vector3Transform({nodes[0].Min.x, nodes[0].Max.y, nodes[0].Max.z}, worldTransform),
+                    Vector3Transform({nodes[0].Max.x, nodes[0].Max.y, nodes[0].Max.z}, worldTransform)};
+                worldAABB.min = corners[0];
+                worldAABB.max = corners[0];
+                for (int i = 1; i < 8; i++)
+                {
                     worldAABB.min = Vector3Min(worldAABB.min, corners[i]);
                     worldAABB.max = Vector3Max(worldAABB.max, corners[i]);
                 }
                 hasBounds = true;
             }
-            else if (collider.Type == ColliderType::Capsule)
+        }
+        else if (collider.Type == ColliderType::Box)
+        {
+            Vector3 corners[8] = {
+                Vector3Transform(collider.Offset, worldTransform),
+                Vector3Transform(Vector3Add(collider.Offset, {collider.Size.x, 0, 0}), worldTransform),
+                Vector3Transform(Vector3Add(collider.Offset, {0, collider.Size.y, 0}), worldTransform),
+                Vector3Transform(Vector3Add(collider.Offset, {collider.Size.x, collider.Size.y, 0}), worldTransform),
+                Vector3Transform(Vector3Add(collider.Offset, {0, 0, collider.Size.z}), worldTransform),
+                Vector3Transform(Vector3Add(collider.Offset, {collider.Size.x, 0, collider.Size.z}), worldTransform),
+                Vector3Transform(Vector3Add(collider.Offset, {0, collider.Size.y, collider.Size.z}), worldTransform),
+                Vector3Transform(Vector3Add(collider.Offset, {collider.Size.x, collider.Size.y, collider.Size.z}),
+                                 worldTransform)};
+            worldAABB.min = corners[0];
+            worldAABB.max = corners[0];
+            for (int i = 1; i < 8; i++)
             {
-                float halfSeg = fmaxf(0.0f, collider.Height * 0.5f - collider.Radius);
-                Vector3 worldA = Vector3Transform(Vector3Add(collider.Offset, {0, -halfSeg, 0}), worldTransform);
-                Vector3 worldB = Vector3Transform(Vector3Add(collider.Offset, {0, halfSeg, 0}), worldTransform);
-                
-                float r = collider.Radius;
-                worldAABB.min = Vector3Subtract(Vector3Min(worldA, worldB), {r, r, r});
-                worldAABB.max = Vector3Add(Vector3Max(worldA, worldB), {r, r, r});
-                hasBounds = true;
+                worldAABB.min = Vector3Min(worldAABB.min, corners[i]);
+                worldAABB.max = Vector3Max(worldAABB.max, corners[i]);
             }
-            else if (collider.Type == ColliderType::Sphere)
-            {
-                Vector3 worldPos = Vector3Transform(collider.Offset, worldTransform);
-                float r = collider.Radius;
-                worldAABB.min = Vector3Subtract(worldPos, {r, r, r});
-                worldAABB.max = Vector3Add(worldPos, {r, r, r});
-                hasBounds = true;
-            }
+            hasBounds = true;
+        }
+        else if (collider.Type == ColliderType::Capsule)
+        {
+            float halfSeg = fmaxf(0.0f, collider.Height * 0.5f - collider.Radius);
+            Vector3 worldA = Vector3Transform(Vector3Add(collider.Offset, {0, -halfSeg, 0}), worldTransform);
+            Vector3 worldB = Vector3Transform(Vector3Add(collider.Offset, {0, halfSeg, 0}), worldTransform);
 
-            if (hasBounds)
-            {
-                Vector3 center = Vector3Scale(Vector3Add(worldAABB.min, worldAABB.max), 0.5f);
-                Vector3 size = Vector3Subtract(worldAABB.max, worldAABB.min);
-                Renderer::Get().DrawCubeWires(MatrixTranslate(center.x, center.y, center.z), size, RED);
-            }
+            float r = collider.Radius;
+            worldAABB.min = Vector3Subtract(Vector3Min(worldA, worldB), {r, r, r});
+            worldAABB.max = Vector3Add(Vector3Max(worldA, worldB), {r, r, r});
+            hasBounds = true;
+        }
+        else if (collider.Type == ColliderType::Sphere)
+        {
+            Vector3 worldPos = Vector3Transform(collider.Offset, worldTransform);
+            float r = collider.Radius;
+            worldAABB.min = Vector3Subtract(worldPos, {r, r, r});
+            worldAABB.max = Vector3Add(worldPos, {r, r, r});
+            hasBounds = true;
+        }
+
+        if (hasBounds)
+        {
+            Vector3 center = Vector3Scale(Vector3Add(worldAABB.min, worldAABB.max), 0.5f);
+            Vector3 size = Vector3Subtract(worldAABB.max, worldAABB.min);
+            Renderer::Get().DrawCubeWires(MatrixTranslate(center.x, center.y, center.z), size, RED);
+        }
+    }
+}
+
+void SceneRenderer::DrawSpawnDebug(entt::registry& registry, const DebugRenderFlags* debugFlags)
+{
+    auto view = registry.view<TransformComponent, SpawnComponent>();
+    for (auto entity : view)
+    {
+        auto [transform, spawn] = view.get<TransformComponent, SpawnComponent>(entity);
+        if (spawn.RenderSpawnZoneInScene)
+        {
+            Matrix worldTransform = GetWorldTransform(registry, entity);
+            Renderer::Get().DrawCubeWires(worldTransform, spawn.ZoneSize, {255, 255, 0, 200});
+        }
+    }
+}
+
+void SceneRenderer::RenderEditorIcons(Scene* scene, const Camera3D& camera)
+{
+    auto& registry = scene->GetRegistry();
+    auto& state = Renderer::Get().GetData();
+    auto assetManager = Project::GetActive() ? Project::GetActive()->GetAssetManager() : nullptr;
+
+    if (state.LightIcon.id == 0 && assetManager)
+    {
+        auto texture = assetManager->Get<TextureAsset>("engine/resources/icons/light_bulb.png");
+        if (texture && texture->IsReady())
+        {
+            state.LightIcon = texture->GetTexture();
+        }
+    }
+    if (state.SpawnIcon.id == 0 && assetManager)
+    {
+        auto texture = assetManager->Get<TextureAsset>("engine/resources/icons/leaf_icon.png");
+        if (texture && texture->IsReady())
+        {
+            state.SpawnIcon = texture->GetTexture();
+        }
+    }
+    if (state.CameraIcon.id == 0 && assetManager)
+    {
+        auto texture = assetManager->Get<TextureAsset>("engine/resources/icons/camera_icon.jpg");
+        if (texture && texture->IsReady())
+        {
+            state.CameraIcon = texture->GetTexture();
         }
     }
 
-    void SceneRenderer::DrawSpawnDebug(entt::registry& registry, const DebugRenderFlags* debugFlags)
+    rlDisableDepthTest();
+
+    {
+        auto view = registry.view<TransformComponent, LightComponent>();
+        for (auto entity : view)
+        {
+            Vector3 worldPos = GetWorldPosition(registry, entity);
+            Renderer::Get().DrawBillboard(camera, state.LightIcon, worldPos, 1.5f, WHITE);
+        }
+    }
+
     {
         auto view = registry.view<TransformComponent, SpawnComponent>();
         for (auto entity : view)
         {
-            auto [transform, spawn] = view.get<TransformComponent, SpawnComponent>(entity);
-            if (spawn.RenderSpawnZoneInScene)
-            {
-                Matrix worldTransform = GetWorldTransform(registry, entity);
-                Renderer::Get().DrawCubeWires(worldTransform, spawn.ZoneSize, {255, 255, 0, 200});
-            }
+            Vector3 worldPos = GetWorldPosition(registry, entity);
+            Renderer::Get().DrawBillboard(camera, state.SpawnIcon, worldPos, 1.5f, WHITE);
         }
     }
 
-    void SceneRenderer::RenderEditorIcons(Scene* scene, const Camera3D& camera)
     {
-        auto& registry = scene->GetRegistry();
-        auto& state = Renderer::Get().GetData();
-        auto assetManager = Project::GetActive() ? Project::GetActive()->GetAssetManager() : nullptr;
-
-        if (state.LightIcon.id == 0 && assetManager) {
-            auto texture = assetManager->Get<TextureAsset>("engine/resources/icons/light_bulb.png");
-            if (texture && texture->IsReady()) state.LightIcon = texture->GetTexture();
-        }
-        if (state.SpawnIcon.id == 0 && assetManager) {
-            auto texture = assetManager->Get<TextureAsset>("engine/resources/icons/leaf_icon.png");
-            if (texture && texture->IsReady()) state.SpawnIcon = texture->GetTexture();
-        }
-        if (state.CameraIcon.id == 0 && assetManager) {
-            auto texture = assetManager->Get<TextureAsset>("engine/resources/icons/camera_icon.jpg");
-            if (texture && texture->IsReady()) state.CameraIcon = texture->GetTexture();
-        }
-
-        rlDisableDepthTest();
-
+        auto view = registry.view<TransformComponent, CameraComponent>();
+        for (auto entity : view)
         {
-            auto view = registry.view<TransformComponent, LightComponent>();
-            for (auto entity : view)
-            {
-                Vector3 worldPos = GetWorldPosition(registry, entity);
-                Renderer::Get().DrawBillboard(camera, state.LightIcon, worldPos, 1.5f, WHITE);
-            }
+            Vector3 worldPos = GetWorldPosition(registry, entity);
+            Renderer::Get().DrawBillboard(camera, state.CameraIcon, worldPos, 1.5f, WHITE);
         }
-
-        {
-            auto view = registry.view<TransformComponent, SpawnComponent>();
-            for (auto entity : view)
-            {
-                Vector3 worldPos = GetWorldPosition(registry, entity);
-                Renderer::Get().DrawBillboard(camera, state.SpawnIcon, worldPos, 1.5f, WHITE);
-            }
-        }
-
-        {
-            auto view = registry.view<TransformComponent, CameraComponent>();
-            for (auto entity : view)
-            {
-                Vector3 worldPos = GetWorldPosition(registry, entity);
-                Renderer::Get().DrawBillboard(camera, state.CameraIcon, worldPos, 1.5f, WHITE);
-            }
-        }
-
-        rlEnableDepthTest();
     }
 
-    void SceneRenderer::RenderSprites(Scene* scene)
-    {
-        CH_CORE_ASSERT(scene, "Scene is null!");
-        CH_CORE_ASSERT(Renderer2D::IsInitialized(), "Renderer2D not initialized!");
-        auto& registry = scene->GetRegistry();
-        auto view = registry.view<TransformComponent, SpriteComponent>();
-
-        std::vector<entt::entity> sortedEntities;
-        for (auto entity : view) sortedEntities.push_back(entity);
-
-        if (sortedEntities.empty()) return;
-
-        std::sort(sortedEntities.begin(), sortedEntities.end(), [&](entt::entity a, entt::entity b) {
-            return view.get<SpriteComponent>(a).ZOrder < view.get<SpriteComponent>(b).ZOrder;
-        });
-
-        Renderer2D::Get().BeginCanvas();
-        for (auto entityID : sortedEntities)
-        {         
-            auto& sprite = view.get<SpriteComponent>(entityID);
-
-            if (sprite.TexturePath.empty()) continue;
-
-            if (!sprite.Texture && Project::GetActive())
-                sprite.Texture = Project::GetActive()->GetAssetManager()->Get<TextureAsset>(sprite.TexturePath);
-
-            Vector3 worldPos = GetWorldPosition(registry, entityID);
-            
-            Renderer2D::Get().DrawSprite(Vector2{worldPos.x, worldPos.y},
-                                    Vector2{1.0f, 1.0f},
-                                    0.0f,
-                                    sprite.Texture, sprite.Tint);
-        }
-        Renderer2D::Get().EndCanvas();
-    }
+    rlEnableDepthTest();
 }
+
+void SceneRenderer::RenderSprites(Scene* scene)
+{
+    CH_CORE_ASSERT(scene, "Scene is null!");
+    CH_CORE_ASSERT(Renderer2D::IsInitialized(), "Renderer2D not initialized!");
+    auto& registry = scene->GetRegistry();
+    auto view = registry.view<TransformComponent, SpriteComponent>();
+
+    std::vector<entt::entity> sortedEntities;
+    for (auto entity : view)
+    {
+        sortedEntities.push_back(entity);
+    }
+
+    if (sortedEntities.empty())
+    {
+        return;
+    }
+
+    std::sort(sortedEntities.begin(), sortedEntities.end(), [&](entt::entity a, entt::entity b) {
+        return view.get<SpriteComponent>(a).ZOrder < view.get<SpriteComponent>(b).ZOrder;
+    });
+
+    Renderer2D::Get().BeginCanvas();
+    for (auto entityID : sortedEntities)
+    {
+        auto& sprite = view.get<SpriteComponent>(entityID);
+
+        if (sprite.TexturePath.empty())
+        {
+            continue;
+        }
+
+        if (!sprite.Texture && Project::GetActive())
+        {
+            sprite.Texture = Project::GetActive()->GetAssetManager()->Get<TextureAsset>(sprite.TexturePath);
+        }
+
+        Vector3 worldPos = GetWorldPosition(registry, entityID);
+
+        Renderer2D::Get().DrawSprite(Vector2{worldPos.x, worldPos.y}, Vector2{1.0f, 1.0f}, 0.0f, sprite.Texture,
+                                     sprite.Tint);
+    }
+    Renderer2D::Get().EndCanvas();
+}
+} // namespace CHEngine

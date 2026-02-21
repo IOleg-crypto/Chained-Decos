@@ -12,6 +12,7 @@ uniform float exposure;
 uniform float brightness;
 uniform float contrast;
 uniform float uTime;
+uniform bool isHDR;
 
 // Fog data
 uniform int fogEnabled;
@@ -24,6 +25,17 @@ uniform float fogEnd;
 layout(location = 0) out vec4 finalColor;
 
 uniform int skyboxMode; // 0: Equirectangular, 1: Cross (Horizontal)
+
+// ACES filmic tone mapping
+vec3 ACESFilm(vec3 x)
+{
+    float a = 2.51;
+    float b = 0.03;
+    float c = 2.43;
+    float d = 0.59;
+    float e = 0.14;
+    return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
+}
 
 float hash(vec3 p) {
     p = fract(p * 0.3183099 + 0.1);
@@ -125,6 +137,12 @@ void main()
 
     // Apply contrast
     color = (color - 0.5) * contrast + 0.5;
+
+    // HDR tone mapping (ACES filmic)
+    if (isHDR)
+    {
+        color = ACESFilm(color);
+    }
 
     if (doGamma) // Apply gamma correction
     {

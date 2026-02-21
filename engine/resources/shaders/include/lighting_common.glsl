@@ -32,16 +32,18 @@ uniform float shininess; // Legacy support (derived from roughness)
 uniform float emissiveIntensity;
 
 struct Light {
-    vec4 color;
-    vec3 position;
-    vec3 direction;
-    float intensity;
-    float radius;
-    float innerCutoff;
-    float outerCutoff;
-    int type;       // 0: Point, 1: Spot
-    int enabled;
+    vec4 color;       // 0-15
+    vec3 position;    // 16-27
+    float intensity;  // 28-31
+    vec3 direction;   // 32-43
+    float radius;     // 44-47
+    float innerCutoff;// 48-51
+    float outerCutoff;// 52-55
+    int type;         // 56-59
+    int enabled;      // 60-63
 };
 
-#define MAX_LIGHTS 16
-uniform Light lights[MAX_LIGHTS];
+#define MAX_LIGHTS 256
+layout(std430, binding = 0) buffer LightData {
+    Light lights[];
+};

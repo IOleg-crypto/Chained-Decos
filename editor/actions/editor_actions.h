@@ -16,11 +16,12 @@ public:
 
     static void PushCommand(std::unique_ptr<IEditorCommand> command);
 
-    template <typename T, typename F>
-    static void ModifyComponent(Entity entity, const std::string &name, F &&modifier)
+    template <typename T, typename F> static void ModifyComponent(Entity entity, const std::string& name, F&& modifier)
     {
         if (!entity || !entity.HasComponent<T>())
+        {
             return;
+        }
 
         T oldState = entity.GetComponent<T>();
         modifier(entity.GetComponent<T>());
@@ -29,11 +30,11 @@ public:
         PushCommand(std::make_unique<ModifyComponentCommand<T>>(entity, oldState, newState, name));
     }
 
-    bool OnEvent(Event &e);
+    bool OnEvent(Event& e);
 
 private:
-    bool OnKeyPressed(KeyPressedEvent &e);
-    bool OnMouseButtonPressed(MouseButtonPressedEvent &e);
+    bool OnKeyPressed(KeyPressedEvent& e);
+    bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
 };
 
 } // namespace CHEngine

@@ -3,8 +3,8 @@
 
 #include "engine/core/base.h"
 #include "engine/graphics/asset.h"
-#include <future>
 #include "raylib.h"
+#include <future>
 #include <string>
 
 namespace CHEngine
@@ -26,10 +26,10 @@ struct ColliderComponent
 
     // Common/Box fields
     Vector3 Offset = {0.0f, 0.0f, 0.0f};
-    
+
     // Box
     Vector3 Size = {1.0f, 1.0f, 1.0f};
-    
+
     // Capsule
     float Radius = 0.5f;
     float Height = 2.0f;
@@ -44,9 +44,8 @@ struct ColliderComponent
     bool IsColliding = false;
 
     ColliderComponent() = default;
-    ColliderComponent(const ColliderComponent &) = default;
+    ColliderComponent(const ColliderComponent&) = default;
 };
-
 
 struct RigidBodyComponent
 {

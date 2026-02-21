@@ -1,8 +1,8 @@
 #include "editor_camera.h"
-#include "engine/core/input.h"
-#include "engine/scene/project.h"
-#include "engine/scene/components.h"
 #include "editor/editor_layer.h"
+#include "engine/core/input.h"
+#include "engine/scene/components.h"
+#include "engine/scene/project.h"
 #include "raymath.h"
 #include <cmath>
 
@@ -11,7 +11,7 @@ namespace CHEngine
 
 EditorCameraController::EditorCameraController()
 {
-    m_FocalPoint = { 0.0f, 0.0f, 0.0f };
+    m_FocalPoint = {0.0f, 0.0f, 0.0f};
     m_Distance = 10.0f;
     m_Yaw = 0.0f;
     m_Pitch = 0.0f;
@@ -19,8 +19,11 @@ EditorCameraController::EditorCameraController()
 
 void EditorCameraController::OnUpdate(Entity cameraEntity, Timestep ts)
 {
-    if (!cameraEntity || !cameraEntity.HasComponent<TransformComponent>() || !cameraEntity.HasComponent<CameraComponent>())
+    if (!cameraEntity || !cameraEntity.HasComponent<TransformComponent>() ||
+        !cameraEntity.HasComponent<CameraComponent>())
+    {
         return;
+    }
 
     auto& tc = cameraEntity.GetComponent<TransformComponent>();
     float deltaTime = ts;
@@ -34,7 +37,7 @@ void EditorCameraController::OnUpdate(Entity cameraEntity, Timestep ts)
     {
         m_Pitch = tc.Rotation.x * DEG2RAD;
         m_Yaw = tc.Rotation.y * DEG2RAD;
-        
+
         // If position also changed, we might need to update focal point
         // But for now, let's just update the angles to prevent snapping
     }
@@ -46,11 +49,17 @@ void EditorCameraController::OnUpdate(Entity cameraEntity, Timestep ts)
     if (Input::IsKeyDown(KEY_LEFT_ALT))
     {
         if (Input::IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+        {
             MouseRotate(delta);
+        }
         else if (Input::IsMouseButtonDown(MOUSE_BUTTON_MIDDLE))
+        {
             MousePan(delta);
+        }
         else if (Input::IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+        {
             MouseZoom(delta.y);
+        }
     }
     else if (Input::IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
     {
@@ -59,18 +68,38 @@ void EditorCameraController::OnUpdate(Entity cameraEntity, Timestep ts)
 
         float speed = m_MoveSpeed * deltaTime;
         if (Input::IsKeyDown(KEY_LEFT_SHIFT))
+        {
             speed *= m_BoostMultiplier;
+        }
 
         Vector3 forward = GetForwardDirection();
         Vector3 right = GetRightDirection();
-        Vector3 up = { 0, 1, 0 };
+        Vector3 up = {0, 1, 0};
 
-        if (Input::IsKeyDown(KEY_W)) tc.Translation = Vector3Add(tc.Translation, Vector3Scale(forward, speed));
-        if (Input::IsKeyDown(KEY_S)) tc.Translation = Vector3Subtract(tc.Translation, Vector3Scale(forward, speed));
-        if (Input::IsKeyDown(KEY_D)) tc.Translation = Vector3Add(tc.Translation, Vector3Scale(right, speed));
-        if (Input::IsKeyDown(KEY_A)) tc.Translation = Vector3Subtract(tc.Translation, Vector3Scale(right, speed));
-        if (Input::IsKeyDown(KEY_E)) tc.Translation = Vector3Add(tc.Translation, Vector3Scale(up, speed));
-        if (Input::IsKeyDown(KEY_Q)) tc.Translation = Vector3Subtract(tc.Translation, Vector3Scale(up, speed));
+        if (Input::IsKeyDown(KEY_W))
+        {
+            tc.Translation = Vector3Add(tc.Translation, Vector3Scale(forward, speed));
+        }
+        if (Input::IsKeyDown(KEY_S))
+        {
+            tc.Translation = Vector3Subtract(tc.Translation, Vector3Scale(forward, speed));
+        }
+        if (Input::IsKeyDown(KEY_D))
+        {
+            tc.Translation = Vector3Add(tc.Translation, Vector3Scale(right, speed));
+        }
+        if (Input::IsKeyDown(KEY_A))
+        {
+            tc.Translation = Vector3Subtract(tc.Translation, Vector3Scale(right, speed));
+        }
+        if (Input::IsKeyDown(KEY_E))
+        {
+            tc.Translation = Vector3Add(tc.Translation, Vector3Scale(up, speed));
+        }
+        if (Input::IsKeyDown(KEY_Q))
+        {
+            tc.Translation = Vector3Subtract(tc.Translation, Vector3Scale(up, speed));
+        }
 
         // In fly mode, focal point follows position at fixed distance
         m_FocalPoint = Vector3Add(tc.Translation, Vector3Scale(forward, m_Distance));
@@ -78,7 +107,9 @@ void EditorCameraController::OnUpdate(Entity cameraEntity, Timestep ts)
 
     float wheel = Input::GetMouseWheelMove();
     if (wheel != 0)
+    {
         MouseZoom(wheel);
+    }
 
     // Update Transform logic
     tc.RotationQuat = QuaternionFromEuler(m_Pitch, m_Yaw, 0.0f);
@@ -119,17 +150,17 @@ void EditorCameraController::MouseZoom(float delta)
 
 Vector3 EditorCameraController::GetUpDirection() const
 {
-    return Vector3RotateByQuaternion({ 0.0f, 1.0f, 0.0f }, QuaternionFromEuler(m_Pitch, m_Yaw, 0.0f));
+    return Vector3RotateByQuaternion({0.0f, 1.0f, 0.0f}, QuaternionFromEuler(m_Pitch, m_Yaw, 0.0f));
 }
 
 Vector3 EditorCameraController::GetRightDirection() const
 {
-    return Vector3RotateByQuaternion({ 1.0f, 0.0f, 0.0f }, QuaternionFromEuler(m_Pitch, m_Yaw, 0.0f));
+    return Vector3RotateByQuaternion({1.0f, 0.0f, 0.0f}, QuaternionFromEuler(m_Pitch, m_Yaw, 0.0f));
 }
 
 Vector3 EditorCameraController::GetForwardDirection() const
 {
-    return Vector3RotateByQuaternion({ 0.0f, 0.0f, -1.0f }, QuaternionFromEuler(m_Pitch, m_Yaw, 0.0f));
+    return Vector3RotateByQuaternion({0.0f, 0.0f, -1.0f}, QuaternionFromEuler(m_Pitch, m_Yaw, 0.0f));
 }
 
 Vector3 EditorCameraController::CalculatePosition() const
@@ -145,7 +176,7 @@ std::pair<float, float> EditorCameraController::PanSpeed() const
     float y = fminf(m_ViewportHeight / 1000.0f, 2.4f); // max = 2.4f
     float yFactor = 0.0366f * (y * y) - 0.1778f * y + 0.3021f;
 
-    return { xFactor, yFactor };
+    return {xFactor, yFactor};
 }
 
 float EditorCameraController::RotationSpeed() const

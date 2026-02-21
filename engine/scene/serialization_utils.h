@@ -1,231 +1,284 @@
 #ifndef CH_SERIALIZATION_UTILS_H
 #define CH_SERIALIZATION_UTILS_H
 
-#include "engine/core/yaml.h"
 #include "engine/core/uuid.h"
+#include "engine/core/yaml.h"
 #include "engine/scene/project.h"
 #include <filesystem>
 
 namespace CHEngine::SerializationUtils
 {
-    // --- YAML Serialization Helpers ---
-    
-    template<typename T>
-    inline void SerializeProperty(YAML::Emitter& out, const char* name, const T& value)
+// --- YAML Serialization Helpers ---
+
+template <typename T> inline void SerializeProperty(YAML::Emitter& out, const char* name, const T& value)
+{
+    out << YAML::Key << name << YAML::Value << value;
+}
+
+inline void SerializePath(YAML::Emitter& out, const char* name, const std::string& path)
+{
+    if (path.empty())
     {
-        out << YAML::Key << name << YAML::Value << value;
+        out << YAML::Key << name << YAML::Value << "";
+        return;
     }
 
-    inline void SerializePath(YAML::Emitter& out, const char* name, const std::string& path)
+    std::string relativePath = Project::GetRelativePath(path);
+    out << YAML::Key << name << YAML::Value << relativePath;
+}
+
+inline void SerializeHandle(YAML::Emitter& out, const char* name, uint64_t handle)
+{
+    out << YAML::Key << name << YAML::Value << handle;
+}
+
+// --- YAML Deserialization Helpers ---
+
+template <typename T> inline void DeserializeProperty(YAML::Node node, const char* name, T& value)
+{
+    if (node[name])
     {
-        if (path.empty()) {
-            out << YAML::Key << name << YAML::Value << "";
+        value = node[name].as<T>();
+    }
+}
+
+inline void DeserializePath(YAML::Node node, const char* name, std::string& path)
+{
+    if (node[name])
+    {
+        std::string pathValue = node[name].as<std::string>();
+        if (pathValue.empty())
+        {
+            path = "";
             return;
         }
 
-        std::string relativePath = Project::GetRelativePath(path);
-        out << YAML::Key << name << YAML::Value << relativePath;
-    }
+        std::filesystem::path fsPath(pathValue);
 
-    inline void SerializeHandle(YAML::Emitter& out, const char* name, uint64_t handle)
-    {
-        out << YAML::Key << name << YAML::Value << handle;
-    }
-
-    // --- YAML Deserialization Helpers ---
-
-    template<typename T>
-    inline void DeserializeProperty(YAML::Node node, const char* name, T& value)
-    {
-        if (node[name])
-            value = node[name].as<T>();
-    }
-
-    inline void DeserializePath(YAML::Node node, const char* name, std::string& path)
-    {
-        if (node[name])
+        // If path is already absolute - keep it as is
+        if (fsPath.is_absolute())
         {
-            std::string pathValue = node[name].as<std::string>();
-            if (pathValue.empty()) {
-                path = "";
-                return;
-            }
-
-            std::filesystem::path fsPath(pathValue);
-            
-            // If path is already absolute - keep it as is
-            if (fsPath.is_absolute()) {
-                path = pathValue;
-                #ifdef CH_PLATFORM_WINDOWS
-                std::replace(path.begin(), path.end(), '\\', '/');
-                std::transform(path.begin(), path.end(), path.begin(), ::tolower);
-                #endif
-                return;
-            }
-
-            // If relative - KEEP IT RELATIVE!
-            // AssetManager will resolve it to absolute when loading
             path = pathValue;
-            
-            #ifdef CH_PLATFORM_WINDOWS
+#ifdef CH_PLATFORM_WINDOWS
             std::replace(path.begin(), path.end(), '\\', '/');
             std::transform(path.begin(), path.end(), path.begin(), ::tolower);
-            #endif
+#endif
+            return;
         }
+
+        // If relative - KEEP IT RELATIVE!
+        // AssetManager will resolve it to absolute when loading
+        path = pathValue;
+
+#ifdef CH_PLATFORM_WINDOWS
+        std::replace(path.begin(), path.end(), '\\', '/');
+        std::transform(path.begin(), path.end(), path.begin(), ::tolower);
+#endif
+    }
+}
+
+inline void DeserializeHandle(YAML::Node node, const char* name, uint64_t& handle)
+{
+    if (node[name])
+    {
+        handle = node[name].as<uint64_t>();
+    }
+}
+
+inline void DeserializePath(YAML::Node node, const char* name, std::filesystem::path& path)
+{
+    std::string pathStr;
+    DeserializePath(node, name, pathStr);
+    if (!pathStr.empty())
+    {
+        path = pathStr;
+    }
+}
+
+// For optional components or complex types that might be missing
+template <typename T> inline bool HasProperty(YAML::Node node, const char* name)
+{
+    return node[name].IsDefined();
+}
+
+// ========================================================================
+// PropertyArchive - Declarative Serialization/Deserialization
+// ========================================================================
+// Allows defining component layout once for both save/load operations
+
+class PropertyArchive
+{
+public:
+    enum Mode
+    {
+        Serialize,
+        Deserialize
+    };
+
+    // Serialize constructor
+    PropertyArchive(YAML::Emitter& emitter)
+        : m_Mode(Serialize),
+          m_Out(&emitter),
+          m_Node()
+    {
     }
 
-    inline void DeserializeHandle(YAML::Node node, const char* name, uint64_t& handle)
+    // Deserialize constructor
+    PropertyArchive(YAML::Node node)
+        : m_Mode(Deserialize),
+          m_Out(nullptr),
+          m_Node(node)
     {
-        if (node[name])
-            handle = node[name].as<uint64_t>();
     }
 
-    inline void DeserializePath(YAML::Node node, const char* name, std::filesystem::path& path)
+    // Check if property exists (for backwards compatibility/migrations)
+    bool HasProperty(const char* name)
     {
-        std::string pathStr;
-        DeserializePath(node, name, pathStr);
-        if (!pathStr.empty())
-            path = pathStr;
+        if (m_Mode == Serialize)
+        {
+            return true; // Always "has" property in serialize mode (conceptually) or return false?
+                         // Actually for migration checks we usually check if generic properties exist in READ mode.
+        }
+        return m_Node[name].IsDefined();
     }
 
-    // For optional components or complex types that might be missing
-    template<typename T>
-    inline bool HasProperty(YAML::Node node, const char* name)
+    // Generic property handler
+    template <typename T> PropertyArchive& operator()(const char* name, T& value)
     {
-        return node[name].IsDefined();
+        if (m_Mode == Serialize)
+        {
+            SerializeProperty(*m_Out, name, value);
+        }
+        else
+        {
+            DeserializeProperty(m_Node, name, value);
+        }
+        return *this;
     }
 
-    // ========================================================================
-    // PropertyArchive - Declarative Serialization/Deserialization
-    // ========================================================================
-    // Allows defining component layout once for both save/load operations
-
-    class PropertyArchive
+    // Fluent alias for property
+    template <typename T> PropertyArchive& Property(const char* name, T& value)
     {
-    public:
-        enum Mode { Serialize, Deserialize };
+        return (*this)(name, value);
+    }
 
-        // Serialize constructor
-        PropertyArchive(YAML::Emitter& emitter) 
-            : m_Mode(Serialize), m_Out(&emitter), m_Node() {}
-
-        // Deserialize constructor
-        PropertyArchive(YAML::Node node) 
-            : m_Mode(Deserialize), m_Out(nullptr), m_Node(node) {}
-
-        // Check if property exists (for backwards compatibility/migrations)
-        bool HasProperty(const char* name)
+    // Path property (handles relative/absolute conversion)
+    PropertyArchive& Path(const char* name, std::string& path)
+    {
+        if (m_Mode == Serialize)
         {
-            if (m_Mode == Serialize) return true; // Always "has" property in serialize mode (conceptually) or return false? 
-                                                  // Actually for migration checks we usually check if generic properties exist in READ mode.
-            return m_Node[name].IsDefined();
+            SerializePath(*m_Out, name, path);
         }
-
-        // Generic property handler
-        template<typename T>
-        PropertyArchive& operator()(const char* name, T& value)
+        else
         {
-            if (m_Mode == Serialize)
-                SerializeProperty(*m_Out, name, value);
-            else
-                DeserializeProperty(m_Node, name, value);
-            return *this;
+            DeserializePath(m_Node, name, path);
         }
+        return *this;
+    }
 
-        // Fluent alias for property
-        template<typename T>
-        PropertyArchive& Property(const char* name, T& value)
+    PropertyArchive& Path(const char* name, std::filesystem::path& path)
+    {
+        if (m_Mode == Serialize)
         {
-            return (*this)(name, value);
+            SerializePath(*m_Out, name, path.string());
         }
-
-        // Path property (handles relative/absolute conversion)
-        PropertyArchive& Path(const char* name, std::string& path)
+        else
         {
-            if (m_Mode == Serialize)
-                SerializePath(*m_Out, name, path);
-            else
-                DeserializePath(m_Node, name, path);
-            return *this;
+            DeserializePath(m_Node, name, path);
         }
+        return *this;
+    }
 
-        PropertyArchive& Path(const char* name, std::filesystem::path& path)
+    PropertyArchive& Handle(const char* name, uint64_t& handle)
+    {
+        if (m_Mode == Serialize)
         {
-            if (m_Mode == Serialize)
-                SerializePath(*m_Out, name, path.string());
-            else
-                DeserializePath(m_Node, name, path);
-            return *this;
+            SerializeHandle(*m_Out, name, handle);
         }
-
-        PropertyArchive& Handle(const char* name, uint64_t& handle)
+        else
         {
-            if (m_Mode == Serialize)
-                SerializeHandle(*m_Out, name, handle);
-            else
-                DeserializeHandle(m_Node, name, handle);
-            return *this;
+            DeserializeHandle(m_Node, name, handle);
         }
+        return *this;
+    }
 
-        PropertyArchive& Handle(const char* name, UUID& handle)
+    PropertyArchive& Handle(const char* name, UUID& handle)
+    {
+        uint64_t& id = (uint64_t&)handle;
+        if (m_Mode == Serialize)
         {
-            uint64_t& id = (uint64_t&)handle;
-            if (m_Mode == Serialize)
-                SerializeHandle(*m_Out, name, id);
-            else
-                DeserializeHandle(m_Node, name, id);
-            return *this;
+            SerializeHandle(*m_Out, name, id);
         }
-
-        // Nested structure (TextStyle, UIStyle, etc.)
-        template<typename T, typename SerFunc, typename DeserFunc>
-        PropertyArchive& Nested(const char* name, T& value, SerFunc serializeFunc, DeserFunc deserializeFunc)
+        else
         {
-            if (m_Mode == Serialize)
+            DeserializeHandle(m_Node, name, id);
+        }
+        return *this;
+    }
+
+    // Nested structure (TextStyle, UIStyle, etc.)
+    template <typename T, typename SerFunc, typename DeserFunc>
+    PropertyArchive& Nested(const char* name, T& value, SerFunc serializeFunc, DeserFunc deserializeFunc)
+    {
+        if (m_Mode == Serialize)
+        {
+            *m_Out << YAML::Key << name << YAML::Value;
+            serializeFunc(*m_Out, value);
+        }
+        else
+        {
+            if (m_Node[name])
             {
-                *m_Out << YAML::Key << name << YAML::Value;
-                serializeFunc(*m_Out, value);
+                deserializeFunc(value, m_Node[name]);
             }
-            else
-            {
-                if (m_Node[name])
-                    deserializeFunc(value, m_Node[name]);
-            }
-            return *this;
         }
+        return *this;
+    }
 
-        // Array/Sequence property
-        template<typename T>
-        PropertyArchive& Sequence(const char* name, std::vector<T>& vec)
+    // Array/Sequence property
+    template <typename T> PropertyArchive& Sequence(const char* name, std::vector<T>& vec)
+    {
+        if (m_Mode == Serialize)
         {
-            if (m_Mode == Serialize)
+            *m_Out << YAML::Key << name << YAML::Value << YAML::BeginSeq;
+            for (const auto& item : vec)
             {
-                *m_Out << YAML::Key << name << YAML::Value << YAML::BeginSeq;
-                for (const auto& item : vec)
-                    *m_Out << item;
-                *m_Out << YAML::EndSeq;
+                *m_Out << item;
             }
-            else
+            *m_Out << YAML::EndSeq;
+        }
+        else
+        {
+            if (m_Node[name] && m_Node[name].IsSequence())
             {
-                if (m_Node[name] && m_Node[name].IsSequence())
+                vec.clear();
+                for (auto item : m_Node[name])
                 {
-                    vec.clear();
-                    for (auto item : m_Node[name])
-                        vec.push_back(item.template as<T>());
+                    vec.push_back(item.template as<T>());
                 }
             }
-            return *this;
         }
+        return *this;
+    }
 
-        Mode GetMode() const { return m_Mode; }
-        YAML::Emitter* GetEmitter() { return m_Out; }
-        YAML::Node GetNode() { return m_Node; }
+    Mode GetMode() const
+    {
+        return m_Mode;
+    }
+    YAML::Emitter* GetEmitter()
+    {
+        return m_Out;
+    }
+    YAML::Node GetNode()
+    {
+        return m_Node;
+    }
 
-    private:
-        Mode m_Mode;
-        YAML::Emitter* m_Out;
-        YAML::Node m_Node;
-    };
-}
+private:
+    Mode m_Mode;
+    YAML::Emitter* m_Out;
+    YAML::Node m_Node;
+};
+} // namespace CHEngine::SerializationUtils
 
 #endif // CH_SERIALIZATION_UTILS_H

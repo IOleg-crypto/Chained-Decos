@@ -1,6 +1,5 @@
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
-#include "engine/scene/scene.h"
 #include "gtest/gtest.h"
 
 using namespace CHEngine;
@@ -49,7 +48,7 @@ TEST(SceneTest, EntityRenaming)
     Scene scene;
     Entity entity = scene.CreateEntity("Old Name");
 
-    auto &tag = entity.GetComponent<TagComponent>().Tag;
+    auto& tag = entity.GetComponent<TagComponent>().Tag;
     EXPECT_EQ(tag, "Old Name");
 
     tag = "New Name";

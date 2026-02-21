@@ -1,7 +1,7 @@
-#include "engine/scene/scene.h"
-#include "engine/scene/scene_serializer.h"
 #include "engine/scene/component_serializer.h"
 #include "engine/scene/components.h"
+#include "engine/scene/scene.h"
+#include "engine/scene/scene_serializer.h"
 #include "gtest/gtest.h"
 #include <filesystem>
 
@@ -19,7 +19,7 @@ TEST(SceneSerializationTest, SaveAndLoadScene)
         Entity entity = scene.CreateEntity("Serialized Entity");
         entityID = entity.GetUUID();
         entity.AddComponent<CameraComponent>().Primary = true;
-        
+
         SceneSerializer serializer(&scene);
         serializer.Serialize(testPath);
     }

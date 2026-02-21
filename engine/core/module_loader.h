@@ -3,17 +3,19 @@
 
 #include <string>
 
-namespace CHEngine {
+namespace CHEngine
+{
 
-    class ScriptRegistry;
+class ScriptRegistry;
 
-    class ModuleLoader {
-    public:
-        // ABI-safe: loads DLL, passes a C-callback for script registration
-        static bool LoadGameModule(const std::string& dllPath, ScriptRegistry* registry);
-        static void UnloadGameModule();
-    };
+class ModuleLoader
+{
+public:
+    // ABI-safe: loads DLL, passes a C-callback for script registration
+    static bool LoadGameModule(const std::string& dllPath, ScriptRegistry* registry);
+    static void UnloadGameModule();
+};
 
-}
+} // namespace CHEngine
 
 #endif // CH_MODULE_LOADER_H

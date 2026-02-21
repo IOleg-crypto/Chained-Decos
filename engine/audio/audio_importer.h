@@ -7,14 +7,14 @@
 
 namespace CHEngine
 {
-    class AudioImporter
-    {
-    public:
-        static std::shared_ptr<SoundAsset> ImportSound(const std::string& path);
-        
-        // For async loading
-        static void ImportSoundAsync(const std::shared_ptr<SoundAsset>& asset, const std::string& path);
-    };
-}
+class AudioImporter
+{
+public:
+    static std::shared_ptr<SoundAsset> ImportSound(const std::string& path);
+
+    // For async loading
+    static void ImportSoundAsync(const std::shared_ptr<SoundAsset>& asset, const std::string& path);
+};
+} // namespace CHEngine
 
 #endif // CH_AUDIO_IMPORTER_H

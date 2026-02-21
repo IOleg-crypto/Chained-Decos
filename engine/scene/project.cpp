@@ -1,9 +1,9 @@
 #include "project.h"
-#include "project_serializer.h"
 #include "engine/graphics/asset_manager.h"
-#include "engine/graphics/renderer.h"
 #include "engine/graphics/environment.h"
+#include "engine/graphics/renderer.h"
 #include "imgui.h"
+#include "project_serializer.h"
 
 namespace CHEngine
 {
@@ -19,12 +19,12 @@ std::shared_ptr<Project> Project::New()
     return s_ActiveProject;
 }
 
-std::shared_ptr<Project> Project::Load(const std::filesystem::path &path)
+std::shared_ptr<Project> Project::Load(const std::filesystem::path& path)
 {
     std::shared_ptr<Project> project = std::make_shared<Project>();
     project->m_AssetManager = std::make_shared<AssetManager>();
     project->m_AssetManager->Initialize(path.parent_path());
-    
+
     project->m_Config.ProjectDirectory = path.parent_path();
     s_ActiveProject = project;
 
@@ -61,7 +61,7 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path &path)
         // Register asset search path
         project->m_AssetManager->ClearSearchPaths();
         project->m_AssetManager->AddSearchPath(project->m_Config.ProjectDirectory / project->m_Config.AssetDirectory);
-        
+
         if (!s_EngineRoot.empty())
         {
             project->m_AssetManager->AddSearchPath(s_EngineRoot);
@@ -71,7 +71,8 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path &path)
         // Load environment if specified
         if (!project->m_Config.EnvironmentPath.empty())
         {
-            project->m_Environment = project->m_AssetManager->Get<EnvironmentAsset>(project->m_Config.EnvironmentPath.string());
+            project->m_Environment =
+                project->m_AssetManager->Get<EnvironmentAsset>(project->m_Config.EnvironmentPath.string());
         }
 
         // --- Automated Shader Discovery ---
@@ -87,7 +88,7 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path &path)
                     {
                         std::string name = entry.path().stem().string();
                         std::string relPath = project->GetRelativePath(entry.path());
-                        
+
                         if (!lib.Exists(name))
                         {
                             lib.Load(name, relPath);
@@ -105,10 +106,13 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path &path)
     return nullptr;
 }
 
-std::filesystem::path Project::Discover(const std::filesystem::path &startPath, const std::string& hintName)
+std::filesystem::path Project::Discover(const std::filesystem::path& startPath, const std::string& hintName)
 {
     std::filesystem::path current = startPath.empty() ? std::filesystem::current_path() : startPath;
-    if (std::filesystem::is_regular_file(current)) current = current.parent_path();
+    if (std::filesystem::is_regular_file(current))
+    {
+        current = current.parent_path();
+    }
 
     CH_CORE_INFO("Project: Discovering project starting from: {} (Hint: {})", current.string(), hintName);
 
@@ -156,24 +160,29 @@ std::filesystem::path Project::Discover(const std::filesystem::path &startPath, 
                         }
                     }
                 }
-                
+
                 // If nested search didn't find the hint, return the first found .chproject in gameDir
                 for (const auto& entry : std::filesystem::recursive_directory_iterator(gameDir, ec))
                 {
                     if (entry.path().extension() == ".chproject")
+                    {
                         return entry.path();
+                    }
                 }
             }
         }
-        
-        if (!current.has_parent_path() || current == current.root_path()) break;
+
+        if (!current.has_parent_path() || current == current.root_path())
+        {
+            break;
+        }
         current = current.parent_path();
     }
 
     return "";
 }
 
-bool Project::SaveActive(const std::filesystem::path &path)
+bool Project::SaveActive(const std::filesystem::path& path)
 {
     ProjectSerializer serializer(s_ActiveProject);
     if (serializer.Serialize(path))
@@ -184,63 +193,67 @@ bool Project::SaveActive(const std::filesystem::path &path)
 
     return false;
 }
-    std::vector<std::string> Project::GetAvailableScenes()
+std::vector<std::string> Project::GetAvailableScenes()
+{
+    std::vector<std::string> scenes;
+    if (!s_ActiveProject)
     {
-        std::vector<std::string> scenes;
-        if (!s_ActiveProject)
-            return scenes;
-
-        auto assetDir = GetAssetDirectory();
-        auto scenesDir = assetDir / "scenes";
-
-        if (std::filesystem::exists(scenesDir))
-        {
-            for (auto &entry : std::filesystem::recursive_directory_iterator(scenesDir))
-            {
-                if (entry.path().extension() == ".chscene")
-                {
-                    std::string relPath = std::filesystem::relative(entry.path(), assetDir).string();
-                    scenes.push_back(relPath);
-                }
-            }
-        }
         return scenes;
     }
 
-    // -------------------------------------------------------------------------------------------------------------------
-    // Path Utility Helpers
-    // -------------------------------------------------------------------------------------------------------------------
+    auto assetDir = GetAssetDirectory();
+    auto scenesDir = assetDir / "scenes";
 
-    std::filesystem::path Project::NormalizePath(const std::filesystem::path& path)
+    if (std::filesystem::exists(scenesDir))
     {
-        std::filesystem::path normalized = std::filesystem::absolute(path).lexically_normal();
-        
-        #ifdef CH_PLATFORM_WINDOWS
-        // Normalize drive letter to lowercase for consistent comparison
-        std::string pathStr = normalized.generic_string();
-        std::transform(pathStr.begin(), pathStr.end(), pathStr.begin(), ::tolower);
-        normalized = pathStr;
-        #endif
-        
-        return normalized;
-    }
-
-    std::optional<std::string> Project::TryMakeRelative(
-        const std::filesystem::path& absolutePath,
-        const std::filesystem::path& basePath)
-    {
-        if (basePath.empty())
-            return std::nullopt;
-        
-        auto normalizedBase = NormalizePath(basePath);
-        std::filesystem::path rel = std::filesystem::relative(absolutePath, normalizedBase);
-        std::string relStr = rel.generic_string();
-            
-        // Only return if path doesn't escape the base directory
-        if (relStr.find("..") == std::string::npos) {
-            return relStr;
+        for (auto& entry : std::filesystem::recursive_directory_iterator(scenesDir))
+        {
+            if (entry.path().extension() == ".chscene")
+            {
+                std::string relPath = std::filesystem::relative(entry.path(), assetDir).string();
+                scenes.push_back(relPath);
+            }
         }
-        
+    }
+    return scenes;
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+// Path Utility Helpers
+// -------------------------------------------------------------------------------------------------------------------
+
+std::filesystem::path Project::NormalizePath(const std::filesystem::path& path)
+{
+    std::filesystem::path normalized = std::filesystem::absolute(path).lexically_normal();
+
+#ifdef CH_PLATFORM_WINDOWS
+    // Normalize drive letter to lowercase for consistent comparison
+    std::string pathStr = normalized.generic_string();
+    std::transform(pathStr.begin(), pathStr.end(), pathStr.begin(), ::tolower);
+    normalized = pathStr;
+#endif
+
+    return normalized;
+}
+
+std::optional<std::string> Project::TryMakeRelative(const std::filesystem::path& absolutePath,
+                                                    const std::filesystem::path& basePath)
+{
+    if (basePath.empty())
+    {
         return std::nullopt;
     }
+
+    auto normalizedBase = NormalizePath(basePath);
+    std::filesystem::path rel = std::filesystem::relative(absolutePath, normalizedBase);
+    std::string relStr = rel.generic_string();
+
+    // Only return if path doesn't escape the base directory
+    if (relStr.find("..") == std::string::npos)
+    {
+        return relStr;
+    }
+
+    return std::nullopt;
+}
 } // namespace CHEngine

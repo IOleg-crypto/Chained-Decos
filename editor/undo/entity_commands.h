@@ -10,15 +10,15 @@ namespace CHEngine
 class DestroyEntityCommand : public IEditorCommand
 {
 public:
-    DestroyEntityCommand(Entity entity) 
-        : m_Entity(entity), m_Scene(entity.GetRegistry().ctx().get<Scene*>())
+    DestroyEntityCommand(Entity entity)
+        : m_Entity(entity),
+          m_Scene(entity.GetRegistry().ctx().get<Scene*>())
     {
     }
 
     void Execute() override
     {
-        CH_CORE_INFO("Destroying entity via command: {}",
-                     m_Entity.GetComponent<TagComponent>().Tag);
+        CH_CORE_INFO("Destroying entity via command: {}", m_Entity.GetComponent<TagComponent>().Tag);
         m_Scene->DestroyEntity(m_Entity);
     }
 
@@ -34,14 +34,16 @@ public:
 
 private:
     Entity m_Entity;
-    Scene *m_Scene;
+    Scene* m_Scene;
 };
 
 class CreateEntityCommand : public IEditorCommand
 {
 public:
-    CreateEntityCommand(Scene *scene, const std::string &name, const std::string &modelPath = "")
-        : m_Scene(scene), m_Name(name), m_ModelPath(modelPath)
+    CreateEntityCommand(Scene* scene, const std::string& name, const std::string& modelPath = "")
+        : m_Scene(scene),
+          m_Name(name),
+          m_ModelPath(modelPath)
     {
     }
 
@@ -50,7 +52,7 @@ public:
         m_Entity = m_Scene->CreateEntity(m_Name);
         if (!m_ModelPath.empty())
         {
-            auto &mc = m_Entity.AddComponent<ModelComponent>();
+            auto& mc = m_Entity.AddComponent<ModelComponent>();
             mc.ModelPath = m_ModelPath;
         }
     }
@@ -58,7 +60,9 @@ public:
     void Undo() override
     {
         if (m_Entity)
+        {
             m_Scene->DestroyEntity(m_Entity);
+        }
     }
 
     std::string GetName() const override
@@ -67,7 +71,7 @@ public:
     }
 
 private:
-    Scene *m_Scene;
+    Scene* m_Scene;
     std::string m_Name;
     std::string m_ModelPath;
     Entity m_Entity;

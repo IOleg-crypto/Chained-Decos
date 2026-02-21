@@ -6,17 +6,18 @@
 
 namespace CHEngine
 {
-    class ProjectSerializer
-    {
-    public:
-        ProjectSerializer(std::shared_ptr<Project> project);
-    public:
-        bool Serialize(const std::filesystem::path &filepath);
-        bool Deserialize(const std::filesystem::path &filepath);
+class ProjectSerializer
+{
+public:
+    ProjectSerializer(std::shared_ptr<Project> project);
 
-    private:
-        std::shared_ptr<Project> m_Project;
-    };
+public:
+    bool Serialize(const std::filesystem::path& filepath);
+    bool Deserialize(const std::filesystem::path& filepath);
+
+private:
+    std::shared_ptr<Project> m_Project;
+};
 } // namespace CHEngine
 
 #endif // CH_PROJECT_SERIALIZER_H

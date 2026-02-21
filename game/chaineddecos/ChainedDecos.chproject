@@ -15,6 +15,9 @@ Project:
   Render:
     AmbientIntensity: 0
     DefaultExposure: 1.23000002
+  Texture:
+    GenerateMipmaps: true
+    Filter: 2
   Window:
     Width: 1920
     Height: 1080

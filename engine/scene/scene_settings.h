@@ -4,30 +4,37 @@
 #include "engine/graphics/environment.h"
 #include "engine/scene/components/control_component.h"
 #include "raylib.h"
-#include <string>
 #include <memory>
+#include <string>
 
 namespace CHEngine
 {
-    enum class BackgroundMode
-    {
-        Color = 0,
-        Texture = 1,
-        Environment3D = 2
-    };
+enum class BackgroundMode
+{
+    Color = 0,
+    Texture = 1,
+    Environment3D = 2
+};
 
-    struct SceneSettings
-    {
-        std::string Name = "Untitled Scene";
-        std::string ScenePath;
-        std::shared_ptr<EnvironmentAsset> Environment;
-        
-        BackgroundMode Mode = BackgroundMode::Environment3D;
-        Color BackgroundColor = {30, 30, 30, 255};
-        std::string BackgroundTexturePath;
+struct GridSettings
+{
+    int   Slices  = 20;
+    float Spacing = 1.0f;
+};
 
-        CanvasSettings Canvas;
-    };
+struct SceneSettings
+{
+    std::string Name = "Untitled Scene";
+    std::string ScenePath;
+    std::shared_ptr<EnvironmentAsset> Environment;
+
+    BackgroundMode Mode = BackgroundMode::Environment3D;
+    Color BackgroundColor = {30, 30, 30, 255};
+    std::string BackgroundTexturePath;
+
+    CanvasSettings Canvas;
+    GridSettings   Grid;
+};
 
 } // namespace CHEngine
 

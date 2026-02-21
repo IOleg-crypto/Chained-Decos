@@ -1,6 +1,5 @@
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
-#include "engine/scene/scene.h"
 #include "gtest/gtest.h"
 
 using namespace CHEngine;
@@ -11,8 +10,8 @@ TEST(HierarchyTest, BasicParenting)
     Entity parent = scene.CreateEntity("Parent");
     Entity child = scene.CreateEntity("Child");
 
-    auto &phc = parent.AddComponent<HierarchyComponent>();
-    auto &chc = child.AddComponent<HierarchyComponent>();
+    auto& phc = parent.AddComponent<HierarchyComponent>();
+    auto& chc = child.AddComponent<HierarchyComponent>();
 
     chc.Parent = (entt::entity)parent;
     phc.Children.push_back((entt::entity)child);
@@ -45,8 +44,8 @@ TEST(HierarchyTest, ClearParent)
     Entity parent = scene.CreateEntity("Parent");
     Entity child = scene.CreateEntity("Child");
 
-    auto &phc = parent.AddComponent<HierarchyComponent>();
-    auto &chc = child.AddComponent<HierarchyComponent>();
+    auto& phc = parent.AddComponent<HierarchyComponent>();
+    auto& chc = child.AddComponent<HierarchyComponent>();
 
     chc.Parent = (entt::entity)parent;
     phc.Children.push_back((entt::entity)child);
@@ -55,7 +54,9 @@ TEST(HierarchyTest, ClearParent)
     chc.Parent = entt::null;
     auto it = std::find(phc.Children.begin(), phc.Children.end(), (entt::entity)child);
     if (it != phc.Children.end())
+    {
         phc.Children.erase(it);
+    }
 
     // Using true/false check because entt::null is a template thing that might confuse EXPECT_EQ
     EXPECT_TRUE(chc.Parent == entt::null);

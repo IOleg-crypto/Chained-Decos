@@ -18,7 +18,7 @@ protected:
         InitWindow(1, 1, "AssetManagerTest");
 
         m_AssetManager = std::make_unique<AssetManager>();
-        
+
         // Final check if InitWindow actually worked
         if (IsWindowReady())
         {
@@ -49,7 +49,9 @@ protected:
 TEST_F(AssetManagerTest, ProceduralModelLoading)
 {
     if (!IsWindowReady() || !m_AssetManager)
+    {
         return;
+    }
 
     auto cube = m_AssetManager->Get<ModelAsset>(":cube:");
     EXPECT_TRUE(cube);
@@ -59,7 +61,9 @@ TEST_F(AssetManagerTest, ProceduralModelLoading)
 TEST_F(AssetManagerTest, ModelCaching)
 {
     if (!IsWindowReady() || !m_AssetManager)
+    {
         return;
+    }
 
     auto cube1 = m_AssetManager->Get<ModelAsset>(":cube:");
     auto cube2 = m_AssetManager->Get<ModelAsset>(":cube:");
@@ -71,25 +75,27 @@ TEST_F(AssetManagerTest, ModelCaching)
 TEST_F(AssetManagerTest, Unloading)
 {
     if (!IsWindowReady() || !m_AssetManager)
+    {
         return;
+    }
 
     auto cube = m_AssetManager->Get<ModelAsset>(":cube:");
     EXPECT_TRUE(cube);
-    
+
     m_AssetManager->Remove<ModelAsset>(":cube:");
-    // Cube shouldn't be in the cache, but since we didn't add a 'HasInCache' check yet, 
+    // Cube shouldn't be in the cache, but since we didn't add a 'HasInCache' check yet,
     // we'll just check that it loads again.
 }
 
 TEST_F(AssetManagerTest, AsyncLoading)
 {
     if (!IsWindowReady() || !m_AssetManager)
+    {
         return;
+    }
 
     // Test async loading of a procedural model
-    auto cubeFuture = std::async(std::launch::async, [this]() {
-        return m_AssetManager->Get<ModelAsset>(":cube:");
-    });
+    auto cubeFuture = std::async(std::launch::async, [this]() { return m_AssetManager->Get<ModelAsset>(":cube:"); });
 
     auto cube = cubeFuture.get();
     ASSERT_TRUE(cube);

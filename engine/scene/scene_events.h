@@ -12,16 +12,17 @@ namespace CHEngine
 class ProjectCreatedEvent : public Event
 {
 public:
-    ProjectCreatedEvent(const std::string &name, const std::string &path)
-        : m_Name(name), m_Path(path)
+    ProjectCreatedEvent(const std::string& name, const std::string& path)
+        : m_Name(name),
+          m_Path(path)
     {
     }
 
-    const std::string &GetProjectName() const
+    const std::string& GetProjectName() const
     {
         return m_Name;
     }
-    const std::string &GetPath() const
+    const std::string& GetPath() const
     {
         return m_Path;
     }
@@ -37,11 +38,12 @@ private:
 class ProjectOpenedEvent : public Event
 {
 public:
-    ProjectOpenedEvent(const std::string &path) : m_Path(path)
+    ProjectOpenedEvent(const std::string& path)
+        : m_Path(path)
     {
     }
 
-    const std::string &GetPath() const
+    const std::string& GetPath() const
     {
         return m_Path;
     }
@@ -56,11 +58,12 @@ private:
 class SceneOpenedEvent : public Event
 {
 public:
-    SceneOpenedEvent(const std::string &path) : m_Path(path)
+    SceneOpenedEvent(const std::string& path)
+        : m_Path(path)
     {
     }
 
-    const std::string &GetPath() const
+    const std::string& GetPath() const
     {
         return m_Path;
     }
@@ -76,8 +79,10 @@ private:
 class EntitySelectedEvent : public Event
 {
 public:
-    EntitySelectedEvent(entt::entity entity, class Scene *scene, int meshIndex = -1)
-        : m_Entity(entity), m_Scene(scene), m_MeshIndex(meshIndex)
+    EntitySelectedEvent(entt::entity entity, class Scene* scene, int meshIndex = -1)
+        : m_Entity(entity),
+          m_Scene(scene),
+          m_MeshIndex(meshIndex)
     {
     }
 
@@ -85,7 +90,7 @@ public:
     {
         return m_Entity;
     }
-    class Scene *GetScene() const
+    class Scene* GetScene() const
     {
         return m_Scene;
     }
@@ -99,7 +104,7 @@ public:
 
 private:
     entt::entity m_Entity;
-    class Scene *m_Scene;
+    class Scene* m_Scene;
     int m_MeshIndex = -1;
 };
 
@@ -122,11 +127,12 @@ public:
 class SceneChangeRequestEvent : public Event
 {
 public:
-    SceneChangeRequestEvent(const std::string &path) : m_Path(path)
+    SceneChangeRequestEvent(const std::string& path)
+        : m_Path(path)
     {
     }
 
-    const std::string &GetPath() const
+    const std::string& GetPath() const
     {
         return m_Path;
     }
@@ -137,8 +143,6 @@ public:
 private:
     std::string m_Path;
 };
-
-
 
 } // namespace CHEngine
 

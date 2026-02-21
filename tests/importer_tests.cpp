@@ -1,11 +1,11 @@
+#include "engine/audio/audio_importer.h"
 #include "engine/core/base.h"
 #include "engine/graphics/environment_importer.h"
-#include "engine/graphics/shader_importer.h"
 #include "engine/graphics/font_importer.h"
-#include "engine/audio/audio_importer.h"
 #include "engine/graphics/mesh_importer.h"
-#include "gtest/gtest.h"
+#include "engine/graphics/shader_importer.h"
 #include "raylib.h"
+#include "gtest/gtest.h"
 #include <filesystem>
 #include <fstream>
 
@@ -19,16 +19,25 @@ protected:
         // HIDDEN window for raylib resource loading tests
         SetConfigFlags(FLAG_WINDOW_HIDDEN);
         InitWindow(1, 1, "ImporterTest");
-        if (IsAudioDeviceReady() == false) InitAudioDevice();
-        
+        if (IsAudioDeviceReady() == false)
+        {
+            InitAudioDevice();
+        }
+
         std::filesystem::create_directories("test_assets");
     }
 
     void TearDown() override
     {
-        if (IsAudioDeviceReady()) CloseAudioDevice();
-        if (IsWindowReady()) CloseWindow();
-        
+        if (IsAudioDeviceReady())
+        {
+            CloseAudioDevice();
+        }
+        if (IsWindowReady())
+        {
+            CloseWindow();
+        }
+
         std::filesystem::remove_all("test_assets");
     }
 };
@@ -36,7 +45,7 @@ protected:
 TEST_F(ImporterTest, EnvironmentImporter_SaveAndLoad)
 {
     std::string testPath = "test_assets/test.chenv";
-    
+
     auto env = std::make_shared<EnvironmentAsset>();
     env->GetSettings().Lighting.Ambient = 0.5f;
     env->GetSettings().Lighting.LightColor = RED;
@@ -50,7 +59,7 @@ TEST_F(ImporterTest, EnvironmentImporter_SaveAndLoad)
     auto loadedEnv = EnvironmentImporter::ImportEnvironment(testPath);
     ASSERT_TRUE(loadedEnv);
     EXPECT_FLOAT_EQ(loadedEnv->GetSettings().Lighting.Ambient, 0.5f);
-    
+
     Color expectedColor = RED;
     EXPECT_EQ(loadedEnv->GetSettings().Lighting.LightColor.r, expectedColor.r);
     EXPECT_TRUE(loadedEnv->GetSettings().Fog.Enabled);
@@ -65,7 +74,7 @@ TEST_F(ImporterTest, ShaderImporter_ParseConfig)
     fs << "  FragmentPath: \"fragment.glsl\"\n";
     fs.close();
 
-    // Since we don't have real GLSL files here, we expect failure in actual loading, 
+    // Since we don't have real GLSL files here, we expect failure in actual loading,
     // but the importer should at least try to read the YAML.
     // For now, let's just assert it handles non-existent files gracefully.
     auto shader = ShaderImporter::ImportShader(testPath);

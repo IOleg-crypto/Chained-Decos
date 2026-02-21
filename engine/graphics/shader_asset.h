@@ -12,26 +12,38 @@ namespace CHEngine
 class ShaderAsset : public Asset
 {
 public:
-    static AssetType GetStaticType() { return AssetType::Shader; }
+    static AssetType GetStaticType()
+    {
+        return AssetType::Shader;
+    }
 
-    ShaderAsset() : Asset(GetStaticType()) {}
-    ShaderAsset(Shader shader) : Asset(GetStaticType()), m_Shader(shader) {}
+    ShaderAsset()
+        : Asset(GetStaticType())
+    {
+    }
+    ShaderAsset(Shader shader)
+        : Asset(GetStaticType()),
+          m_Shader(shader)
+    {
+    }
     virtual ~ShaderAsset();
 
-    void UploadToGPU() {}
+    void UploadToGPU()
+    {
+    }
 
-    Shader &GetShader()
+    Shader& GetShader()
     {
         return m_Shader;
     }
-    const Shader &GetShader() const
+    const Shader& GetShader() const
     {
         return m_Shader;
     }
 
-    int GetLocation(const std::string &name);
-    void SetUniform(int location, const void *value, int type);
-    void SetUniform(const std::string &name, const void *value, int type);
+    int GetLocation(const std::string& name);
+    void SetUniform(int location, const void* value, int type);
+    void SetUniform(const std::string& name, const void* value, int type);
 
     // Type-safe helper methods
     void SetFloat(const std::string& name, float value);
@@ -44,7 +56,7 @@ public:
     void SetMatrices(const std::string& name, const Matrix* values, int count);
 
 private:
-    Shader m_Shader = { 0 };
+    Shader m_Shader = {0};
     std::unordered_map<std::string, int> m_UniformCache;
 };
 } // namespace CHEngine

@@ -10,8 +10,9 @@ struct IDComponent
     UUID ID;
 
     IDComponent() = default;
-    IDComponent(const IDComponent &) = default;
-    IDComponent(const UUID &id) : ID(id)
+    IDComponent(const IDComponent&) = default;
+    IDComponent(const UUID& id)
+        : ID(id)
     {
     }
 };

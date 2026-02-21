@@ -5,24 +5,27 @@
 
 namespace CHEngine
 {
-    class ImGuiLayer : public Layer
+class ImGuiLayer : public Layer
+{
+public:
+    ImGuiLayer();
+    ~ImGuiLayer() override;
+
+    void OnAttach() override;
+    void OnDetach() override;
+    void OnEvent(Event& e) override;
+
+    void Begin();
+    void End();
+
+    void BlockEvents(bool block)
     {
-    public:
-        ImGuiLayer();
-        ~ImGuiLayer() override;
+        m_BlockEvents = block;
+    }
 
-        void OnAttach() override;
-        void OnDetach() override;
-        void OnEvent(Event& e) override;
-
-        void Begin();
-        void End();
-
-        void BlockEvents(bool block) { m_BlockEvents = block; }
-
-    private:
-        bool m_BlockEvents = true;
-    };
-}
+private:
+    bool m_BlockEvents = true;
+};
+} // namespace CHEngine
 
 #endif // CH_IMGUI_LAYER_H

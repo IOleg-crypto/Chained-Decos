@@ -9,9 +9,9 @@ namespace CHEngine
 struct CameraComponent
 {
     CHEngine::SceneCamera Camera;
-    bool Primary = true;  // If true, this is the main game camera
+    bool Primary = true; // If true, this is the main game camera
     bool FixedAspectRatio = false;
-    
+
     // Orbit camera settings (maintained for the controller script)
     bool IsOrbitCamera = false;
     std::string TargetEntityTag = "Player";

@@ -2,8 +2,8 @@
 #define CH_HIERARCHY_COMPONENT_H
 
 #include "entt/entt.hpp"
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace CHEngine
 {
@@ -13,7 +13,7 @@ struct HierarchyComponent
     std::vector<entt::entity> Children;
 
     HierarchyComponent() = default;
-    HierarchyComponent(const HierarchyComponent &) = default;
+    HierarchyComponent(const HierarchyComponent&) = default;
 };
 
 struct NameComponent
@@ -21,7 +21,8 @@ struct NameComponent
     std::string Name;
 
     NameComponent() = default;
-    NameComponent(const std::string &name) : Name(name)
+    NameComponent(const std::string& name)
+        : Name(name)
     {
     }
 };

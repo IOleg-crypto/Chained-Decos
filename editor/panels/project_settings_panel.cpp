@@ -1,9 +1,9 @@
 #include "project_settings_panel.h"
 #include "engine/scene/project.h"
 #include "engine/scene/project_serializer.h"
-#include "rlImGui/extras/IconsFontAwesome6.h"
 #include "imgui.h"
 #include "nfd.h"
+#include "rlImGui/extras/IconsFontAwesome6.h"
 #include <format>
 
 namespace CHEngine
@@ -17,7 +17,9 @@ ProjectSettingsPanel::ProjectSettingsPanel()
 void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
 {
     if (!m_IsOpen)
+    {
         return;
+    }
 
     auto project = Project::GetActive();
     if (!project)
@@ -29,7 +31,7 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
     if (ImGui::Begin("Project Settings", &m_IsOpen))
     {
         ImGui::PushID(this);
-        auto &config = project->GetConfig();
+        auto& config = project->GetConfig();
 
         if (ImGui::CollapsingHeader(ICON_FA_GEARS " General", ImGuiTreeNodeFlags_DefaultOpen))
         {
@@ -50,7 +52,7 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             ImGui::SameLine();
             if (ImGui::Button("...###IconBrowse"))
             {
-                nfdu8char_t *outPath = NULL;
+                nfdu8char_t* outPath = NULL;
                 nfdu8filteritem_t filterItem[1] = {{"Image Files", "png,jpg,jpeg"}};
                 nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, NULL);
                 if (result == NFD_OKAY)
@@ -62,7 +64,7 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
 
             auto availableScenes = Project::GetAvailableScenes();
             const char* currentScene = config.StartScene.c_str();
-            
+
             if (ImGui::BeginCombo("Start Scene", currentScene))
             {
                 for (const auto& scenePath : availableScenes)
@@ -99,7 +101,7 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             {
                 auto& profile = config.LaunchProfiles[i];
                 ImGui::PushID(i);
-                
+
                 bool isActive = (config.ActiveLaunchProfileIndex == i);
                 if (ImGui::RadioButton("Active", isActive))
                 {
@@ -113,18 +115,22 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
                     strncpy(nameBuf, profile.Name.c_str(), 127);
                     nameBuf[127] = '\0';
                     if (ImGui::InputText("Profile Name", nameBuf, 127))
+                    {
                         profile.Name = nameBuf;
+                    }
 
                     char pathBuf[512];
                     strncpy(pathBuf, profile.BinaryPath.c_str(), 511);
                     pathBuf[511] = '\0';
                     if (ImGui::InputText("Binary Path", pathBuf, 511))
+                    {
                         profile.BinaryPath = pathBuf;
-                    
+                    }
+
                     ImGui::SameLine();
                     if (ImGui::Button("..."))
                     {
-                        nfdu8char_t *outPath = NULL;
+                        nfdu8char_t* outPath = NULL;
                         nfdu8filteritem_t filterItem[1] = {{"Runtime Executable", "exe"}};
                         nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, NULL);
                         if (result == NFD_OKAY)
@@ -138,15 +144,19 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
                     strncpy(argBuf, profile.Arguments.c_str(), 511);
                     argBuf[511] = '\0';
                     if (ImGui::InputText("Arguments", argBuf, 511))
+                    {
                         profile.Arguments = argBuf;
-                    
+                    }
+
                     ImGui::Checkbox("Use Default Project Args", &profile.UseDefaultArgs);
 
                     if (ImGui::Button("Remove Profile"))
                     {
                         config.LaunchProfiles.erase(config.LaunchProfiles.begin() + i);
                         if (config.ActiveLaunchProfileIndex >= (int)config.LaunchProfiles.size())
+                        {
                             config.ActiveLaunchProfileIndex = std::max(0, (int)config.LaunchProfiles.size() - 1);
+                        }
                         ImGui::PopID();
                         break;
                     }
@@ -157,13 +167,16 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             if (ImGui::Button(ICON_FA_PLUS " Add New Profile"))
             {
                 config.LaunchProfiles.push_back({"New Profile", "", ""});
-                if (config.LaunchProfiles.size() == 1) config.ActiveLaunchProfileIndex = 0;
+                if (config.LaunchProfiles.size() == 1)
+                {
+                    config.ActiveLaunchProfileIndex = 0;
+                }
             }
 
             ImGui::Separator();
             ImGui::Text("Legacy BuildConfig Support");
 
-            const char *configNames[] = {"Debug", "Release"};
+            const char* configNames[] = {"Debug", "Release"};
             int currentConfig = (int)config.BuildConfig;
             if (ImGui::Combo("Build Configuration", &currentConfig, configNames, 2))
             {
@@ -191,7 +204,7 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             ImGui::SameLine();
             if (ImGui::Button("...###ModuleDirBrowse"))
             {
-                nfdu8char_t *outPath = NULL;
+                nfdu8char_t* outPath = NULL;
                 nfdresult_t result = NFD_PickFolder(&outPath, NULL);
                 if (result == NFD_OKAY)
                 {
@@ -216,7 +229,7 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             ImGui::Checkbox("VSync", &config.Window.VSync);
             ImGui::Checkbox("Resizable", &config.Window.Resizable);
         }
-        
+
         if (ImGui::CollapsingHeader(ICON_FA_PLAY " Runtime", ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::Checkbox("Fullscreen", &config.Runtime.Fullscreen);
@@ -235,14 +248,35 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
         {
             ImGui::DragFloat("Ambient Intensity", &config.Render.AmbientIntensity, 0.01f, 0.0f, 1.0f);
             ImGui::DragFloat("Default Exposure", &config.Render.DefaultExposure, 0.01f, 0.0f, 10.0f);
+
+            ImGui::Separator();
+            ImGui::Text("Texture Quality");
+            ImGui::SetNextItemWidth(200.0f);
+            ImGui::Checkbox("Generate Mipmaps", &config.Texture.GenerateMipmaps);
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Generates mip chain on texture upload.\nReduces aliasing and bandwidth.\nApplied to newly loaded textures.");
+            }
+
+            const char* filterNames[] = {"Point (No Filter)", "Bilinear", "Trilinear", "Anisotropic 4x",
+                                          "Anisotropic 8x", "Anisotropic 16x"};
+            int currentFilter = (int)config.Texture.Filter;
+            ImGui::SetNextItemWidth(200.0f);
+            if (ImGui::Combo("Texture Filter", &currentFilter, filterNames, 6))
+            {
+                config.Texture.Filter = (TextureFilter)currentFilter;
+            }
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Anisotropic significantly improves quality at an angle.\nHigher values = more GPU cost.\nApplied to newly loaded textures.");
+            }
         }
 
         ImGui::Separator();
         if (ImGui::Button("Save Project Settings"))
         {
             ProjectSerializer serializer(project);
-            std::filesystem::path path =
-                project->GetProjectDirectory() / (project->GetConfig().Name + ".chproject");
+            std::filesystem::path path = project->GetProjectDirectory() / (project->GetConfig().Name + ".chproject");
             serializer.Serialize(path);
         }
         ImGui::PopID();

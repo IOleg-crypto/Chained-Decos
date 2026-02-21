@@ -6,14 +6,15 @@
 
 namespace CHEngine
 {
-    using namespace SerializationUtils;
-ProjectSerializer::ProjectSerializer(std::shared_ptr<Project> project) : m_Project(project)
+using namespace SerializationUtils;
+ProjectSerializer::ProjectSerializer(std::shared_ptr<Project> project)
+    : m_Project(project)
 {
 }
 
-bool ProjectSerializer::Serialize(const std::filesystem::path &filepath)
+bool ProjectSerializer::Serialize(const std::filesystem::path& filepath)
 {
-    const auto &config = m_Project->m_Config;
+    const auto& config = m_Project->m_Config;
 
     YAML::Emitter out;
     out << YAML::BeginMap; // Project
@@ -24,7 +25,7 @@ bool ProjectSerializer::Serialize(const std::filesystem::path &filepath)
         out << YAML::Key << "IconPath" << YAML::Value << config.IconPath;
         out << YAML::Key << "StartScene" << YAML::Value << config.StartScene;
         out << YAML::Key << "AssetDirectory" << YAML::Value << config.AssetDirectory.string();
-        
+
         SerializePath(out, "ActiveScene", config.ActiveScenePath.string());
         SerializePath(out, "Environment", config.EnvironmentPath.string());
 
@@ -47,6 +48,11 @@ bool ProjectSerializer::Serialize(const std::filesystem::path &filepath)
         out << YAML::Key << "Render" << YAML::Value << YAML::BeginMap;
         out << YAML::Key << "AmbientIntensity" << YAML::Value << config.Render.AmbientIntensity;
         out << YAML::Key << "DefaultExposure" << YAML::Value << config.Render.DefaultExposure;
+        out << YAML::EndMap;
+
+        out << YAML::Key << "Texture" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "GenerateMipmaps" << YAML::Value << config.Texture.GenerateMipmaps;
+        out << YAML::Key << "Filter" << YAML::Value << (int)config.Texture.Filter;
         out << YAML::EndMap;
 
         out << YAML::Key << "Window" << YAML::Value << YAML::BeginMap;
@@ -104,7 +110,7 @@ bool ProjectSerializer::Serialize(const std::filesystem::path &filepath)
     return false;
 }
 
-bool ProjectSerializer::Deserialize(const std::filesystem::path &filepath)
+bool ProjectSerializer::Deserialize(const std::filesystem::path& filepath)
 {
     std::ifstream stream(filepath);
     if (!stream.is_open())
@@ -119,15 +125,19 @@ bool ProjectSerializer::Deserialize(const std::filesystem::path &filepath)
     YAML::Node data = YAML::Load(strStream.str());
     auto projectNode = data["Project"];
     if (!projectNode)
+    {
         return false;
+    }
 
-    auto &config = m_Project->m_Config;
+    auto& config = m_Project->m_Config;
     config.Name = projectNode["Name"].as<std::string>();
     if (projectNode["IconPath"])
+    {
         config.IconPath = projectNode["IconPath"].as<std::string>();
+    }
     config.StartScene = projectNode["StartScene"].as<std::string>();
     config.AssetDirectory = projectNode["AssetDirectory"].as<std::string>();
-    
+
     DeserializePath(projectNode, "Environment", config.EnvironmentPath);
     DeserializePath(projectNode, "ActiveScene", config.ActiveScenePath);
 
@@ -135,23 +145,41 @@ bool ProjectSerializer::Deserialize(const std::filesystem::path &filepath)
     if (buildScenes)
     {
         for (auto scene : buildScenes)
+        {
             config.BuildScenes.push_back(scene.as<std::string>());
+        }
     }
 
     if (projectNode["Physics"])
     {
         config.Physics.Gravity = projectNode["Physics"]["Gravity"].as<float>();
         if (projectNode["Physics"]["FixedTimestep"])
+        {
             config.Physics.FixedTimestep = projectNode["Physics"]["FixedTimestep"].as<float>();
+        }
     }
 
     if (projectNode["Animation"])
+    {
         config.Animation.TargetFPS = projectNode["Animation"]["TargetFPS"].as<float>();
+    }
 
     if (projectNode["Render"])
     {
         config.Render.AmbientIntensity = projectNode["Render"]["AmbientIntensity"].as<float>();
         config.Render.DefaultExposure = projectNode["Render"]["DefaultExposure"].as<float>();
+    }
+
+    if (projectNode["Texture"])
+    {
+        if (projectNode["Texture"]["GenerateMipmaps"])
+        {
+            config.Texture.GenerateMipmaps = projectNode["Texture"]["GenerateMipmaps"].as<bool>();
+        }
+        if (projectNode["Texture"]["Filter"])
+        {
+            config.Texture.Filter = (TextureFilter)projectNode["Texture"]["Filter"].as<int>();
+        }
     }
 
     if (projectNode["Window"])
@@ -180,9 +208,13 @@ bool ProjectSerializer::Deserialize(const std::filesystem::path &filepath)
     {
         config.Scripting.ModuleName = projectNode["Scripting"]["ModuleName"].as<std::string>();
         if (projectNode["Scripting"]["ModuleDirectory"])
+        {
             config.Scripting.ModuleDirectory = projectNode["Scripting"]["ModuleDirectory"].as<std::string>();
+        }
         if (projectNode["Scripting"]["AutoLoad"])
+        {
             config.Scripting.AutoLoad = projectNode["Scripting"]["AutoLoad"].as<bool>();
+        }
     }
 
     if (projectNode["LaunchProfiles"])
@@ -194,17 +226,23 @@ bool ProjectSerializer::Deserialize(const std::filesystem::path &filepath)
             profile.BinaryPath = profileNode["BinaryPath"].as<std::string>();
             profile.Arguments = profileNode["Arguments"].as<std::string>();
             if (profileNode["UseDefaultArgs"])
+            {
                 profile.UseDefaultArgs = profileNode["UseDefaultArgs"].as<bool>();
-            
+            }
+
             config.LaunchProfiles.push_back(profile);
         }
     }
 
     if (projectNode["ActiveLaunchProfile"])
+    {
         config.ActiveLaunchProfileIndex = projectNode["ActiveLaunchProfile"].as<int>();
+    }
 
     if (projectNode["BuildConfig"])
+    {
         config.BuildConfig = (Configuration)projectNode["BuildConfig"].as<int>();
+    }
 
     config.ProjectDirectory = filepath.parent_path();
 

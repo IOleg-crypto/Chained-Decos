@@ -12,7 +12,7 @@ public:
     virtual void OnImGuiRender(bool readOnly = false) override;
 
 private:
-    void DrawProfileResult(const struct ProfileResult &result);
+    void DrawProfileResult(const struct ProfileResult& result);
     void UpdateHistory();
 
 private:

@@ -25,7 +25,7 @@ CH_SCRIPT(GameHUD)
     {
         // 1. Calculate Player Altitude
         float altitude = 0.0f;
-        auto *scene = GetScene();
+        auto* scene = GetScene();
         if (scene)
         {
             Entity player = scene->FindEntityByTag("Player");
@@ -41,10 +41,10 @@ CH_SCRIPT(GameHUD)
         int seconds = (int)(m_Timer) % 60;
 
         // 3. Premium Overlay Styling
-        ImGuiWindowFlags window_flags =
-            ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
-            ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing |
-            ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground;
+        ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
+                                        ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing |
+                                        ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoMove |
+                                        ImGuiWindowFlags_NoBackground;
 
         ImGui::SetNextWindowBgAlpha(0.0f);
         ImGui::Begin("ParkourHUD", nullptr, window_flags);
@@ -63,7 +63,9 @@ CH_SCRIPT(GameHUD)
 
         // Shortcut hint (R to Reset)
         if (ImGui::IsKeyPressed(ImGuiKey_R))
+        {
             m_Timer = 0.0f;
+        }
 
         ImGui::End();
     }

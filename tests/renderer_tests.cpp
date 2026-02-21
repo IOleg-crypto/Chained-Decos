@@ -1,7 +1,7 @@
 #include "engine/graphics/renderer.h"
 #include "engine/graphics/renderer2d.h"
-#include "gtest/gtest.h"
 #include "raylib.h"
+#include "gtest/gtest.h"
 
 using namespace CHEngine;
 
@@ -17,7 +17,10 @@ protected:
 
     void TearDown() override
     {
-        if (IsWindowReady()) CloseWindow();
+        if (IsWindowReady())
+        {
+            CloseWindow();
+        }
     }
 };
 
@@ -25,23 +28,23 @@ TEST_F(RendererTest, RendererSingleton)
 {
     // Test that Get() returns a valid instance after initialization
     Renderer::Init();
-    
+
     // Multiple calls to Get() should return the same instance
     auto& instance1 = Renderer::Get();
     auto& instance2 = Renderer::Get();
     EXPECT_EQ(&instance1, &instance2);
-    
+
     Renderer::Shutdown();
 }
 
 TEST_F(RendererTest, Renderer2DSingleton)
 {
     Renderer2D::Init();
-    
+
     auto& instance1 = Renderer2D::Get();
     auto& instance2 = Renderer2D::Get();
     EXPECT_EQ(&instance1, &instance2);
-    
+
     Renderer2D::Shutdown();
 }
 
@@ -51,7 +54,7 @@ TEST_F(RendererTest, SingletonLifetime)
     Renderer::Init();
     auto& firstInstance = Renderer::Get();
     Renderer::Shutdown();
-    
+
     Renderer::Init();
     auto& secondInstance = Renderer::Get();
     EXPECT_NE(&firstInstance, &secondInstance); // Should be a new instance

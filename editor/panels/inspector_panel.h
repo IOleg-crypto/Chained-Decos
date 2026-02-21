@@ -10,7 +10,7 @@ class InspectorPanel : public Panel
 public:
     InspectorPanel();
     virtual void OnImGuiRender(bool readOnly = false) override;
-    virtual void OnEvent(Event &e) override;
+    virtual void OnEvent(Event& e) override;
 
     void SetSelectedMeshIndex(int index)
     {

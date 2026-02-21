@@ -12,3 +12,11 @@ Uniforms:
   - exposure
   - brightness
   - contrast
+  - uTime
+  - isHDR
+  - skyboxMode
+  - fogEnabled
+  - fogColor
+  - fogDensity
+  - fogStart
+  - fogEnd

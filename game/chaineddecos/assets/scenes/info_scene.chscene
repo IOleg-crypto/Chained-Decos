@@ -1,0 +1,244 @@
+Scene: Untitled Scene
+Background:
+  Mode: 0
+  Color: [0, 0, 0, 255]
+  TexturePath: ""
+Canvas:
+  ReferenceResolution: [1920, 1080]
+  ScaleMode: 1
+  MatchWidthOrHeight: 0.5
+EnvironmentPath: ""
+Lighting:
+  Direction: [-1, -1, -1]
+  LightColor: [255, 255, 255, 255]
+  Ambient: 0.300000012
+Skybox:
+  TexturePath: ""
+  Exposure: 1
+  Brightness: 0
+  Contrast: 1
+Fog:
+  Enabled: false
+  Color: [130, 130, 130, 255]
+  Density: 0.00999999978
+  Start: 10
+  End: 100
+Entities:
+  - Entity: 2001
+    TagComponent:
+      Tag: title_info
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-460, -340]
+        OffsetMax: [-60, -278]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+    LabelControl:
+      Text: Information
+      AutoSize: false
+      Style:
+        FontName: Default
+        FontSize: 44
+        TextColor: [240, 235, 228, 255]
+        Shadow: false
+        ShadowOffset: 0
+        ShadowColor: [0, 0, 0, 255]
+        LetterSpacing: 2
+        LineHeight: 1.20000005
+        HorizontalAlignment: 0
+        VerticalAlignment: 1
+  - Entity: 2002
+    TagComponent:
+      Tag: info_text_1
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-460, -200]
+        OffsetMax: [100, -170]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+    LabelControl:
+      Text: "Project: Chained Decos"
+      AutoSize: false
+      Style:
+        FontName: Default
+        FontSize: 24
+        TextColor: [220, 215, 208, 255]
+        Shadow: false
+        ShadowOffset: 0
+        ShadowColor: [0, 0, 0, 255]
+        LetterSpacing: 1.5
+        LineHeight: 1.20000005
+        HorizontalAlignment: 0
+        VerticalAlignment: 1
+  - Entity: 2003
+    TagComponent:
+      Tag: info_text_2
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-460, -160]
+        OffsetMax: [100, -130]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+    LabelControl:
+      Text: "Version: 0.1a (Tech Demo)"
+      AutoSize: false
+      Style:
+        FontName: Default
+        FontSize: 24
+        TextColor: [200, 195, 188, 255]
+        Shadow: false
+        ShadowOffset: 0
+        ShadowColor: [0, 0, 0, 255]
+        LetterSpacing: 1.5
+        LineHeight: 1.20000005
+        HorizontalAlignment: 0
+        VerticalAlignment: 1
+  - Entity: 2004
+    TagComponent:
+      Tag: info_text_3
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-460, -120]
+        OffsetMax: [100, -90]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+    LabelControl:
+      Text: "Engine: Chained Engine"
+      AutoSize: false
+      Style:
+        FontName: Default
+        FontSize: 22
+        TextColor: [180, 175, 168, 255]
+        Shadow: false
+        ShadowOffset: 0
+        ShadowColor: [0, 0, 0, 255]
+        LetterSpacing: 1.5
+        LineHeight: 1.20000005
+        HorizontalAlignment: 0
+        VerticalAlignment: 1
+  - Entity: 2005
+    TagComponent:
+      Tag: info_text_4
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-460, -80]
+        OffsetMax: [100, -50]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+    LabelControl:
+      Text: "Developer: Oleg (IOleg-crypto)"
+      AutoSize: false
+      Style:
+        FontName: Default
+        FontSize: 22
+        TextColor: [180, 175, 168, 255]
+        Shadow: false
+        ShadowOffset: 0
+        ShadowColor: [0, 0, 0, 255]
+        LetterSpacing: 1.5
+        LineHeight: 1.20000005
+        HorizontalAlignment: 0
+        VerticalAlignment: 1
+  - Entity: 2006
+    TagComponent:
+      Tag: back_button
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    SceneTransitionComponent:
+      TargetScenePath: scenes\main_menu.chscene
+      Triggered: false
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-460, 40]
+        OffsetMax: [-60, 86]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+    ButtonControl:
+      Label: Back
+      Interactable: true
+      AutoSize: false
+      Style:
+        BackgroundColor: [4, 4, 4, 255]
+        HoverColor: [22, 22, 22, 255]
+        PressedColor: [2, 2, 2, 255]
+        Rounding: 0
+        BorderSize: 0
+        BorderColor: [0, 0, 0, 0]
+        Padding: 0
+        UseGradient: false
+        GradientColor: [0, 0, 0, 0]
+        HoverScale: 1.0
+        PressedScale: 1.0
+        TransitionSpeed: 0.100000001
+      Text:
+        FontName: Default
+        FontSize: 28
+        TextColor: [190, 185, 178, 255]
+        Shadow: false
+        ShadowOffset: 0
+        ShadowColor: [0, 0, 0, 0]
+        LetterSpacing: 2
+        LineHeight: 1.20000005
+        HorizontalAlignment: 0
+        VerticalAlignment: 1
+    NativeScriptComponent:
+      Scripts:
+        - SceneScript

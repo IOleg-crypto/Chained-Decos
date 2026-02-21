@@ -1,0 +1,44 @@
+Project:
+  Name: ChainedDecos
+  IconPath: engine/resources/icons/chaineddecos.jpg
+  StartScene: scenes\main_menu.chscene
+  AssetDirectory: assets
+  ActiveScene: assets/scenes/main_menu.chscene
+  Environment: ""
+  BuildScenes:
+    []
+  Physics:
+    Gravity: 20
+    FixedTimestep: 0.0166666675
+  Animation:
+    TargetFPS: 0
+  Render:
+    AmbientIntensity: 0
+    DefaultExposure: 1.23000002
+  Texture:
+    GenerateMipmaps: true
+    Filter: 3
+  Window:
+    Width: 1920
+    Height: 1080
+    VSync: false
+    Resizable: true
+  Runtime:
+    Fullscreen: false
+    ShowStats: false
+    EnableConsole: false
+  Editor:
+    CameraMoveSpeed: 13.5
+    CameraRotationSpeed: 1
+    CameraBoostMultiplier: 20
+  Scripting:
+    ModuleName: libChainedDecosGame
+    ModuleDirectory: bin
+    AutoLoad: true
+  LaunchProfiles:
+    - Name: Debug Runtime
+      BinaryPath: ${BUILD}/ChainedRuntime.exe
+      Arguments: --project "${PROJECT_FILE}"
+      UseDefaultArgs: false
+  ActiveLaunchProfile: 0
+  BuildConfig: 0

@@ -1,10 +1,10 @@
-#include "engine/core/application.h"
 #include "editor_layer.h"
+#include "engine/core/application.h"
 #include "engine/core/entry_point.h"
 
 namespace CHEngine
 {
-Application *CreateApplication(ApplicationCommandLineArgs args)
+Application* CreateApplication(ApplicationCommandLineArgs args)
 {
     ApplicationSpecification spec;
     spec.Name = "Chained Editor";
