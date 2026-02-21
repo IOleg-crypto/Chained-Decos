@@ -3,82 +3,83 @@
 
 #include "engine/core/base.h"
 #include "engine/graphics/asset.h"
+#include <filesystem>
+#include <future>
 #include <map>
 #include <memory>
-#include <string>
-#include <filesystem>
 #include <mutex>
+#include <string>
 #include <unordered_map>
-#include <future>
 
 namespace CHEngine
 {
-    struct AssetMetadata
+struct AssetMetadata
+{
+    AssetHandle Handle;
+    std::string FilePath;
+    AssetType Type;
+};
+
+class AssetManager
+{
+public:
+    AssetManager();
+    ~AssetManager();
+
+    void Initialize(const std::filesystem::path& rootPath = "");
+    void Shutdown();
+
+    void SetRootPath(const std::filesystem::path& path);
+    std::filesystem::path GetRootPath() const;
+    void AddSearchPath(const std::filesystem::path& path);
+    void ClearSearchPaths();
+
+    std::string ResolvePath(const std::string& path) const;
+
+    template <typename T> std::shared_ptr<T> Get(const std::string& path)
     {
-        AssetHandle Handle;
-        std::string FilePath;
-        AssetType Type;
-    };
+        return std::static_pointer_cast<T>(GetAsset(path, T::GetStaticType()));
+    }
 
-    class AssetManager
+    template <typename T> std::shared_ptr<T> Get(AssetHandle handle)
     {
-    public:
-        AssetManager();
-        ~AssetManager();
+        return std::static_pointer_cast<T>(GetAsset(handle, T::GetStaticType()));
+    }
 
-        void Initialize(const std::filesystem::path& rootPath = "");
-        void Shutdown();
+    const AssetMetadata& GetMetadata(AssetHandle handle) const;
+    void Update();
+    int GetPendingCount() const;
+    void SetMaxUploadsPerFrame(int n) { m_MaxUploadsPerFrame = n; }
 
-        void SetRootPath(const std::filesystem::path& path);
-        std::filesystem::path GetRootPath() const;
-        void AddSearchPath(const std::filesystem::path& path);
-        void ClearSearchPaths();
+    template <typename T> void Remove(const std::string& path)
+    {
+        RemoveAsset(path, T::GetStaticType());
+    }
 
-        std::string ResolvePath(const std::string& path) const;
+private:
+    // Internal methods to be implemented in .cpp
+    std::shared_ptr<Asset> GetAsset(const std::string& path, AssetType type);
+    std::shared_ptr<Asset> GetAsset(AssetHandle handle, AssetType type);
+    void RemoveAsset(const std::string& path, AssetType type);
 
-        template <typename T>
-        std::shared_ptr<T> Get(const std::string& path)
-        {
-            return std::static_pointer_cast<T>(GetAsset(path, T::GetStaticType()));
-        }
+private:
+    std::filesystem::path m_RootPath;
+    std::vector<std::filesystem::path> m_SearchPaths;
+    mutable std::recursive_mutex m_AssetLock;
 
-        template <typename T>
-        std::shared_ptr<T> Get(AssetHandle handle)
-        {
-            return std::static_pointer_cast<T>(GetAsset(handle, T::GetStaticType()));
-        }
+    // Unified cache: Type -> Path -> Asset
+    std::map<AssetType, std::map<std::string, std::shared_ptr<Asset>>> m_AssetCaches;
+    std::unordered_map<AssetHandle, AssetMetadata> m_AssetMetadata;
 
-        const AssetMetadata& GetMetadata(AssetHandle handle) const;
-        void Update();
+    // Async loading support
+    std::vector<std::shared_ptr<Asset>> m_PendingUploads;
+    mutable std::mutex m_PendingUploadsMutex;
 
-        template <typename T>
-        void Remove(const std::string& path)
-        {
-            RemoveAsset(path, T::GetStaticType());
-        }
+    std::vector<std::future<void>> m_Futures;
+    mutable std::mutex m_FuturesMutex;
 
-    private:
-        // Internal methods to be implemented in .cpp
-        std::shared_ptr<Asset> GetAsset(const std::string& path, AssetType type);
-        std::shared_ptr<Asset> GetAsset(AssetHandle handle, AssetType type);
-        void RemoveAsset(const std::string& path, AssetType type);
-
-    private:
-        std::filesystem::path m_RootPath;
-        std::vector<std::filesystem::path> m_SearchPaths;
-        mutable std::recursive_mutex m_AssetLock;
-
-        // Unified cache: Type -> Path -> Asset
-        std::map<AssetType, std::map<std::string, std::shared_ptr<Asset>>> m_AssetCaches;
-        std::unordered_map<AssetHandle, AssetMetadata> m_AssetMetadata;
-
-        // Async loading support
-        std::vector<std::shared_ptr<Asset>> m_PendingUploads;
-        mutable std::mutex m_PendingUploadsMutex;
-
-        std::vector<std::future<void>> m_Futures;
-        mutable std::mutex m_FuturesMutex;
-    };
-}
+    int m_MaxUploadsPerFrame = 2; // Throttle GPU uploads to avoid per-frame spikes
+};
+} // namespace CHEngine
 
 #endif // CH_ASSET_MANAGER_H

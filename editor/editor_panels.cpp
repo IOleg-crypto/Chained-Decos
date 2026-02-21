@@ -28,31 +28,39 @@ void EditorPanels::Init()
 
 void EditorPanels::OnUpdate(Timestep ts)
 {
-    for (auto &panel : m_Panels)
+    for (auto& panel : m_Panels)
+    {
         panel->OnUpdate(ts);
+    }
 }
 
 void EditorPanels::OnImGuiRender(bool readOnly)
 {
-    for (auto &panel : m_Panels)
+    for (auto& panel : m_Panels)
     {
         if (panel->GetName() == "Project Browser")
+        {
             continue;
+        }
 
         panel->OnImGuiRender(readOnly);
     }
 }
 
-void EditorPanels::OnEvent(Event &e)
+void EditorPanels::OnEvent(Event& e)
 {
-    for (auto &panel : m_Panels)
+    for (auto& panel : m_Panels)
+    {
         panel->OnEvent(e);
+    }
 }
 
-void EditorPanels::SetContext(const std::shared_ptr<Scene> &context)
+void EditorPanels::SetContext(const std::shared_ptr<Scene>& context)
 {
-    for (auto &panel : m_Panels)
+    for (auto& panel : m_Panels)
+    {
         panel->SetContext(context);
+    }
 }
 
 } // namespace CHEngine

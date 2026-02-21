@@ -9,19 +9,19 @@
 
 namespace CHEngine
 {
-    struct SpriteComponent
-    {
-        AssetHandle TextureHandle = 0;
-        std::string TexturePath;
-        std::shared_ptr<TextureAsset> Texture;
-        Color Tint = WHITE;
-        bool FlipX = false;
-        bool FlipY = false;
-        int ZOrder = 0;
+struct SpriteComponent
+{
+    AssetHandle TextureHandle = 0;
+    std::string TexturePath;
+    std::shared_ptr<TextureAsset> Texture;
+    Color Tint = WHITE;
+    bool FlipX = false;
+    bool FlipY = false;
+    int ZOrder = 0;
 
-        SpriteComponent() = default;
-        SpriteComponent(const SpriteComponent&) = default;
-    };
-}
+    SpriteComponent() = default;
+    SpriteComponent(const SpriteComponent&) = default;
+};
+} // namespace CHEngine
 
 #endif // CH_SPRITE_COMPONENT_H

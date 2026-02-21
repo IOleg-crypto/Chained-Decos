@@ -1,4 +1,4 @@
-#version 330 core
+#version 430 core
 
 #include "include/lighting_common.glsl"
 #include "include/lighting_directional.glsl"

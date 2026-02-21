@@ -11,7 +11,7 @@ class SceneActions
 public:
     static void New();
     static void Open();
-    static void Open(const std::filesystem::path &path);
+    static void Open(const std::filesystem::path& path);
     static void Save();
     static void SaveAs();
     static void SetParent(Entity child, Entity parent);

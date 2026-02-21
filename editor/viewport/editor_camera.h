@@ -17,8 +17,14 @@ public:
     // Drives the transform and camera component of the given entity
     void OnUpdate(Entity cameraEntity, Timestep ts);
 
-    float GetYaw() const { return m_Yaw; }
-    float GetPitch() const { return m_Pitch; }
+    float GetYaw() const
+    {
+        return m_Yaw;
+    }
+    float GetPitch() const
+    {
+        return m_Pitch;
+    }
 
 private:
     void MouseRotate(const Vector2& delta);
@@ -42,10 +48,10 @@ private:
     float m_Yaw = 0.0f;
     float m_Pitch = 0.0f;
 
-    Vector3 m_FocalPoint = { 0.0f, 0.0f, 0.0f };
+    Vector3 m_FocalPoint = {0.0f, 0.0f, 0.0f};
     float m_Distance = 10.0f;
 
-    Vector2 m_InitialMousePosition = { 0.0f, 0.0f };
+    Vector2 m_InitialMousePosition = {0.0f, 0.0f};
     uint32_t m_ViewportWidth = 1280, m_ViewportHeight = 720;
 };
 

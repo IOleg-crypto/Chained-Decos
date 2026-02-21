@@ -17,19 +17,19 @@ public:
     virtual void OnUpdate(Timestep ts)
     {
     }
-    virtual void OnEvent(Event &e)
+    virtual void OnEvent(Event& e)
     {
     }
-    virtual void SetContext(const std::shared_ptr<Scene> &context)
+    virtual void SetContext(const std::shared_ptr<Scene>& context)
     {
         m_Context = context;
     }
 
-    bool &IsOpen()
+    bool& IsOpen()
     {
         return m_IsOpen;
     }
-    const std::string &GetName() const
+    const std::string& GetName() const
     {
         return m_Name;
     }

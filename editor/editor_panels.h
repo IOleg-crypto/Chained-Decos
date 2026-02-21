@@ -20,7 +20,7 @@ public:
     void Init();
 
 public:
-    template <typename T, typename... Args> std::shared_ptr<T> Register(Args &&...args)
+    template <typename T, typename... Args> std::shared_ptr<T> Register(Args&&... args)
     {
         auto panel = std::make_shared<T>(std::forward<Args>(args)...);
         m_Panels.push_back(panel);
@@ -29,33 +29,43 @@ public:
 
     template <typename T> std::shared_ptr<T> Get()
     {
-        for (auto &panel : m_Panels)
+        for (auto& panel : m_Panels)
         {
             if (auto p = std::dynamic_pointer_cast<T>(panel))
+            {
                 return p;
+            }
         }
         return nullptr;
     }
 
-    std::shared_ptr<Panel> Get(const std::string &name)
+    std::shared_ptr<Panel> Get(const std::string& name)
     {
-        for (auto &panel : m_Panels)
-            if (panel->GetName() == name) return panel;
+        for (auto& panel : m_Panels)
+        {
+            if (panel->GetName() == name)
+            {
+                return panel;
+            }
+        }
         return nullptr;
     }
 
-    template <typename F> void ForEach(F &&func)
+    template <typename F> void ForEach(F&& func)
     {
-        for (auto &panel : m_Panels) func(panel);
+        for (auto& panel : m_Panels)
+        {
+            func(panel);
+        }
     }
 
 public:
     void OnUpdate(Timestep ts);
     void OnImGuiRender(bool readOnly);
-    void OnEvent(Event &e);
-    void SetContext(const std::shared_ptr<Scene> &context);
+    void OnEvent(Event& e);
+    void SetContext(const std::shared_ptr<Scene>& context);
 
-    std::vector<std::shared_ptr<Panel>> &GetPanels()
+    std::vector<std::shared_ptr<Panel>>& GetPanels()
     {
         return m_Panels;
     }

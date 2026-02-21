@@ -13,13 +13,12 @@ class Dynamics
 public:
     Dynamics() = default;
 
-    void Update(Scene *scene, const std::vector<entt::entity> &entities, float deltaTime);
+    void Update(Scene* scene, const std::vector<entt::entity>& entities, float deltaTime);
 
 private:
-    void ApplyGravity(entt::registry &registry, entt::entity entity, float gravity,
-                             float deltaTime);
-    void IntegrateVelocity(entt::registry &registry, entt::entity entity, float deltaTime);
-    void LogDiagnostics(entt::registry &registry, entt::entity entity);
+    void ApplyGravity(entt::registry& registry, entt::entity entity, float gravity, float deltaTime);
+    void IntegrateVelocity(entt::registry& registry, entt::entity entity, float deltaTime);
+    void LogDiagnostics(entt::registry& registry, entt::entity entity);
 };
 } // namespace CHEngine
 

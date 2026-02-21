@@ -8,74 +8,77 @@
 
 namespace CHEngine
 {
-    CH_SCRIPT(CameraController)
+CH_SCRIPT(CameraController){public : CH_UPDATE(deltaTime){auto scene = GetScene();
+if (!scene)
+{
+    return;
+}
+
+// 1. Get CameraComponent context
+if (!GetEntity().HasComponent<CameraComponent>())
+{
+    return;
+}
+auto& camera = GetComponent<CameraComponent>();
+
+// 2. Find the Player entity
+Entity playerEntity = scene->FindEntityByTag("Player");
+if (!playerEntity)
+{
+    auto playerView = scene->GetRegistry().view<PlayerComponent>();
+    if (playerView.begin() != playerView.end())
     {
-    public:
-        CH_UPDATE(deltaTime)
-        {
-            auto scene = GetScene();
-            if (!scene) return;
+        playerEntity = Entity(*playerView.begin(), &scene->GetRegistry());
+    }
+}
 
-            // 1. Get CameraComponent context
-            if (!GetEntity().HasComponent<CameraComponent>()) return;
-            auto &camera = GetComponent<CameraComponent>();
+if (!playerEntity || !playerEntity.HasComponent<TransformComponent>())
+{
+    return;
+}
 
-            // 2. Find the Player entity
-            Entity playerEntity = scene->FindEntityByTag("Player");
-            if (!playerEntity)
-            {
-                auto playerView = scene->GetRegistry().view<PlayerComponent>();
-                if (playerView.begin() != playerView.end())
-                    playerEntity = Entity(*playerView.begin(), &scene->GetRegistry());
-            }
+auto& playerTransform = playerEntity.GetComponent<TransformComponent>();
 
-            if (!playerEntity || !playerEntity.HasComponent<TransformComponent>())
-                return;
+// 3. Handle Input (Orbit & Zoom)
+bool isStandalone = !Application::Get().GetLayerStack().HasLayer("EditorLayer");
+if (Input::IsMouseButtonDown(MOUSE_BUTTON_RIGHT) || isStandalone)
+{
+    Vector2 mouseDelta = Input::GetMouseDelta();
+    camera.OrbitYaw -= mouseDelta.x * camera.LookSensitivity;
+    camera.OrbitPitch -= mouseDelta.y * camera.LookSensitivity;
 
-            auto &playerTransform = playerEntity.GetComponent<TransformComponent>();
+    // Clamp pitch
+    camera.OrbitPitch = Clamp(camera.OrbitPitch, -10.0f, 85.0f);
+}
 
-            // 3. Handle Input (Orbit & Zoom)
-            bool isStandalone = !Application::Get().GetLayerStack().HasLayer("EditorLayer");
-            if (Input::IsMouseButtonDown(MOUSE_BUTTON_RIGHT) || isStandalone)
-            {
-                Vector2 mouseDelta = Input::GetMouseDelta();
-                camera.OrbitYaw -= mouseDelta.x * camera.LookSensitivity;
-                camera.OrbitPitch -= mouseDelta.y * camera.LookSensitivity;
+float wheelMovement = Input::GetMouseWheelMove();
+camera.OrbitDistance -= wheelMovement * 2.0f;
+camera.OrbitDistance = Clamp(camera.OrbitDistance, 0.0f, 40.0f);
 
-                // Clamp pitch
-                camera.OrbitPitch = Clamp(camera.OrbitPitch, -10.0f, 85.0f);
-            }
+// 4. Calculate Position (Spherical Coordinates)
+float yawRad = camera.OrbitYaw * DEG2RAD;
+float pitchRad = camera.OrbitPitch * DEG2RAD;
 
-            float wheelMovement = Input::GetMouseWheelMove();
-            camera.OrbitDistance -= wheelMovement * 2.0f;
-            camera.OrbitDistance = Clamp(camera.OrbitDistance, 0.0f, 40.0f);
+float x = camera.OrbitDistance * cosf(pitchRad) * sinf(yawRad);
+float y = camera.OrbitDistance * sinf(pitchRad);
+float z = camera.OrbitDistance * cosf(pitchRad) * cosf(yawRad);
 
-            // 4. Calculate Position (Spherical Coordinates)
-            float yawRad = camera.OrbitYaw * DEG2RAD;
-            float pitchRad = camera.OrbitPitch * DEG2RAD;
+Vector3 targetPos = playerTransform.Translation;
+targetPos.y += 1.5f; // Look at head level
 
-            float x = camera.OrbitDistance * cosf(pitchRad) * sinf(yawRad);
-            float y = camera.OrbitDistance * sinf(pitchRad);
-            float z = camera.OrbitDistance * cosf(pitchRad) * cosf(yawRad);
+auto& cameraTransform = GetComponent<TransformComponent>();
+cameraTransform.Translation = Vector3Add(targetPos, {x, y, z});
 
-            Vector3 targetPos = playerTransform.Translation;
-            targetPos.y += 1.5f; // Look at head level
+// 5. Update Rotation
+cameraTransform.Rotation.x = -camera.OrbitPitch;
+cameraTransform.Rotation.y = camera.OrbitYaw;
+cameraTransform.Rotation.z = 0.0f;
 
-            auto& cameraTransform = GetComponent<TransformComponent>();
-            cameraTransform.Translation = Vector3Add(targetPos, {x, y, z});
-            
-            // 5. Update Rotation
-            cameraTransform.Rotation.x = -camera.OrbitPitch;
-            cameraTransform.Rotation.y = camera.OrbitYaw;
-            cameraTransform.Rotation.z = 0.0f;
-
-            cameraTransform.RotationQuat = QuaternionFromEuler(
-                cameraTransform.Rotation.x * DEG2RAD,
-                cameraTransform.Rotation.y * DEG2RAD,
-                cameraTransform.Rotation.z * DEG2RAD
-            );
-        }
-    };
+cameraTransform.RotationQuat = QuaternionFromEuler(
+    cameraTransform.Rotation.x * DEG2RAD, cameraTransform.Rotation.y* DEG2RAD, cameraTransform.Rotation.z* DEG2RAD);
+} // namespace CHEngine
+}
+;
 } // namespace CHEngine
 
 #endif // CH_CAMERA_CONTROLLER_H

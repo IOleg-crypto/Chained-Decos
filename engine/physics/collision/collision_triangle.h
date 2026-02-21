@@ -12,8 +12,8 @@ struct CollisionTriangle
     Vector3 center;
     int meshIndex = -1;
 
-    CollisionTriangle(const Vector3 &a, const Vector3 &b, const Vector3 &c, int index = -1);
-    bool IntersectsRay(const Ray &ray, float &t, Vector3 &normal) const;
+    CollisionTriangle(const Vector3& a, const Vector3& b, const Vector3& c, int index = -1);
+    bool IntersectsRay(const Ray& ray, float& t, Vector3& normal) const;
 };
 } // namespace CHEngine
 
