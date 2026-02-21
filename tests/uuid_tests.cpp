@@ -39,10 +39,10 @@ TEST(UUIDTest, Hashability)
 {
     std::unordered_map<UUID, std::string> uuidMap;
     UUID id1, id2;
-    
+
     uuidMap[id1] = "ID1";
     uuidMap[id2] = "ID2";
-    
+
     EXPECT_EQ(uuidMap[id1], "ID1");
     EXPECT_EQ(uuidMap[id2], "ID2");
     EXPECT_EQ(uuidMap.size(), 2);

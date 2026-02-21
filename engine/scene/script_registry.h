@@ -11,8 +11,8 @@ namespace CHEngine
 class ScriptRegistry
 {
 public:
-    using InstantiateFn = ScriptableEntity *(*)();
-    using DestroyFn = void (*)(ScriptInstance *);
+    using InstantiateFn = ScriptableEntity* (*)();
+    using DestroyFn = void (*)(ScriptInstance*);
 
     struct ScriptFunctions
     {
@@ -20,11 +20,10 @@ public:
         DestroyFn Destroy;
     };
 
-    template <typename T> void Register(const std::string &name)
+    template <typename T> void Register(const std::string& name)
     {
-        m_Registry[name] = {[]() { return static_cast<ScriptableEntity *>(new T()); },
-                            [](ScriptInstance *si)
-                            {
+        m_Registry[name] = {[]() { return static_cast<ScriptableEntity*>(new T()); },
+                            [](ScriptInstance* si) {
                                 delete si->Instance;
                                 si->Instance = nullptr;
                             }};
@@ -33,10 +32,10 @@ public:
     // ABI-safe registration: called from EXE side with raw function pointers
     void RegisterDirect(const std::string& name, InstantiateFn instantiate, DestroyFn destroy)
     {
-        m_Registry[name] = { instantiate, destroy };
+        m_Registry[name] = {instantiate, destroy};
     }
 
-    void AddScript(const std::string &name, NativeScriptComponent &nsc)
+    void AddScript(const std::string& name, NativeScriptComponent& nsc)
     {
         if (m_Registry.find(name) != m_Registry.end())
         {
@@ -48,7 +47,7 @@ public:
         }
     }
 
-    const std::unordered_map<std::string, ScriptFunctions> &GetScripts() const
+    const std::unordered_map<std::string, ScriptFunctions>& GetScripts() const
     {
         return m_Registry;
     }

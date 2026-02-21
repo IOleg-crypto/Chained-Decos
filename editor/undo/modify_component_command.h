@@ -3,7 +3,6 @@
 
 #include "editor_command.h"
 #include "engine/scene/scene.h"
-#include "engine/scene/scene.h"
 #include <string>
 
 namespace CHEngine
@@ -12,9 +11,11 @@ namespace CHEngine
 template <typename T> class ModifyComponentCommand : public IEditorCommand
 {
 public:
-    ModifyComponentCommand(Entity entity, const T &oldState, const T &newState,
-                           const std::string &name = "")
-        : m_Entity(entity), m_OldState(oldState), m_NewState(newState), m_Name(name)
+    ModifyComponentCommand(Entity entity, const T& oldState, const T& newState, const std::string& name = "")
+        : m_Entity(entity),
+          m_OldState(oldState),
+          m_NewState(newState),
+          m_Name(name)
     {
     }
 
@@ -42,7 +43,10 @@ public:
 private:
     bool Validate()
     {
-        if (!m_Entity) return false;
+        if (!m_Entity)
+        {
+            return false;
+        }
         auto* registry = &m_Entity.GetRegistry();
         return registry->valid(static_cast<entt::entity>(m_Entity)) && m_Entity.HasComponent<T>();
     }

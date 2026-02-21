@@ -1,9 +1,9 @@
 #ifndef CH_EDITOR_GIZMO_H
 #define CH_EDITOR_GIZMO_H
 
+#include "ImGuizmo.h"
 #include "engine/scene/scene.h"
 #include "imgui.h"
-#include "ImGuizmo.h"
 #include "raylib.h"
 
 namespace CHEngine

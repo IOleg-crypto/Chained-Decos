@@ -1,49 +1,67 @@
 #ifndef CH_EDITOR_CONTEXT_H
 #define CH_EDITOR_CONTEXT_H
 
-#include "engine/scene/scene.h"
 #include "engine/graphics/renderer.h"
+#include "engine/scene/scene.h"
 
 namespace CHEngine
 {
-    enum class SceneState : uint8_t
+enum class SceneState : uint8_t
+{
+    Edit = 0,
+    Play = 1
+};
+
+struct EditorState
+{
+    Entity SelectedEntity;
+    bool FullscreenGame = false;
+    bool StandaloneActive = false;
+    bool NeedsLayoutReset = false;
+    int LastHitMeshIndex = -1;
+    DebugRenderFlags DebugRenderFlags;
+};
+
+// EditorContext stores the global state of the editor,
+// such as the selected entity, scene state, and debug flags.
+// This decouples the state from the EditorLayer.
+class EditorContext
+{
+public:
+    static void Init();
+    static void Shutdown();
+
+    static Entity GetSelectedEntity()
     {
-        Edit = 0,
-        Play = 1
-    };
-
-    struct EditorState
+        return s_State.SelectedEntity;
+    }
+    static void SetSelectedEntity(Entity entity)
     {
-        Entity SelectedEntity;
-        bool FullscreenGame = false;
-        bool StandaloneActive = false;
-        bool NeedsLayoutReset = false;
-        int LastHitMeshIndex = -1;
-        DebugRenderFlags DebugRenderFlags;
-    };
+        s_State.SelectedEntity = entity;
+    }
 
-    // EditorContext stores the global state of the editor, 
-    // such as the selected entity, scene state, and debug flags.
-    // This decouples the state from the EditorLayer.
-    class EditorContext
+    static SceneState GetSceneState()
     {
-    public:
-        static void Init();
-        static void Shutdown();
+        return s_SceneState;
+    }
+    static void SetSceneState(SceneState state)
+    {
+        s_SceneState = state;
+    }
 
-        static Entity GetSelectedEntity() { return s_State.SelectedEntity; }
-        static void SetSelectedEntity(Entity entity) { s_State.SelectedEntity = entity; }
+    static DebugRenderFlags& GetDebugRenderFlags()
+    {
+        return s_State.DebugRenderFlags;
+    }
+    static EditorState& GetState()
+    {
+        return s_State;
+    }
 
-        static SceneState GetSceneState() { return s_SceneState; }
-        static void SetSceneState(SceneState state) { s_SceneState = state; }
-
-        static DebugRenderFlags& GetDebugRenderFlags() { return s_State.DebugRenderFlags; }
-        static EditorState& GetState() { return s_State; }
-
-    private:
-        static EditorState s_State;
-        static SceneState s_SceneState;
-    };
-}
+private:
+    static EditorState s_State;
+    static SceneState s_SceneState;
+};
+} // namespace CHEngine
 
 #endif // CH_EDITOR_CONTEXT_H

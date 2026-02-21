@@ -10,10 +10,10 @@ class SceneHierarchyPanel : public Panel
 {
 public:
     SceneHierarchyPanel();
-    SceneHierarchyPanel(const std::shared_ptr<Scene> &context);
-
+    SceneHierarchyPanel(const std::shared_ptr<Scene>& context);
 
     virtual void OnImGuiRender(bool readOnly = false) override;
+
 private:
     entt::entity DrawEntityNodeRecursive(Entity entity);
     void DrawComponents(Entity entity);
