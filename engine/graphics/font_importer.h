@@ -7,11 +7,11 @@
 
 namespace CHEngine
 {
-    class FontImporter
-    {
-    public:
-        static std::shared_ptr<FontAsset> ImportFont(const std::string& path);
-    };
-}
+class FontImporter
+{
+public:
+    static std::shared_ptr<FontAsset> ImportFont(const std::string& path);
+};
+} // namespace CHEngine
 
 #endif // CH_FONT_IMPORTER_H

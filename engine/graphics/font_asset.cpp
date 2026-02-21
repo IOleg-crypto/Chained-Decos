@@ -2,11 +2,11 @@
 
 namespace CHEngine
 {
-    FontAsset::~FontAsset()
+FontAsset::~FontAsset()
+{
+    if (m_Font.texture.id > 0)
     {
-        if (m_Font.texture.id > 0)
-        {
-            UnloadFont(m_Font);
-        }
+        UnloadFont(m_Font);
     }
+}
 } // namespace CHEngine

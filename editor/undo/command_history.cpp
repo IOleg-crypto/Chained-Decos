@@ -3,24 +3,28 @@
 
 namespace CHEngine
 {
-CommandHistory::CommandHistory(size_t maxHistory) : m_MaxHistory(maxHistory)
+CommandHistory::CommandHistory(size_t maxHistory)
+    : m_MaxHistory(maxHistory)
 {
 }
 
 void CommandHistory::PushCommand(std::unique_ptr<IEditorCommand> command)
 {
     if (!command)
+    {
         return;
+    }
 
     command->Execute();
     m_RedoStack.clear();
     m_UndoStack.push_back(std::move(command));
 
     if (m_UndoStack.size() > m_MaxHistory)
+    {
         m_UndoStack.pop_front();
+    }
 
-    CH_CORE_INFO("Command pushed: {} (Undo stack size: {})", m_UndoStack.back()->GetName(),
-                 m_UndoStack.size());
+    CH_CORE_INFO("Command pushed: {} (Undo stack size: {})", m_UndoStack.back()->GetName(), m_UndoStack.size());
 
     Notify();
 }
@@ -28,7 +32,9 @@ void CommandHistory::PushCommand(std::unique_ptr<IEditorCommand> command)
 void CommandHistory::Undo()
 {
     if (m_UndoStack.empty())
+    {
         return;
+    }
 
     std::unique_ptr<IEditorCommand> command = std::move(m_UndoStack.back());
     m_UndoStack.pop_back();
@@ -44,7 +50,9 @@ void CommandHistory::Undo()
 void CommandHistory::Redo()
 {
     if (m_RedoStack.empty())
+    {
         return;
+    }
 
     std::unique_ptr<IEditorCommand> command = std::move(m_RedoStack.back());
     m_RedoStack.pop_back();
@@ -77,6 +85,8 @@ std::string CommandHistory::GetRedoName() const
 void CommandHistory::Notify()
 {
     if (m_NotifyCallback)
+    {
         m_NotifyCallback();
+    }
 }
 } // namespace CHEngine

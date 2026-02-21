@@ -33,7 +33,7 @@ struct CanvasSettings
 {
     Vector2 ReferenceResolution = {1920.0f, 1080.0f};
     CanvasScaleMode ScaleMode = CanvasScaleMode::ConstantPixelSize; // No scaling, anchors relative to viewport
-    float MatchWidthOrHeight = 0.5f; // Only used with ScaleWithScreenSize
+    float MatchWidthOrHeight = 0.5f;                                // Only used with ScaleWithScreenSize
 };
 
 struct TextStyle
@@ -64,7 +64,7 @@ struct UIStyle
     Color GradientColor = {20, 20, 20, 255};
 
     float Padding = 4.0f;
-    
+
     float HoverScale = 1.0f;
     float PressedScale = 1.0f;
     float TransitionSpeed = 0.1f;
@@ -83,36 +83,31 @@ struct RectTransform
     Rectangle CalculateRect(Vector2 viewportSize, Vector2 viewportOffset = {0.0f, 0.0f}) const
     {
         // 1. Calculate the box defined by anchors (clamped to 0..1)
-        Vector2 clAnchMin = { Clamp(AnchorMin.x, 0.0f, 1.0f), Clamp(AnchorMin.y, 0.0f, 1.0f) };
-        Vector2 clAnchMax = { Clamp(AnchorMax.x, 0.0f, 1.0f), Clamp(AnchorMax.y, 0.0f, 1.0f) };
+        Vector2 clAnchMin = {Clamp(AnchorMin.x, 0.0f, 1.0f), Clamp(AnchorMin.y, 0.0f, 1.0f)};
+        Vector2 clAnchMax = {Clamp(AnchorMax.x, 0.0f, 1.0f), Clamp(AnchorMax.y, 0.0f, 1.0f)};
 
         Vector2 anchorMinPos = {viewportSize.x * clAnchMin.x, viewportSize.y * clAnchMin.y};
         Vector2 anchorMaxPos = {viewportSize.x * clAnchMax.x, viewportSize.y * clAnchMax.y};
 
         // 2. Add offsets (absolute pixels)
-        Vector2 pMin = { anchorMinPos.x + OffsetMin.x, anchorMinPos.y + OffsetMin.y };
-        Vector2 pMax = { anchorMaxPos.x + OffsetMax.x, anchorMaxPos.y + OffsetMax.y };
+        Vector2 pMin = {anchorMinPos.x + OffsetMin.x, anchorMinPos.y + OffsetMin.y};
+        Vector2 pMax = {anchorMaxPos.x + OffsetMax.x, anchorMaxPos.y + OffsetMax.y};
 
         // 3. Return generic Raylib Rectangle (x, y, w, h)
-        return Rectangle{
-            viewportOffset.x + pMin.x, 
-            viewportOffset.y + pMin.y, 
-            pMax.x - pMin.x, 
-            pMax.y - pMin.y
-        };
+        return Rectangle{viewportOffset.x + pMin.x, viewportOffset.y + pMin.y, pMax.x - pMin.x, pMax.y - pMin.y};
     }
 
     // New helper to get center position in viewport space
     Vector2 GetCenter(Vector2 viewportSize) const
     {
         Rectangle rect = CalculateRect(viewportSize);
-        return { rect.x + rect.width * 0.5f, rect.y + rect.height * 0.5f };
+        return {rect.x + rect.width * 0.5f, rect.y + rect.height * 0.5f};
     }
 
     Vector2 GetSize(Vector2 viewportSize) const
     {
         Rectangle rect = CalculateRect(viewportSize);
-        return { rect.width, rect.height };
+        return {rect.width, rect.height};
     }
 };
 
@@ -145,7 +140,8 @@ struct ButtonControl
     bool AutoSize = false;
 
     ButtonControl() = default;
-    ButtonControl(const std::string &label) : Label(label)
+    ButtonControl(const std::string& label)
+        : Label(label)
     {
     }
 };
@@ -168,7 +164,8 @@ struct LabelControl
     bool AutoSize = false;
 
     LabelControl() = default;
-    LabelControl(const std::string &text) : Text(text)
+    LabelControl(const std::string& text)
+        : Text(text)
     {
     }
 };
@@ -205,7 +202,7 @@ struct InputTextControl
     bool ReadOnly = false;
     bool Password = false;
     bool Changed = false;
-    
+
     TextStyle Style;
     UIStyle BoxStyle;
 };
@@ -216,7 +213,7 @@ struct ComboBoxControl
     std::vector<std::string> Items = {"Option 1", "Option 2", "Option 3"};
     int SelectedIndex = 0;
     bool Changed = false;
-    
+
     TextStyle Style;
     UIStyle BoxStyle;
 };
@@ -226,7 +223,7 @@ struct ProgressBarControl
     float Progress = 0.5f; // 0.0 - 1.0
     std::string OverlayText = "";
     bool ShowPercentage = true;
-    
+
     TextStyle Style;
     UIStyle BarStyle;
 };
@@ -239,7 +236,7 @@ struct ImageControl
     std::string TexturePath = "";
     Color TintColor = {255, 255, 255, 255};
     Color BorderColor = {0, 0, 0, 0};
-    
+
     UIStyle Style;
 };
 
@@ -250,9 +247,9 @@ struct ImageButtonControl
     std::string Label = "ImageButton";
     Color TintColor = {255, 255, 255, 255};
     Color BackgroundColor = {0, 0, 0, 0};
-    int FramePadding = -1;  // -1 = use default
+    int FramePadding = -1; // -1 = use default
     bool PressedThisFrame = false;
-    
+
     UIStyle Style;
 };
 
@@ -270,8 +267,8 @@ struct RadioButtonControl
     std::vector<std::string> Options = {"Option 1", "Option 2", "Option 3"};
     int SelectedIndex = 0;
     bool Changed = false;
-    bool Horizontal = false;  // Layout direction
-    
+    bool Horizontal = false; // Layout direction
+
     TextStyle Style;
 };
 
@@ -280,9 +277,9 @@ struct ColorPickerControl
     std::string Label = "Color";
     Color SelectedColor = {255, 255, 255, 255};
     bool ShowAlpha = true;
-    bool ShowPicker = true;  // vs just color edit
+    bool ShowPicker = true; // vs just color edit
     bool Changed = false;
-    
+
     UIStyle Style;
 };
 
@@ -295,7 +292,7 @@ struct DragFloatControl
     float Max = 100.0f;
     std::string Format = "%.3f";
     bool Changed = false;
-    
+
     TextStyle Style;
     UIStyle BoxStyle;
 };
@@ -309,7 +306,7 @@ struct DragIntControl
     int Max = 100;
     std::string Format = "%d";
     bool Changed = false;
-    
+
     TextStyle Style;
     UIStyle BoxStyle;
 };
@@ -321,8 +318,8 @@ struct TreeNodeControl
     std::string Label = "TreeNode";
     bool IsOpen = false;
     bool DefaultOpen = false;
-    bool IsLeaf = false;  // No arrow
-    
+    bool IsLeaf = false; // No arrow
+
     TextStyle Style;
 };
 
@@ -331,7 +328,7 @@ struct TabBarControl
     std::string Label = "TabBar";
     bool Reorderable = true;
     bool AutoSelectNewTabs = true;
-    
+
     UIStyle Style;
 };
 
@@ -340,7 +337,7 @@ struct TabItemControl
     std::string Label = "Tab";
     bool IsOpen = true;
     bool Selected = false;
-    
+
     TextStyle Style;
 };
 
@@ -349,7 +346,7 @@ struct CollapsingHeaderControl
     std::string Label = "Header";
     bool IsOpen = false;
     bool DefaultOpen = false;
-    
+
     TextStyle Style;
 };
 
@@ -362,8 +359,8 @@ struct PlotLinesControl
     std::string OverlayText = "";
     float ScaleMin = 0.0f;
     float ScaleMax = 1.0f;
-    Vector2 GraphSize = {0, 80};  // 0 = auto width
-    
+    Vector2 GraphSize = {0, 80}; // 0 = auto width
+
     TextStyle Style;
     UIStyle BoxStyle;
 };
@@ -376,7 +373,7 @@ struct PlotHistogramControl
     float ScaleMin = 0.0f;
     float ScaleMax = 1.0f;
     Vector2 GraphSize = {0, 80};
-    
+
     TextStyle Style;
     UIStyle BoxStyle;
 };

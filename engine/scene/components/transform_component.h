@@ -14,18 +14,19 @@ struct TransformComponent
     Vector3 Scale = {1.0f, 1.0f, 1.0f};
 
     TransformComponent() = default;
-    TransformComponent(const TransformComponent &) = default;
-    TransformComponent(const Vector3 &translation) : Translation(translation)
+    TransformComponent(const TransformComponent&) = default;
+    TransformComponent(const Vector3& translation)
+        : Translation(translation)
     {
     }
 
-    void SetRotation(const Vector3 &euler)
+    void SetRotation(const Vector3& euler)
     {
         Rotation = euler;
         RotationQuat = QuaternionFromEuler(euler.x, euler.y, euler.z);
     }
 
-    void SetRotationQuat(const Quaternion &quat)
+    void SetRotationQuat(const Quaternion& quat)
     {
         RotationQuat = quat;
         Rotation = QuaternionToEuler(quat);
@@ -38,13 +39,11 @@ struct TransformComponent
                               MatrixTranslate(Translation.x, Translation.y, Translation.z));
     }
 
-    static Matrix GetTransform(const Vector3 &translation, const Quaternion &rotation,
-                               const Vector3 &scale)
+    static Matrix GetTransform(const Vector3& translation, const Quaternion& rotation, const Vector3& scale)
     {
-        return MatrixMultiply(
-            QuaternionToMatrix(rotation),
-            MatrixMultiply(MatrixTranslate(translation.x, translation.y, translation.z),
-                           MatrixScale(scale.x, scale.y, scale.z)));
+        return MatrixMultiply(QuaternionToMatrix(rotation),
+                              MatrixMultiply(MatrixTranslate(translation.x, translation.y, translation.z),
+                                             MatrixScale(scale.x, scale.y, scale.z)));
     }
 
     Matrix GetInterpolatedTransform(float alpha) const

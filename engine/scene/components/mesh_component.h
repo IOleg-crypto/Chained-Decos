@@ -25,7 +25,9 @@ struct MaterialSlot
     MaterialInstance Material;
 
     MaterialSlot() = default;
-    MaterialSlot(const std::string &name, int index) : Name(name), Index(index)
+    MaterialSlot(const std::string& name, int index)
+        : Name(name),
+          Index(index)
     {
     }
 };
@@ -36,12 +38,17 @@ struct ModelComponent
     std::string ModelPath;
     std::shared_ptr<ModelAsset> Asset; // Cached asset reference
     std::vector<MaterialSlot> Materials;
-    bool MaterialsInitialized = false;
+    bool  MaterialsInitialized = false;
+    float CullDistance = 0.0f; // 0 = no limit
 
     ModelComponent() = default;
-    ModelComponent(const ModelComponent &) = default;
-    ModelComponent(AssetHandle handle) : ModelHandle(handle) {}
-    ModelComponent(const std::string &path) : ModelPath(path)
+    ModelComponent(const ModelComponent&) = default;
+    ModelComponent(AssetHandle handle)
+        : ModelHandle(handle)
+    {
+    }
+    ModelComponent(const std::string& path)
+        : ModelPath(path)
     {
     }
 };
@@ -51,7 +58,7 @@ struct MaterialComponent
     std::vector<MaterialSlot> Slots;
 
     MaterialComponent() = default;
-    MaterialComponent(const MaterialComponent &) = default;
+    MaterialComponent(const MaterialComponent&) = default;
 };
 
 } // namespace CHEngine

@@ -12,26 +12,30 @@ ShaderAsset::~ShaderAsset()
     }
 }
 
-int ShaderAsset::GetLocation(const std::string &name)
+int ShaderAsset::GetLocation(const std::string& name)
 {
     if (m_UniformCache.find(name) != m_UniformCache.end())
+    {
         return m_UniformCache[name];
+    }
 
     int location = GetShaderLocation(m_Shader, name.c_str());
     m_UniformCache[name] = location;
     return location;
 }
 
-void ShaderAsset::SetUniform(int location, const void *value, int type)
+void ShaderAsset::SetUniform(int location, const void* value, int type)
 {
     SetShaderValue(m_Shader, location, value, type);
 }
 
-void ShaderAsset::SetUniform(const std::string &name, const void *value, int type)
+void ShaderAsset::SetUniform(const std::string& name, const void* value, int type)
 {
     int location = GetLocation(name);
     if (location >= 0)
+    {
         SetShaderValue(m_Shader, location, value, type);
+    }
 }
 
 // Type-safe helper methods
@@ -39,14 +43,18 @@ void ShaderAsset::SetFloat(const std::string& name, float value)
 {
     int location = GetLocation(name);
     if (location >= 0)
+    {
         SetShaderValue(m_Shader, location, &value, SHADER_UNIFORM_FLOAT);
+    }
 }
 
 void ShaderAsset::SetInt(const std::string& name, int value)
 {
     int location = GetLocation(name);
     if (location >= 0)
+    {
         SetShaderValue(m_Shader, location, &value, SHADER_UNIFORM_INT);
+    }
 }
 
 void ShaderAsset::SetVec2(const std::string& name, const Vector2& value)

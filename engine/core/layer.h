@@ -11,7 +11,8 @@ namespace CHEngine
 class Layer
 {
 public:
-    Layer(const std::string &name = "Layer") : m_DebugName(name)
+    Layer(const std::string& name = "Layer")
+        : m_DebugName(name)
     {
     }
     virtual ~Layer() = default;
@@ -41,11 +42,11 @@ public:
     virtual void OnImGuiRender()
     {
     }
-    virtual void OnEvent(Event &event)
+    virtual void OnEvent(Event& event)
     {
     }
 
-    const std::string &GetName() const
+    const std::string& GetName() const
     {
         return m_DebugName;
     }

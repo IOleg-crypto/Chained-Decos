@@ -2,16 +2,22 @@
 #define CH_VIEWPORT_PANEL_H
 
 // Removed redundant include: engine/graphics/render.h
+#include "engine/core/timestep.h"
 #include "panel.h"
 #include "raylib.h"
 #include "viewport/editor_camera.h"
 #include "viewport/editor_gizmo.h"
 #include "viewport/ui_manipulator.h"
-#include "engine/core/timestep.h"
 
 namespace CHEngine
 {
-struct GizmoBtn { GizmoType type; const char* icon; const char* tooltip; int key; };
+struct GizmoBtn
+{
+    GizmoType type;
+    const char* icon;
+    const char* tooltip;
+    int key;
+};
 
 class ViewportPanel : public Panel
 {
@@ -37,11 +43,12 @@ public:
         return m_ViewportSize;
     }
 
-    GizmoType &GetCurrentTool()
+    GizmoType& GetCurrentTool()
     {
         return m_CurrentTool;
     }
-public: 
+
+public:
     void DrawGizmoButtons();
     void DrawCameraSelector(class Scene* scene);
 
@@ -57,10 +64,10 @@ private:
     GizmoType m_CurrentTool = GizmoType::TRANSLATE;
     Entity m_SelectedEntity;
     std::unique_ptr<class SceneRenderer> m_SceneRenderer;
-    
+
     // UI Interaction state
     ImVec2 m_UIDragOffset = {0, 0};
-    
+
     // Viewport Camera State
     uint64_t m_ViewportCameraEntityUUID = 0; // 0 = Editor Camera
 };

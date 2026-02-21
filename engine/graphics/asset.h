@@ -7,7 +7,7 @@
 
 namespace CHEngine
 {
-    using AssetHandle = UUID;
+using AssetHandle = UUID;
 
 enum class AssetType : uint16_t
 {
@@ -34,10 +34,21 @@ class Asset
 public:
     virtual ~Asset() = default;
 
-    AssetType GetType() const { return m_Type; }
+    AssetType GetType() const
+    {
+        return m_Type;
+    }
 
-    Asset(AssetType type = AssetType::None) : m_Type(type), m_ID() {}
-    Asset(AssetType type, UUID id) : m_Type(type), m_ID(id) {}
+    Asset(AssetType type = AssetType::None)
+        : m_Type(type),
+          m_ID()
+    {
+    }
+    Asset(AssetType type, UUID id)
+        : m_Type(type),
+          m_ID(id)
+    {
+    }
 
     AssetState GetState() const
     {
@@ -53,11 +64,11 @@ public:
         return m_State == AssetState::Ready;
     }
 
-    const std::string &GetPath() const
+    const std::string& GetPath() const
     {
         return m_Path;
     }
-    void SetPath(const std::string &path)
+    void SetPath(const std::string& path)
     {
         m_Path = path;
     }

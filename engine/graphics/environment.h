@@ -1,9 +1,9 @@
 #ifndef CH_ENVIRONMENT_H
 #define CH_ENVIRONMENT_H
 
-#include <raylib.h>
 #include "asset.h"
 #include "engine/core/base.h"
+#include <raylib.h>
 #include <string>
 
 namespace CHEngine
@@ -44,16 +44,22 @@ struct EnvironmentSettings
 class EnvironmentAsset : public Asset
 {
 public:
-    EnvironmentAsset() : Asset(GetStaticType()) {}
+    EnvironmentAsset()
+        : Asset(GetStaticType())
+    {
+    }
     virtual ~EnvironmentAsset() = default;
 
-    static AssetType GetStaticType() { return AssetType::Environment; }
+    static AssetType GetStaticType()
+    {
+        return AssetType::Environment;
+    }
 
-    const EnvironmentSettings &GetSettings() const
+    const EnvironmentSettings& GetSettings() const
     {
         return m_Settings;
     }
-    EnvironmentSettings &GetSettings()
+    EnvironmentSettings& GetSettings()
     {
         return m_Settings;
     }

@@ -12,19 +12,28 @@ enum class UIHandleType
 {
     None = 0,
     Center,
-    TopLeft, TopRight, BottomLeft, BottomRight,
-    Top, Bottom, Left, Right
+    TopLeft,
+    TopRight,
+    BottomLeft,
+    BottomRight,
+    Top,
+    Bottom,
+    Left,
+    Right
 };
 
 class EditorUIManipulator
 {
 public:
     EditorUIManipulator() = default;
-    
+
     // Returns true if interaction is happening
     bool OnImGuiRender(Entity selectedEntity, ImVec2 viewportPos, ImVec2 viewportSize);
 
-    bool IsActive() const { return m_Dragging || m_Resizing; }
+    bool IsActive() const
+    {
+        return m_Dragging || m_Resizing;
+    }
 
 private:
     void DrawHandle(ImDrawList* drawList, ImVec2 pos, UIHandleType type, bool hovered);
@@ -34,7 +43,7 @@ private:
     bool m_Dragging = false;
     bool m_Resizing = false;
     UIHandleType m_ActiveHandle = UIHandleType::None;
-    
+
     // Interaction cache
     ImVec2 m_StartMousePos;
     Vector2 m_StartOffsetMin;
