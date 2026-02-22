@@ -12,9 +12,7 @@
 #include "playercontroller.h"
 #include "playergui.h"
 #include "scenescript.h"
-#include "screen_fall_effect.h"
-#include "settings_script.h"
-#include "spawnzone.h"
+#include "game_scripts.h"
 
 // Standard C++ function for static linking (used by Editor)
 void RegisterGameScripts(CHEngine::Scene* scene)

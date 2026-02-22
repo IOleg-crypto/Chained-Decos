@@ -2,8 +2,7 @@
 #include "engine/core/entry_point.h"
 #include "runtime/runtime_layer.h"
 
-// Declaration for the function in game_module.cpp
-void RegisterGameScripts(CHEngine::Scene* scene);
+#include "game_scripts.h"
 
 namespace CHEngine
 {
