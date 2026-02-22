@@ -24,6 +24,7 @@ Renderer* Renderer::s_Instance = nullptr;
 
 void Renderer::Init()
 {
+    CH_CORE_INFO("Renderer::Init - VERSION: DEBUG_SKYBOX_2026_02_22_v1");
     CH_CORE_ASSERT(!s_Instance, "Renderer already initialized!");
     s_Instance = new Renderer();
 
@@ -59,20 +60,32 @@ void Renderer::Init()
             lib.Add("Unlit", unlitShader);
         }
 
+        auto cubemapShader = assetManager->Get<ShaderAsset>("engine/resources/shaders/cubemap.chshader");
+        if (cubemapShader)
+        {
+            lib.Add("CubemapGen", cubemapShader);
+        }
+
+        auto skyboxCubemapShader = assetManager->Get<ShaderAsset>("engine/resources/shaders/skybox_cubemap.chshader");
+        if (skyboxCubemapShader)
+        {
+            lib.Add("SkyboxCubemap", skyboxCubemapShader);
+        }
+
         // Icons
-        auto lightIcon = assetManager->Get<TextureAsset>("engine/resources/icons/light_bulb.png");
+        auto lightIcon = assetManager->Get<TextureAsset>(PROJECT_ROOT_DIR "/engine/resources/icons/light_bulb.png");
         if (lightIcon)
         {
             s_Instance->m_Data->LightIcon = lightIcon->GetTexture();
         }
 
-        auto spawnIcon = assetManager->Get<TextureAsset>("engine/resources/icons/leaf_icon.png");
+        auto spawnIcon = assetManager->Get<TextureAsset>(PROJECT_ROOT_DIR "/engine/resources/icons/leaf_icon.png");
         if (spawnIcon)
         {
             s_Instance->m_Data->SpawnIcon = spawnIcon->GetTexture();
         }
 
-        auto cameraIcon = assetManager->Get<TextureAsset>("engine/resources/icons/camera_icon.png");
+        auto cameraIcon = assetManager->Get<TextureAsset>(PROJECT_ROOT_DIR "/engine/resources/icons/camera_icon.png");
         if (cameraIcon)
         {
             s_Instance->m_Data->CameraIcon = cameraIcon->GetTexture();
@@ -133,6 +146,14 @@ void Renderer::BeginScene(const Camera3D& camera)
 {
     EnsureShadersLoaded();
     m_Data->CurrentCameraPosition = camera.position;
+
+    // Update light SSBO if dirty
+    if (m_Data->LightsDirty)
+    {
+        rlUpdateShaderBuffer(m_Data->LightSSBO, m_Data->Lights, sizeof(RenderLight) * RendererData::MaxLights, 0);
+        m_Data->LightsDirty = false;
+    }
+
     BeginMode3D(camera);
 }
 
@@ -307,16 +328,57 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
         }
     }
 
-    auto skyboxShader = m_Data->Shaders->Exists("Skybox") ? m_Data->Shaders->Get("Skybox") : nullptr;
+    int activeMode = skybox.Mode;
+    CH_CORE_INFO("Renderer: DrawSkybox Mode: {}, Texture: {}", activeMode, skybox.TexturePath);
+    auto shaderName = (activeMode == 2) ? "SkyboxCubemap" : "Skybox";
+    auto skyboxShader = m_Data->Shaders->Exists(shaderName) ? m_Data->Shaders->Get(shaderName) : nullptr;
+    
     if (!skyboxShader || skyboxShader->GetShader().id == 0)
     {
-        return;
+        CH_CORE_WARN("Renderer::DrawSkybox: Required shader '{}' not found or failed to load. Falling back to default skybox.", shaderName);
+        activeMode = 0;
+        skyboxShader = m_Data->Shaders->Get("Skybox");
+        if (!skyboxShader) return;
+    }
+
+    // Cubemap Generation Trigger
+    if (activeMode == 2 && !textureAsset->IsCubemap())
+    {
+        auto genShader = m_Data->Shaders->Exists("CubemapGen") ? m_Data->Shaders->Get("CubemapGen") : nullptr;
+        if (genShader && genShader->GetShader().id > 0)
+        {
+            CH_CORE_INFO("Renderer: Generating cubemap for '{}' (Panorama ID: {})...", skybox.TexturePath, textureAsset->GetTexture().id);
+            Texture2D panorama = textureAsset->GetTexture();
+            
+            // Note: We use PIXELFORMAT_UNCOMPRESSED_R16G16B16A16 or R32G32B32A32 to preserve HDR float values
+            TextureCubemap cubemap = GenTextureCubemap(genShader->GetShader(), panorama, 1024, PIXELFORMAT_UNCOMPRESSED_R32G32B32A32);
+            
+            if (cubemap.id > 0)
+            {
+                textureAsset->Unload(); // Unload panorama
+                textureAsset->SetTexture(cubemap);
+                textureAsset->SetIsCubemap(true);
+                CH_CORE_INFO("Renderer: Cubemap generated successfully for '{}' (Cubemap ID: {}).", skybox.TexturePath, cubemap.id);
+            }
+            else
+            {
+                CH_CORE_ERROR("Renderer: Failed to generate cubemap for '{}'!", skybox.TexturePath);
+                activeMode = 0; // Fallback
+                skyboxShader = m_Data->Shaders->Get("Skybox");
+            }
+        }
+        else
+        {
+             CH_CORE_ERROR("Renderer: CubemapGen shader missing! Cannot generate cubemap.");
+             activeMode = 0;
+             skyboxShader = m_Data->Shaders->Get("Skybox");
+        }
     }
 
     RenderCommand::DisableBackfaceCulling();
     RenderCommand::DisableDepthMask();
 
-    Material material = LoadMaterialDefault();
+    Material& material = m_Data->SkyboxMaterial;
     material.shader = skyboxShader->GetShader();
     Texture2D skyTexture = textureAsset->GetTexture();
 
@@ -329,9 +391,18 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
         return;
     }
 
-    ::SetTextureFilter(skyTexture, TEXTURE_FILTER_BILINEAR);
-    ::SetTextureWrap(skyTexture, TEXTURE_WRAP_CLAMP);
-    material.maps[MATERIAL_MAP_ALBEDO].texture = skyTexture;
+    if (activeMode == 2)
+    {
+        // For Cubemap, we assign it to the CUBEMAP map slot and set environmentMap uniform
+        // to MATERIAL_MAP_CUBEMAP, so Raylib's DrawMesh handles the binding automatically.
+        material.maps[MATERIAL_MAP_CUBEMAP].texture = skyTexture;
+    }
+    else
+    {
+        ::SetTextureFilter(skyTexture, TEXTURE_FILTER_BILINEAR);
+        ::SetTextureWrap(skyTexture, TEXTURE_WRAP_CLAMP);
+        material.maps[MATERIAL_MAP_ALBEDO].texture = skyTexture;
+    }
 
     // Pass missing matrices to shader (required by skybox.vs)
     skyboxShader->SetMatrix("matProjection", rlGetMatrixProjection());
@@ -340,16 +411,29 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
     skyboxShader->SetFloat("exposure", skybox.Exposure);
     skyboxShader->SetFloat("brightness", skybox.Brightness);
     skyboxShader->SetFloat("contrast", skybox.Contrast);
-    skyboxShader->SetInt("vflipped", 0);
-    skyboxShader->SetInt("skyboxMode", skybox.Mode); // 0: Equirect, 1: Cross
-
-    // Detect HDR texture and enable tone mapping + gamma correction
+    
     std::string skyExt = std::filesystem::path(skybox.TexturePath).extension().string();
     std::transform(skyExt.begin(), skyExt.end(), skyExt.begin(), ::tolower);
     bool isHDR = (skyExt == ".hdr");
-    skyboxShader->SetInt("isHDR", isHDR ? 1 : 0);
-    skyboxShader->SetInt("doGamma", isHDR ? 1 : 0);
-    skyboxShader->SetFloat("fragGamma", 2.2f);
+
+    if (activeMode != 2)
+    {
+        skyboxShader->SetInt("vflipped", 0);
+        skyboxShader->SetInt("skyboxMode", activeMode); // 0: Equirect, 1: Cross
+        
+        // Detect HDR texture and enable tone mapping + gamma correction
+        skyboxShader->SetInt("isHDR", isHDR ? 1 : 0);
+        skyboxShader->SetInt("doGamma", isHDR ? 1 : 0);
+        skyboxShader->SetFloat("fragGamma", 2.2f);
+    }
+    else
+    {
+        // Cubemap path
+        skyboxShader->SetInt("environmentMap", MATERIAL_MAP_CUBEMAP);
+        skyboxShader->SetInt("isHDR", isHDR ? 1 : 0);
+        skyboxShader->SetInt("doGamma", isHDR ? 1 : 0);
+        skyboxShader->SetFloat("fragGamma", 2.2f);
+    }
 
     // Fog uniforms
     ApplyFogUniforms(skyboxShader.get());
@@ -421,8 +505,34 @@ void Renderer::ClearLights()
 
 void Renderer::ApplyEnvironment(const EnvironmentSettings& settings)
 {
+    // Skip if nothing changed (POD-like member comparison for Lighting and Fog)
+    bool lightingChanged = (m_Data->CurrentLighting.Ambient != settings.Lighting.Ambient) ||
+                           (m_Data->CurrentLighting.Direction.x != settings.Lighting.Direction.x) ||
+                           (m_Data->CurrentLighting.Direction.y != settings.Lighting.Direction.y) ||
+                           (m_Data->CurrentLighting.Direction.z != settings.Lighting.Direction.z) ||
+                           (m_Data->CurrentLighting.LightColor.r != settings.Lighting.LightColor.r) ||
+                           (m_Data->CurrentLighting.LightColor.g != settings.Lighting.LightColor.g) ||
+                           (m_Data->CurrentLighting.LightColor.b != settings.Lighting.LightColor.b) ||
+                           (m_Data->CurrentLighting.LightColor.a != settings.Lighting.LightColor.a);
+
+    bool fogChanged = (m_Data->CurrentFog.Enabled != settings.Fog.Enabled) ||
+                      (m_Data->CurrentFog.Density != settings.Fog.Density) ||
+                      (m_Data->CurrentFog.Start != settings.Fog.Start) ||
+                      (m_Data->CurrentFog.End != settings.Fog.End) ||
+                      (m_Data->CurrentFog.FogColor.r != settings.Fog.FogColor.r) ||
+                      (m_Data->CurrentFog.FogColor.g != settings.Fog.FogColor.g) ||
+                      (m_Data->CurrentFog.FogColor.b != settings.Fog.FogColor.b) ||
+                      (m_Data->CurrentFog.FogColor.a != settings.Fog.FogColor.a);
+
+    if (!lightingChanged && !fogChanged)
+        return;
+
     m_Data->CurrentLighting = settings.Lighting;
     m_Data->CurrentFog = settings.Fog;
+    
+    // If lighting settings changed significantly (like ambient), we might want to flag lights dirty
+    // to force a refresh if the shader uses it.
+    m_Data->LightsDirty = true;
 }
 
 void Renderer::SetDiagnosticMode(float mode)
@@ -439,6 +549,7 @@ void Renderer::InitializeSkybox()
 {
     Mesh cube = GenMeshCube(1.0f, 1.0f, 1.0f);
     m_Data->SkyboxCube = LoadModelFromMesh(cube);
+    m_Data->SkyboxMaterial = LoadMaterialDefault();
 }
 
 void Renderer::DrawModelInstanced(const std::shared_ptr<ModelAsset>& modelAsset, const std::vector<Matrix>& transforms,
@@ -803,5 +914,84 @@ void Renderer::BindMaterialUniforms(ShaderAsset* activeShader, const Material& m
         shininess = 1.0f;
     }
     activeShader->SetFloat("shininess", shininess);
+}
+// Generate cubemap texture from HDR texture (Direct port from raylib example)
+TextureCubemap Renderer::GenTextureCubemap(Shader shader, Texture2D panorama, int size, int format)
+{
+    TextureCubemap cubemap = {0};
+
+    rlDisableBackfaceCulling(); // Disable backface culling to render inside the cube
+
+    // STEP 1: Setup framebuffer
+    unsigned int rbo = rlLoadTextureDepth(size, size, true);
+    cubemap.id = rlLoadTextureCubemap(0, size, format, 1);
+
+    unsigned int fbo = rlLoadFramebuffer();
+    rlFramebufferAttach(fbo, rbo, RL_ATTACHMENT_DEPTH, RL_ATTACHMENT_RENDERBUFFER, 0);
+    rlFramebufferAttach(fbo, cubemap.id, RL_ATTACHMENT_COLOR_CHANNEL0, RL_ATTACHMENT_CUBEMAP_POSITIVE_X, 0);
+
+    // Check if framebuffer is complete with attachments (valid)
+    if (rlFramebufferComplete(fbo))
+    {
+        CH_CORE_INFO("Renderer::GenTextureCubemap: FBO [ID {}] created successfully", fbo);
+    }
+    else
+    {
+        CH_CORE_ERROR("Renderer::GenTextureCubemap: FBO failed!");
+        return {0};
+    }
+
+    // STEP 2: Draw to framebuffer
+    rlEnableShader(shader.id);
+
+    // Explicitly find locations to avoid relying on hardcoded ones
+    int locProj = GetShaderLocation(shader, "matProjection");
+    int locView = GetShaderLocation(shader, "matView");
+
+    // Define projection matrix and send it to shader
+    Matrix matFboProjection = MatrixPerspective(90.0 * DEG2RAD, 1.0, rlGetCullDistanceNear(), rlGetCullDistanceFar());
+    rlSetUniformMatrix(locProj, matFboProjection);
+
+    // Define view matrix for every side of the cubemap
+    Matrix fboViews[6] = {
+        MatrixLookAt({0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, -1.0f,  0.0f}),
+        MatrixLookAt({0.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f}),
+        MatrixLookAt({0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}),
+        MatrixLookAt({0.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}),
+        MatrixLookAt({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, -1.0f, 0.0f}),
+        MatrixLookAt({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -1.0f}, {0.0f, -1.0f, 0.0f})};
+
+    rlViewport(0, 0, size, size); // Set viewport to current fbo dimensions
+
+    // Activate and enable texture for drawing to cubemap faces
+    rlActiveTextureSlot(0);
+    rlEnableTexture(panorama.id);
+
+    for (int i = 0; i < 6; i++)
+    {
+        rlSetUniformMatrix(locView, fboViews[i]);
+        rlFramebufferAttach(fbo, cubemap.id, RL_ATTACHMENT_COLOR_CHANNEL0, RL_ATTACHMENT_CUBEMAP_POSITIVE_X + i, 0);
+        rlEnableFramebuffer(fbo);
+
+        rlClearScreenBuffers();
+        rlLoadDrawCube();
+    }
+
+    // STEP 3: Unload framebuffer and reset state
+    rlDisableShader();
+    rlDisableTexture();
+    rlDisableFramebuffer();
+    rlUnloadFramebuffer(fbo);
+
+    // Reset viewport dimensions to default
+    rlViewport(0, 0, rlGetFramebufferWidth(), rlGetFramebufferHeight());
+    rlEnableBackfaceCulling();
+
+    cubemap.width = size;
+    cubemap.height = size;
+    cubemap.mipmaps = 1;
+    cubemap.format = format;
+
+    return cubemap;
 }
 } // namespace CHEngine
