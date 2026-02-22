@@ -12,7 +12,13 @@ if(MSVC)
         /Zc:preprocessor     # Modern preprocessor
         /Gm-                 # Disable minimal rebuild (it's slower)
         /utf-8               # Use UTF-8 character set
+        
+        # Dead Code Elimination: Function-Level Linking
+        $<$<CONFIG:Release>:/Gy>
     )
+    
+    # Strip unused functions in Release
+    add_link_options($<$<CONFIG:Release>:/OPT:REF> $<$<CONFIG:Release>:/OPT:ICF>)
 
     if(ENABLE_WARNINGS)
         add_compile_options(/W4 /permissive-)
@@ -32,6 +38,16 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(
         $<$<CONFIG:Debug>:-O0> $<$<CONFIG:Debug>:-g>
         $<$<CONFIG:Release>:-O3> $<$<CONFIG:Release>:-DNDEBUG>
+        
+        # Dead Code Elimination data sections
+        $<$<CONFIG:Release>:-ffunction-sections>
+        $<$<CONFIG:Release>:-fdata-sections>
+    )
+
+    # Dead Code Elimination linkage and binary stripping for Release build
+    add_link_options(
+        $<$<CONFIG:Release>:-Wl,--gc-sections>
+        $<$<CONFIG:Release>:-s>
     )
 
     if(ENABLE_WARNINGS)
@@ -79,8 +95,9 @@ if(WIN32)
 endif()
 
 # Optimized Build Settings
-option(ENABLE_UNITY_BUILD "Enable Unity Builds for faster compilation" ON)
+option(ENABLE_UNITY_BUILD "Enable Unity Builds for faster compilation" OFF)
 option(ENABLE_PCH "Enable Precompiled Headers for faster compilation" ON)
+option(ENABLE_LTO "Enable Link-Time Optimization (IPO) for Release configurations" ON)
 
 if(ENABLE_UNITY_BUILD)
     set(CMAKE_UNITY_BUILD ON)
@@ -99,9 +116,6 @@ function(apply_engine_optimizations target_name)
 #include <unordered_map>
 #include <algorithm>
 #include <functional>
-#include <raylib.h>
-#define IMGUI_DEFINE_MATH_OPERATORS
-#include <imgui.h>
 
 #ifdef CH_PLATFORM_WINDOWS
   #define WIN32_LEAN_AND_MEAN
@@ -127,18 +141,32 @@ function(apply_engine_optimizations target_name)
 #endif
 
 #include <raylib.h>
-#include <imgui.h>
-#include <algorithm>
-#include <functional>
-#include <memory>
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include <entt/entt.hpp>
+#include <yaml-cpp/yaml.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 ")
         # Create a temp file for PCH
         set(PCH_FILE "${CMAKE_BINARY_DIR}/engine_pch.h")
         file(WRITE "${PCH_FILE}" "${PCH_HEADER_CONTENT}")
         
         target_precompile_headers(${target_name} PUBLIC "${PCH_FILE}")
+    endif()
+
+    if(ENABLE_LTO)
+        # Disable LTO for MinGW for now as it has issues with PCH/Plugins in this environment
+        if(MINGW)
+            set(ipo_supported OFF)
+        else()
+            include(CheckIPOSupported)
+            check_ipo_supported(RESULT ipo_supported OUTPUT ipo_output)
+        endif()
+
+        if(ipo_supported)
+            set_property(TARGET ${target_name} PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+        elseif(ipo_output)
+            message(WARNING "IPO/LTO is not supported by the current compiler: ${ipo_output}")
+        endif()
     endif()
 endfunction()

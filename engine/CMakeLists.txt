@@ -3,6 +3,9 @@
 set(ENGINE_INCLUDE_DIRS
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${glm_SOURCE_DIR}
+    ${yaml-cpp_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/include/entt/src
 )
 
 # SHARED for local development (hot-reload), STATIC for CI/distribution
@@ -13,140 +16,19 @@ else()
     set(ENGINE_LIB_TYPE STATIC)
 endif()
 
+add_subdirectory(core)
+add_subdirectory(graphics)
+add_subdirectory(physics)
+add_subdirectory(audio)
+add_subdirectory(scene)
+
+# Create the final engine facade library that stitches all objects together
 add_library(engine ${ENGINE_LIB_TYPE}
-    # Core
-    core/layer_stack.cpp
-    core/profiler.cpp
-    core/uuid.cpp
-    core/window.cpp
-    core/input.cpp
-    core/imgui_layer.cpp
-    core/thread_pool.cpp
-    core/module_loader.cpp
-    core/application.cpp
-    
-    # Graphics
-    graphics/renderer.cpp
-    graphics/render_command.cpp
-    graphics/ui_renderer.cpp
-    graphics/asset_manager.cpp
-    graphics/shader_asset.cpp
-    graphics/shader_library.cpp
-    graphics/scene_renderer.cpp
-    graphics/renderer2d.cpp
-    graphics/model_asset.cpp
-    graphics/texture_asset.cpp
-    graphics/font_asset.cpp
-    graphics/mesh_importer.cpp
-    graphics/texture_importer.cpp
-    graphics/shader_importer.cpp
-    graphics/font_importer.cpp
-    graphics/environment_importer.cpp
-    
-    # Audio
-    audio/audio.cpp
-    audio/sound_asset.cpp
-    audio/audio_importer.cpp
-    
-    # Physics
-    physics/physics.cpp
-    physics/dynamics.cpp
-    physics/narrow_phase.cpp
-    physics/scene_trace.cpp
-    physics/bvh/bvh.cpp
-    
-    # Scene
-    scene/scene.cpp
-    scene/project.cpp
-    scene/project_serializer.cpp
-    scene/scene_serializer.cpp
-    scene/component_serializer.cpp
-    scene/prefab_serializer.cpp
-    scene/scene_scripting.cpp
-    scene/scene_camera.cpp
-    scene/entity.cpp
-    
-    # All headers (for IDE support)
-    core/application.h
-    core/imgui_layer.h
-    core/base.h
-    core/assert.h
-    core/platform_detection.h
-    core/thread_pool.h
-    core/entry_point.h
-    core/events.h
-    core/input.h
-    core/layer.h
-    core/layer_stack.h
-    core/log.h
-    core/profiler.h
-    core/timestep.h
-    core/uuid.h
-    core/window.h
-    core/yaml.h
-    core/module_loader.h
-    
-    graphics/renderer.h
-    graphics/render_command.h
-    graphics/scene_renderer.h
-    graphics/ui_renderer.h
-    graphics/asset.h
-    graphics/asset_manager.h
-    graphics/shader_asset.h
-    graphics/shader_library.h
-    graphics/model_asset.h
-    graphics/texture_asset.h
-    graphics/font_asset.h
-    graphics/environment.h
-    graphics/material.h
-    graphics/mesh_importer.h
-    graphics/texture_importer.h
-    graphics/shader_importer.h
-    graphics/font_importer.h
-    graphics/environment_importer.h
-    graphics/asset_importer.h
-    
-    audio/audio.h
-    audio/sound_asset.h
-    audio/audio_importer.h
-    
-    physics/physics.h
-    physics/dynamics.h
-    physics/narrow_phase.h
-    physics/scene_trace.h
-    physics/bvh/bvh.h
-    physics/bvh/bvh_node.h
-    physics/collision/collision.h
-    physics/collision/collision_triangle.h
-    
-    scene/scene.h
-    scene/scene_events.h
-    scene/project.h
-    scene/project_serializer.h
-    scene/scene_serializer.h
-    scene/component_serializer.h
-    scene/prefab_serializer.h
-    scene/scene_scripting.h
-    scene/script_registry.h
-    scene/scriptable_entity.h
-    scene/scene_camera.h
-    scene/components.h
-    scene/components/animation_component.h
-    scene/components/audio_component.h
-    scene/components/camera_component.h
-    scene/components/control_component.h
-    scene/components/game_components.h
-    scene/components/hierarchy_component.h
-    scene/components/id_component.h
-    scene/components/light_component.h
-    scene/components/mesh_component.h
-    scene/components/navigation_component.h
-    scene/components/physics_component.h
-    scene/components/scripting_components.h
-    scene/components/shader_component.h
-    scene/components/tag_component.h
-    scene/components/transform_component.h
-    scene/entity.h
+    $<TARGET_OBJECTS:engine_core>
+    $<TARGET_OBJECTS:engine_graphics>
+    $<TARGET_OBJECTS:engine_physics>
+    $<TARGET_OBJECTS:engine_audio>
+    $<TARGET_OBJECTS:engine_scene>
 )
 
 # MSVC needs exported symbols to generate the .lib import library
@@ -156,8 +38,9 @@ target_include_directories(engine PUBLIC
     ${ENGINE_INCLUDE_DIRS}
     ${assimp_SOURCE_DIR}/include
     ${assimp_BINARY_DIR}/include
-INTERFACE
+    ${glm_SOURCE_DIR}
     ${yaml-cpp_SOURCE_DIR}/include
+INTERFACE
     ${CMAKE_SOURCE_DIR}/include/imgui
     ${CMAKE_SOURCE_DIR}/include/imgui/backends
     ${imguizmo_SOURCE_DIR}
@@ -167,9 +50,9 @@ target_link_libraries(engine
 PUBLIC 
     raylib 
     EnTT
-PRIVATE
     imguilib
     yaml-cpp
+PRIVATE
     assimp::assimp
 )
 
