@@ -391,7 +391,7 @@ void AssetManager::Update()
     }
 
     // 2. Process finished background loads on the main thread (GPU upload)
-    // Throttled: upload at most m_MaxUploadsPerFrame assets per frame to avoid spikes
+    // Throttled: upload    int m_MaxUploadsPerFrame = 10; // Throttle GPU uploads to avoid per-frame spikes
     std::vector<std::shared_ptr<Asset>> toUpload;
     {
         std::lock_guard<std::mutex> lock(m_PendingUploadsMutex);
@@ -418,7 +418,6 @@ void AssetManager::Update()
         {
             std::static_pointer_cast<SoundAsset>(asset)->UploadToGPU();
         }
-
         CH_CORE_INFO("AssetManager: Background load completed and uploaded to GPU for '{}'", asset->GetPath());
     }
 }

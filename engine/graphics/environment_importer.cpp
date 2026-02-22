@@ -47,6 +47,14 @@ std::shared_ptr<EnvironmentAsset> EnvironmentImporter::ImportEnvironment(const s
             {
                 settings.Lighting.Ambient = lighting["Ambient"].as<float>();
             }
+            if (lighting["Exposure"])
+            {
+                settings.Lighting.Exposure = lighting["Exposure"].as<float>();
+            }
+            if (lighting["Gamma"])
+            {
+                settings.Lighting.Gamma = lighting["Gamma"].as<float>();
+            }
         }
         else
         {
@@ -111,6 +119,8 @@ bool EnvironmentImporter::SaveEnvironment(const std::shared_ptr<EnvironmentAsset
     out << YAML::Key << "Direction" << YAML::Value << settings.Lighting.Direction;
     out << YAML::Key << "LightColor" << YAML::Value << settings.Lighting.LightColor;
     out << YAML::Key << "Ambient" << YAML::Value << settings.Lighting.Ambient;
+    out << YAML::Key << "Exposure" << YAML::Value << settings.Lighting.Exposure;
+    out << YAML::Key << "Gamma" << YAML::Value << settings.Lighting.Gamma;
     out << YAML::EndMap;
 
     out << YAML::Key << "Skybox" << YAML::BeginMap;
