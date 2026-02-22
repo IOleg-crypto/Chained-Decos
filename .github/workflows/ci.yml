@@ -103,11 +103,12 @@ jobs:
         run: |
           cmake --preset ${{ matrix.config_preset }} \
             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" \
-            -DCH_CI=ON
+            -DCH_CI=ON \
+            -DENABLE_UNITY_BUILD=ON
 
       - name: Build
         run: |
-          cmake --build --preset ${{ matrix.preset }} --parallel $(nproc 2>/dev/null || echo 8)
+          cmake --build --preset ${{ matrix.preset }} --parallel 4
 
       - name: Test
         run: |
