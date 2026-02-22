@@ -8,6 +8,7 @@ on:
       - "**/*.h"
       - "**/CMakeLists.txt"
       - "**/CMakePresets.json"
+      - "cmake/*.cmake"
       - ".github/workflows/ci.yml"
   pull_request:
     branches: [main, develop, chained-gui, refactor-branch]
@@ -63,11 +64,11 @@ jobs:
         with:
           path: |
             ~/.ccache
-            C:/ccache
             build/${{ matrix.config_preset }}/_deps
-          key: ${{ runner.os }}-${{ matrix.config_preset }}-${{ hashFiles('**/CMakeLists.txt', 'CMakePresets.json') }}
+          key: ${{ runner.os }}-${{ matrix.preset }}-${{ hashFiles('**/CMakeLists.txt', 'CMakePresets.json', 'cmake/*.cmake') }}
           restore-keys: |
-            ${{ runner.os }}-${{ matrix.config_preset }}-
+            ${{ runner.os }}-${{ matrix.preset }}-
+            ${{ runner.os }}-
 
       - name: Install Linux Dependencies
         if: runner.os == 'Linux'
@@ -96,24 +97,13 @@ jobs:
       - name: Install Windows Dependencies
         if: runner.os == 'Windows'
         run: |
-          choco install cmake ninja ccache --no-progress
+          choco install cmake ninja --no-progress
 
       - name: Configure
         run: |
-          extra_flags=""
-          if [[ "${{ matrix.preset }}" == *"clang"* ]]; then
-            extra_flags="-DCMAKE_CXX_FLAGS=-stdlib=libc++ -DCMAKE_EXE_LINKER_FLAGS=-stdlib=libc++"
-          fi
-          
-          # Only override compilers on Linux to match installed versions
-          if [[ "${{ runner.os }}" == "Linux" ]]; then
-            extra_flags="$extra_flags -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX"
-          fi
-
           cmake --preset ${{ matrix.config_preset }} \
             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" \
-            -DCH_CI=ON \
-            $extra_flags
+            -DCH_CI=ON
 
       - name: Build
         run: |
@@ -138,6 +128,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ runner.os }}-${{ matrix.preset }}
+          name: ${{ runner.os }}-${{ matrix.preset }}-binaries
           path: build/${{ matrix.config_preset }}/bin
           retention-days: 7
+

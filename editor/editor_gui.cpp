@@ -9,6 +9,7 @@
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
 #include "extras/IconsFontAwesome6.h"
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "nfd.h"

@@ -32,9 +32,7 @@
       "displayName": "Linux GCC Debug",
       "inherits": "ninja-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_C_COMPILER": "gcc-15",
-        "CMAKE_CXX_COMPILER": "g++-15"
+        "CMAKE_BUILD_TYPE": "Debug"
       },
       "condition": {
         "type": "equals",
@@ -47,9 +45,7 @@
       "displayName": "Linux GCC Release",
       "inherits": "ninja-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_C_COMPILER": "gcc-15",
-        "CMAKE_CXX_COMPILER": "g++-15"
+        "CMAKE_BUILD_TYPE": "Release"
       },
       "condition": {
         "type": "equals",
@@ -62,9 +58,7 @@
       "displayName": "Linux Clang Debug",
       "inherits": "ninja-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_C_COMPILER": "clang-19",
-        "CMAKE_CXX_COMPILER": "clang++-19"
+        "CMAKE_BUILD_TYPE": "Debug"
       },
       "condition": {
         "type": "equals",
@@ -77,9 +71,7 @@
       "displayName": "Linux Clang Release",
       "inherits": "ninja-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_C_COMPILER": "clang-19",
-        "CMAKE_CXX_COMPILER": "clang++-19"
+        "CMAKE_BUILD_TYPE": "Release"
       },
       "condition": {
         "type": "equals",

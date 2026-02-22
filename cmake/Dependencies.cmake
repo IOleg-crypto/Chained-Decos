@@ -166,7 +166,7 @@ target_include_directories(imguilib PUBLIC
 target_link_libraries(imguilib PRIVATE raylib)
 
 # Define IMGUI math operators and GLFW settings
-target_compile_definitions(imguilib PRIVATE 
+target_compile_definitions(imguilib PUBLIC 
     IMGUI_DEFINE_MATH_OPERATORS
     GLFW_INCLUDE_NONE
 )
