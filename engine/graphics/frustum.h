@@ -102,6 +102,18 @@ struct Frustum
         }
         return true;
     }
+
+    bool IsSphereVisible(Vector3 center, float radius) const
+    {
+        for (int i = 0; i < 6; i++)
+        {
+            if (Planes[i].DistanceToPoint(center) < -radius)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
 };
 } // namespace CHEngine
 

@@ -29,15 +29,37 @@ struct AnimatedEntry
 
 struct InstanceKey
 {
-    std::string modelPath;
-    bool operator<(const InstanceKey& o) const { return modelPath < o.modelPath; }
+    size_t Hash = 0;
+
+    InstanceKey(const std::string& path, const std::vector<MaterialSlot>& mats)
+    {
+        // Simple fast string hash
+        auto hashCombine = [](size_t& seed, size_t hash) {
+            seed ^= hash + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        };
+
+        Hash = std::hash<std::string>{}(path);
+
+        for (const auto& m : mats)
+        {
+            hashCombine(Hash, std::hash<int>{}((int)m.Target));
+            hashCombine(Hash, std::hash<int>{}(m.Index));
+            hashCombine(Hash, std::hash<std::string>{}(m.Material.AlbedoPath));
+            hashCombine(Hash, std::hash<std::string>{}(m.Material.ShaderPath));
+        }
+    }
+
+    bool operator<(const InstanceKey& o) const
+    {
+        return Hash < o.Hash;
+    }
 };
 
 struct InstanceGroup
 {
     std::shared_ptr<ModelAsset> asset;
     std::vector<Matrix>         transforms;
-    std::vector<MaterialSlot>   materials; // taken from the first entity in the group
+    std::vector<MaterialSlot>   materials;
 };
 } // namespace
 
@@ -141,7 +163,14 @@ void SceneRenderer::RenderModels(Scene* scene, Timestep timestep)
     auto& registry = scene->GetRegistry();
     auto view = registry.view<TransformComponent, ModelComponent>();
 
-    // 1. Collect Lights
+    // 1. Frustum Extraction (moved up for light/model culling)
+    Frustum frustum;
+    {
+        Matrix matVP = MatrixMultiply(rlGetMatrixModelview(), rlGetMatrixProjection());
+        frustum.Extract(matVP);
+    }
+
+    // 2. Collect Lights
     Renderer::Get().ClearLights();
 
     int lightCount = 0;
@@ -153,7 +182,14 @@ void SceneRenderer::RenderModels(Scene* scene, Timestep timestep)
             break;
         }
         auto& light = lightView.get<LightComponent>(entity);
-        Vector3 worldPos = GetWorldPosition(registry, entity);
+        Matrix worldTransform = GetWorldTransform(registry, entity);
+        Vector3 worldPos = {worldTransform.m12, worldTransform.m13, worldTransform.m14};
+
+        // Frustum Culling for Lights
+        if (!frustum.IsSphereVisible(worldPos, light.Radius))
+        {
+            continue;
+        }
 
         RenderLight rl;
         rl.color[0] = light.LightColor.r / 255.0f;
@@ -171,7 +207,6 @@ void SceneRenderer::RenderModels(Scene* scene, Timestep timestep)
 
         if (light.Type == LightType::Spot)
         {
-            Matrix worldTransform = GetWorldTransform(registry, entity);
             Vector3 worldDir = Vector3Transform({0, -1, 0}, worldTransform);
             rl.direction = Vector3Normalize(Vector3Subtract(worldDir, worldPos));
         }
@@ -180,11 +215,6 @@ void SceneRenderer::RenderModels(Scene* scene, Timestep timestep)
     }
 
     // ---- Pass A: Collect visible entities, split into animated vs. static ----
-    Frustum frustum;
-    {
-        Matrix matVP = MatrixMultiply(rlGetMatrixModelview(), rlGetMatrixProjection());
-        frustum.Extract(matVP);
-    }
     std::vector<AnimatedEntry>           animatedEntries;
     std::map<InstanceKey, InstanceGroup> instanceGroups;
 
@@ -248,8 +278,8 @@ void SceneRenderer::RenderModels(Scene* scene, Timestep timestep)
         }
         else if (!hasShaderOverride)
         {
-            // Batch static entities by model path
-            InstanceKey key{model.ModelPath};
+            // Batch static entities by model path AND materials
+            InstanceKey key{model.ModelPath, model.Materials};
             auto& group = instanceGroups[key];
             if (group.transforms.empty())
             {

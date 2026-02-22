@@ -39,6 +39,7 @@ static_assert(sizeof(RenderLight) == 64, "RenderLight must be exactly 64 bytes f
 struct RendererData
 {
     Model SkyboxCube;
+    Material SkyboxMaterial;
 
     std::unique_ptr<ShaderLibrary> Shaders;
 
@@ -139,6 +140,7 @@ private:
     void ApplyFogUniforms(ShaderAsset* shader);
     void EnsureShadersLoaded();
     void InitializeSkybox();
+    TextureCubemap GenTextureCubemap(Shader shader, Texture2D panorama, int size, int format);
 
     // DrawModel decomposition helpers
     std::vector<Matrix> ComputeBoneMatrices(const std::shared_ptr<ModelAsset>& modelAsset, int animationIndex,

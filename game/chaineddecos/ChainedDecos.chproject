@@ -9,15 +9,15 @@ Project:
     []
   Physics:
     Gravity: 20
-    FixedTimestep: 0.0166666675
+    FixedTimestep: 0.0666999966
   Animation:
     TargetFPS: 30
   Render:
     AmbientIntensity: 0
-    DefaultExposure: 1.23000002
+    DefaultExposure: 0
   Texture:
     GenerateMipmaps: true
-    Filter: 2
+    Filter: 5
   Window:
     Width: 1920
     Height: 1080

@@ -5,6 +5,7 @@
 #include "engine/core/profiler.h"
 #include "engine/graphics/asset_manager.h"
 #include "engine/graphics/model_asset.h"
+#include "engine/graphics/animation_graph_asset.h"
 #include "engine/physics/bvh/bvh.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/component_serializer.h"
@@ -272,6 +273,8 @@ void Scene::OnUpdateRuntime(Timestep timestep)
 
     UpdateScripting(timestep);
     UpdateAnimations(timestep);
+    UpdateAnimationGraphs(timestep);
+    UpdateUIActions();
     UpdateAudio(timestep);
     UpdateCameras(timestep);
     UpdateTransitions();
@@ -283,6 +286,7 @@ void Scene::OnUpdateEditor(Timestep timestep)
     CH_PROFILE_FUNCTION();
 
     UpdateAnimations(timestep);
+    UpdateAnimationGraphs(timestep);
     UpdateCameras(timestep);
     UpdatePhysics(timestep);
 }
@@ -813,6 +817,70 @@ Entity Scene::GetPrimaryCameraEntity()
         }
     }
     return {};
+}
+
+void Scene::UpdateAnimationGraphs(Timestep deltaTime)
+{
+    m_Registry.view<AnimationComponent, AnimationGraphComponent>().each([&](auto entity, auto& anim, auto& graph) {
+        if (!graph.Graph || !graph.Graph->IsReady())
+            return;
+
+        // Initialize default state if needed
+        if (graph.CurrentState.empty())
+        {
+            graph.CurrentState = graph.Graph->GetDefaultState();
+            const auto* state = graph.Graph->GetState(graph.CurrentState);
+            if (state)
+            {
+                anim.Play(state->AnimationIndex, state->IsLooping);
+            }
+        }
+
+        const auto* currentState = graph.Graph->GetState(graph.CurrentState);
+        if (!currentState)
+            return;
+
+        // Check transitions
+        for (const auto& transition : currentState->Transitions)
+        {
+            if (transition.AreConditionsMet(graph.Parameters))
+            {
+                // Trigger transition
+                const auto* nextState = graph.Graph->GetState(transition.TargetState);
+                if (nextState)
+                {
+                    graph.CurrentState = transition.TargetState;
+                    anim.CrossFade(nextState->AnimationIndex, transition.CrossfadeDuration, nextState->IsLooping);
+                    break;
+                }
+            }
+        }
+    });
+}
+
+void Scene::UpdateUIActions()
+{
+    m_Registry.view<UIActionComponent>().each([&](auto entity, auto& action) {
+        Entity uiEntity(entity, &m_Registry);
+        bool pressed = false;
+        if (uiEntity.HasComponent<ButtonControl>())
+            pressed = uiEntity.GetComponent<ButtonControl>().PressedThisFrame;
+        else if (uiEntity.HasComponent<ImageButtonControl>())
+            pressed = uiEntity.GetComponent<ImageButtonControl>().PressedThisFrame;
+
+        if (pressed)
+        {
+            Entity target = GetEntityByUUID(action.TargetEntityID);
+            if (target && target.HasComponent<AnimationGraphComponent>())
+            {
+                auto& graph = target.GetComponent<AnimationGraphComponent>();
+                if (action.Type == UIActionType::SetParameter)
+                {
+                    graph.SetParameter(action.ParameterName, action.Value);
+                }
+            }
+        }
+    });
 }
 
 } // namespace CHEngine

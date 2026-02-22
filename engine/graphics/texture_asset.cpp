@@ -24,6 +24,13 @@ static int ToRaylibFilter(TextureFilter filter)
 
 void TextureAsset::UploadToGPU()
 {
+    // Check state first to avoid redundant work/races
+    AssetState currentState = GetState();
+    if (currentState == AssetState::Ready || currentState == AssetState::Failed)
+    {
+        return;
+    }
+
     // This MUST run on main thread (where OpenGL context is)
     if (m_HasPendingImage && m_PendingImage.data != nullptr)
     {
@@ -68,31 +75,69 @@ void TextureAsset::UploadToGPU()
         std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
         if (ext == ".hdr")
         {
-            CH_CORE_INFO("TextureAsset: Loading HDR texture directly via LoadTexture: '{}'", m_Path);
+            CH_CORE_WARN("TextureAsset: Attempting diagnostic HDR load for '{}'", m_Path);
             if (m_Texture.id > 0) ::UnloadTexture(m_Texture);
-            m_Texture = ::LoadTexture(m_Path.c_str());
             
+            // Try loading image first to see where it fails
+            Image img = ::LoadImage(m_Path.c_str());
+            if (img.data != nullptr)
+            {
+                CH_CORE_INFO("TextureAsset: HDR Image loaded to CPU ({}x{}, format: {})", img.width, img.height, img.format);
+                
+                // Flip vertically because stb_image loads top-down, but cubemap generation expects GL-style bottom-up or standard spherical UVs
+                ::ImageFlipVertical(&img);
+                
+                m_Texture = ::LoadTextureFromImage(img);
+                ::UnloadImage(img);
+            }
+            else
+            {
+                 CH_CORE_ERROR("TextureAsset: Failed to load HDR Image from path: {}", m_Path);
+                 // Check if file exists to distinguish between "missing file" and "unsupported format"
+                 if (!std::filesystem::exists(m_Path)) {
+                     CH_CORE_ERROR("TextureAsset: File DOES NOT EXIST at path: {}", m_Path);
+                 } else {
+                     CH_CORE_ERROR("TextureAsset: File exists but raylib failed to parse it (likely missing HDR support in build)");
+                 }
+            }
+
             if (m_Texture.id > 0)
             {
                 ::SetTextureFilter(m_Texture, TEXTURE_FILTER_BILINEAR);
                 SetState(AssetState::Ready);
-                CH_CORE_INFO("TextureAsset: HDR texture loaded successfully (ID: {}, format: {})", 
+                CH_CORE_INFO("TextureAsset: HDR texture created on GPU (ID: {}, format: {})", 
                              m_Texture.id, m_Texture.format);
             }
             else
             {
-                CH_CORE_ERROR("TextureAsset: Failed to load HDR texture directly for '{}'", m_Path);
+                CH_CORE_ERROR("TextureAsset: Failed to create GPU texture for HDR '{}'", m_Path);
                 SetState(AssetState::Failed);
             }
         }
+    }
+    else
+    {
+        // State is None or Failed
+        CH_CORE_WARN("TextureAsset::UploadToGPU: Called with state {}, doing nothing for '{}'", (int)m_State.load(), m_Path);
     }
 }
 
 TextureAsset::~TextureAsset()
 {
+    Unload();
+}
+
+void TextureAsset::Unload()
+{
     if (m_Texture.id > 0)
     {
         ::UnloadTexture(m_Texture);
+        m_Texture.id = 0;
+    }
+    if (m_PendingImage.data != nullptr)
+    {
+        ::UnloadImage(m_PendingImage);
+        m_PendingImage.data = nullptr;
     }
 }
 

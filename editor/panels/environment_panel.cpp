@@ -269,8 +269,12 @@ void EnvironmentPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset>
             }
         }
 
-        const char* skyboxModes[] = {"Equirectangular (Sphere)", "Horizontal Cross (Cube)"};
-        ImGui::Combo("Mapping Mode", &settings.Skybox.Mode, skyboxModes, 2);
+        ImGui::SliderInt("Mapping Mode", &settings.Skybox.Mode, 0, 2);
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("0: Equirectangular (Sphere)\n1: Horizontal Cross (Cube)\n2: Cubemap (GPU Generated)");
+        }
+        ImGui::TextDisabled("0: Sphere, 1: Cross, 2: Cubemap");
 
         ImGui::DragFloat("Exposure", &settings.Skybox.Exposure, 0.01f, 0.0f, 10.0f);
         ImGui::DragFloat("Brightness", &settings.Skybox.Brightness, 0.01f, -2.0f, 2.0f);

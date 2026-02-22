@@ -24,9 +24,9 @@ Fog:
   Start: 10
   End: 100
 Entities:
-  - Entity: 17694975162465223617
+  - Entity: 1069064208128281074
     TagComponent:
-      Tag: title_image
+      Tag: game_info_2
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -35,48 +35,74 @@ Entities:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-491, -296]
-        OffsetMax: [-126, -148]
+        OffsetMin: [-460, 306]
+        OffsetMax: [272, 336]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
-      ZOrder: 46
+      ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-    ImageControl:
-      TextureHandle: 0
-      TexturePath: materials/unnamed_1.jpg
-      TintColor: [255, 255, 255, 255]
-      BorderColor: [0, 0, 0, 0]
+    LabelControl:
+      Text: Some functionality or aspects of the game may differ from the final version.
+      AutoSize: true
       Style:
-        BackgroundColor: [0, 0, 0, 0]
-        HoverColor: [0, 0, 0, 0]
-        PressedColor: [0, 0, 0, 0]
-        Rounding: 0
-        BorderSize: 0
-        BorderColor: [0, 0, 0, 0]
-        Padding: 0
-        UseGradient: false
-        GradientColor: [0, 0, 0, 0]
-        HoverScale: 1
-        PressedScale: 1
-        TransitionSpeed: 0.100000001
-  - Entity: 2149386149282995176
+        FontName: Default
+        FontSize: 20
+        TextColor: [65, 60, 56, 255]
+        Shadow: false
+        ShadowOffset: 0
+        ShadowColor: [0, 0, 0, 255]
+        LetterSpacing: 1
+        LineHeight: 1.20000005
+        HorizontalAlignment: 0
+        VerticalAlignment: 1
+  - Entity: 6803442666813639815
     TagComponent:
-      Tag: Start
+      Tag: game_info_1
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
-    SceneTransitionComponent:
-      TargetScenePath: scenes\game_mode_selection.chscene
-      Triggered: false
     ControlComponent:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-460, -90]
-        OffsetMax: [-60, -48]
+        OffsetMin: [-461, 263]
+        OffsetMax: [99, 293]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+    LabelControl:
+      Text: This game is currently in development.
+      AutoSize: false
+      Style:
+        FontName: Default
+        FontSize: 20
+        TextColor: [85, 80, 75, 255]
+        Shadow: false
+        ShadowOffset: 0
+        ShadowColor: [0, 0, 0, 255]
+        LetterSpacing: 1
+        LineHeight: 1.20000005
+        HorizontalAlignment: 0
+        VerticalAlignment: 1
+  - Entity: 9971589997937633979
+    TagComponent:
+      Tag: Exit
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-460, 66]
+        OffsetMax: [-60, 108]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -84,7 +110,7 @@ Entities:
       IsActive: true
       HiddenInHierarchy: false
     ButtonControl:
-      Label: Start Game
+      Label: Exit
       Interactable: true
       AutoSize: false
       Style:
@@ -97,13 +123,66 @@ Entities:
         Padding: 0
         UseGradient: false
         GradientColor: [0, 0, 0, 0]
-        HoverScale: 1.0
-        PressedScale: 1.0
+        HoverScale: 1
+        PressedScale: 1
         TransitionSpeed: 0.100000001
       Text:
         FontName: Default
-        FontSize: 32
-        TextColor: [240, 235, 228, 255]
+        FontSize: 28
+        TextColor: [190, 185, 178, 255]
+        Shadow: false
+        ShadowOffset: 0
+        ShadowColor: [0, 0, 0, 0]
+        LetterSpacing: 2
+        LineHeight: 1.20000005
+        HorizontalAlignment: 0
+        VerticalAlignment: 1
+    NativeScriptComponent:
+      Scripts:
+        - ExitScript
+  - Entity: 10048507876963945433
+    TagComponent:
+      Tag: Options
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    SceneTransitionComponent:
+      TargetScenePath: scenes\video_scene.chscene
+      Triggered: false
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-460, 14]
+        OffsetMax: [-60, 56]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+    ButtonControl:
+      Label: Options
+      Interactable: true
+      AutoSize: false
+      Style:
+        BackgroundColor: [4, 4, 4, 255]
+        HoverColor: [22, 22, 22, 255]
+        PressedColor: [2, 2, 2, 255]
+        Rounding: 0
+        BorderSize: 0
+        BorderColor: [0, 0, 0, 0]
+        Padding: 0
+        UseGradient: false
+        GradientColor: [0, 0, 0, 0]
+        HoverScale: 1
+        PressedScale: 1
+        TransitionSpeed: 0.100000001
+      Text:
+        FontName: Default
+        FontSize: 28
+        TextColor: [190, 185, 178, 255]
         Shadow: false
         ShadowOffset: 0
         ShadowColor: [0, 0, 0, 0]
@@ -150,8 +229,8 @@ Entities:
         Padding: 0
         UseGradient: false
         GradientColor: [0, 0, 0, 0]
-        HoverScale: 1.0
-        PressedScale: 1.0
+        HoverScale: 1
+        PressedScale: 1
         TransitionSpeed: 0.100000001
       Text:
         FontName: Default
@@ -167,22 +246,22 @@ Entities:
     NativeScriptComponent:
       Scripts:
         - SceneScript
-  - Entity: 10048507876963945433
+  - Entity: 2149386149282995176
     TagComponent:
-      Tag: Options
+      Tag: Start
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     SceneTransitionComponent:
-      TargetScenePath: scenes\video_scene.chscene
+      TargetScenePath: scenes\game_mode_selection.chscene
       Triggered: false
     ControlComponent:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-460, 14]
-        OffsetMax: [-60, 56]
+        OffsetMin: [-460, -90]
+        OffsetMax: [-60, -48]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -190,7 +269,7 @@ Entities:
       IsActive: true
       HiddenInHierarchy: false
     ButtonControl:
-      Label: Options
+      Label: Start Game
       Interactable: true
       AutoSize: false
       Style:
@@ -203,13 +282,13 @@ Entities:
         Padding: 0
         UseGradient: false
         GradientColor: [0, 0, 0, 0]
-        HoverScale: 1.0
-        PressedScale: 1.0
+        HoverScale: 1
+        PressedScale: 1
         TransitionSpeed: 0.100000001
       Text:
         FontName: Default
-        FontSize: 28
-        TextColor: [190, 185, 178, 255]
+        FontSize: 32
+        TextColor: [240, 235, 228, 255]
         Shadow: false
         ShadowOffset: 0
         ShadowColor: [0, 0, 0, 0]
@@ -220,9 +299,9 @@ Entities:
     NativeScriptComponent:
       Scripts:
         - SceneScript
-  - Entity: 9971589997937633979
+  - Entity: 17694975162465223617
     TagComponent:
-      Tag: Exit
+      Tag: title_image
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -231,108 +310,29 @@ Entities:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-460, 66]
-        OffsetMax: [-60, 108]
+        OffsetMin: [-491, -296]
+        OffsetMax: [-126, -148]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
-      ZOrder: 0
+      ZOrder: 46
       IsActive: true
       HiddenInHierarchy: false
-    ButtonControl:
-      Label: Exit
-      Interactable: true
-      AutoSize: false
+    ImageControl:
+      TextureHandle: 0
+      TexturePath: materials/unnamed_1.jpg
+      TintColor: [255, 255, 255, 255]
+      BorderColor: [0, 0, 0, 0]
       Style:
-        BackgroundColor: [4, 4, 4, 255]
-        HoverColor: [22, 22, 22, 255]
-        PressedColor: [2, 2, 2, 255]
+        BackgroundColor: [0, 0, 0, 0]
+        HoverColor: [0, 0, 0, 0]
+        PressedColor: [0, 0, 0, 0]
         Rounding: 0
         BorderSize: 0
         BorderColor: [0, 0, 0, 0]
         Padding: 0
         UseGradient: false
         GradientColor: [0, 0, 0, 0]
-        HoverScale: 1.0
-        PressedScale: 1.0
+        HoverScale: 1
+        PressedScale: 1
         TransitionSpeed: 0.100000001
-      Text:
-        FontName: Default
-        FontSize: 28
-        TextColor: [190, 185, 178, 255]
-        Shadow: false
-        ShadowOffset: 0
-        ShadowColor: [0, 0, 0, 0]
-        LetterSpacing: 2
-        LineHeight: 1.20000005
-        HorizontalAlignment: 0
-        VerticalAlignment: 1
-    NativeScriptComponent:
-      Scripts:
-        - ExitScript
-  - Entity: 6803442666813639815
-    TagComponent:
-      Tag: game_info_1
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ControlComponent:
-      Transform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [-460, 280]
-        OffsetMax: [100, 310]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      ZOrder: 0
-      IsActive: true
-      HiddenInHierarchy: false
-    LabelControl:
-      Text: This game is currently in development.
-      AutoSize: false
-      Style:
-        FontName: Default
-        FontSize: 20
-        TextColor: [85, 80, 75, 255]
-        Shadow: false
-        ShadowOffset: 0
-        ShadowColor: [0, 0, 0, 255]
-        LetterSpacing: 1
-        LineHeight: 1.20000005
-        HorizontalAlignment: 0
-        VerticalAlignment: 1
-  - Entity: 1069064208128281074
-    TagComponent:
-      Tag: game_info_2
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ControlComponent:
-      Transform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [-460, 306]
-        OffsetMax: [100, 336]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      ZOrder: 0
-      IsActive: true
-      HiddenInHierarchy: false
-    LabelControl:
-      Text: Some functionality or aspects of the game may differ from the final version.
-      AutoSize: false
-      Style:
-        FontName: Default
-        FontSize: 20
-        TextColor: [65, 60, 56, 255]
-        Shadow: false
-        ShadowOffset: 0
-        ShadowColor: [0, 0, 0, 255]
-        LetterSpacing: 1
-        LineHeight: 1.20000005
-        HorizontalAlignment: 0
-        VerticalAlignment: 1

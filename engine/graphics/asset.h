@@ -3,7 +3,9 @@
 
 #include "engine/core/base.h"
 #include "engine/core/uuid.h"
+#include <cstdio>
 #include <string>
+#include <atomic>
 
 namespace CHEngine
 {
@@ -18,7 +20,8 @@ enum class AssetType : uint16_t
     Shader,
     Environment,
     Material,
-    Font
+    Font,
+    AnimationGraph
 };
 
 enum class AssetState : uint8_t
@@ -52,11 +55,21 @@ public:
 
     AssetState GetState() const
     {
-        return m_State;
+        return m_State.load(std::memory_order_relaxed);
     }
     void SetState(AssetState state)
     {
-        m_State = state;
+        AssetState oldState = m_State.exchange(state, std::memory_order_release);
+        if (state != oldState)
+        {
+            printf("[ASSET] '%s' state change: %d -> %d\n", m_Path.c_str(), (int)oldState, (int)state);
+            fflush(stdout);
+            
+            if (state == AssetState::Failed)
+            {
+                CH_CORE_WARN("Asset: FAILED for '{}' (Type: {}, ID: {})", m_Path, (int)m_Type, (uint64_t)m_ID);
+            }
+        }
     }
 
     bool IsReady() const
@@ -82,7 +95,7 @@ protected:
     std::string m_Path;
     UUID m_ID;
     AssetType m_Type = AssetType::None;
-    AssetState m_State = AssetState::None;
+    std::atomic<AssetState> m_State = AssetState::None;
 };
 
 } // namespace CHEngine

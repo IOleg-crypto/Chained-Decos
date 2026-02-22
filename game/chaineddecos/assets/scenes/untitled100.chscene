@@ -13,10 +13,10 @@ Lighting:
   LightColor: [255, 255, 255, 255]
   Ambient: 0.550000012
 Skybox:
-  TexturePath: skyboxes/kloppenheim_02_puresky_2k.hdr
-  Exposure: 1.36000001
-  Brightness: 0.0700000003
-  Contrast: 1
+  TexturePath: skyboxes/qwantani_dusk_2_puresky_8k.hdr
+  Exposure: 0.670000017
+  Brightness: -0.680000007
+  Contrast: 0.449999988
 Fog:
   Enabled: false
   Color: [158, 148, 148, 255]
@@ -24,6 +24,39 @@ Fog:
   Start: 0
   End: 158.800003
 Entities:
+  - Entity: 12136520092648073534
+    TagComponent:
+      Tag: Sphere
+    TransformComponent:
+      Translation: [0, 24.2238617, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: ":sphere:"
+      Materials:
+        - Name: Material 0
+          Index: 0
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            Metalness: 0
+            Roughness: 0.5
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
   - Entity: 10653066213482940164
     TagComponent:
       Tag: minecrafthouse
@@ -569,8 +602,8 @@ Entities:
     TagComponent:
       Tag: SceneCamera
     TransformComponent:
-      Translation: [-126.707664, 69.1916809, 112.764725]
-      Rotation: [-728.790955, -8679.04688, 0]
+      Translation: [102.517929, 344.002533, 1330.70544]
+      Rotation: [-376.791382, -10089.417, 0]
       Scale: [1, 1, 1]
     CameraComponent:
       Primary: true
@@ -589,18 +622,18 @@ Entities:
     TagComponent:
       Tag: rail#3d
     TransformComponent:
-      Translation: [395.709229, 23.4788246, 27.4185696]
-      Rotation: [-3.03447938, -1.53069568, -2.92836022]
-      Scale: [2.81782007, 1.83832681, 2.52331209]
+      Translation: [334.647217, 23.4788246, 865.104187]
+      Rotation: [0.0143109951, 0.110026747, -0.0434906594]
+      Scale: [160.609955, 176.19548, 75.8668976]
     ModelComponent:
       ModelHandle: 0
-      ModelPath: models/train/scene.gltf
+      ModelPath: models/6_buildings_low-poly_pack_1.glb
       Materials:
         - Name: Material 0
           Index: 0
           Target: 0
           Material:
-            AlbedoColor: [17, 3, 3, 255]
+            AlbedoColor: [17, 3, 0, 240]
             AlbedoPath: ""
             OverrideAlbedo: false
             NormalMapPath: ""
@@ -665,12 +698,12 @@ Entities:
     ColliderComponent:
       Type: 257
       Enabled: true
-      Offset: [-1.23756766, -0.447188109, -3.16349196]
-      Size: [2.47513533, 0.44796145, 34.5888672]
+      Offset: [-47.0180092, -0.00186821003, -296.693939]
+      Size: [461.537354, 163.612488, 386.329773]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
-      ModelPath: models/train/scene.gltf
+      ModelPath: models/6_buildings_low-poly_pack_1.glb
       AutoCalculate: true
   - Entity: 6476044873312290418
     TagComponent:
@@ -876,11 +909,6 @@ Entities:
       Translation: [8.6416502, 43.367569, 55.2477837]
       Rotation: [0, -0, 0]
       Scale: [1, 1, 1]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: ":cube:"
-      Materials:
-        []
     LightComponent:
       Type: 1
       LightColor: [173, 85, 173, 255]

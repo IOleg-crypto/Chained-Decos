@@ -40,6 +40,8 @@ target_sources(editor_core PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/project_settings_panel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/environment_panel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/environment_panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/animation_graph_editor_panel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/animation_graph_editor_panel.cpp
 
     # Undo
     ${CMAKE_CURRENT_SOURCE_DIR}/undo/command_history.h
@@ -56,6 +58,8 @@ target_sources(editor_core PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_layout.cpp
     # External
     ${CMAKE_SOURCE_DIR}/include/rlImGui/rlImGui.cpp
+    ${imguizmo_SOURCE_DIR}/GraphEditor.cpp
+    ${imguizmo_SOURCE_DIR}/GraphEditor.h
 )
 
 # Handle large translation units (required for PropertyEditor and Unity builds)

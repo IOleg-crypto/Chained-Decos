@@ -70,6 +70,7 @@ private:
     // Unified cache: Type -> Path -> Asset
     std::map<AssetType, std::map<std::string, std::shared_ptr<Asset>>> m_AssetCaches;
     std::unordered_map<AssetHandle, AssetMetadata> m_AssetMetadata;
+    mutable std::unordered_map<std::string, std::string> m_PathCache;
 
     // Async loading support
     std::vector<std::shared_ptr<Asset>> m_PendingUploads;
