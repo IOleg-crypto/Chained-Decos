@@ -25,8 +25,7 @@
 #include "panels/property_editor.h"
 #include "panels/viewport_panel.h"
 #include "raylib.h"
-// Forward declaration: statically linked game scripts (defined in game_module.cpp)
-extern void RegisterGameScripts(CHEngine::Scene* scene);
+#include "game/chaineddecos/src/game_scripts.h"
 
 namespace CHEngine
 {
