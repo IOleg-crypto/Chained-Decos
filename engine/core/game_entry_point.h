@@ -2,13 +2,15 @@
 #define CH_GAME_ENTRY_POINT_H
 
 #ifdef CH_PLATFORM_WINDOWS
-#ifdef GAME_BUILD_DLL
-#define CH_GAME_API __declspec(dllexport)
+    #ifdef GAME_BUILD_DLL
+        #define CH_GAME_API __declspec(dllexport)
+    #elif defined(GAME_BUILD_EXE)
+        #define CH_GAME_API // Static linking into EXE
+    #else
+        #define CH_GAME_API // Not building DLL, so don't use dllimport
+    #endif
 #else
-#define CH_GAME_API __declspec(dllimport)
-#endif
-#else
-#define CH_GAME_API
+    #define CH_GAME_API
 #endif
 
 // Forward declarations for ABI-safe script registration
