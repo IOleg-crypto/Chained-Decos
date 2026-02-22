@@ -9,13 +9,13 @@ Canvas:
   MatchWidthOrHeight: 0.5
 EnvironmentPath: environments/new_environment.chenv
 Lighting:
-  Direction: [0.0799999982, -1, -1]
+  Direction: [-0.699999988, -1, 1]
   LightColor: [255, 255, 255, 255]
   Ambient: 0.550000012
 Skybox:
   TexturePath: skyboxes/qwantani_dusk_2_puresky_8k.hdr
   Exposure: 0.670000017
-  Brightness: -0.680000007
+  Brightness: -0.699999988
   Contrast: 0.449999988
 Fog:
   Enabled: false
@@ -239,8 +239,8 @@ Entities:
     TagComponent:
       Tag: Player
     TransformComponent:
-      Translation: [523.908203, 167.991577, 1098.12817]
-      Rotation: [0, -1.53101778, 0]
+      Translation: [-0.443338692, 0.183058769, 37.5503273]
+      Rotation: [0, -55.8001099, 0]
       Scale: [0.999971211, 1, 0.999971211]
     ModelComponent:
       ModelHandle: 0
@@ -289,7 +289,7 @@ Entities:
       SoundPath: audio/storegraphic-soft-wind-477404.mp3
       Loop: true
       PlayOnStart: false
-      Volume: 0.293693691
+      Volume: 0.499051809
       Pitch: 1
     PlayerComponent:
       MovementSpeed: 15
@@ -602,11 +602,11 @@ Entities:
     TagComponent:
       Tag: SceneCamera
     TransformComponent:
-      Translation: [102.517929, 344.002533, 1330.70544]
-      Rotation: [-376.791382, -10089.417, 0]
+      Translation: [-247.533951, 76.114975, -145.229294]
+      Rotation: [-369.591156, -10212.6045, 0]
       Scale: [1, 1, 1]
     CameraComponent:
-      Primary: true
+      Primary: false
       FixedAspectRatio: false
       IsOrbitCamera: false
       OrbitDistance: 10
@@ -883,16 +883,16 @@ Entities:
     TagComponent:
       Tag: CameraPlayer
     TransformComponent:
-      Translation: [512.477722, 179.892288, 1099.9386]
-      Rotation: [-45.7999878, -81, 1.09153516e-05]
+      Translation: [-13.3067703, 4.2832346, 27.8921375]
+      Rotation: [165.700012, -53.0998497, -180]
       Scale: [1, 1, 1]
     CameraComponent:
-      Primary: false
+      Primary: true
       FixedAspectRatio: false
       IsOrbitCamera: true
       OrbitDistance: 16.5999985
-      OrbitYaw: -81.0000763
-      OrbitPitch: 45.799984
+      OrbitYaw: 233.099838
+      OrbitPitch: 14.2999744
       LookSensitivity: 0.899999976
       TargetEntityTag: Player
       ProjectionType: 0
@@ -1081,7 +1081,7 @@ Entities:
             Transparent: false
             Alpha: 1
     ColliderComponent:
-      Type: -2048655103
+      Type: 257
       Enabled: true
       Offset: [-1.23756766, -0.447188109, -3.16349196]
       Size: [2.47513533, 0.44796145, 34.5888672]
@@ -1703,7 +1703,7 @@ Entities:
             Transparent: true
             Alpha: 1
     ColliderComponent:
-      Type: 257
+      Type: 555221249
       Enabled: true
       Offset: [-10.1186838, -142.921936, -4.77685642]
       Size: [20.2556896, 277.196045, 14.2480249]
