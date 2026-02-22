@@ -8,7 +8,6 @@
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
 #include "engine/scene/script_registry.h"
-#include "editor/panels/animation_graph_editor_panel.h"
 #include "extras/IconsFontAwesome6.h"
 #include "imgui.h"
 #include "nfd.h"
@@ -663,30 +662,7 @@ void PropertyEditor::Init()
         return changed || pb.Changed;
     });
 
-    Register<AnimationGraphComponent>("Animation Graph", [](auto& component, auto entity) {
-        bool changed = false;
-        if (ImGui::Button(ICON_FA_SITEMAP " Open Graph Editor"))
-        {
-            if (auto panel = EditorLayer::Get().GetPanels().Get<AnimationGraphEditorPanel>())
-            {
-                panel->IsOpen() = true;
-                panel->SetGraph(component.Graph);
-            }
-        }
 
-        if (ImGui::TreeNodeEx("Parameters", ImGuiTreeNodeFlags_DefaultOpen))
-        {
-            for (auto& [name, value] : component.Parameters)
-            {
-                if (ImGui::DragFloat(name.c_str(), &value, 0.1f))
-                {
-                    changed = true;
-                }
-            }
-            ImGui::TreePop();
-        }
-        return changed;
-    });
 
     Register<UIActionComponent>("UI Action", [](auto& component, auto entity) {
         auto pb = EditorGUI::Begin();

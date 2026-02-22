@@ -1,26 +1,14 @@
 #include "texture_asset.h"
 #include "engine/core/log.h"
 #include "engine/scene/project.h"
+#include "raylib_converter.h"
 #include "raylib.h"
 #include <filesystem>
+#include <algorithm> // Added this include
 
 namespace CHEngine
 {
 
-// Maps TextureFilter enum to raylib TextureFilter constant
-static int ToRaylibFilter(TextureFilter filter)
-{
-    switch (filter)
-    {
-    case TextureFilter::None:          return TEXTURE_FILTER_POINT;
-    case TextureFilter::Bilinear:      return TEXTURE_FILTER_BILINEAR;
-    case TextureFilter::Trilinear:     return TEXTURE_FILTER_TRILINEAR;
-    case TextureFilter::Anisotropic4x: return TEXTURE_FILTER_ANISOTROPIC_4X;
-    case TextureFilter::Anisotropic8x: return TEXTURE_FILTER_ANISOTROPIC_8X;
-    case TextureFilter::Anisotropic16x:return TEXTURE_FILTER_ANISOTROPIC_16X;
-    default:                           return TEXTURE_FILTER_BILINEAR;
-    }
-}
 
 void TextureAsset::UploadToGPU()
 {
@@ -64,7 +52,7 @@ void TextureAsset::UploadToGPU()
             ::GenTextureMipmaps(&m_Texture);
         }
 
-        ::SetTextureFilter(m_Texture, ToRaylibFilter(texSettings.Filter));
+        ::SetTextureFilter(m_Texture, RaylibConverter::ToRaylibFilter(texSettings.Filter));
 
         SetState(AssetState::Ready);
     }

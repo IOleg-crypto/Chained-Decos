@@ -67,7 +67,6 @@ struct PendingModelData
     std::vector<BoneInfo> bones;
     std::vector<Transform> bindPose;
 
-    // KISS additions
     std::vector<std::string> nodeNames;
     std::vector<int> nodeParents;
     std::vector<Matrix> nodeLocalTransforms;

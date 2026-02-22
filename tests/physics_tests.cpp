@@ -55,3 +55,34 @@ TEST(PhysicsTest, Raycast)
     result = scene->GetPhysics().Raycast(ray);
     EXPECT_FALSE(result.Hit);
 }
+
+TEST(PhysicsTest, RaycastMissingCollider)
+{
+    auto scene = std::make_shared<Scene>();
+    auto entity = scene->CreateEntity("No Collider");
+    auto& transform = entity.GetComponent<TransformComponent>();
+    transform.Translation = {0.0f, 0.0f, 5.0f};
+
+    // No ColliderComponent added
+
+    Ray ray;
+    ray.position = {0.0f, 0.0f, 0.0f};
+    ray.direction = {0.0f, 0.0f, 1.0f};
+
+    RaycastResult result = scene->GetPhysics().Raycast(ray);
+    EXPECT_FALSE(result.Hit);
+}
+
+TEST(PhysicsTest, ColliderEnabledFlag)
+{
+    auto scene = std::make_shared<Scene>();
+    auto entity = scene->CreateEntity("Collider Entity");
+    auto& collider = entity.AddComponent<ColliderComponent>();
+    
+    // Default is true
+    EXPECT_TRUE(collider.Enabled);
+    
+    // Set to false
+    collider.Enabled = false;
+    EXPECT_FALSE(collider.Enabled);
+}
