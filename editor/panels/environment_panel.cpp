@@ -4,6 +4,7 @@
 #include "engine/graphics/environment.h"
 #include "engine/graphics/environment_importer.h"
 #include "engine/scene/project.h"
+#include "engine/graphics/imgui_converter.h"
 #include "imgui.h"
 #include "nfd.hpp"
 #include "scene/scene.h"
@@ -52,11 +53,11 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
         if (m_Context->GetSettings().Mode == BackgroundMode::Color)
         {
             Color color = m_Context->GetSettings().BackgroundColor;
-            float c[4] = {color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f};
+            float c[4];
+            ImGuiConverter::ToFloat4(m_Context->GetSettings().BackgroundColor, c);
             if (ImGui::ColorEdit4("Background Color", c))
             {
-                m_Context->GetSettings().BackgroundColor = {(unsigned char)(c[0] * 255), (unsigned char)(c[1] * 255),
-                                                            (unsigned char)(c[2] * 255), (unsigned char)(c[3] * 255)};
+                m_Context->GetSettings().BackgroundColor = ImGuiConverter::FromFloat4(c);
             }
         }
         else if (m_Context->GetSettings().Mode == BackgroundMode::Texture)
@@ -214,14 +215,11 @@ void EnvironmentPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset>
 
         ImGui::DragFloat3("Direction", &settings.Lighting.Direction.x, 0.01f, -1.0f, 1.0f);
 
-        float color[4] = {settings.Lighting.LightColor.r / 255.0f, settings.Lighting.LightColor.g / 255.0f,
-                          settings.Lighting.LightColor.b / 255.0f, settings.Lighting.LightColor.a / 255.0f};
+        float color[4];
+        ImGuiConverter::ToFloat4(settings.Lighting.LightColor, color);
         if (ImGui::ColorEdit4("Light Color", color))
         {
-            settings.Lighting.LightColor.r = (unsigned char)(color[0] * 255.0f);
-            settings.Lighting.LightColor.g = (unsigned char)(color[1] * 255.0f);
-            settings.Lighting.LightColor.b = (unsigned char)(color[2] * 255.0f);
-            settings.Lighting.LightColor.a = (unsigned char)(color[3] * 255.0f);
+            settings.Lighting.LightColor = ImGuiConverter::FromFloat4(color);
         }
 
         ImGui::DragFloat("Ambient", &settings.Lighting.Ambient, 0.005f, 0.0f, 2.0f);
@@ -296,14 +294,11 @@ void EnvironmentPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset>
         auto& fog = settings.Fog;
         ImGui::Checkbox("Fog Enabled", &fog.Enabled);
 
-        float fogColor[4] = {fog.FogColor.r / 255.0f, fog.FogColor.g / 255.0f, fog.FogColor.b / 255.0f,
-                             fog.FogColor.a / 255.0f};
+        float fogColor[4];
+        ImGuiConverter::ToFloat4(fog.FogColor, fogColor);
         if (ImGui::ColorEdit4("Fog Color", fogColor))
         {
-            fog.FogColor.r = (unsigned char)(fogColor[0] * 255.0f);
-            fog.FogColor.g = (unsigned char)(fogColor[1] * 255.0f);
-            fog.FogColor.b = (unsigned char)(fogColor[2] * 255.0f);
-            fog.FogColor.a = (unsigned char)(fogColor[3] * 255.0f);
+            fog.FogColor = ImGuiConverter::FromFloat4(fogColor);
         }
 
         ImGui::DragFloat("Density", &fog.Density, 0.001f, 0.0f, 1.0f);

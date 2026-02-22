@@ -125,7 +125,6 @@ private: // Update Logic
     void UpdateAudio(Timestep deltaTime);
     void UpdateCameras(Timestep deltaTime);
     void UpdateTransitions();
-    void UpdateAnimationGraphs(Timestep deltaTime);
     void UpdateUIActions();
 
     friend class Entity;

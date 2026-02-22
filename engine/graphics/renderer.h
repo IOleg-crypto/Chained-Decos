@@ -47,7 +47,7 @@ struct RendererData
     FogSettings CurrentFog;
 
     // Unified Lights for the scene (SSBO)
-    static const int MaxLights = 256;
+    static constexpr int MaxLights = 256;
     RenderLight Lights[MaxLights];
     unsigned int LightSSBO = 0;
     bool LightsDirty = true;
@@ -60,6 +60,9 @@ struct RendererData
     float DiagnosticMode = 0.0f; // 0: Normal, 1: Normals, 2: Lighting, 3: Albedo
     Vector3 CurrentCameraPosition = {0.0f, 0.0f, 0.0f};
     Timestep Time = 0.0f;
+    int LightCount = 0;
+    ShaderAsset* CurrentShader = nullptr;
+    EnvironmentSettings CurrentEnv;
 };
 
 struct DebugRenderFlags
@@ -111,6 +114,7 @@ public:
     void SetDirectionalLight(Vector3 direction, Color color);
     void SetAmbientLight(float intensity);
     void SetLight(int index, const RenderLight& light);
+    void SetLightCount(int count);
     void ClearLights();
     void ApplyEnvironment(const EnvironmentSettings& settings);
     void SetDiagnosticMode(float mode);

@@ -3,7 +3,11 @@
 #include "engine/graphics/environment_importer.h"
 #include "engine/graphics/font_importer.h"
 #include "engine/graphics/mesh_importer.h"
+#include "engine/graphics/model_asset.h"
 #include "engine/graphics/shader_importer.h"
+#include "engine/graphics/texture_asset.h"
+#include "engine/graphics/texture_importer.h"
+#include "engine/graphics/texture_importer.h"
 #include "raylib.h"
 #include "gtest/gtest.h"
 #include <filesystem>
@@ -16,6 +20,9 @@ class ImporterTest : public ::testing::Test
 protected:
     void SetUp() override
     {
+#if defined(CH_CI) && defined(CH_PLATFORM_WINDOWS)
+        GTEST_SKIP() << "Skipping importer tests on Windows CI due to lack of OpenGL support.";
+#endif
         // HIDDEN window for raylib resource loading tests
         SetConfigFlags(FLAG_WINDOW_HIDDEN);
         InitWindow(1, 1, "ImporterTest");
@@ -109,4 +116,18 @@ TEST_F(ImporterTest, MeshImporter_InvalidProcedural)
 {
     auto invalid = MeshImporter::GenerateProceduralModel(":invalid:");
     EXPECT_EQ(invalid.meshCount, 0);
+}
+
+TEST_F(ImporterTest, MeshImporter_InvalidPath)
+{
+    auto mesh = MeshImporter::ImportMesh("non_existent_model.obj");
+    ASSERT_TRUE(mesh);
+    EXPECT_EQ(mesh->GetState(), AssetState::Failed);
+}
+
+TEST_F(ImporterTest, TextureImporter_InvalidPath)
+{
+    auto texture = TextureImporter::ImportTexture("non_existent_texture.png");
+    ASSERT_TRUE(texture);
+    EXPECT_EQ(texture->GetState(), AssetState::Failed);
 }

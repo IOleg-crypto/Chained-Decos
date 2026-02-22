@@ -2,6 +2,7 @@
 #include "engine/core/profiler.h"
 #include "engine/graphics/asset_manager.h"
 #include "engine/graphics/font_asset.h"
+#include "imgui_converter.h"
 #include "engine/graphics/texture_asset.h"
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
@@ -36,10 +37,6 @@ UIRenderer::~UIRenderer()
 {
 }
 
-ImVec4 UIRenderer::ColorToImVec4(Color color)
-{
-    return {color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f};
-}
 
 Rectangle UIRenderer::GetEntityRect(Entity entity, const ImVec2& viewportSize, const ImVec2& viewportOffset)
 {
@@ -88,14 +85,14 @@ UIRenderer::UIStyleScope::~UIStyleScope()
 
 void UIRenderer::UIStyleScope::PushStyle(const UIStyle& style, bool interactable)
 {
-    ImGui::PushStyleColor(ImGuiCol_Button, UIRenderer::ColorToImVec4(style.BackgroundColor));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, UIRenderer::ColorToImVec4(style.HoverColor));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, UIRenderer::ColorToImVec4(style.PressedColor));
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, UIRenderer::ColorToImVec4(style.BackgroundColor));
-    ImGui::PushStyleColor(ImGuiCol_Border, UIRenderer::ColorToImVec4(style.BorderColor));
-    ImGui::PushStyleColor(ImGuiCol_FrameBg, UIRenderer::ColorToImVec4(style.BackgroundColor));
-    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, UIRenderer::ColorToImVec4(style.HoverColor));
-    ImGui::PushStyleColor(ImGuiCol_FrameBgActive, UIRenderer::ColorToImVec4(style.PressedColor));
+    ImGui::PushStyleColor(ImGuiCol_Button, ImGuiConverter::ToImVec4(style.BackgroundColor));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGuiConverter::ToImVec4(style.HoverColor));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImGuiConverter::ToImVec4(style.PressedColor));
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGuiConverter::ToImVec4(style.BackgroundColor));
+    ImGui::PushStyleColor(ImGuiCol_Border, ImGuiConverter::ToImVec4(style.BorderColor));
+    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImGuiConverter::ToImVec4(style.BackgroundColor));
+    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImGuiConverter::ToImVec4(style.HoverColor));
+    ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImGuiConverter::ToImVec4(style.PressedColor));
     ColorPushCount += 8;
 
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, style.Rounding);
@@ -113,7 +110,7 @@ void UIRenderer::UIStyleScope::PushStyle(const UIStyle& style, bool interactable
 
 void UIRenderer::UIStyleScope::PushText(const TextStyle& text)
 {
-    ImGui::PushStyleColor(ImGuiCol_Text, UIRenderer::ColorToImVec4(text.TextColor));
+    ImGui::PushStyleColor(ImGuiCol_Text, ImGuiConverter::ToImVec4(text.TextColor));
     ColorPushCount++;
 
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign,
@@ -167,7 +164,7 @@ void UIRenderer::UIStyleScope::PushFont(const std::string& fontName, float fontS
 
 // --- Modular Rendering Helpers ---
 
-void UIRenderer::DrawPanel(const PanelControl& panel, const ImVec2& pos, const ImVec2& size)
+void UIRenderer::RenderPanel(const PanelControl& panel, const ImVec2& pos, const ImVec2& size)
 {
     ImDrawList* drawList = ImGui::GetWindowDrawList();
     ImU32 bgColor = ImGui::GetColorU32(ImGuiCol_ChildBg);
@@ -175,7 +172,7 @@ void UIRenderer::DrawPanel(const PanelControl& panel, const ImVec2& pos, const I
 
     if (panel.Texture && panel.Texture->IsReady())
     {
-        drawList->AddImageRounded((ImTextureID)(intptr_t)panel.Texture->GetTexture().id, pos,
+        drawList->AddImageRounded(ImGuiConverter::ToImTextureID(panel.Texture->GetTexture().id), pos,
                                   {pos.x + size.x, pos.y + size.y}, {0, 0}, {1, 1}, IM_COL32_WHITE,
                                   panel.Style.Rounding);
     }
@@ -191,8 +188,11 @@ void UIRenderer::DrawPanel(const PanelControl& panel, const ImVec2& pos, const I
     }
 }
 
-void UIRenderer::DrawLabel(const LabelControl& label, const ImVec2& size)
+void UIRenderer::RenderLabel(const LabelControl& label, const ImVec2& size)
 {
+    UIStyleScope scope;
+    scope.PushText(label.Style);
+
     ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + size.x);
     ImVec2 textSize = ImGui::CalcTextSize(label.Text.c_str(), nullptr, true, size.x);
 
@@ -218,6 +218,301 @@ void UIRenderer::DrawLabel(const LabelControl& label, const ImVec2& size)
     ImGui::SetCursorPos({ImGui::GetCursorPosX() + startX, ImGui::GetCursorPosY() + startY});
     ImGui::TextUnformatted(label.Text.c_str());
     ImGui::PopTextWrapPos();
+}
+
+void UIRenderer::RenderButton(Entity entity, ButtonControl& button, const ImVec2& size, bool& itemHandled)
+{
+    UIStyleScope scope;
+    scope.PushStyle(button.Style, button.IsInteractable);
+    scope.PushText(button.Text);
+    if (ImGui::Button(button.Label.c_str(), size))
+    {
+        CH_CORE_INFO("UIRenderer: Button '{}' (EntityID: {}) clicked in ImGui", button.Label, (int)entity);
+        button.PressedThisFrame = true;
+    }
+    if (ImGui::IsItemActive())
+    {
+        itemHandled = true;
+    }
+}
+
+void UIRenderer::RenderSlider(SliderControl& slider, const ImVec2& size, bool& itemHandled)
+{
+    UIStyleScope scope;
+    scope.PushStyle(slider.Style);
+    scope.PushText(slider.Text);
+    ImGui::SetNextItemWidth(size.x);
+    slider.Changed = ImGui::SliderFloat(slider.Label.c_str(), &slider.Value, slider.Min, slider.Max);
+    if (ImGui::IsItemActive())
+    {
+        itemHandled = true;
+    }
+}
+
+void UIRenderer::RenderCheckbox(CheckboxControl& cb, bool& itemHandled)
+{
+    UIStyleScope scope;
+    scope.PushStyle(cb.Style);
+    scope.PushText(cb.Text);
+    cb.Changed = ImGui::Checkbox(cb.Label.c_str(), &cb.Checked);
+    if (ImGui::IsItemActive())
+    {
+        itemHandled = true;
+    }
+}
+
+void UIRenderer::RenderImage(const ImageControl& image, const ImVec2& size)
+{
+    auto assetManager = Project::GetActive() ? Project::GetActive()->GetAssetManager() : nullptr;
+    if (assetManager && !image.TexturePath.empty())
+    {
+        auto texAsset = assetManager->Get<TextureAsset>(image.TexturePath);
+        if (texAsset)
+        {
+            ImGui::Image(ImGuiConverter::ToImTextureID(texAsset->GetTexture().id), size, {0, 0}, {1, 1},
+                         ImGuiConverter::ToImVec4(image.TintColor), ImGuiConverter::ToImVec4(image.BorderColor));
+        }
+    }
+}
+
+void UIRenderer::RenderInputText(Entity entity, InputTextControl& it, const ImVec2& size, bool& itemHandled)
+{
+    UIStyleScope scope;
+    scope.PushStyle(it.BoxStyle, !it.ReadOnly);
+    scope.PushText(it.Style);
+
+    entt::entity id = (entt::entity)entity;
+    auto& buffer = m_Data->InputBuffers[id];
+    if (buffer.size() != (size_t)it.MaxLength + 1)
+    {
+        buffer.resize(it.MaxLength + 1, '\0');
+        strncpy(buffer.data(), it.Text.c_str(), it.MaxLength);
+    }
+
+    ImGuiInputTextFlags flags =
+        (it.ReadOnly ? ImGuiInputTextFlags_ReadOnly : 0) | (it.Password ? ImGuiInputTextFlags_Password : 0);
+    if (it.Multiline)
+    {
+        if (ImGui::InputTextMultiline(it.Label.c_str(), buffer.data(), buffer.size(), size, flags))
+        {
+            it.Text = buffer.data();
+            it.Changed = true;
+        }
+    }
+    else
+    {
+        ImGui::SetNextItemWidth(size.x);
+        if (ImGui::InputText(it.Label.c_str(), buffer.data(), buffer.size(), flags))
+        {
+            it.Text = buffer.data();
+            it.Changed = true;
+        }
+    }
+    if (ImGui::IsItemActive())
+    {
+        itemHandled = true;
+    }
+}
+
+void UIRenderer::RenderProgressBar(const ProgressBarControl& pb, const ImVec2& size)
+{
+    UIStyleScope scope;
+    scope.PushStyle(pb.BarStyle);
+    scope.PushText(pb.Style);
+    std::string overlay = pb.OverlayText;
+    if (overlay.empty() && pb.ShowPercentage)
+    {
+        overlay = std::to_string((int)(pb.Progress * 100)) + "%";
+    }
+    ImGui::ProgressBar(pb.Progress, size, overlay.c_str());
+}
+
+void UIRenderer::RenderComboBox(ComboBoxControl& cb, const ImVec2& size, bool& itemHandled)
+{
+    UIStyleScope scope;
+    scope.PushStyle(cb.BoxStyle);
+    scope.PushText(cb.Style);
+    ImGui::SetNextItemWidth(size.x);
+    const char* preview = (cb.SelectedIndex >= 0 && cb.SelectedIndex < (int)cb.Items.size())
+                              ? cb.Items[cb.SelectedIndex].c_str()
+                              : "";
+    if (ImGui::BeginCombo(cb.Label.c_str(), preview))
+    {
+        for (int i = 0; i < (int)cb.Items.size(); i++)
+        {
+            if (ImGui::Selectable(cb.Items[i].c_str(), i == cb.SelectedIndex))
+            {
+                cb.SelectedIndex = i;
+                cb.Changed = true;
+            }
+        }
+        ImGui::EndCombo();
+    }
+    if (ImGui::IsItemActive())
+    {
+        itemHandled = true;
+    }
+}
+
+void UIRenderer::RenderImageButton(ImageButtonControl& ib, const ImVec2& size, bool& itemHandled)
+{
+    auto assetManager = Project::GetActive() ? Project::GetActive()->GetAssetManager() : nullptr;
+    if (assetManager && !ib.TexturePath.empty())
+    {
+        auto tex = assetManager->Get<TextureAsset>(ib.TexturePath);
+        if (tex)
+        {
+            if (ImGui::ImageButton(ib.Label.c_str(), ImGuiConverter::ToImTextureID(tex->GetTexture().id), size, {0, 0},
+                                   {1, 1}, ImGuiConverter::ToImVec4(ib.BackgroundColor), ImGuiConverter::ToImVec4(ib.TintColor)))
+            {
+                ib.PressedThisFrame = true;
+            }
+            if (ImGui::IsItemActive())
+            {
+                itemHandled = true;
+            }
+        }
+    }
+}
+
+void UIRenderer::RenderRadioButton(RadioButtonControl& rb, bool& itemHandled)
+{
+    UIStyleScope scope;
+    scope.PushText(rb.Style);
+    for (int i = 0; i < (int)rb.Options.size(); i++)
+    {
+        if (ImGui::RadioButton(rb.Options[i].c_str(), rb.SelectedIndex == i))
+        {
+            rb.SelectedIndex = i;
+            rb.Changed = true;
+        }
+        if (rb.Horizontal && i < (int)rb.Options.size() - 1)
+        {
+            ImGui::SameLine();
+        }
+    }
+    if (ImGui::IsItemActive())
+    {
+        itemHandled = true;
+    }
+}
+
+void UIRenderer::RenderColorPicker(ColorPickerControl& cp, bool& itemHandled)
+{
+    float c[4] = {cp.SelectedColor.r / 255.f, cp.SelectedColor.g / 255.f, cp.SelectedColor.b / 255.f,
+                  cp.SelectedColor.a / 255.f};
+    if (cp.ShowPicker ? ImGui::ColorPicker4(cp.Label.c_str(), c) : ImGui::ColorEdit4(cp.Label.c_str(), c))
+    {
+        cp.SelectedColor = {(uint8_t)(c[0] * 255), (uint8_t)(c[1] * 255), (uint8_t)(c[2] * 255),
+                            (uint8_t)(c[3] * 255)};
+        cp.Changed = true;
+    }
+    if (ImGui::IsItemActive())
+    {
+        itemHandled = true;
+    }
+}
+
+void UIRenderer::RenderSeparator(const SeparatorControl& sep)
+{
+    ImGui::PushStyleColor(ImGuiCol_Separator, ImGuiConverter::ToImVec4(sep.LineColor));
+    ImGui::Separator();
+    ImGui::PopStyleColor();
+}
+
+void UIRenderer::RenderDragFloat(DragFloatControl& df, const ImVec2& size, bool& itemHandled)
+{
+    UIStyleScope scope;
+    scope.PushStyle(df.BoxStyle);
+    scope.PushText(df.Style);
+    ImGui::SetNextItemWidth(size.x);
+    df.Changed = ImGui::DragFloat(df.Label.c_str(), &df.Value, df.Speed, df.Min, df.Max, df.Format.c_str());
+    if (ImGui::IsItemActive())
+    {
+        itemHandled = true;
+    }
+}
+
+void UIRenderer::RenderDragInt(DragIntControl& di, const ImVec2& size, bool& itemHandled)
+{
+    UIStyleScope scope;
+    scope.PushStyle(di.BoxStyle);
+    scope.PushText(di.Style);
+    ImGui::SetNextItemWidth(size.x);
+    di.Changed = ImGui::DragInt(di.Label.c_str(), &di.Value, di.Speed, di.Min, di.Max, di.Format.c_str());
+    if (ImGui::IsItemActive())
+    {
+        itemHandled = true;
+    }
+}
+
+void UIRenderer::RenderTreeNode(TreeNodeControl& tn, bool& itemHandled)
+{
+    ImGuiTreeNodeFlags flags = (tn.DefaultOpen ? ImGuiTreeNodeFlags_DefaultOpen : 0) |
+                               (tn.IsLeaf ? ImGuiTreeNodeFlags_Leaf : 0) | ImGuiTreeNodeFlags_SpanAvailWidth;
+    tn.IsOpen = ImGui::TreeNodeEx(tn.Label.c_str(), flags);
+    if (ImGui::IsItemActive())
+    {
+        itemHandled = true;
+    }
+}
+
+void UIRenderer::RenderCollapsingHeader(CollapsingHeaderControl& ch, bool& itemHandled)
+{
+    ch.IsOpen = ImGui::CollapsingHeader(ch.Label.c_str(), ch.DefaultOpen ? ImGuiTreeNodeFlags_DefaultOpen : 0);
+    if (ImGui::IsItemActive())
+    {
+        itemHandled = true;
+    }
+}
+
+void UIRenderer::RenderPlotLines(const PlotLinesControl& pl, bool& itemHandled)
+{
+    UIStyleScope scope;
+    scope.PushStyle(pl.BoxStyle);
+    scope.PushText(pl.Style);
+    ImGui::PlotLines(pl.Label.c_str(), pl.Values.data(), (int)pl.Values.size(), 0, pl.OverlayText.c_str(),
+                     pl.ScaleMin, pl.ScaleMax, {pl.GraphSize.x, pl.GraphSize.y});
+    if (ImGui::IsItemActive())
+    {
+        itemHandled = true;
+    }
+}
+
+void UIRenderer::RenderPlotHistogram(const PlotHistogramControl& ph, bool& itemHandled)
+{
+    UIStyleScope scope;
+    scope.PushStyle(ph.BoxStyle);
+    scope.PushText(ph.Style);
+    ImGui::PlotHistogram(ph.Label.c_str(), ph.Values.data(), (int)ph.Values.size(), 0, ph.OverlayText.c_str(),
+                         ph.ScaleMin, ph.ScaleMax, {ph.GraphSize.x, ph.GraphSize.y});
+    if (ImGui::IsItemActive())
+    {
+        itemHandled = true;
+    }
+}
+
+void UIRenderer::RenderTabBar(const TabBarControl& tb)
+{
+    ImGuiTabBarFlags flags = (tb.Reorderable ? ImGuiTabBarFlags_Reorderable : 0) |
+                             (tb.AutoSelectNewTabs ? ImGuiTabBarFlags_AutoSelectNewTabs : 0);
+    if (ImGui::BeginTabBar(tb.Label.c_str(), flags))
+    {
+        ImGui::EndTabBar();
+    }
+}
+
+void UIRenderer::RenderTabItem(TabItemControl& ti)
+{
+    if (ImGui::BeginTabItem(ti.Label.c_str(), &ti.IsOpen))
+    {
+        ti.Selected = true;
+        ImGui::EndTabItem();
+    }
+    else
+    {
+        ti.Selected = false;
+    }
 }
 
 void UIRenderer::DrawCanvas(Scene* scene, const ImVec2& referencePosition, const ImVec2& referenceSize, bool editMode)
@@ -361,333 +656,69 @@ Rectangle UIRenderer::CalculateEntityRect(Entity entity, const Rectangle& canvas
 bool UIRenderer::RenderUIComponent(Entity entity, const ImVec2& screenPos, const ImVec2& size, bool editMode)
 {
     bool itemHandled = false;
-    entt::entity id = (entt::entity)entity;
 
     if (entity.HasComponent<PanelControl>())
-    {
-        UIRenderer::DrawPanel(entity.GetComponent<PanelControl>(), screenPos, size);
-    }
+        RenderPanel(entity.GetComponent<PanelControl>(), screenPos, size);
 
     if (entity.HasComponent<LabelControl>())
-    {
-        auto& label = entity.GetComponent<LabelControl>();
-        UIStyleScope scope;
-        scope.PushText(label.Style);
-        UIRenderer::DrawLabel(label, size);
-    }
+        RenderLabel(entity.GetComponent<LabelControl>(), size);
 
     if (entity.HasComponent<ButtonControl>())
-    {
-        auto& button = entity.GetComponent<ButtonControl>();
-        UIStyleScope scope;
-        scope.PushStyle(button.Style, button.IsInteractable);
-        scope.PushText(button.Text);
-        if (ImGui::Button(button.Label.c_str(), size))
-        {
-            CH_CORE_INFO("UIRenderer: Button '{}' (EntityID: {}) clicked in ImGui", button.Label, (int)id);
-            button.PressedThisFrame = true;
-        }
-        if (ImGui::IsItemActive())
-        {
-            itemHandled = true;
-        }
-    }
+        RenderButton(entity, entity.GetComponent<ButtonControl>(), size, itemHandled);
 
     if (entity.HasComponent<SliderControl>())
-    {
-        auto& slider = entity.GetComponent<SliderControl>();
-        UIStyleScope scope;
-        scope.PushStyle(slider.Style);
-        scope.PushText(slider.Text);
-        ImGui::SetNextItemWidth(size.x);
-        slider.Changed = ImGui::SliderFloat(slider.Label.c_str(), &slider.Value, slider.Min, slider.Max);
-        if (ImGui::IsItemActive())
-        {
-            itemHandled = true;
-        }
-    }
+        RenderSlider(entity.GetComponent<SliderControl>(), size, itemHandled);
 
     if (entity.HasComponent<CheckboxControl>())
-    {
-        auto& cb = entity.GetComponent<CheckboxControl>();
-        UIStyleScope scope;
-        scope.PushStyle(cb.Style);
-        scope.PushText(cb.Text);
-        cb.Changed = ImGui::Checkbox(cb.Label.c_str(), &cb.Checked);
-        if (ImGui::IsItemActive())
-        {
-            itemHandled = true;
-        }
-    }
+        RenderCheckbox(entity.GetComponent<CheckboxControl>(), itemHandled);
 
     if (entity.HasComponent<ImageControl>())
-    {
-        auto& image = entity.GetComponent<ImageControl>();
-        auto assetManager = Project::GetActive() ? Project::GetActive()->GetAssetManager() : nullptr;
-        if (assetManager && !image.TexturePath.empty())
-        {
-            auto texAsset = assetManager->Get<TextureAsset>(image.TexturePath);
-            if (texAsset)
-            {
-                ImGui::Image((ImTextureID)(intptr_t)texAsset->GetTexture().id, size, {0, 0}, {1, 1},
-                             ColorToImVec4(image.TintColor), ColorToImVec4(image.BorderColor));
-            }
-        }
-    }
+        RenderImage(entity.GetComponent<ImageControl>(), size);
 
     if (entity.HasComponent<InputTextControl>())
-    {
-        auto& it = entity.GetComponent<InputTextControl>();
-        UIStyleScope scope;
-        scope.PushStyle(it.BoxStyle, !it.ReadOnly);
-        scope.PushText(it.Style);
-
-        auto& buffer = m_Data->InputBuffers[id];
-        if (buffer.size() != (size_t)it.MaxLength + 1)
-        {
-            buffer.resize(it.MaxLength + 1, '\0');
-            strncpy(buffer.data(), it.Text.c_str(), it.MaxLength);
-        }
-
-        ImGuiInputTextFlags flags =
-            (it.ReadOnly ? ImGuiInputTextFlags_ReadOnly : 0) | (it.Password ? ImGuiInputTextFlags_Password : 0);
-        if (it.Multiline)
-        {
-            if (ImGui::InputTextMultiline(it.Label.c_str(), buffer.data(), buffer.size(), size, flags))
-            {
-                it.Text = buffer.data();
-                it.Changed = true;
-            }
-        }
-        else
-        {
-            ImGui::SetNextItemWidth(size.x);
-            if (ImGui::InputText(it.Label.c_str(), buffer.data(), buffer.size(), flags))
-            {
-                it.Text = buffer.data();
-                it.Changed = true;
-            }
-        }
-        if (ImGui::IsItemActive())
-        {
-            itemHandled = true;
-        }
-    }
+        RenderInputText(entity, entity.GetComponent<InputTextControl>(), size, itemHandled);
 
     if (entity.HasComponent<ProgressBarControl>())
-    {
-        auto& pb = entity.GetComponent<ProgressBarControl>();
-        UIStyleScope scope;
-        scope.PushStyle(pb.BarStyle);
-        scope.PushText(pb.Style);
-        std::string overlay = pb.OverlayText;
-        if (overlay.empty() && pb.ShowPercentage)
-        {
-            overlay = std::to_string((int)(pb.Progress * 100)) + "%";
-        }
-        ImGui::ProgressBar(pb.Progress, size, overlay.c_str());
-    }
+        RenderProgressBar(entity.GetComponent<ProgressBarControl>(), size);
 
     if (entity.HasComponent<ComboBoxControl>())
-    {
-        auto& cb = entity.GetComponent<ComboBoxControl>();
-        UIStyleScope scope;
-        scope.PushStyle(cb.BoxStyle);
-        scope.PushText(cb.Style);
-        ImGui::SetNextItemWidth(size.x);
-        const char* preview = (cb.SelectedIndex >= 0 && cb.SelectedIndex < (int)cb.Items.size())
-                                  ? cb.Items[cb.SelectedIndex].c_str()
-                                  : "";
-        if (ImGui::BeginCombo(cb.Label.c_str(), preview))
-        {
-            for (int i = 0; i < (int)cb.Items.size(); i++)
-            {
-                if (ImGui::Selectable(cb.Items[i].c_str(), i == cb.SelectedIndex))
-                {
-                    cb.SelectedIndex = i;
-                    cb.Changed = true;
-                }
-            }
-            ImGui::EndCombo();
-        }
-        if (ImGui::IsItemActive())
-        {
-            itemHandled = true;
-        }
-    }
+        RenderComboBox(entity.GetComponent<ComboBoxControl>(), size, itemHandled);
 
     if (entity.HasComponent<ImageButtonControl>())
-    {
-        auto& ib = entity.GetComponent<ImageButtonControl>();
-        auto assetManager = Project::GetActive() ? Project::GetActive()->GetAssetManager() : nullptr;
-        if (assetManager && !ib.TexturePath.empty())
-        {
-            auto tex = assetManager->Get<TextureAsset>(ib.TexturePath);
-            if (tex)
-            {
-                if (ImGui::ImageButton(ib.Label.c_str(), (ImTextureID)(intptr_t)tex->GetTexture().id, size, {0, 0},
-                                       {1, 1}, UIRenderer::ColorToImVec4(ib.BackgroundColor), UIRenderer::ColorToImVec4(ib.TintColor)))
-                {
-                    ib.PressedThisFrame = true;
-                }
-                if (ImGui::IsItemActive())
-                {
-                    itemHandled = true;
-                }
-            }
-        }
-    }
+        RenderImageButton(entity.GetComponent<ImageButtonControl>(), size, itemHandled);
 
     if (entity.HasComponent<RadioButtonControl>())
-    {
-        auto& rb = entity.GetComponent<RadioButtonControl>();
-        UIStyleScope scope;
-        scope.PushText(rb.Style);
-        for (int i = 0; i < (int)rb.Options.size(); i++)
-        {
-            if (ImGui::RadioButton(rb.Options[i].c_str(), rb.SelectedIndex == i))
-            {
-                rb.SelectedIndex = i;
-                rb.Changed = true;
-            }
-            if (rb.Horizontal && i < (int)rb.Options.size() - 1)
-            {
-                ImGui::SameLine();
-            }
-        }
-        if (ImGui::IsItemActive())
-        {
-            itemHandled = true;
-        }
-    }
+        RenderRadioButton(entity.GetComponent<RadioButtonControl>(), itemHandled);
 
     if (entity.HasComponent<ColorPickerControl>())
-    {
-        auto& cp = entity.GetComponent<ColorPickerControl>();
-        float c[4] = {cp.SelectedColor.r / 255.f, cp.SelectedColor.g / 255.f, cp.SelectedColor.b / 255.f,
-                      cp.SelectedColor.a / 255.f};
-        if (cp.ShowPicker ? ImGui::ColorPicker4(cp.Label.c_str(), c) : ImGui::ColorEdit4(cp.Label.c_str(), c))
-        {
-            cp.SelectedColor = {(uint8_t)(c[0] * 255), (uint8_t)(c[1] * 255), (uint8_t)(c[2] * 255),
-                                (uint8_t)(c[3] * 255)};
-            cp.Changed = true;
-        }
-        if (ImGui::IsItemActive())
-        {
-            itemHandled = true;
-        }
-    }
+        RenderColorPicker(entity.GetComponent<ColorPickerControl>(), itemHandled);
 
     if (entity.HasComponent<SeparatorControl>())
-    {
-        auto& sep = entity.GetComponent<SeparatorControl>();
-        ImGui::PushStyleColor(ImGuiCol_Separator, UIRenderer::ColorToImVec4(sep.LineColor));
-        ImGui::Separator();
-        ImGui::PopStyleColor();
-    }
+        RenderSeparator(entity.GetComponent<SeparatorControl>());
 
     if (entity.HasComponent<DragFloatControl>())
-    {
-        auto& df = entity.GetComponent<DragFloatControl>();
-        UIStyleScope scope;
-        scope.PushStyle(df.BoxStyle);
-        scope.PushText(df.Style);
-        ImGui::SetNextItemWidth(size.x);
-        df.Changed = ImGui::DragFloat(df.Label.c_str(), &df.Value, df.Speed, df.Min, df.Max, df.Format.c_str());
-        if (ImGui::IsItemActive())
-        {
-            itemHandled = true;
-        }
-    }
+        RenderDragFloat(entity.GetComponent<DragFloatControl>(), size, itemHandled);
 
     if (entity.HasComponent<DragIntControl>())
-    {
-        auto& di = entity.GetComponent<DragIntControl>();
-        UIStyleScope scope;
-        scope.PushStyle(di.BoxStyle);
-        scope.PushText(di.Style);
-        ImGui::SetNextItemWidth(size.x);
-        di.Changed = ImGui::DragInt(di.Label.c_str(), &di.Value, di.Speed, di.Min, di.Max, di.Format.c_str());
-        if (ImGui::IsItemActive())
-        {
-            itemHandled = true;
-        }
-    }
+        RenderDragInt(entity.GetComponent<DragIntControl>(), size, itemHandled);
 
     if (entity.HasComponent<TreeNodeControl>())
-    {
-        auto& tn = entity.GetComponent<TreeNodeControl>();
-        ImGuiTreeNodeFlags flags = (tn.DefaultOpen ? ImGuiTreeNodeFlags_DefaultOpen : 0) |
-                                   (tn.IsLeaf ? ImGuiTreeNodeFlags_Leaf : 0) | ImGuiTreeNodeFlags_SpanAvailWidth;
-        tn.IsOpen = ImGui::TreeNodeEx(tn.Label.c_str(), flags);
-        if (ImGui::IsItemActive())
-        {
-            itemHandled = true;
-        }
-    }
+        RenderTreeNode(entity.GetComponent<TreeNodeControl>(), itemHandled);
 
     if (entity.HasComponent<CollapsingHeaderControl>())
-    {
-        auto& ch = entity.GetComponent<CollapsingHeaderControl>();
-        ch.IsOpen = ImGui::CollapsingHeader(ch.Label.c_str(), ch.DefaultOpen ? ImGuiTreeNodeFlags_DefaultOpen : 0);
-        if (ImGui::IsItemActive())
-        {
-            itemHandled = true;
-        }
-    }
+        RenderCollapsingHeader(entity.GetComponent<CollapsingHeaderControl>(), itemHandled);
 
     if (entity.HasComponent<PlotLinesControl>())
-    {
-        auto& pl = entity.GetComponent<PlotLinesControl>();
-        UIStyleScope scope;
-        scope.PushStyle(pl.BoxStyle);
-        scope.PushText(pl.Style);
-        ImGui::PlotLines(pl.Label.c_str(), pl.Values.data(), (int)pl.Values.size(), 0, pl.OverlayText.c_str(),
-                         pl.ScaleMin, pl.ScaleMax, {pl.GraphSize.x, pl.GraphSize.y});
-        if (ImGui::IsItemActive())
-        {
-            itemHandled = true;
-        }
-    }
+        RenderPlotLines(entity.GetComponent<PlotLinesControl>(), itemHandled);
 
     if (entity.HasComponent<PlotHistogramControl>())
-    {
-        auto& ph = entity.GetComponent<PlotHistogramControl>();
-        UIStyleScope scope;
-        scope.PushStyle(ph.BoxStyle);
-        scope.PushText(ph.Style);
-        ImGui::PlotHistogram(ph.Label.c_str(), ph.Values.data(), (int)ph.Values.size(), 0, ph.OverlayText.c_str(),
-                             ph.ScaleMin, ph.ScaleMax, {ph.GraphSize.x, ph.GraphSize.y});
-        if (ImGui::IsItemActive())
-        {
-            itemHandled = true;
-        }
-    }
+        RenderPlotHistogram(entity.GetComponent<PlotHistogramControl>(), itemHandled);
 
     if (entity.HasComponent<TabBarControl>())
-    {
-        auto& tb = entity.GetComponent<TabBarControl>();
-        ImGuiTabBarFlags flags = (tb.Reorderable ? ImGuiTabBarFlags_Reorderable : 0) |
-                                 (tb.AutoSelectNewTabs ? ImGuiTabBarFlags_AutoSelectNewTabs : 0);
-        if (ImGui::BeginTabBar(tb.Label.c_str(), flags))
-        {
-            ImGui::EndTabBar();
-        }
-    }
+        RenderTabBar(entity.GetComponent<TabBarControl>());
 
     if (entity.HasComponent<TabItemControl>())
-    {
-        auto& ti = entity.GetComponent<TabItemControl>();
-        if (ImGui::BeginTabItem(ti.Label.c_str(), &ti.IsOpen))
-        {
-            ti.Selected = true;
-            ImGui::EndTabItem();
-        }
-        else
-        {
-            ti.Selected = false;
-        }
-    }
+        RenderTabItem(entity.GetComponent<TabItemControl>());
 
     return itemHandled;
 }

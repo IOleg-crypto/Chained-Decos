@@ -102,4 +102,25 @@ TEST_F(AssetManagerTest, AsyncLoading)
     EXPECT_TRUE(cube->IsReady());
 }
 
+TEST_F(AssetManagerTest, NonExistentAsset)
+{
+    if (!IsWindowReady() || !m_AssetManager)
+    {
+        return;
+    }
+
+    auto asset = m_AssetManager->Get<ModelAsset>("this/path/does/not/exist.obj");
+    
+    // Wait for the asset to finish its async load attempt
+    while(asset->GetState() == AssetState::Loading) {
+        // busy wait is fine for this quick unit test
+    }
+    
+    EXPECT_TRUE(asset != nullptr);
+    if (asset)
+    {
+        EXPECT_EQ(asset->GetState(), AssetState::Failed);
+    }
+}
+
 #endif

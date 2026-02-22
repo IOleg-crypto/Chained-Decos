@@ -93,7 +93,7 @@
       "inherits": "ninja-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "CH_ENGINE_SHARED": "ON"
+        "CH_ENGINE_SHARED": "OFF"
       },
       "condition": {
         "type": "equals",
@@ -107,7 +107,7 @@
       "inherits": "ninja-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "CH_ENGINE_SHARED": "ON"
+        "CH_ENGINE_SHARED": "OFF"
       },
       "condition": {
         "type": "equals",

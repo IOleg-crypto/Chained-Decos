@@ -28,11 +28,24 @@ TEST(UUIDTest, CopyAndAssignment)
     EXPECT_EQ((uint64_t)id1, (uint64_t)id3);
 }
 
-TEST(UUIDTest, StringConversionPlaceholder)
+TEST(UUIDTest, StringConversion)
 {
-    // If we add string conversion in future
-    UUID id(12345);
-    EXPECT_EQ((uint64_t)id, 12345);
+    UUID id;
+    std::string str = id.ToString();
+    EXPECT_FALSE(str.empty());
+
+    // Test conversion back from string
+    UUID idFromString(str);
+    EXPECT_EQ((uint64_t)id, (uint64_t)idFromString);
+}
+
+TEST(UUIDTest, InvalidStringConversion)
+{
+    // Test with invalid string, it should hopefully generate a valid new ID or handle it gracefully
+    // depending on implementation. If not implemented safely, it might crash, but let's test it.
+    UUID idFromString("invalid-uuid-string");
+    // Usually it just hashes the string or returns 0.
+    EXPECT_EQ((uint64_t)idFromString, 0); 
 }
 
 TEST(UUIDTest, Hashability)

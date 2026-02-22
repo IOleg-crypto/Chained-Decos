@@ -70,9 +70,29 @@ private:
                                   std::map<entt::entity, Rectangle>& rectCache);
     bool RenderUIComponent(Entity entity, const ImVec2& screenPos, const ImVec2& size, bool editMode);
 
-    static ImVec4 ColorToImVec4(Color color);
-    static void DrawPanel(const PanelControl& panel, const ImVec2& pos, const ImVec2& size);
-    static void DrawLabel(const LabelControl& label, const ImVec2& size);
+    // Widget specific rendering helpers
+    void RenderPanel(const PanelControl& panel, const ImVec2& pos, const ImVec2& size);
+    void RenderLabel(const LabelControl& label, const ImVec2& size);
+    void RenderButton(Entity entity, ButtonControl& button, const ImVec2& size, bool& itemHandled);
+    void RenderSlider(SliderControl& slider, const ImVec2& size, bool& itemHandled);
+    void RenderCheckbox(CheckboxControl& cb, bool& itemHandled);
+    void RenderImage(const ImageControl& image, const ImVec2& size);
+    void RenderInputText(Entity entity, InputTextControl& it, const ImVec2& size, bool& itemHandled);
+    void RenderProgressBar(const ProgressBarControl& pb, const ImVec2& size);
+    void RenderComboBox(ComboBoxControl& cb, const ImVec2& size, bool& itemHandled);
+    void RenderImageButton(ImageButtonControl& ib, const ImVec2& size, bool& itemHandled);
+    void RenderRadioButton(RadioButtonControl& rb, bool& itemHandled);
+    void RenderColorPicker(ColorPickerControl& cp, bool& itemHandled);
+    void RenderSeparator(const SeparatorControl& sep);
+    void RenderDragFloat(DragFloatControl& df, const ImVec2& size, bool& itemHandled);
+    void RenderDragInt(DragIntControl& di, const ImVec2& size, bool& itemHandled);
+    void RenderTreeNode(TreeNodeControl& tn, bool& itemHandled);
+    void RenderCollapsingHeader(CollapsingHeaderControl& ch, bool& itemHandled);
+    void RenderPlotLines(const PlotLinesControl& pl, bool& itemHandled);
+    void RenderPlotHistogram(const PlotHistogramControl& ph, bool& itemHandled);
+    void RenderTabBar(const TabBarControl& tb);
+    void RenderTabItem(TabItemControl& ti);
+
 
 private:
     static UIRenderer* s_Instance;

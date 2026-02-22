@@ -4,6 +4,9 @@ uniform vec4 lightColor;
 uniform float ambient;
 uniform vec3 viewPos;
 uniform float uTime;
+uniform int uLightCount;
+uniform float uExposure;
+uniform float uGamma;
 
 // Diagnostics
 uniform float uMode; // 0: Normal, 1: Normals Visualized, 2: Lighting only, 3: Albedo only

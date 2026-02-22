@@ -7,7 +7,10 @@
 #include "engine/graphics/renderer2d.h"
 #include "engine/graphics/shader_asset.h"
 #include "engine/physics/bvh/bvh.h"
-#include "engine/scene/components.h"
+#include "imgui_converter.h"
+#include "engine/scene/components/light_component.h"
+#include "imgui.h"
+#include "raylib.h"
 #include "engine/scene/project.h"
 #include "render_command.h"
 #include <raymath.h>
@@ -16,51 +19,6 @@
 namespace
 {
 using namespace CHEngine;
-
-struct AnimatedEntry
-{
-    std::shared_ptr<ModelAsset>  asset;
-    Matrix                       worldTransform;
-    std::vector<MaterialSlot>    materials;
-    std::shared_ptr<ShaderAsset> shaderOverride;
-    std::vector<ShaderUniform>   customUniforms;
-    AnimationComponent           animation; // copy — avoids holding a registry reference across iterations
-};
-
-struct InstanceKey
-{
-    size_t Hash = 0;
-
-    InstanceKey(const std::string& path, const std::vector<MaterialSlot>& mats)
-    {
-        // Simple fast string hash
-        auto hashCombine = [](size_t& seed, size_t hash) {
-            seed ^= hash + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-        };
-
-        Hash = std::hash<std::string>{}(path);
-
-        for (const auto& m : mats)
-        {
-            hashCombine(Hash, std::hash<int>{}((int)m.Target));
-            hashCombine(Hash, std::hash<int>{}(m.Index));
-            hashCombine(Hash, std::hash<std::string>{}(m.Material.AlbedoPath));
-            hashCombine(Hash, std::hash<std::string>{}(m.Material.ShaderPath));
-        }
-    }
-
-    bool operator<(const InstanceKey& o) const
-    {
-        return Hash < o.Hash;
-    }
-};
-
-struct InstanceGroup
-{
-    std::shared_ptr<ModelAsset> asset;
-    std::vector<Matrix>         transforms;
-    std::vector<MaterialSlot>   materials;
-};
 } // namespace
 
 namespace CHEngine
@@ -106,9 +64,24 @@ void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, Timestep t
         environment = Project::GetActive()->GetEnvironment();
     }
 
+    float exposure = 1.0f;
+    float gamma = 2.2f;
+
     if (environment)
     {
-        Renderer::Get().ApplyEnvironment(environment->GetSettings());
+        const auto& envSettings = environment->GetSettings();
+        Renderer::Get().ApplyEnvironment(envSettings);
+        exposure = envSettings.Lighting.Exposure;
+        gamma = envSettings.Lighting.Gamma;
+    }
+    else
+    {
+        static bool warned = false;
+        if (!warned)
+        {
+            CH_CORE_WARN("SceneRenderer: No environment asset for scene!");
+            warned = true;
+        }
     }
 
     Renderer::Get().UpdateTime(Timestep((float)GetTime()));
@@ -158,19 +131,51 @@ void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, Timestep t
     Renderer::Get().EndScene();
 }
 
+SceneRenderer::InstanceKey::InstanceKey(const std::string& path, const std::vector<MaterialSlot>& mats)
+{
+    auto hashCombine = [](size_t& seed, size_t hash) {
+        seed ^= hash + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    };
+
+    Hash = std::hash<std::string>{}(path);
+
+    for (const auto& m : mats)
+    {
+        hashCombine(Hash, std::hash<int>{}((int)m.Target));
+        hashCombine(Hash, std::hash<int>{}(m.Index));
+        hashCombine(Hash, std::hash<std::string>{}(m.Material.AlbedoPath));
+        hashCombine(Hash, std::hash<std::string>{}(m.Material.ShaderPath));
+    }
+}
+
 void SceneRenderer::RenderModels(Scene* scene, Timestep timestep)
 {
     auto& registry = scene->GetRegistry();
-    auto view = registry.view<TransformComponent, ModelComponent>();
 
-    // 1. Frustum Extraction (moved up for light/model culling)
+    // 1. Frustum Extraction
     Frustum frustum;
     {
         Matrix matVP = MatrixMultiply(rlGetMatrixModelview(), rlGetMatrixProjection());
         frustum.Extract(matVP);
     }
 
-    // 2. Collect Lights
+    // 2. Prepare Lights
+    PrepareLights(registry, frustum);
+
+    // 3. Pass A: Collect visible entities
+    std::vector<AnimatedEntry> animatedEntries;
+    std::map<InstanceKey, InstanceGroup> instanceGroups;
+    CollectRenderItems(registry, frustum, animatedEntries, instanceGroups);
+
+    // 4. Pass B: Draw animated individually
+    DrawAnimatedEntities(animatedEntries);
+
+    // 5. Pass C: Draw static groups (instanced if >=2, single otherwise)
+    DrawStaticEntities(instanceGroups);
+}
+
+void SceneRenderer::PrepareLights(entt::registry& registry, const Frustum& frustum)
+{
     Renderer::Get().ClearLights();
 
     int lightCount = 0;
@@ -178,18 +183,14 @@ void SceneRenderer::RenderModels(Scene* scene, Timestep timestep)
     for (auto entity : lightView)
     {
         if (lightCount >= RendererData::MaxLights)
-        {
             break;
-        }
+
         auto& light = lightView.get<LightComponent>(entity);
         Matrix worldTransform = GetWorldTransform(registry, entity);
         Vector3 worldPos = {worldTransform.m12, worldTransform.m13, worldTransform.m14};
 
-        // Frustum Culling for Lights
         if (!frustum.IsSphereVisible(worldPos, light.Radius))
-        {
             continue;
-        }
 
         RenderLight rl;
         rl.color[0] = light.LightColor.r / 255.0f;
@@ -202,7 +203,7 @@ void SceneRenderer::RenderModels(Scene* scene, Timestep timestep)
         rl.radius = light.Radius;
         rl.innerCutoff = light.InnerCutoff;
         rl.outerCutoff = light.OuterCutoff;
-        rl.type = (int)light.Type;
+        rl.type = (int)light.Type; // Direct enum mapping
         rl.enabled = 1;
 
         if (light.Type == LightType::Spot)
@@ -213,44 +214,38 @@ void SceneRenderer::RenderModels(Scene* scene, Timestep timestep)
 
         Renderer::Get().SetLight(lightCount++, rl);
     }
+    Renderer::Get().SetLightCount(lightCount);
+}
 
-    // ---- Pass A: Collect visible entities, split into animated vs. static ----
-    std::vector<AnimatedEntry>           animatedEntries;
-    std::map<InstanceKey, InstanceGroup> instanceGroups;
-
+void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& frustum,
+                                       std::vector<AnimatedEntry>& animatedEntries,
+                                       std::map<InstanceKey, InstanceGroup>& instanceGroups)
+{
+    auto view = registry.view<TransformComponent, ModelComponent>();
     for (auto entity : view)
     {
         auto [transform, model] = view.get<TransformComponent, ModelComponent>(entity);
 
         if (!model.Asset || model.Asset->GetState() != AssetState::Ready)
-        {
             continue;
-        }
 
-        // Frustum Culling
         Matrix worldTransform = GetWorldTransform(registry, entity);
         if (!frustum.IsBoxVisible(model.Asset->GetBoundingBox(), worldTransform))
-        {
             continue;
-        }
 
-        // Distance Culling
         if (model.CullDistance > 0.0f)
         {
             Vector3 entityPos = {worldTransform.m12, worldTransform.m13, worldTransform.m14};
-            Vector3 camPos    = Renderer::Get().GetData().CurrentCameraPosition;
-            float distSq      = Vector3LengthSqr(Vector3Subtract(entityPos, camPos));
+            Vector3 camPos = Renderer::Get().GetData().CurrentCameraPosition;
+            float distSq = Vector3LengthSqr(Vector3Subtract(entityPos, camPos));
             if (distSq > model.CullDistance * model.CullDistance)
-            {
                 continue;
-            }
         }
 
         model.Asset->OnUpdate();
 
-        // Resolve optional shader override
         std::shared_ptr<ShaderAsset> shaderOverride;
-        std::vector<ShaderUniform>   customUniforms;
+        std::vector<ShaderUniform> customUniforms;
         bool hasShaderOverride = false;
         if (registry.all_of<ShaderComponent>(entity))
         {
@@ -268,53 +263,52 @@ void SceneRenderer::RenderModels(Scene* scene, Timestep timestep)
         if (isAnimated)
         {
             AnimatedEntry entry;
-            entry.asset          = model.Asset;
+            entry.asset = model.Asset;
             entry.worldTransform = worldTransform;
-            entry.materials      = model.Materials;
+            entry.materials = model.Materials;
             entry.shaderOverride = shaderOverride;
             entry.customUniforms = customUniforms;
-            entry.animation      = registry.get<AnimationComponent>(entity);
+            entry.animation = registry.get<AnimationComponent>(entity);
             animatedEntries.push_back(std::move(entry));
         }
         else if (!hasShaderOverride)
         {
-            // Batch static entities by model path AND materials
             InstanceKey key{model.ModelPath, model.Materials};
             auto& group = instanceGroups[key];
             if (group.transforms.empty())
             {
-                group.asset      = model.Asset;
-                group.materials  = model.Materials;
+                group.asset = model.Asset;
+                group.materials = model.Materials;
             }
             group.transforms.push_back(worldTransform);
         }
         else
         {
-            // Static with shader override — draw individually
             Renderer::Get().DrawModel(model.Asset, worldTransform, model.Materials, 0, 0.0f, -1, 0.0f, 0.0f,
                                       shaderOverride, customUniforms);
         }
     }
+}
 
-    // ---- Pass B: Draw animated individually ----
+void SceneRenderer::DrawAnimatedEntities(const std::vector<AnimatedEntry>& animatedEntries)
+{
     for (auto& entry : animatedEntries)
     {
         float targetFPS = 30.0f;
         if (Project::GetActive())
-        {
             targetFPS = Project::GetActive()->GetConfig().Animation.TargetFPS;
-        }
-        float frameTime       = 1.0f / (targetFPS > 0 ? targetFPS : 30.0f);
+
+        float frameTime = 1.0f / (targetFPS > 0 ? targetFPS : 30.0f);
         float fractionalFrame = (float)entry.animation.CurrentFrame + (entry.animation.FrameTimeCounter / frameTime);
 
-        int   targetAnim           = -1;
+        int targetAnim = -1;
         float targetFractionalFrame = 0.0f;
-        float blendWeight          = 0.0f;
+        float blendWeight = 0.0f;
         if (entry.animation.Blending)
         {
-            targetAnim            = entry.animation.TargetAnimationIndex;
+            targetAnim = entry.animation.TargetAnimationIndex;
             targetFractionalFrame = (float)entry.animation.TargetFrame + (entry.animation.FrameTimeCounter / frameTime);
-            blendWeight           = entry.animation.BlendTimer / entry.animation.BlendDuration;
+            blendWeight = entry.animation.BlendTimer / entry.animation.BlendDuration;
         }
 
         Renderer::Get().DrawModel(entry.asset, entry.worldTransform, entry.materials,
@@ -322,8 +316,10 @@ void SceneRenderer::RenderModels(Scene* scene, Timestep timestep)
                                   targetAnim, targetFractionalFrame, blendWeight,
                                   entry.shaderOverride, entry.customUniforms);
     }
+}
 
-    // ---- Pass B continued: Draw static groups (instanced if ≥2, single otherwise) ----
+void SceneRenderer::DrawStaticEntities(std::map<InstanceKey, InstanceGroup>& instanceGroups)
+{
     for (auto& [key, group] : instanceGroups)
     {
         if (group.transforms.size() == 1)
@@ -339,7 +335,7 @@ void SceneRenderer::RenderModels(Scene* scene, Timestep timestep)
 }
 
 void SceneRenderer::RenderBVHNode(const BVH* bvh, uint32_t nodeIndex, const Matrix& transform, Color color,
-                                 int depth)
+                                  int depth)
 {
     const auto& nodes = bvh->GetNodes();
     if (nodeIndex >= nodes.size())
@@ -408,34 +404,37 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const DebugRende
     {
         auto [transform, collider] = view.get<TransformComponent, ColliderComponent>(entity);
         if (!collider.Enabled)
-        {
             continue;
-        }
 
         Matrix worldTransform = GetWorldTransform(registry, entity);
         Color color = GREEN;
 
-        if (collider.Type == ColliderType::Mesh && collider.BVHRoot)
+        switch (collider.Type)
         {
-            RenderBVHNode(collider.BVHRoot.get(), 0, worldTransform, color);
-        }
-        else if (collider.Type == ColliderType::Box)
-        {
-            Vector3 center = Vector3Add(collider.Offset, Vector3Scale(collider.Size, 0.5f));
-            Matrix colliderTransform = MatrixMultiply(MatrixTranslate(center.x, center.y, center.z), worldTransform);
-            Renderer::Get().DrawCubeWires(colliderTransform, collider.Size, color);
-        }
-        else if (collider.Type == ColliderType::Capsule)
-        {
-            Matrix colliderTransform = MatrixMultiply(
-                MatrixTranslate(collider.Offset.x, collider.Offset.y, collider.Offset.z), worldTransform);
-            Renderer::Get().DrawCapsuleWires(colliderTransform, collider.Radius, collider.Height, color);
-        }
-        else if (collider.Type == ColliderType::Sphere)
-        {
-            Matrix colliderTransform = MatrixMultiply(
-                MatrixTranslate(collider.Offset.x, collider.Offset.y, collider.Offset.z), worldTransform);
-            Renderer::Get().DrawSphereWires(colliderTransform, collider.Radius, color);
+            case ColliderType::Mesh:
+                if (collider.BVHRoot){
+                    RenderBVHNode(collider.BVHRoot.get(), 0, worldTransform, color);
+                }
+                break;
+            case ColliderType::Box:
+            {
+                Vector3 center = Vector3Add(collider.Offset, Vector3Scale(collider.Size, 0.5f));
+                Matrix colliderTransform = MatrixMultiply(MatrixTranslate(center.x, center.y, center.z), worldTransform);
+                Renderer::Get().DrawCubeWires(colliderTransform, collider.Size, color);
+                break;
+            }
+            case ColliderType::Capsule:
+            {
+                Matrix colliderTransform = MatrixMultiply(MatrixTranslate(collider.Offset.x, collider.Offset.y, collider.Offset.z), worldTransform);
+                Renderer::Get().DrawCapsuleWires(colliderTransform, collider.Radius, collider.Height, color);
+                break;
+            }
+            case ColliderType::Sphere:
+            {
+                Matrix colliderTransform = MatrixMultiply(MatrixTranslate(collider.Offset.x, collider.Offset.y, collider.Offset.z), worldTransform);
+                Renderer::Get().DrawSphereWires(colliderTransform, collider.Radius, color);
+                break;
+            }
         }
     }
 }
@@ -447,86 +446,83 @@ void SceneRenderer::DrawCollisionModelBoxDebug(entt::registry& registry, const D
     {
         auto [transform, collider] = view.get<TransformComponent, ColliderComponent>(entity);
         if (!collider.Enabled)
-        {
             continue;
-        }
 
         Matrix worldTransform = GetWorldTransform(registry, entity);
-        BoundingBox worldAABB = {{0, 0, 0}, {0, 0, 0}};
-        bool hasBounds = false;
+        BoundingBox worldAABB = CalculateColliderWorldAABB(collider, worldTransform);
 
-        if (collider.Type == ColliderType::Mesh && collider.BVHRoot)
-        {
-            const auto& nodes = collider.BVHRoot->GetNodes();
-            if (!nodes.empty())
-            {
-                Vector3 corners[8] = {
-                    Vector3Transform({nodes[0].Min.x, nodes[0].Min.y, nodes[0].Min.z}, worldTransform),
-                    Vector3Transform({nodes[0].Max.x, nodes[0].Min.y, nodes[0].Min.z}, worldTransform),
-                    Vector3Transform({nodes[0].Min.x, nodes[0].Max.y, nodes[0].Min.z}, worldTransform),
-                    Vector3Transform({nodes[0].Max.x, nodes[0].Max.y, nodes[0].Min.z}, worldTransform),
-                    Vector3Transform({nodes[0].Min.x, nodes[0].Min.y, nodes[0].Max.z}, worldTransform),
-                    Vector3Transform({nodes[0].Max.x, nodes[0].Min.y, nodes[0].Max.z}, worldTransform),
-                    Vector3Transform({nodes[0].Min.x, nodes[0].Max.y, nodes[0].Max.z}, worldTransform),
-                    Vector3Transform({nodes[0].Max.x, nodes[0].Max.y, nodes[0].Max.z}, worldTransform)};
-                worldAABB.min = corners[0];
-                worldAABB.max = corners[0];
-                for (int i = 1; i < 8; i++)
-                {
-                    worldAABB.min = Vector3Min(worldAABB.min, corners[i]);
-                    worldAABB.max = Vector3Max(worldAABB.max, corners[i]);
-                }
-                hasBounds = true;
-            }
-        }
-        else if (collider.Type == ColliderType::Box)
-        {
-            Vector3 corners[8] = {
-                Vector3Transform(collider.Offset, worldTransform),
-                Vector3Transform(Vector3Add(collider.Offset, {collider.Size.x, 0, 0}), worldTransform),
-                Vector3Transform(Vector3Add(collider.Offset, {0, collider.Size.y, 0}), worldTransform),
-                Vector3Transform(Vector3Add(collider.Offset, {collider.Size.x, collider.Size.y, 0}), worldTransform),
-                Vector3Transform(Vector3Add(collider.Offset, {0, 0, collider.Size.z}), worldTransform),
-                Vector3Transform(Vector3Add(collider.Offset, {collider.Size.x, 0, collider.Size.z}), worldTransform),
-                Vector3Transform(Vector3Add(collider.Offset, {0, collider.Size.y, collider.Size.z}), worldTransform),
-                Vector3Transform(Vector3Add(collider.Offset, {collider.Size.x, collider.Size.y, collider.Size.z}),
-                                 worldTransform)};
-            worldAABB.min = corners[0];
-            worldAABB.max = corners[0];
-            for (int i = 1; i < 8; i++)
-            {
-                worldAABB.min = Vector3Min(worldAABB.min, corners[i]);
-                worldAABB.max = Vector3Max(worldAABB.max, corners[i]);
-            }
-            hasBounds = true;
-        }
-        else if (collider.Type == ColliderType::Capsule)
-        {
-            float halfSeg = fmaxf(0.0f, collider.Height * 0.5f - collider.Radius);
-            Vector3 worldA = Vector3Transform(Vector3Add(collider.Offset, {0, -halfSeg, 0}), worldTransform);
-            Vector3 worldB = Vector3Transform(Vector3Add(collider.Offset, {0, halfSeg, 0}), worldTransform);
-
-            float r = collider.Radius;
-            worldAABB.min = Vector3Subtract(Vector3Min(worldA, worldB), {r, r, r});
-            worldAABB.max = Vector3Add(Vector3Max(worldA, worldB), {r, r, r});
-            hasBounds = true;
-        }
-        else if (collider.Type == ColliderType::Sphere)
-        {
-            Vector3 worldPos = Vector3Transform(collider.Offset, worldTransform);
-            float r = collider.Radius;
-            worldAABB.min = Vector3Subtract(worldPos, {r, r, r});
-            worldAABB.max = Vector3Add(worldPos, {r, r, r});
-            hasBounds = true;
-        }
-
-        if (hasBounds)
+        // Check if AABB is valid (max > min)
+        if (worldAABB.max.x > worldAABB.min.x || worldAABB.max.y > worldAABB.min.y || worldAABB.max.z > worldAABB.min.z)
         {
             Vector3 center = Vector3Scale(Vector3Add(worldAABB.min, worldAABB.max), 0.5f);
             Vector3 size = Vector3Subtract(worldAABB.max, worldAABB.min);
             Renderer::Get().DrawCubeWires(MatrixTranslate(center.x, center.y, center.z), size, RED);
         }
     }
+}
+
+BoundingBox SceneRenderer::CalculateColliderWorldAABB(const ColliderComponent& collider, const Matrix& worldTransform)
+{
+    BoundingBox box = {{0, 0, 0}, {0, 0, 0}};
+    std::vector<Vector3> corners;
+
+    switch (collider.Type)
+    {
+        case ColliderType::Mesh:
+            if (collider.BVHRoot && !collider.BVHRoot->GetNodes().empty())
+            {
+                const auto& rootNode = collider.BVHRoot->GetNodes()[0];
+                corners = {
+                    {rootNode.Min.x, rootNode.Min.y, rootNode.Min.z}, {rootNode.Max.x, rootNode.Min.y, rootNode.Min.z},
+                    {rootNode.Min.x, rootNode.Max.y, rootNode.Min.z}, {rootNode.Max.x, rootNode.Max.y, rootNode.Min.z},
+                    {rootNode.Min.x, rootNode.Min.y, rootNode.Max.z}, {rootNode.Max.x, rootNode.Min.y, rootNode.Max.z},
+                    {rootNode.Min.x, rootNode.Max.y, rootNode.Max.z}, {rootNode.Max.x, rootNode.Max.y, rootNode.Max.z}};
+            }
+            break;
+        case ColliderType::Box:
+            corners = {
+                collider.Offset,
+                Vector3Add(collider.Offset, {collider.Size.x, 0, 0}),
+                Vector3Add(collider.Offset, {0, collider.Size.y, 0}),
+                Vector3Add(collider.Offset, {collider.Size.x, collider.Size.y, 0}),
+                Vector3Add(collider.Offset, {0, 0, collider.Size.z}),
+                Vector3Add(collider.Offset, {collider.Size.x, 0, collider.Size.z}),
+                Vector3Add(collider.Offset, {0, collider.Size.y, collider.Size.z}),
+                Vector3Add(collider.Offset, {collider.Size.x, collider.Size.y, collider.Size.z})};
+            break;
+        case ColliderType::Capsule:
+        {
+            float halfSeg = fmaxf(0.0f, collider.Height * 0.5f - collider.Radius);
+            Vector3 worldA = Vector3Transform(Vector3Add(collider.Offset, {0, -halfSeg, 0}), worldTransform);
+            Vector3 worldB = Vector3Transform(Vector3Add(collider.Offset, {0, halfSeg, 0}), worldTransform);
+            float r = collider.Radius;
+            box.min = Vector3Subtract(Vector3Min(worldA, worldB), {r, r, r});
+            box.max = Vector3Add(Vector3Max(worldA, worldB), {r, r, r});
+            return box; // Already in world space
+        }
+        case ColliderType::Sphere:
+        {
+            Vector3 worldPos = Vector3Transform(collider.Offset, worldTransform);
+            float r = collider.Radius;
+            box.min = Vector3Subtract(worldPos, {r, r, r});
+            box.max = Vector3Add(worldPos, {r, r, r});
+            return box; // Already in world space
+        }
+    }
+
+    if (!corners.empty())
+    {
+        box.min = Vector3Transform(corners[0], worldTransform);
+        box.max = box.min;
+        for (size_t i = 1; i < corners.size(); i++)
+        {
+            Vector3 worldCorner = Vector3Transform(corners[i], worldTransform);
+            box.min = Vector3Min(box.min, worldCorner);
+            box.max = Vector3Max(box.max, worldCorner);
+        }
+    }
+
+    return box;
 }
 
 void SceneRenderer::DrawSpawnDebug(entt::registry& registry, const DebugRenderFlags* debugFlags)

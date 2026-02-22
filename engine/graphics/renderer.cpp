@@ -159,6 +159,7 @@ void Renderer::BeginScene(const Camera3D& camera)
 
 void Renderer::EndScene()
 {
+    m_Data->CurrentShader = nullptr;
     EndMode3D();
 }
 
@@ -208,18 +209,49 @@ void Renderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const Ma
     for (int i = 0; i < model.meshCount; i++)
     {
         Material material = ResolveMaterialForMesh(i, model, materialSlotOverrides);
-        auto activeShader = shaderOverride
+        auto activeShaderAsset = shaderOverride
                                 ? shaderOverride
                                 : (m_Data->Shaders->Exists("Lighting") ? m_Data->Shaders->Get("Lighting") : nullptr);
         Matrix meshTransform = MatrixMultiply(model.transform, transform);
 
-        if (activeShader)
+        if (activeShaderAsset)
         {
-            BindShaderUniforms(activeShader.get(), boneMatrices, shaderUniformOverrides);
-            BindMaterialUniforms(activeShader.get(), material, i, model, materialSlotOverrides);
+            ShaderAsset* shader = activeShaderAsset.get();
+            bool shaderChanged = (shader != m_Data->CurrentShader);
+
+            if (shaderChanged)
+            {
+                rlEnableShader(shader->GetShader().id);
+                
+                // Set Global Uniforms
+                shader->SetVec3("viewPos", m_Data->CurrentCameraPosition);
+                shader->SetFloat("uTime", m_Data->Time);
+                shader->SetFloat("uMode", m_Data->DiagnosticMode);
+                
+                // Lighting
+                shader->SetVec3("lightDir", m_Data->CurrentLighting.Direction);
+                shader->SetColor("lightColor", m_Data->CurrentLighting.LightColor);
+                shader->SetFloat("ambient", m_Data->CurrentLighting.Ambient);
+                shader->SetInt("uLightCount", m_Data->LightCount);
+                
+                // Post-Processing
+                shader->SetFloat("uExposure", m_Data->CurrentLighting.Exposure);
+                shader->SetFloat("uGamma", m_Data->CurrentLighting.Gamma);
+
+                // Fog
+                ApplyFogUniforms(shader);
+
+                // SSBO
+                rlBindShaderBuffer(m_Data->LightSSBO, 0);
+
+                m_Data->CurrentShader = shader;
+            }
+
+            BindShaderUniforms(shader, boneMatrices, shaderUniformOverrides);
+            BindMaterialUniforms(shader, material, i, model, materialSlotOverrides);
 
             Shader originalShader = material.shader;
-            material.shader = activeShader->GetShader();
+            material.shader = shader->GetShader();
 
             ProfilerStats stats;
             stats.DrawCalls++;
@@ -494,12 +526,18 @@ void Renderer::SetLight(int index, const RenderLight& light)
     m_Data->LightsDirty = true;
 }
 
+void Renderer::SetLightCount(int count)
+{
+    m_Data->LightCount = std::min(count, RendererData::MaxLights);
+}
+
 void Renderer::ClearLights()
 {
     for (int i = 0; i < RendererData::MaxLights; i++)
     {
         m_Data->Lights[i].enabled = 0;
     }
+    m_Data->LightCount = 0;
     m_Data->LightsDirty = true;
 }
 
@@ -513,7 +551,9 @@ void Renderer::ApplyEnvironment(const EnvironmentSettings& settings)
                            (m_Data->CurrentLighting.LightColor.r != settings.Lighting.LightColor.r) ||
                            (m_Data->CurrentLighting.LightColor.g != settings.Lighting.LightColor.g) ||
                            (m_Data->CurrentLighting.LightColor.b != settings.Lighting.LightColor.b) ||
-                           (m_Data->CurrentLighting.LightColor.a != settings.Lighting.LightColor.a);
+                           (m_Data->CurrentLighting.LightColor.a != settings.Lighting.LightColor.a) ||
+                           (m_Data->CurrentLighting.Exposure != settings.Lighting.Exposure) ||
+                           (m_Data->CurrentLighting.Gamma != settings.Lighting.Gamma);
 
     bool fogChanged = (m_Data->CurrentFog.Enabled != settings.Fog.Enabled) ||
                       (m_Data->CurrentFog.Density != settings.Fog.Density) ||
@@ -784,12 +824,6 @@ void Renderer::BindShaderUniforms(ShaderAsset* activeShader, const std::vector<M
         return;
     }
 
-    activeShader->SetVec3("lightDir", m_Data->CurrentLighting.Direction);
-    activeShader->SetColor("lightColor", m_Data->CurrentLighting.LightColor);
-    activeShader->SetFloat("ambient", m_Data->CurrentLighting.Ambient);
-
-    ApplyFogUniforms(activeShader);
-
     if (!boneMatrices.empty())
     {
         int count = (int)boneMatrices.size();
@@ -799,15 +833,6 @@ void Renderer::BindShaderUniforms(ShaderAsset* activeShader, const std::vector<M
         }
         activeShader->SetMatrices("boneMatrices", boneMatrices.data(), count);
     }
-
-    activeShader->SetVec3("viewPos", m_Data->CurrentCameraPosition);
-    activeShader->SetFloat("uTime", m_Data->Time);
-
-    // Bind Lights SSBO (Unified 4.3 approach)
-    rlBindShaderBuffer(m_Data->LightSSBO, 0);
-
-    // Set global diagnostic mode
-    activeShader->SetFloat("uMode", m_Data->DiagnosticMode);
 
     // Apply custom uniforms from ShaderComponent
     for (const auto& u : shaderUniformOverrides)
@@ -835,6 +860,7 @@ void Renderer::BindShaderUniforms(ShaderAsset* activeShader, const std::vector<M
         }
     }
 }
+
 
 void Renderer::BindMaterialUniforms(ShaderAsset* activeShader, const Material& material, int meshIndex,
                                     const Model& model, const std::vector<MaterialSlot>& materialSlotOverrides)

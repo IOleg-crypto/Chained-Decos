@@ -63,12 +63,12 @@ void main()
     vec3 viewDir = normalize(viewPos - fragPosition);
     vec3 lighting = diffColor * ambient * occ; // Ambient
 
-    
     // Directional Light
     lighting += CalcDirectionalLight(lightDir, lightColor, normal, viewDir, diffColor, s);
 
     // Dynamic Lights (Unified)
-    for (int i = 0; i < MAX_LIGHTS; i++)
+    int lightCount = clamp(uLightCount, 0, MAX_LIGHTS);
+    for (int i = 0; i < lightCount; i++)
     {
         if (lights[i].enabled == 0) continue;
         
@@ -84,7 +84,25 @@ void main()
     emissiveComp *= emissiveIntensity;
 
     // 4. Final Assembly
-    vec4 result = vec4(lighting + emissiveComp, (mode == 2) ? 1.0 : baseColor.a);
+    vec3 outColor = lighting + emissiveComp;
+    
+    // Tonemapping (ACES Filmic)
+    float exposure = (uExposure > 0.0) ? uExposure : 1.0;
+    outColor *= exposure;
+    
+    // ACES Filmic Tone Mapping
+    float a = 2.51;
+    float b = 0.03;
+    float c = 2.43;
+    float d = 0.59;
+    float e = 0.14;
+    outColor = clamp((outColor * (a * outColor + b)) / (outColor * (c * outColor + d) + e), 0.0, 1.0);
+    
+    // Gamma Correction
+    float gamma = (uGamma > 0.0) ? uGamma : 2.2;
+    outColor = pow(outColor, vec3(1.0 / gamma));
+
+    vec4 result = vec4(outColor, (mode == 2) ? 1.0 : baseColor.a);
     
     // 5. Apply Fog
     finalColor = ApplyFog(result, fragPosition, viewPos, uTime);

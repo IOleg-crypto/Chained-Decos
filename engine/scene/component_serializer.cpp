@@ -1,5 +1,6 @@
 #include "component_serializer.h"
 #include "components.h"
+
 #include "components/hierarchy_component.h"
 #include "components/id_component.h"
 #include "engine/core/yaml.h"
@@ -9,7 +10,6 @@
 
 namespace CHEngine
 {
-using namespace SerializationUtils;
 
 std::vector<ComponentSerializerEntry> ComponentSerializer::s_Registry;
 
