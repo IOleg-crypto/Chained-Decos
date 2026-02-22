@@ -32,6 +32,8 @@ struct LightingSettings
     Vector3 Direction = {-1.0f, -1.0f, -1.0f};
     Color LightColor = WHITE;
     float Ambient = 0.3f;
+    float Exposure = 1.0f;
+    float Gamma = 2.2f;
 };
 
 struct EnvironmentSettings

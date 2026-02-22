@@ -62,3 +62,26 @@ TEST(HierarchyTest, ClearParent)
     EXPECT_TRUE(chc.Parent == entt::null);
     EXPECT_EQ(phc.Children.size(), 0);
 }
+
+TEST(HierarchyTest, DeepHierarchyDestruction)
+{
+    Scene scene;
+    Entity root = scene.CreateEntity("Root");
+    Entity child1 = scene.CreateEntity("Child 1");
+    Entity child2 = scene.CreateEntity("Child 2");
+
+    // Root -> Child 1 -> Child 2
+    root.AddComponent<HierarchyComponent>().Children.push_back((entt::entity)child1);
+    child1.AddComponent<HierarchyComponent>().Parent = (entt::entity)root;
+    
+    child1.GetComponent<HierarchyComponent>().Children.push_back((entt::entity)child2);
+    child2.AddComponent<HierarchyComponent>().Parent = (entt::entity)child1;
+
+    entt::entity c1Handle = (entt::entity)child1;
+    entt::entity c2Handle = (entt::entity)child2;
+
+    scene.DestroyEntity(root);
+
+    EXPECT_FALSE(scene.GetRegistry().valid(c1Handle));
+    EXPECT_FALSE(scene.GetRegistry().valid(c2Handle));
+}
