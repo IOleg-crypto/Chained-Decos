@@ -8,6 +8,7 @@
 #include "engine/scene/scene.h"
 #include "narrow_phase.h"
 #include "scene_trace.h"
+#include "dynamics.h"
 #include <mutex>
 #include <unordered_map>
 
