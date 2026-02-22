@@ -41,10 +41,16 @@ public:
         m_Texture = texture;
     }
 
+    bool IsCubemap() const { return m_IsCubemap; }
+    void SetIsCubemap(bool isCubemap) { m_IsCubemap = isCubemap; }
+
+    void Unload();
+
 private:
     Texture2D m_Texture = {0};
     Image m_PendingImage = {0};
     bool m_HasPendingImage = false;
+    bool m_IsCubemap = false;
 };
 } // namespace CHEngine
 

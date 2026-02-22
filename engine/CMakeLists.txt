@@ -158,14 +158,17 @@ target_include_directories(engine PUBLIC
     ${assimp_BINARY_DIR}/include
 INTERFACE
     ${yaml-cpp_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/include/imgui
+    ${CMAKE_SOURCE_DIR}/include/imgui/backends
+    ${imguizmo_SOURCE_DIR}
 )
 
 target_link_libraries(engine 
 PUBLIC 
     raylib 
     EnTT
-    imguilib
 PRIVATE
+    imguilib
     yaml-cpp
     assimp::assimp
 )
