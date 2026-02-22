@@ -12,7 +12,10 @@ class UUID
 public:
     UUID();
     UUID(uint64_t uuid);
+    UUID(const std::string& uuidStr);
     UUID(const UUID&) = default;
+
+    std::string ToString() const;
 
     operator uint64_t() const
     {

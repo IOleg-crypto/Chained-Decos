@@ -3,6 +3,7 @@
 
 // Master header for all components
 #include "components/animation_component.h"
+#include "components/animation_graph_component.h"
 #include "components/audio_component.h"
 #include "components/camera_component.h"
 #include "components/control_component.h"
@@ -18,5 +19,6 @@
 #include "components/sprite_component.h"
 #include "components/tag_component.h"
 #include "components/transform_component.h"
+#include "components/ui_action_component.h"
 
 #endif // CH_COMPONENTS_H

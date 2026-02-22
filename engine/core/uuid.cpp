@@ -16,4 +16,21 @@ UUID::UUID(uint64_t uuid)
     : m_UUID(uuid)
 {
 }
+
+UUID::UUID(const std::string& uuidStr)
+{
+    try
+    {
+        m_UUID = std::stoull(uuidStr);
+    }
+    catch (...)
+    {
+        m_UUID = 0;
+    }
+}
+
+std::string UUID::ToString() const
+{
+    return std::to_string(m_UUID);
+}
 } // namespace CHEngine

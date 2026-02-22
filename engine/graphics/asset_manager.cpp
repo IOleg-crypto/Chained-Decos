@@ -92,9 +92,19 @@ std::string AssetManager::ResolvePath(const std::string& path) const
         return "";
     }
 
+    {
+        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+        if (auto it = m_PathCache.find(path); it != m_PathCache.end())
+        {
+            return it->second;
+        }
+    }
+
     std::filesystem::path p(path);
     if (p.is_absolute())
     {
+        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+        m_PathCache[path] = path;
         return path;
     }
 
@@ -131,15 +141,22 @@ std::string AssetManager::ResolvePath(const std::string& path) const
 
     if (foundPath.empty())
     {
+        CH_CORE_WARN("AssetManager: Could not resolve path '{}'. It doesn't exist in search paths or root.", path);
         foundPath = path;
     }
-
-    std::string normalized = foundPath;
+    std::string normalized = foundPath.empty() ? path : foundPath;
 #ifdef CH_PLATFORM_WINDOWS
     std::transform(normalized.begin(), normalized.end(), normalized.begin(), ::tolower);
     std::replace(normalized.begin(), normalized.end(), '\\', '/');
 #endif
 
+    CH_CORE_INFO("AssetManager: Resolved '{}' -> '{}' (normalized: '{}')", path, foundPath, normalized);
+    
+    {
+        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+        m_PathCache[path] = normalized;
+    }
+    
     return normalized;
 }
 
@@ -151,22 +168,23 @@ std::shared_ptr<Asset> AssetManager::GetAsset(const std::string& path, AssetType
     }
 
     std::string resolved = ResolvePath(path);
-    CH_CORE_INFO("AssetManager: Requesting asset '{}' (resolved: '{}')", path, resolved);
 
     {
         std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
         auto& cache = m_AssetCaches[type];
         if (auto it = cache.find(resolved); it != cache.end())
         {
-            CH_CORE_INFO("AssetManager: Found asset '{}' in cache", resolved);
+            CH_CORE_INFO("AssetManager: Cache HIT for '{}' (state: {})", resolved, (int)it->second->GetState());
             return it->second;
         }
     }
 
+    CH_CORE_INFO("AssetManager: Cache MISS for '{}', creating new asset", resolved);
     std::shared_ptr<Asset> asset = nullptr;
 
     // Async path for specific types
-    if (type == AssetType::Texture || type == AssetType::Model || type == AssetType::Audio)
+    bool isProceduralModel = (type == AssetType::Model && resolved.starts_with(":"));
+    if (!isProceduralModel && (type == AssetType::Texture || type == AssetType::Model || type == AssetType::Audio))
     {
         if (type == AssetType::Texture)
         {
@@ -187,11 +205,18 @@ std::shared_ptr<Asset> AssetManager::GetAsset(const std::string& path, AssetType
         // Cache immediately to prevent duplicate requests
         {
             std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+            auto& cache = m_AssetCaches[type];
+            if (auto it = cache.find(resolved); it != cache.end())
+            {
+                CH_CORE_WARN("AssetManager: [Race Condition Avoided] Asset for '{}' was created by another thread while we were preparing it.", resolved);
+                return it->second;
+            }
             m_AssetCaches[type][resolved] = asset;
         }
 
         // Start background load
         std::string pathCopy = resolved;
+        CH_CORE_INFO("AssetManager: [Main] Scheduling async load for '{}' (Type: {})", pathCopy, (int)type);
         std::weak_ptr<Asset> weakAsset = asset;
 
         auto future = std::async(std::launch::async, [this, pathCopy, type, weakAsset]() {
@@ -209,6 +234,9 @@ std::shared_ptr<Asset> AssetManager::GetAsset(const std::string& path, AssetType
                 std::string ext = std::filesystem::path(pathCopy).extension().string();
                 std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
                 bool isHDR = (ext == ".hdr");
+
+                CH_CORE_INFO("AssetManager: [Background] Processing texture '{}', extension detected: '{}', isHDR: {}", 
+                             pathCopy, ext, isHDR ? "YES" : "NO");
 
                 if (isHDR)
                 {
@@ -276,6 +304,12 @@ std::shared_ptr<Asset> AssetManager::GetAsset(const std::string& path, AssetType
     // Sync path for others
     switch (type)
     {
+    case AssetType::Model:
+        if (resolved.starts_with(":"))
+        {
+            asset = std::static_pointer_cast<Asset>(MeshImporter::ImportMesh(resolved));
+        }
+        break;
     case AssetType::Shader:
         asset = std::static_pointer_cast<Asset>(ShaderImporter::ImportShader(resolved));
         break;
@@ -301,8 +335,14 @@ std::shared_ptr<Asset> AssetManager::GetAsset(const std::string& path, AssetType
         metadata.Type = type;
 
         std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+        auto& cache = m_AssetCaches[type];
+        if (auto it = cache.find(resolved); it != cache.end())
+        {
+             CH_CORE_WARN("AssetManager: [Race Condition Avoided Sync] Asset for '{}' was created by another thread.", resolved);
+             return it->second;
+        }
         m_AssetMetadata[metadata.Handle] = metadata;
-        m_AssetCaches[type][resolved] = asset;
+        cache[resolved] = asset;
     }
 
     return asset;

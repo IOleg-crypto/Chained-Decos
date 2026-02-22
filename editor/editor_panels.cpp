@@ -1,4 +1,5 @@
 #include "editor_panels.h"
+#include "panels/animation_graph_editor_panel.h"
 #include "panels/console_panel.h"
 #include "panels/content_browser_panel.h"
 #include "panels/environment_panel.h"
@@ -24,6 +25,7 @@ void EditorPanels::Init()
     Register<ProfilerPanel>();
     Register<ProjectBrowserPanel>();
     Register<ProjectSettingsPanel>();
+    Register<AnimationGraphEditorPanel>();
 }
 
 void EditorPanels::OnUpdate(Timestep ts)
