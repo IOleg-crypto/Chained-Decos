@@ -3,10 +3,11 @@
 #include "engine/core/profiler.h"
 #include "window.h"
 
+#define IMGUI_DEFINE_MATH_OPERATORS
+#include "imgui.h"
 #include "ImGuizmo.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
-#include "imgui.h"
 
 #ifndef GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_NONE
