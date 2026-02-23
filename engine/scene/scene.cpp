@@ -271,6 +271,7 @@ void Scene::OnUpdateRuntime(Timestep timestep)
 {
     CH_PROFILE_FUNCTION();
 
+    UpdateHierarchy();
     UpdateScripting(timestep);
     UpdateAnimations(timestep);
     UpdateUIActions();
@@ -284,6 +285,7 @@ void Scene::OnUpdateEditor(Timestep timestep)
 {
     CH_PROFILE_FUNCTION();
 
+    UpdateHierarchy();
     UpdateAnimations(timestep);
     UpdateCameras(timestep);
     UpdatePhysics(timestep);
@@ -828,6 +830,52 @@ void Scene::UpdateUIActions()
         else if (uiEntity.HasComponent<ImageButtonControl>())
             pressed = uiEntity.GetComponent<ImageButtonControl>().PressedThisFrame;
     });
+}
+
+void Scene::UpdateHierarchy()
+{
+    CH_PROFILE_FUNCTION();
+
+    auto view = m_Registry.view<TransformComponent>();
+
+    // Helper for recursive update
+    std::function<void(entt::entity, const Matrix&)> updateTransform;
+    updateTransform = [&](entt::entity entity, const Matrix& parentWorldTransform) {
+        auto& tc = view.get<TransformComponent>(entity);
+        tc.WorldTransform = MatrixMultiply(tc.GetTransform(), parentWorldTransform);
+        tc.IsDirty = false;
+
+        if (m_Registry.all_of<HierarchyComponent>(entity))
+        {
+            auto& hc = m_Registry.get<HierarchyComponent>(entity);
+            for (auto child : hc.Children)
+            {
+                if (m_Registry.valid(child) && m_Registry.all_of<TransformComponent>(child))
+                {
+                    updateTransform(child, tc.WorldTransform);
+                }
+            }
+        }
+    };
+
+    // Update all root entities
+    for (auto entity : view)
+    {
+        bool isRoot = true;
+        if (m_Registry.all_of<HierarchyComponent>(entity))
+        {
+            auto& hc = m_Registry.get<HierarchyComponent>(entity);
+            if (hc.Parent != entt::null && m_Registry.valid(hc.Parent) && m_Registry.all_of<TransformComponent>(hc.Parent))
+            {
+                isRoot = false;
+            }
+        }
+
+        if (isRoot)
+        {
+            updateTransform(entity, MatrixIdentity());
+        }
+    }
 }
 
 } // namespace CHEngine

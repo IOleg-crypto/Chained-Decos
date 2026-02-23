@@ -67,6 +67,7 @@ private:
 
     Texture2D m_FolderIcon;
     Texture2D m_FileIcon;
+    float m_IconScale = 1.0f;
 };
 } // namespace CHEngine
 

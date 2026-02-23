@@ -14,7 +14,7 @@ Project:
     TargetFPS: 30
   Render:
     AmbientIntensity: 0
-    DefaultExposure: 0
+    DefaultExposure: 0.839999974
   Texture:
     GenerateMipmaps: true
     Filter: 5
