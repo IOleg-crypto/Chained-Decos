@@ -158,9 +158,10 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
         ImGui::Text("Viewport Tools");
 
         const char* diagnosticModes[] = {"Normal Render", "Normals visualization", "Lighting only", "Albedo only"};
-        int currentDiag = (int)Renderer::Get().GetData().DiagnosticMode;
+        int currentDiag = (int)m_Context->GetSettings().DiagnosticMode;
         if (ImGui::Combo("Diagnostic Mode", &currentDiag, diagnosticModes, 4))
         {
+            m_Context->GetSettings().DiagnosticMode = (float)currentDiag;
             Renderer::Get().SetDiagnosticMode((float)currentDiag);
         }
 
@@ -174,7 +175,7 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
 
         if (ImGui::CollapsingHeader("Debug Visualization", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            auto& debugFlags = EditorLayer::Get().GetDebugRenderFlags();
+            auto& debugFlags = m_Context->GetSettings().DebugFlags;
             ImGui::Checkbox("Colliders", &debugFlags.DrawColliders);
             ImGui::Checkbox("Mesh Hierarchy", &debugFlags.DrawCollisionModelBox);
             ImGui::Checkbox("Lights", &debugFlags.DrawLights);

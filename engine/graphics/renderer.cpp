@@ -792,7 +792,8 @@ std::vector<Matrix> Renderer::ComputeBoneMatrices(const std::shared_ptr<ModelAss
         }
         else
         {
-            boneMatrices[i] = MatrixIdentity();
+            // For node-based hierarchy without skinning offsets, use global pose directly
+            boneMatrices[i] = globalPose[i];
         }
     }
 
@@ -853,6 +854,12 @@ void Renderer::BindShaderUniforms(ShaderAsset* activeShader, const std::vector<M
             count = 128; // Shader limit
         }
         activeShader->SetMatrices("boneMatrices", boneMatrices.data(), count);
+    }
+    else
+    {
+        // Provide identity matrices for the first few bones to avoid state leakage if the shader is used for static meshes
+        static Matrix identityMatrices[4] = {MatrixIdentity(), MatrixIdentity(), MatrixIdentity(), MatrixIdentity()};
+        activeShader->SetMatrices("boneMatrices", identityMatrices, 4);
     }
 
     // Apply custom uniforms from ShaderComponent

@@ -355,6 +355,13 @@ bool EditorLayer::OnSceneOpened(SceneOpenedEvent& e)
         project->SetActiveScenePath(std::filesystem::relative(e.GetPath(), project->GetProjectDirectory()));
         ProjectActions::Save();
     }
+
+    // Sync Diagnostic Mode
+    if (activeScene)
+    {
+        Renderer::Get().SetDiagnosticMode(activeScene->GetSettings().DiagnosticMode);
+    }
+
     return false;
 }
 

@@ -133,3 +133,12 @@ jobs:
           path: build/${{ matrix.config_preset }}/bin
           retention-days: 7
 
+  tests:
+    runs-on: ${{ matrix.os }}
+    needs : build
+    steps: 
+      - name : All jobs completed
+        run: |
+          echo "All jobs completed successfully"
+    
+
