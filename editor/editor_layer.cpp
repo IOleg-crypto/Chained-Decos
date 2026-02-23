@@ -24,8 +24,7 @@
 #include "panels/project_browser_panel.h"
 #include "panels/property_editor.h"
 #include "panels/viewport_panel.h"
-#include "raylib.h"
-#include "game/chaineddecos/src/game_scripts.h"
+#include "engine/core/game_entry_point.h"
 
 namespace CHEngine
 {
@@ -157,6 +156,9 @@ void EditorLayer::OnAttach()
     CH_CORE_INFO("EditorLayer Attached with modular panels.");
 
     LoadEditorFonts();
+
+    // Register game scripts once globally
+    RegisterGameScripts();
 }
 
 void EditorLayer::LoadEditorFonts()
@@ -405,7 +407,7 @@ void EditorLayer::OnEvent(Event& e)
         if (EditorContext::GetSceneState() == SceneState::Play)
         {
             auto newScene = std::make_shared<Scene>();
-            RegisterGameScripts(newScene.get()); // Pre-register scripts for NativeScriptComponent
+            // RegisterGameScripts(newScene.get()); // Removed: now handled globally and copied to Scene
             SceneSerializer serializer(newScene.get());
             if (serializer.Deserialize(finalPath))
             {
@@ -523,7 +525,7 @@ void EditorLayer::SetScene(std::shared_ptr<Scene> scene)
         m_Panels->SetContext(m_EditorScene);
     }
 
-    RegisterGameScripts(m_EditorScene.get());
+    // RegisterGameScripts(m_EditorScene.get()); // Removed: now handled globally
 }
 void EditorLayer::SetViewportSize(const ImVec2& size)
 {
