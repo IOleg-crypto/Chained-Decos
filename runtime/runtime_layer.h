@@ -14,9 +14,7 @@ namespace CHEngine
 class RuntimeLayer : public Layer
 {
 public:
-    using ScriptRegistrationCallback = std::function<void(Scene*)>;
-
-    RuntimeLayer(const std::string& projectPath = "", ScriptRegistrationCallback callback = nullptr);
+    RuntimeLayer(const std::string& projectPath = "");
     virtual ~RuntimeLayer();
 
     virtual void OnAttach() override;
@@ -41,7 +39,7 @@ private:
 private:
     std::shared_ptr<Scene> m_Scene;
     std::unique_ptr<class SceneRenderer> m_SceneRenderer;
-    ScriptRegistrationCallback m_ScriptCallback;
+    // Script callback removed in favor of GlobalRegistry
     std::string m_PendingScenePath;
     std::string m_ProjectPath;
 };

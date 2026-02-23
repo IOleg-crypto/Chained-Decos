@@ -16,10 +16,9 @@
 
 namespace CHEngine
 {
-RuntimeLayer::RuntimeLayer(const std::string& projectPath, ScriptRegistrationCallback callback)
+RuntimeLayer::RuntimeLayer(const std::string& projectPath)
     : Layer("RuntimeLayer"),
-      m_ProjectPath(projectPath),
-      m_ScriptCallback(callback)
+      m_ProjectPath(projectPath)
 {
     m_SceneRenderer = std::make_unique<SceneRenderer>();
 }
@@ -173,13 +172,7 @@ void RuntimeLayer::LoadScene(const std::string& path)
 
     m_Scene = std::make_shared<Scene>();
 
-    if (m_ScriptCallback)
-    {
-        m_ScriptCallback(m_Scene.get());
-    }
-    else
-    {
-        auto project = Project::GetActive();
+    auto project = Project::GetActive();
         if (project && project->GetConfig().Scripting.AutoLoad)
         {
             const auto& scripting = project->GetConfig().Scripting;
@@ -225,7 +218,6 @@ void RuntimeLayer::LoadScene(const std::string& path)
                         break;
                     }
                 }
-            }
         }
     }
 

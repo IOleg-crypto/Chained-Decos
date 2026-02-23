@@ -602,11 +602,11 @@ Entities:
     TagComponent:
       Tag: SceneCamera
     TransformComponent:
-      Translation: [-247.533951, 76.114975, -145.229294]
-      Rotation: [-369.591156, -10212.6045, 0]
+      Translation: [233.466766, 38.5550461, 120.721405]
+      Rotation: [-16.7911415, -11114.1777, 0]
       Scale: [1, 1, 1]
     CameraComponent:
-      Primary: false
+      Primary: true
       FixedAspectRatio: false
       IsOrbitCamera: false
       OrbitDistance: 10
@@ -887,7 +887,7 @@ Entities:
       Rotation: [165.700012, -53.0998497, -180]
       Scale: [1, 1, 1]
     CameraComponent:
-      Primary: true
+      Primary: false
       FixedAspectRatio: false
       IsOrbitCamera: true
       OrbitDistance: 16.5999985

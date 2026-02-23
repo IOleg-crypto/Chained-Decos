@@ -35,6 +35,9 @@ extern "C" {
 // New ABI-safe signature: DLL receives a callback + opaque pointer
 CH_GAME_API void LoadGame(CH_RegisterScriptCallback registerCallback, void* userData);
 CH_GAME_API void UnloadGame();
+
+// Static registration entry point
+CH_GAME_API void RegisterGameScripts();
 }
 
 // Helper macro for game scripts to simplify registration

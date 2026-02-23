@@ -2,7 +2,7 @@
 #include "engine/core/entry_point.h"
 #include "runtime/runtime_layer.h"
 
-#include "game_scripts.h"
+#include "engine/core/game_entry_point.h"
 
 namespace CHEngine
 {
@@ -12,10 +12,11 @@ Application* CreateApplication(ApplicationCommandLineArgs args)
     spec.Name = "Chained Decos";
     spec.CommandLineArgs = args;
 
-    // Pass empty string to trigger auto-discovery of .chproject
-    // Pass the static registration function
+    // Register scripts one time into Global Registry
+    RegisterGameScripts();
+
     Application* app = new Application(spec);
-    app->PushLayer(new RuntimeLayer("", RegisterGameScripts));
+    app->PushLayer(new RuntimeLayer(""));
     return app;
 }
 } // namespace CHEngine
