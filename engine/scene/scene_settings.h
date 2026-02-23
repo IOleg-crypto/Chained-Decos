@@ -9,6 +9,17 @@
 
 namespace CHEngine
 {
+struct DebugRenderFlags
+{
+    bool DrawColliders = false;
+    bool DrawHierarchy = false;
+    bool DrawCollisionModelBox = false;
+    bool DrawGrid = false;
+    bool DrawSelection = true;
+    bool DrawLights = true;
+    bool DrawSpawnZones = true;
+};
+
 enum class BackgroundMode
 {
     Color = 0,
@@ -34,6 +45,9 @@ struct SceneSettings
 
     CanvasSettings Canvas;
     GridSettings   Grid;
+
+    DebugRenderFlags DebugFlags;
+    float DiagnosticMode = 0.0f;
 };
 
 } // namespace CHEngine

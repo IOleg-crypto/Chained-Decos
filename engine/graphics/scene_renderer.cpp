@@ -25,21 +25,11 @@ namespace CHEngine
 {
 Matrix SceneRenderer::GetWorldTransform(entt::registry& registry, entt::entity entity)
 {
-    Matrix transform = MatrixIdentity();
     if (registry.all_of<TransformComponent>(entity))
     {
-        transform = registry.get<TransformComponent>(entity).GetTransform();
+        return registry.get<TransformComponent>(entity).WorldTransform;
     }
-
-    if (registry.all_of<HierarchyComponent>(entity))
-    {
-        entt::entity parent = registry.get<HierarchyComponent>(entity).Parent;
-        if (parent != entt::null)
-        {
-            transform = MatrixMultiply(transform, GetWorldTransform(registry, parent));
-        }
-    }
-    return transform;
+    return MatrixIdentity();
 }
 
 Vector3 SceneRenderer::GetWorldPosition(entt::registry& registry, entt::entity entity)
@@ -229,7 +219,7 @@ void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& 
         if (!model.Asset || model.Asset->GetState() != AssetState::Ready)
             continue;
 
-        Matrix worldTransform = GetWorldTransform(registry, entity);
+        const Matrix& worldTransform = transform.WorldTransform;
         if (!frustum.IsBoxVisible(model.Asset->GetBoundingBox(), worldTransform))
             continue;
 

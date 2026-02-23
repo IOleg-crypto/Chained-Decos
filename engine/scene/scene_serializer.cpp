@@ -74,6 +74,7 @@ std::string SceneSerializer::SerializeToString()
 
         out << YAML::Key << "Skybox" << YAML::Value << YAML::BeginMap;
         out << YAML::Key << "TexturePath" << YAML::Value << Project::GetRelativePath(settings.Skybox.TexturePath);
+        out << YAML::Key << "Mode" << YAML::Value << settings.Skybox.Mode;
         out << YAML::Key << "Exposure" << YAML::Value << settings.Skybox.Exposure;
         out << YAML::Key << "Brightness" << YAML::Value << settings.Skybox.Brightness;
         out << YAML::Key << "Contrast" << YAML::Value << settings.Skybox.Contrast;
@@ -87,6 +88,17 @@ std::string SceneSerializer::SerializeToString()
         out << YAML::Key << "End" << YAML::Value << settings.Fog.End;
         out << YAML::EndMap;
     }
+
+    out << YAML::Key << "DebugSettings" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "DiagnosticMode" << YAML::Value << m_Scene->m_Settings.DiagnosticMode;
+    out << YAML::Key << "DrawColliders" << YAML::Value << m_Scene->m_Settings.DebugFlags.DrawColliders;
+    out << YAML::Key << "DrawHierarchy" << YAML::Value << m_Scene->m_Settings.DebugFlags.DrawHierarchy;
+    out << YAML::Key << "DrawCollisionModelBox" << YAML::Value << m_Scene->m_Settings.DebugFlags.DrawCollisionModelBox;
+    out << YAML::Key << "DrawGrid" << YAML::Value << m_Scene->m_Settings.DebugFlags.DrawGrid;
+    out << YAML::Key << "DrawSelection" << YAML::Value << m_Scene->m_Settings.DebugFlags.DrawSelection;
+    out << YAML::Key << "DrawLights" << YAML::Value << m_Scene->m_Settings.DebugFlags.DrawLights;
+    out << YAML::Key << "DrawSpawnZones" << YAML::Value << m_Scene->m_Settings.DebugFlags.DrawSpawnZones;
+    out << YAML::EndMap;
 
     out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
 
@@ -183,6 +195,20 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
             }
         }
 
+        // Deserialize Debug Settings
+        if (data["DebugSettings"])
+        {
+            auto debugNode = data["DebugSettings"];
+            m_Scene->m_Settings.DiagnosticMode = debugNode["DiagnosticMode"].as<float>(0.0f);
+            m_Scene->m_Settings.DebugFlags.DrawColliders = debugNode["DrawColliders"].as<bool>(false);
+            m_Scene->m_Settings.DebugFlags.DrawHierarchy = debugNode["DrawHierarchy"].as<bool>(false);
+            m_Scene->m_Settings.DebugFlags.DrawCollisionModelBox = debugNode["DrawCollisionModelBox"].as<bool>(false);
+            m_Scene->m_Settings.DebugFlags.DrawGrid = debugNode["DrawGrid"].as<bool>(false);
+            m_Scene->m_Settings.DebugFlags.DrawSelection = debugNode["DrawSelection"].as<bool>(true);
+            m_Scene->m_Settings.DebugFlags.DrawLights = debugNode["DrawLights"].as<bool>(true);
+            m_Scene->m_Settings.DebugFlags.DrawSpawnZones = debugNode["DrawSpawnZones"].as<bool>(true);
+        }
+
         // Deserialize Environment
         if (data["EnvironmentPath"] && data["EnvironmentPath"].IsScalar())
         {
@@ -245,6 +271,10 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
                 if (skybox["TexturePath"] && skybox["TexturePath"].IsScalar())
                 {
                     settings.Skybox.TexturePath = skybox["TexturePath"].as<std::string>();
+                }
+                if (skybox["Mode"])
+                {
+                    settings.Skybox.Mode = skybox["Mode"].as<int>();
                 }
                 if (skybox["Exposure"])
                 {

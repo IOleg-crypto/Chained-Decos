@@ -22,6 +22,11 @@ private:
 
 private:
     std::unordered_set<entt::entity> m_DrawnEntities;
+
+    char m_SearchBuffer[128] = {0};
+    bool m_Renaming = false;
+    char m_RenameBuffer[128] = {0};
+    Entity m_RenamingEntity;
 };
 
 } // namespace CHEngine

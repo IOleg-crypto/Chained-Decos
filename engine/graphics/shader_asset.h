@@ -58,6 +58,7 @@ public:
 private:
     Shader m_Shader = {0};
     std::unordered_map<std::string, int> m_UniformCache;
+    std::unordered_map<int, std::vector<float>> m_ValueCache;
 };
 } // namespace CHEngine
 

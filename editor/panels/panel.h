@@ -20,6 +20,9 @@ public:
     virtual void OnEvent(Event& e)
     {
     }
+    virtual void OnConfiguration()
+    {
+    }
     virtual void SetContext(const std::shared_ptr<Scene>& context)
     {
         m_Context = context;
@@ -28,6 +31,10 @@ public:
     bool& IsOpen()
     {
         return m_IsOpen;
+    }
+    bool& ShowSettings()
+    {
+        return m_ShowSettings;
     }
     const std::string& GetName() const
     {
@@ -38,6 +45,7 @@ protected:
     std::string m_Name;
     std::shared_ptr<Scene> m_Context;
     bool m_IsOpen = true;
+    bool m_ShowSettings = false;
 };
 } // namespace CHEngine
 

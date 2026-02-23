@@ -82,6 +82,11 @@ public:
     }
     DebugRenderFlags& GetDebugRenderFlags()
     {
+        auto activeScene = GetActiveScene();
+        if (activeScene)
+        {
+            return activeScene->GetSettings().DebugFlags;
+        }
         return EditorContext::GetDebugRenderFlags();
     }
 

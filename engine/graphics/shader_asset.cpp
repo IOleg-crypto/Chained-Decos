@@ -26,6 +26,39 @@ int ShaderAsset::GetLocation(const std::string& name)
 
 void ShaderAsset::SetUniform(int location, const void* value, int type)
 {
+    // Caching for basic types (float, vec2, vec3, vec4, int)
+    int floatCount = 0;
+    switch (type)
+    {
+        case SHADER_UNIFORM_FLOAT: floatCount = 1; break;
+        case SHADER_UNIFORM_VEC2:  floatCount = 2; break;
+        case SHADER_UNIFORM_VEC3:  floatCount = 3; break;
+        case SHADER_UNIFORM_VEC4:  floatCount = 4; break;
+        case SHADER_UNIFORM_INT:   floatCount = 1; break;
+    }
+
+    if (floatCount > 0)
+    {
+        const float* fptr = (const float*)value;
+        auto& cached = m_ValueCache[location];
+        bool changed = cached.size() != (size_t)floatCount;
+        if (!changed)
+        {
+            for (int i = 0; i < floatCount; i++)
+            {
+                if (cached[i] != fptr[i])
+                {
+                    changed = true;
+                    break;
+                }
+            }
+        }
+
+        if (!changed) return;
+
+        cached.assign(fptr, fptr + floatCount);
+    }
+
     SetShaderValue(m_Shader, location, value, type);
 }
 
@@ -34,67 +67,41 @@ void ShaderAsset::SetUniform(const std::string& name, const void* value, int typ
     int location = GetLocation(name);
     if (location >= 0)
     {
-        SetShaderValue(m_Shader, location, value, type);
+        SetUniform(location, value, type);
     }
 }
 
 // Type-safe helper methods
 void ShaderAsset::SetFloat(const std::string& name, float value)
 {
-    int location = GetLocation(name);
-    if (location >= 0)
-    {
-        SetShaderValue(m_Shader, location, &value, SHADER_UNIFORM_FLOAT);
-    }
+    SetUniform(name, &value, SHADER_UNIFORM_FLOAT);
 }
 
 void ShaderAsset::SetInt(const std::string& name, int value)
 {
-    int location = GetLocation(name);
-    if (location >= 0)
-    {
-        SetShaderValue(m_Shader, location, &value, SHADER_UNIFORM_INT);
-    }
+    // Reuse SetUniform for int as well
+    SetUniform(name, &value, SHADER_UNIFORM_INT);
 }
 
 void ShaderAsset::SetVec2(const std::string& name, const Vector2& value)
 {
-    int location = GetLocation(name);
-    if (location >= 0)
-    {
-        float v[2] = {value.x, value.y};
-        SetShaderValue(m_Shader, location, v, SHADER_UNIFORM_VEC2);
-    }
+    SetUniform(name, &value, SHADER_UNIFORM_VEC2);
 }
 
 void ShaderAsset::SetVec3(const std::string& name, const Vector3& value)
 {
-    int location = GetLocation(name);
-    if (location >= 0)
-    {
-        float v[3] = {value.x, value.y, value.z};
-        SetShaderValue(m_Shader, location, v, SHADER_UNIFORM_VEC3);
-    }
+    SetUniform(name, &value, SHADER_UNIFORM_VEC3);
 }
 
 void ShaderAsset::SetVec4(const std::string& name, const Vector4& value)
 {
-    int location = GetLocation(name);
-    if (location >= 0)
-    {
-        float v[4] = {value.x, value.y, value.z, value.w};
-        SetShaderValue(m_Shader, location, v, SHADER_UNIFORM_VEC4);
-    }
+    SetUniform(name, &value, SHADER_UNIFORM_VEC4);
 }
 
 void ShaderAsset::SetColor(const std::string& name, const Color& value)
 {
-    int location = GetLocation(name);
-    if (location >= 0)
-    {
-        float c[4] = {value.r / 255.0f, value.g / 255.0f, value.b / 255.0f, value.a / 255.0f};
-        SetShaderValue(m_Shader, location, c, SHADER_UNIFORM_VEC4);
-    }
+    float c[4] = {value.r / 255.0f, value.g / 255.0f, value.b / 255.0f, value.a / 255.0f};
+    SetUniform(name, c, SHADER_UNIFORM_VEC4);
 }
 
 void ShaderAsset::SetMatrix(const std::string& name, const Matrix& value)
@@ -102,6 +109,7 @@ void ShaderAsset::SetMatrix(const std::string& name, const Matrix& value)
     int location = GetLocation(name);
     if (location >= 0)
     {
+        // For matrices we could also cache, but let's start with basic types
         SetShaderValueMatrix(m_Shader, location, value);
     }
 }
@@ -111,8 +119,6 @@ void ShaderAsset::SetMatrices(const std::string& name, const Matrix* values, int
     int location = GetLocation(name);
     if (location >= 0)
     {
-        // SetShaderValueV doesn't seem to support matrices in this Raylib version
-        // We use rlgl directly. rlEnableShader handles state caching internally.
         rlEnableShader(m_Shader.id);
         rlSetUniformMatrices(location, values, count);
     }

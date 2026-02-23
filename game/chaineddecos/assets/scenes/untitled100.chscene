@@ -11,9 +11,10 @@ EnvironmentPath: environments/new_environment.chenv
 Lighting:
   Direction: [-0.699999988, -1, 1]
   LightColor: [255, 255, 255, 255]
-  Ambient: 0.550000012
+  Ambient: 0.294999987
 Skybox:
   TexturePath: skyboxes/qwantani_dusk_2_puresky_8k.hdr
+  Mode: 2
   Exposure: 0.670000017
   Brightness: -0.699999988
   Contrast: 0.449999988
@@ -23,40 +24,16 @@ Fog:
   Density: 0.00999999978
   Start: 0
   End: 158.800003
+DebugSettings:
+  DiagnosticMode: 0
+  DrawColliders: false
+  DrawHierarchy: false
+  DrawCollisionModelBox: false
+  DrawGrid: false
+  DrawSelection: true
+  DrawLights: true
+  DrawSpawnZones: true
 Entities:
-  - Entity: 12136520092648073534
-    TagComponent:
-      Tag: Sphere
-    TransformComponent:
-      Translation: [0, 24.2238617, 0]
-      Rotation: [0, -0, 0]
-      Scale: [1, 1, 1]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: ":sphere:"
-      Materials:
-        - Name: Material 0
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            Metalness: 0
-            Roughness: 0.5
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
   - Entity: 10653066213482940164
     TagComponent:
       Tag: minecrafthouse
@@ -239,9 +216,9 @@ Entities:
     TagComponent:
       Tag: Player
     TransformComponent:
-      Translation: [-0.443338692, 0.183058769, 37.5503273]
-      Rotation: [0, -55.8001099, 0]
-      Scale: [0.999971211, 1, 0.999971211]
+      Translation: [-0.443338692, 3.56221986, 37.5503273]
+      Rotation: [0, 0.748557806, 0]
+      Scale: [0.999971151, 1, 0.999971151]
     ModelComponent:
       ModelHandle: 0
       ModelPath: models/player_low.glb
@@ -319,8 +296,8 @@ Entities:
       Tag: Entity
     TransformComponent:
       Translation: [0, 0, 0]
-      Rotation: [0.0425697118, 0.0321596451, -0.00330254296]
-      Scale: [0.999942958, 0.99989593, 0.999932289]
+      Rotation: [-0.011750849, 0.0380452126, -0.00385774393]
+      Scale: [0.999946058, 0.999890089, 0.99993068]
     ModelComponent:
       ModelHandle: 0
       ModelPath: models/arena.glb
@@ -602,8 +579,8 @@ Entities:
     TagComponent:
       Tag: SceneCamera
     TransformComponent:
-      Translation: [233.466766, 38.5550461, 120.721405]
-      Rotation: [-16.7911415, -11114.1777, 0]
+      Translation: [-12.7980175, 46.2279739, 237.55246]
+      Rotation: [-11.9911566, -13306.9453, 0]
       Scale: [1, 1, 1]
     CameraComponent:
       Primary: true
@@ -618,22 +595,22 @@ Entities:
       PerspectiveFOV: 0.680678427
       PerspectiveNear: 0.25999999
       PerspectiveFar: 1021
-  - Entity: 3012313505211892935
+  - Entity: 12136520092648073534
     TagComponent:
-      Tag: rail#3d
+      Tag: Sphere
     TransformComponent:
-      Translation: [334.647217, 23.4788246, 865.104187]
-      Rotation: [0.0143109951, 0.110026747, -0.0434906594]
-      Scale: [160.609955, 176.19548, 75.8668976]
+      Translation: [0, 24.2238617, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
     ModelComponent:
       ModelHandle: 0
-      ModelPath: models/6_buildings_low-poly_pack_1.glb
+      ModelPath: ":sphere:"
       Materials:
         - Name: Material 0
           Index: 0
           Target: 0
           Material:
-            AlbedoColor: [17, 3, 0, 240]
+            AlbedoColor: [255, 255, 255, 255]
             AlbedoPath: ""
             OverrideAlbedo: false
             NormalMapPath: ""
@@ -651,76 +628,22 @@ Entities:
             DoubleSided: false
             Transparent: false
             Alpha: 1
-        - Name: Material 1
-          Index: 1
-          Target: 0
-          Material:
-            AlbedoColor: [145, 145, 145, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            Metalness: 0
-            Roughness: 0.5
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: Material 2
-          Index: 2
-          Target: 0
-          Material:
-            AlbedoColor: [19, 17, 15, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            Metalness: 0
-            Roughness: 0.5
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-    ColliderComponent:
-      Type: 257
-      Enabled: true
-      Offset: [-47.0180092, -0.00186821003, -296.693939]
-      Size: [461.537354, 163.612488, 386.329773]
-      Radius: 0.5
-      Height: 2
-      ModelHandle: 0
-      ModelPath: models/6_buildings_low-poly_pack_1.glb
-      AutoCalculate: true
   - Entity: 6476044873312290418
     TagComponent:
-      Tag: rail#2
+      Tag: ghost
     TransformComponent:
-      Translation: [107.98568, 3.20063448, 19.0170727]
-      Rotation: [3.14027047, -1.54398894, -3.14008403]
-      Scale: [2.81845117, 1.27921426, 1.24591303]
+      Translation: [-43.9071655, 13.3950386, 19.0170727]
+      Rotation: [-0.000735965325, 1.52675712, -0.000922377745]
+      Scale: [1.08846331, 1.27921426, 0.727849543]
     ModelComponent:
       ModelHandle: 0
-      ModelPath: models/train/scene.gltf
+      ModelPath: models/ghost/untitledb.glb
       Materials:
         - Name: Material 0
           Index: 0
           Target: 0
           Material:
-            AlbedoColor: [17, 3, 3, 255]
+            AlbedoColor: [193, 162, 162, 255]
             AlbedoPath: ""
             OverrideAlbedo: false
             NormalMapPath: ""
@@ -785,13 +708,18 @@ Entities:
     ColliderComponent:
       Type: 257
       Enabled: true
-      Offset: [-1.23756766, -0.447188109, -3.16349196]
-      Size: [2.47513533, 0.44796145, 34.5888672]
+      Offset: [-0.268859863, -0.499938965, -0.389160156]
+      Size: [0.533691406, 0.999938965, 0.778839111]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
-      ModelPath: models/train/scene.gltf
+      ModelPath: models/ghost/untitledb.glb
       AutoCalculate: true
+    AnimationComponent:
+      AnimationPath: ""
+      CurrentAnimationIndex: 0
+      IsLooping: true
+      IsPlaying: true
   - Entity: 11765662603609844984
     TagComponent:
       Tag: rail#3d2
@@ -883,7 +811,7 @@ Entities:
     TagComponent:
       Tag: CameraPlayer
     TransformComponent:
-      Translation: [-13.3067703, 4.2832346, 27.8921375]
+      Translation: [-13.3067703, 7.66239548, 27.8921375]
       Rotation: [165.700012, -53.0998497, -180]
       Scale: [1, 1, 1]
     CameraComponent:
@@ -920,18 +848,18 @@ Entities:
     TagComponent:
       Tag: rail#3d
     TransformComponent:
-      Translation: [226.689651, 2.80065823, 22.1876564]
-      Rotation: [3.14027047, -1.54398894, -3.14008403]
-      Scale: [2.81779146, 1.83832991, 2.52320004]
+      Translation: [224.289001, 2.80065823, 408.244843]
+      Rotation: [0.000183386597, 0.0685081109, -4.0567109e-05]
+      Scale: [417.830475, 336.553497, 246.064056]
     ModelComponent:
       ModelHandle: 0
-      ModelPath: models/train/scene.gltf
+      ModelPath: models/building/scene.gltf
       Materials:
         - Name: Material 0
           Index: 0
           Target: 0
           Material:
-            AlbedoColor: [17, 3, 3, 255]
+            AlbedoColor: [76, 75, 75, 255]
             AlbedoPath: ""
             OverrideAlbedo: false
             NormalMapPath: ""
@@ -996,12 +924,12 @@ Entities:
     ColliderComponent:
       Type: 257
       Enabled: true
-      Offset: [-1.23756766, -0.447188109, -3.16349196]
-      Size: [2.47513533, 0.44796145, 34.5888672]
+      Offset: [-47.0180092, -0.00186821003, -296.693939]
+      Size: [461.537354, 163.612488, 386.329773]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
-      ModelPath: models/train/scene.gltf
+      ModelPath: models/building/scene.gltf
       AutoCalculate: true
   - Entity: 193077798077705471
     TagComponent:

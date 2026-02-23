@@ -126,6 +126,7 @@ private: // Update Logic
     void UpdateCameras(Timestep deltaTime);
     void UpdateTransitions();
     void UpdateUIActions();
+    void UpdateHierarchy();
 
     friend class Entity;
     friend class SceneSerializer;
