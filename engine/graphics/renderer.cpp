@@ -664,6 +664,27 @@ void Renderer::EnsureShadersLoaded()
         }
     }
 
+    // 3. Skybox Cubemap Shader
+    if (!lib.Exists("SkyboxCubemap"))
+    {
+        auto shader = assetManager->Get<ShaderAsset>("engine/resources/shaders/skybox_cubemap.chshader");
+        if (shader)
+        {
+            lib.Add("SkyboxCubemap", shader);
+            CH_CORE_INFO("Renderer: 'SkyboxCubemap' shader loaded lazily.");
+        }
+    }
+
+    // 4. Cubemap Generation Shader
+    if (!lib.Exists("CubemapGen"))
+    {
+        auto shader = assetManager->Get<ShaderAsset>("engine/resources/shaders/cubemap.chshader");
+        if (shader)
+        {
+            lib.Add("CubemapGen", shader);
+            CH_CORE_INFO("Renderer: 'CubemapGen' shader loaded lazily.");
+        }
+    }
 }
 
 std::vector<Matrix> Renderer::ComputeBoneMatrices(const std::shared_ptr<ModelAsset>& modelAsset, int animationIndex,

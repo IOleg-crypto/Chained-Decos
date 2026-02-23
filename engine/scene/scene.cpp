@@ -50,8 +50,9 @@ Scene::Scene()
     // Create physics instance
     m_Physics = std::make_unique<Physics>(this);
 
-    // Create script registry
+    // Create script registry and copy from global
     m_ScriptRegistry = std::make_unique<ScriptRegistry>();
+    m_ScriptRegistry->CopyFrom(ScriptRegistry::GetGlobalRegistry());
 }
 
 Scene::~Scene()

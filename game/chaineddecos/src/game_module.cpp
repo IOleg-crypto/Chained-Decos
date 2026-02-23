@@ -12,35 +12,32 @@
 #include "playercontroller.h"
 #include "playergui.h"
 #include "scenescript.h"
-#include "game_scripts.h"
+#include "spawnzone.h"
+#include "settings_script.h"
 
-// Standard C++ function for static linking (used by Editor)
-void RegisterGameScripts(CHEngine::Scene* scene)
+extern "C" {
+
+// Standard C++ function for static linking (used by Editor and Standalone)
+void RegisterGameScripts()
 {
-    if (!scene)
-    {
-        CH_CORE_ERROR("RegisterGameScripts: SCENE IS NULL!");
-        return;
-    }
-    CH_CORE_INFO("RegisterGameScripts: Called for scene '{}' (ptr: {})", scene->GetSettings().Name, (void*)scene);
+    CH_CORE_INFO("RegisterGameScripts: Registering game scripts to Global Registry");
 
-    auto& registry = scene->GetScriptRegistry();
+    auto& registry = CHEngine::ScriptRegistry::GetGlobalRegistry();
 
-    registry.Register<CHEngine::PlayerController>("PlayerController");
-    registry.Register<CHEngine::CameraController>("CameraController");
-    registry.Register<CHEngine::GameHUD>("GameHUD");
-    registry.Register<CHEngine::SceneScript>("SceneScript");
-    registry.Register<CHEngine::ExitScript>("ExitScript");
-    registry.Register<CHEngine::SpawnZoneRespawn>("SpawnZoneRespawn");
-    registry.Register<CHEngine::OrbitCameraController>("OrbitCameraController");
-    registry.Register<CHEngine::PlayerFall>("PlayerFall");
-    //registry.Register<CHEngine::ScreenFallEffect>("ScreenFallEffect");
-    registry.Register<CHEngine::SettingsScript>("SettingsScript");
+    registry.Register<
+        CHEngine::PlayerController,
+        CHEngine::CameraController,
+        CHEngine::GameHUD,
+        CHEngine::SceneScript,
+        CHEngine::ExitScript,
+        CHEngine::SpawnZoneRespawn,
+        CHEngine::OrbitCameraController,
+        CHEngine::PlayerFall,
+        CHEngine::SettingsScript
+    >();
 
     CH_CORE_INFO("Game Scripts Registered successfully!");
 }
-
-extern "C" {
 #ifdef GAME_BUILD_DLL
 // ABI-safe: DLL calls the Engine's callback to register scripts.
 // No C++ STL types cross the DLL boundary.
@@ -56,7 +53,6 @@ CH_GAME_API void LoadGame(CH_RegisterScriptCallback registerCallback, void* user
     CH_REGISTER_SCRIPT(registerCallback, userData, CHEngine::SpawnZoneRespawn, "SpawnZoneRespawn");
     CH_REGISTER_SCRIPT(registerCallback, userData, CHEngine::OrbitCameraController, "OrbitCameraController");
     CH_REGISTER_SCRIPT(registerCallback, userData, CHEngine::PlayerFall, "PlayerFall");
-    //CH_REGISTER_SCRIPT(registerCallback, userData, CHEngine::ScreenFallEffect, "ScreenFallEffect");
     CH_REGISTER_SCRIPT(registerCallback, userData, CHEngine::SettingsScript, "SettingsScript");
 
     CH_CORE_INFO("Game Scripts Registered successfully!");

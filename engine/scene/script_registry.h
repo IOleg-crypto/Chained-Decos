@@ -20,6 +20,21 @@ public:
         DestroyFn Destroy;
     };
 
+    template <typename T> void Register()
+    {
+        m_Registry[T::GetStaticName()] = {[]() { return static_cast<ScriptableEntity*>(new T()); },
+                                         [](ScriptInstance* si) {
+                                             delete si->Instance;
+                                             si->Instance = nullptr;
+                                         }};
+    }
+
+    template <typename T1, typename T2, typename... TArgs> void Register()
+    {
+        Register<T1>();
+        Register<T2, TArgs...>();
+    }
+
     template <typename T> void Register(const std::string& name)
     {
         m_Registry[name] = {[]() { return static_cast<ScriptableEntity*>(new T()); },

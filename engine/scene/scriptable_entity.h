@@ -9,12 +9,21 @@
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_events.h"
 
-#define CH_SCRIPT(name) class name : public CHEngine::ScriptableEntity
-#define CH_START() void OnCreate() override
-#define CH_UPDATE(dt) void OnUpdate(CHEngine::Timestep dt) override
-#define CH_EVENT(e) void OnEvent(CHEngine::Event& e) override
-#define CH_GUI() void OnImGuiRender() override
+#define CH_SCRIPT(name)                                                                                                \
+    struct name##_Base : public CHEngine::ScriptableEntity                                                             \
+    {                                                                                                                  \
+        static constexpr const char* GetStaticName()                                                                   \
+        {                                                                                                              \
+            return #name;                                                                                              \
+        }                                                                                                              \
+    };                                                                                                                 \
+    class name : public name##_Base
 
+#define CH_START() virtual void OnCreate() override
+#define CH_UPDATE(name) virtual void OnUpdate(CHEngine::Timestep name) override
+#define CH_DESTROY() virtual void OnDestroy() override
+#define CH_GUI() virtual void OnImGuiRender() override
+#define CH_EVENT(name) virtual void OnEvent(CHEngine::Event& name) override
 namespace CHEngine
 {
 
