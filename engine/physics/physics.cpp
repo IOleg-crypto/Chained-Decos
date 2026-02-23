@@ -141,6 +141,8 @@ void Physics::UpdateColliders()
     }
 
     auto genView = registry.view<ColliderComponent, TransformComponent>();
+    std::unordered_map<std::string, std::shared_ptr<ModelAsset>> assetCache;
+
     for (auto entity : genView)
     {
         auto& collider = genView.get<ColliderComponent>(entity);
@@ -154,7 +156,11 @@ void Physics::UpdateColliders()
             }
 
             auto& model = registry.get<ModelComponent>(entity);
-            auto asset = project->GetAssetManager()->Get<ModelAsset>(model.ModelPath);
+            if (assetCache.find(model.ModelPath) == assetCache.end())
+            {
+                assetCache[model.ModelPath] = project->GetAssetManager()->Get<ModelAsset>(model.ModelPath);
+            }
+            auto asset = assetCache[model.ModelPath];
 
             if (asset && asset->GetState() == AssetState::Ready)
             {
@@ -168,7 +174,12 @@ void Physics::UpdateColliders()
         // Case B: Mesh Collider (BVH)
         if (collider.Type == ColliderType::Mesh && !collider.ModelPath.empty())
         {
-            auto asset = project->GetAssetManager()->Get<ModelAsset>(collider.ModelPath);
+            if (assetCache.find(collider.ModelPath) == assetCache.end())
+            {
+                assetCache[collider.ModelPath] = project->GetAssetManager()->Get<ModelAsset>(collider.ModelPath);
+            }
+            auto asset = assetCache[collider.ModelPath];
+
             if (asset && asset->GetState() == AssetState::Ready && asset->GetModel().meshCount > 0)
             {
                 // Always try to fetch BVH - if asset changed, GetBVH will return the new one (or null if building)
@@ -197,7 +208,11 @@ void Physics::UpdateColliders()
             }
 
             auto& model = registry.get<ModelComponent>(entity);
-            auto asset = project->GetAssetManager()->Get<ModelAsset>(model.ModelPath);
+            if (assetCache.find(model.ModelPath) == assetCache.end())
+            {
+                assetCache[model.ModelPath] = project->GetAssetManager()->Get<ModelAsset>(model.ModelPath);
+            }
+            auto asset = assetCache[model.ModelPath];
 
             if (asset && asset->GetState() == AssetState::Ready)
             {

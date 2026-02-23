@@ -126,12 +126,17 @@ void ContentBrowserPanel::RenderToolbar()
 
     ImGui::Text("  %s", rel.c_str());
 
+    // Icon Scale Slider (Right aligned)
+    ImGui::SameLine(ImGui::GetWindowWidth() - 160.0f);
+    ImGui::SetNextItemWidth(150.0f);
+    ImGui::SliderFloat("##IconScale", &m_IconScale, 0.5f, 2.0f, ICON_FA_IMAGE);
+
     ImGui::PopStyleVar(2);
 }
 
 void ContentBrowserPanel::RenderGridView()
 {
-    float cellSize = m_ThumbnailSize + m_Padding;
+    float cellSize = (m_ThumbnailSize * m_IconScale) + m_Padding;
     float panelWidth = ImGui::GetContentRegionAvail().x;
     int columnCount = (int)(panelWidth / cellSize);
     if (columnCount < 1)
@@ -180,17 +185,32 @@ void ContentBrowserPanel::RenderGridView()
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
         // Center the icon button
         float availX = ImGui::GetContentRegionAvail().x;
-        float offsetX = (availX - m_ThumbnailSize) * 0.5f;
+        float currentThumbnailSize = m_ThumbnailSize * m_IconScale;
+        float offsetX = (availX - currentThumbnailSize) * 0.5f;
         if (offsetX > 0.0f)
         {
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offsetX);
         }
 
-        if (ImGui::Button(icon, {m_ThumbnailSize, m_ThumbnailSize}))
+        if (ImGui::Button(icon, {currentThumbnailSize, currentThumbnailSize}))
         {
             // Single click selection logic could go here
         }
         ImGui::PopStyleColor();
+
+        // Context Menu
+        if (ImGui::BeginPopupContextItem())
+        {
+            if (ImGui::MenuItem(ICON_FA_PEN " Rename"))
+            {
+                // TODO: Implement renaming
+            }
+            if (ImGui::MenuItem(ICON_FA_TRASH " Delete"))
+            {
+                // TODO: Implement deletion
+            }
+            ImGui::EndPopup();
+        }
 
         if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
         {
@@ -209,6 +229,7 @@ void ContentBrowserPanel::RenderGridView()
             ImGui::EndDragDropSource();
         }
 
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (availX - ImGui::CalcTextSize(asset.name.c_str()).x) * 0.5f);
         ImGui::TextWrapped("%s", asset.name.c_str());
 
         ImGui::NextColumn();

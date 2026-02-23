@@ -33,8 +33,35 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
         ImGui::PushID(this);
         auto& config = project->GetConfig();
 
-        if (ImGui::CollapsingHeader(ICON_FA_GEARS " General", ImGuiTreeNodeFlags_DefaultOpen))
+        static int selectedCategory = 0;
+        const char* categories[] = {
+            ICON_FA_GEARS " General",
+            ICON_FA_CODE " Scripting",
+            ICON_FA_CUBES " Physics",
+            ICON_FA_WINDOW_RESTORE " Window",
+            ICON_FA_PLAY " Runtime",
+            ICON_FA_CAMERA " Editor",
+            ICON_FA_MOUNTAIN_SUN " Rendering"
+        };
+
+        ImGui::Columns(2, "ProjectSettingsColumns", true);
+        ImGui::SetColumnWidth(0, 200.0f);
+
+        // Sidebar
+        for (int i = 0; i < IM_ARRAYSIZE(categories); i++)
         {
+            if (ImGui::Selectable(categories[i], selectedCategory == i))
+            {
+                selectedCategory = i;
+            }
+        }
+
+        ImGui::NextColumn();
+
+        // Content
+        if (selectedCategory == 0) // General
+        {
+            ImGui::TextDisabled("General Settings");
             char nameBuf[256];
             strncpy(nameBuf, config.Name.c_str(), 255);
             if (ImGui::InputText("Project Name", nameBuf, 255))
@@ -111,12 +138,12 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
 
                 if (ImGui::CollapsingHeader(std::format("{}###Header", profile.Name).c_str()))
                 {
-                    char nameBuf[128];
-                    strncpy(nameBuf, profile.Name.c_str(), 127);
-                    nameBuf[127] = '\0';
-                    if (ImGui::InputText("Profile Name", nameBuf, 127))
+                    char profileNameBuf[128];
+                    strncpy(profileNameBuf, profile.Name.c_str(), 127);
+                    profileNameBuf[127] = '\0';
+                    if (ImGui::InputText("Profile Name", profileNameBuf, 127))
                     {
-                        profile.Name = nameBuf;
+                        profile.Name = profileNameBuf;
                     }
 
                     char pathBuf[512];
@@ -172,20 +199,10 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
                     config.ActiveLaunchProfileIndex = 0;
                 }
             }
-
-            ImGui::Separator();
-            ImGui::Text("Legacy BuildConfig Support");
-
-            const char* configNames[] = {"Debug", "Release"};
-            int currentConfig = (int)config.BuildConfig;
-            if (ImGui::Combo("Build Configuration", &currentConfig, configNames, 2))
-            {
-                config.BuildConfig = (Configuration)currentConfig;
-            }
         }
-
-        if (ImGui::CollapsingHeader(ICON_FA_CODE " Scripting", ImGuiTreeNodeFlags_DefaultOpen))
+        else if (selectedCategory == 1) // Scripting
         {
+            ImGui::TextDisabled("Scripting Settings");
             char moduleNameBuf[256];
             strncpy(moduleNameBuf, config.Scripting.ModuleName.c_str(), 255);
             moduleNameBuf[255] = '\0';
@@ -215,43 +232,42 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
 
             ImGui::Checkbox("Auto Load Module", &config.Scripting.AutoLoad);
         }
-
-        if (ImGui::CollapsingHeader(ICON_FA_CUBES " Physics", ImGuiTreeNodeFlags_DefaultOpen))
+        else if (selectedCategory == 2) // Physics
         {
+            ImGui::TextDisabled("Physics Settings");
             ImGui::DragFloat("World Gravity", &config.Physics.Gravity, 0.1f, 0.0f, 100.0f);
             ImGui::DragFloat("Fixed Timestep", &config.Physics.FixedTimestep, 0.001f, 0.001f, 0.1f, "%.4f");
         }
-
-        if (ImGui::CollapsingHeader(ICON_FA_WINDOW_RESTORE " Window", ImGuiTreeNodeFlags_DefaultOpen))
+        else if (selectedCategory == 3) // Window
         {
+            ImGui::TextDisabled("Window Settings");
             ImGui::DragInt("Width", &config.Window.Width, 1, 800, 3840);
             ImGui::DragInt("Height", &config.Window.Height, 1, 600, 2160);
             ImGui::Checkbox("VSync", &config.Window.VSync);
             ImGui::Checkbox("Resizable", &config.Window.Resizable);
         }
-
-        if (ImGui::CollapsingHeader(ICON_FA_PLAY " Runtime", ImGuiTreeNodeFlags_DefaultOpen))
+        else if (selectedCategory == 4) // Runtime
         {
+            ImGui::TextDisabled("Runtime Settings");
             ImGui::Checkbox("Fullscreen", &config.Runtime.Fullscreen);
             ImGui::Checkbox("Show Stats", &config.Runtime.ShowStats);
             ImGui::Checkbox("Enable Console", &config.Runtime.EnableConsole);
         }
-
-        if (ImGui::CollapsingHeader(ICON_FA_CAMERA " Editor", ImGuiTreeNodeFlags_DefaultOpen))
+        else if (selectedCategory == 5) // Editor
         {
+            ImGui::TextDisabled("Editor Settings");
             ImGui::DragFloat("Camera Speed", &config.Editor.CameraMoveSpeed, 0.1f, 0.1f, 100.0f);
             ImGui::DragFloat("Rotation Speed", &config.Editor.CameraRotationSpeed, 0.01f, 0.01f, 1.0f);
             ImGui::DragFloat("Boost Multiplier", &config.Editor.CameraBoostMultiplier, 0.1f, 1.0f, 20.0f);
         }
-
-        if (ImGui::CollapsingHeader(ICON_FA_MOUNTAIN_SUN " Rendering", ImGuiTreeNodeFlags_DefaultOpen))
+        else if (selectedCategory == 6) // Rendering
         {
+            ImGui::TextDisabled("Rendering Settings");
             ImGui::DragFloat("Ambient Intensity", &config.Render.AmbientIntensity, 0.01f, 0.0f, 1.0f);
             ImGui::DragFloat("Default Exposure", &config.Render.DefaultExposure, 0.01f, 0.0f, 10.0f);
 
             ImGui::Separator();
             ImGui::Text("Texture Quality");
-            ImGui::SetNextItemWidth(200.0f);
             ImGui::Checkbox("Generate Mipmaps", &config.Texture.GenerateMipmaps);
             if (ImGui::IsItemHovered())
             {
@@ -261,24 +277,22 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             const char* filterNames[] = {"Point (No Filter)", "Bilinear", "Trilinear", "Anisotropic 4x",
                                           "Anisotropic 8x", "Anisotropic 16x"};
             int currentFilter = (int)config.Texture.Filter;
-            ImGui::SetNextItemWidth(200.0f);
             if (ImGui::Combo("Texture Filter", &currentFilter, filterNames, 6))
             {
                 config.Texture.Filter = (TextureFilter)currentFilter;
             }
-            if (ImGui::IsItemHovered())
-            {
-                ImGui::SetTooltip("Anisotropic significantly improves quality at an angle.\nHigher values = more GPU cost.\nApplied to newly loaded textures.");
-            }
         }
 
+        ImGui::Columns(1);
         ImGui::Separator();
+        
         if (ImGui::Button("Save Project Settings"))
         {
             ProjectSerializer serializer(project);
             std::filesystem::path path = project->GetProjectDirectory() / (project->GetConfig().Name + ".chproject");
             serializer.Serialize(path);
         }
+
         ImGui::PopID();
     }
     ImGui::End();

@@ -16,20 +16,34 @@ struct TransformComponent
     TransformComponent() = default;
     TransformComponent(const TransformComponent&) = default;
     TransformComponent(const Vector3& translation)
-        : Translation(translation)
+        : Translation(translation), IsDirty(true)
     {
+    }
+
+    void SetTranslation(const Vector3& translation)
+    {
+        Translation = translation;
+        IsDirty = true;
+    }
+
+    void SetScale(const Vector3& scale)
+    {
+        Scale = scale;
+        IsDirty = true;
     }
 
     void SetRotation(const Vector3& euler)
     {
         Rotation = euler;
         RotationQuat = QuaternionFromEuler(euler.x, euler.y, euler.z);
+        IsDirty = true;
     }
 
     void SetRotationQuat(const Quaternion& quat)
     {
         RotationQuat = quat;
         Rotation = QuaternionToEuler(quat);
+        IsDirty = true;
     }
 
     Matrix GetTransform() const
@@ -54,6 +68,10 @@ struct TransformComponent
 
         return GetTransform(t, q, s);
     }
+
+    // World transform cache
+    Matrix WorldTransform = MatrixIdentity();
+    bool IsDirty = true;
 
     // Previous state for interpolation
     Vector3 PrevTranslation = {0, 0, 0};

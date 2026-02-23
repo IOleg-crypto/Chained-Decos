@@ -27,6 +27,12 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
     ImGui::Begin("Scene Hierarchy");
     ImGui::PushID(this);
 
+    // Search Bar
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
+    ImGui::InputTextWithHint("##Search", ICON_FA_MAGNIFYING_GLASS " Search...", m_SearchBuffer, sizeof(m_SearchBuffer));
+    ImGui::PopStyleVar();
+    ImGui::Separator();
+
     if (m_Context)
     {
         m_DrawnEntities.clear();
@@ -34,7 +40,10 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
 
         ImGui::BeginDisabled(readOnly);
 
-        // Draw root entities (those without parents)
+        std::string filter = m_SearchBuffer;
+        std::transform(filter.begin(), filter.end(), filter.begin(), ::tolower);
+
+        // Draw entities
         auto view = m_Context->GetRegistry().view<IDComponent>();
         for (auto entityID : view)
         {
@@ -51,6 +60,17 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
             if (entity.HasComponent<ControlComponent>() && entity.GetComponent<ControlComponent>().HiddenInHierarchy)
             {
                 continue;
+            }
+
+            // Apply search filter (if not empty)
+            if (!filter.empty())
+            {
+                std::string tag = entity.GetComponent<TagComponent>().Tag;
+                std::transform(tag.begin(), tag.end(), tag.begin(), ::tolower);
+                if (tag.find(filter) == std::string::npos)
+                {
+                    continue;
+                }
             }
 
             entt::entity toDelete = DrawEntityNodeRecursive(entity);
@@ -142,7 +162,25 @@ entt::entity SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity)
     flags |= ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
 
     ImGui::PushID((int)(uint32_t)entity);
-    bool opened = ImGui::TreeNodeEx(label.c_str(), flags);
+
+    bool opened = false;
+    bool renamed = false;
+
+    if (m_Renaming && m_RenamingEntity == entity)
+    {
+        ImGui::SetKeyboardFocusHere();
+        if (ImGui::InputText("##Rename", m_RenameBuffer, sizeof(m_RenameBuffer), ImGuiInputTextFlags_EnterReturnsTrue) ||
+            (ImGui::IsMouseClicked(0) && !ImGui::IsItemHovered()))
+        {
+            tag = m_RenameBuffer;
+            m_Renaming = false;
+            renamed = true;
+        }
+    }
+    else
+    {
+        opened = ImGui::TreeNodeEx(label.c_str(), flags);
+    }
 
     if (ImGui::IsItemClicked())
     {
@@ -150,19 +188,31 @@ entt::entity SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity)
         Application::Get().OnEvent(e);
     }
 
+    // Rename on F2
+    if (selectedEntity == entity && ImGui::IsKeyPressed(ImGuiKey_F2) && !m_Renaming)
+    {
+        m_Renaming = true;
+        m_RenamingEntity = entity;
+        strncpy(m_RenameBuffer, tag.c_str(), sizeof(m_RenameBuffer));
+    }
+
     entt::entity signaledForDelete = entt::null;
-    entt::entity signaledForCopy = entt::null;
     if (ImGui::BeginPopupContextItem())
     {
-        if (ImGui::MenuItem("Delete Entity"))
+        if (ImGui::MenuItem(ICON_FA_PEN " Rename", "F2"))
+        {
+            m_Renaming = true;
+            m_RenamingEntity = entity;
+            strncpy(m_RenameBuffer, tag.c_str(), sizeof(m_RenameBuffer));
+        }
+        if (ImGui::MenuItem(ICON_FA_COPY " Duplicate", "Ctrl+D"))
+        {
+            m_Context->CopyEntity(entity);
+        }
+        ImGui::Separator();
+        if (ImGui::MenuItem(ICON_FA_TRASH " Delete Entity", "Del"))
         {
             signaledForDelete = (entt::entity)entity;
-        }
-        // Copy entity
-        if (ImGui::MenuItem("Copy Entity"))
-        {
-            signaledForCopy = (entt::entity)entity;
-            m_Context->CopyEntity(signaledForCopy);
         }
 
         ImGui::EndPopup();

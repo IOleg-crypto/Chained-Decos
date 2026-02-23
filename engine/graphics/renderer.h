@@ -9,7 +9,6 @@
 #include "engine/scene/components/mesh_component.h"   // For MaterialSlot
 #include "engine/scene/components/shader_component.h" // For ShaderUniform
 #include "engine/scene/scene_settings.h"              // For GridSettings
-#include "imgui.h"
 #include "raylib.h"
 #include "raymath.h"
 #include <functional>
@@ -65,16 +64,6 @@ struct RendererData
     EnvironmentSettings CurrentEnv;
 };
 
-struct DebugRenderFlags
-{
-    bool DrawColliders = false;
-    bool DrawHierarchy = false;
-    bool DrawCollisionModelBox = false;
-    bool DrawGrid = false;
-    bool DrawSelection = true;
-    bool DrawLights = true;
-    bool DrawSpawnZones = true;
-};
 
 class Renderer
 {
