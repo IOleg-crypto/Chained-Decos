@@ -55,6 +55,12 @@ bool ProjectSerializer::Serialize(const std::filesystem::path& filepath)
         out << YAML::Key << "Filter" << YAML::Value << (int)config.Texture.Filter;
         out << YAML::EndMap;
 
+        out << YAML::Key << "Mesh" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "ImportMaterials" << YAML::Value << config.Mesh.ImportMaterials;
+        out << YAML::Key << "CalculateTangents" << YAML::Value << config.Mesh.CalculateTangents;
+        out << YAML::Key << "FlipUVs" << YAML::Value << config.Mesh.FlipUVs;
+        out << YAML::EndMap;
+
         out << YAML::Key << "Window" << YAML::Value << YAML::BeginMap;
         out << YAML::Key << "Width" << YAML::Value << config.Window.Width;
         out << YAML::Key << "Height" << YAML::Value << config.Window.Height;
@@ -179,6 +185,22 @@ bool ProjectSerializer::Deserialize(const std::filesystem::path& filepath)
         if (projectNode["Texture"]["Filter"])
         {
             config.Texture.Filter = (TextureFilter)projectNode["Texture"]["Filter"].as<int>();
+        }
+    }
+
+    if (projectNode["Mesh"])
+    {
+        if (projectNode["Mesh"]["ImportMaterials"])
+        {
+            config.Mesh.ImportMaterials = projectNode["Mesh"]["ImportMaterials"].as<bool>();
+        }
+        if (projectNode["Mesh"]["CalculateTangents"])
+        {
+            config.Mesh.CalculateTangents = projectNode["Mesh"]["CalculateTangents"].as<bool>();
+        }
+        if (projectNode["Mesh"]["FlipUVs"])
+        {
+            config.Mesh.FlipUVs = projectNode["Mesh"]["FlipUVs"].as<bool>();
         }
     }
 

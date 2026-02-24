@@ -134,6 +134,7 @@ ViewportPanel::ViewportPanel()
 {
     m_Name = "Viewport";
     m_ViewportTexture = {0}; // Initialize to empty
+    m_HDRTexture = {0};
 
     if (IsWindowReady())
     {
@@ -148,9 +149,16 @@ ViewportPanel::ViewportPanel()
 
 ViewportPanel::~ViewportPanel()
 {
-    if (IsWindowReady() && m_ViewportTexture.id > 0)
+    if (IsWindowReady())
     {
-        UnloadRenderTexture(m_ViewportTexture);
+        if (m_ViewportTexture.id > 0)
+        {
+            UnloadRenderTexture(m_ViewportTexture);
+        }
+        if (m_HDRTexture.id > 0)
+        {
+            UnloadRenderTexture(m_HDRTexture);
+        }
     }
 }
 
@@ -189,8 +197,12 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
     {
         if (viewportSize.x > 0 && viewportSize.y > 0)
         {
-            UnloadRenderTexture(m_ViewportTexture);
+            if (m_ViewportTexture.id > 0) UnloadRenderTexture(m_ViewportTexture);
+            if (m_HDRTexture.id > 0) UnloadRenderTexture(m_HDRTexture);
+
             m_ViewportTexture = LoadRenderTexture((int)viewportSize.x, (int)viewportSize.y);
+            m_HDRTexture = LoadRenderTexture((int)viewportSize.x, (int)viewportSize.y);
+            
             EditorLayer::Get().SetViewportSize(viewportSize);
             if (activeScene)
             {
@@ -207,7 +219,7 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         return;
     }
 
-    BeginTextureMode(m_ViewportTexture);
+    BeginTextureMode(m_HDRTexture);
     auto activeScene_raw = activeScene.get();
     ClearSceneBackground(activeScene_raw, {viewportSize.x, viewportSize.y});
 
@@ -219,6 +231,12 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
     {
         m_SceneRenderer->RenderScene(activeScene.get(), camera, GetFrameTime(),
                                      &EditorLayer::Get().GetDebugRenderFlags());
+        EndTextureMode();
+
+        // 2. APPLY MODULAR POST-PROCESSING
+        BeginTextureMode(m_ViewportTexture);
+        Renderer::Get().ApplyPostProcessing(m_HDRTexture, camera);
+        EndTextureMode();
     }
     else
     {
@@ -238,9 +256,17 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
             int textWidth = MeasureText(msg, fontSize);
             DrawText(msg, (int)viewportSize.x / 2 - textWidth / 2, (int)viewportSize.y / 2 - 10, fontSize, GRAY);
         }
-        // Otherwise: UI-only scene with flat background, no warning needed
+        EndTextureMode();
+
+        // Copy warning state to viewport texture
+        BeginTextureMode(m_ViewportTexture);
+        ClearBackground(BLACK);
+        Rectangle source = { 0, 0, (float)m_HDRTexture.texture.width, (float)-m_HDRTexture.texture.height };
+        DrawTexturePro(m_HDRTexture.texture, source, 
+                       { 0, 0, (float)m_ViewportSize.x, (float)m_ViewportSize.y }, 
+                       { 0, 0 }, 0.0f, WHITE);
+        EndTextureMode();
     }
-    EndTextureMode();
 
     rlImGuiImageRenderTexture(&m_ViewportTexture);
     bool isViewportHovered = ImGui::IsItemHovered();

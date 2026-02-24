@@ -327,6 +327,56 @@ void Renderer::DrawSphereWires(const Matrix& transform, float radius, Color colo
     rlPopMatrix();
 }
 
+void Renderer::ApplyPostProcessing(RenderTexture2D target, const Camera3D& camera)
+{
+    CH_PROFILE_FUNCTION();
+    
+    auto shaderAsset = m_Data->Shaders->Exists("PostProcess") ? m_Data->Shaders->Get("PostProcess") : nullptr;
+    if (!shaderAsset)
+    {
+        return;
+    }
+
+    // 1. Prepare Matrices
+    Matrix view = GetCameraMatrix(camera);
+    // Note: Proj matrix might be tricky if not in Mode3D, but we can reconstruct it
+    // Or just use rlGetMatrixProjection() if we call this inside BeginTextureMode
+    Matrix proj = rlGetMatrixProjection(); 
+    Matrix viewProj = MatrixMultiply(view, proj);
+    Matrix invViewProj = MatrixInvert(viewProj);
+
+    // 2. Bind Shader and Uniforms
+    ShaderAsset* shader = shaderAsset.get();
+    rlEnableShader(shader->GetShader().id);
+
+    shader->SetMatrix("matInverseViewProj", invViewProj);
+    shader->SetVec3("viewPos", camera.position);
+    shader->SetFloat("uTime", m_Data->Time);
+    shader->SetFloat("uExposure", m_Data->CurrentLighting.Exposure);
+    shader->SetFloat("uGamma", m_Data->CurrentLighting.Gamma);
+
+    // Fog
+    ApplyFogUniforms(shader);
+
+    // 3. Bind Depth Texture to Slot 1
+    shader->SetInt("texture1", 1);
+    rlActiveTextureSlot(1);
+    rlEnableTexture(target.depth.id);
+    rlActiveTextureSlot(0); // Back to slot 0 for main texture
+
+    // 4. Draw Fullscreen Quad
+    // DrawTextureRec vertically flips the texture (standard FBO behavior)
+    Rectangle source = { 0, 0, (float)target.texture.width, (float)-target.texture.height };
+    Rectangle dest = { 0, 0, (float)target.texture.width, (float)target.texture.height };
+    ::DrawTexturePro(target.texture, source, dest, { 0, 0 }, 0.0f, WHITE);
+
+    // 5. Cleanup
+    rlActiveTextureSlot(1);
+    rlDisableTexture();
+    rlActiveTextureSlot(0);
+    rlDisableShader();
+}
+
 void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
 {
     if (skybox.TexturePath.empty())
@@ -683,6 +733,17 @@ void Renderer::EnsureShadersLoaded()
         {
             lib.Add("CubemapGen", shader);
             CH_CORE_INFO("Renderer: 'CubemapGen' shader loaded lazily.");
+        }
+    }
+
+    // 5. PostProcess Shader
+    if (!lib.Exists("PostProcess"))
+    {
+        auto shader = assetManager->Get<ShaderAsset>("engine/resources/shaders/post_process.chshader");
+        if (shader)
+        {
+            lib.Add("PostProcess", shader);
+            CH_CORE_INFO("Renderer: 'PostProcess' shader loaded lazily.");
         }
     }
 }
