@@ -17,7 +17,6 @@ out vec4 finalColor;
 void main()
 {
     // 1. Base Color & Diagnostics
-    // 1. Base Color & Diagnostics
     vec4 baseColor = colDiffuse;
     
     // Fix: If fragColor (Vertex Color) is close to black (default attribute 0,0,0,1), ignore it.
@@ -54,8 +53,6 @@ void main()
     if (s < 1.0) s = 1.0;
     
     // Metalness -> Specular Color & Diffuse
-    // Dielectric: Specular is white-ish (low), Diffuse is Albedo
-    // Metal: Specular is Albedo, Diffuse is Black
     vec3 specColor = mix(vec3(0.04), baseColor.rgb, m);
     vec3 diffColor = baseColor.rgb * (1.0 - m);
 
@@ -86,24 +83,5 @@ void main()
     // 4. Final Assembly
     vec3 outColor = lighting + emissiveComp;
     
-    // Tonemapping (ACES Filmic)
-    float exposure = (uExposure > 0.0) ? uExposure : 1.0;
-    outColor *= exposure;
-    
-    // ACES Filmic Tone Mapping
-    float a = 2.51;
-    float b = 0.03;
-    float c = 2.43;
-    float d = 0.59;
-    float e = 0.14;
-    outColor = clamp((outColor * (a * outColor + b)) / (outColor * (c * outColor + d) + e), 0.0, 1.0);
-    
-    // Gamma Correction
-    float gamma = (uGamma > 0.0) ? uGamma : 2.2;
-    outColor = pow(outColor, vec3(1.0 / gamma));
-
-    vec4 result = vec4(outColor, (mode == 2) ? 1.0 : baseColor.a);
-    
-    // 5. Apply Fog
-    finalColor = ApplyFog(result, fragPosition, viewPos, uTime);
+    finalColor = vec4(outColor, (mode == 2) ? 1.0 : baseColor.a);
 }

@@ -54,6 +54,7 @@ public:
 
 private:
     RenderTexture2D m_ViewportTexture;
+    RenderTexture2D m_HDRTexture;
     Vector2 m_ViewportSize = {0, 0};
     bool m_Focused = false;
     bool m_Hovered = false;

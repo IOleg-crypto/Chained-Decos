@@ -41,7 +41,8 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             ICON_FA_WINDOW_RESTORE " Window",
             ICON_FA_PLAY " Runtime",
             ICON_FA_CAMERA " Editor",
-            ICON_FA_MOUNTAIN_SUN " Rendering"
+            ICON_FA_MOUNTAIN_SUN " Rendering",
+            ICON_FA_BOXES_STACKED " Assets"
         };
 
         ImGui::Columns(2, "ProjectSettingsColumns", true);
@@ -258,7 +259,7 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             ImGui::TextDisabled("Editor Settings");
             ImGui::DragFloat("Camera Speed", &config.Editor.CameraMoveSpeed, 0.1f, 0.1f, 100.0f);
             ImGui::DragFloat("Rotation Speed", &config.Editor.CameraRotationSpeed, 0.01f, 0.01f, 1.0f);
-            ImGui::DragFloat("Boost Multiplier", &config.Editor.CameraBoostMultiplier, 0.1f, 1.0f, 20.0f);
+            ImGui::DragFloat("Boost Multiplier", &config.Editor.CameraBoostMultiplier, 0.1f, 1.0f, 200.0f);
         }
         else if (selectedCategory == 6) // Rendering
         {
@@ -280,6 +281,30 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             if (ImGui::Combo("Texture Filter", &currentFilter, filterNames, 6))
             {
                 config.Texture.Filter = (TextureFilter)currentFilter;
+            }
+        }
+        else if (selectedCategory == 7) // Assets
+        {
+            ImGui::TextDisabled("Asset Management Settings");
+            
+            ImGui::Separator();
+            ImGui::Text("Mesh Import Settings");
+            ImGui::Checkbox("Import Materials", &config.Mesh.ImportMaterials);
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("If disabled, .mtl files or embedded materials will be ignored.\nModels will use a default material.");
+            }
+            
+            ImGui::Checkbox("Calculate Tangents", &config.Mesh.CalculateTangents);
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Generates tangent and bitangent vectors for normal mapping.");
+            }
+            
+            ImGui::Checkbox("Flip UVs", &config.Mesh.FlipUVs);
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Flips the Y-coordinate of texture coordinates.");
             }
         }
 

@@ -1,5 +1,6 @@
 #include "mesh_importer.h"
 #include "engine/core/log.h"
+#include "engine/scene/project.h"
 #include "model_asset.h"
 #include "raylib.h"
 #include "raymath.h"
@@ -415,20 +416,35 @@ PendingModelData MeshImporter::LoadMeshDataFromDisk(const std::filesystem::path&
     // CRITICAL: Set vertex limit for SplitLargeMeshes to match Raylib's 16-bit indices (unsigned short)
     importer.SetPropertyInteger(AI_CONFIG_PP_SLM_VERTEX_LIMIT, 65535);
 
-    const aiScene* scene = importer.ReadFile(
-        path.string(), aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace |
-                           aiProcess_LimitBoneWeights | aiProcess_JoinIdenticalVertices |
-                           aiProcess_PopulateArmatureData | aiProcess_FlipUVs | aiProcess_ValidateDataStructure |
-                           // aiProcess_GlobalScale | // Removed: can cause issues with animations and manual scaling
-                           aiProcess_SortByPType |          // Needed for point/line removal
-                           aiProcess_SplitLargeMeshes |     // Critical for 16-bit index systems like Raylib
-                           aiProcess_ImproveCacheLocality | // Performance optimization
-                           aiProcess_RemoveRedundantMaterials |
-                           aiProcess_FindInstances |   // Optimize: find identical meshes
-                           aiProcess_FindInvalidData | // Clean up the import
-                           aiProcess_OptimizeGraph |   // Simplify hierarchy
-                           aiProcess_OptimizeMeshes    // Combine small meshes where possible
-    );
+    // Load settings from project
+    bool calculateTangents = true;
+    bool flipUVs = true;
+    bool importMaterials = true;
+
+    if (auto project = Project::GetActive())
+    {
+        const auto& meshSettings = project->GetConfig().Mesh;
+        calculateTangents = meshSettings.CalculateTangents;
+        flipUVs = meshSettings.FlipUVs;
+        importMaterials = meshSettings.ImportMaterials;
+    }
+
+    unsigned int flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals |
+                         aiProcess_LimitBoneWeights | aiProcess_JoinIdenticalVertices |
+                         aiProcess_PopulateArmatureData | aiProcess_ValidateDataStructure |
+                         aiProcess_SortByPType |          // Needed for point/line removal
+                         aiProcess_SplitLargeMeshes |     // Critical for 16-bit index systems like Raylib
+                         aiProcess_ImproveCacheLocality | // Performance optimization
+                         aiProcess_RemoveRedundantMaterials |
+                         aiProcess_FindInstances |   // Optimize: find identical meshes
+                         aiProcess_FindInvalidData | // Clean up the import
+                         aiProcess_OptimizeGraph |   // Simplify hierarchy
+                         aiProcess_OptimizeMeshes;   // Combine small meshes where possible
+
+    if (calculateTangents) flags |= aiProcess_CalcTangentSpace;
+    if (flipUVs) flags |= aiProcess_FlipUVs;
+
+    const aiScene* scene = importer.ReadFile(path.string(), flags);
 
     if (!scene || !scene->mRootNode)
     {
@@ -457,7 +473,16 @@ PendingModelData MeshImporter::LoadMeshDataFromDisk(const std::filesystem::path&
     }
 
     // 3. Sequential Processing
-    ProcessMaterials(scene, modelDir, data);
+    if (importMaterials)
+    {
+        ProcessMaterials(scene, modelDir, data);
+    }
+    else
+    {
+        // Provide a default material
+        data.materials.push_back(RawMaterial{});
+    }
+    
     ProcessMeshes(scene, data.meshToNode, data);
     BuildSkeleton(data);
     ProcessAnimations(scene, data, samplingFPS);
