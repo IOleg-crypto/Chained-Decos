@@ -414,7 +414,7 @@ void NarrowPhase::ResolveCapsuleMesh(::entt::registry& registry, ::entt::entity 
         }
         else
         {
-            normal = Vector3Normalize(Vector3CrossProduct(Vector3Subtract(v1, v0), Vector3Subtract(v2, v0)));
+            normal = tri->normal;
         }
 
         NarrowPhase::ApplyResponse(tc, rb, otherCollider, normal, penetration);
@@ -514,7 +514,7 @@ void NarrowPhase::ResolveSphereMesh(::entt::registry& registry, ::entt::entity r
         }
         else
         {
-            normal = Vector3Normalize(Vector3CrossProduct(Vector3Subtract(v1, v0), Vector3Subtract(v2, v0)));
+            normal = tri->normal;
         }
 
         NarrowPhase::ApplyResponse(tc, rb, otherCollider, normal, penetration);

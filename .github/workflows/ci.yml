@@ -89,9 +89,13 @@ jobs:
             echo "CXX=g++-14" >> $GITHUB_ENV
           elif [[ "${{ matrix.preset }}" == *"clang"* ]]; then
             # Use libc++ to avoid conflicts with GCC 14 headers in C++23 mode
-            sudo apt-get install -y clang-18 clang++-18 libc++-18-dev libc++abi-18-dev
+            sudo apt-get install -y clang-18 clang++-18 libc++-18-dev libc++abi-18-dev lld-18 llvm-18
+            sudo ln -sf /usr/bin/ld.lld-18 /usr/bin/ld.lld
             echo "CC=clang-18" >> $GITHUB_ENV
             echo "CXX=clang++-18" >> $GITHUB_ENV
+            echo "AR=llvm-ar-18" >> $GITHUB_ENV
+            echo "RANLIB=llvm-ranlib-18" >> $GITHUB_ENV
+            echo "LDFLAGS=-fuse-ld=lld" >> $GITHUB_ENV
           fi
 
       - name: Install Windows Dependencies

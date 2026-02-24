@@ -1,0 +1,11 @@
+Model Information:
+* title:	Toy Train
+* source:	https://sketchfab.com/3d-models/toy-train-93399465c93547f4b5408a5c75e44cdb
+* author:	studio.permeated (https://sketchfab.com/studio.permeated)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Toy Train" (https://sketchfab.com/3d-models/toy-train-93399465c93547f4b5408a5c75e44cdb) by studio.permeated (https://sketchfab.com/studio.permeated) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

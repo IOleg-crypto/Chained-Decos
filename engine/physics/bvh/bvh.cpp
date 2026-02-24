@@ -16,6 +16,7 @@ CollisionTriangle::CollisionTriangle(const Vector3& a, const Vector3& b, const V
     min = Vector3Min(Vector3Min(v0, v1), v2);
     max = Vector3Max(Vector3Max(v0, v1), v2);
     center = Vector3Scale(Vector3Add(Vector3Add(v0, v1), v2), 1.0f / 3.0f);
+    normal = Vector3Normalize(Vector3CrossProduct(Vector3Subtract(v1, v0), Vector3Subtract(v2, v0)));
 }
 
 bool CollisionTriangle::IntersectsRay(const Ray& ray, float& t, Vector3& normal) const
@@ -55,9 +56,11 @@ bool CollisionTriangle::IntersectsRay(const Ray& ray, float& t, Vector3& normal)
     }
 
     t = tempT;
-    normal = Vector3Normalize(Vector3CrossProduct(edge1, edge2));
+
+    // Use pre-calculated face normal, flipped if hitting from behind
 
     // Ensure normal points against ray
+    normal = this->normal; // Copy the pre-calculated normal
     if (Vector3DotProduct(normal, ray.direction) > 0)
     {
         normal = Vector3Scale(normal, -1.0f);
@@ -384,9 +387,9 @@ bool BVH::TestAxis(const Vector3& axis, const Vector3& v0, const Vector3& v1, co
     float p1 = Vector3DotProduct(v1, axis);
     float p2 = Vector3DotProduct(v2, axis);
 
-    float r = boxHalfSize.x * fabsf(Vector3DotProduct({1, 0, 0}, axis)) +
-              boxHalfSize.y * fabsf(Vector3DotProduct({0, 1, 0}, axis)) +
-              boxHalfSize.z * fabsf(Vector3DotProduct({0, 0, 1}, axis));
+    float r = boxHalfSize.x * fabsf(axis.x) +
+              boxHalfSize.y * fabsf(axis.y) +
+              boxHalfSize.z * fabsf(axis.z);
 
     float triMin = fminf(fminf(p0, p1), p2);
     float triMax = fmaxf(fmaxf(p0, p1), p2);
@@ -479,8 +482,7 @@ bool BVH::IntersectAABB(const BoundingBox& box, Vector3& outNormal, float& outDe
                 const auto& tri = m_Triangles[node.LeftOrFirst + i];
                 if (BVH::TriangleIntersectAABB(tri, box))
                 {
-                    Vector3 triNormal = Vector3Normalize(
-                        Vector3CrossProduct(Vector3Subtract(tri.v1, tri.v0), Vector3Subtract(tri.v2, tri.v0)));
+                    Vector3 triNormal = tri.normal;
 
                     Vector3 boxCenter = Vector3Scale(Vector3Add(box.min, box.max), 0.5f);
                     float dist = Vector3DotProduct(Vector3Subtract(tri.v0, boxCenter), triNormal);

@@ -99,6 +99,7 @@ public:
     void DrawCubeWires(const Matrix& transform, Vector3 size, Color color);
     void DrawCapsuleWires(const Matrix& transform, float radius, float height, Color color);
     void DrawSphereWires(const Matrix& transform, float radius, Color color);
+    void ApplyPostProcessing(RenderTexture2D screenTexture, const Camera3D& camera);
 
     void SetDirectionalLight(Vector3 direction, Color color);
     void SetAmbientLight(float intensity);

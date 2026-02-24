@@ -32,14 +32,22 @@ void EditorCameraController::OnUpdate(Entity cameraEntity, Timestep ts)
     m_ViewportWidth = (uint32_t)EditorLayer::Get().GetViewportSize().x;
     m_ViewportHeight = (uint32_t)EditorLayer::Get().GetViewportSize().y;
 
+    // Load settings from project
+    float moveSpeed = m_MoveSpeed;
+    float boostMultiplier = m_BoostMultiplier;
+
+    if (auto project = Project::GetActive())
+    {
+        const auto& editorSettings = project->GetConfig().Editor;
+        moveSpeed = editorSettings.CameraMoveSpeed;
+        boostMultiplier = editorSettings.CameraBoostMultiplier;
+    }
+
     // 1. Sync from current transform if it was changed externally (e.g. Inspector)
     if (fabsf(tc.Rotation.x - m_Pitch * RAD2DEG) > 0.01f || fabsf(tc.Rotation.y - m_Yaw * RAD2DEG) > 0.01f)
     {
         m_Pitch = tc.Rotation.x * DEG2RAD;
         m_Yaw = tc.Rotation.y * DEG2RAD;
-
-        // If position also changed, we might need to update focal point
-        // But for now, let's just update the angles to prevent snapping
     }
 
     const Vector2& mouse = Input::GetMousePosition();
@@ -66,10 +74,10 @@ void EditorCameraController::OnUpdate(Entity cameraEntity, Timestep ts)
         // Fly mode (FPS style)
         MouseRotate(delta);
 
-        float speed = m_MoveSpeed * deltaTime;
+        float speed = moveSpeed * deltaTime;
         if (Input::IsKeyDown(KEY_LEFT_SHIFT))
         {
-            speed *= m_BoostMultiplier;
+            speed *= boostMultiplier;
         }
 
         Vector3 forward = GetForwardDirection();
@@ -181,7 +189,12 @@ std::pair<float, float> EditorCameraController::PanSpeed() const
 
 float EditorCameraController::RotationSpeed() const
 {
-    return 0.8f * DEG2RAD; // Constant for now, can be mouse sensitivity
+    float sensitivity = 1.0f;
+    if (auto project = Project::GetActive())
+    {
+        sensitivity = project->GetConfig().Editor.CameraRotationSpeed;
+    }
+    return 0.8f * sensitivity * DEG2RAD;
 }
 
 float EditorCameraController::ZoomSpeed() const

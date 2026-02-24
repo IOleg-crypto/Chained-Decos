@@ -36,6 +36,13 @@ struct RenderSettings
     float DefaultExposure = 1.0f;
 };
 
+struct MeshSettings
+{
+    bool ImportMaterials = true;
+    bool CalculateTangents = true;
+    bool FlipUVs = true;
+};
+
 // 0=None, 1=Bilinear, 2=Trilinear, 3=Anisotropic 4x, 4=Anisotropic 8x, 5=Anisotropic 16x
 enum class TextureFilter : int
 {
@@ -104,6 +111,7 @@ struct ProjectConfig
     AnimationSettings Animation;
     RenderSettings Render;
     TextureSettings Texture;
+    MeshSettings Mesh;
     WindowSettings Window;
     RuntimeSettings Runtime;
     EditorSettings Editor;

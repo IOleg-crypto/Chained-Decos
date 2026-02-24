@@ -10,6 +10,7 @@ struct CollisionTriangle
     Vector3 v0, v1, v2;
     Vector3 min, max;
     Vector3 center;
+    Vector3 normal;
     int meshIndex = -1;
 
     CollisionTriangle(const Vector3& a, const Vector3& b, const Vector3& c, int index = -1);
