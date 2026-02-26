@@ -14,7 +14,7 @@ set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
 
 # Options
 option(BUILD_TESTS "Build unit tests" ON)
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "Force static linkage" FORCE)
+option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 option(CH_CI "Set to ON for CI environments" OFF)
 
 if(CH_CI)
@@ -59,6 +59,8 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 
 add_subdirectory(engine)
+
+# Build Game Projects
 add_subdirectory(game/chaineddecos)
 add_subdirectory(editor)
 add_subdirectory(runtime)

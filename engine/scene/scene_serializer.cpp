@@ -9,9 +9,8 @@
 #include "engine/physics/bvh/bvh.h"
 #include "engine/scene/project.h"
 #include "scene.h"
-#include "script_registry.h"
-
-#include "fstream"
+#include "scriptable_entity.h"
+#include <fstream>
 #include "yaml-cpp/yaml.h"
 
 namespace CHEngine

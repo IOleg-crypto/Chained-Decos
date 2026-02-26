@@ -6,6 +6,8 @@ set(ENGINE_INCLUDE_DIRS
     ${glm_SOURCE_DIR}
     ${yaml-cpp_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/entt/src
+    ${coral_SOURCE_DIR}/Coral.Native/Include
+    ${CMAKE_SOURCE_DIR}/include/raylib/src
 )
 
 # SHARED for local development (hot-reload), STATIC for CI/distribution
@@ -21,6 +23,7 @@ add_subdirectory(graphics)
 add_subdirectory(physics)
 add_subdirectory(audio)
 add_subdirectory(scene)
+add_subdirectory(script)
 
 # Create the final engine facade library that stitches all objects together
 add_library(engine ${ENGINE_LIB_TYPE}
@@ -29,10 +32,14 @@ add_library(engine ${ENGINE_LIB_TYPE}
     $<TARGET_OBJECTS:engine_physics>
     $<TARGET_OBJECTS:engine_audio>
     $<TARGET_OBJECTS:engine_scene>
+    $<TARGET_OBJECTS:engine_script>
 )
 
 # MSVC needs exported symbols to generate the .lib import library
 set_target_properties(engine PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+if(WIN32)
+    set_target_properties(engine PROPERTIES PREFIX "")
+endif()
 
 target_include_directories(engine PUBLIC
     ${ENGINE_INCLUDE_DIRS}
@@ -48,11 +55,12 @@ INTERFACE
 
 target_link_libraries(engine 
 PUBLIC 
-    raylib 
     EnTT
+PRIVATE
+    raylib 
     imguilib
     yaml-cpp
-PRIVATE
+    Coral.Native
     assimp::assimp
 )
 

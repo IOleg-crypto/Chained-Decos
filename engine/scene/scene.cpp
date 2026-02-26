@@ -10,12 +10,11 @@
 #include "engine/scene/component_serializer.h"
 #include "engine/scene/scene_events.h"
 #include "engine/scene/scene_scripting.h"
-#include "engine/scene/script_registry.h"
 #include "project.h"
 #include "raylib.h"
 #include "raymath.h"
 #include "scene_serializer.h"
-#include "scriptable_entity.h"
+#include <Coral/ManagedObject.hpp>
 
 namespace CHEngine
 {
@@ -37,6 +36,8 @@ Scene::Scene()
     m_Registry.on_construct<PanelControl>().connect<&Scene::OnPanelControlAdded>(this);
     m_Registry.on_update<PanelControl>().connect<&Scene::OnPanelControlAdded>(this);
 
+    m_Registry.on_destroy<ManagedScriptComponent>().connect<&Scene::OnScriptComponentDestroyed>(this);
+
     // Every scene must have its own environment to avoid skybox leaking/bugs
     m_Settings.Environment = std::make_shared<EnvironmentAsset>();
 
@@ -49,10 +50,6 @@ Scene::Scene()
 
     // Create physics instance
     m_Physics = std::make_unique<Physics>(this);
-
-    // Create script registry and copy from global
-    m_ScriptRegistry = std::make_unique<ScriptRegistry>();
-    m_ScriptRegistry->CopyFrom(ScriptRegistry::GetGlobalRegistry());
 }
 
 Scene::~Scene()
@@ -71,13 +68,6 @@ std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
     // 1. Copy Scene Settings
     newScene->m_Settings = other->m_Settings;
 
-    // 2. Copy Script Registry
-    if (other->m_ScriptRegistry)
-    {
-        newScene->m_ScriptRegistry->CopyFrom(*other->m_ScriptRegistry);
-        CH_CORE_INFO("Scene::Copy - Script registry copied successfully.");
-    }
-
     // 2. Copy Entities (Direct Memory Copy)
     auto& srcRegistry = other->m_Registry;
     auto& dstRegistry = newScene->m_Registry;
@@ -90,13 +80,6 @@ std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
         Entity dstEntity = newScene->CreateEntityWithUUID(id.ID);
 
         ComponentSerializer::CopyAll(srcEntity, dstEntity);
-
-        if (srcEntity.HasComponent<NativeScriptComponent>())
-        {
-            auto& nsc = srcEntity.GetComponent<NativeScriptComponent>();
-            CH_CORE_INFO("  - Entity '{}': Copying NativeScriptComponent with {} scripts",
-                         srcEntity.GetComponent<TagComponent>().Tag, nsc.Scripts.size());
-        }
     });
 
     CH_CORE_INFO("Scene::Copy - Successfully copied {} entities", entityCount);
@@ -488,37 +471,8 @@ void Scene::OnRuntimeStart()
         }
     });
 
-    // Phase 3: Initialize NativeScripts
-    m_Registry.view<NativeScriptComponent>().each([&](auto entity, auto& nsc) {
-        std::string entityTag =
-            m_Registry.any_of<TagComponent>(entity) ? m_Registry.get<TagComponent>(entity).Tag : "Unnamed";
-        for (auto& script : nsc.Scripts)
-        {
-            if (script.InstantiateScript)
-            {
-                script.Instance = script.InstantiateScript();
-                if (script.Instance)
-                {
-                    script.Instance->m_Entity = Entity(entity, &m_Registry);
-                    script.Instance->m_Scene = this;
-                    CH_CORE_INFO("[SCRIPT_DIAG] Scene: '{}' - Script '{}' instantiated for entity '{}'", sceneName,
-                                 script.ScriptName, entityTag);
-                    script.Instance->OnCreate();
-                    scriptsCreated++;
-                }
-                else
-                {
-                    CH_CORE_ERROR("[SCRIPT_DIAG] Scene: '{}' - Failed to instantiate script: {} for entity '{}'",
-                                  sceneName, script.ScriptName, entityTag);
-                }
-            }
-            else
-            {
-                CH_CORE_WARN("[SCRIPT_DIAG] Scene: '{}' - Entity '{}' has script '{}' but no InstantiateScript func!",
-                             sceneName, entityTag, script.ScriptName);
-            }
-        }
-    });
+    // Phase 3: Initialize ManagedScripts (deferred to SceneScripting)
+    // SceneScripting::OnRuntimeStart(this);
 
     // Phase 4: Initialize UI textures (PanelControl)
     m_Registry.view<PanelControl>().each([&](auto entity, auto& panel) { OnPanelControlAdded(m_Registry, entity); });
@@ -534,18 +488,8 @@ void Scene::OnRuntimeStop()
 {
     CH_CORE_INFO("Scene - Stopping runtime simulation");
 
-    // Destroy all NativeScript instances
-    m_Registry.view<NativeScriptComponent>().each([](auto entity, auto& nsc) {
-        for (auto& script : nsc.Scripts)
-        {
-            if (script.Instance)
-            {
-                script.Instance->OnDestroy();
-                script.DestroyScript(&script);
-                script.Instance = nullptr;
-            }
-        }
-    });
+    // Destroy all active C# script instances (calls OnDestroy and frees memory)
+    SceneScripting::Stop(this);
 
     m_IsSimulationRunning = false;
     CH_CORE_INFO("Runtime stopped - all scripts destroyed");
@@ -874,6 +818,30 @@ void Scene::UpdateHierarchy()
         if (isRoot)
         {
             updateTransform(entity, MatrixIdentity());
+        }
+    }
+}
+
+void Scene::OnScriptComponentDestroyed(entt::registry& registry, entt::entity entity)
+{
+    auto& msc = registry.get<ManagedScriptComponent>(entity);
+    for (auto& script : msc.Scripts)
+    {
+        if (script.Instance)
+        {
+            auto* instance = static_cast<Coral::ManagedObject*>(script.Instance);
+            if (instance->IsValid())
+            {
+                try {
+                    instance->InvokeMethod("OnDestroy");
+                } catch (const std::exception& e) {
+                    CH_CORE_ERROR("Exception in C# OnDestroy: {}", e.what());
+                } catch (...) {}
+            }
+            
+            instance->Destroy();
+            delete instance;
+            script.Instance = nullptr;
         }
     }
 }

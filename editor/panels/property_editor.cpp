@@ -7,7 +7,7 @@
 #include "engine/physics/physics.h"
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
-#include "engine/scene/script_registry.h"
+#include "engine/script/scriptengine.h"
 #include "extras/IconsFontAwesome6.h"
 #include "imgui.h"
 #include "nfd.h"
@@ -558,46 +558,62 @@ void PropertyEditor::Init()
         return EditorGUI::Begin().File("Target Scene", component.TargetScenePath, "chscene");
     });
 
-    Register<NativeScriptComponent>("Native Script", [](auto& component, Entity entity) {
+    Register<ManagedScriptComponent>("Scripts", [](auto& component, Entity entity) {
         bool changed = false;
-        for (size_t i = 0; i < component.Scripts.size(); ++i)
+        auto& scriptClasses = ScriptEngine::GetScriptClasses();
+
+        for (size_t i = 0; i < component.Scripts.size(); i++)
         {
-            ImGui::TextDisabled(ICON_FA_CODE " %s", component.Scripts[i].ScriptName.c_str());
-            ImGui::SameLine();
+            auto& script = component.Scripts[i];
             ImGui::PushID((int)i);
-            if (ImGui::Button(ICON_FA_TRASH))
+            
+            std::string currentClass = script.ClassName;
+            // Push item width so the combo doesn't overlap the minus button
+            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 30.0f);
+            if (ImGui::BeginCombo("##Class", currentClass.empty() ? "None" : currentClass.c_str()))
             {
-                component.Scripts.erase(component.Scripts.begin() + i);
-                ImGui::PopID();
-                changed = true;
-                // Potential crash if we continue loop after erase
-                break;
-            }
-            ImGui::PopID();
-        }
-
-        if (EditorGUI::ActionButton(ICON_FA_PLUS, "Add Script"))
-        {
-            ImGui::OpenPopup("AddScriptPopup");
-        }
-
-        if (ImGui::BeginPopup("AddScriptPopup"))
-        {
-            auto* scene = entity.GetRegistry().ctx().get<Scene*>();
-            if (scene)
-            {
-                auto& scriptRegistry = scene->GetScriptRegistry();
-                for (const auto& [name, funcs] : scriptRegistry.GetScripts())
+                for (const auto& [className, type] : scriptClasses)
                 {
-                    if (ImGui::MenuItem(name.c_str()))
+                    bool isSelected = (currentClass == className);
+                    if (ImGui::Selectable(className.c_str(), isSelected))
                     {
-                        scriptRegistry.AddScript(name, component);
+                        script.ClassName = className;
                         changed = true;
                     }
+                    if (isSelected)
+                        ImGui::SetItemDefaultFocus();
                 }
+                ImGui::EndCombo();
             }
-            ImGui::EndPopup();
+            ImGui::PopItemWidth();
+
+            ImGui::SameLine();
+            if (ImGui::Button(ICON_FA_MINUS))
+            {
+                component.Scripts.erase(component.Scripts.begin() + i);
+                changed = true;
+                ImGui::PopID();
+                break; // Iterator invalidated
+            }
+
+            ImGui::PopID();
         }
+        
+        ImGui::Dummy(ImVec2(0, 2.0f));
+        if (ImGui::Button("Add Script", ImVec2(ImGui::GetContentRegionAvail().x, 0.0f)))
+        {
+            component.Scripts.emplace_back("");
+            changed = true;
+        }
+
+        ImGui::Dummy(ImVec2(0, 5.0f));
+
+        if (ImGui::Button(ICON_FA_TRASH " Remove Component"))
+        {
+            entity.RemoveComponent<ManagedScriptComponent>();
+            changed = true;
+        }
+
         return changed;
     });
 
@@ -693,20 +709,6 @@ void PropertyEditor::Init()
         {
             component.MaterialsInitialized = false;
             changed = true;
-        }
-
-        // Distance culling (0 = disabled)
-        if (ImGui::DragFloat("Cull Distance", &component.CullDistance, 1.0f, 0.0f, 10000.0f, "%.1f"))
-        {
-            if (component.CullDistance < 0.0f)
-            {
-                component.CullDistance = 0.0f;
-            }
-            changed = true;
-        }
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("Distance from camera beyond which this model is not rendered.\n0 = no distance limit.");
         }
 
         return changed;

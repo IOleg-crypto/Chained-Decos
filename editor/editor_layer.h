@@ -51,7 +51,6 @@ public:
     }
     void SetScene(std::shared_ptr<Scene> scene);
     void DrawDockSpace();
-    void DrawScriptUI();
 
 private:
     void LoadEditorFonts();

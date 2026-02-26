@@ -69,9 +69,11 @@ endif()
 
 target_link_libraries(editor_core PUBLIC 
     engine
-    ChainedDecosGame
+    imguilib
+    yaml-cpp
     nfd
 )
+target_compile_definitions(editor_core PUBLIC IMGUI_DEFINE_MATH_OPERATORS YAML_CPP_STATIC_DEFINE)
 target_include_directories(editor_core PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}

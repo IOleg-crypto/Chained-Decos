@@ -6,7 +6,7 @@
 #include "engine/scene/entity.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_events.h"
-#include "engine/scene/script_registry.h"
+#include "engine/scene/scene_serializer.h"
 #include "gtest/gtest.h"
 #include <memory>
 
@@ -75,57 +75,7 @@ TEST_F(SceneIntegrationTest, FindEntityByTag)
     EXPECT_EQ(found.GetComponent<TagComponent>().Tag, "Findable");
 }
 
-// --- ScriptRegistry Integration ---
 
-class ScriptRegistryTest : public ::testing::Test
-{
-protected:
-    ScriptRegistry registry;
-};
-
-TEST_F(ScriptRegistryTest, RegisterAndLookup)
-{
-    // Register using RegisterDirect with simple lambdas
-    registry.RegisterDirect(
-        "TestScript", []() -> ScriptableEntity* { return nullptr; }, // dummy instantiate
-        [](ScriptInstance*) {}                                       // dummy destroy
-    );
-
-    auto& scripts = registry.GetScripts();
-    EXPECT_EQ(scripts.count("TestScript"), 1u);
-    EXPECT_NE(scripts.at("TestScript").Instantiate, nullptr);
-    EXPECT_NE(scripts.at("TestScript").Destroy, nullptr);
-}
-
-TEST_F(ScriptRegistryTest, AddScriptToComponent)
-{
-    registry.RegisterDirect("PlayerController", []() -> ScriptableEntity* { return nullptr; }, [](ScriptInstance*) {});
-
-    NativeScriptComponent nsc;
-    registry.AddScript("PlayerController", nsc);
-
-    ASSERT_EQ(nsc.Scripts.size(), 1u);
-    EXPECT_EQ(nsc.Scripts[0].ScriptName, "PlayerController");
-    EXPECT_NE(nsc.Scripts[0].InstantiateScript, nullptr);
-}
-
-TEST_F(ScriptRegistryTest, AddUnregisteredScriptDoesNothing)
-{
-    NativeScriptComponent nsc;
-    registry.AddScript("NonExistent", nsc);
-    EXPECT_EQ(nsc.Scripts.size(), 0u);
-}
-
-TEST_F(ScriptRegistryTest, CopyFromOtherRegistry)
-{
-    ScriptRegistry source;
-    source.RegisterDirect("ScriptA", []() -> ScriptableEntity* { return nullptr; }, [](ScriptInstance*) {});
-
-    ScriptRegistry dest;
-    dest.CopyFrom(source);
-
-    EXPECT_EQ(dest.GetScripts().count("ScriptA"), 1u);
-}
 
 // --- Event System Integration ---
 

@@ -24,7 +24,6 @@
 #include "panels/project_browser_panel.h"
 #include "panels/property_editor.h"
 #include "panels/viewport_panel.h"
-#include "engine/core/game_entry_point.h"
 
 namespace CHEngine
 {
@@ -156,9 +155,6 @@ void EditorLayer::OnAttach()
     CH_CORE_INFO("EditorLayer Attached with modular panels.");
 
     LoadEditorFonts();
-
-    // Register game scripts once globally
-    RegisterGameScripts();
 }
 
 void EditorLayer::LoadEditorFonts()
@@ -297,34 +293,9 @@ void EditorLayer::DrawDockSpace()
     bool readOnly = EditorContext::GetSceneState() == SceneState::Play;
     m_Panels->OnImGuiRender(readOnly);
 
-    DrawScriptUI();
-
     m_Layout->EndWorkspace();
 }
 
-void EditorLayer::DrawScriptUI()
-{
-    if (EditorContext::GetSceneState() != SceneState::Play)
-    {
-        return;
-    }
-
-    auto scene = GetActiveScene();
-    if (!scene)
-    {
-        return;
-    }
-
-    scene->GetRegistry().view<NativeScriptComponent>().each([&](auto entity, auto& nsc) {
-        for (auto& script : nsc.Scripts)
-        {
-            if (script.Instance)
-            {
-                script.Instance->OnImGuiRender();
-            }
-        }
-    });
-}
 
 bool EditorLayer::OnProjectOpened(ProjectOpenedEvent& e)
 {

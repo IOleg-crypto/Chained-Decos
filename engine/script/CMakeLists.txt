@@ -1,0 +1,52 @@
+add_library(engine_script OBJECT
+    scriptengine.h
+    scriptengine.cpp
+    script_glue.cpp
+)
+
+target_include_directories(engine_script PUBLIC
+    ${ENGINE_INCLUDE_DIRS}
+    ${yaml-cpp_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/include/imgui
+    ${CMAKE_SOURCE_DIR}/include/imgui/backends
+    ${CMAKE_SOURCE_DIR}/include/entt/src
+)
+
+target_link_libraries(engine_script PUBLIC 
+    raylib 
+    yaml-cpp
+    EnTT
+    Coral.Native
+)
+
+if(MSVC)
+    target_compile_options(engine_script PRIVATE /bigobj)
+elseif(MINGW)
+    target_compile_options(engine_script PRIVATE -Wa,-mbig-obj)
+endif()
+
+# ── C# Managed API Build ──────────────────────────────────────────────────
+# This builds the core engine scripting API (.dll) which the game depends on.
+
+find_program(DOTNET_EXECUTABLE dotnet)
+if(DOTNET_EXECUTABLE)
+    set(MANAGED_PROJECT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/managed/CHEngine.Managed.csproj")
+    set(MANAGED_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/$<CONFIG>")
+    
+    add_custom_target(CHEngine_Managed ALL
+        COMMAND ${DOTNET_EXECUTABLE} build "${MANAGED_PROJECT_PATH}" -c $<CONFIG> --output "${MANAGED_OUTPUT_DIR}"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/managed"
+        COMMENT "Building CHEngine.Managed C# Library"
+        VERBATIM
+    )
+    
+    # Ensure the engine script object files are built after/with the managed lib if needed
+    # (Though they are mostly independent, it's good for ordering)
+    add_dependencies(engine_script CHEngine_Managed)
+else()
+    message(WARNING "dotnet executable not found! Cannot build CHEngine.Managed C# library.")
+endif()
+
+if(COMMAND apply_engine_optimizations)
+    apply_engine_optimizations(engine_script)
+endif()

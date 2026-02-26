@@ -39,7 +39,6 @@ struct ModelComponent
     std::shared_ptr<ModelAsset> Asset; // Cached asset reference
     std::vector<MaterialSlot> Materials;
     bool  MaterialsInitialized = false;
-    float CullDistance = 0.0f; // 0 = no limit
 
     ModelComponent() = default;
     ModelComponent(const ModelComponent&) = default;

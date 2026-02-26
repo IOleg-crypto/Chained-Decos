@@ -6,7 +6,7 @@
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene_events.h"
-#include "engine/scene/script_registry.h"
+#include "engine/scene/scene_events.h"
 #include "extras/IconsFontAwesome6.h"
 #include "imgui.h"
 #include "property_editor.h"

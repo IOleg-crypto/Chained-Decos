@@ -174,12 +174,12 @@ std::shared_ptr<Asset> AssetManager::GetAsset(const std::string& path, AssetType
         auto& cache = m_AssetCaches[type];
         if (auto it = cache.find(resolved); it != cache.end())
         {
-            CH_CORE_INFO("AssetManager: Cache HIT for '{}' (state: {})", resolved, (int)it->second->GetState());
+            //CH_CORE_INFO("AssetManager: Cache HIT for '{}' (state: {})", resolved, (int)it->second->GetState());
             return it->second;
         }
     }
 
-    CH_CORE_INFO("AssetManager: Cache MISS for '{}', creating new asset", resolved);
+    //CH_CORE_INFO("AssetManager: Cache MISS for '{}', creating new asset", resolved);
     std::shared_ptr<Asset> asset = nullptr;
 
     // Async path for specific types

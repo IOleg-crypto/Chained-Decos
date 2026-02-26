@@ -2,7 +2,7 @@
 #define CH_ENTRY_POINT_H
 
 #include "engine/core/application.h"
-#include "engine/scene/script_registry.h"
+#include "engine/scene/project.h"
 #include "raylib.h"
 
 extern CHEngine::Application* CHEngine::CreateApplication(CHEngine::ApplicationCommandLineArgs args);
