@@ -2,6 +2,7 @@
 #include "engine/graphics/asset_manager.h"
 #include "engine/graphics/environment.h"
 #include "engine/graphics/renderer.h"
+#include "engine/script/scriptengine.h"
 #include "imgui.h"
 #include "project_serializer.h"
 
@@ -98,6 +99,10 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path& path)
                 }
             }
         }
+
+        // Initialize and Load Scripting
+        ScriptEngine::Init();
+        ScriptEngine::ReloadAssembly();
 
         return s_ActiveProject;
     }

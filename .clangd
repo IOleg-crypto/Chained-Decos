@@ -11,13 +11,5 @@ CompileFlags:
     - -Winvalid-offsetof
 
 Diagnostics:
-  ClangTidy:
-    Add:
-      - modernize-use-nullptr
-      - modernize-use-override
-      - modernize-use-default-member-init
-    Remove:
-      - modernize-use-trailing-return-type
-      - performance-*
   UnusedIncludes: None
 

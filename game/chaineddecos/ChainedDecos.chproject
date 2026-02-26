@@ -36,8 +36,8 @@ Project:
     CameraRotationSpeed: 1
     CameraBoostMultiplier: 11.8000002
   Scripting:
-    ModuleName: libChainedDecosGame
-    ModuleDirectory: bin
+    ModuleName: ChainedDecos.Scripts.dll
+    ModuleDirectory: scripts/bin
     AutoLoad: true
   LaunchProfiles:
     - Name: Debug Runtime
