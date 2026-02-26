@@ -17,7 +17,6 @@ add_library(engine_scene OBJECT
     component_serializer.h
     prefab_serializer.h
     scene_scripting.h
-    script_registry.h
     scriptable_entity.h
     scene_camera.h
     scene_settings.h

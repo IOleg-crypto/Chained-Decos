@@ -145,7 +145,9 @@ void SceneRenderer::RenderModels(Scene* scene, Timestep timestep)
     // 1. Frustum Extraction
     Frustum frustum;
     {
-        Matrix matVP = MatrixMultiply(rlGetMatrixModelview(), rlGetMatrixProjection());
+        Matrix matVP = MatrixMultiply(rlGetMatrixModelview(), rlGetMatrixProjection()); 
+        // Correct order for extracting Frustum planes is Projection * View
+        matVP = MatrixMultiply(rlGetMatrixProjection(), rlGetMatrixModelview());
         frustum.Extract(matVP);
     }
 
@@ -220,17 +222,8 @@ void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& 
             continue;
 
         const Matrix& worldTransform = transform.WorldTransform;
-        if (!frustum.IsBoxVisible(model.Asset->GetBoundingBox(), worldTransform))
-            continue;
-
-        if (model.CullDistance > 0.0f)
-        {
-            Vector3 entityPos = {worldTransform.m12, worldTransform.m13, worldTransform.m14};
-            Vector3 camPos = Renderer::Get().GetData().CurrentCameraPosition;
-            float distSq = Vector3LengthSqr(Vector3Subtract(entityPos, camPos));
-            if (distSq > model.CullDistance * model.CullDistance)
-                continue;
-        }
+        // if (!frustum.IsBoxVisible(model.Asset->GetBoundingBox(), worldTransform))
+        //    continue;
 
         model.Asset->OnUpdate();
 

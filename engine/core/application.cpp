@@ -15,6 +15,7 @@
 #include "engine/scene/component_serializer.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene_events.h"
+#include "engine/script/scriptengine.h"
 #include "rlgl.h"
 
 #include <algorithm>
@@ -76,6 +77,7 @@ Application::Application(const ApplicationSpecification& specification)
     ComponentSerializer::Initialize();
     Renderer::Init();
     Physics::Init();
+    ScriptEngine::Init();
 
     // Audio setup
     InitAudioDevice();
@@ -100,6 +102,7 @@ Application::~Application()
     if (m_Running)
     {
         CH_CORE_INFO("Shutting down Application...");
+        ScriptEngine::Shutdown();
         CloseAudioDevice();
         m_LayerStack.Shutdown();
         m_Window.reset();

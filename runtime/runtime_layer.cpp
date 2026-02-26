@@ -1,6 +1,5 @@
 #include "runtime_layer.h"
 #include "engine/core/application.h"
-#include "engine/core/module_loader.h"
 #include "engine/core/window.h"
 #include "engine/graphics/asset_manager.h"
 #include "engine/graphics/renderer.h"
@@ -172,59 +171,13 @@ void RuntimeLayer::LoadScene(const std::string& path)
 
     m_Scene = std::make_shared<Scene>();
 
-    auto project = Project::GetActive();
-        if (project && project->GetConfig().Scripting.AutoLoad)
-        {
-            const auto& scripting = project->GetConfig().Scripting;
-            std::string moduleName = scripting.ModuleName;
-            if (moduleName.empty())
-            {
-                moduleName = project->GetConfig().Name + "game";
-            }
-
-#ifdef CH_PLATFORM_WINDOWS
-            std::string dllName = moduleName + ".dll";
-#else
-            std::string dllName = "lib" + moduleName + ".so";
-#endif
-
-            std::filesystem::path binDir =
-                std::filesystem::path(Application::Get().GetSpecification().CommandLineArgs.Args[0]).parent_path();
-            std::filesystem::path projectDir = project->GetProjectDirectory();
-
-            std::vector<std::filesystem::path> searchPaths;
-            if (!scripting.ModuleDirectory.empty())
-            {
-                if (scripting.ModuleDirectory.is_absolute())
-                {
-                    searchPaths.push_back(scripting.ModuleDirectory / dllName);
-                }
-                else
-                {
-                    searchPaths.push_back(projectDir / scripting.ModuleDirectory / dllName);
-                }
-            }
-            searchPaths.push_back(projectDir / "bin" / dllName);
-            searchPaths.push_back(projectDir / dllName);
-            searchPaths.push_back(binDir / dllName);
-
-            for (const auto& path : searchPaths)
-            {
-                if (std::filesystem::exists(path))
-                {
-                    if (ModuleLoader::LoadGameModule(path.string(), &m_Scene->GetScriptRegistry()))
-                    {
-                        CH_CORE_INFO("RuntimeLayer: Loaded scripts from: {}", path.string());
-                        break;
-                    }
-                }
-        }
-    }
+    // Native module loading removed in favor of ScriptEngine (C#)
 
     SceneSerializer serializer(m_Scene.get());
     if (serializer.Deserialize(finalPath))
     {
         m_Scene->GetSettings().ScenePath = finalPath;
+
         m_Scene->OnRuntimeStart();
     }
     else
