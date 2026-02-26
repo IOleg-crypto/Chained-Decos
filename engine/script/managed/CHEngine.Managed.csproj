@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <AssemblyName>CHEngine.Managed</AssemblyName>
+    <RootNamespace>CHEngine</RootNamespace>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Optimize>false</Optimize>
+    <!-- Output directly into the engine build output so engine.dll and CHEngine.Managed.dll live together -->
+    <OutputPath>..\..\..\build\windows-ninja-release\bin</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+
+
+  <ItemGroup>
+    <Reference Include="Coral.Managed">
+      <HintPath>../../../build/windows-ninja-release/_deps/coral-build/Coral.Managed.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>

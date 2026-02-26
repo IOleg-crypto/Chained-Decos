@@ -187,7 +187,7 @@ void Renderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const Ma
             static std::string lastFailed = "";
             if (lastFailed != modelAsset->GetPath())
             {
-                CH_CORE_WARN("Renderer::DrawModel - Model asset failed to load: {}", modelAsset->GetPath());
+                //CH_CORE_WARN("Renderer::DrawModel - Model asset failed to load: {}", modelAsset->GetPath());
                 lastFailed = modelAsset->GetPath();
             }
         }
@@ -398,7 +398,7 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
         return;
     }
 
-    CH_CORE_INFO("Renderer: Drawing skybox '{}', asset ready: {}", skybox.TexturePath, textureAsset->IsReady());
+    //CH_CORE_INFO("Renderer: Drawing skybox '{}', asset ready: {}", skybox.TexturePath, textureAsset->IsReady());
 
     if (textureAsset->GetState() != AssetState::Ready)
     {
@@ -411,13 +411,13 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
     }
 
     int activeMode = skybox.Mode;
-    CH_CORE_INFO("Renderer: DrawSkybox Mode: {}, Texture: {}", activeMode, skybox.TexturePath);
+    //CH_CORE_INFO("Renderer: DrawSkybox Mode: {}, Texture: {}", activeMode, skybox.TexturePath);
     auto shaderName = (activeMode == 2) ? "SkyboxCubemap" : "Skybox";
     auto skyboxShader = m_Data->Shaders->Exists(shaderName) ? m_Data->Shaders->Get(shaderName) : nullptr;
     
     if (!skyboxShader || skyboxShader->GetShader().id == 0)
     {
-        CH_CORE_WARN("Renderer::DrawSkybox: Required shader '{}' not found or failed to load. Falling back to default skybox.", shaderName);
+        //CH_CORE_WARN("Renderer::DrawSkybox: Required shader '{}' not found or failed to load. Falling back to default skybox.", shaderName);
         activeMode = 0;
         skyboxShader = m_Data->Shaders->Get("Skybox");
         if (!skyboxShader) return;
@@ -466,8 +466,8 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
 
     if (skyTexture.id == 0)
     {
-        CH_CORE_ERROR("Renderer::DrawSkybox: Texture asset ready but Raylib texture ID is 0! Path: {}",
-                      skybox.TexturePath);
+        //CH_CORE_ERROR("Renderer::DrawSkybox: Texture asset ready but Raylib texture ID is 0! Path: {}",
+                      //skybox.TexturePath);
         RenderCommand::EnableBackfaceCulling();
         RenderCommand::EnableDepthMask();
         return;

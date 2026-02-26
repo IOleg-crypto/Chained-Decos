@@ -19,7 +19,6 @@ namespace CHEngine
 {
 class SceneSerializer;
 class Physics;
-class ScriptRegistry;
 
 class Scene : public std::enable_shared_from_this<Scene>
 {
@@ -70,15 +69,6 @@ public: // Scene Settings
         return *m_Physics;
     }
 
-    ScriptRegistry& GetScriptRegistry()
-    {
-        return *m_ScriptRegistry;
-    }
-    const ScriptRegistry& GetScriptRegistry() const
-    {
-        return *m_ScriptRegistry;
-    }
-
 public: // Systems & Tools
     entt::registry& GetRegistry()
     {
@@ -100,7 +90,6 @@ private:
     std::unordered_map<UUID, entt::entity> m_EntityMap;
     SceneSettings m_Settings;
     std::unique_ptr<Physics> m_Physics;
-    std::unique_ptr<ScriptRegistry> m_ScriptRegistry;
 
     bool m_IsSimulationRunning = false;
 
@@ -117,6 +106,9 @@ private: // Internal Event Handlers
 
     // Hierarchy Handlers
     void OnHierarchyDestroy(entt::registry& registry, entt::entity entity);
+    
+    // Script Cleanup Handlers
+    void OnScriptComponentDestroyed(entt::registry& registry, entt::entity entity);
 
 private: // Update Logic
     void UpdatePhysics(Timestep deltaTime);

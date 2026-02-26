@@ -6,7 +6,36 @@
 #include "engine/core/yaml.h"
 #include "engine/scene/serialization_utils.h"
 #include "scene.h"
-#include "script_registry.h"
+#include "engine/script/scriptengine.h"
+
+namespace YAML
+{
+template <> struct convert<CHEngine::ManagedScriptInstance>
+{
+    static Node encode(const CHEngine::ManagedScriptInstance& rhs)
+    {
+        Node node;
+        node = rhs.ClassName;
+        return node;
+    }
+    static bool decode(const Node& node, CHEngine::ManagedScriptInstance& rhs)
+    {
+        if (node.IsScalar())
+        {
+            rhs.ClassName = node.as<std::string>();
+            return true;
+        }
+        return false;
+    }
+};
+
+inline Emitter& operator<<(Emitter& out, const CHEngine::ManagedScriptInstance& v)
+{
+    out << v.ClassName;
+    return out;
+}
+
+} // namespace YAML
 
 namespace CHEngine
 {
@@ -760,61 +789,20 @@ void ComponentSerializer::Initialize()
         archive.Property("Spacing", component.Spacing).Property("Padding", component.Padding);
     });
 
-    // --- Native Script Component ---
-    {
-        ComponentSerializerEntry entry;
-        entry.Key = "NativeScriptComponent";
-        entry.Serialize = [](YAML::Emitter& out, Entity entity) {
-            if (entity.HasComponent<NativeScriptComponent>())
+    // --- Managed Script Component ---
+    Register<ManagedScriptComponent>("ManagedScriptComponent", [](auto& archive, auto& component) {
+        if (archive.GetMode() == SerializationUtils::PropertyArchive::Deserialize)
+        {
+            if (archive.GetNode()["ClassName"])
             {
-                out << YAML::Key << "NativeScriptComponent" << YAML::Value;
-                out << YAML::BeginMap;
-                auto& component = entity.GetComponent<NativeScriptComponent>();
-                out << YAML::Key << "Scripts" << YAML::Value << YAML::BeginSeq;
-                for (const auto& script : component.Scripts)
-                {
-                    out << script.ScriptName;
-                }
-                out << YAML::EndSeq;
-                out << YAML::EndMap;
+                // Backwards compatibility with the single-class structure
+                ManagedScriptInstance inst;
+                inst.ClassName = archive.GetNode()["ClassName"].template as<std::string>();
+                component.Scripts.push_back(inst);
             }
-        };
-        entry.Deserialize = [](Entity entity, YAML::Node node) {
-            if (node["NativeScriptComponent"])
-            {
-                auto componentNode = node["NativeScriptComponent"];
-                if (!entity.HasComponent<NativeScriptComponent>())
-                {
-                    entity.AddComponent<NativeScriptComponent>();
-                }
-
-                auto& component = entity.GetComponent<NativeScriptComponent>();
-                component.Scripts.clear();
-                auto* scene = entity.GetRegistry().ctx().get<Scene*>();
-                if (scene && componentNode["Scripts"])
-                {
-                    for (auto item : componentNode["Scripts"])
-                    {
-                        std::string scriptName = item.as<std::string>();
-                        CH_CORE_INFO("ComponentSerializer: Adding script '{}' to entity '{}'", scriptName,
-                                     entity.GetName());
-                        scene->GetScriptRegistry().AddScript(scriptName, component);
-                    }
-                }
-                else if (!scene)
-                {
-                    CH_CORE_WARN("ComponentSerializer: Could not find Scene in registry context!");
-                }
-            }
-        };
-        entry.Copy = [](Entity source, Entity destination) {
-            if (source.HasComponent<NativeScriptComponent>())
-            {
-                destination.AddOrReplaceComponent<NativeScriptComponent>(source.GetComponent<NativeScriptComponent>());
-            }
-        };
-        RegisterCustom(entry);
-    }
+        }
+        archive.Sequence("Scripts", component.Scripts);
+    });
 }
 
 void ComponentSerializer::SerializeAll(YAML::Emitter& out, Entity entity)

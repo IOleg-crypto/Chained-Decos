@@ -34,6 +34,14 @@ FetchContent_Declare(
     GIT_TAG 0af55ccecd98d4e5a8d1fad7de25ba429d60e863 #refs/tags/1.0.1
 )
 
+# Coral (for C# scripting integration)
+FetchContent_Declare(
+    coral
+    GIT_REPOSITORY https://github.com/StudioCherno/Coral.git
+    GIT_TAG main
+    SOURCE_SUBDIR cmake
+)
+
 # assimp (Asset Importer Library)
 set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
 set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -51,7 +59,7 @@ FetchContent_Declare(
     GIT_TAG v5.3.1
 )
 
-FetchContent_MakeAvailable(yaml-cpp imguizmo glm assimp)
+FetchContent_MakeAvailable(yaml-cpp imguizmo glm assimp coral)
 
 # Disable unity build for assimp to avoid header/namespace conflicts
 if(TARGET assimp)

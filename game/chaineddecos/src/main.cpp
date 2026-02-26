@@ -2,18 +2,13 @@
 #include "engine/core/entry_point.h"
 #include "runtime/runtime_layer.h"
 
-#include "engine/core/game_entry_point.h"
-
 namespace CHEngine
 {
 Application* CreateApplication(ApplicationCommandLineArgs args)
 {
     ApplicationSpecification spec;
-    spec.Name = "Chained Decos";
+    spec.Name = CH_PROJECT_NAME;
     spec.CommandLineArgs = args;
-
-    // Register scripts one time into Global Registry
-    RegisterGameScripts();
 
     Application* app = new Application(spec);
     app->PushLayer(new RuntimeLayer(""));

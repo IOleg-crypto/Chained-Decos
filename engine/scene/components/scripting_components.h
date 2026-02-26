@@ -6,69 +6,30 @@
 
 namespace CHEngine
 {
-class ScriptableEntity;
 
-// Component that enables Native (C++) scripting for an entity.
-struct ScriptInstance
+// Represents a single C# script instance attached to an entity.
+struct ManagedScriptInstance
 {
-    ScriptableEntity* Instance = nullptr;
-    std::string ScriptName;
+    std::string ClassName;    // Full qualified name, e.g. "ChainedDecos.Scripts.PlayerController"
+    void*       Instance     = nullptr; // Runtime only: Coral::ManagedObject*
+    bool        NeedsStart   = false;   // True until OnStart() has been invoked
 
-    ScriptableEntity* (*InstantiateScript)() = nullptr;
-    void (*DestroyScript)(ScriptInstance*) = nullptr;
+    // High-performance lifecycle delegates
+    void (*OnCreate)()        = nullptr;
+    void (*OnStart)()         = nullptr;
+    void (*OnUpdate)(float)   = nullptr;
+    void (*OnDestroy)()       = nullptr;
 
-    ScriptInstance() = default;
-
-    // Copying a ScriptInstance should NOT copy the active pointer!
-    // The new component should instantiate its own script.
-    ScriptInstance(const ScriptInstance& other)
-        : ScriptName(other.ScriptName),
-          InstantiateScript(other.InstantiateScript),
-          DestroyScript(other.DestroyScript)
-    {
-        Instance = nullptr;
-    }
-
-    ScriptInstance& operator=(const ScriptInstance& other)
-    {
-        if (this != &other)
-        {
-            ScriptName = other.ScriptName;
-            InstantiateScript = other.InstantiateScript;
-            DestroyScript = other.DestroyScript;
-            Instance = nullptr;
-        }
-        return *this;
-    }
-
-    template <typename T> void Bind(const std::string& name)
-    {
-        ScriptName = name;
-        InstantiateScript = []() { return static_cast<ScriptableEntity*>(new T()); };
-        DestroyScript = [](ScriptInstance* si) {
-            delete si->Instance;
-            si->Instance = nullptr;
-        };
-    }
+    ManagedScriptInstance() = default;
+    explicit ManagedScriptInstance(const std::string& className)
+        : ClassName(className) {}
 };
 
-struct NativeScriptComponent
+// ECS component that enables managed (C#) scripting for an entity.
+struct ManagedScriptComponent
 {
-    std::vector<ScriptInstance> Scripts;
-
-    NativeScriptComponent() = default;
-    NativeScriptComponent(const NativeScriptComponent&) = default; // Uses ScriptInstance copy ctor
-
-    ~NativeScriptComponent()
-    {
-        for (auto& script : Scripts)
-        {
-            if (script.Instance && script.DestroyScript)
-            {
-                script.DestroyScript(&script);
-            }
-        }
-    }
+    std::vector<ManagedScriptInstance> Scripts;
+    ManagedScriptComponent() = default;
 };
 
 } // namespace CHEngine
