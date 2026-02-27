@@ -30,11 +30,11 @@ public:
     void Shutdown();
 
     void SetRootPath(const std::filesystem::path& path);
-    std::filesystem::path GetRootPath() const;
+    [[nodiscard]] std::filesystem::path GetRootPath() const;
     void AddSearchPath(const std::filesystem::path& path);
     void ClearSearchPaths();
 
-    std::string ResolvePath(const std::string& path) const;
+    [[nodiscard]] std::string ResolvePath(const std::string& path) const;
 
     template <typename T> std::shared_ptr<T> Get(const std::string& path)
     {
@@ -46,9 +46,9 @@ public:
         return std::static_pointer_cast<T>(GetAsset(handle, T::GetStaticType()));
     }
 
-    const AssetMetadata& GetMetadata(AssetHandle handle) const;
+    [[nodiscard]] const AssetMetadata& GetMetadata(AssetHandle handle) const;
     void Update();
-    int GetPendingCount() const;
+    [[nodiscard]] int GetPendingCount() const;
     void SetMaxUploadsPerFrame(int n) { m_MaxUploadsPerFrame = n; }
 
     template <typename T> void Remove(const std::string& path)

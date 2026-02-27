@@ -223,21 +223,51 @@ std::vector<std::string> Project::GetAvailableScenes()
     return scenes;
 }
 
+std::string Project::GetRelativePath(const std::filesystem::path& path)
+{
+    if (path.empty())
+        return "";
+
+    if (path.is_relative())
+        return path.generic_string();
+
+    auto absolutePath = NormalizePath(path);
+
+    // 1. Try relative to Engine Root
+    if (!s_EngineRoot.empty())
+    {
+        if (auto rel = TryMakeRelative(absolutePath, s_EngineRoot))
+        {
+            return "engine/" + *rel;
+        }
+    }
+
+    // 2. Try relative to Assets Directory
+    if (auto rel = TryMakeRelative(absolutePath, GetAssetDirectory()))
+    {
+        return *rel;
+    }
+
+    // 3. Try relative to Project Root
+    if (auto rel = TryMakeRelative(absolutePath, GetProjectDirectory()))
+    {
+        return *rel;
+    }
+
+    return absolutePath.generic_string();
+}
+
 // -------------------------------------------------------------------------------------------------------------------
 // Path Utility Helpers
 // -------------------------------------------------------------------------------------------------------------------
 
 std::filesystem::path Project::NormalizePath(const std::filesystem::path& path)
 {
+    // Use lexically_normal to handle .. and . and unify slashes
     std::filesystem::path normalized = std::filesystem::absolute(path).lexically_normal();
 
-#ifdef CH_PLATFORM_WINDOWS
-    // Normalize drive letter to lowercase for consistent comparison
-    std::string pathStr = normalized.generic_string();
-    std::transform(pathStr.begin(), pathStr.end(), pathStr.begin(), ::tolower);
-    normalized = pathStr;
-#endif
-
+    // On Windows, generic_string() will use / which is exactly what we want for cross-platform portability.
+    // We avoid tolower() here to preserve original casing as requested by the user.
     return normalized;
 }
 

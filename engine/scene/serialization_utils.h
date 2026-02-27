@@ -53,26 +53,12 @@ inline void DeserializePath(YAML::Node node, const char* name, std::string& path
             return;
         }
 
-        std::filesystem::path fsPath(pathValue);
-
-        // If path is already absolute - keep it as is
-        if (fsPath.is_absolute())
-        {
-            path = pathValue;
-#ifdef CH_PLATFORM_WINDOWS
-            std::replace(path.begin(), path.end(), '\\', '/');
-            std::transform(path.begin(), path.end(), path.begin(), ::tolower);
-#endif
-            return;
-        }
-
-        // If relative - KEEP IT RELATIVE!
-        // AssetManager will resolve it to absolute when loading
+        // Keep path as is, but unify slashes to forward slashes for cross-platform portability.
+        // AssetManager::ResolvePath will handle the actual file lookup.
         path = pathValue;
 
 #ifdef CH_PLATFORM_WINDOWS
         std::replace(path.begin(), path.end(), '\\', '/');
-        std::transform(path.begin(), path.end(), path.begin(), ::tolower);
 #endif
     }
 }

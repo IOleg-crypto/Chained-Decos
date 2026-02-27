@@ -22,7 +22,7 @@ void Input::PollEvents()
         Application::Get().OnEvent(e);
     }
 
-    // 2. Mouse Events
+    // 2. Mouse Buttons
     auto handleMouse = [&](int button) {
         if (::IsMouseButtonPressed(button))
         {
@@ -40,15 +40,7 @@ void Input::PollEvents()
     handleMouse(MOUSE_BUTTON_RIGHT);
     handleMouse(MOUSE_BUTTON_MIDDLE);
 
-    Vector2 currentMousePos = ::GetMousePosition();
-    static Vector2 lastMousePos = {0, 0};
-    if (currentMousePos.x != lastMousePos.x || currentMousePos.y != lastMousePos.y)
-    {
-        MouseMovedEvent e(currentMousePos.x, currentMousePos.y);
-        Application::Get().OnEvent(e);
-        lastMousePos = currentMousePos;
-    }
-
+    // 3. Mouse Wheel
     float wheel = ::GetMouseWheelMove();
     if (wheel != 0)
     {
