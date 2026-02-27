@@ -15,9 +15,14 @@
 
 
 
+  <!-- Coral.Managed.dll location: set by CMake via -p:CoralManagedDir=... -->
+  <PropertyGroup>
+    <CoralManagedDir Condition="'$(CoralManagedDir)' == ''">../../../build/windows-ninja-release/_deps/coral-build</CoralManagedDir>
+  </PropertyGroup>
+
   <ItemGroup>
     <Reference Include="Coral.Managed">
-      <HintPath>../../../build/windows-ninja-release/_deps/coral-build/Coral.Managed.dll</HintPath>
+      <HintPath>$(CoralManagedDir)/Coral.Managed.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>
