@@ -40,6 +40,11 @@ if(DOTNET_EXECUTABLE)
         COMMENT "Building CHEngine.Managed C# Library"
         VERBATIM
     )
+
+    # Ensure CHEngine_Managed builds AFTER Coral.Managed to avoid dotnet race condition
+    if(TARGET Coral.Managed)
+        add_dependencies(CHEngine_Managed Coral.Managed)
+    endif()
     
     # Ensure the engine script object files are built after/with the managed lib if needed
     # (Though they are mostly independent, it's good for ordering)
