@@ -18,6 +18,9 @@ on:
 
 env:
   CI: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_NOLOGO: true
 
 jobs:
   build:
@@ -67,7 +70,6 @@ jobs:
         with:
           path: |
             ~/.ccache
-            ~/.nuget/packages
             build/${{ matrix.config_preset }}/_deps
           key: ${{ runner.os }}-${{ matrix.preset }}-${{ hashFiles('**/CMakeLists.txt', 'CMakePresets.json', 'cmake/*.cmake') }}
           restore-keys: |
