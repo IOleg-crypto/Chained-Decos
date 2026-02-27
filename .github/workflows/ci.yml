@@ -60,12 +60,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 1
 
-      - name: Cache
+      - name: Cache CMake dependencies
         uses: actions/cache@v4
         with:
           path: |
             ~/.ccache
+            ~/.nuget/packages
             build/${{ matrix.config_preset }}/_deps
           key: ${{ runner.os }}-${{ matrix.preset }}-${{ hashFiles('**/CMakeLists.txt', 'CMakePresets.json', 'cmake/*.cmake') }}
           restore-keys: |
@@ -119,7 +121,7 @@ jobs:
 
       - name: Build
         run: |
-          cmake --build --preset ${{ matrix.preset }} --parallel 4
+          cmake --build --preset ${{ matrix.preset }} --parallel $(nproc 2>/dev/null || echo 4)
 
       - name: Test
         run: |
@@ -144,12 +146,81 @@ jobs:
           path: build/${{ matrix.config_preset }}/bin
           retention-days: 7
 
+  # ── PR Gate: waits for all builds to pass ──────────────────────────────────
   tests:
-    runs-on: ${{ matrix.os }}
-    needs : build
-    steps: 
-      - name : All jobs completed
-        run: |
-          echo "All jobs completed successfully"
-    
+    name: All Tests Passed
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: All jobs completed
+        run: echo "All build and test jobs completed successfully"
 
+  # ── SDK Release: generates SDK package on main branch only ─────────────────
+  release-sdk:
+    name: Generate SDK
+    runs-on: ubuntu-latest
+    needs: tests
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ninja-build \
+            libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
+            libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
+            pkg-config libgtk-3-dev libdrm-dev libgbm-dev gcc-14 g++-14
+          echo "CC=gcc-14" >> $GITHUB_ENV
+          echo "CXX=g++-14" >> $GITHUB_ENV
+
+      - name: Configure (Release)
+        run: |
+          cmake --preset linux-gcc-release \
+            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/sdk" \
+            -DCH_CI=ON \
+            -DENABLE_UNITY_BUILD=ON
+
+      - name: Build (Release)
+        run: |
+          cmake --build --preset linux-gcc-release --parallel $(nproc)
+
+      - name: Install SDK
+        run: |
+          cmake --install build/linux-gcc-release --prefix "${{ github.workspace }}/sdk"
+
+      - name: Download Windows Binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: Windows-windows-ninja-release-binaries
+          path: ${{ github.workspace }}/sdk/bin/windows
+
+      - name: Package SDK
+        run: |
+          SDK_VERSION=$(date +%Y.%m.%d)-$(echo ${{ github.sha }} | cut -c1-7)
+          echo "SDK_VERSION=$SDK_VERSION" >> $GITHUB_ENV
+          cd ${{ github.workspace }}
+          tar czf "ChainedDecos-SDK-${SDK_VERSION}.tar.gz" -C sdk .
+
+      - name: Upload SDK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ChainedDecos-SDK-${{ env.SDK_VERSION }}
+          path: ChainedDecos-SDK-*.tar.gz
+          retention-days: 30
+
+      - name: Create Release (tagged commits only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ChainedDecos-SDK-*.tar.gz
+          generate_release_notes: true

@@ -89,8 +89,9 @@ function(chained_add_game TARGET_NAME DISPLAY_NAME CSHARP_PROJECT_PATH)
         set(SCRIPT_TARGET "BuildScripts_${TARGET_NAME}")
         if(NOT TARGET ${SCRIPT_TARGET})
             set(FULL_CSPROJ_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${CSHARP_PROJECT_PATH}")
+            set(CORAL_MANAGED_DIR "${CMAKE_BINARY_DIR}/_deps/coral-build")
             add_custom_target(${SCRIPT_TARGET} ALL
-                COMMAND dotnet build "${FULL_CSPROJ_PATH}" -c $<IF:$<OR:$<CONFIG:Debug>,$<CONFIG:>>,Debug,Release> --no-incremental
+                COMMAND dotnet build "${FULL_CSPROJ_PATH}" -c $<IF:$<OR:$<CONFIG:Debug>,$<CONFIG:>>,Debug,Release> --no-incremental -p:CoralManagedDir="${CORAL_MANAGED_DIR}"
                 WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
                 COMMENT "Building C# Scripts for ${TARGET_NAME}"
             )

@@ -32,9 +32,10 @@ find_program(DOTNET_EXECUTABLE dotnet)
 if(DOTNET_EXECUTABLE)
     set(MANAGED_PROJECT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/managed/CHEngine.Managed.csproj")
     set(MANAGED_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/$<CONFIG>")
+    set(CORAL_MANAGED_DIR "${CMAKE_BINARY_DIR}/_deps/coral-build")
     
     add_custom_target(CHEngine_Managed ALL
-        COMMAND ${DOTNET_EXECUTABLE} build "${MANAGED_PROJECT_PATH}" -c $<CONFIG> --no-incremental --output "${MANAGED_OUTPUT_DIR}"
+        COMMAND ${DOTNET_EXECUTABLE} build "${MANAGED_PROJECT_PATH}" -c $<CONFIG> --no-incremental --output "${MANAGED_OUTPUT_DIR}" -p:CoralManagedDir="${CORAL_MANAGED_DIR}"
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/managed"
         COMMENT "Building CHEngine.Managed C# Library"
         VERBATIM
