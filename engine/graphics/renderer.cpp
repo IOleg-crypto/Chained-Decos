@@ -24,7 +24,6 @@ Renderer* Renderer::s_Instance = nullptr;
 
 void Renderer::Init()
 {
-    CH_CORE_INFO("Renderer::Init - VERSION: DEBUG_SKYBOX_2026_02_22_v1");
     CH_CORE_ASSERT(!s_Instance, "Renderer already initialized!");
     s_Instance = new Renderer();
 
@@ -34,70 +33,41 @@ void Renderer::Init()
     Renderer2D::Init();
     UIRenderer::Init();
 
-    auto project = Project::GetActive();
-    auto assetManager = project ? project->GetAssetManager() : nullptr;
-
-    // Shaders loading - through AssetManager into the Library
-    if (assetManager)
-    {
-        auto& lib = s_Instance->GetShaderLibrary();
-
-        auto lightingShader = assetManager->Get<ShaderAsset>("engine/resources/shaders/lighting.chshader");
-        if (lightingShader)
-        {
-            lib.Add("Lighting", lightingShader);
-        }
-
-        auto skyboxShader = assetManager->Get<ShaderAsset>("engine/resources/shaders/skybox.chshader");
-        if (skyboxShader)
-        {
-            lib.Add("Skybox", skyboxShader);
-        }
-
-        auto unlitShader = assetManager->Get<ShaderAsset>("engine/resources/shaders/unlit.chshader");
-        if (unlitShader)
-        {
-            lib.Add("Unlit", unlitShader);
-        }
-
-        auto cubemapShader = assetManager->Get<ShaderAsset>("engine/resources/shaders/cubemap.chshader");
-        if (cubemapShader)
-        {
-            lib.Add("CubemapGen", cubemapShader);
-        }
-
-        auto skyboxCubemapShader = assetManager->Get<ShaderAsset>("engine/resources/shaders/skybox_cubemap.chshader");
-        if (skyboxCubemapShader)
-        {
-            lib.Add("SkyboxCubemap", skyboxCubemapShader);
-        }
-
-        // Icons
-        auto lightIcon = assetManager->Get<TextureAsset>(PROJECT_ROOT_DIR "/engine/resources/icons/light_bulb.png");
-        if (lightIcon)
-        {
-            s_Instance->m_Data->LightIcon = lightIcon->GetTexture();
-        }
-
-        auto spawnIcon = assetManager->Get<TextureAsset>(PROJECT_ROOT_DIR "/engine/resources/icons/leaf_icon.png");
-        if (spawnIcon)
-        {
-            s_Instance->m_Data->SpawnIcon = spawnIcon->GetTexture();
-        }
-
-        auto cameraIcon = assetManager->Get<TextureAsset>(PROJECT_ROOT_DIR "/engine/resources/icons/camera_icon.png");
-        if (cameraIcon)
-        {
-            s_Instance->m_Data->CameraIcon = cameraIcon->GetTexture();
-        }
-    }
-    else
-    {
-        CH_CORE_WARN("Renderer::Init: No active project, engine shaders will be loaded lazily.");
-    }
-
     s_Instance->InitializeSkybox();
     CH_CORE_INFO("Render System Initialized (Core).");
+}
+
+void Renderer::LoadEngineResources(AssetManager& assetManager)
+{
+    CH_CORE_INFO("Renderer: Loading engine materials and shaders...");
+    auto& lib = s_Instance->GetShaderLibrary();
+
+    // Shaders loading - through AssetManager into the Library
+    auto loadShader = [&](const std::string& name, const std::string& path) {
+        auto shader = assetManager.Get<ShaderAsset>(path);
+        if (shader)
+        {
+            lib.Add(name, shader);
+            return true;
+        }
+        return false;
+    };
+
+    loadShader("Lighting", "engine/resources/shaders/lighting.chshader");
+    loadShader("Skybox", "engine/resources/shaders/skybox.chshader");
+    loadShader("Unlit", "engine/resources/shaders/unlit.chshader");
+    loadShader("CubemapGen", "engine/resources/shaders/cubemap.chshader");
+    loadShader("SkyboxCubemap", "engine/resources/shaders/skybox_cubemap.chshader");
+
+    // Icons
+    auto loadIcon = [&](Texture2D& target, const std::string& path) {
+        auto tex = assetManager.Get<TextureAsset>(path);
+        if (tex) target = tex->GetTexture();
+    };
+
+    loadIcon(s_Instance->m_Data->LightIcon, "engine/resources/icons/light_bulb.png");
+    loadIcon(s_Instance->m_Data->SpawnIcon, "engine/resources/icons/leaf_icon.png");
+    loadIcon(s_Instance->m_Data->CameraIcon, "engine/resources/icons/camera_icon.png");
 }
 
 void Renderer::Shutdown()
