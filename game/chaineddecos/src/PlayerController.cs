@@ -42,12 +42,12 @@ public class PlayerController : Script
             }
             else
             {
-                 Log.Info("[PlayerController] Found Camera Entity, but no CameraComponent attached.");
+                 Log.Warn($"[PlayerController] Found Camera Entity '{camEntity}', but it's missing a CameraComponent.");
             }
         }
         else
         {
-             Log.Info("[PlayerController] ERROR: Could not find primary camera!");
+             Log.Error("[PlayerController] FAILED: No primary camera found in scene! Enter Editor and mark a Camera entity as 'Primary'.");
         }
 
         Vector3 movementVector = Vector3.Zero;
@@ -71,11 +71,9 @@ public class PlayerController : Script
                 velocity.Z = movementVector.Z * currentSpeed;
                 rb.Velocity = velocity;
 
-                // Simple look-at rotation (Y axis)
+                // Simple look-at rotation (Y axis only)
                 float targetYaw = Mathf.Atan2(movementVector.X, movementVector.Z);
-                Vector3 rot = transform.Rotation;
-                rot.Y = targetYaw * Mathf.Rad2Deg;
-                transform.Rotation = rot;
+                transform.Rotation = new Vector3(0, targetYaw, 0);
             }
             else
             {

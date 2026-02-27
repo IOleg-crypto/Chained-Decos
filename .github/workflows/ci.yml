@@ -6,6 +6,8 @@ on:
     paths:
       - "**/*.cpp"
       - "**/*.h"
+      - "**/*.cs"
+      - "**/*.csproj"
       - "**/CMakeLists.txt"
       - "**/CMakePresets.json"
       - "cmake/*.cmake"
@@ -102,6 +104,11 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           choco install cmake ninja --no-progress
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
 
       - name: Configure
         run: |
