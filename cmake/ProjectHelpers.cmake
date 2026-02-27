@@ -96,6 +96,10 @@ function(chained_add_game TARGET_NAME DISPLAY_NAME CSHARP_PROJECT_PATH)
                 COMMENT "Building C# Scripts for ${TARGET_NAME}"
             )
             add_dependencies(${TARGET_NAME}Exe ${SCRIPT_TARGET})
+            # Ensure scripts build AFTER CHEngine_Managed to avoid dotnet race condition
+            if(TARGET CHEngine_Managed)
+                add_dependencies(${SCRIPT_TARGET} CHEngine_Managed)
+            endif()
         endif()
     endif()
 
