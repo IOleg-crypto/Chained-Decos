@@ -1,4 +1,5 @@
 #include "application.h"
+#include "engine/audio/audio.h"
 #include "engine/core/assert.h"
 #include "engine/core/imgui_layer.h"
 #include "engine/core/input.h"
@@ -80,7 +81,7 @@ Application::Application(const ApplicationSpecification& specification)
     ScriptEngine::Init();
 
     // Audio setup
-    InitAudioDevice();
+    Audio::Init();
     if (IsAudioDeviceReady())
     {
         CH_CORE_INFO("Audio Device Initialized Successfully");
@@ -103,7 +104,7 @@ Application::~Application()
     {
         CH_CORE_INFO("Shutting down Application...");
         ScriptEngine::Shutdown();
-        CloseAudioDevice();
+        Audio::Shutdown();
         m_LayerStack.Shutdown();
         m_Window.reset();
     }
