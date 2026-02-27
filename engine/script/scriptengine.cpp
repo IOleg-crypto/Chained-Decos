@@ -9,6 +9,13 @@
 #include <filesystem>
 #include <iostream>
 #include "engine/script/script_glue.h"
+#include "engine/core/base.h"
+
+#ifdef CH_PLATFORM_WINDOWS
+#include <windows.h>
+#elif defined(CH_PLATFORM_LINUX)
+#include <unistd.h>
+#endif
 
 namespace CHEngine {
 
@@ -26,6 +33,21 @@ static std::string ToLower(std::string s)
 {
     std::transform(s.begin(), s.end(), s.begin(), ::tolower);
     return s;
+}
+
+static std::filesystem::path GetExecutableDir()
+{
+#ifdef CH_PLATFORM_WINDOWS
+    wchar_t path[MAX_PATH];
+    GetModuleFileNameW(NULL, path, MAX_PATH);
+    return std::filesystem::path(path).parent_path();
+#elif defined(CH_PLATFORM_LINUX)
+    char path[1024];
+    ssize_t count = readlink("/proc/self/exe", path, sizeof(path));
+    if (count != -1)
+        return std::filesystem::path(std::string(path, count)).parent_path();
+#endif
+    return std::filesystem::current_path();
 }
 
 // Shadow-copy directory for DLLs — avoids file locks from CoreCLR
@@ -91,8 +113,7 @@ void ScriptEngine::Init()
 
     Coral::HostSettings settings;
     // Coral looks for Coral.Managed.dll in this directory.
-    // It must be next to the engine executable.
-    settings.CoralDirectory = ".";
+    settings.CoralDirectory = GetExecutableDir().string();
 
     auto status = s_Host.Initialize(settings);
     if (status != Coral::CoralInitStatus::Success)
@@ -135,8 +156,7 @@ void ScriptEngine::LoadAppAssembly(const std::string& filepath)
     {
         // 1. Ensure our Core Managed library is loaded first (in the same ALC)
         // This provides the base CHEngine.Script class for discovery.
-        // We assume CHEngine.Managed.dll is in the same directory as the executable.
-        std::filesystem::path corePath = std::filesystem::current_path() / "CHEngine.Managed.dll";
+        std::filesystem::path corePath = GetExecutableDir() / "CHEngine.Managed.dll";
         if (!std::filesystem::exists(corePath)) {
             corePath = "CHEngine.Managed.dll"; 
         }
