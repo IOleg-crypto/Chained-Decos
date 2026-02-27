@@ -34,7 +34,7 @@ if(DOTNET_EXECUTABLE)
     set(MANAGED_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/$<CONFIG>")
     
     add_custom_target(CHEngine_Managed ALL
-        COMMAND ${DOTNET_EXECUTABLE} build "${MANAGED_PROJECT_PATH}" -c $<CONFIG> --output "${MANAGED_OUTPUT_DIR}"
+        COMMAND ${DOTNET_EXECUTABLE} build "${MANAGED_PROJECT_PATH}" -c $<CONFIG> --no-incremental --output "${MANAGED_OUTPUT_DIR}"
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/managed"
         COMMENT "Building CHEngine.Managed C# Library"
         VERBATIM

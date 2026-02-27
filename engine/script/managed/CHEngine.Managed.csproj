@@ -8,8 +8,7 @@
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Optimize>false</Optimize>
-    <!-- Output directly into the engine build output so engine.dll and CHEngine.Managed.dll live together -->
-    <OutputPath>..\..\..\build\windows-ninja-release\bin</OutputPath>
+    <!-- Output path is controlled by the CMake build system to avoid stale DLL issues -->
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
   </PropertyGroup>

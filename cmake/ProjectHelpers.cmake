@@ -90,7 +90,7 @@ function(chained_add_game TARGET_NAME DISPLAY_NAME CSHARP_PROJECT_PATH)
         if(NOT TARGET ${SCRIPT_TARGET})
             set(FULL_CSPROJ_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${CSHARP_PROJECT_PATH}")
             add_custom_target(${SCRIPT_TARGET} ALL
-                COMMAND dotnet build "${FULL_CSPROJ_PATH}" -c $<IF:$<OR:$<CONFIG:Debug>,$<CONFIG:>>,Debug,Release>
+                COMMAND dotnet build "${FULL_CSPROJ_PATH}" -c $<IF:$<OR:$<CONFIG:Debug>,$<CONFIG:>>,Debug,Release> --no-incremental
                 WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
                 COMMENT "Building C# Scripts for ${TARGET_NAME}"
             )

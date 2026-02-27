@@ -1,5 +1,5 @@
-#line 1 "d:/gitnext/Chained Decos/engine/script/script_glue.cpp"
 #include <Coral/String.hpp>
+#include <Coral/Array.hpp>
 #include "engine/core/log.h"
 #include "engine/core/input.h"
 #include "engine/core/application.h"
@@ -147,6 +147,27 @@ namespace CHEngine {
         return entity && entity.HasComponent<RigidBodyComponent>() ? entity.GetComponent<RigidBodyComponent>().IsGrounded : false;
     }
 
+    CH_SCRIPT_FUNC Coral::Array<uint64_t> Entity_FindAllWithComponent(Coral::String componentName) {
+        Scene* scene = ScriptEngine::GetActiveScene();
+        if (!scene) return Coral::Array<uint64_t>::New(0);
+        
+        std::string name = (std::string)componentName;
+        std::vector<uint64_t> ids;
+
+        auto addToVec = [&](auto view) {
+            for (auto entity : view) ids.push_back((uint64_t)(uint32_t)entity);
+        };
+
+        if (name == "TransformComponent") addToVec(scene->GetRegistry().view<TransformComponent>());
+        else if (name == "RigidBodyComponent") addToVec(scene->GetRegistry().view<RigidBodyComponent>());
+        else if (name == "CameraComponent")    addToVec(scene->GetRegistry().view<CameraComponent>());
+        else if (name == "PlayerComponent")    addToVec(scene->GetRegistry().view<PlayerComponent>());
+        else if (name == "AudioComponent")     addToVec(scene->GetRegistry().view<AudioComponent>());
+        else if (name == "TagComponent")       addToVec(scene->GetRegistry().view<TagComponent>());
+
+        return Coral::Array<uint64_t>::New(ids);
+    }
+
     // ── Tag ───────────────────────────────────────────────────────────────
     CH_SCRIPT_FUNC Coral::String TagComponent_GetTag(uint64_t entityID) {
         Scene* scene = ScriptEngine::GetActiveScene();
@@ -200,6 +221,51 @@ namespace CHEngine {
             camera.OrbitPitch = pitch;
             camera.OrbitDistance = distance;
         }
+    }
+
+    CH_SCRIPT_FUNC bool Camera_GetPrimary(uint64_t entityID) {
+        Scene* scene = ScriptEngine::GetActiveScene();
+        if (!scene) return false;
+        Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
+        return entity && entity.HasComponent<CameraComponent>() ? entity.GetComponent<CameraComponent>().Primary : false;
+    }
+
+    CH_SCRIPT_FUNC void Camera_SetPrimary(uint64_t entityID, bool primary) {
+        Scene* scene = ScriptEngine::GetActiveScene();
+        if (!scene) return;
+        Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
+        if (entity && entity.HasComponent<CameraComponent>()) 
+            entity.GetComponent<CameraComponent>().Primary = primary;
+    }
+
+    CH_SCRIPT_FUNC bool Camera_GetIsOrbit(uint64_t entityID) {
+        Scene* scene = ScriptEngine::GetActiveScene();
+        if (!scene) return false;
+        Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
+        return entity && entity.HasComponent<CameraComponent>() ? entity.GetComponent<CameraComponent>().IsOrbitCamera : false;
+    }
+
+    CH_SCRIPT_FUNC void Camera_SetIsOrbit(uint64_t entityID, bool isOrbit) {
+        Scene* scene = ScriptEngine::GetActiveScene();
+        if (!scene) return;
+        Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
+        if (entity && entity.HasComponent<CameraComponent>()) 
+            entity.GetComponent<CameraComponent>().IsOrbitCamera = isOrbit;
+    }
+
+    CH_SCRIPT_FUNC Coral::String Camera_GetTargetTag(uint64_t entityID) {
+        Scene* scene = ScriptEngine::GetActiveScene();
+        if (!scene) return Coral::String::New("");
+        Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
+        return entity && entity.HasComponent<CameraComponent>() ? Coral::String::New(entity.GetComponent<CameraComponent>().TargetEntityTag) : Coral::String::New("");
+    }
+
+    CH_SCRIPT_FUNC void Camera_SetTargetTag(uint64_t entityID, Coral::String tag) {
+        Scene* scene = ScriptEngine::GetActiveScene();
+        if (!scene) return;
+        Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
+        if (entity && entity.HasComponent<CameraComponent>()) 
+            entity.GetComponent<CameraComponent>().TargetEntityTag = (std::string)tag;
     }
 
     // ── UI Controls ───────────────────────────────────────────────────────
@@ -332,6 +398,7 @@ namespace CHEngine {
         CH_ADD_INTERNAL_CALL(Audio, Audio_Stop_Ptr, Audio_Stop);
 
         // Entity / Transform
+        CH_ADD_INTERNAL_CALL(Entity, Entity_FindAllWithComponent_Ptr, Entity_FindAllWithComponent);
         CH_ADD_INTERNAL_CALL(Entity, Entity_HasComponent_Ptr, Entity_HasComponent);
         CH_ADD_INTERNAL_CALL(Entity, Entity_GetTranslation_Ptr, Entity_GetTranslation);
         CH_ADD_INTERNAL_CALL(Entity, Entity_SetTranslation_Ptr, Entity_SetTranslation);
@@ -351,6 +418,12 @@ namespace CHEngine {
         CH_ADD_INTERNAL_CALL(CameraComponent, Camera_GetRight_Ptr, Camera_GetRight);
         CH_ADD_INTERNAL_CALL(CameraComponent, Camera_GetOrbit_Ptr, Camera_GetOrbit);
         CH_ADD_INTERNAL_CALL(CameraComponent, Camera_SetOrbit_Ptr, Camera_SetOrbit);
+        CH_ADD_INTERNAL_CALL(CameraComponent, Camera_GetPrimary_Ptr, Camera_GetPrimary);
+        CH_ADD_INTERNAL_CALL(CameraComponent, Camera_SetPrimary_Ptr, Camera_SetPrimary);
+        CH_ADD_INTERNAL_CALL(CameraComponent, Camera_GetIsOrbit_Ptr, Camera_GetIsOrbit);
+        CH_ADD_INTERNAL_CALL(CameraComponent, Camera_SetIsOrbit_Ptr, Camera_SetIsOrbit);
+        CH_ADD_INTERNAL_CALL(CameraComponent, Camera_GetTargetTag_Ptr, Camera_GetTargetTag);
+        CH_ADD_INTERNAL_CALL(CameraComponent, Camera_SetTargetTag_Ptr, Camera_SetTargetTag);
 
         // PlayerComponent
         CH_ADD_INTERNAL_CALL(PlayerComponent, PlayerComponent_GetMovementSpeed_Ptr, PlayerComponent_GetMovementSpeed);

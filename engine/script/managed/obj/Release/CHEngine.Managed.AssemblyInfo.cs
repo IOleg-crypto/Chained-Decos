@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CHEngine.Managed")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a6cec421beae13bfdbdc7b7c597ed1c4363e483c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5051975c71c5023c3513172c1850425c1d8e324b")]
 [assembly: System.Reflection.AssemblyProductAttribute("CHEngine.Managed")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CHEngine.Managed")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

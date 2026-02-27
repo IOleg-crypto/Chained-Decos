@@ -17,3 +17,8 @@ D:\gitnext\Chained Decos\engine\script\managed\bin\Coral.Managed.pdb
 D:\gitnext\Chained Decos\build\windows-ninja-release\bin\CHEngine.Managed.deps.json
 D:\gitnext\Chained Decos\build\windows-ninja-release\bin\CHEngine.Managed.dll
 D:\gitnext\Chained Decos\build\windows-ninja-release\bin\CHEngine.Managed.pdb
+D:\gitnext\Chained Decos\engine\script\managed\bin\Debug\CHEngine.Managed.deps.json
+D:\gitnext\Chained Decos\engine\script\managed\bin\Debug\CHEngine.Managed.dll
+D:\gitnext\Chained Decos\engine\script\managed\bin\Debug\CHEngine.Managed.pdb
+D:\gitnext\Chained Decos\engine\script\managed\bin\Debug\Coral.Managed.dll
+D:\gitnext\Chained Decos\engine\script\managed\bin\Debug\Coral.Managed.pdb
