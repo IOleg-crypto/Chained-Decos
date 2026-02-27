@@ -29,7 +29,13 @@ public static class Scene
     public static Entity? GetMainCamera()
     {
         ulong id = GetPrimaryCameraEntity_Native();
-        return id != 0 ? new Entity(id) : null;
+        if (id != 0) return new Entity(id);
+
+        // Fallback: Find first entity with CameraComponent
+        var ids = Entity.FindAllWithComponent<CameraComponent>();
+        if (ids.Length > 0) return new Entity(ids[0]);
+
+        return null;
     }
 }
 

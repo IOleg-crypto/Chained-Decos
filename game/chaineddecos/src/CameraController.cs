@@ -9,23 +9,34 @@ public class CameraController : Script
 
     public override void OnUpdate(float deltaTime)
     {
-        Log.Info($"[Camera] OnUpdate ticked for Entity {Entity.ID}");
-        
         CameraComponent? camera = Entity.GetComponent<CameraComponent>();
         if (camera == null)
         {
-            Log.Info($"[Camera] ERROR: No CameraComponent found on Entity {Entity.ID}");
+            Log.Error($"[CameraController] FAILED: Attached to Entity '{Entity}' which has NO CameraComponent. CameraController must be on the Camera entity!");
             return;
+        }
+
+        // Auto-configure if needed
+        if (!camera.Primary)
+        {
+             Log.Warn($"[CameraController] Camera on '{Entity}' was not Primary. Setting it to Primary now.");
+             camera.Primary = true;
         }
 
         Entity? player = Scene.FindEntityByTag("Player");
         if (player == null)
         {
-            Log.Info("[Camera] ERROR: Player entity not found (FindEntityByTag returned null)");
+            Log.Warn("[CameraController] Player entity (tagged 'Player') not found. Camera will not orbit correctly.");
             return;
         }
         
-        Log.Info($"[Camera] Camera and Player found. Camera Entity: {Entity.ID}, Player Entity: {player.ID}");
+        // Ensure orbit is enabled
+        if (!camera.IsOrbitCamera || camera.TargetEntityTag != "Player")
+        {
+            Log.Info("[CameraController] Correcting Camera orbit settings...");
+            camera.IsOrbitCamera = true;
+            camera.TargetEntityTag = "Player";
+        }
 
         camera.GetOrbit(out float yaw, out float pitch, out float distance);
 
