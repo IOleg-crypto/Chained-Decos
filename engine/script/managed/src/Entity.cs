@@ -23,7 +23,7 @@ public class Entity
     private readonly Dictionary<System.Type, Component> _cache = new();
 
 #pragma warning disable 0649
-    internal static unsafe delegate*<ulong, string, bool> Entity_HasComponent_Ptr;
+    internal static unsafe delegate*<ulong, NativeString, bool> Entity_HasComponent_Ptr;
     internal static unsafe delegate*<ulong, Vector3*, void> Entity_GetTranslation_Ptr;
     internal static unsafe delegate*<ulong, Vector3*, void> Entity_SetTranslation_Ptr;
     internal static unsafe delegate*<ulong, Vector3*, void> Entity_GetRotation_Ptr;
@@ -33,6 +33,7 @@ public class Entity
     internal static unsafe delegate*<ulong, Vector3*, void> Entity_GetVelocity_Ptr;
     internal static unsafe delegate*<ulong, Vector3*, void> Entity_SetVelocity_Ptr;
     internal static unsafe delegate*<ulong, bool> Entity_IsGrounded_Ptr;
+    internal static unsafe delegate*<NativeString, NativeArray<ulong>> Entity_FindAllWithComponent_Ptr;
 #pragma warning restore 0649
 
     public Entity(ulong id) { ID = id; }
@@ -61,6 +62,11 @@ public class Entity
         T comp = new T() { Entity = this };
         _cache[type] = comp;
         return comp;
+    }
+
+    public static ulong[] FindAllWithComponent<T>() where T : Component, new()
+    {
+        unsafe { return Entity_FindAllWithComponent_Ptr(typeof(T).Name).ToArray(); }
     }
 
     /// <summary>Clear component cache (call after hot-reload or scene change).</summary>
@@ -170,6 +176,12 @@ public class CameraComponent : Component
     internal static unsafe delegate*<ulong, Vector3*, void> Camera_GetRight_Ptr;
     internal static unsafe delegate*<ulong, float*, float*, float*, void> Camera_GetOrbit_Ptr;
     internal static unsafe delegate*<ulong, float, float, float, void> Camera_SetOrbit_Ptr;
+    internal static unsafe delegate*<ulong, bool> Camera_GetPrimary_Ptr;
+    internal static unsafe delegate*<ulong, bool, void> Camera_SetPrimary_Ptr;
+    internal static unsafe delegate*<ulong, bool> Camera_GetIsOrbit_Ptr;
+    internal static unsafe delegate*<ulong, bool, void> Camera_SetIsOrbit_Ptr;
+    internal static unsafe delegate*<ulong, NativeString> Camera_GetTargetTag_Ptr;
+    internal static unsafe delegate*<ulong, NativeString, void> Camera_SetTargetTag_Ptr;
 #pragma warning restore 0649
 
     private static void GetForward(ulong entityID, out Vector3 outForward)
@@ -207,6 +219,24 @@ public class CameraComponent : Component
 
     public void SetOrbit(float yaw, float pitch, float distance)
         => SetOrbit(Entity.ID, yaw, pitch, distance);
+
+    public bool Primary
+    {
+        get { unsafe { return Camera_GetPrimary_Ptr(Entity.ID); } }
+        set { unsafe { Camera_SetPrimary_Ptr(Entity.ID, value); } }
+    }
+
+    public bool IsOrbitCamera
+    {
+        get { unsafe { return Camera_GetIsOrbit_Ptr(Entity.ID); } }
+        set { unsafe { Camera_SetIsOrbit_Ptr(Entity.ID, value); } }
+    }
+
+    public string TargetEntityTag
+    {
+        get { unsafe { return Camera_GetTargetTag_Ptr(Entity.ID); } }
+        set { unsafe { Camera_SetTargetTag_Ptr(Entity.ID, value); } }
+    }
 }
 
 public class PlayerComponent : Component
