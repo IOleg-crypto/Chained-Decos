@@ -66,12 +66,7 @@ void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, Timestep t
     }
     else
     {
-        static bool warned = false;
-        if (!warned)
-        {
-            CH_CORE_WARN("SceneRenderer: No environment asset for scene!");
-            warned = true;
-        }
+        CH_CORE_WARN_ONCE("SceneRenderer: No environment asset for scene!");
     }
 
     Renderer::Get().UpdateTime(Timestep((float)GetTime()));
@@ -88,23 +83,13 @@ void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, Timestep t
         {
             if (environment->GetSettings().Skybox.TexturePath.empty())
             {
-                static bool warned = false;
-                if (!warned)
-                {
-                    CH_CORE_WARN("SceneRenderer: Environment exists but Skybox.TexturePath is empty!");
-                    warned = true;
-                }
+                CH_CORE_WARN_ONCE("SceneRenderer: Environment exists but Skybox.TexturePath is empty!");
             }
             Renderer::Get().DrawSkybox(environment->GetSettings().Skybox, camera);
         }
         else
         {
-            static bool warned = false;
-            if (!warned)
-            {
-                CH_CORE_WARN("SceneRenderer: No environment asset for scene!");
-                warned = true;
-            }
+            CH_CORE_WARN_ONCE("SceneRenderer: No environment asset for scene!");
         }
 
         RenderModels(scene, timestep);
@@ -145,9 +130,8 @@ void SceneRenderer::RenderModels(Scene* scene, Timestep timestep)
     // 1. Frustum Extraction
     Frustum frustum;
     {
-        Matrix matVP = MatrixMultiply(rlGetMatrixModelview(), rlGetMatrixProjection()); 
-        // Correct order for extracting Frustum planes is Projection * View
-        matVP = MatrixMultiply(rlGetMatrixProjection(), rlGetMatrixModelview());
+        // Build View-Projection matrix from Raylib's internal matrices
+        Matrix matVP = MatrixMultiply(rlGetMatrixProjection(), rlGetMatrixModelview());
         frustum.Extract(matVP);
     }
 
@@ -181,8 +165,9 @@ void SceneRenderer::PrepareLights(entt::registry& registry, const Frustum& frust
         Matrix worldTransform = GetWorldTransform(registry, entity);
         Vector3 worldPos = {worldTransform.m12, worldTransform.m13, worldTransform.m14};
 
-        if (!frustum.IsSphereVisible(worldPos, light.Radius))
-            continue;
+        // NOTE: Frustum culling for lights disabled temporarily
+        // if (!frustum.IsSphereVisible(worldPos, light.Radius))
+        //    continue;
 
         RenderLight rl;
         rl.color[0] = light.LightColor.r / 255.0f;
@@ -222,8 +207,10 @@ void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& 
             continue;
 
         const Matrix& worldTransform = transform.WorldTransform;
-        // if (!frustum.IsBoxVisible(model.Asset->GetBoundingBox(), worldTransform))
-        //    continue;
+
+        // NOTE: Frustum culling disabled - rlGetMatrixModelview / rlGetMatrixProjection
+        // may not return correct matrices at this point in the render pipeline.
+        // TODO: Extract VP matrix from camera directly and verify
 
         model.Asset->OnUpdate();
 
@@ -495,14 +482,15 @@ BoundingBox SceneRenderer::CalculateColliderWorldAABB(const ColliderComponent& c
 
     if (!corners.empty())
     {
-        box.min = Vector3Transform(corners[0], worldTransform);
-        box.max = box.min;
-        for (size_t i = 1; i < corners.size(); i++)
+        BoundingBox worldBox;
+        worldBox.min = worldBox.max = Vector3Transform(corners[0], worldTransform);
+        for (int cornerIndex = 1; cornerIndex < 8; cornerIndex++)
         {
-            Vector3 worldCorner = Vector3Transform(corners[i], worldTransform);
-            box.min = Vector3Min(box.min, worldCorner);
-            box.max = Vector3Max(box.max, worldCorner);
+            Vector3 worldCorner = Vector3Transform(corners[cornerIndex], worldTransform);
+            worldBox.min = Vector3Min(worldBox.min, worldCorner);
+            worldBox.max = Vector3Max(worldBox.max, worldCorner);
         }
+        box = worldBox;
     }
 
     return box;

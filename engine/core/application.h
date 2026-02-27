@@ -92,6 +92,7 @@ private:
     bool OnWindowClose(WindowCloseEvent& e);
     bool OnWindowResize(WindowResizeEvent& e);
     void ExecuteMainThreadQueue();
+    void InitSystems();
 
 private:
     static Application* s_Instance;

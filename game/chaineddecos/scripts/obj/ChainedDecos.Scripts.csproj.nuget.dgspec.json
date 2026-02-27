@@ -1,7 +1,7 @@
 {
   "format": 1,
   "restore": {
-    "D:\\gitnext\\Chained Decos\\game\\chaineddecos\\scripts\\ChainedDecos.Scripts.csproj": {}
+    "D:\\gitnext\\Chained Decos\\game\\chaineddecos\\Scripts\\ChainedDecos.Scripts.csproj": {}
   },
   "projects": {
     "D:\\gitnext\\Chained Decos\\engine\\script\\managed\\CHEngine.Managed.csproj": {
@@ -69,14 +69,14 @@
         }
       }
     },
-    "D:\\gitnext\\Chained Decos\\game\\chaineddecos\\scripts\\ChainedDecos.Scripts.csproj": {
+    "D:\\gitnext\\Chained Decos\\game\\chaineddecos\\Scripts\\ChainedDecos.Scripts.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\gitnext\\Chained Decos\\game\\chaineddecos\\scripts\\ChainedDecos.Scripts.csproj",
+        "projectUniqueName": "D:\\gitnext\\Chained Decos\\game\\chaineddecos\\Scripts\\ChainedDecos.Scripts.csproj",
         "projectName": "ChainedDecos.Scripts",
-        "projectPath": "D:\\gitnext\\Chained Decos\\game\\chaineddecos\\scripts\\ChainedDecos.Scripts.csproj",
+        "projectPath": "D:\\gitnext\\Chained Decos\\game\\chaineddecos\\Scripts\\ChainedDecos.Scripts.csproj",
         "packagesPath": "C:\\Users\\olegg\\.nuget\\packages\\",
-        "outputPath": "D:\\gitnext\\Chained Decos\\game\\chaineddecos\\scripts\\obj\\",
+        "outputPath": "D:\\gitnext\\Chained Decos\\game\\chaineddecos\\Scripts\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "D:\\Visual Studio 2022\\NuGetPackages"

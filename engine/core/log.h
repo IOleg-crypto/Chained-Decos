@@ -118,6 +118,15 @@ private:
     if (::CHEngine::Log::GetLogLevel() <= ::CHEngine::LogLevel::LogFatal)                                              \
     ::CHEngine::Log::CoreFatal(__VA_ARGS__)
 
+#define CH_CORE_TRACE_ONCE(...)                                                                                        \
+    { static bool warned = false; if (!warned) { CH_CORE_TRACE(__VA_ARGS__); warned = true; } }
+#define CH_CORE_INFO_ONCE(...)                                                                                         \
+    { static bool warned = false; if (!warned) { CH_CORE_INFO(__VA_ARGS__); warned = true; } }
+#define CH_CORE_WARN_ONCE(...)                                                                                         \
+    { static bool warned = false; if (!warned) { CH_CORE_WARN(__VA_ARGS__); warned = true; } }
+#define CH_CORE_ERROR_ONCE(...)                                                                                        \
+    { static bool warned = false; if (!warned) { CH_CORE_ERROR(__VA_ARGS__); warned = true; } }
+
 // Client logging macros
 #define CH_TRACE(...)                                                                                                  \
     if (::CHEngine::Log::GetLogLevel() <= ::CHEngine::LogLevel::LogTrace)                                              \
@@ -134,5 +143,14 @@ private:
 #define CH_FATAL(...)                                                                                                  \
     if (::CHEngine::Log::GetLogLevel() <= ::CHEngine::LogLevel::LogFatal)                                              \
     ::CHEngine::Log::ClientFatal(__VA_ARGS__)
+
+#define CH_TRACE_ONCE(...)                                                                                             \
+    { static bool warned = false; if (!warned) { CH_TRACE(__VA_ARGS__); warned = true; } }
+#define CH_INFO_ONCE(...)                                                                                              \
+    { static bool warned = false; if (!warned) { CH_INFO(__VA_ARGS__); warned = true; } }
+#define CH_WARN_ONCE(...)                                                                                              \
+    { static bool warned = false; if (!warned) { CH_WARN(__VA_ARGS__); warned = true; } }
+#define CH_ERROR_ONCE(...)                                                                                             \
+    { static bool warned = false; if (!warned) { CH_ERROR(__VA_ARGS__); warned = true; } }
 
 #endif // CH_LOG_H

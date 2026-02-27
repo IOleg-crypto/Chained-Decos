@@ -123,6 +123,11 @@ void EditorLayer::OnAttach()
         CH_CORE_INFO("Auto-loading last project: {}", config.LastProjectPath);
         ProjectActions::Open(config.LastProjectPath);
 
+        if (auto project = Project::GetActive())
+        {
+            Renderer::LoadEngineResources(*project->GetAssetManager());
+        }
+
         if (!config.LastScenePath.empty() && std::filesystem::exists(config.LastScenePath))
         {
             CH_CORE_INFO("Auto-loading last scene: {}", config.LastScenePath);
@@ -132,6 +137,10 @@ void EditorLayer::OnAttach()
     else
     {
         Project::SetActive(nullptr);
+        // Load default engine resources with a temporary manager if no project
+        AssetManager temp;
+        temp.Initialize();
+        Renderer::LoadEngineResources(temp);
     }
 
     // Ensure layout is initialized
@@ -308,6 +317,7 @@ bool EditorLayer::OnProjectOpened(ProjectOpenedEvent& e)
         {
             contentBrowser->SetRootDirectory(Project::GetAssetDirectory());
         }
+        Renderer::LoadEngineResources(*project->GetAssetManager());
     }
     return false;
 }

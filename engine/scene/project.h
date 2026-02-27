@@ -129,16 +129,16 @@ public:
     Project() = default;
     ~Project() = default;
 
-    const ProjectConfig& GetConfig() const
+    [[nodiscard]] const ProjectConfig& GetConfig() const
     {
         return m_Config;
     }
-    ProjectConfig& GetConfig()
+    [[nodiscard]] ProjectConfig& GetConfig()
     {
         return m_Config;
     }
 
-    static std::shared_ptr<Project> GetActive()
+    [[nodiscard]] static std::shared_ptr<Project> GetActive()
     {
         return s_ActiveProject;
     }
@@ -148,12 +148,12 @@ public:
         s_ActiveProject = project;
     }
 
-    static std::shared_ptr<Project> New();
-    static std::shared_ptr<Project> Load(const std::filesystem::path& path);
-    static std::filesystem::path Discover(const std::filesystem::path& startPath = "",
-                                          const std::string& hintName = "");
+    [[nodiscard]] static std::shared_ptr<Project> New();
+    [[nodiscard]] static std::shared_ptr<Project> Load(const std::filesystem::path& path);
+    [[nodiscard]] static std::filesystem::path Discover(const std::filesystem::path& startPath = "",
+                                                         const std::string& hintName = "");
 
-    static std::filesystem::path GetEngineRoot()
+    [[nodiscard]] static std::filesystem::path GetEngineRoot()
     {
         return s_EngineRoot;
     }
@@ -164,9 +164,9 @@ public:
 
     static bool SaveActive(const std::filesystem::path& path);
 
-    static std::vector<std::string> GetAvailableScenes();
+    [[nodiscard]] static std::vector<std::string> GetAvailableScenes();
 
-    static std::filesystem::path GetAssetDirectory()
+    [[nodiscard]] static std::filesystem::path GetAssetDirectory()
     {
         if (s_ActiveProject)
         {
@@ -175,7 +175,7 @@ public:
         return "";
     }
 
-    static std::filesystem::path GetProjectDirectory()
+    [[nodiscard]] static std::filesystem::path GetProjectDirectory()
     {
         if (s_ActiveProject)
         {
@@ -184,44 +184,17 @@ public:
         return "";
     }
 
-    static std::filesystem::path GetAssetPath(const std::filesystem::path& relative)
+    [[nodiscard]] static std::filesystem::path GetAssetPath(const std::filesystem::path& relative)
     {
         return GetAssetDirectory() / relative;
     }
 
-    static std::string GetRelativePath(const std::filesystem::path& path)
-    {
-        if (path.empty())
-        {
-            return "";
-        }
+    [[nodiscard]] static std::string GetRelativePath(const std::filesystem::path& path);
 
-        if (path.is_relative())
-        {
-            return path.generic_string();
-        }
-
-        auto absolutePath = NormalizePath(path);
-        std::string finalPath = absolutePath.generic_string();
-
-        // Try relative to assets directory first
-        if (auto rel = TryMakeRelative(absolutePath, GetAssetDirectory()))
-        {
-            finalPath = *rel;
-        }
-        // Fallback to project root
-        else if (auto rel = TryMakeRelative(absolutePath, GetProjectDirectory()))
-        {
-            finalPath = *rel;
-        }
-
-#ifdef CH_PLATFORM_WINDOWS
-        std::transform(finalPath.begin(), finalPath.end(), finalPath.begin(), ::tolower);
-        std::replace(finalPath.begin(), finalPath.end(), '\\', '/');
-#endif
-
-        return finalPath;
-    }
+    // Path utility helpers
+    [[nodiscard]] static std::filesystem::path NormalizePath(const std::filesystem::path& path);
+    [[nodiscard]] static std::optional<std::string> TryMakeRelative(const std::filesystem::path& absolutePath,
+                                                                    const std::filesystem::path& basePath);
 
     void SetActiveScenePath(const std::filesystem::path& path)
     {
@@ -260,10 +233,6 @@ private:
     static std::shared_ptr<Project> s_ActiveProject;
     static std::filesystem::path s_EngineRoot;
 
-    // Path utility helpers
-    static std::filesystem::path NormalizePath(const std::filesystem::path& path);
-    static std::optional<std::string> TryMakeRelative(const std::filesystem::path& absolutePath,
-                                                      const std::filesystem::path& basePath);
 
     friend class ProjectSerializer;
 };

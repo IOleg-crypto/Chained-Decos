@@ -61,26 +61,29 @@ Application::Application(const ApplicationSpecification& specification)
     windowProps.ImGuiConfigurationPath = "imgui_" + iniName + ".ini";
 #endif
 
-    if (Project::GetActive())
-    {
-        auto& projConfig = Project::GetActive()->GetConfig();
-        windowProps.Width = projConfig.Window.Width;
-        windowProps.Height = projConfig.Window.Height;
-        windowProps.VSync = projConfig.Window.VSync;
-        windowProps.Resizable = projConfig.Window.Resizable;
-    }
-
     // --- System Initialization ---
     m_ThreadPool = std::make_unique<ThreadPool>();
     m_Window = std::make_unique<Window>(windowProps);
     m_Running = true;
+
+    InitSystems();
+
+    // ImGui Layer setup (always needed for Editor/Debugging)
+    m_ImGuiLayer = new ImGuiLayer();
+    PushOverlay(m_ImGuiLayer);
+
+    CH_CORE_INFO("Application Initialized: {}", m_Specification.Name);
+}
+
+void Application::InitSystems()
+{
+    CH_PROFILE_FUNCTION();
 
     ComponentSerializer::Initialize();
     Renderer::Init();
     Physics::Init();
     ScriptEngine::Init();
 
-    // Audio setup
     Audio::Init();
     if (IsAudioDeviceReady())
     {
@@ -90,12 +93,6 @@ Application::Application(const ApplicationSpecification& specification)
     {
         CH_CORE_ERROR("Failed to initialize Audio Device!");
     }
-
-    // ImGui Layer setup
-    m_ImGuiLayer = new ImGuiLayer();
-    PushOverlay(m_ImGuiLayer);
-
-    CH_CORE_INFO("Application Initialized: {}", m_Specification.Name);
 }
 
 Application::~Application()
@@ -213,10 +210,7 @@ void Application::Run()
         // 3. Core Systems Update
         if (auto project = Project::GetActive())
         {
-            if (auto assetManager = project->GetAssetManager())
-            {
-                assetManager->Update();
-            }
+            project->GetAssetManager()->Update();
         }
 
         // 4. Layers Update & Rendering
