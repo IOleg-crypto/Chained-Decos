@@ -70,6 +70,7 @@ class Renderer
 public:
     static void Init();
     static void Shutdown();
+    static void LoadEngineResources(class AssetManager& assetManager);
 
     static bool IsInitialized()
     {

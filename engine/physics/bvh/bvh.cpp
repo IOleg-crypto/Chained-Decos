@@ -4,6 +4,7 @@
 #include "raymath.h"
 #include <algorithm>
 #include <future>
+#include "engine/core/thread_pool.h"
 
 namespace CHEngine
 {
@@ -546,12 +547,12 @@ std::future<std::shared_ptr<BVH>> BVH::BuildAsync(const Model& model, const Matr
     }
 
     // Capture snapshot by value (move)
-    return std::async(std::launch::async, [snapshot = std::move(snapshot)]() { return Build(snapshot); });
+    return ThreadPool::Get().Enqueue([snapshot = std::move(snapshot)]() { return Build(snapshot); });
 }
 
 std::future<std::shared_ptr<BVH>> BVH::BuildAsync(std::shared_ptr<ModelAsset> asset, const Matrix& transform)
 {
-    return std::async(std::launch::async, [asset, transform]() { return Build(asset, transform); });
+    return ThreadPool::Get().Enqueue([asset, transform]() { return Build(asset, transform); });
 }
 
 std::future<std::shared_ptr<BVH>> BVH::BuildAsync(const Model& model, const std::vector<Matrix>& globalTransforms,
@@ -598,7 +599,7 @@ std::future<std::shared_ptr<BVH>> BVH::BuildAsync(const Model& model, const std:
         snapshot.Meshes.push_back(std::move(meshSnap));
     }
 
-    return std::async(std::launch::async, [snapshot = std::move(snapshot)]() { return Build(snapshot); });
+    return ThreadPool::Get().Enqueue([snapshot = std::move(snapshot)]() { return Build(snapshot); });
 }
 
 void BVH::QueryAABB(const BoundingBox& box, std::vector<const CollisionTriangle*>& outTriangles) const

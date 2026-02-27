@@ -12,6 +12,9 @@
 #include "engine/graphics/shader_importer.h"
 #include "engine/graphics/texture_asset.h"
 #include "engine/graphics/texture_importer.h"
+#include "engine/core/thread_pool.h"
+#include "engine/scene/project.h"
+#include "engine/core/constants.h"
 
 #include <algorithm>
 #include <cmath>
@@ -88,9 +91,7 @@ void AssetManager::ClearSearchPaths()
 std::string AssetManager::ResolvePath(const std::string& path) const
 {
     if (path.empty())
-    {
         return "";
-    }
 
     {
         std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
@@ -103,25 +104,43 @@ std::string AssetManager::ResolvePath(const std::string& path) const
     std::filesystem::path p(path);
     if (p.is_absolute())
     {
-        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
-        m_PathCache[path] = path;
-        return path;
+        return Project::NormalizePath(p).generic_string();
     }
 
     std::string foundPath = "";
-    std::string pStr = p.generic_string();
-    if (!pStr.empty() && (pStr[0] == '/' || pStr[0] == '\\'))
+
+    // 1. Handle engine/ prefix for engine-specific assets
+    using namespace CHEngine::Constants;
+
+    if (path.starts_with(Paths::EnginePrefix))
     {
-        pStr = pStr.substr(1);
+        std::filesystem::path engineRoot = Project::GetEngineRoot();
+        if (!engineRoot.empty())
+        {
+            std::string sub = path.substr(Paths::EnginePrefixSize);
+            // Try relative to engine root
+            std::filesystem::path p1 = engineRoot / sub;
+            if (std::filesystem::exists(p1))
+            {
+                foundPath = p1.string();
+            }
+            else
+            {
+                // Try in engine/resources (standard layout)
+                std::filesystem::path p2 = engineRoot / "engine" / "resources" / sub;
+                if (std::filesystem::exists(p2))
+                    foundPath = p2.string();
+            }
+        }
     }
 
-    std::filesystem::path normalizedP(pStr);
-
+    // 2. Try Search Paths (provided by the user or editor)
+    if (foundPath.empty())
     {
         std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
         for (const auto& searchPath : m_SearchPaths)
         {
-            std::filesystem::path assetPath = searchPath / normalizedP;
+            std::filesystem::path assetPath = searchPath / path;
             if (std::filesystem::exists(assetPath))
             {
                 foundPath = assetPath.string();
@@ -130,27 +149,44 @@ std::string AssetManager::ResolvePath(const std::string& path) const
         }
     }
 
+    // 3. Try relative to Project Asset Directory or Project Root
     if (foundPath.empty())
     {
-        std::filesystem::path rootRel = m_RootPath / normalizedP;
-        if (std::filesystem::exists(rootRel))
+        std::filesystem::path assetDir = Project::GetAssetDirectory();
+        std::filesystem::path p1 = assetDir / path;
+        if (std::filesystem::exists(p1))
         {
-            foundPath = rootRel.string();
+            foundPath = p1.string();
+        }
+        else
+        {
+            std::filesystem::path projectRoot = Project::GetProjectDirectory();
+            std::filesystem::path p2 = projectRoot / path;
+            if (std::filesystem::exists(p2))
+                foundPath = p2.string();
         }
     }
 
+    // Final Fallback: use current directory or rootRel if set
+    if (foundPath.empty() && !m_RootPath.empty())
+    {
+        std::filesystem::path rootRel = m_RootPath / path;
+        if (std::filesystem::exists(rootRel))
+            foundPath = rootRel.string();
+    }
+
     if (foundPath.empty())
     {
-        CH_CORE_WARN("AssetManager: Could not resolve path '{}'. It doesn't exist in search paths or root.", path);
+        // Don't warn for engine/ assets during early init, they might load lazily
+        if (!path.starts_with("engine/"))
+            CH_CORE_WARN("AssetManager: Could not resolve asset path '{}'.", path);
         foundPath = path;
     }
-    std::string normalized = foundPath.empty() ? path : foundPath;
-#ifdef CH_PLATFORM_WINDOWS
-    std::transform(normalized.begin(), normalized.end(), normalized.begin(), ::tolower);
-    std::replace(normalized.begin(), normalized.end(), '\\', '/');
-#endif
 
-    CH_CORE_INFO("AssetManager: Resolved '{}' -> '{}' (normalized: '{}')", path, foundPath, normalized);
+    // Use Project::NormalizePath to handle absolute/relative and unify slashes WITHOUT forcing lowercase
+    std::string normalized = Project::NormalizePath(foundPath).generic_string();
+
+    CH_CORE_TRACE("AssetManager: Resolved '{}' -> '{}'", path, normalized);
     
     {
         std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
@@ -219,7 +255,7 @@ std::shared_ptr<Asset> AssetManager::GetAsset(const std::string& path, AssetType
         CH_CORE_INFO("AssetManager: [Main] Scheduling async load for '{}' (Type: {})", pathCopy, (int)type);
         std::weak_ptr<Asset> weakAsset = asset;
 
-        auto future = std::async(std::launch::async, [this, pathCopy, type, weakAsset]() {
+        auto future = ThreadPool::Get().Enqueue([this, pathCopy, type, weakAsset]() {
             auto sharedAsset = weakAsset.lock();
             if (!sharedAsset)
             {
