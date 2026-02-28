@@ -13,9 +13,6 @@ enum class EventType
     // --- Core System Events (classes defined below) ---
     WindowClose,
     WindowResize,
-    WindowFocus,
-    WindowLostFocus,
-    WindowMoved,
     KeyPressed,
     KeyReleased,
     KeyTyped,

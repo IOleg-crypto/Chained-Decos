@@ -42,7 +42,6 @@ public:
 
     void OnUpdate(); // Check if textures loaded and apply them
 
-    void UpdateAnimation(int animationIndex, int frame);
     const std::vector<RawAnimation>& GetRawAnimations() const
     {
         return m_Animations;

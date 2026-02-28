@@ -40,15 +40,9 @@ void ImGuiLayer::OnAttach()
     const auto& spec = app.GetSpecification();
     io.IniFilename = spec.ImGuiConfigurationPath.c_str();
 
-    // Enable docking and viewports
-    if (spec.EnableDocking)
-    {
-        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    }
-    if (spec.EnableViewports)
-    {
-        io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-    }
+    // Docking and viewports are always enabled
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     // Setup style
     ImGui::StyleColorsDark();

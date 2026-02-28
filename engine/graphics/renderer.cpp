@@ -3,7 +3,6 @@
 #include "engine/core/profiler.h"
 #include "engine/graphics/asset_manager.h"
 #include "engine/graphics/model_asset.h"
-#include "engine/graphics/render_command.h"
 #include "engine/graphics/renderer2d.h"
 #include "engine/graphics/scene_renderer.h"
 #include "engine/graphics/shader_asset.h"
@@ -29,7 +28,6 @@ void Renderer::Init()
 
     CH_CORE_INFO("Initializing Render System...");
 
-    RenderCommand::Initialize();
     Renderer2D::Init();
     UIRenderer::Init();
 
@@ -58,6 +56,7 @@ void Renderer::LoadEngineResources(AssetManager& assetManager)
     loadShader("Unlit", "engine/resources/shaders/unlit.chshader");
     loadShader("CubemapGen", "engine/resources/shaders/cubemap.chshader");
     loadShader("SkyboxCubemap", "engine/resources/shaders/skybox_cubemap.chshader");
+    loadShader("PostProcess", "engine/resources/shaders/post_process.chshader");
 
     // Icons
     auto loadIcon = [&](Texture2D& target, const std::string& path) {
@@ -109,19 +108,35 @@ Renderer::~Renderer()
 
     Renderer2D::Shutdown();
     UIRenderer::Shutdown();
-    RenderCommand::Shutdown();
 }
 
 void Renderer::BeginScene(const Camera3D& camera)
 {
-    EnsureShadersLoaded();
     m_Data->CurrentCameraPosition = camera.position;
 
-    // Update light SSBO if dirty
+    // Update light SSBO once per frame
     if (m_Data->LightsDirty)
     {
         rlUpdateShaderBuffer(m_Data->LightSSBO, m_Data->Lights, sizeof(RenderLight) * RendererData::MaxLights, 0);
         m_Data->LightsDirty = false;
+    }
+
+    // Push global shader uniforms once per frame for the Lighting shader
+    if (auto lightingShader = m_Data->Shaders->Exists("Lighting") ? m_Data->Shaders->Get("Lighting") : nullptr)
+    {
+        rlEnableShader(lightingShader->GetShader().id);
+        lightingShader->SetVec3("viewPos", camera.position);
+        lightingShader->SetFloat("uTime", m_Data->Time);
+        lightingShader->SetFloat("uMode", m_Data->DiagnosticMode);
+        lightingShader->SetVec3("lightDir", m_Data->CurrentLighting.Direction);
+        lightingShader->SetColor("lightColor", m_Data->CurrentLighting.LightColor);
+        lightingShader->SetFloat("ambient", m_Data->CurrentLighting.Ambient);
+        lightingShader->SetInt("uLightCount", m_Data->LightCount);
+        lightingShader->SetFloat("uExposure", m_Data->CurrentLighting.Exposure);
+        lightingShader->SetFloat("uGamma", m_Data->CurrentLighting.Gamma);
+        ApplyFogUniforms(lightingShader.get());
+        rlBindShaderBuffer(m_Data->LightSSBO, 0);
+        m_Data->CurrentShader = lightingShader.get();
     }
 
     BeginMode3D(camera);
@@ -135,12 +150,12 @@ void Renderer::EndScene()
 
 void Renderer::Clear(Color color)
 {
-    RenderCommand::Clear(color);
+    ClearBackground(color);
 }
 
 void Renderer::SetViewport(int x, int y, int width, int height)
 {
-    RenderCommand::SetViewport(x, y, width, height);
+    rlViewport(x, y, width, height);
 }
 
 void Renderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const Matrix& transform,
@@ -166,13 +181,6 @@ void Renderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const Ma
 
     Model& model = modelAsset->GetModel();
 
-    // Update SSBO if needed before any draw calls
-    if (m_Data->LightsDirty)
-    {
-        rlUpdateShaderBuffer(m_Data->LightSSBO, m_Data->Lights, sizeof(RenderLight) * RendererData::MaxLights, 0);
-        m_Data->LightsDirty = false;
-    }
-
     std::vector<Matrix> boneMatrices = ComputeBoneMatrices(modelAsset, animationIndex, frameIndex, targetAnimationIndex,
                                                            targetFrameIndex, blendWeight);
 
@@ -187,33 +195,21 @@ void Renderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const Ma
         if (activeShaderAsset)
         {
             ShaderAsset* shader = activeShaderAsset.get();
-            bool shaderChanged = (shader != m_Data->CurrentShader);
-
-            if (shaderChanged)
+            if (shader != m_Data->CurrentShader)
             {
+                // Shader switch — a non-default override shader; re-upload globals
                 rlEnableShader(shader->GetShader().id);
-                
-                // Set Global Uniforms
                 shader->SetVec3("viewPos", m_Data->CurrentCameraPosition);
                 shader->SetFloat("uTime", m_Data->Time);
                 shader->SetFloat("uMode", m_Data->DiagnosticMode);
-                
-                // Lighting
                 shader->SetVec3("lightDir", m_Data->CurrentLighting.Direction);
                 shader->SetColor("lightColor", m_Data->CurrentLighting.LightColor);
                 shader->SetFloat("ambient", m_Data->CurrentLighting.Ambient);
                 shader->SetInt("uLightCount", m_Data->LightCount);
-                
-                // Post-Processing
                 shader->SetFloat("uExposure", m_Data->CurrentLighting.Exposure);
                 shader->SetFloat("uGamma", m_Data->CurrentLighting.Gamma);
-
-                // Fog
                 ApplyFogUniforms(shader);
-
-                // SSBO
                 rlBindShaderBuffer(m_Data->LightSSBO, 0);
-
                 m_Data->CurrentShader = shader;
             }
 
@@ -241,12 +237,12 @@ void Renderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const Ma
 
 void Renderer::DrawLine(Vector3 startPosition, Vector3 endPosition, Color color)
 {
-    RenderCommand::DrawLine(startPosition, endPosition, color);
+    DrawLine3D(startPosition, endPosition, color);
 }
 
 void Renderer::DrawGrid(int sliceCount, float spacing)
 {
-    RenderCommand::DrawGrid(sliceCount, spacing);
+    ::DrawGrid(sliceCount, spacing);
 }
 
 void Renderer::DrawCubeWires(const Matrix& transform, Vector3 size, Color color)
@@ -427,8 +423,8 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
         }
     }
 
-    RenderCommand::DisableBackfaceCulling();
-    RenderCommand::DisableDepthMask();
+    rlDisableBackfaceCulling();
+    rlDisableDepthMask();
 
     Material& material = m_Data->SkyboxMaterial;
     material.shader = skyboxShader->GetShader();
@@ -438,8 +434,8 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
     {
         //CH_CORE_ERROR("Renderer::DrawSkybox: Texture asset ready but Raylib texture ID is 0! Path: {}",
                       //skybox.TexturePath);
-        RenderCommand::EnableBackfaceCulling();
-        RenderCommand::EnableDepthMask();
+        rlEnableBackfaceCulling();
+        rlEnableDepthMask();
         return;
     }
 
@@ -495,8 +491,8 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
     DrawMesh(m_Data->SkyboxCube.meshes[0], material,
              MatrixTranslate(camera.position.x, camera.position.y, camera.position.z));
 
-    RenderCommand::EnableBackfaceCulling();
-    RenderCommand::EnableDepthMask();
+    rlEnableBackfaceCulling();
+    rlEnableDepthMask();
 }
 
 void Renderer::DrawBillboard(const Camera3D& camera, Texture2D texture, Vector3 position, float size, Color color)
@@ -646,78 +642,6 @@ void Renderer::DrawModelInstanced(const std::shared_ptr<ModelAsset>& modelAsset,
     }
 }
 
-void Renderer::EnsureShadersLoaded()
-{
-    auto project = Project::GetActive();
-    if (!project)
-    {
-        return;
-    }
-
-    auto assetManager = project->GetAssetManager();
-    if (!assetManager)
-    {
-        return;
-    }
-
-    auto& lib = s_Instance->GetShaderLibrary();
-
-    // 1. Lighting Shader
-    if (!lib.Exists("Lighting"))
-    {
-        auto shader = assetManager->Get<ShaderAsset>("engine/resources/shaders/lighting.chshader");
-        if (shader)
-        {
-            lib.Add("Lighting", shader);
-            CH_CORE_INFO("Renderer: 'Lighting' shader loaded lazily.");
-        }
-    }
-
-    // 2. Skybox Shader
-    if (!lib.Exists("Skybox"))
-    {
-        auto shader = assetManager->Get<ShaderAsset>("engine/resources/shaders/skybox.chshader");
-        if (shader)
-        {
-            lib.Add("Skybox", shader);
-            CH_CORE_INFO("Renderer: 'Skybox' shader loaded lazily.");
-        }
-    }
-
-    // 3. Skybox Cubemap Shader
-    if (!lib.Exists("SkyboxCubemap"))
-    {
-        auto shader = assetManager->Get<ShaderAsset>("engine/resources/shaders/skybox_cubemap.chshader");
-        if (shader)
-        {
-            lib.Add("SkyboxCubemap", shader);
-            CH_CORE_INFO("Renderer: 'SkyboxCubemap' shader loaded lazily.");
-        }
-    }
-
-    // 4. Cubemap Generation Shader
-    if (!lib.Exists("CubemapGen"))
-    {
-        auto shader = assetManager->Get<ShaderAsset>("engine/resources/shaders/cubemap.chshader");
-        if (shader)
-        {
-            lib.Add("CubemapGen", shader);
-            CH_CORE_INFO("Renderer: 'CubemapGen' shader loaded lazily.");
-        }
-    }
-
-    // 5. PostProcess Shader
-    if (!lib.Exists("PostProcess"))
-    {
-        auto shader = assetManager->Get<ShaderAsset>("engine/resources/shaders/post_process.chshader");
-        if (shader)
-        {
-            lib.Add("PostProcess", shader);
-            CH_CORE_INFO("Renderer: 'PostProcess' shader loaded lazily.");
-        }
-    }
-}
-
 std::vector<Matrix> Renderer::ComputeBoneMatrices(const std::shared_ptr<ModelAsset>& modelAsset, int animationIndex,
                                                   float frameIndex, int targetAnimationIndex, float targetFrameIndex,
                                                   float blendWeight)
@@ -740,8 +664,15 @@ std::vector<Matrix> Renderer::ComputeBoneMatrices(const std::shared_ptr<ModelAss
         return {};
     }
 
-    std::vector<Matrix> boneMatrices(model.boneCount);
-    std::vector<Matrix> globalPose(model.boneCount);
+    const int boneCount = model.boneCount;
+
+    // Reuse pre-allocated scratch buffers — avoids heap allocations each frame
+    auto& boneMatrices = m_Data->ScratchBoneMatrices;
+    auto& globalPose   = m_Data->ScratchGlobalPose;
+    auto& localPoseA   = m_Data->ScratchLocalPoseA;
+    boneMatrices.resize(boneCount);
+    globalPose.resize(boneCount);
+    localPoseA.resize(boneCount);
 
     auto CalculateLocalPose = [&](int animIdx, float fIdx, std::vector<Transform>& outLocalPose) {
         const auto& animations = modelAsset->GetRawAnimations();
@@ -754,81 +685,62 @@ std::vector<Matrix> Renderer::ComputeBoneMatrices(const std::shared_ptr<ModelAss
 
             for (int i = 0; i < anim.boneCount; i++)
             {
-                Transform t = anim.framePoses[currentFrame * anim.boneCount + i];
-                Transform tNext = anim.framePoses[nextFrame * anim.boneCount + i];
+                Transform t     = anim.framePoses[currentFrame * anim.boneCount + i];
+                Transform tNext = anim.framePoses[nextFrame    * anim.boneCount + i];
 
                 outLocalPose[i].translation = Vector3Lerp(t.translation, tNext.translation, interp);
-                outLocalPose[i].rotation = QuaternionSlerp(t.rotation, tNext.rotation, interp);
-                outLocalPose[i].scale = Vector3Lerp(t.scale, tNext.scale, interp);
+                outLocalPose[i].rotation    = QuaternionSlerp(t.rotation, tNext.rotation, interp);
+                outLocalPose[i].scale       = Vector3Lerp(t.scale, tNext.scale, interp);
             }
             return true;
         }
         return false;
     };
 
-    std::vector<Transform> localPoseA(model.boneCount);
     bool hasA = CalculateLocalPose(animationIndex, frameIndex, localPoseA);
-
     if (!hasA)
     {
-        // Default bind pose
-        for (int i = 0; i < model.boneCount; i++)
-        {
+        for (int i = 0; i < boneCount; i++)
             localPoseA[i] = model.bindPose[i];
-        }
     }
 
     if (targetAnimationIndex >= 0 && blendWeight > 0.0f)
     {
-        std::vector<Transform> localPoseB(model.boneCount);
+        auto& localPoseB = m_Data->ScratchLocalPoseB;
+        localPoseB.resize(boneCount);
         if (CalculateLocalPose(targetAnimationIndex, targetFrameIndex, localPoseB))
         {
-            // Blend A and B
-            for (int i = 0; i < model.boneCount; i++)
+            for (int i = 0; i < boneCount; i++)
             {
-                localPoseA[i].translation =
-                    Vector3Lerp(localPoseA[i].translation, localPoseB[i].translation, blendWeight);
-                localPoseA[i].rotation = QuaternionSlerp(localPoseA[i].rotation, localPoseB[i].rotation, blendWeight);
-                localPoseA[i].scale = Vector3Lerp(localPoseA[i].scale, localPoseB[i].scale, blendWeight);
+                localPoseA[i].translation = Vector3Lerp(localPoseA[i].translation, localPoseB[i].translation, blendWeight);
+                localPoseA[i].rotation    = QuaternionSlerp(localPoseA[i].rotation, localPoseB[i].rotation, blendWeight);
+                localPoseA[i].scale       = Vector3Lerp(localPoseA[i].scale, localPoseB[i].scale, blendWeight);
             }
         }
     }
 
     // Convert local transforms to global matrices
-    for (int i = 0; i < model.boneCount; i++)
+    for (int i = 0; i < boneCount; i++)
     {
         Matrix localMat = MatrixMultiply(
             QuaternionToMatrix(localPoseA[i].rotation),
             MatrixTranslate(localPoseA[i].translation.x, localPoseA[i].translation.y, localPoseA[i].translation.z));
-        localMat =
-            MatrixMultiply(MatrixScale(localPoseA[i].scale.x, localPoseA[i].scale.y, localPoseA[i].scale.z), localMat);
+        localMat = MatrixMultiply(
+            MatrixScale(localPoseA[i].scale.x, localPoseA[i].scale.y, localPoseA[i].scale.z), localMat);
 
         int parent = model.bones[i].parent;
-        if (parent == -1)
-        {
-            globalPose[i] = localMat;
-        }
-        else
-        {
-            globalPose[i] = MatrixMultiply(globalPose[parent], localMat);
-        }
+        globalPose[i] = (parent == -1) ? localMat : MatrixMultiply(globalPose[parent], localMat);
     }
 
     // Compute final skinning matrices
-    for (int i = 0; i < model.boneCount; i++)
+    for (int i = 0; i < boneCount; i++)
     {
-        if (i < (int)offsetMatrices.size())
-        {
-            boneMatrices[i] = MatrixMultiply(offsetMatrices[i], globalPose[i]);
-        }
-        else
-        {
-            // For node-based hierarchy without skinning offsets, use global pose directly
-            boneMatrices[i] = globalPose[i];
-        }
+        boneMatrices[i] = (i < (int)offsetMatrices.size())
+            ? MatrixMultiply(offsetMatrices[i], globalPose[i])
+            : globalPose[i];
     }
 
-    return boneMatrices;
+    return boneMatrices; // RVO applies — no copy in practice
 }
 
 Material Renderer::ResolveMaterialForMesh(int meshIndex, const Model& model,
