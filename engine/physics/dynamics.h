@@ -18,7 +18,6 @@ public:
 private:
     void ApplyGravity(entt::registry& registry, entt::entity entity, float gravity, float deltaTime);
     void IntegrateVelocity(entt::registry& registry, entt::entity entity, float deltaTime);
-    void LogDiagnostics(entt::registry& registry, entt::entity entity);
 };
 } // namespace CHEngine
 

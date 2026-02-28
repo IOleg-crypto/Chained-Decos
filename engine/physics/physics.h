@@ -72,6 +72,9 @@ private: // Members
     std::unordered_map<ModelAsset*, std::shared_future<std::shared_ptr<BVH>>> m_BVHCache;
     mutable std::mutex m_BVHMutex;
     float m_Accumulator = 0.0f;
+
+    // Persistent asset cache for collider shape computation (avoids per-frame allocation)
+    std::unordered_map<std::string, std::shared_ptr<ModelAsset>> m_ColliderAssetCache;
 };
 } // namespace CHEngine
 

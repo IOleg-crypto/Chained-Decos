@@ -42,21 +42,21 @@ void Physics::Update(Timestep deltaTime, bool runtime)
     CH_PROFILE_FUNCTION();
     CH_CORE_ASSERT(m_Scene, "Physics Scene is null!");
 
-    // 1. Diagnostics & Stats
+    // Reset collision flags every frame (needed for debug visualisation)
+    auto& registry = m_Scene->GetRegistry();
+    auto collView = registry.view<ColliderComponent>();
+    for (auto entity : collView)
+        collView.get<ColliderComponent>(entity).IsColliding = false;
+
+    // Collider shape recalc and simulation only when playing
+    if (!runtime)
+        return;
+
     UpdateColliders();
 
-    if (!runtime)
-    {
-        return;
-    }
-
-    // 3. Simulation & Resolution (Fixed Timestep)
     float fixedTimestep = 1.0f / 60.0f;
-    auto project = Project::GetActive();
-    if (project)
-    {
+    if (auto project = Project::GetActive())
         fixedTimestep = project->GetConfig().Physics.FixedTimestep;
-    }
 
     m_Accumulator += deltaTime;
     while (m_Accumulator >= fixedTimestep)
@@ -125,48 +125,36 @@ void Physics::UpdateBVHCache(ModelAsset* asset, std::shared_ptr<BVH> bvh)
 void Physics::UpdateColliders()
 {
     auto& registry = m_Scene->GetRegistry();
-
-    // 1. Reset Collision State
-    auto collView = registry.view<ColliderComponent>();
-    for (auto entity : collView)
-    {
-        collView.get<ColliderComponent>(entity).IsColliding = false;
-    }
-
-    // 2. Auto-Calculate Colliders from Assets
     auto project = Project::GetActive();
     if (!project || !project->GetAssetManager())
-    {
         return;
-    }
 
     auto genView = registry.view<ColliderComponent, TransformComponent>();
-    std::unordered_map<std::string, std::shared_ptr<ModelAsset>> assetCache;
 
     for (auto entity : genView)
     {
         auto& collider = genView.get<ColliderComponent>(entity);
 
-        // Case A: Box Collider (Auto)
+        // Case A: Box Collider (Auto) — compute once; static meshes don't change
         if (collider.Type == ColliderType::Box && collider.AutoCalculate)
         {
             if (!registry.all_of<ModelComponent>(entity))
-            {
                 continue;
-            }
 
             auto& model = registry.get<ModelComponent>(entity);
-            if (assetCache.find(model.ModelPath) == assetCache.end())
-            {
-                assetCache[model.ModelPath] = project->GetAssetManager()->Get<ModelAsset>(model.ModelPath);
-            }
-            auto asset = assetCache[model.ModelPath];
+            auto& asset = m_ColliderAssetCache[model.ModelPath];
+            if (!asset)
+                asset = project->GetAssetManager()->Get<ModelAsset>(model.ModelPath);
 
             if (asset && asset->GetState() == AssetState::Ready)
             {
-                BoundingBox box = asset->GetBoundingBox();
-                collider.Size = Vector3Subtract(box.max, box.min);
-                collider.Offset = box.min;
+                // Only recalculate if size hasn't been set yet
+                if (collider.Size.x == 0 && collider.Size.y == 0 && collider.Size.z == 0)
+                {
+                    BoundingBox box = asset->GetBoundingBox();
+                    collider.Size   = Vector3Subtract(box.max, box.min);
+                    collider.Offset = box.min;
+                }
             }
             continue;
         }
@@ -174,26 +162,21 @@ void Physics::UpdateColliders()
         // Case B: Mesh Collider (BVH)
         if (collider.Type == ColliderType::Mesh && !collider.ModelPath.empty())
         {
-            if (assetCache.find(collider.ModelPath) == assetCache.end())
-            {
-                assetCache[collider.ModelPath] = project->GetAssetManager()->Get<ModelAsset>(collider.ModelPath);
-            }
-            auto asset = assetCache[collider.ModelPath];
+            auto& asset = m_ColliderAssetCache[collider.ModelPath];
+            if (!asset)
+                asset = project->GetAssetManager()->Get<ModelAsset>(collider.ModelPath);
 
             if (asset && asset->GetState() == AssetState::Ready && asset->GetModel().meshCount > 0)
             {
-                // Always try to fetch BVH - if asset changed, GetBVH will return the new one (or null if building)
                 auto bvh = GetBVH(asset.get());
                 if (bvh)
-                {
                     collider.BVHRoot = bvh;
-                }
 
-                if (collider.AutoCalculate && collider.BVHRoot)
+                if (collider.AutoCalculate && collider.BVHRoot && collider.Size.x == 0)
                 {
                     BoundingBox box = asset->GetBoundingBox();
                     collider.Offset = box.min;
-                    collider.Size = Vector3Subtract(box.max, box.min);
+                    collider.Size   = Vector3Subtract(box.max, box.min);
                 }
             }
             continue;
@@ -203,18 +186,14 @@ void Physics::UpdateColliders()
         if (collider.Type == ColliderType::Sphere && collider.AutoCalculate)
         {
             if (!registry.all_of<ModelComponent>(entity))
-            {
                 continue;
-            }
 
             auto& model = registry.get<ModelComponent>(entity);
-            if (assetCache.find(model.ModelPath) == assetCache.end())
-            {
-                assetCache[model.ModelPath] = project->GetAssetManager()->Get<ModelAsset>(model.ModelPath);
-            }
-            auto asset = assetCache[model.ModelPath];
+            auto& asset = m_ColliderAssetCache[model.ModelPath];
+            if (!asset)
+                asset = project->GetAssetManager()->Get<ModelAsset>(model.ModelPath);
 
-            if (asset && asset->GetState() == AssetState::Ready)
+            if (asset && asset->GetState() == AssetState::Ready && collider.Radius == 0)
             {
                 BoundingBox box = asset->GetBoundingBox();
                 Vector3 size = Vector3Subtract(box.max, box.min);
