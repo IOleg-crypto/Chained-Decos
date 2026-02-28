@@ -2,46 +2,35 @@
 # Chained Engine - Dependencies
 # Extracted from root CMakeLists.txt for modularity
 
-include(FetchContent)
-
-find_package(Threads REQUIRED)
-
-# ============================================================================
-# FetchContent Dependencies
-# ============================================================================
-
 # yaml-cpp
 set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
 set(YAML_CPP_BUILD_CONTRIB OFF CACHE BOOL "" FORCE)
 
-FetchContent_Declare(
-    yaml-cpp
-    GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
-    GIT_TAG 0.8.0
-)
+if(EXISTS "${CMAKE_SOURCE_DIR}/include/yaml-cpp/CMakeLists.txt")
+    add_subdirectory(include/yaml-cpp)
+    set(yaml-cpp_SOURCE_DIR "${CMAKE_SOURCE_DIR}/include/yaml-cpp")
+else()
+    message(FATAL_ERROR "yaml-cpp submodule not found! Run: git submodule update --init --recursive")
+endif()
 
 # ImGuizmo (Manipulators)
-FetchContent_Declare(
-    imguizmo
-    GIT_REPOSITORY https://github.com/CedricGuillemet/ImGuizmo.git
-    GIT_TAG master
-)
+set(imguizmo_SOURCE_DIR "${CMAKE_SOURCE_DIR}/include/imguizmo")
 
-FetchContent_Declare(
-    glm
-    GIT_REPOSITORY https://github.com/g-truc/glm.git
-    GIT_TAG 0af55ccecd98d4e5a8d1fad7de25ba429d60e863 #refs/tags/1.0.1
-)
+# GLM
+if(EXISTS "${CMAKE_SOURCE_DIR}/include/glm/CMakeLists.txt")
+    # GLM is header-only but provides CMake integration
+    add_subdirectory(include/glm)
+else()
+    message(FATAL_ERROR "glm submodule not found! Run: git submodule update --init --recursive")
+endif()
 
 # Coral (for C# scripting integration)
-FetchContent_Declare(
-    coral
-    GIT_REPOSITORY https://github.com/StudioCherno/Coral.git
-    # Pin to a stable commit that includes NativeString and NativeArray (InterOp types)
-    GIT_TAG 25437c915b452a08949d636d154a766d6c65601a
-    SOURCE_SUBDIR cmake
-)
+if(EXISTS "${CMAKE_SOURCE_DIR}/include/coral/cmake/CMakeLists.txt")
+    add_subdirectory(include/coral/cmake)
+else()
+    message(FATAL_ERROR "coral submodule not found! Run: git submodule update --init --recursive")
+endif()
 
 # assimp (Asset Importer Library)
 set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
@@ -54,17 +43,14 @@ set(ASSIMP_NO_EXPORT ON CACHE BOOL "" FORCE)
 # Ensure no unity build for assimp or its subprojects
 set(CMAKE_UNITY_BUILD OFF) 
 
-FetchContent_Declare(
-    assimp
-    GIT_REPOSITORY https://github.com/assimp/assimp.git
-    GIT_TAG v5.3.1
-)
-
-FetchContent_MakeAvailable(yaml-cpp imguizmo glm assimp coral)
-
-# Disable unity build for assimp to avoid header/namespace conflicts
-if(TARGET assimp)
-    set_target_properties(assimp PROPERTIES UNITY_BUILD OFF)
+if(EXISTS "${CMAKE_SOURCE_DIR}/include/assimp/CMakeLists.txt")
+    add_subdirectory(include/assimp)
+    # Disable unity build for assimp to avoid header/namespace conflicts
+    if(TARGET assimp)
+        set_target_properties(assimp PROPERTIES UNITY_BUILD OFF)
+    endif()
+else()
+    message(FATAL_ERROR "assimp submodule not found! Run: git submodule update --init --recursive")
 endif()
 
 # ============================================================================
