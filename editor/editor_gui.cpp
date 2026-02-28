@@ -14,7 +14,10 @@
 #include "imgui_internal.h"
 #include "nfd.h"
 #include "raymath.h"
+#include <cstring>
 #include <filesystem>
+#include <iterator>
+#include <string>
 
 namespace CHEngine
 {
@@ -140,6 +143,31 @@ void EditorGUI::DrawMenuBar(EditorPanels& panels)
     ImGui::EndMenuBar();
 }
 
+void EditorGUI::BeginPropertyGrid()
+{
+}
+
+void EditorGUI::EndPropertyGrid()
+{
+}
+
+void EditorGUI::BeginProperty(const char* label)
+{
+    ImGui::Columns(2);
+    ImGui::SetColumnWidth(0, 100.0f);
+    ImGui::Text(label);
+    ImGui::NextColumn();
+    ImGui::PushItemWidth(-1);
+    ImGui::PushID(label);
+}
+
+void EditorGUI::EndProperty()
+{
+    ImGui::PopID();
+    ImGui::PopItemWidth();
+    ImGui::Columns(1);
+}
+
 PropertyBuilder EditorGUI::Begin()
 {
     return PropertyBuilder();
@@ -149,58 +177,46 @@ PropertyBuilder EditorGUI::Begin()
 
 bool EditorGUI::Property(const char* label, bool& value)
 {
-    DrawPropertyLabel(label);
-    ImGui::PushID(label);
+    BeginProperty(label);
     bool changed = ImGui::Checkbox("##prop", &value);
-    ImGui::PopID();
+    EndProperty();
     return changed;
 }
 
 bool EditorGUI::Property(const char* label, float& value, float speed, float min, float max)
 {
-    DrawPropertyLabel(label);
-    ImGui::PushID(label);
-    ImGui::PushItemWidth(-1);
+    BeginProperty(label);
     bool changed = ImGui::DragFloat("##prop", &value, speed, min, max);
-    ImGui::PopItemWidth();
-    ImGui::PopID();
+    EndProperty();
     return changed;
 }
 
 bool EditorGUI::Property(const char* label, int& value, int min, int max)
 {
-    DrawPropertyLabel(label);
-    ImGui::PushID(label);
-    ImGui::PushItemWidth(-1);
+    BeginProperty(label);
     bool changed = ImGui::DragInt("##prop", &value, 1.0f, min, max);
-    ImGui::PopItemWidth();
-    ImGui::PopID();
+    EndProperty();
     return changed;
 }
 
 bool EditorGUI::Property(const char* label, std::string& value, bool multiline)
 {
-    DrawPropertyLabel(label);
-    ImGui::PushID(label);
-    ImGui::PushItemWidth(-1);
-    char buffer[256] = {0};
-    value.copy(buffer, sizeof(buffer) - 1);
+    BeginProperty(label);
+    char buffer[1024] = {0};
+    strncpy(buffer, value.c_str(), sizeof(buffer) - 1);
     bool changed = multiline ? ImGui::InputTextMultiline("##prop", buffer, sizeof(buffer))
                              : ImGui::InputText("##prop", buffer, sizeof(buffer));
     if (changed)
     {
         value = buffer;
     }
-    ImGui::PopItemWidth();
-    ImGui::PopID();
+    EndProperty();
     return changed;
 }
 
 bool EditorGUI::Property(const char* label, Color& value)
 {
-    DrawPropertyLabel(label);
-    ImGui::PushID(label);
-    ImGui::PushItemWidth(-1);
+    BeginProperty(label);
     float c[4] = {value.r / 255.0f, value.g / 255.0f, value.b / 255.0f, value.a / 255.0f};
     bool changed = ImGui::ColorEdit4("##prop", c);
     if (changed)
@@ -208,8 +224,7 @@ bool EditorGUI::Property(const char* label, Color& value)
         value = {(unsigned char)(c[0] * 255), (unsigned char)(c[1] * 255), (unsigned char)(c[2] * 255),
                  (unsigned char)(c[3] * 255)};
     }
-    ImGui::PopItemWidth();
-    ImGui::PopID();
+    EndProperty();
     return changed;
 }
 
@@ -346,18 +361,56 @@ bool EditorGUI::DrawVec2(const char* label, Vector2& values, float resetValue)
 {
     bool changed = false;
     ImGui::PushID(label);
-    DrawPropertyLabel(label);
 
-    ImGui::PushMultiItemsWidths(2, ImGui::CalcItemWidth());
+    ImGui::Columns(2);
+    ImGui::SetColumnWidth(0, 80.0f);
+    ImGui::Text(label);
+    ImGui::NextColumn();
+
+    ImGui::PushMultiItemsWidths(2, ImGui::GetContentRegionAvail().x);
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0, 0});
+
     float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
     ImVec2 buttonSize = {lineHeight + 3.0f, lineHeight};
 
-    DrawPropertyControl("##X", values.x, {0.8f, 0.1f, 0.15f, 1.0f}, "X", buttonSize, resetValue, changed);
+    auto& style = ImGui::GetStyle();
+    auto boldFont = ImGui::GetIO().Fonts->Fonts[0]; // Assuming first font is bold or we use standard
+
+    // X
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.9f, 0.2f, 0.2f, 1.0f});
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
+    if (ImGui::Button("X", buttonSize))
+    {
+        values.x = resetValue;
+        changed = true;
+    }
+    ImGui::PopStyleColor(3);
+
     ImGui::SameLine();
-    DrawPropertyControl("##Y", values.y, {0.2f, 0.7f, 0.2f, 1.0f}, "Y", buttonSize, resetValue, changed);
+    if (ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f"))
+        changed = true;
+    ImGui::PopItemWidth();
+    ImGui::SameLine();
+
+    // Y
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.3f, 0.8f, 0.3f, 1.0f});
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
+    if (ImGui::Button("Y", buttonSize))
+    {
+        values.y = resetValue;
+        changed = true;
+    }
+    ImGui::PopStyleColor(3);
+
+    ImGui::SameLine();
+    if (ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f"))
+        changed = true;
+    ImGui::PopItemWidth();
 
     ImGui::PopStyleVar();
+    ImGui::Columns(1);
     ImGui::PopID();
     return changed;
 }
@@ -434,20 +487,69 @@ bool EditorGUI::DrawVec3(const char* label, Vector3& values, float resetValue)
     bool changed = false;
     ImGui::PushID(label);
 
-    DrawPropertyLabel(label);
+    ImGui::Columns(2);
+    ImGui::SetColumnWidth(0, 80.0f);
+    ImGui::Text(label);
+    ImGui::NextColumn();
 
-    ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
+    ImGui::PushMultiItemsWidths(3, ImGui::GetContentRegionAvail().x);
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0, 0});
+
     float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
     ImVec2 buttonSize = {lineHeight + 3.0f, lineHeight};
 
-    DrawPropertyControl("##X", values.x, {0.8f, 0.1f, 0.15f, 1.0f}, "X", buttonSize, resetValue, changed);
+    // X
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.9f, 0.2f, 0.2f, 1.0f});
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
+    if (ImGui::Button("X", buttonSize))
+    {
+        values.x = resetValue;
+        changed = true;
+    }
+    ImGui::PopStyleColor(3);
+
     ImGui::SameLine();
-    DrawPropertyControl("##Y", values.y, {0.2f, 0.7f, 0.2f, 1.0f}, "Y", buttonSize, resetValue, changed);
+    if (ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f"))
+        changed = true;
+    ImGui::PopItemWidth();
     ImGui::SameLine();
-    DrawPropertyControl("##Z", values.z, {0.1f, 0.25f, 0.8f, 1.0f}, "Z", buttonSize, resetValue, changed);
+
+    // Y
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.3f, 0.8f, 0.3f, 1.0f});
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
+    if (ImGui::Button("Y", buttonSize))
+    {
+        values.y = resetValue;
+        changed = true;
+    }
+    ImGui::PopStyleColor(3);
+
+    ImGui::SameLine();
+    if (ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f"))
+        changed = true;
+    ImGui::PopItemWidth();
+    ImGui::SameLine();
+
+    // Z
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.2f, 0.35f, 0.9f, 1.0f});
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
+    if (ImGui::Button("Z", buttonSize))
+    {
+        values.z = resetValue;
+        changed = true;
+    }
+    ImGui::PopStyleColor(3);
+
+    ImGui::SameLine();
+    if (ImGui::DragFloat("##Z", &values.z, 0.1f, 0.0f, 0.0f, "%.2f"))
+        changed = true;
+    ImGui::PopItemWidth();
 
     ImGui::PopStyleVar();
+    ImGui::Columns(1);
     ImGui::PopID();
 
     return changed;
