@@ -21,6 +21,12 @@ public:
     // --- Menu System ---
     static void DrawMenuBar(EditorPanels& panels);
 
+    // --- Property Layout Helpers ---
+    static void BeginPropertyGrid();
+    static void EndPropertyGrid();
+    static void BeginProperty(const char* label);
+    static void EndProperty();
+
     // --- Property Widgets (Single) ---
     // Simple declarative widgets that don't use columns
     static bool Property(const char* label, bool& value);

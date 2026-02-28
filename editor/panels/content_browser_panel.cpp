@@ -122,9 +122,31 @@ void ContentBrowserPanel::RenderToolbar()
     // Breadcrumbs
     std::error_code ec;
     auto relPath = std::filesystem::relative(m_CurrentDirectory, m_RootDirectory, ec);
-    std::string rel = (ec || relPath.empty() || relPath == ".") ? "Assets" : relPath.generic_string();
+    
+    if (ImGui::Button("Assets"))
+    {
+        m_CurrentDirectory = m_RootDirectory;
+        RefreshDirectory();
+    }
 
-    ImGui::Text("  %s", rel.c_str());
+    if (!ec && !relPath.empty() && relPath != ".")
+    {
+        std::filesystem::path accumulated = m_RootDirectory;
+        for (const auto& part : relPath)
+        {
+            ImGui::SameLine();
+            ImGui::Text("/");
+            ImGui::SameLine();
+            
+            accumulated /= part;
+            if (ImGui::Button(part.string().c_str()))
+            {
+                m_CurrentDirectory = accumulated;
+                RefreshDirectory();
+                break;
+            }
+        }
+    }
 
     // Icon Scale Slider (Right aligned)
     ImGui::SameLine(ImGui::GetWindowWidth() - 160.0f);
