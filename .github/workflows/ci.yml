@@ -71,7 +71,7 @@ jobs:
           path: |
             ~/.ccache
             ${{ runner.os == 'Windows' && '~/AppData/Local/ccache' || '' }}
-            build/${{ matrix.config_preset }}/_deps
+
           key: ${{ runner.os }}-${{ matrix.preset }}-${{ hashFiles('**/CMakeLists.txt', 'CMakePresets.json', 'cmake/*.cmake') }}
           restore-keys: |
             ${{ runner.os }}-${{ matrix.preset }}-
@@ -152,13 +152,6 @@ jobs:
           else
             ctest --test-dir "$BUILD_DIR" -C "$config" --output-on-failure --timeout 300 --output-junit junit.xml
           fi
-
-      - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v4
-        if: always()
-        with:
-          report_paths: '**/junit.xml'
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Artifacts
         if: always()
