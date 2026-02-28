@@ -6,7 +6,7 @@ set(ENGINE_INCLUDE_DIRS
     ${glm_SOURCE_DIR}
     ${yaml-cpp_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/entt/src
-    ${coral_SOURCE_DIR}/Coral.Native/Include
+    ${CMAKE_SOURCE_DIR}/include/coral/Coral.Native/Include
     ${CMAKE_SOURCE_DIR}/include/raylib/src
 )
 

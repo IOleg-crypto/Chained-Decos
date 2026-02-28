@@ -4,7 +4,7 @@
 
 namespace CHEngine
 {
-static ThreadPool* s_Instance = nullptr;
+ThreadPool* ThreadPool::s_Instance = nullptr;
 
 ThreadPool& ThreadPool::Get()
 {
@@ -18,6 +18,9 @@ ThreadPool::ThreadPool(size_t threads)
     {
         s_Instance = this;
     }
+    
+    CH_CORE_INFO("ThreadPool: Initializing with {} threads", threads);
+
     for (size_t i = 0; i < threads; ++i)
     {
         m_Workers.emplace_back([this] { WorkerThread(); });
@@ -27,6 +30,10 @@ ThreadPool::ThreadPool(size_t threads)
 ThreadPool::~ThreadPool()
 {
     Shutdown();
+    if (s_Instance == this)
+    {
+        s_Instance = nullptr;
+    }
 }
 
 void ThreadPool::Shutdown()
