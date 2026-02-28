@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ChainedDecos.Scripts")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+77bfe51369b18248ef12260540fddad274ac74c9")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7e57be61e9481e6a633cadcb5392381966c7d2c4")]
 [assembly: System.Reflection.AssemblyProductAttribute("ChainedDecos.Scripts")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ChainedDecos.Scripts")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

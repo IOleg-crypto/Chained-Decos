@@ -13,6 +13,8 @@
 #include "nfd.h"
 #include "raymath.h"
 #include <yaml-cpp/yaml.h>
+#include <iterator>
+#include <algorithm>
 
 namespace CHEngine
 {
@@ -87,19 +89,18 @@ void PropertyEditor::Init()
     Register<TransformComponent>("Transform", [](auto& component, auto entity) {
         bool changed = false;
         if (EditorGUI::DrawVec3("Position", component.Translation))
-        {
             changed = true;
-        }
+        
         if (EditorGUI::DrawVec3("Rotation", component.Rotation))
         {
             component.RotationQuat = QuaternionFromEuler(component.Rotation.x * DEG2RAD, component.Rotation.y * DEG2RAD,
                                                          component.Rotation.z * DEG2RAD);
             changed = true;
         }
+        
         if (EditorGUI::DrawVec3("Scale", component.Scale, 1.0f))
-        {
             changed = true;
-        }
+            
         return changed;
     });
     s_ComponentRegistry[entt::type_hash<TransformComponent>::value()].AllowAdd = false;
@@ -207,40 +208,52 @@ void PropertyEditor::Init()
     });
 
     Register<LightComponent>("Light", [](auto& component, auto entity) {
-        auto pb = EditorGUI::Begin();
+        bool changed = false;
 
         const char* lightTypeStrings[] = {"Point", "Spot"};
         int lightType = (int)component.Type;
         if (EditorGUI::Property("Type", lightType, lightTypeStrings, 2))
         {
             component.Type = (LightType)lightType;
-            pb.Changed = true;
+            changed = true;
         }
 
-        pb.Color("Color", component.LightColor)
-            .Float("Intensity", component.Intensity, 0.1f, 0.0f, 100.0f)
-            .Float("Radius", component.Radius, 0.1f, 0.0f, 1000.0f);
+        if (EditorGUI::Property("Color", component.LightColor))
+            changed = true;
+        if (EditorGUI::Property("Intensity", component.Intensity, 0.1f, 0.0f, 100.0f))
+            changed = true;
+        if (EditorGUI::Property("Radius", component.Radius, 0.1f, 0.0f, 1000.0f))
+            changed = true;
 
         if (component.Type == LightType::Spot)
         {
-            pb.Float("Inner Cutoff", component.InnerCutoff, 0.1f, 0.0f, 90.0f)
-                .Float("Outer Cutoff", component.OuterCutoff, 0.1f, 0.0f, 90.0f);
+            if (EditorGUI::Property("Inner Cutoff", component.InnerCutoff, 0.1f, 0.0f, 90.0f))
+                changed = true;
+            if (EditorGUI::Property("Outer Cutoff", component.OuterCutoff, 0.1f, 0.0f, 90.0f))
+                changed = true;
         }
 
         if (component.Radius <= 0.01f)
         {
-            ImGui::TextColored({1, 1, 0, 1}, ICON_FA_CIRCLE_EXCLAMATION " Radius is 0 (Invisible!)");
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, 100.0f);
+            ImGui::NextColumn();
+            ImGui::TextColored({1, 1, 0, 1}, ICON_FA_CIRCLE_EXCLAMATION " Radius is 0");
+            ImGui::Columns(1);
         }
 
-        return pb.Changed;
+        return changed;
     });
 
     Register<RigidBodyComponent>("RigidBody", [](auto& component, auto entity) {
-        auto pb = EditorGUI::Begin();
-        pb.Float("Mass", component.Mass, 0.1f, 0.0f, 1000.0f)
-            .Bool("Use Gravity", component.UseGravity)
-            .Bool("Is Kinematic", component.IsKinematic);
-        return pb.Changed;
+        bool changed = false;
+        if (EditorGUI::Property("Mass", component.Mass, 0.1f, 0.0f, 1000.0f))
+            changed = true;
+        if (EditorGUI::Property("Use Gravity", component.UseGravity))
+            changed = true;
+        if (EditorGUI::Property("Is Kinematic", component.IsKinematic))
+            changed = true;
+        return changed;
     });
 
     Register<ColliderComponent>("Collider", [](auto& component, auto entity) {
@@ -254,71 +267,63 @@ void PropertyEditor::Init()
         }
 
         if (EditorGUI::Property("Enabled", component.Enabled))
-        {
             changed = true;
-        }
 
         ImGui::BeginDisabled(component.AutoCalculate);
         if (EditorGUI::DrawVec3("Offset", component.Offset))
-        {
             changed = true;
-        }
         ImGui::EndDisabled();
 
         if (component.Type == ColliderType::Box)
         {
             ImGui::BeginDisabled(component.AutoCalculate);
             if (EditorGUI::DrawVec3("Size", component.Size, 1.0f))
-            {
                 changed = true;
-            }
             ImGui::EndDisabled();
         }
         else if (component.Type == ColliderType::Capsule)
         {
             ImGui::BeginDisabled(component.AutoCalculate);
             if (EditorGUI::Property("Radius", component.Radius, 0.05f))
-            {
                 changed = true;
-            }
             if (EditorGUI::Property("Height", component.Height, 0.05f))
-            {
                 changed = true;
-            }
             ImGui::EndDisabled();
         }
         else if (component.Type == ColliderType::Mesh)
         {
-            if (EditorGUI::Begin().File("Model Path", component.ModelPath, "obj,gltf,glb"))
-            {
+            if (EditorGUI::Property("Model Path", component.ModelPath, "obj,gltf,glb"))
                 changed = true;
-            }
 
             ImGui::BeginDisabled(component.AutoCalculate);
             if (EditorGUI::DrawVec3("Size", component.Size, 1.0f))
-            {
                 changed = true;
-            }
             ImGui::EndDisabled();
 
-            ImGui::Text("BVH Status: %s", component.BVHRoot ? "Built" : "Missing");
-            if (ImGui::Button(ICON_FA_HAMMER " Rebuild BVH"))
+            // Status row
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, 100.0f);
+            ImGui::Text("BVH Status");
+            ImGui::NextColumn();
+            ImGui::Text(component.BVHRoot ? "Built" : "Missing");
+            ImGui::Columns(1);
+
+            // Action row
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, 100.0f);
+            ImGui::NextColumn();
+            if (ImGui::Button(ICON_FA_HAMMER " Rebuild BVH", {-1, 0}))
             {
                 if (auto project = Project::GetActive())
                 {
                     auto asset = project->GetAssetManager()->Get<ModelAsset>(component.ModelPath);
                     if (asset)
                     {
-                        // Invalidate the physics cache so UpdateColliders picks up the new BVH
                         auto scene = EditorLayer::Get().GetActiveScene();
                         if (scene)
-                        {
                             scene->GetPhysics().InvalidateBVH(asset.get());
-                        }
 
-                        // Synchronous build for immediate visual feedback
                         component.BVHRoot = BVH::Build(asset);
-
                         if (component.AutoCalculate)
                         {
                             BoundingBox box = asset->GetBoundingBox();
@@ -329,17 +334,17 @@ void PropertyEditor::Init()
                     }
                 }
             }
+            ImGui::Columns(1);
         }
 
         if (EditorGUI::Property("Auto Calculate", component.AutoCalculate))
-        {
             changed = true;
-        }
+
         return changed;
     });
 
     Register<ShaderComponent>("Shader", [](auto& component, auto entity) {
-        auto pb = EditorGUI::Begin();
+        bool changed = false;
 
         // Hazel-style Shader Selection
         if (Renderer::IsInitialized())
@@ -348,7 +353,6 @@ void PropertyEditor::Init()
             std::vector<std::string> names = lib.GetNames();
             std::sort(names.begin(), names.end());
 
-            // Find current name by path
             std::string currentName = "Custom";
             for (const auto& name : names)
             {
@@ -359,203 +363,120 @@ void PropertyEditor::Init()
                 }
             }
 
-            if (ImGui::BeginCombo("Shader", currentName.c_str()))
+            EditorGUI::BeginProperty("Shader");
+            if (ImGui::BeginCombo("##ShaderCombo", currentName.c_str()))
             {
-                if (ImGui::Selectable("Custom", currentName == "Custom"))
-                {
-                    // Keep current path
-                }
-
+                if (ImGui::Selectable("Custom", currentName == "Custom")) {}
                 for (const auto& name : names)
                 {
                     if (ImGui::Selectable(name.c_str(), currentName == name))
                     {
                         component.ShaderPath = lib.Get(name)->GetPath();
-                        pb.Changed = true;
-
-                        // Auto-sync uniforms on change
-                        // (We'll trigger the sync button logic below)
-                        ImGui::SetItemDefaultFocus();
+                        changed = true;
                     }
                 }
                 ImGui::EndCombo();
             }
+            EditorGUI::EndProperty();
         }
 
-        if (EditorGUI::Begin().File("Shader Path", component.ShaderPath, "chshader"))
-        {
-            pb.Changed = true;
-        }
-
-        pb.Bool("Enabled", component.Enabled);
-
-        // Automatic Pruning of engine-managed uniforms
-        if (!component.Uniforms.empty())
-        {
-            auto it = std::remove_if(component.Uniforms.begin(), component.Uniforms.end(), [](const auto& u) {
-                std::string name = u.Name;
-                return name == "mvp" || name == "matModel" || name == "matNormal" || name == "viewPos" ||
-                       name == "lightDir" || name == "lightColor" || name == "ambient" || name == "uTime" ||
-                       name == "useTexture" || name == "colDiffuse" || name == "texture0" || name == "shininess" ||
-                       name == "fogEnabled" || name == "fogColor" || name == "fogDensity" || name == "fogStart" ||
-                       name == "fogEnd" || name == "uMode" || name.find("lights[") != std::string::npos ||
-                       name.find("pointLights") != std::string::npos || name.find("spotLights") != std::string::npos ||
-                       name == "boneMatrices";
-            });
-            if (it != component.Uniforms.end())
-            {
-                component.Uniforms.erase(it, component.Uniforms.end());
-                pb.Changed = true;
-            }
-        }
+        if (EditorGUI::Property("Shader Path", component.ShaderPath, "chshader"))
+            changed = true;
+        if (EditorGUI::Property("Enabled", component.Enabled))
+            changed = true;
 
         if (!component.Uniforms.empty() &&
             ImGui::TreeNodeEx("Uniforms", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
         {
             for (auto& u : component.Uniforms)
             {
-                ImGui::PushID(u.Name.c_str());
+                EditorGUI::BeginProperty(u.Name.c_str());
                 if (u.Type == 0)
                 {
-                    if (ImGui::DragFloat(u.Name.c_str(), &u.Value[0], 0.05f))
-                    {
-                        pb.Changed = true;
-                    }
+                    if (ImGui::DragFloat("##U", &u.Value[0], 0.05f)) changed = true;
                 }
                 else if (u.Type == 1)
                 {
-                    if (ImGui::DragFloat2(u.Name.c_str(), u.Value, 0.05f))
-                    {
-                        pb.Changed = true;
-                    }
+                    if (ImGui::DragFloat2("##U", u.Value, 0.05f)) changed = true;
                 }
                 else if (u.Type == 2)
                 {
-                    if (ImGui::DragFloat3(u.Name.c_str(), u.Value, 0.05f))
-                    {
-                        pb.Changed = true;
-                    }
-                }
-                else if (u.Type == 3)
-                {
-                    if (ImGui::DragFloat4(u.Name.c_str(), u.Value, 0.05f))
-                    {
-                        pb.Changed = true;
-                    }
+                    if (ImGui::DragFloat3("##U", u.Value, 0.05f)) changed = true;
                 }
                 else if (u.Type == 4)
                 {
-                    if (ImGui::ColorEdit4(u.Name.c_str(), u.Value))
-                    {
-                        pb.Changed = true;
-                    }
+                    if (ImGui::ColorEdit4("##U", u.Value)) changed = true;
                 }
-                ImGui::PopID();
+                EditorGUI::EndProperty();
             }
             ImGui::TreePop();
         }
 
         ImGui::Separator();
-        if (ImGui::Button(ICON_FA_ARROWS_ROTATE " Sync Uniforms"))
+        ImGui::Columns(2);
+        ImGui::SetColumnWidth(0, 100.0f);
+        ImGui::NextColumn();
+        if (ImGui::Button(ICON_FA_ARROWS_ROTATE " Sync Uniforms", {-1, 0}))
         {
             if (auto project = Project::GetActive())
             {
                 std::string fullPath = project->GetAssetManager()->ResolvePath(component.ShaderPath);
                 if (std::filesystem::exists(fullPath))
                 {
-                    try
-                    {
+                    try {
                         YAML::Node config = YAML::LoadFile(fullPath);
-                        if (config["Uniforms"])
-                        {
-                            // We don't want to lose values if possible,
-                            // but we want to match the metadata list.
+                        if (config["Uniforms"]) {
                             std::vector<ShaderUniform> newUniforms;
-                            for (auto uNode : config["Uniforms"])
-                            {
+                            for (auto uNode : config["Uniforms"]) {
                                 std::string name = uNode.as<std::string>();
-                                // Skip standard uniforms that are managed by engine
-                                bool isEngineManaged =
-                                    name == "mvp" || name == "matModel" || name == "matNormal" || name == "viewPos" ||
-                                    name == "lightDir" || name == "lightColor" || name == "ambient" ||
-                                    name == "uTime" || name == "useTexture" || name == "colDiffuse" ||
-                                    name == "texture0" || name == "shininess" || name == "fogEnabled" ||
-                                    name == "fogColor" || name == "fogDensity" || name == "fogStart" ||
-                                    name == "fogEnd" || name.find("lights[") != std::string::npos ||
-                                    name.find("pointLights") != std::string::npos || // Legacy
-                                    name.find("spotLights") != std::string::npos ||  // Legacy
-                                    name == "boneMatrices";
-
-                                if (isEngineManaged)
-                                {
-                                    continue;
-                                }
-
-                                // Find existing to preserve value
                                 auto it = std::find_if(component.Uniforms.begin(), component.Uniforms.end(),
-                                                       [&](const auto& existing) { return existing.Name == name; });
-                                if (it != component.Uniforms.end())
-                                {
-                                    newUniforms.push_back(*it);
-                                }
-                                else
-                                {
-                                    // Default to float for now, user can change if we add type detection
-                                    // or if we add type to .chshader
-                                    ShaderUniform u;
-                                    u.Name = name;
-                                    u.Type = name.find("Color") != std::string::npos ? 4 : 0; // Guess type
+                                                       [&](const auto& e) { return e.Name == name; });
+                                if (it != component.Uniforms.end()) newUniforms.push_back(*it);
+                                else {
+                                    ShaderUniform u; u.Name = name;
+                                    u.Type = name.find("Color") != std::string::npos ? 4 : 0;
                                     newUniforms.push_back(u);
                                 }
                             }
                             component.Uniforms = newUniforms;
-                            pb.Changed = true;
+                            changed = true;
                         }
-                    } catch (...)
-                    {
-                        CH_CORE_ERROR("PropertyEditor: Failed to sync uniforms from {}", component.ShaderPath);
-                    }
+                    } catch (...) {}
                 }
             }
         }
-        ImGui::SameLine();
-        if (ImGui::Button(ICON_FA_TRASH " Clear"))
-        {
-            component.Uniforms.clear();
-            pb.Changed = true;
-        }
-
-        return pb.Changed;
+        ImGui::Columns(1);
+        return changed;
     });
 
     Register<AudioComponent>("Audio", [](auto& component, auto entity) {
-        auto pb = EditorGUI::Begin();
-        pb.File("Sound Path", component.SoundPath, "wav,ogg,mp3")
-            .Bool("Loop", component.Loop)
-            .Bool("Play On Start", component.PlayOnStart)
-            .Float("Volume", component.Volume, 0.05f, 0.0f, 2.0f)
-            .Float("Pitch", component.Pitch, 0.05f, 0.1f, 5.0f);
-        return pb.Changed;
+        bool changed = false;
+        if (EditorGUI::Property("Sound Path", component.SoundPath, "wav,ogg,mp3")) changed = true;
+        if (EditorGUI::Property("Loop", component.Loop)) changed = true;
+        if (EditorGUI::Property("Play On Start", component.PlayOnStart)) changed = true;
+        if (EditorGUI::Property("Volume", component.Volume, 0.05f, 0.0f, 2.0f)) changed = true;
+        if (EditorGUI::Property("Pitch", component.Pitch, 0.05f, 0.1f, 5.0f)) changed = true;
+        return changed;
     });
 
     Register<SpawnComponent>("Spawn Zone", [](auto& component, auto entity) {
-        auto pb = EditorGUI::Begin();
-        pb.Vec3("Zone Size", component.ZoneSize)
-            .File("Spawn Texture", component.TexturePath, "png,jpg,tga")
-            .Bool("Render Zone", component.RenderSpawnZoneInScene);
-        return pb.Changed;
+        bool changed = false;
+        if (EditorGUI::DrawVec3("Zone Size", component.ZoneSize)) changed = true;
+        if (EditorGUI::Property("Spawn Texture", component.TexturePath, "png,jpg,tga")) changed = true;
+        if (EditorGUI::Property("Render Zone", component.RenderSpawnZoneInScene)) changed = true;
+        return changed;
     });
 
     Register<PlayerComponent>("Player", [](auto& component, auto entity) {
-        auto pb = EditorGUI::Begin();
-        pb.Float("Speed", component.MovementSpeed)
-            .Float("Sensitivity", component.LookSensitivity)
-            .Float("Jump Force", component.JumpForce);
-        return pb.Changed;
+        bool changed = false;
+        if (EditorGUI::Property("Speed", component.MovementSpeed)) changed = true;
+        if (EditorGUI::Property("Sensitivity", component.LookSensitivity)) changed = true;
+        if (EditorGUI::Property("Jump Force", component.JumpForce)) changed = true;
+        return changed;
     });
 
     Register<SceneTransitionComponent>("Scene Transition", [](auto& component, auto entity) {
-        return EditorGUI::Begin().File("Target Scene", component.TargetScenePath, "chscene");
+        return EditorGUI::Property("Target Scene", component.TargetScenePath, "chscene");
     });
 
     Register<ManagedScriptComponent>("Scripts", [](auto& component, Entity entity) {
@@ -566,15 +487,23 @@ void PropertyEditor::Init()
         {
             auto& script = component.Scripts[i];
             ImGui::PushID((int)i);
-            
-            std::string currentClass = script.ClassName;
-            // Push item width so the combo doesn't overlap the minus button
-            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 30.0f);
-            if (ImGui::BeginCombo("##Class", currentClass.empty() ? "None" : currentClass.c_str()))
+
+            EditorGUI::BeginProperty("Script Class");
+            if (ImGui::Button(script.ClassName.empty() ? "None" : script.ClassName.c_str(), {-1, 0}))
             {
+                ImGui::OpenPopup("SelectScript");
+            }
+
+            if (ImGui::BeginPopup("SelectScript"))
+            {
+                if (ImGui::Selectable("None", script.ClassName.empty()))
+                {
+                    script.ClassName = "";
+                    changed = true;
+                }
                 for (const auto& [className, type] : scriptClasses)
                 {
-                    bool isSelected = (currentClass == className);
+                    bool isSelected = (script.ClassName == className);
                     if (ImGui::Selectable(className.c_str(), isSelected))
                     {
                         script.ClassName = className;
@@ -583,99 +512,86 @@ void PropertyEditor::Init()
                     if (isSelected)
                         ImGui::SetItemDefaultFocus();
                 }
-                ImGui::EndCombo();
+                ImGui::EndPopup();
             }
-            ImGui::PopItemWidth();
+            EditorGUI::EndProperty();
 
-            ImGui::SameLine();
-            if (ImGui::Button(ICON_FA_MINUS))
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, 100.0f);
+            ImGui::NextColumn();
+            if (ImGui::Button(ICON_FA_TRASH " Remove", {-1, 0}))
             {
                 component.Scripts.erase(component.Scripts.begin() + i);
                 changed = true;
+                ImGui::Columns(1);
                 ImGui::PopID();
-                break; // Iterator invalidated
+                break;
             }
-
+            ImGui::Columns(1);
             ImGui::PopID();
-        }
-        
-        ImGui::Dummy(ImVec2(0, 2.0f));
-        if (ImGui::Button("Add Script", ImVec2(ImGui::GetContentRegionAvail().x, 0.0f)))
-        {
-            component.Scripts.emplace_back("");
-            changed = true;
+            ImGui::Separator();
         }
 
-        ImGui::Dummy(ImVec2(0, 5.0f));
-
-        if (ImGui::Button(ICON_FA_TRASH " Remove Component"))
+        ImGui::Columns(2);
+        ImGui::SetColumnWidth(0, 100.0f);
+        ImGui::NextColumn();
+        if (ImGui::Button(ICON_FA_PLUS " Add Script", {-1, 0}))
         {
-            entity.RemoveComponent<ManagedScriptComponent>();
+            component.Scripts.push_back({});
             changed = true;
         }
+        ImGui::Columns(1);
 
         return changed;
     });
 
-    Register<AnimationComponent>("Animation", [](auto& component, auto entity) {
-        auto pb = EditorGUI::Begin();
+    Register<AnimationComponent>("Animations", [](auto& component, auto entity) {
         bool changed = false;
-
-        if (pb.File("Animation Source", component.AnimationPath, "glb,gltf,iqm,m3d").Changed)
-        {
-            changed = true;
-        }
-
+        if (EditorGUI::Property("Looping", component.IsLooping)) changed = true;
+        if (EditorGUI::Property("Playing", component.IsPlaying)) changed = true;
+        
         int animCount = 0;
-        if (entity.template HasComponent<ModelComponent>())
-        {
+        if (entity.template HasComponent<ModelComponent>()) {
             auto& mc = entity.template GetComponent<ModelComponent>();
-            if (mc.Asset)
-            {
-                animCount = mc.Asset->GetAnimationCount();
-            }
+            if (mc.Asset) animCount = mc.Asset->GetAnimationCount();
         }
 
-        if (animCount > 0)
-        {
-            std::shared_ptr<ModelAsset> asset = entity.template GetComponent<ModelComponent>().Asset;
+        if (animCount > 0) {
+            auto asset = entity.template GetComponent<ModelComponent>().Asset;
             std::string currentAnimName = asset->GetAnimationName(component.CurrentAnimationIndex);
-
-            if (ImGui::BeginCombo("Current Animation", currentAnimName.c_str()))
-            {
-                for (int i = 0; i < animCount; i++)
-                {
+            
+            EditorGUI::BeginProperty("Current Animation");
+            if (ImGui::BeginCombo("##AnimCombo", currentAnimName.c_str())) {
+                for (int i = 0; i < animCount; i++) {
                     bool isSelected = (component.CurrentAnimationIndex == i);
-                    if (ImGui::Selectable(asset->GetAnimationName(i).c_str(), isSelected))
-                    {
+                    if (ImGui::Selectable(asset->GetAnimationName(i).c_str(), isSelected)) {
                         component.CurrentAnimationIndex = i;
                         changed = true;
                     }
-                    if (isSelected)
-                    {
-                        ImGui::SetItemDefaultFocus();
-                    }
+                    if (isSelected) ImGui::SetItemDefaultFocus();
                 }
                 ImGui::EndCombo();
             }
-        }
-        else
-        {
-            ImGui::TextDisabled(ICON_FA_CIRCLE_EXCLAMATION " No animations found in ModelAsset.");
-        }
-
-        if (pb.Bool("Loop", component.IsLooping).Changed)
-        {
-            changed = true;
-        }
-        if (pb.Bool("Playing", component.IsPlaying).Changed)
-        {
-            changed = true;
+            EditorGUI::EndProperty();
+        } else {
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, 100.0f);
+            ImGui::NextColumn();
+            ImGui::TextDisabled(ICON_FA_CIRCLE_EXCLAMATION " No animations found");
+            ImGui::Columns(1);
         }
 
-        ImGui::Text("Current Frame: %d", component.CurrentFrame);
+        if (EditorGUI::Property("Loop", component.IsLooping)) changed = true;
+        if (EditorGUI::Property("Playing", component.IsPlaying)) changed = true;
+        
+        ImGui::Columns(2);
+        ImGui::SetColumnWidth(0, 100.0f);
+        ImGui::Text("Frame");
+        ImGui::NextColumn();
+        ImGui::Text("%d", component.CurrentFrame);
+        ImGui::Columns(1);
 
-        return changed || pb.Changed;
+        return changed;
     });
 
 

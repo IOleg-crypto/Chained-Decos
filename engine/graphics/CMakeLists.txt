@@ -33,8 +33,6 @@ add_library(engine_graphics OBJECT
     font_importer.h
     environment_importer.h
     asset_importer.h
-    raylib_converter.h
-    imgui_converter.h
     frustum.h
 )
 

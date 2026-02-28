@@ -72,57 +72,42 @@ private:
 
         if (entity.HasComponent<T>())
         {
+            auto& component = entity.GetComponent<T>();
+            ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
+
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
-
-            // Unique ID for the header
-            ImGui::PushID(name.c_str());
-
-            float contentWidth = ImGui::GetContentRegionAvail().x;
-
-            // Draw the header
+            float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
+            ImGui::Separator();
             bool open = ImGui::TreeNodeEx((void*)entt::type_hash<T>::value(), treeNodeFlags, name.c_str());
+            ImGui::PopStyleVar();
 
-            // Management button (Gear Icon)
-            ImGui::SameLine(contentWidth - 22.0f);
-
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0, 0, 0, 0});
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{1, 1, 1, 0.1f});
-            if (ImGui::Button(ICON_FA_GEAR, ImVec2{22, 22}))
+            ImGui::SameLine(contentRegionAvailable.x - lineHeight * 0.5f);
+            if (ImGui::Button(ICON_FA_GEAR, ImVec2{lineHeight, lineHeight}))
             {
                 ImGui::OpenPopup("ComponentSettings");
             }
-            ImGui::PopStyleColor(2);
 
             bool removeComponent = false;
             if (ImGui::BeginPopup("ComponentSettings"))
             {
-                if (ImGui::MenuItem(ICON_FA_TRASH " Remove Component"))
-                {
+                if (ImGui::MenuItem("Remove Component"))
                     removeComponent = true;
-                }
+
                 ImGui::EndPopup();
             }
 
-            ImGui::PopID();
-            ImGui::PopStyleVar();
-
             if (open)
             {
-                ImGui::Spacing();
-                T& component = entity.GetComponent<T>();
                 T componentCopy = component;
                 if (drawer(componentCopy, entity))
                 {
                     entity.GetRegistry().template patch<T>(entity, [&componentCopy](T& comp) { comp = componentCopy; });
                 }
-                ImGui::Spacing();
                 ImGui::TreePop();
             }
 
             if (removeComponent)
-            {
-                entity.GetRegistry().template remove<T>(entity);
-            }
+                entity.RemoveComponent<T>();
         }
     }
 
