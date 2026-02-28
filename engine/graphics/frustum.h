@@ -3,38 +3,63 @@
 
 #include <raylib.h>
 #include <raymath.h>
+#include <array>
+#include <cstddef>
 #include <cmath>
 
 namespace CHEngine
 {
+/**
+ * Frustum class for view frustum culling.
+ * Uses Gribb-Hartmann method for plane extraction from a View-Projection matrix.
+ */
 struct Frustum
 {
+    static constexpr size_t PlaneCount = 6;
+    static constexpr size_t CornerCount = 8;
+
+    enum PlaneIndex : size_t
+    {
+        Left = 0, Right, Bottom, Top, Near, Far
+    };
+
     // Planes stored as Vector4 (x, y, z = normal, w = distance)
-    Vector4 Planes[6];
+    // The normal (x,y,z) points INSIDE the frustum.
+    std::array<Vector4, PlaneCount> Planes;
 
     /**
-     * Extracts frustum planes from a view-projection matrix.
-     * Order: Left, Right, Bottom, Top, Near, Far.
+     * Extracts frustum planes from a View-Projection matrix (P * V).
      */
     void Extract(Matrix mat)
     {
-        // Gribb-Hartmann method for column-major matrices (standard in Raylib/OpenGL)
-        Planes[0] = {mat.m3 + mat.m0, mat.m7 + mat.m4, mat.m11 + mat.m8, mat.m15 + mat.m12};  // Left
-        Planes[1] = {mat.m3 - mat.m0, mat.m7 - mat.m4, mat.m11 - mat.m8, mat.m15 - mat.m12};  // Right
-        Planes[2] = {mat.m3 + mat.m1, mat.m7 + mat.m5, mat.m11 + mat.m9, mat.m15 + mat.m13};  // Bottom
-        Planes[3] = {mat.m3 - mat.m1, mat.m7 - mat.m5, mat.m11 - mat.m9, mat.m15 - mat.m13};  // Top
-        Planes[4] = {mat.m3 + mat.m2, mat.m7 + mat.m6, mat.m11 + mat.m10, mat.m15 + mat.m14}; // Near
-        Planes[5] = {mat.m3 - mat.m2, mat.m7 - mat.m6, mat.m11 - mat.m10, mat.m15 - mat.m14}; // Far
+        // Extracting rows for cleaner math (Raylib struct names m0..m15 map to memory col-major)
+        // Row 1: m0 m4 m8 m12
+        // Row 2: m1 m5 m9 m13
+        // Row 3: m2 m6 m10 m14
+        // Row 4: m3 m7 m11 m15
+
+        // Left:   col4 + col1
+        Planes[Left]   = { mat.m3 + mat.m0, mat.m7 + mat.m4, mat.m11 + mat.m8, mat.m15 + mat.m12 };
+        // Right:  col4 - col1
+        Planes[Right]  = { mat.m3 - mat.m0, mat.m7 - mat.m4, mat.m11 - mat.m8, mat.m15 - mat.m12 };
+        // Bottom: col4 + col2
+        Planes[Bottom] = { mat.m3 + mat.m1, mat.m7 + mat.m5, mat.m11 + mat.m9, mat.m15 + mat.m13 };
+        // Top:    col4 - col2
+        Planes[Top]    = { mat.m3 - mat.m1, mat.m7 - mat.m5, mat.m11 - mat.m9, mat.m15 - mat.m13 };
+        // Near:   col4 + col3
+        Planes[Near]   = { mat.m3 + mat.m2, mat.m7 + mat.m6, mat.m11 + mat.m10, mat.m15 + mat.m14 };
+        // Far:    col4 - col3
+        Planes[Far]    = { mat.m3 - mat.m2, mat.m7 - mat.m6, mat.m11 - mat.m10, mat.m15 - mat.m14 };
 
         // Normalize planes for accurate distance-based visibility checks
-        for (int i = 0; i < 6; i++)
+        for (auto& plane : Planes)
         {
-            float len = sqrtf(Planes[i].x * Planes[i].x + Planes[i].y * Planes[i].y + Planes[i].z * Planes[i].z);
-            float invLen = (len != 0.0f) ? 1.0f / len : 1.0f;
-            Planes[i].x *= invLen;
-            Planes[i].y *= invLen;
-            Planes[i].z *= invLen;
-            Planes[i].w *= invLen;
+            float length = sqrtf(plane.x * plane.x + plane.y * plane.y + plane.z * plane.z);
+            float invLength = (length != 0.0f) ? 1.0f / length : 1.0f;
+            plane.x *= invLength;
+            plane.y *= invLength;
+            plane.z *= invLength;
+            plane.w *= invLength;
         }
     }
 
@@ -43,20 +68,27 @@ struct Frustum
      */
     bool IsBoxVisible(BoundingBox box) const
     {
-        Vector3 center = {(box.max.x + box.min.x) * 0.5f, (box.max.y + box.min.y) * 0.5f,
-                          (box.max.z + box.min.z) * 0.5f};
-        Vector3 extents = {(box.max.x - box.min.x) * 0.5f, (box.max.y - box.min.y) * 0.5f,
-                           (box.max.z - box.min.z) * 0.5f};
+        Vector3 center = { (box.max.x + box.min.x) * 0.5f, (box.max.y + box.min.y) * 0.5f, (box.max.z + box.min.z) * 0.5f };
+        Vector3 extents = { (box.max.x - box.min.x) * 0.5f, (box.max.y - box.min.y) * 0.5f, (box.max.z - box.min.z) * 0.5f };
 
-        for (int i = 0; i < 6; i++)
+        return IsBoxVisible(center, extents);
+    }
+
+    /**
+     * Checks if a BoundingBox (centered at 'center' with 'extents') is visible.
+     * Pure mathematical center-extents method (most efficient for axis-aligned checks).
+     */
+    bool IsBoxVisible(Vector3 center, Vector3 extents) const
+    {
+        for (const auto& plane : Planes)
         {
-            float r = extents.x * fabsf(Planes[i].x) + extents.y * fabsf(Planes[i].y) + extents.z * fabsf(Planes[i].z);
-            float d = Planes[i].x * center.x + Planes[i].y * center.y + Planes[i].z * center.z + Planes[i].w;
+            // Effective radius of the box projected onto the plane normal
+            float r = extents.x * fabsf(plane.x) + extents.y * fabsf(plane.y) + extents.z * fabsf(plane.z);
+            // Distance from plane to box center
+            float d = plane.x * center.x + plane.y * center.y + plane.z * center.z + plane.w;
 
-            if (d < -r)
-            {
-                return false;
-            }
+            // If the whole box (center-radius) is behind the plane, it is culled
+            if (d < -r) return false;
         }
         return true;
     }
@@ -66,29 +98,31 @@ struct Frustum
      */
     bool IsBoxVisible(BoundingBox box, Matrix transform) const
     {
-        // Compute center and extents in local space
-        Vector3 c = {(box.max.x + box.min.x) * 0.5f, (box.max.y + box.min.y) * 0.5f, (box.max.z + box.min.z) * 0.5f};
-        Vector3 e = {(box.max.x - box.min.x) * 0.5f, (box.max.y - box.min.y) * 0.5f, (box.max.z - box.min.z) * 0.5f};
+        // Transform the 8 corners of the AABB to world space
+        // This is 100% robust against rotation and scale
+        std::array<Vector3, CornerCount> corners = {
+            Vector3Transform({ box.min.x, box.min.y, box.min.z }, transform),
+            Vector3Transform({ box.min.x, box.min.y, box.max.z }, transform),
+            Vector3Transform({ box.min.x, box.max.y, box.min.z }, transform),
+            Vector3Transform({ box.min.x, box.max.y, box.max.z }, transform),
+            Vector3Transform({ box.max.x, box.min.y, box.min.z }, transform),
+            Vector3Transform({ box.max.x, box.min.y, box.max.z }, transform),
+            Vector3Transform({ box.max.x, box.max.y, box.min.z }, transform),
+            Vector3Transform({ box.max.x, box.max.y, box.max.z }, transform)
+        };
 
-        // Transform center to world space
-        Vector3 centerWorld = Vector3Transform(c, transform);
-
-        for (int i = 0; i < 6; i++)
+        for (const auto& plane : Planes)
         {
-            // Project world-space axes on the plane normal to compute the effective radius
-            // We use the absolute values of the transformed axes
-            float r = e.x * fabsf(Planes[i].x * transform.m0 + Planes[i].y * transform.m1 + Planes[i].z * transform.m2) +
-                      e.y * fabsf(Planes[i].x * transform.m4 + Planes[i].y * transform.m5 + Planes[i].z * transform.m6) +
-                      e.z * fabsf(Planes[i].x * transform.m8 + Planes[i].y * transform.m9 + Planes[i].z * transform.m10);
-
-            // Distance from world-space center to plane
-            float d = Planes[i].x * centerWorld.x + Planes[i].y * centerWorld.y + Planes[i].z * centerWorld.z + Planes[i].w;
-
-            if (d < -r)
+            size_t outCount = 0;
+            for (const auto& corner : corners)
             {
-                return false;
+                float dist = plane.x * corner.x + plane.y * corner.y + plane.z * corner.z + plane.w;
+                if (dist < 0) outCount++;
             }
+            // If all corners are behind a single plane, the object is outside
+            if (outCount == corners.size()) return false;
         }
+
         return true;
     }
 
@@ -97,13 +131,10 @@ struct Frustum
      */
     bool IsSphereVisible(Vector3 center, float radius) const
     {
-        for (int i = 0; i < 6; i++)
+        for (const auto& plane : Planes)
         {
-            float d = Planes[i].x * center.x + Planes[i].y * center.y + Planes[i].z * center.z + Planes[i].w;
-            if (d < -radius)
-            {
-                return false;
-            }
+            float d = plane.x * center.x + plane.y * center.y + plane.z * center.z + plane.w;
+            if (d < -radius) return false;
         }
         return true;
     }

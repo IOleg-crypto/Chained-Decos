@@ -229,7 +229,19 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
 
     if (cameraFound)
     {
-        m_SceneRenderer->RenderScene(activeScene.get(), camera, GetFrameTime(),
+        // Extract near/far from the active camera entity if available
+        float nearClip = 0.01f;
+        float farClip = 1000.0f;
+        
+        Entity primaryCam = activeScene_raw->GetPrimaryCameraEntity();
+        if (primaryCam && primaryCam.HasComponent<CameraComponent>())
+        {
+            auto& cameraComp = primaryCam.GetComponent<CameraComponent>().Camera;
+            nearClip = cameraComp.GetPerspectiveNearClip();
+            farClip = cameraComp.GetPerspectiveFarClip();
+        }
+
+        m_SceneRenderer->RenderScene(activeScene.get(), camera, nearClip, farClip, GetFrameTime(),
                                      &EditorLayer::Get().GetDebugRenderFlags());
         EndTextureMode();
 
