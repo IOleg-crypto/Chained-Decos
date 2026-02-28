@@ -29,3 +29,18 @@
 	path = include/entt
 	url = https://github.com/skypjack/entt.git
 	branch = master
+[submodule "include/yaml-cpp"]
+	path = include/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git
+[submodule "include/imguizmo"]
+	path = include/imguizmo
+	url = https://github.com/CedricGuillemet/ImGuizmo.git
+[submodule "include/glm"]
+	path = include/glm
+	url = https://github.com/g-truc/glm.git
+[submodule "include/assimp"]
+	path = include/assimp
+	url = https://github.com/assimp/assimp.git
+[submodule "include/coral"]
+	path = include/coral
+	url = https://github.com/StudioCherno/Coral.git
