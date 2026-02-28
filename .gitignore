@@ -47,6 +47,7 @@ install_manifest.txt
 compile_commands.json
 _deps
 .deps
+CMakeUserPresets.json
 
 # FetchContent artifacts (old)
 include/*-src/
@@ -71,5 +72,10 @@ build.ninja
 CPackConfig.cmake
 CPackSourceConfig.cmake
 
+# Local build artifacts
+bin/
+lib/
 
-
+# Environment files
+.env
+.env.*

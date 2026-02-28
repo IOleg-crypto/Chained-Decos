@@ -21,7 +21,7 @@ target_include_directories(EngineTests PRIVATE
     ${CMAKE_SOURCE_DIR}/editor
 )
 
-if(DEFINED ENV{CI})
+if(DEFINED ENV{CI} OR CH_CI)
     target_compile_definitions(EngineTests PRIVATE CH_CI)
 endif()
 
@@ -33,6 +33,7 @@ gtest_discover_tests(EngineTests
     CONFIGURATION_VAR CMAKE_BUILD_TYPE
     DISCOVERY_MODE PRE_TEST
     WORKING_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+    PROPERTIES LABELS "Engine;Core"
 )
 
 # Installation
