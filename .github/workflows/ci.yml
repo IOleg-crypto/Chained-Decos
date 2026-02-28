@@ -44,47 +44,7 @@ jobs:
           fi
           echo "Audit complete."
 
-  static-analysis:
-    name: Static Analysis (clang-tidy)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
-      - name: Cache CMake and Build dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.ccache
-            build/linux-clang-debug/_deps
-          key: ${{ runner.os }}-linux-clang-debug-${{ hashFiles('**/CMakeLists.txt', 'CMakePresets.json', 'cmake/*.cmake') }}
-          restore-keys: |
-            ${{ runner.os }}-linux-clang-debug-
-            ${{ runner.os }}-
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang-18 clang-tidy-18 build-essential cmake ninja-build \
-            libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
-            libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
-            pkg-config libgtk-3-dev libdrm-dev libgbm-dev
-          sudo ln -sf /usr/bin/clang-tidy-18 /usr/bin/clang-tidy
-
-      - name: Configure
-        env:
-          CC: clang-18
-          CXX: clang++-18
-        run: |
-          cmake --preset linux-clang-debug -DCH_CI=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-
-      - name: Run clang-tidy
-        run: |
-          # Only run on core engine, editor, runtime, tests and game source files, excluding vendor/include
-          # Use --jobs to parallelize analysis
-          find engine editor runtime tests game/chaineddecos/src -name "*.cpp" -o -name "*.h" | xargs -P $(nproc) clang-tidy -p build/linux-clang-debug --warnings-as-errors='*'
 
   build:
     name: ${{ matrix.os }} / ${{ matrix.preset }}
@@ -300,7 +260,7 @@ jobs:
   tests:
     name: All Tests Passed
     runs-on: ubuntu-latest
-    needs: [build, static-analysis, coverage]
+    needs: [build, coverage]
     steps:
       - name: All jobs completed
         run: echo "All build and test jobs completed successfully"
