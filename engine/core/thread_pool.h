@@ -58,6 +58,8 @@ private:
     std::mutex m_QueueMutex;
     std::condition_variable m_Condition;
     bool m_Stop = false;
+
+    static ThreadPool* s_Instance;
 };
 } // namespace CHEngine
 

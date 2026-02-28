@@ -34,6 +34,19 @@ if(DOTNET_EXECUTABLE)
     set(MANAGED_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/$<CONFIG>")
     set(CORAL_MANAGED_DIR "${CMAKE_BINARY_DIR}/include/coral/cmake")
     
+    # Generate ManagedDependencies.props to provide paths to the .csproj
+    # Use native paths (backslashes on Windows) for the MSBuild property
+    file(TO_NATIVE_PATH "${CORAL_MANAGED_DIR}" NATIVE_CORAL_MANAGED_DIR)
+    
+    set(PROPS_CONTENT 
+"<Project>
+  <PropertyGroup>
+    <CoralManagedDir>${NATIVE_CORAL_MANAGED_DIR}</CoralManagedDir>
+  </PropertyGroup>
+</Project>")
+    
+    file(WRITE "${CMAKE_CURRENT_SOURCE_DIR}/managed/ManagedDependencies.props" "${PROPS_CONTENT}")
+    
     add_custom_target(CHEngine_Managed ALL
         COMMAND ${DOTNET_EXECUTABLE} build "${MANAGED_PROJECT_PATH}" -c $<CONFIG> --no-incremental --output "${MANAGED_OUTPUT_DIR}" -p:CoralManagedDir="${CORAL_MANAGED_DIR}"
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/managed"
