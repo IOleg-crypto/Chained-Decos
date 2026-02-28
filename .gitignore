@@ -74,6 +74,7 @@ CPackSourceConfig.cmake
 
 # Local build artifacts
 bin/
+obj/
 lib/
 
 # Environment files
