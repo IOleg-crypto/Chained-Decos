@@ -15,10 +15,8 @@
 
 
 
-  <!-- Coral.Managed.dll location: set by CMake via -p:CoralManagedDir=... -->
-  <PropertyGroup>
-    <CoralManagedDir Condition="'$(CoralManagedDir)' == ''">../../../build/windows-ninja-release/include/coral/cmake</CoralManagedDir>
-  </PropertyGroup>
+  <!-- Import dynamically generated properties from CMake -->
+  <Import Project="ManagedDependencies.props" Condition="Exists('ManagedDependencies.props')" />
 
   <ItemGroup>
     <Reference Include="Coral.Managed">

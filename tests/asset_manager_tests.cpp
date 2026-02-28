@@ -1,6 +1,7 @@
 #include "engine/core/base.h"
 #include "engine/graphics/asset_manager.h"
 #include "engine/graphics/model_asset.h"
+#include "engine/core/thread_pool.h"
 #include "gtest/gtest.h"
 
 using namespace CHEngine;
@@ -17,6 +18,7 @@ protected:
         SetConfigFlags(FLAG_WINDOW_HIDDEN);
         InitWindow(1, 1, "AssetManagerTest");
 
+        m_ThreadPool = std::make_unique<ThreadPool>(1);
         m_AssetManager = std::make_unique<AssetManager>();
 
         // Final check if InitWindow actually worked
@@ -34,6 +36,12 @@ protected:
             m_AssetManager.reset();
         }
 
+        if (m_ThreadPool)
+        {
+            m_ThreadPool->Shutdown();
+            m_ThreadPool.reset();
+        }
+
         if (IsWindowReady())
         {
             CloseWindow();
@@ -41,6 +49,7 @@ protected:
     }
 
     std::unique_ptr<AssetManager> m_AssetManager;
+    std::unique_ptr<ThreadPool> m_ThreadPool;
 };
 
 // These tests require a working OpenGL context

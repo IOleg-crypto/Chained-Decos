@@ -79,4 +79,5 @@ lib/
 
 # Environment files
 .env
+engine/script/managed/ManagedDependencies.props
 .env.*

@@ -78,10 +78,10 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         add_link_options(-fsanitize=address -fsanitize=undefined)
     endif()
 
-    # Level 2 Security Hardening
-    add_compile_options(-fstack-protector-strong -D_FORTIFY_SOURCE=2)
-    add_compile_options(-Wformat=2 -Wformat-security)
-    add_link_options(-Wl,-z,relro -Wl,-z,now)
+    # (Linux Only)
+    if(NOT WIN32)
+        add_link_options(-Wl,-z,relro -Wl,-z,now)
+    endif()
 
     if(ENABLE_PROFILING)
         add_compile_options(-pg)
