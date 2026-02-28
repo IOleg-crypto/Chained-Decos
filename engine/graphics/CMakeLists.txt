@@ -1,6 +1,5 @@
 add_library(engine_graphics OBJECT
     renderer.cpp
-    render_command.cpp
     ui_renderer.cpp
     asset_manager.cpp
     shader_asset.cpp
@@ -17,7 +16,6 @@ add_library(engine_graphics OBJECT
     environment_importer.cpp
 
     renderer.h
-    render_command.h
     scene_renderer.h
     ui_renderer.h
     asset.h

@@ -2,7 +2,6 @@
 #include "engine/core/profiler.h"
 #include "engine/graphics/asset_manager.h"
 #include "engine/graphics/font_asset.h"
-#include "imgui_converter.h"
 #include "engine/graphics/texture_asset.h"
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
@@ -85,14 +84,18 @@ UIRenderer::UIStyleScope::~UIStyleScope()
 
 void UIRenderer::UIStyleScope::PushStyle(const UIStyle& style, bool interactable)
 {
-    ImGui::PushStyleColor(ImGuiCol_Button, ImGuiConverter::ToImVec4(style.BackgroundColor));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGuiConverter::ToImVec4(style.HoverColor));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImGuiConverter::ToImVec4(style.PressedColor));
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGuiConverter::ToImVec4(style.BackgroundColor));
-    ImGui::PushStyleColor(ImGuiCol_Border, ImGuiConverter::ToImVec4(style.BorderColor));
-    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImGuiConverter::ToImVec4(style.BackgroundColor));
-    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImGuiConverter::ToImVec4(style.HoverColor));
-    ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImGuiConverter::ToImVec4(style.PressedColor));
+    // Inline helpers (imgui_converter.h was removed — no external dependency needed)
+    auto toImVec4 = [](Color c) -> ImVec4 { return {c.r / 255.f, c.g / 255.f, c.b / 255.f, c.a / 255.f}; };
+    auto toImTex  = [](unsigned int id) -> ImTextureID { return (ImTextureID)(uintptr_t)id; };
+
+    ImGui::PushStyleColor(ImGuiCol_Button,        toImVec4(style.BackgroundColor));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, toImVec4(style.HoverColor));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive,  toImVec4(style.PressedColor));
+    ImGui::PushStyleColor(ImGuiCol_ChildBg,       toImVec4(style.BackgroundColor));
+    ImGui::PushStyleColor(ImGuiCol_Border,        toImVec4(style.BorderColor));
+    ImGui::PushStyleColor(ImGuiCol_FrameBg,       toImVec4(style.BackgroundColor));
+    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,toImVec4(style.HoverColor));
+    ImGui::PushStyleColor(ImGuiCol_FrameBgActive, toImVec4(style.PressedColor));
     ColorPushCount += 8;
 
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, style.Rounding);
@@ -110,7 +113,7 @@ void UIRenderer::UIStyleScope::PushStyle(const UIStyle& style, bool interactable
 
 void UIRenderer::UIStyleScope::PushText(const TextStyle& text)
 {
-    ImGui::PushStyleColor(ImGuiCol_Text, ImGuiConverter::ToImVec4(text.TextColor));
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{text.TextColor.r/255.f, text.TextColor.g/255.f, text.TextColor.b/255.f, text.TextColor.a/255.f});
     ColorPushCount++;
 
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign,
@@ -172,7 +175,8 @@ void UIRenderer::RenderPanel(const PanelControl& panel, const ImVec2& pos, const
 
     if (panel.Texture && panel.Texture->IsReady())
     {
-        drawList->AddImageRounded(ImGuiConverter::ToImTextureID(panel.Texture->GetTexture().id), pos,
+        ImTextureID texId = (ImTextureID)(uintptr_t)panel.Texture->GetTexture().id;
+        drawList->AddImageRounded(texId, pos,
                                   {pos.x + size.x, pos.y + size.y}, {0, 0}, {1, 1}, IM_COL32_WHITE,
                                   panel.Style.Rounding);
     }
@@ -269,8 +273,10 @@ void UIRenderer::RenderImage(const ImageControl& image, const ImVec2& size)
         auto texAsset = assetManager->Get<TextureAsset>(image.TexturePath);
         if (texAsset)
         {
-            ImGui::Image(ImGuiConverter::ToImTextureID(texAsset->GetTexture().id), size, {0, 0}, {1, 1},
-                         ImGuiConverter::ToImVec4(image.TintColor), ImGuiConverter::ToImVec4(image.BorderColor));
+            ImTextureID tid = (ImTextureID)(uintptr_t)texAsset->GetTexture().id;
+            ImVec4 tint   = {image.TintColor.r/255.f,   image.TintColor.g/255.f,   image.TintColor.b/255.f,   image.TintColor.a/255.f};
+            ImVec4 border = {image.BorderColor.r/255.f, image.BorderColor.g/255.f, image.BorderColor.b/255.f, image.BorderColor.a/255.f};
+            ImGui::Image(tid, size, {0, 0}, {1, 1}, tint, border);
         }
     }
 }
@@ -362,8 +368,10 @@ void UIRenderer::RenderImageButton(ImageButtonControl& ib, const ImVec2& size, b
         auto tex = assetManager->Get<TextureAsset>(ib.TexturePath);
         if (tex)
         {
-            if (ImGui::ImageButton(ib.Label.c_str(), ImGuiConverter::ToImTextureID(tex->GetTexture().id), size, {0, 0},
-                                   {1, 1}, ImGuiConverter::ToImVec4(ib.BackgroundColor), ImGuiConverter::ToImVec4(ib.TintColor)))
+            ImTextureID tid = (ImTextureID)(uintptr_t)tex->GetTexture().id;
+            ImVec4 bg   = {ib.BackgroundColor.r/255.f, ib.BackgroundColor.g/255.f, ib.BackgroundColor.b/255.f, ib.BackgroundColor.a/255.f};
+            ImVec4 tint = {ib.TintColor.r/255.f,       ib.TintColor.g/255.f,       ib.TintColor.b/255.f,       ib.TintColor.a/255.f};
+            if (ImGui::ImageButton(ib.Label.c_str(), tid, size, {0, 0}, {1, 1}, bg, tint))
             {
                 ib.PressedThisFrame = true;
             }
@@ -415,7 +423,8 @@ void UIRenderer::RenderColorPicker(ColorPickerControl& cp, bool& itemHandled)
 
 void UIRenderer::RenderSeparator(const SeparatorControl& sep)
 {
-    ImGui::PushStyleColor(ImGuiCol_Separator, ImGuiConverter::ToImVec4(sep.LineColor));
+    ImVec4 lineImColor = {sep.LineColor.r/255.f, sep.LineColor.g/255.f, sep.LineColor.b/255.f, sep.LineColor.a/255.f};
+    ImGui::PushStyleColor(ImGuiCol_Separator, lineImColor);
     ImGui::Separator();
     ImGui::PopStyleColor();
 }

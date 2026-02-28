@@ -5,7 +5,7 @@
 #include "engine/scene/scene.h"
 #include "engine/scene/components/animation_component.h"
 #include "engine/scene/components/physics_component.h"
-#include <map>
+#include <unordered_map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -46,6 +46,12 @@ private:
         size_t Hash = 0;
         InstanceKey(const std::string& path, const std::vector<MaterialSlot>& mats);
         bool operator<(const InstanceKey& o) const { return Hash < o.Hash; }
+        bool operator==(const InstanceKey& o) const { return Hash == o.Hash; }
+    };
+
+    struct InstanceKeyHash
+    {
+        size_t operator()(const InstanceKey& k) const { return k.Hash; }
     };
 
     struct InstanceGroup
@@ -57,11 +63,11 @@ private:
 
 private:
     void PrepareLights(entt::registry& registry, const Frustum& frustum);
-    void CollectRenderItems(entt::registry& registry, const Frustum& frustum, 
-                            std::vector<AnimatedEntry>& animatedEntries, 
-                            std::map<InstanceKey, InstanceGroup>& instanceGroups);
+    void CollectRenderItems(entt::registry& registry, const Frustum& frustum,
+                            std::vector<AnimatedEntry>& animatedEntries,
+                            std::unordered_map<InstanceKey, InstanceGroup, InstanceKeyHash>& instanceGroups);
     void DrawAnimatedEntities(const std::vector<AnimatedEntry>& animatedEntries);
-    void DrawStaticEntities(std::map<InstanceKey, InstanceGroup>& instanceGroups);
+    void DrawStaticEntities(std::unordered_map<InstanceKey, InstanceGroup, InstanceKeyHash>& instanceGroups);
 
     void DrawColliderDebug(entt::registry& registry, const DebugRenderFlags* debugFlags);
     void DrawCollisionModelBoxDebug(entt::registry& registry, const DebugRenderFlags* debugFlags);
