@@ -102,9 +102,20 @@ void RuntimeLayer::OnRender(Timestep ts)
     ::ClearBackground(bgColor);
 
     auto camera = GetActiveCamera();
-    if (camera.has_value())
+    if (camera)
     {
-        m_SceneRenderer->RenderScene(m_Scene.get(), camera.value(), ts);
+        float nearClip = 0.01f;
+        float farClip = 1000.0f;
+        
+        Entity primaryCam = m_Scene->GetPrimaryCameraEntity();
+        if (primaryCam && primaryCam.HasComponent<CameraComponent>())
+        {
+            auto& cameraComp = primaryCam.GetComponent<CameraComponent>().Camera;
+            nearClip = cameraComp.GetPerspectiveNearClip();
+            farClip = cameraComp.GetPerspectiveFarClip();
+        }
+
+        m_SceneRenderer->RenderScene(m_Scene.get(), camera.value(), nearClip, farClip, ts);
     }
 }
 

@@ -175,6 +175,9 @@ void ModelAsset::UploadToGPU()
         m_Textures = std::move(localTextures);
         m_PendingTextures = std::move(localPendingTextures);
 
+        // Cache the bounding box once (expensive Raylib call)
+        m_BoundingBox = ::GetModelBoundingBox(m_Model);
+
         // Build skeleton from pending bone data
         if (!m_PendingData.bones.empty())
         {
@@ -262,7 +265,7 @@ void ModelAsset::OnUpdate()
 }
 BoundingBox ModelAsset::GetBoundingBox() const
 {
-    return ::GetModelBoundingBox(m_Model);
+    return m_BoundingBox;
 }
 
 Model& ModelAsset::GetModel()

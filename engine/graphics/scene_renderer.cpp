@@ -11,6 +11,8 @@
 #include "engine/scene/project.h"
 #include "imgui.h"
 #include "raylib.h"
+#include <unordered_map>
+#include <unordered_set>
 #include <raymath.h>
 #include <rlgl.h>
 
@@ -32,25 +34,30 @@ Matrix SceneRenderer::GetWorldTransform(entt::registry& registry, entt::entity e
 
 Vector3 SceneRenderer::GetWorldPosition(entt::registry& registry, entt::entity entity)
 {
-    Matrix transform = GetWorldTransform(registry, entity);
-    return {transform.m12, transform.m13, transform.m14};
+    // Transforming origin (0,0,0) by the world transform is a cleaner way to extract position
+    // than accessing matrix indices directly.
+    return Vector3Transform({ 0, 0, 0 }, GetWorldTransform(registry, entity));
 }
 
-void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, Timestep timestep,
+void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float nearClip, float farClip, Timestep timestep,
                                 const DebugRenderFlags* debugFlags)
 {
     CH_PROFILE_FUNCTION();
     CH_CORE_ASSERT(Renderer::IsInitialized(), "Renderer not initialized!");
     CH_CORE_ASSERT(scene, "Scene is null!");
 
-    // 1. Environmental setup
-    auto environment = scene->GetSettings().Environment;
+    // 1. Initial State
+    rlEnableDepthTest();
 
-    // Fallback to project environment if not set in scene
+    // 2. Environmental setup
+    auto environment = scene->GetSettings().Environment;
     if (!environment && Project::GetActive())
     {
         environment = Project::GetActive()->GetEnvironment();
     }
+
+    // 3. Render Passes
+    RenderModels(scene, camera, nearClip, farClip, timestep);
 
     float exposure = 1.0f;
     float gamma = 2.2f;
@@ -90,7 +97,7 @@ void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, Timestep t
             CH_CORE_WARN_ONCE("SceneRenderer: No environment asset for scene!");
         }
 
-        RenderModels(scene, timestep);
+        RenderModels(scene, camera, nearClip, farClip, timestep);
 
         if (debugFlags)
         {
@@ -121,15 +128,26 @@ SceneRenderer::InstanceKey::InstanceKey(const std::string& path, const std::vect
     }
 }
 
-void SceneRenderer::RenderModels(Scene* scene, Timestep timestep)
+void SceneRenderer::RenderModels(Scene* scene, const Camera3D& camera, float nearClip, float farClip, Timestep timestep)
 {
     auto& registry = scene->GetRegistry();
 
     // 1. Frustum Extraction
     Frustum frustum;
     {
-        // Build View-Projection matrix from Raylib's internal matrices
-        Matrix matVP = MatrixMultiply(rlGetMatrixProjection(), rlGetMatrixModelview());
+        // Use explicit camera matrices for robustness (identical to what BeginMode3D uses)
+        Matrix view = GetCameraMatrix(camera);
+        
+        // Get aspect ratio from the active window
+        float width = (float)GetScreenWidth();
+        float height = (float)GetScreenHeight();
+        float aspect = (width > 0 && height > 0) ? width / height : 1.0f;
+        
+        // Use the passed-in clipping planes from the CameraComponent or Editor camera
+        Matrix projection = MatrixPerspective(camera.fovy * DEG2RAD, aspect, nearClip, farClip);
+        
+        // Standard mathematical order for World -> Clip transformation (for extraction) is Projection * View
+        Matrix matVP = MatrixMultiply(view, projection); 
         frustum.Extract(matVP);
     }
 
@@ -196,6 +214,8 @@ void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& 
                                        std::vector<AnimatedEntry>& animatedEntries,
                                        std::unordered_map<InstanceKey, InstanceGroup, InstanceKeyHash>& instanceGroups)
 {
+    std::unordered_set<ModelAsset*> updatedAssets;
+
     auto view = registry.view<TransformComponent, ModelComponent>();
     for (auto entity : view)
     {
@@ -204,13 +224,19 @@ void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& 
         if (!model.Asset || model.Asset->GetState() != AssetState::Ready)
             continue;
 
+        // 1. Precise Frustum Culling
         const Matrix& worldTransform = transform.WorldTransform;
+        BoundingBox aabb = model.Asset->GetBoundingBox();
 
-        // NOTE: Frustum culling disabled - rlGetMatrixModelview / rlGetMatrixProjection
-        // may not return correct matrices at this point in the render pipeline.
-        // TODO: Extract VP matrix from camera directly and verify
+        if (!frustum.IsBoxVisible(aabb, worldTransform))
+            continue;
 
-        model.Asset->OnUpdate();
+        // 2. Optimized Asset Update (Once per unique asset per frame)
+        if (updatedAssets.find(model.Asset.get()) == updatedAssets.end())
+        {
+            model.Asset->OnUpdate();
+            updatedAssets.insert(model.Asset.get());
+        }
 
         std::shared_ptr<ShaderAsset> shaderOverride;
         std::vector<ShaderUniform> customUniforms;

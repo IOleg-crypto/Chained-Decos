@@ -28,7 +28,7 @@ namespace CHEngine {
             s_LoggedOnce = true;
         }
 
-        for (auto [entity, msc] : view.each())
+        for (auto&& [entity, msc] : view.each())
         {
             for (auto& script : msc.Scripts)
             {

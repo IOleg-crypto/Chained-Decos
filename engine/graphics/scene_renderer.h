@@ -21,11 +21,11 @@ public:
     ~SceneRenderer() = default;
 
 public:
-    void RenderScene(Scene* scene, const Camera3D& camera, Timestep timestep,
+    void RenderScene(Scene* scene, const Camera3D& camera, float nearClip, float farClip, Timestep timestep,
                      const DebugRenderFlags* debugFlags = nullptr);
 
     // Internal methods used by RenderScene
-    void RenderModels(Scene* scene, Timestep timestep);
+    void RenderModels(Scene* scene, const Camera3D& camera, float nearClip, float farClip, Timestep timestep);
     void RenderDebug(Scene* scene, const DebugRenderFlags* debugFlags);
     void RenderEditorIcons(Scene* scene, const Camera3D& camera);
     void RenderSprites(Scene* scene);

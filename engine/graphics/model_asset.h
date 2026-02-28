@@ -88,6 +88,8 @@ private:
 
     // Track textures that are still loading
     std::vector<PendingTexture> m_PendingTextures;
+
+    BoundingBox m_BoundingBox = {{0, 0, 0}, {0, 0, 0}};
 };
 } // namespace CHEngine
 
