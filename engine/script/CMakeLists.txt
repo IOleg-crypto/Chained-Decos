@@ -32,7 +32,7 @@ find_program(DOTNET_EXECUTABLE dotnet)
 if(DOTNET_EXECUTABLE)
     set(MANAGED_PROJECT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/managed/CHEngine.Managed.csproj")
     set(MANAGED_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/$<CONFIG>")
-    set(CORAL_MANAGED_DIR "${CMAKE_BINARY_DIR}/_deps/coral-build")
+    set(CORAL_MANAGED_DIR "${CMAKE_BINARY_DIR}/include/coral/cmake")
     
     add_custom_target(CHEngine_Managed ALL
         COMMAND ${DOTNET_EXECUTABLE} build "${MANAGED_PROJECT_PATH}" -c $<CONFIG> --no-incremental --output "${MANAGED_OUTPUT_DIR}" -p:CoralManagedDir="${CORAL_MANAGED_DIR}"
@@ -42,8 +42,8 @@ if(DOTNET_EXECUTABLE)
     )
 
     # Ensure CHEngine_Managed builds AFTER Coral.Managed to avoid dotnet race condition
-    if(TARGET Coral.Managed)
-        add_dependencies(CHEngine_Managed Coral.Managed)
+    if(TARGET CoralManaged)
+        add_dependencies(CHEngine_Managed CoralManaged)
     endif()
     
     # Ensure the engine script object files are built after/with the managed lib if needed
