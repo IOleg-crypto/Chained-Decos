@@ -23,6 +23,71 @@ env:
   DOTNET_NOLOGO: true
 
 jobs:
+  lint:
+    name: Code Formatting Check (clang-format)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run clang-format check
+        uses: jidicula/clang-format-action@v4.11.0
+        with:
+          clang-format-version: '18'
+          check-path: '.'
+          exclude-regex: 'include/.*|game/chaineddecos/scripts/.*'
+
+  cs-lint:
+    name: C# Code Formatting Check (dotnet format)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.sln') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Run dotnet format check
+        run: dotnet format ./game/chaineddecos/scripts/ChainedDecos.Scripts.sln --verify-no-changes --verbosity diagnostic
+
+  static-analysis:
+    name: Static Analysis (clang-tidy)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-tidy-18 build-essential cmake ninja-build \
+            libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
+            libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
+            pkg-config libgtk-3-dev libdrm-dev libgbm-dev
+          sudo ln -sf /usr/bin/clang-tidy-18 /usr/bin/clang-tidy
+
+      - name: Configure
+        run: |
+          cmake --preset linux-clang-debug -DCH_CI=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Run clang-tidy
+        run: |
+          # Only run on core engine and editor files, excluding vendor/include
+          # Use --jobs to parallelize analysis
+          find engine editor -name "*.cpp" -o -name "*.h" | xargs -P $(nproc) clang-tidy -p build/linux-clang-debug --warnings-as-errors='*'
+
   build:
     name: ${{ matrix.os }} / ${{ matrix.preset }}
     runs-on: ${{ matrix.os }}
@@ -65,11 +130,12 @@ jobs:
           submodules: recursive
           fetch-depth: 1
 
-      - name: Cache CMake dependencies
+      - name: Cache CMake and Build dependencies
         uses: actions/cache@v4
         with:
           path: |
             ~/.ccache
+            ${{ runner.os == 'Windows' && '~/AppData/Local/ccache' || '' }}
             build/${{ matrix.config_preset }}/_deps
           key: ${{ runner.os }}-${{ matrix.preset }}-${{ hashFiles('**/CMakeLists.txt', 'CMakePresets.json', 'cmake/*.cmake') }}
           restore-keys: |
@@ -107,7 +173,7 @@ jobs:
       - name: Install Windows Dependencies
         if: runner.os == 'Windows'
         run: |
-          choco install cmake ninja --no-progress
+          choco install cmake ninja ccache --no-progress
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
@@ -116,14 +182,22 @@ jobs:
 
       - name: Configure
         run: |
+          SANITIZERS_FLAG="OFF"
+          if [[ "${{ runner.os }}" == "Linux" ]]; then SANITIZERS_FLAG="ON"; fi
+          
           cmake --preset ${{ matrix.config_preset }} \
             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" \
             -DCH_CI=ON \
-            -DENABLE_UNITY_BUILD=ON
+            -DENABLE_UNITY_BUILD=ON \
+            -DWARNINGS_AS_ERRORS=OFF \
+            -DENABLE_WARNINGS=ON \
+            -DENABLE_SANITIZERS=$SANITIZERS_FLAG
 
       - name: Build
         run: |
-          cmake --build --preset ${{ matrix.preset }} --parallel $(nproc 2>/dev/null || echo 4)
+          CPU_COUNT=4
+          if [[ "${{ runner.os }}" == "Linux" ]]; then CPU_COUNT=$(nproc); else CPU_COUNT=$NUMBER_OF_PROCESSORS; fi
+          cmake --build --preset ${{ matrix.preset }} --parallel $CPU_COUNT
 
       - name: Test
         run: |
@@ -134,11 +208,19 @@ jobs:
           
           echo "Running CTest in $BUILD_DIR for config $config..."
           
+          # Output to JUNIT for reporting
           if [[ "${{ runner.os }}" == "Linux" ]]; then
-            xvfb-run -a ctest --test-dir "$BUILD_DIR" -C "$config" --output-on-failure --timeout 300
+            xvfb-run -a ctest --test-dir "$BUILD_DIR" -C "$config" --output-on-failure --timeout 300 --output-junit junit.xml
           else
-            ctest --test-dir "$BUILD_DIR" -C "$config" --output-on-failure --timeout 300
+            ctest --test-dir "$BUILD_DIR" -C "$config" --output-on-failure --timeout 300 --output-junit junit.xml
           fi
+
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v4
+        if: always()
+        with:
+          report_paths: '**/junit.xml'
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Artifacts
         if: always()
@@ -148,11 +230,66 @@ jobs:
           path: build/${{ matrix.config_preset }}/bin
           retention-days: 7
 
+  coverage:
+    name: Code Coverage (LCOV)
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Cache CMake and Build dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.ccache
+            build/linux-gcc-debug/_deps
+          key: ${{ runner.os }}-linux-gcc-debug-${{ hashFiles('**/CMakeLists.txt', 'CMakePresets.json', 'cmake/*.cmake') }}
+          restore-keys: |
+            ${{ runner.os }}-linux-gcc-debug-
+            ${{ runner.os }}-
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lcov build-essential cmake ninja-build \
+            libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
+            libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
+            pkg-config libgtk-3-dev libdrm-dev libgbm-dev xvfb
+
+      - name: Configure with Coverage
+        run: |
+          cmake --preset linux-gcc-debug \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCH_CI=ON \
+            -DENABLE_COVERAGE=ON
+
+      - name: Build
+        run: cmake --build build/linux-gcc-debug --target EngineTests --parallel $(nproc)
+
+      - name: Run Tests
+        run: |
+          xvfb-run -a ctest --test-dir build/linux-gcc-debug -C Debug --output-on-failure
+
+      - name: Generate Coverage Report
+        run: |
+          lcov --capture --directory . --output-file coverage.info
+          lcov --remove coverage.info '/usr/*' '*/_deps/*' '*/tests/*' '*/include/raylib/*' '*/include/imgui/*' --output-file coverage.cleaned.info
+          genhtml coverage.cleaned.info --output-directory coverage-report
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage-report
+          path: coverage-report/
+
   # ── PR Gate: waits for all builds to pass ──────────────────────────────────
   tests:
     name: All Tests Passed
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, lint, cs-lint, static-analysis, coverage]
     steps:
       - name: All jobs completed
         run: echo "All build and test jobs completed successfully"
