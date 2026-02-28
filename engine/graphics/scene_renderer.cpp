@@ -7,12 +7,10 @@
 #include "engine/graphics/renderer2d.h"
 #include "engine/graphics/shader_asset.h"
 #include "engine/physics/bvh/bvh.h"
-#include "imgui_converter.h"
 #include "engine/scene/components/light_component.h"
+#include "engine/scene/project.h"
 #include "imgui.h"
 #include "raylib.h"
-#include "engine/scene/project.h"
-#include "render_command.h"
 #include <raymath.h>
 #include <rlgl.h>
 
@@ -140,7 +138,7 @@ void SceneRenderer::RenderModels(Scene* scene, Timestep timestep)
 
     // 3. Pass A: Collect visible entities
     std::vector<AnimatedEntry> animatedEntries;
-    std::map<InstanceKey, InstanceGroup> instanceGroups;
+    std::unordered_map<InstanceKey, InstanceGroup, InstanceKeyHash> instanceGroups;
     CollectRenderItems(registry, frustum, animatedEntries, instanceGroups);
 
     // 4. Pass B: Draw animated individually
@@ -196,7 +194,7 @@ void SceneRenderer::PrepareLights(entt::registry& registry, const Frustum& frust
 
 void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& frustum,
                                        std::vector<AnimatedEntry>& animatedEntries,
-                                       std::map<InstanceKey, InstanceGroup>& instanceGroups)
+                                       std::unordered_map<InstanceKey, InstanceGroup, InstanceKeyHash>& instanceGroups)
 {
     auto view = registry.view<TransformComponent, ModelComponent>();
     for (auto entity : view)
@@ -288,7 +286,7 @@ void SceneRenderer::DrawAnimatedEntities(const std::vector<AnimatedEntry>& anima
     }
 }
 
-void SceneRenderer::DrawStaticEntities(std::map<InstanceKey, InstanceGroup>& instanceGroups)
+void SceneRenderer::DrawStaticEntities(std::unordered_map<InstanceKey, InstanceGroup, InstanceKeyHash>& instanceGroups)
 {
     for (auto& [key, group] : instanceGroups)
     {

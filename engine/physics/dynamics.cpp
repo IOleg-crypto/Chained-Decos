@@ -25,7 +25,6 @@ void Dynamics::Update(Scene* scene, const std::vector<entt::entity>& entities, f
         }
 
         ApplyGravity(registry, entity, gravity, deltaTime);
-        LogDiagnostics(registry, entity);
         IntegrateVelocity(registry, entity, deltaTime);
     }
 }
@@ -48,7 +47,4 @@ void Dynamics::IntegrateVelocity(entt::registry& registry, entt::entity entity, 
     entityTransform.Translation = Vector3Add(entityTransform.Translation, velocityDelta);
 }
 
-void Dynamics::LogDiagnostics(entt::registry& registry, entt::entity entity)
-{
-}
 } // namespace CHEngine

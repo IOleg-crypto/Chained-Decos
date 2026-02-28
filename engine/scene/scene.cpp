@@ -298,6 +298,12 @@ void Scene::UpdatePhysics(Timestep deltaTime)
 
 void Scene::UpdateAnimations(Timestep deltaTime)
 {
+    // Compute frameTime once per frame — Project::GetActive() is a global lookup
+    float targetFPS = 30.0f;
+    if (auto project = Project::GetActive())
+        targetFPS = project->GetConfig().Animation.TargetFPS;
+    const float frameTime = 1.0f / (targetFPS > 0.0f ? targetFPS : 30.0f);
+
     m_Registry.view<ModelComponent, AnimationComponent>().each([&](auto entity, auto& mc, auto& anim) {
         if (anim.IsPlaying && mc.Asset)
         {
@@ -308,13 +314,7 @@ void Scene::UpdateAnimations(Timestep deltaTime)
                 if (animIdx >= 0 && animIdx < animCount)
                 {
                     const auto& rawAnim = anims[animIdx];
-                    float targetFPS = 30.0f;
-                    if (Project::GetActive())
-                    {
-                        targetFPS = Project::GetActive()->GetConfig().Animation.TargetFPS;
-                    }
-                    float frameTime = 1.0f / (targetFPS > 0 ? targetFPS : 30.0f);
-
+                    // frameTime already computed above — no per-entity Project lookup
                     timeCounter += deltaTime;
                     while (timeCounter >= frameTime)
                     {

@@ -62,6 +62,12 @@ struct RendererData
     int LightCount = 0;
     ShaderAsset* CurrentShader = nullptr;
     EnvironmentSettings CurrentEnv;
+
+    // Scratch buffers reused per-frame to avoid heap allocations during bone matrix computation
+    std::vector<Matrix> ScratchBoneMatrices;
+    std::vector<Matrix> ScratchGlobalPose;
+    std::vector<Transform> ScratchLocalPoseA;
+    std::vector<Transform> ScratchLocalPoseB;
 };
 
 
@@ -133,7 +139,6 @@ public:
 
 private:
     void ApplyFogUniforms(ShaderAsset* shader);
-    void EnsureShadersLoaded();
     void InitializeSkybox();
     TextureCubemap GenTextureCubemap(Shader shader, Texture2D panorama, int size, int format);
 

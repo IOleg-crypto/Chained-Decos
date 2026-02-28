@@ -36,9 +36,6 @@ struct ApplicationSpecification
     std::string Name = "Chained Application";
     std::string WorkingDirectory;
     ApplicationCommandLineArgs CommandLineArgs;
-
-    bool EnableDocking = true;
-    bool EnableViewports = true;
     std::string ImGuiConfigurationPath = "imgui.ini";
 };
 
