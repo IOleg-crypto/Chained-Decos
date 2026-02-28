@@ -38,7 +38,8 @@ FetchContent_Declare(
 FetchContent_Declare(
     coral
     GIT_REPOSITORY https://github.com/StudioCherno/Coral.git
-    GIT_TAG main
+    # Pin to a stable commit that includes NativeString and NativeArray (InterOp types)
+    GIT_TAG 25437c915b452a08949d636d154a766d6c65601a
     SOURCE_SUBDIR cmake
 )
 
