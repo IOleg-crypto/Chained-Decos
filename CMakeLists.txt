@@ -1,5 +1,12 @@
 ﻿cmake_minimum_required(VERSION 3.31)
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+
+# Windows SDK Version (must be set before project())
+if(WIN32)
+    set(WINDOWS_SDK_VERSION "10.0" CACHE STRING "Windows SDK Version")
+    set(CMAKE_SYSTEM_VERSION ${WINDOWS_SDK_VERSION})
+endif()
+
 project(ChainedDecos LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 23)
@@ -20,6 +27,11 @@ option(CH_CI "Set to ON for CI environments" OFF)
 if(CH_CI)
     add_compile_definitions(CH_CI)
 endif()
+
+# Warning Settings
+option(DISABLE_ALL_WARNINGS "Disable all compiler warnings" OFF)
+option(ENABLE_WARNINGS "Enable compiler warnings" OFF)
+option(WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
 
 # Optional: ccache support for faster rebuilds
 # Install ccache: choco install ccache (Windows) or apt install ccache (Linux)
