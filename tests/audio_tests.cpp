@@ -5,28 +5,30 @@ using namespace CHEngine;
 
 TEST(AudioTest, InitializationAndShutdown)
 {
+    Audio audio;
     // Initialize audio device
-    Audio::Init();
+    audio.Init();
     
     // We expect it to be safe to call shutdown
-    Audio::Shutdown();
+    audio.Shutdown();
     
     // Test multiple init/shutdowns to ensure no state leaking or crashes
-    Audio::Init();
-    Audio::Shutdown();
+    audio.Init();
+    audio.Shutdown();
 }
 
 TEST(AudioTest, PlayWithoutAsset)
 {
-    Audio::Init();
+    Audio audio;
+    audio.Init();
 
     // Trying to play a null asset should safely be ignored and not crash
     std::shared_ptr<SoundAsset> nullAsset = nullptr;
     
     EXPECT_NO_THROW({
-        Audio::Play(nullAsset);
-        Audio::Stop(nullAsset);
+        audio.Play(nullAsset);
+        audio.Stop(nullAsset);
     });
 
-    Audio::Shutdown();
+    audio.Shutdown();
 }
