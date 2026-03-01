@@ -55,16 +55,16 @@ struct Renderer2DData
 class Renderer2D
 {
 public:
-    static void Init();
-    static void Shutdown();
-
-    static bool IsInitialized()
-    {
-        return s_Instance != nullptr;
-    }
-
     Renderer2D();
     ~Renderer2D();
+
+    void Init();
+    void Shutdown();
+
+    bool IsInitialized()
+    {
+        return m_Data != nullptr;
+    }
 
     // Screen-space (UI) rendering
     void BeginCanvas();
@@ -98,11 +98,7 @@ public:
         return m_Data->Stats;
     }
 
-    static Renderer2D& Get()
-    {
-        CH_CORE_ASSERT(s_Instance, "Renderer2D instance is null!");
-        return *s_Instance;
-    }
+    static Renderer2D& Get();
 
 private:
     void StartBatch();

@@ -1,24 +1,24 @@
 #include "renderer2d.h"
+#include "renderer.h"
 #include "engine/core/log.h"
 #include "engine/graphics/texture_asset.h"
 #include "rlgl.h"
 
 namespace CHEngine
 {
-Renderer2D* Renderer2D::s_Instance = nullptr;
+Renderer2D& Renderer2D::Get()
+{
+    return Renderer::Get().GetRenderer2D();
+}
 
 void Renderer2D::Init()
 {
-    CH_CORE_ASSERT(!s_Instance, "Renderer2D already initialized!");
-    s_Instance = new Renderer2D();
     CH_CORE_INFO("Initializing Renderer2D (Batching Mode)...");
 }
 
 void Renderer2D::Shutdown()
 {
     CH_CORE_INFO("Shutting down Renderer2D...");
-    delete s_Instance;
-    s_Instance = nullptr;
 }
 
 Renderer2D::Renderer2D()

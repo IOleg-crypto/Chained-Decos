@@ -1,4 +1,5 @@
 #include "ui_renderer.h"
+#include "renderer.h"
 #include "engine/core/profiler.h"
 #include "engine/graphics/asset_manager.h"
 #include "engine/graphics/font_asset.h"
@@ -11,20 +12,19 @@
 
 namespace CHEngine
 {
-UIRenderer* UIRenderer::s_Instance = nullptr;
+UIRenderer& UIRenderer::Get()
+{
+    return Renderer::Get().GetUIRenderer();
+}
 
 void UIRenderer::Init()
 {
-    CH_CORE_ASSERT(!s_Instance, "UIRenderer already initialized!");
-    s_Instance = new UIRenderer();
-    CH_CORE_INFO("Initializing UIRenderer...");
+    CH_CORE_INFO("Initializing UIRenderer (ImGui Backend)...");
 }
 
 void UIRenderer::Shutdown()
 {
     CH_CORE_INFO("Shutting down UIRenderer...");
-    delete s_Instance;
-    s_Instance = nullptr;
 }
 
 UIRenderer::UIRenderer()

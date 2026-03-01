@@ -1,24 +1,14 @@
-#include "thread_pool.h"
-#include "engine/core/assert.h"
-#include "engine/core/log.h"
+#include "engine/core/application.h"
 
 namespace CHEngine
 {
-ThreadPool* ThreadPool::s_Instance = nullptr;
-
 ThreadPool& ThreadPool::Get()
 {
-    CH_CORE_ASSERT(s_Instance, "ThreadPool instance is null!");
-    return *s_Instance;
+    return Application::Get().GetThreadPool();
 }
 
 ThreadPool::ThreadPool(size_t threads)
 {
-    if (!s_Instance)
-    {
-        s_Instance = this;
-    }
-    
     CH_CORE_INFO("ThreadPool: Initializing with {} threads", threads);
 
     for (size_t i = 0; i < threads; ++i)
@@ -30,10 +20,6 @@ ThreadPool::ThreadPool(size_t threads)
 ThreadPool::~ThreadPool()
 {
     Shutdown();
-    if (s_Instance == this)
-    {
-        s_Instance = nullptr;
-    }
 }
 
 void ThreadPool::Shutdown()

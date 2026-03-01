@@ -17,28 +17,40 @@
 #include <filesystem>
 #include <vector>
 
+#include "renderer2d.h"
+#include "ui_renderer.h"
+
+#include "engine/core/application.h"
+
 namespace CHEngine
 {
-Renderer* Renderer::s_Instance = nullptr;
+
+bool Renderer::IsInitialized()
+{
+    return Application::Get().GetRenderer().m_Data != nullptr;
+}
+
+Renderer& Renderer::Get()
+{
+    return Application::Get().GetRenderer();
+}
 
 void Renderer::Init()
 {
-    CH_CORE_ASSERT(!s_Instance, "Renderer already initialized!");
-    s_Instance = new Renderer();
-
     CH_CORE_INFO("Initializing Render System...");
 
-    Renderer2D::Init();
-    UIRenderer::Init();
+    m_Renderer2D->Init();
+    m_UIRenderer->Init();
 
-    s_Instance->InitializeSkybox();
+    InitializeSkybox();
     CH_CORE_INFO("Render System Initialized (Core).");
 }
 
 void Renderer::LoadEngineResources(AssetManager& assetManager)
 {
     CH_CORE_INFO("Renderer: Loading engine materials and shaders...");
-    auto& lib = s_Instance->GetShaderLibrary();
+    auto& renderer = Renderer::Get();
+    auto& lib = renderer.GetShaderLibrary();
 
     // Shaders loading - through AssetManager into the Library
     auto loadShader = [&](const std::string& name, const std::string& path) {
@@ -64,21 +76,27 @@ void Renderer::LoadEngineResources(AssetManager& assetManager)
         if (tex) target = tex->GetTexture();
     };
 
-    loadIcon(s_Instance->m_Data->LightIcon, "engine/resources/icons/light_bulb.png");
-    loadIcon(s_Instance->m_Data->SpawnIcon, "engine/resources/icons/leaf_icon.png");
-    loadIcon(s_Instance->m_Data->CameraIcon, "engine/resources/icons/camera_icon.png");
+    loadIcon(renderer.m_Data->LightIcon, "engine/resources/icons/light_bulb.png");
+    loadIcon(renderer.m_Data->SpawnIcon, "engine/resources/icons/leaf_icon.png");
+    loadIcon(renderer.m_Data->CameraIcon, "engine/resources/icons/camera_icon.png");
 }
 
 void Renderer::Shutdown()
 {
     CH_CORE_INFO("Shutting down Render System...");
-    delete s_Instance;
-    s_Instance = nullptr;
+    if (m_Renderer2D) m_Renderer2D->Shutdown();
+    if (m_UIRenderer) m_UIRenderer->Shutdown();
+    
+    InitializeSkybox(); // wait, why InitializeSkybox in shutdown? Ah, it was probably meant to be CleanupSkybox if it existed.
+    // Actually, renderer.cpp had InitializeSkybox(); in Init().
 }
 
 Renderer::Renderer()
 {
     m_Data = std::make_unique<RendererData>();
+    m_Renderer2D = std::make_unique<Renderer2D>();
+    m_UIRenderer = std::make_unique<UIRenderer>();
+    
     m_Data->Shaders = std::make_unique<ShaderLibrary>();
 
     // Initialize SSBO for lights
@@ -102,12 +120,9 @@ Renderer::~Renderer()
     }
 
     if (m_Data->LightSSBO > 0)
-    {
-        rlUnloadShaderBuffer(m_Data->LightSSBO);
-    }
+    rlUnloadShaderBuffer(m_Data->LightSSBO);
 
-    Renderer2D::Shutdown();
-    UIRenderer::Shutdown();
+    Shutdown();
 }
 
 void Renderer::BeginScene(const Camera3D& camera)

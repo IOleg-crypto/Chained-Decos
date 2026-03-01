@@ -1,11 +1,25 @@
 #include "audio.h"
+#include "engine/audio/sound_asset.h"
+#include "engine/core/application.h"
 #include "engine/core/log.h"
 #include "engine/scene/components.h"
-#include "raylib.h"
-#include "sound_asset.h"
 
 namespace CHEngine
 {
+Audio::Audio()
+{
+}
+
+Audio::~Audio()
+{
+    Shutdown();
+}
+
+Audio& Audio::Get()
+{
+    return Application::Get().GetAudio();
+}
+
 void Audio::Init()
 {
     if (!IsAudioDeviceReady())

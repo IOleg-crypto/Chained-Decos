@@ -79,7 +79,7 @@ std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
         Entity srcEntity = {entityHandle, &other->m_Registry};
         Entity dstEntity = newScene->CreateEntityWithUUID(id.ID);
 
-        ComponentSerializer::CopyAll(srcEntity, dstEntity);
+        ComponentSerializer::Get().CopyAll(srcEntity, dstEntity);
     });
 
     CH_CORE_INFO("Scene::Copy - Successfully copied {} entities", entityCount);
@@ -104,7 +104,7 @@ Entity Scene::CopyEntity(entt::entity copyEntity)
     Entity dstEntity = CreateEntity(name);
 
     // Copy components
-    ComponentSerializer::CopyAll(srcEntity, dstEntity);
+    ComponentSerializer::Get().CopyAll(srcEntity, dstEntity);
 
     return dstEntity;
 }
@@ -372,7 +372,7 @@ void Scene::UpdateScripting(Timestep deltaTime)
 
 void Scene::UpdateAudio(Timestep deltaTime)
 {
-    Audio::Update(this, deltaTime);
+    Audio::Get().Update(this, deltaTime);
 }
 
 void Scene::UpdateTransitions()
@@ -553,7 +553,7 @@ void Scene::OnAudioComponentAdded(entt::registry& reg, entt::entity entity)
         audio.IsPlaying = true;
         if (audio.Asset)
         {
-            Audio::Play(audio.Asset, audio.Volume, audio.Pitch, audio.Loop);
+            Audio::Get().Play(audio.Asset, audio.Volume, audio.Pitch, audio.Loop);
         }
     }
 }

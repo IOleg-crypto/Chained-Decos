@@ -70,7 +70,6 @@ endif()
 target_link_libraries(editor_core PUBLIC 
     engine
     imguilib
-    yaml-cpp
     nfd
 )
 target_compile_definitions(editor_core PUBLIC IMGUI_DEFINE_MATH_OPERATORS YAML_CPP_STATIC_DEFINE)

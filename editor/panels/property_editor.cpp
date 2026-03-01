@@ -481,7 +481,7 @@ void PropertyEditor::Init()
 
     Register<ManagedScriptComponent>("Scripts", [](auto& component, Entity entity) {
         bool changed = false;
-        auto& scriptClasses = ScriptEngine::GetScriptClasses();
+        auto& scriptClasses = ScriptEngine::Get().GetScriptClasses();
 
         for (size_t i = 0; i < component.Scripts.size(); i++)
         {

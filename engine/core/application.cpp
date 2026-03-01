@@ -64,27 +64,20 @@ Application::Application(const ApplicationSpecification& specification)
     // --- System Initialization ---
     m_ThreadPool = std::make_unique<ThreadPool>();
     m_Window = std::make_unique<Window>(windowProps);
+    m_Renderer = std::make_unique<Renderer>();
+    m_ScriptEngine = std::make_unique<ScriptEngine>();
+    m_Audio = std::make_unique<Audio>();
+    m_PhysicsSystem = std::make_unique<PhysicsSystem>();
+    m_ComponentSerializer = std::make_unique<ComponentSerializer>();
     m_Running = true;
 
-    InitSystems();
+    // --- Core Systems Initialization ---
+    m_ComponentSerializer->Initialize();
+    m_Renderer->Init();
+    m_PhysicsSystem->Init();
+    m_ScriptEngine->Init();
 
-    // ImGui Layer setup (always needed for Editor/Debugging)
-    m_ImGuiLayer = new ImGuiLayer();
-    PushOverlay(m_ImGuiLayer);
-
-    CH_CORE_INFO("Application Initialized: {}", m_Specification.Name);
-}
-
-void Application::InitSystems()
-{
-    CH_PROFILE_FUNCTION();
-
-    ComponentSerializer::Initialize();
-    Renderer::Init();
-    Physics::Init();
-    ScriptEngine::Init();
-
-    Audio::Init();
+    m_Audio->Init();
     if (IsAudioDeviceReady())
     {
         CH_CORE_INFO("Audio Device Initialized Successfully");
@@ -93,6 +86,12 @@ void Application::InitSystems()
     {
         CH_CORE_ERROR("Failed to initialize Audio Device!");
     }
+
+    // ImGui Layer setup (always needed for Editor/Debugging)
+    m_ImGuiLayer = new ImGuiLayer();
+    PushOverlay(m_ImGuiLayer);
+
+    CH_CORE_INFO("Application Initialized: {}", m_Specification.Name);
 }
 
 Application::~Application()
@@ -100,8 +99,10 @@ Application::~Application()
     if (m_Running)
     {
         CH_CORE_INFO("Shutting down Application...");
-        ScriptEngine::Shutdown();
-        Audio::Shutdown();
+        m_ScriptEngine->Shutdown();
+        m_Audio->Shutdown();
+        m_PhysicsSystem->Shutdown();
+        m_Renderer->Shutdown();
         m_LayerStack.Shutdown();
         m_Window.reset();
     }

@@ -15,11 +15,12 @@
 #include <memory>
 #include <string>
 #include <vector>
-
 namespace CHEngine
 {
 class ModelAsset;
 class ShaderAsset;
+class Renderer2D;
+class UIRenderer;
 
 struct RenderLight
 {
@@ -74,17 +75,15 @@ struct RendererData
 class Renderer
 {
 public:
-    static void Init();
-    static void Shutdown();
     static void LoadEngineResources(class AssetManager& assetManager);
 
-    static bool IsInitialized()
-    {
-        return s_Instance != nullptr;
-    }
+    static bool IsInitialized();
 
     Renderer();
     ~Renderer();
+
+    void Init();
+    void Shutdown();
 
     void BeginScene(const Camera3D& camera);
     void EndScene();
@@ -131,11 +130,10 @@ public:
         return *m_Data->Shaders;
     }
 
-    static Renderer& Get()
-    {
-        CH_CORE_ASSERT(s_Instance, "Renderer instance is null!");
-        return *s_Instance;
-    }
+    Renderer2D& GetRenderer2D() { return *m_Renderer2D; }
+    UIRenderer& GetUIRenderer() { return *m_UIRenderer; }
+
+    static Renderer& Get();
 
 private:
     void ApplyFogUniforms(ShaderAsset* shader);
@@ -154,8 +152,9 @@ private:
                               const std::vector<MaterialSlot>& materialSlotOverrides);
 
 private:
-    static Renderer* s_Instance;
     std::unique_ptr<RendererData> m_Data;
+    std::unique_ptr<Renderer2D> m_Renderer2D;
+    std::unique_ptr<UIRenderer> m_UIRenderer;
 };
 } // namespace CHEngine
 
