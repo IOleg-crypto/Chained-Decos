@@ -9,7 +9,11 @@
 #include "engine/core/thread_pool.h"
 #include "engine/core/timestep.h"
 #include "engine/core/window.h"
-
+#include "engine/graphics/renderer.h"
+#include "engine/script/scriptengine.h"
+#include "engine/audio/audio.h"
+#include "engine/physics/physics.h"
+#include "engine/scene/component_serializer.h"
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -18,6 +22,7 @@
 
 namespace CHEngine
 {
+
 
 struct ApplicationCommandLineArgs
 {
@@ -78,6 +83,26 @@ public:
     {
         return m_LayerStack;
     }
+    Renderer& GetRenderer()
+    {
+        return *m_Renderer;
+    }
+    ScriptEngine& GetScriptEngine()
+    {
+        return *m_ScriptEngine;
+    }
+    Audio& GetAudio()
+    {
+        return *m_Audio;
+    }
+    PhysicsSystem& GetPhysicsSystem()
+    {
+        return *m_PhysicsSystem;
+    }
+    ComponentSerializer& GetComponentSerializer()
+    {
+        return *m_ComponentSerializer;
+    }
     ThreadPool& GetThreadPool()
     {
         return *m_ThreadPool;
@@ -89,7 +114,6 @@ private:
     bool OnWindowClose(WindowCloseEvent& e);
     bool OnWindowResize(WindowResizeEvent& e);
     void ExecuteMainThreadQueue();
-    void InitSystems();
 
 private:
     static Application* s_Instance;
@@ -97,6 +121,11 @@ private:
     ApplicationSpecification m_Specification;
     std::unique_ptr<Window> m_Window;
     std::unique_ptr<ThreadPool> m_ThreadPool;
+    std::unique_ptr<Renderer> m_Renderer;
+    std::unique_ptr<ScriptEngine> m_ScriptEngine;
+    std::unique_ptr<Audio> m_Audio;
+    std::unique_ptr<PhysicsSystem> m_PhysicsSystem;
+    std::unique_ptr<ComponentSerializer> m_ComponentSerializer;
     ImGuiLayer* m_ImGuiLayer = nullptr;
 
     bool m_Running = true;

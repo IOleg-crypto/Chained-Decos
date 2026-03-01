@@ -101,8 +101,7 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path& path)
         }
 
         // Initialize and Load Scripting
-        ScriptEngine::Init();
-        ScriptEngine::ReloadAssembly();
+        ScriptEngine::Get().ReloadAssembly();
 
         return s_ActiveProject;
     }
