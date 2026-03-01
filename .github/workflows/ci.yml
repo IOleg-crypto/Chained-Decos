@@ -74,6 +74,10 @@ jobs:
           variant: ${{ runner.os == 'Windows' && 'sccache' || 'ccache' }}
           key: ${{ runner.os }}-${{ matrix.preset }}
 
+      - name: Setup Mold Linker
+        if: runner.os == 'Linux'
+        uses: rui314/setup-mold@v1
+
       - name: Install Linux Dependencies
         if: runner.os == 'Linux'
         run: |
@@ -195,6 +199,15 @@ jobs:
       - name: Get CMake and Ninja
         uses: lukka/get-cmake@latest
 
+      - name: Setup Compiler Cache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          variant: ccache
+          key: Linux-linux-gcc-release
+
+      - name: Setup Mold Linker
+        uses: rui314/setup-mold@v1
+
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
@@ -214,6 +227,8 @@ jobs:
         run: |
           cmake --preset linux-gcc-release \
             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/sdk" \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCH_CI=ON \
             -DENABLE_UNITY_BUILD=ON
 
@@ -230,6 +245,12 @@ jobs:
         with:
           name: Windows-windows-ninja-release-binaries
           path: ${{ github.workspace }}/sdk/bin/windows
+
+      - name: Package NuGet API
+        run: |
+          mkdir -p "${{ github.workspace }}/sdk/nuget"
+          # Find the generated .nupkg file from the build step and copy it
+          find build/linux-gcc-release -name "*.nupkg" -exec cp {} "${{ github.workspace }}/sdk/nuget/" \;
 
       - name: Package SDK
         run: |
