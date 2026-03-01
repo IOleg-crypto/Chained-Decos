@@ -12,33 +12,45 @@ namespace CHEngine
 class TextureAsset : public Asset
 {
 public:
-    TextureAsset() = default;
-    virtual ~TextureAsset();
-
-    static std::shared_ptr<TextureAsset> Load(const std::string &path);
-    static void LoadAsync(const std::string &path);
-
-    void UploadToGPU();
-    void LoadFromFile(const std::string &path);
-
-    virtual AssetType GetType() const override
+    static AssetType GetStaticType()
     {
         return AssetType::Texture;
     }
 
-    Texture2D &GetTexture()
+    TextureAsset()
+        : Asset(GetStaticType())
+    {
+    }
+    virtual ~TextureAsset();
+
+    void UploadToGPU();
+
+    // For internal use by Importer
+    void SetPendingImage(Image image)
+    {
+        m_PendingImage = image;
+        m_HasPendingImage = true;
+    }
+
+    Texture2D& GetTexture()
     {
         return m_Texture;
     }
-    void SetTexture(Texture2D tex)
+    void SetTexture(Texture2D texture)
     {
-        m_Texture = tex;
+        m_Texture = texture;
     }
+
+    bool IsCubemap() const { return m_IsCubemap; }
+    void SetIsCubemap(bool isCubemap) { m_IsCubemap = isCubemap; }
+
+    void Unload();
 
 private:
     Texture2D m_Texture = {0};
     Image m_PendingImage = {0};
     bool m_HasPendingImage = false;
+    bool m_IsCubemap = false;
 };
 } // namespace CHEngine
 

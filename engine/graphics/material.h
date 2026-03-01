@@ -1,9 +1,7 @@
-#include <glm/glm.hpp>
-#include <raylib.h>
 #ifndef CH_MATERIAL_H
 #define CH_MATERIAL_H
 
-// Removed redundant include: engine/core/math_types.h
+#include <raylib.h>
 #include <string>
 
 namespace CHEngine
@@ -22,8 +20,13 @@ struct MaterialInstance
     std::string MetallicRoughnessPath = "";
     bool OverrideMetallicRoughness = false;
 
+    std::string OcclusionMapPath = "";
+    bool OverrideOcclusion = false;
+
     // Optional Emissive
     std::string EmissivePath = "";
+    Color EmissiveColor = BLACK;
+    float EmissiveIntensity = 0.0f;
     bool OverrideEmissive = false;
 
     // Shader
@@ -34,8 +37,14 @@ struct MaterialInstance
     float Metalness = 0.0f;
     float Roughness = 0.5f;
 
+    // Rendering State
+    bool DoubleSided = false;
+    bool Transparent = false;
+    float Alpha = 1.0f;
+
     MaterialInstance() = default;
 };
+
 } // namespace CHEngine
 
 #endif // CH_MATERIAL_H

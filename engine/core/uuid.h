@@ -1,9 +1,9 @@
 #ifndef CH_UUID_H
 #define CH_UUID_H
 
+#include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <cstddef>
 
 namespace CHEngine
 {
@@ -12,7 +12,10 @@ class UUID
 public:
     UUID();
     UUID(uint64_t uuid);
-    UUID(const UUID &) = default;
+    UUID(const std::string& uuidStr);
+    UUID(const UUID&) = default;
+
+    std::string ToString() const;
 
     operator uint64_t() const
     {
@@ -28,7 +31,7 @@ namespace std
 {
 template <> struct hash<CHEngine::UUID>
 {
-    std::size_t operator()(const CHEngine::UUID &uuid) const
+    std::size_t operator()(const CHEngine::UUID& uuid) const
     {
         return std::hash<uint64_t>()((uint64_t)uuid);
     }

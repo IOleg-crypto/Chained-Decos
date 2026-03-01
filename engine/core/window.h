@@ -1,6 +1,7 @@
 #ifndef CH_WINDOW_H
 #define CH_WINDOW_H
 
+#include <memory>
 #include <string>
 
 // Forward declare GLFWwindow
@@ -8,7 +9,7 @@ struct GLFWwindow;
 
 namespace CHEngine
 {
-struct WindowConfig
+struct WindowProperties
 {
     std::string Title;
     int Width = 1280;
@@ -16,21 +17,28 @@ struct WindowConfig
     bool VSync = true;
     bool Resizable = true;
     bool Fullscreen = false;
-    int TargetFPS = 60;
+    int TargetFramesPerSecond = 60;
+    std::string IconPath = "";
+
+    // UI / Docking
     bool EnableViewports = true;
     bool EnableDocking = true;
-    std::string IniFilename = "imgui.ini";
+    std::string ImGuiConfigurationPath = "imgui.ini";
+
+    WindowProperties(const std::string& title = "Chained Engine", int width = 1280, int height = 720)
+        : Title(title),
+          Width(width),
+          Height(height)
+    {
+    }
 };
 
 class Window
 {
 public:
-    Window(const WindowConfig &config);
+    Window(const WindowProperties& properties);
     ~Window();
-
-    void PollEvents();
     bool ShouldClose() const;
-
     void BeginFrame();
     void EndFrame();
 
@@ -43,24 +51,33 @@ public:
         return m_Height;
     }
 
-    GLFWwindow *GetNativeWindow() const
+    GLFWwindow* GetNativeWindow() const
     {
-        return m_Window;
+        return m_WindowHandle;
     }
 
-    void SetTitle(const std::string &title);
+    void SetTitle(const std::string& title);
+    void SetSize(int width, int height);
+    void SetSizeDirect(int width, int height)
+    {
+        m_Width = width;
+        m_Height = height;
+    }
+
     void ToggleFullscreen();
+    void SetFullscreen(bool enabled);
 
     void SetVSync(bool enabled);
-    void SetTargetFPS(int fps);
+    void SetAntialiasing(bool enabled);
+    void SetTargetFramesPerSecond(int framesPerSecond);
     void SetWindowIcon(Image icon);
 
 private:
-    GLFWwindow *m_Window = nullptr;
+    GLFWwindow* m_WindowHandle = nullptr;
     int m_Width, m_Height;
     std::string m_Title;
     bool m_VSync = true;
-    std::string m_IniFilename;
+    std::string m_ImGuiConfigurationPath;
 };
 } // namespace CHEngine
 

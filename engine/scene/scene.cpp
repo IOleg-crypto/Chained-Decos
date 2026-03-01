@@ -1,27 +1,28 @@
 #include "engine/scene/scene.h"
+#include "engine/audio/audio.h"
 #include "engine/audio/sound_asset.h"
 #include "engine/core/application.h"
 #include "engine/core/profiler.h"
 #include "engine/graphics/asset_manager.h"
 #include "engine/graphics/model_asset.h"
-#include "engine/graphics/visuals.h"
+#include "engine/physics/bvh/bvh.h"
 #include "engine/physics/physics.h"
+#include "engine/scene/component_serializer.h"
+#include "engine/scene/scene_events.h"
 #include "engine/scene/scene_scripting.h"
 #include "project.h"
 #include "raylib.h"
 #include "raymath.h"
 #include "scene_serializer.h"
-#include "scriptable_entity.h"
-#include "ui_math.h"
+#include <Coral/ManagedObject.hpp>
 
 namespace CHEngine
 {
-void Scene::RequestSceneChange(const std::string &path)
-{
-    Application::Get().RequestSceneChange(path);
-}
+// Scene implementation
 Scene::Scene()
 {
+    m_Registry.ctx().emplace<Scene*>(this);
+
     // Declarative signals binding
     m_Registry.on_construct<ModelComponent>().connect<&Scene::OnModelComponentAdded>(this);
     m_Registry.on_update<ModelComponent>().connect<&Scene::OnModelComponentAdded>(this);
@@ -29,8 +30,16 @@ Scene::Scene()
     m_Registry.on_construct<AnimationComponent>().connect<&Scene::OnAnimationComponentAdded>(this);
     m_Registry.on_update<AnimationComponent>().connect<&Scene::OnAnimationComponentAdded>(this);
 
-    m_Registry.on_construct<AudioComponent>().connect<&Scene::OnAudioComponentAdded>(this);
-    m_Registry.on_update<AudioComponent>().connect<&Scene::OnAudioComponentAdded>(this);
+    m_Registry.on_construct<ColliderComponent>().connect<&Scene::OnColliderComponentAdded>(this);
+    m_Registry.on_update<ColliderComponent>().connect<&Scene::OnColliderComponentAdded>(this);
+
+    m_Registry.on_construct<PanelControl>().connect<&Scene::OnPanelControlAdded>(this);
+    m_Registry.on_update<PanelControl>().connect<&Scene::OnPanelControlAdded>(this);
+
+    m_Registry.on_destroy<ManagedScriptComponent>().connect<&Scene::OnScriptComponentDestroyed>(this);
+
+    // Every scene must have its own environment to avoid skybox leaking/bugs
+    m_Settings.Environment = std::make_shared<EnvironmentAsset>();
 
     // UUID Mapping
     m_Registry.on_construct<IDComponent>().connect<&Scene::OnIDConstruct>(this);
@@ -39,33 +48,47 @@ Scene::Scene()
     // Hierarchy Mapping
     m_Registry.on_destroy<HierarchyComponent>().connect<&Scene::OnHierarchyDestroy>(this);
 
-    // Every scene must have its own environment to avoid skybox leaking/bugs
-    m_Settings.Environment = std::make_shared<EnvironmentAsset>();
+    // Create physics instance
+    m_Physics = std::make_unique<Physics>(this);
 }
 
 Scene::~Scene()
 {
+    // Clean up active signals
+    m_Registry.clear();
 }
 
 std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
 {
+    CH_PROFILE_FUNCTION();
+    CH_CORE_INFO("Scene::Copy - Starting copy of scene '{}'", other->m_Settings.Name);
+
     std::shared_ptr<Scene> newScene = std::make_shared<Scene>();
 
-    SceneSerializer serializer(other.get());
-    std::string yaml = serializer.SerializeToString();
+    // 1. Copy Scene Settings
+    newScene->m_Settings = other->m_Settings;
 
-    SceneSerializer deserializer(newScene.get());
-    if (deserializer.DeserializeFromString(yaml))
-    {
-        return newScene;
-    }
+    // 2. Copy Entities (Direct Memory Copy)
+    auto& srcRegistry = other->m_Registry;
+    auto& dstRegistry = newScene->m_Registry;
 
-    return nullptr;
+    // Copy all entities using ComponentSerializer
+    int entityCount = 0;
+    srcRegistry.view<IDComponent>().each([&](auto entityHandle, auto& id) {
+        entityCount++;
+        Entity srcEntity = {entityHandle, &other->m_Registry};
+        Entity dstEntity = newScene->CreateEntityWithUUID(id.ID);
+
+        ComponentSerializer::CopyAll(srcEntity, dstEntity);
+    });
+
+    CH_CORE_INFO("Scene::Copy - Successfully copied {} entities", entityCount);
+    return newScene;
 }
 
-Entity Scene::CreateEntity(const std::string &name)
+Entity Scene::CreateEntity(const std::string& name)
 {
-    Entity entity(m_Registry.create(), this);
+    Entity entity(m_Registry.create(), &m_Registry);
     entity.AddComponent<IDComponent>();
     entity.AddComponent<TagComponent>(name.empty() ? "Entity" : name);
     entity.AddComponent<TransformComponent>();
@@ -74,9 +97,21 @@ Entity Scene::CreateEntity(const std::string &name)
     return entity;
 }
 
-Entity Scene::CreateEntityWithUUID(UUID uuid, const std::string &name)
+Entity Scene::CopyEntity(entt::entity copyEntity)
 {
-    Entity entity(m_Registry.create(), this);
+    Entity srcEntity(copyEntity, &m_Registry);
+    std::string name = srcEntity.GetName();
+    Entity dstEntity = CreateEntity(name);
+
+    // Copy components
+    ComponentSerializer::CopyAll(srcEntity, dstEntity);
+
+    return dstEntity;
+}
+
+Entity Scene::CreateEntityWithUUID(UUID uuid, const std::string& name)
+{
+    Entity entity(m_Registry.create(), &m_Registry);
     entity.AddComponent<IDComponent>(uuid);
     entity.AddComponent<TagComponent>(name.empty() ? "Entity" : name);
     entity.AddComponent<TransformComponent>();
@@ -85,8 +120,9 @@ Entity Scene::CreateEntityWithUUID(UUID uuid, const std::string &name)
     return entity;
 }
 
-Entity Scene::CreateUIEntity(const std::string &type, const std::string &name)
+Entity Scene::CreateUIEntity(const std::string& type, const std::string& name)
 {
+
     Entity entity = CreateEntity(name.empty() ? type : name);
     entity.AddComponent<ControlComponent>();
 
@@ -110,6 +146,70 @@ Entity Scene::CreateUIEntity(const std::string &type, const std::string &name)
     {
         entity.AddComponent<CheckboxControl>();
     }
+    else if (type == "InputText")
+    {
+        entity.AddComponent<InputTextControl>();
+    }
+    else if (type == "ComboBox")
+    {
+        entity.AddComponent<ComboBoxControl>();
+    }
+    else if (type == "ProgressBar")
+    {
+        entity.AddComponent<ProgressBarControl>();
+    }
+    else if (type == "Image")
+    {
+        entity.AddComponent<ImageControl>();
+    }
+    else if (type == "ImageButton")
+    {
+        entity.AddComponent<ImageButtonControl>();
+    }
+    else if (type == "Separator")
+    {
+        entity.AddComponent<SeparatorControl>();
+    }
+    else if (type == "RadioButton")
+    {
+        entity.AddComponent<RadioButtonControl>();
+    }
+    else if (type == "ColorPicker")
+    {
+        entity.AddComponent<ColorPickerControl>();
+    }
+    else if (type == "DragFloat")
+    {
+        entity.AddComponent<DragFloatControl>();
+    }
+    else if (type == "DragInt")
+    {
+        entity.AddComponent<DragIntControl>();
+    }
+    else if (type == "TreeNode")
+    {
+        entity.AddComponent<TreeNodeControl>();
+    }
+    else if (type == "TabBar")
+    {
+        entity.AddComponent<TabBarControl>();
+    }
+    else if (type == "TabItem")
+    {
+        entity.AddComponent<TabItemControl>();
+    }
+    else if (type == "CollapsingHeader")
+    {
+        entity.AddComponent<CollapsingHeaderControl>();
+    }
+    else if (type == "PlotLines")
+    {
+        entity.AddComponent<PlotLinesControl>();
+    }
+    else if (type == "PlotHistogram")
+    {
+        entity.AddComponent<PlotHistogramControl>();
+    }
 
     return entity;
 }
@@ -117,19 +217,29 @@ Entity Scene::CreateUIEntity(const std::string &type, const std::string &name)
 void Scene::DestroyEntity(Entity entity)
 {
     CH_CORE_ASSERT(entity, "Entity is null!");
-    CH_CORE_INFO("Entity Destroyed: {}", (uint32_t)entity);
+
+    // Recursive destruction
+    if (entity.HasComponent<HierarchyComponent>())
+    {
+        auto children = entity.GetComponent<HierarchyComponent>().Children;
+        for (auto childHandle : children)
+        {
+            DestroyEntity(Entity(childHandle, &m_Registry));
+        }
+    }
+
+    CH_CORE_INFO("Entity Destroyed: {} ({})", entity.GetName(), (uint32_t)entity);
     m_Registry.destroy(entity);
 }
 
-void Scene::OnHierarchyDestroy(entt::registry &reg, entt::entity entity)
+void Scene::OnHierarchyDestroy(entt::registry& reg, entt::entity entity)
 {
-    auto &hc = reg.get<HierarchyComponent>(entity);
+    auto& hc = reg.get<HierarchyComponent>(entity);
 
     // 1. Detach from parent
-    if (hc.Parent != entt::null && reg.valid(hc.Parent) &&
-        reg.all_of<HierarchyComponent>(hc.Parent))
+    if (hc.Parent != entt::null && reg.valid(hc.Parent) && reg.all_of<HierarchyComponent>(hc.Parent))
     {
-        auto &phc = reg.get<HierarchyComponent>(hc.Parent);
+        auto& phc = reg.get<HierarchyComponent>(hc.Parent);
         auto it = std::find(phc.Children.begin(), phc.Children.end(), entity);
         if (it != phc.Children.end())
         {
@@ -137,33 +247,368 @@ void Scene::OnHierarchyDestroy(entt::registry &reg, entt::entity entity)
         }
     }
 
-    // 2. Clear parent link in children (detaching them, not destroying)
-    for (auto child : hc.Children)
+    // Children are handled by recursive DestroyEntity call
+}
+
+void Scene::OnUpdateRuntime(Timestep timestep)
+{
+    CH_PROFILE_FUNCTION();
+
+    UpdateHierarchy();
+    UpdateScripting(timestep);
+    UpdateAnimations(timestep);
+    UpdateUIActions();
+    UpdateAudio(timestep);
+    UpdateCameras(timestep);
+    UpdateTransitions();
+    UpdatePhysics(timestep);
+}
+
+void Scene::OnUpdateEditor(Timestep timestep)
+{
+    CH_PROFILE_FUNCTION();
+
+    UpdateHierarchy();
+    UpdateAnimations(timestep);
+    UpdateCameras(timestep);
+    UpdatePhysics(timestep);
+}
+
+void Scene::OnViewportResize(uint32_t width, uint32_t height)
+{
+    auto view = m_Registry.view<CameraComponent>();
+    for (auto entity : view)
     {
-        if (reg.valid(child) && reg.all_of<HierarchyComponent>(child))
+        auto& cameraComponent = view.get<CameraComponent>(entity);
+        if (!cameraComponent.FixedAspectRatio)
         {
-            reg.get<HierarchyComponent>(child).Parent = entt::null;
+            cameraComponent.Camera.SetViewportSize(width, height);
         }
     }
 }
 
-template <> void Scene::OnComponentAdded<ModelComponent>(Entity entity, ModelComponent &component)
-{
-    if (!component.ModelPath.empty())
-    {
-        // Check if we need to (re)load the asset
-        bool pathChanged = !component.Asset || (component.Asset->GetPath() != component.ModelPath);
+// -------------------------------------------------------------------------------------------------------------------
+// Update Logic Implementation
+// -------------------------------------------------------------------------------------------------------------------
 
-        if (pathChanged)
+void Scene::UpdatePhysics(Timestep deltaTime)
+{
+    m_Physics->Update(deltaTime, IsSimulationRunning());
+}
+
+void Scene::UpdateAnimations(Timestep deltaTime)
+{
+    // Compute frameTime once per frame — Project::GetActive() is a global lookup
+    float targetFPS = 30.0f;
+    if (auto project = Project::GetActive())
+        targetFPS = project->GetConfig().Animation.TargetFPS;
+    const float frameTime = 1.0f / (targetFPS > 0.0f ? targetFPS : 30.0f);
+
+    m_Registry.view<ModelComponent, AnimationComponent>().each([&](auto entity, auto& mc, auto& anim) {
+        if (anim.IsPlaying && mc.Asset)
         {
-            component.Asset = AssetManager::Get<ModelAsset>(component.ModelPath);
-            component.MaterialsInitialized = false; // Reset materials if asset changed
+            const auto& anims = mc.Asset->GetRawAnimations();
+            int animCount = (int)anims.size();
+
+            auto UpdateTrack = [&](int animIdx, int& frame, float& timeCounter) {
+                if (animIdx >= 0 && animIdx < animCount)
+                {
+                    const auto& rawAnim = anims[animIdx];
+                    // frameTime already computed above — no per-entity Project lookup
+                    timeCounter += deltaTime;
+                    while (timeCounter >= frameTime)
+                    {
+                        frame++;
+                        timeCounter -= frameTime;
+                        if (frame >= rawAnim.frameCount)
+                        {
+                            if (anim.IsLooping)
+                            {
+                                frame = 0;
+                            }
+                            else
+                            {
+                                frame = rawAnim.frameCount - 1;
+                                return false; // Animation finished
+                            }
+                        }
+                    }
+                }
+                return true;
+            };
+
+            // Update primary track
+            bool primaryPlaying = UpdateTrack(anim.CurrentAnimationIndex, anim.CurrentFrame, anim.FrameTimeCounter);
+
+            if (anim.Blending)
+            {
+                // Note: We use the same time counter/speed for the target track for simplicity
+                float targetTimeCounter = anim.FrameTimeCounter;
+                UpdateTrack(anim.TargetAnimationIndex, anim.TargetFrame, targetTimeCounter);
+
+                anim.BlendTimer += deltaTime;
+                if (anim.BlendTimer >= anim.BlendDuration)
+                {
+                    // Transition complete
+                    anim.CurrentAnimationIndex = anim.TargetAnimationIndex;
+                    anim.CurrentFrame = anim.TargetFrame;
+                    anim.Blending = false;
+                    anim.TargetAnimationIndex = -1;
+                    anim.BlendTimer = 0.0f;
+                }
+            }
+            else if (!primaryPlaying)
+            {
+                anim.IsPlaying = false;
+            }
+        }
+    });
+}
+
+void Scene::UpdateScripting(Timestep deltaTime)
+{
+    SceneScripting::Update(this, deltaTime);
+}
+
+void Scene::UpdateAudio(Timestep deltaTime)
+{
+    Audio::Update(this, deltaTime);
+}
+
+void Scene::UpdateTransitions()
+{
+    m_Registry.view<SceneTransitionComponent>().each([&](auto entity, auto& tr) {
+        if (tr.Triggered && !tr.TargetScenePath.empty())
+        {
+            SceneChangeRequestEvent e(tr.TargetScenePath);
+            Application::Get().OnEvent(e);
+        }
+    });
+}
+
+void Scene::UpdateCameras(Timestep deltaTime)
+{
+    m_Registry.view<TransformComponent, CameraComponent>().each([&](auto entity, auto& tc, auto& cc) {
+        if (cc.IsOrbitCamera && !cc.TargetEntityTag.empty())
+        {
+            Entity target = FindEntityByTag(cc.TargetEntityTag);
+            if (!target)
+            {
+                return;
+            }
+
+            auto& targetTc = target.GetComponent<TransformComponent>();
+
+            // Spherical coordinates → orbit position
+            float yaw = cc.OrbitYaw * DEG2RAD;
+            float pitch = cc.OrbitPitch * DEG2RAD;
+            Vector3 offset = {cc.OrbitDistance * sin(yaw) * cos(pitch), cc.OrbitDistance * sin(pitch),
+                              cc.OrbitDistance * cos(yaw) * cos(pitch)};
+            tc.Translation = Vector3Add(targetTc.Translation, offset);
+
+            // LookAt → quaternion rotation
+            Matrix viewMat = MatrixLookAt(tc.Translation, targetTc.Translation, {0, 1, 0});
+            tc.RotationQuat = QuaternionFromMatrix(MatrixInvert(viewMat));
+
+            // Sync Euler angles for Inspector display
+            tc.Rotation = QuaternionToEuler(tc.RotationQuat);
+            tc.Rotation.x *= RAD2DEG;
+            tc.Rotation.y *= RAD2DEG;
+            tc.Rotation.z *= RAD2DEG;
+        }
+    });
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+
+void Scene::OnRuntimeStart()
+{
+    m_IsSimulationRunning = true;
+
+    std::string sceneName = "Unknown";
+    auto view = m_Registry.view<TagComponent>();
+    if (!view.empty())
+    {
+        sceneName = view.get<TagComponent>(view.front()).Tag;
+    }
+
+    // Track initialization statistics
+    int modelsLoaded = 0, modelsFailed = 0;
+    int collidersBuilt = 0, collidersFailed = 0;
+    int scriptsCreated = 0;
+
+    // Phase 1: Load models (other components may depend on them)
+    m_Registry.view<ModelComponent>().each([&](auto entity, auto& component) {
+        if (!component.ModelPath.empty())
+        {
+            OnModelComponentAdded(m_Registry, entity);
+            if (component.Asset && component.Asset->IsReady())
+            {
+                modelsLoaded++;
+            }
+            else
+            {
+                modelsFailed++;
+                CH_CORE_ERROR("Failed to load model: {}", component.ModelPath);
+            }
+        }
+    });
+
+    // Phase 2: Initialize ColliderComponents (may depend on models for mesh colliders)
+    m_Registry.view<ColliderComponent>().each([&](auto entity, auto& component) {
+        OnColliderComponentAdded(m_Registry, entity);
+        if (component.Type == ColliderType::Mesh)
+        {
+            if (component.BVHRoot)
+            {
+                collidersBuilt++;
+            }
+            else if (!component.ModelPath.empty())
+            {
+                collidersFailed++;
+                CH_CORE_ERROR("Failed to build BVH for collider: {}", component.ModelPath);
+            }
+        }
+    });
+
+    // Phase 3: Initialize ManagedScripts (deferred to SceneScripting)
+    // SceneScripting::OnRuntimeStart(this);
+
+    // Phase 4: Initialize UI textures (PanelControl)
+    m_Registry.view<PanelControl>().each([&](auto entity, auto& panel) { OnPanelControlAdded(m_Registry, entity); });
+
+    // Report initialization results
+    CH_CORE_INFO("Runtime initialization complete:");
+    CH_CORE_INFO("  - Models: {} loaded, {} failed", modelsLoaded, modelsFailed);
+    CH_CORE_INFO("  - Colliders: {} built, {} failed", collidersBuilt, collidersFailed);
+    CH_CORE_INFO("  - Scripts: {} created", scriptsCreated);
+}
+
+void Scene::OnRuntimeStop()
+{
+    CH_CORE_INFO("Scene - Stopping runtime simulation");
+
+    // Destroy all active C# script instances (calls OnDestroy and frees memory)
+    SceneScripting::Stop(this);
+
+    m_IsSimulationRunning = false;
+    CH_CORE_INFO("Runtime stopped - all scripts destroyed");
+}
+
+void Scene::OnEvent(Event& e)
+{
+    SceneScripting::DispatchEvent(this, e);
+}
+
+Entity Scene::FindEntityByTag(const std::string& tag)
+{
+    auto view = m_Registry.view<TagComponent>();
+    for (auto entity : view)
+    {
+        const auto& tagComp = view.get<TagComponent>(entity);
+        if (tagComp.Tag == tag)
+        {
+            return {entity, &m_Registry};
+        }
+    }
+    return {};
+}
+Entity Scene::GetEntityByUUID(UUID uuid)
+{
+    if (m_EntityMap.find(uuid) != m_EntityMap.end())
+    {
+        return {m_EntityMap.at(uuid), &m_Registry};
+    }
+    return {};
+}
+
+void Scene::OnIDConstruct(entt::registry& reg, entt::entity entity)
+{
+    auto& id = reg.get<IDComponent>(entity).ID;
+    m_EntityMap[id] = entity;
+}
+
+void Scene::OnIDDestroy(entt::registry& reg, entt::entity entity)
+{
+    auto& id = reg.get<IDComponent>(entity).ID;
+    m_EntityMap.erase(id);
+}
+
+void Scene::OnAudioComponentAdded(entt::registry& reg, entt::entity entity)
+{
+    auto& audio = reg.get<AudioComponent>(entity);
+
+    if (!audio.SoundPath.empty())
+    {
+        auto project = Project::GetActive();
+        if (project && project->GetAssetManager())
+        {
+            audio.Asset = project->GetAssetManager()->Get<SoundAsset>(audio.SoundPath);
+        }
+    }
+
+    // Reactive Sound Playback
+    if (audio.PlayOnStart && !audio.IsPlaying)
+    {
+        audio.IsPlaying = true;
+        if (audio.Asset)
+        {
+            Audio::Play(audio.Asset, audio.Volume, audio.Pitch, audio.Loop);
+        }
+    }
+}
+
+void Scene::OnModelComponentAdded(entt::registry& reg, entt::entity entity)
+{
+    auto& component = reg.get<ModelComponent>(entity);
+    if (component.ModelPath.empty())
+    {
+        return;
+    }
+
+    auto project = Project::GetActive();
+    std::string resolvedPath = component.ModelPath;
+    if (project && project->GetAssetManager())
+    {
+        resolvedPath = project->GetAssetManager()->ResolvePath(component.ModelPath);
+    }
+
+    bool pathChanged = !component.Asset || (component.Asset->GetPath() != resolvedPath);
+
+    if (pathChanged)
+    {
+        if (project && project->GetAssetManager())
+        {
+            component.Asset = project->GetAssetManager()->Get<ModelAsset>(component.ModelPath);
+            if (!component.Asset)
+            {
+                CH_CORE_ERROR("Failed to load model asset: {}", component.ModelPath);
+            }
+        }
+        else
+        {
+            CH_CORE_ERROR("No active project or AssetManager!");
         }
 
-        if (component.Asset && !component.MaterialsInitialized)
+        // Only reset materials if we don't have deserialized ones
+        if (component.Materials.empty())
         {
-            Model &model = component.Asset->GetModel();
-            component.Materials.clear();
+            component.MaterialsInitialized = false;
+        }
+    }
+
+    if (component.Asset && !component.MaterialsInitialized)
+    {
+        if (component.Asset->GetState() != AssetState::Ready)
+        {
+            return;
+        }
+
+        Model& model = component.Asset->GetModel();
+
+        // Initialize default materials from model if none were deserialized
+        if (component.Materials.empty() && model.materials != nullptr)
+        {
             std::set<int> uniqueIndices;
             for (int i = 0; i < model.meshCount; i++)
             {
@@ -172,438 +617,233 @@ template <> void Scene::OnComponentAdded<ModelComponent>(Entity entity, ModelCom
 
             for (int idx : uniqueIndices)
             {
-                MaterialSlot slot("Material " + std::to_string(idx), idx);
-                slot.Target = MaterialSlotTarget::MaterialIndex;
-                slot.Material.AlbedoColor = model.materials[idx].maps[MATERIAL_MAP_ALBEDO].color;
-                component.Materials.push_back(slot);
+                if (idx >= 0 && idx < model.materialCount)
+                {
+                    MaterialSlot slot("Material " + std::to_string(idx), idx);
+                    slot.Target = MaterialSlotTarget::MaterialIndex;
+                    slot.Material.AlbedoColor = model.materials[idx].maps[MATERIAL_MAP_ALBEDO].color;
+                    component.Materials.push_back(slot);
+                }
             }
-            component.MaterialsInitialized = true;
         }
+        component.MaterialsInitialized = true;
     }
 }
 
-template <>
-void Scene::OnComponentAdded<AnimationComponent>(Entity entity, AnimationComponent &component)
+void Scene::OnAnimationComponentAdded(entt::registry& reg, entt::entity entity)
 {
+    auto& component = reg.get<AnimationComponent>(entity);
     // Animation component might need the model asset to perform calculations
-    if (entity.HasComponent<ModelComponent>())
+    if (reg.all_of<ModelComponent>(entity))
     {
-        auto &mc = entity.GetComponent<ModelComponent>();
+        auto& mc = reg.get<ModelComponent>(entity);
         if (!mc.Asset && !mc.ModelPath.empty())
         {
-            mc.Asset = AssetManager::Get<ModelAsset>(mc.ModelPath);
-        }
-    }
-}
-
-template <> void Scene::OnComponentAdded<AudioComponent>(Entity entity, AudioComponent &component)
-{
-    if (!component.SoundPath.empty())
-    {
-        component.Asset = AssetManager::Get<SoundAsset>(component.SoundPath);
-    }
-}
-
-void Scene::OnUpdateRuntime(float deltaTime)
-{
-    CH_PROFILE_FUNCTION();
-
-    // Declarative Pipeline
-    SceneScripting::Update(this, deltaTime);
-    UpdateAnimation(deltaTime);
-    UpdateAudio(deltaTime);
-
-    // Declarative Scene Transitions
-    auto view = m_Registry.view<SceneTransitionComponent>();
-    for (auto entity : view)
-    {
-        auto &transition = view.get<SceneTransitionComponent>(entity);
-        if (transition.Triggered && !transition.TargetScenePath.empty())
-        {
-            RequestSceneChange(transition.TargetScenePath);
-            break; // Only one transition at a time
-        }
-    }
-}
-
-void Scene::UpdateScripting(float deltaTime)
-{
-    // High-level scripting logic now handled by SceneScripting
-}
-
-void Scene::UpdateAnimation(float deltaTime)
-{
-    auto animView = m_Registry.view<AnimationComponent, ModelComponent>();
-    for (auto entity : animView)
-    {
-        auto &anim = animView.get<AnimationComponent>(entity);
-        auto &model = animView.get<ModelComponent>(entity);
-
-        if (anim.IsPlaying && model.Asset)
-        {
-            int animCount = 0;
-            auto *animations = model.Asset->GetAnimations(&animCount);
-
-            if (animations && anim.CurrentAnimationIndex < animCount)
+            auto project = Project::GetActive();
+            if (project && project->GetAssetManager())
             {
-                anim.FrameTimeCounter += deltaTime;
-                float targetFPS = 30.0f;
-                if (Project::GetActive())
-                    targetFPS = Project::GetActive()->GetConfig().Animation.TargetFPS;
+                mc.Asset = project->GetAssetManager()->Get<ModelAsset>(mc.ModelPath);
+            }
+        }
+    }
+}
 
-                float frameTime = 1.0f / targetFPS;
-                if (anim.FrameTimeCounter >= frameTime)
+void Scene::OnColliderComponentAdded(entt::registry& reg, entt::entity entity)
+{
+    auto& collider = reg.get<ColliderComponent>(entity);
+    if (collider.Type == ColliderType::Mesh && !collider.ModelPath.empty())
+    {
+        // Rebuild BVH if path changed or it's null
+        if (!collider.BVHRoot)
+        {
+            auto project = Project::GetActive();
+            if (project && project->GetAssetManager())
+            {
+                auto modelAsset = project->GetAssetManager()->Get<ModelAsset>(collider.ModelPath);
+                if (modelAsset && modelAsset->IsReady())
                 {
-                    anim.CurrentFrame++;
-                    anim.FrameTimeCounter = 0;
-                    if (anim.CurrentFrame >= animations[anim.CurrentAnimationIndex].frameCount)
-                    {
-                        if (anim.IsLooping)
-                            anim.CurrentFrame = 0;
-                        else
-                        {
-                            anim.CurrentFrame =
-                                animations[anim.CurrentAnimationIndex].frameCount - 1;
-                            anim.IsPlaying = false;
-                        }
-                    }
-                    model.Asset->UpdateAnimation(anim.CurrentAnimationIndex, anim.CurrentFrame);
+                    collider.BVHRoot = BVH::Build(modelAsset);
                 }
             }
         }
     }
 }
 
-void Scene::UpdateAudio(float deltaTime)
+void Scene::OnPanelControlAdded(entt::registry& reg, entt::entity entity)
 {
-    m_Registry.view<AudioComponent>().each(
-        [](auto entity, auto &audio)
+    auto& panel = reg.get<PanelControl>(entity);
+    if (panel.TexturePath.empty())
+    {
+        return;
+    }
+
+    // Load texture asset if path changed or texture is null
+    bool pathChanged = !panel.Texture || (panel.Texture->GetPath() != panel.TexturePath);
+
+    if (pathChanged)
+    {
+        auto project = Project::GetActive();
+        if (project && project->GetAssetManager())
         {
-            if (audio.Asset && audio.PlayOnStart)
-            {
-                Sound &sound = audio.Asset->GetSound();
-                SetSoundVolume(sound, audio.Volume);
-                SetSoundPitch(sound, audio.Pitch);
-                ::PlaySound(sound);
-                audio.PlayOnStart = false;
-            }
-        });
+            panel.Texture = project->GetAssetManager()->Get<TextureAsset>(panel.TexturePath);
+        }
+    }
 }
 
-void Scene::OnRender(const Camera3D &camera, const DebugRenderFlags *debugFlags)
+std::optional<Camera3D> Scene::GetActiveCamera()
 {
-    CH_PROFILE_FUNCTION();
+    auto view = m_Registry.view<TransformComponent, CameraComponent>();
 
-    // Late initialization for async loaded models
-    auto view = m_Registry.view<ModelComponent>();
-    for (auto entityID : view)
+    entt::entity fallbackEntity = entt::null;
+
+    for (auto entityHandle : view)
     {
-        auto &mc = view.get<ModelComponent>(entityID);
-        if (mc.Asset && mc.Asset->IsReady() && !mc.MaterialsInitialized)
+        auto& cc = view.get<CameraComponent>(entityHandle);
+        if (fallbackEntity == entt::null)
         {
-            Entity entity = {entityID, this};
-            OnComponentAdded<ModelComponent>(entity, mc);
+            fallbackEntity = entityHandle;
+        }
+
+        if (cc.Primary)
+        {
+            return GetCameraFromEntity(entityHandle);
         }
     }
 
-    Visuals::DrawScene(this, camera, debugFlags);
-}
-
-Camera3D Scene::GetActiveCamera() const
-{
-    auto view = m_Registry.view<PlayerComponent, TransformComponent>();
-
-    if (view.begin() != view.end())
+    // Fallback to first available camera if no primary set
+    if (fallbackEntity != entt::null)
     {
-        auto entity = *view.begin();
-        auto &transform = view.get<TransformComponent>(entity);
-        auto &player = view.get<PlayerComponent>(entity);
-
-        Vector3 target = transform.Translation;
-        target.y += 1.0f;
-
-        float yawRad = player.CameraYaw * DEG2RAD;
-        float pitchRad = player.CameraPitch * DEG2RAD;
-
-        Vector3 offset;
-        offset.x = player.CameraDistance * cosf(pitchRad) * sinf(yawRad);
-        offset.y = player.CameraDistance * sinf(pitchRad);
-        offset.z = player.CameraDistance * cosf(pitchRad) * cosf(yawRad);
-
-        Camera3D camera = {0};
-        camera.position = Vector3Add(target, offset);
-        camera.target = target;
-        camera.up = {0.0f, 1.0f, 0.0f};
-        camera.fovy = 90.0f;
-        camera.projection = CAMERA_PERSPECTIVE;
-        return camera;
+        return GetCameraFromEntity(fallbackEntity);
     }
 
-    // Default fallback
+    return std::nullopt;
+}
+
+Camera3D Scene::GetCameraFromEntity(entt::entity entityHandle)
+{
+    auto& tc = m_Registry.get<TransformComponent>(entityHandle);
+    auto& cc = m_Registry.get<CameraComponent>(entityHandle);
+
     Camera3D camera = {0};
-    camera.position = {10.0f, 10.0f, 10.0f};
-    camera.target = {0.0f, 0.0f, 0.0f};
-    camera.up = {0.0f, 1.0f, 0.0f};
-    camera.fovy = 45.0f;
-    camera.projection = CAMERA_PERSPECTIVE;
+    camera.position = tc.Translation;
+
+    // Calculate forward vector from rotation
+    Matrix frame = QuaternionToMatrix(tc.RotationQuat);
+    Vector3 forward = Vector3Transform({0, 0, -1}, frame);
+
+    camera.target = Vector3Add(camera.position, forward);
+    camera.up = Vector3Transform({0, 1, 0}, frame);
+
+    // Map Hazel-style SceneCamera properties to Raylib's Camera3D
+    if (cc.Camera.GetProjectionType() == ProjectionType::Perspective)
+    {
+        camera.fovy = cc.Camera.GetPerspectiveVerticalFOV() * RAD2DEG;
+        camera.projection = CAMERA_PERSPECTIVE;
+    }
+    else
+    {
+        camera.fovy = cc.Camera.GetOrthographicSize();
+        camera.projection = CAMERA_ORTHOGRAPHIC;
+    }
+
     return camera;
 }
 
-const struct SkyboxComponent &Scene::GetSkybox() const
+Entity Scene::GetPrimaryCameraEntity()
 {
-    if (m_Settings.Environment)
-    {
-        // Proxy from environment
-        const auto &envSky = m_Settings.Environment->GetSettings().Skybox;
-        const_cast<Scene *>(this)->m_ProxySkybox.TexturePath = envSky.TexturePath;
-        const_cast<Scene *>(this)->m_ProxySkybox.Exposure = envSky.Exposure;
-        const_cast<Scene *>(this)->m_ProxySkybox.Brightness = envSky.Brightness;
-        const_cast<Scene *>(this)->m_ProxySkybox.Contrast = envSky.Contrast;
-        return m_ProxySkybox;
-    }
-    return m_Settings.Skybox;
-}
-
-struct SkyboxComponent &Scene::GetSkybox()
-{
-    return m_Settings.Skybox;
-}
-EnvironmentSettings Scene::GetEnvironmentSettings() const
-{
-    if (m_Settings.Environment)
-        return m_Settings.Environment->GetSettings();
-
-    EnvironmentSettings settings;
-    settings.Skybox.TexturePath = m_Settings.Skybox.TexturePath;
-    settings.Skybox.Exposure = m_Settings.Skybox.Exposure;
-    settings.Skybox.Brightness = m_Settings.Skybox.Brightness;
-    settings.Skybox.Contrast = m_Settings.Skybox.Contrast;
-    return settings;
-}
-
-// -------------------------------------------------------------------------------------------------------------------
-
-void Scene::OnUpdateEditor(float deltaTime)
-{
-    // Assets are now managed declaratively via entt signals
-}
-
-void Scene::OnRuntimeStart()
-{
-    m_IsSimulationRunning = true;
-    CH_CORE_INFO("Scene '{}' simulation started.",
-                 m_Registry.view<TagComponent>()
-                     .get<TagComponent>(m_Registry.view<TagComponent>().front())
-                     .Tag);
-}
-
-void Scene::OnRuntimeStop()
-{
-    m_IsSimulationRunning = false;
-    // TODO: Cleanup runtime state
-}
-
-void Scene::OnEvent(Event &e)
-{
-    SceneScripting::DispatchEvent(this, e);
-}
-
-void Scene::OnImGuiRender(const ImVec2 &refPos, const ImVec2 &refSize, uint32_t viewportID,
-                          bool editMode)
-{
-    UpdateProfilerStats();
-    ImVec2 referenceSize = refSize;
-    if (referenceSize.x <= 0 || referenceSize.y <= 0)
-        referenceSize = ImGui::GetIO().DisplaySize;
-
-    // --- UI Layout System ---
-    // Pure pixel values and anchors, no custom ReferenceResolution scaling for now
-    auto uiView = m_Registry.view<ControlComponent>();
-    
-    // Process UI elements by ZOrder
-    std::vector<entt::entity> sortedList;
-    for (auto entityID : uiView) sortedList.push_back(entityID);
-
-    // Simple bubble sort to avoid lambdas
-    for (size_t i = 0; i < sortedList.size(); i++) {
-        for (size_t j = i + 1; j < sortedList.size(); j++) {
-            if (uiView.get<ControlComponent>(sortedList[i]).ZOrder > uiView.get<ControlComponent>(sortedList[j]).ZOrder) {
-                std::swap(sortedList[i], sortedList[j]);
-            }
-        }
-    }
-
-    for (entt::entity entityID : sortedList)
-    {
-        Entity entity{entityID, this};
-        auto &cc = uiView.get<ControlComponent>(entityID);
-        if (!cc.IsActive) continue;
-
-        if (entity.HasComponent<ButtonControl>())
-            entity.GetComponent<ButtonControl>().PressedThisFrame = false;
-
-        // --- Uniform UI Math using helper ---
-        auto rect = UIMath::CalculateRect(cc.Transform,
-            {referenceSize.x, referenceSize.y},
-            {refPos.x, refPos.y});
-        
-        ImVec2 pos = {rect.Min.x - refPos.x, rect.Min.y - refPos.y};
-        ImVec2 size = {rect.Size().x, rect.Size().y};
-
-        ImGui::SetCursorPos(pos);
-        ImGui::BeginGroup();
-        ImGui::PushID((int)entityID); // Use stable entity ID
-        
-        // Render Panel
-        if (entity.HasComponent<PanelControl>())
-        {
-            auto& pnl = entity.GetComponent<PanelControl>();
-            ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4{pnl.Style.BackgroundColor.r / 255.0f, pnl.Style.BackgroundColor.g / 255.0f, pnl.Style.BackgroundColor.b / 255.0f, pnl.Style.BackgroundColor.a / 255.0f});
-            ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, pnl.Style.Rounding);
-            ImGui::BeginChild("Panel", size, true); 
-            ImGui::EndChild();
-            ImGui::PopStyleVar();
-            ImGui::PopStyleColor();
-        }
-
-        // Render Label
-        if (entity.HasComponent<LabelControl>())
-        {
-            auto& lbl = entity.GetComponent<LabelControl>();
-            ImVec4 color = {lbl.Style.TextColor.r / 255.0f, lbl.Style.TextColor.g / 255.0f, lbl.Style.TextColor.b / 255.0f, lbl.Style.TextColor.a / 255.0f};
-            ImGui::PushStyleColor(ImGuiCol_Text, color);
-            ImGui::PushTextWrapPos(pos.x + size.x);
-
-            ImVec2 textSize = ImGui::CalcTextSize(lbl.Text.c_str(), nullptr, true, size.x);
-            float startX = pos.x;
-            if (lbl.Style.HorizontalAlignment == TextAlignment::Center) startX += (size.x - textSize.x) * 0.5f;
-            else if (lbl.Style.HorizontalAlignment == TextAlignment::Right) startX += (size.x - textSize.x);
-
-            float startY = pos.y;
-            if (lbl.Style.VerticalAlignment == TextAlignment::Center) startY += (size.y - textSize.y) * 0.5f;
-            else if (lbl.Style.VerticalAlignment == TextAlignment::Right) startY += (size.y - textSize.y);
-
-            ImGui::SetCursorPos({startX, startY});
-            ImGui::TextUnformatted(lbl.Text.c_str());
-            ImGui::PopTextWrapPos();
-            ImGui::PopStyleColor();
-        }
-
-        // Render Button
-        if (entity.HasComponent<ButtonControl>())
-        {
-            auto& btn = entity.GetComponent<ButtonControl>();
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{btn.Style.BackgroundColor.r / 255.0f, btn.Style.BackgroundColor.g / 255.0f, btn.Style.BackgroundColor.b / 255.0f, btn.Style.BackgroundColor.a / 255.0f});
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{btn.Style.HoverColor.r / 255.0f, btn.Style.HoverColor.g / 255.0f, btn.Style.HoverColor.b / 255.0f, btn.Style.HoverColor.a / 255.0f});
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{btn.Style.PressedColor.r / 255.0f, btn.Style.PressedColor.g / 255.0f, btn.Style.PressedColor.b / 255.0f, btn.Style.PressedColor.a / 255.0f});
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{btn.Text.TextColor.r / 255.0f, btn.Text.TextColor.g / 255.0f, btn.Text.TextColor.b / 255.0f, btn.Text.TextColor.a / 255.0f});
-            
-            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, btn.Style.Rounding);
-            ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2{
-                btn.Text.HorizontalAlignment == TextAlignment::Left ? 0.0f : (btn.Text.HorizontalAlignment == TextAlignment::Center ? 0.5f : 1.0f),
-                btn.Text.VerticalAlignment == TextAlignment::Left ? 0.0f : (btn.Text.VerticalAlignment == TextAlignment::Center ? 0.5f : 1.0f)
-            });
-            
-            if (ImGui::Button(btn.Label.c_str(), size)) btn.PressedThisFrame = true;
-
-            ImGui::PopStyleVar(2);
-            ImGui::PopStyleColor(4);
-        }
-
-        if (entity.HasComponent<SliderControl>())
-        {
-            auto& sl = entity.GetComponent<SliderControl>();
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{sl.Text.TextColor.r / 255.0f, sl.Text.TextColor.g / 255.0f, sl.Text.TextColor.b / 255.0f, sl.Text.TextColor.a / 255.0f});
-            ImGui::SetNextItemWidth(size.x * 0.7f); // Make slider 70% of width to leave space for label
-            sl.Changed = ImGui::SliderFloat(sl.Label.c_str(), &sl.Value, sl.Min, sl.Max);
-            ImGui::PopStyleColor();
-        }
-
-        if (entity.HasComponent<CheckboxControl>())
-        {
-            auto& cb = entity.GetComponent<CheckboxControl>();
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{cb.Text.TextColor.r / 255.0f, cb.Text.TextColor.g / 255.0f, cb.Text.TextColor.b / 255.0f, cb.Text.TextColor.a / 255.0f});
-            cb.Changed = ImGui::Checkbox(cb.Label.c_str(), &cb.Checked);
-            ImGui::PopStyleColor();
-        }
-
-        ImGui::PopID();
-        ImGui::EndGroup();
-
-        // Editor selection and drag support
-        if (editMode) {
-            ImGui::SetCursorPos(pos);
-            ImGui::InvisibleButton("##SelectionZone", size);
-            if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
-                ImVec2 delta = ImGui::GetIO().MouseDelta;
-                cc.Transform.OffsetMin.x += delta.x;
-                cc.Transform.OffsetMax.x += delta.x;
-                cc.Transform.OffsetMin.y += delta.y;
-                cc.Transform.OffsetMax.y += delta.y;
-                m_Registry.patch<ControlComponent>(entityID);
-            }
-        }
-    }
-
-    // Scripted UI elements
-    SceneScripting::RenderUI(this);
-}
-
-Entity Scene::FindEntityByTag(const std::string &tag)
-{
-    auto view = m_Registry.view<TagComponent>();
+    auto view = m_Registry.view<CameraComponent>();
     for (auto entity : view)
     {
-        const auto &tagComp = view.get<TagComponent>(entity);
-        if (tagComp.Tag == tag)
-            return {entity, this};
+        const auto& camera = view.get<CameraComponent>(entity);
+        if (camera.Primary)
+        {
+            return Entity(entity, &m_Registry);
+        }
     }
     return {};
 }
-Entity Scene::GetEntityByUUID(UUID uuid)
+
+
+void Scene::UpdateUIActions()
 {
-    if (m_EntityMap.find(uuid) != m_EntityMap.end())
-        return {m_EntityMap.at(uuid), this};
-    return {};
+    m_Registry.view<UIActionComponent>().each([&](auto entity, auto& action) {
+        Entity uiEntity(entity, &m_Registry);
+        bool pressed = false;
+        if (uiEntity.HasComponent<ButtonControl>())
+            pressed = uiEntity.GetComponent<ButtonControl>().PressedThisFrame;
+        else if (uiEntity.HasComponent<ImageButtonControl>())
+            pressed = uiEntity.GetComponent<ImageButtonControl>().PressedThisFrame;
+    });
 }
 
-void Scene::OnIDConstruct(entt::registry &reg, entt::entity entity)
-{
-    auto &id = reg.get<IDComponent>(entity).ID;
-    m_EntityMap[id] = entity;
-}
-
-void Scene::OnIDDestroy(entt::registry &reg, entt::entity entity)
-{
-    auto &id = reg.get<IDComponent>(entity).ID;
-    m_EntityMap.erase(id);
-}
-
-void Scene::OnAudioComponentAdded(entt::registry &reg, entt::entity entity)
-{
-    OnComponentAdded<AudioComponent>(Entity{entity, this}, reg.get<AudioComponent>(entity));
-}
-
-void Scene::OnModelComponentAdded(entt::registry &reg, entt::entity entity)
-{
-    OnComponentAdded<ModelComponent>(Entity{entity, this}, reg.get<ModelComponent>(entity));
-}
-
-void Scene::OnAnimationComponentAdded(entt::registry &reg, entt::entity entity)
-{
-    OnComponentAdded<AnimationComponent>(Entity{entity, this}, reg.get<AnimationComponent>(entity));
-}
-
-void Scene::UpdateProfilerStats()
+void Scene::UpdateHierarchy()
 {
     CH_PROFILE_FUNCTION();
 
-    ::CHEngine::ProfilerStats stats;
-    stats.EntityCount = (uint32_t)m_Registry.storage<entt::entity>().size();
+    auto view = m_Registry.view<TransformComponent>();
 
-    auto view = m_Registry.view<::CHEngine::ColliderComponent>();
-    stats.ColliderCount = (uint32_t)view.size();
+    // Helper for recursive update
+    std::function<void(entt::entity, const Matrix&)> updateTransform;
+    updateTransform = [&](entt::entity entity, const Matrix& parentWorldTransform) {
+        auto& tc = view.get<TransformComponent>(entity);
+        tc.WorldTransform = MatrixMultiply(tc.GetTransform(), parentWorldTransform);
+        tc.IsDirty = false;
 
-    ::CHEngine::Profiler::UpdateStats(stats);
+        if (m_Registry.all_of<HierarchyComponent>(entity))
+        {
+            auto& hc = m_Registry.get<HierarchyComponent>(entity);
+            for (auto child : hc.Children)
+            {
+                if (m_Registry.valid(child) && m_Registry.all_of<TransformComponent>(child))
+                {
+                    updateTransform(child, tc.WorldTransform);
+                }
+            }
+        }
+    };
+
+    // Update all root entities
+    for (auto entity : view)
+    {
+        bool isRoot = true;
+        if (m_Registry.all_of<HierarchyComponent>(entity))
+        {
+            auto& hc = m_Registry.get<HierarchyComponent>(entity);
+            if (hc.Parent != entt::null && m_Registry.valid(hc.Parent) && m_Registry.all_of<TransformComponent>(hc.Parent))
+            {
+                isRoot = false;
+            }
+        }
+
+        if (isRoot)
+        {
+            updateTransform(entity, MatrixIdentity());
+        }
+    }
 }
+
+void Scene::OnScriptComponentDestroyed(entt::registry& registry, entt::entity entity)
+{
+    auto& msc = registry.get<ManagedScriptComponent>(entity);
+    for (auto& script : msc.Scripts)
+    {
+        if (script.Instance)
+        {
+            auto* instance = static_cast<Coral::ManagedObject*>(script.Instance);
+            if (instance->IsValid())
+            {
+                try {
+                    instance->InvokeMethod("OnDestroy");
+                } catch (const std::exception& e) {
+                    CH_CORE_ERROR("Exception in C# OnDestroy: {}", e.what());
+                } catch (...) {}
+            }
+            
+            instance->Destroy();
+            delete instance;
+            script.Instance = nullptr;
+        }
+    }
+}
+
 } // namespace CHEngine
