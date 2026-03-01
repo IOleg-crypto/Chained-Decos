@@ -14,21 +14,36 @@ struct TransformComponent
     Vector3 Scale = {1.0f, 1.0f, 1.0f};
 
     TransformComponent() = default;
-    TransformComponent(const TransformComponent &) = default;
-    TransformComponent(const Vector3 &translation) : Translation(translation)
+    TransformComponent(const TransformComponent&) = default;
+    TransformComponent(const Vector3& translation)
+        : Translation(translation), IsDirty(true)
     {
     }
 
-    void SetRotation(const Vector3 &euler)
+    void SetTranslation(const Vector3& translation)
+    {
+        Translation = translation;
+        IsDirty = true;
+    }
+
+    void SetScale(const Vector3& scale)
+    {
+        Scale = scale;
+        IsDirty = true;
+    }
+
+    void SetRotation(const Vector3& euler)
     {
         Rotation = euler;
         RotationQuat = QuaternionFromEuler(euler.x, euler.y, euler.z);
+        IsDirty = true;
     }
 
-    void SetRotationQuat(const Quaternion &quat)
+    void SetRotationQuat(const Quaternion& quat)
     {
         RotationQuat = quat;
         Rotation = QuaternionToEuler(quat);
+        IsDirty = true;
     }
 
     Matrix GetTransform() const
@@ -38,13 +53,11 @@ struct TransformComponent
                               MatrixTranslate(Translation.x, Translation.y, Translation.z));
     }
 
-    static Matrix GetTransform(const Vector3 &translation, const Quaternion &rotation,
-                               const Vector3 &scale)
+    static Matrix GetTransform(const Vector3& translation, const Quaternion& rotation, const Vector3& scale)
     {
-        return MatrixMultiply(
-            QuaternionToMatrix(rotation),
-            MatrixMultiply(MatrixTranslate(translation.x, translation.y, translation.z),
-                           MatrixScale(scale.x, scale.y, scale.z)));
+        return MatrixMultiply(QuaternionToMatrix(rotation),
+                              MatrixMultiply(MatrixTranslate(translation.x, translation.y, translation.z),
+                                             MatrixScale(scale.x, scale.y, scale.z)));
     }
 
     Matrix GetInterpolatedTransform(float alpha) const
@@ -56,11 +69,16 @@ struct TransformComponent
         return GetTransform(t, q, s);
     }
 
+    // World transform cache
+    Matrix WorldTransform = MatrixIdentity();
+    bool IsDirty = true;
+
     // Previous state for interpolation
     Vector3 PrevTranslation = {0, 0, 0};
     Quaternion PrevRotationQuat = {0.0f, 0.0f, 0.0f, 1.0f};
     Vector3 PrevScale = {1, 1, 1};
 };
+
 } // namespace CHEngine
 
 #endif // CH_TRANSFORM_COMPONENT_H

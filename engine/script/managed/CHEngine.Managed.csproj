@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <AssemblyName>CHEngine.Managed</AssemblyName>
+    <RootNamespace>CHEngine</RootNamespace>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Optimize>false</Optimize>
+    <!-- Output path is controlled by the CMake build system to avoid stale DLL issues -->
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    
+    <!-- NuGet Packaging Options -->
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>CHEngine.Managed</PackageId>
+    <Authors>Oleg and Contributors</Authors>
+    <Description>C# Base Class Library for Chained Engine.</Description>
+    <RepositoryUrl>https://github.com/IOleg-crypto/Chained-Decos</RepositoryUrl>
+  </PropertyGroup>
+
+
+
+  <!-- Import dynamically generated properties from CMake -->
+  <Import Project="ManagedDependencies.props" Condition="Exists('ManagedDependencies.props')" />
+
+  <ItemGroup>
+    <Reference Include="Coral.Managed">
+      <HintPath>$(CoralManagedDir)/Coral.Managed.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>

@@ -10,11 +10,13 @@ struct TagComponent
     std::string Tag;
 
     TagComponent() = default;
-    TagComponent(const TagComponent &) = default;
-    TagComponent(const std::string &tag) : Tag(tag)
+    TagComponent(const TagComponent&) = default;
+    TagComponent(const std::string& tag)
+        : Tag(tag)
     {
     }
 };
+
 } // namespace CHEngine
 
 #endif // CH_TAG_COMPONENT_H

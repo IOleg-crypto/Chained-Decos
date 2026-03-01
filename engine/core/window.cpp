@@ -9,101 +9,64 @@
 
 // GLFW for getting native handle
 #ifndef GLFW_INCLUDE_NONE
-    #define GLFW_INCLUDE_NONE
+#define GLFW_INCLUDE_NONE
 #endif
 #include <GLFW/glfw3.h>
 
 namespace CHEngine
 {
-Window::Window(const WindowConfig &config)
-    : m_Width(config.Width), m_Height(config.Height), m_Title(config.Title), m_VSync(config.VSync), m_IniFilename(config.IniFilename)
+Window::Window(const WindowProperties& windowProperties)
+    : m_Width(windowProperties.Width),
+      m_Height(windowProperties.Height),
+      m_Title(windowProperties.Title),
+      m_VSync(windowProperties.VSync),
+      m_ImGuiConfigurationPath(windowProperties.ImGuiConfigurationPath)
 {
     CH_CORE_INFO("Initializing Window: {} ({}x{})", m_Title, m_Width, m_Height);
 
     // Use Raylib to create the window (it manages GLFW internally)
     unsigned int flags = FLAG_MSAA_4X_HINT;
-    if (config.Resizable)
+    if (windowProperties.Resizable)
+    {
         flags |= FLAG_WINDOW_RESIZABLE;
-    if (config.Fullscreen)
+    }
+    if (windowProperties.Fullscreen)
+    {
         flags |= FLAG_FULLSCREEN_MODE;
+    }
 
     SetConfigFlags(flags);
     InitWindow(m_Width, m_Height, m_Title.c_str());
 
-    if (config.VSync)
-        SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
+    if (windowProperties.VSync)
+    {
+        SetTargetFramesPerSecond(GetMonitorRefreshRate(GetCurrentMonitor()));
+    }
     else
-        SetTargetFPS(config.TargetFPS);
+    {
+        SetTargetFramesPerSecond(windowProperties.TargetFramesPerSecond);
+    }
 
-    // Get the actual GLFW window handle.
-    m_Window = glfwGetCurrentContext();
+    m_WindowHandle = glfwGetCurrentContext();
 
-    CH_CORE_INFO("GLFW Window Handle obtained: {}", (void *)m_Window);
+    CH_CORE_INFO("GLFW Window Handle obtained: {}", (void*)m_WindowHandle);
 
-    if (!m_Window)
+    if (!m_WindowHandle)
     {
         CH_CORE_ERROR("Failed to get GLFW window handle! Is GLFW initialized?");
         return;
     }
 
-    // Setup ImGui with GLFW backend
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO &io = ImGui::GetIO();
-    io.IniFilename = m_IniFilename.c_str();
-
-    // Enable docking and viewports
-    if (config.EnableDocking)
-        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    if (config.EnableViewports)
-        io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-
-    // Setup Platform/Renderer backends
-    if (!ImGui_ImplGlfw_InitForOpenGL(m_Window, true))
-    {
-        CH_CORE_ERROR("Failed to initialize ImGui GLFW backend");
-        return;
-    }
-
-    if (!ImGui_ImplOpenGL3_Init("#version 430"))
-    {
-        CH_CORE_ERROR("Failed to initialize ImGui OpenGL3 backend");
-        return;
-    }
-
-    // Setup style
-    ImGui::StyleColorsDark();
-
-    // When viewports are enabled, tweak WindowRounding/WindowBg
-    ImGuiStyle &style = ImGui::GetStyle();
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-    {
-        style.WindowRounding = 0.0f;
-        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-    }
-
     SetExitKey(KEY_NULL); // Prevent ESC from closing the app
 
-    CH_CORE_INFO("Window Initialized with native ImGui backends: {} ({}x{})", m_Title, m_Width,
-                 m_Height);
-    CH_CORE_INFO("ImGui Viewports: {}",
-                 (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) ? "Enabled" : "Disabled");
+    CH_CORE_INFO("Window Initialized: {} ({}x{})", m_Title, m_Width, m_Height);
 }
 
 Window::~Window()
 {
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-
     CloseWindow();
-    m_Window = nullptr;
+    m_WindowHandle = nullptr;
     CH_CORE_INFO("Window Closed");
-}
-
-void Window::PollEvents()
-{
-    // Raylib polls events internally
 }
 
 bool Window::ShouldClose() const
@@ -122,10 +85,17 @@ void Window::EndFrame()
     EndDrawing();
 }
 
-void Window::SetTitle(const std::string &title)
+void Window::SetTitle(const std::string& title)
 {
     m_Title = title;
     ::SetWindowTitle(m_Title.c_str());
+}
+
+void Window::SetSize(int width, int height)
+{
+    m_Width = width;
+    m_Height = height;
+    ::SetWindowSize(m_Width, m_Height);
 }
 
 void Window::ToggleFullscreen()
@@ -133,23 +103,49 @@ void Window::ToggleFullscreen()
     ::ToggleFullscreen();
 }
 
+void Window::SetFullscreen(bool enabled)
+{
+    if (::IsWindowFullscreen() != enabled)
+    {
+        ::ToggleFullscreen();
+    }
+}
+
 void Window::SetVSync(bool enabled)
 {
     m_VSync = enabled;
     if (m_VSync)
+    {
         ::SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
+    }
 }
 
-void Window::SetTargetFPS(int fps)
+void Window::SetAntialiasing(bool enabled)
+{
+    if (enabled)
+    {
+        ::SetWindowState(FLAG_MSAA_4X_HINT);
+    }
+    else
+    {
+        ::ClearWindowState(FLAG_MSAA_4X_HINT);
+    }
+}
+
+void Window::SetTargetFramesPerSecond(int framesPerSecond)
 {
     if (!m_VSync)
-        ::SetTargetFPS(fps);
+    {
+        ::SetTargetFPS(framesPerSecond);
+    }
 }
 
 void Window::SetWindowIcon(Image icon)
 {
-    if (m_Window)
+    if (m_WindowHandle)
+    {
         ::SetWindowIcon(icon);
+    }
 }
 
 } // namespace CHEngine

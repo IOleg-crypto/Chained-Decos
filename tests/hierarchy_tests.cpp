@@ -1,5 +1,4 @@
 #include "engine/scene/components.h"
-#include "engine/scene/entity.h"
 #include "engine/scene/scene.h"
 #include "gtest/gtest.h"
 
@@ -11,8 +10,8 @@ TEST(HierarchyTest, BasicParenting)
     Entity parent = scene.CreateEntity("Parent");
     Entity child = scene.CreateEntity("Child");
 
-    auto &phc = parent.AddComponent<HierarchyComponent>();
-    auto &chc = child.AddComponent<HierarchyComponent>();
+    auto& phc = parent.AddComponent<HierarchyComponent>();
+    auto& chc = child.AddComponent<HierarchyComponent>();
 
     chc.Parent = (entt::entity)parent;
     phc.Children.push_back((entt::entity)child);
@@ -32,13 +31,11 @@ TEST(HierarchyTest, DestroyParent)
     child.AddComponent<HierarchyComponent>().Parent = (entt::entity)parent;
 
     entt::entity childHandle = (entt::entity)child;
-    entt::entity parentHandle = (entt::entity)parent;
 
     scene.DestroyEntity(parent);
 
-    EXPECT_TRUE(scene.GetRegistry().valid(childHandle));
-    auto &chc = scene.GetRegistry().get<HierarchyComponent>(childHandle);
-    EXPECT_TRUE(chc.Parent == entt::null);
+    // In this engine, DestroyEntity is recursive
+    EXPECT_FALSE(scene.GetRegistry().valid(childHandle));
 }
 
 TEST(HierarchyTest, ClearParent)
@@ -47,8 +44,8 @@ TEST(HierarchyTest, ClearParent)
     Entity parent = scene.CreateEntity("Parent");
     Entity child = scene.CreateEntity("Child");
 
-    auto &phc = parent.AddComponent<HierarchyComponent>();
-    auto &chc = child.AddComponent<HierarchyComponent>();
+    auto& phc = parent.AddComponent<HierarchyComponent>();
+    auto& chc = child.AddComponent<HierarchyComponent>();
 
     chc.Parent = (entt::entity)parent;
     phc.Children.push_back((entt::entity)child);
@@ -57,9 +54,34 @@ TEST(HierarchyTest, ClearParent)
     chc.Parent = entt::null;
     auto it = std::find(phc.Children.begin(), phc.Children.end(), (entt::entity)child);
     if (it != phc.Children.end())
+    {
         phc.Children.erase(it);
+    }
 
     // Using true/false check because entt::null is a template thing that might confuse EXPECT_EQ
     EXPECT_TRUE(chc.Parent == entt::null);
     EXPECT_EQ(phc.Children.size(), 0);
+}
+
+TEST(HierarchyTest, DeepHierarchyDestruction)
+{
+    Scene scene;
+    Entity root = scene.CreateEntity("Root");
+    Entity child1 = scene.CreateEntity("Child 1");
+    Entity child2 = scene.CreateEntity("Child 2");
+
+    // Root -> Child 1 -> Child 2
+    root.AddComponent<HierarchyComponent>().Children.push_back((entt::entity)child1);
+    child1.AddComponent<HierarchyComponent>().Parent = (entt::entity)root;
+    
+    child1.GetComponent<HierarchyComponent>().Children.push_back((entt::entity)child2);
+    child2.AddComponent<HierarchyComponent>().Parent = (entt::entity)child1;
+
+    entt::entity c1Handle = (entt::entity)child1;
+    entt::entity c2Handle = (entt::entity)child2;
+
+    scene.DestroyEntity(root);
+
+    EXPECT_FALSE(scene.GetRegistry().valid(c1Handle));
+    EXPECT_FALSE(scene.GetRegistry().valid(c2Handle));
 }

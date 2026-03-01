@@ -3,6 +3,7 @@
 
 #include "engine/core/base.h"
 #include "engine/core/events.h"
+#include "engine/core/timestep.h"
 #include "engine/scene/scene.h"
 
 namespace CHEngine
@@ -13,22 +14,29 @@ public:
     virtual ~Panel() = default;
 
     virtual void OnImGuiRender(bool readOnly = false) = 0;
-    virtual void OnUpdate(float deltaTime)
+    virtual void OnUpdate(Timestep ts)
     {
     }
-    virtual void OnEvent(Event &e)
+    virtual void OnEvent(Event& e)
     {
     }
-    virtual void SetContext(const std::shared_ptr<Scene> &context)
+    virtual void OnConfiguration()
+    {
+    }
+    virtual void SetContext(const std::shared_ptr<Scene>& context)
     {
         m_Context = context;
     }
 
-    bool &IsOpen()
+    bool& IsOpen()
     {
         return m_IsOpen;
     }
-    const std::string &GetName() const
+    bool& ShowSettings()
+    {
+        return m_ShowSettings;
+    }
+    const std::string& GetName() const
     {
         return m_Name;
     }
@@ -37,6 +45,7 @@ protected:
     std::string m_Name;
     std::shared_ptr<Scene> m_Context;
     bool m_IsOpen = true;
+    bool m_ShowSettings = false;
 };
 } // namespace CHEngine
 

@@ -1,139 +1,118 @@
 #ifndef CH_APPLICATION_H
 #define CH_APPLICATION_H
 
+#include "engine/core/assert.h"
 #include "engine/core/base.h"
 #include "engine/core/events.h"
-#include "engine/core/layer.h"
+#include "engine/core/imgui_layer.h"
 #include "engine/core/layer_stack.h"
+#include "engine/core/thread_pool.h"
+#include "engine/core/timestep.h"
 #include "engine/core/window.h"
-#include "engine/scene/scene.h"
-#include "raylib.h"
+
+#include <functional>
+#include <memory>
+#include <mutex>
 #include <string>
-#include <thread>
+#include <vector>
 
 namespace CHEngine
 {
-    struct ApplicationConfig
+
+struct ApplicationCommandLineArgs
+{
+    int Count = 0;
+    char** Args = nullptr;
+
+    const char* operator[](int index) const
     {
-        std::string Title;
-        int Width = 1280;
-        int Height = 720;
-        bool Fullscreen = false;
-        int TargetFPS = 60;
-        bool EnableViewports = true;
-        bool EnableDocking = true;
-        Image WindowIcon = {0};
-        int Argc = 0;
-        char **Argv = nullptr;
-    };
+        CH_CORE_ASSERT(index < Count);
+        return Args[index];
+    }
+};
 
-    class Application
+struct ApplicationSpecification
+{
+    std::string Name = "Chained Application";
+    std::string WorkingDirectory;
+    ApplicationCommandLineArgs CommandLineArgs;
+    std::string ImGuiConfigurationPath = "imgui.ini";
+};
+
+// The main entry point and controller for the engine life cycle.
+class Application
+{
+public:
+    Application(const ApplicationSpecification& specification);
+    virtual ~Application();
+
+    void Close()
     {
-    public:
-        using Config = ApplicationConfig;
+        m_Running = false;
+    }
+    void Run();
 
-    public:
-        Application(const Config &config = Config());
-        virtual ~Application();
+    void PushLayer(Layer* layer);
+    void PushOverlay(Layer* overlay);
 
-        bool Initialize(const Config &config);
-        void Shutdown();
-        void Close();
+    void OnEvent(Event& e);
 
-        static void PushLayer(Layer *layer);
-        static void PushOverlay(Layer *overlay);
+    static Application& Get()
+    {
+        return *s_Instance;
+    }
 
-        static bool ShouldClose();
-        static void BeginFrame();
-        static void EndFrame();
-        static void PollEvents();
-        static void OnEvent(Event &e);
+    Window& GetWindow()
+    {
+        return *m_Window;
+    }
+    ImGuiLayer* GetImGuiLayer()
+    {
+        return m_ImGuiLayer;
+    }
+    const ApplicationSpecification& GetSpecification() const
+    {
+        return m_Specification;
+    }
+    LayerStack& GetLayerStack()
+    {
+        return m_LayerStack;
+    }
+    ThreadPool& GetThreadPool()
+    {
+        return *m_ThreadPool;
+    }
 
-        void Run();
+    void SubmitToMainThread(const std::function<void()>& function);
 
-    public:
-        virtual void PostInitialize()
-        {
-        }
+private:
+    bool OnWindowClose(WindowCloseEvent& e);
+    bool OnWindowResize(WindowResizeEvent& e);
+    void ExecuteMainThreadQueue();
+    void InitSystems();
 
-        LayerStack &GetLayerStack()
-        {
-            return m_LayerStack;
-        }
+private:
+    static Application* s_Instance;
 
-        static bool IsRunning();
-        static float GetDeltaTime();
+    ApplicationSpecification m_Specification;
+    std::unique_ptr<Window> m_Window;
+    std::unique_ptr<ThreadPool> m_ThreadPool;
+    ImGuiLayer* m_ImGuiLayer = nullptr;
 
-        static Application &Get()
-        {
-            return *s_Instance;
-        }
+    bool m_Running = true;
+    bool m_Minimized = false;
 
-        std::unique_ptr<Window> &GetWindow()
-        {
-            return m_Window;
-        }
+    Timestep m_DeltaTime = 0.0f;
+    Timestep m_LastFrameTime = 0.0f;
 
-        std::shared_ptr<Scene> GetActiveScene()
-        {
-            return m_ActiveScene;
-        }
+    LayerStack m_LayerStack;
 
-        void SetActiveScene(std::shared_ptr<Scene> scene)
-        {
-            m_ActiveScene = scene;
-        }
+    std::vector<std::function<void()>> m_MainThreadQueue;
+    std::mutex m_MainThreadQueueMutex;
+};
 
-        void RequestSceneChange(const std::string &path)
-        {
-            m_NextScenePath = path;
-        }
+Application* CreateApplication(ApplicationCommandLineArgs args);
 
-        void LoadScene(const std::string &path);
-
-        static void SetStartupScene(const std::string &path)
-        {
-            s_StartupScenePath = path;
-        }
-
-        static const std::string &GetStartupScene()
-        {
-            return s_StartupScenePath;
-        }
-
-        const Config &GetConfig() const
-        {
-            return m_Config;
-        }
-
-        void SetWindowIcon(const Image &icon) const;
-
-    private:
-        void LoadEngineFonts();
-        void ProcessEvents();
-        void Simulate();
-        void Animate();
-        void Render();
-
-        void OnUpdate(float deltaTime);
-        void OnRender();
-
-        static Application *s_Instance;
-        static std::string s_StartupScenePath;
-
-        Config m_Config;
-        bool m_Running = false;
-        bool m_Minimized = false;
-        float m_DeltaTime = 0.0f;
-        float m_LastFrameTime = 0.0f;
-
-        LayerStack m_LayerStack;
-        std::unique_ptr<Window> m_Window;
-        std::shared_ptr<Scene> m_ActiveScene;
-        std::string m_NextScenePath;
-    };
-
-    Application *CreateApplication(int argc, char **argv);
 } // namespace CHEngine
 
 #endif // CH_APPLICATION_H

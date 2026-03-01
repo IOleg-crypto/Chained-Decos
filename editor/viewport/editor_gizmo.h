@@ -1,8 +1,8 @@
 #ifndef CH_EDITOR_GIZMO_H
 #define CH_EDITOR_GIZMO_H
 
-#include "engine/scene/entity.h"
 #include "engine/scene/scene.h"
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
 #include "ImGuizmo.h"
 #include "raylib.h"
@@ -25,11 +25,9 @@ public:
     EditorGizmo() = default;
     ~EditorGizmo() = default;
 
-    /**
-     * Render and handle gizmo interaction
-     * true if the gizmo is being used (captured mouse)
-     */
-    bool RenderAndHandle(GizmoType type);
+    // Render and handle gizmo interaction
+    // true if the gizmo is being used (captured mouse)
+    bool RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 viewportSize, const Camera3D& camera);
 
     bool IsHovered() const
     {

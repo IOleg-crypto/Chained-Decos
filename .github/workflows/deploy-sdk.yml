@@ -21,15 +21,28 @@ jobs:
           - os: ubuntu-latest
             name: linux
             preset: linux-gcc-release
+            config_preset: linux-gcc-release
           - os: windows-latest
             name: windows
             preset: windows-ninja-release
+            config_preset: windows-ninja-release
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.ccache
+            C:/ccache
+            build/${{ matrix.config_preset }}/_deps
+          key: ${{ runner.os }}-${{ matrix.config_preset }}-${{ hashFiles('**/CMakeLists.txt', 'CMakePresets.json') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.config_preset }}-
 
       - name: Get current version/date
         id: info
@@ -123,7 +136,7 @@ jobs:
             ### Chained Engine SDK Update
             - **Version**: ${{ steps.info.outputs.version }}
             - **Build Date**: ${{ steps.info.outputs.date }}
-            - **Architecture**: Rebuilded architecture and made engine editor
+            - **Architecture**: ${{steps.build-env}}
           draft: false
           prerelease: false
         env:

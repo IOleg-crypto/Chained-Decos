@@ -1,6 +1,6 @@
 add_library(RuntimeCore STATIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/runtime_application.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/runtime_application.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/runtime_layer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/runtime_layer.cpp
 )
 
 target_link_libraries(RuntimeCore PUBLIC engine)
@@ -13,4 +13,16 @@ target_precompile_headers(RuntimeCore PRIVATE
     <memory>
     <filesystem>
     "../engine/core/application.h"
+)
+
+# Generic Runtime Executable
+add_executable(ChainedRuntime
+    runtime_generic_entry.cpp
+)
+
+target_link_libraries(ChainedRuntime PRIVATE RuntimeCore)
+apply_engine_optimizations(ChainedRuntime)
+
+install(TARGETS ChainedRuntime
+    RUNTIME DESTINATION bin COMPONENT Runtime
 )

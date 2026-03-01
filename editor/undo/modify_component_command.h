@@ -2,7 +2,6 @@
 #define CH_MODIFY_COMPONENT_COMMAND_H
 
 #include "editor_command.h"
-#include "engine/scene/entity.h"
 #include "engine/scene/scene.h"
 #include <string>
 
@@ -12,9 +11,11 @@ namespace CHEngine
 template <typename T> class ModifyComponentCommand : public IEditorCommand
 {
 public:
-    ModifyComponentCommand(Entity entity, const T &oldState, const T &newState,
-                           const std::string &name = "")
-        : m_Entity(entity), m_OldState(oldState), m_NewState(newState), m_Name(name)
+    ModifyComponentCommand(Entity entity, const T& oldState, const T& newState, const std::string& name = "")
+        : m_Entity(entity),
+          m_OldState(oldState),
+          m_NewState(newState),
+          m_Name(name)
     {
     }
 
@@ -42,9 +43,12 @@ public:
 private:
     bool Validate()
     {
-        return m_Entity && m_Entity.GetScene() &&
-               m_Entity.GetScene()->GetRegistry().valid(static_cast<entt::entity>(m_Entity)) &&
-               m_Entity.HasComponent<T>();
+        if (!m_Entity)
+        {
+            return false;
+        }
+        auto* registry = &m_Entity.GetRegistry();
+        return registry->valid(static_cast<entt::entity>(m_Entity)) && m_Entity.HasComponent<T>();
     }
 
 private:

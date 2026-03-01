@@ -1,68 +1,168 @@
 #include "viewport_panel.h"
+#include "editor/actions/scene_actions.h"
+#include "editor/viewport/ui_manipulator.h"
+#include "editor_events.h"
+#include "editor_gui.h"
 #include "editor_layer.h"
+#include "editor_layout.h"
 #include "engine/core/application.h"
-#include "engine/graphics/draw_command.h"
+#include "engine/core/events.h"
+#include "engine/core/input.h"
+#include "engine/graphics/asset_manager.h"
+#include "engine/graphics/model_asset.h"
+#include "engine/graphics/scene_renderer.h"
+#include "engine/graphics/ui_renderer.h"
+#include "engine/physics/bvh/bvh.h"
+#include "engine/physics/physics.h"
+#include "engine/scene/components.h"
+#include "engine/scene/prefab_serializer.h"
+#include "engine/scene/project.h"
 #include "engine/scene/scene.h"
+#include "engine/scene/scene_events.h"
 #include "extras/IconsFontAwesome6.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "raylib.h"
 #include "rlImGui.h"
-#include "ui/editor_gui.h"
-#include "engine/graphics/asset_manager.h"
-#include "engine/graphics/model_asset.h"
-#include "engine/core/input.h"
-#include "engine/core/events.h"
-#include "engine/scene/scene_events.h"
-#include "engine/scene/ui_math.h"
-
 
 namespace CHEngine
 {
-    static void ClearSceneBackground(Scene *scene, Vector2 size)
+static void ClearSceneBackground(Scene* scene, Vector2 size)
+{
+    auto mode = scene->GetSettings().Mode;
+    if (mode == BackgroundMode::Color)
     {
-        auto mode = scene->GetBackgroundMode();
-        if (mode == BackgroundMode::Color)
+        ClearBackground(scene->GetSettings().BackgroundColor);
+    }
+    else if (mode == BackgroundMode::Texture)
+    {
+        auto& path = scene->GetSettings().BackgroundTexturePath;
+        if (!path.empty())
         {
-            ClearBackground(scene->GetBackgroundColor());
+            // Fallback for now
+            ClearBackground(scene->GetSettings().BackgroundColor);
         }
-        else if (mode == BackgroundMode::Texture)
+    }
+    else if (mode == BackgroundMode::Environment3D)
+    {
+        ClearBackground(BLACK);
+    }
+}
+
+static const GizmoBtn s_GizmoBtns[] = {{GizmoType::NONE, ICON_FA_ARROW_POINTER, "Select (Q)", KEY_Q},
+                                       {GizmoType::TRANSLATE, ICON_FA_UP_DOWN_LEFT_RIGHT, "Translate (W)", KEY_W},
+                                       {GizmoType::ROTATE, ICON_FA_ARROWS_ROTATE, "Rotate (E)", KEY_E},
+                                       {GizmoType::SCALE, ICON_FA_UP_RIGHT_FROM_SQUARE, "Scale (R)", KEY_R}};
+
+void ViewportPanel::DrawCameraSelector(Scene* scene)
+{
+    if (!scene)
+    {
+        return;
+    }
+
+    ImGui::PushStyleColor(ImGuiCol_Button, {0.1f, 0.1f, 0.12f, 0.0f});
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 4.0f);
+
+    auto view = scene->GetRegistry().view<CameraComponent>();
+    Entity primaryCam = scene->GetPrimaryCameraEntity();
+    std::string currentLabel = primaryCam ? primaryCam.GetComponent<TagComponent>().Tag : "No Camera";
+
+    ImGui::SetNextItemWidth(150);
+    if (ImGui::BeginCombo("##CameraSelector", (ICON_FA_VIDEO "  " + currentLabel).c_str(), ImGuiComboFlags_None))
+    {
+        for (auto entityHandle : view)
         {
-            auto &path = scene->GetBackgroundTexturePath();
-            if (!path.empty())
+            Entity entity(entityHandle, &scene->GetRegistry());
+            bool isSelected = (entity == primaryCam);
+            std::string tag = entity.GetComponent<TagComponent>().Tag;
+
+            if (ImGui::Selectable(tag.c_str(), isSelected))
             {
-                // Fallback for now
-                ClearBackground(scene->GetBackgroundColor());
+                // Unset all and set this one as primary
+                for (auto otherHandle : view)
+                {
+                    scene->GetRegistry().get<CameraComponent>(otherHandle).Primary = false;
+                }
+                entity.GetComponent<CameraComponent>().Primary = true;
+            }
+
+            if (isSelected)
+            {
+                ImGui::SetItemDefaultFocus();
             }
         }
-        else if (mode == BackgroundMode::Environment3D)
-        {
-            ClearBackground(BLACK);
-        }
+        ImGui::EndCombo();
     }
 
-    ViewportPanel::ViewportPanel()
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor();
+}
+
+void ViewportPanel::DrawGizmoButtons()
+{
+    ImGui::PushStyleColor(ImGuiCol_Button, {0.1f, 0.1f, 0.1f, 0.0f}); // Transparent buttons in toolbar
+
+    for (const auto& btn : s_GizmoBtns)
     {
-        m_Name = "Viewport";
-        m_ViewportTexture = { 0 }; // Initialize to empty
-        
-        if (IsWindowReady())
+        bool selected = (m_CurrentTool == btn.type);
+        if (selected)
         {
-            int w = GetScreenWidth();
-            int h = GetScreenHeight();
-            m_ViewportTexture = LoadRenderTexture(w > 0 ? w : 1280, h > 0 ? h : 720);
+            ImGui::PushStyleColor(ImGuiCol_Button, {0.9f, 0.45f, 0.0f, 1.0f});
         }
+
+        if (ImGui::Button(btn.icon, {28, 28}))
+        {
+            m_CurrentTool = btn.type;
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("%s", btn.tooltip);
+        }
+
+        if (selected)
+        {
+            ImGui::PopStyleColor();
+        }
+        ImGui::SameLine(0, 5);
     }
 
-    ViewportPanel::~ViewportPanel()
+    ImGui::PopStyleColor();
+}
+
+ViewportPanel::ViewportPanel()
+{
+    m_Name = "Viewport";
+    m_ViewportTexture = {0}; // Initialize to empty
+    m_HDRTexture = {0};
+
+    if (IsWindowReady())
     {
-        if (IsWindowReady() && m_ViewportTexture.id > 0)
+        int w = GetScreenWidth();
+        int h = GetScreenHeight();
+        m_ViewportTexture = LoadRenderTexture(w > 0 ? w : 1280, h > 0 ? h : 720);
+    }
+
+    m_SceneRenderer = std::make_unique<SceneRenderer>();
+    m_CameraController = std::make_unique<EditorCameraController>();
+}
+
+ViewportPanel::~ViewportPanel()
+{
+    if (IsWindowReady())
+    {
+        if (m_ViewportTexture.id > 0)
         {
             UnloadRenderTexture(m_ViewportTexture);
         }
+        if (m_HDRTexture.id > 0)
+        {
+            UnloadRenderTexture(m_HDRTexture);
+        }
     }
+}
 
-    void ViewportPanel::OnImGuiRender(bool readOnly)
+void ViewportPanel::OnImGuiRender(bool readOnly)
 {
     if (!m_IsOpen)
     {
@@ -74,156 +174,17 @@ namespace CHEngine
     ImGui::Begin(m_Name.c_str(), &m_IsOpen);
     ImGui::PushID(this);
 
-    // Important: ImGuizmo needs to begin frame at the start of the window
-    ImGuizmo::BeginFrame();
-
+    // --- 1. PREPARE SCENE RENDER ---
     // Get available content region dimensions (excluding window title/decorations)
     ImVec2 viewportSize = ImGui::GetContentRegionAvail();
     ImVec2 viewportScreenPos = ImGui::GetCursorScreenPos(); // Global top-left corner position
 
-    // --- 0. FLOATING TOOLBAR ---
-    // Floating style for cleaner viewport
-    ImVec2 toolbarPos = { viewportScreenPos.x + 10.0f, viewportScreenPos.y + 10.0f };
-    ImGui::SetNextWindowPos(toolbarPos);
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.12f, 0.8f));
-    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5, 5));
-    
-    if (ImGui::BeginChild("##FloatingToolbar", ImVec2(320, 38), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
-    {
-        // Gizmo Buttons (No labels, icons only)
-        auto& activeTool = m_CurrentTool;
-        
-        // Select Tool - capture state BEFORE button to keep Push/Pop balanced
-        bool wasSelect = (activeTool == GizmoType::NONE);
-        if (wasSelect) 
-        {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.85f, 0.45f, 0.0f, 1.0f));
-        }
-        if (ImGui::Button(ICON_FA_ARROW_POINTER, ImVec2(28, 28))) 
-        {
-            activeTool = GizmoType::NONE;
-        }
-        if (wasSelect) 
-        {
-            ImGui::PopStyleColor();
-        }
-        if (ImGui::IsItemHovered()) 
-        {
-            ImGui::SetTooltip("Select (Q)");
-        }
-        ImGui::SameLine();
-
-        // Translate Tool
-        bool wasTranslate = (activeTool == GizmoType::TRANSLATE);
-        if (wasTranslate) 
-        {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.85f, 0.45f, 0.0f, 1.0f));
-        }
-        if (ImGui::Button(ICON_FA_UP_DOWN_LEFT_RIGHT, ImVec2(28, 28))) 
-        {
-            activeTool = GizmoType::TRANSLATE;
-        }
-        if (wasTranslate) 
-        {
-            ImGui::PopStyleColor();
-        }
-        if (ImGui::IsItemHovered()) 
-        {
-            ImGui::SetTooltip("Translate (W)");
-        }
-        ImGui::SameLine();
-
-        // Rotate Tool
-        bool wasRotate = (activeTool == GizmoType::ROTATE);
-        if (wasRotate) 
-        {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.85f, 0.45f, 0.0f, 1.0f));
-        }
-        if (ImGui::Button(ICON_FA_ARROWS_ROTATE, ImVec2(28, 28))) 
-        {
-            activeTool = GizmoType::ROTATE;
-        }
-        if (wasRotate) 
-        {
-            ImGui::PopStyleColor();
-        }
-        if (ImGui::IsItemHovered()) 
-        {
-            ImGui::SetTooltip("Rotate (E)");
-        }
-        ImGui::SameLine();
-
-        // Scale Tool
-        bool wasScale = (activeTool == GizmoType::SCALE);
-        if (wasScale) 
-        {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.85f, 0.45f, 0.0f, 1.0f));
-        }
-        if (ImGui::Button(ICON_FA_UP_RIGHT_FROM_SQUARE, ImVec2(28, 28))) 
-        {
-            activeTool = GizmoType::SCALE;
-        }
-        if (wasScale) 
-        {
-            ImGui::PopStyleColor();
-        }
-        if (ImGui::IsItemHovered()) 
-        {
-            ImGui::SetTooltip("Scale (R)");
-        }
-        ImGui::SameLine();
-
-        ImGui::SameLine(0, 15);
-        ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
-        ImGui::SameLine(0, 15);
-
-        // Playback Tools
-        SceneState sceneState = EditorLayer::Get().GetSceneState();
-        bool isPlaying = (sceneState == SceneState::Play);
-
-        if (isPlaying) 
-        {
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 1.0f, 0.3f, 1.0f));
-        }
-        if (ImGui::Button(ICON_FA_PLAY, ImVec2(28, 28))) 
-        { 
-            ScenePlayEvent e; 
-            EditorLayer::Get().OnEvent(e); 
-        }
-        if (isPlaying) 
-        {
-            ImGui::PopStyleColor();
-        }
-        ImGui::SameLine();
-
-        if (ImGui::Button(isPlaying ? ICON_FA_STOP : ICON_FA_PAUSE, ImVec2(28, 28))) 
-        {
-            if (isPlaying) 
-            { 
-                SceneStopEvent e; 
-                EditorLayer::Get().OnEvent(e); 
-            }
-        }
-    }
-    ImGui::EndChild();
-    ImGui::PopStyleVar(2);
-    ImGui::PopStyleColor();
-
-    // Rocket Launch button (Top Right)
-    ImGui::SetCursorScreenPos({ viewportScreenPos.x + viewportSize.x - 100.0f, viewportScreenPos.y + 10.0f });
-    if (ImGui::Button(ICON_FA_ROCKET " Launch", ImVec2(90, 28)))
-    {
-        AppLaunchRuntimeEvent e;
-        Application::OnEvent(e);
-    }
-
     // --- 1. PREPARE SCENE RENDER ---
     auto selectedEntity = EditorLayer::Get().GetSelectedEntity();
     bool isUISelected = selectedEntity && selectedEntity.HasComponent<ControlComponent>();
-    
+
     // Disable grid when editing UI
-    auto &debugFlags = EditorLayer::Get().GetDebugRenderFlags();
+    auto& debugFlags = EditorLayer::Get().GetDebugRenderFlags();
     bool oldGrid = debugFlags.DrawGrid;
     if (isUISelected)
     {
@@ -231,17 +192,25 @@ namespace CHEngine
     }
 
     // Framebuffer management
+    auto activeScene = EditorLayer::Get().GetActiveScene();
     if (viewportSize.x != m_ViewportTexture.texture.width || viewportSize.y != m_ViewportTexture.texture.height)
     {
         if (viewportSize.x > 0 && viewportSize.y > 0)
         {
-            UnloadRenderTexture(m_ViewportTexture);
+            if (m_ViewportTexture.id > 0) UnloadRenderTexture(m_ViewportTexture);
+            if (m_HDRTexture.id > 0) UnloadRenderTexture(m_HDRTexture);
+
             m_ViewportTexture = LoadRenderTexture((int)viewportSize.x, (int)viewportSize.y);
-            EditorLayer::Get().s_ViewportSize = viewportSize;
+            m_HDRTexture = LoadRenderTexture((int)viewportSize.x, (int)viewportSize.y);
+            
+            EditorLayer::Get().SetViewportSize(viewportSize);
+            if (activeScene)
+            {
+                activeScene->OnViewportResize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
+            }
         }
     }
 
-    auto activeScene = Application::Get().GetActiveScene();
     if (!activeScene || viewportSize.x <= 0 || viewportSize.y <= 0)
     {
         ImGui::PopID();
@@ -250,66 +219,144 @@ namespace CHEngine
         return;
     }
 
-    // Scene Rendering
-    BeginTextureMode(m_ViewportTexture);
-    ClearSceneBackground(activeScene.get(), {viewportSize.x, viewportSize.y});
-    Camera3D camera = EditorUI::GUI::GetActiveCamera(EditorLayer::Get().GetSceneState());
-    activeScene->OnRender(camera, &EditorLayer::Get().GetDebugRenderFlags());
-    EndTextureMode();
+    BeginTextureMode(m_HDRTexture);
+    auto activeScene_raw = activeScene.get();
+    ClearSceneBackground(activeScene_raw, {viewportSize.x, viewportSize.y});
+
+    auto activeCameraOpt = activeScene_raw->GetActiveCamera();
+    bool cameraFound = activeCameraOpt.has_value();
+    Camera3D camera = cameraFound ? activeCameraOpt.value() : Camera3D{0};
+
+    if (cameraFound)
+    {
+        // Extract near/far from the active camera entity if available
+        float nearClip = 0.01f;
+        float farClip = 1000.0f;
+        
+        Entity primaryCam = activeScene_raw->GetPrimaryCameraEntity();
+        if (primaryCam && primaryCam.HasComponent<CameraComponent>())
+        {
+            auto& cameraComp = primaryCam.GetComponent<CameraComponent>().Camera;
+            nearClip = cameraComp.GetPerspectiveNearClip();
+            farClip = cameraComp.GetPerspectiveFarClip();
+        }
+
+        m_SceneRenderer->RenderScene(activeScene.get(), camera, nearClip, farClip, GetFrameTime(),
+                                     &EditorLayer::Get().GetDebugRenderFlags());
+        EndTextureMode();
+
+        // 2. APPLY MODULAR POST-PROCESSING
+        BeginTextureMode(m_ViewportTexture);
+        Renderer::Get().ApplyPostProcessing(m_HDRTexture, camera);
+        EndTextureMode();
+    }
+    else
+    {
+        // Only show warning if the scene actually expects 3D content
+        bool has3DContent = !activeScene->GetRegistry().view<ModelComponent>().empty() ||
+                            !activeScene->GetRegistry().view<SpriteComponent>().empty() ||
+                            !activeScene->GetRegistry().view<LightComponent>().empty();
+
+        bool is3DBackground = activeScene->GetSettings().Mode == BackgroundMode::Environment3D;
+
+        if (has3DContent || is3DBackground)
+        {
+            // Draw black background or specific message
+            ClearBackground(BLACK);
+            const char* msg = "No Primary Camera Found in Scene!";
+            int fontSize = 20;
+            int textWidth = MeasureText(msg, fontSize);
+            DrawText(msg, (int)viewportSize.x / 2 - textWidth / 2, (int)viewportSize.y / 2 - 10, fontSize, GRAY);
+        }
+        EndTextureMode();
+
+        // Copy warning state to viewport texture
+        BeginTextureMode(m_ViewportTexture);
+        ClearBackground(BLACK);
+        Rectangle source = { 0, 0, (float)m_HDRTexture.texture.width, (float)-m_HDRTexture.texture.height };
+        DrawTexturePro(m_HDRTexture.texture, source, 
+                       { 0, 0, (float)m_ViewportSize.x, (float)m_ViewportSize.y }, 
+                       { 0, 0 }, 0.0f, WHITE);
+        EndTextureMode();
+    }
 
     rlImGuiImageRenderTexture(&m_ViewportTexture);
+    bool isViewportHovered = ImGui::IsItemHovered();
 
-    // Gizmo rendering (after scene image so it overlays properly)
-    m_Gizmo.RenderAndHandle(!isUISelected ? m_CurrentTool : GizmoType::NONE);
+    // Drag & Drop Target
+    if (ImGui::BeginDragDropTarget())
+    {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+        {
+            const char* path = (const char*)payload->Data;
+            std::filesystem::path filepath = std::filesystem::path(path); // Ensure cross-platform path handling
+            std::string ext = filepath.extension().string();
+            std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+            if (ext == ".chscene")
+            {
+                SceneActions::Open(filepath);
+            }
+            else if (ext == ".chprefab")
+            {
+                PrefabSerializer::Deserialize(activeScene.get(), filepath.string());
+            }
+            else if (ext == ".gltf" || ext == ".glb" || ext == ".obj")
+            {
+                std::string filename = filepath.stem().string();
+                Entity entity = activeScene->CreateEntity(filename);
+                auto& modelcomp = entity.AddComponent<ModelComponent>();
+                // Use relative path if possible to satisfy portability
+                modelcomp.ModelPath = Project::GetRelativePath(filepath);
+
+                // Select the new entity
+                EntitySelectedEvent e((entt::entity)entity, activeScene.get());
+                EditorLayer::Get().OnEvent(e);
+            }
+        }
+        ImGui::EndDragDropTarget();
+    }
 
     // --- 2. UI OVERLAY & SELECTION ---
     ImGui::SetCursorScreenPos(viewportScreenPos);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-    
-    if (ImGui::BeginChild("##SceneUI", viewportSize, false, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoInputs))
+
+    bool isUIChildHovered = false;
+    bool isGizmoActive = false;
+    bool isGizmoHovered = false;
+
+    if (ImGui::BeginChild("##SceneUI", viewportSize, false,
+                          ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar |
+                              ImGuiWindowFlags_NoScrollWithMouse))
     {
-        // Render Game UI Overlay
-        activeScene->OnImGuiRender(viewportScreenPos, viewportSize, 0, EditorLayer::Get().GetSceneState() == SceneState::Edit);
+        // 1. Gizmo handling (inside child window for input priority)
+        isGizmoActive = m_Gizmo.RenderAndHandle(!isUISelected ? m_CurrentTool : GizmoType::NONE, viewportScreenPos,
+                                                viewportSize, camera);
+        isGizmoHovered = m_Gizmo.IsHovered();
 
-        // Selection Highlight
-        if (isUISelected)
+        // 2. Game UI Overlay
+        UIRenderer::Get().DrawCanvas(activeScene.get(), viewportScreenPos, viewportSize,
+                                     EditorLayer::Get().GetSceneState() == SceneState::Edit);
+        isUIChildHovered =
+            ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByPopup);
+
+        // 3. Selection Highlight (FIX for play mode)
+        if (isUISelected && selectedEntity && EditorLayer::Get().GetSceneState() == SceneState::Edit)
         {
-            auto &cc = selectedEntity.GetComponent<ControlComponent>();
-            auto& canvas = activeScene->GetCanvasSettings();
-            
-            // Use UIMath helper for simple anchoring
-            auto rect = UIMath::CalculateRect(cc.Transform, 
-                {viewportSize.x, viewportSize.y}, 
-                {viewportScreenPos.x, viewportScreenPos.y});
-            
-            ImVec2 p1 = {rect.Min.x, rect.Min.y};
-            ImVec2 p2 = {rect.Max.x, rect.Max.y};
+            auto rect = UIRenderer::Get().GetEntityRect(selectedEntity, viewportSize, viewportScreenPos);
 
-            // Selection Frame
-            ImDrawList* drawList = ImGui::GetWindowDrawList();
-            drawList->AddRect(p1, p2, IM_COL32(255, 255, 0, 255), 0, 0, 2.0f);
+            ImVec2 p1 = ImVec2(rect.x, rect.y);
+            ImVec2 p2 = ImVec2(p1.x + rect.width, p1.y + rect.height);
 
-            // Simple Drag support
-            if (ImGui::IsMouseHoveringRect(p1, p2) && ImGui::IsMouseClicked(0)) 
+            ImGui::GetWindowDrawList()->AddRect(p1, p2, IM_COL32(255, 255, 0, 255), 0, 0, 2.0f);
+
+            // Use the new UI Manipulator
+            m_UIManipulator.OnImGuiRender(selectedEntity, viewportScreenPos, viewportSize);
+
+            // Debug info
+            if (ImGui::IsMouseHoveringRect(p1, p2))
             {
-                m_DraggingUI = true;
-            }
-            
-            if (m_DraggingUI)
-            {
-                if (ImGui::IsMouseDown(0)) 
-                {
-                    ImVec2 delta = ImGui::GetIO().MouseDelta;
-                    // No scale used now, pure pixel movement
-                    cc.Transform.OffsetMin.x += delta.x;
-                    cc.Transform.OffsetMax.x += delta.x;
-                    cc.Transform.OffsetMin.y += delta.y;
-                    cc.Transform.OffsetMax.y += delta.y;
-                }
-                else 
-                {
-                    m_DraggingUI = false;
-                }
+                ImGui::GetWindowDrawList()->AddRect(p1, p2, IM_COL32(0, 255, 0, 255), 0, 0, 1.0f);
             }
         }
     }
@@ -317,14 +364,38 @@ namespace CHEngine
     ImGui::PopStyleVar();
 
     // --- 3. OBJECT PICKING ---
-    if (EditorLayer::Get().GetSceneState() == SceneState::Edit && ImGui::IsWindowHovered() &&
-        ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && !m_DraggingUI && !ImGui::IsAnyItemActive())
+    bool isHovered = isUIChildHovered;
+    bool isClicked = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
+    bool isDragging = m_UIManipulator.IsActive();
+    SceneState sceneState = EditorLayer::Get().GetSceneState();
+
+    if (isClicked)
+    {
+        CH_CORE_WARN("[Viewport] Click: Hovered={}, GizmoActive={}, GizmoHovered={}, Dragging={}, SceneState={}",
+                     isHovered, isGizmoActive, isGizmoHovered, isDragging, (int)sceneState);
+    }
+
+    if (sceneState == SceneState::Edit && isHovered && isClicked && !isGizmoActive && !isGizmoHovered && !isDragging)
     {
         ImVec2 mousePos = ImGui::GetMousePos();
         ImVec2 localMouseImGui = {mousePos.x - viewportScreenPos.x, mousePos.y - viewportScreenPos.y};
         Vector2 localMouse = {localMouseImGui.x, localMouseImGui.y};
 
-        Ray ray = GetMouseRay(localMouse, camera);
+        Ray ray = EditorGUI::GetMouseRay(camera, {localMouse.x, localMouse.y}, {viewportSize.x, viewportSize.y});
+
+        bool isClicked = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
+        if (isClicked)
+        {
+            static int clickCount = 0;
+            CH_CORE_WARN("PICKING DEBUG #{}", ++clickCount);
+            CH_CORE_INFO("Viewport: Pos({},{}), Size({},{})", viewportScreenPos.x, viewportScreenPos.y, viewportSize.x,
+                         viewportSize.y);
+            CH_CORE_INFO("Mouse: ImGui({},{}), Local({},{})", mousePos.x, mousePos.y, localMouseImGui.x,
+                         localMouseImGui.y);
+            CH_CORE_INFO("Ray: Origin({:.2f}, {:.2f}, {:.2f}), Dir({:.2f}, {:.2f}, {:.2f})", ray.position.x,
+                         ray.position.y, ray.position.z, ray.direction.x, ray.direction.y, ray.direction.z);
+        }
+
         Entity bestHit = {};
         float minDistance = FLT_MAX;
 
@@ -332,59 +403,236 @@ namespace CHEngine
         auto uiView = activeScene->GetRegistry().view<ControlComponent>();
         for (auto entityID : uiView)
         {
-            Entity entity{entityID, activeScene.get()};
-            auto &cc = uiView.get<ControlComponent>(entityID);
-            if (!cc.IsActive) 
+            Entity entity(entityID, &activeScene->GetRegistry());
+            auto& cc = uiView.get<ControlComponent>(entityID);
+            if (!cc.IsActive)
             {
                 continue;
             }
 
-            auto rect = UIMath::CalculateRect(cc.Transform,
-                {viewportSize.x, viewportSize.y},
-                {viewportScreenPos.x, viewportScreenPos.y});
+            auto rect = UIRenderer::Get().GetEntityRect(entity, viewportSize, viewportScreenPos);
 
-            glm::vec2 mouse = {mousePos.x, mousePos.y};
-            if (rect.Contains(mouse))
+            Vector2 mouse = {mousePos.x, mousePos.y};
+            Vector2 mouseRaylib = {mouse.x, mouse.y};
+            if (CheckCollisionPointRec(mouseRaylib, rect))
             {
                 bestHit = entity;
+                CH_CORE_INFO("HIT UI: {}", entity.GetComponent<TagComponent>().Tag);
             }
         }
 
-        // 3D Picking (if no UI hit)
+        // 3D Picking
         if (!bestHit)
         {
-            auto view = activeScene->GetRegistry().view<TransformComponent, ModelComponent>();
-            for (auto entityID : view)
+            // 1. Physics Picking
+            RaycastResult result = activeScene->GetPhysics().Raycast(ray);
+            if (result.Hit)
             {
-                Entity entity{entityID, activeScene.get()};
-                auto &modelComp = view.get<ModelComponent>(entityID);
-                if (modelComp.ModelPath.empty()) continue;
+                bestHit = Entity(result.Entity, &activeScene->GetRegistry());
+                minDistance = result.Distance;
+                CH_CORE_INFO("HIT PHYSICS: {} at Dist {}", bestHit.GetComponent<TagComponent>().Tag, minDistance);
+            }
+            else
+            {
+                CH_CORE_TRACE("Physics Raycast missed.");
+            }
 
-                auto modelAsset = AssetManager::Get<ModelAsset>(modelComp.ModelPath);
-                if (!modelAsset || !modelAsset->IsReady()) continue;
+            // 2. Visual Picking Fallback
+            auto modelView = activeScene->GetRegistry().view<TransformComponent, ModelComponent>();
+            int visualCandidates = 0;
 
-                Model &model = modelAsset->GetModel();
-                for (int m = 0; m < model.meshCount; m++)
+            for (auto entityID : modelView)
+            {
+                visualCandidates++;
+                if (bestHit && (entt::entity)bestHit == entityID)
                 {
-                    RayCollision collision = GetRayCollisionMesh(ray, model.meshes[m], model.transform);
-                    if (collision.hit && collision.distance < minDistance)
+                    continue;
+                }
+
+                Entity entity(entityID, &activeScene->GetRegistry());
+                auto& modelComp = modelView.get<ModelComponent>(entityID);
+                auto& tag = entity.GetComponent<TagComponent>().Tag;
+
+                if (modelComp.ModelPath.empty())
+                {
+                    CH_CORE_TRACE("Skip {}: No model path", tag);
+                    continue;
+                }
+
+                auto modelAsset = Project::GetActive()->GetAssetManager()->Get<ModelAsset>(modelComp.ModelPath);
+                if (!modelAsset || !modelAsset->IsReady())
+                {
+                    CH_CORE_TRACE("Skip {}: Asset not ready", tag);
+                    continue;
+                }
+
+                auto& tc = modelView.get<TransformComponent>(entityID);
+                Matrix modelTransform = tc.GetTransform();
+                Matrix invTransform = MatrixInvert(modelTransform);
+
+                // Transform ray to local space
+                Ray localRay;
+                localRay.position = Vector3Transform(ray.position, invTransform);
+                Vector3 localTarget = Vector3Transform(Vector3Add(ray.position, ray.direction), invTransform);
+                localRay.direction = Vector3Normalize(Vector3Subtract(localTarget, localRay.position));
+
+                float t_local = FLT_MAX;
+                Vector3 localNormal = {0, 0, 0};
+                int localMeshIndex = -1;
+
+                bool hit = false;
+                auto bvh = activeScene->GetPhysics().GetBVH(modelAsset.get());
+
+                if (bvh)
+                {
+                    hit = bvh->Raycast(localRay, t_local, localNormal, localMeshIndex);
+                }
+                else
+                {
+                    Model& model = modelAsset->GetModel();
+                    for (int m = 0; m < model.meshCount; m++)
                     {
-                        minDistance = collision.distance;
+                        RayCollision collision = GetRayCollisionMesh(localRay, model.meshes[m], MatrixIdentity());
+                        if (collision.hit && collision.distance < t_local)
+                        {
+                            t_local = collision.distance;
+                            hit = true;
+                        }
+                    }
+                }
+
+                if (hit)
+                {
+                    Vector3 hitPosLocal = Vector3Add(localRay.position, Vector3Scale(localRay.direction, t_local));
+                    Vector3 hitPosWorld = Vector3Transform(hitPosLocal, modelTransform);
+                    float distWorld = Vector3Distance(ray.position, hitPosWorld);
+
+                    CH_CORE_INFO("VISUAL HIT Candidate: {} (Dist: {:.2f})", tag, distWorld);
+
+                    if (distWorld < minDistance)
+                    {
+                        minDistance = distWorld;
                         bestHit = entity;
                     }
                 }
             }
+            CH_CORE_TRACE("Checked {} visual candidates", visualCandidates);
         }
 
-        if (bestHit) {
+        if (bestHit)
+        {
+            CH_CORE_WARN("FINAL SELECTION: {}", bestHit.GetComponent<TagComponent>().Tag);
             EntitySelectedEvent e((entt::entity)bestHit, activeScene.get());
             EditorLayer::Get().OnEvent(e);
         }
-        else {
+        else
+        {
+            CH_CORE_WARN("FINAL SELECTION: NONE");
+            // Only deselect if we actually clicked and missed everything
             EntitySelectedEvent e(entt::null, activeScene.get());
             EditorLayer::Get().OnEvent(e);
         }
     }
+
+    // --- 4. FLOATING HUD (Drawn last to be on top of SceneUI) ---
+    // Floating style for cleaner viewport
+    ImVec2 toolbarPos = {viewportScreenPos.x + 10.0f, viewportScreenPos.y + 10.0f};
+    ImGui::SetNextWindowPos(toolbarPos);
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.12f, 0.8f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5, 5));
+
+    if (ImGui::BeginChild("##FloatingToolbar", ImVec2(450, 40), true,
+                          ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
+    {
+        ImGui::SetCursorPosY(6); // Center align vertically-ish
+        ImGui::Indent(5);
+
+        DrawGizmoButtons();
+
+        ImGui::SameLine(0, 10);
+        ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+        ImGui::SameLine(0, 10);
+
+        DrawCameraSelector(activeScene.get());
+
+        ImGui::SameLine(0, 10);
+        ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+        ImGui::SameLine(0, 10);
+
+        // Playback Tools
+        SceneState sceneState = EditorLayer::Get().GetSceneState();
+        bool isPlaying = (sceneState == SceneState::Play);
+
+        if (isPlaying)
+        {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 1.0f, 0.3f, 1.0f));
+        }
+        if (ImGui::Button(isPlaying ? ICON_FA_STOP : ICON_FA_PLAY, ImVec2(28, 28)))
+        {
+            if (isPlaying)
+            {
+                CH_CORE_INFO("ViewportPanel: Stop Button Clicked");
+                SceneStopEvent e;
+                EditorLayer::Get().OnEvent(e);
+            }
+            else
+            {
+                CH_CORE_INFO("ViewportPanel: Play Button Clicked");
+                ScenePlayEvent e;
+                EditorLayer::Get().OnEvent(e);
+            }
+        }
+        if (isPlaying)
+        {
+            ImGui::PopStyleColor();
+        }
+
+        ImGui::SameLine(0, 15);
+        ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+        ImGui::SameLine(0, 15);
+
+        // Camera Info (Read-only status)
+        Entity primaryCam = activeScene->GetPrimaryCameraEntity();
+        if (primaryCam)
+        {
+            ImGui::TextDisabled(ICON_FA_CAMERA " %s", primaryCam.GetComponent<TagComponent>().Tag.c_str());
+        }
+        else
+        {
+            ImGui::TextColored({1, 0, 0, 1}, ICON_FA_CIRCLE_EXCLAMATION " No Primary Camera");
+        }
+    }
+    ImGui::EndChild();
+    ImGui::PopStyleVar(2);
+    ImGui::PopStyleColor();
+
+    // --- 5. ROCKET LAUNCH BUTTON (Top Right Overlay) ---
+    // Wrapped in a child window to ensure input priority over full-screen overlays (like ##SceneUI)
+    ImGui::SetCursorScreenPos({viewportScreenPos.x + viewportSize.x - 110.0f, viewportScreenPos.y + 10.0f});
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.12f, 0.8f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5, 5));
+
+    if (ImGui::BeginChild("##LaunchHUD", ImVec2(100, 40), true,
+                          ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
+    {
+        ImGui::SetCursorPosY(6);
+        ImGui::Indent(5);
+        if (ImGui::Button(ICON_FA_ROCKET " Launch", ImVec2(90, 28)))
+        {
+            CH_CORE_INFO("Viewport: Launch button clicked");
+            AppLaunchRuntimeEvent e;
+            Application::Get().OnEvent(e);
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("Build & Run Standalone project (F5)");
+        }
+    }
+    ImGui::EndChild();
+    ImGui::PopStyleVar(2);
+    ImGui::PopStyleColor();
 
     ImGui::PopID();
     ImGui::End();
@@ -394,21 +642,31 @@ namespace CHEngine
     // Shortcuts
     if (ImGui::IsWindowFocused() || ImGui::IsWindowHovered())
     {
-        if (CHEngine::Input::IsKeyPressed(KEY_W)) m_CurrentTool = GizmoType::TRANSLATE;
-        if (CHEngine::Input::IsKeyPressed(KEY_E)) m_CurrentTool = GizmoType::ROTATE;
-        if (CHEngine::Input::IsKeyPressed(KEY_R)) m_CurrentTool = GizmoType::SCALE;
-        if (CHEngine::Input::IsKeyPressed(KEY_Q)) m_CurrentTool = GizmoType::NONE;
+        for (const auto& btn : s_GizmoBtns)
+        {
+            if (CHEngine::Input::IsKeyPressed(btn.key))
+            {
+                m_CurrentTool = btn.type;
+            }
+        }
     }
 }
 
-    void ViewportPanel::OnUpdate(float deltaTime)
+void ViewportPanel::OnUpdate(Timestep ts)
+{
+    // Only update editor camera in Edit mode
+    if (EditorLayer::Get().GetSceneState() == SceneState::Edit)
     {
-        m_EditorCamera.OnUpdate(deltaTime);
+        auto activeScene = EditorLayer::Get().GetActiveScene();
+        if (activeScene)
+        {
+            Entity primaryCamera = activeScene->GetPrimaryCameraEntity();
+            if (primaryCamera)
+            {
+                m_CameraController->OnUpdate(primaryCamera, ts);
+            }
+        }
     }
-
-    void ViewportPanel::OnEvent(Event &e)
-    {
-        // m_EditorCamera doesn't have OnEvent yet, so we just let it be for now
-    }
+}
 
 } // namespace CHEngine

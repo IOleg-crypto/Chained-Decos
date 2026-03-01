@@ -1,8 +1,8 @@
 #ifndef CH_COMMAND_HISTORY_H
 #define CH_COMMAND_HISTORY_H
 
-#include "editor_command.h"
 #include "deque"
+#include "editor_command.h"
 #include <functional>
 #include <memory>
 #include <string>

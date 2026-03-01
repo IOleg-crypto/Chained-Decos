@@ -10,27 +10,23 @@ class SceneHierarchyPanel : public Panel
 {
 public:
     SceneHierarchyPanel();
-    SceneHierarchyPanel(const std::shared_ptr<Scene> &context);
+    SceneHierarchyPanel(const std::shared_ptr<Scene>& context);
 
-    virtual void SetContext(const std::shared_ptr<Scene> &context) override;
     virtual void OnImGuiRender(bool readOnly = false) override;
-
-    void SetSelectedEntity(Entity entity)
-    {
-        m_SelectionContext = entity;
-    }
-
-    Entity GetSelectedEntity() const
-    {
-        return m_SelectionContext;
-    }
 
 private:
     entt::entity DrawEntityNodeRecursive(Entity entity);
+    void DrawComponents(Entity entity);
+    void DrawContextMenu();
+    const char* GetEntityIcon(Entity entity);
 
 private:
-    Entity m_SelectionContext;
     std::unordered_set<entt::entity> m_DrawnEntities;
+
+    char m_SearchBuffer[128] = {0};
+    bool m_Renaming = false;
+    char m_RenameBuffer[128] = {0};
+    Entity m_RenamingEntity;
 };
 
 } // namespace CHEngine
