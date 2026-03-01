@@ -37,26 +37,29 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/include/coral/cmake/CMakeLists.txt")
         file(MAKE_DIRECTORY "${CORAL_FIX_DIR}")
         
         # 1. ShlObj_core.h shim (MinGW fix)
-        file(WRITE "${CORAL_FIX_DIR}/ShlObj_core.h" "#pragma once\n#include <ShlObj.h>\n")
+        if(MINGW)
+            file(WRITE "${CORAL_FIX_DIR}/ShlObj_core.h" "#pragma once\n#include <shlobj.h>\n")
+        endif()
         
         # 2. MSVC wchar_t stream fix (C2280 fix)
-        file(WRITE "${CORAL_FIX_DIR}/MSVCFix.hpp" 
+        file(WRITE "${CORAL_FIX_DIR}/StreamFix.hpp" 
             "#pragma once\n"
             "#include <iostream>\n"
             "#include <string>\n"
-            "#ifdef _MSC_VER\n"
-            "// Standalone fix for MSVC C2280 in Coral logging\n"
+            "// Standalone fix for deleted operator<< in Coral logging\n"
             "inline std::ostream& operator<<(std::ostream& os, const wchar_t* str) { return os << \"[wide string]\"; }\n"
             "inline std::ostream& operator<<(std::ostream& os, const std::wstring& str) { return os << \"[wide string]\"; }\n"
-            "#endif\n"
         )
         
         if(TARGET Coral.Native)
-            target_include_directories(Coral.Native PRIVATE "${CORAL_FIX_DIR}")
+            if(MINGW)
+                target_include_directories(Coral.Native PRIVATE "${CORAL_FIX_DIR}")
+            endif()
+            
             if(MSVC)
-                target_compile_options(Coral.Native PRIVATE "/FI${CORAL_FIX_DIR}/MSVCFix.hpp")
+                target_compile_options(Coral.Native PRIVATE "/FI${CORAL_FIX_DIR}/StreamFix.hpp")
             else()
-                target_compile_options(Coral.Native PRIVATE "-include${CORAL_FIX_DIR}/MSVCFix.hpp")
+                target_compile_options(Coral.Native PRIVATE "-include${CORAL_FIX_DIR}/StreamFix.hpp")
             endif()
         endif()
     endif()
