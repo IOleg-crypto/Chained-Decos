@@ -17,7 +17,8 @@
         "BUILD_TESTS": "ON",
         "BUILD_MAP_EDITOR": "ON",
         "DISABLE_ALL_WARNINGS": "ON",
-        "CH_ENGINE_SHARED": "OFF"
+        "CH_ENGINE_SHARED": "OFF",
+        "WINDOWS_SDK_VERSION": "10.0"
       }
     },
     {
