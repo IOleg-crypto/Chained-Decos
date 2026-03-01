@@ -3,10 +3,13 @@
 
 #include "engine/core/base.h"
 #include "engine/core/uuid.h"
+#include <cstdio>
 #include <string>
+#include <atomic>
 
 namespace CHEngine
 {
+using AssetHandle = UUID;
 
 enum class AssetType : uint16_t
 {
@@ -17,7 +20,8 @@ enum class AssetType : uint16_t
     Shader,
     Environment,
     Material,
-    Font
+    Font,
+    AnimationGraph
 };
 
 enum class AssetState : uint8_t
@@ -33,15 +37,39 @@ class Asset
 public:
     virtual ~Asset() = default;
 
-    virtual AssetType GetType() const = 0;
+    AssetType GetType() const
+    {
+        return m_Type;
+    }
+
+    Asset(AssetType type = AssetType::None)
+        : m_Type(type),
+          m_ID()
+    {
+    }
+    Asset(AssetType type, UUID id)
+        : m_Type(type),
+          m_ID(id)
+    {
+    }
 
     AssetState GetState() const
     {
-        return m_State;
+        return m_State.load(std::memory_order_relaxed);
     }
     void SetState(AssetState state)
     {
-        m_State = state;
+        AssetState oldState = m_State.exchange(state, std::memory_order_release);
+        if (state != oldState)
+        {
+            printf("[ASSET] '%s' state change: %d -> %d\n", m_Path.c_str(), (int)oldState, (int)state);
+            fflush(stdout);
+            
+            if (state == AssetState::Failed)
+            {
+                CH_CORE_WARN("Asset: FAILED for '{}' (Type: {}, ID: {})", m_Path, (int)m_Type, (uint64_t)m_ID);
+            }
+        }
     }
 
     bool IsReady() const
@@ -49,11 +77,11 @@ public:
         return m_State == AssetState::Ready;
     }
 
-    const std::string &GetPath() const
+    const std::string& GetPath() const
     {
         return m_Path;
     }
-    void SetPath(const std::string &path)
+    void SetPath(const std::string& path)
     {
         m_Path = path;
     }
@@ -66,7 +94,8 @@ public:
 protected:
     std::string m_Path;
     UUID m_ID;
-    AssetState m_State = AssetState::None;
+    AssetType m_Type = AssetType::None;
+    std::atomic<AssetState> m_State = AssetState::None;
 };
 
 } // namespace CHEngine

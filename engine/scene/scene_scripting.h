@@ -9,9 +9,12 @@ namespace CHEngine
 class SceneScripting
 {
 public:
-    static void Update(Scene *scene, float deltaTime);
-    static void DispatchEvent(Scene *scene, Event &e);
-    static void RenderUI(Scene *scene);
+    static void Update(Scene* scene, Timestep deltaTime);
+    // Calls OnDestroy on all active C# instances and frees managed objects.
+    // Must be called before scene unload or hot-reload.
+    static void Stop(Scene* scene);
+    static void DispatchEvent(Scene* scene, Event& e);
+    static void RenderUI(Scene* scene);
 };
 } // namespace CHEngine
 

@@ -1,70 +1,87 @@
-#version 430
+#version 430 core
 
-// Input vertex attributes (from vertex shader)
+#include "include/lighting_common.glsl"
+#include "include/lighting_directional.glsl"
+#include "include/lighting_point.glsl"
+#include "include/lighting_spot.glsl"
+#include "include/fog.glsl"
+
 in vec3 fragPosition;
 in vec2 fragTexCoord;
 in vec4 fragColor;
 in vec3 fragNormal;
+in mat3 fragTBN;
 
-// Input uniform values
-uniform sampler2D texture0;
-uniform vec4 colDiffuse;
-
-// Output fragment color
 out vec4 finalColor;
-
-// Light data
-uniform vec3 lightDir;
-uniform vec4 lightColor;
-uniform float ambient;
-
-#define MAX_LIGHTS 8
-
-struct Light {
-    vec3 position;
-    vec4 color;
-    float radius;
-    float radiance;
-    float falloff;
-    int enabled;
-};
-
-uniform Light lights[MAX_LIGHTS];
 
 void main()
 {
-    // Texel color fetching from texture sampler
-    vec4 texelColor = texture(texture0, fragTexCoord);
-    vec4 diffuse = colDiffuse * fragColor;
+    // 1. Base Color & Diagnostics
+    vec4 baseColor = colDiffuse;
+    
+    // Fix: If fragColor (Vertex Color) is close to black (default attribute 0,0,0,1), ignore it.
+    // Otherwise multiply. This prevents generated meshes (no colors) from being black.
+    if (length(fragColor.rgb) > 0.01) baseColor *= fragColor;
+    
+    if (useTexture == 1) baseColor *= texture(texture0, fragTexCoord);
+    
+    int mode = int(uMode + 0.5);
+    if (mode == 3) { finalColor = baseColor; return; }
+    
+    // Normal Mapping
+    vec3 normal = normalize(fragNormal);
+    if (useNormalMap == 1) {
+        vec3 mapNormal = texture(texture2, fragTexCoord).rgb;
+        mapNormal = normalize(mapNormal * 2.0 - 1.0);
+        normal = normalize(fragTBN * mapNormal);
+    }
+    
+    if (mode == 1) { finalColor = vec4(normal * 0.5 + 0.5, 1.0); return; }
 
-    // Calculate ambient light
-    vec4 ambientColor = diffuse * ambient;
+    // PBR Properties
+    float m = metalness;
+    float r = roughness;
+    float occ = 1.0;
 
-    // Calculate diffuse light (directional)
-    float diff = max(dot(fragNormal, normalize(-lightDir)), 0.0);
-    vec4 diffuseColor = diffuse * lightColor * diff;
+    if (useMetallicMap == 1) m *= texture(texture1, fragTexCoord).b; // Blue channel usually
+    if (useRoughnessMap == 1) r *= texture(texture3, fragTexCoord).g; // Green channel usually
+    if (useOcclusionMap == 1) occ = texture(texture4, fragTexCoord).r;
 
-    // Point lights
-    vec4 pointLightsColor = vec4(0.0);
-    for (int i = 0; i < MAX_LIGHTS; i++)
+    // Map PBR to Blinn-Phong (Approximation)
+    // Roughness -> Shininess
+    float s = (1.0 - r) * 128.0;
+    if (s < 1.0) s = 1.0;
+    
+    // Metalness -> Specular Color & Diffuse
+    vec3 specColor = mix(vec3(0.04), baseColor.rgb, m);
+    vec3 diffColor = baseColor.rgb * (1.0 - m);
+
+    // 2. Main Lighting Loop
+    vec3 viewDir = normalize(viewPos - fragPosition);
+    vec3 lighting = diffColor * ambient * occ; // Ambient
+
+    // Directional Light
+    lighting += CalcDirectionalLight(lightDir, lightColor, normal, viewDir, diffColor, s);
+
+    // Dynamic Lights (Unified)
+    int lightCount = clamp(uLightCount, 0, MAX_LIGHTS);
+    for (int i = 0; i < lightCount; i++)
     {
         if (lights[i].enabled == 0) continue;
-
-        vec3 lightVector = lights[i].position - fragPosition;
-        float distance = length(lightVector);
         
-        if (distance < lights[i].radius)
-        {
-            vec3 L = normalize(lightVector);
-            float NdotL = max(dot(fragNormal, L), 0.0);
-            
-            // Basic falloff
-            float attenuation = pow(clamp(1.0 - distance/lights[i].radius, 0.0, 1.0), lights[i].falloff);
-            
-            pointLightsColor += diffuse * lights[i].color * NdotL * attenuation * lights[i].radiance;
-        }
+        if (lights[i].type == 0) // Point
+            lighting += CalcPointLight(lights[i], normal, fragPosition, viewDir, diffColor, s);
+        else if (lights[i].type == 1) // Spot
+            lighting += CalcSpotLight(lights[i], normal, fragPosition, viewDir, diffColor, s);
     }
 
-    // Final color
-    finalColor = (ambientColor + diffuseColor + pointLightsColor) * texelColor;
+    // 3. Emissive Component
+    vec3 emissiveComp = colEmissive.rgb;
+    if (useEmissiveTexture == 1) emissiveComp *= texture(texture5, fragTexCoord).rgb;
+    emissiveComp *= emissiveIntensity;
+
+    // 4. Final Assembly
+    vec3 outColor = lighting + emissiveComp;
+    
+    finalColor = vec4(outColor, (mode == 2) ? 1.0 : baseColor.a);
 }

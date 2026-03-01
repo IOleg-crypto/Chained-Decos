@@ -1,370 +1,533 @@
 #include "editor_layer.h"
-#include "actions/editor_actions.h"
-#include "editor/actions/editor_actions.h"
 #include "editor/actions/project_actions.h"
 #include "editor/actions/scene_actions.h"
-#include "editor/editor.h"
-#include "editor/editor_panels.h"
-#include "editor/ui/editor_layout.h"
-#include "editor_panels.h"
-#include "engine/core/application.h"
+#include "editor_events.h"
+#include "editor_gui.h"
 #include "engine/core/input.h"
-#include "ui/editor_gui.h"
-#include "ui/editor_gui.h"
-#include "engine/scene/scene_events.h"
 
 #include "engine/core/profiler.h"
+#include "engine/core/yaml.h"
+#include "engine/graphics/asset_manager.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/components.h"
-#include "engine/scene/project_serializer.h"
-#include "engine/scene/scene.h"
+#include "engine/scene/project.h"
 #include "engine/scene/scene_serializer.h"
 #include "engine/scene/scriptable_entity.h"
+#include <fstream>
 
 #include "cstdarg"
 #include "extras/IconsFontAwesome6.h"
-#include "imgui.h"
 #include "nfd.h"
 #include "panels/console_panel.h"
+#include "panels/content_browser_panel.h"
+#include "panels/environment_panel.h"
+#include "panels/project_browser_panel.h"
 #include "panels/property_editor.h"
-#include "raylib.h"
-
-// Font Awesome fallback if extras/iconsfontawesome6.h is missing or defines different macros
-#ifndef ICON_MIN_FA
-#define ICON_MIN_FA 0xf000
-#endif
-#ifndef ICON_MAX_16_FA
-#define ICON_MAX_16_FA 0xf8ff
-#endif
-
+#include "panels/viewport_panel.h"
 
 namespace CHEngine
 {
-    EditorLayer *EditorLayer::s_Instance = nullptr;
-    ImVec2 EditorLayer::s_ViewportSize = {1280, 720};
+EditorLayer* EditorLayer::s_Instance = nullptr;
 
-    EditorLayer::EditorLayer() : Layer("EditorLayer")
+EditorLayer::EditorLayer()
+    : Layer("EditorLayer")
+{
+    s_Instance = this;
+    EditorContext::Init();
+    m_Panels = std::make_unique<EditorPanels>();
+    m_Layout = std::make_unique<EditorLayout>();
+    m_Actions = std::make_unique<EditorActions>();
+
+    LoadConfig();
+}
+
+void EditorLayer::LoadConfig()
+{
+    std::string configPath = PROJECT_ROOT_DIR "/editor_settings.yaml";
+    if (!std::filesystem::exists(configPath))
     {
-        s_Instance = this;
-        m_Panels = std::make_unique<EditorPanels>();
-        m_Layout = std::make_unique<EditorLayout>();
-        m_Actions = std::make_unique<EditorActions>();
-
-        m_DebugRenderFlags.DrawColliders = true;
-        m_DebugRenderFlags.DrawLights = true;
-        m_DebugRenderFlags.DrawSpawnZones = true;
+        return;
     }
 
-    void EditorLayer::OnAttach()
+    try
     {
-        SetTraceLogCallback(
-            [](int logLevel, const char *text, va_list args)
-            {
-                char buffer[4096];
-                vsnprintf(buffer, sizeof(buffer), text, args);
-
-                // Also print to standard console
-                printf("%s\n", buffer);
-
-                ConsoleLogLevel level = ConsoleLogLevel::Info;
-                if (logLevel == LOG_WARNING)
-                    level = ConsoleLogLevel::Warn;
-                else if (logLevel >= LOG_ERROR)
-                    level = ConsoleLogLevel::Error;
-
-                ConsolePanel::AddLog(buffer, level);
-            });
-
-        ImGuiIO &io = ImGui::GetIO();
-        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-
-        EditorUI::GUI::SetDarkThemeColors();
-
-        NFD_Init();
-        PropertyEditor::Init();
-
-        // Register Panels
-        m_Panels->Init();
-
-        m_CommandHistory.SetNotifyCallback(
-            []() { CH_CORE_TRACE("CommandHistory: Scene state changed, notifying editor..."); });
-
-        // Auto-load last project/scene
-        const auto &config = Editor::Get().GetEditorConfig();
-
-        if (config.LoadLastProjectOnStartup && !config.LastProjectPath.empty() &&
-            std::filesystem::exists(config.LastProjectPath))
+        YAML::Node data = YAML::LoadFile(configPath);
+        if (!data["Editor"])
         {
-            CH_CORE_INFO("Auto-loading last project: {}", config.LastProjectPath);
-            ProjectActions::Open(config.LastProjectPath);
+            return;
+        }
 
-            if (!config.LastScenePath.empty() && std::filesystem::exists(config.LastScenePath))
+        auto node = data["Editor"];
+        m_Config.LastProjectPath = node["LastProjectPath"].as<std::string>("");
+        m_Config.LastScenePath = node["LastScenePath"].as<std::string>("");
+        m_Config.LoadLastProjectOnStartup = node["LoadLastProjectOnStartup"].as<bool>(false);
+    } catch (std::exception& e)
+    {
+        CH_CORE_ERROR("Failed to load editor config: {}", e.what());
+    }
+}
+
+void EditorLayer::SaveConfig()
+{
+    YAML::Emitter out;
+    out << YAML::BeginMap;
+    out << YAML::Key << "Editor" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "LastProjectPath" << YAML::Value << m_Config.LastProjectPath;
+    out << YAML::Key << "LastScenePath" << YAML::Value << m_Config.LastScenePath;
+    out << YAML::Key << "LoadLastProjectOnStartup" << YAML::Value << m_Config.LoadLastProjectOnStartup;
+    out << YAML::EndMap;
+    out << YAML::EndMap;
+
+    std::ofstream fout(PROJECT_ROOT_DIR "/editor_settings.yaml");
+    fout << out.c_str();
+}
+
+void EditorLayer::OnAttach()
+{
+    SetTraceLogCallback([](int logLevel, const char* text, va_list args) {
+        char buffer[4096];
+        vsnprintf(buffer, sizeof(buffer), text, args);
+        printf("%s\n", buffer);
+
+        ConsoleLogLevel level = ConsoleLogLevel::Info;
+        if (logLevel == LOG_WARNING)
+        {
+            level = ConsoleLogLevel::Warn;
+        }
+        else if (logLevel >= LOG_ERROR)
+        {
+            level = ConsoleLogLevel::Error;
+        }
+
+        ConsolePanel::AddLog(buffer, level);
+    });
+
+    NFD_Init();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    EditorGUI::ApplyTheme();
+    PropertyEditor::Init();
+
+    // Register Panels
+    m_Panels->Init();
+
+    m_CommandHistory.SetNotifyCallback(
+        []() { CH_CORE_TRACE("CommandHistory: Scene state changed, notifying editor..."); });
+
+    // Auto-load last project/scene
+    const auto& config = GetConfig();
+
+    if (config.LoadLastProjectOnStartup && !config.LastProjectPath.empty() &&
+        std::filesystem::exists(config.LastProjectPath))
+    {
+        CH_CORE_INFO("Auto-loading last project: {}", config.LastProjectPath);
+        ProjectActions::Open(config.LastProjectPath);
+
+        if (auto project = Project::GetActive())
+        {
+            Renderer::LoadEngineResources(*project->GetAssetManager());
+        }
+
+        if (!config.LastScenePath.empty() && std::filesystem::exists(config.LastScenePath))
+        {
+            CH_CORE_INFO("Auto-loading last scene: {}", config.LastScenePath);
+            SceneActions::Open(config.LastScenePath);
+        }
+    }
+    else
+    {
+        Project::SetActive(nullptr);
+        // Load default engine resources with a temporary manager if no project
+        AssetManager temp;
+        temp.Initialize();
+        Renderer::LoadEngineResources(temp);
+    }
+
+    // Ensure layout is initialized
+    const char* iniPath = ImGui::GetIO().IniFilename;
+    if (iniPath && !std::filesystem::exists(iniPath))
+    {
+        CH_CORE_INFO("OnAttach: Layout file '{}' not found, will be reset on first frame", iniPath);
+        EditorContext::GetState().NeedsLayoutReset = true;
+    }
+
+    CH_CORE_INFO("EditorLayer - Setting window icon");
+    Image icon =
+        LoadImage(PROJECT_ROOT_DIR "/engine/resources/icons/game-engine-icon-featuring-a-game-controller-with-.png");
+    if (icon.data != nullptr)
+    {
+        ImageFormat(&icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+        Application::Get().GetWindow().SetWindowIcon(icon);
+        UnloadImage(icon);
+    }
+
+    CH_CORE_INFO("EditorLayer Attached with modular panels.");
+
+    LoadEditorFonts();
+}
+
+void EditorLayer::LoadEditorFonts()
+{
+
+    ImGuiIO& io = ImGui::GetIO();
+    float fontSize = 16.0f;
+    auto assetManager = Project::GetActive() ? Project::GetActive()->GetAssetManager() : nullptr;
+
+    // Use a temporary asset manager if no project is active yet (for startup screen)
+    std::unique_ptr<AssetManager> tempManager;
+    if (!assetManager)
+    {
+        tempManager = std::make_unique<AssetManager>();
+        tempManager->Initialize();
+        assetManager = std::move(tempManager);
+    }
+
+    // --- Default UI Font (Lato) ---
+    std::string fontPath = assetManager->ResolvePath("engine/resources/font/lato/lato-bold.ttf");
+    if (std::filesystem::exists(fontPath))
+    {
+        io.Fonts->AddFontFromFileTTF(fontPath.c_str(), fontSize);
+        CH_CORE_INFO("Loaded editor font: {}", fontPath);
+    }
+    else
+    {
+        CH_CORE_WARN("Editor font not found: {}. Using default ImGui font.", fontPath);
+        io.Fonts->AddFontDefault();
+    }
+
+    // --- Icon Font (FontAwesome) ---
+    std::string faPath = assetManager->ResolvePath("engine/resources/font/fa-solid-900.ttf");
+    if (std::filesystem::exists(faPath))
+    {
+        static const ImWchar icons_ranges[] = {0xf000, 0xf8ff, 0};
+        ImFontConfig icons_config;
+        icons_config.MergeMode = true;
+        icons_config.PixelSnapH = true;
+        io.Fonts->AddFontFromFileTTF(faPath.c_str(), fontSize, &icons_config, icons_ranges);
+        CH_CORE_INFO("Loaded and merged FontAwesome for editor: {}", faPath);
+    }
+
+    unsigned char* pixels;
+    int width, height;
+    io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
+}
+
+void EditorLayer::OnDetach()
+{
+    SaveConfig();
+    EditorContext::Shutdown();
+    SetTraceLogCallback(nullptr);
+    NFD_Quit();
+}
+
+void EditorLayer::OnUpdate(Timestep ts)
+{
+    CH_PROFILE_FUNCTION();
+
+    if (Input::IsKeyPressed(KEY_F11))
+    {
+        ToggleFullscreen();
+    }
+
+    if (auto scene = GetActiveScene())
+    {
+        if (EditorContext::GetSceneState() == SceneState::Play)
+        {
+            scene->OnUpdateRuntime(ts);
+        }
+        else
+        {
+            scene->OnUpdateEditor(ts);
+        }
+
+        if (Input::IsKeyPressed(KEY_F5))
+        {
+            AppLaunchRuntimeEvent e;
+            OnEvent(e);
+        }
+
+        m_Panels->OnUpdate(ts);
+    }
+}
+
+void EditorLayer::OnRender(Timestep ts)
+{
+    ClearBackground(BLACK);
+}
+
+void EditorLayer::OnImGuiRender()
+{
+    ImGuizmo::SetImGuiContext(ImGui::GetCurrentContext());
+    ImGuizmo::BeginFrame();
+
+    if (EditorContext::GetState().NeedsLayoutReset)
+    {
+        ResetLayout();
+        EditorContext::GetState().NeedsLayoutReset = false;
+    }
+
+    if (Project::GetActive())
+    {
+        if (EditorContext::GetState().FullscreenGame)
+        {
+            if (auto viewportPanel = m_Panels->Get<ViewportPanel>())
             {
-                CH_CORE_INFO("Auto-loading last scene: {}", config.LastScenePath);
-                SceneActions::Open(config.LastScenePath);
+                viewportPanel->OnImGuiRender(true);
             }
         }
         else
         {
-            CH_CORE_INFO("OnAttach: No project to auto-load");
-            Project::SetActive(nullptr);
-        }
-
-        // Ensure layout is initialized
-        if (!std::filesystem::exists("imgui.ini"))
-        {
-            CH_CORE_INFO("OnAttach: Layout will be reset on first frame");
-            m_NeedsLayoutReset = true;
-        }
-
-        CH_CORE_INFO("EditorLayer Attached with modular panels.");
-    }
-
-    void EditorLayer::OnDetach()
-    {
-        SetTraceLogCallback(nullptr);
-        NFD_Quit();
-    }
-
-    void EditorLayer::OnUpdate(float deltaTime)
-    {
-        CH_PROFILE_FUNCTION();
-
-        if (Input::IsKeyPressed(KEY_F11))
-        {
-            ToggleFullscreen();
-        }
-
-        auto activeScene = Application::Get().GetActiveScene();
-        if (!activeScene)
-            return;
-
-        if (m_SceneState == SceneState::Edit)
-        {
-            activeScene->OnUpdateEditor(deltaTime);
-            m_Panels->OnUpdate(deltaTime);
+            DrawDockSpace();
         }
     }
-
-    void EditorLayer::OnRender()
+    else
     {
-        ClearBackground(BLACK);
+        if (auto projectBrowser = m_Panels->Get<ProjectBrowserPanel>())
+        {
+            projectBrowser->OnImGuiRender();
+        }
+    }
+}
+
+void EditorLayer::ResetLayout()
+{
+    m_Layout->ResetLayout();
+}
+
+void EditorLayer::DrawDockSpace()
+{
+    m_Layout->BeginWorkspace();
+    m_Layout->DrawInterface();
+
+    bool readOnly = EditorContext::GetSceneState() == SceneState::Play;
+    m_Panels->OnImGuiRender(readOnly);
+
+    m_Layout->EndWorkspace();
+}
+
+
+bool EditorLayer::OnProjectOpened(ProjectOpenedEvent& e)
+{
+    CH_CORE_INFO("EditorLayer: Handling ProjectOpenedEvent - {}", e.GetPath());
+
+    auto project = Project::GetActive();
+    if (project)
+    {
+        if (auto contentBrowser = m_Panels->Get<ContentBrowserPanel>())
+        {
+            contentBrowser->SetRootDirectory(Project::GetAssetDirectory());
+        }
+        Renderer::LoadEngineResources(*project->GetAssetManager());
+    }
+    return false;
+}
+
+bool EditorLayer::OnSceneOpened(SceneOpenedEvent& e)
+{
+    auto activeScene = GetActiveScene();
+    m_Panels->SetContext(activeScene);
+
+    EditorContext::SetSelectedEntity({});
+
+    // Sync project path
+    auto project = Project::GetActive();
+    if (project && !e.GetPath().empty())
+    {
+        project->SetActiveScenePath(std::filesystem::relative(e.GetPath(), project->GetProjectDirectory()));
+        ProjectActions::Save();
     }
 
-    void EditorLayer::OnImGuiRender()
+    // Sync Diagnostic Mode
+    if (activeScene)
     {
-        ImGuizmo::SetImGuiContext(ImGui::GetCurrentContext());
-        ImGuizmo::BeginFrame();
+        Renderer::Get().SetDiagnosticMode(activeScene->GetSettings().DiagnosticMode);
+    }
 
-        if (m_NeedsLayoutReset)
+    return false;
+}
+
+void EditorLayer::OnEvent(Event& e)
+{
+    EventDispatcher dispatcher(e);
+
+    // 1. Scene Management
+    dispatcher.Dispatch<SceneOpenedEvent>(CH_BIND_EVENT_FN(EditorLayer::OnSceneOpened));
+    dispatcher.Dispatch<ScenePlayEvent>([this](auto& e) {
+        CH_CORE_INFO("EditorLayer::OnEvent - ScenePlayEvent Received");
+        SetSceneState(SceneState::Play);
+        return true;
+    });
+    dispatcher.Dispatch<SceneStopEvent>([this](auto& e) {
+        SetSceneState(SceneState::Edit);
+        return true;
+    });
+
+    // 2. Project Management
+    dispatcher.Dispatch<ProjectCreatedEvent>([](auto& ev) {
+        ProjectActions::New(ev.GetProjectName(), ev.GetPath());
+        return true;
+    });
+    dispatcher.Dispatch<ProjectOpenedEvent>(CH_BIND_EVENT_FN(EditorLayer::OnProjectOpened));
+    dispatcher.Dispatch<AppLaunchRuntimeEvent>([](auto& ev) {
+        ProjectActions::LaunchStandalone();
+        return true;
+    });
+
+    // 3. Layout/System
+    dispatcher.Dispatch<AppResetLayoutEvent>([this](auto& ev) {
+        ResetLayout();
+        return true;
+    });
+    dispatcher.Dispatch<AppSaveLayoutEvent>([this](auto& ev) {
+        m_Layout->SaveDefaultLayout();
+        return true;
+    });
+    dispatcher.Dispatch<SceneChangeRequestEvent>([this](auto& ev) {
+        std::filesystem::path scenePath = ev.GetPath();
+        // If the path is relative, resolve it via Project::GetAssetPath
+        if (scenePath.is_relative() && Project::GetActive())
         {
-            m_Layout->ResetLayout();
-            m_NeedsLayoutReset = false;
+            scenePath = Project::GetAssetPath(ev.GetPath());
         }
 
-        if (Project::GetActive())
+        std::string finalPath = scenePath.string();
+
+        if (EditorContext::GetSceneState() == SceneState::Play)
         {
-            if (m_FullscreenGame)
+            auto newScene = std::make_shared<Scene>();
+            // RegisterGameScripts(newScene.get()); // Removed: now handled globally and copied to Scene
+            SceneSerializer serializer(newScene.get());
+            if (serializer.Deserialize(finalPath))
             {
-                auto viewportPanel = m_Panels->Get<ViewportPanel>();
-                if (viewportPanel)
-                    viewportPanel->OnImGuiRender(true);
-            }
-            else
-            {
-                m_Layout->BeginWorkspace();
-
-                m_Layout->DrawInterface();
-
-                bool readOnly = m_SceneState == SceneState::Play;
-                m_Panels->OnImGuiRender(readOnly);
-
-                DrawScriptUI();
-
-                m_Layout->EndWorkspace();
-            }
-        }
-        else
-        {
-            if (auto projectBrowser = m_Panels->Get<ProjectBrowserPanel>())
-                projectBrowser->OnImGuiRender();
-        }
-    }
-
-    void EditorLayer::DrawScriptUI()
-    {
-        if (m_SceneState != SceneState::Play)
-            return;
-
-        auto scene = Application::Get().GetActiveScene();
-        if (!scene)
-            return;
-
-        scene->GetRegistry().view<NativeScriptComponent>().each(
-            [&](auto entity, auto &nsc)
-            {
-                for (auto &script : nsc.Scripts)
+                if (m_RuntimeScene)
                 {
-                    if (script.Instance)
-                        script.Instance->OnImGuiRender();
+                    m_RuntimeScene->OnRuntimeStop();
                 }
-            });
-    }
-
-    bool EditorLayer::OnProjectOpened(ProjectOpenedEvent &e)
-    {
-        CH_CORE_INFO("EditorLayer: Handling ProjectOpenedEvent - {}", e.GetPath());
-
-        // Project is already loaded by EditorUtils::ProjectActions::OpenProject
-        // or by the ProjectBrowserPanel. Just update UI panels.
-
-        auto project = Project::GetActive();
-        if (project)
-        {
-            if (auto contentBrowser = m_Panels->Get<ContentBrowserPanel>())
-                contentBrowser->SetRootDirectory(Project::GetAssetDirectory());
-        }
-        return false;
-    }
-
-    bool EditorLayer::OnSceneOpened(SceneOpenedEvent &e)
-    {
-        auto activeScene = Application::Get().GetActiveScene();
-        m_Panels->SetContext(activeScene);
-
-        m_SelectedEntity = {};
-
-        // Sync project path
-        auto project = Project::GetActive();
-        if (project && !e.GetPath().empty())
-        {
-            project->SetActiveScenePath(std::filesystem::relative(e.GetPath(), project->GetProjectDirectory()));
-            ProjectActions::Save();
-        }
-        return false;
-    }
-
-    void EditorLayer::OnEvent(CHEngine::Event &e)
-    {
-        EventDispatcher dispatcher(e);
-        dispatcher.Dispatch<ProjectOpenedEvent>(CH_BIND_EVENT_FN(EditorLayer::OnProjectOpened));
-        dispatcher.Dispatch<ProjectCreatedEvent>(
-            [this](ProjectCreatedEvent &ev)
-            {
-                CH_CORE_INFO("EditorLayer: Handling ProjectCreatedEvent");
-                ProjectActions::New(ev.GetProjectName(), ev.GetPath());
-                return true;
-            });
-        dispatcher.Dispatch<SceneOpenedEvent>(CH_BIND_EVENT_FN(EditorLayer::OnSceneOpened));
-        dispatcher.Dispatch<ScenePlayEvent>(CH_BIND_EVENT_FN(EditorLayer::OnScenePlay));
-        dispatcher.Dispatch<SceneStopEvent>(CH_BIND_EVENT_FN(EditorLayer::OnSceneStop));
-        dispatcher.Dispatch<AppLaunchRuntimeEvent>(
-            [this](AppLaunchRuntimeEvent &ev)
-            {
-                ProjectActions::LaunchStandalone();
-                return true;
-            });
-        dispatcher.Dispatch<AppResetLayoutEvent>(
-            [this](AppResetLayoutEvent &ev)
-            {
-                m_Layout->ResetLayout();
-                return true;
-            });
-
-        dispatcher.Dispatch<EntitySelectedEvent>(
-            [this](EntitySelectedEvent &ev)
-            {
-                m_SelectedEntity = Entity{ev.GetEntity(), ev.GetScene()};
-                m_LastHitMeshIndex = ev.GetMeshIndex();
-                return false;
-            });
-
-        // Propagate events to all panels
-        m_Panels->OnEvent(e);
-
-        if (e.Handled)
-            return;
-
-        // Handle actions
-        if (m_Actions->OnEvent(e))
-            return;
-
-        auto activeScene = Application::Get().GetActiveScene();
-        if (e.GetEventType() == EventType::KeyPressed)
-        {
-            auto &ke = (KeyPressedEvent &)e;
-            if (ke.GetKeyCode() == KEY_ESCAPE && m_FullscreenGame)
-            {
-                m_FullscreenGame = false;
-                e.Handled = true;
+                m_RuntimeScene = newScene;
+                m_RuntimeScene->OnRuntimeStart();
+                m_Panels->SetContext(m_RuntimeScene);
+                CH_CORE_INFO("Play Mode: Transitioned to scene {}", finalPath);
             }
+            return true;
+        }
+        SceneActions::Open(finalPath);
+        return true;
+    });
+
+    // 4. Selections/Picking
+    dispatcher.Dispatch<EntitySelectedEvent>([this](auto& ev) {
+        EditorContext::SetSelectedEntity(Entity(ev.GetEntity(), &ev.GetScene()->GetRegistry()));
+        EditorContext::GetState().LastHitMeshIndex = ev.GetMeshIndex();
+        return false;
+    });
+
+    // 5. Hierarchy propagation
+    m_Panels->OnEvent(e);
+    if (e.Handled)
+    {
+        return;
+    }
+    if (m_Actions->OnEvent(e))
+    {
+        return;
+    }
+
+    // 6. Raw Input Overrides
+    if (EditorContext::GetSceneState() == SceneState::Play)
+    {
+        if (auto activeScene = GetActiveScene())
+        {
             activeScene->OnEvent(e);
         }
     }
-
-    CommandHistory &EditorLayer::GetCommandHistory()
+    else if (e.GetEventType() == EventType::KeyPressed)
     {
-        auto &layers = Application::Get().GetLayerStack().GetLayers();
-        return ((EditorLayer *)layers.back())->m_CommandHistory;
-    }
-
-    SceneState EditorLayer::GetSceneState()
-    {
-        return s_Instance->m_SceneState;
-    }
-
-    EditorLayer &EditorLayer::Get()
-    {
-        return *s_Instance;
-    }
-
-    bool EditorLayer::OnScenePlay(ScenePlayEvent &e)
-    {
-        CH_CORE_INFO("Scene Play Event");
-
-        m_EditorScene = Application::Get().GetActiveScene();
-        if (!m_EditorScene)
-            return false;
-
-        std::shared_ptr<Scene> runtimeScene = Scene::Copy(m_EditorScene);
-        if (!runtimeScene)
+        auto& ke = (KeyPressedEvent&)e;
+        if (ke.GetKeyCode() == KEY_ESCAPE && EditorContext::GetState().FullscreenGame)
         {
-            CH_CORE_ERROR("Failed to clone scene for play mode!");
-            return false;
+            EditorContext::GetState().FullscreenGame = false;
+            e.Handled = true;
+        }
+        if (auto activeScene = GetActiveScene())
+        {
+            activeScene->OnEvent(e);
+        }
+    }
+}
+
+CommandHistory& EditorLayer::GetCommandHistory()
+{
+    return s_Instance->m_CommandHistory;
+}
+
+void EditorLayer::SetSceneState(SceneState state)
+{
+    CH_CORE_INFO("EditorLayer::SetSceneState - Pending State: {}", (int)state);
+
+    if (state == SceneState::Play)
+    {
+        if (EditorContext::GetSceneState() == SceneState::Play)
+        {
+            return;
         }
 
-        m_SceneState = SceneState::Play;
-        Application::Get().SetActiveScene(runtimeScene);
-
-        // Update panels context
-        m_Panels->SetContext(runtimeScene);
-
-        runtimeScene->OnRuntimeStart();
-
-        return false;
-    }
-
-    bool EditorLayer::OnSceneStop(SceneStopEvent &e)
-    {
-        CH_CORE_INFO("Scene Stop Event");
-        m_FullscreenGame = false;
-
-        auto runtimeScene = Application::Get().GetActiveScene();
-        if (runtimeScene)
-            runtimeScene->OnRuntimeStop();
-
-        m_SceneState = SceneState::Edit;
-        m_StandaloneActive = false;
-
-        if (m_EditorScene)
+        CH_CORE_INFO("Editor: Play Mode Started");
+        m_RuntimeScene = Scene::Copy(m_EditorScene);
+        if (m_RuntimeScene)
         {
-            Application::Get().SetActiveScene(m_EditorScene);
-            m_Panels->SetContext(m_EditorScene);
-
-            m_EditorScene = nullptr;
+            EditorContext::SetSceneState(SceneState::Play);
+            m_RuntimeScene->OnRuntimeStart();
+            m_Panels->SetContext(m_RuntimeScene);
+        }
+        else
+        {
+            CH_CORE_ERROR("EditorLayer::SetSceneState - Failed to copy scene!");
+        }
+    }
+    else
+    {
+        if (EditorContext::GetSceneState() == SceneState::Edit)
+        {
+            return;
         }
 
-        return false;
+        CH_CORE_INFO("Editor: Play Mode Stopped");
+        if (m_RuntimeScene)
+        {
+            m_RuntimeScene->OnRuntimeStop();
+            m_RuntimeScene = nullptr;
+        }
+
+        EditorContext::SetSceneState(SceneState::Edit);
+        m_Panels->SetContext(m_EditorScene);
+    }
+}
+
+// Register game scripts (statically linked, defined in game_module.cpp outside any namespace)
+void EditorLayer::SetScene(std::shared_ptr<Scene> scene)
+{
+    m_EditorScene = scene;
+    EditorContext::SetSelectedEntity({});
+    if (EditorContext::GetSceneState() == SceneState::Edit)
+    {
+        m_Panels->SetContext(m_EditorScene);
     }
 
+    // RegisterGameScripts(m_EditorScene.get()); // Removed: now handled globally
+}
+void EditorLayer::SetViewportSize(const ImVec2& size)
+{
+    m_ViewportSize = size;
+
+    // Propagate to scenes to update camera aspect ratios
+    if (m_EditorScene)
+    {
+        m_EditorScene->OnViewportResize((uint32_t)size.x, (uint32_t)size.y);
+    }
+
+    if (m_RuntimeScene)
+    {
+        m_RuntimeScene->OnViewportResize((uint32_t)size.x, (uint32_t)size.y);
+    }
+}
 } // namespace CHEngine

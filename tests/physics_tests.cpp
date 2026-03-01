@@ -33,10 +33,10 @@ TEST(PhysicsTest, Raycast)
 {
     auto scene = std::make_shared<Scene>();
     auto entity = scene->CreateEntity("Test Entity");
-    auto &transform = entity.GetComponent<TransformComponent>();
+    auto& transform = entity.GetComponent<TransformComponent>();
     transform.Translation = {0.0f, 0.0f, 5.0f};
 
-    auto &collider = entity.AddComponent<ColliderComponent>();
+    auto& collider = entity.AddComponent<ColliderComponent>();
     collider.Size = {1.0f, 1.0f, 1.0f};
     collider.Offset = {-0.5f, -0.5f, -0.5f}; // Center it
 
@@ -45,13 +45,44 @@ TEST(PhysicsTest, Raycast)
     ray.position = {0.0f, 0.0f, 0.0f};
     ray.direction = {0.0f, 0.0f, 1.0f};
 
-    RaycastResult result = Physics::Raycast(scene.get(), ray);
+    RaycastResult result = scene->GetPhysics().Raycast(ray);
     EXPECT_TRUE(result.Hit);
     EXPECT_NEAR(result.Distance, 4.5f, 0.001f);
     EXPECT_EQ(result.Entity, (entt::entity)entity);
 
     // Ray looking away
     ray.direction = {0.0f, 0.0f, -1.0f};
-    result = Physics::Raycast(scene.get(), ray);
+    result = scene->GetPhysics().Raycast(ray);
     EXPECT_FALSE(result.Hit);
+}
+
+TEST(PhysicsTest, RaycastMissingCollider)
+{
+    auto scene = std::make_shared<Scene>();
+    auto entity = scene->CreateEntity("No Collider");
+    auto& transform = entity.GetComponent<TransformComponent>();
+    transform.Translation = {0.0f, 0.0f, 5.0f};
+
+    // No ColliderComponent added
+
+    Ray ray;
+    ray.position = {0.0f, 0.0f, 0.0f};
+    ray.direction = {0.0f, 0.0f, 1.0f};
+
+    RaycastResult result = scene->GetPhysics().Raycast(ray);
+    EXPECT_FALSE(result.Hit);
+}
+
+TEST(PhysicsTest, ColliderEnabledFlag)
+{
+    auto scene = std::make_shared<Scene>();
+    auto entity = scene->CreateEntity("Collider Entity");
+    auto& collider = entity.AddComponent<ColliderComponent>();
+    
+    // Default is true
+    EXPECT_TRUE(collider.Enabled);
+    
+    // Set to false
+    collider.Enabled = false;
+    EXPECT_FALSE(collider.Enabled);
 }

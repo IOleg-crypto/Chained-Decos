@@ -1,70 +1,109 @@
+// Integration tests — headless only, no GPU/OpenGL required
 #include "engine/core/base.h"
-#include "gtest/gtest.h"
-#include "editor/panels/project_browser_panel.h"
-#include "editor/editor_panels.h"
-#include "editor/editor_layer.h"
 #include "engine/core/events.h"
+#include "engine/core/uuid.h"
+#include "engine/scene/components.h"
+#include "engine/scene/entity.h"
+#include "engine/scene/scene.h"
+#include "engine/scene/scene_events.h"
+#include "engine/scene/scene_serializer.h"
+#include "gtest/gtest.h"
 #include <memory>
 
 using namespace CHEngine;
 
-class EditorIntegrationTest : public ::testing::Test
+// --- Scene + Entity Integration ---
+
+class SceneIntegrationTest : public ::testing::Test
 {
 protected:
+    std::shared_ptr<Scene> scene;
     void SetUp() override
     {
-#if defined(CH_CI) && defined(CH_PLATFORM_WINDOWS)
-        GTEST_SKIP() << "Skipping UI integration tests on Windows CI due to lack of OpenGL support.";
-#endif
+        scene = std::make_shared<Scene>();
     }
 };
 
-TEST_F(EditorIntegrationTest, ProjectBrowserDialogState)
+TEST_F(SceneIntegrationTest, CreateAndDestroyEntity)
 {
-    ProjectBrowserPanel panel;
-    
-    // Initial state
-    EXPECT_FALSE(panel.IsCreateDialogVisible());
-    EXPECT_FALSE(panel.HasPendingCreatePopupRequest());
-    
-    // Simulate interaction via exposed state
-    panel.SetCreateDialogVisible(true);
-    EXPECT_TRUE(panel.IsCreateDialogVisible());
-    
-    panel.SetCreateDialogVisible(false);
-    EXPECT_FALSE(panel.IsCreateDialogVisible());
+    auto entity = scene->CreateEntity("TestEntity");
+    EXPECT_TRUE(entity);
+    EXPECT_TRUE(entity.HasComponent<TagComponent>());
+    EXPECT_EQ(entity.GetComponent<TagComponent>().Tag, "TestEntity");
+
+    scene->DestroyEntity(entity);
 }
 
-TEST_F(EditorIntegrationTest, PanelVisibilityToggle)
+TEST_F(SceneIntegrationTest, MultipleEntitiesHaveUniqueIDs)
 {
-    ProjectBrowserPanel panel;
-    EXPECT_TRUE(panel.IsOpen());
-    
-    panel.IsOpen() = false;
-    EXPECT_FALSE(panel.IsOpen());
-    
-    panel.IsOpen() = true;
-    EXPECT_TRUE(panel.IsOpen());
+    auto e1 = scene->CreateEntity("A");
+    auto e2 = scene->CreateEntity("B");
+    auto e3 = scene->CreateEntity("C");
+
+    auto id1 = e1.GetComponent<IDComponent>().ID;
+    auto id2 = e2.GetComponent<IDComponent>().ID;
+    auto id3 = e3.GetComponent<IDComponent>().ID;
+
+    EXPECT_NE(id1, id2);
+    EXPECT_NE(id2, id3);
+    EXPECT_NE(id1, id3);
 }
 
-TEST_F(EditorIntegrationTest, GlobalPanelConsistency)
+TEST_F(SceneIntegrationTest, EntityComponentLifecycle)
 {
-    EditorPanels panels;
-    panels.Init();
-    
-    auto& panelList = panels.GetPanels();
-    EXPECT_GT(panelList.size(), 0);
-    
-    for (auto& panel : panelList)
-    {
-        // Test opening/closing for EVERY panel registered in the engine
-        panel->IsOpen() = false;
-        EXPECT_FALSE(panel->IsOpen()) << "Failed to close panel: " << panel->GetName();
-        
-        panel->IsOpen() = true;
-        EXPECT_TRUE(panel->IsOpen()) << "Failed to open panel: " << panel->GetName();
-        
-        // Ensure name exists
-        EXPECT_FALSE(panel->GetName().empty());
-    }
+    auto entity = scene->CreateEntity("Player");
+
+    // Transform is added by default
+    EXPECT_TRUE(entity.HasComponent<TransformComponent>());
+    auto& transform = entity.GetComponent<TransformComponent>();
+    transform.Translation = {10.0f, 20.0f, 30.0f};
+    EXPECT_FLOAT_EQ(entity.GetComponent<TransformComponent>().Translation.x, 10.0f);
+
+    // Add and remove a component
+    entity.AddComponent<RigidBodyComponent>();
+    EXPECT_TRUE(entity.HasComponent<RigidBodyComponent>());
+    entity.RemoveComponent<RigidBodyComponent>();
+    EXPECT_FALSE(entity.HasComponent<RigidBodyComponent>());
+}
+
+TEST_F(SceneIntegrationTest, FindEntityByTag)
+{
+    auto entity = scene->CreateEntity("Findable");
+
+    auto found = scene->FindEntityByTag("Findable");
+    EXPECT_TRUE(found);
+    EXPECT_EQ(found.GetComponent<TagComponent>().Tag, "Findable");
+}
+
+
+
+// --- Event System Integration ---
+
+class EventIntegrationTest : public ::testing::Test
+{
+};
+
+TEST_F(EventIntegrationTest, SceneChangeRequestEvent)
+{
+    SceneChangeRequestEvent event("scenes/level2.chscene");
+    EXPECT_EQ(event.GetPath(), "scenes/level2.chscene");
+    EXPECT_FALSE(event.Handled);
+
+    event.Handled = true;
+    EXPECT_TRUE(event.Handled);
+}
+
+TEST_F(EventIntegrationTest, EventDispatcher)
+{
+    SceneChangeRequestEvent event("test.chscene");
+    EventDispatcher dispatcher(event);
+
+    bool handled = false;
+    dispatcher.Dispatch<SceneChangeRequestEvent>([&handled](SceneChangeRequestEvent& e) -> bool {
+        handled = true;
+        return true;
+    });
+
+    EXPECT_TRUE(handled);
+    EXPECT_TRUE(event.Handled);
 }

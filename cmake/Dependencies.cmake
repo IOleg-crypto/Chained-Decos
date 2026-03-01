@@ -1,42 +1,94 @@
+
 # Chained Engine - Dependencies
 # Extracted from root CMakeLists.txt for modularity
-
-include(FetchContent)
-
-find_package(Threads REQUIRED)
-
-# ============================================================================
-# FetchContent Dependencies
-# ============================================================================
 
 # yaml-cpp
 set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
 set(YAML_CPP_BUILD_CONTRIB OFF CACHE BOOL "" FORCE)
 
-FetchContent_Declare(
-    yaml-cpp
-    GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
-    GIT_TAG 0.8.0
-)
+if(EXISTS "${CMAKE_SOURCE_DIR}/include/yaml-cpp/CMakeLists.txt")
+    add_subdirectory(include/yaml-cpp)
+    set(yaml-cpp_SOURCE_DIR "${CMAKE_SOURCE_DIR}/include/yaml-cpp" CACHE INTERNAL "")
+else()
+    message(FATAL_ERROR "yaml-cpp submodule not found! Run: git submodule update --init --recursive")
+endif()
 
 # ImGuizmo (Manipulators)
-FetchContent_Declare(
-    imguizmo
-    GIT_REPOSITORY https://github.com/CedricGuillemet/ImGuizmo.git
-    GIT_TAG master
-)
+set(imguizmo_SOURCE_DIR "${CMAKE_SOURCE_DIR}/include/imguizmo")
 
+# GLM
+if(EXISTS "${CMAKE_SOURCE_DIR}/include/glm/CMakeLists.txt")
+    # GLM is header-only but provides CMake integration
+    add_subdirectory(include/glm)
+    set(glm_SOURCE_DIR "${CMAKE_SOURCE_DIR}/include/glm" CACHE INTERNAL "")
+else()
+    message(FATAL_ERROR "glm submodule not found! Run: git submodule update --init --recursive")
+endif()
 
-FetchContent_Declare(
-	glm
-	GIT_REPOSITORY	https://github.com/g-truc/glm.git
-	GIT_TAG 	0af55ccecd98d4e5a8d1fad7de25ba429d60e863 #refs/tags/1.0.1
-)
+# Coral (for C# scripting integration)
+if(EXISTS "${CMAKE_SOURCE_DIR}/include/coral/cmake/CMakeLists.txt")
+    add_subdirectory(include/coral/cmake)
+    set(coral_SOURCE_DIR "${CMAKE_SOURCE_DIR}/include/coral" CACHE INTERNAL "")
+    
+    # --- CI Fixes for Coral (Injection) ---
+    if(WIN32)
+        set(CORAL_FIX_DIR "${CMAKE_BINARY_DIR}/coral_fixes")
+        file(MAKE_DIRECTORY "${CORAL_FIX_DIR}")
+        
+        # 1. ShlObj_core.h shim (MinGW fix)
+        if(MINGW)
+            file(WRITE "${CORAL_FIX_DIR}/ShlObj_core.h" "#pragma once\n#include <shlobj.h>\n")
+        endif()
+        
+        # 2. MSVC wchar_t stream fix (C2280 fix)
+        file(WRITE "${CORAL_FIX_DIR}/StreamFix.hpp" 
+            "#pragma once\n"
+            "#include <iostream>\n"
+            "#include <string>\n"
+            "// Standalone fix for deleted operator<< in Coral logging\n"
+            "inline std::ostream& operator<<(std::ostream& os, const wchar_t* str) { return os << \"[wide string]\"; }\n"
+            "inline std::ostream& operator<<(std::ostream& os, const std::wstring& str) { return os << \"[wide string]\"; }\n"
+        )
+        
+        if(TARGET Coral.Native)
+            if(MINGW)
+                target_include_directories(Coral.Native PRIVATE "${CORAL_FIX_DIR}")
+            endif()
+            
+            if(MSVC)
+                target_compile_options(Coral.Native PRIVATE "/FI${CORAL_FIX_DIR}/StreamFix.hpp")
+            else()
+                target_compile_options(Coral.Native PRIVATE "-include${CORAL_FIX_DIR}/StreamFix.hpp")
+            endif()
+        endif()
+    endif()
+else()
+    message(FATAL_ERROR "coral submodule not found! Run: git submodule update --init --recursive")
+endif()
 
+# assimp (Asset Importer Library)
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ZLIB ON CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_DRACO OFF CACHE BOOL "" FORCE)
+set(ASSIMP_NO_EXPORT ON CACHE BOOL "" FORCE)
 
+# Ensure no unity build for assimp or its subprojects
+set(CMAKE_UNITY_BUILD OFF) 
 
-FetchContent_MakeAvailable(yaml-cpp imguizmo glm)
+if(EXISTS "${CMAKE_SOURCE_DIR}/include/assimp/CMakeLists.txt")
+    add_subdirectory(include/assimp)
+    set(assimp_SOURCE_DIR "${CMAKE_SOURCE_DIR}/include/assimp" CACHE INTERNAL "")
+    set(assimp_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/include/assimp" CACHE INTERNAL "")
+    # Disable unity build for assimp to avoid header/namespace conflicts
+    if(TARGET assimp)
+        set_target_properties(assimp PROPERTIES UNITY_BUILD OFF)
+    endif()
+else()
+    message(FATAL_ERROR "assimp submodule not found! Run: git submodule update --init --recursive")
+endif()
 
 # ============================================================================
 # Raylib
@@ -146,7 +198,7 @@ target_include_directories(imguilib PUBLIC
 target_link_libraries(imguilib PRIVATE raylib)
 
 # Define IMGUI math operators and GLFW settings
-target_compile_definitions(imguilib PRIVATE 
+target_compile_definitions(imguilib PUBLIC 
     IMGUI_DEFINE_MATH_OPERATORS
     GLFW_INCLUDE_NONE
 )

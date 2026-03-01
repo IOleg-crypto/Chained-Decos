@@ -1,17 +1,20 @@
 #include "project_serializer.h"
 #include "engine/core/log.h"
+#include "engine/scene/serialization_utils.h"
 #include "fstream"
 #include "yaml-cpp/yaml.h"
 
 namespace CHEngine
 {
-ProjectSerializer::ProjectSerializer(std::shared_ptr<Project> project) : m_Project(project)
+using namespace SerializationUtils;
+ProjectSerializer::ProjectSerializer(std::shared_ptr<Project> project)
+    : m_Project(project)
 {
 }
 
-bool ProjectSerializer::Serialize(const std::filesystem::path &filepath)
+bool ProjectSerializer::Serialize(const std::filesystem::path& filepath)
 {
-    const auto &config = m_Project->m_Config;
+    const auto& config = m_Project->m_Config;
 
     YAML::Emitter out;
     out << YAML::BeginMap; // Project
@@ -19,13 +22,23 @@ bool ProjectSerializer::Serialize(const std::filesystem::path &filepath)
     {
         out << YAML::BeginMap;
         out << YAML::Key << "Name" << YAML::Value << config.Name;
+        out << YAML::Key << "IconPath" << YAML::Value << config.IconPath;
         out << YAML::Key << "StartScene" << YAML::Value << config.StartScene;
         out << YAML::Key << "AssetDirectory" << YAML::Value << config.AssetDirectory.string();
-        out << YAML::Key << "ActiveScene" << YAML::Value << config.ActiveScenePath.string();
-        out << YAML::Key << "Environment" << YAML::Value << config.EnvironmentPath.string();
+
+        SerializePath(out, "ActiveScene", config.ActiveScenePath.string());
+        SerializePath(out, "Environment", config.EnvironmentPath.string());
+
+        out << YAML::Key << "BuildScenes" << YAML::Value << YAML::BeginSeq;
+        for (const auto& scene : config.BuildScenes)
+        {
+            out << scene;
+        }
+        out << YAML::EndSeq;
 
         out << YAML::Key << "Physics" << YAML::Value << YAML::BeginMap;
         out << YAML::Key << "Gravity" << YAML::Value << config.Physics.Gravity;
+        out << YAML::Key << "FixedTimestep" << YAML::Value << config.Physics.FixedTimestep;
         out << YAML::EndMap;
 
         out << YAML::Key << "Animation" << YAML::Value << YAML::BeginMap;
@@ -35,6 +48,17 @@ bool ProjectSerializer::Serialize(const std::filesystem::path &filepath)
         out << YAML::Key << "Render" << YAML::Value << YAML::BeginMap;
         out << YAML::Key << "AmbientIntensity" << YAML::Value << config.Render.AmbientIntensity;
         out << YAML::Key << "DefaultExposure" << YAML::Value << config.Render.DefaultExposure;
+        out << YAML::EndMap;
+
+        out << YAML::Key << "Texture" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "GenerateMipmaps" << YAML::Value << config.Texture.GenerateMipmaps;
+        out << YAML::Key << "Filter" << YAML::Value << (int)config.Texture.Filter;
+        out << YAML::EndMap;
+
+        out << YAML::Key << "Mesh" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "ImportMaterials" << YAML::Value << config.Mesh.ImportMaterials;
+        out << YAML::Key << "CalculateTangents" << YAML::Value << config.Mesh.CalculateTangents;
+        out << YAML::Key << "FlipUVs" << YAML::Value << config.Mesh.FlipUVs;
         out << YAML::EndMap;
 
         out << YAML::Key << "Window" << YAML::Value << YAML::BeginMap;
@@ -50,6 +74,31 @@ bool ProjectSerializer::Serialize(const std::filesystem::path &filepath)
         out << YAML::Key << "EnableConsole" << YAML::Value << config.Runtime.EnableConsole;
         out << YAML::EndMap;
 
+        out << YAML::Key << "Editor" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "CameraMoveSpeed" << YAML::Value << config.Editor.CameraMoveSpeed;
+        out << YAML::Key << "CameraRotationSpeed" << YAML::Value << config.Editor.CameraRotationSpeed;
+        out << YAML::Key << "CameraBoostMultiplier" << YAML::Value << config.Editor.CameraBoostMultiplier;
+        out << YAML::EndMap;
+
+        out << YAML::Key << "Scripting" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "ModuleName" << YAML::Value << config.Scripting.ModuleName;
+        out << YAML::Key << "ModuleDirectory" << YAML::Value << config.Scripting.ModuleDirectory.string();
+        out << YAML::Key << "AutoLoad" << YAML::Value << config.Scripting.AutoLoad;
+        out << YAML::EndMap;
+
+        out << YAML::Key << "LaunchProfiles" << YAML::Value << YAML::BeginSeq;
+        for (const auto& profile : config.LaunchProfiles)
+        {
+            out << YAML::BeginMap;
+            out << YAML::Key << "Name" << YAML::Value << profile.Name;
+            out << YAML::Key << "BinaryPath" << YAML::Value << profile.BinaryPath;
+            out << YAML::Key << "Arguments" << YAML::Value << profile.Arguments;
+            out << YAML::Key << "UseDefaultArgs" << YAML::Value << profile.UseDefaultArgs;
+            out << YAML::EndMap;
+        }
+        out << YAML::EndSeq;
+
+        out << YAML::Key << "ActiveLaunchProfile" << YAML::Value << config.ActiveLaunchProfileIndex;
         out << YAML::Key << "BuildConfig" << YAML::Value << (int)config.BuildConfig;
 
         out << YAML::EndMap;
@@ -67,7 +116,7 @@ bool ProjectSerializer::Serialize(const std::filesystem::path &filepath)
     return false;
 }
 
-bool ProjectSerializer::Deserialize(const std::filesystem::path &filepath)
+bool ProjectSerializer::Deserialize(const std::filesystem::path& filepath)
 {
     std::ifstream stream(filepath);
     if (!stream.is_open())
@@ -82,27 +131,77 @@ bool ProjectSerializer::Deserialize(const std::filesystem::path &filepath)
     YAML::Node data = YAML::Load(strStream.str());
     auto projectNode = data["Project"];
     if (!projectNode)
+    {
         return false;
+    }
 
-    auto &config = m_Project->m_Config;
+    auto& config = m_Project->m_Config;
     config.Name = projectNode["Name"].as<std::string>();
+    if (projectNode["IconPath"])
+    {
+        config.IconPath = projectNode["IconPath"].as<std::string>();
+    }
     config.StartScene = projectNode["StartScene"].as<std::string>();
     config.AssetDirectory = projectNode["AssetDirectory"].as<std::string>();
-    if (projectNode["Environment"])
-        config.EnvironmentPath = projectNode["Environment"].as<std::string>();
-    if (projectNode["ActiveScene"])
-        config.ActiveScenePath = projectNode["ActiveScene"].as<std::string>();
+
+    DeserializePath(projectNode, "Environment", config.EnvironmentPath);
+    DeserializePath(projectNode, "ActiveScene", config.ActiveScenePath);
+
+    auto buildScenes = projectNode["BuildScenes"];
+    if (buildScenes)
+    {
+        for (auto scene : buildScenes)
+        {
+            config.BuildScenes.push_back(scene.as<std::string>());
+        }
+    }
 
     if (projectNode["Physics"])
+    {
         config.Physics.Gravity = projectNode["Physics"]["Gravity"].as<float>();
+        if (projectNode["Physics"]["FixedTimestep"])
+        {
+            config.Physics.FixedTimestep = projectNode["Physics"]["FixedTimestep"].as<float>();
+        }
+    }
 
     if (projectNode["Animation"])
+    {
         config.Animation.TargetFPS = projectNode["Animation"]["TargetFPS"].as<float>();
+    }
 
     if (projectNode["Render"])
     {
         config.Render.AmbientIntensity = projectNode["Render"]["AmbientIntensity"].as<float>();
         config.Render.DefaultExposure = projectNode["Render"]["DefaultExposure"].as<float>();
+    }
+
+    if (projectNode["Texture"])
+    {
+        if (projectNode["Texture"]["GenerateMipmaps"])
+        {
+            config.Texture.GenerateMipmaps = projectNode["Texture"]["GenerateMipmaps"].as<bool>();
+        }
+        if (projectNode["Texture"]["Filter"])
+        {
+            config.Texture.Filter = (TextureFilter)projectNode["Texture"]["Filter"].as<int>();
+        }
+    }
+
+    if (projectNode["Mesh"])
+    {
+        if (projectNode["Mesh"]["ImportMaterials"])
+        {
+            config.Mesh.ImportMaterials = projectNode["Mesh"]["ImportMaterials"].as<bool>();
+        }
+        if (projectNode["Mesh"]["CalculateTangents"])
+        {
+            config.Mesh.CalculateTangents = projectNode["Mesh"]["CalculateTangents"].as<bool>();
+        }
+        if (projectNode["Mesh"]["FlipUVs"])
+        {
+            config.Mesh.FlipUVs = projectNode["Mesh"]["FlipUVs"].as<bool>();
+        }
     }
 
     if (projectNode["Window"])
@@ -120,8 +219,52 @@ bool ProjectSerializer::Deserialize(const std::filesystem::path &filepath)
         config.Runtime.EnableConsole = projectNode["Runtime"]["EnableConsole"].as<bool>();
     }
 
+    if (projectNode["Editor"])
+    {
+        config.Editor.CameraMoveSpeed = projectNode["Editor"]["CameraMoveSpeed"].as<float>();
+        config.Editor.CameraRotationSpeed = projectNode["Editor"]["CameraRotationSpeed"].as<float>();
+        config.Editor.CameraBoostMultiplier = projectNode["Editor"]["CameraBoostMultiplier"].as<float>();
+    }
+
+    if (projectNode["Scripting"])
+    {
+        config.Scripting.ModuleName = projectNode["Scripting"]["ModuleName"].as<std::string>();
+        if (projectNode["Scripting"]["ModuleDirectory"])
+        {
+            config.Scripting.ModuleDirectory = projectNode["Scripting"]["ModuleDirectory"].as<std::string>();
+        }
+        if (projectNode["Scripting"]["AutoLoad"])
+        {
+            config.Scripting.AutoLoad = projectNode["Scripting"]["AutoLoad"].as<bool>();
+        }
+    }
+
+    if (projectNode["LaunchProfiles"])
+    {
+        for (auto profileNode : projectNode["LaunchProfiles"])
+        {
+            LaunchProfile profile;
+            profile.Name = profileNode["Name"].as<std::string>();
+            profile.BinaryPath = profileNode["BinaryPath"].as<std::string>();
+            profile.Arguments = profileNode["Arguments"].as<std::string>();
+            if (profileNode["UseDefaultArgs"])
+            {
+                profile.UseDefaultArgs = profileNode["UseDefaultArgs"].as<bool>();
+            }
+
+            config.LaunchProfiles.push_back(profile);
+        }
+    }
+
+    if (projectNode["ActiveLaunchProfile"])
+    {
+        config.ActiveLaunchProfileIndex = projectNode["ActiveLaunchProfile"].as<int>();
+    }
+
     if (projectNode["BuildConfig"])
+    {
         config.BuildConfig = (Configuration)projectNode["BuildConfig"].as<int>();
+    }
 
     config.ProjectDirectory = filepath.parent_path();
 

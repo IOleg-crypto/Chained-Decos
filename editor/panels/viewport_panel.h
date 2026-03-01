@@ -2,13 +2,23 @@
 #define CH_VIEWPORT_PANEL_H
 
 // Removed redundant include: engine/graphics/render.h
+#include "engine/core/timestep.h"
 #include "panel.h"
 #include "raylib.h"
 #include "viewport/editor_camera.h"
 #include "viewport/editor_gizmo.h"
+#include "viewport/ui_manipulator.h"
 
 namespace CHEngine
 {
+struct GizmoBtn
+{
+    GizmoType type;
+    const char* icon;
+    const char* tooltip;
+    int key;
+};
+
 class ViewportPanel : public Panel
 {
 public:
@@ -17,8 +27,7 @@ public:
 
 public:
     virtual void OnImGuiRender(bool readOnly = false) override;
-    virtual void OnUpdate(float deltaTime) override;
-    virtual void OnEvent(Event &e) override;
+    virtual void OnUpdate(Timestep ts) override;
 
 public:
     bool IsFocused() const
@@ -34,29 +43,34 @@ public:
         return m_ViewportSize;
     }
 
-    EditorCamera &GetCamera()
-    {
-        return m_EditorCamera;
-    }
-    GizmoType &GetCurrentTool()
+    GizmoType& GetCurrentTool()
     {
         return m_CurrentTool;
     }
 
+public:
+    void DrawGizmoButtons();
+    void DrawCameraSelector(class Scene* scene);
+
 private:
     RenderTexture2D m_ViewportTexture;
+    RenderTexture2D m_HDRTexture;
     Vector2 m_ViewportSize = {0, 0};
     bool m_Focused = false;
     bool m_Hovered = false;
 
-    EditorCamera m_EditorCamera;
+    std::unique_ptr<EditorCameraController> m_CameraController;
     EditorGizmo m_Gizmo;
+    EditorUIManipulator m_UIManipulator;
     GizmoType m_CurrentTool = GizmoType::TRANSLATE;
     Entity m_SelectedEntity;
-    
+    std::unique_ptr<class SceneRenderer> m_SceneRenderer;
+
     // UI Interaction state
-    bool m_DraggingUI = false;
     ImVec2 m_UIDragOffset = {0, 0};
+
+    // Viewport Camera State
+    uint64_t m_ViewportCameraEntityUUID = 0; // 0 = Editor Camera
 };
 
 } // namespace CHEngine

@@ -1,0 +1,11 @@
+Model Information:
+* title:	Tree Mill Animated
+* source:	https://sketchfab.com/3d-models/tree-mill-animated-8ed62842bd4b4757ad5d0130e40f34b2
+* author:	enesaras (https://sketchfab.com/boss97fb)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Tree Mill Animated" (https://sketchfab.com/3d-models/tree-mill-animated-8ed62842bd4b4757ad5d0130e40f34b2) by enesaras (https://sketchfab.com/boss97fb) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

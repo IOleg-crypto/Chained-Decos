@@ -1,6 +1,6 @@
 #include "engine/scene/components.h"
-#include "engine/scene/entity.h"
 #include "engine/scene/scene.h"
+#include "engine/scene/component_serializer.h"
 #include "gtest/gtest.h"
 
 using namespace CHEngine;
@@ -49,9 +49,54 @@ TEST(SceneTest, EntityRenaming)
     Scene scene;
     Entity entity = scene.CreateEntity("Old Name");
 
-    auto &tag = entity.GetComponent<TagComponent>().Tag;
+    auto& tag = entity.GetComponent<TagComponent>().Tag;
     EXPECT_EQ(tag, "Old Name");
 
     tag = "New Name";
     EXPECT_EQ(entity.GetComponent<TagComponent>().Tag, "New Name");
+}
+
+TEST(SceneTest, FindEntityByTag)
+{
+    Scene scene;
+    scene.CreateEntity("Entity A");
+    scene.CreateEntity("Entity B");
+
+    Entity found = scene.FindEntityByTag("Entity B");
+    EXPECT_TRUE(found);
+    EXPECT_EQ(found.GetName(), "Entity B");
+
+    Entity notFound = scene.FindEntityByTag("Non-existent");
+    EXPECT_FALSE(notFound);
+}
+
+TEST(SceneTest, GetEntityByUUID)
+{
+    Scene scene;
+    Entity entity = scene.CreateEntity("Tracked Entity");
+    UUID id = entity.GetUUID();
+
+    Entity found = scene.GetEntityByUUID(id);
+    EXPECT_TRUE(found);
+    EXPECT_EQ(found.GetName(), "Tracked Entity");
+
+    Entity notFound = scene.GetEntityByUUID(UUID(999999));
+    EXPECT_FALSE(notFound);
+}
+
+
+TEST(SceneTest, CopyEntity)
+{
+    ComponentSerializer::Initialize();
+    
+    Scene scene;
+    Entity src = scene.CreateEntity("Source");
+    src.AddComponent<CameraComponent>().Primary = true;
+    
+    Entity dst = scene.CopyEntity((entt::entity)src);
+    EXPECT_TRUE(dst);
+    EXPECT_EQ(dst.GetName(), "Source"); // Copied name
+    EXPECT_NE(src.GetUUID(), dst.GetUUID()); // Different UUID
+    EXPECT_TRUE(dst.HasComponent<CameraComponent>());
+    EXPECT_TRUE(dst.GetComponent<CameraComponent>().Primary);
 }

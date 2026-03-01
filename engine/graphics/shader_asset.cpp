@@ -1,16 +1,9 @@
 #include "shader_asset.h"
 #include "engine/core/log.h"
-#include "engine/graphics/asset_manager.h"
-#include "yaml-cpp/yaml.h"
-#include <filesystem>
-
+#include "rlgl.h"
 
 namespace CHEngine
 {
-ShaderAsset::ShaderAsset(Shader shader) : m_Shader(shader)
-{
-}
-
 ShaderAsset::~ShaderAsset()
 {
     if (m_Shader.id > 0)
@@ -19,134 +12,115 @@ ShaderAsset::~ShaderAsset()
     }
 }
 
-std::shared_ptr<ShaderAsset> ShaderAsset::Load(const std::string &vsPath, const std::string &fsPath)
+int ShaderAsset::GetLocation(const std::string& name)
 {
-    std::filesystem::path vsAbs(vsPath);
-    std::filesystem::path fsAbs(fsPath);
-
-    Shader shader = ::LoadShader(vsAbs.string().c_str(), fsAbs.string().c_str());
-    if (shader.id > 0)
+    if (m_UniformCache.find(name) != m_UniformCache.end())
     {
-        auto asset = std::make_shared<ShaderAsset>(shader);
-        asset->SetPath(vsPath + "|" + fsPath);
-        asset->SetState(AssetState::Ready);
-        return asset;
+        return m_UniformCache[name];
     }
 
-    CH_CORE_ERROR("Failed to load shader: VS: {}, FS: {}", vsPath, fsPath);
-    return nullptr;
+    int location = GetShaderLocation(m_Shader, name.c_str());
+    m_UniformCache[name] = location;
+    return location;
 }
 
-std::shared_ptr<ShaderAsset> ShaderAsset::Load(const std::string &chshaderPath)
+void ShaderAsset::SetUniform(int location, const void* value, int type)
 {
-    std::filesystem::path absolutePath(chshaderPath);
-    if (!std::filesystem::exists(absolutePath))
+    // Caching for basic types (float, vec2, vec3, vec4, int)
+    int floatCount = 0;
+    switch (type)
     {
-        CH_CORE_ERROR("CHShader not found: {}", chshaderPath);
-        return nullptr;
+        case SHADER_UNIFORM_FLOAT: floatCount = 1; break;
+        case SHADER_UNIFORM_VEC2:  floatCount = 2; break;
+        case SHADER_UNIFORM_VEC3:  floatCount = 3; break;
+        case SHADER_UNIFORM_VEC4:  floatCount = 4; break;
+        case SHADER_UNIFORM_INT:   floatCount = 1; break;
     }
 
-    try
+    if (floatCount > 0)
     {
-        YAML::Node config = YAML::LoadFile(absolutePath.string());
-        std::string vsRel = config["VertexShader"].as<std::string>();
-        std::string fsRel = config["FragmentShader"].as<std::string>();
-
-        std::string vsPath = AssetManager::ResolvePath(vsRel);
-        std::string fsPath = AssetManager::ResolvePath(fsRel);
-        
-        CH_CORE_INFO("ShaderAsset: Loading from {}", chshaderPath);
-        CH_CORE_INFO("  VertexShader: {} -> {} (exists={})", vsRel, vsPath, std::filesystem::exists(vsPath));
-        CH_CORE_INFO("  FragmentShader: {} -> {} (exists={})", fsRel, fsPath, std::filesystem::exists(fsPath));
-
-        std::shared_ptr<ShaderAsset> asset = Load(vsPath, fsPath);
-        if (asset)
+        const float* fptr = (const float*)value;
+        auto& cached = m_ValueCache[location];
+        bool changed = cached.size() != (size_t)floatCount;
+        if (!changed)
         {
-            asset->SetPath(chshaderPath);
-
-            // Automatic uniform caching and Raylib standard mapping
-            if (config["Uniforms"])
+            for (int i = 0; i < floatCount; i++)
             {
-                for (auto uniform : config["Uniforms"])
+                if (cached[i] != fptr[i])
                 {
-                    std::string name = uniform.as<std::string>();
-                    int loc = asset->GetLocation(name);
-
-                    // Map standard names to Raylib locs
-                    if (name == "mvp")
-                        asset->m_Shader.locs[SHADER_LOC_MATRIX_MVP] = loc;
-                    else if (name == "matModel")
-                        asset->m_Shader.locs[SHADER_LOC_MATRIX_MODEL] = loc;
-                    else if (name == "matNormal")
-                        asset->m_Shader.locs[SHADER_LOC_MATRIX_NORMAL] = loc;
-                    else if (name == "matView")
-                        asset->m_Shader.locs[SHADER_LOC_MATRIX_VIEW] = loc;
-                    else if (name == "matProjection")
-                        asset->m_Shader.locs[SHADER_LOC_MATRIX_PROJECTION] = loc;
-                    else if (name == "viewPos")
-                        asset->m_Shader.locs[SHADER_LOC_VECTOR_VIEW] = loc;
-                    else if (name == "texture0")
-                        asset->m_Shader.locs[SHADER_LOC_MAP_DIFFUSE] = loc;
-                    else if (name == "colDiffuse")
-                        asset->m_Shader.locs[SHADER_LOC_COLOR_DIFFUSE] = loc;
-                    else if (name == "panorama")
-                        asset->m_Shader.locs[SHADER_LOC_MAP_ALBEDO] = loc;
-                    else if (name == "environmentMap")
-                        asset->m_Shader.locs[SHADER_LOC_MAP_CUBEMAP] = loc;
+                    changed = true;
+                    break;
                 }
             }
         }
-        return asset;
+
+        if (!changed) return;
+
+        cached.assign(fptr, fptr + floatCount);
     }
-    catch (const std::exception &e)
+
+    SetShaderValue(m_Shader, location, value, type);
+}
+
+void ShaderAsset::SetUniform(const std::string& name, const void* value, int type)
+{
+    int location = GetLocation(name);
+    if (location >= 0)
     {
-        CH_CORE_ERROR("Failed to parse CHShader {}: {}", chshaderPath, e.what());
+        SetUniform(location, value, type);
     }
-
-    return nullptr;
 }
 
-int ShaderAsset::GetLocation(const std::string &name)
+// Type-safe helper methods
+void ShaderAsset::SetFloat(const std::string& name, float value)
 {
-    if (m_UniformCache.find(name) != m_UniformCache.end())
-        return m_UniformCache[name];
-
-    int loc = GetShaderLocation(m_Shader, name.c_str());
-    m_UniformCache[name] = loc;
-    return loc;
+    SetUniform(name, &value, SHADER_UNIFORM_FLOAT);
 }
 
-void ShaderAsset::SetUniform(int loc, const void *value, int type)
+void ShaderAsset::SetInt(const std::string& name, int value)
 {
-    SetShaderValue(m_Shader, loc, value, type);
+    // Reuse SetUniform for int as well
+    SetUniform(name, &value, SHADER_UNIFORM_INT);
 }
 
-void ShaderAsset::SetUniform(const std::string &name, const void *value, int type)
+void ShaderAsset::SetVec2(const std::string& name, const Vector2& value)
 {
-    int loc = GetLocation(name);
-    if (loc >= 0)
-        SetShaderValue(m_Shader, loc, value, type);
+    SetUniform(name, &value, SHADER_UNIFORM_VEC2);
 }
-void ShaderAsset::LoadFromFile(const std::string &path)
-{
-    if (m_State == AssetState::Ready) return;
 
-    auto loaded = Load(path);
-    if (loaded)
+void ShaderAsset::SetVec3(const std::string& name, const Vector3& value)
+{
+    SetUniform(name, &value, SHADER_UNIFORM_VEC3);
+}
+
+void ShaderAsset::SetVec4(const std::string& name, const Vector4& value)
+{
+    SetUniform(name, &value, SHADER_UNIFORM_VEC4);
+}
+
+void ShaderAsset::SetColor(const std::string& name, const Color& value)
+{
+    float c[4] = {value.r / 255.0f, value.g / 255.0f, value.b / 255.0f, value.a / 255.0f};
+    SetUniform(name, c, SHADER_UNIFORM_VEC4);
+}
+
+void ShaderAsset::SetMatrix(const std::string& name, const Matrix& value)
+{
+    int location = GetLocation(name);
+    if (location >= 0)
     {
-        m_Shader = loaded->m_Shader;
-        loaded->m_Shader.id = 0; // Prevent double unload
-        m_UniformCache = std::move(loaded->m_UniformCache);
-        SetState(AssetState::Ready);
-    }
-    else
-    {
-        SetState(AssetState::Failed);
+        // For matrices we could also cache, but let's start with basic types
+        SetShaderValueMatrix(m_Shader, location, value);
     }
 }
 
-void ShaderAsset::UploadToGPU()
+void ShaderAsset::SetMatrices(const std::string& name, const Matrix* values, int count)
 {
-    // Shader is usually loaded on main thread or already uploaded in LoadFromFile (via Raylib)
+    int location = GetLocation(name);
+    if (location >= 0)
+    {
+        rlEnableShader(m_Shader.id);
+        rlSetUniformMatrices(location, values, count);
+    }
 }
 } // namespace CHEngine

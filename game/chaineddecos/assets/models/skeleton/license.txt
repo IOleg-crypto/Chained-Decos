@@ -1,0 +1,11 @@
+Model Information:
+* title:	Skeleton (Animated)
+* source:	https://sketchfab.com/3d-models/skeleton-animated-bd1de4a8153a44fe93e728ca8e06701b
+* author:	One_Boy (https://sketchfab.com/one_boy)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Skeleton (Animated)" (https://sketchfab.com/3d-models/skeleton-animated-bd1de4a8153a44fe93e728ca8e06701b) by One_Boy (https://sketchfab.com/one_boy) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

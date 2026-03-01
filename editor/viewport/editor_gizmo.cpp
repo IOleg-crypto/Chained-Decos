@@ -1,42 +1,50 @@
 #include "editor_gizmo.h"
 #include "editor/actions/editor_actions.h"
+#include "editor_gui.h"
 #include "editor_layer.h"
 #include "engine/scene/components.h"
 #include "raymath.h"
-#include "ui/editor_gui.h"
 #include "undo/modify_component_command.h"
-
 
 namespace CHEngine
 {
 
-bool EditorGizmo::RenderAndHandle(GizmoType type)
+bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 viewportSize, const Camera3D& camera)
 {
-    auto &layer = EditorLayer::Get();
-    Scene *scene = Application::Get().GetActiveScene().get();
+    auto& layer = EditorLayer::Get();
+    Scene* scene = layer.GetActiveScene().get();
     Entity entity = layer.GetSelectedEntity();
-    Camera3D camera = EditorUI::GUI::GetActiveCamera(layer.GetSceneState());
 
-    if (!scene || !entity || !entity.HasComponent<TransformComponent>() || type == GizmoType::NONE)
+    if (!scene || !entity || !entity.HasComponent<TransformComponent>() || type == GizmoType::NONE ||
+        layer.GetSceneState() == SceneState::Play)
+    {
+        // Trace why gizmo is skipped
+        if (type != GizmoType::NONE && entity)
+        {
+            static int skipCount = 0;
+            if (skipCount++ % 60 == 0)
+            {
+                CH_CORE_TRACE("EditorGizmo: Skip. Scene={}, Entity={}, HasTransform={}, Tool={}, IsPlay={}",
+                              (bool)scene, (uint32_t)entity, entity.HasComponent<TransformComponent>(), (int)type,
+                              layer.GetSceneState() == SceneState::Play);
+            }
+        }
         return false;
+    }
 
-    ImVec2 viewportPos = ImGui::GetWindowPos();
-    ImVec2 viewportSize = ImGui::GetContentRegionAvail();
-
-    auto &transform = entity.GetComponent<TransformComponent>();
+    auto& transform = entity.GetComponent<TransformComponent>();
 
     // 1. Setup ImGuizmo
     ImGuizmo::SetOrthographic(camera.projection == CAMERA_ORTHOGRAPHIC);
     ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
     ImGuizmo::SetRect(viewportPos.x, viewportPos.y, viewportSize.x, viewportSize.y);
 
-    // 2. Prepare View/Projection matrices
+    // 2. Prepare View/Projection matrices (Transposed for ImGuizmo/OpenGL column-major)
     Matrix view = MatrixTranspose(GetCameraMatrix(camera));
     Matrix projection;
     if (camera.projection == CAMERA_PERSPECTIVE)
     {
-        projection = MatrixTranspose(MatrixPerspective(
-            camera.fovy * DEG2RAD, viewportSize.x / viewportSize.y, 0.01f, 1000.0f));
+        projection = MatrixPerspective(camera.fovy * DEG2RAD, viewportSize.x / viewportSize.y, 0.01f, 1000.0f);
     }
     else
     {
@@ -45,14 +53,16 @@ bool EditorGizmo::RenderAndHandle(GizmoType type)
         float left = -right;
         float top = camera.fovy * 0.5f;
         float bottom = -top;
-        projection = MatrixTranspose(MatrixOrtho(left, right, bottom, top, 0.01f, 1000.0f));
+        projection = MatrixOrtho(left, right, bottom, top, 0.01f, 1000.0f);
     }
 
-    // 3. Prepare Model matrix
+    projection = MatrixTranspose(projection);
+
+    // 3. Prepare Model matrix (Transposed for ImGuizmo)
     Matrix model = MatrixTranspose(transform.GetTransform());
 
     // 4. Handle Snapping
-    float *snap = m_SnappingEnabled ? m_SnapValues : nullptr;
+    float* snap = m_SnappingEnabled ? m_SnapValues : nullptr;
 
     // 5. Manipulation
     ImGuizmo::MODE mode = m_IsLocalSpace ? ImGuizmo::LOCAL : ImGuizmo::WORLD;
@@ -68,21 +78,20 @@ bool EditorGizmo::RenderAndHandle(GizmoType type)
         }
     }
 
-    ImGuizmo::Manipulate((float *)&view, (float *)&projection, (ImGuizmo::OPERATION)type, mode,
-                         (float *)&model, NULL, snap);
+    ImGuizmo::Manipulate((float*)&view, (float*)&projection, (ImGuizmo::OPERATION)type, mode, (float*)&model, NULL,
+                         snap);
 
     if (ImGuizmo::IsUsing())
     {
+        // Matrix finalModel = MatrixTranspose(model); // model is already modified and in correct space
         Vector3 translation, rotation, scale;
-        ImGuizmo::DecomposeMatrixToComponents((float *)&model, (float *)&translation,
-                                              (float *)&rotation, (float *)&scale);
+        ImGuizmo::DecomposeMatrixToComponents((float*)&model, (float*)&translation, (float*)&rotation, (float*)&scale);
 
         transform.Translation = translation;
         transform.Rotation.x = rotation.x * DEG2RAD;
         transform.Rotation.y = rotation.y * DEG2RAD;
         transform.Rotation.z = rotation.z * DEG2RAD;
-        transform.RotationQuat =
-            QuaternionFromEuler(transform.Rotation.x, transform.Rotation.y, transform.Rotation.z);
+        transform.RotationQuat = QuaternionFromEuler(transform.Rotation.x, transform.Rotation.y, transform.Rotation.z);
         transform.Scale = scale;
     }
     else if (m_WasUsing)
@@ -92,7 +101,17 @@ bool EditorGizmo::RenderAndHandle(GizmoType type)
             entity, m_OldTransform, transform, "Transform Entity"));
     }
 
-    return ImGuizmo::IsOver() || ImGuizmo::IsUsing();
+    bool hovered = ImGuizmo::IsOver();
+    bool usingGizmo = ImGuizmo::IsUsing();
+
+    if (ImGui::IsMouseClicked(0))
+    {
+        CH_CORE_WARN("Gizmo Click: Over={}, Using={}, Pos({},{}), Rect({},{},{},{})", hovered, usingGizmo,
+                     ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y, viewportPos.x, viewportPos.y, viewportSize.x,
+                     viewportSize.y);
+    }
+
+    return hovered || usingGizmo;
 }
 
 } // namespace CHEngine

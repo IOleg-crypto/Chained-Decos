@@ -5,18 +5,18 @@
 
 namespace CHEngine
 {
-    struct NavigationComponent
-    {
-        entt::entity Up = entt::null;
-        entt::entity Down = entt::null;
-        entt::entity Left = entt::null;
-        entt::entity Right = entt::null;
+struct NavigationComponent
+{
+    entt::entity Up = entt::null;
+    entt::entity Down = entt::null;
+    entt::entity Left = entt::null;
+    entt::entity Right = entt::null;
 
-        bool IsDefaultFocus = false;
+    bool IsDefaultFocus = false;
 
-        NavigationComponent() = default;
-        NavigationComponent(const NavigationComponent&) = default;
-    };
-}
+    NavigationComponent() = default;
+    NavigationComponent(const NavigationComponent&) = default;
+};
+} // namespace CHEngine
 
 #endif // CH_NAVIGATION_COMPONENT_H

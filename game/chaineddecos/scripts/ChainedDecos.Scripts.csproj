@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <AssemblyName>ChainedDecos.Scripts</AssemblyName>
+    <RootNamespace>ChainedDecos.Scripts</RootNamespace>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <OutputPath>bin</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <!-- Game script source files (exclude the old CHEngine.cs engine API) -->
+  <ItemGroup>
+    <Compile Include="../src/**/*.cs" />
+    <!-- Exclude the old monolithic API file – now provided by CHEngine.Managed -->
+    <Compile Remove="../src/CHEngine.cs" />
+    <Compile Remove="../src/obj/**" />
+    <Compile Remove="../src/bin/**" />
+  </ItemGroup>
+
+  <!-- Reference the engine's C# API library -->
+  <ItemGroup>
+    <ProjectReference Include="../../../engine/script/managed/CHEngine.Managed.csproj" />
+  </ItemGroup>
+
+</Project>

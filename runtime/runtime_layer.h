@@ -1,0 +1,48 @@
+#ifndef CH_RUNTIME_LAYER_H
+#define CH_RUNTIME_LAYER_H
+
+#include "engine/core/layer.h"
+#include "engine/scene/scene.h"
+#include "raylib.h"
+#include <functional>
+#include <memory>
+#include <optional>
+#include <string>
+
+namespace CHEngine
+{
+class RuntimeLayer : public Layer
+{
+public:
+    RuntimeLayer(const std::string& projectPath = "");
+    virtual ~RuntimeLayer();
+
+    virtual void OnAttach() override;
+    virtual void OnDetach() override;
+    virtual void OnUpdate(Timestep ts) override;
+    virtual void OnRender(Timestep ts) override;
+    virtual void OnImGuiRender() override;
+    virtual void OnEvent(Event& e) override;
+
+    void LoadScene(const std::string& path);
+    void LoadScene(int index);
+
+private:
+    bool InitProject(const std::string& projectPath);
+    bool DiscoverAndLoadProject(const std::string& projectPath);
+    void ApplyWindowConfiguration();
+    void SetupBrandingAndIcon();
+    void LoadInitialScene();
+
+    std::optional<Camera3D> GetActiveCamera();
+
+private:
+    std::shared_ptr<Scene> m_Scene;
+    std::unique_ptr<class SceneRenderer> m_SceneRenderer;
+    // Script callback removed in favor of GlobalRegistry
+    std::string m_PendingScenePath;
+    std::string m_ProjectPath;
+};
+} // namespace CHEngine
+
+#endif // CH_RUNTIME_LAYER_H

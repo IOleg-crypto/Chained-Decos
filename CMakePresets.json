@@ -16,7 +16,9 @@
         "CMAKE_CXX_EXTENSIONS": "OFF",
         "BUILD_TESTS": "ON",
         "BUILD_MAP_EDITOR": "ON",
-        "DISABLE_ALL_WARNINGS": "ON"
+        "DISABLE_ALL_WARNINGS": "ON",
+        "CH_ENGINE_SHARED": "OFF",
+        "WINDOWS_SDK_VERSION": "10.0"
       }
     },
     {
@@ -31,9 +33,7 @@
       "displayName": "Linux GCC Debug",
       "inherits": "ninja-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_C_COMPILER": "gcc-15",
-        "CMAKE_CXX_COMPILER": "g++-15"
+        "CMAKE_BUILD_TYPE": "Debug"
       },
       "condition": {
         "type": "equals",
@@ -46,9 +46,7 @@
       "displayName": "Linux GCC Release",
       "inherits": "ninja-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_C_COMPILER": "gcc-15",
-        "CMAKE_CXX_COMPILER": "g++-15"
+        "CMAKE_BUILD_TYPE": "Release"
       },
       "condition": {
         "type": "equals",
@@ -61,9 +59,7 @@
       "displayName": "Linux Clang Debug",
       "inherits": "ninja-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_C_COMPILER": "clang-19",
-        "CMAKE_CXX_COMPILER": "clang++-19"
+        "CMAKE_BUILD_TYPE": "Debug"
       },
       "condition": {
         "type": "equals",
@@ -76,9 +72,7 @@
       "displayName": "Linux Clang Release",
       "inherits": "ninja-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_C_COMPILER": "clang-19",
-        "CMAKE_CXX_COMPILER": "clang++-19"
+        "CMAKE_BUILD_TYPE": "Release"
       },
       "condition": {
         "type": "equals",
@@ -91,7 +85,8 @@
       "displayName": "Windows Ninja Debug",
       "inherits": "ninja-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CH_ENGINE_SHARED": "OFF"
       },
       "condition": {
         "type": "equals",
@@ -104,7 +99,8 @@
       "displayName": "Windows Ninja Release",
       "inherits": "ninja-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
+        "CMAKE_BUILD_TYPE": "Release",
+        "CH_ENGINE_SHARED": "OFF"
       },
       "condition": {
         "type": "equals",

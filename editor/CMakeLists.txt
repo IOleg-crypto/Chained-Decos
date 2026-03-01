@@ -1,11 +1,11 @@
-# Editor Core Library (Static) for testability
+
 add_library(editor_core STATIC)
 
 target_sources(editor_core PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/editor.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/editor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_layer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_layer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_context.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_context.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_panels.h
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_panels.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/actions/project_actions.cpp
@@ -18,6 +18,8 @@ target_sources(editor_core PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/viewport/editor_gizmo.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/viewport/editor_camera.h
     ${CMAKE_CURRENT_SOURCE_DIR}/viewport/editor_camera.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/viewport/ui_manipulator.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/viewport/ui_manipulator.cpp
 
     # Panels
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/scene_hierarchy_panel.h
@@ -36,7 +38,6 @@ target_sources(editor_core PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/project_browser_panel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/project_settings_panel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/project_settings_panel.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/environment_panel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/environment_panel.cpp
 
     # Undo
@@ -48,20 +49,31 @@ target_sources(editor_core PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/undo/entity_commands.h
 
     # UI
-    ${CMAKE_CURRENT_SOURCE_DIR}/ui/editor_gui.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/ui/editor_gui.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/ui/editor_layout.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/ui/editor_layout.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_gui.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_gui.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_layout.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_layout.cpp
     # External
     ${CMAKE_SOURCE_DIR}/include/rlImGui/rlImGui.cpp
+    ${imguizmo_SOURCE_DIR}/GraphEditor.cpp
+    ${imguizmo_SOURCE_DIR}/GraphEditor.h
 )
+
+# Handle large translation units (required for PropertyEditor and Unity builds)
+if(MSVC)
+    target_compile_options(editor_core PRIVATE /bigobj)
+elseif(MINGW)
+    target_compile_options(editor_core PRIVATE -Wa,-mbig-obj)
+endif()
 
 
 target_link_libraries(editor_core PUBLIC 
     engine
-    ChainedDecosGame
+    imguilib
+    yaml-cpp
     nfd
 )
+target_compile_definitions(editor_core PUBLIC IMGUI_DEFINE_MATH_OPERATORS YAML_CPP_STATIC_DEFINE)
 target_include_directories(editor_core PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}

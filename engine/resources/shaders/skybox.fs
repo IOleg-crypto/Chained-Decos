@@ -1,48 +1,139 @@
 #version 450 core
 
-// Input vertex attributes (from vertex shader)
 layout(location = 0) in vec3 fragPosition;
 
-// Input uniform values
-layout(binding = 0) uniform samplerCube environmentMap;
-uniform bool vflipped;
-uniform bool doGamma;
+layout(binding = 0) uniform sampler2D texture0;
+
+uniform int vflipped;
+uniform int doGamma;
 uniform float fragGamma;
 uniform float exposure;
 uniform float brightness;
 uniform float contrast;
+uniform float uTime;
+uniform int isHDR;
 
-// Output fragment color
+uniform int fogEnabled;
+uniform vec4 fogColor;
+uniform float fogDensity;
+
+uniform int skyboxMode; // 0 = Equirect, 1 = Cross
+
 layout(location = 0) out vec4 finalColor;
 
-void main()
+////////////////////////////////////////////////////////////
+// Tone mapping (ACES)
+////////////////////////////////////////////////////////////
+vec3 ACES(vec3 x)
 {
-    // Fetch color from texture map
-    vec3 color = vec3(0.0);
+    return clamp(
+        (x * (2.51 * x + 0.03)) /
+        (x * (2.43 * x + 0.59) + 0.14),
+        0.0, 1.0
+    );
+}
 
-    if (vflipped)
+////////////////////////////////////////////////////////////
+// Simple noise
+////////////////////////////////////////////////////////////
+float hash(vec3 p)
+{
+    return fract(sin(dot(p, vec3(12.9898,78.233,45.164))) * 43758.5453);
+}
+
+////////////////////////////////////////////////////////////
+// Equirectangular mapping
+////////////////////////////////////////////////////////////
+vec2 SampleSpherical(vec3 dir)
+{
+    const vec2 invAtan = vec2(0.1591, 0.3183);
+    vec2 uv = vec2(atan(dir.z, dir.x), asin(dir.y));
+    uv *= invAtan;
+    return uv + 0.5;
+}
+
+////////////////////////////////////////////////////////////
+// Horizontal Cross mapping (4x3)
+////////////////////////////////////////////////////////////
+vec2 SampleCross(vec3 dir)
+{
+    vec3 a = abs(dir);
+    vec3 n = dir / max(max(a.x, a.y), a.z);
+
+    vec2 uv;
+    vec2 offset;
+
+    if (a.x > a.y && a.x > a.z)
     {
-        color = texture(environmentMap, vec3(fragPosition.x, -fragPosition.y, fragPosition.z)).rgb;
+        uv = vec2(dir.x > 0.0 ? -n.z : n.z, n.y);
+        offset = vec2(dir.x > 0.0 ? 2.0 : 0.0, 1.0);
+    }
+    else if (a.y > a.x && a.y > a.z)
+    {
+        uv = vec2(n.x, dir.y > 0.0 ? -n.z : n.z);
+        offset = vec2(1.0, dir.y > 0.0 ? 0.0 : 2.0);
     }
     else
     {
-        color = texture(environmentMap, fragPosition).rgb;
+        uv = vec2(dir.z > 0.0 ? n.x : -n.x, n.y);
+        offset = vec2(dir.z > 0.0 ? 1.0 : 3.0, 1.0);
     }
 
-    // Apply exposure
+    uv = (uv + 1.0) * 0.5;
+    uv = (uv + offset) / vec2(4.0, 3.0);
+
+    return uv;
+}
+
+////////////////////////////////////////////////////////////
+
+void main()
+{
+    vec3 dir = normalize(fragPosition);
+
+    // Choose mapping
+    vec2 uv = (skyboxMode == 1)
+        ? SampleCross(dir)
+        : SampleSpherical(dir);
+
+    if (vflipped == 1)
+        uv.y = 1.0 - uv.y;
+
+    vec3 color = texture(texture0, uv).rgb;
+
+    // Basic color grading
     color *= exposure;
-
-    // Apply brightness
     color += brightness;
-
-    // Apply contrast
     color = (color - 0.5) * contrast + 0.5;
 
-    if (doGamma) // Apply gamma correction
-    {
-        color = pow(color, vec3(1.0/fragGamma));
-    }
+    // HDR tone mapping
+    if (isHDR == 1)
+        color = ACES(color);
 
-    // Calculate final fragment color
-    finalColor = vec4(color, 1.0);
+    // Gamma correction
+    if (doGamma == 1)
+        color = pow(color, vec3(1.0 / fragGamma));
+
+    vec4 background = vec4(color, 1.0);
+
+    ////////////////////////////////////////////////////////////
+    // Fog
+    ////////////////////////////////////////////////////////////
+    if (fogEnabled == 1)
+    {
+        // More fog near horizon
+        float horizon = pow(1.0 - abs(dir.y), 3.0);
+
+        // Moving mist
+        float n = hash(dir * 5.0 + uTime * 0.2);
+
+        float fogFactor = clamp(horizon + n * 0.3, 0.0, 1.0);
+        fogFactor *= clamp(fogDensity * 5.0, 0.0, 1.0);
+
+        finalColor = mix(background, fogColor, fogFactor);
+    }
+    else
+    {
+        finalColor = background;
+    }
 }

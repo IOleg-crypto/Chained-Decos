@@ -3,8 +3,10 @@
 
 #include "asset.h"
 #include "engine/core/base.h"
-#include <future>
+#include "model_data.h"
 #include "raylib.h"
+#include <future>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -13,72 +15,81 @@ namespace CHEngine
 class ModelAsset : public Asset
 {
 public:
-    static std::shared_ptr<ModelAsset> Load(const std::string &path);
-    static void LoadAsync(const std::string &path);
-    static std::shared_ptr<ModelAsset> CreateProcedural(const std::string &type);
-
-    ModelAsset() = default;
+    ModelAsset()
+        : Asset(GetStaticType())
+    {
+    }
     virtual ~ModelAsset();
 
-    virtual AssetType GetType() const override
+    static AssetType GetStaticType()
     {
         return AssetType::Model;
     }
 
     void UploadToGPU(); // Main thread
-    void LoadFromFile(const std::string &path);
-    Model &GetModel()
+
+    // For internal use by MeshImporter
+    void SetPendingData(const PendingModelData& data)
     {
-        return m_Model;
+        m_PendingData = data;
+        m_HasPendingData = true;
     }
-    const Model &GetModel() const
-    {
-        return m_Model;
-    }
+
+    Model& GetModel();
+    const Model& GetModel() const;
 
     BoundingBox GetBoundingBox() const;
 
-    void UpdateAnimation(int animIndex, int frame);
-    ModelAnimation *GetAnimations(int *count);
+    void OnUpdate(); // Check if textures loaded and apply them
+
+    const std::vector<RawAnimation>& GetRawAnimations() const
+    {
+        return m_Animations;
+    }
     int GetAnimationCount() const
     {
-        return m_AnimCount;
+        return (int)m_Animations.size();
+    }
+    std::string GetAnimationName(int index) const
+    {
+        return (index >= 0 && index < (int)m_Animations.size()) ? m_Animations[index].name : "";
     }
 
-    const std::vector<std::shared_ptr<class TextureAsset>> &GetTextures() const
+    std::vector<std::shared_ptr<class TextureAsset>> GetTextures() const;
+    const std::vector<Matrix>& GetOffsetMatrices() const
     {
-        return m_Textures;
+        return m_OffsetMatrices;
     }
-
-    std::shared_ptr<class BVH> GetBVHCache()
+    const std::vector<int>& GetMeshToNode() const
     {
-        if (!m_BVHCache && m_BVHFuture.valid())
-        {
-            if (m_BVHFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
-            {
-                m_BVHCache = m_BVHFuture.get();
-            }
-        }
-        return m_BVHCache;
+        return m_MeshToNode;
     }
-    void SetBVHCache(std::shared_ptr<BVH> bvh)
+    const std::vector<Matrix>& GetGlobalNodeTransforms() const
     {
-        m_BVHCache = bvh;
+        return m_GlobalNodeTransforms;
     }
 
 private:
     Model m_Model = {0};
-    ModelAnimation *m_Animations = nullptr;
-    int m_AnimCount = 0;
+    std::vector<RawAnimation> m_Animations;
     std::vector<std::shared_ptr<class TextureAsset>> m_Textures;
-    std::shared_ptr<class BVH> m_BVHCache;
-    std::shared_future<std::shared_ptr<class BVH>> m_BVHFuture;
-    
-    // Deferred loading: CPU work done in background, GPU upload on main thread
-    Mesh m_PendingMesh = {0};
-    bool m_HasPendingMesh = false;
-    std::string m_PendingModelPath;
-    bool m_HasPendingModel = false;
+
+    // KISS additions
+    std::vector<Matrix> m_OffsetMatrices;
+    std::vector<std::string> m_NodeNames;
+    std::vector<int> m_NodeParents;
+    std::vector<int> m_MeshToNode;
+    std::vector<Matrix> m_GlobalNodeTransforms;
+
+    mutable std::mutex m_ModelMutex; // Protect Model access during async loading
+
+    PendingModelData m_PendingData;
+    bool m_HasPendingData = false;
+
+    // Track textures that are still loading
+    std::vector<PendingTexture> m_PendingTextures;
+
+    BoundingBox m_BoundingBox = {{0, 0, 0}, {0, 0, 0}};
 };
 } // namespace CHEngine
 

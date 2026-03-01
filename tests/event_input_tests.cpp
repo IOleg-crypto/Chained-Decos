@@ -41,13 +41,11 @@ TEST(EventSystemTest, EventDispatcherKeyPressed)
     int receivedKey = -1;
 
     EventDispatcher dispatcher(event);
-    dispatcher.Dispatch<KeyPressedEvent>(
-        [&](KeyPressedEvent &e)
-        {
-            handlerCalled = true;
-            receivedKey = e.GetKeyCode();
-            return true;
-        });
+    dispatcher.Dispatch<KeyPressedEvent>([&](KeyPressedEvent& e) {
+        handlerCalled = true;
+        receivedKey = e.GetKeyCode();
+        return true;
+    });
 
     EXPECT_TRUE(handlerCalled);
     EXPECT_EQ(receivedKey, KEY_W);
@@ -60,12 +58,10 @@ TEST(EventSystemTest, EventDispatcherWrongType)
     bool handlerCalled = false;
 
     EventDispatcher dispatcher(event);
-    dispatcher.Dispatch<MouseButtonPressedEvent>(
-        [&](MouseButtonPressedEvent &e)
-        {
-            handlerCalled = true;
-            return true;
-        });
+    dispatcher.Dispatch<MouseButtonPressedEvent>([&](MouseButtonPressedEvent& e) {
+        handlerCalled = true;
+        return true;
+    });
 
     EXPECT_FALSE(handlerCalled);
     EXPECT_FALSE(event.Handled);
@@ -78,19 +74,15 @@ TEST(EventSystemTest, EventDispatcherMultipleHandlers)
 
     EventDispatcher dispatcher(event);
 
-    dispatcher.Dispatch<KeyPressedEvent>(
-        [&](KeyPressedEvent &e)
-        {
-            handlerCount++;
-            return false; // Don't mark as handled
-        });
+    dispatcher.Dispatch<KeyPressedEvent>([&](KeyPressedEvent& e) {
+        handlerCount++;
+        return false; // Don't mark as handled
+    });
 
-    dispatcher.Dispatch<KeyPressedEvent>(
-        [&](KeyPressedEvent &e)
-        {
-            handlerCount++;
-            return true; // Mark as handled
-        });
+    dispatcher.Dispatch<KeyPressedEvent>([&](KeyPressedEvent& e) {
+        handlerCount++;
+        return true; // Mark as handled
+    });
 
     EXPECT_EQ(handlerCount, 2);
     EXPECT_TRUE(event.Handled);

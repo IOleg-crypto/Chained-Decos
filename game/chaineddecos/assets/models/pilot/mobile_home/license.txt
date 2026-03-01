@@ -1,0 +1,8 @@
+Model Information:
+* title:	Mobile Home
+* source:	https://sketchfab.com/3d-models/mobile-home-5240b1dbc29c4ea28be7f91b3638951a
+* author:	Conrad Justin (https://sketchfab.com/ConradJustin)
+
+Model License:
+* license type:	SKETCHFAB Standard (https://sketchfab.com/licenses)
+* requirements:	Under basic restrictions, use worldwide, on all types of media, commercially or not, and in all types of derivative works
