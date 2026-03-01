@@ -65,23 +65,20 @@ jobs:
           submodules: recursive
           fetch-depth: 1
 
-      - name: Cache CMake and Build dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.ccache
-            ${{ runner.os == 'Windows' && '~/AppData/Local/ccache' || '' }}
+      - name: Get CMake and Ninja
+        uses: lukka/get-cmake@latest
 
-          key: ${{ runner.os }}-${{ matrix.preset }}-${{ hashFiles('**/CMakeLists.txt', 'CMakePresets.json', 'cmake/*.cmake') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.preset }}-
-            ${{ runner.os }}-
+      - name: Setup Compiler Cache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          variant: ${{ runner.os == 'Windows' && 'sccache' || 'ccache' }}
+          key: ${{ runner.os }}-${{ matrix.preset }}
 
       - name: Install Linux Dependencies
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake ninja-build ccache \
+          sudo apt-get install -y build-essential \
             libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
             libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
             pkg-config libgtk-3-dev libdrm-dev libgbm-dev \
@@ -108,7 +105,7 @@ jobs:
       - name: Install Windows Dependencies
         if: runner.os == 'Windows'
         run: |
-          choco install cmake ninja ccache --no-progress
+          echo "Windows dependencies are mostly satisfied by runner image and get-cmake."
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
@@ -120,8 +117,13 @@ jobs:
           SANITIZERS_FLAG="OFF"
           if [[ "${{ runner.os }}" == "Linux" ]]; then SANITIZERS_FLAG="ON"; fi
           
+          LAUNCHER="ccache"
+          if [[ "${{ runner.os }}" == "Windows" ]]; then LAUNCHER="sccache"; fi
+          
           cmake --preset ${{ matrix.config_preset }} \
             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" \
+            -DCMAKE_C_COMPILER_LAUNCHER=$LAUNCHER \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=$LAUNCHER \
             -DCH_CI=ON \
             -DENABLE_UNITY_BUILD=ON \
             -DWARNINGS_AS_ERRORS=OFF \
@@ -148,6 +150,10 @@ jobs:
           
           # Output to JUNIT for reporting
           if [[ "${{ runner.os }}" == "Linux" ]]; then
+            export LIBGL_ALWAYS_SOFTWARE=1
+            export GALLIUM_DRIVER=llvmpipe
+            export MESA_GL_VERSION_OVERRIDE=4.5
+            export MESA_GLSL_VERSION_OVERRIDE=450
             xvfb-run -a ctest --test-dir "$BUILD_DIR" -C "$config" --output-on-failure --timeout 300 --output-junit junit.xml
           else
             ctest --test-dir "$BUILD_DIR" -C "$config" --output-on-failure --timeout 300 --output-junit junit.xml
@@ -186,6 +192,9 @@ jobs:
           submodules: recursive
           fetch-depth: 1
 
+      - name: Get CMake and Ninja
+        uses: lukka/get-cmake@latest
+
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
@@ -194,7 +203,7 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake ninja-build \
+          sudo apt-get install -y build-essential \
             libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
             libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
             pkg-config libgtk-3-dev libdrm-dev libgbm-dev gcc-14 g++-14

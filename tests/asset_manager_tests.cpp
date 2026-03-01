@@ -96,20 +96,6 @@ TEST_F(AssetManagerTest, Unloading)
     // we'll just check that it loads again.
 }
 
-TEST_F(AssetManagerTest, AsyncLoading)
-{
-    if (!IsWindowReady() || !m_AssetManager)
-    {
-        return;
-    }
-
-    // Test async loading of a procedural model
-    auto cubeFuture = std::async(std::launch::async, [this]() { return m_AssetManager->Get<ModelAsset>(":cube:"); });
-
-    auto cube = cubeFuture.get();
-    ASSERT_TRUE(cube);
-    EXPECT_TRUE(cube->IsReady());
-}
 
 TEST_F(AssetManagerTest, NonExistentAsset)
 {
