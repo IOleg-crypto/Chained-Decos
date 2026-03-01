@@ -9,7 +9,8 @@ using namespace CHEngine;
 
 TEST(SceneSerializationTest, SaveAndLoadScene)
 {
-    ComponentSerializer::Initialize();
+    ComponentSerializer serializer;
+    serializer.Initialize();
     std::string testPath = "test_assets/test_scene.chscene";
     std::filesystem::create_directories("test_assets");
 

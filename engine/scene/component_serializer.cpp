@@ -1,8 +1,7 @@
 #include "component_serializer.h"
-#include "components.h"
-
 #include "components/hierarchy_component.h"
 #include "components/id_component.h"
+#include "engine/core/application.h"
 #include "engine/core/yaml.h"
 #include "engine/scene/serialization_utils.h"
 #include "scene.h"
@@ -39,12 +38,17 @@ inline Emitter& operator<<(Emitter& out, const CHEngine::ManagedScriptInstance& 
 
 namespace CHEngine
 {
+ComponentSerializer::ComponentSerializer() {}
+ComponentSerializer::~ComponentSerializer() {}
 
-std::vector<ComponentSerializerEntry> ComponentSerializer::s_Registry;
+ComponentSerializer& ComponentSerializer::Get()
+{
+    return Application::Get().GetComponentSerializer();
+}
 
 void ComponentSerializer::RegisterCustom(const ComponentSerializerEntry& entry)
 {
-    s_Registry.push_back(entry);
+    m_Registry.push_back(entry);
 }
 
 // --- Special Serialization Helpers ---
@@ -437,7 +441,7 @@ void ComponentSerializer::DeserializeMaterialSlot(MaterialSlot& slot, YAML::Node
 
 void ComponentSerializer::Initialize()
 {
-    s_Registry.clear();
+    m_Registry.clear();
 
     // --- Основні ---
     Register<TagComponent>("TagComponent",
@@ -807,7 +811,7 @@ void ComponentSerializer::Initialize()
 
 void ComponentSerializer::SerializeAll(YAML::Emitter& out, Entity entity)
 {
-    for (auto& entry : s_Registry)
+    for (auto& entry : m_Registry)
     {
         entry.Serialize(out, entity);
     }
@@ -816,7 +820,7 @@ void ComponentSerializer::SerializeAll(YAML::Emitter& out, Entity entity)
 
 void ComponentSerializer::DeserializeAll(Entity entity, YAML::Node node)
 {
-    for (const auto& entry : s_Registry)
+    for (const auto& entry : m_Registry)
     {
         if (entry.Deserialize)
         {
@@ -827,7 +831,7 @@ void ComponentSerializer::DeserializeAll(Entity entity, YAML::Node node)
 
 void ComponentSerializer::CopyAll(Entity source, Entity destination)
 {
-    for (const auto& entry : s_Registry)
+    for (const auto& entry : m_Registry)
     {
         if (entry.Copy)
         {
