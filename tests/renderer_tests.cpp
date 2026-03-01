@@ -11,8 +11,8 @@ class RendererTest : public ::testing::Test
 protected:
     void SetUp() override
     {
-#if defined(CH_CI) && defined(CH_PLATFORM_WINDOWS)
-        GTEST_SKIP() << "Skipping renderer tests on Windows CI due to lack of OpenGL support.";
+#if defined(CH_CI)
+        GTEST_SKIP() << "Skipping renderer tests on CI due to lack of reliable OpenGL support.";
 #endif
         // HIDDEN window for renderer tests
         SetConfigFlags(FLAG_WINDOW_HIDDEN);
@@ -27,6 +27,8 @@ protected:
         }
     }
 };
+
+#if !defined(CH_CI)
 
 TEST_F(RendererTest, RendererSingleton)
 {
@@ -112,3 +114,5 @@ TEST_F(RendererTest, EnvironmentApplication)
 
     Renderer::Shutdown();
 }
+
+#endif // CH_CI

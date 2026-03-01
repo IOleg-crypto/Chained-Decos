@@ -11,8 +11,8 @@ class AssetManagerTest : public ::testing::Test
 protected:
     void SetUp() override
     {
-#if defined(CH_CI) && defined(CH_PLATFORM_WINDOWS)
-        GTEST_SKIP() << "Skipping graphic tests on Windows CI due to lack of OpenGL support.";
+#if defined(CH_CI)
+        GTEST_SKIP() << "Skipping graphics tests on CI due to lack of reliable OpenGL support.";
 #endif
         // Set hidden flag to avoid showing a window during tests
         SetConfigFlags(FLAG_WINDOW_HIDDEN);
@@ -53,7 +53,7 @@ protected:
 };
 
 // These tests require a working OpenGL context
-#if !defined(CH_CI) || !defined(CH_PLATFORM_WINDOWS)
+#if !defined(CH_CI)
 
 TEST_F(AssetManagerTest, ProceduralModelLoading)
 {

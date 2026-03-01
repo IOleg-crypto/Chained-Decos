@@ -11,6 +11,13 @@
     <!-- Output path is controlled by the CMake build system to avoid stale DLL issues -->
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    
+    <!-- NuGet Packaging Options -->
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>CHEngine.Managed</PackageId>
+    <Authors>Oleg and Contributors</Authors>
+    <Description>C# Base Class Library for Chained Engine.</Description>
+    <RepositoryUrl>https://github.com/IOleg-crypto/Chained-Decos</RepositoryUrl>
   </PropertyGroup>
 
 
