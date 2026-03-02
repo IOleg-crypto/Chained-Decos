@@ -1,4 +1,5 @@
 
+#include "dynamics.h"
 #include "engine/core/profiler.h"
 #include "engine/graphics/asset_manager.h"
 #include "engine/graphics/model_asset.h"
@@ -8,7 +9,6 @@
 #include "engine/scene/scene.h"
 #include "narrow_phase.h"
 #include "scene_trace.h"
-#include "dynamics.h"
 #include <mutex>
 #include <unordered_map>
 
@@ -22,22 +22,38 @@ PhysicsSystem::PhysicsSystem()
 
 PhysicsSystem::~PhysicsSystem()
 {
-    Shutdown();
 }
+
+PhysicsSystem* PhysicsSystem::s_Instance = nullptr;
 
 void PhysicsSystem::Init()
 {
+    if (s_Instance)
+    {
+        CH_CORE_WARN("PhysicsSystem is already initialized!");
+        return;
+    }
+    s_Instance = new PhysicsSystem();
     CH_CORE_INFO("Global Physics System Initialized.");
 }
 
 void PhysicsSystem::Shutdown()
 {
+    if (!s_Instance)
+    {
+        return;
+    }
+
     CH_CORE_INFO("Global Physics System Shutdown.");
+
+    delete s_Instance;
+    s_Instance = nullptr;
 }
 
 PhysicsSystem& PhysicsSystem::Get()
 {
-    return Application::Get().GetPhysicsSystem();
+    CH_CORE_ASSERT(s_Instance, "PhysicsSystem is not initialized!");
+    return *s_Instance;
 }
 
 Physics::Physics(Scene* scene)
@@ -62,17 +78,23 @@ void Physics::Update(Timestep deltaTime, bool runtime)
     auto& registry = m_Scene->GetRegistry();
     auto collView = registry.view<ColliderComponent>();
     for (auto entity : collView)
+    {
         collView.get<ColliderComponent>(entity).IsColliding = false;
+    }
 
     // Collider shape recalc and simulation only when playing
     if (!runtime)
+    {
         return;
+    }
 
     UpdateColliders();
 
     float fixedTimestep = 1.0f / 60.0f;
     if (auto project = Project::GetActive())
+    {
         fixedTimestep = project->GetConfig().Physics.FixedTimestep;
+    }
 
     m_Accumulator += deltaTime;
     while (m_Accumulator >= fixedTimestep)
@@ -143,7 +165,9 @@ void Physics::UpdateColliders()
     auto& registry = m_Scene->GetRegistry();
     auto project = Project::GetActive();
     if (!project || !project->GetAssetManager())
+    {
         return;
+    }
 
     auto genView = registry.view<ColliderComponent, TransformComponent>();
 
@@ -155,12 +179,16 @@ void Physics::UpdateColliders()
         if (collider.Type == ColliderType::Box && collider.AutoCalculate)
         {
             if (!registry.all_of<ModelComponent>(entity))
+            {
                 continue;
+            }
 
             auto& model = registry.get<ModelComponent>(entity);
             auto& asset = m_ColliderAssetCache[model.ModelPath];
             if (!asset)
+            {
                 asset = project->GetAssetManager()->Get<ModelAsset>(model.ModelPath);
+            }
 
             if (asset && asset->GetState() == AssetState::Ready)
             {
@@ -168,7 +196,7 @@ void Physics::UpdateColliders()
                 if (collider.Size.x == 0 && collider.Size.y == 0 && collider.Size.z == 0)
                 {
                     BoundingBox box = asset->GetBoundingBox();
-                    collider.Size   = Vector3Subtract(box.max, box.min);
+                    collider.Size = Vector3Subtract(box.max, box.min);
                     collider.Offset = box.min;
                 }
             }
@@ -180,19 +208,23 @@ void Physics::UpdateColliders()
         {
             auto& asset = m_ColliderAssetCache[collider.ModelPath];
             if (!asset)
+            {
                 asset = project->GetAssetManager()->Get<ModelAsset>(collider.ModelPath);
+            }
 
             if (asset && asset->GetState() == AssetState::Ready && asset->GetModel().meshCount > 0)
             {
                 auto bvh = GetBVH(asset.get());
                 if (bvh)
+                {
                     collider.BVHRoot = bvh;
+                }
 
                 if (collider.AutoCalculate && collider.BVHRoot && collider.Size.x == 0)
                 {
                     BoundingBox box = asset->GetBoundingBox();
                     collider.Offset = box.min;
-                    collider.Size   = Vector3Subtract(box.max, box.min);
+                    collider.Size = Vector3Subtract(box.max, box.min);
                 }
             }
             continue;
@@ -202,12 +234,16 @@ void Physics::UpdateColliders()
         if (collider.Type == ColliderType::Sphere && collider.AutoCalculate)
         {
             if (!registry.all_of<ModelComponent>(entity))
+            {
                 continue;
+            }
 
             auto& model = registry.get<ModelComponent>(entity);
             auto& asset = m_ColliderAssetCache[model.ModelPath];
             if (!asset)
+            {
                 asset = project->GetAssetManager()->Get<ModelAsset>(model.ModelPath);
+            }
 
             if (asset && asset->GetState() == AssetState::Ready && collider.Radius == 0)
             {

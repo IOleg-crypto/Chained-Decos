@@ -1,13 +1,14 @@
 #ifndef CH_SCRIPT_ENGINE_H
 #define CH_SCRIPT_ENGINE_H
 
+#include <Coral/Assembly.hpp>
+#include <Coral/HostInstance.hpp>
 #include <filesystem>
 #include <string>
 #include <unordered_map>
-#include <Coral/HostInstance.hpp>
-#include <Coral/Assembly.hpp>
 
-namespace CHEngine {
+namespace CHEngine
+{
 
 class Scene;
 
@@ -29,8 +30,8 @@ public:
     ScriptEngine();
     ~ScriptEngine();
 
-    void Init();
-    void Shutdown();
+    static void Init();
+    static void Shutdown();
 
     // ── Assembly management ──────────────────────────────────────────────
     /// Load (or re-load) the game script DLL.
@@ -45,12 +46,23 @@ public:
 
     /// All discovered script types keyed by lowercase full name.
     const std::unordered_map<std::string, Coral::Type>& GetScriptClasses() const
-    { return m_ScriptClasses; }
+    {
+        return m_ScriptClasses;
+    }
 
     // ── Accessors ────────────────────────────────────────────────────────
-    bool   IsInitialized() const { return m_IsInitialized; }
-    Scene* GetActiveScene() const { return m_ActiveScene; }
-    void   SetActiveScene(Scene* scene) { m_ActiveScene = scene; }
+    bool IsInitialized() const
+    {
+        return m_IsInitialized;
+    }
+    Scene* GetActiveScene() const
+    {
+        return m_ActiveScene;
+    }
+    void SetActiveScene(Scene* scene)
+    {
+        m_ActiveScene = scene;
+    }
 
     static ScriptEngine& Get();
 
@@ -58,11 +70,13 @@ private:
     void DiscoverScriptTypes();
 
 private:
-    Scene*                                     m_ActiveScene = nullptr;
-    Coral::HostInstance                        m_Host;
-    Coral::AssemblyLoadContext                 m_AppAssemblyContext;
-    Coral::ManagedAssembly*                    m_AppAssembly = nullptr;
-    Coral::ManagedAssembly*                    m_CoreAssembly = nullptr;
+    static ScriptEngine* s_Instance;
+
+    Scene* m_ActiveScene = nullptr;
+    Coral::HostInstance m_Host;
+    Coral::AssemblyLoadContext m_AppAssemblyContext;
+    Coral::ManagedAssembly* m_AppAssembly = nullptr;
+    Coral::ManagedAssembly* m_CoreAssembly = nullptr;
 
     // Keyed by lowercase full qualified name, e.g. "chaineddecos.scripts.playercontroller"
     std::unordered_map<std::string, Coral::Type> m_ScriptClasses;

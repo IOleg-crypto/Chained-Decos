@@ -99,6 +99,33 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     endif()
 endif()
 
+# Linker optimizations
+if(MSVC)
+    # Check for lld-link
+    execute_process(COMMAND lld-link --version OUTPUT_VARIABLE LLD_LINK_VERSION ERROR_QUIET)
+    if(LLD_LINK_VERSION)
+        set(CMAKE_LINKER "lld-link" CACHE STRING "Linker" FORCE)
+        # Using llvm-lib for faster archiving if available
+        execute_process(COMMAND llvm-lib --version OUTPUT_VARIABLE LLVM_LIB_VERSION ERROR_QUIET)
+        if(LLVM_LIB_VERSION)
+            set(CMAKE_AR "llvm-lib" CACHE STRING "Archive" FORCE)
+        endif()
+        message(STATUS "Using lld-link for faster linking")
+    endif()
+else()
+    # Check for mold (fastest) or lld
+    find_program(MOLD_PATH mold)
+    find_program(LLD_PATH lld)
+    if(MOLD_PATH)
+        add_link_options("-fuse-ld=mold")
+        message(STATUS "Using mold for faster linking")
+    elseif(LLD_PATH)
+        add_link_options("-fuse-ld=lld")
+        message(STATUS "Using lld for faster linking")
+    endif()
+endif()
+
+
 # Platform-specific settings
 if(WIN32)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
@@ -108,7 +135,7 @@ if(WIN32)
 endif()
 
 # Optimized Build Settings
-option(ENABLE_UNITY_BUILD "Enable Unity Builds for faster compilation" OFF)
+option(ENABLE_UNITY_BUILD "Enable Unity Builds for faster compilation" ON)
 option(ENABLE_PCH "Enable Precompiled Headers for faster compilation" ON)
 option(ENABLE_LTO "Enable Link-Time Optimization (IPO) for Release configurations" ON)
 option(ENABLE_COVERAGE "Enable Code Coverage (GCC/Clang only)" OFF)
@@ -167,6 +194,15 @@ function(apply_engine_optimizations target_name)
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/quaternion.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
+#include <map>
+#include <set>
+#include <array>
+#include <chrono>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
 ")
         # Create a temp file for PCH
         set(PCH_FILE "${CMAKE_BINARY_DIR}/engine_pch.h")

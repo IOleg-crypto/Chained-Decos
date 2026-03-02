@@ -4,8 +4,8 @@
 #include "engine/core/application.h"
 #include "engine/core/yaml.h"
 #include "engine/scene/serialization_utils.h"
-#include "scene.h"
 #include "engine/script/scriptengine.h"
+#include "scene.h"
 
 namespace YAML
 {
@@ -38,12 +38,19 @@ inline Emitter& operator<<(Emitter& out, const CHEngine::ManagedScriptInstance& 
 
 namespace CHEngine
 {
-ComponentSerializer::ComponentSerializer() {}
-ComponentSerializer::~ComponentSerializer() {}
+ComponentSerializer::ComponentSerializer()
+{
+}
+ComponentSerializer::~ComponentSerializer()
+{
+}
+
+ComponentSerializer* ComponentSerializer::s_Instance = nullptr;
 
 ComponentSerializer& ComponentSerializer::Get()
 {
-    return Application::Get().GetComponentSerializer();
+    CH_CORE_ASSERT(s_Instance, "ComponentSerializer is not initialized!");
+    return *s_Instance;
 }
 
 void ComponentSerializer::RegisterCustom(const ComponentSerializerEntry& entry)
@@ -441,14 +448,20 @@ void ComponentSerializer::DeserializeMaterialSlot(MaterialSlot& slot, YAML::Node
 
 void ComponentSerializer::Initialize()
 {
-    m_Registry.clear();
+    if (s_Instance)
+    {
+        CH_CORE_WARN("ComponentSerializer is already initialized!");
+        return;
+    }
 
+    s_Instance = new ComponentSerializer();
+    s_Instance->m_Registry.clear();
     // --- Основні ---
-    Register<TagComponent>("TagComponent",
-                           [](auto& archive, auto& component) { archive.Property("Tag", component.Tag); });
+    s_Instance->Register<TagComponent>("TagComponent",
+                                       [](auto& archive, auto& component) { archive.Property("Tag", component.Tag); });
 
     // --- Graphics ---
-    Register<TransformComponent>("TransformComponent", [](auto& archive, auto& component) {
+    s_Instance->Register<TransformComponent>("TransformComponent", [](auto& archive, auto& component) {
         archive.Property("Translation", component.Translation)
             .Property("Rotation", component.Rotation)
             .Property("Scale", component.Scale);
@@ -460,7 +473,7 @@ void ComponentSerializer::Initialize()
         }
     });
 
-    Register<ModelComponent>("ModelComponent", [](auto& archive, auto& component) {
+    s_Instance->Register<ModelComponent>("ModelComponent", [](auto& archive, auto& component) {
         archive.Handle("ModelHandle", component.ModelHandle).Path("ModelPath", component.ModelPath);
 
         if (archive.GetMode() == SerializationUtils::PropertyArchive::Serialize)
@@ -490,7 +503,7 @@ void ComponentSerializer::Initialize()
         }
     });
 
-    Register<LightComponent>("LightComponent", [](auto& archive, auto& component) {
+    s_Instance->Register<LightComponent>("LightComponent", [](auto& archive, auto& component) {
         archive.Property("Type", (int&)component.Type)
             .Property("LightColor", component.LightColor)
             .Property("Intensity", component.Intensity)
@@ -499,11 +512,11 @@ void ComponentSerializer::Initialize()
             .Property("OuterCutoff", component.OuterCutoff);
     });
 
-    Register<ShaderComponent>("ShaderComponent",
-                              [](auto& archive, auto& component) { archive.Path("ShaderPath", component.ShaderPath); });
+    s_Instance->Register<ShaderComponent>(
+        "ShaderComponent", [](auto& archive, auto& component) { archive.Path("ShaderPath", component.ShaderPath); });
 
     // --- Physics ---
-    Register<ColliderComponent>("ColliderComponent", [](auto& archive, auto& component) {
+    s_Instance->Register<ColliderComponent>("ColliderComponent", [](auto& archive, auto& component) {
         archive.Property("Type", (int&)component.Type)
             .Property("Enabled", component.Enabled)
             .Property("Offset", component.Offset)
@@ -515,52 +528,53 @@ void ComponentSerializer::Initialize()
             .Property("AutoCalculate", component.AutoCalculate);
     });
 
-    Register<RigidBodyComponent>("RigidBodyComponent", [](auto& archive, auto& component) {
+    s_Instance->Register<RigidBodyComponent>("RigidBodyComponent", [](auto& archive, auto& component) {
         archive.Property("Mass", component.Mass)
             .Property("UseGravity", component.UseGravity)
             .Property("IsKinematic", component.IsKinematic);
     });
 
     // --- Audio ---
-    Register<AudioComponent>("AudioComponent", [](auto& archive, auto& component) {
-        archive.Handle("SoundHandle", component.SoundHandle)
-            .Path("SoundPath", component.SoundPath)
-            .Property("Loop", component.Loop)
-            .Property("PlayOnStart", component.PlayOnStart)
-            .Property("Volume", component.Volume)
-            .Property("Pitch", component.Pitch);
-    });
+    s_Instance->Register<AudioComponent>("AudioComponent",
+                                         [](SerializationUtils::PropertyArchive& archive, AudioComponent& component) {
+                                             archive.Handle("SoundHandle", component.SoundHandle)
+                                                 .Path("SoundPath", component.SoundPath)
+                                                 .Property("Loop", component.Loop)
+                                                 .Property("PlayOnStart", component.PlayOnStart)
+                                                 .Property("Volume", component.Volume)
+                                                 .Property("Pitch", component.Pitch);
+                                         });
 
     // --- Gameplay ---
-    Register<PlayerComponent>("PlayerComponent", [](auto& archive, auto& component) {
+    s_Instance->Register<PlayerComponent>("PlayerComponent", [](auto& archive, auto& component) {
         archive.Property("MovementSpeed", component.MovementSpeed)
             .Property("LookSensitivity", component.LookSensitivity)
             .Property("JumpForce", component.JumpForce);
     });
 
-    Register<SceneTransitionComponent>("SceneTransitionComponent", [](auto& archive, auto& component) {
+    s_Instance->Register<SceneTransitionComponent>("SceneTransitionComponent", [](auto& archive, auto& component) {
         archive.Property("TargetScenePath", component.TargetScenePath).Property("Triggered", component.Triggered);
     });
 
-    Register<AnimationComponent>("AnimationComponent", [](auto& archive, auto& component) {
+    s_Instance->Register<AnimationComponent>("AnimationComponent", [](auto& archive, auto& component) {
         archive.Property("AnimationPath", component.AnimationPath)
             .Property("CurrentAnimationIndex", component.CurrentAnimationIndex)
             .Property("IsLooping", component.IsLooping)
             .Property("IsPlaying", component.IsPlaying);
     });
 
-    Register<NavigationComponent>("NavigationComponent", [](auto& archive, auto& component) {
+    s_Instance->Register<NavigationComponent>("NavigationComponent", [](auto& archive, auto& component) {
         archive.Property("IsDefaultFocus", component.IsDefaultFocus);
     });
 
-    Register<SpawnComponent>("SpawnComponent", [](auto& archive, auto& component) {
+    s_Instance->Register<SpawnComponent>("SpawnComponent", [](auto& archive, auto& component) {
         archive.Property("SpawnZoneSize", component.ZoneSize)
             .Handle("SpawnTextureHandle", component.TextureHandle)
             .Path("SpawnTexturePath", component.TexturePath)
             .Property("RenderSpawnZoneInScene", component.RenderSpawnZoneInScene);
     });
 
-    Register<CameraComponent>("CameraComponent", [](auto& archive, auto& component) {
+    s_Instance->Register<CameraComponent>("CameraComponent", [](auto& archive, auto& component) {
         archive.Property("Primary", component.Primary)
             .Property("FixedAspectRatio", component.FixedAspectRatio)
             .Property("IsOrbitCamera", component.IsOrbitCamera)
@@ -600,7 +614,7 @@ void ComponentSerializer::Initialize()
         }
     });
 
-    Register<SpriteComponent>("SpriteComponent", [](auto& archive, auto& component) {
+    s_Instance->Register<SpriteComponent>("SpriteComponent", [](auto& archive, auto& component) {
         archive.Handle("TextureHandle", component.TextureHandle)
             .Path("TexturePath", component.TexturePath)
             .Property("Tint", component.Tint)
@@ -610,14 +624,14 @@ void ComponentSerializer::Initialize()
     });
 
     // --- UI Components ---
-    Register<ControlComponent>("ControlComponent", [](auto& archive, auto& component) {
+    s_Instance->Register<ControlComponent>("ControlComponent", [](auto& archive, auto& component) {
         archive.Nested("Transform", component.Transform, SerializeRectTransform, DeserializeRectTransform);
         archive.Property("ZOrder", component.ZOrder)
             .Property("IsActive", component.IsActive)
             .Property("HiddenInHierarchy", component.HiddenInHierarchy);
     });
 
-    Register<ButtonControl>("ButtonControl", [](auto& archive, auto& component) {
+    s_Instance->Register<ButtonControl>("ButtonControl", [](auto& archive, auto& component) {
         archive.Property("Label", component.Label)
             .Property("Interactable", component.IsInteractable)
             .Property("AutoSize", component.AutoSize);
@@ -625,19 +639,19 @@ void ComponentSerializer::Initialize()
         archive.Nested("Text", component.Text, SerializeTextStyle, DeserializeTextStyle);
     });
 
-    Register<PanelControl>("PanelControl", [](auto& archive, auto& component) {
+    s_Instance->Register<PanelControl>("PanelControl", [](auto& archive, auto& component) {
         archive.Handle("TextureHandle", component.TextureHandle)
             .Path("TexturePath", component.TexturePath)
             .Property("FullScreen", component.FullScreen);
         archive.Nested("UIStyle", component.Style, SerializeUIStyle, DeserializeUIStyle);
     });
 
-    Register<LabelControl>("LabelControl", [](auto& archive, auto& component) {
+    s_Instance->Register<LabelControl>("LabelControl", [](auto& archive, auto& component) {
         archive.Property("Text", component.Text).Property("AutoSize", component.AutoSize);
         archive.Nested("Style", component.Style, SerializeTextStyle, DeserializeTextStyle);
     });
 
-    Register<SliderControl>("SliderControl", [](auto& archive, auto& component) {
+    s_Instance->Register<SliderControl>("SliderControl", [](auto& archive, auto& component) {
         archive.Property("Label", component.Label)
             .Property("Value", component.Value)
             .Property("Min", component.Min)
@@ -646,19 +660,19 @@ void ComponentSerializer::Initialize()
         archive.Nested("Style", component.Style, SerializeUIStyle, DeserializeUIStyle);
     });
 
-    Register<CheckboxControl>("CheckboxControl", [](auto& archive, auto& component) {
+    s_Instance->Register<CheckboxControl>("CheckboxControl", [](auto& archive, auto& component) {
         archive.Property("Label", component.Label).Property("Checked", component.Checked);
         archive.Nested("Text", component.Text, SerializeTextStyle, DeserializeTextStyle);
         archive.Nested("Style", component.Style, SerializeUIStyle, DeserializeUIStyle);
     });
 
-    Register<ImageControl>("ImageControl", [](auto& archive, auto& component) {
+    s_Instance->Register<ImageControl>("ImageControl", [](auto& archive, auto& component) {
         archive.Handle("TextureHandle", component.TextureHandle).Path("TexturePath", component.TexturePath);
         archive.Property("TintColor", component.TintColor).Property("BorderColor", component.BorderColor);
         archive.Nested("Style", component.Style, SerializeUIStyle, DeserializeUIStyle);
     });
 
-    Register<ImageButtonControl>("ImageButtonControl", [](auto& archive, auto& component) {
+    s_Instance->Register<ImageButtonControl>("ImageButtonControl", [](auto& archive, auto& component) {
         archive.Handle("TextureHandle", component.TextureHandle)
             .Path("TexturePath", component.TexturePath)
             .Property("Label", component.Label)
@@ -668,7 +682,7 @@ void ComponentSerializer::Initialize()
         archive.Nested("Style", component.Style, SerializeUIStyle, DeserializeUIStyle);
     });
 
-    Register<InputTextControl>("InputTextControl", [](auto& archive, auto& component) {
+    s_Instance->Register<InputTextControl>("InputTextControl", [](auto& archive, auto& component) {
         archive.Property("Label", component.Label)
             .Property("Text", component.Text)
             .Property("Placeholder", component.Placeholder)
@@ -680,7 +694,7 @@ void ComponentSerializer::Initialize()
         archive.Nested("BoxStyle", component.BoxStyle, SerializeUIStyle, DeserializeUIStyle);
     });
 
-    Register<ComboBoxControl>("ComboBoxControl", [](auto& archive, auto& component) {
+    s_Instance->Register<ComboBoxControl>("ComboBoxControl", [](auto& archive, auto& component) {
         archive.Property("Label", component.Label)
             .Property("Items", component.Items)
             .Property("SelectedIndex", component.SelectedIndex);
@@ -688,7 +702,7 @@ void ComponentSerializer::Initialize()
         archive.Nested("BoxStyle", component.BoxStyle, SerializeUIStyle, DeserializeUIStyle);
     });
 
-    Register<ProgressBarControl>("ProgressBarControl", [](auto& archive, auto& component) {
+    s_Instance->Register<ProgressBarControl>("ProgressBarControl", [](auto& archive, auto& component) {
         archive.Property("Progress", component.Progress)
             .Property("OverlayText", component.OverlayText)
             .Property("ShowPercentage", component.ShowPercentage);
@@ -696,11 +710,11 @@ void ComponentSerializer::Initialize()
         archive.Nested("BarStyle", component.BarStyle, SerializeUIStyle, DeserializeUIStyle);
     });
 
-    Register<SeparatorControl>("SeparatorControl", [](auto& archive, auto& component) {
+    s_Instance->Register<SeparatorControl>("SeparatorControl", [](auto& archive, auto& component) {
         archive.Property("Thickness", component.Thickness).Property("LineColor", component.LineColor);
     });
 
-    Register<RadioButtonControl>("RadioButtonControl", [](auto& archive, auto& component) {
+    s_Instance->Register<RadioButtonControl>("RadioButtonControl", [](auto& archive, auto& component) {
         archive.Property("Label", component.Label)
             .Property("Options", component.Options)
             .Property("SelectedIndex", component.SelectedIndex)
@@ -708,7 +722,7 @@ void ComponentSerializer::Initialize()
         archive.Nested("TextStyle", component.Style, SerializeTextStyle, DeserializeTextStyle);
     });
 
-    Register<ColorPickerControl>("ColorPickerControl", [](auto& archive, auto& component) {
+    s_Instance->Register<ColorPickerControl>("ColorPickerControl", [](auto& archive, auto& component) {
         archive.Property("Label", component.Label)
             .Property("SelectedColor", component.SelectedColor)
             .Property("ShowAlpha", component.ShowAlpha)
@@ -716,7 +730,7 @@ void ComponentSerializer::Initialize()
         archive.Nested("Style", component.Style, SerializeUIStyle, DeserializeUIStyle);
     });
 
-    Register<DragFloatControl>("DragFloatControl", [](auto& archive, auto& component) {
+    s_Instance->Register<DragFloatControl>("DragFloatControl", [](auto& archive, auto& component) {
         archive.Property("Label", component.Label)
             .Property("Value", component.Value)
             .Property("Speed", component.Speed)
@@ -727,7 +741,7 @@ void ComponentSerializer::Initialize()
         archive.Nested("BoxStyle", component.BoxStyle, SerializeUIStyle, DeserializeUIStyle);
     });
 
-    Register<DragIntControl>("DragIntControl", [](auto& archive, auto& component) {
+    s_Instance->Register<DragIntControl>("DragIntControl", [](auto& archive, auto& component) {
         archive.Property("Label", component.Label)
             .Property("Value", component.Value)
             .Property("Speed", component.Speed)
@@ -738,7 +752,7 @@ void ComponentSerializer::Initialize()
         archive.Nested("BoxStyle", component.BoxStyle, SerializeUIStyle, DeserializeUIStyle);
     });
 
-    Register<TreeNodeControl>("TreeNodeControl", [](auto& archive, auto& component) {
+    s_Instance->Register<TreeNodeControl>("TreeNodeControl", [](auto& archive, auto& component) {
         archive.Property("Label", component.Label)
             .Property("IsOpen", component.IsOpen)
             .Property("DefaultOpen", component.DefaultOpen)
@@ -746,28 +760,28 @@ void ComponentSerializer::Initialize()
         archive.Nested("TextStyle", component.Style, SerializeTextStyle, DeserializeTextStyle);
     });
 
-    Register<TabBarControl>("TabBarControl", [](auto& archive, auto& component) {
+    s_Instance->Register<TabBarControl>("TabBarControl", [](auto& archive, auto& component) {
         archive.Property("Label", component.Label)
             .Property("Reorderable", component.Reorderable)
             .Property("AutoSelectNewTabs", component.AutoSelectNewTabs);
         archive.Nested("Style", component.Style, SerializeUIStyle, DeserializeUIStyle);
     });
 
-    Register<TabItemControl>("TabItemControl", [](auto& archive, auto& component) {
+    s_Instance->Register<TabItemControl>("TabItemControl", [](auto& archive, auto& component) {
         archive.Property("Label", component.Label)
             .Property("IsOpen", component.IsOpen)
             .Property("Selected", component.Selected);
         archive.Nested("TextStyle", component.Style, SerializeTextStyle, DeserializeTextStyle);
     });
 
-    Register<CollapsingHeaderControl>("CollapsingHeaderControl", [](auto& archive, auto& component) {
+    s_Instance->Register<CollapsingHeaderControl>("CollapsingHeaderControl", [](auto& archive, auto& component) {
         archive.Property("Label", component.Label)
             .Property("IsOpen", component.IsOpen)
             .Property("DefaultOpen", component.DefaultOpen);
         archive.Nested("TextStyle", component.Style, SerializeTextStyle, DeserializeTextStyle);
     });
 
-    Register<PlotLinesControl>("PlotLinesControl", [](auto& archive, auto& component) {
+    s_Instance->Register<PlotLinesControl>("PlotLinesControl", [](auto& archive, auto& component) {
         archive.Property("Label", component.Label)
             .Property("Values", component.Values)
             .Property("OverlayText", component.OverlayText)
@@ -778,7 +792,7 @@ void ComponentSerializer::Initialize()
         archive.Nested("BoxStyle", component.BoxStyle, SerializeUIStyle, DeserializeUIStyle);
     });
 
-    Register<PlotHistogramControl>("PlotHistogramControl", [](auto& archive, auto& component) {
+    s_Instance->Register<PlotHistogramControl>("PlotHistogramControl", [](auto& archive, auto& component) {
         archive.Property("Label", component.Label)
             .Property("Values", component.Values)
             .Property("OverlayText", component.OverlayText)
@@ -789,12 +803,12 @@ void ComponentSerializer::Initialize()
         archive.Nested("BoxStyle", component.BoxStyle, SerializeUIStyle, DeserializeUIStyle);
     });
 
-    Register<VerticalLayoutGroup>("VerticalLayoutGroup", [](auto& archive, auto& component) {
+    s_Instance->Register<VerticalLayoutGroup>("VerticalLayoutGroup", [](auto& archive, auto& component) {
         archive.Property("Spacing", component.Spacing).Property("Padding", component.Padding);
     });
 
     // --- Managed Script Component ---
-    Register<ManagedScriptComponent>("ManagedScriptComponent", [](auto& archive, auto& component) {
+    s_Instance->Register<ManagedScriptComponent>("ManagedScriptComponent", [](auto& archive, auto& component) {
         if (archive.GetMode() == SerializationUtils::PropertyArchive::Deserialize)
         {
             if (archive.GetNode()["ClassName"])
@@ -807,6 +821,18 @@ void ComponentSerializer::Initialize()
         }
         archive.Sequence("Scripts", component.Scripts);
     });
+}
+
+void ComponentSerializer::Shutdown()
+{
+    if (!s_Instance)
+    {
+        return;
+    }
+
+    ComponentSerializer* instance = s_Instance;
+    s_Instance = nullptr;
+    delete instance;
 }
 
 void ComponentSerializer::SerializeAll(YAML::Emitter& out, Entity entity)

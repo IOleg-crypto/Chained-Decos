@@ -301,7 +301,9 @@ void Scene::UpdateAnimations(Timestep deltaTime)
     // Compute frameTime once per frame — Project::GetActive() is a global lookup
     float targetFPS = 30.0f;
     if (auto project = Project::GetActive())
+    {
         targetFPS = project->GetConfig().Animation.TargetFPS;
+    }
     const float frameTime = 1.0f / (targetFPS > 0.0f ? targetFPS : 30.0f);
 
     m_Registry.view<ModelComponent, AnimationComponent>().each([&](auto entity, auto& mc, auto& anim) {
@@ -534,26 +536,29 @@ void Scene::OnIDDestroy(entt::registry& reg, entt::entity entity)
     m_EntityMap.erase(id);
 }
 
-void Scene::OnAudioComponentAdded(entt::registry& reg, entt::entity entity)
+void Scene::OnAudioComponentAdded(entt::registry& registry, entt::entity entity)
 {
-    auto& audio = reg.get<AudioComponent>(entity);
-
-    if (!audio.SoundPath.empty())
+    auto& component = registry.get<AudioComponent>(entity);
+    if (m_IsSimulationRunning && component.PlayOnStart)
     {
-        auto project = Project::GetActive();
-        if (project && project->GetAssetManager())
+        std::string playPath = component.SoundPath;
+
+        // Try to resolve path from handle if available
+        if (component.SoundHandle != 0)
         {
-            audio.Asset = project->GetAssetManager()->Get<SoundAsset>(audio.SoundPath);
+            if (auto project = Project::GetActive())
+            {
+                auto asset = project->GetAssetManager()->Get<SoundAsset>(component.SoundHandle);
+                if (asset)
+                {
+                    playPath = asset->GetPath();
+                }
+            }
         }
-    }
 
-    // Reactive Sound Playback
-    if (audio.PlayOnStart && !audio.IsPlaying)
-    {
-        audio.IsPlaying = true;
-        if (audio.Asset)
+        if (!playPath.empty())
         {
-            Audio::Get().Play(audio.Asset, audio.Volume, audio.Pitch, audio.Loop);
+            Audio::Get().Play(playPath, component.Volume, component.Pitch, component.Loop);
         }
     }
 }
@@ -763,16 +768,19 @@ Entity Scene::GetPrimaryCameraEntity()
     return {};
 }
 
-
 void Scene::UpdateUIActions()
 {
     m_Registry.view<UIActionComponent>().each([&](auto entity, auto& action) {
         Entity uiEntity(entity, &m_Registry);
         bool pressed = false;
         if (uiEntity.HasComponent<ButtonControl>())
+        {
             pressed = uiEntity.GetComponent<ButtonControl>().PressedThisFrame;
+        }
         else if (uiEntity.HasComponent<ImageButtonControl>())
+        {
             pressed = uiEntity.GetComponent<ImageButtonControl>().PressedThisFrame;
+        }
     });
 }
 
@@ -809,7 +817,8 @@ void Scene::UpdateHierarchy()
         if (m_Registry.all_of<HierarchyComponent>(entity))
         {
             auto& hc = m_Registry.get<HierarchyComponent>(entity);
-            if (hc.Parent != entt::null && m_Registry.valid(hc.Parent) && m_Registry.all_of<TransformComponent>(hc.Parent))
+            if (hc.Parent != entt::null && m_Registry.valid(hc.Parent) &&
+                m_Registry.all_of<TransformComponent>(hc.Parent))
             {
                 isRoot = false;
             }
@@ -832,13 +841,17 @@ void Scene::OnScriptComponentDestroyed(entt::registry& registry, entt::entity en
             auto* instance = static_cast<Coral::ManagedObject*>(script.Instance);
             if (instance->IsValid())
             {
-                try {
+                try
+                {
                     instance->InvokeMethod("OnDestroy");
-                } catch (const std::exception& e) {
+                } catch (const std::exception& e)
+                {
                     CH_CORE_ERROR("Exception in C# OnDestroy: {}", e.what());
-                } catch (...) {}
+                } catch (...)
+                {
+                }
             }
-            
+
             instance->Destroy();
             delete instance;
             script.Instance = nullptr;

@@ -1,6 +1,5 @@
 add_library(engine_audio OBJECT
     audio.cpp
-    sound_asset.cpp
     audio_importer.cpp
 
     audio.h

@@ -25,24 +25,35 @@
 namespace CHEngine
 {
 
+Renderer* Renderer::s_Instance = nullptr;
+
 bool Renderer::IsInitialized()
 {
-    return Application::Get().GetRenderer().m_Data != nullptr;
+    return s_Instance != nullptr && s_Instance->m_Data != nullptr;
 }
 
 Renderer& Renderer::Get()
 {
-    return Application::Get().GetRenderer();
+    CH_CORE_ASSERT(s_Instance, "Renderer is not initialized!");
+    return *s_Instance;
 }
 
 void Renderer::Init()
 {
+    if (s_Instance)
+    {
+        CH_CORE_WARN("Renderer is already initialized!");
+        return;
+    }
+
+    s_Instance = new Renderer();
+
     CH_CORE_INFO("Initializing Render System...");
 
-    m_Renderer2D->Init();
-    m_UIRenderer->Init();
+    s_Instance->m_Renderer2D->Init();
+    s_Instance->m_UIRenderer->Init();
 
-    InitializeSkybox();
+    s_Instance->InitializeSkybox();
     CH_CORE_INFO("Render System Initialized (Core).");
 }
 
@@ -73,7 +84,10 @@ void Renderer::LoadEngineResources(AssetManager& assetManager)
     // Icons
     auto loadIcon = [&](Texture2D& target, const std::string& path) {
         auto tex = assetManager.Get<TextureAsset>(path);
-        if (tex) target = tex->GetTexture();
+        if (tex)
+        {
+            target = tex->GetTexture();
+        }
     };
 
     loadIcon(renderer.m_Data->LightIcon, "engine/resources/icons/light_bulb.png");
@@ -83,12 +97,24 @@ void Renderer::LoadEngineResources(AssetManager& assetManager)
 
 void Renderer::Shutdown()
 {
+    if (!s_Instance)
+    {
+        return;
+    }
+
     CH_CORE_INFO("Shutting down Render System...");
-    if (m_Renderer2D) m_Renderer2D->Shutdown();
-    if (m_UIRenderer) m_UIRenderer->Shutdown();
-    
-    InitializeSkybox(); // wait, why InitializeSkybox in shutdown? Ah, it was probably meant to be CleanupSkybox if it existed.
-    // Actually, renderer.cpp had InitializeSkybox(); in Init().
+    if (s_Instance->m_Renderer2D)
+    {
+        s_Instance->m_Renderer2D->Shutdown();
+    }
+    if (s_Instance->m_UIRenderer)
+    {
+        s_Instance->m_UIRenderer->Shutdown();
+    }
+
+    Renderer* instance = s_Instance;
+    s_Instance = nullptr;
+    delete instance;
 }
 
 Renderer::Renderer()
@@ -96,7 +122,7 @@ Renderer::Renderer()
     m_Data = std::make_unique<RendererData>();
     m_Renderer2D = std::make_unique<Renderer2D>();
     m_UIRenderer = std::make_unique<UIRenderer>();
-    
+
     m_Data->Shaders = std::make_unique<ShaderLibrary>();
 
     // Initialize SSBO for lights
@@ -120,9 +146,9 @@ Renderer::~Renderer()
     }
 
     if (m_Data->LightSSBO > 0)
-    rlUnloadShaderBuffer(m_Data->LightSSBO);
-
-    Shutdown();
+    {
+        rlUnloadShaderBuffer(m_Data->LightSSBO);
+    }
 }
 
 void Renderer::BeginScene(const Camera3D& camera)
@@ -187,7 +213,7 @@ void Renderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const Ma
             static std::string lastFailed = "";
             if (lastFailed != modelAsset->GetPath())
             {
-                //CH_CORE_WARN("Renderer::DrawModel - Model asset failed to load: {}", modelAsset->GetPath());
+                // CH_CORE_WARN("Renderer::DrawModel - Model asset failed to load: {}", modelAsset->GetPath());
                 lastFailed = modelAsset->GetPath();
             }
         }
@@ -202,9 +228,9 @@ void Renderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const Ma
     for (int i = 0; i < model.meshCount; i++)
     {
         Material material = ResolveMaterialForMesh(i, model, materialSlotOverrides);
-        auto activeShaderAsset = shaderOverride
-                                ? shaderOverride
-                                : (m_Data->Shaders->Exists("Lighting") ? m_Data->Shaders->Get("Lighting") : nullptr);
+        auto activeShaderAsset =
+            shaderOverride ? shaderOverride
+                           : (m_Data->Shaders->Exists("Lighting") ? m_Data->Shaders->Get("Lighting") : nullptr);
         Matrix meshTransform = MatrixMultiply(model.transform, transform);
 
         if (activeShaderAsset)
@@ -311,7 +337,7 @@ void Renderer::DrawSphereWires(const Matrix& transform, float radius, Color colo
 void Renderer::ApplyPostProcessing(RenderTexture2D target, const Camera3D& camera)
 {
     CH_PROFILE_FUNCTION();
-    
+
     auto shaderAsset = m_Data->Shaders->Exists("PostProcess") ? m_Data->Shaders->Get("PostProcess") : nullptr;
     if (!shaderAsset)
     {
@@ -322,7 +348,7 @@ void Renderer::ApplyPostProcessing(RenderTexture2D target, const Camera3D& camer
     Matrix view = GetCameraMatrix(camera);
     // Note: Proj matrix might be tricky if not in Mode3D, but we can reconstruct it
     // Or just use rlGetMatrixProjection() if we call this inside BeginTextureMode
-    Matrix proj = rlGetMatrixProjection(); 
+    Matrix proj = rlGetMatrixProjection();
     Matrix viewProj = MatrixMultiply(view, proj);
     Matrix invViewProj = MatrixInvert(viewProj);
 
@@ -347,9 +373,9 @@ void Renderer::ApplyPostProcessing(RenderTexture2D target, const Camera3D& camer
 
     // 4. Draw Fullscreen Quad
     // DrawTextureRec vertically flips the texture (standard FBO behavior)
-    Rectangle source = { 0, 0, (float)target.texture.width, (float)-target.texture.height };
-    Rectangle dest = { 0, 0, (float)target.texture.width, (float)target.texture.height };
-    ::DrawTexturePro(target.texture, source, dest, { 0, 0 }, 0.0f, WHITE);
+    Rectangle source = {0, 0, (float)target.texture.width, (float)-target.texture.height};
+    Rectangle dest = {0, 0, (float)target.texture.width, (float)target.texture.height};
+    ::DrawTexturePro(target.texture, source, dest, {0, 0}, 0.0f, WHITE);
 
     // 5. Cleanup
     rlActiveTextureSlot(1);
@@ -379,7 +405,7 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
         return;
     }
 
-    //CH_CORE_INFO("Renderer: Drawing skybox '{}', asset ready: {}", skybox.TexturePath, textureAsset->IsReady());
+    // CH_CORE_INFO("Renderer: Drawing skybox '{}', asset ready: {}", skybox.TexturePath, textureAsset->IsReady());
 
     if (textureAsset->GetState() != AssetState::Ready)
     {
@@ -392,16 +418,20 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
     }
 
     int activeMode = skybox.Mode;
-    //CH_CORE_INFO("Renderer: DrawSkybox Mode: {}, Texture: {}", activeMode, skybox.TexturePath);
+    // CH_CORE_INFO("Renderer: DrawSkybox Mode: {}, Texture: {}", activeMode, skybox.TexturePath);
     auto shaderName = (activeMode == 2) ? "SkyboxCubemap" : "Skybox";
     auto skyboxShader = m_Data->Shaders->Exists(shaderName) ? m_Data->Shaders->Get(shaderName) : nullptr;
-    
+
     if (!skyboxShader || skyboxShader->GetShader().id == 0)
     {
-        //CH_CORE_WARN("Renderer::DrawSkybox: Required shader '{}' not found or failed to load. Falling back to default skybox.", shaderName);
+        // CH_CORE_WARN("Renderer::DrawSkybox: Required shader '{}' not found or failed to load. Falling back to default
+        // skybox.", shaderName);
         activeMode = 0;
         skyboxShader = m_Data->Shaders->Get("Skybox");
-        if (!skyboxShader) return;
+        if (!skyboxShader)
+        {
+            return;
+        }
     }
 
     // Cubemap Generation Trigger
@@ -410,18 +440,21 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
         auto genShader = m_Data->Shaders->Exists("CubemapGen") ? m_Data->Shaders->Get("CubemapGen") : nullptr;
         if (genShader && genShader->GetShader().id > 0)
         {
-            CH_CORE_INFO("Renderer: Generating cubemap for '{}' (Panorama ID: {})...", skybox.TexturePath, textureAsset->GetTexture().id);
+            CH_CORE_INFO("Renderer: Generating cubemap for '{}' (Panorama ID: {})...", skybox.TexturePath,
+                         textureAsset->GetTexture().id);
             Texture2D panorama = textureAsset->GetTexture();
-            
+
             // Note: We use PIXELFORMAT_UNCOMPRESSED_R16G16B16A16 or R32G32B32A32 to preserve HDR float values
-            TextureCubemap cubemap = GenTextureCubemap(genShader->GetShader(), panorama, 1024, PIXELFORMAT_UNCOMPRESSED_R32G32B32A32);
-            
+            TextureCubemap cubemap =
+                GenTextureCubemap(genShader->GetShader(), panorama, 1024, PIXELFORMAT_UNCOMPRESSED_R32G32B32A32);
+
             if (cubemap.id > 0)
             {
                 textureAsset->Unload(); // Unload panorama
                 textureAsset->SetTexture(cubemap);
                 textureAsset->SetIsCubemap(true);
-                CH_CORE_INFO("Renderer: Cubemap generated successfully for '{}' (Cubemap ID: {}).", skybox.TexturePath, cubemap.id);
+                CH_CORE_INFO("Renderer: Cubemap generated successfully for '{}' (Cubemap ID: {}).", skybox.TexturePath,
+                             cubemap.id);
             }
             else
             {
@@ -432,9 +465,9 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
         }
         else
         {
-             CH_CORE_ERROR("Renderer: CubemapGen shader missing! Cannot generate cubemap.");
-             activeMode = 0;
-             skyboxShader = m_Data->Shaders->Get("Skybox");
+            CH_CORE_ERROR("Renderer: CubemapGen shader missing! Cannot generate cubemap.");
+            activeMode = 0;
+            skyboxShader = m_Data->Shaders->Get("Skybox");
         }
     }
 
@@ -447,8 +480,8 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
 
     if (skyTexture.id == 0)
     {
-        //CH_CORE_ERROR("Renderer::DrawSkybox: Texture asset ready but Raylib texture ID is 0! Path: {}",
-                      //skybox.TexturePath);
+        // CH_CORE_ERROR("Renderer::DrawSkybox: Texture asset ready but Raylib texture ID is 0! Path: {}",
+        // skybox.TexturePath);
         rlEnableBackfaceCulling();
         rlEnableDepthMask();
         return;
@@ -474,7 +507,7 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
     skyboxShader->SetFloat("exposure", skybox.Exposure);
     skyboxShader->SetFloat("brightness", skybox.Brightness);
     skyboxShader->SetFloat("contrast", skybox.Contrast);
-    
+
     std::string skyExt = std::filesystem::path(skybox.TexturePath).extension().string();
     std::transform(skyExt.begin(), skyExt.end(), skyExt.begin(), ::tolower);
     bool isHDR = (skyExt == ".hdr");
@@ -483,7 +516,7 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
     {
         skyboxShader->SetInt("vflipped", 0);
         skyboxShader->SetInt("skyboxMode", activeMode); // 0: Equirect, 1: Cross
-        
+
         // Detect HDR texture and enable tone mapping + gamma correction
         skyboxShader->SetInt("isHDR", isHDR ? 1 : 0);
         skyboxShader->SetInt("doGamma", isHDR ? 1 : 0);
@@ -586,21 +619,22 @@ void Renderer::ApplyEnvironment(const EnvironmentSettings& settings)
                            (m_Data->CurrentLighting.Exposure != settings.Lighting.Exposure) ||
                            (m_Data->CurrentLighting.Gamma != settings.Lighting.Gamma);
 
-    bool fogChanged = (m_Data->CurrentFog.Enabled != settings.Fog.Enabled) ||
-                      (m_Data->CurrentFog.Density != settings.Fog.Density) ||
-                      (m_Data->CurrentFog.Start != settings.Fog.Start) ||
-                      (m_Data->CurrentFog.End != settings.Fog.End) ||
-                      (m_Data->CurrentFog.FogColor.r != settings.Fog.FogColor.r) ||
-                      (m_Data->CurrentFog.FogColor.g != settings.Fog.FogColor.g) ||
-                      (m_Data->CurrentFog.FogColor.b != settings.Fog.FogColor.b) ||
-                      (m_Data->CurrentFog.FogColor.a != settings.Fog.FogColor.a);
+    bool fogChanged =
+        (m_Data->CurrentFog.Enabled != settings.Fog.Enabled) || (m_Data->CurrentFog.Density != settings.Fog.Density) ||
+        (m_Data->CurrentFog.Start != settings.Fog.Start) || (m_Data->CurrentFog.End != settings.Fog.End) ||
+        (m_Data->CurrentFog.FogColor.r != settings.Fog.FogColor.r) ||
+        (m_Data->CurrentFog.FogColor.g != settings.Fog.FogColor.g) ||
+        (m_Data->CurrentFog.FogColor.b != settings.Fog.FogColor.b) ||
+        (m_Data->CurrentFog.FogColor.a != settings.Fog.FogColor.a);
 
     if (!lightingChanged && !fogChanged)
+    {
         return;
+    }
 
     m_Data->CurrentLighting = settings.Lighting;
     m_Data->CurrentFog = settings.Fog;
-    
+
     // If lighting settings changed significantly (like ambient), we might want to flag lights dirty
     // to force a refresh if the shader uses it.
     m_Data->LightsDirty = true;
@@ -624,7 +658,7 @@ void Renderer::InitializeSkybox()
 }
 
 void Renderer::DrawModelInstanced(const std::shared_ptr<ModelAsset>& modelAsset, const std::vector<Matrix>& transforms,
-                                   const std::vector<MaterialSlot>& materialSlotOverrides)
+                                  const std::vector<MaterialSlot>& materialSlotOverrides)
 {
     if (!modelAsset || modelAsset->GetState() != AssetState::Ready || transforms.empty())
     {
@@ -683,8 +717,8 @@ std::vector<Matrix> Renderer::ComputeBoneMatrices(const std::shared_ptr<ModelAss
 
     // Reuse pre-allocated scratch buffers — avoids heap allocations each frame
     auto& boneMatrices = m_Data->ScratchBoneMatrices;
-    auto& globalPose   = m_Data->ScratchGlobalPose;
-    auto& localPoseA   = m_Data->ScratchLocalPoseA;
+    auto& globalPose = m_Data->ScratchGlobalPose;
+    auto& localPoseA = m_Data->ScratchLocalPoseA;
     boneMatrices.resize(boneCount);
     globalPose.resize(boneCount);
     localPoseA.resize(boneCount);
@@ -700,12 +734,12 @@ std::vector<Matrix> Renderer::ComputeBoneMatrices(const std::shared_ptr<ModelAss
 
             for (int i = 0; i < anim.boneCount; i++)
             {
-                Transform t     = anim.framePoses[currentFrame * anim.boneCount + i];
-                Transform tNext = anim.framePoses[nextFrame    * anim.boneCount + i];
+                Transform t = anim.framePoses[currentFrame * anim.boneCount + i];
+                Transform tNext = anim.framePoses[nextFrame * anim.boneCount + i];
 
                 outLocalPose[i].translation = Vector3Lerp(t.translation, tNext.translation, interp);
-                outLocalPose[i].rotation    = QuaternionSlerp(t.rotation, tNext.rotation, interp);
-                outLocalPose[i].scale       = Vector3Lerp(t.scale, tNext.scale, interp);
+                outLocalPose[i].rotation = QuaternionSlerp(t.rotation, tNext.rotation, interp);
+                outLocalPose[i].scale = Vector3Lerp(t.scale, tNext.scale, interp);
             }
             return true;
         }
@@ -716,7 +750,9 @@ std::vector<Matrix> Renderer::ComputeBoneMatrices(const std::shared_ptr<ModelAss
     if (!hasA)
     {
         for (int i = 0; i < boneCount; i++)
+        {
             localPoseA[i] = model.bindPose[i];
+        }
     }
 
     if (targetAnimationIndex >= 0 && blendWeight > 0.0f)
@@ -727,9 +763,10 @@ std::vector<Matrix> Renderer::ComputeBoneMatrices(const std::shared_ptr<ModelAss
         {
             for (int i = 0; i < boneCount; i++)
             {
-                localPoseA[i].translation = Vector3Lerp(localPoseA[i].translation, localPoseB[i].translation, blendWeight);
-                localPoseA[i].rotation    = QuaternionSlerp(localPoseA[i].rotation, localPoseB[i].rotation, blendWeight);
-                localPoseA[i].scale       = Vector3Lerp(localPoseA[i].scale, localPoseB[i].scale, blendWeight);
+                localPoseA[i].translation =
+                    Vector3Lerp(localPoseA[i].translation, localPoseB[i].translation, blendWeight);
+                localPoseA[i].rotation = QuaternionSlerp(localPoseA[i].rotation, localPoseB[i].rotation, blendWeight);
+                localPoseA[i].scale = Vector3Lerp(localPoseA[i].scale, localPoseB[i].scale, blendWeight);
             }
         }
     }
@@ -740,8 +777,8 @@ std::vector<Matrix> Renderer::ComputeBoneMatrices(const std::shared_ptr<ModelAss
         Matrix localMat = MatrixMultiply(
             QuaternionToMatrix(localPoseA[i].rotation),
             MatrixTranslate(localPoseA[i].translation.x, localPoseA[i].translation.y, localPoseA[i].translation.z));
-        localMat = MatrixMultiply(
-            MatrixScale(localPoseA[i].scale.x, localPoseA[i].scale.y, localPoseA[i].scale.z), localMat);
+        localMat =
+            MatrixMultiply(MatrixScale(localPoseA[i].scale.x, localPoseA[i].scale.y, localPoseA[i].scale.z), localMat);
 
         int parent = model.bones[i].parent;
         globalPose[i] = (parent == -1) ? localMat : MatrixMultiply(globalPose[parent], localMat);
@@ -750,9 +787,8 @@ std::vector<Matrix> Renderer::ComputeBoneMatrices(const std::shared_ptr<ModelAss
     // Compute final skinning matrices
     for (int i = 0; i < boneCount; i++)
     {
-        boneMatrices[i] = (i < (int)offsetMatrices.size())
-            ? MatrixMultiply(offsetMatrices[i], globalPose[i])
-            : globalPose[i];
+        boneMatrices[i] =
+            (i < (int)offsetMatrices.size()) ? MatrixMultiply(offsetMatrices[i], globalPose[i]) : globalPose[i];
     }
 
     return boneMatrices; // RVO applies — no copy in practice
@@ -815,7 +851,8 @@ void Renderer::BindShaderUniforms(ShaderAsset* activeShader, const std::vector<M
     }
     else
     {
-        // Provide identity matrices for the first few bones to avoid state leakage if the shader is used for static meshes
+        // Provide identity matrices for the first few bones to avoid state leakage if the shader is used for static
+        // meshes
         static Matrix identityMatrices[4] = {MatrixIdentity(), MatrixIdentity(), MatrixIdentity(), MatrixIdentity()};
         activeShader->SetMatrices("boneMatrices", identityMatrices, 4);
     }
@@ -846,7 +883,6 @@ void Renderer::BindShaderUniforms(ShaderAsset* activeShader, const std::vector<M
         }
     }
 }
-
 
 void Renderer::BindMaterialUniforms(ShaderAsset* activeShader, const Material& material, int meshIndex,
                                     const Model& model, const std::vector<MaterialSlot>& materialSlotOverrides)
@@ -965,13 +1001,12 @@ TextureCubemap Renderer::GenTextureCubemap(Shader shader, Texture2D panorama, in
     rlSetUniformMatrix(locProj, matFboProjection);
 
     // Define view matrix for every side of the cubemap
-    Matrix fboViews[6] = {
-        MatrixLookAt({0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, -1.0f,  0.0f}),
-        MatrixLookAt({0.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f}),
-        MatrixLookAt({0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}),
-        MatrixLookAt({0.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}),
-        MatrixLookAt({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, -1.0f, 0.0f}),
-        MatrixLookAt({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -1.0f}, {0.0f, -1.0f, 0.0f})};
+    Matrix fboViews[6] = {MatrixLookAt({0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f}),
+                          MatrixLookAt({0.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f}),
+                          MatrixLookAt({0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}),
+                          MatrixLookAt({0.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}),
+                          MatrixLookAt({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, -1.0f, 0.0f}),
+                          MatrixLookAt({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -1.0f}, {0.0f, -1.0f, 0.0f})};
 
     rlViewport(0, 0, size, size); // Set viewport to current fbo dimensions
 

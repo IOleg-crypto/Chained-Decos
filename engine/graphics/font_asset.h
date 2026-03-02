@@ -19,22 +19,6 @@ public:
         : Asset(GetStaticType())
     {
     }
-    virtual ~FontAsset();
-    Font& GetFont()
-    {
-        return m_Font;
-    }
-    const Font& GetFont() const
-    {
-        return m_Font;
-    }
-
-    void UploadToGPU()
-    {
-    } // Required by AssetManager::UpdateCache
-
-private:
-    Font m_Font = {0};
 };
 } // namespace CHEngine
 

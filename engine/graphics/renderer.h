@@ -71,7 +71,6 @@ struct RendererData
     std::vector<Transform> ScratchLocalPoseB;
 };
 
-
 class Renderer
 {
 public:
@@ -79,12 +78,17 @@ public:
 
     static bool IsInitialized();
 
+public:
+    static Renderer& Get();
+
+    static void Init();
+    static void Shutdown();
+
+private:
     Renderer();
     ~Renderer();
 
-    void Init();
-    void Shutdown();
-
+public:
     void BeginScene(const Camera3D& camera);
     void EndScene();
 
@@ -99,7 +103,7 @@ public:
     void DrawLine(Vector3 startPosition, Vector3 endPosition, Color color);
     void DrawGrid(int sliceCount, float spacing);
     void DrawModelInstanced(const std::shared_ptr<ModelAsset>& modelAsset, const std::vector<Matrix>& transforms,
-                             const std::vector<MaterialSlot>& materialSlotOverrides);
+                            const std::vector<MaterialSlot>& materialSlotOverrides);
     void DrawSkybox(const SkyboxSettings& settings, const Camera3D& camera);
     void DrawBillboard(const Camera3D& camera, Texture2D texture, Vector3 position, float size, Color tint);
     void DrawCubeWires(const Matrix& transform, Vector3 size, Color color);
@@ -130,10 +134,14 @@ public:
         return *m_Data->Shaders;
     }
 
-    Renderer2D& GetRenderer2D() { return *m_Renderer2D; }
-    UIRenderer& GetUIRenderer() { return *m_UIRenderer; }
-
-    static Renderer& Get();
+    Renderer2D& GetRenderer2D()
+    {
+        return *m_Renderer2D;
+    }
+    UIRenderer& GetUIRenderer()
+    {
+        return *m_UIRenderer;
+    }
 
 private:
     void ApplyFogUniforms(ShaderAsset* shader);
@@ -152,6 +160,8 @@ private:
                               const std::vector<MaterialSlot>& materialSlotOverrides);
 
 private:
+    static Renderer* s_Instance;
+
     std::unique_ptr<RendererData> m_Data;
     std::unique_ptr<Renderer2D> m_Renderer2D;
     std::unique_ptr<UIRenderer> m_UIRenderer;

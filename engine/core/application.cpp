@@ -14,7 +14,6 @@
 #include "engine/graphics/renderer.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/component_serializer.h"
-#include "engine/scene/project.h"
 #include "engine/scene/scene_events.h"
 #include "engine/script/scriptengine.h"
 #include "rlgl.h"
@@ -64,20 +63,14 @@ Application::Application(const ApplicationSpecification& specification)
     // --- System Initialization ---
     m_ThreadPool = std::make_unique<ThreadPool>();
     m_Window = std::make_unique<Window>(windowProps);
-    m_Renderer = std::make_unique<Renderer>();
-    m_ScriptEngine = std::make_unique<ScriptEngine>();
-    m_Audio = std::make_unique<Audio>();
-    m_PhysicsSystem = std::make_unique<PhysicsSystem>();
-    m_ComponentSerializer = std::make_unique<ComponentSerializer>();
     m_Running = true;
 
     // --- Core Systems Initialization ---
-    m_ComponentSerializer->Initialize();
-    m_Renderer->Init();
-    m_PhysicsSystem->Init();
-    m_ScriptEngine->Init();
-
-    m_Audio->Init();
+    ComponentSerializer::Initialize();
+    Renderer::Init();
+    PhysicsSystem::Init();
+    ScriptEngine::Init();
+    Audio::Init();
     if (IsAudioDeviceReady())
     {
         CH_CORE_INFO("Audio Device Initialized Successfully");
@@ -99,10 +92,11 @@ Application::~Application()
     if (m_Running)
     {
         CH_CORE_INFO("Shutting down Application...");
-        m_ScriptEngine->Shutdown();
-        m_Audio->Shutdown();
-        m_PhysicsSystem->Shutdown();
-        m_Renderer->Shutdown();
+        ScriptEngine::Shutdown();
+        Audio::Shutdown();
+        PhysicsSystem::Shutdown();
+        Renderer::Shutdown();
+        ComponentSerializer::Shutdown();
         m_LayerStack.Shutdown();
         m_Window.reset();
     }

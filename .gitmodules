@@ -44,3 +44,9 @@
 [submodule "include/coral"]
 	path = include/coral
 	url = https://github.com/StudioCherno/Coral.git
+[submodule "build/windows-ninja-release/bin/enet"]
+	path = build/windows-ninja-release/bin/enet
+	url = https://github.com/zpl-c/enet.git
+[submodule "build/windows-ninja-release/bin/include/GameNetworkingSockets"]
+	path = build/windows-ninja-release/bin/include/GameNetworkingSockets
+	url = https://github.com/ValveSoftware/GameNetworkingSockets.git

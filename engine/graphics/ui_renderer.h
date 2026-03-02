@@ -4,6 +4,8 @@
 #include "engine/scene/components/control_component.h"
 #include "engine/scene/scene.h"
 #include "imgui.h"
+#include <raylib.h>
+#include <unordered_map>
 
 namespace CHEngine
 {
@@ -12,6 +14,7 @@ struct UIRendererData
 {
     // Internal state like input buffers could go here
     std::map<entt::entity, std::vector<char>> InputBuffers;
+    std::unordered_map<std::string, Font> FontCache;
 };
 
 class UIRenderer
@@ -39,6 +42,8 @@ public:
     {
         return *m_Data;
     }
+
+    Font GetOrLoadFont(const std::string& path);
 
 public:
     // Helper scope for UI styling
@@ -89,7 +94,6 @@ private:
     void RenderPlotHistogram(const PlotHistogramControl& ph, bool& itemHandled);
     void RenderTabBar(const TabBarControl& tb);
     void RenderTabItem(TabItemControl& ti);
-
 
 private:
     static UIRenderer* s_Instance;

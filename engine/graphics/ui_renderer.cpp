@@ -1,5 +1,4 @@
 #include "ui_renderer.h"
-#include "renderer.h"
 #include "engine/core/profiler.h"
 #include "engine/graphics/asset_manager.h"
 #include "engine/graphics/font_asset.h"
@@ -7,6 +6,7 @@
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene.h"
+#include "renderer.h"
 #include <algorithm>
 #include <map>
 
@@ -25,6 +25,34 @@ void UIRenderer::Init()
 void UIRenderer::Shutdown()
 {
     CH_CORE_INFO("Shutting down UIRenderer...");
+    for (auto& [path, font] : m_Data->FontCache)
+    {
+        if (font.texture.id > 0)
+        {
+            UnloadFont(font);
+        }
+    }
+    m_Data->FontCache.clear();
+}
+
+Font UIRenderer::GetOrLoadFont(const std::string& path)
+{
+    if (m_Data->FontCache.count(path))
+    {
+        return m_Data->FontCache[path];
+    }
+
+    if (FileExists(path.c_str()))
+    {
+        Font font = LoadFont(path.c_str());
+        if (font.texture.id > 0)
+        {
+            m_Data->FontCache[path] = font;
+            return font;
+        }
+    }
+
+    return GetFontDefault();
 }
 
 UIRenderer::UIRenderer()
@@ -35,7 +63,6 @@ UIRenderer::UIRenderer()
 UIRenderer::~UIRenderer()
 {
 }
-
 
 Rectangle UIRenderer::GetEntityRect(Entity entity, const ImVec2& viewportSize, const ImVec2& viewportOffset)
 {
@@ -86,15 +113,15 @@ void UIRenderer::UIStyleScope::PushStyle(const UIStyle& style, bool interactable
 {
     // Inline helpers (imgui_converter.h was removed — no external dependency needed)
     auto toImVec4 = [](Color c) -> ImVec4 { return {c.r / 255.f, c.g / 255.f, c.b / 255.f, c.a / 255.f}; };
-    auto toImTex  = [](unsigned int id) -> ImTextureID { return (ImTextureID)(uintptr_t)id; };
+    auto toImTex = [](unsigned int id) -> ImTextureID { return (ImTextureID)(uintptr_t)id; };
 
-    ImGui::PushStyleColor(ImGuiCol_Button,        toImVec4(style.BackgroundColor));
+    ImGui::PushStyleColor(ImGuiCol_Button, toImVec4(style.BackgroundColor));
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, toImVec4(style.HoverColor));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive,  toImVec4(style.PressedColor));
-    ImGui::PushStyleColor(ImGuiCol_ChildBg,       toImVec4(style.BackgroundColor));
-    ImGui::PushStyleColor(ImGuiCol_Border,        toImVec4(style.BorderColor));
-    ImGui::PushStyleColor(ImGuiCol_FrameBg,       toImVec4(style.BackgroundColor));
-    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,toImVec4(style.HoverColor));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, toImVec4(style.PressedColor));
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, toImVec4(style.BackgroundColor));
+    ImGui::PushStyleColor(ImGuiCol_Border, toImVec4(style.BorderColor));
+    ImGui::PushStyleColor(ImGuiCol_FrameBg, toImVec4(style.BackgroundColor));
+    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, toImVec4(style.HoverColor));
     ImGui::PushStyleColor(ImGuiCol_FrameBgActive, toImVec4(style.PressedColor));
     ColorPushCount += 8;
 
@@ -113,7 +140,8 @@ void UIRenderer::UIStyleScope::PushStyle(const UIStyle& style, bool interactable
 
 void UIRenderer::UIStyleScope::PushText(const TextStyle& text)
 {
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{text.TextColor.r/255.f, text.TextColor.g/255.f, text.TextColor.b/255.f, text.TextColor.a/255.f});
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{text.TextColor.r / 255.f, text.TextColor.g / 255.f,
+                                                text.TextColor.b / 255.f, text.TextColor.a / 255.f});
     ColorPushCount++;
 
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign,
@@ -160,9 +188,13 @@ void UIRenderer::UIStyleScope::PushFont(const std::string& fontName, float fontS
 
     auto am = project->GetAssetManager();
     auto fontAsset = am->Get<FontAsset>(fontName);
-
-    // Note: For real ImGui font switching, we need to ensure the font is loaded into ImGui atlas.
-    // For now we rely on SetWindowFontScale as requested.
+    if (fontAsset)
+    {
+        // For Raylib-based rendering (if we added it later), we'd use this:
+        Font font = GetOrLoadFont(fontAsset->GetPath());
+        // For ImGui, we still rely on scaling for now as per previous implementation,
+        // but the Font is now managed by UIRenderer, not the Asset.
+    }
 }
 
 // --- Modular Rendering Helpers ---
@@ -176,8 +208,7 @@ void UIRenderer::RenderPanel(const PanelControl& panel, const ImVec2& pos, const
     if (panel.Texture && panel.Texture->IsReady())
     {
         ImTextureID texId = (ImTextureID)(uintptr_t)panel.Texture->GetTexture().id;
-        drawList->AddImageRounded(texId, pos,
-                                  {pos.x + size.x, pos.y + size.y}, {0, 0}, {1, 1}, IM_COL32_WHITE,
+        drawList->AddImageRounded(texId, pos, {pos.x + size.x, pos.y + size.y}, {0, 0}, {1, 1}, IM_COL32_WHITE,
                                   panel.Style.Rounding);
     }
     else
@@ -274,8 +305,10 @@ void UIRenderer::RenderImage(const ImageControl& image, const ImVec2& size)
         if (texAsset)
         {
             ImTextureID tid = (ImTextureID)(uintptr_t)texAsset->GetTexture().id;
-            ImVec4 tint   = {image.TintColor.r/255.f,   image.TintColor.g/255.f,   image.TintColor.b/255.f,   image.TintColor.a/255.f};
-            ImVec4 border = {image.BorderColor.r/255.f, image.BorderColor.g/255.f, image.BorderColor.b/255.f, image.BorderColor.a/255.f};
+            ImVec4 tint = {image.TintColor.r / 255.f, image.TintColor.g / 255.f, image.TintColor.b / 255.f,
+                           image.TintColor.a / 255.f};
+            ImVec4 border = {image.BorderColor.r / 255.f, image.BorderColor.g / 255.f, image.BorderColor.b / 255.f,
+                             image.BorderColor.a / 255.f};
             ImGui::Image(tid, size, {0, 0}, {1, 1}, tint, border);
         }
     }
@@ -339,9 +372,8 @@ void UIRenderer::RenderComboBox(ComboBoxControl& cb, const ImVec2& size, bool& i
     scope.PushStyle(cb.BoxStyle);
     scope.PushText(cb.Style);
     ImGui::SetNextItemWidth(size.x);
-    const char* preview = (cb.SelectedIndex >= 0 && cb.SelectedIndex < (int)cb.Items.size())
-                              ? cb.Items[cb.SelectedIndex].c_str()
-                              : "";
+    const char* preview =
+        (cb.SelectedIndex >= 0 && cb.SelectedIndex < (int)cb.Items.size()) ? cb.Items[cb.SelectedIndex].c_str() : "";
     if (ImGui::BeginCombo(cb.Label.c_str(), preview))
     {
         for (int i = 0; i < (int)cb.Items.size(); i++)
@@ -369,8 +401,10 @@ void UIRenderer::RenderImageButton(ImageButtonControl& ib, const ImVec2& size, b
         if (tex)
         {
             ImTextureID tid = (ImTextureID)(uintptr_t)tex->GetTexture().id;
-            ImVec4 bg   = {ib.BackgroundColor.r/255.f, ib.BackgroundColor.g/255.f, ib.BackgroundColor.b/255.f, ib.BackgroundColor.a/255.f};
-            ImVec4 tint = {ib.TintColor.r/255.f,       ib.TintColor.g/255.f,       ib.TintColor.b/255.f,       ib.TintColor.a/255.f};
+            ImVec4 bg = {ib.BackgroundColor.r / 255.f, ib.BackgroundColor.g / 255.f, ib.BackgroundColor.b / 255.f,
+                         ib.BackgroundColor.a / 255.f};
+            ImVec4 tint = {ib.TintColor.r / 255.f, ib.TintColor.g / 255.f, ib.TintColor.b / 255.f,
+                           ib.TintColor.a / 255.f};
             if (ImGui::ImageButton(ib.Label.c_str(), tid, size, {0, 0}, {1, 1}, bg, tint))
             {
                 ib.PressedThisFrame = true;
@@ -411,8 +445,7 @@ void UIRenderer::RenderColorPicker(ColorPickerControl& cp, bool& itemHandled)
                   cp.SelectedColor.a / 255.f};
     if (cp.ShowPicker ? ImGui::ColorPicker4(cp.Label.c_str(), c) : ImGui::ColorEdit4(cp.Label.c_str(), c))
     {
-        cp.SelectedColor = {(uint8_t)(c[0] * 255), (uint8_t)(c[1] * 255), (uint8_t)(c[2] * 255),
-                            (uint8_t)(c[3] * 255)};
+        cp.SelectedColor = {(uint8_t)(c[0] * 255), (uint8_t)(c[1] * 255), (uint8_t)(c[2] * 255), (uint8_t)(c[3] * 255)};
         cp.Changed = true;
     }
     if (ImGui::IsItemActive())
@@ -423,7 +456,8 @@ void UIRenderer::RenderColorPicker(ColorPickerControl& cp, bool& itemHandled)
 
 void UIRenderer::RenderSeparator(const SeparatorControl& sep)
 {
-    ImVec4 lineImColor = {sep.LineColor.r/255.f, sep.LineColor.g/255.f, sep.LineColor.b/255.f, sep.LineColor.a/255.f};
+    ImVec4 lineImColor = {sep.LineColor.r / 255.f, sep.LineColor.g / 255.f, sep.LineColor.b / 255.f,
+                          sep.LineColor.a / 255.f};
     ImGui::PushStyleColor(ImGuiCol_Separator, lineImColor);
     ImGui::Separator();
     ImGui::PopStyleColor();
@@ -480,8 +514,8 @@ void UIRenderer::RenderPlotLines(const PlotLinesControl& pl, bool& itemHandled)
     UIStyleScope scope;
     scope.PushStyle(pl.BoxStyle);
     scope.PushText(pl.Style);
-    ImGui::PlotLines(pl.Label.c_str(), pl.Values.data(), (int)pl.Values.size(), 0, pl.OverlayText.c_str(),
-                     pl.ScaleMin, pl.ScaleMax, {pl.GraphSize.x, pl.GraphSize.y});
+    ImGui::PlotLines(pl.Label.c_str(), pl.Values.data(), (int)pl.Values.size(), 0, pl.OverlayText.c_str(), pl.ScaleMin,
+                     pl.ScaleMax, {pl.GraphSize.x, pl.GraphSize.y});
     if (ImGui::IsItemActive())
     {
         itemHandled = true;
@@ -535,8 +569,8 @@ void UIRenderer::DrawCanvas(Scene* scene, const ImVec2& referencePosition, const
     // --- Canvas Scaling ---
     const CanvasSettings& canvas = scene->GetSettings().Canvas;
     float scaleFactor = 1.0f;
-    if (canvas.ScaleMode == CanvasScaleMode::ScaleWithScreenSize &&
-        canvas.ReferenceResolution.x > 0 && canvas.ReferenceResolution.y > 0)
+    if (canvas.ScaleMode == CanvasScaleMode::ScaleWithScreenSize && canvas.ReferenceResolution.x > 0 &&
+        canvas.ReferenceResolution.y > 0)
     {
         float scaleX = currentRefSize.x / canvas.ReferenceResolution.x;
         float scaleY = currentRefSize.y / canvas.ReferenceResolution.y;
@@ -576,7 +610,7 @@ void UIRenderer::DrawCanvas(Scene* scene, const ImVec2& referencePosition, const
 
         // Scale virtual rect back to actual screen pixels
         ImVec2 screenPos = {rect.x * scaleFactor, rect.y * scaleFactor};
-        ImVec2 size      = {rect.width  * scaleFactor, rect.height * scaleFactor};
+        ImVec2 size = {rect.width * scaleFactor, rect.height * scaleFactor};
 
         ImGui::SetCursorScreenPos(screenPos);
         ImGui::BeginGroup();
@@ -667,67 +701,109 @@ bool UIRenderer::RenderUIComponent(Entity entity, const ImVec2& screenPos, const
     bool itemHandled = false;
 
     if (entity.HasComponent<PanelControl>())
+    {
         RenderPanel(entity.GetComponent<PanelControl>(), screenPos, size);
+    }
 
     if (entity.HasComponent<LabelControl>())
+    {
         RenderLabel(entity.GetComponent<LabelControl>(), size);
+    }
 
     if (entity.HasComponent<ButtonControl>())
+    {
         RenderButton(entity, entity.GetComponent<ButtonControl>(), size, itemHandled);
+    }
 
     if (entity.HasComponent<SliderControl>())
+    {
         RenderSlider(entity.GetComponent<SliderControl>(), size, itemHandled);
+    }
 
     if (entity.HasComponent<CheckboxControl>())
+    {
         RenderCheckbox(entity.GetComponent<CheckboxControl>(), itemHandled);
+    }
 
     if (entity.HasComponent<ImageControl>())
+    {
         RenderImage(entity.GetComponent<ImageControl>(), size);
+    }
 
     if (entity.HasComponent<InputTextControl>())
+    {
         RenderInputText(entity, entity.GetComponent<InputTextControl>(), size, itemHandled);
+    }
 
     if (entity.HasComponent<ProgressBarControl>())
+    {
         RenderProgressBar(entity.GetComponent<ProgressBarControl>(), size);
+    }
 
     if (entity.HasComponent<ComboBoxControl>())
+    {
         RenderComboBox(entity.GetComponent<ComboBoxControl>(), size, itemHandled);
+    }
 
     if (entity.HasComponent<ImageButtonControl>())
+    {
         RenderImageButton(entity.GetComponent<ImageButtonControl>(), size, itemHandled);
+    }
 
     if (entity.HasComponent<RadioButtonControl>())
+    {
         RenderRadioButton(entity.GetComponent<RadioButtonControl>(), itemHandled);
+    }
 
     if (entity.HasComponent<ColorPickerControl>())
+    {
         RenderColorPicker(entity.GetComponent<ColorPickerControl>(), itemHandled);
+    }
 
     if (entity.HasComponent<SeparatorControl>())
+    {
         RenderSeparator(entity.GetComponent<SeparatorControl>());
+    }
 
     if (entity.HasComponent<DragFloatControl>())
+    {
         RenderDragFloat(entity.GetComponent<DragFloatControl>(), size, itemHandled);
+    }
 
     if (entity.HasComponent<DragIntControl>())
+    {
         RenderDragInt(entity.GetComponent<DragIntControl>(), size, itemHandled);
+    }
 
     if (entity.HasComponent<TreeNodeControl>())
+    {
         RenderTreeNode(entity.GetComponent<TreeNodeControl>(), itemHandled);
+    }
 
     if (entity.HasComponent<CollapsingHeaderControl>())
+    {
         RenderCollapsingHeader(entity.GetComponent<CollapsingHeaderControl>(), itemHandled);
+    }
 
     if (entity.HasComponent<PlotLinesControl>())
+    {
         RenderPlotLines(entity.GetComponent<PlotLinesControl>(), itemHandled);
+    }
 
     if (entity.HasComponent<PlotHistogramControl>())
+    {
         RenderPlotHistogram(entity.GetComponent<PlotHistogramControl>(), itemHandled);
+    }
 
     if (entity.HasComponent<TabBarControl>())
+    {
         RenderTabBar(entity.GetComponent<TabBarControl>());
+    }
 
     if (entity.HasComponent<TabItemControl>())
+    {
         RenderTabItem(entity.GetComponent<TabItemControl>());
+    }
 
     return itemHandled;
 }

@@ -7,19 +7,20 @@
 
 namespace CHEngine
 {
-class SoundAsset;
-
 struct AudioComponent
 {
     AssetHandle SoundHandle = 0;
-    std::string SoundPath;
-    float Volume = 1.0f;
-    float Pitch = 1.0f;
+    std::string SoundPath; // Cached path for the audio system
+
     bool Loop = false;
     bool PlayOnStart = true;
+    float Volume = 1.0f;
+    float Pitch = 1.0f;
+
+    AudioComponent() = default;
+    AudioComponent(const AudioComponent&) = default;
 
     // Runtime
-    std::shared_ptr<SoundAsset> Asset;
     bool IsPlaying = false;
 };
 

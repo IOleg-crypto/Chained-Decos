@@ -3,12 +3,13 @@
 
 #include "engine/core/base.h"
 #include "engine/core/timestep.h"
-#include "engine/scene/scene.h"
-#include <memory>
+#include "raylib.h"
+#include <string>
+#include <unordered_map>
 
 namespace CHEngine
 {
-class SoundAsset;
+class Scene;
 
 // Stateless action class for global audio management.
 class Audio
@@ -18,21 +19,26 @@ public:
     ~Audio();
 
     // Initializes the audio backend.
-    void Init();
+    static void Init();
 
     // Shuts down the audio backend.
-    void Shutdown();
+    static void Shutdown();
 
     // Updates all active audio sources in the scene.
     void Update(Scene* scene, Timestep ts);
 
-    // Plays a specified sound asset.
-    void Play(std::shared_ptr<SoundAsset> asset, float volume = 1.0f, float pitch = 1.0f, bool loop = false);
+    // Plays a sound by its path.
+    void Play(const std::string& path, float volume = 1.0f, float pitch = 1.0f, bool loop = false);
 
-    // Stops a specified sound asset.
-    void Stop(std::shared_ptr<SoundAsset> asset);
+    // Stops a sound by its path.
+    void Stop(const std::string& path);
 
     static Audio& Get();
+
+private:
+    Sound GetOrLoadSound(const std::string& path);
+    static Audio* s_Instance;
+    std::unordered_map<std::string, Sound> m_Sounds;
 };
 } // namespace CHEngine
 

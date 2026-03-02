@@ -33,7 +33,10 @@ public:
     ~ComponentSerializer();
 
     // Initialize registry with all component types
-    void Initialize();
+    static void Initialize();
+
+    // Shutdown and cleanup
+    static void Shutdown();
 
     // Register component via declarative schema (PropertyArchive)
     // This is the primary method that automatically creates serialization, deserialization, and copy logic.
@@ -60,6 +63,7 @@ public:
     static ComponentSerializer& Get();
 
 private:
+    static ComponentSerializer* s_Instance;
     static void SerializeTextStyle(YAML::Emitter& out, const TextStyle& style);
     static void DeserializeTextStyle(TextStyle& style, YAML::Node node);
 

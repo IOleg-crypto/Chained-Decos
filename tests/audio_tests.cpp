@@ -1,34 +1,24 @@
 #include "engine/audio/audio.h"
+#include "engine/core/application.h"
+#include "engine/scene/project.h"
 #include "gtest/gtest.h"
+
 
 using namespace CHEngine;
 
 TEST(AudioTest, InitializationAndShutdown)
 {
-    Audio audio;
-    // Initialize audio device
-    audio.Init();
-    
-    // We expect it to be safe to call shutdown
-    audio.Shutdown();
-    
-    // Test multiple init/shutdowns to ensure no state leaking or crashes
-    audio.Init();
-    audio.Shutdown();
+    // Audio is already initialized by TestEnvironment/Application
+    EXPECT_NO_THROW(Audio::Get());
 }
 
-TEST(AudioTest, PlayWithoutAsset)
+TEST(AudioTest, PlayWithPath)
 {
-    Audio audio;
-    audio.Init();
+    Audio& audio = Audio::Get();
 
-    // Trying to play a null asset should safely be ignored and not crash
-    std::shared_ptr<SoundAsset> nullAsset = nullptr;
-    
+    // This should not crash even if the file doesn't exist (it will just warn/log)
     EXPECT_NO_THROW({
-        audio.Play(nullAsset);
-        audio.Stop(nullAsset);
+        audio.Play("non_existent_sound.wav");
+        audio.Stop("non_existent_sound.wav");
     });
-
-    audio.Shutdown();
 }

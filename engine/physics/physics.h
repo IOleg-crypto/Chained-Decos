@@ -32,13 +32,16 @@ struct RaycastResult
 class PhysicsSystem
 {
 public:
+    static void Init();
+    static void Shutdown();
+
+    static PhysicsSystem& Get();
+
+private:
     PhysicsSystem();
     ~PhysicsSystem();
 
-    void Init();
-    void Shutdown();
-
-    static PhysicsSystem& Get();
+    static PhysicsSystem* s_Instance;
 };
 
 class Physics

@@ -25,9 +25,9 @@ protected:
 
 TEST_F(RendererTest, RendererInitialization)
 {
-    Renderer renderer;
-    renderer.Init();
-    renderer.Shutdown();
+
+    Renderer::Init();
+    Renderer::Shutdown();
 }
 
 TEST_F(RendererTest, Renderer2DInitialization)
@@ -39,60 +39,60 @@ TEST_F(RendererTest, Renderer2DInitialization)
 
 TEST_F(RendererTest, Lifetime)
 {
-    Renderer renderer;
-    renderer.Init();
-    renderer.Shutdown();
 
-    renderer.Init();
-    renderer.Shutdown();
+    Renderer::Init();
+    Renderer::Shutdown();
+
+    Renderer::Init();
+    Renderer::Shutdown();
 }
 
 TEST_F(RendererTest, LightManagement)
 {
-    Renderer renderer;
-    renderer.Init();
 
-    EXPECT_EQ(renderer.GetData().LightCount, 0);
+    Renderer::Init();
+
+    EXPECT_EQ(Renderer::Get().GetData().LightCount, 0);
 
     RenderLight light;
     light.color[0] = 1.0f;
     light.intensity = 5.0f;
 
-    renderer.SetLight(0, light);
-    renderer.SetLightCount(1);
+    Renderer::Get().SetLight(0, light);
+    Renderer::Get().SetLightCount(1);
 
-    EXPECT_EQ(renderer.GetData().LightCount, 1);
-    EXPECT_FLOAT_EQ(renderer.GetData().Lights[0].intensity, 5.0f);
+    EXPECT_EQ(Renderer::Get().GetData().LightCount, 1);
+    EXPECT_FLOAT_EQ(Renderer::Get().GetData().Lights[0].intensity, 5.0f);
 
-    renderer.ClearLights();
-    EXPECT_EQ(renderer.GetData().LightCount, 0);
+    Renderer::Get().ClearLights();
+    EXPECT_EQ(Renderer::Get().GetData().LightCount, 0);
 
-    renderer.Shutdown();
+    Renderer::Shutdown();
 }
 
 TEST_F(RendererTest, DiagnosticMode)
 {
-    Renderer renderer;
-    renderer.Init();
 
-    renderer.SetDiagnosticMode(2.0f);
-    EXPECT_FLOAT_EQ(renderer.GetData().DiagnosticMode, 2.0f);
+    Renderer::Init();
 
-    renderer.Shutdown();
+    Renderer::Get().SetDiagnosticMode(2.0f);
+    EXPECT_FLOAT_EQ(Renderer::Get().GetData().DiagnosticMode, 2.0f);
+
+    Renderer::Shutdown();
 }
 
 TEST_F(RendererTest, EnvironmentApplication)
 {
-    Renderer renderer;
-    renderer.Init();
+
+    Renderer::Init();
 
     EnvironmentSettings env;
     env.Lighting.Ambient = 0.5f;
 
-    renderer.ApplyEnvironment(env);
-    EXPECT_FLOAT_EQ(renderer.GetData().CurrentLighting.Ambient, 0.5f);
+    Renderer::Get().ApplyEnvironment(env);
+    EXPECT_FLOAT_EQ(Renderer::Get().GetData().CurrentLighting.Ambient, 0.5f);
 
-    renderer.Shutdown();
+    Renderer::Shutdown();
 }
 
 #endif // CH_CI

@@ -1,7 +1,9 @@
 #include "engine/graphics/asset_manager.h"
 #include "engine/audio/audio_importer.h"
 #include "engine/audio/sound_asset.h"
+#include "engine/core/constants.h"
 #include "engine/core/log.h"
+#include "engine/core/thread_pool.h"
 #include "engine/graphics/environment.h"
 #include "engine/graphics/environment_importer.h"
 #include "engine/graphics/font_asset.h"
@@ -12,9 +14,8 @@
 #include "engine/graphics/shader_importer.h"
 #include "engine/graphics/texture_asset.h"
 #include "engine/graphics/texture_importer.h"
-#include "engine/core/thread_pool.h"
 #include "engine/scene/project.h"
-#include "engine/core/constants.h"
+
 
 #include <algorithm>
 #include <cmath>
@@ -91,7 +92,9 @@ void AssetManager::ClearSearchPaths()
 std::string AssetManager::ResolvePath(const std::string& path) const
 {
     if (path.empty())
+    {
         return "";
+    }
 
     {
         std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
@@ -129,7 +132,9 @@ std::string AssetManager::ResolvePath(const std::string& path) const
                 // Try in engine/resources (standard layout)
                 std::filesystem::path p2 = engineRoot / "engine" / "resources" / sub;
                 if (std::filesystem::exists(p2))
+                {
                     foundPath = p2.string();
+                }
             }
         }
     }
@@ -163,7 +168,9 @@ std::string AssetManager::ResolvePath(const std::string& path) const
             std::filesystem::path projectRoot = Project::GetProjectDirectory();
             std::filesystem::path p2 = projectRoot / path;
             if (std::filesystem::exists(p2))
+            {
                 foundPath = p2.string();
+            }
         }
     }
 
@@ -172,14 +179,18 @@ std::string AssetManager::ResolvePath(const std::string& path) const
     {
         std::filesystem::path rootRel = m_RootPath / path;
         if (std::filesystem::exists(rootRel))
+        {
             foundPath = rootRel.string();
+        }
     }
 
     if (foundPath.empty())
     {
         // Don't warn for engine/ assets during early init, they might load lazily
         if (!path.starts_with("engine/"))
+        {
             CH_CORE_WARN("AssetManager: Could not resolve asset path '{}'.", path);
+        }
         foundPath = path;
     }
 
@@ -187,12 +198,12 @@ std::string AssetManager::ResolvePath(const std::string& path) const
     std::string normalized = Project::NormalizePath(foundPath).generic_string();
 
     CH_CORE_TRACE("AssetManager: Resolved '{}' -> '{}'", path, normalized);
-    
+
     {
         std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
         m_PathCache[path] = normalized;
     }
-    
+
     return normalized;
 }
 
@@ -210,12 +221,12 @@ std::shared_ptr<Asset> AssetManager::GetAsset(const std::string& path, AssetType
         auto& cache = m_AssetCaches[type];
         if (auto it = cache.find(resolved); it != cache.end())
         {
-            //CH_CORE_INFO("AssetManager: Cache HIT for '{}' (state: {})", resolved, (int)it->second->GetState());
+            // CH_CORE_INFO("AssetManager: Cache HIT for '{}' (state: {})", resolved, (int)it->second->GetState());
             return it->second;
         }
     }
 
-    //CH_CORE_INFO("AssetManager: Cache MISS for '{}', creating new asset", resolved);
+    // CH_CORE_INFO("AssetManager: Cache MISS for '{}', creating new asset", resolved);
     std::shared_ptr<Asset> asset = nullptr;
 
     // Async path for specific types
@@ -244,7 +255,9 @@ std::shared_ptr<Asset> AssetManager::GetAsset(const std::string& path, AssetType
             auto& cache = m_AssetCaches[type];
             if (auto it = cache.find(resolved); it != cache.end())
             {
-                CH_CORE_WARN("AssetManager: [Race Condition Avoided] Asset for '{}' was created by another thread while we were preparing it.", resolved);
+                CH_CORE_WARN("AssetManager: [Race Condition Avoided] Asset for '{}' was created by another thread "
+                             "while we were preparing it.",
+                             resolved);
                 return it->second;
             }
             m_AssetCaches[type][resolved] = asset;
@@ -266,17 +279,18 @@ std::shared_ptr<Asset> AssetManager::GetAsset(const std::string& path, AssetType
             if (type == AssetType::Texture)
             {
                 auto texAsset = std::static_pointer_cast<TextureAsset>(sharedAsset);
-                Image img = { 0 };
+                Image img = {0};
                 std::string ext = std::filesystem::path(pathCopy).extension().string();
                 std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
                 bool isHDR = (ext == ".hdr");
 
-                CH_CORE_INFO("AssetManager: [Background] Processing texture '{}', extension detected: '{}', isHDR: {}", 
+                CH_CORE_INFO("AssetManager: [Background] Processing texture '{}', extension detected: '{}', isHDR: {}",
                              pathCopy, ext, isHDR ? "YES" : "NO");
 
                 if (isHDR)
                 {
-                    CH_CORE_INFO("AssetManager: Recognized {} as HDR file, will load directly on main thread", pathCopy);
+                    CH_CORE_INFO("AssetManager: Recognized {} as HDR file, will load directly on main thread",
+                                 pathCopy);
                     success = true;
                 }
                 else
@@ -284,8 +298,8 @@ std::shared_ptr<Asset> AssetManager::GetAsset(const std::string& path, AssetType
                     img = TextureImporter::LoadImageFromDisk(pathCopy);
                     if (img.data != nullptr)
                     {
-                        CH_CORE_INFO("AssetManager: Loaded image {} ({}x{}, format={})", 
-                                     pathCopy, img.width, img.height, img.format);
+                        CH_CORE_INFO("AssetManager: Loaded image {} ({}x{}, format={})", pathCopy, img.width,
+                                     img.height, img.format);
 
                         ImageFormat(&img, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
                         texAsset->SetPendingImage(img);
@@ -374,8 +388,9 @@ std::shared_ptr<Asset> AssetManager::GetAsset(const std::string& path, AssetType
         auto& cache = m_AssetCaches[type];
         if (auto it = cache.find(resolved); it != cache.end())
         {
-             CH_CORE_WARN("AssetManager: [Race Condition Avoided Sync] Asset for '{}' was created by another thread.", resolved);
-             return it->second;
+            CH_CORE_WARN("AssetManager: [Race Condition Avoided Sync] Asset for '{}' was created by another thread.",
+                         resolved);
+            return it->second;
         }
         m_AssetMetadata[metadata.Handle] = metadata;
         cache[resolved] = asset;
@@ -452,7 +467,7 @@ void AssetManager::Update()
         }
         else if (asset->GetType() == AssetType::Audio)
         {
-            std::static_pointer_cast<SoundAsset>(asset)->UploadToGPU();
+            asset->SetState(AssetState::Ready);
         }
         CH_CORE_INFO("AssetManager: Background load completed and uploaded to GPU for '{}'", asset->GetPath());
     }
