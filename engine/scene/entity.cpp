@@ -1,5 +1,4 @@
 #include "engine/scene/entity.h"
-#include "engine/scene/scene.h"
 
 namespace CHEngine
 {

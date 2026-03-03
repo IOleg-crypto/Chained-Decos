@@ -11,7 +11,6 @@
 
 namespace CHEngine
 {
-class Scene;
 
 class Entity
 {
