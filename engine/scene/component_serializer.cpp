@@ -640,9 +640,7 @@ void ComponentSerializer::Initialize()
     });
 
     s_Instance->Register<PanelControl>("PanelControl", [](auto& archive, auto& component) {
-        archive.Handle("TextureHandle", component.TextureHandle)
-            .Path("TexturePath", component.TexturePath)
-            .Property("FullScreen", component.FullScreen);
+        archive.Path("TexturePath", component.TexturePath).Property("FullScreen", component.FullScreen);
         archive.Nested("UIStyle", component.Style, SerializeUIStyle, DeserializeUIStyle);
     });
 

@@ -10,6 +10,7 @@ namespace CHEngine
 void SceneActions::New()
 {
     auto newScene = std::make_shared<Scene>();
+    newScene->SetEventCallback([](Event& e) { EditorLayer::Get().OnEvent(e); });
 
     // Ensure every scene starts with a Main Camera
     Entity camera = newScene->CreateEntity("Main Camera");
@@ -35,6 +36,7 @@ void SceneActions::Open()
 void SceneActions::Open(const std::filesystem::path& path)
 {
     auto newScene = std::make_shared<Scene>();
+    newScene->SetEventCallback([](Event& e) { EditorLayer::Get().OnEvent(e); });
     // KISS: Load Game Module BEFORE deserialization to ensure ScriptRegistry is populated
     EditorLayer::Get().SetScene(newScene);
     SceneSerializer serializer(newScene.get());

@@ -28,7 +28,10 @@
 #include "engine/graphics/render_command.h"
 #include "engine/graphics/renderer.h"
 #include "engine/graphics/renderer2d.h"
+#include "engine/graphics/scene_renderer.h"
+#include "engine/graphics/ui_renderer.h"
 #include <GLFW/glfw3.h>
+
 
 namespace CHEngine
 {
@@ -68,6 +71,9 @@ Application::Application(const ApplicationSpecification& specification)
     // --- Core Systems Initialization ---
     ComponentSerializer::Initialize();
     Renderer::Init();
+    Renderer2D::Init();
+    UIRenderer::Init();
+    SceneRenderer::Init();
     PhysicsSystem::Init();
     ScriptEngine::Init();
     Audio::Init();
@@ -95,6 +101,9 @@ Application::~Application()
         ScriptEngine::Shutdown();
         Audio::Shutdown();
         PhysicsSystem::Shutdown();
+        SceneRenderer::Shutdown();
+        UIRenderer::Shutdown();
+        Renderer2D::Shutdown();
         Renderer::Shutdown();
         ComponentSerializer::Shutdown();
         m_LayerStack.Shutdown();

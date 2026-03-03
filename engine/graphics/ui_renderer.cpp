@@ -12,27 +12,41 @@
 
 namespace CHEngine
 {
+UIRenderer* UIRenderer::s_Instance = nullptr;
+
 UIRenderer& UIRenderer::Get()
 {
-    return Renderer::Get().GetUIRenderer();
+    CH_CORE_ASSERT(s_Instance, "UIRenderer is not initialized!");
+    return *s_Instance;
 }
 
 void UIRenderer::Init()
 {
+    if (s_Instance)
+    {
+        CH_CORE_WARN("UIRenderer is already initialized!");
+        return;
+    }
+    s_Instance = new UIRenderer();
     CH_CORE_INFO("Initializing UIRenderer (ImGui Backend)...");
 }
 
 void UIRenderer::Shutdown()
 {
+    if (!s_Instance)
+    {
+        return;
+    }
+
     CH_CORE_INFO("Shutting down UIRenderer...");
-    for (auto& [path, font] : m_Data->FontCache)
+    for (auto& [path, font] : s_Instance->m_Data->FontCache)
     {
         if (font.texture.id > 0)
         {
             UnloadFont(font);
         }
     }
-    m_Data->FontCache.clear();
+    s_Instance->m_Data->FontCache.clear();
 }
 
 Font UIRenderer::GetOrLoadFont(const std::string& path)
@@ -191,7 +205,7 @@ void UIRenderer::UIStyleScope::PushFont(const std::string& fontName, float fontS
     if (fontAsset)
     {
         // For Raylib-based rendering (if we added it later), we'd use this:
-        Font font = GetOrLoadFont(fontAsset->GetPath());
+        Font font = UIRenderer::Get().GetOrLoadFont(fontAsset->GetPath());
         // For ImGui, we still rely on scaling for now as per previous implementation,
         // but the Font is now managed by UIRenderer, not the Asset.
     }
@@ -205,11 +219,15 @@ void UIRenderer::RenderPanel(const PanelControl& panel, const ImVec2& pos, const
     ImU32 bgColor = ImGui::GetColorU32(ImGuiCol_ChildBg);
     ImU32 borderColor = ImGui::GetColorU32(ImGuiCol_Border);
 
-    if (panel.Texture && panel.Texture->IsReady())
+    if (!panel.TexturePath.empty())
     {
-        ImTextureID texId = (ImTextureID)(uintptr_t)panel.Texture->GetTexture().id;
-        drawList->AddImageRounded(texId, pos, {pos.x + size.x, pos.y + size.y}, {0, 0}, {1, 1}, IM_COL32_WHITE,
-                                  panel.Style.Rounding);
+        Texture2D texture = Renderer::Get().GetOrLoadTexture(panel.TexturePath);
+        if (texture.id > 0)
+        {
+            ImTextureID texId = (ImTextureID)(uintptr_t)texture.id;
+            drawList->AddImageRounded(texId, pos, {pos.x + size.x, pos.y + size.y}, {0, 0}, {1, 1}, IM_COL32_WHITE,
+                                      panel.Style.Rounding);
+        }
     }
     else
     {
@@ -298,13 +316,12 @@ void UIRenderer::RenderCheckbox(CheckboxControl& cb, bool& itemHandled)
 
 void UIRenderer::RenderImage(const ImageControl& image, const ImVec2& size)
 {
-    auto assetManager = Project::GetActive() ? Project::GetActive()->GetAssetManager() : nullptr;
-    if (assetManager && !image.TexturePath.empty())
+    if (!image.TexturePath.empty())
     {
-        auto texAsset = assetManager->Get<TextureAsset>(image.TexturePath);
-        if (texAsset)
+        Texture2D texture = Renderer::Get().GetOrLoadTexture(image.TexturePath);
+        if (texture.id > 0)
         {
-            ImTextureID tid = (ImTextureID)(uintptr_t)texAsset->GetTexture().id;
+            ImTextureID tid = (ImTextureID)(uintptr_t)texture.id;
             ImVec4 tint = {image.TintColor.r / 255.f, image.TintColor.g / 255.f, image.TintColor.b / 255.f,
                            image.TintColor.a / 255.f};
             ImVec4 border = {image.BorderColor.r / 255.f, image.BorderColor.g / 255.f, image.BorderColor.b / 255.f,
@@ -394,13 +411,12 @@ void UIRenderer::RenderComboBox(ComboBoxControl& cb, const ImVec2& size, bool& i
 
 void UIRenderer::RenderImageButton(ImageButtonControl& ib, const ImVec2& size, bool& itemHandled)
 {
-    auto assetManager = Project::GetActive() ? Project::GetActive()->GetAssetManager() : nullptr;
-    if (assetManager && !ib.TexturePath.empty())
+    if (!ib.TexturePath.empty())
     {
-        auto tex = assetManager->Get<TextureAsset>(ib.TexturePath);
-        if (tex)
+        Texture2D texture = Renderer::Get().GetOrLoadTexture(ib.TexturePath);
+        if (texture.id > 0)
         {
-            ImTextureID tid = (ImTextureID)(uintptr_t)tex->GetTexture().id;
+            ImTextureID tid = (ImTextureID)(uintptr_t)texture.id;
             ImVec4 bg = {ib.BackgroundColor.r / 255.f, ib.BackgroundColor.g / 255.f, ib.BackgroundColor.b / 255.f,
                          ib.BackgroundColor.a / 255.f};
             ImVec4 tint = {ib.TintColor.r / 255.f, ib.TintColor.g / 255.f, ib.TintColor.b / 255.f,
@@ -569,11 +585,17 @@ void UIRenderer::DrawCanvas(Scene* scene, const ImVec2& referencePosition, const
     // --- Canvas Scaling ---
     const CanvasSettings& canvas = scene->GetSettings().Canvas;
     float scaleFactor = 1.0f;
-    if (canvas.ScaleMode == CanvasScaleMode::ScaleWithScreenSize && canvas.ReferenceResolution.x > 0 &&
-        canvas.ReferenceResolution.y > 0)
+
+    Vector2 refRes = canvas.ReferenceResolution;
+    if (refRes.x <= 0 || refRes.y <= 0)
     {
-        float scaleX = currentRefSize.x / canvas.ReferenceResolution.x;
-        float scaleY = currentRefSize.y / canvas.ReferenceResolution.y;
+        refRes = {currentRefSize.x, currentRefSize.y};
+    }
+
+    if (canvas.ScaleMode == CanvasScaleMode::ScaleWithScreenSize && refRes.x > 0 && refRes.y > 0)
+    {
+        float scaleX = currentRefSize.x / refRes.x;
+        float scaleY = currentRefSize.y / refRes.y;
         float t = canvas.MatchWidthOrHeight; // 0 = match width, 1 = match height
         scaleFactor = scaleX * (1.0f - t) + scaleY * t;
     }

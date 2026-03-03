@@ -1,4 +1,5 @@
 #include "runtime_layer.h"
+#include "engine/audio/audio.h"
 #include "engine/core/application.h"
 #include "engine/core/window.h"
 #include "engine/graphics/asset_manager.h"
@@ -63,6 +64,7 @@ void RuntimeLayer::OnDetach()
 {
     if (m_Scene)
     {
+        SceneScripting::Stop(m_Scene.get());
         m_Scene->OnRuntimeStop();
     }
 }
@@ -79,6 +81,8 @@ void RuntimeLayer::OnUpdate(Timestep ts)
     if (m_Scene)
     {
         m_Scene->OnUpdateRuntime(ts);
+        SceneScripting::Update(m_Scene.get(), ts);
+        Audio::Get().Update(m_Scene.get(), ts);
     }
 }
 
@@ -106,7 +110,7 @@ void RuntimeLayer::OnRender(Timestep ts)
     {
         float nearClip = 0.01f;
         float farClip = 1000.0f;
-        
+
         Entity primaryCam = m_Scene->GetPrimaryCameraEntity();
         if (primaryCam && primaryCam.HasComponent<CameraComponent>())
         {
@@ -162,6 +166,7 @@ void RuntimeLayer::OnEvent(Event& e)
     if (m_Scene)
     {
         m_Scene->OnEvent(e);
+        SceneScripting::DispatchEvent(m_Scene.get(), e);
     }
 }
 
@@ -177,10 +182,12 @@ void RuntimeLayer::LoadScene(const std::string& path)
 
     if (m_Scene)
     {
+        SceneScripting::Stop(m_Scene.get());
         m_Scene->OnRuntimeStop();
     }
 
     m_Scene = std::make_shared<Scene>();
+    m_Scene->SetEventCallback(CH_BIND_EVENT_FN(RuntimeLayer::OnEvent));
 
     // Native module loading removed in favor of ScriptEngine (C#)
 
@@ -406,7 +413,34 @@ std::optional<Camera3D> RuntimeLayer::GetActiveCamera()
 {
     if (m_Scene)
     {
-        return m_Scene->GetActiveCamera();
+        Entity entity = m_Scene->GetPrimaryCameraEntity();
+        if (entity)
+        {
+            auto& tc = entity.GetComponent<TransformComponent>();
+            auto& cc = entity.GetComponent<CameraComponent>();
+
+            Camera3D camera = {0};
+            camera.position = tc.Translation;
+
+            Matrix frame = QuaternionToMatrix(tc.RotationQuat);
+            Vector3 forward = Vector3Transform({0, 0, -1}, frame);
+
+            camera.target = Vector3Add(camera.position, forward);
+            camera.up = Vector3Transform({0, 1, 0}, frame);
+
+            if (cc.Camera.GetProjectionType() == ProjectionType::Perspective)
+            {
+                camera.fovy = cc.Camera.GetPerspectiveVerticalFOV() * RAD2DEG;
+                camera.projection = CAMERA_PERSPECTIVE;
+            }
+            else
+            {
+                camera.fovy = cc.Camera.GetOrthographicSize();
+                camera.projection = CAMERA_ORTHOGRAPHIC;
+            }
+
+            return camera;
+        }
     }
     return std::nullopt;
 }

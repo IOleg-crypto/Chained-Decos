@@ -7,8 +7,6 @@ add_library(engine_graphics OBJECT
     scene_renderer.cpp
     renderer2d.cpp
     model_asset.cpp
-    texture_asset.cpp
-    font_asset.cpp
     mesh_importer.cpp
     texture_importer.cpp
     shader_importer.cpp

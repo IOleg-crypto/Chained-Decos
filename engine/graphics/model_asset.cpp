@@ -1,16 +1,11 @@
 #include "model_asset.h"
-#include "asset_manager.h"
 #include "engine/core/log.h"
-#include "engine/physics/bvh/bvh.h"
-#include "engine/scene/project.h"
 #include "mesh_importer.h"
 #include "raylib.h"
 #include "raymath.h"
-#include "shader_asset.h"
-#include "texture_asset.h"
+#include "renderer.h"
 #include <algorithm>
 #include <cstring>
-#include <filesystem>
 
 namespace CHEngine
 {
@@ -37,23 +32,6 @@ void ModelAsset::UploadToGPU()
     model.materials = (Material*)RL_CALLOC(model.materialCount, sizeof(Material));
 
     // Load Materials
-    auto project = Project::GetActive();
-    std::vector<std::shared_ptr<TextureAsset>> localTextures;
-    std::vector<PendingTexture> localPendingTextures;
-
-    // Helper: load one texture channel, queue if still loading
-    auto loadTex = [&](int matIdx, const std::string& path, int mapIndex) {
-        if (path.empty() || !project) return;
-        auto tex = project->GetAssetManager()->Get<TextureAsset>(path);
-        if (!tex) return;
-        if (tex->IsReady()) {
-            model.materials[matIdx].maps[mapIndex].texture = tex->GetTexture();
-            localTextures.push_back(tex);
-        } else {
-            localPendingTextures.push_back({matIdx, path, mapIndex});
-        }
-    };
-
     for (int i = 0; i < model.materialCount; ++i)
     {
         model.materials[i] = LoadMaterialDefault();
@@ -62,28 +40,37 @@ void ModelAsset::UploadToGPU()
         {
             const auto& rawMaterial = m_PendingData.materials[i];
 
-            model.materials[i].maps[MATERIAL_MAP_ALBEDO].color   = rawMaterial.albedoColor;
-            model.materials[i].maps[MATERIAL_MAP_EMISSION].color  = rawMaterial.emissiveColor;
+            model.materials[i].maps[MATERIAL_MAP_ALBEDO].color = rawMaterial.albedoColor;
+            model.materials[i].maps[MATERIAL_MAP_EMISSION].color = rawMaterial.emissiveColor;
             model.materials[i].maps[MATERIAL_MAP_METALNESS].value = rawMaterial.metalness;
             model.materials[i].maps[MATERIAL_MAP_ROUGHNESS].value = rawMaterial.roughness;
 
-            loadTex(i, rawMaterial.albedoPath,            MATERIAL_MAP_ALBEDO);
-            loadTex(i, rawMaterial.emissivePath,          MATERIAL_MAP_EMISSION);
-            loadTex(i, rawMaterial.normalPath,            MATERIAL_MAP_NORMAL);
-            loadTex(i, rawMaterial.occlusionPath,         MATERIAL_MAP_OCCLUSION);
-
-            // MetallicRoughness is a packed texture shared by two slots
-            if (!rawMaterial.metallicRoughnessPath.empty() && project)
+            if (!rawMaterial.albedoPath.empty())
             {
-                auto tex = project->GetAssetManager()->Get<TextureAsset>(rawMaterial.metallicRoughnessPath);
-                if (tex && tex->IsReady()) {
-                    model.materials[i].maps[MATERIAL_MAP_METALNESS].texture = tex->GetTexture();
-                    model.materials[i].maps[MATERIAL_MAP_ROUGHNESS].texture = tex->GetTexture();
-                    localTextures.push_back(tex);
-                } else if (tex) {
-                    localPendingTextures.push_back({i, rawMaterial.metallicRoughnessPath, MATERIAL_MAP_METALNESS});
-                    localPendingTextures.push_back({i, rawMaterial.metallicRoughnessPath, MATERIAL_MAP_ROUGHNESS});
-                }
+                model.materials[i].maps[MATERIAL_MAP_ALBEDO].texture =
+                    Renderer::Get().GetOrLoadTexture(rawMaterial.albedoPath);
+            }
+            if (!rawMaterial.emissivePath.empty())
+            {
+                model.materials[i].maps[MATERIAL_MAP_EMISSION].texture =
+                    Renderer::Get().GetOrLoadTexture(rawMaterial.emissivePath);
+            }
+            if (!rawMaterial.normalPath.empty())
+            {
+                model.materials[i].maps[MATERIAL_MAP_NORMAL].texture =
+                    Renderer::Get().GetOrLoadTexture(rawMaterial.normalPath);
+            }
+            if (!rawMaterial.occlusionPath.empty())
+            {
+                model.materials[i].maps[MATERIAL_MAP_OCCLUSION].texture =
+                    Renderer::Get().GetOrLoadTexture(rawMaterial.occlusionPath);
+            }
+
+            if (!rawMaterial.metallicRoughnessPath.empty())
+            {
+                Texture2D tex = Renderer::Get().GetOrLoadTexture(rawMaterial.metallicRoughnessPath);
+                model.materials[i].maps[MATERIAL_MAP_METALNESS].texture = tex;
+                model.materials[i].maps[MATERIAL_MAP_ROUGHNESS].texture = tex;
             }
         }
     }
@@ -172,8 +159,6 @@ void ModelAsset::UploadToGPU()
         }
 
         m_Model = model;
-        m_Textures = std::move(localTextures);
-        m_PendingTextures = std::move(localPendingTextures);
 
         // Cache the bounding box once (expensive Raylib call)
         m_BoundingBox = ::GetModelBoundingBox(m_Model);
@@ -201,10 +186,10 @@ void ModelAsset::UploadToGPU()
         m_Animations = std::move(m_PendingData.animations);
 
         // Transfer hierarchy data
-        m_OffsetMatrices       = std::move(m_PendingData.offsetMatrices);
-        m_NodeNames            = std::move(m_PendingData.nodeNames);
-        m_NodeParents          = std::move(m_PendingData.nodeParents);
-        m_MeshToNode           = std::move(m_PendingData.meshToNode);
+        m_OffsetMatrices = std::move(m_PendingData.offsetMatrices);
+        m_NodeNames = std::move(m_PendingData.nodeNames);
+        m_NodeParents = std::move(m_PendingData.nodeParents);
+        m_MeshToNode = std::move(m_PendingData.meshToNode);
         m_GlobalNodeTransforms = std::move(m_PendingData.globalBindPoses);
     }
 
@@ -221,48 +206,8 @@ ModelAsset::~ModelAsset()
     {
         ::UnloadModel(m_Model);
     }
-    // m_Animations is std::vector, no need for UnloadModelAnimations
 }
 
-
-void ModelAsset::OnUpdate()
-{
-    if (m_PendingTextures.empty())
-    {
-        return;
-    }
-
-    auto project = Project::GetActive();
-    if (!project)
-    {
-        return;
-    }
-
-    auto assetManager = project->GetAssetManager();
-
-    std::lock_guard<std::mutex> lock(m_ModelMutex);
-
-    for (auto it = m_PendingTextures.begin(); it != m_PendingTextures.end();)
-    {
-        auto textureAsset = assetManager->Get<TextureAsset>(it->path);
-        if (textureAsset && textureAsset->IsReady())
-        {
-            CH_CORE_INFO("ModelAsset: Applying deferred texture '{}' to material {}", it->path, it->materialIndex);
-
-            if (it->materialIndex >= 0 && it->materialIndex < m_Model.materialCount)
-            {
-                m_Model.materials[it->materialIndex].maps[it->mapIndex].texture = textureAsset->GetTexture();
-                m_Textures.push_back(textureAsset);
-            }
-
-            it = m_PendingTextures.erase(it);
-        }
-        else
-        {
-            ++it;
-        }
-    }
-}
 BoundingBox ModelAsset::GetBoundingBox() const
 {
     return m_BoundingBox;
@@ -278,12 +223,6 @@ const Model& ModelAsset::GetModel() const
 {
     std::lock_guard<std::mutex> lock(m_ModelMutex);
     return m_Model;
-}
-
-std::vector<std::shared_ptr<TextureAsset>> ModelAsset::GetTextures() const
-{
-    std::lock_guard<std::mutex> lock(m_ModelMutex);
-    return m_Textures;
 }
 
 } // namespace CHEngine

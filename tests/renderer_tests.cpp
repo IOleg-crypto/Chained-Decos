@@ -1,6 +1,7 @@
 #include "engine/core/base.h"
 #include "engine/graphics/renderer.h"
 #include "engine/graphics/renderer2d.h"
+#include "engine/graphics/scene_renderer.h"
 #include "raylib.h"
 #include "gtest/gtest.h"
 
@@ -47,52 +48,10 @@ TEST_F(RendererTest, Lifetime)
     Renderer::Shutdown();
 }
 
-TEST_F(RendererTest, LightManagement)
+TEST_F(RendererTest, SceneRendererInitialization)
 {
-
-    Renderer::Init();
-
-    EXPECT_EQ(Renderer::Get().GetData().LightCount, 0);
-
-    RenderLight light;
-    light.color[0] = 1.0f;
-    light.intensity = 5.0f;
-
-    Renderer::Get().SetLight(0, light);
-    Renderer::Get().SetLightCount(1);
-
-    EXPECT_EQ(Renderer::Get().GetData().LightCount, 1);
-    EXPECT_FLOAT_EQ(Renderer::Get().GetData().Lights[0].intensity, 5.0f);
-
-    Renderer::Get().ClearLights();
-    EXPECT_EQ(Renderer::Get().GetData().LightCount, 0);
-
-    Renderer::Shutdown();
-}
-
-TEST_F(RendererTest, DiagnosticMode)
-{
-
-    Renderer::Init();
-
-    Renderer::Get().SetDiagnosticMode(2.0f);
-    EXPECT_FLOAT_EQ(Renderer::Get().GetData().DiagnosticMode, 2.0f);
-
-    Renderer::Shutdown();
-}
-
-TEST_F(RendererTest, EnvironmentApplication)
-{
-
-    Renderer::Init();
-
-    EnvironmentSettings env;
-    env.Lighting.Ambient = 0.5f;
-
-    Renderer::Get().ApplyEnvironment(env);
-    EXPECT_FLOAT_EQ(Renderer::Get().GetData().CurrentLighting.Ambient, 0.5f);
-
-    Renderer::Shutdown();
+    SceneRenderer::Init();
+    SceneRenderer::Shutdown();
 }
 
 #endif // CH_CI

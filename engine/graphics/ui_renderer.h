@@ -10,6 +10,7 @@
 namespace CHEngine
 {
 class Renderer;
+
 struct UIRendererData
 {
     // Internal state like input buffers could go here
@@ -23,16 +24,21 @@ public:
     UIRenderer();
     ~UIRenderer();
 
-    void Init();
-    void Shutdown();
+    static UIRenderer& Get();
+
+    static void Init();
+    static void Shutdown();
+
+    bool IsInitialized() const
+    {
+        return s_Instance != nullptr;
+    }
 
     // Main entry point for drawing UI for a scene.
     void DrawCanvas(Scene* scene, const ImVec2& referencePosition, const ImVec2& referenceSize, bool editMode = false);
 
     // Helper to calculate the absolute screen-space rect for a UI entity, respecting hierarchy.
     Rectangle GetEntityRect(Entity entity, const ImVec2& viewportSize, const ImVec2& viewportOffset);
-
-    static UIRenderer& Get();
 
     inline UIRendererData& GetData()
     {

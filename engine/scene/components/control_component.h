@@ -2,6 +2,7 @@
 #define CH_CONTROL_COMPONENT_H
 
 #include "engine/graphics/asset.h"
+#include "engine/graphics/graphics_types.h"
 #include <memory>
 #include <raylib.h>
 #include <raymath.h>
@@ -10,65 +11,6 @@
 
 namespace CHEngine
 {
-
-// Typography & Visual Styles
-enum class TextAlignment
-{
-    Left = 0,
-    Center = 1,
-    Right = 2,
-    Top = 0,
-    Bottom = 2
-};
-
-// Canvas scaling modes for Reference Resolution system
-enum class CanvasScaleMode : uint8_t
-{
-    ConstantPixelSize,   // No scaling, pixel-perfect at any resolution
-    ScaleWithScreenSize, // Scale proportionally based on reference resolution
-};
-
-// Scene-wide canvas settings for UI scaling
-struct CanvasSettings
-{
-    Vector2 ReferenceResolution = {1920.0f, 1080.0f};
-    CanvasScaleMode ScaleMode = CanvasScaleMode::ConstantPixelSize; // No scaling, anchors relative to viewport
-    float MatchWidthOrHeight = 0.5f;                                // Only used with ScaleWithScreenSize
-};
-
-struct TextStyle
-{
-    std::string FontName = "Default";
-    float FontSize = 18.0f;
-    Color TextColor = WHITE;
-    bool Shadow = false;
-    float ShadowOffset = 2.0f;
-    Color ShadowColor = BLACK;
-    float LetterSpacing = 1.0f;
-    float LineHeight = 1.2f;
-    TextAlignment HorizontalAlignment = TextAlignment::Center;
-    TextAlignment VerticalAlignment = TextAlignment::Center;
-};
-
-struct UIStyle
-{
-    Color BackgroundColor = {40, 40, 40, 255};
-    Color HoverColor = {60, 60, 60, 255};
-    Color PressedColor = {30, 30, 30, 255};
-
-    float Rounding = 4.0f;
-    float BorderSize = 0.0f;
-    Color BorderColor = WHITE;
-
-    bool UseGradient = false;
-    Color GradientColor = {20, 20, 20, 255};
-
-    float Padding = 4.0f;
-
-    float HoverScale = 1.0f;
-    float PressedScale = 1.0f;
-    float TransitionSpeed = 0.1f;
-};
 
 struct RectTransform
 {
@@ -149,9 +91,7 @@ struct ButtonControl
 struct PanelControl
 {
     UIStyle Style;
-    AssetHandle TextureHandle = 0;
     std::string TexturePath = ""; // For 2D backgrounds
-    std::shared_ptr<class TextureAsset> Texture = nullptr;
 
     bool FullScreen = false;
 };

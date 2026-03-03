@@ -1,20 +1,16 @@
-#include "engine/scene/scene.h"
-#include "engine/audio/audio.h"
-#include "engine/audio/sound_asset.h"
-#include "engine/core/application.h"
 #include "engine/core/profiler.h"
-#include "engine/graphics/asset_manager.h"
+#include "engine/core/window.h"
 #include "engine/graphics/model_asset.h"
 #include "engine/physics/bvh/bvh.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/component_serializer.h"
 #include "engine/scene/scene_events.h"
-#include "engine/scene/scene_scripting.h"
 #include "project.h"
 #include "raylib.h"
 #include "raymath.h"
 #include "scene_serializer.h"
 #include <Coral/ManagedObject.hpp>
+
 
 namespace CHEngine
 {
@@ -81,6 +77,8 @@ std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
 
         ComponentSerializer::Get().CopyAll(srcEntity, dstEntity);
     });
+
+    newScene->m_EventCallback = other->m_EventCallback;
 
     CH_CORE_INFO("Scene::Copy - Successfully copied {} entities", entityCount);
     return newScene;
@@ -255,10 +253,8 @@ void Scene::OnUpdateRuntime(Timestep timestep)
     CH_PROFILE_FUNCTION();
 
     UpdateHierarchy();
-    UpdateScripting(timestep);
     UpdateAnimations(timestep);
     UpdateUIActions();
-    UpdateAudio(timestep);
     UpdateCameras(timestep);
     UpdateTransitions();
     UpdatePhysics(timestep);
@@ -367,23 +363,16 @@ void Scene::UpdateAnimations(Timestep deltaTime)
     });
 }
 
-void Scene::UpdateScripting(Timestep deltaTime)
-{
-    SceneScripting::Update(this, deltaTime);
-}
-
-void Scene::UpdateAudio(Timestep deltaTime)
-{
-    Audio::Get().Update(this, deltaTime);
-}
-
 void Scene::UpdateTransitions()
 {
     m_Registry.view<SceneTransitionComponent>().each([&](auto entity, auto& tr) {
         if (tr.Triggered && !tr.TargetScenePath.empty())
         {
             SceneChangeRequestEvent e(tr.TargetScenePath);
-            Application::Get().OnEvent(e);
+            if (m_EventCallback)
+            {
+                m_EventCallback(e);
+            }
         }
     });
 }
@@ -490,16 +479,12 @@ void Scene::OnRuntimeStop()
 {
     CH_CORE_INFO("Scene - Stopping runtime simulation");
 
-    // Destroy all active C# script instances (calls OnDestroy and frees memory)
-    SceneScripting::Stop(this);
-
     m_IsSimulationRunning = false;
     CH_CORE_INFO("Runtime stopped - all scripts destroyed");
 }
 
 void Scene::OnEvent(Event& e)
 {
-    SceneScripting::DispatchEvent(this, e);
 }
 
 Entity Scene::FindEntityByTag(const std::string& tag)
@@ -538,29 +523,7 @@ void Scene::OnIDDestroy(entt::registry& reg, entt::entity entity)
 
 void Scene::OnAudioComponentAdded(entt::registry& registry, entt::entity entity)
 {
-    auto& component = registry.get<AudioComponent>(entity);
-    if (m_IsSimulationRunning && component.PlayOnStart)
-    {
-        std::string playPath = component.SoundPath;
-
-        // Try to resolve path from handle if available
-        if (component.SoundHandle != 0)
-        {
-            if (auto project = Project::GetActive())
-            {
-                auto asset = project->GetAssetManager()->Get<SoundAsset>(component.SoundHandle);
-                if (asset)
-                {
-                    playPath = asset->GetPath();
-                }
-            }
-        }
-
-        if (!playPath.empty())
-        {
-            Audio::Get().Play(playPath, component.Volume, component.Pitch, component.Loop);
-        }
-    }
+    // The Audio System will handle playing sounds on component creation when needed.
 }
 
 void Scene::OnModelComponentAdded(entt::registry& reg, entt::entity entity)
@@ -571,67 +534,11 @@ void Scene::OnModelComponentAdded(entt::registry& reg, entt::entity entity)
         return;
     }
 
-    auto project = Project::GetActive();
-    std::string resolvedPath = component.ModelPath;
-    if (project && project->GetAssetManager())
+    // Deferrd asset loading and material generation is now handled by external systems
+    // (e.g. Asset System or SceneRenderer) rather than directly in the Scene object.
+    if (component.Materials.empty())
     {
-        resolvedPath = project->GetAssetManager()->ResolvePath(component.ModelPath);
-    }
-
-    bool pathChanged = !component.Asset || (component.Asset->GetPath() != resolvedPath);
-
-    if (pathChanged)
-    {
-        if (project && project->GetAssetManager())
-        {
-            component.Asset = project->GetAssetManager()->Get<ModelAsset>(component.ModelPath);
-            if (!component.Asset)
-            {
-                CH_CORE_ERROR("Failed to load model asset: {}", component.ModelPath);
-            }
-        }
-        else
-        {
-            CH_CORE_ERROR("No active project or AssetManager!");
-        }
-
-        // Only reset materials if we don't have deserialized ones
-        if (component.Materials.empty())
-        {
-            component.MaterialsInitialized = false;
-        }
-    }
-
-    if (component.Asset && !component.MaterialsInitialized)
-    {
-        if (component.Asset->GetState() != AssetState::Ready)
-        {
-            return;
-        }
-
-        Model& model = component.Asset->GetModel();
-
-        // Initialize default materials from model if none were deserialized
-        if (component.Materials.empty() && model.materials != nullptr)
-        {
-            std::set<int> uniqueIndices;
-            for (int i = 0; i < model.meshCount; i++)
-            {
-                uniqueIndices.insert(model.meshMaterial[i]);
-            }
-
-            for (int idx : uniqueIndices)
-            {
-                if (idx >= 0 && idx < model.materialCount)
-                {
-                    MaterialSlot slot("Material " + std::to_string(idx), idx);
-                    slot.Target = MaterialSlotTarget::MaterialIndex;
-                    slot.Material.AlbedoColor = model.materials[idx].maps[MATERIAL_MAP_ALBEDO].color;
-                    component.Materials.push_back(slot);
-                }
-            }
-        }
-        component.MaterialsInitialized = true;
+        component.MaterialsInitialized = false;
     }
 }
 
@@ -676,82 +583,7 @@ void Scene::OnColliderComponentAdded(entt::registry& reg, entt::entity entity)
 
 void Scene::OnPanelControlAdded(entt::registry& reg, entt::entity entity)
 {
-    auto& panel = reg.get<PanelControl>(entity);
-    if (panel.TexturePath.empty())
-    {
-        return;
-    }
-
-    // Load texture asset if path changed or texture is null
-    bool pathChanged = !panel.Texture || (panel.Texture->GetPath() != panel.TexturePath);
-
-    if (pathChanged)
-    {
-        auto project = Project::GetActive();
-        if (project && project->GetAssetManager())
-        {
-            panel.Texture = project->GetAssetManager()->Get<TextureAsset>(panel.TexturePath);
-        }
-    }
-}
-
-std::optional<Camera3D> Scene::GetActiveCamera()
-{
-    auto view = m_Registry.view<TransformComponent, CameraComponent>();
-
-    entt::entity fallbackEntity = entt::null;
-
-    for (auto entityHandle : view)
-    {
-        auto& cc = view.get<CameraComponent>(entityHandle);
-        if (fallbackEntity == entt::null)
-        {
-            fallbackEntity = entityHandle;
-        }
-
-        if (cc.Primary)
-        {
-            return GetCameraFromEntity(entityHandle);
-        }
-    }
-
-    // Fallback to first available camera if no primary set
-    if (fallbackEntity != entt::null)
-    {
-        return GetCameraFromEntity(fallbackEntity);
-    }
-
-    return std::nullopt;
-}
-
-Camera3D Scene::GetCameraFromEntity(entt::entity entityHandle)
-{
-    auto& tc = m_Registry.get<TransformComponent>(entityHandle);
-    auto& cc = m_Registry.get<CameraComponent>(entityHandle);
-
-    Camera3D camera = {0};
-    camera.position = tc.Translation;
-
-    // Calculate forward vector from rotation
-    Matrix frame = QuaternionToMatrix(tc.RotationQuat);
-    Vector3 forward = Vector3Transform({0, 0, -1}, frame);
-
-    camera.target = Vector3Add(camera.position, forward);
-    camera.up = Vector3Transform({0, 1, 0}, frame);
-
-    // Map Hazel-style SceneCamera properties to Raylib's Camera3D
-    if (cc.Camera.GetProjectionType() == ProjectionType::Perspective)
-    {
-        camera.fovy = cc.Camera.GetPerspectiveVerticalFOV() * RAD2DEG;
-        camera.projection = CAMERA_PERSPECTIVE;
-    }
-    else
-    {
-        camera.fovy = cc.Camera.GetOrthographicSize();
-        camera.projection = CAMERA_ORTHOGRAPHIC;
-    }
-
-    return camera;
+    // Texture loading is now handled on-demand by Renderer::GetOrLoadTexture
 }
 
 Entity Scene::GetPrimaryCameraEntity()

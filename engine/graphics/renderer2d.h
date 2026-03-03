@@ -58,12 +58,12 @@ public:
     Renderer2D();
     ~Renderer2D();
 
-    void Init();
-    void Shutdown();
+    static void Init();
+    static void Shutdown();
 
-    bool IsInitialized()
+    bool IsInitialized() const
     {
-        return m_Data != nullptr;
+        return s_Instance != nullptr;
     }
 
     // Screen-space (UI) rendering
@@ -82,14 +82,12 @@ public:
     void DrawQuad(const Vector2& position, const Vector2& size, float rotation, Color color);
     void DrawQuad(const Vector3& position, const Vector2& size, float rotation, Color color);
 
-    void DrawSprite(const Vector2& position, const Vector2& size, const std::shared_ptr<TextureAsset>& texture,
+    void DrawSprite(const Vector2& position, const Vector2& size, Texture2D texture, Color tint = WHITE);
+    void DrawSprite(const Vector3& position, const Vector2& size, Texture2D texture, Color tint = WHITE);
+    void DrawSprite(const Vector2& position, const Vector2& size, float rotation, Texture2D texture,
                     Color tint = WHITE);
-    void DrawSprite(const Vector3& position, const Vector2& size, const std::shared_ptr<TextureAsset>& texture,
+    void DrawSprite(const Vector3& position, const Vector2& size, float rotation, Texture2D texture,
                     Color tint = WHITE);
-    void DrawSprite(const Vector2& position, const Vector2& size, float rotation,
-                    const std::shared_ptr<TextureAsset>& texture, Color tint = WHITE);
-    void DrawSprite(const Vector3& position, const Vector2& size, float rotation,
-                    const std::shared_ptr<TextureAsset>& texture, Color tint = WHITE);
 
     // Stats
     void ResetStats();

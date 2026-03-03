@@ -3,6 +3,7 @@
 #include "editor/actions/scene_actions.h"
 #include "editor_events.h"
 #include "editor_gui.h"
+#include "engine/audio/audio.h"
 #include "engine/core/input.h"
 
 #include "engine/core/profiler.h"
@@ -11,6 +12,7 @@
 #include "engine/physics/physics.h"
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
+#include "engine/scene/scene_scripting.h"
 #include "engine/scene/scene_serializer.h"
 #include "engine/scene/scriptable_entity.h"
 #include <fstream>
@@ -234,6 +236,8 @@ void EditorLayer::OnUpdate(Timestep ts)
         if (EditorContext::GetSceneState() == SceneState::Play)
         {
             scene->OnUpdateRuntime(ts);
+            SceneScripting::Update(scene.get(), ts);
+            Audio::Get().Update(scene.get(), ts);
         }
         else
         {
@@ -304,7 +308,6 @@ void EditorLayer::DrawDockSpace()
 
     m_Layout->EndWorkspace();
 }
-
 
 bool EditorLayer::OnProjectOpened(ProjectOpenedEvent& e)
 {
@@ -395,9 +398,10 @@ void EditorLayer::OnEvent(Event& e)
         if (EditorContext::GetSceneState() == SceneState::Play)
         {
             auto newScene = std::make_shared<Scene>();
-            // RegisterGameScripts(newScene.get()); // Removed: now handled globally and copied to Scene
+            newScene->SetEventCallback(CH_BIND_EVENT_FN(EditorLayer::OnEvent));
             SceneSerializer serializer(newScene.get());
             if (serializer.Deserialize(finalPath))
+
             {
                 if (m_RuntimeScene)
                 {
@@ -438,6 +442,7 @@ void EditorLayer::OnEvent(Event& e)
         if (auto activeScene = GetActiveScene())
         {
             activeScene->OnEvent(e);
+            SceneScripting::DispatchEvent(activeScene.get(), e);
         }
     }
     else if (e.GetEventType() == EventType::KeyPressed)
@@ -494,6 +499,7 @@ void EditorLayer::SetSceneState(SceneState state)
         CH_CORE_INFO("Editor: Play Mode Stopped");
         if (m_RuntimeScene)
         {
+            SceneScripting::Stop(m_RuntimeScene.get());
             m_RuntimeScene->OnRuntimeStop();
             m_RuntimeScene = nullptr;
         }

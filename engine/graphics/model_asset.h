@@ -40,8 +40,6 @@ public:
 
     BoundingBox GetBoundingBox() const;
 
-    void OnUpdate(); // Check if textures loaded and apply them
-
     const std::vector<RawAnimation>& GetRawAnimations() const
     {
         return m_Animations;
@@ -55,7 +53,6 @@ public:
         return (index >= 0 && index < (int)m_Animations.size()) ? m_Animations[index].name : "";
     }
 
-    std::vector<std::shared_ptr<class TextureAsset>> GetTextures() const;
     const std::vector<Matrix>& GetOffsetMatrices() const
     {
         return m_OffsetMatrices;
@@ -72,7 +69,6 @@ public:
 private:
     Model m_Model = {0};
     std::vector<RawAnimation> m_Animations;
-    std::vector<std::shared_ptr<class TextureAsset>> m_Textures;
 
     // KISS additions
     std::vector<Matrix> m_OffsetMatrices;
@@ -85,9 +81,6 @@ private:
 
     PendingModelData m_PendingData;
     bool m_HasPendingData = false;
-
-    // Track textures that are still loading
-    std::vector<PendingTexture> m_PendingTextures;
 
     BoundingBox m_BoundingBox = {{0, 0, 0}, {0, 0, 0}};
 };

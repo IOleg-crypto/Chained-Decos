@@ -1,24 +1,39 @@
 #include "renderer2d.h"
-#include "renderer.h"
 #include "engine/core/log.h"
 #include "engine/graphics/texture_asset.h"
+#include "renderer.h"
 #include "rlgl.h"
 
 namespace CHEngine
 {
+Renderer2D* Renderer2D::s_Instance = nullptr;
+
 Renderer2D& Renderer2D::Get()
 {
-    return Renderer::Get().GetRenderer2D();
+    CH_CORE_ASSERT(s_Instance, "Renderer2D is not initialized!");
+    return *s_Instance;
 }
 
 void Renderer2D::Init()
 {
+    if (s_Instance)
+    {
+        CH_CORE_WARN("Renderer2D is already initialized!");
+        return;
+    }
+    s_Instance = new Renderer2D();
     CH_CORE_INFO("Initializing Renderer2D (Batching Mode)...");
 }
 
 void Renderer2D::Shutdown()
 {
+    if (!s_Instance)
+    {
+        return;
+    }
     CH_CORE_INFO("Shutting down Renderer2D...");
+    delete s_Instance;
+    s_Instance = nullptr;
 }
 
 Renderer2D::Renderer2D()
@@ -184,49 +199,43 @@ void Renderer2D::DrawQuad(const Vector3& position, const Vector2& size, float ro
     m_Data->Stats.DrawCalls++;
 }
 
-void Renderer2D::DrawSprite(const Vector3& position, const Vector2& size, const std::shared_ptr<TextureAsset>& texture,
-                            Color tint)
+void Renderer2D::DrawSprite(const Vector3& position, const Vector2& size, Texture2D texture, Color tint)
 {
-    if (!texture || !texture->IsReady())
+    if (texture.id == 0)
     {
         DrawQuad(position, size, tint);
         return;
     }
 
-    Texture2D tex = texture->GetTexture();
-
     // If we have a different texture than the one currently in the batch, flush
-    if (m_Data->QuadIndexCount > 0 && (m_Data->TextureSlotIndex == 0 || m_Data->TextureSlots[0].id != tex.id))
+    if (m_Data->QuadIndexCount > 0 && (m_Data->TextureSlotIndex == 0 || m_Data->TextureSlots[0].id != texture.id))
     {
         NextBatch();
     }
 
     if (m_Data->QuadIndexCount == 0)
     {
-        m_Data->TextureSlots[0] = tex;
+        m_Data->TextureSlots[0] = texture;
         m_Data->TextureSlotIndex = 1;
-        rlEnableTexture(tex.id);
+        rlEnableTexture(texture.id);
     }
 
     DrawQuad(position, size, tint);
 }
 
-void Renderer2D::DrawSprite(const Vector2& position, const Vector2& size, const std::shared_ptr<TextureAsset>& texture,
-                            Color tint)
+void Renderer2D::DrawSprite(const Vector2& position, const Vector2& size, Texture2D texture, Color tint)
 {
     DrawSprite({position.x, position.y, 0.0f}, size, texture, tint);
 }
 
-void Renderer2D::DrawSprite(const Vector2& position, const Vector2& size, float rotation,
-                            const std::shared_ptr<TextureAsset>& texture, Color tint)
+void Renderer2D::DrawSprite(const Vector2& position, const Vector2& size, float rotation, Texture2D texture, Color tint)
 {
     DrawSprite({position.x, position.y, 0.0f}, size, rotation, texture, tint);
 }
 
-void Renderer2D::DrawSprite(const Vector3& position, const Vector2& size, float rotation,
-                            const std::shared_ptr<TextureAsset>& texture, Color tint)
+void Renderer2D::DrawSprite(const Vector3& position, const Vector2& size, float rotation, Texture2D texture, Color tint)
 {
-    if (!texture || !texture->IsReady())
+    if (texture.id == 0)
     {
         DrawQuad(position, size, rotation, tint);
         return;
@@ -240,8 +249,7 @@ void Renderer2D::DrawSprite(const Vector3& position, const Vector2& size, float 
 
     // For rotated sprites, use Raylib's Pro call for now
     Flush();
-    DrawTexturePro(texture->GetTexture(),
-                   {0, 0, (float)texture->GetTexture().width, (float)texture->GetTexture().height},
+    DrawTexturePro(texture, {0, 0, (float)texture.width, (float)texture.height},
                    {position.x, position.y, size.x, size.y}, {size.x * 0.5f, size.y * 0.5f}, rotation, tint);
 
     m_Data->Stats.QuadCount++;

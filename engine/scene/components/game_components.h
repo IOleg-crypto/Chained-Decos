@@ -18,7 +18,6 @@ struct SpawnComponent
     Vector3 SpawnPoint = {0.0f, 0.0f, 0.0f};
 
     std::string TexturePath = PROJECT_ROOT_DIR "/game/chaineddecos/assets/boxes/PlayerSpawnTexture.png";
-    std::shared_ptr<TextureAsset> Texture;
 
     SpawnComponent() = default;
     SpawnComponent(const SpawnComponent&) = default;

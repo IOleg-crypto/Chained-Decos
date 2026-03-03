@@ -16,7 +16,6 @@
 #include "engine/graphics/texture_importer.h"
 #include "engine/scene/project.h"
 
-
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
@@ -276,42 +275,7 @@ std::shared_ptr<Asset> AssetManager::GetAsset(const std::string& path, AssetType
             }
 
             bool success = false;
-            if (type == AssetType::Texture)
-            {
-                auto texAsset = std::static_pointer_cast<TextureAsset>(sharedAsset);
-                Image img = {0};
-                std::string ext = std::filesystem::path(pathCopy).extension().string();
-                std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-                bool isHDR = (ext == ".hdr");
-
-                CH_CORE_INFO("AssetManager: [Background] Processing texture '{}', extension detected: '{}', isHDR: {}",
-                             pathCopy, ext, isHDR ? "YES" : "NO");
-
-                if (isHDR)
-                {
-                    CH_CORE_INFO("AssetManager: Recognized {} as HDR file, will load directly on main thread",
-                                 pathCopy);
-                    success = true;
-                }
-                else
-                {
-                    img = TextureImporter::LoadImageFromDisk(pathCopy);
-                    if (img.data != nullptr)
-                    {
-                        CH_CORE_INFO("AssetManager: Loaded image {} ({}x{}, format={})", pathCopy, img.width,
-                                     img.height, img.format);
-
-                        ImageFormat(&img, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
-                        texAsset->SetPendingImage(img);
-                        success = true;
-                    }
-                    else
-                    {
-                        CH_CORE_ERROR("AssetManager: Failed to load image from disk: {}", pathCopy);
-                    }
-                }
-            }
-            else if (type == AssetType::Model)
+            if (type == AssetType::Model)
             {
                 auto modelAsset = std::static_pointer_cast<ModelAsset>(sharedAsset);
                 auto pendingData = MeshImporter::LoadMeshDataFromDisk(pathCopy);
@@ -329,6 +293,11 @@ std::shared_ptr<Asset> AssetManager::GetAsset(const std::string& path, AssetType
                 {
                     success = true;
                 }
+            }
+            else if (type == AssetType::Texture)
+            {
+                // Textures are Ready by default now
+                success = true;
             }
 
             if (success)
@@ -457,19 +426,16 @@ void AssetManager::Update()
 
     for (auto& asset : toUpload)
     {
-        if (asset->GetType() == AssetType::Texture)
-        {
-            std::static_pointer_cast<TextureAsset>(asset)->UploadToGPU();
-        }
-        else if (asset->GetType() == AssetType::Model)
+        if (asset->GetType() == AssetType::Model)
         {
             std::static_pointer_cast<ModelAsset>(asset)->UploadToGPU();
         }
-        else if (asset->GetType() == AssetType::Audio)
+        else if (asset->GetType() == AssetType::Audio || asset->GetType() == AssetType::Texture ||
+                 asset->GetType() == AssetType::Font)
         {
             asset->SetState(AssetState::Ready);
         }
-        CH_CORE_INFO("AssetManager: Background load completed and uploaded to GPU for '{}'", asset->GetPath());
+        CH_CORE_INFO("AssetManager: Background load completed for '{}'", asset->GetPath());
     }
 }
 

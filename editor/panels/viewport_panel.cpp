@@ -27,32 +27,6 @@
 
 namespace CHEngine
 {
-static void ClearSceneBackground(Scene* scene, Vector2 size)
-{
-    auto mode = scene->GetSettings().Mode;
-    if (mode == BackgroundMode::Color)
-    {
-        ClearBackground(scene->GetSettings().BackgroundColor);
-    }
-    else if (mode == BackgroundMode::Texture)
-    {
-        auto& path = scene->GetSettings().BackgroundTexturePath;
-        if (!path.empty())
-        {
-            // Fallback for now
-            ClearBackground(scene->GetSettings().BackgroundColor);
-        }
-    }
-    else if (mode == BackgroundMode::Environment3D)
-    {
-        ClearBackground(BLACK);
-    }
-}
-
-static const GizmoBtn s_GizmoBtns[] = {{GizmoType::NONE, ICON_FA_ARROW_POINTER, "Select (Q)", KEY_Q},
-                                       {GizmoType::TRANSLATE, ICON_FA_UP_DOWN_LEFT_RIGHT, "Translate (W)", KEY_W},
-                                       {GizmoType::ROTATE, ICON_FA_ARROWS_ROTATE, "Rotate (E)", KEY_E},
-                                       {GizmoType::SCALE, ICON_FA_UP_RIGHT_FROM_SQUARE, "Scale (R)", KEY_R}};
 
 void ViewportPanel::DrawCameraSelector(Scene* scene)
 {
@@ -143,7 +117,6 @@ ViewportPanel::ViewportPanel()
         m_ViewportTexture = LoadRenderTexture(w > 0 ? w : 1280, h > 0 ? h : 720);
     }
 
-    m_SceneRenderer = std::make_unique<SceneRenderer>();
     m_CameraController = std::make_unique<EditorCameraController>();
 }
 
@@ -197,12 +170,18 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
     {
         if (viewportSize.x > 0 && viewportSize.y > 0)
         {
-            if (m_ViewportTexture.id > 0) UnloadRenderTexture(m_ViewportTexture);
-            if (m_HDRTexture.id > 0) UnloadRenderTexture(m_HDRTexture);
+            if (m_ViewportTexture.id > 0)
+            {
+                UnloadRenderTexture(m_ViewportTexture);
+            }
+            if (m_HDRTexture.id > 0)
+            {
+                UnloadRenderTexture(m_HDRTexture);
+            }
 
             m_ViewportTexture = LoadRenderTexture((int)viewportSize.x, (int)viewportSize.y);
             m_HDRTexture = LoadRenderTexture((int)viewportSize.x, (int)viewportSize.y);
-            
+
             EditorLayer::Get().SetViewportSize(viewportSize);
             if (activeScene)
             {
@@ -221,18 +200,44 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
 
     BeginTextureMode(m_HDRTexture);
     auto activeScene_raw = activeScene.get();
-    ClearSceneBackground(activeScene_raw, {viewportSize.x, viewportSize.y});
+    SceneRenderer::Get().Clear(activeScene_raw);
 
-    auto activeCameraOpt = activeScene_raw->GetActiveCamera();
-    bool cameraFound = activeCameraOpt.has_value();
-    Camera3D camera = cameraFound ? activeCameraOpt.value() : Camera3D{0};
+    bool cameraFound = false;
+    Camera3D camera = {0};
+
+    Entity primaryCam = activeScene_raw->GetPrimaryCameraEntity();
+    if (primaryCam && primaryCam.HasComponent<CameraComponent>())
+    {
+        cameraFound = true;
+        auto& tc = primaryCam.GetComponent<TransformComponent>();
+        auto& cc = primaryCam.GetComponent<CameraComponent>();
+
+        camera.position = tc.Translation;
+
+        Matrix frame = QuaternionToMatrix(tc.RotationQuat);
+        Vector3 forward = Vector3Transform({0, 0, -1}, frame);
+
+        camera.target = Vector3Add(camera.position, forward);
+        camera.up = Vector3Transform({0, 1, 0}, frame);
+
+        if (cc.Camera.GetProjectionType() == ProjectionType::Perspective)
+        {
+            camera.fovy = cc.Camera.GetPerspectiveVerticalFOV() * RAD2DEG;
+            camera.projection = CAMERA_PERSPECTIVE;
+        }
+        else
+        {
+            camera.fovy = cc.Camera.GetOrthographicSize();
+            camera.projection = CAMERA_ORTHOGRAPHIC;
+        }
+    }
 
     if (cameraFound)
     {
         // Extract near/far from the active camera entity if available
         float nearClip = 0.01f;
         float farClip = 1000.0f;
-        
+
         Entity primaryCam = activeScene_raw->GetPrimaryCameraEntity();
         if (primaryCam && primaryCam.HasComponent<CameraComponent>())
         {
@@ -241,8 +246,8 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
             farClip = cameraComp.GetPerspectiveFarClip();
         }
 
-        m_SceneRenderer->RenderScene(activeScene.get(), camera, nearClip, farClip, GetFrameTime(),
-                                     &EditorLayer::Get().GetDebugRenderFlags());
+        SceneRenderer::Get().RenderScene(activeScene_raw, camera, nearClip, farClip, GetFrameTime(),
+                                         &EditorLayer::Get().GetDebugRenderFlags());
         EndTextureMode();
 
         // 2. APPLY MODULAR POST-PROCESSING
@@ -273,10 +278,9 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         // Copy warning state to viewport texture
         BeginTextureMode(m_ViewportTexture);
         ClearBackground(BLACK);
-        Rectangle source = { 0, 0, (float)m_HDRTexture.texture.width, (float)-m_HDRTexture.texture.height };
-        DrawTexturePro(m_HDRTexture.texture, source, 
-                       { 0, 0, (float)m_ViewportSize.x, (float)m_ViewportSize.y }, 
-                       { 0, 0 }, 0.0f, WHITE);
+        Rectangle source = {0, 0, (float)m_HDRTexture.texture.width, (float)-m_HDRTexture.texture.height};
+        DrawTexturePro(m_HDRTexture.texture, source, {0, 0, (float)m_ViewportSize.x, (float)m_ViewportSize.y}, {0, 0},
+                       0.0f, WHITE);
         EndTextureMode();
     }
 

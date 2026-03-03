@@ -1,9 +1,7 @@
 #ifndef CH_FONT_ASSET_H
 #define CH_FONT_ASSET_H
 
-#include "asset.h"
-#include "raylib.h"
-#include <string>
+#include "engine/graphics/asset.h"
 
 namespace CHEngine
 {

@@ -2,6 +2,7 @@
 #define CH_SCENE_SETTINGS_H
 
 #include "engine/graphics/environment.h"
+#include "engine/graphics/graphics_types.h"
 #include "engine/scene/components/control_component.h"
 #include "raylib.h"
 #include <memory>
@@ -27,12 +28,6 @@ enum class BackgroundMode
     Environment3D = 2
 };
 
-struct GridSettings
-{
-    int   Slices  = 20;
-    float Spacing = 1.0f;
-};
-
 struct SceneSettings
 {
     std::string Name = "Untitled Scene";
@@ -44,7 +39,7 @@ struct SceneSettings
     std::string BackgroundTexturePath;
 
     CanvasSettings Canvas;
-    GridSettings   Grid;
+    GridSettings Grid;
 
     DebugRenderFlags DebugFlags;
     float DiagnosticMode = 0.0f;

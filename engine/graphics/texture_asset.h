@@ -21,35 +21,17 @@ public:
         : Asset(GetStaticType())
     {
     }
-    virtual ~TextureAsset();
 
-    void UploadToGPU();
-
-    // For internal use by Importer
-    void SetPendingImage(Image image)
+    bool IsCubemap() const
     {
-        m_PendingImage = image;
-        m_HasPendingImage = true;
+        return m_IsCubemap;
     }
-
-    Texture2D& GetTexture()
+    void SetIsCubemap(bool isCubemap)
     {
-        return m_Texture;
+        m_IsCubemap = isCubemap;
     }
-    void SetTexture(Texture2D texture)
-    {
-        m_Texture = texture;
-    }
-
-    bool IsCubemap() const { return m_IsCubemap; }
-    void SetIsCubemap(bool isCubemap) { m_IsCubemap = isCubemap; }
-
-    void Unload();
 
 private:
-    Texture2D m_Texture = {0};
-    Image m_PendingImage = {0};
-    bool m_HasPendingImage = false;
     bool m_IsCubemap = false;
 };
 } // namespace CHEngine

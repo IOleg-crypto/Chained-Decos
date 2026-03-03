@@ -9,9 +9,9 @@
 #include "engine/scene/entity.h"
 #include "engine/scene/scene_settings.h"
 #include "entt/entt.hpp"
+#include <functional>
 #include <memory>
 #include <optional>
-#include <raylib.h>
 #include <string>
 #include <unordered_map>
 
@@ -50,6 +50,12 @@ public: // Life Cycle & Simulation
     }
     void OnEvent(Event& event);
 
+    using EventCallbackFn = std::function<void(Event&)>;
+    void SetEventCallback(const EventCallbackFn& callback)
+    {
+        m_EventCallback = callback;
+    }
+
 public: // Scene Settings
     SceneSettings& GetSettings()
     {
@@ -79,11 +85,7 @@ public: // Systems & Tools
         return m_Registry;
     }
 
-    std::optional<Camera3D> GetActiveCamera();
     Entity GetPrimaryCameraEntity();
-
-private:
-    Camera3D GetCameraFromEntity(entt::entity entityHandle);
 
 private:
     entt::registry m_Registry;
@@ -92,6 +94,7 @@ private:
     std::unique_ptr<Physics> m_Physics;
 
     bool m_IsSimulationRunning = false;
+    EventCallbackFn m_EventCallback;
 
 private: // Internal Event Handlers
     // Reactive signals handlers
@@ -106,15 +109,13 @@ private: // Internal Event Handlers
 
     // Hierarchy Handlers
     void OnHierarchyDestroy(entt::registry& registry, entt::entity entity);
-    
+
     // Script Cleanup Handlers
     void OnScriptComponentDestroyed(entt::registry& registry, entt::entity entity);
 
 private: // Update Logic
     void UpdatePhysics(Timestep deltaTime);
     void UpdateAnimations(Timestep deltaTime);
-    void UpdateScripting(Timestep deltaTime);
-    void UpdateAudio(Timestep deltaTime);
     void UpdateCameras(Timestep deltaTime);
     void UpdateTransitions();
     void UpdateUIActions();
