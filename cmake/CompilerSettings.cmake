@@ -12,6 +12,7 @@ if(MSVC)
         /Zc:preprocessor     # Modern preprocessor
         /Gm-                 # Disable minimal rebuild (it's slower)
         /utf-8               # Use UTF-8 character set
+        /bigobj              # Allow large object files (required for many modules)
         
         # Dead Code Elimination: Function-Level Linking
         $<$<CONFIG:Release>:/Gy>
@@ -44,6 +45,7 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(
         $<$<CONFIG:Debug>:-O0> $<$<CONFIG:Debug>:-g>
         $<$<CONFIG:Release>:-O3> $<$<CONFIG:Release>:-DNDEBUG>
+        -Wa,-mbig-obj        # Allow large object files (MinGW)
         
         # Dead Code Elimination data sections
         $<$<CONFIG:Release>:-ffunction-sections>
