@@ -35,13 +35,16 @@ if(DOTNET_EXECUTABLE)
     set(CORAL_MANAGED_DIR "${CMAKE_BINARY_DIR}/include/coral/cmake")
     
     # Generate ManagedDependencies.props to provide paths to the .csproj
+    # Use relative paths for better portability between machines and configurations
+    file(RELATIVE_PATH RELATIVE_CORAL_MANAGED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/managed" "${CORAL_MANAGED_DIR}")
+    
     # Use native paths (backslashes on Windows) for the MSBuild property
-    file(TO_NATIVE_PATH "${CORAL_MANAGED_DIR}" NATIVE_CORAL_MANAGED_DIR)
+    file(TO_NATIVE_PATH "${RELATIVE_CORAL_MANAGED_DIR}" NATIVE_RELATIVE_CORAL_MANAGED_DIR)
     
     set(PROPS_CONTENT 
 "<Project>
   <PropertyGroup>
-    <CoralManagedDir>${NATIVE_CORAL_MANAGED_DIR}</CoralManagedDir>
+    <CoralManagedDir>$(MSBuildThisFileDirectory)${NATIVE_RELATIVE_CORAL_MANAGED_DIR}</CoralManagedDir>
   </PropertyGroup>
 </Project>")
     

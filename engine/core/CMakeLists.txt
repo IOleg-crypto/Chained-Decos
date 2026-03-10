@@ -37,11 +37,7 @@ target_include_directories(engine_core PUBLIC
 target_link_libraries(engine_core PUBLIC yaml-cpp raylib imguilib EnTT Coral.Native)
 
 # Apply common macro configurations and compiler flags
-if(MSVC)
-    target_compile_options(engine_core PRIVATE /bigobj)
-elseif(MINGW)
-    target_compile_options(engine_core PRIVATE -Wa,-mbig-obj)
-endif()
+# (Redundant /bigobj flags removed - now in CompilerSettings.cmake)
 
 # We apply optimizations and precompiled headers specific to core
 if(COMMAND apply_engine_optimizations)
