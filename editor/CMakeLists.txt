@@ -59,12 +59,7 @@ target_sources(editor_core PRIVATE
     ${imguizmo_SOURCE_DIR}/GraphEditor.h
 )
 
-# Handle large translation units (required for PropertyEditor and Unity builds)
-if(MSVC)
-    target_compile_options(editor_core PRIVATE /bigobj)
-elseif(MINGW)
-    target_compile_options(editor_core PRIVATE -Wa,-mbig-obj)
-endif()
+# (Redundant /bigobj flags removed - now in CompilerSettings.cmake)
 
 
 target_link_libraries(editor_core PUBLIC 

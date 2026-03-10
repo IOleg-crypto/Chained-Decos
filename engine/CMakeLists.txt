@@ -64,12 +64,7 @@ PRIVATE
     assimp::assimp
 )
 
-# Compiler flags
-if(MSVC)
-    target_compile_options(engine PRIVATE /bigobj)
-elseif(MINGW)
-    target_compile_options(engine PRIVATE -Wa,-mbig-obj)
-endif()
+# (Redundant compiler flags removed - now in CompilerSettings.cmake)
 
 if(COMMAND apply_engine_optimizations)
     apply_engine_optimizations(engine)

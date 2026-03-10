@@ -45,10 +45,6 @@
 	path = include/coral
 	url = https://github.com/StudioCherno/Coral.git
 
-[submodule "include/entt"]
-	path = include/entt
-	url = https://github.com/skypjack/entt.git
-	branch = master
 
 [submodule "include/GameNetworkingSockets"]
 	path = include/GameNetworkingSockets
