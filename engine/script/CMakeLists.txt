@@ -31,7 +31,7 @@ endif()
 find_program(DOTNET_EXECUTABLE dotnet)
 if(DOTNET_EXECUTABLE)
     set(MANAGED_PROJECT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/managed/CHEngine.Managed.csproj")
-    set(MANAGED_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/$<CONFIG>")
+    set(MANAGED_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")
     set(CORAL_MANAGED_DIR "${CMAKE_BINARY_DIR}/include/coral/cmake")
     
     # Generate ManagedDependencies.props to provide paths to the .csproj
