@@ -82,3 +82,15 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/resources"
     USE_SOURCE_PERMISSIONS
     COMPONENT Runtime
 )
+
+# ── DLL Deployment ──────────────────────────────────────────────────────────
+# Ensure Coral.Managed.dll is in the same folder as the engine/editor binaries
+if(TARGET CoralManaged)
+    add_custom_command(TARGET engine POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_BINARY_DIR}/include/coral/cmake/Coral.Managed.dll"
+        "${CMAKE_BINARY_DIR}/bin/Coral.Managed.dll"
+        COMMENT "Deploying Coral.Managed.dll to bin/"
+        VERBATIM
+    )
+endif()
