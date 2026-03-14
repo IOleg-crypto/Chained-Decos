@@ -4,6 +4,8 @@
 #include "engine/core/assert.h"
 #include "engine/core/base.h"
 #include "raylib.h"
+#include "buffer.h"
+#include "vertex_array.h"
 #include <array>
 #include <memory>
 #include <vector>
@@ -15,7 +17,7 @@ class TextureAsset;
 struct QuadVertex
 {
     Vector3 Position;
-    Color Color;
+    Vector4 Color;
     Vector2 TexCoord;
     float TexIndex;
 };
@@ -26,6 +28,9 @@ struct Renderer2DData
     static const uint32_t MaxVertices = MaxQuads * 4;
     static const uint32_t MaxIndices = MaxQuads * 6;
     static const uint32_t MaxTextureSlots = 32; // Limit by GPU
+
+    std::shared_ptr<VertexArray> QuadVertexArray;
+    std::shared_ptr<VertexBuffer> QuadVertexBuffer;
 
     QuadVertex* QuadVertexBufferBase = nullptr;
     QuadVertex* QuadVertexBufferPtr = nullptr;
@@ -55,16 +60,16 @@ struct Renderer2DData
 class Renderer2D
 {
 public:
-    static void Init();
-    static void Shutdown();
-
-    static bool IsInitialized()
-    {
-        return s_Instance != nullptr;
-    }
-
     Renderer2D();
     ~Renderer2D();
+
+    void Init();
+    void Shutdown();
+
+    bool IsInitialized()
+    {
+        return m_Data != nullptr;
+    }
 
     // Screen-space (UI) rendering
     void BeginCanvas();
@@ -98,11 +103,7 @@ public:
         return m_Data->Stats;
     }
 
-    static Renderer2D& Get()
-    {
-        CH_CORE_ASSERT(s_Instance, "Renderer2D instance is null!");
-        return *s_Instance;
-    }
+    static Renderer2D& Get();
 
 private:
     void StartBatch();

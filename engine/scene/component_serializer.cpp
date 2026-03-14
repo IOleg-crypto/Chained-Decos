@@ -1,8 +1,8 @@
 #include "component_serializer.h"
-#include "components.h"
-
 #include "components/hierarchy_component.h"
 #include "components/id_component.h"
+#include "engine/scene/components.h"
+#include "engine/core/application.h"
 #include "engine/core/yaml.h"
 #include "engine/scene/serialization_utils.h"
 #include "scene.h"
@@ -15,9 +15,23 @@ template <> struct convert<CHEngine::ManagedScriptInstance>
     static Node encode(const CHEngine::ManagedScriptInstance& rhs)
     {
         Node node;
-        node = rhs.ClassName;
+        node["ClassName"] = rhs.ClassName;
+        if (!rhs.Fields.empty())
+        {
+            Node fields;
+            for (const auto& [name, field] : rhs.Fields)
+            {
+                Node f;
+                f["Name"] = field.Name;
+                f["Type"] = (int)field.Type;
+                std::visit([&](auto&& arg) { f["Value"] = YAML::Node(arg); }, field.Value);
+                fields.push_back(f);
+            }
+            node["Fields"] = fields;
+        }
         return node;
     }
+
     static bool decode(const Node& node, CHEngine::ManagedScriptInstance& rhs)
     {
         if (node.IsScalar())
@@ -25,13 +39,65 @@ template <> struct convert<CHEngine::ManagedScriptInstance>
             rhs.ClassName = node.as<std::string>();
             return true;
         }
-        return false;
+
+        if (!node.IsMap())
+            return false;
+
+        if (node["ClassName"])
+            rhs.ClassName = node["ClassName"].as<std::string>();
+
+        if (node["Fields"] && node["Fields"].IsSequence())
+        {
+            for (auto f : node["Fields"])
+            {
+                CHEngine::ScriptField field;
+                if (f["Name"])
+                    field.Name = f["Name"].as<std::string>();
+                if (f["Type"])
+                    field.Type = (CHEngine::ScriptFieldType)f["Type"].as<int>();
+
+                if (f["Value"])
+                {
+                    switch (field.Type)
+                    {
+                    case CHEngine::ScriptFieldType::Float: field.Value = f["Value"].as<float>(); break;
+                    case CHEngine::ScriptFieldType::Int: field.Value = f["Value"].as<int>(); break;
+                    case CHEngine::ScriptFieldType::Bool: field.Value = f["Value"].as<bool>(); break;
+                    case CHEngine::ScriptFieldType::String: field.Value = f["Value"].as<std::string>(); break;
+                    case CHEngine::ScriptFieldType::Vector2: field.Value = f["Value"].as<Vector2>(); break;
+                    case CHEngine::ScriptFieldType::Vector3: field.Value = f["Value"].as<Vector3>(); break;
+                    case CHEngine::ScriptFieldType::Vector4: field.Value = f["Value"].as<Vector4>(); break;
+                    case CHEngine::ScriptFieldType::Color: field.Value = f["Value"].as<Color>(); break;
+                    case CHEngine::ScriptFieldType::Entity: field.Value = f["Value"].as<uint64_t>(); break;
+                    default: break;
+                    }
+                }
+                rhs.Fields[field.Name] = field;
+            }
+        }
+        return true;
     }
 };
 
 inline Emitter& operator<<(Emitter& out, const CHEngine::ManagedScriptInstance& v)
 {
-    out << v.ClassName;
+    out << BeginMap;
+    out << Key << "ClassName" << Value << v.ClassName;
+    if (!v.Fields.empty())
+    {
+        out << Key << "Fields" << Value << BeginSeq;
+        for (const auto& [name, field] : v.Fields)
+        {
+            out << BeginMap;
+            out << Key << "Name" << Value << field.Name;
+            out << Key << "Type" << Value << (int)field.Type;
+            out << Key << "Value" << Value;
+            std::visit([&](auto&& arg) { out << YAML::Node(arg); }, field.Value);
+            out << EndMap;
+        }
+        out << EndSeq;
+    }
+    out << EndMap;
     return out;
 }
 
@@ -39,12 +105,28 @@ inline Emitter& operator<<(Emitter& out, const CHEngine::ManagedScriptInstance& 
 
 namespace CHEngine
 {
+static ComponentSerializer* s_Instance = nullptr;
 
-std::vector<ComponentSerializerEntry> ComponentSerializer::s_Registry;
+ComponentSerializer::ComponentSerializer()
+{
+    CH_CORE_ASSERT(!s_Instance, "ComponentSerializer already exists!");
+    s_Instance = this;
+}
+
+ComponentSerializer::~ComponentSerializer()
+{
+    s_Instance = nullptr;
+}
+
+ComponentSerializer& ComponentSerializer::Get()
+{
+    CH_CORE_ASSERT(s_Instance, "ComponentSerializer not initialized!");
+    return *s_Instance;
+}
 
 void ComponentSerializer::RegisterCustom(const ComponentSerializerEntry& entry)
 {
-    s_Registry.push_back(entry);
+    m_Registry.push_back(entry);
 }
 
 // --- Special Serialization Helpers ---
@@ -100,8 +182,16 @@ void ComponentSerializer::DeserializeHierarchyTask(Entity entity, YAML::Node nod
     {
         auto h = node["Hierarchy"];
         outTask.entity = entity;
-        outTask.parent = h["Parent"].as<uint64_t>();
-        if (h["Children"])
+        if (h["Parent"])
+        {
+            outTask.parent = h["Parent"].as<uint64_t>();
+        }
+        else
+        {
+            outTask.parent = 0;
+        }
+
+        if (h["Children"] && h["Children"].IsSequence())
         {
             for (auto child : h["Children"])
             {
@@ -437,7 +527,7 @@ void ComponentSerializer::DeserializeMaterialSlot(MaterialSlot& slot, YAML::Node
 
 void ComponentSerializer::Initialize()
 {
-    s_Registry.clear();
+    m_Registry.clear();
 
     // --- Основні ---
     Register<TagComponent>("TagComponent",
@@ -509,6 +599,19 @@ void ComponentSerializer::Initialize()
             .Handle("ModelHandle", component.ModelHandle)
             .Path("ModelPath", component.ModelPath)
             .Property("AutoCalculate", component.AutoCalculate);
+    });
+
+    Register<PrimitiveComponent>("PrimitiveComponent", [](auto& archive, auto& component) {
+        archive.Property("Type", (int&)component.Type)
+            .Property("Radius", component.Radius)
+            .Property("InnerRadius", component.InnerRadius)
+            .Property("Height", component.Height)
+            .Property("Slices", component.Slices)
+            .Property("Stacks", component.Stacks)
+            .Property("Dimensions", component.Dimensions);
+
+        if (archive.GetMode() == SerializationUtils::PropertyArchive::Deserialize)
+            component.Dirty = true;
     });
 
     Register<RigidBodyComponent>("RigidBodyComponent", [](auto& archive, auto& component) {
@@ -807,7 +910,7 @@ void ComponentSerializer::Initialize()
 
 void ComponentSerializer::SerializeAll(YAML::Emitter& out, Entity entity)
 {
-    for (auto& entry : s_Registry)
+    for (auto& entry : m_Registry)
     {
         entry.Serialize(out, entity);
     }
@@ -816,7 +919,7 @@ void ComponentSerializer::SerializeAll(YAML::Emitter& out, Entity entity)
 
 void ComponentSerializer::DeserializeAll(Entity entity, YAML::Node node)
 {
-    for (const auto& entry : s_Registry)
+    for (const auto& entry : m_Registry)
     {
         if (entry.Deserialize)
         {
@@ -827,7 +930,7 @@ void ComponentSerializer::DeserializeAll(Entity entity, YAML::Node node)
 
 void ComponentSerializer::CopyAll(Entity source, Entity destination)
 {
-    for (const auto& entry : s_Registry)
+    for (const auto& entry : m_Registry)
     {
         if (entry.Copy)
         {

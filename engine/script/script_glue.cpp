@@ -40,10 +40,10 @@ namespace CHEngine {
 
     // ── Scene / Global ────────────────────────────────────────────────────
     CH_SCRIPT_FUNC uint64_t Scene_FindEntityByTag(Coral::String tag) {
-        if (!ScriptEngine::GetActiveScene()) return 0;
+        if (!ScriptEngine::Get().GetActiveScene()) return 0;
         std::string tagStr = (std::string)tag;
         CH_CORE_INFO("C# searching for entity by tag: '{}'", tagStr);
-        Entity entity = ScriptEngine::GetActiveScene()->FindEntityByTag(tagStr);
+        Entity entity = ScriptEngine::Get().GetActiveScene()->FindEntityByTag(tagStr);
         return entity ? (uint64_t)(uint32_t)entity : 0;
     }
 
@@ -53,14 +53,14 @@ namespace CHEngine {
     }
 
     CH_SCRIPT_FUNC uint64_t Scene_GetPrimaryCameraEntity() {
-        if (!ScriptEngine::GetActiveScene()) return 0;
-        Entity entity = ScriptEngine::GetActiveScene()->GetPrimaryCameraEntity();
+        if (!ScriptEngine::Get().GetActiveScene()) return 0;
+        Entity entity = ScriptEngine::Get().GetActiveScene()->GetPrimaryCameraEntity();
         return entity ? (uint64_t)(uint32_t)entity : 0;
     }
 
     // ── Entity / Transform ────────────────────────────────────────────────
     CH_SCRIPT_FUNC void Entity_GetTranslation(uint64_t entityID, Vector3* outTranslation) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return;
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         if (entity && entity.HasComponent<TransformComponent>()) 
@@ -68,7 +68,7 @@ namespace CHEngine {
     }
 
     CH_SCRIPT_FUNC void Entity_SetTranslation(uint64_t entityID, Vector3* inTranslation) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return;
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         if (entity && entity.HasComponent<TransformComponent>()) 
@@ -76,7 +76,7 @@ namespace CHEngine {
     }
 
     CH_SCRIPT_FUNC void Entity_GetRotation(uint64_t entityID, Vector3* outRotation) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return;
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         if (entity && entity.HasComponent<TransformComponent>()) 
@@ -84,7 +84,7 @@ namespace CHEngine {
     }
 
     CH_SCRIPT_FUNC void Entity_SetRotation(uint64_t entityID, Vector3* inRotation) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return;
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         if (entity && entity.HasComponent<TransformComponent>()) 
@@ -92,7 +92,7 @@ namespace CHEngine {
     }
 
     CH_SCRIPT_FUNC void Entity_GetScale(uint64_t entityID, Vector3* outScale) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return;
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         if (entity && entity.HasComponent<TransformComponent>()) 
@@ -100,7 +100,7 @@ namespace CHEngine {
     }
 
     CH_SCRIPT_FUNC void Entity_SetScale(uint64_t entityID, Vector3* inScale) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return;
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         if (entity && entity.HasComponent<TransformComponent>()) 
@@ -108,7 +108,7 @@ namespace CHEngine {
     }
 
     CH_SCRIPT_FUNC bool Entity_HasComponent(uint64_t entityID, Coral::String componentName) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return false;
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         if (!entity) return false;
@@ -125,7 +125,7 @@ namespace CHEngine {
     }
 
     CH_SCRIPT_FUNC void Entity_GetVelocity(uint64_t entityID, Vector3* outVelocity) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return;
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         if (entity && entity.HasComponent<RigidBodyComponent>()) 
@@ -133,7 +133,7 @@ namespace CHEngine {
     }
 
     CH_SCRIPT_FUNC void Entity_SetVelocity(uint64_t entityID, Vector3* inVelocity) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return;
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         if (entity && entity.HasComponent<RigidBodyComponent>()) 
@@ -141,14 +141,14 @@ namespace CHEngine {
     }
 
     CH_SCRIPT_FUNC bool Entity_IsGrounded(uint64_t entityID) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return false;
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         return entity && entity.HasComponent<RigidBodyComponent>() ? entity.GetComponent<RigidBodyComponent>().IsGrounded : false;
     }
 
     CH_SCRIPT_FUNC Coral::Array<uint64_t> Entity_FindAllWithComponent(Coral::String componentName) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return Coral::Array<uint64_t>::New(0);
         
         std::string name = (std::string)componentName;
@@ -170,7 +170,7 @@ namespace CHEngine {
 
     // ── Tag ───────────────────────────────────────────────────────────────
     CH_SCRIPT_FUNC Coral::String TagComponent_GetTag(uint64_t entityID) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return Coral::String::New("");
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         if (entity && entity.HasComponent<TagComponent>()) 
@@ -180,7 +180,7 @@ namespace CHEngine {
 
     // ── Camera ────────────────────────────────────────────────────────────
     CH_SCRIPT_FUNC void Camera_GetForward(uint64_t entityID, Vector3* outForward) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return;
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         if (entity && entity.HasComponent<TransformComponent>()) {
@@ -190,7 +190,7 @@ namespace CHEngine {
     }
 
     CH_SCRIPT_FUNC void Camera_GetRight(uint64_t entityID, Vector3* outRight) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return;
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         if (entity && entity.HasComponent<TransformComponent>()) {
@@ -200,7 +200,7 @@ namespace CHEngine {
     }
 
     CH_SCRIPT_FUNC void Camera_GetOrbit(uint64_t entityID, float* yaw, float* pitch, float* distance) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return;
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         if (entity && entity.HasComponent<CameraComponent>()) {
@@ -212,7 +212,7 @@ namespace CHEngine {
     }
 
     CH_SCRIPT_FUNC void Camera_SetOrbit(uint64_t entityID, float yaw, float pitch, float distance) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return;
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         if (entity && entity.HasComponent<CameraComponent>()) {
@@ -224,14 +224,14 @@ namespace CHEngine {
     }
 
     CH_SCRIPT_FUNC bool Camera_GetPrimary(uint64_t entityID) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return false;
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         return entity && entity.HasComponent<CameraComponent>() ? entity.GetComponent<CameraComponent>().Primary : false;
     }
 
     CH_SCRIPT_FUNC void Camera_SetPrimary(uint64_t entityID, bool primary) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return;
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         if (entity && entity.HasComponent<CameraComponent>()) 
@@ -239,14 +239,14 @@ namespace CHEngine {
     }
 
     CH_SCRIPT_FUNC bool Camera_GetIsOrbit(uint64_t entityID) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return false;
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         return entity && entity.HasComponent<CameraComponent>() ? entity.GetComponent<CameraComponent>().IsOrbitCamera : false;
     }
 
     CH_SCRIPT_FUNC void Camera_SetIsOrbit(uint64_t entityID, bool isOrbit) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return;
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         if (entity && entity.HasComponent<CameraComponent>()) 
@@ -254,14 +254,14 @@ namespace CHEngine {
     }
 
     CH_SCRIPT_FUNC Coral::String Camera_GetTargetTag(uint64_t entityID) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return Coral::String::New("");
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         return entity && entity.HasComponent<CameraComponent>() ? Coral::String::New(entity.GetComponent<CameraComponent>().TargetEntityTag) : Coral::String::New("");
     }
 
     CH_SCRIPT_FUNC void Camera_SetTargetTag(uint64_t entityID, Coral::String tag) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return;
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         if (entity && entity.HasComponent<CameraComponent>()) 
@@ -281,14 +281,14 @@ namespace CHEngine {
 
     // ── PlayerComponent ───────────────────────────────────────────────────
     CH_SCRIPT_FUNC float PlayerComponent_GetMovementSpeed(uint64_t entityID) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return 0.0f;
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         return entity && entity.HasComponent<PlayerComponent>() ? entity.GetComponent<PlayerComponent>().MovementSpeed : 0.0f;
     }
 
     CH_SCRIPT_FUNC void PlayerComponent_SetMovementSpeed(uint64_t entityID, float speed) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return;
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         if (entity && entity.HasComponent<PlayerComponent>()) 
@@ -299,40 +299,40 @@ namespace CHEngine {
     CH_SCRIPT_FUNC void Audio_Play(Coral::String path, float volume, float pitch, bool loop) {
         if (Project::GetActive() && Project::GetActive()->GetAssetManager()) {
             auto asset = Project::GetActive()->GetAssetManager()->Get<SoundAsset>((std::string)path);
-            if (asset) Audio::Play(asset, volume, pitch, loop);
+            if (asset) Audio::Get().Play(asset, volume, pitch, loop);
         }
     }
 
     CH_SCRIPT_FUNC void Audio_Stop(Coral::String path) {
         if (Project::GetActive() && Project::GetActive()->GetAssetManager()) {
             auto asset = Project::GetActive()->GetAssetManager()->Get<SoundAsset>((std::string)path);
-            if (asset) Audio::Stop(asset);
+            if (asset) Audio::Get().Stop(asset);
         }
     }
 
     CH_SCRIPT_FUNC void AudioComponent_SetVolume(uint64_t entityID, float volume) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return;
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         if (entity && entity.HasComponent<AudioComponent>()) entity.GetComponent<AudioComponent>().Volume = volume;
     }
 
     CH_SCRIPT_FUNC void AudioComponent_SetLoop(uint64_t entityID, bool loop) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return;
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         if (entity && entity.HasComponent<AudioComponent>()) entity.GetComponent<AudioComponent>().Loop = loop;
     }
 
     CH_SCRIPT_FUNC bool AudioComponent_IsPlaying(uint64_t entityID) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return false;
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         return entity && entity.HasComponent<AudioComponent>() ? entity.GetComponent<AudioComponent>().IsPlaying : false;
     }
 
     CH_SCRIPT_FUNC Coral::String AudioComponent_GetSoundPath(uint64_t entityID) {
-        Scene* scene = ScriptEngine::GetActiveScene();
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return Coral::String::New("");
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         return entity && entity.HasComponent<AudioComponent>() ? Coral::String::New(entity.GetComponent<AudioComponent>().SoundPath) : Coral::String::New("");

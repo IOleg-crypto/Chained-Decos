@@ -36,48 +36,33 @@ struct WindowProperties
 class Window
 {
 public:
-    Window(const WindowProperties& properties);
-    ~Window();
-    bool ShouldClose() const;
-    void BeginFrame();
-    void EndFrame();
+    virtual ~Window() = default;
 
-    int GetWidth() const
-    {
-        return m_Width;
-    }
-    int GetHeight() const
-    {
-        return m_Height;
-    }
+    virtual void BeginFrame() = 0;
+    virtual void EndFrame() = 0;
 
-    GLFWwindow* GetNativeWindow() const
-    {
-        return m_WindowHandle;
-    }
+    virtual bool ShouldClose() const = 0;
 
-    void SetTitle(const std::string& title);
-    void SetSize(int width, int height);
-    void SetSizeDirect(int width, int height)
-    {
-        m_Width = width;
-        m_Height = height;
-    }
+    virtual int GetWidth() const = 0;
+    virtual int GetHeight() const = 0;
 
-    void ToggleFullscreen();
-    void SetFullscreen(bool enabled);
+    virtual void SetTitle(const std::string& title) = 0;
+    virtual void SetSize(int width, int height) = 0;
+    virtual void SetSizeDirect(int width, int height) = 0;
 
-    void SetVSync(bool enabled);
-    void SetAntialiasing(bool enabled);
-    void SetTargetFramesPerSecond(int framesPerSecond);
-    void SetWindowIcon(Image icon);
+    virtual void ToggleFullscreen() = 0;
+    virtual void SetFullscreen(bool enabled) = 0;
 
-private:
-    GLFWwindow* m_WindowHandle = nullptr;
-    int m_Width, m_Height;
-    std::string m_Title;
-    bool m_VSync = true;
-    std::string m_ImGuiConfigurationPath;
+    virtual void SetVSync(bool enabled) = 0;
+    virtual void SetAntialiasing(bool enabled) = 0;
+    virtual void SetTargetFramesPerSecond(int framesPerSecond) = 0;
+    // Note: Image is from Raylib, might need abstraction later if moving away from Raylib
+    // But for now we focus on the Window Interface.
+    virtual void SetWindowIcon(Image icon) = 0;
+
+    virtual void* GetNativeWindow() const = 0;
+
+    static std::unique_ptr<Window> Create(const WindowProperties& properties = WindowProperties());
 };
 } // namespace CHEngine
 

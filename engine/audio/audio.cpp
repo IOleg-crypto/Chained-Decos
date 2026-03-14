@@ -1,11 +1,31 @@
 #include "audio.h"
+#include "engine/audio/sound_asset.h"
+#include "engine/core/application.h"
 #include "engine/core/log.h"
 #include "engine/scene/components.h"
-#include "raylib.h"
-#include "sound_asset.h"
 
 namespace CHEngine
 {
+static Audio* s_Instance = nullptr;
+
+Audio::Audio()
+{
+    CH_CORE_ASSERT(!s_Instance, "Audio system already exists!");
+    s_Instance = this;
+}
+
+Audio::~Audio()
+{
+    Shutdown();
+    s_Instance = nullptr;
+}
+
+Audio& Audio::Get()
+{
+    CH_CORE_ASSERT(s_Instance, "Audio system not initialized!");
+    return *s_Instance;
+}
+
 void Audio::Init()
 {
     if (!IsAudioDeviceReady())

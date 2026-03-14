@@ -24,8 +24,8 @@ void SceneSerializer::SerializeEntity(YAML::Emitter& out, Entity entity)
 {
     out << YAML::BeginMap; // Entity
 
-    ComponentSerializer::SerializeID(out, entity);
-    ComponentSerializer::SerializeAll(out, entity);
+    ComponentSerializer::Get().SerializeID(out, entity);
+    ComponentSerializer::Get().SerializeAll(out, entity);
 
     out << YAML::EndMap; // Entity
 }
@@ -350,11 +350,11 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
                 Entity deserializedEntity = m_Scene->CreateEntityWithUUID(uuid, name);
 
                 // Use ComponentSerializer registry for all components
-                ComponentSerializer::DeserializeAll(deserializedEntity, entity);
+                ComponentSerializer::Get().DeserializeAll(deserializedEntity, entity);
 
                 // Hierarchy task
                 HierarchyTask task;
-                ComponentSerializer::DeserializeHierarchyTask(deserializedEntity, entity, task);
+                ComponentSerializer::Get().DeserializeHierarchyTask(deserializedEntity, entity, task);
                 if (task.entity)
                 {
                     hierarchyTasks.push_back(task);

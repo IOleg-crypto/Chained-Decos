@@ -56,6 +56,13 @@ void ImGuiLayer::OnAttach()
 
     // Setup Platform/Renderer backends
     GLFWwindow* window = (GLFWwindow*)app.GetWindow().GetNativeWindow();
+    
+    if (!window)
+    {
+        CH_CORE_ERROR("ImGuiLayer: Failed to get native window handle! GLFW context might not be current.");
+        return;
+    }
+
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 430");
 }

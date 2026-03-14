@@ -29,17 +29,23 @@ struct RaycastResult
     int MeshIndex = -1;
 };
 
+class PhysicsSystem
+{
+public:
+    PhysicsSystem();
+    ~PhysicsSystem();
+
+    void Init();
+    void Shutdown();
+
+    static PhysicsSystem& Get();
+};
+
 class Physics
 {
 public: // Life Cycle
     Physics(Scene* scene);
     ~Physics();
-
-    // Initializes the physics context for the scene.
-    static void Init(); // Global engine-level init if needed
-
-    // Shuts down global physics resources.
-    static void Shutdown();
 
 public: // Simulation & Queries
     // Steps the physics simulation and updates collider states.

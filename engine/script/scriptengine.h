@@ -26,42 +26,47 @@ class ScriptEngine
 {
 public:
     // ── Lifecycle ────────────────────────────────────────────────────────
-    static void Init();
-    static void Shutdown();
+    ScriptEngine();
+    ~ScriptEngine();
+
+    void Init();
+    void Shutdown();
 
     // ── Assembly management ──────────────────────────────────────────────
     /// Load (or re-load) the game script DLL.
-    static void LoadAppAssembly(const std::string& filepath);
+    void LoadAppAssembly(const std::string& filepath);
     /// Hot-reload: stops running scripts, unloads the old ALC, loads the new DLL.
-    static void ReloadAssembly();
+    void ReloadAssembly();
 
     // ── Script type lookup ───────────────────────────────────────────────
     /// Returns a pointer to the Coral::Type for the given short or full class name.
     /// Search is case-insensitive. Returns nullptr if not found.
-    static Coral::Type* GetScriptClass(const std::string& name);
+    Coral::Type* GetScriptClass(const std::string& name);
 
     /// All discovered script types keyed by lowercase full name.
-    static const std::unordered_map<std::string, Coral::Type>& GetScriptClasses()
-    { return s_ScriptClasses; }
+    const std::unordered_map<std::string, Coral::Type>& GetScriptClasses() const
+    { return m_ScriptClasses; }
 
     // ── Accessors ────────────────────────────────────────────────────────
-    static bool   IsInitialized()  { return s_IsInitialized; }
-    static Scene* GetActiveScene() { return s_ActiveScene; }
-    static void   SetActiveScene(Scene* scene) { s_ActiveScene = scene; }
+    bool   IsInitialized() const { return m_IsInitialized; }
+    Scene* GetActiveScene() const { return m_ActiveScene; }
+    void   SetActiveScene(Scene* scene) { m_ActiveScene = scene; }
+
+    static ScriptEngine& Get();
 
 private:
-    static void DiscoverScriptTypes();
+    void DiscoverScriptTypes();
 
 private:
-    static Scene*                                     s_ActiveScene;
-    static Coral::HostInstance                        s_Host;
-    static Coral::AssemblyLoadContext                 s_AppAssemblyContext;
-    static Coral::ManagedAssembly*                    s_AppAssembly;
-    static Coral::ManagedAssembly*                    s_CoreAssembly;
+    Scene*                                     m_ActiveScene = nullptr;
+    Coral::HostInstance                        m_Host;
+    Coral::AssemblyLoadContext                 m_AppAssemblyContext;
+    Coral::ManagedAssembly*                    m_AppAssembly = nullptr;
+    Coral::ManagedAssembly*                    m_CoreAssembly = nullptr;
 
     // Keyed by lowercase full qualified name, e.g. "chaineddecos.scripts.playercontroller"
-    static std::unordered_map<std::string, Coral::Type> s_ScriptClasses;
-    static bool s_IsInitialized;
+    std::unordered_map<std::string, Coral::Type> m_ScriptClasses;
+    bool m_IsInitialized = false;
 };
 
 } // namespace CHEngine

@@ -2,6 +2,8 @@
 #define CH_INPUT_H
 
 #include "engine/core/base.h"
+#include "key_codes.h"
+#include "mouse_codes.h"
 
 namespace CHEngine
 {
@@ -13,15 +15,15 @@ public:
     static void PollEvents();
 
     // Direct polling API (wraps raylib)
-    static bool IsKeyPressed(int key);
-    static bool IsKeyDown(int key);
-    static bool IsKeyReleased(int key);
-    static bool IsKeyUp(int key);
+    static bool IsKeyPressed(KeyCode key);
+    static bool IsKeyDown(KeyCode key);
+    static bool IsKeyReleased(KeyCode key);
+    static bool IsKeyUp(KeyCode key);
 
-    static bool IsMouseButtonPressed(int button);
-    static bool IsMouseButtonDown(int button);
-    static bool IsMouseButtonReleased(int button);
-    static bool IsMouseButtonUp(int button);
+    static bool IsMouseButtonPressed(MouseCode button);
+    static bool IsMouseButtonDown(MouseCode button);
+    static bool IsMouseButtonReleased(MouseCode button);
+    static bool IsMouseButtonUp(MouseCode button);
 
     static Vector2 GetMousePosition();
     static Vector2 GetMouseDelta();

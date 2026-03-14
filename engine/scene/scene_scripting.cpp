@@ -9,12 +9,12 @@ namespace CHEngine {
 
     void SceneScripting::Update(Scene* scene, Timestep deltaTime)
     {
-        if (!ScriptEngine::IsInitialized()) {
+        if (!ScriptEngine::Get().IsInitialized()) {
             CH_CORE_WARN("SceneScripting::Update - ScriptEngine not initialized");
             return;
         }
 
-        ScriptEngine::SetActiveScene(scene);
+        ScriptEngine::Get().SetActiveScene(scene);
         
         auto& registry = scene->GetRegistry();
         auto view = registry.view<ManagedScriptComponent>();
@@ -35,7 +35,7 @@ namespace CHEngine {
                 // 1. Instantiation Phase
                 if (!script.Instance && !script.ClassName.empty())
                 {
-                    auto* type = ScriptEngine::GetScriptClass(script.ClassName);
+                    auto* type = ScriptEngine::Get().GetScriptClass(script.ClassName);
                     if (type) 
                     {
                         CH_CORE_INFO("SceneScripting::Update - Instantiating script '{}' for entity '{}'", script.ClassName, (uint32_t)entity);
@@ -49,6 +49,14 @@ namespace CHEngine {
                             ScriptGlue::SetPendingScriptInstance(&script);
                             obj->InvokeMethod("__Init", (uint64_t)(uint32_t)entity);
                             ScriptGlue::SetPendingScriptInstance(nullptr);
+                            
+                            // 2. Apply persistent field values
+                            for (const auto& [fieldName, field] : script.Fields)
+                            {
+                                std::visit([&](auto&& val) {
+                                    obj->SetFieldValue(fieldName, val);
+                                }, field.Value);
+                            }
                             
                             // Initialize logic
                             if (script.OnCreate) script.OnCreate();
@@ -98,10 +106,10 @@ namespace CHEngine {
 
     void SceneScripting::Stop(Scene* scene)
     {
-        if (!ScriptEngine::IsInitialized())
+        if (!ScriptEngine::Get().IsInitialized())
             return;
 
-        ScriptEngine::SetActiveScene(scene);
+        ScriptEngine::Get().SetActiveScene(scene);
 
         scene->GetRegistry().view<ManagedScriptComponent>().each([&](auto entity, auto& msc) {
             for (auto& script : msc.Scripts)
@@ -128,7 +136,7 @@ namespace CHEngine {
             }
         });
 
-        ScriptEngine::SetActiveScene(nullptr);
+        ScriptEngine::Get().SetActiveScene(nullptr);
     }
 
     void SceneScripting::DispatchEvent(Scene* scene, Event& e)

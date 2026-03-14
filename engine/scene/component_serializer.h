@@ -29,30 +29,35 @@ struct ComponentSerializerEntry
 class ComponentSerializer
 {
 public:
+    ComponentSerializer();
+    ~ComponentSerializer();
+
     // Initialize registry with all component types
-    static void Initialize();
+    void Initialize();
 
     // Register component via declarative schema (PropertyArchive)
     // This is the primary method that automatically creates serialization, deserialization, and copy logic.
     template <typename T>
-    static void Register(const std::string& key, std::function<void(SerializationUtils::PropertyArchive&, T&)> schema);
+    void Register(const std::string& key, std::function<void(SerializationUtils::PropertyArchive&, T&)> schema);
 
     // Register with custom logic (for complex cases)
-    static void RegisterCustom(const ComponentSerializerEntry& entry);
+    void RegisterCustom(const ComponentSerializerEntry& entry);
 
     // Serialize all registered components of an entity
-    static void SerializeAll(YAML::Emitter& out, Entity entity);
+    void SerializeAll(YAML::Emitter& out, Entity entity);
 
     // Deserialize all registered components from YAML
-    static void DeserializeAll(Entity entity, YAML::Node node);
+    void DeserializeAll(Entity entity, YAML::Node node);
 
     // Copy all components from source to destination (cloning)
-    static void CopyAll(Entity source, Entity destination);
+    void CopyAll(Entity source, Entity destination);
 
     // Special cases (ID and hierarchy)
-    static void SerializeID(YAML::Emitter& out, Entity entity);
-    static void SerializeHierarchy(YAML::Emitter& out, Entity entity);
-    static void DeserializeHierarchyTask(Entity entity, YAML::Node node, HierarchyTask& outTask);
+    void SerializeID(YAML::Emitter& out, Entity entity);
+    void SerializeHierarchy(YAML::Emitter& out, Entity entity);
+    void DeserializeHierarchyTask(Entity entity, YAML::Node node, HierarchyTask& outTask);
+
+    static ComponentSerializer& Get();
 
 private:
     static void SerializeTextStyle(YAML::Emitter& out, const TextStyle& style);
@@ -70,7 +75,7 @@ private:
     static void SerializeMaterialSlot(YAML::Emitter& out, const MaterialSlot& slot);
     static void DeserializeMaterialSlot(MaterialSlot& slot, YAML::Node node);
 
-    static std::vector<ComponentSerializerEntry> s_Registry;
+    std::vector<ComponentSerializerEntry> m_Registry;
 };
 
 // Template implementation

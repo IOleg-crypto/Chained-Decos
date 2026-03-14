@@ -55,9 +55,25 @@ void AssetManager::Initialize(const std::filesystem::path& rootPath)
 void AssetManager::Shutdown()
 {
     CH_CORE_INFO("AssetManager: Shutting down...");
+
+    // 1. Wait for all background loading to complete
+    {
+        std::lock_guard<std::mutex> futuresLock(m_FuturesMutex);
+        for (auto& future : m_Futures)
+        {
+            if (future.valid())
+            {
+                future.wait();
+            }
+        }
+        m_Futures.clear();
+    }
+
+    // 2. Clear caches
     std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
     m_AssetCaches.clear();
     m_AssetMetadata.clear();
+    m_PathCache.clear();
 }
 
 void AssetManager::SetRootPath(const std::filesystem::path& path)
@@ -85,6 +101,7 @@ void AssetManager::ClearSearchPaths()
 {
     std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
     m_SearchPaths.clear();
+    m_PathCache.clear(); // Important: clear path cache as resolving might change
     CH_CORE_INFO("AssetManager: Cleared search paths.");
 }
 
@@ -92,6 +109,9 @@ std::string AssetManager::ResolvePath(const std::string& path) const
 {
     if (path.empty())
         return "";
+
+    if (path.starts_with(":"))
+        return path;
 
     {
         std::lock_guard<std::recursive_mutex> lock(m_AssetLock);

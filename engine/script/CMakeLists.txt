@@ -31,28 +31,45 @@ endif()
 find_program(DOTNET_EXECUTABLE dotnet)
 if(DOTNET_EXECUTABLE)
     set(MANAGED_PROJECT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/managed/CHEngine.Managed.csproj")
-    set(MANAGED_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/$<CONFIG>")
+    set(MANAGED_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")
     set(CORAL_MANAGED_DIR "${CMAKE_BINARY_DIR}/include/coral/cmake")
     
     # Generate ManagedDependencies.props to provide paths to the .csproj
+    # Use relative paths for better portability between machines and configurations
+    file(RELATIVE_PATH RELATIVE_CORAL_MANAGED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/managed" "${CORAL_MANAGED_DIR}")
+    
     # Use native paths (backslashes on Windows) for the MSBuild property
-    file(TO_NATIVE_PATH "${CORAL_MANAGED_DIR}" NATIVE_CORAL_MANAGED_DIR)
+    file(TO_NATIVE_PATH "${RELATIVE_CORAL_MANAGED_DIR}" NATIVE_RELATIVE_CORAL_MANAGED_DIR)
     
     set(PROPS_CONTENT 
 "<Project>
   <PropertyGroup>
-    <CoralManagedDir>${NATIVE_CORAL_MANAGED_DIR}</CoralManagedDir>
+    <CoralManagedDir>$(MSBuildThisFileDirectory)${NATIVE_RELATIVE_CORAL_MANAGED_DIR}</CoralManagedDir>
   </PropertyGroup>
 </Project>")
     
-    file(WRITE "${CMAKE_CURRENT_SOURCE_DIR}/managed/ManagedDependencies.props" "${PROPS_CONTENT}")
+    set(PROPS_CONTENT_TMP "${CMAKE_CURRENT_SOURCE_DIR}/managed/ManagedDependencies.props.tmp")
+    set(PROPS_CONTENT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/managed/ManagedDependencies.props")
     
-    add_custom_target(CHEngine_Managed ALL
-        COMMAND ${DOTNET_EXECUTABLE} build "${MANAGED_PROJECT_PATH}" -c $<CONFIG> --no-incremental --output "${MANAGED_OUTPUT_DIR}" -p:CoralManagedDir="${CORAL_MANAGED_DIR}"
+    file(WRITE "${PROPS_CONTENT_TMP}" "${PROPS_CONTENT}")
+    configure_file("${PROPS_CONTENT_TMP}" "${PROPS_CONTENT_FILE}" COPYONLY)
+    
+    # Collect all C# source files for dependency tracking
+    file(GLOB_RECURSE MANAGED_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/managed/src/*.cs")
+    list(APPEND MANAGED_SOURCES "${MANAGED_PROJECT_PATH}")
+
+    set(MANAGED_DLL_OUTPUT "${MANAGED_OUTPUT_DIR}/CHEngine.Managed.dll")
+
+    add_custom_command(
+        OUTPUT "${MANAGED_DLL_OUTPUT}"
+        COMMAND ${DOTNET_EXECUTABLE} build "${MANAGED_PROJECT_PATH}" -c $<CONFIG> --output "${MANAGED_OUTPUT_DIR}" -p:CoralManagedDir="${CORAL_MANAGED_DIR}"
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/managed"
+        DEPENDS ${MANAGED_SOURCES}
         COMMENT "Building CHEngine.Managed C# Library"
         VERBATIM
     )
+
+    add_custom_target(CHEngine_Managed ALL DEPENDS "${MANAGED_DLL_OUTPUT}")
 
     # Ensure CHEngine_Managed builds AFTER Coral.Managed to avoid dotnet race condition
     if(TARGET CoralManaged)

@@ -2,11 +2,15 @@ add_library(engine_core OBJECT
     layer_stack.cpp
     profiler.cpp
     uuid.cpp
-    window.cpp
+    window_factory.cpp
     input.cpp
     imgui_layer.cpp
     thread_pool.cpp
     application.cpp
+
+    # Platform specific implementations
+    $<$<PLATFORM_ID:Windows>:../platform/windows/windows_window.cpp>
+    $<$<PLATFORM_ID:Linux>:../platform/linux/linux_window.cpp>
 
     application.h
     imgui_layer.h
@@ -31,17 +35,14 @@ target_include_directories(engine_core PUBLIC
     ${ENGINE_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/include/imgui
     ${CMAKE_SOURCE_DIR}/include/imgui/backends
+    ${CMAKE_SOURCE_DIR}/include/raylib/src/external/glfw/include
 )
 
 # Core module uses yaml-cpp for some configurations
 target_link_libraries(engine_core PUBLIC yaml-cpp raylib imguilib EnTT Coral.Native)
 
 # Apply common macro configurations and compiler flags
-if(MSVC)
-    target_compile_options(engine_core PRIVATE /bigobj)
-elseif(MINGW)
-    target_compile_options(engine_core PRIVATE -Wa,-mbig-obj)
-endif()
+# (Redundant /bigobj flags removed - now in CompilerSettings.cmake)
 
 # We apply optimizations and precompiled headers specific to core
 if(COMMAND apply_engine_optimizations)

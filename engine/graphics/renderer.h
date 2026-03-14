@@ -1,25 +1,21 @@
 #ifndef CH_RENDERER_H
 #define CH_RENDERER_H
 
-#include "engine/core/assert.h"
-#include "engine/core/base.h"
 #include "engine/core/timestep.h"
 #include "engine/graphics/environment.h"
 #include "engine/graphics/shader_library.h"
 #include "engine/scene/components/mesh_component.h"   // For MaterialSlot
 #include "engine/scene/components/shader_component.h" // For ShaderUniform
-#include "engine/scene/scene_settings.h"              // For GridSettings
 #include "raylib.h"
 #include "raymath.h"
-#include <functional>
 #include <memory>
-#include <string>
 #include <vector>
-
 namespace CHEngine
 {
 class ModelAsset;
 class ShaderAsset;
+class Renderer2D;
+class UIRenderer;
 
 struct RenderLight
 {
@@ -35,13 +31,8 @@ struct RenderLight
 };
 static_assert(sizeof(RenderLight) == 64, "RenderLight must be exactly 64 bytes for SSBO alignment");
 
-struct RendererData
+struct LightingData
 {
-    Model SkyboxCube;
-    Material SkyboxMaterial;
-
-    std::unique_ptr<ShaderLibrary> Shaders;
-
     LightingSettings CurrentLighting;
     FogSettings CurrentFog;
 
@@ -50,11 +41,28 @@ struct RendererData
     RenderLight Lights[MaxLights];
     unsigned int LightSSBO = 0;
     bool LightsDirty = true;
+};
 
-    // Editor Icons
+struct SkyboxData
+{
+    Model SkyboxCube;
+    Material SkyboxMaterial;
+};
+
+struct EditorResourcesData
+{
     Texture2D LightIcon = {0};
     Texture2D SpawnIcon = {0};
     Texture2D CameraIcon = {0};
+};
+
+struct RendererData
+{
+    SkyboxData Skybox;
+    LightingData Lighting;
+    EditorResourcesData EditorResources;
+
+    std::unique_ptr<ShaderLibrary> Shaders;
 
     float DiagnosticMode = 0.0f; // 0: Normal, 1: Normals, 2: Lighting, 3: Albedo
     Vector3 CurrentCameraPosition = {0.0f, 0.0f, 0.0f};
@@ -74,20 +82,20 @@ struct RendererData
 class Renderer
 {
 public:
-    static void Init();
-    static void Shutdown();
     static void LoadEngineResources(class AssetManager& assetManager);
 
-    static bool IsInitialized()
-    {
-        return s_Instance != nullptr;
-    }
+    static bool IsInitialized();
 
     Renderer();
     ~Renderer();
 
+    void Init();
+    void Shutdown();
+
     void BeginScene(const Camera3D& camera);
     void EndScene();
+
+    void CleanupSkybox();
 
     void Clear(Color color);
     void SetViewport(int x, int y, int width, int height);
@@ -131,11 +139,10 @@ public:
         return *m_Data->Shaders;
     }
 
-    static Renderer& Get()
-    {
-        CH_CORE_ASSERT(s_Instance, "Renderer instance is null!");
-        return *s_Instance;
-    }
+    Renderer2D& GetRenderer2D() { return *m_Renderer2D; }
+    UIRenderer& GetUIRenderer() { return *m_UIRenderer; }
+
+    static Renderer& Get();
 
 private:
     void ApplyFogUniforms(ShaderAsset* shader);
@@ -154,8 +161,11 @@ private:
                               const std::vector<MaterialSlot>& materialSlotOverrides);
 
 private:
-    static Renderer* s_Instance;
     std::unique_ptr<RendererData> m_Data;
+    std::unique_ptr<Renderer2D> m_Renderer2D;
+    std::unique_ptr<UIRenderer> m_UIRenderer;
+
+    static Renderer* s_Instance;
 };
 } // namespace CHEngine
 

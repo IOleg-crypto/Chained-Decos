@@ -346,7 +346,7 @@ public class SceneTransitionComponent : Component
     internal static unsafe delegate*<ulong, NativeString> SceneTransitionComponent_GetTargetScene_Ptr;
 #pragma warning restore 0649
 
-    private static unsafe string GetTargetScene(ulong entityID)
+    private static unsafe string? GetTargetScene(ulong entityID)
     {
         return SceneTransitionComponent_GetTargetScene_Ptr(entityID);
     }
