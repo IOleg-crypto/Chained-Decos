@@ -19,6 +19,7 @@
 
 #include "renderer2d.h"
 #include "ui_renderer.h"
+#include "render_command.h"
 
 #include "engine/core/application.h"
 
@@ -38,6 +39,8 @@ Renderer& Renderer::Get()
 void Renderer::Init()
 {
     CH_CORE_INFO("Initializing Render System...");
+
+    RenderCommand::Initialize();
 
     m_Renderer2D->Init();
     m_UIRenderer->Init();
@@ -190,12 +193,12 @@ void Renderer::EndScene()
 
 void Renderer::Clear(Color color)
 {
-    ClearBackground(color);
+    RenderCommand::Clear(color);
 }
 
 void Renderer::SetViewport(int x, int y, int width, int height)
 {
-    rlViewport(x, y, width, height);
+    RenderCommand::SetViewport(x, y, width, height);
 }
 
 void Renderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const Matrix& transform,
@@ -470,8 +473,8 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
         }
     }
 
-    rlDisableBackfaceCulling();
-    rlDisableDepthMask();
+    RenderCommand::DisableBackfaceCulling();
+    RenderCommand::DisableDepthMask();
 
     Material& material = m_Data->SkyboxMaterial;
     material.shader = skyboxShader->GetShader();
@@ -538,8 +541,8 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
     DrawMesh(m_Data->SkyboxCube.meshes[0], material,
              MatrixTranslate(camera.position.x, camera.position.y, camera.position.z));
 
-    rlEnableBackfaceCulling();
-    rlEnableDepthMask();
+    RenderCommand::EnableBackfaceCulling();
+    RenderCommand::EnableDepthMask();
 }
 
 void Renderer::DrawBillboard(const Camera3D& camera, Texture2D texture, Vector3 position, float size, Color color)
