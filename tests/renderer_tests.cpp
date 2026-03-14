@@ -25,21 +25,21 @@ protected:
 
 TEST_F(RendererTest, RendererInitialization)
 {
-    Renderer renderer;
+    auto& renderer = Renderer::Get();
     renderer.Init();
     renderer.Shutdown();
 }
 
 TEST_F(RendererTest, Renderer2DInitialization)
 {
-    Renderer2D renderer2d;
+    auto& renderer2d = Renderer2D::Get();
     renderer2d.Init();
     renderer2d.Shutdown();
 }
 
 TEST_F(RendererTest, Lifetime)
 {
-    Renderer renderer;
+    auto& renderer = Renderer::Get();
     renderer.Init();
     renderer.Shutdown();
 
@@ -49,7 +49,7 @@ TEST_F(RendererTest, Lifetime)
 
 TEST_F(RendererTest, LightManagement)
 {
-    Renderer renderer;
+    auto& renderer = Renderer::Get();
     renderer.Init();
 
     EXPECT_EQ(renderer.GetData().LightCount, 0);
@@ -72,7 +72,7 @@ TEST_F(RendererTest, LightManagement)
 
 TEST_F(RendererTest, DiagnosticMode)
 {
-    Renderer renderer;
+    auto& renderer = Renderer::Get();
     renderer.Init();
 
     renderer.SetDiagnosticMode(2.0f);
@@ -83,7 +83,7 @@ TEST_F(RendererTest, DiagnosticMode)
 
 TEST_F(RendererTest, EnvironmentApplication)
 {
-    Renderer renderer;
+    auto& renderer = Renderer::Get();
     renderer.Init();
 
     EnvironmentSettings env;

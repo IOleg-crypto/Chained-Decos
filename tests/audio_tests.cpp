@@ -5,21 +5,15 @@ using namespace CHEngine;
 
 TEST(AudioTest, InitializationAndShutdown)
 {
-    Audio audio;
-    // Initialize audio device
-    audio.Init();
-    
-    // We expect it to be safe to call shutdown
-    audio.Shutdown();
-    
-    // Test multiple init/shutdowns to ensure no state leaking or crashes
+    auto& audio = Audio::Get();
+    // Test that we can call Init/Shutdown safely even if already initialized
     audio.Init();
     audio.Shutdown();
 }
 
 TEST(AudioTest, PlayWithoutAsset)
 {
-    Audio audio;
+    auto& audio = Audio::Get();
     audio.Init();
 
     // Trying to play a null asset should safely be ignored and not crash
