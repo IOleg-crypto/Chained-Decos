@@ -2,13 +2,19 @@
 
 namespace CHEngine
 {
+static ThreadPool* s_ThreadPoolInstance = nullptr;
+
 ThreadPool& ThreadPool::Get()
 {
-    return Application::Get().GetThreadPool();
+    CH_CORE_ASSERT(s_ThreadPoolInstance, "ThreadPool not initialized!");
+    return *s_ThreadPoolInstance;
 }
 
 ThreadPool::ThreadPool(size_t threads)
 {
+    CH_CORE_ASSERT(!s_ThreadPoolInstance, "ThreadPool already exists!");
+    s_ThreadPoolInstance = this;
+
     CH_CORE_INFO("ThreadPool: Initializing with {} threads", threads);
 
     for (size_t i = 0; i < threads; ++i)
@@ -20,6 +26,7 @@ ThreadPool::ThreadPool(size_t threads)
 ThreadPool::~ThreadPool()
 {
     Shutdown();
+    s_ThreadPoolInstance = nullptr;
 }
 
 void ThreadPool::Shutdown()

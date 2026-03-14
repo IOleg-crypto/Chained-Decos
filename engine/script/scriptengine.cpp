@@ -21,9 +21,13 @@
 namespace CHEngine {
 
 // ── Lifecycle ────────────────────────────────────────────────────────────────
+static ScriptEngine* s_Instance = nullptr;
+
 ScriptEngine::ScriptEngine()
     : m_ActiveScene(nullptr), m_IsInitialized(false)
 {
+    CH_CORE_ASSERT(!s_Instance, "ScriptEngine already exists!");
+    s_Instance = this;
 }
 
 ScriptEngine::~ScriptEngine()
@@ -32,11 +36,13 @@ ScriptEngine::~ScriptEngine()
     {
         Shutdown();
     }
+    s_Instance = nullptr;
 }
 
 ScriptEngine& ScriptEngine::Get()
 {
-    return Application::Get().GetScriptEngine();
+    CH_CORE_ASSERT(s_Instance, "ScriptEngine not initialized!");
+    return *s_Instance;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

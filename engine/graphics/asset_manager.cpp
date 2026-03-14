@@ -110,6 +110,9 @@ std::string AssetManager::ResolvePath(const std::string& path) const
     if (path.empty())
         return "";
 
+    if (path.starts_with(":"))
+        return path;
+
     {
         std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
         if (auto it = m_PathCache.find(path); it != m_PathCache.end())
