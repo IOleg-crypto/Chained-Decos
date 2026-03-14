@@ -15,6 +15,9 @@ public:
     virtual void Clear() override;
 
     virtual void DrawIndexed(const std::shared_ptr<VertexArray>& vertexArray, uint32_t indexCount = 0) override;
+
+private:
+    Color m_ClearColor = { 0, 0, 0, 255 };
 };
 
 } // namespace CHEngine

@@ -34,16 +34,26 @@ void WindowsWindow::Init(const WindowProperties& properties)
     CH_CORE_INFO("Initializing Windows Window: {} ({}x{})", m_Title, m_Width, m_Height);
 
     unsigned int flags = FLAG_MSAA_4X_HINT;
-    if (properties.Resizable) flags |= FLAG_WINDOW_RESIZABLE;
-    if (properties.Fullscreen) flags |= FLAG_FULLSCREEN_MODE;
+    if (properties.Resizable)
+    {
+        flags |= FLAG_WINDOW_RESIZABLE;
+    }
+    if (properties.Fullscreen)
+    {
+        flags |= FLAG_FULLSCREEN_MODE;
+    }
 
     SetConfigFlags(flags);
     InitWindow(m_Width, m_Height, m_Title.c_str());
 
     if (m_VSync)
+    {
         SetTargetFramesPerSecond(GetMonitorRefreshRate(GetCurrentMonitor()));
+    }
     else
+    {
         SetTargetFramesPerSecond(properties.TargetFramesPerSecond);
+    }
 
     m_WindowHandle = glfwGetCurrentContext();
     SetExitKey(KEY_NULL);
@@ -98,26 +108,38 @@ void WindowsWindow::ToggleFullscreen()
 void WindowsWindow::SetFullscreen(bool enabled)
 {
     if (IsWindowFullscreen() != enabled)
+    {
         ::ToggleFullscreen();
+    }
 }
 
 void WindowsWindow::SetVSync(bool enabled)
 {
     m_VSync = enabled;
     if (m_VSync)
+    {
         SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
+    }
 }
 
 void WindowsWindow::SetAntialiasing(bool enabled)
 {
-    if (enabled) SetWindowState(FLAG_MSAA_4X_HINT);
-    else ClearWindowState(FLAG_MSAA_4X_HINT);
+    if (enabled)
+    {
+        SetWindowState(FLAG_MSAA_4X_HINT);
+    }
+    else
+    {
+        ClearWindowState(FLAG_MSAA_4X_HINT);
+    }
 }
 
 void WindowsWindow::SetTargetFramesPerSecond(int framesPerSecond)
 {
     if (!m_VSync)
+    {
         SetTargetFPS(framesPerSecond);
+    }
 }
 
 void WindowsWindow::SetWindowIcon(Image icon)

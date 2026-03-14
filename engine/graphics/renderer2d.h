@@ -4,6 +4,8 @@
 #include "engine/core/assert.h"
 #include "engine/core/base.h"
 #include "raylib.h"
+#include "buffer.h"
+#include "vertex_array.h"
 #include <array>
 #include <memory>
 #include <vector>
@@ -15,7 +17,7 @@ class TextureAsset;
 struct QuadVertex
 {
     Vector3 Position;
-    Color Color;
+    Vector4 Color;
     Vector2 TexCoord;
     float TexIndex;
 };
@@ -26,6 +28,9 @@ struct Renderer2DData
     static const uint32_t MaxVertices = MaxQuads * 4;
     static const uint32_t MaxIndices = MaxQuads * 6;
     static const uint32_t MaxTextureSlots = 32; // Limit by GPU
+
+    std::shared_ptr<VertexArray> QuadVertexArray;
+    std::shared_ptr<VertexBuffer> QuadVertexBuffer;
 
     QuadVertex* QuadVertexBufferBase = nullptr;
     QuadVertex* QuadVertexBufferPtr = nullptr;

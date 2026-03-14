@@ -1,4 +1,5 @@
 #include "raylib_renderer_api.h"
+#include "raylib.h"
 #include "rlgl.h"
 #include "vertex_array.h"
 
@@ -18,14 +19,12 @@ void RaylibRendererAPI::SetViewport(int x, int y, int width, int height)
 
 void RaylibRendererAPI::SetClearColor(const Color& color)
 {
-    // Raylib doesn't have a separate "SetClearColor" that persists independently of "Clear".
-    // We'll store it or just pass it to Clear if needed. For now, ClearBackground is used.
+    m_ClearColor = color;
 }
 
 void RaylibRendererAPI::Clear()
 {
-    // Uses the last set color or a default. 
-    // In Raylib/RLGL, ClearBackground(color) is the standard way.
+    ::ClearBackground(m_ClearColor);
 }
 
 void RaylibRendererAPI::DrawIndexed(const std::shared_ptr<VertexArray>& vertexArray, uint32_t indexCount)
