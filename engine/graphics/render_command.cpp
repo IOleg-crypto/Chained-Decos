@@ -3,23 +3,19 @@
 
 namespace CHEngine
 {
+
+std::unique_ptr<RendererAPI> RenderCommand::s_RendererAPI = RendererAPI::Create();
+
 void RenderCommand::Initialize()
 {
+    s_RendererAPI->Init();
 }
 
 void RenderCommand::Shutdown()
 {
 }
 
-void RenderCommand::Clear(Color color)
-{
-    ClearBackground(color);
-}
-
-void RenderCommand::SetViewport(int x, int y, int width, int height)
-{
-    rlViewport(x, y, width, height);
-}
+// Clear and SetViewport are now inline in header
 
 void RenderCommand::DrawLine(Vector3 startPosition, Vector3 endPosition, Color color)
 {

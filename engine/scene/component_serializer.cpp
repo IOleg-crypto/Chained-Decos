@@ -14,9 +14,23 @@ template <> struct convert<CHEngine::ManagedScriptInstance>
     static Node encode(const CHEngine::ManagedScriptInstance& rhs)
     {
         Node node;
-        node = rhs.ClassName;
+        node["ClassName"] = rhs.ClassName;
+        if (!rhs.Fields.empty())
+        {
+            Node fields;
+            for (const auto& [name, field] : rhs.Fields)
+            {
+                Node f;
+                f["Name"] = field.Name;
+                f["Type"] = (int)field.Type;
+                std::visit([&](auto&& arg) { f["Value"] = YAML::Node(arg); }, field.Value);
+                fields.push_back(f);
+            }
+            node["Fields"] = fields;
+        }
         return node;
     }
+
     static bool decode(const Node& node, CHEngine::ManagedScriptInstance& rhs)
     {
         if (node.IsScalar())
@@ -24,13 +38,65 @@ template <> struct convert<CHEngine::ManagedScriptInstance>
             rhs.ClassName = node.as<std::string>();
             return true;
         }
-        return false;
+
+        if (!node.IsMap())
+            return false;
+
+        if (node["ClassName"])
+            rhs.ClassName = node["ClassName"].as<std::string>();
+
+        if (node["Fields"] && node["Fields"].IsSequence())
+        {
+            for (auto f : node["Fields"])
+            {
+                CHEngine::ScriptField field;
+                if (f["Name"])
+                    field.Name = f["Name"].as<std::string>();
+                if (f["Type"])
+                    field.Type = (CHEngine::ScriptFieldType)f["Type"].as<int>();
+
+                if (f["Value"])
+                {
+                    switch (field.Type)
+                    {
+                    case CHEngine::ScriptFieldType::Float: field.Value = f["Value"].as<float>(); break;
+                    case CHEngine::ScriptFieldType::Int: field.Value = f["Value"].as<int>(); break;
+                    case CHEngine::ScriptFieldType::Bool: field.Value = f["Value"].as<bool>(); break;
+                    case CHEngine::ScriptFieldType::String: field.Value = f["Value"].as<std::string>(); break;
+                    case CHEngine::ScriptFieldType::Vector2: field.Value = f["Value"].as<Vector2>(); break;
+                    case CHEngine::ScriptFieldType::Vector3: field.Value = f["Value"].as<Vector3>(); break;
+                    case CHEngine::ScriptFieldType::Vector4: field.Value = f["Value"].as<Vector4>(); break;
+                    case CHEngine::ScriptFieldType::Color: field.Value = f["Value"].as<Color>(); break;
+                    case CHEngine::ScriptFieldType::Entity: field.Value = f["Value"].as<uint64_t>(); break;
+                    default: break;
+                    }
+                }
+                rhs.Fields[field.Name] = field;
+            }
+        }
+        return true;
     }
 };
 
 inline Emitter& operator<<(Emitter& out, const CHEngine::ManagedScriptInstance& v)
 {
-    out << v.ClassName;
+    out << BeginMap;
+    out << Key << "ClassName" << Value << v.ClassName;
+    if (!v.Fields.empty())
+    {
+        out << Key << "Fields" << Value << BeginSeq;
+        for (const auto& [name, field] : v.Fields)
+        {
+            out << BeginMap;
+            out << Key << "Name" << Value << field.Name;
+            out << Key << "Type" << Value << (int)field.Type;
+            out << Key << "Value" << Value;
+            std::visit([&](auto&& arg) { out << YAML::Node(arg); }, field.Value);
+            out << EndMap;
+        }
+        out << EndSeq;
+    }
+    out << EndMap;
     return out;
 }
 
@@ -104,8 +170,16 @@ void ComponentSerializer::DeserializeHierarchyTask(Entity entity, YAML::Node nod
     {
         auto h = node["Hierarchy"];
         outTask.entity = entity;
-        outTask.parent = h["Parent"].as<uint64_t>();
-        if (h["Children"])
+        if (h["Parent"])
+        {
+            outTask.parent = h["Parent"].as<uint64_t>();
+        }
+        else
+        {
+            outTask.parent = 0;
+        }
+
+        if (h["Children"] && h["Children"].IsSequence())
         {
             for (auto child : h["Children"])
             {
