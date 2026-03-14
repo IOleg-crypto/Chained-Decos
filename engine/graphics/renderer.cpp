@@ -96,10 +96,23 @@ void Renderer::Shutdown()
         m_UIRenderer->Shutdown();
     }
 
-    InitializeSkybox(); // wait, why InitializeSkybox in shutdown? Ah, it was probably meant to be CleanupSkybox if it
-                        // existed.
-    // Actually, renderer.cpp had InitializeSkybox(); in Init().
+    CleanupSkybox();
 }
+
+void Renderer::CleanupSkybox()
+{
+    if (m_Data->SkyboxCube.meshes != nullptr)
+    {
+        UnloadModel(m_Data->SkyboxCube);
+        m_Data->SkyboxCube.meshes = nullptr;
+    }
+    
+    // Default material doesn't need explicit unloading of its shader/textures 
+    // unless they were loaded specifically. UnloadMaterial handles maps.
+    UnloadMaterial(m_Data->SkyboxMaterial);
+}
+    // Actually, renderer.cpp had InitializeSkybox(); in Init().
+
 
 Renderer::Renderer()
 {
