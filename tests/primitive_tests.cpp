@@ -41,8 +41,7 @@ TEST_F(PrimitiveTest, Defaults)
 
 TEST_F(PrimitiveTest, Serialization)
 {
-    ComponentSerializer serializer;
-    serializer.Initialize();
+    auto& serializer = ComponentSerializer::Get();
 
     Scene scene;
     Entity entity = scene.CreateEntity("PrimitiveEntity");
