@@ -1,5 +1,6 @@
 add_executable(EngineTests
     uuid_tests.cpp
+    primitive_tests.cpp
     serialization_tests.cpp
     scene_tests.cpp
     physics_tests.cpp

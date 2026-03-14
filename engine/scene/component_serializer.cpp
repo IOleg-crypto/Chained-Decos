@@ -1,6 +1,7 @@
 #include "component_serializer.h"
 #include "components/hierarchy_component.h"
 #include "components/id_component.h"
+#include "engine/scene/components.h"
 #include "engine/core/application.h"
 #include "engine/core/yaml.h"
 #include "engine/scene/serialization_utils.h"
@@ -104,12 +105,23 @@ inline Emitter& operator<<(Emitter& out, const CHEngine::ManagedScriptInstance& 
 
 namespace CHEngine
 {
-ComponentSerializer::ComponentSerializer() {}
-ComponentSerializer::~ComponentSerializer() {}
+static ComponentSerializer* s_Instance = nullptr;
+
+ComponentSerializer::ComponentSerializer()
+{
+    CH_CORE_ASSERT(!s_Instance, "ComponentSerializer already exists!");
+    s_Instance = this;
+}
+
+ComponentSerializer::~ComponentSerializer()
+{
+    s_Instance = nullptr;
+}
 
 ComponentSerializer& ComponentSerializer::Get()
 {
-    return Application::Get().GetComponentSerializer();
+    CH_CORE_ASSERT(s_Instance, "ComponentSerializer not initialized!");
+    return *s_Instance;
 }
 
 void ComponentSerializer::RegisterCustom(const ComponentSerializerEntry& entry)
@@ -587,6 +599,19 @@ void ComponentSerializer::Initialize()
             .Handle("ModelHandle", component.ModelHandle)
             .Path("ModelPath", component.ModelPath)
             .Property("AutoCalculate", component.AutoCalculate);
+    });
+
+    Register<PrimitiveComponent>("PrimitiveComponent", [](auto& archive, auto& component) {
+        archive.Property("Type", (int&)component.Type)
+            .Property("Radius", component.Radius)
+            .Property("InnerRadius", component.InnerRadius)
+            .Property("Height", component.Height)
+            .Property("Slices", component.Slices)
+            .Property("Stacks", component.Stacks)
+            .Property("Dimensions", component.Dimensions);
+
+        if (archive.GetMode() == SerializationUtils::PropertyArchive::Deserialize)
+            component.Dirty = true;
     });
 
     Register<RigidBodyComponent>("RigidBodyComponent", [](auto& archive, auto& component) {

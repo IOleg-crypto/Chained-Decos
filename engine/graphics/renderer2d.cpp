@@ -1,5 +1,6 @@
 #include "renderer2d.h"
 #include "renderer.h"
+#include "engine/core/application.h"
 #include "engine/core/log.h"
 #include "engine/graphics/texture_asset.h"
 #include "render_command.h"
@@ -15,17 +16,12 @@ Renderer2D& Renderer2D::Get()
 void Renderer2D::Init()
 {
     CH_CORE_INFO("Initializing Renderer2D (Batching Mode)...");
-}
 
-void Renderer2D::Shutdown()
-{
-    CH_CORE_INFO("Shutting down Renderer2D...");
-}
-
-Renderer2D::Renderer2D()
-{
-    m_Data = std::make_unique<Renderer2DData>();
-    m_Data->QuadVertexBufferBase = new QuadVertex[Renderer2DData::MaxVertices];
+    if (Application::Get().GetSpecification().Headless)
+    {
+        CH_CORE_INFO("Renderer2D: Headless mode, skipping GL initialization.");
+        return;
+    }
 
     m_Data->QuadVertexArray = VertexArray::Create();
     
@@ -63,9 +59,23 @@ Renderer2D::Renderer2D()
     UnloadImage(whiteImage);
 }
 
+void Renderer2D::Shutdown()
+{
+    CH_CORE_INFO("Shutting down Renderer2D...");
+}
+
+Renderer2D::Renderer2D()
+{
+    m_Data = std::make_unique<Renderer2DData>();
+    m_Data->QuadVertexBufferBase = new QuadVertex[Renderer2DData::MaxVertices];
+}
+
 Renderer2D::~Renderer2D()
 {
-    UnloadTexture(m_Data->TextureSlots[0]);
+    if (!Application::Get().GetSpecification().Headless)
+    {
+        UnloadTexture(m_Data->TextureSlots[0]);
+    }
     delete[] m_Data->QuadVertexBufferBase;
 }
 
