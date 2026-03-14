@@ -6,7 +6,11 @@
 class TestApplication : public CHEngine::Application
 {
 public:
-    TestApplication() : CHEngine::Application(CHEngine::ApplicationSpecification{"Engine Tests"}) {}
+    TestApplication() : CHEngine::Application([](){
+        CHEngine::ApplicationSpecification spec{"Engine Tests"};
+        spec.Headless = true;
+        return spec;
+    }()) {}
 };
 
 class EngineEnvironment : public ::testing::Environment {

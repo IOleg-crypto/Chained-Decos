@@ -16,13 +16,18 @@
 
 namespace CHEngine
 {
+static PhysicsSystem* s_PhysicsInstance = nullptr;
+
 PhysicsSystem::PhysicsSystem()
 {
+    CH_CORE_ASSERT(!s_PhysicsInstance, "PhysicsSystem already exists!");
+    s_PhysicsInstance = this;
 }
 
 PhysicsSystem::~PhysicsSystem()
 {
     Shutdown();
+    s_PhysicsInstance = nullptr;
 }
 
 void PhysicsSystem::Init()
@@ -37,7 +42,8 @@ void PhysicsSystem::Shutdown()
 
 PhysicsSystem& PhysicsSystem::Get()
 {
-    return Application::Get().GetPhysicsSystem();
+    CH_CORE_ASSERT(s_PhysicsInstance, "PhysicsSystem not initialized!");
+    return *s_PhysicsInstance;
 }
 
 Physics::Physics(Scene* scene)
