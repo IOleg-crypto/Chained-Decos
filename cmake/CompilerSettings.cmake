@@ -12,6 +12,7 @@ if(MSVC)
         /Zc:preprocessor     # Modern preprocessor
         /Gm-                 # Disable minimal rebuild (it's slower)
         /utf-8               # Use UTF-8 character set
+        /bigobj              # Allow large object files (required for many modules)
         
         # Dead Code Elimination: Function-Level Linking
         $<$<CONFIG:Release>:/Gy>
@@ -39,16 +40,62 @@ if(MSVC)
     add_compile_options(/guard:cf /GS)
     add_link_options(/DYNAMICBASE /NXCOMPAT /guard:cf)
 
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    # GCC/Clang settings
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    # Clang settings (includes AppleClang and clang-cl)
+    if(MSVC)
+        # clang-cl behaves like MSVC
+        add_compile_options(/Zc:preprocessor /utf-8 /bigobj)
+    else()
+        add_compile_options(
+            $<$<CONFIG:Debug>:-O0> $<$<CONFIG:Debug>:-g>
+            $<$<CONFIG:Release>:-O3> $<$<CONFIG:Release>:-DNDEBUG>
+            $<$<CONFIG:Release>:-ffunction-sections>
+            $<$<CONFIG:Release>:-fdata-sections>
+        )
+
+        if(MINGW)
+            add_compile_options(-Wa,-mbig-obj)
+        endif()
+
+        # Dead Code Elimination linkage and binary stripping for Release build
+        add_link_options(
+            $<$<CONFIG:Release>:-Wl,--gc-sections>
+            $<$<CONFIG:Release>:-s>
+        )
+
+        if(DISABLE_ALL_WARNINGS)
+            add_compile_options(-w)
+        elseif(ENABLE_WARNINGS)
+            add_compile_options(-Wall -Wextra -Wpedantic -Wshadow -Wmost -Wno-missing-braces -Wno-missing-field-initializers -Wno-attributes)
+            if(WARNINGS_AS_ERRORS)
+                add_compile_options(-Werror)
+            endif()
+        else()
+            add_compile_options(-Wno-all)
+        endif()
+    endif()
+
+    if(ENABLE_SANITIZERS)
+        add_compile_options(-fsanitize=address -fsanitize=undefined)
+        add_link_options(-fsanitize=address -fsanitize=undefined)
+    endif()
+
+    if(NOT WIN32)
+        add_link_options(-Wl,-z,relro -Wl,-z,now)
+    endif()
+
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # GCC settings
     add_compile_options(
         $<$<CONFIG:Debug>:-O0> $<$<CONFIG:Debug>:-g>
         $<$<CONFIG:Release>:-O3> $<$<CONFIG:Release>:-DNDEBUG>
-        
-        # Dead Code Elimination data sections
         $<$<CONFIG:Release>:-ffunction-sections>
         $<$<CONFIG:Release>:-fdata-sections>
     )
+
+    if(MINGW)
+        add_compile_options(-Wa,-mbig-obj)
+    endif()
 
     # Dead Code Elimination linkage and binary stripping for Release build
     add_link_options(
@@ -59,13 +106,7 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     if(DISABLE_ALL_WARNINGS)
         add_compile_options(-w)
     elseif(ENABLE_WARNINGS)
-        add_compile_options(-Wall -Wextra -Wpedantic -Wshadow)
-        if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-            add_compile_options(-Wmost -Wno-missing-braces -Wno-missing-field-initializers -Wno-attributes)
-        elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-            add_compile_options(-Wno-missing-field-initializers -Wno-attributes)
-        endif()
-
+        add_compile_options(-Wall -Wextra -Wpedantic -Wshadow -Wno-missing-field-initializers -Wno-attributes)
         if(WARNINGS_AS_ERRORS)
             add_compile_options(-Werror)
         endif()
@@ -73,29 +114,13 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         add_compile_options(-Wno-all)
     endif()
 
-    if(ENABLE_DEBUG_INFO)
-        add_compile_options(-g)
-    endif()
-
     if(ENABLE_SANITIZERS)
         add_compile_options(-fsanitize=address -fsanitize=undefined)
         add_link_options(-fsanitize=address -fsanitize=undefined)
     endif()
 
-    # (Linux Only)
     if(NOT WIN32)
         add_link_options(-Wl,-z,relro -Wl,-z,now)
-    endif()
-
-    if(ENABLE_PROFILING)
-        add_compile_options(-pg)
-        add_link_options(-pg)
-    endif()
-
-    if(WIN32)
-        # NOTE: Disabled static runtime for DLL support
-        # Force static linkage of runtimes for MinGW/GCC to avoid DLL entry point mismatches in CI/Bash environments
-        # add_link_options(-static -static-libgcc -static-libstdc++)
     endif()
 endif()
 
@@ -168,9 +193,11 @@ function(apply_engine_optimizations target_name)
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 ")
-        # Create a temp file for PCH
+        # Create a temp file for PCH and only copy if changed
+        set(PCH_FILE_TMP "${CMAKE_BINARY_DIR}/engine_pch.h.tmp")
         set(PCH_FILE "${CMAKE_BINARY_DIR}/engine_pch.h")
-        file(WRITE "${PCH_FILE}" "${PCH_HEADER_CONTENT}")
+        file(WRITE "${PCH_FILE_TMP}" "${PCH_HEADER_CONTENT}")
+        configure_file("${PCH_FILE_TMP}" "${PCH_FILE}" COPYONLY)
         
         target_precompile_headers(${target_name} PUBLIC "${PCH_FILE}")
     endif()

@@ -1,30 +1,57 @@
 #include "renderer2d.h"
+#include "renderer.h"
+#include "engine/core/application.h"
 #include "engine/core/log.h"
 #include "engine/graphics/texture_asset.h"
+#include "render_command.h"
 #include "rlgl.h"
 
 namespace CHEngine
 {
-Renderer2D* Renderer2D::s_Instance = nullptr;
+Renderer2D& Renderer2D::Get()
+{
+    return Renderer::Get().GetRenderer2D();
+}
 
 void Renderer2D::Init()
 {
-    CH_CORE_ASSERT(!s_Instance, "Renderer2D already initialized!");
-    s_Instance = new Renderer2D();
     CH_CORE_INFO("Initializing Renderer2D (Batching Mode)...");
-}
 
-void Renderer2D::Shutdown()
-{
-    CH_CORE_INFO("Shutting down Renderer2D...");
-    delete s_Instance;
-    s_Instance = nullptr;
-}
+    if (Application::Get().GetSpecification().Headless)
+    {
+        CH_CORE_INFO("Renderer2D: Headless mode, skipping GL initialization.");
+        return;
+    }
 
-Renderer2D::Renderer2D()
-{
-    m_Data = std::make_unique<Renderer2DData>();
-    m_Data->QuadVertexBufferBase = new QuadVertex[Renderer2DData::MaxVertices];
+    m_Data->QuadVertexArray = VertexArray::Create();
+    
+    m_Data->QuadVertexBuffer = VertexBuffer::Create(Renderer2DData::MaxVertices * sizeof(QuadVertex));
+    m_Data->QuadVertexBuffer->SetLayout({
+        { ShaderDataType::Float3, "a_Position" },
+        { ShaderDataType::Float4, "a_Color" },
+        { ShaderDataType::Float2, "a_TexCoord" },
+        { ShaderDataType::Float,  "a_TexIndex" }
+    });
+    m_Data->QuadVertexArray->AddVertexBuffer(m_Data->QuadVertexBuffer);
+
+    uint32_t* quadIndices = new uint32_t[Renderer2DData::MaxIndices];
+    uint32_t offset = 0;
+    for (uint32_t i = 0; i < Renderer2DData::MaxIndices; i += 6)
+    {
+        quadIndices[i + 0] = offset + 0;
+        quadIndices[i + 1] = offset + 1;
+        quadIndices[i + 2] = offset + 2;
+
+        quadIndices[i + 3] = offset + 2;
+        quadIndices[i + 4] = offset + 3;
+        quadIndices[i + 5] = offset + 0;
+
+        offset += 4;
+    }
+
+    std::shared_ptr<IndexBuffer> quadIB = IndexBuffer::Create(quadIndices, Renderer2DData::MaxIndices);
+    m_Data->QuadVertexArray->SetIndexBuffer(quadIB);
+    delete[] quadIndices;
 
     // Create 1x1 white texture for plain quads
     Image whiteImage = GenImageColor(1, 1, WHITE);
@@ -32,9 +59,23 @@ Renderer2D::Renderer2D()
     UnloadImage(whiteImage);
 }
 
+void Renderer2D::Shutdown()
+{
+    CH_CORE_INFO("Shutting down Renderer2D...");
+}
+
+Renderer2D::Renderer2D()
+{
+    m_Data = std::make_unique<Renderer2DData>();
+    m_Data->QuadVertexBufferBase = new QuadVertex[Renderer2DData::MaxVertices];
+}
+
 Renderer2D::~Renderer2D()
 {
-    UnloadTexture(m_Data->TextureSlots[0]);
+    if (!Application::Get().GetSpecification().Headless)
+    {
+        UnloadTexture(m_Data->TextureSlots[0]);
+    }
     delete[] m_Data->QuadVertexBufferBase;
 }
 
@@ -74,30 +115,10 @@ void Renderer2D::Flush()
         return;
     }
 
-    uint32_t quadCount = (uint32_t)(m_Data->QuadVertexBufferPtr - m_Data->QuadVertexBufferBase) / 4;
+    uint32_t dataSize = (uint32_t)((uint8_t*)m_Data->QuadVertexBufferPtr - (uint8_t*)m_Data->QuadVertexBufferBase);
+    m_Data->QuadVertexBuffer->SetData(m_Data->QuadVertexBufferBase, dataSize);
 
-    // For now, since we don't have a multi-sampler shader, we group by texture.
-    // But the DrawSprite already ensures we flush on texture change.
-    // So here we assume all quads in the current batch use the textures in slots
-    // actually, to keep it simple with rlgl:
-    // We only support ONE texture per batch for now in this custom batcher
-    // OR we use rlgl's internal mechanism.
-
-    // If we want to be "Hazel-style", we should bind texture slots.
-    // Since rlgl is a global state machine, we can't easily bind 32 textures
-    // without a custom shader.
-
-    // So: let's just draw the damn quads.
-    rlBegin(RL_QUADS);
-    for (uint32_t i = 0; i < quadCount * 4; i++)
-    {
-        const auto& v = m_Data->QuadVertexBufferBase[i];
-        rlColor4ub(v.Color.r, v.Color.g, v.Color.b, v.Color.a);
-        rlTexCoord2f(v.TexCoord.x, v.TexCoord.y);
-        rlVertex3f(v.Position.x, v.Position.y, v.Position.z);
-    }
-    rlEnd();
-    rlDisableTexture();
+    RenderCommand::DrawIndexed(m_Data->QuadVertexArray, m_Data->QuadIndexCount);
 
     m_Data->Stats.DrawCalls++;
     StartBatch();
@@ -134,27 +155,29 @@ void Renderer2D::DrawQuad(const Vector3& position, const Vector2& size, Color co
         rlEnableTexture(m_Data->TextureSlots[0].id);
     }
 
+    Vector4 normalizedColor = ColorNormalize(color);
+
     // 0,0 origin for now
     m_Data->QuadVertexBufferPtr->Position = position;
-    m_Data->QuadVertexBufferPtr->Color = color;
+    m_Data->QuadVertexBufferPtr->Color = normalizedColor;
     m_Data->QuadVertexBufferPtr->TexCoord = {0, 0};
     m_Data->QuadVertexBufferPtr->TexIndex = 0;
     m_Data->QuadVertexBufferPtr++;
 
     m_Data->QuadVertexBufferPtr->Position = {position.x + size.x, position.y, position.z};
-    m_Data->QuadVertexBufferPtr->Color = color;
+    m_Data->QuadVertexBufferPtr->Color = normalizedColor;
     m_Data->QuadVertexBufferPtr->TexCoord = {1, 0};
     m_Data->QuadVertexBufferPtr->TexIndex = 0;
     m_Data->QuadVertexBufferPtr++;
 
     m_Data->QuadVertexBufferPtr->Position = {position.x + size.x, position.y + size.y, position.z};
-    m_Data->QuadVertexBufferPtr->Color = color;
+    m_Data->QuadVertexBufferPtr->Color = normalizedColor;
     m_Data->QuadVertexBufferPtr->TexCoord = {1, 1};
     m_Data->QuadVertexBufferPtr->TexIndex = 0;
     m_Data->QuadVertexBufferPtr++;
 
     m_Data->QuadVertexBufferPtr->Position = {position.x, position.y + size.y, position.z};
-    m_Data->QuadVertexBufferPtr->Color = color;
+    m_Data->QuadVertexBufferPtr->Color = normalizedColor;
     m_Data->QuadVertexBufferPtr->TexCoord = {0, 1};
     m_Data->QuadVertexBufferPtr->TexIndex = 0;
     m_Data->QuadVertexBufferPtr++;

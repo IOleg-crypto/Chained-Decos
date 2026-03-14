@@ -1,4 +1,5 @@
 #include "engine/graphics/renderer.h"
+#include "engine/core/application.h"
 #include "engine/core/log.h"
 #include "engine/core/profiler.h"
 #include "engine/graphics/asset_manager.h"
@@ -17,28 +18,56 @@
 #include <filesystem>
 #include <vector>
 
+#include "render_command.h"
+#include "renderer2d.h"
+#include "ui_renderer.h"
+
 namespace CHEngine
 {
+
 Renderer* Renderer::s_Instance = nullptr;
+
+bool Renderer::IsInitialized()
+{
+    return s_Instance != nullptr && s_Instance->m_Data != nullptr;
+}
+
+Renderer& Renderer::Get()
+{
+    CH_CORE_ASSERT(s_Instance, "Renderer not initialized!");
+    return *s_Instance;
+}
 
 void Renderer::Init()
 {
-    CH_CORE_ASSERT(!s_Instance, "Renderer already initialized!");
-    s_Instance = new Renderer();
-
     CH_CORE_INFO("Initializing Render System...");
+    CH_CORE_ASSERT(s_Instance == this, "Renderer instance mismatch!");
 
-    Renderer2D::Init();
-    UIRenderer::Init();
+    if (Application::Get().GetSpecification().Headless)
+    {
+        CH_CORE_INFO("Renderer: Headless mode, skipping GL initialization.");
+        return;
+    }
 
-    s_Instance->InitializeSkybox();
+    RenderCommand::Initialize();
+
+    m_Renderer2D->Init();
+    m_UIRenderer->Init();
+
+    // Initialize SSBO for lights
+    m_Data->Lighting.LightSSBO =
+        rlLoadShaderBuffer(sizeof(RenderLight) * LightingData::MaxLights, nullptr, RL_DYNAMIC_DRAW);
+    m_Data->Lighting.LightsDirty = true;
+
+    InitializeSkybox();
     CH_CORE_INFO("Render System Initialized (Core).");
 }
 
 void Renderer::LoadEngineResources(AssetManager& assetManager)
 {
     CH_CORE_INFO("Renderer: Loading engine materials and shaders...");
-    auto& lib = s_Instance->GetShaderLibrary();
+    auto& renderer = Renderer::Get();
+    auto& lib = renderer.GetShaderLibrary();
 
     // Shaders loading - through AssetManager into the Library
     auto loadShader = [&](const std::string& name, const std::string& path) {
@@ -61,53 +90,90 @@ void Renderer::LoadEngineResources(AssetManager& assetManager)
     // Icons
     auto loadIcon = [&](Texture2D& target, const std::string& path) {
         auto tex = assetManager.Get<TextureAsset>(path);
-        if (tex) target = tex->GetTexture();
+        if (tex)
+        {
+            target = tex->GetTexture();
+        }
     };
 
-    loadIcon(s_Instance->m_Data->LightIcon, "engine/resources/icons/light_bulb.png");
-    loadIcon(s_Instance->m_Data->SpawnIcon, "engine/resources/icons/leaf_icon.png");
-    loadIcon(s_Instance->m_Data->CameraIcon, "engine/resources/icons/camera_icon.png");
+    loadIcon(renderer.m_Data->EditorResources.LightIcon, "engine/resources/icons/light_bulb.png");
+    loadIcon(renderer.m_Data->EditorResources.SpawnIcon, "engine/resources/icons/leaf_icon.png");
+    loadIcon(renderer.m_Data->EditorResources.CameraIcon, "engine/resources/icons/camera_icon.png");
 }
 
 void Renderer::Shutdown()
 {
     CH_CORE_INFO("Shutting down Render System...");
-    delete s_Instance;
+    if (m_Renderer2D)
+    {
+        m_Renderer2D->Shutdown();
+    }
+    if (m_UIRenderer)
+    {
+        m_UIRenderer->Shutdown();
+    }
+
+    if (Application::Get().GetSpecification().Headless)
+    {
+        s_Instance = nullptr;
+        return;
+    }
+
+    CleanupSkybox();
     s_Instance = nullptr;
+}
+
+void Renderer::CleanupSkybox()
+{
+    if (m_Data->Skybox.SkyboxCube.meshes != nullptr)
+    {
+        UnloadModel(m_Data->Skybox.SkyboxCube);
+        m_Data->Skybox.SkyboxCube.meshes = nullptr;
+    }
+
+    // Default material doesn't need explicit unloading of its shader/textures
+    // unless they were loaded specifically. UnloadMaterial handles maps.
+    UnloadMaterial(m_Data->Skybox.SkyboxMaterial);
 }
 
 Renderer::Renderer()
 {
-    m_Data = std::make_unique<RendererData>();
-    m_Data->Shaders = std::make_unique<ShaderLibrary>();
+    CH_CORE_ASSERT(!s_Instance, "Renderer already exists!");
+    s_Instance = this;
 
-    // Initialize SSBO for lights
-    m_Data->LightSSBO = rlLoadShaderBuffer(sizeof(RenderLight) * RendererData::MaxLights, nullptr, RL_DYNAMIC_DRAW);
-    m_Data->LightsDirty = true;
+    m_Data = std::make_unique<RendererData>();
+    m_Renderer2D = std::make_unique<Renderer2D>();
+    m_UIRenderer = std::make_unique<UIRenderer>();
+
+    m_Data->Shaders = std::make_unique<ShaderLibrary>();
 }
 
 Renderer::~Renderer()
 {
-    if (m_Data->LightIcon.id > 0)
+    if (Application::Get().GetSpecification().Headless)
     {
-        ::UnloadTexture(m_Data->LightIcon);
-    }
-    if (m_Data->SpawnIcon.id > 0)
-    {
-        ::UnloadTexture(m_Data->SpawnIcon);
-    }
-    if (m_Data->CameraIcon.id > 0)
-    {
-        ::UnloadTexture(m_Data->CameraIcon);
+        return;
     }
 
-    if (m_Data->LightSSBO > 0)
+    if (m_Data->EditorResources.LightIcon.id > 0)
     {
-        rlUnloadShaderBuffer(m_Data->LightSSBO);
+        ::UnloadTexture(m_Data->EditorResources.LightIcon);
+    }
+    if (m_Data->EditorResources.SpawnIcon.id > 0)
+    {
+        ::UnloadTexture(m_Data->EditorResources.SpawnIcon);
+    }
+    if (m_Data->EditorResources.CameraIcon.id > 0)
+    {
+        ::UnloadTexture(m_Data->EditorResources.CameraIcon);
     }
 
-    Renderer2D::Shutdown();
-    UIRenderer::Shutdown();
+    if (m_Data->Lighting.LightSSBO > 0)
+    {
+        rlUnloadShaderBuffer(m_Data->Lighting.LightSSBO);
+    }
+
+    Shutdown();
 }
 
 void Renderer::BeginScene(const Camera3D& camera)
@@ -115,10 +181,11 @@ void Renderer::BeginScene(const Camera3D& camera)
     m_Data->CurrentCameraPosition = camera.position;
 
     // Update light SSBO once per frame
-    if (m_Data->LightsDirty)
+    if (m_Data->Lighting.LightsDirty)
     {
-        rlUpdateShaderBuffer(m_Data->LightSSBO, m_Data->Lights, sizeof(RenderLight) * RendererData::MaxLights, 0);
-        m_Data->LightsDirty = false;
+        rlUpdateShaderBuffer(m_Data->Lighting.LightSSBO, m_Data->Lighting.Lights,
+                             sizeof(RenderLight) * LightingData::MaxLights, 0);
+        m_Data->Lighting.LightsDirty = false;
     }
 
     // Push global shader uniforms once per frame for the Lighting shader
@@ -128,14 +195,14 @@ void Renderer::BeginScene(const Camera3D& camera)
         lightingShader->SetVec3("viewPos", camera.position);
         lightingShader->SetFloat("uTime", m_Data->Time);
         lightingShader->SetFloat("uMode", m_Data->DiagnosticMode);
-        lightingShader->SetVec3("lightDir", m_Data->CurrentLighting.Direction);
-        lightingShader->SetColor("lightColor", m_Data->CurrentLighting.LightColor);
-        lightingShader->SetFloat("ambient", m_Data->CurrentLighting.Ambient);
+        lightingShader->SetVec3("lightDir", m_Data->Lighting.CurrentLighting.Direction);
+        lightingShader->SetColor("lightColor", m_Data->Lighting.CurrentLighting.LightColor);
+        lightingShader->SetFloat("ambient", m_Data->Lighting.CurrentLighting.Ambient);
         lightingShader->SetInt("uLightCount", m_Data->LightCount);
-        lightingShader->SetFloat("uExposure", m_Data->CurrentLighting.Exposure);
-        lightingShader->SetFloat("uGamma", m_Data->CurrentLighting.Gamma);
+        lightingShader->SetFloat("uExposure", m_Data->Lighting.CurrentLighting.Exposure);
+        lightingShader->SetFloat("uGamma", m_Data->Lighting.CurrentLighting.Gamma);
         ApplyFogUniforms(lightingShader.get());
-        rlBindShaderBuffer(m_Data->LightSSBO, 0);
+        rlBindShaderBuffer(m_Data->Lighting.LightSSBO, 0);
         m_Data->CurrentShader = lightingShader.get();
     }
 
@@ -150,12 +217,12 @@ void Renderer::EndScene()
 
 void Renderer::Clear(Color color)
 {
-    ClearBackground(color);
+    RenderCommand::Clear(color);
 }
 
 void Renderer::SetViewport(int x, int y, int width, int height)
 {
-    rlViewport(x, y, width, height);
+    RenderCommand::SetViewport(x, y, width, height);
 }
 
 void Renderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const Matrix& transform,
@@ -164,7 +231,7 @@ void Renderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const Ma
                          const std::shared_ptr<ShaderAsset>& shaderOverride,
                          const std::vector<ShaderUniform>& shaderUniformOverrides)
 {
-    CH_CORE_ASSERT(s_Instance, "Renderer not initialized!");
+    CH_CORE_ASSERT(IsInitialized(), "Renderer not initialized!");
     if (!modelAsset || modelAsset->GetState() != AssetState::Ready)
     {
         if (modelAsset && modelAsset->GetState() == AssetState::Failed)
@@ -172,7 +239,7 @@ void Renderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const Ma
             static std::string lastFailed = "";
             if (lastFailed != modelAsset->GetPath())
             {
-                //CH_CORE_WARN("Renderer::DrawModel - Model asset failed to load: {}", modelAsset->GetPath());
+                // CH_CORE_WARN("Renderer::DrawModel - Model asset failed to load: {}", modelAsset->GetPath());
                 lastFailed = modelAsset->GetPath();
             }
         }
@@ -187,9 +254,9 @@ void Renderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const Ma
     for (int i = 0; i < model.meshCount; i++)
     {
         Material material = ResolveMaterialForMesh(i, model, materialSlotOverrides);
-        auto activeShaderAsset = shaderOverride
-                                ? shaderOverride
-                                : (m_Data->Shaders->Exists("Lighting") ? m_Data->Shaders->Get("Lighting") : nullptr);
+        auto activeShaderAsset =
+            shaderOverride ? shaderOverride
+                           : (m_Data->Shaders->Exists("Lighting") ? m_Data->Shaders->Get("Lighting") : nullptr);
         Matrix meshTransform = MatrixMultiply(model.transform, transform);
 
         if (activeShaderAsset)
@@ -202,14 +269,14 @@ void Renderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const Ma
                 shader->SetVec3("viewPos", m_Data->CurrentCameraPosition);
                 shader->SetFloat("uTime", m_Data->Time);
                 shader->SetFloat("uMode", m_Data->DiagnosticMode);
-                shader->SetVec3("lightDir", m_Data->CurrentLighting.Direction);
-                shader->SetColor("lightColor", m_Data->CurrentLighting.LightColor);
-                shader->SetFloat("ambient", m_Data->CurrentLighting.Ambient);
+                shader->SetVec3("lightDir", m_Data->Lighting.CurrentLighting.Direction);
+                shader->SetColor("lightColor", m_Data->Lighting.CurrentLighting.LightColor);
+                shader->SetFloat("ambient", m_Data->Lighting.CurrentLighting.Ambient);
                 shader->SetInt("uLightCount", m_Data->LightCount);
-                shader->SetFloat("uExposure", m_Data->CurrentLighting.Exposure);
-                shader->SetFloat("uGamma", m_Data->CurrentLighting.Gamma);
+                shader->SetFloat("uExposure", m_Data->Lighting.CurrentLighting.Exposure);
+                shader->SetFloat("uGamma", m_Data->Lighting.CurrentLighting.Gamma);
                 ApplyFogUniforms(shader);
-                rlBindShaderBuffer(m_Data->LightSSBO, 0);
+                rlBindShaderBuffer(m_Data->Lighting.LightSSBO, 0);
                 m_Data->CurrentShader = shader;
             }
 
@@ -296,7 +363,7 @@ void Renderer::DrawSphereWires(const Matrix& transform, float radius, Color colo
 void Renderer::ApplyPostProcessing(RenderTexture2D target, const Camera3D& camera)
 {
     CH_PROFILE_FUNCTION();
-    
+
     auto shaderAsset = m_Data->Shaders->Exists("PostProcess") ? m_Data->Shaders->Get("PostProcess") : nullptr;
     if (!shaderAsset)
     {
@@ -307,7 +374,7 @@ void Renderer::ApplyPostProcessing(RenderTexture2D target, const Camera3D& camer
     Matrix view = GetCameraMatrix(camera);
     // Note: Proj matrix might be tricky if not in Mode3D, but we can reconstruct it
     // Or just use rlGetMatrixProjection() if we call this inside BeginTextureMode
-    Matrix proj = rlGetMatrixProjection(); 
+    Matrix proj = rlGetMatrixProjection();
     Matrix viewProj = MatrixMultiply(view, proj);
     Matrix invViewProj = MatrixInvert(viewProj);
 
@@ -318,8 +385,8 @@ void Renderer::ApplyPostProcessing(RenderTexture2D target, const Camera3D& camer
     shader->SetMatrix("matInverseViewProj", invViewProj);
     shader->SetVec3("viewPos", camera.position);
     shader->SetFloat("uTime", m_Data->Time);
-    shader->SetFloat("uExposure", m_Data->CurrentLighting.Exposure);
-    shader->SetFloat("uGamma", m_Data->CurrentLighting.Gamma);
+    shader->SetFloat("uExposure", m_Data->Lighting.CurrentLighting.Exposure);
+    shader->SetFloat("uGamma", m_Data->Lighting.CurrentLighting.Gamma);
 
     // Fog
     ApplyFogUniforms(shader);
@@ -332,9 +399,9 @@ void Renderer::ApplyPostProcessing(RenderTexture2D target, const Camera3D& camer
 
     // 4. Draw Fullscreen Quad
     // DrawTextureRec vertically flips the texture (standard FBO behavior)
-    Rectangle source = { 0, 0, (float)target.texture.width, (float)-target.texture.height };
-    Rectangle dest = { 0, 0, (float)target.texture.width, (float)target.texture.height };
-    ::DrawTexturePro(target.texture, source, dest, { 0, 0 }, 0.0f, WHITE);
+    Rectangle source = {0, 0, (float)target.texture.width, (float)-target.texture.height};
+    Rectangle dest = {0, 0, (float)target.texture.width, (float)target.texture.height};
+    ::DrawTexturePro(target.texture, source, dest, {0, 0}, 0.0f, WHITE);
 
     // 5. Cleanup
     rlActiveTextureSlot(1);
@@ -364,7 +431,7 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
         return;
     }
 
-    //CH_CORE_INFO("Renderer: Drawing skybox '{}', asset ready: {}", skybox.TexturePath, textureAsset->IsReady());
+    // CH_CORE_INFO("Renderer: Drawing skybox '{}', asset ready: {}", skybox.TexturePath, textureAsset->IsReady());
 
     if (textureAsset->GetState() != AssetState::Ready)
     {
@@ -377,16 +444,20 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
     }
 
     int activeMode = skybox.Mode;
-    //CH_CORE_INFO("Renderer: DrawSkybox Mode: {}, Texture: {}", activeMode, skybox.TexturePath);
+    // CH_CORE_INFO("Renderer: DrawSkybox Mode: {}, Texture: {}", activeMode, skybox.TexturePath);
     auto shaderName = (activeMode == 2) ? "SkyboxCubemap" : "Skybox";
     auto skyboxShader = m_Data->Shaders->Exists(shaderName) ? m_Data->Shaders->Get(shaderName) : nullptr;
-    
+
     if (!skyboxShader || skyboxShader->GetShader().id == 0)
     {
-        //CH_CORE_WARN("Renderer::DrawSkybox: Required shader '{}' not found or failed to load. Falling back to default skybox.", shaderName);
+        // CH_CORE_WARN("Renderer::DrawSkybox: Required shader '{}' not found or failed to load. Falling back to default
+        // skybox.", shaderName);
         activeMode = 0;
         skyboxShader = m_Data->Shaders->Get("Skybox");
-        if (!skyboxShader) return;
+        if (!skyboxShader)
+        {
+            return;
+        }
     }
 
     // Cubemap Generation Trigger
@@ -395,18 +466,21 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
         auto genShader = m_Data->Shaders->Exists("CubemapGen") ? m_Data->Shaders->Get("CubemapGen") : nullptr;
         if (genShader && genShader->GetShader().id > 0)
         {
-            CH_CORE_INFO("Renderer: Generating cubemap for '{}' (Panorama ID: {})...", skybox.TexturePath, textureAsset->GetTexture().id);
+            CH_CORE_INFO("Renderer: Generating cubemap for '{}' (Panorama ID: {})...", skybox.TexturePath,
+                         textureAsset->GetTexture().id);
             Texture2D panorama = textureAsset->GetTexture();
-            
+
             // Note: We use PIXELFORMAT_UNCOMPRESSED_R16G16B16A16 or R32G32B32A32 to preserve HDR float values
-            TextureCubemap cubemap = GenTextureCubemap(genShader->GetShader(), panorama, 1024, PIXELFORMAT_UNCOMPRESSED_R32G32B32A32);
-            
+            TextureCubemap cubemap =
+                GenTextureCubemap(genShader->GetShader(), panorama, 1024, PIXELFORMAT_UNCOMPRESSED_R32G32B32A32);
+
             if (cubemap.id > 0)
             {
                 textureAsset->Unload(); // Unload panorama
                 textureAsset->SetTexture(cubemap);
                 textureAsset->SetIsCubemap(true);
-                CH_CORE_INFO("Renderer: Cubemap generated successfully for '{}' (Cubemap ID: {}).", skybox.TexturePath, cubemap.id);
+                CH_CORE_INFO("Renderer: Cubemap generated successfully for '{}' (Cubemap ID: {}).", skybox.TexturePath,
+                             cubemap.id);
             }
             else
             {
@@ -417,23 +491,23 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
         }
         else
         {
-             CH_CORE_ERROR("Renderer: CubemapGen shader missing! Cannot generate cubemap.");
-             activeMode = 0;
-             skyboxShader = m_Data->Shaders->Get("Skybox");
+            CH_CORE_ERROR("Renderer: CubemapGen shader missing! Cannot generate cubemap.");
+            activeMode = 0;
+            skyboxShader = m_Data->Shaders->Get("Skybox");
         }
     }
 
-    rlDisableBackfaceCulling();
-    rlDisableDepthMask();
+    RenderCommand::DisableBackfaceCulling();
+    RenderCommand::DisableDepthMask();
 
-    Material& material = m_Data->SkyboxMaterial;
+    Material& material = m_Data->Skybox.SkyboxMaterial;
     material.shader = skyboxShader->GetShader();
     Texture2D skyTexture = textureAsset->GetTexture();
 
     if (skyTexture.id == 0)
     {
-        //CH_CORE_ERROR("Renderer::DrawSkybox: Texture asset ready but Raylib texture ID is 0! Path: {}",
-                      //skybox.TexturePath);
+        // CH_CORE_ERROR("Renderer::DrawSkybox: Texture asset ready but Raylib texture ID is 0! Path: {}",
+        // skybox.TexturePath);
         rlEnableBackfaceCulling();
         rlEnableDepthMask();
         return;
@@ -459,7 +533,7 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
     skyboxShader->SetFloat("exposure", skybox.Exposure);
     skyboxShader->SetFloat("brightness", skybox.Brightness);
     skyboxShader->SetFloat("contrast", skybox.Contrast);
-    
+
     std::string skyExt = std::filesystem::path(skybox.TexturePath).extension().string();
     std::transform(skyExt.begin(), skyExt.end(), skyExt.begin(), ::tolower);
     bool isHDR = (skyExt == ".hdr");
@@ -468,7 +542,7 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
     {
         skyboxShader->SetInt("vflipped", 0);
         skyboxShader->SetInt("skyboxMode", activeMode); // 0: Equirect, 1: Cross
-        
+
         // Detect HDR texture and enable tone mapping + gamma correction
         skyboxShader->SetInt("isHDR", isHDR ? 1 : 0);
         skyboxShader->SetInt("doGamma", isHDR ? 1 : 0);
@@ -488,11 +562,11 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
 
     skyboxShader->SetFloat("uTime", m_Data->Time);
 
-    DrawMesh(m_Data->SkyboxCube.meshes[0], material,
+    DrawMesh(m_Data->Skybox.SkyboxCube.meshes[0], material,
              MatrixTranslate(camera.position.x, camera.position.y, camera.position.z));
 
-    rlEnableBackfaceCulling();
-    rlEnableDepthMask();
+    RenderCommand::EnableBackfaceCulling();
+    RenderCommand::EnableDepthMask();
 }
 
 void Renderer::DrawBillboard(const Camera3D& camera, Texture2D texture, Vector3 position, float size, Color color)
@@ -510,7 +584,7 @@ void Renderer::ApplyFogUniforms(ShaderAsset* shader)
     {
         return;
     }
-    auto& fog = m_Data->CurrentFog;
+    auto& fog = m_Data->Lighting.CurrentFog;
     shader->SetInt("fogEnabled", fog.Enabled ? 1 : 0);
     if (fog.Enabled)
     {
@@ -523,72 +597,74 @@ void Renderer::ApplyFogUniforms(ShaderAsset* shader)
 
 void Renderer::SetDirectionalLight(Vector3 direction, Color color)
 {
-    m_Data->CurrentLighting.Direction = direction;
-    m_Data->CurrentLighting.LightColor = color;
+    m_Data->Lighting.CurrentLighting.Direction = direction;
+    m_Data->Lighting.CurrentLighting.LightColor = color;
 }
 
 void Renderer::SetAmbientLight(float intensity)
 {
-    m_Data->CurrentLighting.Ambient = intensity;
+    m_Data->Lighting.CurrentLighting.Ambient = intensity;
 }
 
 void Renderer::SetLight(int index, const RenderLight& light)
 {
-    if (index < 0 || index >= RendererData::MaxLights)
+    if (index < 0 || index >= LightingData::MaxLights)
     {
         return;
     }
-    m_Data->Lights[index] = light;
-    m_Data->LightsDirty = true;
+    m_Data->Lighting.Lights[index] = light;
+    m_Data->Lighting.LightsDirty = true;
 }
 
 void Renderer::SetLightCount(int count)
 {
-    m_Data->LightCount = std::min(count, RendererData::MaxLights);
+    m_Data->LightCount = std::min(count, LightingData::MaxLights);
 }
 
 void Renderer::ClearLights()
 {
-    for (int i = 0; i < RendererData::MaxLights; i++)
+    for (int i = 0; i < LightingData::MaxLights; i++)
     {
-        m_Data->Lights[i].enabled = 0;
+        m_Data->Lighting.Lights[i].enabled = 0;
     }
     m_Data->LightCount = 0;
-    m_Data->LightsDirty = true;
+    m_Data->Lighting.LightsDirty = true;
 }
 
 void Renderer::ApplyEnvironment(const EnvironmentSettings& settings)
 {
     // Skip if nothing changed (POD-like member comparison for Lighting and Fog)
-    bool lightingChanged = (m_Data->CurrentLighting.Ambient != settings.Lighting.Ambient) ||
-                           (m_Data->CurrentLighting.Direction.x != settings.Lighting.Direction.x) ||
-                           (m_Data->CurrentLighting.Direction.y != settings.Lighting.Direction.y) ||
-                           (m_Data->CurrentLighting.Direction.z != settings.Lighting.Direction.z) ||
-                           (m_Data->CurrentLighting.LightColor.r != settings.Lighting.LightColor.r) ||
-                           (m_Data->CurrentLighting.LightColor.g != settings.Lighting.LightColor.g) ||
-                           (m_Data->CurrentLighting.LightColor.b != settings.Lighting.LightColor.b) ||
-                           (m_Data->CurrentLighting.LightColor.a != settings.Lighting.LightColor.a) ||
-                           (m_Data->CurrentLighting.Exposure != settings.Lighting.Exposure) ||
-                           (m_Data->CurrentLighting.Gamma != settings.Lighting.Gamma);
+    bool lightingChanged = (m_Data->Lighting.CurrentLighting.Ambient != settings.Lighting.Ambient) ||
+                           (m_Data->Lighting.CurrentLighting.Direction.x != settings.Lighting.Direction.x) ||
+                           (m_Data->Lighting.CurrentLighting.Direction.y != settings.Lighting.Direction.y) ||
+                           (m_Data->Lighting.CurrentLighting.Direction.z != settings.Lighting.Direction.z) ||
+                           (m_Data->Lighting.CurrentLighting.LightColor.r != settings.Lighting.LightColor.r) ||
+                           (m_Data->Lighting.CurrentLighting.LightColor.g != settings.Lighting.LightColor.g) ||
+                           (m_Data->Lighting.CurrentLighting.LightColor.b != settings.Lighting.LightColor.b) ||
+                           (m_Data->Lighting.CurrentLighting.LightColor.a != settings.Lighting.LightColor.a) ||
+                           (m_Data->Lighting.CurrentLighting.Exposure != settings.Lighting.Exposure) ||
+                           (m_Data->Lighting.CurrentLighting.Gamma != settings.Lighting.Gamma);
 
-    bool fogChanged = (m_Data->CurrentFog.Enabled != settings.Fog.Enabled) ||
-                      (m_Data->CurrentFog.Density != settings.Fog.Density) ||
-                      (m_Data->CurrentFog.Start != settings.Fog.Start) ||
-                      (m_Data->CurrentFog.End != settings.Fog.End) ||
-                      (m_Data->CurrentFog.FogColor.r != settings.Fog.FogColor.r) ||
-                      (m_Data->CurrentFog.FogColor.g != settings.Fog.FogColor.g) ||
-                      (m_Data->CurrentFog.FogColor.b != settings.Fog.FogColor.b) ||
-                      (m_Data->CurrentFog.FogColor.a != settings.Fog.FogColor.a);
+    bool fogChanged = (m_Data->Lighting.CurrentFog.Enabled != settings.Fog.Enabled) ||
+                      (m_Data->Lighting.CurrentFog.Density != settings.Fog.Density) ||
+                      (m_Data->Lighting.CurrentFog.Start != settings.Fog.Start) ||
+                      (m_Data->Lighting.CurrentFog.End != settings.Fog.End) ||
+                      (m_Data->Lighting.CurrentFog.FogColor.r != settings.Fog.FogColor.r) ||
+                      (m_Data->Lighting.CurrentFog.FogColor.g != settings.Fog.FogColor.g) ||
+                      (m_Data->Lighting.CurrentFog.FogColor.b != settings.Fog.FogColor.b) ||
+                      (m_Data->Lighting.CurrentFog.FogColor.a != settings.Fog.FogColor.a);
 
     if (!lightingChanged && !fogChanged)
+    {
         return;
+    }
 
-    m_Data->CurrentLighting = settings.Lighting;
-    m_Data->CurrentFog = settings.Fog;
-    
+    m_Data->Lighting.CurrentLighting = settings.Lighting;
+    m_Data->Lighting.CurrentFog = settings.Fog;
+
     // If lighting settings changed significantly (like ambient), we might want to flag lights dirty
     // to force a refresh if the shader uses it.
-    m_Data->LightsDirty = true;
+    m_Data->Lighting.LightsDirty = true;
 }
 
 void Renderer::SetDiagnosticMode(float mode)
@@ -604,12 +680,12 @@ void Renderer::UpdateTime(Timestep time)
 void Renderer::InitializeSkybox()
 {
     Mesh cube = GenMeshCube(1.0f, 1.0f, 1.0f);
-    m_Data->SkyboxCube = LoadModelFromMesh(cube);
-    m_Data->SkyboxMaterial = LoadMaterialDefault();
+    m_Data->Skybox.SkyboxCube = LoadModelFromMesh(cube);
+    m_Data->Skybox.SkyboxMaterial = LoadMaterialDefault();
 }
 
 void Renderer::DrawModelInstanced(const std::shared_ptr<ModelAsset>& modelAsset, const std::vector<Matrix>& transforms,
-                                   const std::vector<MaterialSlot>& materialSlotOverrides)
+                                  const std::vector<MaterialSlot>& materialSlotOverrides)
 {
     if (!modelAsset || modelAsset->GetState() != AssetState::Ready || transforms.empty())
     {
@@ -668,8 +744,8 @@ std::vector<Matrix> Renderer::ComputeBoneMatrices(const std::shared_ptr<ModelAss
 
     // Reuse pre-allocated scratch buffers — avoids heap allocations each frame
     auto& boneMatrices = m_Data->ScratchBoneMatrices;
-    auto& globalPose   = m_Data->ScratchGlobalPose;
-    auto& localPoseA   = m_Data->ScratchLocalPoseA;
+    auto& globalPose = m_Data->ScratchGlobalPose;
+    auto& localPoseA = m_Data->ScratchLocalPoseA;
     boneMatrices.resize(boneCount);
     globalPose.resize(boneCount);
     localPoseA.resize(boneCount);
@@ -685,12 +761,12 @@ std::vector<Matrix> Renderer::ComputeBoneMatrices(const std::shared_ptr<ModelAss
 
             for (int i = 0; i < anim.boneCount; i++)
             {
-                Transform t     = anim.framePoses[currentFrame * anim.boneCount + i];
-                Transform tNext = anim.framePoses[nextFrame    * anim.boneCount + i];
+                Transform t = anim.framePoses[currentFrame * anim.boneCount + i];
+                Transform tNext = anim.framePoses[nextFrame * anim.boneCount + i];
 
                 outLocalPose[i].translation = Vector3Lerp(t.translation, tNext.translation, interp);
-                outLocalPose[i].rotation    = QuaternionSlerp(t.rotation, tNext.rotation, interp);
-                outLocalPose[i].scale       = Vector3Lerp(t.scale, tNext.scale, interp);
+                outLocalPose[i].rotation = QuaternionSlerp(t.rotation, tNext.rotation, interp);
+                outLocalPose[i].scale = Vector3Lerp(t.scale, tNext.scale, interp);
             }
             return true;
         }
@@ -701,7 +777,9 @@ std::vector<Matrix> Renderer::ComputeBoneMatrices(const std::shared_ptr<ModelAss
     if (!hasA)
     {
         for (int i = 0; i < boneCount; i++)
+        {
             localPoseA[i] = model.bindPose[i];
+        }
     }
 
     if (targetAnimationIndex >= 0 && blendWeight > 0.0f)
@@ -712,9 +790,10 @@ std::vector<Matrix> Renderer::ComputeBoneMatrices(const std::shared_ptr<ModelAss
         {
             for (int i = 0; i < boneCount; i++)
             {
-                localPoseA[i].translation = Vector3Lerp(localPoseA[i].translation, localPoseB[i].translation, blendWeight);
-                localPoseA[i].rotation    = QuaternionSlerp(localPoseA[i].rotation, localPoseB[i].rotation, blendWeight);
-                localPoseA[i].scale       = Vector3Lerp(localPoseA[i].scale, localPoseB[i].scale, blendWeight);
+                localPoseA[i].translation =
+                    Vector3Lerp(localPoseA[i].translation, localPoseB[i].translation, blendWeight);
+                localPoseA[i].rotation = QuaternionSlerp(localPoseA[i].rotation, localPoseB[i].rotation, blendWeight);
+                localPoseA[i].scale = Vector3Lerp(localPoseA[i].scale, localPoseB[i].scale, blendWeight);
             }
         }
     }
@@ -725,8 +804,8 @@ std::vector<Matrix> Renderer::ComputeBoneMatrices(const std::shared_ptr<ModelAss
         Matrix localMat = MatrixMultiply(
             QuaternionToMatrix(localPoseA[i].rotation),
             MatrixTranslate(localPoseA[i].translation.x, localPoseA[i].translation.y, localPoseA[i].translation.z));
-        localMat = MatrixMultiply(
-            MatrixScale(localPoseA[i].scale.x, localPoseA[i].scale.y, localPoseA[i].scale.z), localMat);
+        localMat =
+            MatrixMultiply(MatrixScale(localPoseA[i].scale.x, localPoseA[i].scale.y, localPoseA[i].scale.z), localMat);
 
         int parent = model.bones[i].parent;
         globalPose[i] = (parent == -1) ? localMat : MatrixMultiply(globalPose[parent], localMat);
@@ -735,9 +814,8 @@ std::vector<Matrix> Renderer::ComputeBoneMatrices(const std::shared_ptr<ModelAss
     // Compute final skinning matrices
     for (int i = 0; i < boneCount; i++)
     {
-        boneMatrices[i] = (i < (int)offsetMatrices.size())
-            ? MatrixMultiply(offsetMatrices[i], globalPose[i])
-            : globalPose[i];
+        boneMatrices[i] =
+            (i < (int)offsetMatrices.size()) ? MatrixMultiply(offsetMatrices[i], globalPose[i]) : globalPose[i];
     }
 
     return boneMatrices; // RVO applies — no copy in practice
@@ -800,7 +878,8 @@ void Renderer::BindShaderUniforms(ShaderAsset* activeShader, const std::vector<M
     }
     else
     {
-        // Provide identity matrices for the first few bones to avoid state leakage if the shader is used for static meshes
+        // Provide identity matrices for the first few bones to avoid state leakage if the shader is used for static
+        // meshes
         static Matrix identityMatrices[4] = {MatrixIdentity(), MatrixIdentity(), MatrixIdentity(), MatrixIdentity()};
         activeShader->SetMatrices("boneMatrices", identityMatrices, 4);
     }
@@ -831,7 +910,6 @@ void Renderer::BindShaderUniforms(ShaderAsset* activeShader, const std::vector<M
         }
     }
 }
-
 
 void Renderer::BindMaterialUniforms(ShaderAsset* activeShader, const Material& material, int meshIndex,
                                     const Model& model, const std::vector<MaterialSlot>& materialSlotOverrides)
@@ -950,13 +1028,12 @@ TextureCubemap Renderer::GenTextureCubemap(Shader shader, Texture2D panorama, in
     rlSetUniformMatrix(locProj, matFboProjection);
 
     // Define view matrix for every side of the cubemap
-    Matrix fboViews[6] = {
-        MatrixLookAt({0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, -1.0f,  0.0f}),
-        MatrixLookAt({0.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f}),
-        MatrixLookAt({0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}),
-        MatrixLookAt({0.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}),
-        MatrixLookAt({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, -1.0f, 0.0f}),
-        MatrixLookAt({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -1.0f}, {0.0f, -1.0f, 0.0f})};
+    Matrix fboViews[6] = {MatrixLookAt({0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f}),
+                          MatrixLookAt({0.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f}),
+                          MatrixLookAt({0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}),
+                          MatrixLookAt({0.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}),
+                          MatrixLookAt({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, -1.0f, 0.0f}),
+                          MatrixLookAt({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -1.0f}, {0.0f, -1.0f, 0.0f})};
 
     rlViewport(0, 0, size, size); // Set viewport to current fbo dimensions
 

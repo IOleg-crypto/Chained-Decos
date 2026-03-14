@@ -12,8 +12,40 @@
 #include <mutex>
 #include <unordered_map>
 
+#include "engine/core/application.h"
+
 namespace CHEngine
 {
+static PhysicsSystem* s_PhysicsInstance = nullptr;
+
+PhysicsSystem::PhysicsSystem()
+{
+    CH_CORE_ASSERT(!s_PhysicsInstance, "PhysicsSystem already exists!");
+    s_PhysicsInstance = this;
+}
+
+PhysicsSystem::~PhysicsSystem()
+{
+    Shutdown();
+    s_PhysicsInstance = nullptr;
+}
+
+void PhysicsSystem::Init()
+{
+    CH_CORE_INFO("Global Physics System Initialized.");
+}
+
+void PhysicsSystem::Shutdown()
+{
+    CH_CORE_INFO("Global Physics System Shutdown.");
+}
+
+PhysicsSystem& PhysicsSystem::Get()
+{
+    CH_CORE_ASSERT(s_PhysicsInstance, "PhysicsSystem not initialized!");
+    return *s_PhysicsInstance;
+}
+
 Physics::Physics(Scene* scene)
     : m_Scene(scene)
 {
@@ -25,16 +57,6 @@ Physics::Physics(Scene* scene)
 Physics::~Physics()
 {
     CH_CORE_INFO("Physics instance for scene destroyed.");
-}
-
-void Physics::Init()
-{
-    CH_CORE_INFO("Global Physics System Initialized.");
-}
-
-void Physics::Shutdown()
-{
-    CH_CORE_INFO("Global Physics System Shutdown.");
 }
 
 void Physics::Update(Timestep deltaTime, bool runtime)

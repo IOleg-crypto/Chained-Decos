@@ -1,5 +1,6 @@
 add_executable(EngineTests
     uuid_tests.cpp
+    primitive_tests.cpp
     serialization_tests.cpp
     scene_tests.cpp
     physics_tests.cpp
@@ -13,6 +14,7 @@ add_executable(EngineTests
     math_tests.cpp
     material_tests.cpp
     audio_tests.cpp
+    test_environment.cpp
 )
 
 target_link_libraries(EngineTests PRIVATE engine editor_core GTest::gmock_main GTest::gtest_main)

@@ -3,6 +3,7 @@
 #include "engine/scene/scene.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene_scripting.h"
+#include "engine/core/application.h"
 #include <Coral/ManagedObject.hpp>
 #include <algorithm>
 #include <chrono>
@@ -19,14 +20,30 @@
 
 namespace CHEngine {
 
-// ── Static member definitions ────────────────────────────────────────────────
-Scene*                                     ScriptEngine::s_ActiveScene          = nullptr;
-Coral::HostInstance                        ScriptEngine::s_Host;
-Coral::AssemblyLoadContext                 ScriptEngine::s_AppAssemblyContext;
-Coral::ManagedAssembly*                    ScriptEngine::s_AppAssembly          = nullptr;
-Coral::ManagedAssembly*                    ScriptEngine::s_CoreAssembly         = nullptr;
-std::unordered_map<std::string, Coral::Type> ScriptEngine::s_ScriptClasses;
-bool                                       ScriptEngine::s_IsInitialized        = false;
+// ── Lifecycle ────────────────────────────────────────────────────────────────
+static ScriptEngine* s_Instance = nullptr;
+
+ScriptEngine::ScriptEngine()
+    : m_ActiveScene(nullptr), m_IsInitialized(false)
+{
+    CH_CORE_ASSERT(!s_Instance, "ScriptEngine already exists!");
+    s_Instance = this;
+}
+
+ScriptEngine::~ScriptEngine()
+{
+    if (m_IsInitialized)
+    {
+        Shutdown();
+    }
+    s_Instance = nullptr;
+}
+
+ScriptEngine& ScriptEngine::Get()
+{
+    CH_CORE_ASSERT(s_Instance, "ScriptEngine not initialized!");
+    return *s_Instance;
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 static std::string ToLower(std::string s)
@@ -74,7 +91,7 @@ static std::filesystem::path ShadowCopyDll(const std::filesystem::path& original
     {
         CH_CORE_ERROR("ScriptEngine: Failed to shadow-copy '{}' -> '{}': {}",
                       original.string(), shadowDll.string(), ec.message());
-        return original; // fall back to loading original
+        return ""; // Return empty to indicate failure
     }
 
     // Copy .pdb for debugger support
@@ -106,7 +123,7 @@ static void CleanupShadowCopies()
 // ── Init / Shutdown ───────────────────────────────────────────────────────────
 void ScriptEngine::Init()
 {
-    if (s_IsInitialized)
+    if (m_IsInitialized)
         return;
 
     CH_CORE_INFO("ScriptEngine: Initializing CoreCLR...");
@@ -115,38 +132,38 @@ void ScriptEngine::Init()
     // Coral looks for Coral.Managed.dll in this directory.
     settings.CoralDirectory = GetExecutableDir().string();
 
-    auto status = s_Host.Initialize(settings);
+    auto status = m_Host.Initialize(settings);
     if (status != Coral::CoralInitStatus::Success)
     {
         CH_CORE_ERROR("ScriptEngine: Failed to initialize Coral! Status: {}", (int)status);
         return;
     }
 
-    s_IsInitialized = true;
+    m_IsInitialized = true;
     CH_CORE_INFO("ScriptEngine: CoreCLR initialized.");
 
     // Create the initial AssemblyLoadContext
-    s_AppAssemblyContext = s_Host.CreateAssemblyLoadContext("GameScriptsALC");
+    m_AppAssemblyContext = m_Host.CreateAssemblyLoadContext("GameScriptsALC");
 }
 
 void ScriptEngine::Shutdown()
 {
-    if (!s_IsInitialized)
+    if (!m_IsInitialized)
         return;
 
     CH_CORE_INFO("ScriptEngine: Shutting down...");
-    s_ScriptClasses.clear();
-    s_AppAssembly = nullptr;
-    s_CoreAssembly = nullptr;
-    s_Host.Shutdown();
+    m_ScriptClasses.clear();
+    m_AppAssembly = nullptr;
+    m_CoreAssembly = nullptr;
+    m_Host.Shutdown();
     CleanupShadowCopies();
-    s_IsInitialized = false;
+    m_IsInitialized = false;
 }
 
 // ── Assembly management ───────────────────────────────────────────────────────
 void ScriptEngine::LoadAppAssembly(const std::string& filepath)
 {
-    if (!s_IsInitialized)
+    if (!m_IsInitialized)
     {
         CH_CORE_WARN("ScriptEngine::LoadAppAssembly called before Init().");
         return;
@@ -163,36 +180,55 @@ void ScriptEngine::LoadAppAssembly(const std::string& filepath)
 
         // Shadow-copy to avoid file locks from CoreCLR
         auto shadowCore = ShadowCopyDll(corePath);
-        s_CoreAssembly = &s_AppAssemblyContext.LoadAssembly(shadowCore.string());
+        if (shadowCore.empty())
+        {
+            CH_CORE_ERROR("ScriptEngine: Failed to shadow-copy core assembly '{}'", corePath.string());
+            return;
+        }
+
+        m_CoreAssembly = &m_AppAssemblyContext.LoadAssembly(shadowCore.string());
+        if (!m_CoreAssembly || m_CoreAssembly->GetLoadStatus() != Coral::AssemblyLoadStatus::Success)
+        {
+            CH_CORE_ERROR("ScriptEngine: Failed to load core assembly '{}'. Status: {}", 
+                          corePath.string(), m_CoreAssembly ? (int)m_CoreAssembly->GetLoadStatus() : -1);
+            m_CoreAssembly = nullptr;
+            return;
+        }
 
         // 2. Load the actual game scripts (also shadow-copied)
         auto shadowApp = ShadowCopyDll(std::filesystem::path(filepath));
-        s_AppAssembly = &s_AppAssemblyContext.LoadAssembly(shadowApp.string());
+        if (shadowApp.empty())
+        {
+            CH_CORE_ERROR("ScriptEngine: Failed to shadow-copy app assembly '{}'", filepath);
+            return;
+        }
 
-        if (s_AppAssembly->GetLoadStatus() != Coral::AssemblyLoadStatus::Success)
+        m_AppAssembly = &m_AppAssemblyContext.LoadAssembly(shadowApp.string());
+
+        if (m_AppAssembly->GetLoadStatus() != Coral::AssemblyLoadStatus::Success)
         {
             CH_CORE_ERROR("ScriptEngine: Failed to load assembly '{}'. Status: {}",
-                          filepath, (int)s_AppAssembly->GetLoadStatus());
-            s_AppAssembly = nullptr;
+                          filepath, (int)m_AppAssembly->GetLoadStatus());
+            m_AppAssembly = nullptr;
             return;
         }
 
         CH_CORE_INFO("ScriptEngine: Loaded assembly '{}'.", filepath);
         
-        if (s_CoreAssembly)
-            ScriptGlue::RegisterInternalCalls(*s_CoreAssembly);
+        if (m_CoreAssembly)
+            ScriptGlue::RegisterInternalCalls(*m_CoreAssembly);
         DiscoverScriptTypes();
     }
     catch (const std::exception& e)
     {
         CH_CORE_ERROR("ScriptEngine: Exception loading assembly '{}': {}", filepath, e.what());
-        s_AppAssembly = nullptr;
+        m_AppAssembly = nullptr;
     }
 }
 
 void ScriptEngine::ReloadAssembly()
 {
-    if (!s_IsInitialized)
+    if (!m_IsInitialized)
     {
         CH_CORE_WARN("ScriptEngine::ReloadAssembly called before Init().");
         return;
@@ -221,35 +257,35 @@ void ScriptEngine::ReloadAssembly()
     }
 
     // 1. Stop all running C# scripts cleanly (calls OnDestroy)
-    if (s_ActiveScene)
-        SceneScripting::Stop(s_ActiveScene);
+    if (m_ActiveScene)
+        SceneScripting::Stop(m_ActiveScene);
 
     // 2. Unload the old AssemblyLoadContext so the DLL file is released
-    s_ScriptClasses.clear();
-    s_AppAssembly = nullptr;
-    s_CoreAssembly = nullptr;
-    s_Host.UnloadAssemblyLoadContext(s_AppAssemblyContext);
+    m_ScriptClasses.clear();
+    m_AppAssembly = nullptr;
+    m_CoreAssembly = nullptr;
+    m_Host.UnloadAssemblyLoadContext(m_AppAssemblyContext);
     CH_CORE_INFO("ScriptEngine: Old ALC unloaded.");
 
     // 3. Clean old shadow copies so we don't accumulate temp files
     CleanupShadowCopies();
 
     // 4. Fresh ALC + load the new DLL
-    s_AppAssemblyContext = s_Host.CreateAssemblyLoadContext("GameScriptsALC");
+    m_AppAssemblyContext = m_Host.CreateAssemblyLoadContext("GameScriptsALC");
     LoadAppAssembly(dllPath.string());
 }
 
 // ── Type discovery ─────────────────────────────────────────────────────────────
 void ScriptEngine::DiscoverScriptTypes()
 {
-    if (!s_AppAssembly)
+    if (!m_AppAssembly)
         return;
 
-    s_ScriptClasses.clear();
+    m_ScriptClasses.clear();
 
     // The base script type lives in CHEngine.Managed.dll.
     // We must find it in the Core assembly, not the App assembly.
-    Coral::Type scriptBaseType = s_CoreAssembly->GetLocalType("CHEngine.Script");
+    Coral::Type scriptBaseType = m_CoreAssembly->GetLocalType("CHEngine.Script");
 
     if (!scriptBaseType)
     {
@@ -257,7 +293,7 @@ void ScriptEngine::DiscoverScriptTypes()
         return;
     }
 
-    auto types = s_AppAssembly->GetTypes();
+    auto types = m_AppAssembly->GetTypes();
     for (auto& type : types)
     {
         // Skip the base class itself; only register concrete subclasses
@@ -267,11 +303,11 @@ void ScriptEngine::DiscoverScriptTypes()
         std::string fullName = (std::string)type->GetFullName();
         std::string key      = ToLower(fullName);
 
-        s_ScriptClasses[key] = *type;
+        m_ScriptClasses[key] = *type;
         CH_CORE_INFO("ScriptEngine: Registered script '{}' (key: '{}')", fullName, key);
     }
 
-    CH_CORE_INFO("ScriptEngine: {} script(s) registered.", s_ScriptClasses.size());
+    CH_CORE_INFO("ScriptEngine: {} script(s) registered.", m_ScriptClasses.size());
 }
 
 // ── Script lookup ─────────────────────────────────────────────────────────────
@@ -280,13 +316,13 @@ Coral::Type* ScriptEngine::GetScriptClass(const std::string& name)
     std::string key = ToLower(name);
 
     // Exact full-name match (most common)
-    auto it = s_ScriptClasses.find(key);
-    if (it != s_ScriptClasses.end())
+    auto it = m_ScriptClasses.find(key);
+    if (it != m_ScriptClasses.end())
         return &it->second;
 
     // Fallback: partial suffix match — allows using bare "PlayerController"
     // when the stored key is "chaineddecos.scripts.playercontroller"
-    for (auto& [storedKey, type] : s_ScriptClasses)
+    for (auto& [storedKey, type] : m_ScriptClasses)
     {
         // storedKey ends with ".<key>" or equals <key>
         if (storedKey == key)
