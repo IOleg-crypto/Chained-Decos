@@ -85,7 +85,7 @@ static std::filesystem::path ShadowCopyDll(const std::filesystem::path& original
     {
         CH_CORE_ERROR("ScriptEngine: Failed to shadow-copy '{}' -> '{}': {}",
                       original.string(), shadowDll.string(), ec.message());
-        return original; // fall back to loading original
+        return ""; // Return empty to indicate failure
     }
 
     // Copy .pdb for debugger support
@@ -174,10 +174,29 @@ void ScriptEngine::LoadAppAssembly(const std::string& filepath)
 
         // Shadow-copy to avoid file locks from CoreCLR
         auto shadowCore = ShadowCopyDll(corePath);
+        if (shadowCore.empty())
+        {
+            CH_CORE_ERROR("ScriptEngine: Failed to shadow-copy core assembly '{}'", corePath.string());
+            return;
+        }
+
         m_CoreAssembly = &m_AppAssemblyContext.LoadAssembly(shadowCore.string());
+        if (!m_CoreAssembly || m_CoreAssembly->GetLoadStatus() != Coral::AssemblyLoadStatus::Success)
+        {
+            CH_CORE_ERROR("ScriptEngine: Failed to load core assembly '{}'. Status: {}", 
+                          corePath.string(), m_CoreAssembly ? (int)m_CoreAssembly->GetLoadStatus() : -1);
+            m_CoreAssembly = nullptr;
+            return;
+        }
 
         // 2. Load the actual game scripts (also shadow-copied)
         auto shadowApp = ShadowCopyDll(std::filesystem::path(filepath));
+        if (shadowApp.empty())
+        {
+            CH_CORE_ERROR("ScriptEngine: Failed to shadow-copy app assembly '{}'", filepath);
+            return;
+        }
+
         m_AppAssembly = &m_AppAssemblyContext.LoadAssembly(shadowApp.string());
 
         if (m_AppAssembly->GetLoadStatus() != Coral::AssemblyLoadStatus::Success)

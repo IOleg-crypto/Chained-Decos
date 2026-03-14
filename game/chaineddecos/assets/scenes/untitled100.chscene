@@ -914,67 +914,23 @@ Entities:
       PerspectiveFar: 1000
     ManagedScriptComponent:
       Scripts:
-        - chaineddecos.scripts.cameracontroller
-  - Entity: 11765662603609844984
+        - ClassName: chaineddecos.scripts.cameracontroller
+  - Entity: 6428169142076434776
     TagComponent:
-      Tag: rail#3d2
+      Tag: Entity
     TransformComponent:
-      Translation: [150.736511, 20.0830803, -75.8014832]
-      Rotation: [3.14027047, -1.54398894, -3.14008403]
-      Scale: [2.81845117, 1.27921426, 1.24591303]
+      Translation: [-56.0625648, 0.688478768, 20.357626]
+      Rotation: [0, 1.54954553, 0]
+      Scale: [0.999881089, 1, 0.979426801]
     ModelComponent:
       ModelHandle: 0
-      ModelPath: models/pilot/lighthouse.glb
+      ModelPath: models/stairs.glb
       Materials:
         - Name: Material 0
           Index: 0
           Target: 0
           Material:
-            AlbedoColor: [17, 3, 3, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            Metalness: 0
-            Roughness: 0.5
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: Material 1
-          Index: 1
-          Target: 0
-          Material:
-            AlbedoColor: [145, 145, 145, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            Metalness: 0
-            Roughness: 0.5
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: Material 2
-          Index: 2
-          Target: 0
-          Material:
-            AlbedoColor: [19, 17, 15, 255]
+            AlbedoColor: [120, 73, 73, 255]
             AlbedoPath: ""
             OverrideAlbedo: false
             NormalMapPath: ""
@@ -995,12 +951,12 @@ Entities:
     ColliderComponent:
       Type: -1031798527
       Enabled: true
-      Offset: [-1.23756766, -0.447188109, -3.16349196]
-      Size: [2.47513533, 0.44796145, 34.5888672]
+      Offset: [-17.087841, -4.29592609, -11.3028545]
+      Size: [34.1756821, 8.59185219, 22.6057091]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
-      ModelPath: models/train/scene.gltf
+      ModelPath: models/stairs.glb
       AutoCalculate: true
   - Entity: 6476044873312290418
     TagComponent:
@@ -1131,8 +1087,8 @@ Entities:
     TagComponent:
       Tag: SceneCamera
     TransformComponent:
-      Translation: [132.864105, 29.9162636, -6.9840765]
-      Rotation: [1.60023773, -1896.78589, 0]
+      Translation: [494.742432, 69.7542267, -121.690697]
+      Rotation: [352.800385, -1975.98669, 0]
       Scale: [1, 1, 1]
     CameraComponent:
       Primary: true
@@ -1147,16 +1103,16 @@ Entities:
       PerspectiveFOV: 0.890100479
       PerspectiveNear: 1
       PerspectiveFar: 11999479
-  - Entity: 2700381502322294943
+  - Entity: 10653066213482940164
     TagComponent:
-      Tag: rail
+      Tag: minecrafthouse
     TransformComponent:
-      Translation: [64.8685074, 3.31698322, 17.91469]
-      Rotation: [3.14027047, -1.54398882, -3.14008403]
-      Scale: [2.81846547, 1.27921426, 1.24591637]
+      Translation: [538.350159, 143.252487, 2173.47119]
+      Rotation: [0, -0, 0]
+      Scale: [26.4252186, 28.1715183, 26.7638988]
     ModelComponent:
       ModelHandle: 0
-      ModelPath: models/train/scene.gltf
+      ModelPath: models/rung/house.obj
       Materials:
         - Name: Material 0
           Index: 0
@@ -1227,12 +1183,12 @@ Entities:
     ColliderComponent:
       Type: 257
       Enabled: true
-      Offset: [-1.23756766, -0.447188109, -3.16349196]
-      Size: [2.47513533, 0.44796145, 34.5888672]
+      Offset: [-36, 0, -30]
+      Size: [73, 48, 61]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
-      ModelPath: models/train/scene.gltf
+      ModelPath: models/rung/house.obj
       AutoCalculate: true
   - Entity: 1283719283719285
     TagComponent:
@@ -1505,9 +1461,9 @@ Entities:
       JumpForce: 53.2999992
     ManagedScriptComponent:
       Scripts:
-        - chaineddecos.scripts.playercontroller
-        - chaineddecos.scripts.gamehud
-        - chaineddecos.scripts.playerfall
+        - ClassName: chaineddecos.scripts.playercontroller
+        - ClassName: chaineddecos.scripts.gamehud
+        - ClassName: chaineddecos.scripts.playerfall
   - Entity: 3962667947486927982
     TagComponent:
       Tag: anim_mode
@@ -1556,133 +1512,3 @@ Entities:
       CurrentAnimationIndex: 0
       IsLooping: true
       IsPlaying: false
-  - Entity: 6428169142076434776
-    TagComponent:
-      Tag: Entity
-    TransformComponent:
-      Translation: [-56.0625648, 0.688478768, 20.357626]
-      Rotation: [0, 1.54954553, 0]
-      Scale: [0.999881089, 1, 0.979426801]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/stairs.glb
-      Materials:
-        - Name: Material 0
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [120, 73, 73, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            Metalness: 0
-            Roughness: 0.5
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-    ColliderComponent:
-      Type: 1115685121
-      Enabled: true
-      Offset: [-17.087841, -4.29592609, -11.3028545]
-      Size: [34.1756821, 8.59185219, 22.6057091]
-      Radius: 0.5
-      Height: 2
-      ModelHandle: 0
-      ModelPath: models/stairs.glb
-      AutoCalculate: true
-  - Entity: 10653066213482940164
-    TagComponent:
-      Tag: minecrafthouse
-    TransformComponent:
-      Translation: [538.350159, 143.252487, 2173.47119]
-      Rotation: [0, -0, 0]
-      Scale: [26.4252186, 28.1715183, 26.7638988]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/rung/house.obj
-      Materials:
-        - Name: Material 0
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [17, 3, 3, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            Metalness: 0
-            Roughness: 0.5
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: Material 1
-          Index: 1
-          Target: 0
-          Material:
-            AlbedoColor: [145, 145, 145, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            Metalness: 0
-            Roughness: 0.5
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: Material 2
-          Index: 2
-          Target: 0
-          Material:
-            AlbedoColor: [19, 17, 15, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            Metalness: 0
-            Roughness: 0.5
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-    ColliderComponent:
-      Type: 257
-      Enabled: true
-      Offset: [-36, 0, -30]
-      Size: [73, 48, 61]
-      Radius: 0.5
-      Height: 2
-      ModelHandle: 0
-      ModelPath: models/rung/house.obj
-      AutoCalculate: true
