@@ -73,6 +73,15 @@ TEST_F(PrimitiveTest, Serialization)
 
 TEST_F(PrimitiveTest, ProceduralModelGeneration)
 {
+#if defined(CH_CI)
+    GTEST_SKIP() << "Skipping procedural generation test on CI (no OpenGL).";
+#endif
+
+    if (!IsWindowReady())
+    {
+        GTEST_SKIP() << "Skipping procedural generation test: Raylib window/context not ready.";
+    }
+
     // Test that generation doesn't crash and returns meshes
     // Note: We can't easily check mesh content without a GPU context in some environments,
     // but MeshImporter::GenerateProceduralModel uses Raylib's GenMeshXXX which are CPU-side.
