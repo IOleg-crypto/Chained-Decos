@@ -14,13 +14,22 @@ namespace CHEngine
 {
 class ModelAsset;
 
+struct ProceduralParameters
+{
+    float Radius = 0.5f;
+    float InnerRadius = 0.2f;
+    float Height = 1.0f;
+    int Slices = 16;
+    int Stacks = 16;
+    Vector3 Dimensions = {1.0f, 1.0f, 1.0f};
+};
+
 class MeshImporter : public AssetImporter
 {
 public:
     static std::shared_ptr<ModelAsset> ImportMesh(const std::filesystem::path& path);
-
     // For procedural mesh generation
-    static Model GenerateProceduralModel(const std::string& type);
+    static Model GenerateProceduralModel(const std::string& type, const ProceduralParameters& params = ProceduralParameters());
 
     // For async loading
     static PendingModelData LoadMeshDataFromDisk(const std::filesystem::path& path, int samplingFPS = 30);

@@ -59,7 +59,7 @@ TEST_F(AssetManagerTest, ProceduralModelLoading)
 {
     if (!IsWindowReady() || !m_AssetManager)
     {
-        return;
+        GTEST_SKIP() << "Skipping graphics test: No OpenGL context available.";
     }
 
     auto cube = m_AssetManager->Get<ModelAsset>(":cube:");
@@ -71,7 +71,7 @@ TEST_F(AssetManagerTest, ModelCaching)
 {
     if (!IsWindowReady() || !m_AssetManager)
     {
-        return;
+        GTEST_SKIP() << "Skipping graphics test: No OpenGL context available.";
     }
 
     auto cube1 = m_AssetManager->Get<ModelAsset>(":cube:");
@@ -85,7 +85,7 @@ TEST_F(AssetManagerTest, Unloading)
 {
     if (!IsWindowReady() || !m_AssetManager)
     {
-        return;
+        GTEST_SKIP() << "Skipping graphics test: No OpenGL context available.";
     }
 
     auto cube = m_AssetManager->Get<ModelAsset>(":cube:");

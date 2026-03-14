@@ -521,40 +521,40 @@ std::shared_ptr<ModelAsset> MeshImporter::ImportMesh(const std::filesystem::path
     return asset;
 }
 
-Model MeshImporter::GenerateProceduralModel(const std::string& type)
+Model MeshImporter::GenerateProceduralModel(const std::string& type, const ProceduralParameters& params)
 {
     Mesh mesh = {0};
     if (type == ":cube:")
     {
-        mesh = GenMeshCube(1.0f, 1.0f, 1.0f);
+        mesh = GenMeshCube(params.Dimensions.x, params.Dimensions.y, params.Dimensions.z);
     }
     else if (type == ":sphere:")
     {
-        mesh = GenMeshSphere(0.5f, 16, 16);
+        mesh = GenMeshSphere(params.Radius, params.Stacks, params.Slices);
     }
     else if (type == ":plane:")
     {
-        mesh = GenMeshPlane(10.0f, 10.0f, 10, 10);
+        mesh = GenMeshPlane(params.Dimensions.x, params.Dimensions.z, params.Slices, params.Stacks);
     }
     else if (type == ":torus:")
     {
-        mesh = GenMeshTorus(0.2f, 0.4f, 16, 16);
+        mesh = GenMeshTorus(params.Radius, params.InnerRadius, params.Slices, params.Stacks);
     }
     else if (type == ":cylinder:")
     {
-        mesh = GenMeshCylinder(0.5f, 1.0f, 16);
+        mesh = GenMeshCylinder(params.Radius, params.Height, params.Slices);
     }
     else if (type == ":cone:")
     {
-        mesh = GenMeshCone(0.5f, 1.0f, 16);
+        mesh = GenMeshCone(params.Radius, params.Height, params.Slices);
     }
     else if (type == ":knot:")
     {
-        mesh = GenMeshKnot(0.5f, 0.2f, 16, 128);
+        mesh = GenMeshKnot(params.Radius, params.InnerRadius, params.Slices, params.Stacks);
     }
     else if (type == ":hemisphere:")
     {
-        mesh = GenMeshHemiSphere(0.5f, 16, 16);
+        mesh = GenMeshHemiSphere(params.Radius, params.Stacks, params.Slices);
     }
 
     if (mesh.vertexCount == 0)

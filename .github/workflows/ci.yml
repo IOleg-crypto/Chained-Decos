@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, develop, chained-gui, refactor-branch]
+    branches: [main, develop]
     paths:
       - "**/*.cpp"
       - "**/*.h"
@@ -14,7 +14,20 @@ on:
       - ".github/workflows/ci.yml"
   pull_request:
     branches: [main, develop, chained-gui, refactor-branch]
+    paths:
+      - "**/*.cpp"
+      - "**/*.h"
+      - "**/*.cs"
+      - "**/*.csproj"
+      - "**/CMakeLists.txt"
+      - "**/CMakePresets.json"
+      - "cmake/*.cmake"
+      - ".github/workflows/ci.yml"
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 env:
   CI: true

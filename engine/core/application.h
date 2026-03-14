@@ -9,15 +9,17 @@
 #include "engine/core/thread_pool.h"
 #include "engine/core/timestep.h"
 #include "engine/core/window.h"
-
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
 
+
 namespace CHEngine
 {
+class ImGuiLayer;
+class Layer;
 
 struct ApplicationCommandLineArgs
 {
@@ -37,6 +39,7 @@ struct ApplicationSpecification
     std::string WorkingDirectory;
     ApplicationCommandLineArgs CommandLineArgs;
     std::string ImGuiConfigurationPath = "imgui.ini";
+    bool Headless = false;
 };
 
 // The main entry point and controller for the engine life cycle.
@@ -62,10 +65,7 @@ public:
         return *s_Instance;
     }
 
-    Window& GetWindow()
-    {
-        return *m_Window;
-    }
+    Window& GetWindow();
     ImGuiLayer* GetImGuiLayer()
     {
         return m_ImGuiLayer;
@@ -74,14 +74,7 @@ public:
     {
         return m_Specification;
     }
-    LayerStack& GetLayerStack()
-    {
-        return m_LayerStack;
-    }
-    ThreadPool& GetThreadPool()
-    {
-        return *m_ThreadPool;
-    }
+    LayerStack& GetLayerStack();
 
     void SubmitToMainThread(const std::function<void()>& function);
 
@@ -89,14 +82,12 @@ private:
     bool OnWindowClose(WindowCloseEvent& e);
     bool OnWindowResize(WindowResizeEvent& e);
     void ExecuteMainThreadQueue();
-    void InitSystems();
 
 private:
     static Application* s_Instance;
 
     ApplicationSpecification m_Specification;
     std::unique_ptr<Window> m_Window;
-    std::unique_ptr<ThreadPool> m_ThreadPool;
     ImGuiLayer* m_ImGuiLayer = nullptr;
 
     bool m_Running = true;
@@ -105,7 +96,15 @@ private:
     Timestep m_DeltaTime = 0.0f;
     Timestep m_LastFrameTime = 0.0f;
 
-    LayerStack m_LayerStack;
+    std::unique_ptr<LayerStack> m_LayerStack;
+    
+    // Subsystem pointers for safe cleanup
+    class ThreadPool* m_ThreadPool = nullptr;
+    class Renderer* m_Renderer = nullptr;
+    class ScriptEngine* m_ScriptEngine = nullptr;
+    class Audio* m_Audio = nullptr;
+    class PhysicsSystem* m_PhysicsSystem = nullptr;
+    class ComponentSerializer* m_ComponentSerializer = nullptr;
 
     std::vector<std::function<void()>> m_MainThreadQueue;
     std::mutex m_MainThreadQueueMutex;

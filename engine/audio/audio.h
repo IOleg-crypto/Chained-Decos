@@ -14,20 +14,25 @@ class SoundAsset;
 class Audio
 {
 public:
+    Audio();
+    ~Audio();
+
     // Initializes the audio backend.
-    static void Init();
+    void Init();
 
     // Shuts down the audio backend.
-    static void Shutdown();
+    void Shutdown();
 
     // Updates all active audio sources in the scene.
-    static void Update(Scene* scene, Timestep ts);
+    void Update(Scene* scene, Timestep ts);
 
     // Plays a specified sound asset.
-    static void Play(std::shared_ptr<SoundAsset> asset, float volume = 1.0f, float pitch = 1.0f, bool loop = false);
+    void Play(std::shared_ptr<SoundAsset> asset, float volume = 1.0f, float pitch = 1.0f, bool loop = false);
 
     // Stops a specified sound asset.
-    static void Stop(std::shared_ptr<SoundAsset> asset);
+    void Stop(std::shared_ptr<SoundAsset> asset);
+
+    static Audio& Get();
 };
 } // namespace CHEngine
 

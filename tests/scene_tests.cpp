@@ -87,7 +87,7 @@ TEST(SceneTest, GetEntityByUUID)
 
 TEST(SceneTest, CopyEntity)
 {
-    ComponentSerializer::Initialize();
+    auto& serializer = ComponentSerializer::Get();
     
     Scene scene;
     Entity src = scene.CreateEntity("Source");
