@@ -170,9 +170,11 @@ function(apply_engine_optimizations target_name)
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 ")
-        # Create a temp file for PCH
+        # Create a temp file for PCH and only copy if changed
+        set(PCH_FILE_TMP "${CMAKE_BINARY_DIR}/engine_pch.h.tmp")
         set(PCH_FILE "${CMAKE_BINARY_DIR}/engine_pch.h")
-        file(WRITE "${PCH_FILE}" "${PCH_HEADER_CONTENT}")
+        file(WRITE "${PCH_FILE_TMP}" "${PCH_HEADER_CONTENT}")
+        configure_file("${PCH_FILE_TMP}" "${PCH_FILE}" COPYONLY)
         
         target_precompile_headers(${target_name} PUBLIC "${PCH_FILE}")
     endif()

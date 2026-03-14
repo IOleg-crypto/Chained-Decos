@@ -21,6 +21,11 @@ public:
         s_RendererAPI->SetViewport(x, y, width, height);
     }
 
+    static void DrawIndexed(const std::shared_ptr<VertexArray>& vertexArray, uint32_t indexCount = 0)
+    {
+        s_RendererAPI->DrawIndexed(vertexArray, indexCount);
+    }
+
     static void DrawLine(Vector3 startPosition, Vector3 endPosition, Color color);
     static void DrawGrid(int sliceCount, float spacing);
 
