@@ -1,4 +1,5 @@
 #include "engine/graphics/renderer.h"
+#include "engine/core/application.h"
 #include "engine/core/log.h"
 #include "engine/core/profiler.h"
 #include "engine/graphics/asset_manager.h"
@@ -17,33 +18,46 @@
 #include <filesystem>
 #include <vector>
 
+#include "render_command.h"
 #include "renderer2d.h"
 #include "ui_renderer.h"
-#include "render_command.h"
-
-#include "engine/core/application.h"
 
 namespace CHEngine
 {
 
+Renderer* Renderer::s_Instance = nullptr;
+
 bool Renderer::IsInitialized()
 {
-    return Application::Get().GetRenderer().m_Data != nullptr;
+    return s_Instance != nullptr && s_Instance->m_Data != nullptr;
 }
 
 Renderer& Renderer::Get()
 {
-    return Application::Get().GetRenderer();
+    CH_CORE_ASSERT(s_Instance, "Renderer not initialized!");
+    return *s_Instance;
 }
 
 void Renderer::Init()
 {
     CH_CORE_INFO("Initializing Render System...");
+    CH_CORE_ASSERT(s_Instance == this, "Renderer instance mismatch!");
+
+    if (Application::Get().GetSpecification().Headless)
+    {
+        CH_CORE_INFO("Renderer: Headless mode, skipping GL initialization.");
+        return;
+    }
 
     RenderCommand::Initialize();
 
     m_Renderer2D->Init();
     m_UIRenderer->Init();
+
+    // Initialize SSBO for lights
+    m_Data->Lighting.LightSSBO =
+        rlLoadShaderBuffer(sizeof(RenderLight) * LightingData::MaxLights, nullptr, RL_DYNAMIC_DRAW);
+    m_Data->Lighting.LightsDirty = true;
 
     InitializeSkybox();
     CH_CORE_INFO("Render System Initialized (Core).");
@@ -82,9 +96,9 @@ void Renderer::LoadEngineResources(AssetManager& assetManager)
         }
     };
 
-    loadIcon(renderer.m_Data->LightIcon, "engine/resources/icons/light_bulb.png");
-    loadIcon(renderer.m_Data->SpawnIcon, "engine/resources/icons/leaf_icon.png");
-    loadIcon(renderer.m_Data->CameraIcon, "engine/resources/icons/camera_icon.png");
+    loadIcon(renderer.m_Data->EditorResources.LightIcon, "engine/resources/icons/light_bulb.png");
+    loadIcon(renderer.m_Data->EditorResources.SpawnIcon, "engine/resources/icons/leaf_icon.png");
+    loadIcon(renderer.m_Data->EditorResources.CameraIcon, "engine/resources/icons/camera_icon.png");
 }
 
 void Renderer::Shutdown()
@@ -99,55 +113,64 @@ void Renderer::Shutdown()
         m_UIRenderer->Shutdown();
     }
 
+    if (Application::Get().GetSpecification().Headless)
+    {
+        s_Instance = nullptr;
+        return;
+    }
+
     CleanupSkybox();
+    s_Instance = nullptr;
 }
 
 void Renderer::CleanupSkybox()
 {
-    if (m_Data->SkyboxCube.meshes != nullptr)
+    if (m_Data->Skybox.SkyboxCube.meshes != nullptr)
     {
-        UnloadModel(m_Data->SkyboxCube);
-        m_Data->SkyboxCube.meshes = nullptr;
+        UnloadModel(m_Data->Skybox.SkyboxCube);
+        m_Data->Skybox.SkyboxCube.meshes = nullptr;
     }
-    
-    // Default material doesn't need explicit unloading of its shader/textures 
-    // unless they were loaded specifically. UnloadMaterial handles maps.
-    UnloadMaterial(m_Data->SkyboxMaterial);
-}
-    // Actually, renderer.cpp had InitializeSkybox(); in Init().
 
+    // Default material doesn't need explicit unloading of its shader/textures
+    // unless they were loaded specifically. UnloadMaterial handles maps.
+    UnloadMaterial(m_Data->Skybox.SkyboxMaterial);
+}
 
 Renderer::Renderer()
 {
+    CH_CORE_ASSERT(!s_Instance, "Renderer already exists!");
+    s_Instance = this;
+
     m_Data = std::make_unique<RendererData>();
     m_Renderer2D = std::make_unique<Renderer2D>();
     m_UIRenderer = std::make_unique<UIRenderer>();
 
     m_Data->Shaders = std::make_unique<ShaderLibrary>();
-
-    // Initialize SSBO for lights
-    m_Data->LightSSBO = rlLoadShaderBuffer(sizeof(RenderLight) * RendererData::MaxLights, nullptr, RL_DYNAMIC_DRAW);
-    m_Data->LightsDirty = true;
 }
 
 Renderer::~Renderer()
 {
-    if (m_Data->LightIcon.id > 0)
+    if (Application::Get().GetSpecification().Headless)
     {
-        ::UnloadTexture(m_Data->LightIcon);
-    }
-    if (m_Data->SpawnIcon.id > 0)
-    {
-        ::UnloadTexture(m_Data->SpawnIcon);
-    }
-    if (m_Data->CameraIcon.id > 0)
-    {
-        ::UnloadTexture(m_Data->CameraIcon);
+        return;
     }
 
-    if (m_Data->LightSSBO > 0)
+    if (m_Data->EditorResources.LightIcon.id > 0)
     {
-        rlUnloadShaderBuffer(m_Data->LightSSBO);
+        ::UnloadTexture(m_Data->EditorResources.LightIcon);
+    }
+    if (m_Data->EditorResources.SpawnIcon.id > 0)
+    {
+        ::UnloadTexture(m_Data->EditorResources.SpawnIcon);
+    }
+    if (m_Data->EditorResources.CameraIcon.id > 0)
+    {
+        ::UnloadTexture(m_Data->EditorResources.CameraIcon);
+    }
+
+    if (m_Data->Lighting.LightSSBO > 0)
+    {
+        rlUnloadShaderBuffer(m_Data->Lighting.LightSSBO);
     }
 
     Shutdown();
@@ -158,10 +181,11 @@ void Renderer::BeginScene(const Camera3D& camera)
     m_Data->CurrentCameraPosition = camera.position;
 
     // Update light SSBO once per frame
-    if (m_Data->LightsDirty)
+    if (m_Data->Lighting.LightsDirty)
     {
-        rlUpdateShaderBuffer(m_Data->LightSSBO, m_Data->Lights, sizeof(RenderLight) * RendererData::MaxLights, 0);
-        m_Data->LightsDirty = false;
+        rlUpdateShaderBuffer(m_Data->Lighting.LightSSBO, m_Data->Lighting.Lights,
+                             sizeof(RenderLight) * LightingData::MaxLights, 0);
+        m_Data->Lighting.LightsDirty = false;
     }
 
     // Push global shader uniforms once per frame for the Lighting shader
@@ -171,14 +195,14 @@ void Renderer::BeginScene(const Camera3D& camera)
         lightingShader->SetVec3("viewPos", camera.position);
         lightingShader->SetFloat("uTime", m_Data->Time);
         lightingShader->SetFloat("uMode", m_Data->DiagnosticMode);
-        lightingShader->SetVec3("lightDir", m_Data->CurrentLighting.Direction);
-        lightingShader->SetColor("lightColor", m_Data->CurrentLighting.LightColor);
-        lightingShader->SetFloat("ambient", m_Data->CurrentLighting.Ambient);
+        lightingShader->SetVec3("lightDir", m_Data->Lighting.CurrentLighting.Direction);
+        lightingShader->SetColor("lightColor", m_Data->Lighting.CurrentLighting.LightColor);
+        lightingShader->SetFloat("ambient", m_Data->Lighting.CurrentLighting.Ambient);
         lightingShader->SetInt("uLightCount", m_Data->LightCount);
-        lightingShader->SetFloat("uExposure", m_Data->CurrentLighting.Exposure);
-        lightingShader->SetFloat("uGamma", m_Data->CurrentLighting.Gamma);
+        lightingShader->SetFloat("uExposure", m_Data->Lighting.CurrentLighting.Exposure);
+        lightingShader->SetFloat("uGamma", m_Data->Lighting.CurrentLighting.Gamma);
         ApplyFogUniforms(lightingShader.get());
-        rlBindShaderBuffer(m_Data->LightSSBO, 0);
+        rlBindShaderBuffer(m_Data->Lighting.LightSSBO, 0);
         m_Data->CurrentShader = lightingShader.get();
     }
 
@@ -245,14 +269,14 @@ void Renderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const Ma
                 shader->SetVec3("viewPos", m_Data->CurrentCameraPosition);
                 shader->SetFloat("uTime", m_Data->Time);
                 shader->SetFloat("uMode", m_Data->DiagnosticMode);
-                shader->SetVec3("lightDir", m_Data->CurrentLighting.Direction);
-                shader->SetColor("lightColor", m_Data->CurrentLighting.LightColor);
-                shader->SetFloat("ambient", m_Data->CurrentLighting.Ambient);
+                shader->SetVec3("lightDir", m_Data->Lighting.CurrentLighting.Direction);
+                shader->SetColor("lightColor", m_Data->Lighting.CurrentLighting.LightColor);
+                shader->SetFloat("ambient", m_Data->Lighting.CurrentLighting.Ambient);
                 shader->SetInt("uLightCount", m_Data->LightCount);
-                shader->SetFloat("uExposure", m_Data->CurrentLighting.Exposure);
-                shader->SetFloat("uGamma", m_Data->CurrentLighting.Gamma);
+                shader->SetFloat("uExposure", m_Data->Lighting.CurrentLighting.Exposure);
+                shader->SetFloat("uGamma", m_Data->Lighting.CurrentLighting.Gamma);
                 ApplyFogUniforms(shader);
-                rlBindShaderBuffer(m_Data->LightSSBO, 0);
+                rlBindShaderBuffer(m_Data->Lighting.LightSSBO, 0);
                 m_Data->CurrentShader = shader;
             }
 
@@ -361,8 +385,8 @@ void Renderer::ApplyPostProcessing(RenderTexture2D target, const Camera3D& camer
     shader->SetMatrix("matInverseViewProj", invViewProj);
     shader->SetVec3("viewPos", camera.position);
     shader->SetFloat("uTime", m_Data->Time);
-    shader->SetFloat("uExposure", m_Data->CurrentLighting.Exposure);
-    shader->SetFloat("uGamma", m_Data->CurrentLighting.Gamma);
+    shader->SetFloat("uExposure", m_Data->Lighting.CurrentLighting.Exposure);
+    shader->SetFloat("uGamma", m_Data->Lighting.CurrentLighting.Gamma);
 
     // Fog
     ApplyFogUniforms(shader);
@@ -476,7 +500,7 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
     RenderCommand::DisableBackfaceCulling();
     RenderCommand::DisableDepthMask();
 
-    Material& material = m_Data->SkyboxMaterial;
+    Material& material = m_Data->Skybox.SkyboxMaterial;
     material.shader = skyboxShader->GetShader();
     Texture2D skyTexture = textureAsset->GetTexture();
 
@@ -538,7 +562,7 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
 
     skyboxShader->SetFloat("uTime", m_Data->Time);
 
-    DrawMesh(m_Data->SkyboxCube.meshes[0], material,
+    DrawMesh(m_Data->Skybox.SkyboxCube.meshes[0], material,
              MatrixTranslate(camera.position.x, camera.position.y, camera.position.z));
 
     RenderCommand::EnableBackfaceCulling();
@@ -560,7 +584,7 @@ void Renderer::ApplyFogUniforms(ShaderAsset* shader)
     {
         return;
     }
-    auto& fog = m_Data->CurrentFog;
+    auto& fog = m_Data->Lighting.CurrentFog;
     shader->SetInt("fogEnabled", fog.Enabled ? 1 : 0);
     if (fog.Enabled)
     {
@@ -573,73 +597,74 @@ void Renderer::ApplyFogUniforms(ShaderAsset* shader)
 
 void Renderer::SetDirectionalLight(Vector3 direction, Color color)
 {
-    m_Data->CurrentLighting.Direction = direction;
-    m_Data->CurrentLighting.LightColor = color;
+    m_Data->Lighting.CurrentLighting.Direction = direction;
+    m_Data->Lighting.CurrentLighting.LightColor = color;
 }
 
 void Renderer::SetAmbientLight(float intensity)
 {
-    m_Data->CurrentLighting.Ambient = intensity;
+    m_Data->Lighting.CurrentLighting.Ambient = intensity;
 }
 
 void Renderer::SetLight(int index, const RenderLight& light)
 {
-    if (index < 0 || index >= RendererData::MaxLights)
+    if (index < 0 || index >= LightingData::MaxLights)
     {
         return;
     }
-    m_Data->Lights[index] = light;
-    m_Data->LightsDirty = true;
+    m_Data->Lighting.Lights[index] = light;
+    m_Data->Lighting.LightsDirty = true;
 }
 
 void Renderer::SetLightCount(int count)
 {
-    m_Data->LightCount = std::min(count, RendererData::MaxLights);
+    m_Data->LightCount = std::min(count, LightingData::MaxLights);
 }
 
 void Renderer::ClearLights()
 {
-    for (int i = 0; i < RendererData::MaxLights; i++)
+    for (int i = 0; i < LightingData::MaxLights; i++)
     {
-        m_Data->Lights[i].enabled = 0;
+        m_Data->Lighting.Lights[i].enabled = 0;
     }
     m_Data->LightCount = 0;
-    m_Data->LightsDirty = true;
+    m_Data->Lighting.LightsDirty = true;
 }
 
 void Renderer::ApplyEnvironment(const EnvironmentSettings& settings)
 {
     // Skip if nothing changed (POD-like member comparison for Lighting and Fog)
-    bool lightingChanged = (m_Data->CurrentLighting.Ambient != settings.Lighting.Ambient) ||
-                           (m_Data->CurrentLighting.Direction.x != settings.Lighting.Direction.x) ||
-                           (m_Data->CurrentLighting.Direction.y != settings.Lighting.Direction.y) ||
-                           (m_Data->CurrentLighting.Direction.z != settings.Lighting.Direction.z) ||
-                           (m_Data->CurrentLighting.LightColor.r != settings.Lighting.LightColor.r) ||
-                           (m_Data->CurrentLighting.LightColor.g != settings.Lighting.LightColor.g) ||
-                           (m_Data->CurrentLighting.LightColor.b != settings.Lighting.LightColor.b) ||
-                           (m_Data->CurrentLighting.LightColor.a != settings.Lighting.LightColor.a) ||
-                           (m_Data->CurrentLighting.Exposure != settings.Lighting.Exposure) ||
-                           (m_Data->CurrentLighting.Gamma != settings.Lighting.Gamma);
+    bool lightingChanged = (m_Data->Lighting.CurrentLighting.Ambient != settings.Lighting.Ambient) ||
+                           (m_Data->Lighting.CurrentLighting.Direction.x != settings.Lighting.Direction.x) ||
+                           (m_Data->Lighting.CurrentLighting.Direction.y != settings.Lighting.Direction.y) ||
+                           (m_Data->Lighting.CurrentLighting.Direction.z != settings.Lighting.Direction.z) ||
+                           (m_Data->Lighting.CurrentLighting.LightColor.r != settings.Lighting.LightColor.r) ||
+                           (m_Data->Lighting.CurrentLighting.LightColor.g != settings.Lighting.LightColor.g) ||
+                           (m_Data->Lighting.CurrentLighting.LightColor.b != settings.Lighting.LightColor.b) ||
+                           (m_Data->Lighting.CurrentLighting.LightColor.a != settings.Lighting.LightColor.a) ||
+                           (m_Data->Lighting.CurrentLighting.Exposure != settings.Lighting.Exposure) ||
+                           (m_Data->Lighting.CurrentLighting.Gamma != settings.Lighting.Gamma);
 
-    bool fogChanged =
-        (m_Data->CurrentFog.Enabled != settings.Fog.Enabled) || (m_Data->CurrentFog.Density != settings.Fog.Density) ||
-        (m_Data->CurrentFog.Start != settings.Fog.Start) || (m_Data->CurrentFog.End != settings.Fog.End) ||
-        (m_Data->CurrentFog.FogColor.r != settings.Fog.FogColor.r) ||
-        (m_Data->CurrentFog.FogColor.g != settings.Fog.FogColor.g) ||
-        (m_Data->CurrentFog.FogColor.b != settings.Fog.FogColor.b) ||
-        (m_Data->CurrentFog.FogColor.a != settings.Fog.FogColor.a);
+    bool fogChanged = (m_Data->Lighting.CurrentFog.Enabled != settings.Fog.Enabled) ||
+                      (m_Data->Lighting.CurrentFog.Density != settings.Fog.Density) ||
+                      (m_Data->Lighting.CurrentFog.Start != settings.Fog.Start) ||
+                      (m_Data->Lighting.CurrentFog.End != settings.Fog.End) ||
+                      (m_Data->Lighting.CurrentFog.FogColor.r != settings.Fog.FogColor.r) ||
+                      (m_Data->Lighting.CurrentFog.FogColor.g != settings.Fog.FogColor.g) ||
+                      (m_Data->Lighting.CurrentFog.FogColor.b != settings.Fog.FogColor.b) ||
+                      (m_Data->Lighting.CurrentFog.FogColor.a != settings.Fog.FogColor.a);
 
     if (!lightingChanged && !fogChanged)
     {
         return;
     }
 
-    m_Data->CurrentLighting = settings.Lighting;
-    m_Data->CurrentFog = settings.Fog;
+    m_Data->Lighting.CurrentLighting = settings.Lighting;
+    m_Data->Lighting.CurrentFog = settings.Fog;
 
     // If lighting settings changed significantly (like ambient), we might want to flag lights dirty
     // to force a refresh if the shader uses it.
-    m_Data->LightsDirty = true;
+    m_Data->Lighting.LightsDirty = true;
 }
 
 void Renderer::SetDiagnosticMode(float mode)
@@ -655,8 +680,8 @@ void Renderer::UpdateTime(Timestep time)
 void Renderer::InitializeSkybox()
 {
     Mesh cube = GenMeshCube(1.0f, 1.0f, 1.0f);
-    m_Data->SkyboxCube = LoadModelFromMesh(cube);
-    m_Data->SkyboxMaterial = LoadMaterialDefault();
+    m_Data->Skybox.SkyboxCube = LoadModelFromMesh(cube);
+    m_Data->Skybox.SkyboxMaterial = LoadMaterialDefault();
 }
 
 void Renderer::DrawModelInstanced(const std::shared_ptr<ModelAsset>& modelAsset, const std::vector<Matrix>& transforms,

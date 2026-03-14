@@ -6,18 +6,24 @@
 
 namespace CHEngine
 {
+static Audio* s_Instance = nullptr;
+
 Audio::Audio()
 {
+    CH_CORE_ASSERT(!s_Instance, "Audio system already exists!");
+    s_Instance = this;
 }
 
 Audio::~Audio()
 {
     Shutdown();
+    s_Instance = nullptr;
 }
 
 Audio& Audio::Get()
 {
-    return Application::Get().GetAudio();
+    CH_CORE_ASSERT(s_Instance, "Audio system not initialized!");
+    return *s_Instance;
 }
 
 void Audio::Init()

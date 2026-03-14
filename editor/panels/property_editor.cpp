@@ -630,6 +630,65 @@ void PropertyEditor::Init()
         return changed;
     });
 
+    Register<PrimitiveComponent>("Primitive", [](auto& component, auto entity) {
+        bool changed = false;
+        const char* primitiveTypes[] = {"None", "Cube", "Sphere", "Plane", "Cylinder", "Cone", "Torus", "Knot", "Hemisphere"};
+        int type = (int)component.Type;
+        if (EditorGUI::Property("Shape", type, primitiveTypes, (int)std::size(primitiveTypes)))
+        {
+            component.Type = (PrimitiveType)type;
+            component.Asset = nullptr; // Reset asset cache for type change
+            component.Dirty = true;
+            changed = true;
+        }
+
+        if (component.Type == PrimitiveType::None)
+            return changed;
+
+        ImGui::Separator();
+
+        if (component.Type == PrimitiveType::Cube)
+        {
+            if (EditorGUI::DrawVec3("Dimensions", component.Dimensions, 1.0f)) changed = true;
+        }
+        else if (component.Type == PrimitiveType::Sphere || component.Type == PrimitiveType::Hemisphere)
+        {
+            if (EditorGUI::Property("Radius", component.Radius, 0.05f)) changed = true;
+            if (EditorGUI::Property("Slices", component.Slices, 3, 128)) changed = true;
+            if (EditorGUI::Property("Stacks", component.Stacks, 3, 128)) changed = true;
+        }
+        else if (component.Type == PrimitiveType::Plane)
+        {
+            Vector2 size = {component.Dimensions.x, component.Dimensions.z};
+            if (EditorGUI::Property("Size", size))
+            {
+                component.Dimensions.x = size.x;
+                component.Dimensions.z = size.y;
+                changed = true;
+            }
+            if (EditorGUI::Property("Res X", component.Slices, 1, 128)) changed = true;
+            if (EditorGUI::Property("Res Z", component.Stacks, 1, 128)) changed = true;
+        }
+        else if (component.Type == PrimitiveType::Cylinder || component.Type == PrimitiveType::Cone)
+        {
+            if (EditorGUI::Property("Radius", component.Radius, 0.05f)) changed = true;
+            if (EditorGUI::Property("Height", component.Height, 0.05f)) changed = true;
+            if (EditorGUI::Property("Slices", component.Slices, 3, 128)) changed = true;
+        }
+        else if (component.Type == PrimitiveType::Torus || component.Type == PrimitiveType::Knot)
+        {
+            if (EditorGUI::Property("Radius", component.Radius, 0.05f)) changed = true;
+            if (EditorGUI::Property("Inner Radius", component.InnerRadius, 0.05f)) changed = true;
+            if (EditorGUI::Property("Slices", component.Slices, 3, 128)) changed = true;
+            if (EditorGUI::Property("Stacks", component.Stacks, 3, 128)) changed = true;
+        }
+
+        if (changed)
+            component.Dirty = true;
+
+        return changed;
+    });
+
     Register<SpriteComponent>("Sprite", [](auto& component, auto entity) {
         auto pb = EditorGUI::Begin();
         pb.File("Texture", component.TexturePath, "png,jpg,tga")

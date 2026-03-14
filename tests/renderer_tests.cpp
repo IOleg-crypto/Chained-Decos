@@ -62,7 +62,7 @@ TEST_F(RendererTest, LightManagement)
     renderer.SetLightCount(1);
 
     EXPECT_EQ(renderer.GetData().LightCount, 1);
-    EXPECT_FLOAT_EQ(renderer.GetData().Lights[0].intensity, 5.0f);
+    EXPECT_FLOAT_EQ(renderer.GetData().Lighting.Lights[0].intensity, 5.0f);
 
     renderer.ClearLights();
     EXPECT_EQ(renderer.GetData().LightCount, 0);
@@ -90,7 +90,7 @@ TEST_F(RendererTest, EnvironmentApplication)
     env.Lighting.Ambient = 0.5f;
 
     renderer.ApplyEnvironment(env);
-    EXPECT_FLOAT_EQ(renderer.GetData().CurrentLighting.Ambient, 0.5f);
+    EXPECT_FLOAT_EQ(renderer.GetData().Lighting.CurrentLighting.Ambient, 0.5f);
 
     renderer.Shutdown();
 }

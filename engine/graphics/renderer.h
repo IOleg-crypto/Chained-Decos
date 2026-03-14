@@ -31,13 +31,8 @@ struct RenderLight
 };
 static_assert(sizeof(RenderLight) == 64, "RenderLight must be exactly 64 bytes for SSBO alignment");
 
-struct RendererData
+struct LightingData
 {
-    Model SkyboxCube;
-    Material SkyboxMaterial;
-
-    std::unique_ptr<ShaderLibrary> Shaders;
-
     LightingSettings CurrentLighting;
     FogSettings CurrentFog;
 
@@ -46,11 +41,28 @@ struct RendererData
     RenderLight Lights[MaxLights];
     unsigned int LightSSBO = 0;
     bool LightsDirty = true;
+};
 
-    // Editor Icons
+struct SkyboxData
+{
+    Model SkyboxCube;
+    Material SkyboxMaterial;
+};
+
+struct EditorResourcesData
+{
     Texture2D LightIcon = {0};
     Texture2D SpawnIcon = {0};
     Texture2D CameraIcon = {0};
+};
+
+struct RendererData
+{
+    SkyboxData Skybox;
+    LightingData Lighting;
+    EditorResourcesData EditorResources;
+
+    std::unique_ptr<ShaderLibrary> Shaders;
 
     float DiagnosticMode = 0.0f; // 0: Normal, 1: Normals, 2: Lighting, 3: Albedo
     Vector3 CurrentCameraPosition = {0.0f, 0.0f, 0.0f};
@@ -152,6 +164,8 @@ private:
     std::unique_ptr<RendererData> m_Data;
     std::unique_ptr<Renderer2D> m_Renderer2D;
     std::unique_ptr<UIRenderer> m_UIRenderer;
+
+    static Renderer* s_Instance;
 };
 } // namespace CHEngine
 

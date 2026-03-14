@@ -13,6 +13,7 @@
 #include "components/mesh_component.h"
 #include "components/navigation_component.h"
 #include "components/physics_component.h"
+#include "components/primitive_component.h"
 #include "components/scripting_components.h"
 #include "components/shader_component.h"
 #include "components/sprite_component.h"

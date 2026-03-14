@@ -3,6 +3,7 @@
 #include "engine/core/profiler.h"
 #include "engine/graphics/frustum.h"
 #include "engine/graphics/model_asset.h"
+#include "engine/graphics/mesh_importer.h"
 #include "engine/graphics/renderer.h"
 #include "engine/graphics/renderer2d.h"
 #include "engine/graphics/shader_asset.h"
@@ -173,7 +174,7 @@ void SceneRenderer::PrepareLights(entt::registry& registry, const Frustum& frust
     auto lightView = registry.view<LightComponent>();
     for (auto entity : lightView)
     {
-        if (lightCount >= RendererData::MaxLights)
+        if (lightCount >= LightingData::MaxLights)
         {
             break;
         }
@@ -217,6 +218,7 @@ void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& 
 {
     std::unordered_set<ModelAsset*> updatedAssets;
 
+    // 3. Collect Models
     auto view = registry.view<TransformComponent, ModelComponent>();
     for (auto entity : view)
     {
@@ -284,6 +286,105 @@ void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& 
         else
         {
             Renderer::Get().DrawModel(model.Asset, worldTransform, model.Materials, 0, 0.0f, -1, 0.0f, 0.0f,
+                                      shaderOverride, customUniforms);
+        }
+    }
+
+    // 4. Collect Primitives
+    auto primitiveView = registry.view<TransformComponent, PrimitiveComponent>();
+    for (auto entity : primitiveView)
+    {
+        auto [transform, primitive] = primitiveView.get<TransformComponent, PrimitiveComponent>(entity);
+
+        if (primitive.Type == PrimitiveType::None)
+            continue;
+
+        // Lazy load/cache primitive asset or regenerate if dirty
+        if ((!primitive.Asset || primitive.Dirty) && Project::GetActive())
+        {
+            const char* primitivePaths[] = {
+                "", ":cube:", ":sphere:", ":plane:", ":cylinder:", ":cone:", ":torus:", ":knot:", ":hemisphere:"
+            };
+            int typeIdx = (int)primitive.Type;
+            if (typeIdx > 0 && typeIdx < (int)std::size(primitivePaths))
+            {
+                ProceduralParameters params;
+                params.Radius = primitive.Radius;
+                params.InnerRadius = primitive.InnerRadius;
+                params.Height = primitive.Height;
+                params.Slices = primitive.Slices;
+                params.Stacks = primitive.Stacks;
+                params.Dimensions = primitive.Dimensions;
+
+                // Create a temporary model from updated parameters
+                Model model = MeshImporter::GenerateProceduralModel(primitivePaths[typeIdx], params);
+                if (model.meshCount > 0)
+                {
+                    if (!primitive.Asset)
+                    {
+                        primitive.Asset = std::make_shared<ModelAsset>();
+                        primitive.Asset->SetPath(primitivePaths[typeIdx]);
+                    }
+                    else
+                    {
+                        // Unload existing mesh data if regenerating
+                        UnloadModel(primitive.Asset->GetModel());
+                    }
+                    
+                    primitive.Asset->GetModel() = model;
+                    primitive.Asset->SetState(AssetState::Ready);
+                }
+                primitive.Dirty = false;
+            }
+        }
+
+        if (!primitive.Asset || primitive.Asset->GetState() != AssetState::Ready)
+            continue;
+
+        const Matrix& worldTransform = transform.WorldTransform;
+        BoundingBox aabb = primitive.Asset->GetBoundingBox();
+
+        if (!frustum.IsBoxVisible(aabb, worldTransform))
+            continue;
+
+        // 2. Optimized Asset Update
+        if (updatedAssets.find(primitive.Asset.get()) == updatedAssets.end())
+        {
+            primitive.Asset->OnUpdate();
+            updatedAssets.insert(primitive.Asset.get());
+        }
+
+        // Handle shader override for primitives too
+        std::shared_ptr<ShaderAsset> shaderOverride;
+        std::vector<ShaderUniform> customUniforms;
+        bool hasShaderOverride = false;
+        if (registry.all_of<ShaderComponent>(entity))
+        {
+            auto& shaderComp = registry.get<ShaderComponent>(entity);
+            if (shaderComp.Enabled && !shaderComp.ShaderPath.empty() && Project::GetActive())
+            {
+                shaderOverride = Project::GetActive()->GetAssetManager()->Get<ShaderAsset>(shaderComp.ShaderPath);
+                customUniforms = shaderComp.Uniforms;
+                hasShaderOverride = true;
+            }
+        }
+
+        // Primitives are never animated (for now)
+        if (!hasShaderOverride)
+        {
+            std::string pathKey = "primitive_" + std::to_string((int)primitive.Type);
+            InstanceKey key{pathKey, {}}; // No material slots for primitives yet
+            auto& group = instanceGroups[key];
+            if (group.transforms.empty())
+            {
+                group.asset = primitive.Asset;
+                group.materials = {};
+            }
+            group.transforms.push_back(worldTransform);
+        }
+        else
+        {
+            Renderer::Get().DrawModel(primitive.Asset, worldTransform, {}, 0, 0.0f, -1, 0.0f, 0.0f,
                                       shaderOverride, customUniforms);
         }
     }
@@ -546,28 +647,28 @@ void SceneRenderer::RenderEditorIcons(Scene* scene, const Camera3D& camera)
     auto& state = Renderer::Get().GetData();
     auto assetManager = Project::GetActive() ? Project::GetActive()->GetAssetManager() : nullptr;
 
-    if (state.LightIcon.id == 0 && assetManager)
+    if (state.EditorResources.LightIcon.id == 0 && assetManager)
     {
         auto texture = assetManager->Get<TextureAsset>("engine/resources/icons/light_bulb.png");
         if (texture && texture->IsReady())
         {
-            state.LightIcon = texture->GetTexture();
+            state.EditorResources.LightIcon = texture->GetTexture();
         }
     }
-    if (state.SpawnIcon.id == 0 && assetManager)
+    if (state.EditorResources.SpawnIcon.id == 0 && assetManager)
     {
         auto texture = assetManager->Get<TextureAsset>("engine/resources/icons/leaf_icon.png");
         if (texture && texture->IsReady())
         {
-            state.SpawnIcon = texture->GetTexture();
+            state.EditorResources.SpawnIcon = texture->GetTexture();
         }
     }
-    if (state.CameraIcon.id == 0 && assetManager)
+    if (state.EditorResources.CameraIcon.id == 0 && assetManager)
     {
         auto texture = assetManager->Get<TextureAsset>("engine/resources/icons/camera_icon.jpg");
         if (texture && texture->IsReady())
         {
-            state.CameraIcon = texture->GetTexture();
+            state.EditorResources.CameraIcon = texture->GetTexture();
         }
     }
 
@@ -578,7 +679,7 @@ void SceneRenderer::RenderEditorIcons(Scene* scene, const Camera3D& camera)
         for (auto entity : view)
         {
             Vector3 worldPos = GetWorldPosition(registry, entity);
-            Renderer::Get().DrawBillboard(camera, state.LightIcon, worldPos, 1.5f, WHITE);
+            Renderer::Get().DrawBillboard(camera, state.EditorResources.LightIcon, worldPos, 1.5f, WHITE);
         }
     }
 
@@ -587,7 +688,7 @@ void SceneRenderer::RenderEditorIcons(Scene* scene, const Camera3D& camera)
         for (auto entity : view)
         {
             Vector3 worldPos = GetWorldPosition(registry, entity);
-            Renderer::Get().DrawBillboard(camera, state.SpawnIcon, worldPos, 1.5f, WHITE);
+            Renderer::Get().DrawBillboard(camera, state.EditorResources.SpawnIcon, worldPos, 1.5f, WHITE);
         }
     }
 
@@ -596,7 +697,7 @@ void SceneRenderer::RenderEditorIcons(Scene* scene, const Camera3D& camera)
         for (auto entity : view)
         {
             Vector3 worldPos = GetWorldPosition(registry, entity);
-            Renderer::Get().DrawBillboard(camera, state.CameraIcon, worldPos, 1.5f, WHITE);
+            Renderer::Get().DrawBillboard(camera, state.EditorResources.CameraIcon, worldPos, 1.5f, WHITE);
         }
     }
 
