@@ -2,6 +2,8 @@
 #define CH_YAML_UTILS_H
 
 #include <raylib.h>
+#include <variant>
+#include <string>
 
 #include "yaml-cpp/yaml.h"
 
@@ -128,10 +130,6 @@ template <> struct convert<Color>
         return false;
     }
 };
-} // namespace YAML
-
-namespace CHEngine
-{
 
 inline YAML::Emitter& operator<<(YAML::Emitter& out, const Vector2& v)
 {
@@ -162,6 +160,14 @@ inline YAML::Emitter& operator<<(YAML::Emitter& out, const Color& c)
     out << YAML::BeginSeq << (int)c.r << (int)c.g << (int)c.b << (int)c.a << YAML::EndSeq;
     return out;
 }
-} // namespace CHEngine
+
+template<typename... Ts>
+inline Emitter& operator<<(Emitter& out, const std::variant<Ts...>& v)
+{
+    std::visit([&](auto&& arg) { out << arg; }, v);
+    return out;
+}
+
+} // namespace YAML
 
 #endif // CH_YAML_UTILS_H

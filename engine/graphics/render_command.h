@@ -1,7 +1,7 @@
 #ifndef CH_RENDER_COMMAND_H
 #define CH_RENDER_COMMAND_H
 
-#include "raylib.h"
+#include "renderer_api.h"
 
 namespace CHEngine
 {
@@ -11,8 +11,15 @@ public:
     static void Initialize();
     static void Shutdown();
 
-    static void Clear(Color color);
-    static void SetViewport(int x, int y, int width, int height);
+    static void Clear(Color color)
+    {
+        s_RendererAPI->SetClearColor(color);
+        s_RendererAPI->Clear();
+    }
+    static void SetViewport(int x, int y, int width, int height)
+    {
+        s_RendererAPI->SetViewport(x, y, width, height);
+    }
 
     static void DrawLine(Vector3 startPosition, Vector3 endPosition, Color color);
     static void DrawGrid(int sliceCount, float spacing);
@@ -24,6 +31,9 @@ public:
     static void DisableBackfaceCulling();
     static void EnableDepthMask();
     static void DisableDepthMask();
+
+private:
+    static std::unique_ptr<RendererAPI> s_RendererAPI;
 };
 } // namespace CHEngine
 

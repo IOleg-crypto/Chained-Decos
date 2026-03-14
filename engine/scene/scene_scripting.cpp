@@ -50,6 +50,14 @@ namespace CHEngine {
                             obj->InvokeMethod("__Init", (uint64_t)(uint32_t)entity);
                             ScriptGlue::SetPendingScriptInstance(nullptr);
                             
+                            // 2. Apply persistent field values
+                            for (const auto& [fieldName, field] : script.Fields)
+                            {
+                                std::visit([&](auto&& val) {
+                                    obj->SetFieldValue(fieldName, val);
+                                }, field.Value);
+                            }
+                            
                             // Initialize logic
                             if (script.OnCreate) script.OnCreate();
                             else obj->InvokeMethod("OnCreate");

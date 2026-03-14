@@ -2,11 +2,15 @@ add_library(engine_core OBJECT
     layer_stack.cpp
     profiler.cpp
     uuid.cpp
-    window.cpp
+    window_factory.cpp
     input.cpp
     imgui_layer.cpp
     thread_pool.cpp
     application.cpp
+
+    # Platform specific implementations
+    $<$<PLATFORM_ID:Windows>:../platform/windows/windows_window.cpp>
+    $<$<PLATFORM_ID:Linux>:../platform/linux/linux_window.cpp>
 
     application.h
     imgui_layer.h
@@ -31,6 +35,7 @@ target_include_directories(engine_core PUBLIC
     ${ENGINE_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/include/imgui
     ${CMAKE_SOURCE_DIR}/include/imgui/backends
+    ${CMAKE_SOURCE_DIR}/include/raylib/src/external/glfw/include
 )
 
 # Core module uses yaml-cpp for some configurations

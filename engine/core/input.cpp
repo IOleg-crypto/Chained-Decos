@@ -49,38 +49,38 @@ void Input::PollEvents()
     }
 }
 
-bool Input::IsKeyPressed(int key)
+bool Input::IsKeyPressed(KeyCode key)
 {
     return ::IsKeyPressed(key);
 }
-bool Input::IsKeyDown(int key)
+bool Input::IsKeyDown(KeyCode key)
 {
     bool down = ::IsKeyDown(key);
     // if (down) CH_CORE_INFO("Input::IsKeyDown(key={}) -> true", key);
     return down;
 }
-bool Input::IsKeyReleased(int key)
+bool Input::IsKeyReleased(KeyCode key)
 {
     return ::IsKeyReleased(key);
 }
-bool Input::IsKeyUp(int key)
+bool Input::IsKeyUp(KeyCode key)
 {
     return ::IsKeyUp(key);
 }
 
-bool Input::IsMouseButtonPressed(int button)
+bool Input::IsMouseButtonPressed(MouseCode button)
 {
     return ::IsMouseButtonPressed(button);
 }
-bool Input::IsMouseButtonDown(int button)
+bool Input::IsMouseButtonDown(MouseCode button)
 {
     return ::IsMouseButtonDown(button);
 }
-bool Input::IsMouseButtonReleased(int button)
+bool Input::IsMouseButtonReleased(MouseCode button)
 {
     return ::IsMouseButtonReleased(button);
 }
-bool Input::IsMouseButtonUp(int button)
+bool Input::IsMouseButtonUp(MouseCode button)
 {
     return ::IsMouseButtonUp(button);
 }

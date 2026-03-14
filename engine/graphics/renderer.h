@@ -1,19 +1,14 @@
 #ifndef CH_RENDERER_H
 #define CH_RENDERER_H
 
-#include "engine/core/assert.h"
-#include "engine/core/base.h"
 #include "engine/core/timestep.h"
 #include "engine/graphics/environment.h"
 #include "engine/graphics/shader_library.h"
 #include "engine/scene/components/mesh_component.h"   // For MaterialSlot
 #include "engine/scene/components/shader_component.h" // For ShaderUniform
-#include "engine/scene/scene_settings.h"              // For GridSettings
 #include "raylib.h"
 #include "raymath.h"
-#include <functional>
 #include <memory>
-#include <string>
 #include <vector>
 namespace CHEngine
 {
@@ -87,6 +82,8 @@ public:
 
     void BeginScene(const Camera3D& camera);
     void EndScene();
+
+    void CleanupSkybox();
 
     void Clear(Color color);
     void SetViewport(int x, int y, int width, int height);

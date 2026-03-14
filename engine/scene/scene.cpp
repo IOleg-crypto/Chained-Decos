@@ -218,18 +218,38 @@ void Scene::DestroyEntity(Entity entity)
 {
     CH_CORE_ASSERT(entity, "Entity is null!");
 
-    // Recursive destruction
-    if (entity.HasComponent<HierarchyComponent>())
+    std::vector<entt::entity> entitiesToDestroy;
+    entitiesToDestroy.push_back(entity);
+
+    // 1. Iteratively collect all descendants
+    size_t current = 0;
+    while (current < entitiesToDestroy.size())
     {
-        auto children = entity.GetComponent<HierarchyComponent>().Children;
-        for (auto childHandle : children)
+        Entity e(entitiesToDestroy[current++], &m_Registry);
+        if (e.HasComponent<HierarchyComponent>())
         {
-            DestroyEntity(Entity(childHandle, &m_Registry));
+            auto& hc = e.GetComponent<HierarchyComponent>();
+            for (auto child : hc.Children)
+            {
+                // Basic circular dependency check
+                if (std::find(entitiesToDestroy.begin(), entitiesToDestroy.end(), child) == entitiesToDestroy.end())
+                {
+                    entitiesToDestroy.push_back(child);
+                }
+            }
         }
     }
 
-    CH_CORE_INFO("Entity Destroyed: {} ({})", entity.GetName(), (uint32_t)entity);
-    m_Registry.destroy(entity);
+    // 2. Destroy in reverse order (bottom-up)
+    for (auto it = entitiesToDestroy.rbegin(); it != entitiesToDestroy.rend(); ++it)
+    {
+        if (m_Registry.valid(*it))
+        {
+            Entity e(*it, &m_Registry);
+            CH_CORE_INFO("Entity Destroyed: {} ({})", e.GetName(), (uint32_t)*it);
+            m_Registry.destroy(*it);
+        }
+    }
 }
 
 void Scene::OnHierarchyDestroy(entt::registry& reg, entt::entity entity)
@@ -782,34 +802,24 @@ void Scene::UpdateHierarchy()
 
     auto view = m_Registry.view<TransformComponent>();
 
-    // Helper for recursive update
-    std::function<void(entt::entity, const Matrix&)> updateTransform;
-    updateTransform = [&](entt::entity entity, const Matrix& parentWorldTransform) {
-        auto& tc = view.get<TransformComponent>(entity);
-        tc.WorldTransform = MatrixMultiply(tc.GetTransform(), parentWorldTransform);
-        tc.IsDirty = false;
-
-        if (m_Registry.all_of<HierarchyComponent>(entity))
-        {
-            auto& hc = m_Registry.get<HierarchyComponent>(entity);
-            for (auto child : hc.Children)
-            {
-                if (m_Registry.valid(child) && m_Registry.all_of<TransformComponent>(child))
-                {
-                    updateTransform(child, tc.WorldTransform);
-                }
-            }
-        }
+    struct UpdateTask
+    {
+        entt::entity Entity;
+        Matrix ParentTransform;
     };
 
-    // Update all root entities
+    std::vector<UpdateTask> stack;
+    stack.reserve(m_Registry.storage<entt::entity>().size());
+
+    // 1. Find all root entities and push to stack
     for (auto entity : view)
     {
         bool isRoot = true;
         if (m_Registry.all_of<HierarchyComponent>(entity))
         {
             auto& hc = m_Registry.get<HierarchyComponent>(entity);
-            if (hc.Parent != entt::null && m_Registry.valid(hc.Parent) && m_Registry.all_of<TransformComponent>(hc.Parent))
+            if (hc.Parent != entt::null && m_Registry.valid(hc.Parent) &&
+                m_Registry.all_of<TransformComponent>(hc.Parent))
             {
                 isRoot = false;
             }
@@ -817,7 +827,30 @@ void Scene::UpdateHierarchy()
 
         if (isRoot)
         {
-            updateTransform(entity, MatrixIdentity());
+            stack.push_back({entity, MatrixIdentity()});
+        }
+    }
+
+    // 2. Iterative DFS update
+    while (!stack.empty())
+    {
+        UpdateTask task = stack.back();
+        stack.pop_back();
+
+        auto& tc = view.get<TransformComponent>(task.Entity);
+        tc.WorldTransform = MatrixMultiply(tc.GetTransform(), task.ParentTransform);
+        tc.IsDirty = false;
+
+        if (m_Registry.all_of<HierarchyComponent>(task.Entity))
+        {
+            auto& hc = m_Registry.get<HierarchyComponent>(task.Entity);
+            for (auto child : hc.Children)
+            {
+                if (m_Registry.valid(child) && m_Registry.all_of<TransformComponent>(child))
+                {
+                    stack.push_back({child, tc.WorldTransform});
+                }
+            }
         }
     }
 }

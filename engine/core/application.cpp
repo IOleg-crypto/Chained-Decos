@@ -63,7 +63,7 @@ Application::Application(const ApplicationSpecification& specification)
 
     // --- System Initialization ---
     m_ThreadPool = std::make_unique<ThreadPool>();
-    m_Window = std::make_unique<Window>(windowProps);
+    m_Window = Window::Create(windowProps);
     m_Renderer = std::make_unique<Renderer>();
     m_ScriptEngine = std::make_unique<ScriptEngine>();
     m_Audio = std::make_unique<Audio>();
@@ -96,16 +96,16 @@ Application::Application(const ApplicationSpecification& specification)
 
 Application::~Application()
 {
-    if (m_Running)
-    {
-        CH_CORE_INFO("Shutting down Application...");
-        m_ScriptEngine->Shutdown();
-        m_Audio->Shutdown();
-        m_PhysicsSystem->Shutdown();
-        m_Renderer->Shutdown();
-        m_LayerStack.Shutdown();
-        m_Window.reset();
-    }
+    CH_CORE_INFO("Shutting down Application...");
+    
+    // Systems should have their own guards to prevent double-shutdown if called manually elsewhere
+    if (m_ScriptEngine) m_ScriptEngine->Shutdown();
+    if (m_Audio) m_Audio->Shutdown();
+    if (m_PhysicsSystem) m_PhysicsSystem->Shutdown();
+    if (m_Renderer) m_Renderer->Shutdown();
+    
+    m_LayerStack.Shutdown();
+    m_Window.reset();
 
     s_Instance = nullptr;
     CH_CORE_INFO("Engine Shutdown Successfully.");
@@ -134,15 +134,15 @@ void Application::OnEvent(Event& e)
     dispatcher.Dispatch<WindowResizeEvent>(CH_BIND_EVENT_FN(Application::OnWindowResize));
 
     // Propagate events from top to bottom (overlays first)
-    for (const auto& it : std::ranges::reverse_view(m_LayerStack))
+    // We use a copy of the layer stack to avoid iterator invalidation if a layer is removed during event handling
+    auto layers = m_LayerStack.GetLayers();
+    for (auto it = layers.rbegin(); it != layers.rend(); ++it)
     {
         if (e.Handled)
-        {
             break;
-        }
-        if (it->IsEnabled())
+        if ((*it)->IsEnabled())
         {
-            it->OnEvent(e);
+            (*it)->OnEvent(e);
         }
     }
 }

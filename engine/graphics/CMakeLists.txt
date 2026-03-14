@@ -14,6 +14,13 @@ add_library(engine_graphics OBJECT
     shader_importer.cpp
     font_importer.cpp
     environment_importer.cpp
+    render_command.cpp
+    renderer_api.cpp
+    raylib_renderer_api.cpp
+    buffer.cpp
+    raylib_buffer.cpp
+    vertex_array.cpp
+    raylib_vertex_array.cpp
 
     renderer.h
     scene_renderer.h
