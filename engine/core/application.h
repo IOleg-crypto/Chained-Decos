@@ -101,7 +101,6 @@ private:
     // Subsystem pointers for safe cleanup
     class ThreadPool* m_ThreadPool = nullptr;
     class Renderer* m_Renderer = nullptr;
-    class ScriptEngine* m_ScriptEngine = nullptr;
     class Audio* m_Audio = nullptr;
     class PhysicsSystem* m_PhysicsSystem = nullptr;
     class ComponentSerializer* m_ComponentSerializer = nullptr;

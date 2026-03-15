@@ -16,7 +16,7 @@
 #include "engine/scene/component_serializer.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene_events.h"
-#include "engine/script/scriptengine.h"
+#include "engine/scene/scene_events.h"
 #include "rlgl.h"
 
 #include <algorithm>
@@ -70,7 +70,6 @@ Application::Application(const ApplicationSpecification& specification)
     }
     
     m_Renderer = new Renderer();
-    m_ScriptEngine = new ScriptEngine();
     m_Audio = new Audio();
     m_PhysicsSystem = new PhysicsSystem();
     m_ComponentSerializer = new ComponentSerializer();
@@ -82,7 +81,7 @@ Application::Application(const ApplicationSpecification& specification)
     m_ComponentSerializer->Initialize();
     m_Renderer->Init();
     m_PhysicsSystem->Init();
-    m_ScriptEngine->Init();
+    m_PhysicsSystem->Init();
     m_Audio->Init();
     if (IsAudioDeviceReady())
     {
@@ -107,13 +106,13 @@ Application::~Application()
 {
     CH_CORE_INFO("Shutting down Application...");
     
-    if (m_ScriptEngine) m_ScriptEngine->Shutdown();
+    
     if (m_Audio) m_Audio->Shutdown();
     if (m_PhysicsSystem) m_PhysicsSystem->Shutdown();
     if (m_Renderer) m_Renderer->Shutdown();
     
     // Cleanup subsystem instances safely using local pointers
-    delete m_ScriptEngine;
+    
     delete m_Audio;
     delete m_PhysicsSystem;
     delete m_Renderer;

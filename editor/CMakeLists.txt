@@ -59,11 +59,10 @@ target_sources(editor_core PRIVATE
     ${imguizmo_SOURCE_DIR}/GraphEditor.h
 )
 
-# (Redundant /bigobj flags removed - now in CompilerSettings.cmake)
-
 
 target_link_libraries(editor_core PUBLIC 
     engine
+    scripting
     imguilib
     nfd
 )

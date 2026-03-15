@@ -3,25 +3,34 @@
 
 #include "engine/core/assert.h"
 #include "engine/core/base.h"
+#include "engine/core/uuid.h"
 #include "engine/scene/components/id_component.h"
 #include "engine/scene/components/tag_component.h"
 #include "entt/entt.hpp"
 
 #include <string>
+#include <unordered_map>
+#include <memory>
 
 namespace CHEngine
 {
-class Scene;
+
+struct EntityUUIDMap
+{
+    std::unordered_map<UUID, entt::entity> Map;
+};
 
 class Entity
 {
 public:
     Entity() = default;
-    Entity(entt::entity handle, entt::registry* registry)
+    Entity(entt::entity handle, std::shared_ptr<entt::registry> registry)
         : m_EntityHandle(handle),
           m_Registry(registry)
     {
     }
+    Entity(entt::entity handle, entt::registry& registry);
+    Entity(entt::entity handle, entt::registry* registry);
     Entity(const Entity& other) = default;
 
     template <typename T, typename... Args> T& AddOrReplaceComponent(Args&&... args)
@@ -62,6 +71,17 @@ public:
         return m_EntityHandle != entt::null && m_Registry != nullptr;
     }
     bool IsValid() const;
+
+    // Entity Management (Factory & Queries)
+    Entity Create(const std::string& name = "");
+    Entity CreateWithUUID(UUID uuid, const std::string& name = "");
+    Entity CreateUI(const std::string& type, const std::string& name = "");
+    Entity Copy(entt::entity copyEntity);
+    void Destroy();
+
+    Entity FindByTag(const std::string& tag);
+    Entity GetByUUID(UUID uuid);
+
     operator entt::entity() const
     {
         return m_EntityHandle;
@@ -88,6 +108,8 @@ public:
     {
         return *m_Registry;
     }
+    
+    std::shared_ptr<entt::registry> GetRegistryPtr() { return m_Registry; }
 
     UUID GetUUID()
     {
@@ -101,7 +123,7 @@ public:
 
 private:
     entt::entity m_EntityHandle{entt::null};
-    entt::registry* m_Registry = nullptr;
+    std::shared_ptr<entt::registry> m_Registry = nullptr;
 };
 } // namespace CHEngine
 
