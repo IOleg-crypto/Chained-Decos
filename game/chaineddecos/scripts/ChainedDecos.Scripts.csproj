@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
@@ -23,7 +23,7 @@
 
   <!-- Reference the engine's C# API library -->
   <ItemGroup>
-    <ProjectReference Include="../../../engine/script/managed/CHEngine.Managed.csproj" />
+    <ProjectReference Include="../../../scripting/managed/CHEngine.Managed.csproj" />
   </ItemGroup>
 
 </Project>

@@ -37,6 +37,8 @@ void PhysicsSystem::Init()
 
 void PhysicsSystem::Shutdown()
 {
+    std::lock_guard<std::mutex> lock(m_BVHMutex);
+    m_BVHCache.clear();
     CH_CORE_INFO("Global Physics System Shutdown.");
 }
 
@@ -46,55 +48,7 @@ PhysicsSystem& PhysicsSystem::Get()
     return *s_PhysicsInstance;
 }
 
-Physics::Physics(Scene* scene)
-    : m_Scene(scene)
-{
-    m_NarrowPhase = std::make_unique<NarrowPhase>(this);
-    m_Dynamics = std::make_unique<Dynamics>();
-    m_SceneTrace = std::make_unique<SceneTrace>(this);
-}
-
-Physics::~Physics()
-{
-    CH_CORE_INFO("Physics instance for scene destroyed.");
-}
-
-void Physics::Update(Timestep deltaTime, bool runtime)
-{
-    CH_PROFILE_FUNCTION();
-    CH_CORE_ASSERT(m_Scene, "Physics Scene is null!");
-
-    // Reset collision flags every frame (needed for debug visualisation)
-    auto& registry = m_Scene->GetRegistry();
-    auto collView = registry.view<ColliderComponent>();
-    for (auto entity : collView)
-        collView.get<ColliderComponent>(entity).IsColliding = false;
-
-    // Collider shape recalc and simulation only when playing
-    if (!runtime)
-        return;
-
-    UpdateColliders();
-
-    float fixedTimestep = 1.0f / 60.0f;
-    if (auto project = Project::GetActive())
-        fixedTimestep = project->GetConfig().Physics.FixedTimestep;
-
-    m_Accumulator += deltaTime;
-    while (m_Accumulator >= fixedTimestep)
-    {
-        ResolveSimulation(fixedTimestep);
-        m_Accumulator -= fixedTimestep;
-    }
-}
-
-RaycastResult Physics::Raycast(Ray ray)
-{
-    CH_CORE_ASSERT(m_Scene, "Physics Scene is null!");
-    return m_SceneTrace->Raycast(m_Scene, ray);
-}
-
-std::shared_ptr<BVH> Physics::GetBVH(ModelAsset* asset)
+std::shared_ptr<BVH> PhysicsSystem::GetBVH(ModelAsset* asset)
 {
     if (!asset || asset->GetState() != AssetState::Ready)
     {
@@ -106,13 +60,11 @@ std::shared_ptr<BVH> Physics::GetBVH(ModelAsset* asset)
     auto it = m_BVHCache.find(asset);
     if (it == m_BVHCache.end())
     {
-        // Start building in background using full model data (node transforms)
         m_BVHCache[asset] =
             BVH::BuildAsync(asset->GetModel(), asset->GetGlobalNodeTransforms(), asset->GetMeshToNode()).share();
         return nullptr;
     }
 
-    // Check if ready
     if (it->second.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
     {
         return it->second.get();
@@ -121,22 +73,16 @@ std::shared_ptr<BVH> Physics::GetBVH(ModelAsset* asset)
     return nullptr;
 }
 
-void Physics::InvalidateBVH(ModelAsset* asset)
+void PhysicsSystem::InvalidateBVH(ModelAsset* asset)
 {
-    if (!asset)
-    {
-        return;
-    }
+    if (!asset) return;
     std::lock_guard<std::mutex> lock(m_BVHMutex);
     m_BVHCache.erase(asset);
 }
 
-void Physics::UpdateBVHCache(ModelAsset* asset, std::shared_ptr<BVH> bvh)
+void PhysicsSystem::UpdateBVHCache(ModelAsset* asset, std::shared_ptr<BVH> bvh)
 {
-    if (!asset || !bvh)
-    {
-        return;
-    }
+    if (!asset || !bvh) return;
     std::lock_guard<std::mutex> lock(m_BVHMutex);
 
     std::promise<std::shared_ptr<BVH>> promise;
@@ -144,9 +90,59 @@ void Physics::UpdateBVHCache(ModelAsset* asset, std::shared_ptr<BVH> bvh)
     m_BVHCache[asset] = promise.get_future().share();
 }
 
-void Physics::UpdateColliders()
+PhysicsContext& Physics::GetContext(Scene* scene)
 {
-    auto& registry = m_Scene->GetRegistry();
+    auto& registry = scene->GetRegistry();
+    auto* ctx = registry.ctx().find<PhysicsContext>();
+    if (!ctx)
+    {
+        return registry.ctx().emplace<PhysicsContext>();
+    }
+    return *ctx;
+}
+
+void Physics::SetCollisionCallback(Scene* scene, std::function<void(entt::entity, entt::entity)> callback)
+{
+    GetContext(scene).CollisionCallback = callback;
+}
+
+void Physics::Update(Scene* scene, Timestep deltaTime, bool runtime)
+{
+    CH_PROFILE_FUNCTION();
+    if (!scene) return;
+
+    auto& registry = scene->GetRegistry();
+    auto collView = registry.view<ColliderComponent>();
+    for (auto entity : collView)
+        collView.get<ColliderComponent>(entity).IsColliding = false;
+
+    if (!runtime)
+        return;
+
+    UpdateColliders(scene);
+
+    float fixedTimestep = 1.0f / 60.0f;
+    if (auto project = Project::GetActive())
+        fixedTimestep = project->GetConfig().Physics.FixedTimestep;
+
+    auto& context = GetContext(scene);
+    context.Accumulator += deltaTime;
+    while (context.Accumulator >= fixedTimestep)
+    {
+        ResolveSimulation(scene, fixedTimestep);
+        context.Accumulator -= fixedTimestep;
+    }
+}
+
+RaycastResult Physics::Raycast(Scene* scene, Ray ray)
+{
+    if (!scene) return RaycastResult();
+    return SceneTrace::Raycast(scene->GetRegistry(), ray);
+}
+
+void Physics::UpdateColliders(Scene* scene)
+{
+    auto& registry = scene->GetRegistry();
     auto project = Project::GetActive();
     if (!project || !project->GetAssetManager())
         return;
@@ -157,20 +153,17 @@ void Physics::UpdateColliders()
     {
         auto& collider = genView.get<ColliderComponent>(entity);
 
-        // Case A: Box Collider (Auto) — compute once; static meshes don't change
+        // Case A: Box Collider (Auto)
         if (collider.Type == ColliderType::Box && collider.AutoCalculate)
         {
             if (!registry.all_of<ModelComponent>(entity))
                 continue;
 
             auto& model = registry.get<ModelComponent>(entity);
-            auto& asset = m_ColliderAssetCache[model.ModelPath];
-            if (!asset)
-                asset = project->GetAssetManager()->Get<ModelAsset>(model.ModelPath);
+            auto asset = project->GetAssetManager()->Get<ModelAsset>(model.ModelPath);
 
             if (asset && asset->GetState() == AssetState::Ready)
             {
-                // Only recalculate if size hasn't been set yet
                 if (collider.Size.x == 0 && collider.Size.y == 0 && collider.Size.z == 0)
                 {
                     BoundingBox box = asset->GetBoundingBox();
@@ -184,17 +177,11 @@ void Physics::UpdateColliders()
         // Case B: Mesh Collider (BVH)
         if (collider.Type == ColliderType::Mesh && !collider.ModelPath.empty())
         {
-            auto& asset = m_ColliderAssetCache[collider.ModelPath];
-            if (!asset)
-                asset = project->GetAssetManager()->Get<ModelAsset>(collider.ModelPath);
+            auto asset = project->GetAssetManager()->Get<ModelAsset>(collider.ModelPath);
 
             if (asset && asset->GetState() == AssetState::Ready && asset->GetModel().meshCount > 0)
             {
-                auto bvh = GetBVH(asset.get());
-                if (bvh)
-                    collider.BVHRoot = bvh;
-
-                if (collider.AutoCalculate && collider.BVHRoot && collider.Size.x == 0)
+                if (collider.AutoCalculate && collider.Size.x == 0)
                 {
                     BoundingBox box = asset->GetBoundingBox();
                     collider.Offset = box.min;
@@ -211,9 +198,7 @@ void Physics::UpdateColliders()
                 continue;
 
             auto& model = registry.get<ModelComponent>(entity);
-            auto& asset = m_ColliderAssetCache[model.ModelPath];
-            if (!asset)
-                asset = project->GetAssetManager()->Get<ModelAsset>(model.ModelPath);
+            auto asset = project->GetAssetManager()->Get<ModelAsset>(model.ModelPath);
 
             if (asset && asset->GetState() == AssetState::Ready && collider.Radius == 0)
             {
@@ -227,9 +212,9 @@ void Physics::UpdateColliders()
     }
 }
 
-void Physics::ResolveSimulation(Timestep deltaTime)
+void Physics::ResolveSimulation(Scene* scene, Timestep deltaTime)
 {
-    auto& registry = m_Scene->GetRegistry();
+    auto& registry = scene->GetRegistry();
     auto rbView = registry.view<TransformComponent, RigidBodyComponent>();
     std::vector<entt::entity> rbEntities;
     rbEntities.reserve(rbView.size_hint());
@@ -240,12 +225,10 @@ void Physics::ResolveSimulation(Timestep deltaTime)
     }
 
     if (rbEntities.empty())
-    {
         return;
-    }
 
-    m_Dynamics->Update(m_Scene, rbEntities, deltaTime);
-    m_NarrowPhase->ResolveCollisions(m_Scene, rbEntities);
+    Dynamics::Update(registry, rbEntities, deltaTime);
+    NarrowPhase::ResolveCollisions(registry, rbEntities);
 }
 
 } // namespace CHEngine

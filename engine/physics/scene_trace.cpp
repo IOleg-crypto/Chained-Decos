@@ -47,7 +47,7 @@ bool SceneTrace::RayAABB(Vector3 origin, Vector3 dir, Vector3 min, Vector3 max, 
     return false;
 }
 
-RaycastResult SceneTrace::Raycast(Scene* scene, Ray ray)
+RaycastResult SceneTrace::Raycast(::entt::registry& registry, Ray ray)
 {
     RaycastResult result;
     result.Hit = false;
@@ -57,7 +57,7 @@ RaycastResult SceneTrace::Raycast(Scene* scene, Ray ray)
     Vector3 rayOrigin = ray.position;
     Vector3 rayDir = Vector3Normalize(ray.direction);
 
-    auto view = scene->GetRegistry().view<TransformComponent, ColliderComponent>();
+    auto view = registry.view<TransformComponent, ColliderComponent>();
     for (auto entity : view)
     {
         auto& entityTransform = view.get<TransformComponent>(entity);
@@ -105,7 +105,7 @@ RaycastResult SceneTrace::Raycast(Scene* scene, Ray ray)
         }
         else if (colliderComp.Type == ColliderType::Mesh)
         {
-            auto modelComp = scene->GetRegistry().try_get<ModelComponent>(entity);
+            auto modelComp = registry.try_get<ModelComponent>(entity);
             if (!modelComp || modelComp->ModelPath.empty())
             {
                 continue;
@@ -118,7 +118,7 @@ RaycastResult SceneTrace::Raycast(Scene* scene, Ray ray)
             }
 
             auto asset = project->GetAssetManager()->Get<ModelAsset>(modelComp->ModelPath);
-            auto bvh = m_Physics->GetBVH(asset.get());
+            auto bvh = PhysicsSystem::Get().GetBVH(asset.get());
             if (!bvh)
             {
                 continue;
@@ -141,8 +141,8 @@ RaycastResult SceneTrace::Raycast(Scene* scene, Ray ray)
                     result.Distance = distWorld;
                     result.Position = hitPosWorld;
 
-                    Vector3 normalWorld = Vector3Normalize(Vector3Transform(localNormal, modelMatrix) -
-                                                           Vector3Transform(Vector3Zero(), modelMatrix));
+                    Vector3 normalWorld = Vector3Normalize(Vector3Subtract(Vector3Transform(localNormal, modelMatrix),
+                                                           Vector3Transform(Vector3Zero(), modelMatrix)));
                     result.Normal = normalWorld;
                     result.Entity = entity;
                     result.MeshIndex = localMeshIndex;

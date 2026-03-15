@@ -1,5 +1,5 @@
 <Project>
   <PropertyGroup>
-    <CoralManagedDir>$(MSBuildThisFileDirectory)..\..\build\windows-ninja-release\include\coral\cmake</CoralManagedDir>
+    <CoralManagedDir>$(MSBuildThisFileDirectory)..\..\build\windows-ninja-debug\include\coral\cmake</CoralManagedDir>
   </PropertyGroup>
 </Project>
