@@ -335,7 +335,11 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         isGizmoHovered = m_Gizmo.IsHovered();
 
         // 2. Game UI Overlay
-        UIRenderer::Get().DrawCanvas(activeScene.get(), viewportScreenPos, viewportSize,
+        // Use child window's actual cursor position rather than the external viewportScreenPos
+        // to ensure UI elements are positioned relative to this child window's origin,
+        // matching the runtime behavior.
+        ImVec2 canvasOrigin = ImGui::GetCursorScreenPos();
+        UIRenderer::Get().DrawCanvas(activeScene.get(), canvasOrigin, viewportSize,
                                      EditorLayer::Get().GetSceneState() == SceneState::Edit);
         isUIChildHovered =
             ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByPopup);
