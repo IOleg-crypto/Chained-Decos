@@ -52,6 +52,11 @@ public:
     Scene* GetActiveScene() const { return m_ActiveScene; }
     void   SetActiveScene(Scene* scene) { m_ActiveScene = scene; }
 
+    /// Called from C# script glue — queue a scene to load next frame.
+    void RequestLoadScene(const std::string& path) { m_PendingScenePath = path; }
+    /// Consumed by RuntimeLayer::OnUpdate each frame. Returns the path and clears it.
+    std::string ConsumeRequestedScene() { std::string s = m_PendingScenePath; m_PendingScenePath.clear(); return s; }
+
     static ScriptEngine& Get();
 
 private:
@@ -64,9 +69,9 @@ private:
     Coral::ManagedAssembly*                    m_AppAssembly = nullptr;
     Coral::ManagedAssembly*                    m_CoreAssembly = nullptr;
 
-    // Keyed by lowercase full qualified name, e.g. "chaineddecos.scripts.playercontroller"
     std::unordered_map<std::string, Coral::Type> m_ScriptClasses;
     bool m_IsInitialized = false;
+    std::string m_PendingScenePath;
 };
 
 } // namespace CHEngine

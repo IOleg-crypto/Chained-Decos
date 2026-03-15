@@ -421,8 +421,8 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
             }
         }
 
-        // 3D Picking
-        if (!bestHit)
+        // 3D Picking (only when camera is present)
+        if (!bestHit && cameraFound)
         {
             // 1. Physics Picking
             RaycastResult result = Physics::Raycast(activeScene.get(), ray);

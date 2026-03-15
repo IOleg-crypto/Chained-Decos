@@ -88,13 +88,6 @@ private:
 
     bool m_IsSimulationRunning = false;
 
-private: // Internal Event Handlers
-    // Reactive signals handlers
-    void OnModelComponentAdded(entt::registry& registry, entt::entity entity);
-    void OnAnimationComponentAdded(entt::registry& registry, entt::entity entity);
-    void OnAudioComponentAdded(entt::registry& registry, entt::entity entity);
-    void OnColliderComponentAdded(entt::registry& registry, entt::entity entity);
-    void OnPanelControlAdded(entt::registry& registry, entt::entity entity);
 
     void OnIDConstruct(entt::registry& registry, entt::entity entity);
     void OnIDDestroy(entt::registry& registry, entt::entity entity);
@@ -107,10 +100,6 @@ private: // Internal Event Handlers
 private: // Update Logic
     void UpdatePhysics(Timestep deltaTime);
     void UpdateAnimations(Timestep deltaTime);
-    void UpdateAudio(Timestep deltaTime);
-    void UpdateCameras(Timestep deltaTime);
-    void UpdateTransitions();
-    void UpdateUIActions();
     void UpdateHierarchy();
 
     friend class Entity;

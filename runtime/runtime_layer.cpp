@@ -7,12 +7,13 @@
 #include "engine/graphics/ui_renderer.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene_events.h"
-#include "scripting/scriptengine.h"
-#include "scripting/scene_scripting.h"
 #include "engine/scene/scene_serializer.h"
 #include "imgui.h"
 #include "raymath.h"
+#include "scripting/scene_scripting.h"
+#include "scripting/scriptengine.h"
 #include <filesystem>
+
 
 namespace CHEngine
 {
@@ -109,7 +110,7 @@ void RuntimeLayer::OnRender(Timestep ts)
     {
         float nearClip = 0.01f;
         float farClip = 1000.0f;
-        
+
         Entity primaryCam = m_Scene->GetPrimaryCameraEntity();
         if (primaryCam && primaryCam.HasComponent<CameraComponent>())
         {
@@ -156,7 +157,7 @@ void RuntimeLayer::OnImGuiRender()
 
 void RuntimeLayer::OnEvent(Event& e)
 {
-    if (m_Scene) 
+    if (m_Scene)
     {
         SceneScripting::DispatchEvent(m_Scene.get(), e);
         m_Scene->OnEvent(e);
@@ -227,7 +228,7 @@ bool RuntimeLayer::InitProject(const std::string& projectPath)
     }
 
     auto project = Project::GetActive();
-    
+
     // Initialize Scripting for the loaded project
     ScriptEngine::Get().ReloadAssembly();
 

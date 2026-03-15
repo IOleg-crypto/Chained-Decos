@@ -50,8 +50,7 @@ namespace CHEngine {
     }
 
     CH_SCRIPT_FUNC void Scene_LoadScene(Coral::String path) {
-        // This should probably be deferred or handled by a high-level SceneManager
-        // For now, it's a stub as in the original code
+        ScriptEngine::Get().RequestLoadScene((std::string)path);
     }
 
     CH_SCRIPT_FUNC uint64_t Scene_GetPrimaryCameraEntity() {
