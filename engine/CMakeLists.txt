@@ -77,8 +77,8 @@ install(TARGETS engine
     RUNTIME DESTINATION bin COMPONENT Runtime
 )
 
-install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/resources"
-    DESTINATION engine
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/resources"
+    DESTINATION .
     USE_SOURCE_PERMISSIONS
     COMPONENT Runtime
 )

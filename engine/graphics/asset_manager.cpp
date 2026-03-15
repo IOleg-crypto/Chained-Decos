@@ -146,8 +146,8 @@ std::string AssetManager::ResolvePath(const std::string& path) const
             }
             else
             {
-                // Try in engine/resources (standard layout)
-                std::filesystem::path p2 = engineRoot / "engine" / "resources" / sub;
+                // Try in resources (standard project layout)
+                std::filesystem::path p2 = engineRoot / "resources" / sub;
                 if (std::filesystem::exists(p2))
                     foundPath = p2.string();
             }

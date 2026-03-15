@@ -153,7 +153,7 @@ void EditorLayer::OnAttach()
 
     CH_CORE_INFO("EditorLayer - Setting window icon");
     Image icon =
-        LoadImage(PROJECT_ROOT_DIR "/engine/resources/icons/game-engine-icon-featuring-a-game-controller-with-.png");
+        LoadImage(PROJECT_ROOT_DIR "/resources/icons/game-engine-icon-featuring-a-game-controller-with-.png");
     if (icon.data != nullptr)
     {
         ImageFormat(&icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
@@ -183,7 +183,7 @@ void EditorLayer::LoadEditorFonts()
     }
 
     // --- Default UI Font (Lato) ---
-    std::string fontPath = assetManager->ResolvePath("engine/resources/font/lato/lato-bold.ttf");
+    std::string fontPath = assetManager->ResolvePath("resources/font/lato/lato-bold.ttf");
     if (std::filesystem::exists(fontPath))
     {
         io.Fonts->AddFontFromFileTTF(fontPath.c_str(), fontSize);
@@ -196,7 +196,7 @@ void EditorLayer::LoadEditorFonts()
     }
 
     // --- Icon Font (FontAwesome) ---
-    std::string faPath = assetManager->ResolvePath("engine/resources/font/fa-solid-900.ttf");
+    std::string faPath = assetManager->ResolvePath("resources/font/fa-solid-900.ttf");
     if (std::filesystem::exists(faPath))
     {
         static const ImWchar icons_ranges[] = {0xf000, 0xf8ff, 0};

@@ -46,7 +46,7 @@ void RuntimeLayer::OnAttach()
     }
 
     // --- Default UI Font (Lato) ---
-    std::string fontPath = assetManager->ResolvePath("engine/resources/font/lato/lato-bold.ttf");
+    std::string fontPath = assetManager->ResolvePath("resources/font/lato/lato-bold.ttf");
     if (std::filesystem::exists(fontPath))
     {
         io.Fonts->AddFontFromFileTTF(fontPath.c_str(), fontSize);

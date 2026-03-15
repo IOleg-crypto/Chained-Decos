@@ -1,0 +1,11 @@
+# Lighting Shader Metadata
+VertexShader: "lighting.vs"
+FragmentShader: "lighting.fs"
+
+Uniforms:
+  - texture0
+  - colDiffuse
+  - useTexture
+  - shininess
+  - ambient
+  - uMode

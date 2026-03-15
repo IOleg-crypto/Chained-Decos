@@ -649,7 +649,7 @@ void SceneRenderer::RenderEditorIcons(Scene* scene, const Camera3D& camera)
 
     if (state.EditorResources.LightIcon.id == 0 && assetManager)
     {
-        auto texture = assetManager->Get<TextureAsset>("engine/resources/icons/light_bulb.png");
+        auto texture = assetManager->Get<TextureAsset>("resources/icons/light_bulb.png");
         if (texture && texture->IsReady())
         {
             state.EditorResources.LightIcon = texture->GetTexture();
@@ -657,7 +657,7 @@ void SceneRenderer::RenderEditorIcons(Scene* scene, const Camera3D& camera)
     }
     if (state.EditorResources.SpawnIcon.id == 0 && assetManager)
     {
-        auto texture = assetManager->Get<TextureAsset>("engine/resources/icons/leaf_icon.png");
+        auto texture = assetManager->Get<TextureAsset>("resources/icons/leaf_icon.png");
         if (texture && texture->IsReady())
         {
             state.EditorResources.SpawnIcon = texture->GetTexture();
@@ -665,7 +665,7 @@ void SceneRenderer::RenderEditorIcons(Scene* scene, const Camera3D& camera)
     }
     if (state.EditorResources.CameraIcon.id == 0 && assetManager)
     {
-        auto texture = assetManager->Get<TextureAsset>("engine/resources/icons/camera_icon.jpg");
+        auto texture = assetManager->Get<TextureAsset>("resources/icons/camera_icon.jpg");
         if (texture && texture->IsReady())
         {
             state.EditorResources.CameraIcon = texture->GetTexture();
