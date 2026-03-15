@@ -149,12 +149,26 @@ std::optional<Camera3D> Scene::GetActiveCamera()
         if (camera.Primary)
         {
             Camera3D raylibCamera;
-            raylibCamera.position = transform.Translation;
             
-            // Calculate forward and up vectors from rotation
-            Vector3 forward = Vector3RotateByQuaternion(Vector3{ 0, 0, -1 }, transform.RotationQuat);
-            raylibCamera.target = Vector3Add(transform.Translation, forward);
-            raylibCamera.up = Vector3RotateByQuaternion(Vector3{ 0, 1, 0 }, transform.RotationQuat);
+            // Use WorldTransform instead of local translation/rotation for parented cameras
+            Matrix worldTransform = transform.WorldTransform;
+            
+            // Extract position from world transform
+            raylibCamera.position = Vector3Transform({ 0, 0, 0 }, worldTransform);
+            
+            // Calculate world forward and up vectors
+            Vector3 worldForward = Vector3Transform({ 0, 0, -1 }, worldTransform);
+            Vector3 worldUp = Vector3Transform({ 0, 1, 0 }, worldTransform);
+            
+            Vector3 forward = Vector3Normalize(Vector3Subtract(worldForward, raylibCamera.position));
+            
+            // Provide a safe fallback if forward is somehow zero
+            if (Vector3LengthSqr(forward) < 0.0001f) {
+                forward = { 0.0f, 0.0f, -1.0f };
+            }
+            
+            raylibCamera.target = Vector3Add(raylibCamera.position, forward);
+            raylibCamera.up = Vector3Normalize(Vector3Subtract(worldUp, raylibCamera.position));
             
             // SceneCamera stores FOV in radians, raylib expects degrees for Camera3D
             raylibCamera.fovy = camera.Camera.GetPerspectiveVerticalFOV() * RAD2DEG;

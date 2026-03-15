@@ -3,7 +3,7 @@ Project:
   IconPath: resources/icons/chaineddecos.jpg
   StartScene: scenes\main_menu.chscene
   AssetDirectory: assets
-  ActiveScene: assets/scenes/start_menu.chscene
+  ActiveScene: assets/scenes/main_menu.chscene
   Environment: ""
   BuildScenes:
     []
@@ -11,7 +11,7 @@ Project:
     Gravity: 20
     FixedTimestep: 0.0666999966
   Animation:
-    TargetFPS: 30
+    TargetFPS: 60
   Render:
     AmbientIntensity: 0
     DefaultExposure: 0.839999974

@@ -33,30 +33,38 @@ void RuntimeLayer::OnAttach()
     m_ScriptEngine = std::make_unique<ScriptEngine>();
     m_ScriptEngine->Init();
 
-    if (InitProject(m_ProjectPath))
-    {
-        // Initial scene/module load is handled by InitProject calling LoadInitialScene
-    }
-    ImGuiIO& io = ImGui::GetIO();
-    float fontSize = 16.0f;
     auto& assetManager = AssetManager::Get();
-
     if (assetManager.GetRootPath().empty())
     {
         assetManager.Initialize();
     }
+
+    if (InitProject(m_ProjectPath))
+    {
+        // Initial scene/module load is handled by InitProject calling LoadInitialScene
+    }
+
+    ImGuiIO& io = ImGui::GetIO();
+    float fontSize = 16.0f;
 
     // --- Default UI Font (Lato) ---
     std::string fontPath = assetManager.ResolvePath("resources/font/lato/lato-bold.ttf");
     if (std::filesystem::exists(fontPath))
     {
         io.Fonts->AddFontFromFileTTF(fontPath.c_str(), fontSize);
-        CH_CORE_INFO("Loaded editor font: {}", fontPath);
+        CH_CORE_INFO("Runtime: Loaded engine font: {}", fontPath);
     }
     else
     {
-        CH_CORE_WARN("Editor font not found: {}. Using default ImGui font.", fontPath);
+        CH_CORE_WARN("Runtime: Engine font not found at {}. Using default ImGui font.", fontPath);
         io.Fonts->AddFontDefault();
+    }
+
+    // Ensure camera aspect ratio is correct on startup
+    if (m_Scene)
+    {
+        Window& window = Application::Get().GetWindow();
+        m_Scene->OnViewportResize(window.GetWidth(), window.GetHeight());
     }
 }
 
@@ -83,6 +91,17 @@ void RuntimeLayer::OnUpdate(Timestep ts)
         SceneScripting::Update(m_Scene.get(), ts);
         m_Scene->OnUpdateRuntime(ts);
     }
+
+    if (m_IsBoostingUploads)
+    {
+        m_BoostUploadsTimer -= ts;
+        if (m_BoostUploadsTimer <= 0.0f)
+        {
+            m_IsBoostingUploads = false;
+            AssetManager::Get().SetMaxUploadsPerFrame(50); // Reset to default
+            CH_CORE_INFO("RuntimeLayer: Asset upload boost finished, reset limit to 50.");
+        }
+    }
 }
 
 void RuntimeLayer::OnRender(Timestep ts)
@@ -94,6 +113,8 @@ void RuntimeLayer::OnRender(Timestep ts)
     }
 
     Color bgColor = BLACK;
+    bool clearBackground = true;
+
     if (m_Scene->GetSettings().Environment)
     {
         auto& env = m_Scene->GetSettings().Environment->GetSettings();
@@ -101,8 +122,16 @@ void RuntimeLayer::OnRender(Timestep ts)
         {
             bgColor = env.Fog.FogColor;
         }
+        else if (!env.Skybox.TexturePath.empty())
+        {
+            clearBackground = false; // Skybox will draw over everything, no need to clear to a solid color
+        }
     }
-    ::ClearBackground(bgColor);
+
+    if (clearBackground)
+    {
+        ::ClearBackground(bgColor);
+    }
 
     auto camera = GetActiveCamera();
     if (camera)
@@ -194,6 +223,19 @@ void RuntimeLayer::LoadScene(const std::string& path)
     {
         m_Scene->GetSettings().ScenePath = finalPath;
 
+        // Important: Update ScriptEngine context immediately
+        ScriptEngine::Get().SetActiveScene(m_Scene.get());
+
+        // Update camera aspect ratios for the new scene
+        Window& window = Application::Get().GetWindow();
+        m_Scene->OnViewportResize(window.GetWidth(), window.GetHeight());
+
+        // Boost asset uploads for scene loading
+        m_IsBoostingUploads = true;
+        m_BoostUploadsTimer = 5.0f; // Boost for 5 seconds
+        AssetManager::Get().SetMaxUploadsPerFrame(2000); // Aggressive upload boost for loading
+        CH_CORE_INFO("RuntimeLayer: Boosting asset uploads for scene loading...");
+
         m_Scene->OnRuntimeStart();
     }
     else
@@ -260,7 +302,16 @@ bool RuntimeLayer::DiscoverAndLoadProject(const std::string& projectPath)
     }
 
     auto project = Project::Load(m_ProjectPath);
-    return project != nullptr;
+    if (!project)
+    {
+        CH_CORE_ERROR("Runtime: Failed to load project at {}", m_ProjectPath);
+        return false;
+    }
+
+    // CRITICAL: Load engine shaders and resources immediately after project is resolved
+    Renderer::LoadEngineResources(AssetManager::Get());
+
+    return true;
 }
 
 void RuntimeLayer::ApplyWindowConfiguration()

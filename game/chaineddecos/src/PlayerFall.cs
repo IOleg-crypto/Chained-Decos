@@ -20,7 +20,9 @@ public class PlayerFall : Script
         if (string.IsNullOrEmpty(soundPath))
             return;
 
-        if (fallSpeed > 5.0f && !rb.IsGrounded)
+        bool isWindNeeded = (fallSpeed > 5.0f && !rb.IsGrounded);
+
+        if (isWindNeeded)
         {
             float targetVolume = (fallSpeed - 5.0f) / 25.0f;
             if (targetVolume > 1.01f)
@@ -34,7 +36,11 @@ public class PlayerFall : Script
             if (!audio.IsPlaying)
             {
                 Audio.Play(soundPath, targetVolume, 1.0f, true);
-                Log.Info("playerfall: Wind sound ON");
+                if (!m_WindSoundPlaying)
+                {
+                    Log.Info("playerfall: Wind sound ON");
+                    m_WindSoundPlaying = true;
+                }
             }
         }
         else
@@ -42,10 +48,16 @@ public class PlayerFall : Script
             if (audio.IsPlaying)
             {
                 Audio.Stop(soundPath);
+            }
+            
+            if (m_WindSoundPlaying)
+            {
                 Log.Info("playerfall: Wind sound OFF");
-                
+                m_WindSoundPlaying = false;
             }
         }
     }
+
+    private bool m_WindSoundPlaying = false;
 }
 }

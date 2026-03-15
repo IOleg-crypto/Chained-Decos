@@ -13,6 +13,7 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "script_glue.h"
+#include <imgui.h>
 
 // Macro to mark functions for InternalCall (formerly P/Invoke)
 #define CH_SCRIPT_FUNC static
@@ -73,7 +74,7 @@ namespace CHEngine {
         if (!scene) return;
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         if (entity && entity.HasComponent<TransformComponent>()) 
-            entity.GetComponent<TransformComponent>().Translation = *inTranslation;
+            entity.GetComponent<TransformComponent>().SetTranslation(*inTranslation);
     }
 
     CH_SCRIPT_FUNC void Entity_GetRotation(uint64_t entityID, Vector3* outRotation) {
@@ -105,7 +106,7 @@ namespace CHEngine {
         if (!scene) return;
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
         if (entity && entity.HasComponent<TransformComponent>()) 
-            entity.GetComponent<TransformComponent>().Scale = *inScale;
+            entity.GetComponent<TransformComponent>().SetScale(*inScale);
     }
 
     CH_SCRIPT_FUNC bool Entity_HasComponent(uint64_t entityID, Coral::String componentName) {
@@ -256,11 +257,31 @@ namespace CHEngine {
         Scene* scene = ScriptEngine::Get().GetActiveScene();
         if (!scene) return;
         Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
-        if (entity && entity.HasComponent<CameraComponent>()) {
+        if (entity && entity.HasComponent<CameraComponent>() && entity.HasComponent<TransformComponent>()) {
             auto& camera = entity.GetComponent<CameraComponent>();
             camera.OrbitYaw = yaw;
             camera.OrbitPitch = pitch;
             camera.OrbitDistance = distance;
+
+            // Sync with TransformComponent
+            auto& tc = entity.GetComponent<TransformComponent>();
+            Entity target = scene->FindEntityByTag(camera.TargetEntityTag);
+            
+            Vector3 targetPos = {0, 0, 0};
+            if (target && target.HasComponent<TransformComponent>()) {
+                targetPos = target.GetComponent<TransformComponent>().Translation;
+            }
+
+            // Calculate rotation from orbit angles (Degrees to Radians)
+            float yawRad = yaw * DEG2RAD;
+            float pitchRad = pitch * DEG2RAD;
+            
+            // Orbit camera usually works by rotating a vector pointing "backwards" from the target
+            Quaternion rotation = QuaternionFromEuler(pitchRad, yawRad, 0);
+            Vector3 offset = Vector3RotateByQuaternion({0.0f, 0.0f, distance}, rotation);
+            
+            tc.SetTranslation(Vector3Add(targetPos, offset));
+            tc.SetRotationQuat(rotation);
         }
     }
 
@@ -431,23 +452,11 @@ namespace CHEngine {
 
     // ── UI ────────────────────────────────────────────────────────────────
     CH_SCRIPT_FUNC void UI_Text(Coral::String text) {
-        // Since we are in OnGUI, the ImGui context should be active.
-        // We use the engine's UIRenderer or direct ImGui calls.
-        // For simplicity and to avoid including imgui.h everywhere, 
-        // we can use a helper or just CH_CORE_INFO for now if imgui is not linked.
-        // But wait, scripting module should probably have access to imgui if it's for UI.
-        
-        // Actually, let's just log for now if we want to avoid deep dependencies, 
-        // OR better, use RAYLIB's DrawText if it's simpler for "HUD" style UI.
-        // But the user mentioned ImGui in the past.
-        
-        // If we want REAL ImGui:
-        // ImGui::Text("%s", ((std::string)text).c_str());
-        
-        // Let's use CH_CORE_INFO as a placeholder that also "renders" to log
-        CH_CORE_TRACE("[UI] {}", (std::string)text);
+        ImGui::Text("%s", ((std::string)text).c_str());
     }
     CH_SCRIPT_FUNC void Application_Close() { Application::Get().Close(); }
+    CH_SCRIPT_FUNC int Application_GetFPS() { return ::GetFPS(); }
+    CH_SCRIPT_FUNC float Application_GetFrameTime() { return ::GetFrameTime(); }
     CH_SCRIPT_FUNC void Window_SetSize(int w, int h) { Application::Get().GetWindow().SetSize(w, h); }
     CH_SCRIPT_FUNC void Window_SetFullscreen(bool enabled) { Application::Get().GetWindow().SetFullscreen(enabled); }
     CH_SCRIPT_FUNC void Window_SetVSync(bool enabled) { Application::Get().GetWindow().SetVSync(enabled); }
@@ -525,6 +534,8 @@ namespace CHEngine {
 
         // Application
         CH_ADD_INTERNAL_CALL(Application, Application_Close_Ptr, Application_Close);
+        CH_ADD_INTERNAL_CALL(Application, Application_GetFPS_Ptr, Application_GetFPS);
+        CH_ADD_INTERNAL_CALL(Application, Application_GetFrameTime_Ptr, Application_GetFrameTime);
 
         // AppWindow
         CH_ADD_INTERNAL_CALL(AppWindow, Window_SetSize_Ptr, Window_SetSize);

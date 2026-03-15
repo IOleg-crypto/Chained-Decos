@@ -283,7 +283,7 @@ std::shared_ptr<Asset> AssetManager::GetAsset(const std::string& path, AssetType
 
         // Start background load
         std::string pathCopy = resolved;
-        CH_CORE_INFO("AssetManager: [Main] Scheduling async load for '{}' (Type: {})", pathCopy, (int)type);
+        CH_CORE_TRACE("AssetManager: [Main] Scheduling async load for '{}' (Type: {})", pathCopy, (int)type);
         std::weak_ptr<Asset> weakAsset = asset;
 
         auto future = ThreadPool::Get().Enqueue([this, pathCopy, type, weakAsset]() {
@@ -302,7 +302,7 @@ std::shared_ptr<Asset> AssetManager::GetAsset(const std::string& path, AssetType
                 std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
                 bool isHDR = (ext == ".hdr");
 
-                CH_CORE_INFO("AssetManager: [Background] Processing texture '{}', extension detected: '{}', isHDR: {}", 
+                CH_CORE_TRACE("AssetManager: [Background] Processing texture '{}', extension detected: '{}', isHDR: {}", 
                              pathCopy, ext, isHDR ? "YES" : "NO");
 
                 if (isHDR)
@@ -315,7 +315,7 @@ std::shared_ptr<Asset> AssetManager::GetAsset(const std::string& path, AssetType
                     img = TextureImporter::LoadImageFromDisk(pathCopy);
                     if (img.data != nullptr)
                     {
-                        CH_CORE_INFO("AssetManager: Loaded image {} ({}x{}, format={})", 
+                        CH_CORE_TRACE("AssetManager: Loaded image {} ({}x{}, format={})", 
                                      pathCopy, img.width, img.height, img.format);
 
                         ImageFormat(&img, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
@@ -485,7 +485,7 @@ void AssetManager::Update()
         {
             std::static_pointer_cast<SoundAsset>(asset)->UploadToGPU();
         }
-        CH_CORE_INFO("AssetManager: Background load completed and uploaded to GPU for '{}'", asset->GetPath());
+        CH_CORE_TRACE("AssetManager: Background load completed and uploaded to GPU for '{}'", asset->GetPath());
     }
 }
 

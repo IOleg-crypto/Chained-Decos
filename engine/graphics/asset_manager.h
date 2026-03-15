@@ -81,7 +81,7 @@ private:
     std::vector<std::future<void>> m_Futures;
     mutable std::mutex m_FuturesMutex;
 
-    int m_MaxUploadsPerFrame = 10; // Throttle GPU uploads to avoid per-frame spikes
+    int m_MaxUploadsPerFrame = 100; // Throttle GPU uploads to avoid per-frame spikes
 };
 } // namespace CHEngine
 

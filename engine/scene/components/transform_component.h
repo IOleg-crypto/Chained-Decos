@@ -55,9 +55,9 @@ struct TransformComponent
 
     static Matrix GetTransform(const Vector3& translation, const Quaternion& rotation, const Vector3& scale)
     {
-        return MatrixMultiply(QuaternionToMatrix(rotation),
-                              MatrixMultiply(MatrixTranslate(translation.x, translation.y, translation.z),
-                                             MatrixScale(scale.x, scale.y, scale.z)));
+        Matrix rot = QuaternionToMatrix(rotation);
+        return MatrixMultiply(MatrixMultiply(MatrixScale(scale.x, scale.y, scale.z), rot),
+                              MatrixTranslate(translation.x, translation.y, translation.z));
     }
 
     Matrix GetInterpolatedTransform(float alpha) const
