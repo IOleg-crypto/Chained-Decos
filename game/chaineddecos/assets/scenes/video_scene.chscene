@@ -108,9 +108,9 @@ Entities:
         HoverScale: 1
         PressedScale: 1
         TransitionSpeed: 0.100000001
-    NativeScriptComponent:
+    ManagedScriptComponent:
       Scripts:
-        - SettingsScript
+        - ClassName: ChainedDecos.Scripts.SettingsScript
   - Entity: 2001
     TagComponent:
       Tag: fps_limit
@@ -163,9 +163,9 @@ Entities:
         HoverScale: 1
         PressedScale: 1
         TransitionSpeed: 0.100000001
-    NativeScriptComponent:
+    ManagedScriptComponent:
       Scripts:
-        - SettingsScript
+        - ClassName: ChainedDecos.Scripts.SettingsScript
   - Entity: 16516555726583183032
     TagComponent:
       Tag: option_fullscreen
@@ -212,9 +212,9 @@ Entities:
         HoverScale: 1
         PressedScale: 1
         TransitionSpeed: 0.100000001
-    NativeScriptComponent:
+    ManagedScriptComponent:
       Scripts:
-        - SettingsScript
+        - ClassName: ChainedDecos.Scripts.SettingsScript
   - Entity: 1001
     TagComponent:
       Tag: option_vsync
@@ -261,9 +261,9 @@ Entities:
         HoverScale: 1
         PressedScale: 1
         TransitionSpeed: 0.100000001
-    NativeScriptComponent:
+    ManagedScriptComponent:
       Scripts:
-        - SettingsScript
+        - ClassName: ChainedDecos.Scripts.SettingsScript
   - Entity: 1003
     TagComponent:
       Tag: quality_preset
@@ -315,9 +315,9 @@ Entities:
         HoverScale: 1
         PressedScale: 1
         TransitionSpeed: 0.100000001
-    NativeScriptComponent:
+    ManagedScriptComponent:
       Scripts:
-        - SettingsScript
+        - ClassName: ChainedDecos.Scripts.SettingsScript
   - Entity: 2002
     TagComponent:
       Tag: option_mipmaps
@@ -364,9 +364,9 @@ Entities:
         HoverScale: 1
         PressedScale: 1
         TransitionSpeed: 0.100000001
-    NativeScriptComponent:
+    ManagedScriptComponent:
       Scripts:
-        - SettingsScript
+        - ClassName: ChainedDecos.Scripts.SettingsScript
   - Entity: 2003
     TagComponent:
       Tag: texture_filter
@@ -420,9 +420,9 @@ Entities:
         HoverScale: 1
         PressedScale: 1
         TransitionSpeed: 0.100000001
-    NativeScriptComponent:
+    ManagedScriptComponent:
       Scripts:
-        - SettingsScript
+        - ClassName: ChainedDecos.Scripts.SettingsScript
   - Entity: 1002
     TagComponent:
       Tag: option_aa
@@ -516,9 +516,9 @@ Entities:
         LineHeight: 1.20000005
         HorizontalAlignment: 0
         VerticalAlignment: 1
-    NativeScriptComponent:
+    ManagedScriptComponent:
       Scripts:
-        - SettingsScript
+        - ClassName: ChainedDecos.Scripts.SettingsScript
   - Entity: 18170181542896433609
     TagComponent:
       Tag: back_button
@@ -569,6 +569,6 @@ Entities:
         LineHeight: 1.20000005
         HorizontalAlignment: 0
         VerticalAlignment: 1
-    NativeScriptComponent:
+    ManagedScriptComponent:
       Scripts:
-        - SceneScript
+        - ClassName: ChainedDecos.Scripts.SceneScript

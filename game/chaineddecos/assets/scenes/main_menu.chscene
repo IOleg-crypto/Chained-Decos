@@ -14,6 +14,7 @@ Lighting:
   Ambient: 0.300000012
 Skybox:
   TexturePath: ""
+  Mode: 0
   Exposure: 1
   Brightness: 0
   Contrast: 1
@@ -23,6 +24,15 @@ Fog:
   Density: 0.00999999978
   Start: 10
   End: 100
+DebugSettings:
+  DiagnosticMode: 0
+  DrawColliders: false
+  DrawHierarchy: false
+  DrawCollisionModelBox: false
+  DrawGrid: false
+  DrawSelection: true
+  DrawLights: true
+  DrawSpawnZones: true
 Entities:
   - Entity: 1069064208128281074
     TagComponent:
@@ -137,9 +147,9 @@ Entities:
         LineHeight: 1.20000005
         HorizontalAlignment: 0
         VerticalAlignment: 1
-    NativeScriptComponent:
+    ManagedScriptComponent:
       Scripts:
-        - ExitScript
+        - ClassName: chaineddecos.scripts.exitscript
   - Entity: 10048507876963945433
     TagComponent:
       Tag: Options
@@ -190,9 +200,9 @@ Entities:
         LineHeight: 1.20000005
         HorizontalAlignment: 0
         VerticalAlignment: 1
-    NativeScriptComponent:
+    ManagedScriptComponent:
       Scripts:
-        - SceneScript
+        - ClassName: chaineddecos.scripts.scenescript
   - Entity: 17229056952832949834
     TagComponent:
       Tag: Info
@@ -243,9 +253,9 @@ Entities:
         LineHeight: 1.20000005
         HorizontalAlignment: 0
         VerticalAlignment: 1
-    NativeScriptComponent:
+    ManagedScriptComponent:
       Scripts:
-        - SceneScript
+        - ClassName: chaineddecos.scripts.scenescript
   - Entity: 2149386149282995176
     TagComponent:
       Tag: Start
@@ -296,9 +306,10 @@ Entities:
         LineHeight: 1.20000005
         HorizontalAlignment: 0
         VerticalAlignment: 1
-    NativeScriptComponent:
+    ManagedScriptComponent:
       Scripts:
-        - SceneScript
+        - ClassName: chaineddecos.scripts.mainmenuscript
+        - ClassName: chaineddecos.scripts.debuginfoscript
   - Entity: 17694975162465223617
     TagComponent:
       Tag: title_image

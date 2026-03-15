@@ -63,6 +63,18 @@ public static class Application
 #pragma warning restore 0649
 
     public static unsafe void Close() => Application_Close_Ptr();
+
+    internal static unsafe delegate*<int> Application_GetFPS_Ptr;
+    internal static unsafe delegate*<float> Application_GetFrameTime_Ptr;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Time — static API for timing information
+// ─────────────────────────────────────────────────────────────────────────────
+public static class Time
+{
+    public static unsafe int FPS => Application.Application_GetFPS_Ptr();
+    public static unsafe float DeltaTime => Application.Application_GetFrameTime_Ptr();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -239,6 +239,6 @@ Entities:
         LineHeight: 1.20000005
         HorizontalAlignment: 0
         VerticalAlignment: 1
-    NativeScriptComponent:
+    ManagedScriptComponent:
       Scripts:
-        - SceneScript
+        - ClassName: ChainedDecos.Scripts.SceneScript
