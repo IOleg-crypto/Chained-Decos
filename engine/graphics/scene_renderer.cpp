@@ -225,14 +225,18 @@ void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& 
     {
         auto [transform, model] = view.get<TransformComponent, ModelComponent>(entity);
 
-        if (!model.Asset || model.Asset->GetState() != AssetState::Ready)
+        if (model.ModelPath.empty())
+            continue;
+
+        auto modelAsset = AssetManager::Get().Get<ModelAsset>(model.ModelPath);
+        if (!modelAsset || modelAsset->GetState() != AssetState::Ready)
         {
             continue;
         }
 
         // 1. Precise Frustum Culling
         const Matrix& worldTransform = transform.WorldTransform;
-        BoundingBox aabb = model.Asset->GetBoundingBox();
+        BoundingBox aabb = modelAsset->GetBoundingBox();
 
         if (!frustum.IsBoxVisible(aabb, worldTransform))
         {
@@ -240,10 +244,10 @@ void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& 
         }
 
         // 2. Optimized Asset Update (Once per unique asset per frame)
-        if (updatedAssets.find(model.Asset.get()) == updatedAssets.end())
+        if (updatedAssets.find(modelAsset.get()) == updatedAssets.end())
         {
-            model.Asset->OnUpdate();
-            updatedAssets.insert(model.Asset.get());
+            modelAsset->OnUpdate();
+            updatedAssets.insert(modelAsset.get());
         }
 
         std::shared_ptr<ShaderAsset> shaderOverride;
@@ -254,7 +258,7 @@ void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& 
             auto& shaderComp = registry.get<ShaderComponent>(entity);
             if (shaderComp.Enabled && !shaderComp.ShaderPath.empty() && Project::GetActive())
             {
-                shaderOverride = Project::GetActive()->GetAssetManager()->Get<ShaderAsset>(shaderComp.ShaderPath);
+                shaderOverride = AssetManager::Get().Get<ShaderAsset>(shaderComp.ShaderPath);
                 customUniforms = shaderComp.Uniforms;
                 hasShaderOverride = true;
             }
@@ -265,7 +269,7 @@ void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& 
         if (isAnimated)
         {
             AnimatedEntry entry;
-            entry.asset = model.Asset;
+            entry.asset = modelAsset;
             entry.worldTransform = worldTransform;
             entry.materials = model.Materials;
             entry.shaderOverride = shaderOverride;
@@ -279,14 +283,14 @@ void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& 
             auto& group = instanceGroups[key];
             if (group.transforms.empty())
             {
-                group.asset = model.Asset;
+                group.asset = modelAsset;
                 group.materials = model.Materials;
             }
             group.transforms.push_back(worldTransform);
         }
         else
         {
-            Renderer::Get().DrawModel(model.Asset, worldTransform, model.Materials, 0, 0.0f, -1, 0.0f, 0.0f,
+            Renderer::Get().DrawModel(modelAsset, worldTransform, model.Materials, 0, 0.0f, -1, 0.0f, 0.0f,
                                       shaderOverride, customUniforms);
         }
     }
@@ -364,7 +368,7 @@ void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& 
             auto& shaderComp = registry.get<ShaderComponent>(entity);
             if (shaderComp.Enabled && !shaderComp.ShaderPath.empty() && Project::GetActive())
             {
-                shaderOverride = Project::GetActive()->GetAssetManager()->Get<ShaderAsset>(shaderComp.ShaderPath);
+                shaderOverride = AssetManager::Get().Get<ShaderAsset>(shaderComp.ShaderPath);
                 customUniforms = shaderComp.Uniforms;
                 hasShaderOverride = true;
             }
@@ -519,7 +523,7 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const DebugRende
             if (collider.ModelPath.empty()) break;
             if (auto project = Project::GetActive())
             {
-                if (auto asset = project->GetAssetManager()->Get<ModelAsset>(collider.ModelPath))
+                if (auto asset = AssetManager::Get().Get<ModelAsset>(collider.ModelPath))
                 {
                     if (auto bvh = PhysicsSystem::Get().GetBVH(asset.get()))
                     {
@@ -587,7 +591,7 @@ BoundingBox SceneRenderer::CalculateColliderWorldAABB(const ColliderComponent& c
         if (collider.ModelPath.empty()) break;
         if (auto project = Project::GetActive())
         {
-            if (auto asset = project->GetAssetManager()->Get<ModelAsset>(collider.ModelPath))
+            if (auto asset = AssetManager::Get().Get<ModelAsset>(collider.ModelPath))
             {
                 if (auto bvh = PhysicsSystem::Get().GetBVH(asset.get()))
                 {
@@ -667,27 +671,27 @@ void SceneRenderer::RenderEditorIcons(Scene* scene, const Camera3D& camera)
 {
     auto& registry = scene->GetRegistry();
     auto& state = Renderer::Get().GetData();
-    auto assetManager = Project::GetActive() ? Project::GetActive()->GetAssetManager() : nullptr;
+    auto& assetManager = AssetManager::Get();
 
-    if (state.EditorResources.LightIcon.id == 0 && assetManager)
+    if (state.EditorResources.LightIcon.id == 0)
     {
-        auto texture = assetManager->Get<TextureAsset>("resources/icons/light_bulb.png");
+        auto texture = assetManager.Get<TextureAsset>("resources/icons/light_bulb.png");
         if (texture && texture->IsReady())
         {
             state.EditorResources.LightIcon = texture->GetTexture();
         }
     }
-    if (state.EditorResources.SpawnIcon.id == 0 && assetManager)
+    if (state.EditorResources.SpawnIcon.id == 0)
     {
-        auto texture = assetManager->Get<TextureAsset>("resources/icons/leaf_icon.png");
+        auto texture = assetManager.Get<TextureAsset>("resources/icons/leaf_icon.png");
         if (texture && texture->IsReady())
         {
             state.EditorResources.SpawnIcon = texture->GetTexture();
         }
     }
-    if (state.EditorResources.CameraIcon.id == 0 && assetManager)
+    if (state.EditorResources.CameraIcon.id == 0)
     {
-        auto texture = assetManager->Get<TextureAsset>("resources/icons/camera_icon.jpg");
+        auto texture = assetManager.Get<TextureAsset>("resources/icons/camera_icon.jpg");
         if (texture && texture->IsReady())
         {
             state.EditorResources.CameraIcon = texture->GetTexture();
@@ -760,7 +764,7 @@ void SceneRenderer::RenderSprites(Scene* scene)
 
         if (!sprite.Texture && Project::GetActive())
         {
-            sprite.Texture = Project::GetActive()->GetAssetManager()->Get<TextureAsset>(sprite.TexturePath);
+            sprite.Texture = AssetManager::Get().Get<TextureAsset>(sprite.TexturePath);
         }
 
         Vector3 worldPos = GetWorldPosition(registry, entityID);

@@ -459,7 +459,7 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
                     continue;
                 }
 
-                auto modelAsset = Project::GetActive()->GetAssetManager()->Get<ModelAsset>(modelComp.ModelPath);
+                auto modelAsset = AssetManager::Get().Get<ModelAsset>(modelComp.ModelPath);
                 if (!modelAsset || !modelAsset->IsReady())
                 {
                     CH_CORE_TRACE("Skip {}: Asset not ready", tag);

@@ -44,7 +44,7 @@ void ModelAsset::UploadToGPU()
     // Helper: load one texture channel, queue if still loading
     auto loadTex = [&](int matIdx, const std::string& path, int mapIndex) {
         if (path.empty() || !project) return;
-        auto tex = project->GetAssetManager()->Get<TextureAsset>(path);
+        auto tex = AssetManager::Get().Get<TextureAsset>(path);
         if (!tex) return;
         if (tex->IsReady()) {
             model.materials[matIdx].maps[mapIndex].texture = tex->GetTexture();
@@ -75,7 +75,7 @@ void ModelAsset::UploadToGPU()
             // MetallicRoughness is a packed texture shared by two slots
             if (!rawMaterial.metallicRoughnessPath.empty() && project)
             {
-                auto tex = project->GetAssetManager()->Get<TextureAsset>(rawMaterial.metallicRoughnessPath);
+                auto tex = AssetManager::Get().Get<TextureAsset>(rawMaterial.metallicRoughnessPath);
                 if (tex && tex->IsReady()) {
                     model.materials[i].maps[MATERIAL_MAP_METALNESS].texture = tex->GetTexture();
                     model.materials[i].maps[MATERIAL_MAP_ROUGHNESS].texture = tex->GetTexture();
@@ -238,13 +238,13 @@ void ModelAsset::OnUpdate()
         return;
     }
 
-    auto assetManager = project->GetAssetManager();
+    auto& assetManager = AssetManager::Get();
 
     std::lock_guard<std::mutex> lock(m_ModelMutex);
 
     for (auto it = m_PendingTextures.begin(); it != m_PendingTextures.end();)
     {
-        auto textureAsset = assetManager->Get<TextureAsset>(it->path);
+        auto textureAsset = assetManager.Get<TextureAsset>(it->path);
         if (textureAsset && textureAsset->IsReady())
         {
             CH_CORE_INFO("ModelAsset: Applying deferred texture '{}' to material {}", it->path, it->materialIndex);

@@ -6,8 +6,6 @@
 
 namespace CHEngine
 {
-class Scene;
-
 class Dynamics
 {
 public:

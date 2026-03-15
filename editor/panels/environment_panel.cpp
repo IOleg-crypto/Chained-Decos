@@ -112,7 +112,7 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
             {
                 if (auto project = Project::GetActive())
                 {
-                    m_Context->GetSettings().Environment = project->GetAssetManager()->Get<EnvironmentAsset>(outPath);
+                    m_Context->GetSettings().Environment = AssetManager::Get().Get<EnvironmentAsset>(outPath);
                 }
                 NFD_FreePath(outPath);
             }

@@ -26,6 +26,8 @@ public:
     AssetManager();
     ~AssetManager();
 
+    static AssetManager& Get();
+
     void Initialize(const std::filesystem::path& rootPath = "");
     void Shutdown();
 

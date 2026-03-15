@@ -221,15 +221,10 @@ public:
         return m_Environment;
     }
 
-    std::shared_ptr<AssetManager> GetAssetManager() const
-    {
-        return m_AssetManager;
-    }
 
 private:
     ProjectConfig m_Config;
     std::shared_ptr<EnvironmentAsset> m_Environment;
-    std::shared_ptr<AssetManager> m_AssetManager;
     static std::shared_ptr<Project> s_ActiveProject;
     static std::filesystem::path s_EngineRoot;
 

@@ -4,7 +4,6 @@
 #include "engine/graphics/renderer.h"
 #include "imgui.h"
 #include "project_serializer.h"
-#include "scripting/scriptengine.h"
 
 
 namespace CHEngine
@@ -15,8 +14,7 @@ std::filesystem::path Project::s_EngineRoot = "";
 std::shared_ptr<Project> Project::New()
 {
     auto project = std::make_shared<Project>();
-    project->m_AssetManager = std::make_shared<AssetManager>();
-    project->m_AssetManager->Initialize();
+    AssetManager::Get().Initialize();
     s_ActiveProject = project;
     return s_ActiveProject;
 }
@@ -24,8 +22,7 @@ std::shared_ptr<Project> Project::New()
 std::shared_ptr<Project> Project::Load(const std::filesystem::path& path)
 {
     std::shared_ptr<Project> project = std::make_shared<Project>();
-    project->m_AssetManager = std::make_shared<AssetManager>();
-    project->m_AssetManager->Initialize(path.parent_path());
+    AssetManager::Get().Initialize(path.parent_path());
 
     project->m_Config.ProjectDirectory = path.parent_path();
     s_ActiveProject = project;
@@ -61,20 +58,20 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path& path)
     if (serializer.Deserialize(path))
     {
         // Register asset search path
-        project->m_AssetManager->ClearSearchPaths();
-        project->m_AssetManager->AddSearchPath(project->m_Config.ProjectDirectory / project->m_Config.AssetDirectory);
+        AssetManager::Get().ClearSearchPaths();
+        AssetManager::Get().AddSearchPath(project->m_Config.ProjectDirectory / project->m_Config.AssetDirectory);
 
         if (!s_EngineRoot.empty())
         {
-            project->m_AssetManager->AddSearchPath(s_EngineRoot);
-            project->m_AssetManager->AddSearchPath(s_EngineRoot / "resources");
+            AssetManager::Get().AddSearchPath(s_EngineRoot);
+            AssetManager::Get().AddSearchPath(s_EngineRoot / "resources");
         }
 
         // Load environment if specified
         if (!project->m_Config.EnvironmentPath.empty())
         {
             project->m_Environment =
-                project->m_AssetManager->Get<EnvironmentAsset>(project->m_Config.EnvironmentPath.string());
+                AssetManager::Get().Get<EnvironmentAsset>(project->m_Config.EnvironmentPath.string());
         }
 
         // --- Automated Shader Discovery ---
@@ -100,9 +97,6 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path& path)
                 }
             }
         }
-
-        // Initialize and Load Scripting
-        ScriptEngine::Get().ReloadAssembly();
 
         return s_ActiveProject;
     }

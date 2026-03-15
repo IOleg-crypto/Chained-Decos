@@ -214,7 +214,7 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
             std::string envPath = data["EnvironmentPath"].as<std::string>();
             if (auto project = Project::GetActive())
             {
-                m_Scene->GetSettings().Environment = project->GetAssetManager()->Get<EnvironmentAsset>(envPath);
+                m_Scene->GetSettings().Environment = AssetManager::Get().Get<EnvironmentAsset>(envPath);
             }
         }
 
