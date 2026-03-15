@@ -30,11 +30,11 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path& path)
     s_ActiveProject = project;
 
     // Discover Engine Root if not set or invalid
-    if (s_EngineRoot.empty() || !std::filesystem::exists(s_EngineRoot / "engine/resources"))
+    if (s_EngineRoot.empty() || !std::filesystem::exists(s_EngineRoot / "resources"))
     {
         // 1. Try development root macro
 #ifdef PROJECT_ROOT_DIR
-        if (std::filesystem::exists(std::filesystem::path(PROJECT_ROOT_DIR) / "engine/resources"))
+        if (std::filesystem::exists(std::filesystem::path(PROJECT_ROOT_DIR) / "resources"))
         {
             s_EngineRoot = PROJECT_ROOT_DIR;
         }
@@ -46,7 +46,7 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path& path)
             std::filesystem::path current = path.parent_path();
             while (current.has_parent_path())
             {
-                if (std::filesystem::exists(current / "engine/resources"))
+                if (std::filesystem::exists(current / "resources"))
                 {
                     s_EngineRoot = current;
                     break;
@@ -66,7 +66,7 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path& path)
         if (!s_EngineRoot.empty())
         {
             project->m_AssetManager->AddSearchPath(s_EngineRoot);
-            project->m_AssetManager->AddSearchPath(s_EngineRoot / "engine/resources");
+            project->m_AssetManager->AddSearchPath(s_EngineRoot / "resources");
         }
 
         // Load environment if specified
