@@ -18,7 +18,6 @@
 
 namespace CHEngine
 {
-class SceneSerializer;
 class Physics;
 
 class Scene : public std::enable_shared_from_this<Scene>
@@ -61,14 +60,6 @@ public: // Scene Settings
         return m_Settings;
     }
 
-    Physics& GetPhysics()
-    {
-        return *m_Physics;
-    }
-    const Physics& GetPhysics() const
-    {
-        return *m_Physics;
-    }
 
 public: // Systems & Tools
     entt::registry& GetRegistry()
@@ -94,7 +85,6 @@ private:
 private:
     Entity m_Manager;
     SceneSettings m_Settings;
-    std::unique_ptr<Physics> m_Physics;
 
     bool m_IsSimulationRunning = false;
 
@@ -124,7 +114,6 @@ private: // Update Logic
     void UpdateHierarchy();
 
     friend class Entity;
-    friend class SceneSerializer;
 };
 
 } // namespace CHEngine

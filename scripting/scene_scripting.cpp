@@ -10,8 +10,7 @@ namespace CHEngine {
 
     void SceneScripting::OnRuntimeStart(Scene* scene)
     {
-        auto& physics = scene->GetPhysics();
-        physics.SetCollisionCallback([scene](entt::entity a, entt::entity b) {
+        Physics::SetCollisionCallback(scene, [scene](entt::entity a, entt::entity b) {
                 auto& registry = scene->GetRegistry();
                 
                 // Dispatch to object A
@@ -44,8 +43,7 @@ namespace CHEngine {
 
     void SceneScripting::OnRuntimeStop(Scene* scene)
     {
-        auto& physics = scene->GetPhysics();
-        physics.SetCollisionCallback(nullptr);
+        Physics::SetCollisionCallback(scene, nullptr);
     }
 
     void SceneScripting::Update(Scene* scene, Timestep deltaTime)

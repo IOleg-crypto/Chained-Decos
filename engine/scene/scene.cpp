@@ -50,9 +50,6 @@ Scene::Scene()
 
     // Every scene must have its own environment to avoid skybox leaking/bugs
     m_Settings.Environment = std::make_shared<EnvironmentAsset>();
-
-    // Create physics instance
-    m_Physics = std::make_unique<Physics>(this);
 }
 
 Scene::~Scene()
@@ -204,7 +201,7 @@ Entity Scene::GetPrimaryCameraEntity()
 void Scene::UpdatePhysics(Timestep deltaTime)
 {
     CH_PROFILE_FUNCTION();
-    m_Physics->Update(deltaTime);
+    Physics::Update(this, deltaTime, m_IsSimulationRunning);
 }
 
 void Scene::UpdateAnimations(Timestep deltaTime)

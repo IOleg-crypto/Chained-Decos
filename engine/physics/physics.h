@@ -40,54 +40,44 @@ public:
     void Shutdown();
 
     static PhysicsSystem& Get();
+
+    // BVH Cache moved to global system
+    std::shared_ptr<BVH> GetBVH(ModelAsset* asset);
+    void InvalidateBVH(ModelAsset* asset);
+    void UpdateBVHCache(ModelAsset* asset, std::shared_ptr<BVH> bvh);
+
+private:
+    // Localized BVH cache in global system
+    std::unordered_map<ModelAsset*, std::shared_future<std::shared_ptr<BVH>>> m_BVHCache;
+    mutable std::mutex m_BVHMutex;
+
+    // Persistent asset cache for collider shape computation (avoids per-frame allocation)
+    // This can still be global or part of AssetManager, but keeping here for now as shared state
+    std::unordered_map<std::string, std::shared_ptr<ModelAsset>> m_ColliderAssetCache;
+};
+
+struct PhysicsContext
+{
+    float Accumulator = 0.0f;
+    std::function<void(entt::entity, entt::entity)> CollisionCallback;
 };
 
 class Physics
 {
-public: // Life Cycle
-    Physics(Scene* scene);
-    ~Physics();
-
 public: // Simulation & Queries
-    // Steps the physics simulation and updates collider states.
-    void Update(Timestep deltaTime, bool runtime = false);
+    // Steps the physics simulation and updates collider states for a given scene.
+    static void Update(Scene* scene, Timestep deltaTime, bool runtime = false);
 
-    // Performs a spatial raycast query within the owned scene.
-    RaycastResult Raycast(Ray ray);
+    // Performs a spatial raycast query within the given scene.
+    static RaycastResult Raycast(Scene* scene, Ray ray);
 
-    // Retrieves or starts building a BVH for a model asset.
-    std::shared_ptr<BVH> GetBVH(ModelAsset* asset);
-
-    // Invalidates the cached BVH for a specific asset, forcing a rebuild on next update.
-    void InvalidateBVH(ModelAsset* asset);
-
-    // Directly updates the cache with a pre-built BVH.
-    void UpdateBVHCache(ModelAsset* asset, std::shared_ptr<BVH> bvh);
-
-    using CollisionCallback = std::function<void(entt::entity, entt::entity)>;
-    void SetCollisionCallback(CollisionCallback callback) { m_CollisionCallback = callback; }
-    const CollisionCallback& GetCollisionCallback() const { return m_CollisionCallback; }
+    // Context management helpers
+    static PhysicsContext& GetContext(Scene* scene);
+    static void SetCollisionCallback(Scene* scene, std::function<void(entt::entity, entt::entity)> callback);
 
 private: // Internal Helpers
-    void UpdateColliders();
-    void ResolveSimulation(Timestep deltaTime);
-
-private: // Members
-    Scene* m_Scene = nullptr;
-
-    std::unique_ptr<class NarrowPhase> m_NarrowPhase;
-    std::unique_ptr<class Dynamics> m_Dynamics;
-    std::unique_ptr<class SceneTrace> m_SceneTrace;
-
-    // Localized BVH cache to avoid global static state
-    std::unordered_map<ModelAsset*, std::shared_future<std::shared_ptr<BVH>>> m_BVHCache;
-    mutable std::mutex m_BVHMutex;
-    float m_Accumulator = 0.0f;
-
-    // Persistent asset cache for collider shape computation (avoids per-frame allocation)
-    std::unordered_map<std::string, std::shared_ptr<ModelAsset>> m_ColliderAssetCache;
-
-    CollisionCallback m_CollisionCallback;
+    static void UpdateColliders(Scene* scene);
+    static void ResolveSimulation(Scene* scene, Timestep deltaTime);
 };
 } // namespace CHEngine
 
