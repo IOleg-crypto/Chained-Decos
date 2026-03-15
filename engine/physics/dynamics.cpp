@@ -7,9 +7,8 @@
 
 namespace CHEngine
 {
-void Dynamics::Update(Scene* scene, const std::vector<entt::entity>& entities, float deltaTime)
+void Dynamics::Update(::entt::registry& registry, const std::vector<entt::entity>& entities, float deltaTime)
 {
-    auto& registry = scene->GetRegistry();
 
     float gravity = 20.0f;
     if (Project::GetActive())

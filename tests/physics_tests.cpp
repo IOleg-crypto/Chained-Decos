@@ -45,14 +45,14 @@ TEST(PhysicsTest, Raycast)
     ray.position = {0.0f, 0.0f, 0.0f};
     ray.direction = {0.0f, 0.0f, 1.0f};
 
-    RaycastResult result = scene->GetPhysics().Raycast(ray);
+    RaycastResult result = Physics::Raycast(scene.get(), ray);
     EXPECT_TRUE(result.Hit);
     EXPECT_NEAR(result.Distance, 4.5f, 0.001f);
     EXPECT_EQ(result.Entity, (entt::entity)entity);
 
     // Ray looking away
     ray.direction = {0.0f, 0.0f, -1.0f};
-    result = scene->GetPhysics().Raycast(ray);
+    result = Physics::Raycast(scene.get(), ray);
     EXPECT_FALSE(result.Hit);
 }
 
@@ -69,7 +69,7 @@ TEST(PhysicsTest, RaycastMissingCollider)
     ray.position = {0.0f, 0.0f, 0.0f};
     ray.direction = {0.0f, 0.0f, 1.0f};
 
-    RaycastResult result = scene->GetPhysics().Raycast(ray);
+    RaycastResult result = Physics::Raycast(scene.get(), ray);
     EXPECT_FALSE(result.Hit);
 }
 

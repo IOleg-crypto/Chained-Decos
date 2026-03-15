@@ -5,17 +5,18 @@
 #include "collision/collision.h"
 #include "engine/core/log.h"
 #include "engine/scene/components.h"
+#include "engine/scene/project.h"
 #include "engine/scene/scene.h"
 #include "raymath.h"
+#include "engine/graphics/asset_manager.h"
+#include "engine/graphics/model_asset.h"
 
 namespace CHEngine
 {
 
-// ─── Helper: Apply collision response ────────────────────────────────────────
-// --- NarrowPhase Internal Helpers ---
-
-void NarrowPhase::ApplyResponse(entt::entity rbEntity, entt::entity otherEntity, TransformComponent& tc,
-                               RigidBodyComponent& rb, ColliderComponent& other, Vector3 normal, float depth)
+// ─── Helper: Apply collision response ───────
+void NarrowPhase::ApplyResponse(::entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity, TransformComponent& tc,
+                                RigidBodyComponent& rb, ColliderComponent& other, Vector3 normal, float depth)
 {
     tc.Translation = Vector3Add(tc.Translation, Vector3Scale(normal, depth));
 
@@ -46,9 +47,12 @@ void NarrowPhase::ApplyResponse(entt::entity rbEntity, entt::entity otherEntity,
     other.IsColliding = true;
 
     // Trigger callback
-    if (m_Physics->GetCollisionCallback())
+    if (auto* context = registry.ctx().find<PhysicsContext>())
     {
-        m_Physics->GetCollisionCallback()(rbEntity, otherEntity);
+        if (context->CollisionCallback)
+        {
+            context->CollisionCallback(rbEntity, otherEntity);
+        }
     }
 }
 
@@ -139,10 +143,8 @@ NarrowPhase::WorldAABB NarrowPhase::GetWorldAABB(const TransformComponent& tc, c
 // Main dispatch
 // ═══════════════════════════════════════════════════════════════════════════════
 
-void NarrowPhase::ResolveCollisions(Scene* scene, const std::vector<::entt::entity>& entities)
+void NarrowPhase::ResolveCollisions(::entt::registry& registry, const std::vector<::entt::entity>& entities)
 {
-    auto& registry = scene->GetRegistry();
-
     for (auto rbEntity : entities)
     {
         if (!registry.all_of<TransformComponent, RigidBodyComponent, ColliderComponent>(rbEntity))
@@ -184,7 +186,7 @@ void NarrowPhase::ResolveCollisions(Scene* scene, const std::vector<::entt::enti
                     ResolveSphereBox(registry, rbEntity, otherEntity);
                 }
             }
-            else if (otherCollider.Type == ColliderType::Mesh && otherCollider.BVHRoot)
+            else if (otherCollider.Type == ColliderType::Mesh)
             {
                 if (rbCollider.Type == ColliderType::Box)
                 {
@@ -251,20 +253,28 @@ void NarrowPhase::ResolveBoxBox(::entt::registry& registry, ::entt::entity rbEnt
 
     // MTV direction per axis: +X, -X, +Y, -Y, +Z, -Z
     const Vector3 dirs[6] = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
-    ApplyResponse(rbEntity, otherEntity, tc, rb, otherCollider, dirs[axis], minDepth);
+    ApplyResponse(registry, rbEntity, otherEntity, tc, rb, otherCollider, dirs[axis], minDepth);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Box vs Mesh
 // ═══════════════════════════════════════════════════════════════════════════════
 
-void NarrowPhase::ResolveBoxMesh(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity)
+void NarrowPhase::ResolveBoxMesh(::entt::registry& registry, ::entt::entity rbEntity, ::entt::entity otherEntity)
 {
     auto& tc = registry.get<TransformComponent>(rbEntity);
     auto& rb = registry.get<RigidBodyComponent>(rbEntity);
     auto& rbc = registry.get<ColliderComponent>(rbEntity);
     auto& otherCollider = registry.get<ColliderComponent>(otherEntity);
     auto& otherTc = registry.get<TransformComponent>(otherEntity);
+
+    if (otherCollider.ModelPath.empty()) return;
+    auto project = Project::GetActive();
+    if (!project || !project->GetAssetManager()) return;
+
+    auto asset = project->GetAssetManager()->Get<ModelAsset>(otherCollider.ModelPath);
+    auto bvh = PhysicsSystem::Get().GetBVH(asset.get());
+    if (!bvh) return;
 
     // Build world-space AABB for the rigid body
     NarrowPhase::WorldAABB rbAABB = NarrowPhase::GetWorldAABB(tc, rbc);
@@ -289,7 +299,7 @@ void NarrowPhase::ResolveBoxMesh(entt::registry& registry, entt::entity rbEntity
 
     Vector3 localNormal;
     float overlapDepth = -1.0f;
-    if (!otherCollider.BVHRoot->IntersectAABB(localBox, localNormal, overlapDepth))
+    if (!bvh->IntersectAABB(localBox, localNormal, overlapDepth))
     {
         return;
     }
@@ -307,7 +317,7 @@ void NarrowPhase::ResolveBoxMesh(entt::registry& registry, entt::entity rbEntity
     Vector3 worldNormal = Vector3Normalize(
         Vector3Subtract(Vector3Transform(localNormal, normalMatrix), Vector3Transform({0, 0, 0}, normalMatrix)));
 
-    ApplyResponse(rbEntity, otherEntity, tc, rb, otherCollider, worldNormal, Vector3Length(worldMTV));
+    ApplyResponse(registry, rbEntity, otherEntity, tc, rb, otherCollider, worldNormal, Vector3Length(worldMTV));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -349,7 +359,7 @@ void NarrowPhase::ResolveCapsuleBox(::entt::registry& registry, ::entt::entity r
 
     Vector3 normal = (dist > 0.0001f) ? Vector3Scale(diff, 1.0f / dist) : Vector3{0, 1, 0};
 
-    ApplyResponse(rbEntity, otherEntity, tc, rb, box, normal, penetration);
+    ApplyResponse(registry, rbEntity, otherEntity, tc, rb, box, normal, penetration);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -363,6 +373,14 @@ void NarrowPhase::ResolveCapsuleMesh(::entt::registry& registry, ::entt::entity 
     auto& capsule = registry.get<ColliderComponent>(rbEntity);
     auto& otherCollider = registry.get<ColliderComponent>(otherEntity);
     auto& otherTc = registry.get<TransformComponent>(otherEntity);
+
+    if (otherCollider.ModelPath.empty()) return;
+    auto project = Project::GetActive();
+    if (!project || !project->GetAssetManager()) return;
+
+    auto asset = project->GetAssetManager()->Get<ModelAsset>(otherCollider.ModelPath);
+    auto bvh = PhysicsSystem::Get().GetBVH(asset.get());
+    if (!bvh) return;
 
     Matrix meshMatrix = otherTc.GetTransform();
     Matrix invMeshMatrix = MatrixInvert(meshMatrix);
@@ -383,7 +401,7 @@ void NarrowPhase::ResolveCapsuleMesh(::entt::registry& registry, ::entt::entity 
 
     // Query BVH for candidate triangles
     std::vector<const CollisionTriangle*> candidates;
-    otherCollider.BVHRoot->QueryAABB(queryBox, candidates);
+    bvh->QueryAABB(queryBox, candidates);
     if (candidates.empty())
     {
         return;
@@ -424,7 +442,7 @@ void NarrowPhase::ResolveCapsuleMesh(::entt::registry& registry, ::entt::entity 
             normal = tri->normal;
         }
 
-        ApplyResponse(rbEntity, otherEntity, tc, rb, otherCollider, normal, penetration);
+        ApplyResponse(registry, rbEntity, otherEntity, tc, rb, otherCollider, normal, penetration);
 
         // Update capsule position for stacking contacts
         seg = NarrowPhase::GetCapsuleSegment(tc, capsule);
@@ -462,7 +480,7 @@ void NarrowPhase::ResolveSphereBox(::entt::registry& registry, ::entt::entity rb
     float penetration = sphere.Radius - dist;
     Vector3 normal = (dist > 0.0001f) ? Vector3Scale(diff, 1.0f / dist) : Vector3{0, 1, 0};
 
-    ApplyResponse(rbEntity, otherEntity, tc, rb, box, normal, penetration);
+    ApplyResponse(registry, rbEntity, otherEntity, tc, rb, box, normal, penetration);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -476,6 +494,14 @@ void NarrowPhase::ResolveSphereMesh(::entt::registry& registry, ::entt::entity r
     auto& sphere = registry.get<ColliderComponent>(rbEntity);
     auto& otherCollider = registry.get<ColliderComponent>(otherEntity);
     auto& otherTc = registry.get<TransformComponent>(otherEntity);
+
+    if (otherCollider.ModelPath.empty()) return;
+    auto project = Project::GetActive();
+    if (!project || !project->GetAssetManager()) return;
+
+    auto asset = project->GetAssetManager()->Get<ModelAsset>(otherCollider.ModelPath);
+    auto bvh = PhysicsSystem::Get().GetBVH(asset.get());
+    if (!bvh) return;
 
     Matrix meshMatrix = otherTc.GetTransform();
     Matrix invMeshMatrix = MatrixInvert(meshMatrix);
@@ -491,7 +517,7 @@ void NarrowPhase::ResolveSphereMesh(::entt::registry& registry, ::entt::entity r
         {sphereLocalPos.x + localRadius, sphereLocalPos.y + localRadius, sphereLocalPos.z + localRadius}};
 
     std::vector<const CollisionTriangle*> candidates;
-    otherCollider.BVHRoot->QueryAABB(queryBox, candidates);
+    bvh->QueryAABB(queryBox, candidates);
     if (candidates.empty())
     {
         return;
@@ -524,7 +550,7 @@ void NarrowPhase::ResolveSphereMesh(::entt::registry& registry, ::entt::entity r
             normal = tri->normal;
         }
 
-        ApplyResponse(rbEntity, otherEntity, tc, rb, otherCollider, normal, penetration);
+        ApplyResponse(registry, rbEntity, otherEntity, tc, rb, otherCollider, normal, penetration);
         sphereWorldPos = Vector3Add(tc.Translation, sphere.Offset); // Update for stacked contacts
     }
 }
@@ -557,7 +583,7 @@ void NarrowPhase::ResolveSphereSphere(::entt::registry& registry, ::entt::entity
     float penetration = radiusSum - dist;
     Vector3 normal = (dist > 0.0001f) ? Vector3Scale(diff, 1.0f / dist) : Vector3{0, 1, 0};
 
-    ApplyResponse(rbEntity, otherEntity, tc, rb, s2, normal, penetration);
+    ApplyResponse(registry, rbEntity, otherEntity, tc, rb, s2, normal, penetration);
 }
 
 } // namespace CHEngine
