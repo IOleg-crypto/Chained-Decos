@@ -28,18 +28,6 @@ Scene::Scene()
     reg.ctx().emplace<EntityUUIDMap>();
     reg.ctx().emplace<std::shared_ptr<entt::registry>>(registry);
 
-    // Declarative signals binding
-    reg.on_construct<ModelComponent>().connect<&Scene::OnModelComponentAdded>(this);
-    reg.on_update<ModelComponent>().connect<&Scene::OnModelComponentAdded>(this);
-
-    reg.on_construct<AnimationComponent>().connect<&Scene::OnAnimationComponentAdded>(this);
-    reg.on_update<AnimationComponent>().connect<&Scene::OnAnimationComponentAdded>(this);
-
-    reg.on_construct<ColliderComponent>().connect<&Scene::OnColliderComponentAdded>(this);
-    reg.on_update<ColliderComponent>().connect<&Scene::OnColliderComponentAdded>(this);
-
-    reg.on_construct<PanelControl>().connect<&Scene::OnPanelControlAdded>(this);
-    reg.on_update<PanelControl>().connect<&Scene::OnPanelControlAdded>(this);
 
     // UUID Mapping
     reg.on_construct<IDComponent>().connect<&Scene::OnIDConstruct>(this);
@@ -121,10 +109,6 @@ void Scene::OnUpdateRuntime(Timestep timestep)
 
     UpdateHierarchy();
     UpdateAnimations(timestep);
-    UpdateUIActions();
-    UpdateAudio(timestep);
-    UpdateCameras(timestep);
-    UpdateTransitions();
     UpdatePhysics(timestep);
 }
 
@@ -134,7 +118,6 @@ void Scene::OnUpdateEditor(Timestep timestep)
 
     UpdateHierarchy();
     UpdateAnimations(timestep);
-    UpdateCameras(timestep);
     UpdatePhysics(timestep);
 }
 
@@ -169,7 +152,7 @@ std::optional<Camera3D> Scene::GetActiveCamera()
             raylibCamera.position = transform.Translation;
             
             // Calculate forward and up vectors from rotation
-            Vector3 forward = Vector3RotateByQuaternion(Vector3{ 0, 0, 1 }, transform.RotationQuat);
+            Vector3 forward = Vector3RotateByQuaternion(Vector3{ 0, 0, -1 }, transform.RotationQuat);
             raylibCamera.target = Vector3Add(transform.Translation, forward);
             raylibCamera.up = Vector3RotateByQuaternion(Vector3{ 0, 1, 0 }, transform.RotationQuat);
             
@@ -221,24 +204,6 @@ void Scene::UpdateAnimations(Timestep deltaTime)
             // Update animation logic here
         }
     }
-}
-
-void Scene::UpdateAudio(Timestep deltaTime)
-{
-    CH_PROFILE_FUNCTION();
-    // Audio update logic
-}
-
-void Scene::UpdateCameras(Timestep deltaTime)
-{
-}
-
-void Scene::UpdateTransitions()
-{
-}
-
-void Scene::UpdateUIActions()
-{
 }
 
 void Scene::UpdateHierarchy()
@@ -315,10 +280,5 @@ void Scene::OnIDDestroy(entt::registry& reg, entt::entity entity)
     mapStruct.Map.erase(id.ID);
 }
 
-void Scene::OnAudioComponentAdded(entt::registry& reg, entt::entity entity) {}
-void Scene::OnModelComponentAdded(entt::registry& reg, entt::entity entity) {}
-void Scene::OnAnimationComponentAdded(entt::registry& reg, entt::entity entity) {}
-void Scene::OnColliderComponentAdded(entt::registry& reg, entt::entity entity) {}
-void Scene::OnPanelControlAdded(entt::registry& reg, entt::entity entity) {}
 
 } // namespace CHEngine
