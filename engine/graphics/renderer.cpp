@@ -80,12 +80,12 @@ void Renderer::LoadEngineResources(AssetManager& assetManager)
         return false;
     };
 
-    loadShader("Lighting", "engine/resources/shaders/lighting.chshader");
-    loadShader("Skybox", "engine/resources/shaders/skybox.chshader");
-    loadShader("Unlit", "engine/resources/shaders/unlit.chshader");
-    loadShader("CubemapGen", "engine/resources/shaders/cubemap.chshader");
-    loadShader("SkyboxCubemap", "engine/resources/shaders/skybox_cubemap.chshader");
-    loadShader("PostProcess", "engine/resources/shaders/post_process.chshader");
+    loadShader("Lighting", "resources/shaders/lighting.chshader");
+    loadShader("Skybox", "resources/shaders/skybox.chshader");
+    loadShader("Unlit", "resources/shaders/unlit.chshader");
+    loadShader("CubemapGen", "resources/shaders/cubemap.chshader");
+    loadShader("SkyboxCubemap", "resources/shaders/skybox_cubemap.chshader");
+    loadShader("PostProcess", "resources/shaders/post_process.chshader");
 
     // Icons
     auto loadIcon = [&](Texture2D& target, const std::string& path) {
@@ -96,9 +96,9 @@ void Renderer::LoadEngineResources(AssetManager& assetManager)
         }
     };
 
-    loadIcon(renderer.m_Data->EditorResources.LightIcon, "engine/resources/icons/light_bulb.png");
-    loadIcon(renderer.m_Data->EditorResources.SpawnIcon, "engine/resources/icons/leaf_icon.png");
-    loadIcon(renderer.m_Data->EditorResources.CameraIcon, "engine/resources/icons/camera_icon.png");
+    loadIcon(renderer.m_Data->EditorResources.LightIcon, "resources/icons/light_bulb.png");
+    loadIcon(renderer.m_Data->EditorResources.SpawnIcon, "resources/icons/leaf_icon.png");
+    loadIcon(renderer.m_Data->EditorResources.CameraIcon, "resources/icons/camera_icon.png");
 }
 
 void Renderer::Shutdown()
