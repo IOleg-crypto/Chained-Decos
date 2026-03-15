@@ -12,12 +12,10 @@
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene_serializer.h"
-#include "engine/scene/scriptable_entity.h"
 #include <fstream>
 #include "scripting/scriptengine.h"
 #include "scripting/scene_scripting.h"
 
-#include "cstdarg"
 #include "extras/IconsFontAwesome6.h"
 #include "nfd.h"
 #include "panels/console_panel.h"

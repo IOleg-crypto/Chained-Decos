@@ -55,8 +55,6 @@ target_sources(editor_core PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_layout.cpp
     # External
     ${CMAKE_SOURCE_DIR}/include/rlImGui/rlImGui.cpp
-    ${imguizmo_SOURCE_DIR}/GraphEditor.cpp
-    ${imguizmo_SOURCE_DIR}/GraphEditor.h
 )
 
 
