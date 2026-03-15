@@ -41,7 +41,7 @@ private:
     std::unique_ptr<class SceneRenderer> m_SceneRenderer;
     std::unique_ptr<class ScriptEngine> m_ScriptEngine;
     // Script callback removed in favor of GlobalRegistry
-    std::string m_PendingScenePath;
+
     std::string m_ProjectPath;
 };
 } // namespace CHEngine

@@ -240,6 +240,14 @@ void EditorLayer::OnUpdate(Timestep ts)
         {
             SceneScripting::Update(scene.get(), ts);
             scene->OnUpdateRuntime(ts);
+
+            // Handle deferred scene loading requested from C# scripts
+            std::string pendingPath = ScriptEngine::Get().ConsumeRequestedScene();
+            if (!pendingPath.empty())
+            {
+                SceneChangeRequestEvent ev(pendingPath);
+                OnEvent(ev);
+            }
         }
         else
         {
