@@ -144,7 +144,7 @@ void Physics::UpdateColliders(Scene* scene)
 {
     auto& registry = scene->GetRegistry();
     auto project = Project::GetActive();
-    if (!project || !project->GetAssetManager())
+    if (!project)
         return;
 
     auto genView = registry.view<ColliderComponent, TransformComponent>();
@@ -160,7 +160,7 @@ void Physics::UpdateColliders(Scene* scene)
                 continue;
 
             auto& model = registry.get<ModelComponent>(entity);
-            auto asset = project->GetAssetManager()->Get<ModelAsset>(model.ModelPath);
+            auto asset = AssetManager::Get().Get<ModelAsset>(model.ModelPath);
 
             if (asset && asset->GetState() == AssetState::Ready)
             {
@@ -177,7 +177,7 @@ void Physics::UpdateColliders(Scene* scene)
         // Case B: Mesh Collider (BVH)
         if (collider.Type == ColliderType::Mesh && !collider.ModelPath.empty())
         {
-            auto asset = project->GetAssetManager()->Get<ModelAsset>(collider.ModelPath);
+            auto asset = AssetManager::Get().Get<ModelAsset>(collider.ModelPath);
 
             if (asset && asset->GetState() == AssetState::Ready && asset->GetModel().meshCount > 0)
             {
@@ -198,7 +198,7 @@ void Physics::UpdateColliders(Scene* scene)
                 continue;
 
             auto& model = registry.get<ModelComponent>(entity);
-            auto asset = project->GetAssetManager()->Get<ModelAsset>(model.ModelPath);
+            auto asset = AssetManager::Get().Get<ModelAsset>(model.ModelPath);
 
             if (asset && asset->GetState() == AssetState::Ready && collider.Radius == 0)
             {

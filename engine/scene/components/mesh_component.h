@@ -36,7 +36,6 @@ struct ModelComponent
 {
     AssetHandle ModelHandle = 0;
     std::string ModelPath;
-    std::shared_ptr<ModelAsset> Asset; // Cached asset reference
     std::vector<MaterialSlot> Materials;
     bool  MaterialsInitialized = false;
 

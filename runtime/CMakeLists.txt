@@ -3,7 +3,7 @@ add_library(RuntimeCore STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/runtime_layer.cpp
 )
 
-target_link_libraries(RuntimeCore PUBLIC engine)
+target_link_libraries(RuntimeCore PUBLIC engine scripting)
 target_include_directories(RuntimeCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Set PCH for RuntimeCore

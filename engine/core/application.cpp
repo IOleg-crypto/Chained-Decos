@@ -226,7 +226,7 @@ void Application::Run()
         // 3. Core Systems Update
         if (auto project = Project::GetActive())
         {
-            project->GetAssetManager()->Update();
+            AssetManager::Get().Update();
         }
 
         // 4. Layers Update & Rendering

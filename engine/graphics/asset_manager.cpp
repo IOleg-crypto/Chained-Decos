@@ -23,8 +23,19 @@
 
 namespace CHEngine
 {
+static std::unique_ptr<AssetManager> s_Instance = nullptr;
+
 AssetManager::AssetManager()
 {
+}
+
+AssetManager& AssetManager::Get()
+{
+    if (!s_Instance)
+    {
+        s_Instance = std::make_unique<AssetManager>();
+    }
+    return *s_Instance;
 }
 
 AssetManager::~AssetManager()

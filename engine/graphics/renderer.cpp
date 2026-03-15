@@ -423,7 +423,7 @@ void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
         return;
     }
 
-    auto textureAsset = project->GetAssetManager()->Get<TextureAsset>(skybox.TexturePath);
+    auto textureAsset = AssetManager::Get().Get<TextureAsset>(skybox.TexturePath);
 
     if (!textureAsset)
     {
@@ -846,7 +846,7 @@ Material Renderer::ResolveMaterialForMesh(int meshIndex, const Model& model,
                 if (Project::GetActive())
                 {
                     auto textureAsset =
-                        Project::GetActive()->GetAssetManager()->Get<TextureAsset>(slot.Material.AlbedoPath);
+                        AssetManager::Get().Get<TextureAsset>(slot.Material.AlbedoPath);
                     if (textureAsset && textureAsset->IsReady())
                     {
                         material.maps[MATERIAL_MAP_ALBEDO].texture = textureAsset->GetTexture();
