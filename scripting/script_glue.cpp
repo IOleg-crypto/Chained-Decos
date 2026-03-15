@@ -115,13 +115,53 @@ namespace CHEngine {
         if (!entity) return false;
         
         std::string name = (std::string)componentName;
-        CH_CORE_INFO("C# queried HasComponent: '{}'", name);
+        // Optimization: return immediately for most common queries
         if (name == "TransformComponent") return entity.HasComponent<TransformComponent>();
-        if (name == "RigidBodyComponent") return entity.HasComponent<RigidBodyComponent>();
-        if (name == "CameraComponent")    return entity.HasComponent<CameraComponent>();
-        if (name == "PlayerComponent")    return entity.HasComponent<PlayerComponent>();
-        if (name == "AudioComponent")     return entity.HasComponent<AudioComponent>();
         if (name == "TagComponent")       return entity.HasComponent<TagComponent>();
+
+        // Logging only for non-standard/debugging purposes to avoid spam
+        // CH_CORE_INFO("C# queried HasComponent: '{}'", name);
+        
+        // --- Engine Components ---
+        if (name == "MeshComponent")      return entity.HasComponent<ModelComponent>();
+        if (name == "ModelComponent")     return entity.HasComponent<ModelComponent>();
+        if (name == "MaterialComponent")  return entity.HasComponent<MaterialComponent>();
+        if (name == "SpriteComponent")    return entity.HasComponent<SpriteComponent>();
+        if (name == "LightComponent")     return entity.HasComponent<LightComponent>();
+        if (name == "CameraComponent")    return entity.HasComponent<CameraComponent>();
+        if (name == "AudioComponent")     return entity.HasComponent<AudioComponent>();
+        if (name == "RigidBodyComponent") return entity.HasComponent<RigidBodyComponent>();
+        if (name == "PhysicsComponent")   return entity.HasComponent<ColliderComponent>();
+        if (name == "ColliderComponent")  return entity.HasComponent<ColliderComponent>();
+        if (name == "AnimationComponent") return entity.HasComponent<AnimationComponent>();
+        if (name == "HierarchyComponent") return entity.HasComponent<HierarchyComponent>();
+        if (name == "IDComponent")        return entity.HasComponent<IDComponent>();
+        if (name == "ManagedScriptComponent") return entity.HasComponent<ManagedScriptComponent>();
+
+        // --- Gameplay Components ---
+        if (name == "PlayerComponent")    return entity.HasComponent<PlayerComponent>();
+        if (name == "SpawnComponent")     return entity.HasComponent<SpawnComponent>();
+        if (name == "SceneTransitionComponent") return entity.HasComponent<SceneTransitionComponent>();
+
+        // --- UI Components ---
+        if (name == "ControlComponent")   return entity.HasComponent<ControlComponent>();
+        if (name == "ButtonControl")      return entity.HasComponent<ButtonControl>();
+        if (name == "PanelControl")       return entity.HasComponent<PanelControl>();
+        if (name == "LabelControl")       return entity.HasComponent<LabelControl>();
+        if (name == "ImageControl")       return entity.HasComponent<ImageControl>();
+        if (name == "CheckboxControl")    return entity.HasComponent<CheckboxControl>();
+        if (name == "ComboBoxControl")    return entity.HasComponent<ComboBoxControl>();
+        if (name == "SliderControl")      return entity.HasComponent<SliderControl>();
+        if (name == "ProgressBarControl") return entity.HasComponent<ProgressBarControl>();
+        if (name == "InputTextControl")   return entity.HasComponent<InputTextControl>();
+        if (name == "ImageButtonControl") return entity.HasComponent<ImageButtonControl>();
+        if (name == "SeparatorControl")   return entity.HasComponent<SeparatorControl>();
+        if (name == "RadioButtonControl") return entity.HasComponent<RadioButtonControl>();
+        if (name == "ColorPickerControl") return entity.HasComponent<ColorPickerControl>();
+        if (name == "DragFloatControl")   return entity.HasComponent<DragFloatControl>();
+        if (name == "DragIntControl")     return entity.HasComponent<DragIntControl>();
+        if (name == "VerticalLayoutGroup") return entity.HasComponent<VerticalLayoutGroup>();
+
         return false;
     }
 
