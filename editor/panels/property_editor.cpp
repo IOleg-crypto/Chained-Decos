@@ -343,7 +343,7 @@ void PropertyEditor::Init()
             {
                 if (auto project = Project::GetActive())
                 {
-                    auto asset = project->GetAssetManager()->Get<ModelAsset>(component.ModelPath);
+                    auto asset = AssetManager::Get().Get<ModelAsset>(component.ModelPath);
                     if (asset)
                     {
                         PhysicsSystem::Get().InvalidateBVH(asset.get());
@@ -463,7 +463,7 @@ void PropertyEditor::Init()
         {
             if (auto project = Project::GetActive())
             {
-                std::string fullPath = project->GetAssetManager()->ResolvePath(component.ShaderPath);
+                std::string fullPath = AssetManager::Get().ResolvePath(component.ShaderPath);
                 if (std::filesystem::exists(fullPath))
                 {
                     try
@@ -645,19 +645,20 @@ void PropertyEditor::Init()
         }
 
         int animCount = 0;
+        std::shared_ptr<ModelAsset> modelAsset;
         if (entity.template HasComponent<ModelComponent>())
         {
             auto& mc = entity.template GetComponent<ModelComponent>();
-            if (mc.Asset)
+            modelAsset = AssetManager::Get().Get<ModelAsset>(mc.ModelPath);
+            if (modelAsset)
             {
-                animCount = mc.Asset->GetAnimationCount();
+                animCount = modelAsset->GetAnimationCount();
             }
         }
 
         if (animCount > 0)
         {
-            auto asset = entity.template GetComponent<ModelComponent>().Asset;
-            std::string currentAnimName = asset->GetAnimationName(component.CurrentAnimationIndex);
+            std::string currentAnimName = modelAsset->GetAnimationName(component.CurrentAnimationIndex);
 
             EditorGUI::BeginProperty("Current Animation");
             if (ImGui::BeginCombo("##AnimCombo", currentAnimName.c_str()))
@@ -665,7 +666,7 @@ void PropertyEditor::Init()
                 for (int i = 0; i < animCount; i++)
                 {
                     bool isSelected = (component.CurrentAnimationIndex == i);
-                    if (ImGui::Selectable(asset->GetAnimationName(i).c_str(), isSelected))
+                    if (ImGui::Selectable(modelAsset->GetAnimationName(i).c_str(), isSelected))
                     {
                         component.CurrentAnimationIndex = i;
                         changed = true;
@@ -1571,12 +1572,13 @@ void PropertyEditor::DrawMaterial(CHEngine::Entity entity, int hitMeshIndex)
     }
 
     auto& mc = entity.GetComponent<ModelComponent>();
-    if (!mc.Asset)
+    auto mcAsset = AssetManager::Get().Get<ModelAsset>(mc.ModelPath);
+    if (!mcAsset)
     {
         return;
     }
 
-    const Model& model = mc.Asset->GetModel();
+    const Model& model = mcAsset->GetModel();
 
     // Helper to draw a single material instance
     auto DrawMaterialInstance = [](MaterialInstance& mat, int index) {

@@ -270,9 +270,9 @@ void NarrowPhase::ResolveBoxMesh(::entt::registry& registry, ::entt::entity rbEn
 
     if (otherCollider.ModelPath.empty()) return;
     auto project = Project::GetActive();
-    if (!project || !project->GetAssetManager()) return;
+    if (!project) return;
 
-    auto asset = project->GetAssetManager()->Get<ModelAsset>(otherCollider.ModelPath);
+    auto asset = AssetManager::Get().Get<ModelAsset>(otherCollider.ModelPath);
     auto bvh = PhysicsSystem::Get().GetBVH(asset.get());
     if (!bvh) return;
 
@@ -376,9 +376,9 @@ void NarrowPhase::ResolveCapsuleMesh(::entt::registry& registry, ::entt::entity 
 
     if (otherCollider.ModelPath.empty()) return;
     auto project = Project::GetActive();
-    if (!project || !project->GetAssetManager()) return;
+    if (!project) return;
 
-    auto asset = project->GetAssetManager()->Get<ModelAsset>(otherCollider.ModelPath);
+    auto asset = AssetManager::Get().Get<ModelAsset>(otherCollider.ModelPath);
     auto bvh = PhysicsSystem::Get().GetBVH(asset.get());
     if (!bvh) return;
 
@@ -497,9 +497,9 @@ void NarrowPhase::ResolveSphereMesh(::entt::registry& registry, ::entt::entity r
 
     if (otherCollider.ModelPath.empty()) return;
     auto project = Project::GetActive();
-    if (!project || !project->GetAssetManager()) return;
+    if (!project) return;
 
-    auto asset = project->GetAssetManager()->Get<ModelAsset>(otherCollider.ModelPath);
+    auto asset = AssetManager::Get().Get<ModelAsset>(otherCollider.ModelPath);
     auto bvh = PhysicsSystem::Get().GetBVH(asset.get());
     if (!bvh) return;
 

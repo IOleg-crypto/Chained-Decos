@@ -158,8 +158,8 @@ void UIRenderer::UIStyleScope::PushFont(const std::string& fontName, float fontS
         return;
     }
 
-    auto am = project->GetAssetManager();
-    auto fontAsset = am->Get<FontAsset>(fontName);
+    auto& am = AssetManager::Get();
+    auto fontAsset = am.Get<FontAsset>(fontName);
 
     // Note: For real ImGui font switching, we need to ensure the font is loaded into ImGui atlas.
     // For now we rely on SetWindowFontScale as requested.
@@ -267,10 +267,10 @@ void UIRenderer::RenderCheckbox(CheckboxControl& cb, bool& itemHandled)
 
 void UIRenderer::RenderImage(const ImageControl& image, const ImVec2& size)
 {
-    auto assetManager = Project::GetActive() ? Project::GetActive()->GetAssetManager() : nullptr;
-    if (assetManager && !image.TexturePath.empty())
+    auto& assetManager = AssetManager::Get();
+    if (!image.TexturePath.empty())
     {
-        auto texAsset = assetManager->Get<TextureAsset>(image.TexturePath);
+        auto texAsset = assetManager.Get<TextureAsset>(image.TexturePath);
         if (texAsset)
         {
             ImTextureID tid = (ImTextureID)(uintptr_t)texAsset->GetTexture().id;
@@ -362,10 +362,10 @@ void UIRenderer::RenderComboBox(ComboBoxControl& cb, const ImVec2& size, bool& i
 
 void UIRenderer::RenderImageButton(ImageButtonControl& ib, const ImVec2& size, bool& itemHandled)
 {
-    auto assetManager = Project::GetActive() ? Project::GetActive()->GetAssetManager() : nullptr;
-    if (assetManager && !ib.TexturePath.empty())
+    auto& assetManager = AssetManager::Get();
+    if (!ib.TexturePath.empty())
     {
-        auto tex = assetManager->Get<TextureAsset>(ib.TexturePath);
+        auto tex = assetManager.Get<TextureAsset>(ib.TexturePath);
         if (tex)
         {
             ImTextureID tid = (ImTextureID)(uintptr_t)tex->GetTexture().id;

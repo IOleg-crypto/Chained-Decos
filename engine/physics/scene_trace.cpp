@@ -112,12 +112,12 @@ RaycastResult SceneTrace::Raycast(::entt::registry& registry, Ray ray)
             }
 
             auto project = Project::GetActive();
-            if (!project || !project->GetAssetManager())
+            if (!project)
             {
                 continue;
             }
 
-            auto asset = project->GetAssetManager()->Get<ModelAsset>(modelComp->ModelPath);
+            auto asset = AssetManager::Get().Get<ModelAsset>(modelComp->ModelPath);
             auto bvh = PhysicsSystem::Get().GetBVH(asset.get());
             if (!bvh)
             {

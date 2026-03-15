@@ -38,19 +38,15 @@ void RuntimeLayer::OnAttach()
     }
     ImGuiIO& io = ImGui::GetIO();
     float fontSize = 16.0f;
-    auto assetManager = Project::GetActive() ? Project::GetActive()->GetAssetManager() : nullptr;
+    auto& assetManager = AssetManager::Get();
 
-    // Use a temporary asset manager if no project is active yet (for startup screen)
-    std::unique_ptr<AssetManager> tempManager;
-    if (!assetManager)
+    if (assetManager.GetRootPath().empty())
     {
-        tempManager = std::make_unique<AssetManager>();
-        tempManager->Initialize();
-        assetManager = std::move(tempManager);
+        assetManager.Initialize();
     }
 
     // --- Default UI Font (Lato) ---
-    std::string fontPath = assetManager->ResolvePath("resources/font/lato/lato-bold.ttf");
+    std::string fontPath = assetManager.ResolvePath("resources/font/lato/lato-bold.ttf");
     if (std::filesystem::exists(fontPath))
     {
         io.Fonts->AddFontFromFileTTF(fontPath.c_str(), fontSize);
@@ -231,6 +227,10 @@ bool RuntimeLayer::InitProject(const std::string& projectPath)
     }
 
     auto project = Project::GetActive();
+    
+    // Initialize Scripting for the loaded project
+    ScriptEngine::Get().ReloadAssembly();
+
     ApplyWindowConfiguration();
     SetupBrandingAndIcon();
 
@@ -331,7 +331,7 @@ void RuntimeLayer::SetupBrandingAndIcon()
     }
 
     std::filesystem::path iconPath = "";
-    std::string resolved = project->GetAssetManager()->ResolvePath(config.IconPath);
+    std::string resolved = AssetManager::Get().ResolvePath(config.IconPath);
     if (std::filesystem::exists(resolved))
     {
         iconPath = resolved;

@@ -131,7 +131,7 @@ void EditorLayer::OnAttach()
 
         if (auto project = Project::GetActive())
         {
-            Renderer::LoadEngineResources(*project->GetAssetManager());
+            Renderer::LoadEngineResources(AssetManager::Get());
         }
 
         if (!config.LastScenePath.empty() && std::filesystem::exists(config.LastScenePath))
@@ -143,10 +143,9 @@ void EditorLayer::OnAttach()
     else
     {
         Project::SetActive(nullptr);
-        // Load default engine resources with a temporary manager if no project
-        AssetManager temp;
-        temp.Initialize();
-        Renderer::LoadEngineResources(temp);
+        // Load default engine resources with the global manager if no project
+        AssetManager::Get().Initialize();
+        Renderer::LoadEngineResources(AssetManager::Get());
     }
 
     // Ensure layout is initialized
@@ -177,19 +176,15 @@ void EditorLayer::LoadEditorFonts()
 
     ImGuiIO& io = ImGui::GetIO();
     float fontSize = 16.0f;
-    auto assetManager = Project::GetActive() ? Project::GetActive()->GetAssetManager() : nullptr;
+    auto& assetManager = AssetManager::Get();
 
-    // Use a temporary asset manager if no project is active yet (for startup screen)
-    std::unique_ptr<AssetManager> tempManager;
-    if (!assetManager)
+    if (assetManager.GetRootPath().empty())
     {
-        tempManager = std::make_unique<AssetManager>();
-        tempManager->Initialize();
-        assetManager = std::move(tempManager);
+        assetManager.Initialize();
     }
 
     // --- Default UI Font (Lato) ---
-    std::string fontPath = assetManager->ResolvePath("resources/font/lato/lato-bold.ttf");
+    std::string fontPath = assetManager.ResolvePath("resources/font/lato/lato-bold.ttf");
     if (std::filesystem::exists(fontPath))
     {
         io.Fonts->AddFontFromFileTTF(fontPath.c_str(), fontSize);
@@ -202,7 +197,7 @@ void EditorLayer::LoadEditorFonts()
     }
 
     // --- Icon Font (FontAwesome) ---
-    std::string faPath = assetManager->ResolvePath("resources/font/fa-solid-900.ttf");
+    std::string faPath = assetManager.ResolvePath("resources/font/fa-solid-900.ttf");
     if (std::filesystem::exists(faPath))
     {
         static const ImWchar icons_ranges[] = {0xf000, 0xf8ff, 0};
@@ -330,7 +325,8 @@ bool EditorLayer::OnProjectOpened(ProjectOpenedEvent& e)
         {
             contentBrowser->SetRootDirectory(Project::GetAssetDirectory());
         }
-        Renderer::LoadEngineResources(*project->GetAssetManager());
+        Renderer::LoadEngineResources(AssetManager::Get());
+        ScriptEngine::Get().ReloadAssembly();
     }
     return false;
 }
