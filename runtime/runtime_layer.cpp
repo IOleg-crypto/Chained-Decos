@@ -72,11 +72,10 @@ void RuntimeLayer::OnDetach()
 
 void RuntimeLayer::OnUpdate(Timestep ts)
 {
-    if (!m_PendingScenePath.empty())
+    std::string pendingPath = ScriptEngine::Get().ConsumeRequestedScene();
+    if (!pendingPath.empty())
     {
-        std::string path = m_PendingScenePath;
-        m_PendingScenePath.clear();
-        LoadScene(path);
+        LoadScene(pendingPath);
     }
 
     if (m_Scene)
@@ -165,7 +164,7 @@ void RuntimeLayer::OnEvent(Event& e)
 
     EventDispatcher dispatcher(e);
     dispatcher.Dispatch<SceneChangeRequestEvent>([this](auto& ev) {
-        m_PendingScenePath = ev.GetPath();
+        ScriptEngine::Get().RequestLoadScene(ev.GetPath());
         return true;
     });
 }
