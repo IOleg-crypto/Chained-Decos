@@ -26,18 +26,18 @@ ProjectBrowserPanel::ProjectBrowserPanel()
     // Based on search: d:\gitnext\Chained Decos\engine\resources\icons\newproject.jpg
 
     std::string root = PROJECT_ROOT_DIR; // Use the macro defined in CMake
-    m_NewProjectIcon = LoadTexture((root + "/engine/resources/icons/newproject.jpg").c_str());
-    m_OpenProjectIcon = LoadTexture((root + "/engine/resources/icons/folder.png").c_str());
+    m_NewProjectIcon = LoadTexture((root + "/resources/icons/newproject.jpg").c_str());
+    m_OpenProjectIcon = LoadTexture((root + "/resources/icons/folder.png").c_str());
 
     // Fallback to internal icons if failed (but do not generate ugly white squares)
     if (m_NewProjectIcon.id == 0)
     {
         // Try relative path
-        m_NewProjectIcon = LoadTexture("engine/resources/icons/newproject.jpg");
+        m_NewProjectIcon = LoadTexture("resources/icons/newproject.jpg");
     }
     if (m_OpenProjectIcon.id == 0)
     {
-        m_OpenProjectIcon = LoadTexture("engine/resources/icons/folder.png");
+        m_OpenProjectIcon = LoadTexture("resources/icons/folder.png");
     }
 }
 
