@@ -425,7 +425,7 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         if (!bestHit)
         {
             // 1. Physics Picking
-            RaycastResult result = activeScene->GetPhysics().Raycast(ray);
+            RaycastResult result = Physics::Raycast(activeScene.get(), ray);
             if (result.Hit)
             {
                 bestHit = Entity(result.Entity, &activeScene->GetRegistry());
@@ -481,7 +481,7 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
                 int localMeshIndex = -1;
 
                 bool hit = false;
-                auto bvh = activeScene->GetPhysics().GetBVH(modelAsset.get());
+                auto bvh = PhysicsSystem::Get().GetBVH(modelAsset.get());
 
                 if (bvh)
                 {

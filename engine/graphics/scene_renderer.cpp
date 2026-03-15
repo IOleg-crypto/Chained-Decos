@@ -7,6 +7,7 @@
 #include "engine/graphics/renderer.h"
 #include "engine/graphics/renderer2d.h"
 #include "engine/graphics/shader_asset.h"
+#include "engine/physics/physics.h"
 #include "engine/physics/bvh/bvh.h"
 #include "engine/scene/components/light_component.h"
 #include "engine/scene/project.h"
@@ -514,11 +515,20 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const DebugRende
         switch (collider.Type)
         {
         case ColliderType::Mesh:
-            if (collider.BVHRoot)
+        {
+            if (collider.ModelPath.empty()) break;
+            if (auto project = Project::GetActive())
             {
-                RenderBVHNode(collider.BVHRoot.get(), 0, worldTransform, color);
+                if (auto asset = project->GetAssetManager()->Get<ModelAsset>(collider.ModelPath))
+                {
+                    if (auto bvh = PhysicsSystem::Get().GetBVH(asset.get()))
+                    {
+                        RenderBVHNode(bvh.get(), 0, worldTransform, color);
+                    }
+                }
             }
             break;
+        }
         case ColliderType::Box: {
             Vector3 center = Vector3Add(collider.Offset, Vector3Scale(collider.Size, 0.5f));
             Matrix colliderTransform = MatrixMultiply(MatrixTranslate(center.x, center.y, center.z), worldTransform);
@@ -573,16 +583,28 @@ BoundingBox SceneRenderer::CalculateColliderWorldAABB(const ColliderComponent& c
     switch (collider.Type)
     {
     case ColliderType::Mesh:
-        if (collider.BVHRoot && !collider.BVHRoot->GetNodes().empty())
+    {
+        if (collider.ModelPath.empty()) break;
+        if (auto project = Project::GetActive())
         {
-            const auto& rootNode = collider.BVHRoot->GetNodes()[0];
-            corners = {
-                {rootNode.Min.x, rootNode.Min.y, rootNode.Min.z}, {rootNode.Max.x, rootNode.Min.y, rootNode.Min.z},
-                {rootNode.Min.x, rootNode.Max.y, rootNode.Min.z}, {rootNode.Max.x, rootNode.Max.y, rootNode.Min.z},
-                {rootNode.Min.x, rootNode.Min.y, rootNode.Max.z}, {rootNode.Max.x, rootNode.Min.y, rootNode.Max.z},
-                {rootNode.Min.x, rootNode.Max.y, rootNode.Max.z}, {rootNode.Max.x, rootNode.Max.y, rootNode.Max.z}};
+            if (auto asset = project->GetAssetManager()->Get<ModelAsset>(collider.ModelPath))
+            {
+                if (auto bvh = PhysicsSystem::Get().GetBVH(asset.get()))
+                {
+                    if (!bvh->GetNodes().empty())
+                    {
+                        const auto& rootNode = bvh->GetNodes()[0];
+                        corners = {
+                            {rootNode.Min.x, rootNode.Min.y, rootNode.Min.z}, {rootNode.Max.x, rootNode.Min.y, rootNode.Min.z},
+                            {rootNode.Min.x, rootNode.Max.y, rootNode.Min.z}, {rootNode.Max.x, rootNode.Max.y, rootNode.Min.z},
+                            {rootNode.Min.x, rootNode.Min.y, rootNode.Max.z}, {rootNode.Max.x, rootNode.Min.y, rootNode.Max.z},
+                            {rootNode.Min.x, rootNode.Max.y, rootNode.Max.z}, {rootNode.Max.x, rootNode.Max.y, rootNode.Max.z}};
+                    }
+                }
+            }
         }
         break;
+    }
     case ColliderType::Box:
         corners = {collider.Offset,
                    Vector3Add(collider.Offset, {collider.Size.x, 0, 0}),

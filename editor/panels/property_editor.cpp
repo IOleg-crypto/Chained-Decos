@@ -335,14 +335,6 @@ void PropertyEditor::Init()
             }
             ImGui::EndDisabled();
 
-            // Status row
-            ImGui::Columns(2);
-            ImGui::SetColumnWidth(0, 100.0f);
-            ImGui::Text("BVH Status");
-            ImGui::NextColumn();
-            ImGui::Text(component.BVHRoot ? "Built" : "Missing");
-            ImGui::Columns(1);
-
             // Action row
             ImGui::Columns(2);
             ImGui::SetColumnWidth(0, 100.0f);
@@ -354,13 +346,7 @@ void PropertyEditor::Init()
                     auto asset = project->GetAssetManager()->Get<ModelAsset>(component.ModelPath);
                     if (asset)
                     {
-                        auto scene = EditorLayer::Get().GetActiveScene();
-                        if (scene)
-                        {
-                            scene->GetPhysics().InvalidateBVH(asset.get());
-                        }
-
-                        component.BVHRoot = BVH::Build(asset);
+                        PhysicsSystem::Get().InvalidateBVH(asset.get());
                         if (component.AutoCalculate)
                         {
                             BoundingBox box = asset->GetBoundingBox();

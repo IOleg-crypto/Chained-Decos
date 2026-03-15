@@ -39,31 +39,31 @@ std::string SceneSerializer::SerializeToString()
 
     YAML::Emitter out;
     out << YAML::BeginMap;
-    out << YAML::Key << "Scene" << YAML::Value << m_Scene->m_Settings.Name;
+    out << YAML::Key << "Scene" << YAML::Value << m_Scene->GetSettings().Name;
 
     // Serialize Background Settings
     out << YAML::Key << "Background" << YAML::Value << YAML::BeginMap;
-    out << YAML::Key << "Mode" << YAML::Value << (int)m_Scene->m_Settings.Mode;
-    out << YAML::Key << "Color" << YAML::Value << m_Scene->m_Settings.BackgroundColor;
+    out << YAML::Key << "Mode" << YAML::Value << (int)m_Scene->GetSettings().Mode;
+    out << YAML::Key << "Color" << YAML::Value << m_Scene->GetSettings().BackgroundColor;
     out << YAML::Key << "TexturePath" << YAML::Value
-        << Project::GetRelativePath(m_Scene->m_Settings.BackgroundTexturePath);
+        << Project::GetRelativePath(m_Scene->GetSettings().BackgroundTexturePath);
     out << YAML::EndMap;
 
     // Serialize Canvas Settings
     out << YAML::Key << "Canvas" << YAML::Value << YAML::BeginMap;
-    out << YAML::Key << "ReferenceResolution" << YAML::Value << m_Scene->m_Settings.Canvas.ReferenceResolution;
-    out << YAML::Key << "ScaleMode" << YAML::Value << (int)m_Scene->m_Settings.Canvas.ScaleMode;
-    out << YAML::Key << "MatchWidthOrHeight" << YAML::Value << m_Scene->m_Settings.Canvas.MatchWidthOrHeight;
+    out << YAML::Key << "ReferenceResolution" << YAML::Value << m_Scene->GetSettings().Canvas.ReferenceResolution;
+    out << YAML::Key << "ScaleMode" << YAML::Value << (int)m_Scene->GetSettings().Canvas.ScaleMode;
+    out << YAML::Key << "MatchWidthOrHeight" << YAML::Value << m_Scene->GetSettings().Canvas.MatchWidthOrHeight;
     out << YAML::EndMap;
 
     // Serialize Environment
-    if (m_Scene->m_Settings.Environment)
+    if (m_Scene->GetSettings().Environment)
     {
         out << YAML::Key << "EnvironmentPath" << YAML::Value
-            << Project::GetRelativePath(m_Scene->m_Settings.Environment->GetPath());
+            << Project::GetRelativePath(m_Scene->GetSettings().Environment->GetPath());
 
         // Also serialize the current settings for quick preview/fallback
-        auto& settings = m_Scene->m_Settings.Environment->GetSettings();
+        auto& settings = m_Scene->GetSettings().Environment->GetSettings();
 
         out << YAML::Key << "Lighting" << YAML::BeginMap;
         out << YAML::Key << "Direction" << YAML::Value << settings.Lighting.Direction;
@@ -89,14 +89,14 @@ std::string SceneSerializer::SerializeToString()
     }
 
     out << YAML::Key << "DebugSettings" << YAML::Value << YAML::BeginMap;
-    out << YAML::Key << "DiagnosticMode" << YAML::Value << m_Scene->m_Settings.DiagnosticMode;
-    out << YAML::Key << "DrawColliders" << YAML::Value << m_Scene->m_Settings.DebugFlags.DrawColliders;
-    out << YAML::Key << "DrawHierarchy" << YAML::Value << m_Scene->m_Settings.DebugFlags.DrawHierarchy;
-    out << YAML::Key << "DrawCollisionModelBox" << YAML::Value << m_Scene->m_Settings.DebugFlags.DrawCollisionModelBox;
-    out << YAML::Key << "DrawGrid" << YAML::Value << m_Scene->m_Settings.DebugFlags.DrawGrid;
-    out << YAML::Key << "DrawSelection" << YAML::Value << m_Scene->m_Settings.DebugFlags.DrawSelection;
-    out << YAML::Key << "DrawLights" << YAML::Value << m_Scene->m_Settings.DebugFlags.DrawLights;
-    out << YAML::Key << "DrawSpawnZones" << YAML::Value << m_Scene->m_Settings.DebugFlags.DrawSpawnZones;
+    out << YAML::Key << "DiagnosticMode" << YAML::Value << m_Scene->GetSettings().DiagnosticMode;
+    out << YAML::Key << "DrawColliders" << YAML::Value << m_Scene->GetSettings().DebugFlags.DrawColliders;
+    out << YAML::Key << "DrawHierarchy" << YAML::Value << m_Scene->GetSettings().DebugFlags.DrawHierarchy;
+    out << YAML::Key << "DrawCollisionModelBox" << YAML::Value << m_Scene->GetSettings().DebugFlags.DrawCollisionModelBox;
+    out << YAML::Key << "DrawGrid" << YAML::Value << m_Scene->GetSettings().DebugFlags.DrawGrid;
+    out << YAML::Key << "DrawSelection" << YAML::Value << m_Scene->GetSettings().DebugFlags.DrawSelection;
+    out << YAML::Key << "DrawLights" << YAML::Value << m_Scene->GetSettings().DebugFlags.DrawLights;
+    out << YAML::Key << "DrawSpawnZones" << YAML::Value << m_Scene->GetSettings().DebugFlags.DrawSpawnZones;
     out << YAML::EndMap;
 
     out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
@@ -163,15 +163,15 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
             auto background = data["Background"];
             if (background["Mode"])
             {
-                m_Scene->m_Settings.Mode = (BackgroundMode)background["Mode"].as<int>();
+                m_Scene->GetSettings().Mode = (BackgroundMode)background["Mode"].as<int>();
             }
             if (background["Color"])
             {
-                m_Scene->m_Settings.BackgroundColor = background["Color"].as<Color>();
+                m_Scene->GetSettings().BackgroundColor = background["Color"].as<Color>();
             }
             if (background["TexturePath"] && background["TexturePath"].IsScalar())
             {
-                m_Scene->m_Settings.BackgroundTexturePath = background["TexturePath"].as<std::string>();
+                m_Scene->GetSettings().BackgroundTexturePath = background["TexturePath"].as<std::string>();
             }
             // Legacy AmbientIntensity in Background block is silently ignored
         }
@@ -182,15 +182,15 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
             auto canvas = data["Canvas"];
             if (canvas["ReferenceResolution"])
             {
-                m_Scene->m_Settings.Canvas.ReferenceResolution = canvas["ReferenceResolution"].as<Vector2>();
+                m_Scene->GetSettings().Canvas.ReferenceResolution = canvas["ReferenceResolution"].as<Vector2>();
             }
             if (canvas["ScaleMode"])
             {
-                m_Scene->m_Settings.Canvas.ScaleMode = (CanvasScaleMode)canvas["ScaleMode"].as<int>();
+                m_Scene->GetSettings().Canvas.ScaleMode = (CanvasScaleMode)canvas["ScaleMode"].as<int>();
             }
             if (canvas["MatchWidthOrHeight"])
             {
-                m_Scene->m_Settings.Canvas.MatchWidthOrHeight = canvas["MatchWidthOrHeight"].as<float>();
+                m_Scene->GetSettings().Canvas.MatchWidthOrHeight = canvas["MatchWidthOrHeight"].as<float>();
             }
         }
 
@@ -198,14 +198,14 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
         if (data["DebugSettings"])
         {
             auto debugNode = data["DebugSettings"];
-            m_Scene->m_Settings.DiagnosticMode = debugNode["DiagnosticMode"].as<float>(0.0f);
-            m_Scene->m_Settings.DebugFlags.DrawColliders = debugNode["DrawColliders"].as<bool>(false);
-            m_Scene->m_Settings.DebugFlags.DrawHierarchy = debugNode["DrawHierarchy"].as<bool>(false);
-            m_Scene->m_Settings.DebugFlags.DrawCollisionModelBox = debugNode["DrawCollisionModelBox"].as<bool>(false);
-            m_Scene->m_Settings.DebugFlags.DrawGrid = debugNode["DrawGrid"].as<bool>(false);
-            m_Scene->m_Settings.DebugFlags.DrawSelection = debugNode["DrawSelection"].as<bool>(true);
-            m_Scene->m_Settings.DebugFlags.DrawLights = debugNode["DrawLights"].as<bool>(true);
-            m_Scene->m_Settings.DebugFlags.DrawSpawnZones = debugNode["DrawSpawnZones"].as<bool>(true);
+            m_Scene->GetSettings().DiagnosticMode = debugNode["DiagnosticMode"].as<float>(0.0f);
+            m_Scene->GetSettings().DebugFlags.DrawColliders = debugNode["DrawColliders"].as<bool>(false);
+            m_Scene->GetSettings().DebugFlags.DrawHierarchy = debugNode["DrawHierarchy"].as<bool>(false);
+            m_Scene->GetSettings().DebugFlags.DrawCollisionModelBox = debugNode["DrawCollisionModelBox"].as<bool>(false);
+            m_Scene->GetSettings().DebugFlags.DrawGrid = debugNode["DrawGrid"].as<bool>(false);
+            m_Scene->GetSettings().DebugFlags.DrawSelection = debugNode["DrawSelection"].as<bool>(true);
+            m_Scene->GetSettings().DebugFlags.DrawLights = debugNode["DrawLights"].as<bool>(true);
+            m_Scene->GetSettings().DebugFlags.DrawSpawnZones = debugNode["DrawSpawnZones"].as<bool>(true);
         }
 
         // Deserialize Environment
@@ -214,7 +214,7 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
             std::string envPath = data["EnvironmentPath"].as<std::string>();
             if (auto project = Project::GetActive())
             {
-                m_Scene->m_Settings.Environment = project->GetAssetManager()->Get<EnvironmentAsset>(envPath);
+                m_Scene->GetSettings().Environment = project->GetAssetManager()->Get<EnvironmentAsset>(envPath);
             }
         }
 
@@ -222,12 +222,12 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
         if (data["Skybox"] || data["Fog"] || data["LightDirection"])
         {
             // Ensure Environment exists
-            if (!m_Scene->m_Settings.Environment)
+            if (!m_Scene->GetSettings().Environment)
             {
-                m_Scene->m_Settings.Environment = std::make_shared<EnvironmentAsset>();
+                m_Scene->GetSettings().Environment = std::make_shared<EnvironmentAsset>();
             }
 
-            auto env = m_Scene->m_Settings.Environment;
+            auto env = m_Scene->GetSettings().Environment;
             auto& settings = env->GetSettings();
 
             // Lighting (new format with Lighting section, or backward-compat flat fields)

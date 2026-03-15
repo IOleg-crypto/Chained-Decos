@@ -39,7 +39,6 @@ struct ColliderComponent
     // Mesh (BVH) fields
     AssetHandle ModelHandle = 0;
     std::string ModelPath;
-    std::shared_ptr<BVH> BVHRoot = nullptr;
 
     bool IsColliding = false;
 
