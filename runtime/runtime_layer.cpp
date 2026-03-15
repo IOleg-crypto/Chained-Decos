@@ -7,7 +7,8 @@
 #include "engine/graphics/ui_renderer.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene_events.h"
-#include "engine/scene/scene_scripting.h"
+#include "scripting/scriptengine.h"
+#include "scripting/scene_scripting.h"
 #include "engine/scene/scene_serializer.h"
 #include "imgui.h"
 #include "raymath.h"
@@ -28,6 +29,9 @@ RuntimeLayer::~RuntimeLayer()
 
 void RuntimeLayer::OnAttach()
 {
+    m_ScriptEngine = std::make_unique<ScriptEngine>();
+    m_ScriptEngine->Init();
+
     if (InitProject(m_ProjectPath))
     {
         // Initial scene/module load is handled by InitProject calling LoadInitialScene
@@ -63,8 +67,10 @@ void RuntimeLayer::OnDetach()
 {
     if (m_Scene)
     {
+        SceneScripting::Stop(m_Scene.get());
         m_Scene->OnRuntimeStop();
     }
+    m_ScriptEngine.reset();
 }
 
 void RuntimeLayer::OnUpdate(Timestep ts)
@@ -78,6 +84,7 @@ void RuntimeLayer::OnUpdate(Timestep ts)
 
     if (m_Scene)
     {
+        SceneScripting::Update(m_Scene.get(), ts);
         m_Scene->OnUpdateRuntime(ts);
     }
 }
@@ -153,16 +160,17 @@ void RuntimeLayer::OnImGuiRender()
 
 void RuntimeLayer::OnEvent(Event& e)
 {
+    if (m_Scene) 
+    {
+        SceneScripting::DispatchEvent(m_Scene.get(), e);
+        m_Scene->OnEvent(e);
+    }
+
     EventDispatcher dispatcher(e);
     dispatcher.Dispatch<SceneChangeRequestEvent>([this](auto& ev) {
         m_PendingScenePath = ev.GetPath();
         return true;
     });
-
-    if (m_Scene)
-    {
-        m_Scene->OnEvent(e);
-    }
 }
 
 void RuntimeLayer::LoadScene(const std::string& path)
@@ -177,6 +185,7 @@ void RuntimeLayer::LoadScene(const std::string& path)
 
     if (m_Scene)
     {
+        SceneScripting::Stop(m_Scene.get());
         m_Scene->OnRuntimeStop();
     }
 

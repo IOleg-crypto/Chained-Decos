@@ -14,6 +14,8 @@
 #include "engine/scene/scene_serializer.h"
 #include "engine/scene/scriptable_entity.h"
 #include <fstream>
+#include "scripting/scriptengine.h"
+#include "scripting/scene_scripting.h"
 
 #include "cstdarg"
 #include "extras/IconsFontAwesome6.h"
@@ -107,6 +109,10 @@ void EditorLayer::OnAttach()
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     EditorGUI::ApplyTheme();
     PropertyEditor::Init();
+
+    // Initialize Scripting
+    m_ScriptEngine = std::make_unique<ScriptEngine>();
+    m_ScriptEngine->Init();
 
     // Register Panels
     m_Panels->Init();
@@ -214,6 +220,12 @@ void EditorLayer::LoadEditorFonts()
 
 void EditorLayer::OnDetach()
 {
+    if (m_RuntimeScene)
+    {
+        SceneScripting::Stop(m_RuntimeScene.get());
+    }
+    m_ScriptEngine.reset();
+
     SaveConfig();
     EditorContext::Shutdown();
     SetTraceLogCallback(nullptr);
@@ -233,6 +245,7 @@ void EditorLayer::OnUpdate(Timestep ts)
     {
         if (EditorContext::GetSceneState() == SceneState::Play)
         {
+            SceneScripting::Update(scene.get(), ts);
             scene->OnUpdateRuntime(ts);
         }
         else
@@ -348,6 +361,11 @@ bool EditorLayer::OnSceneOpened(SceneOpenedEvent& e)
 
 void EditorLayer::OnEvent(Event& e)
 {
+    if (auto scene = GetActiveScene())
+    {
+        SceneScripting::DispatchEvent(scene.get(), e);
+    }
+    
     EventDispatcher dispatcher(e);
 
     // 1. Scene Management
@@ -494,6 +512,7 @@ void EditorLayer::SetSceneState(SceneState state)
         CH_CORE_INFO("Editor: Play Mode Stopped");
         if (m_RuntimeScene)
         {
+            SceneScripting::Stop(m_RuntimeScene.get());
             m_RuntimeScene->OnRuntimeStop();
             m_RuntimeScene = nullptr;
         }

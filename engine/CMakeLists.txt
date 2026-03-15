@@ -23,7 +23,6 @@ add_subdirectory(graphics)
 add_subdirectory(physics)
 add_subdirectory(audio)
 add_subdirectory(scene)
-add_subdirectory(script)
 
 # Create the final engine facade library that stitches all objects together
 add_library(engine ${ENGINE_LIB_TYPE}
@@ -32,7 +31,6 @@ add_library(engine ${ENGINE_LIB_TYPE}
     $<TARGET_OBJECTS:engine_physics>
     $<TARGET_OBJECTS:engine_audio>
     $<TARGET_OBJECTS:engine_scene>
-    $<TARGET_OBJECTS:engine_script>
 )
 
 # MSVC needs exported symbols to generate the .lib import library
@@ -60,7 +58,6 @@ PRIVATE
     raylib 
     imguilib
     yaml-cpp
-    Coral.Native
     assimp::assimp
 )
 
@@ -83,14 +80,3 @@ install(DIRECTORY "${CMAKE_SOURCE_DIR}/resources"
     COMPONENT Runtime
 )
 
-# ── DLL Deployment ──────────────────────────────────────────────────────────
-# Ensure Coral.Managed.dll is in the same folder as the engine/editor binaries
-if(TARGET CoralManaged)
-    add_custom_command(TARGET engine POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_BINARY_DIR}/include/coral/cmake/Coral.Managed.dll"
-        "${CMAKE_BINARY_DIR}/bin/Coral.Managed.dll"
-        COMMENT "Deploying Coral.Managed.dll to bin/"
-        VERBATIM
-    )
-endif()

@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.31)
+cmake_minimum_required(VERSION 3.31)
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 
 # Windows SDK Version (must be set before project())
@@ -71,6 +71,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 
 add_subdirectory(engine)
+add_subdirectory(scripting)
 
 # Build Game Projects
 add_subdirectory(game/chaineddecos)

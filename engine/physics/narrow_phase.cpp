@@ -1,4 +1,5 @@
 #include "narrow_phase.h"
+#include "physics.h"
 #include "bvh/bvh.h"
 #include "cfloat"
 #include "collision/collision.h"
@@ -13,8 +14,8 @@ namespace CHEngine
 // ─── Helper: Apply collision response ────────────────────────────────────────
 // --- NarrowPhase Internal Helpers ---
 
-void NarrowPhase::ApplyResponse(TransformComponent& tc, RigidBodyComponent& rb, ColliderComponent& other, Vector3 normal,
-                               float depth)
+void NarrowPhase::ApplyResponse(entt::entity rbEntity, entt::entity otherEntity, TransformComponent& tc,
+                               RigidBodyComponent& rb, ColliderComponent& other, Vector3 normal, float depth)
 {
     tc.Translation = Vector3Add(tc.Translation, Vector3Scale(normal, depth));
 
@@ -43,6 +44,12 @@ void NarrowPhase::ApplyResponse(TransformComponent& tc, RigidBodyComponent& rb, 
     }
 
     other.IsColliding = true;
+
+    // Trigger callback
+    if (m_Physics->GetCollisionCallback())
+    {
+        m_Physics->GetCollisionCallback()(rbEntity, otherEntity);
+    }
 }
 
 Vector3 NarrowPhase::ClosestPointOnSegment(Vector3 p, Vector3 a, Vector3 b)
@@ -244,7 +251,7 @@ void NarrowPhase::ResolveBoxBox(::entt::registry& registry, ::entt::entity rbEnt
 
     // MTV direction per axis: +X, -X, +Y, -Y, +Z, -Z
     const Vector3 dirs[6] = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
-    NarrowPhase::ApplyResponse(tc, rb, otherCollider, dirs[axis], minDepth);
+    ApplyResponse(rbEntity, otherEntity, tc, rb, otherCollider, dirs[axis], minDepth);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -300,7 +307,7 @@ void NarrowPhase::ResolveBoxMesh(entt::registry& registry, entt::entity rbEntity
     Vector3 worldNormal = Vector3Normalize(
         Vector3Subtract(Vector3Transform(localNormal, normalMatrix), Vector3Transform({0, 0, 0}, normalMatrix)));
 
-    NarrowPhase::ApplyResponse(tc, rb, otherCollider, worldNormal, Vector3Length(worldMTV));
+    ApplyResponse(rbEntity, otherEntity, tc, rb, otherCollider, worldNormal, Vector3Length(worldMTV));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -342,7 +349,7 @@ void NarrowPhase::ResolveCapsuleBox(::entt::registry& registry, ::entt::entity r
 
     Vector3 normal = (dist > 0.0001f) ? Vector3Scale(diff, 1.0f / dist) : Vector3{0, 1, 0};
 
-    NarrowPhase::ApplyResponse(tc, rb, box, normal, penetration);
+    ApplyResponse(rbEntity, otherEntity, tc, rb, box, normal, penetration);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -417,7 +424,7 @@ void NarrowPhase::ResolveCapsuleMesh(::entt::registry& registry, ::entt::entity 
             normal = tri->normal;
         }
 
-        NarrowPhase::ApplyResponse(tc, rb, otherCollider, normal, penetration);
+        ApplyResponse(rbEntity, otherEntity, tc, rb, otherCollider, normal, penetration);
 
         // Update capsule position for stacking contacts
         seg = NarrowPhase::GetCapsuleSegment(tc, capsule);
@@ -455,7 +462,7 @@ void NarrowPhase::ResolveSphereBox(::entt::registry& registry, ::entt::entity rb
     float penetration = sphere.Radius - dist;
     Vector3 normal = (dist > 0.0001f) ? Vector3Scale(diff, 1.0f / dist) : Vector3{0, 1, 0};
 
-    NarrowPhase::ApplyResponse(tc, rb, box, normal, penetration);
+    ApplyResponse(rbEntity, otherEntity, tc, rb, box, normal, penetration);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -517,7 +524,7 @@ void NarrowPhase::ResolveSphereMesh(::entt::registry& registry, ::entt::entity r
             normal = tri->normal;
         }
 
-        NarrowPhase::ApplyResponse(tc, rb, otherCollider, normal, penetration);
+        ApplyResponse(rbEntity, otherEntity, tc, rb, otherCollider, normal, penetration);
         sphereWorldPos = Vector3Add(tc.Translation, sphere.Offset); // Update for stacked contacts
     }
 }
@@ -550,7 +557,7 @@ void NarrowPhase::ResolveSphereSphere(::entt::registry& registry, ::entt::entity
     float penetration = radiusSum - dist;
     Vector3 normal = (dist > 0.0001f) ? Vector3Scale(diff, 1.0f / dist) : Vector3{0, 1, 0};
 
-    NarrowPhase::ApplyResponse(tc, rb, s2, normal, penetration);
+    ApplyResponse(rbEntity, otherEntity, tc, rb, s2, normal, penetration);
 }
 
 } // namespace CHEngine

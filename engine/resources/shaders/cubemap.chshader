@@ -1,8 +1,0 @@
-# Cubemap Conversion Shader Metadata
-VertexShader: "cubemap.vs"
-FragmentShader: "cubemap.fs"
-
-Uniforms:
-  - matProjection
-  - matView
-  - equirectangularMap

@@ -36,6 +36,8 @@ struct ManagedScriptInstance
     void (*OnStart)()         = nullptr;
     void (*OnUpdate)(float)   = nullptr;
     void (*OnDestroy)()       = nullptr;
+    void (*OnGUI)()           = nullptr;
+    void (*OnCollisionEnter)(uint64_t) = nullptr;
 
     ManagedScriptInstance() = default;
     explicit ManagedScriptInstance(const std::string& className)

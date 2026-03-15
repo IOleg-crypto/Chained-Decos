@@ -5,6 +5,7 @@
 #include "engine/core/timestep.h"
 #include "entt/entt.hpp"
 #include "raylib.h"
+#include <functional>
 #include <future>
 #include <memory>
 #include <mutex>
@@ -63,6 +64,10 @@ public: // Simulation & Queries
     // Directly updates the cache with a pre-built BVH.
     void UpdateBVHCache(ModelAsset* asset, std::shared_ptr<BVH> bvh);
 
+    using CollisionCallback = std::function<void(entt::entity, entt::entity)>;
+    void SetCollisionCallback(CollisionCallback callback) { m_CollisionCallback = callback; }
+    const CollisionCallback& GetCollisionCallback() const { return m_CollisionCallback; }
+
 private: // Internal Helpers
     void UpdateColliders();
     void ResolveSimulation(Timestep deltaTime);
@@ -81,6 +86,8 @@ private: // Members
 
     // Persistent asset cache for collider shape computation (avoids per-frame allocation)
     std::unordered_map<std::string, std::shared_ptr<ModelAsset>> m_ColliderAssetCache;
+
+    CollisionCallback m_CollisionCallback;
 };
 } // namespace CHEngine
 

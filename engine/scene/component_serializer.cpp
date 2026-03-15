@@ -6,7 +6,7 @@
 #include "engine/core/yaml.h"
 #include "engine/scene/serialization_utils.h"
 #include "scene.h"
-#include "engine/script/scriptengine.h"
+#include "scripting/scriptengine.h"
 
 namespace YAML
 {

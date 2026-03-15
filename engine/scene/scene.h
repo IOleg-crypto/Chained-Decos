@@ -14,6 +14,7 @@
 #include <raylib.h>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace CHEngine
 {
@@ -28,14 +29,14 @@ public:
 
     static std::shared_ptr<Scene> Copy(std::shared_ptr<Scene> other);
 
-    Entity CreateEntity(const std::string& name = std::string());
-    Entity CreateEntityWithUUID(UUID uuid, const std::string& name = std::string());
-    Entity CreateUIEntity(const std::string& type, const std::string& name = std::string());
-    Entity CopyEntity(entt::entity copyEntity);
-    void DestroyEntity(Entity entity);
+    Entity CreateEntity(const std::string& name = std::string()) { return m_Manager.Create(name); }
+    Entity CreateEntityWithUUID(UUID uuid, const std::string& name = std::string()) { return m_Manager.CreateWithUUID(uuid, name); }
+    Entity CreateUIEntity(const std::string& type, const std::string& name = std::string()) { return m_Manager.CreateUI(type, name); }
+    Entity CopyEntity(entt::entity copyEntity) { return m_Manager.Copy(copyEntity); }
+    void DestroyEntity(Entity entity) { entity.Destroy(); }
 
-    Entity FindEntityByTag(const std::string& tag);
-    Entity GetEntityByUUID(UUID uuid);
+    Entity FindEntityByTag(const std::string& tag) { return m_Manager.FindByTag(tag); }
+    Entity GetEntityByUUID(UUID uuid) { return m_Manager.GetByUUID(uuid); }
 
 public: // Life Cycle & Simulation
     void OnRuntimeStart();
@@ -72,11 +73,16 @@ public: // Scene Settings
 public: // Systems & Tools
     entt::registry& GetRegistry()
     {
-        return m_Registry;
+        return m_Manager.GetRegistry();
     }
     const entt::registry& GetRegistry() const
     {
-        return m_Registry;
+        return m_Manager.GetRegistry();
+    }
+    
+    std::shared_ptr<entt::registry> GetRegistryPtr()
+    {
+        return m_Manager.GetRegistryPtr();
     }
 
     std::optional<Camera3D> GetActiveCamera();
@@ -86,8 +92,7 @@ private:
     Camera3D GetCameraFromEntity(entt::entity entityHandle);
 
 private:
-    entt::registry m_Registry;
-    std::unordered_map<UUID, entt::entity> m_EntityMap;
+    Entity m_Manager;
     SceneSettings m_Settings;
     std::unique_ptr<Physics> m_Physics;
 
@@ -108,12 +113,10 @@ private: // Internal Event Handlers
     void OnHierarchyDestroy(entt::registry& registry, entt::entity entity);
     
     // Script Cleanup Handlers
-    void OnScriptComponentDestroyed(entt::registry& registry, entt::entity entity);
 
 private: // Update Logic
     void UpdatePhysics(Timestep deltaTime);
     void UpdateAnimations(Timestep deltaTime);
-    void UpdateScripting(Timestep deltaTime);
     void UpdateAudio(Timestep deltaTime);
     void UpdateCameras(Timestep deltaTime);
     void UpdateTransitions();

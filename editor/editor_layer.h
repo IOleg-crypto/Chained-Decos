@@ -13,6 +13,7 @@
 #include "engine/scene/scene_events.h"
 #include "imgui.h"
 #include "undo/command_history.h"
+#include <memory>
 
 namespace CHEngine
 {
@@ -142,6 +143,7 @@ private:
     std::shared_ptr<Scene> m_EditorScene;
     std::shared_ptr<Scene> m_RuntimeScene;
 
+    std::unique_ptr<class ScriptEngine> m_ScriptEngine;
     CommandHistory m_CommandHistory;
     ImVec2 m_ViewportSize = {1280, 720};
 };

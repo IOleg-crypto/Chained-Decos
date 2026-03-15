@@ -20,7 +20,13 @@ add_executable(ChainedRuntime
     runtime_generic_entry.cpp
 )
 
-target_link_libraries(ChainedRuntime PRIVATE RuntimeCore)
+target_link_libraries(ChainedRuntime PRIVATE
+    RuntimeCore
+    engine
+    scripting
+    raylib
+    imguilib
+)
 apply_engine_optimizations(ChainedRuntime)
 
 install(TARGETS ChainedRuntime
