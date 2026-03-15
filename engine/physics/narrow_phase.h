@@ -33,8 +33,8 @@ private:
         Vector3 min, max;
     };
 
-    static void ApplyResponse(TransformComponent& tc, RigidBodyComponent& rb, ColliderComponent& other, Vector3 normal,
-                              float depth);
+    void ApplyResponse(entt::entity rbEntity, entt::entity otherEntity, TransformComponent& tc, RigidBodyComponent& rb,
+                       ColliderComponent& other, Vector3 normal, float depth);
     static Vector3 ClosestPointOnSegment(Vector3 p, Vector3 a, Vector3 b);
     static Vector3 ClosestPointTriangle(Vector3 p, Vector3 a, Vector3 b, Vector3 c);
     static CapsuleSegment GetCapsuleSegment(const TransformComponent& tc, const ColliderComponent& cc);

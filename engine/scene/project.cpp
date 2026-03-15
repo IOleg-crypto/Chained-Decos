@@ -2,9 +2,10 @@
 #include "engine/graphics/asset_manager.h"
 #include "engine/graphics/environment.h"
 #include "engine/graphics/renderer.h"
-#include "engine/script/scriptengine.h"
 #include "imgui.h"
 #include "project_serializer.h"
+#include "scripting/scriptengine.h"
+
 
 namespace CHEngine
 {
@@ -225,10 +226,14 @@ std::vector<std::string> Project::GetAvailableScenes()
 std::string Project::GetRelativePath(const std::filesystem::path& path)
 {
     if (path.empty())
+    {
         return "";
+    }
 
     if (path.is_relative())
+    {
         return path.generic_string();
+    }
 
     auto absolutePath = NormalizePath(path);
 

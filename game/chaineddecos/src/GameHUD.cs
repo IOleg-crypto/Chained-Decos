@@ -11,27 +11,24 @@ public class GameHUD : Script
     {
         m_Timer += deltaTime;
 
-        // Shortcut hint (R to Reset)
-        if (Input.IsKeyPressed((Key)82)) // KEY_R
+        if (Input.IsKeyPressed(Key.R))
         {
             m_Timer = 0.0f;
+            Log.Info("timer reset via R");
         }
     }
 
-    // Note: CH_GUI in C++ is usually implemented via a specific callback.
-    // If our Script class doesn't have OnGUI yet, we'll need to add it
-    // and register it in ScriptEngine/SceneScripting.
-
-    /*
     public override void OnGUI()
     {
-        float altitude = Entity.Translation.Y;
+        TransformComponent? transform = Entity.GetComponent<TransformComponent>();
+        float altitude = transform != null ? transform.Translation.Y : 0.0f;
+        
         int hours = (int)(m_Timer / 3600.0f);
         int minutes = (int)((m_Timer - hours * 3600.0f) / 60.0f);
         int seconds = (int)(m_Timer) % 60;
 
-        // ImGui calls here...
+        UI.Text($"Altitude: {altitude:F2}");
+        UI.Text($"Time: {hours:D2}:{minutes:D2}:{seconds:D2}");
     }
-    */
 }
 }
