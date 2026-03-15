@@ -107,9 +107,9 @@ Entities:
         LineHeight: 1.20000005
         HorizontalAlignment: 0
         VerticalAlignment: 1
-    NativeScriptComponent:
+    ManagedScriptComponent:
       Scripts:
-        - SceneScript
+        - ClassName: ChainedDecos.Scripts.SceneScript
   - Entity: 3003
     TagComponent:
       Tag: btn_map_bravo
@@ -160,9 +160,9 @@ Entities:
         LineHeight: 1.20000005
         HorizontalAlignment: 0
         VerticalAlignment: 1
-    NativeScriptComponent:
+    ManagedScriptComponent:
       Scripts:
-        - SceneScript
+        - ClassName: ChainedDecos.Scripts.SceneScript
   - Entity: 3004
     TagComponent:
       Tag: back_button
@@ -213,6 +213,6 @@ Entities:
         LineHeight: 1.20000005
         HorizontalAlignment: 0
         VerticalAlignment: 1
-    NativeScriptComponent:
+    ManagedScriptComponent:
       Scripts:
-        - SceneScript
+        - ClassName: ChainedDecos.Scripts.SceneScript

@@ -43,6 +43,8 @@ private:
     // Script callback removed in favor of GlobalRegistry
 
     std::string m_ProjectPath;
+    float m_BoostUploadsTimer = 0.0f;
+    bool m_IsBoostingUploads = false;
 };
 } // namespace CHEngine
 

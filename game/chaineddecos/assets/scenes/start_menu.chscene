@@ -41,6 +41,12 @@ Entities:
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
+    SceneTransitionComponent:
+      TargetScenePath: scenes\info_scene.chscene
+      Triggered: false
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: ChainedDecos.Scripts.SceneScript
     ButtonControl:
       Label: Info
       Interactable: true
@@ -143,9 +149,9 @@ Entities:
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
-    NativeScriptComponent:
+    ManagedScriptComponent:
       Scripts:
-        - ScriptName: ExitScript
+        - ClassName: ChainedDecos.Scripts.ExitScript
     ButtonControl:
       Label: Exit
       Interactable: true
@@ -186,6 +192,12 @@ Entities:
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
+    SceneTransitionComponent:
+      TargetScenePath: scenes\main_menu.chscene
+      Triggered: false
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: ChainedDecos.Scripts.SceneScript
     ButtonControl:
       Label: Start
       Interactable: true
@@ -226,6 +238,12 @@ Entities:
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
+    SceneTransitionComponent:
+      TargetScenePath: scenes\video_scene.chscene
+      Triggered: false
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: ChainedDecos.Scripts.SceneScript
     ButtonControl:
       Label: Options
       Interactable: true

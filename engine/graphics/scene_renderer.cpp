@@ -60,8 +60,6 @@ void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float near
     }
 
     // 3. Render Passes
-    RenderModels(scene, camera, nearClip, farClip, timestep);
-
     float exposure = 1.0f;
     float gamma = 2.2f;
 
@@ -139,9 +137,9 @@ void SceneRenderer::RenderModels(Scene* scene, const Camera3D& camera, float nea
         // Use explicit camera matrices for robustness (identical to what BeginMode3D uses)
         Matrix view = GetCameraMatrix(camera);
 
-        // Get aspect ratio from the active window
-        float width = (float)GetScreenWidth();
-        float height = (float)GetScreenHeight();
+        // Get aspect ratio from the active render target/window
+        float width = (float)GetRenderWidth();
+        float height = (float)GetRenderHeight();
         float aspect = (width > 0 && height > 0) ? width / height : 1.0f;
 
         // Use the passed-in clipping planes from the CameraComponent or Editor camera
@@ -184,9 +182,8 @@ void SceneRenderer::PrepareLights(entt::registry& registry, const Frustum& frust
         Matrix worldTransform = GetWorldTransform(registry, entity);
         Vector3 worldPos = {worldTransform.m12, worldTransform.m13, worldTransform.m14};
 
-        // NOTE: Frustum culling for lights disabled temporarily
-        // if (!frustum.IsSphereVisible(worldPos, light.Radius))
-        //    continue;
+        if (!frustum.IsSphereVisible(worldPos, light.Radius))
+            continue;
 
         RenderLight rl;
         rl.color[0] = light.LightColor.r / 255.0f;
