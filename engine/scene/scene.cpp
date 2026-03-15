@@ -215,7 +215,8 @@ void Scene::UpdateAnimations(Timestep deltaTime)
         auto& animation = view.get<AnimationComponent>(entity);
         auto& model = view.get<ModelComponent>(entity);
 
-        if (model.Asset && animation.CurrentAnimationIndex < model.Asset->GetAnimationCount())
+        auto modelAsset = AssetManager::Get().Get<ModelAsset>(model.ModelPath);
+        if (modelAsset && animation.CurrentAnimationIndex < modelAsset->GetAnimationCount())
         {
             // Update animation logic here
         }

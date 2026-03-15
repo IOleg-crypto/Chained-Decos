@@ -20,7 +20,7 @@ void ShaderLibrary::Load(const std::string& name, const std::string& path)
         return;
     }
 
-    auto shader = project->GetAssetManager()->Get<ShaderAsset>(path);
+    auto shader = AssetManager::Get().Get<ShaderAsset>(path);
     if (shader)
     {
         Add(name, shader);
