@@ -304,9 +304,31 @@ namespace CHEngine {
     }
 
     // ── Spawn / Transition ────────────────────────────────────────────────
-    CH_SCRIPT_FUNC bool SpawnComponent_IsActive(uint64_t entityID) { return false; }
-    CH_SCRIPT_FUNC void SpawnComponent_GetSpawnPoint(uint64_t entityID, Vector3* point) { *point = {0,0,0}; }
-    CH_SCRIPT_FUNC Coral::String SceneTransitionComponent_GetTargetScene(uint64_t entityID) { return Coral::String::New(""); }
+    CH_SCRIPT_FUNC bool SpawnComponent_IsActive(uint64_t entityID) {
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
+        if (!scene) return false;
+        Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
+        return entity && entity.HasComponent<SpawnComponent>() ? entity.GetComponent<SpawnComponent>().IsActive : false;
+    }
+
+    CH_SCRIPT_FUNC void SpawnComponent_GetSpawnPoint(uint64_t entityID, Vector3* point) {
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
+        if (!scene || !point) return;
+        Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
+        if (entity && entity.HasComponent<SpawnComponent>())
+            *point = entity.GetComponent<SpawnComponent>().SpawnPoint;
+        else
+            *point = {0,0,0};
+    }
+
+    CH_SCRIPT_FUNC Coral::String SceneTransitionComponent_GetTargetScene(uint64_t entityID) {
+        Scene* scene = ScriptEngine::Get().GetActiveScene();
+        if (!scene) return Coral::String::New("");
+        Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
+        if (entity && entity.HasComponent<SceneTransitionComponent>())
+            return Coral::String::New(entity.GetComponent<SceneTransitionComponent>().TargetScenePath);
+        return Coral::String::New("");
+    }
 
     // ── PlayerComponent ───────────────────────────────────────────────────
     CH_SCRIPT_FUNC float PlayerComponent_GetMovementSpeed(uint64_t entityID) {
