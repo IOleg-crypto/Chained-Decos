@@ -900,7 +900,7 @@ Entities:
       Rotation: [136.399994, -35.0997086, 180]
       Scale: [1, 1, 1]
     CameraComponent:
-      Primary: false
+      Primary: true
       FixedAspectRatio: false
       IsOrbitCamera: true
       OrbitDistance: 16.5999985
@@ -915,6 +915,8 @@ Entities:
     ManagedScriptComponent:
       Scripts:
         - ClassName: chaineddecos.scripts.cameracontroller
+        - ClassName: chaineddecos.scripts.gamepausescript
+        - ClassName: chaineddecos.scripts.debuginfoscript
   - Entity: 6428169142076434776
     TagComponent:
       Tag: Entity
@@ -1101,7 +1103,7 @@ Entities:
       Rotation: [376.001373, -3188.74268, 0]
       Scale: [1, 1, 1]
     CameraComponent:
-      Primary: true
+      Primary: false
       FixedAspectRatio: false
       IsOrbitCamera: false
       OrbitDistance: 10

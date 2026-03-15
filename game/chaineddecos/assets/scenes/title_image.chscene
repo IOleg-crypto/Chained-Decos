@@ -55,6 +55,12 @@ Entities:
           Pivot: [0.5, 0.5]
           Rotation: 0
           Scale: [1, 1]
+    SceneTransitionComponent:
+      TargetScenePath: scenes\video_scene.chscene
+      Triggered: false
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: ChainedDecos.Scripts.SceneScript
     ButtonControl:
       ? Label: Options
         TextStyle:
@@ -85,6 +91,12 @@ Entities:
           Pivot: [0.5, 0.5]
           Rotation: 0
           Scale: [1, 1]
+    SceneTransitionComponent:
+      TargetScenePath: scenes\main_menu.chscene
+      Triggered: false
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: ChainedDecos.Scripts.SceneScript
     ButtonControl:
       ? Label: Start
         TextStyle:
@@ -127,9 +139,9 @@ Entities:
           HoverColor: [60, 60, 60, 255]
           PressedColor: [30, 30, 30, 255]
           Rounding: 4
-    NativeScriptComponent:
+    ManagedScriptComponent:
       Scripts:
-        - ScriptName: ExitScript
+        - ClassName: ChainedDecos.Scripts.ExitScript
   - Entity: 15500646445384167357
     TagComponent:
       ? Tag: start_game_info
@@ -198,6 +210,12 @@ Entities:
           Pivot: [0.5, 0.5]
           Rotation: 0
           Scale: [1, 1]
+    SceneTransitionComponent:
+      TargetScenePath: scenes\info_scene.chscene
+      Triggered: false
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: ChainedDecos.Scripts.SceneScript
     ButtonControl:
       ? Label: Info
         TextStyle:

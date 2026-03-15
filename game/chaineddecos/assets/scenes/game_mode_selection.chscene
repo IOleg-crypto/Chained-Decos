@@ -107,9 +107,9 @@ Entities:
         LineHeight: 1.20000005
         HorizontalAlignment: 0
         VerticalAlignment: 1
-    NativeScriptComponent:
+    ManagedScriptComponent:
       Scripts:
-        - SceneScript
+        - ClassName: ChainedDecos.Scripts.SceneScript
   - Entity: 1003
     TagComponent:
       Tag: btn_multiplayer
@@ -207,6 +207,6 @@ Entities:
         LineHeight: 1.20000005
         HorizontalAlignment: 0
         VerticalAlignment: 1
-    NativeScriptComponent:
+    ManagedScriptComponent:
       Scripts:
-        - SceneScript
+        - ClassName: ChainedDecos.Scripts.SceneScript
