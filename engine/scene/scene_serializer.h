@@ -2,7 +2,6 @@
 #define CH_SCENE_SERIALIZER_H
 
 #include "engine/scene/scene.h"
-#include <yaml-cpp/yaml.h>
 
 namespace CHEngine
 {
@@ -19,8 +18,6 @@ public:
     bool DeserializeFromString(const std::string& yaml);
 
 private:
-    static void SerializeEntity(YAML::Emitter& out, Entity entity);
-
     Scene* m_Scene;
 };
 } // namespace CHEngine

@@ -8,12 +8,10 @@
 #include "engine/core/application.h"
 #include "engine/core/events.h"
 #include "engine/core/input.h"
-#include "engine/graphics/asset_manager.h"
-#include "engine/graphics/model_asset.h"
+#include "engine/graphics/renderer.h"
 #include "engine/graphics/scene_renderer.h"
 #include "engine/graphics/ui_renderer.h"
-#include "engine/physics/bvh/bvh.h"
-#include "engine/physics/physics.h"
+#include "engine/scene/scene_picking.h"
 #include "engine/scene/components.h"
 #include "engine/scene/prefab_serializer.h"
 #include "engine/scene/project.h"
@@ -32,7 +30,7 @@ static void ClearSceneBackground(Scene* scene, Vector2 size)
     auto mode = scene->GetSettings().Mode;
     if (mode == BackgroundMode::Color)
     {
-        ClearBackground(scene->GetSettings().BackgroundColor);
+        Renderer::Get().Clear(scene->GetSettings().BackgroundColor);
     }
     else if (mode == BackgroundMode::Texture)
     {
@@ -45,7 +43,7 @@ static void ClearSceneBackground(Scene* scene, Vector2 size)
     }
     else if (mode == BackgroundMode::Environment3D)
     {
-        ClearBackground(BLACK);
+        Renderer::Get().Clear(BLACK);
     }
 }
 
@@ -133,15 +131,19 @@ void ViewportPanel::DrawGizmoButtons()
 ViewportPanel::ViewportPanel()
 {
     m_Name = "Viewport";
-    m_ViewportTexture = {0}; // Initialize to empty
-    m_HDRTexture = {0};
 
-    if (IsWindowReady())
+    FramebufferSpecification spec;
+    spec.Width = 1280;
+    spec.Height = 720;
+    
+    if (Application::Get().GetWindow().GetNativeWindow())
     {
-        int w = GetScreenWidth();
-        int h = GetScreenHeight();
-        m_ViewportTexture = LoadRenderTexture(w > 0 ? w : 1280, h > 0 ? h : 720);
+        spec.Width = Application::Get().GetWindow().GetWidth() > 0 ? Application::Get().GetWindow().GetWidth() : 1280;
+        spec.Height = Application::Get().GetWindow().GetHeight() > 0 ? Application::Get().GetWindow().GetHeight() : 720;
     }
+
+    m_ViewportFramebuffer = Framebuffer::Create(spec);
+    m_HDRFramebuffer = Framebuffer::Create(spec);
 
     m_SceneRenderer = std::make_unique<SceneRenderer>();
     m_CameraController = std::make_unique<EditorCameraController>();
@@ -149,17 +151,6 @@ ViewportPanel::ViewportPanel()
 
 ViewportPanel::~ViewportPanel()
 {
-    if (IsWindowReady())
-    {
-        if (m_ViewportTexture.id > 0)
-        {
-            UnloadRenderTexture(m_ViewportTexture);
-        }
-        if (m_HDRTexture.id > 0)
-        {
-            UnloadRenderTexture(m_HDRTexture);
-        }
-    }
 }
 
 void ViewportPanel::OnImGuiRender(bool readOnly)
@@ -193,15 +184,12 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
 
     // Framebuffer management
     auto activeScene = EditorLayer::Get().GetActiveScene();
-    if (viewportSize.x != m_ViewportTexture.texture.width || viewportSize.y != m_ViewportTexture.texture.height)
+    if (viewportSize.x != m_ViewportFramebuffer->GetSpecification().Width || viewportSize.y != m_ViewportFramebuffer->GetSpecification().Height)
     {
         if (viewportSize.x > 0 && viewportSize.y > 0)
         {
-            if (m_ViewportTexture.id > 0) UnloadRenderTexture(m_ViewportTexture);
-            if (m_HDRTexture.id > 0) UnloadRenderTexture(m_HDRTexture);
-
-            m_ViewportTexture = LoadRenderTexture((int)viewportSize.x, (int)viewportSize.y);
-            m_HDRTexture = LoadRenderTexture((int)viewportSize.x, (int)viewportSize.y);
+            m_ViewportFramebuffer->Resize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
+            m_HDRFramebuffer->Resize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
             
             EditorLayer::Get().SetViewportSize(viewportSize);
             if (activeScene)
@@ -219,7 +207,7 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         return;
     }
 
-    BeginTextureMode(m_HDRTexture);
+    m_HDRFramebuffer->Bind();
     auto activeScene_raw = activeScene.get();
     ClearSceneBackground(activeScene_raw, {viewportSize.x, viewportSize.y});
 
@@ -253,13 +241,13 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
             options.TargetFPS = project->GetConfig().Animation.TargetFPS;
         }
 
-        m_SceneRenderer->RenderScene(activeScene.get(), camera, nearClip, farClip, GetFrameTime(), options);
-        EndTextureMode();
+        m_SceneRenderer->RenderScene(activeScene.get(), camera, nearClip, farClip, Application::Get().GetFrameTime(), options);
+        m_HDRFramebuffer->Unbind();
 
         // 2. APPLY MODULAR POST-PROCESSING
-        BeginTextureMode(m_ViewportTexture);
-        Renderer::Get().ApplyPostProcessing(m_HDRTexture, camera);
-        EndTextureMode();
+        m_ViewportFramebuffer->Bind();
+        Renderer::Get().ApplyPostProcessing(*(RenderTexture2D*)m_HDRFramebuffer->GetNativeFramebuffer(), camera);
+        m_ViewportFramebuffer->Unbind();
     }
     else
     {
@@ -273,25 +261,26 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         if (has3DContent || is3DBackground)
         {
             // Draw black background or specific message
-            ClearBackground(BLACK);
+            Renderer::Get().Clear(BLACK);
             const char* msg = "No Primary Camera Found in Scene!";
             int fontSize = 20;
-            int textWidth = MeasureText(msg, fontSize);
-            DrawText(msg, (int)viewportSize.x / 2 - textWidth / 2, (int)viewportSize.y / 2 - 10, fontSize, GRAY);
+            int textWidth = Renderer::Get().MeasureText(msg, fontSize);
+            Renderer::Get().DrawText(msg, (int)viewportSize.x / 2 - textWidth / 2, (int)viewportSize.y / 2 - 10, fontSize, GRAY);
         }
-        EndTextureMode();
+        m_HDRFramebuffer->Unbind();
 
         // Copy warning state to viewport texture
-        BeginTextureMode(m_ViewportTexture);
-        ClearBackground(BLACK);
-        Rectangle source = { 0, 0, (float)m_HDRTexture.texture.width, (float)-m_HDRTexture.texture.height };
-        DrawTexturePro(m_HDRTexture.texture, source, 
+        m_ViewportFramebuffer->Bind();
+        Renderer::Get().Clear(BLACK);
+        RenderTexture2D* hdrTex = (RenderTexture2D*)m_HDRFramebuffer->GetNativeFramebuffer();
+        Rectangle source = { 0, 0, (float)hdrTex->texture.width, (float)-hdrTex->texture.height };
+        Renderer::Get().DrawTexture(hdrTex->texture, source, 
                        { 0, 0, (float)m_ViewportSize.x, (float)m_ViewportSize.y }, 
                        { 0, 0 }, 0.0f, WHITE);
-        EndTextureMode();
+        m_ViewportFramebuffer->Unbind();
     }
 
-    rlImGuiImageRenderTexture(&m_ViewportTexture);
+    rlImGuiImageRenderTexture((RenderTexture2D*)m_ViewportFramebuffer->GetNativeFramebuffer());
     bool isViewportHovered = ImGui::IsItemHovered();
 
     // Drag & Drop Target
@@ -428,8 +417,8 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
             auto rect = UIRenderer::Get().GetEntityRect(entity, viewportSize, viewportScreenPos);
 
             Vector2 mouse = {mousePos.x, mousePos.y};
-            Vector2 mouseRaylib = {mouse.x, mouse.y};
-            if (CheckCollisionPointRec(mouseRaylib, rect))
+            if (mouse.x >= rect.x && mouse.x <= rect.x + rect.width &&
+                mouse.y >= rect.y && mouse.y <= rect.y + rect.height)
             {
                 bestHit = entity;
                 CH_CORE_INFO("HIT UI: {}", entity.GetComponent<TagComponent>().Tag);
@@ -439,99 +428,13 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         // 3D Picking (only when camera is present)
         if (!bestHit && cameraFound)
         {
-            // 1. Physics Picking
-            RaycastResult result = Physics::Raycast(activeScene.get(), ray);
+            SceneRaycastResult result = ScenePicker::Raycast(activeScene.get(), ray);
             if (result.Hit)
             {
-                bestHit = Entity(result.Entity, &activeScene->GetRegistry());
+                bestHit = result.HitEntity;
                 minDistance = result.Distance;
-                CH_CORE_INFO("HIT PHYSICS: {} at Dist {}", bestHit.GetComponent<TagComponent>().Tag, minDistance);
+                CH_CORE_INFO("HIT: {} at Dist {:.2f}", bestHit.GetComponent<TagComponent>().Tag, minDistance);
             }
-            else
-            {
-                CH_CORE_TRACE("Physics Raycast missed.");
-            }
-
-            // 2. Visual Picking Fallback
-            auto modelView = activeScene->GetRegistry().view<TransformComponent, ModelComponent>();
-            int visualCandidates = 0;
-
-            for (auto entityID : modelView)
-            {
-                visualCandidates++;
-                if (bestHit && (entt::entity)bestHit == entityID)
-                {
-                    continue;
-                }
-
-                Entity entity(entityID, &activeScene->GetRegistry());
-                auto& modelComp = modelView.get<ModelComponent>(entityID);
-                auto& tag = entity.GetComponent<TagComponent>().Tag;
-
-                if (modelComp.ModelPath.empty())
-                {
-                    CH_CORE_TRACE("Skip {}: No model path", tag);
-                    continue;
-                }
-
-                auto modelAsset = AssetManager::Get().Get<ModelAsset>(modelComp.ModelPath);
-                if (!modelAsset || !modelAsset->IsReady())
-                {
-                    CH_CORE_TRACE("Skip {}: Asset not ready", tag);
-                    continue;
-                }
-
-                auto& tc = modelView.get<TransformComponent>(entityID);
-                Matrix modelTransform = tc.GetTransform();
-                Matrix invTransform = MatrixInvert(modelTransform);
-
-                // Transform ray to local space
-                Ray localRay;
-                localRay.position = Vector3Transform(ray.position, invTransform);
-                Vector3 localTarget = Vector3Transform(Vector3Add(ray.position, ray.direction), invTransform);
-                localRay.direction = Vector3Normalize(Vector3Subtract(localTarget, localRay.position));
-
-                float t_local = FLT_MAX;
-                Vector3 localNormal = {0, 0, 0};
-                int localMeshIndex = -1;
-
-                bool hit = false;
-                auto bvh = PhysicsSystem::Get().GetBVH(modelAsset.get());
-
-                if (bvh)
-                {
-                    hit = bvh->Raycast(localRay, t_local, localNormal, localMeshIndex);
-                }
-                else
-                {
-                    Model& model = modelAsset->GetModel();
-                    for (int m = 0; m < model.meshCount; m++)
-                    {
-                        RayCollision collision = GetRayCollisionMesh(localRay, model.meshes[m], MatrixIdentity());
-                        if (collision.hit && collision.distance < t_local)
-                        {
-                            t_local = collision.distance;
-                            hit = true;
-                        }
-                    }
-                }
-
-                if (hit)
-                {
-                    Vector3 hitPosLocal = Vector3Add(localRay.position, Vector3Scale(localRay.direction, t_local));
-                    Vector3 hitPosWorld = Vector3Transform(hitPosLocal, modelTransform);
-                    float distWorld = Vector3Distance(ray.position, hitPosWorld);
-
-                    CH_CORE_INFO("VISUAL HIT Candidate: {} (Dist: {:.2f})", tag, distWorld);
-
-                    if (distWorld < minDistance)
-                    {
-                        minDistance = distWorld;
-                        bestHit = entity;
-                    }
-                }
-            }
-            CH_CORE_TRACE("Checked {} visual candidates", visualCandidates);
         }
 
         if (bestHit)

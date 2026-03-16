@@ -16,7 +16,6 @@
 #include <iterator>
 #include <yaml-cpp/yaml.h>
 
-
 namespace CHEngine
 {
 
@@ -639,6 +638,7 @@ void PropertyEditor::Init()
         {
             changed = true;
         }
+
         if (EditorGUI::Property("Playing", component.IsPlaying))
         {
             changed = true;

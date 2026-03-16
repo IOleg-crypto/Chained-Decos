@@ -12,7 +12,8 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
 #include "imgui_internal.h"
-#include "nfd.h"
+#include "engine/core/dialogs.h"
+#include "engine/scene/scene_picking.h"
 #include "raymath.h"
 #include <cstring>
 #include <filesystem>
@@ -300,22 +301,16 @@ bool EditorGUI::Property(const char* label, std::string& value, const std::strin
 
     if (ImGui::Button(ICON_FA_FOLDER_OPEN, {buttonSize, buttonSize}))
     {
-        nfdu8char_t* outPath = NULL;
-        nfdu8filteritem_t args[] = {{"Files", filter.c_str()}};
-
-        nfdresult_t result;
-        if (filter.empty())
+        std::vector<FileDialogFilter> filters;
+        if (!filter.empty())
         {
-            result = NFD_OpenDialogU8(&outPath, NULL, 0, NULL);
-        }
-        else
-        {
-            result = NFD_OpenDialogU8(&outPath, args, 1, NULL);
+            filters.push_back({"Files", filter});
         }
 
-        if (result == NFD_OKAY)
+        auto result = Dialogs::OpenFile(filters);
+        if (result)
         {
-            std::filesystem::path p = outPath;
+            std::filesystem::path p = *result;
             auto projectPath = Project::GetAssetDirectory();
             std::filesystem::path relativePath = std::filesystem::relative(p, projectPath);
 
@@ -325,10 +320,9 @@ bool EditorGUI::Property(const char* label, std::string& value, const std::strin
             }
             else
             {
-                value = outPath;
+                value = p.string();
             }
 
-            NFD_FreePathU8(outPath);
             changed = true;
         }
     }
@@ -557,74 +551,6 @@ bool EditorGUI::DrawVec3(const char* label, Vector3& values, float resetValue)
 
 Ray EditorGUI::GetMouseRay(const Camera3D& camera, const Vector2& localMousePos, const Vector2& viewportSize)
 {
-    // NDC: [-1, 1], Y-up
-    float ndc_x = (2.0f * localMousePos.x) / viewportSize.x - 1.0f;
-    float ndc_y = 1.0f - (2.0f * localMousePos.y) / viewportSize.y;
-
-    // View-Projection Matrix
-    Matrix projection = MatrixPerspective(camera.fovy * DEG2RAD, viewportSize.x / viewportSize.y, 0.01f, 1000.0f);
-    if (camera.projection == CAMERA_ORTHOGRAPHIC)
-    {
-        float aspect = viewportSize.x / viewportSize.y;
-        float top = camera.fovy / 2.0f;
-        float right = top * aspect;
-        projection = MatrixOrtho(-right, right, -top, top, 0.01f, 1000.0f);
-    }
-
-    Matrix view = GetCameraMatrix(camera);
-    Matrix viewProj = MatrixMultiply(view, projection);
-    Matrix invViewProj = MatrixInvert(viewProj);
-
-    // Unproject Near/Far points
-    auto Unproject = [&](float x, float y, float z) -> Vector3 {
-        float coords[4] = {x, y, z, 1.0f};
-        float result[4] = {0};
-
-        float resPoints[4] = {0};
-        // Manual 4x4 multiplication for W component
-        resPoints[0] = coords[0] * invViewProj.m0 + coords[1] * invViewProj.m4 + coords[2] * invViewProj.m8 +
-                       coords[3] * invViewProj.m12;
-        resPoints[1] = coords[0] * invViewProj.m1 + coords[1] * invViewProj.m5 + coords[2] * invViewProj.m9 +
-                       coords[3] * invViewProj.m13;
-        resPoints[2] = coords[0] * invViewProj.m2 + coords[1] * invViewProj.m6 + coords[2] * invViewProj.m10 +
-                       coords[3] * invViewProj.m14;
-        resPoints[3] = coords[0] * invViewProj.m3 + coords[1] * invViewProj.m7 + coords[2] * invViewProj.m11 +
-                       coords[3] * invViewProj.m15;
-
-        if (resPoints[3] == 0.0f)
-        {
-            return {0, 0, 0};
-        }
-
-        // Perspective division
-        if (fabs(resPoints[3]) > 0.00001f)
-        {
-            return {resPoints[0] / resPoints[3], resPoints[1] / resPoints[3], resPoints[2] / resPoints[3]};
-        }
-        return {0, 0, 0};
-    };
-
-    Vector3 nearPoint = Unproject(ndc_x, ndc_y, -1.0f);
-    Vector3 farPoint = Unproject(ndc_x, ndc_y, 1.0f);
-
-    Ray ray;
-    ray.position = nearPoint;
-
-    // Manual vector math to avoid potential signature issues
-    float dx = farPoint.x - nearPoint.x;
-    float dy = farPoint.y - nearPoint.y;
-    float dz = farPoint.z - nearPoint.z;
-    float len = sqrtf(dx * dx + dy * dy + dz * dz);
-
-    if (len > 0.0f)
-    {
-        ray.direction = {dx / len, dy / len, dz / len};
-    }
-    else
-    {
-        ray.direction = {0, 0, -1}; // Default forward?
-    }
-
-    return ray;
+    return ScenePicker::CreateRayFromViewport(camera, localMousePos, viewportSize);
 }
 } // namespace CHEngine
