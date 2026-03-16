@@ -6,11 +6,11 @@
 #include "engine/graphics/mesh_importer.h"
 #include "engine/graphics/renderer.h"
 #include "engine/graphics/renderer2d.h"
+#include "engine/graphics/asset_manager.h"
 #include "engine/graphics/shader_asset.h"
 #include "engine/physics/physics.h"
 #include "engine/physics/bvh/bvh.h"
 #include "engine/scene/components/light_component.h"
-#include "engine/scene/project.h"
 #include "imgui.h"
 #include "raylib.h"
 #include <raymath.h>
@@ -43,7 +43,7 @@ Vector3 SceneRenderer::GetWorldPosition(entt::registry& registry, entt::entity e
 }
 
 void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float nearClip, float farClip, Timestep timestep,
-                                const DebugRenderFlags* debugFlags)
+                                const SceneRenderOptions& options)
 {
     CH_PROFILE_FUNCTION();
     CH_CORE_ASSERT(Renderer::IsInitialized(), "Renderer not initialized!");
@@ -54,9 +54,9 @@ void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float near
 
     // 2. Environmental setup
     auto environment = scene->GetSettings().Environment;
-    if (!environment && Project::GetActive())
+    if (!environment)
     {
-        environment = Project::GetActive()->GetEnvironment();
+        environment = options.EnvironmentOverride;
     }
 
     // 3. Render Passes
@@ -98,12 +98,9 @@ void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float near
             CH_CORE_WARN_ONCE("SceneRenderer: No environment asset for scene!");
         }
 
-        RenderModels(scene, camera, nearClip, farClip, timestep);
+        RenderModels(scene, camera, nearClip, farClip, timestep, options);
 
-        if (debugFlags)
-        {
-            RenderDebug(scene, debugFlags);
-        }
+        RenderDebug(scene, options);
 
         RenderSprites(scene);
 
@@ -127,7 +124,8 @@ SceneRenderer::InstanceKey::InstanceKey(const std::string& path, const std::vect
     }
 }
 
-void SceneRenderer::RenderModels(Scene* scene, const Camera3D& camera, float nearClip, float farClip, Timestep timestep)
+void SceneRenderer::RenderModels(Scene* scene, const Camera3D& camera, float nearClip, float farClip, Timestep timestep,
+                                 const SceneRenderOptions& options)
 {
     auto& registry = scene->GetRegistry();
 
@@ -159,7 +157,7 @@ void SceneRenderer::RenderModels(Scene* scene, const Camera3D& camera, float nea
     CollectRenderItems(registry, frustum, animatedEntries, instanceGroups);
 
     // 4. Pass B: Draw animated individually
-    DrawAnimatedEntities(animatedEntries);
+    DrawAnimatedEntities(animatedEntries, options);
 
     // 5. Pass C: Draw static groups (instanced if >=2, single otherwise)
     DrawStaticEntities(instanceGroups);
@@ -253,7 +251,7 @@ void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& 
         if (registry.all_of<ShaderComponent>(entity))
         {
             auto& shaderComp = registry.get<ShaderComponent>(entity);
-            if (shaderComp.Enabled && !shaderComp.ShaderPath.empty() && Project::GetActive())
+            if (shaderComp.Enabled && !shaderComp.ShaderPath.empty())
             {
                 shaderOverride = AssetManager::Get().Get<ShaderAsset>(shaderComp.ShaderPath);
                 customUniforms = shaderComp.Uniforms;
@@ -302,7 +300,7 @@ void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& 
             continue;
 
         // Lazy load/cache primitive asset or regenerate if dirty
-        if ((!primitive.Asset || primitive.Dirty) && Project::GetActive())
+        if ((!primitive.Asset || primitive.Dirty))
         {
             const char* primitivePaths[] = {
                 "", ":cube:", ":sphere:", ":plane:", ":cylinder:", ":cone:", ":torus:", ":knot:", ":hemisphere:"
@@ -363,7 +361,7 @@ void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& 
         if (registry.all_of<ShaderComponent>(entity))
         {
             auto& shaderComp = registry.get<ShaderComponent>(entity);
-            if (shaderComp.Enabled && !shaderComp.ShaderPath.empty() && Project::GetActive())
+            if (shaderComp.Enabled && !shaderComp.ShaderPath.empty())
             {
                 shaderOverride = AssetManager::Get().Get<ShaderAsset>(shaderComp.ShaderPath);
                 customUniforms = shaderComp.Uniforms;
@@ -392,15 +390,11 @@ void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& 
     }
 }
 
-void SceneRenderer::DrawAnimatedEntities(const std::vector<AnimatedEntry>& animatedEntries)
+void SceneRenderer::DrawAnimatedEntities(const std::vector<AnimatedEntry>& animatedEntries, const SceneRenderOptions& options)
 {
     for (auto& entry : animatedEntries)
     {
-        float targetFPS = 30.0f;
-        if (Project::GetActive())
-        {
-            targetFPS = Project::GetActive()->GetConfig().Animation.TargetFPS;
-        }
+        float targetFPS = options.TargetFPS;
 
         float frameTime = 1.0f / (targetFPS > 0 ? targetFPS : 30.0f);
         float fractionalFrame = (float)entry.animation.CurrentFrame + (entry.animation.FrameTimeCounter / frameTime);
@@ -467,9 +461,9 @@ void SceneRenderer::RenderBVHNode(const BVH* bvh, uint32_t nodeIndex, const Matr
     }
 }
 
-void SceneRenderer::RenderDebug(Scene* scene, const DebugRenderFlags* debugFlags)
+void SceneRenderer::RenderDebug(Scene* scene, const SceneRenderOptions& options)
 {
-    if (!debugFlags)
+    if (!options.ShowDebugColliders && !options.ShowDebugCollisionModelBox && !options.ShowDebugSpawnZones && !options.DrawGrid)
     {
         return;
     }
@@ -477,29 +471,30 @@ void SceneRenderer::RenderDebug(Scene* scene, const DebugRenderFlags* debugFlags
 
     rlDisableDepthTest();
 
-    if (debugFlags->DrawColliders)
-    {
-        DrawColliderDebug(registry, debugFlags);
-    }
-    if (debugFlags->DrawCollisionModelBox)
-    {
-        DrawCollisionModelBoxDebug(registry, debugFlags);
-    }
-    if (debugFlags->DrawSpawnZones)
-    {
-        DrawSpawnDebug(registry, debugFlags);
-    }
 
-    if (debugFlags->DrawGrid && scene->GetSettings().Mode == BackgroundMode::Environment3D)
+    if (options.DrawGrid && scene->GetSettings().Mode == BackgroundMode::Environment3D)
     {
         const auto& grid = scene->GetSettings().Grid;
         Renderer::Get().DrawGrid(grid.Slices, grid.Spacing);
     }
 
+    if (options.ShowDebugColliders)
+    {
+        DrawColliderDebug(registry, options);
+    }
+    if (options.ShowDebugCollisionModelBox)
+    {
+        DrawCollisionModelBoxDebug(registry, options);
+    }
+    if (options.ShowDebugSpawnZones)
+    {
+        DrawSpawnDebug(registry, options);
+    }
+
     rlEnableDepthTest();
 }
 
-void SceneRenderer::DrawColliderDebug(entt::registry& registry, const DebugRenderFlags* debugFlags)
+void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRenderOptions& options)
 {
     auto view = registry.view<TransformComponent, ColliderComponent>();
     for (auto entity : view)
@@ -518,7 +513,7 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const DebugRende
         case ColliderType::Mesh:
         {
             if (collider.ModelPath.empty()) break;
-            if (auto project = Project::GetActive())
+            // Draw collider visualization
             {
                 if (auto asset = AssetManager::Get().Get<ModelAsset>(collider.ModelPath))
                 {
@@ -552,7 +547,7 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const DebugRende
     }
 }
 
-void SceneRenderer::DrawCollisionModelBoxDebug(entt::registry& registry, const DebugRenderFlags* debugFlags)
+void SceneRenderer::DrawCollisionModelBoxDebug(entt::registry& registry, const SceneRenderOptions& options)
 {
     auto view = registry.view<TransformComponent, ColliderComponent>();
     for (auto entity : view)
@@ -586,7 +581,7 @@ BoundingBox SceneRenderer::CalculateColliderWorldAABB(const ColliderComponent& c
     case ColliderType::Mesh:
     {
         if (collider.ModelPath.empty()) break;
-        if (auto project = Project::GetActive())
+        // Local resolution via AssetManager
         {
             if (auto asset = AssetManager::Get().Get<ModelAsset>(collider.ModelPath))
             {
@@ -596,10 +591,10 @@ BoundingBox SceneRenderer::CalculateColliderWorldAABB(const ColliderComponent& c
                     {
                         const auto& rootNode = bvh->GetNodes()[0];
                         corners = {
-                            {rootNode.Min.x, rootNode.Min.y, rootNode.Min.z}, {rootNode.Max.x, rootNode.Min.y, rootNode.Min.z},
-                            {rootNode.Min.x, rootNode.Max.y, rootNode.Min.z}, {rootNode.Max.x, rootNode.Max.y, rootNode.Min.z},
-                            {rootNode.Min.x, rootNode.Min.y, rootNode.Max.z}, {rootNode.Max.x, rootNode.Min.y, rootNode.Max.z},
-                            {rootNode.Min.x, rootNode.Max.y, rootNode.Max.z}, {rootNode.Max.x, rootNode.Max.y, rootNode.Max.z}};
+                            Vector3{rootNode.Min.x, rootNode.Min.y, rootNode.Min.z}, Vector3{rootNode.Max.x, rootNode.Min.y, rootNode.Min.z},
+                            Vector3{rootNode.Min.x, rootNode.Max.y, rootNode.Min.z}, Vector3{rootNode.Max.x, rootNode.Max.y, rootNode.Min.z},
+                            Vector3{rootNode.Min.x, rootNode.Min.y, rootNode.Max.z}, Vector3{rootNode.Max.x, rootNode.Min.y, rootNode.Max.z},
+                            Vector3{rootNode.Min.x, rootNode.Max.y, rootNode.Max.z}, Vector3{rootNode.Max.x, rootNode.Max.y, rootNode.Max.z}};
                     }
                 }
             }
@@ -650,7 +645,7 @@ BoundingBox SceneRenderer::CalculateColliderWorldAABB(const ColliderComponent& c
     return box;
 }
 
-void SceneRenderer::DrawSpawnDebug(entt::registry& registry, const DebugRenderFlags* debugFlags)
+void SceneRenderer::DrawSpawnDebug(entt::registry& registry, const SceneRenderOptions& options)
 {
     auto view = registry.view<TransformComponent, SpawnComponent>();
     for (auto entity : view)
@@ -759,7 +754,7 @@ void SceneRenderer::RenderSprites(Scene* scene)
             continue;
         }
 
-        if (!sprite.Texture && Project::GetActive())
+        if (!sprite.Texture)
         {
             sprite.Texture = AssetManager::Get().Get<TextureAsset>(sprite.TexturePath);
         }
