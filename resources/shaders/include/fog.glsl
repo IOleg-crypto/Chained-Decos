@@ -1,5 +1,6 @@
 // Fog data
 uniform int fogEnabled;
+uniform int fogMode; // 0: Linear, 1: Exp, 2: Exp2
 uniform vec4 fogColor;
 uniform float fogDensity;
 uniform float fogStart;
@@ -26,15 +27,28 @@ vec4 ApplyFog(vec4 color, vec3 fragPos, vec3 viewPos, float time)
     if (fogEnabled == 0) return color;
 
     float dist = length(viewPos - fragPos);
+    
+    // Add some dynamic variance (optional but nice for "mysterious" look)
     vec3 noisePos = fragPos * 0.05 + vec3(time * 0.1, 0.0, time * 0.05);
-    float volumetricFactor = 0.5 + noise(noisePos) * 1.0;
+    float volumetricFactor = 0.5 + noise(noisePos) * 0.5;
+    float effectiveDensity = fogDensity * volumetricFactor;
+
+    float fogFactor = 0.0;
     
-    float linearFog = clamp((fogEnd - dist) / (fogEnd - fogStart), 0.0, 1.0);
-    float expFog = exp(-dist * fogDensity * volumetricFactor);
-    float fogFactor = clamp(min(linearFog, expFog), 0.0, 1.0);
+    if (fogMode == 0) // Linear
+    {
+        fogFactor = (dist - fogStart) / (fogEnd - fogStart);
+    }
+    else if (fogMode == 1) // Exp
+    {
+        fogFactor = 1.0 - exp(-dist * effectiveDensity);
+    }
+    else if (fogMode == 2) // Exp2
+    {
+        fogFactor = 1.0 - exp(-(dist * effectiveDensity) * (dist * effectiveDensity));
+    }
     
-    vec4 result;
-    result.rgb = mix(fogColor.rgb, color.rgb, fogFactor);
-    result.a = mix(fogColor.a, color.a, fogFactor);
-    return result;
+    fogFactor = clamp(fogFactor, 0.0, 1.0);
+    
+    return mix(color, fogColor, fogFactor);
 }

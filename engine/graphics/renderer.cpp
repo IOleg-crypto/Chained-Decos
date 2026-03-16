@@ -588,6 +588,7 @@ void Renderer::ApplyFogUniforms(ShaderAsset* shader)
     shader->SetInt("fogEnabled", fog.Enabled ? 1 : 0);
     if (fog.Enabled)
     {
+        shader->SetInt("fogMode", fog.Mode);
         shader->SetColor("fogColor", fog.FogColor);
         shader->SetFloat("fogDensity", fog.Density);
         shader->SetFloat("fogStart", fog.Start);
@@ -604,6 +605,21 @@ void Renderer::SetDirectionalLight(Vector3 direction, Color color)
 void Renderer::SetAmbientLight(float intensity)
 {
     m_Data->Lighting.CurrentLighting.Ambient = intensity;
+}
+
+void Renderer::DrawText(const char* text, int posX, int posY, int fontSize, Color color)
+{
+    ::DrawText(text, posX, posY, fontSize, color);
+}
+
+int Renderer::MeasureText(const char* text, int fontSize)
+{
+    return ::MeasureText(text, fontSize);
+}
+
+void Renderer::DrawTexture(Texture2D texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint)
+{
+    ::DrawTexturePro(texture, source, dest, origin, rotation, tint);
 }
 
 void Renderer::SetLight(int index, const RenderLight& light)

@@ -59,6 +59,7 @@ PRIVATE
     imguilib
     yaml-cpp
     assimp::assimp
+    nfd
 )
 
 # (Redundant compiler flags removed - now in CompilerSettings.cmake)

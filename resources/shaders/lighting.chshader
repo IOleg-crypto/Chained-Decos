@@ -9,3 +9,8 @@ Uniforms:
   - shininess
   - ambient
   - uMode
+  - fogEnabled
+  - fogColor
+  - fogDensity
+  - fogStart
+  - fogEnd

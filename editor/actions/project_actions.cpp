@@ -6,7 +6,7 @@
 #include "engine/scene/project.h"
 #include "engine/scene/project_serializer.h"
 #include "engine/scene/scene_events.h"
-#include "nfd.h"
+#include "engine/core/dialogs.h"
 #include <filesystem>
 #include <format>
 
@@ -31,13 +31,11 @@ void ProjectActions::New(const std::string& name, const std::string& path)
 
 void ProjectActions::Open()
 {
-    nfdchar_t* outPath = NULL;
-    nfdu8filteritem_t filterItem[1] = {{"Chained Project", "chproject"}};
-    nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, NULL);
-    if (result == NFD_OKAY)
+    std::vector<FileDialogFilter> filters = {{"Chained Project", "chproject"}};
+    auto result = Dialogs::OpenFile(filters);
+    if (result)
     {
-        Open(outPath);
-        NFD_FreePath(outPath);
+        Open(*result);
     }
 }
 

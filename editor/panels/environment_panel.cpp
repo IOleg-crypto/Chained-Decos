@@ -4,8 +4,7 @@
 #include "engine/graphics/environment.h"
 #include "engine/graphics/environment_importer.h"
 #include "engine/scene/project.h"
-#include "imgui.h"
-#include "nfd.hpp"
+#include "engine/core/dialogs.h"
 #include "scene/scene.h"
 #include <filesystem>
 
@@ -68,15 +67,13 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
                 m_Context->GetSettings().BackgroundTexturePath = buffer;
             }
 
-            ImGui::SameLine();
             if (ImGui::Button("..."))
             {
-                nfdu8char_t* outPath = NULL;
-                nfdu8filteritem_t filterList[1] = {{"Textures", "png,jpg,tga,bmp"}};
-                nfdresult_t result = NFD_OpenDialog(&outPath, filterList, 1, NULL);
-                if (result == NFD_OKAY)
+                std::vector<FileDialogFilter> filters = {{"Textures", "png,jpg,tga,bmp"}};
+                auto result = Dialogs::OpenFile(filters);
+                if (result)
                 {
-                    std::filesystem::path p = outPath;
+                    std::filesystem::path p = *result;
                     if (Project::GetActive())
                     {
                         m_Context->GetSettings().BackgroundTexturePath =
@@ -86,7 +83,6 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
                     {
                         m_Context->GetSettings().BackgroundTexturePath = p.filename().string();
                     }
-                    NFD_FreePath(outPath);
                 }
             }
         }
@@ -105,29 +101,26 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
     {
         if (ImGui::Button("Load Environment..."))
         {
-            nfdu8char_t* outPath = NULL;
-            nfdu8filteritem_t filterList[1] = {{"Environment", "chenv"}};
-            nfdresult_t result = NFD_OpenDialog(&outPath, filterList, 1, NULL);
-            if (result == NFD_OKAY)
+            std::vector<FileDialogFilter> filters = {{"Environment", "chenv"}};
+            auto result = Dialogs::OpenFile(filters);
+            if (result)
             {
                 if (auto project = Project::GetActive())
                 {
-                    m_Context->GetSettings().Environment = AssetManager::Get().Get<EnvironmentAsset>(outPath);
+                    m_Context->GetSettings().Environment = AssetManager::Get().Get<EnvironmentAsset>(result->string());
                 }
-                NFD_FreePath(outPath);
             }
         }
 
         ImGui::SameLine();
         if (ImGui::Button("New Environment"))
         {
-            NFD::UniquePath outPath;
-            nfdfilteritem_t filterItem[1] = {{"Environment", "chenv"}};
-            auto result = NFD::SaveDialog(outPath, filterItem, 1, nullptr, "Untitled.chenv");
-            if (result == NFD_OKAY)
+            std::vector<FileDialogFilter> filters = {{"Environment", "chenv"}};
+            auto result = Dialogs::SaveFile(filters);
+            if (result)
             {
                 auto newEnv = std::make_shared<EnvironmentAsset>();
-                newEnv->SetPath(outPath.get());
+                newEnv->SetPath(result->string());
                 m_Context->GetSettings().Environment = newEnv;
             }
         }
@@ -248,12 +241,11 @@ void EnvironmentPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset>
         ImGui::SameLine();
         if (ImGui::Button("..."))
         {
-            nfdu8char_t* outPath = NULL;
-            nfdu8filteritem_t filterList[1] = {{"Textures/HDR", "png,jpg,hdr"}};
-            nfdresult_t result = NFD_OpenDialog(&outPath, filterList, 1, NULL);
-            if (result == NFD_OKAY)
+            std::vector<FileDialogFilter> filters = {{"Textures/HDR", "png,jpg,hdr"}};
+            auto result = Dialogs::OpenFile(filters);
+            if (result)
             {
-                std::filesystem::path p = outPath;
+                std::filesystem::path p = *result;
                 if (Project::GetActive())
                 {
                     settings.Skybox.TexturePath = std::filesystem::relative(p, Project::GetAssetDirectory()).string();
@@ -262,7 +254,6 @@ void EnvironmentPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset>
                 {
                     settings.Skybox.TexturePath = p.filename().string();
                 }
-                NFD_FreePath(outPath);
             }
         }
 
@@ -299,6 +290,8 @@ void EnvironmentPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset>
             fog.FogColor = {(uint8_t)(fogColor[0]*255),(uint8_t)(fogColor[1]*255),(uint8_t)(fogColor[2]*255),(uint8_t)(fogColor[3]*255)};
         }
 
+        
+        ImGui::DragInt("Fog Mode", &fog.Mode, 1, 0, 4);
         ImGui::DragFloat("Density", &fog.Density, 0.001f, 0.0f, 1.0f);
         ImGui::DragFloat("Start", &fog.Start, 0.1f, 0.0f, 1000.0f);
         ImGui::DragFloat("End", &fog.End, 0.1f, 0.0f, 1000.0f);

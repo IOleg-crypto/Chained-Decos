@@ -21,6 +21,7 @@ struct SkyboxSettings
 struct FogSettings
 {
     bool Enabled = false;
+    int Mode = 0; // 0: Linear, 1: Exp, 2: Exp2
     Color FogColor = GRAY;
     float Density = 0.01f;
     float Start = 10.0f;

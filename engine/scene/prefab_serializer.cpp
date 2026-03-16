@@ -8,7 +8,8 @@
 namespace CHEngine
 {
 // Simplified serialization logic for specific entities
-void PrefabSerializer::SerializeEntityData(YAML::Emitter& out, Entity entity)
+// Simplified serialization logic for specific entities
+static void SerializeEntityData(YAML::Emitter& out, Entity entity)
 {
     out << YAML::BeginMap;
 
