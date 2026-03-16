@@ -1,7 +1,7 @@
 #include "engine/scene/entity.h"
-#include "engine/scene/components.h"
-#include "engine/scene/component_serializer.h"
 #include "engine/core/uuid.h"
+#include "engine/scene/component_serializer.h"
+#include "engine/scene/components.h"
 #include <unordered_map>
 
 namespace CHEngine
@@ -17,10 +17,11 @@ Entity::Entity(entt::entity handle, entt::registry& registry)
     }
     else
     {
-        // Fallback or warning: this should only happen if the registry wasn't initialized by a Scene
-        // We'll still set the raw pointer part of the shared_ptr if we can, but shared_ptr doesn't work that way.
-        // Actually, EnTT handles usually exist within a Scene context.
+        // Fallback: Use a non-owning shared_ptr if we're initialized from a raw registry
+        // that doesn't have a shared context (e.g. in stack-allocated test registries).
+        m_Registry = std::shared_ptr<entt::registry>(&registry, [](entt::registry*) {});
     }
+    CH_CORE_ASSERT(m_Registry, "Entity initialized with null registry!");
 }
 
 Entity::Entity(entt::entity handle, entt::registry* registry)
@@ -33,8 +34,15 @@ Entity::Entity(entt::entity handle, entt::registry* registry)
         {
             m_Registry = *sharedPtr;
         }
+        else
+        {
+            // Fallback: Use a non-owning shared_ptr
+            m_Registry = std::shared_ptr<entt::registry>(registry, [](entt::registry*) {});
+        }
     }
+    CH_CORE_ASSERT(m_Registry, "Entity initialized with null registry!");
 }
+
 
 bool Entity::IsValid() const
 {
@@ -63,28 +71,91 @@ Entity Entity::CreateUI(const std::string& type, const std::string& name)
 {
     Entity entity = Create(name.empty() ? type : name);
     entity.AddComponent<ControlComponent>();
-
-    if (type == "Button") entity.AddComponent<ButtonControl>();
-    else if (type == "Panel") entity.AddComponent<PanelControl>();
-    else if (type == "Label") entity.AddComponent<LabelControl>();
-    else if (type == "Slider") entity.AddComponent<SliderControl>();
-    else if (type == "CheckBox") entity.AddComponent<CheckboxControl>();
-    else if (type == "InputText") entity.AddComponent<InputTextControl>();
-    else if (type == "ComboBox") entity.AddComponent<ComboBoxControl>();
-    else if (type == "ProgressBar") entity.AddComponent<ProgressBarControl>();
-    else if (type == "Image") entity.AddComponent<ImageControl>();
-    else if (type == "ImageButton") entity.AddComponent<ImageButtonControl>();
-    else if (type == "Separator") entity.AddComponent<SeparatorControl>();
-    else if (type == "RadioButton") entity.AddComponent<RadioButtonControl>();
-    else if (type == "ColorPicker") entity.AddComponent<ColorPickerControl>();
-    else if (type == "DragFloat") entity.AddComponent<DragFloatControl>();
-    else if (type == "DragInt") entity.AddComponent<DragIntControl>();
-    else if (type == "TreeNode") entity.AddComponent<TreeNodeControl>();
-    else if (type == "TabBar") entity.AddComponent<TabBarControl>();
-    else if (type == "TabItem") entity.AddComponent<TabItemControl>();
-    else if (type == "CollapsingHeader") entity.AddComponent<CollapsingHeaderControl>();
-    else if (type == "PlotLines") entity.AddComponent<PlotLinesControl>();
-    else if (type == "PlotHistogram") entity.AddComponent<PlotHistogramControl>();
+    
+    if (type == "Button")
+    {
+        entity.AddComponent<ButtonControl>();
+    }
+    else if (type == "Panel")
+    {
+        entity.AddComponent<PanelControl>();
+    }
+    else if (type == "Label")
+    {
+        entity.AddComponent<LabelControl>();
+    }
+    else if (type == "Slider")
+    {
+        entity.AddComponent<SliderControl>();
+    }
+    else if (type == "CheckBox")
+    {
+        entity.AddComponent<CheckboxControl>();
+    }
+    else if (type == "InputText")
+    {
+        entity.AddComponent<InputTextControl>();
+    }
+    else if (type == "ComboBox")
+    {
+        entity.AddComponent<ComboBoxControl>();
+    }
+    else if (type == "ProgressBar")
+    {
+        entity.AddComponent<ProgressBarControl>();
+    }
+    else if (type == "Image")
+    {
+        entity.AddComponent<ImageControl>();
+    }
+    else if (type == "ImageButton")
+    {
+        entity.AddComponent<ImageButtonControl>();
+    }
+    else if (type == "Separator")
+    {
+        entity.AddComponent<SeparatorControl>();
+    }
+    else if (type == "RadioButton")
+    {
+        entity.AddComponent<RadioButtonControl>();
+    }
+    else if (type == "ColorPicker")
+    {
+        entity.AddComponent<ColorPickerControl>();
+    }
+    else if (type == "DragFloat")
+    {
+        entity.AddComponent<DragFloatControl>();
+    }
+    else if (type == "DragInt")
+    {
+        entity.AddComponent<DragIntControl>();
+    }
+    else if (type == "TreeNode")
+    {
+        entity.AddComponent<TreeNodeControl>();
+    }
+    else if (type == "TabBar")
+    {
+        entity.AddComponent<TabBarControl>();
+    }
+    else if (type == "TabItem")
+    {
+        entity.AddComponent<TabItemControl>();
+    }
+    else if (type == "CollapsingHeader")
+    {
+        entity.AddComponent<CollapsingHeaderControl>();
+    }
+    else if (type == "PlotLines")
+    {
+        entity.AddComponent<PlotLinesControl>();
+    }
+    else if (type == "PlotHistogram")
+    {
+        entity.AddComponent<PlotHistogramControl>();
+    }
 
     return entity;
 }
@@ -92,16 +163,32 @@ Entity Entity::CreateUI(const std::string& type, const std::string& name)
 Entity Entity::Copy(entt::entity copyEntity)
 {
     Entity srcEntity(copyEntity, m_Registry);
-    std::string name = srcEntity.GetName();
-    Entity dstEntity = Create(name);
+    std::string copyName = srcEntity.GetName() + "_copy";
+    Entity dstEntity = Create(copyName);
 
+    // CopyAll overwrites TagComponent and IDComponent with the source's values.
+    // We must restore the copy's unique identity afterwards.
     ComponentSerializer::Get().CopyAll(srcEntity, dstEntity);
+
+    // Restore the "_copy" name (CopyAll overwrites it with source tag)
+    dstEntity.GetComponent<TagComponent>().Tag = copyName;
+
+    // The IDComponent was copied verbatim from the source, so both entities now share
+    // the same UUID. We must remove it and add a fresh one so that EnTT's on_construct
+    // signal fires correctly and the EntityUUIDMap is properly updated.
+    dstEntity.RemoveComponent<IDComponent>();
+    dstEntity.AddComponent<IDComponent>(); // generates a new UUID, triggers on_construct
+
     return dstEntity;
 }
 
+
 void Entity::Destroy()
 {
-    if (!IsValid()) return;
+    if (!IsValid())
+    {
+        return;
+    }
 
     std::vector<entt::entity> entitiesToDestroy;
     entitiesToDestroy.push_back(m_EntityHandle);
@@ -138,7 +225,10 @@ Entity Entity::FindByTag(const std::string& tag)
     for (auto entity : view)
     {
         const auto& tagComp = view.get<TagComponent>(entity);
-        if (tagComp.Tag == tag) return {entity, m_Registry};
+        if (tagComp.Tag == tag)
+        {
+            return {entity, m_Registry};
+        }
     }
     return {};
 }

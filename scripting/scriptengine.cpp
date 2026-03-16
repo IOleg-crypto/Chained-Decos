@@ -67,59 +67,6 @@ static std::filesystem::path GetExecutableDir()
     return std::filesystem::current_path();
 }
 
-// Shadow-copy directory for DLLs — avoids file locks from CoreCLR
-static std::filesystem::path GetShadowDir()
-{
-    return std::filesystem::temp_directory_path() / "CHEngine_shadow";
-}
-
-/// Copy a DLL (and optional .pdb) to a uniquely-named shadow file.
-/// Returns the path to the shadow copy.
-static std::filesystem::path ShadowCopyDll(const std::filesystem::path& original)
-{
-    auto shadowDir = GetShadowDir();
-    std::filesystem::create_directories(shadowDir);
-
-    auto ts = std::chrono::steady_clock::now().time_since_epoch().count();
-    std::string shadowName = original.stem().string() + "_" + std::to_string(ts) + ".dll";
-    std::filesystem::path shadowDll = shadowDir / shadowName;
-
-    std::error_code ec;
-    std::filesystem::copy_file(original, shadowDll,
-                               std::filesystem::copy_options::overwrite_existing, ec);
-    if (ec)
-    {
-        CH_CORE_ERROR("ScriptEngine: Failed to shadow-copy '{}' -> '{}': {}",
-                      original.string(), shadowDll.string(), ec.message());
-        return ""; // Return empty to indicate failure
-    }
-
-    // Copy .pdb for debugger support
-    auto pdbOrig = original; pdbOrig.replace_extension(".pdb");
-    if (std::filesystem::exists(pdbOrig))
-    {
-        auto pdbShadow = shadowDll; pdbShadow.replace_extension(".pdb");
-        std::filesystem::copy_file(pdbOrig, pdbShadow,
-                                   std::filesystem::copy_options::overwrite_existing, ec);
-    }
-
-    CH_CORE_INFO("ScriptEngine: Shadow-copied '{}' -> '{}'", original.string(), shadowDll.string());
-    return shadowDll;
-}
-
-/// Remove all old shadow copies (called before creating a new one)
-static void CleanupShadowCopies()
-{
-    auto shadowDir = GetShadowDir();
-    std::error_code ec;
-    if (std::filesystem::exists(shadowDir, ec))
-    {
-        std::filesystem::remove_all(shadowDir, ec);
-        if (ec)
-            CH_CORE_WARN("ScriptEngine: Could not clean shadow dir: {}", ec.message());
-    }
-}
-
 // ── Init / Shutdown ───────────────────────────────────────────────────────────
 void ScriptEngine::Init()
 {
@@ -156,7 +103,6 @@ void ScriptEngine::Shutdown()
     m_AppAssembly = nullptr;
     m_CoreAssembly = nullptr;
     m_Host.Shutdown();
-    CleanupShadowCopies();
     m_IsInitialized = false;
 }
 
@@ -178,15 +124,8 @@ void ScriptEngine::LoadAppAssembly(const std::string& filepath)
             corePath = "CHEngine.Managed.dll"; 
         }
 
-        // Shadow-copy to avoid file locks from CoreCLR
-        auto shadowCore = ShadowCopyDll(corePath);
-        if (shadowCore.empty())
-        {
-            CH_CORE_ERROR("ScriptEngine: Failed to shadow-copy core assembly '{}'", corePath.string());
-            return;
-        }
-
-        m_CoreAssembly = &m_AppAssemblyContext.LoadAssembly(shadowCore.string());
+        // Load the core assembly directly — no shadow copy needed
+        m_CoreAssembly = &m_AppAssemblyContext.LoadAssembly(corePath.string());
         if (!m_CoreAssembly || m_CoreAssembly->GetLoadStatus() != Coral::AssemblyLoadStatus::Success)
         {
             CH_CORE_ERROR("ScriptEngine: Failed to load core assembly '{}'. Status: {}", 
@@ -195,15 +134,8 @@ void ScriptEngine::LoadAppAssembly(const std::string& filepath)
             return;
         }
 
-        // 2. Load the actual game scripts (also shadow-copied)
-        auto shadowApp = ShadowCopyDll(std::filesystem::path(filepath));
-        if (shadowApp.empty())
-        {
-            CH_CORE_ERROR("ScriptEngine: Failed to shadow-copy app assembly '{}'", filepath);
-            return;
-        }
-
-        m_AppAssembly = &m_AppAssemblyContext.LoadAssembly(shadowApp.string());
+        // 2. Load the game scripts directly from the project directory
+        m_AppAssembly = &m_AppAssemblyContext.LoadAssembly(filepath);
 
         if (m_AppAssembly->GetLoadStatus() != Coral::AssemblyLoadStatus::Success)
         {
@@ -267,10 +199,7 @@ void ScriptEngine::ReloadAssembly()
     m_Host.UnloadAssemblyLoadContext(m_AppAssemblyContext);
     CH_CORE_INFO("ScriptEngine: Old ALC unloaded.");
 
-    // 3. Clean old shadow copies so we don't accumulate temp files
-    CleanupShadowCopies();
-
-    // 4. Fresh ALC + load the new DLL
+    // 3. Fresh ALC + load the new DLL directly from the project
     m_AppAssemblyContext = m_Host.CreateAssemblyLoadContext("GameScriptsALC");
     LoadAppAssembly(dllPath.string());
 }

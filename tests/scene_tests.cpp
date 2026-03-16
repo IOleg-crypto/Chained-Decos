@@ -95,7 +95,7 @@ TEST(SceneTest, CopyEntity)
     
     Entity dst = scene.CopyEntity((entt::entity)src);
     EXPECT_TRUE(dst);
-    EXPECT_EQ(dst.GetName(), "Source"); // Copied name
+    EXPECT_EQ(dst.GetName(), "Source_copy"); // Copy must have "_copy" suffix
     EXPECT_NE(src.GetUUID(), dst.GetUUID()); // Different UUID
     EXPECT_TRUE(dst.HasComponent<CameraComponent>());
     EXPECT_TRUE(dst.GetComponent<CameraComponent>().Primary);
