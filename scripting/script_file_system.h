@@ -1,3 +1,8 @@
+//========= Copyright Chained Decos, All rights reserved. ============//
+//
+// Purpose: Filesystem utilities for the scripting subsystem.
+//
+//=============================================================================//
 #ifndef CH_SCRIPT_FILE_SYSTEM_H
 #define CH_SCRIPT_FILE_SYSTEM_H
 
@@ -6,22 +11,14 @@
 
 namespace CHEngine {
 
-	class ScriptFileSystem
-	{
-	public:
-		// Returns the directory containing the engine executable
-		static std::filesystem::path GetExecutableDir();
-
-		// Returns the path to the temporary directory used for shadow copying assemblies
-		static std::filesystem::path GetShadowDir();
-
-		// Copies a DLL (and its .pdb if present) to a uniquely-named file in the shadow directory.
-		// Returns the path to the newly created shadow copy.
-		static std::filesystem::path ShadowCopyDll(const std::filesystem::path& original);
-
-		// Deletes all old shadow copies in the shadow directory.
-		static void CleanupShadowCopies();
-	};
+class ScriptFileSystem
+{
+public:
+    //-----------------------------------------------------------------------------
+    // Purpose: Returns the directory containing the engine executable
+    //-----------------------------------------------------------------------------
+    static std::filesystem::path GetExecutableDir();
+};
 
 } // namespace CHEngine
 #endif // CH_SCRIPT_FILE_SYSTEM_H
