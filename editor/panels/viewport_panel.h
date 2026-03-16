@@ -5,6 +5,7 @@
 #include "engine/core/timestep.h"
 #include "panel.h"
 #include "raylib.h"
+#include "engine/graphics/framebuffer.h"
 #include "viewport/editor_camera.h"
 #include "viewport/editor_gizmo.h"
 #include "viewport/ui_manipulator.h"
@@ -53,8 +54,8 @@ public:
     void DrawCameraSelector(class Scene* scene);
 
 private:
-    RenderTexture2D m_ViewportTexture;
-    RenderTexture2D m_HDRTexture;
+    std::shared_ptr<Framebuffer> m_ViewportFramebuffer;
+    std::shared_ptr<Framebuffer> m_HDRFramebuffer;
     Vector2 m_ViewportSize = {0, 0};
     bool m_Focused = false;
     bool m_Hovered = false;

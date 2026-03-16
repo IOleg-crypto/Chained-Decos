@@ -83,5 +83,6 @@ void main()
     // 4. Final Assembly
     vec3 outColor = lighting + emissiveComp;
     
-    finalColor = vec4(outColor, (mode == 2) ? 1.0 : baseColor.a);
+    vec4 result = vec4(outColor, (mode == 2) ? 1.0 : baseColor.a);
+    finalColor = ApplyFog(result, fragPosition, viewPos, uTime);
 }

@@ -20,6 +20,7 @@ namespace CHEngine
 {
 class ImGuiLayer;
 class Layer;
+class ScriptEngine;
 
 struct ApplicationCommandLineArgs
 {
@@ -70,11 +71,16 @@ public:
     {
         return m_ImGuiLayer;
     }
+    ScriptEngine& GetScriptEngine()
+    {
+        return *m_ScriptEngine;
+    }
     const ApplicationSpecification& GetSpecification() const
     {
         return m_Specification;
     }
     LayerStack& GetLayerStack();
+    float GetFrameTime() const { return m_DeltaTime; }
 
     void SubmitToMainThread(const std::function<void()>& function);
 
@@ -104,6 +110,7 @@ private:
     class Audio* m_Audio = nullptr;
     class PhysicsSystem* m_PhysicsSystem = nullptr;
     class ComponentSerializer* m_ComponentSerializer = nullptr;
+    std::unique_ptr<class ScriptEngine> m_ScriptEngine;
 
     std::vector<std::function<void()>> m_MainThreadQueue;
     std::mutex m_MainThreadQueueMutex;

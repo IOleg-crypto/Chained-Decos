@@ -3,7 +3,7 @@
 #include "engine/core/application.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene_serializer.h"
-#include "nfd.h"
+#include "engine/core/dialogs.h"
 
 namespace CHEngine
 {
@@ -22,13 +22,11 @@ void SceneActions::New()
 
 void SceneActions::Open()
 {
-    nfdchar_t* outPath = NULL;
-    nfdu8filteritem_t filterItem[1] = {{"Chained Scene", "chscene"}};
-    nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, NULL);
-    if (result == NFD_OKAY)
+    std::vector<FileDialogFilter> filters = {{"Chained Scene", "chscene"}};
+    auto result = Dialogs::OpenFile(filters);
+    if (result)
     {
-        Open(outPath);
-        NFD_FreePath(outPath);
+        Open(*result);
     }
 }
 
@@ -77,16 +75,14 @@ void SceneActions::Save()
 
 void SceneActions::SaveAs()
 {
-    nfdchar_t* outPath = NULL;
-    nfdu8filteritem_t filterItem[1] = {{"Chained Scene", "chscene"}};
-    nfdresult_t result = NFD_SaveDialog(&outPath, filterItem, 1, NULL, NULL);
-    if (result == NFD_OKAY)
+    std::vector<FileDialogFilter> filters = {{"Chained Scene", "chscene"}};
+    auto result = Dialogs::SaveFile(filters);
+    if (result)
     {
         auto scene = EditorLayer::Get().GetActiveScene();
-        scene->GetSettings().ScenePath = outPath;
+        scene->GetSettings().ScenePath = result->string();
         SceneSerializer serializer(scene.get());
-        serializer.Serialize(outPath);
-        NFD_FreePath(outPath);
+        serializer.Serialize(result->string());
     }
 }
 

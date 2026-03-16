@@ -21,6 +21,8 @@ add_library(engine_graphics OBJECT
     raylib_buffer.cpp
     vertex_array.cpp
     raylib_vertex_array.cpp
+    framebuffer.cpp
+    raylib_framebuffer.cpp
 
     renderer.h
     scene_renderer.h
@@ -41,6 +43,7 @@ add_library(engine_graphics OBJECT
     environment_importer.h
     asset_importer.h
     frustum.h
+    framebuffer.h
 )
 
 target_include_directories(engine_graphics PUBLIC

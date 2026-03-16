@@ -37,9 +37,6 @@ RuntimeLayer::~RuntimeLayer()
 
 void RuntimeLayer::OnAttach()
 {
-    m_ScriptEngine = std::make_unique<ScriptEngine>();
-    m_ScriptEngine->Init();
-
     auto& assetManager = AssetManager::Get();
     if (assetManager.GetRootPath().empty())
     {
@@ -82,7 +79,6 @@ void RuntimeLayer::OnDetach()
         SceneScripting::Stop(m_Scene.get());
         m_Scene->OnRuntimeStop();
     }
-    m_ScriptEngine.reset();
 }
 
 void RuntimeLayer::OnUpdate(Timestep ts)

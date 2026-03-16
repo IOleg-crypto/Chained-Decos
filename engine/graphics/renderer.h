@@ -116,6 +116,11 @@ public:
     void DrawSphereWires(const Matrix& transform, float radius, Color color);
     void ApplyPostProcessing(RenderTexture2D screenTexture, const Camera3D& camera);
 
+    // 2D / UI / Overlay helpers (wraps internal systems or raw calls)
+    void DrawText(const char* text, int posX, int posY, int fontSize, Color color);
+    int MeasureText(const char* text, int fontSize);
+    void DrawTexture(Texture2D texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint);
+
     void SetDirectionalLight(Vector3 direction, Color color);
     void SetAmbientLight(float intensity);
     void SetLight(int index, const RenderLight& light);

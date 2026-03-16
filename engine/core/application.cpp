@@ -18,6 +18,8 @@
 #include "engine/scene/scene_events.h"
 #include "engine/scene/scene_events.h"
 #include "rlgl.h"
+#include "nfd.h"
+#include "scripting/scriptengine.h"
 
 #include <algorithm>
 #include <filesystem>
@@ -95,9 +97,13 @@ Application::Application(const ApplicationSpecification& specification)
     // ImGui Layer setup (always needed for Editor/Debugging)
     if (!m_Specification.Headless)
     {
+        NFD_Init();
         m_ImGuiLayer = new ImGuiLayer();
         PushOverlay(m_ImGuiLayer);
     }
+
+    m_ScriptEngine = std::make_unique<ScriptEngine>();
+    m_ScriptEngine->Init();
 
     CH_CORE_INFO("Application Initialized: {}", m_Specification.Name);
 }
@@ -121,6 +127,11 @@ Application::~Application()
 
     m_LayerStack->Shutdown();
     m_Window.reset();
+
+    if (!m_Specification.Headless)
+    {
+        NFD_Quit();
+    }
 
     s_Instance = nullptr;
     CH_CORE_INFO("Engine Shutdown Successfully.");
