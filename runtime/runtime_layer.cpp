@@ -1,3 +1,10 @@
+//========= Copyright Chained Decos, All rights reserved. ============//
+//
+// Purpose: Primary gameplay runtime layer.
+//          Handles scene management, game loop, and script execution.
+//
+//=============================================================================//
+
 #include "runtime_layer.h"
 #include "engine/core/application.h"
 #include "engine/core/window.h"
@@ -198,6 +205,9 @@ void RuntimeLayer::OnEvent(Event& e)
     });
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: Load a new scene from file
+//-----------------------------------------------------------------------------
 void RuntimeLayer::LoadScene(const std::string& path)
 {
     std::filesystem::path scenePath = path;

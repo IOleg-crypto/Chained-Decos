@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using CHEngine;
 
 namespace ChainedDecos.Scripts
@@ -6,6 +7,7 @@ namespace ChainedDecos.Scripts
     public class DebugInfoScript : Script
     {
         public Key ToggleKey = Key.F3;
+        public Key ToggleKey2 = Key.F4;
         private bool m_ShowDebug = false;
 
         public override void OnUpdate(float ts)
