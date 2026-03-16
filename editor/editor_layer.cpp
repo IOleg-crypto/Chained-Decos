@@ -12,9 +12,10 @@
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene_serializer.h"
-#include <fstream>
-#include "scripting/scriptengine.h"
 #include "scripting/scene_scripting.h"
+#include "scripting/scriptengine.h"
+#include <fstream>
+
 
 #include "extras/IconsFontAwesome6.h"
 #include "nfd.h"
@@ -24,6 +25,8 @@
 #include "panels/project_browser_panel.h"
 #include "panels/property_editor.h"
 #include "panels/viewport_panel.h"
+#include "scripting/script_file_system.h"
+
 
 namespace CHEngine
 {
@@ -43,7 +46,7 @@ EditorLayer::EditorLayer()
 
 void EditorLayer::LoadConfig()
 {
-    std::string configPath = PROJECT_ROOT_DIR "/editor_settings.yaml";
+    std::filesystem::path configPath = ScriptFileSystem::GetExecutableDir() / "editor_settings.yaml";
     if (!std::filesystem::exists(configPath))
     {
         return;
@@ -51,7 +54,7 @@ void EditorLayer::LoadConfig()
 
     try
     {
-        YAML::Node data = YAML::LoadFile(configPath);
+        YAML::Node data = YAML::LoadFile(configPath.string());
         if (!data["Editor"])
         {
             return;
@@ -78,7 +81,7 @@ void EditorLayer::SaveConfig()
     out << YAML::EndMap;
     out << YAML::EndMap;
 
-    std::ofstream fout(PROJECT_ROOT_DIR "/editor_settings.yaml");
+    std::ofstream fout(ScriptFileSystem::GetExecutableDir() / "editor_settings.yaml");
     fout << out.c_str();
 }
 
@@ -155,8 +158,7 @@ void EditorLayer::OnAttach()
     }
 
     CH_CORE_INFO("EditorLayer - Setting window icon");
-    Image icon =
-        LoadImage(PROJECT_ROOT_DIR "/resources/icons/game-engine-icon-featuring-a-game-controller-with-.png");
+    Image icon = LoadImage(PROJECT_ROOT_DIR "/resources/icons/game-engine-icon-featuring-a-game-controller-with-.png");
     if (icon.data != nullptr)
     {
         ImageFormat(&icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
@@ -319,7 +321,6 @@ void EditorLayer::DrawDockSpace()
     m_Layout->EndWorkspace();
 }
 
-
 bool EditorLayer::OnProjectOpened(ProjectOpenedEvent& e)
 {
     CH_CORE_INFO("EditorLayer: Handling ProjectOpenedEvent - {}", e.GetPath());
@@ -367,7 +368,7 @@ void EditorLayer::OnEvent(Event& e)
     {
         SceneScripting::DispatchEvent(scene.get(), e);
     }
-    
+
     EventDispatcher dispatcher(e);
 
     // 1. Scene Management

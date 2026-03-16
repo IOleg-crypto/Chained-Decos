@@ -1,5 +1,12 @@
 #include <Coral/String.hpp>
 #include <Coral/Array.hpp>
+//========= Copyright Chained Decos, All rights reserved. ============//
+//
+// Purpose: Native glue code for C# scripting system. 
+//          Exposes engine functionality to Coral managed environment.
+//
+//=============================================================================//
+
 #include "engine/core/log.h"
 #include "engine/core/input.h"
 #include "engine/core/application.h"
@@ -479,6 +486,9 @@ namespace CHEngine {
         }
     }
 
+    //-----------------------------------------------------------------------------
+    // Purpose: Register all native methods with the Coral scripting engine
+    //-----------------------------------------------------------------------------
     void ScriptGlue::RegisterInternalCalls(Coral::ManagedAssembly& assembly) {
         #define CH_ADD_INTERNAL_CALL(className, fieldName, funcPtr) \
             assembly.AddInternalCall("CHEngine." #className, #fieldName, (void*)funcPtr)

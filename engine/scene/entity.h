@@ -8,9 +8,9 @@
 #include "engine/scene/components/tag_component.h"
 #include "entt/entt.hpp"
 
+#include <memory>
 #include <string>
 #include <unordered_map>
-#include <memory>
 
 namespace CHEngine
 {
@@ -73,9 +73,9 @@ public:
     bool IsValid() const;
 
     // Entity Management (Factory & Queries)
-    Entity Create(const std::string& name = "");
-    Entity CreateWithUUID(UUID uuid, const std::string& name = "");
-    Entity CreateUI(const std::string& type, const std::string& name = "");
+    Entity Create(const std::string& name);
+    Entity CreateWithUUID(UUID uuid, const std::string& name);
+    Entity CreateUI(const std::string& type, const std::string& name);
     Entity Copy(entt::entity copyEntity);
     void Destroy();
 
@@ -108,8 +108,11 @@ public:
     {
         return *m_Registry;
     }
-    
-    std::shared_ptr<entt::registry> GetRegistryPtr() { return m_Registry; }
+
+    std::shared_ptr<entt::registry> GetRegistryPtr()
+    {
+        return m_Registry;
+    }
 
     UUID GetUUID()
     {

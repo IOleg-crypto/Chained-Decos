@@ -1,3 +1,8 @@
+//========= Copyright Chained Decos, All rights reserved. ============//
+//
+// Purpose: Handles player falling logic and environmental audio hints.
+//
+//=============================================================================//
 using System;
 using CHEngine;
 

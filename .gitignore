@@ -82,6 +82,6 @@ lib/
 engine/script/managed/ManagedDependencies.props
 .env.*
 
-# Local/Editor Configs
-editor_settings.yaml
+# Log files
+*.log
 
