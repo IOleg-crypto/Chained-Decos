@@ -241,8 +241,19 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
             farClip = cameraComp.GetPerspectiveFarClip();
         }
 
-        m_SceneRenderer->RenderScene(activeScene.get(), camera, nearClip, farClip, GetFrameTime(),
-                                     &EditorLayer::Get().GetDebugRenderFlags());
+        SceneRenderOptions options;
+        options.DrawGrid = EditorLayer::Get().GetDebugRenderFlags().DrawGrid;
+        options.ShowDebugColliders = EditorLayer::Get().GetDebugRenderFlags().DrawColliders;
+        options.ShowDebugCollisionModelBox = EditorLayer::Get().GetDebugRenderFlags().DrawCollisionModelBox;
+        options.ShowDebugSpawnZones = EditorLayer::Get().GetDebugRenderFlags().DrawSpawnZones;
+        options.ShowEditorIcons = true;
+
+        if (auto project = Project::GetActive())
+        {
+            options.TargetFPS = project->GetConfig().Animation.TargetFPS;
+        }
+
+        m_SceneRenderer->RenderScene(activeScene.get(), camera, nearClip, farClip, GetFrameTime(), options);
         EndTextureMode();
 
         // 2. APPLY MODULAR POST-PROCESSING

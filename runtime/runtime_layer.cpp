@@ -154,7 +154,13 @@ void RuntimeLayer::OnRender(Timestep ts)
             farClip = cameraComp.GetPerspectiveFarClip();
         }
 
-        m_SceneRenderer->RenderScene(m_Scene.get(), camera.value(), nearClip, farClip, ts);
+        SceneRenderOptions options;
+        if (auto project = Project::GetActive())
+        {
+            options.TargetFPS = project->GetConfig().Animation.TargetFPS;
+        }
+
+        m_SceneRenderer->RenderScene(m_Scene.get(), camera.value(), nearClip, farClip, ts, options);
     }
 }
 
