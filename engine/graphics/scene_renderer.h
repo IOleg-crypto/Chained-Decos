@@ -14,6 +14,19 @@ namespace CHEngine
 {
 struct Frustum;
 
+struct SceneRenderOptions
+{
+    float TargetFPS = 60.0f;
+    std::shared_ptr<class EnvironmentAsset> EnvironmentOverride = nullptr;
+    
+    // Debug Rendering Flags
+    bool ShowDebugColliders = false;
+    bool ShowDebugCollisionModelBox = false;
+    bool ShowDebugSpawnZones = true;
+    bool DrawGrid = false;
+    bool ShowEditorIcons = true;
+};
+
 class SceneRenderer
 {
 public:
@@ -22,11 +35,13 @@ public:
 
 public:
     void RenderScene(Scene* scene, const Camera3D& camera, float nearClip, float farClip, Timestep timestep,
-                     const DebugRenderFlags* debugFlags = nullptr);
+                     const SceneRenderOptions& options);
+
 
     // Internal methods used by RenderScene
-    void RenderModels(Scene* scene, const Camera3D& camera, float nearClip, float farClip, Timestep timestep);
-    void RenderDebug(Scene* scene, const DebugRenderFlags* debugFlags);
+    void RenderModels(Scene* scene, const Camera3D& camera, float nearClip, float farClip, Timestep timestep,
+                      const SceneRenderOptions& options);
+    void RenderDebug(Scene* scene, const SceneRenderOptions& options);
     void RenderEditorIcons(Scene* scene, const Camera3D& camera);
     void RenderSprites(Scene* scene);
 
@@ -66,12 +81,12 @@ private:
     void CollectRenderItems(entt::registry& registry, const Frustum& frustum,
                             std::vector<AnimatedEntry>& animatedEntries,
                             std::unordered_map<InstanceKey, InstanceGroup, InstanceKeyHash>& instanceGroups);
-    void DrawAnimatedEntities(const std::vector<AnimatedEntry>& animatedEntries);
+    void DrawAnimatedEntities(const std::vector<AnimatedEntry>& animatedEntries, const SceneRenderOptions& options);
     void DrawStaticEntities(std::unordered_map<InstanceKey, InstanceGroup, InstanceKeyHash>& instanceGroups);
 
-    void DrawColliderDebug(entt::registry& registry, const DebugRenderFlags* debugFlags);
-    void DrawCollisionModelBoxDebug(entt::registry& registry, const DebugRenderFlags* debugFlags);
-    void DrawSpawnDebug(entt::registry& registry, const DebugRenderFlags* debugFlags);
+    void DrawColliderDebug(entt::registry& registry, const SceneRenderOptions& options);
+    void DrawCollisionModelBoxDebug(entt::registry& registry, const SceneRenderOptions& options);
+    void DrawSpawnDebug(entt::registry& registry, const SceneRenderOptions& options);
 
     static BoundingBox CalculateColliderWorldAABB(const ColliderComponent& collider, const Matrix& worldTransform);
 

@@ -16,7 +16,6 @@
 #include "scripting/scriptengine.h"
 #include <fstream>
 
-
 #include "extras/IconsFontAwesome6.h"
 #include "nfd.h"
 #include "panels/console_panel.h"
@@ -26,7 +25,6 @@
 #include "panels/property_editor.h"
 #include "panels/viewport_panel.h"
 #include "scripting/script_file_system.h"
-
 
 namespace CHEngine
 {
@@ -47,6 +45,7 @@ EditorLayer::EditorLayer()
 void EditorLayer::LoadConfig()
 {
     std::filesystem::path configPath = ScriptFileSystem::GetExecutableDir() / "editor_settings.yaml";
+    CH_CORE_INFO("Loading editor config from: {}", configPath.string());
     if (!std::filesystem::exists(configPath))
     {
         return;
@@ -72,18 +71,30 @@ void EditorLayer::LoadConfig()
 
 void EditorLayer::SaveConfig()
 {
+    std::filesystem::path configPath = ScriptFileSystem::GetExecutableDir() / "editor_settings.yaml";
+    CH_CORE_INFO("Saving editor config to: {}", configPath.string());
+
     YAML::Emitter out;
     out << YAML::BeginMap;
     out << YAML::Key << "Editor" << YAML::Value << YAML::BeginMap;
     out << YAML::Key << "LastProjectPath" << YAML::Value << m_Config.LastProjectPath;
     out << YAML::Key << "LastScenePath" << YAML::Value << m_Config.LastScenePath;
     out << YAML::Key << "LoadLastProjectOnStartup" << YAML::Value << m_Config.LoadLastProjectOnStartup;
-    out << YAML::EndMap;
-    out << YAML::EndMap;
+    out << YAML::EndMap; // closes Editor map
+    out << YAML::EndMap; // closes root map
 
-    std::ofstream fout(ScriptFileSystem::GetExecutableDir() / "editor_settings.yaml");
-    fout << out.c_str();
+    std::ofstream fout(configPath);
+    if (fout.is_open())
+    {
+        fout << out.c_str();
+        fout.close();
+    }
+    else
+    {
+        CH_CORE_ERROR("Failed to open editor config for writing: {}", configPath.string());
+    }
 }
+
 
 void EditorLayer::OnAttach()
 {
@@ -334,6 +345,9 @@ bool EditorLayer::OnProjectOpened(ProjectOpenedEvent& e)
         }
         Renderer::LoadEngineResources(AssetManager::Get());
         ScriptEngine::Get().ReloadAssembly();
+        
+        m_Config.LastProjectPath = e.GetPath();
+        SaveConfig();
     }
     return false;
 }
@@ -351,6 +365,9 @@ bool EditorLayer::OnSceneOpened(SceneOpenedEvent& e)
     {
         project->SetActiveScenePath(std::filesystem::relative(e.GetPath(), project->GetProjectDirectory()));
         ProjectActions::Save();
+        
+        m_Config.LastScenePath = e.GetPath();
+        SaveConfig();
     }
 
     // Sync Diagnostic Mode

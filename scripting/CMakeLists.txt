@@ -3,6 +3,14 @@ add_library(scripting STATIC
     scriptengine.cpp
     script_glue.h
     script_glue.cpp
+    script_glue_internal.h
+    script_glue_system.cpp
+    script_glue_input.cpp
+    script_glue_scene.cpp
+    script_glue_entity.cpp
+    script_glue_camera.cpp
+    script_glue_ui.cpp
+    script_glue_gameplay.cpp
     scene_scripting.h
     scene_scripting.cpp
     script_file_system.h
