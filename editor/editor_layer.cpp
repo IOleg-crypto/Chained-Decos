@@ -6,7 +6,6 @@
 #include "engine/core/input.h"
 
 #include "engine/core/profiler.h"
-#include "engine/core/yaml.h"
 #include "engine/graphics/asset_manager.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/components.h"
@@ -14,10 +13,9 @@
 #include "engine/scene/scene_serializer.h"
 #include "scripting/scene_scripting.h"
 #include "scripting/scriptengine.h"
-#include <fstream>
+#include "scripting/script_file_system.h"
 
 #include "extras/IconsFontAwesome6.h"
-#include "nfd.h"
 #include "panels/console_panel.h"
 #include "panels/content_browser_panel.h"
 #include "panels/environment_panel.h"
@@ -39,60 +37,28 @@ EditorLayer::EditorLayer()
     m_Layout = std::make_unique<EditorLayout>();
     m_Actions = std::make_unique<EditorActions>();
 
+    std::filesystem::path configPath = ScriptFileSystem::GetExecutableDir() / "editor_settings.yaml";
+    m_Settings = std::make_unique<SettingsManager>(configPath);
+
     LoadConfig();
 }
 
 void EditorLayer::LoadConfig()
 {
-    std::filesystem::path configPath = ScriptFileSystem::GetExecutableDir() / "editor_settings.yaml";
-    CH_CORE_INFO("Loading editor config from: {}", configPath.string());
-    if (!std::filesystem::exists(configPath))
+    if (m_Settings->Load())
     {
-        return;
-    }
-
-    try
-    {
-        YAML::Node data = YAML::LoadFile(configPath.string());
-        if (!data["Editor"])
-        {
-            return;
-        }
-
-        auto node = data["Editor"];
-        m_Config.LastProjectPath = node["LastProjectPath"].as<std::string>("");
-        m_Config.LastScenePath = node["LastScenePath"].as<std::string>("");
-        m_Config.LoadLastProjectOnStartup = node["LoadLastProjectOnStartup"].as<bool>(false);
-    } catch (std::exception& e)
-    {
-        CH_CORE_ERROR("Failed to load editor config: {}", e.what());
+        m_Config.LastProjectPath = m_Settings->Get<std::string>("Editor", "LastProjectPath", "");
+        m_Config.LastScenePath = m_Settings->Get<std::string>("Editor", "LastScenePath", "");
+        m_Config.LoadLastProjectOnStartup = m_Settings->Get<bool>("Editor", "LoadLastProjectOnStartup", false);
     }
 }
 
 void EditorLayer::SaveConfig()
 {
-    std::filesystem::path configPath = ScriptFileSystem::GetExecutableDir() / "editor_settings.yaml";
-    CH_CORE_INFO("Saving editor config to: {}", configPath.string());
-
-    YAML::Emitter out;
-    out << YAML::BeginMap;
-    out << YAML::Key << "Editor" << YAML::Value << YAML::BeginMap;
-    out << YAML::Key << "LastProjectPath" << YAML::Value << m_Config.LastProjectPath;
-    out << YAML::Key << "LastScenePath" << YAML::Value << m_Config.LastScenePath;
-    out << YAML::Key << "LoadLastProjectOnStartup" << YAML::Value << m_Config.LoadLastProjectOnStartup;
-    out << YAML::EndMap; // closes Editor map
-    out << YAML::EndMap; // closes root map
-
-    std::ofstream fout(configPath);
-    if (fout.is_open())
-    {
-        fout << out.c_str();
-        fout.close();
-    }
-    else
-    {
-        CH_CORE_ERROR("Failed to open editor config for writing: {}", configPath.string());
-    }
+    m_Settings->Set("Editor", "LastProjectPath", m_Config.LastProjectPath);
+    m_Settings->Set("Editor", "LastScenePath", m_Config.LastScenePath);
+    m_Settings->Set("Editor", "LoadLastProjectOnStartup", m_Config.LoadLastProjectOnStartup);
+    m_Settings->Save();
 }
 
 
@@ -116,15 +82,8 @@ void EditorLayer::OnAttach()
         ConsolePanel::AddLog(buffer, level);
     });
 
-    NFD_Init();
-    ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     EditorGUI::ApplyTheme();
     PropertyEditor::Init();
-
-    // Initialize Scripting
-    m_ScriptEngine = std::make_unique<ScriptEngine>();
-    m_ScriptEngine->Init();
 
     // Register Panels
     m_Panels->Init();
@@ -226,16 +185,9 @@ void EditorLayer::LoadEditorFonts()
 
 void EditorLayer::OnDetach()
 {
-    if (m_RuntimeScene)
-    {
-        SceneScripting::Stop(m_RuntimeScene.get());
-    }
-    m_ScriptEngine.reset();
-
     SaveConfig();
     EditorContext::Shutdown();
     SetTraceLogCallback(nullptr);
-    NFD_Quit();
 }
 
 void EditorLayer::OnUpdate(Timestep ts)

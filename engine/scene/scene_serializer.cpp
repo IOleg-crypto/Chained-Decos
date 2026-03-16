@@ -15,12 +15,7 @@
 
 namespace CHEngine
 {
-SceneSerializer::SceneSerializer(Scene* scene)
-    : m_Scene(scene)
-{
-}
-
-void SceneSerializer::SerializeEntity(YAML::Emitter& out, Entity entity)
+static void SerializeEntity(YAML::Emitter& out, Entity entity)
 {
     out << YAML::BeginMap; // Entity
 
@@ -127,6 +122,11 @@ bool SceneSerializer::Serialize(const std::string& filepath)
         CH_CORE_ERROR("Failed to save scene to: {}", filepath.c_str());
         return false;
     }
+}
+
+SceneSerializer::SceneSerializer(Scene* scene)
+    : m_Scene(scene)
+{
 }
 
 bool SceneSerializer::Deserialize(const std::string& filepath)

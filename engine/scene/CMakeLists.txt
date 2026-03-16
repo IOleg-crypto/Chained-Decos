@@ -6,7 +6,9 @@ add_library(engine_scene OBJECT
     component_serializer.cpp
     prefab_serializer.cpp
     scene_camera.cpp
+    editor_camera.cpp
     entity.cpp
+    scene_picking.cpp
 
     scene.h
     scene_events.h
@@ -17,6 +19,8 @@ add_library(engine_scene OBJECT
     prefab_serializer.h
     scriptable_entity.h
     scene_camera.h
+    editor_camera.h
+    scene_picking.h
     scene_settings.h
     components.h
     components/animation_component.h

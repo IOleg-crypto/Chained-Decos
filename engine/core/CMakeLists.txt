@@ -7,6 +7,8 @@ add_library(engine_core OBJECT
     imgui_layer.cpp
     thread_pool.cpp
     application.cpp
+    settings_manager.cpp
+    dialogs.cpp
 
     # Platform specific implementations
     $<$<PLATFORM_ID:Windows>:../platform/windows/windows_window.cpp>
@@ -29,6 +31,8 @@ add_library(engine_core OBJECT
     uuid.h
     window.h
     yaml.h
+    settings_manager.h
+    dialogs.h
 )
 
 target_include_directories(engine_core PUBLIC
@@ -39,7 +43,7 @@ target_include_directories(engine_core PUBLIC
 )
 
 # Core module uses yaml-cpp for some configurations
-target_link_libraries(engine_core PUBLIC yaml-cpp raylib imguilib EnTT Coral.Native)
+target_link_libraries(engine_core PUBLIC yaml-cpp raylib imguilib EnTT Coral.Native nfd)
 
 # Apply common macro configurations and compiler flags
 # (Redundant /bigobj flags removed - now in CompilerSettings.cmake)

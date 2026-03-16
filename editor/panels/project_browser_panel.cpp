@@ -8,7 +8,7 @@
 // Removed redundant include: engine/graphics/asset_manager.h
 #include "extras/IconsFontAwesome6.h"
 #include "imgui.h"
-#include "nfd.h"
+#include "engine/core/dialogs.h"
 #include "rlImGui.h"
 #include <filesystem>
 
@@ -218,15 +218,12 @@ void ProjectBrowserPanel::DrawCreateProjectDialog()
         ImGui::SameLine();
         if (ImGui::Button("Browse..."))
         {
-            nfdchar_t* outPath = nullptr;
-            nfdresult_t result = NFD_PickFolder(&outPath, nullptr);
-
-            if (result == NFD_OKAY)
+            auto result = Dialogs::PickFolder();
+            if (result)
             {
                 memset(m_ProjectLocationBuffer, 0, sizeof(m_ProjectLocationBuffer));
-                std::string path(outPath);
+                std::string path = result->string();
                 path.copy(m_ProjectLocationBuffer, sizeof(m_ProjectLocationBuffer) - 1);
-                NFD_FreePath(outPath);
             }
         }
 

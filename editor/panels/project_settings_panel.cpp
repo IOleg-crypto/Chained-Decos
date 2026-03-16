@@ -2,7 +2,7 @@
 #include "engine/scene/project.h"
 #include "engine/scene/project_serializer.h"
 #include "imgui.h"
-#include "nfd.h"
+#include "engine/core/dialogs.h"
 #include "rlImGui/extras/IconsFontAwesome6.h"
 #include <format>
 
@@ -80,13 +80,11 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             ImGui::SameLine();
             if (ImGui::Button("...###IconBrowse"))
             {
-                nfdu8char_t* outPath = NULL;
-                nfdu8filteritem_t filterItem[1] = {{"Image Files", "png,jpg,jpeg"}};
-                nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, NULL);
-                if (result == NFD_OKAY)
+                std::vector<FileDialogFilter> filters = {{"Image Files", "png,jpg,jpeg"}};
+                auto result = Dialogs::OpenFile(filters);
+                if (result)
                 {
-                    config.IconPath = Project::GetRelativePath(outPath);
-                    NFD_FreePath(outPath);
+                    config.IconPath = Project::GetRelativePath(result->string());
                 }
             }
 
@@ -158,13 +156,11 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
                     ImGui::SameLine();
                     if (ImGui::Button("..."))
                     {
-                        nfdu8char_t* outPath = NULL;
-                        nfdu8filteritem_t filterItem[1] = {{"Runtime Executable", "exe"}};
-                        nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, NULL);
-                        if (result == NFD_OKAY)
+                        std::vector<FileDialogFilter> filters = {{"Runtime Executable", "exe"}};
+                        auto result = Dialogs::OpenFile(filters);
+                        if (result)
                         {
-                            profile.BinaryPath = outPath;
-                            NFD_FreePath(outPath);
+                            profile.BinaryPath = result->string();
                         }
                     }
 
@@ -222,12 +218,10 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             ImGui::SameLine();
             if (ImGui::Button("...###ModuleDirBrowse"))
             {
-                nfdu8char_t* outPath = NULL;
-                nfdresult_t result = NFD_PickFolder(&outPath, NULL);
-                if (result == NFD_OKAY)
+                auto result = Dialogs::PickFolder();
+                if (result)
                 {
-                    config.Scripting.ModuleDirectory = Project::GetRelativePath(outPath);
-                    NFD_FreePath(outPath);
+                    config.Scripting.ModuleDirectory = Project::GetRelativePath(result->string());
                 }
             }
 

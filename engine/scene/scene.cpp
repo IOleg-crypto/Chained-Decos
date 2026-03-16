@@ -22,12 +22,11 @@ Scene::Scene()
     // Create registry and manager handle
     auto registry = std::make_shared<entt::registry>();
     m_Manager = {entt::null, registry};
-    
+
     auto& reg = GetRegistry();
     reg.ctx().emplace<Scene*>(this);
     reg.ctx().emplace<EntityUUIDMap>();
     reg.ctx().emplace<std::shared_ptr<entt::registry>>(registry);
-
 
     // UUID Mapping
     reg.on_construct<IDComponent>().connect<&Scene::OnIDConstruct>(this);
@@ -73,7 +72,6 @@ std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
     CH_CORE_INFO("Scene::Copy - Successfully copied {} entities", entityCount);
     return newScene;
 }
-
 
 void Scene::OnHierarchyDestroy(entt::registry& reg, entt::entity entity)
 {
@@ -149,31 +147,32 @@ std::optional<Camera3D> Scene::GetActiveCamera()
         if (camera.Primary)
         {
             Camera3D raylibCamera;
-            
+
             // Use WorldTransform instead of local translation/rotation for parented cameras
             Matrix worldTransform = transform.WorldTransform;
-            
+
             // Extract position from world transform
-            raylibCamera.position = Vector3Transform({ 0, 0, 0 }, worldTransform);
-            
+            raylibCamera.position = Vector3Transform({0, 0, 0}, worldTransform);
+
             // Calculate world forward and up vectors
-            Vector3 worldForward = Vector3Transform({ 0, 0, -1 }, worldTransform);
-            Vector3 worldUp = Vector3Transform({ 0, 1, 0 }, worldTransform);
-            
+            Vector3 worldForward = Vector3Transform({0, 0, -1}, worldTransform);
+            Vector3 worldUp = Vector3Transform({0, 1, 0}, worldTransform);
+
             Vector3 forward = Vector3Normalize(Vector3Subtract(worldForward, raylibCamera.position));
-            
+
             // Provide a safe fallback if forward is somehow zero
-            if (Vector3LengthSqr(forward) < 0.0001f) {
-                forward = { 0.0f, 0.0f, -1.0f };
+            if (Vector3LengthSqr(forward) < 0.0001f)
+            {
+                forward = {0.0f, 0.0f, -1.0f};
             }
-            
+
             raylibCamera.target = Vector3Add(raylibCamera.position, forward);
             raylibCamera.up = Vector3Normalize(Vector3Subtract(worldUp, raylibCamera.position));
-            
+
             // SceneCamera stores FOV in radians, raylib expects degrees for Camera3D
             raylibCamera.fovy = camera.Camera.GetPerspectiveVerticalFOV() * RAD2DEG;
             raylibCamera.projection = (int)camera.Camera.GetProjectionType();
-            
+
             return raylibCamera;
         }
     }
@@ -210,12 +209,80 @@ void Scene::UpdateAnimations(Timestep deltaTime)
     for (auto entity : view)
     {
         auto& animation = view.get<AnimationComponent>(entity);
-        auto& model = view.get<ModelComponent>(entity);
-
-        auto modelAsset = AssetManager::Get().Get<ModelAsset>(model.ModelPath);
-        if (modelAsset && animation.CurrentAnimationIndex < modelAsset->GetAnimationCount())
+        if (!animation.IsPlaying)
         {
-            // Update animation logic here
+            continue;
+        }
+
+        auto& model = view.get<ModelComponent>(entity);
+        auto modelAsset = AssetManager::Get().Get<ModelAsset>(model.ModelPath);
+        if (!modelAsset || modelAsset->GetAnimationCount() == 0)
+        {
+            continue;
+        }
+
+        // Progress timers
+        float dt = deltaTime.GetSeconds();
+        animation.FrameTimeCounter += dt;
+
+        // Fixed framerate for animations (should probably be asset-driven, but 30fps is standard)
+        float targetFPS = 30.0f;
+        float frameTime = 1.0f / targetFPS;
+
+        if (animation.FrameTimeCounter >= frameTime)
+        {
+            animation.FrameTimeCounter = 0.0f;
+            animation.CurrentFrame++;
+
+            const auto& rawAnims = modelAsset->GetRawAnimations();
+            if (animation.CurrentAnimationIndex >= 0 && animation.CurrentAnimationIndex < (int)rawAnims.size())
+            {
+                int totalFrames = rawAnims[animation.CurrentAnimationIndex].frameCount;
+                if (animation.CurrentFrame >= totalFrames)
+                {
+                    if (animation.IsLooping)
+                    {
+                        animation.CurrentFrame = 0;
+                    }
+                    else
+                    {
+                        animation.CurrentFrame = totalFrames - 1;
+                        animation.IsPlaying = false;
+                    }
+                }
+            }
+        }
+
+        // Handle Blending
+        if (animation.Blending)
+        {
+            animation.BlendTimer += dt;
+            if (animation.BlendTimer >= animation.BlendDuration)
+            {
+                // Blend complete
+                animation.CurrentAnimationIndex = animation.TargetAnimationIndex;
+                animation.CurrentFrame = animation.TargetFrame;
+                animation.Blending = false;
+                animation.TargetAnimationIndex = -1;
+            }
+            else
+            {
+                // Progress target frame too
+                if (animation.FrameTimeCounter == 0.0f) // Just advanced a frame
+                {
+                    animation.TargetFrame++;
+                    if (animation.TargetAnimationIndex >= 0 &&
+                        animation.TargetAnimationIndex < modelAsset->GetAnimationCount())
+                    {
+                        int targetTotalFrames =
+                            modelAsset->GetRawAnimations()[animation.TargetAnimationIndex].frameCount;
+                        if (animation.TargetFrame >= targetTotalFrames)
+                        {
+                            animation.TargetFrame = 0;
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -242,8 +309,7 @@ void Scene::UpdateHierarchy()
         if (reg.all_of<HierarchyComponent>(entity))
         {
             auto& hc = reg.get<HierarchyComponent>(entity);
-            if (hc.Parent != entt::null && reg.valid(hc.Parent) &&
-                reg.all_of<TransformComponent>(hc.Parent))
+            if (hc.Parent != entt::null && reg.valid(hc.Parent) && reg.all_of<TransformComponent>(hc.Parent))
             {
                 isRoot = false;
             }
@@ -279,7 +345,6 @@ void Scene::UpdateHierarchy()
     }
 }
 
-
 void Scene::OnIDConstruct(entt::registry& reg, entt::entity entity)
 {
     auto& id = reg.get<IDComponent>(entity);
@@ -293,6 +358,5 @@ void Scene::OnIDDestroy(entt::registry& reg, entt::entity entity)
     auto& mapStruct = reg.ctx().get<EntityUUIDMap>();
     mapStruct.Map.erase(id.ID);
 }
-
 
 } // namespace CHEngine
