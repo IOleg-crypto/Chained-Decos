@@ -121,12 +121,24 @@ void Physics::Update(Scene* scene, Timestep deltaTime, bool runtime)
 
     UpdateColliders(scene);
 
-    float fixedTimestep = 1.0f / 60.0f;
+    // Fixed timestep: collisions are fully FPS-independent.
+    // We pick a small step so penetration per tick is small and stable.
+    float fixedTimestep = 1.0f / 120.0f;  // default: 120 Hz physics
     if (auto project = Project::GetActive())
-        fixedTimestep = project->GetConfig().Physics.FixedTimestep;
+    {
+        float cfg = project->GetConfig().Physics.FixedTimestep;
+        if (cfg > 0.0f)
+            fixedTimestep = cfg;
+    }
 
     auto& context = GetContext(scene);
-    context.Accumulator += deltaTime;
+    context.Accumulator += (float)deltaTime;
+
+    // Clamp accumulator to prevent spiral-of-death on lag spikes
+    const float maxAccumulator = 0.2f;
+    if (context.Accumulator > maxAccumulator)
+        context.Accumulator = maxAccumulator;
+
     while (context.Accumulator >= fixedTimestep)
     {
         ResolveSimulation(scene, fixedTimestep);

@@ -7,6 +7,7 @@
 #include "editor_events.h"
 #include "engine/core/application.h"
 #include "engine/scene/components.h"
+#include "scripting/scriptengine.h"
 #include "engine/scene/project.h"
 #include "extras/IconsFontAwesome6.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -136,6 +137,13 @@ void EditorGUI::DrawMenuBar(EditorPanels& panels)
         {
             AppLaunchRuntimeEvent e;
             Application::Get().OnEvent(e);
+        }
+
+        ImGui::Separator();
+
+        if (ImGui::MenuItem(ICON_FA_FILE_CODE " Reload Scripts", "Ctrl+R"))
+        {
+            ScriptEngine::Get().ReloadAssembly();
         }
 
         ImGui::EndMenu();

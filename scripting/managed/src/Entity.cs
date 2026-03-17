@@ -33,6 +33,8 @@ public class Entity
     internal static unsafe delegate*<ulong, Vector3*, void> Entity_GetVelocity_Ptr;
     internal static unsafe delegate*<ulong, Vector3*, void> Entity_SetVelocity_Ptr;
     internal static unsafe delegate*<ulong, bool> Entity_IsGrounded_Ptr;
+    internal static unsafe delegate*<ulong, bool> Entity_IsKinematic_Ptr;
+    internal static unsafe delegate*<ulong, bool, void> Entity_SetKinematic_Ptr;
     internal static unsafe delegate*<NativeString, NativeArray<ulong>> Entity_FindAllWithComponent_Ptr;
 #pragma warning restore 0649
 
@@ -117,6 +119,8 @@ public class Entity
     }
 
     public static unsafe bool IsGrounded(ulong entityID) => Entity_IsGrounded_Ptr(entityID);
+    public static unsafe bool IsKinematic(ulong entityID) => Entity_IsKinematic_Ptr(entityID);
+    public static unsafe void SetKinematic(ulong entityID, bool isKinematic) => Entity_SetKinematic_Ptr(entityID, isKinematic);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -153,6 +157,12 @@ public class RigidBodyComponent : Component
     }
 
     public bool IsGrounded => Entity.IsGrounded(Entity.ID);
+
+    public bool IsKinematic
+    {
+        get => Entity.IsKinematic(Entity.ID);
+        set => Entity.SetKinematic(Entity.ID, value);
+    }
 }
 
 public class TagComponent : Component
