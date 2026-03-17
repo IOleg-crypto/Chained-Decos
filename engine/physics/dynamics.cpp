@@ -42,6 +42,10 @@ void Dynamics::IntegrateVelocity(entt::registry& registry, entt::entity entity, 
     auto& entityTransform = registry.get<TransformComponent>(entity);
     auto& rigidBody = registry.get<RigidBodyComponent>(entity);
 
+    // Kinematic bodies are moved entirely by scripts; skip physics-driven integration
+    if (rigidBody.IsKinematic)
+        return;
+
     Vector3 velocityDelta = Vector3Scale(rigidBody.Velocity, deltaTime);
     entityTransform.Translation = Vector3Add(entityTransform.Translation, velocityDelta);
 }

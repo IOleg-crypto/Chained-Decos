@@ -366,6 +366,10 @@ void NarrowPhase::ResolveCapsuleBox(::entt::registry& registry, ::entt::entity r
 // Capsule vs Mesh
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  Capsule vs Mesh
+// ─────────────────────────────────────────────────────────────────────────────
+
 void NarrowPhase::ResolveCapsuleMesh(::entt::registry& registry, ::entt::entity rbEntity, ::entt::entity otherEntity)
 {
     auto& tc = registry.get<TransformComponent>(rbEntity);
@@ -402,10 +406,13 @@ void NarrowPhase::ResolveCapsuleMesh(::entt::registry& registry, ::entt::entity 
     // Query BVH for candidate triangles
     std::vector<const CollisionTriangle*> candidates;
     bvh->QueryAABB(queryBox, candidates);
-    if (candidates.empty())
-    {
-        return;
-    }
+    if (candidates.empty()) return;
+
+    // Accumulate max per-axis correction (avoid additive stacking flings)
+    Vector3 bestCorrection = {0.0f, 0.0f, 0.0f};
+    Vector3 bestNormal     = {0.0f, 1.0f, 0.0f};
+    bool    anyContact     = false;
+    bool    foundGround    = false;
 
     for (const auto* tri : candidates)
     {
@@ -424,28 +431,52 @@ void NarrowPhase::ResolveCapsuleMesh(::entt::registry& registry, ::entt::entity 
         Vector3 diff = Vector3Subtract(finalSeg, triPoint);
         float distSq = Vector3DotProduct(diff, diff);
 
-        if (distSq >= seg.radius * seg.radius)
-        {
-            continue;
-        }
+        if (distSq >= seg.radius * seg.radius) continue;
 
         float dist = sqrtf(distSq);
         float penetration = seg.radius - dist;
+        Vector3 normal = (dist > 0.0001f) ? Vector3Scale(diff, 1.0f / dist) : tri->normal;
 
-        Vector3 normal;
-        if (dist > 0.0001f)
-        {
-            normal = Vector3Scale(diff, 1.0f / dist);
-        }
-        else
-        {
-            normal = tri->normal;
-        }
+        Vector3 correction = Vector3Scale(normal, penetration);
+        if (fabsf(correction.x) > fabsf(bestCorrection.x)) bestCorrection.x = correction.x;
+        if (fabsf(correction.y) > fabsf(bestCorrection.y)) { bestCorrection.y = correction.y; bestNormal = normal; }
+        if (fabsf(correction.z) > fabsf(bestCorrection.z)) bestCorrection.z = correction.z;
 
-        ApplyResponse(registry, rbEntity, otherEntity, tc, rb, otherCollider, normal, penetration);
+        if (normal.y > 0.45f) foundGround = true;
+        anyContact = true;
+    }
 
-        // Update capsule position for stacking contacts
-        seg = NarrowPhase::GetCapsuleSegment(tc, capsule);
+    if (!anyContact) return;
+
+    // Apply combined response
+    const float kMaxCorrection = 2.0f; // Prevent explosive corrections
+    float corrLen = Vector3Length(bestCorrection);
+    if (corrLen > kMaxCorrection)
+        bestCorrection = Vector3Scale(Vector3Normalize(bestCorrection), kMaxCorrection);
+
+    tc.Translation = Vector3Add(tc.Translation, bestCorrection);
+
+    if (foundGround)
+    {
+        rb.IsGrounded = true;
+        if (rb.Velocity.y < 0) rb.Velocity.y = 0;
+    }
+    else if (bestNormal.y < -0.45f) // Ceiling
+    {
+        if (rb.Velocity.y > 0) rb.Velocity.y = 0;
+    }
+
+    // Velocity cancellation
+    float vDotN = Vector3DotProduct(rb.Velocity, bestNormal);
+    if (vDotN < 0.0f)
+        rb.Velocity = Vector3Subtract(rb.Velocity, Vector3Scale(bestNormal, vDotN));
+
+    otherCollider.IsColliding = true;
+
+    if (auto* context = registry.ctx().find<PhysicsContext>())
+    {
+        if (context->CollisionCallback)
+            context->CollisionCallback(rbEntity, otherEntity);
     }
 }
 
@@ -487,6 +518,10 @@ void NarrowPhase::ResolveSphereBox(::entt::registry& registry, ::entt::entity rb
 // Sphere vs Mesh
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// Sphere vs Mesh
+// ═══════════════════════════════════════════════════════════════════════════════
+
 void NarrowPhase::ResolveSphereMesh(::entt::registry& registry, ::entt::entity rbEntity, ::entt::entity otherEntity)
 {
     auto& tc = registry.get<TransformComponent>(rbEntity);
@@ -518,10 +553,13 @@ void NarrowPhase::ResolveSphereMesh(::entt::registry& registry, ::entt::entity r
 
     std::vector<const CollisionTriangle*> candidates;
     bvh->QueryAABB(queryBox, candidates);
-    if (candidates.empty())
-    {
-        return;
-    }
+    if (candidates.empty()) return;
+
+    // Accumulate max per-axis correction (avoid additive stacking flings)
+    Vector3 bestCorrection = {0.0f, 0.0f, 0.0f};
+    Vector3 bestNormal     = {0.0f, 1.0f, 0.0f};
+    bool    anyContact     = false;
+    bool    foundGround    = false;
 
     for (const auto* tri : candidates)
     {
@@ -533,25 +571,52 @@ void NarrowPhase::ResolveSphereMesh(::entt::registry& registry, ::entt::entity r
         Vector3 diff = Vector3Subtract(sphereWorldPos, triPoint);
         float distSq = Vector3DotProduct(diff, diff);
 
-        if (distSq >= sphere.Radius * sphere.Radius)
-        {
-            continue;
-        }
+        if (distSq >= sphere.Radius * sphere.Radius) continue;
 
         float dist = sqrtf(distSq);
         float penetration = sphere.Radius - dist;
-        Vector3 normal;
-        if (dist > 0.0001f)
-        {
-            normal = Vector3Scale(diff, 1.0f / dist);
-        }
-        else
-        {
-            normal = tri->normal;
-        }
+        Vector3 normal = (dist > 0.0001f) ? Vector3Scale(diff, 1.0f / dist) : tri->normal;
 
-        ApplyResponse(registry, rbEntity, otherEntity, tc, rb, otherCollider, normal, penetration);
-        sphereWorldPos = Vector3Add(tc.Translation, sphere.Offset); // Update for stacked contacts
+        Vector3 correction = Vector3Scale(normal, penetration);
+        if (fabsf(correction.x) > fabsf(bestCorrection.x)) bestCorrection.x = correction.x;
+        if (fabsf(correction.y) > fabsf(bestCorrection.y)) { bestCorrection.y = correction.y; bestNormal = normal; }
+        if (fabsf(correction.z) > fabsf(bestCorrection.z)) bestCorrection.z = correction.z;
+
+        if (normal.y > 0.45f) foundGround = true;
+        anyContact = true;
+    }
+
+    if (!anyContact) return;
+
+    // Apply combined response
+    const float kMaxCorrection = 2.0f;
+    float corrLen = Vector3Length(bestCorrection);
+    if (corrLen > kMaxCorrection)
+        bestCorrection = Vector3Scale(Vector3Normalize(bestCorrection), kMaxCorrection);
+
+    tc.Translation = Vector3Add(tc.Translation, bestCorrection);
+
+    if (foundGround)
+    {
+        rb.IsGrounded = true;
+        if (rb.Velocity.y < 0) rb.Velocity.y = 0;
+    }
+    else if (bestNormal.y < -0.45f)
+    {
+        if (rb.Velocity.y > 0) rb.Velocity.y = 0;
+    }
+
+    // Velocity cancellation
+    float vDotN = Vector3DotProduct(rb.Velocity, bestNormal);
+    if (vDotN < 0.0f)
+        rb.Velocity = Vector3Subtract(rb.Velocity, Vector3Scale(bestNormal, vDotN));
+
+    otherCollider.IsColliding = true;
+
+    if (auto* context = registry.ctx().find<PhysicsContext>())
+    {
+        if (context->CollisionCallback)
+            context->CollisionCallback(rbEntity, otherEntity);
     }
 }
 

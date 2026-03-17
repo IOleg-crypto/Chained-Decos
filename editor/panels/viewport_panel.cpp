@@ -11,17 +11,19 @@
 #include "engine/graphics/renderer.h"
 #include "engine/graphics/scene_renderer.h"
 #include "engine/graphics/ui_renderer.h"
-#include "engine/scene/scene_picking.h"
 #include "engine/scene/components.h"
 #include "engine/scene/prefab_serializer.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_events.h"
+#include "engine/scene/scene_picking.h"
+#include "scripting/scriptengine.h"
 #include "extras/IconsFontAwesome6.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "raylib.h"
 #include "rlImGui.h"
+
 
 namespace CHEngine
 {
@@ -47,10 +49,10 @@ static void ClearSceneBackground(Scene* scene, Vector2 size)
     }
 }
 
-static const GizmoBtn s_GizmoBtns[] = {{GizmoType::NONE, ICON_FA_ARROW_POINTER, "Select (Q)", KEY_Q},
-                                       {GizmoType::TRANSLATE, ICON_FA_UP_DOWN_LEFT_RIGHT, "Translate (W)", KEY_W},
-                                       {GizmoType::ROTATE, ICON_FA_ARROWS_ROTATE, "Rotate (E)", KEY_E},
-                                       {GizmoType::SCALE, ICON_FA_UP_RIGHT_FROM_SQUARE, "Scale (R)", KEY_R}};
+static const GizmoBtn s_GizmoBtns[] = {{GizmoType::NONE, ICON_FA_ARROW_POINTER "##Select", "Select (Q)", KEY_Q},
+                                       {GizmoType::TRANSLATE, ICON_FA_UP_DOWN_LEFT_RIGHT "##Translate", "Translate (W)", KEY_W},
+                                       {GizmoType::ROTATE, ICON_FA_ARROWS_ROTATE "##Rotate", "Rotate (E)", KEY_E},
+                                       {GizmoType::SCALE, ICON_FA_UP_RIGHT_FROM_SQUARE "##Scale", "Scale (R)", KEY_R}};
 
 void ViewportPanel::DrawCameraSelector(Scene* scene)
 {
@@ -135,7 +137,7 @@ ViewportPanel::ViewportPanel()
     FramebufferSpecification spec;
     spec.Width = 1280;
     spec.Height = 720;
-    
+
     if (Application::Get().GetWindow().GetNativeWindow())
     {
         spec.Width = Application::Get().GetWindow().GetWidth() > 0 ? Application::Get().GetWindow().GetWidth() : 1280;
@@ -184,13 +186,14 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
 
     // Framebuffer management
     auto activeScene = EditorLayer::Get().GetActiveScene();
-    if (viewportSize.x != m_ViewportFramebuffer->GetSpecification().Width || viewportSize.y != m_ViewportFramebuffer->GetSpecification().Height)
+    if (viewportSize.x != m_ViewportFramebuffer->GetSpecification().Width ||
+        viewportSize.y != m_ViewportFramebuffer->GetSpecification().Height)
     {
         if (viewportSize.x > 0 && viewportSize.y > 0)
         {
             m_ViewportFramebuffer->Resize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
             m_HDRFramebuffer->Resize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
-            
+
             EditorLayer::Get().SetViewportSize(viewportSize);
             if (activeScene)
             {
@@ -220,7 +223,7 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         // Extract near/far from the active camera entity if available
         float nearClip = 0.01f;
         float farClip = 1000.0f;
-        
+
         Entity primaryCam = activeScene_raw->GetPrimaryCameraEntity();
         if (primaryCam && primaryCam.HasComponent<CameraComponent>())
         {
@@ -241,7 +244,8 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
             options.TargetFPS = project->GetConfig().Animation.TargetFPS;
         }
 
-        m_SceneRenderer->RenderScene(activeScene.get(), camera, nearClip, farClip, Application::Get().GetFrameTime(), options);
+        m_SceneRenderer->RenderScene(activeScene.get(), camera, nearClip, farClip, Application::Get().GetFrameTime(),
+                                     options);
         m_HDRFramebuffer->Unbind();
 
         // 2. APPLY MODULAR POST-PROCESSING
@@ -265,7 +269,8 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
             const char* msg = "No Primary Camera Found in Scene!";
             int fontSize = 20;
             int textWidth = Renderer::Get().MeasureText(msg, fontSize);
-            Renderer::Get().DrawText(msg, (int)viewportSize.x / 2 - textWidth / 2, (int)viewportSize.y / 2 - 10, fontSize, GRAY);
+            Renderer::Get().DrawText(msg, (int)viewportSize.x / 2 - textWidth / 2, (int)viewportSize.y / 2 - 10,
+                                     fontSize, GRAY);
         }
         m_HDRFramebuffer->Unbind();
 
@@ -273,10 +278,9 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         m_ViewportFramebuffer->Bind();
         Renderer::Get().Clear(BLACK);
         RenderTexture2D* hdrTex = (RenderTexture2D*)m_HDRFramebuffer->GetNativeFramebuffer();
-        Rectangle source = { 0, 0, (float)hdrTex->texture.width, (float)-hdrTex->texture.height };
-        Renderer::Get().DrawTexture(hdrTex->texture, source, 
-                       { 0, 0, (float)m_ViewportSize.x, (float)m_ViewportSize.y }, 
-                       { 0, 0 }, 0.0f, WHITE);
+        Rectangle source = {0, 0, (float)hdrTex->texture.width, (float)-hdrTex->texture.height};
+        Renderer::Get().DrawTexture(hdrTex->texture, source, {0, 0, (float)m_ViewportSize.x, (float)m_ViewportSize.y},
+                                    {0, 0}, 0.0f, WHITE);
         m_ViewportFramebuffer->Unbind();
     }
 
@@ -417,8 +421,8 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
             auto rect = UIRenderer::Get().GetEntityRect(entity, viewportSize, viewportScreenPos);
 
             Vector2 mouse = {mousePos.x, mousePos.y};
-            if (mouse.x >= rect.x && mouse.x <= rect.x + rect.width &&
-                mouse.y >= rect.y && mouse.y <= rect.y + rect.height)
+            if (mouse.x >= rect.x && mouse.x <= rect.x + rect.width && mouse.y >= rect.y &&
+                mouse.y <= rect.y + rect.height)
             {
                 bestHit = entity;
                 CH_CORE_INFO("HIT UI: {}", entity.GetComponent<TagComponent>().Tag);
@@ -460,7 +464,7 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
     ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5, 5));
 
-    if (ImGui::BeginChild("##FloatingToolbar", ImVec2(450, 40), true,
+    if (ImGui::BeginChild("##FloatingToolbar", ImVec2(600, 40), true,
                           ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
     {
         ImGui::SetCursorPosY(6); // Center align vertically-ish
@@ -504,6 +508,16 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         if (isPlaying)
         {
             ImGui::PopStyleColor();
+        }
+
+        ImGui::SameLine(0, 5);
+        if (ImGui::Button(ICON_FA_FILE_CODE "##ReloadToolbar", ImVec2(28, 28)))
+        {
+            ScriptEngine::Get().ReloadAssembly();
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("Reload Scripts (Ctrl+R)");
         }
 
         ImGui::SameLine(0, 15);
