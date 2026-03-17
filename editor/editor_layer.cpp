@@ -225,6 +225,11 @@ void EditorLayer::OnUpdate(Timestep ts)
             OnEvent(e);
         }
 
+        if (Input::IsKeyDown(KEY_LEFT_CONTROL) && Input::IsKeyPressed(KEY_R))
+        {
+            ScriptEngine::Get().ReloadAssembly();
+        }
+
         m_Panels->OnUpdate(ts);
     }
 }

@@ -56,6 +56,17 @@ namespace CHEngine {
         return entity && entity.HasComponent<RigidBodyComponent>() ? entity.GetComponent<RigidBodyComponent>().IsGrounded : false;
     }
 
+    CH_SCRIPT_FUNC bool Entity_IsKinematic(uint64_t entityID) {
+        Entity entity = GetEntity(entityID);
+        return entity && entity.HasComponent<RigidBodyComponent>() ? entity.GetComponent<RigidBodyComponent>().IsKinematic : false;
+    }
+
+    CH_SCRIPT_FUNC void Entity_SetKinematic(uint64_t entityID, bool isKinematic) {
+        Entity entity = GetEntity(entityID);
+        if (entity && entity.HasComponent<RigidBodyComponent>())
+            entity.GetComponent<RigidBodyComponent>().IsKinematic = isKinematic;
+    }
+
     CH_SCRIPT_FUNC bool Entity_HasComponent(uint64_t entityID, Coral::String componentName) {
         Entity entity = GetEntity(entityID);
         if (!entity) return false;
@@ -143,6 +154,8 @@ namespace CHEngine {
         CH_ADD_INTERNAL_CALL(Entity, Entity_GetVelocity_Ptr, Entity_GetVelocity);
         CH_ADD_INTERNAL_CALL(Entity, Entity_SetVelocity_Ptr, Entity_SetVelocity);
         CH_ADD_INTERNAL_CALL(Entity, Entity_IsGrounded_Ptr, Entity_IsGrounded);
+        CH_ADD_INTERNAL_CALL(Entity, Entity_IsKinematic_Ptr, Entity_IsKinematic);
+        CH_ADD_INTERNAL_CALL(Entity, Entity_SetKinematic_Ptr, Entity_SetKinematic);
         CH_ADD_INTERNAL_CALL(TagComponent, TagComponent_GetTag_Ptr, TagComponent_GetTag);
 
         #undef CH_ADD_INTERNAL_CALL
