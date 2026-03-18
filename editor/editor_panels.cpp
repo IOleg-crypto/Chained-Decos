@@ -1,7 +1,9 @@
 #include "editor_panels.h"
 #include "panels/console_panel.h"
 #include "panels/content_browser_panel.h"
-#include "panels/environment_panel.h"
+#include "panels/world_panel.h"
+#include "panels/effects_panel.h"
+#include "panels/material_panel.h"
 #include "panels/inspector_panel.h"
 #include "panels/panel.h"
 #include "panels/profiler_panel.h"
@@ -20,7 +22,9 @@ void EditorPanels::Init()
     Register<InspectorPanel>();
     Register<ContentBrowserPanel>();
     Register<ConsolePanel>();
-    Register<EnvironmentPanel>();
+    Register<WorldPanel>();
+    Register<EffectsPanel>();
+    Register<MaterialPanel>();
     Register<ProfilerPanel>();
     Register<ProjectBrowserPanel>();
     Register<ProjectSettingsPanel>();

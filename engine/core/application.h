@@ -14,6 +14,7 @@
 #include <mutex>
 #include <string>
 #include <vector>
+#include <filesystem>
 
 
 namespace CHEngine
@@ -71,16 +72,15 @@ public:
     {
         return m_ImGuiLayer;
     }
-    ScriptEngine& GetScriptEngine()
-    {
-        return *m_ScriptEngine;
-    }
+    ScriptEngine& GetScriptEngine();
     const ApplicationSpecification& GetSpecification() const
     {
         return m_Specification;
     }
     LayerStack& GetLayerStack();
     float GetFrameTime() const { return m_DeltaTime; }
+
+
 
     void SubmitToMainThread(const std::function<void()>& function);
 
@@ -93,24 +93,16 @@ private:
     static Application* s_Instance;
 
     ApplicationSpecification m_Specification;
-    std::unique_ptr<Window> m_Window;
-    ImGuiLayer* m_ImGuiLayer = nullptr;
+    std::unique_ptr<LayerStack> m_LayerStack;
 
-    bool m_Running = true;
+    ImGuiLayer* m_ImGuiLayer = nullptr;
+    std::unique_ptr<Window> m_Window;
+
+    bool m_Running = false;
     bool m_Minimized = false;
 
     Timestep m_DeltaTime = 0.0f;
     Timestep m_LastFrameTime = 0.0f;
-
-    std::unique_ptr<LayerStack> m_LayerStack;
-    
-    // Subsystem pointers for safe cleanup
-    class ThreadPool* m_ThreadPool = nullptr;
-    class Renderer* m_Renderer = nullptr;
-    class Audio* m_Audio = nullptr;
-    class PhysicsSystem* m_PhysicsSystem = nullptr;
-    class ComponentSerializer* m_ComponentSerializer = nullptr;
-    std::unique_ptr<class ScriptEngine> m_ScriptEngine;
 
     std::vector<std::function<void()>> m_MainThreadQueue;
     std::mutex m_MainThreadQueueMutex;

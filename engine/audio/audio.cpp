@@ -16,7 +16,7 @@ Audio::Audio()
 
 Audio::~Audio()
 {
-    Shutdown();
+    InternalShutdown();
     s_Instance = nullptr;
 }
 
@@ -28,6 +28,13 @@ Audio& Audio::Get()
 
 void Audio::Init()
 {
+    if (!s_Instance)
+        s_Instance = new Audio();
+    s_Instance->InternalInit();
+}
+
+void Audio::InternalInit()
+{
     if (!IsAudioDeviceReady())
     {
         InitAudioDevice();
@@ -36,6 +43,16 @@ void Audio::Init()
 }
 
 void Audio::Shutdown()
+{
+    if (s_Instance)
+    {
+        s_Instance->InternalShutdown();
+        delete s_Instance;
+        s_Instance = nullptr;
+    }
+}
+
+void Audio::InternalShutdown()
 {
     if (IsAudioDeviceReady())
     {

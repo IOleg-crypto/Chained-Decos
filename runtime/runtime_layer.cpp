@@ -101,8 +101,7 @@ void RuntimeLayer::OnUpdate(Timestep ts)
         if (m_BoostUploadsTimer <= 0.0f)
         {
             m_IsBoostingUploads = false;
-            AssetManager::Get().SetMaxUploadsPerFrame(50); // Reset to default
-            CH_CORE_INFO("RuntimeLayer: Asset upload boost finished, reset limit to 50.");
+            // Limit reset removed as per user request
         }
     }
 }
@@ -245,7 +244,7 @@ void RuntimeLayer::LoadScene(const std::string& path)
         // Boost asset uploads for scene loading
         m_IsBoostingUploads = true;
         m_BoostUploadsTimer = 5.0f; // Boost for 5 seconds
-        AssetManager::Get().SetMaxUploadsPerFrame(2000); // Aggressive upload boost for loading
+        AssetManager::Get().SetMaxUploadsPerFrame(10000); // effectively no limit
         CH_CORE_INFO("RuntimeLayer: Boosting asset uploads for scene loading...");
 
         m_Scene->OnRuntimeStart();

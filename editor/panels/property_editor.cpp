@@ -615,6 +615,92 @@ void PropertyEditor::Init()
                 break;
             }
             ImGui::Columns(1);
+
+            // Draw Fields
+            auto* scriptType = ScriptEngine::Get().GetScriptClass(script.ClassName);
+            if (scriptType)
+            {
+                auto fields = scriptType->GetFields();
+                for (auto& fieldInfo : fields)
+                {
+                    if (fieldInfo.GetAccessibility() != Coral::TypeAccessibility::Public)
+                        continue;
+
+                    std::string fieldName = (std::string)fieldInfo.GetName();
+                    auto& fieldType = fieldInfo.GetType();
+
+                    // Check if we already have a persistent value
+                    if (script.Fields.find(fieldName) == script.Fields.end())
+                    {
+                        // Add to map with default if possible
+                        ScriptField field;
+                        field.Name = fieldName;
+                        
+                        auto mt = fieldType.GetManagedType();
+                        if (mt == Coral::ManagedType::Float) field.Type = ScriptFieldType::Float;
+                        else if (mt == Coral::ManagedType::Int) field.Type = ScriptFieldType::Int;
+                        else if (mt == Coral::ManagedType::Bool) field.Type = ScriptFieldType::Bool;
+                        else if (mt == Coral::ManagedType::String) field.Type = ScriptFieldType::String;
+                        
+                        if (field.Type != ScriptFieldType::None)
+                        {
+                            // Try to get current value if instance exists
+                            if (script.Instance)
+                            {
+                                auto* obj = static_cast<Coral::ManagedObject*>(script.Instance);
+                                if (field.Type == ScriptFieldType::Float) field.Value = obj->GetFieldValue<float>(fieldName);
+                                else if (field.Type == ScriptFieldType::Int) field.Value = obj->GetFieldValue<int>(fieldName);
+                                else if (field.Type == ScriptFieldType::Bool) field.Value = obj->GetFieldValue<bool>(fieldName);
+                                else if (field.Type == ScriptFieldType::String) field.Value = obj->GetFieldValue<std::string>(fieldName);
+                            }
+                            script.Fields[fieldName] = field;
+                        }
+                    }
+
+                    if (script.Fields.count(fieldName))
+                    {
+                        auto& field = script.Fields[fieldName];
+                        bool fieldChanged = false;
+                        
+                        EditorGUI::BeginProperty(fieldName.c_str());
+                        if (field.Type == ScriptFieldType::Float)
+                        {
+                            float val = std::get<float>(field.Value);
+                            if (ImGui::DragFloat("##F", &val, 0.1f)) { field.Value = val; fieldChanged = true; }
+                        }
+                        else if (field.Type == ScriptFieldType::Int)
+                        {
+                            int val = std::get<int>(field.Value);
+                            if (ImGui::DragInt("##I", &val)) { field.Value = val; fieldChanged = true; }
+                        }
+                        else if (field.Type == ScriptFieldType::Bool)
+                        {
+                            bool val = std::get<bool>(field.Value);
+                            if (ImGui::Checkbox("##B", &val)) { field.Value = val; fieldChanged = true; }
+                        }
+                        else if (field.Type == ScriptFieldType::String)
+                        {
+                            std::string val = std::get<std::string>(field.Value);
+                            char buffer[256];
+                            memset(buffer, 0, sizeof(buffer));
+                            strncpy(buffer, val.c_str(), sizeof(buffer) - 1);
+                            if (ImGui::InputText("##S", buffer, sizeof(buffer))) { field.Value = std::string(buffer); fieldChanged = true; }
+                        }
+                        EditorGUI::EndProperty();
+
+                        if (fieldChanged)
+                        {
+                            changed = true;
+                            if (script.Instance)
+                            {
+                                auto* obj = static_cast<Coral::ManagedObject*>(script.Instance);
+                                std::visit([&](auto&& v) { obj->SetFieldValue(fieldName, v); }, field.Value);
+                            }
+                        }
+                    }
+                }
+            }
+
             ImGui::PopID();
             ImGui::Separator();
         }

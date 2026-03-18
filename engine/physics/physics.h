@@ -36,8 +36,11 @@ public:
     PhysicsSystem();
     ~PhysicsSystem();
 
-    void Init();
-    void Shutdown();
+    static void Init();
+    static void Shutdown();
+
+    void InternalInit();
+    void InternalShutdown();
 
     static PhysicsSystem& Get();
 

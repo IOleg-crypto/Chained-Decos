@@ -40,6 +40,13 @@ Renderer& Renderer::Get()
 
 void Renderer::Init()
 {
+    if (!s_Instance)
+        s_Instance = new Renderer();
+    s_Instance->InternalInit();
+}
+
+void Renderer::InternalInit()
+{
     CH_CORE_INFO("Initializing Render System...");
     CH_CORE_ASSERT(s_Instance == this, "Renderer instance mismatch!");
 
@@ -102,6 +109,16 @@ void Renderer::LoadEngineResources(AssetManager& assetManager)
 }
 
 void Renderer::Shutdown()
+{
+    if (s_Instance)
+    {
+        s_Instance->InternalShutdown();
+        delete s_Instance;
+        s_Instance = nullptr;
+    }
+}
+
+void Renderer::InternalShutdown()
 {
     CH_CORE_INFO("Shutting down Render System...");
     if (m_Renderer2D)
@@ -173,7 +190,7 @@ Renderer::~Renderer()
         rlUnloadShaderBuffer(m_Data->Lighting.LightSSBO);
     }
 
-    Shutdown();
+    InternalShutdown();
 }
 
 void Renderer::BeginScene(const Camera3D& camera)

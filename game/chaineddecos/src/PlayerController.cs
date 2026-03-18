@@ -78,9 +78,10 @@ public class PlayerController : Script
         // If Dynamic, the physics engine handles these in ResolveSimulation/IntegrateVelocity.
         if (isKinematic)
         {
-            if (!rb.IsGrounded)
-                velocity.Y -= Gravity * deltaTime;
-            else if (velocity.Y < 0)
+            // Always apply gravity to kinematic bodies when in the air or moving upwards
+            velocity.Y -= Gravity * deltaTime;
+
+            if (rb.IsGrounded && velocity.Y < 0.1f)
                 velocity.Y = 0;
 
             // Manual integration for Kinematic bodies
