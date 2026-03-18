@@ -31,6 +31,19 @@ public:
     EVENT_CLASS_TYPE(AppLaunchRuntime)
     EVENT_CLASS_CATEGORY(EventCategoryApplication)
 };
+
+// Event to signal focusing on a specific entity in the viewport
+class ViewportFocusEntityEvent : public Event
+{
+public:
+    ViewportFocusEntityEvent(Entity entity) : m_Entity(entity) {}
+    Entity GetEntity() const { return m_Entity; }
+
+    EVENT_CLASS_TYPE(ViewportFocusEntity)
+    EVENT_CLASS_CATEGORY(EventCategoryApplication)
+private:
+    Entity m_Entity;
+};
 } // namespace CHEngine
 
 #endif // CH_EDITOR_EVENTS_H

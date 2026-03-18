@@ -18,18 +18,49 @@ namespace CHEngine
 void NarrowPhase::ApplyResponse(::entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity, TransformComponent& tc,
                                 RigidBodyComponent& rb, ColliderComponent& other, Vector3 normal, float depth)
 {
-    tc.Translation = Vector3Add(tc.Translation, Vector3Scale(normal, depth));
+    // --- Baumgarte Stabilization & Slop ---
+    // Instead of resolving 100% of the depth, we resolve a percentage (e.g. 40%) 
+    // and ignore tiny penetrations (slop) to prevent jitter.
+    const float kBaumgarte = 0.4f; 
+    const float kSlop = 0.015f; 
+    const float kMaxCorrection = 1.0f;
+
+    float correctionDepth = fmaxf(depth - kSlop, 0.0f) * kBaumgarte;
+    float correction = fminf(correctionDepth, kMaxCorrection);
+
+    if (correction > 0.0f)
+    {
+        tc.Translation = Vector3Add(tc.Translation, Vector3Scale(normal, correction));
+        tc.IsDirty = true;
+    }
 
     // Grounding
     if (normal.y > 0.45f)
     {
         rb.IsGrounded = true;
-        if (rb.Velocity.y < 0)
+
+        // if (correction > 0.1f)
+        // {
+        //     std::string nameA = "Unknown";
+        //     std::string nameB = "Unknown";
+        //     if (registry.all_of<TagComponent>(rbEntity)) nameA = registry.get<TagComponent>(rbEntity).Tag;
+        //     if (registry.all_of<TagComponent>(otherEntity)) nameB = registry.get<TagComponent>(otherEntity).Tag;
+
+        //     CH_CORE_WARN("Physics: Upward correction ({:.3f}) for [{}] hitting [{}]", 
+        //                  correction, nameA, nameB);
+        // }
+
+        // If we hit ground and were falling or moving up slightly (drift), stop vertical movement
+        if (rb.Velocity.y < 0.1f)
         {
             rb.Velocity.y = 0;
         }
+
+        // Stability: zero out horizontal velocity if it's very small after collision
+        if (fabsf(rb.Velocity.x) < 0.05f) rb.Velocity.x = 0;
+        if (fabsf(rb.Velocity.z) < 0.05f) rb.Velocity.z = 0;
     }
-    else if (normal.y < -0.5f)
+    else if (normal.y < -0.45f) // Ceiling
     {
         if (rb.Velocity.y > 0)
         {
@@ -37,11 +68,11 @@ void NarrowPhase::ApplyResponse(::entt::registry& registry, entt::entity rbEntit
         }
     }
 
-    // Slide along surface
-    float dot = Vector3DotProduct(rb.Velocity, normal);
-    if (dot < 0.0f)
+    // Velocity cancellation: remove component pointing into the surface
+    float vDotN = Vector3DotProduct(rb.Velocity, normal);
+    if (vDotN < 0.0f)
     {
-        rb.Velocity = Vector3Subtract(rb.Velocity, Vector3Scale(normal, dot));
+        rb.Velocity = Vector3Subtract(rb.Velocity, Vector3Scale(normal, vDotN));
     }
 
     other.IsColliding = true;
@@ -133,10 +164,13 @@ NarrowPhase::CapsuleSegment NarrowPhase::GetCapsuleSegment(const TransformCompon
 NarrowPhase::WorldAABB NarrowPhase::GetWorldAABB(const TransformComponent& tc, const ColliderComponent& cc)
 {
     Vector3 scale = tc.Scale;
-    Vector3 offset = Vector3Multiply(cc.Offset, scale);
-    Vector3 size = Vector3Multiply(cc.Size, scale);
-    Vector3 min = Vector3Add(tc.Translation, offset);
-    return {min, Vector3Add(min, size)};
+    Vector3 min_offset = Vector3Multiply(cc.Offset, scale);
+    Vector3 max_offset = Vector3Multiply(Vector3Add(cc.Offset, cc.Size), scale);
+    
+    Vector3 world_min = Vector3Add(tc.Translation, min_offset);
+    Vector3 world_max = Vector3Add(tc.Translation, max_offset);
+    
+    return {Vector3Min(world_min, world_max), Vector3Max(world_min, world_max)};
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -408,11 +442,10 @@ void NarrowPhase::ResolveCapsuleMesh(::entt::registry& registry, ::entt::entity 
     bvh->QueryAABB(queryBox, candidates);
     if (candidates.empty()) return;
 
-    // Accumulate max per-axis correction (avoid additive stacking flings)
-    Vector3 bestCorrection = {0.0f, 0.0f, 0.0f};
-    Vector3 bestNormal     = {0.0f, 1.0f, 0.0f};
-    bool    anyContact     = false;
-    bool    foundGround    = false;
+    // Find deepest penetration among all candidate triangles
+    Vector3 bestNormal      = {0.0f, 1.0f, 0.0f};
+    float   maxPenetration  = -1.0f;
+    bool    anyContact      = false;
 
     for (const auto* tri : candidates)
     {
@@ -437,46 +470,17 @@ void NarrowPhase::ResolveCapsuleMesh(::entt::registry& registry, ::entt::entity 
         float penetration = seg.radius - dist;
         Vector3 normal = (dist > 0.0001f) ? Vector3Scale(diff, 1.0f / dist) : tri->normal;
 
-        Vector3 correction = Vector3Scale(normal, penetration);
-        if (fabsf(correction.x) > fabsf(bestCorrection.x)) bestCorrection.x = correction.x;
-        if (fabsf(correction.y) > fabsf(bestCorrection.y)) { bestCorrection.y = correction.y; bestNormal = normal; }
-        if (fabsf(correction.z) > fabsf(bestCorrection.z)) bestCorrection.z = correction.z;
-
-        if (normal.y > 0.45f) foundGround = true;
+        if (penetration > maxPenetration)
+        {
+            maxPenetration = penetration;
+            bestNormal = normal;
+        }
         anyContact = true;
     }
 
-    if (!anyContact) return;
-
-    // Apply combined response
-    const float kMaxCorrection = 2.0f; // Prevent explosive corrections
-    float corrLen = Vector3Length(bestCorrection);
-    if (corrLen > kMaxCorrection)
-        bestCorrection = Vector3Scale(Vector3Normalize(bestCorrection), kMaxCorrection);
-
-    tc.Translation = Vector3Add(tc.Translation, bestCorrection);
-
-    if (foundGround)
+    if (anyContact && maxPenetration > 0.0f)
     {
-        rb.IsGrounded = true;
-        if (rb.Velocity.y < 0) rb.Velocity.y = 0;
-    }
-    else if (bestNormal.y < -0.45f) // Ceiling
-    {
-        if (rb.Velocity.y > 0) rb.Velocity.y = 0;
-    }
-
-    // Velocity cancellation
-    float vDotN = Vector3DotProduct(rb.Velocity, bestNormal);
-    if (vDotN < 0.0f)
-        rb.Velocity = Vector3Subtract(rb.Velocity, Vector3Scale(bestNormal, vDotN));
-
-    otherCollider.IsColliding = true;
-
-    if (auto* context = registry.ctx().find<PhysicsContext>())
-    {
-        if (context->CollisionCallback)
-            context->CollisionCallback(rbEntity, otherEntity);
+        ApplyResponse(registry, rbEntity, otherEntity, tc, rb, otherCollider, bestNormal, maxPenetration);
     }
 }
 
@@ -555,11 +559,10 @@ void NarrowPhase::ResolveSphereMesh(::entt::registry& registry, ::entt::entity r
     bvh->QueryAABB(queryBox, candidates);
     if (candidates.empty()) return;
 
-    // Accumulate max per-axis correction (avoid additive stacking flings)
-    Vector3 bestCorrection = {0.0f, 0.0f, 0.0f};
-    Vector3 bestNormal     = {0.0f, 1.0f, 0.0f};
-    bool    anyContact     = false;
-    bool    foundGround    = false;
+    // Find deepest penetration
+    Vector3 bestNormal      = {0.0f, 1.0f, 0.0f};
+    float   maxPenetration  = -1.0f;
+    bool    anyContact      = false;
 
     for (const auto* tri : candidates)
     {
@@ -577,46 +580,17 @@ void NarrowPhase::ResolveSphereMesh(::entt::registry& registry, ::entt::entity r
         float penetration = sphere.Radius - dist;
         Vector3 normal = (dist > 0.0001f) ? Vector3Scale(diff, 1.0f / dist) : tri->normal;
 
-        Vector3 correction = Vector3Scale(normal, penetration);
-        if (fabsf(correction.x) > fabsf(bestCorrection.x)) bestCorrection.x = correction.x;
-        if (fabsf(correction.y) > fabsf(bestCorrection.y)) { bestCorrection.y = correction.y; bestNormal = normal; }
-        if (fabsf(correction.z) > fabsf(bestCorrection.z)) bestCorrection.z = correction.z;
-
-        if (normal.y > 0.45f) foundGround = true;
+        if (penetration > maxPenetration)
+        {
+            maxPenetration = penetration;
+            bestNormal = normal;
+        }
         anyContact = true;
     }
 
-    if (!anyContact) return;
-
-    // Apply combined response
-    const float kMaxCorrection = 2.0f;
-    float corrLen = Vector3Length(bestCorrection);
-    if (corrLen > kMaxCorrection)
-        bestCorrection = Vector3Scale(Vector3Normalize(bestCorrection), kMaxCorrection);
-
-    tc.Translation = Vector3Add(tc.Translation, bestCorrection);
-
-    if (foundGround)
+    if (anyContact && maxPenetration > 0.0f)
     {
-        rb.IsGrounded = true;
-        if (rb.Velocity.y < 0) rb.Velocity.y = 0;
-    }
-    else if (bestNormal.y < -0.45f)
-    {
-        if (rb.Velocity.y > 0) rb.Velocity.y = 0;
-    }
-
-    // Velocity cancellation
-    float vDotN = Vector3DotProduct(rb.Velocity, bestNormal);
-    if (vDotN < 0.0f)
-        rb.Velocity = Vector3Subtract(rb.Velocity, Vector3Scale(bestNormal, vDotN));
-
-    otherCollider.IsColliding = true;
-
-    if (auto* context = registry.ctx().find<PhysicsContext>())
-    {
-        if (context->CollisionCallback)
-            context->CollisionCallback(rbEntity, otherEntity);
+        ApplyResponse(registry, rbEntity, otherEntity, tc, rb, otherCollider, bestNormal, maxPenetration);
     }
 }
 

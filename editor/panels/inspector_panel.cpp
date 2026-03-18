@@ -83,9 +83,6 @@ void InspectorPanel::DrawComponents(Entity entity)
     // Delegate all component drawing logic to PropertyEditor registry
     PropertyEditor::DrawEntityProperties(entity);
 
-    // Special cases like Materials (if multi-mesh selection is ever added, hit index might matter)
-    PropertyEditor::DrawMaterial(entity, m_SelectedMeshIndex);
-
     ImGui::PopID();
 }
 } // namespace CHEngine

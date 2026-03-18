@@ -743,7 +743,7 @@ Entities:
             Transparent: false
             Alpha: 1
     ColliderComponent:
-      Type: 979697920
+      Type: 979697921
       Enabled: true
       Offset: [-18203.7422, -18203.7383, -18237.1973]
       Size: [36407.4922, 36407.4844, 36661.4023]
@@ -944,8 +944,8 @@ Entities:
     TagComponent:
       Tag: Camera
     TransformComponent:
-      Translation: [438.783386, 150.148773, 97.1763916]
-      Rotation: [-393.833099, 2328.21191, 0]
+      Translation: [149.111374, 101.593307, -41.7021332]
+      Rotation: [-344.233337, 3498.5874, 0]
       Scale: [1, 1, 1]
     CameraComponent:
       Primary: true
@@ -1102,7 +1102,7 @@ Entities:
     TagComponent:
       Tag: Player
     TransformComponent:
-      Translation: [409.187378, 84.4879684, 186.117371]
+      Translation: [405.246887, 86.9330597, 185.958862]
       Rotation: [-3.14159083, -1.35437, -3.14159083]
       Scale: [0.999970615, 1, 0.999970615]
     ModelComponent:
@@ -1136,17 +1136,17 @@ Entities:
     ColliderComponent:
       Type: 258
       Enabled: true
-      Offset: [-1.0896225, -0.0913119316, -0.293091357]
+      Offset: [0.109999999, 2.45000005, -0.293091357]
       Size: [2.179245, 6.27687883, 1.20018852]
       Radius: 1.45000005
       Height: 7.30000019
       ModelHandle: 0
       ModelPath: models/player_low.glb
-      AutoCalculate: true
+      AutoCalculate: false
     RigidBodyComponent:
-      Mass: 84.5999985
-      UseGravity: false
-      IsKinematic: true
+      Mass: 83.8000031
+      UseGravity: true
+      IsKinematic: false
     AudioComponent:
       SoundHandle: 0
       SoundPath: audio/storegraphic-soft-wind-477404.mp3
@@ -1161,7 +1161,20 @@ Entities:
     ManagedScriptComponent:
       Scripts:
         - ClassName: chaineddecos.scripts.playercontroller
+          Fields:
+            - Name: Gravity
+              Type: 1
+              Value: 9.80000019
+            - Name: JumpForce
+              Type: 1
+              Value: 11.6999998
+            - Name: MovementSpeed
+              Type: 1
+              Value: 15
         - ClassName: chaineddecos.scripts.gamehud
+        - ClassName: chaineddecos.scripts.spawnzone
+        - ClassName: chaineddecos.scripts.gamehud
+        - ClassName: chaineddecos.scripts.playerfall
   - Entity: 5150207293164281694
     TagComponent:
       Tag: SceneCamera

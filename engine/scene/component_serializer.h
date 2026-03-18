@@ -31,9 +31,10 @@ class ComponentSerializer
 public:
     ComponentSerializer();
     ~ComponentSerializer();
+    static void Init();
+    static void Shutdown();
 
-    // Initialize registry with all component types
-    void Initialize();
+    void InternalInit();
 
     // Register component via declarative schema (PropertyArchive)
     // This is the primary method that automatically creates serialization, deserialization, and copy logic.

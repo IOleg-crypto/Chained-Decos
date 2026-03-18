@@ -46,8 +46,21 @@ void Dynamics::IntegrateVelocity(entt::registry& registry, entt::entity entity, 
     if (rigidBody.IsKinematic)
         return;
 
+    // Dampen velocity slightly (Air resistance)
+    float damping = 1.0f - (0.5f * deltaTime);
+    rigidBody.Velocity = Vector3Scale(rigidBody.Velocity, damping);
+
+    // Clamp absolute velocity to avoid "explosive" launches
+    const float kMaxVelocity = 100.0f;
+    float speed = Vector3Length(rigidBody.Velocity);
+    if (speed > kMaxVelocity)
+    {
+        rigidBody.Velocity = Vector3Scale(Vector3Normalize(rigidBody.Velocity), kMaxVelocity);
+    }
+
     Vector3 velocityDelta = Vector3Scale(rigidBody.Velocity, deltaTime);
     entityTransform.Translation = Vector3Add(entityTransform.Translation, velocityDelta);
+    entityTransform.IsDirty = true;
 }
 
 } // namespace CHEngine

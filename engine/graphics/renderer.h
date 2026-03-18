@@ -89,8 +89,11 @@ public:
     Renderer();
     ~Renderer();
 
-    void Init();
-    void Shutdown();
+    static void Init();
+    static void Shutdown();
+
+    void InternalInit();
+    void InternalShutdown();
 
     void BeginScene(const Camera3D& camera);
     void EndScene();

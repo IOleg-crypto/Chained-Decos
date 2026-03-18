@@ -1,14 +1,14 @@
-#ifndef CH_ENVIRONMENT_PANEL_H
-#define CH_ENVIRONMENT_PANEL_H
+#ifndef CH_WORLD_PANEL_H
+#define CH_WORLD_PANEL_H
 
 #include "panel.h"
 
 namespace CHEngine
 {
-class EnvironmentPanel : public Panel
+class WorldPanel : public Panel
 {
 public:
-    EnvironmentPanel();
+    WorldPanel();
 
 public:
     virtual void OnImGuiRender(bool readOnly = false) override;
@@ -18,4 +18,4 @@ private:
 };
 } // namespace CHEngine
 
-#endif // CH_ENVIRONMENT_PANEL_H
+#endif // CH_WORLD_PANEL_H

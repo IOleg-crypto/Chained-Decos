@@ -18,10 +18,13 @@ public:
     ~Audio();
 
     // Initializes the audio backend.
-    void Init();
+    static void Init();
 
     // Shuts down the audio backend.
-    void Shutdown();
+    static void Shutdown();
+
+    void InternalInit();
+    void InternalShutdown();
 
     // Updates all active audio sources in the scene.
     void Update(Scene* scene, Timestep ts);
