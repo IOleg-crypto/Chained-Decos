@@ -7,6 +7,7 @@
 #include "extras/IconsFontAwesome6.h"
 #include "imgui.h"
 #include <algorithm>
+#include <fstream>
 #include <unordered_map>
 
 namespace CHEngine
@@ -225,12 +226,49 @@ void ContentBrowserPanel::RenderGridView()
         {
             if (ImGui::MenuItem(ICON_FA_PEN " Rename"))
             {
-                // TODO: Implement renaming
+                m_RenamingPath = asset.path;
+                strncpy(m_RenameBuffer, asset.name.c_str(), sizeof(m_RenameBuffer));
+                ImGui::OpenPopup("RenameAsset");
             }
             if (ImGui::MenuItem(ICON_FA_TRASH " Delete"))
             {
-                // TODO: Implement deletion
+                m_PathToDelete = asset.path;
+                ImGui::OpenPopup("DeleteAsset?");
             }
+            ImGui::EndPopup();
+        }
+
+        // Rename Popup
+        if (ImGui::BeginPopupModal("RenameAsset", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            ImGui::Text("Enter new name for %s:", m_RenamingPath.filename().string().c_str());
+            ImGui::InputText("##NewName", m_RenameBuffer, sizeof(m_RenameBuffer));
+            if (ImGui::Button("OK", {120, 0}))
+            {
+                std::filesystem::path newPath = m_RenamingPath.parent_path() / m_RenameBuffer;
+                std::error_code ec;
+                std::filesystem::rename(m_RenamingPath, newPath, ec);
+                RefreshDirectory();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", {120, 0})) { ImGui::CloseCurrentPopup(); }
+            ImGui::EndPopup();
+        }
+
+        // Delete Confirmation
+        if (ImGui::BeginPopupModal("DeleteAsset?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            ImGui::Text("Are you sure you want to delete %s?\nThis operation cannot be undone!", m_PathToDelete.filename().string().c_str());
+            if (ImGui::Button("Delete", {120, 0}))
+            {
+                std::error_code ec;
+                std::filesystem::remove_all(m_PathToDelete, ec);
+                RefreshDirectory();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", {120, 0})) { ImGui::CloseCurrentPopup(); }
             ImGui::EndPopup();
         }
 
@@ -259,6 +297,53 @@ void ContentBrowserPanel::RenderGridView()
     }
 
     ImGui::Columns(1);
+
+    // Empty space context menu
+    if (ImGui::BeginPopupContextWindow(0, 1 | ImGuiPopupFlags_NoOpenOverItems))
+    {
+        if (ImGui::BeginMenu(ICON_FA_PLUS " Create"))
+        {
+            if (ImGui::MenuItem(ICON_FA_FOLDER " New Folder"))
+            {
+                std::filesystem::path newDir = m_CurrentDirectory / "New Folder";
+                int i = 1;
+                while (std::filesystem::exists(newDir))
+                    newDir = m_CurrentDirectory / ("New Folder " + std::to_string(i++));
+                std::filesystem::create_directory(newDir);
+                RefreshDirectory();
+            }
+            if (ImGui::MenuItem(ICON_FA_FILE_CODE " New C# Script"))
+            {
+                std::filesystem::path newScript = m_CurrentDirectory / "NewScript.cs";
+                int i = 1;
+                while (std::filesystem::exists(newScript))
+                    newScript = m_CurrentDirectory / ("NewScript" + std::to_string(i++) + ".cs");
+                
+                std::string className = newScript.stem().string();
+                std::string templateContent = 
+                    "using CHEngine;\n\n"
+                    "namespace ChainedDecos.Scripts\n"
+                    "{\n"
+                    "    public class " + className + " : Script\n"
+                    "    {\n"
+                    "        public override void OnCreate()\n"
+                    "        {\n"
+                    "        }\n\n"
+                    "        public override void OnUpdate(float deltaTime)\n"
+                    "        {\n"
+                    "        }\n"
+                    "    }\n"
+                    "}\n";
+                
+                std::ofstream ofs(newScript);
+                ofs << templateContent;
+                ofs.close();
+                RefreshDirectory();
+            }
+            ImGui::EndMenu();
+        }
+        ImGui::EndPopup();
+    }
 }
 
 void ContentBrowserPanel::OnAssetDoubleClicked(AssetEntry& entry)

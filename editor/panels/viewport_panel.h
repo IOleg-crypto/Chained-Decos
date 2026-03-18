@@ -29,6 +29,7 @@ public:
 public:
     virtual void OnImGuiRender(bool readOnly = false) override;
     virtual void OnUpdate(Timestep ts) override;
+    virtual void OnEvent(Event& e) override;
 
 public:
     bool IsFocused() const

@@ -9,6 +9,7 @@ add_library(engine_core OBJECT
     application.cpp
     settings_manager.cpp
     dialogs.cpp
+    filesystem_utils.cpp
 
     # Platform specific implementations
     $<$<PLATFORM_ID:Windows>:../platform/windows/windows_window.cpp>
@@ -33,6 +34,7 @@ add_library(engine_core OBJECT
     yaml.h
     settings_manager.h
     dialogs.h
+    filesystem_utils.h
 )
 
 target_include_directories(engine_core PUBLIC

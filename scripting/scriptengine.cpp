@@ -3,20 +3,14 @@
 #include "engine/scene/scene.h"
 #include "engine/scene/project.h"
 #include "scene_scripting.h"
-#include "engine/core/application.h"
+#include "engine/core/filesystem_utils.h"
+#include "engine/core/string_utils.h"
 #include <Coral/ManagedObject.hpp>
-#include <algorithm>
 #include <chrono>
 #include <filesystem>
 #include <iostream>
 #include "script_glue.h"
 #include "engine/core/base.h"
-
-#ifdef CH_PLATFORM_WINDOWS
-#include <windows.h>
-#elif defined(CH_PLATFORM_LINUX)
-#include <unistd.h>
-#endif
 
 namespace CHEngine {
 
@@ -32,10 +26,7 @@ ScriptEngine::ScriptEngine()
 
 ScriptEngine::~ScriptEngine()
 {
-    if (m_IsInitialized)
-    {
-        Shutdown();
-    }
+    InternalShutdown();
     s_Instance = nullptr;
 }
 
@@ -45,30 +36,16 @@ ScriptEngine& ScriptEngine::Get()
     return *s_Instance;
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-static std::string ToLower(std::string s)
-{
-    std::transform(s.begin(), s.end(), s.begin(), ::tolower);
-    return s;
-}
-
-static std::filesystem::path GetExecutableDir()
-{
-#ifdef CH_PLATFORM_WINDOWS
-    wchar_t path[MAX_PATH];
-    GetModuleFileNameW(NULL, path, MAX_PATH);
-    return std::filesystem::path(path).parent_path();
-#elif defined(CH_PLATFORM_LINUX)
-    char path[1024];
-    ssize_t count = readlink("/proc/self/exe", path, sizeof(path));
-    if (count != -1)
-        return std::filesystem::path(std::string(path, count)).parent_path();
-#endif
-    return std::filesystem::current_path();
-}
 
 // ── Init / Shutdown ───────────────────────────────────────────────────────────
 void ScriptEngine::Init()
+{
+    if (!s_Instance)
+        s_Instance = new ScriptEngine();
+    s_Instance->InternalInit();
+}
+
+void ScriptEngine::InternalInit()
 {
     if (m_IsInitialized)
         return;
@@ -77,7 +54,7 @@ void ScriptEngine::Init()
 
     Coral::HostSettings settings;
     // Coral looks for Coral.Managed.dll in this directory.
-    settings.CoralDirectory = GetExecutableDir().string();
+    settings.CoralDirectory = FilesystemUtils::GetExecutableDirectory().string();
 
     auto status = m_Host.Initialize(settings);
     if (status != Coral::CoralInitStatus::Success)
@@ -95,10 +72,20 @@ void ScriptEngine::Init()
 
 void ScriptEngine::Shutdown()
 {
+    if (s_Instance)
+    {
+        s_Instance->InternalShutdown();
+        delete s_Instance;
+        s_Instance = nullptr;
+    }
+}
+
+void ScriptEngine::InternalShutdown()
+{
     if (!m_IsInitialized)
         return;
 
-    CH_CORE_INFO("ScriptEngine: Shutting down...");
+    CH_CORE_INFO("ScriptEngine: Shutting down CoreCLR...");
     m_ScriptClasses.clear();
     m_AppAssembly = nullptr;
     m_CoreAssembly = nullptr;
@@ -119,7 +106,7 @@ void ScriptEngine::LoadAppAssembly(const std::string& filepath)
     {
         // 1. Ensure our Core Managed library is loaded first (in the same ALC)
         // This provides the base CHEngine.Script class for discovery.
-        std::filesystem::path corePath = GetExecutableDir() / "CHEngine.Managed.dll";
+        std::filesystem::path corePath = FilesystemUtils::GetExecutableDirectory() / "CHEngine.Managed.dll";
         if (!std::filesystem::exists(corePath)) {
             corePath = "CHEngine.Managed.dll"; 
         }
@@ -230,7 +217,7 @@ void ScriptEngine::DiscoverScriptTypes()
             continue;
 
         std::string fullName = (std::string)type->GetFullName();
-        std::string key      = ToLower(fullName);
+        std::string key      = Utils::ToLower(fullName);
 
         m_ScriptClasses[key] = *type;
         CH_CORE_INFO("ScriptEngine: Registered script '{}' (key: '{}')", fullName, key);
@@ -242,7 +229,7 @@ void ScriptEngine::DiscoverScriptTypes()
 // ── Script lookup ─────────────────────────────────────────────────────────────
 Coral::Type* ScriptEngine::GetScriptClass(const std::string& name)
 {
-    std::string key = ToLower(name);
+    std::string key = Utils::ToLower(name);
 
     // Exact full-name match (most common)
     auto it = m_ScriptClasses.find(key);

@@ -6,6 +6,8 @@
 #include "extras/IconsFontAwesome6.h"
 #include "imgui.h"
 #include "undo/entity_commands.h"
+#include "editor_events.h"
+#include "engine/core/input.h"
 #include <functional>
 #include <vector>
 
@@ -91,6 +93,17 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
         {
             EntitySelectedEvent e(entt::null, m_Context.get());
             Application::Get().OnEvent(e);
+        }
+
+        // Focus Shortcut
+        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) && Input::IsKeyPressed(KeyboardKey::KEY_F))
+        {
+            Entity selected = EditorContext::GetSelectedEntity();
+            if (selected)
+            {
+                ViewportFocusEntityEvent e(selected);
+                Application::Get().OnEvent(e);
+            }
         }
 
         // Blank space context menu
@@ -258,6 +271,33 @@ void SceneHierarchyPanel::DrawContextMenu()
             collider.Offset = {0.0f, 0.0f, 0.0f};
         }
         ImGui::EndMenu();
+    }
+
+    if (ImGui::MenuItem("Camera"))
+    {
+        auto entity = m_Context->CreateEntity("Camera");
+        entity.AddComponent<CameraComponent>();
+    }
+
+    if (ImGui::MenuItem("Point Light"))
+    {
+        auto entity = m_Context->CreateEntity("Point Light");
+        auto& light = entity.AddComponent<LightComponent>();
+        light.Type = LightType::Point;
+    }
+
+    if (ImGui::MenuItem("Spot Light"))
+    {
+        auto entity = m_Context->CreateEntity("Spot Light");
+        auto& light = entity.AddComponent<LightComponent>();
+        light.Type = LightType::Spot;
+    }
+
+    if (ImGui::MenuItem("Directional Light"))
+    {
+        auto entity = m_Context->CreateEntity("Directional Light");
+        auto& light = entity.AddComponent<LightComponent>();
+        light.Type = LightType::Directional;
     }
 
     if (ImGui::MenuItem("Spawn Zone"))

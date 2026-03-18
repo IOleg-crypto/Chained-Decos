@@ -113,6 +113,22 @@ ComponentSerializer::ComponentSerializer()
     s_Instance = this;
 }
 
+void ComponentSerializer::Init()
+{
+    if (!s_Instance)
+        s_Instance = new ComponentSerializer();
+    s_Instance->InternalInit();
+}
+
+void ComponentSerializer::Shutdown()
+{
+    if (s_Instance)
+    {
+        delete s_Instance;
+        s_Instance = nullptr;
+    }
+}
+
 ComponentSerializer::~ComponentSerializer()
 {
     s_Instance = nullptr;
@@ -525,7 +541,7 @@ void ComponentSerializer::DeserializeMaterialSlot(MaterialSlot& slot, YAML::Node
 // Initialize Registry
 // ========================================================================
 
-void ComponentSerializer::Initialize()
+void ComponentSerializer::InternalInit()
 {
     m_Registry.clear();
 

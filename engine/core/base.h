@@ -37,7 +37,7 @@
 #define CH_ENABLE_ASSERTS
 #endif
 
-#include <memory>
+
 
 // Bit manipulation
 #define BIT(x) (1 << (x))

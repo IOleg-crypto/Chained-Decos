@@ -94,8 +94,10 @@ void EditorLayout::ResetLayout()
     ImGui::DockBuilderDockWindow("Viewport", main);
     ImGui::DockBuilderDockWindow("Scene Hierarchy", left);
     ImGui::DockBuilderDockWindow("Inspector", right);
-    ImGui::DockBuilderDockWindow("Environment", right);
-    ImGui::DockBuilderDockWindow("Profiler", right);
+    ImGui::DockBuilderDockWindow("World Settings", right);
+    ImGui::DockBuilderDockWindow("Material Editor", right);
+    ImGui::DockBuilderDockWindow("Effects & Debug", down);
+    ImGui::DockBuilderDockWindow("Profiler", down);
     ImGui::DockBuilderDockWindow("Content Browser", down);
     ImGui::DockBuilderDockWindow("Console", down);
 

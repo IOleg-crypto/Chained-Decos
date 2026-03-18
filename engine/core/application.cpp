@@ -1,4 +1,5 @@
 #include "application.h"
+#include "filesystem_utils.h"
 #include "engine/audio/audio.h"
 #include "engine/core/assert.h"
 #include "engine/core/imgui_layer.h"
@@ -16,7 +17,6 @@
 #include "engine/scene/component_serializer.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene_events.h"
-#include "engine/scene/scene_events.h"
 #include "rlgl.h"
 #include "nfd.h"
 #include "scripting/scriptengine.h"
@@ -29,7 +29,6 @@
 #define GLFW_INCLUDE_NONE
 #endif
 #include "engine/graphics/render_command.h"
-#include "engine/graphics/renderer.h"
 #include "engine/graphics/renderer2d.h"
 #include <GLFW/glfw3.h>
 
@@ -65,26 +64,27 @@ Application::Application(const ApplicationSpecification& specification)
 
     // --- System Initialization ---
     // Systems are singletons and manage their own lifetimes
-    m_ThreadPool = new ThreadPool();
     if (!m_Specification.Headless)
     {
-        m_Window = Window::Create(windowProps);
+        m_Window = std::unique_ptr<Window>(Window::Create(windowProps));
     }
     
-    m_Renderer = new Renderer();
-    m_Audio = new Audio();
-    m_PhysicsSystem = new PhysicsSystem();
-    m_ComponentSerializer = new ComponentSerializer();
+    ThreadPool::Init();
+    Renderer::Init();
+    Audio::Init();
+    PhysicsSystem::Init();
+    ComponentSerializer::Init();
+    ScriptEngine::Init();
 
     m_LayerStack = std::make_unique<LayerStack>();
     m_Running = true;
 
     // --- Core Systems Initialization ---
-    m_ComponentSerializer->Initialize();
-    m_Renderer->Init();
-    m_PhysicsSystem->Init();
-    m_PhysicsSystem->Init();
-    m_Audio->Init();
+    ComponentSerializer::Get().InternalInit();
+    Renderer::Get().InternalInit();
+    PhysicsSystem::Get().InternalInit();
+    Audio::Get().InternalInit();
+
     if (IsAudioDeviceReady())
     {
         CH_CORE_INFO("Audio Device Initialized Successfully");
@@ -102,8 +102,7 @@ Application::Application(const ApplicationSpecification& specification)
         PushOverlay(m_ImGuiLayer);
     }
 
-    m_ScriptEngine = std::make_unique<ScriptEngine>();
-    m_ScriptEngine->Init();
+    ScriptEngine::Get().InternalInit();
 
     CH_CORE_INFO("Application Initialized: {}", m_Specification.Name);
 }
@@ -112,20 +111,15 @@ Application::~Application()
 {
     CH_CORE_INFO("Shutting down Application...");
     
-    
-    if (m_Audio) m_Audio->Shutdown();
-    if (m_PhysicsSystem) m_PhysicsSystem->Shutdown();
-    if (m_Renderer) m_Renderer->Shutdown();
-    
-    // Cleanup subsystem instances safely using local pointers
-    
-    delete m_Audio;
-    delete m_PhysicsSystem;
-    delete m_Renderer;
-    delete m_ThreadPool;
-    delete m_ComponentSerializer;
+    m_LayerStack.reset();
 
-    m_LayerStack->Shutdown();
+    ScriptEngine::Shutdown();
+    ComponentSerializer::Shutdown();
+    PhysicsSystem::Shutdown();
+    Audio::Shutdown();
+    Renderer::Shutdown();
+    ThreadPool::Shutdown();
+
     m_Window.reset();
 
     if (!m_Specification.Headless)
@@ -294,6 +288,11 @@ Window& Application::GetWindow()
 LayerStack& Application::GetLayerStack()
 {
     return *m_LayerStack;
+}
+
+ScriptEngine& Application::GetScriptEngine()
+{
+    return ScriptEngine::Get();
 }
 
 } // namespace CHEngine

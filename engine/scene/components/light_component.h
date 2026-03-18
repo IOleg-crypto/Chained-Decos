@@ -8,7 +8,8 @@ namespace CHEngine
 enum class LightType
 {
     Point = 0,
-    Spot = 1
+    Spot = 1,
+    Directional = 2
 };
 
 struct LightComponent
