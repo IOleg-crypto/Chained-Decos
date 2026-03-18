@@ -1,4 +1,4 @@
-#include "environment_panel.h"
+#include "world_panel.h"
 #include "editor/editor_layer.h"
 #include "engine/graphics/asset_manager.h"
 #include "engine/graphics/environment.h"
@@ -11,12 +11,12 @@
 namespace CHEngine
 {
 
-EnvironmentPanel::EnvironmentPanel()
+WorldPanel::WorldPanel()
 {
-    m_Name = "Environment";
+    m_Name = "World Settings";
 }
 
-void EnvironmentPanel::OnImGuiRender(bool readOnly)
+void WorldPanel::OnImGuiRender(bool readOnly)
 {
     if (!m_IsOpen)
     {
@@ -67,7 +67,8 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
                 m_Context->GetSettings().BackgroundTexturePath = buffer;
             }
 
-            if (ImGui::Button("..."))
+            ImGui::SameLine();
+            if (ImGui::Button("...##BG"))
             {
                 std::vector<FileDialogFilter> filters = {{"Textures", "png,jpg,tga,bmp"}};
                 auto result = Dialogs::OpenFile(filters);
@@ -142,59 +143,11 @@ void EnvironmentPanel::OnImGuiRender(bool readOnly)
         DrawEnvironmentSettings(env, readOnly);
     }
 
-    // Replaced m_DebugFlags with EditorLayer::Get().GetDebugRenderFlags()
-    {
-        bool is3D = m_Context->GetSettings().Mode == BackgroundMode::Environment3D;
-        ImGui::Separator();
-        ImGui::Text("Viewport Tools");
-
-        const char* diagnosticModes[] = {"Normal Render", "Normals visualization", "Lighting only", "Albedo only"};
-        int currentDiag = (int)m_Context->GetSettings().DiagnosticMode;
-        if (ImGui::Combo("Diagnostic Mode", &currentDiag, diagnosticModes, 4))
-        {
-            m_Context->GetSettings().DiagnosticMode = (float)currentDiag;
-            Renderer::Get().SetDiagnosticMode((float)currentDiag);
-        }
-
-        ImGui::Separator();
-        ImGui::Text("Debug Rendering");
-
-        if (!is3D)
-        {
-            ImGui::BeginDisabled();
-        }
-
-        if (ImGui::CollapsingHeader("Debug Visualization", ImGuiTreeNodeFlags_DefaultOpen))
-        {
-            auto& debugFlags = m_Context->GetSettings().DebugFlags;
-            ImGui::Checkbox("Colliders", &debugFlags.DrawColliders);
-            ImGui::Checkbox("Mesh Hierarchy", &debugFlags.DrawCollisionModelBox);
-            ImGui::Checkbox("Lights", &debugFlags.DrawLights);
-            ImGui::Checkbox("Spawn Zones", &debugFlags.DrawSpawnZones);
-            ImGui::Checkbox("Draw Grid", &debugFlags.DrawGrid);
-
-            if (debugFlags.DrawGrid)
-            {
-                auto& grid = m_Context->GetSettings().Grid;
-                ImGui::Indent(12.0f);
-                ImGui::DragInt  ("Slices",  &grid.Slices,  1,    4, 200);
-                ImGui::DragFloat("Spacing", &grid.Spacing, 0.1f, 0.1f, 50.0f);
-                ImGui::Unindent(12.0f);
-            }
-        }
-
-        if (!is3D)
-        {
-            ImGui::EndDisabled();
-            ImGui::TextDisabled("(Hiding 3D Debug in UI Mode)");
-        }
-    }
-
     ImGui::PopID();
     ImGui::End();
 }
 
-void EnvironmentPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, bool readOnly)
+void WorldPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, bool readOnly)
 {
     auto& settings = env->GetSettings();
 
@@ -239,7 +192,7 @@ void EnvironmentPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset>
         }
 
         ImGui::SameLine();
-        if (ImGui::Button("..."))
+        if (ImGui::Button("...##Sky"))
         {
             std::vector<FileDialogFilter> filters = {{"Textures/HDR", "png,jpg,hdr"}};
             auto result = Dialogs::OpenFile(filters);
@@ -274,7 +227,7 @@ void EnvironmentPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset>
         }
     }
 
-    if (ImGui::CollapsingHeader("Fog Visualization", ImGuiTreeNodeFlags_DefaultOpen))
+    if (ImGui::CollapsingHeader("Fog Visibility", ImGuiTreeNodeFlags_DefaultOpen))
     {
         if (readOnly)
         {
@@ -290,7 +243,6 @@ void EnvironmentPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset>
             fog.FogColor = {(uint8_t)(fogColor[0]*255),(uint8_t)(fogColor[1]*255),(uint8_t)(fogColor[2]*255),(uint8_t)(fogColor[3]*255)};
         }
 
-        
         ImGui::DragInt("Fog Mode", &fog.Mode, 1, 0, 4);
         ImGui::DragFloat("Density", &fog.Density, 0.001f, 0.0f, 1.0f);
         ImGui::DragFloat("Start", &fog.Start, 0.1f, 0.0f, 1000.0f);

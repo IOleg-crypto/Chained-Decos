@@ -29,8 +29,11 @@ public:
     ScriptEngine();
     ~ScriptEngine();
 
-    void Init();
-    void Shutdown();
+    static void Init();
+    static void Shutdown();
+
+    void InternalInit();
+    void InternalShutdown();
 
     // ── Assembly management ──────────────────────────────────────────────
     /// Load (or re-load) the game script DLL.

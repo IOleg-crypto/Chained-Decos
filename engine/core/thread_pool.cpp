@@ -1,4 +1,5 @@
 #include "engine/core/application.h"
+#include "engine/core/thread_pool.h"
 
 namespace CHEngine
 {
@@ -8,6 +9,22 @@ ThreadPool& ThreadPool::Get()
 {
     CH_CORE_ASSERT(s_ThreadPoolInstance, "ThreadPool not initialized!");
     return *s_ThreadPoolInstance;
+}
+
+void ThreadPool::Init(size_t threads)
+{
+    if (!s_ThreadPoolInstance)
+        s_ThreadPoolInstance = new ThreadPool(threads);
+}
+
+void ThreadPool::Shutdown()
+{
+    if (s_ThreadPoolInstance)
+    {
+        s_ThreadPoolInstance->InternalShutdown();
+        delete s_ThreadPoolInstance;
+        s_ThreadPoolInstance = nullptr;
+    }
 }
 
 ThreadPool::ThreadPool(size_t threads)
@@ -25,11 +42,11 @@ ThreadPool::ThreadPool(size_t threads)
 
 ThreadPool::~ThreadPool()
 {
-    Shutdown();
+    InternalShutdown();
     s_ThreadPoolInstance = nullptr;
 }
 
-void ThreadPool::Shutdown()
+void ThreadPool::InternalShutdown()
 {
     {
         std::unique_lock<std::mutex> lock(m_QueueMutex);

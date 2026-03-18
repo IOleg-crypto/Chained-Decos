@@ -38,7 +38,12 @@ target_sources(editor_core PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/project_browser_panel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/project_settings_panel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/project_settings_panel.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/environment_panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/world_panel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/world_panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/effects_panel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/effects_panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/material_panel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/material_panel.cpp
 
     # Undo
     ${CMAKE_CURRENT_SOURCE_DIR}/undo/command_history.h

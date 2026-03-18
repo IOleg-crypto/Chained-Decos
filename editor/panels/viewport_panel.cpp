@@ -601,4 +601,19 @@ void ViewportPanel::OnUpdate(Timestep ts)
     }
 }
 
+void ViewportPanel::OnEvent(Event& e)
+{
+    EventDispatcher dispatcher(e);
+    dispatcher.Dispatch<ViewportFocusEntityEvent>([this](ViewportFocusEntityEvent& ev) {
+        Entity entity = ev.GetEntity();
+        if (entity && entity.HasComponent<TransformComponent>())
+        {
+            auto& transform = entity.GetComponent<TransformComponent>();
+            m_CameraController->GetCamera().SetFocalPoint(transform.Translation);
+            return true;
+        }
+        return false;
+    });
+}
+
 } // namespace CHEngine

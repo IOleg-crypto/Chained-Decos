@@ -34,88 +34,55 @@ DebugSettings:
   DrawLights: true
   DrawSpawnZones: true
 Entities:
-  - Entity: 14689743047800951365
+  - Entity: 1283719283719285
     TagComponent:
-      Tag: SceneCamera
+      Tag: Arena
     TransformComponent:
-      Translation: [42.2146225, 28.3946991, 76.4796829]
-      Rotation: [-30.3999996, 66.4000092, 0]
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
-    CameraComponent:
-      Primary: true
-      FixedAspectRatio: false
-      IsOrbitCamera: false
-      OrbitDistance: 10
-      OrbitYaw: 0
-      OrbitPitch: 20
-      LookSensitivity: 0.899999976
-      TargetEntityTag: Player
-      ProjectionType: 0
-      PerspectiveFOV: 1.04719758
-      PerspectiveNear: 0.00999999978
-      PerspectiveFar: 1000
-  - Entity: 7935884460455885952
-    TagComponent:
-      Tag: Camera
-    TransformComponent:
-      Translation: [6.70736885, 16.0135632, 7.79821491]
-      Rotation: [-16.6000118, 173.000656, 0]
-      Scale: [1, 1, 1]
-    CameraComponent:
-      Primary: true
-      FixedAspectRatio: false
-      IsOrbitCamera: true
-      OrbitDistance: 32
-      OrbitYaw: 1.80052602
-      OrbitPitch: 13.4000015
-      LookSensitivity: 0.899999976
-      TargetEntityTag: Player
-      ProjectionType: 0
-      PerspectiveFOV: 1.04719758
-      PerspectiveNear: 0.100000001
-      PerspectiveFar: 1000
-    ManagedScriptComponent:
-      Scripts:
-        - ClassName: chaineddecos.scripts.cameracontroller
-  - Entity: 6428169142076434776
-    TagComponent:
-      Tag: stairsaw
-    TransformComponent:
-      Translation: [-50.6539459, 0.631593704, 10.243227]
-      Rotation: [-3.14159083, 1.55226898, -3.14159083]
-      Scale: [0.999882996, 1, 0.97942549]
     ModelComponent:
       ModelHandle: 0
-      ModelPath: models/stairs.glb
+      ModelPath: models/arena.glb
       Materials:
         []
     ColliderComponent:
       Type: 257
       Enabled: true
-      Offset: [-17.087841, -4.29592609, -11.3028545]
-      Size: [34.1756821, 8.59185219, 22.6057091]
+      Offset: [-43.8236694, -68.8881912, -46.1545258]
+      Size: [86.6819458, 94.478302, 89.0095215]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
-      ModelPath: models/stairs.glb
+      ModelPath: models/arena.glb
       AutoCalculate: true
-  - Entity: 1283719283719289
+  - Entity: 1283719283719287
     TagComponent:
       Tag: Entity
     TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-  - Entity: 1326311650816898569
-    TagComponent:
-      Tag: Player
-    TransformComponent:
-      Translation: [0.741465449, 2.10330534, 47.3956604]
+      Translation: [28.8506241, 16.7000008, 27.7648582]
       Rotation: [0, -0, 0]
       Scale: [1, 1, 1]
     ModelComponent:
       ModelHandle: 0
-      ModelPath: models/player_low.glb
+      ModelPath: ""
+      Materials:
+        []
+    SpawnComponent:
+      SpawnZoneSize: [1, 1, 1]
+      SpawnTextureHandle: 0
+      SpawnTexturePath: boxes/playerspawntexture.png
+      RenderSpawnZoneInScene: true
+  - Entity: 1326311650816898569
+    TagComponent:
+      Tag: Player
+    TransformComponent:
+      Translation: [0.741465449, 5.18291473, 100.064888]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/city/after_the_rain..._-_vr__sound.glb
       Materials:
         []
     ColliderComponent:
@@ -142,43 +109,76 @@ Entities:
         - ClassName: chaineddecos.scripts.playercontroller
         - ClassName: chaineddecos.scripts.playerfall
         - ClassName: chaineddecos.scripts.spawnzone
-        - ClassName: ""
-  - Entity: 1283719283719287
+        - ClassName: chaineddecos.scripts.spawnzone
+  - Entity: 1283719283719289
     TagComponent:
       Tag: Entity
-    TransformComponent:
-      Translation: [28.8506241, 16.7000008, 27.7648582]
-      Rotation: [0, -0, 0]
-      Scale: [1, 1, 1]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: ""
-      Materials:
-        []
-    SpawnComponent:
-      SpawnZoneSize: [1, 1, 1]
-      SpawnTextureHandle: 0
-      SpawnTexturePath: boxes/playerspawntexture.png
-      RenderSpawnZoneInScene: true
-  - Entity: 1283719283719285
-    TagComponent:
-      Tag: Arena
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
+  - Entity: 6428169142076434776
+    TagComponent:
+      Tag: stairsaw
+    TransformComponent:
+      Translation: [-50.6539459, 0.631593704, 10.243227]
+      Rotation: [-3.14159083, 1.55226898, -3.14159083]
+      Scale: [0.999882996, 1, 0.97942549]
     ModelComponent:
       ModelHandle: 0
-      ModelPath: models/arena.glb
+      ModelPath: models/stairs.glb
       Materials:
         []
     ColliderComponent:
       Type: 257
       Enabled: true
-      Offset: [-43.8236694, -68.8881912, -46.1545258]
-      Size: [86.6819458, 94.478302, 89.0095215]
+      Offset: [-17.087841, -4.29592609, -11.3028545]
+      Size: [34.1756821, 8.59185219, 22.6057091]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
-      ModelPath: models/arena.glb
+      ModelPath: models/stairs.glb
       AutoCalculate: true
+  - Entity: 7935884460455885952
+    TagComponent:
+      Tag: Camera
+    TransformComponent:
+      Translation: [-75.8884048, 25.9009342, 87.4832993]
+      Rotation: [-11.0000238, -57.3987541, 0]
+      Scale: [1, 1, 1]
+    CameraComponent:
+      Primary: true
+      FixedAspectRatio: false
+      IsOrbitCamera: true
+      OrbitDistance: 32
+      OrbitYaw: 1.80052602
+      OrbitPitch: 13.4000015
+      LookSensitivity: 0.899999976
+      TargetEntityTag: Player
+      ProjectionType: 0
+      PerspectiveFOV: 1.04719758
+      PerspectiveNear: 0.100000001
+      PerspectiveFar: 1000
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: chaineddecos.scripts.cameracontroller
+  - Entity: 14689743047800951365
+    TagComponent:
+      Tag: SceneCamera
+    TransformComponent:
+      Translation: [42.2146225, 28.3946991, 76.4796829]
+      Rotation: [-30.3999996, 66.4000092, 0]
+      Scale: [1, 1, 1]
+    CameraComponent:
+      Primary: true
+      FixedAspectRatio: false
+      IsOrbitCamera: false
+      OrbitDistance: 10
+      OrbitYaw: 0
+      OrbitPitch: 20
+      LookSensitivity: 0.899999976
+      TargetEntityTag: Player
+      ProjectionType: 0
+      PerspectiveFOV: 1.04719758
+      PerspectiveNear: 0.00999999978
+      PerspectiveFar: 1000

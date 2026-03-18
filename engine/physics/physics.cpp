@@ -26,16 +26,33 @@ PhysicsSystem::PhysicsSystem()
 
 PhysicsSystem::~PhysicsSystem()
 {
-    Shutdown();
+    InternalShutdown();
     s_PhysicsInstance = nullptr;
 }
 
 void PhysicsSystem::Init()
 {
+    if (!s_PhysicsInstance)
+        s_PhysicsInstance = new PhysicsSystem();
+    s_PhysicsInstance->InternalInit();
+}
+
+void PhysicsSystem::InternalInit()
+{
     CH_CORE_INFO("Global Physics System Initialized.");
 }
 
 void PhysicsSystem::Shutdown()
+{
+    if (s_PhysicsInstance)
+    {
+        s_PhysicsInstance->InternalShutdown();
+        delete s_PhysicsInstance;
+        s_PhysicsInstance = nullptr;
+    }
+}
+
+void PhysicsSystem::InternalShutdown()
 {
     std::lock_guard<std::mutex> lock(m_BVHMutex);
     m_BVHCache.clear();
@@ -60,12 +77,18 @@ std::shared_ptr<BVH> PhysicsSystem::GetBVH(ModelAsset* asset)
     auto it = m_BVHCache.find(asset);
     if (it == m_BVHCache.end())
     {
-        m_BVHCache[asset] =
-            BVH::BuildAsync(asset->GetModel(), asset->GetGlobalNodeTransforms(), asset->GetMeshToNode()).share();
-        return nullptr;
+        CH_CORE_INFO("PhysicsSystem: Starting synchronous BVH build for '{}'", asset->GetPath());
+        auto bvh = BVH::Build(asset->GetModel(), asset->GetGlobalNodeTransforms(), asset->GetMeshToNode());
+        
+        std::promise<std::shared_ptr<BVH>> promise;
+        promise.set_value(bvh);
+        m_BVHCache[asset] = promise.get_future().share();
+        
+        return bvh;
     }
 
-    if (it->second.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+    // Return current cached value (gets blocking wait if still building async)
+    if (it->second.valid())
     {
         return it->second.get();
     }

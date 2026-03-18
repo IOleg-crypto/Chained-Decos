@@ -35,6 +35,7 @@ enum class EventType
     AppLaunchRuntime,
     AppResetLayout,
     AppSaveLayout,
+    ViewportFocusEntity,
 
     // --- UI Events ---
     ButtonPressed

@@ -17,6 +17,7 @@ public:
     // Drives the transform and camera component of the given entity
     void OnUpdate(Entity cameraEntity, Timestep ts);
 
+    EditorCamera& GetCamera() { return m_Camera; }
     float GetYaw() const { return m_Camera.GetYaw(); }
     float GetPitch() const { return m_Camera.GetPitch(); }
 

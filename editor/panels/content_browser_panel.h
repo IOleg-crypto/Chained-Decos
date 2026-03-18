@@ -68,6 +68,11 @@ private:
     Texture2D m_FolderIcon;
     Texture2D m_FileIcon;
     float m_IconScale = 1.0f;
+
+    // Asset Management
+    std::filesystem::path m_RenamingPath;
+    char m_RenameBuffer[256] = "";
+    std::filesystem::path m_PathToDelete;
 };
 } // namespace CHEngine
 

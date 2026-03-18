@@ -20,6 +20,9 @@ public:
     ThreadPool(size_t threads = std::thread::hardware_concurrency());
     ~ThreadPool();
 
+    static void Init(size_t threads = std::thread::hardware_concurrency());
+    static void Shutdown();
+
     static ThreadPool& Get();
 
     // Enqueues a task for execution. Returns a future for the result.
@@ -45,7 +48,7 @@ public:
         return res;
     }
 
-    void Shutdown();
+    void InternalShutdown();
 
 private:
     // Worker thread function

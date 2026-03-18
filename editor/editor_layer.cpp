@@ -18,7 +18,6 @@
 #include "extras/IconsFontAwesome6.h"
 #include "panels/console_panel.h"
 #include "panels/content_browser_panel.h"
-#include "panels/environment_panel.h"
 #include "panels/project_browser_panel.h"
 #include "panels/property_editor.h"
 #include "panels/viewport_panel.h"
