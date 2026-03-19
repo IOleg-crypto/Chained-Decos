@@ -76,6 +76,39 @@ private:
     std::string m_ModelPath;
     Entity m_Entity;
 };
+
+class DuplicateEntityCommand : public IEditorCommand
+{
+public:
+    DuplicateEntityCommand(Entity entity)
+        : m_SourceEntity(entity),
+          m_Scene(entity.GetRegistry().ctx().get<Scene*>())
+    {
+    }
+
+    void Execute() override
+    {
+        m_DuplicateEntity = m_Scene->CopyEntity(m_SourceEntity);
+    }
+
+    void Undo() override
+    {
+        if (m_DuplicateEntity)
+        {
+            m_Scene->DestroyEntity(m_DuplicateEntity);
+        }
+    }
+
+    std::string GetName() const override
+    {
+        return "Duplicate Entity";
+    }
+
+private:
+    Entity m_SourceEntity;
+    Entity m_DuplicateEntity;
+    Scene* m_Scene;
+};
 } // namespace CHEngine
 
 #endif // CH_ENTITY_COMMANDS_H

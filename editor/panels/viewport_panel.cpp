@@ -18,6 +18,7 @@
 #include "engine/scene/scene_events.h"
 #include "engine/scene/scene_picking.h"
 #include "scripting/scriptengine.h"
+#include "undo/entity_commands.h"
 #include "extras/IconsFontAwesome6.h"
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -579,6 +580,15 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
             if (CHEngine::Input::IsKeyPressed(btn.key))
             {
                 m_CurrentTool = btn.type;
+            }
+        }
+
+        if (Input::IsKeyDown(KeyboardKey::KEY_LEFT_CONTROL) && Input::IsKeyPressed(KeyboardKey::KEY_D))
+        {
+            Entity selected = EditorLayer::Get().GetSelectedEntity();
+            if (selected)
+            {
+                EditorLayer::GetCommandHistory().PushCommand(std::make_unique<DuplicateEntityCommand>(selected));
             }
         }
     }
