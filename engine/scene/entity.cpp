@@ -160,17 +160,17 @@ Entity Entity::CreateUI(const std::string& type, const std::string& name)
     return entity;
 }
 
-Entity Entity::Copy(entt::entity copyEntity)
+Entity Entity::Copy(entt::entity copyEntity, entt::entity parentEntity)
 {
     Entity srcEntity(copyEntity, m_Registry);
-    std::string copyName = srcEntity.GetName() + "_copy";
+    std::string copyName = srcEntity.GetName() + (parentEntity == entt::null ? "_copy" : "");
     Entity dstEntity = Create(copyName);
 
     // CopyAll overwrites TagComponent and IDComponent with the source's values.
     // We must restore the copy's unique identity afterwards.
     ComponentSerializer::Get().CopyAll(srcEntity, dstEntity);
 
-    // Restore the "_copy" name (CopyAll overwrites it with source tag)
+    // Restore the name (CopyAll overwrites it with source tag)
     dstEntity.GetComponent<TagComponent>().Tag = copyName;
 
     // The IDComponent was copied verbatim from the source, so both entities now share
@@ -178,6 +178,51 @@ Entity Entity::Copy(entt::entity copyEntity)
     // signal fires correctly and the EntityUUIDMap is properly updated.
     dstEntity.RemoveComponent<IDComponent>();
     dstEntity.AddComponent<IDComponent>(); // generates a new UUID, triggers on_construct
+
+    // Handle Hierarchy
+    if (srcEntity.HasComponent<HierarchyComponent>())
+    {
+        auto& srcHC = srcEntity.GetComponent<HierarchyComponent>();
+        
+        // Determine the target parent for the duplicated entity.
+        // If we are in a recursive call (parentEntity exists), use it.
+        // If we are at the top level and the source has a parent, make the copy a sibling.
+        entt::entity targetParent = parentEntity;
+        if (targetParent == entt::null && srcHC.Parent != entt::null)
+        {
+            targetParent = srcHC.Parent;
+        }
+
+        if (targetParent != entt::null)
+        {
+            auto& dstHC = dstEntity.AddOrReplaceComponent<HierarchyComponent>();
+            dstHC.Parent = targetParent;
+            dstHC.Children.clear(); // Children will be added via recursion below
+
+            Entity parent(targetParent, m_Registry);
+            if (parent.HasComponent<HierarchyComponent>())
+            {
+                parent.GetComponent<HierarchyComponent>().Children.push_back(dstEntity);
+            }
+        }
+        else
+        {
+            // If it's a root entity in the copy, ensure it doesn't think it has the source's parent
+            if (dstEntity.HasComponent<HierarchyComponent>())
+            {
+                dstEntity.GetComponent<HierarchyComponent>().Parent = entt::null;
+                dstEntity.GetComponent<HierarchyComponent>().Children.clear();
+            }
+        }
+
+        // Recursively copy all children
+        // Use a copy of the children vector to avoid issues with modification during iteration
+        std::vector<entt::entity> childrenToCopy = srcHC.Children;
+        for (auto child : childrenToCopy)
+        {
+            Copy(child, dstEntity);
+        }
+    }
 
     return dstEntity;
 }

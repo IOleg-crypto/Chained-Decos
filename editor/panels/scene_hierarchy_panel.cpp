@@ -106,6 +106,17 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
             }
         }
 
+        // Duplicate Shortcut
+        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) && Input::IsKeyDown(KeyboardKey::KEY_LEFT_CONTROL) &&
+            Input::IsKeyPressed(KeyboardKey::KEY_D))
+        {
+            Entity selected = EditorContext::GetSelectedEntity();
+            if (selected)
+            {
+                EditorLayer::GetCommandHistory().PushCommand(std::make_unique<DuplicateEntityCommand>(selected));
+            }
+        }
+
         // Blank space context menu
         if (ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
         {
@@ -220,7 +231,7 @@ entt::entity SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity)
         }
         if (ImGui::MenuItem(ICON_FA_COPY " Duplicate", "Ctrl+D"))
         {
-            m_Context->CopyEntity(entity);
+            EditorLayer::GetCommandHistory().PushCommand(std::make_unique<DuplicateEntityCommand>(entity));
         }
         ImGui::Separator();
         if (ImGui::MenuItem(ICON_FA_TRASH " Delete Entity", "Del"))
