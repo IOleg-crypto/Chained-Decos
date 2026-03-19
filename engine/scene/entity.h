@@ -76,7 +76,7 @@ public:
     Entity Create(const std::string& name);
     Entity CreateWithUUID(UUID uuid, const std::string& name);
     Entity CreateUI(const std::string& type, const std::string& name);
-    Entity Copy(entt::entity copyEntity);
+    Entity Copy(entt::entity copyEntity, entt::entity parentEntity = entt::null);
     void Destroy();
 
     Entity FindByTag(const std::string& tag);
