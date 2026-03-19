@@ -419,14 +419,13 @@ void SceneRenderer::DrawStaticEntities(std::unordered_map<InstanceKey, InstanceG
 {
     for (auto& [key, group] : instanceGroups)
     {
-        if (group.transforms.size() == 1)
+        // Bypass hardware instancing for now as the default shader (lighting.vs)
+        // does not yet support the necessary vertex attributes for per-instance transforms.
+        // This ensures all entities render at their correct world positions.
+        for (const auto& transform : group.transforms)
         {
-            Renderer::Get().DrawModel(group.asset, group.transforms[0], group.materials, 0, 0.0f, -1, 0.0f, 0.0f,
+            Renderer::Get().DrawModel(group.asset, transform, group.materials, 0, 0.0f, -1, 0.0f, 0.0f,
                                       nullptr, {});
-        }
-        else
-        {
-            Renderer::Get().DrawModelInstanced(group.asset, group.transforms, group.materials);
         }
     }
 }
