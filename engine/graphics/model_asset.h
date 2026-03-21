@@ -69,6 +69,9 @@ public:
         return m_GlobalNodeTransforms;
     }
 
+    std::vector<Matrix> ComputeAnimationPose(int animationIndex, float frameIndex, int targetAnimationIndex = -1,
+                                            float targetFrameIndex = 0.0f, float blendWeight = 0.0f);
+
 private:
     Model m_Model = {0};
     std::vector<RawAnimation> m_Animations;

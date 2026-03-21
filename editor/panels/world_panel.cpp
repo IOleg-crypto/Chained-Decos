@@ -94,6 +94,36 @@ void WorldPanel::OnImGuiRender(bool readOnly)
         }
     }
 
+    if (ImGui::CollapsingHeader("Physics", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        if (readOnly)
+        {
+            ImGui::BeginDisabled();
+        }
+
+        if (auto project = Project::GetActive())
+        {
+            auto& settings = project->GetConfig().Physics;
+            
+            ImGui::DragFloat("Gravity", &settings.Gravity, 0.1f);
+            
+            float fps = 1.0f / settings.FixedTimestep;
+            if (ImGui::DragFloat("Fixed FPS", &fps, 1.0f, 10.0f, 240.0f))
+            {
+                settings.FixedTimestep = 1.0f / fps;
+            }
+        }
+        else
+        {
+            ImGui::TextDisabled("No active project to store physics settings.");
+        }
+
+        if (readOnly)
+        {
+            ImGui::EndDisabled();
+        }
+    }
+
     ImGui::Separator();
 
     auto env = m_Context->GetSettings().Environment;
@@ -215,11 +245,16 @@ void WorldPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, 
         {
             ImGui::SetTooltip("0: Equirectangular (Sphere)\n1: Horizontal Cross (Cube)\n2: Cubemap (GPU Generated)");
         }
-        ImGui::TextDisabled("0: Sphere, 1: Cross, 2: Cubemap");
-
         ImGui::DragFloat("Exposure", &settings.Skybox.Exposure, 0.01f, 0.0f, 10.0f);
         ImGui::DragFloat("Brightness", &settings.Skybox.Brightness, 0.01f, -2.0f, 2.0f);
         ImGui::DragFloat("Contrast", &settings.Skybox.Contrast, 0.01f, 0.0f, 5.0f);
+
+        ImGui::Separator();
+        if (ImGui::Button("Reload Shaders"))
+        {
+            CH_CORE_INFO("WorldPanel: Requesting global shader hot-reload.");
+            Renderer::Get().GetShaderLibrary().ReloadAll();
+        }
 
         if (readOnly)
         {

@@ -58,7 +58,11 @@ void main()
 
     // 2. Main Lighting Loop
     vec3 viewDir = normalize(viewPos - fragPosition);
-    vec3 lighting = diffColor * ambient * occ; // Ambient
+    
+    // Combine uniform ambient with sky environment color
+    vec3 skyAmbient = skyAmbientColor.rgb * skyAmbientColor.a; 
+    vec3 finalAmbient = (diffColor * ambient) + skyAmbient;
+    vec3 lighting = finalAmbient * occ;
 
     // Directional Light
     lighting += CalcDirectionalLight(lightDir, lightColor, normal, viewDir, diffColor, s);

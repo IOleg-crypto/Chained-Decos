@@ -30,6 +30,7 @@
 #endif
 #include "engine/graphics/render_command.h"
 #include "engine/graphics/renderer2d.h"
+#include "engine/graphics/ui_renderer.h"
 #include <GLFW/glfw3.h>
 
 namespace CHEngine
@@ -70,7 +71,10 @@ Application::Application(const ApplicationSpecification& specification)
     }
     
     ThreadPool::Init();
+    AssetManager::Get().Initialize(); // Initialize asset manager root discovery before renderer needs it
     Renderer::Init();
+    Renderer2D::Init();
+    UIRenderer::Init();
     Audio::Init();
     PhysicsSystem::Init();
     ComponentSerializer::Init();
@@ -79,12 +83,10 @@ Application::Application(const ApplicationSpecification& specification)
     m_LayerStack = std::make_unique<LayerStack>();
     m_Running = true;
 
-    // --- Core Systems Initialization ---
-    ComponentSerializer::Get().InternalInit();
-    Renderer::Get().InternalInit();
-    PhysicsSystem::Get().InternalInit();
-    Audio::Get().InternalInit();
-
+    // --- Core Systems Post-Initialization ---
+    // Note: Systems' Init() already called InternalInit().
+    // We only need to Push layers andoverlays.
+    
     if (IsAudioDeviceReady())
     {
         CH_CORE_INFO("Audio Device Initialized Successfully");
@@ -102,8 +104,6 @@ Application::Application(const ApplicationSpecification& specification)
         PushOverlay(m_ImGuiLayer);
     }
 
-    ScriptEngine::Get().InternalInit();
-
     CH_CORE_INFO("Application Initialized: {}", m_Specification.Name);
 }
 
@@ -117,6 +117,8 @@ Application::~Application()
     ComponentSerializer::Shutdown();
     PhysicsSystem::Shutdown();
     Audio::Shutdown();
+    UIRenderer::Shutdown();
+    Renderer2D::Shutdown();
     Renderer::Shutdown();
     ThreadPool::Shutdown();
 
@@ -290,9 +292,5 @@ LayerStack& Application::GetLayerStack()
     return *m_LayerStack;
 }
 
-ScriptEngine& Application::GetScriptEngine()
-{
-    return ScriptEngine::Get();
-}
 
 } // namespace CHEngine

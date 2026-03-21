@@ -2,7 +2,6 @@
 #include "editor_gui.h"
 #include "engine/graphics/asset_manager.h"
 #include "engine/graphics/model_asset.h"
-#include "engine/physics/bvh/bvh.h"
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene_events.h"

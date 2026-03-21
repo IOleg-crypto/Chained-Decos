@@ -5,12 +5,13 @@ layout(location = 0) in vec3 fragPosition;
 
 // Input uniform values
 layout(binding = 0) uniform sampler2D environmentMap;
-uniform bool doGamma;
+uniform int doGamma;
 uniform float fragGamma;
 uniform float exposure;
 uniform float brightness;
 uniform float contrast;
 uniform float uTime;
+uniform int isHDR;
 
 // Fog data
 uniform int fogEnabled;
@@ -21,6 +22,16 @@ uniform float fogEnd;
 
 // Output fragment color
 layout(location = 0) out vec4 finalColor;
+
+// Tone mapping (ACES)
+vec3 ACES(vec3 x)
+{
+    return clamp(
+        (x * (2.51 * x + 0.03)) /
+        (x * (2.43 * x + 0.59) + 0.14),
+        0.0, 1.0
+    );
+}
 
 float hash(vec3 p) {
     p = fract(p * 0.3183099 + 0.1);
@@ -59,7 +70,11 @@ void main()
     // Apply contrast
     color = (color - 0.5) * contrast + 0.5;
 
-    if (doGamma) // Apply gamma correction
+    // HDR tone mapping
+    if (isHDR == 1)
+        color = ACES(color);
+
+    if (doGamma == 1) // Apply gamma correction
     {
         color = pow(color, vec3(1.0/fragGamma));
     }

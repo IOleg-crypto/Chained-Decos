@@ -15,6 +15,13 @@ uniform float uTime;
 uniform float uExposure;
 uniform float uGamma;
 
+// Helper for dithering (removes banding)
+float InterleavedGradientNoise(vec2 uv)
+{
+    vec3 magic = vec3(0.06711056, 0.00583715, 52.9829189);
+    return fract(magic.z * fract(dot(uv, magic.xy)));
+}
+
 void main()
 {
     vec4 color = texture(texture0, fragTexCoord);
@@ -42,7 +49,13 @@ void main()
     float e = 0.14;
     outColor = clamp((outColor * (a * outColor + b)) / (outColor * (c * outColor + d) + e), 0.0, 1.0);
     
-    // 4. Gamma Correction
+    // 4. Dithering (Crucial for smooth skies/gradients)
+    // We add a tiny amount of noise to hide bit-depth transitions (Banding)
+    // Using floor(gl_FragCoord.xy) for consistent noise per-pixel
+    float dither = InterleavedGradientNoise(floor(gl_FragCoord.xy));
+    outColor += (dither - 0.5) / 255.0;
+
+    // 5. Gamma Correction
     float gamma = (uGamma > 0.0) ? uGamma : 2.2;
     outColor = pow(outColor, vec3(1.0 / gamma));
 

@@ -44,6 +44,10 @@ public:
     bool IsCubemap() const { return m_IsCubemap; }
     void SetIsCubemap(bool isCubemap) { m_IsCubemap = isCubemap; }
 
+    bool IsHDR() const {
+        return m_Texture.format >= 8 && m_Texture.format <= 13; // Raylib float/half-float formats
+    }
+
     void Unload();
 
 private:

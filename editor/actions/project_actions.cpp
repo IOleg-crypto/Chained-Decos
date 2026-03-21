@@ -27,6 +27,9 @@ void ProjectActions::New(const std::string& name, const std::string& path)
 
     ProjectSerializer serializer(project);
     serializer.Serialize((std::filesystem::path(path) / (name + ".chproject")).string());
+
+    // Load engine shaders and resources for the dynamic newly created project
+    Renderer::LoadEngineResources();
 }
 
 void ProjectActions::Open()
@@ -36,6 +39,7 @@ void ProjectActions::Open()
     if (result)
     {
         Open(*result);
+        
     }
 }
 
@@ -44,6 +48,10 @@ void ProjectActions::Open(const std::filesystem::path& path)
     if (Project::Load(path))
     {
         EditorLayer::Get().SetLastProjectPath(path.string());
+        
+        // Load engine shaders and resources
+        Renderer::LoadEngineResources();
+        
         ProjectOpenedEvent e(path.string());
         Application::Get().OnEvent(e);
     }

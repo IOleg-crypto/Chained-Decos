@@ -20,6 +20,11 @@ public:
     {
         s_RendererAPI->SetViewport(x, y, width, height);
     }
+ 
+    static void SetDepthFunc(RendererAPI::DepthFunc func)
+    {
+        s_RendererAPI->SetDepthFunc(func);
+    }
 
     static void DrawIndexed(const std::shared_ptr<VertexArray>& vertexArray, uint32_t indexCount = 0)
     {

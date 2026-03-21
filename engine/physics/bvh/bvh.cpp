@@ -1,139 +1,29 @@
 #include "bvh.h"
-#include "cfloat"
-#include "engine/graphics/model_asset.h"
 #include "raymath.h"
 #include <algorithm>
-#include <future>
-#include "engine/core/thread_pool.h"
+#include <cfloat>
 
 namespace CHEngine
 {
-CollisionTriangle::CollisionTriangle(const Vector3& a, const Vector3& b, const Vector3& c, int index)
-    : v0(a),
-      v1(b),
-      v2(c),
-      meshIndex(index)
+
+std::shared_ptr<BVH> BVH::Build(std::vector<CollisionTriangle>&& triangles)
 {
-    min = Vector3Min(Vector3Min(v0, v1), v2);
-    max = Vector3Max(Vector3Max(v0, v1), v2);
-    center = Vector3Scale(Vector3Add(Vector3Add(v0, v1), v2), 1.0f / 3.0f);
-    normal = Vector3Normalize(Vector3CrossProduct(Vector3Subtract(v1, v0), Vector3Subtract(v2, v0)));
-}
-
-bool CollisionTriangle::IntersectsRay(const Ray& ray, float& t, Vector3& normal) const
-{
-    Vector3 edge1 = Vector3Subtract(v1, v0);
-    Vector3 edge2 = Vector3Subtract(v2, v0);
-    Vector3 pvec = Vector3CrossProduct(ray.direction, edge2);
-    float det = Vector3DotProduct(edge1, pvec);
-
-    // Using a smaller epsilon for better precision
-    if (fabsf(det) < 1e-7f)
-    {
-        return false;
-    }
-
-    float invDet = 1.0f / det;
-    Vector3 tvec = Vector3Subtract(ray.position, v0);
-    float u = Vector3DotProduct(tvec, pvec) * invDet;
-
-    if (u < 0.0f || u > 1.0f)
-    {
-        return false;
-    }
-
-    Vector3 qvec = Vector3CrossProduct(tvec, edge1);
-    float v = Vector3DotProduct(ray.direction, qvec) * invDet;
-
-    if (v < 0.0f || u + v > 1.0f)
-    {
-        return false;
-    }
-
-    float tempT = Vector3DotProduct(edge2, qvec) * invDet;
-    if (tempT < 1e-6f)
-    {
-        return false;
-    }
-
-    t = tempT;
-
-    // Use pre-calculated face normal, flipped if hitting from behind
-
-    // Ensure normal points against ray
-    normal = this->normal; // Copy the pre-calculated normal
-    if (Vector3DotProduct(normal, ray.direction) > 0)
-    {
-        normal = Vector3Scale(normal, -1.0f);
-    }
-
-    return true;
-}
-
-std::shared_ptr<BVH> BVH::Build(const BVHModelSnapshot& snapshot)
-{
-    if (snapshot.Meshes.empty())
+    if (triangles.empty())
     {
         return nullptr;
     }
 
     auto bvh = std::make_shared<BVH>();
-    std::vector<CollisionTriangle> allTris;
-
-    for (const auto& mesh : snapshot.Meshes)
-    {
-        if (mesh.Vertices.empty())
-        {
-            continue;
-        }
-
-        Matrix meshTransform = mesh.Transform;
-
-        if (!mesh.Indices.empty())
-        {
-            // Ensure we have complete triangles
-            for (size_t k = 0; (k + 2) < mesh.Indices.size(); k += 3)
-            {
-                uint32_t idx0 = mesh.Indices[k];
-                uint32_t idx1 = mesh.Indices[k + 1];
-                uint32_t idx2 = mesh.Indices[k + 2];
-
-                if (idx0 >= mesh.Vertices.size() || idx1 >= mesh.Vertices.size() || idx2 >= mesh.Vertices.size())
-                {
-                    CH_CORE_WARN("BVH::Build: Index out of vertex bounds in mesh {}", mesh.MeshIndex);
-                    continue;
-                }
-
-                allTris.emplace_back(Vector3Transform(mesh.Vertices[idx0], meshTransform),
-                                     Vector3Transform(mesh.Vertices[idx1], meshTransform),
-                                     Vector3Transform(mesh.Vertices[idx2], meshTransform), mesh.MeshIndex);
-            }
-        }
-        else
-        {
-            // Non-indexed: Ensure we have complete triangles
-            for (size_t k = 0; (k + 2) < mesh.Vertices.size(); k += 3)
-            {
-                allTris.emplace_back(Vector3Transform(mesh.Vertices[k], meshTransform),
-                                     Vector3Transform(mesh.Vertices[k + 1], meshTransform),
-                                     Vector3Transform(mesh.Vertices[k + 2], meshTransform), mesh.MeshIndex);
-            }
-        }
-    }
-
-    if (allTris.empty())
-    {
-        return nullptr;
-    }
-
-    bvh->m_Triangles = std::move(allTris);
+    bvh->m_Triangles = std::move(triangles);
+    
+    // Reserve nodes: worst case for binary BVH is 2N-1 nodes
     bvh->m_Nodes.reserve(bvh->m_Triangles.size() * 2);
     bvh->m_Nodes.emplace_back(); // Root
 
     BuildContext ctx(bvh->m_Triangles);
     bvh->BuildIterative(ctx, bvh->m_Triangles.size());
 
-    // Reorder triangles based on serial indices
+    // Reorder triangles based on serial indices to improve cache locality
     std::vector<CollisionTriangle> reorderedTris;
     reorderedTris.reserve(bvh->m_Triangles.size());
     for (uint32_t idx : ctx.TriIndices)
@@ -143,61 +33,6 @@ std::shared_ptr<BVH> BVH::Build(const BVHModelSnapshot& snapshot)
     bvh->m_Triangles = std::move(reorderedTris);
 
     return bvh;
-}
-
-std::shared_ptr<BVH> BVH::Build(std::shared_ptr<ModelAsset> asset, const Matrix& transform)
-{
-    if (!asset || !asset->IsReady())
-    {
-        return nullptr;
-    }
-    return Build(asset->GetModel(), asset->GetGlobalNodeTransforms(), asset->GetMeshToNode(), transform);
-}
-
-std::shared_ptr<BVH> BVH::Build(const Model& model, const std::vector<Matrix>& globalTransforms,
-                                const std::vector<int>& meshToNode, const Matrix& transform)
-{
-    BVHModelSnapshot snapshot;
-    for (int i = 0; i < model.meshCount; i++)
-    {
-        Mesh& mesh = model.meshes[i];
-        if (mesh.vertexCount == 0 || mesh.vertices == nullptr)
-        {
-            continue;
-        }
-
-        BVHMeshSnapshot meshSnap;
-        meshSnap.MeshIndex = i;
-
-        Matrix nodeTransform = MatrixIdentity();
-        if (i < (int)meshToNode.size())
-        {
-            int nodeIdx = meshToNode[i];
-            if (nodeIdx >= 0 && nodeIdx < (int)globalTransforms.size())
-            {
-                nodeTransform = globalTransforms[nodeIdx];
-            }
-        }
-
-        meshSnap.Transform = MatrixMultiply(MatrixMultiply(nodeTransform, model.transform), transform);
-
-        meshSnap.Vertices.resize(mesh.vertexCount);
-        for (int v = 0; v < mesh.vertexCount; v++)
-        {
-            meshSnap.Vertices[v] = {mesh.vertices[v * 3], mesh.vertices[v * 3 + 1], mesh.vertices[v * 3 + 2]};
-        }
-
-        if (mesh.triangleCount > 0 && mesh.indices != nullptr)
-        {
-            meshSnap.Indices.resize(mesh.triangleCount * 3);
-            for (int idx = 0; idx < mesh.triangleCount * 3; idx++)
-            {
-                meshSnap.Indices[idx] = (uint32_t)mesh.indices[idx];
-            }
-        }
-        snapshot.Meshes.push_back(std::move(meshSnap));
-    }
-    return Build(snapshot);
 }
 
 void BVH::BuildIterative(BuildContext& ctx, size_t totalTriCount)
@@ -510,97 +345,6 @@ bool BVH::IntersectAABB(const BoundingBox& box, Vector3& outNormal, float& outDe
     return hit;
 }
 
-std::future<std::shared_ptr<BVH>> BVH::BuildAsync(const Model& model, const Matrix& transform)
-{
-    // Deep copy geometry on the calling thread (Main Thread)
-    // This avoids race conditions if the model is modified (e.g. animation) or destroyed during async build.
-    BVHModelSnapshot snapshot;
-    Matrix modelTransform = MatrixMultiply(model.transform, transform);
-
-    for (int i = 0; i < model.meshCount; i++)
-    {
-        Mesh& mesh = model.meshes[i];
-        if (mesh.vertexCount == 0 || mesh.vertices == nullptr)
-        {
-            continue;
-        }
-
-        BVHMeshSnapshot meshSnap;
-        meshSnap.MeshIndex = i;
-        meshSnap.Transform = modelTransform;
-        meshSnap.Vertices.resize(mesh.vertexCount);
-        for (int v = 0; v < mesh.vertexCount; v++)
-        {
-            meshSnap.Vertices[v] = {mesh.vertices[v * 3], mesh.vertices[v * 3 + 1], mesh.vertices[v * 3 + 2]};
-        }
-
-        if (mesh.triangleCount > 0 && mesh.indices != nullptr)
-        {
-            meshSnap.Indices.resize(mesh.triangleCount * 3);
-            for (int idx = 0; idx < mesh.triangleCount * 3; idx++)
-            {
-                meshSnap.Indices[idx] = (uint32_t)mesh.indices[idx];
-            }
-        }
-
-        snapshot.Meshes.push_back(std::move(meshSnap));
-    }
-
-    // Capture snapshot by value (move)
-    return ThreadPool::Get().Enqueue([snapshot = std::move(snapshot)]() { return Build(snapshot); });
-}
-
-std::future<std::shared_ptr<BVH>> BVH::BuildAsync(std::shared_ptr<ModelAsset> asset, const Matrix& transform)
-{
-    return ThreadPool::Get().Enqueue([asset, transform]() { return Build(asset, transform); });
-}
-
-std::future<std::shared_ptr<BVH>> BVH::BuildAsync(const Model& model, const std::vector<Matrix>& globalTransforms,
-                                                  const std::vector<int>& meshToNode, const Matrix& transform)
-{
-    BVHModelSnapshot snapshot;
-    for (int i = 0; i < model.meshCount; i++)
-    {
-        Mesh& mesh = model.meshes[i];
-        if (mesh.vertexCount == 0 || mesh.vertices == nullptr)
-        {
-            continue;
-        }
-
-        BVHMeshSnapshot meshSnap;
-        meshSnap.MeshIndex = i;
-
-        Matrix nodeTransform = MatrixIdentity();
-        if (i < (int)meshToNode.size())
-        {
-            int nodeIdx = meshToNode[i];
-            if (nodeIdx >= 0 && nodeIdx < (int)globalTransforms.size())
-            {
-                nodeTransform = globalTransforms[nodeIdx];
-            }
-        }
-
-        meshSnap.Transform = MatrixMultiply(MatrixMultiply(nodeTransform, model.transform), transform);
-
-        meshSnap.Vertices.resize(mesh.vertexCount);
-        for (int v = 0; v < mesh.vertexCount; v++)
-        {
-            meshSnap.Vertices[v] = {mesh.vertices[v * 3], mesh.vertices[v * 3 + 1], mesh.vertices[v * 3 + 2]};
-        }
-
-        if (mesh.triangleCount > 0 && mesh.indices != nullptr)
-        {
-            meshSnap.Indices.resize(mesh.triangleCount * 3);
-            for (int idx = 0; idx < mesh.triangleCount * 3; idx++)
-            {
-                meshSnap.Indices[idx] = (uint32_t)mesh.indices[idx];
-            }
-        }
-        snapshot.Meshes.push_back(std::move(meshSnap));
-    }
-
-    return ThreadPool::Get().Enqueue([snapshot = std::move(snapshot)]() { return Build(snapshot); });
-}
 
 void BVH::QueryAABB(const BoundingBox& box, std::vector<const CollisionTriangle*>& outTriangles) const
 {

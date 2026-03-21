@@ -10,25 +10,17 @@
 #include <memory>
 #include <mutex>
 #include <unordered_map>
+#include "raycast_result.h"
 
 namespace CHEngine
 {
 class Scene;
-class ModelAsset;
 class BVH;
 
 // Represents the physics simulation and spatial query context for a specific scene.
 // Following the 'Action-Based' naming convention (Physics instead of PhysicsSystem).
 // Organized with encapsulated instance state.
-struct RaycastResult
-{
-    bool Hit = false;
-    float Distance = 0.0f;
-    Vector3 Position = {0.0f, 0.0f, 0.0f};
-    Vector3 Normal = {0.0f, 0.0f, 0.0f};
-    entt::entity Entity = entt::null;
-    int MeshIndex = -1;
-};
+
 
 class PhysicsSystem
 {
@@ -45,18 +37,14 @@ public:
     static PhysicsSystem& Get();
 
     // BVH Cache moved to global system
-    std::shared_ptr<BVH> GetBVH(ModelAsset* asset);
-    void InvalidateBVH(ModelAsset* asset);
-    void UpdateBVHCache(ModelAsset* asset, std::shared_ptr<BVH> bvh);
+    std::shared_ptr<BVH> GetBVH(const std::string& path);
+    void InvalidateBVH(const std::string& path);
+    void UpdateBVHCache(const std::string& path, std::shared_ptr<BVH> bvh);
 
 private:
     // Localized BVH cache in global system
-    std::unordered_map<ModelAsset*, std::shared_future<std::shared_ptr<BVH>>> m_BVHCache;
+    std::unordered_map<std::string, std::shared_future<std::shared_ptr<BVH>>> m_BVHCache;
     mutable std::mutex m_BVHMutex;
-
-    // Persistent asset cache for collider shape computation (avoids per-frame allocation)
-    // This can still be global or part of AssetManager, but keeping here for now as shared state
-    std::unordered_map<std::string, std::shared_ptr<ModelAsset>> m_ColliderAssetCache;
 };
 
 struct PhysicsContext
