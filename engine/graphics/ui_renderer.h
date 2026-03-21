@@ -1,18 +1,44 @@
 #ifndef CH_UI_RENDERER_H
 #define CH_UI_RENDERER_H
 
-#include "engine/scene/components/control_component.h"
-#include "engine/scene/scene.h"
-#include "imgui.h"
+#include "raylib.h"
+#include <memory>
+#include <vector>
+#include <map>
+#include <string>
+
+// Forward declarations for ImGui (avoids full header in API)
+struct ImVec2;
 
 namespace CHEngine
 {
+class Scene;
+class Entity;
+class UIStyle;
+class TextStyle;
+struct PanelControl;
+struct LabelControl;
+struct ButtonControl;
+struct SliderControl;
+struct CheckboxControl;
+struct ImageControl;
+struct InputTextControl;
+struct ProgressBarControl;
+struct ComboBoxControl;
+struct ImageButtonControl;
+struct RadioButtonControl;
+struct ColorPickerControl;
+struct SeparatorControl;
+struct DragFloatControl;
+struct DragIntControl;
+struct TreeNodeControl;
+struct CollapsingHeaderControl;
+struct PlotLinesControl;
+struct PlotHistogramControl;
+struct TabBarControl;
+struct TabItemControl;
 class Renderer;
-struct UIRendererData
-{
-    // Internal state like input buffers could go here
-    std::map<entt::entity, std::vector<char>> InputBuffers;
-};
+struct UIRendererData;
 
 class UIRenderer
 {
@@ -20,8 +46,8 @@ public:
     UIRenderer();
     ~UIRenderer();
 
-    void Init();
-    void Shutdown();
+    static void Init();
+    static void Shutdown();
 
     // Main entry point for drawing UI for a scene.
     void DrawCanvas(Scene* scene, const ImVec2& referencePosition, const ImVec2& referenceSize, bool editMode = false);

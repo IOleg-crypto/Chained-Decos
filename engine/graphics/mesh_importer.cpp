@@ -409,8 +409,7 @@ PendingModelData MeshImporter::LoadMeshDataFromDisk(const std::filesystem::path&
     std::filesystem::path modelDir = path.parent_path();
 
     Assimp::Importer importer;
-
-    // Configure to remove non-triangle primitives (points/lines)
+       // Configure to remove non-triangle primitives (points/lines)
     importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
 
     // CRITICAL: Set vertex limit for SplitLargeMeshes to match Raylib's 16-bit indices (unsigned short)
@@ -436,7 +435,6 @@ PendingModelData MeshImporter::LoadMeshDataFromDisk(const std::filesystem::path&
                          aiProcess_SplitLargeMeshes |     // Critical for 16-bit index systems like Raylib
                          aiProcess_ImproveCacheLocality | // Performance optimization
                          aiProcess_RemoveRedundantMaterials |
-                         aiProcess_FindInstances |   // Optimize: find identical meshes
                          aiProcess_FindInvalidData | // Clean up the import
                          aiProcess_OptimizeGraph |   // Simplify hierarchy
                          aiProcess_OptimizeMeshes;   // Combine small meshes where possible
@@ -468,7 +466,8 @@ PendingModelData MeshImporter::LoadMeshDataFromDisk(const std::filesystem::path&
         }
         else
         {
-            data.globalBindPoses[i] = MatrixMultiply(data.globalBindPoses[parent], data.nodeLocalTransforms[i]);
+            // Raylib math is row-major: v_out = v_in * M_local * M_parent
+            data.globalBindPoses[i] = MatrixMultiply(data.nodeLocalTransforms[i], data.globalBindPoses[parent]);
         }
     }
 

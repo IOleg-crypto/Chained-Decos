@@ -9,7 +9,6 @@
 #include "engine/graphics/asset_manager.h"
 #include "engine/graphics/shader_asset.h"
 #include "engine/physics/physics.h"
-#include "engine/physics/bvh/bvh.h"
 #include "engine/scene/components/light_component.h"
 #include "imgui.h"
 #include "raylib.h"
@@ -78,9 +77,8 @@ void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float near
     Renderer::Get().UpdateTime(Timestep((float)GetTime()));
 
     // --- Update Profiler Stats ---
-    ProfilerStats stats;
-    stats.EntityCount = (uint32_t)scene->GetRegistry().storage<entt::entity>().size();
-    Profiler::UpdateStats(stats);
+    m_CurrentStats = {};
+    m_CurrentStats.EntityCount = (uint32_t)scene->GetRegistry().storage<entt::entity>().size();
 
     // 2. Scene rendering flow
     Renderer::Get().BeginScene(camera);
@@ -107,6 +105,9 @@ void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float near
         RenderEditorIcons(scene, camera);
     }
     Renderer::Get().EndScene();
+
+    // 4. Report final stats
+    Profiler::UpdateStats(m_CurrentStats);
 }
 
 SceneRenderer::InstanceKey::InstanceKey(const std::string& path, const std::vector<MaterialSlot>& mats)
@@ -285,8 +286,7 @@ void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& 
         }
         else
         {
-            Renderer::Get().DrawModel(modelAsset, worldTransform, model.Materials, 0, 0.0f, -1, 0.0f, 0.0f,
-                                      shaderOverride, customUniforms);
+            DrawModel(modelAsset, worldTransform, model.Materials, {}, shaderOverride, customUniforms);
         }
     }
 
@@ -384,8 +384,7 @@ void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& 
         }
         else
         {
-            Renderer::Get().DrawModel(primitive.Asset, worldTransform, {}, 0, 0.0f, -1, 0.0f, 0.0f,
-                                      shaderOverride, customUniforms);
+            DrawModel(primitive.Asset, worldTransform, {}, {}, shaderOverride, customUniforms);
         }
     }
 }
@@ -409,9 +408,10 @@ void SceneRenderer::DrawAnimatedEntities(const std::vector<AnimatedEntry>& anima
             blendWeight = entry.animation.BlendTimer / entry.animation.BlendDuration;
         }
 
-        Renderer::Get().DrawModel(entry.asset, entry.worldTransform, entry.materials,
-                                  entry.animation.CurrentAnimationIndex, fractionalFrame, targetAnim,
-                                  targetFractionalFrame, blendWeight, entry.shaderOverride, entry.customUniforms);
+        std::vector<Matrix> boneMatrices = entry.asset->ComputeAnimationPose(
+            entry.animation.CurrentAnimationIndex, fractionalFrame, targetAnim, targetFractionalFrame, blendWeight);
+
+        DrawModel(entry.asset, entry.worldTransform, entry.materials, boneMatrices, entry.shaderOverride, entry.customUniforms);
     }
 }
 
@@ -419,44 +419,10 @@ void SceneRenderer::DrawStaticEntities(std::unordered_map<InstanceKey, InstanceG
 {
     for (auto& [key, group] : instanceGroups)
     {
-        // Bypass hardware instancing for now as the default shader (lighting.vs)
-        // does not yet support the necessary vertex attributes for per-instance transforms.
-        // This ensures all entities render at their correct world positions.
         for (const auto& transform : group.transforms)
         {
-            Renderer::Get().DrawModel(group.asset, transform, group.materials, 0, 0.0f, -1, 0.0f, 0.0f,
-                                      nullptr, {});
+            DrawModel(group.asset, transform, group.materials);
         }
-    }
-}
-
-void SceneRenderer::RenderBVHNode(const BVH* bvh, uint32_t nodeIndex, const Matrix& transform, Color color, int depth)
-{
-    const auto& nodes = bvh->GetNodes();
-    if (nodeIndex >= nodes.size())
-    {
-        return;
-    }
-
-    const auto& node = nodes[nodeIndex];
-    bool isLeaf = node.IsLeaf();
-
-    // Only draw root or leaves to reduce clutter in the editor
-    if (depth == 0 || isLeaf)
-    {
-        Color nodeColor = isLeaf ? ORANGE : color;
-
-        Vector3 center = Vector3Scale(Vector3Add(node.Min, node.Max), 0.5f);
-        Vector3 size = Vector3Subtract(node.Max, node.Min);
-
-        Matrix nodeTransform = MatrixMultiply(MatrixTranslate(center.x, center.y, center.z), transform);
-        Renderer::Get().DrawCubeWires(nodeTransform, size, nodeColor);
-    }
-
-    if (!isLeaf && depth < 20)
-    {
-        RenderBVHNode(bvh, node.LeftOrFirst, transform, color, depth + 1);
-        RenderBVHNode(bvh, node.LeftOrFirst + 1, transform, color, depth + 1);
     }
 }
 
@@ -499,50 +465,48 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
     for (auto entity : view)
     {
         auto [transform, collider] = view.get<TransformComponent, ColliderComponent>(entity);
-        if (!collider.Enabled)
-        {
-            continue;
-        }
+        if (!collider.Enabled) continue;
 
         Matrix worldTransform = GetWorldTransform(registry, entity);
-        Color color = GREEN;
+        Color debugColor = collider.IsColliding ? RED : LIME;
 
-        switch (collider.Type)
+        if (collider.Type == ColliderType::Box)
         {
-        case ColliderType::Mesh:
+            Renderer::Get().DrawCubeWires(MatrixMultiply(MatrixTranslate(collider.Offset.x, collider.Offset.y, collider.Offset.z), worldTransform), collider.Size, debugColor);
+        }
+        else if (collider.Type == ColliderType::Sphere)
         {
-            if (collider.ModelPath.empty()) break;
-            // Draw collider visualization
+            Renderer::Get().DrawSphereWires(MatrixMultiply(MatrixTranslate(collider.Offset.x, collider.Offset.y, collider.Offset.z), worldTransform), collider.Radius, debugColor);
+        }
+        else if (collider.Type == ColliderType::Capsule)
+        {
+            Renderer::Get().DrawCapsuleWires(MatrixMultiply(MatrixTranslate(collider.Offset.x, collider.Offset.y, collider.Offset.z), worldTransform), collider.Radius, collider.Height, debugColor);
+        }
+        else if (collider.Type == ColliderType::Mesh)
+        {
+            if (!collider.ModelPath.empty())
             {
-                if (auto asset = AssetManager::Get().Get<ModelAsset>(collider.ModelPath))
+                auto model = AssetManager::Get().Get<ModelAsset>(collider.ModelPath);
+                if (model && model->GetState() == AssetState::Ready)
                 {
-                    if (auto bvh = PhysicsSystem::Get().GetBVH(asset.get()))
+                    const auto& rayModel = model->GetModel();
+                    const auto& nodeTransforms = model->GetGlobalNodeTransforms();
+                    const auto& meshToNode = model->GetMeshToNode();
+
+                    for (int i = 0; i < rayModel.meshCount; i++)
                     {
-                        RenderBVHNode(bvh.get(), 0, worldTransform, color);
+                        Matrix nodeMat = MatrixIdentity();
+                        if (i < (int)meshToNode.size() && meshToNode[i] >= 0)
+                            nodeMat = nodeTransforms[meshToNode[i]];
+                        
+                        Matrix finalTransform = MatrixMultiply(nodeMat, MatrixMultiply(rayModel.transform, worldTransform));
+                        Renderer::Get().DrawMeshWire(rayModel.meshes[i], debugColor, finalTransform);
                     }
                 }
             }
-            break;
         }
-        case ColliderType::Box: {
-            Vector3 center = Vector3Add(collider.Offset, Vector3Scale(collider.Size, 0.5f));
-            Matrix colliderTransform = MatrixMultiply(MatrixTranslate(center.x, center.y, center.z), worldTransform);
-            Renderer::Get().DrawCubeWires(colliderTransform, collider.Size, color);
-            break;
-        }
-        case ColliderType::Capsule: {
-            Matrix colliderTransform = MatrixMultiply(
-                MatrixTranslate(collider.Offset.x, collider.Offset.y, collider.Offset.z), worldTransform);
-            Renderer::Get().DrawCapsuleWires(colliderTransform, collider.Radius, collider.Height, color);
-            break;
-        }
-        case ColliderType::Sphere: {
-            Matrix colliderTransform = MatrixMultiply(
-                MatrixTranslate(collider.Offset.x, collider.Offset.y, collider.Offset.z), worldTransform);
-            Renderer::Get().DrawSphereWires(colliderTransform, collider.Radius, color);
-            break;
-        }
-        }
+        
+        m_CurrentStats.ColliderCount++;
     }
 }
 
@@ -572,74 +536,33 @@ void SceneRenderer::DrawCollisionModelBoxDebug(entt::registry& registry, const S
 
 BoundingBox SceneRenderer::CalculateColliderWorldAABB(const ColliderComponent& collider, const Matrix& worldTransform)
 {
-    BoundingBox box = {{0, 0, 0}, {0, 0, 0}};
-    std::vector<Vector3> corners;
+    BoundingBox box = {};
+    Vector3 extents = Vector3Scale(collider.Size, 0.5f);
+    Vector3 minLocal = Vector3Subtract(collider.Offset, extents);
+    Vector3 maxLocal = Vector3Add(collider.Offset, extents);
 
-    switch (collider.Type)
-    {
-    case ColliderType::Mesh:
-    {
-        if (collider.ModelPath.empty()) break;
-        // Local resolution via AssetManager
-        {
-            if (auto asset = AssetManager::Get().Get<ModelAsset>(collider.ModelPath))
-            {
-                if (auto bvh = PhysicsSystem::Get().GetBVH(asset.get()))
-                {
-                    if (!bvh->GetNodes().empty())
-                    {
-                        const auto& rootNode = bvh->GetNodes()[0];
-                        corners = {
-                            Vector3{rootNode.Min.x, rootNode.Min.y, rootNode.Min.z}, Vector3{rootNode.Max.x, rootNode.Min.y, rootNode.Min.z},
-                            Vector3{rootNode.Min.x, rootNode.Max.y, rootNode.Min.z}, Vector3{rootNode.Max.x, rootNode.Max.y, rootNode.Min.z},
-                            Vector3{rootNode.Min.x, rootNode.Min.y, rootNode.Max.z}, Vector3{rootNode.Max.x, rootNode.Min.y, rootNode.Max.z},
-                            Vector3{rootNode.Min.x, rootNode.Max.y, rootNode.Max.z}, Vector3{rootNode.Max.x, rootNode.Max.y, rootNode.Max.z}};
-                    }
-                }
-            }
-        }
-        break;
-    }
-    case ColliderType::Box:
-        corners = {collider.Offset,
-                   Vector3Add(collider.Offset, {collider.Size.x, 0, 0}),
-                   Vector3Add(collider.Offset, {0, collider.Size.y, 0}),
-                   Vector3Add(collider.Offset, {collider.Size.x, collider.Size.y, 0}),
-                   Vector3Add(collider.Offset, {0, 0, collider.Size.z}),
-                   Vector3Add(collider.Offset, {collider.Size.x, 0, collider.Size.z}),
-                   Vector3Add(collider.Offset, {0, collider.Size.y, collider.Size.z}),
-                   Vector3Add(collider.Offset, {collider.Size.x, collider.Size.y, collider.Size.z})};
-        break;
-    case ColliderType::Capsule: {
-        float halfSeg = fmaxf(0.0f, collider.Height * 0.5f - collider.Radius);
-        Vector3 worldA = Vector3Transform(Vector3Add(collider.Offset, {0, -halfSeg, 0}), worldTransform);
-        Vector3 worldB = Vector3Transform(Vector3Add(collider.Offset, {0, halfSeg, 0}), worldTransform);
-        float r = collider.Radius;
-        box.min = Vector3Subtract(Vector3Min(worldA, worldB), {r, r, r});
-        box.max = Vector3Add(Vector3Max(worldA, worldB), {r, r, r});
-        return box; // Already in world space
-    }
-    case ColliderType::Sphere: {
-        Vector3 worldPos = Vector3Transform(collider.Offset, worldTransform);
-        float r = collider.Radius;
-        box.min = Vector3Subtract(worldPos, {r, r, r});
-        box.max = Vector3Add(worldPos, {r, r, r});
-        return box; // Already in world space
-    }
-    }
+    Vector3 corners[8] = {
+        {minLocal.x, minLocal.y, minLocal.z}, {maxLocal.x, minLocal.y, minLocal.z},
+        {minLocal.x, maxLocal.y, minLocal.z}, {maxLocal.x, maxLocal.y, minLocal.z},
+        {minLocal.x, minLocal.y, maxLocal.z}, {maxLocal.x, minLocal.y, maxLocal.z},
+        {minLocal.x, maxLocal.y, maxLocal.z}, {maxLocal.x, maxLocal.y, maxLocal.z}
+    };
 
-    if (!corners.empty())
+    Vector3 minWorld = {FLT_MAX, FLT_MAX, FLT_MAX};
+    Vector3 maxWorld = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
+
+    for (int i = 0; i < 8; i++)
     {
-        BoundingBox worldBox;
-        worldBox.min = worldBox.max = Vector3Transform(corners[0], worldTransform);
-        for (int cornerIndex = 1; cornerIndex < 8; cornerIndex++)
-        {
-            Vector3 worldCorner = Vector3Transform(corners[cornerIndex], worldTransform);
-            worldBox.min = Vector3Min(worldBox.min, worldCorner);
-            worldBox.max = Vector3Max(worldBox.max, worldCorner);
-        }
-        box = worldBox;
+        Vector3 worldPt = Vector3Transform(corners[i], worldTransform);
+        minWorld.x = std::min(minWorld.x, worldPt.x);
+        minWorld.y = std::min(minWorld.y, worldPt.y);
+        minWorld.z = std::min(minWorld.z, worldPt.z);
+        maxWorld.x = std::max(maxWorld.x, worldPt.x);
+        maxWorld.y = std::max(maxWorld.y, worldPt.y);
+        maxWorld.z = std::max(maxWorld.z, worldPt.z);
     }
+    box.min = minWorld;
+    box.max = maxWorld;
 
     return box;
 }
@@ -661,63 +584,49 @@ void SceneRenderer::DrawSpawnDebug(entt::registry& registry, const SceneRenderOp
 void SceneRenderer::RenderEditorIcons(Scene* scene, const Camera3D& camera)
 {
     auto& registry = scene->GetRegistry();
-    auto& state = Renderer::Get().GetData();
     auto& assetManager = AssetManager::Get();
 
-    if (state.EditorResources.LightIcon.id == 0)
+    if (m_EditorResources.LightIcon.id == 0)
     {
         auto texture = assetManager.Get<TextureAsset>("resources/icons/light_bulb.png");
-        if (texture && texture->IsReady())
-        {
-            state.EditorResources.LightIcon = texture->GetTexture();
-        }
+        if (texture && texture->IsReady()) m_EditorResources.LightIcon = texture->GetTexture();
     }
-    if (state.EditorResources.SpawnIcon.id == 0)
+    if (m_EditorResources.SpawnIcon.id == 0)
     {
         auto texture = assetManager.Get<TextureAsset>("resources/icons/leaf_icon.png");
-        if (texture && texture->IsReady())
-        {
-            state.EditorResources.SpawnIcon = texture->GetTexture();
-        }
+        if (texture && texture->IsReady()) m_EditorResources.SpawnIcon = texture->GetTexture();
     }
-    if (state.EditorResources.CameraIcon.id == 0)
+    if (m_EditorResources.CameraIcon.id == 0)
     {
-        auto texture = assetManager.Get<TextureAsset>("resources/icons/camera_icon.jpg");
-        if (texture && texture->IsReady())
-        {
-            state.EditorResources.CameraIcon = texture->GetTexture();
-        }
+        auto texture = assetManager.Get<TextureAsset>("resources/icons/camera_icon.png");
+        if (texture && texture->IsReady()) m_EditorResources.CameraIcon = texture->GetTexture();
     }
 
     rlDisableDepthTest();
-
     {
         auto view = registry.view<TransformComponent, LightComponent>();
         for (auto entity : view)
         {
             Vector3 worldPos = GetWorldPosition(registry, entity);
-            Renderer::Get().DrawBillboard(camera, state.EditorResources.LightIcon, worldPos, 1.5f, WHITE);
+            Renderer::Get().DrawBillboard(camera, m_EditorResources.LightIcon, worldPos, 1.5f, WHITE);
         }
     }
-
     {
         auto view = registry.view<TransformComponent, SpawnComponent>();
         for (auto entity : view)
         {
             Vector3 worldPos = GetWorldPosition(registry, entity);
-            Renderer::Get().DrawBillboard(camera, state.EditorResources.SpawnIcon, worldPos, 1.5f, WHITE);
+            Renderer::Get().DrawBillboard(camera, m_EditorResources.SpawnIcon, worldPos, 1.5f, WHITE);
         }
     }
-
     {
         auto view = registry.view<TransformComponent, CameraComponent>();
         for (auto entity : view)
         {
             Vector3 worldPos = GetWorldPosition(registry, entity);
-            Renderer::Get().DrawBillboard(camera, state.EditorResources.CameraIcon, worldPos, 1.5f, WHITE);
+            Renderer::Get().DrawBillboard(camera, m_EditorResources.CameraIcon, worldPos, 1.5f, WHITE);
         }
     }
-
     rlEnableDepthTest();
 }
 
@@ -764,5 +673,139 @@ void SceneRenderer::RenderSprites(Scene* scene)
                                      sprite.Tint);
     }
     Renderer2D::Get().EndCanvas();
+}
+void SceneRenderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const Matrix& transform,
+                               const std::vector<MaterialSlot>& materialSlotOverrides,
+                               const std::vector<Matrix>& boneMatrices,
+                               const std::shared_ptr<ShaderAsset>& shaderOverride,
+                               const std::vector<ShaderUniform>& shaderUniformOverrides)
+{
+    if (!modelAsset || modelAsset->GetState() != AssetState::Ready) return;
+
+    Model& model = modelAsset->GetModel();
+    const auto& globalNodeTransforms = modelAsset->GetGlobalNodeTransforms();
+    const auto& meshToNode = modelAsset->GetMeshToNode();
+
+    auto& renderer = Renderer::Get();
+    auto activeShader = shaderOverride ? shaderOverride : (renderer.GetShaderLibrary().Exists("Lighting") ? renderer.GetShaderLibrary().Get("Lighting") : nullptr);
+
+    for (int i = 0; i < model.meshCount; i++)
+    {
+        m_CurrentStats.DrawCalls++;
+        m_CurrentStats.MeshCount++;
+        m_CurrentStats.PolyCount += model.meshes[i].triangleCount;
+
+        Material material = ResolveMaterialForMesh(i, model, materialSlotOverrides);
+        
+        Matrix nodeTransform = MatrixIdentity();
+        if (i < (int)meshToNode.size())
+        {
+            int nodeIdx = meshToNode[i];
+            if (nodeIdx >= 0 && nodeIdx < (int)globalNodeTransforms.size()) 
+                nodeTransform = globalNodeTransforms[nodeIdx];
+        }
+
+        Matrix meshWorldTransform = MatrixMultiply(nodeTransform, MatrixMultiply(model.transform, transform));
+
+        if (activeShader)
+        {
+            BindShaderUniforms(activeShader.get(), boneMatrices, shaderUniformOverrides);
+            BindMaterialUniforms(activeShader.get(), material, i, model, materialSlotOverrides);
+
+            Shader originalShader = material.shader;
+            material.shader = activeShader->GetShader();
+            renderer.DrawMesh(model.meshes[i], material, meshWorldTransform);
+            material.shader = originalShader;
+        }
+        else
+        {
+            renderer.DrawMesh(model.meshes[i], material, meshWorldTransform);
+        }
+    }
+}
+
+Material SceneRenderer::ResolveMaterialForMesh(int meshIndex, const Model& model, const std::vector<MaterialSlot>& materialSlotOverrides)
+{
+    Material material = model.materials[model.meshMaterial[meshIndex]];
+    for (const auto& slot : materialSlotOverrides)
+    {
+        bool match = (slot.Target == MaterialSlotTarget::MeshIndex && slot.Index == meshIndex) ||
+                     (slot.Target == MaterialSlotTarget::MaterialIndex && slot.Index == model.meshMaterial[meshIndex]);
+        if (match)
+        {
+            material.maps[MATERIAL_MAP_ALBEDO].color = slot.Material.AlbedoColor;
+            if (slot.Material.OverrideAlbedo && !slot.Material.AlbedoPath.empty())
+            {
+                auto tex = AssetManager::Get().Get<TextureAsset>(slot.Material.AlbedoPath);
+                if (tex && tex->IsReady()) material.maps[MATERIAL_MAP_ALBEDO].texture = tex->GetTexture();
+            }
+            break;
+        }
+    }
+    return material;
+}
+
+void SceneRenderer::BindShaderUniforms(ShaderAsset* activeShader, const std::vector<Matrix>& boneMatrices, const std::vector<ShaderUniform>& shaderUniformOverrides)
+{
+    if (!activeShader) return;
+    if (!boneMatrices.empty())
+    {
+        int count = std::min((int)boneMatrices.size(), 128);
+        activeShader->SetMatrices("boneMatrices", boneMatrices.data(), count);
+    }
+    else
+    {
+        static Matrix identities[4] = { MatrixIdentity(), MatrixIdentity(), MatrixIdentity(), MatrixIdentity() };
+        activeShader->SetMatrices("boneMatrices", identities, 4);
+    }
+
+    for (const auto& u : shaderUniformOverrides)
+    {
+        switch (u.Type)
+        {
+            case 0: activeShader->SetFloat(u.Name, u.Value[0]); break;
+            case 1: activeShader->SetVec2(u.Name, {u.Value[0], u.Value[1]}); break;
+            case 2: activeShader->SetVec3(u.Name, {u.Value[0], u.Value[1], u.Value[2]}); break;
+            case 3: activeShader->SetVec4(u.Name, {u.Value[0], u.Value[1], u.Value[2], u.Value[3]}); break;
+            case 4: activeShader->SetColor(u.Name, Color{(unsigned char)(u.Value[0]*255), (unsigned char)(u.Value[1]*255), (unsigned char)(u.Value[2]*255), (unsigned char)(u.Value[3]*255)}); break;
+        }
+    }
+}
+
+void SceneRenderer::BindMaterialUniforms(ShaderAsset* activeShader, const Material& material, int meshIndex, const Model& model, const std::vector<MaterialSlot>& materialSlotOverrides)
+{
+    if (!activeShader) return;
+    activeShader->SetInt("useTexture", material.maps[MATERIAL_MAP_ALBEDO].texture.id > 0 ? 1 : 0);
+    activeShader->SetColor("colDiffuse", material.maps[MATERIAL_MAP_ALBEDO].color);
+    activeShader->SetInt("useNormalMap", material.maps[MATERIAL_MAP_NORMAL].texture.id > 0 ? 1 : 0);
+    activeShader->SetInt("useMetallicMap", material.maps[MATERIAL_MAP_METALNESS].texture.id > 0 ? 1 : 0);
+    activeShader->SetInt("useRoughnessMap", material.maps[MATERIAL_MAP_ROUGHNESS].texture.id > 0 ? 1 : 0);
+    activeShader->SetInt("useOcclusionMap", material.maps[MATERIAL_MAP_OCCLUSION].texture.id > 0 ? 1 : 0);
+    activeShader->SetInt("useEmissiveTexture", material.maps[MATERIAL_MAP_EMISSION].texture.id > 0 ? 1 : 0);
+
+    float metalness = material.maps[MATERIAL_MAP_METALNESS].value;
+    float roughness = material.maps[MATERIAL_MAP_ROUGHNESS].value;
+    Color colEmissive = material.maps[MATERIAL_MAP_EMISSION].color;
+    float emissiveIntensity = 0.0f;
+
+    for (const auto& slot : materialSlotOverrides)
+    {
+        bool match = (slot.Target == MaterialSlotTarget::MeshIndex && slot.Index == meshIndex) ||
+                     (slot.Target == MaterialSlotTarget::MaterialIndex && slot.Index == model.meshMaterial[meshIndex]);
+        if (match)
+        {
+            emissiveIntensity = slot.Material.EmissiveIntensity;
+            if (slot.Material.OverrideEmissive) colEmissive = slot.Material.EmissiveColor;
+            metalness = slot.Material.Metalness;
+            roughness = slot.Material.Roughness;
+            break;
+        }
+    }
+
+    activeShader->SetFloat("metalness", metalness);
+    activeShader->SetFloat("roughness", roughness);
+    if (emissiveIntensity == 0.0f && (colEmissive.r > 0 || colEmissive.g > 0 || colEmissive.b > 0)) emissiveIntensity = 1.0f;
+    activeShader->SetColor("colEmissive", colEmissive);
+    activeShader->SetFloat("emissiveIntensity", emissiveIntensity);
 }
 } // namespace CHEngine

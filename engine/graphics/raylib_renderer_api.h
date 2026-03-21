@@ -13,6 +13,7 @@ public:
     virtual void SetViewport(int x, int y, int width, int height) override;
     virtual void SetClearColor(const Color& color) override;
     virtual void Clear() override;
+    virtual void SetDepthFunc(DepthFunc func) override;
 
     virtual void DrawIndexed(const std::shared_ptr<VertexArray>& vertexArray, uint32_t indexCount = 0) override;
 

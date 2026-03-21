@@ -72,7 +72,6 @@ public:
     {
         return m_ImGuiLayer;
     }
-    ScriptEngine& GetScriptEngine();
     const ApplicationSpecification& GetSpecification() const
     {
         return m_Specification;

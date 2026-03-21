@@ -5,6 +5,7 @@
 #include "engine/scene/scene.h"
 #include "engine/scene/components/animation_component.h"
 #include "engine/scene/components/physics_component.h"
+#include "engine/core/profiler.h"
 #include <unordered_map>
 #include <memory>
 #include <string>
@@ -25,6 +26,13 @@ struct SceneRenderOptions
     bool ShowDebugSpawnZones = true;
     bool DrawGrid = false;
     bool ShowEditorIcons = true;
+};
+
+struct EditorResourcesData
+{
+    Texture2D LightIcon = {0};
+    Texture2D SpawnIcon = {0};
+    Texture2D CameraIcon = {0};
 };
 
 class SceneRenderer
@@ -84,6 +92,21 @@ private:
     void DrawAnimatedEntities(const std::vector<AnimatedEntry>& animatedEntries, const SceneRenderOptions& options);
     void DrawStaticEntities(std::unordered_map<InstanceKey, InstanceGroup, InstanceKeyHash>& instanceGroups);
 
+    void DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const Matrix& transform,
+                   const std::vector<MaterialSlot>& materialSlotOverrides = {},
+                   const std::vector<Matrix>& boneMatrices = {},
+                   const std::shared_ptr<ShaderAsset>& shaderOverride = nullptr,
+                   const std::vector<ShaderUniform>& shaderUniformOverrides = {});
+
+    Material ResolveMaterialForMesh(int meshIndex, const Model& model,
+                                    const std::vector<MaterialSlot>& materialSlotOverrides);
+
+    void BindShaderUniforms(ShaderAsset* shader, const std::vector<Matrix>& boneMatrices,
+                            const std::vector<ShaderUniform>& shaderUniformOverrides);
+
+    void BindMaterialUniforms(ShaderAsset* shader, const Material& material, int meshIndex,
+                              const Model& model, const std::vector<MaterialSlot>& materialSlotOverrides);
+
     void DrawColliderDebug(entt::registry& registry, const SceneRenderOptions& options);
     void DrawCollisionModelBoxDebug(entt::registry& registry, const SceneRenderOptions& options);
     void DrawSpawnDebug(entt::registry& registry, const SceneRenderOptions& options);
@@ -92,7 +115,10 @@ private:
 
     static Matrix GetWorldTransform(entt::registry& registry, entt::entity entity);
     static Vector3 GetWorldPosition(entt::registry& registry, entt::entity entity);
-    static void RenderBVHNode(const class BVH* bvh, uint32_t nodeIndex, const Matrix& transform, Color color, int depth = 0);
+
+private:
+    EditorResourcesData m_EditorResources;
+    ProfilerStats m_CurrentStats;
 };
 } // namespace CHEngine
 

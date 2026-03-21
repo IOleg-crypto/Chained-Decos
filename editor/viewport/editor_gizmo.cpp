@@ -87,12 +87,9 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
         Vector3 translation, rotation, scale;
         ImGuizmo::DecomposeMatrixToComponents((float*)&model, (float*)&translation, (float*)&rotation, (float*)&scale);
 
-        transform.Translation = translation;
-        transform.Rotation.x = rotation.x * DEG2RAD;
-        transform.Rotation.y = rotation.y * DEG2RAD;
-        transform.Rotation.z = rotation.z * DEG2RAD;
-        transform.RotationQuat = QuaternionFromEuler(transform.Rotation.x, transform.Rotation.y, transform.Rotation.z);
-        transform.Scale = scale;
+        transform.SetTranslation(translation);
+        transform.SetRotation({rotation.x * DEG2RAD, rotation.y * DEG2RAD, rotation.z * DEG2RAD});
+        transform.SetScale(scale);
     }
     else if (m_WasUsing)
     {

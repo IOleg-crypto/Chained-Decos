@@ -91,36 +91,27 @@ The project uses [CMake Presets](https://cmake.org/cmake/help/latest/manual/cmak
 #### 1. Configuration
 Choose a preset based on your OS and preferred compiler:
 
-| OS | Compiler | Build Type | Preset Name |
+| OS | Compiler | Generator | Preset Name |
 | :--- | :--- | :--- | :--- |
-| **Linux** | **Clang** | Release | `linux-clang-release` |
-| **Linux** | **Clang** | Debug | `linux-clang-debug` |
-| **Linux** | **GCC** | Release | `linux-gcc-release` |
-| **Linux** | **GCC** | Debug | `linux-gcc-debug` |
-| **Windows** | **MSVC** | Logic | `windows-vs2022` |
-| **Windows** | **Ninja** | Release | `windows-ninja-release` |
+| **Linux** | **Clang** | Ninja | `linux-clang` |
+| **Linux** | **GCC** | Ninja | `linux-gcc` |
+| **Windows** | **MSVC** | VS 2022 | `windows-vs2022` |
+| **Windows** | **Ninja** | Ninja | `windows-ninja` |
 
 ```bash
-# Example: Configure for Linux using Clang 19
-cmake --preset linux-clang-release
+# Example: Configure for Release on Windows
+cmake --preset windows-ninja -DCMAKE_BUILD_TYPE=Release
 ```
 
 > [!CAUTION]
-> **Switching Presets**: When switching between different presets (e.g., from `windows-ninja-debug` to `windows-vs2022`), you **must delete the `CMakeCache.txt`** in the corresponding build directory. CMake caches compiler and generator settings that can conflict when switching presets.
-> ```bash
-> # Delete cache before switching presets
-> rm -rf build/<old-preset>/CMakeCache.txt
-> # Or delete the entire build directory for a clean slate
-> rm -rf build/<old-preset>
-> ```
-
+> **Switching Presets**: When switching between different generators (e.g., from `windows-ninja` to `windows-vs2022`), you **must delete the `CMakeCache.txt`** in the corresponding build directory or delete the entire build folder for a clean slate.
 
 #### 2. Compilation
 Compile all targets (Editor, Runtime, Tests) using a build preset:
 
 ```bash
-# Example: Build the release version
-cmake --build --preset linux-clang-release -j $(nproc)
+# Example: Build the current configuration
+cmake --build --preset windows-ninja -j 8
 ```
 
 ### Launching the Application
@@ -131,20 +122,20 @@ Binaries are located in `build/<preset-name>/bin/`.
 The **Chained Editor** is the primary tool for course creation and live simulation.
 ```bash
 # Linux
-./build/linux-clang-release/bin/ChainedEditor
+./build/linux-clang/bin/ChainedEditor
 
 # Windows
-.\build\windows-ninja-release\bin\ChainedEditor.exe
+.\build\windows-ninja\bin\ChainedEditor.exe
 ```
 
 #### Running the Standalone Runtime
 The **Chained Runtime** is a lightweight wrapper that loads and runs your own projects/games without the editor's UI overhead. By passing your project file as an argument, you can test the final "player experience" of your game.
 ```bash
 # Linux
-./build/linux-clang-release/bin/ChainedRuntime path/to/your.chproject
+./build/linux-clang/bin/ChainedRuntime path/to/your.chproject
 
 # Windows
-.\build\windows-ninja-release\bin\ChainedRuntime.exe path\to\your.chproject
+.\build\windows-ninja\bin\ChainedRuntime.exe path\to\your.chproject
 ```
 
 ---
@@ -157,10 +148,10 @@ We use **Google Test** for engine and scene validation.
 After building, you can run the test suite:
 ```bash
 # Run all tests via CTest
-ctest --preset linux-clang-release
+ctest --preset linux-clang
 
 # Or run individual test binaries
-./build/linux-clang-release/bin/tests/EngineTests
+./build/linux-clang/bin/tests/EngineTests
 ```
 
 ---
@@ -176,4 +167,4 @@ Contributions are welcome! As a project in active development, especially regard
 
 This project is licensed under the **MIT License**.
 
-Made with using **Raylib**, **ImGui**, and **Chained Engine** (Modern C++23).
+Made with using **Raylib**, **ImGui**, and **Jolt** (Modern C++23).

@@ -1,7 +1,6 @@
 #include "model_asset.h"
 #include "asset_manager.h"
 #include "engine/core/log.h"
-#include "engine/physics/bvh/bvh.h"
 #include "engine/scene/project.h"
 #include "mesh_importer.h"
 #include "raylib.h"
@@ -26,6 +25,7 @@ void ModelAsset::UploadToGPU()
                  m_PendingData.meshes.size(), m_PendingData.materials.size());
 
     Model model = {0};
+    model.transform = MatrixIdentity();
     model.meshCount = (int)m_PendingData.meshes.size();
     if (model.meshCount > 0)
     {
@@ -159,8 +159,6 @@ void ModelAsset::UploadToGPU()
             (rawMesh.materialIndex >= 0 && rawMesh.materialIndex < model.materialCount) ? rawMesh.materialIndex : 0;
     }
 
-    model.transform = MatrixIdentity();
-
     // Lock and transfer
     {
         std::lock_guard<std::mutex> lock(m_ModelMutex);
@@ -176,7 +174,56 @@ void ModelAsset::UploadToGPU()
         m_PendingTextures = std::move(localPendingTextures);
 
         // Cache the bounding box once (expensive Raylib call)
-        m_BoundingBox = ::GetModelBoundingBox(m_Model);
+        // We calculate a hierarchy-aware bounding box since raylib's GetModelBoundingBox ignores node transforms
+        BoundingBox totalBox = {{FLT_MAX, FLT_MAX, FLT_MAX}, {-FLT_MAX, -FLT_MAX, -FLT_MAX}};
+        bool anyMesh = false;
+        for (int i = 0; i < m_Model.meshCount; i++)
+        {
+            Mesh& mesh = m_Model.meshes[i];
+            if (mesh.vertexCount == 0) continue;
+            
+            Matrix transform = MatrixIdentity();
+            if (i < (int)m_MeshToNode.size()) {
+                int nodeIdx = m_MeshToNode[i];
+                if (nodeIdx >= 0 && nodeIdx < (int)m_GlobalNodeTransforms.size()) {
+                    transform = m_GlobalNodeTransforms[nodeIdx];
+                }
+            }
+            // Combine with model's root transform
+            transform = MatrixMultiply(transform, m_Model.transform);
+            
+            BoundingBox meshBox = ::GetMeshBoundingBox(mesh);
+            
+            // Efficient AABB transform (Arvo's method)
+            Vector3 worldMin = { transform.m12, transform.m13, transform.m14 };
+            Vector3 worldMax = worldMin;
+            
+            float* mat = (float*)&transform;
+            float* vmin = (float*)&meshBox.min;
+            float* vmax = (float*)&meshBox.max;
+            float* wmin = (float*)&worldMin;
+            float* wmax = (float*)&worldMax;
+            
+            for (int j = 0; j < 3; j++)
+            {
+                for (int k = 0; k < 3; k++)
+                {
+                    float a = mat[k * 4 + j];
+                    float b = a * vmin[k];
+                    float c = a * vmax[k];
+                    
+                    if (b < c) { wmin[j] += b; wmax[j] += c; }
+                    else { wmin[j] += c; wmax[j] += b; }
+                }
+            }
+            
+            totalBox.min = Vector3Min(totalBox.min, worldMin);
+            totalBox.max = Vector3Max(totalBox.max, worldMax);
+            anyMesh = true;
+        }
+        
+        if (!anyMesh) totalBox = {{0,0,0}, {0,0,0}};
+        m_BoundingBox = totalBox;
 
         // Build skeleton from pending bone data
         if (!m_PendingData.bones.empty())
@@ -286,4 +333,71 @@ std::vector<std::shared_ptr<TextureAsset>> ModelAsset::GetTextures() const
     return m_Textures;
 }
 
+std::vector<Matrix> ModelAsset::ComputeAnimationPose(int animationIndex, float frameIndex, int targetAnimationIndex, float targetFrameIndex, float blendWeight)
+{
+    std::lock_guard<std::mutex> lock(m_ModelMutex);
+    
+    if (m_Model.boneCount <= 0 || m_OffsetMatrices.empty()) return {};
+
+    int boneCount = m_Model.boneCount;
+    std::vector<Matrix> boneMatrices(boneCount);
+    std::vector<Matrix> globalPose(boneCount);
+    std::vector<Transform> localPoseA(boneCount);
+
+    auto CalculateLocalPose = [&](int animIdx, float fIdx, std::vector<Transform>& outLocalPose) {
+        if (animIdx >= 0 && animIdx < (int)m_Animations.size())
+        {
+            const auto& anim = m_Animations[animIdx];
+            int currentFrame = (int)fIdx % anim.frameCount;
+            int nextFrame = (currentFrame + 1) % anim.frameCount;
+            float interp = fIdx - (float)((int)fIdx);
+
+            for (int i = 0; i < anim.boneCount; i++)
+            {
+                Transform t = anim.framePoses[currentFrame * anim.boneCount + i];
+                Transform tNext = anim.framePoses[nextFrame * anim.boneCount + i];
+
+                outLocalPose[i].translation = Vector3Lerp(t.translation, tNext.translation, interp);
+                outLocalPose[i].rotation = QuaternionSlerp(t.rotation, tNext.rotation, interp);
+                outLocalPose[i].scale = Vector3Lerp(t.scale, tNext.scale, interp);
+            }
+            return true;
+        }
+        return false;
+    };
+
+    if (!CalculateLocalPose(animationIndex, frameIndex, localPoseA))
+    {
+        for (int i = 0; i < boneCount; i++) localPoseA[i] = m_Model.bindPose[i];
+    }
+
+    if (targetAnimationIndex >= 0 && blendWeight > 0.0f)
+    {
+        std::vector<Transform> localPoseB(boneCount);
+        if (CalculateLocalPose(targetAnimationIndex, targetFrameIndex, localPoseB))
+        {
+            for (int i = 0; i < boneCount; i++)
+            {
+                localPoseA[i].translation = Vector3Lerp(localPoseA[i].translation, localPoseB[i].translation, blendWeight);
+                localPoseA[i].rotation = QuaternionSlerp(localPoseA[i].rotation, localPoseB[i].rotation, blendWeight);
+                localPoseA[i].scale = Vector3Lerp(localPoseA[i].scale, localPoseB[i].scale, blendWeight);
+            }
+        }
+    }
+
+    // Convert to global and then to bone matrices
+    for (int i = 0; i < boneCount; i++)
+    {
+        Matrix localMat = MatrixMultiply(QuaternionToMatrix(localPoseA[i].rotation), 
+                                         MatrixTranslate(localPoseA[i].translation.x, localPoseA[i].translation.y, localPoseA[i].translation.z));
+        localMat = MatrixMultiply(MatrixScale(localPoseA[i].scale.x, localPoseA[i].scale.y, localPoseA[i].scale.z), localMat);
+
+        int parent = m_Model.bones[i].parent;
+        // Global = Local * ParentGlobal (Raylib math v * M)
+        globalPose[i] = (parent == -1) ? localMat : MatrixMultiply(globalPose[parent], localMat);
+        boneMatrices[i] = MatrixMultiply(m_OffsetMatrices[i], globalPose[i]);
+    }
+
+    return boneMatrices;
+}
 } // namespace CHEngine
