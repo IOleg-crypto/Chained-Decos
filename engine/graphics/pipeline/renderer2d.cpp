@@ -1,0 +1,290 @@
+#include "renderer2d.h"
+#include "renderer.h"
+#include "engine/core/application.h"
+#include "engine/core/log.h"
+#include "engine/graphics/assets/texture_asset.h"
+#include "render_command.h"
+#include "rlgl.h"
+
+namespace CHEngine
+{
+Renderer2D* Renderer2D::s_Instance = nullptr;
+
+Renderer2D& Renderer2D::Get()
+{
+    CH_CORE_ASSERT(s_Instance, "Renderer2D not initialized!");
+    return *s_Instance;
+}
+
+void Renderer2D::Init()
+{
+    if (!s_Instance) s_Instance = new Renderer2D();
+    
+    CH_CORE_INFO("Initializing Renderer2D (Batching Mode)...");
+
+    if (Application::Get().GetSpecification().Headless)
+    {
+        CH_CORE_INFO("Renderer2D: Headless mode, skipping GL initialization.");
+        return;
+    }
+
+    auto& m_Data = s_Instance->m_Data;
+
+    m_Data->QuadVertexArray = VertexArray::Create();
+    
+    m_Data->QuadVertexBuffer = VertexBuffer::Create(Renderer2DData::MaxVertices * sizeof(QuadVertex));
+    m_Data->QuadVertexBuffer->SetLayout({
+        { ShaderDataType::Float3, "a_Position" },
+        { ShaderDataType::Float4, "a_Color" },
+        { ShaderDataType::Float2, "a_TexCoord" },
+        { ShaderDataType::Float,  "a_TexIndex" }
+    });
+    m_Data->QuadVertexArray->AddVertexBuffer(m_Data->QuadVertexBuffer);
+
+    uint32_t* quadIndices = new uint32_t[Renderer2DData::MaxIndices];
+    uint32_t offset = 0;
+    for (uint32_t i = 0; i < Renderer2DData::MaxIndices; i += 6)
+    {
+        quadIndices[i + 0] = offset + 0;
+        quadIndices[i + 1] = offset + 1;
+        quadIndices[i + 2] = offset + 2;
+
+        quadIndices[i + 3] = offset + 2;
+        quadIndices[i + 4] = offset + 3;
+        quadIndices[i + 5] = offset + 0;
+
+        offset += 4;
+    }
+
+    std::shared_ptr<IndexBuffer> quadIB = IndexBuffer::Create(quadIndices, Renderer2DData::MaxIndices);
+    m_Data->QuadVertexArray->SetIndexBuffer(quadIB);
+    delete[] quadIndices;
+
+    // Create 1x1 white texture for plain quads
+    Image whiteImage = GenImageColor(1, 1, WHITE);
+    m_Data->TextureSlots[0] = LoadTextureFromImage(whiteImage);
+    UnloadImage(whiteImage);
+}
+
+void Renderer2D::Shutdown()
+{
+    if (s_Instance)
+    {
+        CH_CORE_INFO("Shutting down Renderer2D...");
+        delete s_Instance;
+        s_Instance = nullptr;
+    }
+}
+
+Renderer2D::Renderer2D()
+{
+    m_Data = std::make_unique<Renderer2DData>();
+    m_Data->QuadVertexBufferBase = new QuadVertex[Renderer2DData::MaxVertices];
+}
+
+Renderer2D::~Renderer2D()
+{
+    if (!Application::Get().GetSpecification().Headless)
+    {
+        UnloadTexture(m_Data->TextureSlots[0]);
+    }
+    delete[] m_Data->QuadVertexBufferBase;
+}
+
+void Renderer2D::BeginCanvas()
+{
+    // UI rendering uses screen coordinates
+}
+
+void Renderer2D::EndCanvas()
+{
+    Flush();
+}
+
+void Renderer2D::BeginScene(const Camera2D& camera)
+{
+    BeginMode2D(camera);
+    StartBatch();
+}
+
+void Renderer2D::EndScene()
+{
+    Flush();
+    EndMode2D();
+}
+
+void Renderer2D::StartBatch()
+{
+    m_Data->QuadIndexCount = 0;
+    m_Data->QuadVertexBufferPtr = m_Data->QuadVertexBufferBase;
+    m_Data->TextureSlotIndex = 1;
+}
+
+void Renderer2D::Flush()
+{
+    if (m_Data->QuadIndexCount == 0)
+    {
+        return;
+    }
+
+    uint32_t dataSize = (uint32_t)((uint8_t*)m_Data->QuadVertexBufferPtr - (uint8_t*)m_Data->QuadVertexBufferBase);
+    m_Data->QuadVertexBuffer->SetData(m_Data->QuadVertexBufferBase, dataSize);
+
+    RenderCommand::DrawIndexed(m_Data->QuadVertexArray, m_Data->QuadIndexCount);
+
+    m_Data->Stats.DrawCalls++;
+    StartBatch();
+}
+
+void Renderer2D::NextBatch()
+{
+    Flush();
+    StartBatch();
+}
+
+void Renderer2D::DrawQuad(const Vector2& position, const Vector2& size, Color color)
+{
+    DrawQuad({position.x, position.y, 0.0f}, size, color);
+}
+
+void Renderer2D::DrawQuad(const Vector3& position, const Vector2& size, Color color)
+{
+    if (m_Data->QuadIndexCount >= Renderer2DData::MaxIndices)
+    {
+        NextBatch();
+    }
+
+    if (m_Data->QuadIndexCount == 0)
+    {
+        m_Data->TextureSlotIndex = 0; // Use white texture
+        rlEnableTexture(m_Data->TextureSlots[0].id);
+    }
+    else if (m_Data->TextureSlotIndex != 0)
+    {
+        // If we were drawing sprites with a non-white texture, flush
+        NextBatch();
+        m_Data->TextureSlotIndex = 0;
+        rlEnableTexture(m_Data->TextureSlots[0].id);
+    }
+
+    Vector4 normalizedColor = ColorNormalize(color);
+
+    // 0,0 origin for now
+    m_Data->QuadVertexBufferPtr->Position = position;
+    m_Data->QuadVertexBufferPtr->Color = normalizedColor;
+    m_Data->QuadVertexBufferPtr->TexCoord = {0, 0};
+    m_Data->QuadVertexBufferPtr->TexIndex = 0;
+    m_Data->QuadVertexBufferPtr++;
+
+    m_Data->QuadVertexBufferPtr->Position = {position.x + size.x, position.y, position.z};
+    m_Data->QuadVertexBufferPtr->Color = normalizedColor;
+    m_Data->QuadVertexBufferPtr->TexCoord = {1, 0};
+    m_Data->QuadVertexBufferPtr->TexIndex = 0;
+    m_Data->QuadVertexBufferPtr++;
+
+    m_Data->QuadVertexBufferPtr->Position = {position.x + size.x, position.y + size.y, position.z};
+    m_Data->QuadVertexBufferPtr->Color = normalizedColor;
+    m_Data->QuadVertexBufferPtr->TexCoord = {1, 1};
+    m_Data->QuadVertexBufferPtr->TexIndex = 0;
+    m_Data->QuadVertexBufferPtr++;
+
+    m_Data->QuadVertexBufferPtr->Position = {position.x, position.y + size.y, position.z};
+    m_Data->QuadVertexBufferPtr->Color = normalizedColor;
+    m_Data->QuadVertexBufferPtr->TexCoord = {0, 1};
+    m_Data->QuadVertexBufferPtr->TexIndex = 0;
+    m_Data->QuadVertexBufferPtr++;
+
+    m_Data->QuadIndexCount += 6;
+    m_Data->Stats.QuadCount++;
+}
+
+void Renderer2D::DrawQuad(const Vector2& position, const Vector2& size, float rotation, Color color)
+{
+    DrawQuad({position.x, position.y, 0.0f}, size, rotation, color);
+}
+
+void Renderer2D::DrawQuad(const Vector3& position, const Vector2& size, float rotation, Color color)
+{
+    // For now, if rotation is present, we flush and use Raylib's legacy call to avoid complex vertex math here
+    // until we have a proper Matrix vertex transform in the batcher.
+    if (rotation == 0.0f)
+    {
+        DrawQuad(position, size, color);
+        return;
+    }
+
+    Flush();
+    DrawRectanglePro({position.x, position.y, size.x, size.y}, {size.x * 0.5f, size.y * 0.5f}, rotation, color);
+    m_Data->Stats.QuadCount++;
+    m_Data->Stats.DrawCalls++;
+}
+
+void Renderer2D::DrawSprite(const Vector3& position, const Vector2& size, const std::shared_ptr<TextureAsset>& texture,
+                            Color tint)
+{
+    if (!texture || !texture->IsReady())
+    {
+        DrawQuad(position, size, tint);
+        return;
+    }
+
+    Texture2D tex = texture->GetTexture();
+
+    // If we have a different texture than the one currently in the batch, flush
+    if (m_Data->QuadIndexCount > 0 && (m_Data->TextureSlotIndex == 0 || m_Data->TextureSlots[0].id != tex.id))
+    {
+        NextBatch();
+    }
+
+    if (m_Data->QuadIndexCount == 0)
+    {
+        m_Data->TextureSlots[0] = tex;
+        m_Data->TextureSlotIndex = 1;
+        rlEnableTexture(tex.id);
+    }
+
+    DrawQuad(position, size, tint);
+}
+
+void Renderer2D::DrawSprite(const Vector2& position, const Vector2& size, const std::shared_ptr<TextureAsset>& texture,
+                            Color tint)
+{
+    DrawSprite({position.x, position.y, 0.0f}, size, texture, tint);
+}
+
+void Renderer2D::DrawSprite(const Vector2& position, const Vector2& size, float rotation,
+                            const std::shared_ptr<TextureAsset>& texture, Color tint)
+{
+    DrawSprite({position.x, position.y, 0.0f}, size, rotation, texture, tint);
+}
+
+void Renderer2D::DrawSprite(const Vector3& position, const Vector2& size, float rotation,
+                            const std::shared_ptr<TextureAsset>& texture, Color tint)
+{
+    if (!texture || !texture->IsReady())
+    {
+        DrawQuad(position, size, rotation, tint);
+        return;
+    }
+
+    if (rotation == 0.0f)
+    {
+        DrawSprite(position, size, texture, tint);
+        return;
+    }
+
+    // For rotated sprites, use Raylib's Pro call for now
+    Flush();
+    DrawTexturePro(texture->GetTexture(),
+                   {0, 0, (float)texture->GetTexture().width, (float)texture->GetTexture().height},
+                   {position.x, position.y, size.x, size.y}, {size.x * 0.5f, size.y * 0.5f}, rotation, tint);
+
+    m_Data->Stats.QuadCount++;
+    m_Data->Stats.DrawCalls++;
+}
+
+void Renderer2D::ResetStats()
+{
+    memset(&m_Data->Stats, 0, sizeof(Renderer2DData::Statistics));
+}
+} // namespace CHEngine

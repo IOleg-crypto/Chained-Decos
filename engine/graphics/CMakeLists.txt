@@ -1,49 +1,60 @@
 add_library(engine_graphics OBJECT
-    renderer.cpp
-    ui_renderer.cpp
-    asset_manager.cpp
-    shader_asset.cpp
-    shader_library.cpp
-    scene_renderer.cpp
-    renderer2d.cpp
-    model_asset.cpp
-    texture_asset.cpp
-    font_asset.cpp
-    mesh_importer.cpp
-    texture_importer.cpp
-    shader_importer.cpp
-    font_importer.cpp
-    environment_importer.cpp
-    render_command.cpp
-    renderer_api.cpp
-    raylib_renderer_api.cpp
-    buffer.cpp
-    raylib_buffer.cpp
-    vertex_array.cpp
-    raylib_vertex_array.cpp
-    framebuffer.cpp
-    raylib_framebuffer.cpp
+    # Pipeline
+    pipeline/renderer.cpp
+    pipeline/ui_renderer.cpp
+    pipeline/shader_library.cpp
+    pipeline/scene_renderer.cpp
+    pipeline/renderer2d.cpp
+    pipeline/render_command.cpp
+    pipeline/renderer.h
+    pipeline/scene_renderer.h
+    pipeline/ui_renderer.h
+    pipeline/shader_library.h
+    pipeline/material.h
+    pipeline/frustum.h
 
-    renderer.h
-    scene_renderer.h
-    ui_renderer.h
-    asset.h
-    asset_manager.h
-    shader_asset.h
-    shader_library.h
-    model_asset.h
-    texture_asset.h
-    font_asset.h
-    environment.h
-    material.h
-    mesh_importer.h
-    texture_importer.h
-    shader_importer.h
-    font_importer.h
-    environment_importer.h
-    asset_importer.h
-    frustum.h
-    framebuffer.h
+    # Assets
+    assets/shader_asset.cpp
+    assets/model_asset.cpp
+    assets/texture_asset.cpp
+    assets/font_asset.cpp
+    assets/shader_asset.h
+    assets/model_asset.h
+    assets/texture_asset.h
+    assets/font_asset.h
+    assets/environment.h
+
+    # Importers
+    importers/mesh_importer.cpp
+    importers/texture_importer.cpp
+    importers/shader_importer.cpp
+    importers/font_importer.cpp
+    importers/environment_importer.cpp
+    importers/mesh_importer.h
+    importers/texture_importer.h
+    importers/shader_importer.h
+    importers/font_importer.h
+    importers/asset_importer.h
+
+    # Loaders
+    loaders/texture_loader.h
+    loaders/model_loader.h
+    loaders/shader_loader.h
+    loaders/font_loader.h
+    loaders/audio_loader.h
+    loaders/environment_loader.h
+
+    # API & Backend
+    api/renderer_api.cpp
+    api/buffer.cpp
+    api/vertex_array.cpp
+    api/framebuffer.cpp
+    api/framebuffer.h
+    api/model_data.h
+    api/raylib/raylib_renderer_api.cpp
+    api/raylib/raylib_buffer.cpp
+    api/raylib/raylib_vertex_array.cpp
+    api/raylib/raylib_framebuffer.cpp
 )
 
 target_include_directories(engine_graphics PUBLIC

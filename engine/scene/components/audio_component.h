@@ -2,7 +2,7 @@
 #define CH_AUDIO_COMPONENT_H
 
 #include "engine/core/base.h"
-#include "engine/graphics/asset.h"
+#include "engine/core/assets/asset.h"
 #include <string>
 
 namespace CHEngine

@@ -1,7 +1,7 @@
 #ifndef CH_SOUND_ASSET_H
 #define CH_SOUND_ASSET_H
 #include "engine/core/base.h"
-#include "engine/graphics/asset.h"
+#include "engine/core/assets/asset.h"
 #include "raylib.h"
 #include <string>
 

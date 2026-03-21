@@ -5,7 +5,7 @@
 #include "engine/core/timestep.h"
 #include "panel.h"
 #include "raylib.h"
-#include "engine/graphics/framebuffer.h"
+#include "engine/graphics/api/framebuffer.h"
 #include "viewport/editor_camera.h"
 #include "viewport/editor_gizmo.h"
 #include "viewport/ui_manipulator.h"

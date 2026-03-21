@@ -1,6 +1,6 @@
 #include "ui_manipulator.h"
 #include "engine/core/log.h"
-#include "engine/graphics/ui_renderer.h"
+#include "engine/graphics/pipeline/ui_renderer.h"
 #include "engine/scene/components/control_component.h"
 
 namespace CHEngine

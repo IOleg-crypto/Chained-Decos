@@ -1,0 +1,33 @@
+#ifndef CH_AUDIO_LOADER_H
+#define CH_AUDIO_LOADER_H
+
+#include "engine/core/assets/asset_loader.h"
+#include "engine/audio/sound_asset.h"
+#include "engine/audio/audio_importer.h"
+
+namespace CHEngine
+{
+class AudioLoader : public IAssetLoader
+{
+public:
+    std::shared_ptr<Asset> Create() override
+    {
+        return std::make_shared<SoundAsset>();
+    }
+
+    bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath) override
+    {
+        auto soundAsset = std::static_pointer_cast<SoundAsset>(asset);
+        // AudioImporter already has an async method, but the loader itself
+        // is called within an Enqueue if IsAsync() is true.
+        // We can just call the synchronous one if available or the async one and wait if needed,
+        // but here we are ALREADY in a background thread if IsAsync() returns true.
+        AudioImporter::ImportSoundAsync(soundAsset, resolvedPath);
+        return soundAsset->GetState() != AssetState::Failed;
+    }
+
+    bool IsAsync() const override { return true; }
+};
+} // namespace CHEngine
+
+#endif // CH_AUDIO_LOADER_H

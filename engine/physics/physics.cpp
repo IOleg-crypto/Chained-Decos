@@ -1,7 +1,7 @@
 
 #include "engine/core/profiler.h"
-#include "engine/graphics/asset_manager.h"
-#include "engine/graphics/model_asset.h"
+#include "engine/core/assets/asset_manager.h"
+#include "engine/graphics/assets/model_asset.h"
 #include "engine/physics/bvh/bvh.h"
 #include "physics.h"
 #include "engine/scene/components.h"
@@ -260,12 +260,9 @@ void Physics::UpdateColliders(Scene* scene)
 
             if (asset && asset->GetState() == AssetState::Ready)
             {
-                if (collider.Size.x == 0 && collider.Size.y == 0 && collider.Size.z == 0)
-                {
-                    BoundingBox box = asset->GetBoundingBox();
-                    collider.Size   = Vector3Subtract(box.max, box.min);
-                    collider.Offset = box.min;
-                }
+                BoundingBox box = asset->GetBoundingBox();
+                collider.Size   = Vector3Subtract(box.max, box.min);
+                collider.Offset = box.min;
             }
             continue;
         }
@@ -277,7 +274,7 @@ void Physics::UpdateColliders(Scene* scene)
 
             if (asset && asset->GetState() == AssetState::Ready && asset->GetModel().meshCount > 0)
             {
-                if (collider.AutoCalculate && collider.Size.x == 0)
+                if (collider.AutoCalculate)
                 {
                     BoundingBox box = asset->GetBoundingBox();
                     collider.Offset = box.min;
@@ -296,7 +293,7 @@ void Physics::UpdateColliders(Scene* scene)
             auto& model = registry.get<ModelComponent>(entity);
             auto asset = AssetManager::Get().Get<ModelAsset>(model.ModelPath);
 
-            if (asset && asset->GetState() == AssetState::Ready && collider.Radius == 0)
+            if (asset && asset->GetState() == AssetState::Ready)
             {
                 BoundingBox box = asset->GetBoundingBox();
                 Vector3 size = Vector3Subtract(box.max, box.min);
