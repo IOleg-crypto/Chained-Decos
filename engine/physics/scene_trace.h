@@ -1,14 +1,12 @@
 #ifndef CH_SCENE_TRACE_H
 #define CH_SCENE_TRACE_H
 
-#include "physics.h"
+#include "raycast_result.h"
 #include "raylib.h"
 
 namespace CHEngine
 {
-class Scene;
 
-class Physics;
 
 class SceneTrace
 {

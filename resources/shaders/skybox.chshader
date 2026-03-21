@@ -3,8 +3,8 @@ VertexShader: "skybox.vs"
 FragmentShader: "skybox.fs"
 
 Uniforms:
-  - matProjection
-  - matView
+  - projection
+  - view
   - texture0
   - vflipped
   - doGamma

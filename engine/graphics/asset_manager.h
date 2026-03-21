@@ -53,9 +53,9 @@ public:
     [[nodiscard]] int GetPendingCount() const;
     void SetMaxUploadsPerFrame(int n) { m_MaxUploadsPerFrame = n; }
 
-    template <typename T> void Remove(const std::string& path)
+    template <typename T> void Reload(const std::string& path)
     {
-        RemoveAsset(path, T::GetStaticType());
+        ReloadAsset(path, T::GetStaticType());
     }
 
 private:
@@ -63,6 +63,7 @@ private:
     std::shared_ptr<Asset> GetAsset(const std::string& path, AssetType type);
     std::shared_ptr<Asset> GetAsset(AssetHandle handle, AssetType type);
     void RemoveAsset(const std::string& path, AssetType type);
+    void ReloadAsset(const std::string& path, AssetType type);
 
 private:
     std::filesystem::path m_RootPath;

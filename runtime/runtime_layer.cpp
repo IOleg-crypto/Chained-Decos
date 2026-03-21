@@ -320,7 +320,7 @@ bool RuntimeLayer::DiscoverAndLoadProject(const std::string& projectPath)
     }
 
     // CRITICAL: Load engine shaders and resources immediately after project is resolved
-    Renderer::LoadEngineResources(AssetManager::Get());
+    Renderer::LoadEngineResources();
 
     return true;
 }

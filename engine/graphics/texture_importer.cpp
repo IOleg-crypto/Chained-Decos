@@ -44,7 +44,13 @@ std::shared_ptr<TextureAsset> TextureImporter::ImportTexture(const std::filesyst
             }
         }
     }
-    ImageFormat(&image, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+    // ImageFormat(&image, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8); 
+    // ^ DON'T DO THIS for HDR! Let LoadTextureFromImage handle the high-precision format.
+    // If it's not HDR, we still want R8G8B8A8 for consistency.
+    if (!isHDR)
+    {
+        ImageFormat(&image, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+    }
 
     Texture2D texture = LoadTextureFromImage(image);
     UnloadImage(image);

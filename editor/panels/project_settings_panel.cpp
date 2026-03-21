@@ -230,7 +230,7 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
         else if (selectedCategory == 2) // Physics
         {
             ImGui::TextDisabled("Physics Settings");
-            ImGui::DragFloat("World Gravity", &config.Physics.Gravity, 0.1f, 0.0f, 100.0f);
+            ImGui::DragFloat("World Gravity", &config.Physics.Gravity, 0.1f);
             ImGui::DragFloat("Fixed Timestep", &config.Physics.FixedTimestep, 0.001f, 0.001f, 0.1f, "%.4f");
         }
         else if (selectedCategory == 3) // Window

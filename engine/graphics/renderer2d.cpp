@@ -8,13 +8,18 @@
 
 namespace CHEngine
 {
+Renderer2D* Renderer2D::s_Instance = nullptr;
+
 Renderer2D& Renderer2D::Get()
 {
-    return Renderer::Get().GetRenderer2D();
+    CH_CORE_ASSERT(s_Instance, "Renderer2D not initialized!");
+    return *s_Instance;
 }
 
 void Renderer2D::Init()
 {
+    if (!s_Instance) s_Instance = new Renderer2D();
+    
     CH_CORE_INFO("Initializing Renderer2D (Batching Mode)...");
 
     if (Application::Get().GetSpecification().Headless)
@@ -22,6 +27,8 @@ void Renderer2D::Init()
         CH_CORE_INFO("Renderer2D: Headless mode, skipping GL initialization.");
         return;
     }
+
+    auto& m_Data = s_Instance->m_Data;
 
     m_Data->QuadVertexArray = VertexArray::Create();
     
@@ -61,7 +68,12 @@ void Renderer2D::Init()
 
 void Renderer2D::Shutdown()
 {
-    CH_CORE_INFO("Shutting down Renderer2D...");
+    if (s_Instance)
+    {
+        CH_CORE_INFO("Shutting down Renderer2D...");
+        delete s_Instance;
+        s_Instance = nullptr;
+    }
 }
 
 Renderer2D::Renderer2D()

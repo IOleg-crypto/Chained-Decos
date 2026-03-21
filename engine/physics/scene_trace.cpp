@@ -117,8 +117,7 @@ RaycastResult SceneTrace::Raycast(::entt::registry& registry, Ray ray)
                 continue;
             }
 
-            auto asset = AssetManager::Get().Get<ModelAsset>(modelComp->ModelPath);
-            auto bvh = PhysicsSystem::Get().GetBVH(asset.get());
+            auto bvh = PhysicsSystem::Get().GetBVH(modelComp->ModelPath);
             if (!bvh)
             {
                 continue;

@@ -3,8 +3,8 @@ VertexShader: "skybox.vs"
 FragmentShader: "skybox_cubemap.fs"
 
 Uniforms:
-  - matProjection
-  - matView
+  - projection
+  - view
   - environmentMap
   - doGamma
   - fragGamma
@@ -12,6 +12,7 @@ Uniforms:
   - brightness
   - contrast
   - uTime
+  - isHDR
   - fogEnabled
   - fogColor
   - fogDensity

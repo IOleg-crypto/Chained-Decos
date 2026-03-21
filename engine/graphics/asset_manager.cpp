@@ -51,9 +51,26 @@ void AssetManager::Initialize(const std::filesystem::path& rootPath)
     {
 #ifdef PROJECT_ROOT_DIR
         m_RootPath = PROJECT_ROOT_DIR;
-#else
-        m_RootPath = std::filesystem::current_path();
 #endif
+        if (m_RootPath.empty() || !std::filesystem::exists(m_RootPath / "resources"))
+        {
+            // Traverse up to find resources folder
+            std::filesystem::path current = std::filesystem::current_path();
+            while (current.has_parent_path())
+            {
+                if (std::filesystem::exists(current / "resources"))
+                {
+                    m_RootPath = current;
+                    break;
+                }
+                current = current.parent_path();
+            }
+
+            if (m_RootPath.empty())
+            {
+                m_RootPath = std::filesystem::current_path();
+            }
+        }
     }
     else
     {
@@ -124,15 +141,19 @@ std::string AssetManager::ResolvePath(const std::string& path) const
     if (path.starts_with(":"))
         return path;
 
+    std::string internalPath = path;
+    if (internalPath.starts_with("/") || internalPath.starts_with("\\"))
+        internalPath = internalPath.substr(1);
+
     {
         std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
-        if (auto it = m_PathCache.find(path); it != m_PathCache.end())
+        if (auto it = m_PathCache.find(internalPath); it != m_PathCache.end())
         {
             return it->second;
         }
     }
 
-    std::filesystem::path p(path);
+    std::filesystem::path p(internalPath);
     if (p.is_absolute())
     {
         return Project::NormalizePath(p).generic_string();
@@ -146,6 +167,11 @@ std::string AssetManager::ResolvePath(const std::string& path) const
     if (path.starts_with(Paths::EnginePrefix))
     {
         std::filesystem::path engineRoot = Project::GetEngineRoot();
+        if (engineRoot.empty() && !m_RootPath.empty())
+        {
+            engineRoot = m_RootPath;
+        }
+
         if (!engineRoot.empty())
         {
             std::string sub = path.substr(Paths::EnginePrefixSize);
@@ -201,7 +227,7 @@ std::string AssetManager::ResolvePath(const std::string& path) const
     // Final Fallback: use current directory or rootRel if set
     if (foundPath.empty() && !m_RootPath.empty())
     {
-        std::filesystem::path rootRel = m_RootPath / path;
+        std::filesystem::path rootRel = m_RootPath / internalPath;
         if (std::filesystem::exists(rootRel))
             foundPath = rootRel.string();
     }
@@ -443,6 +469,12 @@ void AssetManager::RemoveAsset(const std::string& path, AssetType type)
             cache.erase(it);
         }
     }
+}
+
+void AssetManager::ReloadAsset(const std::string& path, AssetType type)
+{
+    RemoveAsset(path, type);
+    GetAsset(path, type);
 }
 
 void AssetManager::Update()

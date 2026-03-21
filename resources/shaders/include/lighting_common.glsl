@@ -2,6 +2,7 @@
 uniform vec3 lightDir;
 uniform vec4 lightColor;
 uniform float ambient;
+uniform vec4 skyAmbientColor; // Color of the sky environment
 uniform vec3 viewPos;
 uniform float uTime;
 uniform int uLightCount;

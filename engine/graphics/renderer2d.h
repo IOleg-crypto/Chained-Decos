@@ -63,8 +63,8 @@ public:
     Renderer2D();
     ~Renderer2D();
 
-    void Init();
-    void Shutdown();
+    static void Init();
+    static void Shutdown();
 
     bool IsInitialized()
     {

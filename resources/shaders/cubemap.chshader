@@ -3,6 +3,6 @@ VertexShader: "cubemap.vs"
 FragmentShader: "cubemap.fs"
 
 Uniforms:
-  - matProjection
-  - matView
+  - projection
+  - view
   - equirectangularMap

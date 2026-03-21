@@ -8,8 +8,7 @@
 
 namespace CHEngine
 {
-class Physics;
-class Scene;
+
 
 class NarrowPhase
 {

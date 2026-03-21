@@ -4,6 +4,7 @@ add_library(engine_physics OBJECT
     narrow_phase.cpp
     scene_trace.cpp
     bvh/bvh.cpp
+    collision/collision_triangle.cpp
 
     physics.h
     dynamics.h
@@ -13,6 +14,7 @@ add_library(engine_physics OBJECT
     bvh/bvh_node.h
     collision/collision.h
     collision/collision_triangle.h
+    raycast_result.h
 )
 
 target_include_directories(engine_physics PUBLIC

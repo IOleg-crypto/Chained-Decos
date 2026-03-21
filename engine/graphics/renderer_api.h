@@ -11,6 +11,18 @@ class VertexArray;
 class RendererAPI
 {
 public:
+    enum class DepthFunc
+    {
+        Never = 0,
+        Less,
+        Equal,
+        LEqual,
+        Greater,
+        NotEqual,
+        GEqual,
+        Always
+    };
+
     enum class API
     {
         None = 0,
@@ -24,6 +36,8 @@ public:
     virtual void SetViewport(int x, int y, int width, int height) = 0;
     virtual void SetClearColor(const Color& color) = 0;
     virtual void Clear() = 0;
+    
+    virtual void SetDepthFunc(DepthFunc func) = 0;
 
     virtual void DrawIndexed(const std::shared_ptr<VertexArray>& vertexArray, uint32_t indexCount = 0) = 0;
 
