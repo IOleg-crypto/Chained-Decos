@@ -2,8 +2,8 @@
 #include "engine/scene/scene.h"
 #include "engine/physics/physics.h"
 #include "engine/physics/bvh/bvh.h"
-#include "engine/graphics/asset_manager.h"
-#include "engine/graphics/model_asset.h"
+#include "engine/core/assets/asset_manager.h"
+#include "engine/graphics/assets/model_asset.h"
 #include "engine/scene/components.h"
 #include "raymath.h"
 #include <float.h>

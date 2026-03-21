@@ -2,7 +2,7 @@
 #define CH_PHYSICS_COMPONENTS_H
 
 #include "engine/core/base.h"
-#include "engine/graphics/asset.h"
+#include "engine/core/assets/asset.h"
 #include "raylib.h"
 #include <future>
 #include <string>

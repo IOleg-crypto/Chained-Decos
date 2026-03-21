@@ -14,7 +14,7 @@
 #include "engine/audio/audio.h"
 #include "engine/audio/sound_asset.h"
 #include "engine/scene/project.h"
-#include "engine/graphics/asset_manager.h"
+#include "engine/core/assets/asset_manager.h"
 #include "raylib.h"
 #include "raymath.h"
 #include "script_glue.h"

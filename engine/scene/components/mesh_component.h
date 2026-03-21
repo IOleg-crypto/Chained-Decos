@@ -2,8 +2,8 @@
 #define CH_MESH_COMPONENT_H
 
 #include "engine/core/base.h"
-#include "engine/graphics/asset.h"
-#include "engine/graphics/material.h"
+#include "engine/core/assets/asset.h"
+#include "engine/graphics/pipeline/material.h"
 #include <string>
 #include <vector>
 

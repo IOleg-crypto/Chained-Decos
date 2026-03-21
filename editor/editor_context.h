@@ -1,7 +1,7 @@
 #ifndef CH_EDITOR_CONTEXT_H
 #define CH_EDITOR_CONTEXT_H
 
-#include "engine/graphics/renderer.h"
+#include "engine/graphics/pipeline/renderer.h"
 #include "engine/scene/scene.h"
 
 namespace CHEngine

@@ -1,9 +1,9 @@
 #include "property_editor.h"
 #include "editor/editor_layer.h"
 #include "editor_gui.h"
-#include "engine/graphics/asset_manager.h"
-#include "engine/graphics/model_asset.h"
-#include "engine/graphics/texture_asset.h"
+#include "engine/core/assets/asset_manager.h"
+#include "engine/graphics/assets/model_asset.h"
+#include "engine/graphics/assets/texture_asset.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
@@ -364,7 +364,7 @@ void PropertyEditor::Init()
                         if (component.AutoCalculate)
                         {
                             BoundingBox box = asset->GetBoundingBox();
-                            component.Offset = { 0, 0, 0 }; // Meshes should align with their pivot by default
+                            component.Offset = box.min; 
                             component.Size = Vector3Subtract(box.max, box.min);
                         }
                         PhysicsSystem::Get().InvalidateBVH(component.ModelPath);
