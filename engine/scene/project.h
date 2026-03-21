@@ -2,9 +2,9 @@
 #define CH_PROJECT_H
 
 #include "engine/core/base.h"
-#include "engine/graphics/asset_manager.h"
-#include "engine/graphics/environment.h"
-#include "engine/graphics/texture_asset.h"
+#include "engine/core/assets/asset_manager.h"
+#include "engine/graphics/assets/environment.h"
+#include "engine/graphics/assets/texture_asset.h"
 #include <filesystem>
 #include <memory>
 #include <string>

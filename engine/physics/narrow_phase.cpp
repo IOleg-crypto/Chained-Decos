@@ -8,8 +8,8 @@
 #include "engine/scene/project.h"
 #include "engine/scene/scene.h"
 #include "raymath.h"
-#include "engine/graphics/asset_manager.h"
-#include "engine/graphics/model_asset.h"
+#include "engine/core/assets/asset_manager.h"
+#include "engine/graphics/assets/model_asset.h"
 
 namespace CHEngine
 {
@@ -156,21 +156,56 @@ Vector3 NarrowPhase::ClosestPointTriangle(Vector3 p, Vector3 a, Vector3 b, Vecto
 
 NarrowPhase::CapsuleSegment NarrowPhase::GetCapsuleSegment(const TransformComponent& tc, const ColliderComponent& cc)
 {
-    Vector3 pos = Vector3Add(tc.Translation, cc.Offset);
+    // Extract properties from WorldTransform
+    Vector3 worldPos = { tc.WorldTransform.m12, tc.WorldTransform.m13, tc.WorldTransform.m14 };
+    
+    // Offset is in local space, so it must be rotated and scaled by WorldTransform
+    // However, for simplicity and performance in most games, we treat Offset as being in Entity space.
+    // To be perfectly accurate in a hierarchy:
+    Vector3 worldOffset = Vector3Subtract(Vector3Transform(cc.Offset, tc.WorldTransform), worldPos);
+    Vector3 pos = Vector3Add(worldPos, worldOffset);
+    
+    // For now, our capsule is always vertically aligned in world or local space?
+    // Usually capsules are character-aligned (vertical).
     float halfSeg = fmaxf(0.0f, cc.Height * 0.5f - cc.Radius);
-    return {{pos.x, pos.y - halfSeg, pos.z}, {pos.x, pos.y + halfSeg, pos.z}, cc.Radius};
+    
+    // Apply world scale to height/radius if needed? 
+    // Usually character capsules are not scaled much, but for robustness:
+    float worldScaleY = Vector3Length({tc.WorldTransform.m4, tc.WorldTransform.m5, tc.WorldTransform.m6});
+    float worldScaleXZ = fmaxf(Vector3Length({tc.WorldTransform.m0, tc.WorldTransform.m1, tc.WorldTransform.m2}), 
+                               Vector3Length({tc.WorldTransform.m8, tc.WorldTransform.m9, tc.WorldTransform.m10}));
+                               
+    float finalRadius = cc.Radius * worldScaleXZ;
+    float finalHalfSeg = halfSeg * worldScaleY;
+
+    return {{pos.x, pos.y - finalHalfSeg, pos.z}, {pos.x, pos.y + finalHalfSeg, pos.z}, finalRadius};
 }
 
 NarrowPhase::WorldAABB NarrowPhase::GetWorldAABB(const TransformComponent& tc, const ColliderComponent& cc)
 {
-    Vector3 scale = tc.Scale;
-    Vector3 min_offset = Vector3Multiply(cc.Offset, scale);
-    Vector3 max_offset = Vector3Multiply(Vector3Add(cc.Offset, cc.Size), scale);
-    
-    Vector3 world_min = Vector3Add(tc.Translation, min_offset);
-    Vector3 world_max = Vector3Add(tc.Translation, max_offset);
-    
-    return {Vector3Min(world_min, world_max), Vector3Max(world_min, world_max)};
+    // AABB must perfectly enclose the rotated/scaled box in world space.
+    // For a Box collider, cc.Offset is the minimum point and cc.Size is the extent.
+    Vector3 minLocal = cc.Offset;
+    Vector3 maxLocal = Vector3Add(cc.Offset, cc.Size);
+
+    Vector3 corners[8] = {
+        {minLocal.x, minLocal.y, minLocal.z}, {maxLocal.x, minLocal.y, minLocal.z},
+        {minLocal.x, maxLocal.y, minLocal.z}, {maxLocal.x, maxLocal.y, minLocal.z},
+        {minLocal.x, minLocal.y, maxLocal.z}, {maxLocal.x, minLocal.y, maxLocal.z},
+        {minLocal.x, maxLocal.y, maxLocal.z}, {maxLocal.x, maxLocal.y, maxLocal.z}
+    };
+
+    Vector3 worldMin = {FLT_MAX, FLT_MAX, FLT_MAX};
+    Vector3 worldMax = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
+
+    for (int i = 0; i < 8; i++)
+    {
+        Vector3 worldPt = Vector3Transform(corners[i], tc.WorldTransform);
+        worldMin = Vector3Min(worldMin, worldPt);
+        worldMax = Vector3Max(worldMax, worldPt);
+    }
+
+    return {worldMin, worldMax};
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -309,26 +344,28 @@ void NarrowPhase::ResolveBoxMesh(::entt::registry& registry, ::entt::entity rbEn
     auto bvh = PhysicsSystem::Get().GetBVH(otherCollider.ModelPath);
     if (!bvh) return;
 
-    // Build world-space AABB for the rigid body
-    NarrowPhase::WorldAABB rbAABB = NarrowPhase::GetWorldAABB(tc, rbc);
-    BoundingBox rbBox = {rbAABB.min, rbAABB.max};
-
     // Transform to mesh local space
-    Matrix meshMatrix = otherTc.GetTransform();
+    Matrix meshMatrix = otherTc.WorldTransform;
     Matrix invMeshMatrix = MatrixInvert(meshMatrix);
+    Matrix localToOtherLocal = MatrixMultiply(tc.WorldTransform, invMeshMatrix);
 
-    Vector3 corners[8] = {{rbBox.min.x, rbBox.min.y, rbBox.min.z}, {rbBox.max.x, rbBox.min.y, rbBox.min.z},
-                          {rbBox.min.x, rbBox.max.y, rbBox.min.z}, {rbBox.max.x, rbBox.max.y, rbBox.min.z},
-                          {rbBox.min.x, rbBox.min.y, rbBox.max.z}, {rbBox.max.x, rbBox.min.y, rbBox.max.z},
-                          {rbBox.min.x, rbBox.max.y, rbBox.max.z}, {rbBox.max.x, rbBox.max.y, rbBox.max.z}};
+    Vector3 minLocal = rbc.Offset;
+    Vector3 maxLocal = Vector3Add(rbc.Offset, rbc.Size);
+    Vector3 corners[8] = {
+        {minLocal.x, minLocal.y, minLocal.z}, {maxLocal.x, minLocal.y, minLocal.z},
+        {minLocal.x, maxLocal.y, minLocal.z}, {maxLocal.x, maxLocal.y, minLocal.z},
+        {minLocal.x, minLocal.y, maxLocal.z}, {maxLocal.x, minLocal.y, maxLocal.z},
+        {minLocal.x, maxLocal.y, maxLocal.z}, {maxLocal.x, maxLocal.y, maxLocal.z}
+    };
 
     BoundingBox localBox = {{1e30f, 1e30f, 1e30f}, {-1e30f, -1e30f, -1e30f}};
     for (int k = 0; k < 8; k++)
     {
-        Vector3 lc = Vector3Transform(corners[k], invMeshMatrix);
+        Vector3 lc = Vector3Transform(corners[k], localToOtherLocal);
         localBox.min = Vector3Min(localBox.min, lc);
         localBox.max = Vector3Max(localBox.max, lc);
     }
+
 
     Vector3 localNormal;
     float overlapDepth = -1.0f;
@@ -418,7 +455,7 @@ void NarrowPhase::ResolveCapsuleMesh(::entt::registry& registry, ::entt::entity 
     auto bvh = PhysicsSystem::Get().GetBVH(otherCollider.ModelPath);
     if (!bvh) return;
 
-    Matrix meshMatrix = otherTc.GetTransform();
+    Matrix meshMatrix = otherTc.WorldTransform;
     Matrix invMeshMatrix = MatrixInvert(meshMatrix);
 
     CapsuleSegment seg = GetCapsuleSegment(tc, capsule);
@@ -427,8 +464,13 @@ void NarrowPhase::ResolveCapsuleMesh(::entt::registry& registry, ::entt::entity 
     Vector3 localA = Vector3Transform(seg.a, invMeshMatrix);
     Vector3 localB = Vector3Transform(seg.b, invMeshMatrix);
 
-    float maxScale = fmaxf(otherTc.Scale.x, fmaxf(otherTc.Scale.y, otherTc.Scale.z));
-    float localRadius = (maxScale > 0.0001f) ? seg.radius / maxScale : seg.radius;
+    // localRadius should scale with local-to-world? 
+    // Actually, localRadius is in the mesh local space.
+    // If meshMatrix has scale, say 2.0, then a world radius of 1.0 becomes 0.5 in local space.
+    float worldScale = fmaxf(Vector3Length({meshMatrix.m0, meshMatrix.m1, meshMatrix.m2}), 
+                             fmaxf(Vector3Length({meshMatrix.m4, meshMatrix.m5, meshMatrix.m6}), 
+                                   Vector3Length({meshMatrix.m8, meshMatrix.m9, meshMatrix.m10})));
+    float localRadius = (worldScale > 0.0001f) ? seg.radius / worldScale : seg.radius;
 
     Vector3 minSeg = Vector3Min(localA, localB);
     Vector3 maxSeg = Vector3Max(localA, localB);
@@ -539,14 +581,18 @@ void NarrowPhase::ResolveSphereMesh(::entt::registry& registry, ::entt::entity r
     auto bvh = PhysicsSystem::Get().GetBVH(otherCollider.ModelPath);
     if (!bvh) return;
 
-    Matrix meshMatrix = otherTc.GetTransform();
+    Matrix meshMatrix = otherTc.WorldTransform;
     Matrix invMeshMatrix = MatrixInvert(meshMatrix);
 
-    Vector3 sphereWorldPos = Vector3Add(tc.Translation, sphere.Offset);
+    Vector3 sphereWorldPos = Vector3Add({tc.WorldTransform.m12, tc.WorldTransform.m13, tc.WorldTransform.m14}, 
+                                       Vector3Subtract(Vector3Transform(sphere.Offset, tc.WorldTransform), 
+                                                       {tc.WorldTransform.m12, tc.WorldTransform.m13, tc.WorldTransform.m14}));
     Vector3 sphereLocalPos = Vector3Transform(sphereWorldPos, invMeshMatrix);
 
-    float maxScale = fmaxf(otherTc.Scale.x, fmaxf(otherTc.Scale.y, otherTc.Scale.z));
-    float localRadius = (maxScale > 0.0001f) ? sphere.Radius / maxScale : sphere.Radius;
+    float worldScale = fmaxf(Vector3Length({meshMatrix.m0, meshMatrix.m1, meshMatrix.m2}), 
+                             fmaxf(Vector3Length({meshMatrix.m4, meshMatrix.m5, meshMatrix.m6}), 
+                                   Vector3Length({meshMatrix.m8, meshMatrix.m9, meshMatrix.m10})));
+    float localRadius = (worldScale > 0.0001f) ? sphere.Radius / worldScale : sphere.Radius;
 
     BoundingBox queryBox = {
         {sphereLocalPos.x - localRadius, sphereLocalPos.y - localRadius, sphereLocalPos.z - localRadius},

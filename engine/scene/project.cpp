@@ -1,7 +1,7 @@
 #include "project.h"
-#include "engine/graphics/asset_manager.h"
-#include "engine/graphics/environment.h"
-#include "engine/graphics/renderer.h"
+#include "engine/core/assets/asset_manager.h"
+#include "engine/graphics/assets/environment.h"
+#include "engine/graphics/pipeline/renderer.h"
 #include "imgui.h"
 #include "project_serializer.h"
 

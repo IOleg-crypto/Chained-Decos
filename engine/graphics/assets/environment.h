@@ -1,0 +1,81 @@
+#ifndef CH_ENVIRONMENT_H
+#define CH_ENVIRONMENT_H
+
+#include "engine/core/assets/asset.h"
+#include "engine/core/base.h"
+#include <raylib.h>
+#include <string>
+
+namespace CHEngine
+{
+
+struct SkyboxSettings
+{
+    std::string TexturePath;
+    int Mode = 0; // 0: Equirectangular, 1: Cross (Horizontal), 2: Cubemap (GPU)
+    float Exposure = 1.0f;
+    float Brightness = 0.0f;
+    float Contrast = 1.0f;
+};
+
+struct FogSettings
+{
+    bool Enabled = false;
+    int Mode = 0; // 0: Linear, 1: Exp, 2: Exp2
+    Color FogColor = GRAY;
+    float Density = 0.01f;
+    float Start = 10.0f;
+    float End = 100.0f;
+};
+
+struct LightingSettings
+{
+    Vector3 Direction = {-1.0f, -1.0f, -1.0f};
+    Color LightColor = WHITE;
+    float Ambient = 0.3f;
+    float Exposure = 1.0f;
+    float Gamma = 2.2f;
+};
+
+struct EnvironmentSettings
+{
+    LightingSettings Lighting;
+    SkyboxSettings Skybox;
+    FogSettings Fog;
+};
+
+class EnvironmentAsset : public Asset
+{
+public:
+    EnvironmentAsset()
+        : Asset(GetStaticType())
+    {
+    }
+    virtual ~EnvironmentAsset() = default;
+
+    static AssetType GetStaticType()
+    {
+        return AssetType::Environment;
+    }
+
+    const EnvironmentSettings& GetSettings() const
+    {
+        return m_Settings;
+    }
+    EnvironmentSettings& GetSettings()
+    {
+        return m_Settings;
+    }
+
+    void SetSettings(const EnvironmentSettings& settings)
+    {
+        m_Settings = settings;
+    }
+
+private:
+    EnvironmentSettings m_Settings;
+};
+
+} // namespace CHEngine
+
+#endif // CH_ENVIRONMENT_H

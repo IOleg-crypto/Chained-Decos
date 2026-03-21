@@ -2,8 +2,8 @@
 #define CH_SPRITE_COMPONENT_H
 
 #include "engine/core/base.h"
-#include "engine/graphics/asset.h"
-#include "engine/graphics/texture_asset.h"
+#include "engine/core/assets/asset.h"
+#include "engine/graphics/assets/texture_asset.h"
 #include <memory>
 #include <string>
 

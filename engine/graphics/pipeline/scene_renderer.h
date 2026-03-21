@@ -1,0 +1,125 @@
+#ifndef CH_SCENE_RENDERER_H
+#define CH_SCENE_RENDERER_H
+
+#include "engine/graphics/pipeline/renderer.h"
+#include "engine/scene/scene.h"
+#include "engine/scene/components/animation_component.h"
+#include "engine/scene/components/physics_component.h"
+#include "engine/core/profiler.h"
+#include <unordered_map>
+#include <memory>
+#include <string>
+#include <vector>
+
+namespace CHEngine
+{
+struct Frustum;
+
+struct SceneRenderOptions
+{
+    float TargetFPS = 60.0f;
+    std::shared_ptr<class EnvironmentAsset> EnvironmentOverride = nullptr;
+    
+    // Debug Rendering Flags
+    bool ShowDebugColliders = false;
+    bool ShowDebugCollisionModelBox = false;
+    bool ShowDebugSpawnZones = true;
+    bool DrawGrid = false;
+    bool ShowEditorIcons = true;
+};
+
+struct EditorResourcesData
+{
+    Texture2D LightIcon = {0};
+    Texture2D SpawnIcon = {0};
+    Texture2D CameraIcon = {0};
+};
+
+class SceneRenderer
+{
+public:
+    SceneRenderer() = default;
+    ~SceneRenderer() = default;
+
+public:
+    void RenderScene(Scene* scene, const Camera3D& camera, float nearClip, float farClip, Timestep timestep,
+                     const SceneRenderOptions& options);
+
+
+    // Internal methods used by RenderScene
+    void RenderModels(Scene* scene, const Camera3D& camera, float nearClip, float farClip, Timestep timestep,
+                      const SceneRenderOptions& options);
+    void RenderDebug(Scene* scene, const SceneRenderOptions& options);
+    void RenderEditorIcons(Scene* scene, const Camera3D& camera);
+    void RenderSprites(Scene* scene);
+
+private:
+    struct AnimatedEntry
+    {
+        std::shared_ptr<class ModelAsset> asset;
+        Matrix worldTransform;
+        std::vector<MaterialSlot> materials;
+        std::shared_ptr<class ShaderAsset> shaderOverride;
+        std::vector<ShaderUniform> customUniforms;
+        AnimationComponent animation;
+    };
+
+    struct InstanceKey
+    {
+        size_t Hash = 0;
+        InstanceKey(const std::string& path, const std::vector<MaterialSlot>& mats);
+        bool operator<(const InstanceKey& o) const { return Hash < o.Hash; }
+        bool operator==(const InstanceKey& o) const { return Hash == o.Hash; }
+    };
+
+    struct InstanceKeyHash
+    {
+        size_t operator()(const InstanceKey& k) const { return k.Hash; }
+    };
+
+    struct InstanceGroup
+    {
+        std::shared_ptr<class ModelAsset> asset;
+        std::vector<Matrix> transforms;
+        std::vector<MaterialSlot> materials;
+    };
+
+private:
+    void PrepareLights(entt::registry& registry, const Frustum& frustum);
+    void CollectRenderItems(entt::registry& registry, const Frustum& frustum,
+                            std::vector<AnimatedEntry>& animatedEntries,
+                            std::unordered_map<InstanceKey, InstanceGroup, InstanceKeyHash>& instanceGroups);
+    void DrawAnimatedEntities(const std::vector<AnimatedEntry>& animatedEntries, const SceneRenderOptions& options);
+    void DrawStaticEntities(std::unordered_map<InstanceKey, InstanceGroup, InstanceKeyHash>& instanceGroups);
+
+    void DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const Matrix& transform,
+                   const std::vector<MaterialSlot>& materialSlotOverrides = {},
+                   const std::vector<Matrix>& boneMatrices = {},
+                   const std::shared_ptr<ShaderAsset>& shaderOverride = nullptr,
+                   const std::vector<ShaderUniform>& shaderUniformOverrides = {});
+
+    Material ResolveMaterialForMesh(int meshIndex, const Model& model,
+                                    const std::vector<MaterialSlot>& materialSlotOverrides);
+
+    void BindShaderUniforms(ShaderAsset* shader, const std::vector<Matrix>& boneMatrices,
+                            const std::vector<ShaderUniform>& shaderUniformOverrides);
+
+    void BindMaterialUniforms(ShaderAsset* shader, const Material& material, int meshIndex,
+                              const Model& model, const std::vector<MaterialSlot>& materialSlotOverrides);
+
+    void DrawColliderDebug(entt::registry& registry, const SceneRenderOptions& options);
+    void DrawCollisionModelBoxDebug(entt::registry& registry, const SceneRenderOptions& options);
+    void DrawSpawnDebug(entt::registry& registry, const SceneRenderOptions& options);
+
+    static BoundingBox CalculateColliderWorldAABB(const ColliderComponent& collider, const Matrix& worldTransform);
+
+    static Matrix GetWorldTransform(entt::registry& registry, entt::entity entity);
+    static Vector3 GetWorldPosition(entt::registry& registry, entt::entity entity);
+
+private:
+    EditorResourcesData m_EditorResources;
+    ProfilerStats m_CurrentStats;
+};
+} // namespace CHEngine
+
+#endif // CH_SCENE_RENDERER_H

@@ -1,7 +1,7 @@
 #ifndef CH_CONTROL_COMPONENT_H
 #define CH_CONTROL_COMPONENT_H
 
-#include "engine/graphics/asset.h"
+#include "engine/core/assets/asset.h"
 #include <memory>
 #include <raylib.h>
 #include <raymath.h>

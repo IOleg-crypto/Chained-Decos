@@ -9,10 +9,10 @@
 #include "engine/core/profiler.h"
 #include "engine/core/thread_pool.h"
 #include "engine/core/window.h"
-#include "engine/graphics/asset_manager.h"
-#include "engine/graphics/environment.h"
-#include "engine/graphics/font_asset.h"
-#include "engine/graphics/renderer.h"
+#include "engine/core/assets/asset_manager.h"
+#include "engine/graphics/assets/environment.h"
+#include "engine/graphics/assets/font_asset.h"
+#include "engine/graphics/pipeline/renderer.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/component_serializer.h"
 #include "engine/scene/project.h"
@@ -28,9 +28,9 @@
 #ifndef GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_NONE
 #endif
-#include "engine/graphics/render_command.h"
-#include "engine/graphics/renderer2d.h"
-#include "engine/graphics/ui_renderer.h"
+#include "engine/graphics/pipeline/render_command.h"
+#include "engine/graphics/pipeline/renderer2d.h"
+#include "engine/graphics/pipeline/ui_renderer.h"
 #include <GLFW/glfw3.h>
 
 namespace CHEngine

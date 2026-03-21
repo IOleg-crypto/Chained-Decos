@@ -6,7 +6,7 @@
 #include "engine/core/input.h"
 
 #include "engine/core/profiler.h"
-#include "engine/graphics/asset_manager.h"
+#include "engine/core/assets/asset_manager.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
