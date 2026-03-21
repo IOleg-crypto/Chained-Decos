@@ -2,7 +2,7 @@
 #define CH_GAME_COMPONENTS_H
 
 #include "engine/core/base.h"
-#include "engine/graphics/asset.h"
+#include "engine/core/assets/asset.h"
 #include "engine/scene/components/control_component.h"
 #include "raylib.h"
 #include <string>

@@ -8,7 +8,7 @@
 #include "engine/core/application.h"
 #include "engine/core/base.h"
 #include "engine/core/layer.h"
-#include "engine/graphics/renderer.h"
+#include "engine/graphics/pipeline/renderer.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_events.h"
 #include "imgui.h"

@@ -10,6 +10,10 @@ add_library(engine_core OBJECT
     settings_manager.cpp
     dialogs.cpp
     filesystem_utils.cpp
+    assets/asset_manager.cpp
+    assets/asset.h
+    assets/asset_manager.h
+    assets/asset_loader.h
 
     # Platform specific implementations
     $<$<PLATFORM_ID:Windows>:../platform/windows/windows_window.cpp>
@@ -42,10 +46,12 @@ target_include_directories(engine_core PUBLIC
     ${CMAKE_SOURCE_DIR}/include/imgui
     ${CMAKE_SOURCE_DIR}/include/imgui/backends
     ${CMAKE_SOURCE_DIR}/include/raylib/src/external/glfw/include
+    ${CMAKE_SOURCE_DIR}/include/assimp/include
+    ${CMAKE_BINARY_DIR}/include/assimp/include
 )
 
 # Core module uses yaml-cpp for some configurations
-target_link_libraries(engine_core PUBLIC yaml-cpp raylib imguilib EnTT Coral.Native nfd)
+target_link_libraries(engine_core PUBLIC yaml-cpp raylib imguilib EnTT Coral.Native nfd assimp)
 
 # Apply common macro configurations and compiler flags
 # (Redundant /bigobj flags removed - now in CompilerSettings.cmake)
