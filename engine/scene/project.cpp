@@ -67,6 +67,12 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path& path)
             AssetManager::Get().AddSearchPath(s_EngineRoot / "resources");
         }
 
+        // Load engine shaders now that search paths are set correctly
+        if (Renderer::IsInitialized())
+        {
+            Renderer::LoadEngineResources();
+        }
+
         // Load environment if specified
         if (!project->m_Config.EnvironmentPath.empty())
         {

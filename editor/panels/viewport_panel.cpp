@@ -269,8 +269,8 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
             Renderer::Get().Clear(BLACK);
             const char* msg = "No Primary Camera Found in Scene!";
             int fontSize = 20;
-            int textWidth = Renderer::Get().MeasureText(msg, fontSize);
-            Renderer::Get().DrawText(msg, (int)viewportSize.x / 2 - textWidth / 2, (int)viewportSize.y / 2 - 10,
+            int textWidth = ::MeasureText(msg, fontSize);
+            ::DrawText(msg, (int)viewportSize.x / 2 - textWidth / 2, (int)viewportSize.y / 2 - 10,
                                      fontSize, GRAY);
         }
         m_HDRFramebuffer->Unbind();
@@ -280,8 +280,7 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         Renderer::Get().Clear(BLACK);
         RenderTexture2D* hdrTex = (RenderTexture2D*)m_HDRFramebuffer->GetNativeFramebuffer();
         Rectangle source = {0, 0, (float)hdrTex->texture.width, (float)-hdrTex->texture.height};
-        Renderer::Get().DrawTexture(hdrTex->texture, source, {0, 0, (float)m_ViewportSize.x, (float)m_ViewportSize.y},
-                                    {0, 0}, 0.0f, WHITE);
+        ::DrawTextureRec(hdrTex->texture, source, {0, 0}, WHITE);
         m_ViewportFramebuffer->Unbind();
     }
 
@@ -465,7 +464,7 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
     ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5, 5));
 
-    if (ImGui::BeginChild("##FloatingToolbar", ImVec2(600, 40), true,
+    if (ImGui::BeginChild("##FloatingToolbar", ImVec2(850, 40), true,
                           ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
     {
         ImGui::SetCursorPosY(6); // Center align vertically-ish
@@ -473,19 +472,49 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
 
         DrawGizmoButtons();
 
-        ImGui::SameLine(0, 10);
-        ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
-        ImGui::SameLine(0, 10);
-
         DrawCameraSelector(activeScene.get());
-
+        
         ImGui::SameLine(0, 10);
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
         ImGui::SameLine(0, 10);
+
+        // Snapping toggle
+        bool snapping = m_Gizmo.IsSnappingEnabled();
+        if (snapping) ImGui::PushStyleColor(ImGuiCol_Text, {0.3f, 0.8f, 1.0f, 1.0f});
+        if (ImGui::Button(ICON_FA_MAGNET "##SnapToggle", {28, 28}))
+        {
+            m_Gizmo.SetSnapping(!snapping);
+        }
+        if (snapping) ImGui::PopStyleColor();
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Enable Grid Snapping");
+
+        ImGui::SameLine(0, 5);
+        float gridSize = m_Gizmo.GetGridSize();
+        ImGui::SetNextItemWidth(45);
+        if (ImGui::DragFloat("##SnapValue", &gridSize, 0.1f, 0.1f, 10.0f, "%.1f"))
+        {
+            m_Gizmo.SetGridSize(gridSize);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Grid Snap Size");
+
+        ImGui::SameLine(0, 10);
+        
+        // Local/World toggle
+        bool isLocal = m_Gizmo.IsLocalSpace();
+        if (ImGui::Button(isLocal ? (ICON_FA_CUBE " Local") : (ICON_FA_EARTH_AMERICAS " World"), {70, 28}))
+        {
+            m_Gizmo.SetLocalSpace(!isLocal);
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Toggle Local/World Space");
+
+        ImGui::SameLine(0, 15);
+        ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+        ImGui::SameLine(0, 15);
 
         // Playback Tools
         SceneState sceneState = EditorLayer::Get().GetSceneState();
         bool isPlaying = (sceneState == SceneState::Play);
+        ImGui::SameLine(0, 10);
 
         if (isPlaying)
         {

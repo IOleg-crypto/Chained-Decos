@@ -10,21 +10,40 @@
 #include <algorithm>
 #include <map>
 
+#include "imgui.h"
+#include <map>
+#include <vector>
+#include "entt/entt.hpp"
+
 namespace CHEngine
 {
+// Internal implementation detail
+struct UIRendererData
+{
+    std::map<entt::entity, std::vector<char>> InputBuffers;
+};
+UIRenderer* UIRenderer::s_Instance = nullptr;
+
 UIRenderer& UIRenderer::Get()
 {
-    return Renderer::Get().GetUIRenderer();
+    CH_CORE_ASSERT(s_Instance, "UIRenderer not initialized!");
+    return *s_Instance;
 }
 
 void UIRenderer::Init()
 {
+    if (!s_Instance) s_Instance = new UIRenderer();
     CH_CORE_INFO("Initializing UIRenderer (ImGui Backend)...");
 }
 
 void UIRenderer::Shutdown()
 {
-    CH_CORE_INFO("Shutting down UIRenderer...");
+    if (s_Instance)
+    {
+        CH_CORE_INFO("Shutting down UIRenderer...");
+        delete s_Instance;
+        s_Instance = nullptr;
+    }
 }
 
 UIRenderer::UIRenderer()

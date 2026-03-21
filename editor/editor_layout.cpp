@@ -54,13 +54,7 @@ void EditorLayout::EndWorkspace()
 void EditorLayout::DrawInterface()
 {
     auto& layer = EditorLayer::Get();
-    bool isPlaying = (layer.GetSceneState() == SceneState::Play);
-
-    if (ImGui::BeginMenuBar())
-    {
-        EditorGUI::DrawMenuBar(layer.GetPanels());
-        ImGui::EndMenuBar();
-    }
+    EditorGUI::DrawMenuBar(layer.GetPanels());
 }
 
 void EditorLayout::ResetLayout()

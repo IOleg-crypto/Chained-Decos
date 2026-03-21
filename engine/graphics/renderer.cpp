@@ -2,25 +2,16 @@
 #include "engine/core/application.h"
 #include "engine/core/log.h"
 #include "engine/core/profiler.h"
-#include "engine/graphics/asset_manager.h"
-#include "engine/graphics/model_asset.h"
 #include "engine/graphics/renderer2d.h"
-#include "engine/graphics/scene_renderer.h"
-#include "engine/graphics/shader_asset.h"
-#include "engine/graphics/texture_asset.h"
 #include "engine/graphics/ui_renderer.h"
-#include "engine/scene/components.h"
-#include "engine/scene/project.h"
-#include "engine/scene/scene.h"
-#include "imgui.h"
+#include "engine/graphics/shader_asset.h"
+#include "engine/graphics/asset_manager.h"
+#include "engine/graphics/texture_asset.h"
 #include "rlgl.h"
 #include <algorithm>
-#include <filesystem>
 #include <vector>
 
 #include "render_command.h"
-#include "renderer2d.h"
-#include "ui_renderer.h"
 
 namespace CHEngine
 {
@@ -45,46 +36,18 @@ void Renderer::Init()
     s_Instance->InternalInit();
 }
 
-void Renderer::InternalInit()
+void Renderer::LoadEngineResources()
 {
-    CH_CORE_INFO("Initializing Render System...");
-    CH_CORE_ASSERT(s_Instance == this, "Renderer instance mismatch!");
-
-    if (Application::Get().GetSpecification().Headless)
-    {
-        CH_CORE_INFO("Renderer: Headless mode, skipping GL initialization.");
-        return;
-    }
-
-    RenderCommand::Initialize();
-
-    m_Renderer2D->Init();
-    m_UIRenderer->Init();
-
-    // Initialize SSBO for lights
-    m_Data->Lighting.LightSSBO =
-        rlLoadShaderBuffer(sizeof(RenderLight) * LightingData::MaxLights, nullptr, RL_DYNAMIC_DRAW);
-    m_Data->Lighting.LightsDirty = true;
-
-    InitializeSkybox();
-    CH_CORE_INFO("Render System Initialized (Core).");
-}
-
-void Renderer::LoadEngineResources(AssetManager& assetManager)
-{
-    CH_CORE_INFO("Renderer: Loading engine materials and shaders...");
-    auto& renderer = Renderer::Get();
-    auto& lib = renderer.GetShaderLibrary();
-
-    // Shaders loading - through AssetManager into the Library
+    auto& shaders = Get().GetShaderLibrary();
+    
     auto loadShader = [&](const std::string& name, const std::string& path) {
-        auto shader = assetManager.Get<ShaderAsset>(path);
-        if (shader)
-        {
-            lib.Add(name, shader);
-            return true;
+        shaders.Load(name, path);
+        if (shaders.Exists(name)) {
+            auto shader = shaders.Get(name);
+            CH_CORE_INFO("Renderer: Loaded engine shader '{}' from '{}'", name, path);
+        } else {
+            CH_CORE_ERROR("Renderer: Failed to load engine shader '{}' from '{}'!", name, path);
         }
-        return false;
     };
 
     loadShader("Lighting", "resources/shaders/lighting.chshader");
@@ -93,19 +56,28 @@ void Renderer::LoadEngineResources(AssetManager& assetManager)
     loadShader("CubemapGen", "resources/shaders/cubemap.chshader");
     loadShader("SkyboxCubemap", "resources/shaders/skybox_cubemap.chshader");
     loadShader("PostProcess", "resources/shaders/post_process.chshader");
+}
 
-    // Icons
-    auto loadIcon = [&](Texture2D& target, const std::string& path) {
-        auto tex = assetManager.Get<TextureAsset>(path);
-        if (tex)
-        {
-            target = tex->GetTexture();
-        }
-    };
+void Renderer::InternalInit()
+{
+    CH_CORE_INFO("Initializing Render System (Low-Level)...");
+    
+    if (Application::Get().GetSpecification().Headless)
+    {
+        return;
+    }
 
-    loadIcon(renderer.m_Data->EditorResources.LightIcon, "resources/icons/light_bulb.png");
-    loadIcon(renderer.m_Data->EditorResources.SpawnIcon, "resources/icons/leaf_icon.png");
-    loadIcon(renderer.m_Data->EditorResources.CameraIcon, "resources/icons/camera_icon.png");
+    RenderCommand::Initialize();
+
+    // Initialize SSBO for lights
+    m_Data->Lighting.LightSSBO =
+        rlLoadShaderBuffer(sizeof(RenderLight) * LightingData::MaxLights, nullptr, RL_DYNAMIC_DRAW);
+    m_Data->Lighting.LightsDirty = true;
+
+    InitializeSkybox();
+    
+    // Always load engine resources after initialization
+    LoadEngineResources();
 }
 
 void Renderer::Shutdown()
@@ -121,75 +93,26 @@ void Renderer::Shutdown()
 void Renderer::InternalShutdown()
 {
     CH_CORE_INFO("Shutting down Render System...");
-    if (m_Renderer2D)
-    {
-        m_Renderer2D->Shutdown();
-    }
-    if (m_UIRenderer)
-    {
-        m_UIRenderer->Shutdown();
-    }
 
-    if (Application::Get().GetSpecification().Headless)
-    {
-        s_Instance = nullptr;
-        return;
-    }
+    if (Application::Get().GetSpecification().Headless) return;
 
     CleanupSkybox();
-    s_Instance = nullptr;
-}
-
-void Renderer::CleanupSkybox()
-{
-    if (m_Data->Skybox.SkyboxCube.meshes != nullptr)
+    
+    if (m_Data->Lighting.LightSSBO > 0)
     {
-        UnloadModel(m_Data->Skybox.SkyboxCube);
-        m_Data->Skybox.SkyboxCube.meshes = nullptr;
+        rlUnloadShaderBuffer(m_Data->Lighting.LightSSBO);
     }
-
-    // Default material doesn't need explicit unloading of its shader/textures
-    // unless they were loaded specifically. UnloadMaterial handles maps.
-    UnloadMaterial(m_Data->Skybox.SkyboxMaterial);
 }
 
 Renderer::Renderer()
 {
-    CH_CORE_ASSERT(!s_Instance, "Renderer already exists!");
     s_Instance = this;
-
     m_Data = std::make_unique<RendererData>();
-    m_Renderer2D = std::make_unique<Renderer2D>();
-    m_UIRenderer = std::make_unique<UIRenderer>();
-
     m_Data->Shaders = std::make_unique<ShaderLibrary>();
 }
 
 Renderer::~Renderer()
 {
-    if (Application::Get().GetSpecification().Headless)
-    {
-        return;
-    }
-
-    if (m_Data->EditorResources.LightIcon.id > 0)
-    {
-        ::UnloadTexture(m_Data->EditorResources.LightIcon);
-    }
-    if (m_Data->EditorResources.SpawnIcon.id > 0)
-    {
-        ::UnloadTexture(m_Data->EditorResources.SpawnIcon);
-    }
-    if (m_Data->EditorResources.CameraIcon.id > 0)
-    {
-        ::UnloadTexture(m_Data->EditorResources.CameraIcon);
-    }
-
-    if (m_Data->Lighting.LightSSBO > 0)
-    {
-        rlUnloadShaderBuffer(m_Data->Lighting.LightSSBO);
-    }
-
     InternalShutdown();
 }
 
@@ -205,30 +128,56 @@ void Renderer::BeginScene(const Camera3D& camera)
         m_Data->Lighting.LightsDirty = false;
     }
 
-    // Push global shader uniforms once per frame for the Lighting shader
-    if (auto lightingShader = m_Data->Shaders->Exists("Lighting") ? m_Data->Shaders->Get("Lighting") : nullptr)
+    // Bind lighting uniforms to the default lighting shader if it exists
+    auto lightingShader = m_Data->Shaders->Exists("Lighting") ? m_Data->Shaders->Get("Lighting") : nullptr;
+    if (lightingShader)
     {
-        rlEnableShader(lightingShader->GetShader().id);
-        lightingShader->SetVec3("viewPos", camera.position);
-        lightingShader->SetFloat("uTime", m_Data->Time);
-        lightingShader->SetFloat("uMode", m_Data->DiagnosticMode);
-        lightingShader->SetVec3("lightDir", m_Data->Lighting.CurrentLighting.Direction);
-        lightingShader->SetColor("lightColor", m_Data->Lighting.CurrentLighting.LightColor);
-        lightingShader->SetFloat("ambient", m_Data->Lighting.CurrentLighting.Ambient);
-        lightingShader->SetInt("uLightCount", m_Data->LightCount);
-        lightingShader->SetFloat("uExposure", m_Data->Lighting.CurrentLighting.Exposure);
-        lightingShader->SetFloat("uGamma", m_Data->Lighting.CurrentLighting.Gamma);
-        ApplyFogUniforms(lightingShader.get());
+        Shader shader = lightingShader->GetShader();
+        rlEnableShader(shader.id);
+        
+        float time = m_Data->Time;
+        float diagMode = m_Data->DiagnosticMode;
+        int lightCount = m_Data->LightCount;
+        float ambient = m_Data->Lighting.CurrentLighting.Ambient;
+        float exposure = m_Data->Lighting.CurrentLighting.Exposure;
+        float gamma = m_Data->Lighting.CurrentLighting.Gamma;
+
+        SetShaderValue(shader, GetShaderLocation(shader, "viewPos"), &camera.position, SHADER_UNIFORM_VEC3);
+        SetShaderValue(shader, GetShaderLocation(shader, "uTime"), &time, SHADER_UNIFORM_FLOAT);
+        SetShaderValue(shader, GetShaderLocation(shader, "uMode"), &diagMode, SHADER_UNIFORM_FLOAT);
+        SetShaderValue(shader, GetShaderLocation(shader, "lightDir"), &m_Data->Lighting.CurrentLighting.Direction, SHADER_UNIFORM_VEC3);
+        
+        Vector4 lightColor = ColorNormalize(m_Data->Lighting.CurrentLighting.LightColor);
+        SetShaderValue(shader, GetShaderLocation(shader, "lightColor"), &lightColor, SHADER_UNIFORM_VEC4);
+        
+        SetShaderValue(shader, GetShaderLocation(shader, "ambient"), &ambient, SHADER_UNIFORM_FLOAT);
+        
+        // Pass Sky Ambient Color (Simplest IBL)
+        // In a full implementation, this would be the Irradiance Map.
+        // For now, we use a color that represents the sky's influence.
+        Vector4 skyColor = ColorNormalize(m_Data->Lighting.CurrentLighting.LightColor);
+        skyColor.w = ambient * 0.35f; // Reduced intensity for sky ambient
+        SetShaderValue(shader, GetShaderLocation(shader, "skyAmbientColor"), &skyColor, SHADER_UNIFORM_VEC4);
+
+        SetShaderValue(shader, GetShaderLocation(shader, "uLightCount"), &lightCount, SHADER_UNIFORM_INT);
+        SetShaderValue(shader, GetShaderLocation(shader, "uExposure"), &exposure, SHADER_UNIFORM_FLOAT);
+        SetShaderValue(shader, GetShaderLocation(shader, "uGamma"), &gamma, SHADER_UNIFORM_FLOAT);
+        
+        ApplyFogUniforms(shader);
         rlBindShaderBuffer(m_Data->Lighting.LightSSBO, 0);
-        m_Data->CurrentShader = lightingShader.get();
+        m_Data->CurrentShaderId = shader.id;
     }
 
     BeginMode3D(camera);
+
+    // Store matrices for Post-Processing (Inverse View-Proj)
+    m_Data->CurrentView = rlGetMatrixModelview();
+    m_Data->CurrentProj = rlGetMatrixProjection();
 }
 
 void Renderer::EndScene()
 {
-    m_Data->CurrentShader = nullptr;
+    m_Data->CurrentShaderId = 0;
     EndMode3D();
 }
 
@@ -242,101 +191,150 @@ void Renderer::SetViewport(int x, int y, int width, int height)
     RenderCommand::SetViewport(x, y, width, height);
 }
 
-void Renderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const Matrix& transform,
-                         const std::vector<MaterialSlot>& materialSlotOverrides, int animationIndex, float frameIndex,
-                         int targetAnimationIndex, float targetFrameIndex, float blendWeight,
-                         const std::shared_ptr<ShaderAsset>& shaderOverride,
-                         const std::vector<ShaderUniform>& shaderUniformOverrides)
+void Renderer::DrawMesh(const Mesh& mesh, const Material& material, const Matrix& transform)
 {
-    CH_CORE_ASSERT(IsInitialized(), "Renderer not initialized!");
-    if (!modelAsset || modelAsset->GetState() != AssetState::Ready)
-    {
-        if (modelAsset && modelAsset->GetState() == AssetState::Failed)
-        {
-            static std::string lastFailed = "";
-            if (lastFailed != modelAsset->GetPath())
-            {
-                // CH_CORE_WARN("Renderer::DrawModel - Model asset failed to load: {}", modelAsset->GetPath());
-                lastFailed = modelAsset->GetPath();
-            }
-        }
+    ::DrawMesh(mesh, material, transform);
+}
+
+void Renderer::DrawMeshInstanced(const Mesh& mesh, const Material& material, const std::vector<Matrix>& transforms)
+{
+    if (transforms.empty()) return;
+    ::DrawMeshInstanced(mesh, material, transforms.data(), (int)transforms.size());
+}
+
+void Renderer::DrawLine(Vector3 start, Vector3 end, Color color)
+{
+    ::DrawLine3D(start, end, color);
+}
+void Renderer::DrawMeshWire(const Mesh& mesh, Color color, const Matrix& transform)
+{
+    rlPushMatrix();
+    rlMultMatrixf(MatrixToFloat(transform));
+    rlEnableWireMode();
+    // Reusing standard material for color
+    Material mat = LoadMaterialDefault();
+    mat.maps[MATERIAL_MAP_ALBEDO].color = color;
+    ::DrawMesh(mesh, mat, MatrixIdentity());
+    rlDisableWireMode();
+    rlPopMatrix();
+}
+
+void Renderer::DrawGrid(int slices, float spacing)
+{
+    ::DrawGrid(slices, spacing);
+}
+
+void Renderer::DrawSkybox(const SkyboxSettings& settings, const Camera3D& camera)
+{
+    if (settings.TexturePath.empty())
         return;
-    }
 
-    Model& model = modelAsset->GetModel();
+    auto texture = AssetManager::Get().Get<TextureAsset>(settings.TexturePath);
+    if (!texture || texture->GetState() != AssetState::Ready)
+        return;
 
-    std::vector<Matrix> boneMatrices = ComputeBoneMatrices(modelAsset, animationIndex, frameIndex, targetAnimationIndex,
-                                                           targetFrameIndex, blendWeight);
+    bool isCubemap = (settings.Mode == 2);
+    auto shaderAsset = isCubemap && m_Data->Shaders->Exists("SkyboxCubemap") ? 
+                       m_Data->Shaders->Get("SkyboxCubemap") : 
+                       m_Data->Shaders->Get("Skybox");
+    Shader shader = shaderAsset->GetShader();
 
-    for (int i = 0; i < model.meshCount; i++)
+    // 1. Generate Cubemap (Mode 2)
+    if (isCubemap)
     {
-        Material material = ResolveMaterialForMesh(i, model, materialSlotOverrides);
-        auto activeShaderAsset =
-            shaderOverride ? shaderOverride
-                           : (m_Data->Shaders->Exists("Lighting") ? m_Data->Shaders->Get("Lighting") : nullptr);
-        Matrix meshTransform = MatrixMultiply(model.transform, transform);
-
-        if (activeShaderAsset)
+        Texture2D tex = texture->GetTexture();
+        if (m_Data->Skybox.CachedCubemap.id == 0 || 
+            m_Data->Skybox.CachedCubemapPath != settings.TexturePath ||
+            m_Data->Skybox.SourceTextureId != tex.id)
         {
-            ShaderAsset* shader = activeShaderAsset.get();
-            if (shader != m_Data->CurrentShader)
+            if (m_Data->Shaders->Exists("CubemapGen"))
             {
-                // Shader switch — a non-default override shader; re-upload globals
-                rlEnableShader(shader->GetShader().id);
-                shader->SetVec3("viewPos", m_Data->CurrentCameraPosition);
-                shader->SetFloat("uTime", m_Data->Time);
-                shader->SetFloat("uMode", m_Data->DiagnosticMode);
-                shader->SetVec3("lightDir", m_Data->Lighting.CurrentLighting.Direction);
-                shader->SetColor("lightColor", m_Data->Lighting.CurrentLighting.LightColor);
-                shader->SetFloat("ambient", m_Data->Lighting.CurrentLighting.Ambient);
-                shader->SetInt("uLightCount", m_Data->LightCount);
-                shader->SetFloat("uExposure", m_Data->Lighting.CurrentLighting.Exposure);
-                shader->SetFloat("uGamma", m_Data->Lighting.CurrentLighting.Gamma);
-                ApplyFogUniforms(shader);
-                rlBindShaderBuffer(m_Data->Lighting.LightSSBO, 0);
-                m_Data->CurrentShader = shader;
+                if (m_Data->Skybox.CachedCubemap.id != 0) UnloadTexture(m_Data->Skybox.CachedCubemap);
+
+                auto genShader = m_Data->Shaders->Get("CubemapGen")->GetShader();
+                int isHDR = texture->IsHDR() ? 1 : 0;
+                int targetFmt = isHDR ? RL_PIXELFORMAT_UNCOMPRESSED_R16G16B16A16 : RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+                
+                m_Data->Skybox.CachedCubemap = GenTextureCubemap(genShader, tex, 1024, targetFmt);
+                m_Data->Skybox.CachedCubemapPath = settings.TexturePath;
+                m_Data->Skybox.SourceTextureId = tex.id;
+                
+                rlCubemapParameters(m_Data->Skybox.CachedCubemap.id, RL_TEXTURE_MAG_FILTER, RL_TEXTURE_FILTER_LINEAR);
+                rlCubemapParameters(m_Data->Skybox.CachedCubemap.id, RL_TEXTURE_MIN_FILTER, RL_TEXTURE_FILTER_LINEAR);
+                rlCubemapParameters(m_Data->Skybox.CachedCubemap.id, RL_TEXTURE_WRAP_S, RL_TEXTURE_WRAP_CLAMP);
+                rlCubemapParameters(m_Data->Skybox.CachedCubemap.id, RL_TEXTURE_WRAP_T, RL_TEXTURE_WRAP_CLAMP);
+                rlCubemapParameters(m_Data->Skybox.CachedCubemap.id, 0x8072, RL_TEXTURE_WRAP_CLAMP); // GL_TEXTURE_WRAP_R
             }
-
-            BindShaderUniforms(shader, boneMatrices, shaderUniformOverrides);
-            BindMaterialUniforms(shader, material, i, model, materialSlotOverrides);
-
-            Shader originalShader = material.shader;
-            material.shader = shader->GetShader();
-
-            ProfilerStats stats;
-            stats.DrawCalls++;
-            stats.MeshCount++;
-            stats.PolyCount += model.meshes[i].triangleCount;
-            Profiler::UpdateStats(stats);
-
-            DrawMesh(model.meshes[i], material, meshTransform);
-            material.shader = originalShader;
-        }
-        else
-        {
-            DrawMesh(model.meshes[i], material, meshTransform);
         }
     }
+
+    // 2. Prepare Render State
+    rlDrawRenderBatchActive();
+    RenderCommand::SetDepthFunc(RendererAPI::DepthFunc::LEqual);
+    rlDisableBackfaceCulling();
+    rlDisableDepthMask();
+
+    // 3. Setup Uniforms
+    rlEnableShader(shader.id);
+    
+    int projLoc = GetShaderLocation(shader, "projection");
+    int viewLoc = GetShaderLocation(shader, "view");
+    if (projLoc != -1) SetShaderValueMatrix(shader, projLoc, m_Data->CurrentProj);
+    if (viewLoc != -1) SetShaderValueMatrix(shader, viewLoc, m_Data->CurrentView);
+
+    float exposure = settings.Exposure, bright = settings.Brightness, contrast = settings.Contrast;
+    SetShaderValue(shader, GetShaderLocation(shader, "exposure"), &exposure, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(shader, GetShaderLocation(shader, "brightness"), &bright, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(shader, GetShaderLocation(shader, "contrast"), &contrast, SHADER_UNIFORM_FLOAT);
+    
+    int isHDR = texture->IsHDR() ? 1 : 0;
+    SetShaderValue(shader, GetShaderLocation(shader, "isHDR"), &isHDR, SHADER_UNIFORM_INT);
+    
+    int skyboxMode = settings.Mode;
+    SetShaderValue(shader, GetShaderLocation(shader, "skyboxMode"), &skyboxMode, SHADER_UNIFORM_INT);
+    
+    int vflipped = 1; // Default to flipping V for proper orientation
+    SetShaderValue(shader, GetShaderLocation(shader, "vflipped"), &vflipped, SHADER_UNIFORM_INT);
+
+    ApplyFogUniforms(shader);
+
+    // 4. Bind Textures and Draw
+    m_Data->Skybox.SkyboxCube.materials[0].shader = shader;
+    
+    if (isCubemap)
+    {
+        m_Data->Skybox.SkyboxMaterial.maps[MATERIAL_MAP_ALBEDO].texture.id = 0;
+        int slot = 0;
+        SetShaderValue(shader, GetShaderLocation(shader, "environmentMap"), &slot, SHADER_UNIFORM_INT);
+        
+        rlActiveTextureSlot(0);
+        rlEnableTextureCubemap(m_Data->Skybox.CachedCubemap.id);
+    }
+    else
+    {
+        m_Data->Skybox.SkyboxCube.materials[0].maps[MATERIAL_MAP_ALBEDO].texture = texture->GetTexture();
+    }
+    
+    // Draw at 0,0,0. Shader handles view rotation and depth trick
+    ::DrawModel(m_Data->Skybox.SkyboxCube, Vector3{0, 0, 0}, 1.0f, WHITE);
+
+    // 5. Restore Render State
+    rlDrawRenderBatchActive();
+    RenderCommand::SetDepthFunc(RendererAPI::DepthFunc::Less);
+    rlEnableBackfaceCulling();
+    rlEnableDepthMask();
 }
 
-void Renderer::DrawLine(Vector3 startPosition, Vector3 endPosition, Color color)
+void Renderer::DrawBillboard(const Camera3D& camera, Texture2D texture, Vector3 position, float size, Color tint)
 {
-    DrawLine3D(startPosition, endPosition, color);
-}
-
-void Renderer::DrawGrid(int sliceCount, float spacing)
-{
-    ::DrawGrid(sliceCount, spacing);
+    ::DrawBillboard(camera, texture, position, size, tint);
 }
 
 void Renderer::DrawCubeWires(const Matrix& transform, Vector3 size, Color color)
 {
-    // Draw oriented wireframe box using transform matrix
     rlPushMatrix();
     rlMultMatrixf(MatrixToFloat(transform));
-
-    ::DrawCubeWires({0.0f, 0.0f, 0.0f}, size.x, size.y, size.z, color);
-
+    ::DrawCubeWires({0}, size.x, size.y, size.z, color);
     rlPopMatrix();
 }
 
@@ -344,26 +342,7 @@ void Renderer::DrawCapsuleWires(const Matrix& transform, float radius, float hei
 {
     rlPushMatrix();
     rlMultMatrixf(MatrixToFloat(transform));
-
-    float cylinderHeight = height - 2.0f * radius;
-    if (cylinderHeight < 0)
-    {
-        cylinderHeight = 0;
-    }
-    float halfCylinder = cylinderHeight * 0.5f;
-
-    // Draw Cylinder (aligned to Y axis)
-    if (cylinderHeight > 0)
-    {
-        Vector3 start = {0, -halfCylinder, 0};
-        Vector3 end = {0, halfCylinder, 0};
-        ::DrawCylinderWiresEx(start, end, radius, radius, 8, color);
-    }
-
-    // Draw Caps
-    ::DrawSphereWires({0, -halfCylinder, 0}, radius, 8, 8, color);
-    ::DrawSphereWires({0, halfCylinder, 0}, radius, 8, 8, color);
-
+    ::DrawCapsuleWires({0, -height*0.5f, 0}, {0, height*0.5f, 0}, radius, 8, 8, color);
     rlPopMatrix();
 }
 
@@ -371,287 +350,65 @@ void Renderer::DrawSphereWires(const Matrix& transform, float radius, Color colo
 {
     rlPushMatrix();
     rlMultMatrixf(MatrixToFloat(transform));
-
-    ::DrawSphereWires({0, 0, 0}, radius, 8, 8, color);
-
+    ::DrawSphereWires({0}, radius, 16, 16, color);
     rlPopMatrix();
 }
 
-void Renderer::ApplyPostProcessing(RenderTexture2D target, const Camera3D& camera)
+void Renderer::ApplyPostProcessing(RenderTexture2D screenTexture, const Camera3D& camera)
 {
-    CH_PROFILE_FUNCTION();
-
-    auto shaderAsset = m_Data->Shaders->Exists("PostProcess") ? m_Data->Shaders->Get("PostProcess") : nullptr;
-    if (!shaderAsset)
+    if (m_Data->Shaders->Exists("PostProcess"))
     {
-        return;
+        auto shaderAsset = m_Data->Shaders->Get("PostProcess");
+        Shader shader = shaderAsset->GetShader();
+
+        BeginShaderMode(shader);
+        
+        // 1. Set transformation uniforms
+        Matrix invViewProj = MatrixInvert(MatrixMultiply(m_Data->CurrentProj, m_Data->CurrentView));
+        SetShaderValueMatrix(shader, GetShaderLocation(shader, "matInverseViewProj"), invViewProj);
+        SetShaderValue(shader, GetShaderLocation(shader, "viewPos"), &camera.position, SHADER_UNIFORM_VEC3);
+        
+        float time = m_Data->Time;
+        SetShaderValue(shader, GetShaderLocation(shader, "uTime"), &time, SHADER_UNIFORM_FLOAT);
+
+        // 2. Set ToneMapping/Gamma uniforms
+        float exposure = m_Data->Lighting.CurrentLighting.Exposure;
+        float gamma = m_Data->Lighting.CurrentLighting.Gamma;
+        SetShaderValue(shader, GetShaderLocation(shader, "uExposure"), &exposure, SHADER_UNIFORM_FLOAT);
+        SetShaderValue(shader, GetShaderLocation(shader, "uGamma"), &gamma, SHADER_UNIFORM_FLOAT);
+
+        // 3. Set Fog uniforms
+        ApplyFogUniforms(shader);
+
+        // 4. Bind Depth Texture to slot 1 (texture1 in shader)
+        rlActiveTextureSlot(1);
+        rlEnableTexture(screenTexture.depth.id);
+        rlActiveTextureSlot(0);
+
+        // 5. Draw the screen texture (texture0 is bound automatically by DrawTextureRec/BeginShaderMode)
+        ::DrawTextureRec(screenTexture.texture, { 0, 0, (float)screenTexture.texture.width, (float)-screenTexture.texture.height }, { 0, 0 }, WHITE);
+        
+        // Unbind depth texture
+        rlActiveTextureSlot(1);
+        rlDisableTexture();
+        rlActiveTextureSlot(0);
+
+        EndShaderMode();
     }
-
-    // 1. Prepare Matrices
-    Matrix view = GetCameraMatrix(camera);
-    // Note: Proj matrix might be tricky if not in Mode3D, but we can reconstruct it
-    // Or just use rlGetMatrixProjection() if we call this inside BeginTextureMode
-    Matrix proj = rlGetMatrixProjection();
-    Matrix viewProj = MatrixMultiply(view, proj);
-    Matrix invViewProj = MatrixInvert(viewProj);
-
-    // 2. Bind Shader and Uniforms
-    ShaderAsset* shader = shaderAsset.get();
-    rlEnableShader(shader->GetShader().id);
-
-    shader->SetMatrix("matInverseViewProj", invViewProj);
-    shader->SetVec3("viewPos", camera.position);
-    shader->SetFloat("uTime", m_Data->Time);
-    shader->SetFloat("uExposure", m_Data->Lighting.CurrentLighting.Exposure);
-    shader->SetFloat("uGamma", m_Data->Lighting.CurrentLighting.Gamma);
-
-    // Fog
-    ApplyFogUniforms(shader);
-
-    // 3. Bind Depth Texture to Slot 1
-    shader->SetInt("texture1", 1);
-    rlActiveTextureSlot(1);
-    rlEnableTexture(target.depth.id);
-    rlActiveTextureSlot(0); // Back to slot 0 for main texture
-
-    // 4. Draw Fullscreen Quad
-    // DrawTextureRec vertically flips the texture (standard FBO behavior)
-    Rectangle source = {0, 0, (float)target.texture.width, (float)-target.texture.height};
-    Rectangle dest = {0, 0, (float)target.texture.width, (float)target.texture.height};
-    ::DrawTexturePro(target.texture, source, dest, {0, 0}, 0.0f, WHITE);
-
-    // 5. Cleanup
-    rlActiveTextureSlot(1);
-    rlDisableTexture();
-    rlActiveTextureSlot(0);
-    rlDisableShader();
-}
-
-void Renderer::DrawSkybox(const SkyboxSettings& skybox, const Camera3D& camera)
-{
-    if (skybox.TexturePath.empty())
-    {
-        return;
-    }
-
-    auto project = Project::GetActive();
-    if (!project)
-    {
-        return;
-    }
-
-    auto textureAsset = AssetManager::Get().Get<TextureAsset>(skybox.TexturePath);
-
-    if (!textureAsset)
-    {
-        CH_CORE_WARN("Renderer::DrawSkybox: Failed to find texture asset: {}", skybox.TexturePath);
-        return;
-    }
-
-    // CH_CORE_INFO("Renderer: Drawing skybox '{}', asset ready: {}", skybox.TexturePath, textureAsset->IsReady());
-
-    if (textureAsset->GetState() != AssetState::Ready)
-    {
-        // If it's pending, upload it (this will trigger direct LoadTexture for HDR)
-        textureAsset->UploadToGPU();
-        if (!textureAsset->IsReady())
-        {
-            return;
-        }
-    }
-
-    int activeMode = skybox.Mode;
-    // CH_CORE_INFO("Renderer: DrawSkybox Mode: {}, Texture: {}", activeMode, skybox.TexturePath);
-    auto shaderName = (activeMode == 2) ? "SkyboxCubemap" : "Skybox";
-    auto skyboxShader = m_Data->Shaders->Exists(shaderName) ? m_Data->Shaders->Get(shaderName) : nullptr;
-
-    if (!skyboxShader || skyboxShader->GetShader().id == 0)
-    {
-        // CH_CORE_WARN("Renderer::DrawSkybox: Required shader '{}' not found or failed to load. Falling back to default
-        // skybox.", shaderName);
-        activeMode = 0;
-        skyboxShader = m_Data->Shaders->Get("Skybox");
-        if (!skyboxShader)
-        {
-            return;
-        }
-    }
-
-    // Cubemap Generation Trigger
-    if (activeMode == 2 && !textureAsset->IsCubemap())
-    {
-        auto genShader = m_Data->Shaders->Exists("CubemapGen") ? m_Data->Shaders->Get("CubemapGen") : nullptr;
-        if (genShader && genShader->GetShader().id > 0)
-        {
-            CH_CORE_INFO("Renderer: Generating cubemap for '{}' (Panorama ID: {})...", skybox.TexturePath,
-                         textureAsset->GetTexture().id);
-            Texture2D panorama = textureAsset->GetTexture();
-
-            // Note: We use PIXELFORMAT_UNCOMPRESSED_R16G16B16A16 or R32G32B32A32 to preserve HDR float values
-            TextureCubemap cubemap =
-                GenTextureCubemap(genShader->GetShader(), panorama, 1024, PIXELFORMAT_UNCOMPRESSED_R32G32B32A32);
-
-            if (cubemap.id > 0)
-            {
-                textureAsset->Unload(); // Unload panorama
-                textureAsset->SetTexture(cubemap);
-                textureAsset->SetIsCubemap(true);
-                CH_CORE_INFO("Renderer: Cubemap generated successfully for '{}' (Cubemap ID: {}).", skybox.TexturePath,
-                             cubemap.id);
-            }
-            else
-            {
-                CH_CORE_ERROR("Renderer: Failed to generate cubemap for '{}'!", skybox.TexturePath);
-                activeMode = 0; // Fallback
-                skyboxShader = m_Data->Shaders->Get("Skybox");
-            }
-        }
-        else
-        {
-            CH_CORE_ERROR("Renderer: CubemapGen shader missing! Cannot generate cubemap.");
-            activeMode = 0;
-            skyboxShader = m_Data->Shaders->Get("Skybox");
-        }
-    }
-
-    RenderCommand::DisableBackfaceCulling();
-    RenderCommand::DisableDepthMask();
-
-    Material& material = m_Data->Skybox.SkyboxMaterial;
-    material.shader = skyboxShader->GetShader();
-    Texture2D skyTexture = textureAsset->GetTexture();
-
-    if (skyTexture.id == 0)
-    {
-        // CH_CORE_ERROR("Renderer::DrawSkybox: Texture asset ready but Raylib texture ID is 0! Path: {}",
-        // skybox.TexturePath);
-        rlEnableBackfaceCulling();
-        rlEnableDepthMask();
-        return;
-    }
-
-    if (activeMode == 2)
-    {
-        // For Cubemap, we assign it to the CUBEMAP map slot and set environmentMap uniform
-        // to MATERIAL_MAP_CUBEMAP, so Raylib's DrawMesh handles the binding automatically.
-        material.maps[MATERIAL_MAP_CUBEMAP].texture = skyTexture;
-    }
-    else
-    {
-        ::SetTextureFilter(skyTexture, TEXTURE_FILTER_BILINEAR);
-        ::SetTextureWrap(skyTexture, TEXTURE_WRAP_CLAMP);
-        material.maps[MATERIAL_MAP_ALBEDO].texture = skyTexture;
-    }
-
-    // Pass missing matrices to shader (required by skybox.vs)
-    skyboxShader->SetMatrix("matProjection", rlGetMatrixProjection());
-    skyboxShader->SetMatrix("matView", rlGetMatrixModelview());
-
-    skyboxShader->SetFloat("exposure", skybox.Exposure);
-    skyboxShader->SetFloat("brightness", skybox.Brightness);
-    skyboxShader->SetFloat("contrast", skybox.Contrast);
-
-    std::string skyExt = std::filesystem::path(skybox.TexturePath).extension().string();
-    std::transform(skyExt.begin(), skyExt.end(), skyExt.begin(), ::tolower);
-    bool isHDR = (skyExt == ".hdr");
-
-    if (activeMode != 2)
-    {
-        skyboxShader->SetInt("vflipped", 0);
-        skyboxShader->SetInt("skyboxMode", activeMode); // 0: Equirect, 1: Cross
-
-        // Detect HDR texture and enable tone mapping + gamma correction
-        skyboxShader->SetInt("isHDR", isHDR ? 1 : 0);
-        skyboxShader->SetInt("doGamma", isHDR ? 1 : 0);
-        skyboxShader->SetFloat("fragGamma", 2.2f);
-    }
-    else
-    {
-        // Cubemap path
-        skyboxShader->SetInt("environmentMap", MATERIAL_MAP_CUBEMAP);
-        skyboxShader->SetInt("isHDR", isHDR ? 1 : 0);
-        skyboxShader->SetInt("doGamma", isHDR ? 1 : 0);
-        skyboxShader->SetFloat("fragGamma", 2.2f);
-    }
-
-    // Fog uniforms
-    ApplyFogUniforms(skyboxShader.get());
-
-    skyboxShader->SetFloat("uTime", m_Data->Time);
-
-    DrawMesh(m_Data->Skybox.SkyboxCube.meshes[0], material,
-             MatrixTranslate(camera.position.x, camera.position.y, camera.position.z));
-
-    RenderCommand::EnableBackfaceCulling();
-    RenderCommand::EnableDepthMask();
-}
-
-void Renderer::DrawBillboard(const Camera3D& camera, Texture2D texture, Vector3 position, float size, Color color)
-{
-    if (texture.id == 0)
-    {
-        return;
-    }
-    ::DrawBillboard(camera, texture, position, size, color);
-}
-
-void Renderer::ApplyFogUniforms(ShaderAsset* shader)
-{
-    if (!shader)
-    {
-        return;
-    }
-    auto& fog = m_Data->Lighting.CurrentFog;
-    shader->SetInt("fogEnabled", fog.Enabled ? 1 : 0);
-    if (fog.Enabled)
-    {
-        shader->SetInt("fogMode", fog.Mode);
-        shader->SetColor("fogColor", fog.FogColor);
-        shader->SetFloat("fogDensity", fog.Density);
-        shader->SetFloat("fogStart", fog.Start);
-        shader->SetFloat("fogEnd", fog.End);
-    }
-}
-
-void Renderer::SetDirectionalLight(Vector3 direction, Color color)
-{
-    m_Data->Lighting.CurrentLighting.Direction = direction;
-    m_Data->Lighting.CurrentLighting.LightColor = color;
-}
-
-void Renderer::SetAmbientLight(float intensity)
-{
-    m_Data->Lighting.CurrentLighting.Ambient = intensity;
-}
-
-void Renderer::DrawText(const char* text, int posX, int posY, int fontSize, Color color)
-{
-    ::DrawText(text, posX, posY, fontSize, color);
-}
-
-int Renderer::MeasureText(const char* text, int fontSize)
-{
-    return ::MeasureText(text, fontSize);
-}
-
-void Renderer::DrawTexture(Texture2D texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint)
-{
-    ::DrawTexturePro(texture, source, dest, origin, rotation, tint);
 }
 
 void Renderer::SetLight(int index, const RenderLight& light)
 {
-    if (index < 0 || index >= LightingData::MaxLights)
+    if (index >= 0 && index < LightingData::MaxLights)
     {
-        return;
+        m_Data->Lighting.Lights[index] = light;
+        m_Data->Lighting.LightsDirty = true;
     }
-    m_Data->Lighting.Lights[index] = light;
-    m_Data->Lighting.LightsDirty = true;
 }
 
 void Renderer::SetLightCount(int count)
 {
-    m_Data->LightCount = std::min(count, LightingData::MaxLights);
+    m_Data->LightCount = count;
 }
 
 void Renderer::ClearLights()
@@ -666,38 +423,9 @@ void Renderer::ClearLights()
 
 void Renderer::ApplyEnvironment(const EnvironmentSettings& settings)
 {
-    // Skip if nothing changed (POD-like member comparison for Lighting and Fog)
-    bool lightingChanged = (m_Data->Lighting.CurrentLighting.Ambient != settings.Lighting.Ambient) ||
-                           (m_Data->Lighting.CurrentLighting.Direction.x != settings.Lighting.Direction.x) ||
-                           (m_Data->Lighting.CurrentLighting.Direction.y != settings.Lighting.Direction.y) ||
-                           (m_Data->Lighting.CurrentLighting.Direction.z != settings.Lighting.Direction.z) ||
-                           (m_Data->Lighting.CurrentLighting.LightColor.r != settings.Lighting.LightColor.r) ||
-                           (m_Data->Lighting.CurrentLighting.LightColor.g != settings.Lighting.LightColor.g) ||
-                           (m_Data->Lighting.CurrentLighting.LightColor.b != settings.Lighting.LightColor.b) ||
-                           (m_Data->Lighting.CurrentLighting.LightColor.a != settings.Lighting.LightColor.a) ||
-                           (m_Data->Lighting.CurrentLighting.Exposure != settings.Lighting.Exposure) ||
-                           (m_Data->Lighting.CurrentLighting.Gamma != settings.Lighting.Gamma);
-
-    bool fogChanged = (m_Data->Lighting.CurrentFog.Enabled != settings.Fog.Enabled) ||
-                      (m_Data->Lighting.CurrentFog.Density != settings.Fog.Density) ||
-                      (m_Data->Lighting.CurrentFog.Start != settings.Fog.Start) ||
-                      (m_Data->Lighting.CurrentFog.End != settings.Fog.End) ||
-                      (m_Data->Lighting.CurrentFog.FogColor.r != settings.Fog.FogColor.r) ||
-                      (m_Data->Lighting.CurrentFog.FogColor.g != settings.Fog.FogColor.g) ||
-                      (m_Data->Lighting.CurrentFog.FogColor.b != settings.Fog.FogColor.b) ||
-                      (m_Data->Lighting.CurrentFog.FogColor.a != settings.Fog.FogColor.a);
-
-    if (!lightingChanged && !fogChanged)
-    {
-        return;
-    }
-
     m_Data->Lighting.CurrentLighting = settings.Lighting;
     m_Data->Lighting.CurrentFog = settings.Fog;
-
-    // If lighting settings changed significantly (like ambient), we might want to flag lights dirty
-    // to force a refresh if the shader uses it.
-    m_Data->Lighting.LightsDirty = true;
+    m_Data->CurrentEnv = settings;
 }
 
 void Renderer::SetDiagnosticMode(float mode)
@@ -710,6 +438,21 @@ void Renderer::UpdateTime(Timestep time)
     m_Data->Time = time;
 }
 
+void Renderer::ApplyFogUniforms(Shader shader)
+{
+    const auto& fog = m_Data->Lighting.CurrentFog;
+    int enabled = fog.Enabled ? 1 : 0;
+    int mode = (int)fog.Mode;
+    Vector4 color = ColorNormalize(fog.FogColor);
+
+    SetShaderValue(shader, GetShaderLocation(shader, "fogEnabled"), &enabled, SHADER_UNIFORM_INT);
+    SetShaderValue(shader, GetShaderLocation(shader, "fogColor"), &color, SHADER_UNIFORM_VEC4);
+    SetShaderValue(shader, GetShaderLocation(shader, "fogDensity"), &fog.Density, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(shader, GetShaderLocation(shader, "fogStart"), &fog.Start, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(shader, GetShaderLocation(shader, "fogEnd"), &fog.End, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(shader, GetShaderLocation(shader, "fogMode"), &mode, SHADER_UNIFORM_INT);
+}
+
 void Renderer::InitializeSkybox()
 {
     Mesh cube = GenMeshCube(1.0f, 1.0f, 1.0f);
@@ -717,382 +460,104 @@ void Renderer::InitializeSkybox()
     m_Data->Skybox.SkyboxMaterial = LoadMaterialDefault();
 }
 
-void Renderer::DrawModelInstanced(const std::shared_ptr<ModelAsset>& modelAsset, const std::vector<Matrix>& transforms,
-                                  const std::vector<MaterialSlot>& materialSlotOverrides)
-{
-    if (!modelAsset || modelAsset->GetState() != AssetState::Ready || transforms.empty())
-    {
-        return;
-    }
-
-    Model& model = modelAsset->GetModel();
-
-    auto activeShader = m_Data->Shaders->Exists("Lighting") ? m_Data->Shaders->Get("Lighting") : nullptr;
-
-    for (int i = 0; i < model.meshCount; i++)
-    {
-        Material material = ResolveMaterialForMesh(i, model, materialSlotOverrides);
-
-        if (activeShader)
-        {
-            // Bind lighting uniforms (no bone matrices for instanced rendering)
-            BindShaderUniforms(activeShader.get(), {}, {});
-            BindMaterialUniforms(activeShader.get(), material, i, model, materialSlotOverrides);
-
-            Shader originalShader = material.shader;
-            material.shader = activeShader->GetShader();
-            DrawMeshInstanced(model.meshes[i], material, transforms.data(), (int)transforms.size());
-            material.shader = originalShader;
-        }
-        else
-        {
-            DrawMeshInstanced(model.meshes[i], material, transforms.data(), (int)transforms.size());
-        }
-    }
-}
-
-std::vector<Matrix> Renderer::ComputeBoneMatrices(const std::shared_ptr<ModelAsset>& modelAsset, int animationIndex,
-                                                  float frameIndex, int targetAnimationIndex, float targetFrameIndex,
-                                                  float blendWeight)
-{
-    if (!modelAsset)
-    {
-        return {};
-    }
-
-    Model& model = modelAsset->GetModel();
-    if (model.boneCount <= 0)
-    {
-        return {};
-    }
-
-    const auto& offsetMatrices = modelAsset->GetOffsetMatrices();
-    if (offsetMatrices.empty())
-    {
-        CH_CORE_WARN("ModelAsset '{}' has bones but no offset matrices loaded.", modelAsset->GetPath());
-        return {};
-    }
-
-    const int boneCount = model.boneCount;
-
-    // Reuse pre-allocated scratch buffers — avoids heap allocations each frame
-    auto& boneMatrices = m_Data->ScratchBoneMatrices;
-    auto& globalPose = m_Data->ScratchGlobalPose;
-    auto& localPoseA = m_Data->ScratchLocalPoseA;
-    boneMatrices.resize(boneCount);
-    globalPose.resize(boneCount);
-    localPoseA.resize(boneCount);
-
-    auto CalculateLocalPose = [&](int animIdx, float fIdx, std::vector<Transform>& outLocalPose) {
-        const auto& animations = modelAsset->GetRawAnimations();
-        if (animIdx >= 0 && animIdx < (int)animations.size())
-        {
-            const auto& anim = animations[animIdx];
-            int currentFrame = (int)fIdx % anim.frameCount;
-            int nextFrame = (currentFrame + 1) % anim.frameCount;
-            float interp = fIdx - (float)((int)fIdx);
-
-            for (int i = 0; i < anim.boneCount; i++)
-            {
-                Transform t = anim.framePoses[currentFrame * anim.boneCount + i];
-                Transform tNext = anim.framePoses[nextFrame * anim.boneCount + i];
-
-                outLocalPose[i].translation = Vector3Lerp(t.translation, tNext.translation, interp);
-                outLocalPose[i].rotation = QuaternionSlerp(t.rotation, tNext.rotation, interp);
-                outLocalPose[i].scale = Vector3Lerp(t.scale, tNext.scale, interp);
-            }
-            return true;
-        }
-        return false;
-    };
-
-    bool hasA = CalculateLocalPose(animationIndex, frameIndex, localPoseA);
-    if (!hasA)
-    {
-        for (int i = 0; i < boneCount; i++)
-        {
-            localPoseA[i] = model.bindPose[i];
-        }
-    }
-
-    if (targetAnimationIndex >= 0 && blendWeight > 0.0f)
-    {
-        auto& localPoseB = m_Data->ScratchLocalPoseB;
-        localPoseB.resize(boneCount);
-        if (CalculateLocalPose(targetAnimationIndex, targetFrameIndex, localPoseB))
-        {
-            for (int i = 0; i < boneCount; i++)
-            {
-                localPoseA[i].translation =
-                    Vector3Lerp(localPoseA[i].translation, localPoseB[i].translation, blendWeight);
-                localPoseA[i].rotation = QuaternionSlerp(localPoseA[i].rotation, localPoseB[i].rotation, blendWeight);
-                localPoseA[i].scale = Vector3Lerp(localPoseA[i].scale, localPoseB[i].scale, blendWeight);
-            }
-        }
-    }
-
-    // Convert local transforms to global matrices
-    for (int i = 0; i < boneCount; i++)
-    {
-        Matrix localMat = MatrixMultiply(
-            QuaternionToMatrix(localPoseA[i].rotation),
-            MatrixTranslate(localPoseA[i].translation.x, localPoseA[i].translation.y, localPoseA[i].translation.z));
-        localMat =
-            MatrixMultiply(MatrixScale(localPoseA[i].scale.x, localPoseA[i].scale.y, localPoseA[i].scale.z), localMat);
-
-        int parent = model.bones[i].parent;
-        globalPose[i] = (parent == -1) ? localMat : MatrixMultiply(globalPose[parent], localMat);
-    }
-
-    // Compute final skinning matrices
-    for (int i = 0; i < boneCount; i++)
-    {
-        boneMatrices[i] =
-            (i < (int)offsetMatrices.size()) ? MatrixMultiply(offsetMatrices[i], globalPose[i]) : globalPose[i];
-    }
-
-    return boneMatrices; // RVO applies — no copy in practice
-}
-
-Material Renderer::ResolveMaterialForMesh(int meshIndex, const Model& model,
-                                          const std::vector<MaterialSlot>& materialSlotOverrides)
-{
-    Material material = model.materials[model.meshMaterial[meshIndex]];
-
-    for (const auto& slot : materialSlotOverrides)
-    {
-        bool match = false;
-        if (slot.Target == MaterialSlotTarget::MeshIndex && slot.Index == meshIndex)
-        {
-            match = true;
-        }
-        else if (slot.Target == MaterialSlotTarget::MaterialIndex && slot.Index == model.meshMaterial[meshIndex])
-        {
-            match = true;
-        }
-
-        if (match)
-        {
-            material.maps[MATERIAL_MAP_ALBEDO].color = slot.Material.AlbedoColor;
-            if (slot.Material.OverrideAlbedo && !slot.Material.AlbedoPath.empty())
-            {
-                if (Project::GetActive())
-                {
-                    auto textureAsset =
-                        AssetManager::Get().Get<TextureAsset>(slot.Material.AlbedoPath);
-                    if (textureAsset && textureAsset->IsReady())
-                    {
-                        material.maps[MATERIAL_MAP_ALBEDO].texture = textureAsset->GetTexture();
-                    }
-                }
-            }
-            break;
-        }
-    }
-    return material;
-}
-
-void Renderer::BindShaderUniforms(ShaderAsset* activeShader, const std::vector<Matrix>& boneMatrices,
-                                  const std::vector<ShaderUniform>& shaderUniformOverrides)
-{
-    if (!activeShader)
-    {
-        return;
-    }
-
-    if (!boneMatrices.empty())
-    {
-        int count = (int)boneMatrices.size();
-        if (count > 128)
-        {
-            count = 128; // Shader limit
-        }
-        activeShader->SetMatrices("boneMatrices", boneMatrices.data(), count);
-    }
-    else
-    {
-        // Provide identity matrices for the first few bones to avoid state leakage if the shader is used for static
-        // meshes
-        static Matrix identityMatrices[4] = {MatrixIdentity(), MatrixIdentity(), MatrixIdentity(), MatrixIdentity()};
-        activeShader->SetMatrices("boneMatrices", identityMatrices, 4);
-    }
-
-    // Apply custom uniforms from ShaderComponent
-    for (const auto& u : shaderUniformOverrides)
-    {
-        if (u.Type == 0)
-        {
-            activeShader->SetFloat(u.Name, u.Value[0]);
-        }
-        else if (u.Type == 1)
-        {
-            activeShader->SetVec2(u.Name, {u.Value[0], u.Value[1]});
-        }
-        else if (u.Type == 2)
-        {
-            activeShader->SetVec3(u.Name, {u.Value[0], u.Value[1], u.Value[2]});
-        }
-        else if (u.Type == 3)
-        {
-            activeShader->SetVec4(u.Name, {u.Value[0], u.Value[1], u.Value[2], u.Value[3]});
-        }
-        else if (u.Type == 4)
-        {
-            activeShader->SetColor(u.Name, Color{(unsigned char)(u.Value[0] * 255), (unsigned char)(u.Value[1] * 255),
-                                                 (unsigned char)(u.Value[2] * 255), (unsigned char)(u.Value[3] * 255)});
-        }
-    }
-}
-
-void Renderer::BindMaterialUniforms(ShaderAsset* activeShader, const Material& material, int meshIndex,
-                                    const Model& model, const std::vector<MaterialSlot>& materialSlotOverrides)
-{
-    if (!activeShader)
-    {
-        return;
-    }
-
-    // Set untextured support hint
-    activeShader->SetInt("useTexture", material.maps[MATERIAL_MAP_ALBEDO].texture.id > 0 ? 1 : 0);
-
-    // Set material properties
-    activeShader->SetColor("colDiffuse", material.maps[MATERIAL_MAP_ALBEDO].color);
-
-    // PBR Maps & Uniforms
-    int useNormalMap = material.maps[MATERIAL_MAP_NORMAL].texture.id > 0 ? 1 : 0;
-    int useMetallicMap = material.maps[MATERIAL_MAP_METALNESS].texture.id > 0 ? 1 : 0;
-    int useRoughnessMap = material.maps[MATERIAL_MAP_ROUGHNESS].texture.id > 0 ? 1 : 0;
-    int useOcclusionMap = material.maps[MATERIAL_MAP_OCCLUSION].texture.id > 0 ? 1 : 0;
-    int useEmissiveTexture = material.maps[MATERIAL_MAP_EMISSION].texture.id > 0 ? 1 : 0;
-
-    activeShader->SetInt("useNormalMap", useNormalMap);
-    activeShader->SetInt("useMetallicMap", useMetallicMap);
-    activeShader->SetInt("useRoughnessMap", useRoughnessMap);
-    activeShader->SetInt("useOcclusionMap", useOcclusionMap);
-    activeShader->SetInt("useEmissiveTexture", useEmissiveTexture);
-
-    float metalness = material.maps[MATERIAL_MAP_METALNESS].value;
-    float roughness = material.maps[MATERIAL_MAP_ROUGHNESS].value;
-
-    // Emissive defaults
-    Color colEmissive = material.maps[MATERIAL_MAP_EMISSION].color;
-    float emissiveIntensity = 0.0f;
-
-    // Sync with custom MaterialInstance overrides
-    for (const auto& slot : materialSlotOverrides)
-    {
-        bool match = false;
-        if (slot.Target == MaterialSlotTarget::MeshIndex && slot.Index == meshIndex)
-        {
-            match = true;
-        }
-        else if (slot.Target == MaterialSlotTarget::MaterialIndex && slot.Index == model.meshMaterial[meshIndex])
-        {
-            match = true;
-        }
-        if (match)
-        {
-            emissiveIntensity = slot.Material.EmissiveIntensity;
-            if (slot.Material.OverrideEmissive)
-            {
-                colEmissive = slot.Material.EmissiveColor;
-            }
-            metalness = slot.Material.Metalness;
-            roughness = slot.Material.Roughness;
-            break;
-        }
-    }
-
-    activeShader->SetFloat("metalness", metalness);
-    activeShader->SetFloat("roughness", roughness);
-
-    // Fallback: If emissive color is set but intensity is 0, default to 1.0
-    if (emissiveIntensity == 0.0f && (colEmissive.r > 0 || colEmissive.g > 0 || colEmissive.b > 0))
-    {
-        emissiveIntensity = 1.0f;
-    }
-
-    activeShader->SetColor("colEmissive", colEmissive);
-    activeShader->SetFloat("emissiveIntensity", emissiveIntensity);
-
-    // Map Roughness to Shininess for legacy parts (if any)
-    float shininess = (1.0f - roughness) * 128.0f;
-    if (shininess < 1.0f)
-    {
-        shininess = 1.0f;
-    }
-    activeShader->SetFloat("shininess", shininess);
-}
-// Generate cubemap texture from HDR texture (Direct port from raylib example)
 TextureCubemap Renderer::GenTextureCubemap(Shader shader, Texture2D panorama, int size, int format)
 {
-    TextureCubemap cubemap = {0};
+    TextureCubemap cubemap = { 0 };
+    if (shader.id == 0 || panorama.id == 0) return cubemap;
 
-    rlDisableBackfaceCulling(); // Disable backface culling to render inside the cube
+    if (format == 0)
+        format = RL_PIXELFORMAT_UNCOMPRESSED_R16G16B16A16;
 
-    // STEP 1: Setup framebuffer
-    unsigned int rbo = rlLoadTextureDepth(size, size, true);
+    unsigned int last_fbo = rlGetActiveFramebuffer();
+    int last_width = GetScreenWidth();
+    int last_height = GetScreenHeight();
+
+    rlDisableBackfaceCulling();
+    rlDisableDepthTest();
+
+    // Створюємо кубмапу
     cubemap.id = rlLoadTextureCubemap(0, size, format, 1);
-
     unsigned int fbo = rlLoadFramebuffer();
-    rlFramebufferAttach(fbo, rbo, RL_ATTACHMENT_DEPTH, RL_ATTACHMENT_RENDERBUFFER, 0);
-    rlFramebufferAttach(fbo, cubemap.id, RL_ATTACHMENT_COLOR_CHANNEL0, RL_ATTACHMENT_CUBEMAP_POSITIVE_X, 0);
-
-    // Check if framebuffer is complete with attachments (valid)
-    if (rlFramebufferComplete(fbo))
+    
+    if (fbo == 0)
     {
-        CH_CORE_INFO("Renderer::GenTextureCubemap: FBO [ID {}] created successfully", fbo);
-    }
-    else
-    {
-        CH_CORE_ERROR("Renderer::GenTextureCubemap: FBO failed!");
-        return {0};
+        CH_CORE_ERROR("Renderer: Failed to create FBO for cubemap generation!");
+        return cubemap;
     }
 
-    // STEP 2: Draw to framebuffer
-    rlEnableShader(shader.id);
-
-    // Explicitly find locations to avoid relying on hardcoded ones
-    int locProj = GetShaderLocation(shader, "matProjection");
-    int locView = GetShaderLocation(shader, "matView");
-
-    // Define projection matrix and send it to shader
-    Matrix matFboProjection = MatrixPerspective(90.0 * DEG2RAD, 1.0, rlGetCullDistanceNear(), rlGetCullDistanceFar());
-    rlSetUniformMatrix(locProj, matFboProjection);
-
-    // Define view matrix for every side of the cubemap
-    Matrix fboViews[6] = {MatrixLookAt({0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f}),
-                          MatrixLookAt({0.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f}),
-                          MatrixLookAt({0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}),
-                          MatrixLookAt({0.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}),
-                          MatrixLookAt({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, -1.0f, 0.0f}),
-                          MatrixLookAt({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -1.0f}, {0.0f, -1.0f, 0.0f})};
-
-    rlViewport(0, 0, size, size); // Set viewport to current fbo dimensions
-
-    // Activate and enable texture for drawing to cubemap faces
-    rlActiveTextureSlot(0);
-    rlEnableTexture(panorama.id);
-
-    for (int i = 0; i < 6; i++)
+    if (fbo != 0)
     {
-        rlSetUniformMatrix(locView, fboViews[i]);
-        rlFramebufferAttach(fbo, cubemap.id, RL_ATTACHMENT_COLOR_CHANNEL0, RL_ATTACHMENT_CUBEMAP_POSITIVE_X + i, 0);
-        rlEnableFramebuffer(fbo);
+        // ПРОЕКЦІЯ ТА ВИДИ
+        Matrix proj = MatrixPerspective(90.0f * DEG2RAD, 1.0f, 0.01f, 10.0f);
+        Matrix views[] = {
+            MatrixLookAt({0,0,0}, { 1,0,0}, {0,-1,0}),
+            MatrixLookAt({0,0,0}, {-1,0,0}, {0,-1,0}),
+            MatrixLookAt({0,0,0}, {0, 1,0}, {0,0, 1}),
+            MatrixLookAt({0,0,0}, {0,-1,0}, {0,0,-1}),
+            MatrixLookAt({0,0,0}, {0,0, 1}, {0,-1,0}),
+            MatrixLookAt({0,0,0}, {0,0,-1}, {0,-1,0})
+        };
 
-        rlClearScreenBuffers();
-        rlLoadDrawCube();
+        rlEnableShader(shader.id);
+        int projLoc = GetShaderLocation(shader, "projection");
+        int viewLoc = GetShaderLocation(shader, "view");
+        int equirectLoc = GetShaderLocation(shader, "equirectangularMap");
+        
+        CH_CORE_INFO("Renderer: GenTextureCubemap - Shader ID: {}, Panorama ID: {}, Dim: {}x{}, Size: {}", 
+                     shader.id, panorama.id, panorama.width, panorama.height, size);
+        CH_CORE_INFO("Renderer: Uniform locations - Proj: {}, View: {}, Equirect: {}", projLoc, viewLoc, equirectLoc);
+ 
+        if (projLoc != -1) SetShaderValueMatrix(shader, projLoc, proj);
+        else CH_CORE_ERROR("Renderer: 'projection' uniform not found in CubemapGen shader!");
+ 
+        int slot = 0;
+        if (equirectLoc != -1) SetShaderValue(shader, equirectLoc, &slot, SHADER_UNIFORM_INT);
+        else CH_CORE_ERROR("Renderer: 'equirectangularMap' uniform not found in CubemapGen shader!");
+ 
+        rlActiveTextureSlot(0);
+        rlEnableTexture(panorama.id);
+
+        // НЕ активуємо FBO до того, як прив'яжемо хоча б одну грань,
+        // щоб уникнути помилок Incomplete Framebuffer.
+        rlViewport(0, 0, size, size);
+        for (int i = 0; i < 6; i++)
+        {
+            // Attach the cubemap face to the framebuffer
+            rlFramebufferAttach(fbo, cubemap.id, RL_ATTACHMENT_COLOR_CHANNEL0, RL_ATTACHMENT_CUBEMAP_POSITIVE_X + i, 0);
+            
+            if (rlFramebufferComplete(fbo))
+            {
+                rlEnableFramebuffer(fbo);
+                rlClearScreenBuffers(); 
+
+                rlEnableShader(shader.id);
+                if (projLoc != -1) SetShaderValueMatrix(shader, projLoc, proj);
+                if (viewLoc != -1) SetShaderValueMatrix(shader, viewLoc, views[i]);
+                
+                rlActiveTextureSlot(0);
+                rlEnableTexture(panorama.id);
+
+                rlLoadDrawCube(); 
+                rlDrawRenderBatchActive(); 
+            }
+            else
+            {
+                CH_CORE_ERROR("Renderer: Cubemap FBO incomplete for face {}!", i);
+            }
+        }
+
+        rlDisableTexture();
+        rlDisableShader();
+
+        rlDisableFramebuffer();
+        rlUnloadFramebuffer(fbo);
     }
 
-    // STEP 3: Unload framebuffer and reset state
-    rlDisableShader();
-    rlDisableTexture();
-    rlDisableFramebuffer();
-    rlUnloadFramebuffer(fbo);
-
-    // Reset viewport dimensions to default
-    rlViewport(0, 0, rlGetFramebufferWidth(), rlGetFramebufferHeight());
     rlEnableBackfaceCulling();
+    rlEnableDepthTest();
+
+    rlEnableFramebuffer(last_fbo);
+    rlViewport(0, 0, last_width, last_height);
 
     cubemap.width = size;
     cubemap.height = size;
@@ -1101,4 +566,15 @@ TextureCubemap Renderer::GenTextureCubemap(Shader shader, Texture2D panorama, in
 
     return cubemap;
 }
+
+void Renderer::CleanupSkybox()
+{
+    UnloadModel(m_Data->Skybox.SkyboxCube);
+    UnloadMaterial(m_Data->Skybox.SkyboxMaterial);
+    if (m_Data->Skybox.CachedCubemap.id != 0)
+    {
+        UnloadTexture(m_Data->Skybox.CachedCubemap);
+    }
+}
+
 } // namespace CHEngine

@@ -1,26 +1,33 @@
 #version 450 core
 
-layout(location = 0) in vec3 fragPosition;
+in vec3 fragPosition;
 
-layout(binding = 0) uniform sampler2D equirectangularMap;
+uniform sampler2D equirectangularMap;
 
-layout(location = 0) out vec4 finalColor;
+out vec4 finalColor;
 
-#define PI 3.14159265358979323846
+const vec2 invAtan = vec2(0.1591, 0.3183); // 1/(2*PI) та 1/PI
 
 vec2 SampleSphericalMap(vec3 v)
 {
+    // atan2 повертає значення від -PI до PI
+    // asin повертає від -PI/2 до PI/2
     vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
-    uv *= vec2(0.1591, 0.3183); // 1/(2*PI), 1/PI
+    
+    // Перетворюємо в діапазон [0, 1]
+    uv *= invAtan;
     uv += 0.5;
     return uv;
 }
 
 void main()
-{		
-    vec3 v = normalize(fragPosition);
-    vec2 uv = SampleSphericalMap(v);
-    vec3 color = texture(equirectangularMap, uv).rgb;
+{       
+    vec3 direction = normalize(fragPosition);
+    vec2 uv = SampleSphericalMap(direction);
+    
+    // ВАЖЛИВО: textureLod замість texture прибирає шов (диру) 
+    // на межі розгортки через ігнорування mipmap-градієнтів.
+    vec3 color = textureLod(equirectangularMap, uv, 0.0).rgb;
     
     finalColor = vec4(color, 1.0);
 }

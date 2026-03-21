@@ -28,6 +28,8 @@ public:
     }
     std::vector<std::string> GetNames() const;
 
+    void ReloadAll();
+
 private:
     std::unordered_map<std::string, std::shared_ptr<ShaderAsset>> m_Shaders;
 };

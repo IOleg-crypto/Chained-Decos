@@ -3,6 +3,7 @@
 #include "engine/graphics/asset_manager.h"
 #include "engine/graphics/model_asset.h"
 #include "engine/physics/bvh/bvh.h"
+#include "physics.h"
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene.h"
@@ -65,8 +66,11 @@ PhysicsSystem& PhysicsSystem::Get()
     return *s_PhysicsInstance;
 }
 
-std::shared_ptr<BVH> PhysicsSystem::GetBVH(ModelAsset* asset)
+std::shared_ptr<BVH> PhysicsSystem::GetBVH(const std::string& path)
 {
+    if (path.empty()) return nullptr;
+    
+    auto asset = AssetManager::Get().Get<ModelAsset>(path);
     if (!asset || asset->GetState() != AssetState::Ready)
     {
         return nullptr;
@@ -74,15 +78,73 @@ std::shared_ptr<BVH> PhysicsSystem::GetBVH(ModelAsset* asset)
 
     std::lock_guard<std::mutex> lock(m_BVHMutex);
 
-    auto it = m_BVHCache.find(asset);
+    auto it = m_BVHCache.find(path);
     if (it == m_BVHCache.end())
     {
         CH_CORE_INFO("PhysicsSystem: Starting synchronous BVH build for '{}'", asset->GetPath());
-        auto bvh = BVH::Build(asset->GetModel(), asset->GetGlobalNodeTransforms(), asset->GetMeshToNode());
+        
+        const Model& model = asset->GetModel();
+        const auto& globalTransforms = asset->GetGlobalNodeTransforms();
+        const auto& meshToNode = asset->GetMeshToNode();
+        
+        std::vector<CollisionTriangle> allTris;
+        for (int i = 0; i < model.meshCount; i++)
+        {
+            const Mesh& mesh = model.meshes[i];
+            if (mesh.vertexCount == 0 || mesh.vertices == nullptr)
+                continue;
+
+            Matrix nodeTransform = MatrixIdentity();
+            if (i < (int)meshToNode.size())
+            {
+                int nodeIdx = meshToNode[i];
+                if (nodeIdx >= 0 && nodeIdx < (int)globalTransforms.size())
+                    nodeTransform = globalTransforms[nodeIdx];
+            }
+
+            Matrix meshTransform = MatrixMultiply(nodeTransform, model.transform);
+
+            if (mesh.indices != nullptr)
+            {
+                for (int k = 0; k < mesh.triangleCount * 3; k += 3)
+                {
+                    uint32_t idx0 = mesh.indices[k];
+                    uint32_t idx1 = mesh.indices[k + 1];
+                    uint32_t idx2 = mesh.indices[k + 2];
+
+                    allTris.emplace_back(
+                        Vector3Transform({mesh.vertices[idx0 * 3], mesh.vertices[idx0 * 3 + 1], mesh.vertices[idx0 * 3 + 2]}, meshTransform),
+                        Vector3Transform({mesh.vertices[idx1 * 3], mesh.vertices[idx1 * 3 + 1], mesh.vertices[idx1 * 3 + 2]}, meshTransform),
+                        Vector3Transform({mesh.vertices[idx2 * 3], mesh.vertices[idx2 * 3 + 1], mesh.vertices[idx2 * 3 + 2]}, meshTransform),
+                        i
+                    );
+                }
+            }
+            else
+            {
+                for (int k = 0; k < mesh.vertexCount; k += 3)
+                {
+                    allTris.emplace_back(
+                        Vector3Transform({mesh.vertices[k * 3], mesh.vertices[k * 3 + 1], mesh.vertices[k * 3 + 2]}, meshTransform),
+                        Vector3Transform({mesh.vertices[(k + 1) * 3], mesh.vertices[(k + 1) * 3 + 1], mesh.vertices[(k + 1) * 3 + 2]}, meshTransform),
+                        Vector3Transform({mesh.vertices[(k + 2) * 3], mesh.vertices[(k + 2) * 3 + 1], mesh.vertices[(k + 2) * 3 + 2]}, meshTransform),
+                        i
+                    );
+                }
+            }
+        }
+
+        auto bvh = BVH::Build(std::move(allTris));
+        
+        if (!bvh->GetTriangles().empty())
+        {
+            const auto& tri = bvh->GetTriangles()[0];
+            CH_CORE_TRACE("BVH Built for '{}': Tri0.v0 = ({}, {}, {})", path, tri.v0.x, tri.v0.y, tri.v0.z);
+        }
         
         std::promise<std::shared_ptr<BVH>> promise;
         promise.set_value(bvh);
-        m_BVHCache[asset] = promise.get_future().share();
+        m_BVHCache[path] = promise.get_future().share();
         
         return bvh;
     }
@@ -96,21 +158,20 @@ std::shared_ptr<BVH> PhysicsSystem::GetBVH(ModelAsset* asset)
     return nullptr;
 }
 
-void PhysicsSystem::InvalidateBVH(ModelAsset* asset)
+void PhysicsSystem::InvalidateBVH(const std::string& path)
 {
-    if (!asset) return;
     std::lock_guard<std::mutex> lock(m_BVHMutex);
-    m_BVHCache.erase(asset);
+    m_BVHCache.erase(path);
 }
 
-void PhysicsSystem::UpdateBVHCache(ModelAsset* asset, std::shared_ptr<BVH> bvh)
+void PhysicsSystem::UpdateBVHCache(const std::string& path, std::shared_ptr<BVH> bvh)
 {
-    if (!asset || !bvh) return;
+    if (path.empty() || !bvh) return;
     std::lock_guard<std::mutex> lock(m_BVHMutex);
 
     std::promise<std::shared_ptr<BVH>> promise;
     promise.set_value(bvh);
-    m_BVHCache[asset] = promise.get_future().share();
+    m_BVHCache[path] = promise.get_future().share();
 }
 
 PhysicsContext& Physics::GetContext(Scene* scene)

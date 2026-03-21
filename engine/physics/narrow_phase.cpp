@@ -306,8 +306,7 @@ void NarrowPhase::ResolveBoxMesh(::entt::registry& registry, ::entt::entity rbEn
     auto project = Project::GetActive();
     if (!project) return;
 
-    auto asset = AssetManager::Get().Get<ModelAsset>(otherCollider.ModelPath);
-    auto bvh = PhysicsSystem::Get().GetBVH(asset.get());
+    auto bvh = PhysicsSystem::Get().GetBVH(otherCollider.ModelPath);
     if (!bvh) return;
 
     // Build world-space AABB for the rigid body
@@ -416,8 +415,7 @@ void NarrowPhase::ResolveCapsuleMesh(::entt::registry& registry, ::entt::entity 
     auto project = Project::GetActive();
     if (!project) return;
 
-    auto asset = AssetManager::Get().Get<ModelAsset>(otherCollider.ModelPath);
-    auto bvh = PhysicsSystem::Get().GetBVH(asset.get());
+    auto bvh = PhysicsSystem::Get().GetBVH(otherCollider.ModelPath);
     if (!bvh) return;
 
     Matrix meshMatrix = otherTc.GetTransform();
@@ -538,8 +536,7 @@ void NarrowPhase::ResolveSphereMesh(::entt::registry& registry, ::entt::entity r
     auto project = Project::GetActive();
     if (!project) return;
 
-    auto asset = AssetManager::Get().Get<ModelAsset>(otherCollider.ModelPath);
-    auto bvh = PhysicsSystem::Get().GetBVH(asset.get());
+    auto bvh = PhysicsSystem::Get().GetBVH(otherCollider.ModelPath);
     if (!bvh) return;
 
     Matrix meshMatrix = otherTc.GetTransform();

@@ -43,8 +43,8 @@ void EffectsPanel::OnImGuiRender(bool readOnly)
     if (ImGui::CollapsingHeader("Debug Visualization", ImGuiTreeNodeFlags_DefaultOpen))
     {
         auto& debugFlags = m_Context->GetSettings().DebugFlags;
-        ImGui::Checkbox("Colliders", &debugFlags.DrawColliders);
-        ImGui::Checkbox("Mesh Hierarchy", &debugFlags.DrawCollisionModelBox);
+        ImGui::Checkbox("Physics (Colliders)", &debugFlags.DrawColliders);
+        ImGui::Checkbox("AABB Boxes", &debugFlags.DrawCollisionModelBox);
         ImGui::Checkbox("Lights", &debugFlags.DrawLights);
         ImGui::Checkbox("Spawn Zones", &debugFlags.DrawSpawnZones);
         ImGui::Checkbox("Draw Grid", &debugFlags.DrawGrid);

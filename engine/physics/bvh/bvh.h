@@ -1,11 +1,9 @@
 #ifndef CH_PHYSICS_BVH_H
 #define CH_PHYSICS_BVH_H
 
-#include "engine/core/base.h"
 #include "raylib.h"
-#include "raymath.h"
-#include <future>
 #include <vector>
+#include <memory>
 
 #include "bvh_node.h"
 #include "engine/physics/collision/collision_triangle.h"
@@ -34,35 +32,8 @@ class BVH
 public:
     BVH() = default;
 
-    // Snapshot of geometry data for thread-safe async building
-    struct BVHMeshSnapshot
-    {
-        std::vector<Vector3> Vertices;
-        std::vector<uint32_t> Indices;
-        int MeshIndex = 0;
-        Matrix Transform = MatrixIdentity();
-    };
-
-    struct BVHModelSnapshot
-    {
-        std::vector<BVHMeshSnapshot> Meshes;
-    };
-
-    // Synchronous API
-    static std::shared_ptr<BVH> Build(const BVHModelSnapshot& model);
-    static std::shared_ptr<BVH> Build(const Model& model, const Matrix& transform = MatrixIdentity());
-    static std::shared_ptr<BVH> Build(const Model& model, const std::vector<Matrix>& offsetMatrices,
-                                      const std::vector<int>& meshToNode, const Matrix& transform = MatrixIdentity());
-    static std::shared_ptr<BVH> Build(std::shared_ptr<class ModelAsset> asset,
-                                      const Matrix& transform = MatrixIdentity());
-
-    // Asynchronous API
-    static std::future<std::shared_ptr<BVH>> BuildAsync(const Model& model, const Matrix& transform = MatrixIdentity());
-    static std::future<std::shared_ptr<BVH>> BuildAsync(const Model& model, const std::vector<Matrix>& offsetMatrices,
-                                                        const std::vector<int>& meshToNode,
-                                                        const Matrix& transform = MatrixIdentity());
-    static std::future<std::shared_ptr<BVH>> BuildAsync(std::shared_ptr<class ModelAsset> asset,
-                                                        const Matrix& transform = MatrixIdentity());
+    // Low-level API
+    static std::shared_ptr<BVH> Build(std::vector<CollisionTriangle>&& triangles);
 
     bool Raycast(const Ray& ray, float& t, Vector3& normal, int& meshIndex) const;
     bool IntersectAABB(const BoundingBox& box, Vector3& outOverlapNormal, float& outOverlapDepth) const;
