@@ -15,7 +15,7 @@ public:
     virtual void OnImGuiRender(bool readOnly = false) override;
 
 private:
-    entt::entity DrawEntityNodeRecursive(Entity entity);
+    entt::entity DrawEntityNodeRecursive(Entity entity, bool readOnly);
     void DrawComponents(Entity entity);
     void DrawContextMenu();
     const char* GetEntityIcon(Entity entity);

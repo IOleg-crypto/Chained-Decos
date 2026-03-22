@@ -3,6 +3,7 @@
 #include "engine/core/application.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scene_events.h"
+#include "engine/scene/scene_settings.h"
 #include "extras/IconsFontAwesome6.h"
 #include "imgui.h"
 #include "undo/entity_commands.h"
@@ -75,7 +76,7 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
                 }
             }
 
-            entt::entity toDelete = DrawEntityNodeRecursive(entity);
+            entt::entity toDelete = DrawEntityNodeRecursive(entity, readOnly);
             if (toDelete != entt::null)
             {
                 entitiesToDelete.push_back(toDelete);
@@ -118,7 +119,7 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
         }
 
         // Blank space context menu
-        if (ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
+        if (!readOnly && ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
         {
             DrawContextMenu();
             ImGui::EndPopup();
@@ -169,7 +170,7 @@ const char* SceneHierarchyPanel::GetEntityIcon(Entity entity)
     return ICON_FA_CUBE;
 }
 
-entt::entity SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity)
+entt::entity SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity, bool readOnly)
 {
     if (!entity || !entity.IsValid() || m_DrawnEntities.contains(entity))
     {
@@ -221,7 +222,7 @@ entt::entity SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity)
     }
 
     entt::entity signaledForDelete = entt::null;
-    if (ImGui::BeginPopupContextItem())
+    if (!readOnly && ImGui::BeginPopupContextItem())
     {
         if (ImGui::MenuItem(ICON_FA_PEN " Rename", "F2"))
         {
@@ -249,7 +250,7 @@ entt::entity SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity)
             auto children = entity.GetComponent<HierarchyComponent>().Children; // Copy to avoid iteration issues
             for (auto childID : children)
             {
-                entt::entity childDel = DrawEntityNodeRecursive(Entity(childID, &m_Context->GetRegistry()));
+                entt::entity childDel = DrawEntityNodeRecursive(Entity(childID, &m_Context->GetRegistry()), readOnly);
                 if (childDel != entt::null)
                 {
                     signaledForDelete = childDel;
@@ -353,7 +354,9 @@ void SceneHierarchyPanel::DrawContextMenu()
         ImGui::EndMenu();
     }
 
-    if (ImGui::BeginMenu("Control"))
+    if (m_Context->GetSettings().Mode != BackgroundMode::Environment3D)
+    {
+        if (ImGui::BeginMenu("Control"))
     {
         if (ImGui::BeginMenu("Basic"))
         {
@@ -461,6 +464,9 @@ void SceneHierarchyPanel::DrawContextMenu()
             {
                 m_Context->CreateUIEntity("PlotHistogram");
             }
+            ImGui::EndMenu();
+        }
+
             ImGui::EndMenu();
         }
 

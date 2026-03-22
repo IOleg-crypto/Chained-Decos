@@ -1,6 +1,6 @@
 #version 430 core
 
-#include "include/fog.glsl"
+
 
 in vec2 fragTexCoord;
 out vec4 finalColor;
@@ -34,8 +34,8 @@ void main()
     vec4 worldPos = matInverseViewProj * clipPos;
     worldPos /= worldPos.w;
 
-    // 2. Apply Fog
-    color = ApplyFog(color, worldPos.xyz, viewPos, uTime);
+    // 2. Fog is handled in forward passes (lighting.fs, skybox.fs, etc.)
+    // color = ApplyFog(color, worldPos.xyz, viewPos, uTime);
 
     // 3. Tonemapping (ACES Filmic)
     float exposure = (uExposure > 0.0) ? uExposure : 1.0;
