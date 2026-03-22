@@ -35,10 +35,9 @@ public:
     static PendingModelData LoadMeshDataFromDisk(const std::filesystem::path& path, int samplingFPS = 30);
 
 private:
-    static void ProcessHierarchy(aiNode* node, int parent, PendingModelData& data, std::map<aiNode*, int>& nodeToBone,
-                                 std::vector<int>& meshToNode);
+    static void ProcessHierarchy(aiNode* node, int parent, PendingModelData& data, std::map<aiNode*, int>& nodeToBone);
     static void ProcessMaterials(const aiScene* scene, const std::filesystem::path& modelDir, PendingModelData& data);
-    static void ProcessMeshes(const aiScene* scene, const std::vector<int>& meshToNode, PendingModelData& data);
+    static void ProcessMeshes(const aiScene* scene, PendingModelData& data);
     static void BuildSkeleton(PendingModelData& data);
     static void ProcessAnimations(const aiScene* scene, PendingModelData& data, int samplingFPS);
     static std::string ResolveTexturePath(const aiScene* scene, const aiMaterial* aiMat, aiTextureType type,

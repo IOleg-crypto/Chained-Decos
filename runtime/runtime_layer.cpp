@@ -244,7 +244,6 @@ void RuntimeLayer::LoadScene(const std::string& path)
         // Boost asset uploads for scene loading
         m_IsBoostingUploads = true;
         m_BoostUploadsTimer = 5.0f; // Boost for 5 seconds
-        AssetManager::Get().SetMaxUploadsPerFrame(10000); // effectively no limit
         CH_CORE_INFO("RuntimeLayer: Boosting asset uploads for scene loading...");
 
         m_Scene->OnRuntimeStart();

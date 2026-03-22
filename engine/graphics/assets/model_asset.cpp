@@ -173,52 +173,41 @@ void ModelAsset::UploadToGPU()
         m_Textures = std::move(localTextures);
         m_PendingTextures = std::move(localPendingTextures);
 
-        // Cache the bounding box once (expensive Raylib call)
-        // We calculate a hierarchy-aware bounding box since raylib's GetModelBoundingBox ignores node transforms
+        // Cache the bounding box once (expensive calculation)
+        // We calculate a hierarchy-aware bounding box using the flat instance list
         BoundingBox totalBox = {{FLT_MAX, FLT_MAX, FLT_MAX}, {-FLT_MAX, -FLT_MAX, -FLT_MAX}};
         bool anyMesh = false;
-        for (int i = 0; i < m_Model.meshCount; i++)
+
+        for (const auto& inst : m_PendingData.instances)
         {
-            Mesh& mesh = m_Model.meshes[i];
+            if (inst.meshIndex < 0 || inst.meshIndex >= model.meshCount) continue;
+            Mesh& mesh = model.meshes[inst.meshIndex];
             if (mesh.vertexCount == 0) continue;
-            
-            Matrix transform = MatrixIdentity();
-            if (i < (int)m_MeshToNode.size()) {
-                int nodeIdx = m_MeshToNode[i];
-                if (nodeIdx >= 0 && nodeIdx < (int)m_GlobalNodeTransforms.size()) {
-                    transform = m_GlobalNodeTransforms[nodeIdx];
-                }
-            }
-            // Combine with model's root transform
-            transform = MatrixMultiply(transform, m_Model.transform);
-            
+
+            // Correct order: local * root
+            Matrix transform = MatrixMultiply(inst.localTransform, model.transform);
+
             BoundingBox meshBox = ::GetMeshBoundingBox(mesh);
             
-            // Efficient AABB transform (Arvo's method)
-            Vector3 worldMin = { transform.m12, transform.m13, transform.m14 };
-            Vector3 worldMax = worldMin;
-            
-            float* mat = (float*)&transform;
-            float* vmin = (float*)&meshBox.min;
-            float* vmax = (float*)&meshBox.max;
-            float* wmin = (float*)&worldMin;
-            float* wmax = (float*)&worldMax;
-            
-            for (int j = 0; j < 3; j++)
+            // Transform all 8 corners of the mesh AABB to model space
+            Vector3 corners[8] = {
+                { meshBox.min.x, meshBox.min.y, meshBox.min.z },
+                { meshBox.max.x, meshBox.min.y, meshBox.min.z },
+                { meshBox.min.x, meshBox.max.y, meshBox.min.z },
+                { meshBox.max.x, meshBox.max.y, meshBox.min.z },
+                { meshBox.min.x, meshBox.min.y, meshBox.max.z },
+                { meshBox.max.x, meshBox.min.y, meshBox.max.z },
+                { meshBox.min.x, meshBox.max.y, meshBox.max.z },
+                { meshBox.max.x, meshBox.max.y, meshBox.max.z }
+            };
+
+            for (int c = 0; c < 8; c++)
             {
-                for (int k = 0; k < 3; k++)
-                {
-                    float a = mat[k * 4 + j];
-                    float b = a * vmin[k];
-                    float c = a * vmax[k];
-                    
-                    if (b < c) { wmin[j] += b; wmax[j] += c; }
-                    else { wmin[j] += c; wmax[j] += b; }
-                }
+                Vector3 transformed = Vector3Transform(corners[c], transform);
+                totalBox.min = Vector3Min(totalBox.min, transformed);
+                totalBox.max = Vector3Max(totalBox.max, transformed);
             }
             
-            totalBox.min = Vector3Min(totalBox.min, worldMin);
-            totalBox.max = Vector3Max(totalBox.max, worldMax);
             anyMesh = true;
         }
         
@@ -248,10 +237,10 @@ void ModelAsset::UploadToGPU()
         m_Animations = std::move(m_PendingData.animations);
 
         // Transfer hierarchy data
+        m_Instances            = std::move(m_PendingData.instances);
         m_OffsetMatrices       = std::move(m_PendingData.offsetMatrices);
         m_NodeNames            = std::move(m_PendingData.nodeNames);
         m_NodeParents          = std::move(m_PendingData.nodeParents);
-        m_MeshToNode           = std::move(m_PendingData.meshToNode);
         m_GlobalNodeTransforms = std::move(m_PendingData.globalBindPoses);
     }
 

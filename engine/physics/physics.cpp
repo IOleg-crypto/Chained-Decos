@@ -84,25 +84,20 @@ std::shared_ptr<BVH> PhysicsSystem::GetBVH(const std::string& path)
         CH_CORE_INFO("PhysicsSystem: Starting synchronous BVH build for '{}'", asset->GetPath());
         
         const Model& model = asset->GetModel();
-        const auto& globalTransforms = asset->GetGlobalNodeTransforms();
-        const auto& meshToNode = asset->GetMeshToNode();
+        const auto& instances = asset->GetInstances();
         
         std::vector<CollisionTriangle> allTris;
-        for (int i = 0; i < model.meshCount; i++)
+        for (const auto& inst : instances)
         {
-            const Mesh& mesh = model.meshes[i];
+            if (inst.meshIndex < 0 || inst.meshIndex >= model.meshCount)
+                continue;
+
+            const Mesh& mesh = model.meshes[inst.meshIndex];
             if (mesh.vertexCount == 0 || mesh.vertices == nullptr)
                 continue;
 
-            Matrix nodeTransform = MatrixIdentity();
-            if (i < (int)meshToNode.size())
-            {
-                int nodeIdx = meshToNode[i];
-                if (nodeIdx >= 0 && nodeIdx < (int)globalTransforms.size())
-                    nodeTransform = globalTransforms[nodeIdx];
-            }
-
-            Matrix meshTransform = MatrixMultiply(nodeTransform, model.transform);
+            // Local * modelRoot
+            Matrix meshTransform = MatrixMultiply(inst.localTransform, model.transform);
 
             if (mesh.indices != nullptr)
             {
@@ -116,7 +111,7 @@ std::shared_ptr<BVH> PhysicsSystem::GetBVH(const std::string& path)
                         Vector3Transform({mesh.vertices[idx0 * 3], mesh.vertices[idx0 * 3 + 1], mesh.vertices[idx0 * 3 + 2]}, meshTransform),
                         Vector3Transform({mesh.vertices[idx1 * 3], mesh.vertices[idx1 * 3 + 1], mesh.vertices[idx1 * 3 + 2]}, meshTransform),
                         Vector3Transform({mesh.vertices[idx2 * 3], mesh.vertices[idx2 * 3 + 1], mesh.vertices[idx2 * 3 + 2]}, meshTransform),
-                        i
+                        inst.meshIndex
                     );
                 }
             }
@@ -128,7 +123,7 @@ std::shared_ptr<BVH> PhysicsSystem::GetBVH(const std::string& path)
                         Vector3Transform({mesh.vertices[k * 3], mesh.vertices[k * 3 + 1], mesh.vertices[k * 3 + 2]}, meshTransform),
                         Vector3Transform({mesh.vertices[(k + 1) * 3], mesh.vertices[(k + 1) * 3 + 1], mesh.vertices[(k + 1) * 3 + 2]}, meshTransform),
                         Vector3Transform({mesh.vertices[(k + 2) * 3], mesh.vertices[(k + 2) * 3 + 1], mesh.vertices[(k + 2) * 3 + 2]}, meshTransform),
-                        i
+                        inst.meshIndex
                     );
                 }
             }
@@ -200,10 +195,11 @@ void Physics::Update(Scene* scene, Timestep deltaTime, bool runtime)
     for (auto entity : collView)
         collView.get<ColliderComponent>(entity).IsColliding = false;
 
+    // Update collider sizes/offsets even in editor (for AutoCalculate)
+    UpdateColliders(scene);
+
     if (!runtime)
         return;
-
-    UpdateColliders(scene);
 
     // Fixed timestep: collisions are fully FPS-independent.
     // We pick a small step so penetration per tick is small and stable.
