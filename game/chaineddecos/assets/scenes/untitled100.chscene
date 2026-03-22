@@ -70,7 +70,7 @@ Entities:
     ColliderComponent:
       Type: 257
       Enabled: true
-      Offset: [-17.087841, -4.29592609, -11.3028545]
+      Offset: [-14.1946049, -9.53674316e-07, -8.94524384]
       Size: [34.1756821, 8.59185219, 22.6057091]
       Radius: 0.5
       Height: 2
@@ -82,8 +82,8 @@ Entities:
       Tag: rail#3d_copy_copy
     TransformComponent:
       Translation: [51.6836891, 34.3363914, 1.56504583]
-      Rotation: [3.14027047, -1.54398894, -3.14008403]
-      Scale: [2.81779146, 1.83832991, 2.52320004]
+      Rotation: [1.55929029, 0.410788745, -1.60001481]
+      Scale: [2.81782269, 1.8383677, 2.52327061]
     ModelComponent:
       ModelHandle: 0
       ModelPath: models/toy_train/train_vagon.glb
@@ -157,8 +157,8 @@ Entities:
     ColliderComponent:
       Type: 256
       Enabled: true
-      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
-      Size: [2.48870611, 4.18936205, 13.512085]
+      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Size: [2.48870611, 13.512085, 4.18936396]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
@@ -169,8 +169,8 @@ Entities:
       Tag: rail#3d_copy
     TransformComponent:
       Translation: [89.7119217, 34.3363914, -15.4183016]
-      Rotation: [3.14027047, -1.54398894, -3.14008403]
-      Scale: [2.81779146, 1.83832991, 2.52320004]
+      Rotation: [-1.96055889, -0.999783337, -2.69811749]
+      Scale: [2.81780839, 1.8383373, 2.52324486]
     ModelComponent:
       ModelHandle: 0
       ModelPath: models/toy_train/train_vagon.glb
@@ -244,8 +244,8 @@ Entities:
     ColliderComponent:
       Type: 256
       Enabled: true
-      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
-      Size: [2.48870611, 4.18936205, 13.512085]
+      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Size: [2.48870611, 13.512085, 4.18936396]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
@@ -256,8 +256,8 @@ Entities:
       Tag: rail#3d_copy
     TransformComponent:
       Translation: [160.559677, 34.3363914, -15.4183016]
-      Rotation: [3.14027047, -1.54398894, -3.14008403]
-      Scale: [2.81779146, 1.83832991, 2.52320004]
+      Rotation: [-2.88122821, -1.07542729, -1.95391703]
+      Scale: [2.81780005, 1.83833647, 2.52321053]
     ModelComponent:
       ModelHandle: 0
       ModelPath: models/toy_train/train_vagon.glb
@@ -331,8 +331,8 @@ Entities:
     ColliderComponent:
       Type: 256
       Enabled: true
-      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
-      Size: [2.48870611, 4.18936205, 13.512085]
+      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Size: [2.48870611, 13.512085, 4.18936396]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
@@ -343,8 +343,8 @@ Entities:
       Tag: rail#3d_copy
     TransformComponent:
       Translation: [195.275909, 34.3363914, -15.4183016]
-      Rotation: [3.14027047, -1.54398894, -3.14008403]
-      Scale: [2.81779146, 1.83832991, 2.52320004]
+      Rotation: [-2.1531477, -1.10677683, -2.63240695]
+      Scale: [2.81779408, 1.83833039, 2.52320075]
     ModelComponent:
       ModelHandle: 0
       ModelPath: models/toy_train/train_vagon.glb
@@ -418,8 +418,8 @@ Entities:
     ColliderComponent:
       Type: 256
       Enabled: true
-      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
-      Size: [2.48870611, 4.18936205, 13.512085]
+      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Size: [2.48870611, 13.512085, 4.18936396]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
@@ -430,8 +430,8 @@ Entities:
       Tag: rail#3d_copy
     TransformComponent:
       Translation: [232.729095, 34.3363914, -15.4183016]
-      Rotation: [3.14027047, -1.54398894, -3.14008403]
-      Scale: [2.81779146, 1.83832991, 2.52320004]
+      Rotation: [3.1402328, -1.54398417, -1.52254927]
+      Scale: [2.81773686, 1.83830583, 2.52309632]
     ModelComponent:
       ModelHandle: 0
       ModelPath: models/toy_train/train_vagon.glb
@@ -505,8 +505,8 @@ Entities:
     ColliderComponent:
       Type: 256
       Enabled: true
-      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
-      Size: [2.48870611, 4.18936205, 13.512085]
+      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Size: [2.48870611, 13.512085, 4.18936396]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
@@ -517,8 +517,8 @@ Entities:
       Tag: rail#3d_copy
     TransformComponent:
       Translation: [269.359863, 34.3363914, -15.4183016]
-      Rotation: [3.14027047, -1.54398894, -3.14008403]
-      Scale: [2.81779146, 1.83832991, 2.52320004]
+      Rotation: [3.14023447, -1.543975, -1.55569565]
+      Scale: [2.81769967, 1.83829546, 2.52312875]
     ModelComponent:
       ModelHandle: 0
       ModelPath: models/toy_train/train_vagon.glb
@@ -592,8 +592,8 @@ Entities:
     ColliderComponent:
       Type: 256
       Enabled: true
-      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
-      Size: [2.48870611, 4.18936205, 13.512085]
+      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Size: [2.48870611, 13.512085, 4.18936396]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
@@ -604,8 +604,8 @@ Entities:
       Tag: rail#3d_copy
     TransformComponent:
       Translation: [304.469788, 34.3363914, -15.4183016]
-      Rotation: [3.14027047, -1.54398894, -3.14008403]
-      Scale: [2.81779146, 1.83832991, 2.52320004]
+      Rotation: [3.14017534, -1.54393637, -1.68613875]
+      Scale: [2.81769824, 1.83826065, 2.52310705]
     ModelComponent:
       ModelHandle: 0
       ModelPath: models/toy_train/train_vagon.glb
@@ -679,8 +679,8 @@ Entities:
     ColliderComponent:
       Type: 256
       Enabled: true
-      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
-      Size: [2.48870611, 4.18936205, 13.512085]
+      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Size: [2.48870611, 13.512085, 4.18936396]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
@@ -691,8 +691,8 @@ Entities:
       Tag: rail#3d_copy
     TransformComponent:
       Translation: [340.353027, 34.3363914, -15.4183016]
-      Rotation: [3.14027047, -1.54398894, -3.14008403]
-      Scale: [2.81779146, 1.83832991, 2.52320004]
+      Rotation: [3.14018416, -1.54396355, -1.52885783]
+      Scale: [2.81768346, 1.83830261, 2.52313828]
     ModelComponent:
       ModelHandle: 0
       ModelPath: models/toy_train/train_vagon.glb
@@ -766,8 +766,8 @@ Entities:
     ColliderComponent:
       Type: 256
       Enabled: true
-      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
-      Size: [2.48870611, 4.18936205, 13.512085]
+      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Size: [2.48870611, 13.512085, 4.18936396]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
@@ -777,9 +777,9 @@ Entities:
     TagComponent:
       Tag: rail#3d_copy
     TransformComponent:
-      Translation: [375.037903, 34.9479713, -15.4183016]
-      Rotation: [3.14027047, -1.54398894, -3.14008403]
-      Scale: [2.81779146, 1.83832991, 2.52320004]
+      Translation: [369.179901, 34.9479713, -15.4183016]
+      Rotation: [3.14019299, -1.54396594, -1.55295646]
+      Scale: [2.81770563, 1.83824468, 2.52313542]
     ModelComponent:
       ModelHandle: 0
       ModelPath: models/toy_train/train_vagon.glb
@@ -853,8 +853,8 @@ Entities:
     ColliderComponent:
       Type: 256
       Enabled: true
-      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
-      Size: [2.48870611, 4.18936205, 13.512085]
+      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Size: [2.48870611, 13.512085, 4.18936396]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
@@ -1050,8 +1050,8 @@ Entities:
     ColliderComponent:
       Type: 859308289
       Enabled: true
-      Offset: [-43.8236694, -68.8881912, -46.1545258]
-      Size: [86.6819458, 94.478302, 89.0095215]
+      Offset: [-43.8236694, -46.1545258, -25.5901108]
+      Size: [86.6819458, 89.0095215, 94.478302]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
@@ -1246,8 +1246,8 @@ Entities:
       Tag: rail#3d_copy
     TransformComponent:
       Translation: [55.4628983, 34.3363914, -15.9756889]
-      Rotation: [3.14027047, -1.54398894, -3.14008403]
-      Scale: [2.81779146, 1.83832991, 2.52320004]
+      Rotation: [1.56929684, 0.0617705695, -1.59763551]
+      Scale: [2.81781125, 1.83835185, 2.52317905]
     ModelComponent:
       ModelHandle: 0
       ModelPath: models/toy_train/train_vagon.glb
@@ -1321,8 +1321,8 @@ Entities:
     ColliderComponent:
       Type: 1868169472
       Enabled: true
-      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
-      Size: [2.48870611, 4.18936205, 13.512085]
+      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Size: [2.48870611, 13.512085, 4.18936396]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
@@ -1364,7 +1364,7 @@ Entities:
     ColliderComponent:
       Type: 1869152513
       Enabled: true
-      Offset: [-17.087841, -4.29592609, -11.3028545]
+      Offset: [-14.1946049, -9.53674316e-07, -8.94524384]
       Size: [34.1756821, 8.59185219, 22.6057091]
       Radius: 0.5
       Height: 2
@@ -1375,8 +1375,8 @@ Entities:
     TagComponent:
       Tag: Camera
     TransformComponent:
-      Translation: [376.848877, 73.1708298, -51.153904]
-      Rotation: [-36.2302055, 5222.52246, 0]
+      Translation: [309.615295, 140.041046, 137.043091]
+      Rotation: [-17.0302296, 5391.30664, 0]
       Scale: [1, 1, 1]
     CameraComponent:
       Primary: true
@@ -1488,8 +1488,8 @@ Entities:
     ColliderComponent:
       Type: 1399259393
       Enabled: true
-      Offset: [-47.0180092, -0.00186821003, -296.693939]
-      Size: [461.537354, 163.612488, 386.329773]
+      Offset: [-0.470180094, -1.86820998e-05, -2.96693921]
+      Size: [4.61537361, 1.63612497, 3.86329746]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
@@ -1500,8 +1500,8 @@ Entities:
       Tag: rail#3d
     TransformComponent:
       Translation: [124.947281, 34.3363914, -15.4183016]
-      Rotation: [3.14027047, -1.54398894, -3.14008403]
-      Scale: [2.81779146, 1.83832991, 2.52320004]
+      Rotation: [3.14005208, -1.54395568, -1.59915721]
+      Scale: [2.81767035, 1.83825684, 2.5230813]
     ModelComponent:
       ModelHandle: 0
       ModelPath: models/toy_train/train_vagon.glb
@@ -1575,8 +1575,8 @@ Entities:
     ColliderComponent:
       Type: 538968320
       Enabled: true
-      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
-      Size: [2.48870611, 4.18936205, 13.512085]
+      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Size: [2.48870611, 13.512085, 4.18936396]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
@@ -2058,8 +2058,8 @@ Entities:
     ColliderComponent:
       Type: 979697921
       Enabled: true
-      Offset: [-18203.7422, -18203.7383, -18237.1973]
-      Size: [36407.4922, 36407.4844, 36661.4023]
+      Offset: [-18203.7422, -18237.1973, -18203.748]
+      Size: [36407.4922, 36661.4023, 36407.4844]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
@@ -2149,8 +2149,8 @@ Entities:
     ColliderComponent:
       Type: 537526529
       Enabled: true
-      Offset: [-10.1186838, -142.921936, -4.77685642]
-      Size: [20.2556896, 277.196045, 14.2480249]
+      Offset: [-9.29998016, -130.776825, -0.718266964]
+      Size: [20.2556896, 277.196045, 14.2480259]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
@@ -2197,8 +2197,8 @@ Entities:
     ColliderComponent:
       Type: 1852768513
       Enabled: true
-      Offset: [-10.1186838, -142.921936, -4.77685642]
-      Size: [20.2556896, 277.196045, 14.2480249]
+      Offset: [-9.29998016, -130.776825, -0.718266964]
+      Size: [20.2556896, 277.196045, 14.2480259]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
@@ -2245,8 +2245,8 @@ Entities:
     ColliderComponent:
       Type: 1986920705
       Enabled: true
-      Offset: [-466.246063, -5.3495326, -1178.52258]
-      Size: [928.319946, 715.296143, 2357.04517]
+      Offset: [-4.66246033, 3.7252903e-09, -11.7852259]
+      Size: [9.28319931, 7.15296125, 23.5704517]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
@@ -2288,8 +2288,8 @@ Entities:
     ColliderComponent:
       Type: 1600389377
       Enabled: true
-      Offset: [-10.1186838, -142.921936, -4.77685642]
-      Size: [20.2556896, 277.196045, 14.2480249]
+      Offset: [-9.29998016, -130.776825, -0.718266964]
+      Size: [20.2556896, 277.196045, 14.2480259]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
@@ -2304,9 +2304,9 @@ Entities:
     TagComponent:
       Tag: rail#3d_copy_copy
     TransformComponent:
-      Translation: [400.26593, 30.0238152, -15.4183016]
-      Rotation: [3.13979626, -1.54386234, -1.49446869]
-      Scale: [2.81737709, 1.83831358, 2.52311802]
+      Translation: [394.406952, 36.0981331, -15.4183016]
+      Rotation: [3.13979626, -1.54386234, -1.49447083]
+      Scale: [2.81729794, 1.83831346, 2.52311802]
     ModelComponent:
       ModelHandle: 0
       ModelPath: models/toy_train/train_vagon.glb
@@ -2380,8 +2380,8 @@ Entities:
     ColliderComponent:
       Type: 256
       Enabled: true
-      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
-      Size: [2.48870611, 4.18936205, 13.512085]
+      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Size: [2.48870611, 13.512085, 4.18936396]
       Radius: 0.5
       Height: 2
       ModelHandle: 0
