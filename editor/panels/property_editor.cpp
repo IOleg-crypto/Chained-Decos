@@ -8,6 +8,7 @@
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene.h"
+#include "engine/scene/scene_settings.h"
 #include "extras/IconsFontAwesome6.h"
 #include "imgui.h"
 #include "nfd.h"
@@ -1909,6 +1910,8 @@ void PropertyEditor::DrawAddComponentPopup(CHEngine::Entity entity)
     if (ImGui::BeginPopup("AddComponent"))
     {
         bool isUIEntity = entity.HasComponent<ControlComponent>();
+        auto* scene = entity.GetRegistry().ctx().find<Scene*>();
+        bool is3DScene = scene && (*scene)->GetSettings().Mode == BackgroundMode::Environment3D;
 
         for (auto& [id, metadata] : s_ComponentRegistry)
         {
@@ -1922,6 +1925,15 @@ void PropertyEditor::DrawAddComponentPopup(CHEngine::Entity entity)
             if (metadata.IsWidget && !isUIEntity)
             {
                 continue;
+            }
+
+            // [FIX] Constraint: Do not allow adding UI components/widgets in 3D (Environment3D) scenes
+            if (is3DScene)
+            {
+                if (metadata.IsWidget || id == entt::type_hash<ControlComponent>::value())
+                {
+                    continue;
+                }
             }
 
             auto& registry = entity.GetRegistry();

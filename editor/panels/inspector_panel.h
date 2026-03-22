@@ -18,7 +18,7 @@ public:
     }
 
 private:
-    void DrawComponents(Entity entity);
+    void DrawComponents(Entity entity, bool readOnly);
 
 private:
     Entity m_SelectedEntity;

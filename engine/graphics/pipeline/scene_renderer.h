@@ -49,7 +49,7 @@ public:
     // Internal methods used by RenderScene
     void RenderModels(Scene* scene, const Camera3D& camera, float nearClip, float farClip, Timestep timestep,
                       const SceneRenderOptions& options);
-    void RenderDebug(Scene* scene, const SceneRenderOptions& options);
+    void RenderDebug(Scene* scene, const Camera3D& camera, const SceneRenderOptions& options);
     void RenderEditorIcons(Scene* scene, const Camera3D& camera);
     void RenderSprites(Scene* scene);
 

@@ -36,7 +36,7 @@ void InspectorPanel::OnImGuiRender(bool readOnly)
     if (m_SelectedEntity && m_SelectedEntity.IsValid())
     {
         ImGui::BeginDisabled(readOnly);
-        DrawComponents(m_SelectedEntity);
+        DrawComponents(m_SelectedEntity, readOnly);
         ImGui::EndDisabled();
     }
     else
@@ -58,7 +58,7 @@ void InspectorPanel::OnEvent(Event& e)
     });
 }
 
-void InspectorPanel::DrawComponents(Entity entity)
+void InspectorPanel::DrawComponents(Entity entity, bool readOnly)
 {
     ImGui::PushID((uint32_t)entity);
 
@@ -72,11 +72,15 @@ void InspectorPanel::DrawComponents(Entity entity)
 
     ImGui::SameLine();
     ImGui::PushItemWidth(-1);
-    if (ImGui::Button("Add Component"))
+    if (!readOnly && ImGui::Button("Add Component"))
     {
         ImGui::OpenPopup("AddComponent");
     }
-    PropertyEditor::DrawAddComponentPopup(entity);
+    
+    if (!readOnly)
+    {
+        PropertyEditor::DrawAddComponentPopup(entity);
+    }
     ImGui::PopItemWidth();
 
     // Delegate all component drawing logic to PropertyEditor registry

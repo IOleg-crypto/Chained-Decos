@@ -122,10 +122,10 @@ void EditorGUI::DrawMenuBar(EditorPanels& panels)
         ImGui::EndMenu();
     }
 
-    // Game Menu
-    if (ImGui::BeginMenu("Game"))
+    // Project Menu
+    if (ImGui::BeginMenu("Project"))
     {
-        if (ImGui::MenuItem(ICON_FA_GEARS " Project Settings"))
+        if (ImGui::MenuItem(ICON_FA_GEARS " Settings"))
         {
             if (auto p = panels.Get("Project Settings"))
             {
@@ -140,6 +140,11 @@ void EditorGUI::DrawMenuBar(EditorPanels& panels)
         }
 
         ImGui::Separator();
+
+        if (ImGui::MenuItem(ICON_FA_ARROWS_ROTATE " Reload Shaders"))
+        {
+            Renderer::Get().GetShaderLibrary().ReloadAll();
+        }
 
         if (ImGui::MenuItem(ICON_FA_FILE_CODE " Reload Scripts", "Ctrl+R"))
         {

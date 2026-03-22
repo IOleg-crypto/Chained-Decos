@@ -29,7 +29,7 @@ void main()
 
     // Auto-detect skinning: active if we have weights in the first three slots 
     // (Static meshes often default to 0,0,0,1 for unassigned attributes in GL)
-    float activeWeights = vertexBoneWeights.x + vertexBoneWeights.y + vertexBoneWeights.z;
+    float activeWeights = vertexBoneWeights.x + vertexBoneWeights.y + vertexBoneWeights.z + vertexBoneWeights.w;
     if (activeWeights > 0.01)
     {
         mat4 skinMat = 

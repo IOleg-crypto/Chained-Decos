@@ -54,18 +54,23 @@ void main()
     color += brightness;
     color = (color - 0.5) * contrast + 0.5;
 
-    // 2. Linear HDR Color
-    // Tonemapping and Gamma are handled globally in post_process.fs
-
     vec4 background = vec4(color, 1.0);
 
-    // 4. Simple Horizon Fog
+    // 2. Unified Horizon & Ground Fog
+    // This ensures that anything below the horizon eventually matches the fog color
+    // preventing "holes" or sharp seams.
     if (fogEnabled == 1) {
-        // Increase fog density near the horizon
-        float horizonFactor = pow(1.0 - abs(direction.y), 3.0);
-        float fogFactor = clamp(horizonFactor * fogDensity * 2.0, 0.0, 1.0);
+        // Simple vertical gradient: 1.0 at nadir (-Y), 0.0 at top (+Y)
+        float verticalFactor = clamp(1.0 - (direction.y + 0.05) * 10.0, 0.0, 1.0);
+        float fogFactor = pow(verticalFactor, 2.0); // Smooth curve for horizon focus
+        
+        // Also add a slight horizon "haze" even looking up
+        float horizonHaze = pow(1.0 - abs(direction.y), 5.0) * 0.5;
+        fogFactor = max(fogFactor, horizonHaze);
+        
+        fogFactor = clamp(fogFactor * clamp(fogDensity * 5.0, 0.0, 1.0), 0.0, 1.0);
         finalColor = mix(background, fogColor, fogFactor);
     } else {
         finalColor = background;
     }
-}
+}

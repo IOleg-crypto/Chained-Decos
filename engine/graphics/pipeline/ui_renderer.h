@@ -7,6 +7,9 @@
 #include <map>
 #include <string>
 
+
+// TODO : refactor class
+
 // Forward declarations for ImGui (avoids full header in API)
 struct ImVec2;
 

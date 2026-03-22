@@ -198,6 +198,8 @@ void WorldPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, 
         }
 
         ImGui::DragFloat("Ambient", &settings.Lighting.Ambient, 0.005f, 0.0f, 2.0f);
+        ImGui::DragFloat("Exposure", &settings.Lighting.Exposure, 0.01f, 0.0f, 10.0f);
+        ImGui::DragFloat("Gamma", &settings.Lighting.Gamma, 0.01f, 1.0f, 4.0f);
 
         if (readOnly)
         {
@@ -249,13 +251,6 @@ void WorldPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, 
         ImGui::DragFloat("Brightness", &settings.Skybox.Brightness, 0.01f, -2.0f, 2.0f);
         ImGui::DragFloat("Contrast", &settings.Skybox.Contrast, 0.01f, 0.0f, 5.0f);
 
-        ImGui::Separator();
-        if (ImGui::Button("Reload Shaders"))
-        {
-            CH_CORE_INFO("WorldPanel: Requesting global shader hot-reload.");
-            Renderer::Get().GetShaderLibrary().ReloadAll();
-        }
-
         if (readOnly)
         {
             ImGui::EndDisabled();
@@ -278,10 +273,11 @@ void WorldPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, 
             fog.FogColor = {(uint8_t)(fogColor[0]*255),(uint8_t)(fogColor[1]*255),(uint8_t)(fogColor[2]*255),(uint8_t)(fogColor[3]*255)};
         }
 
-        ImGui::DragInt("Fog Mode", &fog.Mode, 1, 0, 4);
-        ImGui::DragFloat("Density", &fog.Density, 0.001f, 0.0f, 1.0f);
-        ImGui::DragFloat("Start", &fog.Start, 0.1f, 0.0f, 1000.0f);
-        ImGui::DragFloat("End", &fog.End, 0.1f, 0.0f, 1000.0f);
+        const char* fogModes[] = { "Linear", "Exponential", "Exponential Squared" };
+        ImGui::Combo("Fog Mode", &fog.Mode, fogModes, 3);
+        ImGui::DragFloat("Density", &fog.Density, 0.0001f, 0.0f, 0.1f, "%.4f");
+        ImGui::DragFloat("Start", &fog.Start, 1.0f, 0.0f, 10000.0f);
+        ImGui::DragFloat("End", &fog.End, 1.0f, 0.0f, 10000.0f);
 
         if (readOnly)
         {
