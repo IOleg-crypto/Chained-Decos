@@ -56,6 +56,12 @@ struct RawAnimation
     std::vector<Transform> framePoses; // flattened [frameCount * boneCount]
 };
 
+struct MeshInstance
+{
+    int meshIndex;
+    Matrix localTransform;
+};
+
 // CPU-side data for async loading (loaded in worker thread)
 struct PendingModelData
 {
@@ -63,17 +69,20 @@ struct PendingModelData
     std::vector<RawMesh> meshes;
     std::vector<RawMaterial> materials;
 
-    // Skeletal / Hierarchy data (RAII)
+    // Skeletal / Hierarchy data (Original data for animations only)
     std::vector<BoneInfo> bones;
     std::vector<Transform> bindPose;
 
+    // Flattened render data
+    std::vector<MeshInstance> instances;
+    
+    // Support for hierarchy (only for animation system/skeleton mapping)
     std::vector<std::string> nodeNames;
     std::vector<int> nodeParents;
     std::vector<Matrix> nodeLocalTransforms;
-    std::vector<Matrix> globalBindPoses; // Computed world-space bind poses
-    std::vector<Matrix> offsetMatrices;  // per-bone offset matrices (Inverse Bind)
-    std::vector<int> meshToNode;
-
+    std::vector<Matrix> globalBindPoses; 
+    std::vector<Matrix> offsetMatrices;  
+    
     std::vector<RawAnimation> animations;
     bool isValid = false;
 };

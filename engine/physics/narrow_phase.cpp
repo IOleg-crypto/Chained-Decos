@@ -32,6 +32,17 @@ void NarrowPhase::ApplyResponse(::entt::registry& registry, entt::entity rbEntit
     {
         tc.Translation = Vector3Add(tc.Translation, Vector3Scale(normal, correction));
         tc.IsDirty = true;
+        
+        // Immediately update WorldTransform so subsequent collision checks in the same frame see the updated position
+        auto hc = registry.try_get<HierarchyComponent>(rbEntity);
+        if (!hc || hc->Parent == entt::null || !registry.valid(hc->Parent))
+        {
+            tc.WorldTransform = tc.GetTransform();
+        }
+        else
+        {
+            tc.WorldTransform = MatrixMultiply(tc.GetTransform(), registry.get<TransformComponent>(hc->Parent).WorldTransform);
+        }
     }
 
     // Grounding
@@ -467,15 +478,20 @@ void NarrowPhase::ResolveCapsuleMesh(::entt::registry& registry, ::entt::entity 
     // localRadius should scale with local-to-world? 
     // Actually, localRadius is in the mesh local space.
     // If meshMatrix has scale, say 2.0, then a world radius of 1.0 becomes 0.5 in local space.
-    float worldScale = fmaxf(Vector3Length({meshMatrix.m0, meshMatrix.m1, meshMatrix.m2}), 
-                             fmaxf(Vector3Length({meshMatrix.m4, meshMatrix.m5, meshMatrix.m6}), 
-                                   Vector3Length({meshMatrix.m8, meshMatrix.m9, meshMatrix.m10})));
-    float localRadius = (worldScale > 0.0001f) ? seg.radius / worldScale : seg.radius;
+    float scaleX = Vector3Length({meshMatrix.m0, meshMatrix.m1, meshMatrix.m2});
+    float scaleY = Vector3Length({meshMatrix.m4, meshMatrix.m5, meshMatrix.m6});
+    float scaleZ = Vector3Length({meshMatrix.m8, meshMatrix.m9, meshMatrix.m10});
+
+    Vector3 localExtents = {
+        (scaleX > 0.0001f) ? seg.radius / scaleX : seg.radius,
+        (scaleY > 0.0001f) ? seg.radius / scaleY : seg.radius,
+        (scaleZ > 0.0001f) ? seg.radius / scaleZ : seg.radius
+    };
 
     Vector3 minSeg = Vector3Min(localA, localB);
     Vector3 maxSeg = Vector3Max(localA, localB);
-    BoundingBox queryBox = {{minSeg.x - localRadius, minSeg.y - localRadius, minSeg.z - localRadius},
-                            {maxSeg.x + localRadius, maxSeg.y + localRadius, maxSeg.z + localRadius}};
+    BoundingBox queryBox = {{minSeg.x - localExtents.x, minSeg.y - localExtents.y, minSeg.z - localExtents.z},
+                            {maxSeg.x + localExtents.x, maxSeg.y + localExtents.y, maxSeg.z + localExtents.z}};
 
     // Query BVH for candidate triangles
     std::vector<const CollisionTriangle*> candidates;
@@ -537,13 +553,16 @@ void NarrowPhase::ResolveSphereBox(::entt::registry& registry, ::entt::entity rb
     auto& otherTc = registry.get<TransformComponent>(otherEntity);
 
     NarrowPhase::WorldAABB boxAABB = NarrowPhase::GetWorldAABB(otherTc, box);
-    Vector3 spherePos = Vector3Add(tc.Translation, sphere.Offset);
+    
+    Vector3 sphereWorldPos = Vector3Add({tc.WorldTransform.m12, tc.WorldTransform.m13, tc.WorldTransform.m14}, 
+                                       Vector3Subtract(Vector3Transform(sphere.Offset, tc.WorldTransform), 
+                                                       {tc.WorldTransform.m12, tc.WorldTransform.m13, tc.WorldTransform.m14}));
 
-    Vector3 closestOnBox = {fmaxf(boxAABB.min.x, fminf(spherePos.x, boxAABB.max.x)),
-                            fmaxf(boxAABB.min.y, fminf(spherePos.y, boxAABB.max.y)),
-                            fmaxf(boxAABB.min.z, fminf(spherePos.z, boxAABB.max.z))};
+    Vector3 closestOnBox = {fmaxf(boxAABB.min.x, fminf(sphereWorldPos.x, boxAABB.max.x)),
+                            fmaxf(boxAABB.min.y, fminf(sphereWorldPos.y, boxAABB.max.y)),
+                            fmaxf(boxAABB.min.z, fminf(sphereWorldPos.z, boxAABB.max.z))};
 
-    Vector3 diff = Vector3Subtract(spherePos, closestOnBox);
+    Vector3 diff = Vector3Subtract(sphereWorldPos, closestOnBox);
     float distSq = Vector3DotProduct(diff, diff);
 
     if (distSq >= sphere.Radius * sphere.Radius)
@@ -589,14 +608,19 @@ void NarrowPhase::ResolveSphereMesh(::entt::registry& registry, ::entt::entity r
                                                        {tc.WorldTransform.m12, tc.WorldTransform.m13, tc.WorldTransform.m14}));
     Vector3 sphereLocalPos = Vector3Transform(sphereWorldPos, invMeshMatrix);
 
-    float worldScale = fmaxf(Vector3Length({meshMatrix.m0, meshMatrix.m1, meshMatrix.m2}), 
-                             fmaxf(Vector3Length({meshMatrix.m4, meshMatrix.m5, meshMatrix.m6}), 
-                                   Vector3Length({meshMatrix.m8, meshMatrix.m9, meshMatrix.m10})));
-    float localRadius = (worldScale > 0.0001f) ? sphere.Radius / worldScale : sphere.Radius;
+    float scaleX = Vector3Length({meshMatrix.m0, meshMatrix.m1, meshMatrix.m2});
+    float scaleY = Vector3Length({meshMatrix.m4, meshMatrix.m5, meshMatrix.m6});
+    float scaleZ = Vector3Length({meshMatrix.m8, meshMatrix.m9, meshMatrix.m10});
+
+    Vector3 localExtents = {
+        (scaleX > 0.0001f) ? sphere.Radius / scaleX : sphere.Radius,
+        (scaleY > 0.0001f) ? sphere.Radius / scaleY : sphere.Radius,
+        (scaleZ > 0.0001f) ? sphere.Radius / scaleZ : sphere.Radius
+    };
 
     BoundingBox queryBox = {
-        {sphereLocalPos.x - localRadius, sphereLocalPos.y - localRadius, sphereLocalPos.z - localRadius},
-        {sphereLocalPos.x + localRadius, sphereLocalPos.y + localRadius, sphereLocalPos.z + localRadius}};
+        {sphereLocalPos.x - localExtents.x, sphereLocalPos.y - localExtents.y, sphereLocalPos.z - localExtents.z},
+        {sphereLocalPos.x + localExtents.x, sphereLocalPos.y + localExtents.y, sphereLocalPos.z + localExtents.z}};
 
     std::vector<const CollisionTriangle*> candidates;
     bvh->QueryAABB(queryBox, candidates);
