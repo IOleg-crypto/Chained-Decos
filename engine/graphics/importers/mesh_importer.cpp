@@ -55,22 +55,29 @@ Color MeshImporter::ConvertColor(const aiColor4D& c)
 // --- Helper Functions for LoadMeshDataFromDisk ---
 
 void MeshImporter::ProcessHierarchy(aiNode* node, int parent, PendingModelData& data,
-                                    std::map<aiNode*, int>& nodeToBone, std::vector<int>& meshToNode)
+                                    std::map<aiNode*, int>& nodeToBone)
 {
     int index = (int)data.nodeNames.size();
     nodeToBone[node] = index;
     data.nodeNames.push_back(node->mName.C_Str());
     data.nodeParents.push_back(parent);
-    data.nodeLocalTransforms.push_back(ConvertMatrix(node->mTransformation));
+    
+    Matrix localMat = ConvertMatrix(node->mTransformation);
+    data.nodeLocalTransforms.push_back(localMat);
 
+    // Compute Global Transform (Row-vector composition: local * parent)
+    Matrix globalMat = (parent == -1) ? localMat : MatrixMultiply(localMat, data.globalBindPoses[parent]);
+    data.globalBindPoses.push_back(globalMat);
+
+    // Create flat instances for rendering and AABB
     for (unsigned int i = 0; i < node->mNumMeshes; i++)
     {
-        meshToNode[node->mMeshes[i]] = index;
+        data.instances.push_back({ (int)node->mMeshes[i], globalMat });
     }
 
     for (unsigned int i = 0; i < node->mNumChildren; i++)
     {
-        ProcessHierarchy(node->mChildren[i], index, data, nodeToBone, meshToNode);
+        ProcessHierarchy(node->mChildren[i], index, data, nodeToBone);
     }
 }
 
@@ -96,7 +103,7 @@ void MeshImporter::ProcessMaterials(const aiScene* scene, const std::filesystem:
     }
 }
 
-void MeshImporter::ProcessMeshes(const aiScene* scene, const std::vector<int>& meshToNode, PendingModelData& data)
+void MeshImporter::ProcessMeshes(const aiScene* scene, PendingModelData& data)
 {
     data.offsetMatrices.assign(data.nodeNames.size(), MatrixIdentity());
 
@@ -105,8 +112,6 @@ void MeshImporter::ProcessMeshes(const aiScene* scene, const std::vector<int>& m
         aiMesh* aiMesh = scene->mMeshes[m];
         RawMesh mesh;
         mesh.materialIndex = aiMesh->mMaterialIndex;
-
-        int owningNodeIdx = meshToNode[m];
 
         for (unsigned int v = 0; v < aiMesh->mNumVertices; v++)
         {
@@ -124,14 +129,10 @@ void MeshImporter::ProcessMeshes(const aiScene* scene, const std::vector<int>& m
                 mesh.texcoords.push_back(aiMesh->mTextureCoords[0][v].x);
                 mesh.texcoords.push_back(aiMesh->mTextureCoords[0][v].y);
             }
-            mesh.joints.insert(mesh.joints.end(), 4, (unsigned char)(owningNodeIdx != -1 ? owningNodeIdx : 0));
+            
+            // Initialize skinning data as empty (no bone influence by default)
+            mesh.joints.insert(mesh.joints.end(), 4, 0);
             mesh.weights.insert(mesh.weights.end(), 4, 0.0f);
-            mesh.weights[mesh.weights.size() - 4] = 1.0f;
-        }
-
-        if (owningNodeIdx != -1 && !aiMesh->HasBones())
-        {
-            data.offsetMatrices[owningNodeIdx] = MatrixIdentity();
         }
 
         if (aiMesh->HasBones())
@@ -175,8 +176,7 @@ void MeshImporter::ProcessMeshes(const aiScene* scene, const std::vector<int>& m
 
                 if (totalWeight <= 0.001f)
                 {
-                    int fallbackBone = (owningNodeIdx != -1) ? owningNodeIdx : 0;
-                    mesh.joints[v * 4] = (unsigned char)fallbackBone;
+                    mesh.joints[v * 4] = 0;
                     mesh.weights[v * 4] = 1.0f;
                     totalWeight = 1.0f;
                 }
@@ -435,6 +435,7 @@ PendingModelData MeshImporter::LoadMeshDataFromDisk(const std::filesystem::path&
                          aiProcess_SplitLargeMeshes |     // Critical for 16-bit index systems like Raylib
                          aiProcess_ImproveCacheLocality | // Performance optimization
                          aiProcess_RemoveRedundantMaterials |
+                         aiProcess_FindInstances |   // Optimize: find identical meshes
                          aiProcess_FindInvalidData | // Clean up the import
                          aiProcess_OptimizeGraph |   // Simplify hierarchy
                          aiProcess_OptimizeMeshes;   // Combine small meshes where possible
@@ -450,26 +451,10 @@ PendingModelData MeshImporter::LoadMeshDataFromDisk(const std::filesystem::path&
         return data;
     }
 
-    // 1. Hierarchy & Mesh-to-Node Mapping
+    // 1. Hierarchy & Instances
     std::map<aiNode*, int> nodeToBone;
-    data.meshToNode.assign(scene->mNumMeshes, -1);
-    ProcessHierarchy(scene->mRootNode, -1, data, nodeToBone, data.meshToNode);
-
-    // 2. Compute Global Bind Pose Transforms
-    data.globalBindPoses.resize(data.nodeNames.size());
-    for (size_t i = 0; i < data.nodeNames.size(); i++)
-    {
-        int parent = data.nodeParents[i];
-        if (parent == -1)
-        {
-            data.globalBindPoses[i] = data.nodeLocalTransforms[i];
-        }
-        else
-        {
-            // Raylib math is row-major: v_out = v_in * M_local * M_parent
-            data.globalBindPoses[i] = MatrixMultiply(data.nodeLocalTransforms[i], data.globalBindPoses[parent]);
-        }
-    }
+    data.globalBindPoses.clear(); // Will be populated by ProcessHierarchy
+    ProcessHierarchy(scene->mRootNode, -1, data, nodeToBone);
 
     // 3. Sequential Processing
     if (importMaterials)
@@ -482,7 +467,7 @@ PendingModelData MeshImporter::LoadMeshDataFromDisk(const std::filesystem::path&
         data.materials.push_back(RawMaterial{});
     }
     
-    ProcessMeshes(scene, data.meshToNode, data);
+    ProcessMeshes(scene, data);
     BuildSkeleton(data);
     ProcessAnimations(scene, data, samplingFPS);
 
