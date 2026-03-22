@@ -1,5 +1,5 @@
 #include "engine/core/base.h"
-#include "engine/graphics/renderer.h"
+#include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/renderer2d.h"
 #include "raylib.h"
 #include "gtest/gtest.h"

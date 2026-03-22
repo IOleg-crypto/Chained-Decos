@@ -65,9 +65,9 @@ public:
     {
         return m_OffsetMatrices;
     }
-    const std::vector<int>& GetMeshToNode() const
+    const std::vector<MeshInstance>& GetInstances() const
     {
-        return m_MeshToNode;
+        return m_Instances;
     }
     const std::vector<Matrix>& GetGlobalNodeTransforms() const
     {
@@ -82,11 +82,13 @@ private:
     std::vector<RawAnimation> m_Animations;
     std::vector<std::shared_ptr<class TextureAsset>> m_Textures;
 
-    // KISS additions
+    // Simplified Instance-based data
+    std::vector<MeshInstance> m_Instances;
+    
+    // Skeleton data (only for animation system)
     std::vector<Matrix> m_OffsetMatrices;
     std::vector<std::string> m_NodeNames;
     std::vector<int> m_NodeParents;
-    std::vector<int> m_MeshToNode;
     std::vector<Matrix> m_GlobalNodeTransforms;
 
     mutable std::mutex m_ModelMutex; // Protect Model access during async loading

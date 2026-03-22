@@ -18,10 +18,6 @@
 #include <unordered_set>
 
 
-namespace
-{
-using namespace CHEngine;
-} // namespace
 
 namespace CHEngine
 {
@@ -491,24 +487,12 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
 
         if (collider.Type == ColliderType::Box)
         {
-            // Position of the wire box: world origin + rotated/scaled Offset + halfSize
-            // Renderer::DrawCubeWires takes center and size.
-            // Our Offset is the min point in Entity local space.
-            Vector3 worldMin = Vector3Transform(collider.Offset, worldTransform);
-            Vector3 worldMax = Vector3Transform(Vector3Add(collider.Offset, collider.Size), worldTransform);
-            Vector3 center = Vector3Scale(Vector3Add(worldMin, worldMax), 0.5f);
-            Vector3 worldSize = { 
-                Vector3Length(Vector3Subtract(Vector3Transform({collider.Size.x, 0, 0}, worldTransform), Vector3Transform({0,0,0}, worldTransform))),
-                Vector3Length(Vector3Subtract(Vector3Transform({0, collider.Size.y, 0}, worldTransform), Vector3Transform({0,0,0}, worldTransform))),
-                Vector3Length(Vector3Subtract(Vector3Transform({0, 0, collider.Size.z}, worldTransform), Vector3Transform({0,0,0}, worldTransform)))
-            };
-            
-            // Actually, simpler: just pass the transform that maps local [Offset, Offset+Size] to world.
-            // But DrawCubeWires expects center.
-            Matrix boxTransform = MatrixMultiply(MatrixTranslate(collider.Offset.x + collider.Size.x*0.5f, 
-                                                                 collider.Offset.y + collider.Size.y*0.5f, 
-                                                                 collider.Offset.z + collider.Size.z*0.5f), worldTransform);
-            Renderer::Get().DrawCubeWires(boxTransform, collider.Size, debugColor);
+            // Box colliders are treated as AABBs in NarrowPhase. 
+            // Draw the exact World AABB so visuals match physical collisions.
+            BoundingBox worldAABB = CalculateColliderWorldAABB(collider, worldTransform);
+            Vector3 center = Vector3Scale(Vector3Add(worldAABB.min, worldAABB.max), 0.5f);
+            Vector3 size = Vector3Subtract(worldAABB.max, worldAABB.min);
+            Renderer::Get().DrawCubeWires(MatrixTranslate(center.x, center.y, center.z), size, debugColor);
         }
         else if (collider.Type == ColliderType::Sphere)
         {
@@ -528,17 +512,13 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
                 if (model && model->GetState() == AssetState::Ready)
                 {
                     const auto& rayModel = model->GetModel();
-                    const auto& nodeTransforms = model->GetGlobalNodeTransforms();
-                    const auto& meshToNode = model->GetMeshToNode();
-
-                    for (int i = 0; i < rayModel.meshCount; i++)
+                    for (const auto& inst : model->GetInstances())
                     {
-                        Matrix nodeMat = MatrixIdentity();
-                        if (i < (int)meshToNode.size() && meshToNode[i] >= 0)
-                            nodeMat = nodeTransforms[meshToNode[i]];
+                        if (inst.meshIndex < 0 || inst.meshIndex >= rayModel.meshCount) continue;
                         
-                        Matrix finalTransform = MatrixMultiply(nodeMat, MatrixMultiply(rayModel.transform, worldTransform));
-                        Renderer::Get().DrawMeshWire(rayModel.meshes[i], debugColor, finalTransform);
+                        // Local * modelRoot * entityWorld
+                        Matrix finalTransform = MatrixMultiply(inst.localTransform, MatrixMultiply(rayModel.transform, worldTransform));
+                        Renderer::Get().DrawMeshWire(rayModel.meshes[inst.meshIndex], debugColor, finalTransform);
                     }
                 }
             }
@@ -720,30 +700,25 @@ void SceneRenderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, con
     if (!modelAsset || modelAsset->GetState() != AssetState::Ready) return;
 
     Model& model = modelAsset->GetModel();
-    const auto& globalNodeTransforms = modelAsset->GetGlobalNodeTransforms();
-    const auto& meshToNode = modelAsset->GetMeshToNode();
-
     auto& renderer = Renderer::Get();
     auto activeShader = shaderOverride ? shaderOverride : (renderer.GetShaderLibrary().Exists("Lighting") ? renderer.GetShaderLibrary().Get("Lighting") : nullptr);
 
-    for (int i = 0; i < model.meshCount; i++)
+    const auto& instances = modelAsset->GetInstances();
+    for (const auto& inst : instances)
     {
+        int i = inst.meshIndex;
+        if (i < 0 || i >= model.meshCount) continue;
+
+        // Correct order for Raylib: local * modelRoot * worldEntity
+        Matrix entityWorldTransform = MatrixMultiply(model.transform, transform);
+        Matrix meshWorldTransform = MatrixMultiply(inst.localTransform, entityWorldTransform);
+
         m_CurrentStats.DrawCalls++;
         m_CurrentStats.MeshCount++;
         m_CurrentStats.PolyCount += model.meshes[i].triangleCount;
 
         Material material = ResolveMaterialForMesh(i, model, materialSlotOverrides);
         
-        Matrix nodeTransform = MatrixIdentity();
-        if (i < (int)meshToNode.size())
-        {
-            int nodeIdx = meshToNode[i];
-            if (nodeIdx >= 0 && nodeIdx < (int)globalNodeTransforms.size()) 
-                nodeTransform = globalNodeTransforms[nodeIdx];
-        }
-
-        Matrix meshWorldTransform = MatrixMultiply(nodeTransform, MatrixMultiply(model.transform, transform));
-
         if (activeShader)
         {
             BindShaderUniforms(activeShader.get(), boneMatrices, shaderUniformOverrides);
@@ -751,7 +726,11 @@ void SceneRenderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, con
 
             Shader originalShader = material.shader;
             material.shader = activeShader->GetShader();
-            renderer.DrawMesh(model.meshes[i], material, meshWorldTransform);
+            
+            // CRITICAL@FIX: If using bone matrices, they already include the local node transform.
+            bool useSkinning = !boneMatrices.empty();
+            renderer.DrawMesh(model.meshes[i], material, useSkinning ? entityWorldTransform : meshWorldTransform);
+            
             material.shader = originalShader;
         }
         else
@@ -792,8 +771,14 @@ void SceneRenderer::BindShaderUniforms(ShaderAsset* activeShader, const std::vec
     }
     else
     {
-        static Matrix identities[4] = { MatrixIdentity(), MatrixIdentity(), MatrixIdentity(), MatrixIdentity() };
-        activeShader->SetMatrices("boneMatrices", identities, 4);
+        // For static meshes in animated models using fallback bones, we must provide identities
+        // for all potential bone indices (up to 128 as per shader)
+        static std::vector<Matrix> identities;
+        if (identities.empty()) 
+        {
+            identities.assign(128, MatrixIdentity());
+        }
+        activeShader->SetMatrices("boneMatrices", identities.data(), 128);
     }
 
     for (const auto& u : shaderUniformOverrides)
