@@ -94,7 +94,7 @@ void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float near
 
         RenderModels(scene, camera, nearClip, farClip, timestep, options);
 
-        RenderDebug(scene, options);
+        RenderDebug(scene, camera, options);
 
         RenderSprites(scene);
 
@@ -441,7 +441,7 @@ void SceneRenderer::DrawStaticEntities(std::unordered_map<InstanceKey, InstanceG
     }
 }
 
-void SceneRenderer::RenderDebug(Scene* scene, const SceneRenderOptions& options)
+void SceneRenderer::RenderDebug(Scene* scene, const Camera3D& camera, const SceneRenderOptions& options)
 {
     if (!options.ShowDebugColliders && !options.ShowDebugCollisionModelBox && !options.ShowDebugSpawnZones && !options.DrawGrid)
     {
@@ -455,7 +455,7 @@ void SceneRenderer::RenderDebug(Scene* scene, const SceneRenderOptions& options)
     if (options.DrawGrid && scene->GetSettings().Mode == BackgroundMode::Environment3D)
     {
         const auto& grid = scene->GetSettings().Grid;
-        Renderer::Get().DrawGrid(grid.Slices, grid.Spacing);
+        Renderer::Get().DrawInfiniteGrid(camera, grid.Spacing, { 200, 200, 200, 255 });
     }
 
     if (options.ShowDebugColliders)

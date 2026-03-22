@@ -92,6 +92,7 @@ public:
     
     void DrawLine(Vector3 start, Vector3 end, Color color);
     void DrawGrid(int slices, float spacing);
+    void DrawInfiniteGrid(const Camera3D& camera, float spacing, Color color);
     void DrawSkybox(const SkyboxSettings& settings, const Camera3D& camera);
     void DrawBillboard(const Camera3D& camera, Texture2D texture, Vector3 position, float size, Color tint);
     void DrawCubeWires(const Matrix& transform, Vector3 size, Color color);

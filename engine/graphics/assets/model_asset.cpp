@@ -399,8 +399,10 @@ std::vector<Matrix> ModelAsset::ComputeAnimationPose(int animationIndex, float f
         localMat = MatrixMultiply(MatrixScale(localPoseA[i].scale.x, localPoseA[i].scale.y, localPoseA[i].scale.z), localMat);
 
         int parent = m_Model.bones[i].parent;
-        // Global = Local * ParentGlobal (Raylib math v * M)
-        globalPose[i] = (parent == -1) ? localMat : MatrixMultiply(globalPose[parent], localMat);
+        // Global = ParentGlobal * Local (Raylib's MatrixMultiply(L, R) is R * L, so we use Child, Parent)
+        globalPose[i] = (parent == -1) ? localMat : MatrixMultiply(localMat, globalPose[parent]);
+        
+        // BoneMatrix = GlobalPose * InverseBindPose (Using InverseBind, GlobalPose to get Global * InverseBind)
         boneMatrices[i] = MatrixMultiply(m_OffsetMatrices[i], globalPose[i]);
     }
 

@@ -31,7 +31,7 @@ void EffectsPanel::OnImGuiRender(bool readOnly)
 
     if (ImGui::CollapsingHeader("Viewport Settings", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        const char* diagnosticModes[] = {"Normal Render", "Normals visualization", "Lighting only", "Albedo only"};
+        const char* diagnosticModes[] = {"Full Render", "Normals", "Lighting only", "Albedo only"};
         int currentDiag = (int)m_Context->GetSettings().DiagnosticMode;
         if (ImGui::Combo("Diagnostic Mode", &currentDiag, diagnosticModes, 4))
         {

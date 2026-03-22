@@ -56,6 +56,7 @@ void Renderer::LoadEngineResources()
     loadShader("CubemapGen",     "resources/shaders/cubemap.chshader");
     loadShader("SkyboxCubemap",  "resources/shaders/skybox_cubemap.chshader");
     loadShader("PostProcess",    "resources/shaders/post_process.chshader");
+    loadShader("Grid",           "resources/shaders/grid.chshader");
     
     CH_CORE_INFO("[Renderer] LoadEngineResources done. {} shader(s) loaded.", shaders.GetNames().size());
 }
@@ -236,6 +237,53 @@ void Renderer::DrawMeshWire(const Mesh& mesh, Color color, const Matrix& transfo
 void Renderer::DrawGrid(int slices, float spacing)
 {
     ::DrawGrid(slices, spacing);
+}
+
+void Renderer::DrawInfiniteGrid(const Camera3D& camera, float spacing, Color color)
+{
+    auto shaderAsset = m_Data->Shaders->Get("Grid");
+    if (!shaderAsset || shaderAsset->GetState() != AssetState::Ready) return;
+
+    Shader shader = shaderAsset->GetShader();
+    
+    // We draw a large plane centered on the camera (XZ only, Y=0)
+    // Size should be large enough to cover the horizon but not too large for precision
+    // Size should be large enough to cover the extreme far plane
+    float gridPlaneSize = 15000.0f; 
+    
+    // Position the plane slightly below Y=0 to prevent Z-fighting with other objects
+    Vector3 planePos = { camera.position.x, -0.005f, camera.position.z };
+    
+    // We can use GenMeshPlane or just DrawMesh with a custom transform
+    static Mesh plane = GenMeshPlane(gridPlaneSize, gridPlaneSize, 1, 1);
+    
+    Matrix model = MatrixTranslate(planePos.x, planePos.y, planePos.z);
+    Matrix mvp = MatrixMultiply(model, MatrixMultiply(m_Data->CurrentView, m_Data->CurrentProj));
+    
+    // Set uniforms BEFORE drawing
+    int mvpLoc = GetShaderLocation(shader, "mvp");
+    int matModelLoc = GetShaderLocation(shader, "matModel");
+    int camPosLoc = GetShaderLocation(shader, "cameraPos");
+    int gridColorLoc = GetShaderLocation(shader, "gridColor");
+    int gridSizeLoc = GetShaderLocation(shader, "gridSize");
+    
+    SetShaderValueMatrix(shader, mvpLoc, mvp);
+    SetShaderValueMatrix(shader, matModelLoc, model);
+    SetShaderValue(shader, camPosLoc, &camera.position, SHADER_UNIFORM_VEC3);
+    
+    Vector4 col = ColorNormalize(color);
+    SetShaderValue(shader, gridColorLoc, &col, SHADER_UNIFORM_VEC4);
+    SetShaderValue(shader, gridSizeLoc, &spacing, SHADER_UNIFORM_FLOAT);
+
+    rlEnableColorBlend();
+    
+    Material mat = LoadMaterialDefault();
+    mat.shader = shader;
+    
+    // Draw the plane mesh using the grid material
+    ::DrawMesh(plane, mat, model);
+    
+    rlDisableColorBlend();
 }
 
 void Renderer::DrawSkybox(const SkyboxSettings& settings, const Camera3D& camera)

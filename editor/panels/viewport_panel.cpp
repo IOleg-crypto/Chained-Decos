@@ -223,7 +223,7 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
     {
         // Extract near/far from the active camera entity if available
         float nearClip = 0.01f;
-        float farClip = 1000.0f;
+        float farClip = 10000.0f;
 
         Entity primaryCam = activeScene_raw->GetPrimaryCameraEntity();
         if (primaryCam && primaryCam.HasComponent<CameraComponent>())

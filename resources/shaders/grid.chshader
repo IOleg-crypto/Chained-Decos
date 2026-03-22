@@ -1,0 +1,10 @@
+# Grid Shader Metadata
+VertexShader: "grid.vs"
+FragmentShader: "grid.fs"
+
+Uniforms:
+  - mvp
+  - matModel
+  - cameraPos
+  - gridColor
+  - gridSize
