@@ -15,25 +15,42 @@ Lighting:
 Skybox:
   TexturePath: skyboxes/qwantani_dusk_2_puresky_8k.hdr
   Mode: 2
-  Exposure: 0.670000017
+  Exposure: 1.00999999
   Brightness: -0.699999988
   Contrast: 0.449999988
 Fog:
   Enabled: false
   Color: [158, 148, 148, 255]
-  Density: 0.105999999
-  Start: 0
-  End: 158.800003
+  Density: 0.00999999978
+  Start: 90
+  End: 174
 DebugSettings:
   DiagnosticMode: 0
-  DrawColliders: true
+  DrawColliders: false
   DrawHierarchy: false
   DrawCollisionModelBox: false
-  DrawGrid: true
+  DrawGrid: false
   DrawSelection: true
   DrawLights: true
   DrawSpawnZones: true
 Entities:
+  - Entity: 10680602693042542455
+    TagComponent:
+      Tag: Empty Entity
+    TransformComponent:
+      Translation: [-216.192169, -7.62939453e-06, 0]
+      Rotation: [0, -0, 0]
+      Scale: [46.0502129, 47.2513962, 14.7384205]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/heli/the_last_stronghold_animated.glb
+      Materials:
+        []
+    AnimationComponent:
+      AnimationPath: ""
+      CurrentAnimationIndex: 0
+      IsLooping: false
+      IsPlaying: true
   - Entity: 6064633921243342758
     TagComponent:
       Tag: Entity_copy
@@ -76,93 +93,6 @@ Entities:
       Height: 2
       ModelHandle: 0
       ModelPath: models/stairs.glb
-      AutoCalculate: true
-  - Entity: 1306196653419322183
-    TagComponent:
-      Tag: rail#3d_copy_copy
-    TransformComponent:
-      Translation: [51.6836891, 34.3363914, 1.56504583]
-      Rotation: [1.55929029, 0.410788745, -1.60001481]
-      Scale: [2.81782269, 1.8383677, 2.52327061]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/toy_train/train_vagon.glb
-      Materials:
-        - Name: Material 0
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [39, 18, 18, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            Metalness: 0
-            Roughness: 0.5
-            DoubleSided: true
-            Transparent: false
-            Alpha: 1
-        - Name: Material 1
-          Index: 1
-          Target: 0
-          Material:
-            AlbedoColor: [145, 145, 145, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            Metalness: 0
-            Roughness: 0.5
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: Material 2
-          Index: 2
-          Target: 0
-          Material:
-            AlbedoColor: [19, 17, 15, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            Metalness: 0
-            Roughness: 0.5
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-    ColliderComponent:
-      Type: 256
-      Enabled: true
-      Offset: [-1.23305595, -6.83498478, -4.18938494]
-      Size: [2.48870611, 13.512085, 4.18936396]
-      Radius: 0.5
-      Height: 2
-      ModelHandle: 0
-      ModelPath: models/toy_train/train_vagon.glb
       AutoCalculate: true
   - Entity: 1295158128682646344
     TagComponent:
@@ -1048,7 +978,7 @@ Entities:
             Transparent: false
             Alpha: 1
     ColliderComponent:
-      Type: 859308289
+      Type: 257
       Enabled: true
       Offset: [-43.8236694, -46.1545258, -25.5901108]
       Size: [86.6819458, 89.0095215, 94.478302]
@@ -1135,7 +1065,7 @@ Entities:
             Transparent: false
             Alpha: 1
     ColliderComponent:
-      Type: 538968321
+      Type: 257
       Enabled: true
       Offset: [-36, 0, -30]
       Size: [73, 48, 61]
@@ -1168,8 +1098,8 @@ Entities:
     TagComponent:
       Tag: Player
     TransformComponent:
-      Translation: [373.983765, 84.6591797, 177.622086]
-      Rotation: [-3.14159083, -1.35437, -3.14159083]
+      Translation: [432.912476, 37.6519547, 333.904663]
+      Rotation: [0, 0.315898925, 0]
       Scale: [0.999970615, 1, 0.999970615]
     ModelComponent:
       ModelHandle: 0
@@ -1200,10 +1130,10 @@ Entities:
     ShaderComponent:
       ShaderPath: shaders/player_effect.chshader
     ColliderComponent:
-      Type: 258
+      Type: 256
       Enabled: true
-      Offset: [-0.49000001, 2.45000005, -0.293091357]
-      Size: [2.179245, 6.27687883, 1.20018852]
+      Offset: [-1.0896225, 0.00202974328, -0.293091357]
+      Size: [2.179245, 6.18353701, 1.20018852]
       Radius: 1.45000005
       Height: 7.30000019
       ModelHandle: 0
@@ -1218,7 +1148,7 @@ Entities:
       SoundPath: audio/storegraphic-soft-wind-477404.mp3
       Loop: true
       PlayOnStart: false
-      Volume: 0.147039875
+      Volume: 0.193617672
       Pitch: 1
     PlayerComponent:
       MovementSpeed: 15
@@ -1319,7 +1249,7 @@ Entities:
             Transparent: false
             Alpha: 1
     ColliderComponent:
-      Type: 1868169472
+      Type: 256
       Enabled: true
       Offset: [-1.23305595, -6.83498478, -4.18938494]
       Size: [2.48870611, 13.512085, 4.18936396]
@@ -1362,7 +1292,7 @@ Entities:
             Transparent: false
             Alpha: 1
     ColliderComponent:
-      Type: 1869152513
+      Type: 257
       Enabled: true
       Offset: [-14.1946049, -9.53674316e-07, -8.94524384]
       Size: [34.1756821, 8.59185219, 22.6057091]
@@ -1375,22 +1305,22 @@ Entities:
     TagComponent:
       Tag: Camera
     TransformComponent:
-      Translation: [309.615295, 140.041046, 137.043091]
-      Rotation: [-17.0302296, 5391.30664, 0]
+      Translation: [48.3928223, 240.997757, 304.763458]
+      Rotation: [-7.43302822, 388.953857, 0]
       Scale: [1, 1, 1]
     CameraComponent:
       Primary: true
       FixedAspectRatio: false
       IsOrbitCamera: true
-      OrbitDistance: 16.5999985
-      OrbitYaw: -100.900314
+      OrbitDistance: 40
+      OrbitYaw: 623.09967
       OrbitPitch: -10
       LookSensitivity: 0.899999976
       TargetEntityTag: Player
       ProjectionType: 0
       PerspectiveFOV: 1.55334306
       PerspectiveNear: 0.00999999978
-      PerspectiveFar: 1000
+      PerspectiveFar: 100000
     ManagedScriptComponent:
       Scripts:
         - ClassName: chaineddecos.scripts.cameracontroller
@@ -1486,7 +1416,7 @@ Entities:
             Transparent: false
             Alpha: 1
     ColliderComponent:
-      Type: 1399259393
+      Type: 257
       Enabled: true
       Offset: [-0.470180094, -1.86820998e-05, -2.96693921]
       Size: [4.61537361, 1.63612497, 3.86329746]
@@ -1573,7 +1503,7 @@ Entities:
             Transparent: false
             Alpha: 1
     ColliderComponent:
-      Type: 538968320
+      Type: 256
       Enabled: true
       Offset: [-1.23305595, -6.83498478, -4.18938494]
       Size: [2.48870611, 13.512085, 4.18936396]
@@ -1598,7 +1528,7 @@ Entities:
           Target: 0
           Material:
             AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
+            AlbedoPath: models/images.jpg
             OverrideAlbedo: false
             NormalMapPath: ""
             OverrideNormal: false
@@ -2056,7 +1986,7 @@ Entities:
             Transparent: false
             Alpha: 1
     ColliderComponent:
-      Type: 979697921
+      Type: 257
       Enabled: true
       Offset: [-18203.7422, -18237.1973, -18203.748]
       Size: [36407.4922, 36661.4023, 36407.4844]
@@ -2099,7 +2029,7 @@ Entities:
             Transparent: true
             Alpha: 1
     ColliderComponent:
-      Type: 808452353
+      Type: 257
       Enabled: true
       Offset: [-9.29998016, -130.776825, -0.718266964]
       Size: [20.2556896, 277.196045, 14.2480259]
@@ -2147,7 +2077,7 @@ Entities:
             Transparent: true
             Alpha: 1
     ColliderComponent:
-      Type: 537526529
+      Type: 257
       Enabled: true
       Offset: [-9.29998016, -130.776825, -0.718266964]
       Size: [20.2556896, 277.196045, 14.2480259]
@@ -2195,7 +2125,7 @@ Entities:
             Transparent: true
             Alpha: 1
     ColliderComponent:
-      Type: 1852768513
+      Type: 257
       Enabled: true
       Offset: [-9.29998016, -130.776825, -0.718266964]
       Size: [20.2556896, 277.196045, 14.2480259]
@@ -2243,7 +2173,7 @@ Entities:
             Transparent: true
             Alpha: 1
     ColliderComponent:
-      Type: 1986920705
+      Type: 257
       Enabled: true
       Offset: [-4.66246033, 3.7252903e-09, -11.7852259]
       Size: [9.28319931, 7.15296125, 23.5704517]
@@ -2286,7 +2216,7 @@ Entities:
             Transparent: true
             Alpha: 1
     ColliderComponent:
-      Type: 1600389377
+      Type: 257
       Enabled: true
       Offset: [-9.29998016, -130.776825, -0.718266964]
       Size: [20.2556896, 277.196045, 14.2480259]
@@ -2378,7 +2308,7 @@ Entities:
             Transparent: false
             Alpha: 1
     ColliderComponent:
-      Type: 256
+      Type: -211222272
       Enabled: true
       Offset: [-1.23305595, -6.83498478, -4.18938494]
       Size: [2.48870611, 13.512085, 4.18936396]
@@ -2387,3 +2317,51 @@ Entities:
       ModelHandle: 0
       ModelPath: models/toy_train/train_vagon.glb
       AutoCalculate: true
+  - Entity: 7094686869644715316
+    TagComponent:
+      Tag: arena_two
+    TransformComponent:
+      Translation: [-949.601318, 51.8037796, 331.382965]
+      Rotation: [2.86779284, 1.33893979, 2.90103149]
+      Scale: [20.9453735, 17.1169147, 17.6528664]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/container_ship/scene.gltf
+      Materials:
+        - Name: Material 0
+          Index: 0
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: models/images.jpg
+            OverrideAlbedo: true
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [62, 46, 60, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: true
+            Metalness: 0.920000017
+            Roughness: 0.910000026
+            DoubleSided: true
+            Transparent: true
+            Alpha: 1
+    ColliderComponent:
+      Type: 257
+      Enabled: true
+      Offset: [-33.291153, -0.000319480896, -6.43264484]
+      Size: [91.2529068, 16.8988457, 12.8652868]
+      Radius: 0.5
+      Height: 2
+      ModelHandle: 0
+      ModelPath: models/container_ship/scene.gltf
+      AutoCalculate: true
+    AnimationComponent:
+      AnimationPath: ""
+      CurrentAnimationIndex: 0
+      IsLooping: true
+      IsPlaying: false

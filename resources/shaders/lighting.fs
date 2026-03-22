@@ -19,13 +19,13 @@ void main()
     // 1. Base Color & Diagnostics
     vec4 baseColor = colDiffuse;
     
-    // Fix: If fragColor (Vertex Color) is close to black (default attribute 0,0,0,1), ignore it.
-    // Otherwise multiply. This prevents generated meshes (no colors) from being black.
+    // Fix: If fragColor (Vertex Color) is close to black, ignore it.
     if (length(fragColor.rgb) > 0.01) baseColor *= fragColor;
     
     if (useTexture == 1) baseColor *= texture(texture0, fragTexCoord);
     
     int mode = int(uMode + 0.5);
+    if (mode == 2) baseColor = vec4(0.5, 0.5, 0.5, 1.0); // Neutral gray for lighting-only
     if (mode == 3) { finalColor = baseColor; return; }
     
     // Normal Mapping
