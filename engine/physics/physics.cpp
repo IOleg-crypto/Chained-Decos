@@ -96,8 +96,8 @@ std::shared_ptr<BVH> PhysicsSystem::GetBVH(const std::string& path)
             if (mesh.vertexCount == 0 || mesh.vertices == nullptr)
                 continue;
 
-            // Local * modelRoot
-            Matrix meshTransform = MatrixMultiply(inst.localTransform, model.transform);
+            // Use only local transform (model root transform is applied by entity WorldTransform)
+            Matrix meshTransform = inst.localTransform;
 
             if (mesh.indices != nullptr)
             {

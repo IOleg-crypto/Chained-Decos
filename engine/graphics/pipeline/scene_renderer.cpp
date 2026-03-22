@@ -516,8 +516,8 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
                     {
                         if (inst.meshIndex < 0 || inst.meshIndex >= rayModel.meshCount) continue;
                         
-                        // Local * modelRoot * entityWorld
-                        Matrix finalTransform = MatrixMultiply(inst.localTransform, MatrixMultiply(rayModel.transform, worldTransform));
+                        // Local * worldEntity (modelRoot is now baked into localTransform)
+                        Matrix finalTransform = MatrixMultiply(inst.localTransform, worldTransform);
                         Renderer::Get().DrawMeshWire(rayModel.meshes[inst.meshIndex], debugColor, finalTransform);
                     }
                 }
@@ -709,9 +709,8 @@ void SceneRenderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, con
         int i = inst.meshIndex;
         if (i < 0 || i >= model.meshCount) continue;
 
-        // Correct order for Raylib: local * modelRoot * worldEntity
-        Matrix entityWorldTransform = MatrixMultiply(model.transform, transform);
-        Matrix meshWorldTransform = MatrixMultiply(inst.localTransform, entityWorldTransform);
+        // instances are already in model-local space.
+        Matrix meshWorldTransform = MatrixMultiply(inst.localTransform, transform);
 
         m_CurrentStats.DrawCalls++;
         m_CurrentStats.MeshCount++;
@@ -729,7 +728,7 @@ void SceneRenderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, con
             
             // CRITICAL@FIX: If using bone matrices, they already include the local node transform.
             bool useSkinning = !boneMatrices.empty();
-            renderer.DrawMesh(model.meshes[i], material, useSkinning ? entityWorldTransform : meshWorldTransform);
+            renderer.DrawMesh(model.meshes[i], material, useSkinning ? transform : meshWorldTransform);
             
             material.shader = originalShader;
         }

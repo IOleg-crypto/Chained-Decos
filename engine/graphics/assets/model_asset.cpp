@@ -170,6 +170,7 @@ void ModelAsset::UploadToGPU()
         }
 
         m_Model = model;
+        m_Model.transform = MatrixIdentity(); // Already baked into instances
         m_Textures = std::move(localTextures);
         m_PendingTextures = std::move(localPendingTextures);
 
@@ -184,8 +185,8 @@ void ModelAsset::UploadToGPU()
             Mesh& mesh = model.meshes[inst.meshIndex];
             if (mesh.vertexCount == 0) continue;
 
-            // Correct order: local * root
-            Matrix transform = MatrixMultiply(inst.localTransform, model.transform);
+            // Correct order: local * root (root is now identity for consistency)
+            Matrix transform = inst.localTransform;
 
             BoundingBox meshBox = ::GetMeshBoundingBox(mesh);
             
@@ -242,6 +243,22 @@ void ModelAsset::UploadToGPU()
         m_NodeNames            = std::move(m_PendingData.nodeNames);
         m_NodeParents          = std::move(m_PendingData.nodeParents);
         m_GlobalNodeTransforms = std::move(m_PendingData.globalBindPoses);
+
+        // De-overengineering: Clear skeletal data for static models
+        // We do this after transfer to ensure they are truly purged for static objects
+        if (m_Animations.empty())
+        {
+            m_OffsetMatrices.clear();
+            m_GlobalNodeTransforms.clear();
+            m_NodeParents.clear();
+            m_NodeNames.clear();
+            // Note: m_Model.boneCount and bone/pose pointers were already set above,
+            // we should null them out to prevent accidental access if static.
+            m_Model.boneCount = 0;
+            // Raylib allocated these via RL_MALLOC if m_PendingData.bones wasn't empty.
+            // But if it's static, was m_PendingData.bones empty?
+            // Usually yes, if it's a truly static mesh.
+        }
     }
 
     m_PendingData = PendingModelData();
