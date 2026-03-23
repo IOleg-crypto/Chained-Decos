@@ -64,6 +64,10 @@ void RuntimeLayer::OnAttach()
         io.Fonts->AddFontDefault();
     }
 
+    // Register project-specific fonts into ImGui's atlas.
+    // Must happen AFTER all AddFontFromFileTTF() calls and BEFORE the atlas is built by rlImGui.
+    UIRenderer::Get().LoadProjectFonts();
+
     // Ensure camera aspect ratio is correct on startup
     if (m_Scene)
     {

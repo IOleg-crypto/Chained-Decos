@@ -22,7 +22,7 @@ bool EditorUIManipulator::OnImGuiRender(Entity selectedEntity, ImVec2 viewportPo
     }
 
     auto& cc = selectedEntity.GetComponent<ControlComponent>();
-    Rectangle rect = UIRenderer::Get().GetEntityRect(selectedEntity, viewportSize, viewportPos);
+    UIRect rect = UIRenderer::Get().GetEntityRect(selectedEntity, viewportSize, viewportPos);
 
     ImDrawList* drawList = ImGui::GetWindowDrawList();
     ImVec2 p1 = {rect.x, rect.y};
