@@ -203,6 +203,8 @@ struct InputTextControl
     bool Password = false;
     bool Changed = false;
 
+    std::vector<char> InputBuffer; // Added for UIRenderer statelessness
+
     TextStyle Style;
     UIStyle BoxStyle;
 };

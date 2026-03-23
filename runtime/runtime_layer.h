@@ -3,6 +3,7 @@
 
 #include "engine/core/layer.h"
 #include "engine/scene/scene.h"
+#include "engine/graphics/pipeline/scene_renderer.h"
 #include "raylib.h"
 #include <functional>
 #include <memory>
@@ -38,7 +39,7 @@ private:
 
 private:
     std::shared_ptr<Scene> m_Scene;
-    std::unique_ptr<class SceneRenderer> m_SceneRenderer;
+    std::unique_ptr<SceneRenderer> m_SceneRenderer;
     // Script callback removed in favor of GlobalRegistry
 
     std::string m_ProjectPath;
