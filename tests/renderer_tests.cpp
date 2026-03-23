@@ -1,6 +1,9 @@
+// renderer_tests.cpp
+// Tests for the main Renderer and Renderer2D singletons.
+// These tests require a valid OpenGL context and are skipped on CI.
 #include "engine/core/base.h"
 #include "engine/graphics/pipeline/renderer.h"
-#include "engine/graphics/renderer2d.h"
+#include "engine/graphics/pipeline/renderer2d.h"
 #include "raylib.h"
 #include "gtest/gtest.h"
 
@@ -16,13 +19,12 @@ protected:
 #endif
     }
 
-    void TearDown() override
-    {
-    }
+    void TearDown() override {}
 };
 
 #if !defined(CH_CI)
 
+// Verifies that the Renderer singleton can be initialized and shut down without errors.
 TEST_F(RendererTest, RendererInitialization)
 {
     auto& renderer = Renderer::Get();
@@ -30,6 +32,7 @@ TEST_F(RendererTest, RendererInitialization)
     renderer.Shutdown();
 }
 
+// Verifies that the Renderer2D singleton can be initialized and shut down without errors.
 TEST_F(RendererTest, Renderer2DInitialization)
 {
     auto& renderer2d = Renderer2D::Get();
@@ -37,6 +40,8 @@ TEST_F(RendererTest, Renderer2DInitialization)
     renderer2d.Shutdown();
 }
 
+// Verifies that the Renderer can be init/shutdown in sequence multiple times
+// without memory corruption or double-free.
 TEST_F(RendererTest, Lifetime)
 {
     auto& renderer = Renderer::Get();
@@ -47,6 +52,7 @@ TEST_F(RendererTest, Lifetime)
     renderer.Shutdown();
 }
 
+// Verifies that lights can be set, counted, and cleared on the renderer.
 TEST_F(RendererTest, LightManagement)
 {
     auto& renderer = Renderer::Get();
@@ -70,6 +76,7 @@ TEST_F(RendererTest, LightManagement)
     renderer.Shutdown();
 }
 
+// Verifies that DiagnosticMode float can be pushed into the renderer's data block.
 TEST_F(RendererTest, DiagnosticMode)
 {
     auto& renderer = Renderer::Get();
@@ -81,6 +88,8 @@ TEST_F(RendererTest, DiagnosticMode)
     renderer.Shutdown();
 }
 
+// Verifies that an EnvironmentSettings object is applied correctly to the renderer's
+// internal lighting data (e.g. ambient value round-trips through ApplyEnvironment).
 TEST_F(RendererTest, EnvironmentApplication)
 {
     auto& renderer = Renderer::Get();

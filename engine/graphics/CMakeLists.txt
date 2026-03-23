@@ -2,6 +2,7 @@ add_library(engine_graphics OBJECT
     # Pipeline
     pipeline/renderer.cpp
     pipeline/ui_renderer.cpp
+    pipeline/ui_font_registry.cpp
     pipeline/shader_library.cpp
     pipeline/scene_renderer.cpp
     pipeline/renderer2d.cpp
@@ -9,6 +10,7 @@ add_library(engine_graphics OBJECT
     pipeline/renderer.h
     pipeline/scene_renderer.h
     pipeline/ui_renderer.h
+    pipeline/ui_font_registry.h
     pipeline/shader_library.h
     pipeline/material.h
     pipeline/frustum.h

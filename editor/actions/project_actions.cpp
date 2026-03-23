@@ -7,6 +7,7 @@
 #include "engine/scene/project_serializer.h"
 #include "engine/scene/scene_events.h"
 #include "engine/core/dialogs.h"
+#include "engine/graphics/pipeline/ui_renderer.h"
 #include <filesystem>
 #include <format>
 
@@ -30,6 +31,7 @@ void ProjectActions::New(const std::string& name, const std::string& path)
 
     // Load engine shaders and resources for the dynamic newly created project
     Renderer::LoadEngineResources();
+    UIRenderer::Get().LoadProjectFonts();
 }
 
 void ProjectActions::Open()
@@ -51,6 +53,7 @@ void ProjectActions::Open(const std::filesystem::path& path)
         
         // Load engine shaders and resources
         Renderer::LoadEngineResources();
+        UIRenderer::Get().LoadProjectFonts();
         
         ProjectOpenedEvent e(path.string());
         Application::Get().OnEvent(e);

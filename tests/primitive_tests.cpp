@@ -1,7 +1,10 @@
+// primitive_tests.cpp
+// Tests for the PrimitiveComponent ECS component and procedural mesh generation via MeshImporter.
+// The ProceduralModelGeneration test requires a raylib window and is skipped on CI.
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/component_serializer.h"
-#include "engine/graphics/mesh_importer.h"
+#include "engine/graphics/importers/mesh_importer.h"
 #include "gtest/gtest.h"
 
 using namespace CHEngine;
@@ -11,7 +14,6 @@ class PrimitiveTest : public ::testing::Test
 protected:
     void SetUp() override
     {
-        // HIDDEN window for raylib resource loading tests
         if (!IsWindowReady())
         {
             SetConfigFlags(FLAG_WINDOW_HIDDEN);
@@ -19,14 +21,11 @@ protected:
         }
     }
 
-    void TearDown() override
-    {
-        // Don't close window here as it might be used by other tests in the same process
-        // unless we are sure we want to re-init it every time.
-        // For simplicity, let's just keep it open or use a wrapper.
-    }
+    void TearDown() override {}
 };
 
+// Verifies that a default-constructed PrimitiveComponent has sensible defaults
+// (Type=None, Radius=0.5, Height=1, Slices/Stacks=16, not dirty, no asset).
 TEST_F(PrimitiveTest, Defaults)
 {
     PrimitiveComponent comp;
@@ -39,6 +38,9 @@ TEST_F(PrimitiveTest, Defaults)
     EXPECT_EQ(comp.Asset, nullptr);
 }
 
+// Verifies that a PrimitiveComponent can be serialized to YAML and deserialized back
+// into a new entity, preserving all fields including Type, Radius, Slices, and Stacks.
+// The deserialized component must also be marked Dirty so the mesh is re-generated.
 TEST_F(PrimitiveTest, Serialization)
 {
     auto& serializer = ComponentSerializer::Get();
@@ -46,18 +48,18 @@ TEST_F(PrimitiveTest, Serialization)
     Scene scene;
     Entity entity = scene.CreateEntity("PrimitiveEntity");
     auto& primitive = entity.AddComponent<PrimitiveComponent>();
-    primitive.Type = PrimitiveType::Sphere;
+    primitive.Type   = PrimitiveType::Sphere;
     primitive.Radius = 1.5f;
     primitive.Slices = 32;
     primitive.Stacks = 24;
 
-    // Serialize
+    // Serialize to YAML string
     YAML::Emitter out;
     out << YAML::BeginMap;
     serializer.SerializeAll(out, entity);
     out << YAML::EndMap;
 
-    // Deserialize into another entity
+    // Deserialize into a new entity in the same scene
     Entity other = scene.CreateEntity("DeserializedPrimitive");
     YAML::Node data = YAML::Load(out.c_str());
     serializer.DeserializeAll(other, data);
@@ -68,9 +70,11 @@ TEST_F(PrimitiveTest, Serialization)
     EXPECT_FLOAT_EQ(otherPrim.Radius, 1.5f);
     EXPECT_EQ(otherPrim.Slices, 32);
     EXPECT_EQ(otherPrim.Stacks, 24);
-    EXPECT_TRUE(otherPrim.Dirty); // Should be dirty after deserialization
+    EXPECT_TRUE(otherPrim.Dirty); // Must be dirty so mesh is re-generated on first frame
 }
 
+// Verifies that MeshImporter::GenerateProceduralModel produces valid meshes for
+// built-in :sphere: and :cube: keys. Requires a raylib context.
 TEST_F(PrimitiveTest, ProceduralModelGeneration)
 {
 #if defined(CH_CI)
@@ -82,26 +86,20 @@ TEST_F(PrimitiveTest, ProceduralModelGeneration)
         GTEST_SKIP() << "Skipping procedural generation test: Raylib window/context not ready.";
     }
 
-    // Test that generation doesn't crash and returns meshes
-    // Note: We can't easily check mesh content without a GPU context in some environments,
-    // but MeshImporter::GenerateProceduralModel uses Raylib's GenMeshXXX which are CPU-side.
-
     ProceduralParameters params;
     params.Radius = 1.0f;
     params.Slices = 20;
     
-    // Sphere
+    // :sphere: — should return a model with at least 1 mesh and > 0 vertices
     Model sphere = MeshImporter::GenerateProceduralModel(":sphere:", params);
     EXPECT_GT(sphere.meshCount, 0);
-    // Raylib's GenMeshSphere(radius, rings, slices)
-    // Mesh count should be 1
     if (sphere.meshCount > 0)
     {
         EXPECT_GT(sphere.meshes[0].vertexCount, 0);
         UnloadModel(sphere);
     }
 
-    // Cube
+    // :cube: — same expectations, different shape
     params.Dimensions = {2.0f, 3.0f, 4.0f};
     Model cube = MeshImporter::GenerateProceduralModel(":cube:", params);
     EXPECT_GT(cube.meshCount, 0);
