@@ -1,0 +1,57 @@
+#ifndef CH_UI_FONT_REGISTRY_H
+#define CH_UI_FONT_REGISTRY_H
+
+#include "imgui.h"
+#include <string>
+#include <unordered_map>
+
+namespace CHEngine
+{
+
+// Manages ImGui font atlas entries for UI rendering.
+// Fonts must be registered before BuildAtlas() is called (before the first frame).
+// Typical usage: call LoadProjectFonts() between rlImGuiBeginInitImGui() and rlImGuiEndInitImGui().
+class UIFontRegistry
+{
+public:
+    UIFontRegistry()  = default;
+    ~UIFontRegistry() = default;
+
+    // Scans <ProjectAssetDir>/fonts/ for all TTF/OTF files and registers them.
+    // FontName key = relative path from assets/, e.g. "fonts/Roboto-Regular.ttf".
+    // Multiple sizes of the same file are registered on demand via GetFont().
+    void LoadProjectFonts();
+
+    // Returns the ImFont* for the given relative font name and pixel size.
+    // If not found or not loaded, returns nullptr (ImGui will use its default font).
+    ImFont* GetFont(const std::string& relativeName, float pixelSize) const;
+
+    // Returns the default font (first registered, or ImGui built-in default).
+    ImFont* GetDefaultFont() const { return m_DefaultFont; }
+
+    // True if any fonts were successfully loaded.
+    bool HasFonts() const { return !m_Fonts.empty(); }
+
+    // Clears all registered fonts (call before re-loading a new project).
+    void Clear();
+
+private:
+    // Registers a single TTF/OTF file at the given absolute path under a relative name key.
+    // Returns the loaded ImFont* or nullptr on failure.
+    ImFont* RegisterFont(const std::string& relativeName, const std::string& absolutePath, float pixelSize);
+
+    // Build a cache key from name + size (rounded to 0.5px increments).
+    static std::string MakeKey(const std::string& name, float size);
+
+    // map<"fonts/Roboto.ttf|16.0" -> ImFont*>
+    std::unordered_map<std::string, ImFont*> m_Fonts;
+
+    // Tracks which relative paths have been discovered (name -> absolute path)
+    std::unordered_map<std::string, std::string> m_KnownPaths;
+
+    ImFont* m_DefaultFont = nullptr;
+};
+
+} // namespace CHEngine
+
+#endif // CH_UI_FONT_REGISTRY_H

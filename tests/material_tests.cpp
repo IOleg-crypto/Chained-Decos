@@ -1,13 +1,17 @@
-#include "engine/graphics/material.h"
+// material_tests.cpp
+// Tests for the MaterialInstance struct (engine/graphics/pipeline/material.h).
+// These tests are pure-CPU and do not require an OpenGL context.
+#include "engine/graphics/pipeline/material.h"
 #include "gtest/gtest.h"
 
 using namespace CHEngine;
 
+// Verifies that a default-constructed MaterialInstance has engine-standard default values:
+// white albedo, no overrides, metalness=0, roughness=0.5, alpha=1.
 TEST(MaterialTest, DefaultInitialization)
 {
     MaterialInstance material;
     
-    // Check default values
     EXPECT_EQ(material.AlbedoColor.r, 255);
     EXPECT_EQ(material.AlbedoColor.g, 255);
     EXPECT_EQ(material.AlbedoColor.b, 255);
@@ -28,6 +32,8 @@ TEST(MaterialTest, DefaultInitialization)
     EXPECT_FLOAT_EQ(material.Alpha, 1.0f);
 }
 
+// Verifies that fields can be mutated and read back correctly — ensures no unexpected
+// padding or bitfield truncation in the struct layout.
 TEST(MaterialTest, StateModification)
 {
     MaterialInstance material;

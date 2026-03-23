@@ -20,12 +20,12 @@ jobs:
         include:
           - os: ubuntu-latest
             name: linux
-            preset: linux-gcc-release
-            config_preset: linux-gcc-release
+            preset: linux-gcc
+            config_preset: linux-gcc
           - os: windows-latest
             name: windows
-            preset: windows-ninja-release
-            config_preset: windows-ninja-release
+            preset: windows-ninja
+            config_preset: windows-ninja
 
     steps:
       - name: Checkout
@@ -86,6 +86,7 @@ jobs:
           fi
           
           cmake --preset ${{ matrix.preset }} \
+            -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_INSTALL_PREFIX="${{ steps.build-env.outputs.package-dir }}" \
