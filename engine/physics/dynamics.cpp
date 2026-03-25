@@ -10,7 +10,7 @@ namespace CHEngine
 void Dynamics::Update(::entt::registry& registry, const std::vector<entt::entity>& entities, float deltaTime)
 {
 
-    float gravity = 20.0f;
+    float gravity = 9.8f;
     if (Project::GetActive())
     {
         gravity = Project::GetActive()->GetConfig().Physics.Gravity;

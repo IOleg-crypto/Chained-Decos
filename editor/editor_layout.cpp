@@ -105,10 +105,10 @@ void EditorLayout::SaveDefaultLayout()
     if (settings)
     {
         std::string defaultPath = std::string(PROJECT_ROOT_DIR) + "/imgui_default.ini";
-        std::ofstream f(defaultPath);
-        if (f.is_open())
+        std::ofstream file(defaultPath);
+        if (file.is_open())
         {
-            f.write(settings, size);
+            file.write(settings, size);
             CH_CORE_INFO("EditorLayout: Saved current layout as default: {}", defaultPath);
         }
         else

@@ -19,12 +19,10 @@ void EffectsPanel::OnImGuiRender(bool readOnly)
     }
 
     ImGui::Begin(m_Name.c_str(), &m_IsOpen);
-    ImGui::PushID(this);
 
     if (!m_Context)
     {
         ImGui::Text("No active scene.");
-        ImGui::PopID();
         ImGui::End();
         return;
     }
@@ -59,7 +57,6 @@ void EffectsPanel::OnImGuiRender(bool readOnly)
         }
     }
 
-    ImGui::PopID();
     ImGui::End();
 }
 

@@ -162,6 +162,7 @@ function(apply_engine_optimizations target_name)
 #include <unordered_map>
 #include <algorithm>
 #include <functional>
+#include <cassert>
 
 #ifdef CH_PLATFORM_WINDOWS
   #define WIN32_LEAN_AND_MEAN
