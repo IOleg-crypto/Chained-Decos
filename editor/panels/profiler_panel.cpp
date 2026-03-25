@@ -34,7 +34,6 @@ void ProfilerPanel::OnImGuiRender(bool readOnly)
     UpdateHistory();
 
     ImGui::Begin(m_Name.c_str(), &m_IsOpen);
-    ImGui::PushID(this);
 
     const auto& stats = Profiler::GetStats();
 
@@ -112,7 +111,6 @@ void ProfilerPanel::OnImGuiRender(bool readOnly)
         }
     }
 
-    ImGui::PopID();
     ImGui::End();
 }
 

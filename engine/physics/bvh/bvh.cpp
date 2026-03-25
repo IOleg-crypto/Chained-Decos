@@ -37,13 +37,11 @@ std::shared_ptr<BVH> BVH::Build(std::vector<CollisionTriangle>&& triangles)
 
 void BVH::BuildIterative(BuildContext& ctx, size_t totalTriCount)
 {
-    // Explicit work stack instead of recursion
-    struct WorkItem
-    {
-        uint32_t nodeIdx;
-        size_t triStart;
-        size_t triCount;
-    };
+    // 1. Резервуємо пам'ять, щоб уникнути реаллокацій та інвалідації
+    m_Nodes.clear();
+    m_Nodes.reserve(totalTriCount * 2); 
+    m_Nodes.emplace_back(); // Корінь (index 0)
+
     std::vector<WorkItem> stack;
     stack.push_back({0, 0, totalTriCount});
 
@@ -52,90 +50,79 @@ void BVH::BuildIterative(BuildContext& ctx, size_t totalTriCount)
         auto [nodeIdx, triStart, triCount] = stack.back();
         stack.pop_back();
 
-        BVHNode& node = m_Nodes[nodeIdx];
-
-        // Calculate bounds + centroid extents
-        node.Min = {FLT_MAX, FLT_MAX, FLT_MAX};
-        node.Max = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
+        // Рахуємо AABB вузла та межі центроїдів
+        Vector3 nodeMin = {FLT_MAX, FLT_MAX, FLT_MAX};
+        Vector3 nodeMax = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
         Vector3 cMin = {FLT_MAX, FLT_MAX, FLT_MAX};
         Vector3 cMax = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
 
         for (size_t i = 0; i < triCount; ++i)
         {
             const auto& tri = ctx.AllTriangles[ctx.TriIndices[triStart + i]];
-            node.Min = Vector3Min(node.Min, tri.min);
-            node.Max = Vector3Max(node.Max, tri.max);
+            nodeMin = Vector3Min(nodeMin, tri.min);
+            nodeMax = Vector3Max(nodeMax, tri.max);
             cMin = Vector3Min(cMin, tri.center);
             cMax = Vector3Max(cMax, tri.center);
         }
 
-        // Leaf if few triangles
+        m_Nodes[nodeIdx].Min = nodeMin;
+        m_Nodes[nodeIdx].Max = nodeMax;
+
+        // Leaf condition
         if (triCount <= 4)
         {
-            node.LeftOrFirst = (uint32_t)triStart;
-            node.TriangleCount = (uint16_t)triCount;
+            m_Nodes[nodeIdx].LeftOrFirst = (uint32_t)triStart;
+            m_Nodes[nodeIdx].TriangleCount = (uint16_t)triCount;
             continue;
         }
 
-        // Pick longest axis
+        // Вибір осі (найдовша сторона боксу центроїдів)
         Vector3 extent = Vector3Subtract(cMax, cMin);
         int axis = 0;
-        if (extent.y > extent.x && extent.y > extent.z)
-        {
-            axis = 1;
-        }
-        else if (extent.z > extent.x && extent.z > extent.y)
-        {
-            axis = 2;
-        }
+        if (extent.y > extent.x && extent.y > extent.z) axis = 1;
+        else if (extent.z > extent.x && extent.z > extent.y) axis = 2;
 
-        auto getAxis = [axis](const Vector3& v) { return (axis == 0) ? v.x : (axis == 1) ? v.y : v.z; };
+        float splitPos = 0;
+        if (axis == 0) splitPos = cMin.x + extent.x * 0.5f;
+        else if (axis == 1) splitPos = cMin.y + extent.y * 0.5f;
+        else splitPos = cMin.z + extent.z * 0.5f;
 
-        float splitPos = getAxis(cMin) + getAxis(extent) * 0.5f;
+        // 2. Використовуємо std::partition для безпечного розділення
+        auto startIt = ctx.TriIndices.begin() + triStart;
+        auto endIt = startIt + triCount;
+        
+        auto midIt = std::partition(startIt, endIt, [&](uint32_t idx) {
+            const auto& tri = ctx.AllTriangles[idx];
+            float val = (axis == 0) ? tri.center.x : (axis == 1) ? tri.center.y : tri.center.z;
+            return val < splitPos;
+        });
 
-        // Partition triangles
-        size_t i = triStart;
-        size_t j = triStart + triCount - 1;
-        while (i <= j)
-        {
-            if (getAxis(ctx.AllTriangles[ctx.TriIndices[i]].center) < splitPos)
-            {
-                i++;
-            }
-            else
-            {
-                std::swap(ctx.TriIndices[i], ctx.TriIndices[j]);
-                if (j == 0)
-                {
-                    break;
-                }
-                j--;
-            }
-        }
+        size_t leftCount = std::distance(startIt, midIt);
 
-        size_t leftCount = i - triStart;
-
-        // Fallback: median split if partition failed
+        // Fallback: якщо розділення не спрацювало (всі центроїди в одній точці)
         if (leftCount == 0 || leftCount == triCount)
         {
             leftCount = triCount / 2;
-            std::nth_element(ctx.TriIndices.begin() + triStart, ctx.TriIndices.begin() + triStart + leftCount,
-                             ctx.TriIndices.begin() + triStart + triCount, [&](uint32_t a, uint32_t b) {
-                                 return getAxis(ctx.AllTriangles[a].center) < getAxis(ctx.AllTriangles[b].center);
-                             });
+            std::nth_element(startIt, startIt + leftCount, endIt, [&](uint32_t a, uint32_t b) {
+                const auto& triA = ctx.AllTriangles[a];
+                const auto& triB = ctx.AllTriangles[b];
+                float valA = (axis == 0) ? triA.center.x : (axis == 1) ? triA.center.y : triA.center.z;
+                float valB = (axis == 0) ? triB.center.x : (axis == 1) ? triB.center.y : triB.center.z;
+                return valA < valB;
+            });
         }
 
-        // Allocate child nodes
+        // Створюємо дочірні вузли
         uint32_t leftIdx = (uint32_t)m_Nodes.size();
         m_Nodes.emplace_back();
         m_Nodes.emplace_back();
 
-        // IMPORTANT: re-fetch node ref — emplace_back may have invalidated it
+        // Оновлюємо поточний вузол
         m_Nodes[nodeIdx].LeftOrFirst = leftIdx;
         m_Nodes[nodeIdx].TriangleCount = 0;
         m_Nodes[nodeIdx].Axis = (uint16_t)axis;
 
-        // Push children (right first so left is processed first)
+        // Стек: спочатку правий, потім лівий (щоб лівий обробився першим)
         stack.push_back({leftIdx + 1, triStart + leftCount, triCount - leftCount});
         stack.push_back({leftIdx, triStart, leftCount});
     }

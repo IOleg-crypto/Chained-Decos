@@ -24,12 +24,10 @@ void WorldPanel::OnImGuiRender(bool readOnly)
     }
 
     ImGui::Begin(m_Name.c_str(), &m_IsOpen);
-    ImGui::PushID(this);
 
     if (!m_Context)
     {
         ImGui::Text("No active scene.");
-        ImGui::PopID();
         ImGui::End();
         return;
     }
@@ -173,7 +171,6 @@ void WorldPanel::OnImGuiRender(bool readOnly)
         DrawEnvironmentSettings(env, readOnly);
     }
 
-    ImGui::PopID();
     ImGui::End();
 }
 

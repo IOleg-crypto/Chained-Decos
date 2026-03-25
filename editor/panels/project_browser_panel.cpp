@@ -69,7 +69,6 @@ void ProjectBrowserPanel::OnImGuiRender(bool readOnly)
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 
     ImGui::Begin("Project Browser", nullptr, windowFlags);
-    ImGui::PushID(this);
 
     if (m_OpenCreatePopupRequest)
     {
@@ -84,7 +83,6 @@ void ProjectBrowserPanel::OnImGuiRender(bool readOnly)
         DrawCreateProjectDialog();
     }
 
-    ImGui::PopID();
     ImGui::End();
     ImGui::PopStyleVar(3);
 }

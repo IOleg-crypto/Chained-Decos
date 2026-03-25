@@ -19,11 +19,11 @@ void NarrowPhase::ApplyResponse(::entt::registry& registry, entt::entity rbEntit
                                 RigidBodyComponent& rb, ColliderComponent& other, Vector3 normal, float depth)
 {
     // --- Baumgarte Stabilization & Slop ---
-    // Instead of resolving 100% of the depth, we resolve a percentage (e.g. 40%) 
-    // and ignore tiny penetrations (slop) to prevent jitter.
-    const float kBaumgarte = 0.4f; 
-    const float kSlop = 0.015f; 
-    const float kMaxCorrection = 1.0f;
+    // 0.8 = aggressive correction, catches fast-falling players.
+    // kSlop = 0.005 so very shallow contacts are still resolved.
+    const float kBaumgarte = 0.8f;
+    const float kSlop = 0.005f;
+    const float kMaxCorrection = 1.5f;
 
     float correctionDepth = fmaxf(depth - kSlop, 0.0f) * kBaumgarte;
     float correction = fminf(correctionDepth, kMaxCorrection);
@@ -167,29 +167,26 @@ Vector3 NarrowPhase::ClosestPointTriangle(Vector3 p, Vector3 a, Vector3 b, Vecto
 
 NarrowPhase::CapsuleSegment NarrowPhase::GetCapsuleSegment(const TransformComponent& tc, const ColliderComponent& cc)
 {
-    // Extract properties from WorldTransform
+    // Дістаємо позицію та вектори базису з матриці
     Vector3 worldPos = { tc.WorldTransform.m12, tc.WorldTransform.m13, tc.WorldTransform.m14 };
     
-    // Offset is in local space, so it must be rotated and scaled by WorldTransform
-    // However, for simplicity and performance in most games, we treat Offset as being in Entity space.
-    // To be perfectly accurate in a hierarchy:
-    Vector3 worldOffset = Vector3Subtract(Vector3Transform(cc.Offset, tc.WorldTransform), worldPos);
-    Vector3 pos = Vector3Add(worldPos, worldOffset);
+    // Вектор "вгору" об'єкта в світовому просторі (друга колонка матриці m4, m5, m6)
+    Vector3 worldUp = Vector3Normalize({ tc.WorldTransform.m4, tc.WorldTransform.m5, tc.WorldTransform.m6 });
     
-    // For now, our capsule is always vertically aligned in world or local space?
-    // Usually capsules are character-aligned (vertical).
-    float halfSeg = fmaxf(0.0f, cc.Height * 0.5f - cc.Radius);
-    
-    // Apply world scale to height/radius if needed? 
-    // Usually character capsules are not scaled much, but for robustness:
-    float worldScaleY = Vector3Length({tc.WorldTransform.m4, tc.WorldTransform.m5, tc.WorldTransform.m6});
+    // Враховуємо офсет, трансформуючи його світовою матрицею
+    Vector3 finalPos = Vector3Transform(cc.Offset, tc.WorldTransform);
+
+    float scaleY = Vector3Length({tc.WorldTransform.m4, tc.WorldTransform.m5, tc.WorldTransform.m6});
+    float halfSeg = fmaxf(0.0f, (cc.Height * 0.5f - cc.Radius) * scaleY);
+
+    // Тепер капсула орієнтована згідно з поворотом об'єкта
+    Vector3 a = Vector3Subtract(finalPos, Vector3Scale(worldUp, halfSeg));
+    Vector3 b = Vector3Add(finalPos, Vector3Scale(worldUp, halfSeg));
+
     float worldScaleXZ = fmaxf(Vector3Length({tc.WorldTransform.m0, tc.WorldTransform.m1, tc.WorldTransform.m2}), 
                                Vector3Length({tc.WorldTransform.m8, tc.WorldTransform.m9, tc.WorldTransform.m10}));
-                               
-    float finalRadius = cc.Radius * worldScaleXZ;
-    float finalHalfSeg = halfSeg * worldScaleY;
 
-    return {{pos.x, pos.y - finalHalfSeg, pos.z}, {pos.x, pos.y + finalHalfSeg, pos.z}, finalRadius};
+    return { a, b, cc.Radius * worldScaleXZ };
 }
 
 NarrowPhase::WorldAABB NarrowPhase::GetWorldAABB(const TransformComponent& tc, const ColliderComponent& cc)
@@ -225,67 +222,59 @@ NarrowPhase::WorldAABB NarrowPhase::GetWorldAABB(const TransformComponent& tc, c
 
 void NarrowPhase::ResolveCollisions(::entt::registry& registry, const std::vector<::entt::entity>& entities)
 {
-    for (auto rbEntity : entities)
+    // Multi-pass resolution: iterate several times per physics tick so fast-moving
+    // objects (e.g. falling player) are pushed out of geometry correctly.
+    const int kResolveIterations = 4;
+
+    for (int iter = 0; iter < kResolveIterations; iter++)
     {
-        if (!registry.all_of<TransformComponent, RigidBodyComponent, ColliderComponent>(rbEntity))
+        for (auto rbEntity : entities)
         {
-            continue;
-        }
-
-        auto& rb = registry.get<RigidBodyComponent>(rbEntity);
-        rb.IsGrounded = false;
-
-        auto& rbCollider = registry.get<ColliderComponent>(rbEntity);
-
-        auto colliders = registry.view<TransformComponent, ColliderComponent>();
-        for (auto otherEntity : colliders)
-        {
-            if (rbEntity == otherEntity)
+            if (!registry.all_of<TransformComponent, RigidBodyComponent, ColliderComponent>(rbEntity))
             {
                 continue;
             }
 
-            auto& otherCollider = colliders.get<ColliderComponent>(otherEntity);
-            if (!otherCollider.Enabled)
+            // Reset IsGrounded only on the FIRST iteration each tick
+            if (iter == 0)
             {
-                continue;
+                registry.get<RigidBodyComponent>(rbEntity).IsGrounded = false;
             }
 
-            if (otherCollider.Type == ColliderType::Box)
+            auto& rbCollider = registry.get<ColliderComponent>(rbEntity);
+
+            auto colliders = registry.view<TransformComponent, ColliderComponent>();
+            for (auto otherEntity : colliders)
             {
-                if (rbCollider.Type == ColliderType::Box)
+                if (rbEntity == otherEntity)
+                    continue;
+
+                auto& otherCollider = colliders.get<ColliderComponent>(otherEntity);
+                if (!otherCollider.Enabled)
+                    continue;
+
+                if (otherCollider.Type == ColliderType::Box)
                 {
-                    ResolveBoxBox(registry, rbEntity, otherEntity);
+                    if (rbCollider.Type == ColliderType::Box)
+                        ResolveBoxBox(registry, rbEntity, otherEntity);
+                    else if (rbCollider.Type == ColliderType::Capsule)
+                        ResolveCapsuleBox(registry, rbEntity, otherEntity);
+                    else if (rbCollider.Type == ColliderType::Sphere)
+                        ResolveSphereBox(registry, rbEntity, otherEntity);
                 }
-                else if (rbCollider.Type == ColliderType::Capsule)
+                else if (otherCollider.Type == ColliderType::Mesh)
                 {
-                    ResolveCapsuleBox(registry, rbEntity, otherEntity);
+                    if (rbCollider.Type == ColliderType::Box)
+                        ResolveBoxMesh(registry, rbEntity, otherEntity);
+                    else if (rbCollider.Type == ColliderType::Capsule)
+                        ResolveCapsuleMesh(registry, rbEntity, otherEntity);
+                    else if (rbCollider.Type == ColliderType::Sphere)
+                        ResolveSphereMesh(registry, rbEntity, otherEntity);
                 }
-                else if (rbCollider.Type == ColliderType::Sphere)
+                else if (otherCollider.Type == ColliderType::Sphere)
                 {
-                    ResolveSphereBox(registry, rbEntity, otherEntity);
-                }
-            }
-            else if (otherCollider.Type == ColliderType::Mesh)
-            {
-                if (rbCollider.Type == ColliderType::Box)
-                {
-                    ResolveBoxMesh(registry, rbEntity, otherEntity);
-                }
-                else if (rbCollider.Type == ColliderType::Capsule)
-                {
-                    ResolveCapsuleMesh(registry, rbEntity, otherEntity);
-                }
-                else if (rbCollider.Type == ColliderType::Sphere)
-                {
-                    ResolveSphereMesh(registry, rbEntity, otherEntity);
-                }
-            }
-            else if (otherCollider.Type == ColliderType::Sphere)
-            {
-                if (rbCollider.Type == ColliderType::Sphere)
-                {
-                    ResolveSphereSphere(registry, rbEntity, otherEntity);
+                    if (rbCollider.Type == ColliderType::Sphere)
+                        ResolveSphereSphere(registry, rbEntity, otherEntity);
                 }
             }
         }
@@ -498,11 +487,9 @@ void NarrowPhase::ResolveCapsuleMesh(::entt::registry& registry, ::entt::entity 
     bvh->QueryAABB(queryBox, candidates);
     if (candidates.empty()) return;
 
-    // Find deepest penetration among all candidate triangles
-    Vector3 bestNormal      = {0.0f, 1.0f, 0.0f};
-    float   maxPenetration  = -1.0f;
-    bool    anyContact      = false;
-
+    // Accumulate contacts: apply a response for EVERY penetrating triangle.
+    // This ensures the player is pushed out of all geometry simultaneously
+    // instead of only the single deepest contact.
     for (const auto* tri : candidates)
     {
         // Transform triangle to world space
@@ -510,33 +497,25 @@ void NarrowPhase::ResolveCapsuleMesh(::entt::registry& registry, ::entt::entity 
         Vector3 v1 = Vector3Transform(tri->v1, meshMatrix);
         Vector3 v2 = Vector3Transform(tri->v2, meshMatrix);
 
-        // Find closest point on triangle, then closest on capsule segment
+        // Two-pass closest point: triangle → segment → triangle for accuracy
         Vector3 triCenter = Vector3Scale(Vector3Add(Vector3Add(v0, v1), v2), 1.0f / 3.0f);
-        Vector3 segPoint = NarrowPhase::ClosestPointOnSegment(triCenter, seg.a, seg.b);
-        Vector3 triPoint = NarrowPhase::ClosestPointTriangle(segPoint, v0, v1, v2);
+        Vector3 segPoint  = NarrowPhase::ClosestPointOnSegment(triCenter, seg.a, seg.b);
+        Vector3 triPoint  = NarrowPhase::ClosestPointTriangle(segPoint, v0, v1, v2);
+        Vector3 finalSeg  = NarrowPhase::ClosestPointOnSegment(triPoint, seg.a, seg.b);
 
-        // Re-project back to segment for accuracy
-        Vector3 finalSeg = NarrowPhase::ClosestPointOnSegment(triPoint, seg.a, seg.b);
-        Vector3 diff = Vector3Subtract(finalSeg, triPoint);
-        float distSq = Vector3DotProduct(diff, diff);
+        Vector3 diff  = Vector3Subtract(finalSeg, triPoint);
+        float distSq  = Vector3DotProduct(diff, diff);
 
         if (distSq >= seg.radius * seg.radius) continue;
 
-        float dist = sqrtf(distSq);
+        float dist        = sqrtf(distSq);
         float penetration = seg.radius - dist;
-        Vector3 normal = (dist > 0.0001f) ? Vector3Scale(diff, 1.0f / dist) : tri->normal;
+        Vector3 normal    = (dist > 0.0001f) ? Vector3Scale(diff, 1.0f / dist) : tri->normal;
 
-        if (penetration > maxPenetration)
+        if (penetration > 0.0f)
         {
-            maxPenetration = penetration;
-            bestNormal = normal;
+            ApplyResponse(registry, rbEntity, otherEntity, tc, rb, otherCollider, normal, penetration);
         }
-        anyContact = true;
-    }
-
-    if (anyContact && maxPenetration > 0.0f)
-    {
-        ApplyResponse(registry, rbEntity, otherEntity, tc, rb, otherCollider, bestNormal, maxPenetration);
     }
 }
 
@@ -667,29 +646,28 @@ void NarrowPhase::ResolveSphereMesh(::entt::registry& registry, ::entt::entity r
 
 void NarrowPhase::ResolveSphereSphere(::entt::registry& registry, ::entt::entity rbEntity, ::entt::entity otherEntity)
 {
-    auto& tc = registry.get<TransformComponent>(rbEntity);
+    auto& tc1 = registry.get<TransformComponent>(rbEntity);
     auto& rb = registry.get<RigidBodyComponent>(rbEntity);
     auto& s1 = registry.get<ColliderComponent>(rbEntity);
     auto& s2 = registry.get<ColliderComponent>(otherEntity);
     auto& tc2 = registry.get<TransformComponent>(otherEntity);
 
-    Vector3 p1 = Vector3Add(tc.Translation, s1.Offset);
-    Vector3 p2 = Vector3Add(tc2.Translation, s2.Offset);
+    // Отримуємо світові позиції центрів сфер
+    Vector3 p1 = Vector3Transform(s1.Offset, tc1.WorldTransform);
+    Vector3 p2 = Vector3Transform(s2.Offset, tc2.WorldTransform);
 
     Vector3 diff = Vector3Subtract(p1, p2);
-    float distSq = Vector3DotProduct(diff, diff);
-    float radiusSum = s1.Radius + s2.Radius;
+    float distSq = Vector3LengthSqr(diff);
+    float radiusSum = (s1.Radius * Vector3Length({tc1.WorldTransform.m0, tc1.WorldTransform.m1, tc1.WorldTransform.m2})) + 
+                      (s2.Radius * Vector3Length({tc2.WorldTransform.m0, tc2.WorldTransform.m1, tc2.WorldTransform.m2}));
 
-    if (distSq >= radiusSum * radiusSum)
-    {
-        return;
-    }
+    if (distSq >= radiusSum * radiusSum) return;
 
     float dist = sqrtf(distSq);
     float penetration = radiusSum - dist;
     Vector3 normal = (dist > 0.0001f) ? Vector3Scale(diff, 1.0f / dist) : Vector3{0, 1, 0};
 
-    ApplyResponse(registry, rbEntity, otherEntity, tc, rb, s2, normal, penetration);
+    ApplyResponse(registry, rbEntity, otherEntity, tc1, rb, s2, normal, penetration);
 }
 
 } // namespace CHEngine

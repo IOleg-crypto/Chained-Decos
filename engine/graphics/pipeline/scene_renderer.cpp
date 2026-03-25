@@ -29,12 +29,13 @@ Matrix SceneRenderer::GetWorldTransform(entt::registry& registry, entt::entity e
     }
     return MatrixIdentity();
 }
-
 Vector3 SceneRenderer::GetWorldPosition(entt::registry& registry, entt::entity entity)
 {
-    // Transforming origin (0,0,0) by the world transform is a cleaner way to extract position
-    // than accessing matrix indices directly.
-    return Vector3Transform({0, 0, 0}, GetWorldTransform(registry, entity));
+    // Отримуємо матрицю (бажано через посилання, якщо можливо)
+    Matrix worldTransform = GetWorldTransform(registry, entity);
+    
+    // Прямий доступ до компонентів трансляції (переміщення)
+    return { worldTransform.m12, worldTransform.m13, worldTransform.m14 };
 }
 
 void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float nearClip, float farClip, Timestep timestep,
@@ -406,30 +407,39 @@ void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& 
 
 void SceneRenderer::DrawAnimatedEntities(const std::vector<AnimatedEntry>& animatedEntries, const SceneRenderOptions& options)
 {
-    for (auto& entry : animatedEntries)
-    {
-        float targetFPS = options.TargetFPS;
+    // 1. Виносимо те, що не змінюється, за межі циклу (економія обчислень)
+    float targetFPS = options.TargetFPS > 0.0f ? options.TargetFPS : 60.0f;
+    float invFrameTime = targetFPS; // Це математично те саме, що 1.0f / (1.0f / targetFPS)
 
-        float frameTime = 1.0f / (targetFPS > 0 ? targetFPS : 30.0f);
-        float fractionalFrame = (float)entry.animation.CurrentFrame + (entry.animation.FrameTimeCounter / frameTime);
+    for (const auto& entry : animatedEntries) // Додав const для безпеки
+    {
+        // 2. Множення замість ділення працює швидше
+        float fractionalFrame = (float)entry.animation.CurrentFrame + (entry.animation.FrameTimeCounter * invFrameTime);
 
         int targetAnim = -1;
         float targetFractionalFrame = 0.0f;
         float blendWeight = 0.0f;
+
         if (entry.animation.Blending)
         {
             targetAnim = entry.animation.TargetAnimationIndex;
-            targetFractionalFrame = (float)entry.animation.TargetFrame + (entry.animation.FrameTimeCounter / frameTime);
-            blendWeight = entry.animation.BlendTimer / entry.animation.BlendDuration;
+            targetFractionalFrame = (float)entry.animation.TargetFrame + (entry.animation.FrameTimeCounter * invFrameTime);
+            
+            // 3. Захист від ділення на нуль (уникаємо NaN) та обмеження ваги від 0 до 1
+            if (entry.animation.BlendDuration > 0.0001f) 
+            {
+                blendWeight = entry.animation.BlendTimer / entry.animation.BlendDuration;
+                blendWeight = std::clamp(blendWeight, 0.0f, 1.0f); 
+            }
         }
 
+        // Залишаємо ваш виклик як є
         std::vector<Matrix> boneMatrices = entry.asset->ComputeAnimationPose(
             entry.animation.CurrentAnimationIndex, fractionalFrame, targetAnim, targetFractionalFrame, blendWeight);
 
         DrawModel(entry.asset, entry.worldTransform, entry.materials, boneMatrices, entry.shaderOverride, entry.customUniforms);
     }
 }
-
 void SceneRenderer::DrawStaticEntities(std::unordered_map<InstanceKey, InstanceGroup, InstanceKeyHash>& instanceGroups)
 {
     for (auto& [key, group] : instanceGroups)
@@ -483,71 +493,119 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
         if (!collider.Enabled) continue;
 
         Matrix worldTransform = GetWorldTransform(registry, entity);
+        // Green = no collision, Red = currently colliding
         Color debugColor = collider.IsColliding ? RED : LIME;
 
         if (collider.Type == ColliderType::Box)
         {
-            // Box colliders are treated as AABBs in NarrowPhase. 
-            // Draw the exact World AABB so visuals match physical collisions.
             BoundingBox worldAABB = CalculateColliderWorldAABB(collider, worldTransform);
             Vector3 center = Vector3Scale(Vector3Add(worldAABB.min, worldAABB.max), 0.5f);
-            Vector3 size = Vector3Subtract(worldAABB.max, worldAABB.min);
+            Vector3 size   = Vector3Subtract(worldAABB.max, worldAABB.min);
             Renderer::Get().DrawCubeWires(MatrixTranslate(center.x, center.y, center.z), size, debugColor);
         }
         else if (collider.Type == ColliderType::Sphere)
         {
-            Matrix sphereTransform = MatrixMultiply(MatrixTranslate(collider.Offset.x, collider.Offset.y, collider.Offset.z), worldTransform);
+            Matrix sphereTransform = MatrixMultiply(
+                MatrixTranslate(collider.Offset.x, collider.Offset.y, collider.Offset.z), worldTransform);
             Renderer::Get().DrawSphereWires(sphereTransform, collider.Radius, debugColor);
         }
         else if (collider.Type == ColliderType::Capsule)
         {
-            Matrix capsuleTransform = MatrixMultiply(MatrixTranslate(collider.Offset.x, collider.Offset.y, collider.Offset.z), worldTransform);
+            Matrix capsuleTransform = MatrixMultiply(
+                MatrixTranslate(collider.Offset.x, collider.Offset.y, collider.Offset.z), worldTransform);
             Renderer::Get().DrawCapsuleWires(capsuleTransform, collider.Radius, collider.Height, debugColor);
         }
         else if (collider.Type == ColliderType::Mesh)
         {
+            // Draw the world-space AABB of the mesh collider instead of per-triangle wireframe.
+            // Per-triangle mode was producing unreadable visual noise when scene had many mesh colliders.
             if (!collider.ModelPath.empty())
             {
                 auto model = AssetManager::Get().Get<ModelAsset>(collider.ModelPath);
                 if (model && model->GetState() == AssetState::Ready)
                 {
+                    BoundingBox localBox = model->GetBoundingBox();
+
+                    // Transform local AABB corners to world space and re-compute a world AABB
+                    Vector3 corners[8] = {
+                        {localBox.min.x, localBox.min.y, localBox.min.z},
+                        {localBox.max.x, localBox.min.y, localBox.min.z},
+                        {localBox.min.x, localBox.max.y, localBox.min.z},
+                        {localBox.max.x, localBox.max.y, localBox.min.z},
+                        {localBox.min.x, localBox.min.y, localBox.max.z},
+                        {localBox.max.x, localBox.min.y, localBox.max.z},
+                        {localBox.min.x, localBox.max.y, localBox.max.z},
+                        {localBox.max.x, localBox.max.y, localBox.max.z},
+                    };
+
+                    Vector3 wMin = { FLT_MAX,  FLT_MAX,  FLT_MAX};
+                    Vector3 wMax = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
+                    for (const auto& c : corners)
+                    {
+                        Vector3 wp = Vector3Transform(c, worldTransform);
+                        wMin = Vector3Min(wMin, wp);
+                        wMax = Vector3Max(wMax, wp);
+                    }
+
+                    Vector3 center = Vector3Scale(Vector3Add(wMin, wMax), 0.5f);
+                    Vector3 size   = Vector3Subtract(wMax, wMin);
+                    // Cyan for mesh colliders to distinguish them from box colliders
+                    Color meshDebugColor = collider.IsColliding ? RED : SKYBLUE;
+                    Renderer::Get().DrawCubeWires(MatrixTranslate(center.x, center.y, center.z), size, meshDebugColor);
+
+                    // Also draw individual mesh wireframes with depth test ON so they
+                    // don't render through walls — gives shape detail without visual chaos.
+                    Color meshWireColor = collider.IsColliding ? Color{255, 80, 80, 120} : Color{0, 180, 200, 100};
+                    rlEnableDepthTest();
                     const auto& rayModel = model->GetModel();
                     for (const auto& inst : model->GetInstances())
                     {
                         if (inst.meshIndex < 0 || inst.meshIndex >= rayModel.meshCount) continue;
-                        
-                        // Local * worldEntity (modelRoot is now baked into localTransform)
                         Matrix finalTransform = MatrixMultiply(inst.localTransform, worldTransform);
-                        Renderer::Get().DrawMeshWire(rayModel.meshes[inst.meshIndex], debugColor, finalTransform);
+                        Renderer::Get().DrawMeshWire(rayModel.meshes[inst.meshIndex], meshWireColor, finalTransform);
                     }
+                    rlDisableDepthTest();
                 }
             }
         }
-        
+
         m_CurrentStats.ColliderCount++;
     }
 }
 
 void SceneRenderer::DrawCollisionModelBoxDebug(entt::registry& registry, const SceneRenderOptions& options)
 {
+    // 1. Використовуємо посилання (&), щоб не копіювати матриці та структури щоразу
     auto view = registry.view<TransformComponent, ColliderComponent>();
+    
     for (auto entity : view)
     {
-        auto [transform, collider] = view.get<TransformComponent, ColliderComponent>(entity);
-        if (!collider.Enabled)
-        {
-            continue;
-        }
+        const auto& [transform, collider] = view.get<TransformComponent, ColliderComponent>(entity);
+        
+        if (!collider.Enabled) continue;
 
-        Matrix worldTransform = GetWorldTransform(registry, entity);
+        // 2. ОПТИМІЗАЦІЯ: Беремо матрицю прямо з отриманого компонента transform
+        // Не потрібно викликати GetWorldTransform(registry, entity) повторно.
+        const Matrix& worldTransform = transform.WorldTransform;
+
         BoundingBox worldAABB = CalculateColliderWorldAABB(collider, worldTransform);
 
-        // Check if AABB is valid (max > min)
-        if (worldAABB.max.x > worldAABB.min.x || worldAABB.max.y > worldAABB.min.y || worldAABB.max.z > worldAABB.min.z)
+        // 3. Розраховуємо розмір та центр
+        Vector3 size = Vector3Subtract(worldAABB.max, worldAABB.min);
+        
+        // Перевірка, чи бокс не "вивернутий" (min > max)
+        if (size.x >= 0 && size.y >= 0 && size.z >= 0)
         {
             Vector3 center = Vector3Scale(Vector3Add(worldAABB.min, worldAABB.max), 0.5f);
-            Vector3 size = Vector3Subtract(worldAABB.max, worldAABB.min);
-            Renderer::Get().DrawCubeWires(MatrixTranslate(center.x, center.y, center.z), size, RED);
+            
+            // Порада: можна міняти колір, якщо об'єкт зіткнувся (як у DrawColliderDebug)
+            Color debugColor = collider.IsColliding ? RED : Color{ 255, 0, 0, 100 }; 
+
+            Renderer::Get().DrawCubeWires(
+                MatrixTranslate(center.x, center.y, center.z), 
+                size, 
+                debugColor
+            );
         }
     }
 }

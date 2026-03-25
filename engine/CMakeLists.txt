@@ -2,7 +2,7 @@
 # Common include directories for all engine targets
 set(ENGINE_INCLUDE_DIRS
     ${CMAKE_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}
+        .
     ${glm_SOURCE_DIR}
     ${yaml-cpp_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/entt/src

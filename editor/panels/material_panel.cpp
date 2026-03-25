@@ -19,7 +19,6 @@ void MaterialPanel::OnImGuiRender(bool readOnly)
     }
 
     ImGui::Begin(m_Name.c_str(), &m_IsOpen);
-    ImGui::PushID(this);
 
     if (m_SelectedEntity && m_SelectedEntity.GetRegistry().ctx().get<Scene*>() != m_Context.get())
     {
@@ -38,7 +37,6 @@ void MaterialPanel::OnImGuiRender(bool readOnly)
         ImGui::TextDisabled("Select an entity in the Hierarchy to edit its materials.");
     }
 
-    ImGui::PopID();
     ImGui::End();
 }
 

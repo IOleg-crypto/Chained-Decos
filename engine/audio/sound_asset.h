@@ -19,7 +19,7 @@ public:
         : Asset(GetStaticType())
     {
     }
-    SoundAsset(Sound sound)
+    SoundAsset(const Sound &sound)
         : Asset(GetStaticType()),
           m_Sound(sound)
     {

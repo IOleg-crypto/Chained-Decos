@@ -166,7 +166,6 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
     // Remove window padding to let the image fill the entire window area
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
     ImGui::Begin(m_Name.c_str(), &m_IsOpen);
-    ImGui::PushID(this);
 
     // --- 1. PREPARE SCENE RENDER ---
     // Get available content region dimensions (excluding window title/decorations)
@@ -205,7 +204,6 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
 
     if (!activeScene || viewportSize.x <= 0 || viewportSize.y <= 0)
     {
-        ImGui::PopID();
         ImGui::End();
         ImGui::PopStyleVar();
         return;
@@ -596,7 +594,6 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
     ImGui::PopStyleVar(2);
     ImGui::PopStyleColor();
 
-    ImGui::PopID();
     ImGui::End();
     ImGui::PopStyleVar();
     debugFlags.DrawGrid = oldGrid;
