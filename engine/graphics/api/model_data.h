@@ -53,6 +53,7 @@ struct RawAnimation
     std::string name;
     int frameCount;
     int boneCount;
+    float frameRate = 30.0f; // FPS of the animation source asset
     std::vector<Transform> framePoses; // flattened [frameCount * boneCount]
 };
 

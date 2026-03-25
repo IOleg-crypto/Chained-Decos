@@ -143,15 +143,13 @@ void ModelAsset::UploadToGPU()
                 std::memcpy(mesh.boneWeights, rawMesh.weights.data(), rawMesh.weights.size() * sizeof(float));
             }
 
-            UploadMesh(&mesh, false);
-
-            // If no tangents but we have normals and texcoords, generate them
+            // If Assimp didn't provide tangents but we have normals and texcoords, generate them BEFORE upload
             if (mesh.tangents == nullptr && mesh.normals != nullptr && mesh.texcoords != nullptr)
             {
                 GenMeshTangents(&mesh);
-                // Re-upload with tangents
-                UpdateMeshBuffer(mesh, 4, mesh.tangents, mesh.vertexCount * 4 * sizeof(float), 0);
             }
+
+            UploadMesh(&mesh, false);
         }
 
         model.meshes[i] = mesh;
@@ -222,16 +220,9 @@ void ModelAsset::UploadToGPU()
             m_Model.bones = (BoneInfo*)RL_MALLOC(m_Model.boneCount * sizeof(BoneInfo));
             std::memcpy(m_Model.bones, m_PendingData.bones.data(), m_Model.boneCount * sizeof(BoneInfo));
 
+            // Use pre-calculated bind pose from import (avoid recalculating/re-decomposing)
             m_Model.bindPose = (Transform*)RL_MALLOC(m_Model.boneCount * sizeof(Transform));
-            for (int i = 0; i < m_Model.boneCount; i++)
-            {
-                Matrix mat = m_PendingData.nodeLocalTransforms[i];
-                m_Model.bindPose[i].translation = {mat.m12, mat.m13, mat.m14};
-                m_Model.bindPose[i].rotation = QuaternionFromMatrix(mat);
-                m_Model.bindPose[i].scale = {Vector3Length({mat.m0, mat.m1, mat.m2}),
-                                             Vector3Length({mat.m4, mat.m5, mat.m6}),
-                                             Vector3Length({mat.m8, mat.m9, mat.m10})};
-            }
+            std::memcpy(m_Model.bindPose, m_PendingData.bindPose.data(), m_Model.boneCount * sizeof(Transform));
         }
 
         // Transfer runtime data
@@ -394,15 +385,19 @@ std::vector<Matrix> ModelAsset::ComputeAnimationPose(int animationIndex, float f
     // Convert to global and then to bone matrices
     for (int i = 0; i < boneCount; i++)
     {
-        Matrix localMat = MatrixMultiply(QuaternionToMatrix(localPoseA[i].rotation), 
-                                         MatrixTranslate(localPoseA[i].translation.x, localPoseA[i].translation.y, localPoseA[i].translation.z));
-        localMat = MatrixMultiply(MatrixScale(localPoseA[i].scale.x, localPoseA[i].scale.y, localPoseA[i].scale.z), localMat);
+        // Build local bone matrix: Scale * Rotation * Translation
+        // Use nested MatrixMultiply: MatrixMultiply(A,B) = B*A (Raylib convention)
+        // To get S*R*T: MatrixMultiply(T, MatrixMultiply(R, S))
+        Matrix scaleRotMat = MatrixMultiply(QuaternionToMatrix(localPoseA[i].rotation), 
+                                             MatrixScale(localPoseA[i].scale.x, localPoseA[i].scale.y, localPoseA[i].scale.z));
+        Matrix localMat = MatrixMultiply(MatrixTranslate(localPoseA[i].translation.x, localPoseA[i].translation.y, localPoseA[i].translation.z),
+                                          scaleRotMat);
 
         int parent = m_Model.bones[i].parent;
         // Global = ParentGlobal * Local (Raylib's MatrixMultiply(L, R) is R * L, so we use Child, Parent)
         globalPose[i] = (parent == -1) ? localMat : MatrixMultiply(localMat, globalPose[parent]);
         
-        // BoneMatrix = GlobalPose * InverseBindPose (Using InverseBind, GlobalPose to get Global * InverseBind)
+        // BoneMatrix = GlobalPose * InverseBindPose (m_OffsetMatrices already contains inverse bind poses from Assimp)
         boneMatrices[i] = MatrixMultiply(m_OffsetMatrices[i], globalPose[i]);
     }
 

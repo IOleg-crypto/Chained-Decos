@@ -11,8 +11,8 @@ struct BVHNode
     Vector3 Min;
     Vector3 Max;
     uint32_t LeftOrFirst; // Index of left child or first triangle
-    uint16_t TriangleCount;
-    uint16_t Axis; // 0=X, 1=Y, 2=Z for internal nodes
+    uint32_t TriangleCount;
+    uint8_t Axis; // 0=X, 1=Y, 2=Z for internal nodes
 
     bool IsLeaf() const
     {

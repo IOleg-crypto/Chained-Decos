@@ -30,7 +30,6 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
 
     if (ImGui::Begin("Project Settings", &m_IsOpen))
     {
-        ImGui::PushID(this);
         auto& config = project->GetConfig();
 
         static int selectedCategory = 0;
@@ -312,7 +311,6 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             serializer.Serialize(path);
         }
 
-        ImGui::PopID();
     }
     ImGui::End();
 }

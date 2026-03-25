@@ -155,8 +155,9 @@ TEST(HierarchyDestructiveTest, RapidReparenting)
         chc.Parent = (entt::entity)newP;
     }
 
-    // 100 swaps (even) → back to p1
-    EXPECT_EQ(chc.Parent, (entt::entity)p1);
+    // 100 swaps (starting at 0 for p1, 1 for p2... 99 for p2)
+    // Means the last assigned parent is p2!
+    EXPECT_EQ(chc.Parent, (entt::entity)p2);
     EXPECT_NO_THROW(scene.DestroyEntity(p1));
     EXPECT_NO_THROW(scene.DestroyEntity(p2));
 }

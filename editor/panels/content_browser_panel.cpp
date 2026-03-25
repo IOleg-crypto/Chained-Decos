@@ -43,7 +43,6 @@ void ContentBrowserPanel::OnImGuiRender(bool readOnly)
         return;
     }
     ImGui::Begin(m_Name.c_str(), &m_IsOpen);
-    ImGui::PushID(this);
 
     ImGui::BeginDisabled(readOnly);
     RenderToolbar();
@@ -51,7 +50,6 @@ void ContentBrowserPanel::OnImGuiRender(bool readOnly)
     RenderGridView();
 
     ImGui::EndDisabled();
-    ImGui::PopID();
     ImGui::End();
 }
 

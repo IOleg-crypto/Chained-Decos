@@ -217,9 +217,9 @@ void PropertyEditor::Init()
     Register<LightComponent>("Light", [](auto& component, auto entity) {
         bool changed = false;
 
-        const char* lightTypeStrings[] = {"Point", "Spot"};
+        const char* lightTypeStrings[] = {"Point", "Spot", "Directional"};
         int lightType = (int)component.Type;
-        if (EditorGUI::Property("Type", lightType, lightTypeStrings, 2))
+        if (EditorGUI::Property("Type", lightType, lightTypeStrings, 3))
         {
             component.Type = (LightType)lightType;
             changed = true;
@@ -582,6 +582,127 @@ void PropertyEditor::Init()
         return EditorGUI::Property("Target Scene", component.TargetScenePath, "chscene");
     });
 
+    Register<AudioComponent>("Audio Source", [](auto& component, auto entity) {
+        auto pb = EditorGUI::Begin();
+        pb.File("Sound File", component.SoundPath, "wav,mp3,ogg")
+            .Float("Volume", component.Volume, 0.05f, 0.0f, 10.0f)
+            .Float("Pitch", component.Pitch, 0.05f, 0.1f, 5.0f)
+            .Bool("Loop", component.Loop)
+            .Bool("Play on Start", component.PlayOnStart);
+        
+        ImGui::Separator();
+        if (ImGui::Button("Play")) { component.IsPlaying = true; }
+        ImGui::SameLine();
+        if (ImGui::Button("Stop")) { component.IsPlaying = false; }
+        return pb.Changed;
+    });
+
+    Register<AnimationComponent>("Animation", [](auto& component, auto entity) {
+        auto pb = EditorGUI::Begin();
+        pb.File("Animation File", component.AnimationPath, "gltf,glb")
+            .Bool("Is Looping", component.IsLooping)
+            .Bool("Is Playing", component.IsPlaying)
+            .Int("Current Index", component.CurrentAnimationIndex);
+        return pb.Changed;
+    });
+
+    Register<NavigationComponent>("UI Navigation", [](auto& component, auto entity) {
+        bool changed = false;
+        auto pb = EditorGUI::Begin();
+        pb.Bool("Default Focus", component.IsDefaultFocus);
+        
+        int up = (int)(uint32_t)component.Up;
+        int down = (int)(uint32_t)component.Down;
+        int left = (int)(uint32_t)component.Left;
+        int right = (int)(uint32_t)component.Right;
+
+        pb.Int("Up (ID)", up).Int("Down (ID)", down).Int("Left (ID)", left).Int("Right (ID)", right);
+        if (pb.Changed)
+        {
+            component.Up = (entt::entity)up;
+            component.Down = (entt::entity)down;
+            component.Left = (entt::entity)left;
+            component.Right = (entt::entity)right;
+            changed = true;
+        }
+
+        return changed;
+    });
+
+    Register<ModelComponent>("Model", [](auto& component, auto entity) {
+        bool changed = false;
+        if (EditorGUI::Property("Model Path", component.ModelPath, "obj,gltf,glb,iqm,m3d"))
+        {
+            // Signal reload by resetting the handle; the asset system will re-import
+            component.ModelHandle    = 0;
+            component.MaterialsInitialized = false;
+            changed = true;
+        }
+        return changed;
+    });
+
+    Register<SpriteComponent>("Sprite", [](auto& component, auto entity) {
+        auto pb = EditorGUI::Begin();
+        pb.File("Texture", component.TexturePath, "png,jpg,bmp,tga")
+          .Color("Tint", component.Tint)
+          .Bool("Flip X", component.FlipX)
+          .Bool("Flip Y", component.FlipY)
+          .Int("Z Order", component.ZOrder);
+        return pb.Changed;
+    });
+
+    Register<PrimitiveComponent>("Primitive", [](auto& component, auto entity) {
+        bool changed = false;
+        const char* primitiveTypes[] = {"None", "Cube", "Sphere", "Plane", "Cylinder", "Cone", "Torus", "Knot", "Hemisphere"};
+        int type = (int)component.Type;
+        if (EditorGUI::Property("Type", type, primitiveTypes, 9))
+        {
+            component.Type = (PrimitiveType)type;
+            component.Dirty = true;
+            changed = true;
+        }
+
+        auto pb = EditorGUI::Begin();
+        if (component.Type == PrimitiveType::Cube || component.Type == PrimitiveType::Plane)
+        {
+            if (EditorGUI::DrawVec3("Dimensions", component.Dimensions, 1.0f)) { component.Dirty = true; changed = true; }
+        }
+        else if (component.Type == PrimitiveType::Sphere || component.Type == PrimitiveType::Hemisphere)
+        {
+            pb.Float("Radius", component.Radius, 0.1f);
+            pb.Int("Slices", component.Slices, 3, 64);
+            pb.Int("Stacks", component.Stacks, 3, 64);
+        }
+        else if (component.Type == PrimitiveType::Cylinder || component.Type == PrimitiveType::Cone)
+        {
+            pb.Float("Radius", component.Radius, 0.1f);
+            pb.Float("Height", component.Height, 0.1f);
+            pb.Int("Slices", component.Slices, 3, 64);
+        }
+        else if (component.Type == PrimitiveType::Torus)
+        {
+            pb.Float("Radius", component.Radius, 0.1f);
+            pb.Float("Inner Radius", component.InnerRadius, 0.1f);
+            pb.Int("Slices", component.Slices, 3, 64);
+            pb.Int("Stacks", component.Stacks, 3, 64);
+        }
+        else if (component.Type == PrimitiveType::Knot)
+        {
+            pb.Float("Radius", component.Radius, 0.1f);
+            pb.Float("Inner Radius", component.InnerRadius, 0.1f);
+            pb.Int("Slices", component.Slices, 3, 128);
+            pb.Int("Stacks", component.Stacks, 3, 128);
+        }
+
+        if (pb.Changed)
+        {
+            component.Dirty = true;
+            changed = true;
+        }
+
+        return changed;
+    });
+
     Register<ManagedScriptComponent>("Scripts", [](auto& component, Entity entity) {
         bool changed = false;
         auto& scriptClasses = ScriptEngine::Get().GetScriptClasses();
@@ -655,10 +776,10 @@ void PropertyEditor::Init()
                         field.Name = fieldName;
                         
                         auto mt = fieldType.GetManagedType();
-                        if (mt == Coral::ManagedType::Float) field.Type = ScriptFieldType::Float;
-                        else if (mt == Coral::ManagedType::Int) field.Type = ScriptFieldType::Int;
-                        else if (mt == Coral::ManagedType::Bool) field.Type = ScriptFieldType::Bool;
-                        else if (mt == Coral::ManagedType::String) field.Type = ScriptFieldType::String;
+                        if (mt == Coral::ManagedType::Float) { field.Type = ScriptFieldType::Float; field.Value = 0.0f; }
+                        else if (mt == Coral::ManagedType::Int) { field.Type = ScriptFieldType::Int; field.Value = 0; }
+                        else if (mt == Coral::ManagedType::Bool) { field.Type = ScriptFieldType::Bool; field.Value = false; }
+                        else if (mt == Coral::ManagedType::String) { field.Type = ScriptFieldType::String; field.Value = std::string(""); }
                         
                         if (field.Type != ScriptFieldType::None)
                         {
@@ -791,15 +912,6 @@ void PropertyEditor::Init()
             ImGui::NextColumn();
             ImGui::TextDisabled(ICON_FA_CIRCLE_EXCLAMATION " No animations found");
             ImGui::Columns(1);
-        }
-
-        if (EditorGUI::Property("Loop", component.IsLooping))
-        {
-            changed = true;
-        }
-        if (EditorGUI::Property("Playing", component.IsPlaying))
-        {
-            changed = true;
         }
 
         ImGui::Columns(2);

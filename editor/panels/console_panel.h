@@ -1,36 +1,43 @@
 #ifndef CH_CONSOLE_PANEL_H
 #define CH_CONSOLE_PANEL_H
 
-#include "deque"
+#include <deque>
 #include <cstdint>
 #include <mutex>
 #include <string>
 #include <vector>
+#include <chrono>
 
-#include "panel.h" // Added include for Panel
+#include "panel.h"
 
 namespace CHEngine
 {
+// Розширюємо рівні логування для повної відповідності Raylib/Editor
 enum class ConsoleLogLevel : uint32_t
 {
-    Info = 0,
-    Warn = 1,
-    Error = 2
+    Trace = 0,
+    Debug,
+    Info,
+    Warn,
+    Error,
+    Fatal,
+    None
 };
 
 struct ConsoleLogEntry
 {
     ConsoleLogLevel level;
     std::string message;
+    std::string timestamp; // Додаємо час для зручності
 };
 
-class ConsolePanel : public Panel // Inherited from Panel
+class ConsolePanel : public Panel
 {
 public:
     ConsolePanel();
     ~ConsolePanel();
 
-    void OnImGuiRender(bool readOnly = false) override; // Added override keyword
+    void OnImGuiRender(bool readOnly = false) override;
     void Log(const std::string& message, ConsoleLogLevel level = ConsoleLogLevel::Info);
     void Clear();
 
@@ -38,10 +45,19 @@ public:
 
 private:
     static ConsolePanel* s_Instance;
+    
     std::deque<ConsoleLogEntry> m_Messages;
     std::mutex m_LogMutex;
-    int m_LogLevel = 3; // Default to LOG_INFO
-    static constexpr size_t MAX_MESSAGES = 1000;
+
+    // Стан інтерфейсу
+    int m_LogLevel = (int)ConsoleLogLevel::Info; 
+    bool m_ScrollToBottom = false;
+    char m_FilterBuffer[256] = { 0 }; // Буфер для пошуку
+
+    static constexpr size_t MAX_MESSAGES = 10000;
+
+    // Допоміжний метод для отримання поточного часу
+    std::string GetCurrentTimestamp();
 };
 } // namespace CHEngine
 
