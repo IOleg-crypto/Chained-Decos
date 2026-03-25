@@ -26,7 +26,6 @@ void InspectorPanel::OnImGuiRender(bool readOnly)
     }
 
     ImGui::Begin(m_Name.c_str(), &m_IsOpen);
-    ImGui::PushID(this);
 
     if (m_SelectedEntity && m_SelectedEntity.GetRegistry().ctx().get<Scene*>() != m_Context.get())
     {
@@ -44,7 +43,6 @@ void InspectorPanel::OnImGuiRender(bool readOnly)
         ImGui::Text("Selection: None");
         ImGui::TextDisabled("Select an entity in the Hierarchy to view its components.");
     }
-    ImGui::PopID();
     ImGui::End();
 }
 

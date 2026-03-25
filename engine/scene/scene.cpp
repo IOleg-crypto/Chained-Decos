@@ -13,6 +13,7 @@
 #include "raymath.h"
 #include "scene_serializer.h"
 #include "scripting/scene_scripting.h"
+#include <cmath>
 
 namespace CHEngine
 {
@@ -225,16 +226,22 @@ void Scene::UpdateAnimations(Timestep deltaTime)
         float dt = deltaTime.GetSeconds();
         animation.FrameTimeCounter += dt;
 
-        // Fixed framerate for animations (should probably be asset-driven, but 30fps is standard)
+        // Get animation frameRate from asset (asset-driven, defaults to 30fps if not available)
         float targetFPS = 30.0f;
+        const auto& rawAnims = modelAsset->GetRawAnimations();
+        if (animation.CurrentAnimationIndex >= 0 && animation.CurrentAnimationIndex < (int)rawAnims.size())
+        {
+            targetFPS = rawAnims[animation.CurrentAnimationIndex].frameRate;
+        }
         float frameTime = 1.0f / targetFPS;
 
-        if (animation.FrameTimeCounter >= frameTime)
+        // Use a while loop to correctly consume elapsed time without dropping fractional MS,
+        // which prevents animation sequence shaking/jittering.
+        while (animation.FrameTimeCounter >= frameTime)
         {
-            animation.FrameTimeCounter = 0.0f;
+            animation.FrameTimeCounter -= frameTime;
             animation.CurrentFrame++;
 
-            const auto& rawAnims = modelAsset->GetRawAnimations();
             if (animation.CurrentAnimationIndex >= 0 && animation.CurrentAnimationIndex < (int)rawAnims.size())
             {
                 int totalFrames = rawAnims[animation.CurrentAnimationIndex].frameCount;
@@ -268,7 +275,8 @@ void Scene::UpdateAnimations(Timestep deltaTime)
             else
             {
                 // Progress target frame too
-                if (animation.FrameTimeCounter == 0.0f) // Just advanced a frame
+                const float FRAME_EPSILON = 0.001f;
+                if (std::abs(animation.FrameTimeCounter - 0.0f) < FRAME_EPSILON) // Just advanced a frame
                 {
                     animation.TargetFrame++;
                     if (animation.TargetAnimationIndex >= 0 &&

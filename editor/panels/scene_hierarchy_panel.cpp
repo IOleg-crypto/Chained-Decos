@@ -28,7 +28,6 @@ SceneHierarchyPanel::SceneHierarchyPanel(const std::shared_ptr<Scene>& context)
 void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
 {
     ImGui::Begin("Scene Hierarchy");
-    ImGui::PushID(this);
 
     // Search Bar
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
@@ -128,7 +127,6 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
         ImGui::EndDisabled();
     }
 
-    ImGui::PopID();
     ImGui::End();
 }
 

@@ -1,11 +1,11 @@
 add_library(engine_audio OBJECT
-    audio.cpp
-    sound_asset.cpp
-    audio_importer.cpp
+        audio.cpp
+        sound_asset.cpp
+        audio_importer.cpp
 
-    audio.h
-    sound_asset.h
-    audio_importer.h
+        audio.h
+        sound_asset.h
+        audio_importer.h
 )
 
 target_include_directories(engine_audio PUBLIC

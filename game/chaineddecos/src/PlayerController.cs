@@ -78,11 +78,18 @@ public class PlayerController : Script
         // If Dynamic, the physics engine handles these in ResolveSimulation/IntegrateVelocity.
         if (isKinematic)
         {
-            // Always apply gravity to kinematic bodies when in the air or moving upwards
-            velocity.Y -= Gravity * deltaTime;
+            // Apply gravity only when not grounded
+            if (!rb.IsGrounded)
+                velocity.Y -= Gravity * deltaTime;
 
-            if (rb.IsGrounded && velocity.Y < 0.1f)
-                velocity.Y = 0;
+            // Terminal velocity cap — prevents extreme penetration that multi-pass can't recover
+            const float kTerminalVelocity = -50.0f;
+            if (velocity.Y < kTerminalVelocity)
+                velocity.Y = kTerminalVelocity;
+
+            // Stop downward movement when grounded to prevent creep-through
+            if (rb.IsGrounded && velocity.Y < 0.0f)
+                velocity.Y = 0.0f;
 
             // Manual integration for Kinematic bodies
             transform.Translation = new Vector3(

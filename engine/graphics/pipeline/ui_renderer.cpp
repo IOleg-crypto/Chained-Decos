@@ -476,7 +476,9 @@ void UIRenderer::RenderTabBar(Entity tabBarEntity, const TabBarControl& tb, entt
     for (auto childID : tabItems)
     {
         auto& ti = registry.get<TabItemControl>(childID);
-        if (ImGui::BeginTabItem(ti.Label.c_str(), &ti.IsOpen))
+        // Append entity ID to label to prevent ImGui ID collisions for identical labels
+        std::string tabLabel = ti.Label + "##" + std::to_string((uint32_t)childID);
+        if (ImGui::BeginTabItem(tabLabel.c_str(), &ti.IsOpen))
         {
             ti.Selected = true;
             ImGui::EndTabItem();

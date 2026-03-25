@@ -38,8 +38,12 @@ void main()
             vertexBoneWeights.z * boneMatrices[int(vertexBoneIds.z)] +
             vertexBoneWeights.w * boneMatrices[int(vertexBoneIds.w)];
         
-        vPos = (skinMat * vec4(vertexPosition, 1.0)).xyz;
-        vNormal = (skinMat * vec4(vertexNormal, 0.0)).xyz;
+        // Raylib's rlSetUniformMatrices uploads arrays in row-major memory layout, 
+        // unlike rlSetUniformMatrix which transposes single matrices to column-major.
+        // Therefore, we must multiply the vector on the left side (vec * mat) to properly
+        // apply the transformation since the translation is encoded in the 4th row.
+        vPos = (vec4(vertexPosition, 1.0) * skinMat).xyz;
+        vNormal = (vec4(vertexNormal, 0.0) * skinMat).xyz;
     }
 
     // Send vertex attributes to fragment shader

@@ -27,6 +27,14 @@ struct BuildContext
     }
 };
 
+  // Explicit work stack instead of recursion
+struct WorkItem
+{
+    uint32_t nodeIdx;
+    size_t triStart;
+    size_t triCount;
+};
+
 class BVH
 {
 public:

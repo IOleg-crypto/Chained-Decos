@@ -129,6 +129,27 @@ void MeshImporter::ProcessMeshes(const aiScene* scene, PendingModelData& data)
                 mesh.texcoords.push_back(aiMesh->mTextureCoords[0][v].x);
                 mesh.texcoords.push_back(aiMesh->mTextureCoords[0][v].y);
             }
+            if (aiMesh->mTangents)
+            {
+                mesh.tangents.push_back(aiMesh->mTangents[v].x);
+                mesh.tangents.push_back(aiMesh->mTangents[v].y);
+                mesh.tangents.push_back(aiMesh->mTangents[v].z);
+
+                // Raylib expects 4D tangents setup (x, y, z, w) where w is handedness/sign
+                if (aiMesh->mBitangents && aiMesh->HasNormals())
+                {
+                    Vector3 n = { aiMesh->mNormals[v].x, aiMesh->mNormals[v].y, aiMesh->mNormals[v].z };
+                    Vector3 t = { aiMesh->mTangents[v].x, aiMesh->mTangents[v].y, aiMesh->mTangents[v].z };
+                    Vector3 b = { aiMesh->mBitangents[v].x, aiMesh->mBitangents[v].y, aiMesh->mBitangents[v].z };
+
+                    float w = (Vector3DotProduct(Vector3CrossProduct(n, t), b) < 0.0f) ? -1.0f : 1.0f;
+                    mesh.tangents.push_back(w);
+                }
+                else
+                {
+                    mesh.tangents.push_back(1.0f);
+                }
+            }
             
             // Initialize skinning data as empty (no bone influence by default)
             mesh.joints.insert(mesh.joints.end(), 4, 0);
@@ -233,6 +254,8 @@ void MeshImporter::ProcessAnimations(const aiScene* scene, PendingModelData& dat
         int frameCount = (int)(durationInSeconds * (double)samplingFPS) + 1;
         int boneCount = (int)data.nodeNames.size();
 
+        // Store the sampling frame rate (the rate at which we resampled the animation during import)
+        rawAnim.frameRate = (float)samplingFPS;
         rawAnim.frameCount = frameCount;
         rawAnim.boneCount = boneCount;
         rawAnim.framePoses.resize(frameCount * boneCount);
@@ -430,7 +453,7 @@ PendingModelData MeshImporter::LoadMeshDataFromDisk(const std::filesystem::path&
 
     unsigned int flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals |
                          aiProcess_LimitBoneWeights | aiProcess_JoinIdenticalVertices |
-                         aiProcess_PopulateArmatureData | aiProcess_ValidateDataStructure |
+                         aiProcess_ValidateDataStructure |
                          aiProcess_SortByPType |          // Needed for point/line removal
                          aiProcess_SplitLargeMeshes |     // Critical for 16-bit index systems like Raylib
                          aiProcess_ImproveCacheLocality | // Performance optimization
