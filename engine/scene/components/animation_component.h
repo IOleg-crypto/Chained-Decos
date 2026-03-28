@@ -1,7 +1,7 @@
 #ifndef CH_ANIMATION_COMPONENT_H
 #define CH_ANIMATION_COMPONENT_H
 
-#include "raylib.h"
+#include "engine/core/base.h"
 #include <string>
 #include <vector>
 

@@ -1,4 +1,7 @@
 #include "editor_camera.h"
+#include <glm/gtc/matrix_transform.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/quaternion.hpp>
 
 namespace CHEngine
 {
@@ -24,39 +27,39 @@ void EditorCamera::OnUpdate(Timestep ts)
 void EditorCamera::UpdateView()
 {
     Vector3 position = CalculatePosition();
-    m_ViewMatrix = MatrixLookAt(position, Vector3Add(position, GetForwardDirection()), GetUpDirection());
+    m_ViewMatrix = glm::lookAt(position, position + GetForwardDirection(), GetUpDirection());
 }
 
 Vector3 EditorCamera::GetUpDirection() const
 {
-    return Vector3RotateByQuaternion({0.0f, 1.0f, 0.0f}, GetOrientation());
+    return GetOrientation() * glm::vec3(0.0f, 1.0f, 0.0f);
 }
 
 Vector3 EditorCamera::GetRightDirection() const
 {
-    return Vector3RotateByQuaternion({1.0f, 0.0f, 0.0f}, GetOrientation());
+    return GetOrientation() * glm::vec3(1.0f, 0.0f, 0.0f);
 }
 
 Vector3 EditorCamera::GetForwardDirection() const
 {
-    return Vector3RotateByQuaternion({0.0f, 0.0f, -1.0f}, GetOrientation());
+    return GetOrientation() * glm::vec3(0.0f, 0.0f, -1.0f);
 }
 
 Vector3 EditorCamera::CalculatePosition() const
 {
-    return Vector3Subtract(m_FocalPoint, Vector3Scale(GetForwardDirection(), m_Distance));
+    return m_FocalPoint - GetForwardDirection() * m_Distance;
 }
 
 Quaternion EditorCamera::GetOrientation() const
 {
-    return QuaternionFromEuler(m_Pitch, m_Yaw, 0.0f);
+    return glm::quat(glm::vec3(m_Pitch, m_Yaw, 0.0f));
 }
 
 void EditorCamera::MousePan(const Vector2& delta)
 {
     auto [xSpeed, ySpeed] = PanSpeed();
-    m_FocalPoint = Vector3Add(m_FocalPoint, Vector3Scale(GetRightDirection(), -delta.x * xSpeed * m_Distance));
-    m_FocalPoint = Vector3Add(m_FocalPoint, Vector3Scale(GetUpDirection(), delta.y * ySpeed * m_Distance));
+    m_FocalPoint += GetRightDirection() * (-delta.x * xSpeed * m_Distance);
+    m_FocalPoint += GetUpDirection() * (delta.y * ySpeed * m_Distance);
     UpdateView();
 }
 
@@ -73,7 +76,7 @@ void EditorCamera::MouseZoom(float delta)
     m_Distance -= delta * ZoomSpeed();
     if (m_Distance < 0.1f)
     {
-        m_FocalPoint = Vector3Add(m_FocalPoint, GetForwardDirection());
+        m_FocalPoint += GetForwardDirection();
         m_Distance = 0.1f;
     }
     UpdateView();
@@ -92,7 +95,7 @@ std::pair<float, float> EditorCamera::PanSpeed() const
 
 float EditorCamera::RotationSpeed() const
 {
-    return 0.8f * DEG2RAD;
+    return 0.8f * 0.0174532925f; // DEG2RAD
 }
 
 float EditorCamera::ZoomSpeed() const

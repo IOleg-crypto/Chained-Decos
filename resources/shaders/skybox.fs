@@ -1,6 +1,7 @@
 #version 450 core
+#include "include/color_space.glsl"
 
-layout(location = 0) in vec3 fragPosition;
+in vec2 fragTexCoord; 
 
 uniform sampler2D texture0;
 
@@ -9,9 +10,10 @@ uniform int isHDR;
 uniform float exposure;
 uniform float brightness;
 uniform float contrast;
-uniform int skyboxMode; // 0: Sphere, 1: Direct/Cross
+uniform int skyboxMode; // 0: Sphere, 1: Direct
 
-in vec2 fragTexCoord; // Need UVs for Mode 1
+uniform mat4 projection;
+uniform mat4 view;
 
 // Fog uniforms
 uniform int fogEnabled;
@@ -29,18 +31,23 @@ vec2 SampleSpherical(vec3 dir)
     return uv + 0.5;
 }
 
-// Note: ACES Tonemapping and Gamma correction are handled globally in post_process.fs
-
 void main()
 {
-    vec3 direction = normalize(fragPosition);
-    vec2 uv;
+    // 1. Reconstruct world-space direction from UV
+    // Map [0,1] UV to [-1,1] NDC
+    vec4 clipPos = vec4(fragTexCoord * 2.0 - 1.0, 1.0, 1.0);
+    vec4 viewPos = inverse(projection) * clipPos;
+    viewPos /= viewPos.w;
     
+    // View matrix passed to shader already has translation removed for cubemaps,
+    // but for panoramas it might still be there or we use this reconstruction.
+    mat3 invRotView = inverse(mat3(view));
+    vec3 direction = normalize(invRotView * viewPos.xyz);
+    
+    vec2 uv;
     if (skyboxMode == 1) {
-        // Mode 1: Direct Mapping (uses texture coordinates from the mesh)
         uv = fragTexCoord;
     } else {
-        // Mode 0: Spherical Mapping (Equirectangular)
         uv = SampleSpherical(direction);
     }
 
@@ -49,28 +56,30 @@ void main()
     // Sample the panorama
     vec3 color = texture(texture0, uv).rgb;
 
-    // 1. Exposure & Color corrections
-    color *= exposure;
-    color += brightness;
-    color = (color - 0.5) * contrast + 0.5;
+    // Convert to Linear if LDR (PNG/JPG)
+    if (isHDR == 0) color = ToLinear(color);
 
-    vec4 background = vec4(color, 1.0);
+    // 1. Exposure & Basic Tonemapping
+    color *= exposure;
+    
+    // Apply contrast/brightness in linear space
+    color = max(color + brightness, vec3(0.0));
+    color = pow(max(color, vec3(0.0)), vec3(contrast));
+
+    // 2. Simple Tonemapping for preview
+    vec3 mapped = color / (color + vec3(1.0));
+    
+    vec4 background = vec4(mapped, 1.0);
 
     // 2. Unified Horizon & Ground Fog
-    // This ensures that anything below the horizon eventually matches the fog color
-    // preventing "holes" or sharp seams.
     if (fogEnabled == 1) {
-        // Simple vertical gradient: 1.0 at nadir (-Y), 0.0 at top (+Y)
         float verticalFactor = clamp(1.0 - (direction.y + 0.05) * 10.0, 0.0, 1.0);
-        float fogFactor = pow(verticalFactor, 2.0); // Smooth curve for horizon focus
-        
-        // Also add a slight horizon "haze" even looking up
+        float fogFactor = pow(verticalFactor, 2.0); 
         float horizonHaze = pow(1.0 - abs(direction.y), 5.0) * 0.5;
         fogFactor = max(fogFactor, horizonHaze);
-        
         fogFactor = clamp(fogFactor * clamp(fogDensity * 5.0, 0.0, 1.0), 0.0, 1.0);
         finalColor = mix(background, fogColor, fogFactor);
     } else {
         finalColor = background;
     }
-}
+}

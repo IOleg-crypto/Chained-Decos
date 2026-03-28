@@ -1,8 +1,7 @@
 #ifndef CH_FRUSTUM_H
 #define CH_FRUSTUM_H
 
-#include <raylib.h>
-#include <raymath.h>
+#include <glm/glm.hpp>
 #include <array>
 #include <cmath>
 
@@ -14,42 +13,41 @@ struct Frustum
 
     enum PlaneIndex : size_t { Left = 0, Right, Bottom, Top, Near, Far };
 
-    // Planes: x, y, z = нормаль, w = відстань до початку координат
-    std::array<Vector4, PlaneCount> Planes;
+    // Planes: x, y, z = normal, w = distance from origin
+    std::array<glm::vec4, PlaneCount> Planes;
 
     /**
-     * Витягує площини з матриці View-Projection.
-     * Raylib Matrix: m0, m4, m8, m12 - це перший рядок (Row-major storage).
+     * Extracts planes from View-Projection matrix.
+     * GLM uses column-major storage/access.
      */
-    void Extract(Matrix mat)
+    void Extract(const glm::mat4& mat)
     {
-        // Розрахунок площин (Gribb-Hartmann)
-        Planes[Left]   = { mat.m3 + mat.m0, mat.m7 + mat.m4, mat.m11 + mat.m8, mat.m15 + mat.m12 };
-        Planes[Right]  = { mat.m3 - mat.m0, mat.m7 - mat.m4, mat.m11 - mat.m8, mat.m15 - mat.m12 };
-        Planes[Bottom] = { mat.m3 + mat.m1, mat.m7 + mat.m5, mat.m11 + mat.m9, mat.m15 + mat.m13 };
-        Planes[Top]    = { mat.m3 - mat.m1, mat.m7 - mat.m5, mat.m11 - mat.m9, mat.m15 - mat.m13 };
-        Planes[Near]   = { mat.m3 + mat.m2, mat.m7 + mat.m6, mat.m11 + mat.m10, mat.m15 + mat.m14 };
-        Planes[Far]    = { mat.m3 - mat.m2, mat.m7 - mat.m6, mat.m11 - mat.m10, mat.m15 - mat.m14 };
+        // Gribb-Hartmann plane extraction for column-major matrix
+        Planes[Left]   = { mat[0][3] + mat[0][0], mat[1][3] + mat[1][0], mat[2][3] + mat[2][0], mat[3][3] + mat[3][0] };
+        Planes[Right]  = { mat[0][3] - mat[0][0], mat[1][3] - mat[1][0], mat[2][3] - mat[2][0], mat[3][3] - mat[3][0] };
+        Planes[Bottom] = { mat[0][3] + mat[0][1], mat[1][3] + mat[1][1], mat[2][3] + mat[2][1], mat[3][3] + mat[3][1] };
+        Planes[Top]    = { mat[0][3] - mat[0][1], mat[1][3] - mat[1][1], mat[2][3] - mat[2][1], mat[3][3] - mat[3][1] };
+        Planes[Near]   = { mat[0][3] + mat[0][2], mat[1][3] + mat[1][2], mat[2][3] + mat[2][2], mat[3][3] + mat[3][2] };
+        Planes[Far]    = { mat[0][3] - mat[0][2], mat[1][3] - mat[1][2], mat[2][3] - mat[2][2], mat[3][3] - mat[3][2] };
 
-        // Нормалізація для коректної роботи IsSphereVisible
+        // Normalize planes for accurate sphere testing
         for (auto& p : Planes)
         {
-            float length = sqrtf(p.x * p.x + p.y * p.y + p.z * p.z);
-            float invL = (length != 0.0f) ? 1.0f / length : 1.0f;
-            p.x *= invL; p.y *= invL; p.z *= invL; p.w *= invL;
+            float length = std::sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
+            if (length > 0) p /= length;
         }
     }
 
     /**
-     * Найшвидша перевірка AABB через центр та екстенти.
+     * Fast AABB check using center and extents.
      */
-    bool IsBoxVisible(Vector3 center, Vector3 extents) const
+    bool IsBoxVisible(const glm::vec3& center, const glm::vec3& extents) const
     {
         for (const auto& p : Planes)
         {
-            // Проєкція екстентів на нормаль площини
-            float r = extents.x * fabsf(p.x) + extents.y * fabsf(p.y) + extents.z * fabsf(p.z);
-            // Відстань від центру боксу до площини
+            // Projection of extents onto plane normal
+            float r = extents.x * std::abs(p.x) + extents.y * std::abs(p.y) + extents.z * std::abs(p.z);
+            // Distance from box center to plane
             float d = p.x * center.x + p.y * center.y + p.z * center.z + p.w;
 
             if (d < -r) return false;
@@ -58,30 +56,29 @@ struct Frustum
     }
 
     /**
-     * Оптимізована перевірка локального AABB з урахуванням трансформації.
-     * Замість 8 викликів Vector3Transform, ми робимо лише один.
+     * Optimized AABB check with transform.
      */
-    bool IsBoxVisible(BoundingBox box, Matrix transform) const
+    bool IsBoxVisible(const struct BoundingBox& box, const glm::mat4& transform) const
     {
-        // 1. Знаходимо локальний центр та екстенти
-        Vector3 localCenter = { (box.max.x + box.min.x) * 0.5f, (box.max.y + box.min.y) * 0.5f, (box.max.z + box.min.z) * 0.5f };
-        Vector3 localExtents = { (box.max.x - box.min.x) * 0.5f, (box.max.y - box.min.y) * 0.5f, (box.max.z - box.min.z) * 0.5f };
+        // 1. Find local center and extents
+        glm::vec3 localCenter = { (box.Max.x + box.Min.x) * 0.5f, (box.Max.y + box.Min.y) * 0.5f, (box.Max.z + box.Min.z) * 0.5f };
+        glm::vec3 localExtents = { (box.Max.x - box.Min.x) * 0.5f, (box.Max.y - box.Min.y) * 0.5f, (box.Max.z - box.Min.z) * 0.5f };
 
-        // 2. Трансформуємо центр у світовий простір
-        Vector3 worldCenter = Vector3Transform(localCenter, transform);
+        // 2. Transform center to world space
+        glm::vec4 worldCenter4 = transform * glm::vec4(localCenter, 1.0f);
+        glm::vec3 worldCenter = glm::vec3(worldCenter4);
 
-        // 3. Розраховуємо нові екстенти у світовому просторі (враховуючи обертання та масштаб)
-        // Використовуємо абсолютні значення матриці, щоб отримати максимальне охоплення AABB
-        Vector3 worldExtents = {
-            fabsf(transform.m0) * localExtents.x + fabsf(transform.m4) * localExtents.y + fabsf(transform.m8) * localExtents.z,
-            fabsf(transform.m1) * localExtents.x + fabsf(transform.m5) * localExtents.y + fabsf(transform.m9) * localExtents.z,
-            fabsf(transform.m2) * localExtents.x + fabsf(transform.m6) * localExtents.y + fabsf(transform.m10) * localExtents.z
+        // 3. Calculate new extents in world space (taking rotation and scale into account)
+        glm::vec3 worldExtents = {
+            std::abs(transform[0][0]) * localExtents.x + std::abs(transform[1][0]) * localExtents.y + std::abs(transform[2][0]) * localExtents.z,
+            std::abs(transform[0][1]) * localExtents.x + std::abs(transform[1][1]) * localExtents.y + std::abs(transform[2][1]) * localExtents.z,
+            std::abs(transform[0][2]) * localExtents.x + std::abs(transform[1][2]) * localExtents.y + std::abs(transform[2][2]) * localExtents.z
         };
 
         return IsBoxVisible(worldCenter, worldExtents);
     }
 
-    bool IsSphereVisible(Vector3 center, float radius) const
+    bool IsSphereVisible(const glm::vec3& center, float radius) const
     {
         for (const auto& p : Planes)
         {

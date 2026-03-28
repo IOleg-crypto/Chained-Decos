@@ -3,11 +3,31 @@
 
 #include "engine/core/assets/asset.h"
 #include <memory>
-#include <raylib.h>
 #include <string>
+#include <cstdint>
 
 namespace CHEngine
 {
+
+struct Texture
+{
+    uint32_t id = 0;
+    int width = 0;
+    int height = 0;
+    int mipmaps = 0;
+    int format = 0;
+};
+
+struct RawImage
+{
+    void* data = nullptr;
+    int width = 0;
+    int height = 0;
+    int mipmaps = 0;
+    int format = 0;
+    int channels = 0;
+    bool isHDR = false;
+};
 
 class TextureAsset : public Asset
 {
@@ -26,17 +46,17 @@ public:
     void UploadToGPU();
 
     // For internal use by Importer
-    void SetPendingImage(Image image)
+    void SetPendingImage(const RawImage& image)
     {
         m_PendingImage = image;
         m_HasPendingImage = true;
     }
 
-    Texture2D& GetTexture()
+    Texture& GetTexture()
     {
         return m_Texture;
     }
-    void SetTexture(Texture2D texture)
+    void SetTexture(const Texture& texture)
     {
         m_Texture = texture;
     }
@@ -45,14 +65,14 @@ public:
     void SetIsCubemap(bool isCubemap) { m_IsCubemap = isCubemap; }
 
     bool IsHDR() const {
-        return m_Texture.format >= 8 && m_Texture.format <= 13; // Raylib float/half-float formats
+        return m_Texture.format >= 8 && m_Texture.format <= 13;
     }
 
     void Unload();
 
 private:
-    Texture2D m_Texture = {0};
-    Image m_PendingImage = {0};
+    Texture m_Texture = {0};
+    RawImage m_PendingImage = {0};
     bool m_HasPendingImage = false;
     bool m_IsCubemap = false;
 };

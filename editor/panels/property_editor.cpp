@@ -9,11 +9,15 @@
 #include "engine/scene/project.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_settings.h"
-#include "extras/IconsFontAwesome6.h"
+#include "imgui/IconsFontAwesome6.h"
+#include "panel.h"
 #include "imgui.h"
+#include <memory>
+
+
 #include "nfd.h"
-#include "raymath.h"
 #include "scripting/scriptengine.h"
+
 #include <algorithm>
 #include <iterator>
 #include <yaml-cpp/yaml.h>
@@ -89,21 +93,27 @@ void PropertyEditor::Init()
 
     Register<TransformComponent>("Transform", [](auto& component, auto entity) {
         bool changed = false;
-        if (EditorGUI::DrawVec3("Position", component.Translation))
+        Vector3 translation = *reinterpret_cast<Vector3*>(&component.Translation);
+        if (EditorGUI::DrawVec3("Position", translation))
         {
+            component.Translation = *reinterpret_cast<glm::vec3*>(&translation);
             component.IsDirty = true;
             changed = true;
         }
 
-        if (EditorGUI::DrawVec3("Rotation", component.Rotation))
+        Vector3 rotation = *reinterpret_cast<Vector3*>(&component.Rotation);
+        if (EditorGUI::DrawVec3("Rotation", rotation))
         {
-            component.SetRotation(component.Rotation * DEG2RAD);
-            component.Rotation = component.Rotation * (1.0f / DEG2RAD); // Keep in degrees for UI
+            component.Rotation = *reinterpret_cast<glm::vec3*>(&rotation);
+            component.SetRotation(component.Rotation * (glm::pi<float>() / 180.0f));
+            component.Rotation = component.Rotation * (1.0f / (glm::pi<float>() / 180.0f)); // Keep in degrees for UI
             changed = true;
         }
 
-        if (EditorGUI::DrawVec3("Scale", component.Scale, 1.0f))
+        Vector3 scaleVec = *reinterpret_cast<Vector3*>(&component.Scale);
+        if (EditorGUI::DrawVec3("Scale", scaleVec, 1.0f))
         {
+            component.Scale = *reinterpret_cast<glm::vec3*>(&scaleVec);
             component.IsDirty = true;
             changed = true;
         }
@@ -126,12 +136,13 @@ void PropertyEditor::Init()
 
         if (camera.GetProjectionType() == CHEngine::ProjectionType::Perspective)
         {
-            float verticalFov = camera.GetPerspectiveVerticalFOV() * RAD2DEG;
+            float verticalFov = camera.GetPerspectiveVerticalFOV() * 57.2957795f;
             if (EditorGUI::Property("Vertical FOV", verticalFov, 1.0f, 1.0f, 180.0f))
             {
-                camera.SetPerspectiveVerticalFOV(verticalFov * DEG2RAD);
+                camera.SetPerspectiveVerticalFOV(verticalFov * 0.0174532925f);
                 changed = true;
             }
+
 
             float nearClip = camera.GetPerspectiveNearClip();
             if (EditorGUI::Property("Near", nearClip, 0.01f))
@@ -277,8 +288,10 @@ void PropertyEditor::Init()
             changed = true;
         }
 
-        if (EditorGUI::DrawVec3("Velocity", component.Velocity))
+        Vector3 velocity = *reinterpret_cast<Vector3*>(&component.Velocity);
+        if (EditorGUI::DrawVec3("Velocity", velocity))
         {
+            component.Velocity = *reinterpret_cast<glm::vec3*>(&velocity);
             // Syncing velocity is handled by SyncECSToJolt so we don't necessarily need RecreateBody here
         }
 
@@ -306,8 +319,10 @@ void PropertyEditor::Init()
         }
 
         ImGui::BeginDisabled(component.AutoCalculate);
-        if (EditorGUI::DrawVec3("Offset", component.Offset))
+        Vector3 offset = *reinterpret_cast<Vector3*>(&component.Offset);
+        if (EditorGUI::DrawVec3("Offset", offset))
         {
+            component.Offset = *reinterpret_cast<glm::vec3*>(&offset);
             changed = true;
         }
         ImGui::EndDisabled();
@@ -315,8 +330,10 @@ void PropertyEditor::Init()
         if (component.Type == ColliderType::Box)
         {
             ImGui::BeginDisabled(component.AutoCalculate);
-            if (EditorGUI::DrawVec3("Size", component.Size, 1.0f))
+            Vector3 size = *reinterpret_cast<Vector3*>(&component.Size);
+            if (EditorGUI::DrawVec3("Size", size, 1.0f))
             {
+                component.Size = *reinterpret_cast<glm::vec3*>(&size);
                 changed = true;
             }
             ImGui::EndDisabled();
@@ -342,8 +359,10 @@ void PropertyEditor::Init()
             }
 
             ImGui::BeginDisabled(component.AutoCalculate);
-            if (EditorGUI::DrawVec3("Size", component.Size, 1.0f))
+            Vector3 size = *reinterpret_cast<Vector3*>(&component.Size);
+            if (EditorGUI::DrawVec3("Size", size, 1.0f))
             {
+                component.Size = *reinterpret_cast<glm::vec3*>(&size);
                 changed = true;
             }
             ImGui::EndDisabled();
@@ -365,9 +384,15 @@ void PropertyEditor::Init()
                         if (component.AutoCalculate)
                         {
                             BoundingBox box = asset->GetBoundingBox();
-                            component.Offset = box.min; 
-                            component.Size = Vector3Subtract(box.max, box.min);
+                            component.Offset = { box.Min.x, box.Min.y, box.Min.z }; 
+                            glm::vec3 sz = box.Max - box.Min;
+                            component.Size = { sz.x, sz.y, sz.z };
+                            
+                            CH_CORE_INFO("Rebuild Collider: '{}' -> Offset({:.2f}, {:.2f}, {:.2f}), Size({:.2f}, {:.2f}, {:.2f})", 
+                                         component.ModelPath, component.Offset.x, component.Offset.y, component.Offset.z,
+                                         component.Size.x, component.Size.y, component.Size.z);
                         }
+
                         PhysicsSystem::Get().InvalidateBVH(component.ModelPath);
                     }
                     // Physics::CreateBody(entity, asset); // JOLT REMOVED
@@ -1791,11 +1816,11 @@ static bool DrawTextureProperty(const char* label, std::string& path)
         {
             ImGui::SameLine();
             ImTextureID id = (ImTextureID)(intptr_t)textureAsset->GetTexture().id;
-            ImGui::Image(id, {20, 20});
+            ImGui::Image(id, {20, 20}, {0, 1}, {1, 0});
             if (ImGui::IsItemHovered())
             {
                 ImGui::BeginTooltip();
-                ImGui::Image(id, {256, 256});
+                ImGui::Image(id, {256, 256}, {0, 1}, {1, 0});
                 ImGui::Text("%s", path.c_str());
                 ImGui::EndTooltip();
             }
@@ -1804,12 +1829,8 @@ static bool DrawTextureProperty(const char* label, std::string& path)
     return changed;
 }
 
-static std::string GetTexturePathFromModel(const Model& model, int matIdx, int mapIndex,
-                                           const std::vector<std::shared_ptr<TextureAsset>>& textures)
+static std::string GetTexturePathFromID(uint32_t id, const std::vector<std::shared_ptr<CHEngine::TextureAsset>>& textures)
 {
-    if (matIdx < 0 || matIdx >= model.materialCount)
-        return "";
-    unsigned int id = model.materials[matIdx].maps[mapIndex].texture.id;
     if (id == 0)
         return "";
 
@@ -1820,6 +1841,7 @@ static std::string GetTexturePathFromModel(const Model& model, int matIdx, int m
     }
     return "";
 }
+
 
 void PropertyEditor::DrawMaterial(CHEngine::Entity entity, int hitMeshIndex)
 {
@@ -1909,13 +1931,13 @@ void PropertyEditor::DrawMaterial(CHEngine::Entity entity, int hitMeshIndex)
         }
     };
 
-    if (hitMeshIndex >= 0 && hitMeshIndex < model.meshCount)
+    if (hitMeshIndex >= 0 && hitMeshIndex < (int)model.Meshes.size())
     {
-        int matIndex = model.meshMaterial[hitMeshIndex];
+        int matIndex = model.Meshes[hitMeshIndex].MaterialIndex;
         int slotIndex = -1;
 
         // 1. Check for Mesh Index override
-        for (int i = 0; i < mc.Materials.size(); i++)
+        for (int i = 0; i < (int)mc.Materials.size(); i++)
         {
             if (mc.Materials[i].Target == MaterialSlotTarget::MeshIndex && mc.Materials[i].Index == hitMeshIndex)
             {
@@ -1927,7 +1949,7 @@ void PropertyEditor::DrawMaterial(CHEngine::Entity entity, int hitMeshIndex)
         // 2. Check for Material Index override
         if (slotIndex == -1)
         {
-            for (int i = 0; i < mc.Materials.size(); i++)
+            for (int i = 0; i < (int)mc.Materials.size(); i++)
             {
                 if (mc.Materials[i].Target == MaterialSlotTarget::MaterialIndex && mc.Materials[i].Index == matIndex)
                 {
@@ -1945,23 +1967,20 @@ void PropertyEditor::DrawMaterial(CHEngine::Entity entity, int hitMeshIndex)
         {
             // Synthesis default material info for display
             MaterialInstance defaultMat;
-            Material& rMat = model.materials[matIndex];
-            defaultMat.AlbedoColor = rMat.maps[MATERIAL_MAP_ALBEDO].color;
-            defaultMat.AlbedoPath =
-                GetTexturePathFromModel(model, matIndex, MATERIAL_MAP_ALBEDO, modelTextures);
+            const Material& rMat = model.Materials[matIndex];
+            
+            defaultMat.AlbedoColor = { (unsigned char)(rMat.AlbedoColor.r * 255), (unsigned char)(rMat.AlbedoColor.g * 255), (unsigned char)(rMat.AlbedoColor.b * 255), (unsigned char)(rMat.AlbedoColor.a * 255) };
+            defaultMat.AlbedoPath = GetTexturePathFromID(rMat.AlbedoMap, modelTextures);
             defaultMat.OverrideAlbedo = !defaultMat.AlbedoPath.empty();
 
-            defaultMat.NormalMapPath =
-                GetTexturePathFromModel(model, matIndex, MATERIAL_MAP_NORMAL, modelTextures);
-            defaultMat.MetallicRoughnessPath =
-                GetTexturePathFromModel(model, matIndex, MATERIAL_MAP_METALNESS, modelTextures);
-            defaultMat.OcclusionMapPath =
-                GetTexturePathFromModel(model, matIndex, MATERIAL_MAP_OCCLUSION, modelTextures);
-            defaultMat.EmissivePath =
-                GetTexturePathFromModel(model, matIndex, MATERIAL_MAP_EMISSION, modelTextures);
-            defaultMat.EmissiveColor = rMat.maps[MATERIAL_MAP_EMISSION].color;
-            defaultMat.Metalness = rMat.maps[MATERIAL_MAP_METALNESS].value;
-            defaultMat.Roughness = rMat.maps[MATERIAL_MAP_ROUGHNESS].value;
+            defaultMat.NormalMapPath = GetTexturePathFromID(rMat.NormalMap, modelTextures);
+            defaultMat.MetallicRoughnessPath = GetTexturePathFromID(rMat.MetallicRoughnessMap, modelTextures);
+            defaultMat.OcclusionMapPath = GetTexturePathFromID(rMat.OcclusionMap, modelTextures);
+            defaultMat.EmissivePath = GetTexturePathFromID(rMat.EmissiveMap, modelTextures);
+            defaultMat.EmissiveColor = { (unsigned char)(rMat.EmissiveColor.r * 255), (unsigned char)(rMat.EmissiveColor.g * 255), (unsigned char)(rMat.EmissiveColor.b * 255), (unsigned char)(rMat.EmissiveColor.a * 255) };
+            defaultMat.EmissiveIntensity = rMat.EmissiveIntensity;
+            defaultMat.Metalness = rMat.Metalness;
+            defaultMat.Roughness = rMat.Roughness;
 
             DrawMaterialInstance(defaultMat, matIndex, false);
             
@@ -1980,10 +1999,10 @@ void PropertyEditor::DrawMaterial(CHEngine::Entity entity, int hitMeshIndex)
     else
     {
         // Show all materials of the model first
-        for (int m = 0; m < model.materialCount; m++)
+        for (int m = 0; m < (int)model.Materials.size(); m++)
         {
             int slotIdx = -1;
-            for (int i = 0; i < mc.Materials.size(); i++)
+            for (int i = 0; i < (int)mc.Materials.size(); i++)
             {
                 if (mc.Materials[i].Target == MaterialSlotTarget::MaterialIndex && mc.Materials[i].Index == m)
                 {
@@ -1999,22 +2018,26 @@ void PropertyEditor::DrawMaterial(CHEngine::Entity entity, int hitMeshIndex)
             else
             {
                 MaterialInstance defaultMat;
-                Material& rMat = model.materials[m];
-                defaultMat.AlbedoColor = rMat.maps[MATERIAL_MAP_ALBEDO].color;
-                defaultMat.AlbedoPath = GetTexturePathFromModel(model, m, MATERIAL_MAP_ALBEDO, modelTextures);
+                const Material& rMat = model.Materials[m];
+                
+                defaultMat.AlbedoColor = { (unsigned char)(rMat.AlbedoColor.r * 255), (unsigned char)(rMat.AlbedoColor.g * 255), (unsigned char)(rMat.AlbedoColor.b * 255), (unsigned char)(rMat.AlbedoColor.a * 255) };
+                defaultMat.AlbedoPath = GetTexturePathFromID(rMat.AlbedoMap, modelTextures);
                 defaultMat.OverrideAlbedo = !defaultMat.AlbedoPath.empty();
-                defaultMat.NormalMapPath = GetTexturePathFromModel(model, m, MATERIAL_MAP_NORMAL, modelTextures);
-                defaultMat.MetallicRoughnessPath = GetTexturePathFromModel(model, m, MATERIAL_MAP_METALNESS, modelTextures);
-                defaultMat.OcclusionMapPath = GetTexturePathFromModel(model, m, MATERIAL_MAP_OCCLUSION, modelTextures);
-                defaultMat.EmissivePath = GetTexturePathFromModel(model, m, MATERIAL_MAP_EMISSION, modelTextures);
-                defaultMat.EmissiveColor = rMat.maps[MATERIAL_MAP_EMISSION].color;
-                defaultMat.Metalness = rMat.maps[MATERIAL_MAP_METALNESS].value;
-                defaultMat.Roughness = rMat.maps[MATERIAL_MAP_ROUGHNESS].value;
+                
+                defaultMat.NormalMapPath = GetTexturePathFromID(rMat.NormalMap, modelTextures);
+                defaultMat.MetallicRoughnessPath = GetTexturePathFromID(rMat.MetallicRoughnessMap, modelTextures);
+                defaultMat.OcclusionMapPath = GetTexturePathFromID(rMat.OcclusionMap, modelTextures);
+                defaultMat.EmissivePath = GetTexturePathFromID(rMat.EmissiveMap, modelTextures);
+                defaultMat.EmissiveColor = { (unsigned char)(rMat.EmissiveColor.r * 255), (unsigned char)(rMat.EmissiveColor.g * 255), (unsigned char)(rMat.EmissiveColor.b * 255), (unsigned char)(rMat.EmissiveColor.a * 255) };
+                defaultMat.EmissiveIntensity = rMat.EmissiveIntensity;
+                defaultMat.Metalness = rMat.Metalness;
+                defaultMat.Roughness = rMat.Roughness;
 
                 DrawMaterialInstance(defaultMat, m, false);
             }
         }
     }
+
 }
 
 void PropertyEditor::DrawAddComponentPopup(CHEngine::Entity entity)

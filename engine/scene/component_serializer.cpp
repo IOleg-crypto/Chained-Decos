@@ -64,10 +64,11 @@ template <> struct convert<CHEngine::ManagedScriptInstance>
                     case CHEngine::ScriptFieldType::Int: field.Value = f["Value"].as<int>(); break;
                     case CHEngine::ScriptFieldType::Bool: field.Value = f["Value"].as<bool>(); break;
                     case CHEngine::ScriptFieldType::String: field.Value = f["Value"].as<std::string>(); break;
-                    case CHEngine::ScriptFieldType::Vector2: field.Value = f["Value"].as<Vector2>(); break;
-                    case CHEngine::ScriptFieldType::Vector3: field.Value = f["Value"].as<Vector3>(); break;
-                    case CHEngine::ScriptFieldType::Vector4: field.Value = f["Value"].as<Vector4>(); break;
-                    case CHEngine::ScriptFieldType::Color: field.Value = f["Value"].as<Color>(); break;
+                    case CHEngine::ScriptFieldType::Vector2: field.Value = f["Value"].as<CHEngine::Vector2>(); break;
+                    case CHEngine::ScriptFieldType::Vector3: field.Value = f["Value"].as<CHEngine::Vector3>(); break;
+                    case CHEngine::ScriptFieldType::Vector4: field.Value = f["Value"].as<CHEngine::Vector4>(); break;
+                    case CHEngine::ScriptFieldType::Color: field.Value = f["Value"].as<CHEngine::Color>(); break;
+
                     case CHEngine::ScriptFieldType::Entity: field.Value = f["Value"].as<uint64_t>(); break;
                     default: break;
                     }
@@ -259,7 +260,8 @@ void ComponentSerializer::DeserializeTextStyle(TextStyle& style, YAML::Node node
     }
     if (node["ShadowColor"])
     {
-        style.ShadowColor = node["ShadowColor"].as<Color>();
+        style.ShadowColor = node["ShadowColor"].as<CHEngine::Color>();
+
     }
     if (node["LetterSpacing"])
     {
@@ -378,7 +380,8 @@ void ComponentSerializer::DeserializeUIStyle(UIStyle& style, YAML::Node node)
     }
     if (node["GradientColor"])
     {
-        style.GradientColor = node["GradientColor"].as<Color>();
+        style.GradientColor = node["GradientColor"].as<CHEngine::Color>();
+
     }
     if (node["HoverScale"])
     {
@@ -472,7 +475,8 @@ void ComponentSerializer::DeserializeMaterialInstance(MaterialInstance& mat, YAM
     }
     if (node["EmissiveColor"])
     {
-        mat.EmissiveColor = node["EmissiveColor"].as<Color>();
+        mat.EmissiveColor = node["EmissiveColor"].as<CHEngine::Color>();
+
     }
     if (node["EmissiveIntensity"])
     {

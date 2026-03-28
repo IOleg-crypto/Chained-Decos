@@ -1,7 +1,7 @@
 #ifndef CH_APPLICATION_H
 #define CH_APPLICATION_H
 
-#include "engine/core/assert.h"
+#include "engine/core/ch_assert.h"
 #include "engine/core/base.h"
 #include "engine/core/events.h"
 #include "engine/core/imgui_layer.h"

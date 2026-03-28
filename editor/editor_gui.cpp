@@ -9,16 +9,15 @@
 #include "engine/scene/components.h"
 #include "scripting/scriptengine.h"
 #include "engine/scene/project.h"
-#include "extras/IconsFontAwesome6.h"
+#include "imgui/IconsFontAwesome6.h"
+
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "engine/core/dialogs.h"
 #include "engine/scene/scene_picking.h"
-#include "raymath.h"
 #include <cstring>
 #include <filesystem>
-#include <iterator>
 #include <string>
 
 namespace CHEngine
@@ -104,7 +103,8 @@ void EditorGUI::DrawMenuBar(EditorPanels& panels)
 
         if (ImGui::MenuItem(ICON_FA_EXPAND " Fullscreen", "F11"))
         {
-            ToggleFullscreen();
+            // TODO(Decoupling): Implement Fullscreen in GLFW Window
+            // ToggleFullscreen();
         }
 
         if (ImGui::MenuItem(ICON_FA_ARROWS_ROTATE " Reset Layout"))

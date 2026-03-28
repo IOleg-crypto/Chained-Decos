@@ -15,8 +15,9 @@
 #include "engine/audio/sound_asset.h"
 #include "engine/scene/project.h"
 #include "engine/core/assets/asset_manager.h"
-#include "raylib.h"
-#include "raymath.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include "script_glue.h"
 
 // Macro to mark functions for InternalCall (formerly P/Invoke)

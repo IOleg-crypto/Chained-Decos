@@ -56,9 +56,8 @@ public:
     virtual void SetVSync(bool enabled) = 0;
     virtual void SetAntialiasing(bool enabled) = 0;
     virtual void SetTargetFramesPerSecond(int framesPerSecond) = 0;
-    // Note: Image is from Raylib, might need abstraction later if moving away from Raylib
-    // But for now we focus on the Window Interface.
-    virtual void SetWindowIcon(Image icon) = 0;
+    // (Window icon logic can be implemented later with a generic Image type)
+    // virtual void SetWindowIcon(const std::string& path) = 0;
 
     virtual void* GetNativeWindow() const = 0;
 

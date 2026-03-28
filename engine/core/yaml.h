@@ -1,18 +1,24 @@
 #ifndef CH_YAML_UTILS_H
 #define CH_YAML_UTILS_H
 
-#include <raylib.h>
+#include <cassert>
+
 #include <variant>
 #include <string>
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 #include "yaml-cpp/yaml.h"
+#include "engine/core/math_types.h"
 
 namespace YAML
 {
 
-template <> struct convert<Vector2>
+
+template <> struct convert<glm::vec2>
 {
-    static Node encode(const Vector2& rhs)
+    static Node encode(const glm::vec2& rhs)
     {
         Node node;
         node.push_back(rhs.x);
@@ -20,7 +26,7 @@ template <> struct convert<Vector2>
         return node;
     }
 
-    static bool decode(const Node& node, Vector2& rhs)
+    static bool decode(const Node& node, glm::vec2& rhs)
     {
         if (node.IsSequence() && node.size() == 2)
         {
@@ -38,9 +44,9 @@ template <> struct convert<Vector2>
     }
 };
 
-template <> struct convert<Vector3>
+template <> struct convert<glm::vec3>
 {
-    static Node encode(const Vector3& rhs)
+    static Node encode(const glm::vec3& rhs)
     {
         Node node;
         node.push_back(rhs.x);
@@ -49,7 +55,7 @@ template <> struct convert<Vector3>
         return node;
     }
 
-    static bool decode(const Node& node, Vector3& rhs)
+    static bool decode(const Node& node, glm::vec3& rhs)
     {
         if (node.IsSequence() && node.size() == 3)
         {
@@ -69,9 +75,9 @@ template <> struct convert<Vector3>
     }
 };
 
-template <> struct convert<Vector4>
+template <> struct convert<glm::vec4>
 {
-    static Node encode(const Vector4& rhs)
+    static Node encode(const glm::vec4& rhs)
     {
         Node node;
         node.push_back(rhs.x);
@@ -81,7 +87,7 @@ template <> struct convert<Vector4>
         return node;
     }
 
-    static bool decode(const Node& node, Vector4& rhs)
+    static bool decode(const Node& node, glm::vec4& rhs)
     {
         if (node.IsSequence() && node.size() == 4)
         {
@@ -95,11 +101,37 @@ template <> struct convert<Vector4>
     }
 };
 
+template <> struct convert<glm::quat>
+{
+    static Node encode(const glm::quat& rhs)
+    {
+        Node node;
+        node.push_back(rhs.w);
+        node.push_back(rhs.x);
+        node.push_back(rhs.y);
+        node.push_back(rhs.z);
+        return node;
+    }
+
+    static bool decode(const Node& node, glm::quat& rhs)
+    {
+        if (node.IsSequence() && node.size() == 4)
+        {
+            rhs.w = node[0].as<float>();
+            rhs.x = node[1].as<float>();
+            rhs.y = node[2].as<float>();
+            rhs.z = node[3].as<float>();
+            return true;
+        }
+        return false;
+    }
+};
+
 // Quaternion is a typedef of Vector4 in Raylib, so it uses the Vector4 specialization.
 
-template <> struct convert<Color>
+template <> struct convert<CHEngine::Color>
 {
-    static Node encode(const Color& rhs)
+    static Node encode(const CHEngine::Color& rhs)
     {
         Node node;
         node.push_back(rhs.r);
@@ -109,7 +141,7 @@ template <> struct convert<Color>
         return node;
     }
 
-    static bool decode(const Node& node, Color& rhs)
+    static bool decode(const Node& node, CHEngine::Color& rhs)
     {
         if (node.IsSequence() && node.size() == 4)
         {
@@ -131,30 +163,38 @@ template <> struct convert<Color>
     }
 };
 
-inline YAML::Emitter& operator<<(YAML::Emitter& out, const Vector2& v)
+
+inline YAML::Emitter& operator<<(YAML::Emitter& out, const glm::vec2& v)
 {
     out << YAML::Flow;
     out << YAML::BeginSeq << v.x << v.y << YAML::EndSeq;
     return out;
 }
 
-inline YAML::Emitter& operator<<(YAML::Emitter& out, const Vector3& v)
+inline YAML::Emitter& operator<<(YAML::Emitter& out, const glm::vec3& v)
 {
     out << YAML::Flow;
     out << YAML::BeginSeq << v.x << v.y << v.z << YAML::EndSeq;
     return out;
 }
 
-inline YAML::Emitter& operator<<(YAML::Emitter& out, const Vector4& v)
+inline YAML::Emitter& operator<<(YAML::Emitter& out, const glm::vec4& v)
 {
     out << YAML::Flow;
     out << YAML::BeginSeq << v.x << v.y << v.z << v.w << YAML::EndSeq;
     return out;
 }
 
+inline YAML::Emitter& operator<<(YAML::Emitter& out, const glm::quat& q)
+{
+    out << YAML::Flow;
+    out << YAML::BeginSeq << q.w << q.x << q.y << q.z << YAML::EndSeq;
+    return out;
+}
+
 // operator<< for Quaternion uses Vector4 overload
 
-inline YAML::Emitter& operator<<(YAML::Emitter& out, const Color& c)
+inline YAML::Emitter& operator<<(YAML::Emitter& out, const CHEngine::Color& c)
 {
     out << YAML::Flow;
     out << YAML::BeginSeq << (int)c.r << (int)c.g << (int)c.b << (int)c.a << YAML::EndSeq;

@@ -1,10 +1,10 @@
 #include "engine/graphics/api/renderer_api.h"
-#include "raylib/raylib_renderer_api.h"
+#include "opengl/opengl_renderer_api.h"
 
 namespace CHEngine
 {
 
-RendererAPI::API RendererAPI::s_API = RendererAPI::API::Raylib;
+RendererAPI::API RendererAPI::s_API = RendererAPI::API::OpenGL;
 
 std::unique_ptr<RendererAPI> RendererAPI::Create()
 {
@@ -12,11 +12,11 @@ std::unique_ptr<RendererAPI> RendererAPI::Create()
     {
     case RendererAPI::API::None:
         return nullptr;
-    case RendererAPI::API::Raylib:
-        return std::make_unique<RaylibRendererAPI>();
+    case RendererAPI::API::OpenGL:
+        return std::make_unique<OpenGLRendererAPI>();
+    default:
+        return nullptr;
     }
-
-    return nullptr;
 }
 
 } // namespace CHEngine

@@ -1,8 +1,11 @@
 #include "engine/graphics/importers/texture_importer.h"
 #include "engine/core/log.h"
-#include "raylib.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
+
 #include <algorithm>
-#include <cmath>
 #include <filesystem>
 
 namespace CHEngine
@@ -14,61 +17,68 @@ std::shared_ptr<TextureAsset> TextureImporter::ImportTexture(const std::filesyst
     auto asset = std::make_shared<TextureAsset>();
     asset->SetPath(path.string());
 
-    Image image = LoadImage(path.string().c_str());
-    if (image.data == nullptr)
+    int width, height, channels;
+    stbi_set_flip_vertically_on_load(true);
+
+    bool isHDR = stbi_is_hdr(path.string().c_str());
+    void* data = nullptr;
+
+    if (isHDR)
+    {
+        data = stbi_loadf(path.string().c_str(), &width, &height, &channels, 0);
+    }
+    else
+    {
+        data = stbi_load(path.string().c_str(), &width, &height, &channels, 4);
+        channels = 4; // We requested 4 channels
+    }
+    
+    if (data == nullptr)
     {
         CH_CORE_ERROR("TextureImporter: Failed to load image {}", path.string());
         asset->SetState(AssetState::Failed);
         return asset;
     }
 
-    // HDR images: apply tone mapping on CPU, then convert to RGBA8
-    bool isHDR = (image.format == PIXELFORMAT_UNCOMPRESSED_R32G32B32 ||
-                  image.format == PIXELFORMAT_UNCOMPRESSED_R32G32B32A32);
-    if (isHDR)
-    {
-        int channels = (image.format == PIXELFORMAT_UNCOMPRESSED_R32G32B32) ? 3 : 4;
-        int pixelCount = image.width * image.height;
-        float* pixels = (float*)image.data;
-        for (int i = 0; i < pixelCount; i++)
-        {
-            for (int c = 0; c < 3; c++)
-            {
-                float v = pixels[i * channels + c];
-                float mapped = (v * (2.51f * v + 0.03f)) /
-                               (v * (2.43f * v + 0.59f) + 0.14f);
-                if (mapped < 0.0f) mapped = 0.0f;
-                if (mapped > 1.0f) mapped = 1.0f;
-                mapped = powf(mapped, 1.0f / 2.2f);
-                pixels[i * channels + c] = mapped;
-            }
-        }
-    }
-    // ImageFormat(&image, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8); 
-    // ^ DON'T DO THIS for HDR! Let LoadTextureFromImage handle the high-precision format.
-    // If it's not HDR, we still want R8G8B8A8 for consistency.
-    if (!isHDR)
-    {
-        ImageFormat(&image, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
-    }
+    RawImage rawImage;
+    rawImage.data = data;
+    rawImage.width = width;
+    rawImage.height = height;
+    rawImage.channels = channels;
+    rawImage.isHDR = isHDR;
+    rawImage.format = isHDR ? 11 : 7; // Keep compatibility with existing format definitions
+    rawImage.mipmaps = 1;
 
-    Texture2D texture = LoadTextureFromImage(image);
-    UnloadImage(image);
+    asset->SetPendingImage(rawImage);
+    asset->UploadToGPU();
 
-    if (texture.id == 0)
-    {
-        CH_CORE_ERROR("TextureImporter: Failed to create GPU texture from {}", path.string());
-        asset->SetState(AssetState::Failed);
-        return asset;
-    }
-
-    asset->SetTexture(texture);
-    asset->SetState(AssetState::Ready);
     return asset;
 }
 
-Image TextureImporter::LoadImageFromDisk(const std::filesystem::path& path)
+RawImage TextureImporter::LoadImageFromDisk(const std::filesystem::path& path)
 {
-    return LoadImage(path.string().c_str());
+    int width, height, channels;
+    stbi_set_flip_vertically_on_load(true);
+    
+    bool isHDR = stbi_is_hdr(path.string().c_str());
+    void* data = nullptr;
+
+    if (isHDR)
+        data = stbi_loadf(path.string().c_str(), &width, &height, &channels, 0);
+    else
+    {
+        data = stbi_load(path.string().c_str(), &width, &height, &channels, 4);
+        channels = 4;
+    }
+    
+    RawImage rawImage;
+    rawImage.data = data;
+    rawImage.width = width;
+    rawImage.height = height;
+    rawImage.channels = channels;
+    rawImage.isHDR = isHDR;
+    rawImage.format = isHDR ? 11 : 7;
+    rawImage.mipmaps = 1;
+    return rawImage;
 }
 } // namespace CHEngine

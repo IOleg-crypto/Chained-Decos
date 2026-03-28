@@ -2,12 +2,17 @@
 #define CH_WINDOWS_WINDOW_H
 
 #include "engine/core/window.h"
-#include "raylib.h"
+#include <string>
+#include <glad/gl.h>
+#include <GLFW/glfw3.h>
 
 struct GLFWwindow;
-
 namespace CHEngine
 {
+struct WindowIcon {
+    int width, height;
+    unsigned char* pixels;
+};
 
 class WindowsWindow : public Window
 {
@@ -33,7 +38,7 @@ public:
     virtual void SetVSync(bool enabled) override;
     virtual void SetAntialiasing(bool enabled) override;
     virtual void SetTargetFramesPerSecond(int framesPerSecond) override;
-    virtual void SetWindowIcon(Image icon) override;
+    // virtual void SetWindowIcon(const std::string& path) override;
 
     virtual void* GetNativeWindow() const override { return m_WindowHandle; }
 

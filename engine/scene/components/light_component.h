@@ -1,7 +1,7 @@
 #ifndef CH_LIGHT_COMPONENT_H
 #define CH_LIGHT_COMPONENT_H
 
-#include "raylib.h"
+#include "engine/core/base.h"
 
 namespace CHEngine
 {
@@ -15,7 +15,7 @@ enum class LightType
 struct LightComponent
 {
     LightType Type = LightType::Point;
-    Color LightColor = WHITE;
+    Color LightColor = Color::White();
     float Intensity = 100.0f;
     float Radius = 100.0f;     // Also used as Range for Spot lights
     float InnerCutoff = 15.0f; // Spot light only (degrees)

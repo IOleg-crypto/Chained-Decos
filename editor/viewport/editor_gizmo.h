@@ -5,7 +5,6 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
 #include "ImGuizmo.h"
-#include "raylib.h"
 
 namespace CHEngine
 {
@@ -27,7 +26,7 @@ public:
 
     // Render and handle gizmo interaction
     // true if the gizmo is being used (captured mouse)
-    bool RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 viewportSize, const Camera3D& camera);
+    bool RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 viewportSize, const CHEngine::Camera3D& camera);
 
     bool IsHovered() const
     {

@@ -1,7 +1,13 @@
 #include "filesystem_utils.h"
 
 #ifdef CH_PLATFORM_WINDOWS
+    #define Rectangle _Rectangle
+    #define CloseWindow _CloseWindow
+    #define ShowCursor _ShowCursor
     #include <windows.h>
+    #undef Rectangle
+    #undef CloseWindow
+    #undef ShowCursor
 #elif defined(CH_PLATFORM_LINUX)
     #include <unistd.h>
 #endif

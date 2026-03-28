@@ -53,10 +53,11 @@ add_library(engine_graphics OBJECT
         api/framebuffer.cpp
         api/framebuffer.h
         api/model_data.h
-        api/raylib/raylib_renderer_api.cpp
-        api/raylib/raylib_buffer.cpp
-        api/raylib/raylib_vertex_array.cpp
-        api/raylib/raylib_framebuffer.cpp
+        api/opengl/opengl_renderer_api.cpp
+        api/opengl/opengl_buffer.cpp
+        api/opengl/opengl_vertex_array.cpp
+        api/opengl/opengl_framebuffer.cpp
+        api/opengl/opengl_framebuffer.h
 )
 
 target_include_directories(engine_graphics PUBLIC
@@ -67,23 +68,19 @@ target_include_directories(engine_graphics PUBLIC
     ${CMAKE_SOURCE_DIR}/include/imgui
     ${CMAKE_SOURCE_DIR}/include/imgui/backends
     ${CMAKE_SOURCE_DIR}/include/entt/src
+    ${CMAKE_SOURCE_DIR}/include/stb
     ${imguizmo_SOURCE_DIR}
 )
 
-# Graphics module depends on Core, assimp, raylib, imgui
+# Graphics module depends on Core, assimp, glfw, glad, imgui
 target_link_libraries(engine_graphics PUBLIC 
-    raylib 
     imguilib 
     assimp::assimp 
     yaml-cpp
-    EnTT
+    EnTT::EnTT
+    glfw
+    glad
 )
-
-if(MSVC)
-    target_compile_options(engine_graphics PRIVATE /bigobj)
-elseif(MINGW)
-    target_compile_options(engine_graphics PRIVATE -Wa,-mbig-obj)
-endif()
 
 if(COMMAND apply_engine_optimizations)
     apply_engine_optimizations(engine_graphics)

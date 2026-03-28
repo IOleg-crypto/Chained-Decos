@@ -4,8 +4,9 @@
 #include "engine/core/timestep.h"
 #include "engine/graphics/assets/environment.h"
 #include "engine/graphics/pipeline/shader_library.h"
-#include "raylib.h"
-#include "raymath.h"
+#include "engine/graphics/api/camera_types.h"
+#include "engine/graphics/pipeline/renderer_types.h"
+#include <glm/glm.hpp>
 #include <memory>
 #include <vector>
 
@@ -15,10 +16,10 @@ namespace CHEngine
 // Low-level representation of a light for SSBO
 struct RenderLight
 {
-    float color[4] = {1.0f, 1.0f, 1.0f, 1.0f}; // 16 bytes
-    Vector3 position = {0, 0, 0};              // 12 bytes
+    glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f}; // 16 bytes
+    glm::vec3 position = {0, 0, 0};              // 12 bytes
     float intensity = 1.0f;                    // 4 bytes
-    Vector3 direction = {0, -1, 0};            // 12 bytes
+    glm::vec3 direction = {0, -1, 0};            // 12 bytes
     float radius = 10.0f;                      // 4 bytes
     float innerCutoff = 15.0f;                 // 4 bytes
     float outerCutoff = 20.0f;                 // 4 bytes
@@ -39,10 +40,9 @@ struct LightingData
 
 struct SkyboxData
 {
-    Model SkyboxCube;
-    Material SkyboxMaterial;
+    std::unique_ptr<Model> SkyboxModel; // Custom Model type
 
-    TextureCubemap CachedCubemap = { 0 };
+    unsigned int CachedCubemapId = 0;
     std::string CachedCubemapPath = "";
     unsigned int SourceTextureId = 0;
 };
@@ -55,14 +55,18 @@ struct RendererData
     std::unique_ptr<ShaderLibrary> Shaders;
 
     float DiagnosticMode = 0.0f;
-    Vector3 CurrentCameraPosition = {0.0f, 0.0f, 0.0f};
+    glm::vec3 CurrentCameraPosition = {0.0f, 0.0f, 0.0f};
     Timestep Time = 0.0f;
     int LightCount = 0;
     unsigned int CurrentShaderId = 0;
     EnvironmentSettings CurrentEnv;
 
-    Matrix CurrentView = MatrixIdentity();
-    Matrix CurrentProj = MatrixIdentity();
+    glm::mat4 CurrentView = glm::mat4(1.0f);
+    glm::mat4 CurrentProj = glm::mat4(1.0f);
+    
+    // Engine static resources
+    std::shared_ptr<VertexArray> FullscreenQuadVAO;
+    std::shared_ptr<VertexArray> BillboardVAO;
 };
 
 class Renderer
@@ -79,27 +83,27 @@ public:
     void InternalInit();
     void InternalShutdown();
 
-    void BeginScene(const Camera3D& camera);
+    void BeginScene(const Camera3D& camera, float nearClip = 0.01f, float farClip = 1000.0f);
     void EndScene();
 
-    void Clear(Color color);
+    void Clear(const glm::vec4& color);
     void SetViewport(int x, int y, int width, int height);
 
     // Low-level Draw calls
-    void DrawMesh(const Mesh& mesh, const Material& material, const Matrix& transform);
-    void DrawMeshInstanced(const Mesh& mesh, const Material& material, const std::vector<Matrix>& transforms);
-    void DrawMeshWire(const Mesh& mesh, Color color, const Matrix& transform);
+    void DrawMesh(const Mesh& mesh, const Material& material, const glm::mat4& transform);
+    void DrawMeshInstanced(const Mesh& mesh, const Material& material, const std::vector<glm::mat4>& transforms);
+    void DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& transform);
     
-    void DrawLine(Vector3 start, Vector3 end, Color color);
+    void DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color);
     void DrawGrid(int slices, float spacing);
-    void DrawInfiniteGrid(const Camera3D& camera, float spacing, Color color);
+    void DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& color);
     void DrawSkybox(const SkyboxSettings& settings, const Camera3D& camera);
-    void DrawBillboard(const Camera3D& camera, Texture2D texture, Vector3 position, float size, Color tint);
-    void DrawCubeWires(const Matrix& transform, Vector3 size, Color color);
-    void DrawCapsuleWires(const Matrix& transform, float radius, float height, Color color);
-    void DrawSphereWires(const Matrix& transform, float radius, Color color);
+    void DrawBillboard(const Camera3D& camera, uint32_t textureId, const glm::vec3& position, float size, const glm::vec4& tint);
+    void DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, const glm::vec4& color);
+    void DrawCapsuleWires(const glm::mat4& transform, float radius, float height, const glm::vec4& color);
+    void DrawSphereWires(const glm::mat4& transform, float radius, const glm::vec4& color);
 
-    void ApplyPostProcessing(RenderTexture2D screenTexture, const Camera3D& camera);
+    void ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextureId, const Camera3D& camera);
 
     // Light management
     void SetLight(int index, const RenderLight& light);
@@ -116,10 +120,10 @@ public:
     static bool IsInitialized();
 
 private:
-    void ApplyFogUniforms(Shader shader);
+    void ApplyFogUniforms(uint32_t shaderId);
     void InitializeSkybox();
     void CleanupSkybox();
-    TextureCubemap GenTextureCubemap(Shader shader, Texture2D panorama, int size, int format);
+    uint32_t GenTextureCubemap(uint32_t shaderId, uint32_t panoramaId, int size);
 
 private:
     std::unique_ptr<RendererData> m_Data;

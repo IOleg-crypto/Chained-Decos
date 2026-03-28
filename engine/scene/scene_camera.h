@@ -1,8 +1,8 @@
 #ifndef CH_SCENE_CAMERA_H
 #define CH_SCENE_CAMERA_H
 
-#include <raylib.h>
-#include <raymath.h>
+#include <glm/glm.hpp>
+#include <cstdint>
 
 namespace CHEngine
 {
@@ -90,7 +90,7 @@ public:
         RecalculateProjection();
     }
 
-    const Matrix& GetProjection() const
+    const glm::mat4& GetProjection() const
     {
         return m_Projection;
     }
@@ -101,7 +101,7 @@ private:
 private:
     ProjectionType m_ProjectionType = ProjectionType::Perspective;
 
-    float m_PerspectiveFOV = 60.0f * DEG2RAD;
+    float m_PerspectiveFOV = glm::radians(60.0f);
     float m_PerspectiveNear = 0.01f;
     float m_PerspectiveFar = 1000.0f;
 
@@ -110,7 +110,7 @@ private:
     float m_OrthographicFar = 1.0f;
 
     float m_AspectRatio = 0.0f;
-    Matrix m_Projection = MatrixIdentity();
+    glm::mat4 m_Projection = glm::mat4(1.0f);
 };
 
 } // namespace CHEngine

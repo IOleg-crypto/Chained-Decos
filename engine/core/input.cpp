@@ -1,100 +1,95 @@
 #include "input.h"
 #include "engine/core/application.h"
 #include "engine/core/events.h"
-#include "raylib.h"
+#include <GLFW/glfw3.h>
 
 namespace CHEngine
 {
 void Input::PollEvents()
 {
-    // 1. Keyboard Events
-    int key;
-    while ((key = GetKeyPressed()) != 0)
-    {
-        KeyPressedEvent e(key, false);
-        Application::Get().OnEvent(e);
-    }
-
-    // 1.5 Window Events
-    if (::IsWindowResized())
-    {
-        WindowResizeEvent e(::GetScreenWidth(), ::GetScreenHeight());
-        Application::Get().OnEvent(e);
-    }
-
-    // 2. Mouse Buttons
-    auto handleMouse = [&](int button) {
-        if (::IsMouseButtonPressed(button))
-        {
-            MouseButtonPressedEvent e(button);
-            Application::Get().OnEvent(e);
-        }
-        if (::IsMouseButtonReleased(button))
-        {
-            MouseButtonReleasedEvent e(button);
-            Application::Get().OnEvent(e);
-        }
-    };
-
-    handleMouse(MOUSE_BUTTON_LEFT);
-    handleMouse(MOUSE_BUTTON_RIGHT);
-    handleMouse(MOUSE_BUTTON_MIDDLE);
-
-    // 3. Mouse Wheel
-    float wheel = ::GetMouseWheelMove();
-    if (wheel != 0)
-    {
-        MouseScrolledEvent e(0, wheel);
-        Application::Get().OnEvent(e);
-    }
+    // GLFW events are handled via callbacks or polling.
+    // glfwPollEvents() is called in WindowsWindow::EndFrame().
+    // We can still use this method to check for specific state if needed,
+    // but most events should now come from GLFW callbacks.
 }
 
 bool Input::IsKeyPressed(KeyCode key)
 {
-    return ::IsKeyPressed(key);
+    auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
+    auto state = glfwGetKey(window, key);
+    return state == GLFW_PRESS;
 }
+
 bool Input::IsKeyDown(KeyCode key)
 {
-    bool down = ::IsKeyDown(key);
-    // if (down) CH_CORE_INFO("Input::IsKeyDown(key={}) -> true", key);
-    return down;
+    auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
+    auto state = glfwGetKey(window, key);
+    return state == GLFW_PRESS || state == GLFW_REPEAT;
 }
+
 bool Input::IsKeyReleased(KeyCode key)
 {
-    return ::IsKeyReleased(key);
+    auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
+    auto state = glfwGetKey(window, key);
+    return state == GLFW_RELEASE;
 }
+
 bool Input::IsKeyUp(KeyCode key)
 {
-    return ::IsKeyUp(key);
+    auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
+    auto state = glfwGetKey(window, key);
+    return state == GLFW_RELEASE;
 }
 
 bool Input::IsMouseButtonPressed(MouseCode button)
 {
-    return ::IsMouseButtonPressed(button);
+    auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
+    auto state = glfwGetMouseButton(window, button);
+    return state == GLFW_PRESS;
 }
+
 bool Input::IsMouseButtonDown(MouseCode button)
 {
-    return ::IsMouseButtonDown(button);
+    auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
+    auto state = glfwGetMouseButton(window, button);
+    return state == GLFW_PRESS;
 }
+
 bool Input::IsMouseButtonReleased(MouseCode button)
 {
-    return ::IsMouseButtonReleased(button);
+    auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
+    auto state = glfwGetMouseButton(window, button);
+    return state == GLFW_RELEASE;
 }
+
 bool Input::IsMouseButtonUp(MouseCode button)
 {
-    return ::IsMouseButtonUp(button);
+    auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
+    auto state = glfwGetMouseButton(window, button);
+    return state == GLFW_RELEASE;
 }
 
 Vector2 Input::GetMousePosition()
 {
-    return ::GetMousePosition();
+    auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
+    double xpos, ypos;
+    glfwGetCursorPos(window, &xpos, &ypos);
+    return { (float)xpos, (float)ypos };
 }
+
 Vector2 Input::GetMouseDelta()
 {
-    return ::GetMouseDelta();
+    // GLFW doesn't provide delta directly, we'd need to track it manually
+    static Vector2 lastPos = { 0, 0 };
+    Vector2 currentPos = GetMousePosition();
+    Vector2 delta = { currentPos.x - lastPos.x, currentPos.y - lastPos.y };
+    lastPos = currentPos;
+    return delta;
 }
+
 float Input::GetMouseWheelMove()
 {
-    return ::GetMouseWheelMove();
+    // Handled via scroll callback usually
+    return 0.0f; 
 }
 } // namespace CHEngine

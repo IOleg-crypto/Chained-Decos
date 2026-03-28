@@ -7,14 +7,14 @@
 
 namespace CHEngine
 {
-// Static class for polling input state and dispatching raw raylib events to the Application.
+// Static class for polling input state and dispatching events to the Application.
 class Input
 {
 public:
-    // Polls raylib for input changes and dispatches events to Application::OnEvent.
+    // Polls input changes and dispatches events to Application::OnEvent.
     static void PollEvents();
 
-    // Direct polling API (wraps raylib)
+    // Direct polling API (wraps window backend)
     static bool IsKeyPressed(KeyCode key);
     static bool IsKeyDown(KeyCode key);
     static bool IsKeyReleased(KeyCode key);

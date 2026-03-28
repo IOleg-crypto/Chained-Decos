@@ -2,7 +2,6 @@
 #define CH_CONTENT_BROWSER_PANEL_H
 
 #include "panel.h"
-#include "raylib.h"
 #include <filesystem>
 #include <functional>
 #include <string>
@@ -27,7 +26,7 @@ struct AssetEntry
     std::string name;
     std::filesystem::path path;
     EditorAssetType type;
-    Texture2D icon;
+    uint32_t icon;
     bool isDirectory;
 };
 
@@ -50,7 +49,7 @@ private:
 private:
     EditorAssetType DetermineAssetType(const std::filesystem::path& path);
     void LoadDefaultIcons();
-    Texture2D GetIconForAsset(const AssetEntry& entry);
+    uint32_t GetIconForAsset(const AssetEntry& entry);
     void OnAssetDoubleClicked(AssetEntry& entry);
 
 private:
@@ -65,8 +64,8 @@ private:
     char m_FilterBuffer[128] = "";
     int m_FilterType = 0; // 0 = All, or specific type
 
-    Texture2D m_FolderIcon;
-    Texture2D m_FileIcon;
+    uint32_t m_FolderIcon = 0;
+    uint32_t m_FileIcon = 0;
     float m_IconScale = 1.0f;
 
     // Asset Management

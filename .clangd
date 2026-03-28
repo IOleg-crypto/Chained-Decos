@@ -10,6 +10,8 @@ CompileFlags:
     - -Winvalid-pch
     - -Winvalid-offsetof
 
+Index:
+    Background: Skip
 Diagnostics:
   UnusedIncludes: None
 

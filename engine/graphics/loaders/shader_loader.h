@@ -18,7 +18,7 @@ public:
     bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath) override
     {
         auto shaderAsset = std::static_pointer_cast<ShaderAsset>(asset);
-        Shader shader = ShaderImporter::LoadShaderFromPath(resolvedPath);
+        NativeShader shader = ShaderImporter::LoadShaderFromPath(resolvedPath);
         if (shader.id > 0)
         {
             shaderAsset->SetShader(shader);

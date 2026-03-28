@@ -2,12 +2,16 @@
 #define CH_LINUX_WINDOW_H
 
 #include "engine/core/window.h"
-#include "raylib.h"
+#include <string>
 
 struct GLFWwindow;
 
 namespace CHEngine
 {
+struct WindowIcon {
+    int width, height;
+    unsigned char* pixels;
+};
 
 class LinuxWindow : public Window
 {
@@ -33,7 +37,7 @@ public:
     virtual void SetVSync(bool enabled) override;
     virtual void SetAntialiasing(bool enabled) override;
     virtual void SetTargetFramesPerSecond(int framesPerSecond) override;
-    virtual void SetWindowIcon(Image icon) override;
+    // virtual void SetWindowIcon(WindowIcon icon) override;
 
     virtual void* GetNativeWindow() const override { return m_WindowHandle; }
 

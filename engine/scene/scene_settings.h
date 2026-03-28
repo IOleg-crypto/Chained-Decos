@@ -3,7 +3,6 @@
 
 #include "engine/graphics/assets/environment.h"
 #include "engine/scene/components/control_component.h"
-#include "raylib.h"
 #include <memory>
 #include <string>
 
