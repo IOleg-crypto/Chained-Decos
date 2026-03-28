@@ -1,14 +1,16 @@
 #ifndef CH_RENDERER2D_H
 #define CH_RENDERER2D_H
 
-#include "engine/core/assert.h"
+#include "engine/core/ch_assert.h"
 #include "engine/core/base.h"
-#include "raylib.h"
+#include <glm/glm.hpp>
 #include "engine/graphics/api/buffer.h"
 #include "engine/graphics/api/vertex_array.h"
 #include <array>
 #include <memory>
 #include <vector>
+
+#include "engine/graphics/api/camera_types.h"
 
 namespace CHEngine
 {
@@ -16,9 +18,9 @@ class TextureAsset;
 
 struct QuadVertex
 {
-    Vector3 Position;
-    Vector4 Color;
-    Vector2 TexCoord;
+    glm::vec3 Position;
+    glm::vec4 Color;
+    glm::vec2 TexCoord;
     float TexIndex;
 };
 
@@ -37,8 +39,10 @@ struct Renderer2DData
 
     uint32_t QuadIndexCount = 0;
 
-    std::array<Texture2D, MaxTextureSlots> TextureSlots;
+    std::array<uint32_t, MaxTextureSlots> TextureSlots;
     uint32_t TextureSlotIndex = 1; // 0 = white texture (blank)
+
+    glm::mat4 ViewProjection;
 
     // Stats
     struct Statistics
@@ -71,30 +75,34 @@ public:
         return m_Data != nullptr;
     }
 
-    // Screen-space (UI) rendering
-    void BeginCanvas();
-    void EndCanvas();
-
     // World-space 2D rendering (Sprites, Billboards)
     void BeginScene(const Camera2D& camera);
     void EndScene();
 
+    // Aliases for UI/Canvas rendering
+    void BeginCanvas() { BeginScene(Camera2D()); }
+    void EndCanvas() { EndScene(); }
+
     void Flush();
 
     // Primitives
-    void DrawQuad(const Vector2& position, const Vector2& size, Color color);
-    void DrawQuad(const Vector3& position, const Vector2& size, Color color);
-    void DrawQuad(const Vector2& position, const Vector2& size, float rotation, Color color);
-    void DrawQuad(const Vector3& position, const Vector2& size, float rotation, Color color);
+    void DrawQuad(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color);
+    void DrawQuad(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color);
+    void DrawQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const glm::vec4& color);
+    void DrawQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::vec4& color);
 
-    void DrawSprite(const Vector2& position, const Vector2& size, const std::shared_ptr<TextureAsset>& texture,
-                    Color tint = WHITE);
-    void DrawSprite(const Vector3& position, const Vector2& size, const std::shared_ptr<TextureAsset>& texture,
-                    Color tint = WHITE);
-    void DrawSprite(const Vector2& position, const Vector2& size, float rotation,
-                    const std::shared_ptr<TextureAsset>& texture, Color tint = WHITE);
-    void DrawSprite(const Vector3& position, const Vector2& size, float rotation,
-                    const std::shared_ptr<TextureAsset>& texture, Color tint = WHITE);
+    void DrawSprite(const glm::vec2& position, const glm::vec2& size, const std::shared_ptr<TextureAsset>& texture,
+                    const glm::vec4& tint = {1.0f, 1.0f, 1.0f, 1.0f});
+    void DrawSprite(const glm::vec3& position, const glm::vec2& size, const std::shared_ptr<TextureAsset>& texture,
+                    const glm::vec4& tint = {1.0f, 1.0f, 1.0f, 1.0f});
+    void DrawSprite(const glm::vec2& position, const glm::vec2& size, float rotation,
+                    const std::shared_ptr<TextureAsset>& texture, const glm::vec4& tint = {1.0f, 1.0f, 1.0f, 1.0f});
+    void DrawSprite(const glm::vec3& position, const glm::vec2& size, float rotation,
+                    const std::shared_ptr<TextureAsset>& texture, const glm::vec4& tint = {1.0f, 1.0f, 1.0f, 1.0f});
+
+    // Text Rendering
+    void DrawString(const std::string& text, const glm::vec2& position, const std::shared_ptr<class FontAsset>& font, float scale = 1.0f, const glm::vec4& color = {1,1,1,1});
+    void DrawString(const std::string& text, const glm::vec3& position, const std::shared_ptr<class FontAsset>& font, float scale = 1.0f, const glm::vec4& color = {1,1,1,1});
 
     // Stats
     void ResetStats();
@@ -108,6 +116,7 @@ public:
 private:
     void StartBatch();
     void NextBatch();
+    void BeginMode2D(const Camera2D& camera);
 
 private:
     static Renderer2D* s_Instance;

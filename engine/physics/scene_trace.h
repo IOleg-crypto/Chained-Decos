@@ -2,7 +2,8 @@
 #define CH_SCENE_TRACE_H
 
 #include "raycast_result.h"
-#include "raylib.h"
+#include "engine/core/math_types.h"
+#include <entt/entt.hpp>
 
 namespace CHEngine
 {

@@ -3,8 +3,8 @@
 
 #include "engine/core/assets/asset.h"
 #include "engine/core/base.h"
-#include <raylib.h>
 #include <string>
+#include <glm/glm.hpp>
 
 namespace CHEngine
 {
@@ -22,7 +22,7 @@ struct FogSettings
 {
     bool Enabled = false;
     int Mode = 0; // 0: Linear, 1: Exp, 2: Exp2
-    Color FogColor = {158, 148, 148, 255}; // Neutral gray
+    Color FogColor = {158, 148, 148, 255}; 
     float Density = 0.001f;
     float Start = 10.0f;
     float End = 5000.0f;
@@ -30,8 +30,8 @@ struct FogSettings
 
 struct LightingSettings
 {
-    Vector3 Direction = {-1.0f, -1.0f, -1.0f};
-    Color LightColor = WHITE;
+    glm::vec3 Direction = {-1.0f, -1.0f, -1.0f};
+    Color LightColor = {255, 255, 255, 255}; // WHITE
     float Ambient = 0.3f;
     float Exposure = 1.0f;
     float Gamma = 2.2f;

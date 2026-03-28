@@ -12,11 +12,12 @@ class ShaderImporter
 public:
     static std::shared_ptr<ShaderAsset> ImportShader(const std::string& path);
     static std::shared_ptr<ShaderAsset> ImportShader(const std::string& vsPath, const std::string& fsPath);
-    static Shader LoadShaderFromPath(const std::string& path);
-    static Shader LoadShaderFromPaths(const std::string& vsPath, const std::string& fsPath);
+    static NativeShader LoadShaderFromPath(const std::string& path);
+    static NativeShader LoadShaderFromPaths(const std::string& vsPath, const std::string& fsPath);
 
 private:
     static std::string ProcessShaderSource(const std::string& path, std::vector<std::string>& includedFiles);
+    static NativeShader LoadShaderFromMemory(const char* vsSource, const char* fsSource);
 };
 } // namespace CHEngine
 

@@ -29,7 +29,6 @@ target_include_directories(scripting PUBLIC
 
 target_link_libraries(scripting PUBLIC 
     engine
-    raylib 
     yaml-cpp
     EnTT
     Coral.Native

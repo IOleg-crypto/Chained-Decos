@@ -9,7 +9,7 @@ namespace CHEngine
 	{
 		enum : MouseCode
 		{
-			// From raylib.h
+			// Standard Mouse Buttons (match GLFW/Standard)
 			ButtonLeft      = 0,       // Mouse button left
 			ButtonRight     = 1,       // Mouse button right
 			ButtonMiddle    = 2,       // Mouse button middle

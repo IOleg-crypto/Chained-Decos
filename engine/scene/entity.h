@@ -1,7 +1,7 @@
 #ifndef CH_ENTITY_H
 #define CH_ENTITY_H
 
-#include "engine/core/assert.h"
+#include "engine/core/ch_assert.h"
 #include "engine/core/base.h"
 #include "engine/core/uuid.h"
 #include "engine/scene/components/id_component.h"

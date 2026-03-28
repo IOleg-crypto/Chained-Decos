@@ -1,4 +1,3 @@
-
 # Common include directories for all engine targets
 set(ENGINE_INCLUDE_DIRS
     ${CMAKE_SOURCE_DIR}
@@ -7,7 +6,6 @@ set(ENGINE_INCLUDE_DIRS
     ${yaml-cpp_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/entt/src
     ${CMAKE_SOURCE_DIR}/include/coral/Coral.Native/Include
-    ${CMAKE_SOURCE_DIR}/include/raylib/src
 )
 
 # SHARED for local development (hot-reload), STATIC for CI/distribution
@@ -53,9 +51,8 @@ INTERFACE
 
 target_link_libraries(engine 
 PUBLIC 
-    EnTT
+    EnTT::EnTT
 PRIVATE
-    raylib 
     imguilib
     yaml-cpp
     assimp::assimp

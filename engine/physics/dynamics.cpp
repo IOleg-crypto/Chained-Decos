@@ -3,7 +3,8 @@
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene.h"
-#include "raymath.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace CHEngine
 {
@@ -48,18 +49,17 @@ void Dynamics::IntegrateVelocity(entt::registry& registry, entt::entity entity, 
 
     // Dampen velocity slightly (Air resistance)
     float damping = 1.0f - (0.5f * deltaTime);
-    rigidBody.Velocity = Vector3Scale(rigidBody.Velocity, damping);
+    rigidBody.Velocity *= damping;
 
     // Clamp absolute velocity to avoid "explosive" launches
     const float kMaxVelocity = 100.0f;
-    float speed = Vector3Length(rigidBody.Velocity);
+    float speed = glm::length(rigidBody.Velocity);
     if (speed > kMaxVelocity)
     {
-        rigidBody.Velocity = Vector3Scale(Vector3Normalize(rigidBody.Velocity), kMaxVelocity);
+        rigidBody.Velocity = glm::normalize(rigidBody.Velocity) * kMaxVelocity;
     }
 
-    Vector3 velocityDelta = Vector3Scale(rigidBody.Velocity, deltaTime);
-    entityTransform.Translation = Vector3Add(entityTransform.Translation, velocityDelta);
+    entityTransform.Translation += rigidBody.Velocity * deltaTime;
     entityTransform.IsDirty = true;
 }
 

@@ -14,8 +14,10 @@
 #include "scripting/scene_scripting.h"
 #include "scripting/scriptengine.h"
 #include "scripting/script_file_system.h"
+#include "engine/graphics/importers/texture_importer.h"
+#include "engine/graphics/pipeline/render_command.h"
 
-#include "extras/IconsFontAwesome6.h"
+#include "imgui/IconsFontAwesome6.h"
 #include "panels/console_panel.h"
 #include "panels/content_browser_panel.h"
 #include "panels/project_browser_panel.h"
@@ -63,23 +65,7 @@ void EditorLayer::SaveConfig()
 
 void EditorLayer::OnAttach()
 {
-    SetTraceLogCallback([](int logLevel, const char* text, va_list args) {
-        char buffer[4096];
-        vsnprintf(buffer, sizeof(buffer), text, args);
-        printf("%s\n", buffer);
-
-        ConsoleLogLevel level = ConsoleLogLevel::Info;
-        if (logLevel == LOG_WARNING)
-        {
-            level = ConsoleLogLevel::Warn;
-        }
-        else if (logLevel >= LOG_ERROR)
-        {
-            level = ConsoleLogLevel::Error;
-        }
-
-        ConsolePanel::AddLog(buffer, level);
-    });
+    // SetTraceLogCallback removed - now using engine logging
 
     EditorGUI::ApplyTheme();
     PropertyEditor::Init();
@@ -120,14 +106,9 @@ void EditorLayer::OnAttach()
         EditorContext::GetState().NeedsLayoutReset = true;
     }
 
-    CH_CORE_INFO("EditorLayer - Setting window icon");
-    Image icon = LoadImage(PROJECT_ROOT_DIR "/resources/icons/game-engine-icon-featuring-a-game-controller-with-.png");
-    if (icon.data != nullptr)
-    {
-        ImageFormat(&icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
-        Application::Get().GetWindow().SetWindowIcon(icon);
-        UnloadImage(icon);
-    }
+    CH_CORE_INFO("EditorLayer - Window icon loading deferred to Window implementation");
+    // TODO(Decoupling): Restore window icon loading when GLFW Window supports SetWindowIcon
+
 
     CH_CORE_INFO("EditorLayer Attached with modular panels.");
 
@@ -180,17 +161,18 @@ void EditorLayer::OnDetach()
 {
     SaveConfig();
     EditorContext::Shutdown();
-    SetTraceLogCallback(nullptr);
+    // SetTraceLogCallback(nullptr); // Removed: Raylib logging
 }
 
 void EditorLayer::OnUpdate(Timestep ts)
 {
     CH_PROFILE_FUNCTION();
 
-    if (Input::IsKeyPressed(KEY_F11))
+    if (Input::IsKeyPressed(Key::F11))
     {
-        ToggleFullscreen();
+        // ToggleFullscreen removed - to be implemented in Window
     }
+
 
     if (auto scene = GetActiveScene())
     {
@@ -212,16 +194,18 @@ void EditorLayer::OnUpdate(Timestep ts)
             scene->OnUpdateEditor(ts);
         }
 
-        if (Input::IsKeyPressed(KEY_F5))
+        if (Input::IsKeyPressed(Key::F5))
         {
             AppLaunchRuntimeEvent e;
             OnEvent(e);
         }
 
-        if (Input::IsKeyDown(KEY_LEFT_CONTROL) && Input::IsKeyPressed(KEY_R))
+
+        if (Input::IsKeyDown(Key::LeftControl) && Input::IsKeyPressed(Key::R))
         {
             ScriptEngine::Get().ReloadAssembly();
         }
+
 
         m_Panels->OnUpdate(ts);
     }
@@ -229,8 +213,9 @@ void EditorLayer::OnUpdate(Timestep ts)
 
 void EditorLayer::OnRender(Timestep ts)
 {
-    ClearBackground(BLACK);
+    RenderCommand::Clear({ 25, 25, 25, 255 });
 }
+
 
 void EditorLayer::OnImGuiRender()
 {
@@ -430,11 +415,12 @@ void EditorLayer::OnEvent(Event& e)
     else if (e.GetEventType() == EventType::KeyPressed)
     {
         auto& ke = (KeyPressedEvent&)e;
-        if (ke.GetKeyCode() == KEY_ESCAPE && EditorContext::GetState().FullscreenGame)
+        if (ke.GetKeyCode() == Key::Escape && EditorContext::GetState().FullscreenGame)
         {
             EditorContext::GetState().FullscreenGame = false;
             e.Handled = true;
         }
+
         if (auto activeScene = GetActiveScene())
         {
             activeScene->OnEvent(e);

@@ -1,20 +1,21 @@
 #ifndef CH_COLLISION_TRIANGLE_H
 #define CH_COLLISION_TRIANGLE_H
 
-#include "raylib.h"
+#include "engine/core/math_types.h"
+#include <glm/glm.hpp>
 
 namespace CHEngine
 {
 struct CollisionTriangle
 {
-    Vector3 v0, v1, v2;
-    Vector3 min, max;
-    Vector3 center;
-    Vector3 normal;
+    glm::vec3 v0, v1, v2;
+    glm::vec3 min, max;
+    glm::vec3 center;
+    glm::vec3 normal;
     int meshIndex = -1;
 
-    CollisionTriangle(const Vector3& a, const Vector3& b, const Vector3& c, int index = -1);
-    bool IntersectsRay(const Ray& ray, float& t, Vector3& normal) const;
+    CollisionTriangle(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, int index = -1);
+    bool IntersectsRay(const Ray& ray, float& t, glm::vec3& normal) const;
 };
 } // namespace CHEngine
 

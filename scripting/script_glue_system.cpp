@@ -9,8 +9,8 @@ namespace CHEngine {
 
     // ── Application / Window ─────────────────────────────────────────────
     CH_SCRIPT_FUNC void Application_Close() { Application::Get().Close(); }
-    CH_SCRIPT_FUNC int Application_GetFPS() { return ::GetFPS(); }
-    CH_SCRIPT_FUNC float Application_GetFrameTime() { return ::GetFrameTime(); }
+    CH_SCRIPT_FUNC int Application_GetFPS() { return (int)(1.0f / Application::Get().GetFrameTime()); }
+    CH_SCRIPT_FUNC float Application_GetFrameTime() { return Application::Get().GetFrameTime(); }
     CH_SCRIPT_FUNC void Window_SetSize(int w, int h) { Application::Get().GetWindow().SetSize(w, h); }
     CH_SCRIPT_FUNC void Window_SetFullscreen(bool enabled) { Application::Get().GetWindow().SetFullscreen(enabled); }
     CH_SCRIPT_FUNC void Window_SetVSync(bool enabled) { Application::Get().GetWindow().SetVSync(enabled); }

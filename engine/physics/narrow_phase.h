@@ -3,12 +3,11 @@
 
 #include "engine/scene/components.h"
 #include "entt/entt.hpp"
-#include "raylib.h"
 #include <vector>
+#include <glm/glm.hpp>
 
 namespace CHEngine
 {
-
 
 class NarrowPhase
 {
@@ -18,19 +17,20 @@ public:
 private:
     struct CapsuleSegment
     {
-        Vector3 a, b;
+        glm::vec3 a, b;
         float radius;
     };
 
     struct WorldAABB
     {
-        Vector3 min, max;
+        glm::vec3 Min, Max;
     };
 
+
     static void ApplyResponse(::entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity, TransformComponent& tc, RigidBodyComponent& rb,
-                       ColliderComponent& other, Vector3 normal, float depth);
-    static Vector3 ClosestPointOnSegment(Vector3 p, Vector3 a, Vector3 b);
-    static Vector3 ClosestPointTriangle(Vector3 p, Vector3 a, Vector3 b, Vector3 c);
+                       ColliderComponent& other, glm::vec3 normal, float depth);
+    static glm::vec3 ClosestPointOnSegment(glm::vec3 p, glm::vec3 a, glm::vec3 b);
+    static glm::vec3 ClosestPointTriangle(glm::vec3 p, glm::vec3 a, glm::vec3 b, glm::vec3 c);
     static CapsuleSegment GetCapsuleSegment(const TransformComponent& tc, const ColliderComponent& cc);
     static WorldAABB GetWorldAABB(const TransformComponent& tc, const ColliderComponent& cc);
 

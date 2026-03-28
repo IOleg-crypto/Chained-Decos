@@ -29,14 +29,21 @@ public:
     // Updates all active audio sources in the scene.
     void Update(Scene* scene, Timestep ts);
 
+    static Audio& Get();
+    void* GetEngine() { return m_Engine; }
+
+    void SetListenerPosition(const glm::vec3& position, const glm::vec3& forward, const glm::vec3& up);
+
     // Plays a specified sound asset.
-    void Play(std::shared_ptr<SoundAsset> asset, float volume = 1.0f, float pitch = 1.0f, bool loop = false);
+    void Play(std::shared_ptr<SoundAsset> asset, float volume = 1.0f, float pitch = 1.0f, bool loop = false, bool spatial = false, const glm::vec3& pos = {0,0,0});
 
     // Stops a specified sound asset.
     void Stop(std::shared_ptr<SoundAsset> asset);
 
-    static Audio& Get();
+private:
+    void* m_Engine = nullptr;
 };
+
 } // namespace CHEngine
 
 #endif // CH_AUDIO_H

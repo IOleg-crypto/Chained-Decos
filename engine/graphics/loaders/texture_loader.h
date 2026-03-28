@@ -31,12 +31,9 @@ public:
             return true; 
         }
 
-        Image img = TextureImporter::LoadImageFromDisk(resolvedPath);
+        RawImage img = TextureImporter::LoadImageFromDisk(resolvedPath);
         if (img.data != nullptr)
         {
-            // Note: In raylib/engine context, we often ensure RGBA8
-            // ImageFormat(&img, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8); 
-            // If ImageFormat is needed, ensure raylib.h or similar is accessible.
             texAsset->SetPendingImage(img);
             return true;
         }

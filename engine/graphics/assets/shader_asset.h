@@ -3,12 +3,20 @@
 
 #include "engine/core/assets/asset.h"
 #include "engine/core/base.h"
-#include "raylib.h"
 #include <string>
 #include <unordered_map>
+#include <vector>
+#include <cstdint>
 
 namespace CHEngine
 {
+
+struct NativeShader
+{
+    uint32_t id = 0;
+    // Raylib Shader struct has locs array but we'll use a cache in ShaderAsset
+};
+
 class ShaderAsset : public Asset
 {
 public:
@@ -21,7 +29,7 @@ public:
         : Asset(GetStaticType())
     {
     }
-    ShaderAsset(Shader shader)
+    ShaderAsset(const NativeShader& shader)
         : Asset(GetStaticType()),
           m_Shader(shader)
     {
@@ -32,16 +40,16 @@ public:
     {
     }
 
-    void SetShader(Shader shader)
+    void SetShader(const NativeShader& shader)
     {
         m_Shader = shader;
     }
 
-    Shader& GetShader()
+    NativeShader& GetShader()
     {
         return m_Shader;
     }
-    const Shader& GetShader() const
+    const NativeShader& GetShader() const
     {
         return m_Shader;
     }
@@ -53,17 +61,17 @@ public:
     // Type-safe helper methods
     void SetFloat(const std::string& name, float value);
     void SetInt(const std::string& name, int value);
-    void SetVec2(const std::string& name, const Vector2& value);
-    void SetVec3(const std::string& name, const Vector3& value);
-    void SetVec4(const std::string& name, const Vector4& value);
+    void SetVec2(const std::string& name, const glm::vec2& value);
+    void SetVec3(const std::string& name, const glm::vec3& value);
+    void SetVec4(const std::string& name, const glm::vec4& value);
     void SetColor(const std::string& name, const Color& value);
-    void SetMatrix(const std::string& name, const Matrix& value);
-    void SetMatrices(const std::string& name, const Matrix* values, int count);
+    void SetMatrix(const std::string& name, const glm::mat4& value);
+    void SetMatrices(const std::string& name, const glm::mat4* values, int count);
+
 
 private:
-    Shader m_Shader = {0};
+    NativeShader m_Shader = {0};
     std::unordered_map<std::string, int> m_UniformCache;
-    std::unordered_map<int, std::vector<float>> m_ValueCache;
 };
 } // namespace CHEngine
 

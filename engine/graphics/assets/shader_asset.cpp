@@ -1,6 +1,7 @@
 #include "engine/graphics/assets/shader_asset.h"
 #include "engine/core/log.h"
-#include "rlgl.h"
+#include <glad/gl.h>
+#include <glm/gtc/type_ptr.hpp>
 
 namespace CHEngine
 {
@@ -8,58 +9,26 @@ ShaderAsset::~ShaderAsset()
 {
     if (m_Shader.id > 0)
     {
-        UnloadShader(m_Shader);
+        glDeleteProgram(m_Shader.id);
     }
 }
 
 int ShaderAsset::GetLocation(const std::string& name)
 {
-    if (m_UniformCache.find(name) != m_UniformCache.end())
+    auto it = m_UniformCache.find(name);
+    if (it != m_UniformCache.end())
     {
-        return m_UniformCache[name];
+        return it->second;
     }
 
-    int location = GetShaderLocation(m_Shader, name.c_str());
+    int location = glGetUniformLocation(m_Shader.id, name.c_str());
     m_UniformCache[name] = location;
     return location;
 }
 
 void ShaderAsset::SetUniform(int location, const void* value, int type)
 {
-    // Caching for basic types (float, vec2, vec3, vec4, int)
-    int floatCount = 0;
-    switch (type)
-    {
-        case SHADER_UNIFORM_FLOAT: floatCount = 1; break;
-        case SHADER_UNIFORM_VEC2:  floatCount = 2; break;
-        case SHADER_UNIFORM_VEC3:  floatCount = 3; break;
-        case SHADER_UNIFORM_VEC4:  floatCount = 4; break;
-        case SHADER_UNIFORM_INT:   floatCount = 1; break;
-    }
-
-    if (floatCount > 0)
-    {
-        const float* fptr = (const float*)value;
-        auto& cached = m_ValueCache[location];
-        bool changed = cached.size() != (size_t)floatCount;
-        if (!changed)
-        {
-            for (int i = 0; i < floatCount; i++)
-            {
-                if (cached[i] != fptr[i])
-                {
-                    changed = true;
-                    break;
-                }
-            }
-        }
-
-        if (!changed) return;
-
-        cached.assign(fptr, fptr + floatCount);
-    }
-
-    SetShaderValue(m_Shader, location, value, type);
+    // type mapping from legacy raylib constants if needed, or we just use type-safe methods
 }
 
 void ShaderAsset::SetUniform(const std::string& name, const void* value, int type)
@@ -74,53 +43,51 @@ void ShaderAsset::SetUniform(const std::string& name, const void* value, int typ
 // Type-safe helper methods
 void ShaderAsset::SetFloat(const std::string& name, float value)
 {
-    SetUniform(name, &value, SHADER_UNIFORM_FLOAT);
+    int location = GetLocation(name);
+    if (location >= 0) glProgramUniform1f(m_Shader.id, location, value);
 }
 
 void ShaderAsset::SetInt(const std::string& name, int value)
 {
-    // Reuse SetUniform for int as well
-    SetUniform(name, &value, SHADER_UNIFORM_INT);
+    int location = GetLocation(name);
+    if (location >= 0) glProgramUniform1i(m_Shader.id, location, value);
 }
 
-void ShaderAsset::SetVec2(const std::string& name, const Vector2& value)
+void ShaderAsset::SetVec2(const std::string& name, const glm::vec2& value)
 {
-    SetUniform(name, &value, SHADER_UNIFORM_VEC2);
+    int location = GetLocation(name);
+    if (location >= 0) glProgramUniform2fv(m_Shader.id, location, 1, glm::value_ptr(value));
 }
 
-void ShaderAsset::SetVec3(const std::string& name, const Vector3& value)
+void ShaderAsset::SetVec3(const std::string& name, const glm::vec3& value)
 {
-    SetUniform(name, &value, SHADER_UNIFORM_VEC3);
+    int location = GetLocation(name);
+    if (location >= 0) glProgramUniform3fv(m_Shader.id, location, 1, glm::value_ptr(value));
 }
 
-void ShaderAsset::SetVec4(const std::string& name, const Vector4& value)
+void ShaderAsset::SetVec4(const std::string& name, const glm::vec4& value)
 {
-    SetUniform(name, &value, SHADER_UNIFORM_VEC4);
+    int location = GetLocation(name);
+    if (location >= 0) glProgramUniform4fv(m_Shader.id, location, 1, glm::value_ptr(value));
 }
 
 void ShaderAsset::SetColor(const std::string& name, const Color& value)
 {
-    float c[4] = {value.r / 255.0f, value.g / 255.0f, value.b / 255.0f, value.a / 255.0f};
-    SetUniform(name, c, SHADER_UNIFORM_VEC4);
+    glm::vec4 c = {value.r / 255.0f, value.g / 255.0f, value.b / 255.0f, value.a / 255.0f};
+    SetVec4(name, c);
 }
 
-void ShaderAsset::SetMatrix(const std::string& name, const Matrix& value)
+void ShaderAsset::SetMatrix(const std::string& name, const glm::mat4& value)
 {
     int location = GetLocation(name);
-    if (location >= 0)
-    {
-        // For matrices we could also cache, but let's start with basic types
-        SetShaderValueMatrix(m_Shader, location, value);
-    }
+    if (location >= 0) glProgramUniformMatrix4fv(m_Shader.id, location, 1, GL_FALSE, glm::value_ptr(value));
 }
 
-void ShaderAsset::SetMatrices(const std::string& name, const Matrix* values, int count)
+
+void ShaderAsset::SetMatrices(const std::string& name, const glm::mat4* values, int count)
 {
     int location = GetLocation(name);
-    if (location >= 0)
-    {
-        rlEnableShader(m_Shader.id);
-        rlSetUniformMatrices(location, values, count);
-    }
+    if (location >= 0) glProgramUniformMatrix4fv(m_Shader.id, location, count, GL_FALSE, glm::value_ptr(values[0]));
 }
+
 } // namespace CHEngine

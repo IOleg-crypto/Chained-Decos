@@ -4,6 +4,10 @@
 #include "engine/core/log.h"
 #include "engine/scene/components.h"
 
+#include "miniaudio.h"
+
+
+
 namespace CHEngine
 {
 static Audio* s_Instance = nullptr;
@@ -35,11 +39,16 @@ void Audio::Init()
 
 void Audio::InternalInit()
 {
-    if (!IsAudioDeviceReady())
+    m_Engine = new ma_engine();
+    ma_result result = ma_engine_init(NULL, (ma_engine*)m_Engine);
+    if (result != MA_SUCCESS)
     {
-        InitAudioDevice();
-        CH_CORE_INFO("Audio System Initialized.");
+        CH_CORE_ERROR("Audio System: Failed to initialize miniaudio engine!");
+        delete (ma_engine*)m_Engine;
+        m_Engine = nullptr;
+        return;
     }
+    CH_CORE_INFO("Audio System Initialized (miniaudio).");
 }
 
 void Audio::Shutdown()
@@ -54,60 +63,98 @@ void Audio::Shutdown()
 
 void Audio::InternalShutdown()
 {
-    if (IsAudioDeviceReady())
+    if (m_Engine)
     {
-        CloseAudioDevice();
-        CH_CORE_INFO("Audio System Shutdown.");
+        ma_engine_uninit((ma_engine*)m_Engine);
+        delete (ma_engine*)m_Engine;
+        m_Engine = nullptr;
     }
+    CH_CORE_INFO("Audio System Shutdown (miniaudio).");
 }
 
 void Audio::Update(Scene* scene, Timestep ts)
 {
-    auto& registry = scene->GetRegistry();
-    auto view = registry.view<AudioComponent>();
+    if (!m_Engine || !scene)
+        return;
 
+    // 1. Update Listener (find active camera)
+    // In a real engine we'd have a specific listener component or use the main camera
+    // For now, let's assume the scene has a way to get the active camera transform
+    // (This is a simplified implementation)
+
+    auto view = scene->GetRegistry().view<AudioComponent, TransformComponent>();
     for (auto entity : view)
     {
         auto& audio = view.get<AudioComponent>(entity);
-        if (audio.Asset && audio.Asset->GetState() == AssetState::Ready)
-        {
-            // Reactive-like update: ensure volume/pitch match component state
-            SetSoundVolume(audio.Asset->GetSound(), audio.Volume);
-            SetSoundPitch(audio.Asset->GetSound(), audio.Pitch);
+        auto& transform = view.get<TransformComponent>(entity);
+        
+        glm::vec3 worldPos = glm::vec3(transform.WorldTransform[3]);
 
-            // Handle looping (Raylib Sound doesn't have a simple loop flag in PlaySound,
-            // so we check if finished and restart if looping is desired)
-            if (audio.Loop && !IsSoundPlaying(audio.Asset->GetSound()) && audio.IsPlaying)
+        if (audio.PlayOnStart && !audio.IsPlaying && audio.Asset && audio.Asset->GetState() == AssetState::Ready)
+        {
+            Play(audio.Asset, audio.Volume, audio.Pitch, audio.Loop, audio.Spatialized, worldPos);
+            audio.IsPlaying = true;
+        }
+
+        if (audio.IsPlaying && audio.Spatialized && audio.Asset && audio.Asset->GetState() == AssetState::Ready)
+        {
+            ma_sound* sound = (ma_sound*)audio.Asset->GetSound().maSound;
+            if (sound)
             {
-                PlaySound(audio.Asset->GetSound());
+                ma_sound_set_position(sound, worldPos.x, worldPos.y, worldPos.z);
             }
         }
     }
 }
 
-void Audio::Play(std::shared_ptr<SoundAsset> asset, float volume, float pitch, bool loop)
+void Audio::SetListenerPosition(const glm::vec3& position, const glm::vec3& forward, const glm::vec3& up)
 {
-    if (asset && asset->GetState() == AssetState::Ready)
+    if (!m_Engine) return;
+    ma_engine_listener_set_position((ma_engine*)m_Engine, 0, position.x, position.y, position.z);
+    ma_engine_listener_set_direction((ma_engine*)m_Engine, 0, forward.x, forward.y, forward.z);
+    ma_engine_listener_set_world_up((ma_engine*)m_Engine, 0, up.x, up.y, up.z);
+}
+
+void Audio::Play(std::shared_ptr<SoundAsset> asset, float volume, float pitch, bool loop, bool spatial, const glm::vec3& pos)
+{
+    if (!m_Engine || !asset || asset->GetState() != AssetState::Ready)
+        return;
+
+    ma_sound* sound = (ma_sound*)asset->GetSound().maSound;
+    if (sound)
     {
-        SetSoundVolume(asset->GetSound(), volume);
-        SetSoundPitch(asset->GetSound(), pitch);
-        PlaySound(asset->GetSound());
-    }
-    else if (!asset)
-    {
-        CH_CORE_WARN("Audio::Play: Asset is null!");
-    }
-    else
-    {
-        CH_CORE_WARN("Audio::Play: Asset '{}' is not ready (State: {})", asset->GetPath(), (int)asset->GetState());
+        ma_sound_set_volume(sound, volume);
+        ma_sound_set_pitch(sound, pitch);
+        ma_sound_set_looping(sound, loop ? MA_TRUE : MA_FALSE);
+        
+        if (spatial)
+        {
+            ma_sound_set_spatialization_enabled(sound, MA_TRUE);
+            ma_sound_set_position(sound, pos.x, pos.y, pos.z);
+        }
+        else
+        {
+            ma_sound_set_spatialization_enabled(sound, MA_FALSE);
+        }
+
+        if (!ma_sound_is_playing(sound))
+        {
+            ma_sound_start(sound);
+        }
     }
 }
 
 void Audio::Stop(std::shared_ptr<SoundAsset> asset)
 {
-    if (asset && asset->GetState() == AssetState::Ready)
+    if (!m_Engine || !asset)
+        return;
+
+    ma_sound* sound = (ma_sound*)asset->GetSound().maSound;
+    if (sound)
     {
-        StopSound(asset->GetSound());
+        ma_sound_stop(sound);
+        ma_sound_seek_to_pcm_frame(sound, 0); // Reset for next play
     }
 }
 } // namespace CHEngine
+

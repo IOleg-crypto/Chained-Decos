@@ -1,12 +1,20 @@
 #ifndef CH_MODEL_DATA_H
 #define CH_MODEL_DATA_H
 
-#include "raylib.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <string>
 #include <vector>
 
 namespace CHEngine
 {
+struct TransformData
+{
+    glm::vec3 translation;
+    glm::quat rotation;
+    glm::vec3 scale;
+};
+
 struct RawMesh
 {
     std::vector<float> vertices;
@@ -26,10 +34,10 @@ struct RawMesh
 struct RawMaterial
 {
     std::string albedoPath;
-    Color albedoColor = WHITE;
+    glm::vec4 albedoColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 
     std::string emissivePath;
-    Color emissiveColor = BLACK;
+    glm::vec4 emissiveColor = { 0.0f, 0.0f, 0.0f, 1.0f };
     float emissiveIntensity = 0.0f;
 
     std::string normalPath;
@@ -54,13 +62,19 @@ struct RawAnimation
     int frameCount;
     int boneCount;
     float frameRate = 30.0f; // FPS of the animation source asset
-    std::vector<Transform> framePoses; // flattened [frameCount * boneCount]
+    std::vector<TransformData> framePoses; // flattened [frameCount * boneCount]
 };
 
 struct MeshInstance
 {
     int meshIndex;
-    Matrix localTransform;
+    glm::mat4 localTransform;
+};
+
+struct BoneInfoData
+{
+    char name[32];
+    int parent;
 };
 
 // CPU-side data for async loading (loaded in worker thread)
@@ -71,18 +85,19 @@ struct PendingModelData
     std::vector<RawMaterial> materials;
 
     // Skeletal / Hierarchy data (Original data for animations only)
-    std::vector<BoneInfo> bones;
-    std::vector<Transform> bindPose;
+    std::vector<BoneInfoData> bones;
+    std::vector<TransformData> bindPose;
 
     // Flattened render data
     std::vector<MeshInstance> instances;
     
     // Support for hierarchy (only for animation system/skeleton mapping)
     std::vector<std::string> nodeNames;
+    int nodeCount = 0; // Added for convenience
     std::vector<int> nodeParents;
-    std::vector<Matrix> nodeLocalTransforms;
-    std::vector<Matrix> globalBindPoses; 
-    std::vector<Matrix> offsetMatrices;  
+    std::vector<glm::mat4> nodeLocalTransforms;
+    std::vector<glm::mat4> globalBindPoses; 
+    std::vector<glm::mat4> offsetMatrices;  
     
     std::vector<RawAnimation> animations;
     bool isValid = false;

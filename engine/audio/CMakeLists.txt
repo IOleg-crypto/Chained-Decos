@@ -2,19 +2,22 @@ add_library(engine_audio OBJECT
         audio.cpp
         sound_asset.cpp
         audio_importer.cpp
+        miniaudio_impl.cpp
 
         audio.h
         sound_asset.h
         audio_importer.h
 )
 
+
 target_include_directories(engine_audio PUBLIC
     ${ENGINE_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/include/entt/src
+    ${CMAKE_SOURCE_DIR}/include/miniaudio
 )
 
+
 target_link_libraries(engine_audio PUBLIC 
-    raylib 
 )
 
 if(MSVC)

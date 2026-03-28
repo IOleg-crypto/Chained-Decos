@@ -1,17 +1,17 @@
-#ifndef CH_RAYLIB_BUFFER_H
-#define CH_RAYLIB_BUFFER_H
+#ifndef CH_OPENGL_BUFFER_H
+#define CH_OPENGL_BUFFER_H
 
 #include "engine/graphics/api/buffer.h"
 
 namespace CHEngine
 {
 
-class RaylibVertexBuffer : public VertexBuffer
+class OpenGLVertexBuffer : public VertexBuffer
 {
 public:
-    RaylibVertexBuffer(uint32_t size);
-    RaylibVertexBuffer(float* vertices, uint32_t size);
-    virtual ~RaylibVertexBuffer();
+    OpenGLVertexBuffer(uint32_t size);
+    OpenGLVertexBuffer(const float* vertices, uint32_t size);
+    virtual ~OpenGLVertexBuffer();
 
     virtual void Bind() const override;
     virtual void Unbind() const override;
@@ -26,11 +26,11 @@ private:
     BufferLayout m_Layout;
 };
 
-class RaylibIndexBuffer : public IndexBuffer
+class OpenGLIndexBuffer : public IndexBuffer
 {
 public:
-    RaylibIndexBuffer(uint32_t* indices, uint32_t count);
-    virtual ~RaylibIndexBuffer();
+    OpenGLIndexBuffer(const uint32_t* indices, uint32_t count);
+    virtual ~OpenGLIndexBuffer();
 
     virtual void Bind() const override;
     virtual void Unbind() const override;
@@ -44,4 +44,4 @@ private:
 
 } // namespace CHEngine
 
-#endif // CH_RAYLIB_BUFFER_H
+#endif // CH_OPENGL_BUFFER_H

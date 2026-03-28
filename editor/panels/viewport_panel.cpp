@@ -19,11 +19,10 @@
 #include "engine/scene/scene_picking.h"
 #include "scripting/scriptengine.h"
 #include "undo/entity_commands.h"
-#include "extras/IconsFontAwesome6.h"
+#include "imgui/IconsFontAwesome6.h"
 #include "imgui.h"
 #include "imgui_internal.h"
-#include "raylib.h"
-#include "rlImGui.h"
+#include "engine/graphics/pipeline/render_command.h"
 
 
 namespace CHEngine
@@ -32,28 +31,28 @@ static void ClearSceneBackground(Scene* scene, Vector2 size)
 {
     auto mode = scene->GetSettings().Mode;
     if (mode == BackgroundMode::Color)
-    {
-        Renderer::Get().Clear(scene->GetSettings().BackgroundColor);
-    }
+        RenderCommand::Clear(scene->GetSettings().BackgroundColor);
     else if (mode == BackgroundMode::Texture)
     {
         auto& path = scene->GetSettings().BackgroundTexturePath;
         if (!path.empty())
         {
             // Fallback for now
-            ClearBackground(scene->GetSettings().BackgroundColor);
+            RenderCommand::Clear(scene->GetSettings().BackgroundColor);
         }
     }
     else if (mode == BackgroundMode::Environment3D)
     {
-        Renderer::Get().Clear(BLACK);
+        RenderCommand::Clear({ 0, 0, 0, 255 });
     }
 }
 
-static const GizmoBtn s_GizmoBtns[] = {{GizmoType::NONE, ICON_FA_ARROW_POINTER "##Select", "Select (Q)", KEY_Q},
-                                       {GizmoType::TRANSLATE, ICON_FA_UP_DOWN_LEFT_RIGHT "##Translate", "Translate (W)", KEY_W},
-                                       {GizmoType::ROTATE, ICON_FA_ARROWS_ROTATE "##Rotate", "Rotate (E)", KEY_E},
-                                       {GizmoType::SCALE, ICON_FA_UP_RIGHT_FROM_SQUARE "##Scale", "Scale (R)", KEY_R}};
+
+static const GizmoBtn s_GizmoBtns[] = {{GizmoType::NONE, ICON_FA_ARROW_POINTER "##Select", "Select (Q)", Key::Q},
+                                       {GizmoType::TRANSLATE, ICON_FA_UP_DOWN_LEFT_RIGHT "##Translate", "Translate (W)", Key::W},
+                                       {GizmoType::ROTATE, ICON_FA_ARROWS_ROTATE "##Rotate", "Rotate (E)", Key::E},
+                                       {GizmoType::SCALE, ICON_FA_UP_RIGHT_FROM_SQUARE "##Scale", "Scale (R)", Key::R}};
+
 
 void ViewportPanel::DrawCameraSelector(Scene* scene)
 {
@@ -215,14 +214,31 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
 
     auto activeCameraOpt = activeScene_raw->GetActiveCamera();
     bool cameraFound = activeCameraOpt.has_value();
-    Camera3D camera = cameraFound ? activeCameraOpt.value() : Camera3D{0};
+    CHEngine::Camera3D camera;
+    float nearClip = 0.01f;
+    float farClip = 10000.0f;
 
+    // Default to Editor Camera
+    auto& edCam = m_CameraController->GetCamera();
+    Vector3 pos = edCam.CalculatePosition();
+    camera.Position = {pos.x, pos.y, pos.z};
+    
+    Vector3 fp = edCam.GetFocalPoint();
+    camera.Target = {fp.x, fp.y, fp.z};
+    
+    Vector3 up = edCam.GetUpDirection();
+    camera.Up = {up.x, up.y, up.z};
+    
+    camera.Fovy = glm::degrees(edCam.GetPerspectiveVerticalFOV()); // Fovy in degrees
+    camera.Projection = 0; // Perspective
+    
+    nearClip = edCam.GetPerspectiveNearClip();
+    farClip = edCam.GetPerspectiveFarClip();
+
+    // If an entity camera is active (usually during Play mode), override it
     if (cameraFound)
     {
-        // Extract near/far from the active camera entity if available
-        float nearClip = 0.01f;
-        float farClip = 10000.0f;
-
+        camera = activeCameraOpt.value();
         Entity primaryCam = activeScene_raw->GetPrimaryCameraEntity();
         if (primaryCam && primaryCam.HasComponent<CameraComponent>())
         {
@@ -230,59 +246,37 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
             nearClip = cameraComp.GetPerspectiveNearClip();
             farClip = cameraComp.GetPerspectiveFarClip();
         }
-
-        SceneRenderOptions options;
-        options.DrawGrid = EditorLayer::Get().GetDebugRenderFlags().DrawGrid;
-        options.ShowDebugColliders = EditorLayer::Get().GetDebugRenderFlags().DrawColliders;
-        options.ShowDebugCollisionModelBox = EditorLayer::Get().GetDebugRenderFlags().DrawCollisionModelBox;
-        options.ShowDebugSpawnZones = EditorLayer::Get().GetDebugRenderFlags().DrawSpawnZones;
-        options.ShowEditorIcons = true;
-
-        if (auto project = Project::GetActive())
-        {
-            options.TargetFPS = project->GetConfig().Animation.TargetFPS;
-        }
-
-        m_SceneRenderer->RenderScene(activeScene.get(), camera, nearClip, farClip, Application::Get().GetFrameTime(),
-                                     options);
-        m_HDRFramebuffer->Unbind();
-
-        // 2. APPLY MODULAR POST-PROCESSING
-        m_ViewportFramebuffer->Bind();
-        Renderer::Get().ApplyPostProcessing(*(RenderTexture2D*)m_HDRFramebuffer->GetNativeFramebuffer(), camera);
-        m_ViewportFramebuffer->Unbind();
     }
-    else
+
+    SceneRenderOptions options;
+    options.DrawGrid = EditorLayer::Get().GetDebugRenderFlags().DrawGrid;
+    options.ShowDebugColliders = EditorLayer::Get().GetDebugRenderFlags().DrawColliders;
+    options.ShowDebugCollisionModelBox = EditorLayer::Get().GetDebugRenderFlags().DrawCollisionModelBox;
+    options.ShowDebugSpawnZones = EditorLayer::Get().GetDebugRenderFlags().DrawSpawnZones;
+    options.ShowEditorIcons = true;
+
+    if (auto project = Project::GetActive())
     {
-        // Only show warning if the scene actually expects 3D content
-        bool has3DContent = !activeScene->GetRegistry().view<ModelComponent>().empty() ||
-                            !activeScene->GetRegistry().view<SpriteComponent>().empty() ||
-                            !activeScene->GetRegistry().view<LightComponent>().empty();
-
-        bool is3DBackground = activeScene->GetSettings().Mode == BackgroundMode::Environment3D;
-
-        if (has3DContent || is3DBackground)
-        {
-            // Draw black background or specific message
-            Renderer::Get().Clear(BLACK);
-            const char* msg = "No Primary Camera Found in Scene!";
-            int fontSize = 20;
-            int textWidth = ::MeasureText(msg, fontSize);
-            ::DrawText(msg, (int)viewportSize.x / 2 - textWidth / 2, (int)viewportSize.y / 2 - 10,
-                                     fontSize, GRAY);
-        }
-        m_HDRFramebuffer->Unbind();
-
-        // Copy warning state to viewport texture
-        m_ViewportFramebuffer->Bind();
-        Renderer::Get().Clear(BLACK);
-        RenderTexture2D* hdrTex = (RenderTexture2D*)m_HDRFramebuffer->GetNativeFramebuffer();
-        Rectangle source = {0, 0, (float)hdrTex->texture.width, (float)-hdrTex->texture.height};
-        ::DrawTextureRec(hdrTex->texture, source, {0, 0}, WHITE);
-        m_ViewportFramebuffer->Unbind();
+        options.TargetFPS = project->GetConfig().Animation.TargetFPS;
     }
 
-    rlImGuiImageRenderTexture((RenderTexture2D*)m_ViewportFramebuffer->GetNativeFramebuffer());
+    m_SceneRenderer->RenderScene(activeScene.get(), camera, nearClip, farClip, Application::Get().GetFrameTime(),
+                                    options);
+    m_HDRFramebuffer->Unbind();
+
+    // --- 2. APPLY POST-PROCESSING ---
+    m_ViewportFramebuffer->Bind();
+    RenderCommand::Clear({ 0, 0, 0, 255 }); // Clear viewport buffer
+    Renderer::Get().ApplyPostProcessing(
+        m_HDRFramebuffer->GetColorAttachmentRendererID(),
+        m_HDRFramebuffer->GetDepthAttachmentRendererID(),
+        camera
+    );
+    m_ViewportFramebuffer->Unbind();
+
+    uint32_t finalTextureID = m_ViewportFramebuffer->GetColorAttachmentRendererID();
+    ImGui::Image((ImTextureID)(uintptr_t)finalTextureID, viewportSize, { 0, 1 }, { 1, 0 });
+
     bool isViewportHovered = ImGui::IsItemHovered();
 
     // Drag & Drop Target
@@ -609,7 +603,8 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
             }
         }
 
-        if (Input::IsKeyDown(KeyboardKey::KEY_LEFT_CONTROL) && Input::IsKeyPressed(KeyboardKey::KEY_D))
+        if (Input::IsKeyDown(Key::LeftControl) && Input::IsKeyPressed(Key::D))
+
         {
             Entity selected = EditorLayer::Get().GetSelectedEntity();
             if (selected)
@@ -645,7 +640,7 @@ void ViewportPanel::OnEvent(Event& e)
         if (entity && entity.HasComponent<TransformComponent>())
         {
             auto& transform = entity.GetComponent<TransformComponent>();
-            m_CameraController->GetCamera().SetFocalPoint(transform.Translation);
+            m_CameraController->GetCamera().SetFocalPoint(*reinterpret_cast<const Vector3*>(&transform.Translation));
             return true;
         }
         return false;

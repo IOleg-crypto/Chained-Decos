@@ -1,16 +1,15 @@
 #include "linux_window.h"
 #include "engine/core/log.h"
-
-#ifndef GLFW_INCLUDE_NONE
-#define GLFW_INCLUDE_NONE
-#endif
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
 namespace CHEngine
 {
 
-// On Linux, the factory would be in a separate file or guarded by macros.
-// Since we are likely building for one platform at a time, we can use macros in a shared factory.
+static void GLFWErrorCallback(int error, const char* description)
+{
+    CH_CORE_ERROR("GLFW Error ({0}): {1}", error, description);
+}
 
 LinuxWindow::LinuxWindow(const WindowProperties& properties)
 {
@@ -31,65 +30,60 @@ void LinuxWindow::Init(const WindowProperties& properties)
 
     CH_CORE_INFO("Initializing Linux Window: {} ({}x{})", m_Title, m_Width, m_Height);
 
-    unsigned int flags = FLAG_MSAA_4X_HINT;
-    if (properties.Resizable)
+    if (!glfwInit())
     {
-        flags |= FLAG_WINDOW_RESIZABLE;
+        CH_CORE_ASSERT(false, "Could not initialize GLFW!");
     }
-    if (properties.Fullscreen)
-    {
-        flags |= FLAG_FULLSCREEN_MODE;
-    }
+    glfwSetErrorCallback(GLFWErrorCallback);
 
-    SetConfigFlags(flags);
-    InitWindow(m_Width, m_Height, m_Title.c_str());
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    if (m_VSync)
-    {
-        SetTargetFramesPerSecond(GetMonitorRefreshRate(GetCurrentMonitor()));
-    }
-    else
-    {
-        SetTargetFramesPerSecond(properties.TargetFramesPerSecond);
-    }
+    m_WindowHandle = glfwCreateWindow((int)m_Width, (int)m_Height, m_Title.c_str(), nullptr, nullptr);
+    CH_CORE_ASSERT(m_WindowHandle, "Failed to create GLFW window!");
 
-    m_WindowHandle = glfwGetCurrentContext();
-    SetExitKey(KEY_NULL);
+    glfwMakeContextCurrent(m_WindowHandle);
+    gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+
+    SetVSync(m_VSync);
 }
 
 void LinuxWindow::Shutdown()
 {
-    CloseWindow();
+    if (m_WindowHandle)
+    {
+        glfwDestroyWindow(m_WindowHandle);
+    }
     CH_CORE_INFO("Linux Window Closed");
 }
 
 void LinuxWindow::BeginFrame()
 {
-    BeginDrawing();
-    ClearBackground(DARKGRAY);
 }
 
 void LinuxWindow::EndFrame()
 {
-    EndDrawing();
+    glfwSwapBuffers(m_WindowHandle);
+    glfwPollEvents();
 }
 
 bool LinuxWindow::ShouldClose() const
 {
-    return WindowShouldClose();
+    return glfwWindowShouldClose(m_WindowHandle);
 }
 
 void LinuxWindow::SetTitle(const std::string& title)
 {
     m_Title = title;
-    SetWindowTitle(m_Title.c_str());
+    glfwSetWindowTitle(m_WindowHandle, m_Title.c_str());
 }
 
 void LinuxWindow::SetSize(int width, int height)
 {
     m_Width = width;
     m_Height = height;
-    SetWindowSize(m_Width, m_Height);
+    glfwSetWindowSize(m_WindowHandle, m_Width, m_Height);
 }
 
 void LinuxWindow::SetSizeDirect(int width, int height)
@@ -100,49 +94,25 @@ void LinuxWindow::SetSizeDirect(int width, int height)
 
 void LinuxWindow::ToggleFullscreen()
 {
-    ::ToggleFullscreen();
+    // Similar to windows implementation
 }
 
 void LinuxWindow::SetFullscreen(bool enabled)
 {
-    if (IsWindowFullscreen() != enabled)
-    {
-        ::ToggleFullscreen();
-    }
 }
 
 void LinuxWindow::SetVSync(bool enabled)
 {
     m_VSync = enabled;
-    if (m_VSync)
-    {
-        SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
-    }
+    glfwSwapInterval(m_VSync ? 1 : 0);
 }
 
 void LinuxWindow::SetAntialiasing(bool enabled)
 {
-    if (enabled)
-    {
-        SetWindowState(FLAG_MSAA_4X_HINT);
-    }
-    else
-    {
-        ClearWindowState(FLAG_MSAA_4X_HINT);
-    }
 }
 
 void LinuxWindow::SetTargetFramesPerSecond(int framesPerSecond)
 {
-    if (!m_VSync)
-    {
-        SetTargetFPS(framesPerSecond);
-    }
-}
-
-void LinuxWindow::SetWindowIcon(Image icon)
-{
-    ::SetWindowIcon(icon);
 }
 
 } // namespace CHEngine

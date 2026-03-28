@@ -24,9 +24,9 @@ target_link_libraries(ChainedRuntime PRIVATE
     RuntimeCore
     engine
     scripting
-    raylib
     imguilib
 )
+
 apply_engine_optimizations(ChainedRuntime)
 
 install(TARGETS ChainedRuntime

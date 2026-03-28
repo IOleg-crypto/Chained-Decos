@@ -1,7 +1,7 @@
 #ifndef CH_SHADER_COMPONENT_H
 #define CH_SHADER_COMPONENT_H
 
-#include "raylib.h"
+#include "engine/core/base.h"
 #include <algorithm>
 #include <string>
 #include <vector>
@@ -37,7 +37,7 @@ struct ShaderComponent
         }
     }
 
-    void SetVec3(const std::string& name, Vector3 value)
+    void SetVec3(const std::string& name, const Vector3& value)
     {
         auto it = std::find_if(Uniforms.begin(), Uniforms.end(), [&](const auto& u) { return u.Name == name; });
         if (it != Uniforms.end())

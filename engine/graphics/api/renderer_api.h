@@ -1,7 +1,7 @@
 #ifndef CH_RENDERER_API_H
 #define CH_RENDERER_API_H
 
-#include "raylib.h"
+#include "engine/core/math_types.h"
 #include <memory>
 
 namespace CHEngine
@@ -26,7 +26,9 @@ public:
     enum class API
     {
         None = 0,
-        Raylib = 1
+        OpenGL = 1,
+        // Maybe soon
+        Vulkan = 2
     };
 
 public:
@@ -38,8 +40,13 @@ public:
     virtual void Clear() = 0;
     
     virtual void SetDepthFunc(DepthFunc func) = 0;
+    virtual void SetDepthTest(bool enabled) = 0;
+    virtual void SetDepthMask(bool enabled) = 0;
+    virtual void SetCulling(bool enabled) = 0;
+    virtual void SetBlendMode(bool enabled) = 0;
 
     virtual void DrawIndexed(const std::shared_ptr<VertexArray>& vertexArray, uint32_t indexCount = 0) = 0;
+    virtual void DrawLines(const std::shared_ptr<VertexArray>& vertexArray, uint32_t vertexCount) = 0;
 
     static API GetAPI() { return s_API; }
     static std::unique_ptr<RendererAPI> Create();

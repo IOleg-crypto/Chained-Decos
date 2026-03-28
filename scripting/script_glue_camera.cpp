@@ -7,7 +7,8 @@ namespace CHEngine {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<TransformComponent>()) {
             auto& tc = entity.GetComponent<TransformComponent>();
-            *outForward = Vector3RotateByQuaternion({0.0f, 0.0f, -1.0f}, tc.RotationQuat);
+            glm::quat rotation = tc.RotationQuat;
+            *outForward = rotation * glm::vec3(0.0f, 0.0f, -1.0f);
         }
     }
 
@@ -15,7 +16,8 @@ namespace CHEngine {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<TransformComponent>()) {
             auto& tc = entity.GetComponent<TransformComponent>();
-            *outRight = Vector3RotateByQuaternion({1.0f, 0.0f, 0.0f}, tc.RotationQuat);
+            glm::quat rotation = tc.RotationQuat;
+            *outRight = rotation * glm::vec3(1.0f, 0.0f, 0.0f);
         }
     }
 
@@ -42,18 +44,19 @@ namespace CHEngine {
             auto& tc = entity.GetComponent<TransformComponent>();
             Entity target = scene->FindEntityByTag(camera.TargetEntityTag);
             
-            Vector3 targetPos = {0, 0, 0};
+            glm::vec3 targetPos = glm::vec3(0.0f);
             if (target && target.HasComponent<TransformComponent>()) {
                 targetPos = target.GetComponent<TransformComponent>().Translation;
             }
 
             // Calculate rotation from orbit angles
-            float yawRad = yaw * DEG2RAD;
-            float pitchRad = pitch * DEG2RAD;
-            Quaternion rotation = QuaternionFromEuler(pitchRad, yawRad, 0);
-            Vector3 offset = Vector3RotateByQuaternion({0.0f, 0.0f, distance}, rotation);
+            float yawRad = glm::radians(yaw);
+            float pitchRad = glm::radians(pitch);
+            glm::quat rotation = glm::quat(glm::vec3(pitchRad, yawRad, 0.0f));
+            glm::vec3 offset = rotation * glm::vec3(0.0f, 0.0f, distance);
             
-            tc.SetTranslation(Vector3Add(targetPos, offset));
+            glm::vec3 newPos = targetPos + offset;
+            tc.SetTranslation(newPos);
             tc.SetRotationQuat(rotation);
         }
     }

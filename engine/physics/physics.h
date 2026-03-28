@@ -4,7 +4,6 @@
 #include "engine/core/base.h"
 #include "engine/core/timestep.h"
 #include "entt/entt.hpp"
-#include "raylib.h"
 #include <functional>
 #include <future>
 #include <memory>
