@@ -3,8 +3,7 @@
 
 #include "engine/scene/scene_camera.h"
 #include "engine/core/timestep.h"
-#include "raylib.h"
-#include "raymath.h"
+#include "engine/core/math_types.h"
 
 namespace CHEngine
 {
@@ -15,7 +14,7 @@ public:
     EditorCamera();
     EditorCamera(float fov, float aspectRatio, float nearClip, float farClip);
 
-    void OnUpdate(Timestep ts); // Generic update if needed, though usually driven by controller
+    void OnUpdate(Timestep ts); 
     
     void SetViewportSize(uint32_t width, uint32_t height) 
     { 
@@ -24,7 +23,10 @@ public:
     }
 
     const Matrix& GetViewMatrix() const { return m_ViewMatrix; }
-    Matrix GetViewProjection() const { return MatrixMultiply(m_ViewMatrix, GetProjection()); }
+    Matrix GetViewProjection() const 
+    { 
+        return GetProjection() * m_ViewMatrix; 
+    }
 
     Vector3 GetUpDirection() const;
     Vector3 GetRightDirection() const;
@@ -44,12 +46,10 @@ public:
     float GetDistance() const { return m_Distance; }
     void SetDistance(float distance) { m_Distance = distance; }
 
-    // Transformation helpers used by controllers
     void MousePan(const Vector2& delta);
     void MouseRotate(const Vector2& delta);
     void MouseZoom(float delta);
 
-    // Speed helpers
     std::pair<float, float> PanSpeed() const;
     float RotationSpeed() const;
     float ZoomSpeed() const;
@@ -62,7 +62,7 @@ private:
     Vector3 m_FocalPoint = { 0.0f, 0.0f, 0.0f };
     float m_Distance = 10.0f;
 
-    Matrix m_ViewMatrix = MatrixIdentity();
+    Matrix m_ViewMatrix = Matrix(1.0f);
     uint32_t m_ViewportWidth = 1280, m_ViewportHeight = 720;
 };
 

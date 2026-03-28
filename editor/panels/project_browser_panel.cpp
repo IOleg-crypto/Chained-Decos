@@ -4,12 +4,11 @@
 #include "engine/core/application.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene_events.h"
+#include "imgui/IconsFontAwesome6.h"
+#include "engine/graphics/importers/texture_importer.h"
 
-// Removed redundant include: engine/graphics/asset_manager.h
-#include "extras/IconsFontAwesome6.h"
 #include "imgui.h"
 #include "engine/core/dialogs.h"
-#include "rlImGui.h"
 #include <filesystem>
 
 namespace CHEngine
@@ -21,36 +20,17 @@ ProjectBrowserPanel::ProjectBrowserPanel()
     memset(m_ProjectLocationBuffer, 0, sizeof(m_ProjectLocationBuffer));
     cwd.copy(m_ProjectLocationBuffer, sizeof(m_ProjectLocationBuffer) - 1);
 
-    // Load icons from specific paths
-    // Try absolute path first if debugging, but relative is better for portability.
-    // Based on search: d:\gitnext\Chained Decos\engine\resources\icons\newproject.jpg
-
     std::string root = PROJECT_ROOT_DIR; // Use the macro defined in CMake
-    m_NewProjectIcon = LoadTexture((root + "/resources/icons/newproject.jpg").c_str());
-    m_OpenProjectIcon = LoadTexture((root + "/resources/icons/folder.png").c_str());
-
-    // Fallback to internal icons if failed (but do not generate ugly white squares)
-    if (m_NewProjectIcon.id == 0)
-    {
-        // Try relative path
-        m_NewProjectIcon = LoadTexture("resources/icons/newproject.jpg");
-    }
-    if (m_OpenProjectIcon.id == 0)
-    {
-        m_OpenProjectIcon = LoadTexture("resources/icons/folder.png");
-    }
+    m_NewProjectIconAsset = TextureImporter::ImportTexture(root + "/resources/icons/newproject.jpg");
+    if (m_NewProjectIconAsset) m_NewProjectIcon = m_NewProjectIconAsset->GetTexture();
+    
+    m_OpenProjectIconAsset = TextureImporter::ImportTexture(root + "/resources/icons/folder.png");
+    if (m_OpenProjectIconAsset) m_OpenProjectIcon = m_OpenProjectIconAsset->GetTexture();
 }
 
 ProjectBrowserPanel::~ProjectBrowserPanel()
 {
-    if (m_NewProjectIcon.id != 0)
-    {
-        UnloadTexture(m_NewProjectIcon);
-    }
-    if (m_OpenProjectIcon.id != 0)
-    {
-        UnloadTexture(m_OpenProjectIcon);
-    }
+    // Textures are handled by asset manager or manually if needed
 }
 
 void ProjectBrowserPanel::OnImGuiRender(bool readOnly)
@@ -161,7 +141,7 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.9f, 0.9f, 1.0f));
 
     ImGui::BeginGroup();
-    if (rlImGuiImageButtonSize("##NewProject", &m_NewProjectIcon, {300, 300}))
+    if (ImGui::ImageButton("##NewProject", (ImTextureID)(uintptr_t)m_NewProjectIcon.id, {300, 300}, {0, 1}, {1, 0}))
     {
         m_OpenCreatePopupRequest = true;
         m_ShowCreateDialog = true;
@@ -178,7 +158,7 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
     ImGui::SameLine(0, 40);
 
     ImGui::BeginGroup();
-    if (rlImGuiImageButtonSize("##OpenProject", &m_OpenProjectIcon, {300, 300}))
+    if (ImGui::ImageButton("##OpenProject", (ImTextureID)(uintptr_t)m_OpenProjectIcon.id, {300, 300}, {0, 1}, {1, 0}))
     {
         ProjectActions::Open();
     }

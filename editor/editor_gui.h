@@ -8,7 +8,7 @@
 
 #include "editor_layer.h"
 #include "editor_panels.h"
-#include <raylib.h>
+
 
 namespace CHEngine
 {
@@ -33,7 +33,7 @@ public:
     static bool Property(const char* label, int& value, int min = 0, int max = 0);
     static bool Property(const char* label, float& value, float speed = 0.1f, float min = 0.0f, float max = 0.0f);
     static bool Property(const char* label, std::string& value, bool multiline = false);
-    static bool Property(const char* label, Color& value);
+    static bool Property(const char* label, CHEngine::Color& value);
     static bool Property(const char* label, Vector2& value, float speed = 0.1f, float min = 0.0f, float max = 0.0f);
     static bool Property(const char* label, Vector3& value, float speed = 0.1f, float min = 0.0f, float max = 0.0f);
 
@@ -81,7 +81,7 @@ struct PropertyBuilder
         Changed |= EditorGUI::Property(label, value, filter);
         return *this;
     }
-    PropertyBuilder& Color(const char* label, ::Color& value)
+    PropertyBuilder& Color(const char* label, CHEngine::Color& value)
     {
         Changed |= EditorGUI::Property(label, value);
         return *this;

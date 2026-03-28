@@ -12,7 +12,7 @@ public:
     static std::shared_ptr<TextureAsset> ImportTexture(const std::filesystem::path& path);
 
     // For async loading: returns the CPU image data
-    static Image LoadImageFromDisk(const std::filesystem::path& path);
+    static RawImage LoadImageFromDisk(const std::filesystem::path& path);
 };
 } // namespace CHEngine
 

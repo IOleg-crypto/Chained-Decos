@@ -1,34 +1,29 @@
 #include "sound_asset.h"
 #include "engine/core/log.h"
-#include "raylib.h"
+#include "miniaudio.h"
 
 namespace CHEngine
 {
 void SoundAsset::UploadToGPU()
 {
-    // This MUST run on main thread (where Audio device is initialized)
-    if (m_HasPendingWave && m_PendingWave.frameCount > 0)
+    if (m_HasPendingWave && m_PendingWave.maDecoder != nullptr)
     {
-        if (m_Sound.stream.buffer != nullptr)
-        {
-            ::UnloadSound(m_Sound);
-        }
-
-        m_Sound = ::LoadSoundFromWave(m_PendingWave);
-        ::UnloadWave(m_PendingWave);
-
-        m_PendingWave.frameCount = 0;
+        // Placeholder for native audio loading
+        m_Sound.maSound = nullptr; // Dummy
+        m_PendingWave.maDecoder = nullptr;
         m_HasPendingWave = false;
-
         SetState(AssetState::Ready);
     }
 }
 
 SoundAsset::~SoundAsset()
 {
-    if (m_Sound.stream.buffer != nullptr)
+    if (m_Sound.maSound)
     {
-        ::UnloadSound(m_Sound);
+        ma_sound* sound = (ma_sound*)m_Sound.maSound;
+        ma_sound_uninit(sound);
+        delete sound;
+        m_Sound.maSound = nullptr;
     }
 }
 

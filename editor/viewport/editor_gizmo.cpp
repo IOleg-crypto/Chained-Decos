@@ -3,13 +3,14 @@
 #include "editor_gui.h"
 #include "editor_layer.h"
 #include "engine/scene/components.h"
-#include "raymath.h"
 #include "undo/modify_component_command.h"
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 namespace CHEngine
 {
 
-bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 viewportSize, const Camera3D& camera)
+bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 viewportSize, const CHEngine::Camera3D& camera)
 {
     auto& layer = EditorLayer::Get();
     Scene* scene = layer.GetActiveScene().get();
@@ -18,57 +19,41 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
     if (!scene || !entity || !entity.HasComponent<TransformComponent>() || type == GizmoType::NONE ||
         layer.GetSceneState() == SceneState::Play)
     {
-        // Trace why gizmo is skipped
-        if (type != GizmoType::NONE && entity)
-        {
-            static int skipCount = 0;
-            if (skipCount++ % 60 == 0)
-            {
-                CH_CORE_TRACE("EditorGizmo: Skip. Scene={}, Entity={}, HasTransform={}, Tool={}, IsPlay={}",
-                              (bool)scene, (uint32_t)entity, entity.HasComponent<TransformComponent>(), (int)type,
-                              layer.GetSceneState() == SceneState::Play);
-            }
-        }
         return false;
     }
 
     auto& transform = entity.GetComponent<TransformComponent>();
 
     // 1. Setup ImGuizmo
-    ImGuizmo::SetOrthographic(camera.projection == CAMERA_ORTHOGRAPHIC);
+    ImGuizmo::SetOrthographic(camera.Projection == 1); // Assuming 1 is Orthographic
     ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
     ImGuizmo::SetRect(viewportPos.x, viewportPos.y, viewportSize.x, viewportSize.y);
 
-    // 2. Prepare View/Projection matrices (Transposed for ImGuizmo/OpenGL column-major)
-    Matrix view = MatrixTranspose(GetCameraMatrix(camera));
-    Matrix projection;
-    if (camera.projection == CAMERA_PERSPECTIVE)
+    // 2. Prepare View/Projection matrices
+    glm::mat4 view = glm::lookAt(camera.Position, camera.Target, camera.Up);
+    glm::mat4 projection;
+    
+    float aspect = viewportSize.x / viewportSize.y;
+    if (camera.Projection == 0) // Perspective
     {
-        projection = MatrixPerspective(camera.fovy * DEG2RAD, viewportSize.x / viewportSize.y, 0.01f, 1000.0f);
+        projection = glm::perspective(glm::radians(camera.Fovy), aspect, 0.01f, 1000.0f);
     }
-    else
+    else // Orthographic
     {
-        float aspect = viewportSize.x / viewportSize.y;
-        float right = camera.fovy * aspect * 0.5f;
-        float left = -right;
-        float top = camera.fovy * 0.5f;
-        float bottom = -top;
-        projection = MatrixOrtho(left, right, bottom, top, 0.01f, 1000.0f);
+        float top = camera.Fovy * 0.5f;
+        float right = top * aspect;
+        projection = glm::ortho(-right, right, -top, top, 0.01f, 1000.0f);
     }
 
-    projection = MatrixTranspose(projection);
-
-    // 3. Prepare Model matrix (Transposed for ImGuizmo)
-    Matrix model = MatrixTranspose(transform.GetTransform());
+    // 3. Prepare Model matrix
+    glm::mat4 modelMat = transform.GetTransform();
 
     // 4. Handle Snapping
     float* snap = m_SnappingEnabled ? m_SnapValues : nullptr;
 
     // 5. Manipulation
     ImGuizmo::MODE mode = m_IsLocalSpace ? ImGuizmo::LOCAL : ImGuizmo::WORLD;
-    ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
-    ImGuizmo::SetID(0);
-
+    
     if (ImGuizmo::IsUsing())
     {
         if (!m_WasUsing)
@@ -78,18 +63,18 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
         }
     }
 
-    ImGuizmo::Manipulate((float*)&view, (float*)&projection, (ImGuizmo::OPERATION)type, mode, (float*)&model, NULL,
-                         snap);
+    ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(projection), (ImGuizmo::OPERATION)type, mode, glm::value_ptr(modelMat), NULL, snap);
 
     if (ImGuizmo::IsUsing())
     {
-        // Matrix finalModel = MatrixTranspose(model); // model is already modified and in correct space
-        Vector3 translation, rotation, scale;
-        ImGuizmo::DecomposeMatrixToComponents((float*)&model, (float*)&translation, (float*)&rotation, (float*)&scale);
+        glm::vec3 translation, rotation, scale;
+        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(modelMat), glm::value_ptr(translation), glm::value_ptr(rotation), glm::value_ptr(scale));
 
-        transform.SetTranslation(translation);
-        transform.SetRotation({rotation.x * DEG2RAD, rotation.y * DEG2RAD, rotation.z * DEG2RAD});
-        transform.SetScale(scale);
+        transform.Translation = translation;
+        transform.Rotation = rotation; // ImGuizmo returns degrees
+        transform.SetRotation(glm::radians(rotation));
+        transform.Scale = scale;
+        transform.IsDirty = true;
     }
     else if (m_WasUsing)
     {
@@ -98,17 +83,7 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
             entity, m_OldTransform, transform, "Transform Entity"));
     }
 
-    bool hovered = ImGuizmo::IsOver();
-    bool usingGizmo = ImGuizmo::IsUsing();
-
-    if (ImGui::IsMouseClicked(0))
-    {
-        CH_CORE_WARN("Gizmo Click: Over={}, Using={}, Pos({},{}), Rect({},{},{},{})", hovered, usingGizmo,
-                     ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y, viewportPos.x, viewportPos.y, viewportSize.x,
-                     viewportSize.y);
-    }
-
-    return hovered || usingGizmo;
+    return ImGuizmo::IsOver() || ImGuizmo::IsUsing();
 }
 
 } // namespace CHEngine

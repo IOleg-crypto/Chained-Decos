@@ -1,7 +1,7 @@
 #ifndef CH_MATERIAL_H
 #define CH_MATERIAL_H
 
-#include <raylib.h>
+#include "engine/core/base.h"
 #include <string>
 
 namespace CHEngine
@@ -9,7 +9,7 @@ namespace CHEngine
 struct MaterialInstance
 {
     // Albedo/Base Color
-    Color AlbedoColor = WHITE;
+    Color AlbedoColor = { 255, 255, 255, 255 };
     std::string AlbedoPath = "";
     bool OverrideAlbedo = false;
 
@@ -25,7 +25,7 @@ struct MaterialInstance
 
     // Optional Emissive
     std::string EmissivePath = "";
-    Color EmissiveColor = BLACK;
+    Color EmissiveColor = { 0, 0, 0, 255 };
     float EmissiveIntensity = 0.0f;
     bool OverrideEmissive = false;
 

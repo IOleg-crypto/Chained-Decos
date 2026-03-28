@@ -15,6 +15,8 @@ uniform mat4 matModel;
 uniform mat4 matNormal;
 uniform mat4 boneMatrices[128]; // Use explicit constant to avoid version dependency issues
 
+uniform int useSkinning;
+
 // Output vertex attributes (to fragment shader)
 out vec3 fragPosition;
 out vec2 fragTexCoord;
@@ -27,10 +29,7 @@ void main()
     vec3 vPos = vertexPosition;
     vec3 vNormal = vertexNormal;
 
-    // Auto-detect skinning: active if we have weights in the first three slots 
-    // (Static meshes often default to 0,0,0,1 for unassigned attributes in GL)
-    float activeWeights = vertexBoneWeights.x + vertexBoneWeights.y + vertexBoneWeights.z + vertexBoneWeights.w;
-    if (activeWeights > 0.01)
+    if (useSkinning == 1)
     {
         mat4 skinMat = 
             vertexBoneWeights.x * boneMatrices[int(vertexBoneIds.x)] +
@@ -38,10 +37,6 @@ void main()
             vertexBoneWeights.z * boneMatrices[int(vertexBoneIds.z)] +
             vertexBoneWeights.w * boneMatrices[int(vertexBoneIds.w)];
         
-        // Raylib's rlSetUniformMatrices uploads arrays in row-major memory layout, 
-        // unlike rlSetUniformMatrix which transposes single matrices to column-major.
-        // Therefore, we must multiply the vector on the left side (vec * mat) to properly
-        // apply the transformation since the translation is encoded in the 4th row.
         vPos = (vec4(vertexPosition, 1.0) * skinMat).xyz;
         vNormal = (vec4(vertexNormal, 0.0) * skinMat).xyz;
     }

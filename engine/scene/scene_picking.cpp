@@ -1,12 +1,13 @@
 #include "scene_picking.h"
-#include "engine/scene/scene.h"
-#include "engine/physics/physics.h"
-#include "engine/physics/bvh/bvh.h"
 #include "engine/core/assets/asset_manager.h"
 #include "engine/graphics/assets/model_asset.h"
+#include "engine/physics/bvh/bvh.h"
+#include "engine/physics/physics.h"
 #include "engine/scene/components.h"
-#include "raymath.h"
+#include "engine/scene/scene.h"
 #include <float.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace CHEngine
 {
@@ -18,7 +19,9 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
     finalResult.Distance = FLT_MAX;
 
     if (!scene)
+    {
         return finalResult;
+    }
 
     // 1. Physics Picking
     RaycastResult physicsResult = Physics::Raycast(scene, ray);
@@ -31,7 +34,7 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
         finalResult.Normal = physicsResult.Normal;
     }
 
-    // 2. Visual Picking Fallback (for models without colliders)
+    // 2. Visual Picking Fallback
     auto modelView = scene->GetRegistry().view<TransformComponent, ModelComponent>();
     for (auto entityID : modelView)
     {
@@ -40,28 +43,30 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
             continue;
         }
 
-        Entity entity(entityID, &scene->GetRegistry());
         auto& modelComp = modelView.get<ModelComponent>(entityID);
-        
         if (modelComp.ModelPath.empty())
+        {
             continue;
+        }
 
         auto modelAsset = AssetManager::Get().Get<ModelAsset>(modelComp.ModelPath);
         if (!modelAsset || !modelAsset->IsReady())
+        {
             continue;
+        }
 
         auto& tc = modelView.get<TransformComponent>(entityID);
-        Matrix modelTransform = tc.GetTransform();
-        Matrix invTransform = MatrixInvert(modelTransform);
+        glm::mat4 modelTransform = tc.GetTransform();
+        glm::mat4 invTransform = glm::inverse(modelTransform);
 
         // Transform ray to local space
         Ray localRay;
-        localRay.position = Vector3Transform(ray.position, invTransform);
-        Vector3 localTarget = Vector3Transform(Vector3Add(ray.position, ray.direction), invTransform);
-        localRay.direction = Vector3Normalize(Vector3Subtract(localTarget, localRay.position));
+        localRay.position = glm::vec3(invTransform * glm::vec4(ray.position, 1.0f));
+        glm::vec3 localTarget = glm::vec3(invTransform * glm::vec4(ray.position + ray.direction, 1.0f));
+        localRay.direction = glm::normalize(localTarget - localRay.position);
 
         float t_local = FLT_MAX;
-        Vector3 localNormal = {0, 0, 0};
+        glm::vec3 localNormal = {0, 0, 0};
         int localMeshIndex = -1;
 
         bool hit = false;
@@ -73,34 +78,45 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
         }
         else
         {
-            Model& model = modelAsset->GetModel();
-            for (int m = 0; m < model.meshCount; m++)
+            const auto& rawMeshes = modelAsset->GetRawMeshes();
+            for (const auto& raw : rawMeshes)
             {
-                RayCollision collision = GetRayCollisionMesh(localRay, model.meshes[m], MatrixIdentity());
-                if (collision.hit && collision.distance < t_local)
+                for (size_t i = 0; i < raw.indices.size(); i += 3)
                 {
-                    t_local = collision.distance;
-                    hit = true;
-                    localNormal = collision.normal;
+                    uint16_t i0 = raw.indices[i];
+                    uint16_t i1 = raw.indices[i + 1];
+                    uint16_t i2 = raw.indices[i + 2];
+                    glm::vec3 v0 = {raw.vertices[i0 * 3], raw.vertices[i0 * 3 + 1], raw.vertices[i0 * 3 + 2]};
+                    glm::vec3 v1 = {raw.vertices[i1 * 3], raw.vertices[i1 * 3 + 1], raw.vertices[i1 * 3 + 2]};
+                    glm::vec3 v2 = {raw.vertices[i2 * 3], raw.vertices[i2 * 3 + 1], raw.vertices[i2 * 3 + 2]};
+
+                    CollisionTriangle tri(v0, v1, v2, 0);
+                    float triT = FLT_MAX;
+                    glm::vec3 triNormal;
+                    if (tri.IntersectsRay(localRay, triT, triNormal) && triT < t_local)
+                    {
+                        t_local = triT;
+                        hit = true;
+                        localNormal = triNormal;
+                    }
                 }
             }
         }
 
         if (hit)
         {
-            Vector3 hitPosLocal = Vector3Add(localRay.position, Vector3Scale(localRay.direction, t_local));
-            Vector3 hitPosWorld = Vector3Transform(hitPosLocal, modelTransform);
-            float distWorld = Vector3Distance(ray.position, hitPosWorld);
+            glm::vec3 hitPosLocal = localRay.position + localRay.direction * t_local;
+            glm::vec3 hitPosWorld = glm::vec3(modelTransform * glm::vec4(hitPosLocal, 1.0f));
+            float distWorld = glm::distance(ray.position, hitPosWorld);
 
             if (distWorld < finalResult.Distance)
             {
                 finalResult.Distance = distWorld;
                 finalResult.Hit = true;
-                finalResult.HitEntity = entity;
+                finalResult.HitEntity = Entity(entityID, &scene->GetRegistry());
                 finalResult.Position = hitPosWorld;
-                
-                // Final result normal transformation
-                finalResult.Normal = Vector3Normalize(Vector3Transform(localNormal, MatrixTranspose(invTransform)));
+                finalResult.Normal =
+                    glm::normalize(glm::vec3(glm::transpose(invTransform) * glm::vec4(localNormal, 0.0f)));
             }
         }
     }
@@ -108,68 +124,44 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
     return finalResult;
 }
 
-Ray ScenePicker::CreateRayFromViewport(const Camera3D& camera, const Vector2& mousePosition, const Vector2& viewportSize)
+Ray ScenePicker::CreateRayFromViewport(const CHEngine::Camera3D& camera, const glm::vec2& mousePosition,
+                                       const glm::vec2& viewportSize)
 {
-    // NDC: [-1,1], Y-up
     float ndc_x = (2.0f * mousePosition.x) / viewportSize.x - 1.0f;
     float ndc_y = 1.0f - (2.0f * mousePosition.y) / viewportSize.y;
 
-    // View-Projection Matrix
-    Matrix projection = MatrixPerspective(camera.fovy * DEG2RAD, viewportSize.x / viewportSize.y, 0.01f, 1000.0f);
-    if (camera.projection == CAMERA_ORTHOGRAPHIC)
+    glm::mat4 projection;
+    if (camera.Projection == 0) // Perspective
     {
-        float aspect = viewportSize.x / viewportSize.y;
-        float top = camera.fovy / 2.0f;
-        float right = top * aspect;
-        projection = MatrixOrtho(-right, right, -top, top, 0.01f, 1000.0f);
-    }
-
-    Matrix view = GetCameraMatrix(camera);
-    Matrix viewProj = MatrixMultiply(view, projection);
-    Matrix invViewProj = MatrixInvert(viewProj);
-
-    // Unproject Near/Far points
-    auto Unproject = [&](float x, float y, float z) -> Vector3 {
-        float coords[4] = {x, y, z, 1.0f};
-
-        float resPoints[4] = {0};
-        // Manual 4x4 multiplication for W component
-        resPoints[0] = coords[0] * invViewProj.m0 + coords[1] * invViewProj.m4 + coords[2] * invViewProj.m8 +
-                       coords[3] * invViewProj.m12;
-        resPoints[1] = coords[0] * invViewProj.m1 + coords[1] * invViewProj.m5 + coords[2] * invViewProj.m9 +
-                       coords[3] * invViewProj.m13;
-        resPoints[2] = coords[0] * invViewProj.m2 + coords[1] * invViewProj.m6 + coords[2] * invViewProj.m10 +
-                       coords[3] * invViewProj.m14;
-        resPoints[3] = coords[0] * invViewProj.m3 + coords[1] * invViewProj.m7 + coords[2] * invViewProj.m11 +
-                       coords[3] * invViewProj.m15;
-
-        if (fabs(resPoints[3]) > 0.00001f)
-        {
-            return {resPoints[0] / resPoints[3], resPoints[1] / resPoints[3], resPoints[2] / resPoints[3]};
-        }
-        return {0, 0, 0};
-    };
-
-    Vector3 nearPoint = Unproject(ndc_x, ndc_y, -1.0f);
-    Vector3 farPoint = Unproject(ndc_x, ndc_y, 1.0f);
-
-    Ray ray;
-    ray.position = nearPoint;
-
-    // Manual vector math to avoid potential signature issues
-    float dx = farPoint.x - nearPoint.x;
-    float dy = farPoint.y - nearPoint.y;
-    float dz = farPoint.z - nearPoint.z;
-    float len = sqrtf(dx * dx + dy * dy + dz * dz);
-
-    if (len > 0.0f)
-    {
-        ray.direction = {dx / len, dy / len, dz / len};
+        projection = glm::perspective(glm::radians(camera.Fovy), viewportSize.x / viewportSize.y, 0.01f, 1000.0f);
     }
     else
     {
-        ray.direction = {0, 0, -1}; // Default forward
+        float aspect = viewportSize.x / viewportSize.y;
+        float h = camera.Fovy * 0.5f;
+        float w = h * aspect;
+        projection = glm::ortho(-w, w, -h, h, 0.01f, 1000.0f);
     }
+
+    glm::mat4 view = glm::lookAt(camera.Position, camera.Target, camera.Up);
+    glm::mat4 invVP = glm::inverse(projection * view);
+
+    auto Unproject = [&](float x, float y, float z) -> glm::vec3 {
+        glm::vec4 ndc(x, y, z, 1.0f);
+        glm::vec4 world = invVP * ndc;
+        if (std::abs(world.w) > 1e-6f)
+        {
+            return glm::vec3(world) / world.w;
+        }
+        return glm::vec3(0.0f);
+    };
+
+    glm::vec3 nearPoint = Unproject(ndc_x, ndc_y, -1.0f);
+    glm::vec3 farPoint = Unproject(ndc_x, ndc_y, 1.0f);
+
+    Ray ray;
+    ray.position = nearPoint;
+    ray.direction = glm::normalize(farPoint - nearPoint);
 
     return ray;
 }

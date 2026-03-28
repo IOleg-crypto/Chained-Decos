@@ -14,7 +14,7 @@ struct SpriteComponent
     AssetHandle TextureHandle = 0;
     std::string TexturePath;
     std::shared_ptr<TextureAsset> Texture;
-    Color Tint = WHITE;
+    Color Tint = Color::White();
     bool FlipX = false;
     bool FlipY = false;
     int ZOrder = 0;

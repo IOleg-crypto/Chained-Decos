@@ -4,7 +4,8 @@
 #include "engine/core/log.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene_events.h"
-#include "extras/IconsFontAwesome6.h"
+#include "imgui/IconsFontAwesome6.h"
+
 #include "imgui.h"
 #include <algorithm>
 #include <fstream>

@@ -5,6 +5,7 @@
 #include "include/lighting_point.glsl"
 #include "include/lighting_spot.glsl"
 #include "include/fog.glsl"
+#include "include/color_space.glsl"
 
 in vec3 fragPosition;
 in vec2 fragTexCoord;
@@ -22,7 +23,16 @@ void main()
     // Fix: If fragColor (Vertex Color) is close to black, ignore it.
     if (length(fragColor.rgb) > 0.01) baseColor *= fragColor;
     
-    if (useTexture == 1) baseColor *= texture(texture0, fragTexCoord);
+    // Albedo is usually stored in sRGB (Gamma space) for LDR textures
+    if (useTexture == 1) 
+    {
+        vec4 sampled = texture(texture0, fragTexCoord);
+        baseColor *= ToLinear(sampled); // Convert sample to Linear
+    }
+    else
+    {
+        baseColor = ToLinear(baseColor); // Convert uniform color to Linear
+    }
     
     int mode = int(uMode + 0.5);
     if (mode == 2) baseColor = vec4(0.5, 0.5, 0.5, 1.0); // Neutral gray for lighting-only
@@ -79,14 +89,20 @@ void main()
             lighting += CalcSpotLight(lights[i], normal, fragPosition, viewDir, diffColor, s);
     }
 
-    // 3. Emissive Component
-    vec3 emissiveComp = colEmissive.rgb;
-    if (useEmissiveTexture == 1) emissiveComp *= texture(texture5, fragTexCoord).rgb;
+    // 3. Emissive Component (Usually sRGB textures)
+    vec3 emissiveComp = ToLinear(colEmissive.rgb);
+    if (useEmissiveTexture == 1) 
+    {
+        emissiveComp *= ToLinear(texture(texture5, fragTexCoord).rgb);
+    }
     emissiveComp *= emissiveIntensity;
 
     // 4. Final Assembly
+    // All calculations are in Linear Space. No Tonemapping here!
     vec3 outColor = lighting + emissiveComp;
     
     vec4 result = vec4(outColor, (mode == 2) ? 1.0 : baseColor.a);
+
+    // Apply Fog (expects and returns Linear)
     finalColor = ApplyFog(result, fragPosition, viewPos, uTime);
 }

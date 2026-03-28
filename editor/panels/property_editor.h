@@ -3,7 +3,8 @@
 
 #include "editor_gui.h"
 #include "engine/scene/scene.h"
-#include "extras/IconsFontAwesome6.h"
+#include "imgui/IconsFontAwesome6.h"
+
 #include <functional>
 #include <string>
 #include <unordered_map>

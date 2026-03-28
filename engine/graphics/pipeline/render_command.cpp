@@ -1,5 +1,5 @@
 #include "render_command.h"
-#include "rlgl.h"
+#include <glad/gl.h>
 
 namespace CHEngine
 {
@@ -15,50 +15,69 @@ void RenderCommand::Shutdown()
 {
 }
 
-// Clear and SetViewport are now inline in header
-
 void RenderCommand::DrawLine(Vector3 startPosition, Vector3 endPosition, Color color)
 {
-    DrawLine3D(startPosition, endPosition, color);
+    // TODO: Modern OpenGL line drawing (VAO/VBO batching)
+    /*
+    glBegin(GL_LINES);
+    glColor4ub(color.r, color.g, color.b, color.a);
+    glVertex3f(startPosition.x, startPosition.y, startPosition.z);
+    glVertex3f(endPosition.x, endPosition.y, endPosition.z);
+    glEnd();
+    */
 }
 
 void RenderCommand::DrawGrid(int sliceCount, float spacing)
 {
-    ::DrawGrid(sliceCount, spacing);
+    // TODO: Modern OpenGL grid drawing
+    /*
+    float halfSize = (float)sliceCount * spacing / 2.0f;
+    glBegin(GL_LINES);
+    glColor4f(0.5f, 0.5f, 0.5f, 1.0f);
+    for (int i = 0; i <= sliceCount; i++)
+    {
+        float pos = -halfSize + (float)i * spacing;
+        glVertex3f(pos, 0, -halfSize);
+        glVertex3f(pos, 0, halfSize);
+        glVertex3f(-halfSize, 0, pos);
+        glVertex3f(halfSize, 0, pos);
+    }
+    glEnd();
+    */
 }
 
 void RenderCommand::SetBlendMode(int blendMode)
 {
-    rlSetBlendMode(blendMode);
+    s_RendererAPI->SetBlendMode(blendMode != 0);
 }
 
 void RenderCommand::EnableDepthTest()
 {
-    rlEnableDepthTest();
+    s_RendererAPI->SetDepthTest(true);
 }
 
 void RenderCommand::DisableDepthTest()
 {
-    rlDisableDepthTest();
+    s_RendererAPI->SetDepthTest(false);
 }
 
 void RenderCommand::EnableBackfaceCulling()
 {
-    rlEnableBackfaceCulling();
+    s_RendererAPI->SetCulling(true);
 }
 
 void RenderCommand::DisableBackfaceCulling()
 {
-    rlDisableBackfaceCulling();
+    s_RendererAPI->SetCulling(false);
 }
 
 void RenderCommand::EnableDepthMask()
 {
-    rlEnableDepthMask();
+    s_RendererAPI->SetDepthMask(true);
 }
 
 void RenderCommand::DisableDepthMask()
 {
-    rlDisableDepthMask();
+    s_RendererAPI->SetDepthMask(false);
 }
 } // namespace CHEngine

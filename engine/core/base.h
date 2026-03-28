@@ -1,8 +1,9 @@
 #ifndef CH_BASE_H
 #define CH_BASE_H
 
-#define GLM_ENABLE_EXPERIMENTAL
+ #define GLM_ENABLE_EXPERIMENTAL
 #include "engine/core/log.h"
+#include "engine/core/math_types.h"
 #include <memory>
 
 #include "engine/core/platform_detection.h"

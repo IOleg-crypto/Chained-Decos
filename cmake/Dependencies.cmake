@@ -94,48 +94,32 @@ else()
 endif()
 
 # ============================================================================
-# Raylib
+# GLFW (Standalone)
 # ============================================================================
-if(EXISTS "${CMAKE_SOURCE_DIR}/include/raylib/CMakeLists.txt")
-    message(STATUS "Loading Raylib from submodule...")
-    
-    # Raylib build configuration - static only
-    set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-    set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
-    set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-
-    # Platform-specific raylib options
-    if(UNIX AND NOT APPLE)
-        set(USE_WAYLAND OFF CACHE BOOL "" FORCE)
-        set(PLATFORM Desktop CACHE STRING "" FORCE)
-        set(OPENGL_VERSION "4.3" CACHE STRING "" FORCE)
-        set(GLFW_BUILD_X11 ON CACHE BOOL "" FORCE)
-        set(USE_EXTERNAL_GLFW IF_POSSIBLE CACHE STRING "" FORCE)
-    endif()
-
-    if(WIN32)
-        set(OPENGL_VERSION "4.3" CACHE STRING "" FORCE)
-    endif()
-
-    add_subdirectory(include/raylib)
-    message(STATUS "Raylib loaded from submodule")
-    
-    # Disable unity build for raylib to avoid GLAD header conflicts
-    set_target_properties(raylib PROPERTIES UNITY_BUILD OFF)
-    
-    # Suppress warnings for raylib and glfw on Linux (fixes CI with strict compiler flags)
-    if(UNIX AND NOT APPLE)
-        if(TARGET raylib)
-            target_compile_options(raylib PRIVATE -Wno-implicit-function-declaration -Wno-error)
-            find_package(X11 REQUIRED)
-            target_link_libraries(raylib PUBLIC ${X11_LIBRARIES})
-        endif()
-        if(TARGET glfw)
-            target_compile_options(glfw PRIVATE -Wno-implicit-function-declaration -Wno-error)
-        endif()
-    endif()
+if(EXISTS "${CMAKE_SOURCE_DIR}/include/glfw/CMakeLists.txt")
+    message(STATUS "Loading standalone GLFW...")
+    set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+    set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+    add_subdirectory(include/glfw)
+    set(GLFW_SOURCE_DIR "${CMAKE_SOURCE_DIR}/include/glfw" CACHE INTERNAL "")
 else()
-    message(FATAL_ERROR "Raylib submodule not found. Run: git submodule update --init --recursive")
+    message(FATAL_ERROR "Standalone GLFW not found in include/glfw")
+endif()
+
+# ============================================================================
+# GLAD (Standalone Generator)
+# ============================================================================
+if(EXISTS "${CMAKE_SOURCE_DIR}/include/glad/cmake/CMakeLists.txt")
+    message(STATUS "Loading standalone GLAD generator...")
+    # Add the glad subdirectory which provides glad_add_library
+    add_subdirectory(include/glad/cmake EXCLUDE_FROM_ALL)
+    
+    # Generate GLAD for OpenGL 4.3 Core
+    glad_add_library(glad STATIC API gl:core=4.3)
+else()
+    message(FATAL_ERROR "Standalone GLAD generator not found in include/glad")
 endif()
 
 # ============================================================================
@@ -166,14 +150,16 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/include/entt/src")
     message(STATUS "Loading EnTT from submodule...")
     add_library(EnTT INTERFACE)
     target_include_directories(EnTT INTERFACE ${CMAKE_SOURCE_DIR}/include/entt/src)
-    add_library(EnTT::EnTT ALIAS EnTT)
+    if(NOT TARGET EnTT::EnTT)
+        add_library(EnTT::EnTT ALIAS EnTT)
+    endif()
     message(STATUS "EnTT loaded from submodule (header-only)")
 else()
     message(FATAL_ERROR "EnTT submodule not found. Run: git submodule update --init --recursive")
 endif()
 
 # ============================================================================
-# ImGui + rlImGui + ImGuizmo
+# ImGui Standalone (GLFW + OpenGL3)
 # ============================================================================
 set(IMGUI_SOURCES
     include/imgui/imgui.cpp
@@ -190,24 +176,26 @@ set(IMGUI_SOURCES
     ${imguizmo_SOURCE_DIR}/ImGuizmo.h
 )
 
-add_library(imguilib STATIC ${IMGUI_SOURCES})
+if(NOT TARGET imguilib)
+    add_library(imguilib STATIC ${IMGUI_SOURCES})
 
-target_include_directories(imguilib PUBLIC
-    ${CMAKE_SOURCE_DIR}/include/imgui
-    ${CMAKE_SOURCE_DIR}/include/rlImGui
-    ${CMAKE_SOURCE_DIR}/include/raylib/src/external/glfw/include
-    ${imguizmo_SOURCE_DIR}
-)
-target_link_libraries(imguilib PRIVATE raylib)
+    target_include_directories(imguilib PUBLIC
+        ${CMAKE_SOURCE_DIR}/include/imgui
+        ${CMAKE_SOURCE_DIR}/include/glfw/include
+        ${imguizmo_SOURCE_DIR}
+    )
+    target_link_libraries(imguilib PUBLIC glfw glad)
 
-# Define IMGUI math operators and GLFW settings
-target_compile_definitions(imguilib PUBLIC 
-    IMGUI_DEFINE_MATH_OPERATORS
-    GLFW_INCLUDE_NONE
-)
+    # Define IMGUI math operators and GLFW settings
+    target_compile_definitions(imguilib PUBLIC 
+        IMGUI_DEFINE_MATH_OPERATORS
+        GLFW_INCLUDE_NONE
+        IMGUI_IMPL_OPENGL_LOADER_GLAD
+    )
 
-# Disable unity build for imguilib to avoid GLAD header conflicts
-set_target_properties(imguilib PROPERTIES UNITY_BUILD OFF)
+    # Disable unity build for imguilib to avoid GLAD header conflicts
+    set_target_properties(imguilib PROPERTIES UNITY_BUILD OFF)
+endif()
 
 # ============================================================================
 # Native File Dialog (nfd)

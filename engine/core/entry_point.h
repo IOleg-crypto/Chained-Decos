@@ -3,7 +3,8 @@
 
 #include "engine/core/application.h"
 #include "engine/scene/project.h"
-#include "raylib.h"
+#include "engine/scene/project.h"
+#include "engine/core/base.h"
 
 extern CHEngine::Application* CHEngine::CreateApplication(CHEngine::ApplicationCommandLineArgs args);
 

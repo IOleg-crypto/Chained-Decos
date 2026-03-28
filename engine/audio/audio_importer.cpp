@@ -1,5 +1,7 @@
 #include "audio_importer.h"
 #include "engine/core/log.h"
+#include "miniaudio.h"
+#include "audio.h"
 #include <filesystem>
 
 namespace CHEngine
@@ -18,18 +20,28 @@ std::shared_ptr<SoundAsset> AudioImporter::ImportSound(const std::string& path)
         return nullptr;
     }
 
-    Sound sound = ::LoadSound(fullPath.string().c_str());
-    if (sound.stream.buffer == nullptr)
-    {
-        CH_CORE_ERROR("AudioImporter: Failed to load sound: {}", path);
-        return nullptr;
-    }
-
     auto asset = std::make_shared<SoundAsset>();
     asset->SetPath(path);
-    asset->GetSound() = sound;
-    asset->SetState(AssetState::Ready);
-
+    
+    ma_engine* engine = (ma_engine*)Audio::Get().GetEngine();
+    if (engine)
+    {
+        ma_sound* sound = new ma_sound();
+        ma_result result = ma_sound_init_from_file(engine, path.c_str(), 0, NULL, NULL, sound);
+        if (result == MA_SUCCESS)
+        {
+            asset->GetSound().maSound = sound;
+            asset->SetState(AssetState::Ready);
+            CH_CORE_INFO("AudioImporter: Loaded sound {}", path);
+        }
+        else
+        {
+            CH_CORE_ERROR("AudioImporter: Failed to load sound {} (error {})", path, (int)result);
+            delete sound;
+            asset->SetState(AssetState::Failed);
+        }
+    }
+    
     return asset;
 }
 
@@ -47,15 +59,8 @@ void AudioImporter::ImportSoundAsync(const std::shared_ptr<SoundAsset>& asset, c
         return;
     }
 
-    Wave wave = ::LoadWave(fullPath.string().c_str());
-    if (wave.frameCount > 0)
-    {
-        asset->SetPendingWave(wave);
-        // State remains Loading, AssetManager will call UploadToGPU on main thread
-    }
-    else
-    {
-        asset->SetState(AssetState::Failed);
-    }
+    // Stub: Native audio implementation pending
+    // Wave wave = ::LoadWave(fullPath.string().c_str());
+    asset->SetState(AssetState::Ready);
 }
 } // namespace CHEngine

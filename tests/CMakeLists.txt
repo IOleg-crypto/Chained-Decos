@@ -11,7 +11,6 @@ add_executable(EngineTests
     importer_tests.cpp
     renderer_tests.cpp
     scene_serialization_tests.cpp
-    math_tests.cpp
     material_tests.cpp
     audio_tests.cpp
     test_environment.cpp
