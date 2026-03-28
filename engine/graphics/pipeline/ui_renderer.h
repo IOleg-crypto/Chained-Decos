@@ -1,12 +1,12 @@
 #ifndef CH_UI_RENDERER_H
 #define CH_UI_RENDERER_H
 
+#include "engine/core/base.h"
 #include "ui_font_registry.h"
 #include "engine/scene/scene.h"
 #include "engine/graphics/assets/texture_asset.h"
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
-#include "engine/scene/scene.h"
 #include "entt/entt.hpp"
 #include "imgui.h"
 #include <map>
@@ -20,7 +20,7 @@ class Entity;
 
 // Helpers moved into UIRenderer
 
-// Replaces raylib's Rectangle to avoid including raylib.h
+// Custom Rectangle to avoid external dependencies
 struct UIRect {
     float x;
     float y;

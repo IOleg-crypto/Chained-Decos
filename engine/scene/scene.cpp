@@ -9,11 +9,10 @@
 #include "engine/scene/component_serializer.h"
 #include "engine/scene/scene_events.h"
 #include "project.h"
-#include "raylib.h"
-#include "raymath.h"
 #include "scene_serializer.h"
 #include "scripting/scene_scripting.h"
 #include <cmath>
+#include <glm/gtx/norm.hpp>
 
 namespace CHEngine
 {
@@ -147,34 +146,35 @@ std::optional<Camera3D> Scene::GetActiveCamera()
         auto [camera, transform] = view.get<CameraComponent, TransformComponent>(entity);
         if (camera.Primary)
         {
-            Camera3D raylibCamera;
+            Camera3D activeCamera;
 
             // Use WorldTransform instead of local translation/rotation for parented cameras
-            Matrix worldTransform = transform.WorldTransform;
+            const glm::mat4& worldTransform = transform.WorldTransform;
 
             // Extract position from world transform
-            raylibCamera.position = Vector3Transform({0, 0, 0}, worldTransform);
+            activeCamera.Position = glm::vec3(worldTransform * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 
             // Calculate world forward and up vectors
-            Vector3 worldForward = Vector3Transform({0, 0, -1}, worldTransform);
-            Vector3 worldUp = Vector3Transform({0, 1, 0}, worldTransform);
+            glm::vec3 worldForward = glm::vec3(worldTransform * glm::vec4(0.0f, 0.0f, -1.0f, 1.0f));
+            glm::vec3 worldUp = glm::vec3(worldTransform * glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
 
-            Vector3 forward = Vector3Normalize(Vector3Subtract(worldForward, raylibCamera.position));
+            glm::vec3 forward = glm::normalize(worldForward - activeCamera.Position);
 
             // Provide a safe fallback if forward is somehow zero
-            if (Vector3LengthSqr(forward) < 0.0001f)
+            if (glm::length2(forward) < 0.0001f)
             {
-                forward = {0.0f, 0.0f, -1.0f};
+                forward = glm::vec3(0.0f, 0.0f, -1.0f);
             }
 
-            raylibCamera.target = Vector3Add(raylibCamera.position, forward);
-            raylibCamera.up = Vector3Normalize(Vector3Subtract(worldUp, raylibCamera.position));
+            activeCamera.Target = activeCamera.Position + forward;
+            activeCamera.Up = glm::normalize(worldUp - activeCamera.Position);
+
 
             // SceneCamera stores FOV in radians, raylib expects degrees for Camera3D
-            raylibCamera.fovy = camera.Camera.GetPerspectiveVerticalFOV() * RAD2DEG;
-            raylibCamera.projection = (int)camera.Camera.GetProjectionType();
+            activeCamera.Fovy = glm::degrees(camera.Camera.GetPerspectiveVerticalFOV());
+            activeCamera.Projection = (int)camera.Camera.GetProjectionType();
 
-            return raylibCamera;
+            return activeCamera;
         }
     }
     return std::nullopt;
@@ -304,7 +304,7 @@ void Scene::UpdateHierarchy()
     struct UpdateTask
     {
         entt::entity Entity;
-        Matrix ParentTransform;
+        glm::mat4 ParentTransform;
     };
 
     std::vector<UpdateTask> stack;
@@ -325,7 +325,7 @@ void Scene::UpdateHierarchy()
 
         if (isRoot)
         {
-            stack.push_back({entity, MatrixIdentity()});
+            stack.push_back({entity, glm::mat4(1.0f)});
         }
     }
 
@@ -336,7 +336,7 @@ void Scene::UpdateHierarchy()
         stack.pop_back();
 
         auto& tc = view.get<TransformComponent>(task.Entity);
-        tc.WorldTransform = MatrixMultiply(tc.GetTransform(), task.ParentTransform);
+        tc.WorldTransform = task.ParentTransform * tc.GetTransform();
         tc.IsDirty = false;
 
         if (reg.all_of<HierarchyComponent>(task.Entity))

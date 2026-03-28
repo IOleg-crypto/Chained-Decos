@@ -1,7 +1,7 @@
 #include "application.h"
 #include "filesystem_utils.h"
 #include "engine/audio/audio.h"
-#include "engine/core/assert.h"
+#include "engine/core/ch_assert.h"
 #include "engine/core/imgui_layer.h"
 #include "engine/core/input.h"
 #include "engine/core/layer.h"
@@ -17,7 +17,6 @@
 #include "engine/scene/component_serializer.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene_events.h"
-#include "rlgl.h"
 #include "nfd.h"
 #include "scripting/scriptengine.h"
 
@@ -87,15 +86,6 @@ Application::Application(const ApplicationSpecification& specification)
     // Note: Systems' Init() already called InternalInit().
     // We only need to Push layers andoverlays.
     
-    if (IsAudioDeviceReady())
-    {
-        CH_CORE_INFO("Audio Device Initialized Successfully");
-    }
-    else
-    {
-        CH_CORE_ERROR("Failed to initialize Audio Device!");
-    }
-
     // ImGui Layer setup (always needed for Editor/Debugging)
     if (!m_Specification.Headless)
     {
@@ -214,8 +204,6 @@ void Application::ExecuteMainThreadQueue()
 
 void Application::Run()
 {
-    ::SetExitKey(NULL);
-
     while (m_Running && !m_Window->ShouldClose())
     {
         CH_PROFILE_FUNCTION();
@@ -223,7 +211,7 @@ void Application::Run()
         ExecuteMainThreadQueue();
 
         // 1. Time Tracking
-        Timestep time = (float)GetTime();
+        Timestep time = (float)glfwGetTime();
         m_DeltaTime = Timestep(time - m_LastFrameTime);
         m_LastFrameTime = time;
 

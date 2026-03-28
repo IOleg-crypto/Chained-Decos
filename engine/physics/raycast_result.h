@@ -1,7 +1,7 @@
 #ifndef CH_RAYCAST_RESULT_H
 #define CH_RAYCAST_RESULT_H
 
-#include "raylib.h"
+#include "engine/core/base.h"
 #include "entt/entt.hpp"
 
 namespace CHEngine

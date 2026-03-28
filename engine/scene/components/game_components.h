@@ -4,8 +4,8 @@
 #include "engine/core/base.h"
 #include "engine/core/assets/asset.h"
 #include "engine/scene/components/control_component.h"
-#include "raylib.h"
 #include <string>
+#include <memory>
 
 namespace CHEngine
 {

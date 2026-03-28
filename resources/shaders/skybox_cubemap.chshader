@@ -1,5 +1,5 @@
 # Skybox Cubemap Shader Metadata
-VertexShader: "skybox.vs"
+VertexShader: "skybox_cubemap.vs"
 FragmentShader: "skybox_cubemap.fs"
 
 Uniforms:

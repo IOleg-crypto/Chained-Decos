@@ -1,10 +1,11 @@
 #ifndef CH_VIEWPORT_PANEL_H
 #define CH_VIEWPORT_PANEL_H
 
-// Removed redundant include: engine/graphics/render.h
 #include "engine/core/timestep.h"
 #include "panel.h"
-#include "raylib.h"
+#include "imgui.h"
+#include "imgui/IconsFontAwesome6.h"
+#include <memory>
 #include "engine/graphics/api/framebuffer.h"
 #include "viewport/editor_camera.h"
 #include "viewport/editor_gizmo.h"

@@ -4,6 +4,7 @@
 #include "engine/core/base.h"
 #include "engine/core/assets/asset.h"
 #include <string>
+#include <glm/glm.hpp>
 
 namespace CHEngine
 {
@@ -17,6 +18,10 @@ struct AudioComponent
     float Pitch = 1.0f;
     bool Loop = false;
     bool PlayOnStart = true;
+    bool Spatialized = false;
+    glm::vec3 Position = {0, 0, 0};
+    float MinDistance = 1.0f;
+    float MaxDistance = 100.0f;
 
     // Runtime
     std::shared_ptr<SoundAsset> Asset;

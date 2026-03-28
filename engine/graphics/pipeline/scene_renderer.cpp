@@ -1,41 +1,40 @@
 #include "scene_renderer.h"
-#include "engine/core/assert.h"
+#include "engine/audio/audio.h"
+#include "engine/core/application.h"
+#include "engine/core/assets/asset_manager.h"
+#include "engine/core/ch_assert.h"
 #include "engine/core/profiler.h"
-#include "engine/graphics/pipeline/frustum.h"
 #include "engine/graphics/assets/model_asset.h"
+#include "engine/graphics/assets/shader_asset.h"
 #include "engine/graphics/importers/mesh_importer.h"
+#include "engine/graphics/pipeline/frustum.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/pipeline/renderer2d.h"
-#include "engine/core/assets/asset_manager.h"
-#include "engine/graphics/assets/shader_asset.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/components/light_component.h"
 #include "imgui.h"
-#include "raylib.h"
-#include <raymath.h>
-#include <rlgl.h>
+#include <GLFW/glfw3.h>
+#include <glad/gl.h>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include <unordered_map>
 #include <unordered_set>
 
-
-
 namespace CHEngine
 {
-Matrix SceneRenderer::GetWorldTransform(entt::registry& registry, entt::entity entity)
+glm::mat4 SceneRenderer::GetWorldTransform(entt::registry& registry, entt::entity entity)
 {
     if (registry.all_of<TransformComponent>(entity))
     {
         return registry.get<TransformComponent>(entity).WorldTransform;
     }
-    return MatrixIdentity();
+    return glm::mat4(1.0f);
 }
-Vector3 SceneRenderer::GetWorldPosition(entt::registry& registry, entt::entity entity)
+glm::vec3 SceneRenderer::GetWorldPosition(entt::registry& registry, entt::entity entity)
 {
-    // Отримуємо матрицю (бажано через посилання, якщо можливо)
-    Matrix worldTransform = GetWorldTransform(registry, entity);
-    
-    // Прямий доступ до компонентів трансляції (переміщення)
-    return { worldTransform.m12, worldTransform.m13, worldTransform.m14 };
+    glm::mat4 worldTransform = GetWorldTransform(registry, entity);
+    return glm::vec3(worldTransform[3]);
 }
 
 void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float nearClip, float farClip, Timestep timestep,
@@ -46,7 +45,7 @@ void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float near
     CH_CORE_ASSERT(scene, "Scene is null!");
 
     // 1. Initial State
-    rlEnableDepthTest();
+    glEnable(GL_DEPTH_TEST);
 
     // 2. Environmental setup
     auto environment = scene->GetSettings().Environment;
@@ -71,14 +70,15 @@ void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float near
         CH_CORE_WARN_ONCE("SceneRenderer: No environment asset for scene!");
     }
 
-    Renderer::Get().UpdateTime(Timestep((float)GetTime()));
+    Renderer::Get().UpdateTime(Timestep((float)glfwGetTime()));
 
     // --- Update Profiler Stats ---
     m_CurrentStats = {};
     m_CurrentStats.EntityCount = (uint32_t)scene->GetRegistry().storage<entt::entity>().size();
 
     // 2. Scene rendering flow
-    Renderer::Get().BeginScene(camera);
+    Audio::Get().SetListenerPosition(camera.Position, glm::normalize(camera.Target - camera.Position), camera.Up);
+    Renderer::Get().BeginScene(camera, nearClip, farClip);
     {
         if (environment)
         {
@@ -97,7 +97,7 @@ void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float near
 
         RenderDebug(scene, camera, options);
 
-        RenderSprites(scene);
+        // RenderSprites(scene); // Disabled 2D system for now
 
         RenderEditorIcons(scene, camera);
     }
@@ -130,19 +130,17 @@ void SceneRenderer::RenderModels(Scene* scene, const Camera3D& camera, float nea
     // 1. Frustum Extraction
     Frustum frustum;
     {
-        // Use explicit camera matrices for robustness (identical to what BeginMode3D uses)
-        Matrix view = GetCameraMatrix(camera);
-
-        // Get aspect ratio from the active render target/window
-        float width = (float)GetRenderWidth();
-        float height = (float)GetRenderHeight();
+        float width = (float)Application::Get().GetWindow().GetWidth();
+        float height = (float)Application::Get().GetWindow().GetHeight();
         float aspect = (width > 0 && height > 0) ? width / height : 1.0f;
 
-        // Use the passed-in clipping planes from the CameraComponent or Editor camera
-        Matrix projection = MatrixPerspective(camera.fovy * DEG2RAD, aspect, nearClip, farClip);
+        glm::mat4 view = glm::lookAt(camera.Position, camera.Target, camera.Up);
+        glm::mat4 projection =
+            (camera.Projection == 0)
+                ? glm::perspective(glm::radians(camera.Fovy), aspect, nearClip, farClip)
+                : glm::ortho(-aspect * camera.Fovy, aspect * camera.Fovy, -camera.Fovy, camera.Fovy, nearClip, farClip);
 
-        // Standard mathematical order for World -> Clip transformation (for extraction) is Projection * View
-        Matrix matVP = MatrixMultiply(view, projection);
+        glm::mat4 matVP = projection * view;
         frustum.Extract(matVP);
     }
 
@@ -174,31 +172,34 @@ void SceneRenderer::PrepareLights(entt::registry& registry, const Frustum& frust
     for (auto entity : lightView)
     {
         auto& light = lightView.get<LightComponent>(entity);
-        Matrix worldTransform = GetWorldTransform(registry, entity);
-        Vector3 worldPos = {worldTransform.m12, worldTransform.m13, worldTransform.m14};
-        Vector3 worldDir = Vector3Normalize(Vector3Transform({0, -1, 0}, worldTransform));
+        glm::mat4 worldTransform = GetWorldTransform(registry, entity);
+        glm::vec3 worldPos = glm::vec3(worldTransform[3]);
+
+        // Extract forward direction from matrix (column 2 is -Z in Raylib/standard right-handed)
+        // Wait, Raylib's forward is {0, 0, 1}? No, usually it's -Z.
+        // Let's use the same logic as before but with GLM
+        glm::vec3 localDir = {0, -1, 0};
+        glm::vec3 worldDir = glm::normalize(glm::vec3(worldTransform * glm::vec4(localDir, 0.0f)));
 
         if (light.Type == LightType::Directional && !foundDirectional)
         {
-            mainLight.Direction = worldDir;
+            mainLight.Direction = {worldDir.x, worldDir.y, worldDir.z};
             mainLight.LightColor = light.LightColor;
-            // Note: Currently we don't map Intensity to anything for Directional, 
-            // but we could multiply it into LightColor if needed.
             foundDirectional = true;
         }
 
         if (lightCount < LightingData::MaxLights)
         {
-            // Even if it's directional, we add it to SSBO if it has a position (though shader might ignore it)
-            // For now, we only cull Point/Spot lights
             if (light.Type != LightType::Directional && !frustum.IsSphereVisible(worldPos, light.Radius))
+            {
                 continue;
+            }
 
             RenderLight rl;
-            rl.color[0] = light.LightColor.r / 255.0f;
-            rl.color[1] = light.LightColor.g / 255.0f;
-            rl.color[2] = light.LightColor.b / 255.0f;
-            rl.color[3] = light.LightColor.a / 255.0f;
+            rl.color.r = light.LightColor.r / 255.0f;
+            rl.color.g = light.LightColor.g / 255.0f;
+            rl.color.b = light.LightColor.b / 255.0f;
+            rl.color.a = light.LightColor.a / 255.0f;
 
             rl.position = worldPos;
             rl.intensity = (light.Intensity <= 0.0f) ? 1.0f : light.Intensity;
@@ -216,7 +217,7 @@ void SceneRenderer::PrepareLights(entt::registry& registry, const Frustum& frust
             Renderer::Get().SetLight(lightCount++, rl);
         }
     }
-    
+
     if (foundDirectional)
     {
         Renderer::Get().SetMainLight(mainLight);
@@ -238,7 +239,9 @@ void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& 
         auto [transform, model] = view.get<TransformComponent, ModelComponent>(entity);
 
         if (model.ModelPath.empty())
+        {
             continue;
+        }
 
         auto modelAsset = AssetManager::Get().Get<ModelAsset>(model.ModelPath);
         if (!modelAsset || modelAsset->GetState() != AssetState::Ready)
@@ -247,7 +250,7 @@ void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& 
         }
 
         // 1. Precise Frustum Culling
-        const Matrix& worldTransform = transform.WorldTransform;
+        const glm::mat4& worldTransform = transform.WorldTransform;
         BoundingBox aabb = modelAsset->GetBoundingBox();
 
         if (!frustum.IsBoxVisible(aabb, worldTransform))
@@ -313,14 +316,15 @@ void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& 
         auto [transform, primitive] = primitiveView.get<TransformComponent, PrimitiveComponent>(entity);
 
         if (primitive.Type == PrimitiveType::None)
+        {
             continue;
+        }
 
         // Lazy load/cache primitive asset or regenerate if dirty
         if ((!primitive.Asset || primitive.Dirty))
         {
             const char* primitivePaths[] = {
-                "", ":cube:", ":sphere:", ":plane:", ":cylinder:", ":cone:", ":torus:", ":knot:", ":hemisphere:"
-            };
+                "", ":cube:", ":sphere:", ":plane:", ":cylinder:", ":cone:", ":torus:", ":knot:", ":hemisphere:"};
             int typeIdx = (int)primitive.Type;
             if (typeIdx > 0 && typeIdx < (int)std::size(primitivePaths))
             {
@@ -334,7 +338,7 @@ void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& 
 
                 // Create a temporary model from updated parameters
                 Model model = MeshImporter::GenerateProceduralModel(primitivePaths[typeIdx], params);
-                if (model.meshCount > 0)
+                if (model.Meshes.size() > 0)
                 {
                     if (!primitive.Asset)
                     {
@@ -344,9 +348,9 @@ void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& 
                     else
                     {
                         // Unload existing mesh data if regenerating
-                        UnloadModel(primitive.Asset->GetModel());
+                        // UnloadModel(primitive.Asset->GetModel()); // Removed Raylib call
                     }
-                    
+
                     primitive.Asset->GetModel() = model;
                     primitive.Asset->SetState(AssetState::Ready);
                 }
@@ -355,13 +359,17 @@ void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& 
         }
 
         if (!primitive.Asset || primitive.Asset->GetState() != AssetState::Ready)
+        {
             continue;
+        }
 
-        const Matrix& worldTransform = transform.WorldTransform;
+        const glm::mat4& worldTransform = transform.WorldTransform;
         BoundingBox aabb = primitive.Asset->GetBoundingBox();
 
         if (!frustum.IsBoxVisible(aabb, worldTransform))
+        {
             continue;
+        }
 
         // 2. Optimized Asset Update
         if (updatedAssets.find(primitive.Asset.get()) == updatedAssets.end())
@@ -396,16 +404,17 @@ void SceneRenderer::CollectRenderItems(entt::registry& registry, const Frustum& 
                 group.asset = primitive.Asset;
                 group.materials = {};
             }
-            group.transforms.push_back(worldTransform);
+            group.transforms.push_back(transform.WorldTransform);
         }
         else
         {
-            DrawModel(primitive.Asset, worldTransform, {}, {}, shaderOverride, customUniforms);
+            DrawModel(primitive.Asset, transform.WorldTransform, {}, {}, shaderOverride, customUniforms);
         }
     }
 }
 
-void SceneRenderer::DrawAnimatedEntities(const std::vector<AnimatedEntry>& animatedEntries, const SceneRenderOptions& options)
+void SceneRenderer::DrawAnimatedEntities(const std::vector<AnimatedEntry>& animatedEntries,
+                                         const SceneRenderOptions& options)
 {
     // 1. Виносимо те, що не змінюється, за межі циклу (економія обчислень)
     float targetFPS = options.TargetFPS > 0.0f ? options.TargetFPS : 60.0f;
@@ -423,49 +432,61 @@ void SceneRenderer::DrawAnimatedEntities(const std::vector<AnimatedEntry>& anima
         if (entry.animation.Blending)
         {
             targetAnim = entry.animation.TargetAnimationIndex;
-            targetFractionalFrame = (float)entry.animation.TargetFrame + (entry.animation.FrameTimeCounter * invFrameTime);
-            
+            targetFractionalFrame =
+                (float)entry.animation.TargetFrame + (entry.animation.FrameTimeCounter * invFrameTime);
+
             // 3. Захист від ділення на нуль (уникаємо NaN) та обмеження ваги від 0 до 1
-            if (entry.animation.BlendDuration > 0.0001f) 
+            if (entry.animation.BlendDuration > 0.0001f)
             {
                 blendWeight = entry.animation.BlendTimer / entry.animation.BlendDuration;
-                blendWeight = std::clamp(blendWeight, 0.0f, 1.0f); 
+                blendWeight = std::clamp(blendWeight, 0.0f, 1.0f);
             }
         }
 
-        // Залишаємо ваш виклик як є
-        std::vector<Matrix> boneMatrices = entry.asset->ComputeAnimationPose(
+        // Compute animation pose (now returns glm::mat4)
+        std::vector<glm::mat4> boneMatrices = entry.asset->ComputeAnimationPose(
             entry.animation.CurrentAnimationIndex, fractionalFrame, targetAnim, targetFractionalFrame, blendWeight);
 
-        DrawModel(entry.asset, entry.worldTransform, entry.materials, boneMatrices, entry.shaderOverride, entry.customUniforms);
+        DrawModel(entry.asset, entry.worldTransform, entry.materials, boneMatrices, entry.shaderOverride,
+                  entry.customUniforms);
     }
 }
 void SceneRenderer::DrawStaticEntities(std::unordered_map<InstanceKey, InstanceGroup, InstanceKeyHash>& instanceGroups)
 {
     for (auto& [key, group] : instanceGroups)
     {
-        for (const auto& transform : group.transforms)
+        if (group.transforms.size() >= 2)
         {
-            DrawModel(group.asset, transform, group.materials);
+            // Use instanced rendering if we have multiple instances
+            Renderer::Get().DrawMeshInstanced(group.asset->GetModel().Meshes[0],
+                                              ResolveMaterialForMesh(0, group.asset->GetModel(), group.materials),
+                                              group.transforms);
+        }
+        else
+        {
+            for (const auto& transform : group.transforms)
+            {
+                DrawModel(group.asset, transform, group.materials);
+            }
         }
     }
 }
 
 void SceneRenderer::RenderDebug(Scene* scene, const Camera3D& camera, const SceneRenderOptions& options)
 {
-    if (!options.ShowDebugColliders && !options.ShowDebugCollisionModelBox && !options.ShowDebugSpawnZones && !options.DrawGrid)
+    if (!options.ShowDebugColliders && !options.ShowDebugCollisionModelBox && !options.ShowDebugSpawnZones &&
+        !options.DrawGrid)
     {
         return;
     }
     auto& registry = scene->GetRegistry();
 
-    rlDisableDepthTest();
-
+    glDisable(GL_DEPTH_TEST);
 
     if (options.DrawGrid && scene->GetSettings().Mode == BackgroundMode::Environment3D)
     {
         const auto& grid = scene->GetSettings().Grid;
-        Renderer::Get().DrawInfiniteGrid(camera, grid.Spacing, { 200, 200, 200, 255 });
+        Renderer::Get().DrawInfiniteGrid(camera, grid.Spacing, {200, 200, 200, 255});
     }
 
     if (options.ShowDebugColliders)
@@ -481,7 +502,7 @@ void SceneRenderer::RenderDebug(Scene* scene, const Camera3D& camera, const Scen
         DrawSpawnDebug(registry, options);
     }
 
-    rlEnableDepthTest();
+    glEnable(GL_DEPTH_TEST);
 }
 
 void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRenderOptions& options)
@@ -490,29 +511,38 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
     for (auto entity : view)
     {
         auto [transform, collider] = view.get<TransformComponent, ColliderComponent>(entity);
-        if (!collider.Enabled) continue;
+        if (!collider.Enabled)
+        {
+            continue;
+        }
 
-        Matrix worldTransform = GetWorldTransform(registry, entity);
+        const glm::mat4& worldTransform = transform.WorldTransform;
         // Green = no collision, Red = currently colliding
-        Color debugColor = collider.IsColliding ? RED : LIME;
+        // RED and LIME are Raylib residues. Replacing with inline colors.
+        glm::vec4 debugColor =
+            collider.IsColliding ? glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) : glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
 
         if (collider.Type == ColliderType::Box)
         {
             BoundingBox worldAABB = CalculateColliderWorldAABB(collider, worldTransform);
-            Vector3 center = Vector3Scale(Vector3Add(worldAABB.min, worldAABB.max), 0.5f);
-            Vector3 size   = Vector3Subtract(worldAABB.max, worldAABB.min);
-            Renderer::Get().DrawCubeWires(MatrixTranslate(center.x, center.y, center.z), size, debugColor);
+            glm::vec3 center = {(worldAABB.Min.x + worldAABB.Max.x) * 0.5f, (worldAABB.Min.y + worldAABB.Max.y) * 0.5f,
+                                (worldAABB.Min.z + worldAABB.Max.z) * 0.5f};
+            glm::vec3 size = {worldAABB.Max.x - worldAABB.Min.x, worldAABB.Max.y - worldAABB.Min.y,
+                              worldAABB.Max.z - worldAABB.Min.z};
+            Renderer::Get().DrawCubeWires(glm::translate(glm::mat4(1.0f), center), size, debugColor);
         }
         else if (collider.Type == ColliderType::Sphere)
         {
-            Matrix sphereTransform = MatrixMultiply(
-                MatrixTranslate(collider.Offset.x, collider.Offset.y, collider.Offset.z), worldTransform);
+            glm::mat4 sphereTransform =
+                worldTransform *
+                glm::translate(glm::mat4(1.0f), {collider.Offset.x, collider.Offset.y, collider.Offset.z});
             Renderer::Get().DrawSphereWires(sphereTransform, collider.Radius, debugColor);
         }
         else if (collider.Type == ColliderType::Capsule)
         {
-            Matrix capsuleTransform = MatrixMultiply(
-                MatrixTranslate(collider.Offset.x, collider.Offset.y, collider.Offset.z), worldTransform);
+            glm::mat4 capsuleTransform =
+                worldTransform *
+                glm::translate(glm::mat4(1.0f), {collider.Offset.x, collider.Offset.y, collider.Offset.z});
             Renderer::Get().DrawCapsuleWires(capsuleTransform, collider.Radius, collider.Height, debugColor);
         }
         else if (collider.Type == ColliderType::Mesh)
@@ -528,43 +558,47 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
 
                     // Transform local AABB corners to world space and re-compute a world AABB
                     Vector3 corners[8] = {
-                        {localBox.min.x, localBox.min.y, localBox.min.z},
-                        {localBox.max.x, localBox.min.y, localBox.min.z},
-                        {localBox.min.x, localBox.max.y, localBox.min.z},
-                        {localBox.max.x, localBox.max.y, localBox.min.z},
-                        {localBox.min.x, localBox.min.y, localBox.max.z},
-                        {localBox.max.x, localBox.min.y, localBox.max.z},
-                        {localBox.min.x, localBox.max.y, localBox.max.z},
-                        {localBox.max.x, localBox.max.y, localBox.max.z},
+                        {localBox.Min.x, localBox.Min.y, localBox.Min.z},
+                        {localBox.Max.x, localBox.Min.y, localBox.Min.z},
+                        {localBox.Min.x, localBox.Max.y, localBox.Min.z},
+                        {localBox.Max.x, localBox.Max.y, localBox.Min.z},
+                        {localBox.Min.x, localBox.Min.y, localBox.Max.z},
+                        {localBox.Max.x, localBox.Min.y, localBox.Max.z},
+                        {localBox.Min.x, localBox.Max.y, localBox.Max.z},
+                        {localBox.Max.x, localBox.Max.y, localBox.Max.z},
                     };
 
-                    Vector3 wMin = { FLT_MAX,  FLT_MAX,  FLT_MAX};
-                    Vector3 wMax = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
+                    glm::vec3 wMin = {FLT_MAX, FLT_MAX, FLT_MAX};
+                    glm::vec3 wMax = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
                     for (const auto& c : corners)
                     {
-                        Vector3 wp = Vector3Transform(c, worldTransform);
-                        wMin = Vector3Min(wMin, wp);
-                        wMax = Vector3Max(wMax, wp);
+                        glm::vec4 wp = worldTransform * glm::vec4(c.x, c.y, c.z, 1.0f);
+                        wMin = glm::min(wMin, glm::vec3(wp));
+                        wMax = glm::max(wMax, glm::vec3(wp));
                     }
 
-                    Vector3 center = Vector3Scale(Vector3Add(wMin, wMax), 0.5f);
-                    Vector3 size   = Vector3Subtract(wMax, wMin);
+                    glm::vec3 center = (wMin + wMax) * 0.5f;
+                    glm::vec3 size = wMax - wMin;
                     // Cyan for mesh colliders to distinguish them from box colliders
-                    Color meshDebugColor = collider.IsColliding ? RED : SKYBLUE;
-                    Renderer::Get().DrawCubeWires(MatrixTranslate(center.x, center.y, center.z), size, meshDebugColor);
+                    glm::vec4 meshDebugColor =
+                        collider.IsColliding ? glm::vec4(1, 0, 0, 1) : glm::vec4(0.4f, 0.8f, 1.0f, 1.0f);
+                    Renderer::Get().DrawCubeWires(glm::translate(glm::mat4(1.0f), center), size,
+                                                  {meshDebugColor.r / 255.0f, meshDebugColor.g / 255.0f,
+                                                   meshDebugColor.b / 255.0f, meshDebugColor.a / 255.0f});
 
                     // Also draw individual mesh wireframes with depth test ON so they
                     // don't render through walls — gives shape detail without visual chaos.
-                    Color meshWireColor = collider.IsColliding ? Color{255, 80, 80, 120} : Color{0, 180, 200, 100};
-                    rlEnableDepthTest();
+                    glEnable(GL_DEPTH_TEST);
                     const auto& rayModel = model->GetModel();
+                    glm::vec4 wireCol =
+                        collider.IsColliding ? glm::vec4(1.0f, 0.3f, 0.3f, 0.5f) : glm::vec4(0.0f, 0.7f, 0.8f, 0.4f);
                     for (const auto& inst : model->GetInstances())
                     {
-                        if (inst.meshIndex < 0 || inst.meshIndex >= rayModel.meshCount) continue;
-                        Matrix finalTransform = MatrixMultiply(inst.localTransform, worldTransform);
-                        Renderer::Get().DrawMeshWire(rayModel.meshes[inst.meshIndex], meshWireColor, finalTransform);
+                        glm::mat4 finalTransform = worldTransform * inst.localTransform;
+                        Renderer::Get().DrawMeshWire(rayModel.Meshes[inst.meshIndex], wireCol, finalTransform);
                     }
-                    rlDisableDepthTest();
+
+                    glDisable(GL_DEPTH_TEST);
                 }
             }
         }
@@ -577,67 +611,64 @@ void SceneRenderer::DrawCollisionModelBoxDebug(entt::registry& registry, const S
 {
     // 1. Використовуємо посилання (&), щоб не копіювати матриці та структури щоразу
     auto view = registry.view<TransformComponent, ColliderComponent>();
-    
+
     for (auto entity : view)
     {
         const auto& [transform, collider] = view.get<TransformComponent, ColliderComponent>(entity);
-        
-        if (!collider.Enabled) continue;
+
+        if (!collider.Enabled)
+        {
+            continue;
+        }
 
         // 2. ОПТИМІЗАЦІЯ: Беремо матрицю прямо з отриманого компонента transform
         // Не потрібно викликати GetWorldTransform(registry, entity) повторно.
-        const Matrix& worldTransform = transform.WorldTransform;
+        const glm::mat4& worldTransform = transform.WorldTransform;
 
         BoundingBox worldAABB = CalculateColliderWorldAABB(collider, worldTransform);
 
         // 3. Розраховуємо розмір та центр
-        Vector3 size = Vector3Subtract(worldAABB.max, worldAABB.min);
-        
+        glm::vec3 size = {worldAABB.Max.x - worldAABB.Min.x, worldAABB.Max.y - worldAABB.Min.y,
+                          worldAABB.Max.z - worldAABB.Min.z};
+
         // Перевірка, чи бокс не "вивернутий" (min > max)
         if (size.x >= 0 && size.y >= 0 && size.z >= 0)
         {
-            Vector3 center = Vector3Scale(Vector3Add(worldAABB.min, worldAABB.max), 0.5f);
-            
-            // Порада: можна міняти колір, якщо об'єкт зіткнувся (як у DrawColliderDebug)
-            Color debugColor = collider.IsColliding ? RED : Color{ 255, 0, 0, 100 }; 
+            glm::vec3 center = {(worldAABB.Min.x + worldAABB.Max.x) * 0.5f, (worldAABB.Min.y + worldAABB.Max.y) * 0.5f,
+                                (worldAABB.Min.z + worldAABB.Max.z) * 0.5f};
 
-            Renderer::Get().DrawCubeWires(
-                MatrixTranslate(center.x, center.y, center.z), 
-                size, 
-                debugColor
-            );
+            // Порада: можна міняти колір, якщо об'єкт зіткнувся (як у DrawColliderDebug)
+            glm::vec4 debugColor =
+                collider.IsColliding ? glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) : glm::vec4(1.0f, 0.0f, 0.0f, 0.39f);
+
+            Renderer::Get().DrawCubeWires(glm::translate(glm::mat4(1.0f), center), size, debugColor);
         }
     }
 }
 
-BoundingBox SceneRenderer::CalculateColliderWorldAABB(const ColliderComponent& collider, const Matrix& worldTransform)
+BoundingBox SceneRenderer::CalculateColliderWorldAABB(const ColliderComponent& collider,
+                                                      const glm::mat4& worldTransform)
 {
     BoundingBox box = {};
-    Vector3 minLocal = collider.Offset;
-    Vector3 maxLocal = Vector3Add(collider.Offset, collider.Size);
+    glm::vec3 minLocal = {collider.Offset.x, collider.Offset.y, collider.Offset.z};
+    glm::vec3 maxLocal = minLocal + glm::vec3{collider.Size.x, collider.Size.y, collider.Size.z};
 
-    Vector3 corners[8] = {
-        {minLocal.x, minLocal.y, minLocal.z}, {maxLocal.x, minLocal.y, minLocal.z},
-        {minLocal.x, maxLocal.y, minLocal.z}, {maxLocal.x, maxLocal.y, minLocal.z},
-        {minLocal.x, minLocal.y, maxLocal.z}, {maxLocal.x, minLocal.y, maxLocal.z},
-        {minLocal.x, maxLocal.y, maxLocal.z}, {maxLocal.x, maxLocal.y, maxLocal.z}
-    };
+    glm::vec3 corners[8] = {{minLocal.x, minLocal.y, minLocal.z}, {maxLocal.x, minLocal.y, minLocal.z},
+                            {minLocal.x, maxLocal.y, minLocal.z}, {maxLocal.x, maxLocal.y, minLocal.z},
+                            {minLocal.x, minLocal.y, maxLocal.z}, {maxLocal.x, minLocal.y, maxLocal.z},
+                            {minLocal.x, maxLocal.y, maxLocal.z}, {maxLocal.x, maxLocal.y, maxLocal.z}};
 
-    Vector3 minWorld = {FLT_MAX, FLT_MAX, FLT_MAX};
-    Vector3 maxWorld = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
+    glm::vec3 minWorld = {FLT_MAX, FLT_MAX, FLT_MAX};
+    glm::vec3 maxWorld = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
 
     for (int i = 0; i < 8; i++)
     {
-        Vector3 worldPt = Vector3Transform(corners[i], worldTransform);
-        minWorld.x = std::min(minWorld.x, worldPt.x);
-        minWorld.y = std::min(minWorld.y, worldPt.y);
-        minWorld.z = std::min(minWorld.z, worldPt.z);
-        maxWorld.x = std::max(maxWorld.x, worldPt.x);
-        maxWorld.y = std::max(maxWorld.y, worldPt.y);
-        maxWorld.z = std::max(maxWorld.z, worldPt.z);
+        glm::vec4 worldPt = worldTransform * glm::vec4(corners[i], 1.0f);
+        minWorld = glm::min(minWorld, glm::vec3(worldPt));
+        maxWorld = glm::max(maxWorld, glm::vec3(worldPt));
     }
-    box.min = minWorld;
-    box.max = maxWorld;
+    box.Min = {minWorld.x, minWorld.y, minWorld.z};
+    box.Max = {maxWorld.x, maxWorld.y, maxWorld.z};
 
     return box;
 }
@@ -650,8 +681,9 @@ void SceneRenderer::DrawSpawnDebug(entt::registry& registry, const SceneRenderOp
         auto [transform, spawn] = view.get<TransformComponent, SpawnComponent>(entity);
         if (spawn.RenderSpawnZoneInScene)
         {
-            Matrix worldTransform = GetWorldTransform(registry, entity);
-            Renderer::Get().DrawCubeWires(worldTransform, spawn.ZoneSize, {255, 255, 0, 200});
+            glm::mat4 worldTransform = GetWorldTransform(registry, entity);
+            Renderer::Get().DrawCubeWires(worldTransform, {spawn.ZoneSize.x, spawn.ZoneSize.y, spawn.ZoneSize.z},
+                                          {1.0f, 1.0f, 0.0f, 0.78f});
         }
     }
 }
@@ -661,48 +693,57 @@ void SceneRenderer::RenderEditorIcons(Scene* scene, const Camera3D& camera)
     auto& registry = scene->GetRegistry();
     auto& assetManager = AssetManager::Get();
 
-    if (m_EditorResources.LightIcon.id == 0)
+    if (m_EditorResources.LightIconId == 0)
     {
         auto texture = assetManager.Get<TextureAsset>("resources/icons/light_bulb.png");
-        if (texture && texture->IsReady()) m_EditorResources.LightIcon = texture->GetTexture();
+        if (texture && texture->IsReady())
+        {
+            m_EditorResources.LightIconId = texture->GetTexture().id;
+        }
     }
-    if (m_EditorResources.SpawnIcon.id == 0)
+    if (m_EditorResources.SpawnIconId == 0)
     {
         auto texture = assetManager.Get<TextureAsset>("resources/icons/leaf_icon.png");
-        if (texture && texture->IsReady()) m_EditorResources.SpawnIcon = texture->GetTexture();
+        if (texture && texture->IsReady())
+        {
+            m_EditorResources.SpawnIconId = texture->GetTexture().id;
+        }
     }
-    if (m_EditorResources.CameraIcon.id == 0)
+    if (m_EditorResources.CameraIconId == 0)
     {
         auto texture = assetManager.Get<TextureAsset>("resources/icons/camera_icon.png");
-        if (texture && texture->IsReady()) m_EditorResources.CameraIcon = texture->GetTexture();
+        if (texture && texture->IsReady())
+        {
+            m_EditorResources.CameraIconId = texture->GetTexture().id;
+        }
     }
 
-    rlDisableDepthTest();
+    glDisable(GL_DEPTH_TEST);
     {
         auto view = registry.view<TransformComponent, LightComponent>();
         for (auto entity : view)
         {
-            Vector3 worldPos = GetWorldPosition(registry, entity);
-            Renderer::Get().DrawBillboard(camera, m_EditorResources.LightIcon, worldPos, 1.5f, WHITE);
+            glm::vec3 worldPos = GetWorldPosition(registry, entity);
+            Renderer::Get().DrawBillboard(camera, m_EditorResources.LightIconId, worldPos, 1.5f, {1, 1, 1, 1});
         }
     }
     {
         auto view = registry.view<TransformComponent, SpawnComponent>();
         for (auto entity : view)
         {
-            Vector3 worldPos = GetWorldPosition(registry, entity);
-            Renderer::Get().DrawBillboard(camera, m_EditorResources.SpawnIcon, worldPos, 1.5f, WHITE);
+            glm::vec3 worldPos = GetWorldPosition(registry, entity);
+            Renderer::Get().DrawBillboard(camera, m_EditorResources.SpawnIconId, worldPos, 1.5f, {1, 1, 1, 1});
         }
     }
     {
         auto view = registry.view<TransformComponent, CameraComponent>();
         for (auto entity : view)
         {
-            Vector3 worldPos = GetWorldPosition(registry, entity);
-            Renderer::Get().DrawBillboard(camera, m_EditorResources.CameraIcon, worldPos, 1.5f, WHITE);
+            glm::vec3 worldPos = GetWorldPosition(registry, entity);
+            Renderer::Get().DrawBillboard(camera, m_EditorResources.CameraIconId, worldPos, 1.5f, {1, 1, 1, 1});
         }
     }
-    rlEnableDepthTest();
+    glEnable(GL_DEPTH_TEST);
 }
 
 void SceneRenderer::RenderSprites(Scene* scene)
@@ -742,98 +783,125 @@ void SceneRenderer::RenderSprites(Scene* scene)
             sprite.Texture = AssetManager::Get().Get<TextureAsset>(sprite.TexturePath);
         }
 
-        Vector3 worldPos = GetWorldPosition(registry, entityID);
+        glm::vec3 worldPos = GetWorldPosition(registry, entityID);
 
-        Renderer2D::Get().DrawSprite(Vector2{worldPos.x, worldPos.y}, Vector2{1.0f, 1.0f}, 0.0f, sprite.Texture,
-                                     sprite.Tint);
+        Renderer2D::Get().DrawSprite(
+            glm::vec2(worldPos.x, worldPos.y), glm::vec2(1.0f, 1.0f), 0.0f, sprite.Texture,
+            {sprite.Tint.r / 255.0f, sprite.Tint.g / 255.0f, sprite.Tint.b / 255.0f, sprite.Tint.a / 255.0f});
     }
     Renderer2D::Get().EndCanvas();
 }
-void SceneRenderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const Matrix& transform,
-                               const std::vector<MaterialSlot>& materialSlotOverrides,
-                               const std::vector<Matrix>& boneMatrices,
-                               const std::shared_ptr<ShaderAsset>& shaderOverride,
-                               const std::vector<ShaderUniform>& shaderUniformOverrides)
+void SceneRenderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const glm::mat4& transform,
+                              const std::vector<MaterialSlot>& materialSlotOverrides,
+                              const std::vector<glm::mat4>& boneMatrices,
+                              const std::shared_ptr<ShaderAsset>& shaderOverride,
+                              const std::vector<ShaderUniform>& shaderUniformOverrides)
 {
-    if (!modelAsset || modelAsset->GetState() != AssetState::Ready) return;
+    if (!modelAsset || modelAsset->GetState() != AssetState::Ready)
+    {
+        return;
+    }
 
     Model& model = modelAsset->GetModel();
     auto& renderer = Renderer::Get();
-    auto activeShader = shaderOverride ? shaderOverride : (renderer.GetShaderLibrary().Exists("Lighting") ? renderer.GetShaderLibrary().Get("Lighting") : nullptr);
+    auto activeShader =
+        shaderOverride
+            ? shaderOverride
+            : (renderer.GetShaderLibrary().Exists("Lighting") ? renderer.GetShaderLibrary().Get("Lighting") : nullptr);
 
     const auto& instances = modelAsset->GetInstances();
     for (const auto& inst : instances)
     {
         int i = inst.meshIndex;
-        if (i < 0 || i >= model.meshCount) continue;
+        if (i < 0 || i >= (int)model.Meshes.size())
+        {
+            continue;
+        }
 
         // instances are already in model-local space.
-        Matrix meshWorldTransform = MatrixMultiply(inst.localTransform, transform);
+        glm::mat4 meshWorldTransform = transform * inst.localTransform;
 
         m_CurrentStats.DrawCalls++;
         m_CurrentStats.MeshCount++;
-        m_CurrentStats.PolyCount += model.meshes[i].triangleCount;
+        m_CurrentStats.PolyCount += model.Meshes[i].TriangleCount;
 
         Material material = ResolveMaterialForMesh(i, model, materialSlotOverrides);
-        
+
         if (activeShader)
         {
             BindShaderUniforms(activeShader.get(), boneMatrices, shaderUniformOverrides);
             BindMaterialUniforms(activeShader.get(), material, i, model, materialSlotOverrides);
 
-            Shader originalShader = material.shader;
-            material.shader = activeShader->GetShader();
-            
+            uint32_t originalShader = material.ShaderID;
+            material.ShaderID = activeShader->GetShader().id;
+
             // CRITICAL@FIX: If using bone matrices, they already include the local node transform.
             bool useSkinning = !boneMatrices.empty();
-            renderer.DrawMesh(model.meshes[i], material, useSkinning ? transform : meshWorldTransform);
+            activeShader->SetInt("useSkinning", useSkinning ? 1 : 0);
             
-            material.shader = originalShader;
+            renderer.DrawMesh(model.Meshes[i], material, useSkinning ? transform : meshWorldTransform);
+
+            material.ShaderID = originalShader;
         }
         else
         {
-            renderer.DrawMesh(model.meshes[i], material, meshWorldTransform);
+            renderer.DrawMesh(model.Meshes[i], material, meshWorldTransform);
         }
     }
 }
 
-Material SceneRenderer::ResolveMaterialForMesh(int meshIndex, const Model& model, const std::vector<MaterialSlot>& materialSlotOverrides)
+Material SceneRenderer::ResolveMaterialForMesh(int meshIndex, const Model& model,
+                                               const std::vector<MaterialSlot>& materialSlotOverrides)
 {
-    Material material = model.materials[model.meshMaterial[meshIndex]];
+    Material material = model.Materials[model.Meshes[meshIndex].MaterialIndex];
     for (const auto& slot : materialSlotOverrides)
     {
-        bool match = (slot.Target == MaterialSlotTarget::MeshIndex && slot.Index == meshIndex) ||
-                     (slot.Target == MaterialSlotTarget::MaterialIndex && slot.Index == model.meshMaterial[meshIndex]);
+        bool match =
+            (slot.Target == MaterialSlotTarget::MeshIndex && slot.Index == meshIndex) ||
+            (slot.Target == MaterialSlotTarget::MaterialIndex && slot.Index == model.Meshes[meshIndex].MaterialIndex);
         if (match)
         {
-            material.maps[MATERIAL_MAP_ALBEDO].color = slot.Material.AlbedoColor;
+            material.AlbedoColor = {slot.Material.AlbedoColor.r / 255.0f, slot.Material.AlbedoColor.g / 255.0f,
+                                    slot.Material.AlbedoColor.b / 255.0f, slot.Material.AlbedoColor.a / 255.0f};
             if (slot.Material.OverrideAlbedo && !slot.Material.AlbedoPath.empty())
             {
                 auto tex = AssetManager::Get().Get<TextureAsset>(slot.Material.AlbedoPath);
-                if (tex && tex->IsReady()) material.maps[MATERIAL_MAP_ALBEDO].texture = tex->GetTexture();
+                if (tex && tex->IsReady())
+                {
+                    material.AlbedoMap = tex->GetTexture().id;
+                }
             }
+
+            // Update other properties as needed
+            material.EmissiveIntensity = slot.Material.EmissiveIntensity;
+            material.Metalness = slot.Material.Metalness;
+            material.Roughness = slot.Material.Roughness;
             break;
         }
     }
     return material;
 }
 
-void SceneRenderer::BindShaderUniforms(ShaderAsset* activeShader, const std::vector<Matrix>& boneMatrices, const std::vector<ShaderUniform>& shaderUniformOverrides)
+void SceneRenderer::BindShaderUniforms(ShaderAsset* activeShader, const std::vector<glm::mat4>& boneMatrices,
+                                       const std::vector<ShaderUniform>& shaderUniformOverrides)
 {
-    if (!activeShader) return;
+    if (!activeShader)
+    {
+        return;
+    }
     if (!boneMatrices.empty())
     {
         int count = std::min((int)boneMatrices.size(), 128);
-        activeShader->SetMatrices("boneMatrices", boneMatrices.data(), count);
+        activeShader->SetMatrices("boneMatrices", (const Matrix*)glm::value_ptr(boneMatrices[0]), count);
     }
     else
     {
         // For static meshes in animated models using fallback bones, we must provide identities
         // for all potential bone indices (up to 128 as per shader)
-        static std::vector<Matrix> identities;
-        if (identities.empty()) 
+        static std::vector<glm::mat4> identities;
+        if (identities.empty())
         {
-            identities.assign(128, MatrixIdentity());
+            identities.assign(128, glm::mat4(1.0f));
         }
         activeShader->SetMatrices("boneMatrices", identities.data(), 128);
     }
@@ -842,49 +910,54 @@ void SceneRenderer::BindShaderUniforms(ShaderAsset* activeShader, const std::vec
     {
         switch (u.Type)
         {
-            case 0: activeShader->SetFloat(u.Name, u.Value[0]); break;
-            case 1: activeShader->SetVec2(u.Name, {u.Value[0], u.Value[1]}); break;
-            case 2: activeShader->SetVec3(u.Name, {u.Value[0], u.Value[1], u.Value[2]}); break;
-            case 3: activeShader->SetVec4(u.Name, {u.Value[0], u.Value[1], u.Value[2], u.Value[3]}); break;
-            case 4: activeShader->SetColor(u.Name, Color{(unsigned char)(u.Value[0]*255), (unsigned char)(u.Value[1]*255), (unsigned char)(u.Value[2]*255), (unsigned char)(u.Value[3]*255)}); break;
+        case 0:
+            activeShader->SetFloat(u.Name, u.Value[0]);
+            break;
+        case 1:
+            activeShader->SetVec2(u.Name, {u.Value[0], u.Value[1]});
+            break;
+        case 2:
+            activeShader->SetVec3(u.Name, {u.Value[0], u.Value[1], u.Value[2]});
+            break;
+        case 3:
+            activeShader->SetVec4(u.Name, {u.Value[0], u.Value[1], u.Value[2], u.Value[3]});
+            break;
+        case 4:
+            activeShader->SetVec4(u.Name, {u.Value[0], u.Value[1], u.Value[2], u.Value[3]});
+            break;
         }
     }
 }
 
-void SceneRenderer::BindMaterialUniforms(ShaderAsset* activeShader, const Material& material, int meshIndex, const Model& model, const std::vector<MaterialSlot>& materialSlotOverrides)
+void SceneRenderer::BindMaterialUniforms(ShaderAsset* activeShader, const Material& material, int meshIndex,
+                                         const Model& model, const std::vector<MaterialSlot>& materialSlotOverrides)
 {
-    if (!activeShader) return;
-    activeShader->SetInt("useTexture", material.maps[MATERIAL_MAP_ALBEDO].texture.id > 0 ? 1 : 0);
-    activeShader->SetColor("colDiffuse", material.maps[MATERIAL_MAP_ALBEDO].color);
-    activeShader->SetInt("useNormalMap", material.maps[MATERIAL_MAP_NORMAL].texture.id > 0 ? 1 : 0);
-    activeShader->SetInt("useMetallicMap", material.maps[MATERIAL_MAP_METALNESS].texture.id > 0 ? 1 : 0);
-    activeShader->SetInt("useRoughnessMap", material.maps[MATERIAL_MAP_ROUGHNESS].texture.id > 0 ? 1 : 0);
-    activeShader->SetInt("useOcclusionMap", material.maps[MATERIAL_MAP_OCCLUSION].texture.id > 0 ? 1 : 0);
-    activeShader->SetInt("useEmissiveTexture", material.maps[MATERIAL_MAP_EMISSION].texture.id > 0 ? 1 : 0);
-
-    float metalness = material.maps[MATERIAL_MAP_METALNESS].value;
-    float roughness = material.maps[MATERIAL_MAP_ROUGHNESS].value;
-    Color colEmissive = material.maps[MATERIAL_MAP_EMISSION].color;
-    float emissiveIntensity = 0.0f;
-
-    for (const auto& slot : materialSlotOverrides)
+    if (!activeShader)
     {
-        bool match = (slot.Target == MaterialSlotTarget::MeshIndex && slot.Index == meshIndex) ||
-                     (slot.Target == MaterialSlotTarget::MaterialIndex && slot.Index == model.meshMaterial[meshIndex]);
-        if (match)
-        {
-            emissiveIntensity = slot.Material.EmissiveIntensity;
-            if (slot.Material.OverrideEmissive) colEmissive = slot.Material.EmissiveColor;
-            metalness = slot.Material.Metalness;
-            roughness = slot.Material.Roughness;
-            break;
-        }
+        return;
     }
+    activeShader->SetInt("useTexture", material.AlbedoMap > 0 ? 1 : 0);
+    activeShader->SetVec4("colDiffuse", material.AlbedoColor);
+
+    activeShader->SetInt("useNormalMap", material.NormalMap > 0 ? 1 : 0);
+    activeShader->SetInt("useMetallicMap", material.MetallicRoughnessMap > 0 ? 1 : 0);
+    activeShader->SetInt("useRoughnessMap", material.MetallicRoughnessMap > 0 ? 1 : 0);
+    activeShader->SetInt("useOcclusionMap", material.OcclusionMap > 0 ? 1 : 0);
+    activeShader->SetInt("useEmissiveTexture", material.EmissiveMap > 0 ? 1 : 0);
+
+    float metalness = material.Metalness;
+    float roughness = material.Roughness;
+    glm::vec4 colEmissive = material.EmissiveColor;
+    float emissiveIntensity = material.EmissiveIntensity;
 
     activeShader->SetFloat("metalness", metalness);
     activeShader->SetFloat("roughness", roughness);
-    if (emissiveIntensity == 0.0f && (colEmissive.r > 0 || colEmissive.g > 0 || colEmissive.b > 0)) emissiveIntensity = 1.0f;
-    activeShader->SetColor("colEmissive", colEmissive);
+    if (emissiveIntensity == 0.0f && (colEmissive.r > 0 || colEmissive.g > 0 || colEmissive.b > 0))
+    {
+        emissiveIntensity = 1.0f;
+    }
+
+    activeShader->SetVec4("colEmissive", colEmissive);
     activeShader->SetFloat("emissiveIntensity", emissiveIntensity);
 }
 } // namespace CHEngine

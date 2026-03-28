@@ -3,12 +3,15 @@
 
 #include "asset_importer.h"
 #include "engine/graphics/api/model_data.h"
+#include "engine/graphics/pipeline/renderer_types.h"
 #include <filesystem>
 #include <map>
 #include <memory>
 #include <vector>
 
 #include <assimp/scene.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 namespace CHEngine
 {
@@ -21,7 +24,7 @@ struct ProceduralParameters
     float Height = 1.0f;
     int Slices = 16;
     int Stacks = 16;
-    Vector3 Dimensions = {1.0f, 1.0f, 1.0f};
+    glm::vec3 Dimensions = {1.0f, 1.0f, 1.0f};
 };
 
 class MeshImporter : public AssetImporter
@@ -44,10 +47,10 @@ private:
                                           const std::filesystem::path& modelDir);
 
     // Conversion helpers
-    static Matrix ConvertMatrix(const aiMatrix4x4& m);
-    static Vector3 ConvertVector3(const aiVector3D& v);
-    static Quaternion ConvertQuaternion(const aiQuaternion& q);
-    static Color ConvertColor(const aiColor4D& c);
+    static glm::mat4 ConvertMatrix(const aiMatrix4x4& m);
+    static glm::vec3 ConvertVector3(const aiVector3D& v);
+    static glm::quat ConvertQuaternion(const aiQuaternion& q);
+    static glm::vec4 ConvertColor(const aiColor4D& c);
 };
 } // namespace CHEngine
 

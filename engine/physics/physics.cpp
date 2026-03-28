@@ -1,4 +1,3 @@
-
 #include "engine/core/profiler.h"
 #include "engine/core/assets/asset_manager.h"
 #include "engine/graphics/assets/model_asset.h"
@@ -12,6 +11,8 @@
 #include "dynamics.h"
 #include <mutex>
 #include <unordered_map>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "engine/core/application.h"
 
@@ -71,10 +72,7 @@ std::shared_ptr<BVH> PhysicsSystem::GetBVH(const std::string& path)
     if (path.empty()) return nullptr;
     
     auto asset = AssetManager::Get().Get<ModelAsset>(path);
-    if (!asset || asset->GetState() != AssetState::Ready)
-    {
-        return nullptr;
-    }
+    if (!asset || asset->GetState() != AssetState::Ready) return nullptr;
 
     std::lock_guard<std::mutex> lock(m_BVHMutex);
 
@@ -85,57 +83,33 @@ std::shared_ptr<BVH> PhysicsSystem::GetBVH(const std::string& path)
         
         const Model& model = asset->GetModel();
         const auto& instances = asset->GetInstances();
+        const auto& rawMeshes = asset->GetRawMeshes();
         
         std::vector<CollisionTriangle> allTris;
         for (const auto& inst : instances)
         {
-            if (inst.meshIndex < 0 || inst.meshIndex >= model.meshCount)
-                continue;
+            if (inst.meshIndex < 0 || inst.meshIndex >= (int)rawMeshes.size()) continue;
 
-            const Mesh& mesh = model.meshes[inst.meshIndex];
-            if (mesh.vertexCount == 0 || mesh.vertices == nullptr)
-                continue;
-
-            // Use only local transform (model root transform is applied by entity WorldTransform)
-            Matrix meshTransform = inst.localTransform;
-
-            if (mesh.indices != nullptr)
+            const RawMesh& raw = rawMeshes[inst.meshIndex];
+            for (size_t i = 0; i < raw.indices.size(); i += 3)
             {
-                for (int k = 0; k < mesh.triangleCount * 3; k += 3)
-                {
-                    uint32_t idx0 = mesh.indices[k];
-                    uint32_t idx1 = mesh.indices[k + 1];
-                    uint32_t idx2 = mesh.indices[k + 2];
+                uint16_t i0 = raw.indices[i];
+                uint16_t i1 = raw.indices[i + 1];
+                uint16_t i2 = raw.indices[i + 2];
 
-                    allTris.emplace_back(
-                        Vector3Transform({mesh.vertices[idx0 * 3], mesh.vertices[idx0 * 3 + 1], mesh.vertices[idx0 * 3 + 2]}, meshTransform),
-                        Vector3Transform({mesh.vertices[idx1 * 3], mesh.vertices[idx1 * 3 + 1], mesh.vertices[idx1 * 3 + 2]}, meshTransform),
-                        Vector3Transform({mesh.vertices[idx2 * 3], mesh.vertices[idx2 * 3 + 1], mesh.vertices[idx2 * 3 + 2]}, meshTransform),
-                        inst.meshIndex
-                    );
-                }
-            }
-            else
-            {
-                for (int k = 0; k < mesh.vertexCount; k += 3)
-                {
-                    allTris.emplace_back(
-                        Vector3Transform({mesh.vertices[k * 3], mesh.vertices[k * 3 + 1], mesh.vertices[k * 3 + 2]}, meshTransform),
-                        Vector3Transform({mesh.vertices[(k + 1) * 3], mesh.vertices[(k + 1) * 3 + 1], mesh.vertices[(k + 1) * 3 + 2]}, meshTransform),
-                        Vector3Transform({mesh.vertices[(k + 2) * 3], mesh.vertices[(k + 2) * 3 + 1], mesh.vertices[(k + 2) * 3 + 2]}, meshTransform),
-                        inst.meshIndex
-                    );
-                }
+                glm::vec3 v0 = {raw.vertices[i0 * 3], raw.vertices[i0 * 3 + 1], raw.vertices[i0 * 3 + 2]};
+                glm::vec3 v1 = {raw.vertices[i1 * 3], raw.vertices[i1 * 3 + 1], raw.vertices[i1 * 3 + 2]};
+                glm::vec3 v2 = {raw.vertices[i2 * 3], raw.vertices[i2 * 3 + 1], raw.vertices[i2 * 3 + 2]};
+
+                // Transform to instance world space (using localTransform which is MeshGlobal in Assimp)
+                v0 = glm::vec3(inst.localTransform * glm::vec4(v0, 1.0f));
+                v1 = glm::vec3(inst.localTransform * glm::vec4(v1, 1.0f));
+                v2 = glm::vec3(inst.localTransform * glm::vec4(v2, 1.0f));
+
+                allTris.emplace_back(v0, v1, v2, inst.meshIndex);
             }
         }
-
         auto bvh = BVH::Build(std::move(allTris));
-        
-        if (!bvh->GetTriangles().empty())
-        {
-            const auto& tri = bvh->GetTriangles()[0];
-            CH_CORE_TRACE("BVH Built for '{}': Tri0.v0 = ({}, {}, {})", path, tri.v0.x, tri.v0.y, tri.v0.z);
-        }
         
         std::promise<std::shared_ptr<BVH>> promise;
         promise.set_value(bvh);
@@ -143,40 +117,21 @@ std::shared_ptr<BVH> PhysicsSystem::GetBVH(const std::string& path)
         
         return bvh;
     }
-
-    // Return current cached value (gets blocking wait if still building async)
-    if (it->second.valid())
-    {
-        return it->second.get();
-    }
-
-    return nullptr;
+    return it->second.get();
 }
 
 void PhysicsSystem::InvalidateBVH(const std::string& path)
 {
+    if (path.empty()) return;
     std::lock_guard<std::mutex> lock(m_BVHMutex);
     m_BVHCache.erase(path);
-}
-
-void PhysicsSystem::UpdateBVHCache(const std::string& path, std::shared_ptr<BVH> bvh)
-{
-    if (path.empty() || !bvh) return;
-    std::lock_guard<std::mutex> lock(m_BVHMutex);
-
-    std::promise<std::shared_ptr<BVH>> promise;
-    promise.set_value(bvh);
-    m_BVHCache[path] = promise.get_future().share();
 }
 
 PhysicsContext& Physics::GetContext(Scene* scene)
 {
     auto& registry = scene->GetRegistry();
     auto* ctx = registry.ctx().find<PhysicsContext>();
-    if (!ctx)
-    {
-        return registry.ctx().emplace<PhysicsContext>();
-    }
+    if (!ctx) return registry.ctx().emplace<PhysicsContext>();
     return *ctx;
 }
 
@@ -195,29 +150,22 @@ void Physics::Update(Scene* scene, Timestep deltaTime, bool runtime)
     for (auto entity : collView)
         collView.get<ColliderComponent>(entity).IsColliding = false;
 
-    // Update collider sizes/offsets even in editor (for AutoCalculate)
     UpdateColliders(scene);
 
-    if (!runtime)
-        return;
+    if (!runtime) return;
 
-    // Fixed timestep: collisions are fully FPS-independent.
-    // We pick a small step so penetration per tick is small and stable.
-    float fixedTimestep = 1.0f / 120.0f;  // default: 120 Hz physics
+    float fixedTimestep = 1.0f / 120.0f;
     if (auto project = Project::GetActive())
     {
         float cfg = project->GetConfig().Physics.FixedTimestep;
-        if (cfg > 0.0f)
-            fixedTimestep = cfg;
+        if (cfg > 0.0f) fixedTimestep = cfg;
     }
 
     auto& context = GetContext(scene);
     context.Accumulator += (float)deltaTime;
 
-    // Clamp accumulator to prevent spiral-of-death on lag spikes
     const float maxAccumulator = 0.2f;
-    if (context.Accumulator > maxAccumulator)
-        context.Accumulator = maxAccumulator;
+    if (context.Accumulator > maxAccumulator) context.Accumulator = maxAccumulator;
 
     while (context.Accumulator >= fixedTimestep)
     {
@@ -236,8 +184,7 @@ void Physics::UpdateColliders(Scene* scene)
 {
     auto& registry = scene->GetRegistry();
     auto project = Project::GetActive();
-    if (!project)
-        return;
+    if (!project) return;
 
     auto genView = registry.view<ColliderComponent, TransformComponent>();
 
@@ -245,58 +192,32 @@ void Physics::UpdateColliders(Scene* scene)
     {
         auto& collider = genView.get<ColliderComponent>(entity);
 
-        // Case A: Box Collider (Auto)
         if (collider.Type == ColliderType::Box && collider.AutoCalculate)
         {
-            if (!registry.all_of<ModelComponent>(entity))
-                continue;
-
+            if (!registry.all_of<ModelComponent>(entity)) continue;
             auto& model = registry.get<ModelComponent>(entity);
             auto asset = AssetManager::Get().Get<ModelAsset>(model.ModelPath);
 
             if (asset && asset->GetState() == AssetState::Ready)
             {
                 BoundingBox box = asset->GetBoundingBox();
-                collider.Size   = Vector3Subtract(box.max, box.min);
-                collider.Offset = box.min;
+                collider.Size = box.Max - box.Min;
+                collider.Offset = box.Min;
             }
-            continue;
         }
-
-        // Case B: Mesh Collider (BVH)
-        if (collider.Type == ColliderType::Mesh && !collider.ModelPath.empty())
+        else if (collider.Type == ColliderType::Sphere && collider.AutoCalculate)
         {
-            auto asset = AssetManager::Get().Get<ModelAsset>(collider.ModelPath);
-
-            if (asset && asset->GetState() == AssetState::Ready && asset->GetModel().meshCount > 0)
-            {
-                if (collider.AutoCalculate)
-                {
-                    BoundingBox box = asset->GetBoundingBox();
-                    collider.Offset = box.min;
-                    collider.Size   = Vector3Subtract(box.max, box.min);
-                }
-            }
-            continue;
-        }
-
-        // Case C: Sphere Collider (Auto)
-        if (collider.Type == ColliderType::Sphere && collider.AutoCalculate)
-        {
-            if (!registry.all_of<ModelComponent>(entity))
-                continue;
-
+            if (!registry.all_of<ModelComponent>(entity)) continue;
             auto& model = registry.get<ModelComponent>(entity);
             auto asset = AssetManager::Get().Get<ModelAsset>(model.ModelPath);
 
             if (asset && asset->GetState() == AssetState::Ready)
             {
                 BoundingBox box = asset->GetBoundingBox();
-                Vector3 size = Vector3Subtract(box.max, box.min);
-                collider.Radius = fmaxf(size.x, fmaxf(size.y, size.z)) * 0.5f;
-                collider.Offset = Vector3Scale(Vector3Add(box.min, box.max), 0.5f);
+                glm::vec3 sz = box.Max - box.Min;
+                collider.Radius = glm::max(sz.x, glm::max(sz.y, sz.z)) * 0.5f;
+                collider.Offset = (box.Min + box.Max) * 0.5f;
             }
-            continue;
         }
     }
 }
@@ -308,16 +229,12 @@ void Physics::ResolveSimulation(Scene* scene, Timestep deltaTime)
     std::vector<entt::entity> rbEntities;
     rbEntities.reserve(rbView.size_hint());
 
-    for (auto entity : rbView)
+    for (auto entity : rbView) rbEntities.push_back(entity);
+
+    if (!rbEntities.empty())
     {
-        rbEntities.push_back(entity);
+        Dynamics::Update(registry, rbEntities, deltaTime);
+        NarrowPhase::ResolveCollisions(registry, rbEntities);
     }
-
-    if (rbEntities.empty())
-        return;
-
-    Dynamics::Update(registry, rbEntities, deltaTime);
-    NarrowPhase::ResolveCollisions(registry, rbEntities);
 }
-
 } // namespace CHEngine

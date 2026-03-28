@@ -10,6 +10,15 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <glm/glm.hpp>
+
+struct Camera3D;
+struct Texture; // Raylib's Texture2D is a typedef of Texture
+struct Mesh;
+struct Material;
+struct Model;
+struct Color;
+struct BoundingBox;
 
 namespace CHEngine
 {
@@ -30,9 +39,9 @@ struct SceneRenderOptions
 
 struct EditorResourcesData
 {
-    Texture2D LightIcon = {0};
-    Texture2D SpawnIcon = {0};
-    Texture2D CameraIcon = {0};
+    unsigned int LightIconId = 0;
+    unsigned int SpawnIconId = 0;
+    unsigned int CameraIconId = 0;
 };
 
 class SceneRenderer
@@ -57,7 +66,7 @@ private:
     struct AnimatedEntry
     {
         std::shared_ptr<class ModelAsset> asset;
-        Matrix worldTransform;
+        glm::mat4 worldTransform;
         std::vector<MaterialSlot> materials;
         std::shared_ptr<class ShaderAsset> shaderOverride;
         std::vector<ShaderUniform> customUniforms;
@@ -80,7 +89,7 @@ private:
     struct InstanceGroup
     {
         std::shared_ptr<class ModelAsset> asset;
-        std::vector<Matrix> transforms;
+        std::vector<glm::mat4> transforms;
         std::vector<MaterialSlot> materials;
     };
 
@@ -92,29 +101,29 @@ private:
     void DrawAnimatedEntities(const std::vector<AnimatedEntry>& animatedEntries, const SceneRenderOptions& options);
     void DrawStaticEntities(std::unordered_map<InstanceKey, InstanceGroup, InstanceKeyHash>& instanceGroups);
 
-    void DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const Matrix& transform,
+    void DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const glm::mat4& transform,
                    const std::vector<MaterialSlot>& materialSlotOverrides = {},
-                   const std::vector<Matrix>& boneMatrices = {},
+                   const std::vector<glm::mat4>& boneMatrices = {},
                    const std::shared_ptr<ShaderAsset>& shaderOverride = nullptr,
                    const std::vector<ShaderUniform>& shaderUniformOverrides = {});
 
-    Material ResolveMaterialForMesh(int meshIndex, const Model& model,
+    Material ResolveMaterialForMesh(int meshIndex, const struct Model& model,
                                     const std::vector<MaterialSlot>& materialSlotOverrides);
 
-    void BindShaderUniforms(ShaderAsset* shader, const std::vector<Matrix>& boneMatrices,
+    void BindShaderUniforms(ShaderAsset* shader, const std::vector<glm::mat4>& boneMatrices,
                             const std::vector<ShaderUniform>& shaderUniformOverrides);
 
-    void BindMaterialUniforms(ShaderAsset* shader, const Material& material, int meshIndex,
-                              const Model& model, const std::vector<MaterialSlot>& materialSlotOverrides);
+    void BindMaterialUniforms(ShaderAsset* shader, const struct Material& material, int meshIndex,
+                              const struct Model& model, const std::vector<MaterialSlot>& materialSlotOverrides);
 
     void DrawColliderDebug(entt::registry& registry, const SceneRenderOptions& options);
     void DrawCollisionModelBoxDebug(entt::registry& registry, const SceneRenderOptions& options);
     void DrawSpawnDebug(entt::registry& registry, const SceneRenderOptions& options);
 
-    static BoundingBox CalculateColliderWorldAABB(const ColliderComponent& collider, const Matrix& worldTransform);
+    static struct BoundingBox CalculateColliderWorldAABB(const ColliderComponent& collider, const glm::mat4& worldTransform);
 
-    static Matrix GetWorldTransform(entt::registry& registry, entt::entity entity);
-    static Vector3 GetWorldPosition(entt::registry& registry, entt::entity entity);
+    static glm::mat4 GetWorldTransform(entt::registry& registry, entt::entity entity);
+    static glm::vec3 GetWorldPosition(entt::registry& registry, entt::entity entity);
 
 private:
     EditorResourcesData m_EditorResources;

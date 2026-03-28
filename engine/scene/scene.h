@@ -2,7 +2,8 @@
 #define CH_SCENE_H
 
 #include "components.h"
-#include "engine/core/assert.h"
+#include "engine/graphics/api/camera_types.h"
+#include "engine/core/ch_assert.h"
 #include "engine/core/base.h"
 #include "engine/core/events.h"
 #include "engine/core/timestep.h"
@@ -11,7 +12,6 @@
 #include "entt/entt.hpp"
 #include <memory>
 #include <optional>
-#include <raylib.h>
 #include <string>
 #include <unordered_map>
 #include <vector>

@@ -1,16 +1,16 @@
-#ifndef CH_RAYLIB_VERTEX_ARRAY_H
-#define CH_RAYLIB_VERTEX_ARRAY_H
+#ifndef CH_OPENGL_VERTEX_ARRAY_H
+#define CH_OPENGL_VERTEX_ARRAY_H
 
 #include "engine/graphics/api/vertex_array.h"
 
 namespace CHEngine
 {
 
-class RaylibVertexArray : public VertexArray
+class OpenGLVertexArray : public VertexArray
 {
 public:
-    RaylibVertexArray();
-    virtual ~RaylibVertexArray();
+    OpenGLVertexArray();
+    virtual ~OpenGLVertexArray();
 
     virtual void Bind() const override;
     virtual void Unbind() const override;
@@ -29,4 +29,4 @@ private:
 
 } // namespace CHEngine
 
-#endif // CH_RAYLIB_VERTEX_ARRAY_H
+#endif // CH_OPENGL_VERTEX_ARRAY_H

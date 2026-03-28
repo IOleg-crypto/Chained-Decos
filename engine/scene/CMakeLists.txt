@@ -51,16 +51,9 @@ target_include_directories(engine_scene PUBLIC
 )
 
 target_link_libraries(engine_scene PUBLIC 
-    raylib 
     yaml-cpp
-    EnTT
+    EnTT::EnTT
 )
-
-if(MSVC)
-    target_compile_options(engine_scene PRIVATE /bigobj)
-elseif(MINGW)
-    target_compile_options(engine_scene PRIVATE -Wa,-mbig-obj)
-endif()
 
 if(COMMAND apply_engine_optimizations)
     apply_engine_optimizations(engine_scene)

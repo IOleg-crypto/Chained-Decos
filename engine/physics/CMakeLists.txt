@@ -25,8 +25,7 @@ target_include_directories(engine_physics PUBLIC
 )
 
 target_link_libraries(engine_physics PUBLIC 
-    raylib 
-    EnTT
+    EnTT::EnTT
 )
 
 if(MSVC)

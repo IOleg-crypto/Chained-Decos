@@ -12,7 +12,8 @@
 
 namespace CHEngine
 {
-// Розширюємо рівні логування для повної відповідності Raylib/Editor
+// Extend log levels for engine/editor compatibility
+
 enum class ConsoleLogLevel : uint32_t
 {
     Trace = 0,

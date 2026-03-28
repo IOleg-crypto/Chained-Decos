@@ -1,5 +1,5 @@
 #include "shader_library.h"
-#include "engine/core/assert.h"
+#include "engine/core/ch_assert.h"
 #include "engine/core/log.h"
 #include "engine/core/assets/asset_manager.h"
 #include "engine/scene/project.h"

@@ -4,9 +4,11 @@ namespace CHEngine
 {
 FontAsset::~FontAsset()
 {
-    if (m_Font.texture.id > 0)
+    // For now, we don't have a specific font texture unloader in the native renderer
+    // We should handle this through the TextureManager if it was managed there.
+    if (m_Font.textureId > 0)
     {
-        UnloadFont(m_Font);
+        // Renderer::UnloadTexture(m_Font.textureId);
     }
 }
 } // namespace CHEngine

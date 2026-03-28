@@ -9,8 +9,8 @@ namespace CHEngine
 	{
 		enum : KeyCode
 		{
-			// From raylib.h
-			Null            = 0,        // Key: NULL, used for no key pressed
+			// Generic key codes (compatible with GLFW)
+			Null            = 0,        
 			// Alphanumeric keys
 			A               = 65,       // Key: A | a
 			B               = 66,       // Key: B | b

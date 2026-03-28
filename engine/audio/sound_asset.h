@@ -2,11 +2,19 @@
 #define CH_SOUND_ASSET_H
 #include "engine/core/base.h"
 #include "engine/core/assets/asset.h"
-#include "raylib.h"
 #include <string>
+#include <vector>
 
 namespace CHEngine
 {
+struct SoundData {
+    void* maSound = nullptr; // ma_sound*
+};
+struct WaveData {
+    void* maDecoder = nullptr; // ma_decoder*
+};
+
+
 class SoundAsset : public Asset
 {
 public:
@@ -19,34 +27,29 @@ public:
         : Asset(GetStaticType())
     {
     }
-    SoundAsset(const Sound &sound)
-        : Asset(GetStaticType()),
-          m_Sound(sound)
-    {
-    }
     ~SoundAsset() override;
 
     void UploadToGPU();
 
     // For internal use by AudioImporter
-    void SetPendingWave(Wave wave)
+    void SetPendingWave(WaveData wave)
     {
         m_PendingWave = wave;
         m_HasPendingWave = true;
     }
 
-    Sound& GetSound()
+    SoundData& GetSound()
     {
         return m_Sound;
     }
-    const Sound& GetSound() const
+    const SoundData& GetSound() const
     {
         return m_Sound;
     }
 
 private:
-    Sound m_Sound = {0};
-    Wave m_PendingWave = {0};
+    SoundData m_Sound;
+    WaveData m_PendingWave;
     bool m_HasPendingWave = false;
 };
 } // namespace CHEngine

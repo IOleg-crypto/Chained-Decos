@@ -4,7 +4,8 @@
 #include "engine/scene/components.h"
 #include "engine/scene/scene_events.h"
 #include "engine/scene/scene_settings.h"
-#include "extras/IconsFontAwesome6.h"
+#include "imgui/IconsFontAwesome6.h"
+
 #include "imgui.h"
 #include "undo/entity_commands.h"
 #include "editor_events.h"
@@ -96,7 +97,9 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
         }
 
         // Focus Shortcut
-        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) && Input::IsKeyPressed(KeyboardKey::KEY_F))
+        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) && Input::IsKeyPressed(Key::F))
+
+
         {
             Entity selected = EditorContext::GetSelectedEntity();
             if (selected)
@@ -107,8 +110,10 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
         }
 
         // Duplicate Shortcut
-        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) && Input::IsKeyDown(KeyboardKey::KEY_LEFT_CONTROL) &&
-            Input::IsKeyPressed(KeyboardKey::KEY_D))
+        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) && Input::IsKeyDown(Key::LeftControl) &&
+            Input::IsKeyPressed(Key::D))
+
+
         {
             Entity selected = EditorContext::GetSelectedEntity();
             if (selected)

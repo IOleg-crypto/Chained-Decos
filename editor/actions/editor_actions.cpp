@@ -29,8 +29,8 @@ bool EditorActions::OnKeyPressed(KeyPressedEvent& e)
         return false;
     }
 
-    bool ctrl = Input::IsKeyDown(KeyboardKey::KEY_LEFT_CONTROL) || Input::IsKeyDown(KeyboardKey::KEY_RIGHT_CONTROL);
-    bool shift = Input::IsKeyDown(KeyboardKey::KEY_LEFT_SHIFT) || Input::IsKeyDown(KeyboardKey::KEY_RIGHT_SHIFT);
+    bool ctrl = Input::IsKeyDown(Key::LeftControl) || Input::IsKeyDown(Key::RightControl);
+    bool shift = Input::IsKeyDown(Key::LeftShift) || Input::IsKeyDown(Key::RightShift);
 
     auto keyCode = e.GetKeyCode();
 
@@ -38,13 +38,13 @@ bool EditorActions::OnKeyPressed(KeyPressedEvent& e)
     {
         switch (keyCode)
         {
-        case KEY_N:
+        case Key::N:
             SceneActions::New();
             return true;
-        case KEY_O:
+        case Key::O:
             SceneActions::Open();
             return true;
-        case KEY_S:
+        case Key::S:
             if (shift)
             {
                 SceneActions::SaveAs();
@@ -54,16 +54,16 @@ bool EditorActions::OnKeyPressed(KeyPressedEvent& e)
                 SceneActions::Save();
             }
             return true;
-        case KEY_Z:
+        case Key::Z:
             EditorLayer::GetCommandHistory().Undo();
             return true;
-        case KEY_Y:
+        case Key::Y:
             EditorLayer::GetCommandHistory().Redo();
             return true;
         }
     }
 
-    if (keyCode == KEY_F5)
+    if (keyCode == Key::F5)
     {
         ProjectActions::LaunchStandalone();
         return true;

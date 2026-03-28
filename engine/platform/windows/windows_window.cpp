@@ -1,13 +1,17 @@
 #include "windows_window.h"
 #include "engine/core/log.h"
+#include "engine/core/ch_assert.h"
 
-#ifndef GLFW_INCLUDE_NONE
-#define GLFW_INCLUDE_NONE
-#endif
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
 namespace CHEngine
 {
+
+static void GLFWErrorCallback(int error, const char* description)
+{
+    CH_CORE_ERROR("GLFW Error ({0}): {1}", error, description);
+}
 
 std::unique_ptr<Window> Window::Create(const WindowProperties& properties)
 {
@@ -33,65 +37,70 @@ void WindowsWindow::Init(const WindowProperties& properties)
 
     CH_CORE_INFO("Initializing Windows Window: {} ({}x{})", m_Title, m_Width, m_Height);
 
-    unsigned int flags = FLAG_MSAA_4X_HINT;
-    if (properties.Resizable)
+    static bool s_GLFWInitialized = false;
+    if (!s_GLFWInitialized)
     {
-        flags |= FLAG_WINDOW_RESIZABLE;
-    }
-    if (properties.Fullscreen)
-    {
-        flags |= FLAG_FULLSCREEN_MODE;
-    }
-
-    SetConfigFlags(flags);
-    InitWindow(m_Width, m_Height, m_Title.c_str());
-
-    if (m_VSync)
-    {
-        SetTargetFramesPerSecond(GetMonitorRefreshRate(GetCurrentMonitor()));
-    }
-    else
-    {
-        SetTargetFramesPerSecond(properties.TargetFramesPerSecond);
+        int success = glfwInit();
+        CH_CORE_ASSERT(success, "Could not initialize GLFW!");
+        glfwSetErrorCallback(GLFWErrorCallback);
+        s_GLFWInitialized = true;
     }
 
-    m_WindowHandle = glfwGetCurrentContext();
-    SetExitKey(KEY_NULL);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    m_WindowHandle = glfwCreateWindow((int)m_Width, (int)m_Height, m_Title.c_str(), nullptr, nullptr);
+    CH_CORE_ASSERT(m_WindowHandle, "Failed to create GLFW window!");
+
+    glfwMakeContextCurrent(m_WindowHandle);
+    int status = gladLoadGL((GLADloadfunc)glfwGetProcAddress);
+    CH_CORE_ASSERT(status, "Failed to initialize Glad!");
+
+    CH_CORE_INFO("OpenGL Info:");
+    CH_CORE_INFO("  Vendor: {0}", (const char*)glGetString(GL_VENDOR));
+    CH_CORE_INFO("  Renderer: {0}", (const char*)glGetString(GL_RENDERER));
+    CH_CORE_INFO("  Version: {0}", (const char*)glGetString(GL_VERSION));
+
+    SetVSync(m_VSync);
 }
 
 void WindowsWindow::Shutdown()
 {
-    CloseWindow();
+    if (m_WindowHandle)
+    {
+        glfwDestroyWindow(m_WindowHandle);
+    }
     CH_CORE_INFO("Windows Window Closed");
 }
 
 void WindowsWindow::BeginFrame()
 {
-    BeginDrawing();
-    ClearBackground(DARKGRAY);
+    // No-op for now as Renderer handles clears
 }
 
 void WindowsWindow::EndFrame()
 {
-    EndDrawing();
+    glfwSwapBuffers(m_WindowHandle);
+    glfwPollEvents();
 }
 
 bool WindowsWindow::ShouldClose() const
 {
-    return WindowShouldClose();
+    return glfwWindowShouldClose(m_WindowHandle);
 }
 
 void WindowsWindow::SetTitle(const std::string& title)
 {
     m_Title = title;
-    SetWindowTitle(m_Title.c_str());
+    glfwSetWindowTitle(m_WindowHandle, m_Title.c_str());
 }
 
 void WindowsWindow::SetSize(int width, int height)
 {
     m_Width = width;
     m_Height = height;
-    SetWindowSize(m_Width, m_Height);
+    glfwSetWindowSize(m_WindowHandle, m_Width, m_Height);
 }
 
 void WindowsWindow::SetSizeDirect(int width, int height)
@@ -102,49 +111,54 @@ void WindowsWindow::SetSizeDirect(int width, int height)
 
 void WindowsWindow::ToggleFullscreen()
 {
-    ::ToggleFullscreen();
+    // Simplified fullscreen toggle
+    static bool isFullscreen = false;
+    static int windowedX, windowedY, windowedW, windowedH;
+
+    if (!isFullscreen)
+    {
+        glfwGetWindowPos(m_WindowHandle, &windowedX, &windowedY);
+        glfwGetWindowSize(m_WindowHandle, &windowedW, &windowedH);
+
+        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+        glfwSetWindowMonitor(m_WindowHandle, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+        isFullscreen = true;
+    }
+    else
+    {
+        glfwSetWindowMonitor(m_WindowHandle, nullptr, windowedX, windowedY, windowedW, windowedH, 0);
+        isFullscreen = false;
+    }
 }
 
 void WindowsWindow::SetFullscreen(bool enabled)
 {
-    if (IsWindowFullscreen() != enabled)
-    {
-        ::ToggleFullscreen();
-    }
+    // Logic similar to ToggleFullscreen
 }
 
 void WindowsWindow::SetVSync(bool enabled)
 {
     m_VSync = enabled;
     if (m_VSync)
-    {
-        SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
-    }
+        glfwSwapInterval(1);
+    else
+        glfwSwapInterval(0);
 }
 
 void WindowsWindow::SetAntialiasing(bool enabled)
 {
-    if (enabled)
-    {
-        SetWindowState(FLAG_MSAA_4X_HINT);
-    }
-    else
-    {
-        ClearWindowState(FLAG_MSAA_4X_HINT);
-    }
+    // MSAA is usually set via window hints before creation
 }
 
 void WindowsWindow::SetTargetFramesPerSecond(int framesPerSecond)
 {
-    if (!m_VSync)
-    {
-        SetTargetFPS(framesPerSecond);
-    }
+    // Not directly supported by GLFW, usually handled by custom timing loop
 }
 
-void WindowsWindow::SetWindowIcon(Image icon)
-{
-    ::SetWindowIcon(icon);
-}
+// void WindowsWindow::SetWindowIcon(const std::string& path)
+// {
+//     // Implementation with stbi_load or similar
+// }
 
 } // namespace CHEngine

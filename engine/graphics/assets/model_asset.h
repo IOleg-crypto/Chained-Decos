@@ -4,7 +4,7 @@
 #include "engine/core/assets/asset.h"
 #include "engine/core/base.h"
 #include "engine/graphics/api/model_data.h"
-#include "raylib.h"
+#include "engine/graphics/pipeline/renderer_types.h"
 #include <future>
 #include <mutex>
 #include <string>
@@ -35,7 +35,7 @@ public:
         m_HasPendingData = true;
     }
 
-    void SetModel(Model model)
+    void SetModel(const Model& model)
     {
         m_Model = model;
     }
@@ -61,7 +61,7 @@ public:
     }
 
     std::vector<std::shared_ptr<class TextureAsset>> GetTextures() const;
-    const std::vector<Matrix>& GetOffsetMatrices() const
+    const std::vector<glm::mat4>& GetOffsetMatrices() const
     {
         return m_OffsetMatrices;
     }
@@ -69,16 +69,14 @@ public:
     {
         return m_Instances;
     }
-    const std::vector<Matrix>& GetGlobalNodeTransforms() const
-    {
-        return m_GlobalNodeTransforms;
-    }
+    const std::vector<RawMesh>& GetRawMeshes() const { return m_RawMeshes; }
+    void SetRawMeshes(const std::vector<RawMesh>& meshes) { m_RawMeshes = meshes; }
 
-    std::vector<Matrix> ComputeAnimationPose(int animationIndex, float frameIndex, int targetAnimationIndex = -1,
-                                            float targetFrameIndex = 0.0f, float blendWeight = 0.0f);
+    std::vector<glm::mat4> ComputeAnimationPose(int animationIndex, float frameIndex, int targetAnimationIndex = -1,
+                                             float targetFrameIndex = 0.0f, float blendWeight = 0.0f);
 
 private:
-    Model m_Model = {0};
+    Model m_Model;
     std::vector<RawAnimation> m_Animations;
     std::vector<std::shared_ptr<class TextureAsset>> m_Textures;
 
@@ -86,10 +84,10 @@ private:
     std::vector<MeshInstance> m_Instances;
     
     // Skeleton data (only for animation system)
-    std::vector<Matrix> m_OffsetMatrices;
+    std::vector<glm::mat4> m_OffsetMatrices;
     std::vector<std::string> m_NodeNames;
     std::vector<int> m_NodeParents;
-    std::vector<Matrix> m_GlobalNodeTransforms;
+    std::vector<glm::mat4> m_GlobalNodeTransforms;
 
     mutable std::mutex m_ModelMutex; // Protect Model access during async loading
 
@@ -99,6 +97,7 @@ private:
     // Track textures that are still loading
     std::vector<PendingTexture> m_PendingTextures;
 
+    std::vector<RawMesh> m_RawMeshes;
     BoundingBox m_BoundingBox = {{0, 0, 0}, {0, 0, 0}};
 };
 } // namespace CHEngine

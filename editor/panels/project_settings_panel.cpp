@@ -3,7 +3,7 @@
 #include "engine/scene/project_serializer.h"
 #include "imgui.h"
 #include "engine/core/dialogs.h"
-#include "rlImGui/extras/IconsFontAwesome6.h"
+#include "imgui/IconsFontAwesome6.h"
 #include <format>
 
 namespace CHEngine

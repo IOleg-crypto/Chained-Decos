@@ -3,9 +3,10 @@
 
 #include "engine/core/base.h"
 #include "engine/core/assets/asset.h"
-#include "raylib.h"
 #include <future>
 #include <string>
+
+#include <glm/glm.hpp>
 
 namespace CHEngine
 {
@@ -25,10 +26,10 @@ struct ColliderComponent
     bool Enabled = true;
 
     // Common/Box fields
-    Vector3 Offset = {0.0f, 0.0f, 0.0f};
+    glm::vec3 Offset = {0.0f, 0.0f, 0.0f};
 
     // Box
-    Vector3 Size = {1.0f, 1.0f, 1.0f};
+    glm::vec3 Size = {1.0f, 1.0f, 1.0f};
 
     // Capsule
     float Radius = 0.5f;
@@ -48,7 +49,7 @@ struct ColliderComponent
 
 struct RigidBodyComponent
 {
-    Vector3 Velocity = {0.0f, 0.0f, 0.0f};
+    glm::vec3 Velocity = {0.0f, 0.0f, 0.0f};
     bool UseGravity = true;
     bool IsGrounded = false;
     bool IsKinematic = false;
