@@ -222,6 +222,7 @@ void Application::Run()
         if (auto project = Project::GetActive())
         {
             AssetManager::Get().Update();
+            Audio::Get().Update(m_DeltaTime);
         }
 
         // 4. Layers Update & Rendering

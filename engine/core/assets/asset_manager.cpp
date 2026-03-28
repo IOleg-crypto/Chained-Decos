@@ -407,7 +407,8 @@ void AssetManager::Update()
         }
         else if (asset->GetType() == AssetType::Audio)
         {
-            std::static_pointer_cast<SoundAsset>(asset)->UploadToGPU();
+            // Audio assets don't need explicit uploading in the new decoupled system
+            asset->SetState(AssetState::Ready);
         }
         CH_CORE_TRACE("AssetManager: Background load completed and uploaded to GPU for '{}'", asset->GetPath());
     }
