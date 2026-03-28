@@ -100,6 +100,7 @@ private:
 private: // Update Logic
     void UpdatePhysics(Timestep deltaTime);
     void UpdateAnimations(Timestep deltaTime);
+    void UpdateAudio(Timestep deltaTime);
     void UpdateHierarchy();
 
     friend class Entity;

@@ -39,15 +39,13 @@ namespace CHEngine {
     // ── Audio ─────────────────────────────────────────────────────────────
     CH_SCRIPT_FUNC void Audio_Play(Coral::String path, float volume, float pitch, bool loop) {
         if (Project::GetActive() != nullptr) {
-            auto asset = AssetManager::Get().Get<SoundAsset>((std::string)path);
-            if (asset) Audio::Get().Play(asset, volume, pitch, loop);
+            Audio::Get().Play((std::string)path, volume, pitch, loop);
         }
     }
 
     CH_SCRIPT_FUNC void Audio_Stop(Coral::String path) {
         if (Project::GetActive() != nullptr) {
-            auto asset = AssetManager::Get().Get<SoundAsset>((std::string)path);
-            if (asset) Audio::Get().Stop(asset);
+            Audio::Get().Stop((std::string)path);
         }
     }
 

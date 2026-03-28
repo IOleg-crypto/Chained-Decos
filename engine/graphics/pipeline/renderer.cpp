@@ -434,7 +434,7 @@ void Renderer::DrawSkybox(const SkyboxSettings& settings, const Camera3D& camera
         return;
 
     bool isCubemap = (settings.Mode == 2);
-    auto shaderAsset = isCubemap && m_Data->Shaders->Exists("SkyboxCubemap") ? 
+    auto shaderAsset = isCubemap ? 
                        m_Data->Shaders->Get("SkyboxCubemap") : 
                        m_Data->Shaders->Get("Skybox");
     if (!shaderAsset) return;
@@ -448,24 +448,13 @@ void Renderer::DrawSkybox(const SkyboxSettings& settings, const Camera3D& camera
             m_Data->Skybox.CachedCubemapPath != settings.TexturePath ||
             m_Data->Skybox.SourceTextureId != texId)
         {
-            if (m_Data->Shaders->Exists("CubemapGen"))
+            auto genShaderAsset = m_Data->Shaders->Get("CubemapGen");
+            if (genShaderAsset)
             {
-                if (m_Data->Skybox.CachedCubemapId != 0) {
-                    glDeleteTextures(1, &m_Data->Skybox.CachedCubemapId);
-                }
-
-                auto genShaderAsset = m_Data->Shaders->Get("CubemapGen");
-                
+                if (m_Data->Skybox.CachedCubemapId != 0) glDeleteTextures(1, &m_Data->Skybox.CachedCubemapId);
                 m_Data->Skybox.CachedCubemapId = GenTextureCubemap(genShaderAsset->GetShader().id, texture->GetTexture().id, 1024);
                 m_Data->Skybox.CachedCubemapPath = settings.TexturePath;
                 m_Data->Skybox.SourceTextureId = texId;
-                
-                glBindTexture(GL_TEXTURE_CUBE_MAP, m_Data->Skybox.CachedCubemapId);
-                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
             }
         }
     }
@@ -478,43 +467,33 @@ void Renderer::DrawSkybox(const SkyboxSettings& settings, const Camera3D& camera
     // 3. Setup Uniforms
     glUseProgram(shaderId);
     
-    glUniformMatrix4fv(glGetUniformLocation(shaderId, "projection"), 1, GL_FALSE, glm::value_ptr(m_Data->CurrentProj));
-    
-    if (isCubemap)
-    {
-        // Remove translation from view matrix for cubemap skybox
-        glm::mat4 view = glm::mat4(glm::mat3(m_Data->CurrentView));
-        glUniformMatrix4fv(glGetUniformLocation(shaderId, "view"), 1, GL_FALSE, glm::value_ptr(view));
-    }
-    else
-    {
-        glUniformMatrix4fv(glGetUniformLocation(shaderId, "view"), 1, GL_FALSE, glm::value_ptr(m_Data->CurrentView));
-    }
+    // Always remove translation from view matrix for skybox
+    glm::mat4 view = glm::mat4(glm::mat3(m_Data->CurrentView));
+    glUniformMatrix4fv(glGetUniformLocation(shaderId, "u_View"), 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(glGetUniformLocation(shaderId, "u_Projection"), 1, GL_FALSE, glm::value_ptr(m_Data->CurrentProj));
 
-    glUniform1f(glGetUniformLocation(shaderId, "exposure"), settings.Exposure);
-    glUniform1f(glGetUniformLocation(shaderId, "brightness"), settings.Brightness);
-    glUniform1f(glGetUniformLocation(shaderId, "contrast"), settings.Contrast);
+    glUniform1f(glGetUniformLocation(shaderId, "u_Exposure"), settings.Exposure);
+    glUniform1f(glGetUniformLocation(shaderId, "u_Brightness"), settings.Brightness);
+    glUniform1f(glGetUniformLocation(shaderId, "u_Contrast"), settings.Contrast);
     
     int isHDR = texture->IsHDR() ? 1 : 0;
-    glUniform1i(glGetUniformLocation(shaderId, "isHDR"), isHDR);
-    glUniform1i(glGetUniformLocation(shaderId, "skyboxMode"), settings.Mode);
-    glUniform1i(glGetUniformLocation(shaderId, "vflipped"), 1);
+    glUniform1i(glGetUniformLocation(shaderId, "u_IsHDR"), isHDR);
+    glUniform1i(glGetUniformLocation(shaderId, "u_VFlipped"), isCubemap ? 0 : 1);
 
     ApplyFogUniforms(shaderId);
 
-    // 4. Bind Textures and Draw
+    // 4. Bind Textures and Draw Mesh
     if (isCubemap)
     {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, m_Data->Skybox.CachedCubemapId);
-        glUniform1i(glGetUniformLocation(shaderId, "environmentMap"), 0);
+        glUniform1i(glGetUniformLocation(shaderId, "u_Cubemap"), 0);
 
-        // Draw Skybox Cube (Correct way for cubemaps)
-        if (m_Data->Skybox.SkyboxModel && !m_Data->Skybox.SkyboxModel->Meshes.empty())
+        if (m_Data->Skybox.SkyboxCubeModel && !m_Data->Skybox.SkyboxCubeModel->Meshes.empty())
         {
-            auto& mesh = m_Data->Skybox.SkyboxModel->Meshes[0];
+            auto& mesh = m_Data->Skybox.SkyboxCubeModel->Meshes[0];
             mesh.VAO->Bind();
-            glDrawElements(GL_TRIANGLES, mesh.TriangleCount * 3, GL_UNSIGNED_INT, 0);
+            glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
             mesh.VAO->Unbind();
         }
     }
@@ -522,14 +501,14 @@ void Renderer::DrawSkybox(const SkyboxSettings& settings, const Camera3D& camera
     {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture->GetTexture().id);
-        glUniform1i(glGetUniformLocation(shaderId, "texture0"), 0);
+        glUniform1i(glGetUniformLocation(shaderId, "u_Panorama"), 0);
 
-        // Draw Fullscreen Quad (Standard way for panoramas)
-        if (m_Data->FullscreenQuadVAO)
+        if (m_Data->Skybox.SkyboxSphereModel && !m_Data->Skybox.SkyboxSphereModel->Meshes.empty())
         {
-            m_Data->FullscreenQuadVAO->Bind();
-            RenderCommand::DrawIndexed(m_Data->FullscreenQuadVAO);
-            m_Data->FullscreenQuadVAO->Unbind();
+            auto& mesh = m_Data->Skybox.SkyboxSphereModel->Meshes[0];
+            mesh.VAO->Bind();
+            glDrawElements(GL_TRIANGLES, mesh.TriangleCount * 3, GL_UNSIGNED_INT, 0);
+            mesh.VAO->Unbind();
         }
     }
 
@@ -731,11 +710,10 @@ void Renderer::ApplyFogUniforms(uint32_t shaderId)
 
 void Renderer::InitializeSkybox()
 {
-    m_Data->Skybox.SkyboxModel = std::make_unique<Model>();
-    
-    // Manual Cube Generation for OpenGL
+    // 1. Cube Generation
+    m_Data->Skybox.SkyboxCubeModel = std::make_unique<Model>();
     float s = 1.0f;
-    float vertices[] = {
+    float cubeVertices[] = {
         -s, -s,  s,  s, -s,  s,  s,  s,  s, -s,  s,  s, // Front
         -s, -s, -s, -s,  s, -s,  s,  s, -s,  s, -s, -s, // Back
         -s,  s, -s, -s,  s,  s,  s,  s,  s,  s,  s, -s, // Top
@@ -743,24 +721,76 @@ void Renderer::InitializeSkybox()
          s, -s, -s,  s,  s, -s,  s,  s,  s,  s, -s,  s, // Right
         -s, -s, -s, -s, -s,  s, -s,  s,  s, -s,  s, -s  // Left
     };
-    uint32_t indices[] = {
+    uint32_t cubeIndices[] = {
         0,1,2,  2,3,0,   4,5,6,  6,7,4,   8,9,10, 10,11,8,
         12,13,14, 14,15,12, 16,17,18, 18,19,16, 20,21,22, 22,23,20
     };
-    
     Mesh cubeMesh;
     cubeMesh.VertexCount = 24;
     cubeMesh.TriangleCount = 12;
     cubeMesh.VAO = VertexArray::Create();
-    
-    auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
-    vbo->SetLayout({ { ShaderDataType::Float3, "a_Position" } });
-    cubeMesh.VAO->AddVertexBuffer(vbo);
-    
-    auto ibo = IndexBuffer::Create(indices, 36);
-    cubeMesh.VAO->SetIndexBuffer(ibo);
-    
-    m_Data->Skybox.SkyboxModel->Meshes.push_back(cubeMesh);
+    auto cubeVbo = VertexBuffer::Create(cubeVertices, sizeof(cubeVertices));
+    cubeVbo->SetLayout({ { ShaderDataType::Float3, "a_Position" } });
+    cubeMesh.VAO->AddVertexBuffer(cubeVbo);
+    cubeMesh.VAO->SetIndexBuffer(IndexBuffer::Create(cubeIndices, 36));
+    m_Data->Skybox.SkyboxCubeModel->Meshes.push_back(cubeMesh);
+
+    // 2. Sphere Generation (for Panoramas)
+    m_Data->Skybox.SkyboxSphereModel = std::make_unique<Model>();
+    std::vector<float> sphereVertices;
+    std::vector<uint32_t> sphereIndices;
+    const unsigned int X_SEGMENTS = 64;
+    const unsigned int Y_SEGMENTS = 64;
+    for (unsigned int x = 0; x <= X_SEGMENTS; ++x) {
+        for (unsigned int y = 0; y <= Y_SEGMENTS; ++y) {
+            float xSegment = (float)x / (float)X_SEGMENTS;
+            float ySegment = (float)y / (float)Y_SEGMENTS;
+            float xPos = std::cos(xSegment * 2.0f * glm::pi<float>()) * std::sin(ySegment * glm::pi<float>());
+            float yPos = std::cos(ySegment * glm::pi<float>());
+            float zPos = std::sin(xSegment * 2.0f * glm::pi<float>()) * std::sin(ySegment * glm::pi<float>());
+            sphereVertices.push_back(xPos * 50.0f); // Large enough to not be clipped
+            sphereVertices.push_back(yPos * 50.0f);
+            sphereVertices.push_back(zPos * 50.0f);
+        }
+    }
+    for (unsigned int y = 0; y < Y_SEGMENTS; ++y) {
+        if (y % 2 == 0) {
+            for (unsigned int x = 0; x <= X_SEGMENTS; ++x) {
+                sphereIndices.push_back(y * (X_SEGMENTS + 1) + x);
+                sphereIndices.push_back((y + 1) * (X_SEGMENTS + 1) + x);
+            }
+        } else {
+            for (int x = X_SEGMENTS; x >= 0; --x) {
+                sphereIndices.push_back((y + 1) * (X_SEGMENTS + 1) + x);
+                sphereIndices.push_back(y * (X_SEGMENTS + 1) + x);
+            }
+        }
+    }
+    Mesh sphereMesh;
+    sphereMesh.VertexCount = (uint32_t)sphereVertices.size() / 3;
+    sphereMesh.TriangleCount = (uint32_t)sphereIndices.size() - 2; // Approximated for Triangle Strip
+    sphereMesh.VAO = VertexArray::Create();
+    auto sphereVbo = VertexBuffer::Create(sphereVertices.data(), (uint32_t)sphereVertices.size() * sizeof(float));
+    sphereVbo->SetLayout({ { ShaderDataType::Float3, "a_Position" } });
+    sphereMesh.VAO->AddVertexBuffer(sphereVbo);
+    sphereMesh.VAO->SetIndexBuffer(IndexBuffer::Create(sphereIndices.data(), (uint32_t)sphereIndices.size()));
+    // Actually, use Triangle Strip for sphere? No, let's keep it simple with Triangles if possible
+    // Wait, the index generation above is for Triangle Strip. 
+    // Let's rewrite for standard Triangles to avoid Renderer complexity.
+    sphereIndices.clear();
+    for (unsigned int y = 0; y < Y_SEGMENTS; ++y) {
+        for (unsigned int x = 0; x < X_SEGMENTS; ++x) {
+            sphereIndices.push_back((y + 1) * (X_SEGMENTS + 1) + x);
+            sphereIndices.push_back(y * (X_SEGMENTS + 1) + x);
+            sphereIndices.push_back(y * (X_SEGMENTS + 1) + x + 1);
+            sphereIndices.push_back((y + 1) * (X_SEGMENTS + 1) + x);
+            sphereIndices.push_back(y * (X_SEGMENTS + 1) + x + 1);
+            sphereIndices.push_back((y + 1) * (X_SEGMENTS + 1) + x + 1);
+        }
+    }
+    sphereMesh.TriangleCount = (uint32_t)sphereIndices.size() / 3;
+    sphereMesh.VAO->SetIndexBuffer(IndexBuffer::Create(sphereIndices.data(), (uint32_t)sphereIndices.size()));
+    m_Data->Skybox.SkyboxSphereModel->Meshes.push_back(sphereMesh);
 }
 
 uint32_t Renderer::GenTextureCubemap(uint32_t shaderId, uint32_t panoramaId, int size)
@@ -777,6 +807,12 @@ uint32_t Renderer::GenTextureCubemap(uint32_t shaderId, uint32_t panoramaId, int
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    // Save current state to restore later
+    GLint lastFBO;
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &lastFBO);
+    GLint lastViewport[4];
+    glGetIntegerv(GL_VIEWPORT, lastViewport);
 
     uint32_t captureFBO;
     glGenFramebuffers(1, &captureFBO);
@@ -813,26 +849,35 @@ uint32_t Renderer::GenTextureCubemap(uint32_t shaderId, uint32_t panoramaId, int
         glClear(GL_COLOR_BUFFER_BIT);
         
         // Draw Unit Cube
-        if (!m_Data->Skybox.SkyboxModel->Meshes.empty())
+        if (m_Data->Skybox.SkyboxCubeModel && !m_Data->Skybox.SkyboxCubeModel->Meshes.empty())
         {
-            auto& mesh = m_Data->Skybox.SkyboxModel->Meshes[0];
+            auto& mesh = m_Data->Skybox.SkyboxCubeModel->Meshes[0];
             mesh.VAO->Bind();
-            RenderCommand::DrawIndexed(mesh.VAO);
+            glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+            mesh.VAO->Unbind();
         }
     }
     
+    // Restore state
     if (lastCullFace) glEnable(GL_CULL_FACE);
     if (lastDepthTest) glEnable(GL_DEPTH_TEST);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // Restore viewport and framebuffer
+    glViewport(lastViewport[0], lastViewport[1], lastViewport[2], lastViewport[3]);
+    glBindFramebuffer(GL_FRAMEBUFFER, lastFBO);
+    
     glDeleteFramebuffers(1, &captureFBO);
+
+    // Reset clear color to something neutral
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     
     return cubemap;
 }
 
 void Renderer::CleanupSkybox()
 {
-    m_Data->Skybox.SkyboxModel.reset();
+    m_Data->Skybox.SkyboxCubeModel.reset();
+    m_Data->Skybox.SkyboxSphereModel.reset();
     
     if (m_Data->Skybox.CachedCubemapId != 0)
     {

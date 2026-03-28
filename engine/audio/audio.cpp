@@ -1,26 +1,25 @@
 #include "audio.h"
-#include "engine/audio/sound_asset.h"
 #include "engine/core/application.h"
 #include "engine/core/log.h"
-#include "engine/scene/components.h"
 
 #include "miniaudio.h"
 
-
-
 namespace CHEngine
 {
+
 static Audio* s_Instance = nullptr;
 
 Audio::Audio()
 {
     CH_CORE_ASSERT(!s_Instance, "Audio system already exists!");
     s_Instance = this;
+    m_Device = new ma_device();
 }
 
 Audio::~Audio()
 {
-    InternalShutdown();
+    Shutdown();
+    delete (ma_device*)m_Device;
     s_Instance = nullptr;
 }
 
@@ -34,127 +33,195 @@ void Audio::Init()
 {
     if (!s_Instance)
         s_Instance = new Audio();
-    s_Instance->InternalInit();
-}
+    
+    ma_device_config config = ma_device_config_init(ma_device_type_playback);
+    config.playback.format   = ma_format_f32;
+    config.playback.channels = 2;
+    config.sampleRate        = 48000;
+    config.dataCallback      = (ma_device_data_proc)DataCallback;
+    config.pUserData         = s_Instance;
 
-void Audio::InternalInit()
-{
-    m_Engine = new ma_engine();
-    ma_result result = ma_engine_init(NULL, (ma_engine*)m_Engine);
-    if (result != MA_SUCCESS)
+    if (ma_device_init(NULL, &config, (ma_device*)s_Instance->m_Device) != MA_SUCCESS)
     {
-        CH_CORE_ERROR("Audio System: Failed to initialize miniaudio engine!");
-        delete (ma_engine*)m_Engine;
-        m_Engine = nullptr;
+        CH_CORE_ERROR("Audio System: Failed to initialize ma_device!");
         return;
     }
-    CH_CORE_INFO("Audio System Initialized (miniaudio).");
+
+    ma_device_start((ma_device*)s_Instance->m_Device);
+    CH_CORE_INFO("Audio System Initialized (Low-Level ma_device).");
 }
 
 void Audio::Shutdown()
 {
-    if (s_Instance)
+    if (s_Instance && s_Instance->m_Device)
     {
-        s_Instance->InternalShutdown();
-        delete s_Instance;
-        s_Instance = nullptr;
+        s_Instance->StopAll();
+        ma_device_uninit((ma_device*)s_Instance->m_Device);
     }
+    CH_CORE_INFO("Audio System Shutdown.");
 }
 
-void Audio::InternalShutdown()
+void Audio::Update(Timestep ts)
 {
-    if (m_Engine)
+    // Cleanup finished sounds
+    std::lock_guard<std::mutex> lock(m_AudioMutex);
+    for (auto it = m_ActiveSounds.begin(); it != m_ActiveSounds.end(); )
     {
-        ma_engine_uninit((ma_engine*)m_Engine);
-        delete (ma_engine*)m_Engine;
-        m_Engine = nullptr;
-    }
-    CH_CORE_INFO("Audio System Shutdown (miniaudio).");
-}
-
-void Audio::Update(Scene* scene, Timestep ts)
-{
-    if (!m_Engine || !scene)
-        return;
-
-    // 1. Update Listener (find active camera)
-    // In a real engine we'd have a specific listener component or use the main camera
-    // For now, let's assume the scene has a way to get the active camera transform
-    // (This is a simplified implementation)
-
-    auto view = scene->GetRegistry().view<AudioComponent, TransformComponent>();
-    for (auto entity : view)
-    {
-        auto& audio = view.get<AudioComponent>(entity);
-        auto& transform = view.get<TransformComponent>(entity);
-        
-        glm::vec3 worldPos = glm::vec3(transform.WorldTransform[3]);
-
-        if (audio.PlayOnStart && !audio.IsPlaying && audio.Asset && audio.Asset->GetState() == AssetState::Ready)
+        if ((*it)->Finished)
         {
-            Play(audio.Asset, audio.Volume, audio.Pitch, audio.Loop, audio.Spatialized, worldPos);
-            audio.IsPlaying = true;
-        }
-
-        if (audio.IsPlaying && audio.Spatialized && audio.Asset && audio.Asset->GetState() == AssetState::Ready)
-        {
-            ma_sound* sound = (ma_sound*)audio.Asset->GetSound().maSound;
-            if (sound)
+            if ((*it)->IsInitialized && (*it)->Decoder)
             {
-                ma_sound_set_position(sound, worldPos.x, worldPos.y, worldPos.z);
+                ma_decoder_uninit((ma_decoder*)(*it)->Decoder);
+                delete (ma_decoder*)(*it)->Decoder;
             }
+            it = m_ActiveSounds.erase(it);
+        }
+        else
+        {
+            ++it;
         }
     }
 }
 
 void Audio::SetListenerPosition(const glm::vec3& position, const glm::vec3& forward, const glm::vec3& up)
 {
-    if (!m_Engine) return;
-    ma_engine_listener_set_position((ma_engine*)m_Engine, 0, position.x, position.y, position.z);
-    ma_engine_listener_set_direction((ma_engine*)m_Engine, 0, forward.x, forward.y, forward.z);
-    ma_engine_listener_set_world_up((ma_engine*)m_Engine, 0, up.x, up.y, up.z);
+    std::lock_guard<std::mutex> lock(m_AudioMutex);
+    m_Listener.Position = position;
+    m_Listener.Forward = forward;
+    m_Listener.Up = up;
 }
 
-void Audio::Play(std::shared_ptr<SoundAsset> asset, float volume, float pitch, bool loop, bool spatial, const glm::vec3& pos)
+void Audio::Play(const std::string& filepath, float volume, float pitch, bool loop, bool spatial, const glm::vec3& pos)
 {
-    if (!m_Engine || !asset || asset->GetState() != AssetState::Ready)
+    if (filepath.empty())
         return;
 
-    ma_sound* sound = (ma_sound*)asset->GetSound().maSound;
-    if (sound)
-    {
-        ma_sound_set_volume(sound, volume);
-        ma_sound_set_pitch(sound, pitch);
-        ma_sound_set_looping(sound, loop ? MA_TRUE : MA_FALSE);
-        
-        if (spatial)
-        {
-            ma_sound_set_spatialization_enabled(sound, MA_TRUE);
-            ma_sound_set_position(sound, pos.x, pos.y, pos.z);
-        }
-        else
-        {
-            ma_sound_set_spatialization_enabled(sound, MA_FALSE);
-        }
+    auto instance = std::make_shared<SoundInstance>();
+    instance->Path = filepath;
+    instance->Volume = volume;
+    instance->Pitch = pitch;
+    instance->Loop = loop;
+    instance->Spatial = spatial;
+    instance->Position = pos;
 
-        if (!ma_sound_is_playing(sound))
+    instance->Decoder = new ma_decoder();
+    ma_result result = ma_decoder_init_file(filepath.c_str(), NULL, (ma_decoder*)instance->Decoder);
+    if (result == MA_SUCCESS)
+    {
+        instance->IsInitialized = true;
+        std::lock_guard<std::mutex> lock(m_AudioMutex);
+        m_ActiveSounds.push_back(instance);
+    }
+    else
+    {
+        CH_CORE_ERROR("Audio System: Failed to init decoder for {}", filepath);
+        delete (ma_decoder*)instance->Decoder;
+    }
+}
+
+void Audio::Stop(const std::string& filepath)
+{
+    std::lock_guard<std::mutex> lock(m_AudioMutex);
+    for (auto& instance : m_ActiveSounds)
+    {
+        if (instance->Path == filepath)
+            instance->Finished = true;
+    }
+}
+
+void Audio::StopAll()
+{
+    std::lock_guard<std::mutex> lock(m_AudioMutex);
+    for (auto& sound : m_ActiveSounds)
+    {
+        if (sound->IsInitialized && sound->Decoder)
         {
-            ma_sound_start(sound);
+            ma_decoder_uninit((ma_decoder*)sound->Decoder);
+            delete (ma_decoder*)sound->Decoder;
+            sound->Decoder = nullptr;
+            sound->IsInitialized = false;
+        }
+    }
+    m_ActiveSounds.clear();
+}
+
+void Audio::DataCallback(void* pDevice, void* pOutput, const void* pInput, unsigned int frameCount)
+{
+    Audio* self = (Audio*)((ma_device*)pDevice)->pUserData;
+    if (!self) return;
+    
+    float* fOutput = (float*)pOutput;
+
+    // Clear buffer
+    memset(pOutput, 0, frameCount * 2 * sizeof(float));
+
+    std::lock_guard<std::mutex> lock(self->m_AudioMutex);
+    
+    float tempBuffer[1024 * 2]; // Stereo
+    
+    glm::vec3 listenerRight = glm::normalize(glm::cross(self->m_Listener.Forward, self->m_Listener.Up));
+
+    for (auto& sound : self->m_ActiveSounds)
+    {
+        if (sound->Finished) continue;
+
+        ma_uint32 totalFramesRead = 0;
+        while (totalFramesRead < frameCount)
+        {
+            ma_uint32 framesToRead = frameCount - totalFramesRead;
+            if (framesToRead > 1024) framesToRead = 1024;
+
+            ma_uint64 framesRead = 0;
+            ma_decoder_read_pcm_frames((ma_decoder*)sound->Decoder, tempBuffer, (ma_uint64)framesToRead, &framesRead);
+            
+            if (framesRead == 0)
+            {
+                if (sound->Loop)
+                {
+                    ma_decoder_seek_to_pcm_frame((ma_decoder*)sound->Decoder, 0);
+                    continue;
+                }
+                else
+                {
+                    sound->Finished = true;
+                    break;
+                }
+            }
+
+            // Mix into output
+            float spatialVolumeLeft = sound->Volume;
+            float spatialVolumeRight = sound->Volume;
+
+            if (sound->Spatial)
+            {
+                glm::vec3 toSound = sound->Position - self->m_Listener.Position;
+                float distance = glm::length(toSound);
+                
+                // Simple distance attenuation
+                float attenuation = 1.0f / (1.0f + 0.1f * distance); 
+                
+                // Simple panning
+                if (distance > 0.001f)
+                {
+                    toSound = glm::normalize(toSound);
+                    float pan = glm::dot(toSound, listenerRight); // -1 to 1
+                    spatialVolumeLeft *= (1.0f - pan) * 0.5f;
+                    spatialVolumeRight *= (1.0f + pan) * 0.5f;
+                }
+                
+                spatialVolumeLeft *= attenuation;
+                spatialVolumeRight *= attenuation;
+            }
+
+            for (ma_uint32 i = 0; i < framesRead; ++i)
+            {
+                fOutput[(totalFramesRead + i) * 2 + 0] += tempBuffer[i * 2 + 0] * spatialVolumeLeft;
+                fOutput[(totalFramesRead + i) * 2 + 1] += tempBuffer[i * 2 + 1] * spatialVolumeRight;
+            }
+
+            totalFramesRead += framesRead;
         }
     }
 }
 
-void Audio::Stop(std::shared_ptr<SoundAsset> asset)
-{
-    if (!m_Engine || !asset)
-        return;
-
-    ma_sound* sound = (ma_sound*)asset->GetSound().maSound;
-    if (sound)
-    {
-        ma_sound_stop(sound);
-        ma_sound_seek_to_pcm_frame(sound, 0); // Reset for next play
-    }
-}
 } // namespace CHEngine
-

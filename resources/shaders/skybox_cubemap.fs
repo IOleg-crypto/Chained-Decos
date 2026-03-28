@@ -3,12 +3,12 @@
 
 in vec3 v_Position;
 
-uniform samplerCube environmentMap;
+uniform samplerCube u_Cubemap;
 
-uniform int isHDR;
-uniform float exposure;
-uniform float brightness;
-uniform float contrast;
+uniform int u_IsHDR;
+uniform float u_Exposure;
+uniform float u_Brightness;
+uniform float u_Contrast;
 
 // Fog uniforms
 uniform int fogEnabled;
@@ -22,21 +22,20 @@ void main()
     vec3 direction = normalize(v_Position);
     
     // Sample the environment cubemap
-    vec3 color = texture(environmentMap, direction).rgb;
+    vec3 color = texture(u_Cubemap, direction).rgb;
 
     // 1. Convert to Linear if LDR
-    if (isHDR == 0) color = pow(color, vec3(2.2));
+    if (u_IsHDR == 0) color = pow(color, vec3(2.2));
 
-    // 2. Exposure & Basic Tonemapping (ACES-like)
-    color *= exposure;
-    
-    // Apply contrast/brightness in linear space
-    color = max(color + brightness, vec3(0.0));
-    color = pow(max(color, vec3(0.0)), vec3(contrast)); // Use contrast as power for HDR
+    // 2. Exposure & Color Correction
+    color *= u_Exposure;
+    color = color + u_Brightness;
+    color = pow(max(color, vec3(0.0001)), vec3(u_Contrast));
 
-    // 3. Simple Tonemapping for HDR (Reinhard) 
-    // This prevents burning if post-process is bypassed or for preview
-    vec3 mapped = color / (color + vec3(1.0));
+    // 3. ACES-like Tonemapping
+    vec3 x = color;
+    vec3 mapped = (x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14);
+    mapped = clamp(mapped, 0.0, 1.0);
     
     vec4 background = vec4(mapped, 1.0);
 
