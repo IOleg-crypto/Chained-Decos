@@ -40,7 +40,8 @@ struct LightingData
 
 struct SkyboxData
 {
-    std::unique_ptr<Model> SkyboxModel; // Custom Model type
+    std::unique_ptr<Model> SkyboxCubeModel;
+    std::unique_ptr<Model> SkyboxSphereModel;
 
     unsigned int CachedCubemapId = 0;
     std::string CachedCubemapPath = "";

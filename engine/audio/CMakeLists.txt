@@ -20,6 +20,10 @@ target_include_directories(engine_audio PUBLIC
 target_link_libraries(engine_audio PUBLIC 
 )
 
+if(WIN32)
+    target_link_libraries(engine_audio PUBLIC winmm ole32)
+endif()
+
 if(MSVC)
     target_compile_options(engine_audio PRIVATE /bigobj)
 elseif(MINGW)

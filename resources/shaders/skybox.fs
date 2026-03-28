@@ -1,19 +1,15 @@
 #version 450 core
 #include "include/color_space.glsl"
 
-in vec2 fragTexCoord; 
+in vec3 v_Position;
 
-uniform sampler2D texture0;
+uniform sampler2D u_Panorama;
 
-uniform int vflipped;
-uniform int isHDR;
-uniform float exposure;
-uniform float brightness;
-uniform float contrast;
-uniform int skyboxMode; // 0: Sphere, 1: Direct
-
-uniform mat4 projection;
-uniform mat4 view;
+uniform int u_IsHDR;
+uniform float u_Exposure;
+uniform float u_Brightness;
+uniform float u_Contrast;
+uniform int u_VFlipped;
 
 // Fog uniforms
 uniform int fogEnabled;
@@ -22,7 +18,6 @@ uniform float fogDensity;
 
 layout(location = 0) out vec4 finalColor;
 
-// Converts 3D direction to Spherical UVs for equirectangular panorama
 vec2 SampleSpherical(vec3 dir)
 {
     const vec2 invAtan = vec2(0.1591, 0.3183);
@@ -33,45 +28,28 @@ vec2 SampleSpherical(vec3 dir)
 
 void main()
 {
-    // 1. Reconstruct world-space direction from UV
-    // Map [0,1] UV to [-1,1] NDC
-    vec4 clipPos = vec4(fragTexCoord * 2.0 - 1.0, 1.0, 1.0);
-    vec4 viewPos = inverse(projection) * clipPos;
-    viewPos /= viewPos.w;
-    
-    // View matrix passed to shader already has translation removed for cubemaps,
-    // but for panoramas it might still be there or we use this reconstruction.
-    mat3 invRotView = inverse(mat3(view));
-    vec3 direction = normalize(invRotView * viewPos.xyz);
-    
-    vec2 uv;
-    if (skyboxMode == 1) {
-        uv = fragTexCoord;
-    } else {
-        uv = SampleSpherical(direction);
-    }
-
-    if (vflipped == 1) uv.y = 1.0 - uv.y;
+    vec3 direction = normalize(v_Position);
+    vec2 uv = SampleSpherical(direction);
+    if (u_VFlipped == 1) uv.y = 1.0 - uv.y;
 
     // Sample the panorama
-    vec3 color = texture(texture0, uv).rgb;
+    vec3 color = texture(u_Panorama, uv).rgb;
 
     // Convert to Linear if LDR (PNG/JPG)
-    if (isHDR == 0) color = ToLinear(color);
+    if (u_IsHDR == 0) color = pow(color, vec3(2.2));
 
-    // 1. Exposure & Basic Tonemapping
-    color *= exposure;
-    
-    // Apply contrast/brightness in linear space
-    color = max(color + brightness, vec3(0.0));
-    color = pow(max(color, vec3(0.0)), vec3(contrast));
+    // 1. Exposure & Color Correction
+    color *= u_Exposure;
+    color = color + u_Brightness;
+    color = pow(max(color, vec3(0.0001)), vec3(u_Contrast));
 
-    // 2. Simple Tonemapping for preview
-    vec3 mapped = color / (color + vec3(1.0));
+    // 2. ACES Tonemapping
+    vec3 x = color;
+    vec3 mapped = (x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14);
+    mapped = clamp(mapped, 0.0, 1.0);
     
     vec4 background = vec4(mapped, 1.0);
 
-    // 2. Unified Horizon & Ground Fog
     if (fogEnabled == 1) {
         float verticalFactor = clamp(1.0 - (direction.y + 0.05) * 10.0, 0.0, 1.0);
         float fogFactor = pow(verticalFactor, 2.0); 

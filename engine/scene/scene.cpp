@@ -108,6 +108,7 @@ void Scene::OnUpdateRuntime(Timestep timestep)
     UpdateHierarchy();
     UpdateAnimations(timestep);
     UpdatePhysics(timestep);
+    UpdateAudio(timestep);
 }
 
 void Scene::OnUpdateEditor(Timestep timestep)
@@ -117,6 +118,7 @@ void Scene::OnUpdateEditor(Timestep timestep)
     UpdateHierarchy();
     UpdateAnimations(timestep);
     UpdatePhysics(timestep);
+    UpdateAudio(timestep);
 }
 
 void Scene::OnViewportResize(uint32_t width, uint32_t height)
@@ -349,6 +351,44 @@ void Scene::UpdateHierarchy()
                     stack.push_back({child, tc.WorldTransform});
                 }
             }
+        }
+    }
+}
+
+void Scene::UpdateAudio(Timestep deltaTime)
+{
+    CH_PROFILE_FUNCTION();
+
+    // 1. Sync Listener with Primary Camera
+    auto cameraView = GetRegistry().view<CameraComponent, TransformComponent>();
+    for (auto entity : cameraView)
+    {
+        auto& camera = cameraView.get<CameraComponent>(entity);
+        if (camera.Primary)
+        {
+            auto& transform = cameraView.get<TransformComponent>(entity);
+            glm::vec3 pos = glm::vec3(transform.WorldTransform[3]);
+            glm::mat3 rot = glm::mat3(transform.WorldTransform);
+            glm::vec3 forward = rot * glm::vec3(0, 0, -1);
+            glm::vec3 up = rot * glm::vec3(0, 1, 0);
+            
+            Audio::Get().SetListenerPosition(pos, forward, up);
+            break;
+        }
+    }
+
+    // 2. Manage Audio Components
+    auto audioView = GetRegistry().view<AudioComponent, TransformComponent>();
+    for (auto entity : audioView)
+    {
+        auto& audio = audioView.get<AudioComponent>(entity);
+        if (audio.PlayOnStart && !audio.IsPlaying && audio.Asset && audio.Asset->GetState() == AssetState::Ready)
+        {
+            auto& transform = audioView.get<TransformComponent>(entity);
+            glm::vec3 worldPos = glm::vec3(transform.WorldTransform[3]);
+            
+            Audio::Get().Play(audio.Asset->GetPath(), audio.Volume, audio.Pitch, audio.Loop, audio.Spatialized, worldPos);
+            audio.IsPlaying = true;
         }
     }
 }

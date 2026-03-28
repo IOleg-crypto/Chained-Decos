@@ -9,9 +9,7 @@ namespace CHEngine
 std::shared_ptr<SoundAsset> AudioImporter::ImportSound(const std::string& path)
 {
     if (path.empty())
-    {
         return nullptr;
-    }
 
     std::filesystem::path fullPath(path);
     if (!std::filesystem::exists(fullPath))
@@ -22,26 +20,9 @@ std::shared_ptr<SoundAsset> AudioImporter::ImportSound(const std::string& path)
 
     auto asset = std::make_shared<SoundAsset>();
     asset->SetPath(path);
+    asset->SetState(AssetState::Ready);
     
-    ma_engine* engine = (ma_engine*)Audio::Get().GetEngine();
-    if (engine)
-    {
-        ma_sound* sound = new ma_sound();
-        ma_result result = ma_sound_init_from_file(engine, path.c_str(), 0, NULL, NULL, sound);
-        if (result == MA_SUCCESS)
-        {
-            asset->GetSound().maSound = sound;
-            asset->SetState(AssetState::Ready);
-            CH_CORE_INFO("AudioImporter: Loaded sound {}", path);
-        }
-        else
-        {
-            CH_CORE_ERROR("AudioImporter: Failed to load sound {} (error {})", path, (int)result);
-            delete sound;
-            asset->SetState(AssetState::Failed);
-        }
-    }
-    
+    CH_CORE_INFO("AudioImporter: Loaded sound {}", path);
     return asset;
 }
 
