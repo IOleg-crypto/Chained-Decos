@@ -61,20 +61,54 @@ void OpenGLRendererAPI::SetDepthMask(bool enabled)
     glDepthMask(enabled ? GL_TRUE : GL_FALSE);
 }
 
-void OpenGLRendererAPI::SetCulling(bool enabled)
+void OpenGLRendererAPI::SetCullMode(CullMode mode)
 {
-    if (enabled) glEnable(GL_CULL_FACE);
-    else glDisable(GL_CULL_FACE);
+    if (mode == CullMode::None)
+    {
+        glDisable(GL_CULL_FACE);
+    }
+    else
+    {
+        glEnable(GL_CULL_FACE);
+        switch (mode)
+        {
+            case CullMode::Front:        glCullFace(GL_FRONT); break;
+            case CullMode::Back:         glCullFace(GL_BACK); break;
+            case CullMode::FrontAndBack: glCullFace(GL_FRONT_AND_BACK); break;
+        }
+    }
 }
 
 void OpenGLRendererAPI::SetBlendMode(bool enabled)
 {
-    if (enabled) {
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    } else {
-        glDisable(GL_BLEND);
-    }
+    if (enabled) glEnable(GL_BLEND);
+    else glDisable(GL_BLEND);
+}
+
+void OpenGLRendererAPI::SetBlendFunc(BlendFactor src, BlendFactor dst)
+{
+    auto toGL = [](BlendFactor factor) -> GLenum {
+        switch (factor)
+        {
+            case BlendFactor::Zero:           return GL_ZERO;
+            case BlendFactor::One:            return GL_ONE;
+            case BlendFactor::SrcColor:       return GL_SRC_COLOR;
+            case BlendFactor::OneMinusSrcColor: return GL_ONE_MINUS_SRC_COLOR;
+            case BlendFactor::DstColor:       return GL_DST_COLOR;
+            case BlendFactor::OneMinusDstColor: return GL_ONE_MINUS_DST_COLOR;
+            case BlendFactor::SrcAlpha:       return GL_SRC_ALPHA;
+            case BlendFactor::OneMinusSrcAlpha: return GL_ONE_MINUS_SRC_ALPHA;
+            case BlendFactor::DstAlpha:       return GL_DST_ALPHA;
+            case BlendFactor::OneMinusDstAlpha: return GL_ONE_MINUS_DST_ALPHA;
+        }
+        return GL_ONE;
+    };
+    glBlendFunc(toGL(src), toGL(dst));
+}
+
+void OpenGLRendererAPI::SetLineWidth(float width)
+{
+    glLineWidth(width);
 }
 
 void OpenGLRendererAPI::DrawIndexed(const std::shared_ptr<VertexArray>& vertexArray, uint32_t indexCount)

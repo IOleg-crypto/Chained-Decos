@@ -3,7 +3,7 @@
 namespace CHEngine {
 
     // ── Camera ────────────────────────────────────────────────────────────
-    CH_SCRIPT_FUNC void Camera_GetForward(uint64_t entityID, Vector3* outForward) {
+    CH_SCRIPT_FUNC void Camera_GetForward(uint64_t entityID, glm::vec3* outForward) {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<TransformComponent>()) {
             auto& tc = entity.GetComponent<TransformComponent>();
@@ -12,7 +12,7 @@ namespace CHEngine {
         }
     }
 
-    CH_SCRIPT_FUNC void Camera_GetRight(uint64_t entityID, Vector3* outRight) {
+    CH_SCRIPT_FUNC void Camera_GetRight(uint64_t entityID, glm::vec3* outRight) {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<TransformComponent>()) {
             auto& tc = entity.GetComponent<TransformComponent>();

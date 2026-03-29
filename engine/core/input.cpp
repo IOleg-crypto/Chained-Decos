@@ -5,91 +5,92 @@
 
 namespace CHEngine
 {
+void Input::Update()
+{
+    auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
+    if (!window) return;
+
+    // 1. Sync Key States
+    for (int i = 0; i < 512; i++)
+    {
+        Input::s_LastKeyStates[i] = Input::s_KeyStates[i];
+        Input::s_KeyStates[i] = glfwGetKey(window, i) == GLFW_PRESS;
+    }
+
+    // 2. Sync Mouse States
+    for (int i = 0; i < 16; i++)
+    {
+        Input::s_LastMouseStates[i] = Input::s_MouseStates[i];
+        Input::s_MouseStates[i] = glfwGetMouseButton(window, i) == GLFW_PRESS;
+    }
+
+    // 3. Sync Mouse Position
+    Input::s_LastMousePosition = Input::s_MousePosition;
+    double xpos, ypos;
+    glfwGetCursorPos(window, &xpos, &ypos);
+    Input::s_MousePosition = { (float)xpos, (float)ypos };
+
+    // 4. Sync Mouse Wheel (Impulse)
+    Input::s_CurrentMouseWheelDelta = Input::s_MouseWheelDelta;
+    Input::s_MouseWheelDelta = 0.0f;
+}
+
 void Input::PollEvents()
 {
-    // GLFW events are handled via callbacks or polling.
-    // glfwPollEvents() is called in WindowsWindow::EndFrame().
-    // We can still use this method to check for specific state if needed,
-    // but most events should now come from GLFW callbacks.
 }
 
 bool Input::IsKeyPressed(KeyCode key)
 {
-    auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
-    auto state = glfwGetKey(window, key);
-    return state == GLFW_PRESS;
+    return Input::s_KeyStates[key] && !Input::s_LastKeyStates[key];
 }
 
 bool Input::IsKeyDown(KeyCode key)
 {
-    auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
-    auto state = glfwGetKey(window, key);
-    return state == GLFW_PRESS || state == GLFW_REPEAT;
+    return Input::s_KeyStates[key];
 }
 
 bool Input::IsKeyReleased(KeyCode key)
 {
-    auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
-    auto state = glfwGetKey(window, key);
-    return state == GLFW_RELEASE;
+    return !Input::s_KeyStates[key] && Input::s_LastKeyStates[key];
 }
 
 bool Input::IsKeyUp(KeyCode key)
 {
-    auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
-    auto state = glfwGetKey(window, key);
-    return state == GLFW_RELEASE;
+    return !Input::s_KeyStates[key];
 }
 
 bool Input::IsMouseButtonPressed(MouseCode button)
 {
-    auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
-    auto state = glfwGetMouseButton(window, button);
-    return state == GLFW_PRESS;
+    return Input::s_MouseStates[button] && !Input::s_LastMouseStates[button];
 }
 
 bool Input::IsMouseButtonDown(MouseCode button)
 {
-    auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
-    auto state = glfwGetMouseButton(window, button);
-    return state == GLFW_PRESS;
+    return Input::s_MouseStates[button];
 }
 
 bool Input::IsMouseButtonReleased(MouseCode button)
 {
-    auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
-    auto state = glfwGetMouseButton(window, button);
-    return state == GLFW_RELEASE;
+    return !Input::s_MouseStates[button] && Input::s_LastMouseStates[button];
 }
 
 bool Input::IsMouseButtonUp(MouseCode button)
 {
-    auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
-    auto state = glfwGetMouseButton(window, button);
-    return state == GLFW_RELEASE;
+    return !Input::s_MouseStates[button];
 }
 
-Vector2 Input::GetMousePosition()
+glm::vec2 Input::GetMousePosition()
 {
-    auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
-    double xpos, ypos;
-    glfwGetCursorPos(window, &xpos, &ypos);
-    return { (float)xpos, (float)ypos };
+    return Input::s_MousePosition;
 }
 
-Vector2 Input::GetMouseDelta()
+glm::vec2 Input::GetMouseDelta()
 {
-    // GLFW doesn't provide delta directly, we'd need to track it manually
-    static Vector2 lastPos = { 0, 0 };
-    Vector2 currentPos = GetMousePosition();
-    Vector2 delta = { currentPos.x - lastPos.x, currentPos.y - lastPos.y };
-    lastPos = currentPos;
-    return delta;
+    return Input::s_MousePosition - Input::s_LastMousePosition;
 }
 
 float Input::GetMouseWheelMove()
 {
-    // Handled via scroll callback usually
-    return 0.0f; 
+    return Input::s_CurrentMouseWheelDelta; 
 }
 } // namespace CHEngine

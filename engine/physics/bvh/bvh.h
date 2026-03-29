@@ -7,7 +7,7 @@
 
 #include "bvh_node.h"
 #include "engine/physics/collision/collision_triangle.h"
-#include "engine/core/math_types.h"
+#include "engine/core/ch_math.h"
 
 namespace CHEngine
 {

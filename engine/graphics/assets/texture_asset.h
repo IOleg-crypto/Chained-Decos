@@ -2,21 +2,13 @@
 #define CH_TEXTURE_ASSET_H
 
 #include "engine/core/assets/asset.h"
+#include "engine/graphics/api/texture.h"
 #include <memory>
-#include <string>
+// #include <string>
 #include <cstdint>
 
 namespace CHEngine
 {
-
-struct Texture
-{
-    uint32_t id = 0;
-    int width = 0;
-    int height = 0;
-    int mipmaps = 0;
-    int format = 0;
-};
 
 struct RawImage
 {
@@ -32,50 +24,40 @@ struct RawImage
 class TextureAsset : public Asset
 {
 public:
+    TextureAsset()
+        : Asset(GetStaticType())
+    {
+    }
+    virtual ~TextureAsset() = default;
+
     static AssetType GetStaticType()
     {
         return AssetType::Texture;
     }
 
-    TextureAsset()
-        : Asset(GetStaticType())
-    {
-    }
-    virtual ~TextureAsset();
+    void OnLoaded() override;
 
-    void UploadToGPU();
-
-    // For internal use by Importer
-    void SetPendingImage(const RawImage& image)
-    {
-        m_PendingImage = image;
-        m_HasPendingImage = true;
-    }
-
-    Texture& GetTexture()
-    {
-        return m_Texture;
-    }
-    void SetTexture(const Texture& texture)
-    {
-        m_Texture = texture;
-    }
+    std::shared_ptr<Texture> GetTexture() const { return m_Texture; }
+    uint32_t GetWidth() const;
+    uint32_t GetHeight() const;
 
     bool IsCubemap() const { return m_IsCubemap; }
-    void SetIsCubemap(bool isCubemap) { m_IsCubemap = isCubemap; }
+    bool IsHDR() const { return m_IsHDR; }
 
-    bool IsHDR() const {
-        return m_Texture.format >= 8 && m_Texture.format <= 13;
-    }
+    void SetPendingImage(const RawImage& image) { m_PendingImage = image; m_HasPendingImage = true; }
+    void SetIsCubemap(bool isCubemap) { m_IsCubemap = isCubemap; }
+    void SetIsHDR(bool isHDR) { m_IsHDR = isHDR; }
 
     void Unload();
 
 private:
-    Texture m_Texture = {0};
+    std::shared_ptr<Texture> m_Texture;
     RawImage m_PendingImage = {0};
     bool m_HasPendingImage = false;
     bool m_IsCubemap = false;
+    bool m_IsHDR = false;
 };
+
 } // namespace CHEngine
 
 #endif // CH_TEXTURE_ASSET_H

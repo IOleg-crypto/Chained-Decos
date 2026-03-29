@@ -46,8 +46,8 @@ private:
 
     // Interaction cache
     ImVec2 m_StartMousePos;
-    Vector2 m_StartOffsetMin;
-    Vector2 m_StartOffsetMax;
+    glm::vec2 m_StartOffsetMin;
+    glm::vec2 m_StartOffsetMax;
 };
 
 } // namespace CHEngine

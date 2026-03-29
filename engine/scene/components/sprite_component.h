@@ -21,6 +21,19 @@ struct SpriteComponent
 
     SpriteComponent() = default;
     SpriteComponent(const SpriteComponent&) = default;
+
+    static const char* GetStaticName() { return "SpriteComponent"; }
+
+    template <typename Archive>
+    static void Serialize(Archive& archive, SpriteComponent& component)
+    {
+        archive.Handle("TextureHandle", component.TextureHandle)
+            .Path("TexturePath", component.TexturePath)
+            .Property("Tint", component.Tint)
+            .Property("FlipX", component.FlipX)
+            .Property("FlipY", component.FlipY)
+            .Property("ZOrder", component.ZOrder);
+    }
 };
 } // namespace CHEngine
 

@@ -1,89 +1,54 @@
-#include "engine/core/application.h"
-#include "engine/core/thread_pool.h"
+#include "thread_pool.h"
+#include "engine/core/log.h"
 
 namespace CHEngine
 {
-static ThreadPool* s_ThreadPoolInstance = nullptr;
-
-ThreadPool& ThreadPool::Get()
+ThreadPool::ThreadPool()
 {
-    CH_CORE_ASSERT(s_ThreadPoolInstance, "ThreadPool not initialized!");
-    return *s_ThreadPoolInstance;
-}
-
-void ThreadPool::Init(size_t threads)
-{
-    if (!s_ThreadPoolInstance)
-        s_ThreadPoolInstance = new ThreadPool(threads);
-}
-
-void ThreadPool::Shutdown()
-{
-    if (s_ThreadPoolInstance)
-    {
-        s_ThreadPoolInstance->InternalShutdown();
-        delete s_ThreadPoolInstance;
-        s_ThreadPoolInstance = nullptr;
-    }
-}
-
-ThreadPool::ThreadPool(size_t threads)
-{
-    CH_CORE_ASSERT(!s_ThreadPoolInstance, "ThreadPool already exists!");
-    s_ThreadPoolInstance = this;
-
+    size_t threads = std::thread::hardware_concurrency();
     CH_CORE_INFO("ThreadPool: Initializing with {} threads", threads);
 
     for (size_t i = 0; i < threads; ++i)
     {
-        m_Workers.emplace_back([this] { WorkerThread(); });
+        m_Workers.emplace_back([this](std::stop_token st) { WorkerThread(st); });
     }
 }
 
 ThreadPool::~ThreadPool()
 {
-    InternalShutdown();
-    s_ThreadPoolInstance = nullptr;
-}
-
-void ThreadPool::InternalShutdown()
-{
     {
         std::unique_lock<std::mutex> lock(m_QueueMutex);
-        if (m_Stop)
-        {
-            return;
-        }
         m_Stop = true;
     }
     m_Condition.notify_all();
-    for (std::thread& worker : m_Workers)
-    {
-        if (worker.joinable())
-        {
-            worker.join();
-        }
-    }
+    // jthreads will automatically join here
 }
 
-void ThreadPool::WorkerThread()
+void ThreadPool::WorkerThread(std::stop_token stopToken)
 {
-    while (true)
+    while (!stopToken.stop_requested())
     {
         std::function<void()> task;
         {
             std::unique_lock<std::mutex> lock(m_QueueMutex);
-            m_Condition.wait(lock, [this] { return m_Stop || !m_Tasks.empty(); });
+            
+            // Wait until there's a task or the entire pool is stopping
+            m_Condition.wait(lock, stopToken, [this] { 
+                return m_Stop || !m_Tasks.empty(); 
+            });
 
             if (m_Stop && m_Tasks.empty())
-            {
                 return;
-            }
+
+            if (m_Tasks.empty())
+                continue;
 
             task = std::move(m_Tasks.front());
             m_Tasks.pop();
         }
-        task();
+        
+        if (task)
+            task();
     }
 }
 } // namespace CHEngine

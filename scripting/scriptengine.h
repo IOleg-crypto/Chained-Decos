@@ -1,13 +1,14 @@
 #ifndef CH_SCRIPT_ENGINE_H
 #define CH_SCRIPT_ENGINE_H
 
+#include <Coral/Assembly.hpp>
+#include <Coral/HostInstance.hpp>
 #include <filesystem>
 #include <string>
 #include <unordered_map>
-#include <Coral/HostInstance.hpp>
-#include <Coral/Assembly.hpp>
 
-namespace CHEngine {
+namespace CHEngine
+{
 
 class Scene;
 
@@ -48,17 +49,36 @@ public:
 
     /// All discovered script types keyed by lowercase full name.
     const std::unordered_map<std::string, Coral::Type>& GetScriptClasses() const
-    { return m_ScriptClasses; }
+    {
+        return m_ScriptClasses;
+    }
 
     // ── Accessors ────────────────────────────────────────────────────────
-    bool   IsInitialized() const { return m_IsInitialized; }
-    Scene* GetActiveScene() const { return m_ActiveScene; }
-    void   SetActiveScene(Scene* scene) { m_ActiveScene = scene; }
+    bool IsInitialized() const
+    {
+        return m_IsInitialized;
+    }
+    Scene* GetActiveScene() const
+    {
+        return m_ActiveScene;
+    }
+    void SetActiveScene(Scene* scene)
+    {
+        m_ActiveScene = scene;
+    }
 
     /// Called from C# script glue — queue a scene to load next frame.
-    void RequestLoadScene(const std::string& path) { m_PendingScenePath = path; }
+    void RequestLoadScene(const std::string& path)
+    {
+        m_PendingScenePath = path;
+    }
     /// Consumed by RuntimeLayer::OnUpdate each frame. Returns the path and clears it.
-    std::string ConsumeRequestedScene() { std::string s = m_PendingScenePath; m_PendingScenePath.clear(); return s; }
+    std::string ConsumeRequestedScene()
+    {
+        std::string s = m_PendingScenePath;
+        m_PendingScenePath.clear();
+        return s;
+    }
 
     static ScriptEngine& Get();
 
@@ -66,11 +86,11 @@ private:
     void DiscoverScriptTypes();
 
 private:
-    Scene*                                     m_ActiveScene = nullptr;
-    Coral::HostInstance                        m_Host;
-    Coral::AssemblyLoadContext                 m_AppAssemblyContext;
-    Coral::ManagedAssembly*                    m_AppAssembly = nullptr;
-    Coral::ManagedAssembly*                    m_CoreAssembly = nullptr;
+    Scene* m_ActiveScene = nullptr;
+    Coral::HostInstance m_Host;
+    Coral::AssemblyLoadContext m_AppAssemblyContext;
+    Coral::ManagedAssembly* m_AppAssembly = nullptr;
+    Coral::ManagedAssembly* m_CoreAssembly = nullptr;
 
     std::unordered_map<std::string, Coral::Type> m_ScriptClasses;
     bool m_IsInitialized = false;

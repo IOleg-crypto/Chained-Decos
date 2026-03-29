@@ -44,12 +44,12 @@ void EditorCameraController::OnUpdate(Entity cameraEntity, Timestep ts)
         m_Camera.SetPitch(tc.Rotation.x * glm::radians(1.0f));
         m_Camera.SetYaw(tc.Rotation.y * glm::radians(1.0f));
     }
-    Vector3 tcTranslation = *reinterpret_cast<const Vector3*>(&tc.Translation);
+    glm::vec3 tcTranslation = *reinterpret_cast<const glm::vec3*>(&tc.Translation);
     glm::vec3 translation = *reinterpret_cast<const glm::vec3*>(&tcTranslation);
     m_Camera.SetFocalPoint(translation + (m_Camera.GetForwardDirection() * m_Camera.GetDistance()));
 
-    const Vector2& mouse = Input::GetMousePosition();
-    Vector2 delta = Input::GetMouseDelta();
+    const glm::vec2& mouse = Input::GetMousePosition();
+    glm::vec2 delta = Input::GetMouseDelta();
     m_InitialMousePosition = mouse;
 
     if (Input::IsKeyDown(Key::LeftAlt))
@@ -78,9 +78,9 @@ void EditorCameraController::OnUpdate(Entity cameraEntity, Timestep ts)
             speed *= boostMultiplier;
         }
 
-        Vector3 forward = m_Camera.GetForwardDirection();
-        Vector3 right = m_Camera.GetRightDirection();
-        Vector3 up = {0, 1, 0};
+        glm::vec3 forward = m_Camera.GetForwardDirection();
+        glm::vec3 right = m_Camera.GetRightDirection();
+        glm::vec3 up = {0, 1, 0};
         
         glm::vec3 fwd(forward.x, forward.y, forward.z);
         glm::vec3 rgt(right.x, right.y, right.z);
@@ -133,7 +133,7 @@ void EditorCameraController::OnUpdate(Entity cameraEntity, Timestep ts)
     if (!Input::IsMouseButtonDown(Mouse::ButtonRight))
     {
         // Only drive position from focal point if NOT in fly mode
-        Vector3 pos = m_Camera.CalculatePosition();
+        glm::vec3 pos = m_Camera.CalculatePosition();
         tc.Translation = *reinterpret_cast<const glm::vec3*>(&pos);
     }
 }

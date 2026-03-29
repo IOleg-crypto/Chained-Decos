@@ -3,7 +3,7 @@
 // These tests require a valid OpenGL context and are skipped on CI.
 #include "engine/core/base.h"
 #include "engine/graphics/pipeline/renderer.h"
-#include "engine/graphics/pipeline/renderer2d.h"
+
 #include "raylib.h"
 #include "gtest/gtest.h"
 
@@ -32,13 +32,7 @@ TEST_F(RendererTest, RendererInitialization)
     renderer.Shutdown();
 }
 
-// Verifies that the Renderer2D singleton can be initialized and shut down without errors.
-TEST_F(RendererTest, Renderer2DInitialization)
-{
-    auto& renderer2d = Renderer2D::Get();
-    renderer2d.Init();
-    renderer2d.Shutdown();
-}
+
 
 // Verifies that the Renderer can be init/shutdown in sequence multiple times
 // without memory corruption or double-free.

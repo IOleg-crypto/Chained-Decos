@@ -14,8 +14,13 @@ struct NavigationComponent
 
     bool IsDefaultFocus = false;
 
-    NavigationComponent() = default;
-    NavigationComponent(const NavigationComponent&) = default;
+    static const char* GetStaticName() { return "NavigationComponent"; }
+
+    template <typename Archive>
+    static void Serialize(Archive& archive, NavigationComponent& component)
+    {
+        archive.Property("IsDefaultFocus", component.IsDefaultFocus);
+    }
 };
 } // namespace CHEngine
 

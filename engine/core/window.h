@@ -3,9 +3,7 @@
 
 #include <memory>
 #include <string>
-
-// Forward declare GLFWwindow
-struct GLFWwindow;
+#include <GLFW/glfw3.h>
 
 namespace CHEngine
 {

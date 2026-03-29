@@ -27,7 +27,7 @@
 
 namespace CHEngine
 {
-static void ClearSceneBackground(Scene* scene, Vector2 size)
+static void ClearSceneBackground(Scene* scene, glm::vec2 size)
 {
     auto mode = scene->GetSettings().Mode;
     if (mode == BackgroundMode::Color)
@@ -220,13 +220,13 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
 
     // Default to Editor Camera
     auto& edCam = m_CameraController->GetCamera();
-    Vector3 pos = edCam.CalculatePosition();
+    glm::vec3 pos = edCam.CalculatePosition();
     camera.Position = {pos.x, pos.y, pos.z};
     
-    Vector3 fp = edCam.GetFocalPoint();
+    glm::vec3 fp = edCam.GetFocalPoint();
     camera.Target = {fp.x, fp.y, fp.z};
     
-    Vector3 up = edCam.GetUpDirection();
+    glm::vec3 up = edCam.GetUpDirection();
     camera.Up = {up.x, up.y, up.z};
     
     camera.Fovy = glm::degrees(edCam.GetPerspectiveVerticalFOV()); // Fovy in degrees
@@ -379,7 +379,7 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
     {
         ImVec2 mousePos = ImGui::GetMousePos();
         ImVec2 localMouseImGui = {mousePos.x - viewportScreenPos.x, mousePos.y - viewportScreenPos.y};
-        Vector2 localMouse = {localMouseImGui.x, localMouseImGui.y};
+        glm::vec2 localMouse = {localMouseImGui.x, localMouseImGui.y};
 
         Ray ray = EditorGUI::GetMouseRay(camera, {localMouse.x, localMouse.y}, {viewportSize.x, viewportSize.y});
 
@@ -412,7 +412,7 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
 
             auto rect = UIRenderer::Get().GetEntityRect(entity, viewportSize, viewportScreenPos);
 
-            Vector2 mouse = {mousePos.x, mousePos.y};
+            glm::vec2 mouse = {mousePos.x, mousePos.y};
             if (mouse.x >= rect.x && mouse.x <= rect.x + rect.width && mouse.y >= rect.y &&
                 mouse.y <= rect.y + rect.height)
             {
@@ -640,7 +640,7 @@ void ViewportPanel::OnEvent(Event& e)
         if (entity && entity.HasComponent<TransformComponent>())
         {
             auto& transform = entity.GetComponent<TransformComponent>();
-            m_CameraController->GetCamera().SetFocalPoint(*reinterpret_cast<const Vector3*>(&transform.Translation));
+            m_CameraController->GetCamera().SetFocalPoint(*reinterpret_cast<const glm::vec3*>(&transform.Translation));
             return true;
         }
         return false;

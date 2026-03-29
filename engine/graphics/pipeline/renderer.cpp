@@ -2,11 +2,16 @@
 #include "engine/core/application.h"
 #include "engine/core/log.h"
 #include "engine/core/profiler.h"
-#include "engine/graphics/pipeline/renderer2d.h"
+#include "engine/graphics/pipeline/render_command.h"
+#include "engine/graphics/api/texture.h"
+#include "engine/graphics/api/framebuffer.h"
+#include "engine/graphics/pipeline/texture_utility.h"
+
 #include "engine/graphics/pipeline/ui_renderer.h"
 #include "engine/graphics/assets/shader_asset.h"
 #include "engine/core/assets/asset_manager.h"
 #include "engine/graphics/assets/texture_asset.h"
+#include "engine/graphics/pipeline/geometry_generator.h"
 
 #include <glad/gl.h>
 #include <algorithm>
@@ -46,7 +51,7 @@ void Renderer::LoadEngineResources()
         shaders.Load(name, path);
         if (shaders.Exists(name)) {
             auto shader = shaders.Get(name);
-            CH_CORE_INFO("[Renderer] Shader '{}' loaded OK (ID={}) from '{}'.", name, shader->GetShader().id, path);
+            CH_CORE_INFO("[Renderer] Shader '{}' loaded OK (ID={}) from '{}'.", name, shader->GetShader()->GetRendererID(), path);
         } else {
             CH_CORE_ERROR("[Renderer] FAILED to load shader '{}' from '{}'! Viewport may be black.", name, path);
         }
@@ -161,10 +166,9 @@ void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
 
     // Bind lighting uniforms to the default lighting shader if it exists
     auto lightingShaderAsset = m_Data->Shaders->Exists("Lighting") ? m_Data->Shaders->Get("Lighting") : nullptr;
-    if (lightingShaderAsset)
+    if (lightingShaderAsset && lightingShaderAsset->GetShader())
     {
-        uint32_t shaderId = lightingShaderAsset->GetShader().id;
-        glUseProgram(shaderId);
+        lightingShaderAsset->GetShader()->Bind();
         
         float time = m_Data->Time;
         float diagMode = m_Data->DiagnosticMode;
@@ -173,47 +177,34 @@ void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
         float exposure = m_Data->Lighting.CurrentLighting.Exposure;
         float gamma = m_Data->Lighting.CurrentLighting.Gamma;
 
-        auto setVec3 = [&](const char* name, const glm::vec3& v) {
-            glUniform3fv(glGetUniformLocation(shaderId, name), 1, glm::value_ptr(v));
-        };
-        auto setVec4 = [&](const char* name, const glm::vec4& v) {
-            glUniform4fv(glGetUniformLocation(shaderId, name), 1, glm::value_ptr(v));
-        };
-        auto setFloat = [&](const char* name, float v) {
-            glUniform1f(glGetUniformLocation(shaderId, name), v);
-        };
-        auto setInt = [&](const char* name, int v) {
-            glUniform1i(glGetUniformLocation(shaderId, name), v);
-        };
-
-        setVec3("viewPos", camera.Position);
-        setFloat("uTime", time);
-        setFloat("uMode", diagMode);
+        lightingShaderAsset->GetShader()->SetVec3("viewPos", camera.Position);
+        lightingShaderAsset->GetShader()->SetFloat("uTime", time);
+        lightingShaderAsset->GetShader()->SetFloat("uMode", diagMode);
         
-        setVec3("lightDir", m_Data->Lighting.CurrentLighting.Direction);
+        lightingShaderAsset->GetShader()->SetVec3("lightDir", m_Data->Lighting.CurrentLighting.Direction);
         
         glm::vec4 lightColor = { m_Data->Lighting.CurrentLighting.LightColor.r / 255.0f, 
                                  m_Data->Lighting.CurrentLighting.LightColor.g / 255.0f, 
                                  m_Data->Lighting.CurrentLighting.LightColor.b / 255.0f, 
                                  m_Data->Lighting.CurrentLighting.LightColor.a / 255.0f };
-        setVec4("lightColor", lightColor);
+        lightingShaderAsset->GetShader()->SetVec4("lightColor", lightColor);
         
-        setFloat("ambient", ambient);
+        lightingShaderAsset->GetShader()->SetFloat("ambient", ambient);
         
         glm::vec4 skyColor = lightColor;
         skyColor.w = ambient * 0.35f; 
-        setVec4("skyAmbientColor", skyColor);
+        lightingShaderAsset->GetShader()->SetVec4("skyAmbientColor", skyColor);
 
-        setInt("uLightCount", lightCount);
-        setFloat("uExposure", exposure);
-        setFloat("uGamma", gamma);
+        lightingShaderAsset->GetShader()->SetInt("uLightCount", lightCount);
+        lightingShaderAsset->GetShader()->SetFloat("uExposure", exposure);
+        lightingShaderAsset->GetShader()->SetFloat("uGamma", gamma);
         
-        ApplyFogUniforms(lightingShaderAsset->GetShader().id);
+        ApplyFogUniforms(lightingShaderAsset);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, m_Data->Lighting.LightSSBO);
-        m_Data->CurrentShaderId = shaderId;
+        m_Data->CurrentShaderId = lightingShaderAsset->GetShader()->GetRendererID();
     }
 
-    // --- Direct Matrix Management (Pure OpenGL style) ---
+    // --- Direct glm::mat4 Management (Pure OpenGL style) ---
     // 1. Calculate View Transform
     m_Data->CurrentView = glm::lookAt(camera.Position, camera.Target, camera.Up);
 
@@ -239,7 +230,6 @@ void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
 void Renderer::EndScene()
 {
     m_Data->CurrentShaderId = 0;
-    glUseProgram(0);
 }
 
 void Renderer::Clear(const glm::vec4& color)
@@ -263,18 +253,21 @@ void Renderer::DrawMesh(const Mesh& mesh, const Material& material, const glm::m
     if (shaderId == 0) shaderId = m_Data->CurrentShaderId;
     if (shaderId == 0) return;
 
-    glUseProgram(shaderId);
+    auto shaderAsset = GetShaderLibrary().GetById(shaderId);
+    if (!shaderAsset) return;
 
-    // Set matrices
-    glUniformMatrix4fv(glGetUniformLocation(shaderId, "matModel"), 1, GL_FALSE, glm::value_ptr(transform));
-    glUniformMatrix4fv(glGetUniformLocation(shaderId, "matView"), 1, GL_FALSE, glm::value_ptr(m_Data->CurrentView));
-    glUniformMatrix4fv(glGetUniformLocation(shaderId, "matProjection"), 1, GL_FALSE, glm::value_ptr(m_Data->CurrentProj));
+    shaderAsset->GetShader()->Bind();
+ 
+     // Set matrices
+     shaderAsset->GetShader()->SetMatrix("matModel", transform);
+     shaderAsset->GetShader()->SetMatrix("matView", m_Data->CurrentView);
+     shaderAsset->GetShader()->SetMatrix("matProjection", m_Data->CurrentProj);
     
     glm::mat4 matNormal = glm::transpose(glm::inverse(transform));
-    glUniformMatrix4fv(glGetUniformLocation(shaderId, "matNormal"), 1, GL_FALSE, glm::value_ptr(matNormal));
+    shaderAsset->GetShader()->SetMatrix("matNormal", matNormal);
 
     glm::mat4 mvp = m_Data->CurrentProj * m_Data->CurrentView * transform;
-    glUniformMatrix4fv(glGetUniformLocation(shaderId, "mvp"), 1, GL_FALSE, glm::value_ptr(mvp));
+    shaderAsset->GetShader()->SetMatrix("mvp", mvp);
 
     // Bind VAO and Draw
     if (mesh.VAO)
@@ -292,12 +285,6 @@ void Renderer::DrawMeshInstanced(const Mesh& mesh, const Material& material, con
 {
     if (transforms.empty()) return;
 
-    uint32_t shaderId = material.ShaderID;
-    if (shaderId == 0) shaderId = m_Data->CurrentShaderId;
-    if (shaderId == 0) return;
-
-    glUseProgram(shaderId);
-    
     // Matricies are usually passed via an instance buffer, but for simplicity we keep raylib call or loop
     // Raylib's DrawMeshInstanced is quite complex internally.
     // For "clean OpenGL" we should implement instanced rendering properly.
@@ -313,16 +300,14 @@ void Renderer::DrawMeshInstanced(const Mesh& mesh, const Material& material, con
 void Renderer::DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color)
 {
     // Native OpenGL line drawing (Fixed function or simple shader)
-    // For now we use the simple unlit shader if available
-    auto unlitShader = m_Data->Shaders->Exists("Unlit") ? m_Data->Shaders->Get("Unlit") : nullptr;
-    if (unlitShader)
-    {
-        uint32_t shaderId = unlitShader->GetShader().id;
-        glUseProgram(shaderId);
-        
-        glm::mat4 mvp = m_Data->CurrentProj * m_Data->CurrentView;
-        glUniformMatrix4fv(glGetUniformLocation(shaderId, "u_ViewProjection"), 1, GL_FALSE, glm::value_ptr(mvp));
-        glUniform4fv(glGetUniformLocation(shaderId, "u_Color"), 1, glm::value_ptr(color));
+        auto unlitShader = m_Data->Shaders->Exists("Unlit") ? m_Data->Shaders->Get("Unlit") : nullptr;
+        if (unlitShader && unlitShader->GetShader())
+        {
+            unlitShader->GetShader()->Bind();
+            
+            glm::mat4 mvp = m_Data->CurrentProj * m_Data->CurrentView;
+            unlitShader->GetShader()->SetMatrix("u_ViewProjection", mvp);
+            unlitShader->GetShader()->SetVec4("u_Color", color);
         
         // Immediate mode replacement or small buffer
         float vertices[] = { start.x, start.y, start.z, end.x, end.y, end.z };
@@ -375,119 +360,77 @@ void Renderer::DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm
 {
     auto& shaders = GetShaderLibrary();
     if (!shaders.Exists("Grid")) return;
-    auto shader = shaders.Get("Grid")->GetShader();
+    auto shaderAsset = shaders.Get("Grid");
 
-    uint32_t shaderId = shader.id;
-    glUseProgram(shaderId);
-
-    glm::mat4 mvp = m_Data->CurrentProj * m_Data->CurrentView;
-    glUniformMatrix4fv(glGetUniformLocation(shaderId, "u_ViewProjection"), 1, GL_FALSE, glm::value_ptr(mvp));
-    
-    // Position the plane slightly below Y=0 to prevent Z-fighting
-    glm::vec3 planePos = { camera.Position.x, -0.005f, camera.Position.z };
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), planePos);
-    glUniformMatrix4fv(glGetUniformLocation(shaderId, "matModel"), 1, GL_FALSE, glm::value_ptr(model));
-    
-    glUniform3fv(glGetUniformLocation(shaderId, "cameraPos"), 1, &camera.Position.x);
-    
-    glm::vec4 col = color;
-    glUniform4fv(glGetUniformLocation(shaderId, "gridColor"), 1, glm::value_ptr(col));
-    glUniform1f(glGetUniformLocation(shaderId, "gridSize"), spacing);
+    shaderAsset->GetShader()->Bind();
+ 
+     glm::mat4 mvp = m_Data->CurrentProj * m_Data->CurrentView;
+     shaderAsset->GetShader()->SetMatrix("u_ViewProjection", mvp);
+     
+     // Position the plane slightly below Y=0 to prevent Z-fighting
+     glm::vec3 planePos = { camera.Position.x, -0.005f, camera.Position.z };
+     glm::mat4 model = glm::translate(glm::mat4(1.0f), planePos);
+     shaderAsset->GetShader()->SetMatrix("matModel", model);
+     
+     shaderAsset->GetShader()->SetVec3("cameraPos", camera.Position);
+     
+     glm::vec4 col = color;
+     shaderAsset->GetShader()->SetVec4("gridColor", col);
+     shaderAsset->GetShader()->SetFloat("gridSize", spacing);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
-    // Draw the plane mesh (static or shared mesh)
-    // We assume we have a quad/plane VAO ready
-    static uint32_t planeVAO = 0;
-    if (planeVAO == 0)
+    // Use shared mesh from GeometryGenerator
+    static Mesh gridPlane;
+    if (!gridPlane.VAO)
     {
-        float gridPlaneSize = 15000.0f; 
-        float vertices[] = {
-            -gridPlaneSize, 0.0f, -gridPlaneSize,
-             gridPlaneSize, 0.0f, -gridPlaneSize,
-             gridPlaneSize, 0.0f,  gridPlaneSize,
-            -gridPlaneSize, 0.0f,  gridPlaneSize
-        };
-        uint32_t vbo;
-        glGenVertexArrays(1, &planeVAO);
-        glGenBuffers(1, &vbo);
-        glBindVertexArray(planeVAO);
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+        gridPlane = GeometryGenerator::GenerateQuad(15000.0f);
     }
     
-    glBindVertexArray(planeVAO);
+    gridPlane.VAO->Bind();
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-    glBindVertexArray(0);
+    gridPlane.VAO->Unbind();
 }
 
-void Renderer::DrawSkybox(const SkyboxSettings& settings, const Camera3D& camera)
+void Renderer::DrawSkybox(uint32_t textureId, bool isCubemap, bool isHDR, float exposure, float brightness, float contrast, const Camera3D& camera)
 {
-    if (settings.TexturePath.empty())
+    if (textureId == 0)
         return;
 
-    auto texture = AssetManager::Get().Get<TextureAsset>(settings.TexturePath);
-    if (!texture || texture->GetState() != AssetState::Ready)
-        return;
-
-    bool isCubemap = (settings.Mode == 2);
     auto shaderAsset = isCubemap ? 
                        m_Data->Shaders->Get("SkyboxCubemap") : 
                        m_Data->Shaders->Get("Skybox");
     if (!shaderAsset) return;
-    uint32_t shaderId = shaderAsset->GetShader().id;
 
-    // 1. Generate Cubemap (Mode 2)
-    if (isCubemap)
-    {
-        uint32_t texId = texture->GetTexture().id;
-        if (m_Data->Skybox.CachedCubemapId == 0 || 
-            m_Data->Skybox.CachedCubemapPath != settings.TexturePath ||
-            m_Data->Skybox.SourceTextureId != texId)
-        {
-            auto genShaderAsset = m_Data->Shaders->Get("CubemapGen");
-            if (genShaderAsset)
-            {
-                if (m_Data->Skybox.CachedCubemapId != 0) glDeleteTextures(1, &m_Data->Skybox.CachedCubemapId);
-                m_Data->Skybox.CachedCubemapId = GenTextureCubemap(genShaderAsset->GetShader().id, texture->GetTexture().id, 1024);
-                m_Data->Skybox.CachedCubemapPath = settings.TexturePath;
-                m_Data->Skybox.SourceTextureId = texId;
-            }
-        }
-    }
+    // 1. Prepare Render State
+    RenderCommand::SetDepthFunc(RendererAPI::DepthFunc::LEqual);
+    RenderCommand::SetCullMode(RendererAPI::CullMode::None);
+    RenderCommand::DisableDepthMask();
 
-    // 2. Prepare Render State
-    glDepthFunc(GL_LEQUAL);
-    glDisable(GL_CULL_FACE);
-    glDepthMask(GL_FALSE);
-
-    // 3. Setup Uniforms
-    glUseProgram(shaderId);
+    // 2. Setup Uniforms
+    shaderAsset->GetShader()->Bind();
     
     // Always remove translation from view matrix for skybox
     glm::mat4 view = glm::mat4(glm::mat3(m_Data->CurrentView));
-    glUniformMatrix4fv(glGetUniformLocation(shaderId, "u_View"), 1, GL_FALSE, glm::value_ptr(view));
-    glUniformMatrix4fv(glGetUniformLocation(shaderId, "u_Projection"), 1, GL_FALSE, glm::value_ptr(m_Data->CurrentProj));
+    shaderAsset->GetShader()->SetMatrix("u_View", view);
+    shaderAsset->GetShader()->SetMatrix("u_Projection", m_Data->CurrentProj);
 
-    glUniform1f(glGetUniformLocation(shaderId, "u_Exposure"), settings.Exposure);
-    glUniform1f(glGetUniformLocation(shaderId, "u_Brightness"), settings.Brightness);
-    glUniform1f(glGetUniformLocation(shaderId, "u_Contrast"), settings.Contrast);
+    shaderAsset->GetShader()->SetFloat("u_Exposure", exposure);
+    shaderAsset->GetShader()->SetFloat("u_Brightness", brightness);
+    shaderAsset->GetShader()->SetFloat("u_Contrast", contrast);
     
-    int isHDR = texture->IsHDR() ? 1 : 0;
-    glUniform1i(glGetUniformLocation(shaderId, "u_IsHDR"), isHDR);
-    glUniform1i(glGetUniformLocation(shaderId, "u_VFlipped"), isCubemap ? 0 : 1);
+    shaderAsset->GetShader()->SetInt("u_IsHDR", isHDR ? 1 : 0);
+    shaderAsset->GetShader()->SetInt("u_VFlipped", isCubemap ? 0 : 1);
 
-    ApplyFogUniforms(shaderId);
+    ApplyFogUniforms(shaderAsset);
 
-    // 4. Bind Textures and Draw Mesh
+    // 3. Bind Textures and Draw Mesh
     if (isCubemap)
     {
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, m_Data->Skybox.CachedCubemapId);
-        glUniform1i(glGetUniformLocation(shaderId, "u_Cubemap"), 0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, textureId);
+        shaderAsset->GetShader()->SetInt("u_Cubemap", 0);
 
         if (m_Data->Skybox.SkyboxCubeModel && !m_Data->Skybox.SkyboxCubeModel->Meshes.empty())
         {
@@ -500,8 +443,8 @@ void Renderer::DrawSkybox(const SkyboxSettings& settings, const Camera3D& camera
     else
     {
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture->GetTexture().id);
-        glUniform1i(glGetUniformLocation(shaderId, "u_Panorama"), 0);
+        glBindTexture(GL_TEXTURE_2D, textureId);
+        shaderAsset->GetShader()->SetInt("u_Panorama", 0);
 
         if (m_Data->Skybox.SkyboxSphereModel && !m_Data->Skybox.SkyboxSphereModel->Meshes.empty())
         {
@@ -512,7 +455,7 @@ void Renderer::DrawSkybox(const SkyboxSettings& settings, const Camera3D& camera
         }
     }
 
-    // 5. Restore Render State
+    // 4. Restore Render State
     glDepthFunc(GL_LESS);
     glEnable(GL_CULL_FACE);
     glDepthMask(GL_TRUE);
@@ -523,10 +466,9 @@ void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const g
     // Custom billboard rendering in OpenGL
     // We can use a simple quad and rotate it to face the camera
     auto unlitShader = m_Data->Shaders->Exists("Unlit") ? m_Data->Shaders->Get("Unlit") : nullptr;
-    if (unlitShader)
+    if (unlitShader && unlitShader->GetShader())
     {
-        uint32_t shaderId = unlitShader->GetShader().id;
-        glUseProgram(shaderId);
+        unlitShader->GetShader()->Bind();
         
         // Calculate billboard transform
         glm::vec3 look = glm::normalize(camera.Position - position);
@@ -540,12 +482,12 @@ void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const g
         model[3] = glm::vec4(position, 1.0f);
         
         glm::mat4 mvp = m_Data->CurrentProj * m_Data->CurrentView * model;
-        glUniformMatrix4fv(glGetUniformLocation(shaderId, "u_ViewProjection"), 1, GL_FALSE, glm::value_ptr(mvp));
-        glUniform4fv(glGetUniformLocation(shaderId, "u_Color"), 1, glm::value_ptr(tint));
+        unlitShader->GetShader()->SetMatrix("u_ViewProjection", mvp);
+        unlitShader->GetShader()->SetVec4("u_Color", tint);
         
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureId);
-        glUniform1i(glGetUniformLocation(shaderId, "u_Texture"), 0);
+        unlitShader->GetShader()->SetInt("u_Texture", 0);
         
         // Draw quad (Reuse planeVAO from DrawInfiniteGrid or create a localized one)
         static uint32_t quadVAO = 0;
@@ -606,31 +548,32 @@ void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextu
     if (m_Data->Shaders->Exists("PostProcess"))
     {
         auto shaderAsset = m_Data->Shaders->Get("PostProcess");
-        uint32_t shaderId = shaderAsset->GetShader().id;
+        if (shaderAsset && shaderAsset->GetShader())
+        {
+            shaderAsset->GetShader()->Bind();
+            
+            // Fullscreen quad doesn't need transformation, set MVP to identity
+            glm::mat4 identity = glm::mat4(1.0f);
+            shaderAsset->GetShader()->SetMatrix("mvp", identity);
 
-        glUseProgram(shaderId);
-        
-        // Fullscreen quad doesn't need transformation, set MVP to identity
-        glm::mat4 identity = glm::mat4(1.0f);
-        glUniformMatrix4fv(glGetUniformLocation(shaderId, "mvp"), 1, GL_FALSE, glm::value_ptr(identity));
+            glm::mat4 invViewProj = glm::inverse(m_Data->CurrentProj * m_Data->CurrentView);
+            shaderAsset->GetShader()->SetMatrix("matInverseViewProj", invViewProj);
+            shaderAsset->GetShader()->SetVec3("viewPos", camera.Position);
+            
+            shaderAsset->GetShader()->SetFloat("uTime", m_Data->Time);
+            shaderAsset->GetShader()->SetFloat("uExposure", m_Data->Lighting.CurrentLighting.Exposure);
+            shaderAsset->GetShader()->SetFloat("uGamma", m_Data->Lighting.CurrentLighting.Gamma);
 
-        glm::mat4 invViewProj = glm::inverse(m_Data->CurrentProj * m_Data->CurrentView);
-        glUniformMatrix4fv(glGetUniformLocation(shaderId, "matInverseViewProj"), 1, GL_FALSE, glm::value_ptr(invViewProj));
-        glUniform3fv(glGetUniformLocation(shaderId, "viewPos"), 1, glm::value_ptr(camera.Position));
-        
-        glUniform1f(glGetUniformLocation(shaderId, "uTime"), m_Data->Time);
-        glUniform1f(glGetUniformLocation(shaderId, "uExposure"), m_Data->Lighting.CurrentLighting.Exposure);
-        glUniform1f(glGetUniformLocation(shaderId, "uGamma"), m_Data->Lighting.CurrentLighting.Gamma);
+            ApplyFogUniforms(shaderAsset);
 
-        ApplyFogUniforms(shaderId);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, screenTextureId);
+            shaderAsset->GetShader()->SetInt("texture0", 0);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, screenTextureId);
-        glUniform1i(glGetUniformLocation(shaderId, "texture0"), 0);
-
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, depthTextureId);
-        glUniform1i(glGetUniformLocation(shaderId, "texture1"), 1);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, depthTextureId);
+            shaderAsset->GetShader()->SetInt("texture1", 1);
+        }
 
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_CULL_FACE);
@@ -693,185 +636,28 @@ void Renderer::UpdateTime(Timestep time)
     m_Data->Time = time;
 }
 
-void Renderer::ApplyFogUniforms(uint32_t shaderId)
+void Renderer::ApplyFogUniforms(const std::shared_ptr<ShaderAsset>& shader)
 {
     const auto& fog = m_Data->Lighting.CurrentFog;
     int enabled = fog.Enabled ? 1 : 0;
     int mode = (int)fog.Mode;
     glm::vec4 color = { fog.FogColor.r / 255.0f, fog.FogColor.g / 255.0f, fog.FogColor.b / 255.0f, fog.FogColor.a / 255.0f };
 
-    glUniform1i(glGetUniformLocation(shaderId, "fogEnabled"), enabled);
-    glUniform4fv(glGetUniformLocation(shaderId, "fogColor"), 1, glm::value_ptr(color));
-    glUniform1f(glGetUniformLocation(shaderId, "fogDensity"), fog.Density);
-    glUniform1f(glGetUniformLocation(shaderId, "fogStart"), fog.Start);
-    glUniform1f(glGetUniformLocation(shaderId, "fogEnd"), fog.End);
-    glUniform1i(glGetUniformLocation(shaderId, "fogMode"), mode);
+    shader->GetShader()->SetInt("fogEnabled", enabled);
+    shader->GetShader()->SetVec4("fogColor", color);
+    shader->GetShader()->SetFloat("fogDensity", fog.Density);
+    shader->GetShader()->SetFloat("fogStart", fog.Start);
+    shader->GetShader()->SetFloat("fogEnd", fog.End);
+    shader->GetShader()->SetInt("fogMode", mode);
 }
 
 void Renderer::InitializeSkybox()
 {
-    // 1. Cube Generation
     m_Data->Skybox.SkyboxCubeModel = std::make_unique<Model>();
-    float s = 1.0f;
-    float cubeVertices[] = {
-        -s, -s,  s,  s, -s,  s,  s,  s,  s, -s,  s,  s, // Front
-        -s, -s, -s, -s,  s, -s,  s,  s, -s,  s, -s, -s, // Back
-        -s,  s, -s, -s,  s,  s,  s,  s,  s,  s,  s, -s, // Top
-        -s, -s, -s,  s, -s, -s,  s, -s,  s, -s, -s,  s, // Bottom
-         s, -s, -s,  s,  s, -s,  s,  s,  s,  s, -s,  s, // Right
-        -s, -s, -s, -s, -s,  s, -s,  s,  s, -s,  s, -s  // Left
-    };
-    uint32_t cubeIndices[] = {
-        0,1,2,  2,3,0,   4,5,6,  6,7,4,   8,9,10, 10,11,8,
-        12,13,14, 14,15,12, 16,17,18, 18,19,16, 20,21,22, 22,23,20
-    };
-    Mesh cubeMesh;
-    cubeMesh.VertexCount = 24;
-    cubeMesh.TriangleCount = 12;
-    cubeMesh.VAO = VertexArray::Create();
-    auto cubeVbo = VertexBuffer::Create(cubeVertices, sizeof(cubeVertices));
-    cubeVbo->SetLayout({ { ShaderDataType::Float3, "a_Position" } });
-    cubeMesh.VAO->AddVertexBuffer(cubeVbo);
-    cubeMesh.VAO->SetIndexBuffer(IndexBuffer::Create(cubeIndices, 36));
-    m_Data->Skybox.SkyboxCubeModel->Meshes.push_back(cubeMesh);
+    m_Data->Skybox.SkyboxCubeModel->Meshes.push_back(GeometryGenerator::GenerateUnitCube());
 
-    // 2. Sphere Generation (for Panoramas)
     m_Data->Skybox.SkyboxSphereModel = std::make_unique<Model>();
-    std::vector<float> sphereVertices;
-    std::vector<uint32_t> sphereIndices;
-    const unsigned int X_SEGMENTS = 64;
-    const unsigned int Y_SEGMENTS = 64;
-    for (unsigned int x = 0; x <= X_SEGMENTS; ++x) {
-        for (unsigned int y = 0; y <= Y_SEGMENTS; ++y) {
-            float xSegment = (float)x / (float)X_SEGMENTS;
-            float ySegment = (float)y / (float)Y_SEGMENTS;
-            float xPos = std::cos(xSegment * 2.0f * glm::pi<float>()) * std::sin(ySegment * glm::pi<float>());
-            float yPos = std::cos(ySegment * glm::pi<float>());
-            float zPos = std::sin(xSegment * 2.0f * glm::pi<float>()) * std::sin(ySegment * glm::pi<float>());
-            sphereVertices.push_back(xPos * 50.0f); // Large enough to not be clipped
-            sphereVertices.push_back(yPos * 50.0f);
-            sphereVertices.push_back(zPos * 50.0f);
-        }
-    }
-    for (unsigned int y = 0; y < Y_SEGMENTS; ++y) {
-        if (y % 2 == 0) {
-            for (unsigned int x = 0; x <= X_SEGMENTS; ++x) {
-                sphereIndices.push_back(y * (X_SEGMENTS + 1) + x);
-                sphereIndices.push_back((y + 1) * (X_SEGMENTS + 1) + x);
-            }
-        } else {
-            for (int x = X_SEGMENTS; x >= 0; --x) {
-                sphereIndices.push_back((y + 1) * (X_SEGMENTS + 1) + x);
-                sphereIndices.push_back(y * (X_SEGMENTS + 1) + x);
-            }
-        }
-    }
-    Mesh sphereMesh;
-    sphereMesh.VertexCount = (uint32_t)sphereVertices.size() / 3;
-    sphereMesh.TriangleCount = (uint32_t)sphereIndices.size() - 2; // Approximated for Triangle Strip
-    sphereMesh.VAO = VertexArray::Create();
-    auto sphereVbo = VertexBuffer::Create(sphereVertices.data(), (uint32_t)sphereVertices.size() * sizeof(float));
-    sphereVbo->SetLayout({ { ShaderDataType::Float3, "a_Position" } });
-    sphereMesh.VAO->AddVertexBuffer(sphereVbo);
-    sphereMesh.VAO->SetIndexBuffer(IndexBuffer::Create(sphereIndices.data(), (uint32_t)sphereIndices.size()));
-    // Actually, use Triangle Strip for sphere? No, let's keep it simple with Triangles if possible
-    // Wait, the index generation above is for Triangle Strip. 
-    // Let's rewrite for standard Triangles to avoid Renderer complexity.
-    sphereIndices.clear();
-    for (unsigned int y = 0; y < Y_SEGMENTS; ++y) {
-        for (unsigned int x = 0; x < X_SEGMENTS; ++x) {
-            sphereIndices.push_back((y + 1) * (X_SEGMENTS + 1) + x);
-            sphereIndices.push_back(y * (X_SEGMENTS + 1) + x);
-            sphereIndices.push_back(y * (X_SEGMENTS + 1) + x + 1);
-            sphereIndices.push_back((y + 1) * (X_SEGMENTS + 1) + x);
-            sphereIndices.push_back(y * (X_SEGMENTS + 1) + x + 1);
-            sphereIndices.push_back((y + 1) * (X_SEGMENTS + 1) + x + 1);
-        }
-    }
-    sphereMesh.TriangleCount = (uint32_t)sphereIndices.size() / 3;
-    sphereMesh.VAO->SetIndexBuffer(IndexBuffer::Create(sphereIndices.data(), (uint32_t)sphereIndices.size()));
-    m_Data->Skybox.SkyboxSphereModel->Meshes.push_back(sphereMesh);
-}
-
-uint32_t Renderer::GenTextureCubemap(uint32_t shaderId, uint32_t panoramaId, int size)
-{
-    uint32_t cubemap;
-    glGenTextures(1, &cubemap);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap);
-    for (unsigned int i = 0; i < 6; ++i)
-    {
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA16F, size, size, 0, GL_RGBA, GL_FLOAT, nullptr);
-    }
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-    // Save current state to restore later
-    GLint lastFBO;
-    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &lastFBO);
-    GLint lastViewport[4];
-    glGetIntegerv(GL_VIEWPORT, lastViewport);
-
-    uint32_t captureFBO;
-    glGenFramebuffers(1, &captureFBO);
-    glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
-    
-    glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
-    glm::mat4 captureViews[] = {
-        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
-        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
-        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-        glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
-    };
-
-    glUseProgram(shaderId);
-    glUniformMatrix4fv(glGetUniformLocation(shaderId, "projection"), 1, GL_FALSE, glm::value_ptr(captureProjection));
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, panoramaId);
-    glUniform1i(glGetUniformLocation(shaderId, "equirectangularMap"), 0);
-
-    glViewport(0, 0, size, size);
-    
-    // Disable depth testing since FBO has no depth attachment, and disable culling to see inside the cube
-    bool lastCullFace = glIsEnabled(GL_CULL_FACE);
-    bool lastDepthTest = glIsEnabled(GL_DEPTH_TEST);
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
-
-    for (unsigned int i = 0; i < 6; ++i)
-    {
-        glUniformMatrix4fv(glGetUniformLocation(shaderId, "view"), 1, GL_FALSE, glm::value_ptr(captureViews[i]));
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, cubemap, 0);
-        glClear(GL_COLOR_BUFFER_BIT);
-        
-        // Draw Unit Cube
-        if (m_Data->Skybox.SkyboxCubeModel && !m_Data->Skybox.SkyboxCubeModel->Meshes.empty())
-        {
-            auto& mesh = m_Data->Skybox.SkyboxCubeModel->Meshes[0];
-            mesh.VAO->Bind();
-            glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-            mesh.VAO->Unbind();
-        }
-    }
-    
-    // Restore state
-    if (lastCullFace) glEnable(GL_CULL_FACE);
-    if (lastDepthTest) glEnable(GL_DEPTH_TEST);
-
-    // Restore viewport and framebuffer
-    glViewport(lastViewport[0], lastViewport[1], lastViewport[2], lastViewport[3]);
-    glBindFramebuffer(GL_FRAMEBUFFER, lastFBO);
-    
-    glDeleteFramebuffers(1, &captureFBO);
-
-    // Reset clear color to something neutral
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    
-    return cubemap;
+    m_Data->Skybox.SkyboxSphereModel->Meshes.push_back(GeometryGenerator::GenerateSphere(50.0f, 64, 64));
 }
 
 void Renderer::CleanupSkybox()

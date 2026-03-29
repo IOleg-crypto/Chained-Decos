@@ -26,6 +26,19 @@ struct AudioComponent
     // Runtime
     std::shared_ptr<SoundAsset> Asset;
     bool IsPlaying = false;
+
+    static const char* GetStaticName() { return "AudioComponent"; }
+
+    template <typename Archive>
+    static void Serialize(Archive& archive, AudioComponent& component)
+    {
+        archive.Handle("SoundHandle", component.SoundHandle)
+            .Path("SoundPath", component.SoundPath)
+            .Property("Loop", component.Loop)
+            .Property("PlayOnStart", component.PlayOnStart)
+            .Property("Volume", component.Volume)
+            .Property("Pitch", component.Pitch);
+    }
 };
 
 } // namespace CHEngine

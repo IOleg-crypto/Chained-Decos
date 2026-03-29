@@ -37,7 +37,7 @@ struct ShaderComponent
         }
     }
 
-    void SetVec3(const std::string& name, const Vector3& value)
+    void SetVec3(const std::string& name, const glm::vec3& value)
     {
         auto it = std::find_if(Uniforms.begin(), Uniforms.end(), [&](const auto& u) { return u.Name == name; });
         if (it != Uniforms.end())
@@ -50,6 +50,14 @@ struct ShaderComponent
         {
             Uniforms.push_back({name, 2, {value.x, value.y, value.z, 0}});
         }
+    }
+
+    static const char* GetStaticName() { return "ShaderComponent"; }
+
+    template <typename Archive>
+    static void Serialize(Archive& archive, ShaderComponent& component)
+    {
+        archive.Path("ShaderPath", component.ShaderPath);
     }
 };
 } // namespace CHEngine

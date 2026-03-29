@@ -77,6 +77,19 @@ struct TransformComponent
     glm::vec3 PrevTranslation = {0, 0, 0};
     glm::quat PrevRotationQuat = {1.0f, 0.0f, 0.0f, 0.0f};
     glm::vec3 PrevScale = {1, 1, 1};
+
+    static const char* GetStaticName() { return "TransformComponent"; }
+
+    template <typename Archive>
+    static void Serialize(Archive& archive, TransformComponent& component)
+    {
+        archive.Property("Translation", component.Translation)
+            .Property("Rotation", component.Rotation)
+            .Property("Scale", component.Scale);
+
+        // Always sync rotation quat in case we just deserialized
+        component.SetRotation(component.Rotation);
+    }
 };
 
 } // namespace CHEngine

@@ -31,7 +31,7 @@ struct PrimitiveComponent
     float Height = 1.0f;
     int Slices = 16;
     int Stacks = 16;
-    Vector3 Dimensions = {1.0f, 1.0f, 1.0f};
+    glm::vec3 Dimensions = {1.0f, 1.0f, 1.0f};
 
     // Internal state
     bool Dirty = false;
@@ -44,6 +44,26 @@ struct PrimitiveComponent
     PrimitiveComponent(PrimitiveType type)
         : Type(type)
     {
+    }
+
+    static const char* GetStaticName() { return "PrimitiveComponent"; }
+
+    template <typename Archive>
+    static void Serialize(Archive& archive, PrimitiveComponent& component)
+    {
+        archive.Property("Type", (int&)component.Type)
+            .Property("Radius", component.Radius)
+            .Property("InnerRadius", component.InnerRadius)
+            .Property("Height", component.Height)
+            .Property("Slices", component.Slices)
+            .Property("Stacks", component.Stacks)
+            .Property("Dimensions", component.Dimensions);
+
+        if (archive.GetMode() == Archive::Deserialize)
+        {
+            component.Dirty = true;
+            component.Asset = nullptr;
+        }
     }
 };
 

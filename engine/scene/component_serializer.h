@@ -41,6 +41,14 @@ public:
     template <typename T>
     void Register(const std::string& key, std::function<void(SerializationUtils::PropertyArchive&, T&)> schema);
 
+    // Auto-discovering register (Requires T::Serialize(Archive&, T&))
+    template <typename T>
+    void Register(const std::string& key);
+
+    // Keyless register (Requires T::GetStaticName() and T::Serialize(Archive&, T&))
+    template <typename T>
+    void Register();
+
     // Register with custom logic (for complex cases)
     void RegisterCustom(const ComponentSerializerEntry& entry);
 
@@ -124,6 +132,50 @@ void ComponentSerializer::Register(const std::string& key,
 
     RegisterCustom(entry);
 }
+
+template <typename T>
+void ComponentSerializer::Register(const std::string& key)
+{
+    ComponentSerializerEntry entry;
+    entry.Key = key;
+
+    entry.Serialize = [key](YAML::Emitter& out, Entity entity) {
+        if (entity.HasComponent<T>())
+        {
+            out << YAML::Key << key << YAML::Value << YAML::BeginMap;
+            SerializationUtils::PropertyArchive archive(out);
+            T::Serialize(archive, entity.GetComponent<T>());
+            out << YAML::EndMap;
+        }
+    };
+
+    entry.Deserialize = [key](Entity entity, YAML::Node node) {
+        if (node[key])
+        {
+            if (!entity.HasComponent<T>()) entity.AddComponent<T>();
+            entity.Patch<T>([&](auto& component) {
+                SerializationUtils::PropertyArchive archive(node[key]);
+                T::Serialize(archive, component);
+            });
+        }
+    };
+
+    entry.Copy = [](Entity source, Entity destination) {
+        if (source.HasComponent<T>())
+        {
+            destination.AddOrReplaceComponent<T>(source.GetComponent<T>());
+        }
+    };
+
+    RegisterCustom(entry);
+}
+
+template <typename T>
+void ComponentSerializer::Register()
+{
+    Register<T>(T::GetStaticName());
+}
+
 } // namespace CHEngine
 
 #endif // CH_COMPONENT_SERIALIZER_H

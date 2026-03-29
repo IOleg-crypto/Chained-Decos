@@ -15,7 +15,7 @@ void RenderCommand::Shutdown()
 {
 }
 
-void RenderCommand::DrawLine(Vector3 startPosition, Vector3 endPosition, Color color)
+void RenderCommand::DrawLine(glm::vec3 startPosition, glm::vec3 endPosition, Color color)
 {
     // TODO: Modern OpenGL line drawing (VAO/VBO batching)
     /*
@@ -46,38 +46,4 @@ void RenderCommand::DrawGrid(int sliceCount, float spacing)
     */
 }
 
-void RenderCommand::SetBlendMode(int blendMode)
-{
-    s_RendererAPI->SetBlendMode(blendMode != 0);
-}
-
-void RenderCommand::EnableDepthTest()
-{
-    s_RendererAPI->SetDepthTest(true);
-}
-
-void RenderCommand::DisableDepthTest()
-{
-    s_RendererAPI->SetDepthTest(false);
-}
-
-void RenderCommand::EnableBackfaceCulling()
-{
-    s_RendererAPI->SetCulling(true);
-}
-
-void RenderCommand::DisableBackfaceCulling()
-{
-    s_RendererAPI->SetCulling(false);
-}
-
-void RenderCommand::EnableDepthMask()
-{
-    s_RendererAPI->SetDepthMask(true);
-}
-
-void RenderCommand::DisableDepthMask()
-{
-    s_RendererAPI->SetDepthMask(false);
-}
 } // namespace CHEngine

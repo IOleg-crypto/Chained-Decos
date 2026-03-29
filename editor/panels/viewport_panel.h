@@ -41,7 +41,7 @@ public:
     {
         return m_Hovered;
     }
-    Vector2 GetSize() const
+    glm::vec2 GetSize() const
     {
         return m_ViewportSize;
     }
@@ -58,7 +58,7 @@ public:
 private:
     std::shared_ptr<Framebuffer> m_ViewportFramebuffer;
     std::shared_ptr<Framebuffer> m_HDRFramebuffer;
-    Vector2 m_ViewportSize = {0, 0};
+    glm::vec2 m_ViewportSize = {0, 0};
     bool m_Focused = false;
     bool m_Hovered = false;
 

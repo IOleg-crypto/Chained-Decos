@@ -2,18 +2,24 @@ add_library(engine_graphics OBJECT
     # Pipeline
         pipeline/renderer.cpp
         pipeline/ui_renderer.cpp
+        pipeline/ui_widget_renderer.cpp
         pipeline/ui_font_registry.cpp
         pipeline/shader_library.cpp
         pipeline/scene_renderer.cpp
-        pipeline/renderer2d.cpp
+
         pipeline/render_command.cpp
+        pipeline/texture_utility.cpp
+        pipeline/geometry_generator.cpp
         pipeline/renderer.h
         pipeline/scene_renderer.h
         pipeline/ui_renderer.h
+        pipeline/ui_widget_renderer.h
         pipeline/ui_font_registry.h
         pipeline/shader_library.h
         pipeline/material.h
         pipeline/frustum.h
+        pipeline/texture_utility.h
+        pipeline/geometry_generator.h
 
     # Assets
         assets/shader_asset.cpp
@@ -26,38 +32,44 @@ add_library(engine_graphics OBJECT
         assets/font_asset.h
         assets/environment.h
 
-    # Importers
-        importers/mesh_importer.cpp
-        importers/texture_importer.cpp
-        importers/shader_importer.cpp
-        importers/font_importer.cpp
-        importers/environment_importer.cpp
-        importers/mesh_importer.h
-        importers/texture_importer.h
-        importers/shader_importer.h
-        importers/font_importer.h
-        importers/asset_importer.h
-
     # Loaders
+        loaders/texture_loader.cpp
+        loaders/model_loader.cpp
+        loaders/shader_loader.cpp
+        loaders/font_loader.cpp
+        loaders/environment_loader.cpp
         loaders/texture_loader.h
         loaders/model_loader.h
         loaders/shader_loader.h
         loaders/font_loader.h
-        loaders/audio_loader.h
         loaders/environment_loader.h
 
     # API & Backend
         api/renderer_api.cpp
         api/buffer.cpp
+        api/buffer.h
         api/vertex_array.cpp
+        api/vertex_array.h
+        api/texture.cpp
+        api/texture.h
         api/framebuffer.cpp
         api/framebuffer.h
+        api/renderer_api.h
         api/model_data.h
+        api/shader.h
+        api/shader.cpp
         api/opengl/opengl_renderer_api.cpp
+        api/opengl/opengl_renderer_api.h
         api/opengl/opengl_buffer.cpp
+        api/opengl/opengl_buffer.h
         api/opengl/opengl_vertex_array.cpp
+        api/opengl/opengl_vertex_array.h
+        api/opengl/opengl_texture.cpp
+        api/opengl/opengl_texture.h
         api/opengl/opengl_framebuffer.cpp
         api/opengl/opengl_framebuffer.h
+        api/opengl/opengl_shader.h
+        api/opengl/opengl_shader.cpp
 )
 
 target_include_directories(engine_graphics PUBLIC

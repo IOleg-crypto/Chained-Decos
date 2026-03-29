@@ -15,6 +15,14 @@ struct TagComponent
         : Tag(tag)
     {
     }
+
+    static const char* GetStaticName() { return "TagComponent"; }
+
+    template <typename Archive>
+    static void Serialize(Archive& archive, TagComponent& component)
+    {
+        archive.Property("Tag", component.Tag);
+    }
 };
 
 } // namespace CHEngine

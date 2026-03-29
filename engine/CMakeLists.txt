@@ -6,6 +6,8 @@ set(ENGINE_INCLUDE_DIRS
     ${yaml-cpp_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/entt/src
     ${CMAKE_SOURCE_DIR}/include/coral/Coral.Native/Include
+    ${CMAKE_SOURCE_DIR}/include/miniaudio
+    ${CMAKE_SOURCE_DIR}/include/glfw/include
 )
 
 # SHARED for local development (hot-reload), STATIC for CI/distribution
