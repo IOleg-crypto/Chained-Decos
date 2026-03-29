@@ -242,12 +242,12 @@ bool EditorGUI::Property(const char* label, Color& value)
     return changed;
 }
 
-bool EditorGUI::Property(const char* label, Vector2& value, float speed, float min, float max)
+bool EditorGUI::Property(const char* label, glm::vec2& value, float speed, float min, float max)
 {
     return DrawVec2(label, value, 0.0f);
 }
 
-bool EditorGUI::Property(const char* label, Vector3& value, float speed, float min, float max)
+bool EditorGUI::Property(const char* label, glm::vec3& value, float speed, float min, float max)
 {
     return DrawVec3(label, value, 0.0f);
 }
@@ -364,7 +364,7 @@ static void DrawPropertyControl(const char* id, float& val, ImVec4 color, const 
     ImGui::PopItemWidth();
 }
 
-bool EditorGUI::DrawVec2(const char* label, Vector2& values, float resetValue)
+bool EditorGUI::DrawVec2(const char* label, glm::vec2& values, float resetValue)
 {
     bool changed = false;
     ImGui::PushID(label);
@@ -489,7 +489,7 @@ void EditorGUI::ApplyTheme()
     colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
 }
 
-bool EditorGUI::DrawVec3(const char* label, Vector3& values, float resetValue)
+bool EditorGUI::DrawVec3(const char* label, glm::vec3& values, float resetValue)
 {
     bool changed = false;
     ImGui::PushID(label);
@@ -562,7 +562,7 @@ bool EditorGUI::DrawVec3(const char* label, Vector3& values, float resetValue)
     return changed;
 }
 
-Ray EditorGUI::GetMouseRay(const Camera3D& camera, const Vector2& localMousePos, const Vector2& viewportSize)
+Ray EditorGUI::GetMouseRay(const Camera3D& camera, const glm::vec2& localMousePos, const glm::vec2& viewportSize)
 {
     return ScenePicker::CreateRayFromViewport(camera, localMousePos, viewportSize);
 }

@@ -3,7 +3,7 @@
 
  #define GLM_ENABLE_EXPERIMENTAL
 #include "engine/core/log.h"
-#include "engine/core/math_types.h"
+#include "engine/core/ch_math.h"
 #include <memory>
 
 #include "engine/core/platform_detection.h"

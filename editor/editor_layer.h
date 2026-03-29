@@ -12,7 +12,6 @@
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_events.h"
 #include "imgui.h"
-#include "engine/core/settings_manager.h"
 #include "undo/command_history.h"
 #include <memory>
 
@@ -133,7 +132,6 @@ public:
 
 private:
     EditorLayerConfig m_Config;
-    std::unique_ptr<SettingsManager> m_Settings;
     bool OnProjectOpened(ProjectOpenedEvent& e);
     bool OnSceneOpened(SceneOpenedEvent& e);
 

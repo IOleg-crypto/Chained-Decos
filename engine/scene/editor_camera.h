@@ -3,7 +3,7 @@
 
 #include "engine/scene/scene_camera.h"
 #include "engine/core/timestep.h"
-#include "engine/core/math_types.h"
+#include "engine/core/ch_math.h"
 
 namespace CHEngine
 {
@@ -22,17 +22,17 @@ public:
         SceneCamera::SetViewportSize(width, height); 
     }
 
-    const Matrix& GetViewMatrix() const { return m_ViewMatrix; }
-    Matrix GetViewProjection() const 
+    const glm::mat4& GetViewMatrix() const { return m_ViewMatrix; }
+    glm::mat4 GetViewProjection() const 
     { 
         return GetProjection() * m_ViewMatrix; 
     }
 
-    Vector3 GetUpDirection() const;
-    Vector3 GetRightDirection() const;
-    Vector3 GetForwardDirection() const;
-    Vector3 CalculatePosition() const;
-    Quaternion GetOrientation() const;
+    glm::vec3 GetUpDirection() const;
+    glm::vec3 GetRightDirection() const;
+    glm::vec3 GetForwardDirection() const;
+    glm::vec3 CalculatePosition() const;
+    glm::quat GetOrientation() const;
 
     float GetPitch() const { return m_Pitch; }
     float GetYaw() const { return m_Yaw; }
@@ -40,14 +40,14 @@ public:
     void SetPitch(float pitch) { m_Pitch = pitch; }
     void SetYaw(float yaw) { m_Yaw = yaw; }
 
-    Vector3 GetFocalPoint() const { return m_FocalPoint; }
-    void SetFocalPoint(const Vector3& focalPoint) { m_FocalPoint = focalPoint; }
+    glm::vec3 GetFocalPoint() const { return m_FocalPoint; }
+    void SetFocalPoint(const glm::vec3& focalPoint) { m_FocalPoint = focalPoint; }
     
     float GetDistance() const { return m_Distance; }
     void SetDistance(float distance) { m_Distance = distance; }
 
-    void MousePan(const Vector2& delta);
-    void MouseRotate(const Vector2& delta);
+    void MousePan(const glm::vec2& delta);
+    void MouseRotate(const glm::vec2& delta);
     void MouseZoom(float delta);
 
     std::pair<float, float> PanSpeed() const;
@@ -59,10 +59,10 @@ private:
 
 private:
     float m_Pitch = 0.0f, m_Yaw = 0.0f;
-    Vector3 m_FocalPoint = { 0.0f, 0.0f, 0.0f };
+    glm::vec3 m_FocalPoint = { 0.0f, 0.0f, 0.0f };
     float m_Distance = 10.0f;
 
-    Matrix m_ViewMatrix = Matrix(1.0f);
+    glm::mat4 m_ViewMatrix = glm::mat4(1.0f);
     uint32_t m_ViewportWidth = 1280, m_ViewportHeight = 720;
 };
 

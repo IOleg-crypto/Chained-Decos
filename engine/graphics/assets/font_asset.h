@@ -2,7 +2,7 @@
 #define CH_FONT_ASSET_H
 
 #include "engine/core/assets/asset.h"
-#include <string>
+// #include <string>
 #include <cstdint>
 
 namespace CHEngine
@@ -25,34 +25,21 @@ struct NativeFont
 class FontAsset : public Asset
 {
 public:
+    FontAsset()
+        : Asset(GetStaticType())
+    {
+    }
+    virtual ~FontAsset() = default;
+
     static AssetType GetStaticType()
     {
         return AssetType::Font;
     }
 
-    FontAsset()
-        : Asset(GetStaticType())
-    {
-    }
-    virtual ~FontAsset();
-    
-    NativeFont& GetFont()
-    {
-        return m_Font;
-    }
-    const NativeFont& GetFont() const
-    {
-        return m_Font;
-    }
+    void OnLoaded() override {}
 
-    void SetFont(const NativeFont& font)
-    {
-        m_Font = font;
-    }
-
-    void UploadToGPU()
-    {
-    } 
+    const NativeFont& GetFont() const { return m_Font; }
+    void SetFont(const NativeFont& font) { m_Font = font; }
 
 private:
     NativeFont m_Font = {0};

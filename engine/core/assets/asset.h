@@ -21,7 +21,7 @@ enum class AssetType : uint16_t
     Environment,
     Material,
     Font,
-    AnimationGraph
+    Animatioraph
 };
 
 enum class AssetState : uint8_t
@@ -91,6 +91,8 @@ public:
         return m_ID;
     }
 
+    // Called on the main thread after the asset is loaded (useful for GPU uploads)
+    virtual void OnLoaded() {}
 protected:
     std::string m_Path;
     UUID m_ID;

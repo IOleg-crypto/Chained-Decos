@@ -1,16 +1,11 @@
 #include "scriptengine.h"
 #include "engine/core/log.h"
-#include "engine/scene/scene.h"
 #include "engine/scene/project.h"
 #include "scene_scripting.h"
 #include "engine/core/filesystem_utils.h"
-#include "engine/core/string_utils.h"
 #include <Coral/ManagedObject.hpp>
-#include <chrono>
 #include <filesystem>
-#include <iostream>
 #include "script_glue.h"
-#include "engine/core/base.h"
 
 namespace CHEngine {
 
@@ -217,7 +212,8 @@ void ScriptEngine::DiscoverScriptTypes()
             continue;
 
         std::string fullName = (std::string)type->GetFullName();
-        std::string key      = Utils::ToLower(fullName);
+        std::string key = fullName;
+        std::transform(key.begin(), key.end(), key.begin(), ::tolower);
 
         m_ScriptClasses[key] = *type;
         CH_CORE_INFO("ScriptEngine: Registered script '{}' (key: '{}')", fullName, key);
@@ -229,7 +225,8 @@ void ScriptEngine::DiscoverScriptTypes()
 // ── Script lookup ─────────────────────────────────────────────────────────────
 Coral::Type* ScriptEngine::GetScriptClass(const std::string& name)
 {
-    std::string key = Utils::ToLower(name);
+    std::string key = name;
+    std::transform(key.begin(), key.end(), key.begin(), ::tolower);
 
     // Exact full-name match (most common)
     auto it = m_ScriptClasses.find(key);

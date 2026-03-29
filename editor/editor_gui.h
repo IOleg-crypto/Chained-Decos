@@ -8,6 +8,8 @@
 
 #include "editor_layer.h"
 #include "editor_panels.h"
+#include "engine/core/ch_math.h"
+#include "engine/graphics/pipeline/renderer.h"
 
 
 namespace CHEngine
@@ -34,8 +36,8 @@ public:
     static bool Property(const char* label, float& value, float speed = 0.1f, float min = 0.0f, float max = 0.0f);
     static bool Property(const char* label, std::string& value, bool multiline = false);
     static bool Property(const char* label, CHEngine::Color& value);
-    static bool Property(const char* label, Vector2& value, float speed = 0.1f, float min = 0.0f, float max = 0.0f);
-    static bool Property(const char* label, Vector3& value, float speed = 0.1f, float min = 0.0f, float max = 0.0f);
+    static bool Property(const char* label, glm::vec2& value, float speed = 0.1f, float min = 0.0f, float max = 0.0f);
+    static bool Property(const char* label, glm::vec3& value, float speed = 0.1f, float min = 0.0f, float max = 0.0f);
 
     static bool Property(const char* label, int& value, const char** items, int itemCount);
 
@@ -45,10 +47,10 @@ public:
     // --- File Property ---
     static bool Property(const char* label, std::string& value, const std::string& filter);
 
-    static bool DrawVec2(const char* label, Vector2& values, float resetValue = 0.0f);
-    static bool DrawVec3(const char* label, Vector3& values, float resetValue = 0.0f);
+    static bool DrawVec2(const char* label, glm::vec2& values, float resetValue = 0.0f);
+    static bool DrawVec3(const char* label, glm::vec3& values, float resetValue = 0.0f);
     static void ApplyTheme();
-    static Ray GetMouseRay(const Camera3D& camera, const Vector2& mousePosition, const Vector2& viewportSize);
+    static Ray GetMouseRay(const struct Camera3D& camera, const glm::vec2& mousePosition, const glm::vec2& viewportSize);
 };
 
 // Builder for properties
@@ -86,12 +88,12 @@ struct PropertyBuilder
         Changed |= EditorGUI::Property(label, value);
         return *this;
     }
-    PropertyBuilder& Vec2(const char* label, Vector2& value, float speed = 0.1f)
+    PropertyBuilder& Vec2(const char* label, glm::vec2& value, float speed = 0.1f)
     {
         Changed |= EditorGUI::Property(label, value, speed);
         return *this;
     }
-    PropertyBuilder& Vec3(const char* label, Vector3& value, float speed = 0.1f)
+    PropertyBuilder& Vec3(const char* label, glm::vec3& value, float speed = 0.1f)
     {
         Changed |= EditorGUI::Property(label, value, speed);
         return *this;

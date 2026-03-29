@@ -10,7 +10,7 @@
 #include <glm/gtx/quaternion.hpp>
 
 #include "yaml-cpp/yaml.h"
-#include "engine/core/math_types.h"
+#include "engine/core/ch_math.h"
 
 namespace YAML
 {
@@ -127,7 +127,7 @@ template <> struct convert<glm::quat>
     }
 };
 
-// Quaternion is a typedef of Vector4 in Raylib, so it uses the Vector4 specialization.
+// glm::quat is a typedef of glm::vec4 in Raylib, so it uses the glm::vec4 specialization.
 
 template <> struct convert<CHEngine::Color>
 {
@@ -192,7 +192,7 @@ inline YAML::Emitter& operator<<(YAML::Emitter& out, const glm::quat& q)
     return out;
 }
 
-// operator<< for Quaternion uses Vector4 overload
+// operator<< for glm::quat uses glm::vec4 overload
 
 inline YAML::Emitter& operator<<(YAML::Emitter& out, const CHEngine::Color& c)
 {

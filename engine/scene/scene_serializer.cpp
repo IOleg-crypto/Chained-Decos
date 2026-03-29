@@ -167,7 +167,7 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
             }
             if (background["Color"])
             {
-                m_Scene->GetSettings().BackgroundColor = background["Color"].as<Color>();
+                m_Scene->GetSettings().BackgroundColor = background["Color"].as<CHEngine::Color>();
             }
             if (background["TexturePath"] && background["TexturePath"].IsScalar())
             {
@@ -182,7 +182,7 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
             auto canvas = data["Canvas"];
             if (canvas["ReferenceResolution"])
             {
-                m_Scene->GetSettings().Canvas.ReferenceResolution = canvas["ReferenceResolution"].as<Vector2>();
+                m_Scene->GetSettings().Canvas.ReferenceResolution = canvas["ReferenceResolution"].as<glm::vec2>();
             }
             if (canvas["ScaleMode"])
             {
@@ -236,11 +236,11 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
                 auto lighting = data["Lighting"];
                 if (lighting["Direction"])
                 {
-                    settings.Lighting.Direction = lighting["Direction"].as<Vector3>();
+                    settings.Lighting.Direction = lighting["Direction"].as<glm::vec3>();
                 }
                 if (lighting["LightColor"])
                 {
-                    settings.Lighting.LightColor = lighting["LightColor"].as<Color>();
+                    settings.Lighting.LightColor = lighting["LightColor"].as<CHEngine::Color>();
                 }
                 if (lighting["Ambient"])
                 {
@@ -252,11 +252,11 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
                 // Backward compat: old flat field names
                 if (data["LightDirection"])
                 {
-                    settings.Lighting.Direction = data["LightDirection"].as<Vector3>();
+                    settings.Lighting.Direction = data["LightDirection"].as<glm::vec3>();
                 }
                 if (data["LightColor"])
                 {
-                    settings.Lighting.LightColor = data["LightColor"].as<Color>();
+                    settings.Lighting.LightColor = data["LightColor"].as<CHEngine::Color>();
                 }
                 if (data["AmbientIntensity"])
                 {
@@ -298,7 +298,7 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
                 }
                 if (fog["Color"])
                 {
-                    settings.Fog.FogColor = fog["Color"].as<Color>();
+                    settings.Fog.FogColor = fog["Color"].as<CHEngine::Color>();
                 }
                 if (fog["Density"])
                 {

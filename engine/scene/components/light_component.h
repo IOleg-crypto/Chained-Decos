@@ -24,6 +24,19 @@ struct LightComponent
 
     LightComponent() = default;
     LightComponent(const LightComponent&) = default;
+
+    static const char* GetStaticName() { return "LightComponent"; }
+
+    template <typename Archive>
+    static void Serialize(Archive& archive, LightComponent& component)
+    {
+        archive.Property("Type", (int&)component.Type)
+            .Property("LightColor", component.LightColor)
+            .Property("Intensity", component.Intensity)
+            .Property("Radius", component.Radius)
+            .Property("InnerCutoff", component.InnerCutoff)
+            .Property("OuterCutoff", component.OuterCutoff);
+    }
 };
 } // namespace CHEngine
 

@@ -1,7 +1,7 @@
 #ifndef CH_COLLISION_TRIANGLE_H
 #define CH_COLLISION_TRIANGLE_H
 
-#include "engine/core/math_types.h"
+#include "engine/core/ch_math.h"
 #include <glm/glm.hpp>
 
 namespace CHEngine

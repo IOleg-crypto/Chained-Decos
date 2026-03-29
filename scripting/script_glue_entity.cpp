@@ -3,49 +3,49 @@
 namespace CHEngine {
 
     // ── Entity / Transform ────────────────────────────────────────────────
-    CH_SCRIPT_FUNC void Entity_GetTranslation(uint64_t entityID, Vector3* outTranslation) {
+    CH_SCRIPT_FUNC void Entity_GetTranslation(uint64_t entityID, glm::vec3* outTranslation) {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<TransformComponent>()) 
             *outTranslation = entity.GetComponent<TransformComponent>().Translation;
     }
 
-    CH_SCRIPT_FUNC void Entity_SetTranslation(uint64_t entityID, Vector3* inTranslation) {
+    CH_SCRIPT_FUNC void Entity_SetTranslation(uint64_t entityID, glm::vec3* inTranslation) {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<TransformComponent>()) 
             entity.GetComponent<TransformComponent>().SetTranslation(*inTranslation);
     }
 
-    CH_SCRIPT_FUNC void Entity_GetRotation(uint64_t entityID, Vector3* outRotation) {
+    CH_SCRIPT_FUNC void Entity_GetRotation(uint64_t entityID, glm::vec3* outRotation) {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<TransformComponent>()) 
             *outRotation = entity.GetComponent<TransformComponent>().Rotation;
     }
 
-    CH_SCRIPT_FUNC void Entity_SetRotation(uint64_t entityID, Vector3* inRotation) {
+    CH_SCRIPT_FUNC void Entity_SetRotation(uint64_t entityID, glm::vec3* inRotation) {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<TransformComponent>()) 
             entity.GetComponent<TransformComponent>().SetRotation(*inRotation);
     }
 
-    CH_SCRIPT_FUNC void Entity_GetScale(uint64_t entityID, Vector3* outScale) {
+    CH_SCRIPT_FUNC void Entity_GetScale(uint64_t entityID, glm::vec3* outScale) {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<TransformComponent>()) 
             *outScale = entity.GetComponent<TransformComponent>().Scale;
     }
 
-    CH_SCRIPT_FUNC void Entity_SetScale(uint64_t entityID, Vector3* inScale) {
+    CH_SCRIPT_FUNC void Entity_SetScale(uint64_t entityID, glm::vec3* inScale) {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<TransformComponent>()) 
             entity.GetComponent<TransformComponent>().SetScale(*inScale);
     }
 
-    CH_SCRIPT_FUNC void Entity_GetVelocity(uint64_t entityID, Vector3* outVelocity) {
+    CH_SCRIPT_FUNC void Entity_GetVelocity(uint64_t entityID, glm::vec3* outVelocity) {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<RigidBodyComponent>()) 
             *outVelocity = entity.GetComponent<RigidBodyComponent>().Velocity;
     }
 
-    CH_SCRIPT_FUNC void Entity_SetVelocity(uint64_t entityID, Vector3* inVelocity) {
+    CH_SCRIPT_FUNC void Entity_SetVelocity(uint64_t entityID, glm::vec3* inVelocity) {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<RigidBodyComponent>()) 
             entity.GetComponent<RigidBodyComponent>().Velocity = *inVelocity;

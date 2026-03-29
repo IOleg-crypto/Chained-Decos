@@ -22,6 +22,7 @@ target_include_directories(engine_physics PUBLIC
     ${assimp_SOURCE_DIR}/include
     ${assimp_BINARY_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/entt/src
+    ${CMAKE_SOURCE_DIR}/include/glfw/include
 )
 
 target_link_libraries(engine_physics PUBLIC 

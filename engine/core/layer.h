@@ -36,6 +36,9 @@ public:
     virtual void OnUpdate(Timestep ts)
     {
     }
+    virtual void OnFixedUpdate(Timestep ts)
+    {
+    }
     virtual void OnRender(Timestep ts)
     {
     }

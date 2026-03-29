@@ -3,7 +3,7 @@
 
 #include "engine/scene/entity.h"
 #include "engine/graphics/api/camera_types.h"
-#include "engine/core/math_types.h"
+#include "engine/core/ch_math.h"
 
 namespace CHEngine
 {

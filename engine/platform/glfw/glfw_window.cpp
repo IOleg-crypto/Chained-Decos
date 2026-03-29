@@ -1,4 +1,4 @@
-#include "windows_window.h"
+#include "glfw_window.h"
 #include "engine/core/log.h"
 #include "engine/core/ch_assert.h"
 
@@ -13,29 +13,24 @@ static void GLFWErrorCallback(int error, const char* description)
     CH_CORE_ERROR("GLFW Error ({0}): {1}", error, description);
 }
 
-std::unique_ptr<Window> Window::Create(const WindowProperties& properties)
-{
-    return std::make_unique<WindowsWindow>(properties);
-}
-
-WindowsWindow::WindowsWindow(const WindowProperties& properties)
+GlfwWindow::GlfwWindow(const WindowProperties& properties)
 {
     Init(properties);
 }
 
-WindowsWindow::~WindowsWindow()
+GlfwWindow::~GlfwWindow()
 {
     Shutdown();
 }
 
-void WindowsWindow::Init(const WindowProperties& properties)
+void GlfwWindow::Init(const WindowProperties& properties)
 {
     m_Width = properties.Width;
     m_Height = properties.Height;
     m_Title = properties.Title;
     m_VSync = properties.VSync;
 
-    CH_CORE_INFO("Initializing Windows Window: {} ({}x{})", m_Title, m_Width, m_Height);
+    CH_CORE_INFO("Initializing Glfw Window: {} ({}x{})", m_Title, m_Width, m_Height);
 
     static bool s_GLFWInitialized = false;
     if (!s_GLFWInitialized)
@@ -54,6 +49,8 @@ void WindowsWindow::Init(const WindowProperties& properties)
     CH_CORE_ASSERT(m_WindowHandle, "Failed to create GLFW window!");
 
     glfwMakeContextCurrent(m_WindowHandle);
+    
+    // Platform-neutral GLAD loading
     int status = gladLoadGL((GLADloadfunc)glfwGetProcAddress);
     CH_CORE_ASSERT(status, "Failed to initialize Glad!");
 
@@ -65,53 +62,51 @@ void WindowsWindow::Init(const WindowProperties& properties)
     SetVSync(m_VSync);
 }
 
-void WindowsWindow::Shutdown()
+void GlfwWindow::Shutdown()
 {
     if (m_WindowHandle)
     {
         glfwDestroyWindow(m_WindowHandle);
     }
-    CH_CORE_INFO("Windows Window Closed");
+    CH_CORE_INFO("Glfw Window Closed");
 }
 
-void WindowsWindow::BeginFrame()
+void GlfwWindow::BeginFrame()
 {
-    // No-op for now as Renderer handles clears
 }
 
-void WindowsWindow::EndFrame()
+void GlfwWindow::EndFrame()
 {
     glfwSwapBuffers(m_WindowHandle);
     glfwPollEvents();
 }
 
-bool WindowsWindow::ShouldClose() const
+bool GlfwWindow::ShouldClose() const
 {
     return glfwWindowShouldClose(m_WindowHandle);
 }
 
-void WindowsWindow::SetTitle(const std::string& title)
+void GlfwWindow::SetTitle(const std::string& title)
 {
     m_Title = title;
     glfwSetWindowTitle(m_WindowHandle, m_Title.c_str());
 }
 
-void WindowsWindow::SetSize(int width, int height)
+void GlfwWindow::SetSize(int width, int height)
 {
     m_Width = width;
     m_Height = height;
     glfwSetWindowSize(m_WindowHandle, m_Width, m_Height);
 }
 
-void WindowsWindow::SetSizeDirect(int width, int height)
+void GlfwWindow::SetSizeDirect(int width, int height)
 {
     m_Width = width;
     m_Height = height;
 }
 
-void WindowsWindow::ToggleFullscreen()
+void GlfwWindow::ToggleFullscreen()
 {
-    // Simplified fullscreen toggle
     static bool isFullscreen = false;
     static int windowedX, windowedY, windowedW, windowedH;
 
@@ -132,33 +127,23 @@ void WindowsWindow::ToggleFullscreen()
     }
 }
 
-void WindowsWindow::SetFullscreen(bool enabled)
+void GlfwWindow::SetFullscreen(bool enabled)
 {
-    // Logic similar to ToggleFullscreen
+    // Simplified: would require checking current state to avoid redundant calls
 }
 
-void WindowsWindow::SetVSync(bool enabled)
+void GlfwWindow::SetVSync(bool enabled)
 {
     m_VSync = enabled;
-    if (m_VSync)
-        glfwSwapInterval(1);
-    else
-        glfwSwapInterval(0);
+    glfwSwapInterval(m_VSync ? 1 : 0);
 }
 
-void WindowsWindow::SetAntialiasing(bool enabled)
+void GlfwWindow::SetAntialiasing(bool enabled)
 {
-    // MSAA is usually set via window hints before creation
 }
 
-void WindowsWindow::SetTargetFramesPerSecond(int framesPerSecond)
+void GlfwWindow::SetTargetFramesPerSecond(int framesPerSecond)
 {
-    // Not directly supported by GLFW, usually handled by custom timing loop
 }
-
-// void WindowsWindow::SetWindowIcon(const std::string& path)
-// {
-//     // Implementation with stbi_load or similar
-// }
 
 } // namespace CHEngine

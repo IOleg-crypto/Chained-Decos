@@ -25,6 +25,9 @@ target_include_directories(scripting PUBLIC
     ${CMAKE_SOURCE_DIR}/include/imgui/backends
     ${CMAKE_SOURCE_DIR}/include/entt/src
     ${CMAKE_SOURCE_DIR}/include/coral/Coral.Native/Include
+    ${CMAKE_SOURCE_DIR}/include/glfw/include
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/include/miniaudio
 )
 
 target_link_libraries(scripting PUBLIC 

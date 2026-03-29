@@ -3,9 +3,6 @@
 
 #include "engine/core/base.h"
 #include "engine/core/assets/asset_loader.h"
-#include <filesystem>
-#include <future>
-#include <map>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -14,13 +11,6 @@
 
 namespace CHEngine
 {
-struct AssetMetadata
-{
-    AssetHandle Handle;
-    std::string FilePath;
-    AssetType Type;
-};
-
 class AssetManager
 {
 public:
@@ -29,22 +19,17 @@ public:
 
     static AssetManager& Get();
 
-    void Initialize(const std::filesystem::path& rootPath = "");
-    void Shutdown();
-
     // Registry for asset loaders
     void RegisterLoader(AssetType type, std::unique_ptr<IAssetLoader> loader);
 
-    void SetRootPath(const std::filesystem::path& path);
-    [[nodiscard]] std::filesystem::path GetRootPath() const;
-    void AddSearchPath(const std::filesystem::path& path);
-    void ClearSearchPaths();
-
     [[nodiscard]] std::string ResolvePath(const std::string& path) const;
+    AssetHandle ResolveToHandle(const std::string& path) const;
 
+    // Основний метод доступу (дуже лаконічний)
     template <typename T> std::shared_ptr<T> Get(const std::string& path)
     {
-        return std::static_pointer_cast<T>(GetAsset(path, T::GetStaticType()));
+        AssetHandle handle = ResolveToHandle(path);
+        return std::static_pointer_cast<T>(GetAsset(handle, T::GetStaticType()));
     }
 
     template <typename T> std::shared_ptr<T> Get(AssetHandle handle)
@@ -52,41 +37,34 @@ public:
         return std::static_pointer_cast<T>(GetAsset(handle, T::GetStaticType()));
     }
 
-    [[nodiscard]] const AssetMetadata& GetMetadata(AssetHandle handle) const;
-    [[nodiscard]] int GetPendingCount() const;
+    // Update тепер не знає про типи!
     void Update();
 
+private:
+    void ReloadAsset(AssetHandle handle, AssetType type);
+
+public:
     template <typename T> void Reload(const std::string& path)
     {
-        ReloadAsset(path, T::GetStaticType());
+        AssetHandle handle = ResolveToHandle(path);
+        ReloadAsset(handle, T::GetStaticType());
     }
 
 private:
-    // Internal methods to be implemented in .cpp
-    std::shared_ptr<Asset> GetAsset(const std::string& path, AssetType type);
     std::shared_ptr<Asset> GetAsset(AssetHandle handle, AssetType type);
-    void RemoveAsset(const std::string& path, AssetType type);
-    void ReloadAsset(const std::string& path, AssetType type);
 
-private:
-    std::filesystem::path m_RootPath;
-    std::vector<std::filesystem::path> m_SearchPaths;
-    // Registry: AssetType -> Loader
+    // Тільки одна пласка карта для кешу
+    std::unordered_map<AssetHandle, std::shared_ptr<Asset>> m_AssetCache;
     std::unordered_map<AssetType, std::unique_ptr<IAssetLoader>> m_Loaders;
-
-    // Unified cache: Type -> Path -> Asset
-    std::map<AssetType, std::map<std::string, std::shared_ptr<Asset>>> m_AssetCaches;
-    std::unordered_map<AssetHandle, AssetMetadata> m_AssetMetadata;
+    
+    // Карта для швидкого пошуку handle за шляхом
+    mutable std::unordered_map<std::string, AssetHandle> m_PathToHandle; 
     mutable std::unordered_map<std::string, std::string> m_PathCache;
 
     // Async loading support
-    std::vector<std::shared_ptr<Asset>> m_PendingUploads;
-    mutable std::mutex m_PendingUploadsMutex;
-
-    std::vector<std::future<void>> m_Futures;
-    mutable std::mutex m_FuturesMutex;
+    std::vector<std::shared_ptr<Asset>> m_PendingAssets;
+    mutable std::mutex m_PendingMutex;
     mutable std::recursive_mutex m_AssetLock;
-
 };
 } // namespace CHEngine
 
