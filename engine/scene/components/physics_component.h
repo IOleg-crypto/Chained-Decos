@@ -45,6 +45,22 @@ struct ColliderComponent
 
     ColliderComponent() = default;
     ColliderComponent(const ColliderComponent&) = default;
+
+    static const char* GetStaticName() { return "ColliderComponent"; }
+
+    template <typename Archive>
+    static void Serialize(Archive& archive, ColliderComponent& component)
+    {
+        archive.Property("Type", (int&)component.Type)
+            .Property("Enabled", component.Enabled)
+            .Property("Offset", component.Offset)
+            .Property("Size", component.Size)
+            .Property("Radius", component.Radius)
+            .Property("Height", component.Height)
+            .Property("AutoCalculate", component.AutoCalculate)
+            .Handle("ModelHandle", component.ModelHandle)
+            .Path("ModelPath", component.ModelPath);
+    }
 };
 
 struct RigidBodyComponent
@@ -56,6 +72,17 @@ struct RigidBodyComponent
     float Mass = 1.0f;
 
     RigidBodyComponent() = default;
+
+    static const char* GetStaticName() { return "RigidBodyComponent"; }
+
+    template <typename Archive>
+    static void Serialize(Archive& archive, RigidBodyComponent& component)
+    {
+        archive.Property("Velocity", component.Velocity)
+            .Property("UseGravity", component.UseGravity)
+            .Property("IsKinematic", component.IsKinematic)
+            .Property("Mass", component.Mass);
+    }
 };
 
 } // namespace CHEngine

@@ -1,5 +1,5 @@
-#ifndef CH_MATH_TYPES_H
-#define CH_MATH_TYPES_H
+#ifndef CH_MATH_H
+#define CH_MATH_H
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -7,12 +7,6 @@
 
 namespace CHEngine
 {
-    using Vector2 = glm::vec2;
-    using Vector3 = glm::vec3;
-    using Vector4 = glm::vec4;
-    using Quaternion = glm::quat;
-    using Matrix = glm::mat4;
-
     struct Color
     {
         unsigned char r, g, b, a;
@@ -41,4 +35,4 @@ namespace CHEngine
     };
 }
 
-#endif // CH_MATH_TYPES_H
+#endif // CH_MATH_H

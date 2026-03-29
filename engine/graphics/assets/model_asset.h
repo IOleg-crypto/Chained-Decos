@@ -6,7 +6,7 @@
 #include "engine/graphics/api/model_data.h"
 #include "engine/graphics/pipeline/renderer_types.h"
 #include <future>
-#include <mutex>
+// #include <mutex>
 #include <string>
 #include <vector>
 
@@ -19,19 +19,45 @@ public:
         : Asset(GetStaticType())
     {
     }
-    virtual ~ModelAsset();
+    virtual ~ModelAsset() = default;
 
     static AssetType GetStaticType()
     {
         return AssetType::Model;
     }
 
-    void UploadToGPU(); // Main thread
+    void OnLoaded() override;
 
-    // For internal use by MeshImporter
-    void SetPendingData(const PendingModelData& data)
+    const Model& GetModel() const
     {
-        m_PendingData = data;
+        return m_Model;
+    }
+    const std::vector<RawAnimation>& GetAnimations() const
+    {
+        return m_Animations;
+    }
+    const std::vector<MeshInstance>& GetInstances() const
+    {
+        return m_Instances;
+    }
+    const BoundingBox& GetBoundingBox() const
+    {
+        return m_BoundingBox;
+    }
+
+    const std::vector<RawMesh>& GetRawMeshes() const
+    {
+        return m_RawMeshes;
+    }
+
+    // Helpers
+    int GetAnimationCount() const
+    {
+        return (int)m_Animations.size();
+    }
+    void SetPendingData(PendingModelData&& data)
+    {
+        m_PendingData = std::move(data);
         m_HasPendingData = true;
     }
 
@@ -39,66 +65,51 @@ public:
     {
         m_Model = model;
     }
-
-    Model& GetModel();
-    const Model& GetModel() const;
-
-    BoundingBox GetBoundingBox() const;
-
-    void OnUpdate(); // Check if textures loaded and apply them
-
-    const std::vector<RawAnimation>& GetRawAnimations() const
+    void SetAnimations(const std::vector<RawAnimation>& animations)
     {
-        return m_Animations;
+        m_Animations = animations;
     }
-    int GetAnimationCount() const
+    void SetInstances(const std::vector<MeshInstance>& instances)
     {
-        return (int)m_Animations.size();
+        m_Instances = instances;
     }
-    std::string GetAnimationName(int index) const
+    void SetBoundingBox(const BoundingBox& bbox)
     {
-        return (index >= 0 && index < (int)m_Animations.size()) ? m_Animations[index].name : "";
+        m_BoundingBox = bbox;
     }
-
-    std::vector<std::shared_ptr<class TextureAsset>> GetTextures() const;
-    const std::vector<glm::mat4>& GetOffsetMatrices() const
+    void SetRawMeshes(const std::vector<RawMesh>& meshes)
     {
-        return m_OffsetMatrices;
+        m_RawMeshes = meshes;
     }
-    const std::vector<MeshInstance>& GetInstances() const
+    void SetOffsetMatrices(const std::vector<glm::mat4>& matrices)
     {
-        return m_Instances;
+        m_OffsetMatrices = matrices;
     }
-    const std::vector<RawMesh>& GetRawMeshes() const { return m_RawMeshes; }
-    void SetRawMeshes(const std::vector<RawMesh>& meshes) { m_RawMeshes = meshes; }
-
-    std::vector<glm::mat4> ComputeAnimationPose(int animationIndex, float frameIndex, int targetAnimationIndex = -1,
-                                             float targetFrameIndex = 0.0f, float blendWeight = 0.0f);
+    void SetNodeNames(const std::vector<std::string>& names)
+    {
+        m_NodeNames = names;
+    }
+    void SetNodeParents(const std::vector<int>& parents)
+    {
+        m_NodeParents = parents;
+    }
+    std::string GetAnimationName(int index) const;
 
 private:
     Model m_Model;
+    std::vector<RawMesh> m_RawMeshes;
     std::vector<RawAnimation> m_Animations;
-    std::vector<std::shared_ptr<class TextureAsset>> m_Textures;
-
-    // Simplified Instance-based data
     std::vector<MeshInstance> m_Instances;
-    
-    // Skeleton data (only for animation system)
+    BoundingBox m_BoundingBox = {{0, 0, 0}, {0, 0, 0}};
+
+    // Skeleton data
     std::vector<glm::mat4> m_OffsetMatrices;
     std::vector<std::string> m_NodeNames;
     std::vector<int> m_NodeParents;
-    std::vector<glm::mat4> m_GlobalNodeTransforms;
 
-    mutable std::mutex m_ModelMutex; // Protect Model access during async loading
-
+    // Loading data
     PendingModelData m_PendingData;
     bool m_HasPendingData = false;
-
-    // Track textures that are still loading
-    std::vector<PendingTexture> m_PendingTextures;
-
-    std::vector<RawMesh> m_RawMeshes;
-    BoundingBox m_BoundingBox = {{0, 0, 0}, {0, 0, 0}};
 };
 } // namespace CHEngine
 

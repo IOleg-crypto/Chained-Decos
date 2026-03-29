@@ -2,32 +2,26 @@
 #define CH_SHADER_LOADER_H
 
 #include "engine/core/assets/asset_loader.h"
-#include "engine/graphics/assets/shader_asset.h"
-#include "engine/graphics/importers/shader_importer.h"
+// #include "engine/graphics/assets/shader_asset.h"
+#include <memory>
+#include <string>
+#include <vector>
 
 namespace CHEngine
 {
+class Shader;
+
 class ShaderLoader : public IAssetLoader
 {
 public:
-    std::shared_ptr<Asset> Create() override
-    {
-        return std::make_shared<ShaderAsset>();
-    }
-
-    bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath) override
-    {
-        auto shaderAsset = std::static_pointer_cast<ShaderAsset>(asset);
-        NativeShader shader = ShaderImporter::LoadShaderFromPath(resolvedPath);
-        if (shader.id > 0)
-        {
-            shaderAsset->SetShader(shader);
-            return true;
-        }
-        return false;
-    }
-
+    std::shared_ptr<Asset> Create() override;
+    bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath) override;
     bool IsAsync() const override { return false; }
+
+private:
+    std::shared_ptr<Shader> LoadShaderFromPath(const std::string& path);
+    std::shared_ptr<Shader> LoadShaderFromPaths(const std::string& vsPath, const std::string& fsPath);
+    std::string ProcessShaderSource(const std::string& path, std::vector<std::string>& includedFiles);
 };
 } // namespace CHEngine
 

@@ -5,10 +5,9 @@
 #include "engine/scene/project.h"
 #include "engine/scene/scene_events.h"
 #include "imgui/IconsFontAwesome6.h"
-#include "engine/graphics/importers/texture_importer.h"
+#include "engine/core/assets/asset_manager.h"
 
-#include "imgui.h"
-#include "engine/core/dialogs.h"
+#include "panel.h"
 #include <filesystem>
 
 namespace CHEngine
@@ -21,11 +20,8 @@ ProjectBrowserPanel::ProjectBrowserPanel()
     cwd.copy(m_ProjectLocationBuffer, sizeof(m_ProjectLocationBuffer) - 1);
 
     std::string root = PROJECT_ROOT_DIR; // Use the macro defined in CMake
-    m_NewProjectIconAsset = TextureImporter::ImportTexture(root + "/resources/icons/newproject.jpg");
-    if (m_NewProjectIconAsset) m_NewProjectIcon = m_NewProjectIconAsset->GetTexture();
-    
-    m_OpenProjectIconAsset = TextureImporter::ImportTexture(root + "/resources/icons/folder.png");
-    if (m_OpenProjectIconAsset) m_OpenProjectIcon = m_OpenProjectIconAsset->GetTexture();
+    m_NewProjectIconAsset = AssetManager::Get().Get<TextureAsset>(root + "/resources/icons/newproject.jpg");
+    m_OpenProjectIconAsset = AssetManager::Get().Get<TextureAsset>(root + "/resources/icons/folder.png");
 }
 
 ProjectBrowserPanel::~ProjectBrowserPanel()
@@ -141,7 +137,7 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.9f, 0.9f, 1.0f));
 
     ImGui::BeginGroup();
-    if (ImGui::ImageButton("##NewProject", (ImTextureID)(uintptr_t)m_NewProjectIcon.id, {300, 300}, {0, 1}, {1, 0}))
+    if (ImGui::ImageButton("##NewProject", (ImTextureID)(uintptr_t)(m_NewProjectIconAsset ? m_NewProjectIconAsset->GetTexture()->GetRendererID() : 0), {300, 300}, {0, 1}, {1, 0}))
     {
         m_OpenCreatePopupRequest = true;
         m_ShowCreateDialog = true;
@@ -158,7 +154,7 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
     ImGui::SameLine(0, 40);
 
     ImGui::BeginGroup();
-    if (ImGui::ImageButton("##OpenProject", (ImTextureID)(uintptr_t)m_OpenProjectIcon.id, {300, 300}, {0, 1}, {1, 0}))
+    if (ImGui::ImageButton("##OpenProject", (ImTextureID)(uintptr_t)(m_OpenProjectIconAsset ? m_OpenProjectIconAsset->GetTexture()->GetRendererID() : 0), {300, 300}, {0, 1}, {1, 0}))
     {
         ProjectActions::Open();
     }

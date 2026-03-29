@@ -43,6 +43,25 @@ struct TextStyle
     float LineHeight = 1.2f;
     TextAlignment HorizontalAlignment = TextAlignment::Center;
     TextAlignment VerticalAlignment = TextAlignment::Center;
+
+    template <typename Archive>
+    static void Serialize(Archive& archive, TextStyle& style)
+    {
+        archive.Property("FontName", style.FontName)
+            .Property("FontSize", style.FontSize)
+            .Property("TextColor", style.TextColor)
+            .Property("Shadow", style.Shadow)
+            .Property("LetterSpacing", style.LetterSpacing)
+            .Property("LineHeight", style.LineHeight)
+            .Property("HorizontalAlignment", (int&)style.HorizontalAlignment)
+            .Property("VerticalAlignment", (int&)style.VerticalAlignment);
+
+        if (style.Shadow)
+        {
+            archive.Property("ShadowOffset", style.ShadowOffset)
+                .Property("ShadowColor", style.ShadowColor);
+        }
+    }
 };
 
 struct UIStyle
@@ -63,6 +82,34 @@ struct UIStyle
     float HoverScale = 1.0f;
     float PressedScale = 1.0f;
     float TransitionSpeed = 0.1f;
+
+    template <typename Archive>
+    static void Serialize(Archive& archive, UIStyle& style)
+    {
+        archive.Property("BackgroundColor", style.BackgroundColor)
+            .Property("HoverColor", style.HoverColor)
+            .Property("PressedColor", style.PressedColor)
+            .Property("Rounding", style.Rounding)
+            .Property("BorderSize", style.BorderSize)
+            .Property("BorderColor", style.BorderColor)
+            .Property("UseGradient", style.UseGradient)
+            .Property("Padding", style.Padding)
+            .Property("HoverScale", style.HoverScale)
+            .Property("PressedScale", style.PressedScale)
+            .Property("TransitionSpeed", style.TransitionSpeed);
+
+        if (style.UseGradient)
+        {
+            archive.Property("GradientColor", style.GradientColor);
+        }
+    }
+
+    // Runtime state (not serialized)
+    struct RuntimeState {
+        float AnimationAlpha = 0.0f; // 0 = idle, 1 = hover/pressed
+        float CurrentScale = 1.0f;
+        Color CurrentColor = {255, 255, 255, 255};
+    } State;
 };
 
 struct Rectangle
@@ -105,6 +152,18 @@ struct RectTransform
         Rectangle rect = CalculateRect(viewportSize);
         return {rect.width, rect.height};
     }
+
+    template <typename Archive>
+    static void Serialize(Archive& archive, RectTransform& transform)
+    {
+        archive.Property("AnchorMin", transform.AnchorMin)
+            .Property("AnchorMax", transform.AnchorMax)
+            .Property("OffsetMin", transform.OffsetMin)
+            .Property("OffsetMax", transform.OffsetMax)
+            .Property("Pivot", transform.Pivot)
+            .Property("Rotation", transform.Rotation)
+            .Property("Scale", transform.Scale);
+    }
 };
 
 struct ControlComponent
@@ -115,6 +174,17 @@ struct ControlComponent
     bool HiddenInHierarchy = false;
 
     ControlComponent() = default;
+
+    static const char* GetStaticName() { return "ControlComponent"; }
+
+    template <typename Archive>
+    static void Serialize(Archive& archive, ControlComponent& component)
+    {
+        archive.Property("Transform", component.Transform)
+            .Property("ZOrder", component.ZOrder)
+            .Property("IsActive", component.IsActive)
+            .Property("HiddenInHierarchy", component.HiddenInHierarchy);
+    }
 };
 
 struct ButtonControl
@@ -130,6 +200,18 @@ struct ButtonControl
 
     ButtonControl() = default;
     ButtonControl(const std::string& label) : Label(label) {}
+
+    static const char* GetStaticName() { return "ButtonControl"; }
+
+    template <typename Archive>
+    static void Serialize(Archive& archive, ButtonControl& component)
+    {
+        archive.Property("Label", component.Label)
+            .Property("TextStyle", component.Text)
+            .Property("UIStyle", component.Style)
+            .Property("IsInteractable", component.IsInteractable)
+            .Property("AutoSize", component.AutoSize);
+    }
 };
 
 struct PanelControl
@@ -139,6 +221,9 @@ struct PanelControl
     std::string TexturePath = "";
     std::shared_ptr<class TextureAsset> Texture = nullptr;
     bool FullScreen = false;
+
+    bool IsHovered = false;
+    bool IsDown = false;
 };
 
 struct LabelControl
@@ -212,6 +297,18 @@ struct ImageControl
     Color TintColor = {255, 255, 255, 255};
     Color BorderColor = {0, 0, 0, 0};
     UIStyle Style;
+
+    bool IsHovered = false;
+    bool IsDown = false;
+
+    template <typename Archive>
+    static void Serialize(Archive& archive, ImageControl& component)
+    {
+        archive.Property("TexturePath", component.TexturePath)
+            .Property("TintColor", component.TintColor)
+            .Property("BorderColor", component.BorderColor)
+            .Property("Style", component.Style);
+    }
 };
 
 struct ImageButtonControl

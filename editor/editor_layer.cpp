@@ -8,17 +8,14 @@
 #include "engine/core/profiler.h"
 #include "engine/core/assets/asset_manager.h"
 #include "engine/physics/physics.h"
-#include "engine/scene/components.h"
+
 #include "engine/scene/project.h"
 #include "engine/scene/scene_serializer.h"
 #include "scripting/scene_scripting.h"
 #include "scripting/scriptengine.h"
 #include "scripting/script_file_system.h"
-#include "engine/graphics/importers/texture_importer.h"
 #include "engine/graphics/pipeline/render_command.h"
 
-#include "imgui/IconsFontAwesome6.h"
-#include "panels/console_panel.h"
 #include "panels/content_browser_panel.h"
 #include "panels/project_browser_panel.h"
 #include "panels/property_editor.h"
@@ -38,28 +35,46 @@ EditorLayer::EditorLayer()
     m_Layout = std::make_unique<EditorLayout>();
     m_Actions = std::make_unique<EditorActions>();
 
-    std::filesystem::path configPath = ScriptFileSystem::GetExecutableDir() / "editor_settings.yaml";
-    m_Settings = std::make_unique<SettingsManager>(configPath);
-
     LoadConfig();
 }
 
 void EditorLayer::LoadConfig()
 {
-    if (m_Settings->Load())
+    std::filesystem::path configPath = ScriptFileSystem::GetExecutableDir() / "editor_settings.yaml";
+    if (!std::filesystem::exists(configPath))
+        return;
+
+    try
     {
-        m_Config.LastProjectPath = m_Settings->Get<std::string>("Editor", "LastProjectPath", "");
-        m_Config.LastScenePath = m_Settings->Get<std::string>("Editor", "LastScenePath", "");
-        m_Config.LoadLastProjectOnStartup = m_Settings->Get<bool>("Editor", "LoadLastProjectOnStartup", false);
+        YAML::Node data = YAML::LoadFile(configPath.string());
+        if (data["Editor"])
+        {
+            auto node = data["Editor"];
+            if (node["LastProjectPath"]) m_Config.LastProjectPath = node["LastProjectPath"].as<std::string>("");
+            if (node["LastScenePath"]) m_Config.LastScenePath = node["LastScenePath"].as<std::string>("");
+            if (node["LoadLastProjectOnStartup"]) m_Config.LoadLastProjectOnStartup = node["LoadLastProjectOnStartup"].as<bool>(false);
+        }
+    }
+    catch (const std::exception& e)
+    {
+        CH_CORE_ERROR("EditorLayer: Failed to load editor settings: {}", e.what());
     }
 }
 
 void EditorLayer::SaveConfig()
 {
-    m_Settings->Set("Editor", "LastProjectPath", m_Config.LastProjectPath);
-    m_Settings->Set("Editor", "LastScenePath", m_Config.LastScenePath);
-    m_Settings->Set("Editor", "LoadLastProjectOnStartup", m_Config.LoadLastProjectOnStartup);
-    m_Settings->Save();
+    YAML::Emitter out;
+    out << YAML::BeginMap;
+    out << YAML::Key << "Editor" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "LastProjectPath" << YAML::Value << m_Config.LastProjectPath;
+    out << YAML::Key << "LastScenePath" << YAML::Value << m_Config.LastScenePath;
+    out << YAML::Key << "LoadLastProjectOnStartup" << YAML::Value << m_Config.LoadLastProjectOnStartup;
+    out << YAML::EndMap;
+    out << YAML::EndMap;
+
+    std::filesystem::path configPath = ScriptFileSystem::GetExecutableDir() / "editor_settings.yaml";
+    std::ofstream fout(configPath);
+    fout << out.c_str();
 }
 
 
@@ -94,8 +109,6 @@ void EditorLayer::OnAttach()
     else
     {
         Project::SetActive(nullptr);
-        // Load default engine resources with the global manager if no project
-        AssetManager::Get().Initialize();
     }
 
     // Ensure layout is initialized

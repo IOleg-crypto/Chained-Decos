@@ -68,6 +68,17 @@ struct AnimationComponent
         IsPlaying = false;
         Blending = false;
     }
+
+    static const char* GetStaticName() { return "AnimationComponent"; }
+
+    template <typename Archive>
+    static void Serialize(Archive& archive, AnimationComponent& component)
+    {
+        archive.Property("AnimationPath", component.AnimationPath)
+            .Property("CurrentAnimationIndex", component.CurrentAnimationIndex)
+            .Property("IsLooping", component.IsLooping)
+            .Property("IsPlaying", component.IsPlaying);
+    }
 };
 
 } // namespace CHEngine

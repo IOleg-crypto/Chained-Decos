@@ -1,16 +1,11 @@
 #include "engine/scene/scene.h"
 #include "engine/audio/audio.h"
 #include "engine/audio/sound_asset.h"
-#include "engine/core/application.h"
-#include "engine/core/profiler.h"
 #include "engine/core/assets/asset_manager.h"
+#include "engine/core/profiler.h"
 #include "engine/graphics/assets/model_asset.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/component_serializer.h"
-#include "engine/scene/scene_events.h"
-#include "project.h"
-#include "scene_serializer.h"
-#include "scripting/scene_scripting.h"
 #include <cmath>
 #include <glm/gtx/norm.hpp>
 
@@ -171,7 +166,6 @@ std::optional<Camera3D> Scene::GetActiveCamera()
             activeCamera.Target = activeCamera.Position + forward;
             activeCamera.Up = glm::normalize(worldUp - activeCamera.Position);
 
-
             // SceneCamera stores FOV in radians, raylib expects degrees for Camera3D
             activeCamera.Fovy = glm::degrees(camera.Camera.GetPerspectiveVerticalFOV());
             activeCamera.Projection = (int)camera.Camera.GetProjectionType();
@@ -230,7 +224,7 @@ void Scene::UpdateAnimations(Timestep deltaTime)
 
         // Get animation frameRate from asset (asset-driven, defaults to 30fps if not available)
         float targetFPS = 30.0f;
-        const auto& rawAnims = modelAsset->GetRawAnimations();
+        const auto& rawAnims = modelAsset->GetAnimations();
         if (animation.CurrentAnimationIndex >= 0 && animation.CurrentAnimationIndex < (int)rawAnims.size())
         {
             targetFPS = rawAnims[animation.CurrentAnimationIndex].frameRate;
@@ -285,7 +279,7 @@ void Scene::UpdateAnimations(Timestep deltaTime)
                         animation.TargetAnimationIndex < modelAsset->GetAnimationCount())
                     {
                         int targetTotalFrames =
-                            modelAsset->GetRawAnimations()[animation.TargetAnimationIndex].frameCount;
+                            modelAsset->GetAnimations()[animation.TargetAnimationIndex].frameCount;
                         if (animation.TargetFrame >= targetTotalFrames)
                         {
                             animation.TargetFrame = 0;
@@ -371,7 +365,7 @@ void Scene::UpdateAudio(Timestep deltaTime)
             glm::mat3 rot = glm::mat3(transform.WorldTransform);
             glm::vec3 forward = rot * glm::vec3(0, 0, -1);
             glm::vec3 up = rot * glm::vec3(0, 1, 0);
-            
+
             Audio::Get().SetListenerPosition(pos, forward, up);
             break;
         }
@@ -386,8 +380,9 @@ void Scene::UpdateAudio(Timestep deltaTime)
         {
             auto& transform = audioView.get<TransformComponent>(entity);
             glm::vec3 worldPos = glm::vec3(transform.WorldTransform[3]);
-            
-            Audio::Get().Play(audio.Asset->GetPath(), audio.Volume, audio.Pitch, audio.Loop, audio.Spatialized, worldPos);
+
+            Audio::Get().Play(audio.Asset->GetBuffer(), audio.Volume, audio.Pitch, audio.Loop, audio.Spatialized,
+                              worldPos);
             audio.IsPlaying = true;
         }
     }

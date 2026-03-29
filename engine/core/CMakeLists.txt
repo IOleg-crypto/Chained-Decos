@@ -7,17 +7,8 @@ add_library(engine_core OBJECT
         imgui_layer.cpp
         thread_pool.cpp
         application.cpp
-        settings_manager.cpp
         dialogs.cpp
         filesystem_utils.cpp
-        assets/asset_manager.cpp
-        assets/asset.h
-        assets/asset_manager.h
-        assets/asset_loader.h
-
-    # Platform specific implementations
-    $<$<PLATFORM_ID:Windows>:../platform/windows/windows_window.cpp>
-    $<$<PLATFORM_ID:Linux>:../platform/linux/linux_window.cpp>
 
         application.h
         imgui_layer.h
@@ -36,9 +27,10 @@ add_library(engine_core OBJECT
         uuid.h
         window.h
         yaml.h
-        settings_manager.h
         dialogs.h
         filesystem_utils.h
+        ../platform/glfw/glfw_window.cpp
+        ../platform/glfw/glfw_window.h
 )
 
 target_include_directories(engine_core PUBLIC
@@ -48,6 +40,8 @@ target_include_directories(engine_core PUBLIC
     ${CMAKE_SOURCE_DIR}/include/glfw/include
     ${CMAKE_SOURCE_DIR}/include/assimp/include
     ${CMAKE_BINARY_DIR}/include/assimp/include
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/include/miniaudio
 )
 
 # Core module uses yaml-cpp, glfw, glad, imguilib, EnTT, Coral.Native, nfd, assimp

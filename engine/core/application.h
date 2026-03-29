@@ -103,6 +103,9 @@ private:
     Timestep m_DeltaTime = 0.0f;
     Timestep m_LastFrameTime = 0.0f;
 
+    float m_FixedTimestep = 1.0f / 60.0f;
+    float m_Accumulator = 0.0f;
+
     std::vector<std::function<void()>> m_MainThreadQueue;
     std::mutex m_MainThreadQueueMutex;
 };

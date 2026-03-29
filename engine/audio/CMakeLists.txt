@@ -1,12 +1,11 @@
 add_library(engine_audio OBJECT
         audio.cpp
         sound_asset.cpp
-        audio_importer.cpp
-        miniaudio_impl.cpp
-
+        loaders/audio_loader.cpp
+        
         audio.h
         sound_asset.h
-        audio_importer.h
+        loaders/audio_loader.h
 )
 
 

@@ -1,12 +1,13 @@
 #include "component_serializer.h"
 #include "components/hierarchy_component.h"
 #include "components/id_component.h"
-#include "engine/scene/components.h"
 #include "engine/core/application.h"
 #include "engine/core/yaml.h"
+#include "engine/scene/components.h"
 #include "engine/scene/serialization_utils.h"
 #include "scene.h"
 #include "scripting/scriptengine.h"
+
 
 namespace YAML
 {
@@ -41,10 +42,14 @@ template <> struct convert<CHEngine::ManagedScriptInstance>
         }
 
         if (!node.IsMap())
+        {
             return false;
+        }
 
         if (node["ClassName"])
+        {
             rhs.ClassName = node["ClassName"].as<std::string>();
+        }
 
         if (node["Fields"] && node["Fields"].IsSequence())
         {
@@ -52,25 +57,48 @@ template <> struct convert<CHEngine::ManagedScriptInstance>
             {
                 CHEngine::ScriptField field;
                 if (f["Name"])
+                {
                     field.Name = f["Name"].as<std::string>();
+                }
                 if (f["Type"])
+                {
                     field.Type = (CHEngine::ScriptFieldType)f["Type"].as<int>();
+                }
 
                 if (f["Value"])
                 {
                     switch (field.Type)
                     {
-                    case CHEngine::ScriptFieldType::Float: field.Value = f["Value"].as<float>(); break;
-                    case CHEngine::ScriptFieldType::Int: field.Value = f["Value"].as<int>(); break;
-                    case CHEngine::ScriptFieldType::Bool: field.Value = f["Value"].as<bool>(); break;
-                    case CHEngine::ScriptFieldType::String: field.Value = f["Value"].as<std::string>(); break;
-                    case CHEngine::ScriptFieldType::Vector2: field.Value = f["Value"].as<CHEngine::Vector2>(); break;
-                    case CHEngine::ScriptFieldType::Vector3: field.Value = f["Value"].as<CHEngine::Vector3>(); break;
-                    case CHEngine::ScriptFieldType::Vector4: field.Value = f["Value"].as<CHEngine::Vector4>(); break;
-                    case CHEngine::ScriptFieldType::Color: field.Value = f["Value"].as<CHEngine::Color>(); break;
+                    case CHEngine::ScriptFieldType::Float:
+                        field.Value = f["Value"].as<float>();
+                        break;
+                    case CHEngine::ScriptFieldType::Int:
+                        field.Value = f["Value"].as<int>();
+                        break;
+                    case CHEngine::ScriptFieldType::Bool:
+                        field.Value = f["Value"].as<bool>();
+                        break;
+                    case CHEngine::ScriptFieldType::String:
+                        field.Value = f["Value"].as<std::string>();
+                        break;
+                    case CHEngine::ScriptFieldType::Vec2:
+                        field.Value = f["Value"].as<glm::vec2>();
+                        break;
+                    case CHEngine::ScriptFieldType::Vec3:
+                        field.Value = f["Value"].as<glm::vec3>();
+                        break;
+                    case CHEngine::ScriptFieldType::Vec4:
+                        field.Value = f["Value"].as<glm::vec4>();
+                        break;
+                    case CHEngine::ScriptFieldType::Color:
+                        field.Value = f["Value"].as<CHEngine::Color>();
+                        break;
 
-                    case CHEngine::ScriptFieldType::Entity: field.Value = f["Value"].as<uint64_t>(); break;
-                    default: break;
+                    case CHEngine::ScriptFieldType::Entity:
+                        field.Value = f["Value"].as<uint64_t>();
+                        break;
+                    default:
+                        break;
                     }
                 }
                 rhs.Fields[field.Name] = field;
@@ -117,7 +145,9 @@ ComponentSerializer::ComponentSerializer()
 void ComponentSerializer::Init()
 {
     if (!s_Instance)
+    {
         s_Instance = new ComponentSerializer();
+    }
     s_Instance->InternalInit();
 }
 
@@ -261,7 +291,6 @@ void ComponentSerializer::DeserializeTextStyle(TextStyle& style, YAML::Node node
     if (node["ShadowColor"])
     {
         style.ShadowColor = node["ShadowColor"].as<CHEngine::Color>();
-
     }
     if (node["LetterSpacing"])
     {
@@ -298,23 +327,23 @@ void ComponentSerializer::DeserializeRectTransform(RectTransform& transform, YAM
 {
     if (node["AnchorMin"])
     {
-        transform.AnchorMin = node["AnchorMin"].as<Vector2>();
+        transform.AnchorMin = node["AnchorMin"].as<glm::vec2>();
     }
     if (node["AnchorMax"])
     {
-        transform.AnchorMax = node["AnchorMax"].as<Vector2>();
+        transform.AnchorMax = node["AnchorMax"].as<glm::vec2>();
     }
     if (node["OffsetMin"])
     {
-        transform.OffsetMin = node["OffsetMin"].as<Vector2>();
+        transform.OffsetMin = node["OffsetMin"].as<glm::vec2>();
     }
     if (node["OffsetMax"])
     {
-        transform.OffsetMax = node["OffsetMax"].as<Vector2>();
+        transform.OffsetMax = node["OffsetMax"].as<glm::vec2>();
     }
     if (node["Pivot"])
     {
-        transform.Pivot = node["Pivot"].as<Vector2>();
+        transform.Pivot = node["Pivot"].as<glm::vec2>();
     }
     if (node["Rotation"])
     {
@@ -322,7 +351,7 @@ void ComponentSerializer::DeserializeRectTransform(RectTransform& transform, YAM
     }
     if (node["Scale"])
     {
-        transform.Scale = node["Scale"].as<Vector2>();
+        transform.Scale = node["Scale"].as<glm::vec2>();
     }
 }
 
@@ -381,7 +410,6 @@ void ComponentSerializer::DeserializeUIStyle(UIStyle& style, YAML::Node node)
     if (node["GradientColor"])
     {
         style.GradientColor = node["GradientColor"].as<CHEngine::Color>();
-
     }
     if (node["HoverScale"])
     {
@@ -476,7 +504,6 @@ void ComponentSerializer::DeserializeMaterialInstance(MaterialInstance& mat, YAM
     if (node["EmissiveColor"])
     {
         mat.EmissiveColor = node["EmissiveColor"].as<CHEngine::Color>();
-
     }
     if (node["EmissiveIntensity"])
     {
@@ -549,135 +576,31 @@ void ComponentSerializer::InternalInit()
 {
     m_Registry.clear();
 
-    // --- Основні ---
-    Register<TagComponent>("TagComponent",
-                           [](auto& archive, auto& component) { archive.Property("Tag", component.Tag); });
-
-    // --- Graphics ---
-    Register<TransformComponent>("TransformComponent", [](auto& archive, auto& component) {
-        archive.Property("Translation", component.Translation)
-            .Property("Rotation", component.Rotation)
-            .Property("Scale", component.Scale);
-
-        // Recalculate Quat from Euler after deserialization
-        if (archive.GetMode() == SerializationUtils::PropertyArchive::Deserialize)
-        {
-            component.SetRotation(component.Rotation);
-        }
-    });
-
-    Register<ModelComponent>("ModelComponent", [](auto& archive, auto& component) {
-        archive.Handle("ModelHandle", component.ModelHandle).Path("ModelPath", component.ModelPath);
-
-        if (archive.GetMode() == SerializationUtils::PropertyArchive::Serialize)
-        {
-            auto& out = *archive.GetEmitter();
-            out << YAML::Key << "Materials" << YAML::Value << YAML::BeginSeq;
-            for (const auto& slot : component.Materials)
-            {
-                SerializeMaterialSlot(out, slot);
-            }
-            out << YAML::EndSeq;
-        }
-        else
-        {
-            auto node = archive.GetNode();
-            if (node["Materials"] && node["Materials"].IsSequence())
-            {
-                component.Materials.clear();
-                for (auto slotNode : node["Materials"])
-                {
-                    MaterialSlot slot;
-                    DeserializeMaterialSlot(slot, slotNode);
-                    component.Materials.push_back(slot);
-                }
-                component.MaterialsInitialized = true;
-            }
-        }
-    });
-
-    Register<LightComponent>("LightComponent", [](auto& archive, auto& component) {
-        archive.Property("Type", (int&)component.Type)
-            .Property("LightColor", component.LightColor)
-            .Property("Intensity", component.Intensity)
-            .Property("Radius", component.Radius)
-            .Property("InnerCutoff", component.InnerCutoff)
-            .Property("OuterCutoff", component.OuterCutoff);
-    });
-
-    Register<ShaderComponent>("ShaderComponent",
-                              [](auto& archive, auto& component) { archive.Path("ShaderPath", component.ShaderPath); });
+    // --- Основн�    Register<TagComponent>();
+    Register<TransformComponent>();
+    Register<ModelComponent>();
+    Register<LightComponent>();
+    Register<ShaderComponent>();
 
     // --- Physics ---
-    Register<ColliderComponent>("ColliderComponent", [](auto& archive, auto& component) {
-        archive.Property("Type", (int&)component.Type)
-            .Property("Enabled", component.Enabled)
-            .Property("Offset", component.Offset)
-            .Property("Size", component.Size)
-            .Property("Radius", component.Radius)
-            .Property("Height", component.Height)
-            .Handle("ModelHandle", component.ModelHandle)
-            .Path("ModelPath", component.ModelPath)
-            .Property("AutoCalculate", component.AutoCalculate);
-    });
-
-    Register<PrimitiveComponent>("PrimitiveComponent", [](auto& archive, auto& component) {
-        archive.Property("Type", (int&)component.Type)
-            .Property("Radius", component.Radius)
-            .Property("InnerRadius", component.InnerRadius)
-            .Property("Height", component.Height)
-            .Property("Slices", component.Slices)
-            .Property("Stacks", component.Stacks)
-            .Property("Dimensions", component.Dimensions);
-
-        if (archive.GetMode() == SerializationUtils::PropertyArchive::Deserialize)
-            component.Dirty = true;
-    });
-
-    Register<RigidBodyComponent>("RigidBodyComponent", [](auto& archive, auto& component) {
-        archive.Property("Mass", component.Mass)
-            .Property("UseGravity", component.UseGravity)
-            .Property("IsKinematic", component.IsKinematic);
-    });
+    Register<ColliderComponent>();
+    Register<PrimitiveComponent>();
+    Register<RigidBodyComponent>();
 
     // --- Audio ---
-    Register<AudioComponent>("AudioComponent", [](auto& archive, auto& component) {
-        archive.Handle("SoundHandle", component.SoundHandle)
-            .Path("SoundPath", component.SoundPath)
-            .Property("Loop", component.Loop)
-            .Property("PlayOnStart", component.PlayOnStart)
-            .Property("Volume", component.Volume)
-            .Property("Pitch", component.Pitch);
-    });
+    Register<AudioComponent>();
 
     // --- Gameplay ---
-    Register<PlayerComponent>("PlayerComponent", [](auto& archive, auto& component) {
-        archive.Property("MovementSpeed", component.MovementSpeed)
-            .Property("LookSensitivity", component.LookSensitivity)
-            .Property("JumpForce", component.JumpForce);
-    });
+    Register<PlayerComponent>();
+    Register<SceneTransitionComponent>();
+    Register<AnimationComponent>();
+    Register<NavigationComponent>();
+    Register<SpawnComponent>();
 
-    Register<SceneTransitionComponent>("SceneTransitionComponent", [](auto& archive, auto& component) {
-        archive.Property("TargetScenePath", component.TargetScenePath).Property("Triggered", component.Triggered);
-    });
+    Register<SpriteComponent>();
 
-    Register<AnimationComponent>("AnimationComponent", [](auto& archive, auto& component) {
-        archive.Property("AnimationPath", component.AnimationPath)
-            .Property("CurrentAnimationIndex", component.CurrentAnimationIndex)
-            .Property("IsLooping", component.IsLooping)
-            .Property("IsPlaying", component.IsPlaying);
-    });
-
-    Register<NavigationComponent>("NavigationComponent", [](auto& archive, auto& component) {
-        archive.Property("IsDefaultFocus", component.IsDefaultFocus);
-    });
-
-    Register<SpawnComponent>("SpawnComponent", [](auto& archive, auto& component) {
-        archive.Property("SpawnZoneSize", component.ZoneSize)
-            .Handle("SpawnTextureHandle", component.TextureHandle)
-            .Path("SpawnTexturePath", component.TexturePath)
-            .Property("RenderSpawnZoneInScene", component.RenderSpawnZoneInScene);
-    });
+    Register<ControlComponent>();
+    Register<ButtonControl>();
 
     Register<CameraComponent>("CameraComponent", [](auto& archive, auto& component) {
         archive.Property("Primary", component.Primary)
@@ -719,50 +642,26 @@ void ComponentSerializer::InternalInit()
         }
     });
 
-    Register<SpriteComponent>("SpriteComponent", [](auto& archive, auto& component) {
-        archive.Handle("TextureHandle", component.TextureHandle)
-            .Path("TexturePath", component.TexturePath)
-            .Property("Tint", component.Tint)
-            .Property("FlipX", component.FlipX)
-            .Property("FlipY", component.FlipY)
-            .Property("ZOrder", component.ZOrder);
-    });
-
-    // --- UI Components ---
-    Register<ControlComponent>("ControlComponent", [](auto& archive, auto& component) {
-        archive.Nested("Transform", component.Transform, SerializeRectTransform, DeserializeRectTransform);
-        archive.Property("ZOrder", component.ZOrder)
-            .Property("IsActive", component.IsActive)
-            .Property("HiddenInHierarchy", component.HiddenInHierarchy);
-    });
-
-    Register<ButtonControl>("ButtonControl", [](auto& archive, auto& component) {
-        archive.Property("Label", component.Label)
-            .Property("Interactable", component.IsInteractable)
-            .Property("AutoSize", component.AutoSize);
-        archive.Nested("Style", component.Style, SerializeUIStyle, DeserializeUIStyle);
-        archive.Nested("Text", component.Text, SerializeTextStyle, DeserializeTextStyle);
-    });
-
     Register<PanelControl>("PanelControl", [](auto& archive, auto& component) {
         archive.Handle("TextureHandle", component.TextureHandle)
             .Path("TexturePath", component.TexturePath)
-            .Property("FullScreen", component.FullScreen);
-        archive.Nested("UIStyle", component.Style, SerializeUIStyle, DeserializeUIStyle);
+            .Property("FullScreen", component.FullScreen)
+            .Property("Style", component.Style);
     });
 
     Register<LabelControl>("LabelControl", [](auto& archive, auto& component) {
-        archive.Property("Text", component.Text).Property("AutoSize", component.AutoSize);
-        archive.Nested("Style", component.Style, SerializeTextStyle, DeserializeTextStyle);
+        archive.Property("Text", component.Text)
+            .Property("AutoSize", component.AutoSize)
+            .Property("Style", component.Style);
     });
 
     Register<SliderControl>("SliderControl", [](auto& archive, auto& component) {
         archive.Property("Label", component.Label)
             .Property("Value", component.Value)
             .Property("Min", component.Min)
-            .Property("Max", component.Max);
-        archive.Nested("Text", component.Text, SerializeTextStyle, DeserializeTextStyle);
-        archive.Nested("Style", component.Style, SerializeUIStyle, DeserializeUIStyle);
+            .Property("Max", component.Max)
+            .Property("Text", component.Text)
+            .Property("Style", component.Style);
     });
 
     Register<CheckboxControl>("CheckboxControl", [](auto& archive, auto& component) {

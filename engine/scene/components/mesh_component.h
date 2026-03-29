@@ -30,6 +30,17 @@ struct MaterialSlot
           Index(index)
     {
     }
+
+    template <typename Archive>
+    static void Serialize(Archive& archive, MaterialSlot& slot)
+    {
+        archive.Property("Name", slot.Name)
+            .Property("Index", slot.Index)
+            .Property("Target", (int&)slot.Target);
+        
+        // MaterialInstance serialization is handled by archive normally
+        archive.Property("Material", slot.Material);
+    }
 };
 
 struct ModelComponent
@@ -48,6 +59,19 @@ struct ModelComponent
     ModelComponent(const std::string& path)
         : ModelPath(path)
     {
+    }
+
+    static const char* GetStaticName() { return "ModelComponent"; }
+
+    template <typename Archive>
+    static void Serialize(Archive& archive, ModelComponent& component)
+    {
+        archive.Handle("ModelHandle", component.ModelHandle)
+            .Path("ModelPath", component.ModelPath)
+            .Property("Materials", component.Materials);
+        
+        if (archive.GetMode() == SerializationUtils::PropertyArchive::Deserialize)
+            component.MaterialsInitialized = true;
     }
 };
 

@@ -13,15 +13,26 @@ struct SpawnComponent
 {
     bool IsActive = true;
     AssetHandle TextureHandle = 0;
-    Vector3 ZoneSize = {1.0f, 1.0f, 1.0f};
+    glm::vec3 ZoneSize = {1.0f, 1.0f, 1.0f};
     bool RenderSpawnZoneInScene = true;
-    Vector3 SpawnPoint = {0.0f, 0.0f, 0.0f};
+    glm::vec3 SpawnPoint = {0.0f, 0.0f, 0.0f};
 
     std::string TexturePath = PROJECT_ROOT_DIR "/game/chaineddecos/assets/boxes/PlayerSpawnTexture.png";
     std::shared_ptr<TextureAsset> Texture;
 
     SpawnComponent() = default;
     SpawnComponent(const SpawnComponent&) = default;
+
+    static const char* GetStaticName() { return "SpawnComponent"; }
+
+    template <typename Archive>
+    static void Serialize(Archive& archive, SpawnComponent& component)
+    {
+        archive.Property("SpawnZoneSize", component.ZoneSize)
+            .Handle("SpawnTextureHandle", component.TextureHandle)
+            .Path("SpawnTexturePath", component.TexturePath)
+            .Property("RenderSpawnZoneInScene", component.RenderSpawnZoneInScene);
+    }
 };
 
 struct PlayerComponent
@@ -31,6 +42,16 @@ struct PlayerComponent
     float LookSensitivity = 0.9f;
 
     PlayerComponent() = default;
+
+    static const char* GetStaticName() { return "PlayerComponent"; }
+
+    template <typename Archive>
+    static void Serialize(Archive& archive, PlayerComponent& component)
+    {
+        archive.Property("MovementSpeed", component.MovementSpeed)
+            .Property("LookSensitivity", component.LookSensitivity)
+            .Property("JumpForce", component.JumpForce);
+    }
 };
 
 struct SceneTransitionComponent
@@ -42,6 +63,15 @@ struct SceneTransitionComponent
     SceneTransitionComponent(const std::string& path)
         : TargetScenePath(path)
     {
+    }
+
+    static const char* GetStaticName() { return "SceneTransitionComponent"; }
+
+    template <typename Archive>
+    static void Serialize(Archive& archive, SceneTransitionComponent& component)
+    {
+        archive.Property("TargetScenePath", component.TargetScenePath)
+            .Property("Triggered", component.Triggered);
     }
 };
 

@@ -26,7 +26,7 @@ private:
     float m_BoostMultiplier = 5.0f;
 
     EditorCamera m_Camera;
-    Vector2 m_InitialMousePosition = {0.0f, 0.0f};
+    glm::vec2 m_InitialMousePosition = {0.0f, 0.0f};
 };
 
 } // namespace CHEngine

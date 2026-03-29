@@ -31,16 +31,29 @@ public:
         s_RendererAPI->DrawIndexed(vertexArray, indexCount);
     }
 
-    static void DrawLine(Vector3 startPosition, Vector3 endPosition, Color color);
+    static void DrawLine(glm::vec3 startPosition, glm::vec3 endPosition, Color color);
     static void DrawGrid(int sliceCount, float spacing);
 
-    static void SetBlendMode(int blendMode);
-    static void EnableDepthTest();
-    static void DisableDepthTest();
-    static void EnableBackfaceCulling();
-    static void DisableBackfaceCulling();
-    static void EnableDepthMask();
-    static void DisableDepthMask();
+    static void SetCullMode(RendererAPI::CullMode mode)
+    {
+        s_RendererAPI->SetCullMode(mode);
+    }
+
+    static void SetBlendFunc(RendererAPI::BlendFactor src, RendererAPI::BlendFactor dst)
+    {
+        s_RendererAPI->SetBlendFunc(src, dst);
+    }
+
+    static void SetLineWidth(float width)
+    {
+        s_RendererAPI->SetLineWidth(width);
+    }
+
+    static void EnableDepthTest() { s_RendererAPI->SetDepthTest(true); }
+    static void DisableDepthTest() { s_RendererAPI->SetDepthTest(false); }
+    static void EnableDepthMask() { s_RendererAPI->SetDepthMask(true); }
+    static void DisableDepthMask() { s_RendererAPI->SetDepthMask(false); }
+    static void SetBlendMode(bool enabled) { s_RendererAPI->SetBlendMode(enabled); }
 
 private:
     static std::unique_ptr<RendererAPI> s_RendererAPI;
