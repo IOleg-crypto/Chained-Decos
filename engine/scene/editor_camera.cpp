@@ -26,36 +26,36 @@ void EditorCamera::OnUpdate(Timestep ts)
 
 void EditorCamera::UpdateView()
 {
-    Vector3 position = CalculatePosition();
+    glm::vec3 position = CalculatePosition();
     m_ViewMatrix = glm::lookAt(position, position + GetForwardDirection(), GetUpDirection());
 }
 
-Vector3 EditorCamera::GetUpDirection() const
+glm::vec3 EditorCamera::GetUpDirection() const
 {
     return GetOrientation() * glm::vec3(0.0f, 1.0f, 0.0f);
 }
 
-Vector3 EditorCamera::GetRightDirection() const
+glm::vec3 EditorCamera::GetRightDirection() const
 {
     return GetOrientation() * glm::vec3(1.0f, 0.0f, 0.0f);
 }
 
-Vector3 EditorCamera::GetForwardDirection() const
+glm::vec3 EditorCamera::GetForwardDirection() const
 {
     return GetOrientation() * glm::vec3(0.0f, 0.0f, -1.0f);
 }
 
-Vector3 EditorCamera::CalculatePosition() const
+glm::vec3 EditorCamera::CalculatePosition() const
 {
     return m_FocalPoint - GetForwardDirection() * m_Distance;
 }
 
-Quaternion EditorCamera::GetOrientation() const
+glm::quat EditorCamera::GetOrientation() const
 {
     return glm::quat(glm::vec3(m_Pitch, m_Yaw, 0.0f));
 }
 
-void EditorCamera::MousePan(const Vector2& delta)
+void EditorCamera::MousePan(const glm::vec2& delta)
 {
     auto [xSpeed, ySpeed] = PanSpeed();
     m_FocalPoint += GetRightDirection() * (-delta.x * xSpeed * m_Distance);
@@ -63,7 +63,7 @@ void EditorCamera::MousePan(const Vector2& delta)
     UpdateView();
 }
 
-void EditorCamera::MouseRotate(const Vector2& delta)
+void EditorCamera::MouseRotate(const glm::vec2& delta)
 {
     float yawSign = GetUpDirection().y < 0 ? -1.0f : 1.0f;
     m_Yaw -= yawSign * delta.x * RotationSpeed();

@@ -12,14 +12,14 @@ namespace CHEngine
 enum class ScriptFieldType
 {
     None = 0,
-    Float, Int, Bool, String, Vector2, Vector3, Vector4, Color, Entity
+    Float, Int, Bool, String, Vec2, Vec3, Vec4, Color, Entity
 };
 
 struct ScriptField
 {
     ScriptFieldType Type = ScriptFieldType::None;
     std::string Name;
-    std::variant<float, int, bool, std::string, Vector2, Vector3, Vector4, Color, uint64_t> Value;
+    std::variant<float, int, bool, std::string, glm::vec2, glm::vec3, glm::vec4, Color, uint64_t> Value;
 };
 
 // Represents a single C# script instance attached to an entity.

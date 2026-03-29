@@ -3,6 +3,7 @@
 #include "engine/core/log.h"
 #include "engine/core/assets/asset_manager.h"
 #include "engine/scene/project.h"
+#include <filesystem>
 
 namespace CHEngine
 {
@@ -10,6 +11,21 @@ void ShaderLibrary::Add(const std::string& name, const std::shared_ptr<ShaderAss
 {
     CH_CORE_ASSERT(!Exists(name), "Shader already exists in library!");
     m_Shaders[name] = shader;
+}
+
+void ShaderLibrary::Add(const std::shared_ptr<ShaderAsset>& shader)
+{
+    std::filesystem::path path = shader->GetPath();
+    Add(path.stem().string(), shader);
+}
+
+void ShaderLibrary::Load(const std::string& path)
+{
+    auto shader = AssetManager::Get().Get<ShaderAsset>(path);
+    if (shader)
+    {
+        Add(shader);
+    }
 }
 
 void ShaderLibrary::Load(const std::string& name, const std::string& path)
@@ -30,8 +46,27 @@ void ShaderLibrary::Load(const std::string& name, const std::string& path)
 
 std::shared_ptr<ShaderAsset> ShaderLibrary::Get(const std::string& name)
 {
-    CH_CORE_ASSERT(Exists(name), "Shader not found in library!");
+    CH_CORE_ASSERT(Exists(name), "Shader name not found!");
     return m_Shaders[name];
+}
+
+std::shared_ptr<Shader> ShaderLibrary::GetShader(const std::string& name)
+{
+    if (auto asset = Get(name))
+    {
+        return asset->GetShader();
+    }
+    return nullptr;
+}
+
+std::shared_ptr<ShaderAsset> ShaderLibrary::GetById(uint32_t id) const
+{
+    for (const auto& [name, shader] : m_Shaders)
+    {
+        if (shader->GetShader() && shader->GetShader()->GetRendererID() == id)
+            return shader;
+    }
+    return nullptr;
 }
 
 bool ShaderLibrary::Exists(const std::string& name) const
@@ -53,20 +88,13 @@ void ShaderLibrary::ReloadAll()
 {
     CH_CORE_INFO("ShaderLibrary: Reloading all shaders...");
     
-    // We need to collect paths first because reloading modifies the metadata in AssetManager
-    std::vector<std::pair<std::string, std::string>> namePaths;
-    for (const auto& [name, shader] : m_Shaders)
+    for (auto& [name, shader] : m_Shaders)
     {
-        namePaths.push_back({ name, shader->GetPath() });
-    }
-
-    for (const auto& [name, path] : namePaths)
-    {
-        CH_CORE_TRACE("ShaderLibrary: Reloading shader '{}' from '{}'", name, path);
-        // Reload in AssetManager
-        AssetManager::Get().Reload<ShaderAsset>(path);
-        // Re-get and update in our map
-        m_Shaders[name] = AssetManager::Get().Get<ShaderAsset>(path);
+        if (shader && !shader->GetPath().empty())
+        {
+            CH_CORE_TRACE("ShaderLibrary: Reloading shader '{}' from '{}'", name, shader->GetPath());
+            AssetManager::Get().Reload<ShaderAsset>(shader->GetPath());
+        }
     }
 }
 } // namespace CHEngine

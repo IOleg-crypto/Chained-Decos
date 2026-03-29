@@ -16,8 +16,12 @@ public:
     virtual void SetDepthFunc(DepthFunc func) override;
     virtual void SetDepthTest(bool enabled) override;
     virtual void SetDepthMask(bool enabled) override;
-    virtual void SetCulling(bool enabled) override;
+    
+    virtual void SetCullMode(CullMode mode) override;
     virtual void SetBlendMode(bool enabled) override;
+    virtual void SetBlendFunc(BlendFactor src, BlendFactor dst) override;
+
+    virtual void SetLineWidth(float width) override;
 
     virtual void DrawIndexed(const std::shared_ptr<VertexArray>& vertexArray, uint32_t indexCount = 0) override;
     virtual void DrawLines(const std::shared_ptr<VertexArray>& vertexArray, uint32_t vertexCount) override;

@@ -2,7 +2,6 @@
 #define CH_PROJECT_BROWSER_PANEL_H
 
 #include "panel.h"
-#include "engine/graphics/importers/texture_importer.h"
 #include <filesystem>
 #include <functional>
 #include <string>
@@ -49,9 +48,6 @@ private:
     bool m_OpenCreatePopupRequest = false;
     char m_ProjectNameBuffer[256] = "MyProject";
     char m_ProjectLocationBuffer[512] = "";
-
-    Texture m_NewProjectIcon;
-    Texture m_OpenProjectIcon;
 
     std::shared_ptr<TextureAsset> m_NewProjectIconAsset;
     std::shared_ptr<TextureAsset> m_OpenProjectIconAsset;

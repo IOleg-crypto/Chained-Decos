@@ -8,7 +8,7 @@ namespace CHEngine {
         return entity && entity.HasComponent<SpawnComponent>() ? entity.GetComponent<SpawnComponent>().IsActive : false;
     }
 
-    CH_SCRIPT_FUNC void SpawnComponent_GetSpawnPoint(uint64_t entityID, Vector3* point) {
+    CH_SCRIPT_FUNC void SpawnComponent_GetSpawnPoint(uint64_t entityID, glm::vec3* point) {
         Entity entity = GetEntity(entityID);
         if (!point) return;
         if (entity && entity.HasComponent<SpawnComponent>())
@@ -39,13 +39,21 @@ namespace CHEngine {
     // ── Audio ─────────────────────────────────────────────────────────────
     CH_SCRIPT_FUNC void Audio_Play(Coral::String path, float volume, float pitch, bool loop) {
         if (Project::GetActive() != nullptr) {
-            Audio::Get().Play((std::string)path, volume, pitch, loop);
+            auto asset = AssetManager::Get().Get<SoundAsset>((std::string)path);
+            if (asset && asset->GetState() == AssetState::Ready) {
+                AudioBuffer buffer;
+                buffer.Data = asset->GetPCMData().data();
+                buffer.Size = (uint32_t)asset->GetPCMData().size();
+                buffer.Channels = asset->GetChannels();
+                buffer.SampleRate = asset->GetSampleRate();
+                Audio::Get().Play(buffer, volume, pitch, loop);
+            }
         }
     }
 
-    CH_SCRIPT_FUNC void Audio_Stop(Coral::String path) {
+    CH_SCRIPT_FUNC void Audio_StopAll() {
         if (Project::GetActive() != nullptr) {
-            Audio::Get().Stop((std::string)path);
+            Audio::Get().StopAll();
         }
     }
 
@@ -73,7 +81,7 @@ namespace CHEngine {
         #define CH_ADD_INTERNAL_CALL(className, fieldName, funcPtr) assembly.AddInternalCall("CHEngine." #className, #fieldName, (void*)funcPtr)
         
         CH_ADD_INTERNAL_CALL(Audio, Audio_Play_Ptr, Audio_Play);
-        CH_ADD_INTERNAL_CALL(Audio, Audio_Stop_Ptr, Audio_Stop);
+        CH_ADD_INTERNAL_CALL(Audio, Audio_StopAll_Ptr, Audio_StopAll);
         CH_ADD_INTERNAL_CALL(PlayerComponent, PlayerComponent_GetMovementSpeed_Ptr, PlayerComponent_GetMovementSpeed);
         CH_ADD_INTERNAL_CALL(PlayerComponent, PlayerComponent_SetMovementSpeed_Ptr, PlayerComponent_SetMovementSpeed);
         CH_ADD_INTERNAL_CALL(AudioComponent, AudioComponent_SetVolume_Ptr, AudioComponent_SetVolume);

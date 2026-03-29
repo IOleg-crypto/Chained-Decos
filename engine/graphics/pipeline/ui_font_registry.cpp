@@ -1,8 +1,8 @@
 #include "ui_font_registry.h"
 #include "engine/core/base.h"
 #include "engine/scene/project.h"
-#include <filesystem>
 #include <cmath>
+#include <filesystem>
 
 namespace CHEngine
 {
@@ -42,7 +42,10 @@ void UIFontRegistry::LoadProjectFonts()
 
     for (const auto& entry : std::filesystem::recursive_directory_iterator(fontsDir))
     {
-        if (!entry.is_regular_file()) continue;
+        if (!entry.is_regular_file())
+        {
+            continue;
+        }
 
         auto ext = entry.path().extension().string();
         // Convert to lowercase for comparison
@@ -50,8 +53,17 @@ void UIFontRegistry::LoadProjectFonts()
 
         bool validExt = false;
         for (const auto& ve : validExtensions)
-            if (ext == ve) { validExt = true; break; }
-        if (!validExt) continue;
+        {
+            if (ext == ve)
+            {
+                validExt = true;
+                break;
+            }
+        }
+        if (!validExt)
+        {
+            continue;
+        }
 
         // relative key: "fonts/Roboto-Regular.ttf"
         auto relativePath = std::filesystem::relative(entry.path(), Project::GetAssetDirectory());
@@ -65,10 +77,12 @@ void UIFontRegistry::LoadProjectFonts()
     CH_CORE_INFO("UIFontRegistry: Discovered {} font file(s) in '{}'", loaded, fontsDir.string());
 }
 
-ImFont* UIFontRegistry::GetFont(const std::string& relativeName, float pixelSize)  const
+ImFont* UIFontRegistry::GetFont(const std::string& relativeName, float pixelSize) const
 {
     if (relativeName.empty() || relativeName == "Default")
+    {
         return nullptr; // caller should use ImGui default
+    }
 
     float size = (pixelSize > 0.0f) ? pixelSize : 16.0f;
     std::string key = MakeKey(relativeName, size);
@@ -76,7 +90,9 @@ ImFont* UIFontRegistry::GetFont(const std::string& relativeName, float pixelSize
     // Fast path: already in atlas
     auto it = m_Fonts.find(key);
     if (it != m_Fonts.end())
+    {
         return it->second;
+    }
 
     // Slow path: need to register for this size.
     // NOTE: This only works before ImGui font atlas is built (before first frame).
@@ -107,7 +123,9 @@ ImFont* UIFontRegistry::RegisterFont(const std::string& relativeName, const std:
     m_Fonts[key] = font;
 
     if (!m_DefaultFont)
+    {
         m_DefaultFont = font;
+    }
 
     CH_CORE_INFO("UIFontRegistry: Loaded '{}' at {:.1f}px", relativeName, pixelSize);
     return font;

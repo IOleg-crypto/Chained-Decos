@@ -14,7 +14,6 @@ std::filesystem::path Project::s_EngineRoot = "";
 std::shared_ptr<Project> Project::New()
 {
     auto project = std::make_shared<Project>();
-    AssetManager::Get().Initialize();
     s_ActiveProject = project;
     return s_ActiveProject;
 }
@@ -22,7 +21,6 @@ std::shared_ptr<Project> Project::New()
 std::shared_ptr<Project> Project::Load(const std::filesystem::path& path)
 {
     std::shared_ptr<Project> project = std::make_shared<Project>();
-    AssetManager::Get().Initialize(path.parent_path());
 
     project->m_Config.ProjectDirectory = path.parent_path();
     s_ActiveProject = project;
@@ -57,17 +55,7 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path& path)
     ProjectSerializer serializer(project);
     if (serializer.Deserialize(path))
     {
-        // Register asset search path
-        AssetManager::Get().ClearSearchPaths();
-        AssetManager::Get().AddSearchPath(project->m_Config.ProjectDirectory / project->m_Config.AssetDirectory);
-
-        if (!s_EngineRoot.empty())
-        {
-            AssetManager::Get().AddSearchPath(s_EngineRoot);
-            AssetManager::Get().AddSearchPath(s_EngineRoot / "resources");
-        }
-
-        // Load engine shaders now that search paths are set correctly
+        // Load engine shaders now that paths are set correctly
         if (Renderer::IsInitialized())
         {
             Renderer::LoadEngineResources();

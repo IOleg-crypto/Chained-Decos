@@ -1,5 +1,5 @@
-#ifndef CH_LINUX_WINDOW_H
-#define CH_LINUX_WINDOW_H
+#ifndef CH_GLFW_WINDOW_H
+#define CH_GLFW_WINDOW_H
 
 #include "engine/core/window.h"
 #include <string>
@@ -8,16 +8,11 @@ struct GLFWwindow;
 
 namespace CHEngine
 {
-struct WindowIcon {
-    int width, height;
-    unsigned char* pixels;
-};
-
-class LinuxWindow : public Window
+class GlfwWindow : public Window
 {
 public:
-    LinuxWindow(const WindowProperties& properties);
-    virtual ~LinuxWindow();
+    GlfwWindow(const WindowProperties& properties);
+    virtual ~GlfwWindow();
 
     virtual void BeginFrame() override;
     virtual void EndFrame() override;
@@ -37,7 +32,6 @@ public:
     virtual void SetVSync(bool enabled) override;
     virtual void SetAntialiasing(bool enabled) override;
     virtual void SetTargetFramesPerSecond(int framesPerSecond) override;
-    // virtual void SetWindowIcon(WindowIcon icon) override;
 
     virtual void* GetNativeWindow() const override { return m_WindowHandle; }
 
@@ -54,4 +48,4 @@ private:
 
 } // namespace CHEngine
 
-#endif // CH_LINUX_WINDOW_H
+#endif // CH_GLFW_WINDOW_H

@@ -93,27 +93,21 @@ void PropertyEditor::Init()
 
     Register<TransformComponent>("Transform", [](auto& component, auto entity) {
         bool changed = false;
-        Vector3 translation = *reinterpret_cast<Vector3*>(&component.Translation);
-        if (EditorGUI::DrawVec3("Position", translation))
+        if (EditorGUI::DrawVec3("Position", component.Translation))
         {
-            component.Translation = *reinterpret_cast<glm::vec3*>(&translation);
             component.IsDirty = true;
             changed = true;
         }
 
-        Vector3 rotation = *reinterpret_cast<Vector3*>(&component.Rotation);
-        if (EditorGUI::DrawVec3("Rotation", rotation))
+        if (EditorGUI::DrawVec3("Rotation", component.Rotation))
         {
-            component.Rotation = *reinterpret_cast<glm::vec3*>(&rotation);
             component.SetRotation(component.Rotation * (glm::pi<float>() / 180.0f));
             component.Rotation = component.Rotation * (1.0f / (glm::pi<float>() / 180.0f)); // Keep in degrees for UI
             changed = true;
         }
 
-        Vector3 scaleVec = *reinterpret_cast<Vector3*>(&component.Scale);
-        if (EditorGUI::DrawVec3("Scale", scaleVec, 1.0f))
+        if (EditorGUI::DrawVec3("Scale", component.Scale, 1.0f))
         {
-            component.Scale = *reinterpret_cast<glm::vec3*>(&scaleVec);
             component.IsDirty = true;
             changed = true;
         }
@@ -288,11 +282,10 @@ void PropertyEditor::Init()
             changed = true;
         }
 
-        Vector3 velocity = *reinterpret_cast<Vector3*>(&component.Velocity);
-        if (EditorGUI::DrawVec3("Velocity", velocity))
+        if (EditorGUI::DrawVec3("Velocity", component.Velocity))
         {
-            component.Velocity = *reinterpret_cast<glm::vec3*>(&velocity);
             // Syncing velocity is handled by SyncECSToJolt so we don't necessarily need RecreateBody here
+            changed = true;
         }
 
         if (changed)
@@ -319,10 +312,8 @@ void PropertyEditor::Init()
         }
 
         ImGui::BeginDisabled(component.AutoCalculate);
-        Vector3 offset = *reinterpret_cast<Vector3*>(&component.Offset);
-        if (EditorGUI::DrawVec3("Offset", offset))
+        if (EditorGUI::DrawVec3("Offset", component.Offset))
         {
-            component.Offset = *reinterpret_cast<glm::vec3*>(&offset);
             changed = true;
         }
         ImGui::EndDisabled();
@@ -330,10 +321,8 @@ void PropertyEditor::Init()
         if (component.Type == ColliderType::Box)
         {
             ImGui::BeginDisabled(component.AutoCalculate);
-            Vector3 size = *reinterpret_cast<Vector3*>(&component.Size);
-            if (EditorGUI::DrawVec3("Size", size, 1.0f))
+            if (EditorGUI::DrawVec3("Size", component.Size, 1.0f))
             {
-                component.Size = *reinterpret_cast<glm::vec3*>(&size);
                 changed = true;
             }
             ImGui::EndDisabled();
@@ -359,10 +348,8 @@ void PropertyEditor::Init()
             }
 
             ImGui::BeginDisabled(component.AutoCalculate);
-            Vector3 size = *reinterpret_cast<Vector3*>(&component.Size);
-            if (EditorGUI::DrawVec3("Size", size, 1.0f))
+            if (EditorGUI::DrawVec3("Size", component.Size, 1.0f))
             {
-                component.Size = *reinterpret_cast<glm::vec3*>(&size);
                 changed = true;
             }
             ImGui::EndDisabled();
@@ -383,10 +370,9 @@ void PropertyEditor::Init()
                     {
                         if (component.AutoCalculate)
                         {
-                            BoundingBox box = asset->GetBoundingBox();
-                            component.Offset = { box.Min.x, box.Min.y, box.Min.z }; 
-                            glm::vec3 sz = box.Max - box.Min;
-                            component.Size = { sz.x, sz.y, sz.z };
+                            auto box = asset->GetBoundingBox();
+                            component.Offset = box.Min; 
+                            component.Size = box.Max - box.Min;
                             
                             CH_CORE_INFO("Rebuild Collider: '{}' -> Offset({:.2f}, {:.2f}, {:.2f}), Size({:.2f}, {:.2f}, {:.2f})", 
                                          component.ModelPath, component.Offset.x, component.Offset.y, component.Offset.z,
@@ -1026,7 +1012,7 @@ void PropertyEditor::Init()
         }
         else if (component.Type == PrimitiveType::Plane)
         {
-            Vector2 size = {component.Dimensions.x, component.Dimensions.z};
+            glm::vec2 size = {component.Dimensions.x, component.Dimensions.z};
             if (EditorGUI::Property("Size", size))
             {
                 component.Dimensions.x = size.x;
@@ -1130,8 +1116,8 @@ void PropertyEditor::Init()
             float posX = rectTransform.OffsetMin.x + width * rectTransform.Pivot.x;
             float posY = rectTransform.OffsetMin.y + height * rectTransform.Pivot.y;
 
-            Vector2 pos = {posX, posY};
-            Vector2 size = {width, height};
+            glm::vec2 pos = {posX, posY};
+            glm::vec2 size = {width, height};
 
             if (EditorGUI::Property("Pos", pos))
             {

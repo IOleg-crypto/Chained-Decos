@@ -18,13 +18,13 @@ struct RenderLight
 {
     glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f}; // 16 bytes
     glm::vec3 position = {0, 0, 0};              // 12 bytes
-    float intensity = 1.0f;                    // 4 bytes
+    float intensity = 1.0f;                  // 4 bytes
     glm::vec3 direction = {0, -1, 0};            // 12 bytes
-    float radius = 10.0f;                      // 4 bytes
-    float innerCutoff = 15.0f;                 // 4 bytes
-    float outerCutoff = 20.0f;                 // 4 bytes
-    int type = 0;                              // 4 bytes
-    int enabled = 0;                           // 4 bytes
+    float radius = 10.0f;                     // 4 bytes
+    float innerCutoff = 15.0f;                // 4 bytes
+    float outerCutoff = 20.0f;                // 4 bytes
+    int type = 0;                               // 4 bytes
+    int enabled = 0;                            // 4 bytes
 };
 
 struct LightingData
@@ -98,7 +98,7 @@ public:
     void DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color);
     void DrawGrid(int slices, float spacing);
     void DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& color);
-    void DrawSkybox(const SkyboxSettings& settings, const Camera3D& camera);
+    void DrawSkybox(uint32_t textureId, bool isCubemap, bool isHDR, float exposure, float brightness, float contrast, const Camera3D& camera);
     void DrawBillboard(const Camera3D& camera, uint32_t textureId, const glm::vec3& position, float size, const glm::vec4& tint);
     void DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, const glm::vec4& color);
     void DrawCapsuleWires(const glm::mat4& transform, float radius, float height, const glm::vec4& color);
@@ -119,12 +119,10 @@ public:
     RendererData& GetData() { return *m_Data; }
 
     static bool IsInitialized();
-
 private:
-    void ApplyFogUniforms(uint32_t shaderId);
+    void ApplyFogUniforms(const std::shared_ptr<ShaderAsset>& shader);
     void InitializeSkybox();
     void CleanupSkybox();
-    uint32_t GenTextureCubemap(uint32_t shaderId, uint32_t panoramaId, int size);
 
 private:
     std::unique_ptr<RendererData> m_Data;

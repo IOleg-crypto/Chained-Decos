@@ -1,7 +1,7 @@
 #ifndef CH_RENDERER_TYPES_H
 #define CH_RENDERER_TYPES_H
 
-#include "engine/core/math_types.h"
+#include "engine/core/ch_math.h"
 #include <string>
 #include <vector>
 #include <memory>

@@ -1,6 +1,6 @@
 #include "application.h"
-#include "filesystem_utils.h"
 #include "engine/audio/audio.h"
+#include "engine/core/assets/asset_manager.h"
 #include "engine/core/ch_assert.h"
 #include "engine/core/imgui_layer.h"
 #include "engine/core/input.h"
@@ -9,7 +9,6 @@
 #include "engine/core/profiler.h"
 #include "engine/core/thread_pool.h"
 #include "engine/core/window.h"
-#include "engine/core/assets/asset_manager.h"
 #include "engine/graphics/assets/environment.h"
 #include "engine/graphics/assets/font_asset.h"
 #include "engine/graphics/pipeline/renderer.h"
@@ -17,6 +16,7 @@
 #include "engine/scene/component_serializer.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene_events.h"
+#include "filesystem_utils.h"
 #include "nfd.h"
 #include "scripting/scriptengine.h"
 
@@ -28,7 +28,7 @@
 #define GLFW_INCLUDE_NONE
 #endif
 #include "engine/graphics/pipeline/render_command.h"
-#include "engine/graphics/pipeline/renderer2d.h"
+
 #include "engine/graphics/pipeline/ui_renderer.h"
 #include <GLFW/glfw3.h>
 
@@ -68,13 +68,9 @@ Application::Application(const ApplicationSpecification& specification)
     {
         m_Window = std::unique_ptr<Window>(Window::Create(windowProps));
     }
-    
-    ThreadPool::Init();
-    AssetManager::Get().Initialize(); // Initialize asset manager root discovery before renderer needs it
+
     Renderer::Init();
-    Renderer2D::Init();
     UIRenderer::Init();
-    Audio::Init();
     PhysicsSystem::Init();
     ComponentSerializer::Init();
     ScriptEngine::Init();
@@ -85,7 +81,7 @@ Application::Application(const ApplicationSpecification& specification)
     // --- Core Systems Post-Initialization ---
     // Note: Systems' Init() already called InternalInit().
     // We only need to Push layers andoverlays.
-    
+
     // ImGui Layer setup (always needed for Editor/Debugging)
     if (!m_Specification.Headless)
     {
@@ -100,17 +96,14 @@ Application::Application(const ApplicationSpecification& specification)
 Application::~Application()
 {
     CH_CORE_INFO("Shutting down Application...");
-    
+
     m_LayerStack.reset();
 
     ScriptEngine::Shutdown();
     ComponentSerializer::Shutdown();
     PhysicsSystem::Shutdown();
-    Audio::Shutdown();
     UIRenderer::Shutdown();
-    Renderer2D::Shutdown();
     Renderer::Shutdown();
-    ThreadPool::Shutdown();
 
     m_Window.reset();
 
@@ -151,7 +144,9 @@ void Application::OnEvent(Event& e)
     for (auto it = layers.rbegin(); it != layers.rend(); ++it)
     {
         if (e.Handled)
+        {
             break;
+        }
         if ((*it)->IsEnabled())
         {
             (*it)->OnEvent(e);
@@ -216,7 +211,7 @@ void Application::Run()
         m_LastFrameTime = time;
 
         // 2. Input Polling
-        Input::PollEvents();
+        Input::Update();
 
         // 3. Core Systems Update
         if (auto project = Project::GetActive())
@@ -232,7 +227,9 @@ void Application::Run()
 
             if (!m_Minimized)
             {
-                // Logic/Simulation
+                // -- Logic/Simulation --
+                
+                // 1. Variable Update
                 for (auto layer : *m_LayerStack)
                 {
                     if (layer->IsEnabled())
@@ -241,7 +238,21 @@ void Application::Run()
                     }
                 }
 
-                // Rendering
+                // 2. Fixed Update
+                m_Accumulator += (float)m_DeltaTime;
+                while (m_Accumulator >= m_FixedTimestep)
+                {
+                    for (auto layer : *m_LayerStack)
+                    {
+                        if (layer->IsEnabled())
+                        {
+                            layer->OnFixedUpdate(Timestep(m_FixedTimestep));
+                        }
+                    }
+                    m_Accumulator -= m_FixedTimestep;
+                }
+
+                // -- Rendering --
                 m_Window->BeginFrame();
 
                 for (auto layer : *m_LayerStack)
@@ -280,6 +291,5 @@ LayerStack& Application::GetLayerStack()
 {
     return *m_LayerStack;
 }
-
 
 } // namespace CHEngine

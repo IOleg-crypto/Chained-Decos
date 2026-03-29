@@ -1,7 +1,6 @@
 #ifndef CH_THREAD_POOL_H
 #define CH_THREAD_POOL_H
 
-#include "engine/core/base.h"
 #include <condition_variable>
 #include <functional>
 #include <future>
@@ -12,20 +11,30 @@
 
 namespace CHEngine
 {
-// A simple thread pool for executing generic tasks.
-// Useful for physics, asset loading, and other parallel operations.
+/**
+ * @brief A modern C++20 Thread Pool for parallel task execution.
+ * Uses std::jthread for automatic thread management and a thread-safe singleton pattern.
+ */
 class ThreadPool
 {
 public:
-    ThreadPool(size_t threads = std::thread::hardware_concurrency());
-    ~ThreadPool();
+    /**
+     * @brief Access the global thread pool instance.
+     */
+    static ThreadPool& Get()
+    {
+        static ThreadPool instance;
+        return instance;
+    }
 
-    static void Init(size_t threads = std::thread::hardware_concurrency());
-    static void Shutdown();
+    // Deleted constructors for singleton
+    ThreadPool(const ThreadPool&) = delete;
+    ThreadPool& operator=(const ThreadPool&) = delete;
 
-    static ThreadPool& Get();
-
-    // Enqueues a task for execution. Returns a future for the result.
+    /**
+     * @brief Enqueues a task and returns a std::future for the result.
+     * Useful for tasks where you need the return value later (e.g. Asset Loading).
+     */
     template <class F, class... Args>
     auto Enqueue(F&& f, Args&&... args) -> std::future<typename std::invoke_result<F, Args...>::type>
     {
@@ -38,9 +47,7 @@ public:
         {
             std::unique_lock<std::mutex> lock(m_QueueMutex);
             if (m_Stop)
-            {
-                throw std::runtime_error("enqueue on stopped ThreadPool");
-            }
+                throw std::runtime_error("Enqueue on stopped ThreadPool");
 
             m_Tasks.emplace([task]() { (*task)(); });
         }
@@ -48,19 +55,31 @@ public:
         return res;
     }
 
-    void InternalShutdown();
+    /**
+     * @brief Simpler version for "fire and forget" tasks.
+     */
+    void QueueTask(std::function<void()> task)
+    {
+        {
+            std::unique_lock<std::mutex> lock(m_QueueMutex);
+            m_Tasks.emplace(std::move(task));
+        }
+        m_Condition.notify_one();
+    }
 
 private:
-    // Worker thread function
-    void WorkerThread();
+    ThreadPool();
+    ~ThreadPool();
+
+    void WorkerThread(std::stop_token stopToken);
 
 private:
-    std::vector<std::thread> m_Workers;
-    std::queue<std::function<void()>> m_Tasks;
+   std::vector<std::jthread> m_Workers;
+   std::queue<std::function<void()>> m_Tasks;
 
-    std::mutex m_QueueMutex;
-    std::condition_variable m_Condition;
-    bool m_Stop = false;
+   std::mutex m_QueueMutex;
+   std::condition_variable_any m_Condition;
+   bool m_Stop = false;
 };
 } // namespace CHEngine
 

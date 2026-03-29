@@ -1,7 +1,7 @@
 #ifndef CH_RENDERER_API_H
 #define CH_RENDERER_API_H
 
-#include "engine/core/math_types.h"
+#include "engine/core/ch_math.h"
 #include <memory>
 
 namespace CHEngine
@@ -13,14 +13,18 @@ class RendererAPI
 public:
     enum class DepthFunc
     {
-        Never = 0,
-        Less,
-        Equal,
-        LEqual,
-        Greater,
-        NotEqual,
-        GEqual,
-        Always
+        Never = 0, Less, Equal, LEqual, Greater, NotEqual, GEqual, Always
+    };
+
+    enum class CullMode
+    {
+        None = 0, Front, Back, FrontAndBack
+    };
+
+    enum class BlendFactor
+    {
+        Zero = 0, One, SrcColor, OneMinusSrcColor, DstColor, OneMinusDstColor, 
+        SrcAlpha, OneMinusSrcAlpha, DstAlpha, OneMinusDstAlpha
     };
 
     enum class API
@@ -42,8 +46,12 @@ public:
     virtual void SetDepthFunc(DepthFunc func) = 0;
     virtual void SetDepthTest(bool enabled) = 0;
     virtual void SetDepthMask(bool enabled) = 0;
-    virtual void SetCulling(bool enabled) = 0;
+    
+    virtual void SetCullMode(CullMode mode) = 0;
     virtual void SetBlendMode(bool enabled) = 0;
+    virtual void SetBlendFunc(BlendFactor src, BlendFactor dst) = 0;
+
+    virtual void SetLineWidth(float width) = 0;
 
     virtual void DrawIndexed(const std::shared_ptr<VertexArray>& vertexArray, uint32_t indexCount = 0) = 0;
     virtual void DrawLines(const std::shared_ptr<VertexArray>& vertexArray, uint32_t vertexCount) = 0;

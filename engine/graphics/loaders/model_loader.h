@@ -3,53 +3,50 @@
 
 #include "engine/core/assets/asset_loader.h"
 #include "engine/graphics/assets/model_asset.h"
-#include "engine/graphics/importers/mesh_importer.h"
 #include <memory>
 #include <string>
+#include <vector>
+#include <map>
+#include <filesystem>
+#include <assimp/scene.h>
 
 namespace CHEngine
 {
+struct ProceduralParameters
+{
+    float Radius = 0.5f;
+    float InnerRadius = 0.2f;
+    float Height = 1.0f;
+    int Slices = 16;
+    int Stacks = 16;
+    glm::vec3 Dimensions = {1.0f, 1.0f, 1.0f};
+};
+
 class ModelLoader : public IAssetLoader
 {
 public:
-    std::shared_ptr<Asset> Create() override
-    {
-        return std::make_shared<ModelAsset>();
-    }
-
-    bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath) override
-    {
-        auto modelAsset = std::static_pointer_cast<ModelAsset>(asset);
-        
-        // Match existing AssetManager logic:
-        // Handle procedural meshes synchronously, others asynchronously
-        if (resolvedPath.starts_with(":"))
-        {
-            auto importedModel = MeshImporter::ImportMesh(resolvedPath);
-            if (importedModel)
-            {
-                // We need to copy/move data into modelAsset or some similar logic
-                // For now, mirroring what was there before (which was slightly flawed or assumed sync load returns a full asset)
-                // Actually, if it's sync, Load itself should handle it.
-                // In my new GetAsset: if loader->IsAsync() it enqueues, ELSE it calls Load directly.
-                // So if it's a procedural mesh, we want it to be sync.
-                modelAsset->SetModel(importedModel->GetModel()); // Assuming such methods exist based on original code
-                modelAsset->SetState(AssetState::Ready);
-                return true;
-            }
-            return false;
-        }
-
-        auto pendingData = MeshImporter::LoadMeshDataFromDisk(resolvedPath);
-        if (pendingData.isValid)
-        {
-            modelAsset->SetPendingData(pendingData);
-            return true;
-        }
-        return false;
-    }
-
+    std::shared_ptr<Asset> Create() override;
+    bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath) override;
     bool IsAsync() const override { return true; }
+
+    static Model GenerateProceduralModel(const std::string& type, const ProceduralParameters& params = ProceduralParameters());
+
+private:
+    static PendingModelData LoadMeshDataFromDisk(const std::filesystem::path& path, int samplingFPS = 30);
+    
+    // Assimp processing helpers
+    static void ProcessHierarchy(aiNode* node, int parent, PendingModelData& data, std::map<aiNode*, int>& nodeToBone);
+    static void ProcessMaterials(const aiScene* scene, const std::filesystem::path& modelDir, PendingModelData& data);
+    static void ProcessMeshes(const aiScene* scene, PendingModelData& data);
+    static void BuildSkeleton(PendingModelData& data);
+    static void ProcessAnimations(const aiScene* scene, PendingModelData& data, int samplingFPS);
+    static std::string ResolveTexturePath(const aiScene* scene, const aiMaterial* aiMat, aiTextureType type, const std::filesystem::path& modelDir);
+
+    // Conversion helpers
+    static glm::mat4 ConvertMatrix(const aiMatrix4x4& m);
+    static glm::vec3 ConvertVector3(const aiVector3D& v);
+    static glm::quat ConvertQuaternion(const aiQuaternion& q);
+    static glm::vec4 ConvertColor(const aiColor4D& c);
 };
 } // namespace CHEngine
 
