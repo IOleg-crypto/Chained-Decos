@@ -11,14 +11,16 @@ void Input::Update()
     if (!window) return;
 
     // 1. Sync Key States
-    for (int i = 0; i < 512; i++)
+    // GLFW_KEY_SPACE (32) is the first valid named key; indices 0..31 are reserved and
+    // trigger GLFW's error callback if polled. Poll only the valid range.
+    for (int i = GLFW_KEY_SPACE; i <= GLFW_KEY_LAST; i++)
     {
         Input::s_LastKeyStates[i] = Input::s_KeyStates[i];
         Input::s_KeyStates[i] = glfwGetKey(window, i) == GLFW_PRESS;
     }
 
-    // 2. Sync Mouse States
-    for (int i = 0; i < 16; i++)
+    // 2. Sync Mouse States (GLFW_MOUSE_BUTTON_LAST = 7)
+    for (int i = 0; i <= GLFW_MOUSE_BUTTON_LAST; i++)
     {
         Input::s_LastMouseStates[i] = Input::s_MouseStates[i];
         Input::s_MouseStates[i] = glfwGetMouseButton(window, i) == GLFW_PRESS;

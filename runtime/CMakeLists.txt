@@ -27,6 +27,14 @@ target_link_libraries(ChainedRuntime PRIVATE
     imguilib
 )
 
+# Copy engine resources to build output directory
+add_custom_command(TARGET ChainedRuntime POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${CMAKE_SOURCE_DIR}/resources"
+    "$<TARGET_FILE_DIR:ChainedRuntime>/resources"
+    COMMENT "Copying engine resources..."
+)
+
 apply_engine_optimizations(ChainedRuntime)
 
 install(TARGETS ChainedRuntime

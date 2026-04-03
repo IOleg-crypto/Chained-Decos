@@ -1,6 +1,7 @@
 add_library(engine_graphics OBJECT
     # Pipeline
         pipeline/renderer.cpp
+        pipeline/renderer_types.cpp
         pipeline/ui_renderer.cpp
         pipeline/ui_widget_renderer.cpp
         pipeline/ui_font_registry.cpp
@@ -35,11 +36,13 @@ add_library(engine_graphics OBJECT
     # Loaders
         loaders/texture_loader.cpp
         loaders/model_loader.cpp
+        loaders/assimp_importer.cpp
         loaders/shader_loader.cpp
         loaders/font_loader.cpp
         loaders/environment_loader.cpp
         loaders/texture_loader.h
         loaders/model_loader.h
+        loaders/assimp_importer.h
         loaders/shader_loader.h
         loaders/font_loader.h
         loaders/environment_loader.h

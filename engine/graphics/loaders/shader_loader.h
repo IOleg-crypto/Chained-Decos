@@ -2,14 +2,13 @@
 #define CH_SHADER_LOADER_H
 
 #include "engine/core/assets/asset_loader.h"
-// #include "engine/graphics/assets/shader_asset.h"
+#include "engine/graphics/assets/shader_asset.h"
 #include <memory>
 #include <string>
 #include <vector>
 
 namespace CHEngine
 {
-class Shader;
 
 class ShaderLoader : public IAssetLoader
 {

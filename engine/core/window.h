@@ -54,8 +54,7 @@ public:
     virtual void SetVSync(bool enabled) = 0;
     virtual void SetAntialiasing(bool enabled) = 0;
     virtual void SetTargetFramesPerSecond(int framesPerSecond) = 0;
-    // (Window icon logic can be implemented later with a generic Image type)
-    // virtual void SetWindowIcon(const std::string& path) = 0;
+    virtual void SetWindowIcon(const std::string& path) = 0;
 
     virtual void* GetNativeWindow() const = 0;
 

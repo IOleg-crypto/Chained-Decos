@@ -1,8 +1,8 @@
 #ifndef CH_MESH_COMPONENT_H
 #define CH_MESH_COMPONENT_H
 
-#include "engine/core/base.h"
 #include "engine/core/assets/asset.h"
+#include "engine/core/base.h"
 #include "engine/graphics/pipeline/material.h"
 #include <string>
 #include <vector>
@@ -31,13 +31,10 @@ struct MaterialSlot
     {
     }
 
-    template <typename Archive>
-    static void Serialize(Archive& archive, MaterialSlot& slot)
+    template <typename Archive> static void Serialize(Archive& archive, MaterialSlot& slot)
     {
-        archive.Property("Name", slot.Name)
-            .Property("Index", slot.Index)
-            .Property("Target", (int&)slot.Target);
-        
+        archive.Property("Name", slot.Name).Property("Index", slot.Index).Property("Target", (int&)slot.Target);
+
         // MaterialInstance serialization is handled by archive normally
         archive.Property("Material", slot.Material);
     }
@@ -48,7 +45,7 @@ struct ModelComponent
     AssetHandle ModelHandle = 0;
     std::string ModelPath;
     std::vector<MaterialSlot> Materials;
-    bool  MaterialsInitialized = false;
+    bool MaterialsInitialized = false;
 
     ModelComponent() = default;
     ModelComponent(const ModelComponent&) = default;
@@ -61,18 +58,21 @@ struct ModelComponent
     {
     }
 
-    static const char* GetStaticName() { return "ModelComponent"; }
+    static const char* GetStaticName()
+    {
+        return "ModelComponent";
+    }
 
-    template <typename Archive>
-    static void Serialize(Archive& archive, ModelComponent& component)
+    template <typename Archive> static void Serialize(Archive& archive, ModelComponent& component)
     {
         archive.Handle("ModelHandle", component.ModelHandle)
             .Path("ModelPath", component.ModelPath)
             .Property("Materials", component.Materials);
-        
-        if (archive.GetMode() == SerializationUtils::PropertyArchive::Deserialize)
-            component.MaterialsInitialized = true;
     }
+
+    //     if (archive.GetMode() == SerializationUtils::PropertyArchive::Deserialize)
+    //         component.MaterialsInitialized = true;
+    // }
 };
 
 struct MaterialComponent

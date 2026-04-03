@@ -1,4 +1,6 @@
-#pragma once
+#ifndef CH_OPENGL_SHADER_H
+#define CH_OPENGL_SHADER_H
+
 #include "engine/graphics/api/shader.h"
 #include <unordered_map>
 
@@ -33,3 +35,5 @@ private:
 };
 
 } // namespace CHEngine
+
+#endif // CH_OPENGL_SHADER_H

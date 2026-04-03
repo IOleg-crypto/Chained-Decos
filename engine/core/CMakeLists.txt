@@ -9,6 +9,7 @@ add_library(engine_core OBJECT
         application.cpp
         dialogs.cpp
         filesystem_utils.cpp
+        assets/asset_manager.cpp
 
         application.h
         imgui_layer.h
