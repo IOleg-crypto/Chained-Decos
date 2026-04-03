@@ -3,15 +3,13 @@ VertexShader: "skybox.vs"
 FragmentShader: "skybox.fs"
 
 Uniforms:
-  - projection
-  - view
+  - u_Projection
+  - u_View
   - u_Panorama
   - u_VFlipped
-  - doGamma
-  - fragGamma
-  - exposure
-  - brightness
-  - contrast
+  - u_Exposure
+  - u_Brightness
+  - u_Contrast
   - uTime
   - isHDR
   - skyboxMode
