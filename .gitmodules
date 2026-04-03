@@ -56,3 +56,10 @@
 [submodule "include/stb"]
 	path = include/stb
 	url = https://github.com/nothings/stb.git
+[submodule "include/glad"]
+	path = include/glad
+	url = https://github.com/Dav1dde/glad.git
+	branch = glad2
+[submodule "include/glfw"]
+	path = include/glfw
+	url = https://github.com/glfw/glfw.git
