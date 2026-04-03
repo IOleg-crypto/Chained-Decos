@@ -12,8 +12,8 @@ namespace CHEngine
     {
         auto cubemap = Texture::CreateCubemap(size, TextureFormat::RGBA16F);
         
-        // Save current state or just use RenderCommand to manage it
-        // For simplicity, we assume we can just set what we need
+        GLint viewport[4];
+        glGetIntegerv(GL_VIEWPORT, viewport);
         
         auto spec = FramebufferSpecification();
         spec.Width = size;
@@ -57,6 +57,7 @@ namespace CHEngine
         }
         
         captureFBO->Unbind();
+        RenderCommand::SetViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
         
         return cubemap;
     }

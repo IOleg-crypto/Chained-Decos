@@ -23,16 +23,13 @@ void main()
     // Fix: If fragColor (Vertex Color) is close to black, ignore it.
     if (length(fragColor.rgb) > 0.01) baseColor *= fragColor;
     
-    // Albedo is usually stored in sRGB (Gamma space) for LDR textures
+    // Albedo is stored as sRGB in textures. Material colors from Assimp are already linear.
     if (useTexture == 1) 
     {
         vec4 sampled = texture(texture0, fragTexCoord);
-        baseColor *= ToLinear(sampled); // Convert sample to Linear
+        baseColor *= ToLinear(sampled); // sRGB texture → linear
     }
-    else
-    {
-        baseColor = ToLinear(baseColor); // Convert uniform color to Linear
-    }
+    // Note: no ToLinear() needed for baseColor alone — colDiffuse is already linear.
     
     int mode = int(uMode + 0.5);
     if (mode == 2) baseColor = vec4(0.5, 0.5, 0.5, 1.0); // Neutral gray for lighting-only

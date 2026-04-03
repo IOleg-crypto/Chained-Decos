@@ -3,11 +3,9 @@ VertexShader: "resources/shaders/skybox.vs"
 FragmentShader: "resources/shaders/skybox_panorama.fs"
 
 Uniforms:
-  - matProjection
-  - matView
-  - panorama
-  - doGamma
-  - fragGamma
-  - exposure
-  - brightness
-  - contrast
+  - u_Projection
+  - u_View
+  - u_Panorama
+  - u_Exposure
+  - u_Brightness
+  - u_Contrast
