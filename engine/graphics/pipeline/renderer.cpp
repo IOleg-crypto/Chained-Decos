@@ -1,13 +1,9 @@
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/core/application.h"
 #include "engine/core/log.h"
-#include "engine/core/profiler.h"
 #include "engine/graphics/pipeline/render_command.h"
-#include "engine/graphics/api/texture.h"
 #include "engine/graphics/api/framebuffer.h"
-#include "engine/graphics/pipeline/texture_utility.h"
 
-#include "engine/graphics/pipeline/ui_renderer.h"
 #include "engine/graphics/assets/shader_asset.h"
 #include "engine/core/assets/asset_manager.h"
 #include "engine/graphics/assets/texture_asset.h"
@@ -52,6 +48,7 @@ void Renderer::LoadEngineResources()
 
     loadShader("Lighting",       "resources/shaders/lighting.chshader");
     loadShader("Skybox",         "resources/shaders/skybox.chshader");
+    loadShader("SkyboxCross",    "resources/shaders/skybox_cross.chshader");
     loadShader("Unlit",          "resources/shaders/unlit.chshader");
     loadShader("CubemapGen",     "resources/shaders/cubemap.chshader");
     loadShader("SkyboxCubemap",  "resources/shaders/skybox_cubemap.chshader");
@@ -63,6 +60,12 @@ void Renderer::LoadEngineResources()
 
 void Renderer::InternalInit()
 {
+
+    if (Application::Get().GetSpecification().Headless)
+    {
+        CH_CORE_INFO("[Renderer] Headless mode enabled, skipping OpenGL initialization.");
+        return;
+    }
 
     RenderCommand::Initialize();
 
@@ -412,14 +415,16 @@ void Renderer::DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm
     gridPlane.VAO->Unbind();
 }
 
-void Renderer::DrawSkybox(uint32_t textureId, bool isCubemap, bool isHDR, float exposure, float brightness, float contrast, const Camera3D& camera)
+void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float exposure, float brightness, float contrast, const Camera3D& camera)
 {
     if (textureId == 0)
         return;
 
-    auto shaderAsset = isCubemap ? 
-                       m_Data->Shaders->Get("SkyboxCubemap") : 
-                       m_Data->Shaders->Get("Skybox");
+    skyboxMode = std::clamp(skyboxMode, 0, 2);
+
+    auto shaderAsset = (skyboxMode == 2)
+                       ? m_Data->Shaders->Get("SkyboxCubemap")
+                       : (skyboxMode == 1 ? m_Data->Shaders->Get("SkyboxCross") : m_Data->Shaders->Get("Skybox"));
     if (!shaderAsset) return;
 
     // 1. Prepare Render State
@@ -440,16 +445,30 @@ void Renderer::DrawSkybox(uint32_t textureId, bool isCubemap, bool isHDR, float 
     shaderAsset->GetShader()->SetFloat("u_Contrast", contrast);
     
     shaderAsset->GetShader()->SetInt("u_IsHDR", isHDR ? 1 : 0);
-    shaderAsset->GetShader()->SetInt("u_VFlipped", isCubemap ? 0 : 1);
+    shaderAsset->GetShader()->SetInt("u_VFlipped", skyboxMode == 2 ? 0 : 1);
 
     ApplyFogUniforms(shaderAsset);
 
     // 3. Bind Textures and Draw Mesh
-    if (isCubemap)
+    if (skyboxMode == 2)
     {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, textureId);
         shaderAsset->GetShader()->SetInt("u_Cubemap", 0);
+
+        if (m_Data->Skybox.SkyboxCubeModel && !m_Data->Skybox.SkyboxCubeModel->Meshes.empty())
+        {
+            auto& mesh = m_Data->Skybox.SkyboxCubeModel->Meshes[0];
+            mesh.VAO->Bind();
+            glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+            mesh.VAO->Unbind();
+        }
+    }
+    else if (skyboxMode == 1)
+    {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, textureId);
+        shaderAsset->GetShader()->SetInt("u_CrossMap", 0);
 
         if (m_Data->Skybox.SkyboxCubeModel && !m_Data->Skybox.SkyboxCubeModel->Meshes.empty())
         {
