@@ -1,267 +1,328 @@
-#include "assimp_importer.h"
+#include "engine/graphics/loaders/assimp_importer.h"
 #include "engine/core/log.h"
-#include "engine/scene/project.h"
+#include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
+#include <assimp/scene.h>
+#include <stb_image.h>
+#include <mutex>
 #include <fstream>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtx/quaternion.hpp>
+#include <cstring>
 
 namespace CHEngine
 {
-    glm::mat4 AssimpImporter::ConvertMatrix(const aiMatrix4x4& m)
+    static std::mutex s_AssimpMutex;
+    static bool IsSupportedAssimpExtension(const std::string& ext)
     {
-        glm::mat4 res;
-        res[0][0] = m.a1; res[1][0] = m.a2; res[2][0] = m.a3; res[3][0] = m.a4;
-        res[0][1] = m.b1; res[1][1] = m.b2; res[2][1] = m.b3; res[3][1] = m.b4;
-        res[0][2] = m.c1; res[1][2] = m.c2; res[2][2] = m.c3; res[3][2] = m.c4;
-        res[0][3] = m.d1; res[1][3] = m.d2; res[2][3] = m.d3; res[3][3] = m.d4;
-        return res;
+        return ext == ".gltf" || ext == ".glb" || ext == ".obj";
     }
 
-    glm::vec3 AssimpImporter::ConvertVector3(const aiVector3D& v) { return {v.x, v.y, v.z}; }
-    glm::quat AssimpImporter::ConvertQuaternion(const aiQuaternion& q) { return {q.w, q.x, q.y, q.z}; }
-    glm::vec4 AssimpImporter::ConvertColor(const aiColor4D& c) { return {c.r, c.g, c.b, c.a}; }
-
-    std::string AssimpImporter::ResolveTexturePath(const aiScene* scene, const aiMaterial* aiMat, int type, const std::filesystem::path& modelDir)
+    static bool DecodeEmbeddedTexture(const aiTexture* texture, EmbeddedTextureData& out)
     {
-        aiString texPath;
-        if (aiMat->GetTexture((aiTextureType)type, 0, &texPath) != AI_SUCCESS) return "";
-
-        std::string pathString = texPath.C_Str();
-        if (pathString.empty()) return "";
-
-        if (pathString[0] == '*')
+        if (!texture)
         {
-            const char* str = pathString.c_str() + 1;
-            char* endPtr = nullptr;
-            long index = strtol(str, &endPtr, 10);
-            if (endPtr != str && index >= 0 && index < (long)scene->mNumTextures)
-            {
-                aiTexture* tex = scene->mTextures[index];
-                std::string ext = (tex->achFormatHint[0] != '\0') ? std::string(".") + tex->achFormatHint : ".png";
-                std::string filename = std::string("embedded_") + std::to_string(index) + ext;
-                std::filesystem::path texturesDir = modelDir / "textures";
-                if (!std::filesystem::exists(texturesDir)) std::filesystem::create_directories(texturesDir);
-                std::filesystem::path targetPath = texturesDir / filename;
-                if (!std::filesystem::exists(targetPath)) {
-                    std::ofstream ofs(targetPath, std::ios::binary);
-                    if (ofs) {
-                        if (tex->mHeight == 0) ofs.write((const char*)tex->pcData, tex->mWidth);
-                        else ofs.write((const char*)tex->pcData, tex->mWidth * tex->mHeight * 4);
-                    }
-                }
-                return targetPath.string();
-            }
+            return false;
         }
 
-        std::filesystem::path fullPath = modelDir / pathString;
-        if (std::filesystem::exists(fullPath)) return fullPath.string();
+        if (texture->mHeight == 0)
+        {
+            const unsigned char* bytes = reinterpret_cast<const unsigned char*>(texture->pcData);
+            int byteCount = (int)texture->mWidth;
+            if (stbi_is_hdr_from_memory(bytes, byteCount))
+            {
+                CH_CORE_WARN("Assimp embedded HDR texture is not supported by the current texture pipeline. Skipping.");
+                return false;
+            }
 
-        std::string filename = std::filesystem::path(pathString).filename().string();
-        std::filesystem::path fallbackPath = modelDir / filename;
-        if (std::filesystem::exists(fallbackPath)) return fallbackPath.string();
+            int width = 0;
+            int height = 0;
+            int channels = 0;
+            unsigned char* decoded = stbi_load_from_memory(bytes, byteCount, &width, &height, &channels, 4);
+            if (!decoded)
+            {
+                return false;
+            }
 
-        return "";
+            out.width = width;
+            out.height = height;
+            out.channels = 4;
+            out.isHDR = false;
+            out.data.resize((size_t)width * (size_t)height * 4);
+            std::memcpy(out.data.data(), decoded, out.data.size());
+            stbi_image_free(decoded);
+            return true;
+        }
+
+        out.width = (int)texture->mWidth;
+        out.height = (int)texture->mHeight;
+        out.channels = 4;
+        out.isHDR = false;
+        out.data.resize((size_t)out.width * (size_t)out.height * 4);
+        std::memcpy(out.data.data(), texture->pcData, out.data.size());
+        return true;
     }
 
-    void AssimpImporter::ProcessHierarchy(aiNode* node, int parent, PendingModelData& data, std::map<aiNode*, int>& nodeToBone)
+    // --- Minimalist Conversion Helpers ---
+    static glm::mat4 ToMat4(const aiMatrix4x4& m) {
+        // Assimp stores matrices in row-major memory.
+        // glm::make_mat4 reads 16 floats and treats them as 4 columns (column-major).
+        // If we don't transpose, we get the transpose of the intended matrix (translation in the last row).
+        // Thus, we must transpose to get the logical matrix into GLM's column-major memory.
+        return glm::transpose(glm::make_mat4(&m.a1)); 
+    }
+
+    static glm::vec3 ToVec3(const aiVector3D& v) { return { v.x, v.y, v.z }; }
+    static glm::vec2 ToVec2(const aiVector3D& v) { return { v.x, v.y }; }
+    static glm::quat ToQuat(const aiQuaternion& q) { return { q.w, q.x, q.y, q.z }; }
+    static glm::vec4 ToColor(const aiColor4D& c) { return { c.r, c.g, c.b, c.a }; }
+
+    PendingModelData AssimpImporter::Import(const std::filesystem::path& path, int samplingFPS)
     {
-        int index = (int)data.nodeNames.size();
-        nodeToBone[node] = index;
-        data.nodeNames.push_back(node->mName.C_Str());
-        data.nodeParents.push_back(parent);
+        Assimp::Importer importer;
+        std::string exts;
+        importer.GetExtensionList(exts);
+        CH_CORE_INFO("AssimpImporter: Supported extensions: {0}", exts);
         
-        glm::mat4 localMat = ConvertMatrix(node->mTransformation);
-        data.nodeLocalTransforms.push_back(localMat);
+        CH_CORE_INFO("AssimpImporter: Attempting to import '{0}'", path.string());
+        std::lock_guard<std::mutex> lock(s_AssimpMutex);
+        PendingModelData data{};
+        
+        // Match flags and properties from the develop branch for consistency
+        importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
+        importer.SetPropertyInteger(AI_CONFIG_PP_SLM_VERTEX_LIMIT, 65535);
 
-        glm::mat4 globalMat = (parent == -1) ? localMat : data.globalBindPoses[parent] * localMat;
-        data.globalBindPoses.push_back(globalMat);
+        unsigned int flags = aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenSmoothNormals | 
+                             aiProcess_LimitBoneWeights | aiProcess_JoinIdenticalVertices | aiProcess_SortByPType |
+                             aiProcess_CalcTangentSpace | aiProcess_SplitLargeMeshes | 
+                             aiProcess_ImproveCacheLocality | aiProcess_ValidateDataStructure | 
+                             aiProcess_FindInvalidData;
 
-        for (unsigned int i = 0; i < node->mNumMeshes; i++)
+        std::string ext = path.extension().string();
+        std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return (char)std::tolower(c); });
+        if (!IsSupportedAssimpExtension(ext))
         {
-            data.instances.push_back({ (int)node->mMeshes[i], globalMat });
+            CH_CORE_ERROR("Assimp Model Load Failed: {} | Error: unsupported format '{}'. Supported formats: glTF/GLB, OBJ", path.filename().string(), ext);
+            return data;
         }
 
-        for (unsigned int i = 0; i < node->mNumChildren; i++)
+        const aiScene* scene = nullptr;
+
+        // "Robust-Light" Loading Strategy: Read to memory with padding to avoid corruption issues
+        // and handle potential encoding issues on Windows by reading ourselves.
+        std::ifstream file(path, std::ios::binary | std::ios::ate);
+        if (!file.is_open())
         {
-            ProcessHierarchy(node->mChildren[i], index, data, nodeToBone);
+            CH_CORE_ERROR("Assimp Model Load Failed: {} | Error: Could not open file at {}", path.filename().string(), path.string());
+            return data;
         }
-    }
 
-    void AssimpImporter::ProcessMaterials(const aiScene* scene, const std::filesystem::path& modelDir, PendingModelData& data)
-    {
-        for (unsigned int i = 0; i < scene->mNumMaterials; i++)
+        std::streamsize size = file.tellg();
+        if (size <= 0)
         {
-            aiMaterial* aiMat = scene->mMaterials[i];
-            RawMaterial mat;
-            aiColor4D color;
-            if (aiMat->Get(AI_MATKEY_COLOR_DIFFUSE, color) == AI_SUCCESS) mat.albedoColor = ConvertColor(color);
-            
-            mat.albedoPath = ResolveTexturePath(scene, aiMat, aiTextureType_BASE_COLOR, modelDir);
-            if (mat.albedoPath.empty()) mat.albedoPath = ResolveTexturePath(scene, aiMat, aiTextureType_DIFFUSE, modelDir);
-            
-            mat.normalPath = ResolveTexturePath(scene, aiMat, aiTextureType_NORMALS, modelDir);
-            mat.emissivePath = ResolveTexturePath(scene, aiMat, aiTextureType_EMISSIVE, modelDir);
-            data.materials.push_back(mat);
+            CH_CORE_ERROR("Assimp Model Load Failed: {} | Error: File is empty", path.filename().string());
+            return data;
         }
-    }
 
-    void AssimpImporter::ProcessMeshes(const aiScene* scene, PendingModelData& data)
-    {
-        data.offsetMatrices.assign(data.nodeNames.size(), glm::mat4(1.0f));
+        CH_CORE_INFO("AssimpImporter: Loading file {0} (size: {1} bytes)", path.string(), (uint32_t)size);
+        file.seekg(0);
+        
+        std::vector<char> buffer(static_cast<size_t>(size) + 1024, 0); 
+        file.read(buffer.data(), size);
+        std::streamsize read = file.gcount();
+        file.close();
 
-        for (unsigned int m = 0; m < scene->mNumMeshes; m++)
+        if (read < size)
         {
-            aiMesh* aiMesh = scene->mMeshes[m];
-            RawMesh mesh;
-            mesh.materialIndex = aiMesh->mMaterialIndex;
+            CH_CORE_ERROR("AssimpImporter: Read only {0} of {1} bytes for '{2}'", (uint32_t)read, (uint32_t)size, path.string());
+        }
 
-            for (unsigned int v = 0; v < aiMesh->mNumVertices; v++)
+        // Diagnostic: check magic bytes for GLB
+        if (ext == ".glb" && read >= 4)
+        {
+            char magic[5] = { buffer[0], buffer[1], buffer[2], buffer[3], 0 };
+            CH_CORE_INFO("AssimpImporter: GLB Magic: '{0}' (expected 'glTF')", magic);
+        }
+
+        // Hint Assimp about the format since we are loading from memory
+        std::string hint = ext;
+        if (!hint.empty() && hint[0] == '.') hint = hint.substr(1); 
+        
+        CH_CORE_INFO("AssimpImporter: Invoking ReadFileFromMemory for '{0}' with hint '{1}'", path.string(), hint);
+        scene = importer.ReadFileFromMemory(buffer.data(), static_cast<size_t>(size), flags, hint.c_str());
+
+        if (!scene || !scene->mRootNode)
+        {
+            CH_CORE_ERROR("AssimpImporter: ReadFileFromMemory failed for '{0}': {1}", path.string(), importer.GetErrorString());
+            CH_CORE_INFO("AssimpImporter: Falling back to direct ReadFile for '{0}'", path.string());
+            scene = importer.ReadFile(path.string(), flags);
+        }
+
+        if (!scene) {
+            CH_CORE_ERROR("Assimp Model Load Failed: {} | Error: {}", path.filename().string(), importer.GetErrorString());
+            return data;
+        }
+
+        if (!scene->mRootNode)
+        {
+            CH_CORE_ERROR("Assimp Model Load Failed: {} | Error: scene has no root node", path.filename().string());
+            return data;
+        }
+
+        // --- 1. Process Hierarchy & Bind Poses ---
+        std::map<std::string, int> nameToIndex;
+        std::filesystem::path modelDir = path.parent_path();
+
+        std::function<void(aiNode*, int)> processNode = [&](aiNode* node, int parentIdx) -> void {
+            if (!node)
             {
-                mesh.vertices.push_back(aiMesh->mVertices[v].x);
-                mesh.vertices.push_back(aiMesh->mVertices[v].y);
-                mesh.vertices.push_back(aiMesh->mVertices[v].z);
-                if (aiMesh->HasNormals())
-                {
-                    mesh.normals.push_back(aiMesh->mNormals[v].x);
-                    mesh.normals.push_back(aiMesh->mNormals[v].y);
-                    mesh.normals.push_back(aiMesh->mNormals[v].z);
-                }
-                if (aiMesh->mTextureCoords[0])
-                {
-                    mesh.texcoords.push_back(aiMesh->mTextureCoords[0][v].x);
-                    mesh.texcoords.push_back(aiMesh->mTextureCoords[0][v].y);
-                }
-                
-                mesh.joints.insert(mesh.joints.end(), 4, 0);
-                mesh.weights.insert(mesh.weights.end(), 4, 0.0f);
+                return;
             }
 
-            if (aiMesh->HasBones())
+            int currentIdx = (int)data.nodeNames.size();
+            data.nodeNames.push_back(node->mName.C_Str());
+            data.nodeParents.push_back(parentIdx);
+            
+            glm::mat4 local = ToMat4(node->mTransformation);
+            data.nodeLocalTransforms.push_back(local);
+            data.globalBindPoses.push_back((parentIdx == -1) ? local : data.globalBindPoses[parentIdx] * local);
+
+            for (unsigned int i = 0; i < node->mNumMeshes; ++i)
             {
-                std::fill(mesh.weights.begin(), mesh.weights.end(), 0.0f);
-                std::vector<int> weightCount(aiMesh->mNumVertices, 0);
-
-                for (unsigned int b = 0; b < aiMesh->mNumBones; b++)
+                unsigned int meshIndex = node->mMeshes[i];
+                if (meshIndex < scene->mNumMeshes)
                 {
-                    aiBone* bone = aiMesh->mBones[b];
-                    int boneIdx = -1;
-                    auto it = std::find(data.nodeNames.begin(), data.nodeNames.end(), bone->mName.C_Str());
-                    if (it != data.nodeNames.end()) boneIdx = (int)std::distance(data.nodeNames.begin(), it);
+                    data.instances.push_back({ (int)meshIndex, data.globalBindPoses[currentIdx] });
+                }
+            }
 
-                    if (boneIdx != -1)
-                    {
-                        data.offsetMatrices[boneIdx] = ConvertMatrix(bone->mOffsetMatrix);
-                        for (unsigned int w_idx = 0; w_idx < bone->mNumWeights; w_idx++)
-                        {
-                            unsigned int vIdx = bone->mWeights[w_idx].mVertexId;
-                            if (weightCount[vIdx] < 4)
+            for (unsigned int i = 0; i < node->mNumChildren; ++i)
+                processNode(node->mChildren[i], currentIdx);
+        };
+        processNode(scene->mRootNode, -1);
+        data.nodeCount = (int)data.nodeNames.size();
+
+        // --- 2. Process Meshes ---
+        data.meshes.resize(scene->mNumMeshes);
+        for (unsigned int m = 0; m < scene->mNumMeshes; ++m) {
+            aiMesh* am = scene->mMeshes[m];
+            RawMesh& rm = data.meshes[m];
+            rm.materialIndex = am->mMaterialIndex;
+
+            for (unsigned int v = 0; v < am->mNumVertices; ++v) {
+                rm.vertices.insert(rm.vertices.end(), { am->mVertices[v].x, am->mVertices[v].y, am->mVertices[v].z });
+                if (am->mTextureCoords[0]) rm.texcoords.insert(rm.texcoords.end(), { am->mTextureCoords[0][v].x, am->mTextureCoords[0][v].y });
+                if (am->mNormals) rm.normals.insert(rm.normals.end(), { am->mNormals[v].x, am->mNormals[v].y, am->mNormals[v].z });
+            }
+
+            int triCount = 0;
+            for (unsigned int f = 0; f < am->mNumFaces; ++f)
+            {
+                const aiFace& face = am->mFaces[f];
+                if (face.mNumIndices != 3)
+                {
+                    continue;
+                }
+
+                rm.indices.insert(rm.indices.end(), { face.mIndices[0], face.mIndices[1], face.mIndices[2] });
+                triCount++;
+            }
+
+            CH_CORE_INFO("AssimpImporter: Mesh '{}' loaded with {} vertices and {} triangles", am->mName.C_Str(), am->mNumVertices, triCount);
+
+            // Bones & Weights
+            if (am->mNumBones > 0) {
+                rm.joints.resize(am->mNumVertices * 4, 0);
+                rm.weights.resize(am->mNumVertices * 4, 0.0f);
+                std::vector<int> jointCounts(am->mNumVertices, 0);
+
+                for (unsigned int b = 0; b < am->mNumBones; ++b) {
+                    aiBone* bone = am->mBones[b];
+                    int boneIdx = -1;
+                    for (int n = 0; n < (int)data.nodeNames.size(); ++n) if (data.nodeNames[n] == bone->mName.C_Str()) { boneIdx = n; break; }
+                    
+                    if (boneIdx != -1) {
+                        if (boneIdx >= (int)data.offsetMatrices.size()) data.offsetMatrices.resize(boneIdx + 1);
+                        data.offsetMatrices[boneIdx] = ToMat4(bone->mOffsetMatrix);
+
+                        for (unsigned int w = 0; w < bone->mNumWeights; ++w) {
+                            int vIdx = bone->mWeights[w].mVertexId;
+                            if (vIdx < 0 || vIdx >= (int)am->mNumVertices)
                             {
-                                mesh.joints[vIdx * 4 + weightCount[vIdx]] = (unsigned char)boneIdx;
-                                mesh.weights[vIdx * 4 + weightCount[vIdx]] = bone->mWeights[w_idx].mWeight;
-                                weightCount[vIdx]++;
+                                continue;
+                            }
+
+                            if (jointCounts[vIdx] < 4) {
+                                int slot = vIdx * 4 + jointCounts[vIdx]++;
+                                rm.joints[slot] = (unsigned char)boneIdx;
+                                rm.weights[slot] = bone->mWeights[w].mWeight;
                             }
                         }
                     }
                 }
             }
-
-            for (unsigned int f = 0; f < aiMesh->mNumFaces; f++)
-            {
-                for (unsigned int i = 0; i < aiMesh->mFaces[f].mNumIndices; i++)
-                    mesh.indices.push_back((unsigned short)aiMesh->mFaces[f].mIndices[i]);
-            }
-            data.meshes.push_back(std::move(mesh));
         }
-    }
 
-    void AssimpImporter::BuildSkeleton(PendingModelData& data)
-    {
-        data.bones.resize(data.nodeNames.size());
-        data.bindPose.resize(data.nodeNames.size());
+        // --- 3. Process Materials ---
+        data.materials.resize(scene->mNumMaterials);
+        for (unsigned int i = 0; i < scene->mNumMaterials; ++i) {
+            aiMaterial* am = scene->mMaterials[i];
+            RawMaterial& rm = data.materials[i];
+            
+            aiColor4D col;
+            if (aiGetMaterialColor(am, AI_MATKEY_COLOR_DIFFUSE, &col) == AI_SUCCESS) rm.albedoColor = ToColor(col);
+            aiGetMaterialFloat(am, AI_MATKEY_METALLIC_FACTOR, &rm.metalness);
+            aiGetMaterialFloat(am, AI_MATKEY_ROUGHNESS_FACTOR, &rm.roughness);
 
-        for (int i = 0; i < (int)data.nodeNames.size(); i++)
+            auto resolvePath = [&](const std::string& texPath) -> std::string {
+                if (texPath.empty()) return "";
+                
+                // 1. Try absolute / relative to CWD
+                if (std::filesystem::exists(texPath)) return texPath;
+
+                // 2. Try relative to model directory
+                std::filesystem::path p1 = modelDir / texPath;
+                if (std::filesystem::exists(p1)) return p1.string();
+
+                // 3. Try filename only in model directory
+                std::string filename = std::filesystem::path(texPath).filename().string();
+                std::filesystem::path p2 = modelDir / filename;
+                if (std::filesystem::exists(p2)) return p2.string();
+
+                // 4. Try in a 'textures' subfolder
+                std::filesystem::path p3 = modelDir / "textures" / filename;
+                if (std::filesystem::exists(p3)) return p3.string();
+
+                return texPath; // Fallback to original
+            };
+
+            auto getTex = [&](aiTextureType type) -> std::string {
+                aiString str;
+                if (am->GetTexture(type, 0, &str) == AI_SUCCESS) return resolvePath(str.C_Str());
+                return "";
+            };
+            rm.albedoPath = getTex(aiTextureType_DIFFUSE);
+            if (rm.albedoPath.empty()) rm.albedoPath = getTex(aiTextureType_BASE_COLOR); // GLTF often uses this
+            rm.normalPath = getTex(aiTextureType_NORMALS);
+            rm.metallicRoughnessPath = getTex(aiTextureType_METALNESS);
+            if (rm.metallicRoughnessPath.empty()) rm.metallicRoughnessPath = getTex(aiTextureType_UNKNOWN); // GLTF MR is often here
+        }
+
+        // --- 4. Decode Embedded Textures ---
+        for (unsigned int i = 0; i < scene->mNumTextures; ++i)
         {
-            strncpy(data.bones[i].name, data.nodeNames[i].c_str(), 31);
-            data.bones[i].parent = data.nodeParents[i];
-            glm::mat4 mat = data.nodeLocalTransforms[i];
-            data.bindPose[i].translation = {mat[3][0], mat[3][1], mat[3][2]};
-            glm::quat q = glm::quat_cast(mat);
-            data.bindPose[i].rotation = {q.x, q.y, q.z, q.w};
-            data.bindPose[i].scale = {1, 1, 1}; // Simplified scale
-        }
-    }
-
-    void AssimpImporter::ProcessAnimations(const aiScene* scene, PendingModelData& data, int samplingFPS)
-    {
-        for (unsigned int a = 0; a < scene->mNumAnimations; a++)
-        {
-            aiAnimation* aiAnim = scene->mAnimations[a];
-            RawAnimation rawAnim;
-            rawAnim.name = aiAnim->mName.C_Str();
-
-            double ticksPerSecond = aiAnim->mTicksPerSecond != 0 ? aiAnim->mTicksPerSecond : 25.0;
-            double durationInSeconds = aiAnim->mDuration / ticksPerSecond;
-            int frameCount = (int)(durationInSeconds * (double)samplingFPS) + 1;
-            int boneCount = (int)data.nodeNames.size();
-
-            rawAnim.frameRate = (float)samplingFPS;
-            rawAnim.frameCount = frameCount;
-            rawAnim.boneCount = boneCount;
-            rawAnim.framePoses.resize(frameCount * boneCount);
-
-            for (int f = 0; f < frameCount; f++)
+            const aiTexture* texture = scene->mTextures[i];
+            if (!texture)
             {
-                // Animation sampling logic here (omitted for brevity in initial refactor, using bind pose for now)
-                for (int i = 0; i < boneCount; i++) rawAnim.framePoses[f * boneCount + i] = data.bindPose[i];
+                continue;
             }
-            data.animations.push_back(std::move(rawAnim));
+
+            EmbeddedTextureData embedded;
+            if (!DecodeEmbeddedTexture(texture, embedded))
+            {
+                continue;
+            }
+
+            data.embeddedTextures.emplace("*" + std::to_string(i), std::move(embedded));
         }
-    }
-
-    PendingModelData AssimpImporter::Import(const std::filesystem::path& path, int samplingFPS)
-    {
-        PendingModelData data{};
-        std::string pathStr = path.generic_string();
-        
-        if (!std::filesystem::exists(path)) {
-            CH_CORE_ERROR("AssimpImporter: File does not exist: {}", pathStr);
-            return data;
-        }
-
-        uintmax_t fileSize = std::filesystem::file_size(path);
-        CH_CORE_INFO("AssimpImporter: Opening: {} ({} bytes)", pathStr, fileSize);
-
-        std::ifstream file(path, std::ios::binary);
-        if (!file.is_open()) {
-            CH_CORE_ERROR("AssimpImporter: Failed to open file: {}", pathStr);
-            return data;
-        }
-
-        std::vector<char> buffer(fileSize);
-        file.read(buffer.data(), fileSize);
-        file.close();
-
-        Assimp::Importer importer;
-        // Simple flags for better stability
-        unsigned int flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | 
-                             aiProcess_JoinIdenticalVertices | aiProcess_LimitBoneWeights |
-                             aiProcess_ValidateDataStructure | aiProcess_SortByPType;
-
-        importer.SetPropertyInteger(AI_CONFIG_PP_LBW_MAX_WEIGHTS, 4);
-
-        const aiScene* scene = importer.ReadFileFromMemory(buffer.data(), buffer.size(), flags, pathStr.c_str());
-        if (!scene || !scene->mRootNode) {
-            CH_CORE_ERROR("Assimp Error: {}", importer.GetErrorString());
-            return data;
-        }
-
-        std::map<aiNode*, int> nodeToBone;
-        ProcessHierarchy(scene->mRootNode, -1, data, nodeToBone);
-        ProcessMaterials(scene, path.parent_path(), data);
-        ProcessMeshes(scene, data);
-        BuildSkeleton(data);
-        ProcessAnimations(scene, data, samplingFPS);
 
         data.isValid = true;
         return data;

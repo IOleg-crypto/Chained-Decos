@@ -3,6 +3,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <unordered_map>
 #include <string>
 #include <vector>
 
@@ -22,7 +23,7 @@ struct RawMesh
     std::vector<float> normals;
     std::vector<float> tangents;
     std::vector<unsigned char> colors;
-    std::vector<unsigned short> indices;
+    std::vector<uint32_t> indices;
 
     // Skinning data
     std::vector<unsigned char> joints; // 4 joints per vertex
@@ -46,6 +47,15 @@ struct RawMaterial
 
     float metalness = 0.0f;
     float roughness = 0.5f;
+};
+
+struct EmbeddedTextureData
+{
+    std::vector<unsigned char> data;
+    int width = 0;
+    int height = 0;
+    int channels = 0;
+    bool isHDR = false;
 };
 
 // Track textures that are still loading
@@ -83,6 +93,7 @@ struct PendingModelData
     std::string fullPath;
     std::vector<RawMesh> meshes;
     std::vector<RawMaterial> materials;
+    std::unordered_map<std::string, EmbeddedTextureData> embeddedTextures;
 
     // Skeletal / Hierarchy data (Original data for animations only)
     std::vector<BoneInfoData> bones;

@@ -12,6 +12,8 @@
 
 namespace CHEngine
 {
+class Texture;
+
 class ModelAsset : public Asset
 {
 public:
@@ -123,6 +125,7 @@ private:
 
     // Loading data
     PendingModelData m_PendingData;
+    std::vector<std::shared_ptr<Texture>> m_EmbeddedTextures;
     bool m_HasPendingData = false;
 };
 } // namespace CHEngine

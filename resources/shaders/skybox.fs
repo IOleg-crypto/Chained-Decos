@@ -3,7 +3,7 @@
 
 in vec3 v_Position;
 
-uniform sampler2D u_Panorama;
+layout(binding = 0) uniform sampler2D u_Panorama;
 
 uniform int u_IsHDR;
 uniform float u_Exposure;
@@ -60,4 +60,4 @@ void main()
     } else {
         finalColor = background;
     }
-}
+}
