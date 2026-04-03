@@ -91,15 +91,28 @@ std::shared_ptr<BVH> PhysicsSystem::GetBVH(const std::string& path)
             if (inst.meshIndex < 0 || inst.meshIndex >= (int)rawMeshes.size()) continue;
 
             const RawMesh& raw = rawMeshes[inst.meshIndex];
-            for (size_t i = 0; i < raw.indices.size(); i += 3)
+            if (raw.indices.size() < 3)
             {
-                uint16_t i0 = raw.indices[i];
-                uint16_t i1 = raw.indices[i + 1];
-                uint16_t i2 = raw.indices[i + 2];
+                continue;
+            }
 
-                glm::vec3 v0 = {raw.vertices[i0 * 3], raw.vertices[i0 * 3 + 1], raw.vertices[i0 * 3 + 2]};
-                glm::vec3 v1 = {raw.vertices[i1 * 3], raw.vertices[i1 * 3 + 1], raw.vertices[i1 * 3 + 2]};
-                glm::vec3 v2 = {raw.vertices[i2 * 3], raw.vertices[i2 * 3 + 1], raw.vertices[i2 * 3 + 2]};
+            for (size_t i = 0; i + 2 < raw.indices.size(); i += 3)
+            {
+                uint32_t i0 = raw.indices[i];
+                uint32_t i1 = raw.indices[i + 1];
+                uint32_t i2 = raw.indices[i + 2];
+
+                size_t v0Idx = (size_t)i0 * 3;
+                size_t v1Idx = (size_t)i1 * 3;
+                size_t v2Idx = (size_t)i2 * 3;
+                if (v0Idx + 2 >= raw.vertices.size() || v1Idx + 2 >= raw.vertices.size() || v2Idx + 2 >= raw.vertices.size())
+                {
+                    continue;
+                }
+
+                glm::vec3 v0 = {raw.vertices[v0Idx], raw.vertices[v0Idx + 1], raw.vertices[v0Idx + 2]};
+                glm::vec3 v1 = {raw.vertices[v1Idx], raw.vertices[v1Idx + 1], raw.vertices[v1Idx + 2]};
+                glm::vec3 v2 = {raw.vertices[v2Idx], raw.vertices[v2Idx + 1], raw.vertices[v2Idx + 2]};
 
                 // Transform to instance world space (using localTransform which is MeshGlobal in Assimp)
                 v0 = glm::vec3(inst.localTransform * glm::vec4(v0, 1.0f));

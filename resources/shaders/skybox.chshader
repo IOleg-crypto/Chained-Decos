@@ -5,8 +5,8 @@ FragmentShader: "skybox.fs"
 Uniforms:
   - projection
   - view
-  - texture0
-  - vflipped
+  - u_Panorama
+  - u_VFlipped
   - doGamma
   - fragGamma
   - exposure

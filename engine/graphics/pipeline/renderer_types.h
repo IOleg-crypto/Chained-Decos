@@ -23,6 +23,12 @@ namespace CHEngine
         uint32_t EmissiveMap = 0;
         uint32_t OcclusionMap = 0;
 
+        std::string AlbedoPath;
+        std::string NormalPath;
+        std::string MetallicRoughnessPath;
+        std::string EmissivePath;
+        std::string OcclusionPath;
+
         uint32_t ShaderID = 0;
 
         std::string Name;

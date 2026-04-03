@@ -1,0 +1,11 @@
+Model Information:
+* title:	Train Track
+* source:	https://sketchfab.com/3d-models/train-track-bbfcc6c769434911ad704ef42eb4d2fb
+* author:	timblewee (https://sketchfab.com/timblewee)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Train Track" (https://sketchfab.com/3d-models/train-track-bbfcc6c769434911ad704ef42eb4d2fb) by timblewee (https://sketchfab.com/timblewee) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

@@ -98,7 +98,7 @@ public:
     void DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color);
     void DrawGrid(int slices, float spacing);
     void DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& color);
-    void DrawSkybox(uint32_t textureId, bool isCubemap, bool isHDR, float exposure, float brightness, float contrast, const Camera3D& camera);
+    void DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float exposure, float brightness, float contrast, const Camera3D& camera);
     void DrawBillboard(const Camera3D& camera, uint32_t textureId, const glm::vec3& position, float size, const glm::vec4& tint);
     void DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, const glm::vec4& color);
     void DrawCapsuleWires(const glm::mat4& transform, float radius, float height, const glm::vec4& color);

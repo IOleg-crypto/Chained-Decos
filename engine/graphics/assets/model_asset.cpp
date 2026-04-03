@@ -31,14 +31,69 @@ void ModelAsset::OnLoaded()
 
     Model newModel;
     newModel.Materials.resize(m_PendingData.materials.empty() ? 1 : m_PendingData.materials.size());
+    m_EmbeddedTextures.clear();
 
     auto project = Project::GetActive();
 
     auto loadTex = [&](int matIdx, const std::string& path, int mapIndex) {
-        if (path.empty() || !project)
+        if (path.empty())
         {
             return;
         }
+
+        if (path.front() == '*')
+        {
+            auto embeddedIt = m_PendingData.embeddedTextures.find(path);
+            if (embeddedIt == m_PendingData.embeddedTextures.end())
+            {
+                return;
+            }
+
+            const EmbeddedTextureData& embedded = embeddedIt->second;
+            if (embedded.data.empty() || embedded.width <= 0 || embedded.height <= 0 || embedded.isHDR)
+            {
+                return;
+            }
+
+            auto texture = Texture::Create((uint32_t)embedded.width, (uint32_t)embedded.height, TextureFormat::RGBA8);
+            if (!texture)
+            {
+                return;
+            }
+
+            texture->SetData((void*)embedded.data.data(), 0);
+            m_EmbeddedTextures.push_back(texture);
+
+            uint32_t texId = texture->GetRendererID();
+            switch (mapIndex)
+            {
+            case 0:
+                newModel.Materials[matIdx].AlbedoMap = texId;
+                break;
+            case 1:
+                newModel.Materials[matIdx].EmissiveMap = texId;
+                break;
+            case 2:
+                newModel.Materials[matIdx].NormalMap = texId;
+                break;
+            case 3:
+                newModel.Materials[matIdx].MetallicRoughnessMap = texId;
+                break;
+            case 4:
+                newModel.Materials[matIdx].EmissiveMap = texId;
+                break;
+            case 5:
+                newModel.Materials[matIdx].OcclusionMap = texId;
+                break;
+            }
+            return;
+        }
+
+        if (!project)
+        {
+            return;
+        }
+
         auto tex = AssetManager::Get().Get<TextureAsset>(path);
         if (!tex)
         {
@@ -90,10 +145,19 @@ void ModelAsset::OnLoaded()
             newModel.Materials[i].Roughness = rawMaterial.roughness;
 
             loadTex(i, rawMaterial.albedoPath, 0);
-            loadTex(i, rawMaterial.emissivePath, 4);
+            newModel.Materials[i].AlbedoPath = rawMaterial.albedoPath;
+            
             loadTex(i, rawMaterial.normalPath, 2);
+            newModel.Materials[i].NormalPath = rawMaterial.normalPath;
+            
             loadTex(i, rawMaterial.occlusionPath, 5);
+            newModel.Materials[i].OcclusionPath = rawMaterial.occlusionPath;
+            
+            loadTex(i, rawMaterial.emissivePath, 4);
+            newModel.Materials[i].EmissivePath = rawMaterial.emissivePath;
+            
             loadTex(i, rawMaterial.metallicRoughnessPath, 3);
+            newModel.Materials[i].MetallicRoughnessPath = rawMaterial.metallicRoughnessPath;
         }
     }
 
@@ -132,10 +196,30 @@ void ModelAsset::OnLoaded()
                 mesh.VAO->AddVertexBuffer(vboNorm);
             }
 
+            if (!rawMesh.joints.empty())
+            {
+                // Convert unsigned char joints to int32_t for ShaderDataType::Int4 (GL_INT) compatibility
+                std::vector<int32_t> jointsInt;
+                jointsInt.reserve(rawMesh.joints.size());
+                for (auto j : rawMesh.joints) jointsInt.push_back(static_cast<int32_t>(j));
+                
+                auto vboJoints = VertexBuffer::Create((float*)jointsInt.data(),
+                                                      (uint32_t)jointsInt.size() * sizeof(int32_t));
+                vboJoints->SetLayout({{ShaderDataType::Int4, "a_JointIDs"}});
+                mesh.VAO->AddVertexBuffer(vboJoints);
+            }
+
+            if (!rawMesh.weights.empty())
+            {
+                auto vboWeights = VertexBuffer::Create(rawMesh.weights.data(),
+                                                       (uint32_t)rawMesh.weights.size() * sizeof(float));
+                vboWeights->SetLayout({{ShaderDataType::Float4, "a_Weights"}});
+                mesh.VAO->AddVertexBuffer(vboWeights);
+            }
+
             if (!rawMesh.indices.empty())
             {
-                std::vector<uint32_t> indices32(rawMesh.indices.begin(), rawMesh.indices.end());
-                auto ibo = IndexBuffer::Create(indices32.data(), (uint32_t)indices32.size());
+                auto ibo = IndexBuffer::Create(rawMesh.indices.data(), (uint32_t)rawMesh.indices.size());
                 mesh.VAO->SetIndexBuffer(ibo);
             }
 

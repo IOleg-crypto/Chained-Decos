@@ -20,7 +20,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/quaternion.hpp>
-#include <glm/gtx/quaternion.hpp>
 #include <algorithm>
 
 namespace CHEngine
@@ -76,12 +75,12 @@ void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float near
                 auto texture = AssetManager::Get().Get<TextureAsset>(settings.TexturePath);
                 if (texture && texture->GetState() == AssetState::Ready)
                 {
-                    bool isCubemap = (settings.Mode == 2);
+                    int skyboxMode = std::clamp(settings.Mode, 0, 2);
                     uint32_t texId = texture->GetTexture()->GetRendererID();
                     auto& renderer = Renderer::Get();
                     auto& rd = renderer.GetData();
 
-                    if (isCubemap)
+                    if (skyboxMode == 2)
                     {
                         if (rd.Skybox.CachedCubemapId == 0 || rd.Skybox.CachedCubemapPath != settings.TexturePath)
                         {
@@ -97,7 +96,7 @@ void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float near
                         }
                         texId = rd.Skybox.CachedCubemapId;
                     }
-                    renderer.DrawSkybox(texId, isCubemap, texture->IsHDR(), settings.Exposure, settings.Brightness, settings.Contrast, camera);
+                    renderer.DrawSkybox(texId, skyboxMode, texture->IsHDR(), settings.Exposure, settings.Brightness, settings.Contrast, camera);
                 }
             }
         }
@@ -345,13 +344,97 @@ void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Materia
 {
     auto shader = shaderAsset->GetShader();
     shader->Bind();
-    shader->SetInt("useTexture", material.AlbedoMap > 0 ? 1 : 0);
+
+    auto resolveMap = [](uint32_t currentId, const std::string& path) -> uint32_t {
+        if (currentId > 0) return currentId;
+        if (path.empty()) return 0;
+        auto tex = AssetManager::Get().Get<TextureAsset>(path);
+        if (tex && tex->IsReady()) return tex->GetTexture()->GetRendererID();
+        return 0;
+    };
+
+    uint32_t albedoMap = resolveMap(material.AlbedoMap, material.AlbedoPath);
+    uint32_t normalMap = resolveMap(material.NormalMap, material.NormalPath);
+    uint32_t metallicMap = resolveMap(material.MetallicRoughnessMap, material.MetallicRoughnessPath);
+    uint32_t emissiveMap = resolveMap(material.EmissiveMap, material.EmissivePath);
+    uint32_t occlusionMap = resolveMap(material.OcclusionMap, material.OcclusionPath);
+
+    // 1. Albedo (texture0, Unit 0)
+    if (albedoMap > 0)
+    {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, albedoMap);
+        shader->SetInt("texture0", 0);
+        shader->SetInt("useTexture", 1);
+    }
+    else
+    {
+        shader->SetInt("useTexture", 0);
+    }
     shader->SetVec4("colDiffuse", material.AlbedoColor);
-    shader->SetInt("useNormalMap", material.NormalMap > 0 ? 1 : 0);
-    shader->SetInt("useMetallicMap", material.MetallicRoughnessMap > 0 ? 1 : 0);
-    shader->SetInt("useRoughnessMap", material.MetallicRoughnessMap > 0 ? 1 : 0);
-    shader->SetInt("useOcclusionMap", material.OcclusionMap > 0 ? 1 : 0);
-    shader->SetInt("useEmissiveTexture", material.EmissiveMap > 0 ? 1 : 0);
+
+    // 2. Metallic (texture1, Unit 1)
+    if (metallicMap > 0)
+    {
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, metallicMap);
+        shader->SetInt("texture1", 1);
+        shader->SetInt("useMetallicMap", 1);
+        shader->SetInt("useRoughnessMap", 1); // GLTF packed map
+    }
+    else
+    {
+        shader->SetInt("useMetallicMap", 0);
+        shader->SetInt("useRoughnessMap", 0);
+    }
+
+    // 3. Normal (texture2, Unit 2)
+    if (normalMap > 0)
+    {
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, normalMap);
+        shader->SetInt("texture2", 2);
+        shader->SetInt("useNormalMap", 1);
+    }
+    else
+    {
+        shader->SetInt("useNormalMap", 0);
+    }
+
+    // 4. Roughness (texture3, Unit 3) - Often same as metallicMap in GLTF
+    if (metallicMap > 0)
+    {
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, metallicMap);
+        shader->SetInt("texture3", 3);
+    }
+
+    // 5. Occlusion (texture4, Unit 4)
+    if (occlusionMap > 0)
+    {
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_2D, occlusionMap);
+        shader->SetInt("texture4", 4);
+        shader->SetInt("useOcclusionMap", 1);
+    }
+    else
+    {
+        shader->SetInt("useOcclusionMap", 0);
+    }
+
+    // 6. Emissive (texture5, Unit 5)
+    if (emissiveMap > 1) 
+    {
+        glActiveTexture(GL_TEXTURE5);
+        glBindTexture(GL_TEXTURE_2D, emissiveMap);
+        shader->SetInt("texture5", 5);
+        shader->SetInt("useEmissiveTexture", 1);
+    }
+    else
+    {
+        shader->SetInt("useEmissiveTexture", 0);
+    }
+
     shader->SetFloat("metalness", material.Metalness);
     shader->SetFloat("roughness", material.Roughness);
     shader->SetVec4("colEmissive", material.EmissiveColor);
