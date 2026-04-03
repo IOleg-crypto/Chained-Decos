@@ -11,6 +11,7 @@
 
 #include "engine/scene/project.h"
 #include "engine/scene/scene_serializer.h"
+#include <yaml-cpp/yaml.h>
 #include "scripting/scene_scripting.h"
 #include "scripting/scriptengine.h"
 #include "scripting/script_file_system.h"
@@ -21,6 +22,7 @@
 #include "panels/property_editor.h"
 #include "panels/viewport_panel.h"
 #include "scripting/script_file_system.h"
+#include "imgui/IconsFontAwesome6.h"
 
 namespace CHEngine
 {
@@ -119,10 +121,15 @@ void EditorLayer::OnAttach()
         EditorContext::GetState().NeedsLayoutReset = true;
     }
 
-    CH_CORE_INFO("EditorLayer - Window icon loading deferred to Window implementation");
-    // TODO(Decoupling): Restore window icon loading when GLFW Window supports SetWindowIcon
-
-
+    std::string iconPath = AssetManager::Get().ResolvePath("engine/resources/icons/chained_icon.png");
+    if (std::filesystem::exists(iconPath))
+    {
+        Application::Get().GetWindow().SetWindowIcon(iconPath);
+    }
+    else
+    {
+        CH_CORE_WARN("Editor icon not found at: {}", iconPath);
+    }
     CH_CORE_INFO("EditorLayer Attached with modular panels.");
 
     LoadEditorFonts();
@@ -134,14 +141,9 @@ void EditorLayer::LoadEditorFonts()
     ImGuiIO& io = ImGui::GetIO();
     float fontSize = 16.0f;
     auto& assetManager = AssetManager::Get();
-
-    if (assetManager.GetRootPath().empty())
-    {
-        assetManager.Initialize();
-    }
-
+    
     // --- Default UI Font (Lato) ---
-    std::string fontPath = assetManager.ResolvePath("resources/font/lato/lato-bold.ttf");
+    std::string fontPath = assetManager.ResolvePath("engine/resources/font/lato/lato-bold.ttf");
     if (std::filesystem::exists(fontPath))
     {
         io.Fonts->AddFontFromFileTTF(fontPath.c_str(), fontSize);
@@ -154,10 +156,10 @@ void EditorLayer::LoadEditorFonts()
     }
 
     // --- Icon Font (FontAwesome) ---
-    std::string faPath = assetManager.ResolvePath("resources/font/fa-solid-900.ttf");
+    std::string faPath = assetManager.ResolvePath("engine/resources/font/fa-solid-900.ttf");
     if (std::filesystem::exists(faPath))
     {
-        static const ImWchar icons_ranges[] = {0xf000, 0xf8ff, 0};
+        static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
         ImFontConfig icons_config;
         icons_config.MergeMode = true;
         icons_config.PixelSnapH = true;
@@ -181,10 +183,10 @@ void EditorLayer::OnUpdate(Timestep ts)
 {
     CH_PROFILE_FUNCTION();
 
-    if (Input::IsKeyPressed(Key::F11))
-    {
-        // ToggleFullscreen removed - to be implemented in Window
-    }
+    // if (Input::IsKeyPressed(Key::F11))
+    // {
+    //     // ToggleFullscreen removed - to be implemented in Window
+    // }
 
 
     if (auto scene = GetActiveScene())
@@ -295,6 +297,31 @@ bool EditorLayer::OnProjectOpened(ProjectOpenedEvent& e)
         
         m_Config.LastProjectPath = e.GetPath();
         SaveConfig();
+        
+        // Auto-load scene if available
+        std::filesystem::path sceneToLoad;
+        
+        // 1. Try loading ActiveScene
+        if (!project->GetConfig().ActiveScenePath.empty())
+        {
+            sceneToLoad = project->GetConfig().ProjectDirectory / project->GetConfig().ActiveScenePath;
+        }
+        
+        // 2. Fallback to StartScene
+        if (sceneToLoad.empty() || !std::filesystem::exists(sceneToLoad))
+        {
+            if (!project->GetConfig().StartScene.empty())
+            {
+                sceneToLoad = project->GetConfig().ProjectDirectory / project->GetConfig().AssetDirectory / project->GetConfig().StartScene;
+            }
+        }
+        
+        // 3. Load the scene if found
+        if (!sceneToLoad.empty() && std::filesystem::exists(sceneToLoad))
+        {
+            CH_CORE_INFO("EditorLayer: Auto-loading scene: {}", sceneToLoad.string());
+            SceneActions::Open(sceneToLoad);
+        }
     }
     return false;
 }

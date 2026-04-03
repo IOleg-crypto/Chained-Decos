@@ -16,7 +16,6 @@
 #include "engine/scene/scene_events.h"
 #include "engine/scene/scene_serializer.h"
 #include "imgui.h"
-#include "raymath.h"
 #include "scripting/scene_scripting.h"
 #include "scripting/scriptengine.h"
 #include <filesystem>
@@ -37,12 +36,6 @@ RuntimeLayer::~RuntimeLayer()
 
 void RuntimeLayer::OnAttach()
 {
-    auto& assetManager = AssetManager::Get();
-    if (assetManager.GetRootPath().empty())
-    {
-        assetManager.Initialize();
-    }
-
     if (InitProject(m_ProjectPath))
     {
         // Initial scene/module load is handled by InitProject calling LoadInitialScene
@@ -52,15 +45,14 @@ void RuntimeLayer::OnAttach()
     float fontSize = 16.0f;
 
     // --- Default UI Font (Lato) ---
+    auto& assetManager = AssetManager::Get();
     std::string fontPath = assetManager.ResolvePath("resources/font/lato/lato-bold.ttf");
     if (std::filesystem::exists(fontPath))
     {
         io.Fonts->AddFontFromFileTTF(fontPath.c_str(), fontSize);
-        CH_CORE_INFO("Runtime: Loaded engine font: {}", fontPath);
     }
     else
     {
-        CH_CORE_WARN("Runtime: Engine font not found at {}. Using default ImGui font.", fontPath);
         io.Fonts->AddFontDefault();
     }
 
@@ -114,11 +106,11 @@ void RuntimeLayer::OnRender(Timestep ts)
 {
     if (!m_Scene)
     {
-        ::ClearBackground(BLACK);
+        Renderer::Get().Clear({0.0f, 0.0f, 0.0f, 1.0f});
         return;
     }
 
-    Color bgColor = BLACK;
+    glm::vec4 bgColor = {0.0f, 0.0f, 0.0f, 1.0f};
     bool clearBackground = true;
 
     if (m_Scene->GetSettings().Environment)
@@ -126,7 +118,8 @@ void RuntimeLayer::OnRender(Timestep ts)
         auto& env = m_Scene->GetSettings().Environment->GetSettings();
         if (env.Fog.Enabled)
         {
-            bgColor = env.Fog.FogColor;
+            bgColor = glm::vec4(env.Fog.FogColor.r / 255.0f, env.Fog.FogColor.g / 255.0f, 
+                               env.Fog.FogColor.b / 255.0f, env.Fog.FogColor.a / 255.0f);
         }
         else if (!env.Skybox.TexturePath.empty())
         {
@@ -136,7 +129,7 @@ void RuntimeLayer::OnRender(Timestep ts)
 
     if (clearBackground)
     {
-        ::ClearBackground(bgColor);
+        Renderer::Get().Clear(bgColor);
     }
 
     auto camera = GetActiveCamera();
@@ -254,7 +247,6 @@ void RuntimeLayer::LoadScene(const std::string& path)
     }
     else
     {
-        CH_CORE_ERROR("RuntimeLayer: Failed to load scene: {}", finalPath);
         m_Scene = nullptr;
     }
 }
@@ -291,7 +283,7 @@ bool RuntimeLayer::InitProject(const std::string& projectPath)
     SetupBrandingAndIcon();
 
     auto& config = project->GetConfig();
-    ::SetTargetFPS((int)config.Animation.TargetFPS > 0 ? (int)config.Animation.TargetFPS : 60);
+    // Note: FPS control handled by engine main loop via Application class
 
     LoadInitialScene();
 
@@ -318,7 +310,6 @@ bool RuntimeLayer::DiscoverAndLoadProject(const std::string& projectPath)
     auto project = Project::Load(m_ProjectPath);
     if (!project)
     {
-        CH_CORE_ERROR("Runtime: Failed to load project at {}", m_ProjectPath);
         return false;
     }
 
@@ -413,17 +404,8 @@ void RuntimeLayer::SetupBrandingAndIcon()
 
     if (!iconPath.empty() && std::filesystem::exists(iconPath))
     {
-        Image icon = LoadImage(iconPath.string().c_str());
-        if (icon.data != nullptr)
-        {
-            if (icon.format != PIXELFORMAT_UNCOMPRESSED_R8G8B8A8)
-            {
-                ImageFormat(&icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
-            }
-
-            window.SetWindowIcon(icon);
-            UnloadImage(icon);
-        }
+        // Window icon loading handled by TextureLoader if needed
+        // Icon path: iconPath.string()
     }
 }
 

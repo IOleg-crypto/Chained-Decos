@@ -60,6 +60,14 @@ public:
         m_PendingData = std::move(data);
         m_HasPendingData = true;
     }
+    PendingModelData& GetPendingData()
+    {
+        return m_PendingData;
+    }
+    bool HasPendingData() const
+    {
+        return m_HasPendingData;
+    }
 
     void SetModel(const Model& model)
     {
@@ -95,11 +103,17 @@ public:
     }
     std::string GetAnimationName(int index) const;
 
+    const std::vector<Material>& GetMaterials() const
+    {
+        return m_Materials;
+    }
+
 private:
     Model m_Model;
     std::vector<RawMesh> m_RawMeshes;
     std::vector<RawAnimation> m_Animations;
     std::vector<MeshInstance> m_Instances;
+    std::vector<Material> m_Materials;
     BoundingBox m_BoundingBox = {{0, 0, 0}, {0, 0, 0}};
 
     // Skeleton data

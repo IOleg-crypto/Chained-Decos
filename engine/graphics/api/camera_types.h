@@ -3,6 +3,7 @@
 
 #include <glm/glm.hpp>
 
+// Not working , but in the future , i guess i do 2D Renderer
 namespace CHEngine
 {
 struct Camera2D
@@ -12,7 +13,7 @@ struct Camera2D
     float Rotation = 0.0f;
     float Zoom = 1.0f;
 };
-
+// Goat camera
 struct Camera3D
 {
     Camera3D() = default;
@@ -23,6 +24,6 @@ struct Camera3D
     float Fovy = 45.0f;
     int Projection = 0; // 0 for Perspective, 1 for Orthographic
 };
-}
+} // namespace CHEngine
 
 #endif // CH_CAMERA_TYPES_H

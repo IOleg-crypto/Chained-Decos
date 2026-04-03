@@ -5,7 +5,7 @@
 [![C++23](https://img.shields.io/badge/language-C%2B%2B23-blue?logo=c%2B%2B&logoColor=white)](https://isocpp.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/IOleg-crypto/Chained-Decos/build.yml)](https://github.com/IOleg-crypto/Chained-Decos/actions)
-[![raylib](https://img.shields.io/badge/raylib-5.5--dev-red?logo=raylib)](https://www.raylib.com/)
+[![OpenGL](https://img.shields.io/badge/graphics-OpenGL%204.3%2B-red?logo=opengl)](https://www.khronos.org/opengl/)
 
 
 > [!NOTE]
@@ -53,7 +53,7 @@ _GUI Development is currently in progress and may be unstable. It is recommended
 
 ### Engine Features
 
-- **High-Performance Rendering**: Optimized Raylib-based renderer with custom shader support and PBR materials.
+- **High-Performance Rendering**: Optimized OpenGL 4.3+ renderer with custom shader support, PBR materials, and GPU-instanced rendering.
 - **Native C++ Scripting**: Type-safe gameplay scripts with DSL macros for clean, maintainable code.
 - **Advanced Physics & Diagnostics**: BVH-accelerated collision detection with real-time logging for collider state.
 - **Project Hub**: Split-view launcher with "Recent Projects" and intelligent project folder creation.
@@ -167,4 +167,4 @@ Contributions are welcome! As a project in active development, especially regard
 
 This project is licensed under the **MIT License**.
 
-Made with using **Raylib**, **ImGui**, and **Jolt** (Modern C++23).
+Made with using **OpenGL 4.3+**, **ImGui**, and **Jolt** (Modern C++23).

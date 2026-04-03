@@ -6,6 +6,7 @@
 #include <regex>
 #include <sstream>
 #include <yaml-cpp/yaml.h>
+#include <engine/graphics/assets/shader_asset.h>
 
 namespace CHEngine
 {

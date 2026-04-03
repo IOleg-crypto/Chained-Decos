@@ -114,12 +114,10 @@ bool SceneSerializer::Serialize(const std::string& filepath)
     if (fout.is_open())
     {
         fout << yaml;
-        CH_CORE_INFO("Scene saved successfully to: {}", filepath.c_str());
         return true;
     }
     else
     {
-        CH_CORE_ERROR("Failed to save scene to: {}", filepath.c_str());
         return false;
     }
 }
@@ -134,7 +132,6 @@ bool SceneSerializer::Deserialize(const std::string& filepath)
     std::ifstream stream(filepath);
     if (!stream.is_open())
     {
-        CH_CORE_ERROR("Failed to open scene file: {}", filepath.c_str());
         return false;
     }
 
@@ -155,7 +152,6 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
         }
 
         std::string sceneName = data["Scene"].as<std::string>();
-        CH_CORE_INFO("Deserializing scene '{}'", sceneName.c_str());
 
         // Deserialize Background
         if (data["Background"])
@@ -334,7 +330,6 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
                 {
                     uint64_t oldUUID = uuid;
                     uuid = UUID(); // Generate new one
-                    CH_CORE_WARN("SceneSerializer: Duplicate UUID {0} found! Regenerated as {1}", oldUUID, uuid);
                 }
                 seenUUIDs.insert(uuid);
 
@@ -344,8 +339,6 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
                 {
                     name = tagComponent["Tag"].as<std::string>();
                 }
-
-                CH_CORE_TRACE("Deserialized entity with ID = {}, name = {}", uuid, name.c_str());
 
                 Entity deserializedEntity = m_Scene->CreateEntityWithUUID(uuid, name);
 
@@ -364,7 +357,32 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
                 // No need for manual invocation anymore
                 if (deserializedEntity.HasComponent<ModelComponent>())
                 {
-                    CH_CORE_TRACE("SceneSerializer: ModelComponent deserialized for entity '{}'", name.c_str());
+                    auto& modelComp = deserializedEntity.GetComponent<ModelComponent>();
+                    // Convert relative path to absolute if needed
+                    if (!modelComp.ModelPath.empty() && std::filesystem::path(modelComp.ModelPath).is_relative())
+                    {
+                        modelComp.ModelPath = Project::GetAbsolutePath(modelComp.ModelPath).generic_string();
+                    }
+                }
+                
+                // Convert texture paths in background/UI components
+                if (deserializedEntity.HasComponent<SpriteComponent>())
+                {
+                    auto& sprite = deserializedEntity.GetComponent<SpriteComponent>();
+                    if (!sprite.TexturePath.empty() && std::filesystem::path(sprite.TexturePath).is_relative())
+                    {
+                        sprite.TexturePath = Project::GetAbsolutePath(sprite.TexturePath).generic_string();
+                    }
+                }
+                
+                // Convert shader paths
+                if (deserializedEntity.HasComponent<ShaderComponent>())
+                {
+                    auto& shaderComp = deserializedEntity.GetComponent<ShaderComponent>();
+                    if (!shaderComp.ShaderPath.empty() && std::filesystem::path(shaderComp.ShaderPath).is_relative())
+                    {
+                        shaderComp.ShaderPath = Project::GetAbsolutePath(shaderComp.ShaderPath).generic_string();
+                    }
                 }
             }
 
@@ -390,10 +408,22 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
                     }
                 }
             }
+            
+            // Phase 4: Preload all model assets
+            auto modelView = m_Scene->GetRegistry().view<ModelComponent>();
+            auto& assetMgr = AssetManager::Get();
+            for (auto entity : modelView)
+            {
+                auto& modelComp = m_Scene->GetRegistry().get<ModelComponent>(entity);
+                if (!modelComp.ModelPath.empty())
+                {
+                    // Trigger asset loading
+                    assetMgr.Get<ModelAsset>(modelComp.ModelPath);
+                }
+            }
         }
     } catch (const std::exception& e)
     {
-        CH_CORE_ERROR("SceneSerializer: FAILED to deserialize scene: {}", e.what());
         return false;
     }
 

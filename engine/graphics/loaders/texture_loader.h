@@ -2,7 +2,7 @@
 #define CH_TEXTURE_LOADER_H
 
 #include "engine/core/assets/asset_loader.h"
-// #include "engine/graphics/assets/texture_asset.h"
+#include "engine/graphics/assets/texture_asset.h"
 #include <memory>
 #include <string>
 

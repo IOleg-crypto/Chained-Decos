@@ -10,6 +10,7 @@
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_settings.h"
 #include "imgui/IconsFontAwesome6.h"
+#include "engine/graphics/api/renderer_api.h"
 #include "panel.h"
 #include "imgui.h"
 #include <memory>
@@ -1801,15 +1802,15 @@ static bool DrawTextureProperty(const char* label, std::string& path)
         if (textureAsset && textureAsset->GetState() == AssetState::Ready)
         {
             ImGui::SameLine();
-            ImTextureID id = (ImTextureID)(intptr_t)textureAsset->GetTexture().id;
-            ImGui::Image(id, {20, 20}, {0, 1}, {1, 0});
-            if (ImGui::IsItemHovered())
-            {
-                ImGui::BeginTooltip();
-                ImGui::Image(id, {256, 256}, {0, 1}, {1, 0});
-                ImGui::Text("%s", path.c_str());
-                ImGui::EndTooltip();
-            }
+            // ImTextureID id = (ImTextureID)RendererAPI::GetAPI();
+            // ImGui::Image(id, {20, 20}, {0, 1}, {1, 0});
+            // if (ImGui::IsItemHovered())
+            // {
+            //     ImGui::BeginTooltip();
+            //     ImGui::Image(id, {256, 256}, {0, 1}, {1, 0});
+            //     ImGui::Text("%s", path.c_str());
+            //     ImGui::EndTooltip();
+            // }
         }
     }
     return changed;
@@ -1822,7 +1823,7 @@ static std::string GetTexturePathFromID(uint32_t id, const std::vector<std::shar
 
     for (const auto& tex : textures)
     {
-        if (tex->GetTexture().id == id)
+        if (tex->GetID() == id)
             return tex->GetPath();
     }
     return "";
@@ -1840,7 +1841,7 @@ void PropertyEditor::DrawMaterial(CHEngine::Entity entity, int hitMeshIndex)
         return;
 
     const Model& model = mcAsset->GetModel();
-    auto modelTextures = mcAsset->GetTextures();
+    auto modelTextures = mcAsset->GetPendingData().materials;
 
     // Helper to draw a single material instance
     auto DrawMaterialInstance = [&](MaterialInstance& mat, int index, bool isOverride) {
@@ -1955,18 +1956,18 @@ void PropertyEditor::DrawMaterial(CHEngine::Entity entity, int hitMeshIndex)
             MaterialInstance defaultMat;
             const Material& rMat = model.Materials[matIndex];
             
-            defaultMat.AlbedoColor = { (unsigned char)(rMat.AlbedoColor.r * 255), (unsigned char)(rMat.AlbedoColor.g * 255), (unsigned char)(rMat.AlbedoColor.b * 255), (unsigned char)(rMat.AlbedoColor.a * 255) };
-            defaultMat.AlbedoPath = GetTexturePathFromID(rMat.AlbedoMap, modelTextures);
-            defaultMat.OverrideAlbedo = !defaultMat.AlbedoPath.empty();
+            // defaultMat.AlbedoColor = { (unsigned char)(rMat.AlbedoColor.r * 255), (unsigned char)(rMat.AlbedoColor.g * 255), (unsigned char)(rMat.AlbedoColor.b * 255), (unsigned char)(rMat.AlbedoColor.a * 255) };
+            // defaultMat.AlbedoPath = GetTexturePathFromID(rMat.AlbedoMap, modelTextures);
+            // defaultMat.OverrideAlbedo = !defaultMat.AlbedoPath.empty();
 
-            defaultMat.NormalMapPath = GetTexturePathFromID(rMat.NormalMap, modelTextures);
-            defaultMat.MetallicRoughnessPath = GetTexturePathFromID(rMat.MetallicRoughnessMap, modelTextures);
-            defaultMat.OcclusionMapPath = GetTexturePathFromID(rMat.OcclusionMap, modelTextures);
-            defaultMat.EmissivePath = GetTexturePathFromID(rMat.EmissiveMap, modelTextures);
-            defaultMat.EmissiveColor = { (unsigned char)(rMat.EmissiveColor.r * 255), (unsigned char)(rMat.EmissiveColor.g * 255), (unsigned char)(rMat.EmissiveColor.b * 255), (unsigned char)(rMat.EmissiveColor.a * 255) };
-            defaultMat.EmissiveIntensity = rMat.EmissiveIntensity;
-            defaultMat.Metalness = rMat.Metalness;
-            defaultMat.Roughness = rMat.Roughness;
+            // defaultMat.NormalMapPath = GetTexturePathFromID(rMat.NormalMap, modelTextures);
+            // defaultMat.MetallicRoughnessPath = GetTexturePathFromID(rMat.MetallicRoughnessMap, modelTextures);
+            // defaultMat.OcclusionMapPath = GetTexturePathFromID(rMat.OcclusionMap, modelTextures);
+            // defaultMat.EmissivePath = GetTexturePathFromID(rMat.EmissiveMap, modelTextures);
+            // defaultMat.EmissiveColor = { (unsigned char)(rMat.EmissiveColor.r * 255), (unsigned char)(rMat.EmissiveColor.g * 255), (unsigned char)(rMat.EmissiveColor.b * 255), (unsigned char)(rMat.EmissiveColor.a * 255) };
+            // defaultMat.EmissiveIntensity = rMat.EmissiveIntensity;
+            // defaultMat.Metalness = rMat.Metalness;
+            // defaultMat.Roughness = rMat.Roughness;
 
             DrawMaterialInstance(defaultMat, matIndex, false);
             
@@ -2006,18 +2007,18 @@ void PropertyEditor::DrawMaterial(CHEngine::Entity entity, int hitMeshIndex)
                 MaterialInstance defaultMat;
                 const Material& rMat = model.Materials[m];
                 
-                defaultMat.AlbedoColor = { (unsigned char)(rMat.AlbedoColor.r * 255), (unsigned char)(rMat.AlbedoColor.g * 255), (unsigned char)(rMat.AlbedoColor.b * 255), (unsigned char)(rMat.AlbedoColor.a * 255) };
-                defaultMat.AlbedoPath = GetTexturePathFromID(rMat.AlbedoMap, modelTextures);
-                defaultMat.OverrideAlbedo = !defaultMat.AlbedoPath.empty();
+                // defaultMat.AlbedoColor = { (unsigned char)(rMat.AlbedoColor.r * 255), (unsigned char)(rMat.AlbedoColor.g * 255), (unsigned char)(rMat.AlbedoColor.b * 255), (unsigned char)(rMat.AlbedoColor.a * 255) };
+                // defaultMat.AlbedoPath = GetTexturePathFromID(rMat.AlbedoMap, modelTextures);
+                // defaultMat.OverrideAlbedo = !defaultMat.AlbedoPath.empty();
                 
-                defaultMat.NormalMapPath = GetTexturePathFromID(rMat.NormalMap, modelTextures);
-                defaultMat.MetallicRoughnessPath = GetTexturePathFromID(rMat.MetallicRoughnessMap, modelTextures);
-                defaultMat.OcclusionMapPath = GetTexturePathFromID(rMat.OcclusionMap, modelTextures);
-                defaultMat.EmissivePath = GetTexturePathFromID(rMat.EmissiveMap, modelTextures);
-                defaultMat.EmissiveColor = { (unsigned char)(rMat.EmissiveColor.r * 255), (unsigned char)(rMat.EmissiveColor.g * 255), (unsigned char)(rMat.EmissiveColor.b * 255), (unsigned char)(rMat.EmissiveColor.a * 255) };
-                defaultMat.EmissiveIntensity = rMat.EmissiveIntensity;
-                defaultMat.Metalness = rMat.Metalness;
-                defaultMat.Roughness = rMat.Roughness;
+                // defaultMat.NormalMapPath = GetTexturePathFromID(rMat.NormalMap, modelTextures);
+                // defaultMat.MetallicRoughnessPath = GetTexturePathFromID(rMat.MetallicRoughnessMap, modelTextures);
+                // defaultMat.OcclusionMapPath = GetTexturePathFromID(rMat.OcclusionMap, modelTextures);
+                // defaultMat.EmissivePath = GetTexturePathFromID(rMat.EmissiveMap, modelTextures);
+                // defaultMat.EmissiveColor = { (unsigned char)(rMat.EmissiveColor.r * 255), (unsigned char)(rMat.EmissiveColor.g * 255), (unsigned char)(rMat.EmissiveColor.b * 255), (unsigned char)(rMat.EmissiveColor.a * 255) };
+                // defaultMat.EmissiveIntensity = rMat.EmissiveIntensity;
+                // defaultMat.Metalness = rMat.Metalness;
+                // defaultMat.Roughness = rMat.Roughness;
 
                 DrawMaterialInstance(defaultMat, m, false);
             }

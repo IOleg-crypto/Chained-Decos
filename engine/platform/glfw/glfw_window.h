@@ -32,6 +32,7 @@ public:
     virtual void SetVSync(bool enabled) override;
     virtual void SetAntialiasing(bool enabled) override;
     virtual void SetTargetFramesPerSecond(int framesPerSecond) override;
+    virtual void SetWindowIcon(const std::string& path) override;
 
     virtual void* GetNativeWindow() const override { return m_WindowHandle; }
 
