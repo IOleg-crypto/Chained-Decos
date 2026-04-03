@@ -21,7 +21,7 @@ enum class AssetType : uint16_t
     Environment,
     Material,
     Font,
-    Animatioraph
+    AnimationGraph
 };
 
 enum class AssetState : uint8_t

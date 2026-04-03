@@ -2,7 +2,7 @@
 #define CH_ENVIRONMENT_LOADER_H
 
 #include "engine/core/assets/asset_loader.h"
-// #include "engine/graphics/assets/environment.h"
+#include "engine/graphics/assets/environment.h"
 #include <memory>
 #include <string>
 

@@ -10,7 +10,7 @@ namespace CHEngine
 
 // Manages ImGui font atlas entries for UI rendering.
 // Fonts must be registered before BuildAtlas() is called (before the first frame).
-// Typical usage: call LoadProjectFonts() between rlImGuiBeginInitImGui() and rlImGuiEndInitImGui().
+// Typical usage: call LoadProjectFonts() between ImGui::CreateContext() and the first frame.
 class UIFontRegistry
 {
 public:

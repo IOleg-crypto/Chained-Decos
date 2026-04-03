@@ -4,6 +4,7 @@
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
+#include <stb/stb_image.h>
 
 namespace CHEngine
 {
@@ -130,6 +131,21 @@ void GlfwWindow::ToggleFullscreen()
 void GlfwWindow::SetFullscreen(bool enabled)
 {
     // Simplified: would require checking current state to avoid redundant calls
+}
+
+void GlfwWindow::SetWindowIcon(const std::string& path)
+{
+    GLFWimage images[1];
+    images[0].pixels = stbi_load(path.c_str(), &images[0].width, &images[0].height, 0, 4);
+    if (images[0].pixels)
+    {
+        glfwSetWindowIcon(m_WindowHandle, 1, images);
+        stbi_image_free(images[0].pixels);
+    }
+    else
+    {
+        CH_CORE_WARN("Failed to load window icon from {}", path);
+    }
 }
 
 void GlfwWindow::SetVSync(bool enabled)

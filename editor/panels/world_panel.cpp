@@ -1,10 +1,9 @@
 #include "world_panel.h"
 #include "editor/editor_layer.h"
 #include "engine/core/assets/asset_manager.h"
-#include "engine/graphics/assets/environment.h"
-#include "engine/graphics/importers/environment_importer.h"
-#include "engine/scene/project.h"
 #include "engine/core/dialogs.h"
+#include "engine/graphics/assets/environment.h"
+#include "engine/scene/project.h"
 #include "scene/scene.h"
 #include <filesystem>
 
@@ -49,10 +48,11 @@ void WorldPanel::OnImGuiRender(bool readOnly)
         if (m_Context->GetSettings().Mode == BackgroundMode::Color)
         {
             Color bgColor = m_Context->GetSettings().BackgroundColor;
-            float c[4] = {bgColor.r/255.f, bgColor.g/255.f, bgColor.b/255.f, bgColor.a/255.f};
+            float c[4] = {bgColor.r / 255.f, bgColor.g / 255.f, bgColor.b / 255.f, bgColor.a / 255.f};
             if (ImGui::ColorEdit4("Background Color", c))
             {
-                m_Context->GetSettings().BackgroundColor = {(uint8_t)(c[0]*255),(uint8_t)(c[1]*255),(uint8_t)(c[2]*255),(uint8_t)(c[3]*255)};
+                m_Context->GetSettings().BackgroundColor = {(uint8_t)(c[0] * 255), (uint8_t)(c[1] * 255),
+                                                            (uint8_t)(c[2] * 255), (uint8_t)(c[3] * 255)};
             }
         }
         else if (m_Context->GetSettings().Mode == BackgroundMode::Texture)
@@ -102,9 +102,9 @@ void WorldPanel::OnImGuiRender(bool readOnly)
         if (auto project = Project::GetActive())
         {
             auto& settings = project->GetConfig().Physics;
-            
+
             ImGui::DragFloat("Gravity", &settings.Gravity, 0.1f);
-            
+
             float fps = 1.0f / settings.FixedTimestep;
             if (ImGui::DragFloat("Fixed FPS", &fps, 1.0f, 10.0f, 240.0f))
             {
@@ -164,7 +164,66 @@ void WorldPanel::OnImGuiRender(bool readOnly)
 
             if (ImGui::Button("Save"))
             {
-                EnvironmentImporter::SaveEnvironment(env, env->GetPath());
+                // // If environment folder doesn't exist, create it
+                // std::filesystem::path path(env->GetPath());
+                // if (!std::filesystem::exists(path.parent_path()))
+                // {
+                //     std::filesystem::create_directories(path.parent_path());
+                // }
+                // std::ofstream savePath(env->GetPath());
+                const auto& settings = env->GetSettings();
+
+                YAML::Emitter out;
+                out << YAML::BeginMap;
+                out << YAML::Key << "Environment" << YAML::BeginMap;
+
+                out << YAML::Key << "Lighting" << YAML::BeginMap;
+                out << YAML::Key << "Direction" << YAML::BeginMap;
+                out << YAML::Key << "X" << YAML::Value << settings.Lighting.Direction.x;
+                out << YAML::Key << "Y" << YAML::Value << settings.Lighting.Direction.y;
+                out << YAML::Key << "Z" << YAML::Value << settings.Lighting.Direction.z;
+                out << YAML::EndMap;
+
+                out << YAML::Key << "LightColor" << YAML::BeginMap;
+                out << YAML::Key << "R" << YAML::Value << settings.Lighting.LightColor.r;
+                out << YAML::Key << "G" << YAML::Value << settings.Lighting.LightColor.g;
+                out << YAML::Key << "B" << YAML::Value << settings.Lighting.LightColor.b;
+                out << YAML::EndMap;
+                out << YAML::Key << "Ambient" << YAML::Value << settings.Lighting.Ambient;
+                out << YAML::Key << "Exposure" << YAML::Value << settings.Lighting.Exposure;
+                out << YAML::Key << "Gamma" << YAML::Value << settings.Lighting.Gamma;
+                out << YAML::EndMap;
+
+                out << YAML::Key << "Skybox" << YAML::BeginMap;
+                out << YAML::Key << "TexturePath" << YAML::Value << settings.Skybox.TexturePath;
+                out << YAML::Key << "Exposure" << YAML::Value << settings.Skybox.Exposure;
+                out << YAML::Key << "Brightness" << YAML::Value << settings.Skybox.Brightness;
+                out << YAML::Key << "Contrast" << YAML::Value << settings.Skybox.Contrast;
+                out << YAML::EndMap;
+
+                out << YAML::Key << "Fog" << YAML::BeginMap;
+                out << YAML::Key << "Enabled" << YAML::Value << settings.Fog.Enabled;
+                out << YAML::Key << "Color" << YAML::BeginMap;
+                out << YAML::Key << "R" << YAML::Value << settings.Fog.FogColor.r;
+                out << YAML::Key << "G" << YAML::Value << settings.Fog.FogColor.g;
+                out << YAML::Key << "B" << YAML::Value << settings.Fog.FogColor.b;
+                out << YAML::EndMap;
+                out << YAML::Key << "Density" << YAML::Value << settings.Fog.Density;
+                out << YAML::Key << "Start" << YAML::Value << settings.Fog.Start;
+                out << YAML::Key << "End" << YAML::Value << settings.Fog.End;
+                out << YAML::EndMap;
+
+                out << YAML::EndMap;
+                out << YAML::EndMap;
+
+                std::string path = env->GetPath();
+                std::filesystem::path fullPath(path);
+                std::filesystem::create_directories(fullPath.parent_path());
+                std::ofstream fout(fullPath);
+                if (fout.is_open())
+                {
+                    fout << out.c_str();
+                }
             }
         }
 
@@ -187,11 +246,12 @@ void WorldPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, 
 
         ImGui::DragFloat3("Direction", &settings.Lighting.Direction.x, 0.01f, -1.0f, 1.0f);
 
-        float color[4] = {settings.Lighting.LightColor.r/255.f, settings.Lighting.LightColor.g/255.f,
-                           settings.Lighting.LightColor.b/255.f, settings.Lighting.LightColor.a/255.f};
+        float color[4] = {settings.Lighting.LightColor.r / 255.f, settings.Lighting.LightColor.g / 255.f,
+                          settings.Lighting.LightColor.b / 255.f, settings.Lighting.LightColor.a / 255.f};
         if (ImGui::ColorEdit4("Light Color", color))
         {
-            settings.Lighting.LightColor = {(uint8_t)(color[0]*255),(uint8_t)(color[1]*255),(uint8_t)(color[2]*255),(uint8_t)(color[3]*255)};
+            settings.Lighting.LightColor = {(uint8_t)(color[0] * 255), (uint8_t)(color[1] * 255),
+                                            (uint8_t)(color[2] * 255), (uint8_t)(color[3] * 255)};
         }
 
         ImGui::DragFloat("Ambient", &settings.Lighting.Ambient, 0.005f, 0.0f, 2.0f);
@@ -264,13 +324,15 @@ void WorldPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, 
         auto& fog = settings.Fog;
         ImGui::Checkbox("Fog Enabled", &fog.Enabled);
 
-        float fogColor[4] = {fog.FogColor.r/255.f, fog.FogColor.g/255.f, fog.FogColor.b/255.f, fog.FogColor.a/255.f};
+        float fogColor[4] = {fog.FogColor.r / 255.f, fog.FogColor.g / 255.f, fog.FogColor.b / 255.f,
+                             fog.FogColor.a / 255.f};
         if (ImGui::ColorEdit4("Fog Color", fogColor))
         {
-            fog.FogColor = {(uint8_t)(fogColor[0]*255),(uint8_t)(fogColor[1]*255),(uint8_t)(fogColor[2]*255),(uint8_t)(fogColor[3]*255)};
+            fog.FogColor = {(uint8_t)(fogColor[0] * 255), (uint8_t)(fogColor[1] * 255), (uint8_t)(fogColor[2] * 255),
+                            (uint8_t)(fogColor[3] * 255)};
         }
 
-        const char* fogModes[] = { "Linear", "Exponential", "Exponential Squared" };
+        const char* fogModes[] = {"Linear", "Exponential", "Exponential Squared"};
         ImGui::Combo("Fog Mode", &fog.Mode, fogModes, 3);
         ImGui::DragFloat("Density", &fog.Density, 0.0001f, 0.0f, 0.1f, "%.4f");
         ImGui::DragFloat("Start", &fog.Start, 1.0f, 0.0f, 10000.0f);

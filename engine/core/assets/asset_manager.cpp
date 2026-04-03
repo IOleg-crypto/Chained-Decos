@@ -1,4 +1,5 @@
 #include "engine/core/assets/asset_manager.h"
+#include "engine/core/thread_pool.h"
 #include "engine/scene/project.h"
 
 namespace CHEngine
@@ -47,7 +48,7 @@ std::string AssetManager::ResolvePath(const std::string& path) const
         }
     }
 
-    std::string resolved = Project::NormalizePath(path).string();
+    std::string resolved = Project::GetAbsolutePath(path).string();
 
     std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
     m_PathCache[path] = resolved;
@@ -63,6 +64,86 @@ AssetHandle AssetManager::ResolveToHandle(const std::string& path) const
         return it->second;
     }
     return AssetHandle(0); // Invalid handle if not loaded yet
+}
+
+std::shared_ptr<Asset> AssetManager::LoadAsset(const std::string& path, AssetType type)
+{
+    if (path.empty())
+    {
+        return nullptr;
+    }
+
+    std::string resolved = ResolvePath(path);
+
+    // 1. Ensure we don't try to load it twice
+    {
+        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+        if (auto it = m_PathToHandle.find(resolved); it != m_PathToHandle.end())
+        {
+            auto handle = it->second;
+            if (auto currentIt = m_AssetCache.find(handle); currentIt != m_AssetCache.end())
+            {
+                return currentIt->second;
+            }
+        }
+    }
+
+    // 2. Find loader
+    std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+    auto loaderIt = m_Loaders.find(type);
+    if (loaderIt == m_Loaders.end())
+    {
+        CH_CORE_ERROR("AssetManager: No loader registered for type {}", (int)type);
+        return nullptr;
+    }
+
+    // 3. Create and Load
+    auto asset = loaderIt->second->Create();
+    if (!asset)
+    {
+        return nullptr;
+    }
+
+    // Use a new valid UUID for the loaded asset
+    UUID newHandle;
+    // We cannot change m_ID of asset easily since it isn't exposed except via constructor or friend?
+    // Let's assume Asset sets its ID in constructor to a random UUID, we retrieve it:
+    newHandle = asset->GetID();
+    asset->SetPath(resolved);
+    asset->SetState(AssetState::Loading);
+
+    // 4. Start Loading
+    m_AssetCache[newHandle] = asset;
+    m_PathToHandle[resolved] = newHandle;
+
+    if (!loaderIt->second->IsAsync())
+    {
+        bool success = loaderIt->second->Load(asset, resolved);
+        if (!success)
+        {
+            asset->SetState(AssetState::Failed);
+            return asset;
+        }
+        asset->OnLoaded();
+        asset->SetState(AssetState::Ready);
+    }
+    else
+    {
+        // True Async Loading via ThreadPool
+        IAssetLoader* loader = loaderIt->second.get();
+        ThreadPool::Get().QueueTask([this, asset, loader, resolved]() {
+            bool success = loader->Load(asset, resolved);
+            if (!success)
+            {
+                asset->SetState(AssetState::Failed);
+            }
+            
+            std::lock_guard<std::mutex> lock(m_PendingMutex);
+            m_PendingAssets.push_back(asset);
+        });
+    }
+
+    return asset;
 }
 
 std::shared_ptr<Asset> AssetManager::GetAsset(AssetHandle handle, AssetType type)
@@ -109,7 +190,7 @@ void AssetManager::Update()
 void AssetManager::ReloadAsset(AssetHandle handle, AssetType type)
 {
     std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
-    
+
     auto it = m_AssetCache.find(handle);
     if (it == m_AssetCache.end())
     {
@@ -124,7 +205,10 @@ void AssetManager::ReloadAsset(AssetHandle handle, AssetType type)
 
     auto& asset = it->second;
     std::string path = asset->GetPath();
-    if (path.empty()) return;
+    if (path.empty())
+    {
+        return;
+    }
 
     std::string resolved = ResolvePath(path);
     loaderIt->second->Load(asset, resolved);

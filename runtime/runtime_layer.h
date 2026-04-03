@@ -4,7 +4,6 @@
 #include "engine/core/layer.h"
 #include "engine/scene/scene.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
-#include "raylib.h"
 #include <functional>
 #include <memory>
 #include <optional>

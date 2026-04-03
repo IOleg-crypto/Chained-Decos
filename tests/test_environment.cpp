@@ -5,7 +5,6 @@
 #include "gtest/gtest.h"
 #include "engine/core/application.h"
 #include "engine/graphics/pipeline/renderer.h"
-#include "raylib.h"
 
 class TestApplication : public CHEngine::Application
 {
@@ -23,7 +22,6 @@ class EngineEnvironment : public ::testing::Environment {
 public:
     void SetUp() override {
         // Run completely headless/hidden for tests — no window on screen
-        SetConfigFlags(FLAG_WINDOW_HIDDEN);
         app = new TestApplication();
     }
     void TearDown() override {

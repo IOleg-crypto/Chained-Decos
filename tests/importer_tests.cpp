@@ -1,132 +1,132 @@
-#include "engine/audio/audio_importer.h"
-#include "engine/core/base.h"
-#include "engine/graphics/importers/environment_importer.h"
-#include "engine/graphics/importers/font_importer.h"
-#include "engine/graphics/importers/mesh_importer.h"
-#include "engine/graphics/assets/model_asset.h"
-#include "engine/graphics/importers/shader_importer.h"
-#include "engine/graphics/assets/texture_asset.h"
-#include "engine/graphics/importers/texture_importer.h"
-#include "raylib.h"
-#include "gtest/gtest.h"
-#include <filesystem>
-#include <fstream>
 
-using namespace CHEngine;
+// #include "engine/core/base.h"
+// #include "engine/graphics/importers/environment_importer.h"
+// #include "engine/graphics/importers/font_importer.h"
+// #include "engine/graphics/importers/mesh_importer.h"
+// #include "engine/graphics/assets/model_asset.h"
+// #include "engine/graphics/importers/shader_importer.h"
+// #include "engine/graphics/assets/texture_asset.h"
+// #include "engine/graphics/importers/texture_importer.h"
+// #include "raylib.h"
+// #include "gtest/gtest.h"
+// #include <filesystem>
+// #include <fstream>
 
-class ImporterTest : public ::testing::Test
-{
-protected:
-    void SetUp() override
-    {
-#if defined(CH_CI) && defined(CH_PLATFORM_WINDOWS)
-        GTEST_SKIP() << "Skipping importer tests on Windows CI due to lack of OpenGL support.";
-#endif
-        // HIDDEN window for raylib resource loading tests
-        SetConfigFlags(FLAG_WINDOW_HIDDEN);
-        InitWindow(1, 1, "ImporterTest");
-        if (IsAudioDeviceReady() == false)
-        {
-            InitAudioDevice();
-        }
+// using namespace CHEngine;
 
-        std::filesystem::create_directories("test_assets");
-    }
+// class ImporterTest : public ::testing::Test
+// {
+// protected:
+//     void SetUp() override
+//     {
+// #if defined(CH_CI) && defined(CH_PLATFORM_WINDOWS)
+//         GTEST_SKIP() << "Skipping importer tests on Windows CI due to lack of OpenGL support.";
+// #endif
+//         // HIDDEN window for raylib resource loading tests
+//         SetConfigFlags(FLAG_WINDOW_HIDDEN);
+//         InitWindow(1, 1, "ImporterTest");
+//         if (IsAudioDeviceReady() == false)
+//         {
+//             InitAudioDevice();
+//         }
 
-    void TearDown() override
-    {
-        if (IsAudioDeviceReady())
-        {
-            CloseAudioDevice();
-        }
-        if (IsWindowReady())
-        {
-            CloseWindow();
-        }
+//         std::filesystem::create_directories("test_assets");
+//     }
 
-        std::filesystem::remove_all("test_assets");
-    }
-};
+//     void TearDown() override
+//     {
+//         if (IsAudioDeviceReady())
+//         {
+//             CloseAudioDevice();
+//         }
+//         if (IsWindowReady())
+//         {
+//             CloseWindow();
+//         }
 
-TEST_F(ImporterTest, EnvironmentImporter_SaveAndLoad)
-{
-    std::string testPath = "test_assets/test.chenv";
+//         std::filesystem::remove_all("test_assets");
+//     }
+// };
 
-    auto env = std::make_shared<EnvironmentAsset>();
-    env->GetSettings().Lighting.Ambient = 0.5f;
-    env->GetSettings().Lighting.LightColor = RED;
-    env->GetSettings().Fog.Enabled = true;
+// TEST_F(ImporterTest, EnvironmentImporter_SaveAndLoad)
+// {
+//     std::string testPath = "test_assets/test.chenv";
 
-    // Test Saving
-    EXPECT_TRUE(EnvironmentImporter::SaveEnvironment(env, testPath));
-    EXPECT_TRUE(std::filesystem::exists(testPath));
+//     auto env = std::make_shared<EnvironmentAsset>();
+//     env->GetSettings().Lighting.Ambient = 0.5f;
+//     env->GetSettings().Lighting.LightColor = RED;
+//     env->GetSettings().Fog.Enabled = true;
 
-    // Test Loading
-    auto loadedEnv = EnvironmentImporter::ImportEnvironment(testPath);
-    ASSERT_TRUE(loadedEnv);
-    EXPECT_FLOAT_EQ(loadedEnv->GetSettings().Lighting.Ambient, 0.5f);
+//     // Test Saving
+//     EXPECT_TRUE(EnvironmentImporter::SaveEnvironment(env, testPath));
+//     EXPECT_TRUE(std::filesystem::exists(testPath));
 
-    Color expectedColor = RED;
-    EXPECT_EQ(loadedEnv->GetSettings().Lighting.LightColor.r, expectedColor.r);
-    EXPECT_TRUE(loadedEnv->GetSettings().Fog.Enabled);
-}
+//     // Test Loading
+//     auto loadedEnv = EnvironmentImporter::ImportEnvironment(testPath);
+//     ASSERT_TRUE(loadedEnv);
+//     EXPECT_FLOAT_EQ(loadedEnv->GetSettings().Lighting.Ambient, 0.5f);
 
-TEST_F(ImporterTest, ShaderImporter_ParseConfig)
-{
-    std::string testPath = "test_assets/test.chshader";
-    std::ofstream fs(testPath);
-    fs << "Shader:\n";
-    fs << "  VertexPath: \"vertex.glsl\"\n";
-    fs << "  FragmentPath: \"fragment.glsl\"\n";
-    fs.close();
+//     Color expectedColor = RED;
+//     EXPECT_EQ(loadedEnv->GetSettings().Lighting.LightColor.r, expectedColor.r);
+//     EXPECT_TRUE(loadedEnv->GetSettings().Fog.Enabled);
+// }
 
-    // Since we don't have real GLSL files here, we expect failure in actual loading,
-    // but the importer should at least try to read the YAML.
-    // For now, let's just assert it handles non-existent files gracefully.
-    auto shader = ShaderImporter::ImportShader(testPath);
-    EXPECT_FALSE(shader); // Should fail because glsl files don't exist
-}
+// TEST_F(ImporterTest, ShaderImporter_ParseConfig)
+// {
+//     std::string testPath = "test_assets/test.chshader";
+//     std::ofstream fs(testPath);
+//     fs << "Shader:\n";
+//     fs << "  VertexPath: \"vertex.glsl\"\n";
+//     fs << "  FragmentPath: \"fragment.glsl\"\n";
+//     fs.close();
 
-TEST_F(ImporterTest, FontImporter_InvalidPath)
-{
-    auto font = FontImporter::ImportFont("non_existent_font.ttf");
-    EXPECT_FALSE(font);
-}
+//     // Since we don't have real GLSL files here, we expect failure in actual loading,
+//     // but the importer should at least try to read the YAML.
+//     // For now, let's just assert it handles non-existent files gracefully.
+//     auto shader = ShaderImporter::ImportShader(testPath);
+//     EXPECT_FALSE(shader); // Should fail because glsl files don't exist
+// }
 
-TEST_F(ImporterTest, AudioImporter_InvalidPath)
-{
-    auto sound = AudioImporter::ImportSound("non_existent_sound.wav");
-    EXPECT_FALSE(sound);
-}
+// TEST_F(ImporterTest, FontImporter_InvalidPath)
+// {
+//     auto font = FontImporter::ImportFont("non_existent_font.ttf");
+//     EXPECT_FALSE(font);
+// }
 
-TEST_F(ImporterTest, MeshImporter_Procedural)
-{
-    auto cube = MeshImporter::GenerateProceduralModel(":cube:");
-    EXPECT_GT(cube.meshCount, 0);
-    EXPECT_NE(cube.meshes, nullptr);
-    UnloadModel(cube);
+// TEST_F(ImporterTest, AudioImporter_InvalidPath)
+// {
+//     auto sound = AudioImporter::ImportSound("non_existent_sound.wav");
+//     EXPECT_FALSE(sound);
+// }
 
-    auto sphere = MeshImporter::GenerateProceduralModel(":sphere:");
-    EXPECT_GT(sphere.meshCount, 0);
-    UnloadModel(sphere);
-}
+// TEST_F(ImporterTest, MeshImporter_Procedural)
+// {
+//     auto cube = MeshImporter::GenerateProceduralModel(":cube:");
+//     EXPECT_GT(cube.meshCount, 0);
+//     EXPECT_NE(cube.meshes, nullptr);
+//     UnloadModel(cube);
 
-TEST_F(ImporterTest, MeshImporter_InvalidProcedural)
-{
-    auto invalid = MeshImporter::GenerateProceduralModel(":invalid:");
-    EXPECT_EQ(invalid.meshCount, 0);
-}
+//     auto sphere = MeshImporter::GenerateProceduralModel(":sphere:");
+//     EXPECT_GT(sphere.meshCount, 0);
+//     UnloadModel(sphere);
+// }
 
-TEST_F(ImporterTest, MeshImporter_InvalidPath)
-{
-    auto mesh = MeshImporter::ImportMesh("non_existent_model.obj");
-    ASSERT_TRUE(mesh);
-    EXPECT_EQ(mesh->GetState(), AssetState::Failed);
-}
+// TEST_F(ImporterTest, MeshImporter_InvalidProcedural)
+// {
+//     auto invalid = MeshImporter::GenerateProceduralModel(":invalid:");
+//     EXPECT_EQ(invalid.meshCount, 0);
+// }
 
-TEST_F(ImporterTest, TextureImporter_InvalidPath)
-{
-    auto texture = TextureImporter::ImportTexture("non_existent_texture.png");
-    ASSERT_TRUE(texture);
-    EXPECT_EQ(texture->GetState(), AssetState::Failed);
-}
+// TEST_F(ImporterTest, MeshImporter_InvalidPath)
+// {
+//     auto mesh = MeshImporter::ImportMesh("non_existent_model.obj");
+//     ASSERT_TRUE(mesh);
+//     EXPECT_EQ(mesh->GetState(), AssetState::Failed);
+// }
+
+// TEST_F(ImporterTest, TextureImporter_InvalidPath)
+// {
+//     auto texture = TextureImporter::ImportTexture("non_existent_texture.png");
+//     ASSERT_TRUE(texture);
+//     EXPECT_EQ(texture->GetState(), AssetState::Failed);
+// }

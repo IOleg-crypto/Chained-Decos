@@ -3,8 +3,6 @@
 // These tests require a valid OpenGL context and are skipped on CI.
 #include "engine/core/base.h"
 #include "engine/graphics/pipeline/renderer.h"
-
-#include "raylib.h"
 #include "gtest/gtest.h"
 
 using namespace CHEngine;
@@ -19,7 +17,9 @@ protected:
 #endif
     }
 
-    void TearDown() override {}
+    void TearDown() override
+    {
+    }
 };
 
 #if !defined(CH_CI)
@@ -31,8 +31,6 @@ TEST_F(RendererTest, RendererInitialization)
     renderer.Init();
     renderer.Shutdown();
 }
-
-
 
 // Verifies that the Renderer can be init/shutdown in sequence multiple times
 // without memory corruption or double-free.
