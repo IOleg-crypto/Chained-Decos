@@ -3,14 +3,12 @@ VertexShader: "skybox_cubemap.vs"
 FragmentShader: "skybox_cubemap.fs"
 
 Uniforms:
-  - projection
-  - view
-  - environmentMap
-  - doGamma
-  - fragGamma
-  - exposure
-  - brightness
-  - contrast
+  - u_Projection
+  - u_View
+  - u_Cubemap
+  - u_Exposure
+  - u_Brightness
+  - u_Contrast
   - uTime
   - isHDR
   - fogEnabled

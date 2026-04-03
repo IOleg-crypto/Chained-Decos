@@ -703,9 +703,6 @@ void Renderer::CleanupSkybox()
     m_Data->Skybox.SkyboxCubeModel.reset();
     m_Data->Skybox.SkyboxSphereModel.reset();
     
-    if (m_Data->Skybox.CachedCubemapId != 0)
-    {
-        glDeleteTextures(1, &m_Data->Skybox.CachedCubemapId);
-    }
+    m_Data->Skybox.CachedCubemap.reset();
 }
 } // namespace CHEngine
