@@ -85,3 +85,4 @@ engine/script/managed/ManagedDependencies.props
 # Log files
 *.log
 
+build_error.txt

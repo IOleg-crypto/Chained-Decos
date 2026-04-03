@@ -3,6 +3,7 @@
 #include "engine/scene/project.h"
 #include <filesystem>
 #include <algorithm>
+#include <stb_image.h>
 
 namespace CHEngine
 {
@@ -53,7 +54,7 @@ void TextureAsset::OnLoaded()
 
         if (m_PendingImage.data != nullptr)
         {
-            free(m_PendingImage.data);
+            stbi_image_free(m_PendingImage.data);
             m_PendingImage.data = nullptr;
         }
         m_HasPendingImage = false;
@@ -67,7 +68,7 @@ void TextureAsset::Unload()
     m_Texture.reset();
     if (m_PendingImage.data != nullptr)
     {
-        free(m_PendingImage.data);
+        stbi_image_free(m_PendingImage.data);
         m_PendingImage.data = nullptr;
     }
 }
