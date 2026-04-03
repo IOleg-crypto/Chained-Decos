@@ -32,7 +32,6 @@ bool Renderer::IsInitialized()
 
 Renderer& Renderer::Get()
 {
-    CH_CORE_ASSERT(s_Instance, "Renderer not initialized!");
     return *s_Instance;
 }
 
@@ -49,12 +48,6 @@ void Renderer::LoadEngineResources()
     
     auto loadShader = [&](const std::string& name, const std::string& path) {
         shaders.Load(name, path);
-        if (shaders.Exists(name)) {
-            auto shader = shaders.Get(name);
-            CH_CORE_INFO("[Renderer] Shader '{}' loaded OK (ID={}) from '{}'.", name, shader->GetShader()->GetRendererID(), path);
-        } else {
-            CH_CORE_ERROR("[Renderer] FAILED to load shader '{}' from '{}'! Viewport may be black.", name, path);
-        }
     };
 
     loadShader("Lighting",       "resources/shaders/lighting.chshader");
@@ -70,12 +63,6 @@ void Renderer::LoadEngineResources()
 
 void Renderer::InternalInit()
 {
-    CH_CORE_INFO("Initializing Render System (OpenGL Pure)...");
-    
-    if (Application::Get().GetSpecification().Headless)
-    {
-        return;
-    }
 
     RenderCommand::Initialize();
 
@@ -209,8 +196,6 @@ void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
     m_Data->CurrentView = glm::lookAt(camera.Position, camera.Target, camera.Up);
 
     // 2. Calculate Projection Transform
-    // We need to get width/height without Raylib GetRenderWidth()
-    // For now we can assume we have them in m_Data or Application
     int width = Application::Get().GetWindow().GetWidth();
     int height = Application::Get().GetWindow().GetHeight();
     float aspect = (float)width / (float)height;
@@ -245,10 +230,6 @@ void Renderer::SetViewport(int x, int y, int width, int height)
 
 void Renderer::DrawMesh(const Mesh& mesh, const Material& material, const glm::mat4& transform)
 {
-    // For now, we still use Raylib's Mesh and Material, but we draw them manually if possible
-    // or keep the raylib call until Mesh is fully abstracted.
-    // However, the user wants "clean OpenGL" NOW.
-    
     uint32_t shaderId = material.ShaderID;
     if (shaderId == 0) shaderId = m_Data->CurrentShaderId;
     if (shaderId == 0) return;
@@ -283,18 +264,56 @@ void Renderer::DrawMesh(const Mesh& mesh, const Material& material, const glm::m
 
 void Renderer::DrawMeshInstanced(const Mesh& mesh, const Material& material, const std::vector<glm::mat4>& transforms)
 {
-    if (transforms.empty()) return;
+    if (transforms.empty() || !mesh.VAO) return;
 
-    // Matricies are usually passed via an instance buffer, but for simplicity we keep raylib call or loop
-    // Raylib's DrawMeshInstanced is quite complex internally.
-    // For "clean OpenGL" we should implement instanced rendering properly.
-    // But for now, let's keep it as is or loop it? Loop is slow.
-    
-    // Temporary: use loop to keep it "clean OpenGL" (avoiding raylib high level)
-    for (const auto& transform : transforms)
+    uint32_t shaderId = material.ShaderID;
+    if (shaderId == 0) shaderId = m_Data->CurrentShaderId;
+    if (shaderId == 0) return;
+
+    auto shaderAsset = GetShaderLibrary().GetById(shaderId);
+    if (!shaderAsset) return;
+
+    shaderAsset->GetShader()->Bind();
+
+    // Set up matrices
+    glm::mat4 mvp = m_Data->CurrentProj * m_Data->CurrentView;
+    shaderAsset->GetShader()->SetMatrix("u_ViewProjection", mvp);
+    shaderAsset->GetShader()->SetMatrix("u_Transform", glm::mat4(1.0f));
+
+    // Create instance buffer with all transforms
+    uint32_t instanceVBO = 0;
+    glGenBuffers(1, &instanceVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+    glBufferData(GL_ARRAY_BUFFER, transforms.size() * sizeof(glm::mat4), transforms.data(), GL_STATIC_DRAW);
+
+    // Bind the mesh VAO
+    mesh.VAO->Bind();
+    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+
+    // Set up instance vertex attributes for the model matrix (4 vec4 attributes per mat4)
+    size_t vec4Size = sizeof(glm::vec4);
+    for (int i = 0; i < 4; i++)
     {
-        DrawMesh(mesh, material, transform);
+        glEnableVertexAttribArray(5 + i);
+        glVertexAttribPointer(5 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(i * vec4Size));
+        glVertexAttribDivisor(5 + i, 1);  // One matrix per instance
     }
+
+    // Draw with instances
+    if (mesh.TriangleCount > 0)
+        glDrawElementsInstanced(GL_TRIANGLES, mesh.TriangleCount * 3, GL_UNSIGNED_INT, 0, (GLsizei)transforms.size());
+    else
+        glDrawArraysInstanced(GL_TRIANGLES, 0, mesh.VertexCount, (GLsizei)transforms.size());
+
+    // Cleanup instance attributes
+    for (int i = 0; i < 4; i++)
+    {
+        glVertexAttribDivisor(5 + i, 0);
+        glDisableVertexAttribArray(5 + i);
+    }
+
+    mesh.VAO->Unbind();
+    glDeleteBuffers(1, &instanceVBO);
 }
 
 void Renderer::DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color)

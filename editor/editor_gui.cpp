@@ -103,8 +103,7 @@ void EditorGUI::DrawMenuBar(EditorPanels& panels)
 
         if (ImGui::MenuItem(ICON_FA_EXPAND " Fullscreen", "F11"))
         {
-            // TODO(Decoupling): Implement Fullscreen in GLFW Window
-            // ToggleFullscreen();
+            Application::Get().GetWindow().ToggleFullscreen();
         }
 
         if (ImGui::MenuItem(ICON_FA_ARROWS_ROTATE " Reset Layout"))

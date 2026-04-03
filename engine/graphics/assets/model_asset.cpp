@@ -40,12 +40,21 @@ void ModelAsset::OnLoaded()
             return;
         }
         auto tex = AssetManager::Get().Get<TextureAsset>(path);
-        if (!tex || !tex->IsReady())
+        if (!tex)
         {
             return;
         }
 
-        uint32_t texId = tex->GetTexture()->GetRendererID();
+        uint32_t texId = 0;
+        if (tex->IsReady())
+        {
+            texId = tex->GetTexture()->GetRendererID();
+        }
+        else
+        {
+            // Optional: fallback texture ID here
+            texId = 0; 
+        }
         switch (mapIndex)
         {
         case 0:

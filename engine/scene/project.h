@@ -7,6 +7,7 @@
 #include "engine/graphics/assets/texture_asset.h"
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <string>
 
 namespace CHEngine
@@ -190,6 +191,7 @@ public:
     }
 
     [[nodiscard]] static std::string GetRelativePath(const std::filesystem::path& path);
+    [[nodiscard]] static std::filesystem::path GetAbsolutePath(const std::filesystem::path& path);
 
     // Path utility helpers
     [[nodiscard]] static std::filesystem::path NormalizePath(const std::filesystem::path& path);
@@ -227,7 +229,6 @@ private:
     std::shared_ptr<EnvironmentAsset> m_Environment;
     static std::shared_ptr<Project> s_ActiveProject;
     static std::filesystem::path s_EngineRoot;
-
 
     friend class ProjectSerializer;
 };

@@ -31,9 +31,7 @@ public:
         s_RendererAPI->DrawIndexed(vertexArray, indexCount);
     }
 
-    static void DrawLine(glm::vec3 startPosition, glm::vec3 endPosition, Color color);
-    static void DrawGrid(int sliceCount, float spacing);
-
+    // Removed empty DrawLine and DrawGrid stubs. Use Renderer::DrawLine/DrawGrid instead.
     static void SetCullMode(RendererAPI::CullMode mode)
     {
         s_RendererAPI->SetCullMode(mode);

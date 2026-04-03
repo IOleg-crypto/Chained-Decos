@@ -44,8 +44,10 @@ void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float near
                                 const SceneRenderOptions& options)
 {
     CH_PROFILE_FUNCTION();
-    CH_CORE_ASSERT(Renderer::IsInitialized(), "Renderer not initialized!");
-    CH_CORE_ASSERT(scene, "Scene is null!");
+    if (!Renderer::IsInitialized() || !scene)
+    {
+        return;
+    }
 
     glEnable(GL_DEPTH_TEST);
 
@@ -146,7 +148,7 @@ void SceneRenderer::PrepareLights(entt::registry& registry, const Frustum& frust
         RenderLight rl;
         rl.color = {light.LightColor.r / 255.0f, light.LightColor.g / 255.0f, light.LightColor.b / 255.0f, light.LightColor.a / 255.0f};
         rl.position = worldPos;
-        rl.intensity = std::max(0.0f, light.Intensity);
+        rl.intensity = (light.Intensity > 0.0f) ? light.Intensity : 0.0f;
         rl.radius = light.Radius;
         rl.type = (int)light.Type;
         rl.enabled = 1;
@@ -164,10 +166,22 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
     for (auto entity : meshView)
     {
         auto [transform, mesh] = meshView.get<TransformComponent, ModelComponent>(entity);
-        if (mesh.ModelPath.empty()) continue;
+        if (mesh.ModelPath.empty())
+        {
+            continue;
+        }
 
         auto modelAsset = am.Get<ModelAsset>(mesh.ModelPath);
-        if (!modelAsset || modelAsset->GetState() != AssetState::Ready) continue;
+        if (!modelAsset)
+        {
+            continue;
+        }
+        
+        AssetState state = modelAsset->GetState();
+        if (state != AssetState::Ready)
+        {
+            continue;
+        }
 
         if (!frustum.IsBoxVisible(modelAsset->GetBoundingBox(), transform.WorldTransform)) continue;
 
@@ -382,8 +396,9 @@ void SceneRenderer::RenderEditorIcons(Scene* scene, const Camera3D& camera) {}
 
 BoundingBox SceneRenderer::CalculateColliderWorldAABB(const ColliderComponent& collider, const glm::mat4& worldTransform)
 {
-    glm::vec3 min = collider.Offset - collider.HalfExtents;
-    glm::vec3 max = collider.Offset + collider.HalfExtents;
+    glm::vec3 halfExtents = collider.Size * 0.5f;
+    glm::vec3 min = collider.Offset - halfExtents;
+    glm::vec3 max = collider.Offset + halfExtents;
     glm::vec3 corners[8] = { {min.x, min.y, min.z}, {max.x, min.y, min.z}, {min.x, max.y, min.z}, {max.x, max.y, min.z},
                              {min.x, min.y, max.z}, {max.x, min.y, max.z}, {min.x, max.y, max.z}, {max.x, max.y, max.z} };
     BoundingBox result = { {FLT_MAX, FLT_MAX, FLT_MAX}, {-FLT_MAX, -FLT_MAX, -FLT_MAX} };
@@ -391,7 +406,9 @@ BoundingBox SceneRenderer::CalculateColliderWorldAABB(const ColliderComponent& c
     {
         glm::vec3 worldCorner = glm::vec3(worldTransform * glm::vec4(corners[i], 1.0f));
         result.Min = glm::min(result.Min, worldCorner);
-        result.Max = glm::max(result.Max, worldCorner);
+        result.Max.x = (worldCorner.x > result.Max.x) ? worldCorner.x : result.Max.x;
+        result.Max.y = (worldCorner.y > result.Max.y) ? worldCorner.y : result.Max.y;
+        result.Max.z = (worldCorner.z > result.Max.z) ? worldCorner.z : result.Max.z;
     }
     return result;
 }

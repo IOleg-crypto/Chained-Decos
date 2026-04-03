@@ -84,6 +84,14 @@ target_include_directories(ChainedEditor PRIVATE
     ${CMAKE_SOURCE_DIR}
 )
 
+# Copy engine resources to build output directory
+add_custom_command(TARGET ChainedEditor POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${CMAKE_SOURCE_DIR}/resources"
+    "$<TARGET_FILE_DIR:ChainedEditor>/resources"
+    COMMENT "Copying engine resources..."
+)
+
 # Apply optimizations
 if(COMMAND apply_engine_optimizations)
     apply_engine_optimizations(editor_core)

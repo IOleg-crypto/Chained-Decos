@@ -1,12 +1,10 @@
 #include "project_browser_panel.h"
 #include "actions/project_actions.h"
 #include "editor_layer.h"
-#include "engine/core/application.h"
-#include "engine/scene/project.h"
 #include "engine/scene/scene_events.h"
 #include "imgui/IconsFontAwesome6.h"
 #include "engine/core/assets/asset_manager.h"
-
+#include "engine/core/dialogs.h"
 #include "panel.h"
 #include <filesystem>
 
@@ -19,9 +17,8 @@ ProjectBrowserPanel::ProjectBrowserPanel()
     memset(m_ProjectLocationBuffer, 0, sizeof(m_ProjectLocationBuffer));
     cwd.copy(m_ProjectLocationBuffer, sizeof(m_ProjectLocationBuffer) - 1);
 
-    std::string root = PROJECT_ROOT_DIR; // Use the macro defined in CMake
-    m_NewProjectIconAsset = AssetManager::Get().Get<TextureAsset>(root + "/resources/icons/newproject.jpg");
-    m_OpenProjectIconAsset = AssetManager::Get().Get<TextureAsset>(root + "/resources/icons/folder.png");
+    m_NewProjectIconAsset = AssetManager::Get().Get<TextureAsset>("engine/resources/icons/newproject.jpg");
+    m_OpenProjectIconAsset = AssetManager::Get().Get<TextureAsset>("engine/resources/icons/folder.png");
 }
 
 ProjectBrowserPanel::~ProjectBrowserPanel()
@@ -137,10 +134,16 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.9f, 0.9f, 1.0f));
 
     ImGui::BeginGroup();
-    if (ImGui::ImageButton("##NewProject", (ImTextureID)(uintptr_t)(m_NewProjectIconAsset ? m_NewProjectIconAsset->GetTexture()->GetRendererID() : 0), {300, 300}, {0, 1}, {1, 0}))
     {
-        m_OpenCreatePopupRequest = true;
-        m_ShowCreateDialog = true;
+        ImTextureID newProjTex = 0;
+        if (m_NewProjectIconAsset && m_NewProjectIconAsset->IsReady() && m_NewProjectIconAsset->GetTexture())
+            newProjTex = (ImTextureID)(uintptr_t)m_NewProjectIconAsset->GetTexture()->GetRendererID();
+
+        if (ImGui::ImageButton("##NewProject", newProjTex, {300, 300}, {0, 1}, {1, 0}))
+        {
+            m_OpenCreatePopupRequest = true;
+            m_ShowCreateDialog = true;
+        }
     }
     ImGui::SetWindowFontScale(1.3f);
     ImGui::Text("New Project");
@@ -154,9 +157,15 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
     ImGui::SameLine(0, 40);
 
     ImGui::BeginGroup();
-    if (ImGui::ImageButton("##OpenProject", (ImTextureID)(uintptr_t)(m_OpenProjectIconAsset ? m_OpenProjectIconAsset->GetTexture()->GetRendererID() : 0), {300, 300}, {0, 1}, {1, 0}))
     {
-        ProjectActions::Open();
+        ImTextureID openProjTex = 0;
+        if (m_OpenProjectIconAsset && m_OpenProjectIconAsset->IsReady() && m_OpenProjectIconAsset->GetTexture())
+            openProjTex = (ImTextureID)(uintptr_t)m_OpenProjectIconAsset->GetTexture()->GetRendererID();
+
+        if (ImGui::ImageButton("##OpenProject", openProjTex, {300, 300}, {0, 1}, {1, 0}))
+        {
+            ProjectActions::Open();
+        }
     }
     ImGui::SetWindowFontScale(1.3f);
     ImGui::Text("Open Project");

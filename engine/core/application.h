@@ -4,9 +4,7 @@
 #include "engine/core/ch_assert.h"
 #include "engine/core/base.h"
 #include "engine/core/events.h"
-#include "engine/core/imgui_layer.h"
 #include "engine/core/layer_stack.h"
-#include "engine/core/thread_pool.h"
 #include "engine/core/timestep.h"
 #include "engine/core/window.h"
 #include <functional>

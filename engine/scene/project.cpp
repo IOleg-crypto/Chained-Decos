@@ -249,6 +249,82 @@ std::string Project::GetRelativePath(const std::filesystem::path& path)
     return absolutePath.generic_string();
 }
 
+std::filesystem::path Project::GetAbsolutePath(const std::filesystem::path& path)
+{
+    if (path.empty())
+    {
+        return "";
+    }
+
+    if (path.is_absolute())
+    {
+        return NormalizePath(path);
+    }
+
+    std::string pathStr = path.generic_string();
+
+    // Handle "engine/" prefix (for engine resources)
+    bool isEngineResource = false;
+    if (pathStr.find("engine/") == 0)
+    {
+        pathStr = pathStr.substr(7); // Remove "engine/" prefix
+        isEngineResource = true;
+    }
+
+    if (isEngineResource)
+    {
+        // Look in engine root first
+        if (!s_EngineRoot.empty())
+        {
+            std::filesystem::path candidate = s_EngineRoot / pathStr;
+            if (std::filesystem::exists(candidate))
+            {
+                return NormalizePath(candidate);
+            }
+        }
+    }
+    else
+    {
+        // For game assets, try asset directory first
+        std::filesystem::path assetDir = GetAssetDirectory();
+        if (!assetDir.empty())
+        {
+            std::filesystem::path candidate = assetDir / pathStr;
+            if (std::filesystem::exists(candidate))
+            {
+                return NormalizePath(candidate);
+            }
+        }
+
+        // Try project root next
+        std::filesystem::path projectDir = GetProjectDirectory();
+        if (!projectDir.empty())
+        {
+            std::filesystem::path candidate = projectDir / pathStr;
+            if (std::filesystem::exists(candidate))
+            {
+                return NormalizePath(candidate);
+            }
+        }
+    }
+
+    // Final fallback: return best guess without verifying existence
+    // This allows AssetManager async loading to handle missing files gracefully
+    std::filesystem::path assetDir = GetAssetDirectory();
+    if (!assetDir.empty() && !isEngineResource)
+    {
+        return NormalizePath(assetDir / pathStr);
+    }
+    else if (!s_EngineRoot.empty())
+    {
+        return NormalizePath(s_EngineRoot / pathStr);
+    }
+    else
+    {
+        return NormalizePath(GetProjectDirectory() / pathStr);
+    }
+}
+
 // -------------------------------------------------------------------------------------------------------------------
 // Path Utility Helpers
 // -------------------------------------------------------------------------------------------------------------------

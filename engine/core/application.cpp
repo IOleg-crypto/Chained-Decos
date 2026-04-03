@@ -7,27 +7,26 @@
 #include "engine/core/layer.h"
 #include "engine/core/log.h"
 #include "engine/core/profiler.h"
-#include "engine/core/thread_pool.h"
-#include "engine/core/window.h"
-#include "engine/graphics/assets/environment.h"
-#include "engine/graphics/assets/font_asset.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/component_serializer.h"
 #include "engine/scene/project.h"
-#include "engine/scene/scene_events.h"
-#include "filesystem_utils.h"
 #include "nfd.h"
 #include "scripting/scriptengine.h"
 
+#include "engine/graphics/loaders/texture_loader.h"
+#include "engine/graphics/loaders/model_loader.h"
+#include "engine/graphics/loaders/shader_loader.h"
+#include "engine/graphics/loaders/environment_loader.h"
+#include "engine/graphics/loaders/font_loader.h"
+#include "engine/audio/loaders/audio_loader.h"
+
 #include <algorithm>
 #include <filesystem>
-#include <ranges>
 
 #ifndef GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_NONE
 #endif
-#include "engine/graphics/pipeline/render_command.h"
 
 #include "engine/graphics/pipeline/ui_renderer.h"
 #include <GLFW/glfw3.h>
@@ -67,7 +66,19 @@ Application::Application(const ApplicationSpecification& specification)
     if (!m_Specification.Headless)
     {
         m_Window = std::unique_ptr<Window>(Window::Create(windowProps));
+#ifdef PROJECT_ROOT_DIR
+        Project::SetEngineRoot(PROJECT_ROOT_DIR);
+#endif
     }
+
+    // Register Asset Loaders BEFORE any system that may load assets during Init
+    auto& assetManager = AssetManager::Get();
+    assetManager.RegisterLoader(AssetType::Texture, std::make_unique<TextureLoader>());
+    assetManager.RegisterLoader(AssetType::Font, std::make_unique<FontLoader>());
+    assetManager.RegisterLoader(AssetType::Model, std::make_unique<ModelLoader>());
+    assetManager.RegisterLoader(AssetType::Shader, std::make_unique<ShaderLoader>());
+    assetManager.RegisterLoader(AssetType::Environment, std::make_unique<EnvironmentLoader>());
+    assetManager.RegisterLoader(AssetType::Audio, std::make_unique<AudioLoader>());
 
     Renderer::Init();
     UIRenderer::Init();
@@ -214,9 +225,9 @@ void Application::Run()
         Input::Update();
 
         // 3. Core Systems Update
+        AssetManager::Get().Update();
         if (auto project = Project::GetActive())
         {
-            AssetManager::Get().Update();
             Audio::Get().Update(m_DeltaTime);
         }
 

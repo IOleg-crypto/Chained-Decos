@@ -4,6 +4,7 @@
 #include "engine/core/assets/asset.h"
 // #include <string>
 #include <cstdint>
+#include <memory>
 
 namespace CHEngine
 {
@@ -40,6 +41,9 @@ public:
 
     const NativeFont& GetFont() const { return m_Font; }
     void SetFont(const NativeFont& font) { m_Font = font; }
+
+    // Hazel-style asset loading
+    static NativeFont CreateFromFile(const std::string& path);
 
 private:
     NativeFont m_Font = {0};
