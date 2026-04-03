@@ -90,18 +90,26 @@ namespace CHEngine
         importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
         importer.SetPropertyInteger(AI_CONFIG_PP_SLM_VERTEX_LIMIT, 65535);
 
-        unsigned int flags = aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenSmoothNormals | 
-                             aiProcess_LimitBoneWeights | aiProcess_JoinIdenticalVertices | aiProcess_SortByPType |
-                             aiProcess_CalcTangentSpace | aiProcess_SplitLargeMeshes | 
-                             aiProcess_ImproveCacheLocality | aiProcess_ValidateDataStructure | 
-                             aiProcess_FindInvalidData;
-
         std::string ext = path.extension().string();
         std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return (char)std::tolower(c); });
         if (!IsSupportedAssimpExtension(ext))
         {
             CH_CORE_ERROR("Assimp Model Load Failed: {} | Error: unsupported format '{}'. Supported formats: glTF/GLB, OBJ", path.filename().string(), ext);
             return data;
+        }
+
+        unsigned int flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals |
+                             aiProcess_LimitBoneWeights | aiProcess_JoinIdenticalVertices | aiProcess_SortByPType |
+                             aiProcess_CalcTangentSpace | aiProcess_SplitLargeMeshes |
+                             aiProcess_ImproveCacheLocality | aiProcess_ValidateDataStructure |
+                             aiProcess_FindInvalidData;
+
+        // GLTF/GLB already stores UVs with the correct top-left origin for OpenGL sampling.
+        // Adding aiProcess_FlipUVs would flip them a SECOND time → upside-down textures.
+        // Only apply it for formats that need it (OBJ, FBX, etc.).
+        if (ext != ".gltf" && ext != ".glb")
+        {
+            flags |= aiProcess_FlipUVs;
         }
 
         const aiScene* scene = nullptr;

@@ -12,6 +12,7 @@
 
 namespace CHEngine
 {
+    class Texture;
 
 // Low-level representation of a light for SSBO
 struct RenderLight
@@ -43,7 +44,7 @@ struct SkyboxData
     std::unique_ptr<Model> SkyboxCubeModel;
     std::unique_ptr<Model> SkyboxSphereModel;
 
-    unsigned int CachedCubemapId = 0;
+    std::shared_ptr<Texture> CachedCubemap;
     std::string CachedCubemapPath = "";
     unsigned int SourceTextureId = 0;
 };

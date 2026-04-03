@@ -82,19 +82,18 @@ void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float near
 
                     if (skyboxMode == 2)
                     {
-                        if (rd.Skybox.CachedCubemapId == 0 || rd.Skybox.CachedCubemapPath != settings.TexturePath)
+                        if (!rd.Skybox.CachedCubemap || rd.Skybox.CachedCubemapPath != settings.TexturePath)
                         {
                             auto genShader = rd.Shaders->Get("CubemapGen");
                             if (genShader && rd.Skybox.SkyboxCubeModel && !rd.Skybox.SkyboxCubeModel->Meshes.empty())
                             {
-                                if (rd.Skybox.CachedCubemapId != 0) glDeleteTextures(1, &rd.Skybox.CachedCubemapId);
-                                rd.Skybox.CachedCubemapId = TextureUtility::GenTextureCubemap(
-                                    genShader->GetShader()->GetRendererID(), texId, 1024, rd.Skybox.SkyboxCubeModel->Meshes[0])->GetRendererID();
+                                rd.Skybox.CachedCubemap = TextureUtility::GenTextureCubemap(
+                                    genShader->GetShader()->GetRendererID(), texId, 1024, rd.Skybox.SkyboxCubeModel->Meshes[0]);
                                 rd.Skybox.CachedCubemapPath = settings.TexturePath;
                                 rd.Skybox.SourceTextureId = texId;
                             }
                         }
-                        texId = rd.Skybox.CachedCubemapId;
+                        if (rd.Skybox.CachedCubemap) texId = rd.Skybox.CachedCubemap->GetRendererID();
                     }
                     renderer.DrawSkybox(texId, skyboxMode, texture->IsHDR(), settings.Exposure, settings.Brightness, settings.Contrast, camera);
                 }
@@ -347,7 +346,9 @@ void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Materia
 
     auto resolveMap = [](uint32_t currentId, const std::string& path) -> uint32_t {
         if (currentId > 0) return currentId;
-        if (path.empty()) return 0;
+        // Embedded textures (path starts with '*') are never in the AssetManager.
+        // Their GPU ID is stored directly in AlbedoMap/NormalMap etc. by model_asset.cpp.
+        if (path.empty() || (!path.empty() && path.front() == '*')) return 0;
         auto tex = AssetManager::Get().Get<TextureAsset>(path);
         if (tex && tex->IsReady()) return tex->GetTexture()->GetRendererID();
         return 0;
