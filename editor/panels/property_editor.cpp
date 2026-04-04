@@ -11,8 +11,10 @@
 #include "engine/scene/scene_settings.h"
 #include "imgui/IconsFontAwesome6.h"
 #include "engine/graphics/api/renderer_api.h"
+#include "engine/core/dialogs.h"
 #include "panel.h"
 #include "imgui.h"
+#include "imgui_internal.h"
 #include <memory>
 
 
@@ -1792,27 +1794,117 @@ void PropertyEditor::DrawTag(CHEngine::Entity entity)
     }
 }
 
-static bool DrawTextureProperty(const char* label, std::string& path)
+static bool DrawTextureSlot(const char* label, std::string& path)
 {
-    bool changed = EditorGUI::Property(label, path, "png,jpg,tga,bmp");
+    bool changed = false;
+    float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
+    ImVec2 slotSize = { 48, 48 };
+
+    ImGui::PushID(label);
+    
+    // Label column if we are not in a table (fallback)
+    if (ImGui::GetColumnsCount() <= 1 && !ImGui::GetCurrentTable())
+    {
+        ImGui::Text("%s", label);
+        ImGui::SameLine(100.0f);
+    }
+
+    // Texture Slot Rectangle
+    ImGui::BeginGroup();
+    
+    ImTextureID texID = (ImTextureID)(intptr_t)0; // Placeholder
+    bool hasTex = false;
 
     if (!path.empty())
     {
         auto textureAsset = AssetManager::Get().Get<TextureAsset>(path);
-        if (textureAsset && textureAsset->GetState() == AssetState::Ready)
+        if (textureAsset && textureAsset->GetTexture() && textureAsset->GetTexture()->IsReady())
         {
-            ImGui::SameLine();
-            // ImTextureID id = (ImTextureID)RendererAPI::GetAPI();
-            // ImGui::Image(id, {20, 20}, {0, 1}, {1, 0});
-            // if (ImGui::IsItemHovered())
-            // {
-            //     ImGui::BeginTooltip();
-            //     ImGui::Image(id, {256, 256}, {0, 1}, {1, 0});
-            //     ImGui::Text("%s", path.c_str());
-            //     ImGui::EndTooltip();
-            // }
+            texID = (ImTextureID)(intptr_t)textureAsset->GetTexture()->GetRendererID();
+            hasTex = true;
         }
     }
+
+    // Draw background placeholder if no texture
+    if (!hasTex)
+    {
+        ImVec2 p = ImGui::GetCursorScreenPos();
+        ImGui::GetWindowDrawList()->AddRectFilled(p, {p.x + slotSize.x, p.y + slotSize.y}, ImGui::GetColorU32(ImGuiCol_FrameBg));
+        ImGui::GetWindowDrawList()->AddRect(p, {p.x + slotSize.x, p.y + slotSize.y}, ImGui::GetColorU32(ImGuiCol_Border));
+        
+        // Draw a tiny '+' in the middle
+        float center_x = p.x + slotSize.x * 0.5f;
+        float center_y = p.y + slotSize.y * 0.5f;
+        ImGui::GetWindowDrawList()->AddText({center_x - 5, center_y - 7}, ImGui::GetColorU32(ImGuiCol_TextDisabled), ICON_FA_PLUS);
+    }
+
+    ImGui::PushStyleColor(ImGuiCol_Button, {0, 0, 0, 0});
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, {1, 1, 1, 0.05f});
+    if (ImGui::ImageButton("##slot", texID, slotSize, {0, 1}, {1, 0}))
+    {
+        // Maybe open a custom picker? For now just browse
+        std::vector<FileDialogFilter> filters = {{"Images", "png,jpg,tga,bmp"}};
+        auto result = Dialogs::OpenFile(filters);
+        if (result)
+        {
+            std::filesystem::path p = *result;
+            auto projectPath = Project::GetAssetDirectory();
+            std::filesystem::path relativePath = std::filesystem::relative(p, projectPath);
+            path = relativePath.empty() ? p.string() : relativePath.string();
+            changed = true;
+        }
+    }
+    ImGui::PopStyleColor(2);
+
+    if (ImGui::BeginDragDropTarget())
+    {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+        {
+            const char* dropPath = (const char*)payload->Data;
+            std::filesystem::path p = dropPath;
+            auto projectPath = Project::GetAssetDirectory();
+            std::filesystem::path relativePath = std::filesystem::relative(p, projectPath);
+            path = relativePath.empty() ? p.string() : relativePath.string();
+            changed = true;
+        }
+        ImGui::EndDragDropTarget();
+    }
+
+    // Hover tooltip
+    if (hasTex)
+    {
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::BeginTooltip();
+            ImGui::Image(texID, {256, 256}, {0, 1}, {1, 0});
+            ImGui::Text("%s", path.c_str());
+            ImGui::EndTooltip();
+        }
+    }
+
+    // Filename and Clear button overlay
+    ImGui::SameLine();
+    ImGui::BeginGroup();
+    std::string filename = path.empty() ? "None" : std::filesystem::path(path).filename().string();
+    if (filename.length() > 15) filename = filename.substr(0, 12) + "...";
+    
+    ImGui::TextDisabled("%s", filename.c_str());
+    
+    if (!path.empty())
+    {
+        ImGui::PushStyleColor(ImGuiCol_Button, {0.3f, 0.1f, 0.1f, 1.0f});
+        if (ImGui::Button(ICON_FA_XMARK " Clear"))
+        {
+            path = "";
+            changed = true;
+        }
+        ImGui::PopStyleColor();
+    }
+    ImGui::EndGroup();
+
+    ImGui::EndGroup();
+    ImGui::PopID();
+
     return changed;
 }
 
@@ -1845,70 +1937,117 @@ void PropertyEditor::DrawMaterial(CHEngine::Entity entity, int hitMeshIndex)
 
     // Helper to draw a single material instance
     auto DrawMaterialInstance = [&](MaterialInstance& mat, int index, bool isOverride) {
-        std::string header = "Material " + std::to_string(index) + (isOverride ? " (Override)" : " (Default)");
+        std::string header = (isOverride ? ICON_FA_PEN_TO_SQUARE " " : ICON_FA_LOCK " ") + 
+                             std::string("Material ") + std::to_string(index) + (isOverride ? " (Override)" : " (Default)");
+        
         if (ImGui::CollapsingHeader(header.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::PushID(index);
             ImGui::BeginDisabled(!isOverride);
 
-            // Albedo
-            ImGui::Text("Albedo");
-            ImGui::PushID("Albedo");
-            EditorGUI::Property("Color", mat.AlbedoColor);
-            DrawTextureProperty("Texture", mat.AlbedoPath);
-            EditorGUI::Property("Use Texture", mat.OverrideAlbedo);
-            ImGui::PopID();
+            if (ImGui::BeginTable("MaterialProperties", 2, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_Resizable))
+            {
+                ImGui::TableSetupColumn("Property", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+                ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
 
-            // PBR Maps
-            ImGui::Text("PBR Maps");
-            ImGui::PushID("PBRMaps");
-            DrawTextureProperty("Normal Map", mat.NormalMapPath);
-            DrawTextureProperty("Metallic/Roughness", mat.MetallicRoughnessPath);
-            DrawTextureProperty("Occlusion", mat.OcclusionMapPath);
-            ImGui::PopID();
+                // --- Albedo Section ---
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Albedo");
+                
+                ImGui::TableSetColumnIndex(1);
+                ImGui::PushID("Albedo");
+                if (EditorGUI::Property("Color", mat.AlbedoColor)) mat.OverrideAlbedo = true;
+                if (DrawTextureSlot("Map", mat.AlbedoPath)) mat.OverrideAlbedo = true;
+                ImGui::PopID();
+                
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Separator();
+                ImGui::TableSetColumnIndex(1);
+                ImGui::Separator();
 
-            ImGui::Separator();
+                // --- PBR Section ---
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("PBR Maps");
+                
+                ImGui::TableSetColumnIndex(1);
+                DrawTextureSlot("Normal", mat.NormalMapPath);
+                DrawTextureSlot("Metallic/Roughness", mat.MetallicRoughnessPath);
+                DrawTextureSlot("Occlusion", mat.OcclusionMapPath);
 
-            // Parameters
-            ImGui::Text("Parameters");
-            ImGui::PushID("Parameters");
-            EditorGUI::Property("Metalness", mat.Metalness, 0.01f, 0.0f, 1.0f);
-            EditorGUI::Property("Roughness", mat.Roughness, 0.01f, 0.0f, 1.0f);
-            ImGui::PopID();
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Separator();
+                ImGui::TableSetColumnIndex(1);
+                ImGui::Separator();
 
-            ImGui::Separator();
+                // --- Parameters Section ---
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Parameters");
 
-            // Emissive
-            ImGui::Text("Emissive Bloom");
-            ImGui::PushID("Emissive");
-            if (EditorGUI::Property("Emissive Color", mat.EmissiveColor))
-                mat.OverrideEmissive = true;
-            EditorGUI::Property("Intensity", mat.EmissiveIntensity, 0.1f, 0.0f, 100.0f);
-            DrawTextureProperty("Texture", mat.EmissivePath);
-            ImGui::PopID();
+                ImGui::TableSetColumnIndex(1);
+                EditorGUI::Property("Metalness", mat.Metalness, 0.01f, 0.0f, 1.0f);
+                EditorGUI::Property("Roughness", mat.Roughness, 0.01f, 0.0f, 1.0f);
 
-            // Rendering
-            ImGui::Separator();
-            ImGui::Text("Rendering");
-            ImGui::PushID("Rendering");
-            EditorGUI::Property("Double Sided", mat.DoubleSided);
-            EditorGUI::Property("Transparent", mat.Transparent);
-            if (mat.Transparent)
-                EditorGUI::Property("Alpha", mat.Alpha, 0.01f, 0.0f, 1.0f);
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Separator();
+                ImGui::TableSetColumnIndex(1);
+                ImGui::Separator();
 
-            ImGui::PopID();
+                // --- Emissive Section ---
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Emissive");
+
+                ImGui::TableSetColumnIndex(1);
+                ImGui::PushID("Emissive");
+                if (EditorGUI::Property("Color", mat.EmissiveColor)) mat.OverrideEmissive = true;
+                EditorGUI::Property("Intensity", mat.EmissiveIntensity, 0.1f, 0.0f, 100.0f);
+                DrawTextureSlot("Map", mat.EmissivePath);
+                ImGui::PopID();
+
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Separator();
+                ImGui::TableSetColumnIndex(1);
+                ImGui::Separator();
+
+                // --- Rendering Section ---
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Rendering");
+
+                ImGui::TableSetColumnIndex(1);
+                EditorGUI::Property("Double Sided", mat.DoubleSided);
+                EditorGUI::Property("Transparent", mat.Transparent);
+                if (mat.Transparent)
+                    EditorGUI::Property("Alpha", mat.Alpha, 0.01f, 0.0f, 1.0f);
+
+                ImGui::EndTable();
+            }
+
             ImGui::EndDisabled();
 
             if (!isOverride)
             {
+                ImGui::Spacing();
                 ImGui::PushStyleColor(ImGuiCol_Button, {0.2f, 0.4f, 0.2f, 1.0f});
-                if (ImGui::Button("Create Override from Defaults"))
+                if (ImGui::Button(ICON_FA_PLUS " Create Override from Defaults", {-1, 0}))
                 {
                     MaterialSlot newSlot;
                     newSlot.Name = "Override " + std::to_string(index);
                     newSlot.Target = MaterialSlotTarget::MaterialIndex;
                     newSlot.Index = index;
-                    newSlot.Material = mat; // mat is already filled from defaults here
+                    newSlot.Material = mat; 
                     mc.Materials.push_back(newSlot);
                 }
                 ImGui::PopStyleColor();

@@ -7,6 +7,9 @@
 #include <string>
 #include <vector>
 #include <chrono>
+#include <sstream>
+#include <iomanip>
+#include <ctime>
 
 #include "panel.h"
 
@@ -44,8 +47,9 @@ public:
 
     static void AddLog(const char* message, ConsoleLogLevel level = ConsoleLogLevel::Info);
 
-private:
     static ConsolePanel* s_Instance;
+
+private:
     
     std::deque<ConsoleLogEntry> m_Messages;
     std::mutex m_LogMutex;

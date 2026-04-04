@@ -69,7 +69,8 @@ void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float near
     {
         if (environment)
         {
-            const auto& settings = environment->GetSettings().Skybox;
+            const auto& envSettings = environment->GetSettings();
+            const auto& settings = envSettings.Skybox;
             if (!settings.TexturePath.empty())
             {
                 auto texture = AssetManager::Get().Get<TextureAsset>(settings.TexturePath);
