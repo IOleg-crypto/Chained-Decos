@@ -1,12 +1,7 @@
 #ifndef CH_PHYSICS_COMPONENTS_H
 #define CH_PHYSICS_COMPONENTS_H
 
-#include "engine/core/base.h"
-#include "engine/core/assets/asset.h"
-#include <future>
-#include <string>
-
-#include <glm/glm.hpp>
+#include "engine/core/reflection.h"
 
 namespace CHEngine
 {
@@ -46,21 +41,33 @@ struct ColliderComponent
     ColliderComponent() = default;
     ColliderComponent(const ColliderComponent&) = default;
 
-    static const char* GetStaticName() { return "ColliderComponent"; }
-
-    template <typename Archive>
-    static void Serialize(Archive& archive, ColliderComponent& component)
-    {
-        archive.Property("Type", (int&)component.Type)
-            .Property("Enabled", component.Enabled)
-            .Property("Offset", component.Offset)
-            .Property("Size", component.Size)
-            .Property("Radius", component.Radius)
-            .Property("Height", component.Height)
-            .Property("AutoCalculate", component.AutoCalculate)
-            .Handle("ModelHandle", component.ModelHandle)
-            .Path("ModelPath", component.ModelPath);
-    }
+    CH_REFLECT_BEGIN(ColliderComponent)
+        const char* colliderTypes[] = {"Box", "Mesh", "Capsule", "Sphere"};
+        props.Property("Type", Type, colliderTypes, 4);
+        props.Property("Enabled", Enabled);
+        props.Property("Offset", Offset);
+        
+        if (Type == ColliderType::Box)
+        {
+            props.Property("Size", Size);
+        }
+        else if (Type == ColliderType::Capsule)
+        {
+            props.Property("Radius", Radius);
+            props.Property("Height", Height);
+        }
+        else if (Type == ColliderType::Sphere)
+        {
+            props.Property("Radius", Radius);
+        }
+        else if (Type == ColliderType::Mesh)
+        {
+            props.Handle("Model Handle", ModelHandle);
+            props.File("Model Path", ModelPath, "obj,gltf,glb");
+        }
+        
+        props.Property("Auto Calculate", AutoCalculate);
+    CH_REFLECT_END()
 };
 
 struct RigidBodyComponent
@@ -73,16 +80,13 @@ struct RigidBodyComponent
 
     RigidBodyComponent() = default;
 
-    static const char* GetStaticName() { return "RigidBodyComponent"; }
-
-    template <typename Archive>
-    static void Serialize(Archive& archive, RigidBodyComponent& component)
-    {
-        archive.Property("Velocity", component.Velocity)
-            .Property("UseGravity", component.UseGravity)
-            .Property("IsKinematic", component.IsKinematic)
-            .Property("Mass", component.Mass);
-    }
+    CH_REFLECT_BEGIN(RigidBodyComponent)
+        props.Property("Mass", Mass);
+        props.Property("Velocity", Velocity);
+        props.Property("Use Gravity", UseGravity);
+        props.Property("Is Kinematic", IsKinematic);
+        props.Property("Is Grounded", IsGrounded);
+    CH_REFLECT_END()
 };
 
 } // namespace CHEngine

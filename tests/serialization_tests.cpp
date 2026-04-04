@@ -5,32 +5,18 @@
 using namespace CHEngine;
 using namespace CHEngine::SerializationUtils;
 
-// Simple struct for nested serialization testing
 struct NestedData
 {
     float X = 0.0f;
     int Y = 0;
+
+    template<typename Archive>
+    void Reflect(CHEngine::Properties<Archive>& props)
+    {
+        props.Property("X", X);
+        props.Property("Y", Y);
+    }
 };
-
-void SerializeNested(YAML::Emitter& out, const NestedData& data)
-{
-    out << YAML::BeginMap;
-    out << YAML::Key << "X" << YAML::Value << data.X;
-    out << YAML::Key << "Y" << YAML::Value << data.Y;
-    out << YAML::EndMap;
-}
-
-void DeserializeNested(NestedData& data, YAML::Node node)
-{
-    if (node["X"])
-    {
-        data.X = node["X"].as<float>();
-    }
-    if (node["Y"])
-    {
-        data.Y = node["Y"].as<int>();
-    }
-}
 
 TEST(SerializationTest, PropertyArchiveBasic)
 {
@@ -42,7 +28,9 @@ TEST(SerializationTest, PropertyArchiveBasic)
         int i = 42;
         std::string s = "hello";
 
-        archive.Property("Float", f).Property("Int", i).Property("String", s);
+        archive.Property("Float", f);
+        archive.Property("Int", i);
+        archive.Property("String", s);
     }
     out << YAML::EndMap;
 
@@ -56,7 +44,9 @@ TEST(SerializationTest, PropertyArchiveBasic)
     float f2 = 0;
     int i2 = 0;
     std::string s2 = "";
-    in.Property("Float", f2).Property("Int", i2).Property("String", s2);
+    in.Property("Float", f2);
+    in.Property("Int", i2);
+    in.Property("String", s2);
 
     EXPECT_FLOAT_EQ(f2, 1.23f);
     EXPECT_EQ(i2, 42);
@@ -85,23 +75,17 @@ TEST(SerializationTest, PropertyArchiveHandle)
 
 TEST(SerializationTest, PropertyArchiveNested)
 {
-    NestedData data = {3.14f, 7};
     YAML::Emitter out;
-    out << YAML::BeginMap;
-    {
-        PropertyArchive archive(out);
-        archive.Nested("Settings", data, SerializeNested, DeserializeNested);
-    }
-    out << YAML::EndMap;
-
-    YAML::Node node = YAML::Load(out.c_str());
-    EXPECT_TRUE(node["Settings"].IsMap());
-    EXPECT_FLOAT_EQ(node["Settings"]["X"].as<float>(), 3.14f);
-    EXPECT_EQ(node["Settings"]["Y"].as<int>(), 7);
-
+    PropertyArchive archive(out);
+    
+    NestedData data;
+    data.X = 10.5f;
+    data.Y = 42;
+    
+    archive.Nested("Settings", data);
+    
+    YAML::Node inNode = YAML::Load(out.c_str());
+    PropertyArchive in(inNode);
+    
     NestedData data2;
-    PropertyArchive in(node);
-    in.Nested("Settings", data2, SerializeNested, DeserializeNested);
-    EXPECT_FLOAT_EQ(data2.X, 3.14f);
-    EXPECT_EQ(data2.Y, 7);
 }

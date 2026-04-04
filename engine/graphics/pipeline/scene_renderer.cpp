@@ -196,12 +196,18 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
             }
         }
 
+        std::vector<MaterialSlot> materials = mesh.Materials;
+        if (registry.all_of<MaterialComponent>(entity))
+        {
+            materials = registry.get<MaterialComponent>(entity).Materials;
+        }
+
         if (registry.all_of<AnimationComponent>(entity))
         {
             AnimatedEntry entry;
             entry.asset = modelAsset;
             entry.worldTransform = transform.WorldTransform;
-            entry.materials = mesh.Materials;
+            entry.materials = materials;
             entry.shaderOverride = shaderOver;
             entry.customUniforms = uniforms;
             entry.animation = registry.get<AnimationComponent>(entity);
@@ -209,7 +215,7 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
         }
         else
         {
-            DrawModel(modelAsset, transform.WorldTransform, mesh.Materials, {}, shaderOver, uniforms);
+            DrawModel(modelAsset, transform.WorldTransform, materials, {}, shaderOver, uniforms);
         }
     }
 

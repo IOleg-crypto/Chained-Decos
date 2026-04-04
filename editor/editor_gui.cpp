@@ -222,6 +222,14 @@ bool EditorGUI::Property(const char* label, int& value, int min, int max)
     return changed;
 }
 
+bool EditorGUI::Property(const char* label, uint64_t& value)
+{
+    BeginProperty(label);
+    bool changed = ImGui::InputScalar("##prop", ImGuiDataType_U64, &value);
+    EndProperty();
+    return changed;
+}
+
 bool EditorGUI::Property(const char* label, std::string& value, bool multiline)
 {
     BeginProperty(label);
@@ -259,6 +267,11 @@ bool EditorGUI::Property(const char* label, glm::vec2& value, float speed, float
 bool EditorGUI::Property(const char* label, glm::vec3& value, float speed, float min, float max)
 {
     return DrawVec3(label, value, 0.0f);
+}
+
+bool EditorGUI::Property(const char* label, glm::vec4& value, float speed, float min, float max)
+{
+    return DrawVec4(label, value, 0.0f);
 }
 
 bool EditorGUI::Property(const char* label, int& value, const char** items, int itemCount)
@@ -561,6 +574,96 @@ bool EditorGUI::DrawVec3(const char* label, glm::vec3& values, float resetValue)
 
     ImGui::SameLine();
     if (ImGui::DragFloat("##Z", &values.z, 0.1f, 0.0f, 0.0f, "%.2f"))
+        changed = true;
+    ImGui::PopItemWidth();
+
+    ImGui::PopStyleVar();
+    ImGui::Columns(1);
+    ImGui::PopID();
+
+    return changed;
+}
+
+bool EditorGUI::DrawVec4(const char* label, glm::vec4& values, float resetValue)
+{
+    bool changed = false;
+    ImGui::PushID(label);
+
+    ImGui::Columns(2);
+    ImGui::SetColumnWidth(0, 80.0f);
+    ImGui::Text(label);
+    ImGui::NextColumn();
+
+    ImGui::PushMultiItemsWidths(4, ImGui::GetContentRegionAvail().x);
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0, 0});
+
+    float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
+    ImVec2 buttonSize = {lineHeight + 3.0f, lineHeight};
+
+    // X
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.9f, 0.2f, 0.2f, 1.0f});
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
+    if (ImGui::Button("X", buttonSize))
+    {
+        values.x = resetValue;
+        changed = true;
+    }
+    ImGui::PopStyleColor(3);
+
+    ImGui::SameLine();
+    if (ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f"))
+        changed = true;
+    ImGui::PopItemWidth();
+    ImGui::SameLine();
+
+    // Y
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.3f, 0.8f, 0.3f, 1.0f});
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
+    if (ImGui::Button("Y", buttonSize))
+    {
+        values.y = resetValue;
+        changed = true;
+    }
+    ImGui::PopStyleColor(3);
+
+    ImGui::SameLine();
+    if (ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f"))
+        changed = true;
+    ImGui::PopItemWidth();
+    ImGui::SameLine();
+
+    // Z
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.2f, 0.35f, 0.9f, 1.0f});
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
+    if (ImGui::Button("Z", buttonSize))
+    {
+        values.z = resetValue;
+        changed = true;
+    }
+    ImGui::PopStyleColor(3);
+
+    ImGui::SameLine();
+    if (ImGui::DragFloat("##Z", &values.z, 0.1f, 0.0f, 0.0f, "%.2f"))
+        changed = true;
+    ImGui::PopItemWidth();
+    ImGui::SameLine();
+
+    // W
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.8f, 0.8f, 0.1f, 1.0f});
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.9f, 0.9f, 0.2f, 1.0f});
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.8f, 0.8f, 0.1f, 1.0f});
+    if (ImGui::Button("W", buttonSize))
+    {
+        values.w = resetValue;
+        changed = true;
+    }
+    ImGui::PopStyleColor(3);
+
+    ImGui::SameLine();
+    if (ImGui::DragFloat("##W", &values.w, 0.1f, 0.0f, 0.0f, "%.2f"))
         changed = true;
     ImGui::PopItemWidth();
 

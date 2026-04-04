@@ -144,8 +144,7 @@ void ComponentSerializer::Register(const std::string& key)
         {
             out << YAML::Key << key << YAML::Value << YAML::BeginMap;
             SerializationUtils::PropertyArchive archive(out);
-            CHEngine::Properties props(archive);
-            entity.GetComponent<T>().Reflect(props);
+            T::Serialize(archive, entity.GetComponent<T>());
             out << YAML::EndMap;
         }
     };
@@ -156,8 +155,7 @@ void ComponentSerializer::Register(const std::string& key)
             if (!entity.HasComponent<T>()) entity.AddComponent<T>();
             entity.Patch<T>([&](auto& component) {
                 SerializationUtils::PropertyArchive archive(node[key]);
-                CHEngine::Properties props(archive);
-                component.Reflect(props);
+                T::Serialize(archive, component);
             });
         }
     };
