@@ -3,6 +3,7 @@
 
 #include <glm/glm.hpp>
 #include <cstdint>
+#include "engine/core/reflection.h"
 
 namespace CHEngine
 {
@@ -94,6 +95,42 @@ public:
     {
         return m_Projection;
     }
+
+    CH_REFLECT_BEGIN(SceneCamera)
+        ProjectionType type = GetProjectionType();
+        static const char* projTypes[] = { "Perspective", "Orthographic" };
+        if (props.Enum("Projection", type, projTypes, 2))
+            SetProjectionType(type);
+
+        if (type == ProjectionType::Perspective)
+        {
+            float fov = glm::degrees(m_PerspectiveFOV);
+            if (props.Property("Vertical FOV", fov))
+                SetPerspectiveVerticalFOV(glm::radians(fov));
+            
+            float n = m_PerspectiveNear;
+            if (props.Property("Near", n))
+                SetPerspectiveNearClip(n);
+            
+            float f = m_PerspectiveFar;
+            if (props.Property("Far", f))
+                SetPerspectiveFarClip(f);
+        }
+        else
+        {
+            float size = m_OrthographicSize;
+            if (props.Property("Size", size))
+                SetOrthographicSize(size);
+            
+            float n = m_OrthographicNear;
+            if (props.Property("Near", n))
+                SetOrthographicNearClip(n);
+            
+            float f = m_OrthographicFar;
+            if (props.Property("Far", f))
+                SetOrthographicFarClip(f);
+        }
+    CH_REFLECT_END()
 
 private:
     void RecalculateProjection();

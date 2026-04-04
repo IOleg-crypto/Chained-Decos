@@ -82,20 +82,28 @@ void EditorLayout::ResetLayout()
 
     ImGuiID main = dockspace_id;
     ImGuiID right = ImGui::DockBuilderSplitNode(main, ImGuiDir_Right, 0.25f, nullptr, &main);
-    ImGuiID left = ImGui::DockBuilderSplitNode(main, ImGuiDir_Left, 0.25f, nullptr, &main);
+    ImGuiID left = ImGui::DockBuilderSplitNode(main, ImGuiDir_Left, 0.20f, nullptr, &main);
     ImGuiID down = ImGui::DockBuilderSplitNode(main, ImGuiDir_Down, 0.30f, nullptr, &main);
 
+    // Ensure Viewport gets the central node
     ImGui::DockBuilderDockWindow("Viewport", main);
+    
+    // Left side: Hierarchy and Project Browser (tabs)
     ImGui::DockBuilderDockWindow("Scene Hierarchy", left);
+    ImGui::DockBuilderDockWindow("Content Browser", left);
+    
+    // Right side: Inspector and Settings
     ImGui::DockBuilderDockWindow("Inspector", right);
     ImGui::DockBuilderDockWindow("World Settings", right);
     ImGui::DockBuilderDockWindow("Material Editor", right);
-    ImGui::DockBuilderDockWindow("Effects & Debug", down);
-    ImGui::DockBuilderDockWindow("Profiler", down);
-    ImGui::DockBuilderDockWindow("Content Browser", down);
+    
+    // Bottom: Console, Profiler, Effects
     ImGui::DockBuilderDockWindow("Console", down);
+    ImGui::DockBuilderDockWindow("Profiler", down);
+    ImGui::DockBuilderDockWindow("Effects & Debug", down);
 
     ImGui::DockBuilderFinish(dockspace_id);
+    CH_CORE_INFO("EditorLayout: Procedural layout applied.");
 }
 
 void EditorLayout::SaveDefaultLayout()

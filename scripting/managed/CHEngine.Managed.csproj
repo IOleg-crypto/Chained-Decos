@@ -11,6 +11,7 @@
     <!-- Output path is controlled by the CMake build system to avoid stale DLL issues -->
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     
     <Authors>Oleg and Contributors</Authors>
     <Description>C# Base Class Library for Chained Engine.</Description>

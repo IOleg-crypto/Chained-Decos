@@ -145,13 +145,56 @@ struct RectTransform
     }
 
     CH_REFLECT_BEGIN(RectTransform)
-        props.Property("Anchor Min", AnchorMin);
-        props.Property("Anchor Max", AnchorMax);
-        props.Property("Offset Min", OffsetMin);
-        props.Property("Offset Max", OffsetMax);
-        props.Property("Pivot", Pivot);
-        props.Property("Rotation", Rotation);
-        props.Property("Scale", Scale);
+        bool changed = false;
+        bool isFill = (AnchorMin.x == 0.0f && AnchorMax.x == 1.0f && AnchorMin.y == 0.0f && AnchorMax.y == 1.0f);
+        
+        if (props.BeginGroup("Simplified Layout", !isFill))
+        {
+            if (isFill)
+            {
+                props.Header("Fill Mode Active");
+                props.Property("Padding L/R", OffsetMin.x); // Simplified view
+                props.Property("Padding T/B", OffsetMin.y);
+            }
+            else
+            {
+                glm::vec2 pos = (OffsetMin + OffsetMax) * 0.5f;
+                glm::vec2 size = OffsetMax - OffsetMin;
+                
+                if (props.Property("Position", pos))
+                {
+                    OffsetMin.x = pos.x - size.x * Pivot.x;
+                    OffsetMin.y = pos.y - size.y * Pivot.y;
+                    OffsetMax.x = pos.x + size.x * (1.0f - Pivot.x);
+                    OffsetMax.y = pos.y + size.y * (1.0f - Pivot.y);
+                    changed = true;
+                }
+                
+                if (props.Property("Size", size))
+                {
+                    OffsetMin.x = pos.x - size.x * Pivot.x;
+                    OffsetMin.y = pos.y - size.y * Pivot.y;
+                    OffsetMax.x = pos.x + size.x * (1.0f - Pivot.x);
+                    OffsetMax.y = pos.y + size.y * (1.0f - Pivot.y);
+                    changed = true;
+                }
+            }
+            props.EndGroup();
+        }
+
+        if (props.BeginGroup("Advanced Settings", isFill))
+        {
+            if (props.Property("Anchor Min", AnchorMin)) changed = true;
+            if (props.Property("Anchor Max", AnchorMax)) changed = true;
+            if (props.Property("Offset Min", OffsetMin)) changed = true;
+            if (props.Property("Offset Max", OffsetMax)) changed = true;
+            if (props.Property("Pivot", Pivot)) changed = true;
+            if (props.Property("Rotation", Rotation)) changed = true;
+            if (props.Property("Scale", Scale)) changed = true;
+            props.EndGroup();
+        }
+        
+        if (changed) props.SetChanged(true);
     CH_REFLECT_END()
 };
 
@@ -165,7 +208,7 @@ struct ControlComponent
     ControlComponent() = default;
 
     CH_REFLECT_BEGIN(ControlComponent)
-        props.Property("Transform", Transform);
+        props.Nested("Rect Transform", Transform);
         props.Property("Z Order", ZOrder);
         props.Property("Active", IsActive);
         props.Property("Hidden", HiddenInHierarchy);

@@ -350,43 +350,76 @@ void Renderer::DrawLine(const glm::vec3& start, const glm::vec3& end, const glm:
 {
     // Native OpenGL line drawing (Fixed function or simple shader)
     auto unlitShader = m_Data->Shaders->Exists("Unlit") ? m_Data->Shaders->Get("Unlit") : nullptr;
-    if (unlitShader && unlitShader->GetShader())
+    if (!unlitShader || !unlitShader->GetShader())
     {
-        unlitShader->GetShader()->Bind();
-
-        glm::mat4 mvp = m_Data->CurrentProj * m_Data->CurrentView;
-        unlitShader->GetShader()->SetMatrix("u_ViewProjection", mvp);
-        unlitShader->GetShader()->SetVec4("u_Color", color);
-
-        // Immediate mode replacement or small buffer
-        float vertices[] = {start.x, start.y, start.z, end.x, end.y, end.z};
-        uint32_t vbo, vao;
-        glGenVertexArrays(1, &vao);
-        glGenBuffers(1, &vbo);
-        glBindVertexArray(vao);
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STREAM_DRAW);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
-
-        glDrawArrays(GL_LINES, 0, 2);
-
-        glDeleteBuffers(1, &vbo);
-        glDeleteVertexArrays(1, &vao);
+        return;  // Can't render without Unlit shader
     }
+
+    auto shader = unlitShader->GetShader();
+    shader->Bind();
+
+    glm::mat4 mvp = m_Data->CurrentProj * m_Data->CurrentView;
+    shader->SetMatrix("mvp", mvp);
+    shader->SetMatrix("matModel", glm::mat4(1.0f));
+    shader->SetMatrix("matNormal", glm::mat4(1.0f));
+    shader->SetVec4("colDiffuse", color);
+    shader->SetVec3("viewPos", glm::vec3(0.0f));  // For fog calculations
+
+    // Immediate mode replacement or small buffer
+    float vertices[] = {start.x, start.y, start.z, end.x, end.y, end.z};
+    uint32_t vbo, vao;
+    glGenVertexArrays(1, &vao);
+    glGenBuffers(1, &vbo);
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STREAM_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+
+    glDrawArrays(GL_LINES, 0, 2);
+
+    // Properly unbind before deleting
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+    glDeleteBuffers(1, &vbo);
+    glDeleteVertexArrays(1, &vao);
 }
 
 void Renderer::DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& transform)
 {
+    // Use unlit shader for wireframe rendering
+    auto unlitShader = m_Data->Shaders->Exists("Unlit") ? m_Data->Shaders->Get("Unlit") : nullptr;
+    if (!unlitShader || !unlitShader->GetShader())
+    {
+        return;
+    }
+
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    auto shader = unlitShader->GetShader();
+    shader->Bind();
 
-    // Create a temporary unlit material for wireframe
-    Material mat;
-    // We don't have a full Material abstraction yet that easily takes a color,
-    // but the original code had maps[0].color = color.
-    // However, our new Material struct might be different.
+    // Set matrices and color with correct uniform names
+    glm::mat4 mvp = m_Data->CurrentProj * m_Data->CurrentView * transform;
+    shader->SetMatrix("mvp", mvp);
+    shader->SetMatrix("matModel", transform);
+    shader->SetMatrix("matNormal", glm::transpose(glm::inverse(transform)));
+    shader->SetVec4("colDiffuse", color);
+    shader->SetVec3("viewPos", glm::vec3(0.0f));  // For fog calculations
 
-    DrawMesh(mesh, mat, transform);
+    // Render mesh geometry
+    if (mesh.VAO)
+    {
+        mesh.VAO->Bind();
+        if (mesh.TriangleCount > 0)
+        {
+            glDrawElements(GL_TRIANGLES, mesh.TriangleCount * 3, GL_UNSIGNED_INT, 0);
+        }
+        else
+        {
+            glDrawArrays(GL_TRIANGLES, 0, mesh.VertexCount);
+        }
+        mesh.VAO->Unbind();
+    }
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
@@ -608,14 +641,78 @@ void Renderer::DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, 
 
 void Renderer::DrawCapsuleWires(const glm::mat4& transform, float radius, float height, const glm::vec4& color)
 {
-    // Simplified: just draw a cylinder-like box for now or implement proper wires
-    DrawCubeWires(transform, {radius * 2, height, radius * 2}, color);
+    // Draw capsule: two spheres at ends + cylinder sides
+    glm::vec3 p0 = glm::vec3(transform[3]); // Position from transform
+    glm::vec3 up = glm::vec3(transform[1]); // Up vector
+    glm::vec3 p1 = p0 + up * (height - radius * 2.0f);
+
+    // Draw top and bottom circles (sphere ends)
+    glm::vec3 right = glm::normalize(glm::cross(up, glm::vec3(0, 0, 1)));
+    if (glm::length(right) < 0.001f)
+        right = glm::normalize(glm::cross(up, glm::vec3(1, 0, 0)));
+    glm::vec3 forward = glm::normalize(glm::cross(right, up));
+
+    // Draw circles at both ends
+    int segments = 16;
+    for (int i = 0; i < segments; i++)
+    {
+        float angle1 = 2.0f * 3.14159f * i / segments;
+        float angle2 = 2.0f * 3.14159f * (i + 1) / segments;
+        glm::vec3 p1_start = p0 + (glm::cos(angle1) * right + glm::sin(angle1) * forward) * radius;
+        glm::vec3 p1_end = p0 + (glm::cos(angle2) * right + glm::sin(angle2) * forward) * radius;
+        DrawLine(p1_start, p1_end, color);
+
+        glm::vec3 p2_start = p1 + (glm::cos(angle1) * right + glm::sin(angle1) * forward) * radius;
+        glm::vec3 p2_end = p1 + (glm::cos(angle2) * right + glm::sin(angle2) * forward) * radius;
+        DrawLine(p2_start, p2_end, color);
+
+        // Vertical lines connecting the circles
+        if (i % 4 == 0)
+        {
+            DrawLine(p1_start, p2_start, color);
+        }
+    }
 }
 
 void Renderer::DrawSphereWires(const glm::mat4& transform, float radius, const glm::vec4& color)
 {
-    // Simplified: just draw 3 circles
-    DrawCubeWires(transform, {radius * 2, radius * 2, radius * 2}, color);
+    // Draw wireframe sphere using 3 orthogonal circles
+    glm::vec3 center = glm::vec3(transform[3]);
+    glm::vec3 right = glm::normalize(glm::vec3(transform[0]));
+    glm::vec3 up = glm::normalize(glm::vec3(transform[1]));
+    glm::vec3 forward = glm::normalize(glm::vec3(transform[2]));
+
+    int segments = 24;
+
+    // Circle in XY plane
+    for (int i = 0; i < segments; i++)
+    {
+        float angle1 = 2.0f * 3.14159f * i / segments;
+        float angle2 = 2.0f * 3.14159f * (i + 1) / segments;
+        glm::vec3 p1 = center + (glm::cos(angle1) * right + glm::sin(angle1) * up) * radius;
+        glm::vec3 p2 = center + (glm::cos(angle2) * right + glm::sin(angle2) * up) * radius;
+        DrawLine(p1, p2, color);
+    }
+
+    // Circle in XZ plane
+    for (int i = 0; i < segments; i++)
+    {
+        float angle1 = 2.0f * 3.14159f * i / segments;
+        float angle2 = 2.0f * 3.14159f * (i + 1) / segments;
+        glm::vec3 p1 = center + (glm::cos(angle1) * right + glm::sin(angle1) * forward) * radius;
+        glm::vec3 p2 = center + (glm::cos(angle2) * right + glm::sin(angle2) * forward) * radius;
+        DrawLine(p1, p2, color);
+    }
+
+    // Circle in YZ plane
+    for (int i = 0; i < segments; i++)
+    {
+        float angle1 = 2.0f * 3.14159f * i / segments;
+        float angle2 = 2.0f * 3.14159f * (i + 1) / segments;
+        glm::vec3 p1 = center + (glm::cos(angle1) * up + glm::sin(angle1) * forward) * radius;
+        glm::vec3 p2 = center + (glm::cos(angle2) * up + glm::sin(angle2) * forward) * radius;
+        DrawLine(p1, p2, color);
+    }
 }
 
 void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextureId, const Camera3D& camera)

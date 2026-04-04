@@ -45,24 +45,27 @@ public:
     void Log(const std::string& message, ConsoleLogLevel level = ConsoleLogLevel::Info);
     void Clear();
 
-    static void AddLog(const char* message, ConsoleLogLevel level = ConsoleLogLevel::Info);
+    static void AddLog(const char* message, int level = (int)ConsoleLogLevel::Info);
 
     static ConsolePanel* s_Instance;
+    static std::deque<ConsoleLogEntry> s_Buffer;
+    static std::mutex s_BufferMutex;
 
 private:
     
     std::deque<ConsoleLogEntry> m_Messages;
+    std::vector<int> m_VisibleIndices; // Indices of messages that pass the filter
     std::mutex m_LogMutex;
 
-    // Стан інтерфейсу
+    // UI State
     int m_LogLevel = (int)ConsoleLogLevel::Info; 
     bool m_ScrollToBottom = false;
-    char m_FilterBuffer[256] = { 0 }; // Буфер для пошуку
+    char m_FilterBuffer[128] = { 0 }; 
 
     static constexpr size_t MAX_MESSAGES = 10000;
 
     // Допоміжний метод для отримання поточного часу
-    std::string GetCurrentTimestamp();
+    static std::string GetCurrentTimestamp();
 };
 } // namespace CHEngine
 
