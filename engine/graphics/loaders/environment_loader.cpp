@@ -84,7 +84,7 @@ namespace CHEngine
                 if (skyboxNode["Mode"]) settings.Skybox.Mode = skyboxNode["Mode"].as<int>();
                 settings.Skybox.Exposure = skyboxNode["Exposure"].as<float>();
                 settings.Skybox.Brightness = skyboxNode["Brightness"].as<float>();
-                settings.Skybox.Contrast = skyboxNode["Contrast"].as<float>();
+                if (skyboxNode["Contrast"]) settings.Skybox.Contrast = skyboxNode["Contrast"].as<float>();
             }
 
             auto fogNode = envNode["Fog"];

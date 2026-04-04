@@ -275,8 +275,30 @@ namespace CHEngine
             aiMaterial* am = scene->mMaterials[i];
             RawMaterial& rm = data.materials[i];
             
-            aiColor4D col;
-            if (aiGetMaterialColor(am, AI_MATKEY_COLOR_DIFFUSE, &col) == AI_SUCCESS) rm.albedoColor = ToColor(col);
+            aiColor4D col(1.0f, 1.0f, 1.0f, 1.0f);
+            bool colorFound = false;
+            if (aiGetMaterialColor(am, AI_MATKEY_BASE_COLOR, &col) == AI_SUCCESS) {
+                rm.albedoColor = ToColor(col);
+                colorFound = true;
+            } else if (aiGetMaterialColor(am, AI_MATKEY_COLOR_DIFFUSE, &col) == AI_SUCCESS) {
+                rm.albedoColor = ToColor(col);
+                colorFound = true;
+            }
+
+            // Safety fallback for transparency: if alpha is exactly 0 but we found a color, default it to 1.0
+            // unless opacity key explicitly says otherwise.
+            if (colorFound && rm.albedoColor.a < 0.001f) {
+                rm.albedoColor.a = 1.0f;
+            }
+
+            float opacity = 1.0f;
+            if (aiGetMaterialFloat(am, AI_MATKEY_OPACITY, &opacity) == AI_SUCCESS)
+                rm.albedoColor.a *= opacity;
+
+            if (aiGetMaterialColor(am, AI_MATKEY_COLOR_EMISSIVE, &col) == AI_SUCCESS)
+                rm.emissiveColor = ToColor(col);
+
+            aiGetMaterialFloat(am, AI_MATKEY_EMISSIVE_INTENSITY, &rm.emissiveIntensity);
             aiGetMaterialFloat(am, AI_MATKEY_METALLIC_FACTOR, &rm.metalness);
             aiGetMaterialFloat(am, AI_MATKEY_ROUGHNESS_FACTOR, &rm.roughness);
 
