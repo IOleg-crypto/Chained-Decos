@@ -1,7 +1,10 @@
 #ifndef CH_PHYSICS_COMPONENTS_H
 #define CH_PHYSICS_COMPONENTS_H
 
+#include "engine/core/base.h"
 #include "engine/core/reflection.h"
+#include <glm/glm.hpp>
+#include <string>
 
 namespace CHEngine
 {
@@ -42,28 +45,36 @@ struct ColliderComponent
     ColliderComponent(const ColliderComponent&) = default;
 
     CH_REFLECT_BEGIN(ColliderComponent)
-        const char* colliderTypes[] = {"Box", "Mesh", "Capsule", "Sphere"};
-        props.Property("Type", Type, colliderTypes, 4);
-        props.Property("Enabled", Enabled);
-        props.Property("Offset", Offset);
+        if (props.BeginGroup("General"))
+        {
+            const char* colliderTypes[] = {"Box", "Mesh", "Capsule", "Sphere"};
+            props.Property("Type", Type, colliderTypes, 4);
+            props.Property("Enabled", Enabled);
+            props.Property("Offset", Offset);
+            props.EndGroup();
+        }
         
-        if (Type == ColliderType::Box)
+        if (props.BeginGroup("Shape Parameters"))
         {
-            props.Property("Size", Size);
-        }
-        else if (Type == ColliderType::Capsule)
-        {
-            props.Property("Radius", Radius);
-            props.Property("Height", Height);
-        }
-        else if (Type == ColliderType::Sphere)
-        {
-            props.Property("Radius", Radius);
-        }
-        else if (Type == ColliderType::Mesh)
-        {
-            props.Handle("Model Handle", ModelHandle);
-            props.File("Model Path", ModelPath, "obj,gltf,glb");
+            if (Type == ColliderType::Box)
+            {
+                props.Property("Size", Size);
+            }
+            else if (Type == ColliderType::Capsule)
+            {
+                props.Property("Radius", Radius);
+                props.Property("Height", Height);
+            }
+            else if (Type == ColliderType::Sphere)
+            {
+                props.Property("Radius", Radius);
+            }
+            else if (Type == ColliderType::Mesh)
+            {
+                props.Handle("Model Handle", ModelHandle);
+                props.File("Model Path", ModelPath, "obj,gltf,glb");
+            }
+            props.EndGroup();
         }
         
         props.Property("Auto Calculate", AutoCalculate);
@@ -81,11 +92,17 @@ struct RigidBodyComponent
     RigidBodyComponent() = default;
 
     CH_REFLECT_BEGIN(RigidBodyComponent)
+        props.Header("Dynamics");
         props.Property("Mass", Mass);
         props.Property("Velocity", Velocity);
-        props.Property("Use Gravity", UseGravity);
-        props.Property("Is Kinematic", IsKinematic);
-        props.Property("Is Grounded", IsGrounded);
+        
+        if (props.BeginGroup("State"))
+        {
+            props.Property("Use Gravity", UseGravity);
+            props.Property("Is Kinematic", IsKinematic);
+            props.Property("Is Grounded", IsGrounded);
+            props.EndGroup();
+        }
     CH_REFLECT_END()
 };
 

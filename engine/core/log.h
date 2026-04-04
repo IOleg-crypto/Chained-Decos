@@ -17,98 +17,102 @@ enum class LogLevel
     LogNone
 };
 
-#ifdef CH_EDITOR
-class ConsolePanel;
-#endif
+    using LogCallbackFn = void(*)(const char*, int);
 
-class Log
-{
-public:
-    static void SetLogLevel(LogLevel level)
+    class Log
     {
-        s_LogLevel = level;
-    }
-    static LogLevel GetLogLevel()
-    {
-        return s_LogLevel;
-    }
+    public:
+        static void SetLogLevel(LogLevel level)
+        {
+            s_LogLevel = level;
+        }
+        static LogLevel GetLogLevel()
+        {
+            return s_LogLevel;
+        }
 
-    // Core logging functions
-    template <typename... Args> static void CoreTrace(std::format_string<Args...> fmt, Args&&... args)
-    {
-        if (s_LogLevel <= LogLevel::LogTrace) LogMessage("[CORE] [TRACE] ", LogLevel::LogTrace, fmt, std::forward<Args>(args)...);
-    }
+        static void SetLogCallback(LogCallbackFn callback)
+        {
+            s_LogCallback = callback;
+        }
 
-    template <typename... Args> static void CoreInfo(std::format_string<Args...> fmt, Args&&... args)
-    {
-        if (s_LogLevel <= LogLevel::LogInfo) LogMessage("[CORE] [INFO]  ", LogLevel::LogInfo, fmt, std::forward<Args>(args)...);
-    }
+        // Core logging functions
+        template <typename... Args> static void CoreTrace(std::format_string<Args...> fmt, Args&&... args)
+        {
+            if (s_LogLevel <= LogLevel::LogTrace) LogMessage("[CORE] [TRACE] ", LogLevel::LogTrace, fmt, std::forward<Args>(args)...);
+        }
 
-    template <typename... Args> static void CoreWarn(std::format_string<Args...> fmt, Args&&... args)
-    {
-        if (s_LogLevel <= LogLevel::LogWarning) LogMessage("[CORE] [WARN]  ", LogLevel::LogWarning, fmt, std::forward<Args>(args)...);
-    }
+        template <typename... Args> static void CoreInfo(std::format_string<Args...> fmt, Args&&... args)
+        {
+            if (s_LogLevel <= LogLevel::LogInfo) LogMessage("[CORE] [INFO]  ", LogLevel::LogInfo, fmt, std::forward<Args>(args)...);
+        }
 
-    template <typename... Args> static void CoreError(std::format_string<Args...> fmt, Args&&... args)
-    {
-        if (s_LogLevel <= LogLevel::LogError) LogMessage("[CORE] [ERROR] ", LogLevel::LogError, fmt, std::forward<Args>(args)...);
-    }
+        template <typename... Args> static void CoreWarn(std::format_string<Args...> fmt, Args&&... args)
+        {
+            if (s_LogLevel <= LogLevel::LogWarning) LogMessage("[CORE] [WARN]  ", LogLevel::LogWarning, fmt, std::forward<Args>(args)...);
+        }
 
-    template <typename... Args> static void CoreFatal(std::format_string<Args...> fmt, Args&&... args)
-    {
-        if (s_LogLevel <= LogLevel::LogFatal) LogMessage("[CORE] [FATAL] ", LogLevel::LogFatal, fmt, std::forward<Args>(args)...);
-    }
+        template <typename... Args> static void CoreError(std::format_string<Args...> fmt, Args&&... args)
+        {
+            if (s_LogLevel <= LogLevel::LogError) LogMessage("[CORE] [ERROR] ", LogLevel::LogError, fmt, std::forward<Args>(args)...);
+        }
 
-    // Client logging functions
-    template <typename... Args> static void ClientTrace(std::format_string<Args...> fmt, Args&&... args)
-    {
-        if (s_LogLevel <= LogLevel::LogTrace) LogMessage("[CLIENT] [TRACE] ", LogLevel::LogTrace, fmt, std::forward<Args>(args)...);
-    }
+        template <typename... Args> static void CoreFatal(std::format_string<Args...> fmt, Args&&... args)
+        {
+            if (s_LogLevel <= LogLevel::LogFatal) LogMessage("[CORE] [FATAL] ", LogLevel::LogFatal, fmt, std::forward<Args>(args)...);
+        }
 
-    template <typename... Args> static void ClientInfo(std::format_string<Args...> fmt, Args&&... args)
-    {
-        if (s_LogLevel <= LogLevel::LogInfo) LogMessage("[CLIENT] [INFO]  ", LogLevel::LogInfo, fmt, std::forward<Args>(args)...);
-    }
+        // Client logging functions
+        template <typename... Args> static void ClientTrace(std::format_string<Args...> fmt, Args&&... args)
+        {
+            if (s_LogLevel <= LogLevel::LogTrace) LogMessage("[CLIENT] [TRACE] ", LogLevel::LogTrace, fmt, std::forward<Args>(args)...);
+        }
 
-    template <typename... Args> static void ClientWarn(std::format_string<Args...> fmt, Args&&... args)
-    {
-        if (s_LogLevel <= LogLevel::LogWarning) LogMessage("[CLIENT] [WARN]  ", LogLevel::LogWarning, fmt, std::forward<Args>(args)...);
-    }
+        template <typename... Args> static void ClientInfo(std::format_string<Args...> fmt, Args&&... args)
+        {
+            if (s_LogLevel <= LogLevel::LogInfo) LogMessage("[CLIENT] [INFO]  ", LogLevel::LogInfo, fmt, std::forward<Args>(args)...);
+        }
 
-    template <typename... Args> static void ClientError(std::format_string<Args...> fmt, Args&&... args)
-    {
-        if (s_LogLevel <= LogLevel::LogError) LogMessage("[CLIENT] [ERROR] ", LogLevel::LogError, fmt, std::forward<Args>(args)...);
-    }
+        template <typename... Args> static void ClientWarn(std::format_string<Args...> fmt, Args&&... args)
+        {
+            if (s_LogLevel <= LogLevel::LogWarning) LogMessage("[CLIENT] [WARN]  ", LogLevel::LogWarning, fmt, std::forward<Args>(args)...);
+        }
 
-    template <typename... Args> static void ClientFatal(std::format_string<Args...> fmt, Args&&... args)
-    {
-        if (s_LogLevel <= LogLevel::LogFatal) LogMessage("[CLIENT] [FATAL] ", LogLevel::LogFatal, fmt, std::forward<Args>(args)...);
-    }
+        template <typename... Args> static void ClientError(std::format_string<Args...> fmt, Args&&... args)
+        {
+            if (s_LogLevel <= LogLevel::LogError) LogMessage("[CLIENT] [ERROR] ", LogLevel::LogError, fmt, std::forward<Args>(args)...);
+        }
 
-private:
-    template <typename... Args>
-    static void LogMessage(const char* prefix, LogLevel level, std::format_string<Args...> fmt, Args&&... args)
-    {
-        std::string message = std::format(fmt, std::forward<Args>(args)...);
-        std::string fullMessage = std::string(prefix) + message;
-        
-        // Вивід у системну консоль
-        std::cout << fullMessage << std::endl;
-        
-        // Додати до editor ConsolePanel
-        #ifdef CH_EDITOR
-        extern void LogToEditorConsole(const char* message, int logLevel);
-        LogToEditorConsole(fullMessage.c_str(), (int)level);
-        #endif
-    }
+        template <typename... Args> static void ClientFatal(std::format_string<Args...> fmt, Args&&... args)
+        {
+            if (s_LogLevel <= LogLevel::LogFatal) LogMessage("[CLIENT] [FATAL] ", LogLevel::LogFatal, fmt, std::forward<Args>(args)...);
+        }
 
-private:
+    private:
+        template <typename... Args>
+        static void LogMessage(const char* prefix, LogLevel level, std::format_string<Args...> fmt, Args&&... args)
+        {
+            std::string message = std::format(fmt, std::forward<Args>(args)...);
+            std::string fullMessage = std::string(prefix) + message;
+            
+            // Output to system console
+            std::cout << fullMessage << std::endl;
+            
+            // Runtime callback for Editor/UI integration
+            if (s_LogCallback)
+            {
+                s_LogCallback(fullMessage.c_str(), (int)level);
+            }
+        }
+
+    private:
 #ifdef CH_DEBUG
-    inline static LogLevel s_LogLevel = LogLevel::LogTrace;
+        inline static LogLevel s_LogLevel = LogLevel::LogTrace;
 #else
-    inline static LogLevel s_LogLevel = LogLevel::LogInfo;
+        inline static LogLevel s_LogLevel = LogLevel::LogInfo;
 #endif
-};
+        inline static LogCallbackFn s_LogCallback = nullptr;
+    };
 } // namespace CHEngine
 
 // Core logging macros

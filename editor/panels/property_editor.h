@@ -60,7 +60,7 @@ public:
 
     // High-level UI Primitives (Special cases or reused structures)
     static void DrawTag(Entity entity);
-    static void DrawMaterial(Entity entity, int hitMeshIndex = -1);
+
 
 private:
     // Shared Container for all components (Handles headers, removal button, etc)

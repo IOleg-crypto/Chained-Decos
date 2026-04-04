@@ -89,14 +89,23 @@ if(DOTNET_EXECUTABLE)
     
     add_dependencies(scripting CHEngine_Managed)
 
-    # Deploy Coral.Managed.dll
-    add_custom_command(TARGET scripting POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_BINARY_DIR}/include/coral/cmake/Coral.Managed.dll"
-        "${CMAKE_BINARY_DIR}/bin/Coral.Managed.dll"
-        COMMENT "Deploying Coral.Managed.dll to bin/"
-        VERBATIM
+    # Deploy Coral.Managed files
+    set(CORAL_FILES 
+        "Coral.Managed.dll" 
+        "Coral.Managed.runtimeconfig.json"
+        "Coral.Managed.deps.json"
+        "Coral.Managed.pdb"
     )
+
+    foreach(CORAL_FILE ${CORAL_FILES})
+        add_custom_command(TARGET scripting POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_BINARY_DIR}/include/coral/cmake/${CORAL_FILE}"
+            "${CMAKE_BINARY_DIR}/bin/${CORAL_FILE}"
+            COMMENT "Deploying ${CORAL_FILE} to bin/"
+            VERBATIM
+        )
+    endforeach()
 else()
     message(WARNING "dotnet executable not found! Cannot build CHEngine.Managed C# library.")
 endif()

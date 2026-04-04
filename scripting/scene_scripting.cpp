@@ -49,7 +49,11 @@ namespace CHEngine {
     void SceneScripting::Update(Scene* scene, Timestep deltaTime)
     {
         if (!ScriptEngine::Get().IsInitialized()) {
-            CH_CORE_WARN("SceneScripting::Update - ScriptEngine not initialized");
+            static bool s_WarnedOnce = false;
+            if (!s_WarnedOnce) {
+                CH_CORE_WARN("SceneScripting::Update - ScriptEngine not initialized. Scripts will not be updated.");
+                s_WarnedOnce = true;
+            }
             return;
         }
 

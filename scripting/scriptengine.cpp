@@ -115,6 +115,7 @@ void ScriptEngine::LoadAppAssembly(const std::string& filepath)
             m_CoreAssembly = nullptr;
             return;
         }
+        CH_CORE_INFO("ScriptEngine: Loaded core assembly '{}'.", corePath.string());
 
         // 2. Load the game scripts directly from the project directory
         m_AppAssembly = &m_AppAssemblyContext.LoadAssembly(filepath);
@@ -200,16 +201,24 @@ void ScriptEngine::DiscoverScriptTypes()
 
     if (!scriptBaseType)
     {
-        CH_CORE_ERROR("ScriptEngine: Could not find base class 'CHEngine.Script' in Core assembly!");
+        CH_CORE_ERROR("ScriptEngine: Could not find base class 'CHEngine.Script' in Core assembly! Type discovery aborted.");
         return;
     }
+    CH_CORE_INFO("ScriptEngine: Found base script type '{}'.", (std::string)scriptBaseType.GetFullName());
 
     auto types = m_AppAssembly->GetTypes();
+    CH_CORE_INFO("ScriptEngine: Discovery - searching {} types in assembly '{}'...", types.size(), (std::string)m_AppAssembly->GetName());
+
     for (auto& type : types)
     {
-        // Skip the base class itself; only register concrete subclasses
-        if (!type->IsSubclassOf(scriptBaseType) || *type == scriptBaseType)
+        if (*type == scriptBaseType) continue;
+
+        if (!type->IsSubclassOf(scriptBaseType))
+        {
+            // Optional: log non-script types if we suspect inheritance bugs
+            // CH_CORE_TRACE("ScriptEngine: Skipping type '{}' (not a subclass of Script)", (std::string)type->GetFullName());
             continue;
+        }
 
         std::string fullName = (std::string)type->GetFullName();
         std::string key = fullName;
