@@ -1,7 +1,7 @@
 #ifndef CH_TAG_COMPONENT_H
 #define CH_TAG_COMPONENT_H
 
-#include "engine/core/reflection.h"
+#include <string>
 
 namespace CHEngine
 {
@@ -16,9 +16,13 @@ struct TagComponent
     {
     }
 
-    CH_REFLECT_BEGIN(TagComponent)
-        props.Property("Tag", Tag);
-    CH_REFLECT_END()
+    static const char* GetStaticName() { return "TagComponent"; }
+
+    template <typename Archive>
+    static void Serialize(Archive& archive, TagComponent& component)
+    {
+        archive.Property("Tag", component.Tag);
+    }
 };
 
 } // namespace CHEngine

@@ -1,7 +1,7 @@
 #ifndef CH_ANIMATION_COMPONENT_H
 #define CH_ANIMATION_COMPONENT_H
 
-#include "engine/core/reflection.h"
+#include "engine/core/base.h"
 #include <string>
 #include <vector>
 
@@ -69,12 +69,16 @@ struct AnimationComponent
         Blending = false;
     }
 
-    CH_REFLECT_BEGIN(AnimationComponent)
-        props.File("AnimationPath", AnimationPath, "fbx,gltf,obj");
-        props.Property("Current Animation", CurrentAnimationIndex);
-        props.Property("Is Looping", IsLooping);
-        props.Property("Is Playing", IsPlaying);
-    CH_REFLECT_END()
+    static const char* GetStaticName() { return "AnimationComponent"; }
+
+    template <typename Archive>
+    static void Serialize(Archive& archive, AnimationComponent& component)
+    {
+        archive.Property("AnimationPath", component.AnimationPath)
+            .Property("CurrentAnimationIndex", component.CurrentAnimationIndex)
+            .Property("IsLooping", component.IsLooping)
+            .Property("IsPlaying", component.IsPlaying);
+    }
 };
 
 } // namespace CHEngine

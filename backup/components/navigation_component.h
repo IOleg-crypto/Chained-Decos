@@ -2,7 +2,6 @@
 #define CH_NAVIGATION_COMPONENT_H
 
 #include <entt/entt.hpp>
-#include "engine/core/reflection.h"
 
 namespace CHEngine
 {
@@ -15,10 +14,13 @@ struct NavigationComponent
 
     bool IsDefaultFocus = false;
 
-    CH_REFLECT_BEGIN(NavigationComponent)
-        props.Property("Is Default Focus", IsDefaultFocus);
-        // Navigation targets (entt::entity) are usually handled by Entity picker in UI
-    CH_REFLECT_END()
+    static const char* GetStaticName() { return "NavigationComponent"; }
+
+    template <typename Archive>
+    static void Serialize(Archive& archive, NavigationComponent& component)
+    {
+        archive.Property("IsDefaultFocus", component.IsDefaultFocus);
+    }
 };
 } // namespace CHEngine
 

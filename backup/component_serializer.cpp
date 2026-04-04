@@ -576,25 +576,9 @@ void ComponentSerializer::InternalInit()
 {
     m_Registry.clear();
 
-    // --- Основн    Register<TagComponent>();
+    // --- Основн�    Register<TagComponent>();
     Register<TransformComponent>();
-    
-    // --- ModelComponent with logging ---
-    Register<ModelComponent>("ModelComponent", [](auto& archive, auto& component) {
-        CH_CORE_INFO("Deserializing ModelComponent - Mode: {}", (int)archive.GetMode());
-        
-        CHEngine::Properties props(archive);
-        component.Reflect(props);
-        
-        CH_CORE_INFO("  ModelPath: '{}'", component.ModelPath);
-        CH_CORE_INFO("  Materials count: {}", component.Materials.size());
-        for (size_t i = 0; i < component.Materials.size(); ++i)
-        {
-            CH_CORE_INFO("    Material[{}]: AlbedoPath='{}', NormalPath='{}'", 
-                i, component.Materials[i].Material.AlbedoPath, component.Materials[i].Material.NormalMapPath);
-        }
-    });
-    
+    Register<ModelComponent>();
     Register<LightComponent>();
     Register<ShaderComponent>();
 
@@ -619,40 +603,188 @@ void ComponentSerializer::InternalInit()
     Register<ButtonControl>();
 
     Register<CameraComponent>();
-    Register<PanelControl>();
-    Register<LabelControl>();
-    Register<SliderControl>();
-    Register<CheckboxControl>();
-    Register<ImageControl>();
-    Register<ImageButtonControl>();
-    Register<InputTextControl>();
-    Register<ComboBoxControl>();
-    Register<ProgressBarControl>();
-    Register<SeparatorControl>();
-    Register<RadioButtonControl>();
-    Register<ColorPickerControl>();
-    Register<DragFloatControl>();
-    Register<DragIntControl>();
-    Register<TreeNodeControl>();
-    Register<TabBarControl>();
-    Register<TabItemControl>();
-    Register<CollapsingHeaderControl>();
-    Register<PlotLinesControl>();
-    Register<PlotHistogramControl>();
-    Register<VerticalLayoutGroup>();
+    Register<PanelControl>("PanelControl", [](auto& archive, auto& component) {
+        archive.Handle("TextureHandle", component.TextureHandle)
+            .Path("TexturePath", component.TexturePath)
+            .Property("FullScreen", component.FullScreen)
+            .Property("Style", component.Style);
+    });
+
+    Register<LabelControl>("LabelControl", [](auto& archive, auto& component) {
+        archive.Property("Text", component.Text)
+            .Property("AutoSize", component.AutoSize)
+            .Property("Style", component.Style);
+    });
+
+    Register<SliderControl>("SliderControl", [](auto& archive, auto& component) {
+        archive.Property("Label", component.Label)
+            .Property("Value", component.Value)
+            .Property("Min", component.Min)
+            .Property("Max", component.Max)
+            .Property("Text", component.Text)
+            .Property("Style", component.Style);
+    });
+
+    Register<CheckboxControl>("CheckboxControl", [](auto& archive, auto& component) {
+        archive.Property("Label", component.Label).Property("Checked", component.Checked);
+        archive.Nested("Text", component.Text, SerializeTextStyle, DeserializeTextStyle);
+        archive.Nested("Style", component.Style, SerializeUIStyle, DeserializeUIStyle);
+    });
+
+    Register<ImageControl>("ImageControl", [](auto& archive, auto& component) {
+        archive.Handle("TextureHandle", component.TextureHandle).Path("TexturePath", component.TexturePath);
+        archive.Property("TintColor", component.TintColor).Property("BorderColor", component.BorderColor);
+        archive.Nested("Style", component.Style, SerializeUIStyle, DeserializeUIStyle);
+    });
+
+    Register<ImageButtonControl>("ImageButtonControl", [](auto& archive, auto& component) {
+        archive.Handle("TextureHandle", component.TextureHandle)
+            .Path("TexturePath", component.TexturePath)
+            .Property("Label", component.Label)
+            .Property("TintColor", component.TintColor)
+            .Property("BackgroundColor", component.BackgroundColor)
+            .Property("FramePadding", component.FramePadding);
+        archive.Nested("Style", component.Style, SerializeUIStyle, DeserializeUIStyle);
+    });
+
+    Register<InputTextControl>("InputTextControl", [](auto& archive, auto& component) {
+        archive.Property("Label", component.Label)
+            .Property("Text", component.Text)
+            .Property("Placeholder", component.Placeholder)
+            .Property("MaxLength", component.MaxLength)
+            .Property("Multiline", component.Multiline)
+            .Property("ReadOnly", component.ReadOnly)
+            .Property("Password", component.Password);
+        archive.Nested("TextStyle", component.Style, SerializeTextStyle, DeserializeTextStyle);
+        archive.Nested("BoxStyle", component.BoxStyle, SerializeUIStyle, DeserializeUIStyle);
+    });
+
+    Register<ComboBoxControl>("ComboBoxControl", [](auto& archive, auto& component) {
+        archive.Property("Label", component.Label)
+            .Property("Items", component.Items)
+            .Property("SelectedIndex", component.SelectedIndex);
+        archive.Nested("TextStyle", component.Style, SerializeTextStyle, DeserializeTextStyle);
+        archive.Nested("BoxStyle", component.BoxStyle, SerializeUIStyle, DeserializeUIStyle);
+    });
+
+    Register<ProgressBarControl>("ProgressBarControl", [](auto& archive, auto& component) {
+        archive.Property("Progress", component.Progress)
+            .Property("OverlayText", component.OverlayText)
+            .Property("ShowPercentage", component.ShowPercentage);
+        archive.Nested("TextStyle", component.Style, SerializeTextStyle, DeserializeTextStyle);
+        archive.Nested("BarStyle", component.BarStyle, SerializeUIStyle, DeserializeUIStyle);
+    });
+
+    Register<SeparatorControl>("SeparatorControl", [](auto& archive, auto& component) {
+        archive.Property("Thickness", component.Thickness).Property("LineColor", component.LineColor);
+    });
+
+    Register<RadioButtonControl>("RadioButtonControl", [](auto& archive, auto& component) {
+        archive.Property("Label", component.Label)
+            .Property("Options", component.Options)
+            .Property("SelectedIndex", component.SelectedIndex)
+            .Property("Horizontal", component.Horizontal);
+        archive.Nested("TextStyle", component.Style, SerializeTextStyle, DeserializeTextStyle);
+    });
+
+    Register<ColorPickerControl>("ColorPickerControl", [](auto& archive, auto& component) {
+        archive.Property("Label", component.Label)
+            .Property("SelectedColor", component.SelectedColor)
+            .Property("ShowAlpha", component.ShowAlpha)
+            .Property("ShowPicker", component.ShowPicker);
+        archive.Nested("Style", component.Style, SerializeUIStyle, DeserializeUIStyle);
+    });
+
+    Register<DragFloatControl>("DragFloatControl", [](auto& archive, auto& component) {
+        archive.Property("Label", component.Label)
+            .Property("Value", component.Value)
+            .Property("Speed", component.Speed)
+            .Property("Min", component.Min)
+            .Property("Max", component.Max)
+            .Property("Format", component.Format);
+        archive.Nested("TextStyle", component.Style, SerializeTextStyle, DeserializeTextStyle);
+        archive.Nested("BoxStyle", component.BoxStyle, SerializeUIStyle, DeserializeUIStyle);
+    });
+
+    Register<DragIntControl>("DragIntControl", [](auto& archive, auto& component) {
+        archive.Property("Label", component.Label)
+            .Property("Value", component.Value)
+            .Property("Speed", component.Speed)
+            .Property("Min", component.Min)
+            .Property("Max", component.Max)
+            .Property("Format", component.Format);
+        archive.Nested("TextStyle", component.Style, SerializeTextStyle, DeserializeTextStyle);
+        archive.Nested("BoxStyle", component.BoxStyle, SerializeUIStyle, DeserializeUIStyle);
+    });
+
+    Register<TreeNodeControl>("TreeNodeControl", [](auto& archive, auto& component) {
+        archive.Property("Label", component.Label)
+            .Property("IsOpen", component.IsOpen)
+            .Property("DefaultOpen", component.DefaultOpen)
+            .Property("IsLeaf", component.IsLeaf);
+        archive.Nested("TextStyle", component.Style, SerializeTextStyle, DeserializeTextStyle);
+    });
+
+    Register<TabBarControl>("TabBarControl", [](auto& archive, auto& component) {
+        archive.Property("Label", component.Label)
+            .Property("Reorderable", component.Reorderable)
+            .Property("AutoSelectNewTabs", component.AutoSelectNewTabs);
+        archive.Nested("Style", component.Style, SerializeUIStyle, DeserializeUIStyle);
+    });
+
+    Register<TabItemControl>("TabItemControl", [](auto& archive, auto& component) {
+        archive.Property("Label", component.Label)
+            .Property("IsOpen", component.IsOpen)
+            .Property("Selected", component.Selected);
+        archive.Nested("TextStyle", component.Style, SerializeTextStyle, DeserializeTextStyle);
+    });
+
+    Register<CollapsingHeaderControl>("CollapsingHeaderControl", [](auto& archive, auto& component) {
+        archive.Property("Label", component.Label)
+            .Property("IsOpen", component.IsOpen)
+            .Property("DefaultOpen", component.DefaultOpen);
+        archive.Nested("TextStyle", component.Style, SerializeTextStyle, DeserializeTextStyle);
+    });
+
+    Register<PlotLinesControl>("PlotLinesControl", [](auto& archive, auto& component) {
+        archive.Property("Label", component.Label)
+            .Property("Values", component.Values)
+            .Property("OverlayText", component.OverlayText)
+            .Property("ScaleMin", component.ScaleMin)
+            .Property("ScaleMax", component.ScaleMax)
+            .Property("GraphSize", component.GraphSize);
+        archive.Nested("TextStyle", component.Style, SerializeTextStyle, DeserializeTextStyle);
+        archive.Nested("BoxStyle", component.BoxStyle, SerializeUIStyle, DeserializeUIStyle);
+    });
+
+    Register<PlotHistogramControl>("PlotHistogramControl", [](auto& archive, auto& component) {
+        archive.Property("Label", component.Label)
+            .Property("Values", component.Values)
+            .Property("OverlayText", component.OverlayText)
+            .Property("ScaleMin", component.ScaleMin)
+            .Property("ScaleMax", component.ScaleMax)
+            .Property("GraphSize", component.GraphSize);
+        archive.Nested("TextStyle", component.Style, SerializeTextStyle, DeserializeTextStyle);
+        archive.Nested("BoxStyle", component.BoxStyle, SerializeUIStyle, DeserializeUIStyle);
+    });
+
+    Register<VerticalLayoutGroup>("VerticalLayoutGroup", [](auto& archive, auto& component) {
+        archive.Property("Spacing", component.Spacing).Property("Padding", component.Padding);
+    });
 
     // --- Managed Script Component ---
     Register<ManagedScriptComponent>("ManagedScriptComponent", [](auto& archive, auto& component) {
-        if (archive.GetMode() == SerializationUtils::PropertyArchive::Deserialize && archive.GetNode()["ClassName"])
+        if (archive.GetMode() == SerializationUtils::PropertyArchive::Deserialize)
         {
-            // Backwards compatibility with the single-class structure
-            ManagedScriptInstance inst;
-            inst.ClassName = archive.GetNode()["ClassName"].template as<std::string>();
-            component.Scripts.push_back(inst);
+            if (archive.GetNode()["ClassName"])
+            {
+                // Backwards compatibility with the single-class structure
+                ManagedScriptInstance inst;
+                inst.ClassName = archive.GetNode()["ClassName"].template as<std::string>();
+                component.Scripts.push_back(inst);
+            }
         }
-        
-        CHEngine::Properties props(archive);
-        component.Reflect(props);
+        archive.Sequence("Scripts", component.Scripts);
     });
 }
 

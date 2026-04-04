@@ -2,7 +2,6 @@
 #define CH_LIGHT_COMPONENT_H
 
 #include "engine/core/base.h"
-#include "engine/core/reflection.h"
 
 namespace CHEngine
 {
@@ -26,22 +25,18 @@ struct LightComponent
     LightComponent() = default;
     LightComponent(const LightComponent&) = default;
 
+    static const char* GetStaticName() { return "LightComponent"; }
 
-    CH_REFLECT_BEGIN(LightComponent)
-        static const char* lightTypeStrings[] = { "Point", "Spot", "Directional" };
-        props.Enum("Type", Type, lightTypeStrings, 3);
-        props.Property("Color", LightColor);
-        props.Property("Intensity", Intensity);
-        props.Property("Radius", Radius);
-        
-        if (Type == LightType::Spot)
-        {
-            props.Property("Inner Cutoff", InnerCutoff);
-            props.Property("Outer Cutoff", OuterCutoff);
-        }
-
-        props.Property("Shadows", Shadows);
-    CH_REFLECT_END()
+    template <typename Archive>
+    static void Serialize(Archive& archive, LightComponent& component)
+    {
+        archive.Property("Type", (int&)component.Type)
+            .Property("LightColor", component.LightColor)
+            .Property("Intensity", component.Intensity)
+            .Property("Radius", component.Radius)
+            .Property("InnerCutoff", component.InnerCutoff)
+            .Property("OuterCutoff", component.OuterCutoff);
+    }
 };
 } // namespace CHEngine
 

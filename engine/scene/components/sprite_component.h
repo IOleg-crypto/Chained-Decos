@@ -1,11 +1,7 @@
 #ifndef CH_SPRITE_COMPONENT_H
 #define CH_SPRITE_COMPONENT_H
 
-#include "engine/core/base.h"
-#include "engine/core/assets/asset.h"
-#include "engine/graphics/assets/texture_asset.h"
-#include <memory>
-#include <string>
+#include "engine/core/reflection.h"
 
 namespace CHEngine
 {
@@ -22,18 +18,14 @@ struct SpriteComponent
     SpriteComponent() = default;
     SpriteComponent(const SpriteComponent&) = default;
 
-    static const char* GetStaticName() { return "SpriteComponent"; }
-
-    template <typename Archive>
-    static void Serialize(Archive& archive, SpriteComponent& component)
-    {
-        archive.Handle("TextureHandle", component.TextureHandle)
-            .Path("TexturePath", component.TexturePath)
-            .Property("Tint", component.Tint)
-            .Property("FlipX", component.FlipX)
-            .Property("FlipY", component.FlipY)
-            .Property("ZOrder", component.ZOrder);
-    }
+    CH_REFLECT_BEGIN(SpriteComponent)
+        props.Handle("Texture Handle", TextureHandle);
+        props.File("Texture Path", TexturePath, "png,jpg,bmp,tga");
+        props.Property("Tint", Tint);
+        props.Property("Flip X", FlipX);
+        props.Property("Flip Y", FlipY);
+        props.Property("Z Order", ZOrder);
+    CH_REFLECT_END()
 };
 } // namespace CHEngine
 

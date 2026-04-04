@@ -1,7 +1,7 @@
 #ifndef CH_PRIMITIVE_COMPONENT_H
 #define CH_PRIMITIVE_COMPONENT_H
 
-#include "engine/core/base.h"
+#include "engine/core/reflection.h"
 #include <memory>
 
 namespace CHEngine
@@ -46,25 +46,41 @@ struct PrimitiveComponent
     {
     }
 
-    static const char* GetStaticName() { return "PrimitiveComponent"; }
-
-    template <typename Archive>
-    static void Serialize(Archive& archive, PrimitiveComponent& component)
-    {
-        archive.Property("Type", (int&)component.Type)
-            .Property("Radius", component.Radius)
-            .Property("InnerRadius", component.InnerRadius)
-            .Property("Height", component.Height)
-            .Property("Slices", component.Slices)
-            .Property("Stacks", component.Stacks)
-            .Property("Dimensions", component.Dimensions);
-
-        if (archive.GetMode() == Archive::Deserialize)
+    CH_REFLECT_BEGIN(PrimitiveComponent)
+        const char* primitiveTypes[] = {"None", "Cube",  "Sphere", "Plane",     "Cylinder",
+                                        "Cone", "Torus", "Knot",   "Hemisphere"};
+        
+        if (props.Enum("Shape", Type, primitiveTypes, (int)CH_ARRAY_SIZE(primitiveTypes)))
         {
-            component.Dirty = true;
-            component.Asset = nullptr;
+            Dirty = true;
+            Asset = nullptr;
         }
-    }
+
+        if (Type == PrimitiveType::None) return;
+
+        if (Type == PrimitiveType::Cube || Type == PrimitiveType::Plane)
+        {
+            props.Property("Dimensions", Dimensions);
+        }
+        else
+        {
+            props.Property("Radius", Radius);
+            if (Type == PrimitiveType::Torus)
+                props.Property("Inner Radius", InnerRadius);
+            
+            if (Type == PrimitiveType::Cylinder || Type == PrimitiveType::Cone)
+                props.Property("Height", Height);
+
+            props.Property("Slices", Slices);
+            props.Property("Stacks", Stacks);
+        }
+
+        if (props.GetMode() == ReflectionMode::Deserialize)
+        {
+            Dirty = true;
+            Asset = nullptr;
+        }
+    CH_REFLECT_END()
 };
 
 } // namespace CHEngine
