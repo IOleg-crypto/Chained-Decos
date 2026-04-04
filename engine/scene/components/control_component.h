@@ -1,12 +1,10 @@
 #ifndef CH_CONTROL_COMPONENT_H
 #define CH_CONTROL_COMPONENT_H
 
-#include "engine/core/assets/asset.h"
-#include "engine/core/base.h"
+#include "engine/core/reflection.h"
+#include "engine/graphics/api/texture.h"
+#include "engine/graphics/assets/texture_asset.h"
 #include <memory>
-#include <string>
-#include <vector>
-#include <glm/glm.hpp>
 
 namespace CHEngine
 {
@@ -39,29 +37,27 @@ struct TextStyle
     bool Shadow = false;
     float ShadowOffset = 2.0f;
     Color ShadowColor = { 0, 0, 0, 255 };
-    float LetterSpacing = 1.0f;
+    float LetterSpacing = { 1.0f };
     float LineHeight = 1.2f;
     TextAlignment HorizontalAlignment = TextAlignment::Center;
     TextAlignment VerticalAlignment = TextAlignment::Center;
 
-    template <typename Archive>
-    static void Serialize(Archive& archive, TextStyle& style)
-    {
-        archive.Property("FontName", style.FontName)
-            .Property("FontSize", style.FontSize)
-            .Property("TextColor", style.TextColor)
-            .Property("Shadow", style.Shadow)
-            .Property("LetterSpacing", style.LetterSpacing)
-            .Property("LineHeight", style.LineHeight)
-            .Property("HorizontalAlignment", (int&)style.HorizontalAlignment)
-            .Property("VerticalAlignment", (int&)style.VerticalAlignment);
-
-        if (style.Shadow)
+    CH_REFLECT_BEGIN(TextStyle)
+        props.Property("Font Name", FontName);
+        props.Property("Font Size", FontSize);
+        props.Property("Text Color", TextColor);
+        props.Property("Shadow", Shadow);
+        if (Shadow)
         {
-            archive.Property("ShadowOffset", style.ShadowOffset)
-                .Property("ShadowColor", style.ShadowColor);
+            props.Property("Shadow Offset", ShadowOffset);
+            props.Property("Shadow Color", ShadowColor);
         }
-    }
+        props.Property("Letter Spacing", LetterSpacing);
+        props.Property("Line Height", LineHeight);
+        // Alignments as ints for now
+        props.Property("H Align", (int&)HorizontalAlignment);
+        props.Property("V Align", (int&)VerticalAlignment);
+    CH_REFLECT_END()
 };
 
 struct UIStyle
@@ -83,26 +79,21 @@ struct UIStyle
     float PressedScale = 1.0f;
     float TransitionSpeed = 0.1f;
 
-    template <typename Archive>
-    static void Serialize(Archive& archive, UIStyle& style)
-    {
-        archive.Property("BackgroundColor", style.BackgroundColor)
-            .Property("HoverColor", style.HoverColor)
-            .Property("PressedColor", style.PressedColor)
-            .Property("Rounding", style.Rounding)
-            .Property("BorderSize", style.BorderSize)
-            .Property("BorderColor", style.BorderColor)
-            .Property("UseGradient", style.UseGradient)
-            .Property("Padding", style.Padding)
-            .Property("HoverScale", style.HoverScale)
-            .Property("PressedScale", style.PressedScale)
-            .Property("TransitionSpeed", style.TransitionSpeed);
-
-        if (style.UseGradient)
-        {
-            archive.Property("GradientColor", style.GradientColor);
-        }
-    }
+    CH_REFLECT_BEGIN(UIStyle)
+        props.Property("BG Color", BackgroundColor);
+        props.Property("Hover Color", HoverColor);
+        props.Property("Pressed Color", PressedColor);
+        props.Property("Rounding", Rounding);
+        props.Property("Border Size", BorderSize);
+        props.Property("Border Color", BorderColor);
+        props.Property("Gradient", UseGradient);
+        if (UseGradient)
+            props.Property("Gradient Color", GradientColor);
+        props.Property("Padding", Padding);
+        props.Property("Hover Scale", HoverScale);
+        props.Property("Pressed Scale", PressedScale);
+        props.Property("Transition Speed", TransitionSpeed);
+    CH_REFLECT_END()
 
     // Runtime state (not serialized)
     struct RuntimeState {
@@ -153,17 +144,15 @@ struct RectTransform
         return {rect.width, rect.height};
     }
 
-    template <typename Archive>
-    static void Serialize(Archive& archive, RectTransform& transform)
-    {
-        archive.Property("AnchorMin", transform.AnchorMin)
-            .Property("AnchorMax", transform.AnchorMax)
-            .Property("OffsetMin", transform.OffsetMin)
-            .Property("OffsetMax", transform.OffsetMax)
-            .Property("Pivot", transform.Pivot)
-            .Property("Rotation", transform.Rotation)
-            .Property("Scale", transform.Scale);
-    }
+    CH_REFLECT_BEGIN(RectTransform)
+        props.Property("Anchor Min", AnchorMin);
+        props.Property("Anchor Max", AnchorMax);
+        props.Property("Offset Min", OffsetMin);
+        props.Property("Offset Max", OffsetMax);
+        props.Property("Pivot", Pivot);
+        props.Property("Rotation", Rotation);
+        props.Property("Scale", Scale);
+    CH_REFLECT_END()
 };
 
 struct ControlComponent
@@ -175,16 +164,12 @@ struct ControlComponent
 
     ControlComponent() = default;
 
-    static const char* GetStaticName() { return "ControlComponent"; }
-
-    template <typename Archive>
-    static void Serialize(Archive& archive, ControlComponent& component)
-    {
-        archive.Property("Transform", component.Transform)
-            .Property("ZOrder", component.ZOrder)
-            .Property("IsActive", component.IsActive)
-            .Property("HiddenInHierarchy", component.HiddenInHierarchy);
-    }
+    CH_REFLECT_BEGIN(ControlComponent)
+        props.Property("Transform", Transform);
+        props.Property("Z Order", ZOrder);
+        props.Property("Active", IsActive);
+        props.Property("Hidden", HiddenInHierarchy);
+    CH_REFLECT_END()
 };
 
 struct ButtonControl
@@ -201,17 +186,13 @@ struct ButtonControl
     ButtonControl() = default;
     ButtonControl(const std::string& label) : Label(label) {}
 
-    static const char* GetStaticName() { return "ButtonControl"; }
-
-    template <typename Archive>
-    static void Serialize(Archive& archive, ButtonControl& component)
-    {
-        archive.Property("Label", component.Label)
-            .Property("TextStyle", component.Text)
-            .Property("UIStyle", component.Style)
-            .Property("IsInteractable", component.IsInteractable)
-            .Property("AutoSize", component.AutoSize);
-    }
+    CH_REFLECT_BEGIN(ButtonControl)
+        props.Property("Label", Label);
+        props.Nested("Text Style", Text);
+        props.Nested("UI Style", Style);
+        props.Property("Interactable", IsInteractable);
+        props.Property("Auto Size", AutoSize);
+    CH_REFLECT_END()
 };
 
 struct PanelControl
@@ -224,6 +205,13 @@ struct PanelControl
 
     bool IsHovered = false;
     bool IsDown = false;
+
+    CH_REFLECT_BEGIN(PanelControl)
+        props.Nested("UI Style", Style);
+        props.Handle("Texture Handle", TextureHandle);
+        props.File("Texture Path", TexturePath, "png,jpg,tga");
+        props.Property("Full Screen", FullScreen);
+    CH_REFLECT_END()
 };
 
 struct LabelControl
@@ -234,6 +222,12 @@ struct LabelControl
 
     LabelControl() = default;
     LabelControl(const std::string& text) : Text(text) {}
+
+    CH_REFLECT_BEGIN(LabelControl)
+        props.Property("Text", Text);
+        props.Nested("Style", Style);
+        props.Property("Auto Size", AutoSize);
+    CH_REFLECT_END()
 };
 
 struct SliderControl
@@ -245,6 +239,15 @@ struct SliderControl
     float Max = 1.0f;
     bool Changed = false;
     UIStyle Style;
+
+    CH_REFLECT_BEGIN(SliderControl)
+        props.Property("Label", Label);
+        props.Nested("Text Style", Text);
+        props.Property("Value", Value);
+        props.Property("Min", Min);
+        props.Property("Max", Max);
+        props.Nested("UI Style", Style);
+    CH_REFLECT_END()
 };
 
 struct CheckboxControl
@@ -254,6 +257,13 @@ struct CheckboxControl
     bool Checked = false;
     bool Changed = false;
     UIStyle Style;
+
+    CH_REFLECT_BEGIN(CheckboxControl)
+        props.Property("Label", Label);
+        props.Nested("Text Style", Text);
+        props.Property("Checked", Checked);
+        props.Nested("UI Style", Style);
+    CH_REFLECT_END()
 };
 
 struct InputTextControl
@@ -269,6 +279,18 @@ struct InputTextControl
     std::vector<char> InputBuffer;
     TextStyle Style;
     UIStyle BoxStyle;
+
+    CH_REFLECT_BEGIN(InputTextControl)
+        props.Property("Label", Label);
+        props.Property("Text", Text);
+        props.Property("Placeholder", Placeholder);
+        props.Property("MaxLength", MaxLength);
+        props.Property("Multiline", Multiline);
+        props.Property("ReadOnly", ReadOnly);
+        props.Property("Password", Password);
+        props.Nested("Text Style", Style);
+        props.Nested("Box Style", BoxStyle);
+    CH_REFLECT_END()
 };
 
 struct ComboBoxControl
@@ -279,6 +301,14 @@ struct ComboBoxControl
     bool Changed = false;
     TextStyle Style;
     UIStyle BoxStyle;
+
+    CH_REFLECT_BEGIN(ComboBoxControl)
+        props.Property("Label", Label);
+        props.Sequence("Items", Items);
+        props.Property("Selected Index", SelectedIndex);
+        props.Nested("Style", Style);
+        props.Nested("Box Style", BoxStyle);
+    CH_REFLECT_END()
 };
 
 struct ProgressBarControl
@@ -288,6 +318,14 @@ struct ProgressBarControl
     bool ShowPercentage = true;
     TextStyle Style;
     UIStyle BarStyle;
+
+    CH_REFLECT_BEGIN(ProgressBarControl)
+        props.Property("Progress", Progress);
+        props.Property("Overlay Text", OverlayText);
+        props.Property("Show Percentage", ShowPercentage);
+        props.Nested("Style", Style);
+        props.Nested("Bar Style", BarStyle);
+    CH_REFLECT_END()
 };
 
 struct ImageControl
@@ -301,14 +339,13 @@ struct ImageControl
     bool IsHovered = false;
     bool IsDown = false;
 
-    template <typename Archive>
-    static void Serialize(Archive& archive, ImageControl& component)
-    {
-        archive.Property("TexturePath", component.TexturePath)
-            .Property("TintColor", component.TintColor)
-            .Property("BorderColor", component.BorderColor)
-            .Property("Style", component.Style);
-    }
+    CH_REFLECT_BEGIN(ImageControl)
+        props.Handle("Texture Handle", TextureHandle);
+        props.File("Texture Path", TexturePath, "png,jpg,tga");
+        props.Property("Tint Color", TintColor);
+        props.Property("Border Color", BorderColor);
+        props.Nested("Style", Style);
+    CH_REFLECT_END()
 };
 
 struct ImageButtonControl
@@ -321,12 +358,27 @@ struct ImageButtonControl
     int FramePadding = -1;
     bool PressedThisFrame = false;
     UIStyle Style;
+
+    CH_REFLECT_BEGIN(ImageButtonControl)
+        props.Handle("Texture Handle", TextureHandle);
+        props.File("Texture Path", TexturePath, "png,jpg,tga");
+        props.Property("Label", Label);
+        props.Property("Tint Color", TintColor);
+        props.Property("Background Color", BackgroundColor);
+        props.Property("Frame Padding", FramePadding);
+        props.Nested("Style", Style);
+    CH_REFLECT_END()
 };
 
 struct SeparatorControl
 {
     float Thickness = 1.0f;
     Color LineColor = {127, 127, 127, 255};
+
+    CH_REFLECT_BEGIN(SeparatorControl)
+        props.Property("Thickness", Thickness);
+        props.Property("Line Color", LineColor);
+    CH_REFLECT_END()
 };
 
 struct RadioButtonControl
@@ -337,6 +389,14 @@ struct RadioButtonControl
     bool Changed = false;
     bool Horizontal = false;
     TextStyle Style;
+
+    CH_REFLECT_BEGIN(RadioButtonControl)
+        props.Property("Label", Label);
+        props.Sequence("Options", Options);
+        props.Property("Selected Index", SelectedIndex);
+        props.Property("Horizontal", Horizontal);
+        props.Nested("Style", Style);
+    CH_REFLECT_END()
 };
 
 struct ColorPickerControl
@@ -347,6 +407,14 @@ struct ColorPickerControl
     bool ShowPicker = true;
     bool Changed = false;
     UIStyle Style;
+
+    CH_REFLECT_BEGIN(ColorPickerControl)
+        props.Property("Label", Label);
+        props.Property("Color", SelectedColor);
+        props.Property("Show Alpha", ShowAlpha);
+        props.Property("Show Picker", ShowPicker);
+        props.Nested("Style", Style);
+    CH_REFLECT_END()
 };
 
 struct DragFloatControl
@@ -360,6 +428,16 @@ struct DragFloatControl
     bool Changed = false;
     TextStyle Style;
     UIStyle BoxStyle;
+
+    CH_REFLECT_BEGIN(DragFloatControl)
+        props.Property("Label", Label);
+        props.Property("Value", Value);
+        props.Property("Speed", Speed);
+        props.Property("Min", Min);
+        props.Property("Max", Max);
+        props.Nested("Style", Style);
+        props.Nested("Box Style", BoxStyle);
+    CH_REFLECT_END()
 };
 
 struct DragIntControl
@@ -373,6 +451,16 @@ struct DragIntControl
     bool Changed = false;
     TextStyle Style;
     UIStyle BoxStyle;
+
+    CH_REFLECT_BEGIN(DragIntControl)
+        props.Property("Label", Label);
+        props.Property("Value", Value);
+        props.Property("Speed", Speed);
+        props.Property("Min", Min);
+        props.Property("Max", Max);
+        props.Nested("Style", Style);
+        props.Nested("Box Style", BoxStyle);
+    CH_REFLECT_END()
 };
 
 struct TreeNodeControl
@@ -382,6 +470,14 @@ struct TreeNodeControl
     bool DefaultOpen = false;
     bool IsLeaf = false;
     TextStyle Style;
+
+    CH_REFLECT_BEGIN(TreeNodeControl)
+        props.Property("Label", Label);
+        props.Property("Is Open", IsOpen);
+        props.Property("Default Open", DefaultOpen);
+        props.Property("Is Leaf", IsLeaf);
+        props.Nested("Style", Style);
+    CH_REFLECT_END()
 };
 
 struct TabBarControl
@@ -390,6 +486,13 @@ struct TabBarControl
     bool Reorderable = true;
     bool AutoSelectNewTabs = true;
     UIStyle Style;
+
+    CH_REFLECT_BEGIN(TabBarControl)
+        props.Property("Label", Label);
+        props.Property("Reorderable", Reorderable);
+        props.Property("Auto Select New Tabs", AutoSelectNewTabs);
+        props.Nested("Style", Style);
+    CH_REFLECT_END()
 };
 
 struct TabItemControl
@@ -398,6 +501,13 @@ struct TabItemControl
     bool IsOpen = true;
     bool Selected = false;
     TextStyle Style;
+
+    CH_REFLECT_BEGIN(TabItemControl)
+        props.Property("Label", Label);
+        props.Property("Is Open", IsOpen);
+        props.Property("Selected", Selected);
+        props.Nested("Style", Style);
+    CH_REFLECT_END()
 };
 
 struct CollapsingHeaderControl
@@ -406,6 +516,13 @@ struct CollapsingHeaderControl
     bool IsOpen = false;
     bool DefaultOpen = false;
     TextStyle Style;
+
+    CH_REFLECT_BEGIN(CollapsingHeaderControl)
+        props.Property("Label", Label);
+        props.Property("Is Open", IsOpen);
+        props.Property("Default Open", DefaultOpen);
+        props.Nested("Style", Style);
+    CH_REFLECT_END()
 };
 
 struct PlotLinesControl
@@ -418,6 +535,17 @@ struct PlotLinesControl
     glm::vec2 GraphSize = {0, 80};
     TextStyle Style;
     UIStyle BoxStyle;
+
+    CH_REFLECT_BEGIN(PlotLinesControl)
+        props.Property("Label", Label);
+        props.Property("Values", Values);
+        props.Property("Overlay Text", OverlayText);
+        props.Property("Scale Min", ScaleMin);
+        props.Property("Scale Max", ScaleMax);
+        props.Property("Graph Size", GraphSize);
+        props.Nested("Style", Style);
+        props.Nested("Box Style", BoxStyle);
+    CH_REFLECT_END()
 };
 
 struct PlotHistogramControl
@@ -430,12 +558,28 @@ struct PlotHistogramControl
     glm::vec2 GraphSize = {0, 80};
     TextStyle Style;
     UIStyle BoxStyle;
+
+    CH_REFLECT_BEGIN(PlotHistogramControl)
+        props.Property("Label", Label);
+        props.Property("Values", Values);
+        props.Property("Overlay Text", OverlayText);
+        props.Property("Scale Min", ScaleMin);
+        props.Property("Scale Max", ScaleMax);
+        props.Property("Graph Size", GraphSize);
+        props.Nested("Style", Style);
+        props.Nested("Box Style", BoxStyle);
+    CH_REFLECT_END()
 };
 
 struct VerticalLayoutGroup
 {
     float Spacing = 10.0f;
     glm::vec2 Padding = {10, 10};
+
+    CH_REFLECT_BEGIN(VerticalLayoutGroup)
+        props.Property("Spacing", Spacing);
+        props.Property("Padding", Padding);
+    CH_REFLECT_END()
 };
 
 } // namespace CHEngine

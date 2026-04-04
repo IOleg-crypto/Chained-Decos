@@ -2,7 +2,6 @@
 #define CH_CAMERA_COMPONENT_H
 
 #include "engine/scene/scene_camera.h"
-#include "engine/core/reflection.h"
 #include <string>
 
 namespace CHEngine
@@ -10,10 +9,10 @@ namespace CHEngine
 struct CameraComponent
 {
     CHEngine::SceneCamera Camera;
-    bool Primary = true;
+    bool Primary = true; // If true, this is the main game camera
     bool FixedAspectRatio = false;
 
-    // Orbit camera settings
+    // Orbit camera settings (maintained for the controller script)
     bool IsOrbitCamera = false;
     std::string TargetEntityTag = "Player";
     float OrbitDistance = 10.0f;
@@ -23,17 +22,6 @@ struct CameraComponent
 
     CameraComponent() = default;
     CameraComponent(const CameraComponent&) = default;
-
-    CH_REFLECT_BEGIN(CameraComponent)
-        props.Property("Primary", Primary);
-        props.Property("FixedAspectRatio", FixedAspectRatio);
-        props.Property("IsOrbitCamera", IsOrbitCamera);
-        props.Property("TargetEntityTag", TargetEntityTag);
-        props.Property("OrbitDistance", OrbitDistance);
-        props.Property("OrbitYaw", OrbitYaw);
-        props.Property("OrbitPitch", OrbitPitch);
-        props.Property("LookSensitivity", LookSensitivity);
-    CH_REFLECT_END()
 };
 
 } // namespace CHEngine

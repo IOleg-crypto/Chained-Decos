@@ -1,11 +1,7 @@
 #ifndef CH_GAME_COMPONENTS_H
 #define CH_GAME_COMPONENTS_H
 
-#include "engine/core/base.h"
-#include "engine/core/assets/asset.h"
-#include "engine/scene/components/control_component.h"
-#include <string>
-#include <memory>
+#include "engine/core/reflection.h"
 
 namespace CHEngine
 {
@@ -23,16 +19,13 @@ struct SpawnComponent
     SpawnComponent() = default;
     SpawnComponent(const SpawnComponent&) = default;
 
-    static const char* GetStaticName() { return "SpawnComponent"; }
-
-    template <typename Archive>
-    static void Serialize(Archive& archive, SpawnComponent& component)
-    {
-        archive.Property("SpawnZoneSize", component.ZoneSize)
-            .Handle("SpawnTextureHandle", component.TextureHandle)
-            .Path("SpawnTexturePath", component.TexturePath)
-            .Property("RenderSpawnZoneInScene", component.RenderSpawnZoneInScene);
-    }
+    CH_REFLECT_BEGIN(SpawnComponent)
+        props.Property("Active", IsActive);
+        props.Property("Zone Size", ZoneSize);
+        props.Handle("Texture Handle", TextureHandle);
+        props.File("Texture Path", TexturePath, "png,jpg,bmp,tga");
+        props.Property("Render Zone", RenderSpawnZoneInScene);
+    CH_REFLECT_END()
 };
 
 struct PlayerComponent
@@ -43,15 +36,11 @@ struct PlayerComponent
 
     PlayerComponent() = default;
 
-    static const char* GetStaticName() { return "PlayerComponent"; }
-
-    template <typename Archive>
-    static void Serialize(Archive& archive, PlayerComponent& component)
-    {
-        archive.Property("MovementSpeed", component.MovementSpeed)
-            .Property("LookSensitivity", component.LookSensitivity)
-            .Property("JumpForce", component.JumpForce);
-    }
+    CH_REFLECT_BEGIN(PlayerComponent)
+        props.Property("Movement Speed", MovementSpeed);
+        props.Property("Jump Force", JumpForce);
+        props.Property("Look Sensitivity", LookSensitivity);
+    CH_REFLECT_END()
 };
 
 struct SceneTransitionComponent
@@ -65,14 +54,10 @@ struct SceneTransitionComponent
     {
     }
 
-    static const char* GetStaticName() { return "SceneTransitionComponent"; }
-
-    template <typename Archive>
-    static void Serialize(Archive& archive, SceneTransitionComponent& component)
-    {
-        archive.Property("TargetScenePath", component.TargetScenePath)
-            .Property("Triggered", component.Triggered);
-    }
+    CH_REFLECT_BEGIN(SceneTransitionComponent)
+        props.File("Target Scene", TargetScenePath, "chscene");
+        props.Property("Triggered", Triggered);
+    CH_REFLECT_END()
 };
 
 } // namespace CHEngine

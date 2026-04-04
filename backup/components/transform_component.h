@@ -5,7 +5,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
-#include "engine/core/reflection.h"
 
 namespace CHEngine
 {
@@ -79,18 +78,18 @@ struct TransformComponent
     glm::quat PrevRotationQuat = {1.0f, 0.0f, 0.0f, 0.0f};
     glm::vec3 PrevScale = {1, 1, 1};
 
-    
-    CH_REFLECT_BEGIN(TransformComponent)
-        props.Property("Translation", Translation);
-        props.Property("Rotation", Rotation);
-        props.Property("Scale", Scale);
+    static const char* GetStaticName() { return "TransformComponent"; }
 
-        // Sync rotation quat after change
-        if (props.HasChanged() || props.GetMode() == ReflectionMode::Deserialize)
-        {
-             SetRotation(Rotation);
-        }
-    CH_REFLECT_END()
+    template <typename Archive>
+    static void Serialize(Archive& archive, TransformComponent& component)
+    {
+        archive.Property("Translation", component.Translation)
+            .Property("Rotation", component.Rotation)
+            .Property("Scale", component.Scale);
+
+        // Always sync rotation quat in case we just deserialized
+        component.SetRotation(component.Rotation);
+    }
 };
 
 } // namespace CHEngine

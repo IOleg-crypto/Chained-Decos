@@ -1,8 +1,11 @@
 #ifndef CH_MESH_COMPONENT_H
 #define CH_MESH_COMPONENT_H
 
-#include "engine/core/reflection.h"
+#include "engine/core/assets/asset.h"
+#include "engine/core/base.h"
 #include "engine/graphics/pipeline/material.h"
+#include <string>
+#include <vector>
 
 namespace CHEngine
 {
@@ -28,13 +31,13 @@ struct MaterialSlot
     {
     }
 
-    CH_REFLECT_BEGIN(MaterialSlot)
-        props.Property("Name", Name);
-        props.Property("Index", Index);
-        static const char* targetStrings[] = { "Material Index", "Mesh Index" };
-        props.Enum("Target", Target, targetStrings, 2);
-        Material.Reflect(props);
-    CH_REFLECT_END()
+    template <typename Archive> static void Serialize(Archive& archive, MaterialSlot& slot)
+    {
+        archive.Property("Name", slot.Name).Property("Index", slot.Index).Property("Target", (int&)slot.Target);
+
+        // MaterialInstance serialization is handled by archive normally
+        archive.Property("Material", slot.Material);
+    }
 };
 
 struct ModelComponent
@@ -55,25 +58,29 @@ struct ModelComponent
     {
     }
 
-    CH_REFLECT_BEGIN(ModelComponent)
-        props.Handle("ModelHandle", ModelHandle);
-        props.File("ModelPath", ModelPath, "obj,gltf,glb,iqm,m3d");
-        if (props.GetMode() != CHEngine::ReflectionMode::UI)
-            props.Sequence("Materials", Materials);
-    CH_REFLECT_END()
+    static const char* GetStaticName()
+    {
+        return "ModelComponent";
+    }
+
+    template <typename Archive> static void Serialize(Archive& archive, ModelComponent& component)
+    {
+        archive.Handle("ModelHandle", component.ModelHandle)
+            .Path("ModelPath", component.ModelPath)
+            .Property("Materials", component.Materials);
+    }
+
+    //     if (archive.GetMode() == SerializationUtils::PropertyArchive::Deserialize)
+    //         component.MaterialsInitialized = true;
+    // }
 };
 
 struct MaterialComponent
 {
-    std::vector<MaterialSlot> Materials;
-    bool MaterialsInitialized = false;
+    std::vector<MaterialSlot> Slots;
 
     MaterialComponent() = default;
     MaterialComponent(const MaterialComponent&) = default;
-
-    CH_REFLECT_BEGIN(MaterialComponent)
-        props.Sequence("Materials", Materials);
-    CH_REFLECT_END()
 };
 
 } // namespace CHEngine

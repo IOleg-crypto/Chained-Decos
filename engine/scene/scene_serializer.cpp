@@ -362,6 +362,58 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
                     if (!modelComp.ModelPath.empty() && std::filesystem::path(modelComp.ModelPath).is_relative())
                     {
                         modelComp.ModelPath = Project::GetAbsolutePath(modelComp.ModelPath).generic_string();
+                        CH_CORE_INFO("Scene: Converted ModelPath to absolute: {}", modelComp.ModelPath);
+                    }
+                    
+                    // Convert all texture paths in materials
+                    for (auto& slot : modelComp.Materials)
+                    {
+                        auto& mat = slot.Material;
+                        
+                        if (!mat.AlbedoPath.empty() && std::filesystem::path(mat.AlbedoPath).is_relative())
+                        {
+                            mat.AlbedoPath = Project::GetAbsolutePath(mat.AlbedoPath).generic_string();
+                        }
+                        if (!mat.NormalMapPath.empty() && std::filesystem::path(mat.NormalMapPath).is_relative())
+                        {
+                            mat.NormalMapPath = Project::GetAbsolutePath(mat.NormalMapPath).generic_string();
+                        }
+                        if (!mat.MetallicRoughnessPath.empty() && std::filesystem::path(mat.MetallicRoughnessPath).is_relative())
+                        {
+                            mat.MetallicRoughnessPath = Project::GetAbsolutePath(mat.MetallicRoughnessPath).generic_string();
+                        }
+                        if (!mat.OcclusionMapPath.empty() && std::filesystem::path(mat.OcclusionMapPath).is_relative())
+                        {
+                            mat.OcclusionMapPath = Project::GetAbsolutePath(mat.OcclusionMapPath).generic_string();
+                        }
+                        if (!mat.EmissivePath.empty() && std::filesystem::path(mat.EmissivePath).is_relative())
+                        {
+                            mat.EmissivePath = Project::GetAbsolutePath(mat.EmissivePath).generic_string();
+                        }
+                        if (!mat.ShaderPath.empty() && std::filesystem::path(mat.ShaderPath).is_relative())
+                        {
+                            mat.ShaderPath = Project::GetAbsolutePath(mat.ShaderPath).generic_string();
+                        }
+                    }
+                }
+                if (deserializedEntity.HasComponent<MaterialComponent>())
+                {
+                    auto& matComp = deserializedEntity.GetComponent<MaterialComponent>();
+                    for (auto& slot : matComp.Materials)
+                    {
+                        auto& mat = slot.Material;
+                        if (!mat.AlbedoPath.empty() && std::filesystem::path(mat.AlbedoPath).is_relative())
+                            mat.AlbedoPath = Project::GetAbsolutePath(mat.AlbedoPath).generic_string();
+                        if (!mat.NormalMapPath.empty() && std::filesystem::path(mat.NormalMapPath).is_relative())
+                            mat.NormalMapPath = Project::GetAbsolutePath(mat.NormalMapPath).generic_string();
+                        if (!mat.MetallicRoughnessPath.empty() && std::filesystem::path(mat.MetallicRoughnessPath).is_relative())
+                            mat.MetallicRoughnessPath = Project::GetAbsolutePath(mat.MetallicRoughnessPath).generic_string();
+                        if (!mat.OcclusionMapPath.empty() && std::filesystem::path(mat.OcclusionMapPath).is_relative())
+                            mat.OcclusionMapPath = Project::GetAbsolutePath(mat.OcclusionMapPath).generic_string();
+                        if (!mat.EmissivePath.empty() && std::filesystem::path(mat.EmissivePath).is_relative())
+                            mat.EmissivePath = Project::GetAbsolutePath(mat.EmissivePath).generic_string();
+                        if (!mat.ShaderPath.empty() && std::filesystem::path(mat.ShaderPath).is_relative())
+                            mat.ShaderPath = Project::GetAbsolutePath(mat.ShaderPath).generic_string();
                     }
                 }
                 
@@ -382,6 +434,36 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
                     if (!shaderComp.ShaderPath.empty() && std::filesystem::path(shaderComp.ShaderPath).is_relative())
                     {
                         shaderComp.ShaderPath = Project::GetAbsolutePath(shaderComp.ShaderPath).generic_string();
+                    }
+                }
+                
+                // Convert animation paths
+                if (deserializedEntity.HasComponent<AnimationComponent>())
+                {
+                    auto& animComp = deserializedEntity.GetComponent<AnimationComponent>();
+                    if (!animComp.AnimationPath.empty() && std::filesystem::path(animComp.AnimationPath).is_relative())
+                    {
+                        animComp.AnimationPath = Project::GetAbsolutePath(animComp.AnimationPath).generic_string();
+                    }
+                }
+                
+                // Convert audio paths
+                if (deserializedEntity.HasComponent<AudioComponent>())
+                {
+                    auto& audioComp = deserializedEntity.GetComponent<AudioComponent>();
+                    if (!audioComp.SoundPath.empty() && std::filesystem::path(audioComp.SoundPath).is_relative())
+                    {
+                        audioComp.SoundPath = Project::GetAbsolutePath(audioComp.SoundPath).generic_string();
+                    }
+                }
+                
+                // Convert collider model paths
+                if (deserializedEntity.HasComponent<ColliderComponent>())
+                {
+                    auto& colliderComp = deserializedEntity.GetComponent<ColliderComponent>();
+                    if (!colliderComp.ModelPath.empty() && std::filesystem::path(colliderComp.ModelPath).is_relative())
+                    {
+                        colliderComp.ModelPath = Project::GetAbsolutePath(colliderComp.ModelPath).generic_string();
                     }
                 }
             }
