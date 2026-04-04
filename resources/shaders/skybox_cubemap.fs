@@ -30,14 +30,10 @@ void main()
     // 2. Exposure & Color Correction
     color *= u_Exposure;
     color = color + u_Brightness;
-    color = pow(max(color, vec3(0.0001)), vec3(u_Contrast));
+    color = (color - 0.5) * u_Contrast + 0.5;
 
-    // 3. ACES-like Tonemapping
-    vec3 x = color;
-    vec3 mapped = (x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14);
-    mapped = clamp(mapped, 0.0, 1.0);
-    
-    vec4 background = vec4(mapped, 1.0);
+    // Output straight to HDR buffer (tonemapping is in post-process)
+    vec4 background = vec4(max(color, vec3(0.0)), 1.0);
 
     // 4. Unified Horizon & Ground Fog
     if (fogEnabled == 1) {

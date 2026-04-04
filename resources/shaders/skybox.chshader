@@ -10,12 +10,8 @@ Uniforms:
   - u_Exposure
   - u_Brightness
   - u_Contrast
-  - uTime
-  - isHDR
-  - skyboxMode
+  - u_IsHDR
+  - u_Time
   - fogEnabled
-  - fogMode
   - fogColor
   - fogDensity
-  - fogStart
-  - fogEnd

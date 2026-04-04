@@ -11,7 +11,24 @@
 #include "editor_events.h"
 #include "engine/core/input.h"
 #include <functional>
+#include <functional>
 #include <vector>
+
+namespace
+{
+    bool IsDescendant(CHEngine::Entity child, CHEngine::Entity possibleParent)
+    {
+        if (child == possibleParent) return true;
+        
+        if (!possibleParent.HasComponent<CHEngine::HierarchyComponent>()) return false;
+        
+        for (entt::entity c : possibleParent.GetComponent<CHEngine::HierarchyComponent>().Children)
+        {
+            if (IsDescendant(child, CHEngine::Entity(c, child.GetRegistryPtr()))) return true;
+        }
+        return false;
+    }
+}
 
 namespace CHEngine
 {
@@ -129,6 +146,22 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
             ImGui::EndPopup();
         }
 
+        // Blank space drop target to unparent
+        ImGui::Dummy(ImGui::GetContentRegionAvail());
+        if (!readOnly && ImGui::BeginDragDropTarget())
+        {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ENTITY"))
+            {
+                uint64_t droppedUUID = *(const uint64_t*)payload->Data;
+                Entity sourceEntity = m_Context->GetEntityByUUID(droppedUUID);
+                if (sourceEntity)
+                {
+                    EditorLayer::GetCommandHistory().PushCommand(std::make_unique<ParentEntityCommand>(sourceEntity, Entity{}, m_Context.get()));
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
+
         ImGui::EndDisabled();
     }
 
@@ -189,6 +222,11 @@ entt::entity SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity, bool re
     ImGuiTreeNodeFlags flags = ((selectedEntity == entity) ? ImGuiTreeNodeFlags_Selected : 0);
     flags |= ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
 
+    if (!entity.HasComponent<HierarchyComponent>() || entity.GetComponent<HierarchyComponent>().Children.empty())
+    {
+        flags |= ImGuiTreeNodeFlags_Leaf;
+    }
+
     ImGui::PushID((int)(uint32_t)entity);
 
     bool opened = false;
@@ -208,6 +246,30 @@ entt::entity SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity, bool re
     else
     {
         opened = ImGui::TreeNodeEx(label.c_str(), flags);
+    }
+
+    // Drag & Drop Source
+    if (!readOnly && ImGui::BeginDragDropSource())
+    {
+        uint64_t uuid = entity.GetUUID();
+        ImGui::SetDragDropPayload("ENTITY", &uuid, sizeof(uint64_t));
+        ImGui::Text("%s", label.c_str());
+        ImGui::EndDragDropSource();
+    }
+
+    // Drag & Drop Target
+    if (!readOnly && ImGui::BeginDragDropTarget())
+    {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ENTITY"))
+        {
+            uint64_t droppedUUID = *(const uint64_t*)payload->Data;
+            Entity sourceEntity = m_Context->GetEntityByUUID(droppedUUID);
+            if (sourceEntity && sourceEntity != entity && !IsDescendant(entity, sourceEntity))
+            {
+                EditorLayer::GetCommandHistory().PushCommand(std::make_unique<ParentEntityCommand>(sourceEntity, entity, m_Context.get()));
+            }
+        }
+        ImGui::EndDragDropTarget();
     }
 
     if (ImGui::IsItemClicked())
