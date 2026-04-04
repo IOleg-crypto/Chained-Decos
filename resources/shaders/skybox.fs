@@ -10,6 +10,9 @@ uniform float u_Exposure;
 uniform float u_Brightness;
 uniform float u_Contrast;
 uniform int u_VFlipped;
+uniform vec3 u_SunDir;
+uniform int u_SunEnabled;
+uniform float u_SunIntensity;
 
 // Fog uniforms
 uniform int fogEnabled;
@@ -41,14 +44,10 @@ void main()
     // 1. Exposure & Color Correction
     color *= u_Exposure;
     color = color + u_Brightness;
-    color = pow(max(color, vec3(0.0001)), vec3(u_Contrast));
-
-    // 2. ACES Tonemapping
-    vec3 x = color;
-    vec3 mapped = (x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14);
-    mapped = clamp(mapped, 0.0, 1.0);
+    color = (color - 0.5) * u_Contrast + 0.5;
     
-    vec4 background = vec4(mapped, 1.0);
+    // Output straight to HDR buffer (tonemapping is in post-process)
+    vec4 background = vec4(max(color, vec3(0.0)), 1.0);
 
     if (fogEnabled == 1) {
         float verticalFactor = clamp(1.0 - (direction.y + 0.05) * 10.0, 0.0, 1.0);

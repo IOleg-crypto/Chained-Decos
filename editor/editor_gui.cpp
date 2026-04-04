@@ -166,19 +166,29 @@ void EditorGUI::EndPropertyGrid()
 
 void EditorGUI::BeginProperty(const char* label)
 {
-    ImGui::Columns(2);
-    ImGui::SetColumnWidth(0, 100.0f);
-    ImGui::Text(label);
-    ImGui::NextColumn();
-    ImGui::PushItemWidth(-1);
     ImGui::PushID(label);
+    
+    // If we are already in a table, we don't want to start another set of columns
+    // The caller is responsible for TableNextRow/TableSetColumnIndex
+    if (ImGui::GetCurrentTable() == nullptr)
+    {
+        ImGui::Columns(2);
+        ImGui::SetColumnWidth(0, 100.0f);
+        ImGui::Text(label);
+        ImGui::NextColumn();
+    }
+
+    ImGui::PushItemWidth(-1);
 }
 
 void EditorGUI::EndProperty()
 {
-    ImGui::PopID();
     ImGui::PopItemWidth();
-    ImGui::Columns(1);
+    if (ImGui::GetCurrentTable() == nullptr)
+    {
+        ImGui::Columns(1);
+    }
+    ImGui::PopID();
 }
 
 PropertyBuilder EditorGUI::Begin()

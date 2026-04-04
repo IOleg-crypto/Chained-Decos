@@ -109,6 +109,83 @@ private:
     Entity m_DuplicateEntity;
     Scene* m_Scene;
 };
+
+class ParentEntityCommand : public IEditorCommand
+{
+public:
+    ParentEntityCommand(Entity entity, Entity newParent, Scene* scene)
+        : m_Entity(entity), m_NewParent(newParent), m_Scene(scene)
+    {
+        if (m_Entity && m_Entity.HasComponent<HierarchyComponent>())
+        {
+            auto parentID = m_Entity.GetComponent<HierarchyComponent>().Parent;
+            if (parentID != entt::null)
+                m_OldParent = Entity(parentID, m_Entity.GetRegistryPtr());
+        }
+    }
+
+    void Execute() override
+    {
+        SetParent(m_Entity, m_NewParent);
+    }
+
+    void Undo() override
+    {
+        SetParent(m_Entity, m_OldParent);
+    }
+
+    std::string GetName() const override
+    {
+        return "Parent Entity";
+    }
+
+private:
+    void SetParent(Entity child, Entity parent)
+    {
+        if (!child) return;
+        
+        if (!child.HasComponent<HierarchyComponent>())
+            child.AddComponent<HierarchyComponent>();
+        
+        auto& hc = child.GetComponent<HierarchyComponent>();
+        
+        // Remove from old parent
+        if (hc.Parent != entt::null && m_Scene->GetRegistryPtr()->valid(hc.Parent))
+        {
+            Entity oldParent(hc.Parent, m_Scene->GetRegistryPtr());
+            if (oldParent && oldParent.HasComponent<HierarchyComponent>())
+            {
+                auto& oldPhc = oldParent.GetComponent<HierarchyComponent>();
+                auto it = std::find(oldPhc.Children.begin(), oldPhc.Children.end(), (entt::entity)child);
+                if (it != oldPhc.Children.end())
+                {
+                    oldPhc.Children.erase(it);
+                }
+            }
+        }
+
+        // Set new parent
+        if (parent)
+        {
+            hc.Parent = (entt::entity)parent;
+            if (!parent.HasComponent<HierarchyComponent>())
+            {
+                parent.AddComponent<HierarchyComponent>();
+            }
+            parent.GetComponent<HierarchyComponent>().Children.push_back((entt::entity)child);
+        }
+        else
+        {
+            hc.Parent = entt::null;
+        }
+    }
+
+    Entity m_Entity;
+    Entity m_NewParent;
+    Entity m_OldParent;
+    Scene* m_Scene;
+};
+
 } // namespace CHEngine
 
 #endif // CH_ENTITY_COMMANDS_H

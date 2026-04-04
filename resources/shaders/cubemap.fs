@@ -17,6 +17,11 @@ vec2 SampleSphericalMap(vec3 v)
     // Перетворюємо в діапазон [0, 1]
     uv *= invAtan;
     uv += 0.5;
+    
+    // stb_image завантажує JPG/PNG з перевертанням по V (stbi_set_flip_vertically_on_load).
+    // Компенсуємо це тут, щоб кубмапа генерувалась правильно.
+    uv.y = 1.0 - uv.y;
+    
     return uv;
 }
 

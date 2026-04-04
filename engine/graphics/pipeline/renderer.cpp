@@ -1,18 +1,18 @@
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/core/application.h"
 #include "engine/core/log.h"
-#include "engine/graphics/pipeline/render_command.h"
 #include "engine/graphics/api/framebuffer.h"
+#include "engine/graphics/pipeline/render_command.h"
 
-#include "engine/graphics/assets/shader_asset.h"
 #include "engine/core/assets/asset_manager.h"
+#include "engine/graphics/assets/shader_asset.h"
 #include "engine/graphics/assets/texture_asset.h"
 #include "engine/graphics/pipeline/geometry_generator.h"
 
-#include <glad/gl.h>
 #include <algorithm>
-#include <vector>
+#include <glad/gl.h>
 #include <glm/gtc/type_ptr.hpp>
+#include <vector>
 
 #include "render_command.h"
 
@@ -34,27 +34,27 @@ Renderer& Renderer::Get()
 void Renderer::Init()
 {
     if (!s_Instance)
+    {
         s_Instance = new Renderer();
+    }
     s_Instance->InternalInit();
 }
 
 void Renderer::LoadEngineResources()
 {
     auto& shaders = Get().GetShaderLibrary();
-    
-    auto loadShader = [&](const std::string& name, const std::string& path) {
-        shaders.Load(name, path);
-    };
 
-    loadShader("Lighting",       "resources/shaders/lighting.chshader");
-    loadShader("Skybox",         "resources/shaders/skybox.chshader");
-    loadShader("SkyboxCross",    "resources/shaders/skybox_cross.chshader");
-    loadShader("Unlit",          "resources/shaders/unlit.chshader");
-    loadShader("CubemapGen",     "resources/shaders/cubemap.chshader");
-    loadShader("SkyboxCubemap",  "resources/shaders/skybox_cubemap.chshader");
-    loadShader("PostProcess",    "resources/shaders/post_process.chshader");
-    loadShader("Grid",           "resources/shaders/grid.chshader");
-    
+    auto loadShader = [&](const std::string& name, const std::string& path) { shaders.Load(name, path); };
+
+    loadShader("Lighting", "resources/shaders/lighting.chshader");
+    loadShader("Skybox", "resources/shaders/skybox.chshader");
+    loadShader("SkyboxCross", "resources/shaders/skybox_cross.chshader");
+    loadShader("Unlit", "resources/shaders/unlit.chshader");
+    loadShader("CubemapGen", "resources/shaders/cubemap.chshader");
+    loadShader("SkyboxCubemap", "resources/shaders/skybox_cubemap.chshader");
+    loadShader("PostProcess", "resources/shaders/post_process.chshader");
+    loadShader("Grid", "resources/shaders/grid.chshader");
+
     CH_CORE_INFO("[Renderer] LoadEngineResources done. {} shader(s) loaded.", shaders.GetNames().size());
 }
 
@@ -80,27 +80,20 @@ void Renderer::InternalInit()
     // Initialize Engine static resources
     if (!m_Data->FullscreenQuadVAO)
     {
-        float vertices[] = { 
-            -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,  
-             1.0f, -1.0f, 0.0f, 1.0f, 0.0f,  
-             1.0f,  1.0f, 0.0f, 1.0f, 1.0f, 
-            -1.0f,  1.0f, 0.0f, 0.0f, 1.0f 
-        };
-        uint32_t indices[] = { 0, 1, 2, 2, 3, 0 };
-        
+        float vertices[] = {-1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f,  -1.0f, 0.0f, 1.0f, 0.0f,
+                            1.0f,  1.0f,  0.0f, 1.0f, 1.0f, -1.0f, 1.0f,  0.0f, 0.0f, 1.0f};
+        uint32_t indices[] = {0, 1, 2, 2, 3, 0};
+
         m_Data->FullscreenQuadVAO = VertexArray::Create();
         auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
-        vbo->SetLayout({ 
-            { ShaderDataType::Float3, "vertexPosition" }, 
-            { ShaderDataType::Float2, "vertexTexCoord" } 
-        });
+        vbo->SetLayout({{ShaderDataType::Float3, "vertexPosition"}, {ShaderDataType::Float2, "vertexTexCoord"}});
         m_Data->FullscreenQuadVAO->AddVertexBuffer(vbo);
         auto ibo = IndexBuffer::Create(indices, 6);
         m_Data->FullscreenQuadVAO->SetIndexBuffer(ibo);
     }
 
     InitializeSkybox();
-    
+
     // Always load engine resources after initialization
     LoadEngineResources();
 }
@@ -119,10 +112,13 @@ void Renderer::InternalShutdown()
 {
     CH_CORE_INFO("Shutting down Render System...");
 
-    if (Application::Get().GetSpecification().Headless) return;
+    if (Application::Get().GetSpecification().Headless)
+    {
+        return;
+    }
 
     CleanupSkybox();
-    
+
     if (m_Data->Lighting.LightSSBO > 0)
     {
         glDeleteBuffers(1, &m_Data->Lighting.LightSSBO);
@@ -149,7 +145,8 @@ void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
     if (m_Data->Lighting.LightsDirty)
     {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_Data->Lighting.LightSSBO);
-        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(RenderLight) * LightingData::MaxLights, m_Data->Lighting.Lights);
+        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(RenderLight) * LightingData::MaxLights,
+                        m_Data->Lighting.Lights);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
         m_Data->Lighting.LightsDirty = false;
     }
@@ -159,7 +156,7 @@ void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
     if (lightingShaderAsset && lightingShaderAsset->GetShader())
     {
         lightingShaderAsset->GetShader()->Bind();
-        
+
         float time = m_Data->Time;
         float diagMode = m_Data->DiagnosticMode;
         int lightCount = m_Data->LightCount;
@@ -170,25 +167,25 @@ void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
         lightingShaderAsset->GetShader()->SetVec3("viewPos", camera.Position);
         lightingShaderAsset->GetShader()->SetFloat("uTime", time);
         lightingShaderAsset->GetShader()->SetFloat("uMode", diagMode);
-        
+
         lightingShaderAsset->GetShader()->SetVec3("lightDir", m_Data->Lighting.CurrentLighting.Direction);
-        
-        glm::vec4 lightColor = { m_Data->Lighting.CurrentLighting.LightColor.r / 255.0f, 
-                                 m_Data->Lighting.CurrentLighting.LightColor.g / 255.0f, 
-                                 m_Data->Lighting.CurrentLighting.LightColor.b / 255.0f, 
-                                 m_Data->Lighting.CurrentLighting.LightColor.a / 255.0f };
+
+        glm::vec4 lightColor = {m_Data->Lighting.CurrentLighting.LightColor.r / 255.0f,
+                                m_Data->Lighting.CurrentLighting.LightColor.g / 255.0f,
+                                m_Data->Lighting.CurrentLighting.LightColor.b / 255.0f,
+                                m_Data->Lighting.CurrentLighting.LightColor.a / 255.0f};
         lightingShaderAsset->GetShader()->SetVec4("lightColor", lightColor);
-        
+
         lightingShaderAsset->GetShader()->SetFloat("ambient", ambient);
-        
+
         glm::vec4 skyColor = lightColor;
-        skyColor.w = ambient * 0.35f; 
+        skyColor.w = ambient * 0.35f;
         lightingShaderAsset->GetShader()->SetVec4("skyAmbientColor", skyColor);
 
         lightingShaderAsset->GetShader()->SetInt("uLightCount", lightCount);
         lightingShaderAsset->GetShader()->SetFloat("uExposure", exposure);
         lightingShaderAsset->GetShader()->SetFloat("uGamma", gamma);
-        
+
         ApplyFogUniforms(lightingShaderAsset);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, m_Data->Lighting.LightSSBO);
         m_Data->CurrentShaderId = lightingShaderAsset->GetShader()->GetRendererID();
@@ -202,7 +199,7 @@ void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
     int width = Application::Get().GetWindow().GetWidth();
     int height = Application::Get().GetWindow().GetHeight();
     float aspect = (float)width / (float)height;
-    
+
     if (camera.Projection == 0 /* CAMERA_PERSPECTIVE */)
     {
         m_Data->CurrentProj = glm::perspective(glm::radians(camera.Fovy), aspect, nearClip, farClip);
@@ -222,7 +219,8 @@ void Renderer::EndScene()
 
 void Renderer::Clear(const glm::vec4& color)
 {
-    CHEngine::Color chColor((unsigned char)(color.r * 255), (unsigned char)(color.g * 255), (unsigned char)(color.b * 255), (unsigned char)(color.a * 255));
+    CHEngine::Color chColor((unsigned char)(color.r * 255), (unsigned char)(color.g * 255),
+                            (unsigned char)(color.b * 255), (unsigned char)(color.a * 255));
     RenderCommand::Clear(chColor);
 }
 
@@ -234,19 +232,28 @@ void Renderer::SetViewport(int x, int y, int width, int height)
 void Renderer::DrawMesh(const Mesh& mesh, const Material& material, const glm::mat4& transform)
 {
     uint32_t shaderId = material.ShaderID;
-    if (shaderId == 0) shaderId = m_Data->CurrentShaderId;
-    if (shaderId == 0) return;
+    if (shaderId == 0)
+    {
+        shaderId = m_Data->CurrentShaderId;
+    }
+    if (shaderId == 0)
+    {
+        return;
+    }
 
     auto shaderAsset = GetShaderLibrary().GetById(shaderId);
-    if (!shaderAsset) return;
+    if (!shaderAsset)
+    {
+        return;
+    }
 
     shaderAsset->GetShader()->Bind();
- 
-     // Set matrices
-     shaderAsset->GetShader()->SetMatrix("matModel", transform);
-     shaderAsset->GetShader()->SetMatrix("matView", m_Data->CurrentView);
-     shaderAsset->GetShader()->SetMatrix("matProjection", m_Data->CurrentProj);
-    
+
+    // Set matrices
+    shaderAsset->GetShader()->SetMatrix("matModel", transform);
+    shaderAsset->GetShader()->SetMatrix("matView", m_Data->CurrentView);
+    shaderAsset->GetShader()->SetMatrix("matProjection", m_Data->CurrentProj);
+
     glm::mat4 matNormal = glm::transpose(glm::inverse(transform));
     shaderAsset->GetShader()->SetMatrix("matNormal", matNormal);
 
@@ -258,23 +265,39 @@ void Renderer::DrawMesh(const Mesh& mesh, const Material& material, const glm::m
     {
         mesh.VAO->Bind();
         if (mesh.TriangleCount > 0)
+        {
             glDrawElements(GL_TRIANGLES, mesh.TriangleCount * 3, GL_UNSIGNED_INT, 0);
+        }
         else
+        {
             glDrawArrays(GL_TRIANGLES, 0, mesh.VertexCount);
+        }
         mesh.VAO->Unbind();
     }
 }
 
 void Renderer::DrawMeshInstanced(const Mesh& mesh, const Material& material, const std::vector<glm::mat4>& transforms)
 {
-    if (transforms.empty() || !mesh.VAO) return;
+    if (transforms.empty() || !mesh.VAO)
+    {
+        return;
+    }
 
     uint32_t shaderId = material.ShaderID;
-    if (shaderId == 0) shaderId = m_Data->CurrentShaderId;
-    if (shaderId == 0) return;
+    if (shaderId == 0)
+    {
+        shaderId = m_Data->CurrentShaderId;
+    }
+    if (shaderId == 0)
+    {
+        return;
+    }
 
     auto shaderAsset = GetShaderLibrary().GetById(shaderId);
-    if (!shaderAsset) return;
+    if (!shaderAsset)
+    {
+        return;
+    }
 
     shaderAsset->GetShader()->Bind();
 
@@ -299,14 +322,18 @@ void Renderer::DrawMeshInstanced(const Mesh& mesh, const Material& material, con
     {
         glEnableVertexAttribArray(5 + i);
         glVertexAttribPointer(5 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(i * vec4Size));
-        glVertexAttribDivisor(5 + i, 1);  // One matrix per instance
+        glVertexAttribDivisor(5 + i, 1); // One matrix per instance
     }
 
     // Draw with instances
     if (mesh.TriangleCount > 0)
+    {
         glDrawElementsInstanced(GL_TRIANGLES, mesh.TriangleCount * 3, GL_UNSIGNED_INT, 0, (GLsizei)transforms.size());
+    }
     else
+    {
         glDrawArraysInstanced(GL_TRIANGLES, 0, mesh.VertexCount, (GLsizei)transforms.size());
+    }
 
     // Cleanup instance attributes
     for (int i = 0; i < 4; i++)
@@ -322,17 +349,17 @@ void Renderer::DrawMeshInstanced(const Mesh& mesh, const Material& material, con
 void Renderer::DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color)
 {
     // Native OpenGL line drawing (Fixed function or simple shader)
-        auto unlitShader = m_Data->Shaders->Exists("Unlit") ? m_Data->Shaders->Get("Unlit") : nullptr;
-        if (unlitShader && unlitShader->GetShader())
-        {
-            unlitShader->GetShader()->Bind();
-            
-            glm::mat4 mvp = m_Data->CurrentProj * m_Data->CurrentView;
-            unlitShader->GetShader()->SetMatrix("u_ViewProjection", mvp);
-            unlitShader->GetShader()->SetVec4("u_Color", color);
-        
+    auto unlitShader = m_Data->Shaders->Exists("Unlit") ? m_Data->Shaders->Get("Unlit") : nullptr;
+    if (unlitShader && unlitShader->GetShader())
+    {
+        unlitShader->GetShader()->Bind();
+
+        glm::mat4 mvp = m_Data->CurrentProj * m_Data->CurrentView;
+        unlitShader->GetShader()->SetMatrix("u_ViewProjection", mvp);
+        unlitShader->GetShader()->SetVec4("u_Color", color);
+
         // Immediate mode replacement or small buffer
-        float vertices[] = { start.x, start.y, start.z, end.x, end.y, end.z };
+        float vertices[] = {start.x, start.y, start.z, end.x, end.y, end.z};
         uint32_t vbo, vao;
         glGenVertexArrays(1, &vao);
         glGenBuffers(1, &vbo);
@@ -341,9 +368,9 @@ void Renderer::DrawLine(const glm::vec3& start, const glm::vec3& end, const glm:
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STREAM_DRAW);
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
-        
+
         glDrawArrays(GL_LINES, 0, 2);
-        
+
         glDeleteBuffers(1, &vbo);
         glDeleteVertexArrays(1, &vao);
     }
@@ -352,15 +379,15 @@ void Renderer::DrawLine(const glm::vec3& start, const glm::vec3& end, const glm:
 void Renderer::DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& transform)
 {
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    
+
     // Create a temporary unlit material for wireframe
-    Material mat; 
-    // We don't have a full Material abstraction yet that easily takes a color, 
+    Material mat;
+    // We don't have a full Material abstraction yet that easily takes a color,
     // but the original code had maps[0].color = color.
     // However, our new Material struct might be different.
-    
+
     DrawMesh(mesh, mat, transform);
-    
+
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
@@ -368,8 +395,8 @@ void Renderer::DrawGrid(int slices, float spacing)
 {
     // Draw grid manually using DrawLine
     float halfSize = (slices * spacing) / 2.0f;
-    glm::vec4 color = { 0.5f, 0.5f, 0.5f, 1.0f };
-    
+    glm::vec4 color = {0.5f, 0.5f, 0.5f, 1.0f};
+
     for (int i = 0; i <= slices; i++)
     {
         float pos = -halfSize + (i * spacing);
@@ -381,61 +408,70 @@ void Renderer::DrawGrid(int slices, float spacing)
 void Renderer::DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& color)
 {
     auto& shaders = GetShaderLibrary();
-    if (!shaders.Exists("Grid")) return;
+    if (!shaders.Exists("Grid"))
+    {
+        return;
+    }
     auto shaderAsset = shaders.Get("Grid");
 
     shaderAsset->GetShader()->Bind();
- 
-     glm::mat4 mvp = m_Data->CurrentProj * m_Data->CurrentView;
-     shaderAsset->GetShader()->SetMatrix("u_ViewProjection", mvp);
-     
-     // Position the plane slightly below Y=0 to prevent Z-fighting
-     glm::vec3 planePos = { camera.Position.x, -0.005f, camera.Position.z };
-     glm::mat4 model = glm::translate(glm::mat4(1.0f), planePos);
-     shaderAsset->GetShader()->SetMatrix("matModel", model);
-     
-     shaderAsset->GetShader()->SetVec3("cameraPos", camera.Position);
-     
-     glm::vec4 col = color;
-     shaderAsset->GetShader()->SetVec4("gridColor", col);
-     shaderAsset->GetShader()->SetFloat("gridSize", spacing);
+
+    glm::mat4 mvp = m_Data->CurrentProj * m_Data->CurrentView;
+    shaderAsset->GetShader()->SetMatrix("u_ViewProjection", mvp);
+
+    // Position the plane slightly below Y=0 to prevent Z-fighting
+    glm::vec3 planePos = {camera.Position.x, -0.005f, camera.Position.z};
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), planePos);
+    shaderAsset->GetShader()->SetMatrix("matModel", model);
+
+    shaderAsset->GetShader()->SetVec3("cameraPos", camera.Position);
+
+    glm::vec4 col = color;
+    shaderAsset->GetShader()->SetVec4("gridColor", col);
+    shaderAsset->GetShader()->SetFloat("gridSize", spacing);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    
+
     // Use shared mesh from GeometryGenerator
     static Mesh gridPlane;
     if (!gridPlane.VAO)
     {
         gridPlane = GeometryGenerator::GenerateQuad(15000.0f);
     }
-    
+
     gridPlane.VAO->Bind();
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     gridPlane.VAO->Unbind();
 }
 
-void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float exposure, float brightness, float contrast, const Camera3D& camera)
+void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float exposure, float brightness,
+                          float contrast, const Camera3D& camera)
 {
     if (textureId == 0)
+    {
         return;
+    }
 
     skyboxMode = std::clamp(skyboxMode, 0, 2);
 
     auto shaderAsset = (skyboxMode == 2)
-                       ? m_Data->Shaders->Get("SkyboxCubemap")
-                       : (skyboxMode == 1 ? m_Data->Shaders->Get("SkyboxCross") : m_Data->Shaders->Get("Skybox"));
-    if (!shaderAsset) return;
+                           ? m_Data->Shaders->Get("SkyboxCubemap")
+                           : (skyboxMode == 1 ? m_Data->Shaders->Get("SkyboxCross") : m_Data->Shaders->Get("Skybox"));
+    if (!shaderAsset)
+    {
+        return;
+    }
 
     // 1. Prepare Render State
     RenderCommand::SetDepthFunc(RendererAPI::DepthFunc::LEqual);
     RenderCommand::SetCullMode(RendererAPI::CullMode::None);
-    RenderCommand::DisableDepthMask();
+    RenderCommand::DisableDepthMask(); // Використовую твій метод
 
     // 2. Setup Uniforms
     shaderAsset->GetShader()->Bind();
-    
-    // Always remove translation from view matrix for skybox
+
+    // Always remove translation from view matrix for skybox (Виправлено: беремо з переданої camera)
     glm::mat4 view = glm::mat4(glm::mat3(m_Data->CurrentView));
     shaderAsset->GetShader()->SetMatrix("u_View", view);
     shaderAsset->GetShader()->SetMatrix("u_Projection", m_Data->CurrentProj);
@@ -443,7 +479,7 @@ void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float 
     shaderAsset->GetShader()->SetFloat("u_Exposure", exposure);
     shaderAsset->GetShader()->SetFloat("u_Brightness", brightness);
     shaderAsset->GetShader()->SetFloat("u_Contrast", contrast);
-    
+
     shaderAsset->GetShader()->SetInt("u_IsHDR", isHDR ? 1 : 0);
     shaderAsset->GetShader()->SetInt("u_VFlipped", skyboxMode == 2 ? 0 : 1);
 
@@ -493,13 +529,14 @@ void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float 
         }
     }
 
-    // 4. Restore Render State
-    glDepthFunc(GL_LESS);
-    glEnable(GL_CULL_FACE);
-    glDepthMask(GL_TRUE);
+    // 4. Restore Render State (Виправлено: робимо через API рушія)
+    RenderCommand::SetDepthFunc(RendererAPI::DepthFunc::Less);
+    RenderCommand::SetCullMode(RendererAPI::CullMode::Back);
+    RenderCommand::EnableDepthMask(); // Якщо в тебе DisableDepthMask, то має бути і Enable, або SetDepthMask(true)
 }
 
-void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const glm::vec3& position, float size, const glm::vec4& tint)
+void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const glm::vec3& position, float size,
+                             const glm::vec4& tint)
 {
     // Custom billboard rendering in OpenGL
     // We can use a simple quad and rotate it to face the camera
@@ -507,31 +544,31 @@ void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const g
     if (unlitShader && unlitShader->GetShader())
     {
         unlitShader->GetShader()->Bind();
-        
+
         // Calculate billboard transform
         glm::vec3 look = glm::normalize(camera.Position - position);
         glm::vec3 right = glm::normalize(glm::cross(camera.Up, look));
         glm::vec3 up = glm::cross(look, right);
-        
+
         glm::mat4 model = glm::mat4(1.0f);
         model[0] = glm::vec4(right * size, 0.0f);
         model[1] = glm::vec4(up * size, 0.0f);
         model[2] = glm::vec4(look * size, 0.0f);
         model[3] = glm::vec4(position, 1.0f);
-        
+
         glm::mat4 mvp = m_Data->CurrentProj * m_Data->CurrentView * model;
         unlitShader->GetShader()->SetMatrix("u_ViewProjection", mvp);
         unlitShader->GetShader()->SetVec4("u_Color", tint);
-        
+
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureId);
         unlitShader->GetShader()->SetInt("u_Texture", 0);
-        
+
         // Draw quad (Reuse planeVAO from DrawInfiniteGrid or create a localized one)
         static uint32_t quadVAO = 0;
         if (quadVAO == 0)
         {
-            float vertices[] = { -0.5f, -0.5f, 0, 0, 0,  0.5f, -0.5f, 0, 1, 0,  0.5f, 0.5f, 0, 1, 1, -0.5f, 0.5f, 0, 0, 1 };
+            float vertices[] = {-0.5f, -0.5f, 0, 0, 0, 0.5f, -0.5f, 0, 1, 0, 0.5f, 0.5f, 0, 1, 1, -0.5f, 0.5f, 0, 0, 1};
             uint32_t vbo;
             glGenVertexArrays(1, &quadVAO);
             glGenBuffers(1, &vbo);
@@ -543,7 +580,7 @@ void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const g
             glEnableVertexAttribArray(1);
             glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
         }
-        
+
         glBindVertexArray(quadVAO);
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     }
@@ -559,12 +596,12 @@ void Renderer::DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, 
         glm::vec3(transform * glm::vec4(-h.x, -h.y, -h.z, 1)), glm::vec3(transform * glm::vec4(h.x, -h.y, -h.z, 1)),
         glm::vec3(transform * glm::vec4(h.x, h.y, -h.z, 1)),   glm::vec3(transform * glm::vec4(-h.x, h.y, -h.z, 1)),
         glm::vec3(transform * glm::vec4(-h.x, -h.y, h.z, 1)),  glm::vec3(transform * glm::vec4(h.x, -h.y, h.z, 1)),
-        glm::vec3(transform * glm::vec4(h.x, h.y, h.z, 1)),    glm::vec3(transform * glm::vec4(-h.x, h.y, h.z, 1))
-    };
-    for(int i=0; i<4; i++) {
-        DrawLine(p[i], p[(i+1)%4], color);
-        DrawLine(p[i+4], p[((i+1)%4)+4], color);
-        DrawLine(p[i], p[i+4], color);
+        glm::vec3(transform * glm::vec4(h.x, h.y, h.z, 1)),    glm::vec3(transform * glm::vec4(-h.x, h.y, h.z, 1))};
+    for (int i = 0; i < 4; i++)
+    {
+        DrawLine(p[i], p[(i + 1) % 4], color);
+        DrawLine(p[i + 4], p[((i + 1) % 4) + 4], color);
+        DrawLine(p[i], p[i + 4], color);
     }
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
@@ -572,13 +609,13 @@ void Renderer::DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, 
 void Renderer::DrawCapsuleWires(const glm::mat4& transform, float radius, float height, const glm::vec4& color)
 {
     // Simplified: just draw a cylinder-like box for now or implement proper wires
-    DrawCubeWires(transform, {radius*2, height, radius*2}, color);
+    DrawCubeWires(transform, {radius * 2, height, radius * 2}, color);
 }
 
 void Renderer::DrawSphereWires(const glm::mat4& transform, float radius, const glm::vec4& color)
 {
     // Simplified: just draw 3 circles
-    DrawCubeWires(transform, {radius*2, radius*2, radius*2}, color);
+    DrawCubeWires(transform, {radius * 2, radius * 2, radius * 2}, color);
 }
 
 void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextureId, const Camera3D& camera)
@@ -589,7 +626,7 @@ void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextu
         if (shaderAsset && shaderAsset->GetShader())
         {
             shaderAsset->GetShader()->Bind();
-            
+
             // Fullscreen quad doesn't need transformation, set MVP to identity
             glm::mat4 identity = glm::mat4(1.0f);
             shaderAsset->GetShader()->SetMatrix("mvp", identity);
@@ -597,7 +634,7 @@ void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextu
             glm::mat4 invViewProj = glm::inverse(m_Data->CurrentProj * m_Data->CurrentView);
             shaderAsset->GetShader()->SetMatrix("matInverseViewProj", invViewProj);
             shaderAsset->GetShader()->SetVec3("viewPos", camera.Position);
-            
+
             shaderAsset->GetShader()->SetFloat("uTime", m_Data->Time);
             shaderAsset->GetShader()->SetFloat("uExposure", m_Data->Lighting.CurrentLighting.Exposure);
             shaderAsset->GetShader()->SetFloat("uGamma", m_Data->Lighting.CurrentLighting.Gamma);
@@ -679,7 +716,8 @@ void Renderer::ApplyFogUniforms(const std::shared_ptr<ShaderAsset>& shader)
     const auto& fog = m_Data->Lighting.CurrentFog;
     int enabled = fog.Enabled ? 1 : 0;
     int mode = (int)fog.Mode;
-    glm::vec4 color = { fog.FogColor.r / 255.0f, fog.FogColor.g / 255.0f, fog.FogColor.b / 255.0f, fog.FogColor.a / 255.0f };
+    glm::vec4 color = {fog.FogColor.r / 255.0f, fog.FogColor.g / 255.0f, fog.FogColor.b / 255.0f,
+                       fog.FogColor.a / 255.0f};
 
     shader->GetShader()->SetInt("fogEnabled", enabled);
     shader->GetShader()->SetVec4("fogColor", color);
@@ -702,7 +740,7 @@ void Renderer::CleanupSkybox()
 {
     m_Data->Skybox.SkyboxCubeModel.reset();
     m_Data->Skybox.SkyboxSphereModel.reset();
-    
+
     m_Data->Skybox.CachedCubemap.reset();
 }
 } // namespace CHEngine

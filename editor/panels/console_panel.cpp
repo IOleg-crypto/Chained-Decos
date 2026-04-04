@@ -139,4 +139,14 @@ std::string ConsolePanel::GetCurrentTimestamp()
     ss << "[" << std::put_time(std::localtime(&in_time_t), "%H:%M:%S") << "] ";
     return ss.str();
 }
+
+// Зовнішня функція для лінківки з Log системою
+void LogToEditorConsole(const char* message, int logLevel)
+{
+    if (ConsolePanel::s_Instance)
+    {
+        ConsolePanel::s_Instance->Log(message, (ConsoleLogLevel)logLevel);
+    }
+}
+
 } // namespace CHEngine
