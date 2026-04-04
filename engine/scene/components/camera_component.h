@@ -25,14 +25,22 @@ struct CameraComponent
     CameraComponent(const CameraComponent&) = default;
 
     CH_REFLECT_BEGIN(CameraComponent)
+        props.Header("General");
         props.Property("Primary", Primary);
-        props.Property("FixedAspectRatio", FixedAspectRatio);
-        props.Property("IsOrbitCamera", IsOrbitCamera);
-        props.Property("TargetEntityTag", TargetEntityTag);
-        props.Property("OrbitDistance", OrbitDistance);
-        props.Property("OrbitYaw", OrbitYaw);
-        props.Property("OrbitPitch", OrbitPitch);
-        props.Property("LookSensitivity", LookSensitivity);
+        props.Property("Fixed Aspect Ratio", FixedAspectRatio);
+
+        props.Nested("Projection", Camera);
+
+        if (props.BeginGroup("Orbit Controller", IsOrbitCamera))
+        {
+            props.Property("Enabled", IsOrbitCamera);
+            props.Property("Target Tag", TargetEntityTag);
+            props.Property("Distance", OrbitDistance);
+            props.Property("Yaw", OrbitYaw);
+            props.Property("Pitch", OrbitPitch);
+            props.Property("Sensitivity", LookSensitivity);
+            props.EndGroup();
+        }
     CH_REFLECT_END()
 };
 

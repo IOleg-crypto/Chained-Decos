@@ -5,24 +5,24 @@
 #include "editor_gui.h"
 #include "engine/core/input.h"
 
-#include "engine/core/profiler.h"
 #include "engine/core/assets/asset_manager.h"
+#include "engine/core/profiler.h"
 #include "engine/physics/physics.h"
 
+#include "engine/graphics/pipeline/render_command.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene_serializer.h"
-#include <yaml-cpp/yaml.h>
-#include "scripting/scene_scripting.h"
-#include "scripting/scriptengine.h"
-#include "scripting/script_file_system.h"
-#include "engine/graphics/pipeline/render_command.h"
-
+#include "imgui/IconsFontAwesome6.h"
+#include "panels/console_panel.h"
 #include "panels/content_browser_panel.h"
 #include "panels/project_browser_panel.h"
 #include "panels/property_editor.h"
 #include "panels/viewport_panel.h"
+#include "scripting/scene_scripting.h"
 #include "scripting/script_file_system.h"
-#include "imgui/IconsFontAwesome6.h"
+#include "scripting/scriptengine.h"
+#include <ImGuizmo.h>
+#include <yaml-cpp/yaml.h>
 
 namespace CHEngine
 {
@@ -44,7 +44,9 @@ void EditorLayer::LoadConfig()
 {
     std::filesystem::path configPath = ScriptFileSystem::GetExecutableDir() / "editor_settings.yaml";
     if (!std::filesystem::exists(configPath))
+    {
         return;
+    }
 
     try
     {
@@ -52,12 +54,20 @@ void EditorLayer::LoadConfig()
         if (data["Editor"])
         {
             auto node = data["Editor"];
-            if (node["LastProjectPath"]) m_Config.LastProjectPath = node["LastProjectPath"].as<std::string>("");
-            if (node["LastScenePath"]) m_Config.LastScenePath = node["LastScenePath"].as<std::string>("");
-            if (node["LoadLastProjectOnStartup"]) m_Config.LoadLastProjectOnStartup = node["LoadLastProjectOnStartup"].as<bool>(false);
+            if (node["LastProjectPath"])
+            {
+                m_Config.LastProjectPath = node["LastProjectPath"].as<std::string>("");
+            }
+            if (node["LastScenePath"])
+            {
+                m_Config.LastScenePath = node["LastScenePath"].as<std::string>("");
+            }
+            if (node["LoadLastProjectOnStartup"])
+            {
+                m_Config.LoadLastProjectOnStartup = node["LoadLastProjectOnStartup"].as<bool>(false);
+            }
         }
-    }
-    catch (const std::exception& e)
+    } catch (const std::exception& e)
     {
         CH_CORE_ERROR("EditorLayer: Failed to load editor settings: {}", e.what());
     }
@@ -79,12 +89,12 @@ void EditorLayer::SaveConfig()
     fout << out.c_str();
 }
 
-
 void EditorLayer::OnAttach()
 {
     // SetTraceLogCallback removed - now using engine logging
 
     EditorGUI::ApplyTheme();
+    Log::SetLogCallback(ConsolePanel::AddLog);
     PropertyEditor::Init();
 
     // Register Panels
@@ -141,7 +151,7 @@ void EditorLayer::LoadEditorFonts()
     ImGuiIO& io = ImGui::GetIO();
     float fontSize = 16.0f;
     auto& assetManager = AssetManager::Get();
-    
+
     // --- Default UI Font (Lato) ---
     std::string fontPath = assetManager.ResolvePath("engine/resources/font/lato/lato-bold.ttf");
     if (std::filesystem::exists(fontPath))
@@ -183,17 +193,14 @@ void EditorLayer::OnUpdate(Timestep ts)
 {
     CH_PROFILE_FUNCTION();
 
-    // if (Input::IsKeyPressed(Key::F11))
-    // {
-    //     // ToggleFullscreen removed - to be implemented in Window
-    // }
-
-
     if (auto scene = GetActiveScene())
     {
         if (EditorContext::GetSceneState() == SceneState::Play)
         {
-            SceneScripting::Update(scene.get(), ts);
+            if (ScriptEngine::Get().IsInitialized())
+            {
+                SceneScripting::Update(scene.get(), ts);
+            }
             scene->OnUpdateRuntime(ts);
 
             // Handle deferred scene loading requested from C# scripts
@@ -215,12 +222,10 @@ void EditorLayer::OnUpdate(Timestep ts)
             OnEvent(e);
         }
 
-
         if (Input::IsKeyDown(Key::LeftControl) && Input::IsKeyPressed(Key::R))
         {
             ScriptEngine::Get().ReloadAssembly();
         }
-
 
         m_Panels->OnUpdate(ts);
     }
@@ -228,9 +233,8 @@ void EditorLayer::OnUpdate(Timestep ts)
 
 void EditorLayer::OnRender(Timestep ts)
 {
-    RenderCommand::Clear({ 25, 25, 25, 255 });
+    RenderCommand::Clear({25, 25, 25, 255});
 }
-
 
 void EditorLayer::OnImGuiRender()
 {
@@ -294,28 +298,29 @@ bool EditorLayer::OnProjectOpened(ProjectOpenedEvent& e)
             contentBrowser->SetRootDirectory(Project::GetAssetDirectory());
         }
         ScriptEngine::Get().ReloadAssembly();
-        
+
         m_Config.LastProjectPath = e.GetPath();
         SaveConfig();
-        
+
         // Auto-load scene if available
         std::filesystem::path sceneToLoad;
-        
+
         // 1. Try loading ActiveScene
         if (!project->GetConfig().ActiveScenePath.empty())
         {
             sceneToLoad = project->GetConfig().ProjectDirectory / project->GetConfig().ActiveScenePath;
         }
-        
+
         // 2. Fallback to StartScene
         if (sceneToLoad.empty() || !std::filesystem::exists(sceneToLoad))
         {
             if (!project->GetConfig().StartScene.empty())
             {
-                sceneToLoad = project->GetConfig().ProjectDirectory / project->GetConfig().AssetDirectory / project->GetConfig().StartScene;
+                sceneToLoad = project->GetConfig().ProjectDirectory / project->GetConfig().AssetDirectory /
+                              project->GetConfig().StartScene;
             }
         }
-        
+
         // 3. Load the scene if found
         if (!sceneToLoad.empty() && std::filesystem::exists(sceneToLoad))
         {
@@ -339,7 +344,7 @@ bool EditorLayer::OnSceneOpened(SceneOpenedEvent& e)
     {
         project->SetActiveScenePath(std::filesystem::relative(e.GetPath(), project->GetProjectDirectory()));
         ProjectActions::Save();
-        
+
         m_Config.LastScenePath = e.GetPath();
         SaveConfig();
     }

@@ -44,26 +44,56 @@ struct MaterialInstance
     float Alpha = 1.0f;
 
     CH_REFLECT_BEGIN(MaterialInstance)
-        props.Property("Albedo Color", AlbedoColor);
-        props.File("Albedo Path", AlbedoPath, "png,jpg,tga");
-        props.Property("Override Albedo", OverrideAlbedo);
-        props.File("Normal Path", NormalMapPath, "png,jpg,tga");
-        props.Property("Override Normal", OverrideNormal);
-        props.File("MR Path", MetallicRoughnessPath, "png,jpg,tga");
-        props.Property("Override MR", OverrideMetallicRoughness);
-        props.File("Occlusion Path", OcclusionMapPath, "png,jpg,tga");
-        props.Property("Override Occlusion", OverrideOcclusion);
-        props.File("Emissive Path", EmissivePath, "png,jpg,tga");
-        props.Property("Emissive Color", EmissiveColor);
-        props.Property("Emissive Intensity", EmissiveIntensity);
-        props.Property("Override Emissive", OverrideEmissive);
-        props.File("Shader Path", ShaderPath, "chshader");
-        props.Property("Override Shader", OverrideShader);
-        props.Property("Metalness", Metalness);
-        props.Property("Roughness", Roughness);
-        props.Property("Double Sided", DoubleSided);
-        props.Property("Transparent", Transparent);
-        props.Property("Alpha", Alpha);
+        if (props.BeginGroup("Albedo"))
+        {
+            props.Property("Color", AlbedoColor);
+            props.File("Path", AlbedoPath, "png,jpg,tga");
+            props.Property("Override", OverrideAlbedo);
+            props.EndGroup();
+        }
+
+        if (props.BeginGroup("PBR Maps"))
+        {
+            props.File("Normal Map", NormalMapPath, "png,jpg,tga");
+            props.Property("Override Normal", OverrideNormal);
+            props.File("MR Map", MetallicRoughnessPath, "png,jpg,tga");
+            props.Property("Override MR", OverrideMetallicRoughness);
+            props.File("Occlusion Map", OcclusionMapPath, "png,jpg,tga");
+            props.Property("Override Occlusion", OverrideOcclusion);
+            props.EndGroup();
+        }
+
+        if (props.BeginGroup("Emissive"))
+        {
+            props.Property("Color", EmissiveColor);
+            props.Property("Intensity", EmissiveIntensity);
+            props.File("Path", EmissivePath, "png,jpg,tga");
+            props.Property("Override", OverrideEmissive);
+            props.EndGroup();
+        }
+
+        if (props.BeginGroup("Parameters"))
+        {
+            props.Property("Metalness", Metalness);
+            props.Property("Roughness", Roughness);
+            props.EndGroup();
+        }
+
+        if (props.BeginGroup("Rendering"))
+        {
+            props.Property("Double Sided", DoubleSided);
+            props.Property("Transparent", Transparent);
+            if (Transparent)
+                props.Property("Alpha", Alpha);
+            props.EndGroup();
+        }
+
+        if (props.BeginGroup("Shader"))
+        {
+            props.File("Path", ShaderPath, "chshader");
+            props.Property("Override", OverrideShader);
+            props.EndGroup();
+        }
     CH_REFLECT_END()
 };
 

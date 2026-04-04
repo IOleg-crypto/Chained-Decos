@@ -1,12 +1,12 @@
 #include "component_serializer.h"
 #include "components/hierarchy_component.h"
 #include "components/id_component.h"
+#include "components/ui_action_component.h"
 #include "engine/core/application.h"
 #include "engine/core/yaml.h"
 #include "engine/scene/components.h"
 #include "engine/scene/serialization_utils.h"
 #include "scene.h"
-#include "scripting/scriptengine.h"
 
 
 namespace YAML
@@ -576,25 +576,10 @@ void ComponentSerializer::InternalInit()
 {
     m_Registry.clear();
 
-    // --- Основн    Register<TagComponent>();
+    Register<TagComponent>();
     Register<TransformComponent>();
-    
-    // --- ModelComponent with logging ---
-    Register<ModelComponent>("ModelComponent", [](auto& archive, auto& component) {
-        CH_CORE_INFO("Deserializing ModelComponent - Mode: {}", (int)archive.GetMode());
-        
-        CHEngine::Properties props(archive);
-        component.Reflect(props);
-        
-        CH_CORE_INFO("  ModelPath: '{}'", component.ModelPath);
-        CH_CORE_INFO("  Materials count: {}", component.Materials.size());
-        for (size_t i = 0; i < component.Materials.size(); ++i)
-        {
-            CH_CORE_INFO("    Material[{}]: AlbedoPath='{}', NormalPath='{}'", 
-                i, component.Materials[i].Material.AlbedoPath, component.Materials[i].Material.NormalMapPath);
-        }
-    });
-    
+    Register<ModelComponent>();
+    Register<MaterialComponent>();
     Register<LightComponent>();
     Register<ShaderComponent>();
 
@@ -640,6 +625,8 @@ void ComponentSerializer::InternalInit()
     Register<PlotLinesControl>();
     Register<PlotHistogramControl>();
     Register<VerticalLayoutGroup>();
+ 
+    Register<UIActionComponent>();
 
     // --- Managed Script Component ---
     Register<ManagedScriptComponent>("ManagedScriptComponent", [](auto& archive, auto& component) {

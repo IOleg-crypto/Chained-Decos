@@ -15,6 +15,28 @@ struct ShaderUniform
     std::string Name;
     int Type; // 0: Float, 1: Vec2, 2: Vec3, 3: Vec4, 4: Color
     float Value[4] = {0, 0, 0, 0};
+
+    CH_REFLECT_BEGIN(ShaderUniform)
+        props.Property("Name", Name);
+        static const char* types[] = { "Float", "Vec2", "Vec3", "Vec4", "Color" };
+        props.Enum("Type", Type, types, 5);
+        if (Type == 4) // Color
+        {
+            Color c = { (unsigned char)(Value[0]*255), (unsigned char)(Value[1]*255), (unsigned char)(Value[2]*255), (unsigned char)(Value[3]*255) };
+            if (props.Property("Color", c))
+            {
+                Value[0] = c.r / 255.0f;
+                Value[1] = c.g / 255.0f;
+                Value[2] = c.b / 255.0f;
+                Value[3] = c.a / 255.0f;
+            }
+        }
+        else
+        {
+            // Simple float array for others for now
+            props.Property("Value", Value); 
+        }
+    CH_REFLECT_END()
 };
 
 struct ShaderComponent
@@ -55,9 +77,12 @@ struct ShaderComponent
     }
 
     CH_REFLECT_BEGIN(ShaderComponent)
+        props.Header("Shader Asset");
         props.File("Shader Path", ShaderPath, "glsl,shader");
         props.Property("Enabled", Enabled);
-        // Uniforms are complex, maybe handled by custom UI later
+        
+        props.Header("Uniforms");
+        props.Sequence("Uniforms", Uniforms);
     CH_REFLECT_END()
 };
 } // namespace CHEngine

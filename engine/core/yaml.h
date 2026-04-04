@@ -132,10 +132,10 @@ template <> struct convert<CHEngine::Color>
     static Node encode(const CHEngine::Color& rhs)
     {
         Node node;
-        node.push_back(rhs.r);
-        node.push_back(rhs.g);
-        node.push_back(rhs.b);
-        node.push_back(rhs.a);
+        node.push_back((int)rhs.r);
+        node.push_back((int)rhs.g);
+        node.push_back((int)rhs.b);
+        node.push_back((int)rhs.a);
         return node;
     }
 
@@ -189,7 +189,7 @@ struct convert<CHEngine::UIStyle>
 inline YAML::Emitter& operator<<(YAML::Emitter& out, const CHEngine::Color& color)
 {
     out << YAML::Flow;
-    out << YAML::BeginSeq << color.r << color.g << color.b << color.a << YAML::EndSeq;
+    out << YAML::BeginSeq << (int)color.r << (int)color.g << (int)color.b << (int)color.a << YAML::EndSeq;
     return out;
 }
 
@@ -456,6 +456,41 @@ inline YAML::Emitter& operator<<(YAML::Emitter& out, const CHEngine::MaterialSlo
         << YAML::Key << "Index"    << YAML::Value << s.Index
         << YAML::Key << "Target"   << YAML::Value << static_cast<int>(s.Target)
         << YAML::Key << "Material" << YAML::Value << s.Material
+        << YAML::EndMap;
+    return out;
+}
+
+// ---- ShaderUniform ----
+template<> struct convert<CHEngine::ShaderUniform>
+{
+    static Node encode(const CHEngine::ShaderUniform& rhs)
+    {
+        Node node;
+        node["Name"]  = rhs.Name;
+        node["Type"]  = rhs.Type;
+        node["Value"] = glm::vec4(rhs.Value[0], rhs.Value[1], rhs.Value[2], rhs.Value[3]);
+        return node;
+    }
+    static bool decode(const Node& node, CHEngine::ShaderUniform& rhs)
+    {
+        if (!node.IsMap()) return false;
+        if (node["Name"])  rhs.Name  = node["Name"].as<std::string>();
+        if (node["Type"])  rhs.Type  = node["Type"].as<int>();
+        if (node["Value"])
+        {
+            glm::vec4 v = node["Value"].as<glm::vec4>();
+            rhs.Value[0] = v.x; rhs.Value[1] = v.y; rhs.Value[2] = v.z; rhs.Value[3] = v.w;
+        }
+        return true;
+    }
+};
+
+inline YAML::Emitter& operator<<(YAML::Emitter& out, const CHEngine::ShaderUniform& u)
+{
+    out << YAML::BeginMap
+        << YAML::Key << "Name"  << YAML::Value << u.Name
+        << YAML::Key << "Type"  << YAML::Value << u.Type
+        << YAML::Key << "Value" << YAML::Value << glm::vec4(u.Value[0], u.Value[1], u.Value[2], u.Value[3])
         << YAML::EndMap;
     return out;
 }

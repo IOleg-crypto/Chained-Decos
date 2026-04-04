@@ -225,25 +225,25 @@ std::string Project::GetRelativePath(const std::filesystem::path& path)
 
     auto absolutePath = NormalizePath(path);
 
-    // 1. Try relative to Engine Root
+    // 1. Try relative to Assets Directory
+    if (auto rel = TryMakeRelative(absolutePath, GetAssetDirectory()))
+    {
+        return *rel;
+    }
+
+    // 2. Try relative to Project Root
+    if (auto rel = TryMakeRelative(absolutePath, GetProjectDirectory()))
+    {
+        return *rel;
+    }
+
+    // 3. Try relative to Engine Root
     if (!s_EngineRoot.empty())
     {
         if (auto rel = TryMakeRelative(absolutePath, s_EngineRoot))
         {
             return "engine/" + *rel;
         }
-    }
-
-    // 2. Try relative to Assets Directory
-    if (auto rel = TryMakeRelative(absolutePath, GetAssetDirectory()))
-    {
-        return *rel;
-    }
-
-    // 3. Try relative to Project Root
-    if (auto rel = TryMakeRelative(absolutePath, GetProjectDirectory()))
-    {
-        return *rel;
     }
 
     return absolutePath.generic_string();

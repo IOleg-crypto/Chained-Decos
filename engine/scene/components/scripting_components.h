@@ -1,8 +1,6 @@
 #ifndef CH_SCRIPTING_COMPONENTS_H
 #define CH_SCRIPTING_COMPONENTS_H   
 #include "engine/core/reflection.h"
-#include "scripting/scriptengine.h"
-#include <Coral/ManagedObject.hpp>
 #include <vector>
 #include <string>
 #include <map>
@@ -64,42 +62,6 @@ struct ManagedScriptInstance
 
     CH_REFLECT_BEGIN(ManagedScriptInstance)
         props.Property("ClassName", ClassName);
-        
-        // Sync fields with script engine definition
-        if (props.GetMode() == ReflectionMode::UI)
-        {
-            auto* scriptType = ScriptEngine::Get().GetScriptClass(ClassName);
-            if (scriptType)
-            {
-                auto fieldInfos = scriptType->GetFields();
-                for (auto& info : fieldInfos)
-                {
-                    if (info.GetAccessibility() != Coral::TypeAccessibility::Public) continue;
-                    std::string fieldName = (std::string)info.GetName();
-                    
-                    if (Fields.find(fieldName) == Fields.end())
-                    {
-                        // Add default field
-                        ScriptField f;
-                        f.Name = fieldName;
-                        // ... setup default value based on type (simplified for now)
-                        Fields[fieldName] = f;
-                    }
-
-                    auto& field = Fields[fieldName];
-                    
-                    // Reflect the field itself (which handles its name and variant value)
-                    Properties<T_Archive> fieldProps(props.GetArchive());
-                    field.Reflect(fieldProps);
-
-                    if (fieldProps.HasChanged() && Instance)
-                    {
-                        auto* obj = static_cast<Coral::ManagedObject*>(Instance);
-                        std::visit([&](auto&& v) { obj->SetFieldValue(fieldName, v); }, field.Value);
-                    }
-                }
-            }
-        }
     CH_REFLECT_END()
 };
 

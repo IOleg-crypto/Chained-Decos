@@ -1,7 +1,9 @@
 #include "material_panel.h"
-#include "property_editor.h"
-#include "imgui.h"
+#include "engine/scene/components/mesh_component.h"
 #include "engine/scene/scene_events.h"
+#include "imgui.h"
+#include "property_editor.h"
+#include "ui_properties.h"
 
 namespace CHEngine
 {
@@ -28,7 +30,23 @@ void MaterialPanel::OnImGuiRender(bool readOnly)
     if (m_SelectedEntity && m_SelectedEntity.IsValid())
     {
         ImGui::BeginDisabled(readOnly);
-        PropertyEditor::DrawMaterial(m_SelectedEntity, m_SelectedMeshIndex);
+
+        if (m_SelectedEntity.HasComponent<MaterialComponent>())
+        {
+            auto& component = m_SelectedEntity.GetComponent<MaterialComponent>();
+            UIProperties ui;
+            Properties props(ui);
+            component.Reflect(props);
+        }
+        else
+        {
+            ImGui::TextColored({0.8f, 0.8f, 0.2f, 1.0f}, ICON_FA_CIRCLE_INFO " No Materials Component");
+            if (ImGui::Button(ICON_FA_PLUS " Add Materials Component"))
+            {
+                m_SelectedEntity.AddComponent<MaterialComponent>();
+            }
+        }
+
         ImGui::EndDisabled();
     }
     else

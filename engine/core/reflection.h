@@ -81,7 +81,13 @@ namespace CHEngine
         template<typename T_Enum>
         bool Enum(const char* name, T_Enum& value, const char** names, int count)
         {
-            return m_Archive.Property(name, (int&)value, names, count);
+            int temp = (int)value;
+            bool changed = m_Archive.Property(name, temp, names, count);
+            if (changed)
+            {
+                value = (T_Enum)temp;
+            }
+            return changed;
         }
 
         template<typename T_Enum>
@@ -98,6 +104,26 @@ namespace CHEngine
         bool Action(const char* label, std::function<void()> func)
         {
             return m_Archive.Action(label, func);
+        }
+
+        void Header(const char* label)
+        {
+            m_Archive.Header(label);
+        }
+
+        void Separator()
+        {
+            m_Archive.Separator();
+        }
+
+        bool BeginGroup(const char* label, bool defaultOpen = true)
+        {
+            return m_Archive.BeginGroup(label, defaultOpen);
+        }
+
+        void EndGroup()
+        {
+            m_Archive.EndGroup();
         }
 
         // Post-change hook
