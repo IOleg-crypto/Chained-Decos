@@ -2,11 +2,9 @@
 #define CH_SHADER_COMPONENT_H
 
 #include "engine/core/base.h"
-#include "engine/core/reflection.h"
 #include <algorithm>
 #include <string>
 #include <vector>
-#include <glm/glm.hpp>
 
 namespace CHEngine
 {
@@ -54,11 +52,13 @@ struct ShaderComponent
         }
     }
 
-    CH_REFLECT_BEGIN(ShaderComponent)
-        props.File("Shader Path", ShaderPath, "glsl,shader");
-        props.Property("Enabled", Enabled);
-        // Uniforms are complex, maybe handled by custom UI later
-    CH_REFLECT_END()
+    static const char* GetStaticName() { return "ShaderComponent"; }
+
+    template <typename Archive>
+    static void Serialize(Archive& archive, ShaderComponent& component)
+    {
+        archive.Path("ShaderPath", component.ShaderPath);
+    }
 };
 } // namespace CHEngine
 

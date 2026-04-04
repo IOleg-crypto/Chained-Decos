@@ -38,6 +38,8 @@ public:
     static bool Property(const char* label, CHEngine::Color& value);
     static bool Property(const char* label, glm::vec2& value, float speed = 0.1f, float min = 0.0f, float max = 0.0f);
     static bool Property(const char* label, glm::vec3& value, float speed = 0.1f, float min = 0.0f, float max = 0.0f);
+    static bool Property(const char* label, glm::vec4& value, float speed = 0.1f, float min = 0.0f, float max = 0.0f);
+    static bool Property(const char* label, uint64_t& value);
 
     static bool Property(const char* label, int& value, const char** items, int itemCount);
 
@@ -49,6 +51,7 @@ public:
 
     static bool DrawVec2(const char* label, glm::vec2& values, float resetValue = 0.0f);
     static bool DrawVec3(const char* label, glm::vec3& values, float resetValue = 0.0f);
+    static bool DrawVec4(const char* label, glm::vec4& values, float resetValue = 0.0f);
     static void ApplyTheme();
     static Ray GetMouseRay(const struct Camera3D& camera, const glm::vec2& mousePosition, const glm::vec2& viewportSize);
 };
@@ -94,6 +97,11 @@ struct PropertyBuilder
         return *this;
     }
     PropertyBuilder& Vec3(const char* label, glm::vec3& value, float speed = 0.1f)
+    {
+        Changed |= EditorGUI::Property(label, value, speed);
+        return *this;
+    }
+    PropertyBuilder& Vec4(const char* label, glm::vec4& value, float speed = 0.1f)
     {
         Changed |= EditorGUI::Property(label, value, speed);
         return *this;
