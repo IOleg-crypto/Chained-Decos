@@ -54,10 +54,10 @@ inline void DeserializePath(YAML::Node node, const char* name, std::string& path
             return;
         }
 
-        // Keep path as is, but unify slashes to forward slashes for cross-platform portability.
-        // AssetManager::ResolvePath will handle the actual file lookup.
-        path = pathValue;
+        // Convert to absolute path immediately on load
+        path = Project::GetAbsolutePath(pathValue).generic_string();
 
+        // Unify slashes for cross-platform portability.
 #ifdef CH_PLATFORM_WINDOWS
         std::replace(path.begin(), path.end(), '\\', '/');
 #endif
@@ -217,6 +217,11 @@ public:
     {
         return false;
     }
+
+    void Header(const char* label) {}
+    void Separator() {}
+    bool BeginGroup(const char* label, bool defaultOpen = true) { return true; }
+    void EndGroup() {}
 
     // YAML doesn't track change states like UI, so we return false for now
     // (Actual change tracking is done when we SAVE the file anyway)

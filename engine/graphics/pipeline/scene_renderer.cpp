@@ -451,15 +451,47 @@ void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Materia
 
 void SceneRenderer::RenderDebug(Scene* scene, const Camera3D& camera, const SceneRenderOptions& options)
 {
-    if (!options.ShowDebugColliders && !options.ShowDebugCollisionModelBox && !options.ShowDebugSpawnZones && !options.DrawGrid) return;
+    if (!options.ShowDebugColliders && !options.ShowDebugCollisionModelBox && !options.ShowDebugSpawnZones && !options.DrawGrid) 
+        return;
+    
     auto& registry = scene->GetRegistry();
+    
+    // Save current GL state
+    GLboolean depthTestEnabled = glIsEnabled(GL_DEPTH_TEST);
+    GLboolean blendEnabled = glIsEnabled(GL_BLEND);
+    GLint polygonMode[2];
+    glGetIntegerv(GL_POLYGON_MODE, polygonMode);
+    
+    // Setup for debug drawing
     glDisable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    
     if (options.DrawGrid && scene->GetSettings().Mode == BackgroundMode::Environment3D)
         Renderer::Get().DrawInfiniteGrid(camera, scene->GetSettings().Grid.Spacing, {200, 200, 200, 255});
-    if (options.ShowDebugColliders) DrawColliderDebug(registry, options);
-    if (options.ShowDebugCollisionModelBox) DrawCollisionModelBoxDebug(registry, options);
-    if (options.ShowDebugSpawnZones) DrawSpawnDebug(registry, options);
-    glEnable(GL_DEPTH_TEST);
+    
+    if (options.ShowDebugColliders) 
+        DrawColliderDebug(registry, options);
+    
+    if (options.ShowDebugCollisionModelBox) 
+        DrawCollisionModelBoxDebug(registry, options);
+    
+    if (options.ShowDebugSpawnZones) 
+        DrawSpawnDebug(registry, options);
+    
+    // Restore GL state
+    if (depthTestEnabled)
+        glEnable(GL_DEPTH_TEST);
+    else
+        glDisable(GL_DEPTH_TEST);
+    
+    if (blendEnabled)
+        glEnable(GL_BLEND);
+    else
+        glDisable(GL_BLEND);
+    
+    glPolygonMode(GL_FRONT_AND_BACK, polygonMode[0]);
+    glBindVertexArray(0);  // Unbind VAO
 }
 
 void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRenderOptions& options)
@@ -478,12 +510,128 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
         }
         else if (collider.Type == ColliderType::Sphere)
             Renderer::Get().DrawSphereWires(transform.WorldTransform * glm::translate(glm::mat4(1.0f), collider.Offset), collider.Radius, color);
+        else if (collider.Type == ColliderType::Capsule)
+            Renderer::Get().DrawCapsuleWires(transform.WorldTransform * glm::translate(glm::mat4(1.0f), collider.Offset), collider.Radius, collider.Height, color);
+        else if (collider.Type == ColliderType::Mesh)
+        {
+            if (collider.ModelHandle != 0)
+            {
+                auto model = AssetManager::Get().Get<ModelAsset>(collider.ModelHandle);
+                if (model && model->IsReady())
+                {
+                    for (const auto& mesh : model->GetModel().Meshes)
+                    {
+                        Renderer::Get().DrawMeshWire(mesh, color, transform.WorldTransform);
+                    }
+                }
+            }
+        }
     }
 }
 
-void SceneRenderer::DrawCollisionModelBoxDebug(entt::registry& registry, const SceneRenderOptions& options) {}
-void SceneRenderer::DrawSpawnDebug(entt::registry& registry, const SceneRenderOptions& options) {}
-void SceneRenderer::RenderEditorIcons(Scene* scene, const Camera3D& camera) {}
+void SceneRenderer::DrawCollisionModelBoxDebug(entt::registry& registry, const SceneRenderOptions& options)
+{
+    // Draw bounding boxes for collision model box entities
+    // This shows mesh collider bounding boxes
+    auto view = registry.view<TransformComponent, ColliderComponent>();
+    for (auto entity : view)
+    {
+        auto [transform, collider] = view.get<TransformComponent, ColliderComponent>(entity);
+        if (!collider.Enabled) continue;
+        
+        // Only render for mesh colliders
+        if (collider.Type != ColliderType::Mesh) continue;
+        
+        glm::vec4 color = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f); // Yellow for collision model boxes
+        
+        if (collider.ModelHandle != 0)
+        {
+            auto model = AssetManager::Get().Get<ModelAsset>(collider.ModelHandle);
+            if (model && model->IsReady())
+            {
+                // Calculate bounding box from meshes
+                glm::vec3 minBounds(FLT_MAX);
+                glm::vec3 maxBounds(-FLT_MAX);
+                
+                for (const auto& mesh : model->GetModel().Meshes)
+                {
+                    minBounds.x = glm::min(minBounds.x, mesh.MinBounds.x);
+                    minBounds.y = glm::min(minBounds.y, mesh.MinBounds.y);
+                    minBounds.z = glm::min(minBounds.z, mesh.MinBounds.z);
+                    maxBounds.x = glm::max(maxBounds.x, mesh.MaxBounds.x);
+                    maxBounds.y = glm::max(maxBounds.y, mesh.MaxBounds.y);
+                    maxBounds.z = glm::max(maxBounds.z, mesh.MaxBounds.z);
+                }
+                
+                glm::vec3 center = (minBounds + maxBounds) * 0.5f;
+                glm::vec3 size = maxBounds - minBounds;
+                Renderer::Get().DrawCubeWires(transform.WorldTransform * glm::translate(glm::mat4(1.0f), center), size, color);
+            }
+        }
+    }
+}
+
+void SceneRenderer::DrawSpawnDebug(entt::registry& registry, const SceneRenderOptions& options)
+{
+    // Draw spawn zones
+    auto view = registry.view<TransformComponent, SpawnComponent>();
+    for (auto entity : view)
+    {
+        auto [transform, spawn] = view.get<TransformComponent, SpawnComponent>(entity);
+        if (!spawn.IsActive) continue;
+        
+        glm::vec4 color = glm::vec4(1.0f, 0.65f, 0.0f, 1.0f); // Orange for spawn zones
+        
+        // Draw zone as wireframe cube
+        Renderer::Get().DrawCubeWires(
+            transform.WorldTransform * glm::translate(glm::mat4(1.0f), spawn.SpawnPoint),
+            spawn.ZoneSize,
+            color
+        );
+    }
+}
+
+void SceneRenderer::RenderEditorIcons(Scene* scene, const Camera3D& camera)
+{
+    // Render special entity icons (cameras, lights, etc.)
+    auto& registry = scene->GetRegistry();
+    
+    // Draw camera icons
+    auto cameraView = registry.view<TransformComponent, CameraComponent>();
+    for (auto entity : cameraView)
+    {
+        auto [transform, camera] = cameraView.get<TransformComponent, CameraComponent>(entity);
+        glm::vec4 cameraColor = glm::vec4(0.0f, 1.0f, 1.0f, 1.0f); // Cyan
+        glm::vec3 iconSize = glm::vec3(0.1f);
+        Renderer::Get().DrawCubeWires(transform.WorldTransform, iconSize, cameraColor);
+    }
+    
+    // Draw light icons  
+    auto lightView = registry.view<TransformComponent, LightComponent>();
+    for (auto entity : lightView)
+    {
+        auto [transform, light] = lightView.get<TransformComponent, LightComponent>(entity);
+        glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f); // Yellow
+        
+        if (light.Type == LightType::Directional)
+        {
+            // Draw arrow for directional light
+            glm::vec3 pos = glm::vec3(transform.WorldTransform[3]);
+            glm::vec3 dir = glm::normalize(glm::vec3(transform.WorldTransform[2])) * 0.5f;
+            Renderer::Get().DrawLine(pos, pos + dir, lightColor);
+        }
+        else if (light.Type == LightType::Point)
+        {
+            // Draw sphere for point light
+            Renderer::Get().DrawSphereWires(transform.WorldTransform, light.Radius * 0.1f, lightColor);
+        }
+        else if (light.Type == LightType::Spot)
+        {
+            // Draw cone for spot light
+            Renderer::Get().DrawSphereWires(transform.WorldTransform, light.Radius * 0.05f, lightColor);
+        }
+    }
+}
 
 BoundingBox SceneRenderer::CalculateColliderWorldAABB(const ColliderComponent& collider, const glm::mat4& worldTransform)
 {
@@ -496,7 +644,9 @@ BoundingBox SceneRenderer::CalculateColliderWorldAABB(const ColliderComponent& c
     for (int i = 0; i < 8; i++)
     {
         glm::vec3 worldCorner = glm::vec3(worldTransform * glm::vec4(corners[i], 1.0f));
-        result.Min = glm::min(result.Min, worldCorner);
+        result.Min.x = (worldCorner.x < result.Min.x) ? worldCorner.x : result.Min.x;
+        result.Min.y = (worldCorner.y < result.Min.y) ? worldCorner.y : result.Min.y;
+        result.Min.z = (worldCorner.z < result.Min.z) ? worldCorner.z : result.Min.z;
         result.Max.x = (worldCorner.x > result.Max.x) ? worldCorner.x : result.Max.x;
         result.Max.y = (worldCorner.y > result.Max.y) ? worldCorner.y : result.Max.y;
         result.Max.z = (worldCorner.z > result.Max.z) ? worldCorner.z : result.Max.z;

@@ -114,54 +114,26 @@ namespace CHEngine
 
         const aiScene* scene = nullptr;
 
-        // "Robust-Light" Loading Strategy: Read to memory with padding to avoid corruption issues
-        // and handle potential encoding issues on Windows by reading ourselves.
-        std::ifstream file(path, std::ios::binary | std::ios::ate);
-        if (!file.is_open())
-        {
-            CH_CORE_ERROR("Assimp Model Load Failed: {} | Error: Could not open file at {}", path.filename().string(), path.string());
-            return data;
-        }
-
-        std::streamsize size = file.tellg();
-        if (size <= 0)
-        {
-            CH_CORE_ERROR("Assimp Model Load Failed: {} | Error: File is empty", path.filename().string());
-            return data;
-        }
-
-        CH_CORE_INFO("AssimpImporter: Loading file {0} (size: {1} bytes)", path.string(), (uint32_t)size);
-        file.seekg(0);
-        
-        std::vector<char> buffer(static_cast<size_t>(size) + 1024, 0); 
-        file.read(buffer.data(), size);
-        std::streamsize read = file.gcount();
-        file.close();
-
-        if (read < size)
-        {
-            CH_CORE_ERROR("AssimpImporter: Read only {0} of {1} bytes for '{2}'", (uint32_t)read, (uint32_t)size, path.string());
-        }
-
-        // Diagnostic: check magic bytes for GLB
-        if (ext == ".glb" && read >= 4)
-        {
-            char magic[5] = { buffer[0], buffer[1], buffer[2], buffer[3], 0 };
-            CH_CORE_INFO("AssimpImporter: GLB Magic: '{0}' (expected 'glTF')", magic);
-        }
-
-        // Hint Assimp about the format since we are loading from memory
-        std::string hint = ext;
-        if (!hint.empty() && hint[0] == '.') hint = hint.substr(1); 
-        
-        CH_CORE_INFO("AssimpImporter: Invoking ReadFileFromMemory for '{0}' with hint '{1}'", path.string(), hint);
-        scene = importer.ReadFileFromMemory(buffer.data(), static_cast<size_t>(size), flags, hint.c_str());
+        CH_CORE_INFO("AssimpImporter: Invoking ReadFile for '{0}'", path.string());
+        scene = importer.ReadFile(path.string(), flags);
 
         if (!scene || !scene->mRootNode)
         {
-            CH_CORE_ERROR("AssimpImporter: ReadFileFromMemory failed for '{0}': {1}", path.string(), importer.GetErrorString());
-            CH_CORE_INFO("AssimpImporter: Falling back to direct ReadFile for '{0}'", path.string());
-            scene = importer.ReadFile(path.string(), flags);
+            CH_CORE_WARN("AssimpImporter: ReadFile failed for '{0}': {1}. Trying memory loading as fallback...", path.string(), importer.GetErrorString());
+            
+            // "Robust-Light" Loading Strategy: Read to memory with padding to avoid corruption issues
+            std::ifstream file(path, std::ios::binary | std::ios::ate);
+            if (file.is_open())
+            {
+                std::streamsize size = file.tellg();
+                if (size > 0)
+                {
+                    file.seekg(0);
+                    std::vector<char> buffer(static_cast<size_t>(size) + 1024, 0); 
+                    file.read(buffer.data(), size);
+                    scene = importer.ReadFileFromMemory(buffer.data(), static_cast<size_t>(size), flags, path.extension().string().c_str());
+                }
+            }
         }
 
         if (!scene) {

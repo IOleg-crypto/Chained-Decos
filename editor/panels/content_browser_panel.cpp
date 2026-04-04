@@ -204,23 +204,17 @@ void ContentBrowserPanel::RenderGridView()
             }
         }
 
+        ImGui::BeginGroup();
+        
+        // Thumbnail/Icon
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-        // Center the icon button
-        float availX = ImGui::GetContentRegionAvail().x;
         float currentThumbnailSize = m_ThumbnailSize * m_IconScale;
-        float offsetX = (availX - currentThumbnailSize) * 0.5f;
-        if (offsetX > 0.0f)
+        
+        if (ImGui::Button(icon, {cellSize - m_Padding, currentThumbnailSize}))
         {
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offsetX);
+            // Clicked
         }
 
-        if (ImGui::Button(icon, {currentThumbnailSize, currentThumbnailSize}))
-        {
-            // Single click selection logic could go here
-        }
-        ImGui::PopStyleColor();
-
-        // Context Menu
         if (ImGui::BeginPopupContextItem())
         {
             if (ImGui::MenuItem(ICON_FA_PEN " Rename"))
@@ -237,7 +231,6 @@ void ContentBrowserPanel::RenderGridView()
             ImGui::EndPopup();
         }
 
-        // Rename Popup
         if (ImGui::BeginPopupModal("RenameAsset", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
         {
             ImGui::Text("Enter new name for %s:", m_RenamingPath.filename().string().c_str());
@@ -255,7 +248,6 @@ void ContentBrowserPanel::RenderGridView()
             ImGui::EndPopup();
         }
 
-        // Delete Confirmation
         if (ImGui::BeginPopupModal("DeleteAsset?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
         {
             ImGui::Text("Are you sure you want to delete %s?\nThis operation cannot be undone!", m_PathToDelete.filename().string().c_str());
@@ -276,20 +268,43 @@ void ContentBrowserPanel::RenderGridView()
             OnAssetDoubleClicked(asset);
         }
 
-        // Drag and Drop
         if (ImGui::BeginDragDropSource())
         {
             std::string pathStr = asset.path.string();
             ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", pathStr.c_str(), pathStr.size() + 1);
-
-            // Fancy drag preview
             ImGui::Text("%s %s", icon, asset.name.c_str());
-
             ImGui::EndDragDropSource();
         }
 
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (availX - ImGui::CalcTextSize(asset.name.c_str()).x) * 0.5f);
-        ImGui::TextWrapped("%s", asset.name.c_str());
+        ImGui::PopStyleColor();
+
+        // Metadata/Label
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 2));
+        
+        ImGui::SetNextItemWidth(cellSize - m_Padding);
+        ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + cellSize - m_Padding);
+        
+        float textWidth = ImGui::CalcTextSize(asset.name.c_str()).x;
+        if (textWidth < cellSize - m_Padding)
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (cellSize - m_Padding - textWidth) * 0.5f);
+            
+        ImGui::TextUnformatted(asset.name.c_str());
+        ImGui::PopTextWrapPos();
+        
+        // Type Label
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+        const char* typeLabel = asset.isDirectory ? "FOLDER" : "FILE";
+        if (asset.type == EditorAssetType::Model) typeLabel = "MESH";
+        else if (asset.type == EditorAssetType::Scene) typeLabel = "SCENE";
+        else if (asset.type == EditorAssetType::Script) typeLabel = "SCRIPT";
+        
+        float typeLabelWidth = ImGui::CalcTextSize(typeLabel).x;
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (cellSize - m_Padding - typeLabelWidth) * 0.5f);
+        ImGui::TextDisabled("%s", typeLabel);
+        ImGui::PopStyleColor();
+        
+        ImGui::PopStyleVar();
+        ImGui::EndGroup();
 
         ImGui::NextColumn();
         ImGui::PopID();

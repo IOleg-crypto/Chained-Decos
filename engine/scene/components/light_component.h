@@ -28,18 +28,25 @@ struct LightComponent
 
 
     CH_REFLECT_BEGIN(LightComponent)
+        props.Header("General");
         static const char* lightTypeStrings[] = { "Point", "Spot", "Directional" };
         props.Enum("Type", Type, lightTypeStrings, 3);
         props.Property("Color", LightColor);
         props.Property("Intensity", Intensity);
-        props.Property("Radius", Radius);
         
-        if (Type == LightType::Spot)
+        if (props.BeginGroup("Parameters"))
         {
-            props.Property("Inner Cutoff", InnerCutoff);
-            props.Property("Outer Cutoff", OuterCutoff);
+            props.Property("Radius", Radius);
+            
+            if (Type == LightType::Spot)
+            {
+                props.Property("Inner Cutoff", InnerCutoff);
+                props.Property("Outer Cutoff", OuterCutoff);
+            }
+            props.EndGroup();
         }
 
+        props.Separator();
         props.Property("Shadows", Shadows);
     CH_REFLECT_END()
 };

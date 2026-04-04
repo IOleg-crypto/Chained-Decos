@@ -21,6 +21,7 @@
 
 #include "nfd.h"
 #include "scripting/scriptengine.h"
+#include <Coral/ManagedObject.hpp>
 
 #include <algorithm>
 #include <iterator>
@@ -42,6 +43,15 @@ void PropertyEditor::Init()
     Register<T>(name, [](auto&, auto) { return false; });                                                              \
     s_ComponentRegistry[entt::type_hash<T>::value()].Visible = false;
 
+#define REG_REFLECT(T, name)                                                                                           \
+    Register<T>(name, [](auto& component, auto entity) {                                                               \
+        CHEngine::UIProperties ui;                                                                                     \
+        CHEngine::Properties props(ui);                                                                               \
+        component.Reflect(props);                                                                                      \
+        return props.HasChanged();                                                                                     \
+    });
+
+    // Core Components
     Register<TransformComponent>("Transform", [](auto& component, auto entity) {
         CHEngine::UIProperties ui;
         CHEngine::Properties props(ui);
@@ -55,231 +65,69 @@ void PropertyEditor::Init()
     });
     s_ComponentRegistry[entt::type_hash<TransformComponent>::value()].AllowAdd = false;
 
-    Register<CameraComponent>("Camera", [](auto& component, auto entity) {
-        CHEngine::UIProperties ui;
-        CHEngine::Properties props(ui);
-        component.Reflect(props);
-        return props.HasChanged();
-    });
-
-    Register<LightComponent>("Light", [](auto& component, auto entity) {
-        CHEngine::UIProperties ui;
-        CHEngine::Properties props(ui);
-        component.Reflect(props);
-        
-        if (component.Radius <= 0.01f)
-        {
-            ImGui::Columns(2);
-            ImGui::SetColumnWidth(0, 100.0f);
-            ImGui::NextColumn();
-            ImGui::TextColored({ 1, 1, 0, 1 }, ICON_FA_CIRCLE_EXCLAMATION " Radius is 0");
-            ImGui::Columns(1);
-        }
-
-        return props.HasChanged();
-    });
-
-    Register<RigidBodyComponent>("RigidBody", [](auto& component, auto entity) {
-        CHEngine::UIProperties ui;
-        CHEngine::Properties props(ui);
-        component.Reflect(props);
-        return props.HasChanged();
-    });
-
-    Register<ColliderComponent>("Collider", [](auto& component, auto entity) {
-        CHEngine::UIProperties ui;
-        CHEngine::Properties props(ui);
-        component.Reflect(props);
-
-        if (component.Type == ColliderType::Mesh)
-        {
-            ImGui::Columns(2);
-            ImGui::SetColumnWidth(0, 100.0f);
-            ImGui::NextColumn();
-            if (ImGui::Button(ICON_FA_HAMMER " Rebuild Body", {-1, 0}))
-            {
-                auto asset = AssetManager::Get().Get<ModelAsset>(component.ModelPath);
-                if (asset && asset->IsReady())
-                {
-                    if (component.AutoCalculate)
-                    {
-                        auto box = asset->GetBoundingBox();
-                        component.Offset = box.Min; 
-                        component.Size = box.Max - box.Min;
-                    }
-                    PhysicsSystem::Get().InvalidateBVH(component.ModelPath);
-                }
-                return true;
-            }
-            ImGui::Columns(1);
-        }
-
-        return props.HasChanged();
-    });
-
-    Register<TagComponent>("Tag", [](auto& component, auto entity) {
-        CHEngine::UIProperties ui;
-        CHEngine::Properties props(ui);
-        component.Reflect(props);
-        return props.HasChanged();
-    });
-
-    Register<ShaderComponent>("Shader", [](auto& component, auto entity) {
-        // Shaders still use custom UI due to Uniforms complexity and ShaderLibrary integration
+    REG_REFLECT(TagComponent, "Tag");
+    REG_REFLECT(CameraComponent, "Camera");
+    REG_REFLECT(LightComponent, "Light");
+    REG_REFLECT(RigidBodyComponent, "RigidBody");
+    REG_REFLECT(ColliderComponent, "Collider");
+    REG_REFLECT(ModelComponent, "Model");
+    REG_REFLECT(MaterialComponent, "Materials");
+    REG_REFLECT(SpriteComponent, "Sprite");
+    REG_REFLECT(PrimitiveComponent, "Primitive");
+    REG_REFLECT(ShaderComponent, "Shader");
+    REG_REFLECT(AnimationComponent, "Animation");
+    REG_REFLECT(AudioComponent, "Audio");
+    REG_REFLECT(SpawnComponent, "Spawn Zone");
+    REG_REFLECT(PlayerComponent, "Player");
+    REG_REFLECT(SceneTransitionComponent, "Scene Transition");
+    Register<ManagedScriptComponent>("Scripts", [](auto& component, auto entity) {
         bool changed = false;
-
-        if (Renderer::IsInitialized())
+        for (auto& script : component.Scripts)
         {
-            auto& lib = Renderer::Get().GetShaderLibrary();
-            std::vector<std::string> names = lib.GetNames();
-            std::sort(names.begin(), names.end());
-
-            std::string currentName = "Custom";
-            for (const auto& name : names)
+            if (ImGui::TreeNodeEx(script.ClassName.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
             {
-                if (lib.Get(name)->GetPath() == component.ShaderPath)
+                auto* scriptType = ScriptEngine::Get().GetScriptClass(script.ClassName);
+                if (scriptType)
                 {
-                    currentName = name;
-                    break;
-                }
-            }
-
-            EditorGUI::BeginProperty("Shader");
-            if (ImGui::BeginCombo("##ShaderCombo", currentName.c_str()))
-            {
-                if (ImGui::Selectable("Custom", currentName == "Custom")) {}
-                for (const auto& name : names)
-                {
-                    if (ImGui::Selectable(name.c_str(), currentName == name))
+                    auto fieldInfos = scriptType->GetFields();
+                    for (auto& info : fieldInfos)
                     {
-                        component.ShaderPath = lib.Get(name)->GetPath();
-                        changed = true;
-                    }
-                }
-                ImGui::EndCombo();
-            }
-            EditorGUI::EndProperty();
-        }
-
-        if (EditorGUI::Property("Shader Path", component.ShaderPath, "chshader")) changed = true;
-        if (EditorGUI::Property("Enabled", component.Enabled)) changed = true;
-
-        if (!component.Uniforms.empty() && ImGui::TreeNodeEx("Uniforms", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
-        {
-            for (auto& u : component.Uniforms)
-            {
-                EditorGUI::BeginProperty(u.Name.c_str());
-                if (u.Type == 0) { if (ImGui::DragFloat("##U", &u.Value[0], 0.05f)) changed = true; }
-                else if (u.Type == 1) { if (ImGui::DragFloat2("##U", u.Value, 0.05f)) changed = true; }
-                else if (u.Type == 2) { if (ImGui::DragFloat3("##U", u.Value, 0.05f)) changed = true; }
-                else if (u.Type == 4) { if (ImGui::ColorEdit4("##U", u.Value)) changed = true; }
-                EditorGUI::EndProperty();
-            }
-            ImGui::TreePop();
-        }
-
-        ImGui::Separator();
-        ImGui::Columns(2);
-        ImGui::SetColumnWidth(0, 100.0f);
-        ImGui::NextColumn();
-        if (ImGui::Button(ICON_FA_ARROWS_ROTATE " Sync Uniforms", {-1, 0}))
-        {
-            std::string fullPath = AssetManager::Get().ResolvePath(component.ShaderPath);
-            if (std::filesystem::exists(fullPath))
-            {
-                try {
-                    YAML::Node config = YAML::LoadFile(fullPath);
-                    if (config["Uniforms"])
-                    {
-                        std::vector<ShaderUniform> newUniforms;
-                        for (auto uNode : config["Uniforms"])
+                        if (info.GetAccessibility() != Coral::TypeAccessibility::Public) continue;
+                        std::string fieldName = (std::string)info.GetName();
+                        
+                        if (script.Fields.find(fieldName) == script.Fields.end())
                         {
-                            std::string name = uNode.as<std::string>();
-                            auto it = std::find_if(component.Uniforms.begin(), component.Uniforms.end(), [&](const auto& e) { return e.Name == name; });
-                            if (it != component.Uniforms.end()) newUniforms.push_back(*it);
-                            else { ShaderUniform u; u.Name = name; u.Type = name.find("Color") != std::string::npos ? 4 : 0; newUniforms.push_back(u); }
+                            ScriptField f;
+                            f.Name = fieldName;
+                            script.Fields[fieldName] = f;
                         }
-                        component.Uniforms = newUniforms;
-                        changed = true;
+
+                        auto& field = script.Fields[fieldName];
+                        CHEngine::UIProperties ui;
+                        CHEngine::Properties props(ui);
+                        field.Reflect(props);
+                        
+                        if (props.HasChanged())
+                        {
+                            changed = true;
+                            if (script.Instance)
+                            {
+                                auto* obj = static_cast<Coral::ManagedObject*>(script.Instance);
+                                std::visit([&](auto&& v) { obj->SetFieldValue(fieldName, v); }, field.Value);
+                            }
+                        }
                     }
-                } catch (...) {}
+                }
+                ImGui::TreePop();
             }
         }
-        ImGui::Columns(1);
         return changed;
     });
+    
+    REG_REFLECT(ControlComponent, "Rect Transform");
+    s_ComponentRegistry[entt::type_hash<ControlComponent>::value()].AllowAdd = true;
 
-    Register<AudioComponent>("Audio", [](auto& component, auto entity) {
-        CHEngine::UIProperties ui;
-        CHEngine::Properties props(ui);
-        component.Reflect(props);
-        
-        ImGui::Separator();
-        if (ImGui::Button("Play")) { component.IsPlaying = true; }
-        ImGui::SameLine();
-        if (ImGui::Button("Stop")) { component.IsPlaying = false; }
-
-        return props.HasChanged();
-    });
-
-    Register<SpawnComponent>("Spawn Zone", [](auto& component, auto entity) {
-        CHEngine::UIProperties ui;
-        CHEngine::Properties props(ui);
-        component.Reflect(props);
-        return props.HasChanged();
-    });
-
-    Register<PlayerComponent>("Player", [](auto& component, auto entity) {
-        CHEngine::UIProperties ui;
-        CHEngine::Properties props(ui);
-        component.Reflect(props);
-        return props.HasChanged();
-    });
-
-    Register<SceneTransitionComponent>("Scene Transition", [](auto& component, auto entity) {
-        CHEngine::UIProperties ui;
-        CHEngine::Properties props(ui);
-        component.Reflect(props);
-        return props.HasChanged();
-    });
-
-    Register<AnimationComponent>("Animation", [](auto& component, auto entity) {
-        CHEngine::UIProperties ui;
-        CHEngine::Properties props(ui);
-        component.Reflect(props);
-
-        int animCount = 0;
-        std::shared_ptr<ModelAsset> modelAsset;
-        if (entity.template HasComponent<ModelComponent>())
-        {
-            auto& mc = entity.template GetComponent<ModelComponent>();
-            modelAsset = AssetManager::Get().Get<ModelAsset>(mc.ModelPath);
-            if (modelAsset) animCount = modelAsset->GetAnimationCount();
-        }
-
-        if (animCount > 0)
-        {
-            std::string currentAnimName = modelAsset->GetAnimationName(component.CurrentAnimationIndex);
-            EditorGUI::BeginProperty("Animation Select");
-            if (ImGui::BeginCombo("##AnimCombo", currentAnimName.c_str()))
-            {
-                for (int i = 0; i < animCount; i++)
-                {
-                    bool isSelected = (component.CurrentAnimationIndex == i);
-                    if (ImGui::Selectable(modelAsset->GetAnimationName(i).c_str(), isSelected))
-                    {
-                        component.CurrentAnimationIndex = i;
-                        props.SetChanged(true);
-                    }
-                }
-                ImGui::EndCombo();
-            }
-            EditorGUI::EndProperty();
-        }
-
-        return props.HasChanged();
-    });
-
+    // UI Navigation (Still custom due to entity selection)
     Register<NavigationComponent>("UI Navigation", [](auto& component, auto entity) {
         bool changed = false;
         auto pb = EditorGUI::Begin();
@@ -303,224 +151,38 @@ void PropertyEditor::Init()
         return changed;
     });
 
-    Register<ModelComponent>("Model", [](auto& component, auto entity) {
-        CHEngine::UIProperties ui;
-        CHEngine::Properties props(ui);
-        component.Reflect(props);
-        return props.HasChanged();
-    });
+    REG_REFLECT(UIActionComponent, "UI Action");
 
-    Register<MaterialComponent>("Materials", [](auto& component, auto entity) {
-        CHEngine::UIProperties ui;
-        CHEngine::Properties props(ui);
-        component.Reflect(props);
-        return props.HasChanged();
-    });
+    // UI Widgets
+#define REG_WIDGET(T, name) \
+    Register<T>(name, [](auto& component, auto entity) { \
+        CHEngine::UIProperties ui; \
+        CHEngine::Properties props(ui); \
+        component.Reflect(props); \
+        return props.HasChanged(); \
+    }); \
+    s_ComponentRegistry[entt::type_hash<T>::value()].IsWidget = true; \
+    s_ComponentRegistry[entt::type_hash<T>::value()].AllowAdd = true;
 
-
-    Register<SpriteComponent>("Sprite", [](auto& component, auto entity) {
-        CHEngine::UIProperties ui;
-        CHEngine::Properties props(ui);
-        component.Reflect(props);
-        return props.HasChanged();
-    });
-
-    Register<PrimitiveComponent>("Primitive", [](auto& component, auto entity) {
-        CHEngine::UIProperties ui;
-        CHEngine::Properties props(ui);
-        component.Reflect(props);
-        return props.HasChanged();
-    });
-
-    Register<ManagedScriptComponent>("Scripts", [](auto& component, Entity entity) {
-        CHEngine::UIProperties ui;
-        CHEngine::Properties props(ui);
-        component.Reflect(props);
-        return props.HasChanged();
-    });
-
-    Register<UIActionComponent>("UI Action", [](auto& component, auto entity) {
-        auto pb = EditorGUI::Begin();
-        std::string uuidStr = component.TargetEntityID.ToString();
-        if (EditorGUI::Property("Target UUID", uuidStr))
-        {
-            component.TargetEntityID = UUID(uuidStr);
-            pb.Changed = true;
-        }
-        pb.String("Parameter", component.ParameterName).Float("Value", component.Value);
-        return pb.Changed;
-    });
-
-    // --- UI Widgets ---
-    Register<ControlComponent>("Rect Transform", [](auto& component, auto entity) {
-        auto& rectTransform = component.Transform;
-        bool changed = false;
-
-        // --- Anchor Presets ---
-        ImGui::Text("Presets:");
-        ImGui::SameLine();
-        if (ImGui::Button("Center"))
-        {
-            rectTransform.AnchorMin = {0.5f, 0.5f};
-            rectTransform.AnchorMax = {0.5f, 0.5f};
-            rectTransform.OffsetMin = {-50, -50};
-            rectTransform.OffsetMax = {50, 50};
-            changed = true;
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Stretch"))
-        {
-            rectTransform.AnchorMin = {0.0f, 0.0f};
-            rectTransform.AnchorMax = {1.0f, 1.0f};
-            rectTransform.OffsetMin = {0, 0};
-            rectTransform.OffsetMax = {0, 0};
-            changed = true;
-        }
-
-        bool isPoint = (rectTransform.AnchorMin.x == rectTransform.AnchorMax.x &&
-                        rectTransform.AnchorMin.y == rectTransform.AnchorMax.y);
-        if (isPoint)
-        {
-            float width = rectTransform.OffsetMax.x - rectTransform.OffsetMin.x;
-            float height = rectTransform.OffsetMax.y - rectTransform.OffsetMin.y;
-            float posX = rectTransform.OffsetMin.x + width * rectTransform.Pivot.x;
-            float posY = rectTransform.OffsetMin.y + height * rectTransform.Pivot.y;
-
-            glm::vec2 pos = {posX, posY};
-            glm::vec2 size = {width, height};
-
-            if (EditorGUI::Property("Pos", pos))
-            {
-                rectTransform.OffsetMin.x = pos.x - size.x * rectTransform.Pivot.x;
-                rectTransform.OffsetMin.y = pos.y - size.y * rectTransform.Pivot.y;
-                rectTransform.OffsetMax.x = pos.x + size.x * (1.0f - rectTransform.Pivot.x);
-                rectTransform.OffsetMax.y = pos.y + size.y * (1.0f - rectTransform.Pivot.y);
-                changed = true;
-            }
-            if (EditorGUI::Property("Size", size))
-            {
-                rectTransform.OffsetMin.x = pos.x - size.x * rectTransform.Pivot.x;
-                rectTransform.OffsetMin.y = pos.y - size.y * rectTransform.Pivot.y;
-                rectTransform.OffsetMax.x = pos.x + size.x * (1.0f - rectTransform.Pivot.x);
-                rectTransform.OffsetMax.y = pos.y + size.y * (1.0f - rectTransform.Pivot.y);
-                changed = true;
-            }
-        }
-        else
-        {
-            float rightPadding = -rectTransform.OffsetMax.x;
-            float bottomPadding = -rectTransform.OffsetMax.y;
-
-            if (EditorGUI::Property("Left", rectTransform.OffsetMin.x))
-            {
-                changed = true;
-            }
-            if (EditorGUI::Property("Top", rectTransform.OffsetMin.y))
-            {
-                changed = true;
-            }
-            if (EditorGUI::Property("Right", rightPadding))
-            {
-                rectTransform.OffsetMax.x = -rightPadding;
-                changed = true;
-            }
-            if (EditorGUI::Property("Bottom", bottomPadding))
-            {
-                rectTransform.OffsetMax.y = -bottomPadding;
-                changed = true;
-            }
-        }
-
-        if (ImGui::TreeNodeEx("Advanced Layout Settings", ImGuiTreeNodeFlags_SpanAvailWidth))
-        {
-            if (EditorGUI::Property("Pivot", rectTransform.Pivot))
-            {
-                changed = true;
-            }
-            if (EditorGUI::Property("Anchor Min", rectTransform.AnchorMin))
-            {
-                changed = true;
-            }
-            if (EditorGUI::Property("Anchor Max", rectTransform.AnchorMax))
-            {
-                changed = true;
-            }
-            if (EditorGUI::Property("Rotation", rectTransform.Rotation))
-            {
-                changed = true;
-            }
-            if (EditorGUI::Property("Scale", rectTransform.Scale))
-            {
-                changed = true;
-            }
-            if (EditorGUI::Property("Z Order", component.ZOrder))
-            {
-                changed = true;
-            }
-            if (EditorGUI::Property("Visible", component.IsActive))
-            {
-                changed = true;
-            }
-            ImGui::TreePop();
-        }
-        return changed;
-    });
-
-    auto stdReflect = [](auto& component, auto entity) {
-        CHEngine::UIProperties ui;
-        CHEngine::Properties props(ui);
-        component.Reflect(props);
-        return props.HasChanged();
-    };
-
-    Register<ButtonControl>("Button Widget", stdReflect);
-    Register<PanelControl>("Panel Widget", stdReflect);
-    Register<LabelControl>("Label Widget", stdReflect);
-    Register<SliderControl>("Slider Widget", stdReflect);
-    Register<CheckboxControl>("Checkbox Widget", stdReflect);
-    Register<InputTextControl>("Input Text Widget", stdReflect);
-    Register<ComboBoxControl>("ComboBox Widget", stdReflect);
-    Register<ProgressBarControl>("ProgressBar Widget", stdReflect);
-    Register<ImageControl>("Image Widget", stdReflect);
-    Register<ImageButtonControl>("Image Button Widget", stdReflect);
-    Register<SeparatorControl>("Separator Widget", stdReflect);
-    Register<RadioButtonControl>("RadioButton Widget", stdReflect);
-    Register<ColorPickerControl>("ColorPicker Widget", stdReflect);
-    Register<DragFloatControl>("DragFloat Widget", stdReflect);
-    Register<DragIntControl>("DragInt Widget", stdReflect);
-    Register<TabBarControl>("TabBar Widget", stdReflect);
-    Register<TabItemControl>("Tab Item Widget", stdReflect);
-    Register<CollapsingHeaderControl>("CollapsingHeader Widget", stdReflect);
-    Register<VerticalLayoutGroup>("Vertical Layout Group", stdReflect);
-
-    // Helper to setup widgets
-    auto setupWidget = [](entt::id_type id) {
-        auto& metadata = s_ComponentRegistry[id];
-        metadata.IsWidget = true;
-        metadata.AllowAdd = true;
-    };
-
-    setupWidget(entt::type_hash<ButtonControl>::value());
-    setupWidget(entt::type_hash<PanelControl>::value());
-    setupWidget(entt::type_hash<LabelControl>::value());
-    setupWidget(entt::type_hash<SliderControl>::value());
-    setupWidget(entt::type_hash<CheckboxControl>::value());
-    setupWidget(entt::type_hash<InputTextControl>::value());
-    setupWidget(entt::type_hash<ComboBoxControl>::value());
-    setupWidget(entt::type_hash<ProgressBarControl>::value());
-    setupWidget(entt::type_hash<ImageControl>::value());
-    setupWidget(entt::type_hash<ImageButtonControl>::value());
-    setupWidget(entt::type_hash<SeparatorControl>::value());
-    setupWidget(entt::type_hash<RadioButtonControl>::value());
-    setupWidget(entt::type_hash<ColorPickerControl>::value());
-    setupWidget(entt::type_hash<DragFloatControl>::value());
-    setupWidget(entt::type_hash<DragIntControl>::value());
-    setupWidget(entt::type_hash<TabBarControl>::value());
-    setupWidget(entt::type_hash<TabItemControl>::value());
-    setupWidget(entt::type_hash<CollapsingHeaderControl>::value());
-
-    // Allow adding Rect Transform directly too
-    s_ComponentRegistry[entt::type_hash<ControlComponent>::value()].AllowAdd = true;
+    REG_WIDGET(ButtonControl, "Button Widget");
+    REG_WIDGET(PanelControl, "Panel Widget");
+    REG_WIDGET(LabelControl, "Label Widget");
+    REG_WIDGET(SliderControl, "Slider Widget");
+    REG_WIDGET(CheckboxControl, "Checkbox Widget");
+    REG_WIDGET(InputTextControl, "Input Text Widget");
+    REG_WIDGET(ComboBoxControl, "ComboBox Widget");
+    REG_WIDGET(ProgressBarControl, "ProgressBar Widget");
+    REG_WIDGET(ImageControl, "Image Widget");
+    REG_WIDGET(ImageButtonControl, "Image Button Widget");
+    REG_WIDGET(SeparatorControl, "Separator Widget");
+    REG_WIDGET(RadioButtonControl, "RadioButton Widget");
+    REG_WIDGET(ColorPickerControl, "ColorPicker Widget");
+    REG_WIDGET(DragFloatControl, "DragFloat Widget");
+    REG_WIDGET(DragIntControl, "DragInt Widget");
+    REG_WIDGET(TabBarControl, "TabBar Widget");
+    REG_WIDGET(TabItemControl, "Tab Item Widget");
+    REG_WIDGET(CollapsingHeaderControl, "CollapsingHeader Widget");
+    REG_WIDGET(VerticalLayoutGroup, "Vertical Layout Group");
 }
 
 void PropertyEditor::DrawEntityProperties(CHEngine::Entity entity)
@@ -718,249 +380,7 @@ static std::string GetTexturePathFromID(uint32_t id, const std::vector<std::shar
 }
 
 
-void PropertyEditor::DrawMaterial(CHEngine::Entity entity, int hitMeshIndex)
-{
-    if (!entity.HasComponent<ModelComponent>())
-        return;
 
-    auto& mc = entity.GetComponent<ModelComponent>();
-    auto mcAsset = AssetManager::Get().Get<ModelAsset>(mc.ModelPath);
-    if (!mcAsset || mcAsset->GetState() != AssetState::Ready)
-        return;
-
-    const Model& model = mcAsset->GetModel();
-    auto modelTextures = mcAsset->GetPendingData().materials;
-
-    // Helper to draw a single material instance
-    auto DrawMaterialInstance = [&](MaterialInstance& mat, int index, bool isOverride) {
-        std::string header = (isOverride ? ICON_FA_PEN_TO_SQUARE " " : ICON_FA_LOCK " ") + 
-                             std::string("Material ") + std::to_string(index) + (isOverride ? " (Override)" : " (Default)");
-        
-        if (ImGui::CollapsingHeader(header.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
-        {
-            ImGui::PushID(index);
-            ImGui::BeginDisabled(!isOverride);
-
-            if (ImGui::BeginTable("MaterialProperties", 2, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_Resizable))
-            {
-                ImGui::TableSetupColumn("Property", ImGuiTableColumnFlags_WidthFixed, 100.0f);
-                ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
-
-                // --- Albedo Section ---
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                ImGui::AlignTextToFramePadding();
-                ImGui::Text("Albedo");
-                
-                ImGui::TableSetColumnIndex(1);
-                ImGui::PushID("Albedo");
-                if (EditorGUI::Property("Color", mat.AlbedoColor)) mat.OverrideAlbedo = true;
-                if (DrawTextureSlot("Map", mat.AlbedoPath)) mat.OverrideAlbedo = true;
-                ImGui::PopID();
-                
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                ImGui::Separator();
-                ImGui::TableSetColumnIndex(1);
-                ImGui::Separator();
-
-                // --- PBR Section ---
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                ImGui::AlignTextToFramePadding();
-                ImGui::Text("PBR Maps");
-                
-                ImGui::TableSetColumnIndex(1);
-                DrawTextureSlot("Normal", mat.NormalMapPath);
-                DrawTextureSlot("Metallic/Roughness", mat.MetallicRoughnessPath);
-                DrawTextureSlot("Occlusion", mat.OcclusionMapPath);
-
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                ImGui::Separator();
-                ImGui::TableSetColumnIndex(1);
-                ImGui::Separator();
-
-                // --- Parameters Section ---
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                ImGui::AlignTextToFramePadding();
-                ImGui::Text("Parameters");
-
-                ImGui::TableSetColumnIndex(1);
-                EditorGUI::Property("Metalness", mat.Metalness, 0.01f, 0.0f, 1.0f);
-                EditorGUI::Property("Roughness", mat.Roughness, 0.01f, 0.0f, 1.0f);
-
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                ImGui::Separator();
-                ImGui::TableSetColumnIndex(1);
-                ImGui::Separator();
-
-                // --- Emissive Section ---
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                ImGui::AlignTextToFramePadding();
-                ImGui::Text("Emissive");
-
-                ImGui::TableSetColumnIndex(1);
-                ImGui::PushID("Emissive");
-                if (EditorGUI::Property("Color", mat.EmissiveColor)) mat.OverrideEmissive = true;
-                EditorGUI::Property("Intensity", mat.EmissiveIntensity, 0.1f, 0.0f, 100.0f);
-                DrawTextureSlot("Map", mat.EmissivePath);
-                ImGui::PopID();
-
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                ImGui::Separator();
-                ImGui::TableSetColumnIndex(1);
-                ImGui::Separator();
-
-                // --- Rendering Section ---
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                ImGui::AlignTextToFramePadding();
-                ImGui::Text("Rendering");
-
-                ImGui::TableSetColumnIndex(1);
-                EditorGUI::Property("Double Sided", mat.DoubleSided);
-                EditorGUI::Property("Transparent", mat.Transparent);
-                if (mat.Transparent)
-                    EditorGUI::Property("Alpha", mat.Alpha, 0.01f, 0.0f, 1.0f);
-
-                ImGui::EndTable();
-            }
-
-            ImGui::EndDisabled();
-
-            if (!isOverride)
-            {
-                ImGui::Spacing();
-                ImGui::PushStyleColor(ImGuiCol_Button, {0.2f, 0.4f, 0.2f, 1.0f});
-                if (ImGui::Button(ICON_FA_PLUS " Create Override from Defaults", {-1, 0}))
-                {
-                    MaterialSlot newSlot;
-                    newSlot.Name = "Override " + std::to_string(index);
-                    newSlot.Target = MaterialSlotTarget::MaterialIndex;
-                    newSlot.Index = index;
-                    newSlot.Material = mat; 
-                    mc.Materials.push_back(newSlot);
-                }
-                ImGui::PopStyleColor();
-            }
-
-            ImGui::PopID();
-        }
-    };
-
-    if (hitMeshIndex >= 0 && hitMeshIndex < (int)model.Meshes.size())
-    {
-        int matIndex = model.Meshes[hitMeshIndex].MaterialIndex;
-        int slotIndex = -1;
-
-        // 1. Check for Mesh Index override
-        for (int i = 0; i < (int)mc.Materials.size(); i++)
-        {
-            if (mc.Materials[i].Target == MaterialSlotTarget::MeshIndex && mc.Materials[i].Index == hitMeshIndex)
-            {
-                slotIndex = i;
-                break;
-            }
-        }
-
-        // 2. Check for Material Index override
-        if (slotIndex == -1)
-        {
-            for (int i = 0; i < (int)mc.Materials.size(); i++)
-            {
-                if (mc.Materials[i].Target == MaterialSlotTarget::MaterialIndex && mc.Materials[i].Index == matIndex)
-                {
-                    slotIndex = i;
-                    break;
-                }
-            }
-        }
-
-        if (slotIndex != -1)
-        {
-            DrawMaterialInstance(mc.Materials[slotIndex].Material, slotIndex, true);
-        }
-        else
-        {
-            // Synthesis default material info for display
-            MaterialInstance defaultMat;
-            const Material& rMat = model.Materials[matIndex];
-            
-            // defaultMat.AlbedoColor = { (unsigned char)(rMat.AlbedoColor.r * 255), (unsigned char)(rMat.AlbedoColor.g * 255), (unsigned char)(rMat.AlbedoColor.b * 255), (unsigned char)(rMat.AlbedoColor.a * 255) };
-            // defaultMat.AlbedoPath = GetTexturePathFromID(rMat.AlbedoMap, modelTextures);
-            // defaultMat.OverrideAlbedo = !defaultMat.AlbedoPath.empty();
-
-            // defaultMat.NormalMapPath = GetTexturePathFromID(rMat.NormalMap, modelTextures);
-            // defaultMat.MetallicRoughnessPath = GetTexturePathFromID(rMat.MetallicRoughnessMap, modelTextures);
-            // defaultMat.OcclusionMapPath = GetTexturePathFromID(rMat.OcclusionMap, modelTextures);
-            // defaultMat.EmissivePath = GetTexturePathFromID(rMat.EmissiveMap, modelTextures);
-            // defaultMat.EmissiveColor = { (unsigned char)(rMat.EmissiveColor.r * 255), (unsigned char)(rMat.EmissiveColor.g * 255), (unsigned char)(rMat.EmissiveColor.b * 255), (unsigned char)(rMat.EmissiveColor.a * 255) };
-            // defaultMat.EmissiveIntensity = rMat.EmissiveIntensity;
-            // defaultMat.Metalness = rMat.Metalness;
-            // defaultMat.Roughness = rMat.Roughness;
-
-            DrawMaterialInstance(defaultMat, matIndex, false);
-            
-            ImGui::Separator();
-            if (ImGui::Button("Create Mesh Specific Override"))
-            {
-                MaterialSlot newSlot;
-                newSlot.Name = "Mesh Override " + std::to_string(hitMeshIndex);
-                newSlot.Target = MaterialSlotTarget::MeshIndex;
-                newSlot.Index = hitMeshIndex;
-                newSlot.Material = defaultMat;
-                mc.Materials.push_back(newSlot);
-            }
-        }
-    }
-    else
-    {
-        // Show all materials of the model first
-        for (int m = 0; m < (int)model.Materials.size(); m++)
-        {
-            int slotIdx = -1;
-            for (int i = 0; i < (int)mc.Materials.size(); i++)
-            {
-                if (mc.Materials[i].Target == MaterialSlotTarget::MaterialIndex && mc.Materials[i].Index == m)
-                {
-                    slotIdx = i;
-                    break;
-                }
-            }
-
-            if (slotIdx != -1)
-            {
-                DrawMaterialInstance(mc.Materials[slotIdx].Material, slotIdx, true);
-            }
-            else
-            {
-                MaterialInstance defaultMat;
-                const Material& rMat = model.Materials[m];
-                
-                // defaultMat.AlbedoColor = { (unsigned char)(rMat.AlbedoColor.r * 255), (unsigned char)(rMat.AlbedoColor.g * 255), (unsigned char)(rMat.AlbedoColor.b * 255), (unsigned char)(rMat.AlbedoColor.a * 255) };
-                // defaultMat.AlbedoPath = GetTexturePathFromID(rMat.AlbedoMap, modelTextures);
-                // defaultMat.OverrideAlbedo = !defaultMat.AlbedoPath.empty();
-                
-                // defaultMat.NormalMapPath = GetTexturePathFromID(rMat.NormalMap, modelTextures);
-                // defaultMat.MetallicRoughnessPath = GetTexturePathFromID(rMat.MetallicRoughnessMap, modelTextures);
-                // defaultMat.OcclusionMapPath = GetTexturePathFromID(rMat.OcclusionMap, modelTextures);
-                // defaultMat.EmissivePath = GetTexturePathFromID(rMat.EmissiveMap, modelTextures);
-                // defaultMat.EmissiveColor = { (unsigned char)(rMat.EmissiveColor.r * 255), (unsigned char)(rMat.EmissiveColor.g * 255), (unsigned char)(rMat.EmissiveColor.b * 255), (unsigned char)(rMat.EmissiveColor.a * 255) };
-                // defaultMat.EmissiveIntensity = rMat.EmissiveIntensity;
-                // defaultMat.Metalness = rMat.Metalness;
-                // defaultMat.Roughness = rMat.Roughness;
-
-                DrawMaterialInstance(defaultMat, m, false);
-            }
-        }
-    }
-
-}
 
 void PropertyEditor::DrawAddComponentPopup(CHEngine::Entity entity)
 {
