@@ -1,7 +1,5 @@
 #version 450 core
 
-// Infinite Grid Shader (Hazel-style)
-// Based on: http://asliceofrendering.com/webgl/2019/06/19/InfiniteGrid/
 
 layout(location = 0) in vec3 nearPoint;
 layout(location = 1) in vec3 farPoint;
@@ -19,13 +17,6 @@ vec4 grid(vec3 fragPos3D, float scale, bool drawLines) {
     float minimumx = min(derivative.x, 1.0);
     
     vec4 color = vec4(1.0, 1.0, 1.0, 1.0 - min(line, 1.0));
-
-    // Z axis (Blue)
-    if (fragPos3D.x > -0.1 * minimumx && fragPos3D.x < 0.1 * minimumx)
-        color.z = 1.0;
-    // X axis (Red)
-    if (fragPos3D.z > -0.1 * minimumz && fragPos3D.z < 0.1 * minimumz)
-        color.x = 1.0;
         
     return color;
 }

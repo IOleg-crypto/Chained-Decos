@@ -80,7 +80,7 @@ target_include_directories(ChainedEditor PRIVATE
     ${CMAKE_SOURCE_DIR}
 )
 
-# Copy engine resources to build output directory
+# Copy engine resources to build output directory (only if source files changed)
 add_custom_command(TARGET ChainedEditor POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     "${CMAKE_SOURCE_DIR}/resources"

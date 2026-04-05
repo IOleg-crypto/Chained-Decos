@@ -9,13 +9,13 @@ Canvas:
   MatchWidthOrHeight: 0.5
 EnvironmentPath: environments/new_environment.chenv
 Lighting:
-  Direction: [1, 1, 1]
+  Direction: [0.419999987, 0.970000029, 1]
   LightColor: [255, 255, 255, 255]
-  Ambient: 0.185000002
+  Ambient: 0.170000002
 Skybox:
   TexturePath: skyboxes/qwantani_dusk_2_puresky_8k.hdr
   Mode: 0
-  Exposure: 0.75
+  Exposure: 0.680000007
   Brightness: -0.899999976
   Contrast: 0.349999994
 Fog:
@@ -29,77 +29,12 @@ DebugSettings:
   DrawColliders: false
   DrawHierarchy: false
   DrawCollisionModelBox: false
-  DrawGrid: false
+  DrawGrid: true
   DrawSelection: true
-  DrawLights: false
-  DrawSpawnZones: false
+  DrawLights: true
+  DrawSpawnZones: true
   CollisionWireframeMode: 0
 Entities:
-  - Entity: 10680602693042542455
-    TagComponent:
-      Tag: Empty Entity
-    TransformComponent:
-      Translation: [-216.192169, -6.67572021e-06, 0]
-      Rotation: [0.0617936067, 0.0883244723, -0.0563300997]
-      Scale: [46.0502167, 47.251339, 53.7656708]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/pilot/animated_civilian_helicopter/scene.gltf
-      Materials:
-        - Name: ""
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: models/pilot/animated_civilian_helicopter/textures/Helicopter_baseColor.jpeg
-            OverrideAlbedo: true
-            NormalMapPath: models/pilot/animated_civilian_helicopter/textures/Helicopter_normal.png
-            OverrideNormal: true
-            MetallicRoughnessPath: models/pilot/animated_civilian_helicopter/textures/Helicopter_metallicRoughness.png
-            OverrideMetallicRoughness: true
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 1
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-    AnimationComponent:
-      AnimationPath: models/pilot/animated_civilian_helicopter/scene.gltf
-      CurrentAnimation: 0
-      IsLooping: true
-      IsPlaying: true
-      BlendDuration: 0
   - Entity: 11859063027363205809
     TagComponent:
       Tag: rail#3d_copy_copy
@@ -228,7 +163,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-9.29998016, -130.776825, -0.718267083]
-      ModelHandle: 1426162197774911939
+      ModelHandle: 8157136229823322653
       ModelPath: models/bridge.glb
       AutoCalculate: true
     AnimationComponent:
@@ -300,7 +235,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-4.6624608, -3.7252903e-08, -11.7852259]
-      ModelHandle: 15698718432447733580
+      ModelHandle: 1279932366167067299
       ModelPath: models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb.glb
       AutoCalculate: true
   - Entity: 11499449198343814881
@@ -342,7 +277,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-9.29998016, -130.776825, -0.718267083]
-      ModelHandle: 1426162197774911939
+      ModelHandle: 8157136229823322653
       ModelPath: models/bridge.glb
       AutoCalculate: true
     AnimationComponent:
@@ -390,7 +325,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-9.29998016, -130.776825, -0.718267083]
-      ModelHandle: 1426162197774911939
+      ModelHandle: 8157136229823322653
       ModelPath: models/bridge.glb
       AutoCalculate: true
     AnimationComponent:
@@ -438,7 +373,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-9.29998016, -130.776825, -0.718267083]
-      ModelHandle: 1426162197774911939
+      ModelHandle: 8157136229823322653
       ModelPath: models/bridge.glb
       AutoCalculate: true
     AnimationComponent:
@@ -552,28 +487,28 @@ Entities:
       Offset: [-1.23305595, -6.83498478, -4.18938494]
       Size: [2.48870611, 13.512085, 4.18936396]
       AutoCalculate: true
-  - Entity: 9172781978797212155
+  - Entity: 10680602693042542455
     TagComponent:
-      Tag: rail#3d
+      Tag: Empty Entity
     TransformComponent:
-      Translation: [-5573.6748, 635.218933, -316.571991]
-      Rotation: [0.00018337823, 0.0685081109, -4.0567109e-05]
-      Scale: [417.830475, 336.553497, 246.064026]
+      Translation: [-216.192169, -6.67572021e-06, 0]
+      Rotation: [0.0617936067, 0.0883244723, -0.0563300997]
+      Scale: [46.0502167, 47.251339, 53.7656708]
     ModelComponent:
       ModelHandle: 0
-      ModelPath: models/building/scene.gltf
+      ModelPath: models/pilot/animated_civilian_helicopter/scene.gltf
       Materials:
         - Name: ""
           Index: 0
           Target: 0
           Material:
             AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: models/building/textures/standardSurface2_baseColor.png
+            AlbedoPath: models/pilot/animated_civilian_helicopter/textures/Helicopter_baseColor.jpeg
             OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
+            NormalMapPath: models/pilot/animated_civilian_helicopter/textures/Helicopter_normal.png
+            OverrideNormal: true
+            MetallicRoughnessPath: models/pilot/animated_civilian_helicopter/textures/Helicopter_metallicRoughness.png
+            OverrideMetallicRoughness: true
             OcclusionMapPath: ""
             OverrideOcclusion: false
             EmissivePath: ""
@@ -582,133 +517,13 @@ Entities:
             OverrideEmissive: false
             ShaderPath: ""
             OverrideShader: false
-            Metalness: 0
-            Roughness: 0.600000024
+            Metalness: 1
+            Roughness: 1
             DoubleSided: false
             Transparent: false
             Alpha: 1
         - Name: ""
           Index: 1
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: models/building/textures/standardSurface3_baseColor.png
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.600000024
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 2
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: models/building/textures/standardSurface4_baseColor.png
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.600000024
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 3
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: models/building/textures/standardSurface5_baseColor.png
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.600000024
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 4
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: models/building/textures/standardSurface6_baseColor.png
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.600000024
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 5
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: models/building/textures/standardSurface8_baseColor.png
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.600000024
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 6
           Target: 0
           Material:
             AlbedoColor: [255, 255, 255, 255]
@@ -731,13 +546,12 @@ Entities:
             DoubleSided: false
             Transparent: false
             Alpha: 1
-    ColliderComponent:
-      Type: 1
-      Enabled: true
-      Offset: [-0.470180094, -1.86820998e-05, -2.96693921]
-      ModelHandle: 7772729900371965766
-      ModelPath: models/building/scene.gltf
-      AutoCalculate: true
+    AnimationComponent:
+      AnimationPath: models/pilot/animated_civilian_helicopter/scene.gltf
+      CurrentAnimation: 0
+      IsLooping: true
+      IsPlaying: true
+      BlendDuration: 0
   - Entity: 7094686869644715316
     TagComponent:
       Tag: arena_two
@@ -849,7 +663,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-33.2911491, -0.000321388245, -6.43264723]
-      ModelHandle: 9964351771814623863
+      ModelHandle: 15948358158595505911
       ModelPath: models/container_ship/scene.gltf
       AutoCalculate: true
     AnimationComponent:
@@ -862,8 +676,8 @@ Entities:
     TagComponent:
       Tag: Camera
     TransformComponent:
-      Translation: [-234.970184, 81.9206085, 709.579407]
-      Rotation: [-0.157079637, -0.253072679, 0]
+      Translation: [-1155.96265, 1179.86316, 2545.06519]
+      Rotation: [-36.0583954, 1455.48743, 0]
       Scale: [1, 1, 1]
     CameraComponent:
       Primary: true
@@ -872,12 +686,12 @@ Entities:
         Projection: 0
         VerticalFOV: 60.0000038
         Near: 0.00999999978
-        Far: 1000
+        Far: 1000000
       Enabled: true
       TargetTag: Player
-      Distance: 36
-      Yaw: -14.5
-      Pitch: -9
+      Distance: 23.5166721
+      Yaw: 255.5
+      Pitch: 0
       Sensitivity: 0.899999976
     ManagedScriptComponent:
       Scripts:
@@ -886,6 +700,7 @@ Entities:
             - Name: LookSensitivity
               Type: 1
               Value: 6.19999981
+        - ClassName: ""
   - Entity: 6428169142076434776
     TagComponent:
       Tag: Entity
@@ -925,7 +740,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-14.1946049, -9.53674316e-07, -8.94524384]
-      ModelHandle: 15083464920000270219
+      ModelHandle: 13568791854738447524
       ModelPath: models/stairs.glb
       AutoCalculate: true
   - Entity: 2241149956455545874
@@ -1021,8 +836,8 @@ Entities:
     TagComponent:
       Tag: Player
     TransformComponent:
-      Translation: [-226.067474, 76.2889709, 675.155212]
-      Rotation: [0, 2.88852, 0]
+      Translation: [-288.791779, 109.51931, 731.988647]
+      Rotation: [0, -1.82386899, 0]
       Scale: [0.999901831, 1, 0.999901831]
     ModelComponent:
       ModelHandle: 0
@@ -1072,7 +887,7 @@ Entities:
     AudioComponent:
       SoundHandle: 0
       SoundPath: audio/storegraphic-soft-wind-477404.mp3
-      Volume: 0.473782033
+      Volume: 0.561679065
       Pitch: 1
       Loop: true
       PlayOnStart: false
@@ -1426,7 +1241,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-43.8236694, -46.1545258, -25.5901108]
-      ModelHandle: 8985939455265025731
+      ModelHandle: 11325174363199317349
       ModelPath: models/arena.glb
       AutoCalculate: true
   - Entity: 8982711742810159238
@@ -2180,12 +1995,12 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-14.1946049, -9.53674316e-07, -8.94524384]
-      ModelHandle: 15083464920000270219
+      ModelHandle: 13568791854738447524
       ModelPath: models/stairs.glb
       AutoCalculate: true
   - Entity: 6516797172325941388
     TagComponent:
-      Tag: Empty Entity
+      Tag: buildings_6_pack
     TransformComponent:
       Translation: [23.264637, -27.1361389, -506.157532]
       Rotation: [0, -0, 0]
@@ -2364,7 +2179,7 @@ Entities:
             Alpha: 1
   - Entity: 9393782307517162306
     TagComponent:
-      Tag: Empty Entity
+      Tag: island_minigames
     TransformComponent:
       Translation: [-118.395287, 12.3910465, 826.530884]
       Rotation: [0, -0, 0]
@@ -2665,6 +2480,280 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-0.782608986, 0.0434782989, -0.950311005]
-      ModelHandle: 18388960860672921034
+      ModelHandle: 5857447112424927560
       ModelPath: models/minigames/hub_for_minigames_server.glb
       AutoCalculate: true
+  - Entity: 13419404670353191655
+    TagComponent:
+      Tag: toy_train_platform
+    TransformComponent:
+      Translation: [-3565.1311, -45.4531631, 621.43158]
+      Rotation: [0.18592523, -1.13752759, -0.188373342]
+      Scale: [1.00000036, 0.999993503, 0.99999553]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/toy_train/wooden_train.glb
+      Materials:
+        - Name: ""
+          Index: 0
+          Target: 0
+          Material:
+            AlbedoColor: [32, 30, 29, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            ShaderPath: ""
+            OverrideShader: false
+            Metalness: 0
+            Roughness: 0.982108831
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: ""
+          Index: 1
+          Target: 0
+          Material:
+            AlbedoColor: [204, 204, 204, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            ShaderPath: ""
+            OverrideShader: false
+            Metalness: 0
+            Roughness: 0.82111454
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: ""
+          Index: 2
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            ShaderPath: ""
+            OverrideShader: false
+            Metalness: 1
+            Roughness: 1
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+    AnimationComponent:
+      AnimationPath: models/toy_train/wooden_train.glb
+      CurrentAnimation: 0
+      IsLooping: true
+      IsPlaying: true
+      BlendDuration: 5
+  - Entity: 10121800663724246293
+    TagComponent:
+      Tag: cathedral
+    TransformComponent:
+      Translation: [-710.380615, 254.511108, -1909.69739]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models_backup/building/scene.gltf
+      Materials:
+        - Name: ""
+          Index: 0
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: models_backup/building/textures/standardSurface2_baseColor.png
+            OverrideAlbedo: true
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            ShaderPath: ""
+            OverrideShader: false
+            Metalness: 0
+            Roughness: 0.600000024
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: ""
+          Index: 1
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: models_backup/building/textures/standardSurface3_baseColor.png
+            OverrideAlbedo: true
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            ShaderPath: ""
+            OverrideShader: false
+            Metalness: 0
+            Roughness: 0.600000024
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: ""
+          Index: 2
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: models_backup/building/textures/standardSurface4_baseColor.png
+            OverrideAlbedo: true
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            ShaderPath: ""
+            OverrideShader: false
+            Metalness: 0
+            Roughness: 0.600000024
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: ""
+          Index: 3
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: models_backup/building/textures/standardSurface5_baseColor.png
+            OverrideAlbedo: true
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            ShaderPath: ""
+            OverrideShader: false
+            Metalness: 0
+            Roughness: 0.600000024
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: ""
+          Index: 4
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: models_backup/building/textures/standardSurface6_baseColor.png
+            OverrideAlbedo: true
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            ShaderPath: ""
+            OverrideShader: false
+            Metalness: 0
+            Roughness: 0.600000024
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: ""
+          Index: 5
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: models_backup/building/textures/standardSurface8_baseColor.png
+            OverrideAlbedo: true
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            ShaderPath: ""
+            OverrideShader: false
+            Metalness: 0
+            Roughness: 0.600000024
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: ""
+          Index: 6
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            ShaderPath: ""
+            OverrideShader: false
+            Metalness: 1
+            Roughness: 1
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+    AnimationComponent:
+      AnimationPath: ""
+      CurrentAnimation: -1
+      IsLooping: true
+      IsPlaying: true
+      BlendDuration: 0
