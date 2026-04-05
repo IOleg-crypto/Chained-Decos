@@ -141,7 +141,7 @@ void EditorLayer::OnAttach()
         EditorContext::GetState().NeedsLayoutReset = true;
     }
 
-    std::string iconPath = AssetManager::Get().ResolvePath("engine/resources/icons/chained_icon.png");
+    std::string iconPath = AssetManager::Get().ResolvePath("engine/resources/icons/chaineddecosmapeditor.jpg");
     if (std::filesystem::exists(iconPath))
     {
         Application::Get().GetWindow().SetWindowIcon(iconPath);
