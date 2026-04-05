@@ -18,6 +18,39 @@ std::string ModelAsset::GetAnimationName(int index) const
     return (index >= 0 && index < (int)m_Animations.size()) ? m_Animations[index].name : "";
 }
 
+std::vector<glm::mat4> ModelAsset::GetBoneMatrices(int animationIndex, int frame) const
+{
+    if (animationIndex < 0 || animationIndex >= m_Animations.size()) return {};
+    const auto& anim = m_Animations[animationIndex];
+    if (frame < 0 || frame >= anim.frameCount) return {};
+
+    int boneCount = anim.boneCount;
+    if (boneCount == 0) return {};
+
+    std::vector<glm::mat4> globalTransforms(boneCount);
+    std::vector<glm::mat4> finalMatrices;
+    finalMatrices.reserve(boneCount);
+
+    for (int b = 0; b < boneCount; ++b)
+    {
+        const auto& pose = anim.framePoses[frame * boneCount + b];
+        
+        glm::mat4 local = glm::translate(glm::mat4(1.0f), pose.translation) *
+                          glm::mat4_cast(pose.rotation) *
+                          glm::scale(glm::mat4(1.0f), pose.scale);
+
+        if (m_NodeParents[b] == -1)
+            globalTransforms[b] = local;
+        else
+            globalTransforms[b] = globalTransforms[m_NodeParents[b]] * local;
+
+        glm::mat4 offset = (b < (int)m_OffsetMatrices.size()) ? m_OffsetMatrices[b] : glm::mat4(1.0f);
+        finalMatrices.push_back(globalTransforms[b] * offset);
+    }
+
+    return finalMatrices;
+}
+
 void ModelAsset::OnLoaded()
 {
     if (!m_HasPendingData || !m_PendingData.isValid)

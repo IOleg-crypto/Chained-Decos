@@ -68,8 +68,8 @@ inline void DeserializePath(YAML::Node node, const char* name, std::string& path
             return;
         }
 
-        // Convert to absolute path immediately on load
-        path = Project::GetAbsolutePath(pathValue).generic_string();
+        // Keep it relative so that the UI displays it cleanly, and AssetManager will resolve it implicitly.
+        path = pathValue;
 
         // Unify slashes for cross-platform portability.
 #ifdef CH_PLATFORM_WINDOWS
