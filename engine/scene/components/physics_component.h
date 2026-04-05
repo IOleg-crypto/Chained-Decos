@@ -56,22 +56,20 @@ struct ColliderComponent
         
         if (props.BeginGroup("Shape Parameters"))
         {
-            if (props.GetMode() != CHEngine::ReflectionMode::UI || Type == ColliderType::Box)
+            if (Type == ColliderType::Box)
             {
-                props.Property("Size", Size);
+                props.Property("Size", Size, PropertyMeta(0.01f, 100.0f, 0.1f));
             }
-            if (props.GetMode() != CHEngine::ReflectionMode::UI || Type == ColliderType::Capsule)
+            else if (Type == ColliderType::Capsule)
             {
-                props.Property("Radius", Radius);
-                props.Property("Height", Height);
+                props.Property("Radius", Radius, PropertyMeta(0.01f, 50.0f, 0.1f));
+                props.Property("Height", Height, PropertyMeta(0.1f, 100.0f, 0.1f));
             }
-            if (props.GetMode() != CHEngine::ReflectionMode::UI || Type == ColliderType::Sphere)
+            else if (Type == ColliderType::Sphere)
             {
-                // Only show Radius once for Sphere (it's shared with Capsule)
-                if (Type != ColliderType::Capsule)
-                    props.Property("Radius", Radius);
+                props.Property("Radius", Radius, PropertyMeta(0.01f, 50.0f, 0.1f));
             }
-            if (props.GetMode() != CHEngine::ReflectionMode::UI || Type == ColliderType::Mesh)
+            else if (Type == ColliderType::Mesh)
             {
                 props.Handle("Model Handle", ModelHandle);
                 props.File("Model Path", ModelPath, "obj,gltf,glb");
@@ -95,7 +93,7 @@ struct RigidBodyComponent
 
     CH_REFLECT_BEGIN(RigidBodyComponent)
         props.Header("Dynamics");
-        props.Property("Mass", Mass);
+        props.Property("Mass", Mass, PropertyMeta(0.01f, 100.0f, 0.1f));
         props.Property("Velocity", Velocity);
         
         if (props.BeginGroup("State"))

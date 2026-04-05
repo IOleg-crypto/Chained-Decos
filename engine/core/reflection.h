@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CH_REFLECTION_H
+#define CH_REFLECTION_H
 
 #include <vector>
 #include <string>
@@ -214,3 +215,4 @@ namespace CHEngine
     #define CH_REFLECT_END() \
         }
 }
+#endif // CH_REFLECTION_H

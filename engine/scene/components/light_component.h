@@ -32,18 +32,18 @@ struct LightComponent
         static const char* lightTypeStrings[] = { "Point", "Spot", "Directional" };
         props.Enum("Type", Type, lightTypeStrings, 3);
         props.Property("Color", LightColor);
-        props.Property("Intensity", Intensity);
+        props.Property("Intensity", Intensity, PropertyMeta(0.0f, 1000.0f, 1.0f));
         
         if (props.BeginGroup("Parameters"))
         {
-            props.Property("Radius", Radius);
+            props.Property("Radius", Radius, PropertyMeta(1.0f, 1000.0f, 1.0f));
             
             // Always serialize Spot fields to avoid losing values on save/load.
             // Only skip display in UI mode.
             if (props.GetMode() != CHEngine::ReflectionMode::UI || Type == LightType::Spot)
             {
-                props.Property("Inner Cutoff", InnerCutoff);
-                props.Property("Outer Cutoff", OuterCutoff);
+                props.Property("Inner Cutoff", InnerCutoff, PropertyMeta(0.0f, 90.0f, 0.5f));
+                props.Property("Outer Cutoff", OuterCutoff, PropertyMeta(0.0f, 90.0f, 0.5f));
             }
             props.EndGroup();
         }

@@ -89,14 +89,27 @@ function(chained_add_game TARGET_NAME DISPLAY_NAME CSHARP_PROJECT_PATH)
         set(SCRIPT_TARGET "BuildScripts_${TARGET_NAME}")
         if(NOT TARGET ${SCRIPT_TARGET})
             set(FULL_CSPROJ_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${CSHARP_PROJECT_PATH}")
+            get_filename_component(SCRIPT_DIR "${FULL_CSPROJ_PATH}" DIRECTORY)
             set(CORAL_MANAGED_DIR "${CMAKE_BINARY_DIR}/include/coral/cmake")
-            add_custom_target(${SCRIPT_TARGET} ALL
-                COMMAND dotnet build "${FULL_CSPROJ_PATH}" -c $<IF:$<OR:$<CONFIG:Debug>,$<CONFIG:>>,Debug,Release> --output "${CMAKE_CURRENT_SOURCE_DIR}/scripts/bin" -p:CoralManagedDir="${CORAL_MANAGED_DIR}"
+            
+            # 1. Collect dependencies (all .cs files in the script project's parent or relevant folder)
+            file(GLOB_RECURSE GAME_SCRIPT_SOURCES "${SCRIPT_DIR}/../src/*.cs")
+            list(APPEND GAME_SCRIPT_SOURCES "${FULL_CSPROJ_PATH}")
+            
+            set(SCRIPT_DLL_OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/scripts/bin/ChainedDecos.Scripts.dll")
+            
+            add_custom_command(
+                OUTPUT "${SCRIPT_DLL_OUTPUT}"
+                COMMAND ${DOTNET_EXECUTABLE} build "${FULL_CSPROJ_PATH}" -c $<IF:$<OR:$<CONFIG:Debug>,$<CONFIG:>>,Debug,Release> --output "${CMAKE_CURRENT_SOURCE_DIR}/scripts/bin" -p:CoralManagedDir="${CORAL_MANAGED_DIR}"
                 WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+                DEPENDS ${GAME_SCRIPT_SOURCES}
                 COMMENT "Building C# Scripts for ${TARGET_NAME}"
+                VERBATIM
             )
+            
+            add_custom_target(${SCRIPT_TARGET} ALL DEPENDS "${SCRIPT_DLL_OUTPUT}")
+            
             add_dependencies(${TARGET_NAME}Exe ${SCRIPT_TARGET})
-            # Ensure scripts build AFTER CHEngine_Managed to avoid dotnet race condition
             if(TARGET CHEngine_Managed)
                 add_dependencies(${SCRIPT_TARGET} CHEngine_Managed)
             endif()

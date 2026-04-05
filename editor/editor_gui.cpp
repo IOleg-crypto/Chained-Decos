@@ -418,11 +418,9 @@ bool EditorGUI::ActionButton(const char* icon, const char* label)
 }
 
 static void DrawPropertyControl(const char* id, float& val, ImVec4 color, const char* label, float resetValue,
-                                bool& changed)
+                                float width, bool& changed)
 {
     ImGuiIO& io = ImGui::GetIO();
-    auto boldFont = io.Fonts->Fonts[0]; // Assuming 0 is default/bold or just use standard
-
     ImGui::PushID(label);
 
     float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
@@ -449,7 +447,7 @@ static void DrawPropertyControl(const char* id, float& val, ImVec4 color, const 
 
     ImGui::SameLine(0, 0); // No spacing between label and input
 
-    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+    ImGui::SetNextItemWidth(width - buttonSize.x);
     char buf[32];
     sprintf(buf, "##%s_%s", label, id);
     if (ImGui::DragFloat(buf, &val, 0.1f, 0.0f, 0.0f, "%.2f"))
@@ -474,15 +472,15 @@ bool EditorGUI::DrawVec3(const char* label, glm::vec3& values, float resetValue)
     ImGui::BeginGroup();
 
     ImGui::SetNextItemWidth(itemWidth);
-    DrawPropertyControl("x", values.x, {0.8f, 0.1f, 0.15f, 1.0f}, "X", resetValue, changed);
+    DrawPropertyControl("x", values.x, {0.8f, 0.1f, 0.15f, 1.0f}, "X", resetValue, itemWidth, changed);
     ImGui::SameLine();
 
     ImGui::SetNextItemWidth(itemWidth);
-    DrawPropertyControl("y", values.y, {0.2f, 0.7f, 0.2f, 1.0f}, "Y", resetValue, changed);
+    DrawPropertyControl("y", values.y, {0.2f, 0.7f, 0.2f, 1.0f}, "Y", resetValue, itemWidth, changed);
     ImGui::SameLine();
 
     ImGui::SetNextItemWidth(itemWidth);
-    DrawPropertyControl("z", values.z, {0.1f, 0.25f, 0.8f, 1.0f}, "Z", resetValue, changed);
+    DrawPropertyControl("z", values.z, {0.1f, 0.25f, 0.8f, 1.0f}, "Z", resetValue, itemWidth, changed);
 
     ImGui::EndGroup();
 
@@ -505,11 +503,11 @@ bool EditorGUI::DrawVec2(const char* label, glm::vec2& values, float resetValue)
     ImGui::BeginGroup();
 
     ImGui::SetNextItemWidth(itemWidth);
-    DrawPropertyControl("x", values.x, {0.8f, 0.1f, 0.15f, 1.0f}, "X", resetValue, changed);
+    DrawPropertyControl("x", values.x, {0.8f, 0.1f, 0.15f, 1.0f}, "X", resetValue, itemWidth, changed);
     ImGui::SameLine();
 
     ImGui::SetNextItemWidth(itemWidth);
-    DrawPropertyControl("y", values.y, {0.2f, 0.7f, 0.2f, 1.0f}, "Y", resetValue, changed);
+    DrawPropertyControl("y", values.y, {0.2f, 0.7f, 0.2f, 1.0f}, "Y", resetValue, itemWidth, changed);
 
     ImGui::EndGroup();
 
@@ -532,19 +530,19 @@ bool EditorGUI::DrawVec4(const char* label, glm::vec4& values, float resetValue)
     ImGui::BeginGroup();
 
     ImGui::SetNextItemWidth(itemWidth);
-    DrawPropertyControl("x", values.x, {0.8f, 0.1f, 0.15f, 1.0f}, "X", resetValue, changed);
+    DrawPropertyControl("x", values.x, {0.8f, 0.1f, 0.15f, 1.0f}, "X", resetValue, itemWidth, changed);
     ImGui::SameLine();
 
     ImGui::SetNextItemWidth(itemWidth);
-    DrawPropertyControl("y", values.y, {0.2f, 0.7f, 0.2f, 1.0f}, "Y", resetValue, changed);
+    DrawPropertyControl("y", values.y, {0.2f, 0.7f, 0.2f, 1.0f}, "Y", resetValue, itemWidth, changed);
     ImGui::SameLine();
 
     ImGui::SetNextItemWidth(itemWidth);
-    DrawPropertyControl("z", values.z, {0.1f, 0.25f, 0.8f, 1.0f}, "Z", resetValue, changed);
+    DrawPropertyControl("z", values.z, {0.1f, 0.25f, 0.8f, 1.0f}, "Z", resetValue, itemWidth, changed);
     ImGui::SameLine();
 
     ImGui::SetNextItemWidth(itemWidth);
-    DrawPropertyControl("w", values.w, {0.5f, 0.5f, 0.5f, 1.0f}, "W", resetValue, changed);
+    DrawPropertyControl("w", values.w, {0.5f, 0.5f, 0.5f, 1.0f}, "W", resetValue, itemWidth, changed);
 
     ImGui::EndGroup();
 

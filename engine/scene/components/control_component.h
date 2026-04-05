@@ -44,16 +44,16 @@ struct TextStyle
 
     CH_REFLECT_BEGIN(TextStyle)
         props.Property("Font Name", FontName);
-        props.Property("Font Size", FontSize);
+        props.Property("Font Size", FontSize, PropertyMeta(6.0f, 128.0f, 1.0f));
         props.Property("Text Color", TextColor);
         props.Property("Shadow", Shadow);
         if (Shadow)
         {
-            props.Property("Shadow Offset", ShadowOffset);
+            props.Property("Shadow Offset", ShadowOffset, PropertyMeta(0.0f, 20.0f, 0.1f));
             props.Property("Shadow Color", ShadowColor);
         }
-        props.Property("Letter Spacing", LetterSpacing);
-        props.Property("Line Height", LineHeight);
+        props.Property("Letter Spacing", LetterSpacing, PropertyMeta(0.5f, 4.0f, 0.1f));
+        props.Property("Line Height", LineHeight, PropertyMeta(0.5f, 3.0f, 0.1f));
         // Alignments as ints for now
         props.Property("H Align", (int&)HorizontalAlignment);
         props.Property("V Align", (int&)VerticalAlignment);
@@ -83,16 +83,16 @@ struct UIStyle
         props.Property("BG Color", BackgroundColor);
         props.Property("Hover Color", HoverColor);
         props.Property("Pressed Color", PressedColor);
-        props.Property("Rounding", Rounding);
-        props.Property("Border Size", BorderSize);
+        props.Property("Rounding", Rounding, PropertyMeta(0.0f, 20.0f, 0.5f));
+        props.Property("Border Size", BorderSize, PropertyMeta(0.0f, 10.0f, 0.1f));
         props.Property("Border Color", BorderColor);
         props.Property("Gradient", UseGradient);
         if (UseGradient)
             props.Property("Gradient Color", GradientColor);
-        props.Property("Padding", Padding);
-        props.Property("Hover Scale", HoverScale);
-        props.Property("Pressed Scale", PressedScale);
-        props.Property("Transition Speed", TransitionSpeed);
+        props.Property("Padding", Padding, PropertyMeta(0.0f, 50.0f, 1.0f));
+        props.Property("Hover Scale", HoverScale, PropertyMeta(0.8f, 1.5f, 0.05f));
+        props.Property("Pressed Scale", PressedScale, PropertyMeta(0.8f, 1.5f, 0.05f));
+        props.Property("Transition Speed", TransitionSpeed, PropertyMeta(0.01f, 1.0f, 0.01f));
     CH_REFLECT_END()
 
     // Runtime state (not serialized)
@@ -153,15 +153,15 @@ struct RectTransform
             if (isFill)
             {
                 props.Header("Fill Mode Active");
-                props.Property("Padding L/R", OffsetMin.x); // Simplified view
-                props.Property("Padding T/B", OffsetMin.y);
+                props.Property("Padding L/R", OffsetMin.x, PropertyMeta(-1000.0f, 1000.0f, 1.0f)); // Simplified view
+                props.Property("Padding T/B", OffsetMin.y, PropertyMeta(-1000.0f, 1000.0f, 1.0f));
             }
             else
             {
                 glm::vec2 pos = (OffsetMin + OffsetMax) * 0.5f;
                 glm::vec2 size = OffsetMax - OffsetMin;
                 
-                if (props.Property("Position", pos))
+                if (props.Property("Position", pos, PropertyMeta(-2000.0f, 2000.0f, 1.0f)))
                 {
                     OffsetMin.x = pos.x - size.x * Pivot.x;
                     OffsetMin.y = pos.y - size.y * Pivot.y;
@@ -170,7 +170,7 @@ struct RectTransform
                     changed = true;
                 }
                 
-                if (props.Property("Size", size))
+                if (props.Property("Size", size, PropertyMeta(1.0f, 2000.0f, 1.0f)))
                 {
                     OffsetMin.x = pos.x - size.x * Pivot.x;
                     OffsetMin.y = pos.y - size.y * Pivot.y;
@@ -186,11 +186,11 @@ struct RectTransform
         {
             if (props.Property("Anchor Min", AnchorMin)) changed = true;
             if (props.Property("Anchor Max", AnchorMax)) changed = true;
-            if (props.Property("Offset Min", OffsetMin)) changed = true;
-            if (props.Property("Offset Max", OffsetMax)) changed = true;
+            if (props.Property("Offset Min", OffsetMin, PropertyMeta(-2000.0f, 2000.0f, 1.0f))) changed = true;
+            if (props.Property("Offset Max", OffsetMax, PropertyMeta(-2000.0f, 2000.0f, 1.0f))) changed = true;
             if (props.Property("Pivot", Pivot)) changed = true;
-            if (props.Property("Rotation", Rotation)) changed = true;
-            if (props.Property("Scale", Scale)) changed = true;
+            if (props.Property("Rotation", Rotation, PropertyMeta(-360.0f, 360.0f, 1.0f))) changed = true;
+            if (props.Property("Scale", Scale, PropertyMeta(0.1f, 10.0f, 0.1f))) changed = true;
             props.EndGroup();
         }
         
@@ -209,7 +209,7 @@ struct ControlComponent
 
     CH_REFLECT_BEGIN(ControlComponent)
         props.Nested("Rect Transform", Transform);
-        props.Property("Z Order", ZOrder);
+        props.Property("Z Order", ZOrder, PropertyMeta(-1000.0f, 1000.0f, 1.0f));
         props.Property("Active", IsActive);
         props.Property("Hidden", HiddenInHierarchy);
     CH_REFLECT_END()
@@ -286,9 +286,9 @@ struct SliderControl
     CH_REFLECT_BEGIN(SliderControl)
         props.Property("Label", Label);
         props.Nested("Text Style", Text);
-        props.Property("Value", Value);
-        props.Property("Min", Min);
-        props.Property("Max", Max);
+        props.Property("Value", Value, PropertyMeta(0.0f, 100.0f, 0.1f));
+        props.Property("Min", Min, PropertyMeta(-100.0f, 100.0f, 0.1f));
+        props.Property("Max", Max, PropertyMeta(-100.0f, 100.0f, 0.1f));
         props.Nested("UI Style", Style);
     CH_REFLECT_END()
 };
