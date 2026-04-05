@@ -282,20 +282,34 @@ void PropertyEditor::Init()
     Register<CollapsingHeaderControl>("CollapsingHeader", ICON_FA_ANGLE_DOWN);
     Register<VerticalLayoutGroup>("VerticalLayoutGroup", ICON_FA_LAYER_GROUP);
 
-    // Mark widget metadata
-    for (auto& [id, metadata] : s_ComponentRegistry)
-    {
-        // Check types rather than names if possible, but names work for now
-        if (id != entt::type_hash<TransformComponent>::value() && 
-            id != entt::type_hash<TagComponent>::value() &&
-            id != entt::type_hash<CameraComponent>::value() &&
-            id != entt::type_hash<LightComponent>::value() &&
-            id != entt::type_hash<ModelComponent>::value())
-        {
-            // Simple heuristic: most things are "widgets" in UI mode
-            metadata.IsWidget = true; 
-        }
-    }
+    // Mark only real UI widget types as IsWidget (these will be hidden in 3D scenes)
+    auto markWidget = [&](entt::id_type id) {
+        if (s_ComponentRegistry.contains(id))
+            s_ComponentRegistry[id].IsWidget = true;
+    };
+    markWidget(entt::type_hash<ControlComponent>::value());
+    markWidget(entt::type_hash<NavigationComponent>::value());
+    markWidget(entt::type_hash<UIActionComponent>::value());
+    markWidget(entt::type_hash<ButtonControl>::value());
+    markWidget(entt::type_hash<PanelControl>::value());
+    markWidget(entt::type_hash<LabelControl>::value());
+    markWidget(entt::type_hash<SliderControl>::value());
+    markWidget(entt::type_hash<CheckboxControl>::value());
+    markWidget(entt::type_hash<InputTextControl>::value());
+    markWidget(entt::type_hash<ComboBoxControl>::value());
+    markWidget(entt::type_hash<ProgressBarControl>::value());
+    markWidget(entt::type_hash<ImageControl>::value());
+    markWidget(entt::type_hash<ImageButtonControl>::value());
+    markWidget(entt::type_hash<SeparatorControl>::value());
+    markWidget(entt::type_hash<RadioButtonControl>::value());
+    markWidget(entt::type_hash<ColorPickerControl>::value());
+    markWidget(entt::type_hash<DragFloatControl>::value());
+    markWidget(entt::type_hash<DragIntControl>::value());
+    markWidget(entt::type_hash<TabBarControl>::value());
+    markWidget(entt::type_hash<TabItemControl>::value());
+    markWidget(entt::type_hash<CollapsingHeaderControl>::value());
+    markWidget(entt::type_hash<VerticalLayoutGroup>::value());
+    markWidget(entt::type_hash<SpriteComponent>::value());
 }
 
 void PropertyEditor::DrawComponentInternal(entt::id_type typeId, const std::string& name, const char* icon,

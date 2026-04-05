@@ -304,7 +304,12 @@ void SceneRenderer::DrawAnimatedEntities(const std::vector<AnimatedEntry>& anima
 {
     for (const auto& entry : animatedEntries)
     {
-        DrawModel(entry.asset, entry.worldTransform, entry.materials, {}, entry.shaderOverride, entry.customUniforms);
+        std::vector<glm::mat4> boneMatrices;
+        if (entry.animation.CurrentAnimationIndex >= 0 && entry.asset)
+        {
+            boneMatrices = entry.asset->GetBoneMatrices(entry.animation.CurrentAnimationIndex, entry.animation.CurrentFrame);
+        }
+        DrawModel(entry.asset, entry.worldTransform, entry.materials, boneMatrices, entry.shaderOverride, entry.customUniforms);
     }
 }
 

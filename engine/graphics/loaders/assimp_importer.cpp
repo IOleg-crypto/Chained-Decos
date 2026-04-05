@@ -326,6 +326,147 @@ namespace CHEngine
             data.embeddedTextures.emplace("*" + std::to_string(i), std::move(embedded));
         }
 
+        // --- 5. Process Animations ---
+        data.animations.resize(scene->mNumAnimations);
+        for (unsigned int a = 0; a < scene->mNumAnimations; ++a) {
+            aiAnimation* anim = scene->mAnimations[a];
+            RawAnimation& ra = data.animations[a];
+            ra.name = anim->mName.C_Str();
+            if (ra.name.empty()) ra.name = "Anim_" + std::to_string(a);
+            ra.frameRate = anim->mTicksPerSecond > 0 ? (float)anim->mTicksPerSecond : 30.0f;
+            
+            // If duration is 0, try to infer from keys
+            double duration = anim->mDuration;
+            if (duration == 0.0) {
+                for (unsigned int c = 0; c < anim->mNumChannels; ++c) {
+                    if (anim->mChannels[c]->mNumPositionKeys > 0)
+                        duration = std::max(duration, anim->mChannels[c]->mPositionKeys[anim->mChannels[c]->mNumPositionKeys - 1].mTime);
+                    if (anim->mChannels[c]->mNumRotationKeys > 0)
+                        duration = std::max(duration, anim->mChannels[c]->mRotationKeys[anim->mChannels[c]->mNumRotationKeys - 1].mTime);
+                    if (anim->mChannels[c]->mNumScalingKeys > 0)
+                        duration = std::max(duration, anim->mChannels[c]->mScalingKeys[anim->mChannels[c]->mNumScalingKeys - 1].mTime);
+                }
+            }
+
+            ra.frameCount = (int)std::ceil(duration) + 1;
+            ra.boneCount = (int)data.nodeNames.size();
+            ra.framePoses.resize(ra.frameCount * ra.boneCount);
+
+            // Pre-calculate bind poses (decomposed node transforms)
+            std::vector<TransformData> bindPoses(ra.boneCount);
+            for (int b = 0; b < ra.boneCount; ++b) {
+                // Initialize with local node transform if no animation exists
+                aiNode* node = scene->mRootNode->FindNode(data.nodeNames[b].c_str());
+                if (node) {
+                    aiVector3D p, s;
+                    aiQuaternion r;
+                    node->mTransformation.Decompose(s, r, p);
+                    bindPoses[b] = { ToVec3(p), ToQuat(r), ToVec3(s) };
+                } else {
+                    bindPoses[b] = { glm::vec3(0), glm::quat(1,0,0,0), glm::vec3(1) };
+                }
+            }
+
+            // Init all frames to bind pose
+            for (int f = 0; f < ra.frameCount; ++f) {
+                for (int b = 0; b < ra.boneCount; ++b) {
+                    ra.framePoses[f * ra.boneCount + b] = bindPoses[b];
+                }
+            }
+
+            // Fill with channel data
+            for (unsigned int c = 0; c < anim->mNumChannels; ++c) {
+                aiNodeAnim* channel = anim->mChannels[c];
+                int boneIdx = -1;
+                for (int n = 0; n < (int)data.nodeNames.size(); ++n) {
+                    if (data.nodeNames[n] == channel->mNodeName.C_Str()) {
+                        boneIdx = n;
+                        break;
+                    }
+                }
+                
+                if (boneIdx == -1) continue;
+                
+                for (int f = 0; f < ra.frameCount; ++f) {
+                    double time = (double)f;
+                    
+                    // Position
+                    glm::vec3 pos = bindPoses[boneIdx].translation;
+                    if (channel->mNumPositionKeys > 0) {
+                        if (channel->mNumPositionKeys == 1) {
+                            pos = ToVec3(channel->mPositionKeys[0].mValue);
+                        } else {
+                            unsigned int p1 = 0, p2 = 0;
+                            for (unsigned int k = 0; k < channel->mNumPositionKeys - 1; ++k) {
+                                if (time < channel->mPositionKeys[k+1].mTime) {
+                                    p1 = k; p2 = k + 1; break;
+                                }
+                                p1 = k; p2 = k + 1;
+                            }
+                            if (time >= channel->mPositionKeys[channel->mNumPositionKeys - 1].mTime) {
+                                pos = ToVec3(channel->mPositionKeys[channel->mNumPositionKeys - 1].mValue);
+                            } else {
+                                double dt = channel->mPositionKeys[p2].mTime - channel->mPositionKeys[p1].mTime;
+                                float factor = (float)((time - channel->mPositionKeys[p1].mTime) / dt);
+                                pos = glm::mix(ToVec3(channel->mPositionKeys[p1].mValue), ToVec3(channel->mPositionKeys[p2].mValue), factor);
+                            }
+                        }
+                    }
+                    
+                    // Rotation
+                    glm::quat rot = bindPoses[boneIdx].rotation;
+                    if (channel->mNumRotationKeys > 0) {
+                        if (channel->mNumRotationKeys == 1) {
+                            rot = ToQuat(channel->mRotationKeys[0].mValue);
+                        } else {
+                            unsigned int r1 = 0, r2 = 0;
+                            for (unsigned int k = 0; k < channel->mNumRotationKeys - 1; ++k) {
+                                if (time < channel->mRotationKeys[k+1].mTime) {
+                                    r1 = k; r2 = k + 1; break;
+                                }
+                                r1 = k; r2 = k + 1;
+                            }
+                            if (time >= channel->mRotationKeys[channel->mNumRotationKeys - 1].mTime) {
+                                rot = ToQuat(channel->mRotationKeys[channel->mNumRotationKeys - 1].mValue);
+                            } else {
+                                double dt = channel->mRotationKeys[r2].mTime - channel->mRotationKeys[r1].mTime;
+                                float factor = (float)((time - channel->mRotationKeys[r1].mTime) / dt);
+                                aiQuaternion interpolated;
+                                aiQuaternion::Interpolate(interpolated, channel->mRotationKeys[r1].mValue, channel->mRotationKeys[r2].mValue, factor);
+                                rot = ToQuat(interpolated);
+                            }
+                        }
+                    }
+                    
+                    // Scale
+                    glm::vec3 scale = bindPoses[boneIdx].scale;
+                    if (channel->mNumScalingKeys > 0) {
+                        if (channel->mNumScalingKeys == 1) {
+                            scale = ToVec3(channel->mScalingKeys[0].mValue);
+                        } else {
+                            unsigned int s1 = 0, s2 = 0;
+                            for (unsigned int k = 0; k < channel->mNumScalingKeys - 1; ++k) {
+                                if (time < channel->mScalingKeys[k+1].mTime) {
+                                    s1 = k; s2 = k + 1; break;
+                                }
+                                s1 = k; s2 = k + 1;
+                            }
+                            if (time >= channel->mScalingKeys[channel->mNumScalingKeys - 1].mTime) {
+                                scale = ToVec3(channel->mScalingKeys[channel->mNumScalingKeys - 1].mValue);
+                            } else {
+                                double dt = channel->mScalingKeys[s2].mTime - channel->mScalingKeys[s1].mTime;
+                                float factor = (float)((time - channel->mScalingKeys[s1].mTime) / dt);
+                                scale = glm::mix(ToVec3(channel->mScalingKeys[s1].mValue), ToVec3(channel->mScalingKeys[s2].mValue), factor);
+                            }
+                        }
+                    }
+                    
+                    ra.framePoses[f * ra.boneCount + boneIdx] = { pos, rot, scale };
+                }
+            }
+            CH_CORE_INFO("AssimpImporter: Loaded animation '{}' ({} frames, {} fps)", ra.name, ra.frameCount, ra.frameRate);
+        }
+
         data.isValid = true;
         return data;
     }

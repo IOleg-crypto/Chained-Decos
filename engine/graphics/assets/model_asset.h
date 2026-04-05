@@ -104,6 +104,7 @@ public:
         m_NodeParents = parents;
     }
     std::string GetAnimationName(int index) const;
+    std::vector<glm::mat4> GetBoneMatrices(int animationIndex, int frame) const;
 
     const std::vector<Material>& GetMaterials() const
     {
