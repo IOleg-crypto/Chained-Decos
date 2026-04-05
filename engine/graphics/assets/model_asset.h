@@ -111,6 +111,10 @@ public:
         return m_Materials;
     }
 
+    // Get renderer ID for embedded texture (e.g., "*0", "*1").
+    // Returns 0 if the texture is not found or path is not an embedded texture marker.
+    uint32_t GetEmbeddedTextureID(const std::string& path) const;
+
 private:
     Model m_Model;
     std::vector<RawMesh> m_RawMeshes;
