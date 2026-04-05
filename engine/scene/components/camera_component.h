@@ -35,10 +35,10 @@ struct CameraComponent
         {
             props.Property("Enabled", IsOrbitCamera);
             props.Property("Target Tag", TargetEntityTag);
-            props.Property("Distance", OrbitDistance);
-            props.Property("Yaw", OrbitYaw);
-            props.Property("Pitch", OrbitPitch);
-            props.Property("Sensitivity", LookSensitivity);
+            props.Property("Distance", OrbitDistance, PropertyMeta(1.0f, 100.0f, 0.5f));
+            props.Property("Yaw", OrbitYaw, PropertyMeta(-360.0f, 360.0f, 1.0f));
+            props.Property("Pitch", OrbitPitch, PropertyMeta(-90.0f, 90.0f, 1.0f));
+            props.Property("Sensitivity", LookSensitivity, PropertyMeta(0.1f, 5.0f, 0.1f));
             props.EndGroup();
         }
     CH_REFLECT_END()

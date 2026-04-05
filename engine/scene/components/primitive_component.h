@@ -63,19 +63,19 @@ struct PrimitiveComponent
         {
             if (Type == PrimitiveType::Cube || Type == PrimitiveType::Plane)
             {
-                props.Property("Dimensions", Dimensions);
+                props.Property("Dimensions", Dimensions, PropertyMeta(0.01f, 100.0f, 0.1f));
             }
             else
             {
-                props.Property("Radius", Radius);
+                props.Property("Radius", Radius, PropertyMeta(0.01f, 50.0f, 0.1f));
                 if (Type == PrimitiveType::Torus)
-                    props.Property("Inner Radius", InnerRadius);
+                    props.Property("Inner Radius", InnerRadius, PropertyMeta(0.01f, 25.0f, 0.1f));
                 
                 if (Type == PrimitiveType::Cylinder || Type == PrimitiveType::Cone)
-                    props.Property("Height", Height);
+                    props.Property("Height", Height, PropertyMeta(0.1f, 100.0f, 0.1f));
 
-                props.Property("Slices", Slices);
-                props.Property("Stacks", Stacks);
+                props.Property("Slices", Slices, PropertyMeta(3.0f, 256.0f, 1.0f));
+                props.Property("Stacks", Stacks, PropertyMeta(3.0f, 256.0f, 1.0f));
             }
             props.EndGroup();
         }

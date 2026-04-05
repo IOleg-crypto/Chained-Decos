@@ -33,6 +33,8 @@ struct ScriptField
                 props.Color("Value", val);
             else if constexpr (std::is_same_v<T, uint64_t>)
                 props.Handle("Value", val);
+            else if constexpr (std::is_same_v<T, float>)
+                props.Property("Value", val, PropertyMeta(-100.0f, 100.0f, 0.01f));
             else
                 props.Property("Value", val);
         }, Value);
@@ -64,7 +66,9 @@ struct ManagedScriptInstance
         props.Property("ClassName", ClassName);
         for (auto& [name, field] : Fields)
         {
-            props.Nested(name.c_str(), field);
+            std::visit([&](auto&& val) {
+                props.Property(name.c_str(), val);
+            }, field.Value);
         }
     CH_REFLECT_END()
 };

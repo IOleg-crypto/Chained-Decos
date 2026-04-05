@@ -74,6 +74,7 @@ struct AnimationComponent
         props.Property("Current Animation", CurrentAnimationIndex);
         props.Property("Is Looping", IsLooping);
         props.Property("Is Playing", IsPlaying);
+        props.Property("Blend Duration", BlendDuration, PropertyMeta(0.0f, 5.0f, 0.01f));
     CH_REFLECT_END()
 };
 

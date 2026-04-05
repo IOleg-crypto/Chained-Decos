@@ -4,6 +4,8 @@
 #include "editor_gui.h"
 #include "engine/core/reflection.h"
 #include "imgui/IconsFontAwesome6.h"
+#include "imgui.h"
+#include "imgui_internal.h"
 
 namespace CHEngine
 {
@@ -113,7 +115,9 @@ public:
     bool Handle(const char* name, uint64_t& value)
     {
         bool changed = EditorGUI::Property(name, value);
-        m_Changed |= changed;
+        if (changed) m_Changed = true;
+        if (ImGui::IsItemActivated()) m_Started = true;
+        if (ImGui::IsItemDeactivatedAfterEdit()) m_Finished = true;
         return changed;
     }
 
@@ -136,12 +140,28 @@ public:
 
     template <typename T> bool Sequence(const char* name, std::vector<T>& values)
     {
+        if (ImGui::GetCurrentTable() != nullptr)
+        {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::AlignTextToFramePadding();
+        }
+
         bool localChanged = false;
-        if (ImGui::TreeNodeEx(name, ImGuiTreeNodeFlags_DefaultOpen))
+        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth;
+        if (ImGui::GetCurrentTable() != nullptr) flags |= ImGuiTreeNodeFlags_SpanAllColumns;
+
+        if (ImGui::TreeNodeEx(name, flags))
         {
             for (size_t i = 0; i < (int)values.size(); i++)
             {
                 ImGui::PushID((int)i);
+
+                if (ImGui::GetCurrentTable() != nullptr)
+                {
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(1);
+                }
 
                 if (ImGui::Button(ICON_FA_TRASH))
                 {
@@ -158,6 +178,7 @@ public:
                 {
                     char label[32];
                     sprintf(label, "Item %d", (int)i);
+                    // Use a nested tree node for complex items
                     if (ImGui::TreeNodeEx(label, ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth))
                     {
                         Properties<UIProperties> itemProps(*this);
@@ -188,6 +209,12 @@ public:
             }
 
             ImGui::Spacing();
+            if (ImGui::GetCurrentTable() != nullptr)
+            {
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(1);
+            }
+
             if (ImGui::Button(ICON_FA_PLUS " Add New Item", ImVec2(-1, 0)))
             {
                 values.push_back({});
@@ -214,9 +241,20 @@ public:
 
     void Header(const char* label)
     {
+        if (ImGui::GetCurrentTable() != nullptr)
+        {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::AlignTextToFramePadding();
+        }
         ImGui::Spacing();
         ImGui::TextColored({0.2f, 0.7f, 0.9f, 1.0f}, "%s", label);
         ImGui::Separator();
+        if (ImGui::GetCurrentTable() != nullptr)
+        {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+        }
     }
 
     void Separator()
@@ -226,14 +264,30 @@ public:
 
     bool BeginGroup(const char* label, bool defaultOpen = true)
     {
+        if (ImGui::GetCurrentTable() != nullptr)
+        {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::AlignTextToFramePadding();
+        }
+
         ImGuiTreeNodeFlags flags =
-            ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_AllowOverlap | ImGuiTreeNodeFlags_FramePadding;
+            ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_AllowOverlap | ImGuiTreeNodeFlags_FramePadding | 
+            ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_SpanAllColumns;
         if (defaultOpen)
         {
             flags |= ImGuiTreeNodeFlags_DefaultOpen;
         }
 
         bool opened = ImGui::TreeNodeEx(label, flags);
+        
+        if (ImGui::GetCurrentTable() != nullptr)
+        {
+            // Move to the next column to ensure the header row context is technically "complete"
+            // although the next property will start a fresh row with TableNextRow().
+            ImGui::TableSetColumnIndex(1);
+        }
+
         return opened;
     }
 

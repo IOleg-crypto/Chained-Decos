@@ -64,7 +64,12 @@ if(DOTNET_EXECUTABLE)
     file(WRITE "${CMAKE_BINARY_DIR}/.cmake_temp_props" "${PROPS_TEMPLATE_CONTENT}")
     execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_BINARY_DIR}/.cmake_temp_props" "${PROPS_CONTENT_FILE}")
     
-    # Collect all C# source files for dependency tracking
+    # Collect all C# source files and lock file for dependency tracking
+    file(GLOB_RECURSE MANAGED_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/managed/src/*.cs")
+    list(APPEND MANAGED_SOURCES "${MANAGED_PROJECT_PATH}")
+    list(APPEND MANAGED_SOURCES "${PROPS_CONTENT_FILE}")
+    
+    # 1. Collect all local managed sources for dependency tracking
     file(GLOB_RECURSE MANAGED_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/managed/src/*.cs")
     list(APPEND MANAGED_SOURCES "${MANAGED_PROJECT_PATH}")
     list(APPEND MANAGED_SOURCES "${PROPS_CONTENT_FILE}")
@@ -73,7 +78,7 @@ if(DOTNET_EXECUTABLE)
 
     add_custom_command(
         OUTPUT "${MANAGED_DLL_OUTPUT}"
-        COMMAND ${DOTNET_EXECUTABLE} build "${MANAGED_PROJECT_PATH}" -c $<CONFIG> --output "${MANAGED_OUTPUT_DIR}" --no-restore -p:CoralManagedDir="${CORAL_MANAGED_DIR}"
+        COMMAND ${DOTNET_EXECUTABLE} build "${MANAGED_PROJECT_PATH}" -c $<CONFIG> --output "${MANAGED_OUTPUT_DIR}" -p:CoralManagedDir="${CORAL_MANAGED_DIR}"
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/managed"
         DEPENDS ${MANAGED_SOURCES}
         COMMENT "Building CHEngine.Managed C# Library"

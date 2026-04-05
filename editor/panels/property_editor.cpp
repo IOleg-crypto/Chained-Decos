@@ -1,8 +1,11 @@
 #include "property_editor.h"
 #include "editor/editor_layer.h"
+#include "editor/undo/component_commands.h"
+#include "editor/undo/modify_component_command.h"
 #include "editor_gui.h"
-#include "ui_properties.h" // Included here to break circular dependency
 #include "engine/core/assets/asset_manager.h"
+#include "engine/core/dialogs.h"
+#include "engine/graphics/api/renderer_api.h"
 #include "engine/graphics/assets/model_asset.h"
 #include "engine/graphics/assets/texture_asset.h"
 #include "engine/physics/physics.h"
@@ -10,16 +13,12 @@
 #include "engine/scene/project.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_settings.h"
-#include "imgui/IconsFontAwesome6.h"
-#include "engine/graphics/api/renderer_api.h"
-#include "engine/core/dialogs.h"
-#include "editor/undo/component_commands.h"
-#include "editor/undo/modify_component_command.h"
-#include "panel.h"
 #include "imgui.h"
+#include "imgui/IconsFontAwesome6.h"
 #include "imgui_internal.h"
+#include "panel.h"
+#include "ui_properties.h" // Included here to break circular dependency
 #include <memory>
-
 
 #include "nfd.h"
 #include "scripting/scriptengine.h"
@@ -58,7 +57,8 @@ void PropertyEditor::DrawComponentReflection(const std::string& name, const char
             {
                 auto oldState = s_InitialStates[e];
                 auto newState = comp;
-                EditorLayer::GetCommandHistory().PushCommand(std::make_unique<ModifyComponentCommand<T>>(entity, oldState, newState, "Modify " + name));
+                EditorLayer::GetCommandHistory().PushCommand(
+                    std::make_unique<ModifyComponentCommand<T>>(entity, oldState, newState, "Modify " + name));
                 s_InitialStates.erase(e);
             }
         }
@@ -68,11 +68,13 @@ void PropertyEditor::DrawComponentReflection(const std::string& name, const char
 }
 
 template <typename T>
-void PropertyEditor::DrawComponentContainer(const std::string& name, const char* icon, Entity entity, std::function<bool(T&, Entity)> drawer)
+void PropertyEditor::DrawComponentContainer(const std::string& name, const char* icon, Entity entity,
+                                            std::function<bool(T&, Entity)> drawer)
 {
     if (entity.HasComponent<T>())
     {
-        DrawComponentInternal(entt::type_hash<T>::value(), name, icon, entity, 
+        DrawComponentInternal(
+            entt::type_hash<T>::value(), name, icon, entity,
             [&]() {
                 auto& component = entity.GetComponent<T>();
                 T componentCopy = component;
@@ -85,21 +87,20 @@ void PropertyEditor::DrawComponentContainer(const std::string& name, const char*
                 return false;
             },
             [&]() {
-                EditorLayer::GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(entity)); 
-            }
-        );
+                EditorLayer::GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(entity));
+            });
     }
 }
 
-template <typename T> 
-void PropertyEditor::Register(const std::string& name, const char* icon)
+template <typename T> void PropertyEditor::Register(const std::string& name, const char* icon)
 {
     ComponentMetadata metadata;
     metadata.Name = name;
     metadata.Icon = icon;
     metadata.Draw = [name, icon](Entity e) { DrawComponentReflection<T>(name, icon, e); };
     metadata.Add = [](Entity e) {
-        if (!e.HasComponent<T>()) {
+        if (!e.HasComponent<T>())
+        {
             EditorLayer::GetCommandHistory().PushCommand(std::make_unique<AddComponentCommand<T>>(e));
             return true;
         }
@@ -116,7 +117,8 @@ void PropertyEditor::RegisterCustom(const std::string& name, std::function<bool(
     metadata.Icon = icon;
     metadata.Draw = [name, icon, drawer](Entity e) { DrawComponentContainer<T>(name, icon, e, drawer); };
     metadata.Add = [](Entity e) {
-        if (!e.HasComponent<T>()) {
+        if (!e.HasComponent<T>())
+        {
             EditorLayer::GetCommandHistory().PushCommand(std::make_unique<AddComponentCommand<T>>(e));
             return true;
         }
@@ -155,69 +157,108 @@ void PropertyEditor::Init()
     Register<SceneTransitionComponent>("Scene Transition", ICON_FA_DOOR_OPEN);
 
     // --- Scripting ---
-    RegisterCustom<ManagedScriptComponent>("Scripts", [](auto& component, auto entity) {
-        static std::unordered_map<entt::entity, ManagedScriptComponent> s_InitialStates;
-        entt::entity e = (entt::entity)entity;
-        bool changed = false;
-
-        for (auto& script : component.Scripts)
-        {
-            if (ImGui::TreeNodeEx(script.ClassName.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+    RegisterCustom<ManagedScriptComponent>(
+        "Scripts",
+        [](auto& component, auto entity) {
+            // 1. Pre-sync: Discover fields from C# reflection
+            for (auto& script : component.Scripts)
             {
-                auto* scriptType = ScriptEngine::Get().GetScriptClass(script.ClassName);
-                if (scriptType)
+                if (script.ClassName.empty())
                 {
-                    auto fieldInfos = scriptType->GetFields();
+                    continue;
+                }
+
+                auto* scriptClass = ScriptEngine::Get().GetScriptClass(script.ClassName);
+                if (scriptClass)
+                {
+                    auto fieldInfos = scriptClass->GetFields();
                     for (auto& info : fieldInfos)
                     {
-                        if (info.GetAccessibility() != Coral::TypeAccessibility::Public) continue;
+                        if (info.GetAccessibility() != Coral::TypeAccessibility::Public)
+                        {
+                            continue;
+                        }
                         std::string fieldName = (std::string)info.GetName();
-                        
+
                         if (script.Fields.find(fieldName) == script.Fields.end())
                         {
                             ScriptField f;
                             f.Name = fieldName;
-                            script.Fields[fieldName] = f;
-                        }
+                            std::string typeName = (std::string)info.GetType().GetFullName();
 
-                        auto& field = script.Fields[fieldName];
-                        CHEngine::UIProperties ui;
-                        CHEngine::Properties props(ui);
-                        field.Reflect(props);
-                        
-                        if (ui.HasStarted())
-                        {
-                            s_InitialStates[e] = component;
-                        }
-
-                        if (ui.HasFinished())
-                        {
-                            if (s_InitialStates.contains(e))
+                            if (typeName == "System.Single")
                             {
-                                auto oldState = s_InitialStates[e];
-                                auto newState = component;
-                                EditorLayer::GetCommandHistory().PushCommand(std::make_unique<ModifyComponentCommand<ManagedScriptComponent>>(entity, oldState, newState, "Modify Script: " + script.ClassName));
-                                s_InitialStates.erase(e);
+                                f.Type = ScriptFieldType::Float;
+                                f.Value = 0.0f;
                             }
-                        }
-
-                        if (props.HasChanged())
-                        {
-                            changed = true;
-                            if (script.Instance)
+                            else if (typeName == "System.Int32")
                             {
-                                auto* obj = static_cast<Coral::ManagedObject*>(script.Instance);
-                                std::visit([&](auto&& v) { obj->SetFieldValue(fieldName, v); }, field.Value);
+                                f.Type = ScriptFieldType::Int;
+                                f.Value = 0;
+                            }
+                            else if (typeName == "System.Boolean")
+                            {
+                                f.Type = ScriptFieldType::Bool;
+                                f.Value = false;
+                            }
+                            else if (typeName == "System.String")
+                            {
+                                f.Type = ScriptFieldType::String;
+                                f.Value = std::string("");
+                            }
+                            else if (typeName == "CHEngine.Vector2")
+                            {
+                                f.Type = ScriptFieldType::Vec2;
+                                f.Value = glm::vec2(0.0f);
+                            }
+                            else if (typeName == "CHEngine.Vector3")
+                            {
+                                f.Type = ScriptFieldType::Vec3;
+                                f.Value = glm::vec3(0.0f);
+                            }
+                            else if (typeName == "CHEngine.Vector4")
+                            {
+                                f.Type = ScriptFieldType::Vec4;
+                                f.Value = glm::vec4(0.0f);
+                            }
+                            else if (typeName == "CHEngine.Entity")
+                            {
+                                f.Type = ScriptFieldType::Entity;
+                                f.Value = (uint64_t)0;
+                            }
+
+                            if (f.Type != ScriptFieldType::None)
+                            {
+                                script.Fields[fieldName] = f;
                             }
                         }
                     }
                 }
-                ImGui::TreePop();
             }
-        }
-        return changed;
-    }, ICON_FA_FILE_CODE);
-    
+
+            UIProperties ui;
+            Properties props(ui);
+            component.Reflect(props);
+
+            if (props.HasChanged())
+            {
+                // Sync values to live C# instances if they exist
+                for (auto& script : component.Scripts)
+                {
+                    if (script.Instance)
+                    {
+                        auto* obj = static_cast<Coral::ManagedObject*>(script.Instance);
+                        for (auto& [name, field] : script.Fields)
+                        {
+                            std::visit([&](auto&& v) { obj->SetFieldValue(name, v); }, field.Value);
+                        }
+                    }
+                }
+            }
+            return props.HasChanged();
+        },
+        ICON_FA_FILE_CODE);
+
     // --- UI Components ---
     Register<ControlComponent>("Rect Transform", ICON_FA_VECTOR_SQUARE);
     Register<NavigationComponent>("UI Navigation", ICON_FA_ARROWS_TO_DOT);
@@ -248,13 +289,15 @@ void PropertyEditor::Init()
     for (auto& [id, metadata] : s_ComponentRegistry)
     {
         if (metadata.Name.find("Widget") != std::string::npos || metadata.Name.find("Group") != std::string::npos)
+        {
             metadata.IsWidget = true;
+        }
     }
 }
 
-void PropertyEditor::DrawComponentInternal(entt::id_type typeId, const std::string& name, const char* icon, 
-                                          Entity entity, std::function<bool()> contentDrawer, 
-                                          std::function<void()> remover)
+void PropertyEditor::DrawComponentInternal(entt::id_type typeId, const std::string& name, const char* icon,
+                                           Entity entity, std::function<bool()> contentDrawer,
+                                           std::function<void()> remover)
 {
     const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
                                              ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowOverlap |
@@ -264,7 +307,7 @@ void PropertyEditor::DrawComponentInternal(entt::id_type typeId, const std::stri
 
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
     float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
-    
+
     // Header Background Color
     ImGui::PushStyleColor(ImGuiCol_Header, {0.2f, 0.25f, 0.35f, 0.8f});
     ImGui::PushStyleColor(ImGuiCol_HeaderActive, {0.3f, 0.4f, 0.6f, 1.0f});
@@ -272,13 +315,13 @@ void PropertyEditor::DrawComponentInternal(entt::id_type typeId, const std::stri
 
     std::string headerName = (icon ? std::string(icon) + " " : "") + name;
     bool open = ImGui::TreeNodeEx((void*)typeId, treeNodeFlags, headerName.c_str());
-    
+
     ImGui::PopStyleColor(3);
     ImGui::PopStyleVar();
 
     // Right-aligned settings button
     ImGui::SameLine(contentRegionAvailable.x - lineHeight * 0.7f);
-    ImGui::PushStyleColor(ImGuiCol_Button, {0,0,0,0});
+    ImGui::PushStyleColor(ImGuiCol_Button, {0, 0, 0, 0});
     if (ImGui::Button(ICON_FA_GEAR, ImVec2{lineHeight, lineHeight}))
     {
         ImGui::OpenPopup("ComponentSettings");
@@ -288,7 +331,9 @@ void PropertyEditor::DrawComponentInternal(entt::id_type typeId, const std::stri
     if (ImGui::BeginPopup("ComponentSettings"))
     {
         if (ImGui::MenuItem("Remove Component"))
+        {
             remover();
+        }
 
         ImGui::EndPopup();
     }
@@ -302,7 +347,6 @@ void PropertyEditor::DrawComponentInternal(entt::id_type typeId, const std::stri
         ImGui::Spacing();
     }
 }
-
 
 void PropertyEditor::DrawEntityProperties(CHEngine::Entity entity)
 {
@@ -329,11 +373,20 @@ void PropertyEditor::DrawEntityProperties(CHEngine::Entity entity)
             if (s_ComponentRegistry.find(id) != s_ComponentRegistry.end())
             {
                 auto& metadata = s_ComponentRegistry[id];
-                if (!metadata.Visible) continue;
+                if (!metadata.Visible)
+                {
+                    continue;
+                }
 
                 // Logic to reduce clutter
-                if (isUI && id == entt::type_hash<TransformComponent>::value()) continue;
-                if (hasWidget && id == entt::type_hash<ControlComponent>::value()) continue;
+                if (isUI && id == entt::type_hash<TransformComponent>::value())
+                {
+                    continue;
+                }
+                if (hasWidget && id == entt::type_hash<ControlComponent>::value())
+                {
+                    continue;
+                }
 
                 ImGui::PushID((int)id);
                 metadata.Draw(entity);
@@ -348,13 +401,13 @@ void PropertyEditor::DrawEntityHeader(CHEngine::Entity entity)
     if (entity.HasComponent<TagComponent>())
     {
         auto& tag = entity.GetComponent<TagComponent>().Tag;
-        
+
         // Entity Icon and Label
         ImGui::BeginGroup();
         ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]);
         ImGui::TextColored({0.4f, 0.6f, 0.9f, 1.0f}, ICON_FA_CUBE " Entity");
         ImGui::PopFont();
-        
+
         char buffer[256];
         memset(buffer, 0, sizeof(buffer));
         strncpy(buffer, tag.c_str(), sizeof(buffer) - 1);
@@ -365,16 +418,16 @@ void PropertyEditor::DrawEntityHeader(CHEngine::Entity entity)
             tag = std::string(buffer);
         }
         ImGui::PopItemWidth();
-        
+
         ImGui::SameLine();
         if (ImGui::Button(ICON_FA_PLUS " Add Component", ImVec2(110, 0)))
         {
             ImGui::OpenPopup("AddComponent");
         }
-        
+
         DrawAddComponentPopup(entity);
         ImGui::EndGroup();
-        
+
         ImGui::Spacing();
     }
 }
@@ -389,13 +442,25 @@ void PropertyEditor::DrawAddComponentPopup(CHEngine::Entity entity)
 
         for (auto& [id, metadata] : s_ComponentRegistry)
         {
-            if (!metadata.AllowAdd) continue;
-            if (metadata.IsWidget && !isUIEntity) continue;
-            if (is3DScene && (metadata.IsWidget || id == entt::type_hash<ControlComponent>::value())) continue;
+            if (!metadata.AllowAdd)
+            {
+                continue;
+            }
+            if (metadata.IsWidget && !isUIEntity)
+            {
+                continue;
+            }
+            if (is3DScene && (metadata.IsWidget || id == entt::type_hash<ControlComponent>::value()))
+            {
+                continue;
+            }
 
             auto& registry = entity.GetRegistry();
             auto* storage = registry.storage(id);
-            if (storage && storage->contains(entity)) continue;
+            if (storage && storage->contains(entity))
+            {
+                continue;
+            }
 
             std::string label = (metadata.Icon ? std::string(metadata.Icon) + " " : "") + metadata.Name;
             if (ImGui::MenuItem(label.c_str()))
