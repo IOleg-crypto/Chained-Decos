@@ -334,8 +334,17 @@ std::filesystem::path Project::NormalizePath(const std::filesystem::path& path)
     // Use lexically_normal to handle .. and . and unify slashes
     std::filesystem::path normalized = std::filesystem::absolute(path).lexically_normal();
 
+#ifdef CH_PLATFORM_WINDOWS
+    // Unify drive letter casing to uppercase to prevent relative path resolution failures
+    std::string s = normalized.string();
+    if (s.length() >= 2 && s[1] == ':' && std::islower(s[0]))
+    {
+        s[0] = (char)std::toupper(s[0]);
+        normalized = s;
+    }
+#endif
+
     // On Windows, generic_string() will use / which is exactly what we want for cross-platform portability.
-    // We avoid tolower() here to preserve original casing as requested by the user.
     return normalized;
 }
 
@@ -349,12 +358,17 @@ std::optional<std::string> Project::TryMakeRelative(const std::filesystem::path&
 
     auto normalizedBase = NormalizePath(basePath);
     std::filesystem::path rel = std::filesystem::relative(absolutePath, normalizedBase);
-    std::string relStr = rel.generic_string();
-
-    // Only return if path doesn't escape the base directory
-    if (relStr.find("..") == std::string::npos)
+    
+    // std::filesystem::relative returns an absolute path if it cannot resolve relativity (e.g., different drives)
+    if (rel.is_relative())
     {
-        return relStr;
+        std::string relStr = rel.generic_string();
+
+        // Only return if path doesn't escape the base directory
+        if (relStr.find("..") == std::string::npos)
+        {
+            return relStr;
+        }
     }
 
     return std::nullopt;
