@@ -1,5 +1,5 @@
 #include "project_browser_panel.h"
-#include "actions/project_actions.h"
+
 #include "editor_layer.h"
 #include "engine/scene/scene_events.h"
 #include "imgui/IconsFontAwesome6.h"
@@ -93,7 +93,7 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
         // Draw a big button that looks like the card in the screenshot
         if (ImGui::Button(fileName.c_str(), ImVec2(-1, 50)))
         {
-            ProjectActions::Open(lastPath);
+            EditorLayer::Get().OpenProject(lastPath);
         }
         if (ImGui::IsItemHovered())
         {
@@ -164,7 +164,7 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
 
         if (ImGui::ImageButton("##OpenProject", openProjTex, {300, 300}, {0, 1}, {1, 0}))
         {
-            ProjectActions::Open();
+            EditorLayer::Get().OpenProject();
         }
     }
     ImGui::SetWindowFontScale(1.3f);

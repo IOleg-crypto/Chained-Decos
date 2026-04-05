@@ -53,28 +53,27 @@ if(DOTNET_EXECUTABLE)
     set(CORAL_MANAGED_DIR "${CMAKE_BINARY_DIR}/include/coral/cmake")
     
     # Generate ManagedDependencies.props to provide paths to the .csproj
+    # Only regenerate if content changes using copy_if_different
     file(RELATIVE_PATH RELATIVE_CORAL_MANAGED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/managed" "${CORAL_MANAGED_DIR}")
     file(TO_NATIVE_PATH "${RELATIVE_CORAL_MANAGED_DIR}" NATIVE_RELATIVE_CORAL_MANAGED_DIR)
     
-    set(PROPS_CONTENT 
-"<Project>
-  <PropertyGroup>
-    <CoralManagedDir>$(MSBuildThisFileDirectory)${NATIVE_RELATIVE_CORAL_MANAGED_DIR}</CoralManagedDir>
-  </PropertyGroup>
-</Project>")
-    
     set(PROPS_CONTENT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/managed/ManagedDependencies.props")
-    file(WRITE "${PROPS_CONTENT_FILE}" "${PROPS_CONTENT}")
+    set(PROPS_TEMPLATE_CONTENT "<Project>\n  <PropertyGroup>\n    <CoralManagedDir>$(MSBuildThisFileDirectory)${NATIVE_RELATIVE_CORAL_MANAGED_DIR}</CoralManagedDir>\n  </PropertyGroup>\n</Project>")
+    
+    # Write to temp file and only update if different (prevents unnecessary rebuilds)
+    file(WRITE "${CMAKE_BINARY_DIR}/.cmake_temp_props" "${PROPS_TEMPLATE_CONTENT}")
+    execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_BINARY_DIR}/.cmake_temp_props" "${PROPS_CONTENT_FILE}")
     
     # Collect all C# source files for dependency tracking
     file(GLOB_RECURSE MANAGED_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/managed/src/*.cs")
     list(APPEND MANAGED_SOURCES "${MANAGED_PROJECT_PATH}")
+    list(APPEND MANAGED_SOURCES "${PROPS_CONTENT_FILE}")
 
     set(MANAGED_DLL_OUTPUT "${MANAGED_OUTPUT_DIR}/CHEngine.Managed.dll")
 
     add_custom_command(
         OUTPUT "${MANAGED_DLL_OUTPUT}"
-        COMMAND ${DOTNET_EXECUTABLE} build "${MANAGED_PROJECT_PATH}" -c $<CONFIG> --output "${MANAGED_OUTPUT_DIR}" -p:CoralManagedDir="${CORAL_MANAGED_DIR}"
+        COMMAND ${DOTNET_EXECUTABLE} build "${MANAGED_PROJECT_PATH}" -c $<CONFIG> --output "${MANAGED_OUTPUT_DIR}" --no-restore -p:CoralManagedDir="${CORAL_MANAGED_DIR}"
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/managed"
         DEPENDS ${MANAGED_SOURCES}
         COMMENT "Building CHEngine.Managed C# Library"

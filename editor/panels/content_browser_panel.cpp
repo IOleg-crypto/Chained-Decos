@@ -1,6 +1,7 @@
 #include "content_browser_panel.h"
-#include "editor/actions/scene_actions.h"
+
 #include "engine/core/base.h"
+#include "editor/editor_layer.h"
 #include "engine/core/log.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene_events.h"
@@ -369,7 +370,7 @@ void ContentBrowserPanel::OnAssetDoubleClicked(AssetEntry& entry)
     }
     else if (entry.type == EditorAssetType::Scene)
     {
-        SceneActions::Open(entry.path);
+        EditorLayer::Get().OpenScene(entry.path);
     }
 }
 

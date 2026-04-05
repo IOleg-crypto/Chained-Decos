@@ -1,5 +1,5 @@
 #include "viewport_panel.h"
-#include "editor/actions/scene_actions.h"
+
 #include "editor/viewport/ui_manipulator.h"
 #include "editor_events.h"
 #include "editor_gui.h"
@@ -23,6 +23,7 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "engine/graphics/pipeline/render_command.h"
+#include "editor/editor_layer.h"
 
 
 namespace CHEngine
@@ -291,7 +292,7 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
 
             if (ext == ".chscene")
             {
-                SceneActions::Open(filepath);
+                EditorLayer::Get().OpenScene(filepath);
             }
             else if (ext == ".chprefab")
             {

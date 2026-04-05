@@ -55,6 +55,10 @@ void EditorLayout::DrawInterface()
 {
     auto& layer = EditorLayer::Get();
     EditorGUI::DrawMenuBar(layer.GetPanels());
+    
+    // Render all panels
+    bool readOnly = EditorContext::GetSceneState() == SceneState::Play;
+    layer.GetPanels().OnImGuiRender(readOnly);
 }
 
 void EditorLayout::ResetLayout()

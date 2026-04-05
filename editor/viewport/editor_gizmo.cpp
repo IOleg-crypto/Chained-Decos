@@ -1,5 +1,5 @@
 #include "editor_gizmo.h"
-#include "editor/actions/editor_actions.h"
+
 #include "editor_gui.h"
 #include "editor_layer.h"
 #include "engine/scene/components.h"
@@ -79,7 +79,7 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
     else if (m_WasUsing)
     {
         m_WasUsing = false;
-        EditorActions::PushCommand(std::make_unique<ModifyComponentCommand<TransformComponent>>(
+        EditorLayer::GetCommandHistory().PushCommand(std::make_unique<ModifyComponentCommand<TransformComponent>>(
             entity, m_OldTransform, transform, "Transform Entity"));
     }
 

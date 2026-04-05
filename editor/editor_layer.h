@@ -1,7 +1,6 @@
 #ifndef CH_EDITOR_LAYER_H
 #define CH_EDITOR_LAYER_H
 
-#include "editor/actions/editor_actions.h"
 #include "editor_context.h"
 #include "editor_layout.h"
 #include "editor_panels.h"
@@ -17,6 +16,7 @@
 
 namespace CHEngine
 {
+
 class EditorLayer : public Layer
 {
 public:
@@ -63,6 +63,21 @@ public:
         return m_ViewportSize;
     }
 
+    // --- File & Project Operations ---
+    void NewProject();
+    void NewProject(const std::string& name, const std::string& path);
+    void OpenProject();
+    void OpenProject(const std::filesystem::path& path);
+    void SaveProject();
+    void LaunchStandalone();
+
+    void NewScene();
+    void OpenScene();
+    void OpenScene(const std::filesystem::path& path);
+    void SaveScene();
+    void SaveSceneAs();
+    void AutoSaveScene();
+
 public:
     static EditorLayer* s_Instance;
 
@@ -80,6 +95,9 @@ public:
     {
         return EditorContext::GetSelectedEntity();
     }
+
+    static void ReparentEntity(Entity child, Entity parent);
+
     DebugRenderFlags& GetDebugRenderFlags()
     {
         auto activeScene = GetActiveScene();
@@ -142,9 +160,8 @@ private:
     bool OnSceneOpened(SceneOpenedEvent& e);
 
 private:
-    std::unique_ptr<EditorPanels> m_Panels;
     std::unique_ptr<EditorLayout> m_Layout;
-    std::unique_ptr<EditorActions> m_Actions;
+    std::unique_ptr<EditorPanels> m_Panels;
 
     std::shared_ptr<Scene> m_EditorScene;
     std::shared_ptr<Scene> m_RuntimeScene;
@@ -153,6 +170,9 @@ private:
     ImVec2 m_ViewportSize = {1280, 720};
     float m_AutoSaveTimer = 0.0f;
     float m_LastAutoSaveTime = 0.0f;
+
+    bool OnKeyPressed(KeyPressedEvent& e);
+    bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
 };
 } // namespace CHEngine
 

@@ -13,6 +13,8 @@
 #include "imgui/IconsFontAwesome6.h"
 #include "engine/graphics/api/renderer_api.h"
 #include "engine/core/dialogs.h"
+#include "editor/undo/component_commands.h"
+#include "editor/undo/modify_component_command.h"
 #include "panel.h"
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -37,10 +39,30 @@ std::unordered_map<entt::id_type, PropertyEditor::ComponentMetadata> PropertyEdi
 template <typename T>
 void PropertyEditor::DrawComponentReflection(const std::string& name, const char* icon, Entity entity)
 {
-    DrawComponentContainer<T>(name, icon, entity, [](T& comp, Entity e) {
+    static std::unordered_map<entt::entity, T> s_InitialStates;
+    entt::entity e = (entt::entity)entity;
+
+    DrawComponentContainer<T>(name, icon, entity, [&](T& comp, Entity ent) {
         UIProperties ui;
         Properties props(ui);
         comp.Reflect(props);
+
+        if (ui.HasStarted())
+        {
+            s_InitialStates[e] = entity.GetComponent<T>();
+        }
+
+        if (ui.HasFinished())
+        {
+            if (s_InitialStates.contains(e))
+            {
+                auto oldState = s_InitialStates[e];
+                auto newState = comp;
+                EditorLayer::GetCommandHistory().PushCommand(std::make_unique<ModifyComponentCommand<T>>(entity, oldState, newState, "Modify " + name));
+                s_InitialStates.erase(e);
+            }
+        }
+
         return props.HasChanged();
     });
 }
@@ -56,12 +78,15 @@ void PropertyEditor::DrawComponentContainer(const std::string& name, const char*
                 T componentCopy = component;
                 if (drawer(componentCopy, entity))
                 {
+                    // Live preview / immediate update
                     entity.GetRegistry().template patch<T>(entity, [&componentCopy](T& comp) { comp = componentCopy; });
                     return true;
                 }
                 return false;
             },
-            [&]() { entity.RemoveComponent<T>(); }
+            [&]() {
+                EditorLayer::GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(entity)); 
+            }
         );
     }
 }
@@ -75,7 +100,7 @@ void PropertyEditor::Register(const std::string& name, const char* icon)
     metadata.Draw = [name, icon](Entity e) { DrawComponentReflection<T>(name, icon, e); };
     metadata.Add = [](Entity e) {
         if (!e.HasComponent<T>()) {
-            e.AddComponent<T>();
+            EditorLayer::GetCommandHistory().PushCommand(std::make_unique<AddComponentCommand<T>>(e));
             return true;
         }
         return false;
@@ -92,7 +117,7 @@ void PropertyEditor::RegisterCustom(const std::string& name, std::function<bool(
     metadata.Draw = [name, icon, drawer](Entity e) { DrawComponentContainer<T>(name, icon, e, drawer); };
     metadata.Add = [](Entity e) {
         if (!e.HasComponent<T>()) {
-            e.AddComponent<T>();
+            EditorLayer::GetCommandHistory().PushCommand(std::make_unique<AddComponentCommand<T>>(e));
             return true;
         }
         return false;
@@ -131,7 +156,10 @@ void PropertyEditor::Init()
 
     // --- Scripting ---
     RegisterCustom<ManagedScriptComponent>("Scripts", [](auto& component, auto entity) {
+        static std::unordered_map<entt::entity, ManagedScriptComponent> s_InitialStates;
+        entt::entity e = (entt::entity)entity;
         bool changed = false;
+
         for (auto& script : component.Scripts)
         {
             if (ImGui::TreeNodeEx(script.ClassName.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
@@ -157,6 +185,22 @@ void PropertyEditor::Init()
                         CHEngine::Properties props(ui);
                         field.Reflect(props);
                         
+                        if (ui.HasStarted())
+                        {
+                            s_InitialStates[e] = component;
+                        }
+
+                        if (ui.HasFinished())
+                        {
+                            if (s_InitialStates.contains(e))
+                            {
+                                auto oldState = s_InitialStates[e];
+                                auto newState = component;
+                                EditorLayer::GetCommandHistory().PushCommand(std::make_unique<ModifyComponentCommand<ManagedScriptComponent>>(entity, oldState, newState, "Modify Script: " + script.ClassName));
+                                s_InitialStates.erase(e);
+                            }
+                        }
+
                         if (props.HasChanged())
                         {
                             changed = true;
