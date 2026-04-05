@@ -11,8 +11,8 @@ namespace ChainedDecos.Scripts
         {
             if (Entity.HasComponent<ButtonControl>())
             {
-                ButtonControl btn = Entity?.GetComponent<ButtonControl>();
-                if (btn.IsPressed)
+                ButtonControl? btn = Entity.GetComponent<ButtonControl>();
+                if (btn?.IsPressed ?? false)
                 {
                     Log.Info("Starting game, loading scene: " + TargetScene);
                     Scene.LoadScene(TargetScene);

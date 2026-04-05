@@ -233,6 +233,7 @@ void PropertyEditor::Init()
                 }
             }
 
+            // 2. Standard reflection UI for persistence and serialization
             UIProperties ui;
             Properties props(ui);
             component.Reflect(props);
@@ -252,6 +253,58 @@ void PropertyEditor::Init()
                     }
                 }
             }
+
+            // 3. Script selector for adding new scripts
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Text("Add Script:");
+            
+            static int selectedScriptIdx = 0;
+            std::vector<std::string> availableScripts;
+            availableScripts.push_back("");
+            
+            for (const auto& [name, type] : ScriptEngine::Get().GetScriptClasses())
+            {
+                availableScripts.push_back(name);
+            }
+
+            std::vector<const char*> scriptNames;
+            for (const auto& name : availableScripts)
+            {
+                scriptNames.push_back(name.c_str());
+            }
+
+            if (ImGui::Combo("##ScriptSelector", &selectedScriptIdx, scriptNames.data(), (int)scriptNames.size()))
+            {
+                // Selection changed
+            }
+
+            ImGui::SameLine();
+            if (ImGui::Button(ICON_FA_PLUS " Add", ImVec2(-1, 0)))
+            {
+                if (selectedScriptIdx > 0 && selectedScriptIdx < (int)availableScripts.size())
+                {
+                    const std::string& scriptName = availableScripts[selectedScriptIdx];
+                    
+                    // Check if already attached
+                    bool alreadyAttached = false;
+                    for (const auto& script : component.Scripts)
+                    {
+                        if (script.ClassName == scriptName)
+                        {
+                            alreadyAttached = true;
+                            break;
+                        }
+                    }
+
+                    if (!alreadyAttached)
+                    {
+                        component.Scripts.push_back(ManagedScriptInstance(scriptName));
+                        selectedScriptIdx = 0;
+                    }
+                }
+            }
+
             return props.HasChanged();
         },
         ICON_FA_FILE_CODE);

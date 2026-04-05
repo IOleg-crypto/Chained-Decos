@@ -15,8 +15,11 @@ public class PlayerFall : Script
         if (!Entity.HasComponent<RigidBodyComponent>() || !Entity.HasComponent<AudioComponent>())
             return;
 
-        RigidBodyComponent ?rb = Entity.GetComponent<RigidBodyComponent>();
-        AudioComponent ?audio = Entity.GetComponent<AudioComponent>();
+        RigidBodyComponent? rb = Entity.GetComponent<RigidBodyComponent>();
+        AudioComponent? audio = Entity.GetComponent<AudioComponent>();
+
+        if (rb == null || audio == null)
+            return;
 
         Vector3 velocity = rb.Velocity;
         float fallSpeed = -velocity.Y;
