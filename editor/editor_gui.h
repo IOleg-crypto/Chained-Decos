@@ -14,12 +14,9 @@
 
 namespace CHEngine
 {
-struct PropertyBuilder;
-
 class EditorGUI
 {
 public:
-    static PropertyBuilder Begin();
     // --- Menu System ---
     static void DrawMenuBar(EditorPanels& panels);
 
@@ -55,63 +52,6 @@ public:
     static bool DrawVec4(const char* label, glm::vec4& values, float resetValue = 0.0f);
     static void ApplyTheme();
     static Ray GetMouseRay(const struct Camera3D& camera, const glm::vec2& mousePosition, const glm::vec2& viewportSize);
-};
-
-// Builder for properties
-struct PropertyBuilder
-{
-    bool Changed = false;
-
-    PropertyBuilder& Bool(const char* label, bool& value)
-    {
-        Changed |= EditorGUI::Property(label, value);
-        return *this;
-    }
-    PropertyBuilder& Int(const char* label, int& value, int min = 0, int max = 0)
-    {
-        Changed |= EditorGUI::Property(label, value, min, max);
-        return *this;
-    }
-    PropertyBuilder& Float(const char* label, float& value, float speed = 0.1f, float min = 0.0f, float max = 0.0f)
-    {
-        Changed |= EditorGUI::Property(label, value, speed, min, max);
-        return *this;
-    }
-    PropertyBuilder& String(const char* label, std::string& value, bool multiline = false)
-    {
-        Changed |= EditorGUI::Property(label, value, multiline);
-        return *this;
-    }
-    PropertyBuilder& File(const char* label, std::string& value, const char* filter = nullptr)
-    {
-        Changed |= EditorGUI::FileProperty(label, value, filter);
-        return *this;
-    }
-    PropertyBuilder& Color(const char* label, CHEngine::Color& value)
-    {
-        Changed |= EditorGUI::Property(label, value);
-        return *this;
-    }
-    PropertyBuilder& Vec2(const char* label, glm::vec2& value, float speed = 0.1f)
-    {
-        Changed |= EditorGUI::Property(label, value, speed);
-        return *this;
-    }
-    PropertyBuilder& Vec3(const char* label, glm::vec3& value, float speed = 0.1f)
-    {
-        Changed |= EditorGUI::Property(label, value, speed);
-        return *this;
-    }
-    PropertyBuilder& Vec4(const char* label, glm::vec4& value, float speed = 0.1f)
-    {
-        Changed |= EditorGUI::Property(label, value, speed);
-        return *this;
-    }
-
-    operator bool() const
-    {
-        return Changed;
-    }
 };
 
 } // namespace CHEngine
