@@ -96,7 +96,7 @@ public:
     void InitializeResources();
     void CleanupResources();
 
-    void BeginScene(const Camera3D& camera, float nearClip = 0.01f, float farClip = 1000.0f);
+    void BeginScene(const Camera3D& camera, float nearClip = 0.01f, float farClip = 10000.0f);
     void EndScene();
 
     void Clear(const glm::vec4& color);

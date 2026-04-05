@@ -392,7 +392,7 @@ void Renderer::DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm:
         return;
     }
 
-    if (useWireframe)
+     if (useWireframe)
     {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     }
@@ -400,6 +400,7 @@ void Renderer::DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm:
     {
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
+   
 
     auto shader = debugShader->GetShader();
     shader->Bind();
@@ -425,7 +426,8 @@ void Renderer::DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm:
         mesh.VAO->Unbind();
     }
 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    
 }
 
 void Renderer::DrawGrid(int slices, float spacing)

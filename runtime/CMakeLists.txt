@@ -27,7 +27,7 @@ target_link_libraries(ChainedRuntime PRIVATE
     imguilib
 )
 
-# Copy engine resources to build output directory
+# Copy engine resources to build output directory (only if source files changed)
 add_custom_command(TARGET ChainedRuntime POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     "${CMAKE_SOURCE_DIR}/resources"
