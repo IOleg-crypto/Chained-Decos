@@ -1,21 +1,19 @@
 #include "editor_gui.h"
-#include "editor/actions/project_actions.h"
-#include "editor/actions/scene_actions.h"
 #include "editor/editor_layer.h"
 #include "editor/panels/panel.h"
 #include "editor/panels/viewport_panel.h"
 #include "editor_events.h"
 #include "engine/core/application.h"
 #include "engine/scene/components.h"
-#include "scripting/scriptengine.h"
 #include "engine/scene/project.h"
 #include "imgui/IconsFontAwesome6.h"
+#include "scripting/scriptengine.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
-#include "imgui.h"
-#include "imgui_internal.h"
 #include "engine/core/dialogs.h"
 #include "engine/scene/scene_picking.h"
+#include "imgui.h"
+#include "imgui_internal.h"
 #include <cstring>
 #include <filesystem>
 #include <string>
@@ -53,17 +51,57 @@ void EditorGUI::DrawMenuBar(EditorPanels& panels)
     // File Menu
     if (ImGui::BeginMenu("File"))
     {
-        if (ImGui::MenuItem(ICON_FA_FILE " New Project", "Ctrl+Shift+N")) ProjectActions::New();
-        if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open Project", "Ctrl+O")) ProjectActions::Open();
-        if (ImGui::MenuItem(ICON_FA_FLOPPY_DISK " Save Project")) ProjectActions::Save();
-        if (ImGui::MenuItem(ICON_FA_XMARK " Close Project")) Project::SetActive(nullptr);
+        if (ImGui::MenuItem(ICON_FA_FILE " New Project", "Ctrl+Shift+N"))
+        {
+            auto newScene = std::make_shared<Scene>();
+
+            // Ensure every scene starts with a Main Camera
+            Entity camera = newScene->CreateEntity("Main Camera");
+            auto& cc = camera.AddComponent<CameraComponent>();
+            cc.Primary = true;
+            camera.GetComponent<TransformComponent>().Translation = {0, 5, 10};
+
+            EditorLayer::Get().SetScene(newScene);
+        }
+        if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open Project", "Ctrl+O"))
+        {
+            std::vector<FileDialogFilter> filters = {{"Chained Scene", "chscene"}};
+            auto result = Dialogs::OpenFile(filters);
+            if (result)
+            {
+                EditorLayer::Get().OpenScene(*result);
+            }
+        }
+        if (ImGui::MenuItem(ICON_FA_FLOPPY_DISK " Save Project"))
+        {
+            EditorLayer::Get().SaveScene();
+        }
+        if (ImGui::MenuItem(ICON_FA_XMARK " Close Project"))
+        {
+            Project::SetActive(nullptr);
+        }
         ImGui::Separator();
-        if (ImGui::MenuItem(ICON_FA_FILE_CODE " New Scene", "Ctrl+N")) SceneActions::New();
-        if (ImGui::MenuItem(ICON_FA_FLOPPY_DISK " Save Scene", "Ctrl+S")) SceneActions::Save();
-        if (ImGui::MenuItem(ICON_FA_FILE_EXPORT " Save Scene As...", "Ctrl+Shift+S")) SceneActions::SaveAs();
-        if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Load Scene", "Ctrl+L")) SceneActions::Open();
+        if (ImGui::MenuItem(ICON_FA_FILE_CODE " New Scene", "Ctrl+N"))
+        {
+            EditorLayer::Get().NewScene();
+        }
+        if (ImGui::MenuItem(ICON_FA_FLOPPY_DISK " Save Scene", "Ctrl+S"))
+        {
+            EditorLayer::Get().SaveScene();
+        }
+        if (ImGui::MenuItem(ICON_FA_FILE_EXPORT " Save Scene As...", "Ctrl+Shift+S"))
+        {
+            EditorLayer::Get().SaveSceneAs();
+        }
+        if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Load Scene", "Ctrl+L"))
+        {
+            EditorLayer::Get().OpenScene();
+        }
         ImGui::Separator();
-        if (ImGui::MenuItem(ICON_FA_POWER_OFF " Exit")) Application::Get().Close();
+        if (ImGui::MenuItem(ICON_FA_POWER_OFF " Exit"))
+        {
+            Application::Get().Close();
+        }
         ImGui::EndMenu();
     }
 
@@ -72,23 +110,52 @@ void EditorGUI::DrawMenuBar(EditorPanels& panels)
     {
         panels.ForEach([](std::shared_ptr<Panel> panel) {
             if (panel->GetName() != "Viewport" && panel->GetName() != "Project Browser")
+            {
                 ImGui::MenuItem(panel->GetName().c_str(), nullptr, &panel->IsOpen());
+            }
         });
         ImGui::Separator();
-        if (ImGui::MenuItem(ICON_FA_EXPAND " Fullscreen", "F11")) Application::Get().GetWindow().ToggleFullscreen();
-        if (ImGui::MenuItem(ICON_FA_ARROWS_ROTATE " Reset Layout")) { AppResetLayoutEvent e; Application::Get().OnEvent(e); }
-        if (ImGui::MenuItem(ICON_FA_FLOPPY_DISK " Save Layout")) { AppSaveLayoutEvent e; Application::Get().OnEvent(e); }
+        if (ImGui::MenuItem(ICON_FA_EXPAND " Fullscreen", "F11"))
+        {
+            Application::Get().GetWindow().ToggleFullscreen();
+        }
+        if (ImGui::MenuItem(ICON_FA_ARROWS_ROTATE " Reset Layout"))
+        {
+            AppResetLayoutEvent e;
+            Application::Get().OnEvent(e);
+        }
+        if (ImGui::MenuItem(ICON_FA_FLOPPY_DISK " Save Layout"))
+        {
+            AppSaveLayoutEvent e;
+            Application::Get().OnEvent(e);
+        }
         ImGui::EndMenu();
     }
 
     // Project Menu
     if (ImGui::BeginMenu("Project"))
     {
-        if (ImGui::MenuItem(ICON_FA_GEARS " Settings")) if (auto p = panels.Get("Project Settings")) p->IsOpen() = true;
-        if (ImGui::MenuItem(ICON_FA_ROCKET " Build & Run")) { AppLaunchRuntimeEvent e; Application::Get().OnEvent(e); }
+        if (ImGui::MenuItem(ICON_FA_GEARS " Settings"))
+        {
+            if (auto p = panels.Get("Project Settings"))
+            {
+                p->IsOpen() = true;
+            }
+        }
+        if (ImGui::MenuItem(ICON_FA_ROCKET " Build & Run"))
+        {
+            AppLaunchRuntimeEvent e;
+            Application::Get().OnEvent(e);
+        }
         ImGui::Separator();
-        if (ImGui::MenuItem(ICON_FA_ARROWS_ROTATE " Reload Shaders")) Renderer::Get().GetShaderLibrary().ReloadAll();
-        if (ImGui::MenuItem(ICON_FA_FILE_CODE " Reload Scripts", "Ctrl+R")) ScriptEngine::Get().ReloadAssembly();
+        if (ImGui::MenuItem(ICON_FA_ARROWS_ROTATE " Reload Shaders"))
+        {
+            Renderer::Get().GetShaderLibrary().ReloadAll();
+        }
+        if (ImGui::MenuItem(ICON_FA_FILE_CODE " Reload Scripts", "Ctrl+R"))
+        {
+            ScriptEngine::Get().ReloadAssembly();
+        }
         ImGui::EndMenu();
     }
 
@@ -122,7 +189,10 @@ void EditorGUI::EndProperty()
     ImGui::PopID();
 }
 
-PropertyBuilder EditorGUI::Begin() { return PropertyBuilder(); }
+PropertyBuilder EditorGUI::Begin()
+{
+    return PropertyBuilder();
+}
 
 // --- Property Widgets Implementation (New Unified Style) ---
 
@@ -166,13 +236,14 @@ bool EditorGUI::Property(const char* label, std::string& value, bool multiline)
 {
     DrawPropertyLabel(label);
     ImGui::PushID(label);
-    char buffer[1024]; 
+    char buffer[1024];
     memset(buffer, 0, sizeof(buffer));
     strncpy(buffer, value.c_str(), sizeof(buffer) - 1);
     bool changed = false;
     if (multiline)
     {
-        if (ImGui::InputTextMultiline("##prop", buffer, sizeof(buffer), ImVec2(0, ImGui::GetTextLineHeightWithSpacing() * 3)))
+        if (ImGui::InputTextMultiline("##prop", buffer, sizeof(buffer),
+                                      ImVec2(0, ImGui::GetTextLineHeightWithSpacing() * 3)))
         {
             value = buffer;
             changed = true;
@@ -205,9 +276,18 @@ bool EditorGUI::Property(const char* label, Color& value)
     return changed;
 }
 
-bool EditorGUI::Property(const char* label, glm::vec2& value, float speed, float min, float max) { return DrawVec2(label, value, 0.0f); }
-bool EditorGUI::Property(const char* label, glm::vec3& value, float speed, float min, float max) { return DrawVec3(label, value, 0.0f); }
-bool EditorGUI::Property(const char* label, glm::vec4& value, float speed, float min, float max) { return DrawVec4(label, value, 0.0f); }
+bool EditorGUI::Property(const char* label, glm::vec2& value, float speed, float min, float max)
+{
+    return DrawVec2(label, value, 0.0f);
+}
+bool EditorGUI::Property(const char* label, glm::vec3& value, float speed, float min, float max)
+{
+    return DrawVec3(label, value, 0.0f);
+}
+bool EditorGUI::Property(const char* label, glm::vec4& value, float speed, float min, float max)
+{
+    return DrawVec4(label, value, 0.0f);
+}
 
 bool EditorGUI::Property(const char* label, int& value, const char** items, int itemCount)
 {
@@ -229,7 +309,11 @@ bool EditorGUI::FileProperty(const char* label, std::string& value, const char* 
     memset(buffer, 0, sizeof(buffer));
     strncpy(buffer, value.c_str(), sizeof(buffer) - 1);
     bool changed = false;
-    if (ImGui::InputText("##prop", buffer, sizeof(buffer))) { value = buffer; changed = true; }
+    if (ImGui::InputText("##prop", buffer, sizeof(buffer)))
+    {
+        value = buffer;
+        changed = true;
+    }
     if (ImGui::BeginDragDropTarget())
     {
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
@@ -248,7 +332,10 @@ bool EditorGUI::FileProperty(const char* label, std::string& value, const char* 
     if (ImGui::Button(ICON_FA_FOLDER_OPEN, {buttonSize, buttonSize}))
     {
         std::vector<FileDialogFilter> filters;
-        if (filter != nullptr && filter[0] != '\0') filters.push_back({"Files", filter});
+        if (filter != nullptr && filter[0] != '\0')
+        {
+            filters.push_back({"Files", filter});
+        }
         auto result = Dialogs::OpenFile(filters);
         if (result)
         {
@@ -270,15 +357,29 @@ bool EditorGUI::FileProperty(const char* label, std::string& path, uint32_t text
     float width = ImGui::GetContentRegionAvail().x;
     float buttonSize = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
     float thumbnailSize = buttonSize * 1.5f;
-    if (textureId > 0) ImGui::Image((void*)(intptr_t)textureId, {thumbnailSize, thumbnailSize}, {0, 1}, {1, 0});
-    else { ImGui::Button("##empty", {thumbnailSize, thumbnailSize}); if (ImGui::IsItemHovered()) ImGui::SetTooltip("No texture loaded"); }
+    if (textureId > 0)
+    {
+        ImGui::Image((void*)(intptr_t)textureId, {thumbnailSize, thumbnailSize}, {0, 1}, {1, 0});
+    }
+    else
+    {
+        ImGui::Button("##empty", {thumbnailSize, thumbnailSize});
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("No texture loaded");
+        }
+    }
     ImGui::SameLine();
     ImGui::PushItemWidth(width - buttonSize - thumbnailSize - 10.0f);
     char buffer[256];
     memset(buffer, 0, sizeof(buffer));
     strncpy(buffer, path.c_str(), sizeof(buffer) - 1);
     bool changed = false;
-    if (ImGui::InputText("##prop", buffer, sizeof(buffer))) { path = buffer; changed = true; }
+    if (ImGui::InputText("##prop", buffer, sizeof(buffer)))
+    {
+        path = buffer;
+        changed = true;
+    }
     if (ImGui::BeginDragDropTarget())
     {
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
@@ -297,7 +398,10 @@ bool EditorGUI::FileProperty(const char* label, std::string& path, uint32_t text
     if (ImGui::Button(ICON_FA_FOLDER_OPEN, {buttonSize, buttonSize}))
     {
         std::vector<FileDialogFilter> filters;
-        if (filter != nullptr && filter[0] != '\0') filters.push_back({"Files", filter});
+        if (filter != nullptr && filter[0] != '\0')
+        {
+            filters.push_back({"Files", filter});
+        }
         auto result = Dialogs::OpenFile(filters);
         if (result)
         {
@@ -318,16 +422,16 @@ bool EditorGUI::ActionButton(const char* icon, const char* label)
     return ImGui::Button(text.c_str());
 }
 
-static void DrawPropertyControl(const char* id, float& val, ImVec4 color, const char* label, 
-                                float resetValue, bool& changed)
+static void DrawPropertyControl(const char* id, float& val, ImVec4 color, const char* label, float resetValue,
+                                bool& changed)
 {
     ImGuiIO& io = ImGui::GetIO();
     auto boldFont = io.Fonts->Fonts[0]; // Assuming 0 is default/bold or just use standard
 
     ImGui::PushID(label);
-    
+
     float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
-    ImVec2 buttonSize = { lineHeight, lineHeight };
+    ImVec2 buttonSize = {lineHeight, lineHeight};
 
     // Label with background color
     ImGui::PushStyleColor(ImGuiCol_Button, color);
@@ -341,18 +445,22 @@ static void DrawPropertyControl(const char* id, float& val, ImVec4 color, const 
         changed = true;
     }
     if (ImGui::IsItemHovered())
+    {
         ImGui::SetTooltip("Click to reset to %.2f", resetValue);
+    }
 
     ImGui::PopStyleVar();
     ImGui::PopStyleColor(3);
 
     ImGui::SameLine(0, 0); // No spacing between label and input
-    
+
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
     char buf[32];
     sprintf(buf, "##%s_%s", label, id);
     if (ImGui::DragFloat(buf, &val, 0.1f, 0.0f, 0.0f, "%.2f"))
+    {
         changed = true;
+    }
 
     ImGui::PopID();
 }
@@ -361,28 +469,28 @@ bool EditorGUI::DrawVec3(const char* label, glm::vec3& values, float resetValue)
 {
     DrawPropertyLabel(label);
     ImGui::PushID(label);
-    
+
     bool changed = false;
-    
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 4, 0 });
+
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{4, 0});
     float width = ImGui::GetContentRegionAvail().x;
     float itemWidth = (width - 8.0f) / 3.0f; // 4px spacing * 2
 
     ImGui::BeginGroup();
-    
+
     ImGui::SetNextItemWidth(itemWidth);
-    DrawPropertyControl("x", values.x, { 0.8f, 0.1f, 0.15f, 1.0f }, "X", resetValue, changed);
+    DrawPropertyControl("x", values.x, {0.8f, 0.1f, 0.15f, 1.0f}, "X", resetValue, changed);
     ImGui::SameLine();
-    
+
     ImGui::SetNextItemWidth(itemWidth);
-    DrawPropertyControl("y", values.y, { 0.2f, 0.7f, 0.2f, 1.0f }, "Y", resetValue, changed);
+    DrawPropertyControl("y", values.y, {0.2f, 0.7f, 0.2f, 1.0f}, "Y", resetValue, changed);
     ImGui::SameLine();
-    
+
     ImGui::SetNextItemWidth(itemWidth);
-    DrawPropertyControl("z", values.z, { 0.1f, 0.25f, 0.8f, 1.0f }, "Z", resetValue, changed);
-    
+    DrawPropertyControl("z", values.z, {0.1f, 0.25f, 0.8f, 1.0f}, "Z", resetValue, changed);
+
     ImGui::EndGroup();
-    
+
     ImGui::PopStyleVar();
     ImGui::PopID();
     return changed;
@@ -392,24 +500,24 @@ bool EditorGUI::DrawVec2(const char* label, glm::vec2& values, float resetValue)
 {
     DrawPropertyLabel(label);
     ImGui::PushID(label);
-    
+
     bool changed = false;
-    
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 4, 0 });
+
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{4, 0});
     float width = ImGui::GetContentRegionAvail().x;
     float itemWidth = (width - 4.0f) / 2.0f;
 
     ImGui::BeginGroup();
-    
+
     ImGui::SetNextItemWidth(itemWidth);
-    DrawPropertyControl("x", values.x, { 0.8f, 0.1f, 0.15f, 1.0f }, "X", resetValue, changed);
+    DrawPropertyControl("x", values.x, {0.8f, 0.1f, 0.15f, 1.0f}, "X", resetValue, changed);
     ImGui::SameLine();
-    
+
     ImGui::SetNextItemWidth(itemWidth);
-    DrawPropertyControl("y", values.y, { 0.2f, 0.7f, 0.2f, 1.0f }, "Y", resetValue, changed);
-    
+    DrawPropertyControl("y", values.y, {0.2f, 0.7f, 0.2f, 1.0f}, "Y", resetValue, changed);
+
     ImGui::EndGroup();
-    
+
     ImGui::PopStyleVar();
     ImGui::PopID();
     return changed;
@@ -419,32 +527,32 @@ bool EditorGUI::DrawVec4(const char* label, glm::vec4& values, float resetValue)
 {
     DrawPropertyLabel(label);
     ImGui::PushID(label);
-    
+
     bool changed = false;
-    
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 4, 0 });
+
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{4, 0});
     float width = ImGui::GetContentRegionAvail().x;
     float itemWidth = (width - 12.0f) / 4.0f;
 
     ImGui::BeginGroup();
-    
+
     ImGui::SetNextItemWidth(itemWidth);
-    DrawPropertyControl("x", values.x, { 0.8f, 0.1f, 0.15f, 1.0f }, "X", resetValue, changed);
+    DrawPropertyControl("x", values.x, {0.8f, 0.1f, 0.15f, 1.0f}, "X", resetValue, changed);
     ImGui::SameLine();
-    
+
     ImGui::SetNextItemWidth(itemWidth);
-    DrawPropertyControl("y", values.y, { 0.2f, 0.7f, 0.2f, 1.0f }, "Y", resetValue, changed);
+    DrawPropertyControl("y", values.y, {0.2f, 0.7f, 0.2f, 1.0f}, "Y", resetValue, changed);
     ImGui::SameLine();
-    
+
     ImGui::SetNextItemWidth(itemWidth);
-    DrawPropertyControl("z", values.z, { 0.1f, 0.25f, 0.8f, 1.0f }, "Z", resetValue, changed);
+    DrawPropertyControl("z", values.z, {0.1f, 0.25f, 0.8f, 1.0f}, "Z", resetValue, changed);
     ImGui::SameLine();
-    
+
     ImGui::SetNextItemWidth(itemWidth);
-    DrawPropertyControl("w", values.w, { 0.5f, 0.5f, 0.5f, 1.0f }, "W", resetValue, changed);
-    
+    DrawPropertyControl("w", values.w, {0.5f, 0.5f, 0.5f, 1.0f}, "W", resetValue, changed);
+
     ImGui::EndGroup();
-    
+
     ImGui::PopStyleVar();
     ImGui::PopID();
     return changed;
@@ -472,11 +580,11 @@ void EditorGUI::ApplyTheme()
     colors[ImGuiCol_FrameBgActive] = ImVec4(0.22f, 0.24f, 0.26f, 1.00f);
     colors[ImGuiCol_TitleBg] = ImVec4(0.08f, 0.10f, 0.12f, 1.00f);
     colors[ImGuiCol_TitleBgActive] = ImVec4(0.06f, 0.08f, 0.10f, 1.00f);
-    
+
     colors[ImGuiCol_Header] = ImVec4(0.20f, 0.25f, 0.35f, 0.60f);
     colors[ImGuiCol_HeaderHovered] = ImVec4(0.25f, 0.35f, 0.50f, 0.80f);
     colors[ImGuiCol_HeaderActive] = ImVec4(0.30f, 0.40f, 0.60f, 1.00f);
-    
+
     colors[ImGuiCol_Separator] = ImVec4(0.20f, 0.22f, 0.25f, 1.00f);
     colors[ImGuiCol_CheckMark] = ImVec4(0.40f, 0.60f, 0.90f, 1.00f);
     colors[ImGuiCol_SliderGrab] = ImVec4(0.40f, 0.60f, 0.90f, 1.00f);
@@ -484,7 +592,7 @@ void EditorGUI::ApplyTheme()
     colors[ImGuiCol_Button] = ImVec4(0.18f, 0.20f, 0.22f, 1.00f);
     colors[ImGuiCol_ButtonHovered] = ImVec4(0.25f, 0.35f, 0.50f, 1.00f);
     colors[ImGuiCol_ButtonActive] = ImVec4(0.30f, 0.45f, 0.70f, 1.00f);
-    
+
     colors[ImGuiCol_Tab] = ImVec4(0.08f, 0.10f, 0.12f, 1.00f);
     colors[ImGuiCol_TabHovered] = ImVec4(0.25f, 0.35f, 0.50f, 0.80f);
     colors[ImGuiCol_TabActive] = ImVec4(0.12f, 0.14f, 0.16f, 1.00f);

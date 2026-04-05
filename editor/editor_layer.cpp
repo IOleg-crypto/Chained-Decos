@@ -1,6 +1,4 @@
 #include "editor_layer.h"
-#include "editor/actions/project_actions.h"
-#include "editor/actions/scene_actions.h"
 #include "editor_events.h"
 #include "editor_gui.h"
 #include "engine/core/input.h"
@@ -9,9 +7,13 @@
 #include "engine/core/profiler.h"
 #include "engine/physics/physics.h"
 
+#include "engine/core/dialogs.h"
 #include "engine/graphics/pipeline/render_command.h"
+#include "engine/graphics/pipeline/ui_renderer.h"
 #include "engine/scene/project.h"
+#include "engine/scene/project_serializer.h"
 #include "engine/scene/scene_serializer.h"
+
 #include "imgui/IconsFontAwesome6.h"
 #include "panels/console_panel.h"
 #include "panels/content_browser_panel.h"
@@ -33,9 +35,9 @@ EditorLayer::EditorLayer()
 {
     s_Instance = this;
     EditorContext::Init();
-    m_Panels = std::make_unique<EditorPanels>();
+
     m_Layout = std::make_unique<EditorLayout>();
-    m_Actions = std::make_unique<EditorActions>();
+    m_Panels = std::make_unique<EditorPanels>();
 
     LoadConfig();
 }
@@ -106,8 +108,6 @@ void EditorLayer::OnAttach()
     EditorGUI::ApplyTheme();
     Log::SetLogCallback(ConsolePanel::AddLog);
     PropertyEditor::Init();
-
-    // Register Panels
     m_Panels->Init();
 
     m_CommandHistory.SetNotifyCallback(
@@ -120,12 +120,12 @@ void EditorLayer::OnAttach()
         std::filesystem::exists(config.LastProjectPath))
     {
         CH_CORE_INFO("Auto-loading last project: {}", config.LastProjectPath);
-        ProjectActions::Open(config.LastProjectPath);
+        OpenProject(config.LastProjectPath);
 
         if (!config.LastScenePath.empty() && std::filesystem::exists(config.LastScenePath))
         {
             CH_CORE_INFO("Auto-loading last scene: {}", config.LastScenePath);
-            SceneActions::Open(config.LastScenePath);
+            OpenScene(config.LastScenePath);
         }
     }
     else
@@ -203,6 +203,9 @@ void EditorLayer::OnUpdate(Timestep ts)
 {
     CH_PROFILE_FUNCTION();
 
+    // Update all panels (includes viewport camera controller)
+    m_Panels->OnUpdate(ts);
+
     if (auto scene = GetActiveScene())
     {
         if (EditorContext::GetSceneState() == SceneState::Play)
@@ -231,7 +234,7 @@ void EditorLayer::OnUpdate(Timestep ts)
                 m_AutoSaveTimer += ts;
                 if (m_AutoSaveTimer >= m_Config.AutoSaveInterval)
                 {
-                    SceneActions::AutoSave();
+                    AutoSaveScene();
                     m_AutoSaveTimer = 0.0f;
                 }
             }
@@ -247,8 +250,6 @@ void EditorLayer::OnUpdate(Timestep ts)
         {
             ScriptEngine::Get().ReloadAssembly();
         }
-
-        m_Panels->OnUpdate(ts);
     }
 }
 
@@ -302,7 +303,6 @@ void EditorLayer::DrawDockSpace()
     m_Layout->DrawInterface();
 
     bool readOnly = EditorContext::GetSceneState() == SceneState::Play;
-    m_Panels->OnImGuiRender(readOnly);
 
     m_Layout->EndWorkspace();
 }
@@ -346,7 +346,7 @@ bool EditorLayer::OnProjectOpened(ProjectOpenedEvent& e)
         if (!sceneToLoad.empty() && std::filesystem::exists(sceneToLoad))
         {
             CH_CORE_INFO("EditorLayer: Auto-loading scene: {}", sceneToLoad.string());
-            SceneActions::Open(sceneToLoad);
+            OpenScene(sceneToLoad);
         }
     }
     return false;
@@ -364,7 +364,7 @@ bool EditorLayer::OnSceneOpened(SceneOpenedEvent& e)
     if (project && !e.GetPath().empty())
     {
         project->SetActiveScenePath(std::filesystem::relative(e.GetPath(), project->GetProjectDirectory()));
-        ProjectActions::Save();
+        SaveProject();
 
         m_Config.LastScenePath = e.GetPath();
         SaveConfig();
@@ -386,6 +386,9 @@ void EditorLayer::OnEvent(Event& e)
         SceneScripting::DispatchEvent(scene.get(), e);
     }
 
+    // Dispatch events to all editor panels
+    m_Panels->OnEvent(e);
+
     EventDispatcher dispatcher(e);
 
     // 1. Scene Management
@@ -401,13 +404,13 @@ void EditorLayer::OnEvent(Event& e)
     });
 
     // 2. Project Management
-    dispatcher.Dispatch<ProjectCreatedEvent>([](auto& ev) {
-        ProjectActions::New(ev.GetProjectName(), ev.GetPath());
+    dispatcher.Dispatch<ProjectCreatedEvent>([this](auto& ev) {
+        NewProject(ev.GetProjectName(), ev.GetPath());
         return true;
     });
     dispatcher.Dispatch<ProjectOpenedEvent>(CH_BIND_EVENT_FN(EditorLayer::OnProjectOpened));
-    dispatcher.Dispatch<AppLaunchRuntimeEvent>([](auto& ev) {
-        ProjectActions::LaunchStandalone();
+    dispatcher.Dispatch<AppLaunchRuntimeEvent>([this](auto& ev) {
+        LaunchStandalone();
         return true;
     });
 
@@ -443,12 +446,11 @@ void EditorLayer::OnEvent(Event& e)
                 }
                 m_RuntimeScene = newScene;
                 m_RuntimeScene->OnRuntimeStart();
-                m_Panels->SetContext(m_RuntimeScene);
                 CH_CORE_INFO("Play Mode: Transitioned to scene {}", finalPath);
             }
             return true;
         }
-        SceneActions::Open(finalPath);
+        OpenScene(finalPath);
         return true;
     });
 
@@ -459,13 +461,14 @@ void EditorLayer::OnEvent(Event& e)
         return false;
     });
 
-    // 5. Hierarchy propagation
-    m_Panels->OnEvent(e);
     if (e.Handled)
     {
         return;
     }
-    if (m_Actions->OnEvent(e))
+    bool handled = false;
+    handled |= dispatcher.Dispatch<KeyPressedEvent>(CH_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
+    handled |= dispatcher.Dispatch<MouseButtonPressedEvent>(CH_BIND_EVENT_FN(EditorLayer::OnMouseButtonPressed));
+    if (handled)
     {
         return;
     }
@@ -516,7 +519,6 @@ void EditorLayer::SetSceneState(SceneState state)
         {
             EditorContext::SetSceneState(SceneState::Play);
             m_RuntimeScene->OnRuntimeStart();
-            m_Panels->SetContext(m_RuntimeScene);
         }
         else
         {
@@ -539,7 +541,6 @@ void EditorLayer::SetSceneState(SceneState state)
         }
 
         EditorContext::SetSceneState(SceneState::Edit);
-        m_Panels->SetContext(m_EditorScene);
     }
 }
 
@@ -550,7 +551,6 @@ void EditorLayer::SetScene(std::shared_ptr<Scene> scene)
     EditorContext::SetSelectedEntity({});
     if (EditorContext::GetSceneState() == SceneState::Edit)
     {
-        m_Panels->SetContext(m_EditorScene);
     }
 
     // RegisterGameScripts(m_EditorScene.get()); // Removed: now handled globally
@@ -570,4 +570,453 @@ void EditorLayer::SetViewportSize(const ImVec2& size)
         m_RuntimeScene->OnViewportResize((uint32_t)size.x, (uint32_t)size.y);
     }
 }
+
+void EditorLayer::NewProject()
+{
+    // Simple default: close active project to show Project Browser
+    Project::SetActive(nullptr);
+}
+
+void EditorLayer::NewProject(const std::string& name, const std::string& path)
+{
+    Project::New();
+    auto project = Project::GetActive();
+    project->GetConfig().Name = name;
+    project->GetConfig().ProjectDirectory = path;
+
+    ProjectSerializer serializer(project);
+    serializer.Serialize((std::filesystem::path(path) / (name + ".chproject")).string());
+
+    // Load engine shaders and resources for the dynamic newly created project
+    Renderer::LoadEngineResources();
+    UIRenderer::Get().LoadProjectFonts();
+}
+
+void EditorLayer::OpenProject()
+{
+    std::vector<FileDialogFilter> filters = {{"Chained Project", "chproject"}};
+    auto result = Dialogs::OpenFile(filters);
+    if (result)
+    {
+        OpenProject(*result);
+    }
+}
+
+void EditorLayer::OpenProject(const std::filesystem::path& path)
+{
+    if (Project::Load(path))
+    {
+        EditorLayer::Get().SetLastProjectPath(path.string());
+
+        // Load engine shaders and resources
+        Renderer::LoadEngineResources();
+        UIRenderer::Get().LoadProjectFonts();
+
+        ProjectOpenedEvent e(path.string());
+        Application::Get().OnEvent(e);
+    }
+}
+
+void EditorLayer::SaveProject()
+{
+    auto project = Project::GetActive();
+    ProjectSerializer serializer(project);
+    serializer.Serialize((project->GetConfig().ProjectDirectory / (project->GetConfig().Name + ".chproject")).string());
+}
+
+static std::filesystem::path FindRuntimeExecutable(const std::string& projectName, const std::string& configStr)
+{
+    CH_PROFILE_FUNCTION();
+
+    std::filesystem::path root;
+#ifdef PROJECT_ROOT_DIR
+    root = PROJECT_ROOT_DIR;
+#else
+    root = std::filesystem::current_path();
+    while (root.has_parent_path() && !std::filesystem::exists(root / "CMakeLists.txt"))
+    {
+        root = root.parent_path();
+    }
+#endif
+
+    if (!std::filesystem::exists(root))
+    {
+        CH_CORE_ERROR("FindRuntimeExecutable: Root path not found: {}", root.string());
+        return {};
+    }
+
+    CH_CORE_INFO("Searching for runtime in: {}", root.string());
+
+#ifdef CH_PLATFORM_WINDOWS
+    std::string targetName = "ChainedRuntime.exe";
+#else
+    std::string targetName = "ChainedRuntime";
+#endif
+
+    // 1. Check directory of currently running editor (most reliable for portability)
+    // We can't easily get the process handle here without platform code,
+    // but we can check the current working directory bin folder
+    std::filesystem::path currentBin = std::filesystem::current_path() / targetName;
+    if (std::filesystem::exists(currentBin))
+    {
+        CH_CORE_INFO("FindRuntimeExecutable: Found in current directory: {}", currentBin.string());
+        return currentBin;
+    }
+
+    // 2. Fast path: check common output locations including build presets
+    std::vector<std::string> searchSubdirs = {"build/bin", "bin", "out/bin", "cmake-build-debug/bin",
+                                              "cmake-build-release/bin"};
+
+    // Add dynamic preset search build/*/bin
+    if (std::filesystem::exists(root / "build"))
+    {
+        for (const auto& entry : std::filesystem::directory_iterator(root / "build"))
+        {
+            if (entry.is_directory())
+            {
+                std::filesystem::path p = entry.path() / "bin" / targetName;
+                if (std::filesystem::exists(p))
+                {
+                    searchSubdirs.push_back("build/" + entry.path().filename().string() + "/bin");
+                }
+            }
+        }
+    }
+
+    // Search collected paths
+    for (const auto& sub : searchSubdirs)
+    {
+        std::filesystem::path p = root / sub / targetName;
+        if (std::filesystem::exists(p))
+        {
+            CH_CORE_INFO("FindRuntimeExecutable: Path found at: {}", p.string());
+            return p;
+        }
+    }
+
+    // 3. Fallback: careful recursive search excluding noisy folders
+    CH_CORE_INFO("FindRuntimeExecutable: Fast path failed, starting scoped recursive search...");
+    try
+    {
+        for (auto it = std::filesystem::recursive_directory_iterator(root);
+             it != std::filesystem::recursive_directory_iterator(); ++it)
+        {
+            const auto& entry = *it;
+            auto filename = entry.path().filename().string();
+            auto pathStr = entry.path().string();
+
+            // Skip noisy/irrelevant directories
+            if (entry.is_directory())
+            {
+                if (filename == ".git" || filename == ".cache" || filename == ".idea" || filename == "include" ||
+                    filename == "engine")
+                {
+                    it.disable_recursion_pending();
+                    continue;
+                }
+            }
+
+            if (entry.is_regular_file() && filename == targetName)
+            {
+                CH_CORE_INFO("FindRuntimeExecutable: Deep search found at: {}", pathStr);
+                return entry.path();
+            }
+        }
+    } catch (const std::exception& e)
+    {
+        CH_CORE_WARN("FindRuntimeExecutable: Deep search error: {}", e.what());
+    }
+
+    CH_CORE_ERROR("FindRuntimeExecutable: Failed to find '{}' in {}", targetName, root.string());
+    return {};
+}
+
+static std::string ResolveLaunchVariables(std::string str)
+{
+    CH_PROFILE_FUNCTION();
+
+    auto project = Project::GetActive();
+    if (!project)
+    {
+        return str;
+    }
+
+    std::filesystem::path root;
+#ifdef PROJECT_ROOT_DIR
+    root = PROJECT_ROOT_DIR;
+#else
+    root = std::filesystem::current_path();
+    while (root.has_parent_path() && !std::filesystem::exists(root / "CMakeLists.txt"))
+    {
+        root = root.parent_path();
+    }
+#endif
+
+    std::filesystem::path projectFile = project->GetProjectDirectory() / (project->GetConfig().Name + ".chproject");
+    std::string projectPathStr = std::filesystem::absolute(projectFile).string();
+
+    // 1. Resolve ${ROOT}
+    size_t pos = 0;
+    while ((pos = str.find("${ROOT}")) != std::string::npos)
+    {
+        str.replace(pos, 7, std::filesystem::absolute(root).string());
+    }
+
+    // 2. Resolve ${PROJECT_FILE}
+    while ((pos = str.find("${PROJECT_FILE}")) != std::string::npos)
+    {
+        str.replace(pos, 15, projectPathStr);
+    }
+
+    // 3. Resolve ${BUILD} - Intelligent discovery
+    if (str.find("${BUILD}") != std::string::npos)
+    {
+        std::string configStr = (project->GetConfig().BuildConfig == Configuration::Release) ? "Release" : "Debug";
+        std::filesystem::path exePath = FindRuntimeExecutable(project->GetConfig().Name, configStr);
+        std::filesystem::path buildPath = exePath.parent_path();
+
+        if (buildPath.empty())
+        {
+            // Last ditch effort if FindRuntimeExecutable failed
+            std::vector<std::string> searchSubdirs = {"build/bin", "bin", "out/bin", "cmake-build-debug/bin",
+                                                      "cmake-build-release/bin"};
+
+            for (const auto& sub : searchSubdirs)
+            {
+                if (std::filesystem::exists(root / sub))
+                {
+                    buildPath = root / sub;
+                    break;
+                }
+            }
+        }
+
+        while ((pos = str.find("${BUILD}")) != std::string::npos)
+        {
+            str.replace(pos, 8, std::filesystem::absolute(buildPath).string());
+        }
+    }
+
+    return str;
+}
+
+void EditorLayer::LaunchStandalone()
+{
+    CH_PROFILE_FUNCTION();
+    SaveProject();
+
+    auto project = Project::GetActive();
+    if (!project)
+    {
+        return;
+    }
+
+    auto& config = project->GetConfig();
+
+    std::string runtimePath;
+    std::string arguments;
+
+    if (!config.LaunchProfiles.empty() && config.ActiveLaunchProfileIndex >= 0 &&
+        config.ActiveLaunchProfileIndex < (int)config.LaunchProfiles.size())
+    {
+        const auto& profile = config.LaunchProfiles[config.ActiveLaunchProfileIndex];
+        runtimePath = ResolveLaunchVariables(profile.BinaryPath);
+        arguments = ResolveLaunchVariables(profile.Arguments);
+
+        if (profile.UseDefaultArgs)
+        {
+            std::filesystem::path projectFile =
+                project->GetProjectDirectory() / (project->GetConfig().Name + ".chproject");
+            arguments += std::format(" \"{}\"", std::filesystem::absolute(projectFile).string());
+        }
+    }
+    else
+    {
+        // Fallback to old heuristic if no profiles
+        CH_CORE_WARN("LaunchStandalone: No active launch profile. Falling back to heuristic search.");
+        std::string configStr = (config.BuildConfig == Configuration::Release) ? "Release" : "Debug";
+        runtimePath = FindRuntimeExecutable(config.Name, configStr).string();
+
+        std::filesystem::path projectFile = project->GetProjectDirectory() / (project->GetConfig().Name + ".chproject");
+        arguments = std::format("\"{}\"", std::filesystem::absolute(projectFile).string());
+    }
+
+    if (runtimePath.empty() || !std::filesystem::exists(runtimePath))
+    {
+        CH_CORE_WARN("LaunchStandalone: Profile binary not found at '{}'. Searching heuristic...", runtimePath);
+        std::string configStr = (config.BuildConfig == Configuration::Release) ? "Release" : "Debug";
+        runtimePath = FindRuntimeExecutable(config.Name, configStr).string();
+
+        if (runtimePath.empty())
+        {
+            CH_CORE_ERROR("LaunchStandalone: Runtime executable not found!");
+            return;
+        }
+    }
+
+#ifdef CH_PLATFORM_WINDOWS
+    std::string command = std::format("start \"\" \"{}\" {}", runtimePath, arguments);
+#else
+    std::string command = std::format("\"{}\" {} &", runtimePath, arguments);
+#endif
+    CH_CORE_INFO("Launching Standalone: {}", command);
+
+    system(command.c_str());
+}
+
+void EditorLayer::NewScene()
+{
+    auto newScene = std::make_shared<Scene>();
+
+    // Ensure every scene starts with a Main Camera
+    Entity camera = newScene->CreateEntity("Main Camera");
+    auto& cc = camera.AddComponent<CameraComponent>();
+    cc.Primary = true;
+    camera.GetComponent<TransformComponent>().Translation = {0, 5, 10};
+
+    EditorLayer::Get().SetScene(newScene);
+}
+
+void EditorLayer::OpenScene()
+{
+    std::vector<FileDialogFilter> filters = {{"Chained Scene", "chscene"}};
+    auto result = Dialogs::OpenFile(filters);
+    if (result)
+    {
+        OpenProject(*result);
+    }
+}
+
+void EditorLayer::OpenScene(const std::filesystem::path& path)
+{
+    auto newScene = std::make_shared<Scene>();
+    // KISS: Load Game Module BEFORE deserialization to ensure ScriptRegistry is populated
+    EditorLayer::Get().SetScene(newScene);
+    SceneSerializer serializer(newScene.get());
+
+    if (serializer.Deserialize(path.string()))
+    {
+        // Sync environment if needed (optional, logic from Application::LoadScene can be moved here or to a helper)
+        if (Project::GetActive() && Project::GetActive()->GetEnvironment())
+        {
+            if (newScene->GetSettings().Environment->GetPath().empty() &&
+                newScene->GetSettings().Environment->GetSettings().Skybox.TexturePath.empty())
+            {
+                newScene->GetSettings().Environment = Project::GetActive()->GetEnvironment();
+            }
+        }
+
+        // Sync with EditorLayer which manages the scene now
+        // Assumes EditorLayer is active (SceneActions is editor-only code)
+        newScene->GetSettings().ScenePath = path.string();
+
+        SceneOpenedEvent e(path.string());
+        EditorLayer::Get().SetLastScenePath(path.string());
+        Application::Get().OnEvent(e);
+    }
+}
+
+void EditorLayer::SaveScene()
+{
+    auto scene = EditorLayer::Get().GetActiveScene();
+    if (scene->GetSettings().ScenePath.empty())
+    {
+        SaveSceneAs();
+        return;
+    }
+
+    SceneSerializer serializer(scene.get());
+    serializer.Serialize(scene->GetSettings().ScenePath);
+    CH_INFO("Scene saved to {0}", scene->GetSettings().ScenePath);
+}
+
+void EditorLayer::SaveSceneAs()
+{
+    std::vector<FileDialogFilter> filters = {{"Chained Scene", "chscene"}};
+    auto result = Dialogs::SaveFile(filters);
+    if (result)
+    {
+        auto scene = EditorLayer::Get().GetActiveScene();
+        scene->GetSettings().ScenePath = result->string();
+        SceneSerializer serializer(scene.get());
+        serializer.Serialize(result->string());
+    }
+}
+
+void EditorLayer::AutoSaveScene()
+{
+    auto scene = EditorLayer::Get().GetActiveScene();
+    if (!scene || scene->GetSettings().ScenePath.empty())
+    {
+        return;
+    }
+
+    SceneSerializer serializer(scene.get());
+    serializer.Serialize(scene->GetSettings().ScenePath);
+    CH_TRACE("Scene auto-saved to {0}", scene->GetSettings().ScenePath);
+}
+
+void EditorLayer::ReparentEntity(Entity child, Entity parent)
+{
+    if (child.HasComponent<HierarchyComponent>())
+    {
+        child.GetComponent<HierarchyComponent>().Parent = parent;
+    }
+}
+
+bool EditorLayer::OnKeyPressed(KeyPressedEvent& e)
+{
+    if (e.IsRepeat())
+    {
+        return false;
+    }
+
+    bool ctrl = Input::IsKeyDown(Key::LeftControl) || Input::IsKeyDown(Key::RightControl);
+    bool shift = Input::IsKeyDown(Key::LeftShift) || Input::IsKeyDown(Key::RightShift);
+
+    auto keyCode = e.GetKeyCode();
+
+    if (ctrl)
+    {
+        switch (keyCode)
+        {
+        case Key::N:
+            NewScene();
+            return true;
+        case Key::O:
+            OpenScene();
+            return true;
+        case Key::S:
+            if (shift)
+            {
+                SaveSceneAs();
+            }
+            else
+            {
+                SaveScene();
+            }
+            return true;
+        case Key::Z:
+            m_CommandHistory.Undo();
+            return true;
+        case Key::Y:
+            m_CommandHistory.Redo();
+            return true;
+        }
+    }
+
+    if (keyCode == Key::F5)
+    {
+        LaunchStandalone();
+        return true;
+    }
+
+    return false;
+}
+
+bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)
+{
+    return false;
+}
+
 } // namespace CHEngine

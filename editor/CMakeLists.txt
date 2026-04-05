@@ -8,10 +8,6 @@ target_sources(editor_core PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_context.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_panels.h
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_panels.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/actions/project_actions.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/actions/scene_actions.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/actions/editor_actions.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/actions/editor_actions.cpp
 
     # Viewport
     ${CMAKE_CURRENT_SOURCE_DIR}/viewport/editor_gizmo.h
