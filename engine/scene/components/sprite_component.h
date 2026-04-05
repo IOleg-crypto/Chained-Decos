@@ -30,7 +30,7 @@ struct SpriteComponent
             props.Property("Tint", Tint);
             props.Property("Flip X", FlipX);
             props.Property("Flip Y", FlipY);
-            props.Property("Z Order", ZOrder);
+            props.Property("Z Order", ZOrder, PropertyMeta(-1000.0f, 1000.0f, 1.0f));
             props.EndGroup();
         }
     CH_REFLECT_END()
