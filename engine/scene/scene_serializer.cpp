@@ -1,17 +1,16 @@
 #include "scene_serializer.h"
 #include "component_serializer.h"
 #include "components.h"
+#include "engine/core/assets/asset_manager.h"
 #include "engine/core/log.h"
 #include "engine/core/yaml.h"
-#include "engine/core/assets/asset_manager.h"
 #include "engine/graphics/assets/environment.h"
 #include "engine/graphics/assets/model_asset.h"
 #include "engine/physics/bvh/bvh.h"
 #include "engine/scene/project.h"
 #include "scene.h"
-#include "scriptable_entity.h"
-#include <fstream>
 #include "yaml-cpp/yaml.h"
+#include <fstream>
 
 namespace CHEngine
 {
@@ -87,11 +86,13 @@ std::string SceneSerializer::SerializeToString()
     out << YAML::Key << "DiagnosticMode" << YAML::Value << m_Scene->GetSettings().DiagnosticMode;
     out << YAML::Key << "DrawColliders" << YAML::Value << m_Scene->GetSettings().DebugFlags.DrawColliders;
     out << YAML::Key << "DrawHierarchy" << YAML::Value << m_Scene->GetSettings().DebugFlags.DrawHierarchy;
-    out << YAML::Key << "DrawCollisionModelBox" << YAML::Value << m_Scene->GetSettings().DebugFlags.DrawCollisionModelBox;
+    out << YAML::Key << "DrawCollisionModelBox" << YAML::Value
+        << m_Scene->GetSettings().DebugFlags.DrawCollisionModelBox;
     out << YAML::Key << "DrawGrid" << YAML::Value << m_Scene->GetSettings().DebugFlags.DrawGrid;
     out << YAML::Key << "DrawSelection" << YAML::Value << m_Scene->GetSettings().DebugFlags.DrawSelection;
     out << YAML::Key << "DrawLights" << YAML::Value << m_Scene->GetSettings().DebugFlags.DrawLights;
     out << YAML::Key << "DrawSpawnZones" << YAML::Value << m_Scene->GetSettings().DebugFlags.DrawSpawnZones;
+    out << YAML::Key << "CollisionWireframeMode" << YAML::Value << m_Scene->GetSettings().DebugFlags.SetCollisionWireframeMode;
     out << YAML::EndMap;
 
     out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
@@ -197,11 +198,14 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
             m_Scene->GetSettings().DiagnosticMode = debugNode["DiagnosticMode"].as<float>(0.0f);
             m_Scene->GetSettings().DebugFlags.DrawColliders = debugNode["DrawColliders"].as<bool>(false);
             m_Scene->GetSettings().DebugFlags.DrawHierarchy = debugNode["DrawHierarchy"].as<bool>(false);
-            m_Scene->GetSettings().DebugFlags.DrawCollisionModelBox = debugNode["DrawCollisionModelBox"].as<bool>(false);
+            m_Scene->GetSettings().DebugFlags.DrawCollisionModelBox =
+                debugNode["DrawCollisionModelBox"].as<bool>(false);
             m_Scene->GetSettings().DebugFlags.DrawGrid = debugNode["DrawGrid"].as<bool>(false);
             m_Scene->GetSettings().DebugFlags.DrawSelection = debugNode["DrawSelection"].as<bool>(true);
             m_Scene->GetSettings().DebugFlags.DrawLights = debugNode["DrawLights"].as<bool>(true);
             m_Scene->GetSettings().DebugFlags.DrawSpawnZones = debugNode["DrawSpawnZones"].as<bool>(true);
+            m_Scene->GetSettings().DebugFlags.SetCollisionWireframeMode =
+                debugNode["CollisionWireframeMode"].as<int>(0);
         }
 
         // Deserialize Environment
@@ -334,17 +338,17 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
                 seenUUIDs.insert(uuid);
 
                 std::string name;
-                auto tagComponent = entity["TagComponent"];
+                auto tagComponent = entity["Tag"];
                 if (tagComponent && tagComponent["Tag"] && tagComponent["Tag"].IsScalar())
                 {
                     name = tagComponent["Tag"].as<std::string>();
                 }
 
                 Entity deserializedEntity = m_Scene->CreateEntityWithUUID(uuid, name);
- 
+
                 // Use ComponentSerializer registry for all components
                 ComponentSerializer::Get().DeserializeAll(deserializedEntity, entity);
- 
+
                 // Hierarchy task
                 HierarchyTask task;
                 ComponentSerializer::Get().DeserializeHierarchyTask(deserializedEntity, entity, task);
@@ -380,7 +384,7 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
                     }
                 }
             }
-            
+
             // Phase 4: Preload all model assets
             auto modelView = m_Scene->GetRegistry().view<ModelComponent>();
             auto& assetMgr = AssetManager::Get();

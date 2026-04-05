@@ -1,7 +1,7 @@
 #ifndef CH_LIGHT_COMPONENT_H
 #define CH_LIGHT_COMPONENT_H
 
-#include "engine/core/base.h"
+
 #include "engine/core/reflection.h"
 
 namespace CHEngine
@@ -42,8 +42,8 @@ struct LightComponent
             // Only skip display in UI mode.
             if (props.GetMode() != CHEngine::ReflectionMode::UI || Type == LightType::Spot)
             {
-                props.Property("Inner Cutoff", InnerCutoff, PropertyMeta(0.0f, 90.0f, 0.5f));
-                props.Property("Outer Cutoff", OuterCutoff, PropertyMeta(0.0f, 90.0f, 0.5f));
+                props.Property("InnerCutoff", InnerCutoff, PropertyMeta(0.0f, 90.0f, 0.5f));
+                props.Property("OuterCutoff", OuterCutoff, PropertyMeta(0.0f, 90.0f, 0.5f));
             }
             props.EndGroup();
         }

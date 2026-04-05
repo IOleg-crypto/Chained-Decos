@@ -27,14 +27,14 @@ struct CameraComponent
     CH_REFLECT_BEGIN(CameraComponent)
         props.Header("General");
         props.Property("Primary", Primary);
-        props.Property("Fixed Aspect Ratio", FixedAspectRatio);
+        props.Property("FixedAspectRatio", FixedAspectRatio);
 
         props.Nested("Projection", Camera);
 
-        if (props.BeginGroup("Orbit Controller", IsOrbitCamera))
+        if (props.BeginGroup("OrbitController", IsOrbitCamera))
         {
             props.Property("Enabled", IsOrbitCamera);
-            props.Property("Target Tag", TargetEntityTag);
+            props.Property("TargetTag", TargetEntityTag);
             props.Property("Distance", OrbitDistance, PropertyMeta(1.0f, 100.0f, 0.5f));
             props.Property("Yaw", OrbitYaw, PropertyMeta(-360.0f, 360.0f, 1.0f));
             props.Property("Pitch", OrbitPitch, PropertyMeta(-90.0f, 90.0f, 1.0f));

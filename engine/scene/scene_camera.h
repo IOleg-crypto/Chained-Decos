@@ -105,7 +105,7 @@ public:
         if (type == ProjectionType::Perspective)
         {
             float fov = glm::degrees(m_PerspectiveFOV);
-            if (props.Property("Vertical FOV", fov))
+            if (props.Property("VerticalFOV", fov))
                 SetPerspectiveVerticalFOV(glm::radians(fov));
             
             float n = m_PerspectiveNear;

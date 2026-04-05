@@ -40,8 +40,8 @@ struct AudioComponent
         if (props.GetMode() != CHEngine::ReflectionMode::UI || Spatialized)
         {
             props.Property("Position", Position);
-            props.Property("Min Distance", MinDistance, PropertyMeta(0.1f, 100.0f, 0.5f));
-            props.Property("Max Distance", MaxDistance, PropertyMeta(0.1f, 500.0f, 1.0f));
+            props.Property("MinDistance", MinDistance, PropertyMeta(0.1f, 100.0f, 0.5f));
+            props.Property("MaxDistance", MaxDistance, PropertyMeta(0.1f, 500.0f, 1.0f));
         }
     CH_REFLECT_END()
 };

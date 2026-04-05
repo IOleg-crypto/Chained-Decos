@@ -232,6 +232,21 @@ void Physics::UpdateColliders(Scene* scene)
                 collider.Offset = (box.Min + box.Max) * 0.5f;
             }
         }
+        else if (collider.Type == ColliderType::Mesh && collider.AutoCalculate)
+        {
+            if (!registry.all_of<ModelComponent>(entity)) continue;
+            auto& model = registry.get<ModelComponent>(entity);
+            
+            if (!model.ModelPath.empty())
+            {
+                auto asset = AssetManager::Get().Get<ModelAsset>(model.ModelPath);
+                if (asset && asset->GetState() == AssetState::Ready)
+                {
+                    collider.ModelHandle = asset->GetID();
+                    collider.ModelPath = model.ModelPath;
+                }
+            }
+        }
     }
 }
 

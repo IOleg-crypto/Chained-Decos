@@ -13,7 +13,14 @@ namespace CHEngine::SerializationUtils
 
 template <typename T> inline void SerializeProperty(YAML::Emitter& out, const char* name, const T& value)
 {
-    out << YAML::Key << name << YAML::Value << value;
+    if constexpr (std::is_same_v<T, uint8_t> || std::is_same_v<T, int8_t> || std::is_same_v<T, unsigned char> || std::is_same_v<T, char>)
+    {
+        out << YAML::Key << name << YAML::Value << static_cast<int>(value);
+    }
+    else
+    {
+        out << YAML::Key << name << YAML::Value << value;
+    }
 }
 
 inline void SerializePath(YAML::Emitter& out, const char* name, const std::string& path)
@@ -39,7 +46,14 @@ template <typename T> inline void DeserializeProperty(YAML::Node node, const cha
 {
     if (node[name])
     {
-        value = node[name].as<T>();
+        if constexpr (std::is_same_v<T, uint8_t> || std::is_same_v<T, int8_t> || std::is_same_v<T, unsigned char> || std::is_same_v<T, char>)
+        {
+            value = static_cast<T>(node[name].as<int>());
+        }
+        else
+        {
+            value = node[name].as<T>();
+        }
     }
 }
 

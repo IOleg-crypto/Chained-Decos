@@ -46,29 +46,29 @@ struct MaterialInstance
     CH_REFLECT_BEGIN(MaterialInstance)
         if (props.BeginGroup("Albedo"))
         {
-            props.Property("Color", AlbedoColor);
-            props.File("Path", AlbedoPath, "png,jpg,tga");
-            props.Property("Override", OverrideAlbedo);
+            props.Property("AlbedoColor", AlbedoColor);
+            props.File("AlbedoPath", AlbedoPath, "png,jpg,tga");
+            props.Property("OverrideAlbedo", OverrideAlbedo);
             props.EndGroup();
         }
 
         if (props.BeginGroup("PBR Maps"))
         {
-            props.File("Normal Map", NormalMapPath, "png,jpg,tga");
-            props.Property("Override Normal", OverrideNormal);
-            props.File("MR Map", MetallicRoughnessPath, "png,jpg,tga");
-            props.Property("Override MR", OverrideMetallicRoughness);
-            props.File("Occlusion Map", OcclusionMapPath, "png,jpg,tga");
-            props.Property("Override Occlusion", OverrideOcclusion);
+            props.File("NormalMapPath", NormalMapPath, "png,jpg,tga");
+            props.Property("OverrideNormal", OverrideNormal);
+            props.File("MetallicRoughnessPath", MetallicRoughnessPath, "png,jpg,tga");
+            props.Property("OverrideMetallicRoughness", OverrideMetallicRoughness);
+            props.File("OcclusionMapPath", OcclusionMapPath, "png,jpg,tga");
+            props.Property("OverrideOcclusion", OverrideOcclusion);
             props.EndGroup();
         }
 
         if (props.BeginGroup("Emissive"))
         {
-            props.Property("Color", EmissiveColor);
-            props.Property("Intensity", EmissiveIntensity);
-            props.File("Path", EmissivePath, "png,jpg,tga");
-            props.Property("Override", OverrideEmissive);
+            props.Property("EmissiveColor", EmissiveColor);
+            props.Property("EmissiveIntensity", EmissiveIntensity);
+            props.File("EmissivePath", EmissivePath, "png,jpg,tga");
+            props.Property("OverrideEmissive", OverrideEmissive);
             props.EndGroup();
         }
 
@@ -81,7 +81,7 @@ struct MaterialInstance
 
         if (props.BeginGroup("Rendering"))
         {
-            props.Property("Double Sided", DoubleSided);
+            props.Property("DoubleSided", DoubleSided);
             props.Property("Transparent", Transparent);
             if (Transparent)
                 props.Property("Alpha", Alpha);
