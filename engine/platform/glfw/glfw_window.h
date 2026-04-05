@@ -32,6 +32,7 @@ public:
     virtual void SetVSync(bool enabled) override;
     virtual void SetAntialiasing(bool enabled) override;
     virtual void SetTargetFramesPerSecond(int framesPerSecond) override;
+    virtual int GetTargetFramesPerSecond() const override { return m_TargetFPS; }
     virtual void SetWindowIcon(const std::string& path) override;
 
     virtual void* GetNativeWindow() const override { return m_WindowHandle; }
@@ -45,6 +46,9 @@ private:
     int m_Width, m_Height;
     std::string m_Title;
     bool m_VSync = true;
+    bool m_IsFullscreen = false;
+    int m_WindowedX = 0, m_WindowedY = 0, m_WindowedWidth = 0, m_WindowedHeight = 0;
+    int m_TargetFPS = 60;
 };
 
 } // namespace CHEngine

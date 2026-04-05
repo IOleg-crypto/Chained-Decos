@@ -30,6 +30,7 @@ void GlfwWindow::Init(const WindowProperties& properties)
     m_Height = properties.Height;
     m_Title = properties.Title;
     m_VSync = properties.VSync;
+    m_TargetFPS = properties.TargetFramesPerSecond;
 
     CH_CORE_INFO("Initializing Glfw Window: {} ({}x{})", m_Title, m_Width, m_Height);
 
@@ -42,14 +43,36 @@ void GlfwWindow::Init(const WindowProperties& properties)
         s_GLFWInitialized = true;
     }
 
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+#ifdef __APPLE__
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+#else
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#endif
 
     m_WindowHandle = glfwCreateWindow((int)m_Width, (int)m_Height, m_Title.c_str(), nullptr, nullptr);
     CH_CORE_ASSERT(m_WindowHandle, "Failed to create GLFW window!");
 
     glfwMakeContextCurrent(m_WindowHandle);
+    glfwSetWindowUserPointer(m_WindowHandle, this);
+
+    // Initial framebuffer size (crucial for Retina/HiDPI)
+    int fbWidth, fbHeight;
+    glfwGetFramebufferSize(m_WindowHandle, &fbWidth, &fbHeight);
+    m_Width = (uint32_t)fbWidth;
+    m_Height = (uint32_t)fbHeight;
+
+    // Resize Callback
+    glfwSetFramebufferSizeCallback(m_WindowHandle, [](GLFWwindow* window, int width, int height) {
+        auto& glWindow = *(GlfwWindow*)glfwGetWindowUserPointer(window);
+        glWindow.SetSizeDirect(width, height);
+        // Important: Viewport should be updated here or in the renderer
+        glViewport(0, 0, width, height);
+    });
     
     // Platform-neutral GLAD loading
     int status = gladLoadGL((GLADloadfunc)glfwGetProcAddress);
@@ -108,29 +131,29 @@ void GlfwWindow::SetSizeDirect(int width, int height)
 
 void GlfwWindow::ToggleFullscreen()
 {
-    static bool isFullscreen = false;
-    static int windowedX, windowedY, windowedW, windowedH;
-
-    if (!isFullscreen)
-    {
-        glfwGetWindowPos(m_WindowHandle, &windowedX, &windowedY);
-        glfwGetWindowSize(m_WindowHandle, &windowedW, &windowedH);
-
-        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-        glfwSetWindowMonitor(m_WindowHandle, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
-        isFullscreen = true;
-    }
-    else
-    {
-        glfwSetWindowMonitor(m_WindowHandle, nullptr, windowedX, windowedY, windowedW, windowedH, 0);
-        isFullscreen = false;
-    }
+    SetFullscreen(!m_IsFullscreen);
 }
 
 void GlfwWindow::SetFullscreen(bool enabled)
 {
-    // Simplified: would require checking current state to avoid redundant calls
+    if (m_IsFullscreen == enabled)
+        return;
+
+    if (enabled)
+    {
+        glfwGetWindowPos(m_WindowHandle, &m_WindowedX, &m_WindowedY);
+        glfwGetWindowSize(m_WindowHandle, &m_WindowedWidth, &m_WindowedHeight);
+
+        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+        glfwSetWindowMonitor(m_WindowHandle, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+        m_IsFullscreen = true;
+    }
+    else
+    {
+        glfwSetWindowMonitor(m_WindowHandle, nullptr, m_WindowedX, m_WindowedY, m_WindowedWidth, m_WindowedHeight, 0);
+        m_IsFullscreen = false;
+    }
 }
 
 void GlfwWindow::SetWindowIcon(const std::string& path)
@@ -156,10 +179,19 @@ void GlfwWindow::SetVSync(bool enabled)
 
 void GlfwWindow::SetAntialiasing(bool enabled)
 {
+    if(enabled)
+    {
+        glEnable(GL_MULTISAMPLE); 
+    }
+    else
+    {
+        glDisable(GL_MULTISAMPLE); 
+    }
 }
 
 void GlfwWindow::SetTargetFramesPerSecond(int framesPerSecond)
 {
+    m_TargetFPS = framesPerSecond;
 }
 
 } // namespace CHEngine
