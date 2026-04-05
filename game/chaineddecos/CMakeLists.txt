@@ -5,7 +5,7 @@ chained_add_game(ChainedDecosGame
     "scripts/ChainedDecos.Scripts.csproj"
 )
 
-# Copy engine resources
+# Copy engine resources (only if source files changed)
 add_custom_command(TARGET ChainedDecosGameExe POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     "${CMAKE_SOURCE_DIR}/resources"
@@ -13,7 +13,7 @@ add_custom_command(TARGET ChainedDecosGameExe POST_BUILD
     COMMENT "Copying engine resources..."
 )
 
-# Copy game assets
+# Copy game assets (only if source files changed)
 add_custom_command(TARGET ChainedDecosGameExe POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     "${CMAKE_CURRENT_SOURCE_DIR}/assets"
