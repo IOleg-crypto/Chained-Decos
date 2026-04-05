@@ -11,6 +11,7 @@
 #include <variant>
 
 #include "engine/core/ch_math.h"
+#include "engine/scene/project.h"
 #include "yaml-cpp/yaml.h"
 
 namespace YAML
@@ -143,26 +144,25 @@ template <> struct convert<CHEngine::Color>
     {
         if (node.IsSequence() && node.size() == 4)
         {
-            rhs.r = node[0].as<unsigned char>();
-            rhs.g = node[1].as<unsigned char>();
-            rhs.b = node[2].as<unsigned char>();
-            rhs.a = node[3].as<unsigned char>();
+            rhs.r = static_cast<unsigned char>(node[0].as<int>());
+            rhs.g = static_cast<unsigned char>(node[1].as<int>());
+            rhs.b = static_cast<unsigned char>(node[2].as<int>());
+            rhs.a = static_cast<unsigned char>(node[3].as<int>());
             return true;
         }
         else if (node.IsMap())
         {
-            rhs.r = node["r"] ? node["r"].as<unsigned char>() : 255;
-            rhs.g = node["g"] ? node["g"].as<unsigned char>() : 255;
-            rhs.b = node["b"] ? node["b"].as<unsigned char>() : 255;
-            rhs.a = node["a"] ? node["a"].as<unsigned char>() : 255;
+            rhs.r = node["r"] ? static_cast<unsigned char>(node["r"].as<int>()) : 255;
+            rhs.g = node["g"] ? static_cast<unsigned char>(node["g"].as<int>()) : 255;
+            rhs.b = node["b"] ? static_cast<unsigned char>(node["b"].as<int>()) : 255;
+            rhs.a = node["a"] ? static_cast<unsigned char>(node["a"].as<int>()) : 255;
             return true;
         }
         return false;
     }
 };
 
-template<>
-struct convert<CHEngine::UIStyle>
+template <> struct convert<CHEngine::UIStyle>
 {
     static Node encode(const CHEngine::UIStyle& rhs)
     {
@@ -178,8 +178,8 @@ struct convert<CHEngine::UIStyle>
         if (node.IsSequence() && node.size() >= 3)
         {
             rhs.BackgroundColor = node[0].as<CHEngine::Color>();
-            rhs.HoverColor      = node[1].as<CHEngine::Color>();
-            rhs.PressedColor    = node[2].as<CHEngine::Color>();
+            rhs.HoverColor = node[1].as<CHEngine::Color>();
+            rhs.PressedColor = node[2].as<CHEngine::Color>();
             return true;
         }
         return false;
@@ -189,12 +189,8 @@ struct convert<CHEngine::UIStyle>
 inline YAML::Emitter& operator<<(YAML::Emitter& out, const CHEngine::Color& color)
 {
     out << YAML::Flow;
-    out << YAML::BeginSeq 
-        << static_cast<uint32_t>(color.r) 
-        << static_cast<uint32_t>(color.g) 
-        << static_cast<uint32_t>(color.b) 
-        << static_cast<uint32_t>(color.a) 
-        << YAML::EndSeq;
+    out << YAML::BeginSeq << static_cast<uint32_t>(color.r) << static_cast<uint32_t>(color.g)
+        << static_cast<uint32_t>(color.b) << static_cast<uint32_t>(color.a) << YAML::EndSeq;
     return out;
 }
 
@@ -253,59 +249,87 @@ template <typename... Ts> inline Emitter& operator<<(Emitter& out, const std::va
 }
 
 // ---- TextStyle ----
-template<> struct convert<CHEngine::TextStyle>
+template <> struct convert<CHEngine::TextStyle>
 {
     static Node encode(const CHEngine::TextStyle& rhs)
     {
         Node node;
-        node["FontName"]            = rhs.FontName;
-        node["FontSize"]            = rhs.FontSize;
-        node["TextColor"]           = rhs.TextColor;
-        node["Shadow"]              = rhs.Shadow;
-        node["ShadowOffset"]        = rhs.ShadowOffset;
-        node["ShadowColor"]         = rhs.ShadowColor;
-        node["LetterSpacing"]       = rhs.LetterSpacing;
-        node["LineHeight"]          = rhs.LineHeight;
+        node["FontName"] = rhs.FontName;
+        node["FontSize"] = rhs.FontSize;
+        node["TextColor"] = rhs.TextColor;
+        node["Shadow"] = rhs.Shadow;
+        node["ShadowOffset"] = rhs.ShadowOffset;
+        node["ShadowColor"] = rhs.ShadowColor;
+        node["LetterSpacing"] = rhs.LetterSpacing;
+        node["LineHeight"] = rhs.LineHeight;
         node["HorizontalAlignment"] = static_cast<int>(rhs.HorizontalAlignment);
-        node["VerticalAlignment"]   = static_cast<int>(rhs.VerticalAlignment);
+        node["VerticalAlignment"] = static_cast<int>(rhs.VerticalAlignment);
         return node;
     }
     static bool decode(const Node& node, CHEngine::TextStyle& rhs)
     {
-        if (!node.IsMap()) return false;
-        if (node["FontName"])            rhs.FontName            = node["FontName"].as<std::string>();
-        if (node["FontSize"])            rhs.FontSize            = node["FontSize"].as<float>();
-        if (node["TextColor"])           rhs.TextColor           = node["TextColor"].as<CHEngine::Color>();
-        if (node["Shadow"])              rhs.Shadow              = node["Shadow"].as<bool>();
-        if (node["ShadowOffset"])        rhs.ShadowOffset        = node["ShadowOffset"].as<float>();
-        if (node["ShadowColor"])         rhs.ShadowColor         = node["ShadowColor"].as<CHEngine::Color>();
-        if (node["LetterSpacing"])       rhs.LetterSpacing       = node["LetterSpacing"].as<float>();
-        if (node["LineHeight"])          rhs.LineHeight          = node["LineHeight"].as<float>();
-        if (node["HorizontalAlignment"]) rhs.HorizontalAlignment = static_cast<CHEngine::TextAlignment>(node["HorizontalAlignment"].as<int>());
-        if (node["VerticalAlignment"])   rhs.VerticalAlignment   = static_cast<CHEngine::TextAlignment>(node["VerticalAlignment"].as<int>());
+        if (!node.IsMap())
+        {
+            return false;
+        }
+        if (node["FontName"])
+        {
+            rhs.FontName = node["FontName"].as<std::string>();
+        }
+        if (node["FontSize"])
+        {
+            rhs.FontSize = node["FontSize"].as<float>();
+        }
+        if (node["TextColor"])
+        {
+            rhs.TextColor = node["TextColor"].as<CHEngine::Color>();
+        }
+        if (node["Shadow"])
+        {
+            rhs.Shadow = node["Shadow"].as<bool>();
+        }
+        if (node["ShadowOffset"])
+        {
+            rhs.ShadowOffset = node["ShadowOffset"].as<float>();
+        }
+        if (node["ShadowColor"])
+        {
+            rhs.ShadowColor = node["ShadowColor"].as<CHEngine::Color>();
+        }
+        if (node["LetterSpacing"])
+        {
+            rhs.LetterSpacing = node["LetterSpacing"].as<float>();
+        }
+        if (node["LineHeight"])
+        {
+            rhs.LineHeight = node["LineHeight"].as<float>();
+        }
+        if (node["HorizontalAlignment"])
+        {
+            rhs.HorizontalAlignment = static_cast<CHEngine::TextAlignment>(node["HorizontalAlignment"].as<int>());
+        }
+        if (node["VerticalAlignment"])
+        {
+            rhs.VerticalAlignment = static_cast<CHEngine::TextAlignment>(node["VerticalAlignment"].as<int>());
+        }
         return true;
     }
 };
 
 inline YAML::Emitter& operator<<(YAML::Emitter& out, const CHEngine::TextStyle& s)
 {
-    out << YAML::BeginMap
-        << YAML::Key << "FontName"            << YAML::Value << s.FontName
-        << YAML::Key << "FontSize"            << YAML::Value << s.FontSize
-        << YAML::Key << "TextColor"           << YAML::Value << s.TextColor
-        << YAML::Key << "Shadow"              << YAML::Value << s.Shadow
-        << YAML::Key << "ShadowOffset"        << YAML::Value << s.ShadowOffset
-        << YAML::Key << "ShadowColor"         << YAML::Value << s.ShadowColor
-        << YAML::Key << "LetterSpacing"       << YAML::Value << s.LetterSpacing
-        << YAML::Key << "LineHeight"          << YAML::Value << s.LineHeight
-        << YAML::Key << "HorizontalAlignment" << YAML::Value << static_cast<int>(s.HorizontalAlignment)
-        << YAML::Key << "VerticalAlignment"   << YAML::Value << static_cast<int>(s.VerticalAlignment)
-        << YAML::EndMap;
+    out << YAML::BeginMap << YAML::Key << "FontName" << YAML::Value << s.FontName << YAML::Key << "FontSize"
+        << YAML::Value << s.FontSize << YAML::Key << "TextColor" << YAML::Value << s.TextColor << YAML::Key << "Shadow"
+        << YAML::Value << s.Shadow << YAML::Key << "ShadowOffset" << YAML::Value << s.ShadowOffset << YAML::Key
+        << "ShadowColor" << YAML::Value << s.ShadowColor << YAML::Key << "LetterSpacing" << YAML::Value
+        << s.LetterSpacing << YAML::Key << "LineHeight" << YAML::Value << s.LineHeight << YAML::Key
+        << "HorizontalAlignment" << YAML::Value << static_cast<int>(s.HorizontalAlignment) << YAML::Key
+        << "VerticalAlignment" << YAML::Value << static_cast<int>(s.VerticalAlignment) << YAML::EndMap;
     return out;
 }
 
 // ---- RectTransform ----
-template<> struct convert<CHEngine::RectTransform>
+template <> struct convert<CHEngine::RectTransform>
 {
     static Node encode(const CHEngine::RectTransform& rhs)
     {
@@ -314,175 +338,276 @@ template<> struct convert<CHEngine::RectTransform>
         node["AnchorMax"] = rhs.AnchorMax;
         node["OffsetMin"] = rhs.OffsetMin;
         node["OffsetMax"] = rhs.OffsetMax;
-        node["Pivot"]     = rhs.Pivot;
-        node["Rotation"]  = rhs.Rotation;
-        node["Scale"]     = rhs.Scale;
+        node["Pivot"] = rhs.Pivot;
+        node["Rotation"] = rhs.Rotation;
+        node["Scale"] = rhs.Scale;
         return node;
     }
     static bool decode(const Node& node, CHEngine::RectTransform& rhs)
     {
-        if (!node.IsMap()) return false;
-        if (node["AnchorMin"]) rhs.AnchorMin = node["AnchorMin"].as<glm::vec2>();
-        if (node["AnchorMax"]) rhs.AnchorMax = node["AnchorMax"].as<glm::vec2>();
-        if (node["OffsetMin"]) rhs.OffsetMin = node["OffsetMin"].as<glm::vec2>();
-        if (node["OffsetMax"]) rhs.OffsetMax = node["OffsetMax"].as<glm::vec2>();
-        if (node["Pivot"])     rhs.Pivot     = node["Pivot"].as<glm::vec2>();
-        if (node["Rotation"])  rhs.Rotation  = node["Rotation"].as<float>();
-        if (node["Scale"])     rhs.Scale     = node["Scale"].as<glm::vec2>();
+        if (!node.IsMap())
+        {
+            return false;
+        }
+        if (node["AnchorMin"])
+        {
+            rhs.AnchorMin = node["AnchorMin"].as<glm::vec2>();
+        }
+        if (node["AnchorMax"])
+        {
+            rhs.AnchorMax = node["AnchorMax"].as<glm::vec2>();
+        }
+        if (node["OffsetMin"])
+        {
+            rhs.OffsetMin = node["OffsetMin"].as<glm::vec2>();
+        }
+        if (node["OffsetMax"])
+        {
+            rhs.OffsetMax = node["OffsetMax"].as<glm::vec2>();
+        }
+        if (node["Pivot"])
+        {
+            rhs.Pivot = node["Pivot"].as<glm::vec2>();
+        }
+        if (node["Rotation"])
+        {
+            rhs.Rotation = node["Rotation"].as<float>();
+        }
+        if (node["Scale"])
+        {
+            rhs.Scale = node["Scale"].as<glm::vec2>();
+        }
         return true;
     }
 };
 
 inline YAML::Emitter& operator<<(YAML::Emitter& out, const CHEngine::RectTransform& t)
 {
-    out << YAML::BeginMap
-        << YAML::Key << "AnchorMin" << YAML::Value << t.AnchorMin
-        << YAML::Key << "AnchorMax" << YAML::Value << t.AnchorMax
-        << YAML::Key << "OffsetMin" << YAML::Value << t.OffsetMin
-        << YAML::Key << "OffsetMax" << YAML::Value << t.OffsetMax
-        << YAML::Key << "Pivot"     << YAML::Value << t.Pivot
-        << YAML::Key << "Rotation"  << YAML::Value << t.Rotation
-        << YAML::Key << "Scale"     << YAML::Value << t.Scale
-        << YAML::EndMap;
+    out << YAML::BeginMap << YAML::Key << "AnchorMin" << YAML::Value << t.AnchorMin << YAML::Key << "AnchorMax"
+        << YAML::Value << t.AnchorMax << YAML::Key << "OffsetMin" << YAML::Value << t.OffsetMin << YAML::Key
+        << "OffsetMax" << YAML::Value << t.OffsetMax << YAML::Key << "Pivot" << YAML::Value << t.Pivot << YAML::Key
+        << "Rotation" << YAML::Value << t.Rotation << YAML::Key << "Scale" << YAML::Value << t.Scale << YAML::EndMap;
     return out;
 }
 
 // ---- MaterialInstance ----
-template<> struct convert<CHEngine::MaterialInstance>
+template <> struct convert<CHEngine::MaterialInstance>
 {
     static Node encode(const CHEngine::MaterialInstance& rhs)
     {
         Node node;
-        node["AlbedoColor"]               = rhs.AlbedoColor;
-        node["AlbedoPath"]                = rhs.AlbedoPath;
-        node["OverrideAlbedo"]            = rhs.OverrideAlbedo;
-        node["NormalMapPath"]             = rhs.NormalMapPath;
-        node["OverrideNormal"]            = rhs.OverrideNormal;
-        node["MetallicRoughnessPath"]     = rhs.MetallicRoughnessPath;
+        node["AlbedoColor"] = rhs.AlbedoColor;
+        node["AlbedoPath"] = CHEngine::Project::GetRelativePath(rhs.AlbedoPath);
+        node["OverrideAlbedo"] = rhs.OverrideAlbedo;
+        node["NormalMapPath"] = CHEngine::Project::GetRelativePath(rhs.NormalMapPath);
+        node["OverrideNormal"] = rhs.OverrideNormal;
+        node["MetallicRoughnessPath"] = CHEngine::Project::GetRelativePath(rhs.MetallicRoughnessPath);
         node["OverrideMetallicRoughness"] = rhs.OverrideMetallicRoughness;
-        node["OcclusionMapPath"]          = rhs.OcclusionMapPath;
-        node["OverrideOcclusion"]         = rhs.OverrideOcclusion;
-        node["EmissivePath"]              = rhs.EmissivePath;
-        node["EmissiveColor"]             = rhs.EmissiveColor;
-        node["EmissiveIntensity"]         = rhs.EmissiveIntensity;
-        node["OverrideEmissive"]          = rhs.OverrideEmissive;
-        node["ShaderPath"]                = rhs.ShaderPath;
-        node["OverrideShader"]            = rhs.OverrideShader;
-        node["Metalness"]                 = rhs.Metalness;
-        node["Roughness"]                 = rhs.Roughness;
-        node["DoubleSided"]               = rhs.DoubleSided;
-        node["Transparent"]               = rhs.Transparent;
-        node["Alpha"]                     = rhs.Alpha;
+        node["OcclusionMapPath"] = CHEngine::Project::GetRelativePath(rhs.OcclusionMapPath);
+        node["OverrideOcclusion"] = rhs.OverrideOcclusion;
+        node["EmissivePath"] = CHEngine::Project::GetRelativePath(rhs.EmissivePath);
+        node["EmissiveColor"] = rhs.EmissiveColor;
+        node["EmissiveIntensity"] = rhs.EmissiveIntensity;
+        node["OverrideEmissive"] = rhs.OverrideEmissive;
+        node["ShaderPath"] = CHEngine::Project::GetRelativePath(rhs.ShaderPath);
+        node["OverrideShader"] = rhs.OverrideShader;
+        node["Metalness"] = rhs.Metalness;
+        node["Roughness"] = rhs.Roughness;
+        node["DoubleSided"] = rhs.DoubleSided;
+        node["Transparent"] = rhs.Transparent;
+        node["Alpha"] = rhs.Alpha;
         return node;
     }
     static bool decode(const Node& node, CHEngine::MaterialInstance& rhs)
     {
-        if (!node.IsMap()) return false;
-        if (node["AlbedoColor"])               rhs.AlbedoColor               = node["AlbedoColor"].as<CHEngine::Color>();
-        if (node["AlbedoPath"])                rhs.AlbedoPath                = node["AlbedoPath"].as<std::string>();
-        if (node["OverrideAlbedo"])            rhs.OverrideAlbedo            = node["OverrideAlbedo"].as<bool>();
-        if (node["NormalMapPath"])             rhs.NormalMapPath             = node["NormalMapPath"].as<std::string>();
-        if (node["OverrideNormal"])            rhs.OverrideNormal            = node["OverrideNormal"].as<bool>();
-        if (node["MetallicRoughnessPath"])     rhs.MetallicRoughnessPath     = node["MetallicRoughnessPath"].as<std::string>();
-        if (node["OverrideMetallicRoughness"]) rhs.OverrideMetallicRoughness = node["OverrideMetallicRoughness"].as<bool>();
-        if (node["OcclusionMapPath"])          rhs.OcclusionMapPath          = node["OcclusionMapPath"].as<std::string>();
-        if (node["OverrideOcclusion"])         rhs.OverrideOcclusion         = node["OverrideOcclusion"].as<bool>();
-        if (node["EmissivePath"])              rhs.EmissivePath              = node["EmissivePath"].as<std::string>();
-        if (node["EmissiveColor"])             rhs.EmissiveColor             = node["EmissiveColor"].as<CHEngine::Color>();
-        if (node["EmissiveIntensity"])         rhs.EmissiveIntensity         = node["EmissiveIntensity"].as<float>();
-        if (node["OverrideEmissive"])          rhs.OverrideEmissive          = node["OverrideEmissive"].as<bool>();
-        if (node["ShaderPath"])                rhs.ShaderPath                = node["ShaderPath"].as<std::string>();
-        if (node["OverrideShader"])            rhs.OverrideShader            = node["OverrideShader"].as<bool>();
-        if (node["Metalness"])                 rhs.Metalness                 = node["Metalness"].as<float>();
-        if (node["Roughness"])                 rhs.Roughness                 = node["Roughness"].as<float>();
-        if (node["DoubleSided"])               rhs.DoubleSided               = node["DoubleSided"].as<bool>();
-        if (node["Transparent"])               rhs.Transparent               = node["Transparent"].as<bool>();
-        if (node["Alpha"])                     rhs.Alpha                     = node["Alpha"].as<float>();
+        if (!node.IsMap())
+        {
+            return false;
+        }
+        if (node["AlbedoColor"])
+        {
+            rhs.AlbedoColor = node["AlbedoColor"].as<CHEngine::Color>();
+        }
+        if (node["AlbedoPath"])
+        {
+            rhs.AlbedoPath = node["AlbedoPath"].as<std::string>();
+        }
+        if (node["OverrideAlbedo"])
+        {
+            rhs.OverrideAlbedo = node["OverrideAlbedo"].as<bool>();
+        }
+        if (node["NormalMapPath"])
+        {
+            rhs.NormalMapPath = node["NormalMapPath"].as<std::string>();
+        }
+        if (node["OverrideNormal"])
+        {
+            rhs.OverrideNormal = node["OverrideNormal"].as<bool>();
+        }
+        if (node["MetallicRoughnessPath"])
+        {
+            rhs.MetallicRoughnessPath = node["MetallicRoughnessPath"].as<std::string>();
+        }
+        if (node["OverrideMetallicRoughness"])
+        {
+            rhs.OverrideMetallicRoughness = node["OverrideMetallicRoughness"].as<bool>();
+        }
+        if (node["OcclusionMapPath"])
+        {
+            rhs.OcclusionMapPath = node["OcclusionMapPath"].as<std::string>();
+        }
+        if (node["OverrideOcclusion"])
+        {
+            rhs.OverrideOcclusion = node["OverrideOcclusion"].as<bool>();
+        }
+        if (node["EmissivePath"])
+        {
+            rhs.EmissivePath = node["EmissivePath"].as<std::string>();
+        }
+        if (node["EmissiveColor"])
+        {
+            rhs.EmissiveColor = node["EmissiveColor"].as<CHEngine::Color>();
+        }
+        if (node["EmissiveIntensity"])
+        {
+            rhs.EmissiveIntensity = node["EmissiveIntensity"].as<float>();
+        }
+        if (node["OverrideEmissive"])
+        {
+            rhs.OverrideEmissive = node["OverrideEmissive"].as<bool>();
+        }
+        if (node["ShaderPath"])
+        {
+            rhs.ShaderPath = node["ShaderPath"].as<std::string>();
+        }
+        if (node["OverrideShader"])
+        {
+            rhs.OverrideShader = node["OverrideShader"].as<bool>();
+        }
+        if (node["Metalness"])
+        {
+            rhs.Metalness = node["Metalness"].as<float>();
+        }
+        if (node["Roughness"])
+        {
+            rhs.Roughness = node["Roughness"].as<float>();
+        }
+        if (node["DoubleSided"])
+        {
+            rhs.DoubleSided = node["DoubleSided"].as<bool>();
+        }
+        if (node["Transparent"])
+        {
+            rhs.Transparent = node["Transparent"].as<bool>();
+        }
+        if (node["Alpha"])
+        {
+            rhs.Alpha = node["Alpha"].as<float>();
+        }
         return true;
     }
 };
 
 inline YAML::Emitter& operator<<(YAML::Emitter& out, const CHEngine::MaterialInstance& m)
 {
-    out << YAML::BeginMap
-        << YAML::Key << "AlbedoColor"               << YAML::Value << m.AlbedoColor
-        << YAML::Key << "AlbedoPath"                << YAML::Value << m.AlbedoPath
-        << YAML::Key << "OverrideAlbedo"            << YAML::Value << m.OverrideAlbedo
-        << YAML::Key << "NormalMapPath"             << YAML::Value << m.NormalMapPath
-        << YAML::Key << "OverrideNormal"            << YAML::Value << m.OverrideNormal
-        << YAML::Key << "MetallicRoughnessPath"     << YAML::Value << m.MetallicRoughnessPath
-        << YAML::Key << "OverrideMetallicRoughness" << YAML::Value << m.OverrideMetallicRoughness
-        << YAML::Key << "OcclusionMapPath"          << YAML::Value << m.OcclusionMapPath
-        << YAML::Key << "OverrideOcclusion"         << YAML::Value << m.OverrideOcclusion
-        << YAML::Key << "EmissivePath"              << YAML::Value << m.EmissivePath
-        << YAML::Key << "EmissiveColor"             << YAML::Value << m.EmissiveColor
-        << YAML::Key << "EmissiveIntensity"         << YAML::Value << m.EmissiveIntensity
-        << YAML::Key << "OverrideEmissive"          << YAML::Value << m.OverrideEmissive
-        << YAML::Key << "ShaderPath"                << YAML::Value << m.ShaderPath
-        << YAML::Key << "OverrideShader"            << YAML::Value << m.OverrideShader
-        << YAML::Key << "Metalness"                 << YAML::Value << m.Metalness
-        << YAML::Key << "Roughness"                 << YAML::Value << m.Roughness
-        << YAML::Key << "DoubleSided"               << YAML::Value << m.DoubleSided
-        << YAML::Key << "Transparent"               << YAML::Value << m.Transparent
-        << YAML::Key << "Alpha"                     << YAML::Value << m.Alpha
+    out << YAML::BeginMap << YAML::Key << "AlbedoColor" << YAML::Value << m.AlbedoColor << YAML::Key << "AlbedoPath"
+        << YAML::Value << CHEngine::Project::GetRelativePath(m.AlbedoPath) << YAML::Key << "OverrideAlbedo"
+        << YAML::Value << m.OverrideAlbedo << YAML::Key << "NormalMapPath" << YAML::Value
+        << CHEngine::Project::GetRelativePath(m.NormalMapPath) << YAML::Key << "OverrideNormal" << YAML::Value
+        << m.OverrideNormal << YAML::Key << "MetallicRoughnessPath" << YAML::Value
+        << CHEngine::Project::GetRelativePath(m.MetallicRoughnessPath) << YAML::Key << "OverrideMetallicRoughness"
+        << YAML::Value << m.OverrideMetallicRoughness << YAML::Key << "OcclusionMapPath" << YAML::Value
+        << CHEngine::Project::GetRelativePath(m.OcclusionMapPath) << YAML::Key << "OverrideOcclusion" << YAML::Value
+        << m.OverrideOcclusion << YAML::Key << "EmissivePath" << YAML::Value
+        << CHEngine::Project::GetRelativePath(m.EmissivePath) << YAML::Key << "EmissiveColor" << YAML::Value
+        << m.EmissiveColor << YAML::Key << "EmissiveIntensity" << YAML::Value << m.EmissiveIntensity << YAML::Key
+        << "OverrideEmissive" << YAML::Value << m.OverrideEmissive << YAML::Key << "ShaderPath" << YAML::Value
+        << CHEngine::Project::GetRelativePath(m.ShaderPath) << YAML::Key << "OverrideShader" << YAML::Value
+        << m.OverrideShader << YAML::Key << "Metalness" << YAML::Value << m.Metalness << YAML::Key << "Roughness"
+        << YAML::Value << m.Roughness << YAML::Key << "DoubleSided" << YAML::Value << m.DoubleSided << YAML::Key
+        << "Transparent" << YAML::Value << m.Transparent << YAML::Key << "Alpha" << YAML::Value << m.Alpha
         << YAML::EndMap;
     return out;
 }
 
 // ---- MaterialSlot ----
-template<> struct convert<CHEngine::MaterialSlot>
+template <> struct convert<CHEngine::MaterialSlot>
 {
     static Node encode(const CHEngine::MaterialSlot& rhs)
     {
         Node node;
-        node["Name"]     = rhs.Name;
-        node["Index"]    = rhs.Index;
-        node["Target"]   = static_cast<int>(rhs.Target);
+        node["Name"] = rhs.Name;
+        node["Index"] = rhs.Index;
+        node["Target"] = static_cast<int>(rhs.Target);
         node["Material"] = rhs.Material;
         return node;
     }
     static bool decode(const Node& node, CHEngine::MaterialSlot& rhs)
     {
-        if (!node.IsMap()) return false;
-        if (node["Name"])     rhs.Name     = node["Name"].as<std::string>();
-        if (node["Index"])    rhs.Index    = node["Index"].as<int>();
-        if (node["Target"])   rhs.Target   = static_cast<CHEngine::MaterialSlotTarget>(node["Target"].as<int>());
-        if (node["Material"]) rhs.Material = node["Material"].as<CHEngine::MaterialInstance>();
+        if (!node.IsMap())
+        {
+            return false;
+        }
+        if (node["Name"])
+        {
+            rhs.Name = node["Name"].as<std::string>();
+        }
+        if (node["Index"])
+        {
+            rhs.Index = node["Index"].as<int>();
+        }
+        if (node["Target"])
+        {
+            rhs.Target = static_cast<CHEngine::MaterialSlotTarget>(node["Target"].as<int>());
+        }
+        if (node["Material"])
+        {
+            rhs.Material = node["Material"].as<CHEngine::MaterialInstance>();
+        }
         return true;
     }
 };
 
 inline YAML::Emitter& operator<<(YAML::Emitter& out, const CHEngine::MaterialSlot& s)
 {
-    out << YAML::BeginMap
-        << YAML::Key << "Name"     << YAML::Value << s.Name
-        << YAML::Key << "Index"    << YAML::Value << s.Index
-        << YAML::Key << "Target"   << YAML::Value << static_cast<int>(s.Target)
-        << YAML::Key << "Material" << YAML::Value << s.Material
-        << YAML::EndMap;
+    out << YAML::BeginMap << YAML::Key << "Name" << YAML::Value << s.Name << YAML::Key << "Index" << YAML::Value
+        << s.Index << YAML::Key << "Target" << YAML::Value << static_cast<int>(s.Target) << YAML::Key << "Material"
+        << YAML::Value << s.Material << YAML::EndMap;
     return out;
 }
 
 // ---- ShaderUniform ----
-template<> struct convert<CHEngine::ShaderUniform>
+template <> struct convert<CHEngine::ShaderUniform>
 {
     static Node encode(const CHEngine::ShaderUniform& rhs)
     {
         Node node;
-        node["Name"]  = rhs.Name;
-        node["Type"]  = rhs.Type;
+        node["Name"] = rhs.Name;
+        node["Type"] = rhs.Type;
         node["Value"] = glm::vec4(rhs.Value[0], rhs.Value[1], rhs.Value[2], rhs.Value[3]);
         return node;
     }
     static bool decode(const Node& node, CHEngine::ShaderUniform& rhs)
     {
-        if (!node.IsMap()) return false;
-        if (node["Name"])  rhs.Name  = node["Name"].as<std::string>();
-        if (node["Type"])  rhs.Type  = node["Type"].as<int>();
+        if (!node.IsMap())
+        {
+            return false;
+        }
+        if (node["Name"])
+        {
+            rhs.Name = node["Name"].as<std::string>();
+        }
+        if (node["Type"])
+        {
+            rhs.Type = node["Type"].as<int>();
+        }
         if (node["Value"])
         {
             glm::vec4 v = node["Value"].as<glm::vec4>();
-            rhs.Value[0] = v.x; rhs.Value[1] = v.y; rhs.Value[2] = v.z; rhs.Value[3] = v.w;
+            rhs.Value[0] = v.x;
+            rhs.Value[1] = v.y;
+            rhs.Value[2] = v.z;
+            rhs.Value[3] = v.w;
         }
         return true;
     }
@@ -490,10 +615,8 @@ template<> struct convert<CHEngine::ShaderUniform>
 
 inline YAML::Emitter& operator<<(YAML::Emitter& out, const CHEngine::ShaderUniform& u)
 {
-    out << YAML::BeginMap
-        << YAML::Key << "Name"  << YAML::Value << u.Name
-        << YAML::Key << "Type"  << YAML::Value << u.Type
-        << YAML::Key << "Value" << YAML::Value << glm::vec4(u.Value[0], u.Value[1], u.Value[2], u.Value[3])
+    out << YAML::BeginMap << YAML::Key << "Name" << YAML::Value << u.Name << YAML::Key << "Type" << YAML::Value
+        << u.Type << YAML::Key << "Value" << YAML::Value << glm::vec4(u.Value[0], u.Value[1], u.Value[2], u.Value[3])
         << YAML::EndMap;
     return out;
 }

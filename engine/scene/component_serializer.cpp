@@ -3,11 +3,6 @@
 #include "components/id_component.h"
 #include "components/ui_action_component.h"
 #include "engine/core/application.h"
-#include "engine/core/yaml.h"
-#include "engine/scene/components.h"
-#include "engine/scene/serialization_utils.h"
-#include "scene.h"
-
 
 #include "scripting_serialization.h"
 
@@ -127,325 +122,7 @@ void ComponentSerializer::DeserializeHierarchyTask(Entity entity, YAML::Node nod
     }
 }
 
-// --- UI Layout Helpers (Consolidated) ---
-
-void ComponentSerializer::SerializeTextStyle(YAML::Emitter& out, const TextStyle& style)
-{
-    out << YAML::BeginMap;
-    out << YAML::Key << "FontName" << YAML::Value << style.FontName;
-    out << YAML::Key << "FontSize" << YAML::Value << style.FontSize;
-    out << YAML::Key << "TextColor" << YAML::Value << style.TextColor;
-    out << YAML::Key << "Shadow" << YAML::Value << style.Shadow;
-    out << YAML::Key << "ShadowOffset" << YAML::Value << style.ShadowOffset;
-    out << YAML::Key << "ShadowColor" << YAML::Value << style.ShadowColor;
-    out << YAML::Key << "LetterSpacing" << YAML::Value << style.LetterSpacing;
-    out << YAML::Key << "LineHeight" << YAML::Value << style.LineHeight;
-    out << YAML::Key << "HorizontalAlignment" << YAML::Value << (int)style.HorizontalAlignment;
-    out << YAML::Key << "VerticalAlignment" << YAML::Value << (int)style.VerticalAlignment;
-    out << YAML::EndMap;
-}
-
-void ComponentSerializer::DeserializeTextStyle(TextStyle& style, YAML::Node node)
-{
-    if (node["FontName"])
-    {
-        style.FontName = node["FontName"].as<std::string>();
-    }
-    if (node["FontSize"])
-    {
-        style.FontSize = node["FontSize"].as<float>();
-    }
-    if (node["TextColor"])
-    {
-        style.TextColor = node["TextColor"].as<Color>();
-    }
-    if (node["Shadow"])
-    {
-        style.Shadow = node["Shadow"].as<bool>();
-    }
-    if (node["ShadowOffset"])
-    {
-        style.ShadowOffset = node["ShadowOffset"].as<float>();
-    }
-    if (node["ShadowColor"])
-    {
-        style.ShadowColor = node["ShadowColor"].as<CHEngine::Color>();
-    }
-    if (node["LetterSpacing"])
-    {
-        style.LetterSpacing = node["LetterSpacing"].as<float>();
-    }
-    if (node["LineHeight"])
-    {
-        style.LineHeight = node["LineHeight"].as<float>();
-    }
-    if (node["HorizontalAlignment"])
-    {
-        style.HorizontalAlignment = (TextAlignment)node["HorizontalAlignment"].as<int>();
-    }
-    if (node["VerticalAlignment"])
-    {
-        style.VerticalAlignment = (TextAlignment)node["VerticalAlignment"].as<int>();
-    }
-}
-
-void ComponentSerializer::SerializeRectTransform(YAML::Emitter& out, const RectTransform& transform)
-{
-    out << YAML::BeginMap;
-    out << YAML::Key << "AnchorMin" << YAML::Value << transform.AnchorMin;
-    out << YAML::Key << "AnchorMax" << YAML::Value << transform.AnchorMax;
-    out << YAML::Key << "OffsetMin" << YAML::Value << transform.OffsetMin;
-    out << YAML::Key << "OffsetMax" << YAML::Value << transform.OffsetMax;
-    out << YAML::Key << "Pivot" << YAML::Value << transform.Pivot;
-    out << YAML::Key << "Rotation" << YAML::Value << transform.Rotation;
-    out << YAML::Key << "Scale" << YAML::Value << transform.Scale;
-    out << YAML::EndMap;
-}
-
-void ComponentSerializer::DeserializeRectTransform(RectTransform& transform, YAML::Node node)
-{
-    if (node["AnchorMin"])
-    {
-        transform.AnchorMin = node["AnchorMin"].as<glm::vec2>();
-    }
-    if (node["AnchorMax"])
-    {
-        transform.AnchorMax = node["AnchorMax"].as<glm::vec2>();
-    }
-    if (node["OffsetMin"])
-    {
-        transform.OffsetMin = node["OffsetMin"].as<glm::vec2>();
-    }
-    if (node["OffsetMax"])
-    {
-        transform.OffsetMax = node["OffsetMax"].as<glm::vec2>();
-    }
-    if (node["Pivot"])
-    {
-        transform.Pivot = node["Pivot"].as<glm::vec2>();
-    }
-    if (node["Rotation"])
-    {
-        transform.Rotation = node["Rotation"].as<float>();
-    }
-    if (node["Scale"])
-    {
-        transform.Scale = node["Scale"].as<glm::vec2>();
-    }
-}
-
-void ComponentSerializer::SerializeUIStyle(YAML::Emitter& out, const UIStyle& style)
-{
-    out << YAML::BeginMap;
-    out << YAML::Key << "BackgroundColor" << YAML::Value << style.BackgroundColor;
-    out << YAML::Key << "HoverColor" << YAML::Value << style.HoverColor;
-    out << YAML::Key << "PressedColor" << YAML::Value << style.PressedColor;
-    out << YAML::Key << "Rounding" << YAML::Value << style.Rounding;
-    out << YAML::Key << "BorderSize" << YAML::Value << style.BorderSize;
-    out << YAML::Key << "BorderColor" << YAML::Value << style.BorderColor;
-    out << YAML::Key << "Padding" << YAML::Value << style.Padding;
-    out << YAML::Key << "UseGradient" << YAML::Value << style.UseGradient;
-    out << YAML::Key << "GradientColor" << YAML::Value << style.GradientColor;
-    out << YAML::Key << "HoverScale" << YAML::Value << style.HoverScale;
-    out << YAML::Key << "PressedScale" << YAML::Value << style.PressedScale;
-    out << YAML::Key << "TransitionSpeed" << YAML::Value << style.TransitionSpeed;
-    out << YAML::EndMap;
-}
-
-void ComponentSerializer::DeserializeUIStyle(UIStyle& style, YAML::Node node)
-{
-    if (node["BackgroundColor"])
-    {
-        style.BackgroundColor = node["BackgroundColor"].as<Color>();
-    }
-    if (node["HoverColor"])
-    {
-        style.HoverColor = node["HoverColor"].as<Color>();
-    }
-    if (node["PressedColor"])
-    {
-        style.PressedColor = node["PressedColor"].as<Color>();
-    }
-    if (node["Rounding"])
-    {
-        style.Rounding = node["Rounding"].as<float>();
-    }
-    if (node["BorderSize"])
-    {
-        style.BorderSize = node["BorderSize"].as<float>();
-    }
-    if (node["BorderColor"])
-    {
-        style.BorderColor = node["BorderColor"].as<Color>();
-    }
-    if (node["Padding"])
-    {
-        style.Padding = node["Padding"].as<float>();
-    }
-    if (node["UseGradient"])
-    {
-        style.UseGradient = node["UseGradient"].as<bool>();
-    }
-    if (node["GradientColor"])
-    {
-        style.GradientColor = node["GradientColor"].as<CHEngine::Color>();
-    }
-    if (node["HoverScale"])
-    {
-        style.HoverScale = node["HoverScale"].as<float>();
-    }
-    if (node["PressedScale"])
-    {
-        style.PressedScale = node["PressedScale"].as<float>();
-    }
-    if (node["TransitionSpeed"])
-    {
-        style.TransitionSpeed = node["TransitionSpeed"].as<float>();
-    }
-}
-
-void ComponentSerializer::SerializeMaterialInstance(YAML::Emitter& out, const MaterialInstance& mat)
-{
-    out << YAML::BeginMap;
-    out << YAML::Key << "AlbedoColor" << YAML::Value << mat.AlbedoColor;
-    out << YAML::Key << "AlbedoPath" << YAML::Value << Project::GetRelativePath(mat.AlbedoPath);
-    out << YAML::Key << "OverrideAlbedo" << YAML::Value << mat.OverrideAlbedo;
-
-    out << YAML::Key << "NormalMapPath" << YAML::Value << Project::GetRelativePath(mat.NormalMapPath);
-    out << YAML::Key << "OverrideNormal" << YAML::Value << mat.OverrideNormal;
-
-    out << YAML::Key << "MetallicRoughnessPath" << YAML::Value << Project::GetRelativePath(mat.MetallicRoughnessPath);
-    out << YAML::Key << "OverrideMetallicRoughness" << YAML::Value << mat.OverrideMetallicRoughness;
-
-    out << YAML::Key << "OcclusionMapPath" << YAML::Value << Project::GetRelativePath(mat.OcclusionMapPath);
-    out << YAML::Key << "OverrideOcclusion" << YAML::Value << mat.OverrideOcclusion;
-
-    out << YAML::Key << "EmissivePath" << YAML::Value << Project::GetRelativePath(mat.EmissivePath);
-    out << YAML::Key << "EmissiveColor" << YAML::Value << mat.EmissiveColor;
-    out << YAML::Key << "EmissiveIntensity" << YAML::Value << mat.EmissiveIntensity;
-    out << YAML::Key << "OverrideEmissive" << YAML::Value << mat.OverrideEmissive;
-
-    out << YAML::Key << "Metalness" << YAML::Value << mat.Metalness;
-    out << YAML::Key << "Roughness" << YAML::Value << mat.Roughness;
-
-    out << YAML::Key << "DoubleSided" << YAML::Value << mat.DoubleSided;
-    out << YAML::Key << "Transparent" << YAML::Value << mat.Transparent;
-    out << YAML::Key << "Alpha" << YAML::Value << mat.Alpha;
-    out << YAML::EndMap;
-}
-
-void ComponentSerializer::DeserializeMaterialInstance(MaterialInstance& mat, YAML::Node node)
-{
-    if (node["AlbedoColor"])
-    {
-        mat.AlbedoColor = node["AlbedoColor"].as<Color>();
-    }
-    if (node["AlbedoPath"])
-    {
-        mat.AlbedoPath = node["AlbedoPath"].as<std::string>();
-    }
-    if (node["OverrideAlbedo"])
-    {
-        mat.OverrideAlbedo = node["OverrideAlbedo"].as<bool>();
-    }
-
-    if (node["NormalMapPath"])
-    {
-        mat.NormalMapPath = node["NormalMapPath"].as<std::string>();
-    }
-    if (node["OverrideNormal"])
-    {
-        mat.OverrideNormal = node["OverrideNormal"].as<bool>();
-    }
-
-    if (node["MetallicRoughnessPath"])
-    {
-        mat.MetallicRoughnessPath = node["MetallicRoughnessPath"].as<std::string>();
-    }
-    if (node["OverrideMetallicRoughness"])
-    {
-        mat.OverrideMetallicRoughness = node["OverrideMetallicRoughness"].as<bool>();
-    }
-
-    if (node["OcclusionMapPath"])
-    {
-        mat.OcclusionMapPath = node["OcclusionMapPath"].as<std::string>();
-    }
-    if (node["OverrideOcclusion"])
-    {
-        mat.OverrideOcclusion = node["OverrideOcclusion"].as<bool>();
-    }
-
-    if (node["EmissivePath"])
-    {
-        mat.EmissivePath = node["EmissivePath"].as<std::string>();
-    }
-    if (node["EmissiveColor"])
-    {
-        mat.EmissiveColor = node["EmissiveColor"].as<CHEngine::Color>();
-    }
-    if (node["EmissiveIntensity"])
-    {
-        mat.EmissiveIntensity = node["EmissiveIntensity"].as<float>();
-    }
-    if (node["OverrideEmissive"])
-    {
-        mat.OverrideEmissive = node["OverrideEmissive"].as<bool>();
-    }
-
-    if (node["Metalness"])
-    {
-        mat.Metalness = node["Metalness"].as<float>();
-    }
-    if (node["Roughness"])
-    {
-        mat.Roughness = node["Roughness"].as<float>();
-    }
-
-    if (node["DoubleSided"])
-    {
-        mat.DoubleSided = node["DoubleSided"].as<bool>();
-    }
-    if (node["Transparent"])
-    {
-        mat.Transparent = node["Transparent"].as<bool>();
-    }
-    if (node["Alpha"])
-    {
-        mat.Alpha = node["Alpha"].as<float>();
-    }
-}
-
-void ComponentSerializer::SerializeMaterialSlot(YAML::Emitter& out, const MaterialSlot& slot)
-{
-    out << YAML::BeginMap;
-    out << YAML::Key << "Name" << YAML::Value << slot.Name;
-    out << YAML::Key << "Index" << YAML::Value << slot.Index;
-    out << YAML::Key << "Target" << YAML::Value << (int)slot.Target;
-    out << YAML::Key << "Material" << YAML::Value;
-    SerializeMaterialInstance(out, slot.Material);
-    out << YAML::EndMap;
-}
-
-void ComponentSerializer::DeserializeMaterialSlot(MaterialSlot& slot, YAML::Node node)
-{
-    if (node["Name"])
-    {
-        slot.Name = node["Name"].as<std::string>();
-    }
-    if (node["Index"])
-    {
-        slot.Index = node["Index"].as<int>();
-    }
-    if (node["Target"])
-    {
-        slot.Target = (MaterialSlotTarget)node["Target"].as<int>();
-    }
-    if (node["Material"])
-    {
-        DeserializeMaterialInstance(slot.Material, node["Material"]);
-    }
-}
+// --- Registry Initialization ---
 
 // ========================================================================
 // Initialize Registry
@@ -469,6 +146,7 @@ void ComponentSerializer::InternalInit()
 
     // --- Audio ---
     Register<AudioComponent>();
+    Register<CameraComponent>();
 
     // --- Gameplay ---
     Register<PlayerComponent>();
@@ -477,12 +155,12 @@ void ComponentSerializer::InternalInit()
     Register<NavigationComponent>();
     Register<SpawnComponent>();
 
+    // --- Rendering ---
     Register<SpriteComponent>();
 
+    // --- UI System ---
     Register<ControlComponent>();
     Register<ButtonControl>();
-
-    Register<CameraComponent>();
     Register<PanelControl>();
     Register<LabelControl>();
     Register<SliderControl>();
@@ -501,25 +179,11 @@ void ComponentSerializer::InternalInit()
     Register<TabBarControl>();
     Register<TabItemControl>();
     Register<CollapsingHeaderControl>();
-    Register<PlotLinesControl>();
-    Register<PlotHistogramControl>();
     Register<VerticalLayoutGroup>();
- 
     Register<UIActionComponent>();
 
-    // --- Managed Script Component ---
-    Register<ManagedScriptComponent>("ManagedScriptComponent", [](auto& archive, auto& component) {
-        if (archive.GetMode() == SerializationUtils::PropertyArchive::Deserialize && archive.GetNode()["ClassName"])
-        {
-            // Backwards compatibility with the single-class structure
-            ManagedScriptInstance inst;
-            inst.ClassName = archive.GetNode()["ClassName"].template as<std::string>();
-            component.Scripts.push_back(inst);
-        }
-        
-        CHEngine::Properties props(archive);
-        component.Reflect(props);
-    });
+    // --- Scripting ---
+    Register<ManagedScriptComponent>();
 }
 
 void ComponentSerializer::SerializeAll(YAML::Emitter& out, Entity entity)

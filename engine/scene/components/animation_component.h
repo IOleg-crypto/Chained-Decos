@@ -71,10 +71,10 @@ struct AnimationComponent
 
     CH_REFLECT_BEGIN(AnimationComponent)
         props.File("AnimationPath", AnimationPath, "fbx,gltf,obj");
-        props.Property("Current Animation", CurrentAnimationIndex);
-        props.Property("Is Looping", IsLooping);
-        props.Property("Is Playing", IsPlaying);
-        props.Property("Blend Duration", BlendDuration, PropertyMeta(0.0f, 5.0f, 0.01f));
+        props.Property("CurrentAnimation", CurrentAnimationIndex);
+        props.Property("IsLooping", IsLooping);
+        props.Property("IsPlaying", IsPlaying);
+        props.Property("BlendDuration", BlendDuration, PropertyMeta(0.0f, 5.0f, 0.01f));
     CH_REFLECT_END()
 };
 

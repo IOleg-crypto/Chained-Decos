@@ -23,6 +23,7 @@ struct SceneRenderOptions
     bool ShowDebugSpawnZones       = true;
     bool DrawGrid                  = false;
     bool ShowEditorIcons           = true;
+    int  SetCollisionWireframeMode = 0;
 };
 
 struct EditorResourcesData

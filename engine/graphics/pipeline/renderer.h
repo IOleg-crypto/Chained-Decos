@@ -105,7 +105,7 @@ public:
     // Low-level Draw calls
     void DrawMesh(const Mesh& mesh, const Material& material, const glm::mat4& transform);
     void DrawMeshInstanced(const Mesh& mesh, const Material& material, const std::vector<glm::mat4>& transforms);
-    void DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& transform);
+    void DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& transform, bool useWireframe = true);
     
     void DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color);
     void DrawGrid(int slices, float spacing);

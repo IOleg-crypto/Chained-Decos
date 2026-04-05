@@ -4,8 +4,6 @@
 #include "editor/undo/modify_component_command.h"
 #include "editor_gui.h"
 #include "engine/core/assets/asset_manager.h"
-#include "engine/core/dialogs.h"
-#include "engine/graphics/api/renderer_api.h"
 #include "engine/graphics/assets/model_asset.h"
 #include "engine/graphics/assets/texture_asset.h"
 #include "engine/physics/physics.h"
@@ -15,7 +13,6 @@
 #include "engine/scene/scene_settings.h"
 #include "imgui.h"
 #include "imgui/IconsFontAwesome6.h"
-#include "imgui_internal.h"
 #include "panel.h"
 #include "ui_properties.h" // Included here to break circular dependency
 #include <memory>
@@ -152,9 +149,9 @@ void PropertyEditor::Init()
     Register<ShaderComponent>("Shader", ICON_FA_CODE);
     Register<AnimationComponent>("Animation", ICON_FA_FILM);
     Register<AudioComponent>("Audio", ICON_FA_VOLUME_HIGH);
-    Register<SpawnComponent>("Spawn Zone", ICON_FA_LOCATION_DOT);
+    Register<SpawnComponent>("SpawnZone", ICON_FA_LOCATION_DOT);
     Register<PlayerComponent>("Player", ICON_FA_USER);
-    Register<SceneTransitionComponent>("Scene Transition", ICON_FA_DOOR_OPEN);
+    Register<SceneTransitionComponent>("SceneTransition", ICON_FA_DOOR_OPEN);
 
     // --- Scripting ---
     RegisterCustom<ManagedScriptComponent>(
@@ -260,37 +257,43 @@ void PropertyEditor::Init()
         ICON_FA_FILE_CODE);
 
     // --- UI Components ---
-    Register<ControlComponent>("Rect Transform", ICON_FA_VECTOR_SQUARE);
-    Register<NavigationComponent>("UI Navigation", ICON_FA_ARROWS_TO_DOT);
-    Register<UIActionComponent>("UI Action", ICON_FA_BOLT);
+    Register<ControlComponent>("RectTransform", ICON_FA_VECTOR_SQUARE);
+    Register<NavigationComponent>("Navigation", ICON_FA_ARROWS_TO_DOT);
+    Register<UIActionComponent>("UIAction", ICON_FA_BOLT);
 
     // --- UI Widgets ---
-    Register<ButtonControl>("Button Widget", ICON_FA_ARROW_POINTER);
-    Register<PanelControl>("Panel Widget", ICON_FA_WINDOW_MAXIMIZE);
-    Register<LabelControl>("Label Widget", ICON_FA_FONT);
-    Register<SliderControl>("Slider Widget", ICON_FA_SLIDERS);
-    Register<CheckboxControl>("Checkbox Widget", ICON_FA_SQUARE_CHECK);
-    Register<InputTextControl>("Input Text Widget", ICON_FA_PEN_TO_SQUARE);
-    Register<ComboBoxControl>("ComboBox Widget", ICON_FA_LIST_UL);
-    Register<ProgressBarControl>("ProgressBar Widget", ICON_FA_BARS_PROGRESS);
-    Register<ImageControl>("Image Widget", ICON_FA_IMAGE);
-    Register<ImageButtonControl>("Image Button Widget", ICON_FA_IMAGE);
-    Register<SeparatorControl>("Separator Widget", ICON_FA_MINUS);
-    Register<RadioButtonControl>("RadioButton Widget", ICON_FA_CIRCLE_DOT);
-    Register<ColorPickerControl>("ColorPicker Widget", ICON_FA_PALETTE);
-    Register<DragFloatControl>("DragFloat Widget", ICON_FA_ARROWS_LEFT_RIGHT);
-    Register<DragIntControl>("DragInt Widget", ICON_FA_ARROWS_LEFT_RIGHT);
-    Register<TabBarControl>("TabBar Widget", ICON_FA_TABLE_COLUMNS);
-    Register<TabItemControl>("Tab Item Widget", ICON_FA_FILE);
-    Register<CollapsingHeaderControl>("CollapsingHeader Widget", ICON_FA_ANGLE_DOWN);
-    Register<VerticalLayoutGroup>("Vertical Layout Group", ICON_FA_LAYER_GROUP);
+    Register<ButtonControl>("Button", ICON_FA_ARROW_POINTER);
+    Register<PanelControl>("Panel", ICON_FA_WINDOW_MAXIMIZE);
+    Register<LabelControl>("Label", ICON_FA_FONT);
+    Register<SliderControl>("Slider", ICON_FA_SLIDERS);
+    Register<CheckboxControl>("Checkbox", ICON_FA_SQUARE_CHECK);
+    Register<InputTextControl>("InputText", ICON_FA_PEN_TO_SQUARE);
+    Register<ComboBoxControl>("ComboBox", ICON_FA_LIST_UL);
+    Register<ProgressBarControl>("ProgressBar", ICON_FA_BARS_PROGRESS);
+    Register<ImageControl>("Image", ICON_FA_IMAGE);
+    Register<ImageButtonControl>("ImageButton", ICON_FA_IMAGE);
+    Register<SeparatorControl>("Separator", ICON_FA_MINUS);
+    Register<RadioButtonControl>("RadioButton", ICON_FA_CIRCLE_DOT);
+    Register<ColorPickerControl>("ColorPicker", ICON_FA_PALETTE);
+    Register<DragFloatControl>("DragFloat", ICON_FA_ARROWS_LEFT_RIGHT);
+    Register<DragIntControl>("DragInt", ICON_FA_ARROWS_LEFT_RIGHT);
+    Register<TabBarControl>("TabBar", ICON_FA_TABLE_COLUMNS);
+    Register<TabItemControl>("TabItem", ICON_FA_FILE);
+    Register<CollapsingHeaderControl>("CollapsingHeader", ICON_FA_ANGLE_DOWN);
+    Register<VerticalLayoutGroup>("VerticalLayoutGroup", ICON_FA_LAYER_GROUP);
 
     // Mark widget metadata
     for (auto& [id, metadata] : s_ComponentRegistry)
     {
-        if (metadata.Name.find("Widget") != std::string::npos || metadata.Name.find("Group") != std::string::npos)
+        // Check types rather than names if possible, but names work for now
+        if (id != entt::type_hash<TransformComponent>::value() && 
+            id != entt::type_hash<TagComponent>::value() &&
+            id != entt::type_hash<CameraComponent>::value() &&
+            id != entt::type_hash<LightComponent>::value() &&
+            id != entt::type_hash<ModelComponent>::value())
         {
-            metadata.IsWidget = true;
+            // Simple heuristic: most things are "widgets" in UI mode
+            metadata.IsWidget = true; 
         }
     }
 }
@@ -328,11 +331,13 @@ void PropertyEditor::DrawComponentInternal(entt::id_type typeId, const std::stri
     }
     ImGui::PopStyleColor();
 
+    bool removed = false;
     if (ImGui::BeginPopup("ComponentSettings"))
     {
         if (ImGui::MenuItem("Remove Component"))
         {
             remover();
+            removed = true;
         }
 
         ImGui::EndPopup();
@@ -340,9 +345,12 @@ void PropertyEditor::DrawComponentInternal(entt::id_type typeId, const std::stri
 
     if (open)
     {
-        EditorGUI::BeginPropertyGrid();
-        contentDrawer();
-        EditorGUI::EndPropertyGrid();
+        if (!removed)
+        {
+            EditorGUI::BeginPropertyGrid();
+            contentDrawer();
+            EditorGUI::EndPropertyGrid();
+        }
         ImGui::TreePop();
         ImGui::Spacing();
     }

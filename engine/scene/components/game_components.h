@@ -21,11 +21,11 @@ struct SpawnComponent
 
     CH_REFLECT_BEGIN(SpawnComponent)
         props.Property("Active", IsActive);
-        props.Property("Zone Size", ZoneSize, PropertyMeta(0.1f, 100.0f, 0.1f));
-        props.Handle("Texture Handle", TextureHandle);
-        props.File("Texture Path", TexturePath, "png,jpg,bmp,tga");
-        props.Property("Render Zone", RenderSpawnZoneInScene);
-        props.Property("Spawn Point", SpawnPoint);
+        props.Property("ZoneSize", ZoneSize, PropertyMeta(0.1f, 100.0f, 0.1f));
+        props.Handle("TextureHandle", TextureHandle);
+        props.File("TexturePath", TexturePath, "png,jpg,bmp,tga");
+        props.Property("RenderZone", RenderSpawnZoneInScene);
+        props.Property("SpawnPoint", SpawnPoint);
     CH_REFLECT_END()
 };
 
@@ -38,9 +38,9 @@ struct PlayerComponent
     PlayerComponent() = default;
 
     CH_REFLECT_BEGIN(PlayerComponent)
-        props.Property("Movement Speed", MovementSpeed, PropertyMeta(0.1f, 100.0f, 0.5f));
-        props.Property("Jump Force", JumpForce, PropertyMeta(0.1f, 50.0f, 0.5f));
-        props.Property("Look Sensitivity", LookSensitivity, PropertyMeta(0.1f, 5.0f, 0.1f));
+        props.Property("MovementSpeed", MovementSpeed, PropertyMeta(0.1f, 100.0f, 0.5f));
+        props.Property("JumpForce", JumpForce, PropertyMeta(0.1f, 50.0f, 0.5f));
+        props.Property("LookSensitivity", LookSensitivity, PropertyMeta(0.1f, 5.0f, 0.1f));
     CH_REFLECT_END()
 };
 
@@ -56,7 +56,7 @@ struct SceneTransitionComponent
     }
 
     CH_REFLECT_BEGIN(SceneTransitionComponent)
-        props.File("Target Scene", TargetScenePath, "chscene");
+        props.File("TargetScenePath", TargetScenePath, "chscene");
         props.Property("Triggered", Triggered);
     CH_REFLECT_END()
 };

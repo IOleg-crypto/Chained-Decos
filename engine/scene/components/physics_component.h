@@ -1,7 +1,6 @@
 #ifndef CH_PHYSICS_COMPONENTS_H
 #define CH_PHYSICS_COMPONENTS_H
 
-#include "engine/core/base.h"
 #include "engine/core/reflection.h"
 #include <glm/glm.hpp>
 #include <string>
@@ -54,7 +53,7 @@ struct ColliderComponent
             props.EndGroup();
         }
         
-        if (props.BeginGroup("Shape Parameters"))
+        if (props.BeginGroup("ShapeParameters"))
         {
             if (Type == ColliderType::Box)
             {
@@ -71,13 +70,13 @@ struct ColliderComponent
             }
             else if (Type == ColliderType::Mesh)
             {
-                props.Handle("Model Handle", ModelHandle);
-                props.File("Model Path", ModelPath, "obj,gltf,glb");
+                props.Handle("ModelHandle", ModelHandle);
+                props.File("ModelPath", ModelPath, "obj,gltf,glb");
             }
             props.EndGroup();
         }
         
-        props.Property("Auto Calculate", AutoCalculate);
+        props.Property("AutoCalculate", AutoCalculate, PropertyMeta().WithTooltip("Overwrite Offset/Size automatically from model mesh each frame"));
     CH_REFLECT_END()
 };
 
@@ -98,9 +97,9 @@ struct RigidBodyComponent
         
         if (props.BeginGroup("State"))
         {
-            props.Property("Use Gravity", UseGravity);
-            props.Property("Is Kinematic", IsKinematic);
-            props.Property("Is Grounded", IsGrounded);
+            props.Property("UseGravity", UseGravity);
+            props.Property("IsKinematic", IsKinematic);
+            props.Property("IsGrounded", IsGrounded);
             props.EndGroup();
         }
     CH_REFLECT_END()
