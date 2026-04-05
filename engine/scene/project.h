@@ -57,8 +57,8 @@ enum class TextureFilter : int
 
 struct TextureSettings
 {
-    bool          GenerateMipmaps = true;
-    TextureFilter Filter          = TextureFilter::Bilinear;
+    bool GenerateMipmaps = true;
+    TextureFilter Filter = TextureFilter::Bilinear;
 };
 
 struct WindowSettings

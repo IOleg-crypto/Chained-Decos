@@ -132,10 +132,10 @@ template <> struct convert<CHEngine::Color>
     static Node encode(const CHEngine::Color& rhs)
     {
         Node node;
-        node.push_back((int)rhs.r);
-        node.push_back((int)rhs.g);
-        node.push_back((int)rhs.b);
-        node.push_back((int)rhs.a);
+        node.push_back(static_cast<uint32_t>(rhs.r));
+        node.push_back(static_cast<uint32_t>(rhs.g));
+        node.push_back(static_cast<uint32_t>(rhs.b));
+        node.push_back(static_cast<uint32_t>(rhs.a));
         return node;
     }
 
@@ -189,7 +189,12 @@ struct convert<CHEngine::UIStyle>
 inline YAML::Emitter& operator<<(YAML::Emitter& out, const CHEngine::Color& color)
 {
     out << YAML::Flow;
-    out << YAML::BeginSeq << (int)color.r << (int)color.g << (int)color.b << (int)color.a << YAML::EndSeq;
+    out << YAML::BeginSeq 
+        << static_cast<uint32_t>(color.r) 
+        << static_cast<uint32_t>(color.g) 
+        << static_cast<uint32_t>(color.b) 
+        << static_cast<uint32_t>(color.a) 
+        << YAML::EndSeq;
     return out;
 }
 
@@ -230,14 +235,12 @@ inline YAML::Emitter& operator<<(YAML::Emitter& out, const glm::quat& q)
 
 inline YAML::Emitter& operator<<(YAML::Emitter& out, const std::filesystem::path& p)
 {
-    out << YAML::Flow;
-    out << YAML::BeginSeq << p.string() << YAML::EndSeq;
+    out << p.string();
     return out;
 }
 inline YAML::Emitter& operator<<(YAML::Emitter& out, char* s)
 {
-    out << YAML::Flow;
-    out << YAML::BeginSeq << s << YAML::EndSeq;
+    out << (const char*)s;
     return out;
 }
 

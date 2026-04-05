@@ -11,8 +11,11 @@ namespace CHEngine
         // Generates a sphere mesh
         static Mesh GenerateSphere(float radius, int slices, int stacks);
 
-        // Generates a unit cube mesh for skyboxes/cubemaps
+        // Generates a unit cube mesh for skyboxes/cubemaps (triangles)
         static Mesh GenerateUnitCube();
+
+        // Generates a wireframe cube with 12 edges for debug drawing (GL_LINES)
+        static Mesh GenerateWireCube();
 
         // Generates a grid mesh
         static Mesh GenerateGrid(int slices, float spacing);

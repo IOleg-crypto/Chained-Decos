@@ -35,7 +35,9 @@ struct AudioComponent
         props.Property("Loop", Loop);
         props.Property("PlayOnStart", PlayOnStart);
         props.Property("Spatialized", Spatialized);
-        if (Spatialized)
+        // Always serialize spatial fields to preserve values on save/load.
+        // Only skip display in UI mode.
+        if (props.GetMode() != CHEngine::ReflectionMode::UI || Spatialized)
         {
             props.Property("Position", Position);
             props.Property("Min Distance", MinDistance);

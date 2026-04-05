@@ -1,4 +1,4 @@
-add_library(engine_scene OBJECT
+add_library(engine_scene ${SUBMODULE_LIB_TYPE}
         scene.cpp
         project.cpp
         project_serializer.cpp
@@ -9,6 +9,7 @@ add_library(engine_scene OBJECT
         editor_camera.cpp
         entity.cpp
         scene_picking.cpp
+        components/mesh_component.cpp
 
         scene.h
         scene_events.h
@@ -51,6 +52,10 @@ target_include_directories(engine_scene PUBLIC
 )
 
 target_link_libraries(engine_scene PUBLIC 
+    engine_core
+    engine_graphics
+    engine_physics
+    engine_audio
     yaml-cpp
     EnTT::EnTT
 )
