@@ -73,7 +73,8 @@ private:
                    const std::vector<ShaderUniform>& shaderUniformOverrides = {});
 
     Material ResolveMaterialForMesh(int meshIndex, const Model& model,
-                                   const std::vector<MaterialSlot>& materialSlotOverrides);
+                                   const std::vector<MaterialSlot>& materialSlotOverrides,
+                                   const std::shared_ptr<class ModelAsset>& modelAsset = nullptr);
 
     void BindShaderUniforms(ShaderAsset* shader, const std::vector<glm::mat4>& boneMatrices,
                            const std::vector<ShaderUniform>& shaderUniformOverrides);

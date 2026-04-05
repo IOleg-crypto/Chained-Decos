@@ -18,7 +18,6 @@ add_library(engine_scene ${SUBMODULE_LIB_TYPE}
         scene_serializer.h
         component_serializer.h
         prefab_serializer.h
-        scriptable_entity.h
         scene_camera.h
         editor_camera.h
         scene_picking.h

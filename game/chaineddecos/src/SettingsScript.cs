@@ -12,14 +12,11 @@ public class SettingsScript : Script
 
     public override void OnUpdate(float deltaTime)
     {
-        ButtonControl btn = Entity.GetComponent<ButtonControl>();
-        if (btn != null)
+        ButtonControl? btn = Entity.GetComponent<ButtonControl>();
+        if (btn?.IsPressed ?? false)
         {
-            if (btn.IsPressed)
-            {
-                Log.Info("settings_script: Button pressed, applying settings...");
-                ApplySettings();
-            }
+            Log.Info("settings_script: Button pressed, applying settings...");
+            ApplySettings();
         }
     }
 
@@ -27,19 +24,19 @@ public class SettingsScript : Script
     {
         Log.Info("settings_script: Applying Settings...");
 
-        Entity resEnt = Scene.FindEntityByTag("resolution");
-        Entity fullEnt = Scene.FindEntityByTag("option_fullscreen");
-        Entity vsyncEnt = Scene.FindEntityByTag("option_vsync");
-        Entity aaEnt = Scene.FindEntityByTag("option_aa");
+        Entity? resEnt = Scene.FindEntityByTag("resolution");
+        Entity? fullEnt = Scene.FindEntityByTag("option_fullscreen");
+        Entity? vsyncEnt = Scene.FindEntityByTag("option_vsync");
+        Entity? aaEnt = Scene.FindEntityByTag("option_aa");
 
         // 1. Resolution
         if (resEnt != null)
         {
-            ComboBoxControl combo = resEnt.GetComponent<ComboBoxControl>();
+            ComboBoxControl? combo = resEnt.GetComponent<ComboBoxControl>();
             if (combo != null)
             {
                 int index = combo.SelectedIndex;
-                string resStr = combo.GetItem(index);
+                string? resStr = combo.GetItem(index);
                 if (!string.IsNullOrEmpty(resStr))
                 {
                     string[] parts = resStr.Split('x');
@@ -57,7 +54,7 @@ public class SettingsScript : Script
         // 2. Fullscreen
         if (fullEnt != null)
         {
-            CheckboxControl check = fullEnt.GetComponent<CheckboxControl>();
+            CheckboxControl? check = fullEnt.GetComponent<CheckboxControl>();
             if (check != null)
             {
                 bool enabled = check.IsChecked;
@@ -69,7 +66,7 @@ public class SettingsScript : Script
         // 3. VSync
         if (vsyncEnt != null)
         {
-            CheckboxControl check = vsyncEnt.GetComponent<CheckboxControl>();
+            CheckboxControl? check = vsyncEnt.GetComponent<CheckboxControl>();
             if (check != null)
             {
                 bool enabled = check.IsChecked;
@@ -81,7 +78,7 @@ public class SettingsScript : Script
         // 4. Anti-aliasing
         if (aaEnt != null)
         {
-            CheckboxControl check = aaEnt.GetComponent<CheckboxControl>();
+            CheckboxControl? check = aaEnt.GetComponent<CheckboxControl>();
             if (check != null)
             {
                 bool enabled = check.IsChecked;

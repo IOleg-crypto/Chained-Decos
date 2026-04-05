@@ -60,12 +60,11 @@ public static class Application
 {
 #pragma warning disable 0649
     internal static unsafe delegate*<void> Application_Close_Ptr;
+    internal static unsafe delegate*<int> Application_GetFPS_Ptr;
+    internal static unsafe delegate*<float> Application_GetFrameTime_Ptr;
 #pragma warning restore 0649
 
     public static unsafe void Close() => Application_Close_Ptr();
-
-    internal static unsafe delegate*<int> Application_GetFPS_Ptr;
-    internal static unsafe delegate*<float> Application_GetFrameTime_Ptr;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
