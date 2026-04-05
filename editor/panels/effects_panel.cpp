@@ -42,6 +42,11 @@ void EffectsPanel::OnImGuiRender(bool readOnly)
     {
         auto& debugFlags = m_Context->GetSettings().DebugFlags;
         ImGui::Checkbox("Physics (Colliders)", &debugFlags.DrawColliders);
+        if (debugFlags.DrawColliders)
+        {
+            const char* wireModes[] = {"Wireframe", "Solid"};
+            ImGui::Combo("Wireframe Mode", &debugFlags.SetCollisionWireframeMode, wireModes, 2);
+        }
         ImGui::Checkbox("AABB Boxes", &debugFlags.DrawCollisionModelBox);
         ImGui::Checkbox("Lights", &debugFlags.DrawLights);
         ImGui::Checkbox("Spawn Zones", &debugFlags.DrawSpawnZones);
@@ -51,7 +56,7 @@ void EffectsPanel::OnImGuiRender(bool readOnly)
         {
             auto& grid = m_Context->GetSettings().Grid;
             ImGui::Indent(12.0f);
-            ImGui::DragInt  ("Slices",  &grid.Slices,  1,    4, 200);
+            ImGui::DragInt("Slices", &grid.Slices, 1, 4, 200);
             ImGui::DragFloat("Spacing", &grid.Spacing, 0.1f, 0.1f, 50.0f);
             ImGui::Unindent(12.0f);
         }

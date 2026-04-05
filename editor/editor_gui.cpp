@@ -300,13 +300,15 @@ bool EditorGUI::FileProperty(const char* label, std::string& value, const char* 
     float width = ImGui::GetContentRegionAvail().x;
     float buttonSize = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
     ImGui::PushItemWidth(width - buttonSize - 5.0f);
+    std::string displayPath = Project::GetRelativePath(value);
     char buffer[256];
     memset(buffer, 0, sizeof(buffer));
-    strncpy(buffer, value.c_str(), sizeof(buffer) - 1);
+    strncpy(buffer, displayPath.c_str(), sizeof(buffer) - 1);
+    
     bool changed = false;
     if (ImGui::InputText("##prop", buffer, sizeof(buffer)))
     {
-        value = buffer;
+        value = Project::GetAbsolutePath(buffer).string();
         changed = true;
     }
     if (ImGui::BeginDragDropTarget())
@@ -366,13 +368,16 @@ bool EditorGUI::FileProperty(const char* label, std::string& path, uint32_t text
     }
     ImGui::SameLine();
     ImGui::PushItemWidth(width - buttonSize - thumbnailSize - 10.0f);
+    
+    std::string displayPath = Project::GetRelativePath(path);
     char buffer[256];
     memset(buffer, 0, sizeof(buffer));
-    strncpy(buffer, path.c_str(), sizeof(buffer) - 1);
+    strncpy(buffer, displayPath.c_str(), sizeof(buffer) - 1);
+    
     bool changed = false;
     if (ImGui::InputText("##prop", buffer, sizeof(buffer)))
     {
-        path = buffer;
+        path = Project::GetAbsolutePath(buffer).string();
         changed = true;
     }
     if (ImGui::BeginDragDropTarget())

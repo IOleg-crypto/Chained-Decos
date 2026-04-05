@@ -21,16 +21,16 @@ struct SpriteComponent
 
     CH_REFLECT_BEGIN(SpriteComponent)
         props.Header("Asset");
-        props.Handle("Texture Handle", TextureHandle);
-        props.File("Texture Path", TexturePath, "png,jpg,bmp,tga");
+        props.Handle("TextureHandle", TextureHandle);
+        props.File("TexturePath", TexturePath, "png,jpg,bmp,tga");
         
         props.Header("Appearance");
         if (props.BeginGroup("Transform"))
         {
             props.Property("Tint", Tint);
-            props.Property("Flip X", FlipX);
-            props.Property("Flip Y", FlipY);
-            props.Property("Z Order", ZOrder, PropertyMeta(-1000.0f, 1000.0f, 1.0f));
+            props.Property("FlipX", FlipX);
+            props.Property("FlipY", FlipY);
+            props.Property("ZOrder", ZOrder, PropertyMeta(-1000.0f, 1000.0f, 1.0f));
             props.EndGroup();
         }
     CH_REFLECT_END()
