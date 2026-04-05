@@ -81,9 +81,14 @@ struct TransformComponent
 
     
     CH_REFLECT_BEGIN(TransformComponent)
+        // Position with reasonable range
         props.Property("Translation", Translation);
-        props.Property("Rotation", Rotation);
-        props.Property("Scale", Scale);
+        
+        // Rotation with slider hint (in radians, -π to π range)
+        props.Property("Rotation", Rotation, PropertyMeta(-3.14159f, 3.14159f, 0.01f));
+        
+        // Scale with slider hint (0.1 to 10.0 range)
+        props.Property("Scale", Scale, PropertyMeta(0.1f, 10.0f, 0.1f));
 
         // Sync rotation quat after change
         if (props.HasChanged() || props.GetMode() == ReflectionMode::Deserialize)

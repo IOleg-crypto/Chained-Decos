@@ -46,6 +46,70 @@ public:
         return changed;
     }
 
+    // --- Property methods with metadata ---
+    template <typename T> bool Property(const char* name, T& value, const PropertyMeta& meta)
+    {
+        bool changed = false;
+        
+        // Use metadata hint to select widget
+        if constexpr (std::is_same_v<T, float>)
+        {
+            if (meta.Hint == PropertyMeta::WidgetHint::Slider && meta.MaxValue > meta.MinValue)
+            {
+                changed = ImGui::SliderFloat(name, &value, meta.MinValue, meta.MaxValue);
+            }
+            else if (meta.Hint == PropertyMeta::WidgetHint::Default)
+            {
+                changed = ImGui::DragFloat(name, &value, meta.Speed);
+            }
+            else
+            {
+                changed = ImGui::InputFloat(name, &value);
+            }
+        }
+        else if constexpr (std::is_same_v<T, int>)
+        {
+            if (meta.Hint == PropertyMeta::WidgetHint::Slider && meta.MaxValue > meta.MinValue)
+            {
+                changed = ImGui::SliderInt(name, &value, (int)meta.MinValue, (int)meta.MaxValue);
+            }
+            else
+            {
+                changed = EditorGUI::Property(name, value);
+            }
+        }
+        else
+        {
+            // Fall back to default for other types
+            changed = EditorGUI::Property(name, value);
+        }
+
+        if (changed) m_Changed = true;
+        if (ImGui::IsItemActivated()) m_Started = true;
+        if (ImGui::IsItemDeactivatedAfterEdit()) m_Finished = true;
+        return changed;
+    }
+
+    // Enum with metadata
+    bool Property(const char* name, int& value, const char** names, int count, const PropertyMeta& meta)
+    {
+        bool changed = EditorGUI::Property(name, value, names, count);
+        if (changed) m_Changed = true;
+        if (ImGui::IsItemActivated()) m_Started = true;
+        if (ImGui::IsItemDeactivatedAfterEdit()) m_Finished = true;
+        return changed;
+    }
+
+    // File with metadata
+    bool File(const char* name, std::string& path, const char* extensions, const PropertyMeta& meta)
+    {
+        bool changed = EditorGUI::FileProperty(name, path, extensions);
+        if (changed) m_Changed = true;
+        if (ImGui::IsItemActivated()) m_Started = true;
+        if (ImGui::IsItemDeactivatedAfterEdit()) m_Finished = true;
+        return changed;
+    }
+
     bool Handle(const char* name, uint64_t& value)
     {
         bool changed = EditorGUI::Property(name, value);

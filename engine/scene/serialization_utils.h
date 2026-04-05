@@ -156,6 +156,25 @@ public:
         return (*this)(name, value);
     }
 
+    // --- Property methods with metadata (ignored in serialization) ---
+    template <typename T> bool Property(const char* name, T& value, const PropertyMeta& meta)
+    {
+        // Metadata is only used by UI, not by serialization
+        return (*this)(name, value);
+    }
+
+    template <typename T_Enum>
+    bool Property(const char* name, T_Enum& value, const char** names, int count, const PropertyMeta& meta)
+    {
+        return (*this)(name, value);
+    }
+
+    bool File(const char* name, std::string& path, const char* extensions, const PropertyMeta& meta)
+    {
+        // Metadata is only used by UI, not by serialization
+        return File(name, path, extensions);
+    }
+
     // File/Path property (handles relative/absolute conversion)
     bool File(const char* name, std::string& path, const char* extensions = nullptr)
     {
