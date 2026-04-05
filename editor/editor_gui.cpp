@@ -189,11 +189,6 @@ void EditorGUI::EndProperty()
     ImGui::PopID();
 }
 
-PropertyBuilder EditorGUI::Begin()
-{
-    return PropertyBuilder();
-}
-
 // --- Property Widgets Implementation (New Unified Style) ---
 
 bool EditorGUI::Property(const char* label, bool& value)
