@@ -15,29 +15,34 @@ public:
 
     template <typename T> bool Property(const char* name, T& value)
     {
+        bool changed = false;
         if constexpr (is_variant_v<T>)
         {
-            return std::visit([&](auto&& v) { return EditorGUI::Property(name, v); }, value);
+            changed = std::visit([&](auto&& v) { return EditorGUI::Property(name, v); }, value);
         }
         else if constexpr (std::is_same_v<T, float[4]>)
         {
-            bool changed = EditorGUI::Property(name, *(glm::vec4*)&value);
-            m_Changed |= changed;
-            return changed;
+            changed = EditorGUI::Property(name, *(glm::vec4*)&value);
         }
         else
         {
-            bool changed = EditorGUI::Property(name, value);
-            m_Changed |= changed;
-            return changed;
+            changed = EditorGUI::Property(name, value);
         }
+
+        if (changed) m_Changed = true;
+        if (ImGui::IsItemActivated()) m_Started = true;
+        if (ImGui::IsItemDeactivatedAfterEdit()) m_Finished = true;
+        
+        return changed;
     }
 
     // Overload for enums
     bool Property(const char* name, int& value, const char** names, int count)
     {
         bool changed = EditorGUI::Property(name, value, names, count);
-        m_Changed |= changed;
+        if (changed) m_Changed = true;
+        if (ImGui::IsItemActivated()) m_Started = true;
+        if (ImGui::IsItemDeactivatedAfterEdit()) m_Finished = true;
         return changed;
     }
 
@@ -51,7 +56,9 @@ public:
     bool File(const char* name, std::string& path, const char* extensions = nullptr)
     {
         bool changed = EditorGUI::FileProperty(name, path, extensions);
-        m_Changed |= changed;
+        if (changed) m_Changed = true;
+        if (ImGui::IsItemActivated()) m_Started = true;
+        if (ImGui::IsItemDeactivatedAfterEdit()) m_Finished = true;
         return changed;
     }
 
@@ -171,6 +178,9 @@ public:
         ImGui::TreePop();
     }
 
+    bool HasFinished() const { return m_Finished; }
+    bool HasStarted() const { return m_Started; }
+
     bool HasChanged() const
     {
         return m_Changed;
@@ -186,6 +196,8 @@ public:
 
 private:
     bool m_Changed = false;
+    bool m_Started = false;
+    bool m_Finished = false;
 };
 } // namespace CHEngine
 
