@@ -39,6 +39,13 @@ struct LightingData
     FogSettings CurrentFog;
 };
 
+struct StaticResources
+{
+    std::unique_ptr<Model> UnitCubeModel;
+    std::unique_ptr<Model> UnitSphereModel;
+    std::unique_ptr<Model> WireCubeModel;  // 12-edge wireframe cube for GL_LINES
+};
+
 struct SkyboxData
 {
     std::unique_ptr<Model> SkyboxCubeModel;
@@ -52,6 +59,7 @@ struct SkyboxData
 struct RendererData
 {
     SkyboxData Skybox;
+    StaticResources Resources;
     LightingData Lighting;
 
     std::unique_ptr<ShaderLibrary> Shaders;
@@ -84,6 +92,9 @@ public:
 
     void InternalInit();
     void InternalShutdown();
+
+    void InitializeResources();
+    void CleanupResources();
 
     void BeginScene(const Camera3D& camera, float nearClip = 0.01f, float farClip = 1000.0f);
     void EndScene();

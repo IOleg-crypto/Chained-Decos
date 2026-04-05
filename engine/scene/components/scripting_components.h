@@ -62,6 +62,10 @@ struct ManagedScriptInstance
 
     CH_REFLECT_BEGIN(ManagedScriptInstance)
         props.Property("ClassName", ClassName);
+        for (auto& [name, field] : Fields)
+        {
+            props.Nested(name.c_str(), field);
+        }
     CH_REFLECT_END()
 };
 

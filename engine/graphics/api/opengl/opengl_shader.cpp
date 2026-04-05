@@ -110,7 +110,7 @@ void OpenGLShader::SetVec4(const std::string& name, const glm::vec4& value)
 
 void OpenGLShader::SetColor(const std::string& name, const Color& value)
 {
-    glm::vec4 c = {value.r / 255.0f, value.g / 255.0f, value.b / 255.0f, value.a / 255.0f};
+    glm::vec4 c(value.r / 255.0f, value.g / 255.0f, value.b / 255.0f, value.a / 255.0f);
     SetVec4(name, c);
 }
 

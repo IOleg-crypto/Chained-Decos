@@ -12,8 +12,10 @@
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/pipeline/texture_utility.h"
 #include "engine/physics/physics.h"
+#include "engine/scene/components/game_components.h"
 #include "engine/scene/components/light_component.h"
 #include "engine/scene/components/mesh_component.h"
+#include "engine/scene/components/camera_component.h"
 #include "imgui.h"
 #include <GLFW/glfw3.h>
 #include <glad/gl.h>
@@ -175,6 +177,9 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
         {
             continue;
         }
+
+        // Sync materials if not already initialized
+        mesh.SyncMaterials(modelAsset->GetID());
         
         AssetState state = modelAsset->GetState();
         if (state != AssetState::Ready)
@@ -502,16 +507,38 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
         auto [transform, collider] = view.get<TransformComponent, ColliderComponent>(entity);
         if (!collider.Enabled) continue;
         glm::vec4 color = collider.IsColliding ? glm::vec4(1, 0, 0, 1) : glm::vec4(0, 1, 0, 1);
-        if (collider.Type == ColliderType::Box)
+        if (collider.Type == ColliderType::Box || collider.Type == ColliderType::Sphere || collider.Type == ColliderType::Capsule)
         {
-            BoundingBox b = CalculateColliderWorldAABB(collider, transform.WorldTransform);
-            glm::vec3 center = (b.Min + b.Max) * 0.5f;
-            Renderer::Get().DrawCubeWires(glm::translate(glm::mat4(1.0f), center), b.Max - b.Min, color);
+            // Extract scale from WorldTransform column lengths
+            glm::vec3 entityScale(
+                glm::length(glm::vec3(transform.WorldTransform[0])),
+                glm::length(glm::vec3(transform.WorldTransform[1])),
+                glm::length(glm::vec3(transform.WorldTransform[2])));
+            
+            // Build a rotation-only transform (remove scale from matrix)
+            glm::mat4 rotTrans = transform.WorldTransform;
+            if (entityScale.x > 0.0001f) rotTrans[0] = glm::vec4(glm::vec3(rotTrans[0]) / entityScale.x, 0.0f);
+            if (entityScale.y > 0.0001f) rotTrans[1] = glm::vec4(glm::vec3(rotTrans[1]) / entityScale.y, 0.0f);
+            if (entityScale.z > 0.0001f) rotTrans[2] = glm::vec4(glm::vec3(rotTrans[2]) / entityScale.z, 0.0f);
+            
+            glm::mat4 baseTransform = rotTrans * glm::translate(glm::mat4(1.0f), collider.Offset);
+
+            if (collider.Type == ColliderType::Box)
+            {
+                Renderer::Get().DrawCubeWires(baseTransform, collider.Size * entityScale, color);
+            }
+            else if (collider.Type == ColliderType::Sphere)
+            {
+                // For sphere, we use the maximum component of the entity scale for the overall radius multiplier
+                float maxScale = glm::max(entityScale.x, glm::max(entityScale.y, entityScale.z));
+                Renderer::Get().DrawSphereWires(baseTransform, collider.Radius * maxScale, color);
+            }
+            else if (collider.Type == ColliderType::Capsule)
+            {
+                float maxScale = glm::max(entityScale.x, glm::max(entityScale.y, entityScale.z));
+                Renderer::Get().DrawCapsuleWires(baseTransform, collider.Radius * maxScale, collider.Height * entityScale.y, color);
+            }
         }
-        else if (collider.Type == ColliderType::Sphere)
-            Renderer::Get().DrawSphereWires(transform.WorldTransform * glm::translate(glm::mat4(1.0f), collider.Offset), collider.Radius, color);
-        else if (collider.Type == ColliderType::Capsule)
-            Renderer::Get().DrawCapsuleWires(transform.WorldTransform * glm::translate(glm::mat4(1.0f), collider.Offset), collider.Radius, collider.Height, color);
         else if (collider.Type == ColliderType::Mesh)
         {
             if (collider.ModelHandle != 0)
@@ -549,22 +576,13 @@ void SceneRenderer::DrawCollisionModelBoxDebug(entt::registry& registry, const S
             auto model = AssetManager::Get().Get<ModelAsset>(collider.ModelHandle);
             if (model && model->IsReady())
             {
-                // Calculate bounding box from meshes
-                glm::vec3 minBounds(FLT_MAX);
-                glm::vec3 maxBounds(-FLT_MAX);
+                const BoundingBox& localBox = model->GetBoundingBox();
+                glm::vec3 center = (localBox.Min + localBox.Max) * 0.5f;
+                glm::vec3 size = localBox.Max - localBox.Min;
                 
-                for (const auto& mesh : model->GetModel().Meshes)
-                {
-                    minBounds.x = glm::min(minBounds.x, mesh.MinBounds.x);
-                    minBounds.y = glm::min(minBounds.y, mesh.MinBounds.y);
-                    minBounds.z = glm::min(minBounds.z, mesh.MinBounds.z);
-                    maxBounds.x = glm::max(maxBounds.x, mesh.MaxBounds.x);
-                    maxBounds.y = glm::max(maxBounds.y, mesh.MaxBounds.y);
-                    maxBounds.z = glm::max(maxBounds.z, mesh.MaxBounds.z);
-                }
-                
-                glm::vec3 center = (minBounds + maxBounds) * 0.5f;
-                glm::vec3 size = maxBounds - minBounds;
+                // Note: transform.WorldTransform already includes entity scale, 
+                // but the localBox is also scaled if the importer applied scale?
+                // Usually localBox is untransformed.
                 Renderer::Get().DrawCubeWires(transform.WorldTransform * glm::translate(glm::mat4(1.0f), center), size, color);
             }
         }

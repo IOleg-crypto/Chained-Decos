@@ -86,6 +86,19 @@ void SceneActions::SaveAs()
     }
 }
 
+void SceneActions::AutoSave()
+{
+    auto scene = EditorLayer::Get().GetActiveScene();
+    if (!scene || scene->GetSettings().ScenePath.empty())
+    {
+        return;
+    }
+ 
+    SceneSerializer serializer(scene.get());
+    serializer.Serialize(scene->GetSettings().ScenePath);
+    CH_TRACE("Scene auto-saved to {0}", scene->GetSettings().ScenePath);
+}
+
 void SceneActions::SetParent(Entity child, Entity parent)
 {
     if (child.HasComponent<HierarchyComponent>())

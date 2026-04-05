@@ -8,47 +8,47 @@ namespace CHEngine
     Mesh GeometryGenerator::GenerateUnitCube()
     {
         float vertices[] = {
-            -1.0f,  1.0f, -1.0f,
-            -1.0f, -1.0f, -1.0f,
-             1.0f, -1.0f, -1.0f,
-             1.0f, -1.0f, -1.0f,
-             1.0f,  1.0f, -1.0f,
-            -1.0f,  1.0f, -1.0f,
+            -0.5f,  0.5f, -0.5f,
+            -0.5f, -0.5f, -0.5f,
+             0.5f, -0.5f, -0.5f,
+             0.5f, -0.5f, -0.5f,
+             0.5f,  0.5f, -0.5f,
+            -0.5f,  0.5f, -0.5f,
 
-            -1.0f, -1.0f,  1.0f,
-            -1.0f, -1.0f, -1.0f,
-            -1.0f,  1.0f, -1.0f,
-            -1.0f,  1.0f, -1.0f,
-            -1.0f,  1.0f,  1.0f,
-            -1.0f, -1.0f,  1.0f,
+            -0.5f, -0.5f,  0.5f,
+            -0.5f, -0.5f, -0.5f,
+            -0.5f,  0.5f, -0.5f,
+            -0.5f,  0.5f,  0.5f,
+            -0.5f,  0.5f,  0.5f,
+            -0.5f, -0.5f,  0.5f,
 
-             1.0f, -1.0f, -1.0f,
-             1.0f, -1.0f,  1.0f,
-             1.0f,  1.0f,  1.0f,
-             1.0f,  1.0f,  1.0f,
-             1.0f,  1.0f, -1.0f,
-             1.0f, -1.0f, -1.0f,
+             0.5f, -0.5f, -0.5f,
+             0.5f, -0.5f,  0.5f,
+             0.5f,  0.5f,  0.5f,
+             0.5f,  0.5f,  0.5f,
+             0.5f,  0.5f, -0.5f,
+             0.5f, -0.5f, -0.5f,
 
-            -1.0f, -1.0f,  1.0f,
-            -1.0f,  1.0f,  1.0f,
-             1.0f,  1.0f,  1.0f,
-             1.0f,  1.0f,  1.0f,
-             1.0f, -1.0f,  1.0f,
-            -1.0f, -1.0f,  1.0f,
+            -0.5f, -0.5f,  0.5f,
+            -0.5f,  0.5f,  0.5f,
+             0.5f,  0.5f,  0.5f,
+             0.5f,  0.5f,  0.5f,
+             0.5f, -0.5f,  0.5f,
+            -0.5f, -0.5f,  0.5f,
 
-            -1.0f,  1.0f, -1.0f,
-             1.0f,  1.0f, -1.0f,
-             1.0f,  1.0f,  1.0f,
-             1.0f,  1.0f,  1.0f,
-            -1.0f,  1.0f,  1.0f,
-            -1.0f,  1.0f, -1.0f,
+            -0.5f,  0.5f, -0.5f,
+             0.5f,  0.5f, -0.5f,
+             0.5f,  0.5f,  0.5f,
+             0.5f,  0.5f,  0.5f,
+            -0.5f,  0.5f,  0.5f,
+            -0.5f,  0.5f, -0.5f,
 
-            -1.0f, -1.0f, -1.0f,
-            -1.0f, -1.0f,  1.0f,
-             1.0f, -1.0f, -1.0f,
-             1.0f, -1.0f, -1.0f,
-            -1.0f, -1.0f,  1.0f,
-             1.0f, -1.0f,  1.0f
+            -0.5f, -0.5f, -0.5f,
+            -0.5f, -0.5f,  0.5f,
+             0.5f, -0.5f, -0.5f,
+             0.5f, -0.5f, -0.5f,
+            -0.5f, -0.5f,  0.5f,
+             0.5f, -0.5f,  0.5f
         };
 
         auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
@@ -65,6 +65,44 @@ namespace CHEngine
         mesh.VAO = vao;
         mesh.VertexCount = 36;
         mesh.TriangleCount = 12;
+        return mesh;
+    }
+
+    Mesh GeometryGenerator::GenerateWireCube()
+    {
+        // 8 unique corner vertices of a unit cube [-0.5, 0.5]
+        float vertices[] = {
+            -0.5f, -0.5f, -0.5f,  // 0: left  bottom back
+             0.5f, -0.5f, -0.5f,  // 1: right bottom back
+             0.5f,  0.5f, -0.5f,  // 2: right top    back
+            -0.5f,  0.5f, -0.5f,  // 3: left  top    back
+            -0.5f, -0.5f,  0.5f,  // 4: left  bottom front
+             0.5f, -0.5f,  0.5f,  // 5: right bottom front
+             0.5f,  0.5f,  0.5f,  // 6: right top    front
+            -0.5f,  0.5f,  0.5f   // 7: left  top    front
+        };
+
+        // 12 edges × 2 indices = 24 indices for GL_LINES
+        uint32_t indices[] = {
+            // Back face edges
+            0, 1,  1, 2,  2, 3,  3, 0,
+            // Front face edges
+            4, 5,  5, 6,  6, 7,  7, 4,
+            // Connecting edges
+            0, 4,  1, 5,  2, 6,  3, 7
+        };
+
+        auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
+        vbo->SetLayout({{ShaderDataType::Float3, "a_Position"}});
+        auto vao = VertexArray::Create();
+        vao->AddVertexBuffer(vbo);
+        auto ebo = IndexBuffer::Create(indices, 24);
+        vao->SetIndexBuffer(ebo);
+
+        Mesh mesh;
+        mesh.VAO = vao;
+        mesh.VertexCount = 8;
+        mesh.TriangleCount = 0; // Lines, not triangles
         return mesh;
     }
 

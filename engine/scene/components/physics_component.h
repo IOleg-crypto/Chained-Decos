@@ -56,20 +56,22 @@ struct ColliderComponent
         
         if (props.BeginGroup("Shape Parameters"))
         {
-            if (Type == ColliderType::Box)
+            if (props.GetMode() != CHEngine::ReflectionMode::UI || Type == ColliderType::Box)
             {
                 props.Property("Size", Size);
             }
-            else if (Type == ColliderType::Capsule)
+            if (props.GetMode() != CHEngine::ReflectionMode::UI || Type == ColliderType::Capsule)
             {
                 props.Property("Radius", Radius);
                 props.Property("Height", Height);
             }
-            else if (Type == ColliderType::Sphere)
+            if (props.GetMode() != CHEngine::ReflectionMode::UI || Type == ColliderType::Sphere)
             {
-                props.Property("Radius", Radius);
+                // Only show Radius once for Sphere (it's shared with Capsule)
+                if (Type != ColliderType::Capsule)
+                    props.Property("Radius", Radius);
             }
-            else if (Type == ColliderType::Mesh)
+            if (props.GetMode() != CHEngine::ReflectionMode::UI || Type == ColliderType::Mesh)
             {
                 props.Handle("Model Handle", ModelHandle);
                 props.File("Model Path", ModelPath, "obj,gltf,glb");
