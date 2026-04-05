@@ -348,7 +348,7 @@ void SceneRenderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, con
         m_CurrentStats.MeshCount++;
         m_CurrentStats.PolyCount += model.Meshes[i].TriangleCount;
 
-        Material material = ResolveMaterialForMesh(i, model, materialSlotOverrides);
+        Material material = ResolveMaterialForMesh(i, model, materialSlotOverrides, modelAsset);
 
         BindShaderUniforms(activeShader.get(), boneMatrices, shaderUniformOverrides);
         BindMaterialUniforms(activeShader.get(), material, i, model, materialSlotOverrides);
@@ -366,7 +366,8 @@ void SceneRenderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, con
 }
 
 Material SceneRenderer::ResolveMaterialForMesh(int meshIndex, const Model& model,
-                                               const std::vector<MaterialSlot>& materialSlotOverrides)
+                                               const std::vector<MaterialSlot>& materialSlotOverrides,
+                                               const std::shared_ptr<ModelAsset>& modelAsset)
 {
     Material material = model.Materials[model.Meshes[meshIndex].MaterialIndex];
     for (const auto& slot : materialSlotOverrides)
@@ -380,10 +381,22 @@ Material SceneRenderer::ResolveMaterialForMesh(int meshIndex, const Model& model
                                     slot.Material.AlbedoColor.b / 255.0f, slot.Material.AlbedoColor.a / 255.0f};
             if (slot.Material.OverrideAlbedo && !slot.Material.AlbedoPath.empty())
             {
-                auto tex = AssetManager::Get().Get<TextureAsset>(slot.Material.AlbedoPath);
-                if (tex && tex->IsReady())
+                // Check if this is an embedded texture (path starts with '*')
+                if (modelAsset && slot.Material.AlbedoPath.front() == '*')
                 {
-                    material.AlbedoMap = tex->GetTexture()->GetRendererID();
+                    uint32_t embeddedTexID = modelAsset->GetEmbeddedTextureID(slot.Material.AlbedoPath);
+                    if (embeddedTexID > 0)
+                    {
+                        material.AlbedoMap = embeddedTexID;
+                    }
+                }
+                else
+                {
+                    auto tex = AssetManager::Get().Get<TextureAsset>(slot.Material.AlbedoPath);
+                    if (tex && tex->IsReady())
+                    {
+                        material.AlbedoMap = tex->GetTexture()->GetRendererID();
+                    }
                 }
             }
             material.EmissiveIntensity = slot.Material.EmissiveIntensity;

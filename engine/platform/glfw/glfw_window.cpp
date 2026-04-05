@@ -1,6 +1,7 @@
 #include "glfw_window.h"
 #include "engine/core/log.h"
 #include "engine/core/ch_assert.h"
+#include "engine/core/input.h"
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
@@ -72,6 +73,11 @@ void GlfwWindow::Init(const WindowProperties& properties)
         glWindow.SetSizeDirect(width, height);
         // Important: Viewport should be updated here or in the renderer
         glViewport(0, 0, width, height);
+    });
+
+    // Scroll Callback for mouse wheel input
+    glfwSetScrollCallback(m_WindowHandle, [](GLFWwindow* window, double xOffset, double yOffset) {
+        Input::OnMouseScroll((float)xOffset, (float)yOffset);
     });
     
     // Platform-neutral GLAD loading

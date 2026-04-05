@@ -108,8 +108,12 @@ public class PlayerController : Script
             Entity? spawnZone = Scene.FindEntityByTag("SpawnPoint");
             if (spawnZone != null)
             {
-                transform.Translation = spawnZone.GetComponent<TransformComponent>().Translation;
-                Log.Info("Teleported to spawn via C#!");
+                TransformComponent? spawnTransform = spawnZone.GetComponent<TransformComponent>();
+                if (spawnTransform != null)
+                {
+                    transform.Translation = spawnTransform.Translation;
+                    Log.Info("Teleported to spawn via C#!");
+                }
             }
         }
     }

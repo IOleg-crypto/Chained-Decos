@@ -171,7 +171,7 @@ public class TagComponent : Component
     internal static unsafe delegate*<ulong, NativeString> TagComponent_GetTag_Ptr;
 #pragma warning restore 0649
 
-    private static unsafe string GetTag_Native(ulong entityID)
+    private static unsafe string? GetTag_Native(ulong entityID)
     {
         return TagComponent_GetTag_Ptr(entityID);
     }
@@ -244,7 +244,7 @@ public class CameraComponent : Component
 
     public string TargetEntityTag
     {
-        get { unsafe { return Camera_GetTargetTag_Ptr(Entity.ID); } }
+        get { unsafe { string? result = Camera_GetTargetTag_Ptr(Entity.ID); return result ?? string.Empty; } }
         set { unsafe { Camera_SetTargetTag_Ptr(Entity.ID, value); } }
     }
 }
@@ -278,7 +278,7 @@ public class AudioComponent : Component
     private static unsafe void SetVolume(ulong entityID, float volume) => AudioComponent_SetVolume_Ptr(entityID, volume);
     private static unsafe void SetLoop(ulong entityID, bool loop) => AudioComponent_SetLoop_Ptr(entityID, loop);
     private static unsafe bool IsPlaying_Native(ulong entityID) => AudioComponent_IsPlaying_Ptr(entityID);
-    private static unsafe string GetSoundPath(ulong entityID)
+    private static unsafe string? GetSoundPath(ulong entityID)
     {
         return AudioComponent_GetSoundPath_Ptr(entityID);
     }
@@ -319,7 +319,7 @@ public class ComboBoxControl : Component
 #pragma warning restore 0649
 
     private static unsafe int GetSelectedIndex(ulong entityID) => ComboBoxControl_GetSelectedIndex_Ptr(entityID);
-    private static unsafe string GetItem(ulong entityID, int idx)
+    private static unsafe string? GetItem(ulong entityID, int idx)
     {
         return ComboBoxControl_GetItem_Ptr(entityID, idx);
     }

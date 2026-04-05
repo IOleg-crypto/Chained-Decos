@@ -315,4 +315,18 @@ void ModelAsset::OnLoaded()
     SetState(AssetState::Ready);
 }
 
+uint32_t ModelAsset::GetEmbeddedTextureID(const std::string& path) const
+{
+    // Embedded textures have paths like "*0", "*1", etc.
+    if (path.empty() || path.front() != '*')
+    {
+        return 0;
+    }
+  size_t index = std::stoul(path.substr(1));
+        if (index < m_EmbeddedTextures.size() && m_EmbeddedTextures[index])
+        {
+            return m_EmbeddedTextures[index]->GetRendererID();
+        }
+}
+
 } // namespace CHEngine
