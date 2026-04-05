@@ -68,7 +68,7 @@ void Audio::Play(const AudioBuffer& buffer, float volume, float pitch, bool loop
     ma_result result = ma_audio_buffer_init(&config, &instance->Buffer);
     if (result != MA_SUCCESS) return;
 
-    result = ma_sound_init_from_data_source((ma_engine*)m_Engine, &instance->Buffer, MA_SOUND_FLAG_DECODE | MA_SOUND_FLAG_ASYNC, NULL, &instance->Sound);
+    result = ma_sound_init_from_data_source((ma_engine*)m_Engine, &instance->Buffer, 0, NULL, &instance->Sound);
     if (result != MA_SUCCESS)
     {
         ma_audio_buffer_uninit(&instance->Buffer);

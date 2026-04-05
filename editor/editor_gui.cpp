@@ -316,10 +316,7 @@ bool EditorGUI::FileProperty(const char* label, std::string& value, const char* 
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
         {
             const char* dropPath = (const char*)payload->Data;
-            std::filesystem::path p = dropPath;
-            auto projectPath = Project::GetAssetDirectory();
-            std::filesystem::path relativePath = std::filesystem::relative(p, projectPath);
-            value = (!relativePath.empty() && relativePath != ".") ? relativePath.string() : dropPath;
+            value = Project::GetRelativePath(dropPath);
             changed = true;
         }
         ImGui::EndDragDropTarget();
@@ -336,10 +333,7 @@ bool EditorGUI::FileProperty(const char* label, std::string& value, const char* 
         auto result = Dialogs::OpenFile(filters);
         if (result)
         {
-            std::filesystem::path p = *result;
-            auto projectPath = Project::GetAssetDirectory();
-            std::filesystem::path relativePath = std::filesystem::relative(p, projectPath);
-            value = (!relativePath.empty() && relativePath != ".") ? relativePath.string() : p.string();
+            value = Project::GetRelativePath(*result);
             changed = true;
         }
     }
@@ -385,10 +379,7 @@ bool EditorGUI::FileProperty(const char* label, std::string& path, uint32_t text
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
         {
             const char* dropPath = (const char*)payload->Data;
-            std::filesystem::path p = dropPath;
-            auto projectPath = Project::GetAssetDirectory();
-            std::filesystem::path relativePath = std::filesystem::relative(p, projectPath);
-            path = (!relativePath.empty() && relativePath != ".") ? relativePath.string() : dropPath;
+            path = Project::GetRelativePath(dropPath);
             changed = true;
         }
         ImGui::EndDragDropTarget();
@@ -405,10 +396,7 @@ bool EditorGUI::FileProperty(const char* label, std::string& path, uint32_t text
         auto result = Dialogs::OpenFile(filters);
         if (result)
         {
-            std::filesystem::path p = *result;
-            auto projectPath = Project::GetAssetDirectory();
-            std::filesystem::path relativePath = std::filesystem::relative(p, projectPath);
-            path = (!relativePath.empty() && relativePath != ".") ? relativePath.string() : p.string();
+            path = Project::GetRelativePath(*result);
             changed = true;
         }
     }
