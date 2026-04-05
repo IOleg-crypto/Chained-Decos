@@ -52,6 +52,8 @@ namespace CHEngine
         PropertyMeta(WidgetHint h) : Hint(h) {}
         PropertyMeta(float min, float max, float spd = 0.1f)
             : Hint(WidgetHint::Slider), MinValue(min), MaxValue(max), Speed(spd) {}
+
+        PropertyMeta& WithTooltip(const std::string& t) { Tooltip = t; return *this; }
     };
 
     // The "Properties" class is the primary interface for reflection.
@@ -111,7 +113,7 @@ namespace CHEngine
         {
             int temp = (int)value;
             bool changed = m_Archive.Property(name, temp, names, count);
-            if (changed)
+            if (changed || m_Archive.GetReflectionMode() == ReflectionMode::Deserialize)
             {
                 value = (T_Enum)temp;
             }
@@ -150,7 +152,7 @@ namespace CHEngine
         {
             int temp = (int)value;
             bool changed = m_Archive.Property(name, temp, names, count, meta);
-            if (changed)
+            if (changed || m_Archive.GetReflectionMode() == ReflectionMode::Deserialize)
             {
                 value = (T_Enum)temp;
             }

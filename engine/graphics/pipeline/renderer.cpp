@@ -201,7 +201,7 @@ void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
     // 2. Calculate Projection Transform
     int width = Application::Get().GetWindow().GetWidth();
     int height = Application::Get().GetWindow().GetHeight();
-    float aspect = (float)width / (float)height;
+    float aspect = (height > 0) ? (float)width / (float)height : 1.0f;
 
     if (camera.Projection == 0 /* CAMERA_PERSPECTIVE */)
     {
@@ -351,22 +351,19 @@ void Renderer::DrawMeshInstanced(const Mesh& mesh, const Material& material, con
 
 void Renderer::DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color)
 {
-    // Native OpenGL line drawing (Fixed function or simple shader)
-    auto unlitShader = m_Data->Shaders->Exists("Unlit") ? m_Data->Shaders->Get("Unlit") : nullptr;
-    if (!unlitShader || !unlitShader->GetShader())
+    auto debugShader = m_Data->Shaders->Get("ColliderDebug");
+    if (!debugShader || !debugShader->GetShader())
     {
-        return;  // Can't render without Unlit shader
+        return;
     }
 
-    auto shader = unlitShader->GetShader();
+    auto shader = debugShader->GetShader();
     shader->Bind();
 
-    glm::mat4 mvp = m_Data->CurrentProj * m_Data->CurrentView;
-    shader->SetMatrix("mvp", mvp);
-    shader->SetMatrix("matModel", glm::mat4(1.0f));
-    shader->SetMatrix("matNormal", glm::mat4(1.0f));
-    shader->SetVec4("colDiffuse", color);
-    shader->SetVec3("viewPos", glm::vec3(0.0f));  // For fog calculations
+    glm::mat4 vp = m_Data->CurrentProj * m_Data->CurrentView;
+    shader->SetMatrix("u_ViewProj", vp);
+    shader->SetMatrix("u_Transform", glm::mat4(1.0f));
+    shader->SetVec4("u_Color", color);
 
     // Immediate mode replacement or small buffer
     float vertices[] = {start.x, start.y, start.z, end.x, end.y, end.z};
@@ -381,33 +378,37 @@ void Renderer::DrawLine(const glm::vec3& start, const glm::vec3& end, const glm:
 
     glDrawArrays(GL_LINES, 0, 2);
 
-    // Properly unbind before deleting
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
     glDeleteBuffers(1, &vbo);
     glDeleteVertexArrays(1, &vao);
 }
 
-void Renderer::DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& transform)
+void Renderer::DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& transform, bool useWireframe)
 {
-    // Use unlit shader for wireframe rendering
-    auto unlitShader = m_Data->Shaders->Exists("Unlit") ? m_Data->Shaders->Get("Unlit") : nullptr;
-    if (!unlitShader || !unlitShader->GetShader())
+    auto debugShader = m_Data->Shaders->Get("ColliderDebug");
+    if (!debugShader || !debugShader->GetShader())
     {
         return;
     }
 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    auto shader = unlitShader->GetShader();
+    if (useWireframe)
+    {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    }
+    else
+    {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
+
+    auto shader = debugShader->GetShader();
     shader->Bind();
 
-    // Set matrices and color with correct uniform names
-    glm::mat4 mvp = m_Data->CurrentProj * m_Data->CurrentView * transform;
-    shader->SetMatrix("mvp", mvp);
-    shader->SetMatrix("matModel", transform);
-    shader->SetMatrix("matNormal", glm::transpose(glm::inverse(transform)));
-    shader->SetVec4("colDiffuse", color);
-    shader->SetVec3("viewPos", glm::vec3(0.0f));  // For fog calculations
+    // Set matrices and color with correct uniform names for ColliderDebug
+    glm::mat4 vp = m_Data->CurrentProj * m_Data->CurrentView;
+    shader->SetMatrix("u_ViewProj", vp);
+    shader->SetMatrix("u_Transform", transform);
+    shader->SetVec4("u_Color", color);
 
     // Render mesh geometry
     if (mesh.VAO)
@@ -465,6 +466,7 @@ void Renderer::DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm
     glm::vec4 col = color;
     shaderAsset->GetShader()->SetVec4("gridColor", col);
     shaderAsset->GetShader()->SetFloat("gridSize", spacing);
+    shaderAsset->GetShader()->SetFloat("uTime", m_Data->Time);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

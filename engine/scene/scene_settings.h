@@ -17,6 +17,7 @@ struct DebugRenderFlags
     bool DrawSelection = true;
     bool DrawLights = true;
     bool DrawSpawnZones = true;
+    int SetCollisionWireframeMode = 0;
 };
 
 enum class BackgroundMode

@@ -1,7 +1,7 @@
 #ifndef CH_SHADER_COMPONENT_H
 #define CH_SHADER_COMPONENT_H
 
-#include "engine/core/base.h"
+
 #include "engine/core/reflection.h"
 #include <algorithm>
 #include <string>
@@ -78,7 +78,7 @@ struct ShaderComponent
 
     CH_REFLECT_BEGIN(ShaderComponent)
         props.Header("Shader Asset");
-        props.File("Shader Path", ShaderPath, "glsl,shader");
+        props.File("ShaderPath", ShaderPath, "glsl,shader");
         props.Property("Enabled", Enabled);
         
         props.Header("Uniforms");

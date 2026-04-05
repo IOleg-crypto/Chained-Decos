@@ -1,4 +1,5 @@
 #include "prefab_serializer.h"
+#include "component_serializer.h"
 #include "components.h"
 #include "engine/core/yaml.h"
 #include "engine/scene/scene.h"
@@ -13,32 +14,7 @@ static void SerializeEntityData(YAML::Emitter& out, Entity entity)
 {
     out << YAML::BeginMap;
 
-    if (entity.HasComponent<TagComponent>())
-    {
-        out << YAML::Key << "TagComponent";
-        out << YAML::BeginMap << YAML::Key << "Tag" << YAML::Value << entity.GetComponent<TagComponent>().Tag
-            << YAML::EndMap;
-    }
-
-    if (entity.HasComponent<TransformComponent>())
-    {
-        auto& tc = entity.GetComponent<TransformComponent>();
-        out << YAML::Key << "TransformComponent";
-        out << YAML::BeginMap;
-        out << YAML::Key << "Translation" << YAML::Value << tc.Translation;
-        out << YAML::Key << "Rotation" << YAML::Value << tc.Rotation;
-        out << YAML::Key << "Scale" << YAML::Value << tc.Scale;
-        out << YAML::EndMap;
-    }
-
-    if (entity.HasComponent<ModelComponent>())
-    {
-        auto& mc = entity.GetComponent<ModelComponent>();
-        out << YAML::Key << "ModelComponent";
-        out << YAML::BeginMap << YAML::Key << "ModelPath" << YAML::Value << mc.ModelPath << YAML::EndMap;
-    }
-
-    // Add other components as needed...
+    ComponentSerializer::Get().SerializeAll(out, entity);
 
     out << YAML::EndMap;
 }

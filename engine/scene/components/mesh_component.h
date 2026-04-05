@@ -29,14 +29,10 @@ struct MaterialSlot
     }
 
     CH_REFLECT_BEGIN(MaterialSlot)
-        if (props.BeginGroup(Name.empty() ? "Material Slot" : Name.c_str()))
-        {
-            props.Property("Index", Index);
-            static const char* targetStrings[] = { "Material Index", "Mesh Index" };
-            props.Enum("Target", Target, targetStrings, 2);
-            Material.Reflect(props);
-            props.EndGroup();
-        }
+        props.Property("Name", Name);
+        props.Property("Index", Index);
+        props.Property("Target", (int&)Target);
+        props.Nested("Material", Material);
     CH_REFLECT_END()
 };
 
