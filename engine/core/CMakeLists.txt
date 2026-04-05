@@ -1,4 +1,4 @@
-add_library(engine_core OBJECT
+add_library(engine_core ${SUBMODULE_LIB_TYPE}
         layer_stack.cpp
         profiler.cpp
         uuid.cpp
@@ -10,6 +10,7 @@ add_library(engine_core OBJECT
         dialogs.cpp
         filesystem_utils.cpp
         assets/asset_manager.cpp
+        stb_impl.cpp
 
         application.h
         imgui_layer.h
@@ -42,6 +43,7 @@ target_include_directories(engine_core PUBLIC
     ${CMAKE_SOURCE_DIR}/include/assimp/include
     ${CMAKE_BINARY_DIR}/include/assimp/include
     ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/include/stb
     ${CMAKE_SOURCE_DIR}/include/miniaudio
 )
 

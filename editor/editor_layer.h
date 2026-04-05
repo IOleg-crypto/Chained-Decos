@@ -108,11 +108,17 @@ public:
         std::string LastProjectPath = "";
         std::string LastScenePath = "";
         bool LoadLastProjectOnStartup = false;
+        bool AutoSaveEnabled = true;
+        float AutoSaveInterval = 300.0f; // 5 minutes (300 seconds)
     };
 
     void LoadConfig();
     void SaveConfig();
     const EditorLayerConfig& GetConfig() const
+    {
+        return m_Config;
+    }
+    EditorLayerConfig& GetConfig()
     {
         return m_Config;
     }
@@ -145,6 +151,8 @@ private:
 
     CommandHistory m_CommandHistory;
     ImVec2 m_ViewportSize = {1280, 720};
+    float m_AutoSaveTimer = 0.0f;
+    float m_LastAutoSaveTime = 0.0f;
 };
 } // namespace CHEngine
 

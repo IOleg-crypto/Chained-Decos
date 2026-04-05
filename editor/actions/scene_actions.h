@@ -14,6 +14,7 @@ public:
     static void Open(const std::filesystem::path& path);
     static void Save();
     static void SaveAs();
+    static void AutoSave();
     static void SetParent(Entity child, Entity parent);
 };
 } // namespace CHEngine

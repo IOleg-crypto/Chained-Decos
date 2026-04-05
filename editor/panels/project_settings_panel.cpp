@@ -1,5 +1,6 @@
 #include "project_settings_panel.h"
 #include "engine/scene/project.h"
+#include "editor_layer.h"
 #include "engine/scene/project_serializer.h"
 #include "imgui.h"
 #include "engine/core/dialogs.h"
@@ -253,6 +254,12 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             ImGui::DragFloat("Camera Speed", &config.Editor.CameraMoveSpeed, 0.1f, 0.1f, 100.0f);
             ImGui::DragFloat("Rotation Speed", &config.Editor.CameraRotationSpeed, 0.01f, 0.01f, 1.0f);
             ImGui::DragFloat("Boost Multiplier", &config.Editor.CameraBoostMultiplier, 0.1f, 1.0f, 200.0f);
+
+            ImGui::Separator();
+            ImGui::TextDisabled("Auto-Save Settings");
+            auto& editorConfig = EditorLayer::Get().GetConfig();
+            ImGui::Checkbox("Enable Auto-Save", &editorConfig.AutoSaveEnabled);
+            ImGui::DragFloat("Auto-Save Interval (s)", &editorConfig.AutoSaveInterval, 1.0f, 10.0f, 3600.0f);
         }
         else if (selectedCategory == 6) // Rendering
         {

@@ -357,6 +357,10 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
             // Phase 3: Finalize Hierarchy
             for (auto& task : hierarchyTasks)
             {
+                if (!task.entity.HasComponent<HierarchyComponent>())
+                {
+                    task.entity.AddComponent<HierarchyComponent>();
+                }
                 auto& hc = task.entity.GetComponent<HierarchyComponent>();
                 if (task.parent != 0)
                 {

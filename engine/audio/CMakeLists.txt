@@ -1,4 +1,4 @@
-add_library(engine_audio OBJECT
+add_library(engine_audio ${SUBMODULE_LIB_TYPE}
         audio.cpp
         sound_asset.cpp
         loaders/audio_loader.cpp
@@ -17,6 +17,7 @@ target_include_directories(engine_audio PUBLIC
 
 
 target_link_libraries(engine_audio PUBLIC 
+    engine_core
 )
 
 if(WIN32)

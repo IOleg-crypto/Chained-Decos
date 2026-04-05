@@ -1,4 +1,4 @@
-add_library(engine_physics OBJECT
+add_library(engine_physics ${SUBMODULE_LIB_TYPE}
         physics.cpp
         dynamics.cpp
         narrow_phase.cpp
@@ -26,6 +26,7 @@ target_include_directories(engine_physics PUBLIC
 )
 
 target_link_libraries(engine_physics PUBLIC 
+    engine_core
     EnTT::EnTT
 )
 

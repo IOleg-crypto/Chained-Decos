@@ -1,7 +1,6 @@
 #include "engine/graphics/loaders/texture_loader.h"
 #include "engine/core/log.h"
 
-#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include <filesystem>
 #include <algorithm>

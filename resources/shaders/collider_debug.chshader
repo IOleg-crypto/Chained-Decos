@@ -1,0 +1,7 @@
+VertexShader: collider_debug.vs
+FragmentShader: collider_debug.fs
+
+Uniforms:
+  - u_ViewProj
+  - u_Transform
+  - u_Color

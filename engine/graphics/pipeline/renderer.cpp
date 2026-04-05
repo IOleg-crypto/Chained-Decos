@@ -54,6 +54,7 @@ void Renderer::LoadEngineResources()
     loadShader("SkyboxCubemap", "resources/shaders/skybox_cubemap.chshader");
     loadShader("PostProcess", "resources/shaders/post_process.chshader");
     loadShader("Grid", "resources/shaders/grid.chshader");
+    loadShader("ColliderDebug", "resources/shaders/collider_debug.chshader");
 
     CH_CORE_INFO("[Renderer] LoadEngineResources done. {} shader(s) loaded.", shaders.GetNames().size());
 }
@@ -92,6 +93,7 @@ void Renderer::InternalInit()
         m_Data->FullscreenQuadVAO->SetIndexBuffer(ibo);
     }
 
+    InitializeResources();
     InitializeSkybox();
 
     // Always load engine resources after initialization
@@ -117,6 +119,7 @@ void Renderer::InternalShutdown()
         return;
     }
 
+    CleanupResources();
     CleanupSkybox();
 
     if (m_Data->Lighting.LightSSBO > 0)
@@ -621,98 +624,52 @@ void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const g
 
 void Renderer::DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, const glm::vec4& color)
 {
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    // Draw cube wires using DrawLine or a shared cube mesh
-    // For simplicity, we just use 12 DrawLine calls
-    glm::vec3 h = size * 0.5f;
-    glm::vec3 p[8] = {
-        glm::vec3(transform * glm::vec4(-h.x, -h.y, -h.z, 1)), glm::vec3(transform * glm::vec4(h.x, -h.y, -h.z, 1)),
-        glm::vec3(transform * glm::vec4(h.x, h.y, -h.z, 1)),   glm::vec3(transform * glm::vec4(-h.x, h.y, -h.z, 1)),
-        glm::vec3(transform * glm::vec4(-h.x, -h.y, h.z, 1)),  glm::vec3(transform * glm::vec4(h.x, -h.y, h.z, 1)),
-        glm::vec3(transform * glm::vec4(h.x, h.y, h.z, 1)),    glm::vec3(transform * glm::vec4(-h.x, h.y, h.z, 1))};
-    for (int i = 0; i < 4; i++)
+    auto shaderAsset = m_Data->Shaders->Get("ColliderDebug");
+    if (!shaderAsset || !shaderAsset->GetShader()) return;
+
+    auto shader = shaderAsset->GetShader();
+    shader->Bind();
+    shader->SetMatrix("u_ViewProj", m_Data->CurrentProj * m_Data->CurrentView);
+    shader->SetMatrix("u_Transform", transform * glm::scale(glm::mat4(1.0f), size));
+    shader->SetVec4("u_Color", color);
+
+    if (m_Data->Resources.WireCubeModel)
     {
-        DrawLine(p[i], p[(i + 1) % 4], color);
-        DrawLine(p[i + 4], p[((i + 1) % 4) + 4], color);
-        DrawLine(p[i], p[i + 4], color);
-    }
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-}
-
-void Renderer::DrawCapsuleWires(const glm::mat4& transform, float radius, float height, const glm::vec4& color)
-{
-    // Draw capsule: two spheres at ends + cylinder sides
-    glm::vec3 p0 = glm::vec3(transform[3]); // Position from transform
-    glm::vec3 up = glm::vec3(transform[1]); // Up vector
-    glm::vec3 p1 = p0 + up * (height - radius * 2.0f);
-
-    // Draw top and bottom circles (sphere ends)
-    glm::vec3 right = glm::normalize(glm::cross(up, glm::vec3(0, 0, 1)));
-    if (glm::length(right) < 0.001f)
-        right = glm::normalize(glm::cross(up, glm::vec3(1, 0, 0)));
-    glm::vec3 forward = glm::normalize(glm::cross(right, up));
-
-    // Draw circles at both ends
-    int segments = 16;
-    for (int i = 0; i < segments; i++)
-    {
-        float angle1 = 2.0f * 3.14159f * i / segments;
-        float angle2 = 2.0f * 3.14159f * (i + 1) / segments;
-        glm::vec3 p1_start = p0 + (glm::cos(angle1) * right + glm::sin(angle1) * forward) * radius;
-        glm::vec3 p1_end = p0 + (glm::cos(angle2) * right + glm::sin(angle2) * forward) * radius;
-        DrawLine(p1_start, p1_end, color);
-
-        glm::vec3 p2_start = p1 + (glm::cos(angle1) * right + glm::sin(angle1) * forward) * radius;
-        glm::vec3 p2_end = p1 + (glm::cos(angle2) * right + glm::sin(angle2) * forward) * radius;
-        DrawLine(p2_start, p2_end, color);
-
-        // Vertical lines connecting the circles
-        if (i % 4 == 0)
+        for (auto& mesh : m_Data->Resources.WireCubeModel->Meshes)
         {
-            DrawLine(p1_start, p2_start, color);
+            mesh.VAO->Bind();
+            glDrawElements(GL_LINES, mesh.VAO->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, 0);
         }
     }
 }
 
+void Renderer::DrawCapsuleWires(const glm::mat4& transform, float radius, float height, const glm::vec4& color)
+{
+    // Simplified: Draw a box representing the capsule for now, until we add a proper capsule mesh
+    DrawCubeWires(transform, glm::vec3(radius * 2.0f, height, radius * 2.0f), color);
+}
+
 void Renderer::DrawSphereWires(const glm::mat4& transform, float radius, const glm::vec4& color)
 {
-    // Draw wireframe sphere using 3 orthogonal circles
-    glm::vec3 center = glm::vec3(transform[3]);
-    glm::vec3 right = glm::normalize(glm::vec3(transform[0]));
-    glm::vec3 up = glm::normalize(glm::vec3(transform[1]));
-    glm::vec3 forward = glm::normalize(glm::vec3(transform[2]));
+    auto shaderAsset = m_Data->Shaders->Get("ColliderDebug");
+    if (!shaderAsset || !shaderAsset->GetShader()) return;
 
-    int segments = 24;
+    auto shader = shaderAsset->GetShader();
+    shader->Bind();
+    shader->SetMatrix("u_ViewProj", m_Data->CurrentProj * m_Data->CurrentView);
+    shader->SetMatrix("u_Transform", transform * glm::scale(glm::mat4(1.0f), glm::vec3(radius)));
+    shader->SetVec4("u_Color", color);
 
-    // Circle in XY plane
-    for (int i = 0; i < segments; i++)
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    if (m_Data->Resources.UnitSphereModel)
     {
-        float angle1 = 2.0f * 3.14159f * i / segments;
-        float angle2 = 2.0f * 3.14159f * (i + 1) / segments;
-        glm::vec3 p1 = center + (glm::cos(angle1) * right + glm::sin(angle1) * up) * radius;
-        glm::vec3 p2 = center + (glm::cos(angle2) * right + glm::sin(angle2) * up) * radius;
-        DrawLine(p1, p2, color);
+        for (auto& mesh : m_Data->Resources.UnitSphereModel->Meshes)
+        {
+            mesh.VAO->Bind();
+            glDrawElements(GL_TRIANGLES, mesh.VAO->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, 0);
+        }
     }
-
-    // Circle in XZ plane
-    for (int i = 0; i < segments; i++)
-    {
-        float angle1 = 2.0f * 3.14159f * i / segments;
-        float angle2 = 2.0f * 3.14159f * (i + 1) / segments;
-        glm::vec3 p1 = center + (glm::cos(angle1) * right + glm::sin(angle1) * forward) * radius;
-        glm::vec3 p2 = center + (glm::cos(angle2) * right + glm::sin(angle2) * forward) * radius;
-        DrawLine(p1, p2, color);
-    }
-
-    // Circle in YZ plane
-    for (int i = 0; i < segments; i++)
-    {
-        float angle1 = 2.0f * 3.14159f * i / segments;
-        float angle2 = 2.0f * 3.14159f * (i + 1) / segments;
-        glm::vec3 p1 = center + (glm::cos(angle1) * up + glm::sin(angle1) * forward) * radius;
-        glm::vec3 p2 = center + (glm::cos(angle2) * up + glm::sin(angle2) * forward) * radius;
-        DrawLine(p1, p2, color);
-    }
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextureId, const Camera3D& camera)
@@ -833,11 +790,30 @@ void Renderer::InitializeSkybox()
     m_Data->Skybox.SkyboxSphereModel->Meshes.push_back(GeometryGenerator::GenerateSphere(50.0f, 64, 64));
 }
 
+void Renderer::InitializeResources()
+{
+    m_Data->Resources.UnitCubeModel = std::make_unique<Model>();
+    m_Data->Resources.UnitCubeModel->Meshes.push_back(GeometryGenerator::GenerateUnitCube());
+
+    m_Data->Resources.UnitSphereModel = std::make_unique<Model>();
+    m_Data->Resources.UnitSphereModel->Meshes.push_back(GeometryGenerator::GenerateSphere(1.0f, 32, 32));
+
+    m_Data->Resources.WireCubeModel = std::make_unique<Model>();
+    m_Data->Resources.WireCubeModel->Meshes.push_back(GeometryGenerator::GenerateWireCube());
+}
+
 void Renderer::CleanupSkybox()
 {
     m_Data->Skybox.SkyboxCubeModel.reset();
     m_Data->Skybox.SkyboxSphereModel.reset();
 
     m_Data->Skybox.CachedCubemap.reset();
+}
+
+void Renderer::CleanupResources()
+{
+    m_Data->Resources.UnitCubeModel.reset();
+    m_Data->Resources.UnitSphereModel.reset();
+    m_Data->Resources.WireCubeModel.reset();
 }
 } // namespace CHEngine

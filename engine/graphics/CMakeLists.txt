@@ -1,4 +1,4 @@
-add_library(engine_graphics OBJECT
+add_library(engine_graphics ${SUBMODULE_LIB_TYPE}
     # Pipeline
         pipeline/renderer.cpp
         pipeline/renderer_types.cpp
@@ -87,8 +87,8 @@ target_include_directories(engine_graphics PUBLIC
     ${imguizmo_SOURCE_DIR}
 )
 
-# Graphics module depends on Core, assimp, glfw, glad, imgui
 target_link_libraries(engine_graphics PUBLIC 
+    engine_core
     imguilib 
     assimp::assimp 
     yaml-cpp

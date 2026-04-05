@@ -1,11 +1,11 @@
 #include "property_editor.h"
 #include "editor/editor_layer.h"
 #include "editor_gui.h"
+#include "ui_properties.h" // Included here to break circular dependency
 #include "engine/core/assets/asset_manager.h"
 #include "engine/graphics/assets/model_asset.h"
 #include "engine/graphics/assets/texture_asset.h"
 #include "engine/physics/physics.h"
-#include "ui_properties.h"
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene.h"
@@ -32,6 +32,76 @@ namespace CHEngine
 
 std::unordered_map<entt::id_type, PropertyEditor::ComponentMetadata> PropertyEditor::s_ComponentRegistry;
 
+// --- Template Implementations (Moved from Header) ---
+
+template <typename T>
+void PropertyEditor::DrawComponentReflection(const std::string& name, const char* icon, Entity entity)
+{
+    DrawComponentContainer<T>(name, icon, entity, [](T& comp, Entity e) {
+        UIProperties ui;
+        Properties props(ui);
+        comp.Reflect(props);
+        return props.HasChanged();
+    });
+}
+
+template <typename T>
+void PropertyEditor::DrawComponentContainer(const std::string& name, const char* icon, Entity entity, std::function<bool(T&, Entity)> drawer)
+{
+    if (entity.HasComponent<T>())
+    {
+        DrawComponentInternal(entt::type_hash<T>::value(), name, icon, entity, 
+            [&]() {
+                auto& component = entity.GetComponent<T>();
+                T componentCopy = component;
+                if (drawer(componentCopy, entity))
+                {
+                    entity.GetRegistry().template patch<T>(entity, [&componentCopy](T& comp) { comp = componentCopy; });
+                    return true;
+                }
+                return false;
+            },
+            [&]() { entity.RemoveComponent<T>(); }
+        );
+    }
+}
+
+template <typename T> 
+void PropertyEditor::Register(const std::string& name, const char* icon)
+{
+    ComponentMetadata metadata;
+    metadata.Name = name;
+    metadata.Icon = icon;
+    metadata.Draw = [name, icon](Entity e) { DrawComponentReflection<T>(name, icon, e); };
+    metadata.Add = [](Entity e) {
+        if (!e.HasComponent<T>()) {
+            e.AddComponent<T>();
+            return true;
+        }
+        return false;
+    };
+    RegisterComponent(entt::type_hash<T>::value(), metadata);
+}
+
+template <typename T>
+void PropertyEditor::RegisterCustom(const std::string& name, std::function<bool(T&, Entity)> drawer, const char* icon)
+{
+    ComponentMetadata metadata;
+    metadata.Name = name;
+    metadata.Icon = icon;
+    metadata.Draw = [name, icon, drawer](Entity e) { DrawComponentContainer<T>(name, icon, e, drawer); };
+    metadata.Add = [](Entity e) {
+        if (!e.HasComponent<T>()) {
+            e.AddComponent<T>();
+            return true;
+        }
+        return false;
+    };
+    RegisterComponent(entt::type_hash<T>::value(), metadata);
+}
+
+// --- Implementation ---
+
 void PropertyEditor::RegisterComponent(entt::id_type typeId, const ComponentMetadata& metadata)
 {
     s_ComponentRegistry[typeId] = metadata;
@@ -39,48 +109,28 @@ void PropertyEditor::RegisterComponent(entt::id_type typeId, const ComponentMeta
 
 void PropertyEditor::Init()
 {
-#define REG_HIDDEN(T, name)                                                                                            \
-    Register<T>(name, [](auto&, auto) { return false; });                                                              \
-    s_ComponentRegistry[entt::type_hash<T>::value()].Visible = false;
-
-#define REG_REFLECT(T, name)                                                                                           \
-    Register<T>(name, [](auto& component, auto entity) {                                                               \
-        CHEngine::UIProperties ui;                                                                                     \
-        CHEngine::Properties props(ui);                                                                               \
-        component.Reflect(props);                                                                                      \
-        return props.HasChanged();                                                                                     \
-    });
-
-    // Core Components
-    Register<TransformComponent>("Transform", [](auto& component, auto entity) {
-        CHEngine::UIProperties ui;
-        CHEngine::Properties props(ui);
-        component.Reflect(props);
-        if (props.HasChanged())
-        {
-            component.IsDirty = true;
-            return true;
-        }
-        return false;
-    });
+    // --- Core Components ---
+    Register<TransformComponent>("Transform", ICON_FA_ARROWS_UP_DOWN_LEFT_RIGHT);
     s_ComponentRegistry[entt::type_hash<TransformComponent>::value()].AllowAdd = false;
 
-    REG_REFLECT(TagComponent, "Tag");
-    REG_REFLECT(CameraComponent, "Camera");
-    REG_REFLECT(LightComponent, "Light");
-    REG_REFLECT(RigidBodyComponent, "RigidBody");
-    REG_REFLECT(ColliderComponent, "Collider");
-    REG_REFLECT(ModelComponent, "Model");
-    REG_REFLECT(MaterialComponent, "Materials");
-    REG_REFLECT(SpriteComponent, "Sprite");
-    REG_REFLECT(PrimitiveComponent, "Primitive");
-    REG_REFLECT(ShaderComponent, "Shader");
-    REG_REFLECT(AnimationComponent, "Animation");
-    REG_REFLECT(AudioComponent, "Audio");
-    REG_REFLECT(SpawnComponent, "Spawn Zone");
-    REG_REFLECT(PlayerComponent, "Player");
-    REG_REFLECT(SceneTransitionComponent, "Scene Transition");
-    Register<ManagedScriptComponent>("Scripts", [](auto& component, auto entity) {
+    Register<TagComponent>("Tag", ICON_FA_TAG);
+    Register<CameraComponent>("Camera", ICON_FA_VIDEO);
+    Register<LightComponent>("Light", ICON_FA_LIGHTBULB);
+    Register<RigidBodyComponent>("RigidBody", ICON_FA_CUBES);
+    Register<ColliderComponent>("Collider", ICON_FA_SHIELD);
+    Register<ModelComponent>("Model", ICON_FA_CUBE);
+    Register<MaterialComponent>("Materials", ICON_FA_DROPLET);
+    Register<SpriteComponent>("Sprite", ICON_FA_IMAGE);
+    Register<PrimitiveComponent>("Primitive", ICON_FA_SHAPES);
+    Register<ShaderComponent>("Shader", ICON_FA_CODE);
+    Register<AnimationComponent>("Animation", ICON_FA_FILM);
+    Register<AudioComponent>("Audio", ICON_FA_VOLUME_HIGH);
+    Register<SpawnComponent>("Spawn Zone", ICON_FA_LOCATION_DOT);
+    Register<PlayerComponent>("Player", ICON_FA_USER);
+    Register<SceneTransitionComponent>("Scene Transition", ICON_FA_DOOR_OPEN);
+
+    // --- Scripting ---
+    RegisterCustom<ManagedScriptComponent>("Scripts", [](auto& component, auto entity) {
         bool changed = false;
         for (auto& script : component.Scripts)
         {
@@ -122,68 +172,93 @@ void PropertyEditor::Init()
             }
         }
         return changed;
-    });
+    }, ICON_FA_FILE_CODE);
     
-    REG_REFLECT(ControlComponent, "Rect Transform");
-    s_ComponentRegistry[entt::type_hash<ControlComponent>::value()].AllowAdd = true;
+    // --- UI Components ---
+    Register<ControlComponent>("Rect Transform", ICON_FA_VECTOR_SQUARE);
+    Register<NavigationComponent>("UI Navigation", ICON_FA_ARROWS_TO_DOT);
+    Register<UIActionComponent>("UI Action", ICON_FA_BOLT);
 
-    // UI Navigation (Still custom due to entity selection)
-    Register<NavigationComponent>("UI Navigation", [](auto& component, auto entity) {
-        bool changed = false;
-        auto pb = EditorGUI::Begin();
-        pb.Bool("Default Focus", component.IsDefaultFocus);
-        
-        int up = (int)(uint32_t)component.Up;
-        int down = (int)(uint32_t)component.Down;
-        int left = (int)(uint32_t)component.Left;
-        int right = (int)(uint32_t)component.Right;
+    // --- UI Widgets ---
+    Register<ButtonControl>("Button Widget", ICON_FA_ARROW_POINTER);
+    Register<PanelControl>("Panel Widget", ICON_FA_WINDOW_MAXIMIZE);
+    Register<LabelControl>("Label Widget", ICON_FA_FONT);
+    Register<SliderControl>("Slider Widget", ICON_FA_SLIDERS);
+    Register<CheckboxControl>("Checkbox Widget", ICON_FA_SQUARE_CHECK);
+    Register<InputTextControl>("Input Text Widget", ICON_FA_PEN_TO_SQUARE);
+    Register<ComboBoxControl>("ComboBox Widget", ICON_FA_LIST_UL);
+    Register<ProgressBarControl>("ProgressBar Widget", ICON_FA_BARS_PROGRESS);
+    Register<ImageControl>("Image Widget", ICON_FA_IMAGE);
+    Register<ImageButtonControl>("Image Button Widget", ICON_FA_IMAGE);
+    Register<SeparatorControl>("Separator Widget", ICON_FA_MINUS);
+    Register<RadioButtonControl>("RadioButton Widget", ICON_FA_CIRCLE_DOT);
+    Register<ColorPickerControl>("ColorPicker Widget", ICON_FA_PALETTE);
+    Register<DragFloatControl>("DragFloat Widget", ICON_FA_ARROWS_LEFT_RIGHT);
+    Register<DragIntControl>("DragInt Widget", ICON_FA_ARROWS_LEFT_RIGHT);
+    Register<TabBarControl>("TabBar Widget", ICON_FA_TABLE_COLUMNS);
+    Register<TabItemControl>("Tab Item Widget", ICON_FA_FILE);
+    Register<CollapsingHeaderControl>("CollapsingHeader Widget", ICON_FA_ANGLE_DOWN);
+    Register<VerticalLayoutGroup>("Vertical Layout Group", ICON_FA_LAYER_GROUP);
 
-        pb.Int("Up (ID)", up).Int("Down (ID)", down).Int("Left (ID)", left).Int("Right (ID)", right);
-        if (pb.Changed)
-        {
-            component.Up = (entt::entity)up;
-            component.Down = (entt::entity)down;
-            component.Left = (entt::entity)left;
-            component.Right = (entt::entity)right;
-            changed = true;
-        }
-
-        return changed;
-    });
-
-    REG_REFLECT(UIActionComponent, "UI Action");
-
-    // UI Widgets
-#define REG_WIDGET(T, name) \
-    Register<T>(name, [](auto& component, auto entity) { \
-        CHEngine::UIProperties ui; \
-        CHEngine::Properties props(ui); \
-        component.Reflect(props); \
-        return props.HasChanged(); \
-    }); \
-    s_ComponentRegistry[entt::type_hash<T>::value()].IsWidget = true; \
-    s_ComponentRegistry[entt::type_hash<T>::value()].AllowAdd = true;
-
-    REG_WIDGET(ButtonControl, "Button Widget");
-    REG_WIDGET(PanelControl, "Panel Widget");
-    REG_WIDGET(LabelControl, "Label Widget");
-    REG_WIDGET(SliderControl, "Slider Widget");
-    REG_WIDGET(CheckboxControl, "Checkbox Widget");
-    REG_WIDGET(InputTextControl, "Input Text Widget");
-    REG_WIDGET(ComboBoxControl, "ComboBox Widget");
-    REG_WIDGET(ProgressBarControl, "ProgressBar Widget");
-    REG_WIDGET(ImageControl, "Image Widget");
-    REG_WIDGET(ImageButtonControl, "Image Button Widget");
-    REG_WIDGET(SeparatorControl, "Separator Widget");
-    REG_WIDGET(RadioButtonControl, "RadioButton Widget");
-    REG_WIDGET(ColorPickerControl, "ColorPicker Widget");
-    REG_WIDGET(DragFloatControl, "DragFloat Widget");
-    REG_WIDGET(DragIntControl, "DragInt Widget");
-    REG_WIDGET(TabBarControl, "TabBar Widget");
-    REG_WIDGET(TabItemControl, "Tab Item Widget");
-    REG_WIDGET(CollapsingHeaderControl, "CollapsingHeader Widget");
-    REG_WIDGET(VerticalLayoutGroup, "Vertical Layout Group");
+    // Mark widget metadata
+    for (auto& [id, metadata] : s_ComponentRegistry)
+    {
+        if (metadata.Name.find("Widget") != std::string::npos || metadata.Name.find("Group") != std::string::npos)
+            metadata.IsWidget = true;
+    }
 }
+
+void PropertyEditor::DrawComponentInternal(entt::id_type typeId, const std::string& name, const char* icon, 
+                                          Entity entity, std::function<bool()> contentDrawer, 
+                                          std::function<void()> remover)
+{
+    const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
+                                             ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowOverlap |
+                                             ImGuiTreeNodeFlags_FramePadding;
+
+    ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
+
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
+    float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
+    
+    // Header Background Color
+    ImGui::PushStyleColor(ImGuiCol_Header, {0.2f, 0.25f, 0.35f, 0.8f});
+    ImGui::PushStyleColor(ImGuiCol_HeaderActive, {0.3f, 0.4f, 0.6f, 1.0f});
+    ImGui::PushStyleColor(ImGuiCol_HeaderHovered, {0.25f, 0.35f, 0.5f, 1.0f});
+
+    std::string headerName = (icon ? std::string(icon) + " " : "") + name;
+    bool open = ImGui::TreeNodeEx((void*)typeId, treeNodeFlags, headerName.c_str());
+    
+    ImGui::PopStyleColor(3);
+    ImGui::PopStyleVar();
+
+    // Right-aligned settings button
+    ImGui::SameLine(contentRegionAvailable.x - lineHeight * 0.7f);
+    ImGui::PushStyleColor(ImGuiCol_Button, {0,0,0,0});
+    if (ImGui::Button(ICON_FA_GEAR, ImVec2{lineHeight, lineHeight}))
+    {
+        ImGui::OpenPopup("ComponentSettings");
+    }
+    ImGui::PopStyleColor();
+
+    if (ImGui::BeginPopup("ComponentSettings"))
+    {
+        if (ImGui::MenuItem("Remove Component"))
+            remover();
+
+        ImGui::EndPopup();
+    }
+
+    if (open)
+    {
+        EditorGUI::BeginPropertyGrid();
+        contentDrawer();
+        EditorGUI::EndPropertyGrid();
+        ImGui::TreePop();
+        ImGui::Spacing();
+    }
+}
+
 
 void PropertyEditor::DrawEntityProperties(CHEngine::Entity entity)
 {
@@ -210,21 +285,11 @@ void PropertyEditor::DrawEntityProperties(CHEngine::Entity entity)
             if (s_ComponentRegistry.find(id) != s_ComponentRegistry.end())
             {
                 auto& metadata = s_ComponentRegistry[id];
-                if (!metadata.Visible)
-                {
-                    continue;
-                }
+                if (!metadata.Visible) continue;
 
                 // Logic to reduce clutter
-                if (isUI && id == entt::type_hash<TransformComponent>::value())
-                {
-                    continue;
-                }
-
-                if (hasWidget && id == entt::type_hash<ControlComponent>::value())
-                {
-                    continue;
-                }
+                if (isUI && id == entt::type_hash<TransformComponent>::value()) continue;
+                if (hasWidget && id == entt::type_hash<ControlComponent>::value()) continue;
 
                 ImGui::PushID((int)id);
                 metadata.Draw(entity);
@@ -234,153 +299,41 @@ void PropertyEditor::DrawEntityProperties(CHEngine::Entity entity)
     }
 }
 
-void PropertyEditor::DrawTag(CHEngine::Entity entity)
+void PropertyEditor::DrawEntityHeader(CHEngine::Entity entity)
 {
     if (entity.HasComponent<TagComponent>())
     {
         auto& tag = entity.GetComponent<TagComponent>().Tag;
+        
+        // Entity Icon and Label
+        ImGui::BeginGroup();
+        ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]);
+        ImGui::TextColored({0.4f, 0.6f, 0.9f, 1.0f}, ICON_FA_CUBE " Entity");
+        ImGui::PopFont();
+        
         char buffer[256];
         memset(buffer, 0, sizeof(buffer));
         strncpy(buffer, tag.c_str(), sizeof(buffer) - 1);
 
-        ImGui::Text("Tag");
-        ImGui::SameLine();
+        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 120.0f);
         if (ImGui::InputText("##Tag", buffer, sizeof(buffer)))
         {
             tag = std::string(buffer);
         }
-    }
-}
-
-static bool DrawTextureSlot(const char* label, std::string& path)
-{
-    bool changed = false;
-    float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
-    ImVec2 slotSize = { 48, 48 };
-
-    ImGui::PushID(label);
-    
-    // Label column if we are not in a table (fallback)
-    if (ImGui::GetColumnsCount() <= 1 && !ImGui::GetCurrentTable())
-    {
-        ImGui::Text("%s", label);
-        ImGui::SameLine(100.0f);
-    }
-
-    // Texture Slot Rectangle
-    ImGui::BeginGroup();
-    
-    ImTextureID texID = (ImTextureID)(intptr_t)0; // Placeholder
-    bool hasTex = false;
-
-    if (!path.empty())
-    {
-        auto textureAsset = AssetManager::Get().Get<TextureAsset>(path);
-        if (textureAsset && textureAsset->GetTexture() && textureAsset->GetTexture()->IsReady())
-        {
-            texID = (ImTextureID)(intptr_t)textureAsset->GetTexture()->GetRendererID();
-            hasTex = true;
-        }
-    }
-
-    // Draw background placeholder if no texture
-    if (!hasTex)
-    {
-        ImVec2 p = ImGui::GetCursorScreenPos();
-        ImGui::GetWindowDrawList()->AddRectFilled(p, {p.x + slotSize.x, p.y + slotSize.y}, ImGui::GetColorU32(ImGuiCol_FrameBg));
-        ImGui::GetWindowDrawList()->AddRect(p, {p.x + slotSize.x, p.y + slotSize.y}, ImGui::GetColorU32(ImGuiCol_Border));
+        ImGui::PopItemWidth();
         
-        // Draw a tiny '+' in the middle
-        float center_x = p.x + slotSize.x * 0.5f;
-        float center_y = p.y + slotSize.y * 0.5f;
-        ImGui::GetWindowDrawList()->AddText({center_x - 5, center_y - 7}, ImGui::GetColorU32(ImGuiCol_TextDisabled), ICON_FA_PLUS);
-    }
-
-    ImGui::PushStyleColor(ImGuiCol_Button, {0, 0, 0, 0});
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, {1, 1, 1, 0.05f});
-    if (ImGui::ImageButton("##slot", texID, slotSize, {0, 1}, {1, 0}))
-    {
-        // Maybe open a custom picker? For now just browse
-        std::vector<FileDialogFilter> filters = {{"Images", "png,jpg,tga,bmp"}};
-        auto result = Dialogs::OpenFile(filters);
-        if (result)
+        ImGui::SameLine();
+        if (ImGui::Button(ICON_FA_PLUS " Add Component", ImVec2(110, 0)))
         {
-            std::filesystem::path p = *result;
-            auto projectPath = Project::GetAssetDirectory();
-            std::filesystem::path relativePath = std::filesystem::relative(p, projectPath);
-            path = relativePath.empty() ? p.string() : relativePath.string();
-            changed = true;
+            ImGui::OpenPopup("AddComponent");
         }
+        
+        DrawAddComponentPopup(entity);
+        ImGui::EndGroup();
+        
+        ImGui::Spacing();
     }
-    ImGui::PopStyleColor(2);
-
-    if (ImGui::BeginDragDropTarget())
-    {
-        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
-        {
-            const char* dropPath = (const char*)payload->Data;
-            std::filesystem::path p = dropPath;
-            auto projectPath = Project::GetAssetDirectory();
-            std::filesystem::path relativePath = std::filesystem::relative(p, projectPath);
-            path = relativePath.empty() ? p.string() : relativePath.string();
-            changed = true;
-        }
-        ImGui::EndDragDropTarget();
-    }
-
-    // Hover tooltip
-    if (hasTex)
-    {
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::BeginTooltip();
-            ImGui::Image(texID, {256, 256}, {0, 1}, {1, 0});
-            ImGui::Text("%s", path.c_str());
-            ImGui::EndTooltip();
-        }
-    }
-
-    // Filename and Clear button overlay
-    ImGui::SameLine();
-    ImGui::BeginGroup();
-    std::string filename = path.empty() ? "None" : std::filesystem::path(path).filename().string();
-    if (filename.length() > 15) filename = filename.substr(0, 12) + "...";
-    
-    ImGui::TextDisabled("%s", filename.c_str());
-    
-    if (!path.empty())
-    {
-        ImGui::PushStyleColor(ImGuiCol_Button, {0.3f, 0.1f, 0.1f, 1.0f});
-        if (ImGui::Button(ICON_FA_XMARK " Clear"))
-        {
-            path = "";
-            changed = true;
-        }
-        ImGui::PopStyleColor();
-    }
-    ImGui::EndGroup();
-
-    ImGui::EndGroup();
-    ImGui::PopID();
-
-    return changed;
 }
-
-static std::string GetTexturePathFromID(uint32_t id, const std::vector<std::shared_ptr<CHEngine::TextureAsset>>& textures)
-{
-    if (id == 0)
-        return "";
-
-    for (const auto& tex : textures)
-    {
-        if (tex->GetID() == id)
-            return tex->GetPath();
-    }
-    return "";
-}
-
-
-
 
 void PropertyEditor::DrawAddComponentPopup(CHEngine::Entity entity)
 {
@@ -392,35 +345,16 @@ void PropertyEditor::DrawAddComponentPopup(CHEngine::Entity entity)
 
         for (auto& [id, metadata] : s_ComponentRegistry)
         {
-            if (!metadata.AllowAdd)
-            {
-                continue;
-            }
-
-            // Filtering: Only show widgets if the entity is a UI entity
-            // (or if it's the ControlComponent itself which can be added to any transform)
-            if (metadata.IsWidget && !isUIEntity)
-            {
-                continue;
-            }
-
-            // [FIX] Constraint: Do not allow adding UI components/widgets in 3D (Environment3D) scenes
-            if (is3DScene)
-            {
-                if (metadata.IsWidget || id == entt::type_hash<ControlComponent>::value())
-                {
-                    continue;
-                }
-            }
+            if (!metadata.AllowAdd) continue;
+            if (metadata.IsWidget && !isUIEntity) continue;
+            if (is3DScene && (metadata.IsWidget || id == entt::type_hash<ControlComponent>::value())) continue;
 
             auto& registry = entity.GetRegistry();
             auto* storage = registry.storage(id);
-            if (storage && storage->contains(entity))
-            {
-                continue;
-            }
+            if (storage && storage->contains(entity)) continue;
 
-            if (ImGui::MenuItem(metadata.Name.c_str()))
+            std::string label = (metadata.Icon ? std::string(metadata.Icon) + " " : "") + metadata.Name;
+            if (ImGui::MenuItem(label.c_str()))
             {
                 metadata.Add(entity);
                 ImGui::CloseCurrentPopup();

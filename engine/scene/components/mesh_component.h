@@ -58,6 +58,8 @@ struct ModelComponent
     {
     }
 
+    void SyncMaterials(AssetHandle handle);
+
     CH_REFLECT_BEGIN(ModelComponent)
         props.Handle("ModelHandle", ModelHandle);
         props.File("ModelPath", ModelPath, "obj,gltf,glb,iqm,m3d");
