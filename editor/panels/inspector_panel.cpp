@@ -28,7 +28,7 @@ void InspectorPanel::OnImGuiRender(bool readOnly)
 
     ImGui::Begin(m_Name.c_str(), &m_IsOpen);
 
-    if (m_SelectedEntity && m_SelectedEntity.GetRegistry().ctx().get<Scene*>() != m_Context.get())
+    if (m_SelectedEntity && (!m_SelectedEntity.IsValid() || m_SelectedEntity.GetRegistry().ctx().get<Scene*>() != m_Context.get()))
     {
         m_SelectedEntity = {};
     }
@@ -57,6 +57,12 @@ void InspectorPanel::OnEvent(Event& e)
     });
 }
 
+void InspectorPanel::SetContext(const std::shared_ptr<Scene>& context)
+{
+    Panel::SetContext(context);
+    m_SelectedEntity = {};
+}
+
 void InspectorPanel::DrawComponents(Entity entity, bool readOnly)
 {
     ImGui::PushID((uint32_t)entity);
@@ -64,23 +70,10 @@ void InspectorPanel::DrawComponents(Entity entity, bool readOnly)
     if (entity.HasComponent<IDComponent>())
     {
         uint64_t uuid = (uint64_t)entity.GetComponent<IDComponent>().ID;
-        ImGui::Text("UUID: %llu", uuid);
+        ImGui::TextDisabled("UUID: %llu", uuid);
     }
 
-    PropertyEditor::DrawTag(entity);
-
-    ImGui::SameLine();
-    ImGui::PushItemWidth(-1);
-    if (!readOnly && ImGui::Button("Add Component"))
-    {
-        ImGui::OpenPopup("AddComponent");
-    }
-    
-    if (!readOnly)
-    {
-        PropertyEditor::DrawAddComponentPopup(entity);
-    }
-    ImGui::PopItemWidth();
+    PropertyEditor::DrawEntityHeader(entity);
 
     // Delegate all component drawing logic to PropertyEditor registry
     PropertyEditor::DrawEntityProperties(entity);

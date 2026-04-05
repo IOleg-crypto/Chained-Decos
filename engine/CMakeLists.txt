@@ -18,13 +18,17 @@ else()
     set(ENGINE_LIB_TYPE STATIC)
 endif()
 
+# We use OBJECT libraries for sub-modules to handle circular dependencies (e.g. Core <-> Scene)
+# Unified through Unity Build and PCH for maximum compilation speed.
+set(SUBMODULE_LIB_TYPE OBJECT)
+
 add_subdirectory(core)
 add_subdirectory(graphics)
 add_subdirectory(physics)
 add_subdirectory(audio)
 add_subdirectory(scene)
 
-# Create the final engine facade library that stitches all objects together
+# Create the final engine facade library that links all sub-modules together
 add_library(engine ${ENGINE_LIB_TYPE}
     $<TARGET_OBJECTS:engine_core>
     $<TARGET_OBJECTS:engine_graphics>

@@ -38,7 +38,9 @@ struct LightComponent
         {
             props.Property("Radius", Radius);
             
-            if (Type == LightType::Spot)
+            // Always serialize Spot fields to avoid losing values on save/load.
+            // Only skip display in UI mode.
+            if (props.GetMode() != CHEngine::ReflectionMode::UI || Type == LightType::Spot)
             {
                 props.Property("Inner Cutoff", InnerCutoff);
                 props.Property("Outer Cutoff", OuterCutoff);

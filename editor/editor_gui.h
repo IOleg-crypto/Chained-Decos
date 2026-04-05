@@ -47,7 +47,8 @@ public:
     static bool ActionButton(const char* icon, const char* label);
 
     // --- File Property ---
-    static bool Property(const char* label, std::string& value, const std::string& filter);
+    static bool FileProperty(const char* label, std::string& value, const char* filter = nullptr);
+    static bool FileProperty(const char* label, std::string& path, uint32_t textureId, const char* filter = nullptr);
 
     static bool DrawVec2(const char* label, glm::vec2& values, float resetValue = 0.0f);
     static bool DrawVec3(const char* label, glm::vec3& values, float resetValue = 0.0f);
@@ -81,9 +82,9 @@ struct PropertyBuilder
         Changed |= EditorGUI::Property(label, value, multiline);
         return *this;
     }
-    PropertyBuilder& File(const char* label, std::string& value, const std::string& filter = "")
+    PropertyBuilder& File(const char* label, std::string& value, const char* filter = nullptr)
     {
-        Changed |= EditorGUI::Property(label, value, filter);
+        Changed |= EditorGUI::FileProperty(label, value, filter);
         return *this;
     }
     PropertyBuilder& Color(const char* label, CHEngine::Color& value)

@@ -66,6 +66,14 @@ void EditorLayer::LoadConfig()
             {
                 m_Config.LoadLastProjectOnStartup = node["LoadLastProjectOnStartup"].as<bool>(false);
             }
+            if (node["AutoSaveEnabled"])
+            {
+                m_Config.AutoSaveEnabled = node["AutoSaveEnabled"].as<bool>(true);
+            }
+            if (node["AutoSaveInterval"])
+            {
+                m_Config.AutoSaveInterval = node["AutoSaveInterval"].as<float>(300.0f);
+            }
         }
     } catch (const std::exception& e)
     {
@@ -81,6 +89,8 @@ void EditorLayer::SaveConfig()
     out << YAML::Key << "LastProjectPath" << YAML::Value << m_Config.LastProjectPath;
     out << YAML::Key << "LastScenePath" << YAML::Value << m_Config.LastScenePath;
     out << YAML::Key << "LoadLastProjectOnStartup" << YAML::Value << m_Config.LoadLastProjectOnStartup;
+    out << YAML::Key << "AutoSaveEnabled" << YAML::Value << m_Config.AutoSaveEnabled;
+    out << YAML::Key << "AutoSaveInterval" << YAML::Value << m_Config.AutoSaveInterval;
     out << YAML::EndMap;
     out << YAML::EndMap;
 
@@ -214,6 +224,17 @@ void EditorLayer::OnUpdate(Timestep ts)
         else
         {
             scene->OnUpdateEditor(ts);
+
+            // Auto-save logic
+            if (m_Config.AutoSaveEnabled)
+            {
+                m_AutoSaveTimer += ts;
+                if (m_AutoSaveTimer >= m_Config.AutoSaveInterval)
+                {
+                    SceneActions::AutoSave();
+                    m_AutoSaveTimer = 0.0f;
+                }
+            }
         }
 
         if (Input::IsKeyPressed(Key::F5))

@@ -1,6 +1,6 @@
 # Chained Engine - Compiler Settings
 # Extracted from root CMakeLists.txt for modularity
-
+set(CMAKE_DEBUG_POSTFIX "")
 # Compiler-specific settings
 if(MSVC)
     # MSVC-specific settings
@@ -17,6 +17,8 @@ if(MSVC)
         # Dead Code Elimination: Function-Level Linking
         $<$<CONFIG:Release>:/Gy>
     )
+
+    
     
     # Strip unused functions in Release
     add_link_options($<$<CONFIG:Release>:/OPT:REF> $<$<CONFIG:Release>:/OPT:ICF>)
@@ -136,7 +138,7 @@ if(WIN32)
 endif()
 
 # Optimized Build Settings
-option(ENABLE_UNITY_BUILD "Enable Unity Builds for faster compilation" OFF)
+option(ENABLE_UNITY_BUILD "Enable Unity Builds for faster compilation" ON)
 option(ENABLE_PCH "Enable Precompiled Headers for faster compilation" ON)
 option(ENABLE_LTO "Enable Link-Time Optimization (IPO) for Release configurations" ON)
 option(ENABLE_COVERAGE "Enable Code Coverage (GCC/Clang only)" OFF)
@@ -161,8 +163,8 @@ function(apply_engine_optimizations target_name)
     endif()
 
     if(ENABLE_LTO)
-        # Disable LTO for MinGW for now as it has issues with PCH/Plugins in this environment
-        if(MINGW)
+        # Disable LTO for MinGW/GCC in Debug as it's extremely slow
+        if(MINGW OR (CMAKE_BUILD_TYPE STREQUAL "Debug"))
             set(ipo_supported OFF)
         else()
             include(CheckIPOSupported)
@@ -171,8 +173,13 @@ function(apply_engine_optimizations target_name)
 
         if(ipo_supported)
             set_property(TARGET ${target_name} PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
-        elseif(ipo_output)
-            message(WARNING "IPO/LTO is not supported by the current compiler: ${ipo_output}")
+        elseif(ipo_output AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+            message(STATUS "IPO/LTO is not supported or disabled for this configuration: ${ipo_output}")
         endif()
+    endif()
+
+    # Enable Unity Build for the target if global option is ON
+    if(ENABLE_UNITY_BUILD)
+        set_target_properties(${target_name} PROPERTIES UNITY_BUILD ON)
     endif()
 endfunction()

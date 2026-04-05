@@ -50,7 +50,7 @@ public:
 
     bool File(const char* name, std::string& path, const char* extensions = nullptr)
     {
-        bool changed = EditorGUI::Property(name, path, extensions);
+        bool changed = EditorGUI::FileProperty(name, path, extensions);
         m_Changed |= changed;
         return changed;
     }

@@ -2,8 +2,10 @@
 #define ENGINE_PCH_H
 
 // 1. Assertion setup (must be before any headers that might use them like GLM or EnTT)
-#undef assert
 #include <cassert>
+
+#define GLM_ENABLE_EXPERIMENTAL
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
 // Fallback for assert if it's missing from <cassert> in this environment
 #ifndef assert
@@ -31,10 +33,8 @@
     #define GLM_ASSERT(x) CH_ASSERT_IMPL(x)
 #endif
 
-// 2. Engine base and types (contains GLM_ENABLE_EXPERIMENTAL etc)
-#include "engine/core/base.h"
-
-// 3. Standard Library
+// 2. Standard Library
+#include "engine/core/ch_math.h"
 #include <memory>
 #include <vector>
 #include <string>
