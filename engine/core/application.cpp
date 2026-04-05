@@ -217,7 +217,19 @@ void Application::Run()
         ExecuteMainThreadQueue();
 
         // 1. Time Tracking
-        Timestep time = (float)glfwGetTime();
+        float time = (float)glfwGetTime();
+        
+        // FPS Capping
+        int targetFPS = m_Window->GetTargetFramesPerSecond();
+        if (targetFPS > 0)
+        {
+            float minFrameTime = 1.0f / (float)targetFPS;
+            while (time - m_LastFrameTime < minFrameTime)
+            {
+                time = (float)glfwGetTime();
+            }
+        }
+
         m_DeltaTime = Timestep(time - m_LastFrameTime);
         m_LastFrameTime = time;
 

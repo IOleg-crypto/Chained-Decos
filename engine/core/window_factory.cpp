@@ -7,7 +7,7 @@ namespace CHEngine
 
 std::unique_ptr<Window> Window::Create(const WindowProperties& properties)
 {
-    // Currently, all supported platforms (Windows, Linux) use GLFW
+    // Currently, all supported platforms (Windows, Linux, MacOS) use GLFW
     return std::make_unique<GlfwWindow>(properties);
 }
 
