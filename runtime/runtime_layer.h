@@ -35,6 +35,8 @@ private:
     void SetupBrandingAndIcon();
     void LoadInitialScene();
     void EnsureRuntimeFramebuffer(uint32_t width, uint32_t height);
+    bool IsSceneReadyToStart() const;
+    void DrawLoadingOverlay();
 
     std::optional<Camera3D> GetActiveCamera();
 
@@ -46,6 +48,10 @@ private:
     std::string m_ProjectPath;
     float m_BoostUploadsTimer = 0.0f;
     bool m_IsBoostingUploads = false;
+    bool m_RuntimeStarted = false;
+    bool m_IsSceneLoading = false;
+    float m_LoadingOverlayElapsed = 0.0f;
+    float m_LoadingOverlayMinDuration = 0.35f;
 
     std::shared_ptr<Framebuffer> m_HDRFramebuffer;
 };
