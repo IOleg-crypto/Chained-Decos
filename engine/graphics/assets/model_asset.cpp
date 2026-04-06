@@ -51,6 +51,7 @@ std::vector<glm::mat4> ModelAsset::GetBoneMatrices(int animationIndex, int frame
     return finalMatrices;
 }
 
+
 void ModelAsset::OnLoaded()
 {
     if (!m_HasPendingData || !m_PendingData.isValid)
@@ -322,11 +323,18 @@ uint32_t ModelAsset::GetEmbeddedTextureID(const std::string& path) const
     {
         return 0;
     }
-  size_t index = std::stoul(path.substr(1));
+    try
+    {
+        size_t index = std::stoul(path.substr(1));
         if (index < m_EmbeddedTextures.size() && m_EmbeddedTextures[index])
         {
             return m_EmbeddedTextures[index]->GetRendererID();
         }
+    }
+    catch (...)
+    {
+    }
+    return 0;
 }
 
 } // namespace CHEngine

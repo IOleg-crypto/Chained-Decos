@@ -276,31 +276,54 @@ void UIRenderer::DrawCanvas(Scene* scene, const ImVec2& referencePosition, const
         ImVec2 screenPos = {rect.x * scaleFactor, rect.y * scaleFactor};
         ImVec2 size      = {rect.width * scaleFactor, rect.height * scaleFactor};
 
-        ImGui::SetCursorScreenPos(screenPos);
-        ImGui::BeginGroup();
-        ImGui::PushID((int)id);
-
-        bool itemHandled = RenderUIComponent(entity, screenPos, size, editMode);
-
-        if (editMode)
+        // Apply clipping for child elements to their parent bounds
+        bool needsClipPop = false;
+        if (entity.HasComponent<HierarchyComponent>())
         {
-            if (!itemHandled)
+            auto parentID = entity.GetComponent<HierarchyComponent>().Parent;
+            if (parentID != entt::null && rectCache.count(parentID))
             {
-                ImGui::SetCursorScreenPos(screenPos);
-                ImGui::InvisibleButton("##DragZone", size);
-            }
-            if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
-            {
-                ImVec2 delta = ImGui::GetIO().MouseDelta;
-                control.Transform.OffsetMin.x += delta.x / scaleFactor;
-                control.Transform.OffsetMax.x += delta.x / scaleFactor;
-                control.Transform.OffsetMin.y += delta.y / scaleFactor;
-                control.Transform.OffsetMax.y += delta.y / scaleFactor;
+                UIRect parentRect = rectCache[parentID];
+                if (parentRect.width > 1.0f && parentRect.height > 1.0f)
+                {
+                    ImVec2 clipMin = {parentRect.x * scaleFactor, parentRect.y * scaleFactor};
+                    ImVec2 clipMax = {(parentRect.x + parentRect.width) * scaleFactor,
+                                      (parentRect.y + parentRect.height) * scaleFactor};
+                    ImGui::PushClipRect(clipMin, clipMax, true);
+                    needsClipPop = true;
+                }
             }
         }
 
-        ImGui::PopID();
-        ImGui::EndGroup();
+        if (size.x > 0.0f && size.y > 0.0f)
+        {
+            ImGui::SetCursorScreenPos(screenPos);
+            ImGui::BeginGroup();
+            ImGui::PushID((int)id);
+
+            RenderUIComponent(entity, screenPos, size, editMode);
+
+            if (editMode)
+            {
+                ImGui::SetCursorScreenPos(screenPos);
+                ImGui::InvisibleButton("##DragZone", size);
+
+                if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+                {
+                    ImVec2 delta = ImGui::GetIO().MouseDelta;
+                    control.Transform.OffsetMin.x += delta.x / scaleFactor;
+                    control.Transform.OffsetMax.x += delta.x / scaleFactor;
+                    control.Transform.OffsetMin.y += delta.y / scaleFactor;
+                    control.Transform.OffsetMax.y += delta.y / scaleFactor;
+                }
+            }
+
+            ImGui::PopID();
+            ImGui::EndGroup();
+        }
+
+        if (needsClipPop)
+            ImGui::PopClipRect();
     }
 }
 
