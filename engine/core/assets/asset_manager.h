@@ -51,6 +51,10 @@ public:
         return std::static_pointer_cast<T>(LoadAsset(path, T::GetStaticType()));
     }
 
+    [[nodiscard]] size_t GetPendingFinalizeCount() const;
+    [[nodiscard]] size_t GetLoadingAssetCount() const;
+    [[nodiscard]] bool HasBackgroundWork() const;
+
     // Update тепер не знає про типи!
     void Update();
 
