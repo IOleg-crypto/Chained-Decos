@@ -1,5 +1,6 @@
 #include "scene_serializer.h"
 #include "component_serializer.h"
+#include "hierarchy_serializer.h"
 #include "components.h"
 #include "engine/core/assets/asset_manager.h"
 #include "engine/core/log.h"
@@ -351,7 +352,7 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
 
                 // Hierarchy task
                 HierarchyTask task;
-                ComponentSerializer::Get().DeserializeHierarchyTask(deserializedEntity, entity, task);
+                HierarchySerializer::DeserializeTask(deserializedEntity, entity, task);
                 if (task.entity)
                 {
                     hierarchyTasks.push_back(task);

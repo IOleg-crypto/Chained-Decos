@@ -3,9 +3,13 @@
 
 #include "editor_gui.h"
 #include "engine/core/reflection.h"
+#include "scripting/scriptengine.h"
 #include "imgui/IconsFontAwesome6.h"
 #include "imgui.h"
 #include "imgui_internal.h"
+
+#include <algorithm>
+#include <string_view>
 
 namespace CHEngine
 {
@@ -74,6 +78,52 @@ public:
             if (meta.Hint == PropertyMeta::WidgetHint::Slider && meta.MaxValue > meta.MinValue)
             {
                 changed = ImGui::SliderInt(name, &value, (int)meta.MinValue, (int)meta.MaxValue);
+            }
+            else
+            {
+                changed = EditorGUI::Property(name, value);
+            }
+        }
+        else if constexpr (std::is_same_v<T, std::string>)
+        {
+            if (meta.Hint == PropertyMeta::WidgetHint::Enum && std::string_view(name) == "ClassName")
+            {
+                std::vector<std::string> options;
+                options.emplace_back("-- Select script --");
+
+                for (const auto& [scriptName, scriptType] : ScriptEngine::Get().GetScriptClasses())
+                {
+                    (void)scriptType;
+                    options.emplace_back(scriptName);
+                }
+
+                if (options.size() > 2)
+                {
+                    std::sort(options.begin() + 1, options.end());
+                }
+
+                int currentIndex = 0;
+                for (size_t i = 1; i < options.size(); ++i)
+                {
+                    if (options[i] == value)
+                    {
+                        currentIndex = (int)i;
+                        break;
+                    }
+                }
+
+                std::vector<const char*> optionNames;
+                optionNames.reserve(options.size());
+                for (const auto& option : options)
+                {
+                    optionNames.push_back(option.c_str());
+                }
+
+                if (ImGui::Combo(name, &currentIndex, optionNames.data(), (int)optionNames.size()))
+                {
+                    value = (currentIndex > 0 && currentIndex < (int)options.size()) ? options[currentIndex] : std::string();
+                    changed = true;
+                }
             }
             else
             {

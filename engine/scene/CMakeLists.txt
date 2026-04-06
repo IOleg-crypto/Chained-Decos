@@ -4,6 +4,7 @@ add_library(engine_scene ${SUBMODULE_LIB_TYPE}
         project_serializer.cpp
         scene_serializer.cpp
         component_serializer.cpp
+        hierarchy_serializer.cpp
         prefab_serializer.cpp
         scene_camera.cpp
         editor_camera.cpp
@@ -17,6 +18,7 @@ add_library(engine_scene ${SUBMODULE_LIB_TYPE}
         project_serializer.h
         scene_serializer.h
         component_serializer.h
+        hierarchy_serializer.h
         prefab_serializer.h
         scene_camera.h
         editor_camera.h
