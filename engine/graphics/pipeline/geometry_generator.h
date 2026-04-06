@@ -22,6 +22,9 @@ namespace CHEngine
 
         // Generates a fullscreen quad or a simple plane quad
         static Mesh GenerateQuad(float size);
+
+         // Generate a cube mesh with given dimensions (for procedural cube generation)
+        static Mesh GenerateCube(const glm::vec3& dimensions);
     };
 }
 

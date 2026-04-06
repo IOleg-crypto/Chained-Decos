@@ -84,6 +84,18 @@ ImFont* UIFontRegistry::GetFont(const std::string& relativeName, float pixelSize
         return nullptr; // caller should use ImGui default
     }
 
+    // Avoid mutating ImGui font atlas at runtime. If a custom font wasn't preloaded
+    // before the first frame, caller should gracefully fallback to default font.
+    if (ImGui::GetFrameCount() > 0)
+    {
+        auto it = m_Fonts.find(MakeKey(relativeName, (pixelSize > 0.0f) ? pixelSize : 16.0f));
+        if (it != m_Fonts.end())
+        {
+            return it->second;
+        }
+        return nullptr;
+    }
+
     float size = (pixelSize > 0.0f) ? pixelSize : 16.0f;
     std::string key = MakeKey(relativeName, size);
 

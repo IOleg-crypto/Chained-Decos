@@ -446,9 +446,12 @@ void EditorLayer::OnEvent(Event& e)
             {
                 if (m_RuntimeScene)
                 {
+                    SceneScripting::OnRuntimeStop(m_RuntimeScene.get());
+                    SceneScripting::Stop(m_RuntimeScene.get());
                     m_RuntimeScene->OnRuntimeStop();
                 }
                 m_RuntimeScene = newScene;
+                SceneScripting::OnRuntimeStart(m_RuntimeScene.get());
                 m_RuntimeScene->OnRuntimeStart();
                 CH_CORE_INFO("Play Mode: Transitioned to scene {}", finalPath);
             }
@@ -522,6 +525,7 @@ void EditorLayer::SetSceneState(SceneState state)
         if (m_RuntimeScene)
         {
             EditorContext::SetSceneState(SceneState::Play);
+            SceneScripting::OnRuntimeStart(m_RuntimeScene.get());
             m_RuntimeScene->OnRuntimeStart();
         }
         else
@@ -539,6 +543,7 @@ void EditorLayer::SetSceneState(SceneState state)
         CH_CORE_INFO("Editor: Play Mode Stopped");
         if (m_RuntimeScene)
         {
+            SceneScripting::OnRuntimeStop(m_RuntimeScene.get());
             SceneScripting::Stop(m_RuntimeScene.get());
             m_RuntimeScene->OnRuntimeStop();
             m_RuntimeScene = nullptr;

@@ -35,6 +35,138 @@ DebugSettings:
   DrawSpawnZones: true
   CollisionWireframeMode: 0
 Entities:
+  - Entity: 2002
+    TagComponent:
+      Tag: info_project
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ControlComponent:
+      Rect Transform:
+        Position: [-31.6659088, -132.238693]
+        Size: [374.510468, 86.5034485]
+        Anchor Min: [0.5, 0.5]
+        Anchor Max: [0.5, 0.5]
+        Offset Min: [-218.921143, -175.490417]
+        Offset Max: [155.589325, -88.986969]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      Z Order: 0
+      Active: true
+      Hidden: false
+    LabelControl:
+      Text: "Project: Chained Decos"
+      Style:
+        Font Name: Default
+        Font Size: 21.7250004
+        Text Color: [255, 255, 255, 255]
+        Shadow: false
+        Letter Spacing: 1.26699996
+        Line Height: 1.28600001
+        H Align: 1
+        V Align: 1
+      Auto Size: false
+  - Entity: 2001
+    TagComponent:
+      Tag: title_info
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ControlComponent:
+      Rect Transform:
+        Position: [-616.812073, -385.069275]
+        Size: [414.535522, 75.6689148]
+        Anchor Min: [0.5, 0.5]
+        Anchor Max: [0.5, 0.5]
+        Offset Min: [-824.079834, -422.903748]
+        Offset Max: [-409.544312, -347.234833]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      Z Order: 0
+      Active: true
+      Hidden: false
+    LabelControl:
+      Text: Information
+      Style:
+        Font Name: Default
+        Font Size: 18
+        Text Color: [255, 255, 255, 255]
+        Shadow: false
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Auto Size: false
+  - Entity: 2004
+    TagComponent:
+      Tag: info_text_3
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ControlComponent:
+      Rect Transform:
+        Position: [-31.8438187, -211.002258]
+        Size: [408.050293, 67.5622864]
+        Anchor Min: [0.5, 0.5]
+        Anchor Max: [0.5, 0.5]
+        Offset Min: [-235.868973, -244.783401]
+        Offset Max: [172.181335, -177.221115]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      Z Order: 0
+      Active: true
+      Hidden: false
+    LabelControl:
+      Text: "Engine: Chained Engine"
+      Style:
+        Font Name: Default
+        Font Size: 18
+        Text Color: [255, 255, 255, 255]
+        Shadow: false
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Auto Size: false
+  - Entity: 2005
+    TagComponent:
+      Tag: info_text_4
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ControlComponent:
+      Rect Transform:
+        Position: [-26.5849457, -50.6350212]
+        Size: [386.973297, 85.3969803]
+        Anchor Min: [0.5, 0.5]
+        Anchor Max: [0.5, 0.5]
+        Offset Min: [-220.071594, -93.3335114]
+        Offset Max: [166.901703, -7.93653107]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      Z Order: 0
+      Active: true
+      Hidden: false
+    LabelControl:
+      Text: "Developer: Oleg (IOleg-crypto)"
+      Style:
+        Font Name: Default
+        Font Size: 18
+        Text Color: [255, 255, 255, 255]
+        Shadow: false
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Auto Size: false
   - Entity: 2006
     TagComponent:
       Tag: back_button
@@ -43,16 +175,16 @@ Entities:
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     SceneTransitionComponent:
-      TargetScenePath: scenes/main_menu.chscene
+      TargetScenePath: scenes/start_menu.chscene
       Triggered: false
     ControlComponent:
       Rect Transform:
-        Position: [-519.439087, 533.698181]
-        Size: [100.000183, 39.9997559]
+        Position: [-571.321289, 312.388367]
+        Size: [245.918732, 80.5326843]
         Anchor Min: [0.5, 0.5]
         Anchor Max: [0.5, 0.5]
-        Offset Min: [-569.439209, 513.698303]
-        Offset Max: [-469.439026, 553.698059]
+        Offset Min: [-694.28064, 272.122009]
+        Offset Max: [-448.361908, 352.654694]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -87,168 +219,3 @@ Entities:
     ManagedScriptComponent:
       Scripts:
         - ClassName: ChainedDecos.Scripts.SceneScript
-  - Entity: 2005
-    TagComponent:
-      Tag: info_text_4
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ControlComponent:
-      Rect Transform:
-        Position: [-46.8513985, 6.11108351]
-        Size: [100.000175, 40.0000954]
-        Anchor Min: [0.5, 0.5]
-        Anchor Max: [0.5, 0.5]
-        Offset Min: [-96.8514862, -13.8889647]
-        Offset Max: [3.14869094, 26.1111317]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      Z Order: 0
-      Active: true
-      Hidden: false
-    LabelControl:
-      Text: "Developer: Oleg (IOleg-crypto)"
-      Style:
-        Font Name: Default
-        Font Size: 18
-        Text Color: [255, 255, 255, 255]
-        Shadow: false
-        Letter Spacing: 1
-        Line Height: 1.20000005
-        H Align: 1
-        V Align: 1
-      Auto Size: false
-  - Entity: 2004
-    TagComponent:
-      Tag: info_text_3
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ControlComponent:
-      Rect Transform:
-        Position: [-44.8143501, 193.516342]
-        Size: [99.9999771, 39.9999695]
-        Anchor Min: [0.5, 0.5]
-        Anchor Max: [0.5, 0.5]
-        Offset Min: [-94.8143387, 173.516357]
-        Offset Max: [5.18563652, 213.516327]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      Z Order: 0
-      Active: true
-      Hidden: false
-    LabelControl:
-      Text: "Engine: Chained Engine"
-      Style:
-        Font Name: Default
-        Font Size: 18
-        Text Color: [255, 255, 255, 255]
-        Shadow: false
-        Letter Spacing: 1
-        Line Height: 1.20000005
-        H Align: 1
-        V Align: 1
-      Auto Size: false
-  - Entity: 2003
-    TagComponent:
-      Tag: info_text_2
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ControlComponent:
-      Rect Transform:
-        Position: [-42.331955, -160.181503]
-        Size: [100.000031, 40]
-        Anchor Min: [0.5, 0.5]
-        Anchor Max: [0.5, 0.5]
-        Offset Min: [-92.3319702, -180.181503]
-        Offset Max: [7.6680603, -140.181503]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      Z Order: 0
-      Active: true
-      Hidden: false
-    LabelControl:
-      Text: "Version: 0.1a (Tech Demo)"
-      Style:
-        Font Name: Default
-        Font Size: 18
-        Text Color: [255, 255, 255, 255]
-        Shadow: false
-        Letter Spacing: 1
-        Line Height: 1.20000005
-        H Align: 1
-        V Align: 1
-      Auto Size: false
-  - Entity: 2002
-    TagComponent:
-      Tag: info_text_1
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ControlComponent:
-      Rect Transform:
-        Position: [4.81372833, -298.423706]
-        Size: [214.000046, 32.9999695]
-        Anchor Min: [0.5, 0.5]
-        Anchor Max: [0.5, 0.5]
-        Offset Min: [-102.186295, -314.923706]
-        Offset Max: [111.813751, -281.923737]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      Z Order: 0
-      Active: true
-      Hidden: false
-    LabelControl:
-      Text: "Project: Chained Decos"
-      Style:
-        Font Name: Default
-        Font Size: 21.7250004
-        Text Color: [255, 255, 255, 255]
-        Shadow: false
-        Letter Spacing: 1.26699996
-        Line Height: 1.28600001
-        H Align: 1
-        V Align: 1
-      Auto Size: false
-  - Entity: 2001
-    TagComponent:
-      Tag: title_info
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ControlComponent:
-      Rect Transform:
-        Position: [-38.0017815, -428.844849]
-        Size: [99.9999619, 39.999939]
-        Anchor Min: [0.5, 0.5]
-        Anchor Max: [0.5, 0.5]
-        Offset Min: [-88.0017624, -448.844818]
-        Offset Max: [11.9981976, -408.844879]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      Z Order: 0
-      Active: true
-      Hidden: false
-    LabelControl:
-      Text: Information
-      Style:
-        Font Name: Default
-        Font Size: 18
-        Text Color: [255, 255, 255, 255]
-        Shadow: false
-        Letter Spacing: 1
-        Line Height: 1.20000005
-        H Align: 1
-        V Align: 1
-      Auto Size: false
