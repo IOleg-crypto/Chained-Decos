@@ -230,6 +230,28 @@ void UIRenderer::DrawCanvas(Scene* scene, const ImVec2& referencePosition, const
     ImVec2 refSize   = (referenceSize.x > 0) ? referenceSize : ImGui::GetIO().DisplaySize;
     auto&  registry  = scene->GetRegistry();
 
+    // Reset one-shot button press flags once per ImGui frame per registry.
+    const int frameNumber = ImGui::GetFrameCount();
+    static int s_LastResetFrame = -1;
+    static const entt::registry* s_LastResetRegistry = nullptr;
+    if (s_LastResetFrame != frameNumber || s_LastResetRegistry != &registry)
+    {
+        auto buttonView = registry.view<ButtonControl>();
+        for (entt::entity id : buttonView)
+        {
+            buttonView.get<ButtonControl>(id).PressedThisFrame = false;
+        }
+
+        auto imageButtonView = registry.view<ImageButtonControl>();
+        for (entt::entity id : imageButtonView)
+        {
+            imageButtonView.get<ImageButtonControl>(id).PressedThisFrame = false;
+        }
+
+        s_LastResetFrame = frameNumber;
+        s_LastResetRegistry = &registry;
+    }
+
     const CanvasSettings& canvas = scene->GetSettings().Canvas;
     float scaleFactor = 1.0f;
     if (canvas.ScaleMode == CanvasScaleMode::ScaleWithScreenSize &&
@@ -249,6 +271,11 @@ void UIRenderer::DrawCanvas(Scene* scene, const ImVec2& referencePosition, const
     std::map<entt::entity, UIRect> rectCache;
     float dt = ImGui::GetIO().DeltaTime;
 
+    // Clip all UI rendering to canvas bounds first.
+    ImVec2 canvasClipMin = referencePosition;
+    ImVec2 canvasClipMax = {referencePosition.x + refSize.x, referencePosition.y + refSize.y};
+    ImGui::PushClipRect(canvasClipMin, canvasClipMax, true);
+
     for (entt::entity id : SortUIEntities(registry))
     {
         Entity entity(id, &registry);
@@ -258,7 +285,6 @@ void UIRenderer::DrawCanvas(Scene* scene, const ImVec2& referencePosition, const
         // Animate interactable controls
         if (entity.HasComponent<ButtonControl>()) {
             auto& btn = entity.GetComponent<ButtonControl>();
-            btn.PressedThisFrame = false;
             UpdateStyleAnimation(btn.Style, btn.IsHovered, btn.IsDown, dt);
         }
         if (entity.HasComponent<ImageControl>()) {
@@ -281,10 +307,29 @@ void UIRenderer::DrawCanvas(Scene* scene, const ImVec2& referencePosition, const
         if (entity.HasComponent<HierarchyComponent>())
         {
             auto parentID = entity.GetComponent<HierarchyComponent>().Parent;
-            if (parentID != entt::null && rectCache.count(parentID))
+            if (parentID != entt::null && registry.valid(parentID))
             {
-                UIRect parentRect = rectCache[parentID];
-                if (parentRect.width > 1.0f && parentRect.height > 1.0f)
+                UIRect parentRect{};
+                bool hasParentRect = false;
+
+                auto it = rectCache.find(parentID);
+                if (it != rectCache.end())
+                {
+                    parentRect = it->second;
+                    hasParentRect = true;
+                }
+                else
+                {
+                    Entity parentEntity{parentID, &registry};
+                    if (parentEntity.HasComponent<ControlComponent>())
+                    {
+                        parentRect = CalculateEntityRect(parentEntity, canvasRect, rectCache);
+                        rectCache[parentID] = parentRect;
+                        hasParentRect = true;
+                    }
+                }
+
+                if (hasParentRect && parentRect.width > 1.0f && parentRect.height > 1.0f)
                 {
                     ImVec2 clipMin = {parentRect.x * scaleFactor, parentRect.y * scaleFactor};
                     ImVec2 clipMax = {(parentRect.x + parentRect.width) * scaleFactor,
@@ -325,6 +370,8 @@ void UIRenderer::DrawCanvas(Scene* scene, const ImVec2& referencePosition, const
         if (needsClipPop)
             ImGui::PopClipRect();
     }
+
+    ImGui::PopClipRect();
 }
 
 } // namespace CHEngine
