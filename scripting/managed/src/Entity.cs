@@ -363,4 +363,34 @@ public class SceneTransitionComponent : Component
     public string? TargetScene => GetTargetScene(Entity.ID);
 }
 
+public class RPGStatsComponent : Component
+{
+#pragma warning disable 0649
+    internal static unsafe delegate*<ulong, int> RPGStatsComponent_GetLevel_Ptr;
+    internal static unsafe delegate*<ulong, int, void> RPGStatsComponent_SetLevel_Ptr;
+    internal static unsafe delegate*<ulong, float> RPGStatsComponent_GetHealth_Ptr;
+    internal static unsafe delegate*<ulong, float, void> RPGStatsComponent_SetHealth_Ptr;
+    internal static unsafe delegate*<ulong, int> RPGStatsComponent_GetGold_Ptr;
+    internal static unsafe delegate*<ulong, int, void> RPGStatsComponent_SetGold_Ptr;
+#pragma warning restore 0649
+
+    public int Level { get { unsafe { return RPGStatsComponent_GetLevel_Ptr(Entity.ID); } } set { unsafe { RPGStatsComponent_SetLevel_Ptr(Entity.ID, value); } } }
+    public float Health { get { unsafe { return RPGStatsComponent_GetHealth_Ptr(Entity.ID); } } set { unsafe { RPGStatsComponent_SetHealth_Ptr(Entity.ID, value); } } }
+    public int Gold { get { unsafe { return RPGStatsComponent_GetGold_Ptr(Entity.ID); } } set { unsafe { RPGStatsComponent_SetGold_Ptr(Entity.ID, value); } } }
+}
+
+public class SkillComponent : Component
+{
+#pragma warning disable 0649
+    internal static unsafe delegate*<ulong, bool> SkillComponent_IsUnlocked_Ptr;
+    internal static unsafe delegate*<ulong, bool, void> SkillComponent_SetUnlocked_Ptr;
+#pragma warning restore 0649
+
+    public bool IsUnlocked { get { unsafe { return SkillComponent_IsUnlocked_Ptr(Entity.ID); } } set { unsafe { SkillComponent_SetUnlocked_Ptr(Entity.ID, value); } } }
+}
+
+public class InventoryComponent : Component
+{
+}
+
 } // namespace CHEngine

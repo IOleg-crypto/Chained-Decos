@@ -12,6 +12,9 @@ public abstract class Script
     /// <summary>The entity this script is attached to.</summary>
     public Entity Entity { get; private set; } = null!;
 
+    public T? GetComponent<T>() where T : Component, new() => Entity.GetComponent<T>();
+    public bool HasComponent<T>() where T : Component, new() => Entity.HasComponent<T>();
+
 #pragma warning disable 0649
     internal static unsafe delegate*<ulong, IntPtr, IntPtr, IntPtr, IntPtr, IntPtr, IntPtr, void> RegisterLifecyclePointers;
 #pragma warning restore 0649

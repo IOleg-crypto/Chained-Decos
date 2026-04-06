@@ -37,6 +37,8 @@ add_library(engine ${ENGINE_LIB_TYPE}
     $<TARGET_OBJECTS:engine_scene>
 )
 
+target_compile_definitions(engine PRIVATE CH_ENGINE_BUILD)
+
 # MSVC needs exported symbols to generate the .lib import library
 set_target_properties(engine PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
 if(WIN32)
