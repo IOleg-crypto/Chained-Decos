@@ -421,7 +421,7 @@ void SceneHierarchyPanel::DrawContextMenu()
     if (m_Context->GetSettings().Mode != BackgroundMode::Environment3D)
     {
         if (ImGui::BeginMenu("Control"))
-    {
+        {
         if (ImGui::BeginMenu("Basic"))
         {
             if (ImGui::MenuItem("Panel"))
@@ -533,8 +533,6 @@ void SceneHierarchyPanel::DrawContextMenu()
 
             ImGui::EndMenu();
         }
-
-        ImGui::EndMenu();
     }
 }
 } // namespace CHEngine

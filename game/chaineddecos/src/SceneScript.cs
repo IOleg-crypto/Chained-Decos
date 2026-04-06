@@ -14,7 +14,7 @@ public class SceneScript : Script
             string? targetScene = trans?.TargetScene;
             if (string.IsNullOrEmpty(targetScene))
             {
-                targetScene = "scenes/main_menu.chscene";
+                targetScene = "scenes/start_menu.chscene";
                 Log.Warn("scenescript: No TargetScenePath found, using fallback: " + targetScene);
             }
 

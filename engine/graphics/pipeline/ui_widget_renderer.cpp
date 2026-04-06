@@ -55,10 +55,16 @@ void PushTextStyle(const TextStyle& text, StyleCounts& c)
     c.vars++;
 
     const std::string& fontName = text.FontName;
+
+    // Default/empty uses regular ImGui font to avoid runtime font atlas mutations.
     if (!fontName.empty() && fontName != "Default")
     {
         ImFont* font = UIRenderer::Get().GetFontRegistry().GetFont(fontName, text.FontSize);
-        if (font) { ImGui::PushFont(font); c.fonts++; }
+        if (font)
+        {
+            ImGui::PushFont(font);
+            c.fonts++;
+        }
     }
 }
 

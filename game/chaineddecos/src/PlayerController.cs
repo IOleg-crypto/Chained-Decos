@@ -9,6 +9,7 @@ public class PlayerController : Script
     public float MovementSpeed = 15.0f;
     public float JumpForce    = 10.0f;
     public float Gravity      = 20.0f;   // Units per second^2 (should match physics config)
+    public string MenuScene   = "scenes/start_menu.chscene";
 
     public override void OnCreate()
     {
@@ -17,7 +18,17 @@ public class PlayerController : Script
 
     public override void OnUpdate(float deltaTime)
     {
-        float currentSpeed = MovementSpeed;
+        // Allow leaving gameplay back to menu with a single key press.
+        if (Input.IsKeyPressed(Key.Escape))
+        {
+            Log.Info("PlayerController: Escape pressed, returning to menu: " + MenuScene);
+            Scene.LoadScene(MenuScene);
+            return;
+        }
+
+        float currentSpeed = MovementSpeed * HeroProgression.MoveSpeedMultiplier;
+        float effectiveJumpForce = JumpForce * HeroProgression.JumpMultiplier;
+
         if (Input.IsKeyDown(Key.LeftShift))
             currentSpeed *= 2.0f;
 
@@ -71,7 +82,7 @@ public class PlayerController : Script
         // --- Jump ---
         if (Input.IsKeyPressed(Key.Space) && rb.IsGrounded)
         {
-            velocity.Y = JumpForce;
+            velocity.Y = effectiveJumpForce;
             Log.Info("C# Jump triggered!");
         }
 

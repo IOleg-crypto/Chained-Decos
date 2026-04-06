@@ -137,10 +137,46 @@ UIRect UIRenderer::CalculateEntityRect(Entity entity, const UIRect& canvasRect, 
 
 UIRect UIRenderer::GetEntityRect(Entity entity, const ImVec2& viewportSize, const ImVec2& viewportPos)
 {
-    if (!entity || !entity.HasComponent<ControlComponent>()) return {0, 0, 0, 0};
+    if (!entity || !entity.HasComponent<ControlComponent>())
+    {
+        return {0, 0, 0, 0};
+    }
+
+    float scaleFactor = 1.0f;
+    auto* sceneCtx = entity.GetRegistry().ctx().find<Scene*>();
+    if (sceneCtx && *sceneCtx)
+    {
+        const CanvasSettings& canvasSettings = (*sceneCtx)->GetSettings().Canvas;
+        if (canvasSettings.ScaleMode == CanvasScaleMode::ScaleWithScreenSize &&
+            canvasSettings.ReferenceResolution.x > 0.0f && canvasSettings.ReferenceResolution.y > 0.0f)
+        {
+            const float scaleX = viewportSize.x / canvasSettings.ReferenceResolution.x;
+            const float scaleY = viewportSize.y / canvasSettings.ReferenceResolution.y;
+            scaleFactor = scaleX * (1.0f - canvasSettings.MatchWidthOrHeight) +
+                          scaleY * canvasSettings.MatchWidthOrHeight;
+
+            if (scaleFactor <= 0.0001f)
+            {
+                scaleFactor = 1.0f;
+            }
+        }
+    }
+
     std::map<entt::entity, UIRect> empty;
-    UIRect canvas = {viewportPos.x, viewportPos.y, viewportSize.x, viewportSize.y};
-    return CalculateEntityRect(entity, canvas, empty);
+    UIRect virtualCanvas = {
+        viewportPos.x / scaleFactor,
+        viewportPos.y / scaleFactor,
+        viewportSize.x / scaleFactor,
+        viewportSize.y / scaleFactor,
+    };
+
+    UIRect virtualRect = CalculateEntityRect(entity, virtualCanvas, empty);
+    return {
+        virtualRect.x * scaleFactor,
+        virtualRect.y * scaleFactor,
+        virtualRect.width * scaleFactor,
+        virtualRect.height * scaleFactor,
+    };
 }
 
 // ---------------------------------------------------------------------------

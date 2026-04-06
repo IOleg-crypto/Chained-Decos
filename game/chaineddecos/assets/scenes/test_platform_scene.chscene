@@ -1980,10 +1980,7 @@ Entities:
               Value: 11.8999996
         - ClassName: chaineddecos.scripts.gamehud
         - ClassName: chaineddecos.scripts.spawnzone
-        - ClassName: chaineddecos.scripts.gamehud
         - ClassName: chaineddecos.scripts.playerfall
-        - ClassName: chaineddecos.scripts.spawnzone
-        - ClassName: ""
   - Entity: 2241149956455545874
     TagComponent:
       Tag: rail#3d_copy
@@ -2143,7 +2140,6 @@ Entities:
             - Name: LookSensitivity
               Type: 1
               Value: 6.19999981
-        - ClassName: ""
   - Entity: 7094686869644715316
     TagComponent:
       Tag: arena_two
