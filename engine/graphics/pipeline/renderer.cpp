@@ -578,51 +578,93 @@ void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float 
 void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const glm::vec3& position, float size,
                              const glm::vec4& tint)
 {
-    // Custom billboard rendering in OpenGL
-    // We can use a simple quad and rotate it to face the camera
-    auto unlitShader = m_Data->Shaders->Exists("Unlit") ? m_Data->Shaders->Get("Unlit") : nullptr;
-    if (unlitShader && unlitShader->GetShader())
+    auto unlitShaderAsset = m_Data->Shaders->Exists("Unlit") ? m_Data->Shaders->Get("Unlit") : nullptr;
+    if (!unlitShaderAsset || !unlitShaderAsset->GetShader() || textureId == 0)
     {
-        unlitShader->GetShader()->Bind();
+        return;
+    }
 
-        // Calculate billboard transform
-        glm::vec3 look = glm::normalize(camera.Position - position);
-        glm::vec3 right = glm::normalize(glm::cross(camera.Up, look));
-        glm::vec3 up = glm::cross(look, right);
+    auto shader = unlitShaderAsset->GetShader();
+    shader->Bind();
 
-        glm::mat4 model = glm::mat4(1.0f);
-        model[0] = glm::vec4(right * size, 0.0f);
-        model[1] = glm::vec4(up * size, 0.0f);
-        model[2] = glm::vec4(look * size, 0.0f);
-        model[3] = glm::vec4(position, 1.0f);
+    glm::vec3 look = glm::normalize(camera.Position - position);
+    glm::vec3 right = glm::cross(camera.Up, look);
+    if (glm::length(right) < 0.0001f)
+    {
+        right = glm::vec3(1.0f, 0.0f, 0.0f);
+    }
+    else
+    {
+        right = glm::normalize(right);
+    }
+    glm::vec3 up = glm::normalize(glm::cross(look, right));
 
-        glm::mat4 mvp = m_Data->CurrentProj * m_Data->CurrentView * model;
-        unlitShader->GetShader()->SetMatrix("u_ViewProjection", mvp);
-        unlitShader->GetShader()->SetVec4("u_Color", tint);
+    glm::mat4 model = glm::mat4(1.0f);
+    model[0] = glm::vec4(right * size, 0.0f);
+    model[1] = glm::vec4(up * size, 0.0f);
+    model[2] = glm::vec4(look * size, 0.0f);
+    model[3] = glm::vec4(position, 1.0f);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, textureId);
-        unlitShader->GetShader()->SetInt("u_Texture", 0);
+    shader->SetMatrix("mvp", m_Data->CurrentProj * m_Data->CurrentView * model);
+    shader->SetMatrix("matModel", model);
+    shader->SetMatrix("matNormal", glm::transpose(glm::inverse(model)));
+    shader->SetVec3("viewPos", camera.Position);
+    shader->SetVec4("colDiffuse", tint);
+    shader->SetVec4("colEmissive", glm::vec4(0.0f));
+    shader->SetInt("useTexture", 1);
+    shader->SetInt("useEmissiveTexture", 0);
+    shader->SetFloat("emissiveIntensity", 0.0f);
+    shader->SetInt("useSkinning", 0);
 
-        // Draw quad (Reuse planeVAO from DrawInfiniteGrid or create a localized one)
-        static uint32_t quadVAO = 0;
-        if (quadVAO == 0)
-        {
-            float vertices[] = {-0.5f, -0.5f, 0, 0, 0, 0.5f, -0.5f, 0, 1, 0, 0.5f, 0.5f, 0, 1, 1, -0.5f, 0.5f, 0, 0, 1};
-            uint32_t vbo;
-            glGenVertexArrays(1, &quadVAO);
-            glGenBuffers(1, &vbo);
-            glBindVertexArray(quadVAO);
-            glBindBuffer(GL_ARRAY_BUFFER, vbo);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-            glEnableVertexAttribArray(0);
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), 0);
-            glEnableVertexAttribArray(1);
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-        }
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textureId);
+    shader->SetInt("texture0", 0);
 
+    const GLboolean blendWasEnabled = glIsEnabled(GL_BLEND);
+    const GLboolean cullWasEnabled = glIsEnabled(GL_CULL_FACE);
+    if (!blendWasEnabled)
+    {
+        glEnable(GL_BLEND);
+    }
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    if (cullWasEnabled)
+    {
+        glDisable(GL_CULL_FACE);
+    }
+
+    static uint32_t quadVAO = 0;
+    static uint32_t quadVBO = 0;
+    if (quadVAO == 0)
+    {
+        const float vertices[] = {
+            -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
+             0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+             0.5f,  0.5f, 0.0f, 1.0f, 1.0f,
+            -0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
+        };
+
+        glGenVertexArrays(1, &quadVAO);
+        glGenBuffers(1, &quadVBO);
         glBindVertexArray(quadVAO);
-        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), 0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    }
+
+    glBindVertexArray(quadVAO);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    glBindVertexArray(0);
+
+    if (cullWasEnabled)
+    {
+        glEnable(GL_CULL_FACE);
+    }
+    if (!blendWasEnabled)
+    {
+        glDisable(GL_BLEND);
     }
 }
 

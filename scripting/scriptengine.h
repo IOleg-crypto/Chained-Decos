@@ -88,6 +88,7 @@ private:
 
 private:
     Scene* m_ActiveScene = nullptr;
+    std::filesystem::path m_CoralDirectory;
     Coral::HostInstance m_Host;
     Coral::AssemblyLoadContext m_AppAssemblyContext;
     Coral::ManagedAssembly* m_AppAssembly = nullptr;

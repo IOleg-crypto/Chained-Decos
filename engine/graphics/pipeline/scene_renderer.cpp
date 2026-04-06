@@ -113,7 +113,10 @@ void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float near
 
         RenderModels(scene, camera, nearClip, farClip, timestep, options);
         RenderDebug(scene, camera, options);
-        RenderEditorIcons(scene, camera);
+        if (options.ShowEditorIcons)
+        {
+            RenderEditorIcons(scene, camera);
+        }
     }
     Renderer::Get().EndScene();
 
@@ -794,52 +797,120 @@ void SceneRenderer::DrawSpawnDebug(entt::registry& registry, const SceneRenderOp
 
 void SceneRenderer::RenderEditorIcons(Scene* scene, const Camera3D& camera)
 {
-    // Render special entity icons (cameras, lights, etc.)
     auto& registry = scene->GetRegistry();
+    auto& assetManager = AssetManager::Get();
     const glm::vec3 activeCameraPos = camera.Position;
 
-    // Draw camera icons
+    auto tryLoadIcon = [&](const char* path, unsigned int& cachedId) {
+        if (cachedId != 0)
+        {
+            return;
+        }
+
+        auto tex = assetManager.Get<TextureAsset>(path);
+        if (tex && tex->IsReady() && tex->GetTexture())
+        {
+            cachedId = tex->GetTexture()->GetRendererID();
+        }
+    };
+
+    tryLoadIcon("engine/resources/icons/camera_icon.png", m_EditorResources.CameraIconId);
+    tryLoadIcon("engine/resources/icons/light_bulb.png", m_EditorResources.LightIconId);
+    tryLoadIcon("engine/resources/icons/leaf_icon.png", m_EditorResources.SpawnIconId);
+
+    auto iconSizeFromDistance = [&](const glm::vec3& worldPos, float minSize, float maxSize, float scale) {
+        const float distanceToCamera = glm::distance(worldPos, activeCameraPos);
+        return std::clamp(distanceToCamera * scale, minSize, maxSize);
+    };
+
+    // Camera icons
     auto cameraView = registry.view<TransformComponent, CameraComponent>();
     for (auto entity : cameraView)
     {
-        auto [transform, camera] = cameraView.get<TransformComponent, CameraComponent>(entity);
-        const glm::vec3 iconPos = glm::vec3(transform.WorldTransform[3]);
+        auto [transform, cameraComp] = cameraView.get<TransformComponent, CameraComponent>(entity);
+        (void)cameraComp;
 
-        // If we draw an icon around the active camera itself, wire edges intersect the near plane
-        // and appear as long cyan stripes on screen.
+        const glm::vec3 iconPos = glm::vec3(transform.WorldTransform[3]);
         if (glm::distance(iconPos, activeCameraPos) < 0.25f)
         {
             continue;
         }
 
-        glm::vec4 cameraColor = glm::vec4(0.0f, 1.0f, 1.0f, 1.0f); // Cyan
-        glm::vec3 iconSize = glm::vec3(0.1f);
-        Renderer::Get().DrawCubeWires(transform.WorldTransform, iconSize, cameraColor);
+        const float iconSize = iconSizeFromDistance(iconPos, 0.10f, 0.70f, 0.040f);
+        const glm::vec4 cameraTint = glm::vec4(0.65f, 0.95f, 1.0f, 0.95f);
+        if (m_EditorResources.CameraIconId != 0)
+        {
+            Renderer::Get().DrawBillboard(camera, m_EditorResources.CameraIconId, iconPos, iconSize, cameraTint);
+        }
+        else
+        {
+            Renderer::Get().DrawCubeWires(transform.WorldTransform, glm::vec3(iconSize * 0.35f), cameraTint);
+        }
     }
 
-    // Draw light icons
-    auto lightView = registry.view<TransformComponent, LightComponent>();
-    for (auto entity : lightView)
+    // Light icons
+    if (scene->GetSettings().DebugFlags.DrawLights)
     {
-        auto [transform, light] = lightView.get<TransformComponent, LightComponent>(entity);
-        glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f); // Yellow
+        auto lightView = registry.view<TransformComponent, LightComponent>();
+        for (auto entity : lightView)
+        {
+            auto [transform, light] = lightView.get<TransformComponent, LightComponent>(entity);
+            const glm::vec3 iconPos = glm::vec3(transform.WorldTransform[3]);
+            const float iconSize = iconSizeFromDistance(iconPos, 0.10f, 0.85f, 0.045f);
 
-        if (light.Type == LightType::Directional)
-        {
-            // Draw arrow for directional light
-            glm::vec3 pos = glm::vec3(transform.WorldTransform[3]);
-            glm::vec3 dir = glm::normalize(glm::vec3(transform.WorldTransform[2])) * 0.5f;
-            Renderer::Get().DrawLine(pos, pos + dir, lightColor);
+            glm::vec4 lightTint = {
+                light.LightColor.r / 255.0f,
+                light.LightColor.g / 255.0f,
+                light.LightColor.b / 255.0f,
+                0.95f,
+            };
+
+            if (m_EditorResources.LightIconId != 0)
+            {
+                Renderer::Get().DrawBillboard(camera, m_EditorResources.LightIconId, iconPos, iconSize, lightTint);
+                if (light.Type == LightType::Directional)
+                {
+                    glm::vec3 dir = glm::normalize(glm::vec3(transform.WorldTransform[2])) * 0.45f;
+                    Renderer::Get().DrawLine(iconPos, iconPos + dir, lightTint);
+                }
+            }
+            else if (light.Type == LightType::Directional)
+            {
+                glm::vec3 dir = glm::normalize(glm::vec3(transform.WorldTransform[2])) * 0.5f;
+                Renderer::Get().DrawLine(iconPos, iconPos + dir, lightTint);
+            }
+            else if (light.Type == LightType::Point)
+            {
+                Renderer::Get().DrawSphereWires(transform.WorldTransform, light.Radius * 0.1f, lightTint);
+            }
+            else if (light.Type == LightType::Spot)
+            {
+                Renderer::Get().DrawSphereWires(transform.WorldTransform, light.Radius * 0.05f, lightTint);
+            }
         }
-        else if (light.Type == LightType::Point)
+    }
+
+    // Spawn icons
+    if (scene->GetSettings().DebugFlags.DrawSpawnZones)
+    {
+        auto spawnView = registry.view<TransformComponent, SpawnComponent>();
+        for (auto entity : spawnView)
         {
-            // Draw sphere for point light
-            Renderer::Get().DrawSphereWires(transform.WorldTransform, light.Radius * 0.1f, lightColor);
-        }
-        else if (light.Type == LightType::Spot)
-        {
-            // Draw cone for spot light
-            Renderer::Get().DrawSphereWires(transform.WorldTransform, light.Radius * 0.05f, lightColor);
+            auto [transform, spawn] = spawnView.get<TransformComponent, SpawnComponent>(entity);
+            if (!spawn.IsActive)
+            {
+                continue;
+            }
+
+            const glm::vec3 iconPos =
+                glm::vec3(transform.WorldTransform * glm::vec4(spawn.SpawnPoint, 1.0f));
+            const float iconSize = iconSizeFromDistance(iconPos, 0.09f, 0.60f, 0.036f);
+            const glm::vec4 spawnTint = glm::vec4(1.0f, 0.75f, 0.20f, 0.95f);
+
+            if (m_EditorResources.SpawnIconId != 0)
+            {
+                Renderer::Get().DrawBillboard(camera, m_EditorResources.SpawnIconId, iconPos, iconSize, spawnTint);
+            }
         }
     }
 }

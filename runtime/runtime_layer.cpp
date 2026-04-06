@@ -18,6 +18,9 @@
 #include "imgui.h"
 #include "scripting/scene_scripting.h"
 #include "scripting/scriptengine.h"
+#include <algorithm>
+#include <array>
+#include <cctype>
 #include <filesystem>
 
 
@@ -42,19 +45,8 @@ void RuntimeLayer::OnAttach()
     }
 
     ImGuiIO& io = ImGui::GetIO();
-    float fontSize = 16.0f;
-
-    // --- Default UI Font (Lato) ---
-    auto& assetManager = AssetManager::Get();
-    std::string fontPath = assetManager.ResolvePath("resources/font/lato/lato-bold.ttf");
-    if (std::filesystem::exists(fontPath))
-    {
-        io.Fonts->AddFontFromFileTTF(fontPath.c_str(), fontSize);
-    }
-    else
-    {
-        io.Fonts->AddFontDefault();
-    }
+    io.FontDefault = io.Fonts->AddFontDefault();
+    CH_CORE_INFO("RuntimeLayer: Using built-in ImGui default font.");
 
     // Register project-specific fonts into ImGui's atlas.
     // Must happen AFTER all AddFontFromFileTTF() calls and BEFORE the atlas is built by rlImGui.
@@ -73,11 +65,12 @@ void RuntimeLayer::OnDetach()
 {
     if (m_Scene)
     {
-        SceneScripting::Stop(m_Scene.get());
         if (m_RuntimeStarted)
         {
+            SceneScripting::OnRuntimeStop(m_Scene.get());
             m_Scene->OnRuntimeStop();
         }
+        SceneScripting::Stop(m_Scene.get());
     }
 
     m_RuntimeStarted = false;
@@ -99,6 +92,7 @@ void RuntimeLayer::OnUpdate(Timestep ts)
 
         if (IsSceneReadyToStart() && m_LoadingOverlayElapsed >= m_LoadingOverlayMinDuration)
         {
+            SceneScripting::OnRuntimeStart(m_Scene.get());
             m_Scene->OnRuntimeStart();
             m_RuntimeStarted = true;
             m_IsSceneLoading = false;
@@ -173,6 +167,7 @@ void RuntimeLayer::OnRender(Timestep ts)
         {
             options.TargetFPS = project->GetConfig().Animation.TargetFPS;
         }
+        options.ShowEditorIcons = false;
 
         m_HDRFramebuffer->Bind();
         Renderer::Get().Clear(bgColor);
@@ -272,21 +267,46 @@ void RuntimeLayer::OnEvent(Event& e)
 //-----------------------------------------------------------------------------
 void RuntimeLayer::LoadScene(const std::string& path)
 {
-    std::filesystem::path scenePath = path;
+    std::string normalizedPath = path;
+    normalizedPath.erase(
+        normalizedPath.begin(),
+        std::find_if(normalizedPath.begin(), normalizedPath.end(), [](unsigned char ch) {
+            return !std::isspace(ch);
+        }));
+    normalizedPath.erase(
+        std::find_if(normalizedPath.rbegin(), normalizedPath.rend(), [](unsigned char ch) {
+            return !std::isspace(ch);
+        }).base(),
+        normalizedPath.end());
+
+    std::replace(normalizedPath.begin(), normalizedPath.end(), '\\', '/');
+    if (normalizedPath.rfind("assets/", 0) == 0)
+    {
+        normalizedPath = normalizedPath.substr(7);
+    }
+
+    if (normalizedPath.empty())
+    {
+        CH_CORE_WARN("RuntimeLayer: Ignoring empty scene path request.");
+        return;
+    }
+
+    std::filesystem::path scenePath = normalizedPath;
     if (scenePath.is_relative() && Project::GetActive())
     {
-        scenePath = Project::GetAssetPath(path);
+        scenePath = Project::GetAssetPath(scenePath);
     }
 
     std::string finalPath = scenePath.string();
 
     if (m_Scene)
     {
-        SceneScripting::Stop(m_Scene.get());
         if (m_RuntimeStarted)
         {
+            SceneScripting::OnRuntimeStop(m_Scene.get());
             m_Scene->OnRuntimeStop();
         }
+        SceneScripting::Stop(m_Scene.get());
     }
 
     m_RuntimeStarted = false;

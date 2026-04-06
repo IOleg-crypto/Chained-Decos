@@ -198,4 +198,36 @@ namespace CHEngine
         mesh.TriangleCount = 2;
         return mesh;
     }
+
+    Mesh GeometryGenerator::GenerateCube(const glm::vec3 &dimensions)
+    {
+        float w = dimensions.x * 0.5f;
+        float h = dimensions.y * 0.5f;
+        float d = dimensions.z * 0.5f;
+
+        float vertices[] = {
+            -w,-h, d,  w,-h, d,  w, h, d, -w, h, d,
+            -w,-h,-d, -w, h,-d,  w, h,-d,  w,-h,-d,
+            -w, h,-d, -w, h, d,  w, h, d,  w, h,-d,
+            -w,-h,-d,  w,-h,-d,  w,-h, d, -w,-h, d,
+             w,-h,-d,  w, h,-d,  w, h, d,  w,-h, d,
+            -w,-h,-d, -w,-h, d, -w, h, d, -w, h,-d
+        };
+
+        auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
+        vbo->SetLayout({{ShaderDataType::Float3, "a_Position"}});
+        auto vao = VertexArray::Create();
+        vao->AddVertexBuffer(vbo);
+        
+        uint32_t indices[36];
+        for(int i=0; i<36; i++) indices[i] = i;
+        auto ebo = IndexBuffer::Create(indices, 36);
+        vao->SetIndexBuffer(ebo);
+
+        Mesh mesh;
+        mesh.VAO = vao;
+        mesh.VertexCount = 36;
+        mesh.TriangleCount = 12;
+        return mesh;
+    }
 }
