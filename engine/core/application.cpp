@@ -49,6 +49,8 @@ Application::Application(const ApplicationSpecification& specification)
     // --- Window Setup ---
     WindowProperties windowProps;
     windowProps.Title = m_Specification.Name;
+    windowProps.Width = m_Specification.WindowWidth;
+    windowProps.Height = m_Specification.WindowHeight;
 
     // ImGui Ini path setup
     std::string iniName = m_Specification.Name;

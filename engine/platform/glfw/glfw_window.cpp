@@ -27,13 +27,11 @@ GlfwWindow::~GlfwWindow()
 
 void GlfwWindow::Init(const WindowProperties& properties)
 {
-    m_Width = properties.Width;
-    m_Height = properties.Height;
+    int initialWidth = properties.Width;
+    int initialHeight = properties.Height;
     m_Title = properties.Title;
     m_VSync = properties.VSync;
     m_TargetFPS = properties.TargetFramesPerSecond;
-
-    CH_CORE_INFO("Initializing Glfw Window: {} ({}x{})", m_Title, m_Width, m_Height);
 
     static bool s_GLFWInitialized = false;
     if (!s_GLFWInitialized)
@@ -43,6 +41,27 @@ void GlfwWindow::Init(const WindowProperties& properties)
         glfwSetErrorCallback(GLFWErrorCallback);
         s_GLFWInitialized = true;
     }
+
+    if (initialWidth <= 0 || initialHeight <= 0)
+    {
+        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+        if (monitor)
+        {
+            int workX = 0, workY = 0, workW = 0, workH = 0;
+            glfwGetMonitorWorkarea(monitor, &workX, &workY, &workW, &workH);
+            initialWidth = (workW > 0) ? workW : 1280;
+            initialHeight = (workH > 0) ? workH : 720;
+        }
+        else
+        {
+            initialWidth = 1280;
+            initialHeight = 720;
+        }
+    }
+
+    m_Width = initialWidth;
+    m_Height = initialHeight;
+    CH_CORE_INFO("Initializing Glfw Window: {} ({}x{})", m_Title, m_Width, m_Height);
 
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 

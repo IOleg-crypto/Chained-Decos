@@ -1,4 +1,5 @@
-vec3 CalcSpotLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 baseColor, float shininess)
+vec3 CalcSpotLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 diffuseColor,
+                   vec3 specularColor, float shininess)
 {
     if (light.enabled == 0) return vec3(0.0);
 
@@ -22,7 +23,7 @@ vec3 CalcSpotLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 ba
     attenuation = pow(attenuation, 1.5);
     
     // Diffuse
-    vec3 s_diff = baseColor * light.color.rgb * NdotL;
+    vec3 s_diff = diffuseColor * light.color.rgb * NdotL;
     
     // Specular
     vec3 s_spec = vec3(0.0);
@@ -30,7 +31,7 @@ vec3 CalcSpotLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 ba
     {
         vec3 H = normalize(L + viewDir);
         float spec = pow(max(dot(normal, H), 0.0), max(1.0, shininess));
-        s_spec = light.color.rgb * spec;
+        s_spec = light.color.rgb * specularColor * spec;
     }
     
     return (s_diff + s_spec) * attenuation * light.intensity * spotIntensity;
