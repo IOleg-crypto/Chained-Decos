@@ -1,6 +1,7 @@
 #ifndef CH_SCRIPT_ENGINE_H
 #define CH_SCRIPT_ENGINE_H
 
+#include "engine/core/base.h"
 #include <Coral/Assembly.hpp>
 #include <Coral/HostInstance.hpp>
 #include <filesystem>
@@ -23,7 +24,7 @@ class Scene;
 //  The class is fully static (singleton-style) because the host is a process-
 //  level singleton in CoreCLR.
 // ─────────────────────────────────────────────────────────────────────────────
-class ScriptEngine
+class CH_API ScriptEngine
 {
 public:
     // ── Lifecycle ────────────────────────────────────────────────────────

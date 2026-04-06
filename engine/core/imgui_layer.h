@@ -2,10 +2,11 @@
 #define CH_IMGUI_LAYER_H
 
 #include "engine/core/layer.h"
+#include <imgui.h>
 
 namespace CHEngine
 {
-class ImGuiLayer : public Layer
+class CH_API ImGuiLayer : public Layer
 {
 public:
     ImGuiLayer();
@@ -22,6 +23,8 @@ public:
     {
         m_BlockEvents = block;
     }
+
+    static void SetContext(ImGuiContext* context);
 
 private:
     bool m_BlockEvents = true;

@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "engine/core/platform_detection.h"
+#include "engine/core/export.h"
 
 // Debug/Release detection
 #ifdef _DEBUG

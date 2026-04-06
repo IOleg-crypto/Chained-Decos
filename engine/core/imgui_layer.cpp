@@ -13,6 +13,11 @@
 
 namespace CHEngine
 {
+void ImGuiLayer::SetContext(ImGuiContext* context)
+{
+    ImGui::SetCurrentContext(context);
+}
+
 ImGuiLayer::ImGuiLayer()
     : Layer("ImGuiLayer")
 {

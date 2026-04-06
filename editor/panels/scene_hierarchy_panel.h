@@ -15,13 +15,14 @@ public:
     virtual void OnImGuiRender(bool readOnly = false) override;
 
 private:
-    entt::entity DrawEntityNodeRecursive(Entity entity, bool readOnly);
+    void DrawEntityNodeRecursive(Entity entity, bool readOnly);
     void DrawComponents(Entity entity);
     void DrawContextMenu();
     const char* GetEntityIcon(Entity entity);
 
 private:
     std::unordered_set<entt::entity> m_DrawnEntities;
+    std::vector<entt::entity> m_EntitiesToDestroyPending;
 
     char m_SearchBuffer[128] = {0};
     bool m_Renaming = false;

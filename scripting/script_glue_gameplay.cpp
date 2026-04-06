@@ -24,6 +24,42 @@ namespace CHEngine {
         return Coral::String::New("");
     }
 
+    // ── RPGStatsComponent ────────────────────────────────────────────────
+    CH_SCRIPT_FUNC int RPGStatsComponent_GetLevel(uint64_t entityID) {
+        auto e = GetEntity(entityID);
+        return e && e.HasComponent<RPGStatsComponent>() ? e.GetComponent<RPGStatsComponent>().Level : 0;
+    }
+    CH_SCRIPT_FUNC void RPGStatsComponent_SetLevel(uint64_t entityID, int val) {
+        auto e = GetEntity(entityID);
+        if (e && e.HasComponent<RPGStatsComponent>()) e.GetComponent<RPGStatsComponent>().Level = val;
+    }
+    CH_SCRIPT_FUNC float RPGStatsComponent_GetHealth(uint64_t entityID) {
+        auto e = GetEntity(entityID);
+        return e && e.HasComponent<RPGStatsComponent>() ? e.GetComponent<RPGStatsComponent>().Health : 0.0f;
+    }
+    CH_SCRIPT_FUNC void RPGStatsComponent_SetHealth(uint64_t entityID, float val) {
+        auto e = GetEntity(entityID);
+        if (e && e.HasComponent<RPGStatsComponent>()) e.GetComponent<RPGStatsComponent>().Health = val;
+    }
+    CH_SCRIPT_FUNC int RPGStatsComponent_GetGold(uint64_t entityID) {
+        auto e = GetEntity(entityID);
+        return e && e.HasComponent<RPGStatsComponent>() ? e.GetComponent<RPGStatsComponent>().Gold : 0;
+    }
+    CH_SCRIPT_FUNC void RPGStatsComponent_SetGold(uint64_t entityID, int val) {
+        auto e = GetEntity(entityID);
+        if (e && e.HasComponent<RPGStatsComponent>()) e.GetComponent<RPGStatsComponent>().Gold = val;
+    }
+
+    // ── SkillComponent ───────────────────────────────────────────────────
+    CH_SCRIPT_FUNC bool SkillComponent_IsUnlocked(uint64_t entityID) {
+        auto e = GetEntity(entityID);
+        return e && e.HasComponent<SkillComponent>() ? e.GetComponent<SkillComponent>().IsUnlocked : false;
+    }
+    CH_SCRIPT_FUNC void SkillComponent_SetUnlocked(uint64_t entityID, bool val) {
+        auto e = GetEntity(entityID);
+        if (e && e.HasComponent<SkillComponent>()) e.GetComponent<SkillComponent>().IsUnlocked = val;
+    }
+
     // ── PlayerComponent ───────────────────────────────────────────────────
     CH_SCRIPT_FUNC float PlayerComponent_GetMovementSpeed(uint64_t entityID) {
         Entity entity = GetEntity(entityID);
@@ -91,6 +127,17 @@ namespace CHEngine {
         CH_ADD_INTERNAL_CALL(SpawnComponent, SpawnComponent_IsActive_Ptr, SpawnComponent_IsActive);
         CH_ADD_INTERNAL_CALL(SpawnComponent, SpawnComponent_GetSpawnPoint_Ptr, SpawnComponent_GetSpawnPoint);
         CH_ADD_INTERNAL_CALL(SceneTransitionComponent, SceneTransitionComponent_GetTargetScene_Ptr, SceneTransitionComponent_GetTargetScene);
+        
+        // RPG
+        CH_ADD_INTERNAL_CALL(RPGStatsComponent, RPGStatsComponent_GetLevel_Ptr, RPGStatsComponent_GetLevel);
+        CH_ADD_INTERNAL_CALL(RPGStatsComponent, RPGStatsComponent_SetLevel_Ptr, RPGStatsComponent_SetLevel);
+        CH_ADD_INTERNAL_CALL(RPGStatsComponent, RPGStatsComponent_GetHealth_Ptr, RPGStatsComponent_GetHealth);
+        CH_ADD_INTERNAL_CALL(RPGStatsComponent, RPGStatsComponent_SetHealth_Ptr, RPGStatsComponent_SetHealth);
+        CH_ADD_INTERNAL_CALL(RPGStatsComponent, RPGStatsComponent_GetGold_Ptr, RPGStatsComponent_GetGold);
+        CH_ADD_INTERNAL_CALL(RPGStatsComponent, RPGStatsComponent_SetGold_Ptr, RPGStatsComponent_SetGold);
+
+        CH_ADD_INTERNAL_CALL(SkillComponent, SkillComponent_IsUnlocked_Ptr, SkillComponent_IsUnlocked);
+        CH_ADD_INTERNAL_CALL(SkillComponent, SkillComponent_SetUnlocked_Ptr, SkillComponent_SetUnlocked);
 
         #undef CH_ADD_INTERNAL_CALL
     }
