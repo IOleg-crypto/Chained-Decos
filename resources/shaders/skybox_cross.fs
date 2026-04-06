@@ -1,5 +1,7 @@
 #version 450 core
 
+#include "include/color_space.glsl"
+
 in vec3 v_Position;
 
 layout(binding = 0) uniform sampler2D u_CrossMap;
@@ -14,15 +16,6 @@ uniform vec4 fogColor;
 uniform float fogDensity;
 
 layout(location = 0) out vec4 finalColor;
-
-vec3 ACES(vec3 x)
-{
-    return clamp(
-        (x * (2.51 * x + 0.03)) /
-        (x * (2.43 * x + 0.59) + 0.14),
-        0.0, 1.0
-    );
-}
 
 vec2 DirectionToHorizontalCrossUV(vec3 direction)
 {
@@ -80,16 +73,14 @@ void main()
     vec2 uv = DirectionToHorizontalCrossUV(direction);
     vec3 color = texture(u_CrossMap, uv).rgb;
 
+    // Convert to linear if source is LDR.
+    if (u_IsHDR == 0) color = ToLinear(color);
+
     color *= u_Exposure;
     color += u_Brightness;
     color = (color - 0.5) * u_Contrast + 0.5;
 
-    if (u_IsHDR == 1)
-    {
-        color = ACES(color);
-    }
-
-    vec4 background = vec4(color, 1.0);
+    vec4 background = vec4(max(color, vec3(0.0)), 1.0);
 
     if (fogEnabled == 1)
     {

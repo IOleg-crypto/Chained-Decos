@@ -65,6 +65,7 @@ void RuntimeLayer::OnAttach()
     {
         Window& window = Application::Get().GetWindow();
         m_Scene->OnViewportResize(window.GetWidth(), window.GetHeight());
+        EnsureRuntimeFramebuffer((uint32_t)window.GetWidth(), (uint32_t)window.GetHeight());
     }
 }
 
@@ -104,14 +105,24 @@ void RuntimeLayer::OnUpdate(Timestep ts)
 
 void RuntimeLayer::OnRender(Timestep ts)
 {
+    Window& window = Application::Get().GetWindow();
+    uint32_t width = (uint32_t)window.GetWidth();
+    uint32_t height = (uint32_t)window.GetHeight();
+
     if (!m_Scene)
     {
         Renderer::Get().Clear({0.0f, 0.0f, 0.0f, 1.0f});
         return;
     }
 
+    if (width == 0 || height == 0)
+    {
+        return;
+    }
+
+    EnsureRuntimeFramebuffer(width, height);
+
     glm::vec4 bgColor = {0.0f, 0.0f, 0.0f, 1.0f};
-    bool clearBackground = true;
 
     if (m_Scene->GetSettings().Environment)
     {
@@ -121,15 +132,6 @@ void RuntimeLayer::OnRender(Timestep ts)
             bgColor = glm::vec4(env.Fog.FogColor.r / 255.0f, env.Fog.FogColor.g / 255.0f, 
                                env.Fog.FogColor.b / 255.0f, env.Fog.FogColor.a / 255.0f);
         }
-        else if (!env.Skybox.TexturePath.empty())
-        {
-            clearBackground = false; // Skybox will draw over everything, no need to clear to a solid color
-        }
-    }
-
-    if (clearBackground)
-    {
-        Renderer::Get().Clear(bgColor);
     }
 
     auto camera = GetActiveCamera();
@@ -152,7 +154,20 @@ void RuntimeLayer::OnRender(Timestep ts)
             options.TargetFPS = project->GetConfig().Animation.TargetFPS;
         }
 
+        m_HDRFramebuffer->Bind();
+        Renderer::Get().Clear(bgColor);
         m_SceneRenderer->RenderScene(m_Scene.get(), camera.value(), nearClip, farClip, ts, options);
+        m_HDRFramebuffer->Unbind();
+
+        Renderer::Get().SetViewport(0, 0, (int)width, (int)height);
+        Renderer::Get().ApplyPostProcessing(
+            m_HDRFramebuffer->GetColorAttachmentRendererID(),
+            m_HDRFramebuffer->GetDepthAttachmentRendererID(),
+            camera.value());
+    }
+    else
+    {
+        Renderer::Get().Clear(bgColor);
     }
 }
 
@@ -197,6 +212,20 @@ void RuntimeLayer::OnEvent(Event& e)
     }
 
     EventDispatcher dispatcher(e);
+    dispatcher.Dispatch<WindowResizeEvent>([this](auto& ev) {
+        if (ev.GetWidth() == 0 || ev.GetHeight() == 0)
+        {
+            return false;
+        }
+
+        EnsureRuntimeFramebuffer(ev.GetWidth(), ev.GetHeight());
+        if (m_Scene)
+        {
+            m_Scene->OnViewportResize(ev.GetWidth(), ev.GetHeight());
+        }
+        return false;
+    });
+
     dispatcher.Dispatch<SceneChangeRequestEvent>([this](auto& ev) {
         ScriptEngine::Get().RequestLoadScene(ev.GetPath());
         return true;
@@ -465,5 +494,29 @@ std::optional<Camera3D> RuntimeLayer::GetActiveCamera()
         return m_Scene->GetActiveCamera();
     }
     return std::nullopt;
+}
+
+void RuntimeLayer::EnsureRuntimeFramebuffer(uint32_t width, uint32_t height)
+{
+    if (width == 0 || height == 0)
+    {
+        return;
+    }
+
+    if (!m_HDRFramebuffer)
+    {
+        FramebufferSpecification hdrSpec;
+        hdrSpec.Width = width;
+        hdrSpec.Height = height;
+        hdrSpec.ColorFormat = FramebufferColorFormat::RGBA16F;
+        m_HDRFramebuffer = Framebuffer::Create(hdrSpec);
+        return;
+    }
+
+    const auto& spec = m_HDRFramebuffer->GetSpecification();
+    if (spec.Width != width || spec.Height != height)
+    {
+        m_HDRFramebuffer->Resize(width, height);
+    }
 }
 } // namespace CHEngine

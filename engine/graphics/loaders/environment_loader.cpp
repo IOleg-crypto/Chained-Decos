@@ -82,8 +82,8 @@ namespace CHEngine
             {
                 settings.Skybox.TexturePath = skyboxNode["TexturePath"].as<std::string>();
                 if (skyboxNode["Mode"]) settings.Skybox.Mode = skyboxNode["Mode"].as<int>();
-                settings.Skybox.Exposure = skyboxNode["Exposure"].as<float>();
-                settings.Skybox.Brightness = skyboxNode["Brightness"].as<float>();
+                if (skyboxNode["Exposure"]) settings.Skybox.Exposure = skyboxNode["Exposure"].as<float>();
+                if (skyboxNode["Brightness"]) settings.Skybox.Brightness = skyboxNode["Brightness"].as<float>();
                 if (skyboxNode["Contrast"]) settings.Skybox.Contrast = skyboxNode["Contrast"].as<float>();
             }
 

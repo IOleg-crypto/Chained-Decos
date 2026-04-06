@@ -2,6 +2,7 @@
 #define CH_RUNTIME_LAYER_H
 
 #include "engine/core/layer.h"
+#include "engine/graphics/api/framebuffer.h"
 #include "engine/scene/scene.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
 #include <functional>
@@ -33,6 +34,7 @@ private:
     void ApplyWindowConfiguration();
     void SetupBrandingAndIcon();
     void LoadInitialScene();
+    void EnsureRuntimeFramebuffer(uint32_t width, uint32_t height);
 
     std::optional<Camera3D> GetActiveCamera();
 
@@ -44,6 +46,8 @@ private:
     std::string m_ProjectPath;
     float m_BoostUploadsTimer = 0.0f;
     bool m_IsBoostingUploads = false;
+
+    std::shared_ptr<Framebuffer> m_HDRFramebuffer;
 };
 } // namespace CHEngine
 

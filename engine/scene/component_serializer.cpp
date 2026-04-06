@@ -1,5 +1,4 @@
 #include "component_serializer.h"
-#include "components/hierarchy_component.h"
 #include "components/id_component.h"
 #include "components/ui_action_component.h"
 #include "engine/core/application.h"
@@ -64,64 +63,6 @@ void ComponentSerializer::SerializeID(YAML::Emitter& out, Entity entity)
     }
 }
 
-void ComponentSerializer::SerializeHierarchy(YAML::Emitter& out, Entity entity)
-{
-    if (entity.HasComponent<HierarchyComponent>())
-    {
-        auto& hc = entity.GetComponent<HierarchyComponent>();
-        out << YAML::Key << "Hierarchy";
-        out << YAML::BeginMap;
-
-        uint64_t parentUUID = 0;
-        if (hc.Parent != entt::null)
-        {
-            Entity parent{hc.Parent, &entity.GetRegistry()};
-            if (parent.HasComponent<IDComponent>())
-            {
-                parentUUID = (uint64_t)parent.GetComponent<IDComponent>().ID;
-            }
-        }
-        out << YAML::Key << "Parent" << YAML::Value << parentUUID;
-
-        out << YAML::Key << "Children" << YAML::BeginSeq;
-        for (auto childHandle : hc.Children)
-        {
-            Entity child{childHandle, &entity.GetRegistry()};
-            if (child.HasComponent<IDComponent>())
-            {
-                out << (uint64_t)child.GetComponent<IDComponent>().ID;
-            }
-        }
-        out << YAML::EndSeq;
-        out << YAML::EndMap;
-    }
-}
-
-void ComponentSerializer::DeserializeHierarchyTask(Entity entity, YAML::Node node, HierarchyTask& outTask)
-{
-    if (node["Hierarchy"])
-    {
-        auto h = node["Hierarchy"];
-        outTask.entity = entity;
-        if (h["Parent"])
-        {
-            outTask.parent = h["Parent"].as<uint64_t>();
-        }
-        else
-        {
-            outTask.parent = 0;
-        }
-
-        if (h["Children"] && h["Children"].IsSequence())
-        {
-            for (auto child : h["Children"])
-            {
-                outTask.children.push_back(child.as<uint64_t>());
-            }
-        }
-    }
-}
-
 // --- Registry Initialization ---
 
 // ========================================================================
@@ -132,23 +73,40 @@ void ComponentSerializer::InternalInit()
 {
     m_Registry.clear();
 
+    RegisterCoreComponents();
+    RegisterPhysicsComponents();
+    RegisterAudioComponents();
+    RegisterGameplayComponents();
+    RegisterUIComponents();
+    RegisterScriptingComponents();
+}
+
+void ComponentSerializer::RegisterCoreComponents()
+{
     Register<TagComponent>();
     Register<TransformComponent>();
     Register<ModelComponent>();
     Register<MaterialComponent>();
     Register<LightComponent>();
     Register<ShaderComponent>();
+    Register<CameraComponent>();
+    Register<SpriteComponent>();
+}
 
-    // --- Physics ---
+void ComponentSerializer::RegisterPhysicsComponents()
+{
     Register<ColliderComponent>();
     Register<PrimitiveComponent>();
     Register<RigidBodyComponent>();
+}
 
-    // --- Audio ---
+void ComponentSerializer::RegisterAudioComponents()
+{
     Register<AudioComponent>();
-    Register<CameraComponent>();
+}
 
-    // --- Gameplay ---
+void ComponentSerializer::RegisterGameplayComponents()
+{
     Register<PlayerComponent>();
     Register<SceneTransitionComponent>();
     Register<AnimationComponent>();
@@ -157,11 +115,10 @@ void ComponentSerializer::InternalInit()
     Register<RPGStatsComponent>();
     Register<SkillComponent>();
     Register<InventoryComponent>();
+}
 
-    // --- Rendering ---
-    Register<SpriteComponent>();
-
-    // --- UI System ---
+void ComponentSerializer::RegisterUIComponents()
+{
     Register<ControlComponent>();
     Register<ButtonControl>();
     Register<PanelControl>();
@@ -184,8 +141,10 @@ void ComponentSerializer::InternalInit()
     Register<CollapsingHeaderControl>();
     Register<VerticalLayoutGroup>();
     Register<UIActionComponent>();
+}
 
-    // --- Scripting ---
+void ComponentSerializer::RegisterScriptingComponents()
+{
     Register<ManagedScriptComponent>();
 }
 
@@ -195,7 +154,7 @@ void ComponentSerializer::SerializeAll(YAML::Emitter& out, Entity entity)
     {
         entry.Serialize(out, entity);
     }
-    SerializeHierarchy(out, entity);
+    HierarchySerializer::Serialize(out, entity);
 }
 
 void ComponentSerializer::DeserializeAll(Entity entity, YAML::Node node)
