@@ -54,6 +54,9 @@ void main()
     if (useRoughnessMap == 1) r *= texture(texture3, fragTexCoord).g; // Green channel usually
     if (useOcclusionMap == 1) occ = texture(texture4, fragTexCoord).r;
 
+    m = clamp(m, 0.0, 1.0);
+    r = clamp(r, 0.04, 1.0);
+
     // Map PBR to Blinn-Phong (Approximation)
     // Roughness -> Shininess
     float s = (1.0 - r) * 128.0;
@@ -72,7 +75,7 @@ void main()
     vec3 lighting = finalAmbient * occ;
 
     // Directional Light
-    lighting += CalcDirectionalLight(lightDir, lightColor, normal, viewDir, diffColor, s);
+    lighting += CalcDirectionalLight(lightDir, lightColor, normal, viewDir, diffColor, specColor, s);
 
     // Dynamic Lights (Unified)
     int lightCount = clamp(uLightCount, 0, MAX_LIGHTS);
@@ -81,9 +84,9 @@ void main()
         if (lights[i].enabled == 0) continue;
         
         if (lights[i].type == 0) // Point
-            lighting += CalcPointLight(lights[i], normal, fragPosition, viewDir, diffColor, s);
+            lighting += CalcPointLight(lights[i], normal, fragPosition, viewDir, diffColor, specColor, s);
         else if (lights[i].type == 1) // Spot
-            lighting += CalcSpotLight(lights[i], normal, fragPosition, viewDir, diffColor, s);
+            lighting += CalcSpotLight(lights[i], normal, fragPosition, viewDir, diffColor, specColor, s);
     }
 
     // 3. Emissive Component (Usually sRGB textures)

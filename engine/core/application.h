@@ -37,6 +37,8 @@ struct CH_API ApplicationSpecification
 {
     std::string Name = "Chained Application";
     std::string WorkingDirectory;
+    int WindowWidth = 1280;
+    int WindowHeight = 720;
     ApplicationCommandLineArgs CommandLineArgs;
     std::string ImGuiConfigurationPath = "imgui.ini";
     bool Headless = false;

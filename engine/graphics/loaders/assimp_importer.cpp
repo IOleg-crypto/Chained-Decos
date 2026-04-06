@@ -4,13 +4,72 @@
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 #include <stb_image.h>
+#include <algorithm>
+#include <atomic>
+#include <cmath>
 #include <mutex>
 #include <fstream>
+#include <thread>
+#include <unordered_map>
 #include <cstring>
 
 namespace CHEngine
 {
     static std::mutex s_AssimpMutex;
+
+    template <typename Fn>
+    static void ParallelFor(uint32_t count, Fn&& fn)
+    {
+        if (count <= 1)
+        {
+            for (uint32_t i = 0; i < count; ++i)
+            {
+                fn(i);
+            }
+            return;
+        }
+
+        unsigned int hw = std::thread::hardware_concurrency();
+        if (hw == 0)
+        {
+            hw = 1;
+        }
+
+        const uint32_t workers = std::min<uint32_t>(count, hw);
+        if (workers <= 1)
+        {
+            for (uint32_t i = 0; i < count; ++i)
+            {
+                fn(i);
+            }
+            return;
+        }
+
+        std::atomic<uint32_t> next{0};
+        std::vector<std::thread> threads;
+        threads.reserve(workers);
+
+        for (uint32_t t = 0; t < workers; ++t)
+        {
+            threads.emplace_back([&]() {
+                while (true)
+                {
+                    const uint32_t idx = next.fetch_add(1, std::memory_order_relaxed);
+                    if (idx >= count)
+                    {
+                        break;
+                    }
+                    fn(idx);
+                }
+            });
+        }
+
+        for (auto& thread : threads)
+        {
+            thread.join();
+        }
+    }
+
     static bool IsSupportedAssimpExtension(const std::string& ext)
     {
         return ext == ".gltf" || ext == ".glb" || ext == ".obj";
@@ -83,7 +142,6 @@ namespace CHEngine
         CH_CORE_INFO("AssimpImporter: Supported extensions: {0}", exts);
         
         CH_CORE_INFO("AssimpImporter: Attempting to import '{0}'", path.string());
-        std::lock_guard<std::mutex> lock(s_AssimpMutex);
         PendingModelData data{};
         
         // Match flags and properties from the develop branch for consistency
@@ -115,7 +173,10 @@ namespace CHEngine
         const aiScene* scene = nullptr;
 
         CH_CORE_INFO("AssimpImporter: Invoking ReadFile for '{0}'", path.string());
-        scene = importer.ReadFile(path.string(), flags);
+        {
+            std::lock_guard<std::mutex> readLock(s_AssimpMutex);
+            scene = importer.ReadFile(path.string(), flags);
+        }
 
         if (!scene || !scene->mRootNode)
         {
@@ -131,7 +192,9 @@ namespace CHEngine
                     file.seekg(0);
                     std::vector<char> buffer(static_cast<size_t>(size) + 1024, 0); 
                     file.read(buffer.data(), size);
-                    scene = importer.ReadFileFromMemory(buffer.data(), static_cast<size_t>(size), flags, path.extension().string().c_str());
+                    std::lock_guard<std::mutex> readLock(s_AssimpMutex);
+                    scene = importer.ReadFileFromMemory(buffer.data(), static_cast<size_t>(size), flags,
+                                                        path.extension().string().c_str());
                 }
             }
         }
@@ -148,7 +211,6 @@ namespace CHEngine
         }
 
         // --- 1. Process Hierarchy & Bind Poses ---
-        std::map<std::string, int> nameToIndex;
         std::filesystem::path modelDir = path.parent_path();
 
         std::function<void(aiNode*, int)> processNode = [&](aiNode* node, int parentIdx) -> void {
@@ -180,20 +242,46 @@ namespace CHEngine
         processNode(scene->mRootNode, -1);
         data.nodeCount = (int)data.nodeNames.size();
 
+        std::unordered_map<std::string, int> nameToIndex;
+        nameToIndex.reserve(data.nodeNames.size());
+        for (int i = 0; i < (int)data.nodeNames.size(); ++i)
+        {
+            nameToIndex[data.nodeNames[i]] = i;
+        }
+
         // --- 2. Process Meshes ---
         data.meshes.resize(scene->mNumMeshes);
-        for (unsigned int m = 0; m < scene->mNumMeshes; ++m) {
+        std::vector<std::vector<std::pair<int, glm::mat4>>> meshOffsetWrites(scene->mNumMeshes);
+
+        ParallelFor(scene->mNumMeshes, [&](uint32_t m) {
             aiMesh* am = scene->mMeshes[m];
-            RawMesh& rm = data.meshes[m];
+            RawMesh rm;
             rm.materialIndex = am->mMaterialIndex;
 
-            for (unsigned int v = 0; v < am->mNumVertices; ++v) {
-                rm.vertices.insert(rm.vertices.end(), { am->mVertices[v].x, am->mVertices[v].y, am->mVertices[v].z });
-                if (am->mTextureCoords[0]) rm.texcoords.insert(rm.texcoords.end(), { am->mTextureCoords[0][v].x, am->mTextureCoords[0][v].y });
-                if (am->mNormals) rm.normals.insert(rm.normals.end(), { am->mNormals[v].x, am->mNormals[v].y, am->mNormals[v].z });
+            rm.vertices.reserve((size_t)am->mNumVertices * 3);
+            if (am->mTextureCoords[0])
+            {
+                rm.texcoords.reserve((size_t)am->mNumVertices * 2);
+            }
+            if (am->mNormals)
+            {
+                rm.normals.reserve((size_t)am->mNumVertices * 3);
+            }
+            rm.indices.reserve((size_t)am->mNumFaces * 3);
+
+            for (unsigned int v = 0; v < am->mNumVertices; ++v)
+            {
+                rm.vertices.insert(rm.vertices.end(), {am->mVertices[v].x, am->mVertices[v].y, am->mVertices[v].z});
+                if (am->mTextureCoords[0])
+                {
+                    rm.texcoords.insert(rm.texcoords.end(), {am->mTextureCoords[0][v].x, am->mTextureCoords[0][v].y});
+                }
+                if (am->mNormals)
+                {
+                    rm.normals.insert(rm.normals.end(), {am->mNormals[v].x, am->mNormals[v].y, am->mNormals[v].z});
+                }
             }
 
-            int triCount = 0;
             for (unsigned int f = 0; f < am->mNumFaces; ++f)
             {
                 const aiFace& face = am->mFaces[f];
@@ -202,41 +290,59 @@ namespace CHEngine
                     continue;
                 }
 
-                rm.indices.insert(rm.indices.end(), { face.mIndices[0], face.mIndices[1], face.mIndices[2] });
-                triCount++;
+                rm.indices.insert(rm.indices.end(), {face.mIndices[0], face.mIndices[1], face.mIndices[2]});
             }
 
-            CH_CORE_INFO("AssimpImporter: Mesh '{}' loaded with {} vertices and {} triangles", am->mName.C_Str(), am->mNumVertices, triCount);
-
             // Bones & Weights
-            if (am->mNumBones > 0) {
-                rm.joints.resize(am->mNumVertices * 4, 0);
-                rm.weights.resize(am->mNumVertices * 4, 0.0f);
+            if (am->mNumBones > 0)
+            {
+                rm.joints.resize((size_t)am->mNumVertices * 4, 0);
+                rm.weights.resize((size_t)am->mNumVertices * 4, 0.0f);
                 std::vector<int> jointCounts(am->mNumVertices, 0);
+                auto& offsetWrites = meshOffsetWrites[m];
+                offsetWrites.reserve(am->mNumBones);
 
-                for (unsigned int b = 0; b < am->mNumBones; ++b) {
+                for (unsigned int b = 0; b < am->mNumBones; ++b)
+                {
                     aiBone* bone = am->mBones[b];
-                    int boneIdx = -1;
-                    for (int n = 0; n < (int)data.nodeNames.size(); ++n) if (data.nodeNames[n] == bone->mName.C_Str()) { boneIdx = n; break; }
-                    
-                    if (boneIdx != -1) {
-                        if (boneIdx >= (int)data.offsetMatrices.size()) data.offsetMatrices.resize(boneIdx + 1);
-                        data.offsetMatrices[boneIdx] = ToMat4(bone->mOffsetMatrix);
+                    auto boneIt = nameToIndex.find(bone->mName.C_Str());
+                    if (boneIt == nameToIndex.end())
+                    {
+                        continue;
+                    }
 
-                        for (unsigned int w = 0; w < bone->mNumWeights; ++w) {
-                            int vIdx = bone->mWeights[w].mVertexId;
-                            if (vIdx < 0 || vIdx >= (int)am->mNumVertices)
-                            {
-                                continue;
-                            }
+                    const int boneIdx = boneIt->second;
+                    offsetWrites.emplace_back(boneIdx, ToMat4(bone->mOffsetMatrix));
 
-                            if (jointCounts[vIdx] < 4) {
-                                int slot = vIdx * 4 + jointCounts[vIdx]++;
-                                rm.joints[slot] = (unsigned char)boneIdx;
-                                rm.weights[slot] = bone->mWeights[w].mWeight;
-                            }
+                    for (unsigned int w = 0; w < bone->mNumWeights; ++w)
+                    {
+                        const int vIdx = bone->mWeights[w].mVertexId;
+                        if (vIdx < 0 || vIdx >= (int)am->mNumVertices)
+                        {
+                            continue;
+                        }
+
+                        if (jointCounts[vIdx] < 4)
+                        {
+                            const int slot = vIdx * 4 + jointCounts[vIdx]++;
+                            rm.joints[slot] = (unsigned char)boneIdx;
+                            rm.weights[slot] = bone->mWeights[w].mWeight;
                         }
                     }
+                }
+            }
+
+            data.meshes[m] = std::move(rm);
+        });
+
+        data.offsetMatrices.assign(data.nodeNames.size(), glm::mat4(1.0f));
+        for (const auto& meshOffsets : meshOffsetWrites)
+        {
+            for (const auto& [boneIdx, offset] : meshOffsets)
+            {
+                if (boneIdx >= 0 && boneIdx < (int)data.offsetMatrices.size())
+                {
+                    data.offsetMatrices[boneIdx] = offset;
                 }
             }
         }
@@ -333,24 +439,28 @@ namespace CHEngine
             RawAnimation& ra = data.animations[a];
             ra.name = anim->mName.C_Str();
             if (ra.name.empty()) ra.name = "Anim_" + std::to_string(a);
-            ra.frameRate = anim->mTicksPerSecond > 0 ? (float)anim->mTicksPerSecond : 30.0f;
+            const double ticksPerSecond =
+                (anim->mTicksPerSecond > 0.0) ? anim->mTicksPerSecond : (double)std::max(1, samplingFPS);
+            ra.frameRate = (float)std::max(1, samplingFPS);
             
             // If duration is 0, try to infer from keys
-            double duration = anim->mDuration;
-            if (duration == 0.0) {
+            double durationTicks = anim->mDuration;
+            if (durationTicks == 0.0) {
                 for (unsigned int c = 0; c < anim->mNumChannels; ++c) {
                     if (anim->mChannels[c]->mNumPositionKeys > 0)
-                        duration = std::max(duration, anim->mChannels[c]->mPositionKeys[anim->mChannels[c]->mNumPositionKeys - 1].mTime);
+                        durationTicks = std::max(durationTicks, anim->mChannels[c]->mPositionKeys[anim->mChannels[c]->mNumPositionKeys - 1].mTime);
                     if (anim->mChannels[c]->mNumRotationKeys > 0)
-                        duration = std::max(duration, anim->mChannels[c]->mRotationKeys[anim->mChannels[c]->mNumRotationKeys - 1].mTime);
+                        durationTicks = std::max(durationTicks, anim->mChannels[c]->mRotationKeys[anim->mChannels[c]->mNumRotationKeys - 1].mTime);
                     if (anim->mChannels[c]->mNumScalingKeys > 0)
-                        duration = std::max(duration, anim->mChannels[c]->mScalingKeys[anim->mChannels[c]->mNumScalingKeys - 1].mTime);
+                        durationTicks = std::max(durationTicks, anim->mChannels[c]->mScalingKeys[anim->mChannels[c]->mNumScalingKeys - 1].mTime);
                 }
             }
 
-            ra.frameCount = (int)std::ceil(duration) + 1;
+            const double durationSeconds = (ticksPerSecond > 0.0) ? (durationTicks / ticksPerSecond) : 0.0;
+            ra.frameCount = std::max(1, (int)std::ceil(durationSeconds * (double)ra.frameRate) + 1);
             ra.boneCount = (int)data.nodeNames.size();
             ra.framePoses.resize(ra.frameCount * ra.boneCount);
+            const double ticksPerFrame = ticksPerSecond / (double)ra.frameRate;
 
             // Pre-calculate bind poses (decomposed node transforms)
             std::vector<TransformData> bindPoses(ra.boneCount);
@@ -377,18 +487,12 @@ namespace CHEngine
             // Fill with channel data
             for (unsigned int c = 0; c < anim->mNumChannels; ++c) {
                 aiNodeAnim* channel = anim->mChannels[c];
-                int boneIdx = -1;
-                for (int n = 0; n < (int)data.nodeNames.size(); ++n) {
-                    if (data.nodeNames[n] == channel->mNodeName.C_Str()) {
-                        boneIdx = n;
-                        break;
-                    }
-                }
-                
-                if (boneIdx == -1) continue;
+                auto boneIt = nameToIndex.find(channel->mNodeName.C_Str());
+                if (boneIt == nameToIndex.end()) continue;
+                const int boneIdx = boneIt->second;
                 
                 for (int f = 0; f < ra.frameCount; ++f) {
-                    double time = (double)f;
+                    double time = (double)f * ticksPerFrame;
                     
                     // Position
                     glm::vec3 pos = bindPoses[boneIdx].translation;
@@ -407,7 +511,7 @@ namespace CHEngine
                                 pos = ToVec3(channel->mPositionKeys[channel->mNumPositionKeys - 1].mValue);
                             } else {
                                 double dt = channel->mPositionKeys[p2].mTime - channel->mPositionKeys[p1].mTime;
-                                float factor = (float)((time - channel->mPositionKeys[p1].mTime) / dt);
+                                float factor = (dt > 0.0) ? (float)((time - channel->mPositionKeys[p1].mTime) / dt) : 0.0f;
                                 pos = glm::mix(ToVec3(channel->mPositionKeys[p1].mValue), ToVec3(channel->mPositionKeys[p2].mValue), factor);
                             }
                         }
@@ -430,7 +534,7 @@ namespace CHEngine
                                 rot = ToQuat(channel->mRotationKeys[channel->mNumRotationKeys - 1].mValue);
                             } else {
                                 double dt = channel->mRotationKeys[r2].mTime - channel->mRotationKeys[r1].mTime;
-                                float factor = (float)((time - channel->mRotationKeys[r1].mTime) / dt);
+                                float factor = (dt > 0.0) ? (float)((time - channel->mRotationKeys[r1].mTime) / dt) : 0.0f;
                                 aiQuaternion interpolated;
                                 aiQuaternion::Interpolate(interpolated, channel->mRotationKeys[r1].mValue, channel->mRotationKeys[r2].mValue, factor);
                                 rot = ToQuat(interpolated);
@@ -455,7 +559,7 @@ namespace CHEngine
                                 scale = ToVec3(channel->mScalingKeys[channel->mNumScalingKeys - 1].mValue);
                             } else {
                                 double dt = channel->mScalingKeys[s2].mTime - channel->mScalingKeys[s1].mTime;
-                                float factor = (float)((time - channel->mScalingKeys[s1].mTime) / dt);
+                                float factor = (dt > 0.0) ? (float)((time - channel->mScalingKeys[s1].mTime) / dt) : 0.0f;
                                 scale = glm::mix(ToVec3(channel->mScalingKeys[s1].mValue), ToVec3(channel->mScalingKeys[s2].mValue), factor);
                             }
                         }

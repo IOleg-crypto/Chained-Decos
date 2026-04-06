@@ -796,12 +796,22 @@ void SceneRenderer::RenderEditorIcons(Scene* scene, const Camera3D& camera)
 {
     // Render special entity icons (cameras, lights, etc.)
     auto& registry = scene->GetRegistry();
+    const glm::vec3 activeCameraPos = camera.Position;
 
     // Draw camera icons
     auto cameraView = registry.view<TransformComponent, CameraComponent>();
     for (auto entity : cameraView)
     {
         auto [transform, camera] = cameraView.get<TransformComponent, CameraComponent>(entity);
+        const glm::vec3 iconPos = glm::vec3(transform.WorldTransform[3]);
+
+        // If we draw an icon around the active camera itself, wire edges intersect the near plane
+        // and appear as long cyan stripes on screen.
+        if (glm::distance(iconPos, activeCameraPos) < 0.25f)
+        {
+            continue;
+        }
+
         glm::vec4 cameraColor = glm::vec4(0.0f, 1.0f, 1.0f, 1.0f); // Cyan
         glm::vec3 iconSize = glm::vec3(0.1f);
         Renderer::Get().DrawCubeWires(transform.WorldTransform, iconSize, cameraColor);
