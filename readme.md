@@ -4,7 +4,8 @@
 
 [![C++23](https://img.shields.io/badge/language-C%2B%2B23-blue?logo=c%2B%2B&logoColor=white)](https://isocpp.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/IOleg-crypto/Chained-Decos/build.yml)](https://github.com/IOleg-crypto/Chained-Decos/actions)
+[![CI](https://img.shields.io/github/actions/workflow/status/IOleg-crypto/Chained-Decos/ci.yml?label=CI)](https://github.com/IOleg-crypto/Chained-Decos/actions/workflows/ci.yml)
+[![SDK Deploy](https://img.shields.io/github/actions/workflow/status/IOleg-crypto/Chained-Decos/deploy-sdk.yml?label=SDK%20Deploy)](https://github.com/IOleg-crypto/Chained-Decos/actions/workflows/deploy-sdk.yml)
 [![OpenGL](https://img.shields.io/badge/graphics-OpenGL%204.3%2B-red?logo=opengl)](https://www.khronos.org/opengl/)
 
 
@@ -13,7 +14,7 @@
 
 **Chained Decos** is a 3D parkour game built from the ground up using **Chained Engine**, a custom modular C++23 game engine. It features advanced physics, an ECS-driven architecture, native C++ scripting, and integrated development tools.
 
-![Game Screenshot](https://i.imgur.com/d9Bxmsq.jpeg)
+![Game Screenshot](https://i.imgur.com/MLIxRhB.png)
 
 ---
 
@@ -38,13 +39,9 @@ The Chained Editor provides a high-fidelity environment for creating and testing
 > - **Capture**: When you press **PLAY**, the editor captures the cursor for game control.
 > - **ESCAPE**: No longer exits the app! Press **ESCAPE** during play to return to editor control.
 
-![Editor Screenshot#1](https://i.postimg.cc/CMrw4RW5/Znimok-ekrana-2026-01-18-115501.png)
-![Editor Screenshot#2](https://i.postimg.cc/1XhrxmdQ/Znimok-ekrana-2026-01-18-122026.png)
-![Editor Screenshot#3](https://i.postimg.cc/ZK3tPGXk/Znimok-ekrana-2026-02-01-125758.png)
-
-_GUI Development is currently in progress and may be unstable. It is recommended to use the **ChainedEditor** for GUI development._
-
-[![Editor Screenshot#4](https://i.postimg.cc/dtRNVwzr/Znimok-ekrana-2026-02-01-133334.png)](https://postimg.cc/4mdQ8k4x)
+![Editor Screenshot#1](https://i.imgur.com/jey25o0.png)
+![Editor Screenshot#2](https://i.imgur.com/VMhs9Zm.jpeg)
+![Editor Screenshot#3](https://i.imgur.com/4RpCh2P.png)
 
 > [!WARNING]
 > **Standalone Runtime**: The `ChainedRuntime` acts as a specialized **wrapper** for your games. It is designed to load and execute your custom projects directly. While it now supports Linux and Windows, it is still under active development.
@@ -140,19 +137,42 @@ The **Chained Runtime** is a lightweight wrapper that loads and runs your own pr
 
 ---
 
-## Testing & CI
+## Testing, CI & CD
 
-We use **Google Test** for engine and scene validation.
+The project currently has two automated test layers:
+
+- **Native engine tests**: GoogleTest + CTest (`EngineTests`) for C++ engine/editor/runtime logic.
+- **Managed gameplay tests**: xUnit tests for script-side progression logic (`HeroProgression`).
 
 ### Running Tests Locally
-After building, you can run the test suite:
-```bash
-# Run all tests via CTest
-ctest --preset linux-clang
 
-# Or run individual test binaries
-./build/linux-clang/bin/tests/EngineTests
+#### Native C++ tests
+```bash
+# Linux example
+cmake --build --preset linux-clang --target EngineTests
+ctest --test-dir build/linux-clang --output-on-failure
+
+# Windows example
+cmake --build --preset windows-ninja --target EngineTests
+ctest --test-dir build/windows-ninja --output-on-failure
 ```
+
+#### Managed C# gameplay tests
+```bash
+dotnet test ./game/chaineddecos/scripts/tests/ChainedDecos.Scripts.Tests.csproj -c Debug
+```
+
+### CI/CD Workflows
+
+- **CI** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml))
+    - Builds C++ targets on Linux/Windows across preset and config matrix.
+    - Runs CTest for native tests.
+    - Runs managed xUnit tests for script progression logic.
+
+- **CD** ([`.github/workflows/deploy-sdk.yml`](.github/workflows/deploy-sdk.yml))
+    - Triggers on `v*` tags and manual dispatch.
+    - Runs managed progression tests before packaging.
+    - Builds and publishes SDK artifacts for Linux and Windows.
 
 ---
 
@@ -167,4 +187,4 @@ Contributions are welcome! As a project in active development, especially regard
 
 This project is licensed under the **MIT License**.
 
-Made with using **OpenGL 4.3+**, **ImGui**, and **Jolt** (Modern C++23).
+Made with using **OpenGL 4.3+**, **ImGui**(Modern C++23).

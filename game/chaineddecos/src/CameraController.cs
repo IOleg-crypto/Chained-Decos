@@ -5,7 +5,7 @@ namespace ChainedDecos.Scripts
 {
 public class CameraController : Script
 {
-    public const float LookSensitivity = 0.5f;
+    public float LookSensitivity = 0.5f;
 
     public override void OnUpdate(float deltaTime)
     {

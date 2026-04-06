@@ -9,7 +9,7 @@ namespace ChainedDecos.Scripts
     /// </summary>
     public class LoadSceneButton : Script
     {
-        public string TargetScene = "scenes/main_menu.chscene";
+        public string TargetScene = "scenes/start_menu.chscene";
 
         public override void OnUpdate(float deltaTime)
         {

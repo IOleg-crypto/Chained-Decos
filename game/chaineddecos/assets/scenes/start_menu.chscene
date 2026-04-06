@@ -35,30 +35,33 @@ DebugSettings:
   DrawSpawnZones: true
   CollisionWireframeMode: 0
 Entities:
-  - Entity: 16315165840263914448
+  - Entity: 15051911593141375302
     TagComponent:
-      Tag: Image
+      Tag: start_menu_game_info
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
+    SceneTransitionComponent:
+      TargetScenePath: scenes/info_scene.chscene
+      Triggered: false
     ControlComponent:
       Rect Transform:
-        Position: [-1499.69617, -698.967529]
-        Size: [409.000244, 269.999756]
+        Position: [-3.58671188, -121.63102]
+        Size: [239.569427, 60.69841]
         Anchor Min: [0.5, 0.5]
         Anchor Max: [0.5, 0.5]
-        Offset Min: [-1704.19629, -833.967407]
-        Offset Max: [-1295.19604, -563.967651]
+        Offset Min: [-123.371422, -151.980225]
+        Offset Max: [116.197998, -91.2818146]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
       Z Order: 0
       Active: true
       Hidden: false
-    LabelControl:
-      Text: Chained Decos
-      Style:
+    ButtonControl:
+      Label: Info
+      Text Style:
         Font Name: Default
         Font Size: 18
         Text Color: [255, 255, 255, 255]
@@ -67,7 +70,23 @@ Entities:
         Line Height: 1.20000005
         H Align: 1
         V Align: 1
+      UI Style:
+        BG Color: [40, 40, 40, 255]
+        Hover Color: [60, 60, 60, 255]
+        Pressed Color: [30, 30, 30, 255]
+        Rounding: 4
+        Border Size: 0
+        Border Color: [255, 255, 255, 255]
+        Gradient: false
+        Padding: 4
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.100000001
+      Interactable: true
       Auto Size: false
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: ChainedDecos.Scripts.SceneScript
   - Entity: 13765047633248252361
     TagComponent:
       Tag: start_game_menu_options
@@ -80,12 +99,12 @@ Entities:
       Triggered: false
     ControlComponent:
       Rect Transform:
-        Position: [-4.43763733, -45.0787582]
-        Size: [100, 39.999958]
+        Position: [-7.68027496, 1.93944168]
+        Size: [213.492203, 75.6689377]
         Anchor Min: [0.5, 0.5]
         Anchor Max: [0.5, 0.5]
-        Offset Min: [-54.4376373, -65.0787354]
-        Offset Max: [45.5623627, -25.0787773]
+        Offset Min: [-114.426376, -35.8950272]
+        Offset Max: [99.0658264, 39.7739105]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -128,16 +147,16 @@ Entities:
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     SceneTransitionComponent:
-      TargetScenePath: scenes/test_platform_scene.chscene
+      TargetScenePath: scenes/rpg_strategy_scene.chscene
       Triggered: false
     ControlComponent:
       Rect Transform:
-        Position: [-6.00004005, -210.934326]
-        Size: [100, 40.0000153]
+        Position: [-5.18938446, -237.686066]
+        Size: [241.054611, 70.8050385]
         Anchor Min: [0.5, 0.5]
         Anchor Max: [0.5, 0.5]
-        Offset Min: [-56.000042, -230.934341]
-        Offset Max: [43.9999619, -190.934326]
+        Offset Min: [-125.71669, -273.088593]
+        Offset Max: [115.337921, -202.283554]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -181,12 +200,12 @@ Entities:
       Scale: [1, 1, 1]
     ControlComponent:
       Rect Transform:
-        Position: [-5, 187]
-        Size: [100, 40]
+        Position: [-9.05329895, 116.472702]
+        Size: [221.598785, 61.0771255]
         Anchor Min: [0.5, 0.5]
         Anchor Max: [0.5, 0.5]
-        Offset Min: [-55, 167]
-        Offset Max: [45, 207]
+        Offset Min: [-119.852692, 85.9341354]
+        Offset Max: [101.746094, 147.011261]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -197,7 +216,7 @@ Entities:
       Label: Exit
       Text Style:
         Font Name: Default
-        Font Size: 18
+        Font Size: 72.2519989
         Text Color: [255, 255, 255, 255]
         Shadow: false
         Letter Spacing: 1
@@ -230,12 +249,12 @@ Entities:
       Scale: [1, 1, 1]
     ControlComponent:
       Rect Transform:
-        Position: [-584.163757, 499.371368]
-        Size: [236, 20]
+        Position: [-540.388184, 517.205811]
+        Size: [378.675903, 68.6394653]
         Anchor Min: [0.5, 0.5]
         Anchor Max: [0.5, 0.5]
-        Offset Min: [-702.163757, 489.371368]
-        Offset Max: [-466.163757, 509.371368]
+        Offset Min: [-729.726135, 482.886108]
+        Offset Max: [-351.050232, 551.525574]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -255,22 +274,22 @@ Entities:
         Line Height: 1.20000005
         H Align: 1
         V Align: 1
-      Auto Size: true
+      Auto Size: false
   - Entity: 6090748651460201744
     TagComponent:
-      Tag: start_game_info_2
+      Tag: start_game_title
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     ControlComponent:
       Rect Transform:
-        Position: [-524.43335, 430.879028]
-        Size: [372, 20]
+        Position: [-561.21228, -388.428589]
+        Size: [314.635193, 84.8526917]
         Anchor Min: [0.5, 0.5]
         Anchor Max: [0.5, 0.5]
-        Offset Min: [-710.43335, 420.879028]
-        Offset Max: [-338.43335, 440.879028]
+        Offset Min: [-718.529907, -430.854919]
+        Offset Max: [-403.894714, -346.002228]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -278,66 +297,14 @@ Entities:
       Active: true
       Hidden: false
     LabelControl:
-      Text: Some functionality or aspects can be changed in final version.
+      Text: Chained Decos
       Style:
         Font Name: Default
         Font Size: 20.1919994
-        Text Color: [255, 255, 255, 255]
+        Text Color: [217, 255, 255, 255]
         Shadow: false
         Letter Spacing: 1
         Line Height: 1.20000005
         H Align: 1
         V Align: 1
-      Auto Size: true
-  - Entity: 15051911593141375302
-    TagComponent:
-      Tag: start_menu_game_info
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    SceneTransitionComponent:
-      TargetScenePath: scenes/info_scene.chscene
-      Triggered: false
-    ControlComponent:
-      Rect Transform:
-        Position: [-6.01868439, -132.98024]
-        Size: [105.000092, 37.9999695]
-        Anchor Min: [0.5, 0.5]
-        Anchor Max: [0.5, 0.5]
-        Offset Min: [-58.5187302, -151.980225]
-        Offset Max: [46.4813614, -113.980255]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      Z Order: 0
-      Active: true
-      Hidden: false
-    ButtonControl:
-      Label: Info
-      Text Style:
-        Font Name: Default
-        Font Size: 18
-        Text Color: [255, 255, 255, 255]
-        Shadow: false
-        Letter Spacing: 1
-        Line Height: 1.20000005
-        H Align: 1
-        V Align: 1
-      UI Style:
-        BG Color: [40, 40, 40, 255]
-        Hover Color: [60, 60, 60, 255]
-        Pressed Color: [30, 30, 30, 255]
-        Rounding: 4
-        Border Size: 0
-        Border Color: [255, 255, 255, 255]
-        Gradient: false
-        Padding: 4
-        Hover Scale: 1
-        Pressed Scale: 1
-        Transition Speed: 0.100000001
-      Interactable: true
       Auto Size: false
-    ManagedScriptComponent:
-      Scripts:
-        - ClassName: ChainedDecos.Scripts.SceneScript

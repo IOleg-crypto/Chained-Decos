@@ -4,7 +4,9 @@
 #include "scene_scripting.h"
 #include "engine/core/filesystem_utils.h"
 #include <Coral/ManagedObject.hpp>
+#include <algorithm>
 #include <filesystem>
+#include <vector>
 #include "script_glue.h"
 
 namespace CHEngine {
@@ -48,8 +50,68 @@ void ScriptEngine::InternalInit()
     CH_CORE_INFO("ScriptEngine: Initializing CoreCLR...");
 
     Coral::HostSettings settings;
-    // Coral looks for Coral.Managed.dll in this directory.
-    settings.CoralDirectory = FilesystemUtils::GetExecutableDirectory().string();
+
+    // Coral looks for Coral.Managed.dll in this directory. Resolve a robust fallback chain
+    // because runtime may be launched from different working directories.
+    std::vector<std::filesystem::path> coralDirCandidates;
+    coralDirCandidates.push_back(FilesystemUtils::GetExecutableDirectory());
+    coralDirCandidates.push_back(std::filesystem::current_path());
+
+#ifdef PROJECT_ROOT_DIR
+    coralDirCandidates.push_back(std::filesystem::path(PROJECT_ROOT_DIR) / "build" / "windows-ninja" / "bin");
+    coralDirCandidates.push_back(std::filesystem::path(PROJECT_ROOT_DIR));
+#endif
+
+    if (auto project = Project::GetActive())
+    {
+        coralDirCandidates.push_back(project->GetConfig().ProjectDirectory / "build" / "windows-ninja" / "bin");
+        coralDirCandidates.push_back(project->GetConfig().ProjectDirectory);
+    }
+
+    std::filesystem::path selectedCoralDir;
+    std::vector<std::string> checkedPaths;
+
+    for (const auto& candidateRaw : coralDirCandidates)
+    {
+        if (candidateRaw.empty())
+        {
+            continue;
+        }
+
+        std::error_code ec;
+        std::filesystem::path candidate = std::filesystem::absolute(candidateRaw, ec).lexically_normal();
+        if (ec)
+        {
+            candidate = candidateRaw;
+        }
+
+        const std::filesystem::path managedPath = candidate / "Coral.Managed.dll";
+        checkedPaths.push_back(managedPath.string());
+
+        if (std::filesystem::exists(managedPath))
+        {
+            selectedCoralDir = candidate;
+            break;
+        }
+    }
+
+    if (selectedCoralDir.empty())
+    {
+        selectedCoralDir = FilesystemUtils::GetExecutableDirectory();
+        CH_CORE_WARN("ScriptEngine: Coral.Managed.dll not found in fallback candidates. Using executable directory: '{}'",
+                     selectedCoralDir.string());
+        for (const auto& checked : checkedPaths)
+        {
+            CH_CORE_WARN("ScriptEngine: Checked '{}'", checked);
+        }
+    }
+    else
+    {
+        CH_CORE_INFO("ScriptEngine: Using Coral directory '{}'", selectedCoralDir.string());
+    }
+
+    m_CoralDirectory = selectedCoralDir;
+    settings.CoralDirectory = selectedCoralDir.string();
 
     auto status = m_Host.Initialize(settings);
     if (status != Coral::CoralInitStatus::Success)
@@ -84,6 +146,7 @@ void ScriptEngine::InternalShutdown()
     m_ScriptClasses.clear();
     m_AppAssembly = nullptr;
     m_CoreAssembly = nullptr;
+    m_CoralDirectory.clear();
     m_Host.Shutdown();
     m_IsInitialized = false;
 }
@@ -101,9 +164,34 @@ void ScriptEngine::LoadAppAssembly(const std::string& filepath)
     {
         // 1. Ensure our Core Managed library is loaded first (in the same ALC)
         // This provides the base CHEngine.Script class for discovery.
-        std::filesystem::path corePath = FilesystemUtils::GetExecutableDirectory() / "CHEngine.Managed.dll";
-        if (!std::filesystem::exists(corePath)) {
-            corePath = "CHEngine.Managed.dll"; 
+        std::vector<std::filesystem::path> coreCandidates;
+        if (!m_CoralDirectory.empty())
+        {
+            coreCandidates.push_back(m_CoralDirectory / "CHEngine.Managed.dll");
+        }
+        coreCandidates.push_back(FilesystemUtils::GetExecutableDirectory() / "CHEngine.Managed.dll");
+        coreCandidates.push_back(std::filesystem::current_path() / "CHEngine.Managed.dll");
+        coreCandidates.push_back("CHEngine.Managed.dll");
+
+        std::filesystem::path corePath;
+        for (const auto& candidate : coreCandidates)
+        {
+            if (candidate.is_relative())
+            {
+                corePath = candidate;
+                continue;
+            }
+
+            if (std::filesystem::exists(candidate))
+            {
+                corePath = candidate;
+                break;
+            }
+        }
+
+        if (corePath.empty())
+        {
+            corePath = "CHEngine.Managed.dll";
         }
 
         // Load the core assembly directly — no shadow copy needed
