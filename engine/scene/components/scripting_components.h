@@ -63,7 +63,7 @@ struct ManagedScriptInstance
         : ClassName(className) {}
 
     CH_REFLECT_BEGIN(ManagedScriptInstance)
-        props.Property("ClassName", ClassName);
+        props.Property("ClassName", ClassName, PropertyMeta(PropertyMeta::WidgetHint::Enum));
         for (auto& [name, field] : Fields)
         {
             std::visit([&](auto&& val) {

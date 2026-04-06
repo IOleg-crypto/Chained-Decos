@@ -54,6 +54,11 @@
       "name": "windows-ninja",
       "displayName": "Windows Ninja",
       "inherits": "ninja-base",
+      "cacheVariables": {
+        "ENABLE_UNITY_BUILD": "OFF",
+        "CMAKE_CXX_SCAN_FOR_MODULES": "OFF",
+        "CMAKE_SUPPRESS_REGENERATION": "ON"
+      },
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",

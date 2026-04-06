@@ -138,6 +138,7 @@ ViewportPanel::ViewportPanel()
     FramebufferSpecification spec;
     spec.Width = 1280;
     spec.Height = 720;
+    spec.ColorFormat = FramebufferColorFormat::RGBA8;
 
     if (Application::Get().GetWindow().GetNativeWindow())
     {
@@ -146,7 +147,10 @@ ViewportPanel::ViewportPanel()
     }
 
     m_ViewportFramebuffer = Framebuffer::Create(spec);
-    m_HDRFramebuffer = Framebuffer::Create(spec);
+
+    FramebufferSpecification hdrSpec = spec;
+    hdrSpec.ColorFormat = FramebufferColorFormat::RGBA16F;
+    m_HDRFramebuffer = Framebuffer::Create(hdrSpec);
 
     m_SceneRenderer = std::make_unique<SceneRenderer>();
     m_CameraController = std::make_unique<EditorCameraController>();

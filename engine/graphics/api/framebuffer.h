@@ -6,11 +6,18 @@
 
 namespace CHEngine
 {
+enum class FramebufferColorFormat
+{
+    RGBA8 = 0,
+    RGBA16F = 1,
+};
+
 struct FramebufferSpecification
 {
     uint32_t Width, Height;
     uint32_t Samples = 1;
     bool SwapChainTarget = false;
+    FramebufferColorFormat ColorFormat = FramebufferColorFormat::RGBA8;
 };
 
 class Framebuffer

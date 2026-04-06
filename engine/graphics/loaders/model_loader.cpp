@@ -53,6 +53,15 @@ Model ModelLoader::GenerateProceduralModel(const std::string& type, const Proced
              w,-h,-d,  w, h,-d,  w, h, d,  w,-h, d,
             -w,-h,-d, -w,-h, d, -w, h, d, -w, h,-d
         };
+
+        raw.normals = {
+             0, 0, 1,   0, 0, 1,   0, 0, 1,   0, 0, 1,
+             0, 0,-1,   0, 0,-1,   0, 0,-1,   0, 0,-1,
+             0, 1, 0,   0, 1, 0,   0, 1, 0,   0, 1, 0,
+             0,-1, 0,   0,-1, 0,   0,-1, 0,   0,-1, 0,
+             1, 0, 0,   1, 0, 0,   1, 0, 0,   1, 0, 0,
+            -1, 0, 0,  -1, 0, 0,  -1, 0, 0,  -1, 0, 0
+        };
         
         std::vector<uint32_t> indices;
         for(int i=0; i<6; i++) {

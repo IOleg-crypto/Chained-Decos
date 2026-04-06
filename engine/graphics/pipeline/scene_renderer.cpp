@@ -413,6 +413,26 @@ void SceneRenderer::BindShaderUniforms(ShaderAsset* shaderAsset, const std::vect
 {
     auto shader = shaderAsset->GetShader();
     shader->Bind();
+
+    auto& rd = Renderer::Get().GetData();
+    const auto& lighting = rd.Lighting.CurrentLighting;
+
+    glm::vec4 lightColor = {lighting.LightColor.r / 255.0f, lighting.LightColor.g / 255.0f,
+                            lighting.LightColor.b / 255.0f, lighting.LightColor.a / 255.0f};
+    glm::vec4 skyColor = lightColor;
+    skyColor.w = lighting.Ambient * 0.35f;
+
+    shader->SetVec3("viewPos", rd.CurrentCameraPosition);
+    shader->SetFloat("uTime", rd.Time);
+    shader->SetFloat("uMode", rd.DiagnosticMode);
+    shader->SetVec3("lightDir", lighting.Direction);
+    shader->SetVec4("lightColor", lightColor);
+    shader->SetFloat("ambient", lighting.Ambient);
+    shader->SetVec4("skyAmbientColor", skyColor);
+    shader->SetInt("uLightCount", rd.LightCount);
+    shader->SetFloat("uExposure", lighting.Exposure);
+    shader->SetFloat("uGamma", lighting.Gamma);
+
     if (!boneMatrices.empty())
     {
         shader->SetMatrices("boneMatrices", boneMatrices.data(), std::min((int)boneMatrices.size(), 128));

@@ -32,7 +32,16 @@ void OpenGLFramebuffer::Invalidate()
     // Color Attachment
     glGenTextures(1, &m_ColorAttachment);
     glBindTexture(GL_TEXTURE_2D, m_ColorAttachment);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_Specification.Width, m_Specification.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    GLenum internalFormat = GL_RGBA8;
+    GLenum dataType = GL_UNSIGNED_BYTE;
+    if (m_Specification.ColorFormat == FramebufferColorFormat::RGBA16F)
+    {
+        internalFormat = GL_RGBA16F;
+        dataType = GL_FLOAT;
+    }
+
+    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, m_Specification.Width, m_Specification.Height, 0, GL_RGBA,
+                 dataType, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_ColorAttachment, 0);
