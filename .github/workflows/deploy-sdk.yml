@@ -77,6 +77,26 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: choco install cmake ninja ccache --no-progress
 
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Run managed progression tests
+        shell: bash
+        run: |
+          dotnet test ./game/chaineddecos/scripts/tests/ChainedDecos.Scripts.Tests.csproj \
+            -c Release \
+            --logger "trx;LogFileName=deploy-managed-tests-${{ matrix.name }}.trx"
+
+      - name: Upload managed test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-managed-tests-${{ matrix.name }}
+          path: "**/deploy-managed-tests-${{ matrix.name }}.trx"
+          retention-days: 7
+
       - name: Configure CMake
         shell: bash
         run: |
