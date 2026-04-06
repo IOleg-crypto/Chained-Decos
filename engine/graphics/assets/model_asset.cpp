@@ -303,6 +303,7 @@ void ModelAsset::OnLoaded()
     }
 
     m_Model = std::move(newModel);
+    m_Materials = m_Model.Materials;
     m_BoundingBox = totalBox;
     m_RawMeshes = std::move(m_PendingData.meshes);
     m_Animations = std::move(m_PendingData.animations);
