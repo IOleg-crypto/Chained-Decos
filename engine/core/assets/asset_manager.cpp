@@ -187,6 +187,34 @@ void AssetManager::Update()
     }
 }
 
+size_t AssetManager::GetPendingFinalizeCount() const
+{
+    std::lock_guard<std::mutex> lock(m_PendingMutex);
+    return m_PendingAssets.size();
+}
+
+size_t AssetManager::GetLoadingAssetCount() const
+{
+    std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+
+    size_t loadingCount = 0;
+    for (const auto& [handle, asset] : m_AssetCache)
+    {
+        (void)handle;
+        if (asset && asset->GetState() == AssetState::Loading)
+        {
+            ++loadingCount;
+        }
+    }
+
+    return loadingCount;
+}
+
+bool AssetManager::HasBackgroundWork() const
+{
+    return GetPendingFinalizeCount() > 0 || GetLoadingAssetCount() > 0;
+}
+
 void AssetManager::ReloadAsset(AssetHandle handle, AssetType type)
 {
     std::lock_guard<std::recursive_mutex> lock(m_AssetLock);

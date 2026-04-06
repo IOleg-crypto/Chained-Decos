@@ -74,8 +74,15 @@ void RuntimeLayer::OnDetach()
     if (m_Scene)
     {
         SceneScripting::Stop(m_Scene.get());
-        m_Scene->OnRuntimeStop();
+        if (m_RuntimeStarted)
+        {
+            m_Scene->OnRuntimeStop();
+        }
     }
+
+    m_RuntimeStarted = false;
+    m_IsSceneLoading = false;
+    m_LoadingOverlayElapsed = 0.0f;
 }
 
 void RuntimeLayer::OnUpdate(Timestep ts)
@@ -86,7 +93,20 @@ void RuntimeLayer::OnUpdate(Timestep ts)
         LoadScene(pendingPath);
     }
 
-    if (m_Scene)
+    if (m_Scene && m_IsSceneLoading)
+    {
+        m_LoadingOverlayElapsed += (float)ts;
+
+        if (IsSceneReadyToStart() && m_LoadingOverlayElapsed >= m_LoadingOverlayMinDuration)
+        {
+            m_Scene->OnRuntimeStart();
+            m_RuntimeStarted = true;
+            m_IsSceneLoading = false;
+            CH_CORE_INFO("RuntimeLayer: Scene assets are ready, entering runtime.");
+        }
+    }
+
+    if (m_Scene && m_RuntimeStarted)
     {
         SceneScripting::Update(m_Scene.get(), ts);
         m_Scene->OnUpdateRuntime(ts);
@@ -193,19 +213,34 @@ void RuntimeLayer::OnImGuiRender()
 
         if (ImGui::Begin("RuntimeUI", nullptr, flags))
         {
-            ImVec2 canvasPos = ImGui::GetCursorScreenPos();
-            ImVec2 canvasSize = ImGui::GetContentRegionAvail();
-            UIRenderer::Get().DrawCanvas(m_Scene.get(), canvasPos, canvasSize, false);
-            SceneScripting::RenderUI(m_Scene.get());
+            if (m_RuntimeStarted)
+            {
+                ImVec2 childSize = ImGui::GetContentRegionAvail();
+                if (ImGui::BeginChild("##RuntimeUICanvas", childSize, false,
+                                      ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar |
+                                          ImGuiWindowFlags_NoScrollWithMouse))
+                {
+                    ImVec2 canvasPos = ImGui::GetCursorScreenPos();
+                    ImVec2 canvasSize = ImGui::GetContentRegionAvail();
+                    UIRenderer::Get().DrawCanvas(m_Scene.get(), canvasPos, canvasSize, false);
+                    SceneScripting::RenderUI(m_Scene.get());
+                }
+                ImGui::EndChild();
+            }
         }
         ImGui::End();
         ImGui::PopStyleVar(2);
+
+        if (m_IsSceneLoading)
+        {
+            DrawLoadingOverlay();
+        }
     }
 }
 
 void RuntimeLayer::OnEvent(Event& e)
 {
-    if (m_Scene)
+    if (m_Scene && m_RuntimeStarted)
     {
         SceneScripting::DispatchEvent(m_Scene.get(), e);
         m_Scene->OnEvent(e);
@@ -248,8 +283,15 @@ void RuntimeLayer::LoadScene(const std::string& path)
     if (m_Scene)
     {
         SceneScripting::Stop(m_Scene.get());
-        m_Scene->OnRuntimeStop();
+        if (m_RuntimeStarted)
+        {
+            m_Scene->OnRuntimeStop();
+        }
     }
+
+    m_RuntimeStarted = false;
+    m_IsSceneLoading = false;
+    m_LoadingOverlayElapsed = 0.0f;
 
     m_Scene = std::make_shared<Scene>();
 
@@ -272,11 +314,16 @@ void RuntimeLayer::LoadScene(const std::string& path)
         m_BoostUploadsTimer = 5.0f; // Boost for 5 seconds
         CH_CORE_INFO("RuntimeLayer: Boosting asset uploads for scene loading...");
 
-        m_Scene->OnRuntimeStart();
+        m_IsSceneLoading = true;
+        m_LoadingOverlayElapsed = 0.0f;
+        CH_CORE_INFO("RuntimeLayer: Scene loaded, waiting for async assets before runtime start.");
     }
     else
     {
         m_Scene = nullptr;
+        m_RuntimeStarted = false;
+        m_IsSceneLoading = false;
+        m_LoadingOverlayElapsed = 0.0f;
     }
 }
 
@@ -391,7 +438,7 @@ void RuntimeLayer::ApplyWindowConfiguration()
     }
 
     window.SetVSync(vsync);
-    if (width != config.Window.Width || height != config.Window.Height)
+    if (width != window.GetWidth() || height != window.GetHeight())
     {
         window.SetSize(width, height);
     }
@@ -518,5 +565,56 @@ void RuntimeLayer::EnsureRuntimeFramebuffer(uint32_t width, uint32_t height)
     {
         m_HDRFramebuffer->Resize(width, height);
     }
+}
+
+bool RuntimeLayer::IsSceneReadyToStart() const
+{
+    return !AssetManager::Get().HasBackgroundWork();
+}
+
+void RuntimeLayer::DrawLoadingOverlay()
+{
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->WorkPos);
+    ImGui::SetNextWindowSize(viewport->WorkSize);
+    ImGui::SetNextWindowViewport(viewport->ID);
+
+    ImGuiWindowFlags flags =
+        ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
+        ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.02f, 0.02f, 0.02f, 0.92f));
+
+    if (ImGui::Begin("##RuntimeLoadingOverlay", nullptr, flags))
+    {
+        const size_t loadingCount = AssetManager::Get().GetLoadingAssetCount();
+        const size_t pendingFinalizeCount = AssetManager::Get().GetPendingFinalizeCount();
+        const size_t totalPending = loadingCount + pendingFinalizeCount;
+
+        int dotsCount = (static_cast<int>(ImGui::GetTime() * 2.5f) % 3) + 1;
+        std::string dots(static_cast<size_t>(dotsCount), '.');
+        std::string loadingLine = "Preparing world" + dots;
+        std::string pendingLine = "Pending assets: " + std::to_string(totalPending);
+
+        ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.45f);
+
+        const char* title = "Loading scene";
+        ImVec2 titleSize = ImGui::CalcTextSize(title);
+        ImGui::SetCursorPosX((ImGui::GetWindowWidth() - titleSize.x) * 0.5f);
+        ImGui::TextUnformatted(title);
+
+        ImVec2 loadingSize = ImGui::CalcTextSize(loadingLine.c_str());
+        ImGui::SetCursorPosX((ImGui::GetWindowWidth() - loadingSize.x) * 0.5f);
+        ImGui::TextUnformatted(loadingLine.c_str());
+
+        ImVec2 pendingSize = ImGui::CalcTextSize(pendingLine.c_str());
+        ImGui::SetCursorPosX((ImGui::GetWindowWidth() - pendingSize.x) * 0.5f);
+        ImGui::TextUnformatted(pendingLine.c_str());
+    }
+
+    ImGui::End();
+    ImGui::PopStyleColor();
+    ImGui::PopStyleVar();
 }
 } // namespace CHEngine
