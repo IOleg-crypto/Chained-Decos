@@ -12,6 +12,8 @@ Application* CreateApplication(ApplicationCommandLineArgs args)
 
     ApplicationSpecification spec;
     spec.Name = "Chained Editor";
+    spec.WindowWidth = 0;
+    spec.WindowHeight = 0;
     spec.CommandLineArgs = args;
 
     auto app = new Application(spec);
