@@ -47,10 +47,12 @@ public static class Audio
 #pragma warning disable 0649
     internal static unsafe delegate*<NativeString, float, float, bool, void> Audio_Play_Ptr;
     internal static unsafe delegate*<NativeString, void> Audio_Stop_Ptr;
+    internal static unsafe delegate*<void> Audio_StopAll_Ptr;
 #pragma warning restore 0649
 
     public static unsafe void Play(string path, float volume = 1.0f, float pitch = 1.0f, bool loop = false) => Audio_Play_Ptr(path, volume, pitch, loop);
     public static unsafe void Stop(string path) => Audio_Stop_Ptr(path);
+    public static unsafe void StopAll() => Audio_StopAll_Ptr();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

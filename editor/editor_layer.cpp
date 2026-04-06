@@ -2,6 +2,7 @@
 #include "editor_events.h"
 #include "editor_gui.h"
 #include "engine/core/input.h"
+#include "engine/core/imgui_layer.h"
 
 #include "engine/core/assets/asset_manager.h"
 #include "engine/core/profiler.h"
@@ -33,6 +34,9 @@ EditorLayer* EditorLayer::s_Instance = nullptr;
 EditorLayer::EditorLayer()
     : Layer("EditorLayer")
 {
+    // Ensure the engine DLL uses the same ImGui context as the Editor
+    ImGuiLayer::SetContext(ImGui::GetCurrentContext());
+
     s_Instance = this;
     EditorContext::Init();
 

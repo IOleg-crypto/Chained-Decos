@@ -157,159 +157,220 @@ void PropertyEditor::Init()
     RegisterCustom<ManagedScriptComponent>(
         "Scripts",
         [](auto& component, auto entity) {
-            // 1. Pre-sync: Discover fields from C# reflection
+            bool changed = false;
+
+            // ── Pre-sync: discover public fields from C# reflection ─────────────────
             for (auto& script : component.Scripts)
             {
-                if (script.ClassName.empty())
-                {
-                    continue;
-                }
-
+                if (script.ClassName.empty()) continue;
                 auto* scriptClass = ScriptEngine::Get().GetScriptClass(script.ClassName);
-                if (scriptClass)
+                if (!scriptClass) continue;
+
+                for (auto& info : scriptClass->GetFields())
                 {
-                    auto fieldInfos = scriptClass->GetFields();
-                    for (auto& info : fieldInfos)
-                    {
-                        if (info.GetAccessibility() != Coral::TypeAccessibility::Public)
-                        {
-                            continue;
-                        }
-                        std::string fieldName = (std::string)info.GetName();
+                    if (info.GetAccessibility() != Coral::TypeAccessibility::Public) continue;
+                    std::string fieldName = (std::string)info.GetName();
+                    if (script.Fields.contains(fieldName)) continue;
 
-                        if (script.Fields.find(fieldName) == script.Fields.end())
-                        {
-                            ScriptField f;
-                            f.Name = fieldName;
-                            std::string typeName = (std::string)info.GetType().GetFullName();
-
-                            if (typeName == "System.Single")
-                            {
-                                f.Type = ScriptFieldType::Float;
-                                f.Value = 0.0f;
-                            }
-                            else if (typeName == "System.Int32")
-                            {
-                                f.Type = ScriptFieldType::Int;
-                                f.Value = 0;
-                            }
-                            else if (typeName == "System.Boolean")
-                            {
-                                f.Type = ScriptFieldType::Bool;
-                                f.Value = false;
-                            }
-                            else if (typeName == "System.String")
-                            {
-                                f.Type = ScriptFieldType::String;
-                                f.Value = std::string("");
-                            }
-                            else if (typeName == "CHEngine.Vector2")
-                            {
-                                f.Type = ScriptFieldType::Vec2;
-                                f.Value = glm::vec2(0.0f);
-                            }
-                            else if (typeName == "CHEngine.Vector3")
-                            {
-                                f.Type = ScriptFieldType::Vec3;
-                                f.Value = glm::vec3(0.0f);
-                            }
-                            else if (typeName == "CHEngine.Vector4")
-                            {
-                                f.Type = ScriptFieldType::Vec4;
-                                f.Value = glm::vec4(0.0f);
-                            }
-                            else if (typeName == "CHEngine.Entity")
-                            {
-                                f.Type = ScriptFieldType::Entity;
-                                f.Value = (uint64_t)0;
-                            }
-
-                            if (f.Type != ScriptFieldType::None)
-                            {
-                                script.Fields[fieldName] = f;
-                            }
-                        }
-                    }
+                    ScriptField f;
+                    f.Name = fieldName;
+                    std::string typeName = (std::string)info.GetType().GetFullName();
+                    if      (typeName == "System.Single")  { f.Type = ScriptFieldType::Float;  f.Value = 0.0f; }
+                    else if (typeName == "System.Int32")   { f.Type = ScriptFieldType::Int;    f.Value = 0; }
+                    else if (typeName == "System.Boolean") { f.Type = ScriptFieldType::Bool;   f.Value = false; }
+                    else if (typeName == "System.String")  { f.Type = ScriptFieldType::String; f.Value = std::string(""); }
+                    else if (typeName == "CHEngine.Vector2"){ f.Type = ScriptFieldType::Vec2;  f.Value = glm::vec2(0.0f); }
+                    else if (typeName == "CHEngine.Vector3"){ f.Type = ScriptFieldType::Vec3;  f.Value = glm::vec3(0.0f); }
+                    else if (typeName == "CHEngine.Vector4"){ f.Type = ScriptFieldType::Vec4;  f.Value = glm::vec4(0.0f); }
+                    else if (typeName == "CHEngine.Entity") { f.Type = ScriptFieldType::Entity; f.Value = (uint64_t)0; }
+                    if (f.Type != ScriptFieldType::None) script.Fields[fieldName] = f;
                 }
             }
 
-            // 2. Standard reflection UI for persistence and serialization
-            UIProperties ui;
-            Properties props(ui);
-            component.Reflect(props);
-
-            if (props.HasChanged())
+            // ── Draw one card per attached script ───────────────────────────────────
+            int toRemove = -1;
+            for (int si = 0; si < (int)component.Scripts.size(); ++si)
             {
-                // Sync values to live C# instances if they exist
-                for (auto& script : component.Scripts)
+                auto& script = component.Scripts[si];
+
+                // Extract short class name for the header
+                std::string shortName = script.ClassName;
+                auto dot = shortName.rfind('.');
+                if (dot != std::string::npos) shortName = shortName.substr(dot + 1);
+
+                ImGui::PushID(si);
+
+                // Card background
+                ImGui::PushStyleColor(ImGuiCol_Header,        {0.15f, 0.20f, 0.30f, 1.0f});
+                ImGui::PushStyleColor(ImGuiCol_HeaderHovered, {0.20f, 0.28f, 0.42f, 1.0f});
+                ImGui::PushStyleColor(ImGuiCol_HeaderActive,  {0.25f, 0.35f, 0.52f, 1.0f});
+
+                bool open = ImGui::TreeNodeEx("##script", ImGuiTreeNodeFlags_DefaultOpen |
+                                              ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth |
+                                              ImGuiTreeNodeFlags_AllowOverlap | ImGuiTreeNodeFlags_FramePadding,
+                                              "%s  %s", ICON_FA_FILE_CODE, shortName.c_str());
+                ImGui::PopStyleColor(3);
+
+                // Delete button aligned to the right
+                ImGui::SameLine(ImGui::GetContentRegionAvail().x - 20.0f);
+                ImGui::PushStyleColor(ImGuiCol_Button, {0.0f, 0.0f, 0.0f, 0.0f});
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, {0.6f, 0.15f, 0.15f, 1.0f});
+                if (ImGui::SmallButton(ICON_FA_TRASH))
                 {
-                    if (script.Instance)
-                    {
-                        auto* obj = static_cast<Coral::ManagedObject*>(script.Instance);
-                        for (auto& [name, field] : script.Fields)
-                        {
-                            std::visit([&](auto&& v) { obj->SetFieldValue(name, v); }, field.Value);
-                        }
-                    }
+                    toRemove = si;
+                    changed = true;
                 }
-            }
+                ImGui::PopStyleColor(2);
 
-            // 3. Script selector for adding new scripts
-            ImGui::Spacing();
-            ImGui::Separator();
-            ImGui::Text("Add Script:");
-            
-            static int selectedScriptIdx = 0;
-            std::vector<std::string> availableScripts;
-            availableScripts.push_back("");
-            
-            for (const auto& [name, type] : ScriptEngine::Get().GetScriptClasses())
-            {
-                availableScripts.push_back(name);
-            }
-
-            std::vector<const char*> scriptNames;
-            for (const auto& name : availableScripts)
-            {
-                scriptNames.push_back(name.c_str());
-            }
-
-            if (ImGui::Combo("##ScriptSelector", &selectedScriptIdx, scriptNames.data(), (int)scriptNames.size()))
-            {
-                // Selection changed
-            }
-
-            ImGui::SameLine();
-            if (ImGui::Button(ICON_FA_PLUS " Add", ImVec2(-1, 0)))
-            {
-                if (selectedScriptIdx > 0 && selectedScriptIdx < (int)availableScripts.size())
+                if (open)
                 {
-                    const std::string& scriptName = availableScripts[selectedScriptIdx];
-                    
-                    // Check if already attached
-                    bool alreadyAttached = false;
-                    for (const auto& script : component.Scripts)
+                    // Full class name (muted)
+                    ImGui::TextDisabled("  %s", script.ClassName.c_str());
+                    ImGui::Spacing();
+
+                    if (script.Fields.empty())
                     {
-                        if (script.ClassName == scriptName)
+                        ImGui::TextDisabled("  (no public fields)");
+                    }
+
+                    // ── Per-field controls ──────────────────────────────────────────
+                    for (auto& [fieldName, field] : script.Fields)
+                    {
+                        ImGui::PushID(fieldName.c_str());
+
+                        // Label column
+                        float labelW = ImGui::GetContentRegionAvail().x * 0.40f;
+                        ImGui::Text("%s", fieldName.c_str());
+                        ImGui::SameLine(labelW);
+                        ImGui::SetNextItemWidth(-1.0f);
+
+                        bool fieldChanged = false;
+                        switch (field.Type)
                         {
-                            alreadyAttached = true;
+                        case ScriptFieldType::Float:
+                        {
+                            float v = std::get<float>(field.Value);
+                            if (ImGui::DragFloat("##v", &v, 0.1f)) { field.Value = v; fieldChanged = true; }
                             break;
                         }
+                        case ScriptFieldType::Int:
+                        {
+                            int v = std::get<int>(field.Value);
+                            if (ImGui::DragInt("##v", &v)) { field.Value = v; fieldChanged = true; }
+                            break;
+                        }
+                        case ScriptFieldType::Bool:
+                        {
+                            bool v = std::get<bool>(field.Value);
+                            if (ImGui::Checkbox("##v", &v)) { field.Value = v; fieldChanged = true; }
+                            break;
+                        }
+                        case ScriptFieldType::String:
+                        {
+                            auto& v = std::get<std::string>(field.Value);
+                            char buf[256] = {};
+                            strncpy(buf, v.c_str(), 255);
+                            if (ImGui::InputText("##v", buf, sizeof(buf))) { field.Value = std::string(buf); fieldChanged = true; }
+                            break;
+                        }
+                        case ScriptFieldType::Vec2:
+                        {
+                            glm::vec2& v = std::get<glm::vec2>(field.Value);
+                            if (ImGui::DragFloat2("##v", &v.x, 0.1f)) fieldChanged = true;
+                            break;
+                        }
+                        case ScriptFieldType::Vec3:
+                        {
+                            glm::vec3& v = std::get<glm::vec3>(field.Value);
+                            if (ImGui::DragFloat3("##v", &v.x, 0.1f)) fieldChanged = true;
+                            break;
+                        }
+                        case ScriptFieldType::Vec4:
+                        case ScriptFieldType::Color:
+                        {
+                            glm::vec4& v = std::get<glm::vec4>(field.Value);
+                            if (ImGui::ColorEdit4("##v", &v.x)) fieldChanged = true;
+                            break;
+                        }
+                        case ScriptFieldType::Entity:
+                        {
+                            uint64_t v = std::get<uint64_t>(field.Value);
+                            ImGui::TextDisabled("Entity: %llu", (unsigned long long)v);
+                            break;
+                        }
+                        default:
+                            ImGui::TextDisabled("(unsupported)");
+                            break;
+                        }
+
+                        if (fieldChanged)
+                        {
+                            changed = true;
+                            // Live-sync to running C# instance
+                            if (script.Instance)
+                            {
+                                auto* obj = static_cast<Coral::ManagedObject*>(script.Instance);
+                                std::visit([&](auto&& v) { obj->SetFieldValue(fieldName, v); }, field.Value);
+                            }
+                        }
+
+                        ImGui::PopID();
                     }
 
-                    if (!alreadyAttached)
-                    {
-                        component.Scripts.push_back(ManagedScriptInstance(scriptName));
-                        selectedScriptIdx = 0;
-                    }
+                    ImGui::TreePop();
+                    ImGui::Spacing();
                 }
+
+                ImGui::PopID();
             }
 
-            return props.HasChanged();
+            if (toRemove >= 0)
+            {
+                component.Scripts.erase(component.Scripts.begin() + toRemove);
+            }
+
+            // ── Add Script ──────────────────────────────────────────────────────────
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            ImGui::TextColored({0.5f, 0.7f, 1.0f, 1.0f}, ICON_FA_PLUS " Add Script");
+
+            static int s_SelectedScript = 0;
+            static std::string s_Filter;
+
+            std::vector<std::string> allScripts;
+            allScripts.push_back("-- Select script --");
+            for (const auto& [name, type] : ScriptEngine::Get().GetScriptClasses())
+                allScripts.push_back(name);
+
+            std::vector<const char*> cnames;
+            for (const auto& n : allScripts) cnames.push_back(n.c_str());
+
+            ImGui::SetNextItemWidth(-80.0f);
+            ImGui::Combo("##AddScriptCombo", &s_SelectedScript, cnames.data(), (int)cnames.size());
+            ImGui::SameLine();
+            if (ImGui::Button(ICON_FA_PLUS " Add", ImVec2(-1, 0)) && s_SelectedScript > 0
+                && s_SelectedScript < (int)allScripts.size())
+            {
+                const std::string& chosen = allScripts[s_SelectedScript];
+                bool already = false;
+                for (const auto& s : component.Scripts)
+                    if (s.ClassName == chosen) { already = true; break; }
+                if (!already)
+                {
+                    component.Scripts.emplace_back(chosen);
+                    changed = true;
+                }
+                s_SelectedScript = 0;
+            }
+
+            return changed;
         },
         ICON_FA_FILE_CODE);
 
     // --- UI Components ---
+
     Register<ControlComponent>("RectTransform", ICON_FA_VECTOR_SQUARE);
     Register<NavigationComponent>("Navigation", ICON_FA_ARROWS_TO_DOT);
     Register<UIActionComponent>("UIAction", ICON_FA_BOLT);

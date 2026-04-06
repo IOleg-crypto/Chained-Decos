@@ -154,6 +154,9 @@ void ComponentSerializer::InternalInit()
     Register<AnimationComponent>();
     Register<NavigationComponent>();
     Register<SpawnComponent>();
+    Register<RPGStatsComponent>();
+    Register<SkillComponent>();
+    Register<InventoryComponent>();
 
     // --- Rendering ---
     Register<SpriteComponent>();

@@ -56,7 +56,7 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
     if (m_Context)
     {
         m_DrawnEntities.clear();
-        std::vector<entt::entity> entitiesToDelete;
+        m_EntitiesToDestroyPending.clear();
 
         ImGui::BeginDisabled(readOnly);
 
@@ -93,18 +93,7 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
                 }
             }
 
-            entt::entity toDelete = DrawEntityNodeRecursive(entity, readOnly);
-            if (toDelete != entt::null)
-            {
-                entitiesToDelete.push_back(toDelete);
-            }
-        }
-
-        // Execute deletions via commands
-        for (auto ent : entitiesToDelete)
-        {
-            Entity entity(ent, &m_Context->GetRegistry());
-            EditorLayer::GetCommandHistory().PushCommand(std::make_unique<DestroyEntityCommand>(entity));
+            DrawEntityNodeRecursive(entity, readOnly);
         }
 
         if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered())
@@ -166,6 +155,19 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
     }
 
     ImGui::End();
+
+    if (!m_EntitiesToDestroyPending.empty())
+    {
+        for (auto ent : m_EntitiesToDestroyPending)
+        {
+            Entity entity(ent, &m_Context->GetRegistry());
+            if (entity.IsValid())
+            {
+                EditorLayer::GetCommandHistory().PushCommand(std::make_unique<DestroyEntityCommand>(entity));
+            }
+        }
+        m_EntitiesToDestroyPending.clear();
+    }
 }
 
 const char* SceneHierarchyPanel::GetEntityIcon(Entity entity)
@@ -202,15 +204,19 @@ const char* SceneHierarchyPanel::GetEntityIcon(Entity entity)
     {
         return ICON_FA_VOLUME_HIGH;
     }
+    if (entity.HasComponent<ManagedScriptComponent>())
+    {
+        return ICON_FA_CODE;
+    }
 
     return ICON_FA_CUBE;
 }
 
-entt::entity SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity, bool readOnly)
+void SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity, bool readOnly)
 {
     if (!entity || !entity.IsValid() || m_DrawnEntities.contains(entity))
     {
-        return entt::null;
+        return;
     }
 
     m_DrawnEntities.insert(entity);
@@ -286,7 +292,6 @@ entt::entity SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity, bool re
         strncpy(m_RenameBuffer, tag.c_str(), sizeof(m_RenameBuffer));
     }
 
-    entt::entity signaledForDelete = entt::null;
     if (!readOnly && ImGui::BeginPopupContextItem())
     {
         if (ImGui::MenuItem(ICON_FA_PEN " Rename", "F2"))
@@ -302,7 +307,7 @@ entt::entity SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity, bool re
         ImGui::Separator();
         if (ImGui::MenuItem(ICON_FA_TRASH " Delete Entity", "Del"))
         {
-            signaledForDelete = (entt::entity)entity;
+            m_EntitiesToDestroyPending.push_back((entt::entity)entity);
         }
 
         ImGui::EndPopup();
@@ -315,18 +320,12 @@ entt::entity SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity, bool re
             auto children = entity.GetComponent<HierarchyComponent>().Children; // Copy to avoid iteration issues
             for (auto childID : children)
             {
-                entt::entity childDel = DrawEntityNodeRecursive(Entity(childID, &m_Context->GetRegistry()), readOnly);
-                if (childDel != entt::null)
-                {
-                    signaledForDelete = childDel;
-                }
+                DrawEntityNodeRecursive(Entity(childID, &m_Context->GetRegistry()), readOnly);
             }
         }
         ImGui::TreePop();
     }
     ImGui::PopID();
-
-    return signaledForDelete;
 }
 
 void SceneHierarchyPanel::DrawContextMenu()

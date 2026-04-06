@@ -1,9 +1,9 @@
 Project:
   Name: ChainedDecos
   IconPath: resources/icons/chaineddecos.jpg
-  StartScene: scenes\main_menu.chscene
+  StartScene: scenes\start_menu.chscene
   AssetDirectory: assets
-  ActiveScene: assets/scenes/start_menu.chscene
+  ActiveScene: assets/scenes/rpg_strategy_scene.chscene
   Environment: ""
   BuildScenes:
     []
