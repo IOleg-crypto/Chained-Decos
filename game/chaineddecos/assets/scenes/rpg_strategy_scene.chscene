@@ -9,7 +9,7 @@ Canvas:
   MatchWidthOrHeight: 0.5
 EnvironmentPath: environments/new_environment.chenv
 Lighting:
-  Direction: [1, -0.25999999, 1]
+  Direction: [1, -1, 1]
   LightColor: [255, 255, 255, 255]
   Ambient: 0.0850000009
 Skybox:
@@ -29,10 +29,10 @@ DebugSettings:
   DrawColliders: false
   DrawHierarchy: false
   DrawCollisionModelBox: false
-  DrawGrid: true
+  DrawGrid: false
   DrawSelection: true
-  DrawLights: true
-  DrawSpawnZones: true
+  DrawLights: false
+  DrawSpawnZones: false
   CollisionWireframeMode: 0
 Entities:
   - Entity: 9393782307517162306
@@ -338,7 +338,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-0.782608986, 0.0434782989, -0.950311005]
-      ModelHandle: 2468903926399488784
+      ModelHandle: 12596510671947901567
       ModelPath: models/minigames/hub_for_minigames_server.glb
       AutoCalculate: true
   - Entity: 6516797172325941388
@@ -559,7 +559,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-14.1946049, -9.53674316e-07, -8.94524384]
-      ModelHandle: 3075570241040053340
+      ModelHandle: 5601749294476252167
       ModelPath: models/stairs.glb
       AutoCalculate: true
   - Entity: 1295158128682646344
@@ -1505,7 +1505,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-43.8236694, -46.1545258, -25.5901108]
-      ModelHandle: 9103570092397553448
+      ModelHandle: 4781696896857443873
       ModelPath: models/arena.glb
       AutoCalculate: true
   - Entity: 10653066213482940164
@@ -1994,8 +1994,8 @@ Entities:
       Volume: 0.561679065
       Pitch: 1
       Loop: true
-      PlayOnStart: false
-      Spatialized: false
+      PlayOnStart: true
+      Spatialized: true
       Position: [0, 0, 0]
       MinDistance: 1
       MaxDistance: 100
@@ -2160,15 +2160,15 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-14.1946049, -9.53674316e-07, -8.94524384]
-      ModelHandle: 3075570241040053340
+      ModelHandle: 5601749294476252167
       ModelPath: models/stairs.glb
       AutoCalculate: true
   - Entity: 5796298439135209667
     TagComponent:
       Tag: Camera
     TransformComponent:
-      Translation: [-244.903519, 152.873322, 317.899292]
-      Rotation: [-368.059052, 5369.0752, 0]
+      Translation: [111.47963, 148.281952, 240.580139]
+      Rotation: [-6.45898867, 6677.06689, 0]
       Scale: [1, 1, 1]
     CameraComponent:
       Primary: true
@@ -2303,7 +2303,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-33.2911491, -0.000321388245, -6.43264723]
-      ModelHandle: 2546724137874469033
+      ModelHandle: 273052053319593600
       ModelPath: models/container_ship/scene.gltf
       AutoCalculate: true
     AnimationComponent:
@@ -2521,7 +2521,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-9.29998016, -130.776825, -0.718267083]
-      ModelHandle: 17580063704411859259
+      ModelHandle: 17973740915259093922
       ModelPath: models/bridge.glb
       AutoCalculate: true
     AnimationComponent:
@@ -2569,7 +2569,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-9.29998016, -130.776825, -0.718267083]
-      ModelHandle: 17580063704411859259
+      ModelHandle: 17973740915259093922
       ModelPath: models/bridge.glb
       AutoCalculate: true
     AnimationComponent:
@@ -2617,7 +2617,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-9.29998016, -130.776825, -0.718267083]
-      ModelHandle: 17580063704411859259
+      ModelHandle: 17973740915259093922
       ModelPath: models/bridge.glb
       AutoCalculate: true
     AnimationComponent:
@@ -2689,7 +2689,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-4.6624608, -3.7252903e-08, -11.7852259]
-      ModelHandle: 16053755078349705437
+      ModelHandle: 10847482715762544930
       ModelPath: models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb.glb
       AutoCalculate: true
   - Entity: 3962667947486927982
@@ -2731,7 +2731,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-9.29998016, -130.776825, -0.718267083]
-      ModelHandle: 17580063704411859259
+      ModelHandle: 17973740915259093922
       ModelPath: models/bridge.glb
       AutoCalculate: true
     AnimationComponent:

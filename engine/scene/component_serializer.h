@@ -1,8 +1,8 @@
 #ifndef CH_COMPONENT_SERIALIZER_H
 #define CH_COMPONENT_SERIALIZER_H
-
 #include "engine/scene/scene.h"
 #include "engine/scene/serialization_utils.h"
+#include "engine/scene/hierarchy_serializer.h"
 #include <functional>
 #include <unordered_map>
 #include <vector>
@@ -10,13 +10,6 @@
 
 namespace CHEngine
 {
-struct HierarchyTask
-{
-    Entity entity;
-    uint64_t parent;
-    std::vector<uint64_t> children;
-};
-
 // Serializer description for a specific component
 struct ComponentSerializerEntry
 {
@@ -36,6 +29,15 @@ public:
 
     void InternalInit();
 
+private:
+    void RegisterCoreComponents();
+    void RegisterPhysicsComponents();
+    void RegisterAudioComponents();
+    void RegisterGameplayComponents();
+    void RegisterUIComponents();
+    void RegisterScriptingComponents();
+
+public:
     // Register component via declarative schema (PropertyArchive)
     // This is the primary method that automatically creates serialization, deserialization, and copy logic.
     template <typename T>
@@ -61,29 +63,12 @@ public:
     // Copy all components from source to destination (cloning)
     void CopyAll(Entity source, Entity destination);
 
-    // Special cases (ID and hierarchy)
+    // Special cases
     void SerializeID(YAML::Emitter& out, Entity entity);
-    void SerializeHierarchy(YAML::Emitter& out, Entity entity);
-    void DeserializeHierarchyTask(Entity entity, YAML::Node node, HierarchyTask& outTask);
 
     static ComponentSerializer& Get();
 
 private:
-    static void SerializeTextStyle(YAML::Emitter& out, const TextStyle& style);
-    static void DeserializeTextStyle(TextStyle& style, YAML::Node node);
-
-    static void SerializeRectTransform(YAML::Emitter& out, const RectTransform& transform);
-    static void DeserializeRectTransform(RectTransform& transform, YAML::Node node);
-
-    static void SerializeUIStyle(YAML::Emitter& out, const UIStyle& style);
-    static void DeserializeUIStyle(UIStyle& style, YAML::Node node);
-
-    static void SerializeMaterialInstance(YAML::Emitter& out, const MaterialInstance& mat);
-    static void DeserializeMaterialInstance(MaterialInstance& mat, YAML::Node node);
-
-    static void SerializeMaterialSlot(YAML::Emitter& out, const MaterialSlot& slot);
-    static void DeserializeMaterialSlot(MaterialSlot& slot, YAML::Node node);
-
     std::vector<ComponentSerializerEntry> m_Registry;
 };
 

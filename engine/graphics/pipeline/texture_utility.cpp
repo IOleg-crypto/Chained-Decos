@@ -18,6 +18,7 @@ namespace CHEngine
         auto spec = FramebufferSpecification();
         spec.Width = size;
         spec.Height = size;
+        spec.ColorFormat = FramebufferColorFormat::RGBA16F;
         auto captureFBO = Framebuffer::Create(spec);
         
         glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
