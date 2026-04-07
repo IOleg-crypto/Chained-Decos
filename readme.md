@@ -48,6 +48,9 @@ The Chained Editor provides a high-fidelity environment for creating and testing
 
 ---
 
+> [!IMPORTANT]
+> **Stable version of engine and game in main branch**
+
 ### Engine Features
 
 - **High-Performance Rendering**: Optimized OpenGL 4.3+ renderer with custom shader support, PBR materials, and GPU-instanced rendering.
@@ -61,6 +64,14 @@ The Chained Editor provides a high-fidelity environment for creating and testing
 ---
 
 ## Installation & Build
+
+### Clone repository
+```bash
+git clone --recurse-submodules https://github.com/IOleg-crypto/Chained-Decos.git
+```
+
+
+
 
 ### Prerequisites
 
