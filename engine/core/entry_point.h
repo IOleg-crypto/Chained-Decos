@@ -3,8 +3,8 @@
 
 #include "engine/core/application.h"
 #include "engine/scene/project.h"
-#include "engine/scene/project.h"
 #include "engine/core/base.h"
+#include <memory>
 
 extern CHEngine::Application* CHEngine::CreateApplication(CHEngine::ApplicationCommandLineArgs args);
 
@@ -15,9 +15,8 @@ int main(int argc, char** argv)
     args.Count = argc;
     args.Args = argv;
 
-    auto app = CHEngine::CreateApplication(args);
+    std::unique_ptr<CHEngine::Application> app(CHEngine::CreateApplication(args));
     app->Run();
-    delete app;
 
     return 0;
 }

@@ -86,3 +86,27 @@ TEST(PhysicsTest, ColliderEnabledFlag)
     collider.Enabled = false;
     EXPECT_FALSE(collider.Enabled);
 }
+
+TEST(PhysicsTest, ContextLifecycleResetAndClear)
+{
+    auto scene = std::make_shared<Scene>();
+
+    auto& context = Physics::GetContext(scene.get());
+    context.Accumulator = 0.1337f;
+
+    bool callbackInvoked = false;
+    Physics::SetCollisionCallback(scene.get(), [&callbackInvoked](entt::entity, entt::entity) {
+        callbackInvoked = true;
+    });
+
+    Physics::ResetAccumulator(scene.get());
+    EXPECT_FLOAT_EQ(Physics::GetContext(scene.get()).Accumulator, 0.0f);
+    EXPECT_TRUE((bool)Physics::GetContext(scene.get()).CollisionCallback);
+
+    Physics::ClearContext(scene.get());
+
+    auto& recreated = Physics::GetContext(scene.get());
+    EXPECT_FLOAT_EQ(recreated.Accumulator, 0.0f);
+    EXPECT_FALSE((bool)recreated.CollisionCallback);
+    EXPECT_FALSE(callbackInvoked);
+}

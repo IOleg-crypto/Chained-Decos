@@ -28,6 +28,7 @@ public:
     static void Shutdown();
 
     void InternalInit();
+    void InternalShutdown();
 
 private:
     void RegisterCoreComponents();
@@ -70,6 +71,7 @@ public:
 
 private:
     std::vector<ComponentSerializerEntry> m_Registry;
+    bool m_Initialized = false;
 };
 
 // Template implementation

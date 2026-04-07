@@ -23,7 +23,7 @@ Renderer* Renderer::s_Instance = nullptr;
 
 bool Renderer::IsInitialized()
 {
-    return s_Instance != nullptr && s_Instance->m_Data != nullptr;
+    return s_Instance != nullptr && s_Instance->m_Data != nullptr && s_Instance->m_Initialized;
 }
 
 Renderer& Renderer::Get()
@@ -37,6 +37,12 @@ void Renderer::Init()
     {
         s_Instance = new Renderer();
     }
+
+    if (s_Instance->m_Initialized)
+    {
+        return;
+    }
+
     s_Instance->InternalInit();
 }
 
@@ -61,10 +67,15 @@ void Renderer::LoadEngineResources()
 
 void Renderer::InternalInit()
 {
+    if (m_Initialized)
+    {
+        return;
+    }
 
     if (Application::Get().GetSpecification().Headless)
     {
         CH_CORE_INFO("[Renderer] Headless mode enabled, skipping OpenGL initialization.");
+        m_Initialized = true;
         return;
     }
 
@@ -98,6 +109,7 @@ void Renderer::InternalInit()
 
     // Always load engine resources after initialization
     LoadEngineResources();
+    m_Initialized = true;
 }
 
 void Renderer::Shutdown()
@@ -112,10 +124,16 @@ void Renderer::Shutdown()
 
 void Renderer::InternalShutdown()
 {
+    if (!m_Initialized)
+    {
+        return;
+    }
+
     CH_CORE_INFO("Shutting down Render System...");
 
     if (Application::Get().GetSpecification().Headless)
     {
+        m_Initialized = false;
         return;
     }
 
@@ -125,7 +143,10 @@ void Renderer::InternalShutdown()
     if (m_Data->Lighting.LightSSBO > 0)
     {
         glDeleteBuffers(1, &m_Data->Lighting.LightSSBO);
+        m_Data->Lighting.LightSSBO = 0;
     }
+
+    m_Initialized = false;
 }
 
 Renderer::Renderer()
@@ -137,7 +158,6 @@ Renderer::Renderer()
 
 Renderer::~Renderer()
 {
-    InternalShutdown();
 }
 
 void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
