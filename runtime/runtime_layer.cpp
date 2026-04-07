@@ -7,6 +7,7 @@
 
 #include "runtime_layer.h"
 #include "engine/core/application.h"
+#include "engine/core/imgui_layer.h"
 #include "engine/core/window.h"
 #include "engine/core/assets/asset_manager.h"
 #include "engine/graphics/pipeline/renderer.h"
@@ -21,7 +22,64 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <cmath>
 #include <filesystem>
+#include <unordered_set>
+
+
+namespace
+{
+std::string TrimCopy(const std::string& value)
+{
+    auto begin = std::find_if_not(value.begin(), value.end(), [](unsigned char ch) {
+        return std::isspace(ch) != 0;
+    });
+    auto end = std::find_if_not(value.rbegin(), value.rend(), [](unsigned char ch) {
+        return std::isspace(ch) != 0;
+    }).base();
+
+    if (begin >= end)
+    {
+        return {};
+    }
+
+    return std::string(begin, end);
+}
+
+void AppendTextStyleFontRequest(const CHEngine::TextStyle& style,
+                                std::vector<std::pair<std::string, float>>& out,
+                                std::unordered_set<std::string>& dedupe)
+{
+    std::string fontName = TrimCopy(style.FontName);
+    if (fontName.empty() || fontName == "Default")
+    {
+        return;
+    }
+
+    std::replace(fontName.begin(), fontName.end(), '\\', '/');
+    if (fontName.rfind("assets/", 0) == 0)
+    {
+        fontName = fontName.substr(7);
+    }
+
+    const float fontSize = (style.FontSize > 0.0f) ? style.FontSize : 16.0f;
+    const int roundedHalf = static_cast<int>(std::lround(fontSize * 2.0f));
+    const std::string key = fontName + "|" + std::to_string(roundedHalf);
+
+    if (!dedupe.insert(key).second)
+    {
+        return;
+    }
+
+    out.emplace_back(fontName, fontSize);
+}
+
+bool ExistsNoThrow(const std::filesystem::path& path)
+{
+    std::error_code ec;
+    return std::filesystem::exists(path, ec) && !ec;
+}
+}
 
 
 namespace CHEngine
@@ -39,18 +97,26 @@ RuntimeLayer::~RuntimeLayer()
 
 void RuntimeLayer::OnAttach()
 {
+    ImGuiIO& io = ImGui::GetIO();
+    io.FontDefault = io.Fonts->AddFontDefault();
+    CH_CORE_INFO("RuntimeLayer: Using built-in ImGui default font.");
+
     if (InitProject(m_ProjectPath))
     {
         // Initial scene/module load is handled by InitProject calling LoadInitialScene
     }
 
-    ImGuiIO& io = ImGui::GetIO();
-    io.FontDefault = io.Fonts->AddFontDefault();
-    CH_CORE_INFO("RuntimeLayer: Using built-in ImGui default font.");
+    if (ImFont* projectDefaultFont = UIRenderer::Get().GetFontRegistry().EnsureDefaultProjectFont(18.0f, false))
+    {
+        io.FontDefault = projectDefaultFont;
+        CH_CORE_INFO("RuntimeLayer: Switched default UI font to project font.");
+    }
 
-    // Register project-specific fonts into ImGui's atlas.
-    // Must happen AFTER all AddFontFromFileTTF() calls and BEFORE the atlas is built by rlImGui.
-    UIRenderer::Get().LoadProjectFonts();
+    // Materialize atlas data so default and preloaded scene fonts are available from frame 1.
+    unsigned char* pixels = nullptr;
+    int width = 0;
+    int height = 0;
+    io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 
     // Ensure camera aspect ratio is correct on startup
     if (m_Scene)
@@ -63,16 +129,10 @@ void RuntimeLayer::OnAttach()
 
 void RuntimeLayer::OnDetach()
 {
-    if (m_Scene)
-    {
-        if (m_RuntimeStarted)
-        {
-            SceneScripting::OnRuntimeStop(m_Scene.get());
-            m_Scene->OnRuntimeStop();
-        }
-        SceneScripting::Stop(m_Scene.get());
-    }
+    StopCurrentScene();
 
+    m_Scene = nullptr;
+    ScriptEngine::Get().SetActiveScene(nullptr);
     m_RuntimeStarted = false;
     m_IsSceneLoading = false;
     m_LoadingOverlayElapsed = 0.0f;
@@ -80,10 +140,15 @@ void RuntimeLayer::OnDetach()
 
 void RuntimeLayer::OnUpdate(Timestep ts)
 {
-    std::string pendingPath = ScriptEngine::Get().ConsumeRequestedScene();
-    if (!pendingPath.empty())
+    auto& scriptEngine = ScriptEngine::Get();
+
+    if (!scriptEngine.IsReloadInProgress())
     {
-        LoadScene(pendingPath);
+        std::string pendingPath = scriptEngine.ConsumeRequestedScene();
+        if (!pendingPath.empty())
+        {
+            LoadScene(pendingPath);
+        }
     }
 
     if (m_Scene && m_IsSceneLoading)
@@ -102,7 +167,10 @@ void RuntimeLayer::OnUpdate(Timestep ts)
 
     if (m_Scene && m_RuntimeStarted)
     {
-        SceneScripting::Update(m_Scene.get(), ts);
+        if (!scriptEngine.IsReloadInProgress())
+        {
+            SceneScripting::Update(m_Scene.get(), ts);
+        }
         m_Scene->OnUpdateRuntime(ts);
     }
 
@@ -267,24 +335,7 @@ void RuntimeLayer::OnEvent(Event& e)
 //-----------------------------------------------------------------------------
 void RuntimeLayer::LoadScene(const std::string& path)
 {
-    std::string normalizedPath = path;
-    normalizedPath.erase(
-        normalizedPath.begin(),
-        std::find_if(normalizedPath.begin(), normalizedPath.end(), [](unsigned char ch) {
-            return !std::isspace(ch);
-        }));
-    normalizedPath.erase(
-        std::find_if(normalizedPath.rbegin(), normalizedPath.rend(), [](unsigned char ch) {
-            return !std::isspace(ch);
-        }).base(),
-        normalizedPath.end());
-
-    std::replace(normalizedPath.begin(), normalizedPath.end(), '\\', '/');
-    if (normalizedPath.rfind("assets/", 0) == 0)
-    {
-        normalizedPath = normalizedPath.substr(7);
-    }
-
+    const std::string normalizedPath = NormalizeScenePath(path);
     if (normalizedPath.empty())
     {
         CH_CORE_WARN("RuntimeLayer: Ignoring empty scene path request.");
@@ -297,53 +348,28 @@ void RuntimeLayer::LoadScene(const std::string& path)
         scenePath = Project::GetAssetPath(scenePath);
     }
 
-    std::string finalPath = scenePath.string();
-
-    if (m_Scene)
+    if (!scenePath.is_absolute())
     {
-        if (m_RuntimeStarted)
+        std::error_code ec;
+        scenePath = std::filesystem::absolute(scenePath, ec);
+        if (ec)
         {
-            SceneScripting::OnRuntimeStop(m_Scene.get());
-            m_Scene->OnRuntimeStop();
+            CH_CORE_ERROR("RuntimeLayer: Failed to resolve absolute scene path '{}' ({})",
+                          normalizedPath,
+                          ec.message());
+            return;
         }
-        SceneScripting::Stop(m_Scene.get());
     }
 
-    m_RuntimeStarted = false;
-    m_IsSceneLoading = false;
-    m_LoadingOverlayElapsed = 0.0f;
-
-    m_Scene = std::make_shared<Scene>();
-
-    // Native module loading removed in favor of ScriptEngine (C#)
-
-    SceneSerializer serializer(m_Scene.get());
-    if (serializer.Deserialize(finalPath))
+    if (!ExistsNoThrow(scenePath))
     {
-        m_Scene->GetSettings().ScenePath = finalPath;
-
-        // Important: Update ScriptEngine context immediately
-        ScriptEngine::Get().SetActiveScene(m_Scene.get());
-
-        // Update camera aspect ratios for the new scene
-        Window& window = Application::Get().GetWindow();
-        m_Scene->OnViewportResize(window.GetWidth(), window.GetHeight());
-
-        // Boost asset uploads for scene loading
-        m_IsBoostingUploads = true;
-        m_BoostUploadsTimer = 5.0f; // Boost for 5 seconds
-        CH_CORE_INFO("RuntimeLayer: Boosting asset uploads for scene loading...");
-
-        m_IsSceneLoading = true;
-        m_LoadingOverlayElapsed = 0.0f;
-        CH_CORE_INFO("RuntimeLayer: Scene loaded, waiting for async assets before runtime start.");
+        CH_CORE_ERROR("RuntimeLayer: Scene file not found '{}'.", scenePath.string());
+        return;
     }
-    else
+
+    if (!TransitionToScene(scenePath))
     {
-        m_Scene = nullptr;
-        m_RuntimeStarted = false;
-        m_IsSceneLoading = false;
-        m_LoadingOverlayElapsed = 0.0f;
+        CH_CORE_ERROR("RuntimeLayer: Failed to transition to scene '{}'.", scenePath.string());
     }
 }
 
@@ -373,7 +399,13 @@ bool RuntimeLayer::InitProject(const std::string& projectPath)
     auto project = Project::GetActive();
 
     // Initialize Scripting for the loaded project
-    ScriptEngine::Get().ReloadAssembly();
+    if (!ScriptEngine::Get().ReloadAssembly())
+    {
+        CH_CORE_WARN("RuntimeLayer: Script reload failed during project initialization. Runtime continues without scripts.");
+    }
+
+    // Discover project fonts once before any scene loads.
+    UIRenderer::Get().LoadProjectFonts();
 
     ApplyWindowConfiguration();
     SetupBrandingAndIcon();
@@ -549,9 +581,218 @@ void RuntimeLayer::LoadInitialScene()
 
     if (!sceneToLoad.empty())
     {
-        std::filesystem::path fullPath = Project::GetAssetPath(sceneToLoad);
-        LoadScene(fullPath.string());
+        LoadScene(sceneToLoad);
     }
+}
+
+std::string RuntimeLayer::NormalizeScenePath(const std::string& path) const
+{
+    std::string normalized = TrimCopy(path);
+    if (normalized.empty())
+    {
+        return normalized;
+    }
+
+    std::replace(normalized.begin(), normalized.end(), '\\', '/');
+
+    while (normalized.rfind("./", 0) == 0)
+    {
+        normalized = normalized.substr(2);
+    }
+
+    if (normalized.rfind("assets/", 0) == 0)
+    {
+        normalized = normalized.substr(7);
+    }
+
+    return normalized;
+}
+
+void RuntimeLayer::StopCurrentScene()
+{
+    if (!m_Scene)
+    {
+        return;
+    }
+
+    if (m_RuntimeStarted)
+    {
+        SceneScripting::OnRuntimeStop(m_Scene.get());
+        m_Scene->OnRuntimeStop();
+    }
+
+    SceneScripting::Stop(m_Scene.get());
+}
+
+std::vector<std::pair<std::string, float>> RuntimeLayer::CollectSceneFontRequests() const
+{
+    std::vector<std::pair<std::string, float>> requests;
+    if (!m_Scene)
+    {
+        return requests;
+    }
+
+    std::unordered_set<std::string> dedupe;
+    auto& registry = m_Scene->GetRegistry();
+
+    auto buttonView = registry.view<ButtonControl>();
+    for (entt::entity id : buttonView)
+    {
+        AppendTextStyleFontRequest(buttonView.get<ButtonControl>(id).Text, requests, dedupe);
+    }
+
+    auto labelView = registry.view<LabelControl>();
+    for (entt::entity id : labelView)
+    {
+        AppendTextStyleFontRequest(labelView.get<LabelControl>(id).Style, requests, dedupe);
+    }
+
+    auto sliderView = registry.view<SliderControl>();
+    for (entt::entity id : sliderView)
+    {
+        AppendTextStyleFontRequest(sliderView.get<SliderControl>(id).Text, requests, dedupe);
+    }
+
+    auto checkboxView = registry.view<CheckboxControl>();
+    for (entt::entity id : checkboxView)
+    {
+        AppendTextStyleFontRequest(checkboxView.get<CheckboxControl>(id).Text, requests, dedupe);
+    }
+
+    auto inputTextView = registry.view<InputTextControl>();
+    for (entt::entity id : inputTextView)
+    {
+        AppendTextStyleFontRequest(inputTextView.get<InputTextControl>(id).Style, requests, dedupe);
+    }
+
+    auto comboView = registry.view<ComboBoxControl>();
+    for (entt::entity id : comboView)
+    {
+        AppendTextStyleFontRequest(comboView.get<ComboBoxControl>(id).Style, requests, dedupe);
+    }
+
+    auto progressView = registry.view<ProgressBarControl>();
+    for (entt::entity id : progressView)
+    {
+        AppendTextStyleFontRequest(progressView.get<ProgressBarControl>(id).Style, requests, dedupe);
+    }
+
+    auto radioView = registry.view<RadioButtonControl>();
+    for (entt::entity id : radioView)
+    {
+        AppendTextStyleFontRequest(radioView.get<RadioButtonControl>(id).Style, requests, dedupe);
+    }
+
+    auto dragFloatView = registry.view<DragFloatControl>();
+    for (entt::entity id : dragFloatView)
+    {
+        AppendTextStyleFontRequest(dragFloatView.get<DragFloatControl>(id).Style, requests, dedupe);
+    }
+
+    auto dragIntView = registry.view<DragIntControl>();
+    for (entt::entity id : dragIntView)
+    {
+        AppendTextStyleFontRequest(dragIntView.get<DragIntControl>(id).Style, requests, dedupe);
+    }
+
+    auto treeNodeView = registry.view<TreeNodeControl>();
+    for (entt::entity id : treeNodeView)
+    {
+        AppendTextStyleFontRequest(treeNodeView.get<TreeNodeControl>(id).Style, requests, dedupe);
+    }
+
+    auto tabItemView = registry.view<TabItemControl>();
+    for (entt::entity id : tabItemView)
+    {
+        AppendTextStyleFontRequest(tabItemView.get<TabItemControl>(id).Style, requests, dedupe);
+    }
+
+    auto collapsingHeaderView = registry.view<CollapsingHeaderControl>();
+    for (entt::entity id : collapsingHeaderView)
+    {
+        AppendTextStyleFontRequest(collapsingHeaderView.get<CollapsingHeaderControl>(id).Style, requests, dedupe);
+    }
+
+    auto plotLinesView = registry.view<PlotLinesControl>();
+    for (entt::entity id : plotLinesView)
+    {
+        AppendTextStyleFontRequest(plotLinesView.get<PlotLinesControl>(id).Style, requests, dedupe);
+    }
+
+    auto plotHistogramView = registry.view<PlotHistogramControl>();
+    for (entt::entity id : plotHistogramView)
+    {
+        AppendTextStyleFontRequest(plotHistogramView.get<PlotHistogramControl>(id).Style, requests, dedupe);
+    }
+
+    return requests;
+}
+
+void RuntimeLayer::PreloadSceneFonts(bool allowRuntimeMutation)
+{
+    auto requests = CollectSceneFontRequests();
+    if (requests.empty())
+    {
+        return;
+    }
+
+    const int loadedCount = UIRenderer::Get().GetFontRegistry().PreloadFonts(requests, allowRuntimeMutation);
+    if (loadedCount <= 0)
+    {
+        return;
+    }
+
+    CH_CORE_INFO("RuntimeLayer: Preloaded {} scene font tuple(s).", loadedCount);
+
+    if (allowRuntimeMutation && ImGui::GetFrameCount() > 0)
+    {
+        if (auto* imguiLayer = Application::Get().GetImGuiLayer())
+        {
+            if (!imguiLayer->RefreshFontAtlasTexture())
+            {
+                CH_CORE_WARN("RuntimeLayer: Scene fonts were loaded, but font atlas refresh failed.");
+            }
+        }
+    }
+}
+
+bool RuntimeLayer::TransitionToScene(const std::filesystem::path& scenePath)
+{
+    StopCurrentScene();
+
+    m_RuntimeStarted = false;
+    m_IsSceneLoading = false;
+    m_LoadingOverlayElapsed = 0.0f;
+
+    auto nextScene = std::make_shared<Scene>();
+    SceneSerializer serializer(nextScene.get());
+    if (!serializer.Deserialize(scenePath.string()))
+    {
+        m_Scene = nullptr;
+        ScriptEngine::Get().SetActiveScene(nullptr);
+        return false;
+    }
+
+    m_Scene = nextScene;
+    m_Scene->GetSettings().ScenePath = scenePath.string();
+
+    // Keep current ScriptEngine behavior intact while runtime owns transition flow.
+    ScriptEngine::Get().SetActiveScene(m_Scene.get());
+
+    Window& window = Application::Get().GetWindow();
+    m_Scene->OnViewportResize(window.GetWidth(), window.GetHeight());
+    EnsureRuntimeFramebuffer((uint32_t)window.GetWidth(), (uint32_t)window.GetHeight());
+
+    PreloadSceneFonts(ImGui::GetFrameCount() > 0);
+
+    m_IsBoostingUploads = true;
+    m_BoostUploadsTimer = 5.0f;
+    CH_CORE_INFO("RuntimeLayer: Boosting asset uploads for scene loading...");
+
+    m_IsSceneLoading = true;
+    m_LoadingOverlayElapsed = 0.0f;
+    CH_CORE_INFO("RuntimeLayer: Scene loaded, waiting for async assets before runtime start.");
+    return true;
 }
 
 std::optional<Camera3D> RuntimeLayer::GetActiveCamera()

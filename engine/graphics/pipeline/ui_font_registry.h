@@ -3,7 +3,9 @@
 
 #include "imgui.h"
 #include <string>
+#include <utility>
 #include <unordered_map>
+#include <vector>
 
 namespace CHEngine
 {
@@ -17,10 +19,18 @@ public:
     UIFontRegistry()  = default;
     ~UIFontRegistry() = default;
 
-    // Scans <ProjectAssetDir>/fonts/ for all TTF/OTF files and registers them.
+    // Scans <ProjectAssetDir>/fonts/ for all TTF/OTF files and discovers paths.
     // FontName key = relative path from assets/, e.g. "fonts/Roboto-Regular.ttf".
-    // Multiple sizes of the same file are registered on demand via GetFont().
+    // Multiple sizes are loaded explicitly via PreloadFonts().
     void LoadProjectFonts();
+
+    // Preloads explicit font tuples into ImGui atlas.
+    // Returns number of newly registered tuples.
+    int PreloadFonts(const std::vector<std::pair<std::string, float>>& requests, bool allowRuntimeMutation);
+
+    // Ensures project default font is available and returns it.
+    // Falls back to nullptr if no project font files are found.
+    ImFont* EnsureDefaultProjectFont(float pixelSize, bool allowRuntimeMutation);
 
     // Returns the ImFont* for the given relative font name and pixel size.
     // If not found or not loaded, returns nullptr (ImGui will use its default font).
@@ -42,6 +52,7 @@ private:
 
     // Build a cache key from name + size (rounded to 0.5px increments).
     static std::string MakeKey(const std::string& name, float size);
+    static std::string NormalizeFontName(std::string name);
 
     // map<"fonts/Roboto.ttf|16.0" -> ImFont*>
     std::unordered_map<std::string, ImFont*> m_Fonts;

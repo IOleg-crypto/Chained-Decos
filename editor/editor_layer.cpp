@@ -214,18 +214,23 @@ void EditorLayer::OnUpdate(Timestep ts)
     {
         if (EditorContext::GetSceneState() == SceneState::Play)
         {
-            if (ScriptEngine::Get().IsInitialized())
+            auto& scriptEngine = ScriptEngine::Get();
+
+            if (scriptEngine.IsInitialized() && !scriptEngine.IsReloadInProgress())
             {
                 SceneScripting::Update(scene.get(), ts);
             }
             scene->OnUpdateRuntime(ts);
 
             // Handle deferred scene loading requested from C# scripts
-            std::string pendingPath = ScriptEngine::Get().ConsumeRequestedScene();
-            if (!pendingPath.empty())
+            if (!scriptEngine.IsReloadInProgress())
             {
-                SceneChangeRequestEvent ev(pendingPath);
-                OnEvent(ev);
+                std::string pendingPath = scriptEngine.ConsumeRequestedScene();
+                if (!pendingPath.empty())
+                {
+                    SceneChangeRequestEvent ev(pendingPath);
+                    OnEvent(ev);
+                }
             }
         }
         else
@@ -252,7 +257,15 @@ void EditorLayer::OnUpdate(Timestep ts)
 
         if (Input::IsKeyDown(Key::LeftControl) && Input::IsKeyPressed(Key::R))
         {
-            ScriptEngine::Get().ReloadAssembly();
+            auto& scriptEngine = ScriptEngine::Get();
+            if (scriptEngine.IsReloadInProgress())
+            {
+                CH_CORE_INFO("EditorLayer: Script reload request ignored (reload already in progress).");
+            }
+            else if (!scriptEngine.ReloadAssembly())
+            {
+                CH_CORE_WARN("EditorLayer: Script reload failed from Ctrl+R shortcut.");
+            }
         }
     }
 }
@@ -322,7 +335,10 @@ bool EditorLayer::OnProjectOpened(ProjectOpenedEvent& e)
         {
             contentBrowser->SetRootDirectory(Project::GetAssetDirectory());
         }
-        ScriptEngine::Get().ReloadAssembly();
+        if (!ScriptEngine::Get().ReloadAssembly())
+        {
+            CH_CORE_WARN("EditorLayer: Script reload failed after project open.");
+        }
 
         m_Config.LastProjectPath = e.GetPath();
         SaveConfig();

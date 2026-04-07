@@ -48,6 +48,44 @@ TEST(SceneSerializationTest, SaveAndLoadScene)
     std::filesystem::remove_all("test_assets");
 }
 
+TEST(SceneSerializationTest, CameraProjectionRoundTrip)
+{
+    std::string testPath = "test_assets/test_camera_roundtrip.chscene";
+    std::filesystem::create_directories("test_assets");
+
+    UUID entityID;
+    {
+        Scene scene;
+        Entity entity = scene.CreateEntity("Camera Entity");
+        entityID = entity.GetUUID();
+
+        auto& cameraComponent = entity.AddComponent<CameraComponent>();
+        cameraComponent.Camera.SetProjectionType(ProjectionType::Orthographic);
+        cameraComponent.Camera.SetOrthographic(37.5f, -7.0f, 321.0f);
+
+        SceneSerializer serializer(&scene);
+        ASSERT_TRUE(serializer.Serialize(testPath));
+    }
+
+    {
+        Scene scene;
+        SceneSerializer serializer(&scene);
+        ASSERT_TRUE(serializer.Deserialize(testPath));
+
+        auto loadedEntity = scene.GetEntityByUUID(entityID);
+        ASSERT_TRUE(loadedEntity);
+        ASSERT_TRUE(loadedEntity.HasComponent<CameraComponent>());
+
+        const auto& camera = loadedEntity.GetComponent<CameraComponent>().Camera;
+        EXPECT_EQ(camera.GetProjectionType(), ProjectionType::Orthographic);
+        EXPECT_FLOAT_EQ(camera.GetOrthographicSize(), 37.5f);
+        EXPECT_FLOAT_EQ(camera.GetOrthographicNearClip(), -7.0f);
+        EXPECT_FLOAT_EQ(camera.GetOrthographicFarClip(), 321.0f);
+    }
+
+    std::filesystem::remove_all("test_assets");
+}
+
 // ============================================================
 //  Destructive / Negative Serialization Tests
 // ============================================================
