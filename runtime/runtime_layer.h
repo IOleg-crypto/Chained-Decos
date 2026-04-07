@@ -5,10 +5,13 @@
 #include "engine/graphics/api/framebuffer.h"
 #include "engine/scene/scene.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
+#include <filesystem>
 #include <functional>
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
+#include <vector>
 
 namespace CHEngine
 {
@@ -34,6 +37,11 @@ private:
     void ApplyWindowConfiguration();
     void SetupBrandingAndIcon();
     void LoadInitialScene();
+    std::string NormalizeScenePath(const std::string& path) const;
+    bool TransitionToScene(const std::filesystem::path& scenePath);
+    void StopCurrentScene();
+    void PreloadSceneFonts(bool allowRuntimeMutation);
+    std::vector<std::pair<std::string, float>> CollectSceneFontRequests() const;
     void EnsureRuntimeFramebuffer(uint32_t width, uint32_t height);
     bool IsSceneReadyToStart() const;
     void DrawLoadingOverlay();

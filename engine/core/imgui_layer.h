@@ -19,6 +19,9 @@ public:
     void Begin();
     void End();
 
+    // Recreate renderer device objects so newly added ImGui fonts become visible.
+    bool RefreshFontAtlasTexture();
+
     void BlockEvents(bool block)
     {
         m_BlockEvents = block;

@@ -48,7 +48,9 @@ void SceneScripting::OnRuntimeStop(Scene* scene)
 
 void SceneScripting::Update(Scene* scene, Timestep deltaTime)
 {
-    if (!ScriptEngine::Get().IsInitialized())
+    auto& scriptEngine = ScriptEngine::Get();
+
+    if (!scriptEngine.IsInitialized())
     {
         static bool s_WarnedOnce = false;
         if (!s_WarnedOnce)
@@ -59,7 +61,12 @@ void SceneScripting::Update(Scene* scene, Timestep deltaTime)
         return;
     }
 
-    ScriptEngine::Get().SetActiveScene(scene);
+    if (scriptEngine.IsReloadInProgress())
+    {
+        return;
+    }
+
+    scriptEngine.SetActiveScene(scene);
 
     auto& registry = scene->GetRegistry();
     auto view = registry.view<ManagedScriptComponent>();
@@ -84,7 +91,7 @@ void SceneScripting::Update(Scene* scene, Timestep deltaTime)
             // 1. Instantiation Phase
             if (!script.Instance && !script.ClassName.empty())
             {
-                auto* type = ScriptEngine::Get().GetScriptClass(script.ClassName);
+                auto* type = scriptEngine.GetScriptClass(script.ClassName);
                 if (type)
                 {
                     CH_CORE_INFO("SceneScripting::Update - Instantiating script '{}' for entity '{}'", script.ClassName,
@@ -185,12 +192,14 @@ void SceneScripting::Update(Scene* scene, Timestep deltaTime)
 
 void SceneScripting::Stop(Scene* scene)
 {
-    if (!ScriptEngine::Get().IsInitialized())
+    auto& scriptEngine = ScriptEngine::Get();
+
+    if (!scriptEngine.IsInitialized())
     {
         return;
     }
 
-    ScriptEngine::Get().SetActiveScene(scene);
+    scriptEngine.SetActiveScene(scene);
 
     scene->GetRegistry().view<ManagedScriptComponent>().each([&](auto entity, auto& msc) {
         for (auto& script : msc.Scripts)
@@ -226,7 +235,7 @@ void SceneScripting::Stop(Scene* scene)
         }
     });
 
-    ScriptEngine::Get().SetActiveScene(nullptr);
+    scriptEngine.SetActiveScene(nullptr);
 }
 
 void SceneScripting::DispatchEvent(Scene* scene, Event& e)
@@ -236,12 +245,19 @@ void SceneScripting::DispatchEvent(Scene* scene, Event& e)
 
 void SceneScripting::RenderUI(Scene* scene)
 {
-    if (!ScriptEngine::Get().IsInitialized())
+    auto& scriptEngine = ScriptEngine::Get();
+
+    if (!scriptEngine.IsInitialized())
     {
         return;
     }
 
-    ScriptEngine::Get().SetActiveScene(scene);
+    if (scriptEngine.IsReloadInProgress())
+    {
+        return;
+    }
+
+    scriptEngine.SetActiveScene(scene);
 
     auto& registry = scene->GetRegistry();
     auto view = registry.view<ManagedScriptComponent>();
@@ -267,7 +283,7 @@ void SceneScripting::RenderUI(Scene* scene)
         }
     }
 
-    ScriptEngine::Get().SetActiveScene(nullptr);
+    scriptEngine.SetActiveScene(nullptr);
 }
 
 } // namespace CHEngine
