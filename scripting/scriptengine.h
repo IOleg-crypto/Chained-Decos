@@ -39,9 +39,9 @@ public:
 
     // ── Assembly management ──────────────────────────────────────────────
     /// Load (or re-load) the game script DLL.
-    void LoadAppAssembly(const std::string& filepath);
+    bool LoadAppAssembly(const std::string& filepath);
     /// Hot-reload: stops running scripts, unloads the old ALC, loads the new DLL.
-    void ReloadAssembly();
+    bool ReloadAssembly();
 
     // ── Script type lookup ───────────────────────────────────────────────
     /// Returns a pointer to the Coral::Type for the given short or full class name.
@@ -58,6 +58,10 @@ public:
     bool IsInitialized() const
     {
         return m_IsInitialized;
+    }
+    bool IsReloadInProgress() const
+    {
+        return m_ReloadInProgress;
     }
     Scene* GetActiveScene() const
     {
@@ -85,6 +89,9 @@ public:
 
 private:
     void DiscoverScriptTypes();
+    void ClearLoadedAssemblyState();
+    bool RecreateAssemblyLoadContext(bool unloadCurrent);
+    bool LoadAssembliesTransactional(const std::filesystem::path& appAssemblyPath);
 
 private:
     Scene* m_ActiveScene = nullptr;
@@ -95,7 +102,9 @@ private:
     Coral::ManagedAssembly* m_CoreAssembly = nullptr;
 
     std::unordered_map<std::string, Coral::Type> m_ScriptClasses;
+    std::unordered_map<std::string, std::string> m_ShortNameToFullName;
     bool m_IsInitialized = false;
+    bool m_ReloadInProgress = false;
     std::string m_PendingScenePath;
 };
 

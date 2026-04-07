@@ -107,6 +107,25 @@ void ImGuiLayer::End()
     }
 }
 
+bool ImGuiLayer::RefreshFontAtlasTexture()
+{
+    if (!ImGui::GetCurrentContext())
+    {
+        CH_CORE_WARN("ImGuiLayer: Cannot refresh font atlas without an active ImGui context.");
+        return false;
+    }
+
+    ImGui_ImplOpenGL3_DestroyDeviceObjects();
+    if (!ImGui_ImplOpenGL3_CreateDeviceObjects())
+    {
+        CH_CORE_ERROR("ImGuiLayer: Failed to recreate OpenGL device objects for font atlas refresh.");
+        return false;
+    }
+
+    CH_CORE_INFO("ImGuiLayer: Refreshed font atlas texture.");
+    return true;
+}
+
 void ImGuiLayer::OnEvent(Event& e)
 {
     if (m_BlockEvents)

@@ -1,93 +1,162 @@
-#if 0
 #include "engine/core/base.h"
 #include "engine/core/assets/asset_manager.h"
-#include "engine/graphics/assets/model_asset.h"
+#include "engine/scene/project.h"
 #include "gtest/gtest.h"
 
+#include <atomic>
+#include <filesystem>
+#include <string>
+
 using namespace CHEngine;
+
+namespace
+{
+class DummyAsset final : public Asset
+{
+public:
+    DummyAsset()
+        : Asset(GetStaticType())
+    {
+    }
+
+    static AssetType GetStaticType()
+    {
+        return AssetType::None;
+    }
+
+    int OnLoadedCount = 0;
+    int LoadCount = 0;
+    std::string LastLoadedPath;
+
+    void OnLoaded() override
+    {
+        ++OnLoadedCount;
+    }
+};
+
+class CountingLoader final : public IAssetLoader
+{
+public:
+    explicit CountingLoader(bool shouldSucceed)
+        : m_ShouldSucceed(shouldSucceed)
+    {
+    }
+
+    std::shared_ptr<Asset> Create() override
+    {
+        ++CreateCalls;
+        return std::make_shared<DummyAsset>();
+    }
+
+    bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath) override
+    {
+        ++LoadCalls;
+        if (auto dummy = std::dynamic_pointer_cast<DummyAsset>(asset))
+        {
+            ++dummy->LoadCount;
+            dummy->LastLoadedPath = resolvedPath;
+        }
+
+        return m_ShouldSucceed;
+    }
+
+    int CreateCalls = 0;
+    int LoadCalls = 0;
+
+private:
+    bool m_ShouldSucceed = true;
+};
+
+std::string MakeUniqueAssetPath(const char* suffix)
+{
+    static std::atomic<uint64_t> counter{0};
+    return std::string("unit_tests/") + suffix + "_" + std::to_string(++counter) + ".dummy";
+}
+} // namespace
 
 class AssetManagerTest : public ::testing::Test
 {
 protected:
     void SetUp() override
     {
-#if defined(CH_CI)
-        GTEST_SKIP() << "Skipping graphics tests on CI due to lack of reliable OpenGL support.";
-#endif
-        GTEST_SKIP() << "Skipping asset manager tests - raylib dependencies removed, needs refactoring.";
+        auto project = Project::New();
+        project->GetConfig().ProjectDirectory = std::filesystem::current_path();
+        project->GetConfig().AssetDirectory = "assets";
+        Project::SetEngineRoot(project->GetConfig().ProjectDirectory);
     }
 
-    void TearDown() override
+    static CountingLoader* RegisterDummyLoader(bool shouldSucceed)
     {
-        // Cleanup handled by GTEST_SKIP in SetUp
+        auto loader = std::make_unique<CountingLoader>(shouldSucceed);
+        CountingLoader* rawLoader = loader.get();
+        AssetManager::Get().RegisterLoader(DummyAsset::GetStaticType(), std::move(loader));
+        return rawLoader;
     }
-
-    std::unique_ptr<AssetManager> m_AssetManager;
 };
 
-// These tests require a working OpenGL context
-
-TEST_F(AssetManagerTest, ProceduralModelLoading)
+TEST_F(AssetManagerTest, ResolvePathReturnsEmptyForEmptyInput)
 {
-    if (!IsWindowReady() || !m_AssetManager)
-    {
-        GTEST_SKIP() << "Skipping graphics test: No OpenGL context available.";
-    }
-
-    auto cube = m_AssetManager->Get<ModelAsset>(":cube:");
-    EXPECT_TRUE(cube);
-    EXPECT_GT(cube->GetModel().meshCount, 0);
+    EXPECT_TRUE(AssetManager::Get().ResolvePath("").empty());
 }
 
-TEST_F(AssetManagerTest, ModelCaching)
+TEST_F(AssetManagerTest, GetCachesAssetAndLoadsOnlyOnce)
 {
-    if (!IsWindowReady() || !m_AssetManager)
-    {
-        GTEST_SKIP() << "Skipping graphics test: No OpenGL context available.";
-    }
+    CountingLoader* loader = RegisterDummyLoader(true);
+    const std::string path = MakeUniqueAssetPath("cache");
 
-    auto cube1 = m_AssetManager->Get<ModelAsset>(":cube:");
-    auto cube2 = m_AssetManager->Get<ModelAsset>(":cube:");
+    auto first = AssetManager::Get().Get<DummyAsset>(path);
+    auto second = AssetManager::Get().Get<DummyAsset>(path);
 
-    EXPECT_EQ(cube1, cube2);
-    EXPECT_EQ(cube1->GetModel().meshes, cube2->GetModel().meshes);
+    ASSERT_NE(first, nullptr);
+    ASSERT_NE(second, nullptr);
+    EXPECT_EQ(first.get(), second.get());
+    EXPECT_EQ(loader->CreateCalls, 1);
+    EXPECT_EQ(loader->LoadCalls, 1);
+    EXPECT_EQ(first->GetState(), AssetState::Ready);
+    EXPECT_EQ(first->OnLoadedCount, 1);
+    EXPECT_FALSE(first->LastLoadedPath.empty());
 }
 
-TEST_F(AssetManagerTest, Unloading)
+TEST_F(AssetManagerTest, ResolveToHandleReturnsValidHandleAfterLoad)
 {
-    if (!IsWindowReady() || !m_AssetManager)
-    {
-        GTEST_SKIP() << "Skipping graphics test: No OpenGL context available.";
-    }
+    RegisterDummyLoader(true);
+    const std::string path = MakeUniqueAssetPath("handle");
 
-    auto cube = m_AssetManager->Get<ModelAsset>(":cube:");
-    EXPECT_TRUE(cube);
+    auto loaded = AssetManager::Get().Get<DummyAsset>(path);
+    ASSERT_NE(loaded, nullptr);
 
-    // AssetManager doesn't expose a public Remove<T>(); Reload<T>() re-fetches the asset
-    // from disk and replaces the cache entry — good enough to test eviction + reload.
-    EXPECT_NO_THROW(m_AssetManager->Reload<ModelAsset>(":cube:"));
+    AssetHandle handle = AssetManager::Get().ResolveToHandle(path);
+    EXPECT_NE((uint64_t)handle, 0ull);
+
+    auto byHandle = AssetManager::Get().Get<DummyAsset>(handle);
+    ASSERT_NE(byHandle, nullptr);
+    EXPECT_EQ(byHandle.get(), loaded.get());
 }
 
-
-TEST_F(AssetManagerTest, NonExistentAsset)
+TEST_F(AssetManagerTest, ReloadInvokesLoaderAgainForExistingAsset)
 {
-    if (!IsWindowReady() || !m_AssetManager)
-    {
-        return;
-    }
+    CountingLoader* loader = RegisterDummyLoader(true);
+    const std::string path = MakeUniqueAssetPath("reload");
 
-    auto asset = m_AssetManager->Get<ModelAsset>("this/path/does/not/exist.obj");
-    
-    // Wait for the asset to finish its async load attempt
-    while(asset->GetState() == AssetState::Loading) {
-        // busy wait is fine for this quick unit test
-    }
-    
-    EXPECT_TRUE(asset != nullptr);
-    if (asset)
-    {
-        EXPECT_EQ(asset->GetState(), AssetState::Failed);
-    }
+    auto asset = AssetManager::Get().Load<DummyAsset>(path);
+    ASSERT_NE(asset, nullptr);
+    ASSERT_EQ(loader->LoadCalls, 1);
+
+    AssetManager::Get().Reload<DummyAsset>(path);
+
+    EXPECT_EQ(loader->LoadCalls, 2);
+    EXPECT_GE(asset->OnLoadedCount, 2);
 }
 
-#endif
+TEST_F(AssetManagerTest, FailedLoadMarksAssetAsFailed)
+{
+    CountingLoader* loader = RegisterDummyLoader(false);
+    const std::string path = MakeUniqueAssetPath("failed");
+
+    auto asset = AssetManager::Get().Load<DummyAsset>(path);
+
+    ASSERT_NE(asset, nullptr);
+    EXPECT_EQ(loader->LoadCalls, 1);
+    EXPECT_EQ(asset->GetState(), AssetState::Failed);
+    EXPECT_EQ(asset->OnLoadedCount, 0);
+}

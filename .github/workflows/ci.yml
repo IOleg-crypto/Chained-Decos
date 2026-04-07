@@ -43,7 +43,7 @@ jobs:
       run:
         shell: bash
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         preset: [linux-gcc, linux-clang, windows-vs2022, windows-ninja]
         build_type: [Debug, Release]
@@ -134,9 +134,8 @@ jobs:
           else
             BUILD_PRESET="${{ matrix.preset }}"
           fi
-          
-          CPU_COUNT=$([[ "${{ runner.os }}" == "Linux" ]] && nproc || echo $NUMBER_OF_PROCESSORS)
-          cmake --build --preset $BUILD_PRESET --parallel $CPU_COUNT
+        
+          cmake --build --preset $BUILD_PRESET --parallel 16
 
       - name: Test
         run: |
