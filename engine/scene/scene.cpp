@@ -36,6 +36,7 @@ Scene::Scene()
 
 Scene::~Scene()
 {
+    Physics::ClearContext(this);
     // Clean up active signals
     GetRegistry().clear();
 }
@@ -88,12 +89,14 @@ void Scene::OnHierarchyDestroy(entt::registry& reg, entt::entity entity)
 
 void Scene::OnRuntimeStart()
 {
+    Physics::ResetAccumulator(this);
     m_IsSimulationRunning = true;
 }
 
 void Scene::OnRuntimeStop()
 {
     m_IsSimulationRunning = false;
+    Physics::ClearContext(this);
 }
 
 void Scene::OnUpdateRuntime(Timestep timestep)

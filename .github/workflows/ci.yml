@@ -11,7 +11,7 @@ on:
       - "**/CMakeLists.txt"
       - "**/CMakePresets.json"
       - "cmake/*.cmake"
-      - ".github/workflows/ci.yml"
+      - ".github/workflows/*.yml"
   pull_request:
     branches: [main, develop, chained-gui, refactor-branch]
     paths:
@@ -22,7 +22,7 @@ on:
       - "**/CMakeLists.txt"
       - "**/CMakePresets.json"
       - "cmake/*.cmake"
-      - ".github/workflows/ci.yml"
+      - ".github/workflows/*.yml"
   workflow_dispatch:
 
 concurrency:
@@ -36,162 +36,19 @@ env:
   DOTNET_NOLOGO: true
 
 jobs:
-  build:
-    name: ${{ matrix.os }} / ${{ matrix.preset }} (${{ matrix.build_type }})
-    runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        shell: bash
-    strategy:
-      fail-fast: true
-      matrix:
-        preset: [linux-gcc, linux-clang, windows-vs2022, windows-ninja]
-        build_type: [Debug, Release]
-        include:
-          - preset: linux-gcc
-            os: ubuntu-latest
-          - preset: linux-clang
-            os: ubuntu-latest
-          - preset: windows-vs2022
-            os: windows-latest
-          - preset: windows-ninja
-            os: windows-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          fetch-depth: 1
-
-      - name: Get CMake and Ninja
-        uses: lukka/get-cmake@latest
-
-      - name: Setup Compiler Cache
-        uses: hendrikmuhs/ccache-action@v1.2
-        with:
-          variant: ${{ runner.os == 'Windows' && 'sccache' || 'ccache' }}
-          key: ${{ runner.os }}-${{ matrix.preset }}-${{ matrix.build_type }}
-          max-size: 1G
-
-      - name: Setup Mold Linker
-        if: runner.os == 'Linux'
-        uses: rui314/setup-mold@v1
-
-      - name: Install Linux Dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential \
-            libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
-            libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
-            pkg-config libgtk-3-dev libdrm-dev libgbm-dev \
-            xvfb libxkbcommon-x11-0 libgl1-mesa-dri mesa-utils
-
-      - name: Setup Linux Compilers
-        if: runner.os == 'Linux'
-        run: |
-          if [[ "${{ matrix.preset }}" == *"gcc"* ]]; then
-            sudo apt-get install -y gcc-14 g++-14
-            echo "CC=gcc-14" >> $GITHUB_ENV
-            echo "CXX=g++-14" >> $GITHUB_ENV
-          elif [[ "${{ matrix.preset }}" == *"clang"* ]]; then
-            sudo apt-get install -y clang-18 clang++-18 libc++-18-dev libc++abi-18-dev lld-18 llvm-18
-            echo "CC=clang-18" >> $GITHUB_ENV
-            echo "CXX=clang++-18" >> $GITHUB_ENV
-            echo "LDFLAGS=-fuse-ld=lld" >> $GITHUB_ENV
-          fi
-
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-
-      - name: Configure
-        run: |
-          SANITIZERS_FLAG="OFF"
-          if [[ "${{ runner.os }}" == "Linux" && "${{ matrix.build_type }}" == "Debug" ]]; then 
-            SANITIZERS_FLAG="ON"
-          fi
-          
-          LAUNCHER="ccache"
-          if [[ "${{ runner.os }}" == "Windows" ]]; then LAUNCHER="sccache"; fi
-          
-          cmake --preset ${{ matrix.preset }} \
-            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" \
-            -DCMAKE_C_COMPILER_LAUNCHER=$LAUNCHER \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=$LAUNCHER \
-            -DCH_CI=ON \
-            -DENABLE_UNITY_BUILD=ON \
-            -DENABLE_SANITIZERS=$SANITIZERS_FLAG
-
-      - name: Build
-        run: |
-          if [[ "${{ matrix.preset }}" == *"vs2022"* ]]; then
-            BUILD_PRESET="${{ matrix.preset }}-${{ matrix.build_type }}"
-            BUILD_PRESET=$(echo "$BUILD_PRESET" | tr '[:upper:]' '[:lower:]')
-          else
-            BUILD_PRESET="${{ matrix.preset }}"
-          fi
-        
-          cmake --build --preset $BUILD_PRESET --parallel 16
-
-      - name: Test
-        run: |
-          BUILD_DIR="${{ github.workspace }}/build/${{ matrix.preset }}"
-          
-          if [[ "${{ runner.os }}" == "Linux" ]]; then
-            export LIBGL_ALWAYS_SOFTWARE=1
-            export GALLIUM_DRIVER=llvmpipe
-            export MESA_GL_VERSION_OVERRIDE=4.5
-            xvfb-run -a ctest --test-dir "$BUILD_DIR" -C "${{ matrix.build_type }}" --output-on-failure --timeout 300 --output-junit junit.xml
-          else
-            ctest --test-dir "$BUILD_DIR" -C "${{ matrix.build_type }}" --output-on-failure --timeout 300 --output-junit junit.xml
-          fi
-
-      - name: Upload Artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ runner.os }}-${{ matrix.preset }}-${{ matrix.build_type }}-binaries
-          path: build/${{ matrix.preset }}/bin
-          retention-days: 7
+  native:
+    name: Native Matrix
+    uses: ./.github/workflows/ci-native-reusable.yml
+    secrets: inherit
 
   managed-tests:
     name: Managed Scripts Tests
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-
-      - name: Restore managed tests
-        run: dotnet restore ./game/chaineddecos/scripts/tests/ChainedDecos.Scripts.Tests.csproj
-
-      - name: Run managed tests
-        run: dotnet test ./game/chaineddecos/scripts/tests/ChainedDecos.Scripts.Tests.csproj -c Release --no-restore --logger "trx;LogFileName=managed-tests.trx"
-
-      - name: Upload managed test report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: managed-tests-report
-          path: "**/managed-tests.trx"
-          retention-days: 7
+    uses: ./.github/workflows/ci-managed-reusable.yml
+    secrets: inherit
 
   quality-gate:
     name: PR Gate
     runs-on: ubuntu-latest
-    needs: [build, managed-tests]
+    needs: [native, managed-tests]
     steps:
       - run: echo "Native matrix and managed progression tests passed."

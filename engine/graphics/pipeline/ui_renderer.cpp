@@ -20,7 +20,17 @@ UIRenderer& UIRenderer::Get()
 
 void UIRenderer::Init()
 {
-    if (!s_Instance) s_Instance = new UIRenderer();
+    if (!s_Instance)
+    {
+        s_Instance = new UIRenderer();
+    }
+
+    if (s_Instance->m_Initialized)
+    {
+        return;
+    }
+
+    s_Instance->m_Initialized = true;
     CH_CORE_INFO("Initializing UIRenderer...");
 }
 
@@ -28,7 +38,11 @@ void UIRenderer::Shutdown()
 {
     if (s_Instance)
     {
-        CH_CORE_INFO("Shutting down UIRenderer...");
+        if (s_Instance->m_Initialized)
+        {
+            CH_CORE_INFO("Shutting down UIRenderer...");
+            s_Instance->m_Initialized = false;
+        }
         delete s_Instance;
         s_Instance = nullptr;
     }

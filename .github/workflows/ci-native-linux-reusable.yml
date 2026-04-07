@@ -1,0 +1,105 @@
+name: CI Native Linux Reusable
+
+on:
+  workflow_call:
+
+env:
+  CI: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_NOLOGO: true
+
+jobs:
+  build-linux:
+    name: ubuntu-latest / ${{ matrix.preset }} (${{ matrix.build_type }})
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: true
+      matrix:
+        preset: [linux-gcc, linux-clang]
+        build_type: [Debug, Release]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Get CMake and Ninja
+        uses: lukka/get-cmake@latest
+
+      - name: Setup Compiler Cache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          variant: ccache
+          key: Linux-${{ matrix.preset }}-${{ matrix.build_type }}
+          max-size: 1G
+
+      - name: Setup Mold Linker
+        uses: rui314/setup-mold@v1
+
+      - name: Install Linux Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential \
+            libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
+            libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
+            pkg-config libgtk-3-dev libdrm-dev libgbm-dev \
+            xvfb libxkbcommon-x11-0 libgl1-mesa-dri mesa-utils
+
+      - name: Setup Linux Compilers
+        run: |
+          if [[ "${{ matrix.preset }}" == *"gcc"* ]]; then
+            sudo apt-get install -y gcc-14 g++-14
+            echo "CC=gcc-14" >> $GITHUB_ENV
+            echo "CXX=g++-14" >> $GITHUB_ENV
+          elif [[ "${{ matrix.preset }}" == *"clang"* ]]; then
+            sudo apt-get install -y clang-18 clang++-18 libc++-18-dev libc++abi-18-dev lld-18 llvm-18
+            echo "CC=clang-18" >> $GITHUB_ENV
+            echo "CXX=clang++-18" >> $GITHUB_ENV
+            echo "LDFLAGS=-fuse-ld=lld" >> $GITHUB_ENV
+          fi
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Configure
+        run: |
+          SANITIZERS_FLAG="OFF"
+          if [[ "${{ matrix.build_type }}" == "Debug" ]]; then
+            SANITIZERS_FLAG="ON"
+          fi
+
+          cmake --preset ${{ matrix.preset }} \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCH_CI=ON \
+            -DENABLE_UNITY_BUILD=ON \
+            -DENABLE_SANITIZERS=$SANITIZERS_FLAG
+
+      - name: Build
+        run: cmake --build --preset ${{ matrix.preset }} --parallel 16
+
+      - name: Test
+        run: |
+          BUILD_DIR="${{ github.workspace }}/build/${{ matrix.preset }}"
+          export LIBGL_ALWAYS_SOFTWARE=1
+          export GALLIUM_DRIVER=llvmpipe
+          export MESA_GL_VERSION_OVERRIDE=4.5
+          xvfb-run -a ctest --test-dir "$BUILD_DIR" -C "${{ matrix.build_type }}" --output-on-failure --timeout 300 --output-junit junit.xml
+
+      - name: Upload Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Linux-${{ matrix.preset }}-${{ matrix.build_type }}-binaries
+          path: build/${{ matrix.preset }}/bin
+          retention-days: 7

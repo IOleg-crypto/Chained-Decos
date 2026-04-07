@@ -457,6 +457,25 @@ bool ScriptEngine::ReloadAssembly()
     return loaded;
 }
 
+bool ScriptEngine::RequestAssemblyReload(const char* requestSource)
+{
+    const char* source = (requestSource && requestSource[0] != '\0') ? requestSource : "ScriptEngine";
+
+    if (IsReloadInProgress())
+    {
+        CH_CORE_INFO("{}: Script reload request ignored (reload already in progress).", source);
+        return false;
+    }
+
+    if (!ReloadAssembly())
+    {
+        CH_CORE_WARN("{}: Script reload failed.", source);
+        return false;
+    }
+
+    return true;
+}
+
 // ── Type discovery ─────────────────────────────────────────────────────────────
 void ScriptEngine::DiscoverScriptTypes()
 {

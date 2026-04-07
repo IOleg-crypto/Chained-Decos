@@ -1,0 +1,80 @@
+name: CI Native Windows Reusable
+
+on:
+  workflow_call:
+
+env:
+  CI: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_NOLOGO: true
+
+jobs:
+  build-windows:
+    name: windows-latest / ${{ matrix.preset }} (${{ matrix.build_type }})
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: true
+      matrix:
+        preset: [windows-vs2022, windows-ninja]
+        build_type: [Debug, Release]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Get CMake and Ninja
+        uses: lukka/get-cmake@latest
+
+      - name: Setup Compiler Cache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          variant: sccache
+          key: Windows-${{ matrix.preset }}-${{ matrix.build_type }}
+          max-size: 1G
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Configure
+        run: |
+          cmake --preset ${{ matrix.preset }} \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" \
+            -DCMAKE_C_COMPILER_LAUNCHER=sccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
+            -DCH_CI=ON \
+            -DENABLE_UNITY_BUILD=ON \
+            -DENABLE_SANITIZERS=OFF
+
+      - name: Build
+        run: |
+          if [[ "${{ matrix.preset }}" == *"vs2022"* ]]; then
+            BUILD_PRESET="${{ matrix.preset }}-${{ matrix.build_type }}"
+            BUILD_PRESET=$(echo "$BUILD_PRESET" | tr '[:upper:]' '[:lower:]')
+          else
+            BUILD_PRESET="${{ matrix.preset }}"
+          fi
+
+          cmake --build --preset $BUILD_PRESET --parallel 16
+
+      - name: Test
+        run: |
+          BUILD_DIR="${{ github.workspace }}/build/${{ matrix.preset }}"
+          ctest --test-dir "$BUILD_DIR" -C "${{ matrix.build_type }}" --output-on-failure --timeout 300 --output-junit junit.xml
+
+      - name: Upload Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows-${{ matrix.preset }}-${{ matrix.build_type }}-binaries
+          path: build/${{ matrix.preset }}/bin
+          retention-days: 7

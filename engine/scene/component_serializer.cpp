@@ -28,6 +28,7 @@ void ComponentSerializer::Shutdown()
 {
     if (s_Instance)
     {
+        s_Instance->InternalShutdown();
         delete s_Instance;
         s_Instance = nullptr;
     }
@@ -35,6 +36,7 @@ void ComponentSerializer::Shutdown()
 
 ComponentSerializer::~ComponentSerializer()
 {
+    InternalShutdown();
     s_Instance = nullptr;
 }
 
@@ -71,6 +73,11 @@ void ComponentSerializer::SerializeID(YAML::Emitter& out, Entity entity)
 
 void ComponentSerializer::InternalInit()
 {
+    if (m_Initialized)
+    {
+        return;
+    }
+
     m_Registry.clear();
 
     RegisterCoreComponents();
@@ -79,6 +86,19 @@ void ComponentSerializer::InternalInit()
     RegisterGameplayComponents();
     RegisterUIComponents();
     RegisterScriptingComponents();
+
+    m_Initialized = true;
+}
+
+void ComponentSerializer::InternalShutdown()
+{
+    if (!m_Initialized)
+    {
+        return;
+    }
+
+    m_Registry.clear();
+    m_Initialized = false;
 }
 
 void ComponentSerializer::RegisterCoreComponents()
