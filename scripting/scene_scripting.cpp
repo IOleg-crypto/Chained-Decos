@@ -4,14 +4,47 @@
 #include "script_glue.h"
 #include "scriptengine.h"
 #include <Coral/ManagedObject.hpp>
+#include <memory>
 
 namespace CHEngine
 {
 
+namespace
+{
+class ActiveSceneScope
+{
+public:
+    ActiveSceneScope(ScriptEngine& engine, Scene* scene)
+        : m_Engine(engine)
+    {
+        m_Engine.SetActiveScene(scene);
+    }
+
+    ~ActiveSceneScope()
+    {
+        m_Engine.SetActiveScene(nullptr);
+    }
+
+private:
+    ScriptEngine& m_Engine;
+};
+} // namespace
+
 void SceneScripting::OnRuntimeStart(Scene* scene)
 {
-    Physics::SetCollisionCallback(scene, [scene](entt::entity a, entt::entity b) {
-        auto& registry = scene->GetRegistry();
+    std::weak_ptr<entt::registry> weakRegistry = scene->GetRegistryPtr();
+    Physics::SetCollisionCallback(scene, [weakRegistry](entt::entity a, entt::entity b) {
+        auto registryPtr = weakRegistry.lock();
+        if (!registryPtr)
+        {
+            return;
+        }
+
+        auto& registry = *registryPtr;
+        if (!registry.valid(a) || !registry.valid(b))
+        {
+            return;
+        }
 
         // Dispatch to object A
         if (registry.all_of<ManagedScriptComponent>(a))
@@ -50,10 +83,10 @@ void SceneScripting::Update(Scene* scene, Timestep deltaTime)
 {
     auto& scriptEngine = ScriptEngine::Get();
 
-    if (!scriptEngine.IsInitialized())
+    if (!scriptEngine.CanExecuteFrameScripts())
     {
         static bool s_WarnedOnce = false;
-        if (!s_WarnedOnce)
+        if (!s_WarnedOnce && !scriptEngine.IsInitialized())
         {
             CH_CORE_WARN("SceneScripting::Update - ScriptEngine not initialized. Scripts will not be updated.");
             s_WarnedOnce = true;
@@ -61,12 +94,7 @@ void SceneScripting::Update(Scene* scene, Timestep deltaTime)
         return;
     }
 
-    if (scriptEngine.IsReloadInProgress())
-    {
-        return;
-    }
-
-    scriptEngine.SetActiveScene(scene);
+    ActiveSceneScope activeScene(scriptEngine, scene);
 
     auto& registry = scene->GetRegistry();
     auto view = registry.view<ManagedScriptComponent>();
@@ -199,7 +227,7 @@ void SceneScripting::Stop(Scene* scene)
         return;
     }
 
-    scriptEngine.SetActiveScene(scene);
+    ActiveSceneScope activeScene(scriptEngine, scene);
 
     scene->GetRegistry().view<ManagedScriptComponent>().each([&](auto entity, auto& msc) {
         for (auto& script : msc.Scripts)
@@ -235,7 +263,6 @@ void SceneScripting::Stop(Scene* scene)
         }
     });
 
-    scriptEngine.SetActiveScene(nullptr);
 }
 
 void SceneScripting::DispatchEvent(Scene* scene, Event& e)
@@ -247,17 +274,12 @@ void SceneScripting::RenderUI(Scene* scene)
 {
     auto& scriptEngine = ScriptEngine::Get();
 
-    if (!scriptEngine.IsInitialized())
+    if (!scriptEngine.CanExecuteFrameScripts())
     {
         return;
     }
 
-    if (scriptEngine.IsReloadInProgress())
-    {
-        return;
-    }
-
-    scriptEngine.SetActiveScene(scene);
+    ActiveSceneScope activeScene(scriptEngine, scene);
 
     auto& registry = scene->GetRegistry();
     auto view = registry.view<ManagedScriptComponent>();
@@ -283,7 +305,6 @@ void SceneScripting::RenderUI(Scene* scene)
         }
     }
 
-    scriptEngine.SetActiveScene(nullptr);
 }
 
 } // namespace CHEngine

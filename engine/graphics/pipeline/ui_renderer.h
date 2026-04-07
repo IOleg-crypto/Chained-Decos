@@ -44,6 +44,7 @@ private:
     UIRect CalculateEntityRect(Entity entity, const UIRect& canvasRect, std::map<entt::entity, UIRect>& rectCache);
 
     UIFontRegistry    m_FontRegistry;
+    bool m_Initialized = false;
     static UIRenderer* s_Instance;
 };
 

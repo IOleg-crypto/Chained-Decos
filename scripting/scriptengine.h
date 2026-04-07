@@ -42,6 +42,8 @@ public:
     bool LoadAppAssembly(const std::string& filepath);
     /// Hot-reload: stops running scripts, unloads the old ALC, loads the new DLL.
     bool ReloadAssembly();
+    /// UI-safe reload entry point with consistent guard/log behavior.
+    bool RequestAssemblyReload(const char* requestSource);
 
     // ── Script type lookup ───────────────────────────────────────────────
     /// Returns a pointer to the Coral::Type for the given short or full class name.
@@ -63,6 +65,10 @@ public:
     {
         return m_ReloadInProgress;
     }
+    bool CanExecuteFrameScripts() const
+    {
+        return m_IsInitialized && !m_ReloadInProgress;
+    }
     Scene* GetActiveScene() const
     {
         return m_ActiveScene;
@@ -83,6 +89,19 @@ public:
         std::string s = m_PendingScenePath;
         m_PendingScenePath.clear();
         return s;
+    }
+    /// Safely consume pending scene requests for frame updates.
+    /// Returns false if reload is in progress or there is no pending path.
+    bool TryConsumeRequestedScene(std::string& outPath)
+    {
+        outPath.clear();
+        if (m_ReloadInProgress || m_PendingScenePath.empty())
+        {
+            return false;
+        }
+
+        outPath.swap(m_PendingScenePath);
+        return true;
     }
 
     static ScriptEngine& Get();

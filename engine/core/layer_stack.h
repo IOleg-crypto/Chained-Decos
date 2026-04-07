@@ -2,6 +2,7 @@
 #define CH_LAYER_STACK_H
 
 #include "layer.h"
+#include <memory>
 #include <vector>
 
 namespace CHEngine
@@ -9,11 +10,18 @@ namespace CHEngine
 class LayerStack
 {
 public:
+    using LayerStorage = std::vector<std::unique_ptr<Layer>>;
+
     LayerStack() = default;
     ~LayerStack();
 
     void Shutdown();
 
+    // Preferred ownership-aware API.
+    void PushLayer(std::unique_ptr<Layer> layer);
+    void PushOverlay(std::unique_ptr<Layer> overlay);
+
+    // Backward-compatible API; takes ownership of raw pointer.
     void PushLayer(Layer* layer);
     void PushOverlay(Layer* overlay);
     void PopLayer(Layer* layer);
@@ -21,7 +29,7 @@ public:
 
     bool HasLayer(const std::string& name) const
     {
-        for (auto layer : m_Layers)
+        for (const auto& layer : m_Layers)
         {
             if (layer && layer->GetName() == name)
             {
@@ -32,30 +40,32 @@ public:
     }
 
 public:
-    std::vector<Layer*>::iterator begin()
+    LayerStorage::iterator begin()
     {
         return m_Layers.begin();
     }
-    std::vector<Layer*>::iterator end()
+    LayerStorage::iterator end()
     {
         return m_Layers.end();
     }
-    std::vector<Layer*>::reverse_iterator rbegin()
+    LayerStorage::reverse_iterator rbegin()
     {
         return m_Layers.rbegin();
     }
-    std::vector<Layer*>::reverse_iterator rend()
+    LayerStorage::reverse_iterator rend()
     {
         return m_Layers.rend();
     }
 
-    std::vector<Layer*>& GetLayers()
+    LayerStorage& GetLayers()
     {
         return m_Layers;
     }
 
+    std::vector<Layer*> GetLayerPointersSnapshot() const;
+
 private:
-    std::vector<Layer*> m_Layers;
+    LayerStorage m_Layers;
     unsigned int m_LayerInsertIndex = 0;
 };
 } // namespace CHEngine
