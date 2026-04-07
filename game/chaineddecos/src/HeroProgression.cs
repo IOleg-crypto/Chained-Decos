@@ -11,10 +11,62 @@ namespace ChainedDecos.Scripts
         Economy
     }
 
+    // Strategy contract for branch-specific hero development.
+    public interface IHeroDevelopmentStrategy
+    {
+        ProgressBranch Branch { get; }
+        void Apply(HeroBuildState state);
+    }
+
+    public sealed class HeroBuildState
+    {
+        public int StrengthLevel { get; set; }
+        public int MagicLevel { get; set; }
+        public int EconomyLevel { get; set; }
+    }
+
+    public sealed class StrengthDevelopmentStrategy : IHeroDevelopmentStrategy
+    {
+        public ProgressBranch Branch => ProgressBranch.Strength;
+
+        public void Apply(HeroBuildState state)
+        {
+            state.StrengthLevel++;
+        }
+    }
+
+    public sealed class MagicDevelopmentStrategy : IHeroDevelopmentStrategy
+    {
+        public ProgressBranch Branch => ProgressBranch.Magic;
+
+        public void Apply(HeroBuildState state)
+        {
+            state.MagicLevel++;
+        }
+    }
+
+    public sealed class EconomyDevelopmentStrategy : IHeroDevelopmentStrategy
+    {
+        public ProgressBranch Branch => ProgressBranch.Economy;
+
+        public void Apply(HeroBuildState state)
+        {
+            state.EconomyLevel++;
+        }
+    }
+
     // Global progression state shared across gameplay scripts.
     public static class HeroProgression
     {
         private static readonly HashSet<string> s_CompletedLevelIds = new(StringComparer.OrdinalIgnoreCase);
+        private static readonly HeroBuildState s_BuildState = new();
+        private static readonly Dictionary<ProgressBranch, IHeroDevelopmentStrategy> s_DevelopmentStrategies =
+            new()
+            {
+                { ProgressBranch.Strength, new StrengthDevelopmentStrategy() },
+                { ProgressBranch.Magic, new MagicDevelopmentStrategy() },
+                { ProgressBranch.Economy, new EconomyDevelopmentStrategy() },
+            };
 
         public static int HeroLevel { get; private set; } = 1;
         public static int Experience { get; private set; } = 0;
@@ -22,9 +74,9 @@ namespace ChainedDecos.Scripts
         public static int SkillPoints { get; private set; } = 0;
         public static int Gold { get; private set; } = 0;
 
-        public static int StrengthLevel { get; private set; } = 0;
-        public static int MagicLevel { get; private set; } = 0;
-        public static int EconomyLevel { get; private set; } = 0;
+        public static int StrengthLevel => s_BuildState.StrengthLevel;
+        public static int MagicLevel => s_BuildState.MagicLevel;
+        public static int EconomyLevel => s_BuildState.EconomyLevel;
 
         public static int WeaponTier { get; private set; } = 1;
         public static int MagicTier { get; private set; } = 1;
@@ -58,9 +110,9 @@ namespace ChainedDecos.Scripts
             SkillPoints = 0;
             Gold = 0;
 
-            StrengthLevel = 0;
-            MagicLevel = 0;
-            EconomyLevel = 0;
+            s_BuildState.StrengthLevel = 0;
+            s_BuildState.MagicLevel = 0;
+            s_BuildState.EconomyLevel = 0;
 
             WeaponTier = 1;
             MagicTier = 1;
@@ -110,20 +162,14 @@ namespace ChainedDecos.Scripts
                 return false;
             }
 
-            SkillPoints--;
-
-            switch (branch)
+            if (!s_DevelopmentStrategies.TryGetValue(branch, out IHeroDevelopmentStrategy? strategy))
             {
-                case ProgressBranch.Strength:
-                    StrengthLevel++;
-                    break;
-                case ProgressBranch.Magic:
-                    MagicLevel++;
-                    break;
-                case ProgressBranch.Economy:
-                    EconomyLevel++;
-                    break;
+                Log.Warn($"progression: No strategy found for branch {branch}.");
+                return false;
             }
+
+            SkillPoints--;
+            strategy.Apply(s_BuildState);
 
             Log.Info($"progression: Upgraded {branch}. STR:{StrengthLevel} MAG:{MagicLevel} ECO:{EconomyLevel} | SP:{SkillPoints}");
             return true;

@@ -58,6 +58,17 @@ public class HeroProgressionTests
     }
 
     [Fact]
+    public void UpgradeBranch_ShouldApplySelectedStrategy()
+    {
+        HeroProgression.AddExperience(100, "combat");
+
+        Assert.True(HeroProgression.UpgradeBranch(ProgressBranch.Magic));
+        Assert.Equal(1, HeroProgression.MagicLevel);
+        Assert.Equal(0, HeroProgression.StrengthLevel);
+        Assert.Equal(0, HeroProgression.EconomyLevel);
+    }
+
+    [Fact]
     public void BuyWeaponUpgrade_ShouldSpendGoldAndIncreaseTier()
     {
         HeroProgression.AddGold(500, "loot");
