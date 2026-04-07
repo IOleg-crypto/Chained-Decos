@@ -216,21 +216,18 @@ void EditorLayer::OnUpdate(Timestep ts)
         {
             auto& scriptEngine = ScriptEngine::Get();
 
-            if (scriptEngine.IsInitialized() && !scriptEngine.IsReloadInProgress())
+            if (scriptEngine.CanExecuteFrameScripts())
             {
                 SceneScripting::Update(scene.get(), ts);
             }
             scene->OnUpdateRuntime(ts);
 
             // Handle deferred scene loading requested from C# scripts
-            if (!scriptEngine.IsReloadInProgress())
+            std::string pendingPath;
+            if (scriptEngine.TryConsumeRequestedScene(pendingPath))
             {
-                std::string pendingPath = scriptEngine.ConsumeRequestedScene();
-                if (!pendingPath.empty())
-                {
-                    SceneChangeRequestEvent ev(pendingPath);
-                    OnEvent(ev);
-                }
+                SceneChangeRequestEvent ev(pendingPath);
+                OnEvent(ev);
             }
         }
         else
@@ -258,14 +255,7 @@ void EditorLayer::OnUpdate(Timestep ts)
         if (Input::IsKeyDown(Key::LeftControl) && Input::IsKeyPressed(Key::R))
         {
             auto& scriptEngine = ScriptEngine::Get();
-            if (scriptEngine.IsReloadInProgress())
-            {
-                CH_CORE_INFO("EditorLayer: Script reload request ignored (reload already in progress).");
-            }
-            else if (!scriptEngine.ReloadAssembly())
-            {
-                CH_CORE_WARN("EditorLayer: Script reload failed from Ctrl+R shortcut.");
-            }
+            scriptEngine.RequestAssemblyReload("EditorLayer");
         }
     }
 }

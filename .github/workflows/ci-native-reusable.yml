@@ -1,0 +1,21 @@
+name: CI Native Reusable
+
+on:
+  workflow_call:
+
+env:
+  CI: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_NOLOGO: true
+
+jobs:
+  linux:
+    name: Native Linux Matrix
+    uses: ./.github/workflows/ci-native-linux-reusable.yml
+    secrets: inherit
+
+  windows:
+    name: Native Windows Matrix
+    uses: ./.github/workflows/ci-native-windows-reusable.yml
+    secrets: inherit

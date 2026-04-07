@@ -138,6 +138,7 @@ private:
 
 private:
     std::unique_ptr<RendererData> m_Data;
+    bool m_Initialized = false;
 
     static Renderer* s_Instance;
 };

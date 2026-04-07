@@ -155,14 +155,7 @@ void EditorGUI::DrawMenuBar(EditorPanels& panels)
         if (ImGui::MenuItem(ICON_FA_FILE_CODE " Reload Scripts", "Ctrl+R"))
         {
             auto& scriptEngine = ScriptEngine::Get();
-            if (scriptEngine.IsReloadInProgress())
-            {
-                CH_CORE_INFO("EditorGUI: Script reload request ignored (reload already in progress).");
-            }
-            else if (!scriptEngine.ReloadAssembly())
-            {
-                CH_CORE_WARN("EditorGUI: Script reload failed from menu action.");
-            }
+            scriptEngine.RequestAssemblyReload("EditorGUI");
         }
         ImGui::EndMenu();
     }

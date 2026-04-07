@@ -57,7 +57,10 @@ public:
     }
     void Run();
 
+    void PushLayer(std::unique_ptr<Layer> layer);
     void PushLayer(Layer* layer);
+
+    void PushOverlay(std::unique_ptr<Layer> overlay);
     void PushOverlay(Layer* overlay);
 
     void OnEvent(Event& e);
