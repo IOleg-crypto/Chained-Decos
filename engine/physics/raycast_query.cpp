@@ -1,21 +1,18 @@
-#include "scene_trace.h"
+#include "raycast_query.h"
+
 #include "bvh/bvh.h"
-#include <cfloat>
-#include <cmath>
-#include <algorithm>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include "engine/core/assets/asset_manager.h"
 #include "engine/graphics/assets/model_asset.h"
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
-#include "engine/scene/scene.h"
 #include "physics.h"
+#include <algorithm>
+#include <cfloat>
+#include <glm/glm.hpp>
 
 namespace CHEngine
 {
-
-bool SceneTrace::RayAABB(glm::vec3 origin, glm::vec3 dir, glm::vec3 min, glm::vec3 max, float& t, glm::vec3& normal)
+bool RaycastQuery::RayAABB(glm::vec3 origin, glm::vec3 dir, glm::vec3 min, glm::vec3 max, float& t, glm::vec3& normal)
 {
     glm::vec3 invDir = 1.0f / dir;
 
@@ -33,22 +30,22 @@ bool SceneTrace::RayAABB(glm::vec3 origin, glm::vec3 dir, glm::vec3 min, glm::ve
         t = minVal;
         if (minVal == tMin.x)
         {
-            normal = { (float)(dir.x > 0 ? -1 : 1), 0, 0 };
+            normal = {(float)(dir.x > 0 ? -1 : 1), 0, 0};
         }
         else if (minVal == tMin.y)
         {
-            normal = { 0, (float)(dir.y > 0 ? -1 : 1), 0 };
+            normal = {0, (float)(dir.y > 0 ? -1 : 1), 0};
         }
         else
         {
-            normal = { 0, 0, (float)(dir.z > 0 ? -1 : 1) };
+            normal = {0, 0, (float)(dir.z > 0 ? -1 : 1)};
         }
         return true;
     }
     return false;
 }
 
-RaycastResult SceneTrace::Raycast(::entt::registry& registry, Ray ray)
+RaycastResult RaycastQuery::Raycast(entt::registry& registry, Ray ray)
 {
     RaycastResult result;
     result.Hit = false;
@@ -59,8 +56,9 @@ RaycastResult SceneTrace::Raycast(::entt::registry& registry, Ray ray)
     glm::vec3 rayDir = glm::normalize(ray.direction);
 
     auto view = registry.view<TransformComponent, ColliderComponent>();
-    for (auto entity : view)
+    for (auto it = view.begin(); it != view.end(); ++it)
     {
+        auto entity = *it;
         auto& entityTransform = view.get<TransformComponent>(entity);
         auto& colliderComp = view.get<ColliderComponent>(entity);
 
@@ -78,11 +76,11 @@ RaycastResult SceneTrace::Raycast(::entt::registry& registry, Ray ray)
         if (colliderComp.Type == ColliderType::Box)
         {
             float t = 0;
-            glm::vec3 localNormal = { 0, 0, 0 };
+            glm::vec3 localNormal = {0, 0, 0};
             glm::vec3 boxMin = colliderComp.Offset;
             glm::vec3 boxMax = colliderComp.Offset + colliderComp.Size;
 
-            if (SceneTrace::RayAABB(localOrigin, localDir, boxMin, boxMax, t, localNormal))
+            if (RayAABB(localOrigin, localDir, boxMin, boxMax, t, localNormal))
             {
                 glm::vec3 hitPosLocal = localOrigin + localDir * t;
                 glm::vec3 hitPosWorld = glm::vec3(modelMatrix * glm::vec4(hitPosLocal, 1.0f));
@@ -108,26 +106,25 @@ RaycastResult SceneTrace::Raycast(::entt::registry& registry, Ray ray)
                 continue;
             }
 
-            auto project = Project::GetActive();
-            if (!project)
+            if (!Project::GetActive())
             {
                 continue;
             }
 
-            auto bvh = PhysicsSystem::Get().GetBVH(modelComp->ModelPath);
+            auto bvh = Physics::GetBVH(modelComp->ModelPath);
             if (!bvh)
             {
                 continue;
             }
 
-            Ray localRay = { localOrigin, localDir };
-            float t_local = FLT_MAX;
-            glm::vec3 localNormal = { 0, 0, 0 };
+            Ray localRay = {localOrigin, localDir};
+            float tLocal = FLT_MAX;
+            glm::vec3 localNormal = {0, 0, 0};
             int localMeshIndex = -1;
 
-            if (bvh->Raycast(localRay, t_local, localNormal, localMeshIndex))
+            if (bvh->Raycast(localRay, tLocal, localNormal, localMeshIndex))
             {
-                glm::vec3 hitPosLocal = localOrigin + localDir * t_local;
+                glm::vec3 hitPosLocal = localOrigin + localDir * tLocal;
                 glm::vec3 hitPosWorld = glm::vec3(modelMatrix * glm::vec4(hitPosLocal, 1.0f));
                 float distWorld = glm::distance(rayOrigin, hitPosWorld);
 

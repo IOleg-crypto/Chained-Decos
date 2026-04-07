@@ -5,46 +5,14 @@
 #include "engine/core/timestep.h"
 #include "entt/entt.hpp"
 #include <functional>
-#include <future>
 #include <memory>
-#include <mutex>
-#include <unordered_map>
+#include <string>
 #include "raycast_result.h"
 
 namespace CHEngine
 {
 class Scene;
 class BVH;
-
-// Represents the physics simulation and spatial query context for a specific scene.
-// Following the 'Action-Based' naming convention (Physics instead of PhysicsSystem).
-// Organized with encapsulated instance state.
-
-
-class PhysicsSystem
-{
-public:
-    PhysicsSystem();
-    ~PhysicsSystem();
-
-    static void Init();
-    static void Shutdown();
-
-    void InternalInit();
-    void InternalShutdown();
-
-    static PhysicsSystem& Get();
-
-    // BVH Cache moved to global system
-    std::shared_ptr<BVH> GetBVH(const std::string& path);
-    void InvalidateBVH(const std::string& path);
-    void UpdateBVHCache(const std::string& path, std::shared_ptr<BVH> bvh);
-
-private:
-    // Localized BVH cache in global system
-    std::unordered_map<std::string, std::shared_future<std::shared_ptr<BVH>>> m_BVHCache;
-    mutable std::mutex m_BVHMutex;
-};
 
 struct PhysicsContext
 {
@@ -54,6 +22,16 @@ struct PhysicsContext
 
 class Physics
 {
+public: // Lifecycle
+    static void Init();
+    static void Shutdown();
+    static bool IsInitialized();
+
+public: // BVH cache API
+    static std::shared_ptr<BVH> GetBVH(const std::string& path);
+    static void InvalidateBVH(const std::string& path);
+    static void UpdateBVHCache(const std::string& path, std::shared_ptr<BVH> bvh);
+
 public: // Simulation & Queries
     // Steps the physics simulation and updates collider states for a given scene.
     static void Update(Scene* scene, Timestep deltaTime, bool runtime = false);
@@ -63,6 +41,8 @@ public: // Simulation & Queries
 
     // Context management helpers
     static PhysicsContext& GetContext(Scene* scene);
+    static void ResetAccumulator(Scene* scene);
+    static void ClearContext(Scene* scene);
     static void SetCollisionCallback(Scene* scene, std::function<void(entt::entity, entt::entity)> callback);
 
 private: // Internal Helpers

@@ -86,7 +86,11 @@ Entities:
       Auto Size: false
     ManagedScriptComponent:
       Scripts:
-        - ClassName: ChainedDecos.Scripts.SceneScript
+        - ClassName: ChainedDecos.Scripts.LoadSceneButton
+          Fields:
+            - Name: TargetScene
+              Type: 4
+              Value: scenes/start_menu.chscene
   - Entity: 1004
     TagComponent:
       Tag: btn_apply_settings
