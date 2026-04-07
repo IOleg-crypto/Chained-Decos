@@ -146,9 +146,6 @@ cmake --preset linux-clang
 
 # Windows (Ninja)
 cmake --preset windows-ninja
-
-# Windows (Visual Studio generator)
-cmake --preset windows-vs2022
 ```
 
 1. Build:
@@ -157,10 +154,6 @@ cmake --preset windows-vs2022
 # Ninja presets
 cmake --build --preset linux-clang --parallel
 cmake --build --preset windows-ninja --parallel
-
-# Visual Studio preset uses config-specific build presets
-cmake --build --preset windows-vs2022-debug --parallel
-cmake --build --preset windows-vs2022-release --parallel
 ```
 
 1. Run editor:
@@ -180,12 +173,11 @@ CMake presets defined in CMakePresets.json:
 - linux-gcc
 - linux-clang
 - windows-ninja
-- windows-vs2022
 
 Notes:
 
 - BUILD_TESTS defaults to ON in presets.
-- If you switch generator families (for example Ninja to Visual Studio), do a clean configure for that build directory.
+- If you switch presets or major toolchains, do a clean configure for that build directory.
 - Optional compiler cache support is built in through ccache/sccache integration in CI and CMake options.
 
 ## Run

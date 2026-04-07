@@ -38,9 +38,8 @@ void AppendBuildBinCandidates(std::vector<std::filesystem::path>& out, const std
     if (root.empty())
         return;
 
-    static constexpr std::array<const char*, 4> kPresetDirs = {
+    static constexpr std::array<const char*, 3> kPresetDirs = {
         "windows-ninja",
-        "windows-vs2022",
         "linux-gcc",
         "linux-clang",
     };
