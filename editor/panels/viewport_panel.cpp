@@ -540,7 +540,15 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         ImGui::SameLine(0, 5);
         if (ImGui::Button(ICON_FA_FILE_CODE "##ReloadToolbar", ImVec2(28, 28)))
         {
-            ScriptEngine::Get().ReloadAssembly();
+            auto& scriptEngine = ScriptEngine::Get();
+            if (scriptEngine.IsReloadInProgress())
+            {
+                CH_CORE_INFO("ViewportPanel: Script reload request ignored (reload already in progress).");
+            }
+            else if (!scriptEngine.ReloadAssembly())
+            {
+                CH_CORE_WARN("ViewportPanel: Script reload failed from toolbar action.");
+            }
         }
         if (ImGui::IsItemHovered())
         {

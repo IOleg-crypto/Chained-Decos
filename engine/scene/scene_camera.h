@@ -99,35 +99,35 @@ public:
     CH_REFLECT_BEGIN(SceneCamera)
         ProjectionType type = GetProjectionType();
         static const char* projTypes[] = { "Perspective", "Orthographic" };
-        if (props.Enum("Projection", type, projTypes, 2))
+        if (props.Enum("Projection", type, projTypes, 2) || props.GetMode() == ReflectionMode::Deserialize)
             SetProjectionType(type);
 
         if (type == ProjectionType::Perspective)
         {
             float fov = glm::degrees(m_PerspectiveFOV);
-            if (props.Property("VerticalFOV", fov))
+            if (props.Property("VerticalFOV", fov) || props.GetMode() == ReflectionMode::Deserialize)
                 SetPerspectiveVerticalFOV(glm::radians(fov));
             
             float n = m_PerspectiveNear;
-            if (props.Property("Near", n))
+            if (props.Property("Near", n) || props.GetMode() == ReflectionMode::Deserialize)
                 SetPerspectiveNearClip(n);
             
             float f = m_PerspectiveFar;
-            if (props.Property("Far", f))
+            if (props.Property("Far", f) || props.GetMode() == ReflectionMode::Deserialize)
                 SetPerspectiveFarClip(f);
         }
         else
         {
             float size = m_OrthographicSize;
-            if (props.Property("Size", size))
+            if (props.Property("Size", size) || props.GetMode() == ReflectionMode::Deserialize)
                 SetOrthographicSize(size);
             
             float n = m_OrthographicNear;
-            if (props.Property("Near", n))
+            if (props.Property("Near", n) || props.GetMode() == ReflectionMode::Deserialize)
                 SetOrthographicNearClip(n);
             
             float f = m_OrthographicFar;
-            if (props.Property("Far", f))
+            if (props.Property("Far", f) || props.GetMode() == ReflectionMode::Deserialize)
                 SetOrthographicFarClip(f);
         }
     CH_REFLECT_END()
@@ -140,7 +140,7 @@ private:
 
     float m_PerspectiveFOV = glm::radians(60.0f);
     float m_PerspectiveNear = 0.01f;
-    float m_PerspectiveFar = 1000.0f;
+    float m_PerspectiveFar = 100000.0f;
 
     float m_OrthographicSize = 10.0f;
     float m_OrthographicNear = -1.0f;
