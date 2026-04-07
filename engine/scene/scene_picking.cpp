@@ -71,7 +71,7 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
         int localMeshIndex = -1;
 
         bool hit = false;
-        auto bvh = PhysicsSystem::Get().GetBVH(modelComp.ModelPath);
+        auto bvh = Physics::GetBVH(modelComp.ModelPath);
 
         if (bvh)
         {
