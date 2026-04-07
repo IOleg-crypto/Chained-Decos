@@ -174,7 +174,7 @@ Entities:
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     SceneTransitionComponent:
-      TargetScenePath: scenes/main_menu.chscene
+      TargetScenePath: scenes/start_menu.chscene
       Triggered: false
     ControlComponent:
       Rect Transform:

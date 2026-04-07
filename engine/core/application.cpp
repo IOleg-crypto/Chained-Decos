@@ -84,7 +84,7 @@ Application::Application(const ApplicationSpecification& specification)
 
     Renderer::Init();
     UIRenderer::Init();
-    PhysicsSystem::Init();
+    Physics::Init();
     ComponentSerializer::Init();
     ScriptEngine::Init();
 
@@ -99,8 +99,9 @@ Application::Application(const ApplicationSpecification& specification)
     if (!m_Specification.Headless)
     {
         NFD_Init();
-        m_ImGuiLayer = new ImGuiLayer();
-        PushOverlay(m_ImGuiLayer);
+        auto imguiLayer = std::make_unique<ImGuiLayer>();
+        m_ImGuiLayer = imguiLayer.get();
+        PushOverlay(std::move(imguiLayer));
     }
 
     CH_CORE_INFO("Application Initialized: {}", m_Specification.Name);
@@ -114,7 +115,7 @@ Application::~Application()
 
     ScriptEngine::Shutdown();
     ComponentSerializer::Shutdown();
-    PhysicsSystem::Shutdown();
+    Physics::Shutdown();
     UIRenderer::Shutdown();
     Renderer::Shutdown();
 
@@ -129,20 +130,32 @@ Application::~Application()
     CH_CORE_INFO("Engine Shutdown Successfully.");
 }
 
-void Application::PushLayer(Layer* layer)
+void Application::PushLayer(std::unique_ptr<Layer> layer)
 {
     CH_CORE_ASSERT(layer, "Layer is null!");
-    m_LayerStack->PushLayer(layer);
-    layer->OnAttach();
-    CH_CORE_INFO("Layer Attached: {}", layer->GetName());
+    Layer* rawLayer = layer.get();
+    m_LayerStack->PushLayer(std::move(layer));
+    rawLayer->OnAttach();
+    CH_CORE_INFO("Layer Attached: {}", rawLayer->GetName());
+}
+
+void Application::PushLayer(Layer* layer)
+{
+    PushLayer(std::unique_ptr<Layer>(layer));
+}
+
+void Application::PushOverlay(std::unique_ptr<Layer> overlay)
+{
+    CH_CORE_ASSERT(overlay, "Overlay is null!");
+    Layer* rawOverlay = overlay.get();
+    m_LayerStack->PushOverlay(std::move(overlay));
+    rawOverlay->OnAttach();
+    CH_CORE_INFO("Overlay Attached: {}", rawOverlay->GetName());
 }
 
 void Application::PushOverlay(Layer* overlay)
 {
-    CH_CORE_ASSERT(overlay, "Overlay is null!");
-    m_LayerStack->PushOverlay(overlay);
-    overlay->OnAttach();
-    CH_CORE_INFO("Overlay Attached: {}", overlay->GetName());
+    PushOverlay(std::unique_ptr<Layer>(overlay));
 }
 
 void Application::OnEvent(Event& e)
@@ -153,7 +166,7 @@ void Application::OnEvent(Event& e)
 
     // Propagate events from top to bottom (overlays first)
     // We use a copy of the layer stack to avoid iterator invalidation if a layer is removed during event handling
-    auto layers = m_LayerStack->GetLayers();
+    auto layers = m_LayerStack->GetLayerPointersSnapshot();
     for (auto it = layers.rbegin(); it != layers.rend(); ++it)
     {
         if (e.Handled)
@@ -255,7 +268,7 @@ void Application::Run()
                 // -- Logic/Simulation --
                 
                 // 1. Variable Update
-                for (auto layer : *m_LayerStack)
+                for (auto& layer : *m_LayerStack)
                 {
                     if (layer->IsEnabled())
                     {
@@ -267,7 +280,7 @@ void Application::Run()
                 m_Accumulator += (float)m_DeltaTime;
                 while (m_Accumulator >= m_FixedTimestep)
                 {
-                    for (auto layer : *m_LayerStack)
+                    for (auto& layer : *m_LayerStack)
                     {
                         if (layer->IsEnabled())
                         {
@@ -280,7 +293,7 @@ void Application::Run()
                 // -- Rendering --
                 m_Window->BeginFrame();
 
-                for (auto layer : *m_LayerStack)
+                for (auto& layer : *m_LayerStack)
                 {
                     if (layer->IsEnabled())
                     {
@@ -290,7 +303,7 @@ void Application::Run()
 
                 // ImGui
                 m_ImGuiLayer->Begin();
-                for (auto layer : *m_LayerStack)
+                for (auto& layer : *m_LayerStack)
                 {
                     if (layer->IsEnabled())
                     {

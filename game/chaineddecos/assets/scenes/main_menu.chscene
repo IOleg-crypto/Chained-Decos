@@ -124,8 +124,8 @@ Entities:
       Auto Size: false
     ManagedScriptComponent:
       Scripts:
-        - ClassName: chaineddecos.scripts.mainmenuscript
-        - ClassName: chaineddecos.scripts.debuginfoscript
+        - ClassName: ChainedDecos.Scripts.SceneScript
+        - ClassName: ChainedDecos.Scripts.DebugInfoScript
   - Entity: 17229056952832949834
     TagComponent:
       Tag: Info
@@ -177,7 +177,7 @@ Entities:
       Auto Size: false
     ManagedScriptComponent:
       Scripts:
-        - ClassName: chaineddecos.scripts.scenescript
+        - ClassName: ChainedDecos.Scripts.SceneScript
   - Entity: 10048507876963945433
     TagComponent:
       Tag: Options
@@ -229,7 +229,7 @@ Entities:
       Auto Size: false
     ManagedScriptComponent:
       Scripts:
-        - ClassName: chaineddecos.scripts.scenescript
+        - ClassName: ChainedDecos.Scripts.SceneScript
   - Entity: 9971589997937633979
     TagComponent:
       Tag: Exit
@@ -278,7 +278,7 @@ Entities:
       Auto Size: false
     ManagedScriptComponent:
       Scripts:
-        - ClassName: chaineddecos.scripts.exitscript
+        - ClassName: ChainedDecos.Scripts.ExitScript
   - Entity: 6803442666813639815
     TagComponent:
       Tag: game_info_1

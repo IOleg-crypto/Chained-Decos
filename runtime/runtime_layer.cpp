@@ -13,6 +13,7 @@
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
 #include "engine/graphics/pipeline/ui_renderer.h"
+#include "engine/scene/components.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene_events.h"
 #include "engine/scene/scene_serializer.h"
@@ -142,12 +143,34 @@ void RuntimeLayer::OnUpdate(Timestep ts)
 {
     auto& scriptEngine = ScriptEngine::Get();
 
-    if (!scriptEngine.IsReloadInProgress())
+    std::string pendingPath;
+    if (scriptEngine.TryConsumeRequestedScene(pendingPath))
     {
-        std::string pendingPath = scriptEngine.ConsumeRequestedScene();
-        if (!pendingPath.empty())
+        LoadScene(pendingPath);
+        return;
+    }
+
+    if (m_Scene && m_RuntimeStarted && !m_IsSceneLoading)
+    {
+        auto& registry = m_Scene->GetRegistry();
+        auto transitionView = registry.view<ButtonControl, SceneTransitionComponent>();
+        for (entt::entity id : transitionView)
         {
-            LoadScene(pendingPath);
+            auto& button = transitionView.get<ButtonControl>(id);
+            auto& transition = transitionView.get<SceneTransitionComponent>(id);
+            if (!button.PressedThisFrame || !button.IsInteractable)
+            {
+                continue;
+            }
+
+            if (transition.TargetScenePath.empty())
+            {
+                continue;
+            }
+
+            CH_CORE_INFO("RuntimeLayer: UI scene transition '{}' -> '{}'", button.Label, transition.TargetScenePath);
+            LoadScene(transition.TargetScenePath);
+            return;
         }
     }
 
@@ -167,7 +190,7 @@ void RuntimeLayer::OnUpdate(Timestep ts)
 
     if (m_Scene && m_RuntimeStarted)
     {
-        if (!scriptEngine.IsReloadInProgress())
+        if (scriptEngine.CanExecuteFrameScripts())
         {
             SceneScripting::Update(m_Scene.get(), ts);
         }

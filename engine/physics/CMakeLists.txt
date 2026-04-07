@@ -1,15 +1,17 @@
 add_library(engine_physics ${SUBMODULE_LIB_TYPE}
         physics.cpp
         dynamics.cpp
-        narrow_phase.cpp
-        scene_trace.cpp
+    collision_core.cpp
+    raycast_query.cpp
+        bvh/bvh_cache.cpp
         bvh/bvh.cpp
         collision/collision_triangle.cpp
 
         physics.h
         dynamics.h
-        narrow_phase.h
-        scene_trace.h
+    collision_core.h
+    raycast_query.h
+        bvh/bvh_cache.h
         bvh/bvh.h
         bvh/bvh_node.h
         collision/collision.h

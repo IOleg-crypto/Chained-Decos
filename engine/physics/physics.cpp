@@ -1,143 +1,92 @@
 #include "engine/core/profiler.h"
-#include "engine/core/assets/asset_manager.h"
-#include "engine/graphics/assets/model_asset.h"
-#include "engine/physics/bvh/bvh.h"
 #include "physics.h"
+#include "engine/core/assets/asset_manager.h"
+#include "engine/core/log.h"
+#include "engine/graphics/assets/model_asset.h"
+#include "engine/physics/bvh/bvh_cache.h"
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene.h"
-#include "narrow_phase.h"
-#include "scene_trace.h"
+#include "collision_core.h"
+#include "raycast_query.h"
 #include "dynamics.h"
-#include <mutex>
-#include <unordered_map>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
-#include "engine/core/application.h"
+#include <utility>
+#include <vector>
 
 namespace CHEngine
 {
-static PhysicsSystem* s_PhysicsInstance = nullptr;
-
-PhysicsSystem::PhysicsSystem()
+namespace
 {
-    CH_CORE_ASSERT(!s_PhysicsInstance, "PhysicsSystem already exists!");
-    s_PhysicsInstance = this;
+BVHCache& Cache()
+{
+    static BVHCache s_Cache;
+    return s_Cache;
 }
 
-PhysicsSystem::~PhysicsSystem()
+bool& InitializedFlag()
 {
-    InternalShutdown();
-    s_PhysicsInstance = nullptr;
+    static bool s_Initialized = false;
+    return s_Initialized;
 }
+} // namespace
 
-void PhysicsSystem::Init()
+void Physics::Init()
 {
-    if (!s_PhysicsInstance)
-        s_PhysicsInstance = new PhysicsSystem();
-    s_PhysicsInstance->InternalInit();
-}
-
-void PhysicsSystem::InternalInit()
-{
-    CH_CORE_INFO("Global Physics System Initialized.");
-}
-
-void PhysicsSystem::Shutdown()
-{
-    if (s_PhysicsInstance)
+    if (InitializedFlag())
     {
-        s_PhysicsInstance->InternalShutdown();
-        delete s_PhysicsInstance;
-        s_PhysicsInstance = nullptr;
+        return;
     }
+
+    Cache().Init();
+    InitializedFlag() = true;
+    CH_CORE_INFO("Physics initialized.");
 }
 
-void PhysicsSystem::InternalShutdown()
+void Physics::Shutdown()
 {
-    std::lock_guard<std::mutex> lock(m_BVHMutex);
-    m_BVHCache.clear();
-    CH_CORE_INFO("Global Physics System Shutdown.");
-}
-
-PhysicsSystem& PhysicsSystem::Get()
-{
-    CH_CORE_ASSERT(s_PhysicsInstance, "PhysicsSystem not initialized!");
-    return *s_PhysicsInstance;
-}
-
-std::shared_ptr<BVH> PhysicsSystem::GetBVH(const std::string& path)
-{
-    if (path.empty()) return nullptr;
-    
-    auto asset = AssetManager::Get().Get<ModelAsset>(path);
-    if (!asset || asset->GetState() != AssetState::Ready) return nullptr;
-
-    std::lock_guard<std::mutex> lock(m_BVHMutex);
-
-    auto it = m_BVHCache.find(path);
-    if (it == m_BVHCache.end())
+    if (!InitializedFlag())
     {
-        CH_CORE_INFO("PhysicsSystem: Starting synchronous BVH build for '{}'", asset->GetPath());
-        
-        const Model& model = asset->GetModel();
-        const auto& instances = asset->GetInstances();
-        const auto& rawMeshes = asset->GetRawMeshes();
-        
-        std::vector<CollisionTriangle> allTris;
-        for (const auto& inst : instances)
-        {
-            if (inst.meshIndex < 0 || inst.meshIndex >= (int)rawMeshes.size()) continue;
-
-            const RawMesh& raw = rawMeshes[inst.meshIndex];
-            if (raw.indices.size() < 3)
-            {
-                continue;
-            }
-
-            for (size_t i = 0; i + 2 < raw.indices.size(); i += 3)
-            {
-                uint32_t i0 = raw.indices[i];
-                uint32_t i1 = raw.indices[i + 1];
-                uint32_t i2 = raw.indices[i + 2];
-
-                size_t v0Idx = (size_t)i0 * 3;
-                size_t v1Idx = (size_t)i1 * 3;
-                size_t v2Idx = (size_t)i2 * 3;
-                if (v0Idx + 2 >= raw.vertices.size() || v1Idx + 2 >= raw.vertices.size() || v2Idx + 2 >= raw.vertices.size())
-                {
-                    continue;
-                }
-
-                glm::vec3 v0 = {raw.vertices[v0Idx], raw.vertices[v0Idx + 1], raw.vertices[v0Idx + 2]};
-                glm::vec3 v1 = {raw.vertices[v1Idx], raw.vertices[v1Idx + 1], raw.vertices[v1Idx + 2]};
-                glm::vec3 v2 = {raw.vertices[v2Idx], raw.vertices[v2Idx + 1], raw.vertices[v2Idx + 2]};
-
-                // Transform to instance world space (using localTransform which is MeshGlobal in Assimp)
-                v0 = glm::vec3(inst.localTransform * glm::vec4(v0, 1.0f));
-                v1 = glm::vec3(inst.localTransform * glm::vec4(v1, 1.0f));
-                v2 = glm::vec3(inst.localTransform * glm::vec4(v2, 1.0f));
-
-                allTris.emplace_back(v0, v1, v2, inst.meshIndex);
-            }
-        }
-        auto bvh = BVH::Build(std::move(allTris));
-        
-        std::promise<std::shared_ptr<BVH>> promise;
-        promise.set_value(bvh);
-        m_BVHCache[path] = promise.get_future().share();
-        
-        return bvh;
+        return;
     }
-    return it->second.get();
+
+    Cache().Shutdown();
+    InitializedFlag() = false;
+    CH_CORE_INFO("Physics shutdown.");
 }
 
-void PhysicsSystem::InvalidateBVH(const std::string& path)
+bool Physics::IsInitialized()
 {
-    if (path.empty()) return;
-    std::lock_guard<std::mutex> lock(m_BVHMutex);
-    m_BVHCache.erase(path);
+    return InitializedFlag();
+}
+
+std::shared_ptr<BVH> Physics::GetBVH(const std::string& path)
+{
+    if (!InitializedFlag())
+    {
+        return nullptr;
+    }
+
+    return Cache().GetOrBuild(path);
+}
+
+void Physics::InvalidateBVH(const std::string& path)
+{
+    if (!InitializedFlag())
+    {
+        return;
+    }
+
+    Cache().Invalidate(path);
+}
+
+void Physics::UpdateBVHCache(const std::string& path, std::shared_ptr<BVH> bvh)
+{
+    if (!InitializedFlag())
+    {
+        return;
+    }
+
+    Cache().Put(path, std::move(bvh));
 }
 
 PhysicsContext& Physics::GetContext(Scene* scene)
@@ -146,6 +95,26 @@ PhysicsContext& Physics::GetContext(Scene* scene)
     auto* ctx = registry.ctx().find<PhysicsContext>();
     if (!ctx) return registry.ctx().emplace<PhysicsContext>();
     return *ctx;
+}
+
+void Physics::ResetAccumulator(Scene* scene)
+{
+    if (!scene)
+    {
+        return;
+    }
+
+    GetContext(scene).Accumulator = 0.0f;
+}
+
+void Physics::ClearContext(Scene* scene)
+{
+    if (!scene)
+    {
+        return;
+    }
+
+    scene->GetRegistry().ctx().erase<PhysicsContext>();
 }
 
 void Physics::SetCollisionCallback(Scene* scene, std::function<void(entt::entity, entt::entity)> callback)
@@ -160,8 +129,11 @@ void Physics::Update(Scene* scene, Timestep deltaTime, bool runtime)
 
     auto& registry = scene->GetRegistry();
     auto collView = registry.view<ColliderComponent>();
-    for (auto entity : collView)
+    for (auto it = collView.begin(); it != collView.end(); ++it)
+    {
+        auto entity = *it;
         collView.get<ColliderComponent>(entity).IsColliding = false;
+    }
 
     UpdateColliders(scene);
 
@@ -190,7 +162,7 @@ void Physics::Update(Scene* scene, Timestep deltaTime, bool runtime)
 RaycastResult Physics::Raycast(Scene* scene, Ray ray)
 {
     if (!scene) return RaycastResult();
-    return SceneTrace::Raycast(scene->GetRegistry(), ray);
+    return RaycastQuery::Raycast(scene->GetRegistry(), ray);
 }
 
 void Physics::UpdateColliders(Scene* scene)
@@ -201,8 +173,9 @@ void Physics::UpdateColliders(Scene* scene)
 
     auto genView = registry.view<ColliderComponent, TransformComponent>();
 
-    for (auto entity : genView)
+    for (auto it = genView.begin(); it != genView.end(); ++it)
     {
+        auto entity = *it;
         auto& collider = genView.get<ColliderComponent>(entity);
 
         if (collider.Type == ColliderType::Box && collider.AutoCalculate)
@@ -257,12 +230,15 @@ void Physics::ResolveSimulation(Scene* scene, Timestep deltaTime)
     std::vector<entt::entity> rbEntities;
     rbEntities.reserve(rbView.size_hint());
 
-    for (auto entity : rbView) rbEntities.push_back(entity);
+    for (auto it = rbView.begin(); it != rbView.end(); ++it)
+    {
+        rbEntities.push_back(*it);
+    }
 
     if (!rbEntities.empty())
     {
         Dynamics::Update(registry, rbEntities, deltaTime);
-        NarrowPhase::ResolveCollisions(registry, rbEntities);
+        CollisionCore::ResolveCollisions(registry, rbEntities);
     }
 }
 } // namespace CHEngine
