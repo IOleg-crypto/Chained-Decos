@@ -1,25 +1,26 @@
-#include "narrow_phase.h"
-#include "physics.h"
+#include "collision_core.h"
+
 #include "bvh/bvh.h"
-#include <cfloat>
-#include <cmath>
-#include <algorithm>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include "collision/collision.h"
-#include "engine/core/log.h"
-#include "engine/scene/components.h"
-#include "engine/scene/project.h"
-#include "engine/scene/scene.h"
 #include "engine/core/assets/asset_manager.h"
 #include "engine/graphics/assets/model_asset.h"
+#include "engine/scene/project.h"
+#include "physics.h"
+#include <algorithm>
+#include <cfloat>
+#include <cmath>
+#include <glm/glm.hpp>
 
 namespace CHEngine
 {
-
-// ─── Helper: Apply collision response ───────
-void NarrowPhase::ApplyResponse(::entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity, TransformComponent& tc,
-                                RigidBodyComponent& rb, ColliderComponent& other, glm::vec3 normal, float depth)
+void CollisionCore::ApplyResponse(entt::registry& registry,
+                                  entt::entity rbEntity,
+                                  entt::entity otherEntity,
+                                  TransformComponent& tc,
+                                  RigidBodyComponent& rb,
+                                  ColliderComponent& other,
+                                  glm::vec3 normal,
+                                  float depth)
 {
     const float kBaumgarte = 0.8f;
     const float kSlop = 0.005f;
@@ -32,7 +33,7 @@ void NarrowPhase::ApplyResponse(::entt::registry& registry, entt::entity rbEntit
     {
         tc.Translation += normal * correction;
         tc.IsDirty = true;
-        
+
         auto hc = registry.try_get<HierarchyComponent>(rbEntity);
         if (!hc || hc->Parent == entt::null || !registry.valid(hc->Parent))
         {
@@ -54,7 +55,7 @@ void NarrowPhase::ApplyResponse(::entt::registry& registry, entt::entity rbEntit
         if (std::abs(rb.Velocity.x) < 0.05f) rb.Velocity.x = 0;
         if (std::abs(rb.Velocity.z) < 0.05f) rb.Velocity.z = 0;
     }
-    else if (normal.y < -0.45f) // Ceiling
+    else if (normal.y < -0.45f)
     {
         if (rb.Velocity.y > 0)
         {
@@ -79,7 +80,7 @@ void NarrowPhase::ApplyResponse(::entt::registry& registry, entt::entity rbEntit
     }
 }
 
-glm::vec3 NarrowPhase::ClosestPointOnSegment(glm::vec3 p, glm::vec3 a, glm::vec3 b)
+glm::vec3 CollisionCore::ClosestPointOnSegment(glm::vec3 p, glm::vec3 a, glm::vec3 b)
 {
     glm::vec3 ab = b - a;
     float denom = glm::dot(ab, ab);
@@ -91,7 +92,7 @@ glm::vec3 NarrowPhase::ClosestPointOnSegment(glm::vec3 p, glm::vec3 a, glm::vec3
     return a + ab * t;
 }
 
-glm::vec3 NarrowPhase::ClosestPointTriangle(glm::vec3 p, glm::vec3 a, glm::vec3 b, glm::vec3 c)
+glm::vec3 CollisionCore::ClosestPointTriangle(glm::vec3 p, glm::vec3 a, glm::vec3 b, glm::vec3 c)
 {
     glm::vec3 ab = b - a;
     glm::vec3 ac = c - a;
@@ -137,9 +138,8 @@ glm::vec3 NarrowPhase::ClosestPointTriangle(glm::vec3 p, glm::vec3 a, glm::vec3 
     return a + ab * v + ac * w;
 }
 
-NarrowPhase::CapsuleSegment NarrowPhase::GetCapsuleSegment(const TransformComponent& tc, const ColliderComponent& cc)
+CollisionCore::CapsuleSegment CollisionCore::GetCapsuleSegment(const TransformComponent& tc, const ColliderComponent& cc)
 {
-    glm::vec3 worldPos = glm::vec3(tc.WorldTransform[3]);
     glm::vec3 worldUp = glm::normalize(glm::vec3(tc.WorldTransform[1]));
     glm::vec3 finalPos = glm::vec3(tc.WorldTransform * glm::vec4(cc.Offset, 1.0f));
 
@@ -149,23 +149,26 @@ NarrowPhase::CapsuleSegment NarrowPhase::GetCapsuleSegment(const TransformCompon
     glm::vec3 a = finalPos - worldUp * halfSeg;
     glm::vec3 b = finalPos + worldUp * halfSeg;
 
-    float worldScaleXZ = std::max(glm::length(glm::vec3(tc.WorldTransform[0])), 
-                                 glm::length(glm::vec3(tc.WorldTransform[2])));
+    float worldScaleXZ = std::max(glm::length(glm::vec3(tc.WorldTransform[0])),
+                                  glm::length(glm::vec3(tc.WorldTransform[2])));
 
-    return { a, b, cc.Radius * worldScaleXZ };
+    return {a, b, cc.Radius * worldScaleXZ};
 }
 
-NarrowPhase::WorldAABB NarrowPhase::GetWorldAABB(const TransformComponent& tc, const ColliderComponent& cc)
+CollisionCore::WorldAABB CollisionCore::GetWorldAABB(const TransformComponent& tc, const ColliderComponent& cc)
 {
     glm::vec3 minLocal = cc.Offset;
     glm::vec3 maxLocal = cc.Offset + cc.Size;
 
     glm::vec3 corners[8] = {
-        {minLocal.x, minLocal.y, minLocal.z}, {maxLocal.x, minLocal.y, minLocal.z},
-        {minLocal.x, maxLocal.y, minLocal.z}, {maxLocal.x, maxLocal.y, minLocal.z},
-        {minLocal.x, minLocal.y, maxLocal.z}, {maxLocal.x, minLocal.y, maxLocal.z},
-        {minLocal.x, maxLocal.y, maxLocal.z}, {maxLocal.x, maxLocal.y, maxLocal.z}
-    };
+        {minLocal.x, minLocal.y, minLocal.z},
+        {maxLocal.x, minLocal.y, minLocal.z},
+        {minLocal.x, maxLocal.y, minLocal.z},
+        {maxLocal.x, maxLocal.y, minLocal.z},
+        {minLocal.x, minLocal.y, maxLocal.z},
+        {maxLocal.x, minLocal.y, maxLocal.z},
+        {minLocal.x, maxLocal.y, maxLocal.z},
+        {maxLocal.x, maxLocal.y, maxLocal.z}};
 
     glm::vec3 worldMin = {FLT_MAX, FLT_MAX, FLT_MAX};
     glm::vec3 worldMax = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
@@ -180,7 +183,7 @@ NarrowPhase::WorldAABB NarrowPhase::GetWorldAABB(const TransformComponent& tc, c
     return {worldMin, worldMax};
 }
 
-void NarrowPhase::ResolveCollisions(::entt::registry& registry, const std::vector<::entt::entity>& entities)
+void CollisionCore::ResolveCollisions(entt::registry& registry, const std::vector<entt::entity>& entities)
 {
     const int kResolveIterations = 4;
     for (int iter = 0; iter < kResolveIterations; iter++)
@@ -220,7 +223,7 @@ void NarrowPhase::ResolveCollisions(::entt::registry& registry, const std::vecto
     }
 }
 
-void NarrowPhase::ResolveBoxBox(::entt::registry& registry, ::entt::entity rbEntity, ::entt::entity otherEntity)
+void CollisionCore::ResolveBoxBox(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity)
 {
     auto& tc = registry.get<TransformComponent>(rbEntity);
     auto& rb = registry.get<RigidBodyComponent>(rbEntity);
@@ -232,24 +235,31 @@ void NarrowPhase::ResolveBoxBox(::entt::registry& registry, ::entt::entity rbEnt
 
     if (!Collision::CheckAABB(a.Min, a.Max, b.Min, b.Max)) return;
 
-    float depths[6] = {b.Max.x - a.Min.x, a.Max.x - b.Min.x, b.Max.y - a.Min.y,
-                       a.Max.y - b.Min.y, b.Max.z - a.Min.z, a.Max.z - b.Min.z};
+    float depths[6] = {b.Max.x - a.Min.x,
+                       a.Max.x - b.Min.x,
+                       b.Max.y - a.Min.y,
+                       a.Max.y - b.Min.y,
+                       b.Max.z - a.Min.z,
+                       a.Max.z - b.Min.z};
 
     int axis = 0;
     float minDepth = depths[0];
     for (int d = 1; d < 6; d++)
     {
-        if (depths[d] < minDepth) { minDepth = depths[d]; axis = d; }
+        if (depths[d] < minDepth)
+        {
+            minDepth = depths[d];
+            axis = d;
+        }
     }
 
     if (minDepth <= 0) return;
 
     const glm::vec3 dirs[6] = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
     ApplyResponse(registry, rbEntity, otherEntity, tc, rb, otherCollider, dirs[axis], minDepth);
-
 }
 
-void NarrowPhase::ResolveBoxMesh(::entt::registry& registry, ::entt::entity rbEntity, ::entt::entity otherEntity)
+void CollisionCore::ResolveBoxMesh(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity)
 {
     auto& tc = registry.get<TransformComponent>(rbEntity);
     auto& rb = registry.get<RigidBodyComponent>(rbEntity);
@@ -258,10 +268,9 @@ void NarrowPhase::ResolveBoxMesh(::entt::registry& registry, ::entt::entity rbEn
     auto& otherTc = registry.get<TransformComponent>(otherEntity);
 
     if (otherCollider.ModelPath.empty()) return;
-    auto project = Project::GetActive();
-    if (!project) return;
+    if (!Project::GetActive()) return;
 
-    auto bvh = PhysicsSystem::Get().GetBVH(otherCollider.ModelPath);
+    auto bvh = Physics::GetBVH(otherCollider.ModelPath);
     if (!bvh) return;
 
     glm::mat4 meshMatrix = otherTc.WorldTransform;
@@ -271,11 +280,14 @@ void NarrowPhase::ResolveBoxMesh(::entt::registry& registry, ::entt::entity rbEn
     glm::vec3 minLocal = rbc.Offset;
     glm::vec3 maxLocal = rbc.Offset + rbc.Size;
     glm::vec3 corners[8] = {
-        {minLocal.x, minLocal.y, minLocal.z}, {maxLocal.x, minLocal.y, minLocal.z},
-        {minLocal.x, maxLocal.y, minLocal.z}, {maxLocal.x, maxLocal.y, minLocal.z},
-        {minLocal.x, minLocal.y, maxLocal.z}, {maxLocal.x, minLocal.y, maxLocal.z},
-        {minLocal.x, maxLocal.y, maxLocal.z}, {maxLocal.x, maxLocal.y, maxLocal.z}
-    };
+        {minLocal.x, minLocal.y, minLocal.z},
+        {maxLocal.x, minLocal.y, minLocal.z},
+        {minLocal.x, maxLocal.y, minLocal.z},
+        {maxLocal.x, maxLocal.y, minLocal.z},
+        {minLocal.x, minLocal.y, maxLocal.z},
+        {maxLocal.x, minLocal.y, maxLocal.z},
+        {minLocal.x, maxLocal.y, maxLocal.z},
+        {maxLocal.x, maxLocal.y, maxLocal.z}};
 
     BoundingBox localBox = {{1e30f, 1e30f, 1e30f}, {-1e30f, -1e30f, -1e30f}};
     for (int k = 0; k < 8; k++)
@@ -297,7 +309,7 @@ void NarrowPhase::ResolveBoxMesh(::entt::registry& registry, ::entt::entity rbEn
     ApplyResponse(registry, rbEntity, otherEntity, tc, rb, otherCollider, worldNormal, glm::length(worldMTV));
 }
 
-void NarrowPhase::ResolveCapsuleBox(::entt::registry& registry, ::entt::entity rbEntity, ::entt::entity otherEntity)
+void CollisionCore::ResolveCapsuleBox(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity)
 {
     auto& tc = registry.get<TransformComponent>(rbEntity);
     auto& rb = registry.get<RigidBodyComponent>(rbEntity);
@@ -327,7 +339,7 @@ void NarrowPhase::ResolveCapsuleBox(::entt::registry& registry, ::entt::entity r
     ApplyResponse(registry, rbEntity, otherEntity, tc, rb, box, normal, penetration);
 }
 
-void NarrowPhase::ResolveCapsuleMesh(::entt::registry& registry, ::entt::entity rbEntity, ::entt::entity otherEntity)
+void CollisionCore::ResolveCapsuleMesh(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity)
 {
     auto& tc = registry.get<TransformComponent>(rbEntity);
     auto& rb = registry.get<RigidBodyComponent>(rbEntity);
@@ -336,7 +348,7 @@ void NarrowPhase::ResolveCapsuleMesh(::entt::registry& registry, ::entt::entity 
     auto& otherTc = registry.get<TransformComponent>(otherEntity);
 
     if (otherCollider.ModelPath.empty()) return;
-    auto bvh = PhysicsSystem::Get().GetBVH(otherCollider.ModelPath);
+    auto bvh = Physics::GetBVH(otherCollider.ModelPath);
     if (!bvh) return;
 
     glm::mat4 meshMatrix = otherTc.WorldTransform;
@@ -351,11 +363,9 @@ void NarrowPhase::ResolveCapsuleMesh(::entt::registry& registry, ::entt::entity 
     float scaleY = glm::length(glm::vec3(meshMatrix[1]));
     float scaleZ = glm::length(glm::vec3(meshMatrix[2]));
 
-    glm::vec3 localExtents = {
-        (scaleX > 0.0001f) ? seg.radius / scaleX : seg.radius,
-        (scaleY > 0.0001f) ? seg.radius / scaleY : seg.radius,
-        (scaleZ > 0.0001f) ? seg.radius / scaleZ : seg.radius
-    };
+    glm::vec3 localExtents = {(scaleX > 0.0001f) ? seg.radius / scaleX : seg.radius,
+                              (scaleY > 0.0001f) ? seg.radius / scaleY : seg.radius,
+                              (scaleZ > 0.0001f) ? seg.radius / scaleZ : seg.radius};
 
     BoundingBox queryBox = {glm::min(localA, localB) - localExtents, glm::max(localA, localB) + localExtents};
 
@@ -370,12 +380,12 @@ void NarrowPhase::ResolveCapsuleMesh(::entt::registry& registry, ::entt::entity 
         glm::vec3 v2 = glm::vec3(meshMatrix * glm::vec4(tri->v2, 1.0f));
 
         glm::vec3 triCenter = (v0 + v1 + v2) / 3.0f;
-        glm::vec3 segPoint  = ClosestPointOnSegment(triCenter, seg.a, seg.b);
-        glm::vec3 triPoint  = ClosestPointTriangle(segPoint, v0, v1, v2);
-        glm::vec3 finalSeg  = ClosestPointOnSegment(triPoint, seg.a, seg.b);
+        glm::vec3 segPoint = ClosestPointOnSegment(triCenter, seg.a, seg.b);
+        glm::vec3 triPoint = ClosestPointTriangle(segPoint, v0, v1, v2);
+        glm::vec3 finalSeg = ClosestPointOnSegment(triPoint, seg.a, seg.b);
 
-        glm::vec3 diff  = finalSeg - triPoint;
-        float distSq  = glm::dot(diff, diff);
+        glm::vec3 diff = finalSeg - triPoint;
+        float distSq = glm::dot(diff, diff);
 
         if (distSq >= seg.radius * seg.radius) continue;
 
@@ -387,7 +397,7 @@ void NarrowPhase::ResolveCapsuleMesh(::entt::registry& registry, ::entt::entity 
     }
 }
 
-void NarrowPhase::ResolveSphereBox(::entt::registry& registry, ::entt::entity rbEntity, ::entt::entity otherEntity)
+void CollisionCore::ResolveSphereBox(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity)
 {
     auto& tc = registry.get<TransformComponent>(rbEntity);
     auto& rb = registry.get<RigidBodyComponent>(rbEntity);
@@ -412,7 +422,7 @@ void NarrowPhase::ResolveSphereBox(::entt::registry& registry, ::entt::entity rb
     ApplyResponse(registry, rbEntity, otherEntity, tc, rb, box, normal, penetration);
 }
 
-void NarrowPhase::ResolveSphereMesh(::entt::registry& registry, ::entt::entity rbEntity, ::entt::entity otherEntity)
+void CollisionCore::ResolveSphereMesh(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity)
 {
     auto& tc = registry.get<TransformComponent>(rbEntity);
     auto& rb = registry.get<RigidBodyComponent>(rbEntity);
@@ -421,7 +431,7 @@ void NarrowPhase::ResolveSphereMesh(::entt::registry& registry, ::entt::entity r
     auto& otherTc = registry.get<TransformComponent>(otherEntity);
 
     if (otherCollider.ModelPath.empty()) return;
-    auto bvh = PhysicsSystem::Get().GetBVH(otherCollider.ModelPath);
+    auto bvh = Physics::GetBVH(otherCollider.ModelPath);
     if (!bvh) return;
 
     glm::mat4 meshMatrix = otherTc.WorldTransform;
@@ -434,11 +444,9 @@ void NarrowPhase::ResolveSphereMesh(::entt::registry& registry, ::entt::entity r
     float scaleY = glm::length(glm::vec3(meshMatrix[1]));
     float scaleZ = glm::length(glm::vec3(meshMatrix[2]));
 
-    glm::vec3 localExtents = {
-        (scaleX > 0.0001f) ? sphere.Radius / scaleX : sphere.Radius,
-        (scaleY > 0.0001f) ? sphere.Radius / scaleY : sphere.Radius,
-        (scaleZ > 0.0001f) ? sphere.Radius / scaleZ : sphere.Radius
-    };
+    glm::vec3 localExtents = {(scaleX > 0.0001f) ? sphere.Radius / scaleX : sphere.Radius,
+                              (scaleY > 0.0001f) ? sphere.Radius / scaleY : sphere.Radius,
+                              (scaleZ > 0.0001f) ? sphere.Radius / scaleZ : sphere.Radius};
 
     BoundingBox queryBox = {sphereLocalPos - localExtents, sphereLocalPos + localExtents};
 
@@ -466,16 +474,21 @@ void NarrowPhase::ResolveSphereMesh(::entt::registry& registry, ::entt::entity r
         float penetration = sphere.Radius - dist;
         glm::vec3 normal = (dist > 0.0001f) ? (diff / dist) : tri->normal;
 
-        if (penetration > maxPenetration) { maxPenetration = penetration; bestNormal = normal; }
+        if (penetration > maxPenetration)
+        {
+            maxPenetration = penetration;
+            bestNormal = normal;
+        }
         anyContact = true;
     }
 
-    if (anyContact && maxPenetration > 0.0f) {
+    if (anyContact && maxPenetration > 0.0f)
+    {
         ApplyResponse(registry, rbEntity, otherEntity, tc, rb, otherCollider, bestNormal, maxPenetration);
     }
 }
 
-void NarrowPhase::ResolveSphereSphere(::entt::registry& registry, ::entt::entity rbEntity, ::entt::entity otherEntity)
+void CollisionCore::ResolveSphereSphere(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity)
 {
     auto& tc1 = registry.get<TransformComponent>(rbEntity);
     auto& rb = registry.get<RigidBodyComponent>(rbEntity);
@@ -488,7 +501,7 @@ void NarrowPhase::ResolveSphereSphere(::entt::registry& registry, ::entt::entity
 
     glm::vec3 diff = p1 - p2;
     float distSq = glm::dot(diff, diff);
-    float radiusSum = (s1.Radius * glm::length(glm::vec3(tc1.WorldTransform[0]))) + 
+    float radiusSum = (s1.Radius * glm::length(glm::vec3(tc1.WorldTransform[0]))) +
                       (s2.Radius * glm::length(glm::vec3(tc2.WorldTransform[0])));
 
     if (distSq >= radiusSum * radiusSum) return;

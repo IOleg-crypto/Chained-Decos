@@ -90,7 +90,8 @@ void RenderPanel(const PanelControl& panel, const ImVec2& pos, const ImVec2& siz
     if (panel.Texture && panel.Texture->IsReady())
     {
         ImTextureID texId = (ImTextureID)(uintptr_t)panel.Texture->GetTexture()->GetRendererID();
-        dl->AddImageRounded(texId, pos, pMax, {0,0}, {1,1}, IM_COL32_WHITE, panel.Style.Rounding);
+            // UI textures are loaded with stb vertical flip enabled; invert V in ImGui sampling to keep them upright.
+            dl->AddImageRounded(texId, pos, pMax, {0,1}, {1,0}, IM_COL32_WHITE, panel.Style.Rounding);
     }
     else if (panel.Style.UseGradient)
     {
@@ -221,7 +222,7 @@ void RenderImage(ImageControl& image, const ImVec2& size)
         if (tex && tex->IsReady())
         {
             ImTextureID tid = (ImTextureID)(uintptr_t)tex->GetTexture()->GetRendererID();
-            dl->AddImageRounded(tid, pos, pMax, {0,0}, {1,1}, ImGui::GetColorU32(ToImVec4(image.TintColor)), image.Style.Rounding);
+            dl->AddImageRounded(tid, pos, pMax, {0,1}, {1,0}, ImGui::GetColorU32(ToImVec4(image.TintColor)), image.Style.Rounding);
         }
     }
     else
@@ -307,7 +308,7 @@ bool RenderImageButton(ImageButtonControl& ib, const ImVec2& size)
     if (!tex) return false;
 
     ImTextureID tid = (ImTextureID)(uintptr_t)tex->GetTexture()->GetRendererID();
-    if (ImGui::ImageButton(ib.Label.c_str(), tid, size, {0,0}, {1,1}, ToImVec4(ib.BackgroundColor), ToImVec4(ib.TintColor)))
+    if (ImGui::ImageButton(ib.Label.c_str(), tid, size, {0,1}, {1,0}, ToImVec4(ib.BackgroundColor), ToImVec4(ib.TintColor)))
         ib.PressedThisFrame = true;
     return ImGui::IsItemActive();
 }
