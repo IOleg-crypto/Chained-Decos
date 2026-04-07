@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        preset: [windows-vs2022, windows-ninja]
+        preset: [windows-ninja]
         build_type: [Debug, Release]
 
     steps:
@@ -57,14 +57,7 @@ jobs:
 
       - name: Build
         run: |
-          if [[ "${{ matrix.preset }}" == *"vs2022"* ]]; then
-            BUILD_PRESET="${{ matrix.preset }}-${{ matrix.build_type }}"
-            BUILD_PRESET=$(echo "$BUILD_PRESET" | tr '[:upper:]' '[:lower:]')
-          else
-            BUILD_PRESET="${{ matrix.preset }}"
-          fi
-
-          cmake --build --preset $BUILD_PRESET --parallel 16
+          cmake --build --preset ${{ matrix.preset }} --parallel 16
 
       - name: Test
         run: |

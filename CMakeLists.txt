@@ -56,22 +56,14 @@ if(MSVC)
     add_link_options(/INCREMENTAL)
 endif()
 
-# 3. Parallel build by default
-if(MSVC)
-    # Already enabled via /MP in CompilerSettings.cmake
-elseif(UNIX)
-    include(ProcessorCount)
-    ProcessorCount(N)
-    if(N GREATER_EQUAL 1)
-        add_compile_options(-j${N})
-    endif()
-endif()
+# 3. Parallel build must be controlled by the build tool (cmake --build --parallel)
+# Never pass -j as a compiler flag, because compilers like gcc treat it as invalid.
 
 # 4. Unity builds in Release (combine multiple source files)
 # Trades disk space for faster compilation times
 if(CMAKE_BUILD_TYPE STREQUAL Release OR CMAKE_CONFIGURATION_TYPES)
-    set(CMAKE_UNITY_BUILD ON CACHE BOOL \"Enable Unity builds\" FORCE)
-    set(CMAKE_UNITY_BUILD_BATCH_SIZE 8 CACHE STRING \"Unity build batch size\")
+    set(CMAKE_UNITY_BUILD ON CACHE BOOL "Enable Unity builds" FORCE)
+    set(CMAKE_UNITY_BUILD_BATCH_SIZE 8 CACHE STRING "Unity build batch size")
 endif()
 
 # Dependencies
