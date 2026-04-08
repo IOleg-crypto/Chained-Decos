@@ -4,7 +4,7 @@
 #include "editor_gui.h"
 #include "engine/core/reflection.h"
 #include "scripting/scriptengine.h"
-#include "imgui/IconsFontAwesome6.h"
+#include "IconsFontAwesome6.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 

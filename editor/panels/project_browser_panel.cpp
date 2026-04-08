@@ -2,7 +2,7 @@
 
 #include "editor_layer.h"
 #include "engine/scene/scene_events.h"
-#include "imgui/IconsFontAwesome6.h"
+#include "IconsFontAwesome6.h"
 #include "engine/core/assets/asset_manager.h"
 #include "engine/core/dialogs.h"
 #include "panel.h"
