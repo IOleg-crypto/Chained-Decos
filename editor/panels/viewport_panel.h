@@ -4,7 +4,7 @@
 #include "engine/core/timestep.h"
 #include "panel.h"
 #include "imgui.h"
-#include "imgui/IconsFontAwesome6.h"
+#include "IconsFontAwesome6.h"
 #include <memory>
 #include "engine/graphics/api/framebuffer.h"
 #include "viewport/editor_camera.h"

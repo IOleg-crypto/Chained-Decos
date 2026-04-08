@@ -12,7 +12,7 @@
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_settings.h"
 #include "imgui.h"
-#include "imgui/IconsFontAwesome6.h"
+#include "IconsFontAwesome6.h"
 #include "panel.h"
 #include "ui_properties.h" // Included here to break circular dependency
 #include <memory>
