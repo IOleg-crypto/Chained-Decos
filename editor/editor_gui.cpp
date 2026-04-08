@@ -6,7 +6,7 @@
 #include "engine/core/application.h"
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
-#include "imgui/IconsFontAwesome6.h"
+#include "IconsFontAwesome6.h"
 #include "scripting/scriptengine.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS

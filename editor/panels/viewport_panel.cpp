@@ -19,7 +19,7 @@
 #include "engine/scene/scene_picking.h"
 #include "scripting/scriptengine.h"
 #include "undo/entity_commands.h"
-#include "imgui/IconsFontAwesome6.h"
+#include "IconsFontAwesome6.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "engine/graphics/pipeline/render_command.h"

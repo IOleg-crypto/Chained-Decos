@@ -5,7 +5,7 @@
 #include "engine/graphics/assets/environment.h"
 #include "engine/scene/project.h"
 #include "scene/scene.h"
-#include "imgui/IconsFontAwesome6.h"
+#include "IconsFontAwesome6.h"
 #include <filesystem>
 
 namespace CHEngine
