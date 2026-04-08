@@ -24,8 +24,8 @@ jobs:
             config_preset: linux-gcc
           - os: windows-latest
             name: windows
-            preset: windows-ninja
-            config_preset: windows-ninja
+            preset: windows-gcc
+            config_preset: windows-gcc
 
     steps:
       - name: Checkout
@@ -76,6 +76,15 @@ jobs:
       - name: Install dependencies (Windows)
         if: matrix.os == 'windows-latest'
         run: choco install cmake ninja ccache --no-progress
+
+      - name: Setup MSYS2
+        if: matrix.os == 'windows-latest'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4

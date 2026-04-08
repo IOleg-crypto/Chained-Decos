@@ -64,6 +64,39 @@
         "lhs": "${hostSystemName}",
         "rhs": "Windows"
       }
+    },
+    {
+      "name": "windows-mingw-base",
+      "hidden": true,
+      "inherits": "ninja-base",
+      "cacheVariables": {
+        "ENABLE_UNITY_BUILD": "OFF",
+        "CMAKE_CXX_SCAN_FOR_MODULES": "OFF",
+        "CMAKE_SUPPRESS_REGENERATION": "ON"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "windows-gcc",
+      "displayName": "Windows GCC (MSYS2)",
+      "inherits": "windows-mingw-base",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++"
+      }
+    },
+    {
+      "name": "windows-clang",
+      "displayName": "Windows Clang (MSYS2)",
+      "inherits": "windows-mingw-base",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++"
+      }
     }
   ],
   "buildPresets": [
@@ -78,6 +111,14 @@
     {
       "name": "windows-ninja",
       "configurePreset": "windows-ninja"
+    },
+    {
+      "name": "windows-gcc",
+      "configurePreset": "windows-gcc"
+    },
+    {
+      "name": "windows-clang",
+      "configurePreset": "windows-clang"
     }
   ]
 }
