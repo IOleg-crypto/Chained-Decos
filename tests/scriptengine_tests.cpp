@@ -22,7 +22,11 @@ std::vector<std::filesystem::path> GetReloadAssemblyCandidates()
     candidates.emplace_back(root / "game" / "chaineddecos" / "scripts" / "game" / "chaineddecos" / "bin" /
                             "ChainedDecos.Scripts.dll");
     candidates.emplace_back(root / "build" / "windows-ninja" / "bin" / "ChainedDecos.Scripts.dll");
+    candidates.emplace_back(root / "build" / "windows-gcc" / "bin" / "ChainedDecos.Scripts.dll");
+    candidates.emplace_back(root / "build" / "windows-clang" / "bin" / "ChainedDecos.Scripts.dll");
     candidates.emplace_back(root / "build" / "windows-ninja" / "bin" / "CHEngine.Managed.dll");
+    candidates.emplace_back(root / "build" / "windows-gcc" / "bin" / "CHEngine.Managed.dll");
+    candidates.emplace_back(root / "build" / "windows-clang" / "bin" / "CHEngine.Managed.dll");
     candidates.emplace_back(root / "scripting" / "managed" / "bin" / "CHEngine.Managed.dll");
     candidates.emplace_back(root / "scripting" / "managed" / "bin" / "Debug" / "CHEngine.Managed.dll");
 #endif
