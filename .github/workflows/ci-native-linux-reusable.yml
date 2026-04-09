@@ -42,6 +42,11 @@ jobs:
       - name: Setup Mold Linker
         uses: rui314/setup-mold@v1
 
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install jinja2
+
       - name: Install Linux Dependencies
         run: |
           sudo apt-get update

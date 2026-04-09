@@ -11,11 +11,11 @@ env:
 
 jobs:
   linux:
-    name: Native Linux Matrix
+    name: Linux Builds
     uses: ./.github/workflows/ci-native-linux-reusable.yml
     secrets: inherit
 
   windows:
-    name: Native Windows Matrix
+    name: Windows Builds
     uses: ./.github/workflows/ci-native-windows-reusable.yml
     secrets: inherit
