@@ -176,7 +176,14 @@ std::string ConsolePanel::GetCurrentTimestamp()
     auto in_time_t = system_clock::to_time_t(now);
 
     std::tm time_info;
+#if defined(_MSC_VER)
     localtime_s(&time_info, &in_time_t);
+#elif defined(_WIN32)
+    std::tm* tm_ptr = std::localtime(&in_time_t);
+    if (tm_ptr) time_info = *tm_ptr;
+#else
+    localtime_r(&in_time_t, &time_info);
+#endif
 
     std::stringstream ss;
     ss << "[" << std::put_time(&time_info, "%H:%M:%S") << "] ";

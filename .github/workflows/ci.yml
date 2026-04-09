@@ -37,7 +37,7 @@ env:
 
 jobs:
   native:
-    name: Native Matrix
+    name: Native Builds
     uses: ./.github/workflows/ci-native-reusable.yml
     secrets: inherit
 
@@ -51,4 +51,4 @@ jobs:
     runs-on: ubuntu-latest
     needs: [native, managed-tests]
     steps:
-      - run: echo "Native matrix and managed progression tests passed."
+      - run: echo "Native builds and managed tests passed."
