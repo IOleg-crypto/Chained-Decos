@@ -2,16 +2,11 @@ add_library(engine_core ${SUBMODULE_LIB_TYPE}
         layer_stack.cpp
         profiler.cpp
         uuid.cpp
-        window_factory.cpp
         input.cpp
         imgui_layer.cpp
         thread_pool.cpp
         application.cpp
-        dialogs.cpp
-        filesystem_utils.cpp
         assets/asset_manager.cpp
-        stb_impl.cpp
-
         application.h
         imgui_layer.h
         base.h
@@ -28,9 +23,8 @@ add_library(engine_core ${SUBMODULE_LIB_TYPE}
         timestep.h
         uuid.h
         window.h
-        yaml.h
-        dialogs.h
-        filesystem_utils.h
+        ../platform/utils/dialogs.cpp
+        ../platform/utils/dialogs.h
         ../platform/glfw/glfw_window.cpp
         ../platform/glfw/glfw_window.h
 )

@@ -24,7 +24,7 @@ class Scene;
 //  The class is fully static (singleton-style) because the host is a process-
 //  level singleton in CoreCLR.
 // ─────────────────────────────────────────────────────────────────────────────
-class CH_API ScriptEngine
+class ScriptEngine
 {
 public:
     // ── Lifecycle ────────────────────────────────────────────────────────
