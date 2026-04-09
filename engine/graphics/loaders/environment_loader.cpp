@@ -1,6 +1,6 @@
 #include "engine/graphics/loaders/environment_loader.h"
 #include "engine/core/log.h"
-#include "engine/core/yaml.h"
+#include "engine/scene/yaml.h"
 #include "yaml-cpp/yaml.h"
 #include <filesystem>
 #include <fstream>

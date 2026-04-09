@@ -7,6 +7,7 @@
 
 namespace CHEngine
 {
+// Editor and gameplay raycasting helpers.
 class RaycastQuery
 {
 public:

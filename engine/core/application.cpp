@@ -1,4 +1,10 @@
 #include "application.h"
+#ifdef CH_PLATFORM_WINDOWS
+    #include <windows.h>
+#elif defined(CH_PLATFORM_LINUX)
+    #include <unistd.h>
+#endif
+
 #include "engine/audio/audio.h"
 #include "engine/core/assets/asset_manager.h"
 #include "engine/core/ch_assert.h"
@@ -317,6 +323,21 @@ void Application::Run()
         }
         Profiler::EndFrame();
     }
+}
+
+std::filesystem::path Application::GetExecutableDirectory()
+{
+#ifdef CH_PLATFORM_WINDOWS
+    wchar_t path[MAX_PATH];
+    GetModuleFileNameW(NULL, path, MAX_PATH);
+    return std::filesystem::path(path).parent_path();
+#elif defined(CH_PLATFORM_LINUX)
+    char path[1024];
+    ssize_t count = readlink("/proc/self/exe", path, sizeof(path));
+    if (count != -1)
+        return std::filesystem::path(std::string(path, count)).parent_path();
+#endif
+    return std::filesystem::current_path();
 }
 
 Window& Application::GetWindow()

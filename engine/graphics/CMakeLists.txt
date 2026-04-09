@@ -1,4 +1,5 @@
 add_library(engine_graphics ${SUBMODULE_LIB_TYPE}
+        stb_impl.cpp
     # Pipeline
         pipeline/renderer.cpp
         pipeline/renderer_types.cpp

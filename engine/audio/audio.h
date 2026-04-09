@@ -7,7 +7,7 @@
 #include <mutex>
 #include <vector>
 
-#include "miniaudio.h"
+#include <miniaudio.h>
 
 namespace CHEngine
 {
@@ -18,11 +18,13 @@ struct AudioBuffer
     uint32_t Channels = 0;
     uint32_t SampleRate = 0;
 };
+
 struct SoundInstance
 {
     ma_sound Sound;
     ma_audio_buffer Buffer;
 };
+
 
 class Audio
 {
