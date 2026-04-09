@@ -1,8 +1,7 @@
 #include "texture.h"
 #include "engine/graphics/api/renderer_api.h"
 #include "engine/graphics/api/opengl/opengl_texture.h"
-#include "engine/graphics/assets/texture_asset.h"
-#include "engine/core/assets/asset_manager.h"
+#include "engine/graphics/texture_system.h"
 
 namespace CHEngine
 {
@@ -29,12 +28,8 @@ std::shared_ptr<Texture> Texture::CreateCubemap(uint32_t size, TextureFormat for
 
 std::shared_ptr<Texture> Texture::CreateFromFile(const std::string& path)
 {
-    auto asset = AssetManager::Get().Get<TextureAsset>(path);
-    if (asset && asset->GetState() == AssetState::Ready)
-    {
-        return asset->GetTexture();
-    }
-    return nullptr;
+    auto handle = TextureSystem::Get().LoadTexture(path);
+    return TextureSystem::Get().GetTexture(handle);
 }
 
 } // namespace CHEngine

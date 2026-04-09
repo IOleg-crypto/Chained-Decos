@@ -8,8 +8,6 @@
 
 namespace CHEngine
 {
-class SoundAsset;
-
 struct AudioComponent
 {
     AssetHandle SoundHandle = 0;
@@ -24,7 +22,7 @@ struct AudioComponent
     float MaxDistance = 100.0f;
 
     // Runtime
-    std::shared_ptr<SoundAsset> Asset;
+    
     bool IsPlaying = false;
 
     CH_REFLECT_BEGIN(AudioComponent)
