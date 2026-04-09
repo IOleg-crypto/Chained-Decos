@@ -1,7 +1,7 @@
 #include "world_panel.h"
 #include "editor/editor_layer.h"
 #include "engine/core/assets/asset_manager.h"
-#include "engine/core/dialogs.h"
+#include "engine/platform/utils/dialogs.h"
 #include "engine/graphics/assets/environment.h"
 #include "engine/scene/project.h"
 #include "scene/scene.h"

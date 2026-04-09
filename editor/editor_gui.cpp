@@ -10,7 +10,7 @@
 #include "scripting/scriptengine.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
-#include "engine/core/dialogs.h"
+#include "engine/platform/utils/dialogs.h"
 #include "engine/scene/scene_picking.h"
 #include "imgui.h"
 #include "imgui_internal.h"

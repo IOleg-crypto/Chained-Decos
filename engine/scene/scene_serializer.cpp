@@ -4,7 +4,7 @@
 #include "components.h"
 #include "engine/core/assets/asset_manager.h"
 #include "engine/core/log.h"
-#include "engine/core/yaml.h"
+#include "engine/scene/yaml.h"
 #include "engine/graphics/assets/environment.h"
 #include "engine/graphics/assets/model_asset.h"
 #include "engine/physics/bvh/bvh.h"

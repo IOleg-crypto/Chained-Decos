@@ -2,7 +2,7 @@
 #include "engine/core/log.h"
 #include "engine/scene/project.h"
 #include "scene_scripting.h"
-#include "engine/core/filesystem_utils.h"
+#include "engine/core/application.h"
 #include <Coral/ManagedObject.hpp>
 #include <algorithm>
 #include <array>
@@ -55,7 +55,7 @@ void AppendBuildBinCandidates(std::vector<std::filesystem::path>& out, const std
 std::filesystem::path ResolveCoralDirectory()
 {
     std::vector<std::filesystem::path> candidateDirs;
-    candidateDirs.push_back(FilesystemUtils::GetExecutableDirectory());
+    candidateDirs.push_back(Application::GetExecutableDirectory());
     candidateDirs.push_back(std::filesystem::current_path());
 
 #ifdef PROJECT_ROOT_DIR
@@ -87,7 +87,7 @@ std::filesystem::path ResolveCoralDirectory()
             return ec ? candidateRaw : candidate;
     }
 
-    const std::filesystem::path fallback = FilesystemUtils::GetExecutableDirectory();
+    const std::filesystem::path fallback = Application::GetExecutableDirectory();
     CH_CORE_WARN("ScriptEngine: Coral.Managed.dll not found in fallback candidates. Using executable directory: '{}'.",
                  fallback.string());
     for (const auto& checked : checkedPaths)
@@ -103,7 +103,7 @@ std::filesystem::path ResolveCoreAssemblyPath(const std::filesystem::path& coral
     if (!coralDir.empty())
         coreCandidates.push_back(coralDir / "CHEngine.Managed.dll");
 
-    const std::filesystem::path exeDir = FilesystemUtils::GetExecutableDirectory();
+    const std::filesystem::path exeDir = Application::GetExecutableDirectory();
     coreCandidates.push_back(exeDir / "CHEngine.Managed.dll");
     coreCandidates.push_back(std::filesystem::current_path() / "CHEngine.Managed.dll");
 

@@ -2,7 +2,7 @@
 #define CH_SCRIPTING_SERIALIZATION_H
 
 #include "components/scripting_components.h"
-#include "engine/core/yaml.h"
+#include "engine/scene/yaml.h"
 #include <yaml-cpp/yaml.h>
 
 namespace YAML

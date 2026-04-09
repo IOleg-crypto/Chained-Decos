@@ -36,27 +36,24 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
 
     // 2. Visual Picking Fallback
     auto modelView = scene->GetRegistry().view<TransformComponent, ModelComponent>();
-    for (auto it = modelView.begin(); it != modelView.end(); ++it)
+    modelView.each([&](auto entityID, auto& tc, auto& modelComp)
     {
-        auto entityID = *it;
         if (finalResult.Hit && (entt::entity)finalResult.HitEntity == entityID)
         {
-            continue;
+            return;
         }
 
-        auto& modelComp = modelView.get<ModelComponent>(entityID);
         if (modelComp.ModelPath.empty())
         {
-            continue;
+            return;
         }
 
         auto modelAsset = AssetManager::Get().Get<ModelAsset>(modelComp.ModelPath);
         if (!modelAsset || !modelAsset->IsReady())
         {
-            continue;
+            return;
         }
 
-        auto& tc = modelView.get<TransformComponent>(entityID);
         glm::mat4 modelTransform = tc.GetTransform();
         glm::mat4 invTransform = glm::inverse(modelTransform);
 
@@ -134,7 +131,7 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
                     glm::normalize(glm::vec3(glm::transpose(invTransform) * glm::vec4(localNormal, 0.0f)));
             }
         }
-    }
+        });
 
     return finalResult;
 }

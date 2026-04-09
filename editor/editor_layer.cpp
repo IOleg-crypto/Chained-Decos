@@ -8,14 +8,14 @@
 #include "engine/core/profiler.h"
 #include "engine/physics/physics.h"
 
-#include "engine/core/dialogs.h"
+#include "engine/platform/utils/dialogs.h"
 #include "engine/graphics/pipeline/render_command.h"
 #include "engine/graphics/pipeline/ui_renderer.h"
 #include "engine/scene/project.h"
 #include "engine/scene/project_serializer.h"
 #include "engine/scene/scene_serializer.h"
 
-#include "IconsFontAwesome6.h"
+#include "imgui/IconsFontAwesome6.h"
 #include "panels/console_panel.h"
 #include "panels/content_browser_panel.h"
 #include "panels/project_browser_panel.h"
@@ -200,7 +200,6 @@ void EditorLayer::OnDetach()
 {
     SaveConfig();
     EditorContext::Shutdown();
-    // SetTraceLogCallback(nullptr); // Removed: Raylib logging
 }
 
 void EditorLayer::OnUpdate(Timestep ts)

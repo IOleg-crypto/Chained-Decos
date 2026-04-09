@@ -7,8 +7,17 @@
 #include <GLFW/glfw3.h>
 #include <stb/stb_image.h>
 
+#include <algorithm>
+#include <vector>
+
 namespace CHEngine
 {
+
+std::unique_ptr<Window> Window::Create(const WindowProperties& properties)
+{
+    // Currently, all supported platforms (Windows, Linux, MacOS) use GLFW
+    return std::make_unique<GlfwWindow>(properties);
+}
 
 static void GLFWErrorCallback(int error, const char* description)
 {
@@ -93,6 +102,8 @@ void GlfwWindow::Init(const WindowProperties& properties)
         // Important: Viewport should be updated here or in the renderer
         glViewport(0, 0, width, height);
     });
+
+    
 
     // Scroll Callback for mouse wheel input
     glfwSetScrollCallback(m_WindowHandle, [](GLFWwindow* window, double xOffset, double yOffset) {
@@ -183,12 +194,25 @@ void GlfwWindow::SetFullscreen(bool enabled)
 
 void GlfwWindow::SetWindowIcon(const std::string& path)
 {
-    GLFWimage images[1];
-    images[0].pixels = stbi_load(path.c_str(), &images[0].width, &images[0].height, 0, 4);
-    if (images[0].pixels)
+    GLFWimage image{};
+
+    image.pixels = stbi_load(path.c_str(), &image.width, &image.height, nullptr, 4);
+
+    if (image.pixels)
     {
-        glfwSetWindowIcon(m_WindowHandle, 1, images);
-        stbi_image_free(images[0].pixels);
+        const int rowSize = image.width * 4;
+        std::vector<unsigned char> flippedPixels(static_cast<size_t>(rowSize) * static_cast<size_t>(image.height));
+
+        for (int y = 0; y < image.height; ++y)
+        {
+            const unsigned char* sourceRow = image.pixels + static_cast<size_t>(image.height - 1 - y) * static_cast<size_t>(rowSize);
+            unsigned char* destinationRow = flippedPixels.data() + static_cast<size_t>(y) * static_cast<size_t>(rowSize);
+            std::copy(sourceRow, sourceRow + rowSize, destinationRow);
+        }
+
+        stbi_image_free(image.pixels);
+        image.pixels = flippedPixels.data();
+        glfwSetWindowIcon(m_WindowHandle, 1, &image);
     }
     else
     {
