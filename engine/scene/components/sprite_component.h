@@ -2,7 +2,7 @@
 #define CH_SPRITE_COMPONENT_H
 
 #include "engine/core/reflection.h"
-#include "engine/graphics/assets/texture_asset.h"
+#include "engine/graphics/texture_system.h"
 
 namespace CHEngine
 {
@@ -10,7 +10,6 @@ struct SpriteComponent
 {
     AssetHandle TextureHandle = 0;
     std::string TexturePath;
-    std::shared_ptr<TextureAsset> Texture;
     Color Tint = Color::White();
     bool FlipX = false;
     bool FlipY = false;

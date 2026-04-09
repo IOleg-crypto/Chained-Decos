@@ -1,13 +1,7 @@
 add_library(engine_audio ${SUBMODULE_LIB_TYPE}
         audio.cpp
-        sound_asset.cpp
-        loaders/audio_loader.cpp
-        
         audio.h
-        sound_asset.h
-        loaders/audio_loader.h
 )
-
 
 target_include_directories(engine_audio PUBLIC
     ${ENGINE_INCLUDE_DIRS}

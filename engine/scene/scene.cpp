@@ -1,6 +1,5 @@
 #include "engine/scene/scene.h"
 #include "engine/audio/audio.h"
-#include "engine/audio/sound_asset.h"
 #include "engine/core/assets/asset_manager.h"
 #include "engine/core/profiler.h"
 #include "engine/graphics/assets/model_asset.h"
@@ -379,14 +378,22 @@ void Scene::UpdateAudio(Timestep deltaTime)
     for (auto entity : audioView)
     {
         auto& audio = audioView.get<AudioComponent>(entity);
-        if (audio.PlayOnStart && !audio.IsPlaying && audio.Asset && audio.Asset->GetState() == AssetState::Ready)
+        if (audio.PlayOnStart && !audio.IsPlaying && !audio.SoundPath.empty())
         {
-            auto& transform = audioView.get<TransformComponent>(entity);
-            glm::vec3 worldPos = glm::vec3(transform.WorldTransform[3]);
+            if (audio.SoundHandle == 0 || !Audio::Get().IsSoundLoaded(audio.SoundHandle))
+            {
+                audio.SoundHandle = Audio::Get().LoadSound(audio.SoundPath);
+            }
+            
+            if (audio.SoundHandle != 0)
+            {
+                auto& transform = audioView.get<TransformComponent>(entity);
+                glm::vec3 worldPos = glm::vec3(transform.WorldTransform[3]);
 
-            Audio::Get().Play(audio.Asset->GetBuffer(), audio.Volume, audio.Pitch, audio.Loop, audio.Spatialized,
-                              worldPos);
-            audio.IsPlaying = true;
+                Audio::Get().Play(audio.SoundHandle, audio.Volume, audio.Pitch, audio.Loop, audio.Spatialized,
+                                  worldPos);
+                audio.IsPlaying = true;
+            }
         }
     }
 }

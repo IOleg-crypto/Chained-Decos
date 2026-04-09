@@ -3,7 +3,6 @@
 #include "editor_layer.h"
 #include "engine/scene/scene_events.h"
 #include "IconsFontAwesome6.h"
-#include "engine/core/assets/asset_manager.h"
 #include "engine/platform/utils/dialogs.h"
 #include "panel.h"
 #include <filesystem>
@@ -17,13 +16,13 @@ ProjectBrowserPanel::ProjectBrowserPanel()
     memset(m_ProjectLocationBuffer, 0, sizeof(m_ProjectLocationBuffer));
     cwd.copy(m_ProjectLocationBuffer, sizeof(m_ProjectLocationBuffer) - 1);
 
-    m_NewProjectIconAsset = AssetManager::Get().Get<TextureAsset>("engine/resources/icons/newproject.jpg");
-    m_OpenProjectIconAsset = AssetManager::Get().Get<TextureAsset>("engine/resources/icons/folder.png");
+    m_NewProjectIconHandle = TextureSystem::Get().LoadTexture("engine/resources/icons/newproject.jpg");
+    m_OpenProjectIconHandle = TextureSystem::Get().LoadTexture("engine/resources/icons/folder.png");
 }
 
 ProjectBrowserPanel::~ProjectBrowserPanel()
 {
-    // Textures are handled by asset manager or manually if needed
+    // Textures are cached globally by the texture system.
 }
 
 void ProjectBrowserPanel::OnImGuiRender(bool readOnly)
@@ -136,8 +135,8 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
     ImGui::BeginGroup();
     {
         ImTextureID newProjTex = 0;
-        if (m_NewProjectIconAsset && m_NewProjectIconAsset->IsReady() && m_NewProjectIconAsset->GetTexture())
-            newProjTex = (ImTextureID)(uintptr_t)m_NewProjectIconAsset->GetTexture()->GetRendererID();
+        if (m_NewProjectIconHandle != 0)
+            newProjTex = (ImTextureID)(uintptr_t)TextureSystem::Get().GetRendererID(m_NewProjectIconHandle);
 
         if (ImGui::ImageButton("##NewProject", newProjTex, {300, 300}, {0, 1}, {1, 0}))
         {
@@ -159,8 +158,8 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
     ImGui::BeginGroup();
     {
         ImTextureID openProjTex = 0;
-        if (m_OpenProjectIconAsset && m_OpenProjectIconAsset->IsReady() && m_OpenProjectIconAsset->GetTexture())
-            openProjTex = (ImTextureID)(uintptr_t)m_OpenProjectIconAsset->GetTexture()->GetRendererID();
+        if (m_OpenProjectIconHandle != 0)
+            openProjTex = (ImTextureID)(uintptr_t)TextureSystem::Get().GetRendererID(m_OpenProjectIconHandle);
 
         if (ImGui::ImageButton("##OpenProject", openProjTex, {300, 300}, {0, 1}, {1, 0}))
         {
