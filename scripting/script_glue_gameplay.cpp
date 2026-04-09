@@ -75,14 +75,40 @@ namespace CHEngine {
     // ── Audio ─────────────────────────────────────────────────────────────
     CH_SCRIPT_FUNC void Audio_Play(Coral::String path, float volume, float pitch, bool loop) {
         if (Project::GetActive() != nullptr) {
-            auto asset = AssetManager::Get().Get<SoundAsset>((std::string)path);
-            if (asset && asset->GetState() == AssetState::Ready) {
-                AudioBuffer buffer;
-                buffer.Data = asset->GetPCMData().data();
-                buffer.Size = (uint32_t)asset->GetPCMData().size();
-                buffer.Channels = asset->GetChannels();
-                buffer.SampleRate = asset->GetSampleRate();
-                Audio::Get().Play(buffer, volume, pitch, loop);
+            const std::string soundPath = (std::string)path;
+            AudioHandle handle = Audio::Get().LoadSound(soundPath);
+            if (handle != 0) {
+                Audio::Get().Play(handle, volume, pitch, loop);
+
+                if (Scene* scene = GetActiveScene()) {
+                    auto& registry = scene->GetRegistry();
+                    auto view = registry.view<AudioComponent>();
+                    for (auto entity : view) {
+                        auto& audio = view.get<AudioComponent>(entity);
+                        if (audio.SoundPath == soundPath) {
+                            audio.SoundHandle = handle;
+                            audio.IsPlaying = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    CH_SCRIPT_FUNC void Audio_Stop(Coral::String path) {
+        if (Project::GetActive() != nullptr) {
+            const std::string soundPath = (std::string)path;
+            Audio::Get().Stop(soundPath);
+
+            if (Scene* scene = GetActiveScene()) {
+                auto& registry = scene->GetRegistry();
+                auto view = registry.view<AudioComponent>();
+                for (auto entity : view) {
+                    auto& audio = view.get<AudioComponent>(entity);
+                    if (audio.SoundPath == soundPath) {
+                        audio.IsPlaying = false;
+                    }
+                }
             }
         }
     }
@@ -105,7 +131,11 @@ namespace CHEngine {
 
     CH_SCRIPT_FUNC bool AudioComponent_IsPlaying(uint64_t entityID) {
         Entity entity = GetEntity(entityID);
-        return entity && entity.HasComponent<AudioComponent>() ? entity.GetComponent<AudioComponent>().IsPlaying : false;
+        if (!entity || !entity.HasComponent<AudioComponent>())
+            return false;
+
+        auto& audio = entity.GetComponent<AudioComponent>();
+        return audio.IsPlaying && Audio::Get().IsPlaying(audio.SoundHandle);
     }
 
     CH_SCRIPT_FUNC Coral::String AudioComponent_GetSoundPath(uint64_t entityID) {
@@ -117,6 +147,7 @@ namespace CHEngine {
         #define CH_ADD_INTERNAL_CALL(className, fieldName, funcPtr) assembly.AddInternalCall("CHEngine." #className, #fieldName, (void*)funcPtr)
         
         CH_ADD_INTERNAL_CALL(Audio, Audio_Play_Ptr, Audio_Play);
+        CH_ADD_INTERNAL_CALL(Audio, Audio_Stop_Ptr, Audio_Stop);
         CH_ADD_INTERNAL_CALL(Audio, Audio_StopAll_Ptr, Audio_StopAll);
         CH_ADD_INTERNAL_CALL(PlayerComponent, PlayerComponent_GetMovementSpeed_Ptr, PlayerComponent_GetMovementSpeed);
         CH_ADD_INTERNAL_CALL(PlayerComponent, PlayerComponent_SetMovementSpeed_Ptr, PlayerComponent_SetMovementSpeed);

@@ -25,7 +25,6 @@
 #include "engine/graphics/loaders/shader_loader.h"
 #include "engine/graphics/loaders/environment_loader.h"
 #include "engine/graphics/loaders/font_loader.h"
-#include "engine/audio/loaders/audio_loader.h"
 
 #include <algorithm>
 #include <filesystem>
@@ -86,7 +85,6 @@ Application::Application(const ApplicationSpecification& specification)
     assetManager.RegisterLoader(AssetType::Model, std::make_unique<ModelLoader>());
     assetManager.RegisterLoader(AssetType::Shader, std::make_unique<ShaderLoader>());
     assetManager.RegisterLoader(AssetType::Environment, std::make_unique<EnvironmentLoader>());
-    assetManager.RegisterLoader(AssetType::Audio, std::make_unique<AudioLoader>());
 
     Renderer::Init();
     UIRenderer::Init();

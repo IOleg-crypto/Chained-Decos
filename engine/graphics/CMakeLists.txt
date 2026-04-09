@@ -11,6 +11,7 @@ add_library(engine_graphics ${SUBMODULE_LIB_TYPE}
 
         pipeline/render_command.cpp
         pipeline/texture_utility.cpp
+        texture_system.cpp
         pipeline/geometry_generator.cpp
         pipeline/renderer.h
         pipeline/scene_renderer.h
@@ -21,6 +22,7 @@ add_library(engine_graphics ${SUBMODULE_LIB_TYPE}
         pipeline/material.h
         pipeline/frustum.h
         pipeline/texture_utility.h
+        texture_system.h
         pipeline/geometry_generator.h
 
     # Assets

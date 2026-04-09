@@ -4,8 +4,7 @@
 #include "imgui.h"
 #include "property_editor.h"
 #include "ui_properties.h"
-#include "engine/core/assets/asset_manager.h"
-#include "engine/graphics/assets/texture_asset.h"
+#include "engine/graphics/texture_system.h"
 
 namespace CHEngine
 {
@@ -18,10 +17,8 @@ MaterialPanel::MaterialPanel()
 static uint32_t GetTextureID(const std::string& path)
 {
     if (path.empty()) return 0;
-    auto tex = AssetManager::Get().Get<TextureAsset>(path);
-    if (tex && tex->GetTexture())
-        return tex->GetTexture()->GetRendererID();
-    return 0;
+    auto textureHandle = TextureSystem::Get().LoadTexture(path);
+    return TextureSystem::Get().GetRendererID(textureHandle);
 }
 
 void MaterialPanel::DrawMaterialSlot(MaterialSlot& slot)
