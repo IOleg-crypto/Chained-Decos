@@ -1,7 +1,6 @@
 #include "ui_widget_renderer.h"
 #include "ui_renderer.h"
-#include "engine/core/assets/asset_manager.h"
-#include "engine/graphics/assets/texture_asset.h"
+#include "engine/graphics/texture_system.h"
 #include "engine/scene/components.h"
 #include "engine/core/log.h"
 #include <algorithm>
@@ -87,11 +86,21 @@ void RenderPanel(const PanelControl& panel, const ImVec2& pos, const ImVec2& siz
     ImU32 borderCol  = ImGui::GetColorU32(ToImVec4(panel.Style.BorderColor));
     ImVec2 pMax      = {pos.x + size.x, pos.y + size.y};
 
-    if (panel.Texture && panel.Texture->IsReady())
+    TextureHandle textureHandle = panel.TextureHandle;
+    if (textureHandle == 0 && !panel.TexturePath.empty())
     {
-        ImTextureID texId = (ImTextureID)(uintptr_t)panel.Texture->GetTexture()->GetRendererID();
+        textureHandle = TextureSystem::Get().LoadTexture(panel.TexturePath);
+    }
+
+    if (textureHandle != 0)
+    {
+        auto texture = TextureSystem::Get().GetTexture(textureHandle);
+        if (texture && texture->IsReady())
+        {
+            ImTextureID texId = (ImTextureID)(uintptr_t)texture->GetRendererID();
             // UI textures are loaded with stb vertical flip enabled; invert V in ImGui sampling to keep them upright.
             dl->AddImageRounded(texId, pos, pMax, {0,1}, {1,0}, IM_COL32_WHITE, panel.Style.Rounding);
+        }
     }
     else if (panel.Style.UseGradient)
     {
@@ -216,12 +225,19 @@ void RenderImage(ImageControl& image, const ImVec2& size)
 
     ImVec2 pMax = {pos.x + aSize.x, pos.y + aSize.y};
 
-    if (!image.TexturePath.empty())
+    TextureHandle textureHandle = image.TextureHandle;
+    if (textureHandle == 0 && !image.TexturePath.empty())
     {
-        auto tex = AssetManager::Get().Get<TextureAsset>(image.TexturePath);
+        textureHandle = TextureSystem::Get().LoadTexture(image.TexturePath);
+        image.TextureHandle = textureHandle;
+    }
+
+    if (textureHandle != 0)
+    {
+        auto tex = TextureSystem::Get().GetTexture(textureHandle);
         if (tex && tex->IsReady())
         {
-            ImTextureID tid = (ImTextureID)(uintptr_t)tex->GetTexture()->GetRendererID();
+            ImTextureID tid = (ImTextureID)(uintptr_t)tex->GetRendererID();
             dl->AddImageRounded(tid, pos, pMax, {0,1}, {1,0}, ImGui::GetColorU32(ToImVec4(image.TintColor)), image.Style.Rounding);
         }
     }
@@ -303,11 +319,19 @@ bool RenderComboBox(ComboBoxControl& cb, const ImVec2& size)
 
 bool RenderImageButton(ImageButtonControl& ib, const ImVec2& size)
 {
-    if (ib.TexturePath.empty()) return false;
-    auto tex = AssetManager::Get().Get<TextureAsset>(ib.TexturePath);
+    TextureHandle textureHandle = ib.TextureHandle;
+    if (textureHandle == 0 && !ib.TexturePath.empty())
+    {
+        textureHandle = TextureSystem::Get().LoadTexture(ib.TexturePath);
+        ib.TextureHandle = textureHandle;
+    }
+
+    if (textureHandle == 0) return false;
+
+    auto tex = TextureSystem::Get().GetTexture(textureHandle);
     if (!tex) return false;
 
-    ImTextureID tid = (ImTextureID)(uintptr_t)tex->GetTexture()->GetRendererID();
+    ImTextureID tid = (ImTextureID)(uintptr_t)tex->GetRendererID();
     if (ImGui::ImageButton(ib.Label.c_str(), tid, size, {0,1}, {1,0}, ToImVec4(ib.BackgroundColor), ToImVec4(ib.TintColor)))
         ib.PressedThisFrame = true;
     return ImGui::IsItemActive();

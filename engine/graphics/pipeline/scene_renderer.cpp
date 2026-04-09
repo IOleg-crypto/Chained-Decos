@@ -6,11 +6,11 @@
 #include "engine/core/profiler.h"
 #include "engine/graphics/assets/model_asset.h"
 #include "engine/graphics/assets/shader_asset.h"
-#include "engine/graphics/assets/texture_asset.h"
 #include "engine/graphics/loaders/model_loader.h"
 #include "engine/graphics/pipeline/frustum.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/pipeline/texture_utility.h"
+#include "engine/graphics/texture_system.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/components/camera_component.h"
 #include "engine/scene/components/game_components.h"
@@ -78,11 +78,12 @@ void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float near
             const auto& settings = envSettings.Skybox;
             if (!settings.TexturePath.empty())
             {
-                auto texture = AssetManager::Get().Get<TextureAsset>(settings.TexturePath);
-                if (texture && texture->GetState() == AssetState::Ready)
+                auto textureHandle = TextureSystem::Get().LoadTexture(settings.TexturePath);
+                auto texture = TextureSystem::Get().GetTexture(textureHandle);
+                if (texture)
                 {
                     int skyboxMode = std::clamp(settings.Mode, 0, 2);
-                    uint32_t texId = texture->GetTexture()->GetRendererID();
+                    uint32_t texId = texture->GetRendererID();
                     auto& renderer = Renderer::Get();
                     auto& rd = renderer.GetData();
 
@@ -105,7 +106,7 @@ void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float near
                             texId = rd.Skybox.CachedCubemap->GetRendererID();
                         }
                     }
-                    renderer.DrawSkybox(texId, skyboxMode, texture->IsHDR(), settings.Exposure, settings.Brightness,
+                    renderer.DrawSkybox(texId, skyboxMode, TextureSystem::Get().IsHDR(textureHandle), settings.Exposure, settings.Brightness,
                                         settings.Contrast, camera);
                 }
             }
@@ -395,11 +396,8 @@ Material SceneRenderer::ResolveMaterialForMesh(int meshIndex, const Model& model
                 }
                 else
                 {
-                    auto tex = AssetManager::Get().Get<TextureAsset>(slot.Material.AlbedoPath);
-                    if (tex && tex->IsReady())
-                    {
-                        material.AlbedoMap = tex->GetTexture()->GetRendererID();
-                    }
+                    auto textureHandle = TextureSystem::Get().LoadTexture(slot.Material.AlbedoPath);
+                    material.AlbedoMap = TextureSystem::Get().GetRendererID(textureHandle);
                 }
             }
             material.EmissiveIntensity = slot.Material.EmissiveIntensity;
@@ -478,12 +476,8 @@ void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Materia
         {
             return 0;
         }
-        auto tex = AssetManager::Get().Get<TextureAsset>(path);
-        if (tex && tex->IsReady())
-        {
-            return tex->GetTexture()->GetRendererID();
-        }
-        return 0;
+        auto textureHandle = TextureSystem::Get().LoadTexture(path);
+        return TextureSystem::Get().GetRendererID(textureHandle);
     };
 
     uint32_t albedoMap = resolveMap(material.AlbedoMap, material.AlbedoPath);
@@ -798,7 +792,6 @@ void SceneRenderer::DrawSpawnDebug(entt::registry& registry, const SceneRenderOp
 void SceneRenderer::RenderEditorIcons(Scene* scene, const Camera3D& camera)
 {
     auto& registry = scene->GetRegistry();
-    auto& assetManager = AssetManager::Get();
     const glm::vec3 activeCameraPos = camera.Position;
 
     auto tryLoadIcon = [&](const char* path, unsigned int& cachedId) {
@@ -807,11 +800,8 @@ void SceneRenderer::RenderEditorIcons(Scene* scene, const Camera3D& camera)
             return;
         }
 
-        auto tex = assetManager.Get<TextureAsset>(path);
-        if (tex && tex->IsReady() && tex->GetTexture())
-        {
-            cachedId = tex->GetTexture()->GetRendererID();
-        }
+        auto textureHandle = TextureSystem::Get().LoadTexture(path);
+        cachedId = TextureSystem::Get().GetRendererID(textureHandle);
     };
 
     tryLoadIcon("engine/resources/icons/camera_icon.png", m_EditorResources.CameraIconId);

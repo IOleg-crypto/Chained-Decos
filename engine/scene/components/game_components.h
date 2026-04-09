@@ -2,6 +2,7 @@
 #define CH_GAME_COMPONENTS_H
 
 #include "engine/core/reflection.h"
+#include <string>
 
 namespace CHEngine
 {
@@ -13,8 +14,7 @@ struct SpawnComponent
     bool RenderSpawnZoneInScene = true;
     glm::vec3 SpawnPoint = {0.0f, 0.0f, 0.0f};
 
-    std::string TexturePath = PROJECT_ROOT_DIR "/game/chaineddecos/assets/boxes/PlayerSpawnTexture.png";
-    std::shared_ptr<TextureAsset> Texture;
+    std::string TexturePath;
 
     SpawnComponent() = default;
     SpawnComponent(const SpawnComponent&) = default;

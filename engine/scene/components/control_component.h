@@ -2,9 +2,6 @@
 #define CH_CONTROL_COMPONENT_H
 
 #include "engine/core/reflection.h"
-#include "engine/graphics/api/texture.h"
-#include "engine/graphics/assets/texture_asset.h"
-#include <memory>
 
 namespace CHEngine
 {
@@ -243,7 +240,6 @@ struct PanelControl
     UIStyle Style;
     AssetHandle TextureHandle = 0;
     std::string TexturePath = "";
-    std::shared_ptr<class TextureAsset> Texture = nullptr;
     bool FullScreen = false;
 
     bool IsHovered = false;
