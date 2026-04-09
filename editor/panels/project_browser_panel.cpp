@@ -4,7 +4,7 @@
 #include "engine/scene/scene_events.h"
 #include "IconsFontAwesome6.h"
 #include "engine/core/assets/asset_manager.h"
-#include "engine/core/dialogs.h"
+#include "engine/platform/utils/dialogs.h"
 #include "panel.h"
 #include <filesystem>
 

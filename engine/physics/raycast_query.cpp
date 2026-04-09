@@ -14,6 +14,7 @@ namespace CHEngine
 {
 bool RaycastQuery::RayAABB(glm::vec3 origin, glm::vec3 dir, glm::vec3 min, glm::vec3 max, float& t, glm::vec3& normal)
 {
+    // Slab test for a ray against an axis-aligned box.
     glm::vec3 invDir = 1.0f / dir;
 
     glm::vec3 t0 = (min - origin) * invDir;
@@ -55,6 +56,7 @@ RaycastResult RaycastQuery::Raycast(entt::registry& registry, Ray ray)
     glm::vec3 rayOrigin = ray.position;
     glm::vec3 rayDir = glm::normalize(ray.direction);
 
+    // Test every enabled collider in local space, then compare results in world space.
     auto view = registry.view<TransformComponent, ColliderComponent>();
     for (auto it = view.begin(); it != view.end(); ++it)
     {

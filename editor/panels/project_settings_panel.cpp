@@ -3,7 +3,7 @@
 #include "editor_layer.h"
 #include "engine/scene/project_serializer.h"
 #include "imgui.h"
-#include "engine/core/dialogs.h"
+#include "engine/platform/utils/dialogs.h"
 #include "IconsFontAwesome6.h"
 #include <format>
 

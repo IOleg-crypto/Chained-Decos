@@ -22,6 +22,7 @@ void CollisionCore::ApplyResponse(entt::registry& registry,
                                   glm::vec3 normal,
                                   float depth)
 {
+    // Baumgarte-style positional correction keeps bodies from sinking into each other.
     const float kBaumgarte = 0.8f;
     const float kSlop = 0.005f;
     const float kMaxCorrection = 1.5f;
@@ -45,6 +46,7 @@ void CollisionCore::ApplyResponse(entt::registry& registry,
         }
     }
 
+    // Treat mostly-upward contacts as ground contact.
     if (normal.y > 0.45f)
     {
         rb.IsGrounded = true;
@@ -69,6 +71,7 @@ void CollisionCore::ApplyResponse(entt::registry& registry,
         rb.Velocity -= normal * vDotN;
     }
 
+    // Mark the collider so gameplay code can react later in the frame.
     other.IsColliding = true;
 
     if (auto* context = registry.ctx().find<PhysicsContext>())
@@ -82,6 +85,7 @@ void CollisionCore::ApplyResponse(entt::registry& registry,
 
 glm::vec3 CollisionCore::ClosestPointOnSegment(glm::vec3 p, glm::vec3 a, glm::vec3 b)
 {
+    // Standard closest-point helper used by capsule and mesh contact tests.
     glm::vec3 ab = b - a;
     float denom = glm::dot(ab, ab);
     if (denom < 0.0001f)
@@ -94,6 +98,7 @@ glm::vec3 CollisionCore::ClosestPointOnSegment(glm::vec3 p, glm::vec3 a, glm::ve
 
 glm::vec3 CollisionCore::ClosestPointTriangle(glm::vec3 p, glm::vec3 a, glm::vec3 b, glm::vec3 c)
 {
+    // Standard closest-point-on-triangle test from Real-Time Collision Detection.
     glm::vec3 ab = b - a;
     glm::vec3 ac = c - a;
     glm::vec3 ap = p - a;
@@ -140,6 +145,7 @@ glm::vec3 CollisionCore::ClosestPointTriangle(glm::vec3 p, glm::vec3 a, glm::vec
 
 CollisionCore::CapsuleSegment CollisionCore::GetCapsuleSegment(const TransformComponent& tc, const ColliderComponent& cc)
 {
+    // Scale the capsule with the world transform so non-uniform scaling stays consistent.
     glm::vec3 worldUp = glm::normalize(glm::vec3(tc.WorldTransform[1]));
     glm::vec3 finalPos = glm::vec3(tc.WorldTransform * glm::vec4(cc.Offset, 1.0f));
 
@@ -157,6 +163,7 @@ CollisionCore::CapsuleSegment CollisionCore::GetCapsuleSegment(const TransformCo
 
 CollisionCore::WorldAABB CollisionCore::GetWorldAABB(const TransformComponent& tc, const ColliderComponent& cc)
 {
+    // Build a world-space AABB from the transformed local corners.
     glm::vec3 minLocal = cc.Offset;
     glm::vec3 maxLocal = cc.Offset + cc.Size;
 
@@ -186,6 +193,9 @@ CollisionCore::WorldAABB CollisionCore::GetWorldAABB(const TransformComponent& t
 void CollisionCore::ResolveCollisions(entt::registry& registry, const std::vector<entt::entity>& entities)
 {
     const int kResolveIterations = 4;
+    auto colliders = registry.view<TransformComponent, ColliderComponent>();
+
+    // A small fixed number of passes is usually enough to settle stacked bodies.
     for (int iter = 0; iter < kResolveIterations; iter++)
     {
         for (auto rbEntity : entities)
@@ -195,12 +205,10 @@ void CollisionCore::ResolveCollisions(entt::registry& registry, const std::vecto
             if (iter == 0) registry.get<RigidBodyComponent>(rbEntity).IsGrounded = false;
 
             auto& rbCollider = registry.get<ColliderComponent>(rbEntity);
-            auto colliders = registry.view<TransformComponent, ColliderComponent>();
-            for (auto otherEntity : colliders)
+            colliders.each([&](auto otherEntity, auto&, auto& otherCollider)
             {
-                if (rbEntity == otherEntity) continue;
-                auto& otherCollider = colliders.get<ColliderComponent>(otherEntity);
-                if (!otherCollider.Enabled) continue;
+                if (rbEntity == otherEntity) return;
+                if (!otherCollider.Enabled) return;
 
                 if (otherCollider.Type == ColliderType::Box)
                 {
@@ -218,7 +226,7 @@ void CollisionCore::ResolveCollisions(entt::registry& registry, const std::vecto
                 {
                     if (rbCollider.Type == ColliderType::Sphere) ResolveSphereSphere(registry, rbEntity, otherEntity);
                 }
-            }
+            });
         }
     }
 }

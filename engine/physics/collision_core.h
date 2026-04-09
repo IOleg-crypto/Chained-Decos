@@ -8,6 +8,7 @@
 
 namespace CHEngine
 {
+// Narrow-phase collision response helpers for the physics step.
 class CollisionCore
 {
 public:

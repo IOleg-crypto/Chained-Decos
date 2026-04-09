@@ -2,7 +2,7 @@
 #define CH_SERIALIZATION_UTILS_H
 
 #include "engine/core/uuid.h"
-#include "engine/core/yaml.h"
+#include "engine/scene/yaml.h"
 #include "engine/core/reflection.h"
 #include "engine/scene/project.h"
 #include <filesystem>

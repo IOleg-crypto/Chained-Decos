@@ -1,7 +1,7 @@
 #include "prefab_serializer.h"
 #include "component_serializer.h"
 #include "components.h"
-#include "engine/core/yaml.h"
+#include "engine/scene/yaml.h"
 #include "engine/scene/scene.h"
 #include <fstream>
 #include <yaml-cpp/yaml.h>

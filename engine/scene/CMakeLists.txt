@@ -1,4 +1,5 @@
 add_library(engine_scene ${SUBMODULE_LIB_TYPE}
+        yaml.h
         scene.cpp
         project.cpp
         project_serializer.cpp

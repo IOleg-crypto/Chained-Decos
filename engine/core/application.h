@@ -21,7 +21,7 @@ class ImGuiLayer;
 class Layer;
 class ScriptEngine;
 
-struct CH_API ApplicationCommandLineArgs
+struct ApplicationCommandLineArgs
 {
     int Count = 0;
     char** Args = nullptr;
@@ -33,7 +33,7 @@ struct CH_API ApplicationCommandLineArgs
     }
 };
 
-struct CH_API ApplicationSpecification
+struct ApplicationSpecification
 {
     std::string Name = "Chained Application";
     std::string WorkingDirectory;
@@ -45,7 +45,7 @@ struct CH_API ApplicationSpecification
 };
 
 // The main entry point and controller for the engine life cycle.
-class CH_API Application
+class Application
 {
 public:
     Application(const ApplicationSpecification& specification);
@@ -69,6 +69,8 @@ public:
     {
         return *s_Instance;
     }
+
+    static std::filesystem::path GetExecutableDirectory();
 
     Window& GetWindow();
     ImGuiLayer* GetImGuiLayer()
