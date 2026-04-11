@@ -78,6 +78,9 @@ add_library(engine_graphics ${SUBMODULE_LIB_TYPE}
         api/opengl/opengl_shader.cpp
 )
 
+# Prevents multiple definition errors when using unity builds
+set_source_files_properties(stb_impl.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+
 target_include_directories(engine_graphics PUBLIC
     ${ENGINE_INCLUDE_DIRS}
     ${assimp_SOURCE_DIR}/include

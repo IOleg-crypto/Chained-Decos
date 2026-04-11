@@ -4,7 +4,7 @@
 
 namespace
 {
-constexpr const char* kProjectGame = "ChainedDecos";
+constexpr const char* kProjectGame = "testproject";
 }
 
 namespace CHEngine
