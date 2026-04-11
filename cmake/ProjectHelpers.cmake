@@ -15,8 +15,8 @@ function(chained_add_csharp_scripts TARGET_NAME CSHARP_PROJECT_PATH)
     set(CORAL_MANAGED_DIR "${CMAKE_BINARY_DIR}/include/coral/cmake")
     set(SCRIPT_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/scripts/${TARGET_NAME}")
     
-    # Track .cs files for incremental builds
-    file(GLOB_RECURSE CS_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cs")
+    # Track only gameplay .cs files for incremental builds
+    file(GLOB_RECURSE CS_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cs")
     set(SCRIPT_DLL_PATH "${SCRIPT_OUTPUT_DIR}/${TARGET_NAME}.dll")
 
     add_custom_command(
