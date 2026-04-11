@@ -12,13 +12,17 @@ namespace CHEngine
         return std::make_shared<EnvironmentAsset>();
     }
 
-    bool EnvironmentLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath)
+    bool EnvironmentLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError)
     {
         std::filesystem::path fullPath(resolvedPath);
         std::ifstream stream(fullPath);
         if (!stream.is_open())
         {
             CH_CORE_ERROR("EnvironmentLoader: Failed to open environment file: {0}", resolvedPath);
+            if (outError)
+            {
+                *outError = "EnvironmentLoader: failed to open environment file '" + resolvedPath + "'";
+            }
             return false;
         }
 
@@ -29,6 +33,10 @@ namespace CHEngine
             YAML::Node data = YAML::Load(stream);
             if (!data["Environment"])
             {
+                if (outError)
+                {
+                    *outError = "EnvironmentLoader: missing Environment node in '" + resolvedPath + "'";
+                }
                 return false;
             }
 
@@ -102,6 +110,19 @@ namespace CHEngine
         } catch (const std::exception& e)
         {
             CH_CORE_ERROR("EnvironmentLoader: Failed to parse environment file {0}: {1}", resolvedPath, e.what());
+            if (outError)
+            {
+                *outError = std::string("EnvironmentLoader: failed to parse '") + resolvedPath + "': " + e.what();
+            }
+            return false;
+        }
+        catch (...)
+        {
+            CH_CORE_ERROR("EnvironmentLoader: Failed to parse environment file {0} with an unknown exception", resolvedPath);
+            if (outError)
+            {
+                *outError = std::string("EnvironmentLoader: failed to parse '") + resolvedPath + "' with an unknown exception";
+            }
             return false;
         }
     }

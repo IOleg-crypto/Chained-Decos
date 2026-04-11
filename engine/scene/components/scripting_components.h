@@ -61,6 +61,25 @@ struct ManagedScriptInstance
     ManagedScriptInstance() = default;
     explicit ManagedScriptInstance(const std::string& className)
         : ClassName(className) {}
+    ManagedScriptInstance(const ManagedScriptInstance& other)
+        : ClassName(other.ClassName), Fields(other.Fields) {}
+    ManagedScriptInstance& operator=(const ManagedScriptInstance& other)
+    {
+        if (this != &other)
+        {
+            ClassName = other.ClassName;
+            Fields = other.Fields;
+            Instance = nullptr;
+            NeedsStart = true;
+            OnCreate = nullptr;
+            OnStart = nullptr;
+            OnUpdate = nullptr;
+            OnDestroy = nullptr;
+            OnGUI = nullptr;
+            OnCollisionEnter = nullptr;
+        }
+        return *this;
+    }
 
     CH_REFLECT_BEGIN(ManagedScriptInstance)
         props.Property("ClassName", ClassName, PropertyMeta(PropertyMeta::WidgetHint::Enum));

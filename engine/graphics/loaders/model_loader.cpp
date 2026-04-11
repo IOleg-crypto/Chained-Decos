@@ -8,7 +8,7 @@ std::shared_ptr<Asset> ModelLoader::Create()
     return std::make_shared<ModelAsset>();
 }
 
-bool ModelLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath)
+bool ModelLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError)
 {
     auto modelAsset = std::static_pointer_cast<ModelAsset>(asset);
 
@@ -17,6 +17,10 @@ bool ModelLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolved
     {
         // Placeholder: GenerateProceduralModel was removed from ModelLoader in favor of AssimpImporter
         // If you need it, move it to AssimpImporter or keep a simplified version here
+        if (outError)
+        {
+            *outError = "ModelLoader: procedural model paths are not supported: " + resolvedPath;
+        }
         return false;
     }
 
@@ -25,6 +29,10 @@ bool ModelLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolved
     {
         modelAsset->SetPendingData(std::move(pendingData));
         return true;
+    }
+    if (outError)
+    {
+        *outError = "ModelLoader: failed to import model data from '" + resolvedPath + "'";
     }
     return false;
 }

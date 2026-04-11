@@ -101,6 +101,40 @@ TEST(SceneTest, CopyEntity)
     EXPECT_TRUE(dst.GetComponent<CameraComponent>().Primary);
 }
 
+TEST(SceneTest, CopyEntityResetsManagedScriptRuntimeState)
+{
+    Scene scene;
+    Entity src = scene.CreateEntity("Scripted");
+
+    auto& scripts = src.AddComponent<ManagedScriptComponent>().Scripts;
+    scripts.emplace_back("TestScript");
+    auto& script = scripts.back();
+    script.Instance = reinterpret_cast<void*>(0x1234);
+    script.NeedsStart = false;
+    script.OnCreate = reinterpret_cast<void (*)()>(0x1);
+    script.OnStart = reinterpret_cast<void (*)()>(0x2);
+    script.OnUpdate = reinterpret_cast<void (*)(float)>(0x3);
+    script.OnDestroy = reinterpret_cast<void (*)()>(0x4);
+    script.OnGUI = reinterpret_cast<void (*)()>(0x5);
+    script.OnCollisionEnter = reinterpret_cast<void (*)(uint64_t)>(0x6);
+
+    Entity dst = scene.CopyEntity((entt::entity)src);
+    ASSERT_TRUE(dst.HasComponent<ManagedScriptComponent>());
+
+    const auto& copiedScripts = dst.GetComponent<ManagedScriptComponent>().Scripts;
+    ASSERT_EQ(copiedScripts.size(), 1u);
+    EXPECT_EQ(copiedScripts[0].ClassName, "TestScript");
+    EXPECT_EQ(copiedScripts[0].Fields.size(), 0u);
+    EXPECT_EQ(copiedScripts[0].Instance, nullptr);
+    EXPECT_TRUE(copiedScripts[0].NeedsStart);
+    EXPECT_EQ(copiedScripts[0].OnCreate, nullptr);
+    EXPECT_EQ(copiedScripts[0].OnStart, nullptr);
+    EXPECT_EQ(copiedScripts[0].OnUpdate, nullptr);
+    EXPECT_EQ(copiedScripts[0].OnDestroy, nullptr);
+    EXPECT_EQ(copiedScripts[0].OnGUI, nullptr);
+    EXPECT_EQ(copiedScripts[0].OnCollisionEnter, nullptr);
+}
+
 TEST(SceneTest, DestructiveOperations)
 {
     Scene scene;

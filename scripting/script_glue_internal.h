@@ -3,6 +3,7 @@
 
 #include "engine/core/assets/asset_manager.h"
 #include "engine/audio/audio.h"
+#include "engine/audio/audio.h"
 #include "engine/core/application.h"
 #include "engine/core/input.h"
 #include "engine/core/log.h"
@@ -43,13 +44,13 @@ inline Entity GetEntity(uint64_t entityID)
 }
 
 // Module registration functions (to be called by ScriptGlue::RegisterInternalCalls)
-void RegisterSystemInternalCalls(Coral::ManagedAssembly& assembly);
-void RegisterInputInternalCalls(Coral::ManagedAssembly& assembly);
-void RegisterSceneInternalCalls(Coral::ManagedAssembly& assembly);
-void RegisterEntityInternalCalls(Coral::ManagedAssembly& assembly);
-void RegisterCameraInternalCalls(Coral::ManagedAssembly& assembly);
-void RegisterUIInternalCalls(Coral::ManagedAssembly& assembly);
-void RegisterGameplayInternalCalls(Coral::ManagedAssembly& assembly);
+void RegisterSystemGlue(Coral::ManagedAssembly& assembly);
+void RegisterInputGlue(Coral::ManagedAssembly& assembly);
+void RegisterSceneGlue(Coral::ManagedAssembly& assembly);
+void RegisterEntityGlue(Coral::ManagedAssembly& assembly);
+void RegisterCameraGlue(Coral::ManagedAssembly& assembly);
+void RegisterUIGlue(Coral::ManagedAssembly& assembly);
+void RegisterGameplayGlue(Coral::ManagedAssembly& assembly);
 
 } // namespace CHEngine
 

@@ -15,7 +15,7 @@ namespace CHEngine
         return std::make_shared<ShaderAsset>();
     }
 
-    bool ShaderLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath)
+    bool ShaderLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError)
     {
         auto shaderAsset = std::static_pointer_cast<ShaderAsset>(asset);
         auto shader = LoadShaderFromPath(resolvedPath);
@@ -23,6 +23,10 @@ namespace CHEngine
         {
             shaderAsset->SetShader(shader);
             return true;
+        }
+        if (outError)
+        {
+            *outError = "ShaderLoader: failed to load shader from '" + resolvedPath + "'";
         }
         return false;
     }

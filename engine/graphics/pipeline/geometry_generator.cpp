@@ -57,7 +57,7 @@ namespace CHEngine
         vao->AddVertexBuffer(vbo);
         
         uint32_t indices[36];
-        for(int i=0; i<36; i++) indices[i] = i;
+        for (uint32_t index = 0; index < 36; ++index) indices[index] = index;
         auto ebo = IndexBuffer::Create(indices, 36);
         vao->SetIndexBuffer(ebo);
 
@@ -111,32 +111,32 @@ namespace CHEngine
         std::vector<float> vertices;
         std::vector<uint32_t> indices;
 
-        for (int i = 0; i <= stacks; ++i) {
-            float v = (float)i / (float)stacks;
-            float phi = v * glm::pi<float>();
+        for (int stackIndex = 0; stackIndex <= stacks; ++stackIndex) {
+            float stackFraction = (float)stackIndex / (float)stacks;
+            float polarAngle = stackFraction * glm::pi<float>();
 
-            for (int j = 0; j <= slices; ++j) {
-                float u = (float)j / (float)slices;
-                float theta = u * 2.0f * glm::pi<float>();
+            for (int sliceIndex = 0; sliceIndex <= slices; ++sliceIndex) {
+                float sliceFraction = (float)sliceIndex / (float)slices;
+                float azimuthAngle = sliceFraction * 2.0f * glm::pi<float>();
 
-                float x = std::cos(theta) * std::sin(phi);
-                float y = std::cos(phi);
-                float z = std::sin(theta) * std::sin(phi);
+                float positionX = std::cos(azimuthAngle) * std::sin(polarAngle);
+                float positionY = std::cos(polarAngle);
+                float positionZ = std::sin(azimuthAngle) * std::sin(polarAngle);
 
-                vertices.push_back(x * radius);
-                vertices.push_back(y * radius);
-                vertices.push_back(z * radius);
+                vertices.push_back(positionX * radius);
+                vertices.push_back(positionY * radius);
+                vertices.push_back(positionZ * radius);
             }
         }
 
-        for (int i = 0; i < stacks; ++i) {
-            for (int j = 0; j < slices; ++j) {
-                indices.push_back((i + 1) * (slices + 1) + j);
-                indices.push_back(i * (slices + 1) + j);
-                indices.push_back(i * (slices + 1) + j + 1);
-                indices.push_back((i + 1) * (slices + 1) + j);
-                indices.push_back(i * (slices + 1) + j + 1);
-                indices.push_back((i + 1) * (slices + 1) + (j + 1));
+        for (int stackIndex = 0; stackIndex < stacks; ++stackIndex) {
+            for (int sliceIndex = 0; sliceIndex < slices; ++sliceIndex) {
+                indices.push_back((stackIndex + 1) * (slices + 1) + sliceIndex);
+                indices.push_back(stackIndex * (slices + 1) + sliceIndex);
+                indices.push_back(stackIndex * (slices + 1) + sliceIndex + 1);
+                indices.push_back((stackIndex + 1) * (slices + 1) + sliceIndex);
+                indices.push_back(stackIndex * (slices + 1) + sliceIndex + 1);
+                indices.push_back((stackIndex + 1) * (slices + 1) + (sliceIndex + 1));
             }
         }
 
@@ -157,13 +157,13 @@ namespace CHEngine
     Mesh GeometryGenerator::GenerateGrid(int slices, float spacing)
     {
         std::vector<float> vertices;
-        for (int i = -slices; i <= slices; i++)
+        for (int lineIndex = -slices; lineIndex <= slices; ++lineIndex)
         {
-            vertices.push_back((float)i * spacing); vertices.push_back(0); vertices.push_back((float)-slices * spacing);
-            vertices.push_back((float)i * spacing); vertices.push_back(0); vertices.push_back((float)slices * spacing);
+            vertices.push_back((float)lineIndex * spacing); vertices.push_back(0); vertices.push_back((float)-slices * spacing);
+            vertices.push_back((float)lineIndex * spacing); vertices.push_back(0); vertices.push_back((float)slices * spacing);
 
-            vertices.push_back((float)-slices * spacing); vertices.push_back(0); vertices.push_back((float)i * spacing);
-            vertices.push_back((float)slices * spacing); vertices.push_back(0); vertices.push_back((float)i * spacing);
+            vertices.push_back((float)-slices * spacing); vertices.push_back(0); vertices.push_back((float)lineIndex * spacing);
+            vertices.push_back((float)slices * spacing); vertices.push_back(0); vertices.push_back((float)lineIndex * spacing);
         }
 
         auto vbo = VertexBuffer::Create(vertices.data(), (uint32_t)vertices.size() * sizeof(float));
@@ -201,17 +201,17 @@ namespace CHEngine
 
     Mesh GeometryGenerator::GenerateCube(const glm::vec3 &dimensions)
     {
-        float w = dimensions.x * 0.5f;
-        float h = dimensions.y * 0.5f;
-        float d = dimensions.z * 0.5f;
+        float halfWidth = dimensions.x * 0.5f;
+        float halfHeight = dimensions.y * 0.5f;
+        float halfDepth = dimensions.z * 0.5f;
 
         float vertices[] = {
-            -w,-h, d,  w,-h, d,  w, h, d, -w, h, d,
-            -w,-h,-d, -w, h,-d,  w, h,-d,  w,-h,-d,
-            -w, h,-d, -w, h, d,  w, h, d,  w, h,-d,
-            -w,-h,-d,  w,-h,-d,  w,-h, d, -w,-h, d,
-             w,-h,-d,  w, h,-d,  w, h, d,  w,-h, d,
-            -w,-h,-d, -w,-h, d, -w, h, d, -w, h,-d
+            -halfWidth,-halfHeight, halfDepth,  halfWidth,-halfHeight, halfDepth,  halfWidth, halfHeight, halfDepth, -halfWidth, halfHeight, halfDepth,
+            -halfWidth,-halfHeight,-halfDepth, -halfWidth, halfHeight,-halfDepth,  halfWidth, halfHeight,-halfDepth,  halfWidth,-halfHeight,-halfDepth,
+            -halfWidth, halfHeight,-halfDepth, -halfWidth, halfHeight, halfDepth,  halfWidth, halfHeight, halfDepth,  halfWidth, halfHeight,-halfDepth,
+            -halfWidth,-halfHeight,-halfDepth,  halfWidth,-halfHeight,-halfDepth,  halfWidth,-halfHeight, halfDepth, -halfWidth,-halfHeight, halfDepth,
+             halfWidth,-halfHeight,-halfDepth,  halfWidth, halfHeight,-halfDepth,  halfWidth, halfHeight, halfDepth,  halfWidth,-halfHeight, halfDepth,
+            -halfWidth,-halfHeight,-halfDepth, -halfWidth,-halfHeight, halfDepth, -halfWidth, halfHeight, halfDepth, -halfWidth, halfHeight,-halfDepth
         };
 
         auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
@@ -220,7 +220,7 @@ namespace CHEngine
         vao->AddVertexBuffer(vbo);
         
         uint32_t indices[36];
-        for(int i=0; i<36; i++) indices[i] = i;
+        for (uint32_t index = 0; index < 36; ++index) indices[index] = index;
         auto ebo = IndexBuffer::Create(indices, 36);
         vao->SetIndexBuffer(ebo);
 

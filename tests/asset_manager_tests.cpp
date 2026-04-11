@@ -48,13 +48,18 @@ public:
         return std::make_shared<DummyAsset>();
     }
 
-    bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath) override
+    bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError = nullptr) override
     {
         ++LoadCalls;
         if (auto dummy = std::dynamic_pointer_cast<DummyAsset>(asset))
         {
             ++dummy->LoadCount;
             dummy->LastLoadedPath = resolvedPath;
+        }
+
+        if (!m_ShouldSucceed && outError)
+        {
+            *outError = "CountingLoader: forced failure for test path '" + resolvedPath + "'";
         }
 
         return m_ShouldSucceed;

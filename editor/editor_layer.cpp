@@ -15,14 +15,13 @@
 #include "engine/scene/project_serializer.h"
 #include "engine/scene/scene_serializer.h"
 
-#include "imgui/IconsFontAwesome6.h"
+#include "IconsFontAwesome6.h"
 #include "panels/console_panel.h"
 #include "panels/content_browser_panel.h"
 #include "panels/project_browser_panel.h"
 #include "panels/property_editor.h"
 #include "panels/viewport_panel.h"
 #include "scripting/scene_scripting.h"
-#include "scripting/script_file_system.h"
 #include "scripting/scriptengine.h"
 #include <ImGuizmo.h>
 #include <yaml-cpp/yaml.h>
@@ -48,7 +47,7 @@ EditorLayer::EditorLayer()
 
 void EditorLayer::LoadConfig()
 {
-    std::filesystem::path configPath = ScriptFileSystem::GetExecutableDir() / "editor_settings.yaml";
+    std::filesystem::path configPath = std::filesystem::current_path() / "editor_settings.yaml";
     if (!std::filesystem::exists(configPath))
     {
         return;
@@ -100,7 +99,7 @@ void EditorLayer::SaveConfig()
     out << YAML::EndMap;
     out << YAML::EndMap;
 
-    std::filesystem::path configPath = ScriptFileSystem::GetExecutableDir() / "editor_settings.yaml";
+    std::filesystem::path configPath = std::filesystem::current_path() / "editor_settings.yaml";
     std::ofstream fout(configPath);
     fout << out.c_str();
 }

@@ -7,6 +7,7 @@ namespace CHEngine
 // ─────────────────────────────────────────────────────────────────────────────
 //  Component — base class for all component wrappers
 // ─────────────────────────────────────────────────────────────────────────────
+/// <summary>Base class for managed component wrappers.</summary>
 public abstract class Component
 {
     public Entity Entity { get; internal set; } = null!;
@@ -15,8 +16,10 @@ public abstract class Component
 // ─────────────────────────────────────────────────────────────────────────────
 //  Entity — wraps a native entity ID and provides component access
 // ─────────────────────────────────────────────────────────────────────────────
+/// <summary>Entity wrapper with a small component cache.</summary>
 public class Entity
 {
+    /// <summary>Native entity handle.</summary>
     public ulong ID { get; private set; }
 
     // Cache: avoids allocating a new stub on every GetComponent<T>() call
@@ -24,22 +27,13 @@ public class Entity
 
 #pragma warning disable 0649
     internal static unsafe delegate*<ulong, NativeString, bool> Entity_HasComponent_Ptr;
-    internal static unsafe delegate*<ulong, Vector3*, void> Entity_GetTranslation_Ptr;
-    internal static unsafe delegate*<ulong, Vector3*, void> Entity_SetTranslation_Ptr;
-    internal static unsafe delegate*<ulong, Vector3*, void> Entity_GetRotation_Ptr;
-    internal static unsafe delegate*<ulong, Vector3*, void> Entity_SetRotation_Ptr;
-    internal static unsafe delegate*<ulong, Vector3*, void> Entity_GetScale_Ptr;
-    internal static unsafe delegate*<ulong, Vector3*, void> Entity_SetScale_Ptr;
-    internal static unsafe delegate*<ulong, Vector3*, void> Entity_GetVelocity_Ptr;
-    internal static unsafe delegate*<ulong, Vector3*, void> Entity_SetVelocity_Ptr;
-    internal static unsafe delegate*<ulong, bool> Entity_IsGrounded_Ptr;
-    internal static unsafe delegate*<ulong, bool> Entity_IsKinematic_Ptr;
-    internal static unsafe delegate*<ulong, bool, void> Entity_SetKinematic_Ptr;
     internal static unsafe delegate*<NativeString, NativeArray<ulong>> Entity_FindAllWithComponent_Ptr;
 #pragma warning restore 0649
 
+    /// <summary>Wraps a native entity ID.</summary>
     public Entity(ulong id) { ID = id; }
 
+    /// <summary>True when the entity handle is valid.</summary>
     public bool IsValid => ID != 0;
 
     // ── Component access ──────────────────────────────────────────────────
@@ -47,124 +41,101 @@ public class Entity
     private static unsafe bool HasComponent_Native(ulong entityID, string componentName)
         => Entity_HasComponent_Ptr(entityID, componentName);
 
+    /// <summary>True when the component exists.</summary>
     public bool HasComponent<T>() where T : Component, new()
         => IsValid && HasComponent_Native(ID, typeof(T).Name);
 
+    /// <summary>Returns the component wrapper, or null.</summary>
     public T? GetComponent<T>() where T : Component, new()
     {
         if (!IsValid) return null;
 
-        System.Type type = typeof(T);
-        if (_cache.TryGetValue(type, out Component? cached))
-            return (T)cached;
+        System.Type componentType = typeof(T);
+        if (_cache.TryGetValue(componentType, out Component? cachedComponent))
+            return (T)cachedComponent;
 
         if (!HasComponent<T>())
             return null;
 
-        T comp = new T() { Entity = this };
-        _cache[type] = comp;
-        return comp;
+        T component = new T() { Entity = this };
+        _cache[componentType] = component;
+        return component;
     }
 
+    /// <summary>Returns all entity IDs with the component.</summary>
     public static ulong[] FindAllWithComponent<T>() where T : Component, new()
     {
         unsafe { return Entity_FindAllWithComponent_Ptr(typeof(T).Name).ToArray(); }
     }
 
-    /// <summary>Clear component cache (call after hot-reload or scene change).</summary>
+    /// <summary>Clears the component cache.</summary>
     public void InvalidateComponentCache() => _cache.Clear();
 
     public override string ToString() => $"Entity({ID})";
-
-    // ── Internal Calls (Native) ───────────────────────────────────────────
-
-    public static void GetTranslation(ulong entityID, out Vector3 outTranslation)
-    {
-        unsafe { fixed (Vector3* p = &outTranslation) Entity_GetTranslation_Ptr(entityID, p); }
-    }
-
-    public static void SetTranslation(ulong entityID, ref Vector3 inTranslation)
-    {
-        unsafe { fixed (Vector3* p = &inTranslation) Entity_SetTranslation_Ptr(entityID, p); }
-    }
-
-    public static void GetRotation(ulong entityID, out Vector3 outRotation)
-    {
-        unsafe { fixed (Vector3* p = &outRotation) Entity_GetRotation_Ptr(entityID, p); }
-    }
-
-    public static void SetRotation(ulong entityID, ref Vector3 inRotation)
-    {
-        unsafe { fixed (Vector3* p = &inRotation) Entity_SetRotation_Ptr(entityID, p); }
-    }
-
-    public static void GetScale(ulong entityID, out Vector3 outScale)
-    {
-        unsafe { fixed (Vector3* p = &outScale) Entity_GetScale_Ptr(entityID, p); }
-    }
-
-    public static void SetScale(ulong entityID, ref Vector3 inScale)
-    {
-        unsafe { fixed (Vector3* p = &inScale) Entity_SetScale_Ptr(entityID, p); }
-    }
-
-    public static void GetVelocity(ulong entityID, out Vector3 outVelocity)
-    {
-        unsafe { fixed (Vector3* p = &outVelocity) Entity_GetVelocity_Ptr(entityID, p); }
-    }
-
-    public static void SetVelocity(ulong entityID, ref Vector3 inVelocity)
-    {
-        unsafe { fixed (Vector3* p = &inVelocity) Entity_SetVelocity_Ptr(entityID, p); }
-    }
-
-    public static unsafe bool IsGrounded(ulong entityID) => Entity_IsGrounded_Ptr(entityID);
-    public static unsafe bool IsKinematic(ulong entityID) => Entity_IsKinematic_Ptr(entityID);
-    public static unsafe void SetKinematic(ulong entityID, bool isKinematic) => Entity_SetKinematic_Ptr(entityID, isKinematic);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Component implementations
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// <summary>Transform wrapper.</summary>
 public class TransformComponent : Component
 {
+#pragma warning disable 0649
+    internal static unsafe delegate*<ulong, Vector3*, void> Transform_GetTranslation_Ptr;
+    internal static unsafe delegate*<ulong, Vector3*, void> Transform_SetTranslation_Ptr;
+    internal static unsafe delegate*<ulong, Vector3*, void> Transform_GetRotation_Ptr;
+    internal static unsafe delegate*<ulong, Vector3*, void> Transform_SetRotation_Ptr;
+    internal static unsafe delegate*<ulong, Vector3*, void> Transform_GetScale_Ptr;
+    internal static unsafe delegate*<ulong, Vector3*, void> Transform_SetScale_Ptr;
+#pragma warning restore 0649
+
     public Vector3 Translation
     {
-        get { Entity.GetTranslation(Entity.ID, out Vector3 v); return v; }
-        set { Entity.SetTranslation(Entity.ID, ref value); }
+        get { unsafe { Vector3 translation; Transform_GetTranslation_Ptr(Entity.ID, &translation); return translation; } }
+        set { unsafe { Transform_SetTranslation_Ptr(Entity.ID, &value); } }
     }
 
     public Vector3 Rotation
     {
-        get { Entity.GetRotation(Entity.ID, out Vector3 v); return v; }
-        set { Entity.SetRotation(Entity.ID, ref value); }
+        get { unsafe { Vector3 rotation; Transform_GetRotation_Ptr(Entity.ID, &rotation); return rotation; } }
+        set { unsafe { Transform_SetRotation_Ptr(Entity.ID, &value); } }
     }
 
     public Vector3 Scale
     {
-        get { Entity.GetScale(Entity.ID, out Vector3 v); return v; }
-        set { Entity.SetScale(Entity.ID, ref value); }
+        get { unsafe { Vector3 scale; Transform_GetScale_Ptr(Entity.ID, &scale); return scale; } }
+        set { unsafe { Transform_SetScale_Ptr(Entity.ID, &value); } }
     }
 }
 
+/// <summary>Rigid-body wrapper.</summary>
 public class RigidBodyComponent : Component
 {
+#pragma warning disable 0649
+    internal static unsafe delegate*<ulong, Vector3*, void> RigidBody_GetVelocity_Ptr;
+    internal static unsafe delegate*<ulong, Vector3*, void> RigidBody_SetVelocity_Ptr;
+    internal static unsafe delegate*<ulong, bool> RigidBody_IsGrounded_Ptr;
+    internal static unsafe delegate*<ulong, bool> RigidBody_IsKinematic_Ptr;
+    internal static unsafe delegate*<ulong, bool, void> RigidBody_SetKinematic_Ptr;
+#pragma warning restore 0649
+
     public Vector3 Velocity
     {
-        get { Entity.GetVelocity(Entity.ID, out Vector3 v); return v; }
-        set { Entity.SetVelocity(Entity.ID, ref value); }
+        get { unsafe { Vector3 velocity; RigidBody_GetVelocity_Ptr(Entity.ID, &velocity); return velocity; } }
+        set { unsafe { RigidBody_SetVelocity_Ptr(Entity.ID, &value); } }
     }
 
-    public bool IsGrounded => Entity.IsGrounded(Entity.ID);
+    public bool IsGrounded { get { unsafe { return RigidBody_IsGrounded_Ptr(Entity.ID); } } }
 
     public bool IsKinematic
     {
-        get => Entity.IsKinematic(Entity.ID);
-        set => Entity.SetKinematic(Entity.ID, value);
+        get { unsafe { return RigidBody_IsKinematic_Ptr(Entity.ID); } }
+        set { unsafe { RigidBody_SetKinematic_Ptr(Entity.ID, value); } }
     }
 }
 
+/// <summary>Tag wrapper.</summary>
 public class TagComponent : Component
 {
 #pragma warning disable 0649
@@ -179,6 +150,7 @@ public class TagComponent : Component
     public string Tag => GetTag_Native(Entity.ID) ?? string.Empty;
 }
 
+/// <summary>Camera wrapper.</summary>
 public class CameraComponent : Component
 {
 #pragma warning disable 0649
@@ -206,7 +178,7 @@ public class CameraComponent : Component
 
     private static void GetOrbit(ulong entityID, out float yaw, out float pitch, out float distance)
     {
-        unsafe { fixed (float* Py = &yaw, Pp = &pitch, Pd = &distance) Camera_GetOrbit_Ptr(entityID, Py, Pp, Pd); }
+        unsafe { fixed (float* yawPtr = &yaw, pitchPtr = &pitch, distancePtr = &distance) Camera_GetOrbit_Ptr(entityID, yawPtr, pitchPtr, distancePtr); }
     }
 
     private static void SetOrbit(ulong entityID, float yaw, float pitch, float distance)
@@ -216,12 +188,12 @@ public class CameraComponent : Component
 
     public Vector3 Forward
     {
-        get { GetForward(Entity.ID, out Vector3 v); return v; }
+        get { GetForward(Entity.ID, out Vector3 forward); return forward; }
     }
 
     public Vector3 Right
     {
-        get { GetRight(Entity.ID, out Vector3 v); return v; }
+        get { GetRight(Entity.ID, out Vector3 right); return right; }
     }
 
     public void GetOrbit(out float yaw, out float pitch, out float distance)
@@ -249,6 +221,7 @@ public class CameraComponent : Component
     }
 }
 
+/// <summary>Movement-speed wrapper.</summary>
 public class PlayerComponent : Component
 {
 #pragma warning disable 0649
@@ -266,6 +239,7 @@ public class PlayerComponent : Component
     }
 }
 
+/// <summary>Audio wrapper.</summary>
 public class AudioComponent : Component
 {
 #pragma warning disable 0649
@@ -291,6 +265,7 @@ public class AudioComponent : Component
 
 // ── UI Controls ───────────────────────────────────────────────────────────────
 
+/// <summary>Button control wrapper.</summary>
 public class ButtonControl : Component
 {
 #pragma warning disable 0649
@@ -301,6 +276,7 @@ public class ButtonControl : Component
     public bool IsPressed => IsPressed_Native(Entity.ID);
 }
 
+/// <summary>Checkbox wrapper.</summary>
 public class CheckboxControl : Component
 {
 #pragma warning disable 0649
@@ -311,6 +287,7 @@ public class CheckboxControl : Component
     public bool IsChecked => GetChecked(Entity.ID);
 }
 
+/// <summary>Combo box wrapper.</summary>
 public class ComboBoxControl : Component
 {
 #pragma warning disable 0649
@@ -319,17 +296,18 @@ public class ComboBoxControl : Component
 #pragma warning restore 0649
 
     private static unsafe int GetSelectedIndex(ulong entityID) => ComboBoxControl_GetSelectedIndex_Ptr(entityID);
-    private static unsafe string? GetItem(ulong entityID, int idx)
+    private static unsafe string? GetItem(ulong entityID, int index)
     {
-        return ComboBoxControl_GetItem_Ptr(entityID, idx);
+        return ComboBoxControl_GetItem_Ptr(entityID, index);
     }
 
     public int    SelectedIndex     => GetSelectedIndex(Entity.ID);
-    public string? GetItem(int idx) => GetItem(Entity.ID, idx);
+    public string? GetItem(int index) => GetItem(Entity.ID, index);
 }
 
 // ── Gameplay Components ────────────────────────────────────────────────────────
 
+/// <summary>Spawn point wrapper.</summary>
 public class SpawnComponent : Component
 {
 #pragma warning disable 0649
@@ -346,10 +324,11 @@ public class SpawnComponent : Component
     public bool IsActive => IsActive_Native(Entity.ID);
     public Vector3 SpawnPoint
     {
-        get { GetSpawnPoint(Entity.ID, out Vector3 p); return p; }
+        get { GetSpawnPoint(Entity.ID, out Vector3 spawnPoint); return spawnPoint; }
     }
 }
 
+/// <summary>Scene transition wrapper.</summary>
 public class SceneTransitionComponent : Component
 {
 #pragma warning disable 0649
@@ -363,6 +342,7 @@ public class SceneTransitionComponent : Component
     public string? TargetScene => GetTargetScene(Entity.ID);
 }
 
+/// <summary>RPG stats wrapper.</summary>
 public class RPGStatsComponent : Component
 {
 #pragma warning disable 0649
@@ -379,6 +359,7 @@ public class RPGStatsComponent : Component
     public int Gold { get { unsafe { return RPGStatsComponent_GetGold_Ptr(Entity.ID); } } set { unsafe { RPGStatsComponent_SetGold_Ptr(Entity.ID, value); } } }
 }
 
+/// <summary>Skill wrapper.</summary>
 public class SkillComponent : Component
 {
 #pragma warning disable 0649
@@ -389,6 +370,7 @@ public class SkillComponent : Component
     public bool IsUnlocked { get { unsafe { return SkillComponent_IsUnlocked_Ptr(Entity.ID); } } set { unsafe { SkillComponent_SetUnlocked_Ptr(Entity.ID, value); } } }
 }
 
+/// <summary>Inventory wrapper.</summary>
 public class InventoryComponent : Component
 {
 }

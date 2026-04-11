@@ -57,7 +57,7 @@ target_sources(editor_core PRIVATE
 )
 
 
-target_link_libraries(editor_core PUBLIC 
+target_link_libraries(editor_core PUBLIC
     engine
     scripting
     imguilib
