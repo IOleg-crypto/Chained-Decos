@@ -1,4 +1,4 @@
-name: CI Managed Reusable
+name: Managed
 
 on:
   workflow_call:

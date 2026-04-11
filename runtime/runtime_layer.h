@@ -51,7 +51,7 @@ private:
 private:
     std::shared_ptr<Scene> m_Scene;
     std::unique_ptr<SceneRenderer> m_SceneRenderer;
-    // Script callback removed in favor of GlobalRegistry
+private:
 
     std::string m_ProjectPath;
     float m_BoostUploadsTimer = 0.0f;

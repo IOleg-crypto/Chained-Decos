@@ -1,6 +1,7 @@
 #include "engine/graphics/assets/model_asset.h"
 #include "engine/core/assets/asset_manager.h"
 #include "engine/core/log.h"
+#include "engine/core/profiler.h"
 // #include "engine/graphics/assets/shader_asset.h"
 #include "engine/graphics/assets/texture_asset.h"
 // #include "engine/graphics/importers/mesh_importer.h"
@@ -31,21 +32,21 @@ std::vector<glm::mat4> ModelAsset::GetBoneMatrices(int animationIndex, int frame
     std::vector<glm::mat4> finalMatrices;
     finalMatrices.reserve(boneCount);
 
-    for (int b = 0; b < boneCount; ++b)
+    for (int boneIndex = 0; boneIndex < boneCount; ++boneIndex)
     {
-        const auto& pose = anim.framePoses[frame * boneCount + b];
+        const auto& pose = anim.framePoses[frame * boneCount + boneIndex];
         
         glm::mat4 local = glm::translate(glm::mat4(1.0f), pose.translation) *
                           glm::mat4_cast(pose.rotation) *
                           glm::scale(glm::mat4(1.0f), pose.scale);
 
-        if (m_NodeParents[b] == -1)
-            globalTransforms[b] = local;
+        if (m_NodeParents[boneIndex] == -1)
+            globalTransforms[boneIndex] = local;
         else
-            globalTransforms[b] = globalTransforms[m_NodeParents[b]] * local;
+            globalTransforms[boneIndex] = globalTransforms[m_NodeParents[boneIndex]] * local;
 
-        glm::mat4 offset = (b < (int)m_OffsetMatrices.size()) ? m_OffsetMatrices[b] : glm::mat4(1.0f);
-        finalMatrices.push_back(globalTransforms[b] * offset);
+        glm::mat4 offset = (boneIndex < (int)m_OffsetMatrices.size()) ? m_OffsetMatrices[boneIndex] : glm::mat4(1.0f);
+        finalMatrices.push_back(globalTransforms[boneIndex] * offset);
     }
 
     return finalMatrices;
@@ -54,6 +55,8 @@ std::vector<glm::mat4> ModelAsset::GetBoneMatrices(int animationIndex, int frame
 
 void ModelAsset::OnLoaded()
 {
+    CH_PROFILE_FUNCTION();
+
     if (!m_HasPendingData || !m_PendingData.isValid)
     {
         return;
@@ -167,37 +170,37 @@ void ModelAsset::OnLoaded()
         }
     };
 
-    for (int i = 0; i < (int)newModel.Materials.size(); ++i)
+    for (int materialIndex = 0; materialIndex < (int)newModel.Materials.size(); ++materialIndex)
     {
         if (!m_PendingData.materials.empty())
         {
-            const auto& rawMaterial = m_PendingData.materials[i];
-            newModel.Materials[i].AlbedoColor = rawMaterial.albedoColor;
-            newModel.Materials[i].EmissiveColor = rawMaterial.emissiveColor;
-            newModel.Materials[i].EmissiveIntensity = rawMaterial.emissiveIntensity;
-            newModel.Materials[i].Metalness = rawMaterial.metalness;
-            newModel.Materials[i].Roughness = rawMaterial.roughness;
+            const auto& rawMaterial = m_PendingData.materials[materialIndex];
+            newModel.Materials[materialIndex].AlbedoColor = rawMaterial.albedoColor;
+            newModel.Materials[materialIndex].EmissiveColor = rawMaterial.emissiveColor;
+            newModel.Materials[materialIndex].EmissiveIntensity = rawMaterial.emissiveIntensity;
+            newModel.Materials[materialIndex].Metalness = rawMaterial.metalness;
+            newModel.Materials[materialIndex].Roughness = rawMaterial.roughness;
 
-            loadTex(i, rawMaterial.albedoPath, 0);
-            newModel.Materials[i].AlbedoPath = rawMaterial.albedoPath;
+            loadTex(materialIndex, rawMaterial.albedoPath, 0);
+            newModel.Materials[materialIndex].AlbedoPath = rawMaterial.albedoPath;
             
-            loadTex(i, rawMaterial.normalPath, 2);
-            newModel.Materials[i].NormalPath = rawMaterial.normalPath;
+            loadTex(materialIndex, rawMaterial.normalPath, 2);
+            newModel.Materials[materialIndex].NormalPath = rawMaterial.normalPath;
             
-            loadTex(i, rawMaterial.occlusionPath, 5);
-            newModel.Materials[i].OcclusionPath = rawMaterial.occlusionPath;
+            loadTex(materialIndex, rawMaterial.occlusionPath, 5);
+            newModel.Materials[materialIndex].OcclusionPath = rawMaterial.occlusionPath;
             
-            loadTex(i, rawMaterial.emissivePath, 4);
-            newModel.Materials[i].EmissivePath = rawMaterial.emissivePath;
+            loadTex(materialIndex, rawMaterial.emissivePath, 4);
+            newModel.Materials[materialIndex].EmissivePath = rawMaterial.emissivePath;
             
-            loadTex(i, rawMaterial.metallicRoughnessPath, 3);
-            newModel.Materials[i].MetallicRoughnessPath = rawMaterial.metallicRoughnessPath;
+            loadTex(materialIndex, rawMaterial.metallicRoughnessPath, 3);
+            newModel.Materials[materialIndex].MetallicRoughnessPath = rawMaterial.metallicRoughnessPath;
         }
     }
 
-    for (int i = 0; i < (int)m_PendingData.meshes.size(); ++i)
+    for (int meshIndex = 0; meshIndex < (int)m_PendingData.meshes.size(); ++meshIndex)
     {
-        const auto& rawMesh = m_PendingData.meshes[i];
+        const auto& rawMesh = m_PendingData.meshes[meshIndex];
         Mesh mesh;
         mesh.VertexCount = (uint32_t)rawMesh.vertices.size() / 3;
         mesh.TriangleCount = (uint32_t)rawMesh.indices.size() / 3;
@@ -235,7 +238,7 @@ void ModelAsset::OnLoaded()
                 // Convert unsigned char joints to int32_t for ShaderDataType::Int4 (GL_INT) compatibility
                 std::vector<int32_t> jointsInt;
                 jointsInt.reserve(rawMesh.joints.size());
-                for (auto j : rawMesh.joints) jointsInt.push_back(static_cast<int32_t>(j));
+                for (auto jointId : rawMesh.joints) jointsInt.push_back(static_cast<int32_t>(jointId));
                 
                 auto vboJoints = VertexBuffer::Create((float*)jointsInt.data(),
                                                       (uint32_t)jointsInt.size() * sizeof(int32_t));
@@ -259,12 +262,12 @@ void ModelAsset::OnLoaded()
 
             mesh.MinBounds = {FLT_MAX, FLT_MAX, FLT_MAX};
             mesh.MaxBounds = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
-            for (size_t v = 0; v < rawMesh.vertices.size(); v += 3)
+            for (size_t vertexOffset = 0; vertexOffset < rawMesh.vertices.size(); vertexOffset += 3)
             {
                 mesh.MinBounds =
-                    glm::min(mesh.MinBounds, {rawMesh.vertices[v], rawMesh.vertices[v + 1], rawMesh.vertices[v + 2]});
+                    glm::min(mesh.MinBounds, {rawMesh.vertices[vertexOffset], rawMesh.vertices[vertexOffset + 1], rawMesh.vertices[vertexOffset + 2]});
                 mesh.MaxBounds =
-                    glm::max(mesh.MaxBounds, {rawMesh.vertices[v], rawMesh.vertices[v + 1], rawMesh.vertices[v + 2]});
+                    glm::max(mesh.MaxBounds, {rawMesh.vertices[vertexOffset], rawMesh.vertices[vertexOffset + 1], rawMesh.vertices[vertexOffset + 2]});
             }
         }
         newModel.Meshes.push_back(mesh);
@@ -289,9 +292,9 @@ void ModelAsset::OnLoaded()
                                 {mesh.MinBounds.x, mesh.MaxBounds.y, mesh.MaxBounds.z},
                                 {mesh.MaxBounds.x, mesh.MaxBounds.y, mesh.MaxBounds.z}};
 
-        for (int c = 0; c < 8; c++)
+        for (int cornerIndex = 0; cornerIndex < 8; ++cornerIndex)
         {
-            glm::vec4 transformed = inst.localTransform * glm::vec4(corners[c], 1.0f);
+            glm::vec4 transformed = inst.localTransform * glm::vec4(corners[cornerIndex], 1.0f);
             totalBox.Min = glm::min(totalBox.Min, glm::vec3(transformed));
             totalBox.Max = glm::max(totalBox.Max, glm::vec3(transformed));
         }

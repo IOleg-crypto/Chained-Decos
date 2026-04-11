@@ -24,13 +24,13 @@ TEST(SerializationTest, PropertyArchiveBasic)
     out << YAML::BeginMap;
     {
         PropertyArchive archive(out);
-        float f = 1.23f;
-        int i = 42;
-        std::string s = "hello";
+        float floatValue = 1.23f;
+        int intValue = 42;
+        std::string stringValue = "hello";
 
-        archive.Property("Float", f);
-        archive.Property("Int", i);
-        archive.Property("String", s);
+        archive.Property("Float", floatValue);
+        archive.Property("Int", intValue);
+        archive.Property("String", stringValue);
     }
     out << YAML::EndMap;
 
@@ -41,16 +41,16 @@ TEST(SerializationTest, PropertyArchiveBasic)
 
     // Deserialize
     PropertyArchive in(node);
-    float f2 = 0;
-    int i2 = 0;
-    std::string s2 = "";
-    in.Property("Float", f2);
-    in.Property("Int", i2);
-    in.Property("String", s2);
+    float loadedFloatValue = 0;
+    int loadedIntValue = 0;
+    std::string loadedStringValue = "";
+    in.Property("Float", loadedFloatValue);
+    in.Property("Int", loadedIntValue);
+    in.Property("String", loadedStringValue);
 
-    EXPECT_FLOAT_EQ(f2, 1.23f);
-    EXPECT_EQ(i2, 42);
-    EXPECT_EQ(s2, "hello");
+    EXPECT_FLOAT_EQ(loadedFloatValue, 1.23f);
+    EXPECT_EQ(loadedIntValue, 42);
+    EXPECT_EQ(loadedStringValue, "hello");
 }
 
 TEST(SerializationTest, PropertyArchiveHandle)

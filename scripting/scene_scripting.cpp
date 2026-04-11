@@ -1,5 +1,6 @@
 #include "scene_scripting.h"
 #include "engine/physics/physics.h"
+#include "engine/core/profiler.h"
 #include "engine/scene/components.h"
 #include "script_glue.h"
 #include "scriptengine.h"
@@ -27,6 +28,20 @@ public:
 
 private:
     ScriptEngine& m_Engine;
+};
+
+class PendingScriptInstanceScope
+{
+public:
+    explicit PendingScriptInstanceScope(ManagedScriptInstance* instance)
+    {
+        ScriptGlue::SetPendingScriptInstance(instance);
+    }
+
+    ~PendingScriptInstanceScope()
+    {
+        ScriptGlue::SetPendingScriptInstance(nullptr);
+    }
 };
 } // namespace
 
@@ -81,6 +96,8 @@ void SceneScripting::OnRuntimeStop(Scene* scene)
 
 void SceneScripting::Update(Scene* scene, Timestep deltaTime)
 {
+    CH_PROFILE_FUNCTION();
+
     auto& scriptEngine = ScriptEngine::Get();
 
     if (!scriptEngine.CanExecuteFrameScripts())
@@ -132,9 +149,8 @@ void SceneScripting::Update(Scene* scene, Timestep deltaTime)
 
                         // Immediately inject the entity ID before OnCreate
                         // Note: SetPendingScriptInstance allows the script to register its delegates
-                        ScriptGlue::SetPendingScriptInstance(&script);
+                        PendingScriptInstanceScope pendingScriptInstance(&script);
                         obj->InvokeMethod("__Init", (uint64_t)(uint32_t)entity);
-                        ScriptGlue::SetPendingScriptInstance(nullptr);
 
                         // 2. Apply persistent field values
                         for (const auto& [fieldName, field] : script.Fields)

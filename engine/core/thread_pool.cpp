@@ -10,9 +10,18 @@ ThreadPool::ThreadPool()
     {
         threads = 1;
     }
-    CH_CORE_INFO("ThreadPool: Initializing with {} threads", threads);
 
-    for (size_t i = 0; i < threads; ++i)
+    // Leave headroom for the main thread and OS scheduling so asset work does not saturate the machine.
+    size_t workerCount = (threads > 1) ? (threads - 1) : 1;
+    constexpr size_t kMaxWorkerThreads = 8;
+    if (workerCount > kMaxWorkerThreads)
+    {
+        workerCount = kMaxWorkerThreads;
+    }
+
+    CH_CORE_INFO("ThreadPool: Initializing with {} worker threads", workerCount);
+
+    for (size_t i = 0; i < workerCount; ++i)
     {
         m_Workers.emplace_back([this](std::stop_token st) { WorkerThread(st); });
     }
@@ -52,7 +61,20 @@ void ThreadPool::WorkerThread(std::stop_token stopToken)
         }
         
         if (task)
-            task();
+        {
+            try
+            {
+                task();
+            }
+            catch (const std::exception& e)
+            {
+                CH_CORE_ERROR("ThreadPool: Unhandled exception in queued task: {}", e.what());
+            }
+            catch (...)
+            {
+                CH_CORE_ERROR("ThreadPool: Unhandled unknown exception in queued task");
+            }
+        }
     }
 }
 } // namespace CHEngine

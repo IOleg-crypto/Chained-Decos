@@ -68,8 +68,7 @@ CH_SCRIPT_FUNC void RegisterLifecyclePointers(uint64_t entityID, void* onCreate,
     }
 }
 
-void RegisterSystemInternalCalls(Coral::ManagedAssembly& assembly)
-{
+void RegisterSystemGlue(Coral::ManagedAssembly& assembly) {
 #define CH_ADD_INTERNAL_CALL(className, fieldName, funcPtr)                                                            \
     assembly.AddInternalCall("CHEngine." #className, #fieldName, (void*)funcPtr)
 
@@ -86,6 +85,5 @@ void RegisterSystemInternalCalls(Coral::ManagedAssembly& assembly)
     CH_ADD_INTERNAL_CALL(AppWindow, Window_SetAntialiasing_Ptr, Window_SetAntialiasing);
 
 #undef CH_ADD_INTERNAL_CALL
-}
+} } // namespace CHEngine
 
-} // namespace CHEngine

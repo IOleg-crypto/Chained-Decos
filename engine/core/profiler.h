@@ -205,7 +205,9 @@ private:
 
 #define CH_PROFILE_BEGIN_SESSION(name, filepath) ::CHEngine::Instrumentor::Get().BeginSession(name, filepath)
 #define CH_PROFILE_END_SESSION() ::CHEngine::Instrumentor::Get().EndSession()
-#define CH_PROFILE_SCOPE(name) ::CHEngine::InstrumentationTimer timer##__LINE__(name)
+#define CH_PROFILE_CONCAT_IMPL(x, y) x##y
+#define CH_PROFILE_CONCAT(x, y) CH_PROFILE_CONCAT_IMPL(x, y)
+#define CH_PROFILE_SCOPE(name) ::CHEngine::InstrumentationTimer CH_PROFILE_CONCAT(timer, __LINE__)(name)
 #define CH_PROFILE_FUNCTION() CH_PROFILE_SCOPE(__FUNCTION__)
 
 #endif // CH_PROFILER_H

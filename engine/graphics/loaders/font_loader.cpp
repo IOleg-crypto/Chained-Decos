@@ -14,26 +14,48 @@ namespace CHEngine
         return std::make_shared<FontAsset>();
     }
 
-    bool FontLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath)
+    bool FontLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError)
     {
-        if (resolvedPath.empty()) return false;
+        if (resolvedPath.empty())
+        {
+            if (outError)
+            {
+                *outError = "FontLoader: empty path";
+            }
+            return false;
+        }
 
         std::filesystem::path fullPath(resolvedPath);
         if (!std::filesystem::exists(fullPath))
         {
             CH_CORE_ERROR("FontLoader: File not found: {}", resolvedPath);
+            if (outError)
+            {
+                *outError = "FontLoader: file not found '" + resolvedPath + "'";
+            }
             return false;
         }
 
         // Read file into buffer
         std::ifstream file(resolvedPath, std::ios::binary | std::ios::ate);
-        if (!file.is_open()) return false;
+        if (!file.is_open())
+        {
+            if (outError)
+            {
+                *outError = "FontLoader: failed to open font file '" + resolvedPath + "'";
+            }
+            return false;
+        }
         
         std::streamsize size = file.tellg();
         file.seekg(0, std::ios::beg);
         std::vector<unsigned char> buffer(size);
         if (!file.read((char*)buffer.data(), size)) {
             CH_CORE_ERROR("FontLoader: Failed to read font file: {}", resolvedPath);
+            if (outError)
+            {
+                *outError = "FontLoader: failed to read font file '" + resolvedPath + "'";
+            }
             return false;
         }
 

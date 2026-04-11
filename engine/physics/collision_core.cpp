@@ -92,8 +92,8 @@ glm::vec3 CollisionCore::ClosestPointOnSegment(glm::vec3 p, glm::vec3 a, glm::ve
     {
         return a;
     }
-    float t = std::max(0.0f, std::min(1.0f, glm::dot(p - a, ab) / denom));
-    return a + ab * t;
+    float segmentT = std::max(0.0f, std::min(1.0f, glm::dot(p - a, ab) / denom));
+    return a + ab * segmentT;
 }
 
 glm::vec3 CollisionCore::ClosestPointTriangle(glm::vec3 p, glm::vec3 a, glm::vec3 b, glm::vec3 c)
@@ -102,45 +102,45 @@ glm::vec3 CollisionCore::ClosestPointTriangle(glm::vec3 p, glm::vec3 a, glm::vec
     glm::vec3 ab = b - a;
     glm::vec3 ac = c - a;
     glm::vec3 ap = p - a;
-    float d1 = glm::dot(ab, ap);
-    float d2 = glm::dot(ac, ap);
-    if (d1 <= 0.0f && d2 <= 0.0f) return a;
+    float abDotAp = glm::dot(ab, ap);
+    float acDotAp = glm::dot(ac, ap);
+    if (abDotAp <= 0.0f && acDotAp <= 0.0f) return a;
 
     glm::vec3 bp = p - b;
-    float d3 = glm::dot(ab, bp);
-    float d4 = glm::dot(ac, bp);
-    if (d3 >= 0.0f && d4 <= d3) return b;
+    float abDotBp = glm::dot(ab, bp);
+    float acDotBp = glm::dot(ac, bp);
+    if (abDotBp >= 0.0f && acDotBp <= abDotBp) return b;
 
-    float vc = d1 * d4 - d3 * d2;
-    if (vc <= 0.0f && d1 >= 0.0f && d3 <= 0.0f)
+    float edgeVC = abDotAp * acDotBp - abDotBp * acDotAp;
+    if (edgeVC <= 0.0f && abDotAp >= 0.0f && abDotBp <= 0.0f)
     {
-        float v = d1 / (d1 - d3);
-        return a + ab * v;
+        float barycentricV = abDotAp / (abDotAp - abDotBp);
+        return a + ab * barycentricV;
     }
 
     glm::vec3 cp = p - c;
-    float d5 = glm::dot(ab, cp);
-    float d6 = glm::dot(ac, cp);
-    if (d6 >= 0.0f && d5 <= d6) return c;
+    float abDotCp = glm::dot(ab, cp);
+    float acDotCp = glm::dot(ac, cp);
+    if (acDotCp >= 0.0f && abDotCp <= acDotCp) return c;
 
-    float vb = d5 * d2 - d1 * d6;
-    if (vb <= 0.0f && d2 >= 0.0f && d6 <= 0.0f)
+    float edgeVB = abDotCp * acDotAp - abDotAp * acDotCp;
+    if (edgeVB <= 0.0f && acDotAp >= 0.0f && acDotCp <= 0.0f)
     {
-        float w = d2 / (d2 - d6);
-        return a + ac * w;
+        float barycentricW = acDotAp / (acDotAp - acDotCp);
+        return a + ac * barycentricW;
     }
 
-    float va = d3 * d6 - d5 * d4;
-    if (va <= 0.0f && (d4 - d3) >= 0.0f && (d5 - d6) >= 0.0f)
+    float edgeVA = abDotBp * acDotCp - abDotCp * acDotBp;
+    if (edgeVA <= 0.0f && (acDotBp - abDotBp) >= 0.0f && (abDotCp - acDotCp) >= 0.0f)
     {
-        float w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
-        return b + (c - b) * w;
+        float barycentricW = (acDotBp - abDotBp) / ((acDotBp - abDotBp) + (abDotCp - acDotCp));
+        return b + (c - b) * barycentricW;
     }
 
-    float denom = 1.0f / (va + vb + vc);
-    float v = vb * denom;
-    float w = vc * denom;
-    return a + ab * v + ac * w;
+    float inverseDenominator = 1.0f / (edgeVA + edgeVB + edgeVC);
+    float barycentricV = edgeVB * inverseDenominator;
+    float barycentricW = edgeVC * inverseDenominator;
+    return a + ab * barycentricV + ac * barycentricW;
 }
 
 CollisionCore::CapsuleSegment CollisionCore::GetCapsuleSegment(const TransformComponent& tc, const ColliderComponent& cc)

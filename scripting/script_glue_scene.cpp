@@ -30,8 +30,7 @@ CH_SCRIPT_FUNC uint64_t Scene_GetPrimaryCameraEntity()
     return entity ? (uint64_t)(uint32_t)entity : 0;
 }
 
-void RegisterSceneInternalCalls(Coral::ManagedAssembly& assembly)
-{
+void RegisterSceneGlue(Coral::ManagedAssembly& assembly) {
 #define CH_ADD_INTERNAL_CALL(className, fieldName, funcPtr)                                                            \
     assembly.AddInternalCall("CHEngine." #className, #fieldName, (void*)funcPtr)
 
@@ -40,6 +39,5 @@ void RegisterSceneInternalCalls(Coral::ManagedAssembly& assembly)
     CH_ADD_INTERNAL_CALL(Scene, Scene_GetPrimaryCameraEntity_Ptr, Scene_GetPrimaryCameraEntity);
 
 #undef CH_ADD_INTERNAL_CALL
-}
+} } // namespace CHEngine
 
-} // namespace CHEngine

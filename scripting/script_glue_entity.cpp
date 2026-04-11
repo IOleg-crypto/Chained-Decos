@@ -140,25 +140,27 @@ namespace CHEngine {
         return Coral::String::New("");
     }
 
-    void RegisterEntityInternalCalls(Coral::ManagedAssembly& assembly) {
+    void RegisterEntityGlue(Coral::ManagedAssembly& assembly) {
         #define CH_ADD_INTERNAL_CALL(className, fieldName, funcPtr) assembly.AddInternalCall("CHEngine." #className, #fieldName, (void*)funcPtr)
         
         CH_ADD_INTERNAL_CALL(Entity, Entity_FindAllWithComponent_Ptr, Entity_FindAllWithComponent);
         CH_ADD_INTERNAL_CALL(Entity, Entity_HasComponent_Ptr, Entity_HasComponent);
-        CH_ADD_INTERNAL_CALL(Entity, Entity_GetTranslation_Ptr, Entity_GetTranslation);
-        CH_ADD_INTERNAL_CALL(Entity, Entity_SetTranslation_Ptr, Entity_SetTranslation);
-        CH_ADD_INTERNAL_CALL(Entity, Entity_GetRotation_Ptr, Entity_GetRotation);
-        CH_ADD_INTERNAL_CALL(Entity, Entity_SetRotation_Ptr, Entity_SetRotation);
-        CH_ADD_INTERNAL_CALL(Entity, Entity_GetScale_Ptr, Entity_GetScale);
-        CH_ADD_INTERNAL_CALL(Entity, Entity_SetScale_Ptr, Entity_SetScale);
-        CH_ADD_INTERNAL_CALL(Entity, Entity_GetVelocity_Ptr, Entity_GetVelocity);
-        CH_ADD_INTERNAL_CALL(Entity, Entity_SetVelocity_Ptr, Entity_SetVelocity);
-        CH_ADD_INTERNAL_CALL(Entity, Entity_IsGrounded_Ptr, Entity_IsGrounded);
-        CH_ADD_INTERNAL_CALL(Entity, Entity_IsKinematic_Ptr, Entity_IsKinematic);
-        CH_ADD_INTERNAL_CALL(Entity, Entity_SetKinematic_Ptr, Entity_SetKinematic);
+        
+        CH_ADD_INTERNAL_CALL(TransformComponent, Transform_GetTranslation_Ptr, Entity_GetTranslation);
+        CH_ADD_INTERNAL_CALL(TransformComponent, Transform_SetTranslation_Ptr, Entity_SetTranslation);
+        CH_ADD_INTERNAL_CALL(TransformComponent, Transform_GetRotation_Ptr, Entity_GetRotation);
+        CH_ADD_INTERNAL_CALL(TransformComponent, Transform_SetRotation_Ptr, Entity_SetRotation);
+        CH_ADD_INTERNAL_CALL(TransformComponent, Transform_GetScale_Ptr, Entity_GetScale);
+        CH_ADD_INTERNAL_CALL(TransformComponent, Transform_SetScale_Ptr, Entity_SetScale);
+
+        CH_ADD_INTERNAL_CALL(RigidBodyComponent, RigidBody_GetVelocity_Ptr, Entity_GetVelocity);
+        CH_ADD_INTERNAL_CALL(RigidBodyComponent, RigidBody_SetVelocity_Ptr, Entity_SetVelocity);
+        CH_ADD_INTERNAL_CALL(RigidBodyComponent, RigidBody_IsGrounded_Ptr, Entity_IsGrounded);
+        CH_ADD_INTERNAL_CALL(RigidBodyComponent, RigidBody_IsKinematic_Ptr, Entity_IsKinematic);
+        CH_ADD_INTERNAL_CALL(RigidBodyComponent, RigidBody_SetKinematic_Ptr, Entity_SetKinematic);
+
         CH_ADD_INTERNAL_CALL(TagComponent, TagComponent_GetTag_Ptr, TagComponent_GetTag);
 
         #undef CH_ADD_INTERNAL_CALL
-    }
+    } } // namespace CHEngine
 
-} // namespace CHEngine
