@@ -42,8 +42,7 @@ CH_SCRIPT_FUNC void UI_Text(Coral::String text)
     ImGui::Text("%s", ((std::string)text).c_str());
 }
 
-void RegisterUIInternalCalls(Coral::ManagedAssembly& assembly)
-{
+void RegisterUIGlue(Coral::ManagedAssembly& assembly) {
 #define CH_ADD_INTERNAL_CALL(className, fieldName, funcPtr)                                                            \
     assembly.AddInternalCall("CHEngine." #className, #fieldName, (void*)funcPtr)
 
@@ -54,6 +53,5 @@ void RegisterUIInternalCalls(Coral::ManagedAssembly& assembly)
     CH_ADD_INTERNAL_CALL(ComboBoxControl, ComboBoxControl_GetItem_Ptr, ComboBoxControl_GetItem);
 
 #undef CH_ADD_INTERNAL_CALL
-}
+} } // namespace CHEngine
 
-} // namespace CHEngine

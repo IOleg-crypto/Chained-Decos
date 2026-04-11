@@ -2,6 +2,7 @@ using System;
 
 namespace CHEngine
 {
+    /// <summary>Skill tree branches.</summary>
     public enum SkillBranch
     {
         Strength,
@@ -10,6 +11,7 @@ namespace CHEngine
         Defense
     }
 
+    /// <summary>Hero gameplay script.</summary>
     public class Hero : Script
     {
         public RPGStatsComponent Stats;
@@ -19,33 +21,34 @@ namespace CHEngine
         {
             Stats = GetComponent<RPGStatsComponent>()!;
             Inventory = GetComponent<InventoryComponent>()!;
-            
+
             Log.Info("Hero initialized at level " + Stats.Level);
         }
 
+        /// <summary>Adds XP.</summary>
         public void AddExperience(int amount)
         {
-            // Simple logic for XP and Leveling
-            // In a real scenario, this would involve ExperienceToNextLevel calculation
+            // Placeholder progression logic.
             Log.Info($"Hero gained {amount} XP");
         }
 
+        /// <summary>Unlocks a skill if the hero can afford it.</summary>
         public void PurchaseSkill(Entity skillEntity)
         {
-            var skill = skillEntity.GetComponent<SkillComponent>();
-            if (skill != null && !skill.IsUnlocked)
+            var skillComponent = skillEntity.GetComponent<SkillComponent>();
+            if (skillComponent != null && !skillComponent.IsUnlocked)
             {
-                // Basic economy check
                 if (Stats.Gold >= 100)
                 {
                     Stats.Gold -= 100;
-                    skill.IsUnlocked = true;
+                    skillComponent.IsUnlocked = true;
                     Log.Info("Skill purchased!");
                 }
             }
         }
     }
 
+    /// <summary>Hero skill script.</summary>
     public class HeroSkill : Script
     {
         public SkillComponent Skill;
@@ -64,6 +67,7 @@ namespace CHEngine
         }
     }
 
+    /// <summary>Item categories.</summary>
     public enum ItemType
     {
         Weapon,
@@ -72,28 +76,30 @@ namespace CHEngine
         EconomicBoost
     }
 
+    /// <summary>Sample economy script.</summary>
     public class EconomyManager : Script
     {
         private RPGStatsComponent _heroStats;
 
         public override void OnCreate()
         {
-            // Find entity with RPGStats (assuming it's our Hero)
-            var heroes = Entity.FindAllWithComponent<RPGStatsComponent>();
-            if (heroes.Length > 0)
+            // Find the hero stats component.
+            var heroEntityIds = Entity.FindAllWithComponent<RPGStatsComponent>();
+            if (heroEntityIds.Length > 0)
             {
-                _heroStats = new Entity(heroes[0]).GetComponent<RPGStatsComponent>()!;
+                _heroStats = new Entity(heroEntityIds[0]).GetComponent<RPGStatsComponent>()!;
             }
         }
 
-        public bool BuyItem(int cost, ItemType type)
+        /// <summary>Buys an item if there is enough gold.</summary>
+        public bool BuyItem(int cost, ItemType itemType)
         {
             if (_heroStats == null) return false;
 
             if (_heroStats.Gold >= cost)
             {
                 _heroStats.Gold -= cost;
-                Log.Info($"Purchased {type}! Current Gold: {_heroStats.Gold}");
+                Log.Info($"Purchased {itemType}! Current Gold: {_heroStats.Gold}");
                 return true;
             }
             
@@ -101,6 +107,7 @@ namespace CHEngine
             return false;
         }
 
+        /// <summary>Adds gold to the hero stats.</summary>
         public void CollectGold(int amount)
         {
             if (_heroStats != null)

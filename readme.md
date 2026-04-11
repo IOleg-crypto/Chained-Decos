@@ -18,6 +18,7 @@ Chained Decos is the game project built on top of Chained Engine, a modular C++2
 ## Table of Contents
 
 - [Overview](#overview)
+- [Documentation](#documentation)
 - [Editor and Simulation Workflow](#editor-and-simulation-workflow)
 - [Engine Feature Highlights](#engine-feature-highlights)
 - [Architecture](#architecture)
@@ -47,6 +48,16 @@ Main capabilities:
 - Editor workflow with hierarchy/inspector/panels and in-editor play mode.
 - Standalone runtime wrapper for shipping or testing project builds.
 - Managed C# gameplay scripting through Coral (.NET/CoreCLR host).
+
+## Documentation
+
+Use these short topic pages when you want focused details without reading the whole README:
+
+- [Architecture](docs/architecture.md)
+- [Build and Run](docs/build-and-run.md)
+- [Scripting](docs/scripting.md)
+- [Troubleshooting](docs/troubleshooting.md)
+- [Writing Guidelines](docs/writing-guidelines.md)
 
 ## Editor and Simulation Workflow
 
@@ -93,6 +104,7 @@ Core layers:
 - editor/: ChainedEditor application and editor panels/tools.
 - runtime/: ChainedRuntime application and runtime layer.
 - scripting/: script host, glue bindings, and managed build integration.
+- docs/: short topic-focused repository documentation.
 - game/chaineddecos/: main game project content and gameplay scripts.
 - tests/: native C++ test target (EngineTests).
 - include/: third-party dependencies as git submodules.
@@ -320,6 +332,7 @@ Contributions are welcome.
 - Open issues for bugs/regressions.
 - Submit pull requests for fixes and improvements.
 - Platform/build workflow improvements are especially helpful.
+- Follow docs/writing-guidelines.md for the comment and documentation style used in this repository.
 
 ## License
 

@@ -34,8 +34,7 @@ CH_SCRIPT_FUNC float Input_GetMouseWheelMove()
     return Input::GetMouseWheelMove();
 }
 
-void RegisterInputInternalCalls(Coral::ManagedAssembly& assembly)
-{
+void RegisterInputGlue(Coral::ManagedAssembly& assembly) {
 #define CH_ADD_INTERNAL_CALL(className, fieldName, funcPtr)                                                            \
     assembly.AddInternalCall("CHEngine." #className, #fieldName, (void*)funcPtr)
 
@@ -48,6 +47,5 @@ void RegisterInputInternalCalls(Coral::ManagedAssembly& assembly)
     CH_ADD_INTERNAL_CALL(Input, Input_GetMouseWheelMove_Ptr, Input_GetMouseWheelMove);
 
 #undef CH_ADD_INTERNAL_CALL
-}
+} } // namespace CHEngine
 
-} // namespace CHEngine

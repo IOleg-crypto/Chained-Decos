@@ -12,9 +12,18 @@ namespace CHEngine
         return std::make_shared<TextureAsset>();
     }
 
-    bool TextureLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath)
+    bool TextureLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError)
     {
         auto texAsset = std::static_pointer_cast<TextureAsset>(asset);
+
+        if (resolvedPath.empty())
+        {
+            if (outError)
+            {
+                *outError = "TextureLoader: empty path";
+            }
+            return false;
+        }
         
         std::string ext = std::filesystem::path(resolvedPath).extension().string();
         std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
@@ -41,6 +50,10 @@ namespace CHEngine
         if (data == nullptr)
         {
             CH_CORE_ERROR("TextureLoader: Failed to load image {}", resolvedPath);
+            if (outError)
+            {
+                *outError = "TextureLoader: failed to load image '" + resolvedPath + "'";
+            }
             return false;
         }
 

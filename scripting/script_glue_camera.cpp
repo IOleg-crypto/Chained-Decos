@@ -94,7 +94,7 @@ namespace CHEngine {
             entity.GetComponent<CameraComponent>().TargetEntityTag = (std::string)tag;
     }
 
-    void RegisterCameraInternalCalls(Coral::ManagedAssembly& assembly) {
+    void RegisterCameraGlue(Coral::ManagedAssembly& assembly) {
         #define CH_ADD_INTERNAL_CALL(className, fieldName, funcPtr) assembly.AddInternalCall("CHEngine." #className, #fieldName, (void*)funcPtr)
         
         CH_ADD_INTERNAL_CALL(CameraComponent, Camera_GetForward_Ptr, Camera_GetForward);
@@ -109,6 +109,5 @@ namespace CHEngine {
         CH_ADD_INTERNAL_CALL(CameraComponent, Camera_SetTargetTag_Ptr, Camera_SetTargetTag);
 
         #undef CH_ADD_INTERNAL_CALL
-    }
+    } } // namespace CHEngine
 
-} // namespace CHEngine

@@ -2,9 +2,8 @@
 #define CH_SCRIPT_ENGINE_H
 
 #include "engine/core/base.h"
+#include "scriptengine_services.h"
 #include <Coral/Assembly.hpp>
-#include <Coral/HostInstance.hpp>
-#include <filesystem>
 #include <string>
 #include <unordered_map>
 
@@ -16,13 +15,11 @@ class Scene;
 // ─────────────────────────────────────────────────────────────────────────────
 //  ScriptEngine
 //
-//  Manages the .NET (CoreCLR) host via Coral and handles:
-//    - Host init / shutdown
-//    - Assembly load / hot-reload
-//    - Script class discovery and lookup
+//  Thin singleton facade over the scripting host, type registry, and runtime
+//  scene handoff state.
 //
-//  The class is fully static (singleton-style) because the host is a process-
-//  level singleton in CoreCLR.
+//  The singleton shape stays because CoreCLR and the runtime/editor layers
+//  expect a process-wide scripting service.
 // ─────────────────────────────────────────────────────────────────────────────
 class ScriptEngine
 {
@@ -53,78 +50,52 @@ public:
     /// All discovered script types keyed by lowercase full name.
     const std::unordered_map<std::string, Coral::Type>& GetScriptClasses() const
     {
-        return m_ScriptClasses;
+        return GetScriptTypeRegistry().GetScriptClasses();
     }
 
     // ── Accessors ────────────────────────────────────────────────────────
     bool IsInitialized() const
     {
-        return m_IsInitialized;
+        return GetScriptAssemblyHost().IsInitialized();
     }
     bool IsReloadInProgress() const
     {
-        return m_ReloadInProgress;
+        return m_RuntimeSession.IsReloadInProgress();
     }
     bool CanExecuteFrameScripts() const
     {
-        return m_IsInitialized && !m_ReloadInProgress;
+        return GetScriptAssemblyHost().IsInitialized() && !m_RuntimeSession.IsReloadInProgress();
     }
     Scene* GetActiveScene() const
     {
-        return m_ActiveScene;
+        return m_RuntimeSession.GetActiveScene();
     }
     void SetActiveScene(Scene* scene)
     {
-        m_ActiveScene = scene;
+        m_RuntimeSession.SetActiveScene(scene);
     }
 
     /// Called from C# script glue — queue a scene to load next frame.
     void RequestLoadScene(const std::string& path)
     {
-        m_PendingScenePath = path;
+        m_RuntimeSession.RequestLoadScene(path);
     }
     /// Consumed by RuntimeLayer::OnUpdate each frame. Returns the path and clears it.
     std::string ConsumeRequestedScene()
     {
-        std::string s = m_PendingScenePath;
-        m_PendingScenePath.clear();
-        return s;
+        return m_RuntimeSession.ConsumeRequestedScene();
     }
     /// Safely consume pending scene requests for frame updates.
     /// Returns false if reload is in progress or there is no pending path.
     bool TryConsumeRequestedScene(std::string& outPath)
     {
-        outPath.clear();
-        if (m_ReloadInProgress || m_PendingScenePath.empty())
-        {
-            return false;
-        }
-
-        outPath.swap(m_PendingScenePath);
-        return true;
+        return m_RuntimeSession.TryConsumeRequestedScene(outPath);
     }
 
     static ScriptEngine& Get();
 
 private:
-    void DiscoverScriptTypes();
-    void ClearLoadedAssemblyState();
-    bool RecreateAssemblyLoadContext(bool unloadCurrent);
-    bool LoadAssembliesTransactional(const std::filesystem::path& appAssemblyPath);
-
-private:
-    Scene* m_ActiveScene = nullptr;
-    std::filesystem::path m_CoralDirectory;
-    Coral::HostInstance m_Host;
-    Coral::AssemblyLoadContext m_AppAssemblyContext;
-    Coral::ManagedAssembly* m_AppAssembly = nullptr;
-    Coral::ManagedAssembly* m_CoreAssembly = nullptr;
-
-    std::unordered_map<std::string, Coral::Type> m_ScriptClasses;
-    std::unordered_map<std::string, std::string> m_ShortNameToFullName;
-    bool m_IsInitialized = false;
-    bool m_ReloadInProgress = false;
-    std::string m_PendingScenePath;
+    ScriptRuntimeSession m_RuntimeSession;
 };
 
 } // namespace CHEngine

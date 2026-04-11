@@ -1,5 +1,6 @@
 #include "engine/graphics/assets/texture_asset.h"
 #include "engine/core/log.h"
+#include "engine/core/profiler.h"
 #include "engine/scene/project.h"
 #include <filesystem>
 #include <algorithm>
@@ -22,6 +23,8 @@ uint32_t TextureAsset::GetHeight() const
 
 void TextureAsset::OnLoaded()
 {
+    CH_PROFILE_FUNCTION();
+
     if (GetState() == AssetState::Ready || GetState() == AssetState::Failed)
     {
         return;

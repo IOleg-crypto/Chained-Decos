@@ -48,11 +48,11 @@ template <typename T> inline void DeserializeProperty(YAML::Node node, const cha
     {
         if constexpr (std::is_same_v<T, uint8_t> || std::is_same_v<T, int8_t> || std::is_same_v<T, unsigned char> || std::is_same_v<T, char>)
         {
-            value = static_cast<T>(node[name].as<int>());
+            value = static_cast<T>(node[name].as<int>(static_cast<int>(value)));
         }
         else
         {
-            value = node[name].as<T>();
+            value = node[name].as<T>(value);
         }
     }
 }
@@ -61,7 +61,7 @@ inline void DeserializePath(YAML::Node node, const char* name, std::string& path
 {
     if (node[name])
     {
-        std::string pathValue = node[name].as<std::string>();
+        std::string pathValue = node[name].as<std::string>(path);
         if (pathValue.empty())
         {
             path = "";
@@ -82,7 +82,7 @@ inline void DeserializeHandle(YAML::Node node, const char* name, uint64_t& handl
 {
     if (node[name])
     {
-        handle = node[name].as<uint64_t>();
+        handle = node[name].as<uint64_t>(handle);
     }
 }
 
@@ -309,7 +309,7 @@ public:
                 vec.clear();
                 for (auto item : m_Node[name])
                 {
-                    vec.push_back(item.template as<T>());
+                    vec.push_back(item.template as<T>(T{}));
                 }
             }
         }

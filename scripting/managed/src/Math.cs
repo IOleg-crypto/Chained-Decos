@@ -5,63 +5,71 @@ namespace CHEngine
 
 // ── Math ─────────────────────────────────────────────────────────────────────
 
+/// <summary>3D vector shared with native code.</summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct Vector3
 {
     public float X, Y, Z;
 
+    /// <summary>Creates a vector from X, Y, and Z.</summary>
     public Vector3(float x, float y, float z) { X = x; Y = y; Z = z; }
 
     public static readonly Vector3 Zero  = new Vector3(0, 0, 0);
     public static readonly Vector3 One   = new Vector3(1, 1, 1);
     public static readonly Vector3 Up    = new Vector3(0, 1, 0);
 
-    public static Vector3 operator +(Vector3 a, Vector3 b) => new Vector3(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
-    public static Vector3 operator -(Vector3 a, Vector3 b) => new Vector3(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
-    public static Vector3 operator -(Vector3 a)            => new Vector3(-a.X, -a.Y, -a.Z);
-    public static Vector3 operator *(Vector3 a, float b)   => new Vector3(a.X * b, a.Y * b, a.Z * b);
-    public static Vector3 operator *(float a, Vector3 b)   => new Vector3(a * b.X, a * b.Y, a * b.Z);
-    public static Vector3 operator /(Vector3 a, float b)   => new Vector3(a.X / b, a.Y / b, a.Z / b);
+    public static Vector3 operator +(Vector3 left, Vector3 right) => new Vector3(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
+    public static Vector3 operator -(Vector3 left, Vector3 right) => new Vector3(left.X - right.X, left.Y - right.Y, left.Z - right.Z);
+    public static Vector3 operator -(Vector3 vector)              => new Vector3(-vector.X, -vector.Y, -vector.Z);
+    public static Vector3 operator *(Vector3 vector, float scalar) => new Vector3(vector.X * scalar, vector.Y * scalar, vector.Z * scalar);
+    public static Vector3 operator *(float scalar, Vector3 vector) => new Vector3(scalar * vector.X, scalar * vector.Y, scalar * vector.Z);
+    public static Vector3 operator /(Vector3 vector, float scalar) => new Vector3(vector.X / scalar, vector.Y / scalar, vector.Z / scalar);
 
     public float LengthSquared() => X * X + Y * Y + Z * Z;
     public float Length()        => (float)System.Math.Sqrt(LengthSquared());
 
-    public static Vector3 Normalize(Vector3 v)
+    /// <summary>Returns a normalized copy, or zero for tiny inputs.</summary>
+    public static Vector3 Normalize(Vector3 vector)
     {
-        float len = v.Length();
-        return len > 0.00001f ? v / len : Zero;
+        float length = vector.Length();
+        return length > 0.00001f ? vector / length : Zero;
     }
 
-    public static float Dot(Vector3 a, Vector3 b) => a.X * b.X + a.Y * b.Y + a.Z * b.Z;
+    /// <summary>Dot product.</summary>
+    public static float Dot(Vector3 left, Vector3 right) => left.X * right.X + left.Y * right.Y + left.Z * right.Z;
 
-    public static Vector3 Cross(Vector3 a, Vector3 b) => new Vector3(
-        a.Y * b.Z - a.Z * b.Y,
-        a.Z * b.X - a.X * b.Z,
-        a.X * b.Y - a.Y * b.X);
+    /// <summary>Cross product.</summary>
+    public static Vector3 Cross(Vector3 left, Vector3 right) => new Vector3(
+        left.Y * right.Z - left.Z * right.Y,
+        left.Z * right.X - left.X * right.Z,
+        left.X * right.Y - left.Y * right.X);
 
-    public static float Lerp(float a, float b, float t) => a + (b - a) * t;
+    /// <summary>Linear interpolation.</summary>
+    public static float Lerp(float start, float end, float factor) => start + (end - start) * factor;
 
     public override string ToString() => $"({X:F2}, {Y:F2}, {Z:F2})";
 }
 
+/// <summary>Scalar math helpers.</summary>
 public static class Mathf
 {
     public const float PI      = (float)System.Math.PI;
     public const float Deg2Rad = PI / 180.0f;
     public const float Rad2Deg = 180.0f / PI;
 
-    public static float Clamp(float v, float min, float max)
-        => v < min ? min : (v > max ? max : v);
-    public static float Abs(float v) => v < 0 ? -v : v;
-    public static float Sin(float v) => (float)System.Math.Sin(v);
-    public static float Cos(float v) => (float)System.Math.Cos(v);
+    public static float Clamp(float value, float min, float max)
+        => value < min ? min : (value > max ? max : value);
+    public static float Abs(float value) => value < 0 ? -value : value;
+    public static float Sin(float angle) => (float)System.Math.Sin(angle);
+    public static float Cos(float angle) => (float)System.Math.Cos(angle);
     public static float Atan2(float y, float x) => (float)System.Math.Atan2(y, x);
-    public static float Sqrt(float v) => (float)System.Math.Sqrt(v);
-    public static float Lerp(float a, float b, float t) => a + (b - a) * t;
+    public static float Sqrt(float value) => (float)System.Math.Sqrt(value);
+    public static float Lerp(float start, float end, float factor) => start + (end - start) * factor;
 }
 
 // ── Key / MouseButton enums ───────────────────────────────────────────────────
 
+/// <summary>Keyboard keys exposed to managed scripts.</summary>
 public enum Key : int
 {
     A = 65,  B = 66,  C = 67,
@@ -98,6 +106,7 @@ public enum Key : int
     D9 = 57
 }
 
+/// <summary>Mouse buttons exposed to managed scripts.</summary>
 public enum MouseButton : int
 {
     Left   = 0,

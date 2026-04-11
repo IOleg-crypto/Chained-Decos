@@ -55,16 +55,19 @@ std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
     auto& dstRegistry = newScene->GetRegistry();
 
     // Copy all entities using ComponentSerializer
-    int entityCount = 0;
-    srcRegistry.view<IDComponent>().each([&](auto entityHandle, auto& id) {
-        entityCount++;
-        Entity srcEntity = {entityHandle, other->m_Manager.GetRegistryPtr()};
-        Entity dstEntity = newScene->CreateEntityWithUUID(id.ID);
+    {
+        CH_PROFILE_SCOPE("Scene::Copy::CopyEntities");
+        int entityCount = 0;
+        srcRegistry.view<IDComponent>().each([&](auto entityHandle, auto& id) {
+            entityCount++;
+            Entity srcEntity = {entityHandle, other->m_Manager.GetRegistryPtr()};
+            Entity dstEntity = newScene->CreateEntityWithUUID(id.ID);
 
-        ComponentSerializer::Get().CopyAll(srcEntity, dstEntity);
-    });
+            ComponentSerializer::Get().CopyAll(srcEntity, dstEntity);
+        });
 
-    CH_CORE_INFO("Scene::Copy - Successfully copied {} entities", entityCount);
+        CH_CORE_INFO("Scene::Copy - Successfully copied {} entities", entityCount);
+    }
     return newScene;
 }
 

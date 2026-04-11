@@ -27,9 +27,10 @@ public:
      * For asynchronous loaders, this is called on a background thread.
      * @param asset The asset to load into.
      * @param resolvedPath The absolute/resolved path to the asset file.
+     * @param outError Optional failure reason written by the loader.
      * @return true if loading was successful, false otherwise.
      */
-    virtual bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath) = 0;
+    virtual bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError = nullptr) = 0;
 
     /**
      * @brief Indicates if this loader should perform its Load() operation on a background thread.
