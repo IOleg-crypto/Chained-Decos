@@ -107,6 +107,12 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/include/glfw/CMakeLists.txt")
     set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
     set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
     add_subdirectory(include/glfw)
+
+    if(UNIX AND NOT APPLE)
+        find_package(X11 REQUIRED)
+        target_link_libraries(glfw PUBLIC ${X11_LIBRARIES})
+    endif()
+
     set(GLFW_SOURCE_DIR "${CMAKE_SOURCE_DIR}/include/glfw" CACHE INTERNAL "")
 else()
     message(FATAL_ERROR "Standalone GLFW not found in include/glfw")
