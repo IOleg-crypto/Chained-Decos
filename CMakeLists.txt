@@ -71,6 +71,9 @@ include(cmake/CompilerSettings.cmake)
 include(cmake/Dependencies.cmake)
 include(cmake/ProjectHelpers.cmake)
 
+set(CH_ACTIVE_GAME "chaineddecos" CACHE STRING "Active game project to build")
+set_property(CACHE CH_ACTIVE_GAME PROPERTY STRINGS chaineddecos testproject)
+
 # Useful definitions
 if(UNIX AND NOT APPLE)
     add_compile_definitions(_GNU_SOURCE)
@@ -92,7 +95,15 @@ add_subdirectory(engine)
 add_subdirectory(scripting)
 
 # Build Game Projects
-add_subdirectory(game/chaineddecos)
+# Build the selected game project
+if(CH_ACTIVE_GAME STREQUAL "chaineddecos")
+    add_subdirectory(game/chaineddecos)
+elseif(CH_ACTIVE_GAME STREQUAL "testproject")
+    add_subdirectory(game/testproject)
+else()
+    message(FATAL_ERROR "Unknown CH_ACTIVE_GAME='${CH_ACTIVE_GAME}'. Supported values are: chaineddecos, testproject.")
+endif()
+
 add_subdirectory(editor)
 add_subdirectory(runtime)
 

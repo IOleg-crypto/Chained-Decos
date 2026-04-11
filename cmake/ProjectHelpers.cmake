@@ -57,7 +57,7 @@ endmacro()
 # )
 function(chained_add_game TARGET_NAME)
     set(options)
-    set(oneValueArgs DISPLAY_NAME CSHARP_PROJECT)
+    set(oneValueArgs PROJECT_GAME CSHARP_PROJECT)
     set(multiValueArgs SOURCES)
     cmake_parse_arguments(GAME "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -97,7 +97,6 @@ function(chained_add_game TARGET_NAME)
     
     target_compile_definitions(${TARGET_NAME}Exe PRIVATE 
         GAME_BUILD_EXE
-        CH_PROJECT_NAME="${GAME_DISPLAY_NAME}"
     )
     _chained_configure_game_target(${TARGET_NAME}Exe)
 
@@ -122,5 +121,5 @@ function(chained_add_game TARGET_NAME)
         LIBRARY DESTINATION lib COMPONENT Runtime
     )
 
-    message(STATUS "Configured Project: ${GAME_DISPLAY_NAME} (Exe=${TARGET_NAME}Exe, Output=${TARGET_NAME})")
+    message(STATUS "Configured Project: ${GAME_PROJECT_GAME} (Exe=${TARGET_NAME}Exe, Output=${TARGET_NAME})")
 endfunction()
