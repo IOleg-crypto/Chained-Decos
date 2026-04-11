@@ -18,17 +18,22 @@ Chained Decos is the game project built on top of Chained Engine, a modular C++2
 ## Table of Contents
 
 - [Overview](#overview)
-- [Documentation](#documentation)
 - [Editor and Simulation Workflow](#editor-and-simulation-workflow)
 - [Engine Feature Highlights](#engine-feature-highlights)
 - [Architecture](#architecture)
+- [Working with Projects](#working-with-projects)
 - [Project Structure](#project-structure)
 - [Dependencies](#dependencies)
 - [Prerequisites](#prerequisites)
 - [Quick Start](#quick-start)
 - [Build](#build)
 - [Run](#run)
-- [Scripting](#scripting)
+- [Gameplay Scripting (C#)](#gameplay-scripting-c)
+- [Assets and Resources](#assets-and-resources)
+- [Physics and Collisions](#physics-and-collisions)
+- [In-Game UI](#in-game-ui)
+- [Extending the Engine (C++)](#extending-the-engine-c)
+- [Debugging and Profiling](#debugging-and-profiling)
 - [Testing](#testing)
 - [CI/CD](#cicd)
 - [Troubleshooting](#troubleshooting)
@@ -48,16 +53,6 @@ Main capabilities:
 - Editor workflow with hierarchy/inspector/panels and in-editor play mode.
 - Standalone runtime wrapper for shipping or testing project builds.
 - Managed C# gameplay scripting through Coral (.NET/CoreCLR host).
-
-## Documentation
-
-Use these short topic pages when you want focused details without reading the whole README:
-
-- [Architecture](docs/architecture.md)
-- [Build and Run](docs/build-and-run.md)
-- [Scripting](docs/scripting.md)
-- [Troubleshooting](docs/troubleshooting.md)
-- [Writing Guidelines](docs/writing-guidelines.md)
 
 ## Editor and Simulation Workflow
 
@@ -98,14 +93,68 @@ Core layers:
 - Runtime: lightweight executable that loads and runs a project.
 - Scripting bridge: C++/C# interop through Coral.Native and managed assemblies.
 
+The game selection itself is build-time, not runtime: `CH_ACTIVE_GAME` chooses which game folder is added to the build graph, while the `.chproject` file decides what the runtime opens.
+
+## Working with Projects
+
+The engine supports multiple game projects inside the same repository. Right now, there are two:
+
+- **`chaineddecos`**: the main parkour game.
+- **`testproject`**: a lightweight sandbox project to test features safely.
+
+### Switching the Active Game
+
+To keep compile times fast, only one game project is generated in the build graph at a time. This is controlled by the `CH_ACTIVE_GAME` CMake variable.
+
+**How to switch:**
+1. **Command Line:** Run CMake with `-DCH_ACTIVE_GAME=...`.
+   ```bash
+   cmake -S . -B build/windows-ninja -DCH_ACTIVE_GAME=testproject
+   ```
+2. **VS Code:** Open the Command Palette (`Ctrl+Shift+P`), choose `CMake: Edit CMake Cache (UI)`, find `CH_ACTIVE_GAME`, change it, and save.
+
+After changing the game, just rebuild the project. The executable name and assets will automatically switch to the new game.
+
+### Creating a New Project
+
+Want to start a new game from scratch? Here is how to hook it up:
+
+1. **Create the folder structure:** Make a new directory `game/mygame`.
+2. **Add a CMake script:** Create `game/mygame/CMakeLists.txt` and use the engine's helper macro:
+   ```cmake
+   chained_add_game(MyGameTarget
+       PROJECT_GAME mygame
+       CSHARP_PROJECT "scripts/MyGame.Scripts.csproj" # Omit if you don't use C# yet
+   )
+   ```
+3. **Add the entry point:** Create `game/mygame/src/main.cpp`:
+   ```cpp
+   #include "engine/core/application.h"
+   #include "engine/core/entry_point.h"
+   #include "runtime/runtime_layer.h"
+
+   namespace CHEngine {
+       Application* CreateApplication(ApplicationCommandLineArgs args) {
+           ApplicationSpecification spec;
+           spec.Name = "MyGame";
+           spec.CommandLineArgs = args;
+           
+           Application* app = new Application(spec);
+           app->PushLayer(new RuntimeLayer(""));
+           return app;
+       }
+   }
+   ```
+4. **Register it:** Open the *root* `CMakeLists.txt`, find the `if(CH_ACTIVE_GAME STREQUAL "...")` block, and add your new game to the list.
+
 ## Project Structure
 
 - engine/: core engine modules (graphics, scene, physics, audio, platform, assets).
 - editor/: ChainedEditor application and editor panels/tools.
 - runtime/: ChainedRuntime application and runtime layer.
 - scripting/: script host, glue bindings, and managed build integration.
-- docs/: short topic-focused repository documentation.
-- game/chaineddecos/: main game project content and gameplay scripts.
+- game/chaineddecos/: main game project, gameplay scripts under src/, and managed scripts/tests under scripts/.
+- game/testproject/: alternate standalone game project used for project switching and smaller experiments.
 - tests/: native C++ test target (EngineTests).
 - include/: third-party dependencies as git submodules.
 
@@ -195,6 +244,7 @@ Notes:
 
 - BUILD_TESTS defaults to ON in presets.
 - If you switch presets or major toolchains, do a clean configure for that build directory.
+- `CH_ACTIVE_GAME` defaults to `chaineddecos` in CMakePresets.json. Set it to `testproject` when you want the alternate game.
 - Optional compiler cache support is built in through ccache/sccache integration in CI and CMake options.
 
 ## Run
@@ -232,23 +282,153 @@ Runtime CLI flags currently supported:
 - --width
 - --height
 
+When you build the alternate game project, the executable name changes with the active target. The runtime still discovers the `.chproject` file from the executable/project directory.
+
 Editor play-mode note:
 
 - Enter Play mode to capture cursor.
 - Press Escape to return control to editor interaction.
 
-## Scripting
+## Gameplay Scripting (C#)
 
-Gameplay scripting is managed C# (not native C++ gameplay scripting), hosted through Coral/CoreCLR.
+Chained Engine uses managed C# for gameplay, powered by Coral (.NET/CoreCLR). This means you write your game logic in C# while the heavy lifting (rendering, physics) stays in C++.
 
-Relevant scripting parts:
+### Writing Your First Script
 
-- scripting/scriptengine.h and scripting/scriptengine.cpp for host lifecycle and assembly handling.
-- scripting/script_glue_*.cpp for native-to-managed bindings.
-- scripting/managed/CHEngine.Managed.csproj for managed engine API assembly.
-- game/chaineddecos/src for gameplay-side C# scripts.
+Scripts live inside your game's source folder (e.g., [game/chaineddecos/src](game/chaineddecos/src)). Here is a practical example of a basic script:
+
+```csharp
+using System;
+using CHEngine;
+
+namespace ChainedDecos
+{
+    public class PlayerController : Script
+    {
+        public float Speed = 5.0f;
+        private TransformComponent _transform;
+
+        protected override void OnCreate()
+        {
+            // Called once when the Entity is initialized
+            _transform = GetComponent<TransformComponent>();
+            Log.Info("Player Controller initialized!");
+        }
+
+        protected override void OnUpdate(float deltaTime)
+        {
+            // Called every frame
+            if (Input.IsKeyDown(KeyCode.W))
+            {
+                Vector3 pos = _transform.Translation;
+                pos.Z -= Speed * deltaTime;
+                _transform.Translation = pos;
+            }
+        }
+    }
+}
+```
+
+### Connecting the Script in the Editor
+
+Once you've written your magical gameplay code, how does the engine know about it?
+
+1. **Build the scripts:** Either rebuild the project through CMake/Ninja, or navigate to your `.csproj` folder and run `dotnet build`.
+2. **Open the Editor** and select the Entity you want to control.
+3. **Add Component:** In the Inspector panel, click **Add Component** and choose **Managed Script Component**.
+4. **Link it:** In the `Class Name` text field, type the **fully qualified name** of your script — namespace included (for example: `ChainedDecos.PlayerController`).
+5. **Play:** Hit the Play button in the editor. The engine will instantly instantiate your C# class and execute your lifecycle methods!
+
+### Under the Hood: Architecture & Registration
+
+If you are modifying the engine itself, you will find the native-to-managed bridge here:
+- **Native Host:** [scripting/scriptengine.h](scripting/scriptengine.h) initializes Coral and loads assemblies.
+- **Interops:** Native C++ calls are exposed to C# via `script_glue.cpp`.
+- **Discovery:** At startup, `ScriptTypeRegistry::Discover()` scans the game DLL for classes deriving from `CHEngine.Script`.
+- **Lifecycle:** `SceneScripting` instantiates your script in C++, calls `__Init()` to cache delegates, and smoothly passes events from the C++ Scene to C#.
+
+### Managed API Surface
+
+- [scripting/managed/src/Script.cs](scripting/managed/src/Script.cs) defines the script lifecycle base class.
+- [scripting/managed/src/Entity.cs](scripting/managed/src/Entity.cs) exposes entity/component access.
+- [scripting/managed/src/SceneAndApplication.cs](scripting/managed/src/SceneAndApplication.cs) exposes scene, audio, application, time, and window helpers.
+- [scripting/managed/src/Input.cs](scripting/managed/src/Input.cs) wraps input queries.
+- [scripting/managed/src/Log.cs](scripting/managed/src/Log.cs) wraps logging.
+- [scripting/managed/src/Math.cs](scripting/managed/src/Math.cs) provides vector and scalar helpers.
+- [scripting/managed/src/UI.cs](scripting/managed/src/UI.cs) exposes minimal UI helpers.
 
 Managed artifacts are built as part of the scripting target when dotnet is available.
+
+## Assets and Resources
+
+All of your 3D models, textures, animations, and sound files must go into your game's `assets/` or `resources/` folder. The engine uses a unified Asset Manager to register files and assign a UUID to them so they are not loaded multiple times.
+
+1. **Importing:** Drag and drop your source file (e.g., `.gltf` model, `.png` texture) directly into the **Content Browser Panel** in the Editor. The system registers it.
+2. **Usage:** Select the Entity in your scene, find the relevant Component (like `MeshComponent`), and assign the newly loaded asset from the browser.
+
+## Physics and Collisions
+
+Chained Engine uses a built-in 3D physics simulation, which is heavily used by parkour traversal scripts in `chaineddecos`.
+
+To add physical behavior to an Entity in the Editor:
+1. Click **Add Component** and select **RigidBodyComponent**. This determines if the object falls (Dynamic) or stays still (Kinematic/Static).
+2. Add a physical shape like a **BoxColliderComponent** or **SphereColliderComponent**.
+
+If you are writing a C# script (inherited from `CHEngine.Script`), you can hook into these collisions directly:
+
+```csharp
+protected override void OnCollisionEnter(Entity other)
+{
+    Log.Info($"Hit something: {other.Name}");
+    if (other.HasComponent<DamageZone>())
+    {
+        // Example: Handle player taking damage
+    }
+}
+```
+
+## In-Game UI
+
+While the Editor UI is drawn using ImGui, the gameplay (In-Game) UI meant for players is accessed through the managed scripting wrapper.
+
+To draw simple HUDs or text menus:
+1. Override the `OnGUI` method in your C# script.
+2. Call static helpers from the `UI` class.
+
+```csharp
+protected override void OnGUI()
+{
+    // Draw some simple text on screen
+    UI.DrawText("Stamina: 100", new Vector2(10.0f, 10.0f), Color.White);
+
+    // Render a button and check if clicked
+    if (UI.DrawButton("Restart Parkour", new Vector2(100.0f, 200.0f)))
+    {
+        // Restart logic here
+    }
+}
+```
+
+## Extending the Engine (C++)
+
+Need performance that scripting can't provide, or want to create a brand new foundational Component? Here is the flow for a native ECS update:
+
+1. **Define the Data:** Add a fast `struct` in `engine/scene/components.h`. We use `EnTT`, so components are simple structs. 
+   ```cpp
+   struct ParkourStateComponent {
+       float Stamina = 100.0f;
+       bool  IsWallRunning = false;
+   };
+   ```
+2. **Support Serialization:** If you want editors to save or load it with the level, update `scene_serializer.cpp` or `yaml_extensions` so YAML knows how to read/write it.
+3. **Expose It to the Editor:** Open `editor/editor_panels.cpp` and add the `ImGui` draw logic for `ParkourStateComponent` so designers can tweak its values in the Inspector panel.
+
+## Debugging and Profiling
+
+If `Chained Decos` ever suffers a frame-rate drop (a lag spike), do not optimize blindly. Use the tools:
+
+- **Built-in Editor Profiler:** Open the **Profiler** panel. It displays a breakdown (in `ms`) of where your frame time went — `Rendering`, `Physics Update`, or `Scripting Update`. Check this first.
+- **C# Debugging with CoreCLR:** Because the engine wraps .NET via Coral, you can attach a C# IDE debugger (like Visual Studio or Rider) to the running Engine/Editor process. Your breakpoints inside `OnUpdate` or `OnCreate` will pause the simulation.
 
 ## Testing
 
@@ -287,7 +467,8 @@ dotnet test ./game/chaineddecos/scripts/tests/ChainedDecos.Scripts.Tests.csproj 
 
 CI workflow (.github/workflows/ci.yml):
 
-- Builds Linux and Windows matrix across presets/configurations.
+- Dispatches native builds to `.github/workflows/linux.yml` and `.github/workflows/windows.yml`.
+- Dispatches managed tests to `.github/workflows/managed.yml`.
 - Runs CTest for native tests.
 - Runs managed script tests with .NET 9.0.x.
 - Uses software rendering setup for Linux test execution (xvfb + Mesa environment variables).
@@ -319,6 +500,8 @@ Headless Linux test issues:
 - Install the Linux packages listed in Prerequisites.
 - Use xvfb and Mesa software rendering for CI-like environments.
 
+Changing `CH_ACTIVE_GAME` without reconfiguring the build tree can leave stale generated files behind. Reconfigure the same build directory when you switch between `chaineddecos` and `testproject`.
+
 ## Known Issues
 
 - Some native test areas are currently being reworked and may be skipped or gated in CI depending on environment constraints.
@@ -332,7 +515,7 @@ Contributions are welcome.
 - Open issues for bugs/regressions.
 - Submit pull requests for fixes and improvements.
 - Platform/build workflow improvements are especially helpful.
-- Follow docs/writing-guidelines.md for the comment and documentation style used in this repository.
+- Keep documentation changes in this README or in nearby code comments when the detail is local.
 
 ## License
 
