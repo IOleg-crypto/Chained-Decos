@@ -21,10 +21,9 @@ function(chained_add_csharp_scripts TARGET_NAME CSHARP_PROJECT_PATH)
 
     add_custom_command(
         OUTPUT "${SCRIPT_DLL_PATH}"
-        COMMAND dotnet build "${FULL_CSPROJ_PATH}" 
+        COMMAND dotnet build "${FULL_CSPROJ_PATH}"
                 -c $<IF:$<OR:$<CONFIG:Debug>,$<CONFIG:>>,Debug,Release> 
                 --output "${SCRIPT_OUTPUT_DIR}" 
-                --no-restore 
                 -p:CoralManagedDir="${CORAL_MANAGED_DIR}"
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
         DEPENDS ${FULL_CSPROJ_PATH} ${CS_SOURCES}
