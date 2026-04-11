@@ -15,7 +15,7 @@
 #include "engine/scene/project_serializer.h"
 #include "engine/scene/scene_serializer.h"
 
-#include "imgui/IconsFontAwesome6.h"
+#include "IconsFontAwesome6.h"
 #include "panels/console_panel.h"
 #include "panels/content_browser_panel.h"
 #include "panels/project_browser_panel.h"
