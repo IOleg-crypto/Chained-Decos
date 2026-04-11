@@ -14,7 +14,7 @@ class ShaderLoader : public IAssetLoader
 {
 public:
     std::shared_ptr<Asset> Create() override;
-    bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath) override;
+        bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError = nullptr) override;
     bool IsAsync() const override { return false; }
 
 private:

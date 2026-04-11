@@ -552,12 +552,6 @@ void RuntimeLayer::SetupBrandingAndIcon()
             iconPath = p;
         }
     }
-
-    if (!iconPath.empty() && std::filesystem::exists(iconPath))
-    {
-        // Window icon loading handled by TextureLoader if needed
-        // Icon path: iconPath.string()
-    }
 }
 
 void RuntimeLayer::LoadInitialScene()

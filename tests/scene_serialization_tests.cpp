@@ -20,20 +20,20 @@ TEST(SceneSerializationTest, SaveAndLoadScene)
         entityID = entity.GetUUID();
         entity.AddComponent<CameraComponent>().Primary = true;
 
-        SceneSerializer s(&scene);
-        s.Serialize(testPath);
+        SceneSerializer serializer(&scene);
+        serializer.Serialize(testPath);
     }
 
     {
         Scene scene;
-        SceneSerializer s(&scene);
-        EXPECT_TRUE(s.Deserialize(testPath));
+        SceneSerializer serializer(&scene);
+        EXPECT_TRUE(serializer.Deserialize(testPath));
 
         auto view = scene.GetRegistry().view<TagComponent>();
         bool found = false;
-        for (auto e : view)
+        for (auto entityHandle : view)
         {
-            Entity entity(e, &scene.GetRegistry());
+            Entity entity(entityHandle, &scene.GetRegistry());
             if (entity.GetUUID() == entityID)
             {
                 EXPECT_EQ(entity.GetName(), "Serialized Entity");
@@ -110,9 +110,9 @@ TEST_F(SceneSerializationDestructiveTest, EmptyFile)
     WriteFile(path, "");
 
     Scene scene;
-    SceneSerializer s(&scene);
+    SceneSerializer serializer(&scene);
     EXPECT_NO_THROW({
-        bool ok = s.Deserialize(path);
+        bool ok = serializer.Deserialize(path);
         EXPECT_FALSE(ok);
     });
 }
@@ -128,8 +128,8 @@ TEST_F(SceneSerializationDestructiveTest, BinaryGarbage)
     }
 
     Scene scene;
-    SceneSerializer s(&scene);
-    EXPECT_NO_THROW(s.Deserialize(path));
+    SceneSerializer serializer(&scene);
+    EXPECT_NO_THROW(serializer.Deserialize(path));
 }
 
 // Valid YAML missing the "Scene:" root key.
@@ -139,8 +139,8 @@ TEST_F(SceneSerializationDestructiveTest, MissingSceneKey)
     WriteFile(path, "Entities:\n  - tag: Foo\n");
 
     Scene scene;
-    SceneSerializer s(&scene);
-    EXPECT_NO_THROW(s.Deserialize(path));
+    SceneSerializer serializer(&scene);
+    EXPECT_NO_THROW(serializer.Deserialize(path));
 }
 
 // Entity block missing UUID entirely.
@@ -155,9 +155,9 @@ TEST_F(SceneSerializationDestructiveTest, EntityMissingUUID)
         "        Tag: NoUUID\n");
 
     Scene scene;
-    SceneSerializer s(&scene);
+    SceneSerializer serializer(&scene);
     // Must not crash — either skip this entity or assign a new UUID.
-    EXPECT_NO_THROW(s.Deserialize(path));
+    EXPECT_NO_THROW(serializer.Deserialize(path));
 }
 
 // Truncated mid-token YAML.
@@ -171,17 +171,17 @@ TEST_F(SceneSerializationDestructiveTest, TruncatedYAML)
         "      TagCompon");   // intentionally cut
 
     Scene scene;
-    SceneSerializer s(&scene);
-    EXPECT_NO_THROW(s.Deserialize(path));
+    SceneSerializer serializer(&scene);
+    EXPECT_NO_THROW(serializer.Deserialize(path));
 }
 
 // Path that does not exist.
 TEST_F(SceneSerializationDestructiveTest, NonExistentFile)
 {
     Scene scene;
-    SceneSerializer s(&scene);
+    SceneSerializer serializer(&scene);
     EXPECT_NO_THROW({
-        bool ok = s.Deserialize("test_assets/ghost.chscene");
+        bool ok = serializer.Deserialize("test_assets/ghost.chscene");
         EXPECT_FALSE(ok);
     });
 }
@@ -197,14 +197,14 @@ TEST_F(SceneSerializationDestructiveTest, LargeSceneRoundTrip)
         for (int i = 0; i < kCount; ++i)
             scene.CreateEntity("E_" + std::to_string(i));
 
-        SceneSerializer s(&scene);
-        ASSERT_TRUE(s.Serialize(path));
+        SceneSerializer serializer(&scene);
+        ASSERT_TRUE(serializer.Serialize(path));
     }
 
     {
         Scene scene;
-        SceneSerializer s(&scene);
-        ASSERT_TRUE(s.Deserialize(path));
+        SceneSerializer serializer(&scene);
+        ASSERT_TRUE(serializer.Deserialize(path));
 
         int count = 0;
         auto view = scene.GetRegistry().view<TagComponent>();

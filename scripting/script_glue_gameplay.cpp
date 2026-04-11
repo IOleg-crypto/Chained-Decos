@@ -143,7 +143,7 @@ namespace CHEngine {
         return entity && entity.HasComponent<AudioComponent>() ? Coral::String::New(entity.GetComponent<AudioComponent>().SoundPath) : Coral::String::New("");
     }
 
-    void RegisterGameplayInternalCalls(Coral::ManagedAssembly& assembly) {
+    void RegisterGameplayGlue(Coral::ManagedAssembly& assembly) {
         #define CH_ADD_INTERNAL_CALL(className, fieldName, funcPtr) assembly.AddInternalCall("CHEngine." #className, #fieldName, (void*)funcPtr)
         
         CH_ADD_INTERNAL_CALL(Audio, Audio_Play_Ptr, Audio_Play);

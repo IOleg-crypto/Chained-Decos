@@ -1,9 +1,15 @@
 #include "engine/core/assets/asset_manager.h"
 #include "engine/core/thread_pool.h"
+#include "engine/core/profiler.h"
 #include "engine/scene/project.h"
 
 namespace CHEngine
 {
+namespace
+{
+constexpr size_t kMaxAssetFinalizationsPerFrame = 4;
+}
+
 static std::unique_ptr<AssetManager> s_Instance = nullptr;
 
 AssetManager::AssetManager()
@@ -63,7 +69,7 @@ AssetHandle AssetManager::ResolveToHandle(const std::string& path) const
     {
         return it->second;
     }
-    return AssetHandle(0); // Invalid handle if not loaded yet
+    return AssetHandle(0);
 }
 
 std::shared_ptr<Asset> AssetManager::LoadAsset(const std::string& path, AssetType type)
@@ -75,7 +81,6 @@ std::shared_ptr<Asset> AssetManager::LoadAsset(const std::string& path, AssetTyp
 
     std::string resolved = ResolvePath(path);
 
-    // 1. Ensure we don't try to load it twice
     {
         std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
         if (auto it = m_PathToHandle.find(resolved); it != m_PathToHandle.end())
@@ -88,58 +93,83 @@ std::shared_ptr<Asset> AssetManager::LoadAsset(const std::string& path, AssetTyp
         }
     }
 
-    // 2. Find loader
-    std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
-    auto loaderIt = m_Loaders.find(type);
-    if (loaderIt == m_Loaders.end())
+    IAssetLoader* loader = nullptr;
+    std::shared_ptr<Asset> asset;
+
     {
-        CH_CORE_ERROR("AssetManager: No loader registered for type {}", (int)type);
-        return nullptr;
-    }
-
-    // 3. Create and Load
-    auto asset = loaderIt->second->Create();
-    if (!asset)
-    {
-        return nullptr;
-    }
-
-    // Use a new valid UUID for the loaded asset
-    UUID newHandle;
-    // We cannot change m_ID of asset easily since it isn't exposed except via constructor or friend?
-    // Let's assume Asset sets its ID in constructor to a random UUID, we retrieve it:
-    newHandle = asset->GetID();
-    asset->SetPath(resolved);
-    asset->SetState(AssetState::Loading);
-
-    // 4. Start Loading
-    m_AssetCache[newHandle] = asset;
-    m_PathToHandle[resolved] = newHandle;
-
-    if (!loaderIt->second->IsAsync())
-    {
-        bool success = loaderIt->second->Load(asset, resolved);
-        if (!success)
+        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+        auto loaderIt = m_Loaders.find(type);
+        if (loaderIt == m_Loaders.end())
         {
-            asset->SetState(AssetState::Failed);
-            return asset;
+            CH_CORE_ERROR("AssetManager: No loader registered for type {}", (int)type);
+            return nullptr;
         }
-        asset->OnLoaded();
-        asset->SetState(AssetState::Ready);
+
+        asset = loaderIt->second->Create();
+        if (!asset)
+        {
+            return nullptr;
+        }
+
+        loader = loaderIt->second.get();
+        AssetHandle newHandle = asset->GetID();
+        asset->SetPath(resolved);
+        asset->SetState(AssetState::Loading);
+        asset->ClearError();
+        m_AssetCache[newHandle] = asset;
+        m_PathToHandle[resolved] = newHandle;
+    }
+
+    if (!loader->IsAsync())
+    {
+        try
+        {
+            std::string loaderError;
+            if (!loader->Load(asset, resolved, &loaderError))
+            {
+                asset->Fail(loaderError.empty() ? ("AssetManager: Synchronous loader returned false for '" + resolved + "'")
+                                                : loaderError);
+                return asset;
+            }
+
+            asset->ClearError();
+            asset->OnLoaded();
+            asset->SetState(AssetState::Ready);
+        }
+        catch (const std::exception& e)
+        {
+            asset->Fail(std::string("AssetManager: Synchronous load failed for '") + resolved + "': " + e.what());
+        }
+        catch (...)
+        {
+            asset->Fail(std::string("AssetManager: Synchronous load failed for '") + resolved + "' with an unknown exception");
+        }
     }
     else
     {
-        // True Async Loading via ThreadPool
-        IAssetLoader* loader = loaderIt->second.get();
         ThreadPool::Get().QueueTask([this, asset, loader, resolved]() {
-            bool success = loader->Load(asset, resolved);
-            if (!success)
+            try
             {
-                asset->SetState(AssetState::Failed);
+                std::string loaderError;
+                if (!loader->Load(asset, resolved, &loaderError))
+                {
+                    asset->Fail(loaderError.empty() ? ("AssetManager: Async loader returned false for '" + resolved + "'")
+                                                    : loaderError);
+                    return;
+                }
+
+                asset->ClearError();
+                std::lock_guard<std::mutex> lock(m_PendingMutex);
+                m_PendingAssets.push_back(asset);
             }
-            
-            std::lock_guard<std::mutex> lock(m_PendingMutex);
-            m_PendingAssets.push_back(asset);
+            catch (const std::exception& e)
+            {
+                asset->Fail(std::string("AssetManager: Async load failed for '") + resolved + "': " + e.what());
+            }
+            catch (...)
+            {
+                asset->Fail(std::string("AssetManager: Async load failed for '") + resolved + "' with an unknown exception");
+            }
         });
     }
 
@@ -148,7 +178,8 @@ std::shared_ptr<Asset> AssetManager::LoadAsset(const std::string& path, AssetTyp
 
 std::shared_ptr<Asset> AssetManager::GetAsset(AssetHandle handle, AssetType type)
 {
-    // If handle is valid, check cache
+    (void)type;
+
     if (handle != 0)
     {
         std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
@@ -158,14 +189,13 @@ std::shared_ptr<Asset> AssetManager::GetAsset(AssetHandle handle, AssetType type
         }
     }
 
-    // Try to find the path corresponding to this handle for loading
-    // Since we don't know the path here, we can't auto-load just by handle unless we have a registry
-    // In this ultra-simplified version, Get(path) handles loading. Get(handle) just fetches.
     return nullptr;
 }
 
 void AssetManager::Update()
 {
+    CH_PROFILE_FUNCTION();
+
     std::vector<std::shared_ptr<Asset>> completed;
     {
         std::lock_guard<std::mutex> lock(m_PendingMutex);
@@ -173,16 +203,37 @@ void AssetManager::Update()
         {
             return;
         }
-        completed = std::move(m_PendingAssets);
-        m_PendingAssets.clear();
+
+        const size_t finalizeCount = (m_PendingAssets.size() < kMaxAssetFinalizationsPerFrame)
+                                         ? m_PendingAssets.size()
+                                         : kMaxAssetFinalizationsPerFrame;
+
+        completed.reserve(finalizeCount);
+        for (size_t finalizeIndex = 0; finalizeIndex < finalizeCount; ++finalizeIndex)
+        {
+            completed.push_back(std::move(m_PendingAssets[finalizeIndex]));
+        }
+        m_PendingAssets.erase(m_PendingAssets.begin(), m_PendingAssets.begin() + finalizeCount);
     }
 
     for (auto& asset : completed)
     {
-        asset->OnLoaded();
-        if (asset->GetState() != AssetState::Failed)
+        try
         {
-            asset->SetState(AssetState::Ready);
+            asset->ClearError();
+            asset->OnLoaded();
+            if (asset->GetState() != AssetState::Failed)
+            {
+                asset->SetState(AssetState::Ready);
+            }
+        }
+        catch (const std::exception& e)
+        {
+            asset->Fail(std::string("AssetManager: Finalization failed for '") + asset->GetPath() + "': " + e.what());
+        }
+        catch (...)
+        {
+            asset->Fail(std::string("AssetManager: Finalization failed for '") + asset->GetPath() + "' with an unknown exception");
         }
     }
 }
@@ -217,30 +268,59 @@ bool AssetManager::HasBackgroundWork() const
 
 void AssetManager::ReloadAsset(AssetHandle handle, AssetType type)
 {
-    std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+    std::shared_ptr<Asset> asset;
+    IAssetLoader* loader = nullptr;
+    std::string path;
 
-    auto it = m_AssetCache.find(handle);
-    if (it == m_AssetCache.end())
     {
-        return;
-    }
+        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
 
-    auto loaderIt = m_Loaders.find(type);
-    if (loaderIt == m_Loaders.end())
-    {
-        return;
-    }
+        auto it = m_AssetCache.find(handle);
+        if (it == m_AssetCache.end())
+        {
+            return;
+        }
 
-    auto& asset = it->second;
-    std::string path = asset->GetPath();
-    if (path.empty())
-    {
-        return;
+        auto loaderIt = m_Loaders.find(type);
+        if (loaderIt == m_Loaders.end())
+        {
+            return;
+        }
+
+        asset = it->second;
+        loader = loaderIt->second.get();
+        path = asset->GetPath();
+        if (path.empty())
+        {
+            return;
+        }
     }
 
     std::string resolved = ResolvePath(path);
-    loaderIt->second->Load(asset, resolved);
-    asset->OnLoaded();
+    asset->SetState(AssetState::Loading);
+    asset->ClearError();
+
+    try
+    {
+        std::string loaderError;
+        if (!loader->Load(asset, resolved, &loaderError))
+        {
+            asset->Fail(loaderError.empty() ? ("AssetManager: Reload failed for '" + resolved + "'") : loaderError);
+            return;
+        }
+
+        asset->ClearError();
+        asset->OnLoaded();
+        asset->SetState(AssetState::Ready);
+    }
+    catch (const std::exception& e)
+    {
+        asset->Fail(std::string("AssetManager: Reload failed for '") + resolved + "': " + e.what());
+    }
+    catch (...)
+    {
+        asset->Fail(std::string("AssetManager: Reload failed for '") + resolved + "' with an unknown exception");
+    }
 }
 
 } // namespace CHEngine

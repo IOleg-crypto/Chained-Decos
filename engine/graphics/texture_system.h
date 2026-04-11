@@ -12,35 +12,50 @@ namespace CHEngine
 {
     using TextureHandle = UUID;
 
+    /** Cached GPU texture metadata tracked by the texture system. */
     struct TextureInfo
     {
+        /** The uploaded GPU texture, or nullptr until the asset is ready. */
         std::shared_ptr<Texture> GPUTexture;
+        /** Resolved source path used to identify and reload the texture. */
         std::string Path;
+        /** True when the source data is HDR encoded. */
         bool IsHDR = false;
+        /** True when the texture was loaded as a cubemap. */
         bool IsCubemap = false;
 
+        /** Returns true when the GPU texture object exists. */
         bool IsReady() const { return GPUTexture != nullptr; }
     };
 
+    /** Owns texture cache entries and provides lookup/unload helpers. */
     class TextureSystem
     {
     public:
+        /** Returns the global texture system singleton. */
         static TextureSystem& Get()
         {
             static TextureSystem instance;
             return instance;
         }
 
-        // synchronous loading
+        /** Loads a texture synchronously and returns its handle. */
         TextureHandle LoadTexture(const std::string& filepath, bool isCubemap = false);
 
+        /** Returns true when the texture handle exists in the cache. */
         bool IsLoaded(TextureHandle handle) const;
+        /** Returns the renderer-specific GPU texture ID, or 0 if missing. */
         uint32_t GetRendererID(TextureHandle handle) const;
+        /** Returns the cached texture object for the given handle. */
         std::shared_ptr<Texture> GetTexture(TextureHandle handle) const;
+        /** Returns true when the cached texture was loaded as HDR. */
         bool IsHDR(TextureHandle handle) const;
+        /** Returns true when the cached texture was loaded as a cubemap. */
         bool IsCubemap(TextureHandle handle) const;
         
+        /** Removes one texture from the cache. */
         void Unload(TextureHandle handle);
+        /** Clears the entire texture cache. */
         void UnloadAll();
 
     private:

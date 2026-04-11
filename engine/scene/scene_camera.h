@@ -20,77 +20,95 @@ public:
     SceneCamera();
     virtual ~SceneCamera() = default;
 
+    /** Sets a perspective projection using vertical field of view and clip planes. */
     void SetPerspective(float verticalFov, float nearClip, float farClip);
+    /** Sets an orthographic projection using size and clip planes. */
     void SetOrthographic(float size, float nearClip, float farClip);
 
+    /** Updates the cached projection when the viewport size changes. */
     void SetViewportSize(uint32_t width, uint32_t height);
 
+    /** Returns the current perspective vertical field of view in radians. */
     float GetPerspectiveVerticalFOV() const
     {
         return m_PerspectiveFOV;
     }
+    /** Updates the perspective vertical field of view in radians. */
     void SetPerspectiveVerticalFOV(float fov)
     {
         m_PerspectiveFOV = fov;
         RecalculateProjection();
     }
+    /** Returns the near clip plane used for perspective projection. */
     float GetPerspectiveNearClip() const
     {
         return m_PerspectiveNear;
     }
+    /** Updates the near clip plane used for perspective projection. */
     void SetPerspectiveNearClip(float nearClip)
     {
         m_PerspectiveNear = nearClip;
         RecalculateProjection();
     }
+    /** Returns the far clip plane used for perspective projection. */
     float GetPerspectiveFarClip() const
     {
         return m_PerspectiveFar;
     }
+    /** Updates the far clip plane used for perspective projection. */
     void SetPerspectiveFarClip(float farClip)
     {
         m_PerspectiveFar = farClip;
         RecalculateProjection();
     }
 
+    /** Returns the orthographic projection size. */
     float GetOrthographicSize() const
     {
         return m_OrthographicSize;
     }
+    /** Updates the orthographic projection size. */
     void SetOrthographicSize(float size)
     {
         m_OrthographicSize = size;
         RecalculateProjection();
     }
+    /** Returns the near clip plane used for orthographic projection. */
     float GetOrthographicNearClip() const
     {
         return m_OrthographicNear;
     }
+    /** Updates the near clip plane used for orthographic projection. */
     void SetOrthographicNearClip(float nearClip)
     {
         m_OrthographicNear = nearClip;
         RecalculateProjection();
     }
+    /** Returns the far clip plane used for orthographic projection. */
     float GetOrthographicFarClip() const
     {
         return m_OrthographicFar;
     }
+    /** Updates the far clip plane used for orthographic projection. */
     void SetOrthographicFarClip(float farClip)
     {
         m_OrthographicFar = farClip;
         RecalculateProjection();
     }
 
+    /** Returns the active projection type. */
     ProjectionType GetProjectionType() const
     {
         return m_ProjectionType;
     }
+    /** Switches between perspective and orthographic projection modes. */
     void SetProjectionType(ProjectionType type)
     {
         m_ProjectionType = type;
         RecalculateProjection();
     }
 
+    /** Returns the cached projection matrix. */
     const glm::mat4& GetProjection() const
     {
         return m_Projection;
@@ -108,13 +126,13 @@ public:
             if (props.Property("VerticalFOV", fov) || props.GetMode() == ReflectionMode::Deserialize)
                 SetPerspectiveVerticalFOV(glm::radians(fov));
             
-            float n = m_PerspectiveNear;
-            if (props.Property("Near", n) || props.GetMode() == ReflectionMode::Deserialize)
-                SetPerspectiveNearClip(n);
+            float nearClipValue = m_PerspectiveNear;
+            if (props.Property("Near", nearClipValue) || props.GetMode() == ReflectionMode::Deserialize)
+                SetPerspectiveNearClip(nearClipValue);
             
-            float f = m_PerspectiveFar;
-            if (props.Property("Far", f) || props.GetMode() == ReflectionMode::Deserialize)
-                SetPerspectiveFarClip(f);
+            float farClipValue = m_PerspectiveFar;
+            if (props.Property("Far", farClipValue) || props.GetMode() == ReflectionMode::Deserialize)
+                SetPerspectiveFarClip(farClipValue);
         }
         else
         {
@@ -122,13 +140,13 @@ public:
             if (props.Property("Size", size) || props.GetMode() == ReflectionMode::Deserialize)
                 SetOrthographicSize(size);
             
-            float n = m_OrthographicNear;
-            if (props.Property("Near", n) || props.GetMode() == ReflectionMode::Deserialize)
-                SetOrthographicNearClip(n);
+            float nearClipValue = m_OrthographicNear;
+            if (props.Property("Near", nearClipValue) || props.GetMode() == ReflectionMode::Deserialize)
+                SetOrthographicNearClip(nearClipValue);
             
-            float f = m_OrthographicFar;
-            if (props.Property("Far", f) || props.GetMode() == ReflectionMode::Deserialize)
-                SetOrthographicFarClip(f);
+            float farClipValue = m_OrthographicFar;
+            if (props.Property("Far", farClipValue) || props.GetMode() == ReflectionMode::Deserialize)
+                SetOrthographicFarClip(farClipValue);
         }
     CH_REFLECT_END()
 

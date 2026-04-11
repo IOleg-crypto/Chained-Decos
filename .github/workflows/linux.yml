@@ -1,4 +1,4 @@
-name: CI Native Linux Reusable
+name: Linux
 
 on:
   workflow_call:

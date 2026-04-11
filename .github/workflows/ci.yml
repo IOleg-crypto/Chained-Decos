@@ -36,19 +36,24 @@ env:
   DOTNET_NOLOGO: true
 
 jobs:
-  native:
-    name: Native Builds
-    uses: ./.github/workflows/ci-native-reusable.yml
+  linux:
+    name: Linux Builds
+    uses: ./.github/workflows/linux.yml
     secrets: inherit
 
-  managed-tests:
-    name: Managed Scripts Tests
-    uses: ./.github/workflows/ci-managed-reusable.yml
+  windows:
+    name: Windows Builds
+    uses: ./.github/workflows/windows.yml
+    secrets: inherit
+
+  managed:
+    name: Managed Tests
+    uses: ./.github/workflows/managed.yml
     secrets: inherit
 
   quality-gate:
     name: PR Gate
     runs-on: ubuntu-latest
-    needs: [native, managed-tests]
+    needs: [linux, windows, managed]
     steps:
       - run: echo "Native builds and managed tests passed."

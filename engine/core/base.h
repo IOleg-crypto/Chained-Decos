@@ -47,4 +47,11 @@
 #define CH_BIND_EVENT_FN(fn)                                                                                           \
     [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
 
+
+// --- Scripting & Reflection Macros ---
+#define CH_CLASS(...)
+#define CH_PROPERTY(...)
+#define CH_FUNCTION(...)
+
 #endif // CH_BASE_H
+

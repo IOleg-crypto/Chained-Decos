@@ -1,6 +1,8 @@
 add_library(scripting STATIC
     scriptengine.h
     scriptengine.cpp
+    scriptengine_services.h
+    scriptengine_services.cpp
     script_glue.h
     script_glue.cpp
     script_glue_internal.h
@@ -13,8 +15,6 @@ add_library(scripting STATIC
     script_glue_gameplay.cpp
     scene_scripting.h
     scene_scripting.cpp
-    script_file_system.h
-    script_file_system.cpp
 )
 
 target_include_directories(scripting PUBLIC
@@ -36,6 +36,10 @@ target_link_libraries(scripting PUBLIC
     EnTT
     Coral.Native
 )
+
+if(COMMAND apply_engine_optimizations)
+    apply_engine_optimizations(scripting)
+endif()
 
 if(MSVC)
     target_compile_options(scripting PRIVATE /bigobj)
@@ -101,7 +105,7 @@ if(DOTNET_EXECUTABLE)
         "Coral.Managed.pdb"
     )
 
-    add_custom_command(TARGET scripting POST_BUILD
+    add_custom_command(TARGET CHEngine_Managed POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${CMAKE_BINARY_DIR}/include/coral/cmake/Coral.Managed.dll"
             "${CMAKE_BINARY_DIR}/include/coral/cmake/Coral.Managed.runtimeconfig.json"
