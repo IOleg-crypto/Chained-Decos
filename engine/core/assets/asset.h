@@ -23,7 +23,7 @@ enum class AssetType : uint16_t
     Font,
     AnimationGraph // Not existing yet, reserved for future use
 };
-// AssetState - asset loading state
+// Asset loading state.
 enum class AssetState : uint8_t
 {
     None = 0,
@@ -37,7 +37,7 @@ class Asset
 public:
     virtual ~Asset() = default;
 
-    /** Returns the asset type discriminator. */
+    // Returns the asset type discriminator.
     AssetType GetType() const
     {
         return m_Type;
@@ -54,12 +54,12 @@ public:
     {
     }
 
-    /** Returns the current asset loading state using relaxed atomic reads. */
+    // Returns the current asset loading state using relaxed atomic reads.
     AssetState GetState() const
     {
         return m_State.load(std::memory_order_relaxed);
     }
-    /** Updates the loading state and logs state transitions for diagnostics. */
+    // Updates the loading state and logs state transitions for diagnostics.
     void SetState(AssetState state)
     {
         AssetState oldState = m_State.exchange(state, std::memory_order_release);
@@ -83,55 +83,55 @@ public:
         }
     }
 
-    /** Returns the last loader or finalization error, if any. */
+    // Returns the last loader or finalization error, if any.
     const std::string& GetError() const
     {
         return m_Error;
     }
 
-    /** Stores a descriptive error message without changing the state. */
+    // Stores a descriptive error message without changing the state.
     void SetError(const std::string& error)
     {
         m_Error = error;
     }
 
-    /** Clears the stored error message. */
+    // Clears the stored error message.
     void ClearError()
     {
         m_Error.clear();
     }
 
-    /** Marks the asset as failed and records the failure message. */
+    // Marks the asset as failed and records the failure message.
     void Fail(const std::string& error)
     {
         m_Error = error;
         SetState(AssetState::Failed);
     }
 
-    /** Returns true when the asset reached the ready state. */
+    // Returns true when the asset reached the ready state.
     bool IsReady() const
     {
         return m_State == AssetState::Ready;
     }
 
-    /** Returns the resolved asset path used by the loader. */
+    // Returns the resolved asset path used by the loader.
     const std::string& GetPath() const
     {
         return m_Path;
     }
-    /** Updates the resolved asset path used by the loader. */
+    // Updates the resolved asset path used by the loader.
     void SetPath(const std::string& path)
     {
         m_Path = path;
     }
 
-    /** Returns the stable UUID handle associated with this asset. */
+    // Returns the stable UUID handle associated with this asset.
     UUID GetID() const
     {
         return m_ID;
     }
 
-    /** Called on the main thread after loading completes; useful for GPU uploads. */
+    // Called on the main thread after loading completes; useful for GPU uploads.
     virtual void OnLoaded() {}
 protected:
     std::string m_Path;

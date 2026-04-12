@@ -5,6 +5,7 @@
 
 namespace CHEngine
 {
+// Thin static wrapper over the active RendererAPI.
 class RenderCommand
 {
 public:

@@ -41,7 +41,7 @@ glm::vec3 SceneRenderer::GetWorldPosition(entt::registry& registry, entt::entity
     return glm::vec3(GetWorldTransform(registry, entity)[3]);
 }
 
-void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float nearClip, float farClip, Timestep timestep,
+void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float nearClip, float farClip,
                                 const SceneRenderOptions& options)
 {
     CH_PROFILE_FUNCTION();
@@ -91,7 +91,7 @@ void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float near
                     {
                         if (!rd.Skybox.CachedCubemap || rd.Skybox.CachedCubemapPath != settings.TexturePath)
                         {
-                            auto genShader = rd.Shaders->Get("CubemapGen");
+                            auto genShader = rd.Shaders->LoadOrGet("CubemapGen", "engine/resources/shaders/cubemap.chshader");
                             if (genShader && rd.Skybox.SkyboxCubeModel && !rd.Skybox.SkyboxCubeModel->Meshes.empty())
                             {
                                 rd.Skybox.CachedCubemap =
@@ -112,7 +112,7 @@ void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float near
             }
         }
 
-        RenderModels(scene, camera, nearClip, farClip, timestep, options);
+        RenderModels(scene, camera, nearClip, farClip);
         RenderDebug(scene, camera, options);
         if (options.ShowEditorIcons)
         {
@@ -124,8 +124,7 @@ void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float near
     Profiler::UpdateStats(m_CurrentStats);
 }
 
-void SceneRenderer::RenderModels(Scene* scene, const Camera3D& camera, float nearClip, float farClip, Timestep timestep,
-                                 const SceneRenderOptions& options)
+void SceneRenderer::RenderModels(Scene* scene, const Camera3D& camera, float nearClip, float farClip)
 {
     auto& registry = scene->GetRegistry();
     Frustum frustum;
@@ -145,7 +144,7 @@ void SceneRenderer::RenderModels(Scene* scene, const Camera3D& camera, float nea
 
     std::vector<AnimatedEntry> animatedEntries;
     CollectAndRenderItems(registry, frustum, animatedEntries);
-    DrawAnimatedEntities(animatedEntries, options);
+    DrawAnimatedEntities(animatedEntries);
 }
 
 void SceneRenderer::PrepareLights(entt::registry& registry, const Frustum& frustum)
@@ -303,8 +302,7 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
     }
 }
 
-void SceneRenderer::DrawAnimatedEntities(const std::vector<AnimatedEntry>& animatedEntries,
-                                         const SceneRenderOptions& options)
+void SceneRenderer::DrawAnimatedEntities(const std::vector<AnimatedEntry>& animatedEntries)
 {
     for (const auto& entry : animatedEntries)
     {
@@ -589,7 +587,7 @@ void SceneRenderer::RenderDebug(Scene* scene, const Camera3D& camera, const Scen
     glDisable(GL_BLEND);
     if (options.SetCollisionWireframeMode == 1)
     {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glPolygonMode(GL_FRONT_FACE_COMMAND_NV, GL_LINE);
     }
     else
     {
@@ -608,12 +606,12 @@ void SceneRenderer::RenderDebug(Scene* scene, const Camera3D& camera, const Scen
 
     if (options.ShowDebugCollisionModelBox)
     {
-        DrawCollisionModelBoxDebug(registry, options);
+        DrawCollisionModelBoxDebug(registry);
     }
 
     if (options.ShowDebugSpawnZones)
     {
-        DrawSpawnDebug(registry, options);
+        DrawSpawnDebug(registry);
     }
 
     // Restore GL state
@@ -729,7 +727,7 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
     }
 }
 
-void SceneRenderer::DrawCollisionModelBoxDebug(entt::registry& registry, const SceneRenderOptions& options)
+void SceneRenderer::DrawCollisionModelBoxDebug(entt::registry& registry)
 {
     // Draw bounding boxes for collision model box entities
     // This shows mesh collider bounding boxes
@@ -769,7 +767,7 @@ void SceneRenderer::DrawCollisionModelBoxDebug(entt::registry& registry, const S
     }
 }
 
-void SceneRenderer::DrawSpawnDebug(entt::registry& registry, const SceneRenderOptions& options)
+void SceneRenderer::DrawSpawnDebug(entt::registry& registry)
 {
     // Draw spawn zones
     auto view = registry.view<TransformComponent, SpawnComponent>();

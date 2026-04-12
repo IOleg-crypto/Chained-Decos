@@ -71,6 +71,8 @@ include(cmake/CompilerSettings.cmake)
 include(cmake/Dependencies.cmake)
 include(cmake/ProjectHelpers.cmake)
 
+chained_generate_build_preset_header()
+
 set(CH_ACTIVE_GAME "chaineddecos" CACHE STRING "Active game project to build")
 set_property(CACHE CH_ACTIVE_GAME PROPERTY STRINGS chaineddecos testproject)
 

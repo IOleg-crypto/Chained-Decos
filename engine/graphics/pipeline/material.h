@@ -7,6 +7,7 @@
 
 namespace CHEngine
 {
+// Editable material parameters and asset references used by the renderer and inspector.
 struct MaterialInstance
 {
     // Albedo/Base Color

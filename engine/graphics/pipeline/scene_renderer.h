@@ -13,9 +13,9 @@ namespace CHEngine
 {
 struct Frustum;
 
+// Per-render-pass toggles for runtime and editor scene rendering.
 struct SceneRenderOptions
 {
-    float TargetFPS = 60.0f;
     std::shared_ptr<class EnvironmentAsset> EnvironmentOverride = nullptr;
 
     bool ShowDebugColliders        = false;
@@ -26,6 +26,7 @@ struct SceneRenderOptions
     int  SetCollisionWireframeMode = 0;
 };
 
+// Cached editor icon textures used during scene rendering.
 struct EditorResourcesData
 {
     unsigned int LightIconId   = 0;
@@ -33,14 +34,16 @@ struct EditorResourcesData
     unsigned int CameraIconId  = 0;
 };
 
+// High-level scene render orchestrator that collects visible entities, draws them, and emits debug overlays.
 class SceneRenderer
 {
 public:
     SceneRenderer()  = default;
     ~SceneRenderer() = default;
 
+    // Renders the scene using the supplied camera and options.
     void RenderScene(Scene* scene, const Camera3D& camera, float nearClip, float farClip,
-                     Timestep timestep, const SceneRenderOptions& options);
+                     const SceneRenderOptions& options);
 
 private:
     struct AnimatedEntry
@@ -54,8 +57,7 @@ private:
     };
 
     // Render passes
-    void RenderModels(Scene* scene, const Camera3D& camera, float nearClip, float farClip,
-                      Timestep timestep, const SceneRenderOptions& options);
+    void RenderModels(Scene* scene, const Camera3D& camera, float nearClip, float farClip);
     void RenderDebug(Scene* scene, const Camera3D& camera, const SceneRenderOptions& options);
     void RenderEditorIcons(Scene* scene, const Camera3D& camera);
 
@@ -64,7 +66,7 @@ private:
     void CollectAndRenderItems(entt::registry& registry, const Frustum& frustum,
                                std::vector<AnimatedEntry>& animatedEntries);
     
-    void DrawAnimatedEntities(const std::vector<AnimatedEntry>& animatedEntries, const SceneRenderOptions& options);
+    void DrawAnimatedEntities(const std::vector<AnimatedEntry>& animatedEntries);
 
     void DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const glm::mat4& transform,
                    const std::vector<MaterialSlot>& materialSlotOverrides = {},
@@ -83,8 +85,8 @@ private:
                              const Model& model, const std::vector<MaterialSlot>& materialSlotOverrides);
 
     void DrawColliderDebug(entt::registry& registry, const SceneRenderOptions& options);
-    void DrawCollisionModelBoxDebug(entt::registry& registry, const SceneRenderOptions& options);
-    void DrawSpawnDebug(entt::registry& registry, const SceneRenderOptions& options);
+    void DrawCollisionModelBoxDebug(entt::registry& registry);
+    void DrawSpawnDebug(entt::registry& registry);
 
     static BoundingBox CalculateColliderWorldAABB(const ColliderComponent& collider, const glm::mat4& worldTransform);
     static glm::mat4 GetWorldTransform(entt::registry& registry, entt::entity entity);

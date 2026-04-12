@@ -116,6 +116,7 @@ public:
     EVENT_CLASS_CATEGORY(EventCategoryApplication)
 };
 
+
 class SceneStopEvent : public Event
 {
 public:

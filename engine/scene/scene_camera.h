@@ -20,95 +20,95 @@ public:
     SceneCamera();
     virtual ~SceneCamera() = default;
 
-    /** Sets a perspective projection using vertical field of view and clip planes. */
+    // Sets a perspective projection using vertical field of view and clip planes.
     void SetPerspective(float verticalFov, float nearClip, float farClip);
-    /** Sets an orthographic projection using size and clip planes. */
+    // Sets an orthographic projection using size and clip planes.
     void SetOrthographic(float size, float nearClip, float farClip);
 
-    /** Updates the cached projection when the viewport size changes. */
+    // Updates the cached projection when the viewport size changes.
     void SetViewportSize(uint32_t width, uint32_t height);
 
-    /** Returns the current perspective vertical field of view in radians. */
+    // Returns the current perspective vertical field of view in radians.
     float GetPerspectiveVerticalFOV() const
     {
         return m_PerspectiveFOV;
     }
-    /** Updates the perspective vertical field of view in radians. */
+    // Updates the perspective vertical field of view in radians.
     void SetPerspectiveVerticalFOV(float fov)
     {
         m_PerspectiveFOV = fov;
         RecalculateProjection();
     }
-    /** Returns the near clip plane used for perspective projection. */
+    // Returns the near clip plane used for perspective projection.
     float GetPerspectiveNearClip() const
     {
         return m_PerspectiveNear;
     }
-    /** Updates the near clip plane used for perspective projection. */
+    // Updates the near clip plane used for perspective projection.
     void SetPerspectiveNearClip(float nearClip)
     {
         m_PerspectiveNear = nearClip;
         RecalculateProjection();
     }
-    /** Returns the far clip plane used for perspective projection. */
+    // Returns the far clip plane used for perspective projection.
     float GetPerspectiveFarClip() const
     {
         return m_PerspectiveFar;
     }
-    /** Updates the far clip plane used for perspective projection. */
+    // Updates the far clip plane used for perspective projection.
     void SetPerspectiveFarClip(float farClip)
     {
         m_PerspectiveFar = farClip;
         RecalculateProjection();
     }
 
-    /** Returns the orthographic projection size. */
+    // Returns the orthographic projection size.
     float GetOrthographicSize() const
     {
         return m_OrthographicSize;
     }
-    /** Updates the orthographic projection size. */
+    // Updates the orthographic projection size.
     void SetOrthographicSize(float size)
     {
         m_OrthographicSize = size;
         RecalculateProjection();
     }
-    /** Returns the near clip plane used for orthographic projection. */
+    // Returns the near clip plane used for orthographic projection.
     float GetOrthographicNearClip() const
     {
         return m_OrthographicNear;
     }
-    /** Updates the near clip plane used for orthographic projection. */
+    // Updates the near clip plane used for orthographic projection.
     void SetOrthographicNearClip(float nearClip)
     {
         m_OrthographicNear = nearClip;
         RecalculateProjection();
     }
-    /** Returns the far clip plane used for orthographic projection. */
+    // Returns the far clip plane used for orthographic projection.
     float GetOrthographicFarClip() const
     {
         return m_OrthographicFar;
     }
-    /** Updates the far clip plane used for orthographic projection. */
+    // Updates the far clip plane used for orthographic projection.
     void SetOrthographicFarClip(float farClip)
     {
         m_OrthographicFar = farClip;
         RecalculateProjection();
     }
 
-    /** Returns the active projection type. */
+    // Returns the active projection type.
     ProjectionType GetProjectionType() const
     {
         return m_ProjectionType;
     }
-    /** Switches between perspective and orthographic projection modes. */
+    // Switches between perspective and orthographic projection modes.
     void SetProjectionType(ProjectionType type)
     {
         m_ProjectionType = type;
         RecalculateProjection();
     }
 
-    /** Returns the cached projection matrix. */
+    // Returns the cached projection matrix.
     const glm::mat4& GetProjection() const
     {
         return m_Projection;
