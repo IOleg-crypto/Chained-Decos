@@ -50,17 +50,10 @@ void Renderer::LoadEngineResources()
 {
     auto& shaders = Get().GetShaderLibrary();
 
-    auto loadShader = [&](const std::string& name, const std::string& path) { shaders.Load(name, path); };
+    auto loadShader = [&](const std::string& name, const std::string& path) { shaders.LoadOrGet(name, path); };
 
-    loadShader("Lighting", "resources/shaders/lighting.chshader");
-    loadShader("Skybox", "resources/shaders/skybox.chshader");
-    loadShader("SkyboxCross", "resources/shaders/skybox_cross.chshader");
-    loadShader("Unlit", "resources/shaders/unlit.chshader");
-    loadShader("CubemapGen", "resources/shaders/cubemap.chshader");
-    loadShader("SkyboxCubemap", "resources/shaders/skybox_cubemap.chshader");
-    loadShader("PostProcess", "resources/shaders/post_process.chshader");
-    loadShader("Grid", "resources/shaders/grid.chshader");
-    loadShader("ColliderDebug", "resources/shaders/collider_debug.chshader");
+    loadShader("Lighting", "engine/resources/shaders/lighting.chshader");
+    loadShader("Unlit", "engine/resources/shaders/unlit.chshader");
 
     CH_CORE_INFO("[Renderer] LoadEngineResources done. {} shader(s) loaded.", shaders.GetNames().size());
 }
@@ -371,7 +364,7 @@ void Renderer::DrawMeshInstanced(const Mesh& mesh, const Material& material, con
 
 void Renderer::DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color)
 {
-    auto debugShader = m_Data->Shaders->Get("ColliderDebug");
+    auto debugShader = m_Data->Shaders->LoadOrGet("ColliderDebug", "engine/resources/shaders/collider_debug.chshader");
     if (!debugShader || !debugShader->GetShader())
     {
         return;
@@ -406,7 +399,7 @@ void Renderer::DrawLine(const glm::vec3& start, const glm::vec3& end, const glm:
 
 void Renderer::DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& transform, bool useWireframe)
 {
-    auto debugShader = m_Data->Shaders->Get("ColliderDebug");
+    auto debugShader = m_Data->Shaders->LoadOrGet("ColliderDebug", "engine/resources/shaders/collider_debug.chshader");
     if (!debugShader || !debugShader->GetShader())
     {
         return;
@@ -467,11 +460,11 @@ void Renderer::DrawGrid(int slices, float spacing)
 void Renderer::DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& color)
 {
     auto& shaders = GetShaderLibrary();
-    if (!shaders.Exists("Grid"))
+    auto shaderAsset = shaders.LoadOrGet("Grid", "engine/resources/shaders/grid.chshader");
+    if (!shaderAsset || !shaderAsset->GetShader())
     {
         return;
     }
-    auto shaderAsset = shaders.Get("Grid");
 
     shaderAsset->GetShader()->Bind();
 
@@ -516,9 +509,10 @@ void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float 
     skyboxMode = std::clamp(skyboxMode, 0, 2);
 
     auto shaderAsset = (skyboxMode == 2)
-                           ? m_Data->Shaders->Get("SkyboxCubemap")
-                           : (skyboxMode == 1 ? m_Data->Shaders->Get("SkyboxCross") : m_Data->Shaders->Get("Skybox"));
-    if (!shaderAsset)
+                           ? m_Data->Shaders->LoadOrGet("SkyboxCubemap", "engine/resources/shaders/skybox_cubemap.chshader")
+                           : (skyboxMode == 1 ? m_Data->Shaders->LoadOrGet("SkyboxCross", "engine/resources/shaders/skybox_cross.chshader")
+                                              : m_Data->Shaders->LoadOrGet("Skybox", "engine/resources/shaders/skybox.chshader"));
+    if (!shaderAsset || !shaderAsset->GetShader())
     {
         return;
     }
@@ -598,7 +592,7 @@ void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float 
 void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const glm::vec3& position, float size,
                              const glm::vec4& tint)
 {
-    auto unlitShaderAsset = m_Data->Shaders->Exists("Unlit") ? m_Data->Shaders->Get("Unlit") : nullptr;
+    auto unlitShaderAsset = m_Data->Shaders->LoadOrGet("Unlit", "engine/resources/shaders/unlit.chshader");
     if (!unlitShaderAsset || !unlitShaderAsset->GetShader() || textureId == 0)
     {
         return;
@@ -690,7 +684,7 @@ void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const g
 
 void Renderer::DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, const glm::vec4& color)
 {
-    auto shaderAsset = m_Data->Shaders->Get("ColliderDebug");
+    auto shaderAsset = m_Data->Shaders->LoadOrGet("ColliderDebug", "engine/resources/shaders/collider_debug.chshader");
     if (!shaderAsset || !shaderAsset->GetShader()) return;
 
     auto shader = shaderAsset->GetShader();
@@ -717,7 +711,7 @@ void Renderer::DrawCapsuleWires(const glm::mat4& transform, float radius, float 
 
 void Renderer::DrawSphereWires(const glm::mat4& transform, float radius, const glm::vec4& color)
 {
-    auto shaderAsset = m_Data->Shaders->Get("ColliderDebug");
+    auto shaderAsset = m_Data->Shaders->LoadOrGet("ColliderDebug", "engine/resources/shaders/collider_debug.chshader");
     if (!shaderAsset || !shaderAsset->GetShader()) return;
 
     auto shader = shaderAsset->GetShader();
@@ -740,35 +734,32 @@ void Renderer::DrawSphereWires(const glm::mat4& transform, float radius, const g
 
 void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextureId, const Camera3D& camera)
 {
-    if (m_Data->Shaders->Exists("PostProcess"))
+    auto shaderAsset = m_Data->Shaders->LoadOrGet("PostProcess", "engine/resources/shaders/post_process.chshader");
+    if (shaderAsset && shaderAsset->GetShader())
     {
-        auto shaderAsset = m_Data->Shaders->Get("PostProcess");
-        if (shaderAsset && shaderAsset->GetShader())
-        {
-            shaderAsset->GetShader()->Bind();
+        shaderAsset->GetShader()->Bind();
 
-            // Fullscreen quad doesn't need transformation, set MVP to identity
-            glm::mat4 identity = glm::mat4(1.0f);
-            shaderAsset->GetShader()->SetMatrix("mvp", identity);
+        // Fullscreen quad doesn't need transformation, set MVP to identity
+        glm::mat4 identity = glm::mat4(1.0f);
+        shaderAsset->GetShader()->SetMatrix("mvp", identity);
 
-            glm::mat4 invViewProj = glm::inverse(m_Data->CurrentProj * m_Data->CurrentView);
-            shaderAsset->GetShader()->SetMatrix("matInverseViewProj", invViewProj);
-            shaderAsset->GetShader()->SetVec3("viewPos", camera.Position);
+        glm::mat4 invViewProj = glm::inverse(m_Data->CurrentProj * m_Data->CurrentView);
+        shaderAsset->GetShader()->SetMatrix("matInverseViewProj", invViewProj);
+        shaderAsset->GetShader()->SetVec3("viewPos", camera.Position);
 
-            shaderAsset->GetShader()->SetFloat("uTime", m_Data->Time);
-            shaderAsset->GetShader()->SetFloat("uExposure", m_Data->Lighting.CurrentLighting.Exposure);
-            shaderAsset->GetShader()->SetFloat("uGamma", m_Data->Lighting.CurrentLighting.Gamma);
+        shaderAsset->GetShader()->SetFloat("uTime", m_Data->Time);
+        shaderAsset->GetShader()->SetFloat("uExposure", m_Data->Lighting.CurrentLighting.Exposure);
+        shaderAsset->GetShader()->SetFloat("uGamma", m_Data->Lighting.CurrentLighting.Gamma);
 
-            ApplyFogUniforms(shaderAsset);
+        ApplyFogUniforms(shaderAsset);
 
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, screenTextureId);
-            shaderAsset->GetShader()->SetInt("texture0", 0);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, screenTextureId);
+        shaderAsset->GetShader()->SetInt("texture0", 0);
 
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, depthTextureId);
-            shaderAsset->GetShader()->SetInt("texture1", 1);
-        }
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, depthTextureId);
+        shaderAsset->GetShader()->SetInt("texture1", 1);
 
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_CULL_FACE);

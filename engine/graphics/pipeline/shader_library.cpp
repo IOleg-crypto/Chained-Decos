@@ -44,6 +44,21 @@ void ShaderLibrary::Load(const std::string& name, const std::string& path)
     }
 }
 
+std::shared_ptr<ShaderAsset> ShaderLibrary::LoadOrGet(const std::string& name, const std::string& path)
+{
+    if (auto it = m_Shaders.find(name); it != m_Shaders.end())
+    {
+        return it->second;
+    }
+
+    auto shader = AssetManager::Get().Get<ShaderAsset>(path);
+    if (shader)
+    {
+        m_Shaders[name] = shader;
+    }
+    return shader;
+}
+
 std::shared_ptr<ShaderAsset> ShaderLibrary::Get(const std::string& name)
 {
     CH_CORE_ASSERT(Exists(name), "Shader name not found!");

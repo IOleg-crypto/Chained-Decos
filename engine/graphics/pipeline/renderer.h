@@ -14,7 +14,7 @@ namespace CHEngine
 {
     class Texture;
 
-// Low-level representation of a light for SSBO
+// Packed light data uploaded to the renderer SSBO.
 struct RenderLight
 {
     glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f}; // 16 bytes
@@ -28,6 +28,7 @@ struct RenderLight
     int enabled = 0;                            // 4 bytes
 };
 
+// Per-frame lighting state shared by scene rendering and post-processing.
 struct LightingData
 {
     static constexpr int MaxLights = 256;
@@ -39,6 +40,7 @@ struct LightingData
     FogSettings CurrentFog;
 };
 
+// Shared mesh resources for primitive and debug rendering.
 struct StaticResources
 {
     std::unique_ptr<Model> UnitCubeModel;
@@ -46,6 +48,7 @@ struct StaticResources
     std::unique_ptr<Model> WireCubeModel;  // 12-edge wireframe cube for GL_LINES
 };
 
+// Cached skybox resources and the last uploaded environment texture.
 struct SkyboxData
 {
     std::unique_ptr<Model> SkyboxCubeModel;
@@ -56,6 +59,7 @@ struct SkyboxData
     unsigned int SourceTextureId = 0;
 };
 
+// Mutable renderer state owned by the singleton renderer.
 struct RendererData
 {
     SkyboxData Skybox;
@@ -79,6 +83,7 @@ struct RendererData
     std::shared_ptr<VertexArray> BillboardVAO;
 };
 
+// Singleton renderer facade that owns GPU resources, frame state, and low-level draw calls.
 class Renderer
 {
 public:

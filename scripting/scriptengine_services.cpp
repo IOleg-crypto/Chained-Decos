@@ -3,12 +3,14 @@
 #include "engine/core/application.h"
 #include "engine/core/log.h"
 #include "engine/scene/project.h"
+#include <Coral/GC.hpp>
 #include <algorithm>
-#include <array>
 #include <cctype>
 #include <exception>
 #include <filesystem>
 #include <vector>
+
+#include "build_preset_names.h"
 
 namespace CHEngine
 {
@@ -39,17 +41,14 @@ void AppendBuildBinCandidates(std::vector<std::filesystem::path>& out, const std
     if (root.empty())
         return;
 
-    static constexpr std::array<const char*, 5> kPresetDirs = {
-        "windows-gcc",
-        "windows-clang",
-        "windows-ninja",
-        "linux-gcc",
-        "linux-clang",
-    };
-
-    for (const char* preset : kPresetDirs)
+    for (const char* preset : detail::kBuildPresetNames)
     {
-        out.push_back(root / "build" / preset / "bin");
+        const std::filesystem::path binDir = root / "build" / preset / "bin";
+
+        if (std::find(out.begin(), out.end(), binDir) == out.end())
+        {
+            out.push_back(binDir);
+        }
     }
 }
 } // namespace
@@ -219,11 +218,31 @@ bool ScriptAssemblyHost::Init()
 
 void ScriptAssemblyHost::Shutdown()
 {
+    if (!m_IsInitialized)
+    {
+        ClearLoadedAssemblyState();
+        m_CoralDirectory.clear();
+        return;
+    }
+
+    try
+    {
+        m_Host.UnloadAssemblyLoadContext(m_AppAssemblyContext);
+        Coral::GC::Collect();
+        Coral::GC::WaitForPendingFinalizers();
+        Coral::GC::Collect();
+    }
+    catch (const std::exception& e)
+    {
+        CH_CORE_WARN("ScriptEngine: Final scripting cleanup failed: {}", e.what());
+    }
+    catch (...)
+    {
+        CH_CORE_WARN("ScriptEngine: Final scripting cleanup failed (unknown exception).");
+    }
+
     ClearLoadedAssemblyState();
     m_CoralDirectory.clear();
-
-    if (!m_IsInitialized)
-        return;
 
     m_Host.Shutdown();
     m_IsInitialized = false;

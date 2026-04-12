@@ -1,5 +1,7 @@
 #include "viewport_panel.h"
 
+#include "IconsFontAwesome6.h"
+#include "editor/editor_layer.h"
 #include "editor/viewport/ui_manipulator.h"
 #include "editor_events.h"
 #include "editor_gui.h"
@@ -8,6 +10,7 @@
 #include "engine/core/application.h"
 #include "engine/core/events.h"
 #include "engine/core/input.h"
+#include "engine/graphics/pipeline/render_command.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
 #include "engine/graphics/pipeline/ui_renderer.h"
@@ -17,22 +20,20 @@
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_events.h"
 #include "engine/scene/scene_picking.h"
-#include "scripting/scriptengine.h"
-#include "undo/entity_commands.h"
-#include "IconsFontAwesome6.h"
 #include "imgui.h"
 #include "imgui_internal.h"
-#include "engine/graphics/pipeline/render_command.h"
-#include "editor/editor_layer.h"
-
+#include "scripting/scriptengine.h"
+#include "undo/entity_commands.h"
 
 namespace CHEngine
 {
-static void ClearSceneBackground(Scene* scene, glm::vec2 size)
+static void ClearSceneBackground(Scene* scene)
 {
     auto mode = scene->GetSettings().Mode;
     if (mode == BackgroundMode::Color)
+    {
         RenderCommand::Clear(scene->GetSettings().BackgroundColor);
+    }
     else if (mode == BackgroundMode::Texture)
     {
         auto& path = scene->GetSettings().BackgroundTexturePath;
@@ -44,16 +45,15 @@ static void ClearSceneBackground(Scene* scene, glm::vec2 size)
     }
     else if (mode == BackgroundMode::Environment3D)
     {
-        RenderCommand::Clear({ 0, 0, 0, 255 });
+        RenderCommand::Clear({0, 0, 0, 255});
     }
 }
 
-
-static const GizmoBtn s_GizmoBtns[] = {{GizmoType::NONE, ICON_FA_ARROW_POINTER "##Select", "Select (Q)", Key::Q},
-                                       {GizmoType::TRANSLATE, ICON_FA_UP_DOWN_LEFT_RIGHT "##Translate", "Translate (W)", Key::W},
-                                       {GizmoType::ROTATE, ICON_FA_ARROWS_ROTATE "##Rotate", "Rotate (E)", Key::E},
-                                       {GizmoType::SCALE, ICON_FA_UP_RIGHT_FROM_SQUARE "##Scale", "Scale (R)", Key::R}};
-
+static const GizmoBtn s_GizmoBtns[] = {
+    {GizmoType::NONE, ICON_FA_ARROW_POINTER "##Select", "Select (Q)", Key::Q},
+    {GizmoType::TRANSLATE, ICON_FA_UP_DOWN_LEFT_RIGHT "##Translate", "Translate (W)", Key::W},
+    {GizmoType::ROTATE, ICON_FA_ARROWS_ROTATE "##Rotate", "Rotate (E)", Key::E},
+    {GizmoType::SCALE, ICON_FA_UP_RIGHT_FROM_SQUARE "##Scale", "Scale (R)", Key::R}};
 
 void ViewportPanel::DrawCameraSelector(Scene* scene)
 {
@@ -215,7 +215,7 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
 
     m_HDRFramebuffer->Bind();
     auto activeScene_raw = activeScene.get();
-    ClearSceneBackground(activeScene_raw, {viewportSize.x, viewportSize.y});
+    ClearSceneBackground(activeScene_raw);
 
     auto activeCameraOpt = activeScene_raw->GetActiveCamera();
     bool cameraFound = activeCameraOpt.has_value();
@@ -227,16 +227,16 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
     auto& edCam = m_CameraController->GetCamera();
     glm::vec3 pos = edCam.CalculatePosition();
     camera.Position = {pos.x, pos.y, pos.z};
-    
+
     glm::vec3 fp = edCam.GetFocalPoint();
     camera.Target = {fp.x, fp.y, fp.z};
-    
+
     glm::vec3 up = edCam.GetUpDirection();
     camera.Up = {up.x, up.y, up.z};
-    
+
     camera.Fovy = glm::degrees(edCam.GetPerspectiveVerticalFOV()); // Fovy in degrees
-    camera.Projection = 0; // Perspective
-    
+    camera.Projection = 0;                                         // Perspective
+
     nearClip = edCam.GetPerspectiveNearClip();
     farClip = edCam.GetPerspectiveFarClip();
 
@@ -260,27 +260,18 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
     options.ShowDebugSpawnZones = EditorLayer::Get().GetDebugRenderFlags().DrawSpawnZones;
     options.ShowEditorIcons = true;
 
-    if (auto project = Project::GetActive())
-    {
-        options.TargetFPS = project->GetConfig().Animation.TargetFPS;
-    }
-
-    m_SceneRenderer->RenderScene(activeScene.get(), camera, nearClip, farClip, Application::Get().GetFrameTime(),
-                                    options);
+    m_SceneRenderer->RenderScene(activeScene.get(), camera, nearClip, farClip, options);
     m_HDRFramebuffer->Unbind();
 
     // --- 2. APPLY POST-PROCESSING ---
     m_ViewportFramebuffer->Bind();
-    RenderCommand::Clear({ 0, 0, 0, 255 }); // Clear viewport buffer
-    Renderer::Get().ApplyPostProcessing(
-        m_HDRFramebuffer->GetColorAttachmentRendererID(),
-        m_HDRFramebuffer->GetDepthAttachmentRendererID(),
-        camera
-    );
+    RenderCommand::Clear({0, 0, 0, 255}); // Clear viewport buffer
+    Renderer::Get().ApplyPostProcessing(m_HDRFramebuffer->GetColorAttachmentRendererID(),
+                                        m_HDRFramebuffer->GetDepthAttachmentRendererID(), camera);
     m_ViewportFramebuffer->Unbind();
 
     uint32_t finalTextureID = m_ViewportFramebuffer->GetColorAttachmentRendererID();
-    ImGui::Image((ImTextureID)(uintptr_t)finalTextureID, viewportSize, { 0, 1 }, { 1, 0 });
+    ImGui::Image((ImTextureID)(uintptr_t)finalTextureID, viewportSize, {0, 1}, {1, 0});
 
     bool isViewportHovered = ImGui::IsItemHovered();
 
@@ -470,20 +461,29 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         DrawGizmoButtons();
 
         DrawCameraSelector(activeScene.get());
-        
+
         ImGui::SameLine(0, 10);
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
         ImGui::SameLine(0, 10);
 
         // Snapping toggle
         bool snapping = m_Gizmo.IsSnappingEnabled();
-        if (snapping) ImGui::PushStyleColor(ImGuiCol_Text, {0.3f, 0.8f, 1.0f, 1.0f});
+        if (snapping)
+        {
+            ImGui::PushStyleColor(ImGuiCol_Text, {0.3f, 0.8f, 1.0f, 1.0f});
+        }
         if (ImGui::Button(ICON_FA_MAGNET "##SnapToggle", {28, 28}))
         {
             m_Gizmo.SetSnapping(!snapping);
         }
-        if (snapping) ImGui::PopStyleColor();
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Enable Grid Snapping");
+        if (snapping)
+        {
+            ImGui::PopStyleColor();
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("Enable Grid Snapping");
+        }
 
         ImGui::SameLine(0, 5);
         float gridSize = m_Gizmo.GetGridSize();
@@ -492,17 +492,23 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         {
             m_Gizmo.SetGridSize(gridSize);
         }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Grid Snap Size");
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("Grid Snap Size");
+        }
 
         ImGui::SameLine(0, 10);
-        
+
         // Local/World toggle
         bool isLocal = m_Gizmo.IsLocalSpace();
         if (ImGui::Button(isLocal ? (ICON_FA_CUBE " Local") : (ICON_FA_EARTH_AMERICAS " World"), {70, 28}))
         {
             m_Gizmo.SetLocalSpace(!isLocal);
         }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Toggle Local/World Space");
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("Toggle Local/World Space");
+        }
 
         ImGui::SameLine(0, 15);
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
@@ -551,6 +557,18 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         ImGui::SameLine(0, 15);
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
         ImGui::SameLine(0, 15);
+
+        // Run scene in new window (for play mode testing)
+        if (ImGui::Button(ICON_FA_WINDOW_MAXIMIZE "##RunSceneInNewWindow", ImVec2(28, 28)))
+        {
+            CH_CORE_INFO("ViewportPanel: Run Scene in New Window Button Clicked");
+            AppLaunchRuntimeEvent e;
+            Application::Get().OnEvent(e);
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("Run Scene in New Window (Shift+F5)");
+        }
 
         // Camera Info (Read-only status)
         Entity primaryCam = activeScene->GetPrimaryCameraEntity();

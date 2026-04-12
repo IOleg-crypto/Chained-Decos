@@ -7,6 +7,7 @@
 
 namespace CHEngine
 {
+// Window creation parameters and UI/runtime integration flags.
 struct WindowProperties
 {
     std::string Title;
@@ -31,6 +32,7 @@ struct WindowProperties
     }
 };
 
+// Abstract native window interface used by the application and renderer.
 class Window
 {
 public:
@@ -59,6 +61,7 @@ public:
 
     virtual void* GetNativeWindow() const = 0;
 
+    // Creates the platform-specific window implementation.
     static std::unique_ptr<Window> Create(const WindowProperties& properties = WindowProperties());
 };
 } // namespace CHEngine

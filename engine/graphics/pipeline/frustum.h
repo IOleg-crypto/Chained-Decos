@@ -16,10 +16,8 @@ struct Frustum
     // Planes: x, y, z = normal, w = distance from origin
     std::array<glm::vec4, PlaneCount> Planes;
 
-    /**
-     * Extracts planes from View-Projection matrix.
-     * GLM uses column-major storage/access.
-     */
+    // Extracts planes from the view-projection matrix.
+    // GLM uses column-major storage/access.
     void Extract(const glm::mat4& mat)
     {
         // Gribb-Hartmann plane extraction for column-major matrix
@@ -38,9 +36,7 @@ struct Frustum
         }
     }
 
-    /**
-     * Fast AABB check using center and extents.
-     */
+    // Fast AABB check using center and extents.
     bool IsBoxVisible(const glm::vec3& center, const glm::vec3& extents) const
     {
         for (const auto& p : Planes)
@@ -55,9 +51,7 @@ struct Frustum
         return true;
     }
 
-    /**
-     * Optimized AABB check with transform.
-     */
+    // Optimized AABB check with transform.
     bool IsBoxVisible(const struct BoundingBox& box, const glm::mat4& transform) const
     {
         // 1. Find local center and extents

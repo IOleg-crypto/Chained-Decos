@@ -3,11 +3,14 @@
 #include "engine/core/profiler.h"
 #include "engine/scene/project.h"
 
+#include <chrono>
+
 namespace CHEngine
 {
 namespace
 {
-constexpr size_t kMaxAssetFinalizationsPerFrame = 4;
+constexpr size_t kMaxAssetFinalizationsPerFrame = 16;
+constexpr auto kMaxAssetFinalizeBudget = std::chrono::milliseconds(2);
 }
 
 static std::unique_ptr<AssetManager> s_Instance = nullptr;
@@ -196,28 +199,28 @@ void AssetManager::Update()
 {
     CH_PROFILE_FUNCTION();
 
-    std::vector<std::shared_ptr<Asset>> completed;
+    const auto updateStart = std::chrono::steady_clock::now();
+    size_t finalizedCount = 0;
+
+    while (finalizedCount < kMaxAssetFinalizationsPerFrame)
     {
-        std::lock_guard<std::mutex> lock(m_PendingMutex);
-        if (m_PendingAssets.empty())
+        std::shared_ptr<Asset> asset;
         {
-            return;
+            std::lock_guard<std::mutex> lock(m_PendingMutex);
+            if (m_PendingAssets.empty())
+            {
+                return;
+            }
+
+            asset = std::move(m_PendingAssets.front());
+            m_PendingAssets.pop_front();
         }
 
-        const size_t finalizeCount = (m_PendingAssets.size() < kMaxAssetFinalizationsPerFrame)
-                                         ? m_PendingAssets.size()
-                                         : kMaxAssetFinalizationsPerFrame;
-
-        completed.reserve(finalizeCount);
-        for (size_t finalizeIndex = 0; finalizeIndex < finalizeCount; ++finalizeIndex)
+        if (!asset)
         {
-            completed.push_back(std::move(m_PendingAssets[finalizeIndex]));
+            continue;
         }
-        m_PendingAssets.erase(m_PendingAssets.begin(), m_PendingAssets.begin() + finalizeCount);
-    }
 
-    for (auto& asset : completed)
-    {
         try
         {
             asset->ClearError();
@@ -234,6 +237,13 @@ void AssetManager::Update()
         catch (...)
         {
             asset->Fail(std::string("AssetManager: Finalization failed for '") + asset->GetPath() + "' with an unknown exception");
+        }
+
+        ++finalizedCount;
+
+        if ((std::chrono::steady_clock::now() - updateStart) >= kMaxAssetFinalizeBudget)
+        {
+            break;
         }
     }
 }

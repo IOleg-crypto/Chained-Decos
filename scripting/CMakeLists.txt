@@ -30,6 +30,12 @@ target_include_directories(scripting PUBLIC
     ${CMAKE_SOURCE_DIR}/include/miniaudio
 )
 
+if(CH_BUILD_PRESET_NAMES_INCLUDE_DIR)
+    target_include_directories(scripting PRIVATE
+        ${CH_BUILD_PRESET_NAMES_INCLUDE_DIR}
+    )
+endif()
+
 target_link_libraries(scripting PUBLIC 
     engine
     yaml-cpp

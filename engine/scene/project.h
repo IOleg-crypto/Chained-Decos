@@ -12,6 +12,7 @@
 
 namespace CHEngine
 {
+// Describes an executable launch profile for a project build.
 struct LaunchProfile
 {
     std::string Name;
@@ -124,49 +125,63 @@ struct ProjectConfig
     Configuration BuildConfig = Configuration::Debug;
 };
 
+// Owns the active project configuration and environment asset, plus path helpers
+// rooted at the process-wide active project.
 class Project
 {
 public:
     Project() = default;
     ~Project() = default;
 
+    // Returns the active project configuration.
     [[nodiscard]] const ProjectConfig& GetConfig() const
     {
         return m_Config;
     }
+    // Returns the active project configuration for mutation.
     [[nodiscard]] ProjectConfig& GetConfig()
     {
         return m_Config;
     }
 
+    // Returns the process-wide active project, or null if none is loaded.
     [[nodiscard]] static std::shared_ptr<Project> GetActive()
     {
         return s_ActiveProject;
     }
 
+    // Sets the process-wide active project.
     static void SetActive(std::shared_ptr<Project> project)
     {
         s_ActiveProject = project;
     }
 
+    // Creates a new in-memory project with default settings.
     [[nodiscard]] static std::shared_ptr<Project> New();
+    // Loads a project from disk.
     [[nodiscard]] static std::shared_ptr<Project> Load(const std::filesystem::path& path);
+    // Discovers a project file by walking from a starting directory.
     [[nodiscard]] static std::filesystem::path Discover(const std::filesystem::path& startPath = "",
                                                          const std::string& hintName = "");
 
+    // Returns the engine root used for resolving engine-relative paths.
     [[nodiscard]] static std::filesystem::path GetEngineRoot()
     {
         return s_EngineRoot;
     }
+    // Sets the engine root used for resolving engine-relative paths.
     static void SetEngineRoot(const std::filesystem::path& path)
     {
         s_EngineRoot = path;
     }
 
+    // Saves the active project to disk.
     static bool SaveActive(const std::filesystem::path& path);
 
+    // Returns the scenes that are available to the active project.
     [[nodiscard]] static std::vector<std::string> GetAvailableScenes();
 
+    // Returns the active project's asset directory.
     [[nodiscard]] static std::filesystem::path GetAssetDirectory()
     {
         if (s_ActiveProject)
@@ -176,6 +191,7 @@ public:
         return "";
     }
 
+    // Returns the active project's directory.
     [[nodiscard]] static std::filesystem::path GetProjectDirectory()
     {
         if (s_ActiveProject)
@@ -190,10 +206,12 @@ public:
         return GetAssetDirectory() / relative;
     }
 
+    // Converts a path to a project-relative string when possible.
     [[nodiscard]] static std::string GetRelativePath(const std::filesystem::path& path);
+    // Converts a path to an absolute path under the active project or engine root.
     [[nodiscard]] static std::filesystem::path GetAbsolutePath(const std::filesystem::path& path);
 
-    // Path utility helpers
+    // Path utility helpers.
     [[nodiscard]] static std::filesystem::path NormalizePath(const std::filesystem::path& path);
     [[nodiscard]] static std::optional<std::string> TryMakeRelative(const std::filesystem::path& absolutePath,
                                                                     const std::filesystem::path& basePath);
@@ -218,6 +236,7 @@ public:
         m_Config.EnvironmentPath = path;
     }
 
+    // Returns the environment asset associated with this project, if any.
     std::shared_ptr<EnvironmentAsset> GetEnvironment() const
     {
         return m_Environment;

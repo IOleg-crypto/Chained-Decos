@@ -12,11 +12,14 @@
 #include "engine/scene/scene_events.h"
 #include "imgui.h"
 #include "undo/command_history.h"
+#include <filesystem>
 #include <memory>
+#include <future>
 
 namespace CHEngine
 {
 
+// Owns the editor scene pair, viewport state, and project/scene transition flow.
 class EditorLayer : public Layer
 {
 public:
@@ -30,16 +33,20 @@ public:
     virtual void OnImGuiRender() override;
     virtual void OnEvent(Event& e) override;
 
+    // Returns the viewport width currently tracked by the editor.
     static float GetViewportWidth()
     {
         return s_Instance->m_ViewportSize.x;
     }
+    // Returns the viewport height currently tracked by the editor.
     static float GetViewportHeight()
     {
         return s_Instance->m_ViewportSize.y;
     }
 
+    // Resets the editor layout to the default dock structure.
     void ResetLayout();
+    // Requests a transition between Edit and Play scene state.
     void SetSceneState(SceneState state);
     SceneState GetSceneState() const
     {
@@ -50,20 +57,31 @@ public:
     {
         return *s_Instance;
     }
+    // Replaces the current editor scene and updates the runtime scene as needed.
     void SetScene(std::shared_ptr<Scene> scene);
+    // Draws the main editor docking root.
     void DrawDockSpace();
 
 private:
     void LoadEditorFonts();
+    void StartPlayModeTransition();
+    void UpdatePlayModeTransition();
+    void CancelPlayModeTransition(bool waitForCopy);
+    void StartSceneOpenTransition(const std::filesystem::path& path);
+    void UpdateSceneOpenTransition();
+    void CancelSceneOpenTransition(bool waitForCopy);
+    void DrawPlayModeLoadingOverlay();
+    void DrawSceneOpenLoadingOverlay();
 
 public:
+    // Updates the viewport size used by editor rendering and picking.
     void SetViewportSize(const ImVec2& size);
     const ImVec2& GetViewportSize() const
     {
         return m_ViewportSize;
     }
 
-    // --- File & Project Operations ---
+    // File and project operations.
     void NewProject();
     void NewProject(const std::string& name, const std::string& path);
     void OpenProject();
@@ -123,6 +141,7 @@ public:
 
     struct EditorLayerConfig
     {
+        // Persistent editor preferences and last-opened paths.
         std::string LastProjectPath = "";
         std::string LastScenePath = "";
         bool LoadLastProjectOnStartup = false;
@@ -130,7 +149,9 @@ public:
         float AutoSaveInterval = 300.0f; // 5 minutes (300 seconds)
     };
 
+    // Loads the editor config from disk.
     void LoadConfig();
+    // Saves the editor config to disk.
     void SaveConfig();
     const EditorLayerConfig& GetConfig() const
     {
@@ -149,8 +170,14 @@ public:
         m_Config.LastScenePath = path;
     }
 
+    // Returns the scene currently being edited or played, or null while transitions are in flight.
     std::shared_ptr<Scene> GetActiveScene() const
     {
+        if (m_IsPlayModeLoading || m_IsSceneOpenLoading)
+        {
+            return nullptr;
+        }
+
         return (EditorContext::GetSceneState() == SceneState::Play) ? m_RuntimeScene : m_EditorScene;
     }
 
@@ -165,11 +192,19 @@ private:
 
     std::shared_ptr<Scene> m_EditorScene;
     std::shared_ptr<Scene> m_RuntimeScene;
+    std::future<std::shared_ptr<Scene>> m_PlayModeCopyFuture;
+    std::future<std::shared_ptr<Scene>> m_SceneOpenFuture;
+    std::filesystem::path m_PendingSceneOpenPath;
 
     CommandHistory m_CommandHistory;
     ImVec2 m_ViewportSize = {1280, 720};
     float m_AutoSaveTimer = 0.0f;
     float m_LastAutoSaveTime = 0.0f;
+    bool m_PlayModeStartRequested = false;
+    bool m_IsPlayModeLoading = false;
+    bool m_PlayModeSceneReady = false;
+    bool m_IsSceneOpenLoading = false;
+    bool m_SceneOpenSceneReady = false;
 
     bool OnKeyPressed(KeyPressedEvent& e);
     bool OnMouseButtonPressed(MouseButtonPressedEvent& e);

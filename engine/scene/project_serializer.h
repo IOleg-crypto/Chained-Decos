@@ -6,13 +6,17 @@
 
 namespace CHEngine
 {
+// Serializes and deserializes a project configuration; the project is not owned.
 class ProjectSerializer
 {
 public:
+    // Binds the serializer to a project instance.
     ProjectSerializer(std::shared_ptr<Project> project);
 
 public:
+    // Serializes the bound project to disk.
     bool Serialize(const std::filesystem::path& filepath);
+    // Deserializes the project from disk.
     bool Deserialize(const std::filesystem::path& filepath);
 
 private:
