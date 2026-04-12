@@ -13,24 +13,29 @@ namespace CHEngine
 {
 class Scene;
 
+// Screen-space rectangle used for UI layout and hit testing.
 struct UIRect
 {
     float x, y, width, height;
 };
 
+// Singleton renderer for in-world UI canvases and project fonts.
 class UIRenderer
 {
 public:
-    UIRenderer();
-    ~UIRenderer();
+    UIRenderer() = default;
+    ~UIRenderer() = default;
 
     static void Init();
     static void Shutdown();
     static UIRenderer& Get();
 
+    // Draws a UI canvas for the given scene.
     void DrawCanvas(Scene* scene, const ImVec2& referencePosition, const ImVec2& referenceSize, bool editMode = false);
+    // Loads fonts required by the current project/UI theme.
     void LoadProjectFonts();
 
+    // Computes the screen-space bounds for a UI entity.
     UIRect GetEntityRect(Entity entity, const ImVec2& viewportSize, const ImVec2& viewportPos);
 
     UIFontRegistry&       GetFontRegistry()       { return m_FontRegistry; }

@@ -10,7 +10,7 @@
 
 namespace CHEngine
 {
-// Serializer description for a specific component
+// Describes how one component is serialized, deserialized, and copied.
 struct ComponentSerializerEntry
 {
     std::string Key;
@@ -19,6 +19,7 @@ struct ComponentSerializerEntry
     std::function<void(Entity, Entity)> Copy;
 };
 
+// Central registry for component serializers used by scene save/load/copy.
 class ComponentSerializer
 {
 public:
@@ -39,32 +40,32 @@ private:
     void RegisterScriptingComponents();
 
 public:
-    // Register component via declarative schema (PropertyArchive)
-    // This is the primary method that automatically creates serialization, deserialization, and copy logic.
+    // Registers a component via a PropertyArchive schema.
+    // This path automatically creates serialization, deserialization, and copy logic.
     template <typename T>
     void Register(const std::string& key, std::function<void(SerializationUtils::PropertyArchive&, T&)> schema);
 
-    // Auto-discovering register (Requires T::Serialize(Archive&, T&))
+    // Registers a component by calling T::Reflect or T::Serialize-style code.
     template <typename T>
     void Register(const std::string& key);
 
-    // Keyless register (Requires T::GetStaticName() and T::Serialize(Archive&, T&))
+    // Registers a component using T::GetStaticName() as the key.
     template <typename T>
     void Register();
 
-    // Register with custom logic (for complex cases)
+    // Registers custom serialization logic for special cases.
     void RegisterCustom(const ComponentSerializerEntry& entry);
 
-    // Serialize all registered components of an entity
+    // Serializes all registered components owned by an entity.
     void SerializeAll(YAML::Emitter& out, Entity entity);
 
-    // Deserialize all registered components from YAML
+    // Deserializes all registered components from YAML.
     void DeserializeAll(Entity entity, YAML::Node node);
 
-    // Copy all components from source to destination (cloning)
+    // Copies all registered components from source to destination.
     void CopyAll(Entity source, Entity destination);
 
-    // Special cases
+    // Serializes the ID component separately.
     void SerializeID(YAML::Emitter& out, Entity entity);
 
     static ComponentSerializer& Get();

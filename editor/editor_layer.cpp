@@ -6,6 +6,7 @@
 
 #include "engine/core/assets/asset_manager.h"
 #include "engine/core/profiler.h"
+#include "engine/core/thread_pool.h"
 #include "engine/physics/physics.h"
 
 #include "engine/platform/utils/dialogs.h"
@@ -24,7 +25,53 @@
 #include "scripting/scene_scripting.h"
 #include "scripting/scriptengine.h"
 #include <ImGuizmo.h>
+#include <chrono>
 #include <yaml-cpp/yaml.h>
+
+namespace
+{
+void DrawLoadingOverlay(const char* title, const char* status)
+{
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->WorkPos);
+    ImGui::SetNextWindowSize(viewport->WorkSize);
+    ImGui::SetNextWindowViewport(viewport->ID);
+
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
+                             ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking |
+                             ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse |
+                             ImGuiWindowFlags_NoInputs;
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.02f, 0.02f, 0.02f, 0.92f));
+
+    if (ImGui::Begin("##EditorLoadingOverlay", nullptr, flags))
+    {
+        const size_t loadingCount = CHEngine::AssetManager::Get().GetLoadingAssetCount();
+        const size_t pendingFinalizeCount = CHEngine::AssetManager::Get().GetPendingFinalizeCount();
+        const size_t totalPending = loadingCount + pendingFinalizeCount;
+
+        ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.45f);
+
+        ImVec2 titleSize = ImGui::CalcTextSize(title);
+        ImGui::SetCursorPosX((ImGui::GetWindowWidth() - titleSize.x) * 0.5f);
+        ImGui::TextUnformatted(title);
+
+        ImVec2 statusSize = ImGui::CalcTextSize(status);
+        ImGui::SetCursorPosX((ImGui::GetWindowWidth() - statusSize.x) * 0.5f);
+        ImGui::TextUnformatted(status);
+
+        std::string pendingLine = "Pending assets: " + std::to_string(totalPending);
+        ImVec2 pendingSize = ImGui::CalcTextSize(pendingLine.c_str());
+        ImGui::SetCursorPosX((ImGui::GetWindowWidth() - pendingSize.x) * 0.5f);
+        ImGui::TextUnformatted(pendingLine.c_str());
+    }
+
+    ImGui::End();
+    ImGui::PopStyleColor();
+    ImGui::PopStyleVar();
+}
+} // namespace
 
 namespace CHEngine
 {
@@ -52,6 +99,7 @@ void EditorLayer::LoadConfig()
     {
         return;
     }
+
 
     try
     {
@@ -197,6 +245,8 @@ void EditorLayer::LoadEditorFonts()
 
 void EditorLayer::OnDetach()
 {
+    CancelPlayModeTransition(true);
+    CancelSceneOpenTransition(true);
     SaveConfig();
     EditorContext::Shutdown();
 }
@@ -204,6 +254,23 @@ void EditorLayer::OnDetach()
 void EditorLayer::OnUpdate(Timestep ts)
 {
     CH_PROFILE_FUNCTION();
+
+    if (m_PlayModeStartRequested)
+    {
+        StartPlayModeTransition();
+    }
+
+    if (m_IsPlayModeLoading)
+    {
+        UpdatePlayModeTransition();
+        return;
+    }
+
+    if (m_IsSceneOpenLoading)
+    {
+        UpdateSceneOpenTransition();
+        return;
+    }
 
     // Update all panels (includes viewport camera controller)
     m_Panels->OnUpdate(ts);
@@ -260,6 +327,12 @@ void EditorLayer::OnUpdate(Timestep ts)
 
 void EditorLayer::OnRender(Timestep ts)
 {
+    if (m_IsPlayModeLoading || m_IsSceneOpenLoading)
+    {
+        RenderCommand::Clear({25, 25, 25, 255});
+        return;
+    }
+
     RenderCommand::Clear({25, 25, 25, 255});
 }
 
@@ -267,6 +340,19 @@ void EditorLayer::OnImGuiRender()
 {
     ImGuizmo::SetImGuiContext(ImGui::GetCurrentContext());
     ImGuizmo::BeginFrame();
+
+    if (m_IsPlayModeLoading || m_IsSceneOpenLoading)
+    {
+        if (m_IsPlayModeLoading)
+        {
+            DrawPlayModeLoadingOverlay();
+        }
+        else
+        {
+            DrawSceneOpenLoadingOverlay();
+        }
+        return;
+    }
 
     if (EditorContext::GetState().NeedsLayoutReset)
     {
@@ -389,6 +475,11 @@ bool EditorLayer::OnSceneOpened(SceneOpenedEvent& e)
 
 void EditorLayer::OnEvent(Event& e)
 {
+    if (m_IsPlayModeLoading || m_IsSceneOpenLoading)
+    {
+        return;
+    }
+
     if (auto scene = GetActiveScene())
     {
         SceneScripting::DispatchEvent(scene.get(), e);
@@ -519,26 +610,33 @@ void EditorLayer::SetSceneState(SceneState state)
 
     if (state == SceneState::Play)
     {
-        if (EditorContext::GetSceneState() == SceneState::Play)
+        if (m_PlayModeStartRequested || m_IsPlayModeLoading || m_IsSceneOpenLoading ||
+            EditorContext::GetSceneState() == SceneState::Play)
         {
             return;
         }
 
-        CH_CORE_INFO("Editor: Play Mode Started");
-        m_RuntimeScene = Scene::Copy(m_EditorScene);
-        if (m_RuntimeScene)
+        if (!m_EditorScene)
         {
-            EditorContext::SetSceneState(SceneState::Play);
-            SceneScripting::OnRuntimeStart(m_RuntimeScene.get());
-            m_RuntimeScene->OnRuntimeStart();
+            CH_CORE_WARN("EditorLayer::SetSceneState - No editor scene available for play mode.");
+            return;
         }
-        else
-        {
-            CH_CORE_ERROR("EditorLayer::SetSceneState - Failed to copy scene!");
-        }
+
+        m_PlayModeStartRequested = true;
+        CH_CORE_INFO("Editor: Play mode requested.");
     }
     else
     {
+        if (m_PlayModeStartRequested || m_IsPlayModeLoading)
+        {
+            CancelPlayModeTransition(true);
+        }
+
+        if (m_IsSceneOpenLoading)
+        {
+            CancelSceneOpenTransition(true);
+        }
+
         if (EditorContext::GetSceneState() == SceneState::Edit)
         {
             return;
@@ -560,6 +658,8 @@ void EditorLayer::SetSceneState(SceneState state)
 // Register game scripts (statically linked, defined in game_module.cpp outside any namespace)
 void EditorLayer::SetScene(std::shared_ptr<Scene> scene)
 {
+    CancelPlayModeTransition(true);
+    CancelSceneOpenTransition(true);
     m_EditorScene = scene;
     EditorContext::SetSelectedEntity({});
     if (EditorContext::GetSceneState() == SceneState::Edit)
@@ -816,7 +916,6 @@ static std::string ResolveLaunchVariables(std::string str)
 void EditorLayer::LaunchStandalone()
 {
     CH_PROFILE_FUNCTION();
-    SaveProject();
 
     auto project = Project::GetActive();
     if (!project)
@@ -825,6 +924,40 @@ void EditorLayer::LaunchStandalone()
     }
 
     auto& config = project->GetConfig();
+    std::string sceneArgument;
+
+    if (m_EditorScene)
+    {
+        std::filesystem::path scenePath = m_EditorScene->GetSettings().ScenePath;
+        if (scenePath.empty())
+        {
+            scenePath = config.ActiveScenePath;
+        }
+
+        if (!scenePath.empty())
+        {
+            if (!m_EditorScene->GetSettings().ScenePath.empty())
+            {
+                SceneSerializer serializer(m_EditorScene.get());
+                if (!serializer.Serialize(m_EditorScene->GetSettings().ScenePath))
+                {
+                    CH_CORE_ERROR("LaunchStandalone: Failed to save current editor scene before launching.");
+                    return;
+                }
+            }
+
+            if (scenePath.is_relative())
+            {
+                scenePath = Project::GetAssetPath(scenePath);
+            }
+
+            scenePath = std::filesystem::absolute(scenePath);
+            project->SetActiveScenePath(Project::GetRelativePath(scenePath));
+            sceneArgument = std::format(" --scene \"{}\"", scenePath.string());
+        }
+    }
+
+    SaveProject();
 
     std::string runtimePath;
     std::string arguments;
@@ -842,6 +975,11 @@ void EditorLayer::LaunchStandalone()
                 project->GetProjectDirectory() / (project->GetConfig().Name + ".chproject");
             arguments += std::format(" \"{}\"", std::filesystem::absolute(projectFile).string());
         }
+
+        if (!sceneArgument.empty())
+        {
+            arguments += sceneArgument;
+        }
     }
     else
     {
@@ -852,6 +990,11 @@ void EditorLayer::LaunchStandalone()
 
         std::filesystem::path projectFile = project->GetProjectDirectory() / (project->GetConfig().Name + ".chproject");
         arguments = std::format("\"{}\"", std::filesystem::absolute(projectFile).string());
+
+        if (!sceneArgument.empty())
+        {
+            arguments += sceneArgument;
+        }
     }
 
     if (runtimePath.empty() || !std::filesystem::exists(runtimePath))
@@ -896,37 +1039,13 @@ void EditorLayer::OpenScene()
     auto result = Dialogs::OpenFile(filters);
     if (result)
     {
-        OpenProject(*result);
+        OpenScene(*result);
     }
 }
 
 void EditorLayer::OpenScene(const std::filesystem::path& path)
 {
-    auto newScene = std::make_shared<Scene>();
-    // KISS: Load Game Module BEFORE deserialization to ensure ScriptRegistry is populated
-    EditorLayer::Get().SetScene(newScene);
-    SceneSerializer serializer(newScene.get());
-
-    if (serializer.Deserialize(path.string()))
-    {
-        // Sync environment if needed (optional, logic from Application::LoadScene can be moved here or to a helper)
-        if (Project::GetActive() && Project::GetActive()->GetEnvironment())
-        {
-            if (newScene->GetSettings().Environment->GetPath().empty() &&
-                newScene->GetSettings().Environment->GetSettings().Skybox.TexturePath.empty())
-            {
-                newScene->GetSettings().Environment = Project::GetActive()->GetEnvironment();
-            }
-        }
-
-        // Sync with EditorLayer which manages the scene now
-        // Assumes EditorLayer is active (SceneActions is editor-only code)
-        newScene->GetSettings().ScenePath = path.string();
-
-        SceneOpenedEvent e(path.string());
-        EditorLayer::Get().SetLastScenePath(path.string());
-        Application::Get().OnEvent(e);
-    }
+    StartSceneOpenTransition(path);
 }
 
 void EditorLayer::SaveScene()
@@ -1030,6 +1149,263 @@ bool EditorLayer::OnKeyPressed(KeyPressedEvent& e)
 bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)
 {
     return false;
+}
+
+void EditorLayer::StartPlayModeTransition()
+{
+    if (!m_PlayModeStartRequested || m_IsPlayModeLoading || !m_EditorScene)
+    {
+        m_PlayModeStartRequested = false;
+        return;
+    }
+
+    m_PlayModeStartRequested = false;
+    m_PlayModeSceneReady = false;
+    m_RuntimeScene.reset();
+
+    auto editorScene = m_EditorScene;
+    try
+    {
+        m_PlayModeCopyFuture = ThreadPool::Get().Enqueue([editorScene]() {
+            return Scene::Copy(editorScene);
+        });
+        m_IsPlayModeLoading = true;
+        CH_CORE_INFO("Editor: Copying scene for play mode on a worker thread.");
+    }
+    catch (const std::exception& e)
+    {
+        CH_CORE_ERROR("Editor: Failed to start play mode transition: {}", e.what());
+        CancelPlayModeTransition(false);
+    }
+}
+
+void EditorLayer::UpdatePlayModeTransition()
+{
+    if (!m_IsPlayModeLoading)
+    {
+        return;
+    }
+
+    if (!m_PlayModeSceneReady)
+    {
+        if (m_PlayModeCopyFuture.valid() &&
+            m_PlayModeCopyFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+        {
+            try
+            {
+                m_RuntimeScene = m_PlayModeCopyFuture.get();
+            }
+            catch (const std::exception& e)
+            {
+                CH_CORE_ERROR("Editor: Play mode scene copy failed: {}", e.what());
+                CancelPlayModeTransition(false);
+                return;
+            }
+            catch (...)
+            {
+                CH_CORE_ERROR("Editor: Play mode scene copy failed with an unknown exception.");
+                CancelPlayModeTransition(false);
+                return;
+            }
+
+            if (!m_RuntimeScene)
+            {
+                CH_CORE_ERROR("Editor: Play mode scene copy returned null.");
+                CancelPlayModeTransition(false);
+                return;
+            }
+
+            m_PlayModeSceneReady = true;
+        }
+    }
+
+    if (m_PlayModeSceneReady && m_RuntimeScene && !AssetManager::Get().HasBackgroundWork())
+    {
+        if (m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f)
+        {
+            m_RuntimeScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+        }
+
+        EditorContext::SetSceneState(SceneState::Play);
+        SceneScripting::OnRuntimeStart(m_RuntimeScene.get());
+        m_RuntimeScene->OnRuntimeStart();
+
+        m_IsPlayModeLoading = false;
+        m_PlayModeSceneReady = false;
+        m_PlayModeCopyFuture = {};
+
+        CH_CORE_INFO("Editor: Play Mode Started");
+    }
+}
+
+void EditorLayer::CancelPlayModeTransition(bool waitForCopy)
+{
+    if (waitForCopy && m_PlayModeCopyFuture.valid())
+    {
+        try
+        {
+            m_PlayModeCopyFuture.wait();
+            (void)m_PlayModeCopyFuture.get();
+        }
+        catch (...)
+        {
+        }
+    }
+
+    m_PlayModeStartRequested = false;
+    m_IsPlayModeLoading = false;
+    m_PlayModeSceneReady = false;
+    m_PlayModeCopyFuture = {};
+    m_RuntimeScene.reset();
+}
+
+void EditorLayer::StartSceneOpenTransition(const std::filesystem::path& path)
+{
+    if (path.empty())
+    {
+        return;
+    }
+
+    if (m_IsSceneOpenLoading)
+    {
+        return;
+    }
+
+    CancelPlayModeTransition(true);
+
+    std::filesystem::path scenePath = path;
+    if (scenePath.is_relative() && Project::GetActive())
+    {
+        scenePath = Project::GetAssetPath(scenePath);
+    }
+
+    m_PendingSceneOpenPath = scenePath;
+    m_SceneOpenSceneReady = false;
+
+    try
+    {
+        m_SceneOpenFuture = ThreadPool::Get().Enqueue([scenePath]() {
+            auto newScene = std::make_shared<Scene>();
+            SceneSerializer serializer(newScene.get());
+            if (!serializer.Deserialize(scenePath.string()))
+            {
+                return std::shared_ptr<Scene>{};
+            }
+
+            return newScene;
+        });
+
+        m_IsSceneOpenLoading = true;
+        CH_CORE_INFO("Editor: Loading scene '{}' on a worker thread.", scenePath.string());
+    }
+    catch (const std::exception& e)
+    {
+        CH_CORE_ERROR("Editor: Failed to start scene load: {}", e.what());
+        CancelSceneOpenTransition(false);
+    }
+}
+
+void EditorLayer::UpdateSceneOpenTransition()
+{
+    if (!m_IsSceneOpenLoading)
+    {
+        return;
+    }
+
+    if (!m_SceneOpenSceneReady)
+    {
+        if (m_SceneOpenFuture.valid() &&
+            m_SceneOpenFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+        {
+            try
+            {
+                m_EditorScene = m_SceneOpenFuture.get();
+            }
+            catch (const std::exception& e)
+            {
+                CH_CORE_ERROR("Editor: Scene load failed: {}", e.what());
+                CancelSceneOpenTransition(false);
+                return;
+            }
+            catch (...)
+            {
+                CH_CORE_ERROR("Editor: Scene load failed with an unknown exception.");
+                CancelSceneOpenTransition(false);
+                return;
+            }
+
+            if (!m_EditorScene)
+            {
+                CH_CORE_ERROR("Editor: Scene load returned null for '{}'.", m_PendingSceneOpenPath.string());
+                CancelSceneOpenTransition(false);
+                return;
+            }
+
+            m_SceneOpenSceneReady = true;
+        }
+    }
+
+    if (m_SceneOpenSceneReady && m_EditorScene && !AssetManager::Get().HasBackgroundWork())
+    {
+        if (Project::GetActive() && Project::GetActive()->GetEnvironment())
+        {
+            if (m_EditorScene->GetSettings().Environment->GetPath().empty() &&
+                m_EditorScene->GetSettings().Environment->GetSettings().Skybox.TexturePath.empty())
+            {
+                m_EditorScene->GetSettings().Environment = Project::GetActive()->GetEnvironment();
+            }
+        }
+
+        m_EditorScene->GetSettings().ScenePath = m_PendingSceneOpenPath.string();
+
+        if (m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f)
+        {
+            m_EditorScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+        }
+
+        m_IsSceneOpenLoading = false;
+        m_SceneOpenSceneReady = false;
+        m_SceneOpenFuture = {};
+
+        EditorContext::SetSelectedEntity({});
+        SceneOpenedEvent e(m_PendingSceneOpenPath.string());
+        EditorLayer::Get().SetLastScenePath(m_PendingSceneOpenPath.string());
+        Application::Get().OnEvent(e);
+
+        m_PendingSceneOpenPath.clear();
+
+        CH_CORE_INFO("Editor: Scene loaded and activated.");
+    }
+}
+
+void EditorLayer::CancelSceneOpenTransition(bool waitForCopy)
+{
+    if (waitForCopy && m_SceneOpenFuture.valid())
+    {
+        try
+        {
+            m_SceneOpenFuture.wait();
+            (void)m_SceneOpenFuture.get();
+        }
+        catch (...)
+        {
+        }
+    }
+
+    m_IsSceneOpenLoading = false;
+    m_SceneOpenSceneReady = false;
+    m_SceneOpenFuture = {};
+    m_PendingSceneOpenPath.clear();
+}
+
+void EditorLayer::DrawPlayModeLoadingOverlay()
+{
+    DrawLoadingOverlay("Preparing play mode", m_PlayModeSceneReady ? "Waiting for assets" : "Copying scene");
+}
+
+void EditorLayer::DrawSceneOpenLoadingOverlay()
+{
+    DrawLoadingOverlay("Loading scene", m_SceneOpenSceneReady ? "Waiting for assets" : "Deserializing scene");
 }
 
 } // namespace CHEngine

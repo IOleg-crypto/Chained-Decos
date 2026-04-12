@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <atomic>
 #include <cmath>
-#include <mutex>
 #include <fstream>
 #include <thread>
 #include <unordered_map>
@@ -16,8 +15,6 @@
 
 namespace CHEngine
 {
-    static std::mutex s_AssimpMutex;
-
     template <typename Fn>
     static void ParallelFor(uint32_t count, Fn&& fn)
     {
@@ -180,7 +177,6 @@ namespace CHEngine
             CH_CORE_INFO("AssimpImporter: Invoking ReadFile for '{0}'", path.string());
             try
             {
-                std::lock_guard<std::mutex> readLock(s_AssimpMutex);
                 scene = importer.ReadFile(path.string(), flags);
             }
             catch (const std::exception& e)
@@ -208,7 +204,6 @@ namespace CHEngine
                         file.read(buffer.data(), size);
                         try
                         {
-                            std::lock_guard<std::mutex> readLock(s_AssimpMutex);
                             scene = importer.ReadFileFromMemory(buffer.data(), static_cast<size_t>(size), flags,
                                                                 path.extension().string().c_str());
                         }

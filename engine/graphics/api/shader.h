@@ -6,6 +6,7 @@
 namespace CHEngine
 {
 
+// Abstract GPU shader interface used by backends and higher-level render code.
 class Shader
 {
 public:
@@ -25,6 +26,7 @@ public:
     virtual void SetMatrix(const std::string& name, const glm::mat4& value) = 0;
     virtual void SetMatrices(const std::string& name, const glm::mat4* values, int count) = 0;
 
+    // Builds a shader from vertex and fragment source.
     static std::shared_ptr<Shader> Create(const std::string& vsSource, const std::string& fsSource);
 };
 

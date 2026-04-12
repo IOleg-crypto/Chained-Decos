@@ -7,35 +7,20 @@
 
 namespace CHEngine
 {
-/**
- * @brief Base interface for asset loaders.
- * Each asset type (Texture, Model, etc.) implementation will provide its own loader.
- */
+// Base interface for asset loaders. Each asset type provides its own loader.
 class IAssetLoader
 {
 public:
     virtual ~IAssetLoader() = default;
 
-    /**
-     * @brief Creates a new, empty asset of the specific type.
-     * @return std::shared_ptr<Asset> The newly created asset.
-     */
+    // Creates a new, empty asset of the specific type.
     virtual std::shared_ptr<Asset> Create() = 0;
 
-    /**
-     * @brief Loads the asset data from the given path.
-     * For asynchronous loaders, this is called on a background thread.
-     * @param asset The asset to load into.
-     * @param resolvedPath The absolute/resolved path to the asset file.
-     * @param outError Optional failure reason written by the loader.
-     * @return true if loading was successful, false otherwise.
-     */
+    // Loads the asset data from the given path.
+    // For asynchronous loaders, this is called on a background thread.
     virtual bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError = nullptr) = 0;
 
-    /**
-     * @brief Indicates if this loader should perform its Load() operation on a background thread.
-     * @return true if asynchronous, false if synchronous.
-     */
+    // Indicates whether Load() should run on a background thread.
     virtual bool IsAsync() const { return false; }
 };
 } // namespace CHEngine

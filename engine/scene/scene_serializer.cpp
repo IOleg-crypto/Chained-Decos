@@ -12,6 +12,8 @@
 #include "scene.h"
 #include "yaml-cpp/yaml.h"
 #include <fstream>
+#include <set>
+#include <sstream>
 
 namespace CHEngine
 {
@@ -26,6 +28,282 @@ T ReadYamlValue(const YAML::Node& node, const char* key, const T& fallback)
     }
 
     return node[key].as<T>(fallback);
+}
+
+static void SerializeBackgroundSettings(YAML::Emitter& out, const SceneSettings& settings)
+{
+    out << YAML::Key << "Background" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "Mode" << YAML::Value << (int)settings.Mode;
+    out << YAML::Key << "Color" << YAML::Value << settings.BackgroundColor;
+    out << YAML::Key << "TexturePath" << YAML::Value << Project::GetRelativePath(settings.BackgroundTexturePath);
+    out << YAML::EndMap;
+}
+
+static void SerializeCanvasSettings(YAML::Emitter& out, const SceneSettings& settings)
+{
+    out << YAML::Key << "Canvas" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "ReferenceResolution" << YAML::Value << settings.Canvas.ReferenceResolution;
+    out << YAML::Key << "ScaleMode" << YAML::Value << (int)settings.Canvas.ScaleMode;
+    out << YAML::Key << "MatchWidthOrHeight" << YAML::Value << settings.Canvas.MatchWidthOrHeight;
+    out << YAML::EndMap;
+}
+
+static void SerializeEnvironmentSettings(YAML::Emitter& out, const SceneSettings& settings)
+{
+    if (!settings.Environment)
+    {
+        return;
+    }
+
+    out << YAML::Key << "EnvironmentPath" << YAML::Value << Project::GetRelativePath(settings.Environment->GetPath());
+
+    // Also serialize the current settings for quick preview/fallback.
+    const auto& envSettings = settings.Environment->GetSettings();
+
+    out << YAML::Key << "Lighting" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "Direction" << YAML::Value << envSettings.Lighting.Direction;
+    out << YAML::Key << "LightColor" << YAML::Value << envSettings.Lighting.LightColor;
+    out << YAML::Key << "Ambient" << YAML::Value << envSettings.Lighting.Ambient;
+    out << YAML::EndMap;
+
+    out << YAML::Key << "Skybox" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "TexturePath" << YAML::Value << Project::GetRelativePath(envSettings.Skybox.TexturePath);
+    out << YAML::Key << "Mode" << YAML::Value << envSettings.Skybox.Mode;
+    out << YAML::Key << "Exposure" << YAML::Value << envSettings.Skybox.Exposure;
+    out << YAML::Key << "Brightness" << YAML::Value << envSettings.Skybox.Brightness;
+    out << YAML::Key << "Contrast" << YAML::Value << envSettings.Skybox.Contrast;
+    out << YAML::EndMap;
+
+    out << YAML::Key << "Fog" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "Enabled" << YAML::Value << envSettings.Fog.Enabled;
+    out << YAML::Key << "Color" << YAML::Value << envSettings.Fog.FogColor;
+    out << YAML::Key << "Density" << YAML::Value << envSettings.Fog.Density;
+    out << YAML::Key << "Start" << YAML::Value << envSettings.Fog.Start;
+    out << YAML::Key << "End" << YAML::Value << envSettings.Fog.End;
+    out << YAML::EndMap;
+}
+
+static void SerializeDebugSettings(YAML::Emitter& out, const SceneSettings& settings)
+{
+    out << YAML::Key << "DebugSettings" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "DiagnosticMode" << YAML::Value << settings.DiagnosticMode;
+    out << YAML::Key << "DrawColliders" << YAML::Value << settings.DebugFlags.DrawColliders;
+    out << YAML::Key << "DrawHierarchy" << YAML::Value << settings.DebugFlags.DrawHierarchy;
+    out << YAML::Key << "DrawCollisionModelBox" << YAML::Value << settings.DebugFlags.DrawCollisionModelBox;
+    out << YAML::Key << "DrawGrid" << YAML::Value << settings.DebugFlags.DrawGrid;
+    out << YAML::Key << "DrawSelection" << YAML::Value << settings.DebugFlags.DrawSelection;
+    out << YAML::Key << "DrawLights" << YAML::Value << settings.DebugFlags.DrawLights;
+    out << YAML::Key << "DrawSpawnZones" << YAML::Value << settings.DebugFlags.DrawSpawnZones;
+    out << YAML::Key << "CollisionWireframeMode" << YAML::Value << settings.DebugFlags.SetCollisionWireframeMode;
+    out << YAML::EndMap;
+}
+
+static void DeserializeBackgroundSettings(const YAML::Node& data, SceneSettings& settings)
+{
+    if (!data["Background"])
+    {
+        return;
+    }
+
+    auto background = data["Background"];
+    settings.Mode = static_cast<BackgroundMode>(ReadYamlValue(background, "Mode", static_cast<int>(settings.Mode)));
+    settings.BackgroundColor = ReadYamlValue(background, "Color", settings.BackgroundColor);
+    if (background["TexturePath"] && background["TexturePath"].IsScalar())
+    {
+        settings.BackgroundTexturePath = ReadYamlValue(background, "TexturePath", settings.BackgroundTexturePath);
+    }
+    // Legacy AmbientIntensity in Background block is silently ignored.
+}
+
+static void DeserializeCanvasSettings(const YAML::Node& data, SceneSettings& settings)
+{
+    if (!data["Canvas"])
+    {
+        return;
+    }
+
+    auto canvas = data["Canvas"];
+    settings.Canvas.ReferenceResolution =
+        ReadYamlValue(canvas, "ReferenceResolution", settings.Canvas.ReferenceResolution);
+    settings.Canvas.ScaleMode = static_cast<CanvasScaleMode>(
+        ReadYamlValue(canvas, "ScaleMode", static_cast<int>(settings.Canvas.ScaleMode)));
+    settings.Canvas.MatchWidthOrHeight =
+        ReadYamlValue(canvas, "MatchWidthOrHeight", settings.Canvas.MatchWidthOrHeight);
+}
+
+static void DeserializeDebugSettings(const YAML::Node& data, SceneSettings& settings)
+{
+    if (!data["DebugSettings"])
+    {
+        return;
+    }
+
+    auto debugNode = data["DebugSettings"];
+    settings.DiagnosticMode = ReadYamlValue(debugNode, "DiagnosticMode", 0.0f);
+    settings.DebugFlags.DrawColliders = ReadYamlValue(debugNode, "DrawColliders", false);
+    settings.DebugFlags.DrawHierarchy = ReadYamlValue(debugNode, "DrawHierarchy", false);
+    settings.DebugFlags.DrawCollisionModelBox = ReadYamlValue(debugNode, "DrawCollisionModelBox", false);
+    settings.DebugFlags.DrawGrid = ReadYamlValue(debugNode, "DrawGrid", false);
+    settings.DebugFlags.DrawSelection = ReadYamlValue(debugNode, "DrawSelection", true);
+    settings.DebugFlags.DrawLights = ReadYamlValue(debugNode, "DrawLights", true);
+    settings.DebugFlags.DrawSpawnZones = ReadYamlValue(debugNode, "DrawSpawnZones", true);
+    settings.DebugFlags.SetCollisionWireframeMode = ReadYamlValue(debugNode, "CollisionWireframeMode", 0);
+}
+
+static void DeserializeEnvironmentSettings(const YAML::Node& data, SceneSettings& settings)
+{
+    if (data["EnvironmentPath"] && data["EnvironmentPath"].IsScalar())
+    {
+        std::string envPath = ReadYamlValue(data, "EnvironmentPath", std::string());
+        if (Project::GetActive())
+        {
+            settings.Environment = AssetManager::Get().Get<EnvironmentAsset>(envPath);
+        }
+    }
+
+    if (!data["Skybox"] && !data["Fog"] && !data["LightDirection"])
+    {
+        return;
+    }
+
+    if (!settings.Environment)
+    {
+        settings.Environment = std::make_shared<EnvironmentAsset>();
+    }
+
+    auto& env = settings.Environment;
+    auto& envSettings = env->GetSettings();
+
+    if (data["Lighting"])
+    {
+        auto lighting = data["Lighting"];
+        envSettings.Lighting.Direction = ReadYamlValue(lighting, "Direction", envSettings.Lighting.Direction);
+        envSettings.Lighting.LightColor = ReadYamlValue(lighting, "LightColor", envSettings.Lighting.LightColor);
+        envSettings.Lighting.Ambient = ReadYamlValue(lighting, "Ambient", envSettings.Lighting.Ambient);
+    }
+    else
+    {
+        // Backward compat: old flat field names.
+        envSettings.Lighting.Direction = ReadYamlValue(data, "LightDirection", envSettings.Lighting.Direction);
+        envSettings.Lighting.LightColor = ReadYamlValue(data, "LightColor", envSettings.Lighting.LightColor);
+        envSettings.Lighting.Ambient = ReadYamlValue(data, "AmbientIntensity", envSettings.Lighting.Ambient);
+    }
+
+    if (auto skybox = data["Skybox"])
+    {
+        if (skybox["TexturePath"] && skybox["TexturePath"].IsScalar())
+        {
+            envSettings.Skybox.TexturePath = ReadYamlValue(skybox, "TexturePath", envSettings.Skybox.TexturePath);
+        }
+        envSettings.Skybox.Mode = ReadYamlValue(skybox, "Mode", envSettings.Skybox.Mode);
+        envSettings.Skybox.Exposure = ReadYamlValue(skybox, "Exposure", envSettings.Skybox.Exposure);
+        envSettings.Skybox.Brightness = ReadYamlValue(skybox, "Brightness", envSettings.Skybox.Brightness);
+        envSettings.Skybox.Contrast = ReadYamlValue(skybox, "Contrast", envSettings.Skybox.Contrast);
+    }
+
+    if (auto fog = data["Fog"])
+    {
+        envSettings.Fog.Enabled = ReadYamlValue(fog, "Enabled", envSettings.Fog.Enabled);
+        envSettings.Fog.FogColor = ReadYamlValue(fog, "Color", envSettings.Fog.FogColor);
+        envSettings.Fog.Density = ReadYamlValue(fog, "Density", envSettings.Fog.Density);
+        envSettings.Fog.Start = ReadYamlValue(fog, "Start", envSettings.Fog.Start);
+        envSettings.Fog.End = ReadYamlValue(fog, "End", envSettings.Fog.End);
+    }
+}
+
+static void SerializeSceneSettings(YAML::Emitter& out, const SceneSettings& settings)
+{
+    out << YAML::Key << "Scene" << YAML::Value << settings.Name;
+    SerializeBackgroundSettings(out, settings);
+    SerializeCanvasSettings(out, settings);
+    SerializeEnvironmentSettings(out, settings);
+    SerializeDebugSettings(out, settings);
+}
+
+static bool DeserializeSceneSettings(const YAML::Node& data, SceneSettings& settings, std::string& lastError)
+{
+    if (!data["Scene"] || !data["Scene"].IsScalar())
+    {
+        lastError = "SceneSerializer: missing Scene root key";
+        return false;
+    }
+
+    settings.Name = ReadYamlValue(data, "Scene", settings.Name);
+    DeserializeBackgroundSettings(data, settings);
+    DeserializeCanvasSettings(data, settings);
+    DeserializeDebugSettings(data, settings);
+    DeserializeEnvironmentSettings(data, settings);
+    return true;
+}
+
+static void DeserializeEntities(Scene* scene, const YAML::Node& entities)
+{
+    std::vector<HierarchyTask> hierarchyTasks;
+    std::set<uint64_t> seenUUIDs;
+
+    for (auto entity : entities)
+    {
+        if (!entity["Entity"])
+        {
+            continue;
+        }
+
+        uint64_t uuid = ReadYamlValue(entity, "Entity", uint64_t{0});
+        if (uuid == 0)
+        {
+            uuid = UUID();
+        }
+        else if (seenUUIDs.count(uuid))
+        {
+            uuid = UUID();
+        }
+        seenUUIDs.insert(uuid);
+
+        std::string name;
+        auto tagComponent = entity["Tag"];
+        if (tagComponent && tagComponent["Tag"] && tagComponent["Tag"].IsScalar())
+        {
+            name = ReadYamlValue(tagComponent, "Tag", std::string());
+        }
+
+        Entity deserializedEntity = scene->CreateEntityWithUUID(uuid, name);
+
+        ComponentSerializer::Get().DeserializeAll(deserializedEntity, entity);
+
+        HierarchyTask task;
+        HierarchySerializer::DeserializeTask(deserializedEntity, entity, task);
+        if (task.entity)
+        {
+            hierarchyTasks.push_back(task);
+        }
+    }
+
+    for (auto& task : hierarchyTasks)
+    {
+        if (!task.entity.HasComponent<HierarchyComponent>())
+        {
+            task.entity.AddComponent<HierarchyComponent>();
+        }
+
+        auto& hc = task.entity.GetComponent<HierarchyComponent>();
+        if (task.parent != 0)
+        {
+            CHEngine::Entity parent = scene->GetEntityByUUID(task.parent);
+            if (parent)
+            {
+                hc.Parent = parent;
+            }
+        }
+
+        for (uint64_t childUUID : task.children)
+        {
+            CHEngine::Entity child = scene->GetEntityByUUID(childUUID);
+            if (child)
+            {
+                hc.Children.push_back(child);
+            }
+        }
+    }
 }
 } // namespace
 
@@ -180,206 +458,15 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
         return false;
     }
 
-    if (!data["Scene"] || !data["Scene"].IsScalar())
+    if (!DeserializeSceneSettings(data, m_Scene->GetSettings(), m_LastError))
     {
-        m_LastError = "SceneSerializer: missing Scene root key";
         return false;
-    }
-
-    m_Scene->GetSettings().Name = ReadYamlValue(data, "Scene", m_Scene->GetSettings().Name);
-
-    // Deserialize Background
-    if (data["Background"])
-    {
-        auto background = data["Background"];
-        m_Scene->GetSettings().Mode = static_cast<BackgroundMode>(
-            ReadYamlValue(background, "Mode", static_cast<int>(m_Scene->GetSettings().Mode)));
-        m_Scene->GetSettings().BackgroundColor =
-            ReadYamlValue(background, "Color", m_Scene->GetSettings().BackgroundColor);
-        if (background["TexturePath"] && background["TexturePath"].IsScalar())
-        {
-            m_Scene->GetSettings().BackgroundTexturePath =
-                ReadYamlValue(background, "TexturePath", m_Scene->GetSettings().BackgroundTexturePath);
-        }
-        // Legacy AmbientIntensity in Background block is silently ignored
-    }
-
-    // Deserialize Canvas
-    if (data["Canvas"])
-    {
-        auto canvas = data["Canvas"];
-        m_Scene->GetSettings().Canvas.ReferenceResolution =
-            ReadYamlValue(canvas, "ReferenceResolution", m_Scene->GetSettings().Canvas.ReferenceResolution);
-        m_Scene->GetSettings().Canvas.ScaleMode = static_cast<CanvasScaleMode>(
-            ReadYamlValue(canvas, "ScaleMode", static_cast<int>(m_Scene->GetSettings().Canvas.ScaleMode)));
-        m_Scene->GetSettings().Canvas.MatchWidthOrHeight =
-            ReadYamlValue(canvas, "MatchWidthOrHeight", m_Scene->GetSettings().Canvas.MatchWidthOrHeight);
-    }
-
-    // Deserialize Debug Settings
-    if (data["DebugSettings"])
-    {
-        auto debugNode = data["DebugSettings"];
-        m_Scene->GetSettings().DiagnosticMode = ReadYamlValue(debugNode, "DiagnosticMode", 0.0f);
-        m_Scene->GetSettings().DebugFlags.DrawColliders = ReadYamlValue(debugNode, "DrawColliders", false);
-        m_Scene->GetSettings().DebugFlags.DrawHierarchy = ReadYamlValue(debugNode, "DrawHierarchy", false);
-        m_Scene->GetSettings().DebugFlags.DrawCollisionModelBox =
-            ReadYamlValue(debugNode, "DrawCollisionModelBox", false);
-        m_Scene->GetSettings().DebugFlags.DrawGrid = ReadYamlValue(debugNode, "DrawGrid", false);
-        m_Scene->GetSettings().DebugFlags.DrawSelection = ReadYamlValue(debugNode, "DrawSelection", true);
-        m_Scene->GetSettings().DebugFlags.DrawLights = ReadYamlValue(debugNode, "DrawLights", true);
-        m_Scene->GetSettings().DebugFlags.DrawSpawnZones = ReadYamlValue(debugNode, "DrawSpawnZones", true);
-        m_Scene->GetSettings().DebugFlags.SetCollisionWireframeMode =
-            ReadYamlValue(debugNode, "CollisionWireframeMode", 0);
-    }
-
-    // Deserialize Environment
-    if (data["EnvironmentPath"] && data["EnvironmentPath"].IsScalar())
-    {
-        std::string envPath = ReadYamlValue(data, "EnvironmentPath", std::string());
-        if (auto project = Project::GetActive())
-        {
-            m_Scene->GetSettings().Environment = AssetManager::Get().Get<EnvironmentAsset>(envPath);
-        }
-    }
-
-    // Deserialize Environment Settings (Skybox + Fog + Lighting)
-    if (data["Skybox"] || data["Fog"] || data["LightDirection"])
-    {
-        // Ensure Environment exists
-        if (!m_Scene->GetSettings().Environment)
-        {
-            m_Scene->GetSettings().Environment = std::make_shared<EnvironmentAsset>();
-        }
-
-        auto env = m_Scene->GetSettings().Environment;
-        auto& settings = env->GetSettings();
-
-        // Lighting (new format with Lighting section, or backward-compat flat fields)
-        if (data["Lighting"])
-        {
-            auto lighting = data["Lighting"];
-            settings.Lighting.Direction = ReadYamlValue(lighting, "Direction", settings.Lighting.Direction);
-            settings.Lighting.LightColor = ReadYamlValue(lighting, "LightColor", settings.Lighting.LightColor);
-            settings.Lighting.Ambient = ReadYamlValue(lighting, "Ambient", settings.Lighting.Ambient);
-        }
-        else
-        {
-            // Backward compat: old flat field names
-            settings.Lighting.Direction = ReadYamlValue(data, "LightDirection", settings.Lighting.Direction);
-            settings.Lighting.LightColor = ReadYamlValue(data, "LightColor", settings.Lighting.LightColor);
-            settings.Lighting.Ambient = ReadYamlValue(data, "AmbientIntensity", settings.Lighting.Ambient);
-        }
-
-        // Skybox
-        if (auto skybox = data["Skybox"])
-        {
-            if (skybox["TexturePath"] && skybox["TexturePath"].IsScalar())
-            {
-                settings.Skybox.TexturePath = ReadYamlValue(skybox, "TexturePath", settings.Skybox.TexturePath);
-            }
-            settings.Skybox.Mode = ReadYamlValue(skybox, "Mode", settings.Skybox.Mode);
-            settings.Skybox.Exposure = ReadYamlValue(skybox, "Exposure", settings.Skybox.Exposure);
-            settings.Skybox.Brightness = ReadYamlValue(skybox, "Brightness", settings.Skybox.Brightness);
-            settings.Skybox.Contrast = ReadYamlValue(skybox, "Contrast", settings.Skybox.Contrast);
-        }
-
-        // Fog
-        if (auto fog = data["Fog"])
-        {
-            settings.Fog.Enabled = ReadYamlValue(fog, "Enabled", settings.Fog.Enabled);
-            settings.Fog.FogColor = ReadYamlValue(fog, "Color", settings.Fog.FogColor);
-            settings.Fog.Density = ReadYamlValue(fog, "Density", settings.Fog.Density);
-            settings.Fog.Start = ReadYamlValue(fog, "Start", settings.Fog.Start);
-            settings.Fog.End = ReadYamlValue(fog, "End", settings.Fog.End);
-        }
     }
 
     auto entities = data["Entities"];
     if (entities && entities.IsSequence())
     {
-        std::vector<HierarchyTask> hierarchyTasks;
-        std::set<uint64_t> seenUUIDs;
-
-        for (auto entity : entities)
-        {
-            if (!entity["Entity"])
-            {
-                continue;
-            }
-
-            uint64_t uuid = ReadYamlValue(entity, "Entity", uint64_t{0});
-            if (uuid == 0)
-            {
-                uuid = UUID();
-            }
-            else if (seenUUIDs.count(uuid))
-            {
-                uuid = UUID();
-            }
-            seenUUIDs.insert(uuid);
-
-            std::string name;
-            auto tagComponent = entity["Tag"];
-            if (tagComponent && tagComponent["Tag"] && tagComponent["Tag"].IsScalar())
-            {
-                name = ReadYamlValue(tagComponent, "Tag", std::string());
-            }
-
-            Entity deserializedEntity = m_Scene->CreateEntityWithUUID(uuid, name);
-
-            // Use ComponentSerializer registry for all components
-            ComponentSerializer::Get().DeserializeAll(deserializedEntity, entity);
-
-            // Hierarchy task
-            HierarchyTask task;
-            HierarchySerializer::DeserializeTask(deserializedEntity, entity, task);
-            if (task.entity)
-            {
-                hierarchyTasks.push_back(task);
-            }
-        }
-
-        // Phase 3: Finalize Hierarchy
-        for (auto& task : hierarchyTasks)
-        {
-            if (!task.entity.HasComponent<HierarchyComponent>())
-            {
-                task.entity.AddComponent<HierarchyComponent>();
-            }
-            auto& hc = task.entity.GetComponent<HierarchyComponent>();
-            if (task.parent != 0)
-            {
-                CHEngine::Entity parent = m_Scene->GetEntityByUUID(task.parent);
-                if (parent)
-                {
-                    hc.Parent = parent;
-                }
-            }
-
-            for (uint64_t childUUID : task.children)
-            {
-                CHEngine::Entity child = m_Scene->GetEntityByUUID(childUUID);
-                if (child)
-                {
-                    hc.Children.push_back(child);
-                }
-            }
-        }
-
-        // Phase 4: Preload all model assets
-        auto modelView = m_Scene->GetRegistry().view<ModelComponent>();
-        auto& assetMgr = AssetManager::Get();
-        for (auto entity : modelView)
-        {
-            auto& modelComp = m_Scene->GetRegistry().get<ModelComponent>(entity);
-            if (!modelComp.ModelPath.empty())
-            {
-                // Trigger asset loading
-                assetMgr.Get<ModelAsset>(modelComp.ModelPath);
-            }
-        }
-
+        DeserializeEntities(m_Scene, entities);
     }
 
     return true;

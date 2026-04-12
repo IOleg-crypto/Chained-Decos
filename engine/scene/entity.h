@@ -15,6 +15,8 @@
 namespace CHEngine
 {
 
+// Lightweight handle over an entt registry. Entity objects do not own the registry;
+// validity depends on the backing registry still being alive and the handle still existing.
 struct EntityUUIDMap
 {
     std::unordered_map<UUID, entt::entity> Map;
@@ -24,75 +26,80 @@ class Entity
 {
 public:
     Entity() = default;
+    // Wraps an existing registry shared handle.
     Entity(entt::entity handle, std::shared_ptr<entt::registry> registry)
         : m_EntityHandle(handle),
           m_Registry(registry)
     {
     }
+    // Wraps an existing registry reference without creating ownership.
     Entity(entt::entity handle, entt::registry& registry);
+    // Wraps an existing registry pointer without creating ownership.
     Entity(entt::entity handle, entt::registry* registry);
     Entity(const Entity& other) = default;
 
-    /** Adds a component if it is not already present and returns the inserted component. */
+    // Adds a component if it is not already present and returns the inserted component.
     template <typename T, typename... Args> T& AddOrReplaceComponent(Args&&... args)
     {
         return m_Registry->emplace_or_replace<T>(m_EntityHandle, std::forward<Args>(args)...);
     }
 
-    /** Adds a component and asserts that the entity does not already own it. */
+    // Adds a component and asserts that the entity does not already own it.
     template <typename T, typename... Args> T& AddComponent(Args&&... args)
     {
         CH_CORE_ASSERT(!HasComponent<T>(), "Entity already has component!");
         return m_Registry->emplace<T>(m_EntityHandle, std::forward<Args>(args)...);
     }
 
-    /** Returns the requested component and asserts if it is missing. */
+    // Returns the requested component and asserts if it is missing.
     template <typename T> T& GetComponent()
     {
         CH_CORE_ASSERT(HasComponent<T>(), "Entity does not have component!");
         return m_Registry->get<T>(m_EntityHandle);
     }
 
-    /** Returns true when the entity currently owns the requested component. */
+    // Returns true when the entity currently owns the requested component.
     template <typename T> bool HasComponent()
     {
         return m_Registry && m_Registry->all_of<T>(m_EntityHandle);
     }
 
-    /** Removes the requested component and asserts if it is missing. */
+    // Removes the requested component and asserts if it is missing.
     template <typename T> void RemoveComponent()
     {
         CH_CORE_ASSERT(HasComponent<T>(), "Entity does not have component!");
         m_Registry->remove<T>(m_EntityHandle);
     }
 
-    /** Applies a patch operation to the component stored on this entity. */
+    // Applies a patch operation to the component stored on this entity.
     template <typename T, typename... Func> void Patch(Func&&... func)
     {
         m_Registry->patch<T>(m_EntityHandle, std::forward<Func>(func)...);
     }
 
+    // Fast null check. Use IsValid() to confirm the handle still exists in the registry.
     operator bool() const
     {
         return m_EntityHandle != entt::null && m_Registry != nullptr;
     }
+    // Returns false if the registry is missing or the entity handle has been destroyed.
     bool IsValid() const;
 
     // Entity Management (Factory & Queries)
-    /** Creates a child or sibling entity with the requested name in the current scene. */
+    // Creates a child or sibling entity with the requested name in the current scene.
     Entity Create(const std::string& name);
-    /** Creates an entity with a stable UUID for serialization and duplication. */
+    // Creates an entity with a stable UUID for serialization and duplication.
     Entity CreateWithUUID(UUID uuid, const std::string& name);
-    /** Creates a UI entity using the UI-specific component setup. */
+    // Creates a UI entity using the base control component plus type-specific UI components.
     Entity CreateUI(const std::string& type, const std::string& name);
-    /** Copies an existing entity and its components into a new entity. */
+    // Copies an existing entity and its components into a new entity, then restores a unique identity.
     Entity Copy(entt::entity copyEntity, entt::entity parentEntity = entt::null);
-    /** Destroys the entity and removes it from the registry. */
+    // Destroys the entity and any descendants attached through the hierarchy.
     void Destroy();
 
-    /** Finds the first entity with a matching TagComponent. */
+    // Finds the first entity with a matching TagComponent.
     Entity FindByTag(const std::string& tag);
-    /** Looks up an entity by UUID in the scene registry. */
+    // Looks up an entity by UUID in the scene-local registry mapping.
     Entity GetByUUID(UUID uuid);
 
     operator entt::entity() const

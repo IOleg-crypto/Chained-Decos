@@ -8,6 +8,7 @@
 
 namespace CHEngine
 {
+// Base class for engine layers with lifecycle callbacks and an enable flag.
 class Layer
 {
 public:
@@ -24,10 +25,12 @@ public:
     {
     }
 
+    // Returns whether the layer is currently enabled.
     bool IsEnabled() const
     {
         return m_Enabled;
     }
+    // Enables or disables the layer without destroying it.
     void SetEnabled(bool enabled)
     {
         m_Enabled = enabled;

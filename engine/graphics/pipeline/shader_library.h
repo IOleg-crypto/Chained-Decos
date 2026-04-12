@@ -9,40 +9,42 @@
 
 namespace CHEngine
 {
-/// <summary>Named shader cache.</summary>
+// Named shader cache with load-on-demand and hot-reload support.
 class ShaderLibrary
 {
 public:
     ShaderLibrary() = default;
     ~ShaderLibrary() = default;
 
-    /// <summary>Adds a shader under a custom name.</summary>
+    // Adds a shader under a unique library name; asserts if the name already exists.
     void Add(const std::string& name, const std::shared_ptr<ShaderAsset>& shader);
-    /// <summary>Adds a shader using its own name.</summary>
+    // Adds a shader using the source file stem as the library key.
     void Add(const std::shared_ptr<ShaderAsset>& shader);
-    /// <summary>Loads a shader from disk.</summary>
+    // Loads a shader from disk and stores it under the source file stem.
     void Load(const std::string& path);
-    /// <summary>Loads a shader and stores it under a custom name.</summary>
+    // Loads a shader from disk and stores it under the provided name, replacing any existing entry.
     void Load(const std::string& name, const std::string& path);
+    // Returns the cached shader if present; otherwise loads it from disk and caches it under the provided name.
+    std::shared_ptr<ShaderAsset> LoadOrGet(const std::string& name, const std::string& path);
 
-    /// <summary>Returns the shader for a name, if present.</summary>
+    // Returns the shader for a name; asserts if the name is missing.
     std::shared_ptr<ShaderAsset> Get(const std::string& name);
-    /// <summary>Returns the compiled shader for a name, if present.</summary>
+    // Returns the compiled GPU shader owned by the asset, or null if the asset has not produced one.
     std::shared_ptr<Shader> GetShader(const std::string& name);
-    /// <summary>Returns the shader for an asset ID, if present.</summary>
+    // Returns the shader asset matching a renderer ID by scanning the cache.
     std::shared_ptr<ShaderAsset> GetById(uint32_t id) const;
-    /// <summary>Checks whether a shader name exists.</summary>
+    // Checks whether a shader name exists in the cache.
     bool Exists(const std::string& name) const;
 
-    /// <summary>Returns the backing shader map.</summary>
+    // Exposes the cache for read-only iteration.
     const std::unordered_map<std::string, std::shared_ptr<ShaderAsset>>& GetShaders() const
     {
         return m_Shaders;
     }
-    /// <summary>Returns all stored shader names.</summary>
+    // Returns a snapshot of the current shader names.
     std::vector<std::string> GetNames() const;
 
-    /// <summary>Reloads every stored shader.</summary>
+    // Reloads every cached shader that still has a valid source path.
     void ReloadAll();
 
 private:
