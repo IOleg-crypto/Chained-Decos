@@ -2,6 +2,7 @@
 #define CH_ASSET_MANAGER_H
 
 #include "engine/core/assets/asset_loader.h"
+#include <deque>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -10,6 +11,8 @@
 
 namespace CHEngine
 {
+// Central asset cache and loader coordinator. Resolves project-relative paths,
+// deduplicates loads, and finalizes async loads on the main thread.
 class AssetManager
 {
 public:
@@ -18,13 +21,15 @@ public:
 
     static AssetManager& Get();
 
-    // Registry for asset loaders
+    // Registers the loader for a specific asset type and transfers ownership.
     void RegisterLoader(AssetType type, std::unique_ptr<IAssetLoader> loader);
 
+    // Resolves a path through the project root and caches the resolved value.
     [[nodiscard]] std::string ResolvePath(const std::string& path) const;
+    // Resolves a path to an already-loaded asset handle, or 0 when missing.
     AssetHandle ResolveToHandle(const std::string& path) const;
 
-    // Get by path — loads on first access, returns from cache after that
+    // Get by path — returns a cached asset when available, otherwise loads it.
     template <typename T> std::shared_ptr<T> Get(const std::string& path)
     {
         AssetHandle handle = ResolveToHandle(path);
@@ -45,7 +50,7 @@ public:
         return std::static_pointer_cast<T>(GetAsset(handle, T::GetStaticType()));
     }
 
-    // Explicit load — creates, loads and caches the asset, returns nullptr on failure
+    // Explicit load — creates, loads and caches the asset, returning nullptr on failure.
     template <typename T> std::shared_ptr<T> Load(const std::string& path)
     {
         return std::static_pointer_cast<T>(LoadAsset(path, T::GetStaticType()));
@@ -55,7 +60,7 @@ public:
     [[nodiscard]] size_t GetLoadingAssetCount() const;
     [[nodiscard]] bool HasBackgroundWork() const;
 
-    // Update тепер не знає про типи!
+    // Finalizes completed async loads and calls OnLoaded() within a small per-frame budget.
     void Update();
 
 private:
@@ -72,16 +77,16 @@ private:
     std::shared_ptr<Asset> GetAsset(AssetHandle handle, AssetType type);
     std::shared_ptr<Asset> LoadAsset(const std::string& path, AssetType type);
 
-    // Тільки одна пласка карта для кешу
+    // Asset cache.
     std::unordered_map<AssetHandle, std::shared_ptr<Asset>> m_AssetCache;
     std::unordered_map<AssetType, std::unique_ptr<IAssetLoader>> m_Loaders;
 
-    // Карта для швидкого пошуку handle за шляхом
+    // Path-to-handle mapping for quick lookup and a path resolution cache.
     mutable std::unordered_map<std::string, AssetHandle> m_PathToHandle;
     mutable std::unordered_map<std::string, std::string> m_PathCache;
 
-    // Async loading support
-    std::vector<std::shared_ptr<Asset>> m_PendingAssets;
+    // Async loading support.
+    std::deque<std::shared_ptr<Asset>> m_PendingAssets;
     mutable std::mutex m_PendingMutex;
     mutable std::recursive_mutex m_AssetLock;
 };

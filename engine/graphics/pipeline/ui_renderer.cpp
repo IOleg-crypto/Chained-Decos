@@ -48,9 +48,6 @@ void UIRenderer::Shutdown()
     }
 }
 
-UIRenderer::UIRenderer()  {}
-UIRenderer::~UIRenderer() {}
-
 void UIRenderer::LoadProjectFonts()
 {
     m_FontRegistry.Clear();

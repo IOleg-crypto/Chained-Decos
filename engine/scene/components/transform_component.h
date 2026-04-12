@@ -9,7 +9,7 @@
 
 namespace CHEngine
 {
-/// <summary>Local transform state and cached world matrix.</summary>
+// Local transform state and cached world matrix.
 struct TransformComponent
 {
     glm::vec3 Translation = {0.0f, 0.0f, 0.0f};
@@ -24,21 +24,21 @@ struct TransformComponent
     {
     }
 
-    /// <summary>Sets translation and marks the transform dirty.</summary>
+    // Sets translation and marks the transform dirty.
     void SetTranslation(const glm::vec3& translation)
     {
         Translation = translation;
         IsDirty = true;
     }
 
-    /// <summary>Sets scale and marks the transform dirty.</summary>
+    // Sets scale and marks the transform dirty.
     void SetScale(const glm::vec3& scale)
     {
         Scale = scale;
         IsDirty = true;
     }
 
-    /// <summary>Sets Euler rotation and refreshes the cached quaternion.</summary>
+    // Sets Euler rotation and refreshes the cached quaternion.
     void SetRotation(const glm::vec3& eulerAngles)
     {
         Rotation = eulerAngles;
@@ -46,7 +46,7 @@ struct TransformComponent
         IsDirty = true;
     }
 
-    /// <summary>Sets the quaternion and refreshes Euler angles.</summary>
+    // Sets the quaternion and refreshes Euler angles.
     void SetRotationQuat(const glm::quat& rotationQuat)
     {
         RotationQuat = rotationQuat;
@@ -54,13 +54,13 @@ struct TransformComponent
         IsDirty = true;
     }
 
-    /// <summary>Returns the current local transform matrix.</summary>
+    // Returns the current local transform matrix.
     glm::mat4 GetTransform() const
     {
         return GetTransform(Translation, RotationQuat, Scale);
     }
 
-    /// <summary>Returns a transform matrix from explicit translation, rotation, and scale.</summary>
+    // Returns a transform matrix from explicit translation, rotation, and scale.
     static glm::mat4 GetTransform(const glm::vec3& translation, const glm::quat& rotation, const glm::vec3& scale)
     {
         return glm::translate(glm::mat4(1.0f), translation) * 
@@ -68,7 +68,7 @@ struct TransformComponent
                glm::scale(glm::mat4(1.0f), scale);
     }
 
-    /// <summary>Returns an interpolated transform.</summary>
+    // Returns an interpolated transform.
     glm::mat4 GetInterpolatedTransform(float alpha) const
     {
         glm::vec3 interpolatedTranslation = glm::mix(PrevTranslation, Translation, alpha);

@@ -15,6 +15,7 @@
 
 namespace CHEngine
 {
+// Runs the game/runtime experience, including scene loading and the scene renderer.
 class RuntimeLayer : public Layer
 {
 public:
@@ -28,7 +29,9 @@ public:
     virtual void OnImGuiRender() override;
     virtual void OnEvent(Event& e) override;
 
+    // Loads a scene by project-relative or absolute path.
     void LoadScene(const std::string& path);
+    // Loads a scene by index from the active project configuration.
     void LoadScene(int index);
 
 private:

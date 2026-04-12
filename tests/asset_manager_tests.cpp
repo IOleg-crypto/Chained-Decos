@@ -4,8 +4,10 @@
 #include "gtest/gtest.h"
 
 #include <atomic>
+#include <chrono>
 #include <filesystem>
 #include <string>
+#include <thread>
 
 using namespace CHEngine;
 
@@ -37,8 +39,9 @@ public:
 class CountingLoader final : public IAssetLoader
 {
 public:
-    explicit CountingLoader(bool shouldSucceed)
+    explicit CountingLoader(bool shouldSucceed, bool asyncLoad = false)
         : m_ShouldSucceed(shouldSucceed)
+        , m_AsyncLoad(asyncLoad)
     {
     }
 
@@ -65,11 +68,17 @@ public:
         return m_ShouldSucceed;
     }
 
+    bool IsAsync() const override
+    {
+        return m_AsyncLoad;
+    }
+
     int CreateCalls = 0;
     int LoadCalls = 0;
 
 private:
     bool m_ShouldSucceed = true;
+    bool m_AsyncLoad = false;
 };
 
 std::string MakeUniqueAssetPath(const char* suffix)
@@ -90,9 +99,9 @@ protected:
         Project::SetEngineRoot(project->GetConfig().ProjectDirectory);
     }
 
-    static CountingLoader* RegisterDummyLoader(bool shouldSucceed)
+    static CountingLoader* RegisterDummyLoader(bool shouldSucceed, bool asyncLoad = false)
     {
-        auto loader = std::make_unique<CountingLoader>(shouldSucceed);
+        auto loader = std::make_unique<CountingLoader>(shouldSucceed, asyncLoad);
         CountingLoader* rawLoader = loader.get();
         AssetManager::Get().RegisterLoader(DummyAsset::GetStaticType(), std::move(loader));
         return rawLoader;
@@ -164,4 +173,27 @@ TEST_F(AssetManagerTest, FailedLoadMarksAssetAsFailed)
     EXPECT_EQ(loader->LoadCalls, 1);
     EXPECT_EQ(asset->GetState(), AssetState::Failed);
     EXPECT_EQ(asset->OnLoadedCount, 0);
+}
+
+TEST_F(AssetManagerTest, AsyncLoadQueuesFinalizeAndCompletesOnUpdate)
+{
+    CountingLoader* loader = RegisterDummyLoader(true, true);
+    const std::string path = MakeUniqueAssetPath("async");
+
+    auto asset = AssetManager::Get().Load<DummyAsset>(path);
+    ASSERT_NE(asset, nullptr);
+
+    for (int attempt = 0; attempt < 200 && AssetManager::Get().GetPendingFinalizeCount() == 0; ++attempt)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+
+    ASSERT_GT(AssetManager::Get().GetPendingFinalizeCount(), 0u);
+
+    AssetManager::Get().Update();
+
+    EXPECT_EQ(loader->LoadCalls, 1);
+    EXPECT_EQ(asset->GetState(), AssetState::Ready);
+    EXPECT_EQ(asset->OnLoadedCount, 1);
+    EXPECT_EQ(AssetManager::Get().GetPendingFinalizeCount(), 0u);
 }

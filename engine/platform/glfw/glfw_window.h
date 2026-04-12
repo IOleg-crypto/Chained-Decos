@@ -6,8 +6,7 @@
 
 struct GLFWwindow;
 
-// Init GLFW and create a window, also initializes OpenGL context and Glad. 
-//Handles window events and input callbacks, and manages VSync and fullscreen toggling.
+// GLFW-backed window implementation that owns the native window, callbacks, and display settings.
 namespace CHEngine
 {
 class GlfwWindow : public Window

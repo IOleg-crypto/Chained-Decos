@@ -254,15 +254,11 @@ void RuntimeLayer::OnRender(Timestep ts)
         }
 
         SceneRenderOptions options;
-        if (auto project = Project::GetActive())
-        {
-            options.TargetFPS = project->GetConfig().Animation.TargetFPS;
-        }
         options.ShowEditorIcons = false;
 
         m_HDRFramebuffer->Bind();
         Renderer::Get().Clear(bgColor);
-        m_SceneRenderer->RenderScene(m_Scene.get(), camera.value(), nearClip, farClip, ts, options);
+        m_SceneRenderer->RenderScene(m_Scene.get(), camera.value(), nearClip, farClip, options);
         m_HDRFramebuffer->Unbind();
 
         Renderer::Get().SetViewport(0, 0, (int)width, (int)height);

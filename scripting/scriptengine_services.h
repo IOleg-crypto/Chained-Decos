@@ -13,7 +13,7 @@ namespace CHEngine
 
 class Scene;
 
-/// <summary>Runtime scene handoff and reload state.</summary>
+// Runtime scene handoff and reload state.
 class ScriptRuntimeSession
 {
 public:
@@ -51,6 +51,7 @@ private:
     std::string m_PendingScenePath;
 };
 
+// Owns the CoreCLR host and the current app/core assembly handles.
 class ScriptAssemblyHost
 {
 public:
@@ -93,6 +94,7 @@ private:
     bool m_IsInitialized = false;
 };
 
+// Caches discovered script types and resolves short names to full names.
 class ScriptTypeRegistry
 {
 public:

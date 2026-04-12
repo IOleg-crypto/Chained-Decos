@@ -13,11 +13,6 @@ ThreadPool::ThreadPool()
 
     // Leave headroom for the main thread and OS scheduling so asset work does not saturate the machine.
     size_t workerCount = (threads > 1) ? (threads - 1) : 1;
-    constexpr size_t kMaxWorkerThreads = 8;
-    if (workerCount > kMaxWorkerThreads)
-    {
-        workerCount = kMaxWorkerThreads;
-    }
 
     CH_CORE_INFO("ThreadPool: Initializing with {} worker threads", workerCount);
 

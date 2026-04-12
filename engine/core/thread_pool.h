@@ -11,16 +11,11 @@
 
 namespace CHEngine
 {
-/**
- * @brief A modern C++20 Thread Pool for parallel task execution.
- * Uses std::jthread for automatic thread management and a thread-safe singleton pattern.
- */
+// Modern C++20 thread pool for parallel task execution.
 class ThreadPool
 {
 public:
-    /**
-     * @brief Access the global thread pool instance.
-     */
+    // Accesses the global thread pool instance.
     static ThreadPool& Get()
     {
         static ThreadPool instance;
@@ -31,10 +26,7 @@ public:
     ThreadPool(const ThreadPool&) = delete;
     ThreadPool& operator=(const ThreadPool&) = delete;
 
-    /**
-     * @brief Enqueues a task and returns a std::future for the result.
-     * Useful for tasks where you need the return value later (e.g. Asset Loading).
-     */
+    // Enqueues a task and returns a future for the result.
     template <class F, class... Args>
     auto Enqueue(F&& f, Args&&... args) -> std::future<typename std::invoke_result<F, Args...>::type>
     {
@@ -55,9 +47,7 @@ public:
         return res;
     }
 
-    /**
-     * @brief Simpler version for "fire and forget" tasks.
-     */
+    // Queues a fire-and-forget task.
     void QueueTask(std::function<void()> task)
     {
         {

@@ -21,6 +21,7 @@ class ImGuiLayer;
 class Layer;
 class ScriptEngine;
 
+// Command-line arguments passed into application startup.
 struct ApplicationCommandLineArgs
 {
     int Count = 0;
@@ -33,6 +34,7 @@ struct ApplicationCommandLineArgs
     }
 };
 
+// Construction parameters and persistent app settings.
 struct ApplicationSpecification
 {
     std::string Name = "Chained Application";
@@ -44,17 +46,19 @@ struct ApplicationSpecification
     bool Headless = false;
 };
 
-// The main entry point and controller for the engine life cycle.
+// Owns the window, layer stack, and main loop for the process.
 class Application
 {
 public:
     Application(const ApplicationSpecification& specification);
     virtual ~Application();
 
+    // Requests the main loop to exit.
     void Close()
     {
         m_Running = false;
     }
+    // Runs the frame loop until Close() is called.
     void Run();
 
     void PushLayer(std::unique_ptr<Layer> layer);
@@ -70,6 +74,7 @@ public:
         return *s_Instance;
     }
 
+    // Returns the directory containing the executable.
     static std::filesystem::path GetExecutableDirectory();
 
     Window& GetWindow();
@@ -86,6 +91,7 @@ public:
 
 
 
+    // Schedules work to run on the main thread at a safe point in the frame.
     void SubmitToMainThread(const std::function<void()>& function);
 
 private:
