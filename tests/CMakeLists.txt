@@ -23,6 +23,10 @@ target_include_directories(EngineTests PRIVATE
     ${CMAKE_SOURCE_DIR}/editor
 )
 
+# Use centralized engine resources
+chained_add_engine_resources_copy()
+add_dependencies(EngineTests EngineResources)
+
 if(DEFINED ENV{CI} OR CH_CI)
     target_compile_definitions(EngineTests PRIVATE CH_CI)
 endif()

@@ -28,6 +28,7 @@ public:
 
     static void Init();
     static void Shutdown();
+    static bool IsInitialized();
     static UIRenderer& Get();
 
     // Draws a UI canvas for the given scene.

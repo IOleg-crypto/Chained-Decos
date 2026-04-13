@@ -74,9 +74,10 @@ Application::Application(const ApplicationSpecification& specification)
 #ifdef PROJECT_ROOT_DIR
         Project::SetEngineRoot(PROJECT_ROOT_DIR);
 #endif
+        Renderer::Init();
+        UIRenderer::Init();
     }
-    Renderer::Init();
-    UIRenderer::Init();
+    
     Physics::Init();
     ComponentSerializer::Init();
     ScriptEngine::Init();
@@ -109,8 +110,12 @@ Application::~Application()
     ScriptEngine::Shutdown();
     ComponentSerializer::Shutdown();
     Physics::Shutdown();
-    UIRenderer::Shutdown();
-    Renderer::Shutdown();
+    
+    if (UIRenderer::IsInitialized())
+        UIRenderer::Shutdown();
+    
+    if (Renderer::IsInitialized())
+        Renderer::Shutdown();
 
     m_Window.reset();
 
