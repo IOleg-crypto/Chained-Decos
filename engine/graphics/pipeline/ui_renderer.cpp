@@ -20,6 +20,11 @@ UIRenderer& UIRenderer::Get()
     return *s_Instance;
 }
 
+bool UIRenderer::IsInitialized()
+{
+    return s_Instance != nullptr && s_Instance->m_Initialized;
+}
+
 void UIRenderer::Init()
 {
     if (!s_Instance)
