@@ -61,7 +61,7 @@ void EditorGUI::DrawMenuBar(EditorPanels& panels)
             cc.Primary = true;
             camera.GetComponent<TransformComponent>().Translation = {0, 5, 10};
 
-            EditorLayer::Get().SetScene(newScene);
+            EditorLayer::Get().GetSceneManager().SetScene(newScene);
         }
         if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open Project", "Ctrl+O"))
         {
@@ -69,12 +69,12 @@ void EditorGUI::DrawMenuBar(EditorPanels& panels)
             auto result = Dialogs::OpenFile(filters);
             if (result)
             {
-                EditorLayer::Get().OpenScene(*result);
+                EditorLayer::Get().GetSceneManager().OpenScene(*result);
             }
         }
         if (ImGui::MenuItem(ICON_FA_FLOPPY_DISK " Save Project"))
         {
-            EditorLayer::Get().SaveScene();
+            EditorLayer::Get().GetSceneManager().SaveScene();
         }
         if (ImGui::MenuItem(ICON_FA_XMARK " Close Project"))
         {
@@ -83,19 +83,19 @@ void EditorGUI::DrawMenuBar(EditorPanels& panels)
         ImGui::Separator();
         if (ImGui::MenuItem(ICON_FA_FILE_CODE " New Scene", "Ctrl+N"))
         {
-            EditorLayer::Get().NewScene();
+            EditorLayer::Get().GetSceneManager().NewScene();
         }
         if (ImGui::MenuItem(ICON_FA_FLOPPY_DISK " Save Scene", "Ctrl+S"))
         {
-            EditorLayer::Get().SaveScene();
+            EditorLayer::Get().GetSceneManager().SaveScene();
         }
         if (ImGui::MenuItem(ICON_FA_FILE_EXPORT " Save Scene As...", "Ctrl+Shift+S"))
         {
-            EditorLayer::Get().SaveSceneAs();
+            EditorLayer::Get().GetSceneManager().SaveSceneAs();
         }
         if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Load Scene", "Ctrl+L"))
         {
-            EditorLayer::Get().OpenScene();
+            EditorLayer::Get().GetSceneManager().OpenScene();
         }
         ImGui::Separator();
         if (ImGui::MenuItem(ICON_FA_POWER_OFF " Exit"))

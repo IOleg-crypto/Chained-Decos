@@ -12,11 +12,8 @@ public:
     virtual void OnImGuiRender(bool readOnly = false) override;
     virtual void OnEvent(Event& e) override;
     virtual void SetContext(const std::shared_ptr<Scene>& context) override;
-
-    void SetSelectedMeshIndex(int index)
-    {
-        m_SelectedMeshIndex = index;
-    }
+public:
+    void SetSelectedMeshIndex(int index);
 
 private:
     void DrawComponents(Entity entity, bool readOnly);

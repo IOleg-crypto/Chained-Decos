@@ -69,17 +69,13 @@ struct ManagedScriptInstance
         {
             ClassName = other.ClassName;
             Fields = other.Fields;
-            Instance = nullptr;
-            NeedsStart = true;
-            OnCreate = nullptr;
-            OnStart = nullptr;
-            OnUpdate = nullptr;
-            OnDestroy = nullptr;
-            OnGUI = nullptr;
-            OnCollisionEnter = nullptr;
+            ResetRuntimeState();
         }
         return *this;
     }
+
+    void Destroy();
+    void ResetRuntimeState();
 
     CH_REFLECT_BEGIN(ManagedScriptInstance)
         props.Property("ClassName", ClassName, PropertyMeta(PropertyMeta::WidgetHint::Enum));

@@ -3,6 +3,7 @@
 
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/scene/scene.h"
+#include <string>
 
 namespace CHEngine
 {
@@ -21,6 +22,8 @@ struct EditorState
     bool NeedsLayoutReset = false;
     int LastHitMeshIndex = -1;
     DebugRenderFlags DebugRenderFlags;
+    bool IsLoading = false;
+    std::string LoadingStatus = "";
 };
 
 // EditorContext stores global editor state such as the selected entity,

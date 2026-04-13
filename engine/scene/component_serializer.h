@@ -3,6 +3,7 @@
 #include "engine/scene/scene.h"
 #include "engine/scene/serialization_utils.h"
 #include "engine/scene/hierarchy_serializer.h"
+#include "entt/entt.hpp"
 #include <functional>
 #include <unordered_map>
 #include <vector>

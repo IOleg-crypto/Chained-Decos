@@ -1,16 +1,14 @@
 #include "inspector_panel.h"
+#include "IconsFontAwesome6.h"
 #include "editor_gui.h"
 #include "engine/core/assets/asset_manager.h"
 #include "engine/graphics/assets/model_asset.h"
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene_events.h"
-#include "engine/scene/scene_events.h"
-#include "IconsFontAwesome6.h"
 
 #include "imgui.h"
 #include "property_editor.h"
-
 
 namespace CHEngine
 {
@@ -28,16 +26,15 @@ void InspectorPanel::OnImGuiRender(bool readOnly)
 
     ImGui::Begin(m_Name.c_str(), &m_IsOpen);
 
-    if (m_SelectedEntity && (!m_SelectedEntity.IsValid() || m_SelectedEntity.GetRegistry().ctx().get<Scene*>() != m_Context.get()))
+    if (m_SelectedEntity && !m_SelectedEntity.IsValid())
     {
         m_SelectedEntity = {};
     }
 
     if (m_SelectedEntity && m_SelectedEntity.IsValid())
     {
-        ImGui::BeginDisabled(readOnly);
+
         DrawComponents(m_SelectedEntity, readOnly);
-        ImGui::EndDisabled();
     }
     else
     {
@@ -51,7 +48,14 @@ void InspectorPanel::OnEvent(Event& e)
 {
     EventDispatcher dispatcher(e);
     dispatcher.Dispatch<EntitySelectedEvent>([this](EntitySelectedEvent& ev) {
-        m_SelectedEntity = Entity(ev.GetEntity(), &ev.GetScene()->GetRegistry());
+        if (m_Context && ev.GetEntity() != entt::null)
+        {
+            m_SelectedEntity = Entity(ev.GetEntity(), m_Context->GetRegistry());
+        }
+        else
+        {
+            m_SelectedEntity = {};
+        }
         m_SelectedMeshIndex = ev.GetMeshIndex();
         return false;
     });
@@ -59,8 +63,11 @@ void InspectorPanel::OnEvent(Event& e)
 
 void InspectorPanel::SetContext(const std::shared_ptr<Scene>& context)
 {
+    if (m_Context.get() != context.get())
+    {
+        m_SelectedEntity = {};
+    }
     Panel::SetContext(context);
-    m_SelectedEntity = {};
 }
 
 void InspectorPanel::DrawComponents(Entity entity, bool readOnly)
@@ -79,5 +86,9 @@ void InspectorPanel::DrawComponents(Entity entity, bool readOnly)
     PropertyEditor::DrawEntityProperties(entity);
 
     ImGui::PopID();
+}
+void InspectorPanel::SetSelectedMeshIndex(int index)
+{
+    m_SelectedMeshIndex = index;
 }
 } // namespace CHEngine

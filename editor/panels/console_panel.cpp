@@ -1,7 +1,6 @@
 #include "console_panel.h"
 #include "imgui.h"
 
-
 namespace CHEngine
 {
 ConsolePanel* ConsolePanel::s_Instance = nullptr;
@@ -32,26 +31,29 @@ ConsolePanel::~ConsolePanel()
 
 void ConsolePanel::OnImGuiRender(bool readOnly)
 {
-    if (!m_IsOpen) return;
+    if (!m_IsOpen)
+    {
+        return;
+    }
 
     ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10));
-    
+
     if (ImGui::Begin(m_Name.c_str(), &m_IsOpen))
     {
         // Control Panel
         ImGui::BeginDisabled(readOnly);
-        if (ImGui::Button("Clear")) Clear();
-        ImGui::SameLine();
-        
-        ImGui::SetNextItemWidth(150);
-        if (ImGui::InputTextWithHint("##filter", "Filter...", m_FilterBuffer, sizeof(m_FilterBuffer)))
+        if (ImGui::Button("Clear"))
         {
-            // Rebuild visible indices on filter change
+            Clear();
         }
         ImGui::SameLine();
 
-        const char* levels[] = {"TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "FATAL", "NONE"};
+        ImGui::SetNextItemWidth(150);
+        ImGui::InputTextWithHint("##filter", "Filter...", m_FilterBuffer, sizeof(m_FilterBuffer));
+        ImGui::SameLine();
+
+        const char* levels[] = {"TRACE", "INFO", "WARNING", "ERROR", "FATAL", "NONE"};
         ImGui::SetNextItemWidth(120);
         ImGui::Combo("Level", &m_LogLevel, levels, IM_ARRAYSIZE(levels));
 
@@ -69,43 +71,61 @@ void ConsolePanel::OnImGuiRender(bool readOnly)
             for (int i = 0; i < (int)m_Messages.size(); i++)
             {
                 if (m_LogLevel != (int)ConsoleLogLevel::None && (int)m_Messages[i].level < m_LogLevel)
+                {
                     continue;
+                }
 
                 if (!filterStr.empty())
                 {
                     std::string msgLower = m_Messages[i].message;
                     std::transform(msgLower.begin(), msgLower.end(), msgLower.begin(), ::tolower);
                     if (msgLower.find(filterStr) == std::string::npos)
+                    {
                         continue;
+                    }
                 }
                 m_VisibleIndices.push_back(i);
             }
         }
 
         const float footer_height_to_reserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
-        ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footer_height_to_reserve), false, ImGuiWindowFlags_HorizontalScrollbar);
+        ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footer_height_to_reserve), false,
+                          ImGuiWindowFlags_HorizontalScrollbar);
 
         {
             std::lock_guard<std::mutex> lock(m_LogMutex);
-            
+
             ImGuiListClipper clipper;
             clipper.Begin((int)m_VisibleIndices.size());
-            
+
             while (clipper.Step())
             {
                 for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
                 {
                     int msgIdx = m_VisibleIndices[i];
                     const auto& msg = m_Messages[msgIdx];
-                    
+
                     ImVec4 color;
-                    switch (msg.level) {
-                        case ConsoleLogLevel::Trace: color = { 0.7f, 0.7f, 0.7f, 1.0f }; break;
-                        case ConsoleLogLevel::Debug: color = { 0.2f, 0.7f, 0.9f, 1.0f }; break;
-                        case ConsoleLogLevel::Warn:  color = { 1.0f, 0.8f, 0.0f, 1.0f }; break;
-                        case ConsoleLogLevel::Error: color = { 1.0f, 0.2f, 0.2f, 1.0f }; break;
-                        case ConsoleLogLevel::Fatal: color = { 1.0f, 0.0f, 1.0f, 1.0f }; break;
-                        default:                     color = { 1.0f, 1.0f, 1.0f, 1.0f }; break;
+                    switch (msg.level)
+                    {
+                    case ConsoleLogLevel::Trace:
+                        color = {0.7f, 0.7f, 0.7f, 1.0f};
+                        break;
+                    case ConsoleLogLevel::Info:
+                        color = {1.0f, 1.0f, 1.0f, 1.0f};
+                        break;
+                    case ConsoleLogLevel::Warn:
+                        color = {1.0f, 0.8f, 0.0f, 1.0f};
+                        break;
+                    case ConsoleLogLevel::Error:
+                        color = {1.0f, 0.2f, 0.2f, 1.0f};
+                        break;
+                    case ConsoleLogLevel::Fatal:
+                        color = {1.0f, 0.0f, 1.0f, 1.0f};
+                        break;
+                    default:
+                        color = {1.0f, 1.0f, 1.0f, 1.0f};
+                        break;
                     }
 
                     // Timestamp
@@ -122,7 +142,9 @@ void ConsolePanel::OnImGuiRender(bool readOnly)
         }
 
         if (m_ScrollToBottom || (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
+        {
             ImGui::SetScrollHereY(1.0f);
+        }
         m_ScrollToBottom = false;
 
         ImGui::EndChild();
@@ -133,14 +155,16 @@ void ConsolePanel::OnImGuiRender(bool readOnly)
 void ConsolePanel::Log(const std::string& message, ConsoleLogLevel level)
 {
     std::lock_guard<std::mutex> lock(m_LogMutex);
-    
+
     // Форматуємо час (наприклад, "14:20:05")
-    std::string timeStr = GetCurrentTimestamp(); 
-    
-    m_Messages.push_back({ level, message, timeStr });
-    
+    std::string timeStr = GetCurrentTimestamp();
+
+    m_Messages.push_back({level, message, timeStr});
+
     if (m_Messages.size() > MAX_MESSAGES)
+    {
         m_Messages.pop_front();
+    }
 
     m_ScrollToBottom = true; // Сигнал для OnImGuiRender
 }
@@ -163,7 +187,7 @@ void ConsolePanel::AddLog(const char* message, int level)
         std::lock_guard<std::mutex> lock(s_BufferMutex);
         if (s_Buffer.size() < MAX_MESSAGES)
         {
-            s_Buffer.push_back({ (ConsoleLogLevel)level, message, GetCurrentTimestamp() });
+            s_Buffer.push_back({(ConsoleLogLevel)level, message, GetCurrentTimestamp()});
         }
     }
 }
@@ -171,7 +195,7 @@ void ConsolePanel::AddLog(const char* message, int level)
 std::string ConsolePanel::GetCurrentTimestamp()
 {
     using namespace std::chrono;
-    
+
     auto now = system_clock::now();
     auto in_time_t = system_clock::to_time_t(now);
 
@@ -180,7 +204,10 @@ std::string ConsolePanel::GetCurrentTimestamp()
     localtime_s(&time_info, &in_time_t);
 #elif defined(_WIN32)
     std::tm* tm_ptr = std::localtime(&in_time_t);
-    if (tm_ptr) time_info = *tm_ptr;
+    if (tm_ptr)
+    {
+        time_info = *tm_ptr;
+    }
 #else
     localtime_r(&in_time_t, &time_info);
 #endif

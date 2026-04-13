@@ -246,6 +246,12 @@ Notes:
 - If you switch presets or major toolchains, do a clean configure for that build directory.
 - `CH_ACTIVE_GAME` defaults to `chaineddecos` in CMakePresets.json. Set it to `testproject` when you want the alternate game.
 - Optional compiler cache support is built in through ccache/sccache integration in CI and CMake options.
+- If you use Clang on Windows and see Intellisense errors in VS Code, ensure that `.vscode/settings.json` points to the correct build directory for `clangd`:
+  ```json
+  "clangd.arguments": [
+      "--compile-commands-dir=${workspaceFolder}/build/windows-ninja"
+  ]
+  ```
 
 ## Run
 

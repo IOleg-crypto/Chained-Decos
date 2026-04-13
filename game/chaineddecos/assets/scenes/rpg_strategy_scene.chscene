@@ -9,7 +9,7 @@ Canvas:
   MatchWidthOrHeight: 0.5
 EnvironmentPath: environments/new_environment.chenv
 Lighting:
-  Direction: [1, 1, -1]
+  Direction: [0, 0, 0]
   LightColor: [255, 255, 255, 255]
   Ambient: 0.0850000009
 Skybox:
@@ -28,7 +28,7 @@ DebugSettings:
   DiagnosticMode: 0
   DrawColliders: false
   DrawHierarchy: false
-  DrawCollisionModelBox: true
+  DrawCollisionModelBox: false
   DrawGrid: false
   DrawSelection: true
   DrawLights: false
@@ -74,7 +74,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-9.29998016, -130.776825, -0.718267083]
-      ModelHandle: 17418628604232194923
+      ModelHandle: 2965420684362114304
       ModelPath: models/bridge.glb
       AutoCalculate: true
     AnimationComponent:
@@ -386,7 +386,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-0.782608986, 0.0434782989, -0.950311005]
-      ModelHandle: 16296137827503083959
+      ModelHandle: 13762180378948665553
       ModelPath: models/minigames/hub_for_minigames_server.glb
       AutoCalculate: true
   - Entity: 6516797172325941388
@@ -607,7 +607,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-14.1946049, -9.53674316e-07, -8.94524384]
-      ModelHandle: 15335047635154897375
+      ModelHandle: 3207355501576278196
       ModelPath: models/stairs.glb
       AutoCalculate: true
   - Entity: 1295158128682646344
@@ -1581,7 +1581,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-43.8236694, -46.1545258, -25.5901108]
-      ModelHandle: 11311466240225057535
+      ModelHandle: 10037885052031041373
       ModelPath: models/arena.glb
       AutoCalculate: true
   - Entity: 10653066213482940164
@@ -2065,7 +2065,7 @@ Entities:
       IsKinematic: false
       IsGrounded: true
     AudioComponent:
-      SoundHandle: 6361161369448033680
+      SoundHandle: 7667671013812574779
       SoundPath: audio/storegraphic-soft-wind-477404.mp3
       Volume: 1
       Pitch: 1
@@ -2234,7 +2234,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-14.1946049, -9.53674316e-07, -8.94524384]
-      ModelHandle: 15335047635154897375
+      ModelHandle: 3207355501576278196
       ModelPath: models/stairs.glb
       AutoCalculate: true
     Hierarchy:
@@ -2245,8 +2245,8 @@ Entities:
     TagComponent:
       Tag: Camera
     TransformComponent:
-      Translation: [502.203094, 331.197571, 761.203308]
-      Rotation: [-16.9746609, 5800.44434, 0]
+      Translation: [-709.615479, 774.327759, 233.955933]
+      Rotation: [-25.577589, 4365.39648, 0]
       Scale: [1, 1, 1]
     CameraComponent:
       Primary: true
@@ -2384,7 +2384,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-33.2911491, -0.000321388245, -6.43264723]
-      ModelHandle: 727815639750871468
+      ModelHandle: 2798063656810795769
       ModelPath: models/container_ship/scene.gltf
       AutoCalculate: true
     AnimationComponent:
@@ -2397,9 +2397,9 @@ Entities:
     TagComponent:
       Tag: Empty Entity
     TransformComponent:
-      Translation: [-225.932068, -51.0058975, -88.6938171]
-      Rotation: [0.0617935993, 0.0883244723, -0.0563300997]
-      Scale: [46.0502167, 47.2512703, 53.7656708]
+      Translation: [-216.192169, -6.67572021e-06, 0]
+      Rotation: [0.0617936067, 0.0883244723, -0.0563300997]
+      Scale: [46.0502167, 47.251339, 53.7656708]
     ModelComponent:
       ModelHandle: 0
       ModelPath: models/pilot/animated_civilian_helicopter/scene.gltf
@@ -2603,7 +2603,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-9.29998016, -130.776825, -0.718267083]
-      ModelHandle: 17418628604232194923
+      ModelHandle: 2965420684362114304
       ModelPath: models/bridge.glb
       AutoCalculate: true
     AnimationComponent:
@@ -2616,9 +2616,9 @@ Entities:
     TagComponent:
       Tag: anim_mode#4
     TransformComponent:
-      Translation: [421.463959, 97.7958374, 838.863159]
-      Rotation: [-1.98755085, -0.213920265, -0.0104560899]
-      Scale: [0.999972582, 1.00002992, 1.00002062]
+      Translation: [421.805664, 97.7958374, 838.863159]
+      Rotation: [-1.98333037, -0.564842701, -0.0120932925]
+      Scale: [0.999979079, 1.00004041, 1.00003195]
     ModelComponent:
       ModelHandle: 0
       ModelPath: models/bridge.glb
@@ -2651,7 +2651,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-9.29998016, -130.776825, -0.718267083]
-      ModelHandle: 17418628604232194923
+      ModelHandle: 2965420684362114304
       ModelPath: models/bridge.glb
       AutoCalculate: true
     AnimationComponent:
@@ -2699,7 +2699,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-9.29998016, -130.776825, -0.718267083]
-      ModelHandle: 17418628604232194923
+      ModelHandle: 2965420684362114304
       ModelPath: models/bridge.glb
       AutoCalculate: true
     AnimationComponent:
@@ -2771,7 +2771,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-4.6624608, -3.7252903e-08, -11.7852259]
-      ModelHandle: 4665198610359317552
+      ModelHandle: 2505536636863911948
       ModelPath: models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb.glb
       AutoCalculate: true
   - Entity: 3962667947486927982
@@ -2813,7 +2813,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-9.29998016, -130.776825, -0.718267083]
-      ModelHandle: 17418628604232194923
+      ModelHandle: 2965420684362114304
       ModelPath: models/bridge.glb
       AutoCalculate: true
     AnimationComponent:
@@ -3048,7 +3048,7 @@ Entities:
     TagComponent:
       Tag: Static Collider
     TransformComponent:
-      Translation: [-235.089142, -54.4374542, 67.6377563]
+      Translation: [-235.089142, -62.7547264, 67.6377563]
       Rotation: [0, -0, 0]
       Scale: [1, 1, 1]
     ModelComponent:
@@ -3155,7 +3155,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [16.1599998, -29.3299999, -9.84000015]
-      ModelHandle: 16230404886679272117
+      ModelHandle: 1655555126040200487
       ModelPath: models/stone_floor.glb
       AutoCalculate: true
     ManagedScriptComponent:

@@ -74,6 +74,18 @@ private:
 
     // Viewport Camera State
     uint64_t m_ViewportCameraEntityUUID = 0; // 0 = Editor Camera
+
+private:
+    void HandleResize(const ImVec2& viewportSize, class Scene* activeScene);
+    void RenderViewportScene(class Scene* activeScene, const ImVec2& viewportSize);
+    void HandleDragDrop(class Scene* activeScene);
+    void RenderOverlays(class Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos);
+    void HandlePicking(class Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos);
+    void RenderToolbar(class Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos);
+    void RenderLaunchHUD(const ImVec2& viewportSize, const ImVec2& viewportScreenPos);
+
+private:
+    void ClearSceneBackground(Scene* scene);
 };
 
 } // namespace CHEngine

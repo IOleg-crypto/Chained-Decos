@@ -379,7 +379,6 @@ struct ImageControl
     bool IsDown = false;
 
     CH_REFLECT_BEGIN(ImageControl)
-        props.Handle("Texture Handle", TextureHandle);
         props.File("Texture Path", TexturePath, "png,jpg,tga");
         props.Property("Tint Color", TintColor);
         props.Property("Border Color", BorderColor);
@@ -399,7 +398,6 @@ struct ImageButtonControl
     UIStyle Style;
 
     CH_REFLECT_BEGIN(ImageButtonControl)
-        props.Handle("Texture Handle", TextureHandle);
         props.File("Texture Path", TexturePath, "png,jpg,tga");
         props.Property("Label", Label);
         props.Property("Tint Color", TintColor);

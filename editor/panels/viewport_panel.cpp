@@ -27,7 +27,7 @@
 
 namespace CHEngine
 {
-static void ClearSceneBackground(Scene* scene)
+void ViewportPanel::ClearSceneBackground(Scene* scene)
 {
     auto mode = scene->GetSettings().Mode;
     if (mode == BackgroundMode::Color)
@@ -162,49 +162,19 @@ ViewportPanel::~ViewportPanel()
 
 void ViewportPanel::OnImGuiRender(bool readOnly)
 {
-    if (!m_IsOpen)
-    {
-        return;
-    }
+    if (!m_IsOpen) return;
 
-    // Remove window padding to let the image fill the entire window area
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
     ImGui::Begin(m_Name.c_str(), &m_IsOpen);
 
-    // --- 1. PREPARE SCENE RENDER ---
-    // Get available content region dimensions (excluding window title/decorations)
     ImVec2 viewportSize = ImGui::GetContentRegionAvail();
-    ImVec2 viewportScreenPos = ImGui::GetCursorScreenPos(); // Global top-left corner position
+    ImVec2 viewportScreenPos = ImGui::GetCursorScreenPos();
 
-    // --- 1. PREPARE SCENE RENDER ---
-    auto selectedEntity = EditorLayer::Get().GetSelectedEntity();
-    bool isUISelected = selectedEntity && selectedEntity.HasComponent<ControlComponent>();
-
-    // Disable grid when editing UI
-    auto& debugFlags = EditorLayer::Get().GetDebugRenderFlags();
-    bool oldGrid = debugFlags.DrawGrid;
-    if (isUISelected)
-    {
-        debugFlags.DrawGrid = false;
-    }
-
-    // Framebuffer management
     auto activeScene = EditorLayer::Get().GetActiveScene();
-    if (viewportSize.x != m_ViewportFramebuffer->GetSpecification().Width ||
-        viewportSize.y != m_ViewportFramebuffer->GetSpecification().Height)
-    {
-        if (viewportSize.x > 0 && viewportSize.y > 0)
-        {
-            m_ViewportFramebuffer->Resize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
-            m_HDRFramebuffer->Resize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
+    auto activeScene_raw = activeScene.get();
 
-            EditorLayer::Get().SetViewportSize(viewportSize);
-            if (activeScene)
-            {
-                activeScene->OnViewportResize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
-            }
-        }
-    }
+    // 1. Initial State & Resizing
+    HandleResize(viewportSize, activeScene_raw);
 
     if (!activeScene || viewportSize.x <= 0 || viewportSize.y <= 0)
     {
@@ -213,11 +183,112 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         return;
     }
 
-    m_HDRFramebuffer->Bind();
-    auto activeScene_raw = activeScene.get();
-    ClearSceneBackground(activeScene_raw);
+    m_Focused = ImGui::IsWindowFocused();
+    m_Hovered = ImGui::IsWindowHovered();
 
-    auto activeCameraOpt = activeScene_raw->GetActiveCamera();
+    // 2. Rendering
+    RenderViewportScene(activeScene_raw, viewportSize);
+
+    // 3. UI Image & Interaction
+    uint32_t finalTextureID = m_ViewportFramebuffer->GetColorAttachmentRendererID();
+    ImGui::Image((ImTextureID)(uintptr_t)finalTextureID, viewportSize, {0, 1}, {1, 0});
+
+    // 4. Drag & Drop
+    HandleDragDrop(activeScene_raw);
+
+    // 5. Overlays (Gizmos, UI, Highlights)
+    RenderOverlays(activeScene_raw, viewportSize, viewportScreenPos);
+
+    // 6. Picking
+    HandlePicking(activeScene_raw, viewportSize, viewportScreenPos);
+
+    // 7. Toolbars
+    RenderToolbar(activeScene_raw, viewportSize, viewportScreenPos);
+    RenderLaunchHUD(viewportSize, viewportScreenPos);
+
+    ImGui::End();
+    ImGui::PopStyleVar();
+
+    // Shortcuts & Keyboard Input
+    if (ImGui::IsWindowFocused() || ImGui::IsWindowHovered())
+    {
+        for (const auto& btn : s_GizmoBtns)
+        {
+            if (CHEngine::Input::IsKeyPressed(btn.key))    
+            {
+                m_CurrentTool = btn.type;
+            }
+        }
+
+        if (Input::IsKeyDown(Key::LeftControl) && Input::IsKeyPressed(Key::D))
+        {
+            Entity selected = EditorLayer::Get().GetSelectedEntity();
+            if (selected){
+                EditorLayer::GetCommandHistory().PushCommand(std::make_unique<DuplicateEntityCommand>(selected));
+            }
+        }
+    }
+}
+
+void ViewportPanel::OnUpdate(Timestep ts)
+{
+    // Only update editor camera in Edit mode
+    if (EditorLayer::Get().GetSceneState() == SceneState::Edit)
+    {
+        auto activeScene = EditorLayer::Get().GetActiveScene();
+        // Use m_Focused/m_Hovered that were set in the PREVIOUS frame's ImGuiRender.
+        // Also allow update if right mouse is held (user clicked into viewport from outside).
+        bool mouseInViewport = m_Hovered || m_Focused || Input::IsMouseButtonDown(Mouse::ButtonRight);
+        if (activeScene && mouseInViewport)
+        {
+            Entity primaryCamera = activeScene->GetPrimaryCameraEntity();
+            m_CameraController->OnUpdate(primaryCamera, ts);
+        }
+    }
+}
+
+void ViewportPanel::OnEvent(Event& e)
+{
+    EventDispatcher dispatcher(e);
+    dispatcher.Dispatch<ViewportFocusEntityEvent>([this](ViewportFocusEntityEvent& ev) {
+        Entity entity = ev.GetEntity();
+        if (entity && entity.HasComponent<TransformComponent>())
+        {
+            auto& transform = entity.GetComponent<TransformComponent>();
+            m_CameraController->GetCamera().SetFocalPoint(*reinterpret_cast<const glm::vec3*>(&transform.Translation));
+            return true;
+        }
+        return false;
+    });
+}
+
+void ViewportPanel::HandleResize(const ImVec2& viewportSize, Scene* activeScene)
+{
+    if (viewportSize.x != (float)m_ViewportFramebuffer->GetSpecification().Width ||
+        viewportSize.y != (float)m_ViewportFramebuffer->GetSpecification().Height)
+    {
+        if (viewportSize.x > 0 && viewportSize.y > 0)
+        {
+            m_ViewportFramebuffer->Resize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
+            m_HDRFramebuffer->Resize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
+
+            EditorLayer::Get().SetViewportSize(viewportSize);
+            m_CameraController->GetCamera().SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
+
+            if (activeScene)
+            {
+                EditorLayer::Get().GetSceneManager().OnViewportResize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
+            }
+        }
+    }
+}
+
+void ViewportPanel::RenderViewportScene(Scene* activeScene, const ImVec2& viewportSize)
+{
+    m_HDRFramebuffer->Bind();
+    ClearSceneBackground(activeScene);
+
+    auto activeCameraOpt = activeScene->GetActiveCamera();
     bool cameraFound = activeCameraOpt.has_value();
     CHEngine::Camera3D camera;
     float nearClip = 0.01f;
@@ -240,11 +311,11 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
     nearClip = edCam.GetPerspectiveNearClip();
     farClip = edCam.GetPerspectiveFarClip();
 
-    // If an entity camera is active (usually during Play mode), override it
-    if (cameraFound)
+    // If an entity camera is active during Play mode, override the viewport perspective
+    if (cameraFound && EditorLayer::Get().GetSceneState() == SceneState::Play)
     {
         camera = activeCameraOpt.value();
-        Entity primaryCam = activeScene_raw->GetPrimaryCameraEntity();
+        Entity primaryCam = activeScene->GetPrimaryCameraEntity();
         if (primaryCam && primaryCam.HasComponent<CameraComponent>())
         {
             auto& cameraComp = primaryCam.GetComponent<CameraComponent>().Camera;
@@ -254,28 +325,26 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
     }
 
     SceneRenderOptions options;
-    options.DrawGrid = EditorLayer::Get().GetDebugRenderFlags().DrawGrid;
-    options.ShowDebugColliders = EditorLayer::Get().GetDebugRenderFlags().DrawColliders;
-    options.ShowDebugCollisionModelBox = EditorLayer::Get().GetDebugRenderFlags().DrawCollisionModelBox;
-    options.ShowDebugSpawnZones = EditorLayer::Get().GetDebugRenderFlags().DrawSpawnZones;
+    auto& currentDebugFlags = activeScene->GetSettings().DebugFlags;
+    options.DrawGrid = currentDebugFlags.DrawGrid;
+    options.ShowDebugColliders = currentDebugFlags.DrawColliders;
+    options.ShowDebugCollisionModelBox = currentDebugFlags.DrawCollisionModelBox;
+    options.ShowDebugSpawnZones = currentDebugFlags.DrawSpawnZones;
     options.ShowEditorIcons = true;
 
-    m_SceneRenderer->RenderScene(activeScene.get(), camera, nearClip, farClip, options);
+    m_SceneRenderer->RenderScene(activeScene, camera, nearClip, farClip, options);
     m_HDRFramebuffer->Unbind();
 
-    // --- 2. APPLY POST-PROCESSING ---
+    // Application of Post-processing
     m_ViewportFramebuffer->Bind();
     RenderCommand::Clear({0, 0, 0, 255}); // Clear viewport buffer
     Renderer::Get().ApplyPostProcessing(m_HDRFramebuffer->GetColorAttachmentRendererID(),
                                         m_HDRFramebuffer->GetDepthAttachmentRendererID(), camera);
     m_ViewportFramebuffer->Unbind();
+}
 
-    uint32_t finalTextureID = m_ViewportFramebuffer->GetColorAttachmentRendererID();
-    ImGui::Image((ImTextureID)(uintptr_t)finalTextureID, viewportSize, {0, 1}, {1, 0});
-
-    bool isViewportHovered = ImGui::IsItemHovered();
-
-    // Drag & Drop Target
+void ViewportPanel::HandleDragDrop(Scene* activeScene)
+{
     if (ImGui::BeginDragDropTarget())
     {
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
@@ -287,11 +356,11 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
 
             if (ext == ".chscene")
             {
-                EditorLayer::Get().OpenScene(filepath);
+                EditorLayer::Get().GetSceneManager().OpenScene(filepath);
             }
             else if (ext == ".chprefab")
             {
-                PrefabSerializer::Deserialize(activeScene.get(), filepath.string());
+                PrefabSerializer::Deserialize(activeScene, filepath.string());
             }
             else if (ext == ".gltf" || ext == ".glb" || ext == ".obj")
             {
@@ -302,41 +371,55 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
                 modelcomp.ModelPath = Project::GetRelativePath(filepath);
 
                 // Select the new entity
-                EntitySelectedEvent e((entt::entity)entity, activeScene.get());
+                EntitySelectedEvent e((entt::entity)entity, activeScene);
                 EditorLayer::Get().OnEvent(e);
             }
         }
         ImGui::EndDragDropTarget();
     }
+}
 
-    // --- 2. UI OVERLAY & SELECTION ---
+void ViewportPanel::RenderOverlays(Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos)
+{
+    auto selectedEntity = EditorLayer::Get().GetSelectedEntity();
+    bool isUISelected = selectedEntity && selectedEntity.HasComponent<ControlComponent>();
+    auto activeCameraOpt = activeScene->GetActiveCamera();
+    CHEngine::Camera3D camera;
+    if (activeCameraOpt.has_value())
+    {
+        camera = activeCameraOpt.value();
+    }
+    else
+    {
+        // Fallback to editor camera for gizmos even if no scene camera
+        auto& edCam = m_CameraController->GetCamera();
+        glm::vec3 pos = edCam.CalculatePosition();
+        camera.Position = {pos.x, pos.y, pos.z};
+        glm::vec3 fp = edCam.GetFocalPoint();
+        camera.Target = {fp.x, fp.y, fp.z};
+        glm::vec3 up = edCam.GetUpDirection();
+        camera.Up = {up.x, up.y, up.z};
+        camera.Fovy = glm::degrees(edCam.GetPerspectiveVerticalFOV());
+        camera.Projection = 0;
+    }
+
     ImGui::SetCursorScreenPos(viewportScreenPos);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-
-    bool isUIChildHovered = false;
-    bool isGizmoActive = false;
-    bool isGizmoHovered = false;
 
     if (ImGui::BeginChild("##SceneUI", viewportSize, false,
                           ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar |
                               ImGuiWindowFlags_NoScrollWithMouse))
     {
         // 1. Gizmo handling (inside child window for input priority)
-        isGizmoActive = m_Gizmo.RenderAndHandle(!isUISelected ? m_CurrentTool : GizmoType::NONE, viewportScreenPos,
-                                                viewportSize, camera);
-        isGizmoHovered = m_Gizmo.IsHovered();
+        m_Gizmo.RenderAndHandle(!isUISelected ? m_CurrentTool : GizmoType::NONE, viewportScreenPos,
+                                viewportSize, camera);
 
         // 2. Game UI Overlay
-        // Use child window's actual cursor position rather than the external viewportScreenPos
-        // to ensure UI elements are positioned relative to this child window's origin,
-        // matching the runtime behavior.
         ImVec2 canvasOrigin = ImGui::GetCursorScreenPos();
-        UIRenderer::Get().DrawCanvas(activeScene.get(), canvasOrigin, viewportSize,
+        UIRenderer::Get().DrawCanvas(activeScene, canvasOrigin, viewportSize,
                                      EditorLayer::Get().GetSceneState() == SceneState::Edit);
-        isUIChildHovered =
-            ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByPopup);
 
-        // 3. Selection Highlight (FIX for play mode)
+        // 3. Selection Highlight
         if (isUISelected && selectedEntity && EditorLayer::Get().GetSceneState() == SceneState::Edit)
         {
             auto rect = UIRenderer::Get().GetEntityRect(selectedEntity, viewportSize, viewportScreenPos);
@@ -358,42 +441,43 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
     }
     ImGui::EndChild();
     ImGui::PopStyleVar();
+}
 
-    // --- 3. OBJECT PICKING ---
-    bool isHovered = isUIChildHovered;
+void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos)
+{
+    // Object picking logic
+    ImGuiContext& g = *GImGui;
+    bool isUIChildHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByPopup);
     bool isClicked = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
     bool isDragging = m_UIManipulator.IsActive();
+    bool isGizmoDragging = m_Gizmo.IsDragging();
+    bool isGizmoHovered = m_Gizmo.IsHovered();
     SceneState sceneState = EditorLayer::Get().GetSceneState();
 
-    if (isClicked)
-    {
-        CH_CORE_WARN("[Viewport] Click: Hovered={}, GizmoActive={}, GizmoHovered={}, Dragging={}, SceneState={}",
-                     isHovered, isGizmoActive, isGizmoHovered, isDragging, (int)sceneState);
-    }
-
-    if (sceneState == SceneState::Edit && isHovered && isClicked && !isGizmoActive && !isGizmoHovered && !isDragging)
+    if (sceneState == SceneState::Edit && isUIChildHovered && isClicked && !isGizmoDragging && !isGizmoHovered && !isDragging)
     {
         ImVec2 mousePos = ImGui::GetMousePos();
         ImVec2 localMouseImGui = {mousePos.x - viewportScreenPos.x, mousePos.y - viewportScreenPos.y};
-        glm::vec2 localMouse = {localMouseImGui.x, localMouseImGui.y};
 
-        Ray ray = EditorGUI::GetMouseRay(camera, {localMouse.x, localMouse.y}, {viewportSize.x, viewportSize.y});
-
-        bool isClicked = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
-        if (isClicked)
+        auto activeCameraOpt = activeScene->GetActiveCamera();
+        CHEngine::Camera3D camera;
+        if (activeCameraOpt.has_value())
         {
-            static int clickCount = 0;
-            CH_CORE_WARN("PICKING DEBUG #{}", ++clickCount);
-            CH_CORE_INFO("Viewport: Pos({},{}), Size({},{})", viewportScreenPos.x, viewportScreenPos.y, viewportSize.x,
-                         viewportSize.y);
-            CH_CORE_INFO("Mouse: ImGui({},{}), Local({},{})", mousePos.x, mousePos.y, localMouseImGui.x,
-                         localMouseImGui.y);
-            CH_CORE_INFO("Ray: Origin({:.2f}, {:.2f}, {:.2f}), Dir({:.2f}, {:.2f}, {:.2f})", ray.position.x,
-                         ray.position.y, ray.position.z, ray.direction.x, ray.direction.y, ray.direction.z);
+            camera = activeCameraOpt.value();
+        }
+        else
+        {
+             auto& edCam = m_CameraController->GetCamera();
+             camera.Position = {edCam.CalculatePosition().x, edCam.CalculatePosition().y, edCam.CalculatePosition().z};
+             camera.Target = {edCam.GetFocalPoint().x, edCam.GetFocalPoint().y, edCam.GetFocalPoint().z};
+             camera.Up = {edCam.GetUpDirection().x, edCam.GetUpDirection().y, edCam.GetUpDirection().z};
+             camera.Fovy = glm::degrees(edCam.GetPerspectiveVerticalFOV());
+             camera.Projection = 0;
         }
 
+        Ray ray = EditorGUI::GetMouseRay(camera, {localMouseImGui.x, localMouseImGui.y}, {viewportSize.x, viewportSize.y});
+
         Entity bestHit = {};
-        float minDistance = FLT_MAX;
 
         // UI Picking
         auto uiView = activeScene->GetRegistry().view<ControlComponent>();
@@ -401,51 +485,49 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         {
             Entity entity(entityID, &activeScene->GetRegistry());
             auto& cc = uiView.get<ControlComponent>(entityID);
-            if (!cc.IsActive)
-            {
-                continue;
-            }
+            if (!cc.IsActive) continue;
 
             auto rect = UIRenderer::Get().GetEntityRect(entity, viewportSize, viewportScreenPos);
-
-            glm::vec2 mouse = {mousePos.x, mousePos.y};
-            if (mouse.x >= rect.x && mouse.x <= rect.x + rect.width && mouse.y >= rect.y &&
-                mouse.y <= rect.y + rect.height)
+            if (mousePos.x >= rect.x && mousePos.x <= rect.x + rect.width && mousePos.y >= rect.y && mousePos.y <= rect.y + rect.height)
             {
                 bestHit = entity;
-                CH_CORE_INFO("HIT UI: {}", entity.GetComponent<TagComponent>().Tag);
             }
         }
 
-        // 3D Picking (only when camera is present)
-        if (!bestHit && cameraFound)
+        // 3D Picking
+        if (!bestHit && activeCameraOpt.has_value())
         {
-            SceneRaycastResult result = ScenePicker::Raycast(activeScene.get(), ray);
+            SceneRaycastResult result = ScenePicker::Raycast(activeScene, ray);
             if (result.Hit)
             {
                 bestHit = result.HitEntity;
-                minDistance = result.Distance;
-                CH_CORE_INFO("HIT: {} at Dist {:.2f}", bestHit.GetComponent<TagComponent>().Tag, minDistance);
             }
         }
 
         if (bestHit)
         {
-            CH_CORE_WARN("FINAL SELECTION: {}", bestHit.GetComponent<TagComponent>().Tag);
-            EntitySelectedEvent e((entt::entity)bestHit, activeScene.get());
+            EntitySelectedEvent e((entt::entity)bestHit, activeScene);
             EditorLayer::Get().OnEvent(e);
         }
         else
         {
-            CH_CORE_WARN("FINAL SELECTION: NONE");
-            // Only deselect if we actually clicked and missed everything
-            EntitySelectedEvent e(entt::null, activeScene.get());
-            EditorLayer::Get().OnEvent(e);
+            // Only deselect if the mouse is genuinely inside the viewport area
+            ImVec2 mousePos = ImGui::GetMousePos();
+            bool mouseInViewport = (mousePos.x >= viewportScreenPos.x &&
+                                    mousePos.x <= viewportScreenPos.x + viewportSize.x &&
+                                    mousePos.y >= viewportScreenPos.y &&
+                                    mousePos.y <= viewportScreenPos.y + viewportSize.y);
+            if (mouseInViewport)
+            {
+                EntitySelectedEvent e(entt::null, activeScene);
+                EditorLayer::Get().OnEvent(e);
+            }
         }
     }
+}
 
-    // --- 4. FLOATING HUD (Drawn last to be on top of SceneUI) ---
-    // Floating style for cleaner viewport
+void ViewportPanel::RenderToolbar(Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos)
+{
     ImVec2 toolbarPos = {viewportScreenPos.x + 10.0f, viewportScreenPos.y + 10.0f};
     ImGui::SetNextWindowPos(toolbarPos);
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.12f, 0.8f));
@@ -459,8 +541,7 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         ImGui::Indent(5);
 
         DrawGizmoButtons();
-
-        DrawCameraSelector(activeScene.get());
+        DrawCameraSelector(activeScene);
 
         ImGui::SameLine(0, 10);
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
@@ -468,47 +549,23 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
 
         // Snapping toggle
         bool snapping = m_Gizmo.IsSnappingEnabled();
-        if (snapping)
-        {
-            ImGui::PushStyleColor(ImGuiCol_Text, {0.3f, 0.8f, 1.0f, 1.0f});
-        }
-        if (ImGui::Button(ICON_FA_MAGNET "##SnapToggle", {28, 28}))
-        {
-            m_Gizmo.SetSnapping(!snapping);
-        }
-        if (snapping)
-        {
-            ImGui::PopStyleColor();
-        }
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("Enable Grid Snapping");
-        }
+        if (snapping) ImGui::PushStyleColor(ImGuiCol_Text, {0.3f, 0.8f, 1.0f, 1.0f});
+        if (ImGui::Button(ICON_FA_MAGNET "##SnapToggle", {28, 28})) m_Gizmo.SetSnapping(!snapping);
+        if (snapping) ImGui::PopStyleColor();
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Enable Grid Snapping");
 
         ImGui::SameLine(0, 5);
         float gridSize = m_Gizmo.GetGridSize();
         ImGui::SetNextItemWidth(45);
-        if (ImGui::DragFloat("##SnapValue", &gridSize, 0.1f, 0.1f, 10.0f, "%.1f"))
-        {
-            m_Gizmo.SetGridSize(gridSize);
-        }
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("Grid Snap Size");
-        }
+        if (ImGui::DragFloat("##SnapValue", &gridSize, 0.1f, 0.1f, 10.0f, "%.1f")) m_Gizmo.SetGridSize(gridSize);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Grid Snap Size");
 
         ImGui::SameLine(0, 10);
 
         // Local/World toggle
         bool isLocal = m_Gizmo.IsLocalSpace();
-        if (ImGui::Button(isLocal ? (ICON_FA_CUBE " Local") : (ICON_FA_EARTH_AMERICAS " World"), {70, 28}))
-        {
-            m_Gizmo.SetLocalSpace(!isLocal);
-        }
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("Toggle Local/World Space");
-        }
+        if (ImGui::Button(isLocal ? (ICON_FA_CUBE " Local") : (ICON_FA_EARTH_AMERICAS " World"), {70, 28})) m_Gizmo.SetLocalSpace(!isLocal);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Toggle Local/World Space");
 
         ImGui::SameLine(0, 15);
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
@@ -519,40 +576,28 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         bool isPlaying = (sceneState == SceneState::Play);
         ImGui::SameLine(0, 10);
 
-        if (isPlaying)
-        {
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 1.0f, 0.3f, 1.0f));
-        }
+        if (isPlaying) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 1.0f, 0.3f, 1.0f));
         if (ImGui::Button(isPlaying ? ICON_FA_STOP : ICON_FA_PLAY, ImVec2(28, 28)))
         {
             if (isPlaying)
             {
-                CH_CORE_INFO("ViewportPanel: Stop Button Clicked");
                 SceneStopEvent e;
                 EditorLayer::Get().OnEvent(e);
             }
             else
             {
-                CH_CORE_INFO("ViewportPanel: Play Button Clicked");
                 ScenePlayEvent e;
                 EditorLayer::Get().OnEvent(e);
             }
         }
-        if (isPlaying)
-        {
-            ImGui::PopStyleColor();
-        }
+        if (isPlaying) ImGui::PopStyleColor();
 
         ImGui::SameLine(0, 5);
         if (ImGui::Button(ICON_FA_FILE_CODE "##ReloadToolbar", ImVec2(28, 28)))
         {
-            auto& scriptEngine = ScriptEngine::Get();
-            scriptEngine.RequestAssemblyReload("ViewportPanel");
+            ScriptEngine::Get().RequestAssemblyReload("ViewportPanel");
         }
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("Reload Scripts (Ctrl+R)");
-        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Reload Scripts (Ctrl+R)");
 
         ImGui::SameLine(0, 15);
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
@@ -561,32 +606,23 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         // Run scene in new window (for play mode testing)
         if (ImGui::Button(ICON_FA_WINDOW_MAXIMIZE "##RunSceneInNewWindow", ImVec2(28, 28)))
         {
-            CH_CORE_INFO("ViewportPanel: Run Scene in New Window Button Clicked");
             AppLaunchRuntimeEvent e;
             Application::Get().OnEvent(e);
         }
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("Run Scene in New Window (Shift+F5)");
-        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Run Scene in New Window (Shift+F5)");
 
-        // Camera Info (Read-only status)
+        // Camera Info
         Entity primaryCam = activeScene->GetPrimaryCameraEntity();
-        if (primaryCam)
-        {
-            ImGui::TextDisabled(ICON_FA_CAMERA " %s", primaryCam.GetComponent<TagComponent>().Tag.c_str());
-        }
-        else
-        {
-            ImGui::TextColored({1, 0, 0, 1}, ICON_FA_CIRCLE_EXCLAMATION " No Primary Camera");
-        }
+        if (primaryCam) ImGui::TextDisabled(ICON_FA_CAMERA " %s", primaryCam.GetComponent<TagComponent>().Tag.c_str());
+        else ImGui::TextColored({1, 0, 0, 1}, ICON_FA_CIRCLE_EXCLAMATION " No Primary Camera");
     }
     ImGui::EndChild();
     ImGui::PopStyleVar(2);
     ImGui::PopStyleColor();
+}
 
-    // --- 5. ROCKET LAUNCH BUTTON (Top Right Overlay) ---
-    // Wrapped in a child window to ensure input priority over full-screen overlays (like ##SceneUI)
+void ViewportPanel::RenderLaunchHUD(const ImVec2& viewportSize, const ImVec2& viewportScreenPos)
+{
     ImGui::SetCursorScreenPos({viewportScreenPos.x + viewportSize.x - 110.0f, viewportScreenPos.y + 10.0f});
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.12f, 0.8f));
     ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f);
@@ -599,76 +635,14 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         ImGui::Indent(5);
         if (ImGui::Button(ICON_FA_ROCKET " Launch", ImVec2(90, 28)))
         {
-            CH_CORE_INFO("Viewport: Launch button clicked");
             AppLaunchRuntimeEvent e;
             Application::Get().OnEvent(e);
         }
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("Build & Run Standalone project (F5)");
-        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Build & Run Standalone project (F5)");
     }
     ImGui::EndChild();
     ImGui::PopStyleVar(2);
     ImGui::PopStyleColor();
-
-    ImGui::End();
-    ImGui::PopStyleVar();
-    debugFlags.DrawGrid = oldGrid;
-
-    // Shortcuts
-    if (ImGui::IsWindowFocused() || ImGui::IsWindowHovered())
-    {
-        for (const auto& btn : s_GizmoBtns)
-        {
-            if (CHEngine::Input::IsKeyPressed(btn.key))
-            {
-                m_CurrentTool = btn.type;
-            }
-        }
-
-        if (Input::IsKeyDown(Key::LeftControl) && Input::IsKeyPressed(Key::D))
-
-        {
-            Entity selected = EditorLayer::Get().GetSelectedEntity();
-            if (selected)
-            {
-                EditorLayer::GetCommandHistory().PushCommand(std::make_unique<DuplicateEntityCommand>(selected));
-            }
-        }
-    }
-}
-
-void ViewportPanel::OnUpdate(Timestep ts)
-{
-    // Only update editor camera in Edit mode
-    if (EditorLayer::Get().GetSceneState() == SceneState::Edit)
-    {
-        auto activeScene = EditorLayer::Get().GetActiveScene();
-        if (activeScene)
-        {
-            Entity primaryCamera = activeScene->GetPrimaryCameraEntity();
-            if (primaryCamera)
-            {
-                m_CameraController->OnUpdate(primaryCamera, ts);
-            }
-        }
-    }
-}
-
-void ViewportPanel::OnEvent(Event& e)
-{
-    EventDispatcher dispatcher(e);
-    dispatcher.Dispatch<ViewportFocusEntityEvent>([this](ViewportFocusEntityEvent& ev) {
-        Entity entity = ev.GetEntity();
-        if (entity && entity.HasComponent<TransformComponent>())
-        {
-            auto& transform = entity.GetComponent<TransformComponent>();
-            m_CameraController->GetCamera().SetFocalPoint(*reinterpret_cast<const glm::vec3*>(&transform.Translation));
-            return true;
-        }
-        return false;
-    });
 }
 
 } // namespace CHEngine
