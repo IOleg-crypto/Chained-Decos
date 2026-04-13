@@ -160,6 +160,8 @@ void ComponentSerializer::RegisterUIComponents()
     Register<TabItemControl>();
     Register<CollapsingHeaderControl>();
     Register<VerticalLayoutGroup>();
+    Register<PlotLinesControl>();
+    Register<PlotHistogramControl>();
     Register<UIActionComponent>();
 }
 

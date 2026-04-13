@@ -1,4 +1,5 @@
 #include "property_editor.h"
+#include "IconsFontAwesome6.h"
 #include "editor/editor_layer.h"
 #include "editor/undo/component_commands.h"
 #include "editor/undo/modify_component_command.h"
@@ -12,7 +13,6 @@
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_settings.h"
 #include "imgui.h"
-#include "IconsFontAwesome6.h"
 #include "panel.h"
 #include "ui_properties.h" // Included here to break circular dependency
 #include <memory>
@@ -154,7 +154,7 @@ void PropertyEditor::Init()
     Register<SceneTransitionComponent>("SceneTransition", ICON_FA_DOOR_OPEN);
 
     // --- Scripting ---
-        Register<ManagedScriptComponent>("Scripts", ICON_FA_FILE_CODE);
+    Register<ManagedScriptComponent>("Scripts", ICON_FA_FILE_CODE);
 
     // --- UI Components ---
 
@@ -186,7 +186,9 @@ void PropertyEditor::Init()
     // Mark only real UI widget types as IsWidget (these will be hidden in 3D scenes)
     auto markWidget = [&](entt::id_type id) {
         if (s_ComponentRegistry.contains(id))
+        {
             s_ComponentRegistry[id].IsWidget = true;
+        }
     };
     markWidget(entt::type_hash<ControlComponent>::value());
     markWidget(entt::type_hash<NavigationComponent>::value());
@@ -276,45 +278,37 @@ void PropertyEditor::DrawEntityProperties(CHEngine::Entity entity)
     auto& registry = entity.GetRegistry();
     bool isUI = entity.HasComponent<ControlComponent>();
 
+    // 1. Check for widgets more efficiently
     bool hasWidget = false;
+    for (auto [id, storage] : registry.storage())
+    {
+        if (storage.contains(entity) && s_ComponentRegistry.contains(id) && s_ComponentRegistry[id].IsWidget)
+        {
+            hasWidget = true;
+            break;
+        }
+    }
+
+    // 2. Draw components efficiently
     for (auto [id, storage] : registry.storage())
     {
         if (storage.contains(entity) && s_ComponentRegistry.contains(id))
         {
-            if (s_ComponentRegistry[id].IsWidget)
+            auto& metadata = s_ComponentRegistry[id];
+            if (!metadata.Visible)
             {
-                hasWidget = true;
-                break;
+                continue;
             }
-        }
-    }
 
-    for (auto [id, storage] : registry.storage())
-    {
-        if (storage.contains(entity))
-        {
-            if (s_ComponentRegistry.find(id) != s_ComponentRegistry.end())
+            // Logic to reduce clutter
+            if (isUI && id == entt::type_hash<TransformComponent>::value())
             {
-                auto& metadata = s_ComponentRegistry[id];
-                if (!metadata.Visible)
-                {
-                    continue;
-                }
-
-                // Logic to reduce clutter
-                if (isUI && id == entt::type_hash<TransformComponent>::value())
-                {
-                    continue;
-                }
-                if (hasWidget && id == entt::type_hash<ControlComponent>::value())
-                {
-                    continue;
-                }
-
-                ImGui::PushID((int)id);
-                metadata.Draw(entity);
-                ImGui::PopID();
+                continue;
             }
+
+            ImGui::PushID((int)id);
+            metadata.Draw(entity);
+            ImGui::PopID();
         }
     }
 }

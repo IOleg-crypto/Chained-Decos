@@ -150,7 +150,9 @@ void SceneScripting::Update(Scene* scene, Timestep deltaTime)
                         // Immediately inject the entity ID before OnCreate
                         // Note: SetPendingScriptInstance allows the script to register its delegates
                         PendingScriptInstanceScope pendingScriptInstance(&script);
+                        CH_CORE_INFO("ScriptEngine: Calling __Init for entity {}", (uint32_t)entity);
                         obj->InvokeMethod("__Init", (uint64_t)(uint32_t)entity);
+                        CH_CORE_INFO("ScriptEngine: __Init call finished for entity {}", (uint32_t)entity);
 
                         // 2. Apply persistent field values
                         for (const auto& [fieldName, field] : script.Fields)
@@ -234,10 +236,58 @@ void SceneScripting::Update(Scene* scene, Timestep deltaTime)
     }
 }
 
+void ManagedScriptInstance::Destroy()
+{
+    if (Instance)
+    {
+        auto* obj = static_cast<Coral::ManagedObject*>(Instance);
+        if (obj && obj->IsValid())
+        {
+            try
+            {
+                if (OnDestroy)
+                {
+                    OnDestroy();
+                }
+                else
+                {
+                    obj->InvokeMethod("OnDestroy");
+                }
+            }
+            catch (const std::exception& e)
+            {
+                CH_CORE_ERROR("ScriptEngine: Exception during OnDestroy for script '{}': {}", ClassName, e.what());
+            }
+            catch (...)
+            {
+                CH_CORE_ERROR("ScriptEngine: Unknown exception during OnDestroy for script '{}'", ClassName);
+            }
+
+            obj->Destroy();
+            delete obj;
+        }
+    }
+
+    ResetRuntimeState();
+}
+
+void ManagedScriptInstance::ResetRuntimeState()
+{
+    Instance = nullptr;
+    NeedsStart = true;
+    OnCreate = nullptr;
+    OnStart = nullptr;
+    OnUpdate = nullptr;
+    OnDestroy = nullptr;
+    OnGUI = nullptr;
+    OnCollisionEnter = nullptr;
+}
+
 void SceneScripting::Stop(Scene* scene)
 {
-    auto& scriptEngine = ScriptEngine::Get();
+    if (!scene) return;
 
+    auto& scriptEngine = ScriptEngine::Get();
     if (!scriptEngine.IsInitialized())
     {
         return;
@@ -245,40 +295,15 @@ void SceneScripting::Stop(Scene* scene)
 
     ActiveSceneScope activeScene(scriptEngine, scene);
 
-    scene->GetRegistry().view<ManagedScriptComponent>().each([&](auto entity, auto& msc) {
+    auto view = scene->GetRegistry().view<ManagedScriptComponent>();
+    for (auto entity : view)
+    {
+        auto& msc = view.get<ManagedScriptComponent>(entity);
         for (auto& script : msc.Scripts)
         {
-            if (script.Instance)
-            {
-                auto* obj = static_cast<Coral::ManagedObject*>(script.Instance);
-                try
-                {
-                    if (script.OnDestroy)
-                    {
-                        script.OnDestroy();
-                    }
-                    else
-                    {
-                        obj->InvokeMethod("OnDestroy");
-                    }
-                } catch (...)
-                {
-                }
-
-                obj->Destroy();
-                delete obj;
-                script.Instance = nullptr;
-                script.NeedsStart = false;
-
-                // Clear delegates
-                script.OnCreate = nullptr;
-                script.OnStart = nullptr;
-                script.OnUpdate = nullptr;
-                script.OnDestroy = nullptr;
-            }
+            script.Destroy();
         }
-    });
-
+    }
 }
 
 void SceneScripting::DispatchEvent(Scene* scene, Event& e)

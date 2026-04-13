@@ -35,57 +35,24 @@ DebugSettings:
   DrawSpawnZones: true
   CollisionWireframeMode: 0
 Entities:
-  - Entity: 1001
+  - Entity: 1004
     TagComponent:
-      Tag: title_game_mode
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ControlComponent:
-      Rect Transform:
-        Position: [-541.66272, -385.66098]
-        Size: [99.9997864, 40.000061]
-        Anchor Min: [0.5, 0.5]
-        Anchor Max: [0.5, 0.5]
-        Offset Min: [-591.662598, -405.661011]
-        Offset Max: [-491.662811, -365.66095]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      Z Order: 0
-      Active: true
-      Hidden: false
-    LabelControl:
-      Text: Select Mode
-      Style:
-        Font Name: Default
-        Font Size: 18
-        Text Color: [255, 255, 255, 255]
-        Shadow: false
-        Letter Spacing: 1
-        Line Height: 1.20000005
-        H Align: 1
-        V Align: 1
-      Auto Size: false
-  - Entity: 1002
-    TagComponent:
-      Tag: btn_singleplayer
+      Tag: back_button
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     SceneTransitionComponent:
-      TargetScenePath: scenes/map_selection.chscene
+      TargetScenePath: scenes/start_menu.chscene
       Triggered: false
     ControlComponent:
       Rect Transform:
-        Position: [-303.515259, -175.18335]
-        Size: [100, 40]
+        Position: [-539.809082, 478.698639]
+        Size: [99.9998474, 40.000061]
         Anchor Min: [0.5, 0.5]
         Anchor Max: [0.5, 0.5]
-        Offset Min: [-353.515259, -195.18335]
-        Offset Max: [-253.515259, -155.18335]
+        Offset Min: [-589.809021, 458.698608]
+        Offset Max: [-489.809174, 498.698669]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -93,7 +60,7 @@ Entities:
       Active: true
       Hidden: false
     ButtonControl:
-      Label: Singleplayer
+      Label: Back
       Text Style:
         Font Name: Default
         Font Size: 18
@@ -166,24 +133,24 @@ Entities:
         Transition Speed: 0.100000001
       Interactable: false
       Auto Size: false
-  - Entity: 1004
+  - Entity: 1002
     TagComponent:
-      Tag: back_button
+      Tag: btn_singleplayer
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     SceneTransitionComponent:
-      TargetScenePath: scenes/start_menu.chscene
+      TargetScenePath: scenes/map_selection.chscene
       Triggered: false
     ControlComponent:
       Rect Transform:
-        Position: [-539.809082, 478.698639]
-        Size: [99.9998474, 40.000061]
+        Position: [-303.515259, -175.18335]
+        Size: [100, 40]
         Anchor Min: [0.5, 0.5]
         Anchor Max: [0.5, 0.5]
-        Offset Min: [-589.809021, 458.698608]
-        Offset Max: [-489.809174, 498.698669]
+        Offset Min: [-353.515259, -195.18335]
+        Offset Max: [-253.515259, -155.18335]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -191,7 +158,7 @@ Entities:
       Active: true
       Hidden: false
     ButtonControl:
-      Label: Back
+      Label: Singleplayer
       Text Style:
         Font Name: Default
         Font Size: 18
@@ -218,3 +185,36 @@ Entities:
     ManagedScriptComponent:
       Scripts:
         - ClassName: ChainedDecos.Scripts.SceneScript
+  - Entity: 1001
+    TagComponent:
+      Tag: title_game_mode
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ControlComponent:
+      Rect Transform:
+        Position: [-541.66272, -385.66098]
+        Size: [99.9997864, 40.000061]
+        Anchor Min: [0.5, 0.5]
+        Anchor Max: [0.5, 0.5]
+        Offset Min: [-591.662598, -405.661011]
+        Offset Max: [-491.662811, -365.66095]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      Z Order: 0
+      Active: true
+      Hidden: false
+    LabelControl:
+      Text: Select Mode
+      Style:
+        Font Name: Default
+        Font Size: 18
+        Text Color: [255, 255, 255, 255]
+        Shadow: false
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Auto Size: false

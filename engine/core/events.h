@@ -15,7 +15,7 @@ enum class EventType
     ProjectCreated, ProjectOpened, SceneOpened, SceneSaved,
     ScenePlay, SceneStop, SceneChangeRequest, EntitySelected,
     AppLaunchRuntime, AppResetLayout, AppSaveLayout, ViewportFocusEntity,
-    ButtonPressed
+    ButtonPressed, Undo, Redo
 };
 
 enum EventCategory

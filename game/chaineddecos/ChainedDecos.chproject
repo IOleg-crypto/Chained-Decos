@@ -3,7 +3,7 @@ Project:
   IconPath: resources/icons/chaineddecos.jpg
   StartScene: scenes\start_menu.chscene
   AssetDirectory: assets
-  ActiveScene: scenes/rpg_strategy_scene.chscene
+  ActiveScene: assets/scenes/start_menu.chscene
   Environment: ""
   BuildScenes:
     - scenes/start_menu.chscene
@@ -18,7 +18,7 @@ Project:
     - scenes/test_platform_scene.chscene
   Physics:
     Gravity: 20
-    FixedTimestep: 0.0666999966
+    FixedTimestep: 0.00416666688
   Animation:
     TargetFPS: 60
   Render:

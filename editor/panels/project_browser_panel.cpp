@@ -78,36 +78,38 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
     ImGui::TextDisabled("   RECENT PROJECTS");
     ImGui::Spacing();
 
-    std::string lastPath = EditorLayer::Get().GetConfig().LastProjectPath;
-    if (!lastPath.empty())
+    const auto& recentProjects = EditorLayer::Get().GetConfig().RecentProjects;
+    if (recentProjects.empty())
     {
-        std::string fileName = std::filesystem::path(lastPath).filename().string();
-        std::string dirName = std::filesystem::path(lastPath).parent_path().string();
-
-        // Custom Button Style for Recent Project
+        ImGui::TextDisabled("   No recent projects.");
+    }
+    else
+    {
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
-        ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.5f, 0.5f));
+        ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.05f, 0.5f));
         ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 5.0f);
 
-        // Draw a big button that looks like the card in the screenshot
-        if (ImGui::Button(fileName.c_str(), ImVec2(-1, 50)))
+        for (const auto& projectPath : recentProjects)
         {
-            EditorLayer::Get().OpenProject(lastPath);
-        }
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("%s", lastPath.c_str());
+            std::string fileName = std::filesystem::path(projectPath).filename().string();
+            std::string dirName  = std::filesystem::path(projectPath).parent_path().filename().string();
+
+            std::string label = ICON_FA_FOLDER_OPEN "  " + fileName + "\n      " + dirName;
+            if (ImGui::Button(label.c_str(), ImVec2(-1, 50)))
+            {
+                EditorLayer::Get().GetProjectManager().OpenProject(projectPath);
+            }
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("%s", projectPath.c_str());
+            }
+            ImGui::Spacing();
         }
 
         ImGui::PopStyleVar(2);
         ImGui::PopStyleColor();
+    }
 
-        ImGui::TextDisabled("   %s", dirName.c_str());
-    }
-    else
-    {
-        ImGui::TextDisabled("   No recent projects.");
-    }
 
     ImGui::EndChild();
     ImGui::PopStyleColor();
@@ -163,7 +165,7 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
 
         if (ImGui::ImageButton("##OpenProject", openProjTex, {300, 300}, {0, 1}, {1, 0}))
         {
-            EditorLayer::Get().OpenProject();
+            EditorLayer::Get().GetProjectManager().OpenProject();
         }
     }
     ImGui::SetWindowFontScale(1.3f);

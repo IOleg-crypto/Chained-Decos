@@ -44,7 +44,8 @@ namespace CHEngine
 
         if (!data)
         {
-            CH_CORE_ERROR("TextureSystem: Failed to load image {}", cacheKey);
+            const char* reason = stbi_failure_reason();
+            CH_CORE_ERROR("TextureSystem: Failed to load image {}. Reason: {}", cacheKey, reason ? reason : "Unknown");
             return TextureHandle(0);
         }
 
