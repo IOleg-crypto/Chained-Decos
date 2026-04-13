@@ -25,7 +25,11 @@ int main(int argc, char** argv)
 #include <windows.h>
 int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmdshow)
 {
+#if defined(_MSC_VER)
     return main(__argc, __argv);
+#else
+    return main(0, nullptr); // MinGW might need a different approach if arguments are needed
+#endif
 }
 #endif
 
