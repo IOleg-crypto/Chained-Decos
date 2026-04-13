@@ -4,3 +4,5 @@ Editor:
   LoadLastProjectOnStartup: false
   AutoSaveEnabled: true
   AutoSaveInterval: 300
+  RecentProjects:
+    - D:\gitnext\Chained Decos\game\chaineddecos\ChainedDecos.chproject

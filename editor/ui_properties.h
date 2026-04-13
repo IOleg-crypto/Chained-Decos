@@ -346,7 +346,7 @@ public:
         ImGui::TreePop();
     }
 
-    bool HasFinished() const { return m_Finished; }
+    bool HasFinished() const { return m_Started && m_Finished; }
     bool HasStarted() const { return m_Started; }
 
     bool HasChanged() const

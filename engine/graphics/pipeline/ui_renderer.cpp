@@ -266,6 +266,24 @@ bool UIRenderer::RenderUIComponent(Entity entity, const ImVec2& screenPos, const
 }
 
 // ---------------------------------------------------------------------------
+// ResetButtonStates — resets per-frame one-shot flags before scripts run
+// ---------------------------------------------------------------------------
+
+void UIRenderer::ResetButtonStates(Scene* scene)
+{
+    if (!scene) return;
+    auto& registry = scene->GetRegistry();
+
+    auto buttonView = registry.view<ButtonControl>();
+    for (entt::entity id : buttonView)
+        buttonView.get<ButtonControl>(id).PressedThisFrame = false;
+
+    auto imageButtonView = registry.view<ImageButtonControl>();
+    for (entt::entity id : imageButtonView)
+        imageButtonView.get<ImageButtonControl>(id).PressedThisFrame = false;
+}
+
+// ---------------------------------------------------------------------------
 // DrawCanvas — main entry point
 // ---------------------------------------------------------------------------
 
@@ -274,8 +292,17 @@ void UIRenderer::DrawCanvas(Scene* scene, const ImVec2& referencePosition, const
     CH_CORE_ASSERT(scene, "Scene is null!");
     CH_PROFILE_FUNCTION();
 
-    ImVec2 refSize   = (referenceSize.x > 0) ? referenceSize : ImGui::GetIO().DisplaySize;
+    ImVec2 refSize = (referenceSize.x > 0) ? referenceSize : ImGui::GetIO().DisplaySize;
+    if (refSize.x <= 0 || refSize.y <= 0)
+        return;
     auto&  registry  = scene->GetRegistry();
+
+    auto uiEntities = SortUIEntities(registry);
+    static bool s_LoggedOnce = false;
+    if (!s_LoggedOnce) {
+        CH_CORE_WARN("UIRenderer: Drawing canvas with {} UI entities.", uiEntities.size());
+        s_LoggedOnce = true;
+    }
 
     // Reset one-shot button press flags once per ImGui frame per registry.
     const int frameNumber = ImGui::GetFrameCount();

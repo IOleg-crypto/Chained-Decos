@@ -49,10 +49,11 @@ namespace CHEngine
 
         if (data == nullptr)
         {
-            CH_CORE_ERROR("TextureLoader: Failed to load image {}", resolvedPath);
+            const char* reason = stbi_failure_reason();
+            CH_CORE_ERROR("TextureLoader: Failed to load image {}. Reason: {}", resolvedPath, reason ? reason : "Unknown");
             if (outError)
             {
-                *outError = "TextureLoader: failed to load image '" + resolvedPath + "'";
+                *outError = "TextureLoader: failed to load image '" + resolvedPath + "'. Reason: " + (reason ? reason : "Unknown");
             }
             return false;
         }

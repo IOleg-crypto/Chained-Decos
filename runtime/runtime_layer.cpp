@@ -7,9 +7,9 @@
 
 #include "runtime_layer.h"
 #include "engine/core/application.h"
+#include "engine/core/assets/asset_manager.h"
 #include "engine/core/imgui_layer.h"
 #include "engine/core/window.h"
-#include "engine/core/assets/asset_manager.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
 #include "engine/graphics/pipeline/ui_renderer.h"
@@ -27,17 +27,13 @@
 #include <filesystem>
 #include <unordered_set>
 
-
 namespace
 {
 std::string TrimCopy(const std::string& value)
 {
-    auto begin = std::find_if_not(value.begin(), value.end(), [](unsigned char ch) {
-        return std::isspace(ch) != 0;
-    });
-    auto end = std::find_if_not(value.rbegin(), value.rend(), [](unsigned char ch) {
-        return std::isspace(ch) != 0;
-    }).base();
+    auto begin = std::find_if_not(value.begin(), value.end(), [](unsigned char ch) { return std::isspace(ch) != 0; });
+    auto end =
+        std::find_if_not(value.rbegin(), value.rend(), [](unsigned char ch) { return std::isspace(ch) != 0; }).base();
 
     if (begin >= end)
     {
@@ -47,8 +43,7 @@ std::string TrimCopy(const std::string& value)
     return std::string(begin, end);
 }
 
-void AppendTextStyleFontRequest(const CHEngine::TextStyle& style,
-                                std::vector<std::pair<std::string, float>>& out,
+void AppendTextStyleFontRequest(const CHEngine::TextStyle& style, std::vector<std::pair<std::string, float>>& out,
                                 std::unordered_set<std::string>& dedupe)
 {
     std::string fontName = TrimCopy(style.FontName);
@@ -80,8 +75,7 @@ bool ExistsNoThrow(const std::filesystem::path& path)
     std::error_code ec;
     return std::filesystem::exists(path, ec) && !ec;
 }
-}
-
+} // namespace
 
 namespace CHEngine
 {
@@ -98,14 +92,16 @@ RuntimeLayer::~RuntimeLayer()
 
 void RuntimeLayer::OnAttach()
 {
+    if (auto* imguiLayer = Application::Get().GetImGuiLayer())
+    {
+        ImGui::SetCurrentContext(imguiLayer->GetContext());
+    }
+
     ImGuiIO& io = ImGui::GetIO();
     io.FontDefault = io.Fonts->AddFontDefault();
     CH_CORE_INFO("RuntimeLayer: Using built-in ImGui default font.");
 
-    if (InitProject(m_ProjectPath))
-    {
-        // Initial scene/module load is handled by InitProject calling LoadInitialScene
-    }
+    InitProject(m_ProjectPath);
 
     if (ImFont* projectDefaultFont = UIRenderer::Get().GetFontRegistry().EnsureDefaultProjectFont(18.0f, false))
     {
@@ -142,6 +138,9 @@ void RuntimeLayer::OnDetach()
 void RuntimeLayer::OnUpdate(Timestep ts)
 {
     auto& scriptEngine = ScriptEngine::Get();
+
+    // The scene transition and script logic will consume button states after this point.
+    // UIRenderer::DrawCanvas will handle the per-frame reset during the render pass.
 
     std::string pendingPath;
     if (scriptEngine.TryConsumeRequestedScene(pendingPath))
@@ -234,14 +233,16 @@ void RuntimeLayer::OnRender(Timestep ts)
         auto& env = m_Scene->GetSettings().Environment->GetSettings();
         if (env.Fog.Enabled)
         {
-            bgColor = glm::vec4(env.Fog.FogColor.r / 255.0f, env.Fog.FogColor.g / 255.0f, 
-                               env.Fog.FogColor.b / 255.0f, env.Fog.FogColor.a / 255.0f);
+            bgColor = glm::vec4(env.Fog.FogColor.r / 255.0f, env.Fog.FogColor.g / 255.0f, env.Fog.FogColor.b / 255.0f,
+                                env.Fog.FogColor.a / 255.0f);
         }
     }
 
     auto camera = GetActiveCamera();
     if (camera)
     {
+        CH_CORE_INFO("RuntimeLayer: Rendering scene with active camera at ({}, {}, {})", camera->Position.x,
+                     camera->Position.y, camera->Position.z);
         float nearClip = 0.01f;
         float farClip = 1000.0f;
 
@@ -262,13 +263,18 @@ void RuntimeLayer::OnRender(Timestep ts)
         m_HDRFramebuffer->Unbind();
 
         Renderer::Get().SetViewport(0, 0, (int)width, (int)height);
-        Renderer::Get().ApplyPostProcessing(
-            m_HDRFramebuffer->GetColorAttachmentRendererID(),
-            m_HDRFramebuffer->GetDepthAttachmentRendererID(),
-            camera.value());
+        Renderer::Get().ApplyPostProcessing(m_HDRFramebuffer->GetColorAttachmentRendererID(),
+                                            m_HDRFramebuffer->GetDepthAttachmentRendererID(), camera.value());
     }
     else
     {
+        static bool s_WarnedNoCamera = false;
+        if (!s_WarnedNoCamera)
+        {
+            CH_CORE_WARN("RuntimeLayer: No active camera found in scene '{}'! Clearing to background color.",
+                         m_Scene ? m_Scene->GetSettings().ScenePath : "null");
+            s_WarnedNoCamera = true;
+        }
         Renderer::Get().Clear(bgColor);
     }
 }
@@ -297,6 +303,8 @@ void RuntimeLayer::OnImGuiRender()
         {
             if (m_RuntimeStarted)
             {
+                ImGui::SetCursorPos({10, 10});
+                ImGui::TextColored({1, 1, 0, 1}, "DEBUG: STANDALONE UI IS ACTIVE");
                 ImVec2 childSize = ImGui::GetContentRegionAvail();
                 if (ImGui::BeginChild("##RuntimeUICanvas", childSize, false,
                                       ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar |
@@ -304,6 +312,8 @@ void RuntimeLayer::OnImGuiRender()
                 {
                     ImVec2 canvasPos = ImGui::GetCursorScreenPos();
                     ImVec2 canvasSize = ImGui::GetContentRegionAvail();
+                    CH_CORE_INFO("RuntimeLayer: Drawing UI canvas at ({}, {}) with size ({}, {})", 
+                                  canvasPos.x, canvasPos.y, canvasSize.x, canvasSize.y);
                     UIRenderer::Get().DrawCanvas(m_Scene.get(), canvasPos, canvasSize, false);
                     SceneScripting::RenderUI(m_Scene.get());
                 }
@@ -325,7 +335,6 @@ void RuntimeLayer::OnEvent(Event& e)
     if (m_Scene && m_RuntimeStarted)
     {
         SceneScripting::DispatchEvent(m_Scene.get(), e);
-        m_Scene->OnEvent(e);
     }
 
     EventDispatcher dispatcher(e);
@@ -373,8 +382,7 @@ void RuntimeLayer::LoadScene(const std::string& path)
         scenePath = std::filesystem::absolute(scenePath, ec);
         if (ec)
         {
-            CH_CORE_ERROR("RuntimeLayer: Failed to resolve absolute scene path '{}' ({})",
-                          normalizedPath,
+            CH_CORE_ERROR("RuntimeLayer: Failed to resolve absolute scene path '{}' ({})", normalizedPath,
                           ec.message());
             return;
         }
@@ -420,7 +428,8 @@ bool RuntimeLayer::InitProject(const std::string& projectPath)
     // Initialize Scripting for the loaded project
     if (!ScriptEngine::Get().ReloadAssembly())
     {
-        CH_CORE_WARN("RuntimeLayer: Script reload failed during project initialization. Runtime continues without scripts.");
+        CH_CORE_WARN(
+            "RuntimeLayer: Script reload failed during project initialization. Runtime continues without scripts.");
     }
 
     // Discover project fonts once before any scene loads.
@@ -457,8 +466,13 @@ bool RuntimeLayer::DiscoverAndLoadProject(const std::string& projectPath)
     auto project = Project::Load(m_ProjectPath);
     if (!project)
     {
+        CH_CORE_ERROR("RuntimeLayer: Failed to load project file at '{}'", m_ProjectPath);
         return false;
     }
+
+    CH_CORE_INFO("RuntimeLayer: Project loaded: {}", project->GetConfig().Name);
+    CH_CORE_INFO("RuntimeLayer: Project Directory: {}", project->GetProjectDirectory().string());
+    CH_CORE_INFO("RuntimeLayer: Asset Directory: {}", Project::GetAssetDirectory().string());
 
     // CRITICAL: Load engine shaders and resources immediately after project is resolved
     Renderer::LoadEngineResources();
@@ -575,6 +589,8 @@ void RuntimeLayer::LoadInitialScene()
     {
         sceneToLoad = config.ActiveScenePath.string();
     }
+
+    CH_CORE_INFO("RuntimeLayer: Initial scene to load: '{}'", sceneToLoad);
 
     if (sceneToLoad.empty())
     {
@@ -796,6 +812,24 @@ bool RuntimeLayer::TransitionToScene(const std::filesystem::path& scenePath)
     m_Scene->OnViewportResize(window.GetWidth(), window.GetHeight());
     EnsureRuntimeFramebuffer((uint32_t)window.GetWidth(), (uint32_t)window.GetHeight());
 
+    // Ensure no stale button press flags survive from before the scene transition.
+    // Scripts run in OnUpdate (before ImGui DrawCanvas which normally resets these),
+    // so without this, ExitScript or SceneScript would fire on the very first frame.
+    {
+        auto& registry = m_Scene->GetRegistry();
+        auto btnView = registry.view<ButtonControl>();
+        for (entt::entity id : btnView)
+        {
+            btnView.get<ButtonControl>(id).PressedThisFrame = false;
+        }
+
+        auto ibView = registry.view<ImageButtonControl>();
+        for (entt::entity id : ibView)
+        {
+            ibView.get<ImageButtonControl>(id).PressedThisFrame = false;
+        }
+    }
+
     PreloadSceneFonts(ImGui::GetFrameCount() > 0);
 
     m_IsBoostingUploads = true;
@@ -853,9 +887,9 @@ void RuntimeLayer::DrawLoadingOverlay()
     ImGui::SetNextWindowSize(viewport->WorkSize);
     ImGui::SetNextWindowViewport(viewport->ID);
 
-    ImGuiWindowFlags flags =
-        ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
-        ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
+                             ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking |
+                             ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.02f, 0.02f, 0.02f, 0.92f));

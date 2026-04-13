@@ -370,7 +370,7 @@ void ContentBrowserPanel::OnAssetDoubleClicked(AssetEntry& entry)
     }
     else if (entry.type == EditorAssetType::Scene)
     {
-        EditorLayer::Get().OpenScene(entry.path);
+        EditorLayer::Get().GetSceneManager().OpenScene(entry.path);
     }
 }
 
