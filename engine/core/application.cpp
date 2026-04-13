@@ -80,7 +80,9 @@ Application::Application(const ApplicationSpecification& specification)
     
     Physics::Init();
     ComponentSerializer::Init();
-    ScriptEngine::Init();
+    
+    if (m_Specification.EnableScripting)
+        ScriptEngine::Init();
 
     m_LayerStack = std::make_unique<LayerStack>();
     m_Running = true;
@@ -107,7 +109,9 @@ Application::~Application()
 
     m_LayerStack.reset();
 
-    ScriptEngine::Shutdown();
+    if (m_Specification.EnableScripting)
+        ScriptEngine::Shutdown();
+
     ComponentSerializer::Shutdown();
     Physics::Shutdown();
     
@@ -116,6 +120,8 @@ Application::~Application()
     
     if (Renderer::IsInitialized())
         Renderer::Shutdown();
+
+    AssetManager::Shutdown();
 
     m_Window.reset();
 

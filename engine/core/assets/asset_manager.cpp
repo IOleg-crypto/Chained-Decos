@@ -37,6 +37,11 @@ AssetManager& AssetManager::Get()
     return *s_Instance;
 }
 
+void AssetManager::Shutdown()
+{
+    s_Instance.reset();
+}
+
 void AssetManager::RegisterLoader(AssetType type, std::unique_ptr<IAssetLoader> loader)
 {
     m_Loaders[type] = std::move(loader);
