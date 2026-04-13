@@ -39,6 +39,31 @@ namespace CHEngine {
             entity.GetComponent<TransformComponent>().SetScale(*inScale);
     }
 
+    CH_SCRIPT_FUNC Coral::String Entity_GetModelPath(uint64_t entityID) {
+        Entity entity = GetEntity(entityID);
+        return entity && entity.HasComponent<ModelComponent>() ? Coral::String::New(entity.GetComponent<ModelComponent>().ModelPath) : Coral::String::New("");
+    }
+
+    CH_SCRIPT_FUNC void Entity_SetModelPath(uint64_t entityID, Coral::String inPath) {
+        Entity entity = GetEntity(entityID);
+        if (entity && entity.HasComponent<ModelComponent>())
+            entity.GetComponent<ModelComponent>().ModelPath = (std::string)inPath;
+    }
+
+    CH_SCRIPT_FUNC void Entity_AddComponent(uint64_t entityID, Coral::String componentName) {
+        Entity entity = GetEntity(entityID);
+        if (!entity) return;
+        
+        std::string name = (std::string)componentName;
+        if (name == "TransformComponent") entity.AddComponent<TransformComponent>();
+        else if (name == "RigidBodyComponent") entity.AddComponent<RigidBodyComponent>();
+        else if (name == "ModelComponent") entity.AddComponent<ModelComponent>();
+        else if (name == "TagComponent") entity.AddComponent<TagComponent>();
+        else if (name == "AudioComponent") entity.AddComponent<AudioComponent>();
+        else if (name == "CameraComponent") entity.AddComponent<CameraComponent>();
+        else if (name == "ManagedScriptComponent") entity.AddComponent<ManagedScriptComponent>();
+    }
+
     CH_SCRIPT_FUNC void Entity_GetVelocity(uint64_t entityID, glm::vec3* outVelocity) {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<RigidBodyComponent>()) 
@@ -145,6 +170,7 @@ namespace CHEngine {
         
         CH_ADD_INTERNAL_CALL(Entity, Entity_FindAllWithComponent_Ptr, Entity_FindAllWithComponent);
         CH_ADD_INTERNAL_CALL(Entity, Entity_HasComponent_Ptr, Entity_HasComponent);
+        CH_ADD_INTERNAL_CALL(Entity, Entity_AddComponent_Ptr, Entity_AddComponent);
         
         CH_ADD_INTERNAL_CALL(TransformComponent, Transform_GetTranslation_Ptr, Entity_GetTranslation);
         CH_ADD_INTERNAL_CALL(TransformComponent, Transform_SetTranslation_Ptr, Entity_SetTranslation);
@@ -152,6 +178,9 @@ namespace CHEngine {
         CH_ADD_INTERNAL_CALL(TransformComponent, Transform_SetRotation_Ptr, Entity_SetRotation);
         CH_ADD_INTERNAL_CALL(TransformComponent, Transform_GetScale_Ptr, Entity_GetScale);
         CH_ADD_INTERNAL_CALL(TransformComponent, Transform_SetScale_Ptr, Entity_SetScale);
+
+        CH_ADD_INTERNAL_CALL(ModelComponent, Model_GetModelPath_Ptr, Entity_GetModelPath);
+        CH_ADD_INTERNAL_CALL(ModelComponent, Model_SetModelPath_Ptr, Entity_SetModelPath);
 
         CH_ADD_INTERNAL_CALL(RigidBodyComponent, RigidBody_GetVelocity_Ptr, Entity_GetVelocity);
         CH_ADD_INTERNAL_CALL(RigidBodyComponent, RigidBody_SetVelocity_Ptr, Entity_SetVelocity);

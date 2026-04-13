@@ -4,10 +4,12 @@
 #include "engine/scene/project.h"
 #include "engine/scene/project_serializer.h"
 #include "engine/scene/scene_serializer.h"
-#include <windows.h>
+#ifdef CH_PLATFORM_WINDOWS
 #include <shellapi.h>
-#include <format>
+#include <windows.h>
+#endif
 #include <algorithm>
+#include <format>
 
 namespace CHEngine
 {
