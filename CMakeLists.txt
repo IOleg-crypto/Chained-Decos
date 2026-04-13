@@ -28,6 +28,9 @@ if(CH_CI)
     add_compile_definitions(CH_CI)
 endif()
 
+# Global library definitions
+add_compile_definitions(GLM_ENABLE_EXPERIMENTAL GLM_FORCE_DEPTH_ZERO_TO_ONE)
+
 # Warning Settings
 option(DISABLE_ALL_WARNINGS "Disable all compiler warnings" OFF)
 option(ENABLE_WARNINGS "Enable compiler warnings" OFF)
