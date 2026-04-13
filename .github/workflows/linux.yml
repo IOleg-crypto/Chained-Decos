@@ -37,7 +37,7 @@ jobs:
         with:
           variant: ccache
           key: Linux-${{ matrix.preset }}-${{ matrix.build_type }}
-          max-size: 1G
+          max-size: 5G
 
       - name: Setup Mold Linker
         uses: rui314/setup-mold@v1
