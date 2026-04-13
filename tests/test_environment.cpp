@@ -12,6 +12,7 @@ public:
     TestApplication() : CHEngine::Application([](){
         CHEngine::ApplicationSpecification spec{"Engine Tests"};
         spec.Headless = true;
+        spec.EnableScripting = false;
         return spec;
     }()) {}
 };

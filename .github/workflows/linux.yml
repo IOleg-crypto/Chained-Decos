@@ -107,12 +107,13 @@ jobs:
             -DCH_CI=ON \
             -DENABLE_UNITY_BUILD=ON \
             -DENABLE_SANITIZERS=$SANITIZERS_FLAG \
+            -DENABLE_LTO=OFF \
             2>&1 | tee "build/${{ matrix.preset }}/configure.log"
 
       - name: Build
         run: |
           set -euo pipefail
-          cmake --build --preset ${{ matrix.preset }} --parallel 16 \
+          cmake --build --preset ${{ matrix.preset }} \
             2>&1 | tee "build/${{ matrix.preset }}/build.log"
 
       - name: Test
@@ -132,7 +133,6 @@ jobs:
           name: Linux-${{ matrix.preset }}-${{ matrix.build_type }}-binaries
           if-no-files-found: ignore
           path: |
-            build/${{ matrix.preset }}/bin
             build/${{ matrix.preset }}/**/*.log
             build/${{ matrix.preset }}/junit.xml
           retention-days: 7
