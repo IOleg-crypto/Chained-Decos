@@ -17,11 +17,11 @@
 
 // Debug break
 #ifdef CH_DEBUG
-#if defined(CH_PLATFORM_WINDOWS)
+#if CH_PLATFORM_WINDOWS
 #define CH_DEBUGBREAK() __debugbreak()
-#elif defined(CH_PLATFORM_LINUX)
-#include "signal.h"
-#define CH_DEBUGBREAK() raise(SIGTRAP)
+#elif CH_PLATFORM_LINUX
+#include <csignal>
+#define CH_DEBUGBREAK() std::raise(SIGTRAP)
 #else
 #define CH_DEBUGBREAK()
 #endif
@@ -29,6 +29,7 @@
 #else
 #define CH_DEBUGBREAK()
 #endif
+
 
 // Macro helpers
 #define CH_EXPAND_MACRO(x) x

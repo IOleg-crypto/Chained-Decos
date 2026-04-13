@@ -4,7 +4,7 @@
 #include "engine/scene/project.h"
 #include "engine/scene/project_serializer.h"
 #include "engine/scene/scene_serializer.h"
-#ifdef CH_PLATFORM_WINDOWS
+#if CH_PLATFORM_WINDOWS
 #include <shellapi.h>
 #include <windows.h>
 #endif
@@ -114,7 +114,7 @@ void EditorLauncher::LaunchStandalone(std::shared_ptr<Project> project, std::sha
         }
     }
 
-#ifdef CH_PLATFORM_WINDOWS
+#if CH_PLATFORM_WINDOWS
     // Normalize slashes for Windows (start command and ShellExecute prefer \)
     std::string normalizedRuntime = runtimePath;
     std::replace(normalizedRuntime.begin(), normalizedRuntime.end(), '/', '\\');
@@ -159,7 +159,7 @@ std::filesystem::path EditorLauncher::FindRuntimeExecutable(const std::string& p
         return {};
     }
 
-#ifdef CH_PLATFORM_WINDOWS
+#if CH_PLATFORM_WINDOWS
     const std::string targetName = "ChainedRuntime.exe";
 #else
     const std::string targetName = "ChainedRuntime";
