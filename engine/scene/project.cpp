@@ -334,7 +334,7 @@ std::filesystem::path Project::NormalizePath(const std::filesystem::path& path)
     // Use lexically_normal to handle .. and . and unify slashes
     std::filesystem::path normalized = std::filesystem::absolute(path).lexically_normal();
 
-#ifdef CH_PLATFORM_WINDOWS
+#if CH_PLATFORM_WINDOWS
     // Unify drive letter casing to uppercase to prevent relative path resolution failures
     std::string s = normalized.string();
     if (s.length() >= 2 && s[1] == ':' && std::islower(s[0]))
