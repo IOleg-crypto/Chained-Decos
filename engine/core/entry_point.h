@@ -21,7 +21,7 @@ int main(int argc, char** argv)
     return 0;
 }
 
-#if defined(CH_PLATFORM_WINDOWS) && !defined(CH_DEBUG)
+#if CH_PLATFORM_WINDOWS && !defined(CH_DEBUG)
 #include <windows.h>
 int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmdshow)
 {
