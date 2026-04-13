@@ -72,7 +72,7 @@ inline void DeserializePath(YAML::Node node, const char* name, std::string& path
         path = pathValue;
 
         // Unify slashes for cross-platform portability.
-#ifdef CH_PLATFORM_WINDOWS
+#if CH_PLATFORM_WINDOWS
         std::replace(path.begin(), path.end(), '\\', '/');
 #endif
     }

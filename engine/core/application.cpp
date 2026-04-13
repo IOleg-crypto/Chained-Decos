@@ -1,7 +1,7 @@
 #include "application.h"
-#ifdef CH_PLATFORM_WINDOWS
+#if CH_PLATFORM_WINDOWS
     #include <windows.h>
-#elif defined(CH_PLATFORM_LINUX)
+#elif CH_PLATFORM_LINUX
     #include <unistd.h>
 #endif
 
@@ -325,11 +325,11 @@ void Application::Run()
 
 std::filesystem::path Application::GetExecutableDirectory()
 {
-#ifdef CH_PLATFORM_WINDOWS
+#if CH_PLATFORM_WINDOWS
     wchar_t path[MAX_PATH];
     GetModuleFileNameW(NULL, path, MAX_PATH);
     return std::filesystem::path(path).parent_path();
-#elif defined(CH_PLATFORM_LINUX)
+#elif CH_PLATFORM_LINUX
     char path[1024];
     ssize_t count = readlink("/proc/self/exe", path, sizeof(path));
     if (count != -1)
