@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace CHEngine
 {
@@ -110,6 +111,7 @@ public:
 private:
     std::unordered_map<std::string, Coral::Type> m_ScriptClasses;
     std::unordered_map<std::string, std::string> m_ShortNameToFullName;
+    std::unordered_set<std::string> m_MissingScriptsWarnings;
 };
 
 ScriptAssemblyHost& GetScriptAssemblyHost();

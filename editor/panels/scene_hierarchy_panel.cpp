@@ -188,6 +188,10 @@ const char* SceneHierarchyPanel::GetEntityIcon(Entity entity)
     {
         return ICON_FA_SQUARE_CHECK;
     }
+    if (entity.HasComponent<ImageControl>() || entity.HasComponent<ImageButtonControl>())
+    {
+        return ICON_FA_IMAGE;
+    }
     if (entity.HasComponent<ControlComponent>())
     {
         return ICON_FA_SHAPES;

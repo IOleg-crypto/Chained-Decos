@@ -28,6 +28,7 @@ public:
     }
 
     static void SetContext(ImGuiContext* context);
+    ImGuiContext* GetContext() const { return ImGui::GetCurrentContext(); }
 
 private:
     bool m_BlockEvents = true;

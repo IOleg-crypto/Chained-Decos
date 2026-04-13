@@ -31,35 +31,31 @@ public:
     static void DrawAddComponentPopup(Entity entity);
 
     // Automation: Register using Reflection
-    template <typename T> 
-    static void Register(const std::string& name, const char* icon = nullptr);
+    template <typename T> static void Register(const std::string& name, const char* icon = nullptr);
 
     // Custom Drawer Registration
     template <typename T>
-    static void RegisterCustom(const std::string& name, std::function<bool(T&, Entity)> drawer, const char* icon = nullptr);
+    static void RegisterCustom(const std::string& name, std::function<bool(T&, Entity)> drawer,
+                               const char* icon = nullptr);
 
     static void DrawEntityHeader(CHEngine::Entity entity);
 
 private:
     // Internal template helpers (Implementations moved to .cpp or a separate _impl.h if needed elsewhere)
-    template <typename T>
-    static void DrawComponentReflection(const std::string& name, const char* icon, Entity entity);
+    template <typename T> static void DrawComponentReflection(const std::string& name, const char* icon, Entity entity);
 
     template <typename T>
-    static void DrawComponentContainer(const std::string& name, const char* icon, Entity entity, std::function<bool(T&, Entity)> drawer);
+    static void DrawComponentContainer(const std::string& name, const char* icon, Entity entity,
+                                       std::function<bool(T&, Entity)> drawer);
 
     // Final non-template drawing core
-    static void DrawComponentInternal(entt::id_type typeId, const std::string& name, const char* icon, 
-                                      Entity entity, std::function<bool()> contentDrawer, 
-                                      std::function<void()> remover);
+    static void DrawComponentInternal(entt::id_type typeId, const std::string& name, const char* icon, Entity entity,
+                                      std::function<bool()> contentDrawer, std::function<void()> remover);
 
 private:
     static std::unordered_map<entt::id_type, ComponentMetadata> s_ComponentRegistry;
 };
 
 } // namespace CHEngine
-
-// Note: Template implementations are now in PropertyEditor.cpp because they require UIProperties 
-// and EditorGUI, which would cause circular dependencies if included here.
 
 #endif // CH_PROPERTY_EDITOR_H

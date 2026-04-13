@@ -13,17 +13,11 @@ EditorCameraController::EditorCameraController()
 
 void EditorCameraController::OnUpdate(Entity cameraEntity, Timestep ts)
 {
-    if (!cameraEntity || !cameraEntity.HasComponent<TransformComponent>() ||
-        !cameraEntity.HasComponent<CameraComponent>())
-    {
-        return;
-    }
-
-    auto& tc = cameraEntity.GetComponent<TransformComponent>();
     float deltaTime = ts;
 
     // Viewport dimensions for calculations
-    m_Camera.SetViewportSize((uint32_t)EditorLayer::Get().GetViewportSize().x, (uint32_t)EditorLayer::Get().GetViewportSize().y);
+    m_Camera.SetViewportSize((uint32_t)EditorLayer::Get().GetViewportSize().x,
+                             (uint32_t)EditorLayer::Get().GetViewportSize().y);
 
     // Load settings from project
     float moveSpeed = m_MoveSpeed;
@@ -38,38 +32,29 @@ void EditorCameraController::OnUpdate(Entity cameraEntity, Timestep ts)
         sensitivity = editorSettings.CameraRotationSpeed;
     }
 
-    // 1. Sync from current transform if it was changed externally (e.g. Inspector)
-    if (fabsf(tc.Rotation.x - m_Camera.GetPitch() * glm::degrees(1.0f)) > 0.01f || fabsf(tc.Rotation.y - m_Camera.GetYaw() * glm::degrees(1.0f)) > 0.01f)
+    bool hasEntity =
+        cameraEntity && cameraEntity.HasComponent<TransformComponent>() && cameraEntity.HasComponent<CameraComponent>();
+
+    // 1. Sync from entity transform if changed externally (e.g. Inspector)
+    if (hasEntity)
     {
-        m_Camera.SetPitch(tc.Rotation.x * glm::radians(1.0f));
-        m_Camera.SetYaw(tc.Rotation.y * glm::radians(1.0f));
+        auto& tc = cameraEntity.GetComponent<TransformComponent>();
+        if (fabsf(tc.Rotation.x - m_Camera.GetPitch()) > 0.01f || fabsf(tc.Rotation.y - m_Camera.GetYaw()) > 0.01f)
+        {
+            m_Camera.SetPitch(tc.Rotation.x);
+            m_Camera.SetYaw(tc.Rotation.y);
+        }
+        glm::vec3 tcTranslation = *reinterpret_cast<const glm::vec3*>(&tc.Translation);
+        m_Camera.SetFocalPoint(tcTranslation + (m_Camera.GetForwardDirection() * m_Camera.GetDistance()));
     }
-    glm::vec3 tcTranslation = *reinterpret_cast<const glm::vec3*>(&tc.Translation);
-    glm::vec3 translation = *reinterpret_cast<const glm::vec3*>(&tcTranslation);
-    m_Camera.SetFocalPoint(translation + (m_Camera.GetForwardDirection() * m_Camera.GetDistance()));
 
     const glm::vec2& mouse = Input::GetMousePosition();
     glm::vec2 delta = Input::GetMouseDelta();
     m_InitialMousePosition = mouse;
 
-    if (Input::IsKeyDown(Key::LeftAlt))
+    // === Right Mouse Button: Rotate + Fly (FPS-style) ===
+    if (Input::IsMouseButtonDown(Mouse::ButtonRight))
     {
-        if (Input::IsMouseButtonDown(Mouse::ButtonLeft))
-        {
-            m_Camera.MouseRotate({delta.x * sensitivity, delta.y * sensitivity});
-        }
-        else if (Input::IsMouseButtonDown(Mouse::ButtonMiddle))
-        {
-            m_Camera.MousePan(delta);
-        }
-        else if (Input::IsMouseButtonDown(Mouse::ButtonRight))
-        {
-            m_Camera.MouseZoom(delta.y);
-        }
-    }
-    else if (Input::IsMouseButtonDown(Mouse::ButtonRight))
-    {
-        // Fly mode (FPS style)
         m_Camera.MouseRotate({delta.x * sensitivity, delta.y * sensitivity});
 
         float speed = moveSpeed * deltaTime;
@@ -78,63 +63,65 @@ void EditorCameraController::OnUpdate(Entity cameraEntity, Timestep ts)
             speed *= boostMultiplier;
         }
 
-        glm::vec3 forward = m_Camera.GetForwardDirection();
-        glm::vec3 right = m_Camera.GetRightDirection();
-        glm::vec3 up = {0, 1, 0};
-        
-        glm::vec3 fwd(forward.x, forward.y, forward.z);
-        glm::vec3 rgt(right.x, right.y, right.z);
-        glm::vec3 upg(up.x, up.y, up.z);
+        glm::vec3 fwd = m_Camera.GetForwardDirection();
+        glm::vec3 rgt = m_Camera.GetRightDirection();
+        glm::vec3 upg = {0, 1, 0};
 
-        glm::vec3 tcPos = tc.Translation;
-        if (Input::IsKeyDown(Key::W))
-        {
-            tcPos = tcPos + (fwd * speed);
-        }
-        if (Input::IsKeyDown(Key::S))
-        {
-            tcPos = tcPos - (fwd * speed);
-        }
-        if (Input::IsKeyDown(Key::D))
-        {
-            tcPos = tcPos + (rgt * speed);
-        }
-        if (Input::IsKeyDown(Key::A))
-        {
-            tcPos = tcPos - (rgt * speed);
-        }
-        if (Input::IsKeyDown(Key::E))
-        {
-            tcPos = tcPos + (upg * speed);
-        }
-        if (Input::IsKeyDown(Key::Q))
-        {
-            tcPos = tcPos - (upg * speed);
-        }
-        tc.Translation = tcPos;
+        glm::vec3 currentPos =
+            hasEntity ? cameraEntity.GetComponent<TransformComponent>().Translation : m_Camera.CalculatePosition();
 
-        // In fly mode, focal point follows position at fixed distance
-        m_Camera.SetFocalPoint(tcPos + (fwd * m_Camera.GetDistance()));
+        if (Input::IsKeyDown(Key::W)) currentPos += fwd * speed;
+        if (Input::IsKeyDown(Key::S)) currentPos -= fwd * speed;
+        if (Input::IsKeyDown(Key::D)) currentPos += rgt * speed;
+        if (Input::IsKeyDown(Key::A)) currentPos -= rgt * speed;
+        if (Input::IsKeyDown(Key::E)) currentPos += upg * speed;
+        if (Input::IsKeyDown(Key::Q)) currentPos -= upg * speed;
+
+        if (hasEntity)
+        {
+            cameraEntity.GetComponent<TransformComponent>().SetTranslation(currentPos);
+        }
+
+        m_Camera.SetFocalPoint(currentPos + (fwd * m_Camera.GetDistance()));
     }
 
+    // === Middle Mouse: Orbit or Alt+Middle Pan ===
+    if (Input::IsMouseButtonDown(Mouse::ButtonMiddle))
+    {
+        if (Input::IsKeyDown(Key::LeftShift))
+        {
+            m_Camera.MousePan(delta);
+        }
+        else
+        {
+            m_Camera.MouseRotate({delta.x * sensitivity, delta.y * sensitivity});
+        }
+    }
+
+    // === Alt + Left Mouse: Classic orbit (Maya/Unity style) ===
+    if (Input::IsKeyDown(Key::LeftAlt) && Input::IsMouseButtonDown(Mouse::ButtonLeft))
+    {
+        m_Camera.MouseRotate({delta.x * sensitivity, delta.y * sensitivity});
+    }
+
+    // === Scroll wheel: Zoom ===
     float wheel = Input::GetMouseWheelMove();
     if (wheel != 0)
     {
         m_Camera.MouseZoom(wheel);
     }
 
-    // Update Transform logic
-    glm::quat q = glm::quat(glm::vec3(m_Camera.GetPitch(), m_Camera.GetYaw(), 0.0f));
-    tc.RotationQuat = q;
-    tc.Rotation.x = m_Camera.GetPitch() * glm::degrees(1.0f);
-    tc.Rotation.y = m_Camera.GetYaw() * glm::degrees(1.0f);
-    tc.Rotation.z = 0.0f;
-
-    if (!Input::IsMouseButtonDown(Mouse::ButtonRight))
+    // 2. Sync camera state back to entity transform
+    if (hasEntity)
     {
-        // Only drive position from focal point if NOT in fly mode
-        glm::vec3 pos = m_Camera.CalculatePosition();
-        tc.Translation = *reinterpret_cast<const glm::vec3*>(&pos);
+        auto& tc = cameraEntity.GetComponent<TransformComponent>();
+        tc.SetRotation(glm::vec3(m_Camera.GetPitch(), m_Camera.GetYaw(), 0.0f));
+
+        if (!Input::IsMouseButtonDown(Mouse::ButtonRight))
+        {
+            glm::vec3 pos = m_Camera.CalculatePosition();
+            tc.SetTranslation(pos);
+        }
     }
 }
 

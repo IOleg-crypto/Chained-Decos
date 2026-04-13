@@ -420,6 +420,7 @@ void ScriptTypeRegistry::Clear()
 {
     m_ScriptClasses.clear();
     m_ShortNameToFullName.clear();
+    m_MissingScriptsWarnings.clear();
 }
 
 void ScriptTypeRegistry::Discover(Coral::ManagedAssembly& appAssembly, Coral::ManagedAssembly& coreAssembly)
@@ -500,7 +501,11 @@ Coral::Type* ScriptTypeRegistry::GetScriptClass(const std::string& name)
         }
     }
 
-    CH_CORE_WARN("ScriptEngine: No script found for name '{}' (key: '{}')", name, key);
+    if (m_MissingScriptsWarnings.find(key) == m_MissingScriptsWarnings.end())
+    {
+        CH_CORE_WARN("ScriptEngine: No script found for name '{}' (key: '{}')", name, key);
+        m_MissingScriptsWarnings.insert(key);
+    }
     return nullptr;
 }
 

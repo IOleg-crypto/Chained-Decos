@@ -32,6 +32,9 @@ public:
 
     // Draws a UI canvas for the given scene.
     void DrawCanvas(Scene* scene, const ImVec2& referencePosition, const ImVec2& referenceSize, bool editMode = false);
+    // Resets per-frame button press flags for all ButtonControl/ImageButtonControl components.
+    // Must be called once per frame before scripts run to prevent stale PressedThisFrame values.
+    static void ResetButtonStates(Scene* scene);
     // Loads fonts required by the current project/UI theme.
     void LoadProjectFonts();
 

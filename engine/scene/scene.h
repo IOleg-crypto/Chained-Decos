@@ -2,11 +2,11 @@
 #define CH_SCENE_H
 
 #include "components.h"
-#include "engine/graphics/api/camera_types.h"
-#include "engine/core/ch_assert.h"
 #include "engine/core/base.h"
+#include "engine/core/ch_assert.h"
 #include "engine/core/events.h"
 #include "engine/core/timestep.h"
+#include "engine/graphics/api/camera_types.h"
 #include "engine/scene/entity.h"
 #include "engine/scene/scene_settings.h"
 #include "entt/entt.hpp"
@@ -18,113 +18,75 @@
 
 namespace CHEngine
 {
-class Physics;
-
 // Owns the scene registry, scene settings, and the runtime/editor update bridge.
-class Scene : public std::enable_shared_from_this<Scene>
+class Scene
 {
 public:
     Scene();
     ~Scene();
 
-    // Creates a deep copy of the scene settings and entity graph into a fresh scene.
-    // Runtime-only state is rebuilt by the new Scene constructor.
+public:
+    // Creates a new scene with default entities (e.g. Main Camera).
+    static std::shared_ptr<Scene> CreateDefault();
+    // Creates a deep copy of another scene.
     static std::shared_ptr<Scene> Copy(std::shared_ptr<Scene> other);
 
-    // Creates a regular world entity with an optional display name.
-    Entity CreateEntity(const std::string& name = std::string()) { return m_Manager.Create(name); }
-    // Creates an entity with a stable UUID, used for serialization and duplication.
-    Entity CreateEntityWithUUID(UUID uuid, const std::string& name = std::string()) { return m_Manager.CreateWithUUID(uuid, name); }
-    // Creates a UI entity that uses the UI-specific hierarchy and component setup.
-    Entity CreateUIEntity(const std::string& type, const std::string& name = std::string()) { return m_Manager.CreateUI(type, name); }
-    // Copies an entity from this scene's registry into a new entity.
-    Entity CopyEntity(entt::entity copyEntity) { return m_Manager.Copy(copyEntity); }
-    // Destroys an entity and all of its components.
-    void DestroyEntity(Entity entity) { entity.Destroy(); }
+public:
+    Entity CreateEntity(const std::string& name = std::string());
+    Entity CreateEntityWithUUID(UUID uuid, const std::string& name = std::string());
+    Entity CreateUIEntity(const std::string& type, const std::string& name = std::string());
 
-    // Finds the first entity whose TagComponent matches the requested tag.
-    Entity FindEntityByTag(const std::string& tag) { return m_Manager.FindByTag(tag); }
-    // Returns the entity associated with the given UUID, or an invalid entity if missing.
-    Entity GetEntityByUUID(UUID uuid) { return m_Manager.GetByUUID(uuid); }
+public:
+    Entity CopyEntity(entt::entity copyEntity);
+    void DestroyEntity(Entity entity);
+    Entity FindEntityByTag(const std::string& tag);
+    Entity GetEntityByUUID(UUID uuid);
 
 public: // Life Cycle & Simulation
-    // Starts runtime execution for the scene.
     void OnRuntimeStart();
-    // Stops runtime execution and releases runtime-only scene state.
     void OnRuntimeStop();
-    // Advances runtime simulation, scripts, physics, animation, and audio.
     void OnUpdateRuntime(Timestep timestep);
-    // Advances editor-time preview systems without entering runtime mode.
     void OnUpdateEditor(Timestep timestep);
-    // Updates viewport-dependent scene state such as cameras and render targets.
     void OnViewportResize(uint32_t width, uint32_t height);
 
-    bool IsSimulationRunning() const
-    {
-        return m_IsSimulationRunning;
-    }
-    // Dispatches scene-level events to the active systems and components.
-    void OnEvent(Event& event);
+public:
+    bool IsSimulationRunning() const;
 
-public: // Scene Settings
-    // Returns mutable scene settings for editor/runtime code.
-    SceneSettings& GetSettings()
-    {
-        return m_Settings;
-    }
-    // Returns read-only scene settings.
-    const SceneSettings& GetSettings() const
-    {
-        return m_Settings;
-    }
-
+public:
+    SceneSettings& GetSettings();
+    const SceneSettings& GetSettings() const;
 
 public: // Systems & Tools
-    // Returns the live registry backing this scene.
-    entt::registry& GetRegistry()
-    {
-        return m_Manager.GetRegistry();
-    }
-    // Returns the live registry backing this scene.
-    const entt::registry& GetRegistry() const
-    {
-        return m_Manager.GetRegistry();
-    }
+    entt::registry& GetRegistry();
+    const entt::registry& GetRegistry() const;
+    std::shared_ptr<entt::registry> GetRegistryPtr();
 
-    // Returns a shared registry handle for code that needs to keep the registry alive.
-    std::shared_ptr<entt::registry> GetRegistryPtr()
-    {
-        return m_Manager.GetRegistryPtr();
-    }
-
-    // Returns the active camera for this scene, if one is available.
+public:
     std::optional<Camera3D> GetActiveCamera();
-    // Returns the primary camera entity, or an invalid entity if none is marked primary.
     Entity GetPrimaryCameraEntity();
 
 private:
     Camera3D GetCameraFromEntity(entt::entity entityHandle);
 
 private:
-    Entity m_Manager;
+    std::shared_ptr<entt::registry> m_Registry;
     SceneSettings m_Settings;
-
     bool m_IsSimulationRunning = false;
 
-
+private:
     void OnIDConstruct(entt::registry& registry, entt::entity entity);
     void OnIDDestroy(entt::registry& registry, entt::entity entity);
-
     // Hierarchy handlers.
     void OnHierarchyDestroy(entt::registry& registry, entt::entity entity);
-
-    // Script cleanup handlers.
 
 private: // Update Logic
     void UpdatePhysics(Timestep deltaTime);
     void UpdateAnimations(Timestep deltaTime);
     void UpdateAudio(Timestep deltaTime);
     void UpdateHierarchy();
+
+private:
+    Entity CopyEntityInternal(entt::entity copyEntity, entt::entity parentEntity = entt::null);
 
     friend class Entity;
 };

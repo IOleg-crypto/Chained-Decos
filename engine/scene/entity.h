@@ -85,22 +85,8 @@ public:
     // Returns false if the registry is missing or the entity handle has been destroyed.
     bool IsValid() const;
 
-    // Entity Management (Factory & Queries)
-    // Creates a child or sibling entity with the requested name in the current scene.
-    Entity Create(const std::string& name);
-    // Creates an entity with a stable UUID for serialization and duplication.
-    Entity CreateWithUUID(UUID uuid, const std::string& name);
-    // Creates a UI entity using the base control component plus type-specific UI components.
-    Entity CreateUI(const std::string& type, const std::string& name);
-    // Copies an existing entity and its components into a new entity, then restores a unique identity.
-    Entity Copy(entt::entity copyEntity, entt::entity parentEntity = entt::null);
     // Destroys the entity and any descendants attached through the hierarchy.
     void Destroy();
-
-    // Finds the first entity with a matching TagComponent.
-    Entity FindByTag(const std::string& tag);
-    // Looks up an entity by UUID in the scene-local registry mapping.
-    Entity GetByUUID(UUID uuid);
 
     operator entt::entity() const
     {

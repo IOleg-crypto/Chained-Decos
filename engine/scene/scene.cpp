@@ -6,21 +6,24 @@
 #include "engine/physics/physics.h"
 #include "engine/scene/component_serializer.h"
 #include <cmath>
+#include "serialization_utils.h"
+#include <entt/entt.hpp>
 #include <glm/gtx/norm.hpp>
+
+using namespace entt::literals;
 
 namespace CHEngine
 {
 // Scene implementation
 Scene::Scene()
 {
-    // Create registry and manager handle
-    auto registry = std::make_shared<entt::registry>();
-    m_Manager = {entt::null, registry};
+    // Create registry
+    m_Registry = std::make_shared<entt::registry>();
 
-    auto& reg = GetRegistry();
+    auto& reg = *m_Registry;
     reg.ctx().emplace<Scene*>(this);
     reg.ctx().emplace<EntityUUIDMap>();
-    reg.ctx().emplace<std::shared_ptr<entt::registry>>(registry);
+    reg.ctx().emplace<std::shared_ptr<entt::registry>>(m_Registry);
 
     // UUID Mapping
     reg.on_construct<IDComponent>().connect<&Scene::OnIDConstruct>(this);
@@ -38,6 +41,19 @@ Scene::~Scene()
     Physics::ClearContext(this);
     // Clean up active signals
     GetRegistry().clear();
+}
+
+std::shared_ptr<Scene> Scene::CreateDefault()
+{
+    auto scene = std::make_shared<Scene>();
+
+    // Ensure every scene starts with a Main Camera
+    Entity camera = scene->CreateEntity("Main Camera");
+    auto& cameraEntity = camera.AddComponent<CameraComponent>();
+    cameraEntity.Primary = true;
+    camera.GetComponent<TransformComponent>().Translation = {0, 5, 10};
+
+    return scene;
 }
 
 std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
@@ -60,7 +76,7 @@ std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
         int entityCount = 0;
         srcRegistry.view<IDComponent>().each([&](auto entityHandle, auto& id) {
             entityCount++;
-            Entity srcEntity = {entityHandle, other->m_Manager.GetRegistryPtr()};
+            Entity srcEntity = {entityHandle, other->m_Registry};
             Entity dstEntity = newScene->CreateEntityWithUUID(id.ID);
 
             ComponentSerializer::Get().CopyAll(srcEntity, dstEntity);
@@ -135,10 +151,6 @@ void Scene::OnViewportResize(uint32_t width, uint32_t height)
     }
 }
 
-void Scene::OnEvent(Event& event)
-{
-}
-
 std::optional<Camera3D> Scene::GetActiveCamera()
 {
     auto& reg = GetRegistry();
@@ -190,7 +202,7 @@ Entity Scene::GetPrimaryCameraEntity()
         auto& camera = view.get<CameraComponent>(entity);
         if (camera.Primary)
         {
-            return {entity, m_Manager.GetRegistryPtr()};
+            return {entity, m_Registry};
         }
     }
     return {};
@@ -306,6 +318,7 @@ void Scene::UpdateHierarchy()
     {
         entt::entity Entity;
         glm::mat4 ParentTransform;
+        bool ParentChanged;
     };
 
     std::vector<UpdateTask> stack;
@@ -326,19 +339,26 @@ void Scene::UpdateHierarchy()
 
         if (isRoot)
         {
-            stack.push_back({entity, glm::mat4(1.0f)});
+            stack.push_back({entity, glm::mat4(1.0f), false});
         }
     }
 
-    // 2. Iterative DFS update
+    // 2. Iterative DFS update with dirty flag propagation
     while (!stack.empty())
     {
         UpdateTask task = stack.back();
         stack.pop_back();
 
         auto& tc = view.get<TransformComponent>(task.Entity);
-        tc.WorldTransform = task.ParentTransform * tc.GetTransform();
-        tc.IsDirty = false;
+        
+        // A node needs update if it is explicitly dirty OR its parent's world transform changed
+        bool needsUpdate = task.ParentChanged || tc.IsDirty;
+        
+        if (needsUpdate)
+        {
+            tc.WorldTransform = task.ParentTransform * tc.GetTransform();
+            tc.IsDirty = false;
+        }
 
         if (reg.all_of<HierarchyComponent>(task.Entity))
         {
@@ -347,7 +367,7 @@ void Scene::UpdateHierarchy()
             {
                 if (reg.valid(child) && reg.all_of<TransformComponent>(child))
                 {
-                    stack.push_back({child, tc.WorldTransform});
+                    stack.push_back({child, tc.WorldTransform, needsUpdate});
                 }
             }
         }
@@ -415,4 +435,172 @@ void Scene::OnIDDestroy(entt::registry& reg, entt::entity entity)
     mapStruct.Map.erase(id.ID);
 }
 
+std::shared_ptr<entt::registry> Scene::GetRegistryPtr()
+{
+    return m_Registry;
+}
+const entt::registry& Scene::GetRegistry() const
+{
+    return *m_Registry;
+}
+entt::registry& Scene::GetRegistry()
+{
+    return *m_Registry;
+}
+const SceneSettings& Scene::GetSettings() const
+{
+    return m_Settings;
+}
+SceneSettings& Scene::GetSettings()
+{
+    return m_Settings;
+}
+bool Scene::IsSimulationRunning() const
+{
+    return m_IsSimulationRunning;
+}
+void Scene::DestroyEntity(Entity entity)
+{
+    entity.Destroy();
+}
+
+Entity Scene::CopyEntity(entt::entity copyEntity)
+{
+    return CopyEntityInternal(copyEntity, entt::null);
+}
+
+Entity Scene::CopyEntityInternal(entt::entity copyEntity, entt::entity parentEntity)
+{
+    Entity srcEntity(copyEntity, m_Registry);
+    std::string copyName = srcEntity.GetName() + (parentEntity == entt::null ? "_copy" : "");
+    Entity dstEntity = CreateEntity(copyName);
+
+    // CopyAll overwrites TagComponent and IDComponent with the source's values.
+    // We must restore the copy's unique identity afterwards.
+    ComponentSerializer::Get().CopyAll(srcEntity, dstEntity);
+
+    // Restore the name (CopyAll overwrites it with source tag)
+    dstEntity.GetComponent<TagComponent>().Tag = copyName;
+
+    // The IDComponent was copied verbatim from the source, so both entities now share
+    // the same UUID. We must remove it and add a fresh one.
+    dstEntity.RemoveComponent<IDComponent>();
+    dstEntity.AddComponent<IDComponent>(); 
+
+    // Handle Hierarchy
+    if (srcEntity.HasComponent<HierarchyComponent>())
+    {
+        auto& srcHC = srcEntity.GetComponent<HierarchyComponent>();
+        
+        entt::entity targetParent = parentEntity;
+        if (targetParent == entt::null && srcHC.Parent != entt::null)
+        {
+            targetParent = srcHC.Parent;
+        }
+
+        if (targetParent != entt::null)
+        {
+            auto& dstHC = dstEntity.AddOrReplaceComponent<HierarchyComponent>();
+            dstHC.Parent = targetParent;
+            dstHC.Children.clear(); 
+
+            Entity parent(targetParent, m_Registry);
+            if (parent.HasComponent<HierarchyComponent>())
+            {
+                parent.GetComponent<HierarchyComponent>().Children.push_back(dstEntity);
+            }
+        }
+        else
+        {
+            if (dstEntity.HasComponent<HierarchyComponent>())
+            {
+                dstEntity.GetComponent<HierarchyComponent>().Parent = entt::null;
+                dstEntity.GetComponent<HierarchyComponent>().Children.clear();
+            }
+        }
+
+        // Recursively copy all children
+        std::vector<entt::entity> childrenToCopy = srcHC.Children;
+        for (auto child : childrenToCopy)
+        {
+            CopyEntityInternal(child, dstEntity);
+        }
+    }
+
+    return dstEntity;
+}
+
+Entity Scene::CreateUIEntity(const std::string& type, const std::string& name)
+{
+    Entity entity = CreateEntity(name.empty() ? type : name);
+    entity.AddComponent<ControlComponent>();
+    
+    if (type == "Button")                       entity.AddComponent<ButtonControl>();
+    else if (type == "Panel")                  entity.AddComponent<PanelControl>();
+    else if (type == "Label")                  entity.AddComponent<LabelControl>();
+    else if (type == "Slider")                 entity.AddComponent<SliderControl>();
+    else if (type == "CheckBox")               entity.AddComponent<CheckboxControl>();
+    else if (type == "InputText")              entity.AddComponent<InputTextControl>();
+    else if (type == "ComboBox")               entity.AddComponent<ComboBoxControl>();
+    else if (type == "ProgressBar")            entity.AddComponent<ProgressBarControl>();
+    else if (type == "Image")                  entity.AddComponent<ImageControl>();
+    else if (type == "ImageButton")            entity.AddComponent<ImageButtonControl>();
+    else if (type == "Separator")              entity.AddComponent<SeparatorControl>();
+    else if (type == "RadioButton")            entity.AddComponent<RadioButtonControl>();
+    else if (type == "ColorPicker")            entity.AddComponent<ColorPickerControl>();
+    else if (type == "DragFloat")              entity.AddComponent<DragFloatControl>();
+    else if (type == "DragInt")                entity.AddComponent<DragIntControl>();
+    else if (type == "TreeNode")               entity.AddComponent<TreeNodeControl>();
+    else if (type == "TabBar")                 entity.AddComponent<TabBarControl>();
+    else if (type == "TabItem")                entity.AddComponent<TabItemControl>();
+    else if (type == "CollapsingHeader")       entity.AddComponent<CollapsingHeaderControl>();
+    else if (type == "PlotLines")              entity.AddComponent<PlotLinesControl>();
+    else if (type == "PlotHistogram")          entity.AddComponent<PlotHistogramControl>();
+    else if (type == "VerticalLayoutGroup")    entity.AddComponent<VerticalLayoutGroup>();
+    else if (type == "UIAction")               entity.AddComponent<UIActionComponent>();
+
+    return entity;
+}
+
+Entity Scene::CreateEntityWithUUID(UUID uuid, const std::string& name)
+{
+    Entity entity(m_Registry->create(), m_Registry);
+    entity.AddComponent<IDComponent>(uuid);
+    entity.AddComponent<TagComponent>(name.empty() ? "Entity" : name);
+    entity.AddComponent<TransformComponent>();
+    return entity;
+}
+
+Entity Scene::CreateEntity(const std::string& name)
+{
+    Entity entity(m_Registry->create(), m_Registry);
+    entity.AddComponent<IDComponent>();
+    entity.AddComponent<TagComponent>(name.empty() ? "Entity" : name);
+    entity.AddComponent<TransformComponent>();
+    return entity;
+}
+
+Entity Scene::FindEntityByTag(const std::string& tag)
+{
+    auto view = m_Registry->view<TagComponent>();
+    for (auto entity : view)
+    {
+        const auto& tagComp = view.get<TagComponent>(entity);
+        if (tagComp.Tag == tag)
+        {
+            return {entity, m_Registry};
+        }
+    }
+    return {};
+}
+
+Entity Scene::GetEntityByUUID(UUID uuid)
+{
+    auto* mapStruct = m_Registry->ctx().find<EntityUUIDMap>();
+    if (mapStruct && mapStruct->Map.find(uuid) != mapStruct->Map.end())
+    {
+        return {mapStruct->Map.at(uuid), m_Registry};
+    }
+    return {};
+}
 } // namespace CHEngine

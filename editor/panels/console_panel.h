@@ -20,7 +20,6 @@ namespace CHEngine
 enum class ConsoleLogLevel : uint32_t
 {
     Trace = 0,
-    Debug,
     Info,
     Warn,
     Error,
