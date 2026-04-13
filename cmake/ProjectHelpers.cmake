@@ -1,4 +1,4 @@
-﻿# Helper function to compile C# scripts for a game project
+# Helper function to compile C# scripts for a game project
 # Usage: chained_add_csharp_scripts(TARGET_NAME CSHARP_PROJECT_PATH)
 function(chained_add_csharp_scripts TARGET_NAME CSHARP_PROJECT_PATH)
     set(SCRIPT_TARGET "BuildScripts_${TARGET_NAME}")
@@ -170,4 +170,26 @@ function(chained_generate_build_preset_header)
 
     set(GENERATED_HEADER_CONTENT "#pragma once\n\n#include <array>\n\nnamespace CHEngine::detail\n{\ninline constexpr std::array<const char*, ${BUILD_PRESET_COUNT}> kBuildPresetNames = {\n${BUILD_PRESET_ENTRIES}};\n} // namespace CHEngine::detail\n")
     file(GENERATE OUTPUT "${GENERATED_HEADER}" CONTENT "${GENERATED_HEADER_CONTENT}")
+endfunction()
+
+# Centralized target to copy engine resources to the binary directory.
+# Making this a target prevents race conditions during parallel builds.
+function(chained_add_engine_resources_copy)
+    if(TARGET EngineResources)
+        return()
+    endif()
+
+    set(CH_RESOURCE_SRC_DIR "${CMAKE_SOURCE_DIR}/resources")
+    set(CH_RESOURCE_DST_DIR "${CMAKE_BINARY_DIR}/bin/resources")
+
+    add_custom_command(
+        OUTPUT "${CH_RESOURCE_DST_DIR}/.copied"
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${CH_RESOURCE_DST_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${CH_RESOURCE_SRC_DIR}" "${CH_RESOURCE_DST_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E touch "${CH_RESOURCE_DST_DIR}/.copied"
+        DEPENDS "${CH_RESOURCE_SRC_DIR}"
+        COMMENT "Copying global engine resources to ${CH_RESOURCE_DST_DIR}..."
+    )
+
+    add_custom_target(EngineResources ALL DEPENDS "${CH_RESOURCE_DST_DIR}/.copied")
 endfunction()

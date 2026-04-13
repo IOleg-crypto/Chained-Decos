@@ -89,15 +89,9 @@ target_include_directories(ChainedEditor PRIVATE
     ${CMAKE_SOURCE_DIR}
 )
 
-# Copy engine resources to build output directory (only if source files changed)
-set(CH_RESOURCE_SRC_DIR "${CMAKE_SOURCE_DIR}/resources")
-set(CH_RESOURCE_DST_DIR "$<TARGET_FILE_DIR:ChainedEditor>/resources")
-
-add_custom_command(TARGET ChainedEditor POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${CH_RESOURCE_DST_DIR}"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CH_RESOURCE_SRC_DIR}" "${CH_RESOURCE_DST_DIR}"
-    COMMENT "Copying engine resources from ${CH_RESOURCE_SRC_DIR} to ${CH_RESOURCE_DST_DIR}..."
-)
+# Use centralized engine resources
+chained_add_engine_resources_copy()
+add_dependencies(ChainedEditor EngineResources)
 
 # Apply optimizations
 if(COMMAND apply_engine_optimizations)
