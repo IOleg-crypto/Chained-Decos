@@ -35,24 +35,57 @@ DebugSettings:
   DrawSpawnZones: true
   CollisionWireframeMode: 0
 Entities:
-  - Entity: 3004
+  - Entity: 3001
     TagComponent:
-      Tag: back_button
+      Tag: title_map_selection
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ControlComponent:
+      Rect Transform:
+        Position: [-616.455811, -365.501465]
+        Size: [115.73938, 39.9999695]
+        Anchor Min: [0.5, 0.5]
+        Anchor Max: [0.5, 0.5]
+        Offset Min: [-674.3255, -385.501434]
+        Offset Max: [-558.586121, -345.501465]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      Z Order: 0
+      Active: true
+      Hidden: false
+    LabelControl:
+      Text: Select Map
+      Style:
+        Font Name: Default
+        Font Size: 18
+        Text Color: [255, 255, 255, 255]
+        Shadow: false
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Auto Size: false
+  - Entity: 3002
+    TagComponent:
+      Tag: btn_map_alpha
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     SceneTransitionComponent:
-      TargetScenePath: scenes/game_mode_selection.chscene
+      TargetScenePath: scenes/rpg_strategy_scene.chscene
       Triggered: false
     ControlComponent:
       Rect Transform:
-        Position: [-615.581421, 400.477661]
-        Size: [100, 40]
+        Position: [-345.390137, -106.677452]
+        Size: [350.079956, 88.9666901]
         Anchor Min: [0.5, 0.5]
         Anchor Max: [0.5, 0.5]
-        Offset Min: [-665.581421, 380.477661]
-        Offset Max: [-565.581421, 420.477661]
+        Offset Min: [-520.430115, -151.160797]
+        Offset Max: [-170.350159, -62.1941071]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -60,7 +93,7 @@ Entities:
       Active: true
       Hidden: false
     ButtonControl:
-      Label: Back
+      Label: Laboratory Alpha
       Text Style:
         Font Name: Default
         Font Size: 18
@@ -139,24 +172,24 @@ Entities:
     ManagedScriptComponent:
       Scripts:
         []
-  - Entity: 3002
+  - Entity: 3004
     TagComponent:
-      Tag: btn_map_alpha
+      Tag: back_button
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     SceneTransitionComponent:
-      TargetScenePath: scenes/untitled100.chscene
+      TargetScenePath: scenes/game_mode_selection.chscene
       Triggered: false
     ControlComponent:
       Rect Transform:
-        Position: [-345.390137, -106.677452]
-        Size: [350.079956, 88.9666901]
+        Position: [-615.581421, 400.477661]
+        Size: [100, 40]
         Anchor Min: [0.5, 0.5]
         Anchor Max: [0.5, 0.5]
-        Offset Min: [-520.430115, -151.160797]
-        Offset Max: [-170.350159, -62.1941071]
+        Offset Min: [-665.581421, 380.477661]
+        Offset Max: [-565.581421, 420.477661]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -164,7 +197,7 @@ Entities:
       Active: true
       Hidden: false
     ButtonControl:
-      Label: Laboratory Alpha
+      Label: Back
       Text Style:
         Font Name: Default
         Font Size: 18
@@ -191,36 +224,3 @@ Entities:
     ManagedScriptComponent:
       Scripts:
         - ClassName: ChainedDecos.Scripts.SceneScript
-  - Entity: 3001
-    TagComponent:
-      Tag: title_map_selection
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ControlComponent:
-      Rect Transform:
-        Position: [-616.455811, -365.501465]
-        Size: [115.73938, 39.9999695]
-        Anchor Min: [0.5, 0.5]
-        Anchor Max: [0.5, 0.5]
-        Offset Min: [-674.3255, -385.501434]
-        Offset Max: [-558.586121, -345.501465]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      Z Order: 0
-      Active: true
-      Hidden: false
-    LabelControl:
-      Text: Select Map
-      Style:
-        Font Name: Default
-        Font Size: 18
-        Text Color: [255, 255, 255, 255]
-        Shadow: false
-        Letter Spacing: 1
-        Line Height: 1.20000005
-        H Align: 1
-        V Align: 1
-      Auto Size: false

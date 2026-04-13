@@ -25,9 +25,9 @@ public class Entity
     // Cache: avoids allocating a new stub on every GetComponent<T>() call
     private readonly Dictionary<System.Type, Component> _cache = new();
 
-#pragma warning disable 0649
     internal static unsafe delegate*<ulong, NativeString, bool> Entity_HasComponent_Ptr;
     internal static unsafe delegate*<NativeString, NativeArray<ulong>> Entity_FindAllWithComponent_Ptr;
+    internal static unsafe delegate*<ulong, NativeString, void> Entity_AddComponent_Ptr;
 #pragma warning restore 0649
 
     /// <summary>Wraps a native entity ID.</summary>
@@ -59,6 +59,18 @@ public class Entity
 
         T component = new T() { Entity = this };
         _cache[componentType] = component;
+        return component;
+    }
+
+    /// <summary>Adds a component and returns its wrapper.</summary>
+    public T AddComponent<T>() where T : Component, new()
+    {
+        if (!IsValid) throw new System.Exception("Cannot add component to invalid entity.");
+        
+        unsafe { Entity_AddComponent_Ptr(ID, typeof(T).Name); }
+        
+        T component = new T() { Entity = this };
+        _cache[typeof(T)] = component;
         return component;
     }
 
@@ -106,6 +118,21 @@ public class TransformComponent : Component
     {
         get { unsafe { Vector3 scale; Transform_GetScale_Ptr(Entity.ID, &scale); return scale; } }
         set { unsafe { Transform_SetScale_Ptr(Entity.ID, &value); } }
+    }
+}
+
+/// <summary>Model/Mesh wrapper.</summary>
+public class ModelComponent : Component
+{
+#pragma warning disable 0649
+    internal static unsafe delegate*<ulong, NativeString> Model_GetModelPath_Ptr;
+    internal static unsafe delegate*<ulong, NativeString, void> Model_SetModelPath_Ptr;
+#pragma warning restore 0649
+
+    public string ModelPath
+    {
+        get { unsafe { string? result = Model_GetModelPath_Ptr(Entity.ID); return result ?? string.Empty; } }
+        set { unsafe { Model_SetModelPath_Ptr(Entity.ID, value); } }
     }
 }
 
