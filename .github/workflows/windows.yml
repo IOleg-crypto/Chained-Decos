@@ -46,7 +46,7 @@ jobs:
         with:
           variant: sccache
           key: Windows-${{ matrix.preset }}-${{ matrix.build_type }}
-          max-size: 1G
+          max-size: 5G
 
       - name: Setup Python
         uses: actions/setup-python@v5
