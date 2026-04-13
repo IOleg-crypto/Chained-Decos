@@ -3,8 +3,6 @@
 #include "engine/core/profiler.h"
 #include "engine/core/assets/asset_manager.h"
 #include "engine/graphics/loaders/font_loader.h"
-#include "engine/scene/components.h"
-#include "engine/scene/project.h"
 #include "engine/scene/scene.h"
 #include <algorithm>
 #include <map>
