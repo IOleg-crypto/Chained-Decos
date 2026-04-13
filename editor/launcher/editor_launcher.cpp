@@ -5,8 +5,8 @@
 #include "engine/scene/project_serializer.h"
 #include "engine/scene/scene_serializer.h"
 #if CH_PLATFORM_WINDOWS
-#include <shellapi.h>
 #include <windows.h>
+#include <shellapi.h>
 #endif
 #include <algorithm>
 #include <format>

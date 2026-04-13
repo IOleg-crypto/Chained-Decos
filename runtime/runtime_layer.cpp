@@ -137,6 +137,7 @@ void RuntimeLayer::OnDetach()
 
 void RuntimeLayer::OnUpdate(Timestep ts)
 {
+    // Boost uploads during loading
     auto& scriptEngine = ScriptEngine::Get();
 
     // The scene transition and script logic will consume button states after this point.
@@ -312,8 +313,8 @@ void RuntimeLayer::OnImGuiRender()
                 {
                     ImVec2 canvasPos = ImGui::GetCursorScreenPos();
                     ImVec2 canvasSize = ImGui::GetContentRegionAvail();
-                    CH_CORE_INFO("RuntimeLayer: Drawing UI canvas at ({}, {}) with size ({}, {})", 
-                                  canvasPos.x, canvasPos.y, canvasSize.x, canvasSize.y);
+                    // CH_CORE_INFO("RuntimeLayer: Drawing UI canvas at ({}, {}) with size ({}, {})",
+                    //  canvasPos.x, canvasPos.y, canvasSize.x, canvasSize.y);
                     UIRenderer::Get().DrawCanvas(m_Scene.get(), canvasPos, canvasSize, false);
                     SceneScripting::RenderUI(m_Scene.get());
                 }
@@ -549,18 +550,23 @@ void RuntimeLayer::SetupBrandingAndIcon()
 
     std::filesystem::path iconPath = "";
     std::string resolved = AssetManager::Get().ResolvePath(config.IconPath);
-    if (std::filesystem::exists(resolved))
+    if (!resolved.empty() && std::filesystem::exists(resolved))
     {
         iconPath = resolved;
     }
-
-    if (iconPath.empty())
+    else if (std::filesystem::exists(config.IconPath))
     {
-        std::filesystem::path p = project->GetProjectDirectory() / config.IconPath;
-        if (std::filesystem::exists(p))
-        {
-            iconPath = p;
-        }
+        iconPath = config.IconPath;
+    }
+
+    if (!iconPath.empty())
+    {
+        CH_CORE_INFO("RuntimeLayer: Setting window icon: {}", iconPath.string());
+        window.SetWindowIcon(iconPath.string());
+    }
+    else
+    {
+        CH_CORE_WARN("RuntimeLayer: Failed to resolve window icon: {}", config.IconPath);
     }
 }
 

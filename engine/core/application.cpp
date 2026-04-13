@@ -1,8 +1,8 @@
 #include "application.h"
 #if CH_PLATFORM_WINDOWS
-    #include <windows.h>
+#include <windows.h>
 #elif CH_PLATFORM_LINUX
-    #include <unistd.h>
+#include <unistd.h>
 #endif
 
 #include "engine/audio/audio.h"
@@ -17,14 +17,8 @@
 #include "engine/physics/physics.h"
 #include "engine/scene/component_serializer.h"
 #include "engine/scene/project.h"
-#include "nfd.h"
 #include "scripting/scriptengine.h"
-
-#include "engine/graphics/loaders/texture_loader.h"
-#include "engine/graphics/loaders/model_loader.h"
-#include "engine/graphics/loaders/shader_loader.h"
-#include "engine/graphics/loaders/environment_loader.h"
-#include "engine/graphics/loaders/font_loader.h"
+#include <nfd.h>
 
 #include <algorithm>
 #include <filesystem>
@@ -56,6 +50,10 @@ Application::Application(const ApplicationSpecification& specification)
     windowProps.Title = m_Specification.Name;
     windowProps.Width = m_Specification.WindowWidth;
     windowProps.Height = m_Specification.WindowHeight;
+    windowProps.VSync = m_Specification.VSync;
+    windowProps.Fullscreen = m_Specification.Fullscreen;
+    windowProps.Resizable = m_Specification.Resizable;
+    windowProps.IconPath = m_Specification.AppIcon;
 
     // ImGui Ini path setup
     std::string iniName = m_Specification.Name;
@@ -77,15 +75,6 @@ Application::Application(const ApplicationSpecification& specification)
         Project::SetEngineRoot(PROJECT_ROOT_DIR);
 #endif
     }
-
-    // Register Asset Loaders BEFORE any system that may load assets during Init
-    auto& assetManager = AssetManager::Get();
-    assetManager.RegisterLoader(AssetType::Texture, std::make_unique<TextureLoader>());
-    assetManager.RegisterLoader(AssetType::Font, std::make_unique<FontLoader>());
-    assetManager.RegisterLoader(AssetType::Model, std::make_unique<ModelLoader>());
-    assetManager.RegisterLoader(AssetType::Shader, std::make_unique<ShaderLoader>());
-    assetManager.RegisterLoader(AssetType::Environment, std::make_unique<EnvironmentLoader>());
-
     Renderer::Init();
     UIRenderer::Init();
     Physics::Init();
@@ -237,7 +226,7 @@ void Application::Run()
 
         // 1. Time Tracking
         float time = (float)glfwGetTime();
-        
+
         // FPS Capping
         int targetFPS = m_Window->GetTargetFramesPerSecond();
         if (targetFPS > 0)
@@ -270,7 +259,7 @@ void Application::Run()
             if (!m_Minimized)
             {
                 // -- Logic/Simulation --
-                
+
                 // 1. Variable Update
                 for (auto& layer : *m_LayerStack)
                 {
@@ -333,7 +322,9 @@ std::filesystem::path Application::GetExecutableDirectory()
     char path[1024];
     ssize_t count = readlink("/proc/self/exe", path, sizeof(path));
     if (count != -1)
+    {
         return std::filesystem::path(std::string(path, count)).parent_path();
+    }
 #endif
     return std::filesystem::current_path();
 }

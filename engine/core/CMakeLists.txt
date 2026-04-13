@@ -6,8 +6,10 @@ add_library(engine_core ${SUBMODULE_LIB_TYPE}
         imgui_layer.cpp
         thread_pool.cpp
         application.cpp
+        project_launcher.cpp
         assets/asset_manager.cpp
         application.h
+        project_launcher.h
         imgui_layer.h
         base.h
         ch_assert.h

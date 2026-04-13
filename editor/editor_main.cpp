@@ -1,6 +1,6 @@
 #include "editor_layer.h"
-#include "engine/core/application.h"
 #include "engine/core/entry_point.h"
+#include "engine/core/project_launcher.h"
 #include "panels/console_panel.h"
 #include "engine/core/log.h"
 
@@ -10,13 +10,9 @@ Application* CreateApplication(ApplicationCommandLineArgs args)
 {
     Log::SetLogCallback(ConsolePanel::AddLog);
 
-    ApplicationSpecification spec;
-    spec.Name = "Chained Editor";
-    spec.WindowWidth = 0;
-    spec.WindowHeight = 0;
-    spec.CommandLineArgs = args;
+    auto details = ProjectLauncher::PrepareEditor(args);
 
-    auto app = new Application(spec);
+    auto app = new Application(details.Spec);
     app->PushLayer(new EditorLayer());
     return app;
 }
