@@ -15,6 +15,10 @@
 #include <vector>
 
 #include "render_command.h"
+#include "engine/graphics/loaders/texture_loader.h"
+#include "engine/graphics/loaders/model_loader.h"
+#include "engine/graphics/loaders/shader_loader.h"
+#include "engine/graphics/loaders/environment_loader.h"
 
 namespace CHEngine
 {
@@ -42,6 +46,13 @@ void Renderer::Init()
     {
         return;
     }
+
+    // Register Graphics loaders
+    auto& assetManager = AssetManager::Get();
+    assetManager.RegisterLoader(AssetType::Texture, std::make_unique<TextureLoader>());
+    assetManager.RegisterLoader(AssetType::Model, std::make_unique<ModelLoader>());
+    assetManager.RegisterLoader(AssetType::Shader, std::make_unique<ShaderLoader>());
+    assetManager.RegisterLoader(AssetType::Environment, std::make_unique<EnvironmentLoader>());
 
     s_Instance->InternalInit();
 }

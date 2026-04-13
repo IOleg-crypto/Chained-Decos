@@ -41,6 +41,11 @@ struct ApplicationSpecification
     std::string WorkingDirectory;
     int WindowWidth = 1280;
     int WindowHeight = 720;
+    bool VSync = true;
+    bool Fullscreen = false;
+    bool Resizable = true;
+    std::string AppIcon = "";
+    
     ApplicationCommandLineArgs CommandLineArgs;
     std::string ImGuiConfigurationPath = "imgui.ini";
     bool Headless = false;
