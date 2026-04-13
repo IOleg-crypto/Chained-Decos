@@ -22,6 +22,10 @@ int main(int argc, char** argv)
 }
 
 #if CH_PLATFORM_WINDOWS && !defined(CH_DEBUG)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmdshow)
 {
