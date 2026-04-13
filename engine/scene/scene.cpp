@@ -41,6 +41,9 @@ Scene::~Scene()
     Physics::ClearContext(this);
     // Clean up active signals
     GetRegistry().clear();
+    
+    // Break circular dependency to allow registry to be safely deallocated
+    m_Registry->ctx().erase<std::shared_ptr<entt::registry>>();
 }
 
 std::shared_ptr<Scene> Scene::CreateDefault()
