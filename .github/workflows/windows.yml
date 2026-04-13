@@ -89,6 +89,7 @@ jobs:
             -DENABLE_UNITY_BUILD=ON \
             -DENABLE_SANITIZERS=OFF \
             -DENABLE_LTO=OFF \
+            -DENABLE_PCH=OFF \
             2>&1 | tee "build/${{ matrix.preset }}/configure.log"
 
       - name: Build
