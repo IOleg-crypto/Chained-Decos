@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        preset: [windows-gcc, windows-clang]
+        preset: [windows-gcc, windows-clang, windows-msvc]
         build_type: [Debug, Release]
 
     steps:
@@ -30,6 +30,7 @@ jobs:
           fetch-depth: 1
 
       - name: Setup MSYS2
+        if: contains(matrix.preset, 'gcc') || contains(matrix.preset, 'clang')
         uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
@@ -37,6 +38,10 @@ jobs:
           install: >-
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-clang
+
+      - name: Setup MSVC
+        if: contains(matrix.preset, 'msvc')
+        uses: ilammy/msvc-dev-cmd@v1
 
       - name: Get CMake and Ninja
         uses: lukka/get-cmake@latest
@@ -72,6 +77,8 @@ jobs:
           dotnet --info
           if [[ "${{ matrix.preset }}" == *"clang"* ]]; then
             clang --version | head -n 1
+          elif [[ "${{ matrix.preset }}" == *"msvc"* ]]; then
+            cl || true
           else
             gcc --version | head -n 1
           fi
