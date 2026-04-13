@@ -18,6 +18,7 @@ Chained Decos is the game project built on top of Chained Engine, a modular C++2
 ## Table of Contents
 
 - [Overview](#overview)
+- [Developer Resources (Deep Dives)](#developer-resources-deep-dives)
 - [Editor and Simulation Workflow](#editor-and-simulation-workflow)
 - [Engine Feature Highlights](#engine-feature-highlights)
 - [Architecture](#architecture)
@@ -47,12 +48,20 @@ Chained Decos and Chained Engine currently target Windows and Linux.
 
 Main capabilities:
 
-- OpenGL 4.3+ rendering pipeline.
+- OpenGL 4.3+ rendering pipeline with system-specific asset loader registration.
 - ECS-driven scene model using EnTT.
-- YAML-based project and scene serialization.
+- YAML-based project and scene serialization with deep configuration support.
 - Editor workflow with hierarchy/inspector/panels and in-editor play mode.
-- Standalone runtime wrapper for shipping or testing project builds.
+- Flexible bootstrapping via `ProjectLauncher` for Headless, Runtime, and Editor modes.
 - Managed C# gameplay scripting through Coral (.NET/CoreCLR host).
+
+## Developer Resources (Deep Dives)
+
+For a more detailed look at specific engine systems, please refer to the following guides:
+
+*   [**Engine Architecture**](docs/ARCHITECTURE.md): Bootstrapping, system initialization (SRP), and the main loop.
+*   [**Component Reference**](docs/COMPONENTS.md): Complete list of available ECS components and their roles.
+*   [**Scripting API Guide**](docs/SCRIPTING_API.md): Detailed reference for managed C# development.
 
 ## Editor and Simulation Workflow
 
@@ -88,10 +97,11 @@ Chained Engine follows a layered architecture with a Hazel-inspired service/sing
 
 Core layers:
 
-- Engine core: rendering, scene, physics, audio, assets, platform abstractions.
-- Editor: content workflows, scene inspection/manipulation, panel-based tooling.
-- Runtime: lightweight executable that loads and runs a project.
-- Scripting bridge: C++/C# interop through Coral.Native and managed assemblies.
+- **Engine Core**: Rendering, scene, physics, audio, assets, platform abstractions.
+- **Bootstrapping**: `ProjectLauncher` utility that handles headless/runtime/editor initialization using a data-driven approach.
+- **Editor**: Content workflows, scene inspection/manipulation, panel-based tooling.
+- **Runtime**: Lightweight executable that loads and runs a project based on its `.chproject` metadata.
+- **Scripting Bridge**: C++/C# interop through Coral.Native and managed assemblies.
 
 The game selection itself is build-time, not runtime: `CH_ACTIVE_GAME` chooses which game folder is added to the build graph, while the `.chproject` file decides what the runtime opens.
 
@@ -127,21 +137,17 @@ Want to start a new game from scratch? Here is how to hook it up:
        CSHARP_PROJECT "scripts/MyGame.Scripts.csproj" # Omit if you don't use C# yet
    )
    ```
-3. **Add the entry point:** Create `game/mygame/src/main.cpp`:
+3. **Add the entry point:** Create `game/mygame/src/main.cpp`. The engine uses a modular `ProjectLauncher` to bootstrap the application:
    ```cpp
    #include "engine/core/application.h"
    #include "engine/core/entry_point.h"
-   #include "runtime/runtime_layer.h"
+   #include "engine/core/project_launcher.h"
 
    namespace CHEngine {
        Application* CreateApplication(ApplicationCommandLineArgs args) {
-           ApplicationSpecification spec;
-           spec.Name = "MyGame";
-           spec.CommandLineArgs = args;
-           
-           Application* app = new Application(spec);
-           app->PushLayer(new RuntimeLayer(""));
-           return app;
+           // Prepare runtime specifications from project data
+           auto details = ProjectLauncher::PrepareRuntime(args);
+           return new Application(details.Spec);
        }
    }
    ```
@@ -427,7 +433,8 @@ Need performance that scripting can't provide, or want to create a brand new fou
    };
    ```
 2. **Support Serialization:** If you want editors to save or load it with the level, update `scene_serializer.cpp` or `yaml_extensions` so YAML knows how to read/write it.
-3. **Expose It to the Editor:** Open `editor/editor_panels.cpp` and add the `ImGui` draw logic for `ParkourStateComponent` so designers can tweak its values in the Inspector panel.
+3. **Expose It to the Editor:** Open `editor/editor_panels.cpp` and add the `ImGui` draw logic for `ParkourStateComponent`.
+4. **Register Loaders (if needed):** If your component needs a custom asset type, register its loader in the appropriate system (e.g., `Renderer::Init()` for graphics assets) to maintain Single Responsibility Principle compliance.
 
 ## Debugging and Profiling
 

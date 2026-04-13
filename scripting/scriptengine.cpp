@@ -22,7 +22,6 @@ ScriptEngine::ScriptEngine()
 
 ScriptEngine::~ScriptEngine()
 {
-    InternalShutdown();
     s_Instance = nullptr;
 }
 
