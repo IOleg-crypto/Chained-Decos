@@ -34,28 +34,38 @@ namespace ChainedDecos.Scripts
     }
 
     // --- 2. PROTOTYPE (Прототип) ---
-    // Дозволяє клонувати налаштування кубів (масштаб, тег) "на ходу".
-    // Оскільки фізичного Instantiate в C# немає, прототип копіює дані на існуючі Entity.
+    // Дозволяє клонувати налаштування об'єктів (масштаб, модель) "на ходу".
     public class CubePrototype
     {
         public Vector3 Scale;
-        public string ModelName;
+        public string ModelPath;
 
-        public CubePrototype(Vector3 scale, string modelName)
+        public CubePrototype(Vector3 scale, string modelPath)
         {
             Scale = scale;
-            ModelName = modelName;
+            ModelPath = modelPath;
         }
 
-        // "Клонування" властивостей прототипу на вказану сутність
-        public void CloneTo(Entity target)
+        // Повертає новий примірник прототипу (чистий C# Prototype)
+        public CubePrototype Clone() => new CubePrototype(Scale, ModelPath);
+
+        // Застосовує параметри прототипу до існуючої сутності
+        public void ApplyTo(Entity target)
         {
-            TransformComponent? transform = target.GetComponent<TransformComponent>();
-            if (transform != null)
-            {
-                transform.Scale = Scale;
-                Log.Info($"[Prototype] Applied {ModelName} prototype to Entity {target.ID}.");
-            }
+            if (target == null || !target.IsValid) return;
+
+            // 1. Масштаб
+            var transform = target.GetComponent<TransformComponent>();
+            if (transform != null) transform.Scale = Scale;
+
+            // 2. Модель (якщо є)
+            var model = target.GetComponent<ModelComponent>();
+            if (model == null && !string.IsNullOrEmpty(ModelPath))
+                model = target.AddComponent<ModelComponent>();
+            
+            if (model != null) model.ModelPath = ModelPath;
+
+            Log.Info($"[Prototype] Applied config to Entity {target.ID} (Scale: {Scale}, Model: {ModelPath})");
         }
     }
 
@@ -100,8 +110,8 @@ namespace ChainedDecos.Scripts
     public class PatternUsageController : Script
     {
         private IGameConfigFactory? _activeFactory;
-        private CubePrototype _smallCube = new CubePrototype(new Vector3(0.5f, 0.5f, 0.5f), "Obstacle_Small");
-        private CubePrototype _wallCube = new CubePrototype(new Vector3(1.0f, 5.0f, 10.0f), "Wall_Prototype");
+        private CubePrototype _smallCube = new CubePrototype(new Vector3(0.5f, 0.5f, 0.5f), "assets/models/cube.obj");
+        private CubePrototype _wallCube = new CubePrototype(new Vector3(1.0f, 5.0f, 10.0f), ""); // No model change for wall yet
 
         public override void OnUpdate(float deltaTime) // Натискання клавіш для перевірки
         {
@@ -116,11 +126,22 @@ namespace ChainedDecos.Scripts
             if (Input.IsKeyPressed(Key.D1)) ApplyConfig(new ClassicConfigFactory());
             if (Input.IsKeyPressed(Key.D2)) ApplyConfig(new UltraConfigFactory());
 
-            // 3. Тест Prototype (Клавіша P)
+            // 3. Тест Prototype (Клавіша P - застосувати, Клавіша N - клонувати)
             if (Input.IsKeyPressed(Key.P))
             {
-                // Наприклад, перетворюємо поточний об'єкт у стіну за допомогою прототипу
-                _wallCube.CloneTo(Entity);
+                // Застосовуємо прототип стіни до поточного об'єкта
+                _wallCube.ApplyTo(Entity);
+            }
+
+            if (Input.IsKeyPressed(Key.N))
+            {
+                // Створюємо нову сутність як копію поточної і застосовуємо прототип "малого куба"
+                Entity? newEntity = Scene.CopyEntity(Entity);
+                if (newEntity != null)
+                {
+                    _smallCube.ApplyTo(newEntity);
+                    Log.Info($"[Prototype Test] Spawning new entity {newEntity.ID} via Prototype.");
+                }
             }
         }
 
@@ -128,8 +149,7 @@ namespace ChainedDecos.Scripts
         {
             _activeFactory = factory;
             _activeFactory.ConfigureWindow();
-            Log.Info($"[Factory Test] Loading scene: {_activeFactory.GetTargetScene()}");
-            //Scene.LoadScene(_activeFactory.GetTargetScene());
+            Log.Info($"[Factory Test] Configuration applied for: {_activeFactory.GetTargetScene()}");
         }
     }
 }

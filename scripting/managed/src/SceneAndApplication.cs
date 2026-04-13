@@ -13,6 +13,7 @@ public static class Scene
     internal static unsafe delegate*<NativeString, ulong> Scene_FindEntityByTag_Ptr;
     internal static unsafe delegate*<NativeString, void> Scene_LoadScene_Ptr;
     internal static unsafe delegate*<ulong> Scene_GetPrimaryCameraEntity_Ptr;
+    internal static unsafe delegate*<ulong, ulong> Scene_CopyEntity_Ptr;
 #pragma warning restore 0649
 
     private static unsafe ulong FindEntityByTag_Native(string tag) => Scene_FindEntityByTag_Ptr(tag);
@@ -38,6 +39,15 @@ public static class Scene
         if (entityIds.Length > 0) return new Entity(entityIds[0]);
 
         return null;
+    }
+
+    /// <summary>Creates a deep copy of an entity.</summary>
+    public static Entity? CopyEntity(Entity entity)
+    {
+        if (entity == null || !entity.IsValid) return null;
+        ulong newId = 0;
+        unsafe { newId = Scene_CopyEntity_Ptr(entity.ID); }
+        return newId != 0 ? new Entity(newId) : null;
     }
 }
 
