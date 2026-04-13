@@ -1,5 +1,9 @@
 #include "application.h"
 #if CH_PLATFORM_WINDOWS
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #elif CH_PLATFORM_LINUX
 #include <unistd.h>
