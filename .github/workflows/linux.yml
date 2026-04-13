@@ -123,6 +123,7 @@ jobs:
           export LIBGL_ALWAYS_SOFTWARE=1
           export GALLIUM_DRIVER=llvmpipe
           export MESA_GL_VERSION_OVERRIDE=4.5
+          export LSAN_OPTIONS="suppressions=${{ github.workspace }}/.github/lsan.supp"
           xvfb-run -a ctest --test-dir "$BUILD_DIR" -C "${{ matrix.build_type }}" --output-on-failure --timeout 300 --output-junit "$BUILD_DIR/junit.xml" \
             2>&1 | tee "$BUILD_DIR/ctest.log"
 
