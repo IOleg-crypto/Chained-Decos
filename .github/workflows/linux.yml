@@ -101,11 +101,14 @@ jobs:
           fi
 
           mkdir -p "build/${{ matrix.preset }}"
+          PYTHON_EXE=$(python3 -c "import sys; print(sys.executable)")
           cmake --preset ${{ matrix.preset }} \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DPython_EXECUTABLE="${PYTHON_EXE}" \
+            -DPython3_EXECUTABLE="${PYTHON_EXE}" \
             -DCH_CI=ON \
             -DENABLE_UNITY_BUILD=ON \
             -DENABLE_SANITIZERS=$SANITIZERS_FLAG \
