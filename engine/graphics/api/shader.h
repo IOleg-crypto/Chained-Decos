@@ -1,7 +1,9 @@
 #ifndef CH_SHADER_H
 #define CH_SHADER_H
+#include "engine/core/ch_math.h"
 #include <glm/glm.hpp>
 #include <memory>
+#include <string>
 
 namespace CHEngine
 {
