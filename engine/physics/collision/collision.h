@@ -1,13 +1,13 @@
 #ifndef CH_COLLISION_H
 #define CH_COLLISION_H
 
-#include "raylib.h"
+#include <glm/glm.hpp>
 
 namespace CHEngine
 {
 namespace Collision
 {
-static bool CheckAABB(const Vector3& minA, const Vector3& maxA, const Vector3& minB, const Vector3& maxB)
+static bool CheckAABB(const glm::vec3& minA, const glm::vec3& maxA, const glm::vec3& minB, const glm::vec3& maxB)
 {
     return (minA.x <= maxB.x && maxA.x >= minB.x) && (minA.y <= maxB.y && maxA.y >= minB.y) &&
            (minA.z <= maxB.z && maxA.z >= minB.z);

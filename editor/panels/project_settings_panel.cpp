@@ -1,9 +1,10 @@
 #include "project_settings_panel.h"
 #include "engine/scene/project.h"
+#include "editor_layer.h"
 #include "engine/scene/project_serializer.h"
 #include "imgui.h"
-#include "nfd.h"
-#include "rlImGui/extras/IconsFontAwesome6.h"
+#include "engine/platform/utils/dialogs.h"
+#include "IconsFontAwesome6.h"
 #include <format>
 
 namespace CHEngine
@@ -30,7 +31,6 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
 
     if (ImGui::Begin("Project Settings", &m_IsOpen))
     {
-        ImGui::PushID(this);
         auto& config = project->GetConfig();
 
         static int selectedCategory = 0;
@@ -80,13 +80,11 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             ImGui::SameLine();
             if (ImGui::Button("...###IconBrowse"))
             {
-                nfdu8char_t* outPath = NULL;
-                nfdu8filteritem_t filterItem[1] = {{"Image Files", "png,jpg,jpeg"}};
-                nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, NULL);
-                if (result == NFD_OKAY)
+                std::vector<FileDialogFilter> filters = {{"Image Files", "png,jpg,jpeg"}};
+                auto result = Dialogs::OpenFile(filters);
+                if (result)
                 {
-                    config.IconPath = Project::GetRelativePath(outPath);
-                    NFD_FreePath(outPath);
+                    config.IconPath = Project::GetRelativePath(result->string());
                 }
             }
 
@@ -158,13 +156,11 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
                     ImGui::SameLine();
                     if (ImGui::Button("..."))
                     {
-                        nfdu8char_t* outPath = NULL;
-                        nfdu8filteritem_t filterItem[1] = {{"Runtime Executable", "exe"}};
-                        nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, 1, NULL);
-                        if (result == NFD_OKAY)
+                        std::vector<FileDialogFilter> filters = {{"Runtime Executable", "exe"}};
+                        auto result = Dialogs::OpenFile(filters);
+                        if (result)
                         {
-                            profile.BinaryPath = outPath;
-                            NFD_FreePath(outPath);
+                            profile.BinaryPath = result->string();
                         }
                     }
 
@@ -222,12 +218,10 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             ImGui::SameLine();
             if (ImGui::Button("...###ModuleDirBrowse"))
             {
-                nfdu8char_t* outPath = NULL;
-                nfdresult_t result = NFD_PickFolder(&outPath, NULL);
-                if (result == NFD_OKAY)
+                auto result = Dialogs::PickFolder();
+                if (result)
                 {
-                    config.Scripting.ModuleDirectory = Project::GetRelativePath(outPath);
-                    NFD_FreePath(outPath);
+                    config.Scripting.ModuleDirectory = Project::GetRelativePath(result->string());
                 }
             }
 
@@ -236,7 +230,7 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
         else if (selectedCategory == 2) // Physics
         {
             ImGui::TextDisabled("Physics Settings");
-            ImGui::DragFloat("World Gravity", &config.Physics.Gravity, 0.1f, 0.0f, 100.0f);
+            ImGui::DragFloat("World Gravity", &config.Physics.Gravity, 0.1f);
             ImGui::DragFloat("Fixed Timestep", &config.Physics.FixedTimestep, 0.001f, 0.001f, 0.1f, "%.4f");
         }
         else if (selectedCategory == 3) // Window
@@ -260,6 +254,12 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             ImGui::DragFloat("Camera Speed", &config.Editor.CameraMoveSpeed, 0.1f, 0.1f, 100.0f);
             ImGui::DragFloat("Rotation Speed", &config.Editor.CameraRotationSpeed, 0.01f, 0.01f, 1.0f);
             ImGui::DragFloat("Boost Multiplier", &config.Editor.CameraBoostMultiplier, 0.1f, 1.0f, 200.0f);
+
+            ImGui::Separator();
+            ImGui::TextDisabled("Auto-Save Settings");
+            auto& editorConfig = EditorLayer::Get().GetConfig();
+            ImGui::Checkbox("Enable Auto-Save", &editorConfig.AutoSaveEnabled);
+            ImGui::DragFloat("Auto-Save Interval (s)", &editorConfig.AutoSaveInterval, 1.0f, 10.0f, 3600.0f);
         }
         else if (selectedCategory == 6) // Rendering
         {
@@ -318,7 +318,6 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             serializer.Serialize(path);
         }
 
-        ImGui::PopID();
     }
     ImGui::End();
 }

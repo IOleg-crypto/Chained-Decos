@@ -1,121 +1,199 @@
 #include "engine/core/base.h"
-#include "engine/graphics/asset_manager.h"
-#include "engine/graphics/model_asset.h"
-#include "engine/core/thread_pool.h"
+#include "engine/core/assets/asset_manager.h"
+#include "engine/scene/project.h"
 #include "gtest/gtest.h"
 
+#include <atomic>
+#include <chrono>
+#include <filesystem>
+#include <string>
+#include <thread>
+
 using namespace CHEngine;
+
+namespace
+{
+class DummyAsset final : public Asset
+{
+public:
+    DummyAsset()
+        : Asset(GetStaticType())
+    {
+    }
+
+    static AssetType GetStaticType()
+    {
+        return AssetType::None;
+    }
+
+    int OnLoadedCount = 0;
+    int LoadCount = 0;
+    std::string LastLoadedPath;
+
+    void OnLoaded() override
+    {
+        ++OnLoadedCount;
+    }
+};
+
+class CountingLoader final : public IAssetLoader
+{
+public:
+    explicit CountingLoader(bool shouldSucceed, bool asyncLoad = false)
+        : m_ShouldSucceed(shouldSucceed)
+        , m_AsyncLoad(asyncLoad)
+    {
+    }
+
+    std::shared_ptr<Asset> Create() override
+    {
+        ++CreateCalls;
+        return std::make_shared<DummyAsset>();
+    }
+
+    bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError = nullptr) override
+    {
+        ++LoadCalls;
+        if (auto dummy = std::dynamic_pointer_cast<DummyAsset>(asset))
+        {
+            ++dummy->LoadCount;
+            dummy->LastLoadedPath = resolvedPath;
+        }
+
+        if (!m_ShouldSucceed && outError)
+        {
+            *outError = "CountingLoader: forced failure for test path '" + resolvedPath + "'";
+        }
+
+        return m_ShouldSucceed;
+    }
+
+    bool IsAsync() const override
+    {
+        return m_AsyncLoad;
+    }
+
+    int CreateCalls = 0;
+    int LoadCalls = 0;
+
+private:
+    bool m_ShouldSucceed = true;
+    bool m_AsyncLoad = false;
+};
+
+std::string MakeUniqueAssetPath(const char* suffix)
+{
+    static std::atomic<uint64_t> counter{0};
+    return std::string("unit_tests/") + suffix + "_" + std::to_string(++counter) + ".dummy";
+}
+} // namespace
 
 class AssetManagerTest : public ::testing::Test
 {
 protected:
     void SetUp() override
     {
-#if defined(CH_CI)
-        GTEST_SKIP() << "Skipping graphics tests on CI due to lack of reliable OpenGL support.";
-#endif
-        // Set hidden flag to avoid showing a window during tests
-        SetConfigFlags(FLAG_WINDOW_HIDDEN);
-        InitWindow(1, 1, "AssetManagerTest");
-
-        m_ThreadPool = std::make_unique<ThreadPool>(1);
-        m_AssetManager = std::make_unique<AssetManager>();
-
-        // Final check if InitWindow actually worked
-        if (IsWindowReady())
-        {
-            m_AssetManager->Initialize();
-        }
+        auto project = Project::New();
+        project->GetConfig().ProjectDirectory = std::filesystem::current_path();
+        project->GetConfig().AssetDirectory = "assets";
+        Project::SetEngineRoot(project->GetConfig().ProjectDirectory);
     }
 
-    void TearDown() override
+    static CountingLoader* RegisterDummyLoader(bool shouldSucceed, bool asyncLoad = false)
     {
-        if (m_AssetManager)
-        {
-            m_AssetManager->Shutdown();
-            m_AssetManager.reset();
-        }
-
-        if (m_ThreadPool)
-        {
-            m_ThreadPool->Shutdown();
-            m_ThreadPool.reset();
-        }
-
-        if (IsWindowReady())
-        {
-            CloseWindow();
-        }
+        auto loader = std::make_unique<CountingLoader>(shouldSucceed, asyncLoad);
+        CountingLoader* rawLoader = loader.get();
+        AssetManager::Get().RegisterLoader(DummyAsset::GetStaticType(), std::move(loader));
+        return rawLoader;
     }
-
-    std::unique_ptr<AssetManager> m_AssetManager;
-    std::unique_ptr<ThreadPool> m_ThreadPool;
 };
 
-// These tests require a working OpenGL context
-#if !defined(CH_CI)
-
-TEST_F(AssetManagerTest, ProceduralModelLoading)
+TEST_F(AssetManagerTest, ResolvePathReturnsEmptyForEmptyInput)
 {
-    if (!IsWindowReady() || !m_AssetManager)
-    {
-        GTEST_SKIP() << "Skipping graphics test: No OpenGL context available.";
-    }
-
-    auto cube = m_AssetManager->Get<ModelAsset>(":cube:");
-    EXPECT_TRUE(cube);
-    EXPECT_GT(cube->GetModel().meshCount, 0);
+    EXPECT_TRUE(AssetManager::Get().ResolvePath("").empty());
 }
 
-TEST_F(AssetManagerTest, ModelCaching)
+TEST_F(AssetManagerTest, GetCachesAssetAndLoadsOnlyOnce)
 {
-    if (!IsWindowReady() || !m_AssetManager)
-    {
-        GTEST_SKIP() << "Skipping graphics test: No OpenGL context available.";
-    }
+    CountingLoader* loader = RegisterDummyLoader(true);
+    const std::string path = MakeUniqueAssetPath("cache");
 
-    auto cube1 = m_AssetManager->Get<ModelAsset>(":cube:");
-    auto cube2 = m_AssetManager->Get<ModelAsset>(":cube:");
+    auto first = AssetManager::Get().Get<DummyAsset>(path);
+    auto second = AssetManager::Get().Get<DummyAsset>(path);
 
-    EXPECT_EQ(cube1, cube2);
-    EXPECT_EQ(cube1->GetModel().meshes, cube2->GetModel().meshes);
+    ASSERT_NE(first, nullptr);
+    ASSERT_NE(second, nullptr);
+    EXPECT_EQ(first.get(), second.get());
+    EXPECT_EQ(loader->CreateCalls, 1);
+    EXPECT_EQ(loader->LoadCalls, 1);
+    EXPECT_EQ(first->GetState(), AssetState::Ready);
+    EXPECT_EQ(first->OnLoadedCount, 1);
+    EXPECT_FALSE(first->LastLoadedPath.empty());
 }
 
-TEST_F(AssetManagerTest, Unloading)
+TEST_F(AssetManagerTest, ResolveToHandleReturnsValidHandleAfterLoad)
 {
-    if (!IsWindowReady() || !m_AssetManager)
-    {
-        GTEST_SKIP() << "Skipping graphics test: No OpenGL context available.";
-    }
+    RegisterDummyLoader(true);
+    const std::string path = MakeUniqueAssetPath("handle");
 
-    auto cube = m_AssetManager->Get<ModelAsset>(":cube:");
-    EXPECT_TRUE(cube);
+    auto loaded = AssetManager::Get().Get<DummyAsset>(path);
+    ASSERT_NE(loaded, nullptr);
 
-    m_AssetManager->Remove<ModelAsset>(":cube:");
-    // Cube shouldn't be in the cache, but since we didn't add a 'HasInCache' check yet,
-    // we'll just check that it loads again.
+    AssetHandle handle = AssetManager::Get().ResolveToHandle(path);
+    EXPECT_NE((uint64_t)handle, 0ull);
+
+    auto byHandle = AssetManager::Get().Get<DummyAsset>(handle);
+    ASSERT_NE(byHandle, nullptr);
+    EXPECT_EQ(byHandle.get(), loaded.get());
 }
 
-
-TEST_F(AssetManagerTest, NonExistentAsset)
+TEST_F(AssetManagerTest, ReloadInvokesLoaderAgainForExistingAsset)
 {
-    if (!IsWindowReady() || !m_AssetManager)
-    {
-        return;
-    }
+    CountingLoader* loader = RegisterDummyLoader(true);
+    const std::string path = MakeUniqueAssetPath("reload");
 
-    auto asset = m_AssetManager->Get<ModelAsset>("this/path/does/not/exist.obj");
-    
-    // Wait for the asset to finish its async load attempt
-    while(asset->GetState() == AssetState::Loading) {
-        // busy wait is fine for this quick unit test
-    }
-    
-    EXPECT_TRUE(asset != nullptr);
-    if (asset)
-    {
-        EXPECT_EQ(asset->GetState(), AssetState::Failed);
-    }
+    auto asset = AssetManager::Get().Load<DummyAsset>(path);
+    ASSERT_NE(asset, nullptr);
+    ASSERT_EQ(loader->LoadCalls, 1);
+
+    AssetManager::Get().Reload<DummyAsset>(path);
+
+    EXPECT_EQ(loader->LoadCalls, 2);
+    EXPECT_GE(asset->OnLoadedCount, 2);
 }
 
-#endif
+TEST_F(AssetManagerTest, FailedLoadMarksAssetAsFailed)
+{
+    CountingLoader* loader = RegisterDummyLoader(false);
+    const std::string path = MakeUniqueAssetPath("failed");
+
+    auto asset = AssetManager::Get().Load<DummyAsset>(path);
+
+    ASSERT_NE(asset, nullptr);
+    EXPECT_EQ(loader->LoadCalls, 1);
+    EXPECT_EQ(asset->GetState(), AssetState::Failed);
+    EXPECT_EQ(asset->OnLoadedCount, 0);
+}
+
+TEST_F(AssetManagerTest, AsyncLoadQueuesFinalizeAndCompletesOnUpdate)
+{
+    CountingLoader* loader = RegisterDummyLoader(true, true);
+    const std::string path = MakeUniqueAssetPath("async");
+
+    auto asset = AssetManager::Get().Load<DummyAsset>(path);
+    ASSERT_NE(asset, nullptr);
+
+    for (int attempt = 0; attempt < 200 && AssetManager::Get().GetPendingFinalizeCount() == 0; ++attempt)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+
+    ASSERT_GT(AssetManager::Get().GetPendingFinalizeCount(), 0u);
+
+    AssetManager::Get().Update();
+
+    EXPECT_EQ(loader->LoadCalls, 1);
+    EXPECT_EQ(asset->GetState(), AssetState::Ready);
+    EXPECT_EQ(asset->OnLoadedCount, 1);
+    EXPECT_EQ(AssetManager::Get().GetPendingFinalizeCount(), 0u);
+}

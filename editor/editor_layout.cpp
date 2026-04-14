@@ -54,13 +54,11 @@ void EditorLayout::EndWorkspace()
 void EditorLayout::DrawInterface()
 {
     auto& layer = EditorLayer::Get();
-    bool isPlaying = (layer.GetSceneState() == SceneState::Play);
-
-    if (ImGui::BeginMenuBar())
-    {
-        EditorGUI::DrawMenuBar(layer.GetPanels());
-        ImGui::EndMenuBar();
-    }
+    EditorGUI::DrawMenuBar(layer.GetPanels());
+    
+    // Render all panels
+    bool readOnly = EditorContext::GetSceneState() == SceneState::Play;
+    layer.GetPanels().OnImGuiRender(readOnly);
 }
 
 void EditorLayout::ResetLayout()
@@ -88,18 +86,28 @@ void EditorLayout::ResetLayout()
 
     ImGuiID main = dockspace_id;
     ImGuiID right = ImGui::DockBuilderSplitNode(main, ImGuiDir_Right, 0.25f, nullptr, &main);
-    ImGuiID left = ImGui::DockBuilderSplitNode(main, ImGuiDir_Left, 0.25f, nullptr, &main);
+    ImGuiID left = ImGui::DockBuilderSplitNode(main, ImGuiDir_Left, 0.20f, nullptr, &main);
     ImGuiID down = ImGui::DockBuilderSplitNode(main, ImGuiDir_Down, 0.30f, nullptr, &main);
 
+    // Ensure Viewport gets the central node
     ImGui::DockBuilderDockWindow("Viewport", main);
+    
+    // Left side: Hierarchy and Project Browser (tabs)
     ImGui::DockBuilderDockWindow("Scene Hierarchy", left);
+    ImGui::DockBuilderDockWindow("Content Browser", left);
+    
+    // Right side: Inspector and Settings
     ImGui::DockBuilderDockWindow("Inspector", right);
-    ImGui::DockBuilderDockWindow("Environment", right);
-    ImGui::DockBuilderDockWindow("Profiler", right);
-    ImGui::DockBuilderDockWindow("Content Browser", down);
+    ImGui::DockBuilderDockWindow("World Settings", right);
+    ImGui::DockBuilderDockWindow("Material Editor", right);
+    
+    // Bottom: Console, Profiler, Effects
     ImGui::DockBuilderDockWindow("Console", down);
+    ImGui::DockBuilderDockWindow("Profiler", down);
+    ImGui::DockBuilderDockWindow("Effects & Debug", down);
 
     ImGui::DockBuilderFinish(dockspace_id);
+    CH_CORE_INFO("EditorLayout: Procedural layout applied.");
 }
 
 void EditorLayout::SaveDefaultLayout()
@@ -109,10 +117,10 @@ void EditorLayout::SaveDefaultLayout()
     if (settings)
     {
         std::string defaultPath = std::string(PROJECT_ROOT_DIR) + "/imgui_default.ini";
-        std::ofstream f(defaultPath);
-        if (f.is_open())
+        std::ofstream file(defaultPath);
+        if (file.is_open())
         {
-            f.write(settings, size);
+            file.write(settings, size);
             CH_CORE_INFO("EditorLayout: Saved current layout as default: {}", defaultPath);
         }
         else

@@ -1,6 +1,8 @@
 #ifndef CH_MOUSE_CODES_H
 #define CH_MOUSE_CODES_H
 
+#include <cstdint>
+
 namespace CHEngine
 {
 	using MouseCode = uint16_t;
@@ -9,7 +11,7 @@ namespace CHEngine
 	{
 		enum : MouseCode
 		{
-			// From raylib.h
+			// Standard Mouse Buttons (match GLFW/Standard)
 			ButtonLeft      = 0,       // Mouse button left
 			ButtonRight     = 1,       // Mouse button right
 			ButtonMiddle    = 2,       // Mouse button middle

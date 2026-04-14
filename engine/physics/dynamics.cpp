@@ -3,15 +3,15 @@
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene.h"
-#include "raymath.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace CHEngine
 {
-void Dynamics::Update(Scene* scene, const std::vector<entt::entity>& entities, float deltaTime)
+void Dynamics::Update(::entt::registry& registry, const std::vector<entt::entity>& entities, float deltaTime)
 {
-    auto& registry = scene->GetRegistry();
 
-    float gravity = 20.0f;
+    float gravity = 9.8f;
     if (Project::GetActive())
     {
         gravity = Project::GetActive()->GetConfig().Physics.Gravity;
@@ -43,8 +43,24 @@ void Dynamics::IntegrateVelocity(entt::registry& registry, entt::entity entity, 
     auto& entityTransform = registry.get<TransformComponent>(entity);
     auto& rigidBody = registry.get<RigidBodyComponent>(entity);
 
-    Vector3 velocityDelta = Vector3Scale(rigidBody.Velocity, deltaTime);
-    entityTransform.Translation = Vector3Add(entityTransform.Translation, velocityDelta);
+    // Kinematic bodies are moved entirely by scripts; skip physics-driven integration
+    if (rigidBody.IsKinematic)
+        return;
+
+    // Dampen velocity slightly (Air resistance)
+    float damping = 1.0f - (0.5f * deltaTime);
+    rigidBody.Velocity *= damping;
+
+    // Clamp absolute velocity to avoid "explosive" launches
+    const float kMaxVelocity = 100.0f;
+    float speed = glm::length(rigidBody.Velocity);
+    if (speed > kMaxVelocity)
+    {
+        rigidBody.Velocity = glm::normalize(rigidBody.Velocity) * kMaxVelocity;
+    }
+
+    entityTransform.Translation += rigidBody.Velocity * deltaTime;
+    entityTransform.IsDirty = true;
 }
 
 } // namespace CHEngine

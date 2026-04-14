@@ -1,15 +1,10 @@
 #include "project_browser_panel.h"
-#include "actions/project_actions.h"
-#include "editor_layer.h"
-#include "engine/core/application.h"
-#include "engine/scene/project.h"
-#include "engine/scene/scene_events.h"
 
-// Removed redundant include: engine/graphics/asset_manager.h
-#include "extras/IconsFontAwesome6.h"
-#include "imgui.h"
-#include "nfd.h"
-#include "rlImGui.h"
+#include "editor_layer.h"
+#include "engine/scene/scene_events.h"
+#include "IconsFontAwesome6.h"
+#include "engine/platform/utils/dialogs.h"
+#include "panel.h"
 #include <filesystem>
 
 namespace CHEngine
@@ -21,36 +16,13 @@ ProjectBrowserPanel::ProjectBrowserPanel()
     memset(m_ProjectLocationBuffer, 0, sizeof(m_ProjectLocationBuffer));
     cwd.copy(m_ProjectLocationBuffer, sizeof(m_ProjectLocationBuffer) - 1);
 
-    // Load icons from specific paths
-    // Try absolute path first if debugging, but relative is better for portability.
-    // Based on search: d:\gitnext\Chained Decos\engine\resources\icons\newproject.jpg
-
-    std::string root = PROJECT_ROOT_DIR; // Use the macro defined in CMake
-    m_NewProjectIcon = LoadTexture((root + "/engine/resources/icons/newproject.jpg").c_str());
-    m_OpenProjectIcon = LoadTexture((root + "/engine/resources/icons/folder.png").c_str());
-
-    // Fallback to internal icons if failed (but do not generate ugly white squares)
-    if (m_NewProjectIcon.id == 0)
-    {
-        // Try relative path
-        m_NewProjectIcon = LoadTexture("engine/resources/icons/newproject.jpg");
-    }
-    if (m_OpenProjectIcon.id == 0)
-    {
-        m_OpenProjectIcon = LoadTexture("engine/resources/icons/folder.png");
-    }
+    m_NewProjectIconHandle = TextureSystem::Get().LoadTexture("engine/resources/icons/newproject.jpg");
+    m_OpenProjectIconHandle = TextureSystem::Get().LoadTexture("engine/resources/icons/folder.png");
 }
 
 ProjectBrowserPanel::~ProjectBrowserPanel()
 {
-    if (m_NewProjectIcon.id != 0)
-    {
-        UnloadTexture(m_NewProjectIcon);
-    }
-    if (m_OpenProjectIcon.id != 0)
-    {
-        UnloadTexture(m_OpenProjectIcon);
-    }
+    // Textures are cached globally by the texture system.
 }
 
 void ProjectBrowserPanel::OnImGuiRender(bool readOnly)
@@ -69,7 +41,6 @@ void ProjectBrowserPanel::OnImGuiRender(bool readOnly)
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 
     ImGui::Begin("Project Browser", nullptr, windowFlags);
-    ImGui::PushID(this);
 
     if (m_OpenCreatePopupRequest)
     {
@@ -84,7 +55,6 @@ void ProjectBrowserPanel::OnImGuiRender(bool readOnly)
         DrawCreateProjectDialog();
     }
 
-    ImGui::PopID();
     ImGui::End();
     ImGui::PopStyleVar(3);
 }
@@ -108,36 +78,38 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
     ImGui::TextDisabled("   RECENT PROJECTS");
     ImGui::Spacing();
 
-    std::string lastPath = EditorLayer::Get().GetConfig().LastProjectPath;
-    if (!lastPath.empty())
+    const auto& recentProjects = EditorLayer::Get().GetConfig().RecentProjects;
+    if (recentProjects.empty())
     {
-        std::string fileName = std::filesystem::path(lastPath).filename().string();
-        std::string dirName = std::filesystem::path(lastPath).parent_path().string();
-
-        // Custom Button Style for Recent Project
+        ImGui::TextDisabled("   No recent projects.");
+    }
+    else
+    {
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
-        ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.5f, 0.5f));
+        ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.05f, 0.5f));
         ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 5.0f);
 
-        // Draw a big button that looks like the card in the screenshot
-        if (ImGui::Button(fileName.c_str(), ImVec2(-1, 50)))
+        for (const auto& projectPath : recentProjects)
         {
-            ProjectActions::Open(lastPath);
-        }
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("%s", lastPath.c_str());
+            std::string fileName = std::filesystem::path(projectPath).filename().string();
+            std::string dirName  = std::filesystem::path(projectPath).parent_path().filename().string();
+
+            std::string label = ICON_FA_FOLDER_OPEN "  " + fileName + "\n      " + dirName;
+            if (ImGui::Button(label.c_str(), ImVec2(-1, 50)))
+            {
+                EditorLayer::Get().GetProjectManager().OpenProject(projectPath);
+            }
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("%s", projectPath.c_str());
+            }
+            ImGui::Spacing();
         }
 
         ImGui::PopStyleVar(2);
         ImGui::PopStyleColor();
+    }
 
-        ImGui::TextDisabled("   %s", dirName.c_str());
-    }
-    else
-    {
-        ImGui::TextDisabled("   No recent projects.");
-    }
 
     ImGui::EndChild();
     ImGui::PopStyleColor();
@@ -163,10 +135,16 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.9f, 0.9f, 1.0f));
 
     ImGui::BeginGroup();
-    if (rlImGuiImageButtonSize("##NewProject", &m_NewProjectIcon, {300, 300}))
     {
-        m_OpenCreatePopupRequest = true;
-        m_ShowCreateDialog = true;
+        ImTextureID newProjTex = 0;
+        if (m_NewProjectIconHandle != 0)
+            newProjTex = (ImTextureID)(uintptr_t)TextureSystem::Get().GetRendererID(m_NewProjectIconHandle);
+
+        if (ImGui::ImageButton("##NewProject", newProjTex, {300, 300}, {0, 1}, {1, 0}))
+        {
+            m_OpenCreatePopupRequest = true;
+            m_ShowCreateDialog = true;
+        }
     }
     ImGui::SetWindowFontScale(1.3f);
     ImGui::Text("New Project");
@@ -180,9 +158,15 @@ void ProjectBrowserPanel::DrawWelcomeScreen()
     ImGui::SameLine(0, 40);
 
     ImGui::BeginGroup();
-    if (rlImGuiImageButtonSize("##OpenProject", &m_OpenProjectIcon, {300, 300}))
     {
-        ProjectActions::Open();
+        ImTextureID openProjTex = 0;
+        if (m_OpenProjectIconHandle != 0)
+            openProjTex = (ImTextureID)(uintptr_t)TextureSystem::Get().GetRendererID(m_OpenProjectIconHandle);
+
+        if (ImGui::ImageButton("##OpenProject", openProjTex, {300, 300}, {0, 1}, {1, 0}))
+        {
+            EditorLayer::Get().GetProjectManager().OpenProject();
+        }
     }
     ImGui::SetWindowFontScale(1.3f);
     ImGui::Text("Open Project");
@@ -218,15 +202,12 @@ void ProjectBrowserPanel::DrawCreateProjectDialog()
         ImGui::SameLine();
         if (ImGui::Button("Browse..."))
         {
-            nfdchar_t* outPath = nullptr;
-            nfdresult_t result = NFD_PickFolder(&outPath, nullptr);
-
-            if (result == NFD_OKAY)
+            auto result = Dialogs::PickFolder();
+            if (result)
             {
                 memset(m_ProjectLocationBuffer, 0, sizeof(m_ProjectLocationBuffer));
-                std::string path(outPath);
+                std::string path = result->string();
                 path.copy(m_ProjectLocationBuffer, sizeof(m_ProjectLocationBuffer) - 1);
-                NFD_FreePath(outPath);
             }
         }
 

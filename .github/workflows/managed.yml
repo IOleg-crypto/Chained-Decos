@@ -1,0 +1,60 @@
+name: Managed
+
+on:
+  workflow_call:
+
+env:
+  CI: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_NOLOGO: true
+
+jobs:
+  managed-tests:
+    name: Managed Scripts Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Preflight
+        run: |
+          set -euo pipefail
+          echo "Repository root: $PWD"
+          git submodule status --recursive
+          dotnet --info
+
+      - name: Restore managed tests
+        run: |
+          set -euo pipefail
+          dotnet restore ./game/chaineddecos/scripts/tests/ChainedDecos.Scripts.Tests.csproj \
+            2>&1 | tee managed-tests-restore.log
+
+      - name: Run managed tests
+        run: |
+          set -euo pipefail
+          dotnet test ./game/chaineddecos/scripts/tests/ChainedDecos.Scripts.Tests.csproj -c Release --no-restore --logger "trx;LogFileName=managed-tests.trx" \
+            2>&1 | tee managed-tests.log
+
+      - name: Upload managed test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: managed-tests-report
+          if-no-files-found: ignore
+          path: |
+            managed-tests-restore.log
+            managed-tests.log
+            **/managed-tests.trx
+          retention-days: 7

@@ -11,7 +11,7 @@ on:
       - "**/CMakeLists.txt"
       - "**/CMakePresets.json"
       - "cmake/*.cmake"
-      - ".github/workflows/ci.yml"
+      - ".github/workflows/*.yml"
   pull_request:
     branches: [main, develop, chained-gui, refactor-branch]
     paths:
@@ -22,7 +22,7 @@ on:
       - "**/CMakeLists.txt"
       - "**/CMakePresets.json"
       - "cmake/*.cmake"
-      - ".github/workflows/ci.yml"
+      - ".github/workflows/*.yml"
   workflow_dispatch:
 
 concurrency:
@@ -36,252 +36,24 @@ env:
   DOTNET_NOLOGO: true
 
 jobs:
-  build:
-    name: ${{ matrix.os }} / ${{ matrix.preset }}
-    runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        shell: bash
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            preset: linux-gcc-debug
-            config_preset: linux-gcc-debug
-          - os: ubuntu-latest
-            preset: linux-gcc-release
-            config_preset: linux-gcc-release
-          - os: ubuntu-latest
-            preset: linux-clang-debug
-            config_preset: linux-clang-debug
-          - os: ubuntu-latest
-            preset: linux-clang-release
-            config_preset: linux-clang-release
-          - os: windows-latest
-            preset: windows-ninja-debug
-            config_preset: windows-ninja-debug
-          - os: windows-latest
-            preset: windows-ninja-release
-            config_preset: windows-ninja-release
-          - os: windows-latest
-            preset: windows-vs2022-debug
-            config_preset: windows-vs2022
-          - os: windows-latest
-            preset: windows-vs2022-release
-            config_preset: windows-vs2022
+  linux:
+    name: Linux Builds
+    uses: ./.github/workflows/linux.yml
+    secrets: inherit
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          fetch-depth: 1
+  windows:
+    name: Windows Builds
+    uses: ./.github/workflows/windows.yml
+    secrets: inherit
 
-      - name: Get CMake and Ninja
-        uses: lukka/get-cmake@latest
+  managed:
+    name: Managed Tests
+    uses: ./.github/workflows/managed.yml
+    secrets: inherit
 
-      - name: Setup Compiler Cache
-        uses: hendrikmuhs/ccache-action@v1.2
-        with:
-          variant: ${{ runner.os == 'Windows' && 'sccache' || 'ccache' }}
-          key: ${{ runner.os }}-${{ matrix.preset }}
-
-      - name: Setup Mold Linker
-        if: runner.os == 'Linux'
-        uses: rui314/setup-mold@v1
-
-      - name: Install Linux Dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential \
-            libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
-            libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
-            pkg-config libgtk-3-dev libdrm-dev libgbm-dev \
-            xvfb libxkbcommon-x11-0 libgl1-mesa-dri mesa-utils
-
-      - name: Setup Linux Compilers
-        if: runner.os == 'Linux'
-        run: |
-          if [[ "${{ matrix.preset }}" == *"gcc"* ]]; then
-            sudo apt-get install -y gcc-14 g++-14
-            echo "CC=gcc-14" >> $GITHUB_ENV
-            echo "CXX=g++-14" >> $GITHUB_ENV
-          elif [[ "${{ matrix.preset }}" == *"clang"* ]]; then
-            # Use libc++ to avoid conflicts with GCC 14 headers in C++23 mode
-            sudo apt-get install -y clang-18 clang++-18 libc++-18-dev libc++abi-18-dev lld-18 llvm-18
-            sudo ln -sf /usr/bin/ld.lld-18 /usr/bin/ld.lld
-            echo "CC=clang-18" >> $GITHUB_ENV
-            echo "CXX=clang++-18" >> $GITHUB_ENV
-            echo "AR=llvm-ar-18" >> $GITHUB_ENV
-            echo "RANLIB=llvm-ranlib-18" >> $GITHUB_ENV
-            echo "LDFLAGS=-fuse-ld=lld" >> $GITHUB_ENV
-          fi
-
-      - name: Install Windows Dependencies
-        if: runner.os == 'Windows'
-        run: |
-          echo "Windows dependencies are mostly satisfied by runner image and get-cmake."
-
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-
-      - name: Configure
-        run: |
-          SANITIZERS_FLAG="OFF"
-          if [[ "${{ runner.os }}" == "Linux" ]]; then SANITIZERS_FLAG="ON"; fi
-          
-          LAUNCHER="ccache"
-          if [[ "${{ runner.os }}" == "Windows" ]]; then LAUNCHER="sccache"; fi
-          
-          cmake --preset ${{ matrix.config_preset }} \
-            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" \
-            -DCMAKE_C_COMPILER_LAUNCHER=$LAUNCHER \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=$LAUNCHER \
-            -DCH_CI=ON \
-            -DENABLE_UNITY_BUILD=ON \
-            -DWARNINGS_AS_ERRORS=OFF \
-            -DENABLE_WARNINGS=ON \
-            -DENABLE_SANITIZERS=$SANITIZERS_FLAG
-
-      - name: Build
-        run: |
-          CPU_COUNT=4
-          if [[ "${{ runner.os }}" == "Linux" ]]; then CPU_COUNT=$(nproc); else CPU_COUNT=$NUMBER_OF_PROCESSORS; fi
-          cmake --build --preset ${{ matrix.preset }} --parallel $CPU_COUNT
-
-
-
-
-      - name: Test
-        run: |
-          config="Release"
-          if [[ "${{ matrix.preset }}" == *debug* ]]; then config="Debug"; fi
-          
-          BUILD_DIR="${{ github.workspace }}/build/${{ matrix.config_preset }}"
-          
-          echo "Running CTest in $BUILD_DIR for config $config..."
-          
-          # Output to JUNIT for reporting
-          if [[ "${{ runner.os }}" == "Linux" ]]; then
-            export LIBGL_ALWAYS_SOFTWARE=1
-            export GALLIUM_DRIVER=llvmpipe
-            export MESA_GL_VERSION_OVERRIDE=4.5
-            export MESA_GLSL_VERSION_OVERRIDE=450
-            xvfb-run -a ctest --test-dir "$BUILD_DIR" -C "$config" --output-on-failure --timeout 300 --output-junit junit.xml
-          else
-            ctest --test-dir "$BUILD_DIR" -C "$config" --output-on-failure --timeout 300 --output-junit junit.xml
-          fi
-
-      - name: Upload Artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ runner.os }}-${{ matrix.preset }}-binaries
-          path: build/${{ matrix.config_preset }}/bin
-          retention-days: 7
-
-
-
-
-  # ── PR Gate: waits for all builds to pass ──────────────────────────────────
-  tests:
-    name: All Tests Passed
+  quality-gate:
+    name: PR Gate
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [linux, windows, managed]
     steps:
-      - name: All jobs completed
-        run: echo "All build and test jobs completed successfully"
-
-  # ── SDK Release: generates SDK package on main branch only ─────────────────
-  release-sdk:
-    name: Generate SDK
-    runs-on: ubuntu-latest
-    needs: tests
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          fetch-depth: 1
-
-      - name: Get CMake and Ninja
-        uses: lukka/get-cmake@latest
-
-      - name: Setup Compiler Cache
-        uses: hendrikmuhs/ccache-action@v1.2
-        with:
-          variant: ccache
-          key: Linux-linux-gcc-release
-
-      - name: Setup Mold Linker
-        uses: rui314/setup-mold@v1
-
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential \
-            libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
-            libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
-            pkg-config libgtk-3-dev libdrm-dev libgbm-dev gcc-14 g++-14
-          echo "CC=gcc-14" >> $GITHUB_ENV
-          echo "CXX=g++-14" >> $GITHUB_ENV
-
-      - name: Configure (Release)
-        run: |
-          cmake --preset linux-gcc-release \
-            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/sdk" \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DCH_CI=ON \
-            -DENABLE_UNITY_BUILD=ON
-
-      - name: Build (Release)
-        run: |
-          cmake --build --preset linux-gcc-release --parallel $(nproc)
-
-      - name: Install SDK
-        run: |
-          cmake --install build/linux-gcc-release --prefix "${{ github.workspace }}/sdk"
-
-      - name: Download Windows Binaries
-        uses: actions/download-artifact@v4
-        with:
-          name: Windows-windows-ninja-release-binaries
-          path: ${{ github.workspace }}/sdk/bin/windows
-
-      - name: Package NuGet API
-        run: |
-          mkdir -p "${{ github.workspace }}/sdk/nuget"
-          # Find the generated .nupkg file from the build step and copy it
-          find build/linux-gcc-release -name "*.nupkg" -exec cp {} "${{ github.workspace }}/sdk/nuget/" \;
-
-      - name: Package SDK
-        run: |
-          SDK_VERSION=$(date +%Y.%m.%d)-$(echo ${{ github.sha }} | cut -c1-7)
-          echo "SDK_VERSION=$SDK_VERSION" >> $GITHUB_ENV
-          cd ${{ github.workspace }}
-          tar czf "ChainedDecos-SDK-${SDK_VERSION}.tar.gz" -C sdk .
-
-      - name: Upload SDK
-        uses: actions/upload-artifact@v4
-        with:
-          name: ChainedDecos-SDK-${{ env.SDK_VERSION }}
-          path: ChainedDecos-SDK-*.tar.gz
-          retention-days: 30
-
-      - name: Create Release (tagged commits only)
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: ChainedDecos-SDK-*.tar.gz
-          generate_release_notes: true
+      - run: echo "Native builds and managed tests passed."

@@ -11,14 +11,12 @@ public:
     InspectorPanel();
     virtual void OnImGuiRender(bool readOnly = false) override;
     virtual void OnEvent(Event& e) override;
-
-    void SetSelectedMeshIndex(int index)
-    {
-        m_SelectedMeshIndex = index;
-    }
+    virtual void SetContext(const std::shared_ptr<Scene>& context) override;
+public:
+    void SetSelectedMeshIndex(int index);
 
 private:
-    void DrawComponents(Entity entity);
+    void DrawComponents(Entity entity, bool readOnly);
 
 private:
     Entity m_SelectedEntity;

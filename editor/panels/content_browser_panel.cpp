@@ -1,12 +1,15 @@
 #include "content_browser_panel.h"
-#include "editor/actions/scene_actions.h"
+
 #include "engine/core/base.h"
+#include "editor/editor_layer.h"
 #include "engine/core/log.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene_events.h"
-#include "extras/IconsFontAwesome6.h"
+#include "IconsFontAwesome6.h"
+
 #include "imgui.h"
 #include <algorithm>
+#include <fstream>
 #include <unordered_map>
 
 namespace CHEngine
@@ -42,7 +45,6 @@ void ContentBrowserPanel::OnImGuiRender(bool readOnly)
         return;
     }
     ImGui::Begin(m_Name.c_str(), &m_IsOpen);
-    ImGui::PushID(this);
 
     ImGui::BeginDisabled(readOnly);
     RenderToolbar();
@@ -50,7 +52,6 @@ void ContentBrowserPanel::OnImGuiRender(bool readOnly)
     RenderGridView();
 
     ImGui::EndDisabled();
-    ImGui::PopID();
     ImGui::End();
 }
 
@@ -204,33 +205,62 @@ void ContentBrowserPanel::RenderGridView()
             }
         }
 
+        ImGui::BeginGroup();
+        
+        // Thumbnail/Icon
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-        // Center the icon button
-        float availX = ImGui::GetContentRegionAvail().x;
         float currentThumbnailSize = m_ThumbnailSize * m_IconScale;
-        float offsetX = (availX - currentThumbnailSize) * 0.5f;
-        if (offsetX > 0.0f)
+        
+        if (ImGui::Button(icon, {cellSize - m_Padding, currentThumbnailSize}))
         {
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offsetX);
+            // Clicked
         }
 
-        if (ImGui::Button(icon, {currentThumbnailSize, currentThumbnailSize}))
-        {
-            // Single click selection logic could go here
-        }
-        ImGui::PopStyleColor();
-
-        // Context Menu
         if (ImGui::BeginPopupContextItem())
         {
             if (ImGui::MenuItem(ICON_FA_PEN " Rename"))
             {
-                // TODO: Implement renaming
+                m_RenamingPath = asset.path;
+                strncpy(m_RenameBuffer, asset.name.c_str(), sizeof(m_RenameBuffer));
+                ImGui::OpenPopup("RenameAsset");
             }
             if (ImGui::MenuItem(ICON_FA_TRASH " Delete"))
             {
-                // TODO: Implement deletion
+                m_PathToDelete = asset.path;
+                ImGui::OpenPopup("DeleteAsset?");
             }
+            ImGui::EndPopup();
+        }
+
+        if (ImGui::BeginPopupModal("RenameAsset", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            ImGui::Text("Enter new name for %s:", m_RenamingPath.filename().string().c_str());
+            ImGui::InputText("##NewName", m_RenameBuffer, sizeof(m_RenameBuffer));
+            if (ImGui::Button("OK", {120, 0}))
+            {
+                std::filesystem::path newPath = m_RenamingPath.parent_path() / m_RenameBuffer;
+                std::error_code ec;
+                std::filesystem::rename(m_RenamingPath, newPath, ec);
+                RefreshDirectory();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", {120, 0})) { ImGui::CloseCurrentPopup(); }
+            ImGui::EndPopup();
+        }
+
+        if (ImGui::BeginPopupModal("DeleteAsset?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            ImGui::Text("Are you sure you want to delete %s?\nThis operation cannot be undone!", m_PathToDelete.filename().string().c_str());
+            if (ImGui::Button("Delete", {120, 0}))
+            {
+                std::error_code ec;
+                std::filesystem::remove_all(m_PathToDelete, ec);
+                RefreshDirectory();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", {120, 0})) { ImGui::CloseCurrentPopup(); }
             ImGui::EndPopup();
         }
 
@@ -239,26 +269,96 @@ void ContentBrowserPanel::RenderGridView()
             OnAssetDoubleClicked(asset);
         }
 
-        // Drag and Drop
         if (ImGui::BeginDragDropSource())
         {
             std::string pathStr = asset.path.string();
             ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", pathStr.c_str(), pathStr.size() + 1);
-
-            // Fancy drag preview
             ImGui::Text("%s %s", icon, asset.name.c_str());
-
             ImGui::EndDragDropSource();
         }
 
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (availX - ImGui::CalcTextSize(asset.name.c_str()).x) * 0.5f);
-        ImGui::TextWrapped("%s", asset.name.c_str());
+        ImGui::PopStyleColor();
+
+        // Metadata/Label
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 2));
+        
+        ImGui::SetNextItemWidth(cellSize - m_Padding);
+        ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + cellSize - m_Padding);
+        
+        float textWidth = ImGui::CalcTextSize(asset.name.c_str()).x;
+        if (textWidth < cellSize - m_Padding)
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (cellSize - m_Padding - textWidth) * 0.5f);
+            
+        ImGui::TextUnformatted(asset.name.c_str());
+        ImGui::PopTextWrapPos();
+        
+        // Type Label
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+        const char* typeLabel = asset.isDirectory ? "FOLDER" : "FILE";
+        if (asset.type == EditorAssetType::Model) typeLabel = "MESH";
+        else if (asset.type == EditorAssetType::Scene) typeLabel = "SCENE";
+        else if (asset.type == EditorAssetType::Script) typeLabel = "SCRIPT";
+        
+        float typeLabelWidth = ImGui::CalcTextSize(typeLabel).x;
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (cellSize - m_Padding - typeLabelWidth) * 0.5f);
+        ImGui::TextDisabled("%s", typeLabel);
+        ImGui::PopStyleColor();
+        
+        ImGui::PopStyleVar();
+        ImGui::EndGroup();
 
         ImGui::NextColumn();
         ImGui::PopID();
     }
 
     ImGui::Columns(1);
+
+    // Empty space context menu
+    if (ImGui::BeginPopupContextWindow(0, 1 | ImGuiPopupFlags_NoOpenOverItems))
+    {
+        if (ImGui::BeginMenu(ICON_FA_PLUS " Create"))
+        {
+            if (ImGui::MenuItem(ICON_FA_FOLDER " New Folder"))
+            {
+                std::filesystem::path newDir = m_CurrentDirectory / "New Folder";
+                int i = 1;
+                while (std::filesystem::exists(newDir))
+                    newDir = m_CurrentDirectory / ("New Folder " + std::to_string(i++));
+                std::filesystem::create_directory(newDir);
+                RefreshDirectory();
+            }
+            if (ImGui::MenuItem(ICON_FA_FILE_CODE " New C# Script"))
+            {
+                std::filesystem::path newScript = m_CurrentDirectory / "NewScript.cs";
+                int i = 1;
+                while (std::filesystem::exists(newScript))
+                    newScript = m_CurrentDirectory / ("NewScript" + std::to_string(i++) + ".cs");
+                
+                std::string className = newScript.stem().string();
+                std::string templateContent = 
+                    "using CHEngine;\n\n"
+                    "namespace ChainedDecos.Scripts\n"
+                    "{\n"
+                    "    public class " + className + " : Script\n"
+                    "    {\n"
+                    "        public override void OnCreate()\n"
+                    "        {\n"
+                    "        }\n\n"
+                    "        public override void OnUpdate(float deltaTime)\n"
+                    "        {\n"
+                    "        }\n"
+                    "    }\n"
+                    "}\n";
+                
+                std::ofstream ofs(newScript);
+                ofs << templateContent;
+                ofs.close();
+                RefreshDirectory();
+            }
+            ImGui::EndMenu();
+        }
+        ImGui::EndPopup();
+    }
 }
 
 void ContentBrowserPanel::OnAssetDoubleClicked(AssetEntry& entry)
@@ -270,7 +370,7 @@ void ContentBrowserPanel::OnAssetDoubleClicked(AssetEntry& entry)
     }
     else if (entry.type == EditorAssetType::Scene)
     {
-        SceneActions::Open(entry.path);
+        EditorLayer::Get().GetSceneManager().OpenScene(entry.path);
     }
 }
 

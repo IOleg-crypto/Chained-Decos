@@ -1,10 +1,12 @@
 #ifndef CH_VIEWPORT_PANEL_H
 #define CH_VIEWPORT_PANEL_H
 
-// Removed redundant include: engine/graphics/render.h
 #include "engine/core/timestep.h"
 #include "panel.h"
-#include "raylib.h"
+#include "imgui.h"
+#include "IconsFontAwesome6.h"
+#include <memory>
+#include "engine/graphics/api/framebuffer.h"
 #include "viewport/editor_camera.h"
 #include "viewport/editor_gizmo.h"
 #include "viewport/ui_manipulator.h"
@@ -28,6 +30,7 @@ public:
 public:
     virtual void OnImGuiRender(bool readOnly = false) override;
     virtual void OnUpdate(Timestep ts) override;
+    virtual void OnEvent(Event& e) override;
 
 public:
     bool IsFocused() const
@@ -38,7 +41,7 @@ public:
     {
         return m_Hovered;
     }
-    Vector2 GetSize() const
+    glm::vec2 GetSize() const
     {
         return m_ViewportSize;
     }
@@ -53,9 +56,9 @@ public:
     void DrawCameraSelector(class Scene* scene);
 
 private:
-    RenderTexture2D m_ViewportTexture;
-    RenderTexture2D m_HDRTexture;
-    Vector2 m_ViewportSize = {0, 0};
+    std::shared_ptr<Framebuffer> m_ViewportFramebuffer;
+    std::shared_ptr<Framebuffer> m_HDRFramebuffer;
+    glm::vec2 m_ViewportSize = {0, 0};
     bool m_Focused = false;
     bool m_Hovered = false;
 
@@ -71,6 +74,18 @@ private:
 
     // Viewport Camera State
     uint64_t m_ViewportCameraEntityUUID = 0; // 0 = Editor Camera
+
+private:
+    void HandleResize(const ImVec2& viewportSize, class Scene* activeScene);
+    void RenderViewportScene(class Scene* activeScene, const ImVec2& viewportSize);
+    void HandleDragDrop(class Scene* activeScene);
+    void RenderOverlays(class Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos);
+    void HandlePicking(class Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos);
+    void RenderToolbar(class Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos);
+    void RenderLaunchHUD(const ImVec2& viewportSize, const ImVec2& viewportScreenPos);
+
+private:
+    void ClearSceneBackground(Scene* scene);
 };
 
 } // namespace CHEngine

@@ -1,67 +1,93 @@
 #ifndef CH_ENTITY_H
 #define CH_ENTITY_H
 
-#include "engine/core/assert.h"
+#include "engine/core/ch_assert.h"
 #include "engine/core/base.h"
+#include "engine/core/uuid.h"
 #include "engine/scene/components/id_component.h"
 #include "engine/scene/components/tag_component.h"
 #include "entt/entt.hpp"
 
+#include <memory>
 #include <string>
+#include <unordered_map>
 
 namespace CHEngine
 {
-class Scene;
+
+// Lightweight handle over an entt registry. Entity objects do not own the registry;
+// validity depends on the backing registry still being alive and the handle still existing.
+struct EntityUUIDMap
+{
+    std::unordered_map<UUID, entt::entity> Map;
+};
 
 class Entity
 {
 public:
     Entity() = default;
-    Entity(entt::entity handle, entt::registry* registry)
+    // Wraps an existing registry shared handle.
+    Entity(entt::entity handle, std::shared_ptr<entt::registry> registry)
         : m_EntityHandle(handle),
           m_Registry(registry)
     {
     }
+    // Wraps an existing registry reference without creating ownership.
+    Entity(entt::entity handle, entt::registry& registry);
+    // Wraps an existing registry pointer without creating ownership.
+    Entity(entt::entity handle, entt::registry* registry);
     Entity(const Entity& other) = default;
 
+    // Adds a component if it is not already present and returns the inserted component.
     template <typename T, typename... Args> T& AddOrReplaceComponent(Args&&... args)
     {
         return m_Registry->emplace_or_replace<T>(m_EntityHandle, std::forward<Args>(args)...);
     }
 
+    // Adds a component and asserts that the entity does not already own it.
     template <typename T, typename... Args> T& AddComponent(Args&&... args)
     {
         CH_CORE_ASSERT(!HasComponent<T>(), "Entity already has component!");
         return m_Registry->emplace<T>(m_EntityHandle, std::forward<Args>(args)...);
     }
 
+    // Returns the requested component and asserts if it is missing.
     template <typename T> T& GetComponent()
     {
         CH_CORE_ASSERT(HasComponent<T>(), "Entity does not have component!");
         return m_Registry->get<T>(m_EntityHandle);
     }
 
+    // Returns true when the entity currently owns the requested component.
     template <typename T> bool HasComponent()
     {
         return m_Registry && m_Registry->all_of<T>(m_EntityHandle);
     }
 
+    // Removes the requested component and asserts if it is missing.
     template <typename T> void RemoveComponent()
     {
         CH_CORE_ASSERT(HasComponent<T>(), "Entity does not have component!");
         m_Registry->remove<T>(m_EntityHandle);
     }
 
+    // Applies a patch operation to the component stored on this entity.
     template <typename T, typename... Func> void Patch(Func&&... func)
     {
         m_Registry->patch<T>(m_EntityHandle, std::forward<Func>(func)...);
     }
 
+    // Fast null check. Use IsValid() to confirm the handle still exists in the registry.
     operator bool() const
     {
         return m_EntityHandle != entt::null && m_Registry != nullptr;
     }
+    // Returns false if the registry is missing or the entity handle has been destroyed.
     bool IsValid() const;
+
+    // Destroys the entity and any descendants attached through the hierarchy.
+    void Destroy();
+
     operator entt::entity() const
     {
         return m_EntityHandle;
@@ -89,6 +115,11 @@ public:
         return *m_Registry;
     }
 
+    std::shared_ptr<entt::registry> GetRegistryPtr()
+    {
+        return m_Registry;
+    }
+
     UUID GetUUID()
     {
         return GetComponent<IDComponent>().ID;
@@ -101,7 +132,7 @@ public:
 
 private:
     entt::entity m_EntityHandle{entt::null};
-    entt::registry* m_Registry = nullptr;
+    std::shared_ptr<entt::registry> m_Registry = nullptr;
 };
 } // namespace CHEngine
 

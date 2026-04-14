@@ -3,128 +3,142 @@ Background:
   Mode: 0
   Color: [0, 0, 0, 255]
   TexturePath: ""
+Canvas:
+  ReferenceResolution: [1920, 1080]
+  ScaleMode: 1
+  MatchWidthOrHeight: 0.5
 EnvironmentPath: environments/menu_environment.chenv
-LightDirection: [-1, -1, -1]
-LightColor: [255, 255, 255, 255]
-AmbientIntensity: 0.300000012
+Lighting:
+  Direction: [-1, -1, -1]
+  LightColor: [255, 255, 255, 255]
+  Ambient: 0.300000012
 Skybox:
   TexturePath: ""
+  Mode: 0
   Exposure: 0.99000001
   Brightness: 0
   Contrast: 1
 Fog:
   Enabled: false
-  Color: [130, 130, 130, 255]
-  Density: 0.00999999978
+  Color: [158, 148, 148, 255]
+  Density: 0.00100000005
   Start: 10
-  End: 100
-Canvas:
-  ReferenceResolution: [1920, 1080]
-  ScaleMode: 1
-  MatchWidthOrHeight: 0.5
+  End: 5000
+DebugSettings:
+  DiagnosticMode: 0
+  DrawColliders: false
+  DrawHierarchy: false
+  DrawCollisionModelBox: false
+  DrawGrid: false
+  DrawSelection: true
+  DrawLights: true
+  DrawSpawnZones: true
+  CollisionWireframeMode: 0
 Entities:
-  - Entity: 15051911593141375302
+  - Entity: 13765047633248252361
     TagComponent:
-      Tag: start_menu_game_info
+      Tag: start_game_menu_options
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
+    SceneTransitionComponent:
+      TargetScenePath: scenes/video_scene.chscene
+      Triggered: false
     ControlComponent:
-      ZOrder: 0
-      IsActive: true
-      RectTransform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [388, 107]
-        OffsetMax: [508, 147]
+      Rect Transform:
+        Position: [-7.68027496, 1.93944168]
+        Size: [213.492203, 75.6689377]
+        Anchor Min: [0.5, 0.5]
+        Anchor Max: [0.5, 0.5]
+        Offset Min: [-114.426376, -35.8950272]
+        Offset Max: [99.0658264, 39.7739105]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
+      Z Order: 0
+      Active: true
+      Hidden: false
     ButtonControl:
-      Label: Info
+      Label: Options
+      Text Style:
+        Font Name: Default
+        Font Size: 18
+        Text Color: [255, 255, 255, 255]
+        Shadow: false
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      UI Style:
+        BG Color: [40, 40, 40, 255]
+        Hover Color: [60, 60, 60, 255]
+        Pressed Color: [30, 30, 30, 255]
+        Rounding: 4
+        Border Size: 0
+        Border Color: [255, 255, 255, 255]
+        Gradient: false
+        Padding: 4
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.100000001
       Interactable: true
-      Style:
-        ? BackgroundColor: [40, 40, 40, 255]
-          HoverColor: [60, 60, 60, 255]
-          PressedColor: [30, 30, 30, 255]
-          Rounding: 4
-          BorderSize: 0
-          BorderColor: [255, 255, 255, 255]
-          Padding: 4
-      Text:
-        ? FontName: Default
-          FontSize: 18
-          TextColor: [255, 255, 255, 255]
-          Shadow: false
-          ShadowOffset: 2
-          ShadowColor: [0, 0, 0, 255]
-          LetterSpacing: 1
-          LineHeight: 1.20000005
-          HorizontalAlignment: 1
-          VerticalAlignment: 1
-  - Entity: 6090748651460201744
+      Auto Size: false
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: ChainedDecos.Scripts.SceneScript
+  - Entity: 11188570711873615005
     TagComponent:
-      Tag: start_game_info_2
+      Tag: start_button_start
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
+    SceneTransitionComponent:
+      TargetScenePath: scenes/game_mode_selection.chscene
+      Triggered: false
     ControlComponent:
-      ZOrder: 0
-      IsActive: true
-      RectTransform:
-        AnchorMin: [0.100000001, 0.899999976]
-        AnchorMax: [0.100000001, 0.899999976]
-        OffsetMin: [-68, 4]
-        OffsetMax: [282, 34]
-        Pivot: [0, 0.5]
+      Rect Transform:
+        Position: [-5.18938446, -237.686066]
+        Size: [241.054611, 70.8050385]
+        Anchor Min: [0.5, 0.5]
+        Anchor Max: [0.5, 0.5]
+        Offset Min: [-125.71669, -273.088593]
+        Offset Max: [115.337921, -202.283554]
+        Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
-    LabelControl:
-      Text: Some functionality or aspects can be changed in final version.
-      Style:
-        ? FontName: Default
-          FontSize: 18
-          TextColor: [255, 255, 255, 255]
-          Shadow: false
-          ShadowOffset: 2
-          ShadowColor: [0, 0, 0, 255]
-          LetterSpacing: 1
-          LineHeight: 1.20000005
-          HorizontalAlignment: 1
-          VerticalAlignment: 1
-  - Entity: 15500646445384167357
-    TagComponent:
-      Tag: start_game_info
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ControlComponent:
-      ZOrder: 0
-      IsActive: true
-      RectTransform:
-        AnchorMin: [0.100000001, 0.850000024]
-        AnchorMax: [0.100000001, 0.850000024]
-        OffsetMin: [-87, 10]
-        OffsetMax: [213, 40]
-        Pivot: [0, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-    LabelControl:
-      Text: The game is currently in development.
-      Style:
-        ? FontName: Default
-          FontSize: 21.8999996
-          TextColor: [255, 255, 255, 255]
-          Shadow: false
-          ShadowOffset: 2
-          ShadowColor: [0, 0, 0, 255]
-          LetterSpacing: 1
-          LineHeight: 1.20000005
-          HorizontalAlignment: 1
-          VerticalAlignment: 1
+      Z Order: 0
+      Active: true
+      Hidden: false
+    ButtonControl:
+      Label: Start
+      Text Style:
+        Font Name: Default
+        Font Size: 18
+        Text Color: [255, 255, 255, 255]
+        Shadow: false
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      UI Style:
+        BG Color: [40, 40, 40, 255]
+        Hover Color: [60, 60, 60, 255]
+        Pressed Color: [30, 30, 30, 255]
+        Rounding: 4
+        Border Size: 0
+        Border Color: [255, 255, 255, 255]
+        Gradient: false
+        Padding: 4
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.100000001
+      Interactable: true
+      Auto Size: false
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: ChainedDecos.Scripts.SceneScript
   - Entity: 12750009872668354234
     TagComponent:
       Tag: start_button_exit
@@ -133,149 +147,168 @@ Entities:
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     ControlComponent:
-      ZOrder: 0
-      IsActive: true
-      RectTransform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [387, 171]
-        OffsetMax: [507, 211]
+      Rect Transform:
+        Position: [-9.05329895, 116.472702]
+        Size: [221.598785, 61.0771255]
+        Anchor Min: [0.5, 0.5]
+        Anchor Max: [0.5, 0.5]
+        Offset Min: [-119.852692, 85.9341354]
+        Offset Max: [101.746094, 147.011261]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
-    NativeScriptComponent:
-      Scripts:
-        - ScriptName: ExitScript
+      Z Order: 0
+      Active: true
+      Hidden: false
     ButtonControl:
       Label: Exit
+      Text Style:
+        Font Name: Default
+        Font Size: 72.2519989
+        Text Color: [255, 255, 255, 255]
+        Shadow: false
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      UI Style:
+        BG Color: [63, 40, 40, 255]
+        Hover Color: [77, 60, 60, 255]
+        Pressed Color: [53, 30, 30, 255]
+        Rounding: 0
+        Border Size: 0
+        Border Color: [255, 255, 255, 255]
+        Gradient: false
+        Padding: 0
+        Hover Scale: 1.24699998
+        Pressed Scale: 1
+        Transition Speed: 0.100000001
       Interactable: true
-      Style:
-        ? BackgroundColor: [40, 40, 40, 255]
-          HoverColor: [60, 60, 60, 255]
-          PressedColor: [30, 30, 30, 255]
-          Rounding: 4
-          BorderSize: 0
-          BorderColor: [255, 255, 255, 255]
-          Padding: 4
-      Text:
-        ? FontName: Default
-          FontSize: 18
-          TextColor: [255, 255, 255, 255]
-          Shadow: false
-          ShadowOffset: 2
-          ShadowColor: [0, 0, 0, 255]
-          LetterSpacing: 1
-          LineHeight: 1.20000005
-          HorizontalAlignment: 1
-          VerticalAlignment: 1
-  - Entity: 11188570711873615005
+      Auto Size: false
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: chaineddecos.scripts.exitscript
+  - Entity: 15500646445384167357
     TagComponent:
-      Tag: start_button_start
+      Tag: start_game_info
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     ControlComponent:
-      ZOrder: 0
-      IsActive: true
-      RectTransform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [386, -39]
-        OffsetMax: [506, 1]
+      Rect Transform:
+        Position: [-508.789062, 468.227203]
+        Size: [378.675934, 68.6394653]
+        Anchor Min: [0.5, 0.5]
+        Anchor Max: [0.5, 0.5]
+        Offset Min: [-698.127014, 433.907471]
+        Offset Max: [-319.45108, 502.546936]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
-    ButtonControl:
-      Label: Start
-      Interactable: true
+      Z Order: 0
+      Active: true
+      Hidden: false
+    LabelControl:
+      Text: The game is currently in development.
       Style:
-        ? BackgroundColor: [40, 40, 40, 255]
-          HoverColor: [60, 60, 60, 255]
-          PressedColor: [30, 30, 30, 255]
-          Rounding: 4
-          BorderSize: 0
-          BorderColor: [255, 255, 255, 255]
-          Padding: 4
-      Text:
-        ? FontName: Default
-          FontSize: 18
-          TextColor: [255, 255, 255, 255]
-          Shadow: false
-          ShadowOffset: 2
-          ShadowColor: [0, 0, 0, 255]
-          LetterSpacing: 1
-          LineHeight: 1.20000005
-          HorizontalAlignment: 1
-          VerticalAlignment: 1
-  - Entity: 13765047633248252361
+        Font Name: Default
+        Font Size: 18
+        Text Color: [255, 255, 255, 255]
+        Shadow: true
+        Shadow Offset: 2
+        Shadow Color: [0, 0, 0, 255]
+        Letter Spacing: 1.73699999
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Auto Size: false
+  - Entity: 6090748651460201744
     TagComponent:
-      Tag: start_game_menu_options
+      Tag: start_game_title
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     ControlComponent:
-      ZOrder: 0
-      IsActive: true
-      RectTransform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [378, 31]
-        OffsetMax: [498, 71]
+      Rect Transform:
+        Position: [-495.002197, -371.998108]
+        Size: [467.287567, 134.573792]
+        Anchor Min: [0.5, 0.5]
+        Anchor Max: [0.5, 0.5]
+        Offset Min: [-728.645996, -439.285004]
+        Offset Max: [-261.358429, -304.711212]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
-    ButtonControl:
-      Label: Options
-      Interactable: true
-      Style:
-        ? BackgroundColor: [40, 40, 40, 255]
-          HoverColor: [60, 60, 60, 255]
-          PressedColor: [30, 30, 30, 255]
-          Rounding: 4
-          BorderSize: 0
-          BorderColor: [255, 255, 255, 255]
-          Padding: 4
-      Text:
-        ? FontName: Default
-          FontSize: 18
-          TextColor: [255, 255, 255, 255]
-          Shadow: false
-          ShadowOffset: 2
-          ShadowColor: [0, 0, 0, 255]
-          LetterSpacing: 1
-          LineHeight: 1.20000005
-          HorizontalAlignment: 1
-          VerticalAlignment: 1
-  - Entity: 16315165840263914448
-    TagComponent:
-      Tag: Image
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ControlComponent:
-      ZOrder: 0
-      IsActive: true
-      RectTransform:
-        AnchorMin: [0.49000001, 0.469999999]
-        AnchorMax: [0.639999986, 0.540000021]
-        OffsetMin: [-479, -253]
-        OffsetMax: [-379, -213]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
+      Z Order: 0
+      Active: true
+      Hidden: false
     ImageControl:
-      TexturePath: materials/unnamed.png
-      Size: [256.200012, 96.3000031]
-      TintColor: [255, 255, 255, 255]
-      BorderColor: [0, 0, 0, 0]
+      Texture Path: materials/b500c85b-07cb-4818-8010-b2c2eaee3e9a.jpg
+      Tint Color: [255, 255, 255, 255]
+      Border Color: [0, 0, 0, 0]
       Style:
-        ? BackgroundColor: [40, 40, 40, 255]
-          HoverColor: [60, 60, 60, 255]
-          PressedColor: [30, 30, 30, 255]
-          Rounding: 4
-          BorderSize: 0
-          BorderColor: [255, 255, 255, 255]
-          Padding: 4
+        BG Color: [40, 40, 40, 255]
+        Hover Color: [60, 60, 60, 255]
+        Pressed Color: [30, 30, 30, 255]
+        Rounding: 4
+        Border Size: 0
+        Border Color: [255, 255, 255, 255]
+        Gradient: false
+        Padding: 4
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.100000001
+  - Entity: 15051911593141375302
+    TagComponent:
+      Tag: start_menu_game_info
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    SceneTransitionComponent:
+      TargetScenePath: scenes/info_scene.chscene
+      Triggered: false
+    ControlComponent:
+      Rect Transform:
+        Position: [-3.58671188, -121.63102]
+        Size: [239.569427, 60.69841]
+        Anchor Min: [0.5, 0.5]
+        Anchor Max: [0.5, 0.5]
+        Offset Min: [-123.371422, -151.980225]
+        Offset Max: [116.197998, -91.2818146]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      Z Order: 0
+      Active: true
+      Hidden: false
+    ButtonControl:
+      Label: Info
+      Text Style:
+        Font Name: Default
+        Font Size: 18
+        Text Color: [255, 255, 255, 255]
+        Shadow: false
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      UI Style:
+        BG Color: [40, 40, 40, 255]
+        Hover Color: [60, 60, 60, 255]
+        Pressed Color: [30, 30, 30, 255]
+        Rounding: 4
+        Border Size: 0
+        Border Color: [255, 255, 255, 255]
+        Gradient: false
+        Padding: 4
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.100000001
+      Interactable: true
+      Auto Size: false
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: ChainedDecos.Scripts.SceneScript

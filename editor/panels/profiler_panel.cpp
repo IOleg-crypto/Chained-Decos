@@ -1,16 +1,8 @@
 #include "profiler_panel.h"
 #include "engine/core/profiler.h"
 #include <format>
-#if defined(CH_PLATFORM_WINDOWS)
-#include <GL/gl.h>
-#else
-#include <GL/gl.h>
-#endif
+#include <glad/gl.h>
 #include "imgui.h"
-#include "rlgl.h"
-
-#define GL_RENDERER 0x1F01
-extern "C" const unsigned char* glGetString(unsigned int name);
 
 namespace CHEngine
 {
@@ -34,7 +26,6 @@ void ProfilerPanel::OnImGuiRender(bool readOnly)
     UpdateHistory();
 
     ImGui::Begin(m_Name.c_str(), &m_IsOpen);
-    ImGui::PushID(this);
 
     const auto& stats = Profiler::GetStats();
 
@@ -112,7 +103,6 @@ void ProfilerPanel::OnImGuiRender(bool readOnly)
         }
     }
 
-    ImGui::PopID();
     ImGui::End();
 }
 

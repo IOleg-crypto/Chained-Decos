@@ -1,0 +1,145 @@
+name: Linux
+
+on:
+  workflow_call:
+
+env:
+  CI: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_NOLOGO: true
+
+jobs:
+  build-linux:
+    name: ubuntu-latest / ${{ matrix.preset }} (${{ matrix.build_type }})
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [linux-gcc, linux-clang]
+        build_type: [Debug, Release]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Get CMake and Ninja
+        uses: lukka/get-cmake@latest
+
+      - name: Setup Compiler Cache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          variant: ccache
+          key: Linux-${{ matrix.preset }}-${{ matrix.build_type }}
+          max-size: 5G
+
+      - name: Setup Mold Linker
+        uses: rui314/setup-mold@v1
+
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install jinja2
+
+      - name: Install Linux Dependencies
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: >-
+            build-essential
+            libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev
+            libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev
+            pkg-config libgtk-3-dev libdrm-dev libgbm-dev
+            xvfb libxkbcommon-x11-0 libgl1-mesa-dri mesa-utils
+          version: 1.0
+
+      - name: Setup Linux Compilers
+        run: |
+          if [[ "${{ matrix.preset }}" == *"gcc"* ]]; then
+            sudo apt-get install -y gcc-14 g++-14
+            echo "CC=gcc-14" >> $GITHUB_ENV
+            echo "CXX=g++-14" >> $GITHUB_ENV
+          elif [[ "${{ matrix.preset }}" == *"clang"* ]]; then
+            sudo apt-get install -y clang-18 clang++-18 libc++-18-dev libc++abi-18-dev lld-18 llvm-18
+            echo "CC=clang-18" >> $GITHUB_ENV
+            echo "CXX=clang++-18" >> $GITHUB_ENV
+            echo "LDFLAGS=-fuse-ld=mold" >> $GITHUB_ENV
+          fi
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Preflight
+        run: |
+          set -euo pipefail
+          echo "Repository root: $PWD"
+          git submodule status --recursive
+          cmake --version
+          dotnet --info
+          echo "CC=${CC:-unset}"
+          echo "CXX=${CXX:-unset}"
+          if [[ -n "${CC:-}" ]] && command -v "$CC" >/dev/null 2>&1; then
+            "$CC" --version | head -n 1
+          fi
+          if [[ -n "${CXX:-}" ]] && command -v "$CXX" >/dev/null 2>&1; then
+            "$CXX" --version | head -n 1
+          fi
+
+      - name: Configure
+        run: |
+          set -euo pipefail
+          SANITIZERS_FLAG="OFF"
+          if [[ "${{ matrix.build_type }}" == "Debug" ]]; then
+            SANITIZERS_FLAG="ON"
+          fi
+
+          mkdir -p "build/${{ matrix.preset }}"
+          PYTHON_EXE=$(python3 -c "import sys; print(sys.executable)")
+          cmake --preset ${{ matrix.preset }} \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DPython_EXECUTABLE="${PYTHON_EXE}" \
+            -DPython3_EXECUTABLE="${PYTHON_EXE}" \
+            -DCH_CI=ON \
+            -DENABLE_UNITY_BUILD=ON \
+            -DENABLE_SANITIZERS=$SANITIZERS_FLAG \
+            -DENABLE_LTO=OFF \
+            -DENABLE_PCH=OFF \
+            2>&1 | tee "build/${{ matrix.preset }}/configure.log"
+
+      - name: Build
+        run: |
+          set -euo pipefail
+          cmake --build --preset ${{ matrix.preset }} \
+            2>&1 | tee "build/${{ matrix.preset }}/build.log"
+
+      - name: Test
+        run: |
+          set -euo pipefail
+          BUILD_DIR="${{ github.workspace }}/build/${{ matrix.preset }}"
+          export LIBGL_ALWAYS_SOFTWARE=1
+          export GALLIUM_DRIVER=llvmpipe
+          export MESA_GL_VERSION_OVERRIDE=4.5
+          export LSAN_OPTIONS="suppressions=${{ github.workspace }}/.github/lsan.supp"
+          xvfb-run -a ctest --test-dir "$BUILD_DIR" -C "${{ matrix.build_type }}" --output-on-failure --timeout 300 --output-junit "$BUILD_DIR/junit.xml" \
+            2>&1 | tee "$BUILD_DIR/ctest.log"
+
+      - name: Upload Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Linux-${{ matrix.preset }}-${{ matrix.build_type }}-binaries
+          if-no-files-found: ignore
+          path: |
+            build/${{ matrix.preset }}/**/*.log
+            build/${{ matrix.preset }}/junit.xml
+          retention-days: 7

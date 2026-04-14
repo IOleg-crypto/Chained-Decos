@@ -1,13 +1,13 @@
-
 # Common include directories for all engine targets
 set(ENGINE_INCLUDE_DIRS
     ${CMAKE_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}
+        .
     ${glm_SOURCE_DIR}
     ${yaml-cpp_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/entt/src
     ${CMAKE_SOURCE_DIR}/include/coral/Coral.Native/Include
-    ${CMAKE_SOURCE_DIR}/include/raylib/src
+    ${CMAKE_SOURCE_DIR}/include/miniaudio
+    ${CMAKE_SOURCE_DIR}/include/glfw/include
 )
 
 # SHARED for local development (hot-reload), STATIC for CI/distribution
@@ -18,22 +18,26 @@ else()
     set(ENGINE_LIB_TYPE STATIC)
 endif()
 
+# We use OBJECT libraries for sub-modules to handle circular dependencies (e.g. Core <-> Scene)
+# Unified through Unity Build and PCH for maximum compilation speed.
+set(SUBMODULE_LIB_TYPE OBJECT)
+
 add_subdirectory(core)
 add_subdirectory(graphics)
 add_subdirectory(physics)
 add_subdirectory(audio)
 add_subdirectory(scene)
-add_subdirectory(script)
 
-# Create the final engine facade library that stitches all objects together
+# Create the final engine facade library that links all sub-modules together
 add_library(engine ${ENGINE_LIB_TYPE}
     $<TARGET_OBJECTS:engine_core>
     $<TARGET_OBJECTS:engine_graphics>
     $<TARGET_OBJECTS:engine_physics>
     $<TARGET_OBJECTS:engine_audio>
     $<TARGET_OBJECTS:engine_scene>
-    $<TARGET_OBJECTS:engine_script>
 )
+
+target_compile_definitions(engine PRIVATE CH_ENGINE_BUILD)
 
 # MSVC needs exported symbols to generate the .lib import library
 set_target_properties(engine PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
@@ -55,13 +59,12 @@ INTERFACE
 
 target_link_libraries(engine 
 PUBLIC 
-    EnTT
+    EnTT::EnTT
 PRIVATE
-    raylib 
     imguilib
     yaml-cpp
-    Coral.Native
     assimp::assimp
+    nfd
 )
 
 # (Redundant compiler flags removed - now in CompilerSettings.cmake)
@@ -77,20 +80,9 @@ install(TARGETS engine
     RUNTIME DESTINATION bin COMPONENT Runtime
 )
 
-install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/resources"
-    DESTINATION engine
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/resources"
+    DESTINATION .
     USE_SOURCE_PERMISSIONS
     COMPONENT Runtime
 )
 
-# ── DLL Deployment ──────────────────────────────────────────────────────────
-# Ensure Coral.Managed.dll is in the same folder as the engine/editor binaries
-if(TARGET CoralManaged)
-    add_custom_command(TARGET engine POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_BINARY_DIR}/include/coral/cmake/Coral.Managed.dll"
-        "${CMAKE_BINARY_DIR}/bin/Coral.Managed.dll"
-        COMMENT "Deploying Coral.Managed.dll to bin/"
-        VERBATIM
-    )
-endif()

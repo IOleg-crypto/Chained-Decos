@@ -9,15 +9,15 @@
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 
-#ifndef GLFW_INCLUDE_NONE
-#define GLFW_INCLUDE_NONE
-#endif
-#include "raylib.h"
-#include "rlgl.h"
 #include <GLFW/glfw3.h>
 
 namespace CHEngine
 {
+void ImGuiLayer::SetContext(ImGuiContext* context)
+{
+    ImGui::SetCurrentContext(context);
+}
+
 ImGuiLayer::ImGuiLayer()
     : Layer("ImGuiLayer")
 {
@@ -105,6 +105,25 @@ void ImGuiLayer::End()
         ImGui::RenderPlatformWindowsDefault();
         glfwMakeContextCurrent(backup_current_context);
     }
+}
+
+bool ImGuiLayer::RefreshFontAtlasTexture()
+{
+    if (!ImGui::GetCurrentContext())
+    {
+        CH_CORE_WARN("ImGuiLayer: Cannot refresh font atlas without an active ImGui context.");
+        return false;
+    }
+
+    ImGui_ImplOpenGL3_DestroyDeviceObjects();
+    if (!ImGui_ImplOpenGL3_CreateDeviceObjects())
+    {
+        CH_CORE_ERROR("ImGuiLayer: Failed to recreate OpenGL device objects for font atlas refresh.");
+        return false;
+    }
+
+    CH_CORE_INFO("ImGuiLayer: Refreshed font atlas texture.");
+    return true;
 }
 
 void ImGuiLayer::OnEvent(Event& e)

@@ -8,21 +8,27 @@
 
 namespace CHEngine
 {
+// Base class for dockable editor panels with optional scene context.
 class Panel
 {
 public:
     virtual ~Panel() = default;
 
+    // Draws the panel UI. readOnly is used when the panel should avoid editing.
     virtual void OnImGuiRender(bool readOnly = false) = 0;
+    // Optional per-frame update hook.
     virtual void OnUpdate(Timestep ts)
     {
     }
+    // Optional event hook.
     virtual void OnEvent(Event& e)
     {
     }
+    // Optional configuration hook used by settings panels.
     virtual void OnConfiguration()
     {
     }
+    // Updates the scene context used by the panel.
     virtual void SetContext(const std::shared_ptr<Scene>& context)
     {
         m_Context = context;

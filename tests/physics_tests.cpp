@@ -8,24 +8,24 @@ using namespace CHEngine;
 
 TEST(PhysicsTest, AABBIntersection)
 {
-    Vector3 minA = {0.0f, 0.0f, 0.0f};
-    Vector3 maxA = {1.0f, 1.0f, 1.0f};
+    glm::vec3 minA = {0.0f, 0.0f, 0.0f};
+    glm::vec3 maxA = {1.0f, 1.0f, 1.0f};
 
-    Vector3 minB = {0.5f, 0.5f, 0.5f};
-    Vector3 maxB = {1.5f, 1.5f, 1.5f};
+    glm::vec3 minB = {0.5f, 0.5f, 0.5f};
+    glm::vec3 maxB = {1.5f, 1.5f, 1.5f};
 
     // Obvious overlap
     EXPECT_TRUE(Collision::CheckAABB(minA, maxA, minB, maxB));
     EXPECT_TRUE(Collision::CheckAABB(minB, maxB, minA, maxA));
 
     // Touching on edge (should be true based on <= and >=)
-    Vector3 minC = {1.0f, 0.0f, 0.0f};
-    Vector3 maxC = {2.0f, 1.0f, 1.0f};
+    glm::vec3 minC = {1.0f, 0.0f, 0.0f};
+    glm::vec3 maxC = {2.0f, 1.0f, 1.0f};
     EXPECT_TRUE(Collision::CheckAABB(minA, maxA, minC, maxC));
 
     // No overlap
-    Vector3 minD = {1.1f, 0.0f, 0.0f};
-    Vector3 maxD = {2.1f, 1.0f, 1.0f};
+    glm::vec3 minD = {1.1f, 0.0f, 0.0f};
+    glm::vec3 maxD = {2.1f, 1.0f, 1.0f};
     EXPECT_FALSE(Collision::CheckAABB(minA, maxA, minD, maxD));
 }
 
@@ -45,14 +45,14 @@ TEST(PhysicsTest, Raycast)
     ray.position = {0.0f, 0.0f, 0.0f};
     ray.direction = {0.0f, 0.0f, 1.0f};
 
-    RaycastResult result = scene->GetPhysics().Raycast(ray);
+    RaycastResult result = Physics::Raycast(scene.get(), ray);
     EXPECT_TRUE(result.Hit);
     EXPECT_NEAR(result.Distance, 4.5f, 0.001f);
     EXPECT_EQ(result.Entity, (entt::entity)entity);
 
     // Ray looking away
     ray.direction = {0.0f, 0.0f, -1.0f};
-    result = scene->GetPhysics().Raycast(ray);
+    result = Physics::Raycast(scene.get(), ray);
     EXPECT_FALSE(result.Hit);
 }
 
@@ -69,7 +69,7 @@ TEST(PhysicsTest, RaycastMissingCollider)
     ray.position = {0.0f, 0.0f, 0.0f};
     ray.direction = {0.0f, 0.0f, 1.0f};
 
-    RaycastResult result = scene->GetPhysics().Raycast(ray);
+    RaycastResult result = Physics::Raycast(scene.get(), ray);
     EXPECT_FALSE(result.Hit);
 }
 
@@ -85,4 +85,28 @@ TEST(PhysicsTest, ColliderEnabledFlag)
     // Set to false
     collider.Enabled = false;
     EXPECT_FALSE(collider.Enabled);
+}
+
+TEST(PhysicsTest, ContextLifecycleResetAndClear)
+{
+    auto scene = std::make_shared<Scene>();
+
+    auto& context = Physics::GetContext(scene.get());
+    context.Accumulator = 0.1337f;
+
+    bool callbackInvoked = false;
+    Physics::SetCollisionCallback(scene.get(), [&callbackInvoked](entt::entity, entt::entity) {
+        callbackInvoked = true;
+    });
+
+    Physics::ResetAccumulator(scene.get());
+    EXPECT_FLOAT_EQ(Physics::GetContext(scene.get()).Accumulator, 0.0f);
+    EXPECT_TRUE((bool)Physics::GetContext(scene.get()).CollisionCallback);
+
+    Physics::ClearContext(scene.get());
+
+    auto& recreated = Physics::GetContext(scene.get());
+    EXPECT_FLOAT_EQ(recreated.Accumulator, 0.0f);
+    EXPECT_FALSE((bool)recreated.CollisionCallback);
+    EXPECT_FALSE(callbackInvoked);
 }

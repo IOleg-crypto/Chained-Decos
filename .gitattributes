@@ -1,5 +1,12 @@
 *.glb filter=lfs diff=lfs merge=lfs -text
 *.zip filter=lfs diff=lfs merge=lfs -text
+*.bin -text
+*.gltf -text
+*.obj -text
+*.fbx -text
+*.png -text
+*.jpg -text
+*.hdr -text
 *.hdr filter=lfs diff=lfs merge=lfs -text
 *.fbx filter=lfs diff=lfs merge=lfs -text
 *.gltf filter=lfs diff=lfs merge=lfs -text

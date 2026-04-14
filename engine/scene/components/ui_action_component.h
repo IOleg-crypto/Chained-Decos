@@ -20,6 +20,14 @@ namespace CHEngine
         UIActionType Type = UIActionType::SetParameter;
 
         UIActionComponent() = default;
+
+        CH_REFLECT_BEGIN(UIActionComponent)
+            props.Handle("Target Entity", TargetEntityID);
+            props.Property("Parameter", ParameterName);
+            props.Property("Value", Value);
+            const char* typeStrings[] = {"Set Parameter", "Trigger State"};
+            props.Enum("Type", Type, typeStrings, 2);
+        CH_REFLECT_END()
     };
 }
 

@@ -1,20 +1,29 @@
 Project:
   Name: ChainedDecos
-  IconPath: engine/resources/icons/chaineddecos.jpg
-  StartScene: scenes\main_menu.chscene
+  IconPath: resources/icons/chaineddecos.jpg
+  StartScene: scenes\start_menu.chscene
   AssetDirectory: assets
-  ActiveScene: assets/scenes/untitled100.chscene
+  ActiveScene: assets/scenes/rpg_strategy_scene.chscene
   Environment: ""
   BuildScenes:
-    []
+    - scenes/start_menu.chscene
+    - scenes/title_image.chscene
+    - scenes/main_menu.chscene
+    - scenes/game_mode_selection.chscene
+    - scenes/map_selection.chscene
+    - scenes/video_scene.chscene
+    - scenes/info_scene.chscene
+    - scenes/untitled100.chscene
+    - scenes/scene_tem.chscene
+    - scenes/test_platform_scene.chscene
   Physics:
     Gravity: 20
-    FixedTimestep: 0.0666999966
+    FixedTimestep: 0.00416666688
   Animation:
-    TargetFPS: 30
+    TargetFPS: 60
   Render:
-    AmbientIntensity: 0
-    DefaultExposure: 0.839999974
+    AmbientIntensity: 1
+    DefaultExposure: 0.140000001
   Texture:
     GenerateMipmaps: true
     Filter: 5
@@ -28,7 +37,7 @@ Project:
     VSync: false
     Resizable: true
   Runtime:
-    Fullscreen: false
+    Fullscreen: true
     ShowStats: false
     EnableConsole: false
   Editor:

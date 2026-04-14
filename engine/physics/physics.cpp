@@ -1,251 +1,244 @@
-
 #include "engine/core/profiler.h"
-#include "engine/graphics/asset_manager.h"
-#include "engine/graphics/model_asset.h"
-#include "engine/physics/bvh/bvh.h"
+#include "physics.h"
+#include "engine/core/assets/asset_manager.h"
+#include "engine/core/log.h"
+#include "engine/graphics/assets/model_asset.h"
+#include "engine/physics/bvh/bvh_cache.h"
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene.h"
-#include "narrow_phase.h"
-#include "scene_trace.h"
+#include "collision_core.h"
+#include "raycast_query.h"
 #include "dynamics.h"
-#include <mutex>
-#include <unordered_map>
-
-#include "engine/core/application.h"
+#include <utility>
+#include <vector>
 
 namespace CHEngine
 {
-static PhysicsSystem* s_PhysicsInstance = nullptr;
-
-PhysicsSystem::PhysicsSystem()
+namespace
 {
-    CH_CORE_ASSERT(!s_PhysicsInstance, "PhysicsSystem already exists!");
-    s_PhysicsInstance = this;
+BVHCache& Cache()
+{
+    static BVHCache s_Cache;
+    return s_Cache;
 }
 
-PhysicsSystem::~PhysicsSystem()
+bool& InitializedFlag()
 {
-    Shutdown();
-    s_PhysicsInstance = nullptr;
+    static bool s_Initialized = false;
+    return s_Initialized;
+}
+} // namespace
+
+void Physics::Init()
+{
+    if (InitializedFlag())
+    {
+        return;
+    }
+
+    Cache().Init();
+    InitializedFlag() = true;
+    CH_CORE_INFO("Physics initialized.");
 }
 
-void PhysicsSystem::Init()
+void Physics::Shutdown()
 {
-    CH_CORE_INFO("Global Physics System Initialized.");
+    if (!InitializedFlag())
+    {
+        return;
+    }
+
+    Cache().Shutdown();
+    InitializedFlag() = false;
+    CH_CORE_INFO("Physics shutdown.");
 }
 
-void PhysicsSystem::Shutdown()
+bool Physics::IsInitialized()
 {
-    CH_CORE_INFO("Global Physics System Shutdown.");
+    return InitializedFlag();
 }
 
-PhysicsSystem& PhysicsSystem::Get()
+std::shared_ptr<BVH> Physics::GetBVH(const std::string& path)
 {
-    CH_CORE_ASSERT(s_PhysicsInstance, "PhysicsSystem not initialized!");
-    return *s_PhysicsInstance;
+    if (!InitializedFlag())
+    {
+        return nullptr;
+    }
+
+    return Cache().GetOrBuild(path);
 }
 
-Physics::Physics(Scene* scene)
-    : m_Scene(scene)
+void Physics::InvalidateBVH(const std::string& path)
 {
-    m_NarrowPhase = std::make_unique<NarrowPhase>(this);
-    m_Dynamics = std::make_unique<Dynamics>();
-    m_SceneTrace = std::make_unique<SceneTrace>(this);
+    if (!InitializedFlag())
+    {
+        return;
+    }
+
+    Cache().Invalidate(path);
 }
 
-Physics::~Physics()
+void Physics::UpdateBVHCache(const std::string& path, std::shared_ptr<BVH> bvh)
 {
-    CH_CORE_INFO("Physics instance for scene destroyed.");
+    if (!InitializedFlag())
+    {
+        return;
+    }
+
+    Cache().Put(path, std::move(bvh));
 }
 
-void Physics::Update(Timestep deltaTime, bool runtime)
+PhysicsContext& Physics::GetContext(Scene* scene)
+{
+    auto& registry = scene->GetRegistry();
+    auto* ctx = registry.ctx().find<PhysicsContext>();
+    if (!ctx) return registry.ctx().emplace<PhysicsContext>();
+    return *ctx;
+}
+
+void Physics::ResetAccumulator(Scene* scene)
+{
+    if (!scene)
+    {
+        return;
+    }
+
+    GetContext(scene).Accumulator = 0.0f;
+}
+
+void Physics::ClearContext(Scene* scene)
+{
+    if (!scene)
+    {
+        return;
+    }
+
+    scene->GetRegistry().ctx().erase<PhysicsContext>();
+}
+
+void Physics::SetCollisionCallback(Scene* scene, std::function<void(entt::entity, entt::entity)> callback)
+{
+    GetContext(scene).CollisionCallback = callback;
+}
+
+void Physics::Update(Scene* scene, Timestep deltaTime, bool runtime)
 {
     CH_PROFILE_FUNCTION();
-    CH_CORE_ASSERT(m_Scene, "Physics Scene is null!");
+    if (!scene) return;
 
-    // Reset collision flags every frame (needed for debug visualisation)
-    auto& registry = m_Scene->GetRegistry();
+    auto& registry = scene->GetRegistry();
     auto collView = registry.view<ColliderComponent>();
-    for (auto entity : collView)
+    for (auto it = collView.begin(); it != collView.end(); ++it)
+    {
+        auto entity = *it;
         collView.get<ColliderComponent>(entity).IsColliding = false;
+    }
 
-    // Collider shape recalc and simulation only when playing
-    if (!runtime)
-        return;
+    UpdateColliders(scene);
 
-    UpdateColliders();
+    if (!runtime) return;
 
-    float fixedTimestep = 1.0f / 60.0f;
+    float fixedTimestep = 1.0f / 120.0f;
     if (auto project = Project::GetActive())
-        fixedTimestep = project->GetConfig().Physics.FixedTimestep;
-
-    m_Accumulator += deltaTime;
-    while (m_Accumulator >= fixedTimestep)
     {
-        ResolveSimulation(fixedTimestep);
-        m_Accumulator -= fixedTimestep;
+        float cfg = project->GetConfig().Physics.FixedTimestep;
+        if (cfg > 0.0f) fixedTimestep = cfg;
+    }
+
+    auto& context = GetContext(scene);
+    context.Accumulator += (float)deltaTime;
+
+    const float maxAccumulator = 0.2f;
+    if (context.Accumulator > maxAccumulator) context.Accumulator = maxAccumulator;
+
+    while (context.Accumulator >= fixedTimestep)
+    {
+        ResolveSimulation(scene, fixedTimestep);
+        context.Accumulator -= fixedTimestep;
     }
 }
 
-RaycastResult Physics::Raycast(Ray ray)
+RaycastResult Physics::Raycast(Scene* scene, Ray ray)
 {
-    CH_CORE_ASSERT(m_Scene, "Physics Scene is null!");
-    return m_SceneTrace->Raycast(m_Scene, ray);
+    if (!scene) return RaycastResult();
+    return RaycastQuery::Raycast(scene->GetRegistry(), ray);
 }
 
-std::shared_ptr<BVH> Physics::GetBVH(ModelAsset* asset)
+void Physics::UpdateColliders(Scene* scene)
 {
-    if (!asset || asset->GetState() != AssetState::Ready)
-    {
-        return nullptr;
-    }
-
-    std::lock_guard<std::mutex> lock(m_BVHMutex);
-
-    auto it = m_BVHCache.find(asset);
-    if (it == m_BVHCache.end())
-    {
-        // Start building in background using full model data (node transforms)
-        m_BVHCache[asset] =
-            BVH::BuildAsync(asset->GetModel(), asset->GetGlobalNodeTransforms(), asset->GetMeshToNode()).share();
-        return nullptr;
-    }
-
-    // Check if ready
-    if (it->second.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
-    {
-        return it->second.get();
-    }
-
-    return nullptr;
-}
-
-void Physics::InvalidateBVH(ModelAsset* asset)
-{
-    if (!asset)
-    {
-        return;
-    }
-    std::lock_guard<std::mutex> lock(m_BVHMutex);
-    m_BVHCache.erase(asset);
-}
-
-void Physics::UpdateBVHCache(ModelAsset* asset, std::shared_ptr<BVH> bvh)
-{
-    if (!asset || !bvh)
-    {
-        return;
-    }
-    std::lock_guard<std::mutex> lock(m_BVHMutex);
-
-    std::promise<std::shared_ptr<BVH>> promise;
-    promise.set_value(bvh);
-    m_BVHCache[asset] = promise.get_future().share();
-}
-
-void Physics::UpdateColliders()
-{
-    auto& registry = m_Scene->GetRegistry();
+    auto& registry = scene->GetRegistry();
     auto project = Project::GetActive();
-    if (!project || !project->GetAssetManager())
-        return;
+    if (!project) return;
 
     auto genView = registry.view<ColliderComponent, TransformComponent>();
 
-    for (auto entity : genView)
+    for (auto it = genView.begin(); it != genView.end(); ++it)
     {
+        auto entity = *it;
         auto& collider = genView.get<ColliderComponent>(entity);
 
-        // Case A: Box Collider (Auto) — compute once; static meshes don't change
         if (collider.Type == ColliderType::Box && collider.AutoCalculate)
         {
-            if (!registry.all_of<ModelComponent>(entity))
-                continue;
-
+            if (!registry.all_of<ModelComponent>(entity)) continue;
             auto& model = registry.get<ModelComponent>(entity);
-            auto& asset = m_ColliderAssetCache[model.ModelPath];
-            if (!asset)
-                asset = project->GetAssetManager()->Get<ModelAsset>(model.ModelPath);
+            auto asset = AssetManager::Get().Get<ModelAsset>(model.ModelPath);
 
             if (asset && asset->GetState() == AssetState::Ready)
             {
-                // Only recalculate if size hasn't been set yet
-                if (collider.Size.x == 0 && collider.Size.y == 0 && collider.Size.z == 0)
-                {
-                    BoundingBox box = asset->GetBoundingBox();
-                    collider.Size   = Vector3Subtract(box.max, box.min);
-                    collider.Offset = box.min;
-                }
+                BoundingBox box = asset->GetBoundingBox();
+                collider.Size = box.Max - box.Min;
+                collider.Offset = box.Min;
             }
-            continue;
         }
-
-        // Case B: Mesh Collider (BVH)
-        if (collider.Type == ColliderType::Mesh && !collider.ModelPath.empty())
+        else if (collider.Type == ColliderType::Sphere && collider.AutoCalculate)
         {
-            auto& asset = m_ColliderAssetCache[collider.ModelPath];
-            if (!asset)
-                asset = project->GetAssetManager()->Get<ModelAsset>(collider.ModelPath);
-
-            if (asset && asset->GetState() == AssetState::Ready && asset->GetModel().meshCount > 0)
-            {
-                auto bvh = GetBVH(asset.get());
-                if (bvh)
-                    collider.BVHRoot = bvh;
-
-                if (collider.AutoCalculate && collider.BVHRoot && collider.Size.x == 0)
-                {
-                    BoundingBox box = asset->GetBoundingBox();
-                    collider.Offset = box.min;
-                    collider.Size   = Vector3Subtract(box.max, box.min);
-                }
-            }
-            continue;
-        }
-
-        // Case C: Sphere Collider (Auto)
-        if (collider.Type == ColliderType::Sphere && collider.AutoCalculate)
-        {
-            if (!registry.all_of<ModelComponent>(entity))
-                continue;
-
+            if (!registry.all_of<ModelComponent>(entity)) continue;
             auto& model = registry.get<ModelComponent>(entity);
-            auto& asset = m_ColliderAssetCache[model.ModelPath];
-            if (!asset)
-                asset = project->GetAssetManager()->Get<ModelAsset>(model.ModelPath);
+            auto asset = AssetManager::Get().Get<ModelAsset>(model.ModelPath);
 
-            if (asset && asset->GetState() == AssetState::Ready && collider.Radius == 0)
+            if (asset && asset->GetState() == AssetState::Ready)
             {
                 BoundingBox box = asset->GetBoundingBox();
-                Vector3 size = Vector3Subtract(box.max, box.min);
-                collider.Radius = fmaxf(size.x, fmaxf(size.y, size.z)) * 0.5f;
-                collider.Offset = Vector3Scale(Vector3Add(box.min, box.max), 0.5f);
+                glm::vec3 sz = box.Max - box.Min;
+                collider.Radius = glm::max(sz.x, glm::max(sz.y, sz.z)) * 0.5f;
+                collider.Offset = (box.Min + box.Max) * 0.5f;
             }
-            continue;
+        }
+        else if (collider.Type == ColliderType::Mesh && collider.AutoCalculate)
+        {
+            if (!registry.all_of<ModelComponent>(entity)) continue;
+            auto& model = registry.get<ModelComponent>(entity);
+            
+            if (!model.ModelPath.empty())
+            {
+                auto asset = AssetManager::Get().Get<ModelAsset>(model.ModelPath);
+                if (asset && asset->GetState() == AssetState::Ready)
+                {
+                    collider.ModelHandle = asset->GetID();
+                    collider.ModelPath = model.ModelPath;
+                }
+            }
         }
     }
 }
 
-void Physics::ResolveSimulation(Timestep deltaTime)
+void Physics::ResolveSimulation(Scene* scene, Timestep deltaTime)
 {
-    auto& registry = m_Scene->GetRegistry();
+    auto& registry = scene->GetRegistry();
     auto rbView = registry.view<TransformComponent, RigidBodyComponent>();
     std::vector<entt::entity> rbEntities;
     rbEntities.reserve(rbView.size_hint());
 
-    for (auto entity : rbView)
+    for (auto it = rbView.begin(); it != rbView.end(); ++it)
     {
-        rbEntities.push_back(entity);
+        rbEntities.push_back(*it);
     }
 
-    if (rbEntities.empty())
+    if (!rbEntities.empty())
     {
-        return;
+        Dynamics::Update(registry, rbEntities, deltaTime);
+        CollisionCore::ResolveCollisions(registry, rbEntities);
     }
-
-    m_Dynamics->Update(m_Scene, rbEntities, deltaTime);
-    m_NarrowPhase->ResolveCollisions(m_Scene, rbEntities);
 }
-
 } // namespace CHEngine

@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.31)
+cmake_minimum_required(VERSION 3.31)
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 
 # Windows SDK Version (must be set before project())
@@ -28,6 +28,9 @@ if(CH_CI)
     add_compile_definitions(CH_CI)
 endif()
 
+# Global library definitions
+add_compile_definitions(GLM_ENABLE_EXPERIMENTAL GLM_FORCE_DEPTH_ZERO_TO_ONE)
+
 # Warning Settings
 option(DISABLE_ALL_WARNINGS "Disable all compiler warnings" OFF)
 option(ENABLE_WARNINGS "Enable compiler warnings" OFF)
@@ -47,11 +50,34 @@ if(USE_CCACHE)
     endif()
 endif()
 
+# === BUILD OPTIMIZATION: Prevent unnecessary recompilation ===
+# 1. Don't regenerate build files if nothing changed
+set(CMAKE_SUPPRESS_REGENERATION OFF)
+
+# 2. Incremental linking (faster linking)
+if(MSVC)
+    add_link_options(/INCREMENTAL)
+endif()
+
+# 3. Parallel build must be controlled by the build tool (cmake --build --parallel)
+# Never pass -j as a compiler flag, because compilers like gcc treat it as invalid.
+
+# 4. Unity builds in Release (combine multiple source files)
+# Trades disk space for faster compilation times
+if(CMAKE_BUILD_TYPE STREQUAL Release OR CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_UNITY_BUILD ON CACHE BOOL "Enable Unity builds" FORCE)
+    set(CMAKE_UNITY_BUILD_BATCH_SIZE 8 CACHE STRING "Unity build batch size")
+endif()
 
 # Dependencies
 include(cmake/CompilerSettings.cmake)
 include(cmake/Dependencies.cmake)
 include(cmake/ProjectHelpers.cmake)
+
+chained_generate_build_preset_header()
+
+set(CH_ACTIVE_GAME "chaineddecos" CACHE STRING "Active game project to build")
+set_property(CACHE CH_ACTIVE_GAME PROPERTY STRINGS chaineddecos testproject)
 
 # Useful definitions
 if(UNIX AND NOT APPLE)
@@ -71,9 +97,18 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 
 add_subdirectory(engine)
+add_subdirectory(scripting)
 
 # Build Game Projects
-add_subdirectory(game/chaineddecos)
+# Build the selected game project
+if(CH_ACTIVE_GAME STREQUAL "chaineddecos")
+    add_subdirectory(game/chaineddecos)
+elseif(CH_ACTIVE_GAME STREQUAL "testproject")
+    add_subdirectory(game/testproject)
+else()
+    message(FATAL_ERROR "Unknown CH_ACTIVE_GAME='${CH_ACTIVE_GAME}'. Supported values are: chaineddecos, testproject.")
+endif()
+
 add_subdirectory(editor)
 add_subdirectory(runtime)
 

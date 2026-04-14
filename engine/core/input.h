@@ -7,14 +7,13 @@
 
 namespace CHEngine
 {
-// Static class for polling input state and dispatching raw raylib events to the Application.
+
 class Input
 {
 public:
-    // Polls raylib for input changes and dispatches events to Application::OnEvent.
+    static void Update();
     static void PollEvents();
 
-    // Direct polling API (wraps raylib)
     static bool IsKeyPressed(KeyCode key);
     static bool IsKeyDown(KeyCode key);
     static bool IsKeyReleased(KeyCode key);
@@ -25,10 +24,25 @@ public:
     static bool IsMouseButtonReleased(MouseCode button);
     static bool IsMouseButtonUp(MouseCode button);
 
-    static Vector2 GetMousePosition();
-    static Vector2 GetMouseDelta();
+    static glm::vec2 GetMousePosition();
+    static glm::vec2 GetMouseDelta();
     static float GetMouseWheelMove();
+
+    // Callback used by Window to update scroll
+    static void OnMouseScroll(float xOffset, float yOffset) { s_MouseWheelDelta = yOffset; }
+
+private:
+    static inline bool s_KeyStates[512] = { false };
+    static inline bool s_LastKeyStates[512] = { false };
+    static inline bool s_MouseStates[16] = { false };
+    static inline bool s_LastMouseStates[16] = { false };
+
+    static inline glm::vec2 s_MousePosition = { 0.0f, 0.0f };
+    static inline glm::vec2 s_LastMousePosition = { 0.0f, 0.0f };
+    static inline float s_MouseWheelDelta = 0.0f;
+    static inline float s_CurrentMouseWheelDelta = 0.0f;
 };
+
 } // namespace CHEngine
 
 #endif // CH_INPUT_H

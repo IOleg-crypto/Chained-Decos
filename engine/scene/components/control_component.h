@@ -1,12 +1,7 @@
 #ifndef CH_CONTROL_COMPONENT_H
 #define CH_CONTROL_COMPONENT_H
 
-#include "engine/graphics/asset.h"
-#include <memory>
-#include <raylib.h>
-#include <raymath.h>
-#include <string>
-#include <vector>
+#include "engine/core/reflection.h"
 
 namespace CHEngine
 {
@@ -14,40 +9,52 @@ namespace CHEngine
 // Typography & Visual Styles
 enum class TextAlignment
 {
-    Left = 0,
-    Center = 1,
-    Right = 2,
-    Top = 0,
-    Bottom = 2
+    Left = 0, Center = 1, Right = 2,
+    Top = 0, Bottom = 2
 };
 
-// Canvas scaling modes for Reference Resolution system
 enum class CanvasScaleMode : uint8_t
 {
-    ConstantPixelSize,   // No scaling, pixel-perfect at any resolution
-    ScaleWithScreenSize, // Scale proportionally based on reference resolution
+    ConstantPixelSize,
+    ScaleWithScreenSize,
 };
 
-// Scene-wide canvas settings for UI scaling
 struct CanvasSettings
 {
-    Vector2 ReferenceResolution = {1920.0f, 1080.0f};
-    CanvasScaleMode ScaleMode = CanvasScaleMode::ConstantPixelSize; // No scaling, anchors relative to viewport
-    float MatchWidthOrHeight = 0.5f;                                // Only used with ScaleWithScreenSize
+    glm::vec2 ReferenceResolution = {1920.0f, 1080.0f};
+    CanvasScaleMode ScaleMode = CanvasScaleMode::ConstantPixelSize;
+    float MatchWidthOrHeight = 0.5f;
 };
 
 struct TextStyle
 {
     std::string FontName = "Default";
     float FontSize = 18.0f;
-    Color TextColor = WHITE;
+    Color TextColor = { 255, 255, 255, 255 };
     bool Shadow = false;
     float ShadowOffset = 2.0f;
-    Color ShadowColor = BLACK;
-    float LetterSpacing = 1.0f;
+    Color ShadowColor = { 0, 0, 0, 255 };
+    float LetterSpacing = { 1.0f };
     float LineHeight = 1.2f;
     TextAlignment HorizontalAlignment = TextAlignment::Center;
     TextAlignment VerticalAlignment = TextAlignment::Center;
+
+    CH_REFLECT_BEGIN(TextStyle)
+        props.Property("Font Name", FontName);
+        props.Property("Font Size", FontSize, PropertyMeta(6.0f, 128.0f, 1.0f));
+        props.Property("Text Color", TextColor);
+        props.Property("Shadow", Shadow);
+        if (Shadow)
+        {
+            props.Property("Shadow Offset", ShadowOffset, PropertyMeta(0.0f, 20.0f, 0.1f));
+            props.Property("Shadow Color", ShadowColor);
+        }
+        props.Property("Letter Spacing", LetterSpacing, PropertyMeta(0.5f, 4.0f, 0.1f));
+        props.Property("Line Height", LineHeight, PropertyMeta(0.5f, 3.0f, 0.1f));
+        // Alignments as ints for now
+        props.Property("H Align", (int&)HorizontalAlignment);
+        props.Property("V Align", (int&)VerticalAlignment);
+    CH_REFLECT_END()
 };
 
 struct UIStyle
@@ -58,7 +65,7 @@ struct UIStyle
 
     float Rounding = 4.0f;
     float BorderSize = 0.0f;
-    Color BorderColor = WHITE;
+    Color BorderColor = { 255, 255, 255, 255 };
 
     bool UseGradient = false;
     Color GradientColor = {20, 20, 20, 255};
@@ -68,50 +75,126 @@ struct UIStyle
     float HoverScale = 1.0f;
     float PressedScale = 1.0f;
     float TransitionSpeed = 0.1f;
+
+    CH_REFLECT_BEGIN(UIStyle)
+        props.Property("BG Color", BackgroundColor);
+        props.Property("Hover Color", HoverColor);
+        props.Property("Pressed Color", PressedColor);
+        props.Property("Rounding", Rounding, PropertyMeta(0.0f, 20.0f, 0.5f));
+        props.Property("Border Size", BorderSize, PropertyMeta(0.0f, 10.0f, 0.1f));
+        props.Property("Border Color", BorderColor);
+        props.Property("Gradient", UseGradient);
+        if (UseGradient)
+            props.Property("Gradient Color", GradientColor);
+        props.Property("Padding", Padding, PropertyMeta(0.0f, 50.0f, 1.0f));
+        props.Property("Hover Scale", HoverScale, PropertyMeta(0.8f, 1.5f, 0.05f));
+        props.Property("Pressed Scale", PressedScale, PropertyMeta(0.8f, 1.5f, 0.05f));
+        props.Property("Transition Speed", TransitionSpeed, PropertyMeta(0.01f, 1.0f, 0.01f));
+    CH_REFLECT_END()
+
+    // Runtime state (not serialized)
+    struct RuntimeState {
+        float AnimationAlpha = 0.0f; // 0 = idle, 1 = hover/pressed
+        float CurrentScale = 1.0f;
+        Color CurrentColor = {255, 255, 255, 255};
+    } State;
+};
+
+struct Rectangle
+{
+    float x, y, width, height;
 };
 
 struct RectTransform
 {
-    Vector2 AnchorMin = {0.5f, 0.5f};
-    Vector2 AnchorMax = {0.5f, 0.5f};
-    Vector2 OffsetMin = {-50.0f, -20.0f};
-    Vector2 OffsetMax = {50.0f, 20.0f};
-    Vector2 Pivot = {0.5f, 0.5f};
+    glm::vec2 AnchorMin = {0.5f, 0.5f};
+    glm::vec2 AnchorMax = {0.5f, 0.5f};
+    glm::vec2 OffsetMin = {-50.0f, -20.0f};
+    glm::vec2 OffsetMax = {50.0f, 20.0f};
+    glm::vec2 Pivot = {0.5f, 0.5f};
     float Rotation = 0.0f;
-    Vector2 Scale = {1.0f, 1.0f};
+    glm::vec2 Scale = {1.0f, 1.0f};
 
-    Rectangle CalculateRect(Vector2 viewportSize, Vector2 viewportOffset = {0.0f, 0.0f}) const
+    Rectangle CalculateRect(glm::vec2 viewportSize, glm::vec2 viewportOffset = {0.0f, 0.0f}) const
     {
-        // 1. Calculate the box defined by anchors (clamped to 0..1)
-        Vector2 clAnchMin = {Clamp(AnchorMin.x, 0.0f, 1.0f), Clamp(AnchorMin.y, 0.0f, 1.0f)};
-        Vector2 clAnchMax = {Clamp(AnchorMax.x, 0.0f, 1.0f), Clamp(AnchorMax.y, 0.0f, 1.0f)};
+        glm::vec2 clAnchMin = glm::clamp(AnchorMin, 0.0f, 1.0f);
+        glm::vec2 clAnchMax = glm::clamp(AnchorMax, 0.0f, 1.0f);
 
-        Vector2 anchorMinPos = {viewportSize.x * clAnchMin.x, viewportSize.y * clAnchMin.y};
-        Vector2 anchorMaxPos = {viewportSize.x * clAnchMax.x, viewportSize.y * clAnchMax.y};
+        glm::vec2 anchorMinPos = {viewportSize.x * clAnchMin.x, viewportSize.y * clAnchMin.y};
+        glm::vec2 anchorMaxPos = {viewportSize.x * clAnchMax.x, viewportSize.y * clAnchMax.y};
 
-        // 2. Add offsets (absolute pixels)
-        Vector2 pMin = {anchorMinPos.x + OffsetMin.x, anchorMinPos.y + OffsetMin.y};
-        Vector2 pMax = {anchorMaxPos.x + OffsetMax.x, anchorMaxPos.y + OffsetMax.y};
+        glm::vec2 pMin = {anchorMinPos.x + OffsetMin.x, anchorMinPos.y + OffsetMin.y};
+        glm::vec2 pMax = {anchorMaxPos.x + OffsetMax.x, anchorMaxPos.y + OffsetMax.y};
 
-        // 3. Return generic Raylib Rectangle (x, y, w, h)
         return Rectangle{viewportOffset.x + pMin.x, viewportOffset.y + pMin.y, pMax.x - pMin.x, pMax.y - pMin.y};
     }
 
-    // New helper to get center position in viewport space
-    Vector2 GetCenter(Vector2 viewportSize) const
+    glm::vec2 GetCenter(glm::vec2 viewportSize) const
     {
         Rectangle rect = CalculateRect(viewportSize);
         return {rect.x + rect.width * 0.5f, rect.y + rect.height * 0.5f};
     }
 
-    Vector2 GetSize(Vector2 viewportSize) const
+    glm::vec2 GetSize(glm::vec2 viewportSize) const
     {
         Rectangle rect = CalculateRect(viewportSize);
         return {rect.width, rect.height};
     }
+
+    CH_REFLECT_BEGIN(RectTransform)
+        bool changed = false;
+        bool isFill = (AnchorMin.x == 0.0f && AnchorMax.x == 1.0f && AnchorMin.y == 0.0f && AnchorMax.y == 1.0f);
+        
+        if (props.BeginGroup("Simplified Layout", !isFill))
+        {
+            if (isFill)
+            {
+                props.Header("Fill Mode Active");
+                props.Property("Padding L/R", OffsetMin.x, PropertyMeta(-1000.0f, 1000.0f, 1.0f)); // Simplified view
+                props.Property("Padding T/B", OffsetMin.y, PropertyMeta(-1000.0f, 1000.0f, 1.0f));
+            }
+            else
+            {
+                glm::vec2 pos = (OffsetMin + OffsetMax) * 0.5f;
+                glm::vec2 size = OffsetMax - OffsetMin;
+                
+                if (props.Property("Position", pos, PropertyMeta(-2000.0f, 2000.0f, 1.0f)))
+                {
+                    OffsetMin.x = pos.x - size.x * Pivot.x;
+                    OffsetMin.y = pos.y - size.y * Pivot.y;
+                    OffsetMax.x = pos.x + size.x * (1.0f - Pivot.x);
+                    OffsetMax.y = pos.y + size.y * (1.0f - Pivot.y);
+                    changed = true;
+                }
+                
+                if (props.Property("Size", size, PropertyMeta(1.0f, 2000.0f, 1.0f)))
+                {
+                    OffsetMin.x = pos.x - size.x * Pivot.x;
+                    OffsetMin.y = pos.y - size.y * Pivot.y;
+                    OffsetMax.x = pos.x + size.x * (1.0f - Pivot.x);
+                    OffsetMax.y = pos.y + size.y * (1.0f - Pivot.y);
+                    changed = true;
+                }
+            }
+            props.EndGroup();
+        }
+
+        if (props.BeginGroup("Advanced Settings", isFill))
+        {
+            if (props.Property("Anchor Min", AnchorMin)) changed = true;
+            if (props.Property("Anchor Max", AnchorMax)) changed = true;
+            if (props.Property("Offset Min", OffsetMin, PropertyMeta(-2000.0f, 2000.0f, 1.0f))) changed = true;
+            if (props.Property("Offset Max", OffsetMax, PropertyMeta(-2000.0f, 2000.0f, 1.0f))) changed = true;
+            if (props.Property("Pivot", Pivot)) changed = true;
+            if (props.Property("Rotation", Rotation, PropertyMeta(-360.0f, 360.0f, 1.0f))) changed = true;
+            if (props.Property("Scale", Scale, PropertyMeta(0.1f, 10.0f, 0.1f))) changed = true;
+            props.EndGroup();
+        }
+        
+        if (changed) props.SetChanged(true);
+    CH_REFLECT_END()
 };
 
-// Base Component
 struct ControlComponent
 {
     RectTransform Transform;
@@ -120,54 +203,70 @@ struct ControlComponent
     bool HiddenInHierarchy = false;
 
     ControlComponent() = default;
-};
 
-// --- Unified Specialized Widgets ---
+    CH_REFLECT_BEGIN(ControlComponent)
+        props.Nested("Rect Transform", Transform);
+        props.Property("Z Order", ZOrder, PropertyMeta(-1000.0f, 1000.0f, 1.0f));
+        props.Property("Active", IsActive);
+        props.Property("Hidden", HiddenInHierarchy);
+    CH_REFLECT_END()
+};
 
 struct ButtonControl
 {
     std::string Label = "Button";
     TextStyle Text;
     UIStyle Style;
-
     bool IsInteractable = true;
     bool PressedThisFrame = false;
-
-    // Internal state
     bool IsHovered = false;
     bool IsDown = false;
-
     bool AutoSize = false;
 
     ButtonControl() = default;
-    ButtonControl(const std::string& label)
-        : Label(label)
-    {
-    }
+    ButtonControl(const std::string& label) : Label(label) {}
+
+    CH_REFLECT_BEGIN(ButtonControl)
+        props.Property("Label", Label);
+        props.Nested("Text Style", Text);
+        props.Nested("UI Style", Style);
+        props.Property("Interactable", IsInteractable);
+        props.Property("Auto Size", AutoSize);
+    CH_REFLECT_END()
 };
 
 struct PanelControl
 {
     UIStyle Style;
     AssetHandle TextureHandle = 0;
-    std::string TexturePath = ""; // For 2D backgrounds
-    std::shared_ptr<class TextureAsset> Texture = nullptr;
-
+    std::string TexturePath = "";
     bool FullScreen = false;
+
+    bool IsHovered = false;
+    bool IsDown = false;
+
+    CH_REFLECT_BEGIN(PanelControl)
+        props.Nested("UI Style", Style);
+        props.Handle("Texture Handle", TextureHandle);
+        props.File("Texture Path", TexturePath, "png,jpg,tga");
+        props.Property("Full Screen", FullScreen);
+    CH_REFLECT_END()
 };
 
 struct LabelControl
 {
     std::string Text = "Text Label";
     TextStyle Style;
-
     bool AutoSize = false;
 
     LabelControl() = default;
-    LabelControl(const std::string& text)
-        : Text(text)
-    {
-    }
+    LabelControl(const std::string& text) : Text(text) {}
+
+    CH_REFLECT_BEGIN(LabelControl)
+        props.Property("Text", Text);
+        props.Nested("Style", Style);
+        props.Property("Auto Size", AutoSize);
+    CH_REFLECT_END()
 };
 
 struct SliderControl
@@ -178,8 +277,16 @@ struct SliderControl
     float Min = 0.0f;
     float Max = 1.0f;
     bool Changed = false;
-
     UIStyle Style;
+
+    CH_REFLECT_BEGIN(SliderControl)
+        props.Property("Label", Label);
+        props.Nested("Text Style", Text);
+        props.Property("Value", Value, PropertyMeta(0.0f, 100.0f, 0.1f));
+        props.Property("Min", Min, PropertyMeta(-100.0f, 100.0f, 0.1f));
+        props.Property("Max", Max, PropertyMeta(-100.0f, 100.0f, 0.1f));
+        props.Nested("UI Style", Style);
+    CH_REFLECT_END()
 };
 
 struct CheckboxControl
@@ -188,8 +295,14 @@ struct CheckboxControl
     TextStyle Text;
     bool Checked = false;
     bool Changed = false;
-
     UIStyle Style;
+
+    CH_REFLECT_BEGIN(CheckboxControl)
+        props.Property("Label", Label);
+        props.Nested("Text Style", Text);
+        props.Property("Checked", Checked);
+        props.Nested("UI Style", Style);
+    CH_REFLECT_END()
 };
 
 struct InputTextControl
@@ -202,9 +315,21 @@ struct InputTextControl
     bool ReadOnly = false;
     bool Password = false;
     bool Changed = false;
-
+    std::vector<char> InputBuffer;
     TextStyle Style;
     UIStyle BoxStyle;
+
+    CH_REFLECT_BEGIN(InputTextControl)
+        props.Property("Label", Label);
+        props.Property("Text", Text);
+        props.Property("Placeholder", Placeholder);
+        props.Property("MaxLength", MaxLength);
+        props.Property("Multiline", Multiline);
+        props.Property("ReadOnly", ReadOnly);
+        props.Property("Password", Password);
+        props.Nested("Text Style", Style);
+        props.Nested("Box Style", BoxStyle);
+    CH_REFLECT_END()
 };
 
 struct ComboBoxControl
@@ -213,22 +338,34 @@ struct ComboBoxControl
     std::vector<std::string> Items = {"Option 1", "Option 2", "Option 3"};
     int SelectedIndex = 0;
     bool Changed = false;
-
     TextStyle Style;
     UIStyle BoxStyle;
+
+    CH_REFLECT_BEGIN(ComboBoxControl)
+        props.Property("Label", Label);
+        props.Sequence("Items", Items);
+        props.Property("Selected Index", SelectedIndex);
+        props.Nested("Style", Style);
+        props.Nested("Box Style", BoxStyle);
+    CH_REFLECT_END()
 };
 
 struct ProgressBarControl
 {
-    float Progress = 0.5f; // 0.0 - 1.0
+    float Progress = 0.5f;
     std::string OverlayText = "";
     bool ShowPercentage = true;
-
     TextStyle Style;
     UIStyle BarStyle;
-};
 
-// === Visual Widgets ===
+    CH_REFLECT_BEGIN(ProgressBarControl)
+        props.Property("Progress", Progress);
+        props.Property("Overlay Text", OverlayText);
+        props.Property("Show Percentage", ShowPercentage);
+        props.Nested("Style", Style);
+        props.Nested("Bar Style", BarStyle);
+    CH_REFLECT_END()
+};
 
 struct ImageControl
 {
@@ -236,8 +373,17 @@ struct ImageControl
     std::string TexturePath = "";
     Color TintColor = {255, 255, 255, 255};
     Color BorderColor = {0, 0, 0, 0};
-
     UIStyle Style;
+
+    bool IsHovered = false;
+    bool IsDown = false;
+
+    CH_REFLECT_BEGIN(ImageControl)
+        props.File("Texture Path", TexturePath, "png,jpg,tga");
+        props.Property("Tint Color", TintColor);
+        props.Property("Border Color", BorderColor);
+        props.Nested("Style", Style);
+    CH_REFLECT_END()
 };
 
 struct ImageButtonControl
@@ -247,19 +393,30 @@ struct ImageButtonControl
     std::string Label = "ImageButton";
     Color TintColor = {255, 255, 255, 255};
     Color BackgroundColor = {0, 0, 0, 0};
-    int FramePadding = -1; // -1 = use default
+    int FramePadding = -1;
     bool PressedThisFrame = false;
-
     UIStyle Style;
+
+    CH_REFLECT_BEGIN(ImageButtonControl)
+        props.File("Texture Path", TexturePath, "png,jpg,tga");
+        props.Property("Label", Label);
+        props.Property("Tint Color", TintColor);
+        props.Property("Background Color", BackgroundColor);
+        props.Property("Frame Padding", FramePadding);
+        props.Nested("Style", Style);
+    CH_REFLECT_END()
 };
 
 struct SeparatorControl
 {
     float Thickness = 1.0f;
     Color LineColor = {127, 127, 127, 255};
-};
 
-// === Input Widgets ===
+    CH_REFLECT_BEGIN(SeparatorControl)
+        props.Property("Thickness", Thickness);
+        props.Property("Line Color", LineColor);
+    CH_REFLECT_END()
+};
 
 struct RadioButtonControl
 {
@@ -267,9 +424,16 @@ struct RadioButtonControl
     std::vector<std::string> Options = {"Option 1", "Option 2", "Option 3"};
     int SelectedIndex = 0;
     bool Changed = false;
-    bool Horizontal = false; // Layout direction
-
+    bool Horizontal = false;
     TextStyle Style;
+
+    CH_REFLECT_BEGIN(RadioButtonControl)
+        props.Property("Label", Label);
+        props.Sequence("Options", Options);
+        props.Property("Selected Index", SelectedIndex);
+        props.Property("Horizontal", Horizontal);
+        props.Nested("Style", Style);
+    CH_REFLECT_END()
 };
 
 struct ColorPickerControl
@@ -277,10 +441,17 @@ struct ColorPickerControl
     std::string Label = "Color";
     Color SelectedColor = {255, 255, 255, 255};
     bool ShowAlpha = true;
-    bool ShowPicker = true; // vs just color edit
+    bool ShowPicker = true;
     bool Changed = false;
-
     UIStyle Style;
+
+    CH_REFLECT_BEGIN(ColorPickerControl)
+        props.Property("Label", Label);
+        props.Property("Color", SelectedColor);
+        props.Property("Show Alpha", ShowAlpha);
+        props.Property("Show Picker", ShowPicker);
+        props.Nested("Style", Style);
+    CH_REFLECT_END()
 };
 
 struct DragFloatControl
@@ -292,9 +463,18 @@ struct DragFloatControl
     float Max = 100.0f;
     std::string Format = "%.3f";
     bool Changed = false;
-
     TextStyle Style;
     UIStyle BoxStyle;
+
+    CH_REFLECT_BEGIN(DragFloatControl)
+        props.Property("Label", Label);
+        props.Property("Value", Value);
+        props.Property("Speed", Speed);
+        props.Property("Min", Min);
+        props.Property("Max", Max);
+        props.Nested("Style", Style);
+        props.Nested("Box Style", BoxStyle);
+    CH_REFLECT_END()
 };
 
 struct DragIntControl
@@ -306,21 +486,35 @@ struct DragIntControl
     int Max = 100;
     std::string Format = "%d";
     bool Changed = false;
-
     TextStyle Style;
     UIStyle BoxStyle;
-};
 
-// === Structural Widgets ===
+    CH_REFLECT_BEGIN(DragIntControl)
+        props.Property("Label", Label);
+        props.Property("Value", Value);
+        props.Property("Speed", Speed);
+        props.Property("Min", Min);
+        props.Property("Max", Max);
+        props.Nested("Style", Style);
+        props.Nested("Box Style", BoxStyle);
+    CH_REFLECT_END()
+};
 
 struct TreeNodeControl
 {
     std::string Label = "TreeNode";
     bool IsOpen = false;
     bool DefaultOpen = false;
-    bool IsLeaf = false; // No arrow
-
+    bool IsLeaf = false;
     TextStyle Style;
+
+    CH_REFLECT_BEGIN(TreeNodeControl)
+        props.Property("Label", Label);
+        props.Property("Is Open", IsOpen);
+        props.Property("Default Open", DefaultOpen);
+        props.Property("Is Leaf", IsLeaf);
+        props.Nested("Style", Style);
+    CH_REFLECT_END()
 };
 
 struct TabBarControl
@@ -328,8 +522,14 @@ struct TabBarControl
     std::string Label = "TabBar";
     bool Reorderable = true;
     bool AutoSelectNewTabs = true;
-
     UIStyle Style;
+
+    CH_REFLECT_BEGIN(TabBarControl)
+        props.Property("Label", Label);
+        props.Property("Reorderable", Reorderable);
+        props.Property("Auto Select New Tabs", AutoSelectNewTabs);
+        props.Nested("Style", Style);
+    CH_REFLECT_END()
 };
 
 struct TabItemControl
@@ -337,8 +537,14 @@ struct TabItemControl
     std::string Label = "Tab";
     bool IsOpen = true;
     bool Selected = false;
-
     TextStyle Style;
+
+    CH_REFLECT_BEGIN(TabItemControl)
+        props.Property("Label", Label);
+        props.Property("Is Open", IsOpen);
+        props.Property("Selected", Selected);
+        props.Nested("Style", Style);
+    CH_REFLECT_END()
 };
 
 struct CollapsingHeaderControl
@@ -346,11 +552,15 @@ struct CollapsingHeaderControl
     std::string Label = "Header";
     bool IsOpen = false;
     bool DefaultOpen = false;
-
     TextStyle Style;
-};
 
-// === Data Visualization ===
+    CH_REFLECT_BEGIN(CollapsingHeaderControl)
+        props.Property("Label", Label);
+        props.Property("Is Open", IsOpen);
+        props.Property("Default Open", DefaultOpen);
+        props.Nested("Style", Style);
+    CH_REFLECT_END()
+};
 
 struct PlotLinesControl
 {
@@ -359,10 +569,20 @@ struct PlotLinesControl
     std::string OverlayText = "";
     float ScaleMin = 0.0f;
     float ScaleMax = 1.0f;
-    Vector2 GraphSize = {0, 80}; // 0 = auto width
-
+    glm::vec2 GraphSize = {0, 80};
     TextStyle Style;
     UIStyle BoxStyle;
+
+    CH_REFLECT_BEGIN(PlotLinesControl)
+        props.Property("Label", Label);
+        props.Property("Values", Values);
+        props.Property("Overlay Text", OverlayText);
+        props.Property("Scale Min", ScaleMin);
+        props.Property("Scale Max", ScaleMax);
+        props.Property("Graph Size", GraphSize);
+        props.Nested("Style", Style);
+        props.Nested("Box Style", BoxStyle);
+    CH_REFLECT_END()
 };
 
 struct PlotHistogramControl
@@ -372,17 +592,31 @@ struct PlotHistogramControl
     std::string OverlayText = "";
     float ScaleMin = 0.0f;
     float ScaleMax = 1.0f;
-    Vector2 GraphSize = {0, 80};
-
+    glm::vec2 GraphSize = {0, 80};
     TextStyle Style;
     UIStyle BoxStyle;
+
+    CH_REFLECT_BEGIN(PlotHistogramControl)
+        props.Property("Label", Label);
+        props.Property("Values", Values);
+        props.Property("Overlay Text", OverlayText);
+        props.Property("Scale Min", ScaleMin);
+        props.Property("Scale Max", ScaleMax);
+        props.Property("Graph Size", GraphSize);
+        props.Nested("Style", Style);
+        props.Nested("Box Style", BoxStyle);
+    CH_REFLECT_END()
 };
 
-// Layouts
 struct VerticalLayoutGroup
 {
     float Spacing = 10.0f;
-    Vector2 Padding = {10, 10};
+    glm::vec2 Padding = {10, 10};
+
+    CH_REFLECT_BEGIN(VerticalLayoutGroup)
+        props.Property("Spacing", Spacing);
+        props.Property("Padding", Padding);
+    CH_REFLECT_END()
 };
 
 } // namespace CHEngine

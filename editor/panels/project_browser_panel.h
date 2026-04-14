@@ -2,6 +2,8 @@
 #define CH_PROJECT_BROWSER_PANEL_H
 
 #include "panel.h"
+#include "engine/graphics/texture_system.h"
+#include <filesystem>
 #include <functional>
 #include <string>
 #include <vector>
@@ -48,9 +50,8 @@ private:
     char m_ProjectNameBuffer[256] = "MyProject";
     char m_ProjectLocationBuffer[512] = "";
 
-    // Icons
-    Texture2D m_NewProjectIcon;
-    Texture2D m_OpenProjectIcon;
+    TextureHandle m_NewProjectIconHandle = 0;
+    TextureHandle m_OpenProjectIconHandle = 0;
 };
 } // namespace CHEngine
 

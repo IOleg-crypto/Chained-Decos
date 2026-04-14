@@ -1,16 +1,14 @@
 #include "inspector_panel.h"
+#include "IconsFontAwesome6.h"
 #include "editor_gui.h"
-#include "engine/graphics/asset_manager.h"
-#include "engine/graphics/model_asset.h"
-#include "engine/physics/bvh/bvh.h"
+#include "engine/core/assets/asset_manager.h"
+#include "engine/graphics/assets/model_asset.h"
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene_events.h"
-#include "engine/scene/scene_events.h"
-#include "extras/IconsFontAwesome6.h"
+
 #include "imgui.h"
 #include "property_editor.h"
-#include "raymath.h"
 
 namespace CHEngine
 {
@@ -27,25 +25,22 @@ void InspectorPanel::OnImGuiRender(bool readOnly)
     }
 
     ImGui::Begin(m_Name.c_str(), &m_IsOpen);
-    ImGui::PushID(this);
 
-    if (m_SelectedEntity && m_SelectedEntity.GetRegistry().ctx().get<Scene*>() != m_Context.get())
+    if (m_SelectedEntity && !m_SelectedEntity.IsValid())
     {
         m_SelectedEntity = {};
     }
 
     if (m_SelectedEntity && m_SelectedEntity.IsValid())
     {
-        ImGui::BeginDisabled(readOnly);
-        DrawComponents(m_SelectedEntity);
-        ImGui::EndDisabled();
+
+        DrawComponents(m_SelectedEntity, readOnly);
     }
     else
     {
         ImGui::Text("Selection: None");
         ImGui::TextDisabled("Select an entity in the Hierarchy to view its components.");
     }
-    ImGui::PopID();
     ImGui::End();
 }
 
@@ -53,39 +48,47 @@ void InspectorPanel::OnEvent(Event& e)
 {
     EventDispatcher dispatcher(e);
     dispatcher.Dispatch<EntitySelectedEvent>([this](EntitySelectedEvent& ev) {
-        m_SelectedEntity = Entity(ev.GetEntity(), &ev.GetScene()->GetRegistry());
+        if (m_Context && ev.GetEntity() != entt::null)
+        {
+            m_SelectedEntity = Entity(ev.GetEntity(), m_Context->GetRegistry());
+        }
+        else
+        {
+            m_SelectedEntity = {};
+        }
         m_SelectedMeshIndex = ev.GetMeshIndex();
         return false;
     });
 }
 
-void InspectorPanel::DrawComponents(Entity entity)
+void InspectorPanel::SetContext(const std::shared_ptr<Scene>& context)
+{
+    if (m_Context.get() != context.get())
+    {
+        m_SelectedEntity = {};
+    }
+    Panel::SetContext(context);
+}
+
+void InspectorPanel::DrawComponents(Entity entity, bool readOnly)
 {
     ImGui::PushID((uint32_t)entity);
 
     if (entity.HasComponent<IDComponent>())
     {
         uint64_t uuid = (uint64_t)entity.GetComponent<IDComponent>().ID;
-        ImGui::Text("UUID: %llu", uuid);
+        ImGui::TextDisabled("UUID: %llu", uuid);
     }
 
-    PropertyEditor::DrawTag(entity);
-
-    ImGui::SameLine();
-    ImGui::PushItemWidth(-1);
-    if (ImGui::Button("Add Component"))
-    {
-        ImGui::OpenPopup("AddComponent");
-    }
-    PropertyEditor::DrawAddComponentPopup(entity);
-    ImGui::PopItemWidth();
+    PropertyEditor::DrawEntityHeader(entity);
 
     // Delegate all component drawing logic to PropertyEditor registry
     PropertyEditor::DrawEntityProperties(entity);
 
-    // Special cases like Materials (if multi-mesh selection is ever added, hit index might matter)
-    PropertyEditor::DrawMaterial(entity, m_SelectedMeshIndex);
-
     ImGui::PopID();
+}
+void InspectorPanel::SetSelectedMeshIndex(int index)
+{
+    m_SelectedMeshIndex = index;
 }
 } // namespace CHEngine

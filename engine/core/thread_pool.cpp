@@ -1,72 +1,75 @@
-#include "engine/core/application.h"
+#include "thread_pool.h"
+#include "engine/core/log.h"
 
 namespace CHEngine
 {
-static ThreadPool* s_ThreadPoolInstance = nullptr;
-
-ThreadPool& ThreadPool::Get()
+ThreadPool::ThreadPool()
 {
-    CH_CORE_ASSERT(s_ThreadPoolInstance, "ThreadPool not initialized!");
-    return *s_ThreadPoolInstance;
-}
-
-ThreadPool::ThreadPool(size_t threads)
-{
-    CH_CORE_ASSERT(!s_ThreadPoolInstance, "ThreadPool already exists!");
-    s_ThreadPoolInstance = this;
-
-    CH_CORE_INFO("ThreadPool: Initializing with {} threads", threads);
-
-    for (size_t i = 0; i < threads; ++i)
+    size_t threads = std::thread::hardware_concurrency();
+    if (threads == 0)
     {
-        m_Workers.emplace_back([this] { WorkerThread(); });
+        threads = 1;
+    }
+
+    // Leave headroom for the main thread and OS scheduling so asset work does not saturate the machine.
+    size_t workerCount = (threads > 1) ? (threads - 1) : 1;
+
+    CH_CORE_INFO("ThreadPool: Initializing with {} worker threads", workerCount);
+
+    for (size_t i = 0; i < workerCount; ++i)
+    {
+        m_Workers.emplace_back([this](std::stop_token st) { WorkerThread(st); });
     }
 }
 
 ThreadPool::~ThreadPool()
 {
-    Shutdown();
-    s_ThreadPoolInstance = nullptr;
-}
-
-void ThreadPool::Shutdown()
-{
     {
         std::unique_lock<std::mutex> lock(m_QueueMutex);
-        if (m_Stop)
-        {
-            return;
-        }
         m_Stop = true;
     }
     m_Condition.notify_all();
-    for (std::thread& worker : m_Workers)
-    {
-        if (worker.joinable())
-        {
-            worker.join();
-        }
-    }
+    // jthreads will automatically join here
 }
 
-void ThreadPool::WorkerThread()
+void ThreadPool::WorkerThread(std::stop_token stopToken)
 {
-    while (true)
+    while (!stopToken.stop_requested())
     {
         std::function<void()> task;
         {
             std::unique_lock<std::mutex> lock(m_QueueMutex);
-            m_Condition.wait(lock, [this] { return m_Stop || !m_Tasks.empty(); });
+            
+            // Wait until there's a task or the entire pool is stopping
+            m_Condition.wait(lock, stopToken, [this] { 
+                return m_Stop || !m_Tasks.empty(); 
+            });
 
             if (m_Stop && m_Tasks.empty())
-            {
                 return;
-            }
+
+            if (m_Tasks.empty())
+                continue;
 
             task = std::move(m_Tasks.front());
             m_Tasks.pop();
         }
-        task();
+        
+        if (task)
+        {
+            try
+            {
+                task();
+            }
+            catch (const std::exception& e)
+            {
+                CH_CORE_ERROR("ThreadPool: Unhandled exception in queued task: {}", e.what());
+            }
+            catch (...)
+            {
+                CH_CORE_ERROR("ThreadPool: Unhandled unknown exception in queued task");
+            }
+        }
     }
 }
 } // namespace CHEngine

@@ -1,9 +1,8 @@
 #ifndef CH_SCENE_SETTINGS_H
 #define CH_SCENE_SETTINGS_H
 
-#include "engine/graphics/environment.h"
+#include "engine/graphics/assets/environment.h"
 #include "engine/scene/components/control_component.h"
-#include "raylib.h"
 #include <memory>
 #include <string>
 
@@ -18,6 +17,7 @@ struct DebugRenderFlags
     bool DrawSelection = true;
     bool DrawLights = true;
     bool DrawSpawnZones = true;
+    int SetCollisionWireframeMode = 0;
 };
 
 enum class BackgroundMode

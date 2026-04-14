@@ -1,34 +1,37 @@
 #include "application.h"
+#if CH_PLATFORM_WINDOWS
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#elif CH_PLATFORM_LINUX
+#include <unistd.h>
+#endif
+
 #include "engine/audio/audio.h"
-#include "engine/core/assert.h"
+#include "engine/core/assets/asset_manager.h"
+#include "engine/core/ch_assert.h"
 #include "engine/core/imgui_layer.h"
 #include "engine/core/input.h"
 #include "engine/core/layer.h"
 #include "engine/core/log.h"
 #include "engine/core/profiler.h"
-#include "engine/core/thread_pool.h"
-#include "engine/core/window.h"
-#include "engine/graphics/asset_manager.h"
-#include "engine/graphics/environment.h"
-#include "engine/graphics/font_asset.h"
-#include "engine/graphics/renderer.h"
+#include "engine/graphics/pipeline/renderer.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/component_serializer.h"
 #include "engine/scene/project.h"
-#include "engine/scene/scene_events.h"
-#include "engine/script/scriptengine.h"
-#include "rlgl.h"
+#include "scripting/scriptengine.h"
+#include <nfd.h>
 
 #include <algorithm>
 #include <filesystem>
-#include <ranges>
 
 #ifndef GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_NONE
 #endif
-#include "engine/graphics/render_command.h"
-#include "engine/graphics/renderer.h"
-#include "engine/graphics/renderer2d.h"
+
+#include "engine/graphics/pipeline/ui_renderer.h"
 #include <GLFW/glfw3.h>
 
 namespace CHEngine
@@ -49,6 +52,12 @@ Application::Application(const ApplicationSpecification& specification)
     // --- Window Setup ---
     WindowProperties windowProps;
     windowProps.Title = m_Specification.Name;
+    windowProps.Width = m_Specification.WindowWidth;
+    windowProps.Height = m_Specification.WindowHeight;
+    windowProps.VSync = m_Specification.VSync;
+    windowProps.Fullscreen = m_Specification.Fullscreen;
+    windowProps.Resizable = m_Specification.Resizable;
+    windowProps.IconPath = m_Specification.AppIcon;
 
     // ImGui Ini path setup
     std::string iniName = m_Specification.Name;
@@ -63,41 +72,36 @@ Application::Application(const ApplicationSpecification& specification)
 
     // --- System Initialization ---
     // Systems are singletons and manage their own lifetimes
-    m_ThreadPool = new ThreadPool();
     if (!m_Specification.Headless)
     {
-        m_Window = Window::Create(windowProps);
+        m_Window = std::unique_ptr<Window>(Window::Create(windowProps));
+#ifdef PROJECT_ROOT_DIR
+        Project::SetEngineRoot(PROJECT_ROOT_DIR);
+#endif
+        Renderer::Init();
+        UIRenderer::Init();
     }
     
-    m_Renderer = new Renderer();
-    m_ScriptEngine = new ScriptEngine();
-    m_Audio = new Audio();
-    m_PhysicsSystem = new PhysicsSystem();
-    m_ComponentSerializer = new ComponentSerializer();
+    Physics::Init();
+    ComponentSerializer::Init();
+    
+    if (m_Specification.EnableScripting)
+        ScriptEngine::Init();
 
     m_LayerStack = std::make_unique<LayerStack>();
     m_Running = true;
 
-    // --- Core Systems Initialization ---
-    m_ComponentSerializer->Initialize();
-    m_Renderer->Init();
-    m_PhysicsSystem->Init();
-    m_ScriptEngine->Init();
-    m_Audio->Init();
-    if (IsAudioDeviceReady())
-    {
-        CH_CORE_INFO("Audio Device Initialized Successfully");
-    }
-    else
-    {
-        CH_CORE_ERROR("Failed to initialize Audio Device!");
-    }
+    // --- Core Systems Post-Initialization ---
+    // Note: Systems' Init() already called InternalInit().
+    // We only need to Push layers andoverlays.
 
     // ImGui Layer setup (always needed for Editor/Debugging)
     if (!m_Specification.Headless)
     {
-        m_ImGuiLayer = new ImGuiLayer();
-        PushOverlay(m_ImGuiLayer);
+        NFD_Init();
+        auto imguiLayer = std::make_unique<ImGuiLayer>();
+        m_ImGuiLayer = imguiLayer.get();
+        PushOverlay(std::move(imguiLayer));
     }
 
     CH_CORE_INFO("Application Initialized: {}", m_Specification.Name);
@@ -106,41 +110,60 @@ Application::Application(const ApplicationSpecification& specification)
 Application::~Application()
 {
     CH_CORE_INFO("Shutting down Application...");
-    
-    if (m_ScriptEngine) m_ScriptEngine->Shutdown();
-    if (m_Audio) m_Audio->Shutdown();
-    if (m_PhysicsSystem) m_PhysicsSystem->Shutdown();
-    if (m_Renderer) m_Renderer->Shutdown();
-    
-    // Cleanup subsystem instances safely using local pointers
-    delete m_ScriptEngine;
-    delete m_Audio;
-    delete m_PhysicsSystem;
-    delete m_Renderer;
-    delete m_ThreadPool;
-    delete m_ComponentSerializer;
 
-    m_LayerStack->Shutdown();
+    m_LayerStack.reset();
+
+    if (m_Specification.EnableScripting)
+        ScriptEngine::Shutdown();
+
+    ComponentSerializer::Shutdown();
+    Physics::Shutdown();
+    
+    if (UIRenderer::IsInitialized())
+        UIRenderer::Shutdown();
+    
+    if (Renderer::IsInitialized())
+        Renderer::Shutdown();
+
+    AssetManager::Shutdown();
+
     m_Window.reset();
+
+    if (!m_Specification.Headless)
+    {
+        NFD_Quit();
+    }
 
     s_Instance = nullptr;
     CH_CORE_INFO("Engine Shutdown Successfully.");
 }
 
-void Application::PushLayer(Layer* layer)
+void Application::PushLayer(std::unique_ptr<Layer> layer)
 {
     CH_CORE_ASSERT(layer, "Layer is null!");
-    m_LayerStack->PushLayer(layer);
-    layer->OnAttach();
-    CH_CORE_INFO("Layer Attached: {}", layer->GetName());
+    Layer* rawLayer = layer.get();
+    m_LayerStack->PushLayer(std::move(layer));
+    rawLayer->OnAttach();
+    CH_CORE_INFO("Layer Attached: {}", rawLayer->GetName());
+}
+
+void Application::PushLayer(Layer* layer)
+{
+    PushLayer(std::unique_ptr<Layer>(layer));
+}
+
+void Application::PushOverlay(std::unique_ptr<Layer> overlay)
+{
+    CH_CORE_ASSERT(overlay, "Overlay is null!");
+    Layer* rawOverlay = overlay.get();
+    m_LayerStack->PushOverlay(std::move(overlay));
+    rawOverlay->OnAttach();
+    CH_CORE_INFO("Overlay Attached: {}", rawOverlay->GetName());
 }
 
 void Application::PushOverlay(Layer* overlay)
 {
-    CH_CORE_ASSERT(overlay, "Overlay is null!");
-    m_LayerStack->PushOverlay(overlay);
-    overlay->OnAttach();
-    CH_CORE_INFO("Overlay Attached: {}", overlay->GetName());
+    PushOverlay(std::unique_ptr<Layer>(overlay));
 }
 
 void Application::OnEvent(Event& e)
@@ -151,11 +174,13 @@ void Application::OnEvent(Event& e)
 
     // Propagate events from top to bottom (overlays first)
     // We use a copy of the layer stack to avoid iterator invalidation if a layer is removed during event handling
-    auto layers = m_LayerStack->GetLayers();
+    auto layers = m_LayerStack->GetLayerPointersSnapshot();
     for (auto it = layers.rbegin(); it != layers.rend(); ++it)
     {
         if (e.Handled)
+        {
             break;
+        }
         if ((*it)->IsEnabled())
         {
             (*it)->OnEvent(e);
@@ -208,8 +233,6 @@ void Application::ExecuteMainThreadQueue()
 
 void Application::Run()
 {
-    ::SetExitKey(NULL);
-
     while (m_Running && !m_Window->ShouldClose())
     {
         CH_PROFILE_FUNCTION();
@@ -217,17 +240,30 @@ void Application::Run()
         ExecuteMainThreadQueue();
 
         // 1. Time Tracking
-        Timestep time = (float)GetTime();
+        float time = (float)glfwGetTime();
+
+        // FPS Capping
+        int targetFPS = m_Window->GetTargetFramesPerSecond();
+        if (targetFPS > 0)
+        {
+            float minFrameTime = 1.0f / (float)targetFPS;
+            while (time - m_LastFrameTime < minFrameTime)
+            {
+                time = (float)glfwGetTime();
+            }
+        }
+
         m_DeltaTime = Timestep(time - m_LastFrameTime);
         m_LastFrameTime = time;
 
         // 2. Input Polling
-        Input::PollEvents();
+        Input::Update();
 
         // 3. Core Systems Update
+        AssetManager::Get().Update();
         if (auto project = Project::GetActive())
         {
-            project->GetAssetManager()->Update();
+            Audio::Get().Update(m_DeltaTime);
         }
 
         // 4. Layers Update & Rendering
@@ -237,8 +273,10 @@ void Application::Run()
 
             if (!m_Minimized)
             {
-                // Logic/Simulation
-                for (auto layer : *m_LayerStack)
+                // -- Logic/Simulation --
+
+                // 1. Variable Update
+                for (auto& layer : *m_LayerStack)
                 {
                     if (layer->IsEnabled())
                     {
@@ -246,10 +284,24 @@ void Application::Run()
                     }
                 }
 
-                // Rendering
+                // 2. Fixed Update
+                m_Accumulator += (float)m_DeltaTime;
+                while (m_Accumulator >= m_FixedTimestep)
+                {
+                    for (auto& layer : *m_LayerStack)
+                    {
+                        if (layer->IsEnabled())
+                        {
+                            layer->OnFixedUpdate(Timestep(m_FixedTimestep));
+                        }
+                    }
+                    m_Accumulator -= m_FixedTimestep;
+                }
+
+                // -- Rendering --
                 m_Window->BeginFrame();
 
-                for (auto layer : *m_LayerStack)
+                for (auto& layer : *m_LayerStack)
                 {
                     if (layer->IsEnabled())
                     {
@@ -259,7 +311,7 @@ void Application::Run()
 
                 // ImGui
                 m_ImGuiLayer->Begin();
-                for (auto layer : *m_LayerStack)
+                for (auto& layer : *m_LayerStack)
                 {
                     if (layer->IsEnabled())
                     {
@@ -273,6 +325,23 @@ void Application::Run()
         }
         Profiler::EndFrame();
     }
+}
+
+std::filesystem::path Application::GetExecutableDirectory()
+{
+#if CH_PLATFORM_WINDOWS
+    wchar_t path[MAX_PATH];
+    GetModuleFileNameW(NULL, path, MAX_PATH);
+    return std::filesystem::path(path).parent_path();
+#elif CH_PLATFORM_LINUX
+    char path[1024];
+    ssize_t count = readlink("/proc/self/exe", path, sizeof(path));
+    if (count != -1)
+    {
+        return std::filesystem::path(std::string(path, count)).parent_path();
+    }
+#endif
+    return std::filesystem::current_path();
 }
 
 Window& Application::GetWindow()

@@ -20,12 +20,12 @@ jobs:
         include:
           - os: ubuntu-latest
             name: linux
-            preset: linux-gcc-release
-            config_preset: linux-gcc-release
+            preset: linux-gcc
+            config_preset: linux-gcc
           - os: windows-latest
             name: windows
-            preset: windows-ninja-release
-            config_preset: windows-ninja-release
+            preset: windows-gcc
+            config_preset: windows-gcc
 
     steps:
       - name: Checkout
@@ -77,6 +77,35 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: choco install cmake ninja ccache --no-progress
 
+      - name: Setup MSYS2
+        if: matrix.os == 'windows-latest'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Run managed progression tests
+        shell: bash
+        run: |
+          dotnet test ./game/chaineddecos/scripts/tests/ChainedDecos.Scripts.Tests.csproj \
+            -c Release \
+            --logger "trx;LogFileName=deploy-managed-tests-${{ matrix.name }}.trx"
+
+      - name: Upload managed test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-managed-tests-${{ matrix.name }}
+          path: "**/deploy-managed-tests-${{ matrix.name }}.trx"
+          retention-days: 7
+
       - name: Configure CMake
         shell: bash
         run: |
@@ -86,6 +115,7 @@ jobs:
           fi
           
           cmake --preset ${{ matrix.preset }} \
+            -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_INSTALL_PREFIX="${{ steps.build-env.outputs.package-dir }}" \

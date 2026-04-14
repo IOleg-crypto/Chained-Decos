@@ -2,12 +2,17 @@
 #include "engine/core/entry_point.h"
 #include "runtime/runtime_layer.h"
 
+namespace
+{
+constexpr const char* kProjectGame = "ChainedDecos";
+}
+
 namespace CHEngine
 {
 Application* CreateApplication(ApplicationCommandLineArgs args)
 {
     ApplicationSpecification spec;
-    spec.Name = CH_PROJECT_NAME;
+    spec.Name = kProjectGame;
     spec.CommandLineArgs = args;
 
     Application* app = new Application(spec);

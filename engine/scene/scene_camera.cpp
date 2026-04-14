@@ -1,4 +1,6 @@
 #include "scene_camera.h"
+#include <glm/gtc/matrix_transform.hpp>
+#include <algorithm>
 
 namespace CHEngine
 {
@@ -36,7 +38,7 @@ void SceneCamera::RecalculateProjection()
 {
     if (m_ProjectionType == ProjectionType::Perspective)
     {
-        m_Projection = MatrixPerspective(m_PerspectiveFOV, m_AspectRatio, m_PerspectiveNear, m_PerspectiveFar);
+        m_Projection = glm::perspective(m_PerspectiveFOV, m_AspectRatio, m_PerspectiveNear, m_PerspectiveFar);
     }
     else
     {
@@ -45,7 +47,7 @@ void SceneCamera::RecalculateProjection()
         float orthoBottom = -m_OrthographicSize * 0.5f;
         float orthoTop = m_OrthographicSize * 0.5f;
 
-        m_Projection = MatrixOrtho(orthoLeft, orthoRight, orthoBottom, orthoTop, m_OrthographicNear, m_OrthographicFar);
+        m_Projection = glm::ortho(orthoLeft, orthoRight, orthoBottom, orthoTop, m_OrthographicNear, m_OrthographicFar);
     }
 }
 

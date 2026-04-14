@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
@@ -10,6 +10,7 @@
     <OutputPath>bin</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
 
   <!-- Game script source files (exclude the old CHEngine.cs engine API) -->
@@ -23,7 +24,7 @@
 
   <!-- Reference the engine's C# API library -->
   <ItemGroup>
-    <ProjectReference Include="../../../engine/script/managed/CHEngine.Managed.csproj" />
+    <ProjectReference Include="../../../scripting/managed/CHEngine.Managed.csproj" />
   </ItemGroup>
 
 </Project>

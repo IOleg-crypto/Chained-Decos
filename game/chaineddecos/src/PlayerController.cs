@@ -1,4 +1,5 @@
 using System;
+// Build trigger test 2
 using CHEngine;
 
 namespace ChainedDecos.Scripts
@@ -6,7 +7,9 @@ namespace ChainedDecos.Scripts
 public class PlayerController : Script
 {
     public float MovementSpeed = 15.0f;
-    public float JumpForce = 10.0f;
+    public float JumpForce    = 10.0f;
+    public float Gravity      = 20.0f;   // Units per second^2 (should match physics config)
+    public string MenuScene   = "scenes/start_menu.chscene";
 
     public override void OnCreate()
     {
@@ -15,90 +18,113 @@ public class PlayerController : Script
 
     public override void OnUpdate(float deltaTime)
     {
-        // Debug Log to ensure OnUpdate is running
-        if (Input.IsKeyPressed(Key.T)) Log.Info("C# PlayerController: T key pressed!");
+        // Allow leaving gameplay back to menu with a single key press.
+        if (Input.IsKeyPressed(Key.Escape))
+        {
+            Log.Info("PlayerController: Escape pressed, returning to menu: " + MenuScene);
+            Scene.LoadScene(MenuScene);
+            return;
+        }
 
-        float currentSpeed = MovementSpeed;
+        float currentSpeed = MovementSpeed * HeroProgression.MoveSpeedMultiplier;
+        float effectiveJumpForce = JumpForce * HeroProgression.JumpMultiplier;
+
         if (Input.IsKeyDown(Key.LeftShift))
             currentSpeed *= 2.0f;
 
-        // Get movement directions relative to camera
+        // --- Camera-relative directions ---
         Vector3 forward = Vector3.Zero;
-        Vector3 right = Vector3.Zero;
+        Vector3 right   = Vector3.Zero;
 
         Entity? camEntity = Scene.GetMainCamera();
-
         if (camEntity != null)
         {
             CameraComponent? camera = camEntity.GetComponent<CameraComponent>();
             if (camera != null)
             {
-                Vector3 camForward = camera.Forward;
-                Vector3 camRight = camera.Right;
+                // Flatten for XZ ground movement
+                forward = Vector3.Normalize(new Vector3(camera.Forward.X, 0.0f, camera.Forward.Z));
+                right   = Vector3.Normalize(new Vector3(camera.Right.X,   0.0f, camera.Right.Z));
+            }
+        }
 
-                // Flatten for ground movement (XZ Plane)
-                forward = Vector3.Normalize(new Vector3(camForward.X, 0.0f, camForward.Z));
-                right = Vector3.Normalize(new Vector3(camRight.X, 0.0f, camRight.Z));
-            }
-            else
-            {
-                 Log.Warn($"[PlayerController] Found Camera Entity '{camEntity}', but it's missing a CameraComponent.");
-            }
+        // --- Input ---
+        Vector3 movementDir = Vector3.Zero;
+        if (Input.IsKeyDown(Key.W)) movementDir += forward;
+        if (Input.IsKeyDown(Key.S)) movementDir -= forward;
+        if (Input.IsKeyDown(Key.A)) movementDir -= right;
+        if (Input.IsKeyDown(Key.D)) movementDir += right;
+
+        RigidBodyComponent?  rb        = Entity.GetComponent<RigidBodyComponent>();
+        TransformComponent?  transform = Entity.GetComponent<TransformComponent>();
+        if (rb == null || transform == null) return;
+
+        bool isKinematic = rb.IsKinematic;
+        Vector3 velocity = rb.Velocity;
+
+        // --- Horizontal movement ---
+        if (movementDir.LengthSquared() > 0.0001f)
+        {
+            movementDir = Vector3.Normalize(movementDir);
+            velocity.X = movementDir.X * currentSpeed;
+            velocity.Z = movementDir.Z * currentSpeed;
+
+            // Face movement direction (Y-axis only)
+            float targetYaw = Mathf.Atan2(movementDir.X, movementDir.Z);
+            transform.Rotation = new Vector3(0, targetYaw, 0);
         }
         else
         {
-             Log.Error("[PlayerController] FAILED: No primary camera found in scene! Enter Editor and mark a Camera entity as 'Primary'.");
+            velocity.X = 0;
+            velocity.Z = 0;
         }
 
-        Vector3 movementVector = Vector3.Zero;
-
-        if (Input.IsKeyDown(Key.W)) movementVector += forward;
-        if (Input.IsKeyDown(Key.S)) movementVector -= forward;
-        if (Input.IsKeyDown(Key.A)) movementVector -= right;
-        if (Input.IsKeyDown(Key.D)) movementVector += right;
-
-        RigidBodyComponent? rb = Entity.GetComponent<RigidBodyComponent>();
-        TransformComponent? transform = Entity.GetComponent<TransformComponent>();
-
-        if (rb != null && transform != null)
+        // --- Jump ---
+        if (Input.IsKeyPressed(Key.Space) && rb.IsGrounded)
         {
-            if (movementVector.LengthSquared() > 0.0001f)
-            {
-                movementVector = Vector3.Normalize(movementVector);
-
-                Vector3 velocity = rb.Velocity;
-                velocity.X = movementVector.X * currentSpeed;
-                velocity.Z = movementVector.Z * currentSpeed;
-                rb.Velocity = velocity;
-
-                // Simple look-at rotation (Y axis only)
-                float targetYaw = Mathf.Atan2(movementVector.X, movementVector.Z);
-                transform.Rotation = new Vector3(0, targetYaw, 0);
-            }
-            else
-            {
-                Vector3 velocity = rb.Velocity;
-                velocity.X = 0;
-                velocity.Z = 0;
-                rb.Velocity = velocity;
-            }
-
-            if (Input.IsKeyPressed(Key.Space) && rb.IsGrounded)
-            {
-                Vector3 velocity = rb.Velocity;
-                velocity.Y = JumpForce;
-                rb.Velocity = velocity;
-                Log.Info("C# Jump triggered!");
-            }
+            velocity.Y = effectiveJumpForce;
+            Log.Info("C# Jump triggered!");
         }
 
+        // Only apply gravity and integration manually if Kinematic.
+        // If Dynamic, the physics engine handles these in ResolveSimulation/IntegrateVelocity.
+        if (isKinematic)
+        {
+            // Apply gravity only when not grounded
+            if (!rb.IsGrounded)
+                velocity.Y -= Gravity * deltaTime;
+
+            // Terminal velocity cap — prevents extreme penetration that multi-pass can't recover
+            const float kTerminalVelocity = -50.0f;
+            if (velocity.Y < kTerminalVelocity)
+                velocity.Y = kTerminalVelocity;
+
+            // Stop downward movement when grounded to prevent creep-through
+            if (rb.IsGrounded && velocity.Y < 0.0f)
+                velocity.Y = 0.0f;
+
+            // Manual integration for Kinematic bodies
+            transform.Translation = new Vector3(
+                transform.Translation.X + velocity.X * deltaTime,
+                transform.Translation.Y + velocity.Y * deltaTime,
+                transform.Translation.Z + velocity.Z * deltaTime
+            );
+        }
+        
+        rb.Velocity = velocity;
+
+        // --- Debug teleport ---
         if (Input.IsKeyPressed(Key.T))
         {
             Entity? spawnZone = Scene.FindEntityByTag("SpawnPoint");
-            if (spawnZone != null && transform != null)
+            if (spawnZone != null)
             {
-                transform.Translation = spawnZone.GetComponent<TransformComponent>().Translation;
-                Log.Info("Teleported to spawn via C#!");
+                TransformComponent? spawnTransform = spawnZone.GetComponent<TransformComponent>();
+                if (spawnTransform != null)
+                {
+                    transform.Translation = spawnTransform.Translation;
+                    Log.Info("Teleported to spawn via C#!");
+                }
             }
         }
     }

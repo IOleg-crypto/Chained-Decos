@@ -2,38 +2,43 @@
 #define CH_SCENE_H
 
 #include "components.h"
-#include "engine/core/assert.h"
 #include "engine/core/base.h"
+#include "engine/core/ch_assert.h"
 #include "engine/core/events.h"
 #include "engine/core/timestep.h"
+#include "engine/graphics/api/camera_types.h"
 #include "engine/scene/entity.h"
 #include "engine/scene/scene_settings.h"
 #include "entt/entt.hpp"
 #include <memory>
 #include <optional>
-#include <raylib.h>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace CHEngine
 {
-class SceneSerializer;
-class Physics;
-
-class Scene : public std::enable_shared_from_this<Scene>
+// Owns the scene registry, scene settings, and the runtime/editor update bridge.
+class Scene
 {
 public:
     Scene();
     ~Scene();
 
+public:
+    // Creates a new scene with default entities (e.g. Main Camera).
+    static std::shared_ptr<Scene> CreateDefault();
+    // Creates a deep copy of another scene.
     static std::shared_ptr<Scene> Copy(std::shared_ptr<Scene> other);
 
+public:
     Entity CreateEntity(const std::string& name = std::string());
     Entity CreateEntityWithUUID(UUID uuid, const std::string& name = std::string());
     Entity CreateUIEntity(const std::string& type, const std::string& name = std::string());
+
+public:
     Entity CopyEntity(entt::entity copyEntity);
     void DestroyEntity(Entity entity);
-
     Entity FindEntityByTag(const std::string& tag);
     Entity GetEntityByUUID(UUID uuid);
 
@@ -44,41 +49,19 @@ public: // Life Cycle & Simulation
     void OnUpdateEditor(Timestep timestep);
     void OnViewportResize(uint32_t width, uint32_t height);
 
-    bool IsSimulationRunning() const
-    {
-        return m_IsSimulationRunning;
-    }
-    void OnEvent(Event& event);
+public:
+    bool IsSimulationRunning() const;
 
-public: // Scene Settings
-    SceneSettings& GetSettings()
-    {
-        return m_Settings;
-    }
-    const SceneSettings& GetSettings() const
-    {
-        return m_Settings;
-    }
-
-    Physics& GetPhysics()
-    {
-        return *m_Physics;
-    }
-    const Physics& GetPhysics() const
-    {
-        return *m_Physics;
-    }
+public:
+    SceneSettings& GetSettings();
+    const SceneSettings& GetSettings() const;
 
 public: // Systems & Tools
-    entt::registry& GetRegistry()
-    {
-        return m_Registry;
-    }
-    const entt::registry& GetRegistry() const
-    {
-        return m_Registry;
-    }
+    entt::registry& GetRegistry();
+    const entt::registry& GetRegistry() const;
+    std::shared_ptr<entt::registry> GetRegistryPtr();
 
+public:
     std::optional<Camera3D> GetActiveCamera();
     Entity GetPrimaryCameraEntity();
 
@@ -86,42 +69,26 @@ private:
     Camera3D GetCameraFromEntity(entt::entity entityHandle);
 
 private:
-    entt::registry m_Registry;
-    std::unordered_map<UUID, entt::entity> m_EntityMap;
+    std::shared_ptr<entt::registry> m_Registry;
     SceneSettings m_Settings;
-    std::unique_ptr<Physics> m_Physics;
-
     bool m_IsSimulationRunning = false;
 
-private: // Internal Event Handlers
-    // Reactive signals handlers
-    void OnModelComponentAdded(entt::registry& registry, entt::entity entity);
-    void OnAnimationComponentAdded(entt::registry& registry, entt::entity entity);
-    void OnAudioComponentAdded(entt::registry& registry, entt::entity entity);
-    void OnColliderComponentAdded(entt::registry& registry, entt::entity entity);
-    void OnPanelControlAdded(entt::registry& registry, entt::entity entity);
-
+private:
     void OnIDConstruct(entt::registry& registry, entt::entity entity);
     void OnIDDestroy(entt::registry& registry, entt::entity entity);
-
-    // Hierarchy Handlers
+    // Hierarchy handlers.
     void OnHierarchyDestroy(entt::registry& registry, entt::entity entity);
-    
-    // Script Cleanup Handlers
-    void OnScriptComponentDestroyed(entt::registry& registry, entt::entity entity);
 
 private: // Update Logic
     void UpdatePhysics(Timestep deltaTime);
     void UpdateAnimations(Timestep deltaTime);
-    void UpdateScripting(Timestep deltaTime);
     void UpdateAudio(Timestep deltaTime);
-    void UpdateCameras(Timestep deltaTime);
-    void UpdateTransitions();
-    void UpdateUIActions();
     void UpdateHierarchy();
 
+private:
+    Entity CopyEntityInternal(entt::entity copyEntity, entt::entity parentEntity = entt::null);
+
     friend class Entity;
-    friend class SceneSerializer;
 };
 
 } // namespace CHEngine

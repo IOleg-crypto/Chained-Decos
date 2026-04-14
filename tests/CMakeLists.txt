@@ -2,6 +2,7 @@ add_executable(EngineTests
     uuid_tests.cpp
     primitive_tests.cpp
     serialization_tests.cpp
+    scriptengine_tests.cpp
     scene_tests.cpp
     physics_tests.cpp
     hierarchy_tests.cpp
@@ -11,17 +12,21 @@ add_executable(EngineTests
     importer_tests.cpp
     renderer_tests.cpp
     scene_serialization_tests.cpp
-    math_tests.cpp
     material_tests.cpp
     audio_tests.cpp
     test_environment.cpp
 )
 
-target_link_libraries(EngineTests PRIVATE engine editor_core GTest::gmock_main GTest::gtest_main)
+target_link_libraries(EngineTests PRIVATE engine editor_core GTest::gtest_main)
+apply_engine_optimizations(EngineTests)
 target_include_directories(EngineTests PRIVATE 
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/editor
 )
+
+# Use centralized engine resources
+chained_add_engine_resources_copy()
+add_dependencies(EngineTests EngineResources)
 
 if(DEFINED ENV{CI} OR CH_CI)
     target_compile_definitions(EngineTests PRIVATE CH_CI)

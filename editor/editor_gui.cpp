@@ -1,6 +1,4 @@
 #include "editor_gui.h"
-#include "editor/actions/project_actions.h"
-#include "editor/actions/scene_actions.h"
 #include "editor/editor_layer.h"
 #include "editor/panels/panel.h"
 #include "editor/panels/viewport_panel.h"
@@ -8,15 +6,16 @@
 #include "engine/core/application.h"
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
-#include "extras/IconsFontAwesome6.h"
+#include "IconsFontAwesome6.h"
+#include "scripting/scriptengine.h"
+
 #define IMGUI_DEFINE_MATH_OPERATORS
+#include "engine/platform/utils/dialogs.h"
+#include "engine/scene/scene_picking.h"
 #include "imgui.h"
 #include "imgui_internal.h"
-#include "nfd.h"
-#include "raymath.h"
 #include <cstring>
 #include <filesystem>
-#include <iterator>
 #include <string>
 
 namespace CHEngine
@@ -25,8 +24,19 @@ namespace CHEngine
 
 static void DrawPropertyLabel(const char* label)
 {
-    ImGui::Text(label);
-    ImGui::SameLine(ImGui::GetContentRegionAvail().x * 0.4f);
+    if (ImGui::GetCurrentTable() != nullptr)
+    {
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::Text(label);
+        ImGui::TableSetColumnIndex(1);
+    }
+    else
+    {
+        ImGui::Text(label);
+        ImGui::SameLine(ImGui::GetContentRegionAvail().x * 0.4f);
+    }
 }
 
 // --- Menu System Implementation ---
@@ -43,100 +53,110 @@ void EditorGUI::DrawMenuBar(EditorPanels& panels)
     {
         if (ImGui::MenuItem(ICON_FA_FILE " New Project", "Ctrl+Shift+N"))
         {
-            ProjectActions::New();
+            auto newScene = std::make_shared<Scene>();
+
+            // Ensure every scene starts with a Main Camera
+            Entity camera = newScene->CreateEntity("Main Camera");
+            auto& cc = camera.AddComponent<CameraComponent>();
+            cc.Primary = true;
+            camera.GetComponent<TransformComponent>().Translation = {0, 5, 10};
+
+            EditorLayer::Get().GetSceneManager().SetScene(newScene);
         }
         if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open Project", "Ctrl+O"))
         {
-            ProjectActions::Open();
+            std::vector<FileDialogFilter> filters = {{"Chained Scene", "chscene"}};
+            auto result = Dialogs::OpenFile(filters);
+            if (result)
+            {
+                EditorLayer::Get().GetSceneManager().OpenScene(*result);
+            }
         }
         if (ImGui::MenuItem(ICON_FA_FLOPPY_DISK " Save Project"))
         {
-            ProjectActions::Save();
+            EditorLayer::Get().GetSceneManager().SaveScene();
         }
         if (ImGui::MenuItem(ICON_FA_XMARK " Close Project"))
         {
             Project::SetActive(nullptr);
         }
-
         ImGui::Separator();
-
         if (ImGui::MenuItem(ICON_FA_FILE_CODE " New Scene", "Ctrl+N"))
         {
-            SceneActions::New();
+            EditorLayer::Get().GetSceneManager().NewScene();
         }
         if (ImGui::MenuItem(ICON_FA_FLOPPY_DISK " Save Scene", "Ctrl+S"))
         {
-            SceneActions::Save();
+            EditorLayer::Get().GetSceneManager().SaveScene();
         }
         if (ImGui::MenuItem(ICON_FA_FILE_EXPORT " Save Scene As...", "Ctrl+Shift+S"))
         {
-            SceneActions::SaveAs();
+            EditorLayer::Get().GetSceneManager().SaveSceneAs();
         }
         if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Load Scene", "Ctrl+L"))
         {
-            SceneActions::Open();
+            EditorLayer::Get().GetSceneManager().OpenScene();
         }
-
         ImGui::Separator();
-
         if (ImGui::MenuItem(ICON_FA_POWER_OFF " Exit"))
         {
             Application::Get().Close();
         }
-
         ImGui::EndMenu();
     }
 
     // View Menu
     if (ImGui::BeginMenu("View"))
     {
-        // Toggle Panels
         panels.ForEach([](std::shared_ptr<Panel> panel) {
             if (panel->GetName() != "Viewport" && panel->GetName() != "Project Browser")
             {
                 ImGui::MenuItem(panel->GetName().c_str(), nullptr, &panel->IsOpen());
             }
         });
-
         ImGui::Separator();
-
         if (ImGui::MenuItem(ICON_FA_EXPAND " Fullscreen", "F11"))
         {
-            ToggleFullscreen();
+            Application::Get().GetWindow().ToggleFullscreen();
         }
-
         if (ImGui::MenuItem(ICON_FA_ARROWS_ROTATE " Reset Layout"))
         {
             AppResetLayoutEvent e;
             Application::Get().OnEvent(e);
         }
-
-        if (ImGui::MenuItem(ICON_FA_FLOPPY_DISK " Save Current Layout as Default"))
+        if (ImGui::MenuItem(ICON_FA_FLOPPY_DISK " Save Layout"))
         {
             AppSaveLayoutEvent e;
             Application::Get().OnEvent(e);
         }
-
         ImGui::EndMenu();
     }
 
-    // Game Menu
-    if (ImGui::BeginMenu("Game"))
+    // Project Menu
+    if (ImGui::BeginMenu("Project"))
     {
-        if (ImGui::MenuItem(ICON_FA_GEARS " Project Settings"))
+        if (ImGui::MenuItem(ICON_FA_GEARS " Settings"))
         {
             if (auto p = panels.Get("Project Settings"))
             {
                 p->IsOpen() = true;
             }
         }
-
-        if (ImGui::MenuItem(ICON_FA_ROCKET " Build & Run Standalone"))
+        if (ImGui::MenuItem(ICON_FA_ROCKET " Build & Run"))
         {
             AppLaunchRuntimeEvent e;
             Application::Get().OnEvent(e);
         }
-
+        ImGui::Separator();
+        if (ImGui::MenuItem(ICON_FA_ARROWS_ROTATE " Reload Shaders"))
+        {
+            Renderer::Get().GetShaderLibrary().ReloadAll();
+        }
+        if (ImGui::MenuItem(ICON_FA_FILE_CODE " Reload Scripts", "Ctrl+R"))
+        {
+            auto& scriptEngine = ScriptEngine::Get();
+            scriptEngine.RequestAssemblyReload("EditorGUI");
+        }
         ImGui::EndMenu();
     }
 
@@ -145,78 +165,102 @@ void EditorGUI::DrawMenuBar(EditorPanels& panels)
 
 void EditorGUI::BeginPropertyGrid()
 {
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 4));
+    ImGui::BeginTable("PropertyGrid", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchSame);
+    ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+    ImGui::TableSetupColumn("Control", ImGuiTableColumnFlags_WidthStretch);
 }
 
 void EditorGUI::EndPropertyGrid()
 {
+    ImGui::EndTable();
+    ImGui::PopStyleVar();
 }
 
 void EditorGUI::BeginProperty(const char* label)
 {
-    ImGui::Columns(2);
-    ImGui::SetColumnWidth(0, 100.0f);
-    ImGui::Text(label);
-    ImGui::NextColumn();
-    ImGui::PushItemWidth(-1);
+    DrawPropertyLabel(label);
     ImGui::PushID(label);
+    ImGui::PushItemWidth(-1);
 }
 
 void EditorGUI::EndProperty()
 {
-    ImGui::PopID();
     ImGui::PopItemWidth();
-    ImGui::Columns(1);
+    ImGui::PopID();
 }
 
-PropertyBuilder EditorGUI::Begin()
-{
-    return PropertyBuilder();
-}
-
-// --- Property Widgets Implementation ---
+// --- Property Widgets Implementation (New Unified Style) ---
 
 bool EditorGUI::Property(const char* label, bool& value)
 {
-    BeginProperty(label);
+    DrawPropertyLabel(label);
+    ImGui::PushID(label);
     bool changed = ImGui::Checkbox("##prop", &value);
-    EndProperty();
+    ImGui::PopID();
     return changed;
 }
 
 bool EditorGUI::Property(const char* label, float& value, float speed, float min, float max)
 {
-    BeginProperty(label);
+    DrawPropertyLabel(label);
+    ImGui::PushID(label);
     bool changed = ImGui::DragFloat("##prop", &value, speed, min, max);
-    EndProperty();
+    ImGui::PopID();
     return changed;
 }
 
 bool EditorGUI::Property(const char* label, int& value, int min, int max)
 {
-    BeginProperty(label);
+    DrawPropertyLabel(label);
+    ImGui::PushID(label);
     bool changed = ImGui::DragInt("##prop", &value, 1.0f, min, max);
-    EndProperty();
+    ImGui::PopID();
+    return changed;
+}
+
+bool EditorGUI::Property(const char* label, uint64_t& value)
+{
+    DrawPropertyLabel(label);
+    ImGui::PushID(label);
+    bool changed = ImGui::InputScalar("##prop", ImGuiDataType_U64, &value);
+    ImGui::PopID();
     return changed;
 }
 
 bool EditorGUI::Property(const char* label, std::string& value, bool multiline)
 {
-    BeginProperty(label);
-    char buffer[1024] = {0};
+    DrawPropertyLabel(label);
+    ImGui::PushID(label);
+    char buffer[1024];
+    memset(buffer, 0, sizeof(buffer));
     strncpy(buffer, value.c_str(), sizeof(buffer) - 1);
-    bool changed = multiline ? ImGui::InputTextMultiline("##prop", buffer, sizeof(buffer))
-                             : ImGui::InputText("##prop", buffer, sizeof(buffer));
-    if (changed)
+    bool changed = false;
+    if (multiline)
     {
-        value = buffer;
+        if (ImGui::InputTextMultiline("##prop", buffer, sizeof(buffer),
+                                      ImVec2(0, ImGui::GetTextLineHeightWithSpacing() * 3)))
+        {
+            value = buffer;
+            changed = true;
+        }
     }
-    EndProperty();
+    else
+    {
+        if (ImGui::InputText("##prop", buffer, sizeof(buffer)))
+        {
+            value = buffer;
+            changed = true;
+        }
+    }
+    ImGui::PopID();
     return changed;
 }
 
 bool EditorGUI::Property(const char* label, Color& value)
 {
-    BeginProperty(label);
+    DrawPropertyLabel(label);
+    ImGui::PushID(label);
     float c[4] = {value.r / 255.0f, value.g / 255.0f, value.b / 255.0f, value.a / 255.0f};
     bool changed = ImGui::ColorEdit4("##prop", c);
     if (changed)
@@ -224,201 +268,281 @@ bool EditorGUI::Property(const char* label, Color& value)
         value = {(unsigned char)(c[0] * 255), (unsigned char)(c[1] * 255), (unsigned char)(c[2] * 255),
                  (unsigned char)(c[3] * 255)};
     }
-    EndProperty();
+    ImGui::PopID();
     return changed;
 }
 
-bool EditorGUI::Property(const char* label, Vector2& value, float speed, float min, float max)
+bool EditorGUI::Property(const char* label, glm::vec2& value, float speed, float min, float max)
 {
     return DrawVec2(label, value, 0.0f);
 }
-
-bool EditorGUI::Property(const char* label, Vector3& value, float speed, float min, float max)
+bool EditorGUI::Property(const char* label, glm::vec3& value, float speed, float min, float max)
 {
     return DrawVec3(label, value, 0.0f);
+}
+bool EditorGUI::Property(const char* label, glm::vec4& value, float speed, float min, float max)
+{
+    return DrawVec4(label, value, 0.0f);
 }
 
 bool EditorGUI::Property(const char* label, int& value, const char** items, int itemCount)
 {
     DrawPropertyLabel(label);
     ImGui::PushID(label);
-    ImGui::PushItemWidth(-1);
     bool changed = ImGui::Combo("##prop", &value, items, itemCount);
-    ImGui::PopItemWidth();
     ImGui::PopID();
     return changed;
 }
 
-bool EditorGUI::Property(const char* label, std::string& value, const std::string& filter)
+bool EditorGUI::FileProperty(const char* label, std::string& value, const char* filter)
 {
     DrawPropertyLabel(label);
     ImGui::PushID(label);
-
     float width = ImGui::GetContentRegionAvail().x;
     float buttonSize = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
-
     ImGui::PushItemWidth(width - buttonSize - 5.0f);
-
+    std::string displayPath = Project::GetRelativePath(value);
     char buffer[256];
     memset(buffer, 0, sizeof(buffer));
-    strncpy(buffer, value.c_str(), sizeof(buffer) - 1);
-
+    strncpy(buffer, displayPath.c_str(), sizeof(buffer) - 1);
+    
     bool changed = false;
     if (ImGui::InputText("##prop", buffer, sizeof(buffer)))
     {
-        value = buffer;
+        value = Project::GetAbsolutePath(buffer).string();
         changed = true;
     }
-
-    // Drag & Drop Target
     if (ImGui::BeginDragDropTarget())
     {
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
         {
-            const char* path = (const char*)payload->Data;
-            std::filesystem::path p = path;
-            auto projectPath = Project::GetAssetDirectory();
-
-            std::filesystem::path relativePath = std::filesystem::relative(p, projectPath);
-
-            if (!relativePath.empty() && relativePath != ".")
-            {
-                value = relativePath.string();
-            }
-            else
-            {
-                value = path; // Fallback
-            }
-
+            const char* dropPath = (const char*)payload->Data;
+            value = Project::GetRelativePath(dropPath);
             changed = true;
         }
         ImGui::EndDragDropTarget();
     }
-
     ImGui::PopItemWidth();
     ImGui::SameLine();
-
     if (ImGui::Button(ICON_FA_FOLDER_OPEN, {buttonSize, buttonSize}))
     {
-        nfdu8char_t* outPath = NULL;
-        nfdu8filteritem_t args[] = {{"Files", filter.c_str()}};
-
-        nfdresult_t result;
-        if (filter.empty())
+        std::vector<FileDialogFilter> filters;
+        if (filter != nullptr && filter[0] != '\0')
         {
-            result = NFD_OpenDialogU8(&outPath, NULL, 0, NULL);
+            filters.push_back({"Files", filter});
         }
-        else
+        auto result = Dialogs::OpenFile(filters);
+        if (result)
         {
-            result = NFD_OpenDialogU8(&outPath, args, 1, NULL);
-        }
-
-        if (result == NFD_OKAY)
-        {
-            std::filesystem::path p = outPath;
-            auto projectPath = Project::GetAssetDirectory();
-            std::filesystem::path relativePath = std::filesystem::relative(p, projectPath);
-
-            if (!relativePath.empty() && relativePath != ".")
-            {
-                value = relativePath.string();
-            }
-            else
-            {
-                value = outPath;
-            }
-
-            NFD_FreePathU8(outPath);
+            value = Project::GetRelativePath(*result);
             changed = true;
         }
     }
-
     ImGui::PopID();
     return changed;
 }
 
-static void DrawPropertyControl(const char* id, float& val, ImVec4 color, const char* label, ImVec2 buttonSize,
-                                float resetValue, bool& changed)
+bool EditorGUI::FileProperty(const char* label, std::string& path, uint32_t textureId, const char* filter)
 {
-    ImGui::PushStyleColor(ImGuiCol_Button, color);
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, {color.x * 1.1f, color.y * 1.1f, color.z * 1.1f, 1.0f});
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, color);
-    if (ImGui::Button(label, buttonSize))
-    {
-        val = resetValue;
-        changed = true;
-    }
-    ImGui::PopStyleColor(3);
-    ImGui::SameLine();
-    if (ImGui::DragFloat(id, &val, 0.1f, 0.0f, 0.0f, "%.2f"))
-    {
-        changed = true;
-    }
-    ImGui::PopItemWidth();
-}
-
-bool EditorGUI::DrawVec2(const char* label, Vector2& values, float resetValue)
-{
-    bool changed = false;
+    DrawPropertyLabel(label);
     ImGui::PushID(label);
-
-    ImGui::Columns(2);
-    ImGui::SetColumnWidth(0, 80.0f);
-    ImGui::Text(label);
-    ImGui::NextColumn();
-
-    ImGui::PushMultiItemsWidths(2, ImGui::GetContentRegionAvail().x);
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0, 0});
-
-    float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
-    ImVec2 buttonSize = {lineHeight + 3.0f, lineHeight};
-
-    auto& style = ImGui::GetStyle();
-    auto boldFont = ImGui::GetIO().Fonts->Fonts[0]; // Assuming first font is bold or we use standard
-
-    // X
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.9f, 0.2f, 0.2f, 1.0f});
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
-    if (ImGui::Button("X", buttonSize))
+    float width = ImGui::GetContentRegionAvail().x;
+    float buttonSize = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
+    float thumbnailSize = buttonSize * 1.5f;
+    if (textureId > 0)
     {
-        values.x = resetValue;
+        ImGui::Image((void*)(intptr_t)textureId, {thumbnailSize, thumbnailSize}, {0, 1}, {1, 0});
+    }
+    else
+    {
+        ImGui::Button("##empty", {thumbnailSize, thumbnailSize});
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("No texture loaded");
+        }
+    }
+    ImGui::SameLine();
+    ImGui::PushItemWidth(width - buttonSize - thumbnailSize - 10.0f);
+    
+    std::string displayPath = Project::GetRelativePath(path);
+    char buffer[256];
+    memset(buffer, 0, sizeof(buffer));
+    strncpy(buffer, displayPath.c_str(), sizeof(buffer) - 1);
+    
+    bool changed = false;
+    if (ImGui::InputText("##prop", buffer, sizeof(buffer)))
+    {
+        path = Project::GetAbsolutePath(buffer).string();
         changed = true;
     }
-    ImGui::PopStyleColor(3);
-
-    ImGui::SameLine();
-    if (ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f"))
-        changed = true;
-    ImGui::PopItemWidth();
-    ImGui::SameLine();
-
-    // Y
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.3f, 0.8f, 0.3f, 1.0f});
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
-    if (ImGui::Button("Y", buttonSize))
+    if (ImGui::BeginDragDropTarget())
     {
-        values.y = resetValue;
-        changed = true;
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+        {
+            const char* dropPath = (const char*)payload->Data;
+            path = Project::GetRelativePath(dropPath);
+            changed = true;
+        }
+        ImGui::EndDragDropTarget();
     }
-    ImGui::PopStyleColor(3);
-
-    ImGui::SameLine();
-    if (ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f"))
-        changed = true;
     ImGui::PopItemWidth();
-
-    ImGui::PopStyleVar();
-    ImGui::Columns(1);
+    ImGui::SameLine();
+    if (ImGui::Button(ICON_FA_FOLDER_OPEN, {buttonSize, buttonSize}))
+    {
+        std::vector<FileDialogFilter> filters;
+        if (filter != nullptr && filter[0] != '\0')
+        {
+            filters.push_back({"Files", filter});
+        }
+        auto result = Dialogs::OpenFile(filters);
+        if (result)
+        {
+            path = Project::GetRelativePath(*result);
+            changed = true;
+        }
+    }
     ImGui::PopID();
     return changed;
 }
 
 bool EditorGUI::ActionButton(const char* icon, const char* label)
 {
-    std::string fullLabel = std::string(icon) + " " + label;
-    return ImGui::Button(fullLabel.c_str());
+    std::string text = std::string(icon) + " " + label;
+    return ImGui::Button(text.c_str());
+}
+
+static void DrawPropertyControl(const char* id, float& val, ImVec4 color, const char* label, float resetValue,
+                                float width, bool& changed)
+{
+    ImGuiIO& io = ImGui::GetIO();
+    ImGui::PushID(label);
+
+    float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
+    ImVec2 buttonSize = {lineHeight, lineHeight};
+
+    // Label with background color
+    ImGui::PushStyleColor(ImGuiCol_Button, color);
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, color);
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, color);
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
+    // Use a button as a colored label
+    if (ImGui::Button(label, buttonSize))
+    {
+        val = resetValue;
+        changed = true;
+    }
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::SetTooltip("Click to reset to %.2f", resetValue);
+    }
+
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor(3);
+
+    ImGui::SameLine(0, 0); // No spacing between label and input
+
+    ImGui::SetNextItemWidth(width - buttonSize.x);
+    char buf[32];
+    sprintf(buf, "##%s_%s", label, id);
+    if (ImGui::DragFloat(buf, &val, 0.1f, 0.0f, 0.0f, "%.2f"))
+    {
+        changed = true;
+    }
+
+    ImGui::PopID();
+}
+
+bool EditorGUI::DrawVec3(const char* label, glm::vec3& values, float resetValue)
+{
+    DrawPropertyLabel(label);
+    ImGui::PushID(label);
+
+    bool changed = false;
+
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{4, 0});
+    float width = ImGui::GetContentRegionAvail().x;
+    float itemWidth = (width - 8.0f) / 3.0f; // 4px spacing * 2
+
+    ImGui::BeginGroup();
+
+    ImGui::SetNextItemWidth(itemWidth);
+    DrawPropertyControl("x", values.x, {0.8f, 0.1f, 0.15f, 1.0f}, "X", resetValue, itemWidth, changed);
+    ImGui::SameLine();
+
+    ImGui::SetNextItemWidth(itemWidth);
+    DrawPropertyControl("y", values.y, {0.2f, 0.7f, 0.2f, 1.0f}, "Y", resetValue, itemWidth, changed);
+    ImGui::SameLine();
+
+    ImGui::SetNextItemWidth(itemWidth);
+    DrawPropertyControl("z", values.z, {0.1f, 0.25f, 0.8f, 1.0f}, "Z", resetValue, itemWidth, changed);
+
+    ImGui::EndGroup();
+
+    ImGui::PopStyleVar();
+    ImGui::PopID();
+    return changed;
+}
+
+bool EditorGUI::DrawVec2(const char* label, glm::vec2& values, float resetValue)
+{
+    DrawPropertyLabel(label);
+    ImGui::PushID(label);
+
+    bool changed = false;
+
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{4, 0});
+    float width = ImGui::GetContentRegionAvail().x;
+    float itemWidth = (width - 4.0f) / 2.0f;
+
+    ImGui::BeginGroup();
+
+    ImGui::SetNextItemWidth(itemWidth);
+    DrawPropertyControl("x", values.x, {0.8f, 0.1f, 0.15f, 1.0f}, "X", resetValue, itemWidth, changed);
+    ImGui::SameLine();
+
+    ImGui::SetNextItemWidth(itemWidth);
+    DrawPropertyControl("y", values.y, {0.2f, 0.7f, 0.2f, 1.0f}, "Y", resetValue, itemWidth, changed);
+
+    ImGui::EndGroup();
+
+    ImGui::PopStyleVar();
+    ImGui::PopID();
+    return changed;
+}
+
+bool EditorGUI::DrawVec4(const char* label, glm::vec4& values, float resetValue)
+{
+    DrawPropertyLabel(label);
+    ImGui::PushID(label);
+
+    bool changed = false;
+
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{4, 0});
+    float width = ImGui::GetContentRegionAvail().x;
+    float itemWidth = (width - 12.0f) / 4.0f;
+
+    ImGui::BeginGroup();
+
+    ImGui::SetNextItemWidth(itemWidth);
+    DrawPropertyControl("x", values.x, {0.8f, 0.1f, 0.15f, 1.0f}, "X", resetValue, itemWidth, changed);
+    ImGui::SameLine();
+
+    ImGui::SetNextItemWidth(itemWidth);
+    DrawPropertyControl("y", values.y, {0.2f, 0.7f, 0.2f, 1.0f}, "Y", resetValue, itemWidth, changed);
+    ImGui::SameLine();
+
+    ImGui::SetNextItemWidth(itemWidth);
+    DrawPropertyControl("z", values.z, {0.1f, 0.25f, 0.8f, 1.0f}, "Z", resetValue, itemWidth, changed);
+    ImGui::SameLine();
+
+    ImGui::SetNextItemWidth(itemWidth);
+    DrawPropertyControl("w", values.w, {0.5f, 0.5f, 0.5f, 1.0f}, "W", resetValue, itemWidth, changed);
+
+    ImGui::EndGroup();
+
+    ImGui::PopStyleVar();
+    ImGui::PopID();
+    return changed;
 }
 
 void EditorGUI::ApplyTheme()
@@ -434,42 +558,33 @@ void EditorGUI::ApplyTheme()
     ImVec4* colors = style.Colors;
     colors[ImGuiCol_Text] = ImVec4(0.95f, 0.96f, 0.98f, 1.00f);
     colors[ImGuiCol_TextDisabled] = ImVec4(0.36f, 0.42f, 0.47f, 1.00f);
-    colors[ImGuiCol_WindowBg] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);
-    colors[ImGuiCol_ChildBg] = ImVec4(0.15f, 0.18f, 0.22f, 1.00f);
-    colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
-    colors[ImGuiCol_Border] = ImVec4(0.08f, 0.10f, 0.12f, 1.00f);
-    colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-    colors[ImGuiCol_FrameBg] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
-    colors[ImGuiCol_FrameBgHovered] = ImVec4(0.12f, 0.20f, 0.28f, 1.00f);
-    colors[ImGuiCol_FrameBgActive] = ImVec4(0.09f, 0.12f, 0.14f, 1.00f);
-    colors[ImGuiCol_TitleBg] = ImVec4(0.09f, 0.12f, 0.14f, 1.00f);
-    colors[ImGuiCol_TitleBgActive] = ImVec4(0.08f, 0.10f, 0.12f, 1.00f);
-    colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
-    colors[ImGuiCol_MenuBarBg] = ImVec4(0.15f, 0.18f, 0.22f, 1.00f);
-    colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.53f);
-    colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
-    colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.18f, 0.22f, 0.25f, 1.00f);
-    colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.09f, 0.12f, 0.14f, 1.00f);
-    colors[ImGuiCol_CheckMark] = ImVec4(0.28f, 0.56f, 1.00f, 1.00f);
-    colors[ImGuiCol_SliderGrab] = ImVec4(0.28f, 0.56f, 1.00f, 1.00f);
-    colors[ImGuiCol_SliderGrabActive] = ImVec4(0.37f, 0.61f, 1.00f, 1.00f);
-    colors[ImGuiCol_Button] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
-    colors[ImGuiCol_ButtonHovered] = ImVec4(0.28f, 0.56f, 1.00f, 1.00f);
-    colors[ImGuiCol_ButtonActive] = ImVec4(0.06f, 0.53f, 0.98f, 1.00f);
-    colors[ImGuiCol_Header] = ImVec4(0.20f, 0.25f, 0.29f, 0.55f);
-    colors[ImGuiCol_HeaderHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.80f);
-    colors[ImGuiCol_HeaderActive] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
-    colors[ImGuiCol_Separator] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
-    colors[ImGuiCol_SeparatorHovered] = ImVec4(0.10f, 0.40f, 0.75f, 0.78f);
-    colors[ImGuiCol_SeparatorActive] = ImVec4(0.10f, 0.40f, 0.75f, 1.00f);
-    colors[ImGuiCol_ResizeGrip] = ImVec4(0.26f, 0.59f, 0.98f, 0.25f);
-    colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
-    colors[ImGuiCol_ResizeGripActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
-    colors[ImGuiCol_Tab] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);
-    colors[ImGuiCol_TabHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.80f);
-    colors[ImGuiCol_TabActive] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
-    colors[ImGuiCol_TabUnfocused] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);
-    colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);
+    colors[ImGuiCol_WindowBg] = ImVec4(0.10f, 0.12f, 0.14f, 1.00f);
+    colors[ImGuiCol_ChildBg] = ImVec4(0.12f, 0.14f, 0.16f, 1.00f);
+    colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.10f, 0.12f, 0.94f);
+    colors[ImGuiCol_Border] = ImVec4(0.20f, 0.22f, 0.25f, 0.50f);
+    colors[ImGuiCol_FrameBg] = ImVec4(0.18f, 0.20f, 0.22f, 1.00f);
+    colors[ImGuiCol_FrameBgHovered] = ImVec4(0.25f, 0.28f, 0.32f, 1.00f);
+    colors[ImGuiCol_FrameBgActive] = ImVec4(0.22f, 0.24f, 0.26f, 1.00f);
+    colors[ImGuiCol_TitleBg] = ImVec4(0.08f, 0.10f, 0.12f, 1.00f);
+    colors[ImGuiCol_TitleBgActive] = ImVec4(0.06f, 0.08f, 0.10f, 1.00f);
+
+    colors[ImGuiCol_Header] = ImVec4(0.20f, 0.25f, 0.35f, 0.60f);
+    colors[ImGuiCol_HeaderHovered] = ImVec4(0.25f, 0.35f, 0.50f, 0.80f);
+    colors[ImGuiCol_HeaderActive] = ImVec4(0.30f, 0.40f, 0.60f, 1.00f);
+
+    colors[ImGuiCol_Separator] = ImVec4(0.20f, 0.22f, 0.25f, 1.00f);
+    colors[ImGuiCol_CheckMark] = ImVec4(0.40f, 0.60f, 0.90f, 1.00f);
+    colors[ImGuiCol_SliderGrab] = ImVec4(0.40f, 0.60f, 0.90f, 1.00f);
+    colors[ImGuiCol_SliderGrabActive] = ImVec4(0.50f, 0.70f, 1.00f, 1.00f);
+    colors[ImGuiCol_Button] = ImVec4(0.18f, 0.20f, 0.22f, 1.00f);
+    colors[ImGuiCol_ButtonHovered] = ImVec4(0.25f, 0.35f, 0.50f, 1.00f);
+    colors[ImGuiCol_ButtonActive] = ImVec4(0.30f, 0.45f, 0.70f, 1.00f);
+
+    colors[ImGuiCol_Tab] = ImVec4(0.08f, 0.10f, 0.12f, 1.00f);
+    colors[ImGuiCol_TabHovered] = ImVec4(0.25f, 0.35f, 0.50f, 0.80f);
+    colors[ImGuiCol_TabActive] = ImVec4(0.12f, 0.14f, 0.16f, 1.00f);
+    colors[ImGuiCol_TabUnfocused] = ImVec4(0.08f, 0.10f, 0.12f, 1.00f);
+    colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.10f, 0.12f, 0.14f, 1.00f);
     colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
     colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
     colors[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
@@ -482,149 +597,9 @@ void EditorGUI::ApplyTheme()
     colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
 }
 
-bool EditorGUI::DrawVec3(const char* label, Vector3& values, float resetValue)
+Ray EditorGUI::GetMouseRay(const Camera3D& camera, const glm::vec2& mousePosition, const glm::vec2& viewportSize)
 {
-    bool changed = false;
-    ImGui::PushID(label);
-
-    ImGui::Columns(2);
-    ImGui::SetColumnWidth(0, 80.0f);
-    ImGui::Text(label);
-    ImGui::NextColumn();
-
-    ImGui::PushMultiItemsWidths(3, ImGui::GetContentRegionAvail().x);
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0, 0});
-
-    float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
-    ImVec2 buttonSize = {lineHeight + 3.0f, lineHeight};
-
-    // X
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.9f, 0.2f, 0.2f, 1.0f});
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
-    if (ImGui::Button("X", buttonSize))
-    {
-        values.x = resetValue;
-        changed = true;
-    }
-    ImGui::PopStyleColor(3);
-
-    ImGui::SameLine();
-    if (ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f"))
-        changed = true;
-    ImGui::PopItemWidth();
-    ImGui::SameLine();
-
-    // Y
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.3f, 0.8f, 0.3f, 1.0f});
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
-    if (ImGui::Button("Y", buttonSize))
-    {
-        values.y = resetValue;
-        changed = true;
-    }
-    ImGui::PopStyleColor(3);
-
-    ImGui::SameLine();
-    if (ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f"))
-        changed = true;
-    ImGui::PopItemWidth();
-    ImGui::SameLine();
-
-    // Z
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.2f, 0.35f, 0.9f, 1.0f});
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
-    if (ImGui::Button("Z", buttonSize))
-    {
-        values.z = resetValue;
-        changed = true;
-    }
-    ImGui::PopStyleColor(3);
-
-    ImGui::SameLine();
-    if (ImGui::DragFloat("##Z", &values.z, 0.1f, 0.0f, 0.0f, "%.2f"))
-        changed = true;
-    ImGui::PopItemWidth();
-
-    ImGui::PopStyleVar();
-    ImGui::Columns(1);
-    ImGui::PopID();
-
-    return changed;
+    return ScenePicker::CreateRayFromViewport(camera, mousePosition, viewportSize);
 }
 
-Ray EditorGUI::GetMouseRay(const Camera3D& camera, const Vector2& localMousePos, const Vector2& viewportSize)
-{
-    // NDC: [-1, 1], Y-up
-    float ndc_x = (2.0f * localMousePos.x) / viewportSize.x - 1.0f;
-    float ndc_y = 1.0f - (2.0f * localMousePos.y) / viewportSize.y;
-
-    // View-Projection Matrix
-    Matrix projection = MatrixPerspective(camera.fovy * DEG2RAD, viewportSize.x / viewportSize.y, 0.01f, 1000.0f);
-    if (camera.projection == CAMERA_ORTHOGRAPHIC)
-    {
-        float aspect = viewportSize.x / viewportSize.y;
-        float top = camera.fovy / 2.0f;
-        float right = top * aspect;
-        projection = MatrixOrtho(-right, right, -top, top, 0.01f, 1000.0f);
-    }
-
-    Matrix view = GetCameraMatrix(camera);
-    Matrix viewProj = MatrixMultiply(view, projection);
-    Matrix invViewProj = MatrixInvert(viewProj);
-
-    // Unproject Near/Far points
-    auto Unproject = [&](float x, float y, float z) -> Vector3 {
-        float coords[4] = {x, y, z, 1.0f};
-        float result[4] = {0};
-
-        float resPoints[4] = {0};
-        // Manual 4x4 multiplication for W component
-        resPoints[0] = coords[0] * invViewProj.m0 + coords[1] * invViewProj.m4 + coords[2] * invViewProj.m8 +
-                       coords[3] * invViewProj.m12;
-        resPoints[1] = coords[0] * invViewProj.m1 + coords[1] * invViewProj.m5 + coords[2] * invViewProj.m9 +
-                       coords[3] * invViewProj.m13;
-        resPoints[2] = coords[0] * invViewProj.m2 + coords[1] * invViewProj.m6 + coords[2] * invViewProj.m10 +
-                       coords[3] * invViewProj.m14;
-        resPoints[3] = coords[0] * invViewProj.m3 + coords[1] * invViewProj.m7 + coords[2] * invViewProj.m11 +
-                       coords[3] * invViewProj.m15;
-
-        if (resPoints[3] == 0.0f)
-        {
-            return {0, 0, 0};
-        }
-
-        // Perspective division
-        if (fabs(resPoints[3]) > 0.00001f)
-        {
-            return {resPoints[0] / resPoints[3], resPoints[1] / resPoints[3], resPoints[2] / resPoints[3]};
-        }
-        return {0, 0, 0};
-    };
-
-    Vector3 nearPoint = Unproject(ndc_x, ndc_y, -1.0f);
-    Vector3 farPoint = Unproject(ndc_x, ndc_y, 1.0f);
-
-    Ray ray;
-    ray.position = nearPoint;
-
-    // Manual vector math to avoid potential signature issues
-    float dx = farPoint.x - nearPoint.x;
-    float dy = farPoint.y - nearPoint.y;
-    float dz = farPoint.z - nearPoint.z;
-    float len = sqrtf(dx * dx + dy * dy + dz * dz);
-
-    if (len > 0.0f)
-    {
-        ray.direction = {dx / len, dy / len, dz / len};
-    }
-    else
-    {
-        ray.direction = {0, 0, -1}; // Default forward?
-    }
-
-    return ray;
-}
 } // namespace CHEngine

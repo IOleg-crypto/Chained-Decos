@@ -8,10 +8,11 @@ target_sources(editor_core PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_context.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_panels.h
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_panels.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/actions/project_actions.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/actions/scene_actions.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/actions/editor_actions.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/actions/editor_actions.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_project_manager.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_project_manager.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_scene_manager.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_scene_manager.cpp
 
     # Viewport
     ${CMAKE_CURRENT_SOURCE_DIR}/viewport/editor_gizmo.h
@@ -19,7 +20,11 @@ target_sources(editor_core PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/viewport/editor_camera.h
     ${CMAKE_CURRENT_SOURCE_DIR}/viewport/editor_camera.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/viewport/ui_manipulator.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/viewport/ui_manipulator.h
     ${CMAKE_CURRENT_SOURCE_DIR}/viewport/ui_manipulator.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/launcher/editor_launcher.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/launcher/editor_launcher.cpp
 
     # Panels
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/scene_hierarchy_panel.h
@@ -38,7 +43,12 @@ target_sources(editor_core PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/project_browser_panel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/project_settings_panel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/project_settings_panel.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/environment_panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/world_panel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/world_panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/effects_panel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/effects_panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/material_panel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/material_panel.cpp
 
     # Undo
     ${CMAKE_CURRENT_SOURCE_DIR}/undo/command_history.h
@@ -53,17 +63,12 @@ target_sources(editor_core PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_gui.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_layout.h
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_layout.cpp
-    # External
-    ${CMAKE_SOURCE_DIR}/include/rlImGui/rlImGui.cpp
-    ${imguizmo_SOURCE_DIR}/GraphEditor.cpp
-    ${imguizmo_SOURCE_DIR}/GraphEditor.h
 )
 
-# (Redundant /bigobj flags removed - now in CompilerSettings.cmake)
 
-
-target_link_libraries(editor_core PUBLIC 
+target_link_libraries(editor_core PUBLIC
     engine
+    scripting
     imguilib
     nfd
 )
@@ -73,7 +78,6 @@ target_include_directories(editor_core PUBLIC
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/engine
     ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/include/rlImGui
     ${imguizmo_SOURCE_DIR}
 )
 
@@ -84,6 +88,10 @@ target_include_directories(ChainedEditor PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}
 )
+
+# Use centralized engine resources
+chained_add_engine_resources_copy()
+add_dependencies(ChainedEditor EngineResources)
 
 # Apply optimizations
 if(COMMAND apply_engine_optimizations)

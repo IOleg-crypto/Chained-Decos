@@ -1,47 +1,85 @@
-add_library(engine_graphics OBJECT
-    renderer.cpp
-    ui_renderer.cpp
-    asset_manager.cpp
-    shader_asset.cpp
-    shader_library.cpp
-    scene_renderer.cpp
-    renderer2d.cpp
-    model_asset.cpp
-    texture_asset.cpp
-    font_asset.cpp
-    mesh_importer.cpp
-    texture_importer.cpp
-    shader_importer.cpp
-    font_importer.cpp
-    environment_importer.cpp
-    render_command.cpp
-    renderer_api.cpp
-    raylib_renderer_api.cpp
-    buffer.cpp
-    raylib_buffer.cpp
-    vertex_array.cpp
-    raylib_vertex_array.cpp
+add_library(engine_graphics ${SUBMODULE_LIB_TYPE}
+        stb_impl.cpp
+    # Pipeline
+        pipeline/renderer.cpp
+        pipeline/renderer_types.cpp
+        pipeline/ui_renderer.cpp
+        pipeline/ui_widget_renderer.cpp
+        pipeline/ui_font_registry.cpp
+        pipeline/shader_library.cpp
+        pipeline/scene_renderer.cpp
 
-    renderer.h
-    scene_renderer.h
-    ui_renderer.h
-    asset.h
-    asset_manager.h
-    shader_asset.h
-    shader_library.h
-    model_asset.h
-    texture_asset.h
-    font_asset.h
-    environment.h
-    material.h
-    mesh_importer.h
-    texture_importer.h
-    shader_importer.h
-    font_importer.h
-    environment_importer.h
-    asset_importer.h
-    frustum.h
+        pipeline/render_command.cpp
+        pipeline/texture_utility.cpp
+        texture_system.cpp
+        pipeline/geometry_generator.cpp
+        pipeline/renderer.h
+        pipeline/scene_renderer.h
+        pipeline/ui_renderer.h
+        pipeline/ui_widget_renderer.h
+        pipeline/ui_font_registry.h
+        pipeline/shader_library.h
+        pipeline/material.h
+        pipeline/frustum.h
+        pipeline/texture_utility.h
+        texture_system.h
+        pipeline/geometry_generator.h
+
+    # Assets
+        assets/shader_asset.cpp
+        assets/model_asset.cpp
+        assets/texture_asset.cpp
+        assets/font_asset.cpp
+        assets/shader_asset.h
+        assets/model_asset.h
+        assets/texture_asset.h
+        assets/font_asset.h
+        assets/environment.h
+
+    # Loaders
+        loaders/texture_loader.cpp
+        loaders/model_loader.cpp
+        loaders/assimp_importer.cpp
+        loaders/shader_loader.cpp
+        loaders/font_loader.cpp
+        loaders/environment_loader.cpp
+        loaders/texture_loader.h
+        loaders/model_loader.h
+        loaders/assimp_importer.h
+        loaders/shader_loader.h
+        loaders/font_loader.h
+        loaders/environment_loader.h
+
+    # API & Backend
+        api/renderer_api.cpp
+        api/buffer.cpp
+        api/buffer.h
+        api/vertex_array.cpp
+        api/vertex_array.h
+        api/texture.cpp
+        api/texture.h
+        api/framebuffer.cpp
+        api/framebuffer.h
+        api/renderer_api.h
+        api/model_data.h
+        api/shader.h
+        api/shader.cpp
+        api/opengl/opengl_renderer_api.cpp
+        api/opengl/opengl_renderer_api.h
+        api/opengl/opengl_buffer.cpp
+        api/opengl/opengl_buffer.h
+        api/opengl/opengl_vertex_array.cpp
+        api/opengl/opengl_vertex_array.h
+        api/opengl/opengl_texture.cpp
+        api/opengl/opengl_texture.h
+        api/opengl/opengl_framebuffer.cpp
+        api/opengl/opengl_framebuffer.h
+        api/opengl/opengl_shader.h
+        api/opengl/opengl_shader.cpp
 )
+
+# Prevents multiple definition errors when using unity builds
+set_source_files_properties(stb_impl.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 
 target_include_directories(engine_graphics PUBLIC
     ${ENGINE_INCLUDE_DIRS}
@@ -51,23 +89,19 @@ target_include_directories(engine_graphics PUBLIC
     ${CMAKE_SOURCE_DIR}/include/imgui
     ${CMAKE_SOURCE_DIR}/include/imgui/backends
     ${CMAKE_SOURCE_DIR}/include/entt/src
+    ${CMAKE_SOURCE_DIR}/include/stb
     ${imguizmo_SOURCE_DIR}
 )
 
-# Graphics module depends on Core, assimp, raylib, imgui
 target_link_libraries(engine_graphics PUBLIC 
-    raylib 
+    engine_core
     imguilib 
     assimp::assimp 
     yaml-cpp
-    EnTT
+    EnTT::EnTT
+    glfw
+    glad
 )
-
-if(MSVC)
-    target_compile_options(engine_graphics PRIVATE /bigobj)
-elseif(MINGW)
-    target_compile_options(engine_graphics PRIVATE -Wa,-mbig-obj)
-endif()
 
 if(COMMAND apply_engine_optimizations)
     apply_engine_optimizations(engine_graphics)

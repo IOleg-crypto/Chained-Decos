@@ -1,0 +1,126 @@
+name: Windows
+
+on:
+  workflow_call:
+
+env:
+  CI: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_NOLOGO: true
+
+jobs:
+  build-windows:
+    name: windows-latest / ${{ matrix.preset }} (${{ matrix.build_type }})
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [windows-gcc, windows-clang, windows-msvc]
+        build_type: [Debug, Release]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Setup MSYS2
+        if: contains(matrix.preset, 'gcc') || contains(matrix.preset, 'clang')
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: false
+          install: ${{ contains(matrix.preset, 'clang') && 'mingw-w64-x86_64-clang lld' || 'mingw-w64-x86_64-gcc' }}
+
+      - name: Setup MSVC
+        if: contains(matrix.preset, 'msvc')
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Get CMake and Ninja
+        uses: lukka/get-cmake@latest
+
+      - name: Setup Compiler Cache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          variant: sccache
+          key: Windows-${{ matrix.preset }}-${{ matrix.build_type }}
+          max-size: 5G
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install jinja2
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Preflight
+        run: |
+          set -euo pipefail
+          echo "Repository root: $PWD"
+          git submodule status --recursive
+          cmake --version
+          dotnet --info
+          if [[ "${{ matrix.preset }}" == *"clang"* ]]; then
+            clang --version | head -n 1
+          elif [[ "${{ matrix.preset }}" == *"msvc"* ]]; then
+            cl || true
+          else
+            gcc --version | head -n 1
+          fi
+
+      - name: Configure
+        run: |
+          set -euo pipefail
+          mkdir -p "build/${{ matrix.preset }}"
+          PYTHON_EXE=$(python -c "import sys; print(sys.executable)")
+          cmake --preset ${{ matrix.preset }} \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" \
+            -DCMAKE_C_COMPILER_LAUNCHER=sccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
+            -DPython_EXECUTABLE="${PYTHON_EXE}" \
+            -DPython3_EXECUTABLE="${PYTHON_EXE}" \
+            -DCH_CI=ON \
+            -DENABLE_UNITY_BUILD=ON \
+            -DENABLE_SANITIZERS=OFF \
+            -DENABLE_LTO=OFF \
+            -DENABLE_PCH=OFF \
+            2>&1 | tee "build/${{ matrix.preset }}/configure.log"
+
+      - name: Build
+        run: |
+          set -euo pipefail
+          cmake --build --preset ${{ matrix.preset }} \
+            2>&1 | tee "build/${{ matrix.preset }}/build.log"
+
+      - name: Test
+        run: |
+          set -euo pipefail
+          BUILD_DIR="${{ github.workspace }}/build/${{ matrix.preset }}"
+          ctest --test-dir "$BUILD_DIR" -C "${{ matrix.build_type }}" --output-on-failure --timeout 300 --output-junit "$BUILD_DIR/junit.xml" \
+            2>&1 | tee "$BUILD_DIR/ctest.log"
+
+      - name: Upload Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows-${{ matrix.preset }}-${{ matrix.build_type }}-binaries
+          if-no-files-found: ignore
+          path: |
+            build/${{ matrix.preset }}/**/*.log
+            build/${{ matrix.preset }}/junit.xml
+          retention-days: 7

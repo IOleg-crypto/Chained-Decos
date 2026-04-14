@@ -1,6 +1,6 @@
 # Chained Engine - Compiler Settings
 # Extracted from root CMakeLists.txt for modularity
-
+set(CMAKE_DEBUG_POSTFIX "")
 # Compiler-specific settings
 if(MSVC)
     # MSVC-specific settings
@@ -17,6 +17,8 @@ if(MSVC)
         # Dead Code Elimination: Function-Level Linking
         $<$<CONFIG:Release>:/Gy>
     )
+
+    
     
     # Strip unused functions in Release
     add_link_options($<$<CONFIG:Release>:/OPT:REF> $<$<CONFIG:Release>:/OPT:ICF>)
@@ -97,6 +99,9 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         add_compile_options(-Wa,-mbig-obj)
     endif()
 
+    # Suppress overly strict C++23 template body checks for third-party headers (GLM)
+    add_compile_options(-Wno-template-body)
+
     # Dead Code Elimination linkage and binary stripping for Release build
     add_link_options(
         $<$<CONFIG:Release>:-Wl,--gc-sections>
@@ -133,7 +138,7 @@ if(WIN32)
 endif()
 
 # Optimized Build Settings
-option(ENABLE_UNITY_BUILD "Enable Unity Builds for faster compilation" OFF)
+option(ENABLE_UNITY_BUILD "Enable Unity Builds for faster compilation" ON)
 option(ENABLE_PCH "Enable Precompiled Headers for faster compilation" ON)
 option(ENABLE_LTO "Enable Link-Time Optimization (IPO) for Release configurations" ON)
 option(ENABLE_COVERAGE "Enable Code Coverage (GCC/Clang only)" OFF)
@@ -153,58 +158,23 @@ endif()
 # Function to apply common engine optimizations to a target
 function(apply_engine_optimizations target_name)
     if(ENABLE_PCH)
-        # We use a header file for PCH to handle complex logic like undefining Windows macros
-        set(PCH_HEADER_CONTENT "
-#include \"engine/core/base.h\"
-#include <memory>
-#include <vector>
-#include <string>
-#include <unordered_map>
-#include <algorithm>
-#include <functional>
-
-#ifdef CH_PLATFORM_WINDOWS
-  #define WIN32_LEAN_AND_MEAN
-  #define NOMINMAX
-  
-  // Temporarily rename Windows functions that conflict with Raylib
-  #define ShowCursor _win_ShowCursor
-  #define CloseWindow _win_CloseWindow
-  #define Rectangle _win_Rectangle
-  #define DrawText _win_DrawText
-  #define DrawTextEx _win_DrawTextEx
-  #define LoadImage _win_LoadImage
-  
-  #include <windows.h>
-  
-  // Restore names so Raylib can use them
-  #undef ShowCursor
-  #undef CloseWindow
-  #undef Rectangle
-  #undef DrawText
-  #undef DrawTextEx
-  #undef LoadImage
-#endif
-
-#include <raylib.h>
-#include <entt/entt.hpp>
-#include <yaml-cpp/yaml.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-")
-        # Create a temp file for PCH and only copy if changed
-        set(PCH_FILE_TMP "${CMAKE_BINARY_DIR}/engine_pch.h.tmp")
-        set(PCH_FILE "${CMAKE_BINARY_DIR}/engine_pch.h")
-        file(WRITE "${PCH_FILE_TMP}" "${PCH_HEADER_CONTENT}")
-        configure_file("${PCH_FILE_TMP}" "${PCH_FILE}" COPYONLY)
-        
-        target_precompile_headers(${target_name} PUBLIC "${PCH_FILE}")
+        # Real PCH: faster local dev, but breaks sccache cache hit rates
+        target_precompile_headers(${target_name} PUBLIC "${PROJECT_SOURCE_DIR}/engine/engine_pch.h")
+    else()
+        # Force-include: injects engine_pch.h into every TU via compiler flags.
+        # This gives the same include coverage as PCH but without a .pch binary,
+        # so ccache/sccache still achieves 100% hit rates in CI.
+        set(_pch_path "${PROJECT_SOURCE_DIR}/engine/engine_pch.h")
+        if(MSVC)
+            target_compile_options(${target_name} PRIVATE "/FI${_pch_path}")
+        else()
+            target_compile_options(${target_name} PRIVATE "-include" "${_pch_path}")
+        endif()
     endif()
 
     if(ENABLE_LTO)
-        # Disable LTO for MinGW for now as it has issues with PCH/Plugins in this environment
-        if(MINGW)
+        # Disable LTO for MinGW/GCC in Debug as it's extremely slow
+        if(MINGW OR (CMAKE_BUILD_TYPE STREQUAL "Debug"))
             set(ipo_supported OFF)
         else()
             include(CheckIPOSupported)
@@ -213,8 +183,13 @@ function(apply_engine_optimizations target_name)
 
         if(ipo_supported)
             set_property(TARGET ${target_name} PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
-        elseif(ipo_output)
-            message(WARNING "IPO/LTO is not supported by the current compiler: ${ipo_output}")
+        elseif(ipo_output AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+            message(STATUS "IPO/LTO is not supported or disabled for this configuration: ${ipo_output}")
         endif()
+    endif()
+
+    # Enable Unity Build for the target if global option is ON
+    if(ENABLE_UNITY_BUILD)
+        set_target_properties(${target_name} PROPERTIES UNITY_BUILD ON)
     endif()
 endfunction()

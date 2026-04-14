@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <string>
 
 namespace CHEngine
 {
@@ -31,8 +32,7 @@ namespace std
 {
 template <> struct hash<CHEngine::UUID>
 {
-    std::size_t operator()(const CHEngine::UUID& uuid) const
-    {
+    std::size_t operator()(const CHEngine::UUID& uuid) const noexcept {
         return std::hash<uint64_t>()((uint64_t)uuid);
     }
 };

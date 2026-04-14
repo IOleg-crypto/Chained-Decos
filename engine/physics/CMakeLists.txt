@@ -1,18 +1,22 @@
-add_library(engine_physics OBJECT
-    physics.cpp
-    dynamics.cpp
-    narrow_phase.cpp
-    scene_trace.cpp
-    bvh/bvh.cpp
+add_library(engine_physics ${SUBMODULE_LIB_TYPE}
+        physics.cpp
+        dynamics.cpp
+    collision_core.cpp
+    raycast_query.cpp
+        bvh/bvh_cache.cpp
+        bvh/bvh.cpp
+        collision/collision_triangle.cpp
 
-    physics.h
-    dynamics.h
-    narrow_phase.h
-    scene_trace.h
-    bvh/bvh.h
-    bvh/bvh_node.h
-    collision/collision.h
-    collision/collision_triangle.h
+        physics.h
+        dynamics.h
+    collision_core.h
+    raycast_query.h
+        bvh/bvh_cache.h
+        bvh/bvh.h
+        bvh/bvh_node.h
+        collision/collision.h
+        collision/collision_triangle.h
+        raycast_result.h
 )
 
 target_include_directories(engine_physics PUBLIC
@@ -20,11 +24,12 @@ target_include_directories(engine_physics PUBLIC
     ${assimp_SOURCE_DIR}/include
     ${assimp_BINARY_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/entt/src
+    ${CMAKE_SOURCE_DIR}/include/glfw/include
 )
 
 target_link_libraries(engine_physics PUBLIC 
-    raylib 
-    EnTT
+    engine_core
+    EnTT::EnTT
 )
 
 if(MSVC)

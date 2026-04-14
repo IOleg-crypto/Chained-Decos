@@ -2,6 +2,7 @@
 #define CH_EDITOR_EVENTS_H
 
 #include "engine/core/events.h"
+#include "engine/scene/entity.h"
 
 namespace CHEngine
 {
@@ -31,6 +32,37 @@ public:
     EVENT_CLASS_TYPE(AppLaunchRuntime)
     EVENT_CLASS_CATEGORY(EventCategoryApplication)
 };
+
+// Event to signal focusing on a specific entity in the viewport
+class ViewportFocusEntityEvent : public Event
+{
+public:
+    ViewportFocusEntityEvent(Entity entity) : m_Entity(entity) {}
+    Entity GetEntity() const { return m_Entity; }
+
+    EVENT_CLASS_TYPE(ViewportFocusEntity)
+    EVENT_CLASS_CATEGORY(EventCategoryApplication)
+private:
+    Entity m_Entity;
+};
+
+// Undo system events
+class UndoEvent : public Event
+{
+public:
+    UndoEvent() = default;
+    EVENT_CLASS_TYPE(Undo)
+    EVENT_CLASS_CATEGORY(EventCategoryApplication)
+};
+
+class RedoEvent : public Event
+{
+public:
+    RedoEvent() = default;
+    EVENT_CLASS_TYPE(Redo)
+    EVENT_CLASS_CATEGORY(EventCategoryApplication)
+};
+
 } // namespace CHEngine
 
 #endif // CH_EDITOR_EVENTS_H

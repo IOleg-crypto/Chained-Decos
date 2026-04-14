@@ -1,49 +1,105 @@
 #include "editor_layer.h"
-#include "editor/actions/project_actions.h"
-#include "editor/actions/scene_actions.h"
+#include "editor_panels.h"
+#include "editor_layout.h"
 #include "editor_events.h"
 #include "editor_gui.h"
+#include "engine/core/imgui_layer.h"
 #include "engine/core/input.h"
+#include "launcher/editor_launcher.h"
 
+#include "IconsFontAwesome6.h"
+#include "engine/core/assets/asset_manager.h"
 #include "engine/core/profiler.h"
-#include "engine/core/yaml.h"
-#include "engine/graphics/asset_manager.h"
+#include "engine/core/thread_pool.h"
+#include "engine/graphics/pipeline/render_command.h"
+#include "engine/graphics/pipeline/ui_renderer.h"
 #include "engine/physics/physics.h"
-#include "engine/scene/components.h"
+#include "engine/platform/utils/dialogs.h"
 #include "engine/scene/project.h"
+#include "engine/scene/project_serializer.h"
 #include "engine/scene/scene_serializer.h"
-#include "engine/scene/scriptable_entity.h"
-#include <fstream>
-
-#include "cstdarg"
-#include "extras/IconsFontAwesome6.h"
-#include "nfd.h"
 #include "panels/console_panel.h"
 #include "panels/content_browser_panel.h"
-#include "panels/environment_panel.h"
 #include "panels/project_browser_panel.h"
 #include "panels/property_editor.h"
 #include "panels/viewport_panel.h"
+#include "scripting/scene_scripting.h"
+#include "scripting/scriptengine.h"
+#include <ImGuizmo.h>
+#include <chrono>
+#include <yaml-cpp/yaml.h>
+
 
 namespace CHEngine
 {
+void EditorLayer::DrawLoadingOverlay(const char* title, const char* status)
+{
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->WorkPos);
+    ImGui::SetNextWindowSize(viewport->WorkSize);
+    ImGui::SetNextWindowViewport(viewport->ID);
+
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
+                             ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking |
+                             ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse |
+                             ImGuiWindowFlags_NoInputs;
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.02f, 0.02f, 0.02f, 0.92f));
+
+    if (ImGui::Begin("##EditorLoadingOverlay", nullptr, flags))
+    {
+        const size_t loadingCount = CHEngine::AssetManager::Get().GetLoadingAssetCount();
+        const size_t pendingFinalizeCount = CHEngine::AssetManager::Get().GetPendingFinalizeCount();
+        const size_t totalPending = loadingCount + pendingFinalizeCount;
+
+        ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.45f);
+
+        ImVec2 titleSize = ImGui::CalcTextSize(title);
+        ImGui::SetCursorPosX((ImGui::GetWindowWidth() - titleSize.x) * 0.5f);
+        ImGui::TextUnformatted(title);
+
+        ImVec2 statusSize = ImGui::CalcTextSize(status);
+        ImGui::SetCursorPosX((ImGui::GetWindowWidth() - statusSize.x) * 0.5f);
+        ImGui::TextUnformatted(status);
+
+        std::string pendingLine = "Pending assets: " + std::to_string(totalPending);
+        ImVec2 pendingSize = ImGui::CalcTextSize(pendingLine.c_str());
+        ImGui::SetCursorPosX((ImGui::GetWindowWidth() - pendingSize.x) * 0.5f);
+        ImGui::TextUnformatted(pendingLine.c_str());
+    }
+
+    ImGui::End();
+    ImGui::PopStyleColor();
+    ImGui::PopStyleVar();
+}
+
 EditorLayer* EditorLayer::s_Instance = nullptr;
 
 EditorLayer::EditorLayer()
     : Layer("EditorLayer")
 {
+    // Ensure the engine DLL uses the same ImGui context as the Editor
+    ImGuiLayer::SetContext(ImGui::GetCurrentContext());
+
     s_Instance = this;
     EditorContext::Init();
-    m_Panels = std::make_unique<EditorPanels>();
+
+    m_ProjectManager = std::make_unique<EditorProjectManager>();
+    m_SceneManager = std::make_unique<EditorSceneManager>();
     m_Layout = std::make_unique<EditorLayout>();
-    m_Actions = std::make_unique<EditorActions>();
+    m_Panels = std::make_unique<EditorPanels>();
 
     LoadConfig();
 }
 
+EditorLayer::~EditorLayer()
+{
+}
+
 void EditorLayer::LoadConfig()
 {
-    std::string configPath = PROJECT_ROOT_DIR "/editor_settings.yaml";
+    std::filesystem::path configPath = std::filesystem::current_path() / "editor_settings.yaml";
     if (!std::filesystem::exists(configPath))
     {
         return;
@@ -51,19 +107,44 @@ void EditorLayer::LoadConfig()
 
     try
     {
-        YAML::Node data = YAML::LoadFile(configPath);
-        if (!data["Editor"])
+        YAML::Node data = YAML::LoadFile(configPath.string());
+        if (data["Editor"])
         {
-            return;
+            auto node = data["Editor"];
+            if (node["LastProjectPath"])
+            {
+                std::string lastProj = node["LastProjectPath"].as<std::string>("");
+                m_ProjectManager->SetLastProjectPath(lastProj);
+                m_Config.LastProjectPath = lastProj;
+            }
+            if (node["LastScenePath"])
+            {
+                m_Config.LastScenePath = node["LastScenePath"].as<std::string>("");
+            }
+            if (node["LoadLastProjectOnStartup"])
+            {
+                m_Config.LoadLastProjectOnStartup = node["LoadLastProjectOnStartup"].as<bool>(false);
+            }
+            if (node["AutoSaveEnabled"])
+            {
+                m_Config.AutoSaveEnabled = node["AutoSaveEnabled"].as<bool>(true);
+            }
+            if (node["AutoSaveInterval"])
+            {
+                m_Config.AutoSaveInterval = node["AutoSaveInterval"].as<float>(300.0f);
+            }
+            if (node["RecentProjects"])
+            {
+                m_Config.RecentProjects.clear();
+                for (const auto& entry : node["RecentProjects"])
+                {
+                    m_Config.RecentProjects.push_back(entry.as<std::string>());
+                }
+            }
         }
-
-        auto node = data["Editor"];
-        m_Config.LastProjectPath = node["LastProjectPath"].as<std::string>("");
-        m_Config.LastScenePath = node["LastScenePath"].as<std::string>("");
-        m_Config.LoadLastProjectOnStartup = node["LoadLastProjectOnStartup"].as<bool>(false);
-    } catch (std::exception& e)
+    } catch (const std::exception& e)
     {
-        CH_CORE_ERROR("Failed to load editor config: {}", e.what());
+        CH_CORE_ERROR("EditorLayer: Failed to load editor settings: {}", e.what());
     }
 }
 
@@ -72,43 +153,35 @@ void EditorLayer::SaveConfig()
     YAML::Emitter out;
     out << YAML::BeginMap;
     out << YAML::Key << "Editor" << YAML::Value << YAML::BeginMap;
-    out << YAML::Key << "LastProjectPath" << YAML::Value << m_Config.LastProjectPath;
+    out << YAML::Key << "LastProjectPath" << YAML::Value << m_ProjectManager->GetLastProjectPath();
+    m_Config.LastProjectPath = m_ProjectManager->GetLastProjectPath();
     out << YAML::Key << "LastScenePath" << YAML::Value << m_Config.LastScenePath;
     out << YAML::Key << "LoadLastProjectOnStartup" << YAML::Value << m_Config.LoadLastProjectOnStartup;
+    out << YAML::Key << "AutoSaveEnabled" << YAML::Value << m_Config.AutoSaveEnabled;
+    out << YAML::Key << "AutoSaveInterval" << YAML::Value << m_Config.AutoSaveInterval;
+
+    out << YAML::Key << "RecentProjects" << YAML::Value << YAML::BeginSeq;
+    for (const auto& path : m_Config.RecentProjects)
+    {
+        out << path;
+    }
+    out << YAML::EndSeq;
+
     out << YAML::EndMap;
     out << YAML::EndMap;
 
-    std::ofstream fout(PROJECT_ROOT_DIR "/editor_settings.yaml");
+    std::filesystem::path configPath = std::filesystem::current_path() / "editor_settings.yaml";
+    std::ofstream fout(configPath);
     fout << out.c_str();
 }
 
 void EditorLayer::OnAttach()
 {
-    SetTraceLogCallback([](int logLevel, const char* text, va_list args) {
-        char buffer[4096];
-        vsnprintf(buffer, sizeof(buffer), text, args);
-        printf("%s\n", buffer);
+    // SetTraceLogCallback removed - now using engine logging
 
-        ConsoleLogLevel level = ConsoleLogLevel::Info;
-        if (logLevel == LOG_WARNING)
-        {
-            level = ConsoleLogLevel::Warn;
-        }
-        else if (logLevel >= LOG_ERROR)
-        {
-            level = ConsoleLogLevel::Error;
-        }
-
-        ConsolePanel::AddLog(buffer, level);
-    });
-
-    NFD_Init();
-    ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     EditorGUI::ApplyTheme();
+    Log::SetLogCallback(ConsolePanel::AddLog);
     PropertyEditor::Init();
-
-    // Register Panels
     m_Panels->Init();
 
     m_CommandHistory.SetNotifyCallback(
@@ -117,30 +190,21 @@ void EditorLayer::OnAttach()
     // Auto-load last project/scene
     const auto& config = GetConfig();
 
-    if (config.LoadLastProjectOnStartup && !config.LastProjectPath.empty() &&
-        std::filesystem::exists(config.LastProjectPath))
+    if (config.LoadLastProjectOnStartup && !m_ProjectManager->GetLastProjectPath().empty() &&
+        std::filesystem::exists(m_ProjectManager->GetLastProjectPath()))
     {
-        CH_CORE_INFO("Auto-loading last project: {}", config.LastProjectPath);
-        ProjectActions::Open(config.LastProjectPath);
-
-        if (auto project = Project::GetActive())
-        {
-            Renderer::LoadEngineResources(*project->GetAssetManager());
-        }
+        CH_CORE_INFO("Auto-loading last project: {}", m_ProjectManager->GetLastProjectPath());
+        m_ProjectManager->OpenProject(m_ProjectManager->GetLastProjectPath());
 
         if (!config.LastScenePath.empty() && std::filesystem::exists(config.LastScenePath))
         {
             CH_CORE_INFO("Auto-loading last scene: {}", config.LastScenePath);
-            SceneActions::Open(config.LastScenePath);
+            m_SceneManager->OpenScene(config.LastScenePath);
         }
     }
     else
     {
         Project::SetActive(nullptr);
-        // Load default engine resources with a temporary manager if no project
-        AssetManager temp;
-        temp.Initialize();
-        Renderer::LoadEngineResources(temp);
     }
 
     // Ensure layout is initialized
@@ -151,16 +215,15 @@ void EditorLayer::OnAttach()
         EditorContext::GetState().NeedsLayoutReset = true;
     }
 
-    CH_CORE_INFO("EditorLayer - Setting window icon");
-    Image icon =
-        LoadImage(PROJECT_ROOT_DIR "/engine/resources/icons/game-engine-icon-featuring-a-game-controller-with-.png");
-    if (icon.data != nullptr)
+    std::string iconPath = AssetManager::Get().ResolvePath("engine/resources/icons/chaineddecosmapeditor.jpg");
+    if (std::filesystem::exists(iconPath))
     {
-        ImageFormat(&icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
-        Application::Get().GetWindow().SetWindowIcon(icon);
-        UnloadImage(icon);
+        Application::Get().GetWindow().SetWindowIcon(iconPath);
     }
-
+    else
+    {
+        CH_CORE_WARN("Editor icon not found at: {}", iconPath);
+    }
     CH_CORE_INFO("EditorLayer Attached with modular panels.");
 
     LoadEditorFonts();
@@ -171,19 +234,10 @@ void EditorLayer::LoadEditorFonts()
 
     ImGuiIO& io = ImGui::GetIO();
     float fontSize = 16.0f;
-    auto assetManager = Project::GetActive() ? Project::GetActive()->GetAssetManager() : nullptr;
-
-    // Use a temporary asset manager if no project is active yet (for startup screen)
-    std::unique_ptr<AssetManager> tempManager;
-    if (!assetManager)
-    {
-        tempManager = std::make_unique<AssetManager>();
-        tempManager->Initialize();
-        assetManager = std::move(tempManager);
-    }
+    auto& assetManager = AssetManager::Get();
 
     // --- Default UI Font (Lato) ---
-    std::string fontPath = assetManager->ResolvePath("engine/resources/font/lato/lato-bold.ttf");
+    std::string fontPath = assetManager.ResolvePath("engine/resources/font/lato/lato-bold.ttf");
     if (std::filesystem::exists(fontPath))
     {
         io.Fonts->AddFontFromFileTTF(fontPath.c_str(), fontSize);
@@ -196,10 +250,10 @@ void EditorLayer::LoadEditorFonts()
     }
 
     // --- Icon Font (FontAwesome) ---
-    std::string faPath = assetManager->ResolvePath("engine/resources/font/fa-solid-900.ttf");
+    std::string faPath = assetManager.ResolvePath("engine/resources/font/fa-solid-900.ttf");
     if (std::filesystem::exists(faPath))
     {
-        static const ImWchar icons_ranges[] = {0xf000, 0xf8ff, 0};
+        static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
         ImFontConfig icons_config;
         icons_config.MergeMode = true;
         icons_config.PixelSnapH = true;
@@ -216,43 +270,68 @@ void EditorLayer::OnDetach()
 {
     SaveConfig();
     EditorContext::Shutdown();
-    SetTraceLogCallback(nullptr);
-    NFD_Quit();
 }
 
 void EditorLayer::OnUpdate(Timestep ts)
 {
     CH_PROFILE_FUNCTION();
 
-    if (Input::IsKeyPressed(KEY_F11))
-    {
-        ToggleFullscreen();
-    }
+    m_SceneManager->OnUpdate(ts);
+
+    // Sync context to panels
+    m_Panels->SetContext(GetActiveScene());
+
+    // Update all panels (includes viewport camera controller)
+    m_Panels->OnUpdate(ts);
 
     if (auto scene = GetActiveScene())
     {
         if (EditorContext::GetSceneState() == SceneState::Play)
         {
+            auto& scriptEngine = ScriptEngine::Get();
+
+            if (scriptEngine.CanExecuteFrameScripts())
+            {
+                SceneScripting::Update(scene.get(), ts);
+            }
             scene->OnUpdateRuntime(ts);
+
+            // Handle deferred scene loading requested from C# scripts
+            std::string pendingPath;
+            if (scriptEngine.TryConsumeRequestedScene(pendingPath))
+            {
+                SceneChangeRequestEvent ev(pendingPath);
+                OnEvent(ev);
+            }
         }
         else
         {
             scene->OnUpdateEditor(ts);
+
+            // Auto-save logic (delegated to SceneManager)
+            if (m_Config.AutoSaveEnabled)
+            {
+                m_SceneManager->AutoSave(m_Config.AutoSaveInterval, ts);
+            }
         }
 
-        if (Input::IsKeyPressed(KEY_F5))
+        if (Input::IsKeyPressed(Key::F5))
         {
             AppLaunchRuntimeEvent e;
             OnEvent(e);
         }
 
-        m_Panels->OnUpdate(ts);
+        if (Input::IsKeyDown(Key::LeftControl) && Input::IsKeyPressed(Key::R))
+        {
+            auto& scriptEngine = ScriptEngine::Get();
+            scriptEngine.RequestAssemblyReload("EditorLayer");
+        }
     }
 }
 
 void EditorLayer::OnRender(Timestep ts)
 {
-    ClearBackground(BLACK);
+    RenderCommand::Clear({25, 25, 25, 255});
 }
 
 void EditorLayer::OnImGuiRender()
@@ -287,6 +366,11 @@ void EditorLayer::OnImGuiRender()
             projectBrowser->OnImGuiRender();
         }
     }
+
+    if (EditorContext::GetState().IsLoading)
+    {
+        DrawLoadingOverlay("Editor Busy", EditorContext::GetState().LoadingStatus.c_str());
+    }
 }
 
 void EditorLayer::ResetLayout()
@@ -298,81 +382,58 @@ void EditorLayer::DrawDockSpace()
 {
     m_Layout->BeginWorkspace();
     m_Layout->DrawInterface();
-
-    bool readOnly = EditorContext::GetSceneState() == SceneState::Play;
-    m_Panels->OnImGuiRender(readOnly);
-
     m_Layout->EndWorkspace();
 }
 
+// Project and Scene event handlers are now managed by EditorProjectManager and EditorSceneManager.
 
-bool EditorLayer::OnProjectOpened(ProjectOpenedEvent& e)
+std::shared_ptr<Scene> EditorLayer::GetActiveScene() const
 {
-    CH_CORE_INFO("EditorLayer: Handling ProjectOpenedEvent - {}", e.GetPath());
-
-    auto project = Project::GetActive();
-    if (project)
-    {
-        if (auto contentBrowser = m_Panels->Get<ContentBrowserPanel>())
-        {
-            contentBrowser->SetRootDirectory(Project::GetAssetDirectory());
-        }
-        Renderer::LoadEngineResources(*project->GetAssetManager());
-    }
-    return false;
-}
-
-bool EditorLayer::OnSceneOpened(SceneOpenedEvent& e)
-{
-    auto activeScene = GetActiveScene();
-    m_Panels->SetContext(activeScene);
-
-    EditorContext::SetSelectedEntity({});
-
-    // Sync project path
-    auto project = Project::GetActive();
-    if (project && !e.GetPath().empty())
-    {
-        project->SetActiveScenePath(std::filesystem::relative(e.GetPath(), project->GetProjectDirectory()));
-        ProjectActions::Save();
-    }
-
-    // Sync Diagnostic Mode
-    if (activeScene)
-    {
-        Renderer::Get().SetDiagnosticMode(activeScene->GetSettings().DiagnosticMode);
-    }
-
-    return false;
+    return m_SceneManager->GetActiveScene();
 }
 
 void EditorLayer::OnEvent(Event& e)
 {
+    if (auto scene = GetActiveScene())
+    {
+        SceneScripting::DispatchEvent(scene.get(), e);
+    }
+
+    // Dispatch events to all editor panels
+    m_Panels->OnEvent(e);
+
     EventDispatcher dispatcher(e);
 
     // 1. Scene Management
-    dispatcher.Dispatch<SceneOpenedEvent>(CH_BIND_EVENT_FN(EditorLayer::OnSceneOpened));
+    dispatcher.Dispatch<SceneOpenedEvent>([this](auto& e) { return m_SceneManager->OnSceneOpened(e); });
     dispatcher.Dispatch<ScenePlayEvent>([this](auto& e) {
-        CH_CORE_INFO("EditorLayer::OnEvent - ScenePlayEvent Received");
-        SetSceneState(SceneState::Play);
+        m_SceneManager->SetSceneState(SceneState::Play);
         return true;
     });
     dispatcher.Dispatch<SceneStopEvent>([this](auto& e) {
-        SetSceneState(SceneState::Edit);
+        m_SceneManager->SetSceneState(SceneState::Edit);
         return true;
     });
 
     // 2. Project Management
-    dispatcher.Dispatch<ProjectCreatedEvent>([](auto& ev) {
-        ProjectActions::New(ev.GetProjectName(), ev.GetPath());
-        return true;
-    });
-    dispatcher.Dispatch<ProjectOpenedEvent>(CH_BIND_EVENT_FN(EditorLayer::OnProjectOpened));
-    dispatcher.Dispatch<AppLaunchRuntimeEvent>([](auto& ev) {
-        ProjectActions::LaunchStandalone();
+    dispatcher.Dispatch<ProjectOpenedEvent>([this](auto& e) { return m_ProjectManager->OnProjectOpened(e); });
+    dispatcher.Dispatch<AppLaunchRuntimeEvent>([this](auto& e) {
+        LaunchStandalone();
         return true;
     });
 
+    // 3. Command/Undo
+    dispatcher.Dispatch<UndoEvent>([this](auto& e) {
+        m_CommandHistory.Undo();
+        return true;
+    });
+    dispatcher.Dispatch<RedoEvent>([this](auto& e) {
+        m_CommandHistory.Redo();
+        return true;
+    });
+
+    // 4. Input
+    dispatcher.Dispatch<KeyPressedEvent>([this](auto& e) { return m_SceneManager->OnKeyPressed(e); });
     // 3. Layout/System
     dispatcher.Dispatch<AppResetLayoutEvent>([this](auto& ev) {
         ResetLayout();
@@ -394,23 +455,11 @@ void EditorLayer::OnEvent(Event& e)
 
         if (EditorContext::GetSceneState() == SceneState::Play)
         {
-            auto newScene = std::make_shared<Scene>();
-            // RegisterGameScripts(newScene.get()); // Removed: now handled globally and copied to Scene
-            SceneSerializer serializer(newScene.get());
-            if (serializer.Deserialize(finalPath))
-            {
-                if (m_RuntimeScene)
-                {
-                    m_RuntimeScene->OnRuntimeStop();
-                }
-                m_RuntimeScene = newScene;
-                m_RuntimeScene->OnRuntimeStart();
-                m_Panels->SetContext(m_RuntimeScene);
-                CH_CORE_INFO("Play Mode: Transitioned to scene {}", finalPath);
-            }
+            // Handle mid-play scene change directly or via Manager
+            m_SceneManager->OpenScene(finalPath);
             return true;
         }
-        SceneActions::Open(finalPath);
+        m_SceneManager->OpenScene(finalPath);
         return true;
     });
 
@@ -421,36 +470,18 @@ void EditorLayer::OnEvent(Event& e)
         return false;
     });
 
-    // 5. Hierarchy propagation
-    m_Panels->OnEvent(e);
-    if (e.Handled)
-    {
-        return;
-    }
-    if (m_Actions->OnEvent(e))
-    {
-        return;
-    }
-
     // 6. Raw Input Overrides
     if (EditorContext::GetSceneState() == SceneState::Play)
     {
-        if (auto activeScene = GetActiveScene())
-        {
-            activeScene->OnEvent(e);
-        }
+        // Script events are already dispatched on line 390
     }
     else if (e.GetEventType() == EventType::KeyPressed)
     {
         auto& ke = (KeyPressedEvent&)e;
-        if (ke.GetKeyCode() == KEY_ESCAPE && EditorContext::GetState().FullscreenGame)
+        if (ke.GetKeyCode() == Key::Escape && EditorContext::GetState().FullscreenGame)
         {
             EditorContext::GetState().FullscreenGame = false;
             e.Handled = true;
-        }
-        if (auto activeScene = GetActiveScene())
-        {
-            activeScene->OnEvent(e);
         }
     }
 }
@@ -460,74 +491,20 @@ CommandHistory& EditorLayer::GetCommandHistory()
     return s_Instance->m_CommandHistory;
 }
 
-void EditorLayer::SetSceneState(SceneState state)
+// File and project operations are now handled by EditorProjectManager.
+
+void EditorLayer::LaunchStandalone()
 {
-    CH_CORE_INFO("EditorLayer::SetSceneState - Pending State: {}", (int)state);
+    CH_PROFILE_FUNCTION();
+    EditorLauncher::LaunchStandalone(Project::GetActive(), GetActiveScene());
+}
 
-    if (state == SceneState::Play)
+void EditorLayer::ReparentEntity(Entity child, Entity parent)
+{
+    if (child.HasComponent<HierarchyComponent>())
     {
-        if (EditorContext::GetSceneState() == SceneState::Play)
-        {
-            return;
-        }
-
-        CH_CORE_INFO("Editor: Play Mode Started");
-        m_RuntimeScene = Scene::Copy(m_EditorScene);
-        if (m_RuntimeScene)
-        {
-            EditorContext::SetSceneState(SceneState::Play);
-            m_RuntimeScene->OnRuntimeStart();
-            m_Panels->SetContext(m_RuntimeScene);
-        }
-        else
-        {
-            CH_CORE_ERROR("EditorLayer::SetSceneState - Failed to copy scene!");
-        }
-    }
-    else
-    {
-        if (EditorContext::GetSceneState() == SceneState::Edit)
-        {
-            return;
-        }
-
-        CH_CORE_INFO("Editor: Play Mode Stopped");
-        if (m_RuntimeScene)
-        {
-            m_RuntimeScene->OnRuntimeStop();
-            m_RuntimeScene = nullptr;
-        }
-
-        EditorContext::SetSceneState(SceneState::Edit);
-        m_Panels->SetContext(m_EditorScene);
+        child.GetComponent<HierarchyComponent>().Parent = parent;
     }
 }
 
-// Register game scripts (statically linked, defined in game_module.cpp outside any namespace)
-void EditorLayer::SetScene(std::shared_ptr<Scene> scene)
-{
-    m_EditorScene = scene;
-    EditorContext::SetSelectedEntity({});
-    if (EditorContext::GetSceneState() == SceneState::Edit)
-    {
-        m_Panels->SetContext(m_EditorScene);
-    }
-
-    // RegisterGameScripts(m_EditorScene.get()); // Removed: now handled globally
-}
-void EditorLayer::SetViewportSize(const ImVec2& size)
-{
-    m_ViewportSize = size;
-
-    // Propagate to scenes to update camera aspect ratios
-    if (m_EditorScene)
-    {
-        m_EditorScene->OnViewportResize((uint32_t)size.x, (uint32_t)size.y);
-    }
-
-    if (m_RuntimeScene)
-    {
-        m_RuntimeScene->OnViewportResize((uint32_t)size.x, (uint32_t)size.y);
-    }
-}
 } // namespace CHEngine

@@ -1,113 +1,58 @@
-#include "engine/scene/components.h"
-#include "engine/scene/scene.h"
-#include "engine/scene/component_serializer.h"
-#include "engine/graphics/mesh_importer.h"
+#include "engine/scene/components/primitive_component.h"
 #include "gtest/gtest.h"
 
 using namespace CHEngine;
 
-class PrimitiveTest : public ::testing::Test
+TEST(PrimitiveTest, Defaults)
 {
-protected:
-    void SetUp() override
-    {
-        // HIDDEN window for raylib resource loading tests
-        if (!IsWindowReady())
-        {
-            SetConfigFlags(FLAG_WINDOW_HIDDEN);
-            InitWindow(1, 1, "PrimitiveTest");
-        }
-    }
+	PrimitiveComponent component;
 
-    void TearDown() override
-    {
-        // Don't close window here as it might be used by other tests in the same process
-        // unless we are sure we want to re-init it every time.
-        // For simplicity, let's just keep it open or use a wrapper.
-    }
-};
-
-TEST_F(PrimitiveTest, Defaults)
-{
-    PrimitiveComponent comp;
-    EXPECT_EQ(comp.Type, PrimitiveType::None);
-    EXPECT_FLOAT_EQ(comp.Radius, 0.5f);
-    EXPECT_FLOAT_EQ(comp.Height, 1.0f);
-    EXPECT_EQ(comp.Slices, 16);
-    EXPECT_EQ(comp.Stacks, 16);
-    EXPECT_FALSE(comp.Dirty);
-    EXPECT_EQ(comp.Asset, nullptr);
+	EXPECT_EQ(component.Type, PrimitiveType::None);
+	EXPECT_FLOAT_EQ(component.Radius, 0.5f);
+	EXPECT_FLOAT_EQ(component.InnerRadius, 0.2f);
+	EXPECT_FLOAT_EQ(component.Height, 1.0f);
+	EXPECT_EQ(component.Slices, 16);
+	EXPECT_EQ(component.Stacks, 16);
+	EXPECT_FLOAT_EQ(component.Dimensions.x, 1.0f);
+	EXPECT_FLOAT_EQ(component.Dimensions.y, 1.0f);
+	EXPECT_FLOAT_EQ(component.Dimensions.z, 1.0f);
+	EXPECT_FALSE(component.Dirty);
+	EXPECT_EQ(component.Asset, nullptr);
 }
 
-TEST_F(PrimitiveTest, Serialization)
+TEST(PrimitiveTest, TypeConstructorSetsRequestedPrimitiveType)
 {
-    auto& serializer = ComponentSerializer::Get();
+	PrimitiveComponent sphere(PrimitiveType::Sphere);
 
-    Scene scene;
-    Entity entity = scene.CreateEntity("PrimitiveEntity");
-    auto& primitive = entity.AddComponent<PrimitiveComponent>();
-    primitive.Type = PrimitiveType::Sphere;
-    primitive.Radius = 1.5f;
-    primitive.Slices = 32;
-    primitive.Stacks = 24;
-
-    // Serialize
-    YAML::Emitter out;
-    out << YAML::BeginMap;
-    serializer.SerializeAll(out, entity);
-    out << YAML::EndMap;
-
-    // Deserialize into another entity
-    Entity other = scene.CreateEntity("DeserializedPrimitive");
-    YAML::Node data = YAML::Load(out.c_str());
-    serializer.DeserializeAll(other, data);
-
-    EXPECT_TRUE(other.HasComponent<PrimitiveComponent>());
-    auto& otherPrim = other.GetComponent<PrimitiveComponent>();
-    EXPECT_EQ(otherPrim.Type, PrimitiveType::Sphere);
-    EXPECT_FLOAT_EQ(otherPrim.Radius, 1.5f);
-    EXPECT_EQ(otherPrim.Slices, 32);
-    EXPECT_EQ(otherPrim.Stacks, 24);
-    EXPECT_TRUE(otherPrim.Dirty); // Should be dirty after deserialization
+	EXPECT_EQ(sphere.Type, PrimitiveType::Sphere);
+	EXPECT_FLOAT_EQ(sphere.Radius, 0.5f);
+	EXPECT_EQ(sphere.Slices, 16);
+	EXPECT_FALSE(sphere.Dirty);
 }
 
-TEST_F(PrimitiveTest, ProceduralModelGeneration)
+TEST(PrimitiveTest, CopyConstructorPreservesConfiguredValues)
 {
-#if defined(CH_CI)
-    GTEST_SKIP() << "Skipping procedural generation test on CI (no OpenGL).";
-#endif
+	PrimitiveComponent source;
+	source.Type = PrimitiveType::Cylinder;
+	source.Radius = 2.5f;
+	source.InnerRadius = 0.7f;
+	source.Height = 4.0f;
+	source.Slices = 24;
+	source.Stacks = 12;
+	source.Dimensions = {2.0f, 3.0f, 4.0f};
+	source.Dirty = true;
 
-    if (!IsWindowReady())
-    {
-        GTEST_SKIP() << "Skipping procedural generation test: Raylib window/context not ready.";
-    }
+	PrimitiveComponent copy(source);
 
-    // Test that generation doesn't crash and returns meshes
-    // Note: We can't easily check mesh content without a GPU context in some environments,
-    // but MeshImporter::GenerateProceduralModel uses Raylib's GenMeshXXX which are CPU-side.
-
-    ProceduralParameters params;
-    params.Radius = 1.0f;
-    params.Slices = 20;
-    
-    // Sphere
-    Model sphere = MeshImporter::GenerateProceduralModel(":sphere:", params);
-    EXPECT_GT(sphere.meshCount, 0);
-    // Raylib's GenMeshSphere(radius, rings, slices)
-    // Mesh count should be 1
-    if (sphere.meshCount > 0)
-    {
-        EXPECT_GT(sphere.meshes[0].vertexCount, 0);
-        UnloadModel(sphere);
-    }
-
-    // Cube
-    params.Dimensions = {2.0f, 3.0f, 4.0f};
-    Model cube = MeshImporter::GenerateProceduralModel(":cube:", params);
-    EXPECT_GT(cube.meshCount, 0);
-    if (cube.meshCount > 0)
-    {
-        EXPECT_GT(cube.meshes[0].vertexCount, 0);
-        UnloadModel(cube);
-    }
+	EXPECT_EQ(copy.Type, source.Type);
+	EXPECT_FLOAT_EQ(copy.Radius, source.Radius);
+	EXPECT_FLOAT_EQ(copy.InnerRadius, source.InnerRadius);
+	EXPECT_FLOAT_EQ(copy.Height, source.Height);
+	EXPECT_EQ(copy.Slices, source.Slices);
+	EXPECT_EQ(copy.Stacks, source.Stacks);
+	EXPECT_FLOAT_EQ(copy.Dimensions.x, source.Dimensions.x);
+	EXPECT_FLOAT_EQ(copy.Dimensions.y, source.Dimensions.y);
+	EXPECT_FLOAT_EQ(copy.Dimensions.z, source.Dimensions.z);
+	EXPECT_EQ(copy.Dirty, source.Dirty);
+	EXPECT_EQ(copy.Asset, source.Asset);
 }

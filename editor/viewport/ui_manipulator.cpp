@@ -1,7 +1,8 @@
 #include "ui_manipulator.h"
 #include "engine/core/log.h"
-#include "engine/graphics/ui_renderer.h"
+#include "engine/graphics/pipeline/ui_renderer.h"
 #include "engine/scene/components/control_component.h"
+#include "engine/scene/scene.h"
 
 namespace CHEngine
 {
@@ -22,7 +23,27 @@ bool EditorUIManipulator::OnImGuiRender(Entity selectedEntity, ImVec2 viewportPo
     }
 
     auto& cc = selectedEntity.GetComponent<ControlComponent>();
-    Rectangle rect = UIRenderer::Get().GetEntityRect(selectedEntity, viewportSize, viewportPos);
+    UIRect rect = UIRenderer::Get().GetEntityRect(selectedEntity, viewportSize, viewportPos);
+
+    float scaleFactor = 1.0f;
+    auto* sceneCtx = selectedEntity.GetRegistry().ctx().find<Scene*>();
+    if (sceneCtx && *sceneCtx)
+    {
+        const CanvasSettings& canvas = (*sceneCtx)->GetSettings().Canvas;
+        if (canvas.ScaleMode == CanvasScaleMode::ScaleWithScreenSize && canvas.ReferenceResolution.x > 0.0f &&
+            canvas.ReferenceResolution.y > 0.0f)
+        {
+            const float scaleX = viewportSize.x / canvas.ReferenceResolution.x;
+            const float scaleY = viewportSize.y / canvas.ReferenceResolution.y;
+            scaleFactor = scaleX * (1.0f - canvas.MatchWidthOrHeight) + scaleY * canvas.MatchWidthOrHeight;
+            if (scaleFactor <= 0.0001f)
+            {
+                scaleFactor = 1.0f;
+            }
+        }
+    }
+
+    const float toVirtual = 1.0f / scaleFactor;
 
     ImDrawList* drawList = ImGui::GetWindowDrawList();
     ImVec2 p1 = {rect.x, rect.y};
@@ -79,41 +100,42 @@ bool EditorUIManipulator::OnImGuiRender(Entity selectedEntity, ImVec2 viewportPo
         if (ImGui::IsMouseDown(0))
         {
             ImVec2 delta = {mousePos.x - m_StartMousePos.x, mousePos.y - m_StartMousePos.y};
+            ImVec2 virtualDelta = {delta.x * toVirtual, delta.y * toVirtual};
 
             if (m_Dragging)
             {
-                cc.Transform.OffsetMin = {m_StartOffsetMin.x + delta.x, m_StartOffsetMin.y + delta.y};
-                cc.Transform.OffsetMax = {m_StartOffsetMax.x + delta.x, m_StartOffsetMax.y + delta.y};
+                cc.Transform.OffsetMin = {m_StartOffsetMin.x + virtualDelta.x, m_StartOffsetMin.y + virtualDelta.y};
+                cc.Transform.OffsetMax = {m_StartOffsetMax.x + virtualDelta.x, m_StartOffsetMax.y + virtualDelta.y};
             }
             else if (m_Resizing)
             {
                 switch (m_ActiveHandle)
                 {
                 case UIHandleType::TopLeft:
-                    cc.Transform.OffsetMin = {m_StartOffsetMin.x + delta.x, m_StartOffsetMin.y + delta.y};
+                    cc.Transform.OffsetMin = {m_StartOffsetMin.x + virtualDelta.x, m_StartOffsetMin.y + virtualDelta.y};
                     break;
                 case UIHandleType::TopRight:
-                    cc.Transform.OffsetMin.y = m_StartOffsetMin.y + delta.y;
-                    cc.Transform.OffsetMax.x = m_StartOffsetMax.x + delta.x;
+                    cc.Transform.OffsetMin.y = m_StartOffsetMin.y + virtualDelta.y;
+                    cc.Transform.OffsetMax.x = m_StartOffsetMax.x + virtualDelta.x;
                     break;
                 case UIHandleType::BottomLeft:
-                    cc.Transform.OffsetMin.x = m_StartOffsetMin.x + delta.x;
-                    cc.Transform.OffsetMax.y = m_StartOffsetMax.y + delta.y;
+                    cc.Transform.OffsetMin.x = m_StartOffsetMin.x + virtualDelta.x;
+                    cc.Transform.OffsetMax.y = m_StartOffsetMax.y + virtualDelta.y;
                     break;
                 case UIHandleType::BottomRight:
-                    cc.Transform.OffsetMax = {m_StartOffsetMax.x + delta.x, m_StartOffsetMax.y + delta.y};
+                    cc.Transform.OffsetMax = {m_StartOffsetMax.x + virtualDelta.x, m_StartOffsetMax.y + virtualDelta.y};
                     break;
                 case UIHandleType::Top:
-                    cc.Transform.OffsetMin.y = m_StartOffsetMin.y + delta.y;
+                    cc.Transform.OffsetMin.y = m_StartOffsetMin.y + virtualDelta.y;
                     break;
                 case UIHandleType::Bottom:
-                    cc.Transform.OffsetMax.y = m_StartOffsetMax.y + delta.y;
+                    cc.Transform.OffsetMax.y = m_StartOffsetMax.y + virtualDelta.y;
                     break;
                 case UIHandleType::Left:
-                    cc.Transform.OffsetMin.x = m_StartOffsetMin.x + delta.x;
+                    cc.Transform.OffsetMin.x = m_StartOffsetMin.x + virtualDelta.x;
                     break;
                 case UIHandleType::Right:
-                    cc.Transform.OffsetMax.x = m_StartOffsetMax.x + delta.x;
+                    cc.Transform.OffsetMax.x = m_StartOffsetMax.x + virtualDelta.x;
                     break;
                 }
             }

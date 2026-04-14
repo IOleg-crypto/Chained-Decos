@@ -1,10 +1,10 @@
 #include "project.h"
-#include "engine/graphics/asset_manager.h"
-#include "engine/graphics/environment.h"
-#include "engine/graphics/renderer.h"
-#include "engine/script/scriptengine.h"
+#include "engine/core/assets/asset_manager.h"
+#include "engine/graphics/assets/environment.h"
+#include "engine/graphics/pipeline/renderer.h"
 #include "imgui.h"
 #include "project_serializer.h"
+
 
 namespace CHEngine
 {
@@ -14,8 +14,6 @@ std::filesystem::path Project::s_EngineRoot = "";
 std::shared_ptr<Project> Project::New()
 {
     auto project = std::make_shared<Project>();
-    project->m_AssetManager = std::make_shared<AssetManager>();
-    project->m_AssetManager->Initialize();
     s_ActiveProject = project;
     return s_ActiveProject;
 }
@@ -23,18 +21,16 @@ std::shared_ptr<Project> Project::New()
 std::shared_ptr<Project> Project::Load(const std::filesystem::path& path)
 {
     std::shared_ptr<Project> project = std::make_shared<Project>();
-    project->m_AssetManager = std::make_shared<AssetManager>();
-    project->m_AssetManager->Initialize(path.parent_path());
 
     project->m_Config.ProjectDirectory = path.parent_path();
     s_ActiveProject = project;
 
     // Discover Engine Root if not set or invalid
-    if (s_EngineRoot.empty() || !std::filesystem::exists(s_EngineRoot / "engine/resources"))
+    if (s_EngineRoot.empty() || !std::filesystem::exists(s_EngineRoot / "resources"))
     {
         // 1. Try development root macro
 #ifdef PROJECT_ROOT_DIR
-        if (std::filesystem::exists(std::filesystem::path(PROJECT_ROOT_DIR) / "engine/resources"))
+        if (std::filesystem::exists(std::filesystem::path(PROJECT_ROOT_DIR) / "resources"))
         {
             s_EngineRoot = PROJECT_ROOT_DIR;
         }
@@ -46,7 +42,7 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path& path)
             std::filesystem::path current = path.parent_path();
             while (current.has_parent_path())
             {
-                if (std::filesystem::exists(current / "engine/resources"))
+                if (std::filesystem::exists(current / "resources"))
                 {
                     s_EngineRoot = current;
                     break;
@@ -59,21 +55,17 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path& path)
     ProjectSerializer serializer(project);
     if (serializer.Deserialize(path))
     {
-        // Register asset search path
-        project->m_AssetManager->ClearSearchPaths();
-        project->m_AssetManager->AddSearchPath(project->m_Config.ProjectDirectory / project->m_Config.AssetDirectory);
-
-        if (!s_EngineRoot.empty())
+        // Load engine shaders now that paths are set correctly
+        if (Renderer::IsInitialized())
         {
-            project->m_AssetManager->AddSearchPath(s_EngineRoot);
-            project->m_AssetManager->AddSearchPath(s_EngineRoot / "engine/resources");
+            Renderer::LoadEngineResources();
         }
 
         // Load environment if specified
         if (!project->m_Config.EnvironmentPath.empty())
         {
             project->m_Environment =
-                project->m_AssetManager->Get<EnvironmentAsset>(project->m_Config.EnvironmentPath.string());
+                AssetManager::Get().Get<EnvironmentAsset>(project->m_Config.EnvironmentPath.string());
         }
 
         // --- Automated Shader Discovery ---
@@ -99,9 +91,6 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path& path)
                 }
             }
         }
-
-        // Initialize and Load Scripting
-        ScriptEngine::Get().ReloadAssembly();
 
         return s_ActiveProject;
     }
@@ -225,14 +214,30 @@ std::vector<std::string> Project::GetAvailableScenes()
 std::string Project::GetRelativePath(const std::filesystem::path& path)
 {
     if (path.empty())
+    {
         return "";
+    }
 
     if (path.is_relative())
+    {
         return path.generic_string();
+    }
 
     auto absolutePath = NormalizePath(path);
 
-    // 1. Try relative to Engine Root
+    // 1. Try relative to Assets Directory
+    if (auto rel = TryMakeRelative(absolutePath, GetAssetDirectory()))
+    {
+        return *rel;
+    }
+
+    // 2. Try relative to Project Root
+    if (auto rel = TryMakeRelative(absolutePath, GetProjectDirectory()))
+    {
+        return *rel;
+    }
+
+    // 3. Try relative to Engine Root
     if (!s_EngineRoot.empty())
     {
         if (auto rel = TryMakeRelative(absolutePath, s_EngineRoot))
@@ -241,19 +246,83 @@ std::string Project::GetRelativePath(const std::filesystem::path& path)
         }
     }
 
-    // 2. Try relative to Assets Directory
-    if (auto rel = TryMakeRelative(absolutePath, GetAssetDirectory()))
-    {
-        return *rel;
-    }
-
-    // 3. Try relative to Project Root
-    if (auto rel = TryMakeRelative(absolutePath, GetProjectDirectory()))
-    {
-        return *rel;
-    }
-
     return absolutePath.generic_string();
+}
+
+std::filesystem::path Project::GetAbsolutePath(const std::filesystem::path& path)
+{
+    if (path.empty())
+    {
+        return "";
+    }
+
+    if (path.is_absolute())
+    {
+        return NormalizePath(path);
+    }
+
+    std::string pathStr = path.generic_string();
+
+    // Handle "engine/" prefix (for engine resources)
+    bool isEngineResource = false;
+    if (pathStr.find("engine/") == 0)
+    {
+        pathStr = pathStr.substr(7); // Remove "engine/" prefix
+        isEngineResource = true;
+    }
+
+    if (isEngineResource)
+    {
+        // Look in engine root first
+        if (!s_EngineRoot.empty())
+        {
+            std::filesystem::path candidate = s_EngineRoot / pathStr;
+            if (std::filesystem::exists(candidate))
+            {
+                return NormalizePath(candidate);
+            }
+        }
+    }
+    else
+    {
+        // For game assets, try asset directory first
+        std::filesystem::path assetDir = GetAssetDirectory();
+        if (!assetDir.empty())
+        {
+            std::filesystem::path candidate = assetDir / pathStr;
+            if (std::filesystem::exists(candidate))
+            {
+                return NormalizePath(candidate);
+            }
+        }
+
+        // Try project root next
+        std::filesystem::path projectDir = GetProjectDirectory();
+        if (!projectDir.empty())
+        {
+            std::filesystem::path candidate = projectDir / pathStr;
+            if (std::filesystem::exists(candidate))
+            {
+                return NormalizePath(candidate);
+            }
+        }
+    }
+
+    // Final fallback: return best guess without verifying existence
+    // This allows AssetManager async loading to handle missing files gracefully
+    std::filesystem::path assetDir = GetAssetDirectory();
+    if (!assetDir.empty() && !isEngineResource)
+    {
+        return NormalizePath(assetDir / pathStr);
+    }
+    else if (!s_EngineRoot.empty())
+    {
+        return NormalizePath(s_EngineRoot / pathStr);
+    }
+    else
+    {
+        return NormalizePath(GetProjectDirectory() / pathStr);
+    }
 }
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -265,8 +334,17 @@ std::filesystem::path Project::NormalizePath(const std::filesystem::path& path)
     // Use lexically_normal to handle .. and . and unify slashes
     std::filesystem::path normalized = std::filesystem::absolute(path).lexically_normal();
 
+#if CH_PLATFORM_WINDOWS
+    // Unify drive letter casing to uppercase to prevent relative path resolution failures
+    std::string s = normalized.string();
+    if (s.length() >= 2 && s[1] == ':' && std::islower(s[0]))
+    {
+        s[0] = (char)std::toupper(s[0]);
+        normalized = s;
+    }
+#endif
+
     // On Windows, generic_string() will use / which is exactly what we want for cross-platform portability.
-    // We avoid tolower() here to preserve original casing as requested by the user.
     return normalized;
 }
 
@@ -280,12 +358,17 @@ std::optional<std::string> Project::TryMakeRelative(const std::filesystem::path&
 
     auto normalizedBase = NormalizePath(basePath);
     std::filesystem::path rel = std::filesystem::relative(absolutePath, normalizedBase);
-    std::string relStr = rel.generic_string();
-
-    // Only return if path doesn't escape the base directory
-    if (relStr.find("..") == std::string::npos)
+    
+    // std::filesystem::relative returns an absolute path if it cannot resolve relativity (e.g., different drives)
+    if (rel.is_relative())
     {
-        return relStr;
+        std::string relStr = rel.generic_string();
+
+        // Only return if path doesn't escape the base directory
+        if (relStr.find("..") == std::string::npos)
+        {
+            return relStr;
+        }
     }
 
     return std::nullopt;

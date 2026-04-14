@@ -1,0 +1,5 @@
+# LSan suppressions for Chained Engine
+# Ignore internal .NET runtime leaks that occur during hosting/teardown
+leak:libcoreclr.so
+leak:libCoral.Native.a
+leak:memfd:doublemapper

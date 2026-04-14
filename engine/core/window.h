@@ -3,12 +3,11 @@
 
 #include <memory>
 #include <string>
-
-// Forward declare GLFWwindow
-struct GLFWwindow;
+#include <GLFW/glfw3.h>
 
 namespace CHEngine
 {
+// Window creation parameters and UI/runtime integration flags.
 struct WindowProperties
 {
     std::string Title;
@@ -33,6 +32,7 @@ struct WindowProperties
     }
 };
 
+// Abstract native window interface used by the application and renderer.
 class Window
 {
 public:
@@ -56,12 +56,12 @@ public:
     virtual void SetVSync(bool enabled) = 0;
     virtual void SetAntialiasing(bool enabled) = 0;
     virtual void SetTargetFramesPerSecond(int framesPerSecond) = 0;
-    // Note: Image is from Raylib, might need abstraction later if moving away from Raylib
-    // But for now we focus on the Window Interface.
-    virtual void SetWindowIcon(Image icon) = 0;
+    virtual int GetTargetFramesPerSecond() const = 0;
+    virtual void SetWindowIcon(const std::string& path) = 0;
 
     virtual void* GetNativeWindow() const = 0;
 
+    // Creates the platform-specific window implementation.
     static std::unique_ptr<Window> Create(const WindowProperties& properties = WindowProperties());
 };
 } // namespace CHEngine

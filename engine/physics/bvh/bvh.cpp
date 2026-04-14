@@ -1,139 +1,46 @@
 #include "bvh.h"
-#include "cfloat"
-#include "engine/graphics/model_asset.h"
-#include "raymath.h"
 #include <algorithm>
-#include <future>
-#include "engine/core/thread_pool.h"
+#include <cfloat>
+#include <cmath>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace CHEngine
 {
-CollisionTriangle::CollisionTriangle(const Vector3& a, const Vector3& b, const Vector3& c, int index)
-    : v0(a),
-      v1(b),
-      v2(c),
-      meshIndex(index)
+
+static bool RayAABBTest(const Ray& ray, const BoundingBox& box, float& t)
 {
-    min = Vector3Min(Vector3Min(v0, v1), v2);
-    max = Vector3Max(Vector3Max(v0, v1), v2);
-    center = Vector3Scale(Vector3Add(Vector3Add(v0, v1), v2), 1.0f / 3.0f);
-    normal = Vector3Normalize(Vector3CrossProduct(Vector3Subtract(v1, v0), Vector3Subtract(v2, v0)));
+    glm::vec3 invDir = 1.0f / ray.direction;
+    glm::vec3 t0 = (box.Min - ray.position) * invDir;
+    glm::vec3 t1 = (box.Max - ray.position) * invDir;
+
+    glm::vec3 tMin = glm::min(t0, t1);
+    glm::vec3 tMax = glm::max(t0, t1);
+
+    float minVal = std::max(std::max(tMin.x, tMin.y), tMin.z);
+    float maxVal = std::min(std::min(tMax.x, tMax.y), tMax.z);
+
+    if (maxVal >= std::max(0.0f, minVal))
+    {
+        t = minVal;
+        return true;
+    }
+    return false;
 }
 
-bool CollisionTriangle::IntersectsRay(const Ray& ray, float& t, Vector3& normal) const
+std::shared_ptr<BVH> BVH::Build(std::vector<CollisionTriangle>&& triangles)
 {
-    Vector3 edge1 = Vector3Subtract(v1, v0);
-    Vector3 edge2 = Vector3Subtract(v2, v0);
-    Vector3 pvec = Vector3CrossProduct(ray.direction, edge2);
-    float det = Vector3DotProduct(edge1, pvec);
-
-    // Using a smaller epsilon for better precision
-    if (fabsf(det) < 1e-7f)
-    {
-        return false;
-    }
-
-    float invDet = 1.0f / det;
-    Vector3 tvec = Vector3Subtract(ray.position, v0);
-    float u = Vector3DotProduct(tvec, pvec) * invDet;
-
-    if (u < 0.0f || u > 1.0f)
-    {
-        return false;
-    }
-
-    Vector3 qvec = Vector3CrossProduct(tvec, edge1);
-    float v = Vector3DotProduct(ray.direction, qvec) * invDet;
-
-    if (v < 0.0f || u + v > 1.0f)
-    {
-        return false;
-    }
-
-    float tempT = Vector3DotProduct(edge2, qvec) * invDet;
-    if (tempT < 1e-6f)
-    {
-        return false;
-    }
-
-    t = tempT;
-
-    // Use pre-calculated face normal, flipped if hitting from behind
-
-    // Ensure normal points against ray
-    normal = this->normal; // Copy the pre-calculated normal
-    if (Vector3DotProduct(normal, ray.direction) > 0)
-    {
-        normal = Vector3Scale(normal, -1.0f);
-    }
-
-    return true;
-}
-
-std::shared_ptr<BVH> BVH::Build(const BVHModelSnapshot& snapshot)
-{
-    if (snapshot.Meshes.empty())
-    {
-        return nullptr;
-    }
+    if (triangles.empty()) return nullptr;
 
     auto bvh = std::make_shared<BVH>();
-    std::vector<CollisionTriangle> allTris;
-
-    for (const auto& mesh : snapshot.Meshes)
-    {
-        if (mesh.Vertices.empty())
-        {
-            continue;
-        }
-
-        Matrix meshTransform = mesh.Transform;
-
-        if (!mesh.Indices.empty())
-        {
-            // Ensure we have complete triangles
-            for (size_t k = 0; (k + 2) < mesh.Indices.size(); k += 3)
-            {
-                uint32_t idx0 = mesh.Indices[k];
-                uint32_t idx1 = mesh.Indices[k + 1];
-                uint32_t idx2 = mesh.Indices[k + 2];
-
-                if (idx0 >= mesh.Vertices.size() || idx1 >= mesh.Vertices.size() || idx2 >= mesh.Vertices.size())
-                {
-                    CH_CORE_WARN("BVH::Build: Index out of vertex bounds in mesh {}", mesh.MeshIndex);
-                    continue;
-                }
-
-                allTris.emplace_back(Vector3Transform(mesh.Vertices[idx0], meshTransform),
-                                     Vector3Transform(mesh.Vertices[idx1], meshTransform),
-                                     Vector3Transform(mesh.Vertices[idx2], meshTransform), mesh.MeshIndex);
-            }
-        }
-        else
-        {
-            // Non-indexed: Ensure we have complete triangles
-            for (size_t k = 0; (k + 2) < mesh.Vertices.size(); k += 3)
-            {
-                allTris.emplace_back(Vector3Transform(mesh.Vertices[k], meshTransform),
-                                     Vector3Transform(mesh.Vertices[k + 1], meshTransform),
-                                     Vector3Transform(mesh.Vertices[k + 2], meshTransform), mesh.MeshIndex);
-            }
-        }
-    }
-
-    if (allTris.empty())
-    {
-        return nullptr;
-    }
-
-    bvh->m_Triangles = std::move(allTris);
+    bvh->m_Triangles = std::move(triangles);
+    
     bvh->m_Nodes.reserve(bvh->m_Triangles.size() * 2);
     bvh->m_Nodes.emplace_back(); // Root
 
     BuildContext ctx(bvh->m_Triangles);
     bvh->BuildIterative(ctx, bvh->m_Triangles.size());
 
-    // Reorder triangles based on serial indices
     std::vector<CollisionTriangle> reorderedTris;
     reorderedTris.reserve(bvh->m_Triangles.size());
     for (uint32_t idx : ctx.TriIndices)
@@ -145,70 +52,12 @@ std::shared_ptr<BVH> BVH::Build(const BVHModelSnapshot& snapshot)
     return bvh;
 }
 
-std::shared_ptr<BVH> BVH::Build(std::shared_ptr<ModelAsset> asset, const Matrix& transform)
-{
-    if (!asset || !asset->IsReady())
-    {
-        return nullptr;
-    }
-    return Build(asset->GetModel(), asset->GetGlobalNodeTransforms(), asset->GetMeshToNode(), transform);
-}
-
-std::shared_ptr<BVH> BVH::Build(const Model& model, const std::vector<Matrix>& globalTransforms,
-                                const std::vector<int>& meshToNode, const Matrix& transform)
-{
-    BVHModelSnapshot snapshot;
-    for (int i = 0; i < model.meshCount; i++)
-    {
-        Mesh& mesh = model.meshes[i];
-        if (mesh.vertexCount == 0 || mesh.vertices == nullptr)
-        {
-            continue;
-        }
-
-        BVHMeshSnapshot meshSnap;
-        meshSnap.MeshIndex = i;
-
-        Matrix nodeTransform = MatrixIdentity();
-        if (i < (int)meshToNode.size())
-        {
-            int nodeIdx = meshToNode[i];
-            if (nodeIdx >= 0 && nodeIdx < (int)globalTransforms.size())
-            {
-                nodeTransform = globalTransforms[nodeIdx];
-            }
-        }
-
-        meshSnap.Transform = MatrixMultiply(MatrixMultiply(nodeTransform, model.transform), transform);
-
-        meshSnap.Vertices.resize(mesh.vertexCount);
-        for (int v = 0; v < mesh.vertexCount; v++)
-        {
-            meshSnap.Vertices[v] = {mesh.vertices[v * 3], mesh.vertices[v * 3 + 1], mesh.vertices[v * 3 + 2]};
-        }
-
-        if (mesh.triangleCount > 0 && mesh.indices != nullptr)
-        {
-            meshSnap.Indices.resize(mesh.triangleCount * 3);
-            for (int idx = 0; idx < mesh.triangleCount * 3; idx++)
-            {
-                meshSnap.Indices[idx] = (uint32_t)mesh.indices[idx];
-            }
-        }
-        snapshot.Meshes.push_back(std::move(meshSnap));
-    }
-    return Build(snapshot);
-}
-
 void BVH::BuildIterative(BuildContext& ctx, size_t totalTriCount)
 {
-    // Explicit work stack instead of recursion
-    struct WorkItem
-    {
-        uint32_t nodeIdx;
-        size_t triStart;
-        size_t triCount;
-    };
+    m_Nodes.clear();
+    m_Nodes.reserve(totalTriCount * 2); 
+    m_Nodes.emplace_back(); // Root (index 0)
+
     std::vector<WorkItem> stack;
     stack.push_back({0, 0, totalTriCount});
 
@@ -217,101 +66,79 @@ void BVH::BuildIterative(BuildContext& ctx, size_t totalTriCount)
         auto [nodeIdx, triStart, triCount] = stack.back();
         stack.pop_back();
 
-        BVHNode& node = m_Nodes[nodeIdx];
-
-        // Calculate bounds + centroid extents
-        node.Min = {FLT_MAX, FLT_MAX, FLT_MAX};
-        node.Max = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
-        Vector3 cMin = {FLT_MAX, FLT_MAX, FLT_MAX};
-        Vector3 cMax = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
+        glm::vec3 nodeMin = {FLT_MAX, FLT_MAX, FLT_MAX};
+        glm::vec3 nodeMax = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
+        glm::vec3 cMin = {FLT_MAX, FLT_MAX, FLT_MAX};
+        glm::vec3 cMax = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
 
         for (size_t i = 0; i < triCount; ++i)
         {
             const auto& tri = ctx.AllTriangles[ctx.TriIndices[triStart + i]];
-            node.Min = Vector3Min(node.Min, tri.min);
-            node.Max = Vector3Max(node.Max, tri.max);
-            cMin = Vector3Min(cMin, tri.center);
-            cMax = Vector3Max(cMax, tri.center);
+            nodeMin = glm::min(nodeMin, tri.min);
+            nodeMax = glm::max(nodeMax, tri.max);
+            cMin = glm::min(cMin, tri.center);
+            cMax = glm::max(cMax, tri.center);
         }
 
-        // Leaf if few triangles
+        m_Nodes[nodeIdx].Min = nodeMin;
+        m_Nodes[nodeIdx].Max = nodeMax;
+
         if (triCount <= 4)
         {
-            node.LeftOrFirst = (uint32_t)triStart;
-            node.TriangleCount = (uint16_t)triCount;
+            m_Nodes[nodeIdx].LeftOrFirst = (uint32_t)triStart;
+            m_Nodes[nodeIdx].TriangleCount = (uint16_t)triCount;
             continue;
         }
 
-        // Pick longest axis
-        Vector3 extent = Vector3Subtract(cMax, cMin);
+        glm::vec3 extent = cMax - cMin;
         int axis = 0;
-        if (extent.y > extent.x && extent.y > extent.z)
-        {
-            axis = 1;
-        }
-        else if (extent.z > extent.x && extent.z > extent.y)
-        {
-            axis = 2;
-        }
+        if (extent.y > extent.x && extent.y > extent.z) axis = 1;
+        else if (extent.z > extent.x && extent.z > extent.y) axis = 2;
 
-        auto getAxis = [axis](const Vector3& v) { return (axis == 0) ? v.x : (axis == 1) ? v.y : v.z; };
+        float splitPos = 0;
+        if (axis == 0) splitPos = cMin.x + extent.x * 0.5f;
+        else if (axis == 1) splitPos = cMin.y + extent.y * 0.5f;
+        else splitPos = cMin.z + extent.z * 0.5f;
 
-        float splitPos = getAxis(cMin) + getAxis(extent) * 0.5f;
+        auto startIt = ctx.TriIndices.begin() + triStart;
+        auto endIt = startIt + triCount;
+        
+        auto midIt = std::partition(startIt, endIt, [&](uint32_t idx) {
+            const auto& tri = ctx.AllTriangles[idx];
+            float val = (axis == 0) ? tri.center.x : (axis == 1) ? tri.center.y : tri.center.z;
+            return val < splitPos;
+        });
 
-        // Partition triangles
-        size_t i = triStart;
-        size_t j = triStart + triCount - 1;
-        while (i <= j)
-        {
-            if (getAxis(ctx.AllTriangles[ctx.TriIndices[i]].center) < splitPos)
-            {
-                i++;
-            }
-            else
-            {
-                std::swap(ctx.TriIndices[i], ctx.TriIndices[j]);
-                if (j == 0)
-                {
-                    break;
-                }
-                j--;
-            }
-        }
+        size_t leftCount = std::distance(startIt, midIt);
 
-        size_t leftCount = i - triStart;
-
-        // Fallback: median split if partition failed
         if (leftCount == 0 || leftCount == triCount)
         {
             leftCount = triCount / 2;
-            std::nth_element(ctx.TriIndices.begin() + triStart, ctx.TriIndices.begin() + triStart + leftCount,
-                             ctx.TriIndices.begin() + triStart + triCount, [&](uint32_t a, uint32_t b) {
-                                 return getAxis(ctx.AllTriangles[a].center) < getAxis(ctx.AllTriangles[b].center);
-                             });
+            std::nth_element(startIt, startIt + leftCount, endIt, [&](uint32_t a, uint32_t b) {
+                const auto& triA = ctx.AllTriangles[a];
+                const auto& triB = ctx.AllTriangles[b];
+                float valA = (axis == 0) ? triA.center.x : (axis == 1) ? triA.center.y : triA.center.z;
+                float valB = (axis == 0) ? triB.center.x : (axis == 1) ? triB.center.y : triB.center.z;
+                return valA < valB;
+            });
         }
 
-        // Allocate child nodes
         uint32_t leftIdx = (uint32_t)m_Nodes.size();
         m_Nodes.emplace_back();
         m_Nodes.emplace_back();
 
-        // IMPORTANT: re-fetch node ref — emplace_back may have invalidated it
         m_Nodes[nodeIdx].LeftOrFirst = leftIdx;
         m_Nodes[nodeIdx].TriangleCount = 0;
         m_Nodes[nodeIdx].Axis = (uint16_t)axis;
 
-        // Push children (right first so left is processed first)
         stack.push_back({leftIdx + 1, triStart + leftCount, triCount - leftCount});
         stack.push_back({leftIdx, triStart, leftCount});
     }
 }
 
-bool BVH::Raycast(const Ray& ray, float& t, Vector3& normal, int& meshIndex) const
+bool BVH::Raycast(const Ray& ray, float& t, glm::vec3& normal, int& meshIndex) const
 {
-    if (m_Nodes.empty())
-    {
-        return false;
-    }
+    if (m_Nodes.empty()) return false;
 
     uint32_t stack[64];
     uint32_t stackPtr = 0;
@@ -322,11 +149,8 @@ bool BVH::Raycast(const Ray& ray, float& t, Vector3& normal, int& meshIndex) con
     {
         const BVHNode& node = m_Nodes[stack[--stackPtr]];
 
-        RayCollision boxHit = GetRayCollisionBox(ray, {node.Min, node.Max});
-        if (!boxHit.hit || boxHit.distance >= t)
-        {
-            continue;
-        }
+        float boxT = 0;
+        if (!RayAABBTest(ray, {node.Min, node.Max}, boxT) || boxT >= t) continue;
 
         if (node.IsLeaf())
         {
@@ -334,7 +158,7 @@ bool BVH::Raycast(const Ray& ray, float& t, Vector3& normal, int& meshIndex) con
             {
                 const auto& tri = m_Triangles[node.LeftOrFirst + i];
                 float triT = t;
-                Vector3 triNormal;
+                glm::vec3 triNormal;
                 if (tri.IntersectsRay(ray, triT, triNormal) && triT < t)
                 {
                     t = triT;
@@ -349,15 +173,13 @@ bool BVH::Raycast(const Ray& ray, float& t, Vector3& normal, int& meshIndex) con
             uint32_t left = node.LeftOrFirst;
             uint32_t right = left + 1;
 
-            RayCollision leftHit = GetRayCollisionBox(ray, {m_Nodes[left].Min, m_Nodes[left].Max});
-            RayCollision rightHit = GetRayCollisionBox(ray, {m_Nodes[right].Min, m_Nodes[right].Max});
-
-            bool leftValid = leftHit.hit && leftHit.distance < t;
-            bool rightValid = rightHit.hit && rightHit.distance < t;
+            float leftT = FLT_MAX, rightT = FLT_MAX;
+            bool leftValid = RayAABBTest(ray, {m_Nodes[left].Min, m_Nodes[left].Max}, leftT) && leftT < t;
+            bool rightValid = RayAABBTest(ray, {m_Nodes[right].Min, m_Nodes[right].Max}, rightT) && rightT < t;
 
             if (leftValid && rightValid)
             {
-                if (leftHit.distance < rightHit.distance)
+                if (leftT < rightT)
                 {
                     stack[stackPtr++] = right;
                     stack[stackPtr++] = left;
@@ -368,34 +190,28 @@ bool BVH::Raycast(const Ray& ray, float& t, Vector3& normal, int& meshIndex) con
                     stack[stackPtr++] = right;
                 }
             }
-            else if (leftValid)
-            {
-                stack[stackPtr++] = left;
-            }
-            else if (rightValid)
-            {
-                stack[stackPtr++] = right;
-            }
+            else if (leftValid) stack[stackPtr++] = left;
+            else if (rightValid) stack[stackPtr++] = right;
         }
     }
     return hit;
 }
 
-bool BVH::TestAxis(const Vector3& axis, const Vector3& v0, const Vector3& v1, const Vector3& v2,
-                   const Vector3& boxCenter, const Vector3& boxHalfSize)
+bool BVH::TestAxis(const glm::vec3& axis, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2,
+                   const glm::vec3& boxCenter, const glm::vec3& boxHalfSize)
 {
-    float p0 = Vector3DotProduct(v0, axis);
-    float p1 = Vector3DotProduct(v1, axis);
-    float p2 = Vector3DotProduct(v2, axis);
+    float p0 = glm::dot(v0, axis);
+    float p1 = glm::dot(v1, axis);
+    float p2 = glm::dot(v2, axis);
 
-    float r = boxHalfSize.x * fabsf(axis.x) +
-              boxHalfSize.y * fabsf(axis.y) +
-              boxHalfSize.z * fabsf(axis.z);
+    float r = boxHalfSize.x * std::abs(axis.x) +
+              boxHalfSize.y * std::abs(axis.y) +
+              boxHalfSize.z * std::abs(axis.z);
 
-    float triMin = fminf(fminf(p0, p1), p2);
-    float triMax = fmaxf(fmaxf(p0, p1), p2);
+    float triMin = std::min(std::min(p0, p1), p2);
+    float triMax = std::max(std::max(p0, p1), p2);
 
-    float boxProj = Vector3DotProduct(boxCenter, axis);
+    float boxProj = glm::dot(boxCenter, axis);
     float boxMin = boxProj - r;
     float boxMax = boxProj + r;
 
@@ -404,62 +220,41 @@ bool BVH::TestAxis(const Vector3& axis, const Vector3& v0, const Vector3& v1, co
 
 bool BVH::TriangleIntersectAABB(const CollisionTriangle& tri, const BoundingBox& box)
 {
-    Vector3 boxCenter = Vector3Scale(Vector3Add(box.min, box.max), 0.5f);
-    Vector3 boxHalfSize = Vector3Scale(Vector3Subtract(box.max, box.min), 0.5f);
+    glm::vec3 boxCenter = (box.Min + box.Max) * 0.5f;
+    glm::vec3 boxHalfSize = (box.Max - box.Min) * 0.5f;
 
-    Vector3 v0 = Vector3Subtract(tri.v0, boxCenter);
-    Vector3 v1 = Vector3Subtract(tri.v1, boxCenter);
-    Vector3 v2 = Vector3Subtract(tri.v2, boxCenter);
+    glm::vec3 v0 = tri.v0 - boxCenter;
+    glm::vec3 v1 = tri.v1 - boxCenter;
+    glm::vec3 v2 = tri.v2 - boxCenter;
 
-    Vector3 e0 = Vector3Subtract(v1, v0);
-    Vector3 e1 = Vector3Subtract(v2, v1);
-    Vector3 e2 = Vector3Subtract(v0, v2);
+    glm::vec3 e0 = v1 - v0;
+    glm::vec3 e1 = v2 - v1;
+    glm::vec3 e2 = v0 - v2;
 
-    if (!BVH::TestAxis({1, 0, 0}, v0, v1, v2, {0, 0, 0}, boxHalfSize))
-    {
-        return false;
-    }
-    if (!BVH::TestAxis({0, 1, 0}, v0, v1, v2, {0, 0, 0}, boxHalfSize))
-    {
-        return false;
-    }
-    if (!BVH::TestAxis({0, 0, 1}, v0, v1, v2, {0, 0, 0}, boxHalfSize))
-    {
-        return false;
-    }
+    if (!BVH::TestAxis({1, 0, 0}, v0, v1, v2, {0, 0, 0}, boxHalfSize)) return false;
+    if (!BVH::TestAxis({0, 1, 0}, v0, v1, v2, {0, 0, 0}, boxHalfSize)) return false;
+    if (!BVH::TestAxis({0, 0, 1}, v0, v1, v2, {0, 0, 0}, boxHalfSize)) return false;
 
-    Vector3 normal = Vector3CrossProduct(e0, e1);
-    if (!BVH::TestAxis(normal, v0, v1, v2, {0, 0, 0}, boxHalfSize))
-    {
-        return false;
-    }
+    glm::vec3 normal = glm::cross(e0, e1);
+    if (!BVH::TestAxis(normal, v0, v1, v2, {0, 0, 0}, boxHalfSize)) return false;
 
-    Vector3 axes[9] = {
-        Vector3CrossProduct({1, 0, 0}, e0), Vector3CrossProduct({1, 0, 0}, e1), Vector3CrossProduct({1, 0, 0}, e2),
-        Vector3CrossProduct({0, 1, 0}, e0), Vector3CrossProduct({0, 1, 0}, e1), Vector3CrossProduct({0, 1, 0}, e2),
-        Vector3CrossProduct({0, 0, 1}, e0), Vector3CrossProduct({0, 0, 1}, e1), Vector3CrossProduct({0, 0, 1}, e2)};
+    glm::vec3 axes[9] = {
+        glm::cross(glm::vec3(1, 0, 0), e0), glm::cross(glm::vec3(1, 0, 0), e1), glm::cross(glm::vec3(1, 0, 0), e2),
+        glm::cross(glm::vec3(0, 1, 0), e0), glm::cross(glm::vec3(0, 1, 0), e1), glm::cross(glm::vec3(0, 1, 0), e2),
+        glm::cross(glm::vec3(0, 0, 1), e0), glm::cross(glm::vec3(0, 0, 1), e1), glm::cross(glm::vec3(0, 0, 1), e2)};
 
     for (int i = 0; i < 9; i++)
     {
-        if (Vector3Length(axes[i]) < 0.0001f)
-        {
-            continue;
-        }
-        if (!BVH::TestAxis(axes[i], v0, v1, v2, {0, 0, 0}, boxHalfSize))
-        {
-            return false;
-        }
+        if (glm::length(axes[i]) < 0.0001f) continue;
+        if (!BVH::TestAxis(axes[i], v0, v1, v2, {0, 0, 0}, boxHalfSize)) return false;
     }
 
     return true;
 }
 
-bool BVH::IntersectAABB(const BoundingBox& box, Vector3& outNormal, float& outDepth) const
+bool BVH::IntersectAABB(const BoundingBox& box, glm::vec3& outNormal, float& outDepth) const
 {
-    if (m_Nodes.empty())
-    {
-        return false;
-    }
+    if (m_Nodes.empty()) return false;
 
     uint32_t stack[64];
     uint32_t stackPtr = 0;
@@ -470,8 +265,8 @@ bool BVH::IntersectAABB(const BoundingBox& box, Vector3& outNormal, float& outDe
     {
         const BVHNode& node = m_Nodes[stack[--stackPtr]];
 
-        if (!(node.Min.x <= box.max.x && node.Max.x >= box.min.x && node.Min.y <= box.max.y &&
-              node.Max.y >= box.min.y && node.Min.z <= box.max.z && node.Max.z >= box.min.z))
+        if (!(node.Min.x <= box.Max.x && node.Max.x >= box.Min.x && node.Min.y <= box.Max.y &&
+              node.Max.y >= box.Min.y && node.Min.z <= box.Max.z && node.Max.z >= box.Min.z))
         {
             continue;
         }
@@ -483,19 +278,18 @@ bool BVH::IntersectAABB(const BoundingBox& box, Vector3& outNormal, float& outDe
                 const auto& tri = m_Triangles[node.LeftOrFirst + i];
                 if (BVH::TriangleIntersectAABB(tri, box))
                 {
-                    Vector3 triNormal = tri.normal;
+                    glm::vec3 triNormal = tri.normal;
+                    glm::vec3 boxCenter = (box.Min + box.Max) * 0.5f;
+                    float dist = glm::dot(tri.v0 - boxCenter, triNormal);
+                    float radius = 0.5f * (std::abs(triNormal.x * (box.Max.x - box.Min.x)) +
+                                           std::abs(triNormal.y * (box.Max.y - box.Min.y)) +
+                                           std::abs(triNormal.z * (box.Max.z - box.Min.z)));
 
-                    Vector3 boxCenter = Vector3Scale(Vector3Add(box.min, box.max), 0.5f);
-                    float dist = Vector3DotProduct(Vector3Subtract(tri.v0, boxCenter), triNormal);
-                    float radius = 0.5f * (fabsf(triNormal.x * (box.max.x - box.min.x)) +
-                                           fabsf(triNormal.y * (box.max.y - box.min.y)) +
-                                           fabsf(triNormal.z * (box.max.z - box.min.z)));
-
-                    float depth = radius - fabsf(dist);
+                    float depth = radius - std::abs(dist);
                     if (depth > outDepth)
                     {
                         outDepth = depth;
-                        outNormal = (dist > 0) ? Vector3Scale(triNormal, -1.0f) : triNormal;
+                        outNormal = (dist > 0) ? -triNormal : triNormal;
                         hit = true;
                     }
                 }
@@ -510,104 +304,9 @@ bool BVH::IntersectAABB(const BoundingBox& box, Vector3& outNormal, float& outDe
     return hit;
 }
 
-std::future<std::shared_ptr<BVH>> BVH::BuildAsync(const Model& model, const Matrix& transform)
-{
-    // Deep copy geometry on the calling thread (Main Thread)
-    // This avoids race conditions if the model is modified (e.g. animation) or destroyed during async build.
-    BVHModelSnapshot snapshot;
-    Matrix modelTransform = MatrixMultiply(model.transform, transform);
-
-    for (int i = 0; i < model.meshCount; i++)
-    {
-        Mesh& mesh = model.meshes[i];
-        if (mesh.vertexCount == 0 || mesh.vertices == nullptr)
-        {
-            continue;
-        }
-
-        BVHMeshSnapshot meshSnap;
-        meshSnap.MeshIndex = i;
-        meshSnap.Transform = modelTransform;
-        meshSnap.Vertices.resize(mesh.vertexCount);
-        for (int v = 0; v < mesh.vertexCount; v++)
-        {
-            meshSnap.Vertices[v] = {mesh.vertices[v * 3], mesh.vertices[v * 3 + 1], mesh.vertices[v * 3 + 2]};
-        }
-
-        if (mesh.triangleCount > 0 && mesh.indices != nullptr)
-        {
-            meshSnap.Indices.resize(mesh.triangleCount * 3);
-            for (int idx = 0; idx < mesh.triangleCount * 3; idx++)
-            {
-                meshSnap.Indices[idx] = (uint32_t)mesh.indices[idx];
-            }
-        }
-
-        snapshot.Meshes.push_back(std::move(meshSnap));
-    }
-
-    // Capture snapshot by value (move)
-    return ThreadPool::Get().Enqueue([snapshot = std::move(snapshot)]() { return Build(snapshot); });
-}
-
-std::future<std::shared_ptr<BVH>> BVH::BuildAsync(std::shared_ptr<ModelAsset> asset, const Matrix& transform)
-{
-    return ThreadPool::Get().Enqueue([asset, transform]() { return Build(asset, transform); });
-}
-
-std::future<std::shared_ptr<BVH>> BVH::BuildAsync(const Model& model, const std::vector<Matrix>& globalTransforms,
-                                                  const std::vector<int>& meshToNode, const Matrix& transform)
-{
-    BVHModelSnapshot snapshot;
-    for (int i = 0; i < model.meshCount; i++)
-    {
-        Mesh& mesh = model.meshes[i];
-        if (mesh.vertexCount == 0 || mesh.vertices == nullptr)
-        {
-            continue;
-        }
-
-        BVHMeshSnapshot meshSnap;
-        meshSnap.MeshIndex = i;
-
-        Matrix nodeTransform = MatrixIdentity();
-        if (i < (int)meshToNode.size())
-        {
-            int nodeIdx = meshToNode[i];
-            if (nodeIdx >= 0 && nodeIdx < (int)globalTransforms.size())
-            {
-                nodeTransform = globalTransforms[nodeIdx];
-            }
-        }
-
-        meshSnap.Transform = MatrixMultiply(MatrixMultiply(nodeTransform, model.transform), transform);
-
-        meshSnap.Vertices.resize(mesh.vertexCount);
-        for (int v = 0; v < mesh.vertexCount; v++)
-        {
-            meshSnap.Vertices[v] = {mesh.vertices[v * 3], mesh.vertices[v * 3 + 1], mesh.vertices[v * 3 + 2]};
-        }
-
-        if (mesh.triangleCount > 0 && mesh.indices != nullptr)
-        {
-            meshSnap.Indices.resize(mesh.triangleCount * 3);
-            for (int idx = 0; idx < mesh.triangleCount * 3; idx++)
-            {
-                meshSnap.Indices[idx] = (uint32_t)mesh.indices[idx];
-            }
-        }
-        snapshot.Meshes.push_back(std::move(meshSnap));
-    }
-
-    return ThreadPool::Get().Enqueue([snapshot = std::move(snapshot)]() { return Build(snapshot); });
-}
-
 void BVH::QueryAABB(const BoundingBox& box, std::vector<const CollisionTriangle*>& outTriangles) const
 {
-    if (m_Nodes.empty())
-    {
-        return;
-    }
+    if (m_Nodes.empty()) return;
 
     uint32_t stack[64];
     uint32_t stackPtr = 0;
@@ -617,9 +316,8 @@ void BVH::QueryAABB(const BoundingBox& box, std::vector<const CollisionTriangle*
     {
         const BVHNode& node = m_Nodes[stack[--stackPtr]];
 
-        // AABB-AABB check
-        if (!(node.Min.x <= box.max.x && node.Max.x >= box.min.x && node.Min.y <= box.max.y &&
-              node.Max.y >= box.min.y && node.Min.z <= box.max.z && node.Max.z >= box.min.z))
+        if (!(node.Min.x <= box.Max.x && node.Max.x >= box.Min.x && node.Min.y <= box.Max.y &&
+              node.Max.y >= box.Min.y && node.Min.z <= box.Max.z && node.Max.z >= box.Min.z))
         {
             continue;
         }

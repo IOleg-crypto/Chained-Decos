@@ -14,6 +14,7 @@ Lighting:
   Ambient: 0.300000012
 Skybox:
   TexturePath: ""
+  Mode: 0
   Exposure: 1
   Brightness: 0
   Contrast: 1
@@ -23,6 +24,16 @@ Fog:
   Density: 0.00999999978
   Start: 10
   End: 100
+DebugSettings:
+  DiagnosticMode: 0
+  DrawColliders: false
+  DrawHierarchy: false
+  DrawCollisionModelBox: false
+  DrawGrid: false
+  DrawSelection: true
+  DrawLights: true
+  DrawSpawnZones: true
+  CollisionWireframeMode: 0
 Entities:
   - Entity: 3001
     TagComponent:
@@ -32,31 +43,31 @@ Entities:
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     ControlComponent:
-      Transform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [-460, -340]
-        OffsetMax: [-60, -278]
+      Rect Transform:
+        Position: [-616.455811, -365.501465]
+        Size: [115.73938, 39.9999695]
+        Anchor Min: [0.5, 0.5]
+        Anchor Max: [0.5, 0.5]
+        Offset Min: [-674.3255, -385.501434]
+        Offset Max: [-558.586121, -345.501465]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
-      ZOrder: 0
-      IsActive: true
-      HiddenInHierarchy: false
+      Z Order: 0
+      Active: true
+      Hidden: false
     LabelControl:
       Text: Select Map
-      AutoSize: false
       Style:
-        FontName: Default
-        FontSize: 44
-        TextColor: [240, 235, 228, 255]
+        Font Name: Default
+        Font Size: 18
+        Text Color: [255, 255, 255, 255]
         Shadow: false
-        ShadowOffset: 0
-        ShadowColor: [0, 0, 0, 255]
-        LetterSpacing: 2
-        LineHeight: 1.20000005
-        HorizontalAlignment: 0
-        VerticalAlignment: 1
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Auto Size: false
   - Entity: 3002
     TagComponent:
       Tag: btn_map_alpha
@@ -65,51 +76,50 @@ Entities:
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     SceneTransitionComponent:
-      TargetScenePath: scenes\untitled100.chscene
+      TargetScenePath: scenes/rpg_strategy_scene.chscene
       Triggered: false
     ControlComponent:
-      Transform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [-460, -200]
-        OffsetMax: [-60, -154]
+      Rect Transform:
+        Position: [-345.390137, -106.677452]
+        Size: [350.079956, 88.9666901]
+        Anchor Min: [0.5, 0.5]
+        Anchor Max: [0.5, 0.5]
+        Offset Min: [-520.430115, -151.160797]
+        Offset Max: [-170.350159, -62.1941071]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
-      ZOrder: 0
-      IsActive: true
-      HiddenInHierarchy: false
+      Z Order: 0
+      Active: true
+      Hidden: false
     ButtonControl:
       Label: Laboratory Alpha
-      Interactable: true
-      AutoSize: false
-      Style:
-        BackgroundColor: [4, 4, 4, 255]
-        HoverColor: [22, 22, 22, 255]
-        PressedColor: [2, 2, 2, 255]
-        Rounding: 0
-        BorderSize: 0
-        BorderColor: [0, 0, 0, 0]
-        Padding: 0
-        UseGradient: false
-        GradientColor: [0, 0, 0, 0]
-        HoverScale: 1.0
-        PressedScale: 1.0
-        TransitionSpeed: 0.100000001
-      Text:
-        FontName: Default
-        FontSize: 32
-        TextColor: [240, 235, 228, 255]
+      Text Style:
+        Font Name: Default
+        Font Size: 18
+        Text Color: [255, 255, 255, 255]
         Shadow: false
-        ShadowOffset: 0
-        ShadowColor: [0, 0, 0, 0]
-        LetterSpacing: 2
-        LineHeight: 1.20000005
-        HorizontalAlignment: 0
-        VerticalAlignment: 1
-    NativeScriptComponent:
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      UI Style:
+        BG Color: [40, 40, 40, 255]
+        Hover Color: [60, 60, 60, 255]
+        Pressed Color: [30, 30, 30, 255]
+        Rounding: 4
+        Border Size: 0
+        Border Color: [255, 255, 255, 255]
+        Gradient: false
+        Padding: 4
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.100000001
+      Interactable: true
+      Auto Size: false
+    ManagedScriptComponent:
       Scripts:
-        - SceneScript
+        - ClassName: ChainedDecos.Scripts.SceneScript
   - Entity: 3003
     TagComponent:
       Tag: btn_map_bravo
@@ -118,51 +128,50 @@ Entities:
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     SceneTransitionComponent:
-      TargetScenePath: scenes\scene_tem.chscene
+      TargetScenePath: scenes/scene_tem.chscene
       Triggered: false
     ControlComponent:
-      Transform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [-460, -140]
-        OffsetMax: [-60, -94]
+      Rect Transform:
+        Position: [-350.636536, 37.5994301]
+        Size: [336.089447, 87.2178879]
+        Anchor Min: [0.5, 0.5]
+        Anchor Max: [0.5, 0.5]
+        Offset Min: [-518.681274, -6.00951385]
+        Offset Max: [-182.591827, 81.208374]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
-      ZOrder: 0
-      IsActive: true
-      HiddenInHierarchy: false
+      Z Order: 0
+      Active: true
+      Hidden: false
     ButtonControl:
       Label: Training Grounds
-      Interactable: true
-      AutoSize: false
-      Style:
-        BackgroundColor: [4, 4, 4, 255]
-        HoverColor: [22, 22, 22, 255]
-        PressedColor: [2, 2, 2, 255]
-        Rounding: 0
-        BorderSize: 0
-        BorderColor: [0, 0, 0, 0]
-        Padding: 0
-        UseGradient: false
-        GradientColor: [0, 0, 0, 0]
-        HoverScale: 1.0
-        PressedScale: 1.0
-        TransitionSpeed: 0.100000001
-      Text:
-        FontName: Default
-        FontSize: 32
-        TextColor: [240, 235, 228, 255]
+      Text Style:
+        Font Name: Default
+        Font Size: 45.1110001
+        Text Color: [255, 255, 255, 255]
         Shadow: false
-        ShadowOffset: 0
-        ShadowColor: [0, 0, 0, 0]
-        LetterSpacing: 2
-        LineHeight: 1.20000005
-        HorizontalAlignment: 0
-        VerticalAlignment: 1
-    NativeScriptComponent:
+        Letter Spacing: 2.02900004
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      UI Style:
+        BG Color: [40, 40, 0, 255]
+        Hover Color: [60, 60, 92, 255]
+        Pressed Color: [30, 30, 30, 255]
+        Rounding: 4
+        Border Size: 0
+        Border Color: [255, 255, 255, 255]
+        Gradient: false
+        Padding: 4
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.100000001
+      Interactable: true
+      Auto Size: false
+    ManagedScriptComponent:
       Scripts:
-        - SceneScript
+        []
   - Entity: 3004
     TagComponent:
       Tag: back_button
@@ -171,48 +180,47 @@ Entities:
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     SceneTransitionComponent:
-      TargetScenePath: scenes\game_mode_selection.chscene
+      TargetScenePath: scenes/game_mode_selection.chscene
       Triggered: false
     ControlComponent:
-      Transform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [-460, -20]
-        OffsetMax: [-60, 26]
+      Rect Transform:
+        Position: [-615.581421, 400.477661]
+        Size: [100, 40]
+        Anchor Min: [0.5, 0.5]
+        Anchor Max: [0.5, 0.5]
+        Offset Min: [-665.581421, 380.477661]
+        Offset Max: [-565.581421, 420.477661]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
-      ZOrder: 0
-      IsActive: true
-      HiddenInHierarchy: false
+      Z Order: 0
+      Active: true
+      Hidden: false
     ButtonControl:
       Label: Back
-      Interactable: true
-      AutoSize: false
-      Style:
-        BackgroundColor: [4, 4, 4, 255]
-        HoverColor: [22, 22, 22, 255]
-        PressedColor: [2, 2, 2, 255]
-        Rounding: 0
-        BorderSize: 0
-        BorderColor: [0, 0, 0, 0]
-        Padding: 0
-        UseGradient: false
-        GradientColor: [0, 0, 0, 0]
-        HoverScale: 1.0
-        PressedScale: 1.0
-        TransitionSpeed: 0.100000001
-      Text:
-        FontName: Default
-        FontSize: 28
-        TextColor: [190, 185, 178, 255]
+      Text Style:
+        Font Name: Default
+        Font Size: 18
+        Text Color: [255, 255, 255, 255]
         Shadow: false
-        ShadowOffset: 0
-        ShadowColor: [0, 0, 0, 0]
-        LetterSpacing: 2
-        LineHeight: 1.20000005
-        HorizontalAlignment: 0
-        VerticalAlignment: 1
-    NativeScriptComponent:
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      UI Style:
+        BG Color: [40, 40, 40, 255]
+        Hover Color: [60, 60, 60, 255]
+        Pressed Color: [30, 30, 30, 255]
+        Rounding: 4
+        Border Size: 0
+        Border Color: [255, 255, 255, 255]
+        Gradient: false
+        Padding: 4
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.100000001
+      Interactable: true
+      Auto Size: false
+    ManagedScriptComponent:
       Scripts:
-        - SceneScript
+        - ClassName: ChainedDecos.Scripts.SceneScript

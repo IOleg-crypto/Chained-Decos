@@ -1,7 +1,6 @@
 #ifndef CH_THREAD_POOL_H
 #define CH_THREAD_POOL_H
 
-#include "engine/core/base.h"
 #include <condition_variable>
 #include <functional>
 #include <future>
@@ -12,17 +11,22 @@
 
 namespace CHEngine
 {
-// A simple thread pool for executing generic tasks.
-// Useful for physics, asset loading, and other parallel operations.
+// Modern C++20 thread pool for parallel task execution.
 class ThreadPool
 {
 public:
-    ThreadPool(size_t threads = std::thread::hardware_concurrency());
-    ~ThreadPool();
+    // Accesses the global thread pool instance.
+    static ThreadPool& Get()
+    {
+        static ThreadPool instance;
+        return instance;
+    }
 
-    static ThreadPool& Get();
+    // Deleted constructors for singleton
+    ThreadPool(const ThreadPool&) = delete;
+    ThreadPool& operator=(const ThreadPool&) = delete;
 
-    // Enqueues a task for execution. Returns a future for the result.
+    // Enqueues a task and returns a future for the result.
     template <class F, class... Args>
     auto Enqueue(F&& f, Args&&... args) -> std::future<typename std::invoke_result<F, Args...>::type>
     {
@@ -35,9 +39,7 @@ public:
         {
             std::unique_lock<std::mutex> lock(m_QueueMutex);
             if (m_Stop)
-            {
-                throw std::runtime_error("enqueue on stopped ThreadPool");
-            }
+                throw std::runtime_error("Enqueue on stopped ThreadPool");
 
             m_Tasks.emplace([task]() { (*task)(); });
         }
@@ -45,19 +47,28 @@ public:
         return res;
     }
 
-    void Shutdown();
+    // Queues a fire-and-forget task.
+    void QueueTask(std::function<void()> task)
+    {
+        {
+            std::unique_lock<std::mutex> lock(m_QueueMutex);
+            m_Tasks.emplace(std::move(task));
+        }
+        m_Condition.notify_one();
+    }
 
 private:
-    // Worker thread function
-    void WorkerThread();
+    ThreadPool();
+    ~ThreadPool();
+
+    void WorkerThread(std::stop_token stopToken);
 
 private:
-    std::vector<std::thread> m_Workers;
-    std::queue<std::function<void()>> m_Tasks;
-
-    std::mutex m_QueueMutex;
-    std::condition_variable m_Condition;
-    bool m_Stop = false;
+   std::queue<std::function<void()>> m_Tasks;
+   std::mutex m_QueueMutex;
+   std::condition_variable_any m_Condition;
+   bool m_Stop = false;
+   std::vector<std::jthread> m_Workers;
 };
 } // namespace CHEngine
 

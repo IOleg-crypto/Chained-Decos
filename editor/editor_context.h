@@ -1,17 +1,19 @@
 #ifndef CH_EDITOR_CONTEXT_H
 #define CH_EDITOR_CONTEXT_H
 
-#include "engine/graphics/renderer.h"
+#include "engine/graphics/pipeline/renderer.h"
 #include "engine/scene/scene.h"
+#include <string>
 
 namespace CHEngine
 {
 enum class SceneState : uint8_t
 {
-    Edit = 0,
-    Play = 1
+    Edit = 0, // Editor-only update mode.
+    Play = 1  // Runtime simulation mode.
 };
 
+// Mutable editor session state shared across panels and the editor layer.
 struct EditorState
 {
     Entity SelectedEntity;
@@ -20,11 +22,12 @@ struct EditorState
     bool NeedsLayoutReset = false;
     int LastHitMeshIndex = -1;
     DebugRenderFlags DebugRenderFlags;
+    bool IsLoading = false;
+    std::string LoadingStatus = "";
 };
 
-// EditorContext stores the global state of the editor,
-// such as the selected entity, scene state, and debug flags.
-// This decouples the state from the EditorLayer.
+// EditorContext stores global editor state such as the selected entity,
+// scene mode, and debug flags so panels do not need direct EditorLayer access.
 class EditorContext
 {
 public:

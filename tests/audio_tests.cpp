@@ -1,28 +1,31 @@
 #include "engine/audio/audio.h"
 #include "gtest/gtest.h"
 
+#include <array>
+
 using namespace CHEngine;
 
-TEST(AudioTest, InitializationAndShutdown)
+TEST(AudioTest, SingletonReturnsSameInstance)
 {
-    auto& audio = Audio::Get();
-    // Test that we can call Init/Shutdown safely even if already initialized
-    audio.Init();
-    audio.Shutdown();
+    auto& first = Audio::Get();
+    auto& second = Audio::Get();
+    EXPECT_EQ(&first, &second);
 }
 
-TEST(AudioTest, PlayWithoutAsset)
+TEST(AudioTest, EmptyBufferPlaybackIsNoOp)
 {
     auto& audio = Audio::Get();
-    audio.Init();
 
-    // Trying to play a null asset should safely be ignored and not crash
-    std::shared_ptr<SoundAsset> nullAsset = nullptr;
-    
-    EXPECT_NO_THROW({
-        audio.Play(nullAsset);
-        audio.Stop(nullAsset);
-    });
+    EXPECT_NO_THROW(audio.Play(AudioHandle(0)));
+    EXPECT_NO_THROW(audio.Update(Timestep(0.016f)));
+    EXPECT_NO_THROW(audio.StopAll());
+}
 
-    audio.Shutdown();
+TEST(AudioTest, TinyBufferPlaybackAndStopAllAreSafe)
+{
+    auto& audio = Audio::Get();
+
+    EXPECT_NO_THROW(audio.Play(AudioHandle(0), 0.25f, 1.0f, false, false));
+    EXPECT_NO_THROW(audio.Update(Timestep(0.016f)));
+    EXPECT_NO_THROW(audio.StopAll());
 }

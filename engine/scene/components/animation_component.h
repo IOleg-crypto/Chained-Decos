@@ -1,7 +1,7 @@
 #ifndef CH_ANIMATION_COMPONENT_H
 #define CH_ANIMATION_COMPONENT_H
 
-#include "raylib.h"
+#include "engine/core/reflection.h"
 #include <string>
 #include <vector>
 
@@ -68,6 +68,14 @@ struct AnimationComponent
         IsPlaying = false;
         Blending = false;
     }
+
+    CH_REFLECT_BEGIN(AnimationComponent)
+        props.File("AnimationPath", AnimationPath, "fbx,gltf,obj");
+        props.Property("CurrentAnimation", CurrentAnimationIndex);
+        props.Property("IsLooping", IsLooping);
+        props.Property("IsPlaying", IsPlaying);
+        props.Property("BlendDuration", BlendDuration, PropertyMeta(0.0f, 5.0f, 0.01f));
+    CH_REFLECT_END()
 };
 
 } // namespace CHEngine

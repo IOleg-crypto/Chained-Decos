@@ -4,12 +4,12 @@
 #include "engine/scene/scene_serializer.h"
 #include "gtest/gtest.h"
 #include <filesystem>
+#include <fstream>
 
 using namespace CHEngine;
 
 TEST(SceneSerializationTest, SaveAndLoadScene)
 {
-    auto& serializer = ComponentSerializer::Get();
     std::string testPath = "test_assets/test_scene.chscene";
     std::filesystem::create_directories("test_assets");
 
@@ -31,9 +31,9 @@ TEST(SceneSerializationTest, SaveAndLoadScene)
 
         auto view = scene.GetRegistry().view<TagComponent>();
         bool found = false;
-        for (auto e : view)
+        for (auto entityHandle : view)
         {
-            Entity entity(e, &scene.GetRegistry());
+            Entity entity(entityHandle, &scene.GetRegistry());
             if (entity.GetUUID() == entityID)
             {
                 EXPECT_EQ(entity.GetName(), "Serialized Entity");
@@ -46,4 +46,169 @@ TEST(SceneSerializationTest, SaveAndLoadScene)
     }
 
     std::filesystem::remove_all("test_assets");
+}
+
+TEST(SceneSerializationTest, CameraProjectionRoundTrip)
+{
+    std::string testPath = "test_assets/test_camera_roundtrip.chscene";
+    std::filesystem::create_directories("test_assets");
+
+    UUID entityID;
+    {
+        Scene scene;
+        Entity entity = scene.CreateEntity("Camera Entity");
+        entityID = entity.GetUUID();
+
+        auto& cameraComponent = entity.AddComponent<CameraComponent>();
+        cameraComponent.Camera.SetProjectionType(ProjectionType::Orthographic);
+        cameraComponent.Camera.SetOrthographic(37.5f, -7.0f, 321.0f);
+
+        SceneSerializer serializer(&scene);
+        ASSERT_TRUE(serializer.Serialize(testPath));
+    }
+
+    {
+        Scene scene;
+        SceneSerializer serializer(&scene);
+        ASSERT_TRUE(serializer.Deserialize(testPath));
+
+        auto loadedEntity = scene.GetEntityByUUID(entityID);
+        ASSERT_TRUE(loadedEntity);
+        ASSERT_TRUE(loadedEntity.HasComponent<CameraComponent>());
+
+        const auto& camera = loadedEntity.GetComponent<CameraComponent>().Camera;
+        EXPECT_EQ(camera.GetProjectionType(), ProjectionType::Orthographic);
+        EXPECT_FLOAT_EQ(camera.GetOrthographicSize(), 37.5f);
+        EXPECT_FLOAT_EQ(camera.GetOrthographicNearClip(), -7.0f);
+        EXPECT_FLOAT_EQ(camera.GetOrthographicFarClip(), 321.0f);
+    }
+
+    std::filesystem::remove_all("test_assets");
+}
+
+// ============================================================
+//  Destructive / Negative Serialization Tests
+// ============================================================
+
+class SceneSerializationDestructiveTest : public ::testing::Test
+{
+protected:
+    void SetUp() override    { std::filesystem::create_directories("test_assets"); }
+    void TearDown() override { std::filesystem::remove_all("test_assets"); }
+
+    static void WriteFile(const std::string& path, const std::string& content)
+    {
+        std::ofstream f(path);
+        f << content;
+    }
+};
+
+// Empty file — must return false, must not throw.
+TEST_F(SceneSerializationDestructiveTest, EmptyFile)
+{
+    std::string path = "test_assets/empty.chscene";
+    WriteFile(path, "");
+
+    Scene scene;
+    SceneSerializer serializer(&scene);
+    EXPECT_NO_THROW({
+        bool ok = serializer.Deserialize(path);
+        EXPECT_FALSE(ok);
+    });
+}
+
+// Binary garbage — YAML parser must not throw unhandled exception.
+TEST_F(SceneSerializationDestructiveTest, BinaryGarbage)
+{
+    std::string path = "test_assets/garbage.chscene";
+    {
+        std::ofstream f(path, std::ios::binary);
+        static const unsigned char kGarbage[] = {0xFF, 0x00, 0xDE, 0xAD, 0xBE, 0xEF, 0x13, 0x37};
+        f.write(reinterpret_cast<const char*>(kGarbage), sizeof(kGarbage));
+    }
+
+    Scene scene;
+    SceneSerializer serializer(&scene);
+    EXPECT_NO_THROW(serializer.Deserialize(path));
+}
+
+// Valid YAML missing the "Scene:" root key.
+TEST_F(SceneSerializationDestructiveTest, MissingSceneKey)
+{
+    std::string path = "test_assets/no_scene.chscene";
+    WriteFile(path, "Entities:\n  - tag: Foo\n");
+
+    Scene scene;
+    SceneSerializer serializer(&scene);
+    EXPECT_NO_THROW(serializer.Deserialize(path));
+}
+
+// Entity block missing UUID entirely.
+TEST_F(SceneSerializationDestructiveTest, EntityMissingUUID)
+{
+    std::string path = "test_assets/no_uuid.chscene";
+    WriteFile(path,
+        "Scene: Test\n"
+        "Entities:\n"
+        "  - Entity:\n"
+        "      TagComponent:\n"
+        "        Tag: NoUUID\n");
+
+    Scene scene;
+    SceneSerializer serializer(&scene);
+    // Must not crash — either skip this entity or assign a new UUID.
+    EXPECT_NO_THROW(serializer.Deserialize(path));
+}
+
+// Truncated mid-token YAML.
+TEST_F(SceneSerializationDestructiveTest, TruncatedYAML)
+{
+    std::string path = "test_assets/truncated.chscene";
+    WriteFile(path,
+        "Scene: Test\n"
+        "Entities:\n"
+        "  - Entity:\n"
+        "      TagCompon");   // intentionally cut
+
+    Scene scene;
+    SceneSerializer serializer(&scene);
+    EXPECT_NO_THROW(serializer.Deserialize(path));
+}
+
+// Path that does not exist.
+TEST_F(SceneSerializationDestructiveTest, NonExistentFile)
+{
+    Scene scene;
+    SceneSerializer serializer(&scene);
+    EXPECT_NO_THROW({
+        bool ok = serializer.Deserialize("test_assets/ghost.chscene");
+        EXPECT_FALSE(ok);
+    });
+}
+
+// Round-trip with 200 entities — verify count survives serialize/deserialize.
+TEST_F(SceneSerializationDestructiveTest, LargeSceneRoundTrip)
+{
+    constexpr int kCount = 200;
+    std::string   path   = "test_assets/large.chscene";
+
+    {
+        Scene scene;
+        for (int i = 0; i < kCount; ++i)
+            scene.CreateEntity("E_" + std::to_string(i));
+
+        SceneSerializer serializer(&scene);
+        ASSERT_TRUE(serializer.Serialize(path));
+    }
+
+    {
+        Scene scene;
+        SceneSerializer serializer(&scene);
+        ASSERT_TRUE(serializer.Deserialize(path));
+
+        int count = 0;
+        auto view = scene.GetRegistry().view<TagComponent>();
+        for (auto e : view) ++count;
+        EXPECT_EQ(count, kCount);
+    }
 }

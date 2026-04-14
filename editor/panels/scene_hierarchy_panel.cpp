@@ -3,11 +3,32 @@
 #include "engine/core/application.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scene_events.h"
-#include "extras/IconsFontAwesome6.h"
+#include "engine/scene/scene_settings.h"
+#include "IconsFontAwesome6.h"
+
 #include "imgui.h"
 #include "undo/entity_commands.h"
+#include "editor_events.h"
+#include "engine/core/input.h"
+#include <functional>
 #include <functional>
 #include <vector>
+
+namespace
+{
+    bool IsDescendant(CHEngine::Entity child, CHEngine::Entity possibleParent)
+    {
+        if (child == possibleParent) return true;
+        
+        if (!possibleParent.HasComponent<CHEngine::HierarchyComponent>()) return false;
+        
+        for (entt::entity c : possibleParent.GetComponent<CHEngine::HierarchyComponent>().Children)
+        {
+            if (IsDescendant(child, CHEngine::Entity(c, child.GetRegistryPtr()))) return true;
+        }
+        return false;
+    }
+}
 
 namespace CHEngine
 {
@@ -25,7 +46,6 @@ SceneHierarchyPanel::SceneHierarchyPanel(const std::shared_ptr<Scene>& context)
 void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
 {
     ImGui::Begin("Scene Hierarchy");
-    ImGui::PushID(this);
 
     // Search Bar
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
@@ -36,7 +56,7 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
     if (m_Context)
     {
         m_DrawnEntities.clear();
-        std::vector<entt::entity> entitiesToDelete;
+        m_EntitiesToDestroyPending.clear();
 
         ImGui::BeginDisabled(readOnly);
 
@@ -73,18 +93,7 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
                 }
             }
 
-            entt::entity toDelete = DrawEntityNodeRecursive(entity);
-            if (toDelete != entt::null)
-            {
-                entitiesToDelete.push_back(toDelete);
-            }
-        }
-
-        // Execute deletions via commands
-        for (auto ent : entitiesToDelete)
-        {
-            Entity entity(ent, &m_Context->GetRegistry());
-            EditorLayer::GetCommandHistory().PushCommand(std::make_unique<DestroyEntityCommand>(entity));
+            DrawEntityNodeRecursive(entity, readOnly);
         }
 
         if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered())
@@ -93,18 +102,72 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
             Application::Get().OnEvent(e);
         }
 
+        // Focus Shortcut
+        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) && Input::IsKeyPressed(Key::F))
+
+
+        {
+            Entity selected = EditorContext::GetSelectedEntity();
+            if (selected)
+            {
+                ViewportFocusEntityEvent e(selected);
+                Application::Get().OnEvent(e);
+            }
+        }
+
+        // Duplicate Shortcut
+        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) && Input::IsKeyDown(Key::LeftControl) &&
+            Input::IsKeyPressed(Key::D))
+
+
+        {
+            Entity selected = EditorContext::GetSelectedEntity();
+            if (selected)
+            {
+                EditorLayer::GetCommandHistory().PushCommand(std::make_unique<DuplicateEntityCommand>(selected));
+            }
+        }
+
         // Blank space context menu
-        if (ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
+        if (!readOnly && ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
         {
             DrawContextMenu();
             ImGui::EndPopup();
         }
 
+        // Blank space drop target to unparent
+        ImGui::Dummy(ImGui::GetContentRegionAvail());
+        if (!readOnly && ImGui::BeginDragDropTarget())
+        {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ENTITY"))
+            {
+                uint64_t droppedUUID = *(const uint64_t*)payload->Data;
+                Entity sourceEntity = m_Context->GetEntityByUUID(droppedUUID);
+                if (sourceEntity)
+                {
+                    EditorLayer::GetCommandHistory().PushCommand(std::make_unique<ParentEntityCommand>(sourceEntity, Entity{}, m_Context.get()));
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
+
         ImGui::EndDisabled();
     }
 
-    ImGui::PopID();
     ImGui::End();
+
+    if (!m_EntitiesToDestroyPending.empty())
+    {
+        for (auto ent : m_EntitiesToDestroyPending)
+        {
+            Entity entity(ent, &m_Context->GetRegistry());
+            if (entity.IsValid())
+            {
+                EditorLayer::GetCommandHistory().PushCommand(std::make_unique<DestroyEntityCommand>(entity));
+            }
+        }
+        m_EntitiesToDestroyPending.clear();
+    }
 }
 
 const char* SceneHierarchyPanel::GetEntityIcon(Entity entity)
@@ -125,6 +188,10 @@ const char* SceneHierarchyPanel::GetEntityIcon(Entity entity)
     {
         return ICON_FA_SQUARE_CHECK;
     }
+    if (entity.HasComponent<ImageControl>() || entity.HasComponent<ImageButtonControl>())
+    {
+        return ICON_FA_IMAGE;
+    }
     if (entity.HasComponent<ControlComponent>())
     {
         return ICON_FA_SHAPES;
@@ -141,15 +208,19 @@ const char* SceneHierarchyPanel::GetEntityIcon(Entity entity)
     {
         return ICON_FA_VOLUME_HIGH;
     }
+    if (entity.HasComponent<ManagedScriptComponent>())
+    {
+        return ICON_FA_CODE;
+    }
 
     return ICON_FA_CUBE;
 }
 
-entt::entity SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity)
+void SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity, bool readOnly)
 {
     if (!entity || !entity.IsValid() || m_DrawnEntities.contains(entity))
     {
-        return entt::null;
+        return;
     }
 
     m_DrawnEntities.insert(entity);
@@ -160,6 +231,11 @@ entt::entity SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity)
     auto selectedEntity = EditorLayer::Get().GetSelectedEntity();
     ImGuiTreeNodeFlags flags = ((selectedEntity == entity) ? ImGuiTreeNodeFlags_Selected : 0);
     flags |= ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+
+    if (!entity.HasComponent<HierarchyComponent>() || entity.GetComponent<HierarchyComponent>().Children.empty())
+    {
+        flags |= ImGuiTreeNodeFlags_Leaf;
+    }
 
     ImGui::PushID((int)(uint32_t)entity);
 
@@ -182,6 +258,30 @@ entt::entity SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity)
         opened = ImGui::TreeNodeEx(label.c_str(), flags);
     }
 
+    // Drag & Drop Source
+    if (!readOnly && ImGui::BeginDragDropSource())
+    {
+        uint64_t uuid = entity.GetUUID();
+        ImGui::SetDragDropPayload("ENTITY", &uuid, sizeof(uint64_t));
+        ImGui::Text("%s", label.c_str());
+        ImGui::EndDragDropSource();
+    }
+
+    // Drag & Drop Target
+    if (!readOnly && ImGui::BeginDragDropTarget())
+    {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ENTITY"))
+        {
+            uint64_t droppedUUID = *(const uint64_t*)payload->Data;
+            Entity sourceEntity = m_Context->GetEntityByUUID(droppedUUID);
+            if (sourceEntity && sourceEntity != entity && !IsDescendant(entity, sourceEntity))
+            {
+                EditorLayer::GetCommandHistory().PushCommand(std::make_unique<ParentEntityCommand>(sourceEntity, entity, m_Context.get()));
+            }
+        }
+        ImGui::EndDragDropTarget();
+    }
+
     if (ImGui::IsItemClicked())
     {
         EntitySelectedEvent e(entity, m_Context.get());
@@ -196,8 +296,7 @@ entt::entity SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity)
         strncpy(m_RenameBuffer, tag.c_str(), sizeof(m_RenameBuffer));
     }
 
-    entt::entity signaledForDelete = entt::null;
-    if (ImGui::BeginPopupContextItem())
+    if (!readOnly && ImGui::BeginPopupContextItem())
     {
         if (ImGui::MenuItem(ICON_FA_PEN " Rename", "F2"))
         {
@@ -207,12 +306,12 @@ entt::entity SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity)
         }
         if (ImGui::MenuItem(ICON_FA_COPY " Duplicate", "Ctrl+D"))
         {
-            m_Context->CopyEntity(entity);
+            EditorLayer::GetCommandHistory().PushCommand(std::make_unique<DuplicateEntityCommand>(entity));
         }
         ImGui::Separator();
         if (ImGui::MenuItem(ICON_FA_TRASH " Delete Entity", "Del"))
         {
-            signaledForDelete = (entt::entity)entity;
+            m_EntitiesToDestroyPending.push_back((entt::entity)entity);
         }
 
         ImGui::EndPopup();
@@ -225,18 +324,12 @@ entt::entity SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity)
             auto children = entity.GetComponent<HierarchyComponent>().Children; // Copy to avoid iteration issues
             for (auto childID : children)
             {
-                entt::entity childDel = DrawEntityNodeRecursive(Entity(childID, &m_Context->GetRegistry()));
-                if (childDel != entt::null)
-                {
-                    signaledForDelete = childDel;
-                }
+                DrawEntityNodeRecursive(Entity(childID, &m_Context->GetRegistry()), readOnly);
             }
         }
         ImGui::TreePop();
     }
     ImGui::PopID();
-
-    return signaledForDelete;
 }
 
 void SceneHierarchyPanel::DrawContextMenu()
@@ -258,6 +351,33 @@ void SceneHierarchyPanel::DrawContextMenu()
             collider.Offset = {0.0f, 0.0f, 0.0f};
         }
         ImGui::EndMenu();
+    }
+
+    if (ImGui::MenuItem("Camera"))
+    {
+        auto entity = m_Context->CreateEntity("Camera");
+        entity.AddComponent<CameraComponent>();
+    }
+
+    if (ImGui::MenuItem("Point Light"))
+    {
+        auto entity = m_Context->CreateEntity("Point Light");
+        auto& light = entity.AddComponent<LightComponent>();
+        light.Type = LightType::Point;
+    }
+
+    if (ImGui::MenuItem("Spot Light"))
+    {
+        auto entity = m_Context->CreateEntity("Spot Light");
+        auto& light = entity.AddComponent<LightComponent>();
+        light.Type = LightType::Spot;
+    }
+
+    if (ImGui::MenuItem("Directional Light"))
+    {
+        auto entity = m_Context->CreateEntity("Directional Light");
+        auto& light = entity.AddComponent<LightComponent>();
+        light.Type = LightType::Directional;
     }
 
     if (ImGui::MenuItem("Spawn Zone"))
@@ -302,8 +422,10 @@ void SceneHierarchyPanel::DrawContextMenu()
         ImGui::EndMenu();
     }
 
-    if (ImGui::BeginMenu("Control"))
+    if (m_Context->GetSettings().Mode != BackgroundMode::Environment3D)
     {
+        if (ImGui::BeginMenu("Control"))
+        {
         if (ImGui::BeginMenu("Basic"))
         {
             if (ImGui::MenuItem("Panel"))
@@ -413,7 +535,8 @@ void SceneHierarchyPanel::DrawContextMenu()
             ImGui::EndMenu();
         }
 
-        ImGui::EndMenu();
+            ImGui::EndMenu();
+        }
     }
 }
 } // namespace CHEngine

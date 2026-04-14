@@ -2,6 +2,7 @@
 #define CH_COMPONENTS_H
 
 // Master header for all components
+#include "engine/core/reflection.h"
 #include "components/animation_component.h"
 #include "components/audio_component.h"
 #include "components/camera_component.h"

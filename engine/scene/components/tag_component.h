@@ -1,7 +1,7 @@
 #ifndef CH_TAG_COMPONENT_H
 #define CH_TAG_COMPONENT_H
 
-#include <string>
+#include "engine/core/reflection.h"
 
 namespace CHEngine
 {
@@ -15,6 +15,10 @@ struct TagComponent
         : Tag(tag)
     {
     }
+
+    CH_REFLECT_BEGIN(TagComponent)
+        props.Property("Tag", Tag);
+    CH_REFLECT_END()
 };
 
 } // namespace CHEngine

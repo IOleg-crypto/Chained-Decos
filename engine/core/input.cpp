@@ -1,100 +1,98 @@
 #include "input.h"
 #include "engine/core/application.h"
 #include "engine/core/events.h"
-#include "raylib.h"
+#include <GLFW/glfw3.h>
 
 namespace CHEngine
 {
+void Input::Update()
+{
+    auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
+    if (!window) return;
+
+    // 1. Sync Key States
+    // GLFW_KEY_SPACE (32) is the first valid named key; indices 0..31 are reserved and
+    // trigger GLFW's error callback if polled. Poll only the valid range.
+    for (int i = GLFW_KEY_SPACE; i <= GLFW_KEY_LAST; i++)
+    {
+        Input::s_LastKeyStates[i] = Input::s_KeyStates[i];
+        Input::s_KeyStates[i] = glfwGetKey(window, i) == GLFW_PRESS;
+    }
+
+    // 2. Sync Mouse States (GLFW_MOUSE_BUTTON_LAST = 7)
+    for (int i = 0; i <= GLFW_MOUSE_BUTTON_LAST; i++)
+    {
+        Input::s_LastMouseStates[i] = Input::s_MouseStates[i];
+        Input::s_MouseStates[i] = glfwGetMouseButton(window, i) == GLFW_PRESS;
+    }
+
+    // 3. Sync Mouse Position
+    Input::s_LastMousePosition = Input::s_MousePosition;
+    double xpos, ypos;
+    glfwGetCursorPos(window, &xpos, &ypos);
+    Input::s_MousePosition = { (float)xpos, (float)ypos };
+
+    // 4. Sync Mouse Wheel (Impulse)
+    Input::s_CurrentMouseWheelDelta = Input::s_MouseWheelDelta;
+    Input::s_MouseWheelDelta = 0.0f;
+}
+
 void Input::PollEvents()
 {
-    // 1. Keyboard Events
-    int key;
-    while ((key = GetKeyPressed()) != 0)
-    {
-        KeyPressedEvent e(key, false);
-        Application::Get().OnEvent(e);
-    }
-
-    // 1.5 Window Events
-    if (::IsWindowResized())
-    {
-        WindowResizeEvent e(::GetScreenWidth(), ::GetScreenHeight());
-        Application::Get().OnEvent(e);
-    }
-
-    // 2. Mouse Buttons
-    auto handleMouse = [&](int button) {
-        if (::IsMouseButtonPressed(button))
-        {
-            MouseButtonPressedEvent e(button);
-            Application::Get().OnEvent(e);
-        }
-        if (::IsMouseButtonReleased(button))
-        {
-            MouseButtonReleasedEvent e(button);
-            Application::Get().OnEvent(e);
-        }
-    };
-
-    handleMouse(MOUSE_BUTTON_LEFT);
-    handleMouse(MOUSE_BUTTON_RIGHT);
-    handleMouse(MOUSE_BUTTON_MIDDLE);
-
-    // 3. Mouse Wheel
-    float wheel = ::GetMouseWheelMove();
-    if (wheel != 0)
-    {
-        MouseScrolledEvent e(0, wheel);
-        Application::Get().OnEvent(e);
-    }
 }
 
 bool Input::IsKeyPressed(KeyCode key)
 {
-    return ::IsKeyPressed(key);
+    return Input::s_KeyStates[key] && !Input::s_LastKeyStates[key];
 }
+
 bool Input::IsKeyDown(KeyCode key)
 {
-    bool down = ::IsKeyDown(key);
-    // if (down) CH_CORE_INFO("Input::IsKeyDown(key={}) -> true", key);
-    return down;
+    return Input::s_KeyStates[key];
 }
+
 bool Input::IsKeyReleased(KeyCode key)
 {
-    return ::IsKeyReleased(key);
+    return !Input::s_KeyStates[key] && Input::s_LastKeyStates[key];
 }
+
 bool Input::IsKeyUp(KeyCode key)
 {
-    return ::IsKeyUp(key);
+    return !Input::s_KeyStates[key];
 }
 
 bool Input::IsMouseButtonPressed(MouseCode button)
 {
-    return ::IsMouseButtonPressed(button);
-}
-bool Input::IsMouseButtonDown(MouseCode button)
-{
-    return ::IsMouseButtonDown(button);
-}
-bool Input::IsMouseButtonReleased(MouseCode button)
-{
-    return ::IsMouseButtonReleased(button);
-}
-bool Input::IsMouseButtonUp(MouseCode button)
-{
-    return ::IsMouseButtonUp(button);
+    return Input::s_MouseStates[button] && !Input::s_LastMouseStates[button];
 }
 
-Vector2 Input::GetMousePosition()
+bool Input::IsMouseButtonDown(MouseCode button)
 {
-    return ::GetMousePosition();
+    return Input::s_MouseStates[button];
 }
-Vector2 Input::GetMouseDelta()
+
+bool Input::IsMouseButtonReleased(MouseCode button)
 {
-    return ::GetMouseDelta();
+    return !Input::s_MouseStates[button] && Input::s_LastMouseStates[button];
 }
+
+bool Input::IsMouseButtonUp(MouseCode button)
+{
+    return !Input::s_MouseStates[button];
+}
+
+glm::vec2 Input::GetMousePosition()
+{
+    return Input::s_MousePosition;
+}
+
+glm::vec2 Input::GetMouseDelta()
+{
+    return Input::s_MousePosition - Input::s_LastMousePosition;
+}
+
 float Input::GetMouseWheelMove()
 {
-    return ::GetMouseWheelMove();
+    return Input::s_CurrentMouseWheelDelta; 
 }
 } // namespace CHEngine

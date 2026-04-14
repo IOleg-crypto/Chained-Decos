@@ -1,10 +1,8 @@
 #ifndef CH_PHYSICS_COMPONENTS_H
 #define CH_PHYSICS_COMPONENTS_H
 
-#include "engine/core/base.h"
-#include "engine/graphics/asset.h"
-#include "raylib.h"
-#include <future>
+#include "engine/core/reflection.h"
+#include <glm/glm.hpp>
 #include <string>
 
 namespace CHEngine
@@ -25,10 +23,10 @@ struct ColliderComponent
     bool Enabled = true;
 
     // Common/Box fields
-    Vector3 Offset = {0.0f, 0.0f, 0.0f};
+    glm::vec3 Offset = {0.0f, 0.0f, 0.0f};
 
     // Box
-    Vector3 Size = {1.0f, 1.0f, 1.0f};
+    glm::vec3 Size = {1.0f, 1.0f, 1.0f};
 
     // Capsule
     float Radius = 0.5f;
@@ -39,23 +37,72 @@ struct ColliderComponent
     // Mesh (BVH) fields
     AssetHandle ModelHandle = 0;
     std::string ModelPath;
-    std::shared_ptr<BVH> BVHRoot = nullptr;
 
     bool IsColliding = false;
 
     ColliderComponent() = default;
     ColliderComponent(const ColliderComponent&) = default;
+
+    CH_REFLECT_BEGIN(ColliderComponent)
+        if (props.BeginGroup("General"))
+        {
+            const char* colliderTypes[] = {"Box", "Mesh", "Capsule", "Sphere"};
+            props.Property("Type", Type, colliderTypes, 4);
+            props.Property("Enabled", Enabled);
+            props.Property("Offset", Offset);
+            props.EndGroup();
+        }
+        
+        if (props.BeginGroup("ShapeParameters"))
+        {
+            if (Type == ColliderType::Box)
+            {
+                props.Property("Size", Size, PropertyMeta(0.01f, 100.0f, 0.1f));
+            }
+            else if (Type == ColliderType::Capsule)
+            {
+                props.Property("Radius", Radius, PropertyMeta(0.01f, 50.0f, 0.1f));
+                props.Property("Height", Height, PropertyMeta(0.1f, 100.0f, 0.1f));
+            }
+            else if (Type == ColliderType::Sphere)
+            {
+                props.Property("Radius", Radius, PropertyMeta(0.01f, 50.0f, 0.1f));
+            }
+            else if (Type == ColliderType::Mesh)
+            {
+                props.Handle("ModelHandle", ModelHandle);
+                props.File("ModelPath", ModelPath, "obj,gltf,glb");
+            }
+            props.EndGroup();
+        }
+        
+        props.Property("AutoCalculate", AutoCalculate, PropertyMeta().WithTooltip("Overwrite Offset/Size automatically from model mesh each frame"));
+    CH_REFLECT_END()
 };
 
 struct RigidBodyComponent
 {
-    Vector3 Velocity = {0.0f, 0.0f, 0.0f};
+    glm::vec3 Velocity = {0.0f, 0.0f, 0.0f};
     bool UseGravity = true;
     bool IsGrounded = false;
     bool IsKinematic = false;
     float Mass = 1.0f;
 
     RigidBodyComponent() = default;
+
+    CH_REFLECT_BEGIN(RigidBodyComponent)
+        props.Header("Dynamics");
+        props.Property("Mass", Mass, PropertyMeta(0.01f, 100.0f, 0.1f));
+        props.Property("Velocity", Velocity);
+        
+        if (props.BeginGroup("State"))
+        {
+            props.Property("UseGravity", UseGravity);
+            props.Property("IsKinematic", IsKinematic);
+            props.Property("IsGrounded", IsGrounded);
+            props.EndGroup();
+        }
+    CH_REFLECT_END()
 };
 
 } // namespace CHEngine

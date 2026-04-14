@@ -1,8 +1,9 @@
 #ifndef CH_COMPONENT_SERIALIZER_H
 #define CH_COMPONENT_SERIALIZER_H
-
 #include "engine/scene/scene.h"
 #include "engine/scene/serialization_utils.h"
+#include "engine/scene/hierarchy_serializer.h"
+#include "entt/entt.hpp"
 #include <functional>
 #include <unordered_map>
 #include <vector>
@@ -10,14 +11,7 @@
 
 namespace CHEngine
 {
-struct HierarchyTask
-{
-    Entity entity;
-    uint64_t parent;
-    std::vector<uint64_t> children;
-};
-
-// Serializer description for a specific component
+// Describes how one component is serialized, deserialized, and copied.
 struct ComponentSerializerEntry
 {
     std::string Key;
@@ -26,56 +20,60 @@ struct ComponentSerializerEntry
     std::function<void(Entity, Entity)> Copy;
 };
 
+// Central registry for component serializers used by scene save/load/copy.
 class ComponentSerializer
 {
 public:
     ComponentSerializer();
     ~ComponentSerializer();
+    static void Init();
+    static void Shutdown();
 
-    // Initialize registry with all component types
-    void Initialize();
+    void InternalInit();
+    void InternalShutdown();
 
-    // Register component via declarative schema (PropertyArchive)
-    // This is the primary method that automatically creates serialization, deserialization, and copy logic.
+private:
+    void RegisterCoreComponents();
+    void RegisterPhysicsComponents();
+    void RegisterAudioComponents();
+    void RegisterGameplayComponents();
+    void RegisterUIComponents();
+    void RegisterScriptingComponents();
+
+public:
+    // Registers a component via a PropertyArchive schema.
+    // This path automatically creates serialization, deserialization, and copy logic.
     template <typename T>
     void Register(const std::string& key, std::function<void(SerializationUtils::PropertyArchive&, T&)> schema);
 
-    // Register with custom logic (for complex cases)
+    // Registers a component by calling T::Reflect or T::Serialize-style code.
+    template <typename T>
+    void Register(const std::string& key);
+
+    // Registers a component using T::GetStaticName() as the key.
+    template <typename T>
+    void Register();
+
+    // Registers custom serialization logic for special cases.
     void RegisterCustom(const ComponentSerializerEntry& entry);
 
-    // Serialize all registered components of an entity
+    // Serializes all registered components owned by an entity.
     void SerializeAll(YAML::Emitter& out, Entity entity);
 
-    // Deserialize all registered components from YAML
+    // Deserializes all registered components from YAML.
     void DeserializeAll(Entity entity, YAML::Node node);
 
-    // Copy all components from source to destination (cloning)
+    // Copies all registered components from source to destination.
     void CopyAll(Entity source, Entity destination);
 
-    // Special cases (ID and hierarchy)
+    // Serializes the ID component separately.
     void SerializeID(YAML::Emitter& out, Entity entity);
-    void SerializeHierarchy(YAML::Emitter& out, Entity entity);
-    void DeserializeHierarchyTask(Entity entity, YAML::Node node, HierarchyTask& outTask);
 
     static ComponentSerializer& Get();
 
 private:
-    static void SerializeTextStyle(YAML::Emitter& out, const TextStyle& style);
-    static void DeserializeTextStyle(TextStyle& style, YAML::Node node);
-
-    static void SerializeRectTransform(YAML::Emitter& out, const RectTransform& transform);
-    static void DeserializeRectTransform(RectTransform& transform, YAML::Node node);
-
-    static void SerializeUIStyle(YAML::Emitter& out, const UIStyle& style);
-    static void DeserializeUIStyle(UIStyle& style, YAML::Node node);
-
-    static void SerializeMaterialInstance(YAML::Emitter& out, const MaterialInstance& mat);
-    static void DeserializeMaterialInstance(MaterialInstance& mat, YAML::Node node);
-
-    static void SerializeMaterialSlot(YAML::Emitter& out, const MaterialSlot& slot);
-    static void DeserializeMaterialSlot(MaterialSlot& slot, YAML::Node node);
-
     std::vector<ComponentSerializerEntry> m_Registry;
+    bool m_Initialized = false;
 };
 
 // Template implementation
@@ -123,6 +121,52 @@ void ComponentSerializer::Register(const std::string& key,
 
     RegisterCustom(entry);
 }
+
+template <typename T>
+void ComponentSerializer::Register(const std::string& key)
+{
+    ComponentSerializerEntry entry;
+    entry.Key = key;
+
+    entry.Serialize = [key](YAML::Emitter& out, Entity entity) {
+        if (entity.HasComponent<T>())
+        {
+            out << YAML::Key << key << YAML::Value << YAML::BeginMap;
+            SerializationUtils::PropertyArchive archive(out);
+            CHEngine::Properties props(archive);
+            entity.GetComponent<T>().Reflect(props);
+            out << YAML::EndMap;
+        }
+    };
+
+    entry.Deserialize = [key](Entity entity, YAML::Node node) {
+        if (node[key])
+        {
+            if (!entity.HasComponent<T>()) entity.AddComponent<T>();
+            entity.Patch<T>([&](auto& component) {
+                SerializationUtils::PropertyArchive archive(node[key]);
+                CHEngine::Properties props(archive);
+                component.Reflect(props);
+            });
+        }
+    };
+
+    entry.Copy = [](Entity source, Entity destination) {
+        if (source.HasComponent<T>())
+        {
+            destination.AddOrReplaceComponent<T>(source.GetComponent<T>());
+        }
+    };
+
+    RegisterCustom(entry);
+}
+
+template <typename T>
+void ComponentSerializer::Register()
+{
+    Register<T>(T::GetStaticName());
+}
+
 } // namespace CHEngine
 
 #endif // CH_COMPONENT_SERIALIZER_H

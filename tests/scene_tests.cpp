@@ -95,8 +95,91 @@ TEST(SceneTest, CopyEntity)
     
     Entity dst = scene.CopyEntity((entt::entity)src);
     EXPECT_TRUE(dst);
-    EXPECT_EQ(dst.GetName(), "Source"); // Copied name
+    EXPECT_EQ(dst.GetName(), "Source_copy"); // Copy must have "_copy" suffix
     EXPECT_NE(src.GetUUID(), dst.GetUUID()); // Different UUID
     EXPECT_TRUE(dst.HasComponent<CameraComponent>());
     EXPECT_TRUE(dst.GetComponent<CameraComponent>().Primary);
+}
+
+TEST(SceneTest, CopyEntityResetsManagedScriptRuntimeState)
+{
+    Scene scene;
+    Entity src = scene.CreateEntity("Scripted");
+
+    auto& scripts = src.AddComponent<ManagedScriptComponent>().Scripts;
+    scripts.emplace_back("TestScript");
+    auto& script = scripts.back();
+    script.Instance = reinterpret_cast<void*>(0x1234);
+    script.NeedsStart = false;
+    script.OnCreate = reinterpret_cast<void (*)()>(0x1);
+    script.OnStart = reinterpret_cast<void (*)()>(0x2);
+    script.OnUpdate = reinterpret_cast<void (*)(float)>(0x3);
+    script.OnDestroy = reinterpret_cast<void (*)()>(0x4);
+    script.OnGUI = reinterpret_cast<void (*)()>(0x5);
+    script.OnCollisionEnter = reinterpret_cast<void (*)(uint64_t)>(0x6);
+
+    Entity dst = scene.CopyEntity((entt::entity)src);
+    ASSERT_TRUE(dst.HasComponent<ManagedScriptComponent>());
+
+    const auto& copiedScripts = dst.GetComponent<ManagedScriptComponent>().Scripts;
+    ASSERT_EQ(copiedScripts.size(), 1u);
+    EXPECT_EQ(copiedScripts[0].ClassName, "TestScript");
+    EXPECT_EQ(copiedScripts[0].Fields.size(), 0u);
+    EXPECT_EQ(copiedScripts[0].Instance, nullptr);
+    EXPECT_TRUE(copiedScripts[0].NeedsStart);
+    EXPECT_EQ(copiedScripts[0].OnCreate, nullptr);
+    EXPECT_EQ(copiedScripts[0].OnStart, nullptr);
+    EXPECT_EQ(copiedScripts[0].OnUpdate, nullptr);
+    EXPECT_EQ(copiedScripts[0].OnDestroy, nullptr);
+    EXPECT_EQ(copiedScripts[0].OnGUI, nullptr);
+    EXPECT_EQ(copiedScripts[0].OnCollisionEnter, nullptr);
+}
+
+TEST(SceneTest, DestructiveOperations)
+{
+    Scene scene;
+    Entity entity1 = scene.CreateEntity("Entity 1");
+    Entity entity2 = scene.CreateEntity("Entity 2");
+    
+    entt::entity handle1 = entity1;
+    entt::entity handle2 = entity2;
+    UUID uuid1 = entity1.GetUUID();
+
+    // 1. Destroy one entity, check if other is intact
+    scene.DestroyEntity(entity1);
+    EXPECT_FALSE(scene.GetRegistry().valid(handle1));
+    EXPECT_TRUE(scene.GetRegistry().valid(handle2));
+
+    // 2. Fetch by UUID should fail for destroyed entity
+    EXPECT_FALSE(scene.GetEntityByUUID(uuid1));
+
+    // 3. Component removal stress test
+    entity2.AddComponent<CameraComponent>();
+    entity2.AddComponent<LightComponent>();
+    entity2.AddComponent<SpriteComponent>();
+
+    EXPECT_TRUE(entity2.HasComponent<CameraComponent>());
+    EXPECT_TRUE(entity2.HasComponent<LightComponent>());
+    EXPECT_TRUE(entity2.HasComponent<SpriteComponent>());
+
+    entity2.RemoveComponent<LightComponent>();
+    EXPECT_FALSE(entity2.HasComponent<LightComponent>());
+    EXPECT_TRUE(entity2.HasComponent<CameraComponent>()); // Others should still exist
+
+    // 4. Repeated add/remove
+    entity2.AddComponent<LightComponent>();
+    EXPECT_TRUE(entity2.HasComponent<LightComponent>());
+    entity2.RemoveComponent<LightComponent>();
+    EXPECT_FALSE(entity2.HasComponent<LightComponent>());
+
+    // 5. Destroying scene should clear remaining entities
+    // (We simulate this by verifying the registry count drops, though destruction of the Scene obj handles actual cleanup)
+    scene.DestroyEntity(entity2);
+    EXPECT_FALSE(scene.GetRegistry().valid(handle2));
+    
+    // 6. Test trying to destroy an invalid entity (should not crash)
+    Entity invalidEntity; // Default constructor creates null entity
+    EXPECT_NO_THROW({
+        scene.DestroyEntity(invalidEntity);
+    });
 }
