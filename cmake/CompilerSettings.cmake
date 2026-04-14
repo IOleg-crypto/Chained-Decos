@@ -158,8 +158,18 @@ endif()
 # Function to apply common engine optimizations to a target
 function(apply_engine_optimizations target_name)
     if(ENABLE_PCH)
-        # Use the physical engine_pch.h file
+        # Real PCH: faster local dev, but breaks sccache cache hit rates
         target_precompile_headers(${target_name} PUBLIC "${PROJECT_SOURCE_DIR}/engine/engine_pch.h")
+    else()
+        # Force-include: injects engine_pch.h into every TU via compiler flags.
+        # This gives the same include coverage as PCH but without a .pch binary,
+        # so ccache/sccache still achieves 100% hit rates in CI.
+        set(_pch_path "${PROJECT_SOURCE_DIR}/engine/engine_pch.h")
+        if(MSVC)
+            target_compile_options(${target_name} PRIVATE "/FI${_pch_path}")
+        else()
+            target_compile_options(${target_name} PRIVATE "-include" "${_pch_path}")
+        endif()
     endif()
 
     if(ENABLE_LTO)
