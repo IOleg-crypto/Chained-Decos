@@ -1,6 +1,8 @@
 #ifndef CH_MOUSE_CODES_H
 #define CH_MOUSE_CODES_H
 
+#include <cstdint>
+
 namespace CHEngine
 {
 	using MouseCode = uint16_t;

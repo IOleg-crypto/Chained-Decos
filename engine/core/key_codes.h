@@ -1,6 +1,8 @@
 #ifndef CH_KEY_CODES_H
 #define CH_KEY_CODES_H
 
+#include <cstdint>
+
 namespace CHEngine
 {
 	using KeyCode = uint16_t;

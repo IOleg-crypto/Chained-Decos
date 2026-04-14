@@ -3,6 +3,7 @@
 
 // 1. Assertion setup (must be before any headers that might use them like GLM or EnTT)
 #include <cassert>
+#include <cstdint>
 
 #define GLM_ENABLE_EXPERIMENTAL
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE

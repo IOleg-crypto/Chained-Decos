@@ -18,6 +18,7 @@ add_executable(EngineTests
 )
 
 target_link_libraries(EngineTests PRIVATE engine editor_core GTest::gtest_main)
+apply_engine_optimizations(EngineTests)
 target_include_directories(EngineTests PRIVATE 
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/editor
