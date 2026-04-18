@@ -196,28 +196,22 @@ void GlfwWindow::SetWindowIcon(const std::string& path)
 {
     GLFWimage image{};
 
+    // Icon should always be loaded top-down for GLFW
+    stbi_set_flip_vertically_on_load(false);
     image.pixels = stbi_load(path.c_str(), &image.width, &image.height, nullptr, 4);
 
     if (image.pixels)
     {
-        const int rowSize = image.width * 4;
-        std::vector<unsigned char> flippedPixels(static_cast<size_t>(rowSize) * static_cast<size_t>(image.height));
-
-        for (int y = 0; y < image.height; ++y)
-        {
-            const unsigned char* sourceRow = image.pixels + static_cast<size_t>(image.height - 1 - y) * static_cast<size_t>(rowSize);
-            unsigned char* destinationRow = flippedPixels.data() + static_cast<size_t>(y) * static_cast<size_t>(rowSize);
-            std::copy(sourceRow, sourceRow + rowSize, destinationRow);
-        }
-
-        stbi_image_free(image.pixels);
-        image.pixels = flippedPixels.data();
         glfwSetWindowIcon(m_WindowHandle, 1, &image);
+        stbi_image_free(image.pixels);
     }
     else
     {
         CH_CORE_WARN("Failed to load window icon from {}", path);
     }
+
+    // Restore to typical OpenGL state just in case
+    stbi_set_flip_vertically_on_load(true);
 }
 
 void GlfwWindow::SetVSync(bool enabled)

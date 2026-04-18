@@ -12,12 +12,29 @@ namespace ChainedDecos.Scripts
         void OnHeroStatChanged(string stat, float value);
     }
 
-    // "Консольний інтерфейс" (Concrete Observer)
+    // "Консольний інтерфейс" (Concrete Observer), який тепер виводить дані на екран
     public class HeroHUD : IHeroObserver
     {
+        public List<string> Notifications { get; } = new List<string>();
+
         public void OnHeroStatChanged(string stat, float value)
         {
-            Log.Info($"[Observer: HUD Update] {stat} is now: {value}");
+            string msg = $"[{DateTime.Now.ToString("HH:mm:ss")}] {stat} is now: {value}";
+            Log.Info($"[Observer: HUD] {msg}");
+            
+            Notifications.Add(msg);
+            if (Notifications.Count > 5) 
+                Notifications.RemoveAt(0); // Зберігаємо лише 5 останніх повідомлень
+        }
+
+        public void DrawLogs()
+        {
+            UI.Text("");
+            UI.Text("--- [ OBSERVER LIVE LOGS ] ---");
+            foreach (var msg in Notifications)
+            {
+                UI.Text(msg);
+            }
         }
     }
 
@@ -44,13 +61,32 @@ namespace ChainedDecos.Scripts
     public class TrainingState : IHeroState
     {
         private float _timer = 0;
-        public string GetName() => "Training";
+        public string GetName() => "Training (Slow XP)";
         public void UpdateState(HeroBehavioralContext context, float deltaTime)
         {
             _timer += deltaTime;
-            if (_timer >= 2.0f) // Кожні 2 секунди тренування +XP
+            if (_timer >= 2.0f) // Кожні 2 секунди тренування +10 XP
             {
                 context.AddXP(10);
+                _timer = 0;
+            }
+        }
+    }
+
+    // Стан бою (Новий)
+    public class CombatState : IHeroState
+    {
+        private float _timer = 0;
+        public string GetName() => "Combat (High XP, Drain Gold)";
+        
+        public void UpdateState(HeroBehavioralContext context, float deltaTime)
+        {
+            _timer += deltaTime;
+            if (_timer >= 1.5f) // У бою досвід росте швидше, але нищиться екіпіровка (втрата золота)
+            {
+                context.AddXP(25);
+                context.Gold -= 5;
+                context.NotifyStatChange("Gold", context.Gold);
                 _timer = 0;
             }
         }
@@ -95,6 +131,30 @@ namespace ChainedDecos.Scripts
         }
     }
 
+    // Команда лікування (Нова)
+    public class HealCommand : IGameCommand
+    {
+        private HeroBehavioralContext _context;
+        private int _cost = 50;
+
+        public HealCommand(HeroBehavioralContext context) => _context = context;
+
+        public void Execute()
+        {
+            if (_context.Gold >= _cost)
+            {
+                _context.Gold -= _cost;
+                Log.Info($"[Command] Healed hero. Gold left: {_context.Gold}");
+            }
+        }
+
+        public void Undo()
+        {
+            _context.Gold += _cost;
+            Log.Info($"[Command Undo] Healing spell reverted. Gold restored: {_context.Gold}");
+        }
+    }
+
     // =========================================================================
     // КОНТЕКСТ ГЕРОЯ (Subject for Observer, Context for State)
     // =========================================================================
@@ -118,14 +178,14 @@ namespace ChainedDecos.Scripts
         public void AddXP(int amount)
         {
             XP += amount;
-            NotifyObservers("XP", XP);
+            NotifyStatChange("XP", XP);
         }
 
         public void ExecuteCommand(IGameCommand cmd)
         {
             cmd.Execute();
             _history.Push(cmd);
-            NotifyObservers("Gold", Gold);
+            NotifyStatChange("Gold", Gold);
         }
 
         public void UndoLastAction()
@@ -133,7 +193,7 @@ namespace ChainedDecos.Scripts
             if (_history.Count > 0)
             {
                 _history.Pop().Undo();
-                NotifyObservers("Gold", Gold);
+                NotifyStatChange("Gold", Gold);
             }
             else Log.Info("No actions to undo!");
         }
@@ -142,14 +202,23 @@ namespace ChainedDecos.Scripts
 
         public void RenderUI()
         {
-            UI.Text("=== BEHAVIORAL (State/Obs/Cmd) ===");
-            UI.Text($"Activity: {_currentState.GetName()}");
-            UI.Text($"Action Stats -> XP: {XP} | Gold: {Gold}g");
-            UI.Text($"History Stack: {_history.Count} actions");
+            UI.Text("=== BEHAVIORAL PATTERNS ===");
+            UI.Text($"Current State: {_currentState.GetName()}");
+            UI.Text($"Stats => XP: {XP} | Gold: {Gold}g");
+            UI.Text($"Command History Stack: {_history.Count} actions");
+            UI.Text("Controls: State -> T(Train) / I(Idle) / C(Combat)");
+            UI.Text("Controls: Cmd -> B(Buy) / H(Heal) / U(Undo) | Other -> G(+Gold)");
             UI.Text("---------------------------------");
+
+            // Виклик відображення для Observer, якщо він підтримує GUI
+            foreach (var obs in _observers)
+            {
+                if (obs is HeroHUD hud)
+                    hud.DrawLogs();
+            }
         }
 
-        private void NotifyObservers(string stat, float value)
+        public void NotifyStatChange(string stat, float value)
         {
             foreach (var obs in _observers) obs.OnHeroStatChanged(stat, value);
         }
@@ -178,12 +247,13 @@ namespace ChainedDecos.Scripts
             // 1. Тест Станів
             if (Input.IsKeyPressed(Key.T)) _hero?.SetState(new TrainingState());
             if (Input.IsKeyPressed(Key.I)) _hero?.SetState(new IdleState());
+            if (Input.IsKeyPressed(Key.C)) _hero?.SetState(new CombatState()); // Новий стан
 
             // 2. Тест Команд
-            if (Input.IsKeyPressed(Key.B)) // Buy
-            {
+            if (Input.IsKeyPressed(Key.B)) 
                 _hero?.ExecuteCommand(new PurchaseCommand(_hero, "Mystic Scroll", 150));
-            }
+            if (Input.IsKeyPressed(Key.H)) 
+                _hero?.ExecuteCommand(new HealCommand(_hero)); // Нова команда
 
             // 3. Тест Undo
             if (Input.IsKeyPressed(Key.U)) // Undo
@@ -197,7 +267,7 @@ namespace ChainedDecos.Scripts
                 if (_hero != null)
                 {
                     _hero.Gold += 100;
-                    Log.Info($"New Gold: {_hero.Gold}");
+                    _hero.NotifyStatChange("Gold", _hero.Gold);
                 }
             }
         }
