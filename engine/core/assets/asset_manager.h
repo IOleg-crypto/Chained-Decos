@@ -2,6 +2,7 @@
 #define CH_ASSET_MANAGER_H
 
 #include "engine/core/assets/asset_loader.h"
+#include <filesystem>
 #include <deque>
 #include <memory>
 #include <mutex>
@@ -24,6 +25,14 @@ public:
 
     // Registers the loader for a specific asset type and transfers ownership.
     void RegisterLoader(AssetType type, std::unique_ptr<IAssetLoader> loader);
+
+    void SetAssetDirectory(const std::filesystem::path& path) { m_AssetDirectory = path; }
+    void SetProjectDirectory(const std::filesystem::path& path) { m_ProjectDirectory = path; }
+    void SetEngineRoot(const std::filesystem::path& path) { m_EngineRoot = path; }
+
+    [[nodiscard]] const std::filesystem::path& GetAssetDirectory() const { return m_AssetDirectory; }
+    [[nodiscard]] const std::filesystem::path& GetProjectDirectory() const { return m_ProjectDirectory; }
+    [[nodiscard]] const std::filesystem::path& GetEngineRoot() const { return m_EngineRoot; }
 
     // Resolves a path through the project root and caches the resolved value.
     [[nodiscard]] std::string ResolvePath(const std::string& path) const;
@@ -90,6 +99,10 @@ private:
     std::deque<std::shared_ptr<Asset>> m_PendingAssets;
     mutable std::mutex m_PendingMutex;
     mutable std::recursive_mutex m_AssetLock;
+
+    std::filesystem::path m_AssetDirectory;
+    std::filesystem::path m_ProjectDirectory;
+    std::filesystem::path m_EngineRoot;
 };
 } // namespace CHEngine
 

@@ -21,7 +21,6 @@
 #include "engine/physics/physics.h"
 #include "engine/scene/component_serializer.h"
 #include "engine/scene/project.h"
-#include "scripting/scriptengine.h"
 #include <nfd.h>
 
 #include <algorithm>
@@ -81,19 +80,15 @@ Application::Application(const ApplicationSpecification& specification)
         Renderer::Init();
         UIRenderer::Init();
     }
-    
+
     Physics::Init();
     ComponentSerializer::Init();
-    
-    if (m_Specification.EnableScripting)
-        ScriptEngine::Init();
+
+    if (m_Specification.EnableScripting && m_Specification.InitScripting)
+        m_Specification.InitScripting();
 
     m_LayerStack = std::make_unique<LayerStack>();
     m_Running = true;
-
-    // --- Core Systems Post-Initialization ---
-    // Note: Systems' Init() already called InternalInit().
-    // We only need to Push layers andoverlays.
 
     // ImGui Layer setup (always needed for Editor/Debugging)
     if (!m_Specification.Headless)
@@ -113,17 +108,21 @@ Application::~Application()
 
     m_LayerStack.reset();
 
-    if (m_Specification.EnableScripting)
-        ScriptEngine::Shutdown();
+    if (m_Specification.EnableScripting && m_Specification.ShutdownScripting)
+        m_Specification.ShutdownScripting();
 
     ComponentSerializer::Shutdown();
     Physics::Shutdown();
-    
+
     if (UIRenderer::IsInitialized())
+    {
         UIRenderer::Shutdown();
-    
+    }
+
     if (Renderer::IsInitialized())
+    {
         Renderer::Shutdown();
+    }
 
     AssetManager::Shutdown();
 
