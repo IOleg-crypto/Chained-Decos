@@ -151,10 +151,7 @@ public:
     }
 
     // Sets the process-wide active project.
-    static void SetActive(std::shared_ptr<Project> project)
-    {
-        s_ActiveProject = project;
-    }
+    static void SetActive(std::shared_ptr<Project> project);
 
     // Creates a new in-memory project with default settings.
     [[nodiscard]] static std::shared_ptr<Project> New();
@@ -170,10 +167,7 @@ public:
         return s_EngineRoot;
     }
     // Sets the engine root used for resolving engine-relative paths.
-    static void SetEngineRoot(const std::filesystem::path& path)
-    {
-        s_EngineRoot = path;
-    }
+    static void SetEngineRoot(const std::filesystem::path& path);
 
     // Saves the active project to disk.
     static bool SaveActive(const std::filesystem::path& path);

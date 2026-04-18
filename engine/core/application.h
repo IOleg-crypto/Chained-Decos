@@ -50,6 +50,8 @@ struct ApplicationSpecification
     std::string ImGuiConfigurationPath = "imgui.ini";
     bool Headless = false;
     bool EnableScripting = true;
+    std::function<void()> InitScripting;
+    std::function<void()> ShutdownScripting;
 };
 
 // Owns the window, layer stack, and main loop for the process.

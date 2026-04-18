@@ -2,6 +2,7 @@
 #include "engine/core/entry_point.h"
 #include "engine/core/project_launcher.h"
 #include "runtime/runtime_layer.h"
+#include "scripting/scriptengine.h"
 #include <filesystem>
 
 namespace CHEngine
@@ -10,6 +11,9 @@ Application* CreateApplication(ApplicationCommandLineArgs args)
 {
     auto details = ProjectLauncher::PrepareRuntime(args);
     
+    details.Spec.InitScripting = []() { ScriptEngine::Init(); };
+    details.Spec.ShutdownScripting = []() { ScriptEngine::Shutdown(); };
+
     // Create the application with orchestrated settings.
     auto app = new Application(details.Spec);
     

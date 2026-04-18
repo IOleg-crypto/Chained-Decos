@@ -157,7 +157,18 @@ static void DeserializeEnvironmentSettings(const YAML::Node& data, SceneSettings
         std::string envPath = ReadYamlValue(data, "EnvironmentPath", std::string());
         if (Project::GetActive())
         {
-            settings.Environment = AssetManager::Get().Get<EnvironmentAsset>(envPath);
+            auto sharedEnv = AssetManager::Get().Get<EnvironmentAsset>(envPath);
+            if (sharedEnv)
+            {
+                // Create a scene-specific instance to avoid modifying the shared asset cache
+                // and to prevent async load from overwriting our scene overrides.
+                settings.Environment = std::make_shared<EnvironmentAsset>();
+                settings.Environment->SetSettings(sharedEnv->GetSettings());
+                settings.Environment->SetPath(sharedEnv->GetPath());
+                
+                // If it's still loading, we might need a better way to sync, 
+                // but for now, we'll assume the scene overrides will be applied after this block.
+            }
         }
     }
 
