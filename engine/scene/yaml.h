@@ -37,8 +37,8 @@ template <> struct convert<glm::vec2>
         }
         else if (node.IsMap())
         {
-            rhs.x = node["x"] ? node["x"].as<float>() : 0.0f;
-            rhs.y = node["y"] ? node["y"].as<float>() : 0.0f;
+            rhs.x = (node["x"] ? node["x"] : node["X"]) ? (node["x"] ? node["x"] : node["X"]).as<float>() : 0.0f;
+            rhs.y = (node["y"] ? node["y"] : node["Y"]) ? (node["y"] ? node["y"] : node["Y"]).as<float>() : 0.0f;
             return true;
         }
         return false;
@@ -67,9 +67,9 @@ template <> struct convert<glm::vec3>
         }
         else if (node.IsMap())
         {
-            rhs.x = node["x"] ? node["x"].as<float>() : 0.0f;
-            rhs.y = node["y"] ? node["y"].as<float>() : 0.0f;
-            rhs.z = node["z"] ? node["z"].as<float>() : 0.0f;
+            rhs.x = (node["x"] ? node["x"] : node["X"]) ? (node["x"] ? node["x"] : node["X"]).as<float>() : 0.0f;
+            rhs.y = (node["y"] ? node["y"] : node["Y"]) ? (node["y"] ? node["y"] : node["Y"]).as<float>() : 0.0f;
+            rhs.z = (node["z"] ? node["z"] : node["Z"]) ? (node["z"] ? node["z"] : node["Z"]).as<float>() : 0.0f;
             return true;
         }
         return false;
@@ -152,10 +152,15 @@ template <> struct convert<CHEngine::Color>
         }
         else if (node.IsMap())
         {
-            rhs.r = node["r"] ? static_cast<unsigned char>(node["r"].as<int>()) : 255;
-            rhs.g = node["g"] ? static_cast<unsigned char>(node["g"].as<int>()) : 255;
-            rhs.b = node["b"] ? static_cast<unsigned char>(node["b"].as<int>()) : 255;
-            rhs.a = node["a"] ? static_cast<unsigned char>(node["a"].as<int>()) : 255;
+            auto rNode = node["r"] ? node["r"] : node["R"];
+            auto gNode = node["g"] ? node["g"] : node["G"];
+            auto bNode = node["b"] ? node["b"] : node["B"];
+            auto aNode = node["a"] ? node["a"] : node["A"];
+
+            rhs.r = rNode ? static_cast<unsigned char>(rNode.as<int>()) : 255;
+            rhs.g = gNode ? static_cast<unsigned char>(gNode.as<int>()) : 255;
+            rhs.b = bNode ? static_cast<unsigned char>(bNode.as<int>()) : 255;
+            rhs.a = aNode ? static_cast<unsigned char>(aNode.as<int>()) : 255;
             return true;
         }
         return false;
