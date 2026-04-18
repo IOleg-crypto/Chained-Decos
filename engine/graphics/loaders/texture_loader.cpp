@@ -32,9 +32,10 @@ namespace CHEngine
         // For now, we follow the logic from the previous Importer
         
         int width, height, channels;
-        stbi_set_flip_vertically_on_load(true);
 
         bool isHDR = stbi_is_hdr(resolvedPath.c_str());
+        stbi_set_flip_vertically_on_load(!isHDR);
+
         void* data = nullptr;
 
         if (isHDR)

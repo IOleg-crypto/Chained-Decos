@@ -1,7 +1,6 @@
 #include "engine/core/assets/asset_manager.h"
 #include "engine/core/thread_pool.h"
 #include "engine/core/profiler.h"
-#include "engine/scene/project.h"
 
 #include <chrono>
 
@@ -62,7 +61,77 @@ std::string AssetManager::ResolvePath(const std::string& path) const
         }
     }
 
-    std::string resolved = Project::GetAbsolutePath(path).string();
+    std::filesystem::path inputPath(path);
+    std::filesystem::path resolvedPath;
+
+    if (inputPath.is_absolute())
+    {
+        resolvedPath = inputPath;
+    }
+    else
+    {
+        std::string pathStr = inputPath.generic_string();
+        bool isEngineResource = false;
+        if (pathStr.find("engine/") == 0)
+        {
+            pathStr = pathStr.substr(7);
+            isEngineResource = true;
+        }
+
+        if (isEngineResource)
+        {
+            if (!m_EngineRoot.empty())
+            {
+                std::filesystem::path candidate = m_EngineRoot / pathStr;
+                if (std::filesystem::exists(candidate))
+                {
+                    resolvedPath = candidate;
+                }
+            }
+        }
+        else
+        {
+            // Try asset directory first
+            if (!m_AssetDirectory.empty())
+            {
+                std::filesystem::path candidate = m_AssetDirectory / pathStr;
+                if (std::filesystem::exists(candidate))
+                {
+                    resolvedPath = candidate;
+                }
+            }
+
+            // Try project root next
+            if (resolvedPath.empty() && !m_ProjectDirectory.empty())
+            {
+                std::filesystem::path candidate = m_ProjectDirectory / pathStr;
+                if (std::filesystem::exists(candidate))
+                {
+                    resolvedPath = candidate;
+                }
+            }
+        }
+
+        // Fallback
+        if (resolvedPath.empty())
+        {
+            if (!isEngineResource && !m_AssetDirectory.empty())
+            {
+                resolvedPath = m_AssetDirectory / pathStr;
+            }
+            else if (!m_EngineRoot.empty())
+            {
+                resolvedPath = m_EngineRoot / pathStr;
+            }
+            else
+            {
+                resolvedPath = m_ProjectDirectory / pathStr;
+            }
+        }
+    }
+
+    // Normalize and convert to string
+    std::string resolved = std::filesystem::absolute(resolvedPath).lexically_normal().generic_string();
 
     std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
     m_PathCache[path] = resolved;
