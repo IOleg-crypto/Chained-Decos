@@ -1,13 +1,14 @@
 Environment:
   Lighting:
     Direction:
-      X: 1
-      Y: -0.25999999
-      Z: 1
+      X: 0.99000001
+      Y: 0.519999981
+      Z: 0.980000019
     LightColor:
-      R: "\xff"
-      G: "\xff"
-      B: "\xff"
+      R: 255
+      G: 255
+      B: 255
+      A: 255
     Ambient: 0.0850000009
     Exposure: 1
     Gamma: 2.20000005
@@ -16,14 +17,13 @@ Environment:
     Exposure: 1.00999999
     Brightness: -0.699999988
     Contrast: 0.449999988
-    SunEnabled: true
-    SunIntensity: 0
   Fog:
     Enabled: false
     Color:
-      R: "\x9e"
-      G: "\x94"
-      B: "\x94"
+      R: 255
+      G: 255
+      B: 255
+      A: 255
     Density: 0.100000001
     Start: 180
     End: 174
