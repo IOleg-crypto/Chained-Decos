@@ -11,7 +11,7 @@ set(ENGINE_INCLUDE_DIRS
 )
 
 # SHARED for local development (hot-reload), STATIC for CI/distribution
-option(CH_ENGINE_SHARED "Build engine as shared library (DLL)" ON)
+option(CH_ENGINE_SHARED "Build engine as shared library (DLL)" OFF)
 if(CH_ENGINE_SHARED)
     set(ENGINE_LIB_TYPE SHARED)
 else()

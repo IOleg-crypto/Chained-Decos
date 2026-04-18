@@ -5,14 +5,14 @@ using CHEngine;
 namespace ChainedDecos.Scripts
 {
     // =========================================================================
-    // 1. FLYWEIGHT (Легковаговик) - Захоплююча бібліотека спорядження та магії
+    // 1. FLYWEIGHT (Легковаговик) - Глобальна база даних асетів
     // =========================================================================
     public class ItemData
     {
         public string Name { get; }
         public string Description { get; }
         public int BasePrice { get; }
-        public string Category { get; } // Weapon, Magic, Skill, Perk
+        public string Category { get; }
 
         public ItemData(string name, string desc, int price, string category)
         {
@@ -23,221 +23,153 @@ namespace ChainedDecos.Scripts
         }
     }
 
-    public static class ItemFactory
+    public static class GameStorage
     {
         private static readonly Dictionary<string, ItemData> _items = new Dictionary<string, ItemData>();
 
-        static ItemFactory()
+        static GameStorage()
         {
-            // Початкова ініціалізація бази знань предметів
-            Register("DragonSlayer", "Massive physical damage. For true warriors.", 1200, "Weapon");
-            Register("ArchmageStaff", "Focuses mana. +100% spell potency.", 1500, "Magic");
-            Register("MerchantGuildSignet", "Unlock secret VIP prices.", 2000, "Economy");
-            Register("HealthPotion", "Basic recovery item.", 100, "Consumable");
-            Register("FireballScroll", "One-time powerful AoE burst.", 450, "Magic");
+            Register("DragonSlayer", "Massive physical damage.", 1200, "Weapon");
+            Register("ArchmageStaff", "+100% spell potency.", 1500, "Magic");
+            Register("MerchantSignet", "Unlock secret VIP prices.", 2000, "Economy");
         }
 
-        public static void Register(string name, string desc, int price, string category)
-        {
+        public static void Register(string name, string desc, int price, string category) =>
             _items[name] = new ItemData(name, desc, price, category);
-        }
 
-        public static ItemData Get(string name)
-        {
-            if (_items.TryGetValue(name, out var item)) return item;
-            return new ItemData(name, "Unknown relic", 9999, "Mystery");
-        }
-
-        public static void ShowCatalog()
-        {
-            Log.Info("--- [Flyweight Catalog] ---");
-            foreach (var item in _items.Values)
-                Log.Info($"{item.Category}: {item.Name} ({item.BasePrice}g) - {item.Description}");
-        }
+        public static ItemData Get(string name) =>
+            _items.TryGetValue(name, out var item) ? item : new ItemData(name, "Unknown", 9999, "None");
+            
+        public static IEnumerable<ItemData> AllItems => _items.Values;
     }
 
     // =========================================================================
-    // 2. DECORATOR (Декоратор) - Структура розвитку героя по гілках
+    // 2. DECORATOR (Декоратор) - Динамічне розширення можливостей
     // =========================================================================
     public interface IHero
     {
-        string GetClassTitle();
-        int GetTotalPower();
-        int GetMagicSkill();
-        float GetTradeBonus(); // Economy branch factor
-        void LogStatus();
+        string GetTitle();
+        int GetPower();
+        int GetMagic();
+        float GetTradeRatio();
     }
 
-    public class BaseHero : IHero
+    public class BasicHero : IHero
     {
         private string _name;
-        public BaseHero(string name) => _name = name;
-
-        public virtual string GetClassTitle() => "Novice Wanderer";
-        public virtual int GetTotalPower() => 10;
-        public virtual int GetMagicSkill() => 5;
-        public virtual float GetTradeBonus() => 1.0f;
-
-        public virtual void LogStatus()
-        {
-            Log.Info($"=== HERO: {_name} ({GetClassTitle()}) ===");
-            Log.Info($"> Power: {GetTotalPower()} | Magic: {GetMagicSkill()} | Trade: {GetTradeBonus():F2}x");
-        }
+        public BasicHero(string name) => _name = name;
+        public string GetTitle() => _name;
+        public int GetPower() => 10;
+        public int GetMagic() => 5;
+        public float GetTradeRatio() => 1.0f;
     }
 
-    public abstract class HeroUpgrade : IHero
+    public abstract class HeroDecorator : IHero
     {
-        protected IHero _hero;
-        protected HeroUpgrade(IHero hero) => _hero = hero;
-
-        public virtual string GetClassTitle() => _hero.GetClassTitle();
-        public virtual int GetTotalPower() => _hero.GetTotalPower();
-        public virtual int GetMagicSkill() => _hero.GetMagicSkill();
-        public virtual float GetTradeBonus() => _hero.GetTradeBonus();
-        public virtual void LogStatus() => _hero.LogStatus();
+        protected IHero _inner;
+        protected HeroDecorator(IHero inner) => _inner = inner;
+        public virtual string GetTitle() => _inner.GetTitle();
+        public virtual int GetPower() => _inner.GetPower();
+        public virtual int GetMagic() => _inner.GetMagic();
+        public virtual float GetTradeRatio() => _inner.GetTradeRatio();
     }
 
-    // Гілка Сили
-    public class StrengthMastery : HeroUpgrade
+    public class WarriorPath : HeroDecorator
     {
-        public StrengthMastery(IHero hero) : base(hero) { }
-        public override string GetClassTitle() => base.GetClassTitle() + " + Gladiator";
-        public override int GetTotalPower() => base.GetTotalPower() + 25;
+        public WarriorPath(IHero inner) : base(inner) { }
+        public override string GetTitle() => _inner.GetTitle() + " (Warrior)";
+        public override int GetPower() => _inner.GetPower() + 50;
     }
 
-    // Гілка Магії
-    public class MagicMastery : HeroUpgrade
+    public class MagePath : HeroDecorator
     {
-        public MagicMastery(IHero hero) : base(hero) { }
-        public override string GetClassTitle() => base.GetClassTitle() + " + Sorcerer";
-        public override int GetMagicSkill() => base.GetMagicSkill() + 30;
-    }
-
-    // Гілка Економіки
-    public class EconomyMastery : HeroUpgrade
-    {
-        public EconomyMastery(IHero hero) : base(hero) { }
-        public override string GetClassTitle() => base.GetClassTitle() + " + Baron";
-        public override float GetTradeBonus() => base.GetTradeBonus() * 1.6f;
+        public MagePath(IHero inner) : base(inner) { }
+        public override string GetTitle() => _inner.GetTitle() + " (Mage)";
+        public override int GetMagic() => _inner.GetMagic() + 50;
     }
 
     // =========================================================================
-    // 3. FACADE (Фасад) - Управління всією стратегією через єдиний інтерфейс
+    // 3. FACADE (Фасад) - Єдина точка входу в систему розвитку
     // =========================================================================
-    public class HeroStrategyFacade
+    public class HeroSystem
     {
         private IHero _hero;
-        private int _gold = 250;
-        private int _level = 1;
+        private int _gold = 500;
 
-        public HeroStrategyFacade(string name)
+        public HeroSystem(string name) => _hero = BasicHeroFactory.Create(name);
+
+        public string Upgrade(string type)
         {
-            _hero = new BaseHero(name);
-            Log.Info($"[Strategy] New journey started for {name}.");
+            if (type == "warrior") _hero = new WarriorPath(_hero);
+            else if (type == "mage") _hero = new MagePath(_hero);
+            return $"Hero evolved to: {_hero.GetTitle()}";
         }
 
-        public void ProcessLevelUp(string selection)
+        public string Purchase(string itemName)
         {
-            _level++;
-            Log.Info($"\n--- [ LEVEL UP TO {_level} ] ---");
+            var item = GameStorage.Get(itemName);
+            int price = (int)(item.BasePrice / _hero.GetTradeRatio());
             
-            switch (selection.ToLower())
+            if (_gold >= price)
             {
-                case "strength": _hero = new StrengthMastery(_hero); break;
-                case "magic": _hero = new MagicMastery(_hero); break;
-                case "economy": _hero = new EconomyMastery(_hero); break;
+                _gold -= price;
+                return $"Bought {item.Name} for {price}g.";
             }
-            
-            Log.Info($"Evolved specialization: {selection.ToUpper()} branch.");
-            _hero.LogStatus();
+            return $"Not enough gold for {item.Name}!";
         }
 
-        public void ExecuteTrade(string itemName)
-        {
-            var item = ItemFactory.Get(itemName);
-            int finalPrice = (int)(item.BasePrice / _hero.GetTradeBonus());
+        public void AddGold(int amount) => _gold += amount;
+        public string GetInfo() => $"{_hero.GetTitle()} [Power:{_hero.GetPower()} Magic:{_hero.GetMagic()}] Gold:{_gold}g";
+    }
 
-            if (_gold >= finalPrice)
-            {
-                _gold -= finalPrice;
-                Log.Info($"[Shop] Bought {item.Name} for {finalPrice}g (Market Price: {item.BasePrice}g). Gold: {_gold}");
-                Log.Info($"[Item Effect] {item.Description}");
-            }
-            else
-            {
-                Log.Info($"[Shop] Insufficient funds for {item.Name}! Remaining: {_gold}g");
-            }
-        }
-
-        public void EarnRewards(int amount)
-        {
-            int realAmount = (int)(amount * _hero.GetTradeBonus());
-            _gold += realAmount;
-            Log.Info($"[Economy] Looted {realAmount}g (Bonus: {(_hero.GetTradeBonus()-1)*100:F0}%). Total Gold: {_gold}g");
-        }
-
-        public void ShowHeroSheet() => _hero.LogStatus();
-
-        public void RenderUI()
-        {
-            UI.Text("=== STRATEGY (Structural) ===");
-            UI.Text($"Hero: {_hero.GetClassTitle()}");
-            UI.Text($"Power: {_hero.GetTotalPower()} | Magic: {_hero.GetMagicSkill()} | Economy: {_hero.GetTradeBonus():F2}x");
-            UI.Text($"Progress: Level {_level}");
-            UI.Text($"Gold: {_gold}g");
-            UI.Text("-----------------------------");
-        }
+    internal static class BasicHeroFactory 
+    {
+        public static IHero Create(string name) => new BasicHero(name);
     }
 
     // =========================================================================
-    // ГЕЙМПЛЕЙНИЙ СКРИПТ (Controller)
+    // ГЕЙМПЛЕЙНИЙ КОНТРОЛЕР
     // =========================================================================
     public class HeroStrategyScript : Script
     {
-        private HeroStrategyFacade? _facade;
+        private HeroSystem? _heroSystem;
+        private List<string> _onScreenLogs = new List<string>();
 
         public override void OnCreate()
         {
-            Log.Info("=== RPG PROGRESSION SYSTEM READY ===");
-            _facade = new HeroStrategyFacade("Arthur");
-            
-            ItemFactory.ShowCatalog();
-            _facade.ShowHeroSheet();
+            _heroSystem = new HeroSystem("Arthur");
+            AddLog("RPG System Initialized (Facade/Decorator/Flyweight)");
+        }
 
-            Log.Info(">>> CONTROLS:");
-            Log.Info("1-3: Choose Branch (Strength, Magic, Economy)");
-            Log.Info("G: Farm Gold | W/M/E: Buy specific items");
+        private void AddLog(string msg)
+        {
+            Log.Info(msg); // Console log
+            _onScreenLogs.Add($"> {msg}");
+            if (_onScreenLogs.Count > 10) _onScreenLogs.RemoveAt(0);
         }
 
         public override void OnUpdate(float deltaTime)
         {
-            // Розвиток героя
-            if (Input.IsKeyPressed(Key.D1)) _facade?.ProcessLevelUp("strength");
-            if (Input.IsKeyPressed(Key.D2)) _facade?.ProcessLevelUp("magic");
-            if (Input.IsKeyPressed(Key.D3)) _facade?.ProcessLevelUp("economy");
+            if (_heroSystem == null) return;
 
-            // Економіка
-            if (Input.IsKeyPressed(Key.G)) _facade?.EarnRewards(150);
-
-            // Магазин (Flyweights)
-            if (Input.IsKeyPressed(Key.W)) _facade?.ExecuteTrade("DragonSlayer");
-            if (Input.IsKeyPressed(Key.M)) _facade?.ExecuteTrade("ArchmageStaff");
-            if (Input.IsKeyPressed(Key.E)) _facade?.ExecuteTrade("MerchantGuildSignet");
-
-            // Інфо
-            if (Input.IsKeyPressed(Key.I)) _facade?.ShowHeroSheet();
-
-            // Фасад: загальний системний контроль
-            if (Input.IsKeyPressed(Key.Escape))
-            {
-                Log.Info("Terminating RPG Strategy Simulation...");
-                AppWindow.SetFullscreen(false);
-            }
+            if (Input.IsKeyPressed(Key.D1)) AddLog(_heroSystem.Upgrade("warrior"));
+            if (Input.IsKeyPressed(Key.D2)) AddLog(_heroSystem.Upgrade("mage"));
+            if (Input.IsKeyPressed(Key.G)) { _heroSystem.AddGold(100); AddLog("Looted 100 gold."); }
+            if (Input.IsKeyPressed(Key.B)) AddLog(_heroSystem.Purchase("DragonSlayer"));
         }
 
         public override void OnGUI()
         {
-            _facade?.RenderUI();
+            if (_heroSystem == null) return;
+
+            UI.Text("--- [ HERO STATUS ] ---");
+            UI.Text(_heroSystem.GetInfo());
+            UI.Text("Controls: 1 (Warrior), 2 (Mage), G (Gold), B (Buy)");
+            
+            UI.Text("");
+            UI.Text("--- [ IN-GAME LOGS ] ---");
+            foreach (var log in _onScreenLogs)
+                UI.Text(log);
         }
     }
 }

@@ -14,8 +14,8 @@ std::filesystem::path Project::s_EngineRoot = "";
 std::shared_ptr<Project> Project::New()
 {
     auto project = std::make_shared<Project>();
-    s_ActiveProject = project;
-    return s_ActiveProject;
+    SetActive(project);
+    return project;
 }
 
 std::shared_ptr<Project> Project::Load(const std::filesystem::path& path)
@@ -23,7 +23,7 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path& path)
     std::shared_ptr<Project> project = std::make_shared<Project>();
 
     project->m_Config.ProjectDirectory = path.parent_path();
-    s_ActiveProject = project;
+    // Do not set s_ActiveProject here, will be set in SetActive called later in the function
 
     // Discover Engine Root if not set or invalid
     if (s_EngineRoot.empty() || !std::filesystem::exists(s_EngineRoot / "resources"))
@@ -55,6 +55,8 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path& path)
     ProjectSerializer serializer(project);
     if (serializer.Deserialize(path))
     {
+        SetActive(project);
+
         // Load engine shaders now that paths are set correctly
         if (Renderer::IsInitialized())
         {
@@ -92,11 +94,33 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path& path)
             }
         }
 
-        return s_ActiveProject;
+        return project;
     }
 
-    s_ActiveProject = nullptr;
+    SetActive(nullptr);
     return nullptr;
+}
+
+void Project::SetActive(std::shared_ptr<Project> project)
+{
+    s_ActiveProject = project;
+    auto& assetManager = AssetManager::Get();
+    if (project)
+    {
+        assetManager.SetAssetDirectory(project->GetAssetDirectory());
+        assetManager.SetProjectDirectory(project->GetProjectDirectory());
+    }
+    else
+    {
+        assetManager.SetAssetDirectory("");
+        assetManager.SetProjectDirectory("");
+    }
+}
+
+void Project::SetEngineRoot(const std::filesystem::path& path)
+{
+    s_EngineRoot = path;
+    AssetManager::Get().SetEngineRoot(path);
 }
 
 std::filesystem::path Project::Discover(const std::filesystem::path& startPath, const std::string& hintName)

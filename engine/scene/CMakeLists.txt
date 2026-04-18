@@ -44,6 +44,7 @@ add_library(engine_scene ${SUBMODULE_LIB_TYPE}
         components/sprite_component.h
         entity.h
 )
+set_target_properties(engine_scene PROPERTIES UNITY_BUILD OFF)
 
 target_include_directories(engine_scene PUBLIC
     ${ENGINE_INCLUDE_DIRS}

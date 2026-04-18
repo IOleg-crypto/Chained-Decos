@@ -27,9 +27,10 @@ namespace CHEngine
         }
 
         int width, height, channels;
-        stbi_set_flip_vertically_on_load(true);
 
         bool isHDR = stbi_is_hdr(cacheKey.c_str());
+        stbi_set_flip_vertically_on_load(!isHDR);
+
         void* data = nullptr;
 
         if (isHDR)

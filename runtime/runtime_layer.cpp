@@ -227,11 +227,17 @@ void RuntimeLayer::OnRender(Timestep ts)
 
     EnsureRuntimeFramebuffer(width, height);
 
-    glm::vec4 bgColor = {0.0f, 0.0f, 0.0f, 1.0f};
+    const auto& settings = m_Scene->GetSettings();
+    glm::vec4 bgColor = {
+        settings.BackgroundColor.r / 255.0f,
+        settings.BackgroundColor.g / 255.0f,
+        settings.BackgroundColor.b / 255.0f,
+        settings.BackgroundColor.a / 255.0f
+    };
 
-    if (m_Scene->GetSettings().Environment)
+    if (settings.Environment && settings.Mode != BackgroundMode::Color)
     {
-        auto& env = m_Scene->GetSettings().Environment->GetSettings();
+        auto& env = settings.Environment->GetSettings();
         if (env.Fog.Enabled)
         {
             bgColor = glm::vec4(env.Fog.FogColor.r / 255.0f, env.Fog.FogColor.g / 255.0f, env.Fog.FogColor.b / 255.0f,
@@ -242,8 +248,8 @@ void RuntimeLayer::OnRender(Timestep ts)
     auto camera = GetActiveCamera();
     if (camera)
     {
-        CH_CORE_INFO("RuntimeLayer: Rendering scene with active camera at ({}, {}, {})", camera->Position.x,
-                     camera->Position.y, camera->Position.z);
+        // CH_CORE_INFO("RuntimeLayer: Rendering scene with active camera at ({}, {}, {})", camera->Position.x,
+        //              camera->Position.y, camera->Position.z);
         float nearClip = 0.01f;
         float farClip = 1000.0f;
 
