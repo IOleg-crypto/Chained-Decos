@@ -10,7 +10,7 @@ LaunchDetails ProjectLauncher::PrepareRuntime(const ApplicationCommandLineArgs& 
     LaunchDetails details;
     details.Spec.CommandLineArgs = args;
 
-    std::string projectPath = "";
+    std::string projectPath;
     std::string appName = "Chained Runtime";
     int startupWidth = 1280;
     int startupHeight = 720;
