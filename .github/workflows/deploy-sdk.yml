@@ -8,6 +8,9 @@ on:
 
 env:
   CI: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_NOLOGO: true
 
 jobs:
   deploy:
@@ -27,22 +30,25 @@ jobs:
             preset: windows-gcc
             config_preset: windows-gcc
 
+    defaults:
+      run:
+        shell: bash
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Cache
-        uses: actions/cache@v4
+      - name: Get CMake and Ninja
+        uses: lukka/get-cmake@latest
+
+      - name: Setup Compiler Cache
+        uses: hendrikmuhs/ccache-action@v1.2
         with:
-          path: |
-            ~/.ccache
-            C:/ccache
-            build/${{ matrix.config_preset }}/_deps
-          key: ${{ runner.os }}-${{ matrix.config_preset }}-${{ hashFiles('**/CMakeLists.txt', 'CMakePresets.json') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.config_preset }}-
+          variant: ${{ matrix.os == 'windows-latest' && 'sccache' || 'ccache' }}
+          key: ${{ runner.os }}-${{ matrix.config_preset }}
+          max-size: 5G
 
       - name: Get current version/date
         id: info
@@ -73,9 +79,16 @@ jobs:
           echo "CC=gcc-14" >> $GITHUB_ENV
           echo "CXX=g++-14" >> $GITHUB_ENV
 
-      - name: Install dependencies (Windows)
-        if: matrix.os == 'windows-latest'
-        run: choco install cmake ninja ccache --no-progress
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install jinja2
 
       - name: Setup MSYS2
         if: matrix.os == 'windows-latest'
@@ -107,27 +120,36 @@ jobs:
           retention-days: 7
 
       - name: Configure CMake
-        shell: bash
         run: |
+          set -euo pipefail
+          PYTHON_EXE=$(python -c "import sys; print(sys.executable)")
           extra_flags=""
+          launcher="sccache"
           if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
             extra_flags="-DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX"
+            launcher="ccache"
           fi
-          
+
           cmake --preset ${{ matrix.preset }} \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_C_COMPILER_LAUNCHER=$launcher \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=$launcher \
             -DCMAKE_INSTALL_PREFIX="${{ steps.build-env.outputs.package-dir }}" \
+            -DPython_EXECUTABLE="${PYTHON_EXE}" \
+            -DPython3_EXECUTABLE="${PYTHON_EXE}" \
+            -DCH_CI=ON \
+            -DENABLE_UNITY_BUILD=ON \
+            -DENABLE_PCH=OFF \
             -DBUILD_TESTS=OFF \
             $extra_flags
 
       - name: Build binaries
-        shell: bash
         run: |
+          set -euo pipefail
           cmake --build --preset ${{ matrix.preset }} \
             --target ChainedEditor ChainedRuntime \
-            --parallel $(nproc 2>/dev/null || echo 8)
+            --parallel $(nproc 2>/dev/null || echo 8) \
+            2>&1 | tee "build/${{ matrix.preset }}/build.log"
 
       - name: Install to package directory
         shell: bash
