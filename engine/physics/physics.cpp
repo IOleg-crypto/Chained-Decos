@@ -129,6 +129,12 @@ void Physics::Update(Scene* scene, Timestep deltaTime, bool runtime)
 
     auto& registry = scene->GetRegistry();
     auto collView = registry.view<ColliderComponent>();
+    
+    // Update scene statistics
+    ProfilerStats stats = Profiler::GetStats();
+    stats.ColliderCount = (uint32_t)collView.size();
+    Profiler::UpdateStats(stats);
+
     for (auto it = collView.begin(); it != collView.end(); ++it)
     {
         auto entity = *it;

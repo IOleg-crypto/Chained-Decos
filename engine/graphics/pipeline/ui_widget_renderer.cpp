@@ -1,7 +1,6 @@
 #include "ui_widget_renderer.h"
 #include "ui_renderer.h"
 #include "engine/graphics/texture_system.h"
-#include "engine/scene/components.h"
 #include "engine/core/log.h"
 #include <algorithm>
 
@@ -46,10 +45,10 @@ void PushTextStyle(const TextStyle& text, StyleCounts& c)
     ImGui::PushStyleColor(ImGuiCol_Text, ToImVec4(text.TextColor));
     c.colors++;
 
-    float hAlign = (text.HorizontalAlignment == TextAlignment::Left)   ? 0.0f
-                 : (text.HorizontalAlignment == TextAlignment::Center)  ? 0.5f : 1.0f;
-    float vAlign = (text.VerticalAlignment == TextAlignment::Top)       ? 0.0f
-                 : (text.VerticalAlignment == TextAlignment::Center)    ? 0.5f : 1.0f;
+    float hAlign = (text.Horizontal == HorizontalAlignment::Left)   ? 0.0f
+                 : (text.Horizontal == HorizontalAlignment::Center) ? 0.5f : 1.0f;
+    float vAlign = (text.Vertical == VerticalAlignment::Top)       ? 0.0f
+                 : (text.Vertical == VerticalAlignment::Center)    ? 0.5f : 1.0f;
     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(hAlign, vAlign));
     c.vars++;
 
@@ -125,10 +124,10 @@ void RenderLabel(const LabelControl& label, const ImVec2& size)
     ImVec2 ts = ImGui::CalcTextSize(label.Text.c_str(), nullptr, true, size.x);
 
     float sx = 0, sy = 0;
-    if (label.Style.HorizontalAlignment == TextAlignment::Center)  sx = (size.x - ts.x) * 0.5f;
-    else if (label.Style.HorizontalAlignment == TextAlignment::Right) sx = size.x - ts.x;
-    if (label.Style.VerticalAlignment == TextAlignment::Center)    sy = (size.y - ts.y) * 0.5f;
-    else if (label.Style.VerticalAlignment == TextAlignment::Bottom)  sy = size.y - ts.y;
+    if (label.Style.Horizontal == HorizontalAlignment::Center)  sx = (size.x - ts.x) * 0.5f;
+    else if (label.Style.Horizontal == HorizontalAlignment::Right) sx = size.x - ts.x;
+    if (label.Style.Vertical == VerticalAlignment::Center)    sy = (size.y - ts.y) * 0.5f;
+    else if (label.Style.Vertical == VerticalAlignment::Bottom)  sy = size.y - ts.y;
 
     ImGui::SetCursorPos({ImGui::GetCursorPosX() + sx, ImGui::GetCursorPosY() + sy});
     ImGui::TextUnformatted(label.Text.c_str());

@@ -1,7 +1,6 @@
 #ifndef CH_SCRIPT_ENGINE_H
 #define CH_SCRIPT_ENGINE_H
 
-#include "engine/core/base.h"
 #include "scriptengine_services.h"
 #include <Coral/Assembly.hpp>
 #include <string>
@@ -17,8 +16,11 @@ class Scene;
 class ScriptEngine
 {
 public:
+private:
     ScriptEngine();
     ~ScriptEngine();
+
+public:
 
     static void Init();
     static void Shutdown();
@@ -40,51 +42,23 @@ public:
     // All discovered script types keyed by lowercase full name.
     const std::unordered_map<std::string, Coral::Type>& GetScriptClasses() const
     {
-        return GetScriptTypeRegistry().GetScriptClasses();
+        return GetScriptRegistry().GetScriptClasses();
     }
 
     bool IsInitialized() const
     {
-        return GetScriptAssemblyHost().IsInitialized();
+        return GetScriptHost().IsInitialized();
     }
     bool IsReloadInProgress() const
     {
-        return m_RuntimeSession.IsReloadInProgress();
+        return GetScriptHost().IsReloadInProgress();
     }
     bool CanExecuteFrameScripts() const
     {
-        return GetScriptAssemblyHost().IsInitialized() && !m_RuntimeSession.IsReloadInProgress();
+        return GetScriptHost().IsInitialized() && !GetScriptHost().IsReloadInProgress();
     }
-    Scene* GetActiveScene() const
-    {
-        return m_RuntimeSession.GetActiveScene();
-    }
-    void SetActiveScene(Scene* scene)
-    {
-        m_RuntimeSession.SetActiveScene(scene);
-    }
-
-    // Called from C# script glue - queue a scene to load next frame.
-    void RequestLoadScene(const std::string& path)
-    {
-        m_RuntimeSession.RequestLoadScene(path);
-    }
-    // Consumed by RuntimeLayer::OnUpdate each frame. Returns the path and clears it.
-    std::string ConsumeRequestedScene()
-    {
-        return m_RuntimeSession.ConsumeRequestedScene();
-    }
-    // Safely consumes pending scene requests for frame updates.
-    // Returns false if reload is in progress or there is no pending path.
-    bool TryConsumeRequestedScene(std::string& outPath)
-    {
-        return m_RuntimeSession.TryConsumeRequestedScene(outPath);
-    }
-
+public:
     static ScriptEngine& Get();
-
-private:
-    ScriptRuntimeSession m_RuntimeSession;
 };
 
 } // namespace CHEngine

@@ -58,6 +58,7 @@ private:
 
     // Render passes
     void RenderModels(Scene* scene, const Camera3D& camera, float nearClip, float farClip);
+    void RenderSprites(Scene* scene, const Camera3D& camera);
     void RenderDebug(Scene* scene, const Camera3D& camera, const SceneRenderOptions& options);
     void RenderEditorIcons(Scene* scene, const Camera3D& camera);
 

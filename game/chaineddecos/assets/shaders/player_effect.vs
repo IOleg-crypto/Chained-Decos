@@ -1,84 +1,84 @@
-#version 330 core
+#version 430 core
 
-// Input vertex attributes
-in vec3 vertexPosition;
-in vec2 vertexTexCoord;
-in vec3 vertexNormal;
-in vec4 vertexColor;
+// Input vertex attributes matching engine's lighting.vs
+layout(location = 0) in vec3 a_Position;
+layout(location = 1) in vec2 a_TexCoord;
+layout(location = 2) in vec3 a_Normal;
+layout(location = 3) in ivec4 a_JointIDs;
+layout(location = 4) in vec4 a_Weights;
 
-// Input uniform values
+// Standard Engine Uniforms
 uniform mat4 mvp;
 uniform mat4 matModel;
 uniform mat4 matView;
 uniform mat4 matProjection;
+uniform mat4 matNormal;
+uniform mat4 boneMatrices[128];
+uniform int useSkinning;
 
-// Wind effect parameters
-uniform float fallSpeed;      // Fall speed (0-60, negative velocity.y)
-uniform float time;            // Time for animation
-uniform vec3 windDirection;   // Wind direction (e.g., vec3(1.0, 0.0, 0.5))
+// Custom Wind Effect Uniforms
+uniform float fallSpeed;
+uniform float uTime;
+uniform vec3 windDirection;
 
-// Output vertex attributes (to fragment shader)
+// Output to Fragment Shader
+out vec3 fragPosition;
 out vec2 fragTexCoord;
 out vec3 fragNormal;
-out vec3 fragPosition;
 out vec4 fragColor;
-out float windIntensity;      // Pass wind intensity to fragment shader
+out float windIntensity;
 
 void main()
 {
-    vec3 pos = vertexPosition;
-    vec3 normal = vertexNormal;
-    
-    // Apply wind effect only when player is falling
-    if (fallSpeed > 0.5)  // Slightly higher threshold for activation
+    vec3 pos = a_Position;
+    vec3 norm = a_Normal;
+
+    // 1. Skinning Support
+    if (useSkinning == 1)
     {
-        // Normalize fall speed (0-1)
-        float fallStrength = clamp(fallSpeed / 40.0, 0.0, 1.0);
+        mat4 skinMat = 
+            a_Weights.x * boneMatrices[a_JointIDs.x] +
+            a_Weights.y * boneMatrices[a_JointIDs.y] +
+            a_Weights.z * boneMatrices[a_JointIDs.z] +
+            a_Weights.w * boneMatrices[a_JointIDs.w];
         
-        // Wind intensity - subtle effect, no stretching
-        // Use square for smoother increase
-        float windStrength = fallStrength * fallStrength * 0.15; // Soft, natural effect
-        
-        // Vertex height relative to model center
-        // Effect is stronger on upper parts (hood, hair, clothing)
-        float heightFactor = max(0.0, vertexPosition.y);
-        // Normalize height (assuming model height is about 2 units)
-        heightFactor = smoothstep(0.0, 1.5, heightFactor); // Smooth transition function
-        heightFactor = pow(heightFactor, 0.8); // Enhance effect on upper parts
-        
-        // Smooth wind animation - light oscillation (like natural wind gust)
-        float windWave = sin(time * 3.0 + vertexPosition.x * 0.5 + vertexPosition.z * 0.3);
-        float windWave2 = cos(time * 2.5 + vertexPosition.z * 0.4 - vertexPosition.x * 0.3);
-        
-        // Combine waves for natural movement
-        float combinedWave = (windWave * 0.6 + windWave2 * 0.4);
-        
-        // Light vertex position offset (horizontal only, no stretching)
-        // Effect is proportional to height - upper parts move more
-        vec3 windOffset = windDirection * combinedWave * windStrength * heightFactor;
-        
-        // Minimal horizontal offset - only light movement (like clothing sway)
-        pos.x += windOffset.x;
-        pos.z += windOffset.z;
-        
-        // Light normal bending for better lighting under wind
-        // This creates light reflection effect from clothing under wind
-        normal = normalize(normal + windOffset * 0.3);
-        
-        // Pass wind intensity to fragment shader for visual effects
-        windIntensity = windStrength * heightFactor;
+        pos = (skinMat * vec4(pos, 1.0)).xyz;
+        norm = (skinMat * vec4(norm, 0.0)).xyz;
     }
-    else
+
+    // 2. Wind Deformation Logic (Intensified)
+    // Starts reacting at 5.0, maxed out at 40.0
+    float fallStrength = clamp((fallSpeed - 5.0) / 35.0, 0.0, 1.0);
+    windIntensity = fallStrength;
+
+    if (fallStrength > 0.01)
     {
-        windIntensity = 0.0;
+        // Height factor (base of model moves less)
+        float heightFactor = clamp(a_Position.y + 0.5, 0.0, 1.5);
+        
+        // Much more aggressive vibration
+        float flutter = sin(uTime * 40.0 + pos.y * 15.0) * 0.05;
+        float bigWave = sin(uTime * 15.0 + pos.z * 4.0) * 0.1;
+        
+        // Horizontal jitter
+        vec3 jitter = vec3(
+            sin(uTime * 60.0) * 0.02,
+            0.0,
+            cos(uTime * 55.0) * 0.02
+        );
+        
+        vec3 windOffset = windDirection * (bigWave + flutter) * heightFactor * fallStrength;
+        pos += windOffset + (jitter * heightFactor * fallStrength);
+        
+        // Stretching along wind direction
+        pos += windDirection * heightFactor * fallStrength * 0.2;
     }
-    
-    // Transform position to world coordinates
+
+    // 3. Final Transformations
     fragPosition = vec3(matModel * vec4(pos, 1.0));
-    fragTexCoord = vertexTexCoord;
-    fragColor = vertexColor;
-    fragNormal = normalize(mat3(matModel) * normal);
-    
-    // Final screen position
-    gl_Position = matProjection * matView * vec4(fragPosition, 1.0);
+    fragNormal = normalize(mat3(matNormal) * norm);
+    fragTexCoord = a_TexCoord;
+    fragColor = vec4(1.0); 
+
+    gl_Position = mvp * vec4(pos, 1.0);
 }

@@ -44,6 +44,7 @@ struct ColliderComponent
     ColliderComponent(const ColliderComponent&) = default;
 
     CH_REFLECT_BEGIN(ColliderComponent)
+        props.Header("Shape Selection");
         if (props.BeginGroup("General"))
         {
             const char* colliderTypes[] = {"Box", "Mesh", "Capsule", "Sphere"};
@@ -71,7 +72,10 @@ struct ColliderComponent
             else if (Type == ColliderType::Mesh)
             {
                 props.Handle("ModelHandle", ModelHandle);
-                props.File("ModelPath", ModelPath, "obj,gltf,glb");
+                if (props.File("ModelPath", ModelPath, "obj,gltf,glb"))
+                {
+                    ModelHandle = AssetHandle(0);
+                }
             }
             props.EndGroup();
         }

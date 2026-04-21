@@ -119,10 +119,22 @@ void ProfilerPanel::UpdateHistory()
 
     for (const auto& res : results)
     {
-        if (res.Name == "MainThread_Frame")
+        if (res.Name == "Run")
         {
             frameMS = res.DurationMS;
             break;
+        }
+    }
+
+    if (frameMS <= 0)
+    {
+        for (const auto& res : results)
+        {
+            if (res.Name == "MainThread_Frame")
+            {
+                frameMS = res.DurationMS;
+                break;
+            }
         }
     }
 

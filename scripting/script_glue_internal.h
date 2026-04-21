@@ -13,6 +13,7 @@
 #include "engine/scene/scene.h"
 #include "script_glue.h"
 #include "scriptengine.h"
+#include "scriptengine_services.h"
 #include <Coral/Array.hpp>
 #include <Coral/String.hpp>
 #include <glm/glm.hpp>
@@ -29,7 +30,7 @@ namespace CHEngine
 // Internal helper to get active scene safely
 inline Scene* GetActiveScene()
 {
-    return ScriptEngine::Get().GetActiveScene();
+    return GetContextScene();
 }
 
 // Internal helper to get entity safely

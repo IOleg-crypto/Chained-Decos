@@ -21,7 +21,10 @@ struct SpriteComponent
     CH_REFLECT_BEGIN(SpriteComponent)
         props.Header("Asset");
         props.Handle("TextureHandle", TextureHandle);
-        props.File("TexturePath", TexturePath, "png,jpg,bmp,tga");
+        if (props.File("TexturePath", TexturePath, "png,jpg,bmp,tga"))
+        {
+            TextureHandle = AssetHandle(0);
+        }
         
         props.Header("Appearance");
         if (props.BeginGroup("Transform"))

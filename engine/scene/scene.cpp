@@ -1,12 +1,11 @@
 #include "engine/scene/scene.h"
-#include "engine/audio/audio.h"
-#include "engine/core/assets/asset_manager.h"
 #include "engine/core/profiler.h"
-#include "engine/graphics/assets/model_asset.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/component_serializer.h"
-#include <cmath>
-#include "serialization_utils.h"
+#include "engine/scene/systems/animation_system.h"
+#include "engine/scene/systems/hierarchy_system.h"
+#include "engine/scene/systems/scene_audio_system.h"
+#include "SceneScriptingManager.h"
 #include <entt/entt.hpp>
 #include <glm/gtx/norm.hpp>
 
@@ -19,6 +18,7 @@ Scene::Scene()
 {
     // Create registry
     m_Registry = std::make_shared<entt::registry>();
+    m_ScriptingManager = std::make_unique<SceneScriptingManager>(this);
 
     auto& reg = *m_Registry;
     reg.ctx().emplace<Scene*>(this);
@@ -108,15 +108,29 @@ void Scene::OnHierarchyDestroy(entt::registry& reg, entt::entity entity)
     // Children are handled by recursive DestroyEntity call
 }
 
+void Scene::OnEvent(Event& e)
+{
+    m_ScriptingManager->OnEvent(e);
+}
+
+void Scene::OnRenderUI()
+{
+    m_ScriptingManager->OnRenderUI();
+}
+
 void Scene::OnRuntimeStart()
 {
     Physics::ResetAccumulator(this);
     m_IsSimulationRunning = true;
+
+    m_ScriptingManager->OnRuntimeStart();
 }
 
 void Scene::OnRuntimeStop()
 {
     m_IsSimulationRunning = false;
+
+    m_ScriptingManager->OnRuntimeStop();
     Physics::ClearContext(this);
 }
 
@@ -124,20 +138,22 @@ void Scene::OnUpdateRuntime(Timestep timestep)
 {
     CH_PROFILE_FUNCTION();
 
-    UpdateHierarchy();
-    UpdateAnimations(timestep);
-    UpdatePhysics(timestep);
-    UpdateAudio(timestep);
+    m_ScriptingManager->OnUpdate(timestep);
+
+    HierarchySystem::Update(this);
+    AnimationSystem::Update(this, timestep);
+    Physics::Update(this, timestep, m_IsSimulationRunning);
+    SceneAudioSystem::Update(this, timestep);
 }
 
 void Scene::OnUpdateEditor(Timestep timestep)
 {
     CH_PROFILE_FUNCTION();
 
-    UpdateHierarchy();
-    UpdateAnimations(timestep);
-    UpdatePhysics(timestep);
-    UpdateAudio(timestep);
+    HierarchySystem::Update(this);
+    AnimationSystem::Update(this, timestep);
+    Physics::Update(this, timestep, false);
+    SceneAudioSystem::Update(this, timestep);
 }
 
 void Scene::OnViewportResize(uint32_t width, uint32_t height)
@@ -211,218 +227,6 @@ Entity Scene::GetPrimaryCameraEntity()
     return {};
 }
 
-void Scene::UpdatePhysics(Timestep deltaTime)
-{
-    CH_PROFILE_FUNCTION();
-    Physics::Update(this, deltaTime, m_IsSimulationRunning);
-}
-
-void Scene::UpdateAnimations(Timestep deltaTime)
-{
-    CH_PROFILE_FUNCTION();
-    auto& reg = GetRegistry();
-    auto view = reg.view<AnimationComponent, ModelComponent>();
-
-    for (auto entity : view)
-    {
-        auto& animation = view.get<AnimationComponent>(entity);
-        if (!animation.IsPlaying)
-        {
-            continue;
-        }
-
-        auto& model = view.get<ModelComponent>(entity);
-        auto modelAsset = AssetManager::Get().Get<ModelAsset>(model.ModelPath);
-        if (!modelAsset || modelAsset->GetAnimationCount() == 0)
-        {
-            continue;
-        }
-
-        // Progress timers
-        float dt = deltaTime.GetSeconds();
-        animation.FrameTimeCounter += dt;
-
-        // Get animation frameRate from asset (asset-driven, defaults to 30fps if not available)
-        float targetFPS = 30.0f;
-        const auto& rawAnims = modelAsset->GetAnimations();
-        if (animation.CurrentAnimationIndex >= 0 && animation.CurrentAnimationIndex < (int)rawAnims.size())
-        {
-            targetFPS = rawAnims[animation.CurrentAnimationIndex].frameRate;
-        }
-        float frameTime = 1.0f / targetFPS;
-
-        // Use a while loop to correctly consume elapsed time without dropping fractional MS,
-        // which prevents animation sequence shaking/jittering.
-        while (animation.FrameTimeCounter >= frameTime)
-        {
-            animation.FrameTimeCounter -= frameTime;
-            animation.CurrentFrame++;
-
-            if (animation.CurrentAnimationIndex >= 0 && animation.CurrentAnimationIndex < (int)rawAnims.size())
-            {
-                int totalFrames = rawAnims[animation.CurrentAnimationIndex].frameCount;
-                if (animation.CurrentFrame >= totalFrames)
-                {
-                    if (animation.IsLooping)
-                    {
-                        animation.CurrentFrame = 0;
-                    }
-                    else
-                    {
-                        animation.CurrentFrame = totalFrames - 1;
-                        animation.IsPlaying = false;
-                    }
-                }
-            }
-        }
-
-        // Handle Blending
-        if (animation.Blending)
-        {
-            animation.BlendTimer += dt;
-            if (animation.BlendTimer >= animation.BlendDuration)
-            {
-                // Blend complete
-                animation.CurrentAnimationIndex = animation.TargetAnimationIndex;
-                animation.CurrentFrame = animation.TargetFrame;
-                animation.Blending = false;
-                animation.TargetAnimationIndex = -1;
-            }
-            else
-            {
-                // Progress target frame too
-                const float FRAME_EPSILON = 0.001f;
-                if (std::abs(animation.FrameTimeCounter - 0.0f) < FRAME_EPSILON) // Just advanced a frame
-                {
-                    animation.TargetFrame++;
-                    if (animation.TargetAnimationIndex >= 0 &&
-                        animation.TargetAnimationIndex < modelAsset->GetAnimationCount())
-                    {
-                        int targetTotalFrames =
-                            modelAsset->GetAnimations()[animation.TargetAnimationIndex].frameCount;
-                        if (animation.TargetFrame >= targetTotalFrames)
-                        {
-                            animation.TargetFrame = 0;
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-void Scene::UpdateHierarchy()
-{
-    CH_PROFILE_FUNCTION();
-    auto& reg = GetRegistry();
-    auto view = reg.view<TransformComponent>();
-
-    struct UpdateTask
-    {
-        entt::entity Entity;
-        glm::mat4 ParentTransform;
-        bool ParentChanged;
-    };
-
-    std::vector<UpdateTask> stack;
-    stack.reserve(reg.storage<entt::entity>().size());
-
-    // 1. Find all root entities and push to stack
-    for (auto entity : view)
-    {
-        bool isRoot = true;
-        if (reg.all_of<HierarchyComponent>(entity))
-        {
-            auto& hc = reg.get<HierarchyComponent>(entity);
-            if (hc.Parent != entt::null && reg.valid(hc.Parent) && reg.all_of<TransformComponent>(hc.Parent))
-            {
-                isRoot = false;
-            }
-        }
-
-        if (isRoot)
-        {
-            stack.push_back({entity, glm::mat4(1.0f), false});
-        }
-    }
-
-    // 2. Iterative DFS update with dirty flag propagation
-    while (!stack.empty())
-    {
-        UpdateTask task = stack.back();
-        stack.pop_back();
-
-        auto& tc = view.get<TransformComponent>(task.Entity);
-        
-        // A node needs update if it is explicitly dirty OR its parent's world transform changed
-        bool needsUpdate = task.ParentChanged || tc.IsDirty;
-        
-        if (needsUpdate)
-        {
-            tc.WorldTransform = task.ParentTransform * tc.GetTransform();
-            tc.IsDirty = false;
-        }
-
-        if (reg.all_of<HierarchyComponent>(task.Entity))
-        {
-            auto& hc = reg.get<HierarchyComponent>(task.Entity);
-            for (auto child : hc.Children)
-            {
-                if (reg.valid(child) && reg.all_of<TransformComponent>(child))
-                {
-                    stack.push_back({child, tc.WorldTransform, needsUpdate});
-                }
-            }
-        }
-    }
-}
-
-void Scene::UpdateAudio(Timestep deltaTime)
-{
-    CH_PROFILE_FUNCTION();
-
-    // 1. Sync Listener with Primary Camera
-    auto cameraView = GetRegistry().view<CameraComponent, TransformComponent>();
-    for (auto entity : cameraView)
-    {
-        auto& camera = cameraView.get<CameraComponent>(entity);
-        if (camera.Primary)
-        {
-            auto& transform = cameraView.get<TransformComponent>(entity);
-            glm::vec3 pos = glm::vec3(transform.WorldTransform[3]);
-            glm::mat3 rot = glm::mat3(transform.WorldTransform);
-            glm::vec3 forward = rot * glm::vec3(0, 0, -1);
-            glm::vec3 up = rot * glm::vec3(0, 1, 0);
-
-            Audio::Get().SetListenerPosition(pos, forward, up);
-            break;
-        }
-    }
-
-    // 2. Manage Audio Components
-    auto audioView = GetRegistry().view<AudioComponent, TransformComponent>();
-    for (auto entity : audioView)
-    {
-        auto& audio = audioView.get<AudioComponent>(entity);
-        if (audio.PlayOnStart && !audio.IsPlaying && !audio.SoundPath.empty())
-        {
-            if (audio.SoundHandle == 0 || !Audio::Get().IsSoundLoaded(audio.SoundHandle))
-            {
-                audio.SoundHandle = Audio::Get().LoadSound(audio.SoundPath);
-            }
-            
-            if (audio.SoundHandle != 0)
-            {
-                auto& transform = audioView.get<TransformComponent>(entity);
-                glm::vec3 worldPos = glm::vec3(transform.WorldTransform[3]);
-
-                Audio::Get().Play(audio.SoundHandle, audio.Volume, audio.Pitch, audio.Loop, audio.Spatialized,
-                                  worldPos);
-                audio.IsPlaying = true;
-            }
-        }
-    }
-}
 
 void Scene::OnIDConstruct(entt::registry& reg, entt::entity entity)
 {

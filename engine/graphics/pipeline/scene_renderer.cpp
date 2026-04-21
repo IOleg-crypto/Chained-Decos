@@ -9,6 +9,7 @@
 #include "engine/graphics/loaders/model_loader.h"
 #include "engine/graphics/pipeline/frustum.h"
 #include "engine/graphics/pipeline/renderer.h"
+#include "engine/scene/components/shader_component.h"
 #include "engine/graphics/pipeline/texture_utility.h"
 #include "engine/graphics/texture_system.h"
 #include "engine/physics/physics.h"
@@ -22,6 +23,7 @@
 #include <glad/gl.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <unordered_set>
 #include <glm/gtx/quaternion.hpp>
 
 namespace CHEngine
@@ -113,6 +115,7 @@ void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float near
         }
 
         RenderModels(scene, camera, nearClip, farClip);
+        RenderSprites(scene, camera);
         RenderDebug(scene, camera, options);
         if (options.ShowEditorIcons)
         {
@@ -290,15 +293,17 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
         }
 
         std::shared_ptr<ShaderAsset> shaderOver;
+        std::vector<ShaderUniform> uniforms;
         if (registry.all_of<ShaderComponent>(entity))
         {
             auto& sc = registry.get<ShaderComponent>(entity);
             if (sc.Enabled && !sc.ShaderPath.empty())
             {
                 shaderOver = am.Get<ShaderAsset>(sc.ShaderPath);
+                uniforms = sc.Uniforms;
             }
         }
-        DrawModel(primitive.Asset, transform.WorldTransform, {}, {}, shaderOver);
+        DrawModel(primitive.Asset, transform.WorldTransform, {}, {}, shaderOver, uniforms);
     }
 }
 
@@ -336,6 +341,17 @@ void SceneRenderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, con
     if (!activeShader || !activeShader->GetShader())
     {
         return;
+    }
+
+    if (shaderOverride)
+    {
+        static std::unordered_set<std::string> s_LoggedPairs;
+        std::string key = shaderOverride->GetPath() + "|" + modelAsset->GetPath();
+        if (s_LoggedPairs.insert(key).second)
+        {
+            CH_CORE_INFO("[SceneRenderer] Applying shader override: '{}' to model: '{}'",
+                         shaderOverride->GetPath(), modelAsset->GetPath());
+        }
     }
 
     for (const auto& inst : modelAsset->GetInstances())
@@ -438,6 +454,7 @@ void SceneRenderer::BindShaderUniforms(ShaderAsset* shaderAsset, const std::vect
     }
     for (const auto& u : overrides)
     {
+        if (ShaderComponent::IsSystemUniform(u.Name)) continue; // Skip reserved engine uniforms
         if (u.Type == 0)
         {
             shader->SetFloat(u.Name, u.Value[0]);
@@ -923,6 +940,51 @@ BoundingBox SceneRenderer::CalculateColliderWorldAABB(const ColliderComponent& c
         result.Max.z = (worldCorner.z > result.Max.z) ? worldCorner.z : result.Max.z;
     }
     return result;
+}
+
+void SceneRenderer::RenderSprites(Scene* scene, const Camera3D& camera)
+{
+    CH_PROFILE_FUNCTION();
+    auto& registry = scene->GetRegistry();
+    auto view = registry.view<TransformComponent, SpriteComponent>();
+
+    struct SpriteEntry
+    {
+        entt::entity Entity;
+        int ZOrder;
+    };
+
+    std::vector<SpriteEntry> sortedSprites;
+    for (auto entity : view)
+    {
+        sortedSprites.push_back({entity, view.get<SpriteComponent>(entity).ZOrder});
+    }
+
+    std::sort(sortedSprites.begin(), sortedSprites.end(), [](const SpriteEntry& a, const SpriteEntry& b) {
+        if (a.ZOrder != b.ZOrder)
+            return a.ZOrder < b.ZOrder;
+        return a.Entity < b.Entity;
+    });
+
+    for (const auto& entry : sortedSprites)
+    {
+        auto& transform = view.get<TransformComponent>(entry.Entity);
+        auto& sprite = view.get<SpriteComponent>(entry.Entity);
+
+        if (sprite.TexturePath.empty())
+            continue;
+
+        auto textureId = TextureSystem::Get().GetRendererID(
+            TextureSystem::Get().LoadTexture(sprite.TexturePath));
+
+        if (textureId != 0)
+        {
+            Renderer::Get().DrawSprite(textureId, transform.WorldTransform,
+                                       {sprite.Tint.r / 255.0f, sprite.Tint.g / 255.0f, sprite.Tint.b / 255.0f,
+                                        sprite.Tint.a / 255.0f},
+                                       sprite.FlipX, sprite.FlipY);
+        }
+    }
 }
 
 } // namespace CHEngine

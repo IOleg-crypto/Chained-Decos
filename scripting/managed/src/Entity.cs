@@ -248,21 +248,34 @@ public class CameraComponent : Component
     }
 }
 
-/// <summary>Movement-speed wrapper.</summary>
+/// <summary>Player settings wrapper — reads directly from the C++ PlayerComponent.</summary>
 public class PlayerComponent : Component
 {
 #pragma warning disable 0649
     internal static unsafe delegate*<ulong, float> PlayerComponent_GetMovementSpeed_Ptr;
     internal static unsafe delegate*<ulong, float, void> PlayerComponent_SetMovementSpeed_Ptr;
+    internal static unsafe delegate*<ulong, float> PlayerComponent_GetJumpForce_Ptr;
+    internal static unsafe delegate*<ulong, float, void> PlayerComponent_SetJumpForce_Ptr;
+    internal static unsafe delegate*<ulong, float> PlayerComponent_GetLookSensitivity_Ptr;
+    internal static unsafe delegate*<ulong, float, void> PlayerComponent_SetLookSensitivity_Ptr;
 #pragma warning restore 0649
-
-    private static unsafe float GetMovementSpeed(ulong entityID) => PlayerComponent_GetMovementSpeed_Ptr(entityID);
-    private static unsafe void SetMovementSpeed(ulong entityID, float speed) => PlayerComponent_SetMovementSpeed_Ptr(entityID, speed);
 
     public float MovementSpeed
     {
-        get => GetMovementSpeed(Entity.ID);
-        set => SetMovementSpeed(Entity.ID, value);
+        get { unsafe { return PlayerComponent_GetMovementSpeed_Ptr(Entity.ID); } }
+        set { unsafe { PlayerComponent_SetMovementSpeed_Ptr(Entity.ID, value); } }
+    }
+
+    public float JumpForce
+    {
+        get { unsafe { return PlayerComponent_GetJumpForce_Ptr(Entity.ID); } }
+        set { unsafe { PlayerComponent_SetJumpForce_Ptr(Entity.ID, value); } }
+    }
+
+    public float LookSensitivity
+    {
+        get { unsafe { return PlayerComponent_GetLookSensitivity_Ptr(Entity.ID); } }
+        set { unsafe { PlayerComponent_SetLookSensitivity_Ptr(Entity.ID, value); } }
     }
 }
 
@@ -288,6 +301,53 @@ public class AudioComponent : Component
     public bool  Loop   { set => SetLoop(Entity.ID, value); }
     public bool  IsPlaying  => IsPlaying_Native(Entity.ID);
     public string SoundPath => GetSoundPath(Entity.ID) ?? string.Empty;
+}
+
+/// <summary>2D Sprite wrapper.</summary>
+public class SpriteComponent : Component
+{
+#pragma warning disable 0649
+    internal static unsafe delegate*<ulong, NativeString> SpriteComponent_GetTexturePath_Ptr;
+    internal static unsafe delegate*<ulong, NativeString, void> SpriteComponent_SetTexturePath_Ptr;
+    internal static unsafe delegate*<ulong, Vector4*, void> SpriteComponent_GetTint_Ptr;
+    internal static unsafe delegate*<ulong, Vector4, void> SpriteComponent_SetTint_Ptr;
+    internal static unsafe delegate*<ulong, bool> SpriteComponent_GetFlipX_Ptr;
+    internal static unsafe delegate*<ulong, bool, void> SpriteComponent_SetFlipX_Ptr;
+    internal static unsafe delegate*<ulong, bool> SpriteComponent_GetFlipY_Ptr;
+    internal static unsafe delegate*<ulong, bool, void> SpriteComponent_SetFlipY_Ptr;
+    internal static unsafe delegate*<ulong, int> SpriteComponent_GetZOrder_Ptr;
+    internal static unsafe delegate*<ulong, int, void> SpriteComponent_SetZOrder_Ptr;
+#pragma warning restore 0649
+
+    public string TexturePath
+    {
+        get { unsafe { return SpriteComponent_GetTexturePath_Ptr(Entity.ID); } }
+        set { unsafe { SpriteComponent_SetTexturePath_Ptr(Entity.ID, value); } }
+    }
+
+    public Vector4 Tint
+    {
+        get { unsafe { Vector4 v; SpriteComponent_GetTint_Ptr(Entity.ID, &v); return v; } }
+        set { unsafe { SpriteComponent_SetTint_Ptr(Entity.ID, value); } }
+    }
+
+    public bool FlipX
+    {
+        get { unsafe { return SpriteComponent_GetFlipX_Ptr(Entity.ID); } }
+        set { unsafe { SpriteComponent_SetFlipX_Ptr(Entity.ID, value); } }
+    }
+
+    public bool FlipY
+    {
+        get { unsafe { return SpriteComponent_GetFlipY_Ptr(Entity.ID); } }
+        set { unsafe { SpriteComponent_SetFlipY_Ptr(Entity.ID, value); } }
+    }
+
+    public int ZOrder
+    {
+        get { unsafe { return SpriteComponent_GetZOrder_Ptr(Entity.ID); } }
+        set { unsafe { SpriteComponent_SetZOrder_Ptr(Entity.ID, value); } }
+    }
 }
 
 // ── UI Controls ───────────────────────────────────────────────────────────────
@@ -400,6 +460,25 @@ public class SkillComponent : Component
 /// <summary>Inventory wrapper.</summary>
 public class InventoryComponent : Component
 {
+}
+
+/// <summary>Shader control wrapper.</summary>
+public class ShaderComponent : Component
+{
+#pragma warning disable 0649
+    internal static unsafe delegate*<ulong, NativeString, float, void> Shader_SetFloat_Ptr;
+    internal static unsafe delegate*<ulong, NativeString, Vector3*, void> Shader_SetVec3_Ptr;
+#pragma warning restore 0649
+
+    public void SetFloat(string name, float value)
+    {
+        unsafe { Shader_SetFloat_Ptr(Entity.ID, name, value); }
+    }
+
+    public void SetVector3(string name, Vector3 value)
+    {
+        unsafe { Shader_SetVec3_Ptr(Entity.ID, name, &value); }
+    }
 }
 
 } // namespace CHEngine

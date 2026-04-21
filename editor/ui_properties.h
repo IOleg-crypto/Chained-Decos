@@ -60,29 +60,11 @@ public:
         // Use metadata hint to select widget
         if constexpr (std::is_same_v<T, float>)
         {
-            if (meta.Hint == PropertyMeta::WidgetHint::Slider && meta.MaxValue > meta.MinValue)
-            {
-                changed = ImGui::SliderFloat(name, &value, meta.MinValue, meta.MaxValue);
-            }
-            else if (meta.Hint == PropertyMeta::WidgetHint::Default)
-            {
-                changed = ImGui::DragFloat(name, &value, meta.Speed);
-            }
-            else
-            {
-                changed = ImGui::InputFloat(name, &value);
-            }
+            changed = EditorGUI::Property(name, value, meta.Speed, meta.MinValue, meta.MaxValue);
         }
         else if constexpr (std::is_same_v<T, int>)
         {
-            if (meta.Hint == PropertyMeta::WidgetHint::Slider && meta.MaxValue > meta.MinValue)
-            {
-                changed = ImGui::SliderInt(name, &value, (int)meta.MinValue, (int)meta.MaxValue);
-            }
-            else
-            {
-                changed = EditorGUI::Property(name, value);
-            }
+            changed = EditorGUI::Property(name, value, (int)meta.MinValue, (int)meta.MaxValue);
         }
         else if constexpr (std::is_same_v<T, std::string>)
         {
@@ -119,11 +101,13 @@ public:
                     optionNames.push_back(option.c_str());
                 }
 
-                if (ImGui::Combo(name, &currentIndex, optionNames.data(), (int)optionNames.size()))
+                EditorGUI::BeginProperty(name);
+                if (ImGui::Combo("##prop", &currentIndex, optionNames.data(), (int)optionNames.size()))
                 {
                     value = (currentIndex > 0 && currentIndex < (int)options.size()) ? options[currentIndex] : std::string();
                     changed = true;
                 }
+                EditorGUI::EndProperty();
             }
             else
             {
@@ -180,15 +164,18 @@ public:
         return changed;
     }
 
-    void Action(const char* label, std::function<void()> func)
+    bool Action(const char* label, std::function<void()> func)
     {
         if (EditorGUI::ActionButton(nullptr, label))
         {
             func();
+            m_Changed = true;
+            return true;
         }
+        return false;
     }
 
-    template <typename T> bool Sequence(const char* name, std::vector<T>& values)
+    template <typename T> bool Sequence(const char* name, std::vector<T>& values, bool allowAddRemove = true)
     {
         if (ImGui::GetCurrentTable() != nullptr)
         {
@@ -213,7 +200,7 @@ public:
                     ImGui::TableSetColumnIndex(1);
                 }
 
-                if (ImGui::Button(ICON_FA_TRASH))
+                if (allowAddRemove && ImGui::Button(ICON_FA_TRASH))
                 {
                     values.erase(values.begin() + i);
                     m_Changed = true;
@@ -222,17 +209,23 @@ public:
                     break;
                 }
                 
-                ImGui::SameLine();
+                if (allowAddRemove) ImGui::SameLine();
                 
                 if constexpr (requires(T t, Properties<UIProperties>& p) { t.Reflect(p); })
                 {
                     char label[32];
                     sprintf(label, "Item %d", (int)i);
                     // Use a nested tree node for complex items
+                    // Use a nested tree node for complex items.
+                    // We must end the current property grid table before starting a new one for the nested object, 
+                    // or use a nested table if we want to stay in the current column.
+                    // Here we use a nested property grid for better layout of script fields.
                     if (ImGui::TreeNodeEx(label, ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth))
                     {
+                        EditorGUI::BeginPropertyGrid();
                         Properties<UIProperties> itemProps(*this);
                         values[i].Reflect(itemProps);
+                        EditorGUI::EndPropertyGrid();
                         ImGui::TreePop();
                     }
                 }
@@ -265,9 +258,9 @@ public:
                 ImGui::TableSetColumnIndex(1);
             }
 
-            if (ImGui::Button(ICON_FA_PLUS " Add New Item", ImVec2(-1, 0)))
+            if (allowAddRemove && EditorGUI::ActionButton(ICON_FA_PLUS, "Add New Item"))
             {
-                values.push_back({});
+                values.emplace_back();
                 m_Changed = true;
                 localChanged = true;
             }

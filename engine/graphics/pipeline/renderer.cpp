@@ -32,6 +32,7 @@ bool Renderer::IsInitialized()
 
 Renderer& Renderer::Get()
 {
+    CH_CORE_ASSERT(s_Instance && s_Instance->m_Initialized, "Renderer::Get() called before Renderer::Init()!");
     return *s_Instance;
 }
 
@@ -111,9 +112,8 @@ void Renderer::InternalInit()
     InitializeResources();
     InitializeSkybox();
 
-    // Always load engine resources after initialization
-    LoadEngineResources();
     m_Initialized = true;
+    LoadEngineResources();
 }
 
 void Renderer::Shutdown()
@@ -743,37 +743,63 @@ void Renderer::DrawSphereWires(const glm::mat4& transform, float radius, const g
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
-void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextureId, const Camera3D& camera)
+void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextureId, const Camera3D& camera,
+                                   ShaderAsset* overrideShader, const std::vector<ShaderUniform>& uniforms)
 {
-    auto shaderAsset = m_Data->Shaders->LoadOrGet("PostProcess", "engine/resources/shaders/post_process.chshader");
+    auto shaderAsset = overrideShader;
+    if (!shaderAsset)
+    {
+        shaderAsset = m_Data->Shaders->LoadOrGet("PostProcess", "engine/resources/shaders/post_process.chshader").get();
+    }
+
     if (shaderAsset && shaderAsset->GetShader())
     {
-        shaderAsset->GetShader()->Bind();
+        auto shader = shaderAsset->GetShader();
+        shader->Bind();
 
-        // Fullscreen quad doesn't need transformation, set MVP to identity
+        // 1. Set System Uniforms
         glm::mat4 identity = glm::mat4(1.0f);
-        shaderAsset->GetShader()->SetMatrix("mvp", identity);
+        shader->SetMatrix("mvp", identity);
 
         glm::mat4 invViewProj = glm::inverse(m_Data->CurrentProj * m_Data->CurrentView);
-        shaderAsset->GetShader()->SetMatrix("matInverseViewProj", invViewProj);
-        shaderAsset->GetShader()->SetVec3("viewPos", camera.Position);
+        shader->SetMatrix("matInverseViewProj", invViewProj);
+        shader->SetVec3("viewPos", camera.Position);
 
-        shaderAsset->GetShader()->SetFloat("uTime", m_Data->Time);
-        shaderAsset->GetShader()->SetFloat("uExposure", m_Data->Lighting.CurrentLighting.Exposure);
-        shaderAsset->GetShader()->SetFloat("uGamma", m_Data->Lighting.CurrentLighting.Gamma);
+        shader->SetFloat("uTimeF", (float)m_Data->Time.GetSeconds());
+        shader->SetFloat("uTime",  (float)m_Data->Time.GetSeconds()); // system uniform
+        shader->SetFloat("time",   (float)m_Data->Time.GetSeconds()); // alias for custom shaders
+        shader->SetFloat("uExposure", m_Data->Lighting.CurrentLighting.Exposure);
+        shader->SetFloat("uGamma", m_Data->Lighting.CurrentLighting.Gamma);
 
-        ApplyFogUniforms(shaderAsset);
+        ApplyFogUniforms(AssetManager::Get().Get<ShaderAsset>(shaderAsset->GetPath()));
 
+        // 2. Set Custom Uniforms (if any)
+        for (const auto& u : uniforms)
+        {
+            switch (u.Type)
+            {
+            case 0: shader->SetFloat(u.Name, u.Value[0]); break;
+            case 1: shader->SetVec2(u.Name, *(glm::vec2*)u.Value); break;
+            case 2: shader->SetVec3(u.Name, *(glm::vec3*)u.Value); break;
+            case 3: shader->SetVec4(u.Name, *(glm::vec4*)u.Value); break;
+            case 4: shader->SetVec4(u.Name, *(glm::vec4*)u.Value); break; // Color is Vec4
+            }
+        }
+
+        // 3. Bind Textures
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, screenTextureId);
-        shaderAsset->GetShader()->SetInt("texture0", 0);
+        shader->SetInt("texture0", 0);
 
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, depthTextureId);
-        shaderAsset->GetShader()->SetInt("texture1", 1);
+        shader->SetInt("texture1", 1);
 
+        // 4. Draw Fullscreen Quad
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_CULL_FACE);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         if (m_Data->FullscreenQuadVAO)
         {
@@ -782,6 +808,7 @@ void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextu
             m_Data->FullscreenQuadVAO->Unbind();
         }
 
+        glDisable(GL_BLEND);
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
     }
@@ -884,4 +911,52 @@ void Renderer::CleanupResources()
     m_Data->Resources.UnitSphereModel.reset();
     m_Data->Resources.WireCubeModel.reset();
 }
+
+
+
+void Renderer::DrawSprite(uint32_t textureId, const glm::mat4& transform, const glm::vec4& tint, bool flipX, bool flipY)
+{
+    if (textureId == 0) return;
+
+    auto shaderAsset = m_Data->Shaders->LoadOrGet("Sprite", "resources/shaders/sprite.chshader");
+    if (!shaderAsset || !shaderAsset->GetShader()) return;
+
+    auto shader = shaderAsset->GetShader();
+    shader->Bind();
+
+    shader->SetMatrix("mvp", m_Data->CurrentProj * m_Data->CurrentView * transform);
+    shader->SetMatrix("matModel", transform);
+    shader->SetVec4("u_Tint", tint);
+    shader->SetVec2("u_Flip", glm::vec2(flipX ? 1.0f : 0.0f, flipY ? 1.0f : 0.0f));
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textureId);
+    shader->SetInt("texture0", 0);
+
+    ApplyFogUniforms(shaderAsset);
+
+    bool blendWasEnabled = glIsEnabled(GL_BLEND);
+    bool cullWasEnabled = glIsEnabled(GL_CULL_FACE);
+
+    if (!blendWasEnabled) glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    if (cullWasEnabled) glDisable(GL_CULL_FACE);
+
+    if (!m_Data->BillboardVAO)
+    {
+        auto mesh = GeometryGenerator::GenerateQuad(1.0f);
+        m_Data->BillboardVAO = mesh.VAO;
+    }
+
+    if (m_Data->BillboardVAO)
+    {
+        m_Data->BillboardVAO->Bind();
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+        m_Data->BillboardVAO->Unbind();
+    }
+
+    if (cullWasEnabled) glEnable(GL_CULL_FACE);
+    if (!blendWasEnabled) glDisable(GL_BLEND);
+}
+
 } // namespace CHEngine

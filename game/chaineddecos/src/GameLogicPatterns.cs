@@ -13,6 +13,7 @@ namespace ChainedDecos.Scripts
         public static GameManagerPattern Instance => _instance ?? throw new Exception("GameManagerPattern not initialized.");
 
         public int Score { get; set; } = 0;
+        public int Coins { get; set; } = 0;
         public string ActiveTheme { get; set; } = "Basic";
 
         public override void OnCreate()

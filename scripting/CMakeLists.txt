@@ -1,4 +1,4 @@
-add_library(scripting STATIC
+add_library(engine_scripting OBJECT
     scriptengine.h
     scriptengine.cpp
     scriptengine_services.h
@@ -13,44 +13,34 @@ add_library(scripting STATIC
     script_glue_camera.cpp
     script_glue_ui.cpp
     script_glue_gameplay.cpp
-    scene_scripting.h
-    scene_scripting.cpp
 )
 
-target_include_directories(scripting PUBLIC
+target_include_directories(engine_scripting PUBLIC
+    ${ENGINE_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}
-    ${yaml-cpp_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/include/imgui
-    ${CMAKE_SOURCE_DIR}/include/imgui/backends
-    ${CMAKE_SOURCE_DIR}/include/entt/src
-    ${CMAKE_SOURCE_DIR}/include/coral/Coral.Native/Include
-    ${CMAKE_SOURCE_DIR}/include/glfw/include
-    ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/include/miniaudio
 )
 
 if(CH_BUILD_PRESET_NAMES_INCLUDE_DIR)
-    target_include_directories(scripting PRIVATE
+    target_include_directories(engine_scripting PRIVATE
         ${CH_BUILD_PRESET_NAMES_INCLUDE_DIR}
     )
 endif()
 
-target_link_libraries(scripting PUBLIC 
-    engine
-    yaml-cpp
+# Note: Linkage is handled by the final 'engine' target for object libraries.
+# But we need PUBLIC linkage for dependencies that provide headers.
+target_link_libraries(engine_scripting PUBLIC 
     EnTT
     Coral.Native
 )
 
 if(COMMAND apply_engine_optimizations)
-    apply_engine_optimizations(scripting)
+    apply_engine_optimizations(engine_scripting)
 endif()
 
 if(MSVC)
-    target_compile_options(scripting PRIVATE /bigobj)
+    target_compile_options(engine_scripting PRIVATE /bigobj)
 elseif(MINGW)
-    target_compile_options(scripting PRIVATE -Wa,-mbig-obj)
+    target_compile_options(engine_scripting PRIVATE -Wa,-mbig-obj)
 endif()
 
 # ── C# Managed API Build ──────────────────────────────────────────────────
@@ -74,13 +64,8 @@ if(DOTNET_EXECUTABLE)
     file(WRITE "${CMAKE_BINARY_DIR}/.cmake_temp_props" "${PROPS_TEMPLATE_CONTENT}")
     execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_BINARY_DIR}/.cmake_temp_props" "${PROPS_CONTENT_FILE}")
     
-    # Collect all C# source files and lock file for dependency tracking
-    file(GLOB_RECURSE MANAGED_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/managed/src/*.cs")
-    list(APPEND MANAGED_SOURCES "${MANAGED_PROJECT_PATH}")
-    list(APPEND MANAGED_SOURCES "${PROPS_CONTENT_FILE}")
-    
     # 1. Collect all local managed sources for dependency tracking
-    file(GLOB_RECURSE MANAGED_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/managed/src/*.cs")
+    file(GLOB_RECURSE MANAGED_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/managed/src/*.cs")
     list(APPEND MANAGED_SOURCES "${MANAGED_PROJECT_PATH}")
     list(APPEND MANAGED_SOURCES "${PROPS_CONTENT_FILE}")
 
@@ -101,7 +86,7 @@ if(DOTNET_EXECUTABLE)
         add_dependencies(CHEngine_Managed CoralManaged)
     endif()
     
-    add_dependencies(scripting CHEngine_Managed)
+    add_dependencies(engine_scripting CHEngine_Managed)
 
     # Deploy Coral.Managed files
     set(CORAL_FILES 
@@ -118,9 +103,28 @@ if(DOTNET_EXECUTABLE)
             "${CMAKE_BINARY_DIR}/include/coral/cmake/Coral.Managed.deps.json"
             "${CMAKE_BINARY_DIR}/include/coral/cmake/Coral.Managed.pdb"
             "${CMAKE_BINARY_DIR}/bin/"
+            "${CORAL_MANAGED_DIR}/Coral.Managed.dll"
+            "${CORAL_MANAGED_DIR}/Coral.Managed.runtimeconfig.json"
+            "${CORAL_MANAGED_DIR}/Coral.Managed.deps.json"
+            "${CORAL_MANAGED_DIR}/Coral.Managed.pdb"
+            "${MANAGED_OUTPUT_DIR}/"
         COMMENT "Deploying Coral.Managed binaries"
         VERBATIM
     )
 else()
     message(WARNING "dotnet executable not found! Cannot build CHEngine.Managed C# library.")
 endif()
+
+# ── Build Game Projects ──────────────────────────────────────────────────────
+# Automatically find and include all projects in the game/ directory.
+# This avoids manual if/else blocks and allows adding new games easily.
+file(GLOB GAME_PROJECT_LIST RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/game" "game/*")
+foreach(GAME_PROJECT_DIR ${GAME_PROJECT_LIST})
+    set(GAME_PATH "${CMAKE_CURRENT_SOURCE_DIR}/game/${GAME_PROJECT_DIR}")
+    if(IS_DIRECTORY "${GAME_PATH}" AND EXISTS "${GAME_PATH}/CMakeLists.txt")
+        # If CH_ACTIVE_GAME is defined, only add the specific one to save config time (optional)
+        if(NOT CH_ACTIVE_GAME OR CH_ACTIVE_GAME STREQUAL GAME_PROJECT_DIR)
+            add_subdirectory("game/${GAME_PROJECT_DIR}")
+        endif()
+    endif()
+endforeach()

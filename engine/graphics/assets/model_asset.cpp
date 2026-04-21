@@ -69,8 +69,23 @@ void ModelAsset::OnLoaded()
     Model newModel;
     newModel.Materials.resize(m_PendingData.materials.empty() ? 1 : m_PendingData.materials.size());
     m_EmbeddedTextures.clear();
-
     auto project = Project::GetActive();
+
+    // Pre-populate embedded textures
+    for (auto& [path, embedded] : m_PendingData.embeddedTextures)
+    {
+        if (embedded.data.empty() || embedded.width <= 0 || embedded.height <= 0 || embedded.isHDR)
+        {
+            continue;
+        }
+
+        auto texture = Texture::Create((uint32_t)embedded.width, (uint32_t)embedded.height, TextureFormat::RGBA8);
+        if (texture)
+        {
+            texture->SetData((void*)embedded.data.data(), 0);
+            m_EmbeddedTextures[path] = texture;
+        }
+    }
 
     auto loadTex = [&](int matIdx, const std::string& path, int mapIndex) {
         if (path.empty())
@@ -78,95 +93,34 @@ void ModelAsset::OnLoaded()
             return;
         }
 
+        uint32_t texId = 0;
         if (path.front() == '*')
         {
-            auto embeddedIt = m_PendingData.embeddedTextures.find(path);
-            if (embeddedIt == m_PendingData.embeddedTextures.end())
+            auto it = m_EmbeddedTextures.find(path);
+            if (it != m_EmbeddedTextures.end())
             {
-                return;
+                texId = it->second->GetRendererID();
             }
-
-            const EmbeddedTextureData& embedded = embeddedIt->second;
-            if (embedded.data.empty() || embedded.width <= 0 || embedded.height <= 0 || embedded.isHDR)
+        }
+        else if (project)
+        {
+            auto tex = AssetManager::Get().Get<TextureAsset>(path);
+            if (tex && tex->IsReady())
             {
-                return;
+                texId = tex->GetTexture()->GetRendererID();
             }
-
-            auto texture = Texture::Create((uint32_t)embedded.width, (uint32_t)embedded.height, TextureFormat::RGBA8);
-            if (!texture)
-            {
-                return;
-            }
-
-            texture->SetData((void*)embedded.data.data(), 0);
-            m_EmbeddedTextures.push_back(texture);
-
-            uint32_t texId = texture->GetRendererID();
-            switch (mapIndex)
-            {
-            case 0:
-                newModel.Materials[matIdx].AlbedoMap = texId;
-                break;
-            case 1:
-                newModel.Materials[matIdx].EmissiveMap = texId;
-                break;
-            case 2:
-                newModel.Materials[matIdx].NormalMap = texId;
-                break;
-            case 3:
-                newModel.Materials[matIdx].MetallicRoughnessMap = texId;
-                break;
-            case 4:
-                newModel.Materials[matIdx].EmissiveMap = texId;
-                break;
-            case 5:
-                newModel.Materials[matIdx].OcclusionMap = texId;
-                break;
-            }
-            return;
         }
 
-        if (!project)
-        {
-            return;
-        }
+        if (texId == 0) return;
 
-        auto tex = AssetManager::Get().Get<TextureAsset>(path);
-        if (!tex)
-        {
-            return;
-        }
-
-        uint32_t texId = 0;
-        if (tex->IsReady())
-        {
-            texId = tex->GetTexture()->GetRendererID();
-        }
-        else
-        {
-            // Optional: fallback texture ID here
-            texId = 0; 
-        }
         switch (mapIndex)
         {
-        case 0:
-            newModel.Materials[matIdx].AlbedoMap = texId;
-            break;
-        case 1:
-            newModel.Materials[matIdx].EmissiveMap = texId;
-            break;
-        case 2:
-            newModel.Materials[matIdx].NormalMap = texId;
-            break;
-        case 3:
-            newModel.Materials[matIdx].MetallicRoughnessMap = texId;
-            break;
-        case 4:
-            newModel.Materials[matIdx].EmissiveMap = texId;
-            break;
-        case 5:
-            newModel.Materials[matIdx].OcclusionMap = texId;
-            break;
+        case 0: newModel.Materials[matIdx].AlbedoMap = texId; break;
+        case 1: newModel.Materials[matIdx].EmissiveMap = texId; break;
+        case 2: newModel.Materials[matIdx].NormalMap = texId; break;
+        case 3: newModel.Materials[matIdx].MetallicRoughnessMap = texId; break;
+        case 4: newModel.Materials[matIdx].EmissiveMap = texId; break;
+        case 5: newModel.Materials[matIdx].OcclusionMap = texId; break;
         }
     };
 
@@ -322,21 +276,10 @@ void ModelAsset::OnLoaded()
 
 uint32_t ModelAsset::GetEmbeddedTextureID(const std::string& path) const
 {
-    // Embedded textures have paths like "*0", "*1", etc.
-    if (path.empty() || path.front() != '*')
+    auto it = m_EmbeddedTextures.find(path);
+    if (it != m_EmbeddedTextures.end() && it->second)
     {
-        return 0;
-    }
-    try
-    {
-        size_t index = std::stoul(path.substr(1));
-        if (index < m_EmbeddedTextures.size() && m_EmbeddedTextures[index])
-        {
-            return m_EmbeddedTextures[index]->GetRendererID();
-        }
-    }
-    catch (...)
-    {
+        return it->second->GetRendererID();
     }
     return 0;
 }

@@ -4,51 +4,52 @@
 #include "engine/core/base.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "gtest/gtest.h"
+#include "engine/core/application.h"
 
 using namespace CHEngine;
 
 class RendererTest : public ::testing::Test
 {
 protected:
+    std::unique_ptr<Application> m_App;
+
     void SetUp() override
     {
-#if defined(CH_CI)
-        GTEST_SKIP() << "Skipping renderer tests on CI due to lack of reliable OpenGL support.";
-#endif
+        ApplicationSpecification spec;
+        spec.Name = "RendererTests";
+        spec.Headless = true;
+        m_App = std::make_unique<Application>(spec);
     }
 
     void TearDown() override
     {
+        m_App.reset();
     }
 };
-
-#if !defined(CH_CI)
 
 // Verifies that the Renderer singleton can be initialized and shut down without errors.
 TEST_F(RendererTest, RendererInitialization)
 {
-    auto& renderer = Renderer::Get();
-    renderer.Init();
-    renderer.Shutdown();
+    Renderer::Init();
+    Renderer::Shutdown();
 }
 
 // Verifies that the Renderer can be init/shutdown in sequence multiple times
 // without memory corruption or double-free.
 TEST_F(RendererTest, Lifetime)
 {
-    auto& renderer = Renderer::Get();
-    renderer.Init();
-    renderer.Shutdown();
+    Renderer::Init();
+    Renderer::Shutdown();
 
-    renderer.Init();
-    renderer.Shutdown();
+    Renderer::Init();
+    Renderer::Shutdown();
 }
 
 // Verifies that lights can be set, counted, and cleared on the renderer.
 TEST_F(RendererTest, LightManagement)
 {
+    Renderer::Init();
     auto& renderer = Renderer::Get();
-    renderer.Init();
 
     EXPECT_EQ(renderer.GetData().LightCount, 0);
 
@@ -65,27 +66,27 @@ TEST_F(RendererTest, LightManagement)
     renderer.ClearLights();
     EXPECT_EQ(renderer.GetData().LightCount, 0);
 
-    renderer.Shutdown();
+    Renderer::Shutdown();
 }
 
 // Verifies that DiagnosticMode float can be pushed into the renderer's data block.
 TEST_F(RendererTest, DiagnosticMode)
 {
+    Renderer::Init();
     auto& renderer = Renderer::Get();
-    renderer.Init();
 
     renderer.SetDiagnosticMode(2.0f);
     EXPECT_FLOAT_EQ(renderer.GetData().DiagnosticMode, 2.0f);
 
-    renderer.Shutdown();
+    Renderer::Shutdown();
 }
 
 // Verifies that an EnvironmentSettings object is applied correctly to the renderer's
 // internal lighting data (e.g. ambient value round-trips through ApplyEnvironment).
 TEST_F(RendererTest, EnvironmentApplication)
 {
+    Renderer::Init();
     auto& renderer = Renderer::Get();
-    renderer.Init();
 
     EnvironmentSettings env;
     env.Lighting.Ambient = 0.5f;
@@ -93,7 +94,5 @@ TEST_F(RendererTest, EnvironmentApplication)
     renderer.ApplyEnvironment(env);
     EXPECT_FLOAT_EQ(renderer.GetData().Lighting.CurrentLighting.Ambient, 0.5f);
 
-    renderer.Shutdown();
+    Renderer::Shutdown();
 }
-
-#endif // CH_CI

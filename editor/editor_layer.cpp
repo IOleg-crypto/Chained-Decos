@@ -23,7 +23,6 @@
 #include "panels/project_browser_panel.h"
 #include "panels/property_editor.h"
 #include "panels/viewport_panel.h"
-#include "scripting/scene_scripting.h"
 #include "scripting/scriptengine.h"
 #include <ImGuizmo.h>
 #include <chrono>
@@ -292,16 +291,11 @@ void EditorLayer::OnUpdate(Timestep ts)
 
             if (scriptEngine.CanExecuteFrameScripts())
             {
-                SceneScripting::Update(scene.get(), ts);
+                scene->OnUpdateRuntime(ts);
             }
-            scene->OnUpdateRuntime(ts);
-
-            // Handle deferred scene loading requested from C# scripts
-            std::string pendingPath;
-            if (scriptEngine.TryConsumeRequestedScene(pendingPath))
+            else
             {
-                SceneChangeRequestEvent ev(pendingPath);
-                OnEvent(ev);
+                scene->OnUpdateEditor(ts);
             }
         }
         else
@@ -396,7 +390,7 @@ void EditorLayer::OnEvent(Event& e)
 {
     if (auto scene = GetActiveScene())
     {
-        SceneScripting::DispatchEvent(scene.get(), e);
+        scene->OnEvent(e);
     }
 
     // Dispatch events to all editor panels

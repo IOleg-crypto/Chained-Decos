@@ -3,7 +3,7 @@ add_library(RuntimeCore STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/runtime_layer.cpp
 )
 
-target_link_libraries(RuntimeCore PUBLIC engine scripting)
+target_link_libraries(RuntimeCore PUBLIC engine)
 target_include_directories(RuntimeCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Set PCH for RuntimeCore
@@ -23,8 +23,6 @@ add_executable(ChainedRuntime
 target_link_libraries(ChainedRuntime PRIVATE
     RuntimeCore
     engine
-    scripting
-    imguilib
 )
 
 # Use centralized engine resources

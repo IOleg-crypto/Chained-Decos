@@ -28,13 +28,6 @@ target_include_directories(EngineTests PRIVATE
 chained_add_engine_resources_copy()
 add_dependencies(EngineTests EngineResources)
 
-if(DEFINED ENV{CI} OR CH_CI)
-    target_compile_definitions(EngineTests PRIVATE CH_CI)
-endif()
-
-# Fix static linking issues with yaml-cpp on Windows
-target_compile_definitions(EngineTests PRIVATE YAML_CPP_STATIC_DEFINE)
-
 include(GoogleTest)
 gtest_discover_tests(EngineTests 
     CONFIGURATION_VAR CMAKE_BUILD_TYPE

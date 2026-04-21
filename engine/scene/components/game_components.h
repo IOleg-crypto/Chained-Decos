@@ -23,7 +23,10 @@ struct SpawnComponent
         props.Property("Active", IsActive);
         props.Property("ZoneSize", ZoneSize, PropertyMeta(0.1f, 100.0f, 0.1f));
         props.Handle("TextureHandle", TextureHandle);
-        props.File("TexturePath", TexturePath, "png,jpg,bmp,tga");
+        if (props.File("TexturePath", TexturePath, "png,jpg,bmp,tga"))
+        {
+            TextureHandle = AssetHandle(0);
+        }
         props.Property("RenderZone", RenderSpawnZoneInScene);
         props.Property("SpawnPoint", SpawnPoint);
     CH_REFLECT_END()
@@ -38,6 +41,7 @@ struct PlayerComponent
     PlayerComponent() = default;
 
     CH_REFLECT_BEGIN(PlayerComponent)
+        props.Header("Settings");
         props.Property("MovementSpeed", MovementSpeed, PropertyMeta(0.1f, 100.0f, 0.5f));
         props.Property("JumpForce", JumpForce, PropertyMeta(0.1f, 50.0f, 0.5f));
         props.Property("LookSensitivity", LookSensitivity, PropertyMeta(0.1f, 5.0f, 0.1f));

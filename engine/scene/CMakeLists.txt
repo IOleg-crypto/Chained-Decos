@@ -12,9 +12,14 @@ add_library(engine_scene ${SUBMODULE_LIB_TYPE}
         entity.cpp
         scene_picking.cpp
         components/mesh_component.cpp
+        systems/animation_system.cpp
+        systems/hierarchy_system.cpp
+        systems/scene_audio_system.cpp
+        SceneScriptingManager.cpp
 
         scene.h
         scene_events.h
+        SceneScriptingManager.h
         project.h
         project_serializer.h
         scene_serializer.h
