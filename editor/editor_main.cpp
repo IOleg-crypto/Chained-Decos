@@ -17,7 +17,7 @@ Application* CreateApplication(ApplicationCommandLineArgs args)
     details.Spec.ShutdownScripting = []() { ScriptEngine::Shutdown(); };
 
     auto app = new Application(details.Spec);
-    app->PushLayer(new EditorLayer());
+    app->PushLayer(std::make_unique<EditorLayer>());
     return app;
 }
 } // namespace CHEngine

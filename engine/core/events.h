@@ -3,6 +3,8 @@
 
 #include <functional>
 #include <string>
+#include <deque>
+#include <memory>
 
 namespace CHEngine
 {
@@ -63,6 +65,36 @@ public:
     }
 private:
     Event& m_Event;
+};
+
+class EventQueue
+{
+public:
+    void Push(std::unique_ptr<Event> event)
+    {
+        m_Queue.push_back(std::move(event));
+    }
+
+    template<typename T, typename... Args>
+    void Enqueue(Args&&... args)
+    {
+        m_Queue.push_back(std::make_unique<T>(std::forward<Args>(args)...));
+    }
+
+    void Process(const std::function<void(Event&)>& callback)
+    {
+        while (!m_Queue.empty())
+        {
+            auto event = std::move(m_Queue.front());
+            m_Queue.pop_front();
+            callback(*event);
+        }
+    }
+
+    bool IsEmpty() const { return m_Queue.empty(); }
+
+private:
+    std::deque<std::unique_ptr<Event>> m_Queue;
 };
 
 using EventCallbackFn = std::function<void(Event&)>;

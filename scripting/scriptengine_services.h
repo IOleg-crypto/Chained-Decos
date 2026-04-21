@@ -14,46 +14,12 @@ namespace CHEngine
 
 class Scene;
 
-// Runtime scene handoff and reload state.
-class ScriptRuntimeSession
-{
-public:
-    bool IsReloadInProgress() const
-    {
-        return m_ReloadInProgress;
-    }
-
-    bool BeginReload();
-    void EndReload();
-
-    Scene* GetActiveScene() const
-    {
-        return m_ActiveScene;
-    }
-
-    void SetActiveScene(Scene* scene)
-    {
-        m_ActiveScene = scene;
-    }
-
-    void RequestLoadScene(const std::string& path)
-    {
-        m_PendingScenePath = path;
-    }
-
-    std::string ConsumeRequestedScene();
-    bool TryConsumeRequestedScene(std::string& outPath);
-
-    void Reset();
-
-private:
-    Scene* m_ActiveScene = nullptr;
-    bool m_ReloadInProgress = false;
-    std::string m_PendingScenePath;
-};
+// Runtime scripting context (used by glue)
+void SetContextScene(Scene* scene);
+Scene* GetContextScene();
 
 // Owns the CoreCLR host and the current app/core assembly handles.
-class ScriptAssemblyHost
+class ScriptHost
 {
 public:
     bool Init();
@@ -65,6 +31,16 @@ public:
     bool IsInitialized() const
     {
         return m_IsInitialized;
+    }
+
+    bool IsReloadInProgress() const
+    {
+        return m_ReloadInProgress;
+    }
+
+    void SetReloadInProgress(bool inProgress)
+    {
+        m_ReloadInProgress = inProgress;
     }
 
     Coral::ManagedAssembly* GetAppAssembly() const
@@ -93,10 +69,11 @@ private:
     Coral::ManagedAssembly* m_AppAssembly = nullptr;
     Coral::ManagedAssembly* m_CoreAssembly = nullptr;
     bool m_IsInitialized = false;
+    bool m_ReloadInProgress = false;
 };
 
 // Caches discovered script types and resolves short names to full names.
-class ScriptTypeRegistry
+class ScriptRegistry
 {
 public:
     void Clear();
@@ -114,8 +91,8 @@ private:
     std::unordered_set<std::string> m_MissingScriptsWarnings;
 };
 
-ScriptAssemblyHost& GetScriptAssemblyHost();
-ScriptTypeRegistry& GetScriptTypeRegistry();
+ScriptHost& GetScriptHost();
+ScriptRegistry& GetScriptRegistry();
 
 } // namespace CHEngine
 

@@ -2,6 +2,8 @@
 #define CH_RENDERER_TYPES_H
 
 #include "engine/core/ch_math.h"
+#include "engine/core/reflection.h"
+#include <glm/glm.hpp>
 #include <string>
 #include <vector>
 #include <memory>
@@ -9,6 +11,53 @@
 
 namespace CHEngine
 {
+    struct ShaderUniform
+    {
+        std::string Name;
+        int Type; // 0: Float, 1: Vec2, 2: Vec3, 3: Vec4, 4: Color
+        float Value[4] = {0, 0, 0, 0};
+
+        CH_REFLECT_BEGIN(ShaderUniform)
+        props.Property("Name", Name);
+        static const char* types[] = {"Float", "Vec2", "Vec3", "Vec4", "Color"};
+        if (props.Enum("Type", Type, types, 5))
+        {
+            // Zero out values when type changes to avoid mess
+            memset(Value, 0, sizeof(Value));
+        }
+
+        if (Type == 4) // Color
+        {
+            CHEngine::Color c = {(unsigned char)glm::clamp(Value[0] * 255.0f, 0.0f, 255.0f),
+                                (unsigned char)glm::clamp(Value[1] * 255.0f, 0.0f, 255.0f),
+                                (unsigned char)glm::clamp(Value[2] * 255.0f, 0.0f, 255.0f),
+                                (unsigned char)glm::clamp(Value[3] * 255.0f, 0.0f, 255.0f)};
+            if (props.Property("Value", c))
+            {
+                Value[0] = c.r / 255.0f;
+                Value[1] = c.g / 255.0f;
+                Value[2] = c.b / 255.0f;
+                Value[3] = c.a / 255.0f;
+            }
+        }
+        else if (Type == 1) // Vec2
+        {
+            props.Property("Value", *(glm::vec2*)Value);
+        }
+        else if (Type == 2) // Vec3
+        {
+            props.Property("Value", *(glm::vec3*)Value);
+        }
+        else if (Type == 3) // Vec4
+        {
+            props.Property("Value", *(glm::vec4*)Value);
+        }
+        else // Float
+        {
+            props.Property("Value", Value[0]);
+        }
+        CH_REFLECT_END()
+    };
     struct Material
     {
         glm::vec4 AlbedoColor = { 1.0f, 1.0f, 1.0f, 1.0f };

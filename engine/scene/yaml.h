@@ -267,8 +267,8 @@ template <> struct convert<CHEngine::TextStyle>
         node["ShadowColor"] = rhs.ShadowColor;
         node["LetterSpacing"] = rhs.LetterSpacing;
         node["LineHeight"] = rhs.LineHeight;
-        node["HorizontalAlignment"] = static_cast<int>(rhs.HorizontalAlignment);
-        node["VerticalAlignment"] = static_cast<int>(rhs.VerticalAlignment);
+        node["Horizontal"] = static_cast<int>(rhs.Horizontal);
+        node["Vertical"] = static_cast<int>(rhs.Vertical);
         return node;
     }
     static bool decode(const Node& node, CHEngine::TextStyle& rhs)
@@ -309,13 +309,22 @@ template <> struct convert<CHEngine::TextStyle>
         {
             rhs.LineHeight = node["LineHeight"].as<float>();
         }
+        if (node["Horizontal"])
+        {
+            rhs.Horizontal = static_cast<CHEngine::HorizontalAlignment>(node["Horizontal"].as<int>());
+        }
+        if (node["Vertical"])
+        {
+            rhs.Vertical = static_cast<CHEngine::VerticalAlignment>(node["Vertical"].as<int>());
+        }
+        // Support legacy names for backward compatibility if needed, but let's stick to new ones for now
         if (node["HorizontalAlignment"])
         {
-            rhs.HorizontalAlignment = static_cast<CHEngine::TextAlignment>(node["HorizontalAlignment"].as<int>());
+            rhs.Horizontal = static_cast<CHEngine::HorizontalAlignment>(node["HorizontalAlignment"].as<int>());
         }
         if (node["VerticalAlignment"])
         {
-            rhs.VerticalAlignment = static_cast<CHEngine::TextAlignment>(node["VerticalAlignment"].as<int>());
+            rhs.Vertical = static_cast<CHEngine::VerticalAlignment>(node["VerticalAlignment"].as<int>());
         }
         return true;
     }
@@ -328,8 +337,8 @@ inline YAML::Emitter& operator<<(YAML::Emitter& out, const CHEngine::TextStyle& 
         << YAML::Value << s.Shadow << YAML::Key << "ShadowOffset" << YAML::Value << s.ShadowOffset << YAML::Key
         << "ShadowColor" << YAML::Value << s.ShadowColor << YAML::Key << "LetterSpacing" << YAML::Value
         << s.LetterSpacing << YAML::Key << "LineHeight" << YAML::Value << s.LineHeight << YAML::Key
-        << "HorizontalAlignment" << YAML::Value << static_cast<int>(s.HorizontalAlignment) << YAML::Key
-        << "VerticalAlignment" << YAML::Value << static_cast<int>(s.VerticalAlignment) << YAML::EndMap;
+        << "Horizontal" << YAML::Value << static_cast<int>(s.Horizontal) << YAML::Key
+        << "Vertical" << YAML::Value << static_cast<int>(s.Vertical) << YAML::EndMap;
     return out;
 }
 

@@ -22,6 +22,9 @@ if(MSVC)
     
     # Strip unused functions in Release
     add_link_options($<$<CONFIG:Release>:/OPT:REF> $<$<CONFIG:Release>:/OPT:ICF>)
+    
+    # Speed up Debugging: use FASTLINK
+    add_link_options($<$<CONFIG:Debug>:/DEBUG:FASTLINK>)
 
     if(DISABLE_ALL_WARNINGS)
         add_compile_options(/W0)

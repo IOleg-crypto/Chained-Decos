@@ -3,6 +3,21 @@
 
 namespace CHEngine
 {
+ThreadPool* ThreadPool::s_Instance = nullptr;
+
+void ThreadPool::Init()
+{
+    if (s_Instance) return;
+    s_Instance = new ThreadPool();
+}
+
+void ThreadPool::Shutdown()
+{
+    if (!s_Instance) return;
+    delete s_Instance;
+    s_Instance = nullptr;
+}
+
 ThreadPool::ThreadPool()
 {
     size_t threads = std::thread::hardware_concurrency();
@@ -28,8 +43,13 @@ ThreadPool::~ThreadPool()
         std::unique_lock<std::mutex> lock(m_QueueMutex);
         m_Stop = true;
     }
+    
+    // Trigger the condition variable to wake up any threads waiting for tasks.
     m_Condition.notify_all();
-    // jthreads will automatically join here
+
+    // Explicitly destroy the threads (joining them) while the mutex and condition variable members are still alive.
+    // Member destructors run after the body of this destructor, but it's safer to join them explicitly here.
+    m_Workers.clear();
 }
 
 void ThreadPool::WorkerThread(std::stop_token stopToken)

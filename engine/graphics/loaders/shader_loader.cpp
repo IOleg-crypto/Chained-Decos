@@ -18,7 +18,7 @@ namespace CHEngine
     bool ShaderLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError)
     {
         auto shaderAsset = std::static_pointer_cast<ShaderAsset>(asset);
-        auto shader = LoadShaderFromPath(resolvedPath);
+        auto shader = LoadShaderFromPath(resolvedPath, shaderAsset);
         if (shader)
         {
             shaderAsset->SetShader(shader);
@@ -31,7 +31,7 @@ namespace CHEngine
         return false;
     }
 
-    std::shared_ptr<Shader> ShaderLoader::LoadShaderFromPath(const std::string& path)
+    std::shared_ptr<Shader> ShaderLoader::LoadShaderFromPath(const std::string& path, const std::shared_ptr<ShaderAsset>& shaderAsset)
     {
         std::filesystem::path absolutePath(path);
         if (!std::filesystem::exists(absolutePath))
@@ -54,9 +54,23 @@ namespace CHEngine
                 std::string vsPath = (basePath / vsRel).string();
                 std::string fsPath = (basePath / fsRel).string();
 
-                return LoadShaderFromPaths(vsPath, fsPath);
-            } catch (...)
+                auto shader = LoadShaderFromPaths(vsPath, fsPath);
+                if (shader && shaderAsset)
+                {
+                    if (config["Uniforms"])
+                    {
+                        std::vector<std::string> uniformNames;
+                        for (auto u : config["Uniforms"])
+                        {
+                            uniformNames.push_back(u.as<std::string>());
+                        }
+                        shaderAsset->SetUniformNames(uniformNames);
+                    }
+                }
+                return shader;
+            } catch (const std::exception& e)
             {
+                CH_CORE_ERROR("ShaderLoader: Error parsing {}: {}", absolutePath.string(), e.what());
                 return nullptr;
             }
         }

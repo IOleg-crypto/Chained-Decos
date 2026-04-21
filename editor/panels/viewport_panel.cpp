@@ -6,6 +6,7 @@
 #include "editor_events.h"
 #include "editor_gui.h"
 #include "editor_layer.h"
+#include "editor/editor_context.h"
 #include "editor_layout.h"
 #include "engine/core/application.h"
 #include "engine/core/events.h"
@@ -338,8 +339,33 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene, const ImVec2& viewpo
     // Application of Post-processing
     m_ViewportFramebuffer->Bind();
     RenderCommand::Clear({0, 0, 0, 255}); // Clear viewport buffer
+
+    // Only apply camera's custom shader override during PLAY mode.
+    // In Edit mode, use the default post-process pipeline.
+    ShaderAsset* overrideShader = nullptr;
+    std::vector<ShaderUniform> uniforms;
+
+    if (EditorContext::GetSceneState() == SceneState::Play)
+    {
+        Entity primaryCam = activeScene->GetPrimaryCameraEntity();
+        if (primaryCam && primaryCam.HasComponent<ShaderComponent>())
+        {
+            auto& sc = primaryCam.GetComponent<ShaderComponent>();
+            if (sc.Enabled && !sc.ShaderPath.empty())
+            {
+                auto asset = AssetManager::Get().Get<ShaderAsset>(sc.ShaderPath);
+                if (asset)
+                {
+                    overrideShader = asset.get();
+                    uniforms = sc.Uniforms;
+                }
+            }
+        }
+    }
+
     Renderer::Get().ApplyPostProcessing(m_HDRFramebuffer->GetColorAttachmentRendererID(),
-                                        m_HDRFramebuffer->GetDepthAttachmentRendererID(), camera);
+                                        m_HDRFramebuffer->GetDepthAttachmentRendererID(), camera, 
+                                        overrideShader, uniforms);
     m_ViewportFramebuffer->Unbind();
 }
 

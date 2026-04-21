@@ -14,6 +14,15 @@ public class PlayerController : Script
     public override void OnCreate()
     {
         Log.Info("C# PlayerController initialized!");
+
+        // Read settings from the C++ PlayerComponent if the entity has one.
+        // This allows tweaking values from the Inspector without modifying the script.
+        PlayerComponent? pc = Entity.GetComponent<PlayerComponent>();
+        if (pc != null)
+        {
+            if (pc.MovementSpeed > 0.0f) MovementSpeed = pc.MovementSpeed;
+            if (pc.JumpForce > 0.0f)     JumpForce     = pc.JumpForce;
+        }
     }
 
     public override void OnUpdate(float deltaTime)
