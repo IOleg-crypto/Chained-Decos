@@ -25,6 +25,7 @@ function(chained_add_csharp_scripts TARGET_NAME CSHARP_PROJECT_PATH)
                 -c $<IF:$<OR:$<CONFIG:Debug>,$<CONFIG:>>,Debug,Release> 
                 --output "${SCRIPT_OUTPUT_DIR}" 
                 -p:CoralManagedDir="${CORAL_MANAGED_DIR}"
+                -m # Use all CPU cores for dotnet build
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
         DEPENDS ${FULL_CSPROJ_PATH} ${CS_SOURCES}
         COMMENT "Building C# Scripts for ${TARGET_NAME} (incremental)"
@@ -185,10 +186,11 @@ function(chained_add_engine_resources_copy)
     add_custom_command(
         OUTPUT "${CH_RESOURCE_DST_DIR}/.copied"
         COMMAND ${CMAKE_COMMAND} -E make_directory "${CH_RESOURCE_DST_DIR}"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory "${CH_RESOURCE_SRC_DIR}" "${CH_RESOURCE_DST_DIR}"
+        # Use file(COPY) behavior via a cmake script to only copy if changed
+        COMMAND ${CMAKE_COMMAND} -DSOURCE="${CH_RESOURCE_SRC_DIR}" -DDEST="${CH_RESOURCE_DST_DIR}" -P "${CMAKE_SOURCE_DIR}/cmake/CopyIfDifferent.cmake"
         COMMAND ${CMAKE_COMMAND} -E touch "${CH_RESOURCE_DST_DIR}/.copied"
         DEPENDS "${CH_RESOURCE_SRC_DIR}"
-        COMMENT "Copying global engine resources to ${CH_RESOURCE_DST_DIR}..."
+        COMMENT "Syncing global engine resources to ${CH_RESOURCE_DST_DIR}..."
     )
 
     add_custom_target(EngineResources ALL DEPENDS "${CH_RESOURCE_DST_DIR}/.copied")

@@ -1,43 +1,16 @@
 #ifndef CH_SHADER_COMPONENT_H
 #define CH_SHADER_COMPONENT_H
 
-
+#include "engine/core/assets/asset_manager.h"
 #include "engine/core/reflection.h"
+#include "engine/graphics/assets/shader_asset.h"
 #include <algorithm>
-#include <string>
-#include <vector>
 #include <glm/glm.hpp>
+#include <string>
+#include "engine/graphics/pipeline/renderer_types.h"
 
 namespace CHEngine
 {
-struct ShaderUniform
-{
-    std::string Name;
-    int Type; // 0: Float, 1: Vec2, 2: Vec3, 3: Vec4, 4: Color
-    float Value[4] = {0, 0, 0, 0};
-
-    CH_REFLECT_BEGIN(ShaderUniform)
-        props.Property("Name", Name);
-        static const char* types[] = { "Float", "Vec2", "Vec3", "Vec4", "Color" };
-        props.Enum("Type", Type, types, 5);
-        if (Type == 4) // Color
-        {
-            Color c = { (unsigned char)(Value[0]*255), (unsigned char)(Value[1]*255), (unsigned char)(Value[2]*255), (unsigned char)(Value[3]*255) };
-            if (props.Property("Color", c))
-            {
-                Value[0] = c.r / 255.0f;
-                Value[1] = c.g / 255.0f;
-                Value[2] = c.b / 255.0f;
-                Value[3] = c.a / 255.0f;
-            }
-        }
-        else
-        {
-            // Simple float array for others for now
-            props.Property("Value", Value); 
-        }
-    CH_REFLECT_END()
-};
 
 struct ShaderComponent
 {
@@ -47,6 +20,44 @@ struct ShaderComponent
 
     ShaderComponent() = default;
     ShaderComponent(const ShaderComponent&) = default;
+
+    static bool IsSystemUniform(const std::string& name)
+    {
+        static const std::vector<std::string> reserved = {"mvp",
+                                                          "matModel",
+                                                          "matView",
+                                                          "matProjection",
+                                                          "matNormal",
+                                                          "boneMatrices",
+                                                          "useSkinning",
+                                                          "uTime",
+                                                          "viewPos",
+                                                          "lightDir",
+                                                          "lightColor",
+                                                          "ambient",
+                                                          "skyAmbientColor",
+                                                          "uLightCount",
+                                                          "uExposure",
+                                                          "uGamma",
+                                                          "texture0",
+                                                          "texture1",
+                                                          "texture2",
+                                                          "texture3",
+                                                          "texture4",
+                                                          "texture5",
+                                                          "colDiffuse",
+                                                          "useTexture",
+                                                          "colEmissive",
+                                                          "emissiveIntensity",
+                                                          "metalness",
+                                                          "roughness",
+                                                          "useNormalMap",
+                                                          "useMetallicMap",
+                                                          "useRoughnessMap",
+                                                          "useOcclusionMap",
+                                                          "useEmissiveTexture"};
+        return std::find(reserved.begin(), reserved.end(), name) != reserved.end();
+    }
 
     void SetFloat(const std::string& name, float value)
     {
@@ -76,13 +87,46 @@ struct ShaderComponent
         }
     }
 
+    void SyncWithShader()
+    {
+        auto asset = AssetManager::Get().Get<ShaderAsset>(ShaderPath);
+        if (!asset)
+        {
+            return;
+        }
+
+        const auto& names = asset->GetUniformNames();
+        for (const auto& name : names)
+        {
+            if (IsSystemUniform(name))
+            {
+                continue;
+            }
+
+            auto it = std::find_if(Uniforms.begin(), Uniforms.end(), [&](const auto& u) { return u.Name == name; });
+            if (it == Uniforms.end())
+            {
+                Uniforms.push_back({name, 0, {0, 0, 0, 0}});
+            }
+        }
+    }
+
     CH_REFLECT_BEGIN(ShaderComponent)
-        props.Header("Shader Asset");
-        props.File("ShaderPath", ShaderPath, "glsl,shader");
-        props.Property("Enabled", Enabled);
-        
-        props.Header("Uniforms");
-        props.Sequence("Uniforms", Uniforms);
+    props.Header("Shader Asset");
+    if (props.File("ShaderPath", ShaderPath, "glsl,shader,chshader"))
+    {
+        SyncWithShader();
+    }
+    props.Property("Enabled", Enabled);
+
+    props.Action("Refresh Uniforms", [&]() { SyncWithShader(); });
+
+    // Filter out system uniforms if they somehow got in
+    Uniforms.erase(std::remove_if(Uniforms.begin(), Uniforms.end(),
+                                  [](const auto& u) { return IsSystemUniform(u.Name); }),
+                   Uniforms.end());
+
+    props.Sequence("Uniforms", Uniforms, false);
     CH_REFLECT_END()
 };
 } // namespace CHEngine

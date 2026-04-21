@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <memory>
 #include <variant>
 #include <glm/glm.hpp>
 
@@ -42,12 +43,16 @@ struct ScriptField
 };
 
 // Represents a single C# script instance attached to an entity.
+// Instance is stored as shared_ptr<void> with a type-erasing custom deleter set by
+// SceneScriptingManager so that Coral headers do not need to be included here.
 struct ManagedScriptInstance
 {
     std::string ClassName;
     std::map<std::string, ScriptField> Fields; // Persistent fields
 
-    void*       Instance     = nullptr;
+    // Owning smart pointer to the backing Coral::ManagedObject.
+    // The deleter is injected by SceneScriptingManager to avoid including Coral headers here.
+    std::shared_ptr<void> Instance;
     bool        NeedsStart   = true;
 
     // High-performance lifecycle delegates
@@ -57,10 +62,13 @@ struct ManagedScriptInstance
     void (*OnDestroy)()       = nullptr;
     void (*OnGUI)()           = nullptr;
     void (*OnCollisionEnter)(uint64_t) = nullptr;
+    void (*OnEvent)(int)      = nullptr;
 
     ManagedScriptInstance() = default;
     explicit ManagedScriptInstance(const std::string& className)
         : ClassName(className) {}
+
+    // Copy only persisted data — runtime state is never copied.
     ManagedScriptInstance(const ManagedScriptInstance& other)
         : ClassName(other.ClassName), Fields(other.Fields) {}
     ManagedScriptInstance& operator=(const ManagedScriptInstance& other)
@@ -73,6 +81,14 @@ struct ManagedScriptInstance
         }
         return *this;
     }
+
+    // Move is allowed — transfers ownership of Instance.
+    ManagedScriptInstance(ManagedScriptInstance&&) = default;
+    ManagedScriptInstance& operator=(ManagedScriptInstance&&) = default;
+
+    // Returns a raw (non-owning) pointer to the underlying object. Cast as needed.
+    void* GetRaw() const { return Instance.get(); }
+    bool HasInstance() const { return Instance != nullptr; }
 
     void Destroy();
     void ResetRuntimeState();

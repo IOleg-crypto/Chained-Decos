@@ -18,6 +18,7 @@
 
 namespace CHEngine
 {
+class SceneScriptingManager;
 // Owns the scene registry, scene settings, and the runtime/editor update bridge.
 class Scene
 {
@@ -30,6 +31,9 @@ public:
     static std::shared_ptr<Scene> CreateDefault();
     // Creates a deep copy of another scene.
     static std::shared_ptr<Scene> Copy(std::shared_ptr<Scene> other);
+
+    virtual void OnEvent(Event& e);
+    virtual void OnRenderUI();
 
 public:
     Entity CreateEntity(const std::string& name = std::string());
@@ -68,24 +72,20 @@ public:
 private:
     Camera3D GetCameraFromEntity(entt::entity entityHandle);
 
+    SceneScriptingManager& GetScriptingManager() { return *m_ScriptingManager; }
+
 private:
     std::shared_ptr<entt::registry> m_Registry;
     SceneSettings m_Settings;
     bool m_IsSimulationRunning = false;
+    std::unique_ptr<SceneScriptingManager> m_ScriptingManager;
 
 private:
     void OnIDConstruct(entt::registry& registry, entt::entity entity);
     void OnIDDestroy(entt::registry& registry, entt::entity entity);
     // Hierarchy handlers.
     void OnHierarchyDestroy(entt::registry& registry, entt::entity entity);
-
-private: // Update Logic
-    void UpdatePhysics(Timestep deltaTime);
-    void UpdateAnimations(Timestep deltaTime);
-    void UpdateAudio(Timestep deltaTime);
-    void UpdateHierarchy();
-
-private:
+    
     Entity CopyEntityInternal(entt::entity copyEntity, entt::entity parentEntity = entt::null);
 
     friend class Entity;

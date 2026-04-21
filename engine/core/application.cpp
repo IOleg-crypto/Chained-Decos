@@ -17,6 +17,7 @@
 #include "engine/core/layer.h"
 #include "engine/core/log.h"
 #include "engine/core/profiler.h"
+#include "engine/core/thread_pool.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/component_serializer.h"
@@ -70,7 +71,9 @@ Application::Application(const ApplicationSpecification& specification)
 #endif
 
     // --- System Initialization ---
-    // Systems are singletons and manage their own lifetimes
+    // ThreadPool MUST be initialized first as other systems may use it for loading
+    ThreadPool::Init();
+
     if (!m_Specification.Headless)
     {
         m_Window = std::unique_ptr<Window>(Window::Create(windowProps));
@@ -133,6 +136,9 @@ Application::~Application()
         NFD_Quit();
     }
 
+    // ThreadPool MUST be shut down last to ensure all background tasks are finished
+    ThreadPool::Shutdown();
+
     s_Instance = nullptr;
     CH_CORE_INFO("Engine Shutdown Successfully.");
 }
@@ -146,11 +152,6 @@ void Application::PushLayer(std::unique_ptr<Layer> layer)
     CH_CORE_INFO("Layer Attached: {}", rawLayer->GetName());
 }
 
-void Application::PushLayer(Layer* layer)
-{
-    PushLayer(std::unique_ptr<Layer>(layer));
-}
-
 void Application::PushOverlay(std::unique_ptr<Layer> overlay)
 {
     CH_CORE_ASSERT(overlay, "Overlay is null!");
@@ -160,26 +161,23 @@ void Application::PushOverlay(std::unique_ptr<Layer> overlay)
     CH_CORE_INFO("Overlay Attached: {}", rawOverlay->GetName());
 }
 
-void Application::PushOverlay(Layer* overlay)
+void Application::OnEvent(Event& e)
 {
-    PushOverlay(std::unique_ptr<Layer>(overlay));
+    // For now, handle everything immediately, but we can filter here
+    DispatchEvent(e);
 }
 
-void Application::OnEvent(Event& e)
+void Application::DispatchEvent(Event& e)
 {
     EventDispatcher dispatcher(e);
     dispatcher.Dispatch<WindowCloseEvent>(CH_BIND_EVENT_FN(Application::OnWindowClose));
     dispatcher.Dispatch<WindowResizeEvent>(CH_BIND_EVENT_FN(Application::OnWindowResize));
 
-    // Propagate events from top to bottom (overlays first)
-    // We use a copy of the layer stack to avoid iterator invalidation if a layer is removed during event handling
-    auto layers = m_LayerStack->GetLayerPointersSnapshot();
-    for (auto it = layers.rbegin(); it != layers.rend(); ++it)
+    for (auto it = m_LayerStack->rbegin(); it != m_LayerStack->rend(); ++it)
     {
         if (e.Handled)
-        {
             break;
-        }
+        
         if ((*it)->IsEnabled())
         {
             (*it)->OnEvent(e);
@@ -234,10 +232,8 @@ void Application::Run()
 {
     while (m_Running && !m_Window->ShouldClose())
     {
-        CH_PROFILE_FUNCTION();
-
         ExecuteMainThreadQueue();
-
+        
         // 1. Time Tracking
         float time = (float)glfwGetTime();
 
@@ -246,8 +242,15 @@ void Application::Run()
         if (targetFPS > 0)
         {
             float minFrameTime = 1.0f / (float)targetFPS;
-            while (time - m_LastFrameTime < minFrameTime)
+            float frameTime = time - m_LastFrameTime;
+            if (frameTime < minFrameTime)
             {
+                CH_PROFILE_SCOPE("Sleep");
+                float sleepTime = (minFrameTime - frameTime) * 1000.0f;
+                if (sleepTime > 1.0f)
+                {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<long long>(sleepTime)));
+                }
                 time = (float)glfwGetTime();
             }
         }
@@ -255,15 +258,15 @@ void Application::Run()
         m_DeltaTime = Timestep(time - m_LastFrameTime);
         m_LastFrameTime = time;
 
+        // Profile the actual frame work, excluding sleep/input/poll
+        CH_PROFILE_SCOPE("Run");
+
         // 2. Input Polling
         Input::Update();
 
         // 3. Core Systems Update
         AssetManager::Get().Update();
-        if (auto project = Project::GetActive())
-        {
-            Audio::Get().Update(m_DeltaTime);
-        }
+        Audio::Get().Update(m_DeltaTime);
 
         // 4. Layers Update & Rendering
         Profiler::BeginFrame();
@@ -322,7 +325,6 @@ void Application::Run()
                 m_Window->EndFrame();
             }
         }
-        Profiler::EndFrame();
     }
 }
 

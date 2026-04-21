@@ -2,6 +2,7 @@
 #define CH_THREAD_POOL_H
 
 #include <condition_variable>
+#include "engine/core/ch_assert.h"
 #include <functional>
 #include <future>
 #include <mutex>
@@ -18,9 +19,12 @@ public:
     // Accesses the global thread pool instance.
     static ThreadPool& Get()
     {
-        static ThreadPool instance;
-        return instance;
+        CH_CORE_ASSERT(s_Instance, "ThreadPool not initialized!");
+        return *s_Instance;
     }
+
+    static void Init();
+    static void Shutdown();
 
     // Deleted constructors for singleton
     ThreadPool(const ThreadPool&) = delete;
@@ -64,11 +68,12 @@ private:
     void WorkerThread(std::stop_token stopToken);
 
 private:
-   std::queue<std::function<void()>> m_Tasks;
-   std::mutex m_QueueMutex;
-   std::condition_variable_any m_Condition;
-   bool m_Stop = false;
-   std::vector<std::jthread> m_Workers;
+    static ThreadPool* s_Instance;
+    std::queue<std::function<void()>> m_Tasks;
+    std::mutex m_QueueMutex;
+    std::condition_variable_any m_Condition;
+    bool m_Stop = false;
+    std::vector<std::jthread> m_Workers;
 };
 } // namespace CHEngine
 

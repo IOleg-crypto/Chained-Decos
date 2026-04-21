@@ -6,7 +6,6 @@
 #include "engine/scene/scene.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
 #include <filesystem>
-#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -64,6 +63,7 @@ private:
     float m_LoadingOverlayElapsed = 0.0f;
     float m_LoadingOverlayMinDuration = 0.35f;
 
+    std::string m_PendingScenePath;
     std::shared_ptr<Framebuffer> m_HDRFramebuffer;
 };
 } // namespace CHEngine

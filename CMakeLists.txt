@@ -15,6 +15,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# Standardize output directories for all targets (Set BEFORE including dependencies)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Generate compile_commands.json")
 set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
 
@@ -91,23 +96,21 @@ endif()
 file(TO_CMAKE_PATH "${CMAKE_SOURCE_DIR}" PROJECT_ROOT_DIR_ESCAPED)
 add_compile_definitions(PROJECT_ROOT_DIR="${PROJECT_ROOT_DIR_ESCAPED}")
 
-# Standardize output directories for all targets
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
-
 add_subdirectory(engine)
-add_subdirectory(scripting)
 
-# Build Game Projects
-# Build the selected game project
-if(CH_ACTIVE_GAME STREQUAL "chaineddecos")
-    add_subdirectory(game/chaineddecos)
-elseif(CH_ACTIVE_GAME STREQUAL "testproject")
-    add_subdirectory(game/testproject)
-else()
-    message(FATAL_ERROR "Unknown CH_ACTIVE_GAME='${CH_ACTIVE_GAME}'. Supported values are: chaineddecos, testproject.")
-endif()
+
+# ── Build Game Projects ──────────────────────────────────────────────────────
+# Automatically find and include all projects in the game/ directory.
+file(GLOB GAME_PROJECT_LIST RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/game" "game/*")
+foreach(GAME_PROJECT_DIR ${GAME_PROJECT_LIST})
+    set(GAME_PATH "${CMAKE_CURRENT_SOURCE_DIR}/game/${GAME_PROJECT_DIR}")
+    if(IS_DIRECTORY "${GAME_PATH}" AND EXISTS "${GAME_PATH}/CMakeLists.txt")
+        # If CH_ACTIVE_GAME is defined, only add the specific one to save config time
+        if(NOT CH_ACTIVE_GAME OR CH_ACTIVE_GAME STREQUAL GAME_PROJECT_DIR)
+            add_subdirectory("game/${GAME_PROJECT_DIR}")
+        endif()
+    endif()
+endforeach()
 
 add_subdirectory(editor)
 add_subdirectory(runtime)

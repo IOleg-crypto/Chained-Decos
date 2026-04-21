@@ -7,10 +7,14 @@ namespace CHEngine
 {
 
 // Typography & Visual Styles
-enum class TextAlignment
+enum class HorizontalAlignment
 {
-    Left = 0, Center = 1, Right = 2,
-    Top = 0, Bottom = 2
+    Left = 0, Center = 1, Right = 2
+};
+
+enum class VerticalAlignment
+{
+    Top = 0, Center = 1, Bottom = 2
 };
 
 enum class CanvasScaleMode : uint8_t
@@ -36,8 +40,8 @@ struct TextStyle
     Color ShadowColor = { 0, 0, 0, 255 };
     float LetterSpacing = { 1.0f };
     float LineHeight = 1.2f;
-    TextAlignment HorizontalAlignment = TextAlignment::Center;
-    TextAlignment VerticalAlignment = TextAlignment::Center;
+    HorizontalAlignment Horizontal = HorizontalAlignment::Center;
+    VerticalAlignment Vertical = VerticalAlignment::Center;
 
     CH_REFLECT_BEGIN(TextStyle)
         props.Property("Font Name", FontName);
@@ -52,8 +56,8 @@ struct TextStyle
         props.Property("Letter Spacing", LetterSpacing, PropertyMeta(0.5f, 4.0f, 0.1f));
         props.Property("Line Height", LineHeight, PropertyMeta(0.5f, 3.0f, 0.1f));
         // Alignments as ints for now
-        props.Property("H Align", (int&)HorizontalAlignment);
-        props.Property("V Align", (int&)VerticalAlignment);
+        props.Property("H Align", (int&)Horizontal);
+        props.Property("V Align", (int&)Vertical);
     CH_REFLECT_END()
 };
 

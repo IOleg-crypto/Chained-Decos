@@ -291,7 +291,7 @@ public:
     }
 
     // Array/Sequence property
-    template <typename T> bool Sequence(const char* name, std::vector<T>& vec)
+    template <typename T> bool Sequence(const char* name, std::vector<T>& vec, bool allowAddRemove = true)
     {
         if (m_Mode == Serialize)
         {

@@ -82,9 +82,9 @@ namespace CHEngine
         }
 
         template<typename T>
-        bool Sequence(const char* name, std::vector<T>& values)
+        bool Sequence(const char* name, std::vector<T>& values, bool allowAddRemove = true)
         {
-            return m_Archive.Sequence(name, values);
+            return m_Archive.Sequence(name, values, allowAddRemove);
         }
 
         template<typename T>
@@ -166,7 +166,15 @@ namespace CHEngine
 
         bool Action(const char* label, std::function<void()> func)
         {
-            return m_Archive.Action(label, func);
+            if constexpr (std::is_same_v<decltype(m_Archive.Action(label, func)), void>)
+            {
+                m_Archive.Action(label, func);
+                return false;
+            }
+            else
+            {
+                return m_Archive.Action(label, func);
+            }
         }
 
         void Header(const char* label)

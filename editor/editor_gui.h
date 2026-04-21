@@ -27,7 +27,7 @@ public:
     static void BeginProperty(const char* label);
     static void EndProperty();
 
-    // Simple declarative property widgets that do not use columns.
+    // Simple property widgets that do not use columns.
     static bool Property(const char* label, bool& value);
     static bool Property(const char* label, int& value, int min = 0, int max = 0);
     static bool Property(const char* label, float& value, float speed = 0.1f, float min = 0.0f, float max = 0.0f);

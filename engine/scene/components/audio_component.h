@@ -10,7 +10,7 @@ namespace CHEngine
 {
 struct AudioComponent
 {
-    AssetHandle SoundHandle = 0;
+    AssetHandle SoundHandle = AssetHandle(0);
     std::string SoundPath;
     float Volume = 1.0f;
     float Pitch = 1.0f;
@@ -27,7 +27,12 @@ struct AudioComponent
 
     CH_REFLECT_BEGIN(AudioComponent)
         props.Handle("SoundHandle", SoundHandle);
-        props.File("SoundPath", SoundPath, "mp3,wav,ogg");
+        if (props.File("SoundPath", SoundPath, "mp3,wav,ogg"))
+        {
+            // Path changed — invalidate the cached handle so SceneAudioSystem loads the new file.
+            SoundHandle = AssetHandle(0);
+            IsPlaying = false;
+        }
         props.Property("Volume", Volume, PropertyMeta(0.0f, 1.0f, 0.01f));
         props.Property("Pitch", Pitch, PropertyMeta(0.5f, 2.0f, 0.05f));
         props.Property("Loop", Loop);

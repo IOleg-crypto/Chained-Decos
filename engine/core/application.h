@@ -2,7 +2,6 @@
 #define CH_APPLICATION_H
 
 #include "engine/core/ch_assert.h"
-#include "engine/core/base.h"
 #include "engine/core/events.h"
 #include "engine/core/layer_stack.h"
 #include "engine/core/timestep.h"
@@ -59,6 +58,7 @@ class Application
 {
 public:
     Application(const ApplicationSpecification& specification);
+public:
     virtual ~Application();
 
     // Requests the main loop to exit.
@@ -70,12 +70,18 @@ public:
     void Run();
 
     void PushLayer(std::unique_ptr<Layer> layer);
-    void PushLayer(Layer* layer);
-
     void PushOverlay(std::unique_ptr<Layer> overlay);
-    void PushOverlay(Layer* overlay);
 
     void OnEvent(Event& e);
+
+    // Immediate dispatch (Hazel style)
+    void DispatchEvent(Event& e);
+    // Queued dispatch for safe processing at frame end
+    template<typename T, typename... Args>
+    void PostEvent(Args&&... args)
+    {
+        m_EventQueue.Enqueue<T>(std::forward<Args>(args)...);
+    }
 
     static Application& Get()
     {
@@ -112,6 +118,7 @@ private:
 
     ApplicationSpecification m_Specification;
     std::unique_ptr<LayerStack> m_LayerStack;
+    EventQueue m_EventQueue;
 
     ImGuiLayer* m_ImGuiLayer = nullptr;
     std::unique_ptr<Window> m_Window;

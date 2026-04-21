@@ -38,7 +38,7 @@ struct MaterialSlot
 
 struct ModelComponent
 {
-    AssetHandle ModelHandle = 0;
+    AssetHandle ModelHandle = AssetHandle(0);
     std::string ModelPath;
     std::vector<MaterialSlot> Materials;
     bool MaterialsInitialized = false;
@@ -57,8 +57,12 @@ struct ModelComponent
     void SyncMaterials(AssetHandle handle);
 
     CH_REFLECT_BEGIN(ModelComponent)
+        props.Header("Model Asset");
         props.Handle("ModelHandle", ModelHandle);
-        props.File("ModelPath", ModelPath, "obj,gltf,glb,iqm,m3d");
+        if (props.File("ModelPath", ModelPath, "obj,gltf,glb,iqm,m3d"))
+        {
+            ModelHandle = AssetHandle(0);
+        }
         if (props.GetMode() != CHEngine::ReflectionMode::UI)
             props.Sequence("Materials", Materials);
     CH_REFLECT_END()
@@ -73,7 +77,8 @@ struct MaterialComponent
     MaterialComponent(const MaterialComponent&) = default;
 
     CH_REFLECT_BEGIN(MaterialComponent)
-        props.Sequence("Materials", Materials);
+        props.Header("Material Overrides");
+        props.Sequence("Slots", Materials);
     CH_REFLECT_END()
 };
 

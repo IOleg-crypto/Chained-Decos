@@ -8,7 +8,6 @@
 #include "engine/core/key_codes.h"
 #include "engine/core/assets/asset_manager.h"
 #include "engine/platform/utils/dialogs.h"
-#include "scripting/scene_scripting.h"
 #include "engine/scene/scene_events.h"
 
 namespace CHEngine
@@ -136,8 +135,6 @@ void EditorSceneManager::SetSceneState(SceneState state)
         if (m_RuntimeScene)
         {
             CH_CORE_INFO("Editor: Cleaning up runtime scene...");
-            SceneScripting::OnRuntimeStop(m_RuntimeScene.get());
-            SceneScripting::Stop(m_RuntimeScene.get());
             m_RuntimeScene->OnRuntimeStop();
             m_RuntimeScene.reset();
         }
@@ -239,8 +236,6 @@ void EditorSceneManager::UpdateSceneOpenTransition()
                     if (m_RuntimeScene)
                     {
                         CH_CORE_INFO("Editor: Stopping current runtime scene to load '{}'.", m_PendingSceneOpenPath.string());
-                        SceneScripting::OnRuntimeStop(m_RuntimeScene.get());
-                        SceneScripting::Stop(m_RuntimeScene.get());
                         m_RuntimeScene->OnRuntimeStop();
                     }
 
@@ -300,7 +295,6 @@ void EditorSceneManager::UpdateSceneOpenTransition()
         if (m_IsPlayModeSceneLoad)
         {
             CH_CORE_INFO("Editor: Activating new runtime scene '{}'.", m_PendingSceneOpenPath.string());
-            SceneScripting::OnRuntimeStart(m_RuntimeScene.get());
             m_RuntimeScene->OnRuntimeStart();
         }
         else
@@ -382,7 +376,6 @@ void EditorSceneManager::UpdatePlayModeTransition()
     if (m_PlayModeSceneReady && m_RuntimeScene && !AssetManager::Get().HasBackgroundWork())
     {
         EditorContext::SetSceneState(SceneState::Play);
-        SceneScripting::OnRuntimeStart(m_RuntimeScene.get());
         m_RuntimeScene->OnRuntimeStart();
 
         m_IsPlayModeLoading = false;

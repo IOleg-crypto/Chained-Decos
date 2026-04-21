@@ -109,7 +109,8 @@ TEST(SceneTest, CopyEntityResetsManagedScriptRuntimeState)
     auto& scripts = src.AddComponent<ManagedScriptComponent>().Scripts;
     scripts.emplace_back("TestScript");
     auto& script = scripts.back();
-    script.Instance = reinterpret_cast<void*>(0x1234);
+    // Use a dummy shared_ptr to simulate a live runtime instance (no real Coral object).
+    script.Instance = std::make_shared<int>(1);
     script.NeedsStart = false;
     script.OnCreate = reinterpret_cast<void (*)()>(0x1);
     script.OnStart = reinterpret_cast<void (*)()>(0x2);
@@ -125,7 +126,7 @@ TEST(SceneTest, CopyEntityResetsManagedScriptRuntimeState)
     ASSERT_EQ(copiedScripts.size(), 1u);
     EXPECT_EQ(copiedScripts[0].ClassName, "TestScript");
     EXPECT_EQ(copiedScripts[0].Fields.size(), 0u);
-    EXPECT_EQ(copiedScripts[0].Instance, nullptr);
+    EXPECT_FALSE(copiedScripts[0].HasInstance());
     EXPECT_TRUE(copiedScripts[0].NeedsStart);
     EXPECT_EQ(copiedScripts[0].OnCreate, nullptr);
     EXPECT_EQ(copiedScripts[0].OnStart, nullptr);

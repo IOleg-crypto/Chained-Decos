@@ -112,20 +112,39 @@ std::string AssetManager::ResolvePath(const std::string& path) const
             }
         }
 
-        // Fallback
+        // Fallback or Fuzzy Search
         if (resolvedPath.empty())
         {
-            if (!isEngineResource && !m_AssetDirectory.empty())
+            // Try fuzzy search for moved assets (search for filename in asset directory)
+            std::string filename = inputPath.filename().string();
+            if (!filename.empty() && !m_AssetDirectory.empty())
             {
-                resolvedPath = m_AssetDirectory / pathStr;
+                for (const auto& entry : std::filesystem::recursive_directory_iterator(m_AssetDirectory))
+                {
+                    if (entry.is_regular_file() && entry.path().filename() == filename)
+                    {
+                        resolvedPath = entry.path();
+                        CH_CORE_WARN("AssetManager: Asset '{}' not found at original path, but found at '{}'. Please update references.", 
+                                     path, resolvedPath.generic_string());
+                        break;
+                    }
+                }
             }
-            else if (!m_EngineRoot.empty())
+
+            if (resolvedPath.empty())
             {
-                resolvedPath = m_EngineRoot / pathStr;
-            }
-            else
-            {
-                resolvedPath = m_ProjectDirectory / pathStr;
+                if (!isEngineResource && !m_AssetDirectory.empty())
+                {
+                    resolvedPath = m_AssetDirectory / pathStr;
+                }
+                else if (!m_EngineRoot.empty())
+                {
+                    resolvedPath = m_EngineRoot / pathStr;
+                }
+                else
+                {
+                    resolvedPath = m_ProjectDirectory / pathStr;
+                }
             }
         }
     }
@@ -140,6 +159,21 @@ std::string AssetManager::ResolvePath(const std::string& path) const
 
 AssetHandle AssetManager::ResolveToHandle(const std::string& path) const
 {
+    if (path.empty()) return AssetHandle(0);
+
+    // First, check the path cache to see if we've already resolved this input path
+    {
+        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+        auto it = m_PathCache.find(path);
+        if (it != m_PathCache.end())
+        {
+            auto handleIt = m_PathToHandle.find(it->second);
+            if (handleIt != m_PathToHandle.end())
+                return handleIt->second;
+        }
+    }
+
+    // Not in cache, do full resolution
     std::string resolved = ResolvePath(path);
     std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
     if (auto it = m_PathToHandle.find(resolved); it != m_PathToHandle.end())
@@ -165,7 +199,14 @@ std::shared_ptr<Asset> AssetManager::LoadAsset(const std::string& path, AssetTyp
             auto handle = it->second;
             if (auto currentIt = m_AssetCache.find(handle); currentIt != m_AssetCache.end())
             {
-                return currentIt->second;
+                auto asset = currentIt->second;
+                if (asset && asset->GetType() != type)
+                {
+                    CH_CORE_ERROR("AssetManager: Type mismatch for '{}'. Expected {}, but found {}.", 
+                                  resolved, (int)type, (int)asset->GetType());
+                    return nullptr;
+                }
+                return asset;
             }
         }
     }
@@ -255,14 +296,19 @@ std::shared_ptr<Asset> AssetManager::LoadAsset(const std::string& path, AssetTyp
 
 std::shared_ptr<Asset> AssetManager::GetAsset(AssetHandle handle, AssetType type)
 {
-    (void)type;
-
-    if (handle != 0)
+    if (handle != AssetHandle(0))
     {
         std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
         if (auto it = m_AssetCache.find(handle); it != m_AssetCache.end())
         {
-            return it->second;
+            auto asset = it->second;
+            if (asset && asset->GetType() != type && type != AssetType::None)
+            {
+                CH_CORE_ERROR("AssetManager: Type mismatch for handle {}. Expected {}, but found {}.", 
+                              (uint64_t)handle, (int)type, (int)asset->GetType());
+                return nullptr;
+            }
+            return asset;
         }
     }
 
