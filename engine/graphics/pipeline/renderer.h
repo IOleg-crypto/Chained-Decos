@@ -92,8 +92,11 @@ public:
     static Renderer& Get();
     static void LoadEngineResources();
 
+private:
     Renderer();
     ~Renderer();
+
+public:
 
     void InternalInit();
     void InternalShutdown();
@@ -117,11 +120,13 @@ public:
     void DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& color);
     void DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float exposure, float brightness, float contrast, const Camera3D& camera);
     void DrawBillboard(const Camera3D& camera, uint32_t textureId, const glm::vec3& position, float size, const glm::vec4& tint);
+    void DrawSprite(uint32_t textureId, const glm::mat4& transform, const glm::vec4& tint, bool flipX = false, bool flipY = false);
     void DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, const glm::vec4& color);
     void DrawCapsuleWires(const glm::mat4& transform, float radius, float height, const glm::vec4& color);
     void DrawSphereWires(const glm::mat4& transform, float radius, const glm::vec4& color);
 
-    void ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextureId, const Camera3D& camera);
+    void ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextureId, const Camera3D& camera,
+                             ShaderAsset* overrideShader = nullptr, const std::vector<ShaderUniform>& uniforms = {});
 
     // Light management
     void SetLight(int index, const RenderLight& light);

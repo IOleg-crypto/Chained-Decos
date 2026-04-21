@@ -68,11 +68,8 @@ target_sources(editor_core PRIVATE
 
 target_link_libraries(editor_core PUBLIC
     engine
-    scripting
-    imguilib
-    nfd
 )
-target_compile_definitions(editor_core PUBLIC IMGUI_DEFINE_MATH_OPERATORS YAML_CPP_STATIC_DEFINE)
+# (IMGUI_DEFINE_MATH_OPERATORS now inherited from engine)
 target_include_directories(editor_core PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}

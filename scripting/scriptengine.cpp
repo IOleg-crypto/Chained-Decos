@@ -1,8 +1,9 @@
 #include "scriptengine.h"
+#include "engine/core/ch_assert.h"
 #include "engine/core/log.h"
 #include "engine/scene/project.h"
-#include "scene_scripting.h"
 #include "script_glue.h"
+#include "engine/scene/SceneScriptingManager.h"
 #include <exception>
 #include <filesystem>
 
@@ -41,12 +42,12 @@ void ScriptEngine::Init()
 
 void ScriptEngine::InternalInit()
 {
-    if (GetScriptAssemblyHost().IsInitialized())
+    if (GetScriptHost().IsInitialized())
         return;
 
     CH_CORE_INFO("ScriptEngine: Initializing CoreCLR...");
 
-    if (!GetScriptAssemblyHost().Init())
+    if (!GetScriptHost().Init())
         return;
 
     CH_CORE_INFO("ScriptEngine: CoreCLR initialized.");
@@ -65,15 +66,14 @@ void ScriptEngine::Shutdown()
 void ScriptEngine::InternalShutdown()
 {
     CH_CORE_INFO("ScriptEngine: Shutting down CoreCLR...");
-    GetScriptTypeRegistry().Clear();
-    GetScriptAssemblyHost().Shutdown();
-    m_RuntimeSession.Reset();
+    GetScriptRegistry().Clear();
+    GetScriptHost().Shutdown();
 }
 
 // ── Assembly management ───────────────────────────────────────────────────────
 bool ScriptEngine::LoadAppAssembly(const std::string& filepath)
 {
-    if (!GetScriptAssemblyHost().IsInitialized())
+    if (!GetScriptHost().IsInitialized())
     {
         CH_CORE_WARN("ScriptEngine::LoadAppAssembly called before Init().");
         return false;
@@ -91,67 +91,68 @@ bool ScriptEngine::LoadAppAssembly(const std::string& filepath)
         return false;
     }
 
-    if (!GetScriptAssemblyHost().LoadAppAssembly(filepath))
+    if (!GetScriptHost().LoadAppAssembly(filepath))
     {
-        GetScriptTypeRegistry().Clear();
+        GetScriptRegistry().Clear();
         return false;
     }
 
     try
     {
-        Coral::ManagedAssembly* coreAssembly = GetScriptAssemblyHost().GetCoreAssembly();
-        Coral::ManagedAssembly* appAssembly = GetScriptAssemblyHost().GetAppAssembly();
+        Coral::ManagedAssembly* coreAssembly = GetScriptHost().GetCoreAssembly();
+        Coral::ManagedAssembly* appAssembly = GetScriptHost().GetAppAssembly();
 
         if (!coreAssembly || !appAssembly)
         {
             CH_CORE_ERROR("ScriptEngine: Assembly load completed but managed assemblies are missing.");
-            GetScriptTypeRegistry().Clear();
-            GetScriptAssemblyHost().ClearLoadedAssemblyState();
+            GetScriptRegistry().Clear();
+            GetScriptHost().ClearLoadedAssemblyState();
             return false;
         }
 
         ScriptGlue::RegisterInternalCalls(*coreAssembly);
-        GetScriptTypeRegistry().Discover(*appAssembly, *coreAssembly);
+        GetScriptRegistry().Discover(*appAssembly, *coreAssembly);
         return true;
     }
     catch (const std::exception& e)
     {
         CH_CORE_ERROR("ScriptEngine: Exception during post-load setup for '{}': {}", filepath, e.what());
-        GetScriptTypeRegistry().Clear();
-        GetScriptAssemblyHost().ClearLoadedAssemblyState();
+        GetScriptRegistry().Clear();
+        GetScriptHost().ClearLoadedAssemblyState();
         return false;
     }
     catch (...)
     {
         CH_CORE_ERROR("ScriptEngine: Unknown exception during post-load setup for '{}'.", filepath);
-        GetScriptTypeRegistry().Clear();
-        GetScriptAssemblyHost().ClearLoadedAssemblyState();
+        GetScriptRegistry().Clear();
+        GetScriptHost().ClearLoadedAssemblyState();
         return false;
     }
 }
 
 bool ScriptEngine::ReloadAssembly()
 {
-    if (!GetScriptAssemblyHost().IsInitialized())
+    if (!GetScriptHost().IsInitialized())
     {
         CH_CORE_WARN("ScriptEngine::ReloadAssembly called before Init().");
         return false;
     }
 
-    if (!m_RuntimeSession.BeginReload())
+    if (GetScriptHost().IsReloadInProgress())
     {
         CH_CORE_WARN("ScriptEngine::ReloadAssembly skipped: reload already in progress.");
         return false;
     }
 
+    GetScriptHost().SetReloadInProgress(true);
+    
     struct ReloadScopeGuard
     {
-        ScriptRuntimeSession& Session;
         ~ReloadScopeGuard()
         {
-            Session.EndReload();
+            GetScriptHost().SetReloadInProgress(false);
         }
-    } guard{m_RuntimeSession};
+    } guard;
 
     auto project = Project::GetActive();
     if (!project)
@@ -181,14 +182,11 @@ bool ScriptEngine::ReloadAssembly()
         return false;
     }
 
-    // 1. Stop all running C# scripts cleanly (calls OnDestroy)
-    if (m_RuntimeSession.GetActiveScene())
-    {
-        SceneScripting::Stop(m_RuntimeSession.GetActiveScene());
-    }
+    // Stop all active scripts across all scenes before unloading assemblies.
+    SceneScriptingManager::ResetAll();
 
-    GetScriptTypeRegistry().Clear();
-    if (!GetScriptAssemblyHost().ReloadAppAssembly(dllPath.string()))
+    GetScriptRegistry().Clear();
+    if (!GetScriptHost().ReloadAppAssembly(dllPath.string()))
     {
         CH_CORE_ERROR("ScriptEngine: Reload failed for '{}'.", dllPath.string());
         return false;
@@ -196,34 +194,34 @@ bool ScriptEngine::ReloadAssembly()
 
     try
     {
-        Coral::ManagedAssembly* coreAssembly = GetScriptAssemblyHost().GetCoreAssembly();
-        Coral::ManagedAssembly* appAssembly = GetScriptAssemblyHost().GetAppAssembly();
+        Coral::ManagedAssembly* coreAssembly = GetScriptHost().GetCoreAssembly();
+        Coral::ManagedAssembly* appAssembly = GetScriptHost().GetAppAssembly();
 
         if (!coreAssembly || !appAssembly)
         {
             CH_CORE_ERROR("ScriptEngine: Reload completed but managed assemblies are missing.");
-            GetScriptTypeRegistry().Clear();
-            GetScriptAssemblyHost().ClearLoadedAssemblyState();
+            GetScriptRegistry().Clear();
+            GetScriptHost().ClearLoadedAssemblyState();
             return false;
         }
 
         ScriptGlue::RegisterInternalCalls(*coreAssembly);
-        GetScriptTypeRegistry().Discover(*appAssembly, *coreAssembly);
+        GetScriptRegistry().Discover(*appAssembly, *coreAssembly);
         CH_CORE_INFO("ScriptEngine: Recreated ALC for reload.");
         return true;
     }
     catch (const std::exception& e)
     {
         CH_CORE_ERROR("ScriptEngine: Exception during reload setup for '{}': {}", dllPath.string(), e.what());
-        GetScriptTypeRegistry().Clear();
-        GetScriptAssemblyHost().ClearLoadedAssemblyState();
+        GetScriptRegistry().Clear();
+        GetScriptHost().ClearLoadedAssemblyState();
         return false;
     }
     catch (...)
     {
         CH_CORE_ERROR("ScriptEngine: Unknown exception during reload setup for '{}'.", dllPath.string());
-        GetScriptTypeRegistry().Clear();
-        GetScriptAssemblyHost().ClearLoadedAssemblyState();
+        GetScriptRegistry().Clear();
+        GetScriptHost().ClearLoadedAssemblyState();
         return false;
     }
 }
@@ -250,7 +248,7 @@ bool ScriptEngine::RequestAssemblyReload(const char* requestSource)
 // ── Script lookup ─────────────────────────────────────────────────────────────
 Coral::Type* ScriptEngine::GetScriptClass(const std::string& name)
 {
-    return GetScriptTypeRegistry().GetScriptClass(name);
+    return GetScriptRegistry().GetScriptClass(name);
 }
 
 } // namespace CHEngine

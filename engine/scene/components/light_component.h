@@ -38,12 +38,17 @@ struct LightComponent
         {
             props.Property("Radius", Radius, PropertyMeta(1.0f, 1000.0f, 1.0f));
             
-            // Always serialize Spot fields to avoid losing values on save/load.
-            // Only skip display in UI mode.
-            if (props.GetMode() != CHEngine::ReflectionMode::UI || Type == LightType::Spot)
+            // Always show Spot fields if the light is a Spot light.
+            if (Type == LightType::Spot)
             {
                 props.Property("InnerCutoff", InnerCutoff, PropertyMeta(0.0f, 90.0f, 0.5f));
                 props.Property("OuterCutoff", OuterCutoff, PropertyMeta(0.0f, 90.0f, 0.5f));
+            }
+            else if (props.GetMode() != CHEngine::ReflectionMode::UI)
+            {
+                // Still serialize them for other types to avoid data loss.
+                props.Property("InnerCutoff", InnerCutoff);
+                props.Property("OuterCutoff", OuterCutoff);
             }
             props.EndGroup();
         }

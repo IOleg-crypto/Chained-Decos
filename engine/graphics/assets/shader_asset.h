@@ -27,8 +27,12 @@ public:
     std::shared_ptr<Shader> GetShader() const { return m_Shader; }
     void SetShader(const std::shared_ptr<Shader>& shader) { m_Shader = shader; }
 
+    const std::vector<std::string>& GetUniformNames() const { return m_UniformNames; }
+    void SetUniformNames(const std::vector<std::string>& names) { m_UniformNames = names; }
+
 private:
     std::shared_ptr<Shader> m_Shader;
+    std::vector<std::string> m_UniformNames;
 };
 
 } // namespace CHEngine

@@ -18,7 +18,7 @@ public:
     bool IsAsync() const override { return false; }
 
 private:
-    std::shared_ptr<Shader> LoadShaderFromPath(const std::string& path);
+    std::shared_ptr<Shader> LoadShaderFromPath(const std::string& path, const std::shared_ptr<ShaderAsset>& shaderAsset = nullptr);
     std::shared_ptr<Shader> LoadShaderFromPaths(const std::string& vsPath, const std::string& fsPath);
     std::string ProcessShaderSource(const std::string& path, std::vector<std::string>& includedFiles);
 };

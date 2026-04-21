@@ -53,61 +53,33 @@ void AppendBuildBinCandidates(std::vector<std::filesystem::path>& out, const std
 }
 } // namespace
 
-static ScriptAssemblyHost s_ScriptAssemblyHost;
-static ScriptTypeRegistry s_ScriptTypeRegistry;
-static ScriptRuntimeSession s_ScriptRuntimeSession;
+static ScriptHost s_ScriptHost;
+static ScriptRegistry s_Registry;
+static Scene* s_ContextScene = nullptr;
 
-ScriptAssemblyHost& GetScriptAssemblyHost()
+ScriptHost& GetScriptHost()
 {
-    return s_ScriptAssemblyHost;
+    return s_ScriptHost;
 }
 
-ScriptTypeRegistry& GetScriptTypeRegistry()
+ScriptRegistry& GetScriptRegistry()
 {
-    return s_ScriptTypeRegistry;
+    return s_Registry;
 }
 
-bool ScriptRuntimeSession::BeginReload()
+void SetContextScene(Scene* scene)
 {
-    if (m_ReloadInProgress)
-        return false;
-
-    m_ReloadInProgress = true;
-    return true;
+    s_ContextScene = scene;
 }
 
-void ScriptRuntimeSession::EndReload()
+Scene* GetContextScene()
 {
-    m_ReloadInProgress = false;
+    return s_ContextScene;
 }
 
-std::string ScriptRuntimeSession::ConsumeRequestedScene()
-{
-    std::string scenePath = m_PendingScenePath;
-    m_PendingScenePath.clear();
-    return scenePath;
-}
+// ScriptRuntimeSession removed
 
-bool ScriptRuntimeSession::TryConsumeRequestedScene(std::string& outPath)
-{
-    outPath.clear();
-    if (m_ReloadInProgress || m_PendingScenePath.empty())
-    {
-        return false;
-    }
-
-    outPath.swap(m_PendingScenePath);
-    return true;
-}
-
-void ScriptRuntimeSession::Reset()
-{
-    m_ActiveScene = nullptr;
-    m_ReloadInProgress = false;
-    m_PendingScenePath.clear();
-}
-
-std::filesystem::path ScriptAssemblyHost::ResolveCoralDirectory()
+std::filesystem::path ScriptHost::ResolveCoralDirectory()
 {
     std::vector<std::filesystem::path> candidateDirs;
     candidateDirs.push_back(Application::GetExecutableDirectory());
@@ -152,7 +124,7 @@ std::filesystem::path ScriptAssemblyHost::ResolveCoralDirectory()
     return fallback;
 }
 
-std::filesystem::path ScriptAssemblyHost::ResolveCoreAssemblyPath(const std::filesystem::path& coralDir)
+std::filesystem::path ScriptHost::ResolveCoreAssemblyPath(const std::filesystem::path& coralDir)
 {
     std::vector<std::filesystem::path> coreCandidates;
     if (!coralDir.empty())
@@ -180,13 +152,13 @@ std::filesystem::path ScriptAssemblyHost::ResolveCoreAssemblyPath(const std::fil
     return std::filesystem::path("CHEngine.Managed.dll");
 }
 
-void ScriptAssemblyHost::ClearLoadedAssemblyState()
+void ScriptHost::ClearLoadedAssemblyState()
 {
     m_AppAssembly = nullptr;
     m_CoreAssembly = nullptr;
 }
 
-bool ScriptAssemblyHost::Init()
+bool ScriptHost::Init()
 {
     if (m_IsInitialized)
         return true;
@@ -216,7 +188,7 @@ bool ScriptAssemblyHost::Init()
     return true;
 }
 
-void ScriptAssemblyHost::Shutdown()
+void ScriptHost::Shutdown()
 {
     if (!m_IsInitialized)
     {
@@ -230,6 +202,7 @@ void ScriptAssemblyHost::Shutdown()
         m_Host.UnloadAssemblyLoadContext(m_AppAssemblyContext);
         Coral::GC::Collect();
         Coral::GC::WaitForPendingFinalizers();
+        Coral::GC::Collect();
         Coral::GC::Collect();
     }
     catch (const std::exception& e)
@@ -248,7 +221,7 @@ void ScriptAssemblyHost::Shutdown()
     m_IsInitialized = false;
 }
 
-bool ScriptAssemblyHost::RecreateAssemblyLoadContext(bool unloadCurrent)
+bool ScriptHost::RecreateAssemblyLoadContext(bool unloadCurrent)
 {
     if (!m_IsInitialized)
     {
@@ -291,7 +264,7 @@ bool ScriptAssemblyHost::RecreateAssemblyLoadContext(bool unloadCurrent)
     }
 }
 
-bool ScriptAssemblyHost::LoadAssembliesTransactional(const std::filesystem::path& appAssemblyPath)
+bool ScriptHost::LoadAssembliesTransactional(const std::filesystem::path& appAssemblyPath)
 {
     Coral::ManagedAssembly* loadedCore = nullptr;
     Coral::ManagedAssembly* loadedApp = nullptr;
@@ -364,7 +337,7 @@ bool ScriptAssemblyHost::LoadAssembliesTransactional(const std::filesystem::path
     return true;
 }
 
-bool ScriptAssemblyHost::LoadAppAssembly(const std::string& filepath)
+bool ScriptHost::LoadAppAssembly(const std::string& filepath)
 {
     if (!m_IsInitialized)
     {
@@ -387,7 +360,7 @@ bool ScriptAssemblyHost::LoadAppAssembly(const std::string& filepath)
     return LoadAssembliesTransactional(std::filesystem::path(filepath));
 }
 
-bool ScriptAssemblyHost::ReloadAppAssembly(const std::string& filepath)
+bool ScriptHost::ReloadAppAssembly(const std::string& filepath)
 {
     if (!m_IsInitialized)
     {
@@ -416,14 +389,14 @@ bool ScriptAssemblyHost::ReloadAppAssembly(const std::string& filepath)
     return LoadAssembliesTransactional(std::filesystem::path(filepath));
 }
 
-void ScriptTypeRegistry::Clear()
+void ScriptRegistry::Clear()
 {
     m_ScriptClasses.clear();
     m_ShortNameToFullName.clear();
     m_MissingScriptsWarnings.clear();
 }
 
-void ScriptTypeRegistry::Discover(Coral::ManagedAssembly& appAssembly, Coral::ManagedAssembly& coreAssembly)
+void ScriptRegistry::Discover(Coral::ManagedAssembly& appAssembly, Coral::ManagedAssembly& coreAssembly)
 {
     Clear();
 
@@ -468,7 +441,7 @@ void ScriptTypeRegistry::Discover(Coral::ManagedAssembly& appAssembly, Coral::Ma
                  m_ShortNameToFullName.size());
 }
 
-Coral::Type* ScriptTypeRegistry::GetScriptClass(const std::string& name)
+Coral::Type* ScriptRegistry::GetScriptClass(const std::string& name)
 {
     std::string key = ToLowerCopy(name);
 

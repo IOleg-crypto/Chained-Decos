@@ -18,8 +18,9 @@
 #include "engine/scene/scene_events.h"
 #include "engine/scene/scene_serializer.h"
 #include "imgui.h"
-#include "scripting/scene_scripting.h"
+#include "engine/scene/SceneScriptingManager.h"
 #include "scripting/scriptengine.h"
+#include "scripting/scriptengine_services.h"
 #include <algorithm>
 #include <array>
 #include <cctype>
@@ -129,7 +130,7 @@ void RuntimeLayer::OnDetach()
     StopCurrentScene();
 
     m_Scene = nullptr;
-    ScriptEngine::Get().SetActiveScene(nullptr);
+    SetContextScene(nullptr);
     m_RuntimeStarted = false;
     m_IsSceneLoading = false;
     m_LoadingOverlayElapsed = 0.0f;
@@ -143,10 +144,11 @@ void RuntimeLayer::OnUpdate(Timestep ts)
     // The scene transition and script logic will consume button states after this point.
     // UIRenderer::DrawCanvas will handle the per-frame reset during the render pass.
 
-    std::string pendingPath;
-    if (scriptEngine.TryConsumeRequestedScene(pendingPath))
+    if (!m_PendingScenePath.empty())
     {
-        LoadScene(pendingPath);
+        std::string path = std::move(m_PendingScenePath);
+        m_PendingScenePath.clear();
+        LoadScene(path);
         return;
     }
 
@@ -180,7 +182,6 @@ void RuntimeLayer::OnUpdate(Timestep ts)
 
         if (IsSceneReadyToStart() && m_LoadingOverlayElapsed >= m_LoadingOverlayMinDuration)
         {
-            SceneScripting::OnRuntimeStart(m_Scene.get());
             m_Scene->OnRuntimeStart();
             m_RuntimeStarted = true;
             m_IsSceneLoading = false;
@@ -190,10 +191,6 @@ void RuntimeLayer::OnUpdate(Timestep ts)
 
     if (m_Scene && m_RuntimeStarted)
     {
-        if (scriptEngine.CanExecuteFrameScripts())
-        {
-            SceneScripting::Update(m_Scene.get(), ts);
-        }
         m_Scene->OnUpdateRuntime(ts);
     }
 
@@ -270,8 +267,27 @@ void RuntimeLayer::OnRender(Timestep ts)
         m_HDRFramebuffer->Unbind();
 
         Renderer::Get().SetViewport(0, 0, (int)width, (int)height);
+        
+        ShaderAsset* overrideShader = nullptr;
+        std::vector<ShaderUniform> uniforms;
+
+        if (primaryCam && primaryCam.HasComponent<ShaderComponent>())
+        {
+            auto& sc = primaryCam.GetComponent<ShaderComponent>();
+            if (sc.Enabled && !sc.ShaderPath.empty())
+            {
+                auto asset = AssetManager::Get().Get<ShaderAsset>(sc.ShaderPath);
+                if (asset)
+                {
+                    overrideShader = asset.get();
+                    uniforms = sc.Uniforms;
+                }
+            }
+        }
+
         Renderer::Get().ApplyPostProcessing(m_HDRFramebuffer->GetColorAttachmentRendererID(),
-                                            m_HDRFramebuffer->GetDepthAttachmentRendererID(), camera.value());
+                                            m_HDRFramebuffer->GetDepthAttachmentRendererID(), camera.value(),
+                                            overrideShader, uniforms);
     }
     else
     {
@@ -322,7 +338,7 @@ void RuntimeLayer::OnImGuiRender()
                     // CH_CORE_INFO("RuntimeLayer: Drawing UI canvas at ({}, {}) with size ({}, {})",
                     //  canvasPos.x, canvasPos.y, canvasSize.x, canvasSize.y);
                     UIRenderer::Get().DrawCanvas(m_Scene.get(), canvasPos, canvasSize, false);
-                    SceneScripting::RenderUI(m_Scene.get());
+                    m_Scene->OnRenderUI();
                 }
                 ImGui::EndChild();
             }
@@ -341,7 +357,7 @@ void RuntimeLayer::OnEvent(Event& e)
 {
     if (m_Scene && m_RuntimeStarted)
     {
-        SceneScripting::DispatchEvent(m_Scene.get(), e);
+        // (Event dispatching is handled per-scene if needed)
     }
 
     EventDispatcher dispatcher(e);
@@ -360,7 +376,7 @@ void RuntimeLayer::OnEvent(Event& e)
     });
 
     dispatcher.Dispatch<SceneChangeRequestEvent>([this](auto& ev) {
-        ScriptEngine::Get().RequestLoadScene(ev.GetPath());
+        m_PendingScenePath = ev.GetPath();
         return true;
     });
 }
@@ -658,11 +674,8 @@ void RuntimeLayer::StopCurrentScene()
 
     if (m_RuntimeStarted)
     {
-        SceneScripting::OnRuntimeStop(m_Scene.get());
         m_Scene->OnRuntimeStop();
     }
-
-    SceneScripting::Stop(m_Scene.get());
 }
 
 std::vector<std::pair<std::string, float>> RuntimeLayer::CollectSceneFontRequests() const
@@ -810,7 +823,7 @@ bool RuntimeLayer::TransitionToScene(const std::filesystem::path& scenePath)
     if (!serializer.Deserialize(scenePath.string()))
     {
         m_Scene = nullptr;
-        ScriptEngine::Get().SetActiveScene(nullptr);
+        CHEngine::SetContextScene(nullptr);
         return false;
     }
 
@@ -818,7 +831,7 @@ bool RuntimeLayer::TransitionToScene(const std::filesystem::path& scenePath)
     m_Scene->GetSettings().ScenePath = scenePath.string();
 
     // Keep current ScriptEngine behavior intact while runtime owns transition flow.
-    ScriptEngine::Get().SetActiveScene(m_Scene.get());
+    CHEngine::SetContextScene(m_Scene.get());
 
     Window& window = Application::Get().GetWindow();
     m_Scene->OnViewportResize(window.GetWidth(), window.GetHeight());

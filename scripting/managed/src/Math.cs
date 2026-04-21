@@ -50,6 +50,19 @@ public struct Vector3
     public override string ToString() => $"({X:F2}, {Y:F2}, {Z:F2})";
 }
 
+/// <summary>4D vector shared with native code (useful for colors).</summary>
+[StructLayout(LayoutKind.Sequential)]
+public struct Vector4
+{
+    public float X, Y, Z, W;
+
+    public Vector4(float x, float y, float z, float w) { X = x; Y = y; Z = z; W = w; }
+    public Vector4(float value) { X = Y = Z = W = value; }
+
+    public static readonly Vector4 White = new Vector4(1, 1, 1, 1);
+    public static readonly Vector4 Black = new Vector4(0, 0, 0, 1);
+}
+
 /// <summary>Scalar math helpers.</summary>
 public static class Mathf
 {

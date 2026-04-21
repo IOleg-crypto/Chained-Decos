@@ -20,7 +20,7 @@ Application* CreateApplication(ApplicationCommandLineArgs args)
     spec.ShutdownScripting = []() { ScriptEngine::Shutdown(); };
 
     Application* app = new Application(spec);
-    app->PushLayer(new RuntimeLayer(""));
+    app->PushLayer(std::make_unique<RuntimeLayer>(""));
     return app;
 }
 } // namespace CHEngine

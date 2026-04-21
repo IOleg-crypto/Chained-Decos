@@ -55,7 +55,7 @@ void ScriptGlue::SetPendingScriptInstance(ManagedScriptInstance* instance)
 }
 
 CH_SCRIPT_FUNC void RegisterLifecyclePointers(uint64_t entityID, void* onCreate, void* onStart, void* onUpdate,
-                                              void* onDestroy, void* onGUI, void* onCollisionEnter)
+                                              void* onDestroy, void* onGUI, void* onCollisionEnter, void* onEvent)
 {
     if (s_PendingScriptInstance)
     {
@@ -65,6 +65,7 @@ CH_SCRIPT_FUNC void RegisterLifecyclePointers(uint64_t entityID, void* onCreate,
         s_PendingScriptInstance->OnDestroy = (void (*)())onDestroy;
         s_PendingScriptInstance->OnGUI = (void (*)())onGUI;
         s_PendingScriptInstance->OnCollisionEnter = (void (*)(uint64_t))onCollisionEnter;
+        s_PendingScriptInstance->OnEvent = (void (*)(int))onEvent;
     }
 }
 

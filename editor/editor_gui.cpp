@@ -24,17 +24,18 @@ namespace CHEngine
 
 static void DrawPropertyLabel(const char* label)
 {
+    const char* displayLabel = label ? label : "Unknown";
     if (ImGui::GetCurrentTable() != nullptr)
     {
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
         ImGui::AlignTextToFramePadding();
-        ImGui::Text(label);
+        ImGui::Text("%s", displayLabel);
         ImGui::TableSetColumnIndex(1);
     }
     else
     {
-        ImGui::Text(label);
+        ImGui::Text("%s", displayLabel);
         ImGui::SameLine(ImGui::GetContentRegionAvail().x * 0.4f);
     }
 }
@@ -167,7 +168,7 @@ void EditorGUI::BeginPropertyGrid()
 {
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 4));
     ImGui::BeginTable("PropertyGrid", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchSame);
-    ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+    ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, 140.0f);
     ImGui::TableSetupColumn("Control", ImGuiTableColumnFlags_WidthStretch);
 }
 
@@ -407,7 +408,15 @@ bool EditorGUI::FileProperty(const char* label, std::string& path, uint32_t text
 
 bool EditorGUI::ActionButton(const char* icon, const char* label)
 {
-    std::string text = std::string(icon) + " " + label;
+    std::string text;
+    if (icon && icon[0] != '\0')
+    {
+        text = std::string(icon) + " " + (label ? label : "");
+    }
+    else
+    {
+        text = (label ? label : "");
+    }
     return ImGui::Button(text.c_str());
 }
 

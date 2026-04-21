@@ -61,7 +61,10 @@ namespace CHEngine {
         else if (name == "TagComponent") entity.AddComponent<TagComponent>();
         else if (name == "AudioComponent") entity.AddComponent<AudioComponent>();
         else if (name == "CameraComponent") entity.AddComponent<CameraComponent>();
+        else if (name == "ShaderComponent") entity.AddComponent<ShaderComponent>();
         else if (name == "ManagedScriptComponent") entity.AddComponent<ManagedScriptComponent>();
+        else if (name == "SpriteComponent") entity.AddComponent<SpriteComponent>();
+        else if (name == "PlayerComponent") entity.AddComponent<PlayerComponent>();
     }
 
     CH_SCRIPT_FUNC void Entity_GetVelocity(uint64_t entityID, glm::vec3* outVelocity) {
@@ -114,6 +117,7 @@ namespace CHEngine {
         if (name == "PlayerComponent")    return entity.HasComponent<PlayerComponent>();
         if (name == "SpawnComponent")     return entity.HasComponent<SpawnComponent>();
         if (name == "SceneTransitionComponent") return entity.HasComponent<SceneTransitionComponent>();
+        if (name == "ShaderComponent")   return entity.HasComponent<ShaderComponent>();
         if (name == "ControlComponent")   return entity.HasComponent<ControlComponent>();
         if (name.find("Control") != std::string::npos || name.find("Group") != std::string::npos) {
              if (name == "ButtonControl")      return entity.HasComponent<ButtonControl>();
@@ -154,6 +158,7 @@ namespace CHEngine {
         else if (name == "PlayerComponent")    addToVec(scene->GetRegistry().view<PlayerComponent>());
         else if (name == "AudioComponent")     addToVec(scene->GetRegistry().view<AudioComponent>());
         else if (name == "TagComponent")       addToVec(scene->GetRegistry().view<TagComponent>());
+        else if (name == "ShaderComponent")    addToVec(scene->GetRegistry().view<ShaderComponent>());
 
         return Coral::Array<uint64_t>::New(ids);
     }
@@ -163,6 +168,21 @@ namespace CHEngine {
         if (entity && entity.HasComponent<TagComponent>()) 
             return Coral::String::New(entity.GetComponent<TagComponent>().Tag); 
         return Coral::String::New("");
+    }
+
+    CH_SCRIPT_FUNC void Shader_SetFloat(uint64_t entityID, Coral::String inName, float inValue) {
+        Entity entity = GetEntity(entityID);
+        if (entity && entity.HasComponent<ShaderComponent>()) {
+            entity.GetComponent<ShaderComponent>().SetFloat((std::string)inName, inValue);
+            // CH_CORE_INFO("Shader_SetFloat: entity={}, name={}, value={}", entityID, (std::string)inName, inValue);
+        }
+    }
+
+    CH_SCRIPT_FUNC void Shader_SetVec3(uint64_t entityID, Coral::String inName, glm::vec3* inValue) {
+        Entity entity = GetEntity(entityID);
+        if (entity && entity.HasComponent<ShaderComponent>()) {
+            entity.GetComponent<ShaderComponent>().SetVec3((std::string)inName, *inValue);
+        }
     }
 
     void RegisterEntityGlue(Coral::ManagedAssembly& assembly) {
@@ -189,6 +209,9 @@ namespace CHEngine {
         CH_ADD_INTERNAL_CALL(RigidBodyComponent, RigidBody_SetKinematic_Ptr, Entity_SetKinematic);
 
         CH_ADD_INTERNAL_CALL(TagComponent, TagComponent_GetTag_Ptr, TagComponent_GetTag);
+
+        CH_ADD_INTERNAL_CALL(ShaderComponent, Shader_SetFloat_Ptr, Shader_SetFloat);
+        CH_ADD_INTERNAL_CALL(ShaderComponent, Shader_SetVec3_Ptr, Shader_SetVec3);
 
         #undef CH_ADD_INTERNAL_CALL
     } } // namespace CHEngine

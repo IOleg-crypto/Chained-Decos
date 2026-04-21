@@ -8,6 +8,7 @@
 #include <future>
 // #include <mutex>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace CHEngine
@@ -130,7 +131,7 @@ private:
 
     // Loading data
     PendingModelData m_PendingData;
-    std::vector<std::shared_ptr<Texture>> m_EmbeddedTextures;
+    std::unordered_map<std::string, std::shared_ptr<Texture>> m_EmbeddedTextures;
     bool m_HasPendingData = false;
 };
 } // namespace CHEngine
