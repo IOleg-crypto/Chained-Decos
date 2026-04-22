@@ -1,7 +1,10 @@
 #include "engine/scene/scene.h"
 #include "engine/core/profiler.h"
 #include "engine/physics/physics.h"
+#include "engine/physics/default_physics_world.h"
+#include "engine/physics/physics_system.h"
 #include "engine/scene/component_serializer.h"
+#include "engine/core/service_locator.h"
 #include "engine/scene/systems/animation_system.h"
 #include "engine/scene/systems/hierarchy_system.h"
 #include "engine/scene/systems/scene_audio_system.h"
@@ -34,6 +37,8 @@ Scene::Scene()
 
     // Every scene must have its own environment to avoid skybox leaking/bugs
     m_Settings.Environment = std::make_shared<EnvironmentAsset>();
+
+    m_PhysicsWorld = std::make_unique<DefaultPhysicsWorld>();
 }
 
 Scene::~Scene()
@@ -69,23 +74,47 @@ std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
     // 1. Copy Scene Settings
     newScene->m_Settings = other->m_Settings;
 
-    // 2. Copy Entities (Direct Memory Copy)
+    // 2. Copy Entities (remap handled via ID)
     auto& srcRegistry = other->GetRegistry();
     auto& dstRegistry = newScene->GetRegistry();
 
-    // Copy all entities using ComponentSerializer
+    std::unordered_map<entt::entity, entt::entity> entityMap;
+
+    // First pass: Create all entities and copy basic components
     {
-        CH_PROFILE_SCOPE("Scene::Copy::CopyEntities");
-        int entityCount = 0;
+        CH_PROFILE_SCOPE("Scene::Copy::CopyEntities_Pass1");
         srcRegistry.view<IDComponent>().each([&](auto entityHandle, auto& id) {
-            entityCount++;
             Entity srcEntity = {entityHandle, other->m_Registry};
             Entity dstEntity = newScene->CreateEntityWithUUID(id.ID);
+            entityMap[entityHandle] = (entt::entity)dstEntity;
 
             ComponentSerializer::Get().CopyAll(srcEntity, dstEntity);
         });
+    }
 
-        CH_CORE_INFO("Scene::Copy - Successfully copied {} entities", entityCount);
+    // Second pass: Copy and remap Hierarchy
+    {
+        CH_PROFILE_SCOPE("Scene::Copy::CopyEntities_Pass2");
+        srcRegistry.view<HierarchyComponent>().each([&](auto entityHandle, auto& srcHC) {
+            entt::entity dstHandle = entityMap[entityHandle];
+            auto& dstHC = dstRegistry.get_or_emplace<HierarchyComponent>(dstHandle);
+            
+            // Remap parent
+            if (srcHC.Parent != entt::null && entityMap.count(srcHC.Parent))
+                dstHC.Parent = entityMap[srcHC.Parent];
+            else
+                dstHC.Parent = entt::null;
+
+            // Remap children
+            dstHC.Children.clear();
+            for (auto child : srcHC.Children)
+            {
+                if (entityMap.count(child))
+                    dstHC.Children.push_back(entityMap[child]);
+            }
+        });
+        
+        CH_CORE_INFO("Scene::Copy - Successfully copied {} entities with hierarchy", entityMap.size());
     }
     return newScene;
 }
@@ -124,6 +153,9 @@ void Scene::OnRuntimeStart()
     m_IsSimulationRunning = true;
 
     m_ScriptingManager->OnRuntimeStart();
+    
+    // Ensure all transforms are up to date before the first frame
+    HierarchySystem::Update(this);
 }
 
 void Scene::OnRuntimeStop()
@@ -142,7 +174,7 @@ void Scene::OnUpdateRuntime(Timestep timestep)
 
     HierarchySystem::Update(this);
     AnimationSystem::Update(this, timestep);
-    Physics::Update(this, timestep, m_IsSimulationRunning);
+    ServiceLocator::Get<PhysicsSystem>().Update(this, timestep, m_IsSimulationRunning);
     SceneAudioSystem::Update(this, timestep);
 }
 
@@ -152,7 +184,7 @@ void Scene::OnUpdateEditor(Timestep timestep)
 
     HierarchySystem::Update(this);
     AnimationSystem::Update(this, timestep);
-    Physics::Update(this, timestep, false);
+    ServiceLocator::Get<PhysicsSystem>().Update(this, timestep, false);
     SceneAudioSystem::Update(this, timestep);
 }
 

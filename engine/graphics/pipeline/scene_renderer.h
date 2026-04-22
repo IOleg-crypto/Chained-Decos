@@ -56,6 +56,17 @@ private:
         AnimationComponent                 animation;
     };
 
+    struct RenderItem
+    {
+        std::shared_ptr<ModelAsset> Asset;
+        glm::mat4                    Transform;
+        std::vector<MaterialSlot>   Materials;
+        std::vector<glm::mat4>      BoneMatrices;
+        std::shared_ptr<ShaderAsset> ShaderOverride;
+        std::vector<ShaderUniform>  CustomUniforms;
+        float                       Distance = 0.0f;
+    };
+
     // Render passes
     void RenderModels(Scene* scene, const Camera3D& camera, float nearClip, float farClip);
     void RenderSprites(Scene* scene, const Camera3D& camera);
@@ -65,7 +76,7 @@ private:
     // Helpers
     void PrepareLights(entt::registry& registry, const Frustum& frustum);
     void CollectAndRenderItems(entt::registry& registry, const Frustum& frustum,
-                               std::vector<AnimatedEntry>& animatedEntries);
+                               const glm::vec3& cameraPos);
     
     void DrawAnimatedEntities(const std::vector<AnimatedEntry>& animatedEntries);
 
@@ -96,6 +107,9 @@ private:
 private:
     EditorResourcesData m_EditorResources;
     ProfilerStats       m_CurrentStats;
+
+    std::vector<RenderItem> m_OpaqueQueue;
+    std::vector<RenderItem> m_TransparentQueue;
 };
 
 } // namespace CHEngine

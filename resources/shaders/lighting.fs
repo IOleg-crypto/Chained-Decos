@@ -29,6 +29,10 @@ void main()
         vec4 sampled = texture(texture0, fragTexCoord);
         baseColor *= ToLinear(sampled); // sRGB texture → linear
     }
+    
+    // Alpha discard (Cutout)
+    if (baseColor.a < 0.1) discard;
+
     // Note: no ToLinear() needed for baseColor alone — colDiffuse is already linear.
     
     int mode = int(uMode + 0.5);

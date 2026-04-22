@@ -1,12 +1,18 @@
 #define MINIAUDIO_IMPLEMENTATION
 #include "miniaudio.h"
 #include "audio.h"
+#include "engine/core/service_locator.h"
 #include "engine/core/log.h"
 #include "engine/scene/project.h"
 #include <filesystem>
 
 namespace CHEngine
 {
+
+Audio& Audio::Get()
+{
+    return ServiceLocator::Get<Audio>();
+}
 
 
 static std::vector<std::shared_ptr<SoundInstance>> s_ActiveSounds;

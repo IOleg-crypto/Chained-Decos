@@ -3,6 +3,8 @@ add_library(engine_physics ${SUBMODULE_LIB_TYPE}
         dynamics.cpp
     collision_core.cpp
     raycast_query.cpp
+    default_physics_world.cpp
+    physics_system.cpp
         bvh/bvh_cache.cpp
         bvh/bvh.cpp
         collision/collision_triangle.cpp
@@ -11,6 +13,9 @@ add_library(engine_physics ${SUBMODULE_LIB_TYPE}
         dynamics.h
     collision_core.h
     raycast_query.h
+    iphysics_world.h
+    default_physics_world.h
+    physics_system.h
         bvh/bvh_cache.h
         bvh/bvh.h
         bvh/bvh_node.h

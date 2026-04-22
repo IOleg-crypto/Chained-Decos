@@ -25,6 +25,7 @@ add_library(engine_core ${SUBMODULE_LIB_TYPE}
         timestep.h
         uuid.h
         window.h
+        service_locator.h
         ../platform/utils/dialogs.cpp
         ../platform/utils/dialogs.h
         ../platform/glfw/glfw_window.cpp

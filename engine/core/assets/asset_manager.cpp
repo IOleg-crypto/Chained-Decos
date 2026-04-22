@@ -1,7 +1,7 @@
 #include "engine/core/assets/asset_manager.h"
 #include "engine/core/thread_pool.h"
 #include "engine/core/profiler.h"
-
+#include "engine/core/service_locator.h"
 #include <chrono>
 
 namespace CHEngine
@@ -11,8 +11,6 @@ namespace
 constexpr size_t kMaxAssetFinalizationsPerFrame = 16;
 constexpr auto kMaxAssetFinalizeBudget = std::chrono::milliseconds(2);
 }
-
-static std::unique_ptr<AssetManager> s_Instance = nullptr;
 
 AssetManager::AssetManager()
 {
@@ -29,16 +27,7 @@ AssetManager::~AssetManager()
 
 AssetManager& AssetManager::Get()
 {
-    if (!s_Instance)
-    {
-        s_Instance = std::make_unique<AssetManager>();
-    }
-    return *s_Instance;
-}
-
-void AssetManager::Shutdown()
-{
-    s_Instance.reset();
+    return ServiceLocator::Get<AssetManager>();
 }
 
 void AssetManager::RegisterLoader(AssetType type, std::unique_ptr<IAssetLoader> loader)
