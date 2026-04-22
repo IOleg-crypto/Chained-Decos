@@ -498,7 +498,7 @@ bool RuntimeLayer::DiscoverAndLoadProject(const std::string& projectPath)
     CH_CORE_INFO("RuntimeLayer: Asset Directory: {}", Project::GetAssetDirectory().string());
 
     // CRITICAL: Load engine shaders and resources immediately after project is resolved
-    Renderer::LoadEngineResources();
+    Renderer::Get().LoadEngineResources();
 
     return true;
 }

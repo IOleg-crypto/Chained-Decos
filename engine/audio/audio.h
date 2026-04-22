@@ -41,11 +41,10 @@ struct AudioData
 class Audio
 {
 public:
-    static Audio& Get()
-    {
-        static Audio instance;
-        return instance;
-    }
+    Audio();
+    ~Audio();
+
+    static Audio& Get();
 
     Audio(const Audio&) = delete;
     Audio& operator=(const Audio&) = delete;
@@ -68,10 +67,6 @@ public:
     void Stop(AudioHandle handle);
 
     void StopAll();
-
-private:
-    Audio();
-    ~Audio();
 
 private:
     ma_engine* m_Engine = nullptr;

@@ -11,14 +11,14 @@ Application* CreateApplication(ApplicationCommandLineArgs args)
 {
     auto details = ProjectLauncher::PrepareRuntime(args);
     
-    details.Spec.InitScripting = []() { ScriptEngine::Init(); };
-    details.Spec.ShutdownScripting = []() { ScriptEngine::Shutdown(); };
+    details.Spec.InitScripting = []() { ScriptEngine::Get().Initialize(); };
+    details.Spec.ShutdownScripting = []() { ScriptEngine::Get().Shutdown(); };
 
     // Create the application with orchestrated settings.
     auto app = new Application(details.Spec);
     
     // The runtime layer will handle the higher-level project logic.
-    app->PushLayer(new RuntimeLayer(details.ProjectPath.string()));
+    app->PushLayer(std::make_unique<RuntimeLayer>(details.ProjectPath.string()));
     
     return app;
 }

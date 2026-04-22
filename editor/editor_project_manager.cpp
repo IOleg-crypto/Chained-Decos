@@ -34,7 +34,7 @@ void EditorProjectManager::NewProject(const std::string& name, const std::string
     serializer.Serialize((std::filesystem::path(path) / (name + ".chproject")).string());
 
     // Load engine shaders and resources for the dynamic newly created project
-    Renderer::LoadEngineResources();
+    Renderer::Get().LoadEngineResources();
     UIRenderer::Get().LoadProjectFonts();
 }
 
@@ -55,7 +55,7 @@ void EditorProjectManager::OpenProject(const std::filesystem::path& path)
         m_LastProjectPath = path.string();
 
         // Load engine shaders and resources
-        Renderer::LoadEngineResources();
+        Renderer::Get().LoadEngineResources();
         UIRenderer::Get().LoadProjectFonts();
 
         ProjectOpenedEvent e(path.string());

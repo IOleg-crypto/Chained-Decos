@@ -15,7 +15,7 @@ namespace CHEngine
 {
 class Texture;
 
-class ModelAsset : public Asset
+class ModelAsset : public Asset, public std::enable_shared_from_this<ModelAsset>
 {
 public:
     ModelAsset()
@@ -23,6 +23,9 @@ public:
     {
     }
     virtual ~ModelAsset() = default;
+    
+    friend class ModelLoader;
+    friend class SceneRenderer;
 
     static AssetType GetStaticType()
     {
@@ -58,52 +61,6 @@ public:
     {
         return (int)m_Animations.size();
     }
-    void SetPendingData(PendingModelData&& data)
-    {
-        m_PendingData = std::move(data);
-        m_HasPendingData = true;
-    }
-    PendingModelData& GetPendingData()
-    {
-        return m_PendingData;
-    }
-    bool HasPendingData() const
-    {
-        return m_HasPendingData;
-    }
-
-    void SetModel(const Model& model)
-    {
-        m_Model = model;
-    }
-    void SetAnimations(const std::vector<RawAnimation>& animations)
-    {
-        m_Animations = animations;
-    }
-    void SetInstances(const std::vector<MeshInstance>& instances)
-    {
-        m_Instances = instances;
-    }
-    void SetBoundingBox(const BoundingBox& bbox)
-    {
-        m_BoundingBox = bbox;
-    }
-    void SetRawMeshes(const std::vector<RawMesh>& meshes)
-    {
-        m_RawMeshes = meshes;
-    }
-    void SetOffsetMatrices(const std::vector<glm::mat4>& matrices)
-    {
-        m_OffsetMatrices = matrices;
-    }
-    void SetNodeNames(const std::vector<std::string>& names)
-    {
-        m_NodeNames = names;
-    }
-    void SetNodeParents(const std::vector<int>& parents)
-    {
-        m_NodeParents = parents;
-    }
     std::string GetAnimationName(int index) const;
     std::vector<glm::mat4> GetBoneMatrices(int animationIndex, int frame) const;
 
@@ -113,10 +70,23 @@ public:
     }
 
     // Get renderer ID for embedded texture (e.g., "*0", "*1").
-    // Returns 0 if the texture is not found or path is not an embedded texture marker.
     uint32_t GetEmbeddedTextureID(const std::string& path) const;
 
 private:
+    void SetPendingData(PendingModelData&& data)
+    {
+        m_PendingData = std::move(data);
+        m_HasPendingData = true;
+    }
+    
+    void SetModel(const Model& model) { m_Model = model; }
+    void SetAnimations(const std::vector<RawAnimation>& animations) { m_Animations = animations; }
+    void SetInstances(const std::vector<MeshInstance>& instances) { m_Instances = instances; }
+    void SetBoundingBox(const BoundingBox& bbox) { m_BoundingBox = bbox; }
+    void SetRawMeshes(const std::vector<RawMesh>& meshes) { m_RawMeshes = meshes; }
+    void SetOffsetMatrices(const std::vector<glm::mat4>& matrices) { m_OffsetMatrices = matrices; }
+    void SetNodeNames(const std::vector<std::string>& names) { m_NodeNames = names; }
+    void SetNodeParents(const std::vector<int>& parents) { m_NodeParents = parents; }
     Model m_Model;
     std::vector<RawMesh> m_RawMeshes;
     std::vector<RawAnimation> m_Animations;

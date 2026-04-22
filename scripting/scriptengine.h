@@ -16,14 +16,14 @@ class Scene;
 class ScriptEngine
 {
 public:
-private:
     ScriptEngine();
     ~ScriptEngine();
 
-public:
+    void Initialize();
+    void Shutdown();
 
-    static void Init();
-    static void Shutdown();
+    static ScriptEngine& Get();
+    static bool IsInitializedGlobal();
 
     void InternalInit();
     void InternalShutdown();
@@ -57,8 +57,6 @@ public:
     {
         return GetScriptHost().IsInitialized() && !GetScriptHost().IsReloadInProgress();
     }
-public:
-    static ScriptEngine& Get();
 };
 
 } // namespace CHEngine

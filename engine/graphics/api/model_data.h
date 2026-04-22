@@ -47,6 +47,8 @@ struct RawMaterial
 
     float metalness = 0.0f;
     float roughness = 0.5f;
+
+    bool transparent = false;
 };
 
 struct EmbeddedTextureData

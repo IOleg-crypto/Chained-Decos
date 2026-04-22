@@ -21,7 +21,6 @@ public:
     ~AssetManager();
 
     static AssetManager& Get();
-    static void Shutdown();
 
     // Registers the loader for a specific asset type and transfers ownership.
     void RegisterLoader(AssetType type, std::unique_ptr<IAssetLoader> loader);
