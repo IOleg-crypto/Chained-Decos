@@ -12,12 +12,12 @@
 #include "entt/entt.hpp"
 #include <memory>
 #include <optional>
-#include <string>
 #include <unordered_map>
 #include <vector>
 
 namespace CHEngine
 {
+class IPhysicsWorld;
 class SceneScriptingManager;
 // Owns the scene registry, scene settings, and the runtime/editor update bridge.
 class Scene
@@ -65,6 +65,8 @@ public: // Systems & Tools
     const entt::registry& GetRegistry() const;
     std::shared_ptr<entt::registry> GetRegistryPtr();
 
+    IPhysicsWorld& GetPhysicsWorld() { return *m_PhysicsWorld; }
+
 public:
     std::optional<Camera3D> GetActiveCamera();
     Entity GetPrimaryCameraEntity();
@@ -79,6 +81,7 @@ private:
     SceneSettings m_Settings;
     bool m_IsSimulationRunning = false;
     std::unique_ptr<SceneScriptingManager> m_ScriptingManager;
+    std::unique_ptr<IPhysicsWorld> m_PhysicsWorld;
 
 private:
     void OnIDConstruct(entt::registry& registry, entt::entity entity);

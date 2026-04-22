@@ -1,4 +1,5 @@
 #include "ui_renderer.h"
+#include "engine/core/service_locator.h"
 #include "ui_widget_renderer.h"
 #include "engine/core/profiler.h"
 #include "engine/core/assets/asset_manager.h"
@@ -10,27 +11,19 @@
 namespace CHEngine
 {
 
-UIRenderer* UIRenderer::s_Instance = nullptr;
-
 UIRenderer& UIRenderer::Get()
 {
-    CH_CORE_ASSERT(s_Instance, "UIRenderer not initialized!");
-    return *s_Instance;
+    return ServiceLocator::Get<UIRenderer>();
 }
 
 bool UIRenderer::IsInitialized()
 {
-    return s_Instance != nullptr && s_Instance->m_Initialized;
+    return ServiceLocator::Has<UIRenderer>();
 }
 
-void UIRenderer::Init()
+void UIRenderer::Initialize()
 {
-    if (!s_Instance)
-    {
-        s_Instance = new UIRenderer();
-    }
-
-    if (s_Instance->m_Initialized)
+    if (m_Initialized)
     {
         return;
     }
@@ -38,22 +31,25 @@ void UIRenderer::Init()
     // Register Font loader
     AssetManager::Get().RegisterLoader(AssetType::Font, std::make_unique<FontLoader>());
 
-    s_Instance->m_Initialized = true;
+    m_Initialized = true;
     CH_CORE_INFO("Initializing UIRenderer...");
 }
 
 void UIRenderer::Shutdown()
 {
-    if (s_Instance)
+    if (m_Initialized)
     {
-        if (s_Instance->m_Initialized)
-        {
-            CH_CORE_INFO("Shutting down UIRenderer...");
-            s_Instance->m_Initialized = false;
-        }
-        delete s_Instance;
-        s_Instance = nullptr;
+        CH_CORE_INFO("Shutting down UIRenderer...");
+        m_Initialized = false;
     }
+}
+
+UIRenderer::UIRenderer()
+{
+}
+
+UIRenderer::~UIRenderer()
+{
 }
 
 void UIRenderer::LoadProjectFonts()

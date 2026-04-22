@@ -145,9 +145,33 @@ void SceneRenderer::RenderModels(Scene* scene, const Camera3D& camera, float nea
 
     PrepareLights(registry, frustum);
 
-    std::vector<AnimatedEntry> animatedEntries;
-    CollectAndRenderItems(registry, frustum, animatedEntries);
-    DrawAnimatedEntities(animatedEntries);
+    m_OpaqueQueue.clear();
+    m_TransparentQueue.clear();
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    CollectAndRenderItems(registry, frustum, camera.Position);
+
+    // Sort transparent queue back-to-front
+    std::sort(m_TransparentQueue.begin(), m_TransparentQueue.end(), [](const RenderItem& a, const RenderItem& b) {
+        return a.Distance > b.Distance;
+    });
+
+    // 1. Opaque Pass
+    for (const auto& item : m_OpaqueQueue)
+    {
+        DrawModel(item.Asset, item.Transform, item.Materials, item.BoneMatrices, item.ShaderOverride, item.CustomUniforms);
+    }
+
+    // 2. Transparent Pass
+    glDepthMask(GL_FALSE);
+    for (const auto& item : m_TransparentQueue)
+    {
+        DrawModel(item.Asset, item.Transform, item.Materials, item.BoneMatrices, item.ShaderOverride, item.CustomUniforms);
+    }
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
 }
 
 void SceneRenderer::PrepareLights(entt::registry& registry, const Frustum& frustum)
@@ -178,7 +202,7 @@ void SceneRenderer::PrepareLights(entt::registry& registry, const Frustum& frust
 }
 
 void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustum& frustum,
-                                          std::vector<AnimatedEntry>& animatedEntries)
+                                          const glm::vec3& cameraPos)
 {
     auto meshView = registry.view<TransformComponent, ModelComponent>();
     auto& am = AssetManager::Get();
@@ -206,7 +230,18 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
             continue;
         }
 
-        if (!frustum.IsBoxVisible(modelAsset->GetBoundingBox(), transform.WorldTransform))
+        BoundingBox bbox = modelAsset->GetBoundingBox();
+        // Expand bounding box for animated entities to prevent aggressive culling
+        if (registry.all_of<AnimationComponent>(entity))
+        {
+            glm::vec3 center = (bbox.Max + bbox.Min) * 0.5f;
+            glm::vec3 size = (bbox.Max - bbox.Min);
+            size *= 2.0f; // Double the size for animation range
+            bbox.Min = center - size * 0.5f;
+            bbox.Max = center + size * 0.5f;
+        }
+
+        if (!frustum.IsBoxVisible(bbox, transform.WorldTransform))
         {
             continue;
         }
@@ -229,21 +264,40 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
             materials = registry.get<MaterialComponent>(entity).Materials;
         }
 
+        RenderItem item;
+        item.Asset = modelAsset;
+        item.Transform = transform.WorldTransform;
+        item.Materials = materials;
+        item.ShaderOverride = shaderOver;
+        item.CustomUniforms = uniforms;
+        
         if (registry.all_of<AnimationComponent>(entity))
         {
-            AnimatedEntry entry;
-            entry.asset = modelAsset;
-            entry.worldTransform = transform.WorldTransform;
-            entry.materials = materials;
-            entry.shaderOverride = shaderOver;
-            entry.customUniforms = uniforms;
-            entry.animation = registry.get<AnimationComponent>(entity);
-            animatedEntries.push_back(std::move(entry));
+            auto& anim = registry.get<AnimationComponent>(entity);
+            if (anim.CurrentAnimationIndex >= 0)
+                item.BoneMatrices = modelAsset->GetBoneMatrices(anim.CurrentAnimationIndex, anim.CurrentFrame);
         }
-        else
+
+        // Determine transparency and push to correct queue
+        bool isTransparent = false;
+        const auto& model = modelAsset->GetModel();
+        for (int i = 0; i < (int)model.Meshes.size(); ++i)
         {
-            DrawModel(modelAsset, transform.WorldTransform, materials, {}, shaderOver, uniforms);
+            Material mat = ResolveMaterialForMesh(i, model, materials, modelAsset);
+            if (mat.Transparent || mat.AlbedoColor.a < 0.99f)
+            {
+                isTransparent = true;
+                break;
+            }
         }
+
+        // Calculate distance for transparent sorting
+        // Note: we can use a simpler position extraction for speed
+        glm::vec3 worldPos = glm::vec3(transform.WorldTransform[3]);
+        item.Distance = glm::length(cameraPos - worldPos);
+
+        if (isTransparent) m_TransparentQueue.push_back(std::move(item));
+        else m_OpaqueQueue.push_back(std::move(item));
     }
 
     auto primView = registry.view<TransformComponent, PrimitiveComponent>();
@@ -303,7 +357,30 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
                 uniforms = sc.Uniforms;
             }
         }
-        DrawModel(primitive.Asset, transform.WorldTransform, {}, {}, shaderOver, uniforms);
+        RenderItem item;
+        item.Asset = primitive.Asset;
+        item.Transform = transform.WorldTransform;
+        item.ShaderOverride = shaderOver;
+        item.CustomUniforms = uniforms;
+
+        // Primitives are usually opaque, but let's check
+        bool isTransparent = false;
+        const auto& model = primitive.Asset->GetModel();
+        for (int i = 0; i < (int)model.Meshes.size(); ++i)
+        {
+            Material mat = ResolveMaterialForMesh(i, model, {}, primitive.Asset);
+            if (mat.Transparent || mat.AlbedoColor.a < 0.99f)
+            {
+                isTransparent = true;
+                break;
+            }
+        }
+
+        glm::vec3 worldPos = glm::vec3(transform.WorldTransform[3]);
+        item.Distance = glm::length(cameraPos - worldPos);
+
+        if (isTransparent) m_TransparentQueue.push_back(std::move(item));
+        else m_OpaqueQueue.push_back(std::move(item));
     }
 }
 
@@ -417,6 +494,8 @@ Material SceneRenderer::ResolveMaterialForMesh(int meshIndex, const Model& model
             material.EmissiveIntensity = slot.Material.EmissiveIntensity;
             material.Metalness = slot.Material.Metalness;
             material.Roughness = slot.Material.Roughness;
+            material.Transparent = slot.Material.Transparent;
+            material.Alpha = slot.Material.Alpha;
             break;
         }
     }
@@ -600,21 +679,27 @@ void SceneRenderer::RenderDebug(Scene* scene, const Camera3D& camera, const Scen
     glGetIntegerv(GL_POLYGON_MODE, polygonMode);
 
     // Setup for debug drawing
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+    // Use polygon offset to prevent z-fighting with the actual geometry
+    glEnable(GL_POLYGON_OFFSET_LINE);
+    glPolygonOffset(-1.0f, -1.0f);
+
     if (options.SetCollisionWireframeMode == 1)
     {
-        glPolygonMode(GL_FRONT_FACE_COMMAND_NV, GL_LINE);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     }
     else
     {
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 
-    if (options.DrawGrid && scene->GetSettings().Mode == BackgroundMode::Environment3D)
-    {
-        Renderer::Get().DrawInfiniteGrid(camera, scene->GetSettings().Grid.Spacing, {0.8f, 0.8f, 0.8f, 1.0f});
-    }
+    // if (options.DrawGrid && scene->GetSettings().Mode == BackgroundMode::Environment3D)
+    // {
+    //     Renderer::Get().DrawInfiniteGrid(camera, scene->GetSettings().Grid.Spacing, {0.8f, 0.8f, 0.8f, 1.0f});
+    // }
 
     if (options.ShowDebugColliders)
     {
@@ -651,6 +736,7 @@ void SceneRenderer::RenderDebug(Scene* scene, const Camera3D& camera, const Scen
     }
 
     glPolygonMode(GL_FRONT_AND_BACK, polygonMode[0]);
+    glDisable(GL_POLYGON_OFFSET_LINE);
     glBindVertexArray(0); // Unbind VAO
 }
 
@@ -664,7 +750,7 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
         {
             continue;
         }
-        glm::vec4 color = collider.IsColliding ? glm::vec4(1, 0, 0, 1) : glm::vec4(0, 1, 0, 1);
+        glm::vec4 color = collider.IsColliding ? glm::vec4(1, 0, 0, 0.6f) : glm::vec4(0, 1, 0, 0.6f);
         if (collider.Type == ColliderType::Box || collider.Type == ColliderType::Sphere ||
             collider.Type == ColliderType::Capsule)
         {
@@ -690,21 +776,22 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
 
             glm::mat4 baseTransform = rotTrans * glm::translate(glm::mat4(1.0f), collider.Offset);
 
+            bool useWireframe = (options.SetCollisionWireframeMode == 1);
             if (collider.Type == ColliderType::Box)
             {
-                Renderer::Get().DrawCubeWires(baseTransform, collider.Size * entityScale, color);
+                Renderer::Get().DrawCubeWires(baseTransform, collider.Size * entityScale, color, useWireframe);
             }
             else if (collider.Type == ColliderType::Sphere)
             {
                 // For sphere, we use the maximum component of the entity scale for the overall radius multiplier
                 float maxScale = glm::max(entityScale.x, glm::max(entityScale.y, entityScale.z));
-                Renderer::Get().DrawSphereWires(baseTransform, collider.Radius * maxScale, color);
+                Renderer::Get().DrawSphereWires(baseTransform, collider.Radius * maxScale, color, useWireframe);
             }
             else if (collider.Type == ColliderType::Capsule)
             {
                 float maxScale = glm::max(entityScale.x, glm::max(entityScale.y, entityScale.z));
                 Renderer::Get().DrawCapsuleWires(baseTransform, collider.Radius * maxScale,
-                                                 collider.Height * entityScale.y, color);
+                                                 collider.Height * entityScale.y, color, useWireframe);
             }
         }
         else if (collider.Type == ColliderType::Mesh)

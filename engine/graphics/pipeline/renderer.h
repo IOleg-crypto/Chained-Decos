@@ -87,16 +87,15 @@ struct RendererData
 class Renderer
 {
 public:
-    static void Init();
-    static void Shutdown();
-    static Renderer& Get();
-    static void LoadEngineResources();
-
-private:
     Renderer();
     ~Renderer();
 
-public:
+    static bool IsInitialized();
+    static Renderer& Get();
+
+    void Initialize();
+    void LoadEngineResources();
+    void Shutdown();
 
     void InternalInit();
     void InternalShutdown();
@@ -121,9 +120,9 @@ public:
     void DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float exposure, float brightness, float contrast, const Camera3D& camera);
     void DrawBillboard(const Camera3D& camera, uint32_t textureId, const glm::vec3& position, float size, const glm::vec4& tint);
     void DrawSprite(uint32_t textureId, const glm::mat4& transform, const glm::vec4& tint, bool flipX = false, bool flipY = false);
-    void DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, const glm::vec4& color);
-    void DrawCapsuleWires(const glm::mat4& transform, float radius, float height, const glm::vec4& color);
-    void DrawSphereWires(const glm::mat4& transform, float radius, const glm::vec4& color);
+    void DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, const glm::vec4& color, bool useWireframe = true);
+    void DrawCapsuleWires(const glm::mat4& transform, float radius, float height, const glm::vec4& color, bool useWireframe = true);
+    void DrawSphereWires(const glm::mat4& transform, float radius, const glm::vec4& color, bool useWireframe = true);
 
     void ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextureId, const Camera3D& camera,
                              ShaderAsset* overrideShader = nullptr, const std::vector<ShaderUniform>& uniforms = {});
@@ -140,7 +139,6 @@ public:
     ShaderLibrary& GetShaderLibrary() { return *m_Data->Shaders; }
     RendererData& GetData() { return *m_Data; }
 
-    static bool IsInitialized();
 private:
     void ApplyFogUniforms(const std::shared_ptr<ShaderAsset>& shader);
     void InitializeSkybox();
@@ -149,8 +147,6 @@ private:
 private:
     std::unique_ptr<RendererData> m_Data;
     bool m_Initialized = false;
-
-    static Renderer* s_Instance;
 };
 } // namespace CHEngine
 

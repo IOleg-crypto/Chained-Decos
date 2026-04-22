@@ -79,6 +79,8 @@ namespace CHEngine
         std::string OcclusionPath;
 
         uint32_t ShaderID = 0;
+        bool Transparent = false;
+        float Alpha = 1.0f;
 
         std::string Name;
     };

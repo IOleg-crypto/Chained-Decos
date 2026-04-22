@@ -50,16 +50,15 @@ void EffectsPanel::OnImGuiRender(bool readOnly)
         ImGui::Checkbox("AABB Boxes", &debugFlags.DrawCollisionModelBox);
         ImGui::Checkbox("Lights", &debugFlags.DrawLights);
         ImGui::Checkbox("Spawn Zones", &debugFlags.DrawSpawnZones);
-        ImGui::Checkbox("Draw Grid", &debugFlags.DrawGrid);
-
-        if (debugFlags.DrawGrid)
-        {
-            auto& grid = m_Context->GetSettings().Grid;
-            ImGui::Indent(12.0f);
-            ImGui::DragInt("Slices", &grid.Slices, 1, 4, 200);
-            ImGui::DragFloat("Spacing", &grid.Spacing, 0.1f, 0.1f, 50.0f);
-            ImGui::Unindent(12.0f);
-        }
+        // ImGui::Checkbox("Draw Grid", &debugFlags.DrawGrid);
+        // if (debugFlags.DrawGrid)
+        // {
+        //     auto& grid = m_Context->GetSettings().Grid;
+        //     ImGui::Indent(12.0f);
+        //     ImGui::DragInt("Slices", &grid.Slices, 1, 4, 200);
+        //     ImGui::DragFloat("Spacing", &grid.Spacing, 0.1f, 0.1f, 50.0f);
+        //     ImGui::Unindent(12.0f);
+        // }
     }
 
     ImGui::End();

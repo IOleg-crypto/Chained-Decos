@@ -23,13 +23,14 @@ struct UIRect
 class UIRenderer
 {
 public:
-    UIRenderer() = default;
-    ~UIRenderer() = default;
+    UIRenderer();
+    ~UIRenderer();
 
-    static void Init();
-    static void Shutdown();
     static bool IsInitialized();
     static UIRenderer& Get();
+
+    void Initialize();
+    void Shutdown();
 
     // Draws a UI canvas for the given scene.
     void DrawCanvas(Scene* scene, const ImVec2& referencePosition, const ImVec2& referenceSize, bool editMode = false);
@@ -54,7 +55,6 @@ private:
 
     UIFontRegistry    m_FontRegistry;
     bool m_Initialized = false;
-    static UIRenderer* s_Instance;
 };
 
 } // namespace CHEngine

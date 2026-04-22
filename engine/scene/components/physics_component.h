@@ -2,6 +2,7 @@
 #define CH_PHYSICS_COMPONENTS_H
 
 #include "engine/core/reflection.h"
+#include "engine/physics/iphysics_world.h"
 #include <glm/glm.hpp>
 #include <string>
 
@@ -92,7 +93,30 @@ struct RigidBodyComponent
     bool IsKinematic = false;
     float Mass = 1.0f;
 
+    // Runtime handle
+    PhysicsBodyHandle Handle = kInvalidPhysicsBody;
+
     RigidBodyComponent() = default;
+    RigidBodyComponent(const RigidBodyComponent& other)
+        : Velocity(other.Velocity), UseGravity(other.UseGravity), 
+          IsGrounded(other.IsGrounded), IsKinematic(other.IsKinematic), 
+          Mass(other.Mass)
+    {
+        Handle = kInvalidPhysicsBody;
+    }
+    RigidBodyComponent& operator=(const RigidBodyComponent& other)
+    {
+        if (this != &other)
+        {
+            Velocity = other.Velocity;
+            UseGravity = other.UseGravity;
+            IsGrounded = other.IsGrounded;
+            IsKinematic = other.IsKinematic;
+            Mass = other.Mass;
+            Handle = kInvalidPhysicsBody;
+        }
+        return *this;
+    }
 
     CH_REFLECT_BEGIN(RigidBodyComponent)
         props.Header("Dynamics");

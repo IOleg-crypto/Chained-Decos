@@ -60,7 +60,7 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path& path)
         // Load engine shaders now that paths are set correctly
         if (Renderer::IsInitialized())
         {
-            Renderer::LoadEngineResources();
+            Renderer::Get().LoadEngineResources();
         }
 
         // Load environment if specified

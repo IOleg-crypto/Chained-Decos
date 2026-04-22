@@ -19,9 +19,9 @@
 #include "engine/core/profiler.h"
 #include "engine/core/thread_pool.h"
 #include "engine/graphics/pipeline/renderer.h"
-#include "engine/physics/physics.h"
+#include "engine/physics/physics_system.h"
 #include "engine/scene/component_serializer.h"
-#include "engine/scene/project.h"
+#include "engine/core/service_locator.h"
 #include <nfd.h>
 
 #include <algorithm>
@@ -32,6 +32,7 @@
 #endif
 
 #include "engine/graphics/pipeline/ui_renderer.h"
+#include "scripting/scriptengine.h"
 #include <GLFW/glfw3.h>
 
 namespace CHEngine
@@ -76,15 +77,30 @@ Application::Application(const ApplicationSpecification& specification)
 
     if (!m_Specification.Headless)
     {
+        // Register early services that don't depend on the window
+        ServiceLocator::Register<AssetManager>(std::make_shared<AssetManager>());
+        ServiceLocator::Register<PhysicsSystem>(std::make_shared<PhysicsSystem>());
+
         m_Window = std::unique_ptr<Window>(Window::Create(windowProps));
 #ifdef PROJECT_ROOT_DIR
         Project::SetEngineRoot(PROJECT_ROOT_DIR);
 #endif
-        Renderer::Init();
-        UIRenderer::Init();
+        
+        auto renderer = std::make_shared<Renderer>();
+        ServiceLocator::Register<Renderer>(renderer);
+        renderer->Initialize();
+
+        auto uiRenderer = std::make_shared<UIRenderer>();
+        ServiceLocator::Register<UIRenderer>(uiRenderer);
+        uiRenderer->Initialize();
+        
+        auto scriptEngine = std::make_shared<ScriptEngine>();
+        ServiceLocator::Register<ScriptEngine>(scriptEngine);
+        scriptEngine->Initialize();
+
+        ServiceLocator::Register<Audio>(std::make_shared<Audio>());
     }
 
-    Physics::Init();
     ComponentSerializer::Init();
 
     if (m_Specification.EnableScripting && m_Specification.InitScripting)
@@ -115,19 +131,25 @@ Application::~Application()
         m_Specification.ShutdownScripting();
 
     ComponentSerializer::Shutdown();
-    Physics::Shutdown();
 
-    if (UIRenderer::IsInitialized())
-    {
-        UIRenderer::Shutdown();
-    }
+
 
     if (Renderer::IsInitialized())
     {
-        Renderer::Shutdown();
+        Renderer::Get().Shutdown();
     }
 
-    AssetManager::Shutdown();
+    if (UIRenderer::IsInitialized())
+    {
+        UIRenderer::Get().Shutdown();
+    }
+
+    if (ScriptEngine::IsInitializedGlobal())
+    {
+        ScriptEngine::Get().Shutdown();
+    }
+
+    ServiceLocator::Shutdown();
 
     m_Window.reset();
 
