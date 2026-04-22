@@ -1,4 +1,5 @@
 #include "scriptengine.h"
+#include "engine/core/service_locator.h"
 #include "engine/core/ch_assert.h"
 #include "engine/core/log.h"
 #include "engine/scene/project.h"
@@ -10,34 +11,33 @@
 namespace CHEngine
 {
 
-namespace
+ScriptEngine& ScriptEngine::Get()
 {
-static ScriptEngine* s_Instance = nullptr;
-} // namespace
+    return ServiceLocator::Get<ScriptEngine>();
+}
+
+bool ScriptEngine::IsInitializedGlobal()
+{
+    return ServiceLocator::Has<ScriptEngine>();
+}
 
 ScriptEngine::ScriptEngine()
 {
-    CH_CORE_ASSERT(!s_Instance, "ScriptEngine already exists!");
-    s_Instance = this;
 }
 
 ScriptEngine::~ScriptEngine()
 {
-    s_Instance = nullptr;
 }
 
-ScriptEngine& ScriptEngine::Get()
+// ── Initialize / Shutdown ──────────────────────────────────────────────────
+void ScriptEngine::Initialize()
 {
-    CH_CORE_ASSERT(s_Instance, "ScriptEngine not initialized!");
-    return *s_Instance;
+    InternalInit();
 }
 
-// ── Init / Shutdown ───────────────────────────────────────────────────────────
-void ScriptEngine::Init()
+void ScriptEngine::Shutdown()
 {
-    if (!s_Instance)
-        s_Instance = new ScriptEngine();
-    s_Instance->InternalInit();
+    InternalShutdown();
 }
 
 void ScriptEngine::InternalInit()
@@ -53,15 +53,6 @@ void ScriptEngine::InternalInit()
     CH_CORE_INFO("ScriptEngine: CoreCLR initialized.");
 }
 
-void ScriptEngine::Shutdown()
-{
-    if (s_Instance)
-    {
-        s_Instance->InternalShutdown();
-        delete s_Instance;
-        s_Instance = nullptr;
-    }
-}
 
 void ScriptEngine::InternalShutdown()
 {

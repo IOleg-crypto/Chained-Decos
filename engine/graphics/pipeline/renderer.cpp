@@ -3,6 +3,7 @@
 #include "engine/core/log.h"
 #include "engine/graphics/api/framebuffer.h"
 #include "engine/graphics/pipeline/render_command.h"
+#include "engine/core/service_locator.h"
 
 #include "engine/core/assets/asset_manager.h"
 #include "engine/graphics/assets/shader_asset.h"
@@ -23,27 +24,19 @@
 namespace CHEngine
 {
 
-Renderer* Renderer::s_Instance = nullptr;
+Renderer& Renderer::Get()
+{
+    return ServiceLocator::Get<Renderer>();
+}
 
 bool Renderer::IsInitialized()
 {
-    return s_Instance != nullptr && s_Instance->m_Data != nullptr && s_Instance->m_Initialized;
+    return ServiceLocator::Has<Renderer>();
 }
 
-Renderer& Renderer::Get()
+void Renderer::Initialize()
 {
-    CH_CORE_ASSERT(s_Instance && s_Instance->m_Initialized, "Renderer::Get() called before Renderer::Init()!");
-    return *s_Instance;
-}
-
-void Renderer::Init()
-{
-    if (!s_Instance)
-    {
-        s_Instance = new Renderer();
-    }
-
-    if (s_Instance->m_Initialized)
+    if (m_Initialized)
     {
         return;
     }
@@ -55,12 +48,12 @@ void Renderer::Init()
     assetManager.RegisterLoader(AssetType::Shader, std::make_unique<ShaderLoader>());
     assetManager.RegisterLoader(AssetType::Environment, std::make_unique<EnvironmentLoader>());
 
-    s_Instance->InternalInit();
+    InternalInit();
 }
 
 void Renderer::LoadEngineResources()
 {
-    auto& shaders = Get().GetShaderLibrary();
+    auto& shaders = GetShaderLibrary();
 
     auto loadShader = [&](const std::string& name, const std::string& path) { shaders.LoadOrGet(name, path); };
 
@@ -118,12 +111,7 @@ void Renderer::InternalInit()
 
 void Renderer::Shutdown()
 {
-    if (s_Instance)
-    {
-        s_Instance->InternalShutdown();
-        delete s_Instance;
-        s_Instance = nullptr;
-    }
+    InternalShutdown();
 }
 
 void Renderer::InternalShutdown()
@@ -155,7 +143,6 @@ void Renderer::InternalShutdown()
 
 Renderer::Renderer()
 {
-    s_Instance = this;
     m_Data = std::make_unique<RendererData>();
     m_Data->Shaders = std::make_unique<ShaderLibrary>();
 }
@@ -471,7 +458,7 @@ void Renderer::DrawGrid(int slices, float spacing)
 void Renderer::DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& color)
 {
     auto& shaders = GetShaderLibrary();
-    auto shaderAsset = shaders.LoadOrGet("Grid", "engine/resources/shaders/grid.chshader");
+    auto shaderAsset = shaders.LoadOrGet("Grid", "resources/shaders/grid.chshader");
     if (!shaderAsset || !shaderAsset->GetShader())
     {
         return;
@@ -496,6 +483,9 @@ void Renderer::DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+    // Disable depth test for the infinite grid or it will be occluded by the floor
+    glDisable(GL_DEPTH_TEST);
 
     // Use shared mesh from GeometryGenerator
     static Mesh gridPlane;
@@ -507,6 +497,7 @@ void Renderer::DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm
     gridPlane.VAO->Bind();
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     gridPlane.VAO->Unbind();
+    glEnable(GL_DEPTH_TEST);
 }
 
 void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float exposure, float brightness,
@@ -693,7 +684,7 @@ void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const g
     }
 }
 
-void Renderer::DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, const glm::vec4& color)
+void Renderer::DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, const glm::vec4& color, bool useWireframe)
 {
     auto shaderAsset = m_Data->Shaders->LoadOrGet("ColliderDebug", "engine/resources/shaders/collider_debug.chshader");
     if (!shaderAsset || !shaderAsset->GetShader()) return;
@@ -704,23 +695,37 @@ void Renderer::DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, 
     shader->SetMatrix("u_Transform", transform * glm::scale(glm::mat4(1.0f), size));
     shader->SetVec4("u_Color", color);
 
-    if (m_Data->Resources.WireCubeModel)
+    if (useWireframe)
     {
-        for (auto& mesh : m_Data->Resources.WireCubeModel->Meshes)
+        if (m_Data->Resources.WireCubeModel)
         {
-            mesh.VAO->Bind();
-            glDrawElements(GL_LINES, mesh.VAO->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, 0);
+            for (auto& mesh : m_Data->Resources.WireCubeModel->Meshes)
+            {
+                mesh.VAO->Bind();
+                glDrawElements(GL_LINES, mesh.VAO->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, 0);
+            }
+        }
+    }
+    else
+    {
+        if (m_Data->Resources.UnitCubeModel)
+        {
+            for (auto& mesh : m_Data->Resources.UnitCubeModel->Meshes)
+            {
+                mesh.VAO->Bind();
+                glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+            }
         }
     }
 }
 
-void Renderer::DrawCapsuleWires(const glm::mat4& transform, float radius, float height, const glm::vec4& color)
+void Renderer::DrawCapsuleWires(const glm::mat4& transform, float radius, float height, const glm::vec4& color, bool useWireframe)
 {
     // Simplified: Draw a box representing the capsule for now, until we add a proper capsule mesh
-    DrawCubeWires(transform, glm::vec3(radius * 2.0f, height, radius * 2.0f), color);
+    DrawCubeWires(transform, glm::vec3(radius * 2.0f, height, radius * 2.0f), color, useWireframe);
 }
 
-void Renderer::DrawSphereWires(const glm::mat4& transform, float radius, const glm::vec4& color)
+void Renderer::DrawSphereWires(const glm::mat4& transform, float radius, const glm::vec4& color, bool useWireframe)
 {
     auto shaderAsset = m_Data->Shaders->LoadOrGet("ColliderDebug", "engine/resources/shaders/collider_debug.chshader");
     if (!shaderAsset || !shaderAsset->GetShader()) return;
@@ -731,7 +736,15 @@ void Renderer::DrawSphereWires(const glm::mat4& transform, float radius, const g
     shader->SetMatrix("u_Transform", transform * glm::scale(glm::mat4(1.0f), glm::vec3(radius)));
     shader->SetVec4("u_Color", color);
 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    if (useWireframe)
+    {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    }
+    else
+    {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
+
     if (m_Data->Resources.UnitSphereModel)
     {
         for (auto& mesh : m_Data->Resources.UnitSphereModel->Meshes)
@@ -740,7 +753,12 @@ void Renderer::DrawSphereWires(const glm::mat4& transform, float radius, const g
             glDrawElements(GL_TRIANGLES, mesh.VAO->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, 0);
         }
     }
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    
+    // Always restore to FILL at the end of a single draw call if we switched to LINE
+    if (useWireframe)
+    {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
 }
 
 void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextureId, const Camera3D& camera,

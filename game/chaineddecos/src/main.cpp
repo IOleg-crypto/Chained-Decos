@@ -16,8 +16,8 @@ Application* CreateApplication(ApplicationCommandLineArgs args)
     spec.Name = kProjectGame;
     spec.CommandLineArgs = args;
 
-    spec.InitScripting = []() { ScriptEngine::Init(); };
-    spec.ShutdownScripting = []() { ScriptEngine::Shutdown(); };
+    spec.InitScripting = []() { ScriptEngine::Get().Initialize(); };
+    spec.ShutdownScripting = []() { ScriptEngine::Get().Shutdown(); };
 
     Application* app = new Application(spec);
     app->PushLayer(std::make_unique<RuntimeLayer>(""));

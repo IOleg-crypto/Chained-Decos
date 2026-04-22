@@ -28,6 +28,9 @@ public:
     bool IsAsync() const override { return true; }
 
     static Model GenerateProceduralModel(const std::string& type, const ProceduralParameters& params = ProceduralParameters());
+    
+    // Finalizes the asset loading (called on the main thread, e.g. for GPU uploads)
+    static void Finalize(std::shared_ptr<ModelAsset> asset);
 
 private:
     static PendingModelData LoadMeshDataFromDisk(const std::filesystem::path& path, int samplingFPS = 30);

@@ -13,8 +13,8 @@ Application* CreateApplication(ApplicationCommandLineArgs args)
 
     auto details = ProjectLauncher::PrepareEditor(args);
 
-    details.Spec.InitScripting = []() { ScriptEngine::Init(); };
-    details.Spec.ShutdownScripting = []() { ScriptEngine::Shutdown(); };
+    details.Spec.InitScripting = []() { ScriptEngine::Get().Initialize(); };
+    details.Spec.ShutdownScripting = []() { ScriptEngine::Get().Shutdown(); };
 
     auto app = new Application(details.Spec);
     app->PushLayer(std::make_unique<EditorLayer>());

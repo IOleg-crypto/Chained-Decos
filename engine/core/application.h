@@ -6,13 +6,12 @@
 #include "engine/core/layer_stack.h"
 #include "engine/core/timestep.h"
 #include "engine/core/window.h"
+#include <filesystem>
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
-#include <filesystem>
-
 
 namespace CHEngine
 {
@@ -44,7 +43,7 @@ struct ApplicationSpecification
     bool Fullscreen = false;
     bool Resizable = true;
     std::string AppIcon = "";
-    
+
     ApplicationCommandLineArgs CommandLineArgs;
     std::string ImGuiConfigurationPath = "imgui.ini";
     bool Headless = false;
@@ -58,6 +57,7 @@ class Application
 {
 public:
     Application(const ApplicationSpecification& specification);
+
 public:
     virtual ~Application();
 
@@ -77,8 +77,7 @@ public:
     // Immediate dispatch (Hazel style)
     void DispatchEvent(Event& e);
     // Queued dispatch for safe processing at frame end
-    template<typename T, typename... Args>
-    void PostEvent(Args&&... args)
+    template <typename T, typename... Args> void PostEvent(Args&&... args)
     {
         m_EventQueue.Enqueue<T>(std::forward<Args>(args)...);
     }
@@ -101,9 +100,10 @@ public:
         return m_Specification;
     }
     LayerStack& GetLayerStack();
-    float GetFrameTime() const { return m_DeltaTime; }
-
-
+    float GetFrameTime() const
+    {
+        return m_DeltaTime;
+    }
 
     // Schedules work to run on the main thread at a safe point in the frame.
     void SubmitToMainThread(const std::function<void()>& function);

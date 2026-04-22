@@ -50,7 +50,7 @@ protected:
     void SetUp() override
     {
         Project::SetActive(nullptr);
-        ScriptEngine::Init();
+        ScriptEngine::Get().Initialize();
 
         if (!ScriptEngine::Get().IsInitialized())
         {
@@ -61,7 +61,7 @@ protected:
     void TearDown() override
     {
         Project::SetActive(nullptr);
-        ScriptEngine::Shutdown();
+        ScriptEngine::Get().Shutdown();
     }
 };
 

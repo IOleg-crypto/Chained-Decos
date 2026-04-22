@@ -497,6 +497,26 @@ PendingModelData AssimpImporter::Import(const std::filesystem::path& path, int s
                 {
                     rm.metallicRoughnessPath = getTex(aiTextureType_UNKNOWN); // GLTF MR is often here
                 }
+
+                // Transparency detection
+                int blendMode = 0;
+                if (aiGetMaterialInteger(am, AI_MATKEY_BLEND_FUNC, &blendMode) == AI_SUCCESS)
+                {
+                    if (blendMode != aiBlendMode_Default && blendMode != aiBlendMode_Additive)
+                        rm.transparent = true;
+                }
+
+                if (rm.albedoColor.a < 0.999f || opacity < 0.999f)
+                {
+                    rm.transparent = true;
+                }
+
+                // Some formats/importers set 'transparent' flag explicitly
+                unsigned int isTransparent = 0;
+                if (aiGetMaterialInteger(am, "$mat.isTransparent", 0, 0, (int*)&isTransparent) == AI_SUCCESS)
+                {
+                    if (isTransparent) rm.transparent = true;
+                }
             }
         }
 

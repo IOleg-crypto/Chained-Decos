@@ -30,25 +30,25 @@ protected:
 // Verifies that the Renderer singleton can be initialized and shut down without errors.
 TEST_F(RendererTest, RendererInitialization)
 {
-    Renderer::Init();
-    Renderer::Shutdown();
+    Renderer::Get().Initialize();
+    Renderer::Get().Shutdown();
 }
 
 // Verifies that the Renderer can be init/shutdown in sequence multiple times
 // without memory corruption or double-free.
 TEST_F(RendererTest, Lifetime)
 {
-    Renderer::Init();
-    Renderer::Shutdown();
+    Renderer::Get().Initialize();
+    Renderer::Get().Shutdown();
 
-    Renderer::Init();
-    Renderer::Shutdown();
+    Renderer::Get().Initialize();
+    Renderer::Get().Shutdown();
 }
 
 // Verifies that lights can be set, counted, and cleared on the renderer.
 TEST_F(RendererTest, LightManagement)
 {
-    Renderer::Init();
+    Renderer::Get().Initialize();
     auto& renderer = Renderer::Get();
 
     EXPECT_EQ(renderer.GetData().LightCount, 0);
@@ -66,26 +66,26 @@ TEST_F(RendererTest, LightManagement)
     renderer.ClearLights();
     EXPECT_EQ(renderer.GetData().LightCount, 0);
 
-    Renderer::Shutdown();
+    Renderer::Get().Shutdown();
 }
 
 // Verifies that DiagnosticMode float can be pushed into the renderer's data block.
 TEST_F(RendererTest, DiagnosticMode)
 {
-    Renderer::Init();
+    Renderer::Get().Initialize();
     auto& renderer = Renderer::Get();
 
     renderer.SetDiagnosticMode(2.0f);
     EXPECT_FLOAT_EQ(renderer.GetData().DiagnosticMode, 2.0f);
 
-    Renderer::Shutdown();
+    Renderer::Get().Shutdown();
 }
 
 // Verifies that an EnvironmentSettings object is applied correctly to the renderer's
 // internal lighting data (e.g. ambient value round-trips through ApplyEnvironment).
 TEST_F(RendererTest, EnvironmentApplication)
 {
-    Renderer::Init();
+    Renderer::Get().Initialize();
     auto& renderer = Renderer::Get();
 
     EnvironmentSettings env;
@@ -94,5 +94,5 @@ TEST_F(RendererTest, EnvironmentApplication)
     renderer.ApplyEnvironment(env);
     EXPECT_FLOAT_EQ(renderer.GetData().Lighting.CurrentLighting.Ambient, 0.5f);
 
-    Renderer::Shutdown();
+    Renderer::Get().Shutdown();
 }
