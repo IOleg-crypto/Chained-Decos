@@ -15,11 +15,12 @@ add_library(engine_scene ${SUBMODULE_LIB_TYPE}
         systems/animation_system.cpp
         systems/hierarchy_system.cpp
         systems/scene_audio_system.cpp
-        SceneScriptingManager.cpp
+        scene_scripting_manager.cpp
+        ui_factory.cpp
 
         scene.h
         scene_events.h
-        SceneScriptingManager.h
+        scene_scripting_manager.h
         project.h
         project_serializer.h
         scene_serializer.h
