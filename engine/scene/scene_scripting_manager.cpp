@@ -1,4 +1,4 @@
-#include "SceneScriptingManager.h"
+#include "scene_scripting_manager.h"
 #include "engine/physics/physics.h"
 #include "engine/core/profiler.h"
 #include "scripting/script_glue.h"

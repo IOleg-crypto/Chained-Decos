@@ -8,7 +8,8 @@
 #include "engine/scene/systems/animation_system.h"
 #include "engine/scene/systems/hierarchy_system.h"
 #include "engine/scene/systems/scene_audio_system.h"
-#include "SceneScriptingManager.h"
+#include "engine/scene/ui_factory.h"
+#include "scene_scripting_manager.h"
 #include <entt/entt.hpp>
 #include <glm/gtx/norm.hpp>
 
@@ -39,6 +40,8 @@ Scene::Scene()
     m_Settings.Environment = std::make_shared<EnvironmentAsset>();
 
     m_PhysicsWorld = std::make_unique<DefaultPhysicsWorld>();
+    
+    UIFactory::Initialize();
 }
 
 Scene::~Scene()
@@ -374,29 +377,7 @@ Entity Scene::CreateUIEntity(const std::string& type, const std::string& name)
     Entity entity = CreateEntity(name.empty() ? type : name);
     entity.AddComponent<ControlComponent>();
     
-    if (type == "Button")                       entity.AddComponent<ButtonControl>();
-    else if (type == "Panel")                  entity.AddComponent<PanelControl>();
-    else if (type == "Label")                  entity.AddComponent<LabelControl>();
-    else if (type == "Slider")                 entity.AddComponent<SliderControl>();
-    else if (type == "CheckBox")               entity.AddComponent<CheckboxControl>();
-    else if (type == "InputText")              entity.AddComponent<InputTextControl>();
-    else if (type == "ComboBox")               entity.AddComponent<ComboBoxControl>();
-    else if (type == "ProgressBar")            entity.AddComponent<ProgressBarControl>();
-    else if (type == "Image")                  entity.AddComponent<ImageControl>();
-    else if (type == "ImageButton")            entity.AddComponent<ImageButtonControl>();
-    else if (type == "Separator")              entity.AddComponent<SeparatorControl>();
-    else if (type == "RadioButton")            entity.AddComponent<RadioButtonControl>();
-    else if (type == "ColorPicker")            entity.AddComponent<ColorPickerControl>();
-    else if (type == "DragFloat")              entity.AddComponent<DragFloatControl>();
-    else if (type == "DragInt")                entity.AddComponent<DragIntControl>();
-    else if (type == "TreeNode")               entity.AddComponent<TreeNodeControl>();
-    else if (type == "TabBar")                 entity.AddComponent<TabBarControl>();
-    else if (type == "TabItem")                entity.AddComponent<TabItemControl>();
-    else if (type == "CollapsingHeader")       entity.AddComponent<CollapsingHeaderControl>();
-    else if (type == "PlotLines")              entity.AddComponent<PlotLinesControl>();
-    else if (type == "PlotHistogram")          entity.AddComponent<PlotHistogramControl>();
-    else if (type == "VerticalLayoutGroup")    entity.AddComponent<VerticalLayoutGroup>();
-    else if (type == "UIAction")               entity.AddComponent<UIActionComponent>();
+    UIFactory::Create(type, entity);
 
     return entity;
 }
