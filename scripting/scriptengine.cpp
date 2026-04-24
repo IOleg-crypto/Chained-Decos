@@ -1,10 +1,10 @@
 #include "scriptengine.h"
-#include "engine/core/service_locator.h"
 #include "engine/core/ch_assert.h"
 #include "engine/core/log.h"
+#include "engine/core/service_locator.h"
 #include "engine/scene/project.h"
+#include "engine/scene/scene_scripting_manager.h"
 #include "script_glue.h"
-#include "engine/scene/SceneScriptingManager.h"
 #include <exception>
 #include <filesystem>
 
@@ -43,16 +43,19 @@ void ScriptEngine::Shutdown()
 void ScriptEngine::InternalInit()
 {
     if (GetScriptHost().IsInitialized())
+    {
         return;
+    }
 
     CH_CORE_INFO("ScriptEngine: Initializing CoreCLR...");
 
     if (!GetScriptHost().Init())
+    {
         return;
+    }
 
     CH_CORE_INFO("ScriptEngine: CoreCLR initialized.");
 }
-
 
 void ScriptEngine::InternalShutdown()
 {
@@ -104,15 +107,13 @@ bool ScriptEngine::LoadAppAssembly(const std::string& filepath)
         ScriptGlue::RegisterInternalCalls(*coreAssembly);
         GetScriptRegistry().Discover(*appAssembly, *coreAssembly);
         return true;
-    }
-    catch (const std::exception& e)
+    } catch (const std::exception& e)
     {
         CH_CORE_ERROR("ScriptEngine: Exception during post-load setup for '{}': {}", filepath, e.what());
         GetScriptRegistry().Clear();
         GetScriptHost().ClearLoadedAssemblyState();
         return false;
-    }
-    catch (...)
+    } catch (...)
     {
         CH_CORE_ERROR("ScriptEngine: Unknown exception during post-load setup for '{}'.", filepath);
         GetScriptRegistry().Clear();
@@ -136,7 +137,7 @@ bool ScriptEngine::ReloadAssembly()
     }
 
     GetScriptHost().SetReloadInProgress(true);
-    
+
     struct ReloadScopeGuard
     {
         ~ReloadScopeGuard()
@@ -161,11 +162,15 @@ bool ScriptEngine::ReloadAssembly()
 
     std::string dllName = scripting.ModuleName;
     if (dllName.find(".dll") == std::string::npos)
+    {
         dllName += ".dll";
+    }
 
     std::filesystem::path dllPath = scripting.ModuleDirectory / dllName;
     if (dllPath.is_relative())
+    {
         dllPath = Project::GetProjectDirectory() / dllPath;
+    }
 
     if (!std::filesystem::exists(dllPath))
     {
@@ -200,15 +205,13 @@ bool ScriptEngine::ReloadAssembly()
         GetScriptRegistry().Discover(*appAssembly, *coreAssembly);
         CH_CORE_INFO("ScriptEngine: Recreated ALC for reload.");
         return true;
-    }
-    catch (const std::exception& e)
+    } catch (const std::exception& e)
     {
         CH_CORE_ERROR("ScriptEngine: Exception during reload setup for '{}': {}", dllPath.string(), e.what());
         GetScriptRegistry().Clear();
         GetScriptHost().ClearLoadedAssemblyState();
         return false;
-    }
-    catch (...)
+    } catch (...)
     {
         CH_CORE_ERROR("ScriptEngine: Unknown exception during reload setup for '{}'.", dllPath.string());
         GetScriptRegistry().Clear();
