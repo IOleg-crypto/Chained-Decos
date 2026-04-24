@@ -18,7 +18,7 @@
 #include "engine/scene/scene_events.h"
 #include "engine/scene/scene_serializer.h"
 #include "imgui.h"
-#include "engine/scene/SceneScriptingManager.h"
+#include "engine/scene/scene_scripting_manager.h"
 #include "scripting/scriptengine.h"
 #include "scripting/scriptengine_services.h"
 #include <algorithm>
