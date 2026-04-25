@@ -24,7 +24,6 @@ void Profiler::UpdateStats(const ProfilerStats& stats)
 {
     std::lock_guard<std::mutex> lock(s_Mutex);
     s_Stats.DrawCalls += stats.DrawCalls;
-    s_Stats.PolyCount += stats.PolyCount;
     s_Stats.MeshCount += stats.MeshCount;
     s_Stats.TextureCount += stats.TextureCount;
 
@@ -42,7 +41,6 @@ void Profiler::UpdateStats(const ProfilerStats& stats)
 void Profiler::ResetFrameStats()
 {
     s_Stats.DrawCalls = 0;
-    s_Stats.PolyCount = 0;
     s_Stats.MeshCount = 0;
     s_Stats.TextureCount = 0;
 }

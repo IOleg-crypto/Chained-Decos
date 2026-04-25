@@ -16,7 +16,7 @@ struct ShaderComponent
 {
     std::string ShaderPath;
     std::vector<ShaderUniform> Uniforms;
-    bool Enabled = true;
+    bool Enabled = false;
 
     ShaderComponent() = default;
     ShaderComponent(const ShaderComponent&) = default;
@@ -61,6 +61,8 @@ struct ShaderComponent
 
     void SetFloat(const std::string& name, float value)
     {
+        if (IsSystemUniform(name)) return; // Prevent system uniforms from cluttering overrides
+
         auto it = std::find_if(Uniforms.begin(), Uniforms.end(), [&](const auto& u) { return u.Name == name; });
         if (it != Uniforms.end())
         {
@@ -74,6 +76,8 @@ struct ShaderComponent
 
     void SetVec3(const std::string& name, const glm::vec3& value)
     {
+        if (IsSystemUniform(name)) return; // Prevent system uniforms from cluttering overrides
+
         auto it = std::find_if(Uniforms.begin(), Uniforms.end(), [&](const auto& u) { return u.Name == name; });
         if (it != Uniforms.end())
         {
@@ -85,6 +89,12 @@ struct ShaderComponent
         {
             Uniforms.push_back({name, 2, {value.x, value.y, value.z, 0}});
         }
+    }
+
+    void ClearOverrides()
+    {
+        Uniforms.clear();
+        SyncWithShader();
     }
 
     void SyncWithShader()
@@ -117,9 +127,9 @@ struct ShaderComponent
     {
         SyncWithShader();
     }
-    props.Property("Enabled", Enabled);
 
     props.Action("Refresh Uniforms", [&]() { SyncWithShader(); });
+    props.Action("Clear Overrides", [&]() { ClearOverrides(); });
 
     // Filter out system uniforms if they somehow got in
     Uniforms.erase(std::remove_if(Uniforms.begin(), Uniforms.end(),

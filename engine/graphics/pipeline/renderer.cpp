@@ -775,6 +775,12 @@ void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextu
         auto shader = shaderAsset->GetShader();
         shader->Bind();
 
+        float diagIntensity = 0.0f;
+        for (const auto& u : uniforms) { if (u.Name == "uIntensity") diagIntensity = u.Value[0]; }
+        if (diagIntensity > 0.001f) {
+            CH_CORE_INFO("[RENDER DIAG] Applying shader '{}', Intensity={}", shaderAsset->GetPath(), diagIntensity);
+        }
+
         // 1. Set System Uniforms
         glm::mat4 identity = glm::mat4(1.0f);
         shader->SetMatrix("mvp", identity);

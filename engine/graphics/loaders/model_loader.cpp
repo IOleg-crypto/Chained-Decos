@@ -5,6 +5,7 @@
 #include "engine/core/log.h"
 #include "engine/core/profiler.h"
 #include "engine/scene/project.h"
+#include "engine/graphics/loaders/model_cache.h"
 #include <glm/gtc/type_ptr.hpp>
 
 namespace CHEngine
@@ -45,7 +46,23 @@ bool ModelLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolved
 
 PendingModelData ModelLoader::LoadMeshDataFromDisk(const std::filesystem::path& path, int samplingFPS)
 {
-    return AssimpImporter::Import(path, samplingFPS);
+    if (ModelCache::IsCacheValid(path))
+    {
+        PendingModelData data;
+        if (ModelCache::Load(ModelCache::GetCachePath(path), data))
+        {
+            CH_CORE_INFO("ModelLoader: Loaded cached model data for '{}'", path.generic_string());
+            return data;
+        }
+    }
+
+    auto data = AssimpImporter::Import(path, samplingFPS);
+    if (data.isValid)
+    {
+        CH_CORE_INFO("ModelLoader: Saving model cache for '{}'", path.generic_string());
+        ModelCache::Save(ModelCache::GetCachePath(path), data);
+    }
+    return data;
 }
 
 Model ModelLoader::GenerateProceduralModel(const std::string& type, const ProceduralParameters& params)
@@ -260,13 +277,8 @@ void ModelLoader::Finalize(std::shared_ptr<ModelAsset> asset)
                 mesh.VAO->SetIndexBuffer(ibo);
             }
 
-            mesh.MinBounds = {FLT_MAX, FLT_MAX, FLT_MAX};
-            mesh.MaxBounds = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
-            for (size_t vertexOffset = 0; vertexOffset < rawMesh.vertices.size(); vertexOffset += 3)
-            {
-                mesh.MinBounds = glm::min(mesh.MinBounds, {rawMesh.vertices[vertexOffset], rawMesh.vertices[vertexOffset + 1], rawMesh.vertices[vertexOffset + 2]});
-                mesh.MaxBounds = glm::max(mesh.MaxBounds, {rawMesh.vertices[vertexOffset], rawMesh.vertices[vertexOffset + 1], rawMesh.vertices[vertexOffset + 2]});
-            }
+            mesh.MinBounds = rawMesh.MinBounds;
+            mesh.MaxBounds = rawMesh.MaxBounds;
         }
         newModel.Meshes.push_back(mesh);
     }

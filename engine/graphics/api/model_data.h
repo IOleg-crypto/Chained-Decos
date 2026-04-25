@@ -30,6 +30,9 @@ struct RawMesh
     std::vector<float> weights;        // 4 weights per vertex
 
     int materialIndex = -1;
+
+    glm::vec3 MinBounds = { 0, 0, 0 };
+    glm::vec3 MaxBounds = { 0, 0, 0 };
 };
 
 struct RawMaterial

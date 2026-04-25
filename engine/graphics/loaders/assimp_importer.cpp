@@ -342,6 +342,16 @@ PendingModelData AssimpImporter::Import(const std::filesystem::path& path, int s
                     rm.indices.insert(rm.indices.end(), {face.mIndices[0], face.mIndices[1], face.mIndices[2]});
                 }
 
+                // Calculate bounds
+                rm.MinBounds = { FLT_MAX, FLT_MAX, FLT_MAX };
+                rm.MaxBounds = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
+                for (size_t v = 0; v < rm.vertices.size(); v += 3)
+                {
+                    glm::vec3 pos = { rm.vertices[v], rm.vertices[v + 1], rm.vertices[v + 2] };
+                    rm.MinBounds = glm::min(rm.MinBounds, pos);
+                    rm.MaxBounds = glm::max(rm.MaxBounds, pos);
+                }
+
                 // Bones & Weights
                 if (am->mNumBones > 0)
                 {

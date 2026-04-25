@@ -204,11 +204,26 @@ void CollisionCore::ResolveCollisions(entt::registry& registry, const std::vecto
 
             if (iter == 0) registry.get<RigidBodyComponent>(rbEntity).IsGrounded = false;
 
+            auto& tc = registry.get<TransformComponent>(rbEntity);
             auto& rbCollider = registry.get<ColliderComponent>(rbEntity);
-            colliders.each([&](auto otherEntity, auto&, auto& otherCollider)
+            
+            // Pre-calculate world AABB for the moving body once per iteration
+            WorldAABB rbAABB = GetWorldAABB(tc, rbCollider);
+            const float kBroadphaseMargin = 0.1f;
+            rbAABB.Min -= kBroadphaseMargin;
+            rbAABB.Max += kBroadphaseMargin;
+
+            colliders.each([&](auto otherEntity, auto& otherTc, auto& otherCollider)
             {
                 if (rbEntity == otherEntity) return;
                 if (!otherCollider.Enabled) return;
+
+                // Broadphase: Check world AABB overlap before any narrow-phase tests
+                WorldAABB targetAABB = GetWorldAABB(otherTc, otherCollider);
+                if (!Collision::CheckAABB(rbAABB.Min, rbAABB.Max, targetAABB.Min, targetAABB.Max))
+                {
+                    return;
+                }
 
                 if (otherCollider.Type == ColliderType::Box)
                 {
@@ -282,7 +297,7 @@ void CollisionCore::ResolveBoxMesh(entt::registry& registry, entt::entity rbEnti
     if (!bvh) return;
 
     glm::mat4 meshMatrix = otherTc.WorldTransform;
-    glm::mat4 invMeshMatrix = glm::inverse(meshMatrix);
+    glm::mat4 invMeshMatrix = otherTc.InverseWorldTransform;
     glm::mat4 localToOtherLocal = invMeshMatrix * tc.WorldTransform;
 
     glm::vec3 minLocal = rbc.Offset;
@@ -360,7 +375,7 @@ void CollisionCore::ResolveCapsuleMesh(entt::registry& registry, entt::entity rb
     if (!bvh) return;
 
     glm::mat4 meshMatrix = otherTc.WorldTransform;
-    glm::mat4 invMeshMatrix = glm::inverse(meshMatrix);
+    glm::mat4 invMeshMatrix = otherTc.InverseWorldTransform;
 
     CapsuleSegment seg = GetCapsuleSegment(tc, capsule);
 
@@ -443,7 +458,7 @@ void CollisionCore::ResolveSphereMesh(entt::registry& registry, entt::entity rbE
     if (!bvh) return;
 
     glm::mat4 meshMatrix = otherTc.WorldTransform;
-    glm::mat4 invMeshMatrix = glm::inverse(meshMatrix);
+    glm::mat4 invMeshMatrix = otherTc.InverseWorldTransform;
 
     glm::vec3 sphereWorldPos = glm::vec3(tc.WorldTransform * glm::vec4(sphere.Offset, 1.0f));
     glm::vec3 sphereLocalPos = glm::vec3(invMeshMatrix * glm::vec4(sphereWorldPos, 1.0f));
