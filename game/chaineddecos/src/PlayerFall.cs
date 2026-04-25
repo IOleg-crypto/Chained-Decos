@@ -46,29 +46,43 @@ public class PlayerFall : Script
 
         float targetIntensity = 0.0f;
         
-        if (!isGrounded && fallSpeed > 2.0f) // Threshold for at least some descent
+        if (!isGrounded && fallSpeed > 1.5f) // Slightly lower start threshold
         {
-            // 1. Light wind shake (0.0 to 0.15 range)
-            float lightWind = Mathf.Clamp((fallSpeed - 2.0f) / 10.0f, 0.0f, 0.15f);
+            // 1. Progressive light wind (curved start)
+            // Starts very small and grows to 0.15
+            float windT = Mathf.Clamp((fallSpeed - 1.5f) / 12.0f, 0.0f, 1.0f);
+            float lightWind = (windT * windT) * 0.15f; // Quadratic ease-in for smoother start
             
             // 2. Heavy turbulence (only above heavy threshold)
             float heavyTurbulence = 0.0f;
             if (fallSpeed > HEAVY_FALL_THRESHOLD)
             {
-                heavyTurbulence = Mathf.Clamp((fallSpeed - HEAVY_FALL_THRESHOLD) / (MAX_SHAKE_SPEED - HEAVY_FALL_THRESHOLD), 0.0f, 0.85f);
+                float turbT = Mathf.Clamp((fallSpeed - HEAVY_FALL_THRESHOLD) / (MAX_SHAKE_SPEED - HEAVY_FALL_THRESHOLD), 0.0f, 1.0f);
+                heavyTurbulence = turbT * 0.85f;
             }
             
             targetIntensity = lightWind + heavyTurbulence;
         }
 
-        // Smooth transition
-        // Ground landing removes shake faster (lerp speed 15)
-        // airborne entry/exit is smoother (lerp speed 4)
-        float lerpSpeed = isGrounded ? 15.0f : 4.0f;
+        // --- ASYMMETRIC SMOOTHING ---
+        float lerpSpeed;
+        if (isGrounded)
+        {
+            lerpSpeed = 12.0f; // Fast stop on ground
+        }
+        else if (targetIntensity > m_Intensity)
+        {
+            lerpSpeed = 1.5f;  // Very gradual build-up in air
+        }
+        else
+        {
+            lerpSpeed = 3.0f;  // Smooth fade-out in air
+        }
+
         m_Intensity = Mathf.Lerp(m_Intensity, targetIntensity, deltaTime * lerpSpeed);
         
-        // Snap to zero when very low and grounded
-        if (isGrounded && m_Intensity < 0.005f) m_Intensity = 0.0f;
+        // Snap to zero when very low
+        if (m_Intensity < 0.001f) m_Intensity = 0.0f;
 
         if (m_Camera == null) m_Camera = Scene.GetMainCamera();
         if (m_Camera != null)
