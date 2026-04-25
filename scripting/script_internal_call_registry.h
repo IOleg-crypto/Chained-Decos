@@ -29,9 +29,9 @@ namespace CHEngine
         }
     };
 
-    struct InternalCallRegistrar
+    struct InternalCallRegister
     {
-        InternalCallRegistrar(const std::string& className, const std::string& methodName, void* funcPtr)
+        InternalCallRegister(const std::string& className, const std::string& methodName, void* funcPtr)
         {
             InternalCallRegistry::Add({ className, methodName, funcPtr });
         }
@@ -39,6 +39,6 @@ namespace CHEngine
 }
 
 #define CH_ADD_INTERNAL_CALL(className, methodName, funcPtr) \
-    static CHEngine::InternalCallRegistrar s_##methodName##_Registrar("CHEngine." #className, #methodName, (void*)funcPtr)
+    static CHEngine::InternalCallRegister s_##methodName##_Registrar("CHEngine." #className, #methodName, (void*)funcPtr)
 
 #endif // CH_SCRIPT_INTERNAL_CALL_REGISTRY_H
