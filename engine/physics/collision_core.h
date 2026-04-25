@@ -47,6 +47,7 @@ private:
     static void ResolveSphereBox(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity);
     static void ResolveSphereMesh(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity);
     static void ResolveSphereSphere(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity);
+    static void ResolveMeshMesh(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity);
 };
 } // namespace CHEngine
 
