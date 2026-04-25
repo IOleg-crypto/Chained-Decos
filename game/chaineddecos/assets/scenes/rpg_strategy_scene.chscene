@@ -74,7 +74,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-9.29998016, -130.776825, -0.718267083]
-      ModelHandle: 15635222238270594476
+      ModelHandle: 497582407053607120
       ModelPath: models/bridge.glb
       AutoCalculate: true
     AnimationComponent:
@@ -386,7 +386,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-0.782608986, 0.0434782989, -0.950311005]
-      ModelHandle: 8346281793111905212
+      ModelHandle: 17723051701790926294
       ModelPath: models/minigames/hub_for_minigames_server.glb
       AutoCalculate: true
   - Entity: 6516797172325941388
@@ -607,7 +607,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-14.1946049, -9.53674316e-07, -8.94524384]
-      ModelHandle: 11408540457828468628
+      ModelHandle: 7998153021549378935
       ModelPath: models/stairs.glb
       AutoCalculate: true
   - Entity: 1295158128682646344
@@ -1553,7 +1553,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-43.8236694, -46.1545258, -25.5901108]
-      ModelHandle: 12219908022854359540
+      ModelHandle: 3379162863780566589
       ModelPath: models/arena.glb
       AutoCalculate: true
   - Entity: 10653066213482940164
@@ -2032,15 +2032,15 @@ Entities:
       IsKinematic: false
       IsGrounded: true
     AudioComponent:
-      SoundHandle: 4686595928630179124
+      SoundHandle: 0
       SoundPath: audio/storegraphic-soft-wind-477404.mp3
-      Volume: 0.635142922
-      Pitch: 1
+      Volume: 1
+      Pitch: 2
       Loop: true
-      PlayOnStart: true
+      PlayOnStart: false
       Spatialized: true
       Position: [0, 0, 0]
-      MinDistance: 0.100000001
+      MinDistance: 1
       MaxDistance: 100
     PlayerComponent:
       MovementSpeed: 15
@@ -2058,7 +2058,7 @@ Entities:
               Value: 32.5
             - Name: MovementSpeed
               Type: 1
-              Value: 17.7999992
+              Value: 50
         - ClassName: chaineddecos.scripts.gamehud
         - ClassName: chaineddecos.scripts.spawnzone
         - ClassName: chaineddecos.scripts.playerfall
@@ -2066,7 +2066,7 @@ Entities:
           Fields:
             - Name: Coins
               Type: 2
-              Value: 72
+              Value: 165
         - ClassName: chaineddecos.scripts.patternusagecontroller
         - ClassName: chaineddecos.scripts.herostrategyscript
         - ClassName: chaineddecos.scripts.herobehavioralscript
@@ -2203,15 +2203,15 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-14.1946049, -9.53674316e-07, -8.94524384]
-      ModelHandle: 11408540457828468628
+      ModelHandle: 7998153021549378935
       ModelPath: models/stairs.glb
       AutoCalculate: true
   - Entity: 5796298439135209667
     TagComponent:
       Tag: Camera
     TransformComponent:
-      Translation: [-301.497528, 334.900452, 1027.32104]
-      Rotation: [5.64368963, 14.1088505, 0]
+      Translation: [-289.590881, 319.88855, 1012.72113]
+      Rotation: [5.99695063, 26.6821861, 0]
       Scale: [1, 1, 1]
     ShaderComponent:
       ShaderPath: shaders/screen_falling.chshader
@@ -2355,7 +2355,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-33.2911491, -0.000321388245, -6.43264723]
-      ModelHandle: 10651555721054167412
+      ModelHandle: 766299803358203532
       ModelPath: models/container_ship/scene.gltf
       AutoCalculate: true
     AnimationComponent:
@@ -2564,7 +2564,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-9.29998016, -130.776825, -0.718267083]
-      ModelHandle: 15635222238270594476
+      ModelHandle: 497582407053607120
       ModelPath: models/bridge.glb
       AutoCalculate: true
     AnimationComponent:
@@ -2612,7 +2612,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-9.29998016, -130.776825, -0.718267083]
-      ModelHandle: 15635222238270594476
+      ModelHandle: 497582407053607120
       ModelPath: models/bridge.glb
       AutoCalculate: true
     AnimationComponent:
@@ -2660,7 +2660,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-9.29998016, -130.776825, -0.718267083]
-      ModelHandle: 15635222238270594476
+      ModelHandle: 497582407053607120
       ModelPath: models/bridge.glb
       AutoCalculate: true
     AnimationComponent:
@@ -2732,7 +2732,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-4.6624608, -3.7252903e-08, -11.7852259]
-      ModelHandle: 1208335926739789969
+      ModelHandle: 10798446934188950278
       ModelPath: models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb.glb
       AutoCalculate: true
   - Entity: 3962667947486927982
@@ -2774,7 +2774,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-9.29998016, -130.776825, -0.718267083]
-      ModelHandle: 15635222238270594476
+      ModelHandle: 497582407053607120
       ModelPath: models/bridge.glb
       AutoCalculate: true
     AnimationComponent:
@@ -3116,7 +3116,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-191.044159, -23.226656, -191.044159]
-      ModelHandle: 15433444656718619756
+      ModelHandle: 14873475856113226255
       ModelPath: models/stone_floor.glb
       AutoCalculate: true
     ManagedScriptComponent:
