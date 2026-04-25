@@ -236,6 +236,7 @@ void CollisionCore::ResolveCollisions(entt::registry& registry, const std::vecto
                     if (rbCollider.Type == ColliderType::Box) ResolveBoxMesh(registry, rbEntity, otherEntity);
                     else if (rbCollider.Type == ColliderType::Capsule) ResolveCapsuleMesh(registry, rbEntity, otherEntity);
                     else if (rbCollider.Type == ColliderType::Sphere) ResolveSphereMesh(registry, rbEntity, otherEntity);
+                    else if (rbCollider.Type == ColliderType::Mesh) ResolveMeshMesh(registry, rbEntity, otherEntity);
                 }
                 else if (otherCollider.Type == ColliderType::Sphere)
                 {
@@ -534,6 +535,63 @@ void CollisionCore::ResolveSphereSphere(entt::registry& registry, entt::entity r
     glm::vec3 normal = (dist > 0.0001f) ? (diff / dist) : glm::vec3(0, 1, 0);
 
     ApplyResponse(registry, rbEntity, otherEntity, tc1, rb, s2, normal, penetration);
+}
+
+void CollisionCore::ResolveMeshMesh(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity)
+{
+    auto& tc = registry.get<TransformComponent>(rbEntity);
+    auto& rb = registry.get<RigidBodyComponent>(rbEntity);
+    auto& rbc = registry.get<ColliderComponent>(rbEntity);
+    auto& otherCollider = registry.get<ColliderComponent>(otherEntity);
+    auto& otherTc = registry.get<TransformComponent>(otherEntity);
+
+    if (rbc.ModelPath.empty() || otherCollider.ModelPath.empty()) return;
+
+    auto bvhA = Physics::GetBVH(rbc.ModelPath);
+    auto bvhB = Physics::GetBVH(otherCollider.ModelPath);
+    if (!bvhA || !bvhB) return;
+
+    glm::mat4 matA = tc.WorldTransform;
+    glm::mat4 invMatB = otherTc.InverseWorldTransform;
+    glm::mat4 matAToB = invMatB * matA;
+
+    glm::vec3 bestNormal = {0.0f, 1.0f, 0.0f};
+    float maxPenetration = -1.0f;
+    bool anyContact = false;
+
+    // To prevent checking thousands of triangles for every frame update,
+    // we query Mesh B using Mesh A's AABB first (broadphase is handled in dispatcher).
+    // Then we iterate through Mesh A's triangles.
+    for (const auto& tri : bvhA->GetTriangles())
+    {
+        // 1. Transform triangle A to local space of B
+        glm::vec3 v0 = glm::vec3(matAToB * glm::vec4(tri.v0, 1.0f));
+        glm::vec3 v1 = glm::vec3(matAToB * glm::vec4(tri.v1, 1.0f));
+        glm::vec3 v2 = glm::vec3(matAToB * glm::vec4(tri.v2, 1.0f));
+
+        // 2. Create AABB for this triangle
+        BoundingBox triBox = {glm::min(v0, glm::min(v1, v2)), glm::max(v0, glm::max(v1, v2))};
+
+        // 3. Test against BVH of B
+        glm::vec3 localNormal;
+        float depth = -1.0f;
+        if (bvhB->IntersectAABB(triBox, localNormal, depth))
+        {
+            if (depth > maxPenetration)
+            {
+                maxPenetration = depth;
+                bestNormal = localNormal;
+                anyContact = true;
+            }
+        }
+    }
+
+    if (anyContact && maxPenetration > 0.0001f)
+    {
+        glm::mat4 normalMatrix = glm::transpose(invMatB);
+        glm::vec3 worldNormal = glm::normalize(glm::vec3(normalMatrix * glm::vec4(bestNormal, 0.0f)));
+        ApplyResponse(registry, rbEntity, otherEntity, tc, rb, otherCollider, worldNormal, maxPenetration);
+    }
 }
 
 } // namespace CHEngine
