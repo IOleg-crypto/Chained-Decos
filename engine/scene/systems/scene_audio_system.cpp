@@ -54,4 +54,20 @@ void SceneAudioSystem::Update(Scene* scene, Timestep ts)
         }
     }
 }
+
+void SceneAudioSystem::OnRuntimeStop(Scene* scene)
+{
+    auto& reg = scene->GetRegistry();
+
+    // 1. Terminate all active sounds in the engine
+    Audio::Get().StopAll();
+
+    // 2. Reset IsPlaying status for all components so they can re-trigger in next Play Mode
+    auto view = reg.view<AudioComponent>();
+    for (auto entity : view)
+    {
+        auto& audio = view.get<AudioComponent>(entity);
+        audio.IsPlaying = false;
+    }
+}
 } // namespace CHEngine
