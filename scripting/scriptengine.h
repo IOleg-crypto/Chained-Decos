@@ -16,8 +16,8 @@ class Scene;
 class ScriptEngine
 {
 public:
-    ScriptEngine();
-    ~ScriptEngine();
+    ScriptEngine() = default;
+    ~ScriptEngine() = default;
 
     void Initialize();
     void Shutdown();
