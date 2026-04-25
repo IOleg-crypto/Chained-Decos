@@ -1,4 +1,5 @@
 #include "script_glue_internal.h"
+#include "script_internal_call_registry.h"
 
 namespace CHEngine {
 
@@ -8,47 +9,55 @@ namespace CHEngine {
         if (entity && entity.HasComponent<TransformComponent>()) 
             *outTranslation = entity.GetComponent<TransformComponent>().Translation;
     }
+    CH_ADD_INTERNAL_CALL(TransformComponent, Transform_GetTranslation_Ptr, Entity_GetTranslation);
 
     CH_SCRIPT_FUNC void Entity_SetTranslation(uint64_t entityID, glm::vec3* inTranslation) {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<TransformComponent>()) 
             entity.GetComponent<TransformComponent>().SetTranslation(*inTranslation);
     }
+    CH_ADD_INTERNAL_CALL(TransformComponent, Transform_SetTranslation_Ptr, Entity_SetTranslation);
 
     CH_SCRIPT_FUNC void Entity_GetRotation(uint64_t entityID, glm::vec3* outRotation) {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<TransformComponent>()) 
             *outRotation = entity.GetComponent<TransformComponent>().Rotation;
     }
+    CH_ADD_INTERNAL_CALL(TransformComponent, Transform_GetRotation_Ptr, Entity_GetRotation);
 
     CH_SCRIPT_FUNC void Entity_SetRotation(uint64_t entityID, glm::vec3* inRotation) {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<TransformComponent>()) 
             entity.GetComponent<TransformComponent>().SetRotation(*inRotation);
     }
+    CH_ADD_INTERNAL_CALL(TransformComponent, Transform_SetRotation_Ptr, Entity_SetRotation);
 
     CH_SCRIPT_FUNC void Entity_GetScale(uint64_t entityID, glm::vec3* outScale) {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<TransformComponent>()) 
             *outScale = entity.GetComponent<TransformComponent>().Scale;
     }
+    CH_ADD_INTERNAL_CALL(TransformComponent, Transform_GetScale_Ptr, Entity_GetScale);
 
     CH_SCRIPT_FUNC void Entity_SetScale(uint64_t entityID, glm::vec3* inScale) {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<TransformComponent>()) 
             entity.GetComponent<TransformComponent>().SetScale(*inScale);
     }
+    CH_ADD_INTERNAL_CALL(TransformComponent, Transform_SetScale_Ptr, Entity_SetScale);
 
     CH_SCRIPT_FUNC Coral::String Entity_GetModelPath(uint64_t entityID) {
         Entity entity = GetEntity(entityID);
         return entity && entity.HasComponent<ModelComponent>() ? Coral::String::New(entity.GetComponent<ModelComponent>().ModelPath) : Coral::String::New("");
     }
+    CH_ADD_INTERNAL_CALL(ModelComponent, Model_GetModelPath_Ptr, Entity_GetModelPath);
 
     CH_SCRIPT_FUNC void Entity_SetModelPath(uint64_t entityID, Coral::String inPath) {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<ModelComponent>())
             entity.GetComponent<ModelComponent>().ModelPath = (std::string)inPath;
     }
+    CH_ADD_INTERNAL_CALL(ModelComponent, Model_SetModelPath_Ptr, Entity_SetModelPath);
 
     CH_SCRIPT_FUNC void Entity_AddComponent(uint64_t entityID, Coral::String componentName) {
         Entity entity = GetEntity(entityID);
@@ -66,34 +75,40 @@ namespace CHEngine {
         else if (name == "SpriteComponent") entity.AddComponent<SpriteComponent>();
         else if (name == "PlayerComponent") entity.AddComponent<PlayerComponent>();
     }
+    CH_ADD_INTERNAL_CALL(Entity, Entity_AddComponent_Ptr, Entity_AddComponent);
 
     CH_SCRIPT_FUNC void Entity_GetVelocity(uint64_t entityID, glm::vec3* outVelocity) {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<RigidBodyComponent>()) 
             *outVelocity = entity.GetComponent<RigidBodyComponent>().Velocity;
     }
+    CH_ADD_INTERNAL_CALL(RigidBodyComponent, RigidBody_GetVelocity_Ptr, Entity_GetVelocity);
 
     CH_SCRIPT_FUNC void Entity_SetVelocity(uint64_t entityID, glm::vec3* inVelocity) {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<RigidBodyComponent>()) 
             entity.GetComponent<RigidBodyComponent>().Velocity = *inVelocity;
     }
+    CH_ADD_INTERNAL_CALL(RigidBodyComponent, RigidBody_SetVelocity_Ptr, Entity_SetVelocity);
 
     CH_SCRIPT_FUNC bool Entity_IsGrounded(uint64_t entityID) {
         Entity entity = GetEntity(entityID);
         return entity && entity.HasComponent<RigidBodyComponent>() ? entity.GetComponent<RigidBodyComponent>().IsGrounded : false;
     }
+    CH_ADD_INTERNAL_CALL(RigidBodyComponent, RigidBody_IsGrounded_Ptr, Entity_IsGrounded);
 
     CH_SCRIPT_FUNC bool Entity_IsKinematic(uint64_t entityID) {
         Entity entity = GetEntity(entityID);
         return entity && entity.HasComponent<RigidBodyComponent>() ? entity.GetComponent<RigidBodyComponent>().IsKinematic : false;
     }
+    CH_ADD_INTERNAL_CALL(RigidBodyComponent, RigidBody_IsKinematic_Ptr, Entity_IsKinematic);
 
     CH_SCRIPT_FUNC void Entity_SetKinematic(uint64_t entityID, bool isKinematic) {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<RigidBodyComponent>())
             entity.GetComponent<RigidBodyComponent>().IsKinematic = isKinematic;
     }
+    CH_ADD_INTERNAL_CALL(RigidBodyComponent, RigidBody_SetKinematic_Ptr, Entity_SetKinematic);
 
     CH_SCRIPT_FUNC bool Entity_HasComponent(uint64_t entityID, Coral::String componentName) {
         Entity entity = GetEntity(entityID);
@@ -140,6 +155,7 @@ namespace CHEngine {
 
         return false;
     }
+    CH_ADD_INTERNAL_CALL(Entity, Entity_HasComponent_Ptr, Entity_HasComponent);
 
     CH_SCRIPT_FUNC Coral::Array<uint64_t> Entity_FindAllWithComponent(Coral::String componentName) {
         Scene* scene = GetActiveScene();
@@ -162,6 +178,7 @@ namespace CHEngine {
 
         return Coral::Array<uint64_t>::New(ids);
     }
+    CH_ADD_INTERNAL_CALL(Entity, Entity_FindAllWithComponent_Ptr, Entity_FindAllWithComponent);
 
     CH_SCRIPT_FUNC Coral::String TagComponent_GetTag(uint64_t entityID) {
         Entity entity = GetEntity(entityID);
@@ -169,6 +186,7 @@ namespace CHEngine {
             return Coral::String::New(entity.GetComponent<TagComponent>().Tag); 
         return Coral::String::New("");
     }
+    CH_ADD_INTERNAL_CALL(TagComponent, TagComponent_GetTag_Ptr, TagComponent_GetTag);
 
     CH_SCRIPT_FUNC void Shader_SetFloat(uint64_t entityID, Coral::String inName, float inValue) {
         Entity entity = GetEntity(entityID);
@@ -177,6 +195,7 @@ namespace CHEngine {
             // CH_CORE_INFO("Shader_SetFloat: entity={}, name={}, value={}", entityID, (std::string)inName, inValue);
         }
     }
+    CH_ADD_INTERNAL_CALL(ShaderComponent, Shader_SetFloat_Ptr, Shader_SetFloat);
 
     CH_SCRIPT_FUNC void Shader_SetVec3(uint64_t entityID, Coral::String inName, glm::vec3* inValue) {
         Entity entity = GetEntity(entityID);
@@ -184,11 +203,13 @@ namespace CHEngine {
             entity.GetComponent<ShaderComponent>().SetVec3((std::string)inName, *inValue);
         }
     }
+    CH_ADD_INTERNAL_CALL(ShaderComponent, Shader_SetVec3_Ptr, Shader_SetVec3);
 
     CH_SCRIPT_FUNC bool Shader_GetEnabled(uint64_t entityID) {
         Entity entity = GetEntity(entityID);
         return entity && entity.HasComponent<ShaderComponent>() ? entity.GetComponent<ShaderComponent>().Enabled : false;
     }
+    CH_ADD_INTERNAL_CALL(ShaderComponent, Shader_GetEnabled_Ptr, Shader_GetEnabled);
 
     CH_SCRIPT_FUNC void Shader_SetEnabled(uint64_t entityID, bool enabled) {
         Entity entity = GetEntity(entityID);
@@ -196,37 +217,7 @@ namespace CHEngine {
             entity.GetComponent<ShaderComponent>().Enabled = enabled;
         }
     }
+    CH_ADD_INTERNAL_CALL(ShaderComponent, Shader_SetEnabled_Ptr, Shader_SetEnabled);
 
-    void RegisterEntityGlue(Coral::ManagedAssembly& assembly) {
-        #define CH_ADD_INTERNAL_CALL(className, fieldName, funcPtr) assembly.AddInternalCall("CHEngine." #className, #fieldName, (void*)funcPtr)
-        
-        CH_ADD_INTERNAL_CALL(Entity, Entity_FindAllWithComponent_Ptr, Entity_FindAllWithComponent);
-        CH_ADD_INTERNAL_CALL(Entity, Entity_HasComponent_Ptr, Entity_HasComponent);
-        CH_ADD_INTERNAL_CALL(Entity, Entity_AddComponent_Ptr, Entity_AddComponent);
-        
-        CH_ADD_INTERNAL_CALL(TransformComponent, Transform_GetTranslation_Ptr, Entity_GetTranslation);
-        CH_ADD_INTERNAL_CALL(TransformComponent, Transform_SetTranslation_Ptr, Entity_SetTranslation);
-        CH_ADD_INTERNAL_CALL(TransformComponent, Transform_GetRotation_Ptr, Entity_GetRotation);
-        CH_ADD_INTERNAL_CALL(TransformComponent, Transform_SetRotation_Ptr, Entity_SetRotation);
-        CH_ADD_INTERNAL_CALL(TransformComponent, Transform_GetScale_Ptr, Entity_GetScale);
-        CH_ADD_INTERNAL_CALL(TransformComponent, Transform_SetScale_Ptr, Entity_SetScale);
-
-        CH_ADD_INTERNAL_CALL(ModelComponent, Model_GetModelPath_Ptr, Entity_GetModelPath);
-        CH_ADD_INTERNAL_CALL(ModelComponent, Model_SetModelPath_Ptr, Entity_SetModelPath);
-
-        CH_ADD_INTERNAL_CALL(RigidBodyComponent, RigidBody_GetVelocity_Ptr, Entity_GetVelocity);
-        CH_ADD_INTERNAL_CALL(RigidBodyComponent, RigidBody_SetVelocity_Ptr, Entity_SetVelocity);
-        CH_ADD_INTERNAL_CALL(RigidBodyComponent, RigidBody_IsGrounded_Ptr, Entity_IsGrounded);
-        CH_ADD_INTERNAL_CALL(RigidBodyComponent, RigidBody_IsKinematic_Ptr, Entity_IsKinematic);
-        CH_ADD_INTERNAL_CALL(RigidBodyComponent, RigidBody_SetKinematic_Ptr, Entity_SetKinematic);
-
-        CH_ADD_INTERNAL_CALL(TagComponent, TagComponent_GetTag_Ptr, TagComponent_GetTag);
-
-        CH_ADD_INTERNAL_CALL(ShaderComponent, Shader_SetFloat_Ptr, Shader_SetFloat);
-        CH_ADD_INTERNAL_CALL(ShaderComponent, Shader_SetVec3_Ptr, Shader_SetVec3);
-        CH_ADD_INTERNAL_CALL(ShaderComponent, Shader_GetEnabled_Ptr, Shader_GetEnabled);
-        CH_ADD_INTERNAL_CALL(ShaderComponent, Shader_SetEnabled_Ptr, Shader_SetEnabled);
-
-        #undef CH_ADD_INTERNAL_CALL
-    } } // namespace CHEngine
+} // namespace CHEngine
 
