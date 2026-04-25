@@ -23,6 +23,9 @@ public:
     template<typename T>
     static T& Get() {
         auto it = m_Services.find(typeid(T));
+        if (it == m_Services.end()) {
+            CH_CORE_ERROR("Service Locator: Service '{}' not registered!", typeid(T).name());
+        }
         CH_CORE_ASSERT(it != m_Services.end(), "Service Locator: Service not registered!");
         return *std::static_pointer_cast<T>(it->second);
     }
@@ -37,7 +40,7 @@ public:
     }
 
 private:
-    inline static std::unordered_map<std::type_index, std::shared_ptr<void>> m_Services;
+    static std::unordered_map<std::type_index, std::shared_ptr<void>> m_Services;
 };
 
 } // namespace CHEngine

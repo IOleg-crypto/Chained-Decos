@@ -80,6 +80,7 @@ struct TransformComponent
 
     // Cached world transform.
     glm::mat4 WorldTransform = glm::mat4(1.0f);
+    glm::mat4 InverseWorldTransform = glm::mat4(1.0f);
     bool IsDirty = true;
 
     // Previous state for interpolation.

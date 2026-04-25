@@ -15,6 +15,7 @@ add_library(engine_scene ${SUBMODULE_LIB_TYPE}
         systems/animation_system.cpp
         systems/hierarchy_system.cpp
         systems/scene_audio_system.cpp
+        scene_system_manager.cpp
         scene_scripting_manager.cpp
         ui_factory.cpp
 

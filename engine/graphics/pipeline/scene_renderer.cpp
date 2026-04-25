@@ -441,7 +441,6 @@ void SceneRenderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, con
 
         m_CurrentStats.DrawCalls++;
         m_CurrentStats.MeshCount++;
-        m_CurrentStats.PolyCount += model.Meshes[i].TriangleCount;
 
         Material material = ResolveMaterialForMesh(i, model, materialSlotOverrides, modelAsset);
 

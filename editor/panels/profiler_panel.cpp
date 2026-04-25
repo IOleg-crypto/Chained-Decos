@@ -51,25 +51,6 @@ void ProfilerPanel::OnImGuiRender(bool readOnly)
         ImGui::Text("%u", stats.MeshCount);
         ImGui::NextColumn();
 
-        // Format polys (K, M)
-        std::string polyStr;
-        if (stats.PolyCount > 1000000)
-        {
-            polyStr = std::format("{:.2f} M", stats.PolyCount / 1000000.0f);
-        }
-        else if (stats.PolyCount > 1000)
-        {
-            polyStr = std::format("{:.1f} K", stats.PolyCount / 1000.0f);
-        }
-        else
-        {
-            polyStr = std::to_string(stats.PolyCount);
-        }
-
-        ImGui::Text("Polygons:");
-        ImGui::NextColumn();
-        ImGui::Text("%s", polyStr.c_str());
-        ImGui::NextColumn();
         ImGui::Text("Colliders:");
         ImGui::NextColumn();
         ImGui::Text("%u", stats.ColliderCount);

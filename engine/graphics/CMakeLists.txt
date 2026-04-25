@@ -39,12 +39,14 @@ add_library(engine_graphics ${SUBMODULE_LIB_TYPE}
     # Loaders
         loaders/texture_loader.cpp
         loaders/model_loader.cpp
+        loaders/model_cache.cpp
         loaders/assimp_importer.cpp
         loaders/shader_loader.cpp
         loaders/font_loader.cpp
         loaders/environment_loader.cpp
         loaders/texture_loader.h
         loaders/model_loader.h
+        loaders/model_cache.h
         loaders/assimp_importer.h
         loaders/shader_loader.h
         loaders/font_loader.h
