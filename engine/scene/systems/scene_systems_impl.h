@@ -40,6 +40,7 @@ namespace CHEngine
     {
     public:
         void OnUpdate(Scene* scene, Timestep ts) override { SceneAudioSystem::Update(scene, ts); }
+        void OnRuntimeStop(Scene* scene) override { SceneAudioSystem::OnRuntimeStop(scene); }
     };
 }
 

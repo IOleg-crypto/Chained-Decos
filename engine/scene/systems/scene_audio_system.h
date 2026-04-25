@@ -11,6 +11,7 @@ class SceneAudioSystem
 {
 public:
     static void Update(Scene* scene, Timestep ts);
+    static void OnRuntimeStop(Scene* scene);
 };
 } // namespace CHEngine
 

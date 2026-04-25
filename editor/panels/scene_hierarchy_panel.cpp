@@ -10,6 +10,9 @@
 #include "undo/entity_commands.h"
 #include "editor_events.h"
 #include "engine/core/input.h"
+#include "engine/scene/scene_serializer.h"
+#include "engine/scene/prefab_serializer.h"
+#include "engine/platform/utils/dialogs.h"
 #include <functional>
 #include <functional>
 #include <vector>
@@ -313,6 +316,17 @@ void SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity, bool readOnly)
         {
             m_EntitiesToDestroyPending.push_back((entt::entity)entity);
         }
+        ImGui::Separator();
+        if (ImGui::MenuItem(ICON_FA_FILE_EXPORT " Save as Prefab..."))
+        {
+            std::vector<FileDialogFilter> filters = {{"Chained Prefab", "chprefab"}};
+            auto path = Dialogs::SaveFile(filters);
+            if (path)
+            {
+                if (path->extension().empty()) path->replace_extension(".chprefab");
+                PrefabSerializer::Serialize(entity, path->string());
+            }
+        }
 
         ImGui::EndPopup();
     }
@@ -338,6 +352,18 @@ void SceneHierarchyPanel::DrawContextMenu()
     {
         m_Context->CreateEntity("Empty Entity");
     }
+
+    if (ImGui::MenuItem(ICON_FA_FILE_IMPORT " Load Prefab..."))
+    {
+        std::vector<FileDialogFilter> filters = {{"Chained Prefab", "chprefab"}};
+        auto path = Dialogs::OpenFile(filters);
+        if (path)
+        {
+            PrefabSerializer::Deserialize(m_Context.get(), path->string());
+        }
+    }
+
+    ImGui::Separator();
 
     if (ImGui::BeginMenu("Create"))
     {
