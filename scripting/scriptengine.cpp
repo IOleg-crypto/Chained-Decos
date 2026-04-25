@@ -87,9 +87,12 @@ bool ScriptEngine::LoadAppAssembly(const std::string& filepath)
 
     if (!GetScriptHost().LoadAppAssembly(filepath))
     {
+        CH_CORE_ERROR("ScriptEngine: Failed to load assembly from '{}'", std::filesystem::absolute(filepath).string());
         GetScriptRegistry().Clear();
         return false;
     }
+
+    CH_CORE_INFO("ScriptEngine: Successfully loaded assembly from '{}'", std::filesystem::absolute(filepath).string());
 
     try
     {

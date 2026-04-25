@@ -55,12 +55,6 @@ bool ProjectSerializer::Serialize(const std::filesystem::path& filepath)
         out << YAML::Key << "Filter" << YAML::Value << (int)config.Texture.Filter;
         out << YAML::EndMap;
 
-        out << YAML::Key << "Mesh" << YAML::Value << YAML::BeginMap;
-        out << YAML::Key << "ImportMaterials" << YAML::Value << config.Mesh.ImportMaterials;
-        out << YAML::Key << "CalculateTangents" << YAML::Value << config.Mesh.CalculateTangents;
-        out << YAML::Key << "FlipUVs" << YAML::Value << config.Mesh.FlipUVs;
-        out << YAML::EndMap;
-
         out << YAML::Key << "Window" << YAML::Value << YAML::BeginMap;
         out << YAML::Key << "Width" << YAML::Value << config.Window.Width;
         out << YAML::Key << "Height" << YAML::Value << config.Window.Height;
@@ -68,16 +62,8 @@ bool ProjectSerializer::Serialize(const std::filesystem::path& filepath)
         out << YAML::Key << "Resizable" << YAML::Value << config.Window.Resizable;
         out << YAML::EndMap;
 
-        out << YAML::Key << "Runtime" << YAML::Value << YAML::BeginMap;
-        out << YAML::Key << "Fullscreen" << YAML::Value << config.Runtime.Fullscreen;
-        out << YAML::Key << "ShowStats" << YAML::Value << config.Runtime.ShowStats;
-        out << YAML::Key << "EnableConsole" << YAML::Value << config.Runtime.EnableConsole;
-        out << YAML::EndMap;
-
         out << YAML::Key << "Editor" << YAML::Value << YAML::BeginMap;
         out << YAML::Key << "CameraMoveSpeed" << YAML::Value << config.Editor.CameraMoveSpeed;
-        out << YAML::Key << "CameraRotationSpeed" << YAML::Value << config.Editor.CameraRotationSpeed;
-        out << YAML::Key << "CameraBoostMultiplier" << YAML::Value << config.Editor.CameraBoostMultiplier;
         out << YAML::EndMap;
 
         out << YAML::Key << "Scripting" << YAML::Value << YAML::BeginMap;
@@ -93,12 +79,10 @@ bool ProjectSerializer::Serialize(const std::filesystem::path& filepath)
             out << YAML::Key << "Name" << YAML::Value << profile.Name;
             out << YAML::Key << "BinaryPath" << YAML::Value << profile.BinaryPath;
             out << YAML::Key << "Arguments" << YAML::Value << profile.Arguments;
-            out << YAML::Key << "UseDefaultArgs" << YAML::Value << profile.UseDefaultArgs;
             out << YAML::EndMap;
         }
         out << YAML::EndSeq;
 
-        out << YAML::Key << "ActiveLaunchProfile" << YAML::Value << config.ActiveLaunchProfileIndex;
         out << YAML::Key << "BuildConfig" << YAML::Value << (int)config.BuildConfig;
 
         out << YAML::EndMap;
@@ -150,6 +134,7 @@ bool ProjectSerializer::Deserialize(const std::filesystem::path& filepath)
     auto buildScenes = projectNode["BuildScenes"];
     if (buildScenes)
     {
+        config.BuildScenes.clear();
         for (auto scene : buildScenes)
         {
             config.BuildScenes.push_back(scene.as<std::string>());
@@ -188,22 +173,6 @@ bool ProjectSerializer::Deserialize(const std::filesystem::path& filepath)
         }
     }
 
-    if (projectNode["Mesh"])
-    {
-        if (projectNode["Mesh"]["ImportMaterials"])
-        {
-            config.Mesh.ImportMaterials = projectNode["Mesh"]["ImportMaterials"].as<bool>();
-        }
-        if (projectNode["Mesh"]["CalculateTangents"])
-        {
-            config.Mesh.CalculateTangents = projectNode["Mesh"]["CalculateTangents"].as<bool>();
-        }
-        if (projectNode["Mesh"]["FlipUVs"])
-        {
-            config.Mesh.FlipUVs = projectNode["Mesh"]["FlipUVs"].as<bool>();
-        }
-    }
-
     if (projectNode["Window"])
     {
         config.Window.Width = projectNode["Window"]["Width"].as<int>();
@@ -212,18 +181,9 @@ bool ProjectSerializer::Deserialize(const std::filesystem::path& filepath)
         config.Window.Resizable = projectNode["Window"]["Resizable"].as<bool>();
     }
 
-    if (projectNode["Runtime"])
-    {
-        config.Runtime.Fullscreen = projectNode["Runtime"]["Fullscreen"].as<bool>();
-        config.Runtime.ShowStats = projectNode["Runtime"]["ShowStats"].as<bool>();
-        config.Runtime.EnableConsole = projectNode["Runtime"]["EnableConsole"].as<bool>();
-    }
-
     if (projectNode["Editor"])
     {
         config.Editor.CameraMoveSpeed = projectNode["Editor"]["CameraMoveSpeed"].as<float>();
-        config.Editor.CameraRotationSpeed = projectNode["Editor"]["CameraRotationSpeed"].as<float>();
-        config.Editor.CameraBoostMultiplier = projectNode["Editor"]["CameraBoostMultiplier"].as<float>();
     }
 
     if (projectNode["Scripting"])
@@ -241,24 +201,15 @@ bool ProjectSerializer::Deserialize(const std::filesystem::path& filepath)
 
     if (projectNode["LaunchProfiles"])
     {
+        config.LaunchProfiles.clear();
         for (auto profileNode : projectNode["LaunchProfiles"])
         {
             LaunchProfile profile;
             profile.Name = profileNode["Name"].as<std::string>();
             profile.BinaryPath = profileNode["BinaryPath"].as<std::string>();
             profile.Arguments = profileNode["Arguments"].as<std::string>();
-            if (profileNode["UseDefaultArgs"])
-            {
-                profile.UseDefaultArgs = profileNode["UseDefaultArgs"].as<bool>();
-            }
-
             config.LaunchProfiles.push_back(profile);
         }
-    }
-
-    if (projectNode["ActiveLaunchProfile"])
-    {
-        config.ActiveLaunchProfileIndex = projectNode["ActiveLaunchProfile"].as<int>();
     }
 
     if (projectNode["BuildConfig"])

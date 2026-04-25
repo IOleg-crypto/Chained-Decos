@@ -19,6 +19,8 @@ namespace CHEngine
 {
 class IPhysicsWorld;
 class SceneScriptingManager;
+class SceneSystemManager;
+
 // Owns the scene registry, scene settings, and the runtime/editor update bridge.
 class Scene
 {
@@ -81,6 +83,7 @@ private:
     SceneSettings m_Settings;
     bool m_IsSimulationRunning = false;
     std::unique_ptr<SceneScriptingManager> m_ScriptingManager;
+    std::unique_ptr<SceneSystemManager> m_SystemManager;
     std::unique_ptr<IPhysicsWorld> m_PhysicsWorld;
 
 private:

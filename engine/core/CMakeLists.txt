@@ -7,6 +7,7 @@ add_library(engine_core ${SUBMODULE_LIB_TYPE}
         thread_pool.cpp
         application.cpp
         project_launcher.cpp
+        service_locator.cpp
         assets/asset_manager.cpp
         application.h
         project_launcher.h

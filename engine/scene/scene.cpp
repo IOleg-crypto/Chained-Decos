@@ -9,6 +9,8 @@
 #include "engine/scene/systems/hierarchy_system.h"
 #include "engine/scene/systems/scene_audio_system.h"
 #include "engine/scene/ui_factory.h"
+#include "engine/scene/scene_system_manager.h"
+#include "engine/scene/systems/scene_systems_impl.h"
 #include "scene_scripting_manager.h"
 #include <entt/entt.hpp>
 #include <glm/gtx/norm.hpp>
@@ -23,11 +25,18 @@ Scene::Scene()
     // Create registry
     m_Registry = std::make_shared<entt::registry>();
     m_ScriptingManager = std::make_unique<SceneScriptingManager>(this);
+    m_SystemManager = std::make_unique<SceneSystemManager>(this);
 
     auto& reg = *m_Registry;
     reg.ctx().emplace<Scene*>(this);
     reg.ctx().emplace<EntityUUIDMap>();
-    reg.ctx().emplace<std::shared_ptr<entt::registry>>(m_Registry);
+    reg.ctx().emplace<std::weak_ptr<entt::registry>>(m_Registry);
+
+    // Register default scene systems
+    m_SystemManager->AddSystem<HierarchySystemImpl>();
+    m_SystemManager->AddSystem<AnimationSystemImpl>();
+    m_SystemManager->AddSystem<PhysicsSystemImpl>();
+    m_SystemManager->AddSystem<AudioSystemImpl>();
 
     // UUID Mapping
     reg.on_construct<IDComponent>().connect<&Scene::OnIDConstruct>(this);
@@ -49,9 +58,6 @@ Scene::~Scene()
     Physics::ClearContext(this);
     // Clean up active signals
     GetRegistry().clear();
-    
-    // Break circular dependency to allow registry to be safely deallocated
-    m_Registry->ctx().erase<std::shared_ptr<entt::registry>>();
 }
 
 std::shared_ptr<Scene> Scene::CreateDefault()
@@ -156,6 +162,7 @@ void Scene::OnRuntimeStart()
     m_IsSimulationRunning = true;
 
     m_ScriptingManager->OnRuntimeStart();
+    m_SystemManager->OnRuntimeStart();
     
     // Ensure all transforms are up to date before the first frame
     HierarchySystem::Update(this);
@@ -166,6 +173,7 @@ void Scene::OnRuntimeStop()
     m_IsSimulationRunning = false;
 
     m_ScriptingManager->OnRuntimeStop();
+    m_SystemManager->OnRuntimeStop();
     Physics::ClearContext(this);
 }
 
@@ -175,20 +183,14 @@ void Scene::OnUpdateRuntime(Timestep timestep)
 
     m_ScriptingManager->OnUpdate(timestep);
 
-    HierarchySystem::Update(this);
-    AnimationSystem::Update(this, timestep);
-    ServiceLocator::Get<PhysicsSystem>().Update(this, timestep, m_IsSimulationRunning);
-    SceneAudioSystem::Update(this, timestep);
+    m_SystemManager->OnUpdate(timestep);
 }
 
 void Scene::OnUpdateEditor(Timestep timestep)
 {
     CH_PROFILE_FUNCTION();
 
-    HierarchySystem::Update(this);
-    AnimationSystem::Update(this, timestep);
-    ServiceLocator::Get<PhysicsSystem>().Update(this, timestep, false);
-    SceneAudioSystem::Update(this, timestep);
+    m_SystemManager->OnUpdateEditor(timestep);
 }
 
 void Scene::OnViewportResize(uint32_t width, uint32_t height)

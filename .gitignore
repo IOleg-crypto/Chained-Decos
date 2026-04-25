@@ -86,3 +86,6 @@ engine/script/managed/ManagedDependencies.props
 *.log
 
 build_error.txt
+
+# Engine Cache
+*.chcache

@@ -468,7 +468,15 @@ public class ShaderComponent : Component
 #pragma warning disable 0649
     internal static unsafe delegate*<ulong, NativeString, float, void> Shader_SetFloat_Ptr;
     internal static unsafe delegate*<ulong, NativeString, Vector3*, void> Shader_SetVec3_Ptr;
+    internal static unsafe delegate*<ulong, bool> Shader_GetEnabled_Ptr;
+    internal static unsafe delegate*<ulong, bool, void> Shader_SetEnabled_Ptr;
 #pragma warning restore 0649
+
+    public bool Enabled
+    {
+        get { unsafe { return Shader_GetEnabled_Ptr(Entity.ID); } }
+        set { unsafe { Shader_SetEnabled_Ptr(Entity.ID, value); } }
+    }
 
     public void SetFloat(string name, float value)
     {

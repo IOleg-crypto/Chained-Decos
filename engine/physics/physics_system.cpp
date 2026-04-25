@@ -1,12 +1,13 @@
 #include "physics_system.h"
-#include "engine/scene/scene.h"
-#include "engine/scene/components.h"
-#include "engine/core/assets/asset_manager.h"
-#include "engine/graphics/assets/model_asset.h"
-#include "engine/physics/physics.h"
 #include "collision_core.h"
 #include "dynamics.h"
+#include "engine/core/assets/asset_manager.h"
+#include "engine/core/profiler.h"
+#include "engine/graphics/assets/model_asset.h"
+#include "engine/physics/physics.h"
+#include "engine/scene/components.h"
 #include "engine/scene/project.h"
+#include "engine/scene/scene.h"
 
 namespace CHEngine
 {
@@ -15,13 +16,13 @@ void PhysicsSystem::InitializeBodies(Scene* scene)
 {
     auto& registry = scene->GetRegistry();
     auto& world = scene->GetPhysicsWorld();
-    
+
     auto view = registry.view<RigidBodyComponent, TransformComponent>();
     for (auto entity : view)
     {
         auto& rb = view.get<RigidBodyComponent>(entity);
         auto& tc = view.get<TransformComponent>(entity);
-        
+
         if (rb.Handle == kInvalidPhysicsBody)
         {
             PhysicsBodyDesc desc;
@@ -31,7 +32,7 @@ void PhysicsSystem::InitializeBodies(Scene* scene)
             desc.Mass = rb.Mass;
             desc.IsKinematic = rb.IsKinematic;
             desc.UseGravity = rb.UseGravity;
-            
+
             rb.Handle = world.CreateBody(desc);
         }
     }
@@ -39,33 +40,51 @@ void PhysicsSystem::InitializeBodies(Scene* scene)
 
 void PhysicsSystem::Update(Scene* scene, Timestep ts, bool runtime)
 {
-    if (!scene) return;
-    
+    if (!scene)
+    {
+        return;
+    }
+
     if (!Physics::IsInitialized())
     {
         Physics::Init();
     }
-    
+
     auto& registry = scene->GetRegistry();
+
+    // Update scene statistics
+    auto collView = registry.view<ColliderComponent>();
+    ProfilerStats stats = Profiler::GetStats();
+    stats.ColliderCount = (uint32_t)collView.size();
+    Profiler::UpdateStats(stats);
 
     // 1. Auto-calculate collider bounds from models
     UpdateColliders(scene);
 
-    if (!runtime) return;
+    if (!runtime)
+    {
+        return;
+    }
 
     // 2. Fixed Timestep handling (using existing PhysicsContext structure for compatibility)
     float fixedTimestep = 1.0f / 60.0f;
     if (auto project = Project::GetActive())
     {
         float cfg = project->GetConfig().Physics.FixedTimestep;
-        if (cfg > 0.0f) fixedTimestep = cfg;
+        if (cfg > 0.0f)
+        {
+            fixedTimestep = cfg;
+        }
     }
 
     auto& context = Physics::GetContext(scene);
     context.Accumulator += (float)ts;
 
     const float maxAccumulator = 0.2f;
-    if (context.Accumulator > maxAccumulator) context.Accumulator = maxAccumulator;
+    if (context.Accumulator > maxAccumulator)
+    {
+        context.Accumulator = maxAccumulator;
+    }
 
     // 3. Step Simulation
     while (context.Accumulator >= fixedTimestep)
@@ -98,10 +117,15 @@ void PhysicsSystem::UpdateColliders(Scene* scene)
     {
         auto entity = *it;
         auto& collider = genView.get<ColliderComponent>(entity);
+        auto& tc = genView.get<TransformComponent>(entity);
 
+        // Only update if requested
         if (collider.AutoCalculate)
         {
-            if (!registry.all_of<ModelComponent>(entity)) continue;
+            if (!registry.all_of<ModelComponent>(entity))
+            {
+                continue;
+            }
             auto& model = registry.get<ModelComponent>(entity);
             auto asset = AssetManager::Get().Get<ModelAsset>(model.ModelPath);
 
@@ -124,6 +148,11 @@ void PhysicsSystem::UpdateColliders(Scene* scene)
                 {
                     collider.ModelHandle = asset->GetID();
                     collider.ModelPath = model.ModelPath;
+
+                    // Essential for Broadphase AABB check!
+                    BoundingBox box = asset->GetBoundingBox();
+                    collider.Size = box.Max - box.Min;
+                    collider.Offset = box.Min;
                 }
             }
         }
@@ -134,13 +163,13 @@ void PhysicsSystem::SyncEngineToPhysics(Scene* scene)
 {
     auto& registry = scene->GetRegistry();
     auto& world = scene->GetPhysicsWorld();
-    
+
     auto view = registry.view<RigidBodyComponent, TransformComponent>();
     for (auto entity : view)
     {
         auto& rb = view.get<RigidBodyComponent>(entity);
         auto& tc = view.get<TransformComponent>(entity);
-        
+
         if (rb.Handle != kInvalidPhysicsBody)
         {
             // For now just force sync everything or check dirty flag
@@ -154,19 +183,19 @@ void PhysicsSystem::SyncPhysicsToEngine(Scene* scene)
 {
     auto& registry = scene->GetRegistry();
     auto& world = scene->GetPhysicsWorld();
-    
+
     auto view = registry.view<RigidBodyComponent, TransformComponent>();
     for (auto entity : view)
     {
         auto& rb = view.get<RigidBodyComponent>(entity);
         auto& tc = view.get<TransformComponent>(entity);
-        
+
         if (rb.Handle != kInvalidPhysicsBody && !rb.IsKinematic)
         {
             glm::vec3 pos;
             glm::quat rot;
             world.GetTransform(rb.Handle, pos, rot);
-            
+
             tc.Translation = pos;
             tc.SetRotationQuat(rot);
             rb.Velocity = world.GetVelocity(rb.Handle);

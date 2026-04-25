@@ -185,6 +185,18 @@ namespace CHEngine {
         }
     }
 
+    CH_SCRIPT_FUNC bool Shader_GetEnabled(uint64_t entityID) {
+        Entity entity = GetEntity(entityID);
+        return entity && entity.HasComponent<ShaderComponent>() ? entity.GetComponent<ShaderComponent>().Enabled : false;
+    }
+
+    CH_SCRIPT_FUNC void Shader_SetEnabled(uint64_t entityID, bool enabled) {
+        Entity entity = GetEntity(entityID);
+        if (entity && entity.HasComponent<ShaderComponent>()) {
+            entity.GetComponent<ShaderComponent>().Enabled = enabled;
+        }
+    }
+
     void RegisterEntityGlue(Coral::ManagedAssembly& assembly) {
         #define CH_ADD_INTERNAL_CALL(className, fieldName, funcPtr) assembly.AddInternalCall("CHEngine." #className, #fieldName, (void*)funcPtr)
         
@@ -212,6 +224,8 @@ namespace CHEngine {
 
         CH_ADD_INTERNAL_CALL(ShaderComponent, Shader_SetFloat_Ptr, Shader_SetFloat);
         CH_ADD_INTERNAL_CALL(ShaderComponent, Shader_SetVec3_Ptr, Shader_SetVec3);
+        CH_ADD_INTERNAL_CALL(ShaderComponent, Shader_GetEnabled_Ptr, Shader_GetEnabled);
+        CH_ADD_INTERNAL_CALL(ShaderComponent, Shader_SetEnabled_Ptr, Shader_SetEnabled);
 
         #undef CH_ADD_INTERNAL_CALL
     } } // namespace CHEngine

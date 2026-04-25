@@ -168,7 +168,6 @@ struct ProfilerStats
 {
     // Rendering
     uint32_t DrawCalls = 0;
-    uint32_t PolyCount = 0;
     uint32_t MeshCount = 0;
     uint32_t TextureCount = 0;
 

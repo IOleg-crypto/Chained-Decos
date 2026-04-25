@@ -78,8 +78,12 @@ Application::Application(const ApplicationSpecification& specification)
     if (!m_Specification.Headless)
     {
         // Register early services that don't depend on the window
-        ServiceLocator::Register<AssetManager>(std::make_shared<AssetManager>());
-        ServiceLocator::Register<PhysicsSystem>(std::make_shared<PhysicsSystem>());
+        // Register early services that don't depend on the window
+        if (!ServiceLocator::Has<AssetManager>())
+            ServiceLocator::Register<AssetManager>(std::make_shared<AssetManager>());
+            
+        if (!ServiceLocator::Has<PhysicsSystem>())
+            ServiceLocator::Register<PhysicsSystem>(std::make_shared<PhysicsSystem>());
 
         m_Window = std::unique_ptr<Window>(Window::Create(windowProps));
 #ifdef PROJECT_ROOT_DIR
@@ -94,9 +98,12 @@ Application::Application(const ApplicationSpecification& specification)
         ServiceLocator::Register<UIRenderer>(uiRenderer);
         uiRenderer->Initialize();
         
-        auto scriptEngine = std::make_shared<ScriptEngine>();
-        ServiceLocator::Register<ScriptEngine>(scriptEngine);
-        scriptEngine->Initialize();
+        if (!ServiceLocator::Has<ScriptEngine>())
+        {
+            auto scriptEngine = std::make_shared<ScriptEngine>();
+            ServiceLocator::Register<ScriptEngine>(scriptEngine);
+            scriptEngine->Initialize();
+        }
 
         ServiceLocator::Register<Audio>(std::make_shared<Audio>());
     }
