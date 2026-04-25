@@ -10,10 +10,10 @@ namespace CHEngine
 Entity::Entity(entt::entity handle, entt::registry& registry)
     : m_EntityHandle(handle)
 {
-    auto* sharedPtr = registry.ctx().find<std::shared_ptr<entt::registry>>();
-    if (sharedPtr)
+    auto* weakRegistryPtr = registry.ctx().find<std::weak_ptr<entt::registry>>();
+    if (weakRegistryPtr)
     {
-        m_Registry = *sharedPtr;
+        m_Registry = weakRegistryPtr->lock();
     }
     else
     {
@@ -29,10 +29,10 @@ Entity::Entity(entt::entity handle, entt::registry* registry)
 {
     if (registry)
     {
-        auto* sharedPtr = registry->ctx().find<std::shared_ptr<entt::registry>>();
-        if (sharedPtr)
+        auto* weakRegistryPtr = registry->ctx().find<std::weak_ptr<entt::registry>>();
+        if (weakRegistryPtr)
         {
-            m_Registry = *sharedPtr;
+            m_Registry = weakRegistryPtr->lock();
         }
         else
         {

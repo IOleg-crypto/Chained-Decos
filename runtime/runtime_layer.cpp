@@ -139,7 +139,11 @@ void RuntimeLayer::OnDetach()
 void RuntimeLayer::OnUpdate(Timestep ts)
 {
     // Boost uploads during loading
-    auto& scriptEngine = ScriptEngine::Get();
+    if (ScriptEngine::IsInitializedGlobal())
+    {
+        auto& scriptEngine = ScriptEngine::Get();
+        // ... use scriptEngine if needed ...
+    }
 
     // The scene transition and script logic will consume button states after this point.
     // UIRenderer::DrawCanvas will handle the per-frame reset during the render pass.

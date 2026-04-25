@@ -1,5 +1,5 @@
 VertexShader: screen_falling.vs
 FragmentShader: screen_falling.fs
 Uniforms:
-  - intensity
+  - uIntensity
   - color

@@ -32,7 +32,8 @@ void HierarchySystem::Update(Scene* scene)
 
         if (isRoot)
         {
-            stack.push_back({entity, glm::mat4(1.0f), false});
+            // Calculate inverse if it seems uninitialized (identity) or explicitly requested
+            stack.push_back({entity, glm::mat4(1.0f), true}); 
         }
     }
 
@@ -50,6 +51,7 @@ void HierarchySystem::Update(Scene* scene)
         if (needsUpdate)
         {
             tc.WorldTransform = task.ParentTransform * tc.GetTransform();
+            tc.InverseWorldTransform = glm::inverse(tc.WorldTransform);
             tc.IsDirty = false;
         }
 

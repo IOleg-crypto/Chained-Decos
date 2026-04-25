@@ -39,17 +39,15 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             ICON_FA_CODE " Scripting",
             ICON_FA_CUBES " Physics",
             ICON_FA_WINDOW_RESTORE " Window",
-            ICON_FA_PLAY " Runtime",
             ICON_FA_CAMERA " Editor",
-            ICON_FA_MOUNTAIN_SUN " Rendering",
-            ICON_FA_BOXES_STACKED " Assets"
+            ICON_FA_MOUNTAIN_SUN " Rendering"
         };
 
         ImGui::Columns(2, "ProjectSettingsColumns", true);
-        ImGui::SetColumnWidth(0, 200.0f);
+        ImGui::SetColumnWidth(0, 180.0f);
 
         // Sidebar
-        for (int i = 0; i < IM_ARRAYSIZE(categories); i++)
+        for (int i = 0; i < (int)IM_ARRAYSIZE(categories); i++)
         {
             if (ImGui::Selectable(categories[i], selectedCategory == i))
             {
@@ -109,92 +107,39 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             }
 
             ImGui::Separator();
-            ImGui::Text(ICON_FA_ROCKET " Launch Profiles");
+            ImGui::TextDisabled(ICON_FA_ROCKET " Execution Settings");
 
             if (config.LaunchProfiles.empty())
             {
-                if (ImGui::Button("Add Default Profile"))
+                config.LaunchProfiles.push_back({"Default", "${BUILD}/ChainedRuntime.exe", "--project \"${PROJECT_FILE}\""});
+            }
+
+            auto& profile = config.LaunchProfiles[0];
+            char pathBuf[512];
+            strncpy(pathBuf, profile.BinaryPath.c_str(), 511);
+            pathBuf[511] = '\0';
+            if (ImGui::InputText("Runtime Path", pathBuf, 511))
+            {
+                profile.BinaryPath = pathBuf;
+            }
+
+            ImGui::SameLine();
+            if (ImGui::Button("...###BinBrowse"))
+            {
+                std::vector<FileDialogFilter> filters = {{"Runtime Executable", "exe"}};
+                auto result = Dialogs::OpenFile(filters);
+                if (result)
                 {
-                    LaunchProfile debug;
-                    debug.Name = "Debug Runtime";
-                    debug.BinaryPath = "${BUILD}/ChainedRuntime.exe";
-                    debug.Arguments = "--project \"${PROJECT_FILE}\"";
-                    config.LaunchProfiles.push_back(debug);
+                    profile.BinaryPath = result->string();
                 }
             }
 
-            for (int i = 0; i < (int)config.LaunchProfiles.size(); i++)
+            char argBuf[512];
+            strncpy(argBuf, profile.Arguments.c_str(), 511);
+            argBuf[511] = '\0';
+            if (ImGui::InputText("Runtime Args", argBuf, 511))
             {
-                auto& profile = config.LaunchProfiles[i];
-                ImGui::PushID(i);
-
-                bool isActive = (config.ActiveLaunchProfileIndex == i);
-                if (ImGui::RadioButton("Active", isActive))
-                {
-                    config.ActiveLaunchProfileIndex = i;
-                }
-                ImGui::SameLine();
-
-                if (ImGui::CollapsingHeader(std::format("{}###Header", profile.Name).c_str()))
-                {
-                    char profileNameBuf[128];
-                    strncpy(profileNameBuf, profile.Name.c_str(), 127);
-                    profileNameBuf[127] = '\0';
-                    if (ImGui::InputText("Profile Name", profileNameBuf, 127))
-                    {
-                        profile.Name = profileNameBuf;
-                    }
-
-                    char pathBuf[512];
-                    strncpy(pathBuf, profile.BinaryPath.c_str(), 511);
-                    pathBuf[511] = '\0';
-                    if (ImGui::InputText("Binary Path", pathBuf, 511))
-                    {
-                        profile.BinaryPath = pathBuf;
-                    }
-
-                    ImGui::SameLine();
-                    if (ImGui::Button("..."))
-                    {
-                        std::vector<FileDialogFilter> filters = {{"Runtime Executable", "exe"}};
-                        auto result = Dialogs::OpenFile(filters);
-                        if (result)
-                        {
-                            profile.BinaryPath = result->string();
-                        }
-                    }
-
-                    char argBuf[512];
-                    strncpy(argBuf, profile.Arguments.c_str(), 511);
-                    argBuf[511] = '\0';
-                    if (ImGui::InputText("Arguments", argBuf, 511))
-                    {
-                        profile.Arguments = argBuf;
-                    }
-
-                    ImGui::Checkbox("Use Default Project Args", &profile.UseDefaultArgs);
-
-                    if (ImGui::Button("Remove Profile"))
-                    {
-                        config.LaunchProfiles.erase(config.LaunchProfiles.begin() + i);
-                        if (config.ActiveLaunchProfileIndex >= (int)config.LaunchProfiles.size())
-                        {
-                            config.ActiveLaunchProfileIndex = std::max(0, (int)config.LaunchProfiles.size() - 1);
-                        }
-                        ImGui::PopID();
-                        break;
-                    }
-                }
-                ImGui::PopID();
-            }
-
-            if (ImGui::Button(ICON_FA_PLUS " Add New Profile"))
-            {
-                config.LaunchProfiles.push_back({"New Profile", "", ""});
-                if (config.LaunchProfiles.size() == 1)
-                {
-                    config.ActiveLaunchProfileIndex = 0;
-                }
+                profile.Arguments = argBuf;
             }
         }
         else if (selectedCategory == 1) // Scripting
@@ -241,19 +186,10 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             ImGui::Checkbox("VSync", &config.Window.VSync);
             ImGui::Checkbox("Resizable", &config.Window.Resizable);
         }
-        else if (selectedCategory == 4) // Runtime
-        {
-            ImGui::TextDisabled("Runtime Settings");
-            ImGui::Checkbox("Fullscreen", &config.Runtime.Fullscreen);
-            ImGui::Checkbox("Show Stats", &config.Runtime.ShowStats);
-            ImGui::Checkbox("Enable Console", &config.Runtime.EnableConsole);
-        }
-        else if (selectedCategory == 5) // Editor
+        else if (selectedCategory == 4) // Editor
         {
             ImGui::TextDisabled("Editor Settings");
             ImGui::DragFloat("Camera Speed", &config.Editor.CameraMoveSpeed, 0.1f, 0.1f, 100.0f);
-            ImGui::DragFloat("Rotation Speed", &config.Editor.CameraRotationSpeed, 0.01f, 0.01f, 1.0f);
-            ImGui::DragFloat("Boost Multiplier", &config.Editor.CameraBoostMultiplier, 0.1f, 1.0f, 200.0f);
 
             ImGui::Separator();
             ImGui::TextDisabled("Auto-Save Settings");
@@ -261,50 +197,20 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             ImGui::Checkbox("Enable Auto-Save", &editorConfig.AutoSaveEnabled);
             ImGui::DragFloat("Auto-Save Interval (s)", &editorConfig.AutoSaveInterval, 1.0f, 10.0f, 3600.0f);
         }
-        else if (selectedCategory == 6) // Rendering
+        else if (selectedCategory == 5) // Rendering
         {
             ImGui::TextDisabled("Rendering Settings");
             ImGui::DragFloat("Ambient Intensity", &config.Render.AmbientIntensity, 0.01f, 0.0f, 1.0f);
             ImGui::DragFloat("Default Exposure", &config.Render.DefaultExposure, 0.01f, 0.0f, 10.0f);
 
             ImGui::Separator();
-            ImGui::Text("Texture Quality");
+            ImGui::TextDisabled("Visual Quality");
             ImGui::Checkbox("Generate Mipmaps", &config.Texture.GenerateMipmaps);
-            if (ImGui::IsItemHovered())
-            {
-                ImGui::SetTooltip("Generates mip chain on texture upload.\nReduces aliasing and bandwidth.\nApplied to newly loaded textures.");
-            }
-
-            const char* filterNames[] = {"Point (No Filter)", "Bilinear", "Trilinear", "Anisotropic 4x",
-                                          "Anisotropic 8x", "Anisotropic 16x"};
-            int currentFilter = (int)config.Texture.Filter;
-            if (ImGui::Combo("Texture Filter", &currentFilter, filterNames, 6))
-            {
-                config.Texture.Filter = (TextureFilter)currentFilter;
-            }
-        }
-        else if (selectedCategory == 7) // Assets
-        {
-            ImGui::TextDisabled("Asset Management Settings");
             
-            ImGui::Separator();
-            ImGui::Text("Mesh Import Settings");
-            ImGui::Checkbox("Import Materials", &config.Mesh.ImportMaterials);
-            if (ImGui::IsItemHovered())
+            bool highQuality = (config.Texture.Filter >= TextureFilter::Anisotropic16x);
+            if (ImGui::Checkbox("High Quality Textures", &highQuality))
             {
-                ImGui::SetTooltip("If disabled, .mtl files or embedded materials will be ignored.\nModels will use a default material.");
-            }
-            
-            ImGui::Checkbox("Calculate Tangents", &config.Mesh.CalculateTangents);
-            if (ImGui::IsItemHovered())
-            {
-                ImGui::SetTooltip("Generates tangent and bitangent vectors for normal mapping.");
-            }
-            
-            ImGui::Checkbox("Flip UVs", &config.Mesh.FlipUVs);
-            if (ImGui::IsItemHovered())
-            {
-                ImGui::SetTooltip("Flips the Y-coordinate of texture coordinates.");
+                config.Texture.Filter = highQuality ? TextureFilter::Anisotropic16x : TextureFilter::Bilinear;
             }
         }
 
