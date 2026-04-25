@@ -1,0 +1,424 @@
+Prefab: Player
+RootEntity: 1326311650816898569
+Entities:
+  - TagComponent:
+      Tag: Player
+    TransformComponent:
+      Translation: [-321.279785, 315.597015, 1020.75476]
+      Rotation: [-3.14159083, -0.0872663558, -3.14159083]
+      Scale: [0.999901831, 1, 0.999901831]
+    ModelComponent:
+      ModelHandle: 0
+      ModelPath: models/pilot/wizard_tower_animated.glb
+      Materials:
+        - Name: ""
+          Index: 0
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: "*0"
+            OverrideAlbedo: true
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            ShaderPath: ""
+            OverrideShader: false
+            Metalness: 0.0613496937
+            Roughness: 0.932515323
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: ""
+          Index: 1
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: "*0"
+            OverrideAlbedo: true
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            ShaderPath: ""
+            OverrideShader: false
+            Metalness: 0
+            Roughness: 0.600000024
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: ""
+          Index: 2
+          Target: 0
+          Material:
+            AlbedoColor: [35, 69, 23, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            ShaderPath: ""
+            OverrideShader: false
+            Metalness: 0.245398775
+            Roughness: 1
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: ""
+          Index: 3
+          Target: 0
+          Material:
+            AlbedoColor: [28, 28, 28, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            ShaderPath: ""
+            OverrideShader: false
+            Metalness: 0
+            Roughness: 0.600000024
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: ""
+          Index: 4
+          Target: 0
+          Material:
+            AlbedoColor: [26, 48, 4, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            ShaderPath: ""
+            OverrideShader: false
+            Metalness: 0
+            Roughness: 0.600000024
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: ""
+          Index: 5
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: "*1"
+            OverrideAlbedo: true
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            ShaderPath: ""
+            OverrideShader: false
+            Metalness: 0
+            Roughness: 0.600000024
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: ""
+          Index: 6
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: "*0"
+            OverrideAlbedo: true
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            ShaderPath: ""
+            OverrideShader: false
+            Metalness: 0
+            Roughness: 0.600000024
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: ""
+          Index: 7
+          Target: 0
+          Material:
+            AlbedoColor: [6, 5, 4, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            ShaderPath: ""
+            OverrideShader: false
+            Metalness: 0
+            Roughness: 0.600000024
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: ""
+          Index: 8
+          Target: 0
+          Material:
+            AlbedoColor: [204, 10, 6, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            ShaderPath: ""
+            OverrideShader: false
+            Metalness: 0
+            Roughness: 0.220858902
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: ""
+          Index: 9
+          Target: 0
+          Material:
+            AlbedoColor: [11, 74, 204, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            ShaderPath: ""
+            OverrideShader: false
+            Metalness: 0
+            Roughness: 0.21472393
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: ""
+          Index: 10
+          Target: 0
+          Material:
+            AlbedoColor: [204, 38, 138, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            ShaderPath: ""
+            OverrideShader: false
+            Metalness: 0
+            Roughness: 0.171779141
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: ""
+          Index: 11
+          Target: 0
+          Material:
+            AlbedoColor: [6, 204, 5, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            ShaderPath: ""
+            OverrideShader: false
+            Metalness: 0
+            Roughness: 0.147239268
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: ""
+          Index: 12
+          Target: 0
+          Material:
+            AlbedoColor: [56, 65, 135, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [9, 92, 104, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            ShaderPath: ""
+            OverrideShader: false
+            Metalness: 0.337423325
+            Roughness: 0
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: ""
+          Index: 13
+          Target: 0
+          Material:
+            AlbedoColor: [77, 150, 204, 10]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            ShaderPath: ""
+            OverrideShader: false
+            Metalness: 0.21472393
+            Roughness: 0.171779141
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+        - Name: ""
+          Index: 14
+          Target: 0
+          Material:
+            AlbedoColor: [255, 255, 255, 255]
+            AlbedoPath: ""
+            OverrideAlbedo: false
+            NormalMapPath: ""
+            OverrideNormal: false
+            MetallicRoughnessPath: ""
+            OverrideMetallicRoughness: false
+            OcclusionMapPath: ""
+            OverrideOcclusion: false
+            EmissivePath: ""
+            EmissiveColor: [0, 0, 0, 255]
+            EmissiveIntensity: 0
+            OverrideEmissive: false
+            ShaderPath: ""
+            OverrideShader: false
+            Metalness: 1
+            Roughness: 1
+            DoubleSided: false
+            Transparent: false
+            Alpha: 1
+    ColliderComponent:
+      Type: 3
+      Enabled: true
+      Offset: [2.16411662, 4.57000017, 0]
+      Radius: 8.12199974
+      AutoCalculate: false
+    RigidBodyComponent:
+      Mass: 91.3000031
+      Velocity: [0, 0, 0]
+      UseGravity: true
+      IsKinematic: false
+      IsGrounded: true
+    AudioComponent:
+      SoundHandle: 0
+      SoundPath: audio/storegraphic-soft-wind-477404.mp3
+      Volume: 1
+      Pitch: 2
+      Loop: true
+      PlayOnStart: false
+      Spatialized: true
+      Position: [0, 0, 0]
+      MinDistance: 1
+      MaxDistance: 100
+    PlayerComponent:
+      MovementSpeed: 15
+      JumpForce: 10
+      LookSensitivity: 0.899999976
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: chaineddecos.scripts.playercontroller
+          Fields:
+            - Name: Gravity
+              Type: 1
+              Value: 9.80000019
+            - Name: JumpForce
+              Type: 1
+              Value: 32.5
+            - Name: MovementSpeed
+              Type: 1
+              Value: 50
+        - ClassName: chaineddecos.scripts.gamehud
+        - ClassName: chaineddecos.scripts.spawnzone
+        - ClassName: chaineddecos.scripts.playerfall
+        - ClassName: chaineddecos.scripts.gamemanagerpattern
+          Fields:
+            - Name: Coins
+              Type: 2
+              Value: 165
+        - ClassName: chaineddecos.scripts.patternusagecontroller
+        - ClassName: chaineddecos.scripts.herostrategyscript
+        - ClassName: chaineddecos.scripts.herobehavioralscript
