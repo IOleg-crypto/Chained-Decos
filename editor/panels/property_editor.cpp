@@ -154,7 +154,94 @@ void PropertyEditor::Init()
     Register<SceneTransitionComponent>("SceneTransition", ICON_FA_DOOR_OPEN);
 
     // --- Scripting ---
-    Register<ManagedScriptComponent>("Scripts", ICON_FA_FILE_CODE);
+    RegisterCustom<ManagedScriptComponent>("Scripts", [](ManagedScriptComponent& comp, Entity entity) {
+        bool changed = false;
+        
+        for (int i = 0; i < (int)comp.Scripts.size(); i++)
+        {
+            auto& script = comp.Scripts[i];
+            ImGui::PushID(i);
+            
+            // We are already inside a PropertyGrid table (2 columns).
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            
+            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | 
+                                      ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowOverlap |
+                                      ImGuiTreeNodeFlags_SpanAllColumns;
+            
+            // Extract short class name (after last dot)
+            std::string fullClassName = script.ClassName;
+            size_t lastDot = fullClassName.find_last_of('.');
+            std::string shortName = (lastDot == std::string::npos) ? fullClassName : fullClassName.substr(lastDot + 1);
+            std::string label = shortName.empty() ? "-- Empty Script --" : shortName;
+            
+            float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
+            bool open = ImGui::TreeNodeEx((void*)(uintptr_t)i, flags, "%s %s", ICON_FA_FILE_CODE, label.c_str());
+            
+            // Tooltip with full name
+            if (ImGui::IsItemHovered() && !fullClassName.empty())
+                ImGui::SetTooltip("%s", fullClassName.c_str());
+
+            // Delete button in the header row (right aligned in column 1)
+            ImGui::TableSetColumnIndex(1);
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - lineHeight - 5.0f);
+            if (ImGui::Button(ICON_FA_TRASH, ImVec2{lineHeight, lineHeight}))
+            {
+                comp.Scripts.erase(comp.Scripts.begin() + i);
+                changed = true;
+                if (open) ImGui::TreePop();
+                ImGui::PopID();
+                break; 
+            }
+
+            if (open)
+            {
+                UIProperties ui;
+                // Manually draw fields from the map, skipping redundancy
+                for (auto& [fieldName, field] : script.Fields)
+                {
+                    std::visit([&](auto&& val) {
+                        if (ui.Property(fieldName.c_str(), val))
+                            changed = true;
+                    }, field.Value);
+                }
+
+                ImGui::TreePop();
+            }
+            
+            ImGui::PopID();
+            ImGui::Spacing();
+        }
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(1);
+        if (EditorGUI::ActionButton(ICON_FA_PLUS, "Add Script"))
+        {
+            ImGui::OpenPopup("AddScriptPopup");
+        }
+
+        if (ImGui::BeginPopup("AddScriptPopup"))
+        {
+            for (const auto& [className, type] : ScriptEngine::Get().GetScriptClasses())
+            {
+                // Extract short name for menu
+                size_t lastDot = className.find_last_of('.');
+                std::string shortName = (lastDot == std::string::npos) ? className : className.substr(lastDot + 1);
+
+                if (ImGui::MenuItem(shortName.c_str()))
+                {
+                    comp.Scripts.emplace_back(className);
+                    changed = true;
+                }
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("%s", className.c_str());
+            }
+            ImGui::EndPopup();
+        }
+
+        return changed;
+    }, ICON_FA_FILE_CODE);
 
     // --- UI Components ---
 
