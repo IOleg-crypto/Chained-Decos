@@ -44,15 +44,6 @@ inline Entity GetEntity(uint64_t entityID)
     return Entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
 }
 
-// Module registration functions (to be called by ScriptGlue::RegisterInternalCalls)
-void RegisterSystemGlue(Coral::ManagedAssembly& assembly);
-void RegisterInputGlue(Coral::ManagedAssembly& assembly);
-void RegisterSceneGlue(Coral::ManagedAssembly& assembly);
-void RegisterEntityGlue(Coral::ManagedAssembly& assembly);
-void RegisterCameraGlue(Coral::ManagedAssembly& assembly);
-void RegisterUIGlue(Coral::ManagedAssembly& assembly);
-void RegisterGameplayGlue(Coral::ManagedAssembly& assembly);
-
 } // namespace CHEngine
 
 #endif // CH_SCRIPT_GLUE_INTERNAL_H

@@ -1,4 +1,5 @@
 #include "script_glue_internal.h"
+#include "script_internal_call_registry.h"
 #include "engine/scene/scene_events.h"
 #include "engine/core/application.h"
 
@@ -15,6 +16,7 @@ CH_SCRIPT_FUNC uint64_t Scene_FindEntityByTag(Coral::String tag)
     }
     return 0;
 }
+CH_ADD_INTERNAL_CALL(Scene, Scene_FindEntityByTag_Ptr, Scene_FindEntityByTag);
 
 CH_SCRIPT_FUNC uint64_t Scene_CopyEntity(uint64_t entityID)
 {
@@ -26,12 +28,14 @@ CH_SCRIPT_FUNC uint64_t Scene_CopyEntity(uint64_t entityID)
     }
     return 0;
 }
+CH_ADD_INTERNAL_CALL(Scene, Scene_CopyEntity_Ptr, Scene_CopyEntity);
 
 CH_SCRIPT_FUNC void Scene_LoadScene(Coral::String path)
 {
     SceneChangeRequestEvent e((std::string)path);
     Application::Get().OnEvent(e);
 }
+CH_ADD_INTERNAL_CALL(Scene, Scene_LoadScene_Ptr, Scene_LoadScene);
 
 CH_SCRIPT_FUNC uint64_t Scene_GetPrimaryCameraEntity()
 {
@@ -43,16 +47,7 @@ CH_SCRIPT_FUNC uint64_t Scene_GetPrimaryCameraEntity()
     Entity entity = scene->GetPrimaryCameraEntity();
     return entity ? (uint64_t)(uint32_t)entity : 0;
 }
+CH_ADD_INTERNAL_CALL(Scene, Scene_GetPrimaryCameraEntity_Ptr, Scene_GetPrimaryCameraEntity);
 
-void RegisterSceneGlue(Coral::ManagedAssembly& assembly) {
-#define CH_ADD_INTERNAL_CALL(className, fieldName, funcPtr)                                                            \
-    assembly.AddInternalCall("CHEngine." #className, #fieldName, (void*)funcPtr)
-
-    CH_ADD_INTERNAL_CALL(Scene, Scene_FindEntityByTag_Ptr, Scene_FindEntityByTag);
-    CH_ADD_INTERNAL_CALL(Scene, Scene_LoadScene_Ptr, Scene_LoadScene);
-    CH_ADD_INTERNAL_CALL(Scene, Scene_GetPrimaryCameraEntity_Ptr, Scene_GetPrimaryCameraEntity);
-    CH_ADD_INTERNAL_CALL(Scene, Scene_CopyEntity_Ptr, Scene_CopyEntity);
-
-#undef CH_ADD_INTERNAL_CALL
-} } // namespace CHEngine
+} // namespace CHEngine
 

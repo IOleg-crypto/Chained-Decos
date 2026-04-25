@@ -21,13 +21,6 @@ bool ScriptEngine::IsInitializedGlobal()
     return ServiceLocator::Has<ScriptEngine>();
 }
 
-ScriptEngine::ScriptEngine()
-{
-}
-
-ScriptEngine::~ScriptEngine()
-{
-}
 
 // ── Initialize / Shutdown ──────────────────────────────────────────────────
 void ScriptEngine::Initialize()
