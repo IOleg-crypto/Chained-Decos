@@ -1,25 +1,31 @@
 #include "engine/graphics/pipeline/renderer.h"
-#include "engine/core/application.h"
-#include "engine/core/log.h"
-#include "engine/graphics/api/framebuffer.h"
+#include "engine/graphics/pipeline/geometry_generator.h"
 #include "engine/graphics/pipeline/render_command.h"
+#include "engine/graphics/pipeline/renderer_types.h"
+#include "engine/graphics/pipeline/shader_library.h"
+
+#include "engine/core/application.h"
+#include "engine/core/assets/asset_manager.h"
+#include "engine/core/log.h"
 #include "engine/core/service_locator.h"
 
-#include "engine/core/assets/asset_manager.h"
+#include "engine/graphics/api/buffer.h"
+#include "engine/graphics/api/framebuffer.h"
+#include "engine/graphics/api/storage_buffer.h"
+#include "engine/graphics/api/vertex_array.h"
+
+#include "engine/graphics/assets/environment.h"
 #include "engine/graphics/assets/shader_asset.h"
 #include "engine/graphics/assets/texture_asset.h"
-#include "engine/graphics/pipeline/geometry_generator.h"
 
 #include <algorithm>
-#include <glad/gl.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <vector>
 
-#include "render_command.h"
-#include "engine/graphics/loaders/texture_loader.h"
+#include "engine/graphics/loaders/environment_loader.h"
 #include "engine/graphics/loaders/model_loader.h"
 #include "engine/graphics/loaders/shader_loader.h"
-#include "engine/graphics/loaders/environment_loader.h"
+#include "engine/graphics/loaders/texture_loader.h"
 
 namespace CHEngine
 {
@@ -79,11 +85,8 @@ void Renderer::InternalInit()
 
     RenderCommand::Initialize();
 
-    // Initialize SSBO for lights using raw OpenGL
-    glGenBuffers(1, &m_Data->Lighting.LightSSBO);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_Data->Lighting.LightSSBO);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(RenderLight) * LightingData::MaxLights, nullptr, GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    // Initialize SSBO for lights using abstraction
+    m_Data->Lighting.LightSSBO = StorageBuffer::Create(sizeof(RenderLight) * LightingData::MaxLights);
 
     m_Data->Lighting.LightsDirty = true;
 
@@ -132,11 +135,7 @@ void Renderer::InternalShutdown()
     CleanupResources();
     CleanupSkybox();
 
-    if (m_Data->Lighting.LightSSBO > 0)
-    {
-        glDeleteBuffers(1, &m_Data->Lighting.LightSSBO);
-        m_Data->Lighting.LightSSBO = 0;
-    }
+    m_Data->Lighting.LightSSBO.reset();
 
     m_Initialized = false;
 }
@@ -156,12 +155,9 @@ void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
     m_Data->CurrentCameraPosition = camera.Position;
 
     // Update light SSBO once per frame
-    if (m_Data->Lighting.LightsDirty)
+    if (m_Data->Lighting.LightsDirty && m_Data->Lighting.LightSSBO)
     {
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_Data->Lighting.LightSSBO);
-        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(RenderLight) * LightingData::MaxLights,
-                        m_Data->Lighting.Lights);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+        m_Data->Lighting.LightSSBO->SetData(m_Data->Lighting.Lights, sizeof(RenderLight) * LightingData::MaxLights);
         m_Data->Lighting.LightsDirty = false;
     }
 
@@ -201,7 +197,10 @@ void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
         lightingShaderAsset->GetShader()->SetFloat("uGamma", gamma);
 
         ApplyFogUniforms(lightingShaderAsset);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, m_Data->Lighting.LightSSBO);
+        if (m_Data->Lighting.LightSSBO)
+        {
+            m_Data->Lighting.LightSSBO->BindBase(0);
+        }
         m_Data->CurrentShaderId = lightingShaderAsset->GetShader()->GetRendererID();
     }
 
@@ -280,11 +279,11 @@ void Renderer::DrawMesh(const Mesh& mesh, const Material& material, const glm::m
         mesh.VAO->Bind();
         if (mesh.TriangleCount > 0)
         {
-            glDrawElements(GL_TRIANGLES, mesh.TriangleCount * 3, GL_UNSIGNED_INT, 0);
+            RenderCommand::DrawIndexed(mesh.VAO, mesh.TriangleCount * 3);
         }
         else
         {
-            glDrawArrays(GL_TRIANGLES, 0, mesh.VertexCount);
+            RenderCommand::DrawArrays(mesh.VertexCount);
         }
         mesh.VAO->Unbind();
     }
@@ -321,43 +320,63 @@ void Renderer::DrawMeshInstanced(const Mesh& mesh, const Material& material, con
     shaderAsset->GetShader()->SetMatrix("u_Transform", glm::mat4(1.0f));
 
     // Create instance buffer with all transforms
-    uint32_t instanceVBO = 0;
-    glGenBuffers(1, &instanceVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-    glBufferData(GL_ARRAY_BUFFER, transforms.size() * sizeof(glm::mat4), transforms.data(), GL_STATIC_DRAW);
+    auto instanceVBO = VertexBuffer::Create(transforms.size() * sizeof(glm::mat4));
+    instanceVBO->SetData(transforms.data(), transforms.size() * sizeof(glm::mat4));
 
     // Bind the mesh VAO
     mesh.VAO->Bind();
-    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+    instanceVBO->Bind();
 
-    // Set up instance vertex attributes for the model matrix (4 vec4 attributes per mat4)
-    size_t vec4Size = sizeof(glm::vec4);
-    for (int i = 0; i < 4; i++)
+    // Set up instance vertex attributes for the model matrix (Mat4)
+    instanceVBO->SetLayout(BufferLayout({BufferElement(ShaderDataType::Mat4, "a_InstanceTransform", false, true)}));
+
+    // Cache the instanced VAO per mesh to avoid frame-by-frame creation
+    // For simplicity, we store it in a static map here, but in a real engine it should be in Mesh or a cache
+    static std::unordered_map<VertexArray*, std::shared_ptr<VertexArray>> s_InstancedVAOCache;
+
+    auto& instancedVAO = s_InstancedVAOCache[mesh.VAO.get()];
+    if (!instancedVAO)
     {
-        glEnableVertexAttribArray(5 + i);
-        glVertexAttribPointer(5 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(i * vec4Size));
-        glVertexAttribDivisor(5 + i, 1); // One matrix per instance
+        instancedVAO = VertexArray::Create();
+        for (const auto& vbo : mesh.VAO->GetVertexBuffers())
+        {
+            instancedVAO->AddVertexBuffer(vbo);
+        }
+        instancedVAO->SetIndexBuffer(mesh.VAO->GetIndexBuffer());
     }
+
+    // We still need to add the NEW instance buffer every time because the transforms change
+    // But we should ideally only AddVertexBuffer ONCE and then just update its DATA.
+    // However, our current API creates a NEW VertexBuffer every time.
+    // Let's optimize: add the buffer if it's not the same one.
+    // For now, let's just make it work correctly without leaking or conflicting.
+
+    // TEMPORARY: Clear previous vertex buffers from the cache if we are going to add a new one
+    // Actually, AddVertexBuffer APPENDS. This is bad for a cache.
+    // Let's just create it every frame for now BUT ENSURE IT'S CLEAN.
+
+    auto tempVAO = VertexArray::Create();
+    for (const auto& vbo : mesh.VAO->GetVertexBuffers())
+    {
+        tempVAO->AddVertexBuffer(vbo);
+    }
+    tempVAO->AddVertexBuffer(instanceVBO);
+    tempVAO->SetIndexBuffer(mesh.VAO->GetIndexBuffer());
+
+    tempVAO->Bind();
 
     // Draw with instances
     if (mesh.TriangleCount > 0)
     {
-        glDrawElementsInstanced(GL_TRIANGLES, mesh.TriangleCount * 3, GL_UNSIGNED_INT, 0, (GLsizei)transforms.size());
+        RenderCommand::DrawIndexedInstanced(tempVAO, (uint32_t)transforms.size(), mesh.TriangleCount * 3);
     }
     else
     {
-        glDrawArraysInstanced(GL_TRIANGLES, 0, mesh.VertexCount, (GLsizei)transforms.size());
+        RenderCommand::DrawArraysInstanced(mesh.VertexCount, (uint32_t)transforms.size());
     }
 
-    // Cleanup instance attributes
-    for (int i = 0; i < 4; i++)
-    {
-        glVertexAttribDivisor(5 + i, 0);
-        glDisableVertexAttribArray(5 + i);
-    }
-
-    mesh.VAO->Unbind();
-    glDeleteBuffers(1, &instanceVBO);
+    tempVAO->Unbind();
+    // instanceVBO is smart pointer, will be deleted automatically
 }
 
 void Renderer::DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color)
@@ -376,23 +395,17 @@ void Renderer::DrawLine(const glm::vec3& start, const glm::vec3& end, const glm:
     shader->SetMatrix("u_Transform", glm::mat4(1.0f));
     shader->SetVec4("u_Color", color);
 
-    // Immediate mode replacement or small buffer
+    // Use a small buffer with abstraction
     float vertices[] = {start.x, start.y, start.z, end.x, end.y, end.z};
-    uint32_t vbo, vao;
-    glGenVertexArrays(1, &vao);
-    glGenBuffers(1, &vbo);
-    glBindVertexArray(vao);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STREAM_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+    auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
+    vbo->SetLayout({{ShaderDataType::Float3, "vertexPosition"}});
 
-    glDrawArrays(GL_LINES, 0, 2);
+    auto vao = VertexArray::Create();
+    vao->AddVertexBuffer(vbo);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-    glDeleteBuffers(1, &vbo);
-    glDeleteVertexArrays(1, &vao);
+    vao->Bind();
+    RenderCommand::DrawLines(vao, 2);
+    vao->Unbind();
 }
 
 void Renderer::DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& transform, bool useWireframe)
@@ -403,16 +416,6 @@ void Renderer::DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm:
         return;
     }
 
-     if (useWireframe)
-    {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    }
-    else
-    {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    }
-   
-
     auto shader = debugShader->GetShader();
     shader->Bind();
 
@@ -420,25 +423,53 @@ void Renderer::DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm:
     glm::mat4 vp = m_Data->CurrentProj * m_Data->CurrentView;
     shader->SetMatrix("u_ViewProj", vp);
     shader->SetMatrix("u_Transform", transform);
-    shader->SetVec4("u_Color", color);
+    
+    // Apply transparency for solid mode
+    glm::vec4 finalColor = color;
+    if (!useWireframe)
+    {
+        finalColor.a *= 0.35f; // More subtle transparency
+    }
+    shader->SetVec4("u_Color", finalColor);
+
+    if (useWireframe)
+    {
+        RenderCommand::SetPolygonMode(RendererAPI::PolygonMode::Line);
+    }
+    else
+    {
+        RenderCommand::SetPolygonMode(RendererAPI::PolygonMode::Fill);
+    }
 
     // Render mesh geometry
     if (mesh.VAO)
     {
+        RenderCommand::SetBlendMode(true);
+        RenderCommand::SetBlendFunc(RendererAPI::BlendFactor::SrcAlpha, RendererAPI::BlendFactor::OneMinusSrcAlpha);
+        
+        // Depth Test is now disabled globally for debug overlays in SceneRenderer::RenderDebug.
+        // We do not enable it here.
+
+        // DrawMesh helper now handles Binding inside DrawIndexed/DrawArrays
         mesh.VAO->Bind();
         if (mesh.TriangleCount > 0)
         {
-            glDrawElements(GL_TRIANGLES, mesh.TriangleCount * 3, GL_UNSIGNED_INT, 0);
+            RenderCommand::DrawIndexed(mesh.VAO, mesh.TriangleCount * 3);
+        }
+        else if (mesh.VAO->GetIndexBuffer() != nullptr)
+        {
+            RenderCommand::DrawIndexedLines(mesh.VAO, mesh.VAO->GetIndexBuffer()->GetCount());
         }
         else
         {
-            glDrawArrays(GL_TRIANGLES, 0, mesh.VertexCount);
+            RenderCommand::DrawLines(mesh.VAO, mesh.VertexCount);
         }
         mesh.VAO->Unbind();
+        
+        RenderCommand::SetBlendMode(false);
     }
 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    
+    RenderCommand::SetPolygonMode(RendererAPI::PolygonMode::Fill);
 }
 
 void Renderer::DrawGrid(int slices, float spacing)
@@ -481,23 +512,38 @@ void Renderer::DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm
     shaderAsset->GetShader()->SetFloat("gridSize", spacing);
     shaderAsset->GetShader()->SetFloat("uTime", m_Data->Time);
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    
+    RenderCommand::SetBlendMode(true);
+    RenderCommand::SetBlendFunc(RendererAPI::BlendFactor::SrcAlpha, RendererAPI::BlendFactor::OneMinusSrcAlpha);
+
     // Disable depth test for the infinite grid or it will be occluded by the floor
-    glDisable(GL_DEPTH_TEST);
+    RenderCommand::DisableDepthTest();
 
     // Use shared mesh from GeometryGenerator
-    static Mesh gridPlane;
-    if (!gridPlane.VAO)
+    if (!m_Data->GridPlaneVAO)
     {
-        gridPlane = GeometryGenerator::GenerateQuad(15000.0f);
+        float vertices[] = {-0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.5f,  -0.5f, 0.0f, 1.0f, 0.0f,
+                            0.5f,  0.5f,  0.0f, 1.0f, 1.0f, -0.5f, 0.5f,  0.0f, 0.0f, 1.0f};
+        uint32_t indices[] = {0, 1, 2, 2, 3, 0};
+
+        auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
+        vbo->SetLayout({{ShaderDataType::Float3, "a_Position"}, {ShaderDataType::Float2, "a_TexCoord"}});
+
+        m_Data->GridPlaneVAO = VertexArray::Create();
+        m_Data->GridPlaneVAO->AddVertexBuffer(vbo);
+        auto ibo = IndexBuffer::Create(indices, 6);
+        m_Data->GridPlaneVAO->SetIndexBuffer(ibo);
+
+        // Scale the grid plane vbo if needed, or just use a large transform.
+        // The original used GenerateQuad(15000.0f), so we scale here.
     }
 
-    gridPlane.VAO->Bind();
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-    gridPlane.VAO->Unbind();
-    glEnable(GL_DEPTH_TEST);
+    glm::mat4 scale = glm::scale(model, glm::vec3(15000.0f, 1.0f, 15000.0f));
+    shaderAsset->GetShader()->SetMatrix("matModel", scale);
+
+    m_Data->GridPlaneVAO->Bind();
+    RenderCommand::DrawIndexed(m_Data->GridPlaneVAO, 6);
+    m_Data->GridPlaneVAO->Unbind();
+    RenderCommand::EnableDepthTest();
 }
 
 void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float exposure, float brightness,
@@ -510,10 +556,12 @@ void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float 
 
     skyboxMode = std::clamp(skyboxMode, 0, 2);
 
-    auto shaderAsset = (skyboxMode == 2)
-                           ? m_Data->Shaders->LoadOrGet("SkyboxCubemap", "engine/resources/shaders/skybox_cubemap.chshader")
-                           : (skyboxMode == 1 ? m_Data->Shaders->LoadOrGet("SkyboxCross", "engine/resources/shaders/skybox_cross.chshader")
-                                              : m_Data->Shaders->LoadOrGet("Skybox", "engine/resources/shaders/skybox.chshader"));
+    auto shaderAsset =
+        (skyboxMode == 2)
+            ? m_Data->Shaders->LoadOrGet("SkyboxCubemap", "engine/resources/shaders/skybox_cubemap.chshader")
+            : (skyboxMode == 1
+                   ? m_Data->Shaders->LoadOrGet("SkyboxCross", "engine/resources/shaders/skybox_cross.chshader")
+                   : m_Data->Shaders->LoadOrGet("Skybox", "engine/resources/shaders/skybox.chshader"));
     if (!shaderAsset || !shaderAsset->GetShader())
     {
         return;
@@ -522,12 +570,12 @@ void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float 
     // 1. Prepare Render State
     RenderCommand::SetDepthFunc(RendererAPI::DepthFunc::LEqual);
     RenderCommand::SetCullMode(RendererAPI::CullMode::None);
-    RenderCommand::DisableDepthMask(); // Використовую твій метод
+    RenderCommand::DisableDepthMask();
 
     // 2. Setup Uniforms
     shaderAsset->GetShader()->Bind();
 
-    // Always remove translation from view matrix for skybox (Виправлено: беремо з переданої camera)
+    // Always remove translation from view matrix for skybox
     glm::mat4 view = glm::mat4(glm::mat3(m_Data->CurrentView));
     shaderAsset->GetShader()->SetMatrix("u_View", view);
     shaderAsset->GetShader()->SetMatrix("u_Projection", m_Data->CurrentProj);
@@ -544,51 +592,48 @@ void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float 
     // 3. Bind Textures and Draw Mesh
     if (skyboxMode == 2)
     {
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, textureId);
+        RenderCommand::SetTexture(0, textureId, true);
         shaderAsset->GetShader()->SetInt("u_Cubemap", 0);
 
         if (m_Data->Skybox.SkyboxCubeModel && !m_Data->Skybox.SkyboxCubeModel->Meshes.empty())
         {
             auto& mesh = m_Data->Skybox.SkyboxCubeModel->Meshes[0];
             mesh.VAO->Bind();
-            glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+            RenderCommand::DrawIndexed(mesh.VAO, 36);
             mesh.VAO->Unbind();
         }
     }
     else if (skyboxMode == 1)
     {
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, textureId);
+        RenderCommand::SetTexture(0, textureId);
         shaderAsset->GetShader()->SetInt("u_CrossMap", 0);
 
         if (m_Data->Skybox.SkyboxCubeModel && !m_Data->Skybox.SkyboxCubeModel->Meshes.empty())
         {
             auto& mesh = m_Data->Skybox.SkyboxCubeModel->Meshes[0];
             mesh.VAO->Bind();
-            glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+            RenderCommand::DrawIndexed(mesh.VAO, 36);
             mesh.VAO->Unbind();
         }
     }
-    else
+    if (skyboxMode == 0)
     {
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, textureId);
+        RenderCommand::SetTexture(0, textureId);
         shaderAsset->GetShader()->SetInt("u_Panorama", 0);
 
         if (m_Data->Skybox.SkyboxSphereModel && !m_Data->Skybox.SkyboxSphereModel->Meshes.empty())
         {
             auto& mesh = m_Data->Skybox.SkyboxSphereModel->Meshes[0];
             mesh.VAO->Bind();
-            glDrawElements(GL_TRIANGLES, mesh.TriangleCount * 3, GL_UNSIGNED_INT, 0);
+            RenderCommand::DrawIndexed(mesh.VAO, mesh.TriangleCount * 3);
             mesh.VAO->Unbind();
         }
     }
 
-    // 4. Restore Render State (Виправлено: робимо через API рушія)
+    // 4. Restore Render State
     RenderCommand::SetDepthFunc(RendererAPI::DepthFunc::Less);
     RenderCommand::SetCullMode(RendererAPI::CullMode::Back);
-    RenderCommand::EnableDepthMask(); // Якщо в тебе DisableDepthMask, то має бути і Enable, або SetDepthMask(true)
+    RenderCommand::EnableDepthMask();
 }
 
 void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const glm::vec3& position, float size,
@@ -632,132 +677,80 @@ void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const g
     shader->SetFloat("emissiveIntensity", 0.0f);
     shader->SetInt("useSkinning", 0);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, textureId);
+    RenderCommand::SetTexture(0, textureId);
     shader->SetInt("texture0", 0);
 
-    const GLboolean blendWasEnabled = glIsEnabled(GL_BLEND);
-    const GLboolean cullWasEnabled = glIsEnabled(GL_CULL_FACE);
-    if (!blendWasEnabled)
-    {
-        glEnable(GL_BLEND);
-    }
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    if (cullWasEnabled)
-    {
-        glDisable(GL_CULL_FACE);
-    }
+    const bool blendWasEnabled = RenderCommand::IsBlendEnabled();
+    const bool cullWasEnabled = RenderCommand::IsCullFaceEnabled();
 
-    static uint32_t quadVAO = 0;
-    static uint32_t quadVBO = 0;
-    if (quadVAO == 0)
+    RenderCommand::SetBlendMode(true);
+    RenderCommand::SetBlendFunc(RendererAPI::BlendFactor::SrcAlpha, RendererAPI::BlendFactor::OneMinusSrcAlpha);
+    RenderCommand::SetCullMode(RendererAPI::CullMode::None);
+
+    RenderCommand::SetBlendFunc(RendererAPI::BlendFactor::SrcAlpha, RendererAPI::BlendFactor::OneMinusSrcAlpha);
+    RenderCommand::SetCullMode(RendererAPI::CullMode::None);
+
+    if (!m_Data->BillboardVAO)
     {
-        const float vertices[] = {
-            -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
-             0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-             0.5f,  0.5f, 0.0f, 1.0f, 1.0f,
-            -0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
+        float vertices[] = {
+            -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.5f,  -0.5f, 0.0f, 1.0f, 0.0f,
+            0.5f,  0.5f,  0.0f, 1.0f, 1.0f, -0.5f, 0.5f,  0.0f, 0.0f, 1.0f,
         };
+        uint32_t indices[] = {0, 1, 2, 2, 3, 0};
 
-        glGenVertexArrays(1, &quadVAO);
-        glGenBuffers(1, &quadVBO);
-        glBindVertexArray(quadVAO);
-        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), 0);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+        auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
+        vbo->SetLayout({{ShaderDataType::Float3, "a_Position"}, {ShaderDataType::Float2, "a_TexCoord"}});
+
+        m_Data->BillboardVAO = VertexArray::Create();
+        m_Data->BillboardVAO->AddVertexBuffer(vbo);
+        auto ibo = IndexBuffer::Create(indices, 6);
+        m_Data->BillboardVAO->SetIndexBuffer(ibo);
     }
 
-    glBindVertexArray(quadVAO);
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-    glBindVertexArray(0);
+    m_Data->BillboardVAO->Bind();
+    RenderCommand::DrawIndexed(m_Data->BillboardVAO, 6);
+    m_Data->BillboardVAO->Unbind();
 
-    if (cullWasEnabled)
+    RenderCommand::SetCullMode(cullWasEnabled ? RendererAPI::CullMode::Back : RendererAPI::CullMode::None);
+    RenderCommand::SetBlendMode(blendWasEnabled);
+}
+
+void Renderer::DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, const glm::vec4& color,
+                             bool useWireframe)
+{
+    glm::mat4 model = transform * glm::scale(glm::mat4(1.0f), size);
+    if (useWireframe && m_Data->Resources.WireCubeModel && !m_Data->Resources.WireCubeModel->Meshes.empty())
     {
-        glEnable(GL_CULL_FACE);
+        DrawMeshWire(m_Data->Resources.WireCubeModel->Meshes[0], color, model, true);
     }
-    if (!blendWasEnabled)
+    else if (m_Data->Resources.UnitCubeModel && !m_Data->Resources.UnitCubeModel->Meshes.empty())
     {
-        glDisable(GL_BLEND);
+        DrawMeshWire(m_Data->Resources.UnitCubeModel->Meshes[0], color, model, useWireframe);
     }
 }
 
-void Renderer::DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, const glm::vec4& color, bool useWireframe)
+void Renderer::DrawCapsuleWires(const glm::mat4& transform, float radius, float height, const glm::vec4& color,
+                                bool useWireframe)
 {
-    auto shaderAsset = m_Data->Shaders->LoadOrGet("ColliderDebug", "engine/resources/shaders/collider_debug.chshader");
-    if (!shaderAsset || !shaderAsset->GetShader()) return;
-
-    auto shader = shaderAsset->GetShader();
-    shader->Bind();
-    shader->SetMatrix("u_ViewProj", m_Data->CurrentProj * m_Data->CurrentView);
-    shader->SetMatrix("u_Transform", transform * glm::scale(glm::mat4(1.0f), size));
-    shader->SetVec4("u_Color", color);
-
-    if (useWireframe)
+    glm::mat4 model = transform * glm::scale(glm::mat4(1.0f), glm::vec3(radius, height, radius));
+    if (m_Data->Resources.UnitCapsuleModel)
     {
-        if (m_Data->Resources.WireCubeModel)
+        for (auto& mesh : m_Data->Resources.UnitCapsuleModel->Meshes)
         {
-            for (auto& mesh : m_Data->Resources.WireCubeModel->Meshes)
-            {
-                mesh.VAO->Bind();
-                glDrawElements(GL_LINES, mesh.VAO->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, 0);
-            }
+            DrawMeshWire(mesh, color, model, useWireframe);
         }
     }
-    else
-    {
-        if (m_Data->Resources.UnitCubeModel)
-        {
-            for (auto& mesh : m_Data->Resources.UnitCubeModel->Meshes)
-            {
-                mesh.VAO->Bind();
-                glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-            }
-        }
-    }
-}
-
-void Renderer::DrawCapsuleWires(const glm::mat4& transform, float radius, float height, const glm::vec4& color, bool useWireframe)
-{
-    // Simplified: Draw a box representing the capsule for now, until we add a proper capsule mesh
-    DrawCubeWires(transform, glm::vec3(radius * 2.0f, height, radius * 2.0f), color, useWireframe);
 }
 
 void Renderer::DrawSphereWires(const glm::mat4& transform, float radius, const glm::vec4& color, bool useWireframe)
 {
-    auto shaderAsset = m_Data->Shaders->LoadOrGet("ColliderDebug", "engine/resources/shaders/collider_debug.chshader");
-    if (!shaderAsset || !shaderAsset->GetShader()) return;
-
-    auto shader = shaderAsset->GetShader();
-    shader->Bind();
-    shader->SetMatrix("u_ViewProj", m_Data->CurrentProj * m_Data->CurrentView);
-    shader->SetMatrix("u_Transform", transform * glm::scale(glm::mat4(1.0f), glm::vec3(radius)));
-    shader->SetVec4("u_Color", color);
-
-    if (useWireframe)
-    {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    }
-    else
-    {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    }
-
+    glm::mat4 model = transform * glm::scale(glm::mat4(1.0f), glm::vec3(radius));
     if (m_Data->Resources.UnitSphereModel)
     {
         for (auto& mesh : m_Data->Resources.UnitSphereModel->Meshes)
         {
-            mesh.VAO->Bind();
-            glDrawElements(GL_TRIANGLES, mesh.VAO->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, 0);
+            DrawMeshWire(mesh, color, model, useWireframe);
         }
-    }
-    
-    // Always restore to FILL at the end of a single draw call if we switched to LINE
-    if (useWireframe)
-    {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 }
 
@@ -776,8 +769,15 @@ void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextu
         shader->Bind();
 
         float diagIntensity = 0.0f;
-        for (const auto& u : uniforms) { if (u.Name == "uIntensity") diagIntensity = u.Value[0]; }
-        if (diagIntensity > 0.001f) {
+        for (const auto& u : uniforms)
+        {
+            if (u.Name == "uIntensity")
+            {
+                diagIntensity = u.Value[0];
+            }
+        }
+        if (diagIntensity > 0.001f)
+        {
             CH_CORE_INFO("[RENDER DIAG] Applying shader '{}', Intensity={}", shaderAsset->GetPath(), diagIntensity);
         }
 
@@ -790,8 +790,8 @@ void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextu
         shader->SetVec3("viewPos", camera.Position);
 
         shader->SetFloat("uTimeF", (float)m_Data->Time.GetSeconds());
-        shader->SetFloat("uTime",  (float)m_Data->Time.GetSeconds()); // system uniform
-        shader->SetFloat("time",   (float)m_Data->Time.GetSeconds()); // alias for custom shaders
+        shader->SetFloat("uTime", (float)m_Data->Time.GetSeconds()); // system uniform
+        shader->SetFloat("time", (float)m_Data->Time.GetSeconds());  // alias for custom shaders
         shader->SetFloat("uExposure", m_Data->Lighting.CurrentLighting.Exposure);
         shader->SetFloat("uGamma", m_Data->Lighting.CurrentLighting.Gamma);
 
@@ -802,39 +802,43 @@ void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextu
         {
             switch (u.Type)
             {
-            case 0: shader->SetFloat(u.Name, u.Value[0]); break;
-            case 1: shader->SetVec2(u.Name, *(glm::vec2*)u.Value); break;
-            case 2: shader->SetVec3(u.Name, *(glm::vec3*)u.Value); break;
-            case 3: shader->SetVec4(u.Name, *(glm::vec4*)u.Value); break;
-            case 4: shader->SetVec4(u.Name, *(glm::vec4*)u.Value); break; // Color is Vec4
+            case 0:
+                shader->SetFloat(u.Name, u.Value[0]);
+                break;
+            case 1:
+                shader->SetVec2(u.Name, *(glm::vec2*)u.Value);
+                break;
+            case 2:
+                shader->SetVec3(u.Name, *(glm::vec3*)u.Value);
+                break;
+            case 3:
+                shader->SetVec4(u.Name, *(glm::vec4*)u.Value);
+                break;
+            case 4:
+                shader->SetVec4(u.Name, *(glm::vec4*)u.Value);
+                break; // Color is Vec4
             }
         }
 
         // 3. Bind Textures
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, screenTextureId);
+        RenderCommand::SetTexture(0, screenTextureId);
         shader->SetInt("texture0", 0);
 
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, depthTextureId);
+        RenderCommand::SetTexture(1, depthTextureId);
         shader->SetInt("texture1", 1);
 
-        // 4. Draw Fullscreen Quad
-        glDisable(GL_DEPTH_TEST);
-        glDisable(GL_CULL_FACE);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        RenderCommand::DisableDepthTest();
 
         if (m_Data->FullscreenQuadVAO)
         {
             m_Data->FullscreenQuadVAO->Bind();
-            RenderCommand::DrawIndexed(m_Data->FullscreenQuadVAO);
+            RenderCommand::DrawIndexed(m_Data->FullscreenQuadVAO, 6);
             m_Data->FullscreenQuadVAO->Unbind();
         }
 
-        glDisable(GL_BLEND);
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_CULL_FACE);
+        RenderCommand::SetBlendMode(false);
+        RenderCommand::EnableDepthTest();
+        RenderCommand::SetCullMode(RendererAPI::CullMode::Back);
     }
 }
 
@@ -917,6 +921,9 @@ void Renderer::InitializeResources()
     m_Data->Resources.UnitSphereModel = std::make_unique<Model>();
     m_Data->Resources.UnitSphereModel->Meshes.push_back(GeometryGenerator::GenerateSphere(1.0f, 32, 32));
 
+    m_Data->Resources.UnitCapsuleModel = std::make_unique<Model>();
+    m_Data->Resources.UnitCapsuleModel->Meshes.push_back(GeometryGenerator::GenerateCapsule(1.0f, 2.0f, 32, 32));
+
     m_Data->Resources.WireCubeModel = std::make_unique<Model>();
     m_Data->Resources.WireCubeModel->Meshes.push_back(GeometryGenerator::GenerateWireCube());
 }
@@ -933,17 +940,22 @@ void Renderer::CleanupResources()
 {
     m_Data->Resources.UnitCubeModel.reset();
     m_Data->Resources.UnitSphereModel.reset();
+    m_Data->Resources.UnitCapsuleModel.reset();
     m_Data->Resources.WireCubeModel.reset();
 }
 
-
-
 void Renderer::DrawSprite(uint32_t textureId, const glm::mat4& transform, const glm::vec4& tint, bool flipX, bool flipY)
 {
-    if (textureId == 0) return;
+    if (textureId == 0)
+    {
+        return;
+    }
 
     auto shaderAsset = m_Data->Shaders->LoadOrGet("Sprite", "resources/shaders/sprite.chshader");
-    if (!shaderAsset || !shaderAsset->GetShader()) return;
+    if (!shaderAsset || !shaderAsset->GetShader())
+    {
+        return;
+    }
 
     auto shader = shaderAsset->GetShader();
     shader->Bind();
@@ -953,34 +965,39 @@ void Renderer::DrawSprite(uint32_t textureId, const glm::mat4& transform, const 
     shader->SetVec4("u_Tint", tint);
     shader->SetVec2("u_Flip", glm::vec2(flipX ? 1.0f : 0.0f, flipY ? 1.0f : 0.0f));
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, textureId);
-    shader->SetInt("texture0", 0);
+    const bool blendWasEnabled = RenderCommand::IsBlendEnabled();
+    const bool cullWasEnabled = RenderCommand::IsCullFaceEnabled();
 
-    ApplyFogUniforms(shaderAsset);
+    RenderCommand::SetBlendMode(true);
+    RenderCommand::SetBlendFunc(RendererAPI::BlendFactor::SrcAlpha, RendererAPI::BlendFactor::OneMinusSrcAlpha);
+    RenderCommand::SetCullMode(RendererAPI::CullMode::None);
 
-    bool blendWasEnabled = glIsEnabled(GL_BLEND);
-    bool cullWasEnabled = glIsEnabled(GL_CULL_FACE);
-
-    if (!blendWasEnabled) glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    if (cullWasEnabled) glDisable(GL_CULL_FACE);
-
-    if (!m_Data->BillboardVAO)
+    if (!m_Data->SpriteVAO)
     {
-        auto mesh = GeometryGenerator::GenerateQuad(1.0f);
-        m_Data->BillboardVAO = mesh.VAO;
+        float vertices[] = {
+            -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.5f,  -0.5f, 0.0f, 1.0f, 0.0f,
+            0.5f,  0.5f,  0.0f, 1.0f, 1.0f, -0.5f, 0.5f,  0.0f, 0.0f, 1.0f,
+        };
+        uint32_t indices[] = {0, 1, 2, 2, 3, 0};
+
+        auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
+        vbo->SetLayout({{ShaderDataType::Float3, "a_Position"}, {ShaderDataType::Float2, "a_TexCoord"}});
+
+        m_Data->SpriteVAO = VertexArray::Create();
+        m_Data->SpriteVAO->AddVertexBuffer(vbo);
+        auto ibo = IndexBuffer::Create(indices, 6);
+        m_Data->SpriteVAO->SetIndexBuffer(ibo);
     }
 
-    if (m_Data->BillboardVAO)
+    if (m_Data->SpriteVAO)
     {
-        m_Data->BillboardVAO->Bind();
-        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-        m_Data->BillboardVAO->Unbind();
+        m_Data->SpriteVAO->Bind();
+        RenderCommand::DrawIndexed(m_Data->SpriteVAO, 6);
+        m_Data->SpriteVAO->Unbind();
     }
 
-    if (cullWasEnabled) glEnable(GL_CULL_FACE);
-    if (!blendWasEnabled) glDisable(GL_BLEND);
+    RenderCommand::SetCullMode(cullWasEnabled ? RendererAPI::CullMode::Back : RendererAPI::CullMode::None);
+    RenderCommand::SetBlendMode(blendWasEnabled);
 }
 
 } // namespace CHEngine
