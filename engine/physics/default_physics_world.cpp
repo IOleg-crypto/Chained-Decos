@@ -66,14 +66,14 @@ glm::vec3 DefaultPhysicsWorld::GetVelocity(PhysicsBodyHandle handle) const
 
 RaycastResult DefaultPhysicsWorld::Raycast(const glm::vec3& origin, const glm::vec3& direction, float maxDistance)
 {
-    // Тимчасова заглушка, поки ми не інтегруємо RaycastQuery сюди
+    // Temporary stub until RaycastQuery is integrated here
     return RaycastResult();
 }
 
 void DefaultPhysicsWorld::Step(float fixedDt)
 {
-    // Тут буде логіка симуляції (зараз порожня заглушка, 
-    // яка чекає на перенесення коду з CollisionCore та Dynamics)
+    // Simulation logic goes here (currently an empty stub 
+    // waiting for code migration from CollisionCore and Dynamics)
     for (auto& [handle, body] : m_Bodies)
     {
         if (!body.IsKinematic)

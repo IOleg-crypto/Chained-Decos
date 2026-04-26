@@ -24,13 +24,13 @@ uniform float fogEnd;
 // --- Single entry point ---
 vec4 ApplyFog(vec4 color, vec3 fragPos, vec3 viewPos, float time)
 {
-    // Early-out: tuман вимкнений
+    // Early-out: fog is disabled
     if (fogEnabled == 0) return color;
 
-    // 1. Відстань від камери до фрагмента (обидва у World Space)
+    // 1. Distance from camera to fragment (both in World Space)
     float dist = length(viewPos - fragPos);
 
-    // 2. Обчислення fogFactor (0 = без туману, 1 = повний туман)
+    // 2. Compute fogFactor (0 = no fog, 1 = full fog)
     float fogFactor = 0.0;
 
     if (fogMode == 0) // ── Linear ─────────────────────────────
@@ -45,7 +45,7 @@ vec4 ApplyFog(vec4 color, vec3 fragPos, vec3 viewPos, float time)
     else if (fogMode == 1) // ── Exponential ────────────────────
     {
         // fogFactor = 1 - e^(-dist * density)
-        // Додаємо max(0, dist - fogStart), щоб туман не починався від самої камери
+        // Add max(0, dist - fogStart) so fog doesn't start directly at the camera
         float d = max(0.0, dist - fogStart);
         fogFactor = 1.0 - exp(-(d * fogDensity));
     }
@@ -56,10 +56,10 @@ vec4 ApplyFog(vec4 color, vec3 fragPos, vec3 viewPos, float time)
         fogFactor = 1.0 - exp(-(d * d));
     }
 
-    // 3. Обмеження [0, 1]
+    // 3. Clamp to [0, 1]
     fogFactor = clamp(fogFactor, 0.0, 1.0);
 
-    // 4. Змішуємо колір об'єкта з кольором туману
+    // 4. Mix object color with fog color
     //    mix(a, b, t) = a*(1-t) + b*t
     return mix(color, fogColor, fogFactor);
 }

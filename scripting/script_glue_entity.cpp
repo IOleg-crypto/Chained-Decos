@@ -180,6 +180,35 @@ namespace CHEngine {
     }
     CH_ADD_INTERNAL_CALL(Entity, Entity_FindAllWithComponent_Ptr, Entity_FindAllWithComponent);
 
+    CH_SCRIPT_FUNC void AudioComponent_Play(uint64_t entityID) {
+        Entity entity = GetEntity(entityID);
+        if (entity && entity.HasComponent<AudioComponent>()) {
+            auto& audio = entity.GetComponent<AudioComponent>();
+            if (audio.SoundHandle != 0) {
+                glm::vec3 worldPos = {0,0,0};
+                if (entity.HasComponent<TransformComponent>()) {
+                    auto& transform = entity.GetComponent<TransformComponent>();
+                    worldPos = glm::vec3(transform.WorldTransform[3]);
+                }
+                Audio::Get().Play(audio.SoundHandle, audio.Volume, audio.Pitch, audio.Loop, audio.Spatialized, worldPos);
+                audio.IsPlaying = true;
+            }
+        }
+    }
+    CH_ADD_INTERNAL_CALL(AudioComponent, AudioComponent_Play_Ptr, AudioComponent_Play);
+
+    CH_SCRIPT_FUNC void AudioComponent_Stop(uint64_t entityID) {
+        Entity entity = GetEntity(entityID);
+        if (entity && entity.HasComponent<AudioComponent>()) {
+            auto& audio = entity.GetComponent<AudioComponent>();
+            if (audio.SoundHandle != 0 && audio.IsPlaying) {
+                Audio::Get().Stop(audio.SoundHandle);
+                audio.IsPlaying = false;
+            }
+        }
+    }
+    CH_ADD_INTERNAL_CALL(AudioComponent, AudioComponent_Stop_Ptr, AudioComponent_Stop);
+
     CH_SCRIPT_FUNC Coral::String TagComponent_GetTag(uint64_t entityID) {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<TagComponent>()) 

@@ -4,6 +4,7 @@
 #include "engine/core/assets/asset_manager.h"
 #include "engine/core/log.h"
 #include "engine/graphics/assets/model_asset.h"
+#include "engine/core/thread_pool.h"
 #include <glm/glm.hpp>
 
 namespace CHEngine
@@ -27,6 +28,7 @@ void BVHCache::Shutdown()
 
     std::lock_guard<std::mutex> lock(m_Mutex);
     m_ByPath.clear();
+    m_InProgress.clear();
     m_Stats = {};
     m_Initialized = false;
 }
@@ -57,25 +59,31 @@ std::shared_ptr<BVH> BVHCache::GetOrBuild(const std::string& path)
             ++m_Stats.Hits;
             return it->second;
         }
+
+        // Check if we are already building this BVH async
+        if (m_InProgress.find(path) != m_InProgress.end())
+        {
+            ++m_Stats.Misses;
+            return nullptr;
+        }
+
+        m_InProgress.insert(path);
         ++m_Stats.Misses;
     }
 
-    auto built = BuildFromModelAsset(asset);
-    if (!built)
-    {
-        return nullptr;
-    }
+    ThreadPool::Get().QueueTask([this, path, asset]() {
+        auto built = BuildFromModelAsset(asset);
+        
+        std::lock_guard<std::mutex> lock(m_Mutex);
+        if (built)
+        {
+            m_ByPath[path] = built;
+            ++m_Stats.Builds;
+        }
+        m_InProgress.erase(path);
+    });
 
-    std::lock_guard<std::mutex> lock(m_Mutex);
-    auto [it, inserted] = m_ByPath.emplace(path, built);
-    if (inserted)
-    {
-        ++m_Stats.Builds;
-        return built;
-    }
-
-    ++m_Stats.Hits;
-    return it->second;
+    return nullptr;
 }
 
 void BVHCache::Put(const std::string& path, std::shared_ptr<BVH> bvh)
@@ -109,6 +117,7 @@ void BVHCache::Clear()
 
     std::lock_guard<std::mutex> lock(m_Mutex);
     m_ByPath.clear();
+    m_InProgress.clear();
 }
 
 BVHCache::Stats BVHCache::GetStats() const
