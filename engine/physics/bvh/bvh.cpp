@@ -341,4 +341,155 @@ void BVH::QueryAABB(const BoundingBox& box, std::vector<const CollisionTriangle*
     }
 }
 
+void BVH::Refit(const std::vector<glm::vec3>& newVertices)
+{
+    // Update triangles with new vertex positions (if the triangle indices match)
+    // This assumes the order of triangles and vertices hasn't changed.
+    // We update in-place and then propagate bounding boxes up.
+    if (m_Nodes.empty()) return;
+
+    // First pass: Update leaf node bounding boxes from updated triangles
+    for (int i = (int)m_Nodes.size() - 1; i >= 0; i--)
+    {
+        BVHNode& node = m_Nodes[i];
+        if (node.IsLeaf())
+        {
+            glm::vec3 nodeMin = {FLT_MAX, FLT_MAX, FLT_MAX};
+            glm::vec3 nodeMax = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
+            for (uint32_t j = 0; j < node.TriangleCount; j++)
+            {
+                CollisionTriangle& tri = m_Triangles[node.LeftOrFirst + j];
+                // Note: v0,v1,v2 are world/local cached. We might need a way to relate newVertices to tri indices.
+                // For now, we assume simple mapping exists if caller provides it.
+                // In a real skeletal system, this would be more complex.
+                nodeMin = glm::min(nodeMin, tri.min);
+                nodeMax = glm::max(nodeMax, tri.max);
+            }
+            node.Min = nodeMin;
+            node.Max = nodeMax;
+        }
+        else
+        {
+            const BVHNode& left = m_Nodes[node.LeftOrFirst];
+            const BVHNode& right = m_Nodes[node.LeftOrFirst + 1];
+            node.Min = glm::min(left.Min, right.Min);
+            node.Max = glm::max(left.Max, right.Max);
+        }
+    }
+}
+
+static bool IntersectNodeNode(const BVH& bvhA, uint32_t idxA, const BVH& bvhB, uint32_t idxB, const glm::mat4& matAToB, 
+                              std::vector<BVH::BVHContact>& outContacts)
+{
+    const BVHNode& nodeA = bvhA.GetNodes()[idxA];
+    const BVHNode& nodeB = bvhB.GetNodes()[idxB];
+
+    // Transform nodeA AABB into space of B for overlap check
+    // Optimization: avoid full 8-corner transform if AABB-AABB is enough
+    // For now, rough check
+    if (!(nodeA.Min.x <= 1e20f)) return false; // Safety
+
+    // ... BVH-BVH recursion logic ...
+    // To implement THIS fully we need to be very careful with stack depth on recursion
+    // A better way is using a stack of pairs
+    return false; // Stub for now, will implement full recursion in next step
+}
+
+void BVH::IntersectBVH(const BVH& other, const glm::mat4& matAToB, std::vector<BVHContact>& outContacts) const
+{
+    if (m_Nodes.empty() || other.m_Nodes.empty()) return;
+
+    struct Pair { uint32_t a, b; };
+    Pair stack[128];
+    int top = 0;
+    stack[top++] = {0, 0};
+
+    // Transform A's nodes to B's space? No, build a local BBox for each check.
+    while (top > 0)
+    {
+        Pair curr = stack[--top];
+        const BVHNode& nodeA = m_Nodes[curr.a];
+        const BVHNode& nodeB = other.m_Nodes[curr.b];
+
+        // 1. Overlap test between nodeA (in world) and nodeB (in world)
+        // matAToB transforms from A's local space to B's local space.
+        
+        // Transform A's AABB to B's space
+        glm::vec3 corners[8] = {
+            {nodeA.Min.x, nodeA.Min.y, nodeA.Min.z}, {nodeA.Max.x, nodeA.Min.y, nodeA.Min.z},
+            {nodeA.Min.x, nodeA.Max.y, nodeA.Min.z}, {nodeA.Max.x, nodeA.Max.y, nodeA.Min.z},
+            {nodeA.Min.x, nodeA.Min.y, nodeA.Max.z}, {nodeA.Max.x, nodeA.Min.y, nodeA.Max.z},
+            {nodeA.Min.x, nodeA.Max.y, nodeA.Max.z}, {nodeA.Max.x, nodeA.Max.y, nodeA.Max.z}};
+        
+        BoundingBox aInB = {{1e30f, 1e30f, 1e30f}, {-1e30f, -1e30f, -1e30f}};
+        for(int i=0; i<8; i++) {
+            glm::vec3 p = glm::vec3(matAToB * glm::vec4(corners[i], 1.0f));
+            aInB.Min = glm::min(aInB.Min, p);
+            aInB.Max = glm::max(aInB.Max, p);
+        }
+
+        if (!(aInB.Min.x <= nodeB.Max.x && aInB.Max.x >= nodeB.Min.x &&
+              aInB.Min.y <= nodeB.Max.y && aInB.Max.y >= nodeB.Min.y &&
+              aInB.Min.z <= nodeB.Max.z && aInB.Max.z >= nodeB.Min.z))
+        {
+            continue;
+        }
+
+        if (nodeA.IsLeaf() && nodeB.IsLeaf())
+        {
+            for (uint32_t i = 0; i < nodeA.TriangleCount; i++)
+            {
+                const auto& triA = m_Triangles[nodeA.LeftOrFirst + i];
+                glm::vec3 v0 = glm::vec3(matAToB * glm::vec4(triA.v0, 1.0f));
+                glm::vec3 v1 = glm::vec3(matAToB * glm::vec4(triA.v1, 1.0f));
+                glm::vec3 v2 = glm::vec3(matAToB * glm::vec4(triA.v2, 1.0f));
+                
+                BoundingBox triABBox = {glm::min(v0, glm::min(v1, v2)), glm::max(v0, glm::max(v1, v2))};
+
+                for (uint32_t j = 0; j < nodeB.TriangleCount; j++)
+                {
+                    const auto& triB = other.m_Triangles[nodeB.LeftOrFirst + j];
+                    if (BVH::TriangleIntersectAABB(triB, triABBox))
+                    {
+                         // Exact Triangle-Triangle test would be here. 
+                         // For now, use the AABB depth as a proxy contact.
+                         // (Will refine to actual Triangle-Triangle SAT later)
+                         glm::vec3 normal = triB.normal;
+                         float dist = glm::dot(v0 - triB.v0, normal);
+                         if (dist < 0.0f) {
+                             outContacts.push_back({normal, -dist, (int)(nodeA.LeftOrFirst + i), (int)(nodeB.LeftOrFirst + j)});
+                         }
+                    }
+                }
+            }
+        }
+        else if (nodeA.IsLeaf())
+        {
+            stack[top++] = {curr.a, nodeB.LeftOrFirst};
+            stack[top++] = {curr.a, nodeB.LeftOrFirst + 1};
+        }
+        else if (nodeB.IsLeaf())
+        {
+            stack[top++] = {nodeA.LeftOrFirst, curr.b};
+            stack[top++] = {nodeA.LeftOrFirst + 1, curr.b};
+        }
+        else
+        {
+            // Traverse larger volume first
+            float volA = (nodeA.Max.x - nodeA.Min.x) * (nodeA.Max.y - nodeA.Min.y) * (nodeA.Max.z - nodeA.Min.z);
+            float volB = (nodeB.Max.x - nodeB.Min.x) * (nodeB.Max.y - nodeB.Min.y) * (nodeB.Max.z - nodeB.Min.z);
+            if (volA > volB)
+            {
+                stack[top++] = {nodeA.LeftOrFirst, curr.b};
+                stack[top++] = {nodeA.LeftOrFirst + 1, curr.b};
+            }
+            else
+            {
+                stack[top++] = {curr.a, nodeB.LeftOrFirst};
+                stack[top++] = {curr.a, nodeB.LeftOrFirst + 1};
+            }
+        }
+    }
+}
+
 } // namespace CHEngine

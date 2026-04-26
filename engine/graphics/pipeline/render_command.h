@@ -31,6 +31,36 @@ public:
     {
         s_RendererAPI->DrawIndexed(vertexArray, indexCount);
     }
+    
+    static void DrawIndexedInstanced(const std::shared_ptr<VertexArray>& vertexArray, uint32_t instanceCount, uint32_t indexCount = 0)
+    {
+        s_RendererAPI->DrawIndexedInstanced(vertexArray, instanceCount, indexCount);
+    }
+
+    static void DrawIndexedLines(const std::shared_ptr<VertexArray>& vertexArray, uint32_t indexCount = 0)
+    {
+        s_RendererAPI->DrawIndexedLines(vertexArray, indexCount);
+    }
+
+    static void DrawArrays(uint32_t vertexCount)
+    {
+        s_RendererAPI->DrawArrays(vertexCount);
+    }
+
+    static void DrawArraysInstanced(uint32_t vertexCount, uint32_t instanceCount)
+    {
+        s_RendererAPI->DrawArraysInstanced(vertexCount, instanceCount);
+    }
+
+    static void DrawLines(const std::shared_ptr<VertexArray>& vertexArray, uint32_t vertexCount)
+    {
+        s_RendererAPI->DrawLines(vertexArray, vertexCount);
+    }
+
+    static void SetTexture(uint32_t slot, uint32_t textureId, bool isCubemap = false)
+    {
+        s_RendererAPI->SetTexture(slot, textureId, isCubemap);
+    }
 
     // Removed empty DrawLine and DrawGrid stubs. Use Renderer::DrawLine/DrawGrid instead.
     static void SetCullMode(RendererAPI::CullMode mode)
@@ -50,9 +80,18 @@ public:
 
     static void EnableDepthTest() { s_RendererAPI->SetDepthTest(true); }
     static void DisableDepthTest() { s_RendererAPI->SetDepthTest(false); }
+    static void SetDepthTest(bool enabled) { s_RendererAPI->SetDepthTest(enabled); }
     static void EnableDepthMask() { s_RendererAPI->SetDepthMask(true); }
     static void DisableDepthMask() { s_RendererAPI->SetDepthMask(false); }
+    static void SetDepthMask(bool enabled) { s_RendererAPI->SetDepthMask(enabled); }
     static void SetBlendMode(bool enabled) { s_RendererAPI->SetBlendMode(enabled); }
+
+    static void SetPolygonMode(RendererAPI::PolygonMode mode) { s_RendererAPI->SetPolygonMode(mode); }
+    static void SetPolygonOffset(bool enabled, float factor = 0.0f, float units = 0.0f) { s_RendererAPI->SetPolygonOffset(enabled, factor, units); }
+
+    static bool IsDepthTestEnabled() { return s_RendererAPI->IsDepthTestEnabled(); }
+    static bool IsBlendEnabled() { return s_RendererAPI->IsBlendEnabled(); }
+    static bool IsCullFaceEnabled() { return s_RendererAPI->IsCullFaceEnabled(); }
 
 private:
     static std::unique_ptr<RendererAPI> s_RendererAPI;

@@ -16,9 +16,14 @@ OpenGLShader::OpenGLShader(const std::string& vsSource, const std::string& fsSou
         glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
         if (!success)
         {
-            char infoLog[512];
-            glGetShaderInfoLog(shader, 512, nullptr, infoLog);
-            CH_CORE_ERROR("Shader Compilation Error: {}", infoLog);
+            int maxLength = 0;
+            glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength);
+            std::vector<char> infoLog(maxLength);
+            glGetShaderInfoLog(shader, maxLength, &maxLength, &infoLog[0]);
+            
+            CH_CORE_ERROR("[Shader] {} Compilation Error:\n{}", (type == GL_VERTEX_SHADER ? "Vertex" : "Fragment"), infoLog.data());
+            
+            glDeleteShader(shader);
             return 0;
         }
         return shader;
@@ -38,9 +43,14 @@ OpenGLShader::OpenGLShader(const std::string& vsSource, const std::string& fsSou
     glGetProgramiv(m_RendererID, GL_LINK_STATUS, &success);
     if (!success)
     {
-        char infoLog[512];
-        glGetProgramInfoLog(m_RendererID, 512, nullptr, infoLog);
-        CH_CORE_ERROR("Shader Linking Error: {}", infoLog);
+        int maxLength = 0;
+        glGetProgramiv(m_RendererID, GL_INFO_LOG_LENGTH, &maxLength);
+        std::vector<char> infoLog(maxLength);
+        glGetProgramInfoLog(m_RendererID, maxLength, &maxLength, &infoLog[0]);
+        
+        CH_CORE_ERROR("[Shader] Linking Error:\n{}", infoLog.data());
+        
+        glDeleteProgram(m_RendererID);
         m_RendererID = 0;
         return;
     }

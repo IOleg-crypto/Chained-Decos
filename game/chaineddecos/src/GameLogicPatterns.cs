@@ -3,9 +3,9 @@ using CHEngine;
 
 namespace ChainedDecos.Scripts
 {
-    // --- 1. SINGLETON (Одинак) ---
-    // Керує загальним станом гри, рахунком та поточним режимом.
-    // Використовується як глобальна точка доступу.
+    // --- 1. SINGLETON ---
+    // Manages global game state, score, and current mode.
+    // Used as a global access point.
     // NOTE: See GameManager.cs for the actual implementation.
     public class GameManagerPattern : Script
     {
@@ -34,8 +34,8 @@ namespace ChainedDecos.Scripts
         }
     }
 
-    // --- 2. PROTOTYPE (Прототип) ---
-    // Дозволяє клонувати налаштування об'єктів (масштаб, модель) "на ходу".
+    // --- 2. PROTOTYPE ---
+    // Allows cloning object settings (scale, model) on the fly.
     public class CubePrototype
     {
         public Vector3 Scale;
@@ -47,19 +47,19 @@ namespace ChainedDecos.Scripts
             ModelPath = modelPath;
         }
 
-        // Повертає новий примірник прототипу (чистий C# Prototype)
+        // Returns a new instance of the prototype (pure C# Prototype)
         public CubePrototype Clone() => new CubePrototype(Scale, ModelPath);
 
-        // Застосовує параметри прототипу до існуючої сутності
+        // Applies prototype parameters to an existing entity
         public void ApplyTo(Entity target)
         {
             if (target == null || !target.IsValid) return;
 
-            // 1. Масштаб
+            // 1. Scale
             var transform = target.GetComponent<TransformComponent>();
             if (transform != null) transform.Scale = Scale;
 
-            // 2. Модель (якщо є)
+            // 2. Model (if present)
             var model = target.GetComponent<ModelComponent>();
             if (model == null && !string.IsNullOrEmpty(ModelPath))
                 model = target.AddComponent<ModelComponent>();
@@ -71,15 +71,15 @@ namespace ChainedDecos.Scripts
     }
 
     // --- 3. ABSTRACT FACTORY (Абстрактна фабрика) ---
-    // Інтерфейс для створення конфігурацій гри залежно від розширення/стилю.
-    // Зв'язує логіку з системними налаштуваннями (AppWindow) та сценами.
+    // Interface for creating game configurations depending on extension/style.
+    // Binds logic with system settings (AppWindow) and scenes.
     public interface IGameConfigFactory
     {
         void ConfigureWindow();
         string GetTargetScene();
     }
 
-    // Конкретна фабрика для "Classic" режиму (мале розширення)
+    // Concrete factory for "Classic" mode (low resolution)
     public class ClassicConfigFactory : IGameConfigFactory
     {
         public void ConfigureWindow()
@@ -93,7 +93,7 @@ namespace ChainedDecos.Scripts
         public string GetTargetScene() => "scenes/untitled100.chscene";
     }
 
-    // Конкретна фабрика для "Ultra" режиму (велике розширення, графічні налаштування)
+    // Concrete factory for "Ultra" mode (high resolution, graphics settings)
     public class UltraConfigFactory : IGameConfigFactory
     {
         public void ConfigureWindow()
@@ -107,36 +107,36 @@ namespace ChainedDecos.Scripts
         public string GetTargetScene() => "scenes/test_platform_scene.chscene";
     }
 
-    // --- usage: Скрипт-контролер для демонстрації шаблонів ---
+    // --- usage: Script controller for pattern demonstration ---
     public class PatternUsageController : Script
     {
         private IGameConfigFactory? _activeFactory;
         private CubePrototype _smallCube = new CubePrototype(new Vector3(0.5f, 0.5f, 0.5f), "assets/models/cube.obj");
         private CubePrototype _wallCube = new CubePrototype(new Vector3(1.0f, 5.0f, 10.0f), ""); // No model change for wall yet
 
-        public override void OnUpdate(float deltaTime) // Натискання клавіш для перевірки
+        public override void OnUpdate(float deltaTime) // Key presses for testing
         {
-            // 1. Тест Singleton (Пробіл)
+            // 1. Singleton Test (Space)
             if (Input.IsKeyPressed(Key.Space))
             {
                 GameManagerPattern.Instance.Score += 10;
                 Log.Info($"[Singleton Test] Score is now: {GameManagerPattern.Instance.Score}");
             }
 
-            // 2. Тест Abstract Factory (Клавіші 1 та 2)
+            // 2. Abstract Factory Test (Keys 1 and 2)
             if (Input.IsKeyPressed(Key.D1)) ApplyConfig(new ClassicConfigFactory());
             if (Input.IsKeyPressed(Key.D2)) ApplyConfig(new UltraConfigFactory());
 
-            // 3. Тест Prototype (Клавіша P - застосувати, Клавіша N - клонувати)
+            // 3. Prototype Test (P - apply, N - clone)
             if (Input.IsKeyPressed(Key.P))
             {
-                // Застосовуємо прототип стіни до поточного об'єкта
+                // Apply wall prototype to current object
                 _wallCube.ApplyTo(Entity);
             }
 
             if (Input.IsKeyPressed(Key.N))
             {
-                // Створюємо нову сутність як копію поточної і застосовуємо прототип "малого куба"
+                // Create new entity as a copy of current and apply "small cube" prototype
                 Entity? newEntity = Scene.CopyEntity(Entity);
                 if (newEntity != null)
                 {

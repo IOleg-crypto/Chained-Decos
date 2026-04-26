@@ -62,6 +62,9 @@ public:
     void Play(AudioHandle handle, float volume = 1.0f, float pitch = 1.0f, bool loop = false, bool spatial = false,
               const glm::vec3& pos = {0, 0, 0});
 
+    // Updates the position of all active spatialized sounds tracking this handle
+    void SetInstancePosition(AudioHandle handle, const glm::vec3& pos);
+
     // Stops any active instance that was loaded from the given path.
     void Stop(const std::string& filepath);
     void Stop(AudioHandle handle);

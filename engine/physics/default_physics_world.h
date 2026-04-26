@@ -8,10 +8,6 @@
 namespace CHEngine
 {
 
-// Перевірка: чи потрібно нам дійсно виносити ВСЕ з entt зараз?
-// Поки що DefaultPhysicsWorld буде адаптером, який може всередині мати спрощений реєстр 
-// або просто список тіл.
-
 struct DefaultPhysicsBody
 {
     PhysicsBodyHandle Handle;
