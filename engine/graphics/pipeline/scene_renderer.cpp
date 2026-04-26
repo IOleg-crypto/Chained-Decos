@@ -4,6 +4,8 @@
 #include "engine/core/assets/asset_manager.h"
 #include "engine/core/ch_assert.h"
 #include "engine/core/profiler.h"
+#include "engine/graphics/api/renderer_api.h"
+#include "engine/graphics/pipeline/render_command.h"
 #include "engine/graphics/assets/model_asset.h"
 #include "engine/graphics/assets/shader_asset.h"
 #include "engine/graphics/loaders/model_loader.h"
@@ -20,7 +22,6 @@
 #include "imgui.h"
 #include <GLFW/glfw3.h>
 #include <algorithm>
-#include <glad/gl.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <unordered_set>
@@ -52,7 +53,7 @@ void SceneRenderer::RenderScene(Scene* scene, const Camera3D& camera, float near
         return;
     }
 
-    glEnable(GL_DEPTH_TEST);
+    RenderCommand::EnableDepthTest();
 
     auto environment = scene->GetSettings().Environment;
     if (!environment)
@@ -148,8 +149,8 @@ void SceneRenderer::RenderModels(Scene* scene, const Camera3D& camera, float nea
     m_OpaqueQueue.clear();
     m_TransparentQueue.clear();
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    RenderCommand::SetBlendMode(true);
+    RenderCommand::SetBlendFunc(RendererAPI::BlendFactor::SrcAlpha, RendererAPI::BlendFactor::OneMinusSrcAlpha);
 
     CollectAndRenderItems(registry, frustum, camera.Position);
 
@@ -161,17 +162,17 @@ void SceneRenderer::RenderModels(Scene* scene, const Camera3D& camera, float nea
     // 1. Opaque Pass
     for (const auto& item : m_OpaqueQueue)
     {
-        DrawModel(item.Asset, item.Transform, item.Materials, item.BoneMatrices, item.ShaderOverride, item.CustomUniforms);
+        DrawModel(item.Asset, item.Transform, item.Materials, item.BoneMatrices, item.ShaderOverride, item.CustomUniforms, RenderPass::Opaque);
     }
 
     // 2. Transparent Pass
-    glDepthMask(GL_FALSE);
+    RenderCommand::DisableDepthMask();
     for (const auto& item : m_TransparentQueue)
     {
-        DrawModel(item.Asset, item.Transform, item.Materials, item.BoneMatrices, item.ShaderOverride, item.CustomUniforms);
+        DrawModel(item.Asset, item.Transform, item.Materials, item.BoneMatrices, item.ShaderOverride, item.CustomUniforms, RenderPass::Transparent);
     }
-    glDepthMask(GL_TRUE);
-    glDisable(GL_BLEND);
+    RenderCommand::EnableDepthMask();
+    RenderCommand::SetBlendMode(false);
 }
 
 void SceneRenderer::PrepareLights(entt::registry& registry, const Frustum& frustum)
@@ -279,15 +280,19 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
         }
 
         // Determine transparency and push to correct queue
-        bool isTransparent = false;
+        bool hasOpaque = false;
+        bool hasTransparent = false;
         const auto& model = modelAsset->GetModel();
         for (int i = 0; i < (int)model.Meshes.size(); ++i)
         {
             Material mat = ResolveMaterialForMesh(i, model, materials, modelAsset);
             if (mat.Transparent || mat.AlbedoColor.a < 0.99f)
             {
-                isTransparent = true;
-                break;
+                hasTransparent = true;
+            }
+            else
+            {
+                hasOpaque = true;
             }
         }
 
@@ -296,8 +301,8 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
         glm::vec3 worldPos = glm::vec3(transform.WorldTransform[3]);
         item.Distance = glm::length(cameraPos - worldPos);
 
-        if (isTransparent) m_TransparentQueue.push_back(std::move(item));
-        else m_OpaqueQueue.push_back(std::move(item));
+        if (hasTransparent) m_TransparentQueue.push_back(item);
+        if (hasOpaque) m_OpaqueQueue.push_back(std::move(item));
     }
 
     auto primView = registry.view<TransformComponent, PrimitiveComponent>();
@@ -364,23 +369,27 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
         item.CustomUniforms = uniforms;
 
         // Primitives are usually opaque, but let's check
-        bool isTransparent = false;
+        bool hasOpaque = false;
+        bool hasTransparent = false;
         const auto& model = primitive.Asset->GetModel();
         for (int i = 0; i < (int)model.Meshes.size(); ++i)
         {
             Material mat = ResolveMaterialForMesh(i, model, {}, primitive.Asset);
             if (mat.Transparent || mat.AlbedoColor.a < 0.99f)
             {
-                isTransparent = true;
-                break;
+                hasTransparent = true;
+            }
+            else
+            {
+                hasOpaque = true;
             }
         }
 
         glm::vec3 worldPos = glm::vec3(transform.WorldTransform[3]);
         item.Distance = glm::length(cameraPos - worldPos);
 
-        if (isTransparent) m_TransparentQueue.push_back(std::move(item));
-        else m_OpaqueQueue.push_back(std::move(item));
+        if (hasTransparent) m_TransparentQueue.push_back(item);
+        if (hasOpaque) m_OpaqueQueue.push_back(std::move(item));
     }
 }
 
@@ -401,7 +410,8 @@ void SceneRenderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, con
                               const std::vector<MaterialSlot>& materialSlotOverrides,
                               const std::vector<glm::mat4>& boneMatrices,
                               const std::shared_ptr<ShaderAsset>& shaderOverride,
-                              const std::vector<ShaderUniform>& shaderUniformOverrides)
+                              const std::vector<ShaderUniform>& shaderUniformOverrides,
+                              RenderPass pass)
 {
     if (!modelAsset || modelAsset->GetState() != AssetState::Ready)
     {
@@ -443,6 +453,10 @@ void SceneRenderer::DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, con
         m_CurrentStats.MeshCount++;
 
         Material material = ResolveMaterialForMesh(i, model, materialSlotOverrides, modelAsset);
+
+        bool isTransparent = material.Transparent || material.AlbedoColor.a < 0.99f;
+        if (pass == RenderPass::Opaque && isTransparent) continue;
+        if (pass == RenderPass::Transparent && !isTransparent) continue;
 
         BindShaderUniforms(activeShader.get(), boneMatrices, shaderUniformOverrides);
         BindMaterialUniforms(activeShader.get(), material, i, model, materialSlotOverrides);
@@ -582,8 +596,7 @@ void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Materia
     // 1. Albedo (texture0, Unit 0)
     if (albedoMap > 0)
     {
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, albedoMap);
+        RenderCommand::SetTexture(0, albedoMap);
         shader->SetInt("texture0", 0);
         shader->SetInt("useTexture", 1);
     }
@@ -596,8 +609,7 @@ void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Materia
     // 2. Metallic (texture1, Unit 1)
     if (metallicMap > 0)
     {
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, metallicMap);
+        RenderCommand::SetTexture(1, metallicMap);
         shader->SetInt("texture1", 1);
         shader->SetInt("useMetallicMap", 1);
         shader->SetInt("useRoughnessMap", 1); // GLTF packed map
@@ -611,8 +623,7 @@ void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Materia
     // 3. Normal (texture2, Unit 2)
     if (normalMap > 0)
     {
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, normalMap);
+        RenderCommand::SetTexture(2, normalMap);
         shader->SetInt("texture2", 2);
         shader->SetInt("useNormalMap", 1);
     }
@@ -624,16 +635,14 @@ void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Materia
     // 4. Roughness (texture3, Unit 3) - Often same as metallicMap in GLTF
     if (metallicMap > 0)
     {
-        glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_2D, metallicMap);
+        RenderCommand::SetTexture(3, metallicMap);
         shader->SetInt("texture3", 3);
     }
 
     // 5. Occlusion (texture4, Unit 4)
     if (occlusionMap > 0)
     {
-        glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_2D, occlusionMap);
+        RenderCommand::SetTexture(4, occlusionMap);
         shader->SetInt("texture4", 4);
         shader->SetInt("useOcclusionMap", 1);
     }
@@ -645,8 +654,7 @@ void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Materia
     // 6. Emissive (texture5, Unit 5)
     if (emissiveMap > 1)
     {
-        glActiveTexture(GL_TEXTURE5);
-        glBindTexture(GL_TEXTURE_2D, emissiveMap);
+        RenderCommand::SetTexture(5, emissiveMap);
         shader->SetInt("texture5", 5);
         shader->SetInt("useEmissiveTexture", 1);
     }
@@ -671,28 +679,25 @@ void SceneRenderer::RenderDebug(Scene* scene, const Camera3D& camera, const Scen
 
     auto& registry = scene->GetRegistry();
 
-    // Save current GL state
-    GLboolean depthTestEnabled = glIsEnabled(GL_DEPTH_TEST);
-    GLboolean blendEnabled = glIsEnabled(GL_BLEND);
-    GLint polygonMode[2];
-    glGetIntegerv(GL_POLYGON_MODE, polygonMode);
+    // Save current state
+    bool depthTestEnabled = RenderCommand::IsDepthTestEnabled();
+    bool blendEnabled = RenderCommand::IsBlendEnabled();
 
     // Setup for debug drawing
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    RenderCommand::DisableDepthTest();
+    RenderCommand::SetBlendMode(true);
+    RenderCommand::SetBlendFunc(RendererAPI::BlendFactor::SrcAlpha, RendererAPI::BlendFactor::OneMinusSrcAlpha);
     
-    // Use polygon offset to prevent z-fighting with the actual geometry
-    glEnable(GL_POLYGON_OFFSET_LINE);
-    glPolygonOffset(-1.0f, -1.0f);
+    // Polygon offset no longer needed since depth test is OFF
+    RenderCommand::SetPolygonOffset(false, 0.0f, 0.0f);
 
     if (options.SetCollisionWireframeMode == 1)
     {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        RenderCommand::SetPolygonMode(RendererAPI::PolygonMode::Line);
     }
     else
     {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        RenderCommand::SetPolygonMode(RendererAPI::PolygonMode::Fill);
     }
 
     // if (options.DrawGrid && scene->GetSettings().Mode == BackgroundMode::Environment3D)
@@ -715,118 +720,131 @@ void SceneRenderer::RenderDebug(Scene* scene, const Camera3D& camera, const Scen
         DrawSpawnDebug(registry);
     }
 
-    // Restore GL state
+    // Restore state
     if (depthTestEnabled)
     {
-        glEnable(GL_DEPTH_TEST);
+        RenderCommand::EnableDepthTest();
     }
     else
     {
-        glDisable(GL_DEPTH_TEST);
+        RenderCommand::DisableDepthTest();
     }
 
-    if (blendEnabled)
-    {
-        glEnable(GL_BLEND);
-    }
-    else
-    {
-        glDisable(GL_BLEND);
-    }
-
-    glPolygonMode(GL_FRONT_AND_BACK, polygonMode[0]);
-    glDisable(GL_POLYGON_OFFSET_LINE);
-    glBindVertexArray(0); // Unbind VAO
+    RenderCommand::SetBlendMode(blendEnabled);
+    RenderCommand::SetPolygonOffset(false);
 }
 
 void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRenderOptions& options)
 {
-    auto view = registry.view<TransformComponent, ColliderComponent>();
-    for (auto entity : view)
-    {
-        auto [transform, collider] = view.get<TransformComponent, ColliderComponent>(entity);
-        if (!collider.Enabled)
+    int mode = options.SetCollisionWireframeMode;
+    bool drawSolid = (mode == 1 || mode == 2);
+    bool drawWire  = (mode == 0 || mode == 2);
+
+    auto drawPass = [&](bool isWireframe) {
+        auto view = registry.view<TransformComponent, ColliderComponent>();
+        for (auto entity : view)
         {
-            continue;
-        }
-        glm::vec4 color = collider.IsColliding ? glm::vec4(1, 0, 0, 0.6f) : glm::vec4(0, 1, 0, 0.6f);
-        if (collider.Type == ColliderType::Box || collider.Type == ColliderType::Sphere ||
-            collider.Type == ColliderType::Capsule)
-        {
-            // Extract scale from WorldTransform column lengths
-            glm::vec3 entityScale(glm::length(glm::vec3(transform.WorldTransform[0])),
-                                  glm::length(glm::vec3(transform.WorldTransform[1])),
-                                  glm::length(glm::vec3(transform.WorldTransform[2])));
-
-            // Build a rotation-only transform (remove scale from matrix)
-            glm::mat4 rotTrans = transform.WorldTransform;
-            if (entityScale.x > 0.0001f)
+            auto [transform, collider] = view.get<TransformComponent, ColliderComponent>(entity);
+            if (!collider.Enabled)
             {
-                rotTrans[0] = glm::vec4(glm::vec3(rotTrans[0]) / entityScale.x, 0.0f);
+                continue;
             }
-            if (entityScale.y > 0.0001f)
+            
+            glm::vec4 color = collider.IsColliding ? glm::vec4(1, 0, 0, 0.6f) : glm::vec4(0, 1, 0, 0.6f);
+            if (isWireframe)
             {
-                rotTrans[1] = glm::vec4(glm::vec3(rotTrans[1]) / entityScale.y, 0.0f);
-            }
-            if (entityScale.z > 0.0001f)
-            {
-                rotTrans[2] = glm::vec4(glm::vec3(rotTrans[2]) / entityScale.z, 0.0f);
+                color.a = 1.0f; // Ensure wires are fully opaque
             }
 
-            glm::mat4 baseTransform = rotTrans * glm::translate(glm::mat4(1.0f), collider.Offset);
+            if (collider.Type == ColliderType::Box || collider.Type == ColliderType::Sphere ||
+                collider.Type == ColliderType::Capsule)
+            {
+                // Extract scale from WorldTransform column lengths
+                glm::vec3 entityScale(glm::length(glm::vec3(transform.WorldTransform[0])),
+                                      glm::length(glm::vec3(transform.WorldTransform[1])),
+                                      glm::length(glm::vec3(transform.WorldTransform[2])));
 
-            bool useWireframe = (options.SetCollisionWireframeMode == 1);
-            if (collider.Type == ColliderType::Box)
-            {
-                Renderer::Get().DrawCubeWires(baseTransform, collider.Size * entityScale, color, useWireframe);
-            }
-            else if (collider.Type == ColliderType::Sphere)
-            {
-                // For sphere, we use the maximum component of the entity scale for the overall radius multiplier
-                float maxScale = glm::max(entityScale.x, glm::max(entityScale.y, entityScale.z));
-                Renderer::Get().DrawSphereWires(baseTransform, collider.Radius * maxScale, color, useWireframe);
-            }
-            else if (collider.Type == ColliderType::Capsule)
-            {
-                float maxScale = glm::max(entityScale.x, glm::max(entityScale.y, entityScale.z));
-                Renderer::Get().DrawCapsuleWires(baseTransform, collider.Radius * maxScale,
-                                                 collider.Height * entityScale.y, color, useWireframe);
-            }
-        }
-        else if (collider.Type == ColliderType::Mesh)
-        {
-            AssetHandle modelHandle = collider.ModelHandle;
-
-            // Fallback to visual mesh if AutoCalculate is enable and handle is 0
-            if (modelHandle == 0 && collider.AutoCalculate && registry.all_of<ModelComponent>(entity))
-            {
-                auto& mc = registry.get<ModelComponent>(entity);
-                auto asset = AssetManager::Get().Get<ModelAsset>(mc.ModelPath);
-                if (asset)
+                // Build a rotation-only transform (remove scale from matrix)
+                glm::mat4 rotTrans = transform.WorldTransform;
+                if (entityScale.x > 0.0001f)
                 {
-                    modelHandle = asset->GetID();
+                    rotTrans[0] = glm::vec4(glm::vec3(rotTrans[0]) / entityScale.x, 0.0f);
+                }
+                if (entityScale.y > 0.0001f)
+                {
+                    rotTrans[1] = glm::vec4(glm::vec3(rotTrans[1]) / entityScale.y, 0.0f);
+                }
+                if (entityScale.z > 0.0001f)
+                {
+                    rotTrans[2] = glm::vec4(glm::vec3(rotTrans[2]) / entityScale.z, 0.0f);
+                }
+
+                glm::mat4 baseTransform = rotTrans * glm::translate(glm::mat4(1.0f), collider.Offset);
+
+                if (collider.Type == ColliderType::Box)
+                {
+                    Renderer::Get().DrawCubeWires(baseTransform, collider.Size * entityScale, color, isWireframe);
+                }
+                else if (collider.Type == ColliderType::Sphere)
+                {
+                    // For sphere, we use the maximum component of the entity scale for the overall radius multiplier
+                    float maxScale = glm::max(entityScale.x, glm::max(entityScale.y, entityScale.z));
+                    Renderer::Get().DrawSphereWires(baseTransform, collider.Radius * maxScale, color, isWireframe);
+                }
+                else if (collider.Type == ColliderType::Capsule)
+                {
+                    float maxScale = glm::max(entityScale.x, glm::max(entityScale.y, entityScale.z));
+                    Renderer::Get().DrawCapsuleWires(baseTransform, collider.Radius * maxScale,
+                                                     collider.Height * entityScale.y, color, isWireframe);
                 }
             }
-
-            if (modelHandle != 0)
+            else if (collider.Type == ColliderType::Mesh)
             {
-                auto modelAsset = AssetManager::Get().Get<ModelAsset>(modelHandle);
-                if (modelAsset && modelAsset->IsReady())
+                AssetHandle modelHandle = collider.ModelHandle;
+
+                // Fallback to visual mesh if AutoCalculate is enable and handle is 0
+                if (modelHandle == 0 && collider.AutoCalculate && registry.all_of<ModelComponent>(entity))
                 {
-                    const auto& model = modelAsset->GetModel();
-                    const auto& instances = modelAsset->GetInstances();
-                    bool useWireframe = (options.SetCollisionWireframeMode == 0);
-                    for (const auto& inst : instances)
+                    auto& mc = registry.get<ModelComponent>(entity);
+                    auto asset = AssetManager::Get().Get<ModelAsset>(mc.ModelPath);
+                    if (asset)
                     {
-                        if (inst.meshIndex >= 0 && inst.meshIndex < (int)model.Meshes.size())
+                        modelHandle = asset->GetID();
+                    }
+                }
+
+                if (modelHandle != 0)
+                {
+                    auto modelAsset = AssetManager::Get().Get<ModelAsset>(modelHandle);
+                    if (modelAsset && modelAsset->IsReady())
+                    {
+                        const auto& model = modelAsset->GetModel();
+                        const auto& instances = modelAsset->GetInstances();
+                        
+                        for (const auto& inst : instances)
                         {
-                            Renderer::Get().DrawMeshWire(model.Meshes[inst.meshIndex], color,
-                                                         transform.WorldTransform * inst.localTransform, useWireframe);
+                            if (inst.meshIndex >= 0 && inst.meshIndex < (int)model.Meshes.size())
+                            {
+                                Renderer::Get().DrawMeshWire(model.Meshes[inst.meshIndex], color,
+                                                             transform.WorldTransform * inst.localTransform, isWireframe);
+                            }
                         }
                     }
                 }
             }
         }
+    };
+
+    // First draw solid geometries
+    if (drawSolid)
+    {
+        drawPass(false);
+    }
+    
+    // Then draw wireframe overlays on top
+    if (drawWire)
+    {
+        drawPass(true);
     }
 }
 

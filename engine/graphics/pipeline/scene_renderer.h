@@ -13,6 +13,13 @@ namespace CHEngine
 {
 struct Frustum;
 
+enum class RenderPass
+{
+    Opaque,
+    Transparent,
+    Both
+};
+
 // Per-render-pass toggles for runtime and editor scene rendering.
 struct SceneRenderOptions
 {
@@ -84,7 +91,8 @@ private:
                    const std::vector<MaterialSlot>& materialSlotOverrides = {},
                    const std::vector<glm::mat4>& boneMatrices = {},
                    const std::shared_ptr<ShaderAsset>& shaderOverride = nullptr,
-                   const std::vector<ShaderUniform>& shaderUniformOverrides = {});
+                   const std::vector<ShaderUniform>& shaderUniformOverrides = {},
+                   RenderPass pass = RenderPass::Both);
 
     Material ResolveMaterialForMesh(int meshIndex, const Model& model,
                                    const std::vector<MaterialSlot>& materialSlotOverrides,
