@@ -35,22 +35,29 @@ void SceneAudioSystem::Update(Scene* scene, Timestep ts)
     for (auto entity : audioView)
     {
         auto& audio = audioView.get<AudioComponent>(entity);
-        if (audio.PlayOnStart && !audio.IsPlaying && !audio.SoundPath.empty())
+        
+        // 1. Ensure the audio is loaded regardless of PlayOnStart so C# scripts can play it manually.
+        if (!audio.SoundPath.empty() && (audio.SoundHandle == 0 || !Audio::Get().IsSoundLoaded(audio.SoundHandle)))
         {
-            if (audio.SoundHandle == 0 || !Audio::Get().IsSoundLoaded(audio.SoundHandle))
-            {
-                audio.SoundHandle = Audio::Get().LoadSound(audio.SoundPath);
-            }
-            
-            if (audio.SoundHandle != 0)
-            {
-                auto& transform = audioView.get<TransformComponent>(entity);
-                glm::vec3 worldPos = glm::vec3(transform.WorldTransform[3]);
+            audio.SoundHandle = Audio::Get().LoadSound(audio.SoundPath);
+        }
 
-                Audio::Get().Play(audio.SoundHandle, audio.Volume, audio.Pitch, audio.Loop, audio.Spatialized,
-                                  worldPos);
-                audio.IsPlaying = true;
-            }
+        // 2. Autoplay if requested
+        if (audio.PlayOnStart && !audio.IsPlaying && audio.SoundHandle != 0)
+        {
+            auto& transform = audioView.get<TransformComponent>(entity);
+            glm::vec3 worldPos = glm::vec3(transform.WorldTransform[3]);
+
+            Audio::Get().Play(audio.SoundHandle, audio.Volume, audio.Pitch, audio.Loop, audio.Spatialized,
+                                worldPos);
+            audio.IsPlaying = true;
+        }
+        // 2. Track Audio Positions constantly if playing and spatialized
+        else if (audio.IsPlaying && audio.Spatialized && audio.SoundHandle != 0)
+        {
+            auto& transform = audioView.get<TransformComponent>(entity);
+            glm::vec3 worldPos = glm::vec3(transform.WorldTransform[3]);
+            Audio::Get().SetInstancePosition(audio.SoundHandle, worldPos);
         }
     }
 }

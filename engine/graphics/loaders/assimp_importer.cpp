@@ -1,6 +1,7 @@
 #include "engine/graphics/loaders/assimp_importer.h"
 #include "engine/core/log.h"
 #include "engine/core/profiler.h"
+#include "engine/core/thread_pool.h"
 #include <algorithm>
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
@@ -12,63 +13,10 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <stb_image.h>
-#include <thread>
 #include <unordered_map>
 
 namespace CHEngine
 {
-template <typename Fn> static void ParallelFor(uint32_t count, Fn&& fn)
-{
-    if (count <= 1)
-    {
-        for (uint32_t i = 0; i < count; ++i)
-        {
-            fn(i);
-        }
-        return;
-    }
-
-    unsigned int hw = std::thread::hardware_concurrency();
-    if (hw == 0)
-    {
-        hw = 1;
-    }
-
-    const uint32_t workers = std::min<uint32_t>(count, hw);
-    if (workers <= 1)
-    {
-        for (uint32_t i = 0; i < count; ++i)
-        {
-            fn(i);
-        }
-        return;
-    }
-
-    std::atomic<uint32_t> next{0};
-    std::vector<std::thread> threads;
-    threads.reserve(workers);
-
-    for (uint32_t t = 0; t < workers; ++t)
-    {
-        threads.emplace_back([&]() {
-            while (true)
-            {
-                const uint32_t idx = next.fetch_add(1, std::memory_order_relaxed);
-                if (idx >= count)
-                {
-                    break;
-                }
-                fn(idx);
-            }
-        });
-    }
-
-    for (auto& thread : threads)
-    {
-        thread.join();
-    }
-}
-
 static bool IsSupportedAssimpExtension(const std::string& ext)
 {
     return ext == ".gltf" || ext == ".glb" || ext == ".obj";
@@ -122,10 +70,6 @@ static bool DecodeEmbeddedTexture(const aiTexture* texture, EmbeddedTextureData&
 // --- Minimalist Conversion Helpers ---
 static glm::mat4 ToMat4(const aiMatrix4x4& m)
 {
-    // Assimp stores matrices in row-major memory.
-    // glm::make_mat4 reads 16 floats and treats them as 4 columns (column-major).
-    // If we don't transpose, we get the transpose of the intended matrix (translation in the last row).
-    // Thus, we must transpose to get the logical matrix into GLM's column-major memory.
     return glm::transpose(glm::make_mat4(&m.a1));
 }
 
@@ -133,34 +77,142 @@ static glm::vec3 ToVec3(const aiVector3D& v)
 {
     return {v.x, v.y, v.z};
 }
-static glm::vec2 ToVec2(const aiVector3D& v)
-{
-    return {v.x, v.y};
-}
+
 static glm::quat ToQuat(const aiQuaternion& q)
 {
     return {q.w, q.x, q.y, q.z};
 }
+
 static glm::vec4 ToColor(const aiColor4D& c)
 {
     return {c.r, c.g, c.b, c.a};
 }
 
+static glm::vec3 InterpolatePosition(double time, const aiNodeAnim* channel, unsigned int& lastKey,
+                                     const glm::vec3& defaultVal)
+{
+    if (channel->mNumPositionKeys == 0)
+    {
+        return defaultVal;
+    }
+    if (channel->mNumPositionKeys == 1)
+    {
+        return ToVec3(channel->mPositionKeys[0].mValue);
+    }
+
+    unsigned int p1 = lastKey, p2 = lastKey;
+    for (unsigned int k = lastKey; k < channel->mNumPositionKeys - 1; ++k)
+    {
+        if (time < channel->mPositionKeys[k + 1].mTime)
+        {
+            p1 = k;
+            p2 = k + 1;
+            lastKey = k;
+            break;
+        }
+        p1 = k;
+        p2 = k + 1;
+    }
+
+    if (time >= channel->mPositionKeys[channel->mNumPositionKeys - 1].mTime)
+    {
+        return ToVec3(channel->mPositionKeys[channel->mNumPositionKeys - 1].mValue);
+    }
+
+    double dt = channel->mPositionKeys[p2].mTime - channel->mPositionKeys[p1].mTime;
+    float factor = (dt > 0.0) ? (float)((time - channel->mPositionKeys[p1].mTime) / dt) : 0.0f;
+    return glm::mix(ToVec3(channel->mPositionKeys[p1].mValue), ToVec3(channel->mPositionKeys[p2].mValue), factor);
+}
+
+static glm::quat InterpolateRotation(double time, const aiNodeAnim* channel, unsigned int& lastKey,
+                                     const glm::quat& defaultVal)
+{
+    if (channel->mNumRotationKeys == 0)
+    {
+        return defaultVal;
+    }
+    if (channel->mNumRotationKeys == 1)
+    {
+        return ToQuat(channel->mRotationKeys[0].mValue);
+    }
+
+    unsigned int p1 = lastKey, p2 = lastKey;
+    for (unsigned int k = lastKey; k < channel->mNumRotationKeys - 1; ++k)
+    {
+        if (time < channel->mRotationKeys[k + 1].mTime)
+        {
+            p1 = k;
+            p2 = k + 1;
+            lastKey = k;
+            break;
+        }
+        p1 = k;
+        p2 = k + 1;
+    }
+
+    if (time >= channel->mRotationKeys[channel->mNumRotationKeys - 1].mTime)
+    {
+        return ToQuat(channel->mRotationKeys[channel->mNumRotationKeys - 1].mValue);
+    }
+
+    double dt = channel->mRotationKeys[p2].mTime - channel->mRotationKeys[p1].mTime;
+    float factor = (dt > 0.0) ? (float)((time - channel->mRotationKeys[p1].mTime) / dt) : 0.0f;
+
+    aiQuaternion interpolated;
+    aiQuaternion::Interpolate(interpolated, channel->mRotationKeys[p1].mValue, channel->mRotationKeys[p2].mValue,
+                              factor);
+    return ToQuat(interpolated);
+}
+
+static glm::vec3 InterpolateScale(double time, const aiNodeAnim* channel, unsigned int& lastKey,
+                                  const glm::vec3& defaultVal)
+{
+    if (channel->mNumScalingKeys == 0)
+    {
+        return defaultVal;
+    }
+    if (channel->mNumScalingKeys == 1)
+    {
+        return ToVec3(channel->mScalingKeys[0].mValue);
+    }
+
+    unsigned int p1 = lastKey, p2 = lastKey;
+    for (unsigned int k = lastKey; k < channel->mNumScalingKeys - 1; ++k)
+    {
+        if (time < channel->mScalingKeys[k + 1].mTime)
+        {
+            p1 = k;
+            p2 = k + 1;
+            lastKey = k;
+            break;
+        }
+        p1 = k;
+        p2 = k + 1;
+    }
+
+    if (time >= channel->mScalingKeys[channel->mNumScalingKeys - 1].mTime)
+    {
+        return ToVec3(channel->mScalingKeys[channel->mNumScalingKeys - 1].mValue);
+    }
+
+    double dt = channel->mScalingKeys[p2].mTime - channel->mScalingKeys[p1].mTime;
+    float factor = (dt > 0.0) ? (float)((time - channel->mScalingKeys[p1].mTime) / dt) : 0.0f;
+    return glm::mix(ToVec3(channel->mScalingKeys[p1].mValue), ToVec3(channel->mScalingKeys[p2].mValue), factor);
+}
+
 PendingModelData AssimpImporter::Import(const std::filesystem::path& path, int samplingFPS)
 {
     CH_PROFILE_FUNCTION();
-
     PendingModelData data{};
+
     try
     {
         Assimp::Importer importer;
         std::string exts;
         importer.GetExtensionList(exts);
         CH_CORE_INFO("AssimpImporter: Supported extensions: {0}", exts);
-
         CH_CORE_INFO("AssimpImporter: Attempting to import '{0}'", path.string());
 
-        // Match flags and properties from the develop branch for consistency
         importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
         importer.SetPropertyInteger(AI_CONFIG_PP_SLM_VERTEX_LIMIT, 65535);
 
@@ -176,20 +228,16 @@ PendingModelData AssimpImporter::Import(const std::filesystem::path& path, int s
 
         unsigned int flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_LimitBoneWeights |
                              aiProcess_JoinIdenticalVertices | aiProcess_SortByPType | aiProcess_CalcTangentSpace |
-                             aiProcess_SplitLargeMeshes | aiProcess_ImproveCacheLocality |
-                             aiProcess_ValidateDataStructure | aiProcess_FindInvalidData;
+                             aiProcess_SplitLargeMeshes | aiProcess_ImproveCacheLocality;
 
-        // GLTF/GLB already stores UVs with the correct top-left origin for OpenGL sampling.
-        // Adding aiProcess_FlipUVs would flip them a SECOND time → upside-down textures.
-        // Only apply it for formats that need it (OBJ, FBX, etc.).
         if (ext != ".gltf" && ext != ".glb")
         {
             flags |= aiProcess_FlipUVs;
         }
 
         const aiScene* scene = nullptr;
-
         CH_CORE_INFO("AssimpImporter: Invoking ReadFile for '{0}'", path.string());
+
         try
         {
             scene = importer.ReadFile(path.string(), flags);
@@ -208,8 +256,6 @@ PendingModelData AssimpImporter::Import(const std::filesystem::path& path, int s
         {
             CH_CORE_WARN("AssimpImporter: ReadFile failed for '{0}': {1}. Trying memory loading as fallback...",
                          path.string(), importer.GetErrorString());
-
-            // "Robust-Light" Loading Strategy: Read to memory with padding to avoid corruption issues
             std::ifstream file(path, std::ios::binary | std::ios::ate);
             if (file.is_open())
             {
@@ -238,535 +284,17 @@ PendingModelData AssimpImporter::Import(const std::filesystem::path& path, int s
             }
         }
 
-        if (!scene)
+        if (!scene || !scene->mRootNode)
         {
             CH_CORE_ERROR("Assimp Model Load Failed: {} | Error: {}", path.filename().string(),
                           importer.GetErrorString());
             return data;
         }
 
-        if (!scene->mRootNode)
-        {
-            CH_CORE_ERROR("Assimp Model Load Failed: {} | Error: scene has no root node", path.filename().string());
-            return data;
-        }
-
-        // --- 1. Process Hierarchy & Bind Poses ---
-        std::filesystem::path modelDir = path.parent_path();
-
-        {
-            CH_PROFILE_SCOPE("AssimpImporter::ProcessHierarchy");
-            std::function<void(aiNode*, int)> processNode = [&](aiNode* node, int parentIdx) -> void {
-                if (!node)
-                {
-                    return;
-                }
-
-                int currentIdx = (int)data.nodeNames.size();
-                data.nodeNames.push_back(node->mName.C_Str());
-                data.nodeParents.push_back(parentIdx);
-
-                glm::mat4 local = ToMat4(node->mTransformation);
-                data.nodeLocalTransforms.push_back(local);
-                data.globalBindPoses.push_back((parentIdx == -1) ? local : data.globalBindPoses[parentIdx] * local);
-
-                for (unsigned int i = 0; i < node->mNumMeshes; ++i)
-                {
-                    unsigned int meshIndex = node->mMeshes[i];
-                    if (meshIndex < scene->mNumMeshes)
-                    {
-                        data.instances.push_back({(int)meshIndex, data.globalBindPoses[currentIdx]});
-                    }
-                }
-
-                for (unsigned int i = 0; i < node->mNumChildren; ++i)
-                {
-                    processNode(node->mChildren[i], currentIdx);
-                }
-            };
-            processNode(scene->mRootNode, -1);
-        }
-        data.nodeCount = (int)data.nodeNames.size();
-
-        std::unordered_map<std::string, int> nameToIndex;
-        nameToIndex.reserve(data.nodeNames.size());
-        for (int i = 0; i < (int)data.nodeNames.size(); ++i)
-        {
-            nameToIndex[data.nodeNames[i]] = i;
-        }
-
-        // --- 2. Process Meshes ---
-        data.meshes.resize(scene->mNumMeshes);
-        std::vector<std::vector<std::pair<int, glm::mat4>>> meshOffsetWrites(scene->mNumMeshes);
-
-        {
-            CH_PROFILE_SCOPE("AssimpImporter::ProcessMeshes");
-            ParallelFor(scene->mNumMeshes, [&](uint32_t m) {
-                aiMesh* am = scene->mMeshes[m];
-                RawMesh rm;
-                rm.materialIndex = am->mMaterialIndex;
-
-                rm.vertices.reserve((size_t)am->mNumVertices * 3);
-                if (am->mTextureCoords[0])
-                {
-                    rm.texcoords.reserve((size_t)am->mNumVertices * 2);
-                }
-                if (am->mNormals)
-                {
-                    rm.normals.reserve((size_t)am->mNumVertices * 3);
-                }
-                rm.indices.reserve((size_t)am->mNumFaces * 3);
-
-                for (unsigned int v = 0; v < am->mNumVertices; ++v)
-                {
-                    rm.vertices.insert(rm.vertices.end(), {am->mVertices[v].x, am->mVertices[v].y, am->mVertices[v].z});
-                    if (am->mTextureCoords[0])
-                    {
-                        rm.texcoords.insert(rm.texcoords.end(),
-                                            {am->mTextureCoords[0][v].x, am->mTextureCoords[0][v].y});
-                    }
-                    if (am->mNormals)
-                    {
-                        rm.normals.insert(rm.normals.end(), {am->mNormals[v].x, am->mNormals[v].y, am->mNormals[v].z});
-                    }
-                }
-
-                for (unsigned int f = 0; f < am->mNumFaces; ++f)
-                {
-                    const aiFace& face = am->mFaces[f];
-                    if (face.mNumIndices != 3)
-                    {
-                        continue;
-                    }
-
-                    rm.indices.insert(rm.indices.end(), {face.mIndices[0], face.mIndices[1], face.mIndices[2]});
-                }
-
-                // Calculate bounds
-                rm.MinBounds = { FLT_MAX, FLT_MAX, FLT_MAX };
-                rm.MaxBounds = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
-                for (size_t v = 0; v < rm.vertices.size(); v += 3)
-                {
-                    glm::vec3 pos = { rm.vertices[v], rm.vertices[v + 1], rm.vertices[v + 2] };
-                    rm.MinBounds = glm::min(rm.MinBounds, pos);
-                    rm.MaxBounds = glm::max(rm.MaxBounds, pos);
-                }
-
-                // Bones & Weights
-                if (am->mNumBones > 0)
-                {
-                    rm.joints.resize((size_t)am->mNumVertices * 4, 0);
-                    rm.weights.resize((size_t)am->mNumVertices * 4, 0.0f);
-                    std::vector<int> jointCounts(am->mNumVertices, 0);
-                    auto& offsetWrites = meshOffsetWrites[m];
-                    offsetWrites.reserve(am->mNumBones);
-
-                    for (unsigned int b = 0; b < am->mNumBones; ++b)
-                    {
-                        aiBone* bone = am->mBones[b];
-                        auto boneIt = nameToIndex.find(bone->mName.C_Str());
-                        if (boneIt == nameToIndex.end())
-                        {
-                            continue;
-                        }
-
-                        const int boneIdx = boneIt->second;
-                        offsetWrites.emplace_back(boneIdx, ToMat4(bone->mOffsetMatrix));
-
-                        for (unsigned int w = 0; w < bone->mNumWeights; ++w)
-                        {
-                            const int vIdx = bone->mWeights[w].mVertexId;
-                            if (vIdx < 0 || vIdx >= (int)am->mNumVertices)
-                            {
-                                continue;
-                            }
-
-                            if (jointCounts[vIdx] < 4)
-                            {
-                                const int slot = vIdx * 4 + jointCounts[vIdx]++;
-                                rm.joints[slot] = (unsigned char)boneIdx;
-                                rm.weights[slot] = bone->mWeights[w].mWeight;
-                            }
-                        }
-                    }
-                }
-
-                data.meshes[m] = std::move(rm);
-            });
-        }
-
-        data.offsetMatrices.assign(data.nodeNames.size(), glm::mat4(1.0f));
-        for (const auto& meshOffsets : meshOffsetWrites)
-        {
-            for (const auto& [boneIdx, offset] : meshOffsets)
-            {
-                if (boneIdx >= 0 && boneIdx < (int)data.offsetMatrices.size())
-                {
-                    data.offsetMatrices[boneIdx] = offset;
-                }
-            }
-        }
-
-        // --- 3. Process Materials ---
-        {
-            CH_PROFILE_SCOPE("AssimpImporter::ProcessMaterials");
-            data.materials.resize(scene->mNumMaterials);
-            for (unsigned int i = 0; i < scene->mNumMaterials; ++i)
-            {
-                aiMaterial* am = scene->mMaterials[i];
-                RawMaterial& rm = data.materials[i];
-
-                aiColor4D col(1.0f, 1.0f, 1.0f, 1.0f);
-                bool colorFound = false;
-                if (aiGetMaterialColor(am, AI_MATKEY_BASE_COLOR, &col) == AI_SUCCESS)
-                {
-                    rm.albedoColor = ToColor(col);
-                    colorFound = true;
-                }
-                else if (aiGetMaterialColor(am, AI_MATKEY_COLOR_DIFFUSE, &col) == AI_SUCCESS)
-                {
-                    rm.albedoColor = ToColor(col);
-                    colorFound = true;
-                }
-
-                // Safety fallback for transparency: if alpha is exactly 0 but we found a color, default it to 1.0
-                // unless opacity key explicitly says otherwise.
-                if (colorFound && rm.albedoColor.a < 0.001f)
-                {
-                    rm.albedoColor.a = 1.0f;
-                }
-
-                float opacity = 1.0f;
-                if (aiGetMaterialFloat(am, AI_MATKEY_OPACITY, &opacity) == AI_SUCCESS)
-                {
-                    rm.albedoColor.a *= opacity;
-                }
-
-                if (aiGetMaterialColor(am, AI_MATKEY_COLOR_EMISSIVE, &col) == AI_SUCCESS)
-                {
-                    rm.emissiveColor = ToColor(col);
-                }
-
-                aiGetMaterialFloat(am, AI_MATKEY_EMISSIVE_INTENSITY, &rm.emissiveIntensity);
-                aiGetMaterialFloat(am, AI_MATKEY_METALLIC_FACTOR, &rm.metalness);
-                aiGetMaterialFloat(am, AI_MATKEY_ROUGHNESS_FACTOR, &rm.roughness);
-
-                auto resolvePath = [&](const std::string& texPath) -> std::string {
-                    if (texPath.empty())
-                    {
-                        return "";
-                    }
-
-                    // 1. Try absolute / relative to CWD
-                    if (std::filesystem::exists(texPath))
-                    {
-                        return texPath;
-                    }
-
-                    // 2. Try relative to model directory
-                    std::filesystem::path p1 = modelDir / texPath;
-                    if (std::filesystem::exists(p1))
-                    {
-                        return p1.string();
-                    }
-
-                    // 3. Try filename only in model directory
-                    std::string filename = std::filesystem::path(texPath).filename().string();
-                    std::filesystem::path p2 = modelDir / filename;
-                    if (std::filesystem::exists(p2))
-                    {
-                        return p2.string();
-                    }
-
-                    // 4. Try in a 'textures' subfolder
-                    std::filesystem::path p3 = modelDir / "textures" / filename;
-                    if (std::filesystem::exists(p3))
-                    {
-                        return p3.string();
-                    }
-
-                    return texPath; // Fallback to original
-                };
-
-                auto getTex = [&](aiTextureType type) -> std::string {
-                    aiString str;
-                    if (am->GetTexture(type, 0, &str) == AI_SUCCESS)
-                    {
-                        return resolvePath(str.C_Str());
-                    }
-                    return "";
-                };
-                rm.albedoPath = getTex(aiTextureType_DIFFUSE);
-                if (rm.albedoPath.empty())
-                {
-                    rm.albedoPath = getTex(aiTextureType_BASE_COLOR); // GLTF often uses this
-                }
-                rm.normalPath = getTex(aiTextureType_NORMALS);
-                rm.metallicRoughnessPath = getTex(aiTextureType_METALNESS);
-                if (rm.metallicRoughnessPath.empty())
-                {
-                    rm.metallicRoughnessPath = getTex(aiTextureType_UNKNOWN); // GLTF MR is often here
-                }
-
-                // Transparency detection
-                int blendMode = 0;
-                if (aiGetMaterialInteger(am, AI_MATKEY_BLEND_FUNC, &blendMode) == AI_SUCCESS)
-                {
-                    if (blendMode != aiBlendMode_Default && blendMode != aiBlendMode_Additive)
-                        rm.transparent = true;
-                }
-
-                if (rm.albedoColor.a < 0.999f || opacity < 0.999f)
-                {
-                    rm.transparent = true;
-                }
-
-                // Some formats/importers set 'transparent' flag explicitly
-                unsigned int isTransparent = 0;
-                if (aiGetMaterialInteger(am, "$mat.isTransparent", 0, 0, (int*)&isTransparent) == AI_SUCCESS)
-                {
-                    if (isTransparent) rm.transparent = true;
-                }
-            }
-        }
-
-        // --- 4. Decode Embedded Textures ---
-        {
-            CH_PROFILE_SCOPE("AssimpImporter::DecodeEmbeddedTextures");
-            for (unsigned int i = 0; i < scene->mNumTextures; ++i)
-            {
-                const aiTexture* texture = scene->mTextures[i];
-                if (!texture)
-                {
-                    continue;
-                }
-
-                EmbeddedTextureData embedded;
-                if (!DecodeEmbeddedTexture(texture, embedded))
-                {
-                    continue;
-                }
-
-                data.embeddedTextures.emplace("*" + std::to_string(i), std::move(embedded));
-            }
-        }
-
-        // --- 5. Process Animations ---
-        {
-            CH_PROFILE_SCOPE("AssimpImporter::ProcessAnimations");
-            data.animations.resize(scene->mNumAnimations);
-            for (unsigned int a = 0; a < scene->mNumAnimations; ++a)
-            {
-                aiAnimation* anim = scene->mAnimations[a];
-                RawAnimation& ra = data.animations[a];
-                ra.name = anim->mName.C_Str();
-                if (ra.name.empty())
-                {
-                    ra.name = "Anim_" + std::to_string(a);
-                }
-                const double ticksPerSecond =
-                    (anim->mTicksPerSecond > 0.0) ? anim->mTicksPerSecond : (double)std::max(1, samplingFPS);
-                ra.frameRate = (float)std::max(1, samplingFPS);
-
-                // If duration is 0, try to infer from keys
-                double durationTicks = anim->mDuration;
-                if (durationTicks == 0.0)
-                {
-                    for (unsigned int c = 0; c < anim->mNumChannels; ++c)
-                    {
-                        if (anim->mChannels[c]->mNumPositionKeys > 0)
-                        {
-                            durationTicks = std::max(
-                                durationTicks,
-                                anim->mChannels[c]->mPositionKeys[anim->mChannels[c]->mNumPositionKeys - 1].mTime);
-                        }
-                        if (anim->mChannels[c]->mNumRotationKeys > 0)
-                        {
-                            durationTicks = std::max(
-                                durationTicks,
-                                anim->mChannels[c]->mRotationKeys[anim->mChannels[c]->mNumRotationKeys - 1].mTime);
-                        }
-                        if (anim->mChannels[c]->mNumScalingKeys > 0)
-                        {
-                            durationTicks = std::max(
-                                durationTicks,
-                                anim->mChannels[c]->mScalingKeys[anim->mChannels[c]->mNumScalingKeys - 1].mTime);
-                        }
-                    }
-                }
-
-                const double durationSeconds = (ticksPerSecond > 0.0) ? (durationTicks / ticksPerSecond) : 0.0;
-                ra.frameCount = std::max(1, (int)std::ceil(durationSeconds * (double)ra.frameRate) + 1);
-                ra.boneCount = (int)data.nodeNames.size();
-                ra.framePoses.resize(ra.frameCount * ra.boneCount);
-                const double ticksPerFrame = ticksPerSecond / (double)ra.frameRate;
-
-                // Pre-calculate bind poses (decomposed node transforms)
-                std::vector<TransformData> bindPoses(ra.boneCount);
-                for (int b = 0; b < ra.boneCount; ++b)
-                {
-                    // Initialize with local node transform if no animation exists
-                    aiNode* node = scene->mRootNode->FindNode(data.nodeNames[b].c_str());
-                    if (node)
-                    {
-                        aiVector3D p, s;
-                        aiQuaternion r;
-                        node->mTransformation.Decompose(s, r, p);
-                        bindPoses[b] = {ToVec3(p), ToQuat(r), ToVec3(s)};
-                    }
-                    else
-                    {
-                        bindPoses[b] = {glm::vec3(0), glm::quat(1, 0, 0, 0), glm::vec3(1)};
-                    }
-                }
-
-                // Init all frames to bind pose
-                for (int f = 0; f < ra.frameCount; ++f)
-                {
-                    for (int b = 0; b < ra.boneCount; ++b)
-                    {
-                        ra.framePoses[f * ra.boneCount + b] = bindPoses[b];
-                    }
-                }
-
-                // Fill with channel data
-                for (unsigned int c = 0; c < anim->mNumChannels; ++c)
-                {
-                    aiNodeAnim* channel = anim->mChannels[c];
-                    auto boneIt = nameToIndex.find(channel->mNodeName.C_Str());
-                    if (boneIt == nameToIndex.end())
-                    {
-                        continue;
-                    }
-                    const int boneIdx = boneIt->second;
-
-                    for (int f = 0; f < ra.frameCount; ++f)
-                    {
-                        double time = (double)f * ticksPerFrame;
-
-                        // Position
-                        glm::vec3 pos = bindPoses[boneIdx].translation;
-                        if (channel->mNumPositionKeys > 0)
-                        {
-                            if (channel->mNumPositionKeys == 1)
-                            {
-                                pos = ToVec3(channel->mPositionKeys[0].mValue);
-                            }
-                            else
-                            {
-                                unsigned int p1 = 0, p2 = 0;
-                                for (unsigned int k = 0; k < channel->mNumPositionKeys - 1; ++k)
-                                {
-                                    if (time < channel->mPositionKeys[k + 1].mTime)
-                                    {
-                                        p1 = k;
-                                        p2 = k + 1;
-                                        break;
-                                    }
-                                    p1 = k;
-                                    p2 = k + 1;
-                                }
-                                if (time >= channel->mPositionKeys[channel->mNumPositionKeys - 1].mTime)
-                                {
-                                    pos = ToVec3(channel->mPositionKeys[channel->mNumPositionKeys - 1].mValue);
-                                }
-                                else
-                                {
-                                    double dt = channel->mPositionKeys[p2].mTime - channel->mPositionKeys[p1].mTime;
-                                    float factor =
-                                        (dt > 0.0) ? (float)((time - channel->mPositionKeys[p1].mTime) / dt) : 0.0f;
-                                    pos = glm::mix(ToVec3(channel->mPositionKeys[p1].mValue),
-                                                   ToVec3(channel->mPositionKeys[p2].mValue), factor);
-                                }
-                            }
-                        }
-
-                        // Rotation
-                        glm::quat rot = bindPoses[boneIdx].rotation;
-                        if (channel->mNumRotationKeys > 0)
-                        {
-                            if (channel->mNumRotationKeys == 1)
-                            {
-                                rot = ToQuat(channel->mRotationKeys[0].mValue);
-                            }
-                            else
-                            {
-                                unsigned int r1 = 0, r2 = 0;
-                                for (unsigned int k = 0; k < channel->mNumRotationKeys - 1; ++k)
-                                {
-                                    if (time < channel->mRotationKeys[k + 1].mTime)
-                                    {
-                                        r1 = k;
-                                        r2 = k + 1;
-                                        break;
-                                    }
-                                    r1 = k;
-                                    r2 = k + 1;
-                                }
-                                if (time >= channel->mRotationKeys[channel->mNumRotationKeys - 1].mTime)
-                                {
-                                    rot = ToQuat(channel->mRotationKeys[channel->mNumRotationKeys - 1].mValue);
-                                }
-                                else
-                                {
-                                    double dt = channel->mRotationKeys[r2].mTime - channel->mRotationKeys[r1].mTime;
-                                    float factor =
-                                        (dt > 0.0) ? (float)((time - channel->mRotationKeys[r1].mTime) / dt) : 0.0f;
-                                    aiQuaternion interpolated;
-                                    aiQuaternion::Interpolate(interpolated, channel->mRotationKeys[r1].mValue,
-                                                              channel->mRotationKeys[r2].mValue, factor);
-                                    rot = ToQuat(interpolated);
-                                }
-                            }
-                        }
-
-                        // Scale
-                        glm::vec3 scale = bindPoses[boneIdx].scale;
-                        if (channel->mNumScalingKeys > 0)
-                        {
-                            if (channel->mNumScalingKeys == 1)
-                            {
-                                scale = ToVec3(channel->mScalingKeys[0].mValue);
-                            }
-                            else
-                            {
-                                unsigned int s1 = 0, s2 = 0;
-                                for (unsigned int k = 0; k < channel->mNumScalingKeys - 1; ++k)
-                                {
-                                    if (time < channel->mScalingKeys[k + 1].mTime)
-                                    {
-                                        s1 = k;
-                                        s2 = k + 1;
-                                        break;
-                                    }
-                                    s1 = k;
-                                    s2 = k + 1;
-                                }
-                                if (time >= channel->mScalingKeys[channel->mNumScalingKeys - 1].mTime)
-                                {
-                                    scale = ToVec3(channel->mScalingKeys[channel->mNumScalingKeys - 1].mValue);
-                                }
-                                else
-                                {
-                                    double dt = channel->mScalingKeys[s2].mTime - channel->mScalingKeys[s1].mTime;
-                                    float factor =
-                                        (dt > 0.0) ? (float)((time - channel->mScalingKeys[s1].mTime) / dt) : 0.0f;
-                                    scale = glm::mix(ToVec3(channel->mScalingKeys[s1].mValue),
-                                                     ToVec3(channel->mScalingKeys[s2].mValue), factor);
-                                }
-                            }
-                        }
-
-                        ra.framePoses[f * ra.boneCount + boneIdx] = {pos, rot, scale};
-                    }
-                }
-                CH_CORE_INFO("AssimpImporter: Loaded animation '{}' ({} frames, {} fps)", ra.name, ra.frameCount,
-                             ra.frameRate);
-            }
-        }
-
-        data.isValid = true;
+        AssimpImporter instance(path, samplingFPS, scene);
+        data = instance.Execute();
         return data;
+
     } catch (const std::exception& e)
     {
         CH_CORE_ERROR("AssimpImporter: Unhandled exception importing '{}': {}", path.string(), e.what());
@@ -777,4 +305,441 @@ PendingModelData AssimpImporter::Import(const std::filesystem::path& path, int s
         return data;
     }
 }
+
+AssimpImporter::AssimpImporter(const std::filesystem::path& path, int samplingFPS, const aiScene* scene)
+    : m_Path(path),
+      m_SamplingFPS(samplingFPS),
+      m_Scene(scene)
+{
+    m_ModelDir = path.parent_path();
+}
+
+PendingModelData AssimpImporter::Execute()
+{
+    ProcessHierarchy();
+    ProcessMeshes();
+    ProcessMaterials();
+    DecodeEmbeddedTextures();
+    ProcessAnimations();
+
+    m_Data.isValid = true;
+    return std::move(m_Data);
+}
+
+void AssimpImporter::ProcessNode(aiNode* node, int parentIdx)
+{
+    if (!node)
+    {
+        return;
+    }
+
+    int currentIdx = (int)m_Data.nodeNames.size();
+    m_Data.nodeNames.push_back(node->mName.C_Str());
+    m_Data.nodeParents.push_back(parentIdx);
+
+    glm::mat4 local = ToMat4(node->mTransformation);
+    m_Data.nodeLocalTransforms.push_back(local);
+    m_Data.globalBindPoses.push_back((parentIdx == -1) ? local : m_Data.globalBindPoses[parentIdx] * local);
+
+    for (unsigned int i = 0; i < node->mNumMeshes; ++i)
+    {
+        unsigned int meshIndex = node->mMeshes[i];
+        if (meshIndex < m_Scene->mNumMeshes)
+        {
+            m_Data.instances.push_back({(int)meshIndex, m_Data.globalBindPoses[currentIdx]});
+        }
+    }
+
+    for (unsigned int i = 0; i < node->mNumChildren; ++i)
+    {
+        ProcessNode(node->mChildren[i], currentIdx);
+    }
+}
+
+void AssimpImporter::ProcessHierarchy()
+{
+    CH_PROFILE_SCOPE("AssimpImporter::ProcessHierarchy");
+    ProcessNode(m_Scene->mRootNode, -1);
+
+    m_Data.nodeCount = (int)m_Data.nodeNames.size();
+    m_NameToIndex.reserve(m_Data.nodeNames.size());
+    for (int i = 0; i < (int)m_Data.nodeNames.size(); ++i)
+    {
+        m_NameToIndex[m_Data.nodeNames[i]] = i;
+    }
+}
+
+void AssimpImporter::ProcessSingleMesh(uint32_t m)
+{
+    aiMesh* am = m_Scene->mMeshes[m];
+    RawMesh rm;
+    rm.materialIndex = am->mMaterialIndex;
+
+    rm.vertices.reserve((size_t)am->mNumVertices * 3);
+    if (am->mTextureCoords[0])
+    {
+        rm.texcoords.reserve((size_t)am->mNumVertices * 2);
+    }
+    if (am->mNormals)
+    {
+        rm.normals.reserve((size_t)am->mNumVertices * 3);
+    }
+    rm.indices.reserve((size_t)am->mNumFaces * 3);
+
+    for (unsigned int v = 0; v < am->mNumVertices; ++v)
+    {
+        rm.vertices.insert(rm.vertices.end(), {am->mVertices[v].x, am->mVertices[v].y, am->mVertices[v].z});
+        if (am->mTextureCoords[0])
+        {
+            rm.texcoords.insert(rm.texcoords.end(), {am->mTextureCoords[0][v].x, am->mTextureCoords[0][v].y});
+        }
+        if (am->mNormals)
+        {
+            rm.normals.insert(rm.normals.end(), {am->mNormals[v].x, am->mNormals[v].y, am->mNormals[v].z});
+        }
+    }
+
+    for (unsigned int f = 0; f < am->mNumFaces; ++f)
+    {
+        const aiFace& face = am->mFaces[f];
+        if (face.mNumIndices != 3)
+        {
+            continue;
+        }
+        rm.indices.insert(rm.indices.end(), {face.mIndices[0], face.mIndices[1], face.mIndices[2]});
+    }
+
+    rm.MinBounds = {FLT_MAX, FLT_MAX, FLT_MAX};
+    rm.MaxBounds = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
+    for (size_t v = 0; v < rm.vertices.size(); v += 3)
+    {
+        glm::vec3 pos = {rm.vertices[v], rm.vertices[v + 1], rm.vertices[v + 2]};
+        rm.MinBounds = glm::min(rm.MinBounds, pos);
+        rm.MaxBounds = glm::max(rm.MaxBounds, pos);
+    }
+
+    if (am->mNumBones > 0)
+    {
+        rm.joints.resize((size_t)am->mNumVertices * 4, 0);
+        rm.weights.resize((size_t)am->mNumVertices * 4, 0.0f);
+        std::vector<int> jointCounts(am->mNumVertices, 0);
+        auto& offsetWrites = m_MeshOffsetWrites[m];
+        offsetWrites.reserve(am->mNumBones);
+
+        for (unsigned int b = 0; b < am->mNumBones; ++b)
+        {
+            aiBone* bone = am->mBones[b];
+            auto boneIt = m_NameToIndex.find(bone->mName.C_Str());
+            if (boneIt == m_NameToIndex.end())
+            {
+                continue;
+            }
+
+            const int boneIdx = boneIt->second;
+            offsetWrites.emplace_back(boneIdx, ToMat4(bone->mOffsetMatrix));
+
+            for (unsigned int w = 0; w < bone->mNumWeights; ++w)
+            {
+                const int vIdx = bone->mWeights[w].mVertexId;
+                if (vIdx < 0 || vIdx >= (int)am->mNumVertices)
+                {
+                    continue;
+                }
+
+                if (jointCounts[vIdx] < 4)
+                {
+                    const int slot = vIdx * 4 + jointCounts[vIdx]++;
+                    rm.joints[slot] = (unsigned char)boneIdx;
+                    rm.weights[slot] = bone->mWeights[w].mWeight;
+                }
+            }
+        }
+    }
+    m_Data.meshes[m] = std::move(rm);
+}
+
+void AssimpImporter::ProcessMeshes()
+{
+    CH_PROFILE_SCOPE("AssimpImporter::ProcessMeshes");
+    m_Data.meshes.resize(m_Scene->mNumMeshes);
+    m_MeshOffsetWrites.resize(m_Scene->mNumMeshes);
+
+    if (m_Scene->mNumMeshes == 0)
+    {
+    }
+    else if (m_Scene->mNumMeshes == 1)
+    {
+        ProcessSingleMesh(0);
+    }
+    else
+    {
+        std::vector<std::future<void>> futures;
+        futures.reserve(m_Scene->mNumMeshes);
+        for (uint32_t m = 0; m < m_Scene->mNumMeshes; ++m)
+        {
+            futures.push_back(ThreadPool::Get().Enqueue([this, m]() { ProcessSingleMesh(m); }));
+        }
+        for (auto& ft : futures)
+        {
+            ft.wait();
+        }
+    }
+
+    m_Data.offsetMatrices.assign(m_Data.nodeNames.size(), glm::mat4(1.0f));
+    for (const auto& meshOffsets : m_MeshOffsetWrites)
+    {
+        for (const auto& [boneIdx, offset] : meshOffsets)
+        {
+            if (boneIdx >= 0 && boneIdx < (int)m_Data.offsetMatrices.size())
+            {
+                m_Data.offsetMatrices[boneIdx] = offset;
+            }
+        }
+    }
+}
+
+void AssimpImporter::ProcessMaterials()
+{
+    CH_PROFILE_SCOPE("AssimpImporter::ProcessMaterials");
+    m_Data.materials.resize(m_Scene->mNumMaterials);
+    for (unsigned int i = 0; i < m_Scene->mNumMaterials; ++i)
+    {
+        aiMaterial* am = m_Scene->mMaterials[i];
+        RawMaterial& rm = m_Data.materials[i];
+
+        aiColor4D col(1.0f, 1.0f, 1.0f, 1.0f);
+        bool colorFound = false;
+        if (aiGetMaterialColor(am, AI_MATKEY_BASE_COLOR, &col) == AI_SUCCESS)
+        {
+            rm.albedoColor = ToColor(col);
+            colorFound = true;
+        }
+        else if (aiGetMaterialColor(am, AI_MATKEY_COLOR_DIFFUSE, &col) == AI_SUCCESS)
+        {
+            rm.albedoColor = ToColor(col);
+            colorFound = true;
+        }
+
+        if (colorFound && rm.albedoColor.a < 0.001f)
+        {
+            rm.albedoColor.a = 1.0f;
+        }
+
+        float opacity = 1.0f;
+        if (aiGetMaterialFloat(am, AI_MATKEY_OPACITY, &opacity) == AI_SUCCESS)
+        {
+            rm.albedoColor.a *= opacity;
+        }
+
+        if (aiGetMaterialColor(am, AI_MATKEY_COLOR_EMISSIVE, &col) == AI_SUCCESS)
+        {
+            rm.emissiveColor = ToColor(col);
+        }
+
+        aiGetMaterialFloat(am, AI_MATKEY_EMISSIVE_INTENSITY, &rm.emissiveIntensity);
+        aiGetMaterialFloat(am, AI_MATKEY_METALLIC_FACTOR, &rm.metalness);
+        aiGetMaterialFloat(am, AI_MATKEY_ROUGHNESS_FACTOR, &rm.roughness);
+
+        auto resolvePath = [&](const std::string& texPath) -> std::string {
+            if (texPath.empty())
+            {
+                return "";
+            }
+            if (std::filesystem::exists(texPath))
+            {
+                return texPath;
+            }
+
+            std::filesystem::path p1 = m_ModelDir / texPath;
+            if (std::filesystem::exists(p1))
+            {
+                return p1.string();
+            }
+
+            std::string filename = std::filesystem::path(texPath).filename().string();
+            std::filesystem::path p2 = m_ModelDir / filename;
+            if (std::filesystem::exists(p2))
+            {
+                return p2.string();
+            }
+
+            std::filesystem::path p3 = m_ModelDir / "textures" / filename;
+            if (std::filesystem::exists(p3))
+            {
+                return p3.string();
+            }
+
+            return texPath;
+        };
+
+        auto getTex = [&](aiTextureType type) -> std::string {
+            aiString str;
+            if (am->GetTexture(type, 0, &str) == AI_SUCCESS)
+            {
+                return resolvePath(str.C_Str());
+            }
+            return "";
+        };
+
+        rm.albedoPath = getTex(aiTextureType_DIFFUSE);
+        if (rm.albedoPath.empty())
+        {
+            rm.albedoPath = getTex(aiTextureType_BASE_COLOR);
+        }
+
+        rm.normalPath = getTex(aiTextureType_NORMALS);
+
+        rm.metallicRoughnessPath = getTex(aiTextureType_METALNESS);
+        if (rm.metallicRoughnessPath.empty())
+        {
+            rm.metallicRoughnessPath = getTex(aiTextureType_UNKNOWN);
+        }
+
+        int blendMode = 0;
+        if (aiGetMaterialInteger(am, AI_MATKEY_BLEND_FUNC, &blendMode) == AI_SUCCESS)
+        {
+            if (blendMode != aiBlendMode_Default && blendMode != aiBlendMode_Additive)
+            {
+                rm.transparent = true;
+            }
+        }
+
+        if (rm.albedoColor.a < 0.999f || opacity < 0.999f)
+        {
+            rm.transparent = true;
+        }
+
+        unsigned int isTransparent = 0;
+        if (aiGetMaterialInteger(am, "$mat.isTransparent", 0, 0, (int*)&isTransparent) == AI_SUCCESS)
+        {
+            if (isTransparent)
+            {
+                rm.transparent = true;
+            }
+        }
+    }
+}
+
+void AssimpImporter::DecodeEmbeddedTextures()
+{
+    CH_PROFILE_SCOPE("AssimpImporter::DecodeEmbeddedTextures");
+    for (unsigned int i = 0; i < m_Scene->mNumTextures; ++i)
+    {
+        const aiTexture* texture = m_Scene->mTextures[i];
+        if (!texture)
+        {
+            continue;
+        }
+
+        EmbeddedTextureData embedded;
+        if (!DecodeEmbeddedTexture(texture, embedded))
+        {
+            continue;
+        }
+
+        m_Data.embeddedTextures.emplace("*" + std::to_string(i), std::move(embedded));
+    }
+}
+
+void AssimpImporter::ProcessAnimations()
+{
+    CH_PROFILE_SCOPE("AssimpImporter::ProcessAnimations");
+    m_Data.animations.resize(m_Scene->mNumAnimations);
+    for (unsigned int a = 0; a < m_Scene->mNumAnimations; ++a)
+    {
+        aiAnimation* anim = m_Scene->mAnimations[a];
+        RawAnimation& ra = m_Data.animations[a];
+        ra.name = anim->mName.C_Str();
+        if (ra.name.empty())
+        {
+            ra.name = "Anim_" + std::to_string(a);
+        }
+
+        const double ticksPerSecond =
+            (anim->mTicksPerSecond > 0.0) ? anim->mTicksPerSecond : (double)std::max(1, m_SamplingFPS);
+        ra.frameRate = (float)std::max(1, m_SamplingFPS);
+
+        double durationTicks = anim->mDuration;
+        if (durationTicks == 0.0)
+        {
+            for (unsigned int c = 0; c < anim->mNumChannels; ++c)
+            {
+                if (anim->mChannels[c]->mNumPositionKeys > 0)
+                {
+                    durationTicks =
+                        std::max(durationTicks,
+                                 anim->mChannels[c]->mPositionKeys[anim->mChannels[c]->mNumPositionKeys - 1].mTime);
+                }
+                if (anim->mChannels[c]->mNumRotationKeys > 0)
+                {
+                    durationTicks =
+                        std::max(durationTicks,
+                                 anim->mChannels[c]->mRotationKeys[anim->mChannels[c]->mNumRotationKeys - 1].mTime);
+                }
+                if (anim->mChannels[c]->mNumScalingKeys > 0)
+                {
+                    durationTicks = std::max(
+                        durationTicks, anim->mChannels[c]->mScalingKeys[anim->mChannels[c]->mNumScalingKeys - 1].mTime);
+                }
+            }
+        }
+
+        const double durationSeconds = (ticksPerSecond > 0.0) ? (durationTicks / ticksPerSecond) : 0.0;
+        ra.frameCount = std::max(1, (int)std::ceil(durationSeconds * (double)ra.frameRate) + 1);
+        ra.boneCount = (int)m_Data.nodeNames.size();
+        ra.framePoses.resize(ra.frameCount * ra.boneCount);
+        const double ticksPerFrame = ticksPerSecond / (double)ra.frameRate;
+
+        std::vector<TransformData> bindPoses(ra.boneCount);
+        for (int b = 0; b < ra.boneCount; ++b)
+        {
+            aiNode* node = m_Scene->mRootNode->FindNode(m_Data.nodeNames[b].c_str());
+            if (node)
+            {
+                aiVector3D p, s;
+                aiQuaternion r;
+                node->mTransformation.Decompose(s, r, p);
+                bindPoses[b] = {ToVec3(p), ToQuat(r), ToVec3(s)};
+            }
+            else
+            {
+                bindPoses[b] = {glm::vec3(0), glm::quat(1, 0, 0, 0), glm::vec3(1)};
+            }
+        }
+
+        for (int f = 0; f < ra.frameCount; ++f)
+        {
+            for (int b = 0; b < ra.boneCount; ++b)
+            {
+                ra.framePoses[f * ra.boneCount + b] = bindPoses[b];
+            }
+        }
+
+        for (unsigned int c = 0; c < anim->mNumChannels; ++c)
+        {
+            aiNodeAnim* channel = anim->mChannels[c];
+            auto boneIt = m_NameToIndex.find(channel->mNodeName.C_Str());
+            if (boneIt == m_NameToIndex.end())
+            {
+                continue;
+            }
+
+            const int boneIdx = boneIt->second;
+            unsigned int lastPosKey = 0, lastRotKey = 0, lastSclKey = 0;
+
+            for (int f = 0; f < ra.frameCount; ++f)
+            {
+                double time = (double)f * ticksPerFrame;
+
+                glm::vec3 pos = InterpolatePosition(time, channel, lastPosKey, bindPoses[boneIdx].translation);
+                glm::quat rot = InterpolateRotation(time, channel, lastRotKey, bindPoses[boneIdx].rotation);
+                glm::vec3 scale = InterpolateScale(time, channel, lastSclKey, bindPoses[boneIdx].scale);
+
+                ra.framePoses[f * ra.boneCount + boneIdx] = {pos, rot, scale};
+            }
+        }
+        CH_CORE_INFO("AssimpImporter: Loaded animation '{}' ({} frames, {} fps)", ra.name, ra.frameCount, ra.frameRate);
+    }
+}
+
 } // namespace CHEngine

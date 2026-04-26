@@ -11,13 +11,13 @@ class Scene;
 class PhysicsSystem
 {
 public:
-    // Ініціалізує фізичні тіла для сутностей, у яких вони ще не створені
+    // Initializes physics bodies for entities that haven't been created yet
     void InitializeBodies(Scene* scene);
     
-    // Основний цикл синхронізації та симуляції
+    // Main synchronization and simulation loop
     void Update(Scene* scene, Timestep ts, bool runtime);
 
-    // Допоміжні методи для синхронізації
+    // Helper methods for synchronization
     void SyncEngineToPhysics(Scene* scene);
     void SyncPhysicsToEngine(Scene* scene);
 

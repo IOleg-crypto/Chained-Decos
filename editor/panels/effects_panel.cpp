@@ -44,8 +44,8 @@ void EffectsPanel::OnImGuiRender(bool readOnly)
         ImGui::Checkbox("Physics (Colliders)", &debugFlags.DrawColliders);
         if (debugFlags.DrawColliders)
         {
-            const char* wireModes[] = {"Wireframe", "Solid"};
-            ImGui::Combo("Wireframe Mode", &debugFlags.SetCollisionWireframeMode, wireModes, 2);
+            const char* wireModes[] = {"Wireframe", "Solid", "Solid + Wireframe"};
+            ImGui::Combo("Visual Mode", &debugFlags.SetCollisionWireframeMode, wireModes, 3);
         }
         ImGui::Checkbox("AABB Boxes", &debugFlags.DrawCollisionModelBox);
         ImGui::Checkbox("Lights", &debugFlags.DrawLights);

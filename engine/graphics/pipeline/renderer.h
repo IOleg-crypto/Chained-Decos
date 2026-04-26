@@ -6,6 +6,7 @@
 #include "engine/graphics/pipeline/shader_library.h"
 #include "engine/graphics/api/camera_types.h"
 #include "engine/graphics/pipeline/renderer_types.h"
+#include "engine/graphics/api/storage_buffer.h"
 #include <glm/glm.hpp>
 #include <memory>
 #include <vector>
@@ -33,7 +34,7 @@ struct LightingData
 {
     static constexpr int MaxLights = 256;
     RenderLight Lights[MaxLights];
-    unsigned int LightSSBO = 0;
+    std::shared_ptr<StorageBuffer> LightSSBO;
     bool LightsDirty = true;
 
     LightingSettings CurrentLighting;
@@ -45,6 +46,7 @@ struct StaticResources
 {
     std::unique_ptr<Model> UnitCubeModel;
     std::unique_ptr<Model> UnitSphereModel;
+    std::unique_ptr<Model> UnitCapsuleModel;
     std::unique_ptr<Model> WireCubeModel;  // 12-edge wireframe cube for GL_LINES
 };
 
@@ -81,6 +83,8 @@ struct RendererData
     // Engine static resources
     std::shared_ptr<VertexArray> FullscreenQuadVAO;
     std::shared_ptr<VertexArray> BillboardVAO;
+    std::shared_ptr<VertexArray> SpriteVAO;
+    std::shared_ptr<VertexArray> GridPlaneVAO;
 };
 
 // Singleton renderer facade that owns GPU resources, frame state, and low-level draw calls.

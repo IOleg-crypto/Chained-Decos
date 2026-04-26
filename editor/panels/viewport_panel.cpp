@@ -331,6 +331,7 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene, const ImVec2& viewpo
     options.ShowDebugColliders = currentDebugFlags.DrawColliders;
     options.ShowDebugCollisionModelBox = currentDebugFlags.DrawCollisionModelBox;
     options.ShowDebugSpawnZones = currentDebugFlags.DrawSpawnZones;
+    options.SetCollisionWireframeMode = currentDebugFlags.SetCollisionWireframeMode;
     options.ShowEditorIcons = true;
 
     m_SceneRenderer->RenderScene(activeScene, camera, nearClip, farClip, options);

@@ -287,6 +287,8 @@ public class AudioComponent : Component
     internal static unsafe delegate*<ulong, bool, void> AudioComponent_SetLoop_Ptr;
     internal static unsafe delegate*<ulong, bool> AudioComponent_IsPlaying_Ptr;
     internal static unsafe delegate*<ulong, NativeString> AudioComponent_GetSoundPath_Ptr;
+    internal static unsafe delegate*<ulong, void> AudioComponent_Play_Ptr;
+    internal static unsafe delegate*<ulong, void> AudioComponent_Stop_Ptr;
 #pragma warning restore 0649
 
     private static unsafe void SetVolume(ulong entityID, float volume) => AudioComponent_SetVolume_Ptr(entityID, volume);
@@ -301,6 +303,16 @@ public class AudioComponent : Component
     public bool  Loop   { set => SetLoop(Entity.ID, value); }
     public bool  IsPlaying  => IsPlaying_Native(Entity.ID);
     public string SoundPath => GetSoundPath(Entity.ID) ?? string.Empty;
+
+    public void Play() 
+    {
+        unsafe { AudioComponent_Play_Ptr(Entity.ID); }
+    }
+
+    public void Stop()
+    {
+        unsafe { AudioComponent_Stop_Ptr(Entity.ID); }
+    }
 }
 
 /// <summary>2D Sprite wrapper.</summary>

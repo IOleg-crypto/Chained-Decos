@@ -64,6 +64,8 @@ add_library(engine_graphics ${SUBMODULE_LIB_TYPE}
         api/framebuffer.h
         api/renderer_api.h
         api/model_data.h
+        api/storage_buffer.h
+        api/storage_buffer.cpp
         api/shader.h
         api/shader.cpp
         api/opengl/opengl_renderer_api.cpp
@@ -78,6 +80,8 @@ add_library(engine_graphics ${SUBMODULE_LIB_TYPE}
         api/opengl/opengl_framebuffer.h
         api/opengl/opengl_shader.h
         api/opengl/opengl_shader.cpp
+        api/opengl/opengl_storage_buffer.h
+        api/opengl/opengl_storage_buffer.cpp
 )
 
 # Prevents multiple definition errors when using unity builds
