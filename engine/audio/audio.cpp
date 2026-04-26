@@ -169,6 +169,20 @@ void Audio::SetListenerPosition(const glm::vec3& position, const glm::vec3& forw
     ma_engine_listener_set_world_up((ma_engine*)m_Engine, 0, up.x, up.y, up.z);
 }
 
+void Audio::SetInstancePosition(AudioHandle handle, const glm::vec3& pos)
+{
+    if (!m_Engine || handle == 0) return;
+
+    std::lock_guard<std::mutex> lock(m_DataMutex);
+    for (const auto& instance : s_ActiveSounds)
+    {
+        if (instance && instance->Handle == handle)
+        {
+            ma_sound_set_position(&instance->Sound, pos.x, pos.y, pos.z);
+        }
+    }
+}
+
 void Audio::Play(AudioHandle handle, float volume, float pitch, bool loop, bool spatial, const glm::vec3& pos)
 {
     if (!m_Engine || handle == 0) return;

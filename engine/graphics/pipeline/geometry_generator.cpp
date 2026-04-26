@@ -230,4 +230,72 @@ namespace CHEngine
         mesh.TriangleCount = 12;
         return mesh;
     }
+
+    Mesh GeometryGenerator::GenerateCapsule(float radius, float height, int slices, int stacks)
+    {
+        std::vector<float> vertices;
+        std::vector<uint32_t> indices;
+
+        // A capsule is a cylinder with two hemispheres.
+        // Height provided by user is total height.
+        // Cylinder height = height - 2 * radius.
+        float cylinderHeight = std::max(0.0f, height - 2.0f * radius);
+        float halfCylinderHeight = cylinderHeight * 0.5f;
+
+        // Generate vertices
+        for (int stackIndex = 0; stackIndex <= stacks; ++stackIndex)
+        {
+            float stackFraction = (float)stackIndex / (float)stacks;
+            float polarAngle = stackFraction * glm::pi<float>();
+
+            // Offset Y based on which hemisphere or cylinder part we are in
+            float yOffset = 0.0f;
+            if (stackFraction < 0.5f) {
+                yOffset = halfCylinderHeight;
+            } else {
+                yOffset = -halfCylinderHeight;
+            }
+
+            for (int sliceIndex = 0; sliceIndex <= slices; ++sliceIndex)
+            {
+                float sliceFraction = (float)sliceIndex / (float)slices;
+                float azimuthAngle = sliceFraction * 2.0f * glm::pi<float>();
+
+                float x = std::cos(azimuthAngle) * std::sin(polarAngle);
+                float y = std::cos(polarAngle);
+                float z = std::sin(azimuthAngle) * std::sin(polarAngle);
+
+                vertices.push_back(x * radius);
+                vertices.push_back(y * radius + yOffset);
+                vertices.push_back(z * radius);
+            }
+        }
+
+        // Generate indices
+        for (int stackIndex = 0; stackIndex < stacks; ++stackIndex)
+        {
+            for (int sliceIndex = 0; sliceIndex < slices; ++sliceIndex)
+            {
+                indices.push_back((stackIndex + 1) * (slices + 1) + sliceIndex);
+                indices.push_back(stackIndex * (slices + 1) + sliceIndex);
+                indices.push_back(stackIndex * (slices + 1) + sliceIndex + 1);
+                indices.push_back((stackIndex + 1) * (slices + 1) + sliceIndex);
+                indices.push_back(stackIndex * (slices + 1) + sliceIndex + 1);
+                indices.push_back((stackIndex + 1) * (slices + 1) + (sliceIndex + 1));
+            }
+        }
+
+        auto vbo = VertexBuffer::Create(vertices.data(), (uint32_t)vertices.size() * sizeof(float));
+        vbo->SetLayout({{ShaderDataType::Float3, "a_Position"}});
+        auto vao = VertexArray::Create();
+        vao->AddVertexBuffer(vbo);
+        auto ebo = IndexBuffer::Create(indices.data(), (uint32_t)indices.size());
+        vao->SetIndexBuffer(ebo);
+
+        Mesh mesh;
+        mesh.VAO = vao;
+        mesh.VertexCount = (uint32_t)vertices.size() / 3;
+        mesh.TriangleCount = (uint32_t)indices.size() / 3;
+        return mesh;
+    }
 }

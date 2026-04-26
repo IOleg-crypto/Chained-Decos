@@ -55,26 +55,58 @@ void OpenGLVertexArray::AddVertexBuffer(const std::shared_ptr<VertexBuffer>& ver
     const auto& layout = vertexBuffer->GetLayout();
     for (const auto& element : layout)
     {
-        uint32_t index = m_AttributeIndex++;
-        glEnableVertexAttribArray(index);
-        
+        uint32_t count = element.GetComponentCount();
         ShaderDataType type = element.Type;
-        if (type == ShaderDataType::Int || type == ShaderDataType::Int2 || type == ShaderDataType::Int3 || type == ShaderDataType::Int4)
+        
+        if (type == ShaderDataType::Mat4)
         {
+            for (uint32_t i = 0; i < 4; i++)
+            {
+                uint32_t index = m_AttributeIndex++;
+                glEnableVertexAttribArray(index);
+                glVertexAttribPointer(index,
+                    4,
+                    ShaderDataTypeToOpenGLBaseType(type),
+                    element.Normalized ? GL_TRUE : GL_FALSE,
+                    layout.GetStride(),
+                    (const void*)(element.Offset + sizeof(glm::vec4) * i));
+                
+                if (element.Instanced)
+                {
+                    glVertexAttribDivisor(index, 1);
+                }
+            }
+        }
+        else if (type == ShaderDataType::Int || type == ShaderDataType::Int2 || type == ShaderDataType::Int3 || type == ShaderDataType::Int4)
+        {
+            uint32_t index = m_AttributeIndex++;
+            glEnableVertexAttribArray(index);
             glVertexAttribIPointer(index,
-                element.GetComponentCount(),
+                count,
                 ShaderDataTypeToOpenGLBaseType(type),
                 layout.GetStride(),
                 (const void*)element.Offset);
+            
+            if (element.Instanced)
+            {
+                glVertexAttribDivisor(index, 1);
+            }
         }
         else
         {
+            uint32_t index = m_AttributeIndex++;
+            glEnableVertexAttribArray(index);
             glVertexAttribPointer(index,
-                element.GetComponentCount(),
+                count,
                 ShaderDataTypeToOpenGLBaseType(type),
                 element.Normalized ? GL_TRUE : GL_FALSE,
                 layout.GetStride(),
                 (const void*)element.Offset);
+            
+            if (element.Instanced)
+            {
+                glVertexAttribDivisor(index, 1);
+            }
         }
     }
 

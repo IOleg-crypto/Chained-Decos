@@ -6,6 +6,7 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace CHEngine
 {
@@ -38,6 +39,7 @@ private:
 
 private:
     std::unordered_map<std::string, std::shared_ptr<BVH>> m_ByPath;
+    std::unordered_set<std::string> m_InProgress;
     mutable std::mutex m_Mutex;
     Stats m_Stats{};
     bool m_Initialized = false;

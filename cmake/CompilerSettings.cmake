@@ -1,6 +1,7 @@
 # Chained Engine - Compiler Settings
 # Extracted from root CMakeLists.txt for modularity
 set(CMAKE_DEBUG_POSTFIX "")
+
 # Compiler-specific settings
 if(MSVC)
     # MSVC-specific settings

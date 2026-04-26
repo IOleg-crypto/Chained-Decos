@@ -27,6 +27,11 @@ public:
         SrcAlpha, OneMinusSrcAlpha, DstAlpha, OneMinusDstAlpha
     };
 
+    enum class PolygonMode
+    {
+        Fill = 0, Line, Point
+    };
+
     enum class API
     {
         None = 0,
@@ -48,13 +53,26 @@ public:
     virtual void SetDepthMask(bool enabled) = 0;
     
     virtual void SetCullMode(CullMode mode) = 0;
-    virtual void SetBlendMode(bool enabled) = 0;
     virtual void SetBlendFunc(BlendFactor src, BlendFactor dst) = 0;
+    virtual void SetBlendMode(bool enabled) = 0;
+
+    virtual bool IsDepthTestEnabled() const = 0;
+    virtual bool IsBlendEnabled() const = 0;
+    virtual bool IsCullFaceEnabled() const = 0;
+
+    virtual void SetPolygonMode(PolygonMode mode) = 0;
+    virtual void SetPolygonOffset(bool enabled, float factor = 0.0f, float units = 0.0f) = 0;
 
     virtual void SetLineWidth(float width) = 0;
 
     virtual void DrawIndexed(const std::shared_ptr<VertexArray>& vertexArray, uint32_t indexCount = 0) = 0;
+    virtual void DrawIndexedInstanced(const std::shared_ptr<VertexArray>& vertexArray, uint32_t instanceCount, uint32_t indexCount = 0) = 0;
+    virtual void DrawIndexedLines(const std::shared_ptr<VertexArray>& vertexArray, uint32_t indexCount = 0) = 0;
     virtual void DrawLines(const std::shared_ptr<VertexArray>& vertexArray, uint32_t vertexCount) = 0;
+    virtual void DrawArrays(uint32_t vertexCount) = 0;
+    virtual void DrawArraysInstanced(uint32_t vertexCount, uint32_t instanceCount) = 0;
+
+    virtual void SetTexture(uint32_t slot, uint32_t textureId, bool isCubemap = false) = 0;
 
     static API GetAPI() { return s_API; }
     static std::unique_ptr<RendererAPI> Create();

@@ -102,7 +102,6 @@ namespace CHEngine
         std::vector<Material> Materials;
         glm::mat4 Transform = glm::mat4(1.0f);
 
-        // Hazel-style asset loading
         static Model CreateFromFile(const std::string& path);
     };
 }

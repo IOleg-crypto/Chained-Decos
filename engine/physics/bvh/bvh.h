@@ -45,6 +45,17 @@ public:
     bool Raycast(const Ray& ray, float& t, glm::vec3& normal, int& meshIndex) const;
     bool IntersectAABB(const BoundingBox& box, glm::vec3& outOverlapNormal, float& outOverlapDepth) const;
 
+    struct BVHContact
+    {
+        glm::vec3 worldNormal;
+        float depth;
+        int triIndexA;
+        int triIndexB;
+    };
+
+    void IntersectBVH(const BVH& other, const glm::mat4& matAToB, std::vector<BVHContact>& outContacts) const;
+    void Refit(const std::vector<glm::vec3>& newVertices);
+
     void QueryAABB(const BoundingBox& box, std::vector<const CollisionTriangle*>& outTriangles) const;
 
     const std::vector<BVHNode>& GetNodes() const
