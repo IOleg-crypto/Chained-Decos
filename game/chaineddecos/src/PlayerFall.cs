@@ -7,6 +7,7 @@ namespace ChainedDecos.Scripts
 public class PlayerFall : Script
 {
     private Entity? m_Camera;
+    private AudioComponent? m_Audio;
     private float m_Intensity = 0.0f;
     private float m_LogTimer = 0.0f;
 
@@ -34,6 +35,12 @@ public class PlayerFall : Script
         }
 
         m_Camera = Scene.GetMainCamera();
+        m_Audio = Entity.GetComponent<AudioComponent>();
+        if (m_Audio != null)
+        {
+            m_Audio.Loop = true;
+            m_Audio.Volume = 0.0f;
+        }
     }
 
     public override void OnUpdate(float deltaTime)
@@ -107,6 +114,25 @@ public class PlayerFall : Script
                         m_LogTimer = 0.0f;
                     }
                 }
+            }
+        }
+
+        // --- AUDIO MODULATION ---
+        if (m_Audio != null)
+        {
+            bool shouldPlay = m_Intensity > 0.01f;
+            
+            if (shouldPlay)
+            {
+                if (!m_Audio.IsPlaying) m_Audio.Play();
+                
+                // Boost audio volume as it was reported too quiet compared to shader intensity
+                m_Audio.Volume = Mathf.Clamp(m_Intensity * 2.5f, 0.0f, 1.0f);
+            }
+            else if (m_Audio.IsPlaying && m_Intensity < 0.001f)
+            {
+                m_Audio.Volume = 0.0f;
+                m_Audio.Stop();
             }
         }
     }
