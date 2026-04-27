@@ -26,7 +26,7 @@ Fog:
   End: 174
 DebugSettings:
   DiagnosticMode: 0
-  DrawColliders: false
+  DrawColliders: true
   DrawHierarchy: false
   DrawCollisionModelBox: false
   DrawGrid: true
@@ -338,7 +338,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-0.782608986, 0.0434782989, -0.950311005]
-      ModelHandle: 12050262720509054497
+      ModelHandle: 14037085962565458500
       ModelPath: models/minigames/hub_for_minigames_server.glb
       AutoCalculate: true
   - Entity: 6516797172325941388
@@ -559,7 +559,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-14.1946049, -9.53674316e-07, -8.94524384]
-      ModelHandle: 3883115438041526812
+      ModelHandle: 6527073335846499240
       ModelPath: models/stairs.glb
       AutoCalculate: true
   - Entity: 1295158128682646344
@@ -648,7 +648,7 @@ Entities:
     ColliderComponent:
       Type: 0
       Enabled: true
-      Offset: [-1.23305595, -0.0299999993, -4.18938494]
+      Offset: [2.26999998, -0.0299999993, -4.18938494]
       Size: [2.48870611, 13.512085, 4.18936396]
       AutoCalculate: false
   - Entity: 217210127212770073
@@ -737,7 +737,7 @@ Entities:
     ColliderComponent:
       Type: 0
       Enabled: true
-      Offset: [-1.23305595, -0.230000004, -4.18938494]
+      Offset: [2.47000003, 0, -4.18938494]
       Size: [2.48870611, 13.512085, 4.18936396]
       AutoCalculate: false
   - Entity: 11053255314081653602
@@ -826,9 +826,9 @@ Entities:
     ColliderComponent:
       Type: 0
       Enabled: true
-      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Offset: [1.66999996, -0.629999995, -4.18938494]
       Size: [2.48870611, 13.512085, 4.18936396]
-      AutoCalculate: true
+      AutoCalculate: false
   - Entity: 2562263663181998965
     TagComponent:
       Tag: rail#3d_copy
@@ -915,9 +915,9 @@ Entities:
     ColliderComponent:
       Type: 0
       Enabled: true
-      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Offset: [0.870000005, 0.469999999, -4.18938494]
       Size: [2.48870611, 13.512085, 4.18936396]
-      AutoCalculate: true
+      AutoCalculate: false
   - Entity: 5967097730784712040
     TagComponent:
       Tag: rail#3d_copy
@@ -1004,7 +1004,7 @@ Entities:
     ColliderComponent:
       Type: 0
       Enabled: true
-      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Offset: [0.469999999, -0.430000007, -4.59000015]
       Size: [2.48870611, 15.21, 4.18936396]
       AutoCalculate: false
   - Entity: 7772933172421174645
@@ -1093,9 +1093,9 @@ Entities:
     ColliderComponent:
       Type: 0
       Enabled: true
-      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Offset: [-1.23305595, 0.0700000003, -4.18938494]
       Size: [2.48870611, 13.512085, 4.18936396]
-      AutoCalculate: true
+      AutoCalculate: false
   - Entity: 8791625222606561716
     TagComponent:
       Tag: rail#3d_copy
@@ -1182,9 +1182,9 @@ Entities:
     ColliderComponent:
       Type: 0
       Enabled: true
-      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Offset: [-1.23305595, -0.529999971, -4.18938494]
       Size: [2.48870611, 13.512085, 4.18936396]
-      AutoCalculate: true
+      AutoCalculate: false
   - Entity: 8982711742810159238
     TagComponent:
       Tag: rail#3d_copy
@@ -1271,9 +1271,9 @@ Entities:
     ColliderComponent:
       Type: 0
       Enabled: true
-      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Offset: [-1.23305595, 0.569999993, -4.18938494]
       Size: [2.48870611, 13.512085, 4.18936396]
-      AutoCalculate: true
+      AutoCalculate: false
   - Entity: 1283719283719285
     TagComponent:
       Tag: Arena
@@ -1505,7 +1505,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-43.8236694, -46.1545258, -25.5901108]
-      ModelHandle: 7464289134002742044
+      ModelHandle: 17295436366961667330
       ModelPath: models/arena.glb
       AutoCalculate: true
   - Entity: 10653066213482940164
@@ -1604,7 +1604,7 @@ Entities:
     TagComponent:
       Tag: Player
     TransformComponent:
-      Translation: [178.834198, 226.884155, 117.974846]
+      Translation: [178.834198, 200.944061, 117.974846]
       Rotation: [-3.14159083, -0.0872663558, -3.14159083]
       Scale: [0.999901831, 1, 0.999901831]
     ModelComponent:
@@ -1980,17 +1980,17 @@ Entities:
       AutoCalculate: false
     RigidBodyComponent:
       Mass: 70.5999985
-      Velocity: [0, 0, 0]
+      Velocity: [0, -24.1694927, 0]
       UseGravity: true
       IsKinematic: false
-      IsGrounded: true
+      IsGrounded: false
     AudioComponent:
-      SoundHandle: 7120076628079364173
+      SoundHandle: 5437471436620708797
       SoundPath: audio/soundreality-wind-plain-sfx-522910.mp3
       Volume: 1
-      Pitch: 1.70000005
+      Pitch: 2
       Loop: true
-      PlayOnStart: false
+      PlayOnStart: true
       Spatialized: true
       Position: [0, 0, 0]
       MinDistance: 1
@@ -2109,7 +2109,9 @@ Entities:
     ShaderComponent:
       ShaderPath: ""
       Uniforms:
-        []
+        - Name: uIntensity
+          Type: 0
+          Value: [0, 0, 0, 0]
     ColliderComponent:
       Type: 0
       Enabled: true
@@ -2155,22 +2157,22 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-14.1946049, -9.53674316e-07, -8.94524384]
-      ModelHandle: 3883115438041526812
+      ModelHandle: 6527073335846499240
       ModelPath: models/stairs.glb
       AutoCalculate: true
   - Entity: 5796298439135209667
     TagComponent:
       Tag: Camera
     TransformComponent:
-      Translation: [278.477783, 209.045807, -704.675964]
-      Rotation: [6.10725117, 47.0312271, 0]
+      Translation: [207.841858, 206.771652, 116.098976]
+      Rotation: [2.96705985, 1.50621927, -3.1415925]
       Scale: [1, 1, 1]
     ShaderComponent:
       ShaderPath: shaders/screen_falling.chshader
       Uniforms:
         - Name: uIntensity
           Type: 0
-          Value: [20.7999992, 0, 0, 0]
+          Value: [0.430469453, 0, 0, 0]
         - Name: color
           Type: 0
           Value: [0, 0, 0, 0]
@@ -2306,7 +2308,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-33.2911491, -0.000321388245, -6.43264723]
-      ModelHandle: 16734045006617633049
+      ModelHandle: 14569070676208759085
       ModelPath: models/container_ship/scene.gltf
       AutoCalculate: true
     AnimationComponent:
@@ -2466,7 +2468,7 @@ Entities:
     ColliderComponent:
       Type: 0
       Enabled: true
-      Offset: [-1.23305595, 0.0700000003, -4.18938494]
+      Offset: [1.16999996, 0.0700000003, -4.18938494]
       Size: [2.48870611, 13.512085, 4.18936396]
       AutoCalculate: false
   - Entity: 2383946809372162777
@@ -2515,7 +2517,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-9.29998016, -130.776825, -0.718267083]
-      ModelHandle: 13989054162066485723
+      ModelHandle: 2737066013217246651
       ModelPath: models/bridge.glb
       AutoCalculate: true
     AnimationComponent:
@@ -2563,7 +2565,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-9.29998016, -130.776825, -0.718267083]
-      ModelHandle: 13989054162066485723
+      ModelHandle: 2737066013217246651
       ModelPath: models/bridge.glb
       AutoCalculate: true
     AnimationComponent:
@@ -2611,7 +2613,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-9.29998016, -130.776825, -0.718267083]
-      ModelHandle: 13989054162066485723
+      ModelHandle: 2737066013217246651
       ModelPath: models/bridge.glb
       AutoCalculate: true
     AnimationComponent:
@@ -2683,7 +2685,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-4.6624608, -3.7252903e-08, -11.7852259]
-      ModelHandle: 11729928887782110396
+      ModelHandle: 10501570251462733421
       ModelPath: models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb.glb
       AutoCalculate: true
   - Entity: 3962667947486927982
@@ -2725,7 +2727,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-9.29998016, -130.776825, -0.718267083]
-      ModelHandle: 13989054162066485723
+      ModelHandle: 2737066013217246651
       ModelPath: models/bridge.glb
       AutoCalculate: true
     AnimationComponent:
@@ -2820,9 +2822,9 @@ Entities:
     ColliderComponent:
       Type: 0
       Enabled: true
-      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Offset: [-1.23305595, -0.129999995, -4.18938494]
       Size: [2.48870611, 13.512085, 4.18936396]
-      AutoCalculate: true
+      AutoCalculate: false
   - Entity: 7107305315600848246
     TagComponent:
       Tag: SpawnPoint
@@ -3067,7 +3069,7 @@ Entities:
       Type: 1
       Enabled: true
       Offset: [-191.044159, -23.226656, -191.044159]
-      ModelHandle: 13223793286645881158
+      ModelHandle: 8420127454823421503
       ModelPath: models/stone_floor.glb
       AutoCalculate: true
     ManagedScriptComponent:

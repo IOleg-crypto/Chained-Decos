@@ -2,9 +2,6 @@
 
 #include "bvh/bvh.h"
 #include "collision/collision.h"
-#include "engine/core/assets/asset_manager.h"
-#include "engine/graphics/assets/model_asset.h"
-#include "engine/scene/project.h"
 #include "physics.h"
 #include <algorithm>
 #include <cfloat>
@@ -13,106 +10,6 @@
 
 namespace CHEngine
 {
-void CollisionCore::ApplyResponse(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity,
-                                  TransformComponent& tc, RigidBodyComponent& rb, ColliderComponent& other,
-                                  glm::vec3 normal, float depth)
-{
-    // Baumgarte-style positional correction keeps bodies from sinking into each other.
-    const float kBaumgarte = 0.3f; // Менше значення = м'якіше відштовхування, немає підстрибування
-    const float kSlop = 0.01f;     // 1 сантиметр "терпимості" для стану спокою
-    const float kMaxCorrection = 0.5f; // Обмежуємо максимальний стрибок за кадр
-
-    float correctionDepth = std::max(depth - kSlop, 0.0f) * kBaumgarte;
-    float correction = std::min(correctionDepth, kMaxCorrection);
-
-    bool otherIsDynamic = registry.all_of<RigidBodyComponent>(otherEntity);
-    float thisRatio = otherIsDynamic ? 0.5f : 1.0f;
-
-    if (correction > 0.0f)
-    {
-        tc.Translation += normal * (correction * thisRatio);
-        tc.IsDirty = true;
-        
-        if (otherIsDynamic) {
-             auto& otherTc = registry.get<TransformComponent>(otherEntity);
-             otherTc.Translation -= normal * (correction * (1.0f - thisRatio));
-             otherTc.IsDirty = true;
-        }
-
-        auto tcUpdate = [&](entt::entity e, TransformComponent& t) {
-            auto hc = registry.try_get<HierarchyComponent>(e);
-            if (!hc || hc->Parent == entt::null || !registry.valid(hc->Parent))
-            {
-                t.WorldTransform = t.GetTransform();
-            }
-            else
-            {
-                t.WorldTransform = registry.get<TransformComponent>(hc->Parent).WorldTransform * t.GetTransform();
-            }
-        };
-
-        tcUpdate(rbEntity, tc);
-        if (otherIsDynamic) tcUpdate(otherEntity, registry.get<TransformComponent>(otherEntity));
-    }
-
-    // Treat mostly-upward contacts as ground contact.
-    if (normal.y > 0.70f)
-    {
-        rb.IsGrounded = true;
-        if (rb.Velocity.y < 0.1f)
-        {
-            rb.Velocity.y = 0;
-        }
-        if (std::abs(rb.Velocity.x) < 0.05f)
-        {
-            rb.Velocity.x = 0;
-        }
-        if (std::abs(rb.Velocity.z) < 0.05f)
-        {
-            rb.Velocity.z = 0;
-        }
-    }
-    else if (normal.y < -0.70f)
-    {
-        if (rb.Velocity.y > 0)
-        {
-            rb.Velocity.y = 0;
-        }
-    }
-
-    float vDotN = glm::dot(rb.Velocity, normal);
-    if (vDotN < 0.0f)
-    {
-        rb.Velocity -= normal * vDotN * thisRatio;
-    }
-    
-    if (otherIsDynamic) {
-        auto& otherRb = registry.get<RigidBodyComponent>(otherEntity);
-        if (normal.y < -0.70f) { // If normal is up relative to us, it's down relative to them
-            otherRb.IsGrounded = true;
-            if (otherRb.Velocity.y < 0.1f) otherRb.Velocity.y = 0;
-            if (std::abs(otherRb.Velocity.x) < 0.05f) otherRb.Velocity.x = 0;
-            if (std::abs(otherRb.Velocity.z) < 0.05f) otherRb.Velocity.z = 0;
-        }
-        float otherVDotN = glm::dot(otherRb.Velocity, -normal);
-        if (otherVDotN < 0.0f) {
-            otherRb.Velocity -= (-normal) * otherVDotN * (1.0f - thisRatio);
-        }
-    }
-
-    // Mark the collider so gameplay code can react later in the frame.
-    other.IsColliding = true;
-    registry.get<ColliderComponent>(rbEntity).IsColliding = true;
-
-    if (auto* context = registry.ctx().find<PhysicsContext>())
-    {
-        if (context->CollisionCallback)
-        {
-            context->CollisionCallback(rbEntity, otherEntity);
-        }
-    }
-}
-
 glm::vec3 CollisionCore::ClosestPointOnSegment(glm::vec3 p, glm::vec3 a, glm::vec3 b)
 {
     // Standard closest-point helper used by capsule and mesh contact tests.
@@ -203,124 +100,83 @@ CollisionCore::CapsuleSegment CollisionCore::GetCapsuleSegment(const TransformCo
 
 CollisionCore::WorldAABB CollisionCore::GetWorldAABB(const TransformComponent& tc, const ColliderComponent& cc)
 {
-    // Build a world-space AABB from the transformed local corners.
+    if (cc.Type == ColliderType::Sphere)
+    {
+        // World-space center + uniform radius scaled by max axis scale
+        glm::vec3 center = glm::vec3(tc.WorldTransform * glm::vec4(cc.Offset, 1.0f));
+        float scale = std::max({glm::length(glm::vec3(tc.WorldTransform[0])),
+                                glm::length(glm::vec3(tc.WorldTransform[1])),
+                                glm::length(glm::vec3(tc.WorldTransform[2]))});
+        float worldRadius = cc.Radius * scale;
+        return {center - worldRadius, center + worldRadius};
+    }
+
+    if (cc.Type == ColliderType::Capsule)
+    {
+        // Derive AABB from the actual capsule segment + radius
+        CapsuleSegment seg = GetCapsuleSegment(tc, cc);
+        glm::vec3 minPt = glm::min(seg.a, seg.b) - seg.radius;
+        glm::vec3 maxPt = glm::max(seg.a, seg.b) + seg.radius;
+        return {minPt, maxPt};
+    }
+
+    if (cc.Type == ColliderType::Mesh)
+    {
+        // Use the BVH root node's local AABB transformed to world space.
+        // This is tight and accurate, preventing false positives in broadphase.
+        if (!cc.ModelPath.empty())
+        {
+            auto bvh = Physics::GetBVH(cc.ModelPath);
+            if (bvh && !bvh->GetNodes().empty())
+            {
+                const auto& root = bvh->GetNodes()[0];
+                const glm::vec3 corners[8] = {
+                    {root.Min.x, root.Min.y, root.Min.z}, {root.Max.x, root.Min.y, root.Min.z},
+                    {root.Min.x, root.Max.y, root.Min.z}, {root.Max.x, root.Max.y, root.Min.z},
+                    {root.Min.x, root.Min.y, root.Max.z}, {root.Max.x, root.Min.y, root.Max.z},
+                    {root.Min.x, root.Max.y, root.Max.z}, {root.Max.x, root.Max.y, root.Max.z}};
+
+                glm::vec3 worldMin = {FLT_MAX, FLT_MAX, FLT_MAX};
+                glm::vec3 worldMax = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
+                for (const auto& c : corners)
+                {
+                    glm::vec3 wp = glm::vec3(tc.WorldTransform * glm::vec4(c, 1.0f));
+                    worldMin = glm::min(worldMin, wp);
+                    worldMax = glm::max(worldMax, wp);
+                }
+                return {worldMin, worldMax};
+            }
+        }
+        // Fallback if BVH not yet loaded
+        glm::vec3 center = glm::vec3(tc.WorldTransform[3]);
+        return {center - 1.0f, center + 1.0f};
+    }
+
+    // Box (default): transform all 8 local corners to world space
     glm::vec3 minLocal = cc.Offset;
     glm::vec3 maxLocal = cc.Offset + cc.Size;
 
-    glm::vec3 corners[8] = {{minLocal.x, minLocal.y, minLocal.z}, {maxLocal.x, minLocal.y, minLocal.z},
-                            {minLocal.x, maxLocal.y, minLocal.z}, {maxLocal.x, maxLocal.y, minLocal.z},
-                            {minLocal.x, minLocal.y, maxLocal.z}, {maxLocal.x, minLocal.y, maxLocal.z},
-                            {minLocal.x, maxLocal.y, maxLocal.z}, {maxLocal.x, maxLocal.y, maxLocal.z}};
+    const glm::vec3 corners[8] = {
+        {minLocal.x, minLocal.y, minLocal.z}, {maxLocal.x, minLocal.y, minLocal.z},
+        {minLocal.x, maxLocal.y, minLocal.z}, {maxLocal.x, maxLocal.y, minLocal.z},
+        {minLocal.x, minLocal.y, maxLocal.z}, {maxLocal.x, minLocal.y, maxLocal.z},
+        {minLocal.x, maxLocal.y, maxLocal.z}, {maxLocal.x, maxLocal.y, maxLocal.z}};
 
     glm::vec3 worldMin = {FLT_MAX, FLT_MAX, FLT_MAX};
     glm::vec3 worldMax = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
-
-    for (int i = 0; i < 8; i++)
+    for (const auto& c : corners)
     {
-        glm::vec3 worldPt = glm::vec3(tc.WorldTransform * glm::vec4(corners[i], 1.0f));
-        worldMin = glm::min(worldMin, worldPt);
-        worldMax = glm::max(worldMax, worldPt);
+        glm::vec3 wp = glm::vec3(tc.WorldTransform * glm::vec4(c, 1.0f));
+        worldMin = glm::min(worldMin, wp);
+        worldMax = glm::max(worldMax, wp);
     }
-
     return {worldMin, worldMax};
 }
 
-void CollisionCore::ResolveCollisions(entt::registry& registry, const std::vector<entt::entity>& entities)
-{
-    const int kResolveIterations = 4;
-    auto colliders = registry.view<TransformComponent, ColliderComponent>();
 
-    // A small fixed number of passes is usually enough to settle stacked bodies.
-    for (int iter = 0; iter < kResolveIterations; iter++)
-    {
-        for (auto rbEntity : entities)
-        {
-            if (!registry.all_of<TransformComponent, RigidBodyComponent, ColliderComponent>(rbEntity))
-            {
-                continue;
-            }
-
-            if (iter == 0)
-            {
-                registry.get<RigidBodyComponent>(rbEntity).IsGrounded = false;
-            }
-
-            auto& tc = registry.get<TransformComponent>(rbEntity);
-            auto& rbCollider = registry.get<ColliderComponent>(rbEntity);
-
-            // Pre-calculate world AABB for the moving body once per iteration
-            WorldAABB rbAABB = GetWorldAABB(tc, rbCollider);
-            const float kBroadphaseMargin = 0.1f;
-            rbAABB.Min -= kBroadphaseMargin;
-            rbAABB.Max += kBroadphaseMargin;
-
-            colliders.each([&](auto otherEntity, auto& otherTc, auto& otherCollider) {
-                if (rbEntity == otherEntity)
-                {
-                    return;
-                }
-                if (!otherCollider.Enabled)
-                {
-                    return;
-                }
-
-                // Broadphase: Check world AABB overlap before any narrow-phase tests
-                WorldAABB targetAABB = GetWorldAABB(otherTc, otherCollider);
-                if (!Collision::CheckAABB(rbAABB.Min, rbAABB.Max, targetAABB.Min, targetAABB.Max))
-                {
-                    return;
-                }
-
-                if (otherCollider.Type == ColliderType::Box)
-                {
-                    if (rbCollider.Type == ColliderType::Box)
-                    {
-                        ResolveBoxBox(registry, rbEntity, otherEntity);
-                    }
-                    else if (rbCollider.Type == ColliderType::Capsule)
-                    {
-                        ResolveCapsuleBox(registry, rbEntity, otherEntity);
-                    }
-                    else if (rbCollider.Type == ColliderType::Sphere)
-                    {
-                        ResolveSphereBox(registry, rbEntity, otherEntity);
-                    }
-                }
-                else if (otherCollider.Type == ColliderType::Mesh)
-                {
-                    if (rbCollider.Type == ColliderType::Box)
-                    {
-                        ResolveBoxMesh(registry, rbEntity, otherEntity);
-                    }
-                    else if (rbCollider.Type == ColliderType::Capsule)
-                    {
-                        ResolveCapsuleMesh(registry, rbEntity, otherEntity);
-                    }
-                    else if (rbCollider.Type == ColliderType::Sphere)
-                    {
-                        ResolveSphereMesh(registry, rbEntity, otherEntity);
-                    }
-                    else if (rbCollider.Type == ColliderType::Mesh)
-                    {
-                        ResolveMeshMesh(registry, rbEntity, otherEntity);
-                    }
-                }
-                else if (otherCollider.Type == ColliderType::Sphere)
-                {
-                    if (rbCollider.Type == ColliderType::Sphere)
-                    {
-                        ResolveSphereSphere(registry, rbEntity, otherEntity);
-                    }
-                }
-            });
-        }
-    }
-}
-
-void CollisionCore::ResolveBoxBox(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity)
+void CollisionCore::ResolveBoxBox(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity, std::vector<Contact>& contacts)
 {
     auto& tc = registry.get<TransformComponent>(rbEntity);
-    auto& rb = registry.get<RigidBodyComponent>(rbEntity);
     auto& rbc = registry.get<ColliderComponent>(rbEntity);
     auto& otherCollider = registry.get<ColliderComponent>(otherEntity);
 
@@ -352,13 +208,12 @@ void CollisionCore::ResolveBoxBox(entt::registry& registry, entt::entity rbEntit
     }
 
     const glm::vec3 dirs[6] = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
-    ApplyResponse(registry, rbEntity, otherEntity, tc, rb, otherCollider, dirs[axis], minDepth);
+    contacts.push_back({rbEntity, otherEntity, dirs[axis], minDepth});
 }
 
-void CollisionCore::ResolveBoxMesh(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity)
+void CollisionCore::ResolveBoxMesh(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity, std::vector<Contact>& contacts)
 {
     auto& tc = registry.get<TransformComponent>(rbEntity);
-    auto& rb = registry.get<RigidBodyComponent>(rbEntity);
     auto& rbc = registry.get<ColliderComponent>(rbEntity);
     auto& otherCollider = registry.get<ColliderComponent>(otherEntity);
     auto& otherTc = registry.get<TransformComponent>(otherEntity);
@@ -440,14 +295,13 @@ void CollisionCore::ResolveBoxMesh(entt::registry& registry, entt::entity rbEnti
     
     if (maxPenetration > 0.001f)
     {
-        ApplyResponse(registry, rbEntity, otherEntity, tc, rb, otherCollider, bestNormal, maxPenetration);
+        contacts.push_back({rbEntity, otherEntity, bestNormal, maxPenetration});
     }
 }
 
-void CollisionCore::ResolveCapsuleBox(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity)
+void CollisionCore::ResolveCapsuleBox(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity, std::vector<Contact>& contacts)
 {
     auto& tc = registry.get<TransformComponent>(rbEntity);
-    auto& rb = registry.get<RigidBodyComponent>(rbEntity);
     auto& capsule = registry.get<ColliderComponent>(rbEntity);
     auto& box = registry.get<ColliderComponent>(otherEntity);
     auto& otherTc = registry.get<TransformComponent>(otherEntity);
@@ -474,13 +328,12 @@ void CollisionCore::ResolveCapsuleBox(entt::registry& registry, entt::entity rbE
     float penetration = seg.radius - dist;
     glm::vec3 normal = (dist > 0.0001f) ? (diff / dist) : glm::vec3(0, 1, 0);
 
-    ApplyResponse(registry, rbEntity, otherEntity, tc, rb, box, normal, penetration);
+    contacts.push_back({rbEntity, otherEntity, normal, penetration});
 }
 
-void CollisionCore::ResolveCapsuleMesh(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity)
+void CollisionCore::ResolveCapsuleMesh(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity, std::vector<Contact>& contacts)
 {
     auto& tc = registry.get<TransformComponent>(rbEntity);
-    auto& rb = registry.get<RigidBodyComponent>(rbEntity);
     auto& capsule = registry.get<ColliderComponent>(rbEntity);
     auto& otherCollider = registry.get<ColliderComponent>(otherEntity);
     auto& otherTc = registry.get<TransformComponent>(otherEntity);
@@ -523,18 +376,17 @@ void CollisionCore::ResolveCapsuleMesh(entt::registry& registry, entt::entity rb
     glm::vec3 bestNormal = {0.0f, 1.0f, 0.0f};
     float maxPenetration = -1.0f;
 
+
     for (const auto* tri : candidates)
     {
-        CapsuleSegment currentSeg = GetCapsuleSegment(tc, capsule);
-
         glm::vec3 v0 = glm::vec3(meshMatrix * glm::vec4(tri->v0, 1.0f));
         glm::vec3 v1 = glm::vec3(meshMatrix * glm::vec4(tri->v1, 1.0f));
         glm::vec3 v2 = glm::vec3(meshMatrix * glm::vec4(tri->v2, 1.0f));
 
-        glm::vec3 triPoint = ClosestPointTriangle(currentSeg.a, v0, v1, v2);
-        glm::vec3 segPoint = ClosestPointOnSegment(triPoint, currentSeg.a, currentSeg.b);
+        glm::vec3 triPoint = ClosestPointTriangle(seg.a, v0, v1, v2);
+        glm::vec3 segPoint = ClosestPointOnSegment(triPoint, seg.a, seg.b);
         triPoint = ClosestPointTriangle(segPoint, v0, v1, v2);
-        glm::vec3 finalSeg = ClosestPointOnSegment(triPoint, currentSeg.a, currentSeg.b);
+        glm::vec3 finalSeg = ClosestPointOnSegment(triPoint, seg.a, seg.b);
 
         glm::vec3 diff = finalSeg - triPoint;
         float distSq = glm::dot(diff, diff);
@@ -542,20 +394,13 @@ void CollisionCore::ResolveCapsuleMesh(entt::registry& registry, entt::entity rb
 
         glm::vec3 worldTriNormal = glm::normalize(glm::cross(v1-v0, v2-v0));
 
-        if (dist < currentSeg.radius)
+        if (dist < seg.radius)
         {
-            float penetration = currentSeg.radius - dist;
-            glm::vec3 normal;
-            if (dist > 0.001f) {
-                normal = diff / dist;
-            } else {
-                normal = worldTriNormal;
-            }
-            
-            // Prevent tunneling
-            if (glm::dot(normal, worldTriNormal) < 0.0f) {
+            float penetration = seg.radius - dist;
+            glm::vec3 normal = (dist > 0.001f) ? (diff / dist) : worldTriNormal;
+
+            if (glm::dot(normal, worldTriNormal) < 0.0f)
                 normal = -normal;
-            }
 
             if (penetration > maxPenetration)
             {
@@ -567,14 +412,13 @@ void CollisionCore::ResolveCapsuleMesh(entt::registry& registry, entt::entity rb
 
     if (maxPenetration > 0.001f)
     {
-        ApplyResponse(registry, rbEntity, otherEntity, tc, rb, otherCollider, bestNormal, maxPenetration);
+        contacts.push_back({rbEntity, otherEntity, bestNormal, maxPenetration});
     }
 }
 
-void CollisionCore::ResolveSphereBox(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity)
+void CollisionCore::ResolveSphereBox(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity, std::vector<Contact>& contacts)
 {
     auto& tc = registry.get<TransformComponent>(rbEntity);
-    auto& rb = registry.get<RigidBodyComponent>(rbEntity);
     auto& sphere = registry.get<ColliderComponent>(rbEntity);
     auto& box = registry.get<ColliderComponent>(otherEntity);
     auto& otherTc = registry.get<TransformComponent>(otherEntity);
@@ -596,13 +440,12 @@ void CollisionCore::ResolveSphereBox(entt::registry& registry, entt::entity rbEn
     float penetration = sphere.Radius - dist;
     glm::vec3 normal = (dist > 0.0001f) ? (diff / dist) : glm::vec3(0, 1, 0);
 
-    ApplyResponse(registry, rbEntity, otherEntity, tc, rb, box, normal, penetration);
+    contacts.push_back({rbEntity, otherEntity, normal, penetration});
 }
 
-void CollisionCore::ResolveSphereMesh(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity)
+void CollisionCore::ResolveSphereMesh(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity, std::vector<Contact>& contacts)
 {
     auto& tc = registry.get<TransformComponent>(rbEntity);
-    auto& rb = registry.get<RigidBodyComponent>(rbEntity);
     auto& sphere = registry.get<ColliderComponent>(rbEntity);
     auto& otherCollider = registry.get<ColliderComponent>(otherEntity);
     auto& otherTc = registry.get<TransformComponent>(otherEntity);
@@ -643,35 +486,26 @@ void CollisionCore::ResolveSphereMesh(entt::registry& registry, entt::entity rbE
     glm::vec3 bestNormal = {0.0f, 1.0f, 0.0f};
     float maxPenetration = -1.0f;
 
+
     for (const auto* tri : candidates)
     {
-        glm::vec3 currentSphereWorldPos = glm::vec3(tc.WorldTransform * glm::vec4(sphere.Offset, 1.0f));
-
         glm::vec3 v0 = glm::vec3(meshMatrix * glm::vec4(tri->v0, 1.0f));
         glm::vec3 v1 = glm::vec3(meshMatrix * glm::vec4(tri->v1, 1.0f));
         glm::vec3 v2 = glm::vec3(meshMatrix * glm::vec4(tri->v2, 1.0f));
 
-        glm::vec3 triPoint = ClosestPointTriangle(currentSphereWorldPos, v0, v1, v2);
-        glm::vec3 diff = currentSphereWorldPos - triPoint;
-        float distSq = glm::dot(diff, diff);
-        float dist = std::sqrt(distSq);
+        glm::vec3 triPoint = ClosestPointTriangle(sphereWorldPos, v0, v1, v2);
+        glm::vec3 diff = sphereWorldPos - triPoint;
+        float dist = glm::length(diff);
 
         glm::vec3 worldTriNormal = glm::normalize(glm::cross(v1-v0, v2-v0));
 
         if (dist < sphere.Radius)
         {
             float penetration = sphere.Radius - dist;
-            glm::vec3 normal;
-            if (dist > 0.001f) {
-                normal = diff / dist;
-            } else {
-                normal = worldTriNormal;
-            }
-            
-            // Prevent tunneling
-            if (glm::dot(normal, worldTriNormal) < 0.0f) {
+            glm::vec3 normal = (dist > 0.001f) ? (diff / dist) : worldTriNormal;
+
+            if (glm::dot(normal, worldTriNormal) < 0.0f)
                 normal = -normal;
-            }
 
             if (penetration > maxPenetration)
             {
@@ -683,16 +517,15 @@ void CollisionCore::ResolveSphereMesh(entt::registry& registry, entt::entity rbE
 
     if (maxPenetration > 0.001f)
     {
-        ApplyResponse(registry, rbEntity, otherEntity, tc, rb, otherCollider, bestNormal, maxPenetration);
+        contacts.push_back({rbEntity, otherEntity, bestNormal, maxPenetration});
     }
 }
 
-void CollisionCore::ResolveSphereSphere(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity)
+void CollisionCore::ResolveSphereSphere(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity, std::vector<Contact>& contacts)
 {
     auto& tc1 = registry.get<TransformComponent>(rbEntity);
-    auto& rb = registry.get<RigidBodyComponent>(rbEntity);
-    auto& s1 = registry.get<ColliderComponent>(rbEntity);
-    auto& s2 = registry.get<ColliderComponent>(otherEntity);
+    auto& s1  = registry.get<ColliderComponent>(rbEntity);
+    auto& s2  = registry.get<ColliderComponent>(otherEntity);
     auto& tc2 = registry.get<TransformComponent>(otherEntity);
 
     glm::vec3 p1 = glm::vec3(tc1.WorldTransform * glm::vec4(s1.Offset, 1.0f));
@@ -712,16 +545,15 @@ void CollisionCore::ResolveSphereSphere(entt::registry& registry, entt::entity r
     float penetration = radiusSum - dist;
     glm::vec3 normal = (dist > 0.0001f) ? (diff / dist) : glm::vec3(0, 1, 0);
 
-    ApplyResponse(registry, rbEntity, otherEntity, tc1, rb, s2, normal, penetration);
+    contacts.push_back({rbEntity, otherEntity, normal, penetration});
 }
 
-void CollisionCore::ResolveMeshMesh(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity)
+void CollisionCore::ResolveMeshMesh(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity, std::vector<Contact>& contacts)
 {
-    auto& tc = registry.get<TransformComponent>(rbEntity);
-    auto& rbc = registry.get<ColliderComponent>(rbEntity);
-    auto& rb = registry.get<RigidBodyComponent>(rbEntity);
+    auto& tc           = registry.get<TransformComponent>(rbEntity);
+    auto& rbc          = registry.get<ColliderComponent>(rbEntity);
     auto& otherCollider = registry.get<ColliderComponent>(otherEntity);
-    auto& otherTc = registry.get<TransformComponent>(otherEntity);
+    auto& otherTc      = registry.get<TransformComponent>(otherEntity);
 
     if (rbc.ModelPath.empty() || otherCollider.ModelPath.empty())
     {
@@ -737,11 +569,11 @@ void CollisionCore::ResolveMeshMesh(entt::registry& registry, entt::entity rbEnt
 
     // High-performance BVH-BVH recursive intersection
     glm::mat4 matAToB = otherTc.InverseWorldTransform * tc.WorldTransform;
-    std::vector<BVH::BVHContact> contacts;
-    bvhA->IntersectBVH(*bvhB, matAToB, contacts);
+    std::vector<BVH::BVHContact> bvhContacts;
+    bvhA->IntersectBVH(*bvhB, matAToB, bvhContacts);
 
     // Apply responses for all detected contacts
-    for (const auto& contact : contacts)
+    for (const auto& contact : bvhContacts)
     {
         // Transform the local normal from B space to World space
         glm::mat4 normalMatrix = glm::transpose(otherTc.InverseWorldTransform);
@@ -749,8 +581,170 @@ void CollisionCore::ResolveMeshMesh(entt::registry& registry, entt::entity rbEnt
 
         if (contact.depth > 0.001f)
         {
-            ApplyResponse(registry, rbEntity, otherEntity, tc, rb, otherCollider, worldNormal, contact.depth);
+            contacts.push_back({rbEntity, otherEntity, worldNormal, contact.depth});
         }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Impulse-based Sequential Contact Solver
+// ─────────────────────────────────────────────────────────────────────────────
+
+void CollisionCore::SolveContacts(entt::registry& registry, std::vector<Contact>& contacts)
+{
+    for (auto& contact : contacts)
+    {
+        if (!registry.valid(contact.BodyA) || !registry.valid(contact.BodyB)) continue;
+
+        auto* rbA   = registry.try_get<RigidBodyComponent>(contact.BodyA);
+        auto* tcA   = registry.try_get<TransformComponent>(contact.BodyA);
+        auto* colA  = registry.try_get<ColliderComponent>(contact.BodyA);
+        if (!rbA || !tcA || !colA) continue;
+        colA->IsColliding = true;
+
+        const bool isDynamicB  = registry.all_of<RigidBodyComponent>(contact.BodyB);
+        RigidBodyComponent* rbB  = nullptr;
+        TransformComponent* tcB  = nullptr;
+
+        if (isDynamicB)
+        {
+            rbB = registry.try_get<RigidBodyComponent>(contact.BodyB);
+            tcB = registry.try_get<TransformComponent>(contact.BodyB);
+            if (auto* colB = registry.try_get<ColliderComponent>(contact.BodyB)) colB->IsColliding = true;
+        }
+
+        // Inverse-mass: kinematic / static bodies are infinite mass (0 inv).
+        const float invMassA  = rbA->IsKinematic ? 0.0f : (1.0f / rbA->Mass);
+        const float invMassB  = (!isDynamicB || !rbB || rbB->IsKinematic) ? 0.0f : (1.0f / rbB->Mass);
+        const float sumInvMass = invMassA + invMassB;
+        if (sumInvMass <= 0.0f) continue;
+
+        // ── Positional correction (Baumgarte with slop) ──
+        const float kSlop    = 0.01f;
+        const float kPercent = 0.8f;
+        const float depth    = std::max(contact.Depth - kSlop, 0.0f);
+        if (depth > 0.0f)
+        {
+            const glm::vec3 correction = contact.Normal * (depth * kPercent / sumInvMass);
+            if (invMassA > 0.0f) { tcA->Translation += correction * invMassA; tcA->IsDirty = true; }
+            if (invMassB > 0.0f) { tcB->Translation -= correction * invMassB; tcB->IsDirty = true; }
+            contact.Depth -= depth * kPercent; // reduce for further iterations
+        }
+
+        // ── Normal impulse ──
+        const glm::vec3 vA  = rbA->Velocity;
+        const glm::vec3 vB  = (isDynamicB && rbB) ? rbB->Velocity : glm::vec3(0.0f);
+        const glm::vec3 rv  = vA - vB;
+        const float contactVel = glm::dot(rv, contact.Normal);
+        if (contactVel > 0.0f) continue; // already separating
+
+        const float e = 0.0f; // restitution = 0 (perfectly inelastic)
+        const float j = -(1.0f + e) * contactVel / sumInvMass;
+        const glm::vec3 impulse = contact.Normal * j;
+
+        if (invMassA > 0.0f) rbA->Velocity += impulse * invMassA;
+        if (invMassB > 0.0f) rbB->Velocity -= impulse * invMassB;
+
+        // ── Friction impulse (Coulomb) ──
+        const glm::vec3 rvAfter  = rbA->Velocity - ((isDynamicB && rbB) ? rbB->Velocity : glm::vec3(0.0f));
+        glm::vec3 tangent        = rvAfter - contact.Normal * glm::dot(rvAfter, contact.Normal);
+        const float tangentLen   = glm::length(tangent);
+        if (tangentLen > 0.0001f)
+        {
+            tangent /= tangentLen;
+            const float jt           = -glm::dot(rvAfter, tangent) / sumInvMass;
+            const float mu           = 0.5f;
+            const float maxFriction  = std::abs(j * mu);
+            const float jClamped     = std::max(-maxFriction, std::min(jt, maxFriction));
+            const glm::vec3 fImpulse = tangent * jClamped;
+
+            if (invMassA > 0.0f) rbA->Velocity += fImpulse * invMassA;
+            if (invMassB > 0.0f) rbB->Velocity -= fImpulse * invMassB;
+        }
+
+        // ── Grounded detection ──
+        if (contact.Normal.y > 0.70f) rbA->IsGrounded = true;
+        if (isDynamicB && rbB && contact.Normal.y < -0.70f) rbB->IsGrounded = true;
+
+        // ── Notify gameplay ──
+        if (auto* ctx = registry.ctx().find<PhysicsContext>())
+            if (ctx->CollisionCallback)
+                ctx->CollisionCallback(contact.BodyA, contact.BodyB);
+    }
+}
+
+void CollisionCore::GenerateContacts(entt::registry& registry,
+                                     const std::vector<entt::entity>& entities,
+                                     std::vector<Contact>& contacts)
+{
+    auto colliders = registry.view<TransformComponent, ColliderComponent>();
+
+    for (auto rbEntity : entities)
+    {
+        if (!registry.all_of<TransformComponent, RigidBodyComponent, ColliderComponent>(rbEntity))
+            continue;
+
+        auto& tc        = registry.get<TransformComponent>(rbEntity);
+        auto& rbCollider = registry.get<ColliderComponent>(rbEntity);
+
+        WorldAABB rbAABB = GetWorldAABB(tc, rbCollider);
+        rbAABB.Min -= 0.1f;
+        rbAABB.Max += 0.1f;
+
+        colliders.each([&](auto otherEntity, auto& otherTc, auto& otherCollider) {
+            if (rbEntity == otherEntity || !otherCollider.Enabled) return;
+
+            WorldAABB targetAABB = GetWorldAABB(otherTc, otherCollider);
+            if (!Collision::CheckAABB(rbAABB.Min, rbAABB.Max, targetAABB.Min, targetAABB.Max)) return;
+
+            if (otherCollider.Type == ColliderType::Box)
+            {
+                if      (rbCollider.Type == ColliderType::Box)     ResolveBoxBox(registry, rbEntity, otherEntity, contacts);
+                else if (rbCollider.Type == ColliderType::Capsule)  ResolveCapsuleBox(registry, rbEntity, otherEntity, contacts);
+                else if (rbCollider.Type == ColliderType::Sphere)   ResolveSphereBox(registry, rbEntity, otherEntity, contacts);
+            }
+            else if (otherCollider.Type == ColliderType::Mesh)
+            {
+                if      (rbCollider.Type == ColliderType::Box)     ResolveBoxMesh(registry, rbEntity, otherEntity, contacts);
+                else if (rbCollider.Type == ColliderType::Capsule)  ResolveCapsuleMesh(registry, rbEntity, otherEntity, contacts);
+                else if (rbCollider.Type == ColliderType::Sphere)   ResolveSphereMesh(registry, rbEntity, otherEntity, contacts);
+            }
+            else if (otherCollider.Type == ColliderType::Sphere)
+            {
+                if (rbCollider.Type == ColliderType::Sphere) ResolveSphereSphere(registry, rbEntity, otherEntity, contacts);
+            }
+        });
+    }
+}
+
+void CollisionCore::ResolveCollisions(entt::registry& registry, const std::vector<entt::entity>& entities)
+{
+    // Reset grounded state before this frame's solve.
+    for (auto rbEntity : entities)
+        if (auto* rb = registry.try_get<RigidBodyComponent>(rbEntity))
+            rb->IsGrounded = false;
+
+    // Collect all contacts in one broadphase + narrowphase pass.
+    std::vector<Contact> contacts;
+    contacts.reserve(64);
+    GenerateContacts(registry, entities, contacts);
+
+    // Iteratively solve — more iterations = more stable stacks.
+    const int kSolverIterations = 8;
+    for (int i = 0; i < kSolverIterations; ++i)
+        SolveContacts(registry, contacts);
+
+    // Propagate updated positions through the scene hierarchy.
+    for (auto rbEntity : entities)
+    {
+        auto* tc = registry.try_get<TransformComponent>(rbEntity);
+        if (!tc) continue;
+
+        auto* hc = registry.try_get<HierarchyComponent>(rbEntity);
+        if (!hc || hc->Parent == entt::null || !registry.valid(hc->Parent))
+            tc->WorldTransform = tc->GetTransform();
+        else
+            tc->WorldTransform = registry.get<TransformComponent>(hc->Parent).WorldTransform * tc->GetTransform();
     }
 }
 
