@@ -24,10 +24,11 @@ bool EditorUIManipulator::OnImGuiRender(Entity selectedEntity, ImVec2 viewportPo
     }
 
     auto& cc = selectedEntity.GetComponent<ControlComponent>();
-    UIRect rect = ServiceLocator::Get<UIRenderer>().GetEntityRect(selectedEntity, viewportSize, viewportPos);
+    auto* sceneCtx = selectedEntity.GetRegistry().ctx().find<Scene*>();
+    Scene* scene = (sceneCtx && *sceneCtx) ? *sceneCtx : nullptr;
+    UIRect rect = ServiceLocator::Get<UIRenderer>().GetEntityRect(scene, selectedEntity, viewportSize, viewportPos);
 
     float scaleFactor = 1.0f;
-    auto* sceneCtx = selectedEntity.GetRegistry().ctx().find<Scene*>();
     if (sceneCtx && *sceneCtx)
     {
         const CanvasSettings& canvas = (*sceneCtx)->GetSettings().Canvas;

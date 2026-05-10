@@ -3,7 +3,6 @@
 
 namespace CHEngine
 {
-extern void RegisterGameComponents();
 
 Application* CreateApplication(ApplicationCommandLineArgs args)
 {
@@ -17,10 +16,6 @@ Application* CreateApplication(ApplicationCommandLineArgs args)
     spec.Headless = false;
 
     auto* app = new Application(spec);
-
-    // Register game components AFTER Application is created,
-    // because ComponentSerializer is initialized inside Application's constructor.
-    RegisterGameComponents();
 
     app->PushLayer(std::make_unique<EditorLayer>());
 

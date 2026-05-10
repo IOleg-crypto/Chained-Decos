@@ -10,6 +10,8 @@
 #include <unordered_map>
 #include <yaml-cpp/yaml.h>
 
+#include "engine/core/reflection.h"
+
 namespace CHEngine
 {
     /**
@@ -39,6 +41,12 @@ namespace CHEngine
         bool Visible = true;
         bool AllowAdd = true;
         bool IsWidget = false;
+        bool IsReflective = false;
+
+        // Type-erased reflection caller. 
+        // The void* is the archive pointer, and the second int is the reflection mode.
+        // This allows the Editor or Serializer to pass their specific archives.
+        std::function<void(Entity, void*, int)> ReflectInternal;
     };
 
     /**
@@ -77,6 +85,7 @@ namespace CHEngine
         {
             ComponentMetadata metadata;
             metadata.Name = name;
+            metadata.SerializationKey = name + "Component";
             metadata.Icon = icon;
             
             metadata.Has = [](Entity e) { return e.HasComponent<T>(); };
@@ -92,15 +101,31 @@ namespace CHEngine
             metadata.Remove = [](Entity e) { if (e.HasComponent<T>()) e.RemoveComponent<T>(); };
             metadata.Copy = [](Entity src, Entity dst) { if (src.HasComponent<T>()) dst.AddOrReplaceComponent<T>(src.GetComponent<T>()); };
 
-            // We'll fill DrawUI and Serialize/Deserialize in specific layers if needed,
-            // or provide defaults here if we have access to the needed headers.
-            
+            metadata.IsReflective = true;
+            metadata.ReflectInternal = [](Entity e, void* archivePtr, int mode) {
+                if (e.HasComponent<T>()) {
+                    IPropertyArchive* archive = static_cast<IPropertyArchive*>(archivePtr);
+                    GenericProperties props(*archive);
+                    e.GetComponent<T>().Reflect(props);
+                }
+            };
+
             Register(entt::type_hash<T>::value(), metadata);
         }
 
     private:
         static std::unordered_map<entt::id_type, ComponentMetadata> s_Registry;
     };
+
+    /**
+     * @brief Macro for automatic static registration of components.
+     * Use this in your component's .cpp file.
+     */
+    #define CH_REGISTER_COMPONENT(type, name, icon) \
+        static bool s_ComponentRegistered_##type = []() { \
+            ::CHEngine::ComponentRegistry::RegisterReflective<type>(name, icon); \
+            return true; \
+        }()
 
 } // namespace CHEngine
 

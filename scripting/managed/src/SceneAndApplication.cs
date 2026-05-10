@@ -10,10 +10,10 @@ namespace CHEngine
 public static class Scene
 {
 #pragma warning disable 0649
-    internal static unsafe delegate*<NativeString, ulong> Scene_FindEntityByTag_Ptr;
-    internal static unsafe delegate*<NativeString, void> Scene_LoadScene_Ptr;
-    internal static unsafe delegate*<ulong> Scene_GetPrimaryCameraEntity_Ptr;
-    internal static unsafe delegate*<ulong, ulong> Scene_CopyEntity_Ptr;
+    internal static unsafe delegate* unmanaged<NativeString, ulong> Scene_FindEntityByTag_Ptr;
+    internal static unsafe delegate* unmanaged<NativeString, void> Scene_LoadScene_Ptr;
+    internal static unsafe delegate* unmanaged<ulong> Scene_GetPrimaryCameraEntity_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, ulong> Scene_CopyEntity_Ptr;
 #pragma warning restore 0649
 
     private static unsafe ulong FindEntityByTag_Native(string tag) => Scene_FindEntityByTag_Ptr(tag);
@@ -58,9 +58,9 @@ public static class Scene
 public static class Audio
 {
 #pragma warning disable 0649
-    internal static unsafe delegate*<NativeString, float, float, bool, void> Audio_Play_Ptr;
-    internal static unsafe delegate*<NativeString, void> Audio_Stop_Ptr;
-    internal static unsafe delegate*<void> Audio_StopAll_Ptr;
+    internal static unsafe delegate* unmanaged<NativeString, float, float, bool, void> Audio_Play_Ptr;
+    internal static unsafe delegate* unmanaged<NativeString, void> Audio_Stop_Ptr;
+    internal static unsafe delegate* unmanaged<void> Audio_StopAll_Ptr;
 #pragma warning restore 0649
 
     /// <summary>Plays an audio clip.</summary>
@@ -78,9 +78,9 @@ public static class Audio
 public static class Application
 {
 #pragma warning disable 0649
-    internal static unsafe delegate*<void> Application_Close_Ptr;
-    internal static unsafe delegate*<int> Application_GetFPS_Ptr;
-    internal static unsafe delegate*<float> Application_GetFrameTime_Ptr;
+    internal static unsafe delegate* unmanaged<void> Application_Close_Ptr;
+    internal static unsafe delegate* unmanaged<int> Application_GetFPS_Ptr;
+    internal static unsafe delegate* unmanaged<float> Application_GetFrameTime_Ptr;
 #pragma warning restore 0649
 
     /// <summary>Requests shutdown.</summary>
@@ -106,10 +106,10 @@ public static class Time
 public static class AppWindow
 {
 #pragma warning disable 0649
-    internal static unsafe delegate*<int, int, void> Window_SetSize_Ptr;
-    internal static unsafe delegate*<bool, void> Window_SetFullscreen_Ptr;
-    internal static unsafe delegate*<bool, void> Window_SetVSync_Ptr;
-    internal static unsafe delegate*<bool, void> Window_SetAntialiasing_Ptr;
+    internal static unsafe delegate* unmanaged<int, int, void> Window_SetSize_Ptr;
+    internal static unsafe delegate* unmanaged<bool, void> Window_SetFullscreen_Ptr;
+    internal static unsafe delegate* unmanaged<bool, void> Window_SetVSync_Ptr;
+    internal static unsafe delegate* unmanaged<bool, void> Window_SetAntialiasing_Ptr;
 #pragma warning restore 0649
 
     /// <summary>Sets the window size.</summary>

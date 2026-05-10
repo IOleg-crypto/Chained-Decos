@@ -56,6 +56,35 @@ namespace CHEngine
         PropertyMeta& WithTooltip(const std::string& t) { Tooltip = t; return *this; }
     };
 
+    /**
+     * @brief Interface for any archive that can handle reflected properties.
+     * This allows type-erased reflection calls.
+     */
+    class IPropertyArchive
+    {
+    public:
+        virtual ~IPropertyArchive() = default;
+        virtual ReflectionMode GetReflectionMode() const = 0;
+        virtual bool Property(const char* name, int& value, const PropertyMeta& meta = {}) = 0;
+        virtual bool Property(const char* name, float& value, const PropertyMeta& meta = {}) = 0;
+        virtual bool Property(const char* name, bool& value, const PropertyMeta& meta = {}) = 0;
+        virtual bool Property(const char* name, std::string& value, const PropertyMeta& meta = {}) = 0;
+        virtual bool Property(const char* name, glm::vec2& value, const PropertyMeta& meta = {}) = 0;
+        virtual bool Property(const char* name, glm::vec3& value, const PropertyMeta& meta = {}) = 0;
+        virtual bool Property(const char* name, glm::vec4& value, const PropertyMeta& meta = {}) = 0;
+        virtual bool Property(const char* name, Color& value, const PropertyMeta& meta = {}) = 0;
+        virtual bool Property(const char* name, int& value, const char** names, int count, const PropertyMeta& meta = {}) = 0;
+        virtual bool Handle(const char* name, uint64_t& value, const PropertyMeta& meta = {}) = 0;
+        virtual bool File(const char* name, std::string& value, const char* extensions = nullptr, const PropertyMeta& meta = {}) = 0;
+        virtual bool Action(const char* label, std::function<void()> func) = 0;
+        virtual void Header(const char* label) = 0;
+        virtual void Separator() = 0;
+        virtual bool BeginGroup(const char* label, bool defaultOpen = true) = 0;
+        virtual void EndGroup() = 0;
+        virtual bool HasChanged() const = 0;
+        virtual void SetChanged(bool changed) = 0;
+    };
+
     // The "Properties" class is the primary interface for reflection.
     // It is used by both Serializers (YAML) and Editor UI (ImGui).
     template<typename T_Archive>
@@ -68,7 +97,10 @@ namespace CHEngine
 
         bool Color(const char* name, CHEngine::Color& value)
         {
-            return m_Archive.Property(name, value);
+            if constexpr (std::is_base_of_v<IPropertyArchive, T_Archive>)
+                return m_Archive.Property(name, value);
+            else
+                return m_Archive.Property(name, value);
         }
 
         bool Handle(const char* name, uint64_t& value)
@@ -84,6 +116,7 @@ namespace CHEngine
         template<typename T>
         bool Sequence(const char* name, std::vector<T>& values, bool allowAddRemove = true)
         {
+            // Note: Sequence might still need specialization for IPropertyArchive
             return m_Archive.Sequence(name, values, allowAddRemove);
         }
 
@@ -166,15 +199,7 @@ namespace CHEngine
 
         bool Action(const char* label, std::function<void()> func)
         {
-            if constexpr (std::is_same_v<decltype(m_Archive.Action(label, func)), void>)
-            {
-                m_Archive.Action(label, func);
-                return false;
-            }
-            else
-            {
-                return m_Archive.Action(label, func);
-            }
+            return m_Archive.Action(label, func);
         }
 
         void Header(const char* label)
@@ -214,6 +239,11 @@ namespace CHEngine
     private:
         T_Archive& m_Archive;
     };
+
+    /**
+     * @brief Specialized properties for when the archive type is erased.
+     */
+    using GenericProperties = Properties<IPropertyArchive>;
 
     // --- Reflection Macros ---
 

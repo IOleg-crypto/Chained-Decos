@@ -37,7 +37,7 @@ public:
     void LoadProjectFonts();
 
     // Computes the screen-space bounds for a UI entity.
-    UIRect GetEntityRect(Entity entity, const ImVec2& viewportSize, const ImVec2& viewportPos);
+    UIRect GetEntityRect(Scene* scene, Entity entity, const ImVec2& viewportSize, const ImVec2& viewportPos);
 
     UIFontRegistry&       GetFontRegistry()       { return m_FontRegistry; }
     const UIFontRegistry& GetFontRegistry() const  { return m_FontRegistry; }

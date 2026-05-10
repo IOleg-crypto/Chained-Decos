@@ -7,13 +7,13 @@ namespace CHEngine
 public static class Input
 {
 #pragma warning disable 0649
-    internal static unsafe delegate*<int, bool> Input_IsKeyDown_Ptr;
-    internal static unsafe delegate*<int, bool> Input_IsKeyPressed_Ptr;
-    internal static unsafe delegate*<int, bool> Input_IsKeyReleased_Ptr;
-    internal static unsafe delegate*<int, bool> Input_IsMouseButtonDown_Ptr;
-    internal static unsafe delegate*<int, bool> Input_IsMouseButtonPressed_Ptr;
-    internal static unsafe delegate*<float> Input_GetMouseWheelMove_Ptr;
-    internal static unsafe delegate*<Vector3*, void> Input_GetMouseDelta_Ptr;
+    internal static unsafe delegate* unmanaged<int, bool> Input_IsKeyDown_Ptr;
+    internal static unsafe delegate* unmanaged<int, bool> Input_IsKeyPressed_Ptr;
+    internal static unsafe delegate* unmanaged<int, bool> Input_IsKeyReleased_Ptr;
+    internal static unsafe delegate* unmanaged<int, bool> Input_IsMouseButtonDown_Ptr;
+    internal static unsafe delegate* unmanaged<int, bool> Input_IsMouseButtonPressed_Ptr;
+    internal static unsafe delegate* unmanaged<float> Input_GetMouseWheelMove_Ptr;
+    internal static unsafe delegate* unmanaged<Vector3*, void> Input_GetMouseDelta_Ptr;
 #pragma warning restore 0649
 
     /// <summary>True while the key is held.</summary>

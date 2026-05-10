@@ -8,6 +8,7 @@ add_library(engine_scripting ${SUBMODULE_LIB_TYPE}
     script_glue_internal.h
     script_glue_system.cpp
     script_glue_input.cpp
+    script_glue_network.cpp
     script_glue_scene.cpp
     script_glue_entity.cpp
     script_glue_camera.cpp

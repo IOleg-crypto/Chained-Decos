@@ -1,9 +1,3 @@
-//========= Copyright Chained Decos, All rights reserved. ============//
-//
-// Purpose: Primary gameplay runtime layer.
-//          Handles scene management, game loop, and script execution.
-//
-//=============================================================================//
 
 #include "runtime_layer.h"
 #include "engine/core/application.h"
@@ -434,13 +428,20 @@ bool RuntimeLayer::InitProject(const std::string& projectPath)
     }
 
     auto project = Project::GetActive();
-    std::filesystem::path assemblyPath = Project::GetAssetDirectory() / "bin" / (project->GetConfig().Scripting.ModuleName + ".dll");
+    std::string moduleName = project->GetConfig().Scripting.ModuleName;
+    if (!moduleName.empty() && !moduleName.ends_with(".dll"))
+    {
+        moduleName += ".dll";
+    }
+
+    std::filesystem::path assemblyPath = Project::GetAssetDirectory() / "bin" / moduleName;
     
     // Initialize Scripting for the loaded project
     if (!ServiceLocator::Get<ScriptEngine>().ReloadAssembly(assemblyPath.string()))
     {
         CH_CORE_WARN(
-            "RuntimeLayer: Script reload failed during project initialization. Runtime continues without scripts.");
+            "RuntimeLayer: Script reload failed during project initialization (path: {}). Runtime continues without scripts.",
+            assemblyPath.string());
     }
 
     // Discover project fonts once before any scene loads.

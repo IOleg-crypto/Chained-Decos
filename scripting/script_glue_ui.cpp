@@ -1,6 +1,7 @@
 #include "script_glue_internal.h"
 #include "script_internal_call_registry.h"
 #include <variant>
+#include <imgui_internal.h>
 
 namespace CHEngine
 {
@@ -63,7 +64,21 @@ CH_ADD_INTERNAL_CALL(ComboBoxControl, ComboBoxControl_GetItem_Ptr, ComboBoxContr
 
 CH_SCRIPT_FUNC void UI_Text(Coral::String text)
 {
-    ImGui::Text("%s", ((std::string)text).c_str());
+    if (ImGui::GetCurrentContext() == nullptr || !ImGui::GetCurrentContext()->WithinFrameScope)
+        return;
+
+    CH_CORE_INFO("[UI] UI_Text called from script: '{}'", ((std::string)text));
+
+    auto window = ImGui::GetCurrentContext()->CurrentWindow;
+    if (window && !window->SkipItems)
+    {
+        ImGui::Text("%s", ((std::string)text).c_str());
+    }
+    else
+    {
+        // Fallback: draw at top-left of the viewport or screen
+        ImGui::GetForegroundDrawList()->AddText({ 10, 10 }, IM_COL32(255, 255, 0, 255), ((std::string)text).c_str());
+    }
 }
 CH_ADD_INTERNAL_CALL(UI, UI_Text_Ptr, UI_Text);
 

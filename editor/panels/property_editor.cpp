@@ -91,6 +91,29 @@ void PropertyEditor::DrawComponentContainer(const std::string& name, const char*
     }
 }
 
+void PropertyEditor::DrawGenericReflection(const ComponentMetadata& metadata, Entity entity)
+{
+    std::string name = metadata.Name;
+    const char* icon = metadata.Icon;
+    entt::id_type id = 0; // Not strictly needed for generic drawer
+    
+    // We can't easily use DrawComponentContainer<T> here because we don't know T at compile time.
+    // However, we can use the type-erased ReflectInternal!
+    
+    DrawComponentInternal(
+        0, name, icon, entity,
+        [&]() {
+            UIProperties ui;
+            metadata.ReflectInternal(entity, &ui, (int)ReflectionMode::UI);
+            return ui.HasChanged();
+        },
+        [&]() {
+            // Generic remove (if we have metadata.Remove)
+            if (metadata.Remove) metadata.Remove(entity);
+        }
+    );
+}
+
 template <typename T> void PropertyEditor::Register(const std::string& name, const char* icon)
 {
     auto typeId = entt::type_hash<T>::value();
@@ -388,7 +411,10 @@ void PropertyEditor::DrawEntityProperties(CHEngine::Entity entity)
             }
 
             ImGui::PushID((int)id);
-            metadata.DrawUI(entity);
+            if (metadata.DrawUI)
+                metadata.DrawUI(entity);
+            else if (metadata.IsReflective && metadata.ReflectInternal)
+                DrawGenericReflection(metadata, entity);
             ImGui::PopID();
         }
     }

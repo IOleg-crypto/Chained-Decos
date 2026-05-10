@@ -466,7 +466,7 @@ void ViewportPanel::RenderOverlays(Scene* activeScene, const ImVec2& viewportSiz
         // 3. Selection Highlight
         if (isUISelected && selectedEntity && EditorLayer::Get().GetSceneState() == SceneState::Edit)
         {
-            auto rect = ServiceLocator::Get<UIRenderer>().GetEntityRect(selectedEntity, viewportSize, viewportScreenPos);
+            auto rect = ServiceLocator::Get<UIRenderer>().GetEntityRect(activeScene, selectedEntity, viewportSize, viewportScreenPos);
 
             ImVec2 p1 = ImVec2(rect.x, rect.y);
             ImVec2 p2 = ImVec2(p1.x + rect.width, p1.y + rect.height);
@@ -516,7 +516,7 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
             auto& cc = uiView.get<ControlComponent>(entityID);
             if (!cc.IsActive) continue;
 
-            auto rect = ServiceLocator::Get<UIRenderer>().GetEntityRect(entity, viewportSize, viewportScreenPos);
+            auto rect = ServiceLocator::Get<UIRenderer>().GetEntityRect(activeScene, entity, viewportSize, viewportScreenPos);
             if (mousePos.x >= rect.x && mousePos.x <= rect.x + rect.width && mousePos.y >= rect.y && mousePos.y <= rect.y + rect.height)
             {
                 bestHit = entity;
@@ -622,12 +622,17 @@ void ViewportPanel::RenderToolbar(Scene* activeScene, const ImVec2& viewportSize
         if (isPlaying) ImGui::PopStyleColor();
 
         ImGui::SameLine(0, 5);
+        // Reload Scripts (Ctrl+R)
         if (ImGui::Button(ICON_FA_FILE_CODE "##ReloadToolbar", ImVec2(28, 28)))
         {
             auto project = Project::GetActive();
             if (project)
             {
-                std::filesystem::path assemblyPath = Project::GetAssetDirectory() / "bin" / (project->GetConfig().Scripting.ModuleName + ".dll");
+                std::string moduleName = project->GetConfig().Scripting.ModuleName;
+                if (moduleName.find(".dll") == std::string::npos)
+                    moduleName += ".dll";
+                    
+                std::filesystem::path assemblyPath = Project::GetAssetDirectory() / "bin" / moduleName;
                 auto& scriptEngine = ServiceLocator::Get<ScriptEngine>();
                 scriptEngine.RequestAssemblyReload(assemblyPath.string(), "ViewportPanel");
             }

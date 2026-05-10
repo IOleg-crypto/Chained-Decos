@@ -122,4 +122,17 @@ namespace CHEngine {
     }
     CH_ADD_INTERNAL_CALL(PlayerComponent, PlayerComponent_SetLookSensitivity_Ptr, PlayerComponent_SetLookSensitivity);
 
+    // ── NetworkIdentity ──────────────────────────────────────────────────
+    CH_SCRIPT_FUNC uint64_t NetworkIdentity_GetNetworkID(uint64_t entityID) {
+        Entity entity = GetEntity(entityID);
+        return entity && entity.HasComponent<NetworkIdentity>() ? entity.GetComponent<NetworkIdentity>().NetworkID : 0;
+    }
+    CH_ADD_INTERNAL_CALL(NetworkIdentity, NetworkIdentity_GetNetworkID_Ptr, NetworkIdentity_GetNetworkID);
+
+    CH_SCRIPT_FUNC bool NetworkIdentity_IsOwned(uint64_t entityID) {
+        Entity entity = GetEntity(entityID);
+        return entity && entity.HasComponent<NetworkIdentity>() ? entity.GetComponent<NetworkIdentity>().IsOwned : false;
+    }
+    CH_ADD_INTERNAL_CALL(NetworkIdentity, NetworkIdentity_IsOwned_Ptr, NetworkIdentity_IsOwned);
+
 } // namespace CHEngine
