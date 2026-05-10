@@ -17,7 +17,7 @@ class EditorProjectManager
 public:
     EditorProjectManager();
     ~EditorProjectManager() = default;
-
+public:
     void NewProject();
     void NewProject(const std::string& name, const std::string& path);
     void OpenProject();

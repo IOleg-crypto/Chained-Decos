@@ -1,10 +1,11 @@
 #include "property_editor.h"
+#include "engine/scene/component_registry.h"
 #include "IconsFontAwesome6.h"
 #include "editor/editor_layer.h"
 #include "editor/undo/component_commands.h"
 #include "editor/undo/modify_component_command.h"
 #include "editor_gui.h"
-#include "engine/core/assets/asset_manager.h"
+#include "engine/assets/asset_manager.h"
 #include "engine/graphics/assets/model_asset.h"
 #include "engine/graphics/assets/texture_asset.h"
 #include "engine/physics/physics.h"
@@ -21,14 +22,15 @@
 #include "scripting/scriptengine.h"
 #include <Coral/ManagedObject.hpp>
 
+#include "engine/core/service_locator.h"
 #include <algorithm>
 #include <iterator>
 #include <yaml-cpp/yaml.h>
+// Component Registry handles all dynamic component UI
+#include "engine/scene/component_registry.h"
 
 namespace CHEngine
 {
-
-std::unordered_map<entt::id_type, PropertyEditor::ComponentMetadata> PropertyEditor::s_ComponentRegistry;
 
 // --- Template Implementations (Moved from Header) ---
 
@@ -54,7 +56,7 @@ void PropertyEditor::DrawComponentReflection(const std::string& name, const char
             {
                 auto oldState = s_InitialStates[e];
                 auto newState = comp;
-                EditorLayer::GetCommandHistory().PushCommand(
+                ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(
                     std::make_unique<ModifyComponentCommand<T>>(entity, oldState, newState, "Modify " + name));
                 s_InitialStates.erase(e);
             }
@@ -84,58 +86,96 @@ void PropertyEditor::DrawComponentContainer(const std::string& name, const char*
                 return false;
             },
             [&]() {
-                EditorLayer::GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(entity));
+                ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(entity));
             });
     }
 }
 
 template <typename T> void PropertyEditor::Register(const std::string& name, const char* icon)
 {
-    ComponentMetadata metadata;
-    metadata.Name = name;
-    metadata.Icon = icon;
-    metadata.Draw = [name, icon](Entity e) { DrawComponentReflection<T>(name, icon, e); };
-    metadata.Add = [](Entity e) {
-        if (!e.HasComponent<T>())
-        {
-            EditorLayer::GetCommandHistory().PushCommand(std::make_unique<AddComponentCommand<T>>(e));
-            return true;
-        }
-        return false;
-    };
-    RegisterComponent(entt::type_hash<T>::value(), metadata);
+    auto typeId = entt::type_hash<T>::value();
+    if (!ComponentRegistry::Exists(typeId))
+    {
+        ComponentMetadata metadata;
+        metadata.Name = name;
+        metadata.Icon = icon;
+        metadata.DrawUI = [name, icon](Entity e) { DrawComponentReflection<T>(name, icon, e); };
+        metadata.Add = [](Entity e) {
+            if (!e.HasComponent<T>())
+            {
+                ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<AddComponentCommand<T>>(e));
+            }
+        };
+        metadata.Remove = [](Entity e) {
+            ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(e));
+        };
+        metadata.SerializationKey = name + "Component"; // Default key convention
+        ComponentRegistry::Register(typeId, metadata);
+    }
+    else
+    {
+        auto& metadata = ComponentRegistry::GetMetadataMutable(typeId);
+        metadata.Name = name;
+        metadata.Icon = icon;
+        metadata.DrawUI = [name, icon](Entity e) { DrawComponentReflection<T>(name, icon, e); };
+        metadata.Add = [](Entity e) {
+            if (!e.HasComponent<T>())
+            {
+                ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<AddComponentCommand<T>>(e));
+            }
+        };
+        metadata.Remove = [](Entity e) {
+            ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(e));
+        };
+    }
 }
 
 template <typename T>
 void PropertyEditor::RegisterCustom(const std::string& name, std::function<bool(T&, Entity)> drawer, const char* icon)
 {
-    ComponentMetadata metadata;
-    metadata.Name = name;
-    metadata.Icon = icon;
-    metadata.Draw = [name, icon, drawer](Entity e) { DrawComponentContainer<T>(name, icon, e, drawer); };
-    metadata.Add = [](Entity e) {
-        if (!e.HasComponent<T>())
-        {
-            EditorLayer::GetCommandHistory().PushCommand(std::make_unique<AddComponentCommand<T>>(e));
-            return true;
-        }
-        return false;
-    };
-    RegisterComponent(entt::type_hash<T>::value(), metadata);
+    auto typeId = entt::type_hash<T>::value();
+    if (!ComponentRegistry::Exists(typeId))
+    {
+        ComponentMetadata metadata;
+        metadata.Name = name;
+        metadata.Icon = icon;
+        metadata.DrawUI = [name, icon, drawer](Entity e) { DrawComponentContainer<T>(name, icon, e, drawer); };
+        metadata.Add = [](Entity e) {
+            if (!e.HasComponent<T>())
+            {
+                ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<AddComponentCommand<T>>(e));
+            }
+        };
+        metadata.Remove = [](Entity e) {
+             ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(e));
+        };
+        ComponentRegistry::Register(typeId, metadata);
+    }
+    else
+    {
+        auto& metadata = ComponentRegistry::GetMetadataMutable(typeId);
+        metadata.Name = name;
+        metadata.Icon = icon;
+        metadata.DrawUI = [name, icon, drawer](Entity e) { DrawComponentContainer<T>(name, icon, e, drawer); };
+        metadata.Add = [](Entity e) {
+            if (!e.HasComponent<T>())
+            {
+                ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<AddComponentCommand<T>>(e));
+            }
+        };
+        metadata.Remove = [](Entity e) {
+             ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(e));
+        };
+    }
 }
 
 // --- Implementation ---
-
-void PropertyEditor::RegisterComponent(entt::id_type typeId, const ComponentMetadata& metadata)
-{
-    s_ComponentRegistry[typeId] = metadata;
-}
 
 void PropertyEditor::Init()
 {
     // --- Core Components ---
     Register<TransformComponent>("Transform", ICON_FA_ARROWS_UP_DOWN_LEFT_RIGHT);
-    s_ComponentRegistry[entt::type_hash<TransformComponent>::value()].AllowAdd = false;
+    ComponentRegistry::SetAllowAdd(entt::type_hash<TransformComponent>::value(), false);
 
     Register<TagComponent>("Tag", ICON_FA_TAG);
     Register<CameraComponent>("Camera", ICON_FA_VIDEO);
@@ -149,9 +189,6 @@ void PropertyEditor::Init()
     Register<ShaderComponent>("Shader", ICON_FA_CODE);
     Register<AnimationComponent>("Animation", ICON_FA_FILM);
     Register<AudioComponent>("Audio", ICON_FA_VOLUME_HIGH);
-    Register<SpawnComponent>("SpawnZone", ICON_FA_LOCATION_DOT);
-    Register<PlayerComponent>("Player", ICON_FA_USER);
-    Register<SceneTransitionComponent>("SceneTransition", ICON_FA_DOOR_OPEN);
 
     // --- Scripting ---
     RegisterCustom<ManagedScriptComponent>("Scripts", [](ManagedScriptComponent& comp, Entity entity) {
@@ -223,7 +260,7 @@ void PropertyEditor::Init()
 
         if (ImGui::BeginPopup("AddScriptPopup"))
         {
-            for (const auto& [className, type] : ScriptEngine::Get().GetScriptClasses())
+            for (const auto& [className, type] : ServiceLocator::Get<ScriptEngine>().GetScriptClasses())
             {
                 // Extract short name for menu
                 size_t lastDot = className.find_last_of('.');
@@ -250,59 +287,25 @@ void PropertyEditor::Init()
     Register<UIActionComponent>("UIAction", ICON_FA_BOLT);
 
     // --- UI Widgets ---
-    Register<ButtonControl>("Button", ICON_FA_ARROW_POINTER);
-    Register<PanelControl>("Panel", ICON_FA_WINDOW_MAXIMIZE);
-    Register<LabelControl>("Label", ICON_FA_FONT);
-    Register<SliderControl>("Slider", ICON_FA_SLIDERS);
-    Register<CheckboxControl>("Checkbox", ICON_FA_SQUARE_CHECK);
-    Register<InputTextControl>("InputText", ICON_FA_PEN_TO_SQUARE);
-    Register<ComboBoxControl>("ComboBox", ICON_FA_LIST_UL);
-    Register<ProgressBarControl>("ProgressBar", ICON_FA_BARS_PROGRESS);
-    Register<ImageControl>("Image", ICON_FA_IMAGE);
-    Register<ImageButtonControl>("ImageButton", ICON_FA_IMAGE);
-    Register<SeparatorControl>("Separator", ICON_FA_MINUS);
-    Register<RadioButtonControl>("RadioButton", ICON_FA_CIRCLE_DOT);
-    Register<ColorPickerControl>("ColorPicker", ICON_FA_PALETTE);
-    Register<DragFloatControl>("DragFloat", ICON_FA_ARROWS_LEFT_RIGHT);
-    Register<DragIntControl>("DragInt", ICON_FA_ARROWS_LEFT_RIGHT);
-    Register<TabBarControl>("TabBar", ICON_FA_TABLE_COLUMNS);
-    Register<TabItemControl>("TabItem", ICON_FA_FILE);
-    Register<CollapsingHeaderControl>("CollapsingHeader", ICON_FA_ANGLE_DOWN);
-    Register<VerticalLayoutGroup>("VerticalLayoutGroup", ICON_FA_LAYER_GROUP);
+    Register<WidgetComponent>("Widget", ICON_FA_SHAPES);
 
     // Mark only real UI widget types as IsWidget (these will be hidden in 3D scenes)
     auto markWidget = [&](entt::id_type id) {
-        if (s_ComponentRegistry.contains(id))
+        if (ComponentRegistry::Exists(id))
         {
-            s_ComponentRegistry[id].IsWidget = true;
+            auto metadata = ComponentRegistry::GetMetadata(id);
+            metadata.IsWidget = true;
+            ComponentRegistry::Register(id, metadata);
         }
     };
     markWidget(entt::type_hash<ControlComponent>::value());
     markWidget(entt::type_hash<NavigationComponent>::value());
     markWidget(entt::type_hash<UIActionComponent>::value());
-    markWidget(entt::type_hash<ButtonControl>::value());
-    markWidget(entt::type_hash<PanelControl>::value());
-    markWidget(entt::type_hash<LabelControl>::value());
-    markWidget(entt::type_hash<SliderControl>::value());
-    markWidget(entt::type_hash<CheckboxControl>::value());
-    markWidget(entt::type_hash<InputTextControl>::value());
-    markWidget(entt::type_hash<ComboBoxControl>::value());
-    markWidget(entt::type_hash<ProgressBarControl>::value());
-    markWidget(entt::type_hash<ImageControl>::value());
-    markWidget(entt::type_hash<ImageButtonControl>::value());
-    markWidget(entt::type_hash<SeparatorControl>::value());
-    markWidget(entt::type_hash<RadioButtonControl>::value());
-    markWidget(entt::type_hash<ColorPickerControl>::value());
-    markWidget(entt::type_hash<DragFloatControl>::value());
-    markWidget(entt::type_hash<DragIntControl>::value());
-    markWidget(entt::type_hash<TabBarControl>::value());
-    markWidget(entt::type_hash<TabItemControl>::value());
-    markWidget(entt::type_hash<CollapsingHeaderControl>::value());
-    markWidget(entt::type_hash<VerticalLayoutGroup>::value());
+    markWidget(entt::type_hash<WidgetComponent>::value());
     markWidget(entt::type_hash<SpriteComponent>::value());
 }
 
-void PropertyEditor::DrawComponentInternal(entt::id_type typeId, const std::string& name, const char* icon,
+void PropertyEditor::DrawComponentInternal(::entt::id_type typeId, const std::string& name, const char* icon,
                                            Entity entity, std::function<bool()> contentDrawer,
                                            std::function<void()> remover)
 {
@@ -365,23 +368,14 @@ void PropertyEditor::DrawEntityProperties(CHEngine::Entity entity)
     auto& registry = entity.GetRegistry();
     bool isUI = entity.HasComponent<ControlComponent>();
 
-    // 1. Check for widgets more efficiently
-    bool hasWidget = false;
-    for (auto [id, storage] : registry.storage())
-    {
-        if (storage.contains(entity) && s_ComponentRegistry.contains(id) && s_ComponentRegistry[id].IsWidget)
-        {
-            hasWidget = true;
-            break;
-        }
-    }
+    auto& compRegistry = ComponentRegistry::GetRegistry();
 
     // 2. Draw components efficiently
     for (auto [id, storage] : registry.storage())
     {
-        if (storage.contains(entity) && s_ComponentRegistry.contains(id))
+        if (storage.contains(entity) && compRegistry.contains(id))
         {
-            auto& metadata = s_ComponentRegistry[id];
+            auto& metadata = compRegistry.at(id);
             if (!metadata.Visible)
             {
                 continue;
@@ -394,7 +388,7 @@ void PropertyEditor::DrawEntityProperties(CHEngine::Entity entity)
             }
 
             ImGui::PushID((int)id);
-            metadata.Draw(entity);
+            metadata.DrawUI(entity);
             ImGui::PopID();
         }
     }
@@ -444,7 +438,7 @@ void PropertyEditor::DrawAddComponentPopup(CHEngine::Entity entity)
         auto* scene = entity.GetRegistry().ctx().find<Scene*>();
         bool is3DScene = scene && (*scene)->GetSettings().Mode == BackgroundMode::Environment3D;
 
-        for (auto& [id, metadata] : s_ComponentRegistry)
+        for (auto& [id, metadata] : ComponentRegistry::GetRegistry())
         {
             if (!metadata.AllowAdd)
             {

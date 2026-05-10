@@ -7,18 +7,25 @@
 #include <sstream>
 #include <yaml-cpp/yaml.h>
 #include <engine/graphics/assets/shader_asset.h>
+#include "engine/graphics/pipeline/renderer_types.h"
 
 namespace CHEngine
 {
-    std::shared_ptr<Asset> ShaderLoader::Create()
+    std::shared_ptr<Asset> ShaderLoader::Create() const
     {
         return std::make_shared<ShaderAsset>();
     }
 
-    bool ShaderLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError)
+    bool ShaderLoader::Load(std::shared_ptr<Asset> asset, const LoadContext& ctx, std::string* outError)
     {
-        auto shaderAsset = std::static_pointer_cast<ShaderAsset>(asset);
-        auto shader = LoadShaderFromPath(resolvedPath, shaderAsset);
+        auto shaderAsset = std::dynamic_pointer_cast<ShaderAsset>(asset);
+        if (!shaderAsset)
+        {
+            if (outError) *outError = "ShaderLoader: Invalid asset type";
+            return false;
+        }
+
+        auto shader = LoadShaderFromPath(ctx.ResolvedPath, shaderAsset);
         if (shader)
         {
             shaderAsset->SetShader(shader);
@@ -26,7 +33,7 @@ namespace CHEngine
         }
         if (outError)
         {
-            *outError = "ShaderLoader: failed to load shader from '" + resolvedPath + "'";
+            *outError = "ShaderLoader: failed to load shader from '" + ctx.ResolvedPath + "'";
         }
         return false;
     }
@@ -59,12 +66,50 @@ namespace CHEngine
                 {
                     if (config["Uniforms"])
                     {
-                        std::vector<std::string> uniformNames;
+                        std::vector<ShaderUniform> uniforms;
                         for (auto u : config["Uniforms"])
                         {
-                            uniformNames.push_back(u.as<std::string>());
+                            if (u.IsScalar())
+                            {
+                                // Backwards compatibility: just string
+                                ShaderUniform unif;
+                                unif.Name = u.as<std::string>();
+                                unif.Type = 0; // Float
+                                uniforms.push_back(unif);
+                            }
+                            else if (u.IsMap())
+                            {
+                                ShaderUniform unif;
+                                unif.Name = u["Name"].as<std::string>();
+                                
+                                std::string typeStr = "Float";
+                                if (u["Type"]) typeStr = u["Type"].as<std::string>();
+                                
+                                if (typeStr == "Float") unif.Type = 0;
+                                else if (typeStr == "Vec2") unif.Type = 1;
+                                else if (typeStr == "Vec3") unif.Type = 2;
+                                else if (typeStr == "Vec4") unif.Type = 3;
+                                else if (typeStr == "Color") unif.Type = 4;
+                                else unif.Type = 0; // fallback
+
+                                if (u["Default"] && u["Default"].IsSequence())
+                                {
+                                    int i = 0;
+                                    for (auto elem : u["Default"])
+                                    {
+                                        if (i < 4) unif.Value[i] = elem.as<float>();
+                                        i++;
+                                    }
+                                }
+                                else if (u["Default"] && u["Default"].IsScalar())
+                                {
+                                    unif.Value[0] = u["Default"].as<float>();
+                                }
+
+                                uniforms.push_back(unif);
+                            }
                         }
-                        shaderAsset->SetUniformNames(uniformNames);
+                        shaderAsset->SetUniforms(uniforms);
                     }
                 }
                 return shader;

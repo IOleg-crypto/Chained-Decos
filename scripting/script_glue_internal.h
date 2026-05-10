@@ -1,7 +1,7 @@
 #ifndef CH_SCRIPT_GLUE_INTERNAL_H
 #define CH_SCRIPT_GLUE_INTERNAL_H
 
-#include "engine/core/assets/asset_manager.h"
+#include "engine/assets/asset_manager.h"
 #include "engine/audio/audio.h"
 #include "engine/audio/audio.h"
 #include "engine/core/application.h"
@@ -26,6 +26,15 @@
 
 namespace CHEngine
 {
+
+// Forward declarations for explicit glue registration (prevents linker stripping)
+void RegisterGlueSystem();
+void RegisterGlueInput();
+void RegisterGlueScene();
+void RegisterGlueEntity();
+void RegisterGlueCamera();
+void RegisterGlueUI();
+void RegisterGlueAudio();
 
 // Internal helper to get active scene safely
 inline Scene* GetActiveScene()

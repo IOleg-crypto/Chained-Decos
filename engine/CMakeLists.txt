@@ -1,35 +1,16 @@
-# Common include directories for all engine targets
-set(ENGINE_INCLUDE_DIRS
-    ${CMAKE_SOURCE_DIR}
-        .
-    ${glm_SOURCE_DIR}
-    ${yaml-cpp_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/include/entt/src
-    ${CMAKE_SOURCE_DIR}/include/coral/Coral.Native/Include
-    ${CMAKE_SOURCE_DIR}/include/miniaudio
-    ${CMAKE_SOURCE_DIR}/include/glfw/include
-    ${CMAKE_SOURCE_DIR}/include/imgui
-    ${CMAKE_SOURCE_DIR}/include/imgui/backends
-    ${CMAKE_SOURCE_DIR}/include/imguizmo
-    ${CMAKE_SOURCE_DIR}/include/nfd/src/include
-    ${CMAKE_BINARY_DIR}/gladsources/glad/include
-    ${assimp_SOURCE_DIR}/include
-    ${assimp_BINARY_DIR}/include
-)
-
-# SHARED for local development (hot-reload), STATIC for CI/distribution
-set(CH_ENGINE_SHARED ON CACHE BOOL "Build engine as shared library (DLL)" FORCE)
+# SHARED for local development (hot-reload), STATIC for CI/distribution/stability
+set(CH_ENGINE_SHARED OFF CACHE BOOL "Build engine as shared library (DLL)" FORCE)
 if(CH_ENGINE_SHARED)
     set(ENGINE_LIB_TYPE SHARED)
 else()
     set(ENGINE_LIB_TYPE STATIC)
 endif()
 
-# We use OBJECT libraries for sub-modules to handle circular dependencies (e.g. Core <-> Scene)
-# Unified through Unity Build and PCH for maximum compilation speed.
-set(SUBMODULE_LIB_TYPE OBJECT)
+# We use STATIC libraries for sub-modules to ensure binary stability and avoid DLL ABI issues in MinGW
+set(SUBMODULE_LIB_TYPE STATIC)
 
 add_subdirectory(core)
+add_subdirectory(assets)
 add_subdirectory(graphics)
 add_subdirectory(physics)
 add_subdirectory(audio)
@@ -37,22 +18,22 @@ add_subdirectory(scene)
 add_subdirectory(${CMAKE_SOURCE_DIR}/scripting ${CMAKE_BINARY_DIR}/scripting)
 
 # Create the final engine facade library that links all sub-modules together
-add_library(engine ${ENGINE_LIB_TYPE}
-    $<TARGET_OBJECTS:engine_core>
-    $<TARGET_OBJECTS:engine_graphics>
-    $<TARGET_OBJECTS:engine_physics>
-    $<TARGET_OBJECTS:engine_audio>
-    $<TARGET_OBJECTS:engine_scene>
-    $<TARGET_OBJECTS:engine_scripting>
+add_library(engine ${ENGINE_LIB_TYPE} core/application.cpp)
+
+target_link_libraries(engine PUBLIC
+    engine_scripting
+    engine_scene
+    engine_graphics
+    engine_physics
+    engine_audio
+    engine_assets
+    engine_core
 )
 
 target_compile_definitions(engine PRIVATE CH_ENGINE_BUILD)
-    target_compile_definitions(engine PUBLIC 
-        CH_DYNAMIC_LINK
-        IMGUI_DEFINE_MATH_OPERATORS
-        GLFW_INCLUDE_NONE
-        IMGUI_IMPL_OPENGL_LOADER_GLAD
-    )
+target_compile_definitions(engine PUBLIC 
+    CH_DYNAMIC_LINK
+)
 
 # MSVC needs exported symbols to generate the .lib import library
 set_target_properties(engine PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
@@ -61,26 +42,8 @@ if(WIN32)
 endif()
 
 target_include_directories(engine PUBLIC
-    ${ENGINE_INCLUDE_DIRS}
-    ${assimp_SOURCE_DIR}/include
-    ${assimp_BINARY_DIR}/include
-    ${glm_SOURCE_DIR}
-    ${yaml-cpp_SOURCE_DIR}/include
-INTERFACE
-    ${CMAKE_SOURCE_DIR}/include/imgui
-    ${CMAKE_SOURCE_DIR}/include/imgui/backends
-    ${imguizmo_SOURCE_DIR}
-)
-
-target_link_libraries(engine 
-PUBLIC 
-    EnTT::EnTT
-    yaml-cpp
-    assimp::assimp
-PRIVATE
-    imguilib
-    nfd
-    Coral.Native
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 # (Redundant compiler flags removed - now in CompilerSettings.cmake)
@@ -96,15 +59,22 @@ add_library(ChainedEngineFramework INTERFACE)
 add_library(ChainedEngine::Framework ALIAS ChainedEngineFramework)
 add_library(ChainedEngine::API ALIAS ChainedEngineFramework)
 
+file(TO_CMAKE_PATH "${CMAKE_SOURCE_DIR}" PROJECT_ROOT_DIR_ESCAPED)
+
 target_include_directories(ChainedEngineFramework INTERFACE
-    ${ENGINE_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}
 )
 
 target_link_libraries(ChainedEngineFramework INTERFACE
     engine
-    yaml-cpp
-    assimp::assimp
+    ChainedEngine::External::GLM
+    ChainedEngine::External::EnTT
+    ChainedEngine::External::YamlCpp
+)
+
+target_compile_definitions(ChainedEngineFramework INTERFACE
+    PROJECT_ROOT_DIR="${PROJECT_ROOT_DIR_ESCAPED}"
 )
 
 install(TARGETS engine

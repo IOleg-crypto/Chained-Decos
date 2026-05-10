@@ -1,9 +1,7 @@
 #ifndef CH_MATERIAL_H
 #define CH_MATERIAL_H
 
-#include "engine/core/base.h"
 #include "engine/core/reflection.h"
-#include <string>
 
 namespace CHEngine
 {
@@ -12,27 +10,27 @@ struct MaterialInstance
 {
     // Albedo/Base Color
     Color AlbedoColor = { 255, 255, 255, 255 };
-    std::string AlbedoPath = "";
+    AssetHandle AlbedoHandle = AssetHandle(0);
     bool OverrideAlbedo = false;
 
     // PBR Maps
-    std::string NormalMapPath = "";
+    AssetHandle NormalHandle = AssetHandle(0);
     bool OverrideNormal = false;
 
-    std::string MetallicRoughnessPath = "";
+    AssetHandle MetallicRoughnessHandle = AssetHandle(0);
     bool OverrideMetallicRoughness = false;
 
-    std::string OcclusionMapPath = "";
+    AssetHandle OcclusionHandle = AssetHandle(0);
     bool OverrideOcclusion = false;
 
     // Optional Emissive
-    std::string EmissivePath = "";
+    AssetHandle EmissiveHandle = AssetHandle(0);
     Color EmissiveColor = { 0, 0, 0, 255 };
     float EmissiveIntensity = 0.0f;
     bool OverrideEmissive = false;
 
     // Shader
-    std::string ShaderPath = "";
+    AssetHandle ShaderHandle = AssetHandle(0);
     bool OverrideShader = false;
 
     // Material Parameters
@@ -48,18 +46,18 @@ struct MaterialInstance
         if (props.BeginGroup("Albedo"))
         {
             props.Property("AlbedoColor", AlbedoColor);
-            props.File("AlbedoPath", AlbedoPath, "png,jpg,tga");
+            props.Handle("Albedo", AlbedoHandle);
             props.Property("OverrideAlbedo", OverrideAlbedo);
             props.EndGroup();
         }
 
         if (props.BeginGroup("PBR Maps"))
         {
-            props.File("NormalMapPath", NormalMapPath, "png,jpg,tga");
+            props.Handle("Normal", NormalHandle);
             props.Property("OverrideNormal", OverrideNormal);
-            props.File("MetallicRoughnessPath", MetallicRoughnessPath, "png,jpg,tga");
+            props.Handle("MetallicRoughness", MetallicRoughnessHandle);
             props.Property("OverrideMetallicRoughness", OverrideMetallicRoughness);
-            props.File("OcclusionMapPath", OcclusionMapPath, "png,jpg,tga");
+            props.Handle("Occlusion", OcclusionHandle);
             props.Property("OverrideOcclusion", OverrideOcclusion);
             props.EndGroup();
         }
@@ -68,7 +66,7 @@ struct MaterialInstance
         {
             props.Property("EmissiveColor", EmissiveColor);
             props.Property("EmissiveIntensity", EmissiveIntensity);
-            props.File("EmissivePath", EmissivePath, "png,jpg,tga");
+            props.Handle("Emissive", EmissiveHandle);
             props.Property("OverrideEmissive", OverrideEmissive);
             props.EndGroup();
         }
@@ -91,7 +89,7 @@ struct MaterialInstance
 
         if (props.BeginGroup("Shader"))
         {
-            props.File("Path", ShaderPath, "chshader");
+            props.Handle("Shader", ShaderHandle);
             props.Property("Override", OverrideShader);
             props.EndGroup();
         }

@@ -1,6 +1,7 @@
 #include "animation_system.h"
 #include "engine/scene/scene.h"
-#include "engine/core/assets/asset_manager.h"
+#include "engine/assets/asset_manager.h"
+#include "engine/core/service_locator.h"
 #include "engine/graphics/assets/model_asset.h"
 #include "engine/core/profiler.h"
 #include <cmath>
@@ -22,7 +23,8 @@ void AnimationSystem::Update(Scene* scene, Timestep ts)
         }
 
         auto& model = view.get<ModelComponent>(entity);
-        auto modelAsset = AssetManager::Get().Get<ModelAsset>(model.ModelPath);
+        auto handle = ServiceLocator::Get<AssetManager>().ResolveToHandle(model.ModelPath, ModelAsset::GetStaticType());
+        auto modelAsset = ServiceLocator::Get<AssetManager>().Get<ModelAsset>(handle);
         if (!modelAsset || modelAsset->GetAnimationCount() == 0)
         {
             continue;

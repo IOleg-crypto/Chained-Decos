@@ -2,7 +2,7 @@
 
 #include "editor_gui.h"
 #include "editor_layer.h"
-#include "engine/scene/components.h"
+#include "engine/scene/components/component_utils.h"
 #include "undo/modify_component_command.h"
 #include <cmath>
 #include <glm/gtc/matrix_transform.hpp>
@@ -70,7 +70,7 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
     }
 
     // 3. Prepare Model matrix
-    glm::mat4 modelMat = transform.GetTransform();
+    glm::mat4 modelMat = ComponentUtils::GetTransform(transform);
 
     // 4. Handle Snapping
     float* snap = m_SnappingEnabled ? m_SnapValues : nullptr;
@@ -104,9 +104,9 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
             glm::value_ptr(rotation),
             glm::value_ptr(scale));
 
-        transform.SetTranslation(translation);
-        transform.SetRotation(glm::radians(rotation));
-        transform.SetScale(scale);
+        ComponentUtils::SetTranslation(transform, translation);
+        ComponentUtils::SetRotation(transform, glm::radians(rotation));
+        ComponentUtils::SetScale(transform, scale);
     }
     else if (m_WasUsing && !isUsingNow)
     {
@@ -119,7 +119,7 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
 
         if (changed)
         {
-            EditorLayer::GetCommandHistory().PushCommand(std::make_unique<ModifyComponentCommand<TransformComponent>>(
+            EditorLayer::Get().GetCommandHistory().PushCommand(std::make_unique<ModifyComponentCommand<TransformComponent>>(
                 entity, m_OldTransform, transform, "Transform Entity"));
         }
     }

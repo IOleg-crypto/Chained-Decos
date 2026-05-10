@@ -2,6 +2,7 @@
 #define CH_RENDERER_H
 
 #include "engine/core/timestep.h"
+#include "engine/core/engine_service.h"
 #include "engine/graphics/assets/environment.h"
 #include "engine/graphics/pipeline/shader_library.h"
 #include "engine/graphics/api/camera_types.h"
@@ -10,6 +11,7 @@
 #include <glm/glm.hpp>
 #include <memory>
 #include <vector>
+#include <unordered_map>
 
 namespace CHEngine
 {
@@ -50,6 +52,14 @@ struct StaticResources
     std::unique_ptr<Model> WireCubeModel;  // 12-edge wireframe cube for GL_LINES
 };
 
+// Data structures for Uniform Buffers (UBOs)
+struct CameraData
+{
+    glm::mat4 ViewProjection;
+    glm::mat4 Projection;
+    glm::mat4 View;
+};
+
 // Cached skybox resources and the last uploaded environment texture.
 struct SkyboxData
 {
@@ -70,6 +80,9 @@ struct RendererData
 
     std::unique_ptr<ShaderLibrary> Shaders;
 
+    std::shared_ptr<class UniformBuffer> CameraUBO;
+    std::shared_ptr<class UniformBuffer> GlobalUBO;
+
     float DiagnosticMode = 0.0f;
     glm::vec3 CurrentCameraPosition = {0.0f, 0.0f, 0.0f};
     Timestep Time = 0.0f;
@@ -85,24 +98,25 @@ struct RendererData
     std::shared_ptr<VertexArray> BillboardVAO;
     std::shared_ptr<VertexArray> SpriteVAO;
     std::shared_ptr<VertexArray> GridPlaneVAO;
+
+    // Instancing cache
+    std::shared_ptr<class VertexBuffer> InstanceBuffer;
+    uint32_t InstanceBufferCapacity = 0;
+    std::unordered_map<VertexArray*, std::shared_ptr<VertexArray>> InstancedVAOCache;
+
+    // Line rendering cache
+    std::shared_ptr<class VertexBuffer> LineVBO;
+    std::shared_ptr<VertexArray> LineVAO;
 };
 
 // Singleton renderer facade that owns GPU resources, frame state, and low-level draw calls.
-class Renderer
+class Renderer : public EngineService
 {
 public:
     Renderer();
-    ~Renderer();
+    virtual ~Renderer() override;
 
-    static bool IsInitialized();
-    static Renderer& Get();
-
-    void Initialize();
     void LoadEngineResources();
-    void Shutdown();
-
-    void InternalInit();
-    void InternalShutdown();
 
     void InitializeResources();
     void CleanupResources();
@@ -121,7 +135,7 @@ public:
     void DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color);
     void DrawGrid(int slices, float spacing);
     void DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& color);
-    void DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float exposure, float brightness, float contrast, const Camera3D& camera);
+    void DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float exposure, float brightness, float contrast, const Camera3D& camera, bool flipped = false);
     void DrawBillboard(const Camera3D& camera, uint32_t textureId, const glm::vec3& position, float size, const glm::vec4& tint);
     void DrawSprite(uint32_t textureId, const glm::mat4& transform, const glm::vec4& tint, bool flipX = false, bool flipY = false);
     void DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, const glm::vec4& color, bool useWireframe = true);
@@ -143,6 +157,18 @@ public:
     ShaderLibrary& GetShaderLibrary() { return *m_Data->Shaders; }
     RendererData& GetData() { return *m_Data; }
 
+    void SetHeadless(bool headless) { m_Headless = headless; }
+    void SetViewportSize(uint32_t width, uint32_t height) { m_ViewportWidth = width; m_ViewportHeight = height; }
+    
+    uint32_t GetViewportWidth() const { return m_ViewportWidth; }
+    uint32_t GetViewportHeight() const { return m_ViewportHeight; }
+    bool IsHeadless() const { return m_Headless; }
+
+protected:
+    virtual void OnInit() override;
+    virtual void OnUpdate(Timestep ts) override;
+    virtual void OnShutdown() override;
+
 private:
     void ApplyFogUniforms(const std::shared_ptr<ShaderAsset>& shader);
     void InitializeSkybox();
@@ -150,7 +176,10 @@ private:
 
 private:
     std::unique_ptr<RendererData> m_Data;
-    bool m_Initialized = false;
+    bool m_Headless = false;
+    uint32_t m_ViewportWidth = 1280;
+    uint32_t m_ViewportHeight = 720;
+
 };
 } // namespace CHEngine
 

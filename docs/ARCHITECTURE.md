@@ -1,39 +1,53 @@
 # Chained Engine Architecture
 
-This document provides a deep dive into the internal structure of Chained Engine, from the entry point to the main loop.
+This document describes the current runtime structure of Chained Engine, from executable entry points to the main loop.
 
 ## 1. Bootstrapping Flow
 
-The engine uses a modular bootstrapping system centered around the `ProjectLauncher` class. This allows the engine to be initialized in different modes (Editor, Runtime, or Headless) without duplicating initialization logic.
+The engine uses a small `main` wrapper in `entry_point.h` and delegates application construction to a per-executable `CreateApplication` function. Editor and runtime each build their own `ApplicationSpecification`, then attach their primary layer.
 
 ### Entry Point (`main`)
-The `main` function (found in `entry_point.h`) is minimalist. It delegages application creation to a project-specific `CreateApplication` function.
+`entry_point.h` defines the shared `RunEntryPoint` helper. The executable provides `CreateApplication`, which returns a configured `Application` instance.
 
-### ProjectLauncher
-The `ProjectLauncher` utility is responsible for:
-1.  **Parsing Command Line Arguments**: Determining the project path and window overrides.
-2.  **Loading Project Metadata**: Reading the `.chproject` YAML file.
-3.  **Preparing Application Specifications**: Setting VSync, window dimensions, and titles based on project data.
+### Project Selection and Discovery
+Startup usually follows this path:
+1. `CreateApplication` fills `ApplicationSpecification` from CLI args and default window settings.
+2. `Application` is constructed and initializes core services.
+3. Runtime-specific startup may discover or load a project through `Project::Discover` and `Project::Load`.
+4. The executable attaches either `EditorLayer` or `RuntimeLayer`.
 
-## 2. System Initialization (SRP)
+## 2. System Initialization
 
-We adhere to the **Single Responsibility Principle**. Instead of a monolithic initialization block, each engine system is responsible for its own setup.
+Initialization is centralized in `Application`. That keeps startup predictable, but it also makes `Application` a coupling point for unrelated systems.
 
-### Decentralized Asset Loaders
-Asset loaders are registered during the `Init()` phase of the relevant subsystem:
-*   **Renderer**: Registers `TextureLoader`, `ModelLoader`, `ShaderLoader`, and `EnvironmentLoader`.
-*   **UIRenderer**: Registers `FontLoader`.
+### What `Application` Owns
+`Application` currently creates and coordinates the window, `ThreadPool`, `ComponentSerializer`, `AssetManager`, `Renderer`, `TextureSystem`, `Audio`, `PhysicsSystem`, `UIRenderer`, and `ScriptEngine`.
+
+### Current Tradeoff
+This is not a pure SRP split. The benefit is that bootstrap order is explicit. The cost is that changes to service lifecycle, headless mode, or renderer setup tend to ripple through `Application`.
 
 ## 3. Layer Stack Model
 
-The engine handles functionality through a `LayerStack`. Layers are processed in the following order:
-1.  **Engine Layers** (e.g., `RuntimeLayer` or `EditorLayer`): Handle the main logic and viewport rendering.
-2.  **Overlays** (e.g., `ImGuiLayer`): Render UI and debugging information on top of the layers.
+The engine uses a `LayerStack` for gameplay and editor/runtime behavior.
+
+1. `EditorLayer` or `RuntimeLayer` owns the primary experience.
+2. `ImGuiLayer` is pushed as an overlay in non-headless runs.
+3. Layers rely on shared process-wide services through `ServiceLocator` and `Application::Get()`.
 
 ## 4. Main Loop
 
-The `Application::Run()` method is the heart of the engine:
-1.  **Timing**: Calculates `Timestep` (delta time).
-2.  **Updates**: Iterates through the `LayerStack`, calling `OnUpdate` for each layer.
-3.  **UI Rendering**: Calls `Begin()` on `ImGuiLayer`, then `OnImGuiRender` for all layers, and finally `End()`.
-4.  **Events**: Dispatches platform events (input, window resize) through the stack.
+`Application::Run()` drives the frame loop:
+1. Update timing and frame delta.
+2. Poll input and platform events.
+3. Tick engine services.
+4. Run fixed-step updates on the layer stack.
+5. Run per-frame layer updates.
+6. Render scene layers, then render ImGui, then present the frame.
+
+## 5. Architectural Pressure Points
+
+The current shape works, but it has a few clear friction points:
+1. Service lifecycle order is encoded in registration order, which is easy to break.
+2. Runtime and editor logic both reach back into global state instead of depending on explicit interfaces.
+3. Entry-point setup and runtime project loading both interpret CLI and project configuration, which duplicates startup policy.
+4. `Application` owns too many unrelated concerns, so it is the main place where startup regressions accumulate.

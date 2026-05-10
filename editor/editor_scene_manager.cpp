@@ -1,25 +1,32 @@
 #include "editor_scene_manager.h"
 #include "editor_layer.h"
+#include "scripting/scriptengine.h"
+#include "engine/scene/scene.h"
 #include "engine/scene/project.h"
 #include "engine/scene/scene_serializer.h"
+#include "engine/scene/scene_scripting_manager.h"
 #include "engine/core/thread_pool.h"
 #include "engine/core/application.h"
 #include "engine/core/input.h"
 #include "engine/core/key_codes.h"
-#include "engine/core/assets/asset_manager.h"
+#include "engine/assets/asset_manager.h"
+#include "engine/core/service_locator.h"
 #include "engine/platform/utils/dialogs.h"
 #include "engine/scene/scene_events.h"
 
 namespace CHEngine
 {
 
-EditorSceneManager::EditorSceneManager()
+EditorSceneManager::EditorSceneManager(ScriptEngine* scriptEngine)
+    : m_ScriptEngine(scriptEngine)
 {
 }
 
 void EditorSceneManager::NewScene()
 {
-    SetScene(Scene::CreateDefault());
+    SetScene(Scene::CreateDefault()); // CreateDefault uses placeholder nullptr, we should pass engine if we want
+    // Actually, let's update CreateDefault to take it if we can.
+    SetScene(std::make_shared<Scene>(m_ScriptEngine));
 }
 
 void EditorSceneManager::OpenScene()
@@ -201,8 +208,8 @@ void EditorSceneManager::StartSceneOpenTransition(const std::filesystem::path& p
 
     try
     {
-        m_SceneOpenFuture = ThreadPool::Get().Enqueue([scenePath]() {
-            auto newScene = std::make_shared<Scene>();
+        m_SceneOpenFuture = ThreadPool::Get().Enqueue([scenePath, engine = m_ScriptEngine]() {
+            auto newScene = std::make_shared<Scene>(engine);
             SceneSerializer serializer(newScene.get());
             if (!serializer.Deserialize(scenePath.string()))
             {
@@ -272,7 +279,7 @@ void EditorSceneManager::UpdateSceneOpenTransition()
         }
     }
 
-    if (m_SceneOpenSceneReady && (m_EditorScene || m_RuntimeScene) && !AssetManager::Get().HasBackgroundWork())
+    if (m_SceneOpenSceneReady && (m_EditorScene || m_RuntimeScene) && !ServiceLocator::Get<AssetManager>().HasBackgroundWork())
     {
         auto targetScene = m_IsPlayModeSceneLoad ? m_RuntimeScene : m_EditorScene;
 
@@ -340,12 +347,25 @@ void EditorSceneManager::StartPlayModeTransition()
     m_RuntimeScene.reset();
     m_LoadingStatus = "Preparing Play Mode...";
 
-    auto editorScene = m_EditorScene;
+    CH_CORE_INFO("Editor: Copying scene for play mode on main thread.");
     try {
-        m_PlayModeCopyFuture = ThreadPool::Get().Enqueue([editorScene]() { return Scene::Copy(editorScene); });
-        m_IsPlayModeLoading = true;
-        CH_CORE_INFO("Editor: Copying scene for play mode on a worker thread.");
+        m_RuntimeScene = Scene::Copy(m_EditorScene);
+        if (m_RuntimeScene)
+        {
+            CH_CORE_INFO("Editor: Scene copy successful. Resulting pointer: {}", (void*)m_RuntimeScene.get());
+            m_PlayModeSceneReady = true;
+            m_IsPlayModeLoading = true; // Still mark as loading to tick UpdatePlayModeTransition once if needed
+        }
+        else
+        {
+            CH_CORE_ERROR("Editor: Failed to copy scene for play mode - result was null.");
+            CancelPlayModeTransition();
+        }
+    } catch (const std::exception& e) {
+        CH_CORE_ERROR("Editor: Exception copying scene: {}", e.what());
+        CancelPlayModeTransition();
     } catch (...) {
+        CH_CORE_ERROR("Editor: Unknown exception copying scene.");
         CancelPlayModeTransition();
     }
 }
@@ -354,33 +374,13 @@ void EditorSceneManager::UpdatePlayModeTransition()
 {
     if (!m_IsPlayModeLoading) return;
 
-    if (!m_PlayModeSceneReady)
-    {
-        if (m_PlayModeCopyFuture.valid() &&
-            m_PlayModeCopyFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
-        {
-            try {
-                m_RuntimeScene = m_PlayModeCopyFuture.get();
-                if (!m_RuntimeScene) {
-                    CancelPlayModeTransition();
-                    return;
-                }
-                m_PlayModeSceneReady = true;
-            } catch (...) {
-                CancelPlayModeTransition();
-                return;
-            }
-        }
-    }
-
-    if (m_PlayModeSceneReady && m_RuntimeScene && !AssetManager::Get().HasBackgroundWork())
+    if (m_PlayModeSceneReady && m_RuntimeScene && !ServiceLocator::Get<AssetManager>().HasBackgroundWork())
     {
         EditorContext::SetSceneState(SceneState::Play);
         m_RuntimeScene->OnRuntimeStart();
 
         m_IsPlayModeLoading = false;
         m_PlayModeSceneReady = false;
-        m_PlayModeCopyFuture = {};
         m_LoadingStatus = "";
         CH_CORE_INFO("Editor: Play Mode Started");
     }
@@ -391,7 +391,6 @@ void EditorSceneManager::CancelPlayModeTransition()
     m_PlayModeStartRequested = false;
     m_IsPlayModeLoading = false;
     m_PlayModeSceneReady = false;
-    m_PlayModeCopyFuture = {};
     m_RuntimeScene.reset();
     m_LoadingStatus = "";
 }

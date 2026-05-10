@@ -2,8 +2,9 @@
 #include "component_serializer.h"
 #include "hierarchy_serializer.h"
 #include "components.h"
-#include "engine/core/assets/asset_manager.h"
+#include "engine/assets/asset_manager.h"
 #include "engine/core/log.h"
+#include "engine/core/service_locator.h"
 #include "engine/scene/yaml.h"
 #include "engine/graphics/assets/environment.h"
 #include "engine/graphics/assets/model_asset.h"
@@ -157,7 +158,8 @@ static void DeserializeEnvironmentSettings(const YAML::Node& data, SceneSettings
         std::string envPath = ReadYamlValue(data, "EnvironmentPath", std::string());
         if (Project::GetActive())
         {
-            auto sharedEnv = AssetManager::Get().Get<EnvironmentAsset>(envPath);
+            auto handle = ServiceLocator::Get<AssetManager>().ResolveToHandle(envPath, EnvironmentAsset::GetStaticType());
+            auto sharedEnv = ServiceLocator::Get<AssetManager>().Get<EnvironmentAsset>(handle);
             if (sharedEnv)
             {
                 // Create a scene-specific instance to avoid modifying the shared asset cache
@@ -279,7 +281,7 @@ static void DeserializeEntities(Scene* scene, const YAML::Node& entities)
 
         Entity deserializedEntity = scene->CreateEntityWithUUID(uuid, name);
 
-        ComponentSerializer::Get().DeserializeAll(deserializedEntity, entity);
+        ServiceLocator::Get<ComponentSerializer>().DeserializeAll(deserializedEntity, entity);
 
         HierarchyTask task;
         HierarchySerializer::DeserializeTask(deserializedEntity, entity, task);
@@ -303,6 +305,12 @@ static void DeserializeEntities(Scene* scene, const YAML::Node& entities)
             if (parent)
             {
                 hc.Parent = parent;
+                
+                // If it has a parent, it's not a root
+                auto& roots = scene->GetRootEntities();
+                auto it = std::find(roots.begin(), roots.end(), (entt::entity)task.entity);
+                if (it != roots.end())
+                    roots.erase(it);
             }
         }
 
@@ -322,8 +330,8 @@ static void SerializeEntity(YAML::Emitter& out, Entity entity)
 {
     out << YAML::BeginMap; // Entity
 
-    ComponentSerializer::Get().SerializeID(out, entity);
-    ComponentSerializer::Get().SerializeAll(out, entity);
+    ServiceLocator::Get<ComponentSerializer>().SerializeID(out, entity);
+    ServiceLocator::Get<ComponentSerializer>().SerializeAll(out, entity);
 
     out << YAML::EndMap; // Entity
 }

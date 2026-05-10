@@ -4,6 +4,8 @@
 namespace CHEngine
 {
 
+void RegisterGlueInput() {}
+
 CH_SCRIPT_FUNC bool Input_IsKeyDown(int keyCode)
 {
     return Input::IsKeyDown(keyCode);

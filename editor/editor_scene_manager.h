@@ -11,10 +11,12 @@
 namespace CHEngine
 {
 
+class ScriptEngine;
+
 class EditorSceneManager
 {
 public:
-    EditorSceneManager();
+    EditorSceneManager(ScriptEngine* scriptEngine);
     ~EditorSceneManager() = default;
 
     void NewScene();
@@ -56,7 +58,6 @@ private:
     std::shared_ptr<Scene> m_RuntimeScene;
 
     // Async state
-    std::future<std::shared_ptr<Scene>> m_PlayModeCopyFuture;
     std::future<std::shared_ptr<Scene>> m_SceneOpenFuture;
     std::filesystem::path m_PendingSceneOpenPath;
 
@@ -71,6 +72,8 @@ private:
 
     float m_AutoSaveTimer = 0.0f;
     float m_LastAutoSaveTime = 0.0f;
+
+    ScriptEngine* m_ScriptEngine = nullptr;
 };
 
 } // namespace CHEngine

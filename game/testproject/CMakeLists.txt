@@ -5,17 +5,17 @@ chained_add_game(TestProjectGame
 )
 
 # Copy engine resources so the standalone executable behaves like the main game.
-add_custom_command(TARGET TestProjectGameExe POST_BUILD
+add_custom_command(TARGET TestProjectGameGameTarget POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     "${CMAKE_SOURCE_DIR}/resources"
-    "$<TARGET_FILE_DIR:TestProjectGameExe>/resources"
+    "$<TARGET_FILE_DIR:ChainedRuntime>/resources"
     COMMENT "Copying engine resources..."
 )
 
 # Copy test project assets into the output folder.
-add_custom_command(TARGET TestProjectGameExe POST_BUILD
+add_custom_command(TARGET TestProjectGameGameTarget POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     "${CMAKE_CURRENT_SOURCE_DIR}/assets"
-    "$<TARGET_FILE_DIR:TestProjectGameExe>/assets"
+    "$<TARGET_FILE_DIR:ChainedRuntime>/assets"
     COMMENT "Copying test project assets..."
 )

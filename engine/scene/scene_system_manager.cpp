@@ -38,4 +38,9 @@ namespace CHEngine
             system->OnUpdateEditor(m_Scene, ts);
         }
     }
+    void SceneSystemManager::InitObservers()
+    {
+        for (auto& system : m_Systems)
+            system->RegisterObservers(m_Scene->GetRegistry());
+    }
 }

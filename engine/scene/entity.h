@@ -26,15 +26,7 @@ class Entity
 {
 public:
     Entity() = default;
-    // Wraps an existing registry shared handle.
-    Entity(entt::entity handle, std::shared_ptr<entt::registry> registry)
-        : m_EntityHandle(handle),
-          m_Registry(registry)
-    {
-    }
-    // Wraps an existing registry reference without creating ownership.
-    Entity(entt::entity handle, entt::registry& registry);
-    // Wraps an existing registry pointer without creating ownership.
+    // Wraps an existing registry reference.
     Entity(entt::entity handle, entt::registry* registry);
     Entity(const Entity& other) = default;
 
@@ -115,7 +107,7 @@ public:
         return *m_Registry;
     }
 
-    std::shared_ptr<entt::registry> GetRegistryPtr()
+    entt::registry* GetRegistryPtr()
     {
         return m_Registry;
     }
@@ -132,7 +124,7 @@ public:
 
 private:
     entt::entity m_EntityHandle{entt::null};
-    std::shared_ptr<entt::registry> m_Registry = nullptr;
+    entt::registry* m_Registry = nullptr;
 };
 } // namespace CHEngine
 

@@ -33,7 +33,10 @@ struct ScriptField
             if constexpr (std::is_same_v<T, CHEngine::Color>)
                 props.Color("Value", val);
             else if constexpr (std::is_same_v<T, uint64_t>)
-                props.Handle("Value", val);
+            {
+                if (props.GetMode() != CHEngine::ReflectionMode::UI)
+                    props.Handle("Value", val);
+            }
             else if constexpr (std::is_same_v<T, float>)
                 props.Property("Value", val, PropertyMeta(-100.0f, 100.0f, 0.01f));
             else
@@ -55,14 +58,7 @@ struct ManagedScriptInstance
     std::shared_ptr<void> Instance;
     bool        NeedsStart   = true;
 
-    // High-performance lifecycle delegates
-    void (*OnCreate)()        = nullptr;
-    void (*OnStart)()         = nullptr;
-    void (*OnUpdate)(float)   = nullptr;
-    void (*OnDestroy)()       = nullptr;
-    void (*OnGUI)()           = nullptr;
-    void (*OnCollisionEnter)(uint64_t) = nullptr;
-    void (*OnEvent)(int)      = nullptr;
+    // Engine calls methods directly via Coral::ManagedObject::InvokeMethod.
 
     ManagedScriptInstance() = default;
     explicit ManagedScriptInstance(const std::string& className)

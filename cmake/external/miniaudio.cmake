@@ -1,0 +1,8 @@
+# Miniaudio dependency (Header-only)
+if(EXISTS "${CMAKE_SOURCE_DIR}/include/miniaudio")
+    add_library(engine_external_miniaudio INTERFACE)
+    target_include_directories(engine_external_miniaudio INTERFACE "${CMAKE_SOURCE_DIR}/include/miniaudio")
+    add_library(ChainedEngine::External::Miniaudio ALIAS engine_external_miniaudio)
+else()
+    message(FATAL_ERROR "Miniaudio submodule missing at ${CMAKE_SOURCE_DIR}/include/miniaudio")
+endif()

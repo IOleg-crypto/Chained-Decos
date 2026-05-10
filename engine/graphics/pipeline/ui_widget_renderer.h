@@ -30,26 +30,26 @@ void        PopUIStyle(const StyleCounts& c);
 
 // --- Widget rendering functions ---
 
-void RenderPanel   (const PanelControl& panel, const ImVec2& pos, const ImVec2& size);
-void RenderLabel   (const LabelControl& label, const ImVec2& size);
-bool RenderButton  (Entity entity, ButtonControl& button, const ImVec2& size);
-bool RenderSlider  (SliderControl& slider, const ImVec2& size);
-bool RenderCheckbox(CheckboxControl& cb);
-void RenderImage   (ImageControl& image, const ImVec2& size);
-bool RenderInputText(Entity entity, InputTextControl& it, const ImVec2& size);
-void RenderProgressBar(const ProgressBarControl& pb, const ImVec2& size);
-bool RenderComboBox(ComboBoxControl& cb, const ImVec2& size);
-bool RenderImageButton(ImageButtonControl& ib, const ImVec2& size);
-bool RenderRadioButton(RadioButtonControl& rb);
-bool RenderColorPicker(ColorPickerControl& cp);
-void RenderSeparator(const SeparatorControl& sep);
-bool RenderDragFloat(DragFloatControl& df, const ImVec2& size);
-bool RenderDragInt  (DragIntControl& di, const ImVec2& size);
-bool RenderTreeNode(TreeNodeControl& tn);
-bool RenderCollapsingHeader(CollapsingHeaderControl& ch);
-bool RenderPlotLines(const PlotLinesControl& pl);
-bool RenderPlotHistogram(const PlotHistogramControl& ph);
-void RenderTabBar  (Entity tabBarEntity, const TabBarControl& tb, entt::registry& registry);
+void RenderPanel   (const PanelData& panel, WidgetComponent& wc, const ImVec2& pos, const ImVec2& size);
+void RenderLabel   (const LabelData& label, WidgetComponent& wc, const ImVec2& size);
+bool RenderButton  (Entity entity, ButtonData& button, WidgetComponent& wc, const ImVec2& size);
+bool RenderSlider  (SliderData& slider, WidgetComponent& wc, const ImVec2& size);
+bool RenderCheckbox(CheckboxData& cb, WidgetComponent& wc);
+void RenderImage   (ImageData& image, WidgetComponent& wc, const ImVec2& size);
+bool RenderInputText(Entity entity, InputTextData& it, WidgetComponent& wc, const ImVec2& size);
+void RenderProgressBar(const ProgressBarData& pb, WidgetComponent& wc, const ImVec2& size);
+bool RenderComboBox(ComboBoxData& cb, WidgetComponent& wc, const ImVec2& size);
+bool RenderImageButton(ImageButtonData& ib, WidgetComponent& wc, const ImVec2& size);
+bool RenderRadioButton(RadioButtonData& rb, WidgetComponent& wc);
+bool RenderColorPicker(ColorPickerData& cp, WidgetComponent& wc);
+void RenderSeparator(const SeparatorData& sep);
+bool RenderDragFloat(DragFloatData& df, WidgetComponent& wc, const ImVec2& size);
+bool RenderDragInt  (DragIntData& di, WidgetComponent& wc, const ImVec2& size);
+bool RenderTreeNode(TreeNodeData& tn, WidgetComponent& wc);
+bool RenderCollapsingHeader(CollapsingHeaderData& ch, WidgetComponent& wc);
+bool RenderPlotLines(const PlotLinesData& pl, WidgetComponent& wc);
+bool RenderPlotHistogram(const PlotHistogramData& ph, WidgetComponent& wc);
+void RenderTabBar  (Entity tabBarEntity, const TabBarData& tb, WidgetComponent& wc, entt::registry& registry);
 
 } // namespace CHEngine::UI
 

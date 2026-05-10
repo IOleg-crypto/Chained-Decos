@@ -1,35 +1,15 @@
 #define MINIAUDIO_IMPLEMENTATION
-#include "miniaudio.h"
 #include "audio.h"
-#include "engine/core/service_locator.h"
 #include "engine/core/log.h"
+#include "miniaudio.h"
 #include "engine/scene/project.h"
 #include <filesystem>
 
 namespace CHEngine
 {
 
-Audio& Audio::Get()
-{
-    return ServiceLocator::Get<Audio>();
-}
-
-
-static std::vector<std::shared_ptr<SoundInstance>> s_ActiveSounds;
-
 Audio::Audio()
 {
-    m_Engine = new ma_engine();
-    ma_result result = ma_engine_init(NULL, (ma_engine*)m_Engine);
-    if (result != MA_SUCCESS)
-    {
-        delete (ma_engine*)m_Engine;
-        m_Engine = nullptr;
-        CH_CORE_ERROR("Audio System: Failed to initialize ma_engine!");
-        return;
-    }
-
-    CH_CORE_INFO("Audio System: High-level ma_engine initialized.");
 }
 
 Audio::~Audio()
@@ -37,25 +17,52 @@ Audio::~Audio()
     if (m_Engine)
     {
         StopAll();
-        ma_engine_uninit((ma_engine*)m_Engine);
-        delete (ma_engine*)m_Engine;
+        ma_engine_uninit(m_Engine);
+        delete m_Engine;
         m_Engine = nullptr;
-        CH_CORE_INFO("Audio System: Shutdown.");
     }
+}
+
+void Audio::OnInit()
+{
+    m_Engine = new ma_engine();
+    ma_result result = ma_engine_init(NULL, m_Engine);
+    if (result != MA_SUCCESS)
+    {
+        CH_CORE_ERROR("Audio System: Failed to initialize miniaudio engine.");
+        delete m_Engine;
+        m_Engine = nullptr;
+    }
+    else
+    {
+        CH_CORE_INFO("Audio System: Initialized miniaudio engine.");
+    }
+}
+
+void Audio::OnUpdate(Timestep ts)
+{
+    Update(ts);
+}
+
+void Audio::OnShutdown()
+{
+    StopAll();
 }
 
 void Audio::Update(Timestep ts)
 {
-    if (!m_Engine) return;
+    if (!m_Engine)
+    {
+        return;
+    }
 
     std::lock_guard<std::mutex> lock(m_DataMutex);
-    for (auto it = s_ActiveSounds.begin(); it != s_ActiveSounds.end(); )
+    for (auto it = m_ActiveSounds.begin(); it != m_ActiveSounds.end();)
     {
         if (ma_sound_at_end(&(*it)->Sound))
         {
             ma_sound_uninit(&(*it)->Sound);
-            ma_audio_buffer_uninit(&(*it)->Buffer);
-            it = s_ActiveSounds.erase(it);
+            it = m_ActiveSounds.erase(it);
         }
         else
         {
@@ -75,71 +82,30 @@ AudioHandle Audio::LoadSound(const std::string& filepath)
     if (resolvedPath.empty() || !std::filesystem::exists(resolvedPath))
     {
         CH_CORE_ERROR("Audio System: File not found: {}", filepath);
-        return 0; // Returning 0 (INVALID_HANDLE equivalent for UUIDs typically)
+        return 0;
     }
 
     std::string cacheKey = resolvedPath.generic_string();
 
-    {
-        std::lock_guard<std::mutex> lock(m_DataMutex);
-        auto existing = m_PathRegistry.find(cacheKey);
-        if (existing != m_PathRegistry.end())
-        {
-            return existing->second;
-        }
-    }
-
-    ma_decoder decoder;
-    ma_result result = ma_decoder_init_file(cacheKey.c_str(), NULL, &decoder);
-    if (result != MA_SUCCESS)
-    {
-        CH_CORE_ERROR("Audio System: Failed to initialize decoder for {}", filepath);
-        return 0;
-    }
-
-    ma_uint64 frameCount;
-    result = ma_decoder_get_length_in_pcm_frames(&decoder, &frameCount);
-    if (result != MA_SUCCESS)
-    {
-        CH_CORE_ERROR("Audio System: Failed to get length for {}", filepath);
-        ma_decoder_uninit(&decoder);
-        return 0;
-    }
-
-    std::vector<float> pcmData(frameCount * decoder.outputChannels);
-    ma_uint64 framesRead;
-    result = ma_decoder_read_pcm_frames(&decoder, pcmData.data(), frameCount, &framesRead);
-    
-    uint32_t channels = decoder.outputChannels;
-    uint32_t sampleRate = decoder.outputSampleRate;
-
-    ma_decoder_uninit(&decoder);
-
-    if (result != MA_SUCCESS)
-    {
-        CH_CORE_ERROR("Audio System: Failed to read PCM frames for {}", filepath);
-        return 0;
-    }
-
     std::lock_guard<std::mutex> lock(m_DataMutex);
-    AudioHandle newHandle = UUID(); // Generate new unique ID
-    
-    AudioData data;
-    data.PCMData = std::move(pcmData);
-    data.Channels = channels;
-    data.SampleRate = sampleRate;
+    auto existing = m_PathToHandle.find(cacheKey);
+    if (existing != m_PathToHandle.end())
+    {
+        return existing->second;
+    }
 
-    m_AudioDataRegistry[newHandle] = std::move(data);
-    m_PathRegistry[cacheKey] = newHandle;
-    
-    CH_CORE_INFO("Audio System: Successfully loaded {} ({} frames)", filepath, frameCount);
+    AudioHandle newHandle = UUID();
+    m_PathToHandle[cacheKey] = newHandle;
+    m_HandleToPath[newHandle] = cacheKey;
+
+    CH_CORE_INFO("Audio System: Registered sound path {}", cacheKey);
     return newHandle;
 }
 
 bool Audio::IsSoundLoaded(AudioHandle handle) const
 {
-    std::lock_guard<std::mutex> lock(m_DataMutex);
-    return m_AudioDataRegistry.find(handle) != m_AudioDataRegistry.end();
+    std::lock_guard lock(m_DataMutex);
+    return m_HandleToPath.contains(handle);
 }
 
 bool Audio::IsPlaying(AudioHandle handle) const
@@ -150,11 +116,12 @@ bool Audio::IsPlaying(AudioHandle handle) const
     }
 
     std::lock_guard<std::mutex> lock(m_DataMutex);
-    for (const auto& instance : s_ActiveSounds)
+    for (const auto& instance : m_ActiveSounds)
     {
         if (instance && instance->Handle == handle)
         {
-            return true;
+            if (ma_sound_is_playing(&instance->Sound))
+                return true;
         }
     }
     return false;
@@ -162,19 +129,25 @@ bool Audio::IsPlaying(AudioHandle handle) const
 
 void Audio::SetListenerPosition(const glm::vec3& position, const glm::vec3& forward, const glm::vec3& up)
 {
-    if (!m_Engine) return;
+    if (!m_Engine)
+    {
+        return;
+    }
 
-    ma_engine_listener_set_position((ma_engine*)m_Engine, 0, position.x, position.y, position.z);
-    ma_engine_listener_set_direction((ma_engine*)m_Engine, 0, forward.x, forward.y, forward.z);
-    ma_engine_listener_set_world_up((ma_engine*)m_Engine, 0, up.x, up.y, up.z);
+    ma_engine_listener_set_position(m_Engine, 0, position.x, position.y, position.z);
+    ma_engine_listener_set_direction(m_Engine, 0, forward.x, forward.y, forward.z);
+    ma_engine_listener_set_world_up(m_Engine, 0, up.x, up.y, up.z);
 }
 
 void Audio::SetInstancePosition(AudioHandle handle, const glm::vec3& pos)
 {
-    if (!m_Engine || handle == 0) return;
+    if (!m_Engine || handle == 0)
+    {
+        return;
+    }
 
     std::lock_guard<std::mutex> lock(m_DataMutex);
-    for (const auto& instance : s_ActiveSounds)
+    for (const auto& instance : m_ActiveSounds)
     {
         if (instance && instance->Handle == handle)
         {
@@ -185,46 +158,39 @@ void Audio::SetInstancePosition(AudioHandle handle, const glm::vec3& pos)
 
 void Audio::Play(AudioHandle handle, float volume, float pitch, bool loop, bool spatial, const glm::vec3& pos)
 {
-    if (!m_Engine || handle == 0) return;
-
-    std::lock_guard<std::mutex> lock(m_DataMutex);
-    auto it = m_AudioDataRegistry.find(handle);
-    if (it == m_AudioDataRegistry.end()) return;
-
-    const AudioData& data = it->second;
-
-    if (data.PCMData.empty() || data.Channels == 0 || data.SampleRate == 0)
+    if (!m_Engine || handle == 0)
     {
-        CH_CORE_WARN("Audio System: Invalid data in registry for Handle {}", (uint64_t)handle);
         return;
     }
 
-    auto instance = std::make_shared<SoundInstance>();
+    std::string filepath;
+    {
+        std::lock_guard<std::mutex> lock(m_DataMutex);
+        auto it = m_HandleToPath.find(handle);
+        if (it == m_HandleToPath.end())
+        {
+            CH_CORE_WARN("Audio System: Try to play unknown handle {}", (uint64_t)handle);
+            return;
+        }
+        filepath = it->second;
+    }
+
+    auto instance = std::make_unique<SoundInstance>();
     instance->Handle = handle;
-    
-    ma_uint32 frameCount = data.Size() / data.Channels;
-    ma_audio_buffer_config config = ma_audio_buffer_config_init(ma_format_f32, data.Channels, frameCount, data.Data(), NULL);
-    config.sampleRate = data.SampleRate; 
-    
-    ma_result result = ma_audio_buffer_init(&config, &instance->Buffer);
-    if (result != MA_SUCCESS)
-    {
-        CH_CORE_ERROR("Audio System: Failed to initialize audio buffer.");
-        return;
-    }
 
-    result = ma_sound_init_from_data_source((ma_engine*)m_Engine, &instance->Buffer, 0, NULL, &instance->Sound);
+    ma_uint32 flags = MA_SOUND_FLAG_DECODE | MA_SOUND_FLAG_ASYNC;
+    
+    ma_result result = ma_sound_init_from_file(m_Engine, filepath.c_str(), flags, NULL, NULL, &instance->Sound);
     if (result != MA_SUCCESS)
     {
-        ma_audio_buffer_uninit(&instance->Buffer);
-        CH_CORE_ERROR("Audio System: Failed to init sound from data source.");
+        CH_CORE_ERROR("Audio System: Failed to init sound from file {}", filepath);
         return;
     }
 
     ma_sound_set_volume(&instance->Sound, volume);
     ma_sound_set_pitch(&instance->Sound, pitch);
-    ma_sound_set_looping(&instance->Sound, loop);
-    
+    ma_sound_set_looping(&instance->Sound, loop ? MA_TRUE : MA_FALSE);
+
     if (spatial)
     {
         ma_sound_set_position(&instance->Sound, pos.x, pos.y, pos.z);
@@ -235,26 +201,66 @@ void Audio::Play(AudioHandle handle, float volume, float pitch, bool loop, bool 
     if (result != MA_SUCCESS)
     {
         ma_sound_uninit(&instance->Sound);
-        ma_audio_buffer_uninit(&instance->Buffer);
         CH_CORE_ERROR("Audio System: Failed to start sound.");
         return;
     }
 
-    s_ActiveSounds.push_back(instance);
+    std::lock_guard lock(m_DataMutex);
+    m_ActiveSounds.push_back(std::move(instance));
+}
+
+void Audio::SetVolume(AudioHandle handle, float volume)
+{
+    if (!m_Engine || handle == 0)
+    {
+        return;
+    }
+
+    std::lock_guard<std::mutex> lock(m_DataMutex);
+    for (const auto& instance : m_ActiveSounds)
+    {
+        if (instance && instance->Handle == handle)
+        {
+            ma_sound_set_volume(&instance->Sound, volume);
+        }
+    }
+}
+
+void Audio::SetPitch(AudioHandle handle, float pitch)
+{
+    if (!m_Engine || handle == 0)
+    {
+        return;
+    }
+
+    std::lock_guard<std::mutex> lock(m_DataMutex);
+    for (const auto& instance : m_ActiveSounds)
+    {
+        if (instance && instance->Handle == handle)
+        {
+            ma_sound_set_pitch(&instance->Sound, pitch);
+        }
+    }
 }
 
 void Audio::Stop(const std::string& filepath)
 {
-    if (!m_Engine || filepath.empty()) return;
+    if (!m_Engine || filepath.empty())
+    {
+        return;
+    }
 
     std::filesystem::path resolvedPath = Project::GetAbsolutePath(filepath);
-    if (resolvedPath.empty()) return;
+    if (resolvedPath.empty())
+    {
+        return;
+    }
 
     AudioHandle handle = 0;
     {
         std::lock_guard<std::mutex> lock(m_DataMutex);
-        auto it = m_PathRegistry.find(resolvedPath.generic_string());
-        if (it == m_PathRegistry.end())
+        auto it = m_PathToHandle.find(resolvedPath.generic_string());
+        if (it == m_PathToHandle.end())
         {
             return;
         }
@@ -266,17 +272,19 @@ void Audio::Stop(const std::string& filepath)
 
 void Audio::Stop(AudioHandle handle)
 {
-    if (!m_Engine || handle == 0) return;
+    if (!m_Engine || handle == 0)
+    {
+        return;
+    }
 
     std::lock_guard<std::mutex> lock(m_DataMutex);
-    for (auto it = s_ActiveSounds.begin(); it != s_ActiveSounds.end(); )
+    for (auto it = m_ActiveSounds.begin(); it != m_ActiveSounds.end();)
     {
         if ((*it)->Handle == handle)
         {
             ma_sound_stop(&(*it)->Sound);
             ma_sound_uninit(&(*it)->Sound);
-            ma_audio_buffer_uninit(&(*it)->Buffer);
-            it = s_ActiveSounds.erase(it);
+            it = m_ActiveSounds.erase(it);
         }
         else
         {
@@ -287,16 +295,21 @@ void Audio::Stop(AudioHandle handle)
 
 void Audio::StopAll()
 {
-    if (!m_Engine) return;
+    if (!m_Engine)
+    {
+        return;
+    }
 
     std::lock_guard<std::mutex> lock(m_DataMutex);
-    for (auto& instance : s_ActiveSounds)
+    for (auto& instance : m_ActiveSounds)
     {
         ma_sound_stop(&instance->Sound);
         ma_sound_uninit(&instance->Sound);
-        ma_audio_buffer_uninit(&instance->Buffer);
     }
-    s_ActiveSounds.clear();
+    m_ActiveSounds.clear();
 }
 
+ma_engine* Audio::GetEngine() const {
+    return m_Engine;
+}
 } // namespace CHEngine

@@ -2,11 +2,13 @@
 #define CH_MESH_COMPONENT_H
 
 #include "engine/core/reflection.h"
+#include "engine/graphics/assets/model_asset.h"
 #include "engine/graphics/pipeline/material.h"
 
 namespace CHEngine
 {
 class ModelAsset;
+class AssetManager;
 
 enum class MaterialSlotTarget : uint8_t
 {
@@ -49,22 +51,20 @@ struct ModelComponent
         : ModelHandle(handle)
     {
     }
-    ModelComponent(const std::string& path)
-        : ModelPath(path)
-    {
-    }
-
-    void SyncMaterials(AssetHandle handle);
-
     CH_REFLECT_BEGIN(ModelComponent)
         props.Header("Model Asset");
-        props.Handle("ModelHandle", ModelHandle);
-        if (props.File("ModelPath", ModelPath, "obj,gltf,glb,iqm,m3d"))
-        {
-            ModelHandle = AssetHandle(0);
-        }
         if (props.GetMode() != CHEngine::ReflectionMode::UI)
+            props.Handle("Handle", ModelHandle);
+        
+        if (props.File("ModelPath", ModelPath, "fbx,gltf,glb,obj"))
+        {
+            // Logic moved to AssetResolutionSystem
+        }
+
+        if (props.GetMode() != CHEngine::ReflectionMode::UI)
+        {
             props.Sequence("Materials", Materials);
+        }
     CH_REFLECT_END()
 };
 

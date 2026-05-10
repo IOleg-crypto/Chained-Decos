@@ -1,7 +1,7 @@
 #include "inspector_panel.h"
 #include "IconsFontAwesome6.h"
 #include "editor_gui.h"
-#include "engine/core/assets/asset_manager.h"
+#include "engine/assets/asset_manager.h"
 #include "engine/graphics/assets/model_asset.h"
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
@@ -50,7 +50,7 @@ void InspectorPanel::OnEvent(Event& e)
     dispatcher.Dispatch<EntitySelectedEvent>([this](EntitySelectedEvent& ev) {
         if (m_Context && ev.GetEntity() != entt::null)
         {
-            m_SelectedEntity = Entity(ev.GetEntity(), m_Context->GetRegistry());
+            m_SelectedEntity = Entity(ev.GetEntity(), m_Context->GetRegistryPtr());
         }
         else
         {

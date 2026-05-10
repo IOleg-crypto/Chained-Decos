@@ -23,6 +23,9 @@ namespace CHEngine
 
         // Optional: Called for editor-specific updates
         virtual void OnUpdateEditor(Scene* scene, Timestep ts) { OnUpdate(scene, ts); }
+
+        // Called once to register reactive events (Observers)
+        virtual void RegisterObservers(entt::registry& reg) {}
     };
 }
 

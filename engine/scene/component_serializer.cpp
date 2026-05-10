@@ -1,54 +1,46 @@
 #include "component_serializer.h"
+#include "engine/scene/component_registry.h"
+#include "engine/scene/scripting_serialization.h"
+#include "engine/scene/hierarchy_serializer.h"
 #include "components/id_component.h"
 #include "components/ui_action_component.h"
-#include "engine/core/application.h"
 
-#include "scripting_serialization.h"
+
 
 namespace CHEngine
 {
-static ComponentSerializer* s_Instance = nullptr;
 
 ComponentSerializer::ComponentSerializer()
 {
-    CH_CORE_ASSERT(!s_Instance, "ComponentSerializer already exists!");
-    s_Instance = this;
 }
 
-void ComponentSerializer::Init()
+void ComponentSerializer::OnInit()
 {
-    if (!s_Instance)
-    {
-        s_Instance = new ComponentSerializer();
-    }
-    s_Instance->InternalInit();
+    m_Registry.clear();
+
+    RegisterCoreComponents();
+    RegisterPhysicsComponents();
+    RegisterAudioComponents();
+    RegisterUIComponents();
+    RegisterScriptingComponents();
 }
 
-void ComponentSerializer::Shutdown()
+void ComponentSerializer::OnShutdown()
 {
-    if (s_Instance)
-    {
-        s_Instance->InternalShutdown();
-        delete s_Instance;
-        s_Instance = nullptr;
-    }
 }
 
 ComponentSerializer::~ComponentSerializer()
 {
-    InternalShutdown();
-    s_Instance = nullptr;
-}
-
-ComponentSerializer& ComponentSerializer::Get()
-{
-    CH_CORE_ASSERT(s_Instance, "ComponentSerializer not initialized!");
-    return *s_Instance;
 }
 
 void ComponentSerializer::RegisterCustom(const ComponentSerializerEntry& entry)
 {
     m_Registry.push_back(entry);
+
+    // Bridge to the new ComponentRegistry metadata system
+    // We try to find existing metadata; if not found, we creates a basic one.
+    // We use a dummy type hash since we only have the string key in entry.
+    // However, the Template Register<T> knows the type hash!
 }
 
 // --- Special Serialization Helpers ---
@@ -67,39 +59,6 @@ void ComponentSerializer::SerializeID(YAML::Emitter& out, Entity entity)
 
 // --- Registry Initialization ---
 
-// ========================================================================
-// Initialize Registry
-// ========================================================================
-
-void ComponentSerializer::InternalInit()
-{
-    if (m_Initialized)
-    {
-        return;
-    }
-
-    m_Registry.clear();
-
-    RegisterCoreComponents();
-    RegisterPhysicsComponents();
-    RegisterAudioComponents();
-    RegisterGameplayComponents();
-    RegisterUIComponents();
-    RegisterScriptingComponents();
-
-    m_Initialized = true;
-}
-
-void ComponentSerializer::InternalShutdown()
-{
-    if (!m_Initialized)
-    {
-        return;
-    }
-
-    m_Registry.clear();
-    m_Initialized = false;
-}
 
 void ComponentSerializer::RegisterCoreComponents()
 {
@@ -125,43 +84,11 @@ void ComponentSerializer::RegisterAudioComponents()
     Register<AudioComponent>();
 }
 
-void ComponentSerializer::RegisterGameplayComponents()
-{
-    Register<PlayerComponent>();
-    Register<SceneTransitionComponent>();
-    Register<AnimationComponent>();
-    Register<NavigationComponent>();
-    Register<SpawnComponent>();
-    Register<RPGStatsComponent>();
-    Register<SkillComponent>();
-    Register<InventoryComponent>();
-}
 
 void ComponentSerializer::RegisterUIComponents()
 {
     Register<ControlComponent>();
-    Register<ButtonControl>();
-    Register<PanelControl>();
-    Register<LabelControl>();
-    Register<SliderControl>();
-    Register<CheckboxControl>();
-    Register<ImageControl>();
-    Register<ImageButtonControl>();
-    Register<InputTextControl>();
-    Register<ComboBoxControl>();
-    Register<ProgressBarControl>();
-    Register<SeparatorControl>();
-    Register<RadioButtonControl>();
-    Register<ColorPickerControl>();
-    Register<DragFloatControl>();
-    Register<DragIntControl>();
-    Register<TreeNodeControl>();
-    Register<TabBarControl>();
-    Register<TabItemControl>();
-    Register<CollapsingHeaderControl>();
-    Register<VerticalLayoutGroup>();
-    Register<PlotLinesControl>();
-    Register<PlotHistogramControl>();
+    Register<WidgetComponent>();
     Register<UIActionComponent>();
 }
 
@@ -172,31 +99,34 @@ void ComponentSerializer::RegisterScriptingComponents()
 
 void ComponentSerializer::SerializeAll(YAML::Emitter& out, Entity entity)
 {
-    for (auto& entry : m_Registry)
+    for (auto& [id, metadata] : ComponentRegistry::GetRegistry())
     {
-        entry.Serialize(out, entity);
+        if (metadata.Serialize)
+        {
+            metadata.Serialize(out, entity);
+        }
     }
     HierarchySerializer::Serialize(out, entity);
 }
 
 void ComponentSerializer::DeserializeAll(Entity entity, YAML::Node node)
 {
-    for (const auto& entry : m_Registry)
+    for (auto& [id, metadata] : ComponentRegistry::GetRegistry())
     {
-        if (entry.Deserialize)
+        if (metadata.Deserialize)
         {
-            entry.Deserialize(entity, node);
+            metadata.Deserialize(entity, node);
         }
     }
 }
 
 void ComponentSerializer::CopyAll(Entity source, Entity destination)
 {
-    for (const auto& entry : m_Registry)
+    for (auto& [id, metadata] : ComponentRegistry::GetRegistry())
     {
-        if (entry.Copy)
+        if (metadata.Copy)
         {
-            entry.Copy(source, destination);
+            metadata.Copy(source, destination);
         }
     }
 }

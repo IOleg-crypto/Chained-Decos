@@ -93,11 +93,7 @@ if(MINGW)
     add_compile_options(-Wa,-mbig-obj)
 endif()
 
-file(TO_CMAKE_PATH "${CMAKE_SOURCE_DIR}" PROJECT_ROOT_DIR_ESCAPED)
-add_compile_definitions(PROJECT_ROOT_DIR="${PROJECT_ROOT_DIR_ESCAPED}")
-
 add_subdirectory(engine)
-
 
 # ── Build Game Projects ──────────────────────────────────────────────────────
 # Automatically find and include all projects in the game/ directory.
@@ -120,3 +116,8 @@ if(BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
+# --- Post-Build Asset Sync via Python Script ---
+add_custom_target(SyncAssets ALL
+    COMMAND python "${CMAKE_SOURCE_DIR}/build_scripts/sync_assets.py" --root "${CMAKE_SOURCE_DIR}" --bin "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+    COMMENT "Syncing engine assets via Python script..."
+)

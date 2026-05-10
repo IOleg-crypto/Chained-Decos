@@ -1,23 +1,34 @@
 #include "editor_layer.h"
 #include "engine/core/entry_point.h"
-#include "engine/core/project_launcher.h"
-#include "panels/console_panel.h"
-#include "engine/core/log.h"
-#include "scripting/scriptengine.h"
 
 namespace CHEngine
 {
+extern void RegisterGameComponents();
+
 Application* CreateApplication(ApplicationCommandLineArgs args)
 {
-    Log::SetLogCallback(ConsolePanel::AddLog);
+    ApplicationSpecification spec;
+    spec.Name = "ChainedEditor";
+    spec.CommandLineArgs = args;
 
-    auto details = ProjectLauncher::PrepareEditor(args);
+    // Default editor window settings
+    spec.WindowWidth = 1600;
+    spec.WindowHeight = 900;
+    spec.Headless = false;
 
-    details.Spec.InitScripting = []() { ScriptEngine::Get().Initialize(); };
-    details.Spec.ShutdownScripting = []() { ScriptEngine::Get().Shutdown(); };
+    auto* app = new Application(spec);
 
-    auto app = new Application(details.Spec);
+    // Register game components AFTER Application is created,
+    // because ComponentSerializer is initialized inside Application's constructor.
+    RegisterGameComponents();
+
     app->PushLayer(std::make_unique<EditorLayer>());
+
     return app;
 }
 } // namespace CHEngine
+
+int main(int argc, char** argv)
+{
+    return CHEngine::RunEntryPoint(argc, argv);
+}

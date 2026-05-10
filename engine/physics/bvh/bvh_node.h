@@ -6,17 +6,16 @@
 
 namespace CHEngine
 {
-struct BVHNode
+struct alignas(32) BVHNode
 {
-    glm::vec3 Min;
-    glm::vec3 Max;
-    uint32_t LeftOrFirst; // Index of left child or first triangle
-    uint32_t TriangleCount;
-    uint32_t Axis; // 0=X, 1=Y, 2=Z for internal nodes
+    glm::vec3 AABBMin;
+    uint32_t LeftFirst;   // Index of left child (internal) OR first primitive index (leaf)
+    glm::vec3 AABBMax;
+    uint32_t PrimCount;   // Number of primitives (0 = internal node)
 
     bool IsLeaf() const
     {
-        return TriangleCount > 0;
+        return PrimCount > 0;
     }
 };
 } // namespace CHEngine

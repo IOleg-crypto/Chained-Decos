@@ -1,8 +1,7 @@
 #include "hierarchy_system.h"
 #include "engine/scene/scene.h"
-#include "engine/scene/components.h"
+#include "engine/scene/components/component_utils.h"
 #include "engine/core/profiler.h"
-#include <vector>
 
 namespace CHEngine
 {
@@ -10,30 +9,16 @@ void HierarchySystem::Update(Scene* scene)
 {
     CH_PROFILE_FUNCTION();
     auto& reg = scene->GetRegistry();
-    auto view = reg.view<TransformComponent>();
-
-   
-
     std::vector<UpdateTask> stack;
-    stack.reserve(reg.storage<entt::entity>().size());
+    auto& roots = scene->GetRootEntities();
+    stack.reserve(roots.size());
 
-    // 1. Find all root entities and push to stack
-    for (auto entity : view)
+    // 1. Push cached root entities to stack
+    for (auto entity : roots)
     {
-        bool isRoot = true;
-        if (reg.all_of<HierarchyComponent>(entity))
+        if (reg.valid(entity) && reg.all_of<TransformComponent>(entity))
         {
-            auto& hc = reg.get<HierarchyComponent>(entity);
-            if (hc.Parent != entt::null && reg.valid(hc.Parent) && reg.all_of<TransformComponent>(hc.Parent))
-            {
-                isRoot = false;
-            }
-        }
-
-        if (isRoot)
-        {
-            // Calculate inverse if it seems uninitialized (identity) or explicitly requested
-            stack.push_back({entity, glm::mat4(1.0f), true}); 
+            stack.push_back({entity, glm::mat4(1.0f), true});
         }
     }
 
@@ -43,14 +28,14 @@ void HierarchySystem::Update(Scene* scene)
         UpdateTask task = stack.back();
         stack.pop_back();
 
-        auto& tc = view.get<TransformComponent>(task.Entity);
+        auto& tc = reg.get<TransformComponent>(task.Entity);
         
         // A node needs update if it is explicitly dirty OR its parent's world transform changed
         bool needsUpdate = task.ParentChanged || tc.IsDirty;
         
         if (needsUpdate)
         {
-            tc.WorldTransform = task.ParentTransform * tc.GetTransform();
+            tc.WorldTransform = task.ParentTransform * ComponentUtils::GetTransform(tc);
             tc.InverseWorldTransform = glm::inverse(tc.WorldTransform);
             tc.IsDirty = false;
         }

@@ -1,7 +1,6 @@
 #ifndef CH_SERVICE_LOCATOR_H
 #define CH_SERVICE_LOCATOR_H
 
-#include <memory>
 #include <unordered_map>
 #include <typeindex>
 #include "engine/core/ch_assert.h"
@@ -16,23 +15,34 @@ namespace CHEngine {
 class ServiceLocator {
 public:
     template<typename T>
-    static void Register(std::shared_ptr<T> service) {
-        m_Services[typeid(T)] = std::static_pointer_cast<void>(service);
+    static void Register(T* service) {
+        CH_CORE_ASSERT(service != nullptr, "ServiceLocator: Cannot register a null service!");
+        m_Services[typeid(T)] = static_cast<void*>(service);
     }
 
     template<typename T>
     static T& Get() {
         auto it = m_Services.find(typeid(T));
-        if (it == m_Services.end()) {
-            CH_CORE_ERROR("Service Locator: Service '{}' not registered!", typeid(T).name());
+        if (it == m_Services.end() || it->second == nullptr) {
+            CH_CORE_ERROR("Service Locator: Service '{}' not registered or already removed!", typeid(T).name());
         }
-        CH_CORE_ASSERT(it != m_Services.end(), "Service Locator: Service not registered!");
-        return *std::static_pointer_cast<T>(it->second);
+        CH_CORE_ASSERT(it != m_Services.end() && it->second != nullptr, "Service Locator: Service not available!");
+        return *static_cast<T*>(it->second);
     }
 
     template<typename T>
     static bool Has() {
-        return m_Services.find(typeid(T)) != m_Services.end();
+        auto it = m_Services.find(typeid(T));
+        return it != m_Services.end() && it->second != nullptr;
+    }
+
+    template<typename T>
+    static void Remove() {
+        auto it = m_Services.find(typeid(T));
+        if (it != m_Services.end()) {
+            it->second = nullptr; // Null out before erasing to catch dangling access
+            m_Services.erase(it);
+        }
     }
 
     static void Shutdown() {
@@ -40,7 +50,7 @@ public:
     }
 
 private:
-    static std::unordered_map<std::type_index, std::shared_ptr<void>> m_Services;
+    static std::unordered_map<std::type_index, void*> m_Services;
 };
 
 } // namespace CHEngine

@@ -22,6 +22,9 @@ public:
     // Recreate renderer device objects so newly added ImGui fonts become visible.
     bool RefreshFontAtlasTexture();
 
+    // Centralized font loading in the DLL to avoid cross-module atlas corruption
+    ImFont* AddFontFromFile(const std::string& path, float size, const ImFontConfig* config = nullptr, const ImWchar* ranges = nullptr);
+
     void BlockEvents(bool block)
     {
         m_BlockEvents = block;

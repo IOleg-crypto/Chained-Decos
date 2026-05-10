@@ -1,14 +1,16 @@
 #include "raycast_query.h"
 
 #include "bvh/bvh.h"
-#include "engine/core/assets/asset_manager.h"
+#include "engine/assets/asset_manager.h"
 #include "engine/graphics/assets/model_asset.h"
 #include "engine/scene/components.h"
 #include "engine/scene/project.h"
 #include "physics.h"
 #include <algorithm>
 #include <cfloat>
+#include "engine/scene/components/component_utils.h"
 #include <glm/glm.hpp>
+#include <glm/gtx/intersect.hpp>
 
 namespace CHEngine
 {
@@ -58,9 +60,8 @@ RaycastResult RaycastQuery::Raycast(entt::registry& registry, Ray ray)
 
     // Test every enabled collider in local space, then compare results in world space.
     auto view = registry.view<TransformComponent, ColliderComponent>();
-    for (auto it = view.begin(); it != view.end(); ++it)
+    for (auto entity : view)
     {
-        auto entity = *it;
         auto& entityTransform = view.get<TransformComponent>(entity);
         auto& colliderComp = view.get<ColliderComponent>(entity);
 
@@ -69,7 +70,7 @@ RaycastResult RaycastQuery::Raycast(entt::registry& registry, Ray ray)
             continue;
         }
 
-        glm::mat4 modelMatrix = entityTransform.GetTransform();
+        glm::mat4 modelMatrix = ComponentUtils::GetTransform(entityTransform);
         glm::mat4 invMatrix = glm::inverse(modelMatrix);
 
         glm::vec3 localOrigin = glm::vec3(invMatrix * glm::vec4(rayOrigin, 1.0f));

@@ -116,6 +116,7 @@ struct PendingModelData
     std::vector<glm::mat4> offsetMatrices;  
     
     std::vector<RawAnimation> animations;
+    int FinalizationProgress = 0; // Index of the next mesh to be finalized
     bool isValid = false;
 };
 } // namespace CHEngine

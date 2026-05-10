@@ -1,7 +1,7 @@
 #ifndef CH_MODEL_ASSET_H
 #define CH_MODEL_ASSET_H
 
-#include "engine/core/assets/asset.h"
+#include "engine/assets/asset.h"
 #include "engine/core/base.h"
 #include "engine/graphics/api/model_data.h"
 #include "engine/graphics/pipeline/renderer_types.h"
@@ -20,6 +20,10 @@ class ModelAsset : public Asset, public std::enable_shared_from_this<ModelAsset>
 public:
     ModelAsset()
         : Asset(GetStaticType())
+    {
+    }
+    ModelAsset(AssetHandle handle)
+        : Asset(GetStaticType(), handle)
     {
     }
     virtual ~ModelAsset() = default;

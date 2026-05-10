@@ -1,46 +1,33 @@
 #include "application.h"
-#if CH_PLATFORM_WINDOWS
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#elif CH_PLATFORM_LINUX
-#include <unistd.h>
-#endif
-
+#include "engine/assets/asset_manager.h"
 #include "engine/audio/audio.h"
-#include "engine/core/assets/asset_manager.h"
-#include "engine/core/ch_assert.h"
 #include "engine/core/imgui_layer.h"
 #include "engine/core/input.h"
-#include "engine/core/layer.h"
-#include "engine/core/log.h"
 #include "engine/core/profiler.h"
 #include "engine/core/thread_pool.h"
 #include "engine/graphics/pipeline/renderer.h"
+#include "engine/graphics/pipeline/ui_renderer.h"
+#include "engine/graphics/texture_system.h"
 #include "engine/physics/physics_system.h"
 #include "engine/scene/component_serializer.h"
-#include "engine/core/service_locator.h"
-#include <nfd.h>
-
-#include <algorithm>
-#include <filesystem>
-
-#ifndef GLFW_INCLUDE_NONE
-#define GLFW_INCLUDE_NONE
-#endif
-
-#include "engine/graphics/pipeline/ui_renderer.h"
+#include "engine/scene/project.h"
 #include "scripting/scriptengine.h"
 #include <GLFW/glfw3.h>
+#include <filesystem>
+#include <nfd.h>
+
+#if defined(CH_PLATFORM_WINDOWS)
+#include <windows.h>
+#elif defined(CH_PLATFORM_LINUX)
+#include <unistd.h>
+#endif
 
 namespace CHEngine
 {
 Application* Application::s_Instance = nullptr;
 
-Application::Application(const ApplicationSpecification& specification)
-    : m_Specification(specification)
+Application::Application(const ApplicationSpecification& spec)
+    : m_Specification(spec)
 {
     CH_CORE_ASSERT(!s_Instance, "Application already exists!");
     s_Instance = this;
@@ -50,153 +37,164 @@ Application::Application(const ApplicationSpecification& specification)
         std::filesystem::current_path(m_Specification.WorkingDirectory);
     }
 
-    // --- Window Setup ---
-    WindowProperties windowProps;
-    windowProps.Title = m_Specification.Name;
-    windowProps.Width = m_Specification.WindowWidth;
-    windowProps.Height = m_Specification.WindowHeight;
-    windowProps.VSync = m_Specification.VSync;
-    windowProps.Fullscreen = m_Specification.Fullscreen;
-    windowProps.Resizable = m_Specification.Resizable;
-    windowProps.IconPath = m_Specification.AppIcon;
+    // Discover engine root early as it's needed for system resource loading
+    Project::DiscoverEngineRoot(std::filesystem::current_path());
 
-    // ImGui Ini path setup
-    std::string iniName = m_Specification.Name;
-    std::replace(iniName.begin(), iniName.end(), ' ', '_');
-    std::transform(iniName.begin(), iniName.end(), iniName.begin(), ::tolower);
+    // 1. Boot Foundation (no GL)
+    AddService<ThreadPool>();
+    AddService<ComponentSerializer>();
+    NFD_Init();
 
-#ifdef PROJECT_ROOT_DIR
-    windowProps.ImGuiConfigurationPath = std::string(PROJECT_ROOT_DIR) + "/imgui_" + iniName + ".ini";
-#else
-    windowProps.ImGuiConfigurationPath = "imgui_" + iniName + ".ini";
-#endif
+    auto resolver = std::make_shared<AssetPathResolver>();
+    resolver->SetEngineRoot(Project::GetEngineRoot());
+    auto registry = std::make_shared<AssetRegistry>();
+    AddService<AssetManager>(resolver, registry);
 
-    // --- System Initialization ---
-    // ThreadPool MUST be initialized first as other systems may use it for loading
-    ThreadPool::Init();
-
+    // 2. Initialize Window and OpenGL Context
     if (!m_Specification.Headless)
     {
-        // Register early services that don't depend on the window
-        // Register early services that don't depend on the window
-        if (!ServiceLocator::Has<AssetManager>())
-            ServiceLocator::Register<AssetManager>(std::make_shared<AssetManager>());
-            
-        if (!ServiceLocator::Has<PhysicsSystem>())
-            ServiceLocator::Register<PhysicsSystem>(std::make_shared<PhysicsSystem>());
+        WindowProperties props;
+        props.Title = m_Specification.Name;
+        props.Width = m_Specification.WindowWidth;
+        props.Height = m_Specification.WindowHeight;
+        props.VSync = m_Specification.VSync;
+        props.Fullscreen = m_Specification.Fullscreen;
+        props.Resizable = m_Specification.Resizable;
+        props.IconPath = m_Specification.AppIcon;
 
-        m_Window = std::unique_ptr<Window>(Window::Create(windowProps));
-#ifdef PROJECT_ROOT_DIR
-        Project::SetEngineRoot(PROJECT_ROOT_DIR);
-#endif
-        
-        auto renderer = std::make_shared<Renderer>();
-        ServiceLocator::Register<Renderer>(renderer);
-        renderer->Initialize();
-
-        auto uiRenderer = std::make_shared<UIRenderer>();
-        ServiceLocator::Register<UIRenderer>(uiRenderer);
-        uiRenderer->Initialize();
-        
-        if (!ServiceLocator::Has<ScriptEngine>())
-        {
-            auto scriptEngine = std::make_shared<ScriptEngine>();
-            ServiceLocator::Register<ScriptEngine>(scriptEngine);
-            scriptEngine->Initialize();
-        }
-
-        ServiceLocator::Register<Audio>(std::make_shared<Audio>());
+        m_Window = std::unique_ptr<Window>(Window::Create(props));
+        m_Window->SetEventCallback(CH_BIND_EVENT_FN(Application::OnEvent));
     }
 
-    ComponentSerializer::Init();
+    // 3. Initialize Systems (Window/GL ready)
+    auto& renderer = AddService<Renderer>();
+    renderer.SetHeadless(m_Specification.Headless);
+    if (m_Window)
+    {
+        renderer.SetViewportSize(m_Window->GetWidth(), m_Window->GetHeight());
+    }
+    AddService<TextureSystem>();
+    AddService<Audio>();
+    AddService<PhysicsSystem>();
+    AddService<UIRenderer>();
 
-    if (m_Specification.EnableScripting && m_Specification.InitScripting)
-        m_Specification.InitScripting();
+    // Orchestrate Service Bootup via Template Method
+    for (auto& svc : m_Services)
+    {
+        svc->Start();
+    }
+
+    // 4. Scripting — now a proper EngineService, added last so it shuts down first
+    auto& scripting = AddService<ScriptEngine>(m_Specification.EnableScripting);
+    scripting.Start();
 
     m_LayerStack = std::make_unique<LayerStack>();
     m_Running = true;
 
-    // ImGui Layer setup (always needed for Editor/Debugging)
     if (!m_Specification.Headless)
     {
-        NFD_Init();
         auto imguiLayer = std::make_unique<ImGuiLayer>();
         m_ImGuiLayer = imguiLayer.get();
         PushOverlay(std::move(imguiLayer));
     }
-
-    CH_CORE_INFO("Application Initialized: {}", m_Specification.Name);
 }
 
 Application::~Application()
 {
-    CH_CORE_INFO("Shutting down Application...");
-
     m_LayerStack.reset();
 
-    if (m_Specification.EnableScripting && m_Specification.ShutdownScripting)
-        m_Specification.ShutdownScripting();
-
-    ComponentSerializer::Shutdown();
-
-
-
-    if (Renderer::IsInitialized())
+    // Shutdown Services in reverse order (Conductor Shutdown)
+    for (auto it = m_Services.rbegin(); it != m_Services.rend(); ++it)
     {
-        Renderer::Get().Shutdown();
+        (*it)->Stop();
     }
-
-    if (UIRenderer::IsInitialized())
-    {
-        UIRenderer::Get().Shutdown();
-    }
-
-    if (ScriptEngine::IsInitializedGlobal())
-    {
-        ScriptEngine::Get().Shutdown();
-    }
-
-    ServiceLocator::Shutdown();
+    m_Services.clear();
 
     m_Window.reset();
 
-    if (!m_Specification.Headless)
-    {
-        NFD_Quit();
-    }
-
-    // ThreadPool MUST be shut down last to ensure all background tasks are finished
-    ThreadPool::Shutdown();
+    ServiceLocator::Shutdown();
+    NFD_Quit();
 
     s_Instance = nullptr;
-    CH_CORE_INFO("Engine Shutdown Successfully.");
+}
+
+void Application::Run()
+{
+    while (m_Running && (!m_Window || !m_Window->ShouldClose()))
+    {
+        float time = (float)glfwGetTime();
+        m_Timer.DeltaTime = Timestep(time - m_Timer.LastFrameTime);
+        m_Timer.LastFrameTime = time;
+
+        // Start of frame: Prepare input state for transition detection, THEN poll new events
+        Input::Update();
+        Input::PollEvents();
+
+        if (!m_Minimized)
+        {
+            // Conductor Update: Standard Services
+            for (auto& svc : m_Services)
+            {
+                svc->Tick(m_Timer.DeltaTime);
+            }
+
+            // Fixed Update (Physics/Logic)
+            m_Timer.Accumulator += (float)m_Timer.DeltaTime;
+            while (m_Timer.Accumulator >= m_Timer.FixedStepCount)
+            {
+                for (auto& layer : *m_LayerStack)
+                {
+                    layer->OnFixedUpdate(Timestep(m_Timer.FixedStepCount));
+                }
+                m_Timer.Accumulator -= m_Timer.FixedStepCount;
+            }
+
+            // Game Layers Update
+            for (auto& layer : *m_LayerStack)
+            {
+                layer->OnUpdate(m_Timer.DeltaTime);
+            }
+
+            // Frame Rendering
+            if (m_Window)
+            {
+                Profiler::BeginFrame();
+
+                m_Window->BeginFrame();
+                for (auto& layer : *m_LayerStack)
+                {
+                    layer->OnRender(m_Timer.DeltaTime);
+                }
+
+                m_ImGuiLayer->Begin();
+                for (auto& layer : *m_LayerStack)
+                {
+                    layer->OnImGuiRender();
+                }
+                m_ImGuiLayer->End();
+                m_Window->EndFrame();
+
+                Profiler::EndFrame();
+            }
+        }
+    }
 }
 
 void Application::PushLayer(std::unique_ptr<Layer> layer)
 {
-    CH_CORE_ASSERT(layer, "Layer is null!");
-    Layer* rawLayer = layer.get();
+    Layer* raw = layer.get();
     m_LayerStack->PushLayer(std::move(layer));
-    rawLayer->OnAttach();
-    CH_CORE_INFO("Layer Attached: {}", rawLayer->GetName());
+    raw->OnAttach();
 }
 
 void Application::PushOverlay(std::unique_ptr<Layer> overlay)
 {
-    CH_CORE_ASSERT(overlay, "Overlay is null!");
-    Layer* rawOverlay = overlay.get();
+    Layer* raw = overlay.get();
     m_LayerStack->PushOverlay(std::move(overlay));
-    rawOverlay->OnAttach();
-    CH_CORE_INFO("Overlay Attached: {}", rawOverlay->GetName());
+    raw->OnAttach();
 }
 
 void Application::OnEvent(Event& e)
-{
-    // For now, handle everything immediately, but we can filter here
-    DispatchEvent(e);
-}
-
-void Application::DispatchEvent(Event& e)
 {
     EventDispatcher dispatcher(e);
     dispatcher.Dispatch<WindowCloseEvent>(CH_BIND_EVENT_FN(Application::OnWindowClose));
@@ -205,12 +203,10 @@ void Application::DispatchEvent(Event& e)
     for (auto it = m_LayerStack->rbegin(); it != m_LayerStack->rend(); ++it)
     {
         if (e.Handled)
-            break;
-        
-        if ((*it)->IsEnabled())
         {
-            (*it)->OnEvent(e);
+            break;
         }
+        (*it)->OnEvent(e);
     }
 }
 
@@ -225,164 +221,30 @@ bool Application::OnWindowResize(WindowResizeEvent& e)
     if (e.GetWidth() == 0 || e.GetHeight() == 0)
     {
         m_Minimized = true;
-        CH_CORE_WARN("Window minimized or dimensions are zero ({}x{})", e.GetWidth(), e.GetHeight());
         return false;
     }
 
     m_Minimized = false;
     m_Window->SetSizeDirect(e.GetWidth(), e.GetHeight());
-    Renderer::Get().SetViewport(0, 0, e.GetWidth(), e.GetHeight());
-    CH_CORE_INFO("Window resized to {}x{}", e.GetWidth(), e.GetHeight());
-
+    if (ServiceLocator::Has<Renderer>())
+    {
+        ServiceLocator::Get<Renderer>().SetViewportSize(e.GetWidth(), e.GetHeight());
+    }
     return false;
-}
-
-void Application::SubmitToMainThread(const std::function<void()>& function)
-{
-    std::scoped_lock<std::mutex> lock(m_MainThreadQueueMutex);
-    m_MainThreadQueue.emplace_back(function);
-}
-
-void Application::ExecuteMainThreadQueue()
-{
-    std::vector<std::function<void()>> localQueue;
-    {
-        std::scoped_lock<std::mutex> lock(m_MainThreadQueueMutex);
-        localQueue = std::move(m_MainThreadQueue);
-    }
-
-    for (auto& func : localQueue)
-    {
-        func();
-    }
-}
-
-void Application::Run()
-{
-    while (m_Running && !m_Window->ShouldClose())
-    {
-        ExecuteMainThreadQueue();
-        
-        // 1. Time Tracking
-        float time = (float)glfwGetTime();
-
-        // FPS Capping
-        int targetFPS = m_Window->GetTargetFramesPerSecond();
-        if (targetFPS > 0)
-        {
-            float minFrameTime = 1.0f / (float)targetFPS;
-            float frameTime = time - m_LastFrameTime;
-            if (frameTime < minFrameTime)
-            {
-                CH_PROFILE_SCOPE("Sleep");
-                float sleepTime = (minFrameTime - frameTime) * 1000.0f;
-                if (sleepTime > 1.0f)
-                {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<long long>(sleepTime)));
-                }
-                time = (float)glfwGetTime();
-            }
-        }
-
-        m_DeltaTime = Timestep(time - m_LastFrameTime);
-        m_LastFrameTime = time;
-
-        // Profile the actual frame work, excluding sleep/input/poll
-        CH_PROFILE_SCOPE("Run");
-
-        // 2. Input Polling
-        Input::Update();
-
-        // 3. Core Systems Update
-        AssetManager::Get().Update();
-        Audio::Get().Update(m_DeltaTime);
-
-        // 4. Layers Update & Rendering
-        Profiler::BeginFrame();
-        {
-            CH_PROFILE_SCOPE("MainThread_Frame");
-
-            if (!m_Minimized)
-            {
-                // -- Logic/Simulation --
-
-                // 1. Variable Update
-                for (auto& layer : *m_LayerStack)
-                {
-                    if (layer->IsEnabled())
-                    {
-                        layer->OnUpdate(m_DeltaTime);
-                    }
-                }
-
-                // 2. Fixed Update
-                m_Accumulator += (float)m_DeltaTime;
-                while (m_Accumulator >= m_FixedTimestep)
-                {
-                    for (auto& layer : *m_LayerStack)
-                    {
-                        if (layer->IsEnabled())
-                        {
-                            layer->OnFixedUpdate(Timestep(m_FixedTimestep));
-                        }
-                    }
-                    m_Accumulator -= m_FixedTimestep;
-                }
-
-                // -- Rendering --
-                m_Window->BeginFrame();
-
-                for (auto& layer : *m_LayerStack)
-                {
-                    if (layer->IsEnabled())
-                    {
-                        layer->OnRender(m_DeltaTime);
-                    }
-                }
-
-                // ImGui
-                m_ImGuiLayer->Begin();
-                for (auto& layer : *m_LayerStack)
-                {
-                    if (layer->IsEnabled())
-                    {
-                        layer->OnImGuiRender();
-                    }
-                }
-                m_ImGuiLayer->End();
-
-                m_Window->EndFrame();
-            }
-        }
-    }
 }
 
 std::filesystem::path Application::GetExecutableDirectory()
 {
-#if CH_PLATFORM_WINDOWS
+#if defined(CH_PLATFORM_WINDOWS)
     wchar_t path[MAX_PATH];
     GetModuleFileNameW(NULL, path, MAX_PATH);
     return std::filesystem::path(path).parent_path();
-#elif CH_PLATFORM_LINUX
+#elif defined(CH_PLATFORM_LINUX)
     char path[1024];
     ssize_t count = readlink("/proc/self/exe", path, sizeof(path));
-    if (count != -1)
-    {
-        return std::filesystem::path(std::string(path, count)).parent_path();
-    }
-#endif
+    return std::filesystem::path(std::string(path, (count > 0) ? count : 0)).parent_path();
+#else
     return std::filesystem::current_path();
+#endif
 }
-
-Window& Application::GetWindow()
-{
-    CH_CORE_ASSERT(m_Window, "Window is null (Headless mode?)");
-    return *m_Window;
-}
-
-LayerStack& Application::GetLayerStack()
-{
-    return *m_LayerStack;
-}
-
 } // namespace CHEngine

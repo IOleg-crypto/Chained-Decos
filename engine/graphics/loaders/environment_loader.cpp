@@ -1,32 +1,37 @@
 #include "engine/graphics/loaders/environment_loader.h"
 #include "engine/core/log.h"
-#include "engine/scene/yaml.h"
+#include "engine/core/yaml_conversions.h"
 #include "yaml-cpp/yaml.h"
 #include <filesystem>
 #include <fstream>
 
 namespace CHEngine
 {
-    std::shared_ptr<Asset> EnvironmentLoader::Create()
+    std::shared_ptr<Asset> EnvironmentLoader::Create() const
     {
         return std::make_shared<EnvironmentAsset>();
     }
 
-    bool EnvironmentLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError)
+    bool EnvironmentLoader::Load(std::shared_ptr<Asset> asset, const LoadContext& ctx, std::string* outError)
     {
-        std::filesystem::path fullPath(resolvedPath);
-        std::ifstream stream(fullPath);
-        if (!stream.is_open())
+        auto envAsset = std::dynamic_pointer_cast<EnvironmentAsset>(asset);
+        if (!envAsset)
         {
-            CH_CORE_ERROR("EnvironmentLoader: Failed to open environment file: {0}", resolvedPath);
-            if (outError)
-            {
-                *outError = "EnvironmentLoader: failed to open environment file '" + resolvedPath + "'";
-            }
+            if (outError) *outError = "EnvironmentLoader: Invalid asset type";
             return false;
         }
 
-        auto envAsset = std::static_pointer_cast<EnvironmentAsset>(asset);
+        std::filesystem::path fullPath(ctx.ResolvedPath);
+        std::ifstream stream(fullPath);
+        if (!stream.is_open())
+        {
+            CH_CORE_ERROR("EnvironmentLoader: Failed to open environment file: {0}", ctx.ResolvedPath);
+            if (outError)
+            {
+                *outError = "EnvironmentLoader: failed to open environment file '" + ctx.ResolvedPath + "'";
+            }
+            return false;
+        }
 
         try
         {
@@ -35,7 +40,7 @@ namespace CHEngine
             {
                 if (outError)
                 {
-                    *outError = "EnvironmentLoader: missing Environment node in '" + resolvedPath + "'";
+                    *outError = "EnvironmentLoader: missing Environment node in '" + ctx.ResolvedPath + "'";
                 }
                 return false;
             }
@@ -109,19 +114,19 @@ namespace CHEngine
             return true;
         } catch (const std::exception& e)
         {
-            CH_CORE_ERROR("EnvironmentLoader: Failed to parse environment file {0}: {1}", resolvedPath, e.what());
+            CH_CORE_ERROR("EnvironmentLoader: Failed to parse environment file {0}: {1}", ctx.ResolvedPath, e.what());
             if (outError)
             {
-                *outError = std::string("EnvironmentLoader: failed to parse '") + resolvedPath + "': " + e.what();
+                *outError = std::string("EnvironmentLoader: failed to parse '") + ctx.ResolvedPath + "': " + e.what();
             }
             return false;
         }
         catch (...)
         {
-            CH_CORE_ERROR("EnvironmentLoader: Failed to parse environment file {0} with an unknown exception", resolvedPath);
+            CH_CORE_ERROR("EnvironmentLoader: Failed to parse environment file {0} with an unknown exception", ctx.ResolvedPath);
             if (outError)
             {
-                *outError = std::string("EnvironmentLoader: failed to parse '") + resolvedPath + "' with an unknown exception";
+                *outError = std::string("EnvironmentLoader: failed to parse '") + ctx.ResolvedPath + "' with an unknown exception";
             }
             return false;
         }

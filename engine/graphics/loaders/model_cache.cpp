@@ -5,7 +5,7 @@ namespace CHEngine
 {
     namespace
     {
-        constexpr uint32_t kCacheVersion = 2;
+        constexpr uint32_t kCacheVersion = 3;
 
         template<typename T>
         void WritePOD(std::ostream& os, const T& value)

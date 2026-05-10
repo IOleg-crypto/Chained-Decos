@@ -2,7 +2,7 @@
 #define CH_AUDIO_COMPONENT_H
 
 #include "engine/core/reflection.h"
-#include "engine/core/assets/asset.h"
+#include "engine/assets/asset.h"
 #include <string>
 #include <glm/glm.hpp>
 
@@ -26,7 +26,8 @@ struct AudioComponent
     bool IsPlaying = false;
 
     CH_REFLECT_BEGIN(AudioComponent)
-        props.Handle("SoundHandle", SoundHandle);
+        if (props.GetMode() != CHEngine::ReflectionMode::UI)
+            props.Handle("SoundHandle", SoundHandle);
         if (props.File("SoundPath", SoundPath, "mp3,wav,ogg"))
         {
             // Path changed — invalidate the cached handle so SceneAudioSystem loads the new file.

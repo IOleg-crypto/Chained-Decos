@@ -2,7 +2,9 @@
 #include "component_serializer.h"
 #include "components.h"
 #include "engine/scene/yaml.h"
+#include "engine/scene/hierarchy_serializer.h"
 #include "engine/scene/scene.h"
+#include "engine/core/service_locator.h"
 #include <fstream>
 #include <yaml-cpp/yaml.h>
 
@@ -12,7 +14,7 @@ static void SerializeEntityRecursive(YAML::Emitter& out, Entity entity)
 {
     out << YAML::BeginMap;
     // We must manually serialize the ID component early or rely on ComponentSerializer
-    ComponentSerializer::Get().SerializeAll(out, entity);
+    ServiceLocator::Get<ComponentSerializer>().SerializeAll(out, entity);
     out << YAML::EndMap;
 
     if (entity.HasComponent<HierarchyComponent>())
@@ -93,7 +95,7 @@ Entity PrefabSerializer::Deserialize(Scene* scene, const std::string& filepath)
         if (idx >= createdEntities.size()) break;
         
         Entity entity = createdEntities[idx++];
-        ComponentSerializer::Get().DeserializeAll(entity, entityNode);
+        ServiceLocator::Get<ComponentSerializer>().DeserializeAll(entity, entityNode);
         
         HierarchyTask task;
         HierarchySerializer::DeserializeTask(entity, entityNode, task);

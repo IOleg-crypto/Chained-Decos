@@ -1,6 +1,7 @@
 #include "scene_hierarchy_panel.h"
 #include "editor_layer.h"
 #include "engine/core/application.h"
+#include "engine/core/service_locator.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scene_events.h"
 #include "engine/scene/scene_settings.h"
@@ -127,7 +128,7 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
             Entity selected = EditorContext::GetSelectedEntity();
             if (selected)
             {
-                EditorLayer::GetCommandHistory().PushCommand(std::make_unique<DuplicateEntityCommand>(selected));
+                ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<DuplicateEntityCommand>(selected));
             }
         }
 
@@ -148,7 +149,7 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
                 Entity sourceEntity = m_Context->GetEntityByUUID(droppedUUID);
                 if (sourceEntity)
                 {
-                    EditorLayer::GetCommandHistory().PushCommand(std::make_unique<ParentEntityCommand>(sourceEntity, Entity{}, m_Context.get()));
+                    ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<ParentEntityCommand>(sourceEntity, Entity{}, m_Context.get()));
                 }
             }
             ImGui::EndDragDropTarget();
@@ -166,7 +167,7 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
             Entity entity(ent, &m_Context->GetRegistry());
             if (entity.IsValid())
             {
-                EditorLayer::GetCommandHistory().PushCommand(std::make_unique<DestroyEntityCommand>(entity));
+                ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<DestroyEntityCommand>(entity));
             }
         }
         m_EntitiesToDestroyPending.clear();
@@ -175,25 +176,16 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
 
 const char* SceneHierarchyPanel::GetEntityIcon(Entity entity)
 {
-    if (entity.HasComponent<ButtonControl>())
+    if (entity.HasComponent<WidgetComponent>())
     {
-        return ICON_FA_ARROW_POINTER;
-    }
-    if (entity.HasComponent<LabelControl>())
-    {
-        return ICON_FA_FONT;
-    }
-    if (entity.HasComponent<SliderControl>())
-    {
-        return ICON_FA_SLIDERS;
-    }
-    if (entity.HasComponent<CheckboxControl>())
-    {
-        return ICON_FA_SQUARE_CHECK;
-    }
-    if (entity.HasComponent<ImageControl>() || entity.HasComponent<ImageButtonControl>())
-    {
-        return ICON_FA_IMAGE;
+        auto& widget = entity.GetComponent<WidgetComponent>();
+        if (std::holds_alternative<ButtonData>(widget.Data)) return ICON_FA_ARROW_POINTER;
+        if (std::holds_alternative<LabelData>(widget.Data)) return ICON_FA_FONT;
+        if (std::holds_alternative<SliderData>(widget.Data)) return ICON_FA_SLIDERS;
+        if (std::holds_alternative<CheckboxData>(widget.Data)) return ICON_FA_SQUARE_CHECK;
+        if (std::holds_alternative<ImageData>(widget.Data) || std::holds_alternative<ImageButtonData>(widget.Data)) return ICON_FA_IMAGE;
+        
+        return ICON_FA_WINDOW_MAXIMIZE; // Default for other widgets
     }
     if (entity.HasComponent<ControlComponent>())
     {
@@ -231,7 +223,7 @@ void SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity, bool readOnly)
     auto& tag = entity.GetComponent<TagComponent>().Tag;
     std::string label = std::string(GetEntityIcon(entity)) + "  " + tag;
 
-    auto selectedEntity = EditorLayer::Get().GetSelectedEntity();
+    auto selectedEntity = ServiceLocator::Get<EditorLayer>().GetSelectedEntity();
     ImGuiTreeNodeFlags flags = ((selectedEntity == entity) ? ImGuiTreeNodeFlags_Selected : 0);
     flags |= ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
 
@@ -279,7 +271,7 @@ void SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity, bool readOnly)
             Entity sourceEntity = m_Context->GetEntityByUUID(droppedUUID);
             if (sourceEntity && sourceEntity != entity && !IsDescendant(entity, sourceEntity))
             {
-                EditorLayer::GetCommandHistory().PushCommand(std::make_unique<ParentEntityCommand>(sourceEntity, entity, m_Context.get()));
+                EditorLayer::Get().GetCommandHistory().PushCommand(std::make_unique<ParentEntityCommand>(sourceEntity, entity, m_Context.get()));
             }
         }
         ImGui::EndDragDropTarget();
@@ -309,7 +301,7 @@ void SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity, bool readOnly)
         }
         if (ImGui::MenuItem(ICON_FA_COPY " Duplicate", "Ctrl+D"))
         {
-            EditorLayer::GetCommandHistory().PushCommand(std::make_unique<DuplicateEntityCommand>(entity));
+            ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<DuplicateEntityCommand>(entity));
         }
         ImGui::Separator();
         if (ImGui::MenuItem(ICON_FA_TRASH " Delete Entity", "Del"))
@@ -406,15 +398,10 @@ void SceneHierarchyPanel::DrawContextMenu()
         light.Type = LightType::Directional;
     }
 
-    if (ImGui::MenuItem("Spawn Zone"))
-    {
-        m_Context->CreateEntity("Spawn Zone").AddComponent<SpawnComponent>();
-    }
-
     if (ImGui::BeginMenu("3D Object"))
     {
         auto create = [this](const char* name, const char* mesh) {
-            EditorLayer::GetCommandHistory().PushCommand(
+            ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(
                 std::make_unique<CreateEntityCommand>(m_Context.get(), name, mesh));
         };
         if (ImGui::MenuItem("Cube"))

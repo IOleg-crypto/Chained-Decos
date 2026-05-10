@@ -1,5 +1,6 @@
 #include "viewport_panel.h"
 
+
 #include "IconsFontAwesome6.h"
 #include "editor/editor_layer.h"
 #include "editor/viewport/ui_manipulator.h"
@@ -7,12 +8,10 @@
 #include "editor_gui.h"
 #include "editor_layer.h"
 #include "editor/editor_context.h"
-#include "editor_layout.h"
 #include "engine/core/application.h"
 #include "engine/core/events.h"
 #include "engine/core/input.h"
 #include "engine/graphics/pipeline/render_command.h"
-#include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
 #include "engine/graphics/pipeline/ui_renderer.h"
 #include "engine/scene/components.h"
@@ -23,6 +22,7 @@
 #include "engine/scene/scene_picking.h"
 #include "imgui.h"
 #include "imgui_internal.h"
+#include "engine/core/service_locator.h"
 #include "scripting/scriptengine.h"
 #include "undo/entity_commands.h"
 
@@ -67,7 +67,7 @@ void ViewportPanel::DrawCameraSelector(Scene* scene)
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 4.0f);
 
     auto view = scene->GetRegistry().view<CameraComponent>();
-    Entity primaryCam = scene->GetPrimaryCameraEntity();
+    Entity primaryCam = SceneRenderer::GetPrimaryCameraEntity(scene->GetRegistry(), scene->GetRegistryPtr());
     std::string currentLabel = primaryCam ? primaryCam.GetComponent<TagComponent>().Tag : "No Camera";
 
     ImGui::SetNextItemWidth(150);
@@ -171,11 +171,10 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
     ImVec2 viewportSize = ImGui::GetContentRegionAvail();
     ImVec2 viewportScreenPos = ImGui::GetCursorScreenPos();
 
-    auto activeScene = EditorLayer::Get().GetActiveScene();
-    auto activeScene_raw = activeScene.get();
+    auto activeScene = ServiceLocator::Get<EditorLayer>().GetActiveScene();
 
     // 1. Initial State & Resizing
-    HandleResize(viewportSize, activeScene_raw);
+    HandleResize(viewportSize, activeScene.get());
 
     if (!activeScene || viewportSize.x <= 0 || viewportSize.y <= 0)
     {
@@ -188,23 +187,23 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
     m_Hovered = ImGui::IsWindowHovered();
 
     // 2. Rendering
-    RenderViewportScene(activeScene_raw, viewportSize);
+    RenderViewportScene(activeScene.get());
 
     // 3. UI Image & Interaction
     uint32_t finalTextureID = m_ViewportFramebuffer->GetColorAttachmentRendererID();
     ImGui::Image((ImTextureID)(uintptr_t)finalTextureID, viewportSize, {0, 1}, {1, 0});
 
     // 4. Drag & Drop
-    HandleDragDrop(activeScene_raw);
+    HandleDragDrop(activeScene.get());
 
     // 5. Overlays (Gizmos, UI, Highlights)
-    RenderOverlays(activeScene_raw, viewportSize, viewportScreenPos);
+    RenderOverlays(activeScene.get(), viewportSize, viewportScreenPos);
 
     // 6. Picking
-    HandlePicking(activeScene_raw, viewportSize, viewportScreenPos);
+    HandlePicking(activeScene.get(), viewportSize, viewportScreenPos);
 
     // 7. Toolbars
-    RenderToolbar(activeScene_raw, viewportSize, viewportScreenPos);
+    RenderToolbar(activeScene.get(), viewportSize, viewportScreenPos);
     RenderLaunchHUD(viewportSize, viewportScreenPos);
 
     ImGui::End();
@@ -223,9 +222,9 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
 
         if (Input::IsKeyDown(Key::LeftControl) && Input::IsKeyPressed(Key::D))
         {
-            Entity selected = EditorLayer::Get().GetSelectedEntity();
+            Entity selected = ServiceLocator::Get<EditorLayer>().GetSelectedEntity();
             if (selected){
-                EditorLayer::GetCommandHistory().PushCommand(std::make_unique<DuplicateEntityCommand>(selected));
+                ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<DuplicateEntityCommand>(selected));
             }
         }
     }
@@ -242,8 +241,8 @@ void ViewportPanel::OnUpdate(Timestep ts)
         bool mouseInViewport = m_Hovered || m_Focused || Input::IsMouseButtonDown(Mouse::ButtonRight);
         if (activeScene && mouseInViewport)
         {
-            Entity primaryCamera = activeScene->GetPrimaryCameraEntity();
-            m_CameraController->OnUpdate(primaryCamera, ts);
+            Entity primaryCamera = SceneRenderer::GetPrimaryCameraEntity(activeScene->GetRegistry(), activeScene->GetRegistryPtr());
+            m_CameraController->OnUpdate(primaryCamera, ts, m_ViewportSize);
         }
     }
 }
@@ -263,33 +262,71 @@ void ViewportPanel::OnEvent(Event& e)
     });
 }
 
+Ray ViewportPanel::GetMouseRay(const glm::vec2& mousePosition)
+{
+    auto activeScene = ServiceLocator::Get<EditorLayer>().GetActiveScene();
+    auto activeCameraOpt = SceneRenderer::GetActiveCamera(activeScene->GetRegistry());
+    CHEngine::Camera3D camera;
+
+    if (activeCameraOpt.has_value() && EditorLayer::Get().GetSceneState() == SceneState::Play)
+    {
+        camera = activeCameraOpt.value();
+    }
+    else
+    {
+        // Fallback to editor camera
+        auto& edCam = m_CameraController->GetCamera();
+        glm::vec3 pos = edCam.CalculatePosition();
+        camera.Position = {pos.x, pos.y, pos.z};
+        glm::vec3 fp = edCam.GetFocalPoint();
+        camera.Target = {fp.x, fp.y, fp.z};
+        glm::vec3 up = edCam.GetUpDirection();
+        camera.Up = {up.x, up.y, up.z};
+        camera.Fovy = glm::degrees(edCam.GetPerspectiveVerticalFOV());
+        camera.Projection = 0; // Perspective
+    }
+
+    return ScenePicker::CreateRayFromViewport(camera, mousePosition, m_ViewportSize);
+}
+
 void ViewportPanel::HandleResize(const ImVec2& viewportSize, Scene* activeScene)
 {
-    if (viewportSize.x != (float)m_ViewportFramebuffer->GetSpecification().Width ||
-        viewportSize.y != (float)m_ViewportFramebuffer->GetSpecification().Height)
+    if (viewportSize.x != m_ViewportSize.x || viewportSize.y != m_ViewportSize.y)
     {
-        if (viewportSize.x > 0 && viewportSize.y > 0)
+        m_ViewportSize = { viewportSize.x, viewportSize.y };
+        if (m_ViewportSize.x > 0 && m_ViewportSize.y > 0)
         {
-            m_ViewportFramebuffer->Resize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
-            m_HDRFramebuffer->Resize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
+            m_ViewportFramebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+            m_HDRFramebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 
-            EditorLayer::Get().SetViewportSize(viewportSize);
-            m_CameraController->GetCamera().SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
+            // Keep Renderer in sync so frustum & projection use correct aspect ratio
+            if (ServiceLocator::Has<Renderer>())
+            {
+                ServiceLocator::Get<Renderer>().SetViewportSize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+            }
+
+            EditorLayer::Get().OnViewportResized({ m_ViewportSize.x, m_ViewportSize.y });
+            m_CameraController->GetCamera().SetViewportSize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 
             if (activeScene)
             {
-                EditorLayer::Get().GetSceneManager().OnViewportResize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
+                activeScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
             }
         }
     }
 }
 
-void ViewportPanel::RenderViewportScene(Scene* activeScene, const ImVec2& viewportSize)
+void ViewportPanel::RenderViewportScene(Scene* activeScene)
 {
     m_HDRFramebuffer->Bind();
     ClearSceneBackground(activeScene);
 
-    auto activeCameraOpt = activeScene->GetActiveCamera();
+    if (!activeScene)
+    {
+        return;
+    }
+
+    auto activeCameraOpt = SceneRenderer::GetActiveCamera(activeScene->GetRegistry());
     bool cameraFound = activeCameraOpt.has_value();
     CHEngine::Camera3D camera;
     float nearClip = 0.01f;
@@ -316,7 +353,7 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene, const ImVec2& viewpo
     if (cameraFound && EditorLayer::Get().GetSceneState() == SceneState::Play)
     {
         camera = activeCameraOpt.value();
-        Entity primaryCam = activeScene->GetPrimaryCameraEntity();
+        Entity primaryCam = SceneRenderer::GetPrimaryCameraEntity(activeScene->GetRegistry(), activeScene->GetRegistryPtr());
         if (primaryCam && primaryCam.HasComponent<CameraComponent>())
         {
             auto& cameraComp = primaryCam.GetComponent<CameraComponent>().Camera;
@@ -334,39 +371,19 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene, const ImVec2& viewpo
     options.SetCollisionWireframeMode = currentDebugFlags.SetCollisionWireframeMode;
     options.ShowEditorIcons = true;
 
-    m_SceneRenderer->RenderScene(activeScene, camera, nearClip, farClip, options);
+    m_SceneRenderer->RenderScene(activeScene->GetRegistry(), activeScene->GetSettings(), camera, nearClip, farClip, options);
     m_HDRFramebuffer->Unbind();
-
-    // Application of Post-processing
+ 
+    // 3. Application of Post-processing
     m_ViewportFramebuffer->Bind();
-    RenderCommand::Clear({0, 0, 0, 255}); // Clear viewport buffer
+    RenderCommand::Clear({0, 0, 0, 255}); 
 
-    // Only apply camera's custom shader override during PLAY mode.
-    // In Edit mode, use the default post-process pipeline.
-    ShaderAsset* overrideShader = nullptr;
-    std::vector<ShaderUniform> uniforms;
+    ServiceLocator::Get<Renderer>().ApplyPostProcessing(
+        m_HDRFramebuffer->GetColorAttachmentRendererID(),
+        m_HDRFramebuffer->GetDepthAttachmentRendererID(), camera,
+        nullptr, {});
 
-    if (EditorContext::GetSceneState() == SceneState::Play)
-    {
-        Entity primaryCam = activeScene->GetPrimaryCameraEntity();
-        if (primaryCam && primaryCam.HasComponent<ShaderComponent>())
-        {
-            auto& sc = primaryCam.GetComponent<ShaderComponent>();
-            if (sc.Enabled && !sc.ShaderPath.empty())
-            {
-                auto asset = AssetManager::Get().Get<ShaderAsset>(sc.ShaderPath);
-                if (asset)
-                {
-                    overrideShader = asset.get();
-                    uniforms = sc.Uniforms;
-                }
-            }
-        }
-    }
-
-    Renderer::Get().ApplyPostProcessing(m_HDRFramebuffer->GetColorAttachmentRendererID(),
-                                        m_HDRFramebuffer->GetDepthAttachmentRendererID(), camera, 
-                                        overrideShader, uniforms);
+ 
     m_ViewportFramebuffer->Unbind();
 }
 
@@ -410,7 +427,7 @@ void ViewportPanel::RenderOverlays(Scene* activeScene, const ImVec2& viewportSiz
 {
     auto selectedEntity = EditorLayer::Get().GetSelectedEntity();
     bool isUISelected = selectedEntity && selectedEntity.HasComponent<ControlComponent>();
-    auto activeCameraOpt = activeScene->GetActiveCamera();
+    auto activeCameraOpt = SceneRenderer::GetActiveCamera(activeScene->GetRegistry());
     CHEngine::Camera3D camera;
     if (activeCameraOpt.has_value())
     {
@@ -443,13 +460,13 @@ void ViewportPanel::RenderOverlays(Scene* activeScene, const ImVec2& viewportSiz
 
         // 2. Game UI Overlay
         ImVec2 canvasOrigin = ImGui::GetCursorScreenPos();
-        UIRenderer::Get().DrawCanvas(activeScene, canvasOrigin, viewportSize,
+        ServiceLocator::Get<UIRenderer>().DrawCanvas(activeScene, canvasOrigin, viewportSize,
                                      EditorLayer::Get().GetSceneState() == SceneState::Edit);
 
         // 3. Selection Highlight
         if (isUISelected && selectedEntity && EditorLayer::Get().GetSceneState() == SceneState::Edit)
         {
-            auto rect = UIRenderer::Get().GetEntityRect(selectedEntity, viewportSize, viewportScreenPos);
+            auto rect = ServiceLocator::Get<UIRenderer>().GetEntityRect(selectedEntity, viewportSize, viewportScreenPos);
 
             ImVec2 p1 = ImVec2(rect.x, rect.y);
             ImVec2 p2 = ImVec2(p1.x + rect.width, p1.y + rect.height);
@@ -473,6 +490,7 @@ void ViewportPanel::RenderOverlays(Scene* activeScene, const ImVec2& viewportSiz
 void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos)
 {
     // Object picking logic
+    auto activeCameraOpt = SceneRenderer::GetActiveCamera(activeScene->GetRegistry());
     ImGuiContext& g = *GImGui;
     bool isUIChildHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByPopup);
     bool isClicked = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
@@ -486,23 +504,7 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
         ImVec2 mousePos = ImGui::GetMousePos();
         ImVec2 localMouseImGui = {mousePos.x - viewportScreenPos.x, mousePos.y - viewportScreenPos.y};
 
-        auto activeCameraOpt = activeScene->GetActiveCamera();
-        CHEngine::Camera3D camera;
-        if (activeCameraOpt.has_value())
-        {
-            camera = activeCameraOpt.value();
-        }
-        else
-        {
-             auto& edCam = m_CameraController->GetCamera();
-             camera.Position = {edCam.CalculatePosition().x, edCam.CalculatePosition().y, edCam.CalculatePosition().z};
-             camera.Target = {edCam.GetFocalPoint().x, edCam.GetFocalPoint().y, edCam.GetFocalPoint().z};
-             camera.Up = {edCam.GetUpDirection().x, edCam.GetUpDirection().y, edCam.GetUpDirection().z};
-             camera.Fovy = glm::degrees(edCam.GetPerspectiveVerticalFOV());
-             camera.Projection = 0;
-        }
-
-        Ray ray = EditorGUI::GetMouseRay(camera, {localMouseImGui.x, localMouseImGui.y}, {viewportSize.x, viewportSize.y});
+        Ray ray = GetMouseRay({localMouseImGui.x, localMouseImGui.y});
 
         Entity bestHit = {};
 
@@ -514,7 +516,7 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
             auto& cc = uiView.get<ControlComponent>(entityID);
             if (!cc.IsActive) continue;
 
-            auto rect = UIRenderer::Get().GetEntityRect(entity, viewportSize, viewportScreenPos);
+            auto rect = ServiceLocator::Get<UIRenderer>().GetEntityRect(entity, viewportSize, viewportScreenPos);
             if (mousePos.x >= rect.x && mousePos.x <= rect.x + rect.width && mousePos.y >= rect.y && mousePos.y <= rect.y + rect.height)
             {
                 bestHit = entity;
@@ -622,7 +624,13 @@ void ViewportPanel::RenderToolbar(Scene* activeScene, const ImVec2& viewportSize
         ImGui::SameLine(0, 5);
         if (ImGui::Button(ICON_FA_FILE_CODE "##ReloadToolbar", ImVec2(28, 28)))
         {
-            ScriptEngine::Get().RequestAssemblyReload("ViewportPanel");
+            auto project = Project::GetActive();
+            if (project)
+            {
+                std::filesystem::path assemblyPath = Project::GetAssetDirectory() / "bin" / (project->GetConfig().Scripting.ModuleName + ".dll");
+                auto& scriptEngine = ServiceLocator::Get<ScriptEngine>();
+                scriptEngine.RequestAssemblyReload(assemblyPath.string(), "ViewportPanel");
+            }
         }
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Reload Scripts (Ctrl+R)");
 
@@ -639,7 +647,7 @@ void ViewportPanel::RenderToolbar(Scene* activeScene, const ImVec2& viewportSize
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Run Scene in New Window (Shift+F5)");
 
         // Camera Info
-        Entity primaryCam = activeScene->GetPrimaryCameraEntity();
+        Entity primaryCam = SceneRenderer::GetPrimaryCameraEntity(activeScene->GetRegistry(), activeScene->GetRegistryPtr());
         if (primaryCam) ImGui::TextDisabled(ICON_FA_CAMERA " %s", primaryCam.GetComponent<TagComponent>().Tag.c_str());
         else ImGui::TextColored({1, 0, 0, 1}, ICON_FA_CIRCLE_EXCLAMATION " No Primary Camera");
     }

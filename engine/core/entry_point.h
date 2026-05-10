@@ -2,39 +2,24 @@
 #define CH_ENTRY_POINT_H
 
 #include "engine/core/application.h"
-#include "engine/scene/project.h"
-#include "engine/core/base.h"
-#include <memory>
 
-extern CHEngine::Application* CHEngine::CreateApplication(CHEngine::ApplicationCommandLineArgs args);
-
-// Main entry point for the engine and application.
-int main(int argc, char** argv)
+namespace CHEngine
 {
-    CHEngine::ApplicationCommandLineArgs args;
+Application* CreateApplication(ApplicationCommandLineArgs args);
+
+inline int RunEntryPoint(int argc, char** argv)
+{
+    ApplicationCommandLineArgs args;
     args.Count = argc;
     args.Args = argv;
 
-    std::unique_ptr<CHEngine::Application> app(CHEngine::CreateApplication(args));
+    auto app = CreateApplication(args);
     app->Run();
+
+    delete app;
 
     return 0;
 }
-
-#if CH_PLATFORM_WINDOWS && !defined(CH_DEBUG)
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmdshow)
-{
-#if defined(_MSC_VER)
-    return main(__argc, __argv);
-#else
-    return main(0, nullptr); // MinGW might need a different approach if arguments are needed
-#endif
-}
-#endif
+} // namespace CHEngine
 
 #endif // CH_ENTRY_POINT_H

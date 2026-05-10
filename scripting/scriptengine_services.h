@@ -91,9 +91,6 @@ private:
     std::unordered_set<std::string> m_MissingScriptsWarnings;
 };
 
-ScriptHost& GetScriptHost();
-ScriptRegistry& GetScriptRegistry();
-
 } // namespace CHEngine
 
 #endif // CH_SCRIPT_ENGINE_SERVICES_H

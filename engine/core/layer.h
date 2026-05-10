@@ -8,7 +8,7 @@
 
 namespace CHEngine
 {
-// Base class for engine layers with lifecycle callbacks and an enable flag.
+// Base class for engine layers with lifecycle callbacks.
 class Layer
 {
 public:
@@ -23,17 +23,6 @@ public:
     }
     virtual void OnDetach()
     {
-    }
-
-    // Returns whether the layer is currently enabled.
-    bool IsEnabled() const
-    {
-        return m_Enabled;
-    }
-    // Enables or disables the layer without destroying it.
-    void SetEnabled(bool enabled)
-    {
-        m_Enabled = enabled;
     }
 
     virtual void OnUpdate(Timestep ts)
@@ -59,7 +48,6 @@ public:
 
 protected:
     std::string m_DebugName;
-    bool m_Enabled = true;
 };
 } // namespace CHEngine
 

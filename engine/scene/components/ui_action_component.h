@@ -22,7 +22,9 @@ namespace CHEngine
         UIActionComponent() = default;
 
         CH_REFLECT_BEGIN(UIActionComponent)
-            props.Handle("Target Entity", TargetEntityID);
+            if (props.GetMode() != CHEngine::ReflectionMode::UI){
+                props.Handle("Target Entity", TargetEntityID);
+            }
             props.Property("Parameter", ParameterName);
             props.Property("Value", Value);
             const char* typeStrings[] = {"Set Parameter", "Trigger State"};

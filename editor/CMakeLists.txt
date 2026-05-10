@@ -23,9 +23,6 @@ target_sources(editor_core PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/viewport/ui_manipulator.h
     ${CMAKE_CURRENT_SOURCE_DIR}/viewport/ui_manipulator.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/launcher/editor_launcher.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/launcher/editor_launcher.cpp
-
     # Panels
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/scene_hierarchy_panel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/scene_hierarchy_panel.cpp
@@ -40,7 +37,6 @@ target_sources(editor_core PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/profiler_panel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/profiler_panel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/viewport_panel.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/project_browser_panel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/project_settings_panel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/project_settings_panel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/world_panel.h
@@ -63,32 +59,34 @@ target_sources(editor_core PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_gui.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_layout.h
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_layout.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/project_selector_ui.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/project_selector_ui.cpp
+
+    # Utilities
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/editor_utils.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/editor_utils.cpp
 )
 
 
 target_link_libraries(editor_core PUBLIC
-    engine
+    ChainedEngine::Framework
+    ChainedEngine::External::ImGui
+    ChainedEngine::External::NFD
+    ChainedEngine::External::Assimp
+    ChainedEngine::External::Coral
 )
-# (IMGUI_DEFINE_MATH_OPERATORS now inherited from engine)
+
 target_include_directories(editor_core PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/engine
-    ${CMAKE_SOURCE_DIR}/include
-    ${imguizmo_SOURCE_DIR}
 )
 
 # Define the Editor executable
 add_executable(ChainedEditor ${CMAKE_CURRENT_SOURCE_DIR}/editor_main.cpp)
-target_link_libraries(ChainedEditor PRIVATE editor_core)
+target_link_libraries(ChainedEditor PRIVATE editor_core ChainedDecos)
 target_include_directories(ChainedEditor PRIVATE 
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}
 )
-
-# Use centralized engine resources
-chained_add_engine_resources_copy()
-add_dependencies(ChainedEditor EngineResources)
 
 # Apply optimizations
 if(COMMAND apply_engine_optimizations)

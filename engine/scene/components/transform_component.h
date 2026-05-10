@@ -17,67 +17,6 @@ struct TransformComponent
     glm::quat RotationQuat = {1.0f, 0.0f, 0.0f, 0.0f}; // GLM uses w, x, y, z.
     glm::vec3 Scale = {1.0f, 1.0f, 1.0f};
 
-    TransformComponent() = default;
-    TransformComponent(const TransformComponent&) = default;
-    TransformComponent(const glm::vec3& translation)
-        : Translation(translation), IsDirty(true)
-    {
-    }
-
-    // Sets translation and marks the transform dirty.
-    void SetTranslation(const glm::vec3& translation)
-    {
-        Translation = translation;
-        IsDirty = true;
-    }
-
-    // Sets scale and marks the transform dirty.
-    void SetScale(const glm::vec3& scale)
-    {
-        Scale = scale;
-        IsDirty = true;
-    }
-
-    // Sets Euler rotation and refreshes the cached quaternion.
-    void SetRotation(const glm::vec3& eulerAngles)
-    {
-        Rotation = eulerAngles;
-        RotationQuat = glm::quat(eulerAngles);
-        IsDirty = true;
-    }
-
-    // Sets the quaternion and refreshes Euler angles.
-    void SetRotationQuat(const glm::quat& rotationQuat)
-    {
-        RotationQuat = rotationQuat;
-        Rotation = glm::eulerAngles(rotationQuat);
-        IsDirty = true;
-    }
-
-    // Returns the current local transform matrix.
-    glm::mat4 GetTransform() const
-    {
-        return GetTransform(Translation, RotationQuat, Scale);
-    }
-
-    // Returns a transform matrix from explicit translation, rotation, and scale.
-    static glm::mat4 GetTransform(const glm::vec3& translation, const glm::quat& rotation, const glm::vec3& scale)
-    {
-        return glm::translate(glm::mat4(1.0f), translation) * 
-               glm::toMat4(rotation) * 
-               glm::scale(glm::mat4(1.0f), scale);
-    }
-
-    // Returns an interpolated transform.
-    glm::mat4 GetInterpolatedTransform(float alpha) const
-    {
-        glm::vec3 interpolatedTranslation = glm::mix(PrevTranslation, Translation, alpha);
-        glm::quat interpolatedRotation = glm::slerp(PrevRotationQuat, RotationQuat, alpha);
-        glm::vec3 interpolatedScale = glm::mix(PrevScale, Scale, alpha);
-
-        return GetTransform(interpolatedTranslation, interpolatedRotation, interpolatedScale);
-    }
-
     // Cached world transform.
     glm::mat4 WorldTransform = glm::mat4(1.0f);
     glm::mat4 InverseWorldTransform = glm::mat4(1.0f);
@@ -88,7 +27,6 @@ struct TransformComponent
     glm::quat PrevRotationQuat = {1.0f, 0.0f, 0.0f, 0.0f};
     glm::vec3 PrevScale = {1, 1, 1};
 
-    
     CH_REFLECT_BEGIN(TransformComponent)
         // Position.
         props.Property("Translation", Translation);
@@ -99,10 +37,11 @@ struct TransformComponent
         // Scale.
         props.Property("Scale", Scale, PropertyMeta(0.1f, 10.0f, 0.1f));
 
-        // Keep the quaternion in sync.
+        // Keep the quaternion in sync using an inline lambda or similar if we want to avoid member functions
         if (props.HasChanged() || props.GetMode() == ReflectionMode::Deserialize)
         {
-             SetRotation(Rotation);
+             RotationQuat = glm::quat(Rotation);
+             IsDirty = true;
         }
     CH_REFLECT_END()
 };

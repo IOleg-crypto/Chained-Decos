@@ -1,10 +1,12 @@
 #include "scene_scripting_manager.h"
+#include "engine/scene/components.h"
 #include "engine/physics/physics.h"
 #include "engine/core/profiler.h"
 #include "scripting/script_glue.h"
 #include "scripting/scriptengine.h"
 #include "scripting/scriptengine_services.h"
 #include <Coral/ManagedObject.hpp>
+#include "engine/scene/scene.h"
 #include <memory>
 
 namespace CHEngine
@@ -12,22 +14,6 @@ namespace CHEngine
 
 namespace
 {
-// RAII scope that registers the about-to-be-initialized script instance with ScriptGlue,
-// then clears it on exit, so that __Init callbacks have the correct pending context.
-class PendingScriptInstanceScope
-{
-public:
-    explicit PendingScriptInstanceScope(ManagedScriptInstance* instance)
-    {
-        ScriptGlue::SetPendingScriptInstance(instance);
-    }
-
-    ~PendingScriptInstanceScope()
-    {
-        ScriptGlue::SetPendingScriptInstance(nullptr);
-    }
-};
-
 // Custom deleter that properly shuts down a Coral::ManagedObject before freeing it.
 // Used as the deleter for shared_ptr<void> so Coral headers are not needed in scripting_components.h.
 void CoralObjectDeleter(void* ptr)
@@ -43,14 +29,17 @@ static inline Coral::ManagedObject* AsManagedObject(const ManagedScriptInstance&
 }
 
 static std::vector<SceneScriptingManager*> s_Managers;
+static std::mutex s_ManagersMutex;
 
 void SceneScriptingManager::Register(SceneScriptingManager* manager)
 {
+    std::lock_guard<std::mutex> lock(s_ManagersMutex);
     s_Managers.push_back(manager);
 }
 
 void SceneScriptingManager::Unregister(SceneScriptingManager* manager)
 {
+    std::lock_guard<std::mutex> lock(s_ManagersMutex);
     auto it = std::find(s_Managers.begin(), s_Managers.end(), manager);
     if (it != s_Managers.end())
         s_Managers.erase(it);
@@ -58,14 +47,15 @@ void SceneScriptingManager::Unregister(SceneScriptingManager* manager)
 
 void SceneScriptingManager::ResetAll()
 {
+    std::lock_guard<std::mutex> lock(s_ManagersMutex);
     for (auto* manager : s_Managers)
     {
         manager->OnRuntimeStop(); // This will Destroy() all instances
     }
 }
 
-SceneScriptingManager::SceneScriptingManager(Scene* scene)
-    : m_Scene(scene)
+SceneScriptingManager::SceneScriptingManager(Scene* scene, ScriptEngine* scriptEngine)
+    : m_Scene(scene), m_ScriptEngine(scriptEngine)
 {
     SceneScriptingManager::Register(this);
 }
@@ -78,7 +68,8 @@ SceneScriptingManager::~SceneScriptingManager()
     // We still iterate to invoke OnDestroy callbacks before the object is deleted.
     if (m_Scene && m_Scene->IsSimulationRunning())
     {
-        auto view = m_Scene->GetRegistry().view<ManagedScriptComponent>();
+        auto& registry = m_Scene->GetRegistry();
+        auto view = registry.view<ManagedScriptComponent>();
         for (auto entity : view)
         {
             auto& msc = view.get<ManagedScriptComponent>(entity);
@@ -87,8 +78,8 @@ SceneScriptingManager::~SceneScriptingManager()
                 if (script.HasInstance())
                 {
                     auto* obj = AsManagedObject(script);
-                    if (obj->IsValid() && script.OnDestroy)
-                        script.OnDestroy();
+                    if (obj->IsValid())
+                        obj->InvokeMethod("OnDestroy");
                 }
             }
         }
@@ -98,9 +89,8 @@ SceneScriptingManager::~SceneScriptingManager()
 
 void SceneScriptingManager::OnRuntimeStart()
 {
-    std::weak_ptr<entt::registry> weakRegistry = m_Scene->GetRegistryPtr();
-    Physics::SetCollisionCallback(m_Scene, [weakRegistry](entt::entity a, entt::entity b) {
-        auto registryPtr = weakRegistry.lock();
+    entt::registry* registryPtr = m_Scene->GetRegistryPtr();
+    Physics::SetCollisionCallback(m_Scene, [registryPtr](entt::entity a, entt::entity b) {
         if (!registryPtr) return;
 
         auto& registry = *registryPtr;
@@ -112,8 +102,12 @@ void SceneScriptingManager::OnRuntimeStart()
             auto& msc = registry.get<ManagedScriptComponent>(a);
             for (auto& script : msc.Scripts)
             {
-                if (script.HasInstance() && script.OnCollisionEnter)
-                    script.OnCollisionEnter((uint64_t)(uint32_t)b);
+                if (script.HasInstance())
+                {
+                    auto* obj = AsManagedObject(script);
+                    if (obj->IsValid())
+                        obj->InvokeMethod("OnCollisionEnter", (uint64_t)(uint32_t)b);
+                }
             }
         }
 
@@ -123,8 +117,12 @@ void SceneScriptingManager::OnRuntimeStart()
             auto& msc = registry.get<ManagedScriptComponent>(b);
             for (auto& script : msc.Scripts)
             {
-                if (script.HasInstance() && script.OnCollisionEnter)
-                    script.OnCollisionEnter((uint64_t)(uint32_t)a);
+                if (script.HasInstance())
+                {
+                    auto* obj = AsManagedObject(script);
+                    if (obj->IsValid())
+                        obj->InvokeMethod("OnCollisionEnter", (uint64_t)(uint32_t)a);
+                }
             }
         }
     });
@@ -149,7 +147,7 @@ void SceneScriptingManager::OnUpdate(Timestep deltaTime)
 {
     CH_PROFILE_FUNCTION();
 
-    if (!GetScriptHost().IsInitialized() || m_ReloadInProgress)
+    if (!m_ScriptEngine || !m_ScriptEngine->GetHost().IsInitialized() || m_ReloadInProgress)
     {
         return;
     }
@@ -157,64 +155,103 @@ void SceneScriptingManager::OnUpdate(Timestep deltaTime)
     SetContextScene(m_Scene);
 
     auto& registry = m_Scene->GetRegistry();
+    
+    // Copy entities to a stable list to avoid issues if registry is modified during iteration
+    std::vector<entt::entity> entities;
     auto view = registry.view<ManagedScriptComponent>();
+    for (auto entity : view) entities.push_back(entity);
 
-    for (auto&& [entity, msc] : view.each())
+    for (auto entity : entities)
     {
-        for (auto& script : msc.Scripts)
+        if (!registry.valid(entity) || !registry.all_of<ManagedScriptComponent>(entity))
+            continue;
+
+        // Use index-based access to survive potential Scripts vector reallocations
+        size_t scriptCount = registry.get<ManagedScriptComponent>(entity).Scripts.size();
+        for (size_t i = 0; i < scriptCount; ++i)
         {
+            // Re-fetch script component and instance after every potential managed call
+            auto& msc = registry.get<ManagedScriptComponent>(entity);
+            auto& script = msc.Scripts[i];
+
             // 1. Instantiation Phase
             if (!script.HasInstance() && !script.ClassName.empty())
             {
-                auto* type = GetScriptRegistry().GetScriptClass(script.ClassName);
+                auto* type = m_ScriptEngine->GetRegistry().GetScriptClass(script.ClassName);
                 if (type)
                 {
                     try
                     {
-                        // Allocate via raw pointer, wrap in shared_ptr with type-erasing deleter.
+                        CH_CORE_INFO("ScriptEngine: Initializing script '{}' for entity {}...", script.ClassName, (uint32_t)entity);
                         auto* obj = new Coral::ManagedObject(type->CreateInstance());
-                        script.Instance = std::shared_ptr<void>(obj, CoralObjectDeleter);
+                        auto sharedObj = std::shared_ptr<void>(obj, CoralObjectDeleter);
 
-                        PendingScriptInstanceScope pendingScope(&script);
+                        // We use a local object that won't move during reallocation of the registry or vector.
+                        ManagedScriptInstance stableInstance = script; // Copy persistent metadata
+                        stableInstance.Instance = sharedObj;
+
                         obj->InvokeMethod("__Init", (uint64_t)(uint32_t)entity);
+                        
+                        // RE-FETCH: registry or vector might have reallocated during synchronous __Init
+                        auto& finalScript = registry.get<ManagedScriptComponent>(entity).Scripts[i];
+                        
+                        // Move initialized state back to the vector
+                        finalScript.Instance = std::move(stableInstance.Instance);
+                        finalScript.NeedsStart = true;
 
-                        for (const auto& [fieldName, field] : script.Fields)
+                        auto* finalObj = AsManagedObject(finalScript);
+                        if (!finalObj)
                         {
-                            std::visit([&](auto&& val) { obj->SetFieldValue(fieldName, val); }, field.Value);
+                            CH_CORE_ERROR("ScriptEngine: Failed to get managed object for '{}' after initialization!", finalScript.ClassName);
+                            continue;
                         }
 
-                        if (script.OnCreate) script.OnCreate();
-                        else obj->InvokeMethod("OnCreate");
+                        CH_CORE_INFO("ScriptEngine: Script '{}' initialized. Syncing {} fields...", finalScript.ClassName, finalScript.Fields.size());
 
-                        script.NeedsStart = true;
+                        for (const auto& [fieldName, field] : finalScript.Fields)
+                        {
+                            try
+                            {
+                                std::visit([&](auto&& val) { finalObj->SetFieldValue(fieldName, val); }, field.Value);
+                            }
+                            catch (const std::exception& e)
+                            {
+                                CH_CORE_WARN("ScriptEngine: Failed to sync field '{}' on script '{}': {}. Field may be obsolete.",
+                                             fieldName, finalScript.ClassName, e.what());
+                            }
+                        }
+
+                        CH_CORE_INFO("ScriptEngine: Fields sync completed for '{}'. Calling OnCreate.", finalScript.ClassName);
+
+                        finalObj->InvokeMethod("OnCreate");
                     } catch (const std::exception& e)
                     {
                         CH_CORE_ERROR("ScriptEngine: Exception instantiating script '{}': {}", script.ClassName, e.what());
-                        script.Instance.reset(); // Releases via CoralObjectDeleter automatically
+                        // Re-fetch again for safety in catch block
+                        registry.get<ManagedScriptComponent>(entity).Scripts[i].Instance.reset();
                     }
                 }
             }
 
-            // 2. Lifecycle Execution Phase
-            if (script.HasInstance())
+            // Re-fetch for lifecycle phase
+            auto& scriptLifecycle = registry.get<ManagedScriptComponent>(entity).Scripts[i];
+            if (scriptLifecycle.HasInstance())
             {
-                auto* obj = AsManagedObject(script);
+                auto* obj = AsManagedObject(scriptLifecycle);
                 if (!obj->IsValid()) continue;
 
                 try
                 {
-                    if (script.NeedsStart)
+                    if (scriptLifecycle.NeedsStart)
                     {
-                        if (script.OnStart) script.OnStart();
-                        else obj->InvokeMethod("OnStart");
-                        script.NeedsStart = false;
+                        obj->InvokeMethod("OnStart");
+                        scriptLifecycle.NeedsStart = false;
                     }
 
-                    if (script.OnUpdate) script.OnUpdate((float)deltaTime);
-                    else obj->InvokeMethod("OnUpdate", (float)deltaTime);
+                    obj->InvokeMethod("OnUpdate", (float)deltaTime);
                 } catch (const std::exception& e)
                 {
-                    CH_CORE_ERROR("ScriptEngine: Exception in script lifecycle for '{}': {}", script.ClassName, e.what());
+                    CH_CORE_ERROR("ScriptEngine: Exception in script lifecycle for '{}': {}", scriptLifecycle.ClassName, e.what());
                 }
             }
         }
@@ -243,7 +280,7 @@ void SceneScriptingManager::OnEvent(Event& e)
                 {
                     try
                     {
-                        if (script.OnEvent) script.OnEvent((int)e.GetEventType());
+                        obj->InvokeMethod("OnEvent", (int)e.GetEventType());
                     } catch (...)
                     {
                         // Scripts may not implement OnEvent — that's fine.
@@ -257,7 +294,7 @@ void SceneScriptingManager::OnEvent(Event& e)
 
 void SceneScriptingManager::OnRenderUI()
 {
-    if (!GetScriptHost().IsInitialized() || m_ReloadInProgress) return;
+    if (!m_ScriptEngine || !m_ScriptEngine->GetHost().IsInitialized() || m_ReloadInProgress) return;
 
     SetContextScene(m_Scene);
 
@@ -268,14 +305,14 @@ void SceneScriptingManager::OnRenderUI()
     {
         for (auto& script : msc.Scripts)
         {
-            if (script.HasInstance() && script.OnGUI)
+            if (script.HasInstance())
             {
                 auto* obj = AsManagedObject(script);
                 if (obj->IsValid())
                 {
                     try
                     {
-                        script.OnGUI();
+                        obj->InvokeMethod("OnGUI");
                     } catch (const std::exception& e)
                     {
                         CH_CORE_ERROR("ScriptEngine: Exception in OnGUI for '{}': {}", script.ClassName, e.what());
@@ -293,8 +330,7 @@ void ManagedScriptInstance::Destroy()
     if (HasInstance())
     {
         auto* obj = static_cast<Coral::ManagedObject*>(GetRaw());
-        if (OnDestroy) OnDestroy();
-        else if (obj->IsValid()) obj->InvokeMethod("OnDestroy");
+        if (obj->IsValid()) obj->InvokeMethod("OnDestroy");
     }
     ResetRuntimeState();
 }
@@ -303,13 +339,6 @@ void ManagedScriptInstance::ResetRuntimeState()
 {
     Instance.reset(); // shared_ptr deleter handles Coral::ManagedObject cleanup
     NeedsStart = true;
-    OnCreate = nullptr;
-    OnStart = nullptr;
-    OnUpdate = nullptr;
-    OnDestroy = nullptr;
-    OnGUI = nullptr;
-    OnCollisionEnter = nullptr;
-    OnEvent = nullptr;
 }
 
 } // namespace CHEngine

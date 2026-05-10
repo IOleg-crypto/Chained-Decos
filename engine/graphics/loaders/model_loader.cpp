@@ -1,7 +1,8 @@
 #include "engine/graphics/loaders/model_loader.h"
 #include "engine/graphics/loaders/assimp_importer.h"
 #include "engine/graphics/assets/texture_asset.h"
-#include "engine/core/assets/asset_manager.h"
+#include "engine/assets/asset_manager.h"
+#include "engine/core/service_locator.h"
 #include "engine/core/log.h"
 #include "engine/core/profiler.h"
 #include "engine/scene/project.h"
@@ -10,28 +11,31 @@
 
 namespace CHEngine
 {
-std::shared_ptr<Asset> ModelLoader::Create()
+std::shared_ptr<Asset> ModelLoader::Create() const
 {
     return std::make_shared<ModelAsset>();
 }
 
-bool ModelLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError)
+bool ModelLoader::Load(std::shared_ptr<Asset> asset, const LoadContext& ctx, std::string* outError)
 {
-    auto modelAsset = std::static_pointer_cast<ModelAsset>(asset);
+    auto modelAsset = std::dynamic_pointer_cast<ModelAsset>(asset);
+    if (!modelAsset)
+    {
+        if (outError) *outError = "ModelLoader: Invalid asset type";
+        return false;
+    }
 
     // Handle procedural models
-    if (resolvedPath.starts_with(":"))
+    if (ctx.ResolvedPath.starts_with(":"))
     {
-        // Placeholder: GenerateProceduralModel was removed from ModelLoader in favor of AssimpImporter
-        // If you need it, move it to AssimpImporter or keep a simplified version here
         if (outError)
         {
-            *outError = "ModelLoader: procedural model paths are not supported: " + resolvedPath;
+            *outError = "ModelLoader: procedural model paths are not supported: " + ctx.ResolvedPath;
         }
         return false;
     }
 
-    auto pendingData = LoadMeshDataFromDisk(resolvedPath);
+    auto pendingData = LoadMeshDataFromDisk(ctx.ResolvedPath);
     if (pendingData.isValid)
     {
         modelAsset->SetPendingData(std::move(pendingData));
@@ -39,7 +43,7 @@ bool ModelLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolved
     }
     if (outError)
     {
-        *outError = "ModelLoader: failed to import model data from '" + resolvedPath + "'";
+        *outError = "ModelLoader: failed to import model data from '" + ctx.ResolvedPath + "'";
     }
     return false;
 }
@@ -68,185 +72,127 @@ PendingModelData ModelLoader::LoadMeshDataFromDisk(const std::filesystem::path& 
 Model ModelLoader::GenerateProceduralModel(const std::string& type, const ProceduralParameters& params)
 {
     Model model;
-    RawMesh raw;
-
-    if (type == ":cube:")
-    {
-        float w = params.Dimensions.x * 0.5f;
-        float h = params.Dimensions.y * 0.5f;
-        float d = params.Dimensions.z * 0.5f;
-
-        raw.vertices = {
-            -w,-h, d,  w,-h, d,  w, h, d, -w, h, d,
-            -w,-h,-d, -w, h,-d,  w, h,-d,  w,-h,-d,
-            -w, h,-d, -w, h, d,  w, h, d,  w, h,-d,
-            -w,-h,-d,  w,-h,-d,  w,-h, d, -w,-h, d,
-             w,-h,-d,  w, h,-d,  w, h, d,  w,-h, d,
-            -w,-h,-d, -w,-h, d, -w, h, d, -w, h,-d
-        };
-
-        raw.normals = {
-             0, 0, 1,   0, 0, 1,   0, 0, 1,   0, 0, 1,
-             0, 0,-1,   0, 0,-1,   0, 0,-1,   0, 0,-1,
-             0, 1, 0,   0, 1, 0,   0, 1, 0,   0, 1, 0,
-             0,-1, 0,   0,-1, 0,   0,-1, 0,   0,-1, 0,
-             1, 0, 0,   1, 0, 0,   1, 0, 0,   1, 0, 0,
-            -1, 0, 0,  -1, 0, 0,  -1, 0, 0,  -1, 0, 0
-        };
-        
-        std::vector<uint32_t> indices;
-        for(int i=0; i<6; i++) {
-            indices.push_back(i*4+0); indices.push_back(i*4+1); indices.push_back(i*4+2);
-            indices.push_back(i*4+0); indices.push_back(i*4+2); indices.push_back(i*4+3);
-        }
-
-        Mesh mesh;
-        mesh.MaterialIndex = 0;
-        mesh.VertexCount = (uint32_t)(raw.vertices.size() / 3);
-        mesh.TriangleCount = (uint32_t)(indices.size() / 3);
-        
-        mesh.VAO = VertexArray::Create();
-        auto vb = VertexBuffer::Create(raw.vertices.data(), (uint32_t)(raw.vertices.size() * sizeof(float)));
-        vb->SetLayout({
-            { ShaderDataType::Float3, "a_Position" }
-        });
-        mesh.VAO->AddVertexBuffer(vb);
-
-        auto ib = IndexBuffer::Create(indices.data(), (uint32_t)indices.size());
-        mesh.VAO->SetIndexBuffer(ib);
-
-        model.Meshes.push_back(mesh);
-        model.Materials.push_back(Material{});
-    }
-
     return model;
 }
 
-void ModelLoader::Finalize(std::shared_ptr<ModelAsset> asset)
+bool ModelLoader::Finalize(std::shared_ptr<ModelAsset> asset, std::chrono::steady_clock::time_point budgetEnd)
 {
     CH_PROFILE_FUNCTION();
+    if (!asset || !asset->m_HasPendingData) return true;
 
-    if (!asset->m_HasPendingData || !asset->m_PendingData.isValid)
+    auto& pending = asset->m_PendingData;
+
+    // Phase 1: Initialize textures and materials
+    if (pending.FinalizationProgress == 0)
     {
-        return;
-    }
-
-    CH_CORE_INFO("ModelAsset: Uploading model to GPU: '{}' ({} meshes, {} materials)", asset->GetPath(),
-                 static_cast<uint32_t>(asset->m_PendingData.meshes.size()),
-                 static_cast<uint32_t>(asset->m_PendingData.materials.size()));
-
-    Model newModel;
-    newModel.Materials.resize(asset->m_PendingData.materials.empty() ? 1 : asset->m_PendingData.materials.size());
-    asset->m_EmbeddedTextures.clear();
-    auto project = Project::GetActive();
-
-    // Pre-populate embedded textures
-    for (auto& [path, embedded] : asset->m_PendingData.embeddedTextures)
-    {
-        if (embedded.data.empty() || embedded.width <= 0 || embedded.height <= 0 || embedded.isHDR)
+        CH_PROFILE_SCOPE("ModelLoader::Finalize_Init");
+        
+        // 1. Finalize Embedded Textures (Main thread)
+        for (auto& [path, embedded] : pending.embeddedTextures)
         {
-            continue;
-        }
-
-        auto texture = Texture::Create((uint32_t)embedded.width, (uint32_t)embedded.height, TextureFormat::RGBA8);
-        if (texture)
-        {
-            texture->SetData((void*)embedded.data.data(), 0);
-            asset->m_EmbeddedTextures[path] = texture;
-        }
-    }
-
-    auto loadTex = [&](int matIdx, const std::string& path, int mapIndex) {
-        if (path.empty()) return;
-
-        uint32_t texId = 0;
-        if (path.front() == '*')
-        {
-            auto it = asset->m_EmbeddedTextures.find(path);
-            if (it != asset->m_EmbeddedTextures.end())
+            if (asset->m_EmbeddedTextures.find(path) == asset->m_EmbeddedTextures.end())
             {
-                texId = it->second->GetRendererID();
+                auto texture = Texture::Create((uint32_t)embedded.width, (uint32_t)embedded.height, TextureFormat::RGBA8);
+                if (texture)
+                {
+                    texture->SetData((void*)embedded.data.data(), 0);
+                    asset->m_EmbeddedTextures[path] = texture;
+                }
             }
         }
-        else if (project)
+        pending.embeddedTextures.clear(); 
+
+        // 2. Setup Materials
+        asset->m_Model.Materials.clear();
+        asset->m_Materials.clear();
+        
+        auto& am = ServiceLocator::Get<AssetManager>();
+        for (int i = 0; i < (int)pending.materials.size(); ++i)
         {
-            auto tex = AssetManager::Get().Get<TextureAsset>(path);
-            if (tex && tex->IsReady())
-            {
-                texId = tex->GetTexture()->GetRendererID();
-            }
+            const auto& raw = pending.materials[i];
+            Material mat;
+            mat.AlbedoColor = raw.albedoColor;
+            mat.EmissiveColor = raw.emissiveColor;
+            mat.EmissiveIntensity = raw.emissiveIntensity;
+            mat.Metalness = raw.metalness;
+            mat.Roughness = raw.roughness;
+            mat.Transparent = raw.transparent;
+            mat.Alpha = raw.albedoColor.a;
+            
+            // Lambda to resolve a texture directly by GPU ID if already ready,
+            // or return 0 and let BindMaterialUniforms fallback to handle later.
+            // For embedded textures (path starts with '*'), use direct GPU ID.
+            auto resolveHandleAndTriggerLoad = [&](const std::string& path) -> AssetHandle {
+                if (path.empty()) return AssetHandle(0);
+                if (path[0] == '*') return AssetHandle(0); // Embedded, no registry handle
+                // Always call with type to ensure the asset is queued for loading
+                return am.ResolveToHandle(path, TextureAsset::GetStaticType());
+            };
+
+            auto resolveEmbeddedTex = [&](const std::string& path) -> uint32_t {
+                if (path.empty() || path[0] != '*') return 0;
+                auto it = asset->m_EmbeddedTextures.find(path);
+                if (it == asset->m_EmbeddedTextures.end()) return 0;
+                return it->second ? it->second->GetRendererID() : 0;
+            };
+
+            // Embedded textures: direct GPU ids (must be set immediately as they have no handle)
+            mat.AlbedoMap = resolveEmbeddedTex(raw.albedoPath);
+            mat.NormalMap = resolveEmbeddedTex(raw.normalPath);
+            mat.MetallicRoughnessMap = resolveEmbeddedTex(raw.metallicRoughnessPath);
+            mat.EmissiveMap = resolveEmbeddedTex(raw.emissivePath);
+            mat.OcclusionMap = resolveEmbeddedTex(raw.occlusionPath);
+
+            // External textures: register into AssetManager for async loading.
+            // BindMaterialUniforms will lazily pick up the GPU ID each frame once ready.
+            mat.AlbedoHandle = resolveHandleAndTriggerLoad(raw.albedoPath);
+            mat.NormalHandle = resolveHandleAndTriggerLoad(raw.normalPath);
+            mat.MetallicRoughnessHandle = resolveHandleAndTriggerLoad(raw.metallicRoughnessPath);
+            mat.EmissiveHandle = resolveHandleAndTriggerLoad(raw.emissivePath);
+            mat.OcclusionHandle = resolveHandleAndTriggerLoad(raw.occlusionPath);
+
+            asset->m_Model.Materials.push_back(mat);
+            asset->m_Materials.push_back(mat);
         }
 
-        if (texId == 0) return;
-
-        switch (mapIndex)
+        if (asset->m_Model.Materials.empty())
         {
-        case 0: newModel.Materials[matIdx].AlbedoMap = texId; break;
-        case 1: newModel.Materials[matIdx].EmissiveMap = texId; break;
-        case 2: newModel.Materials[matIdx].NormalMap = texId; break;
-        case 3: newModel.Materials[matIdx].MetallicRoughnessMap = texId; break;
-        case 4: newModel.Materials[matIdx].EmissiveMap = texId; break;
-        case 5: newModel.Materials[matIdx].OcclusionMap = texId; break;
-        }
-    };
-
-    for (int materialIndex = 0; materialIndex < (int)newModel.Materials.size(); ++materialIndex)
-    {
-        if (!asset->m_PendingData.materials.empty())
-        {
-            const auto& rawMaterial = asset->m_PendingData.materials[materialIndex];
-            newModel.Materials[materialIndex].AlbedoColor = rawMaterial.albedoColor;
-            newModel.Materials[materialIndex].EmissiveColor = rawMaterial.emissiveColor;
-            newModel.Materials[materialIndex].EmissiveIntensity = rawMaterial.emissiveIntensity;
-            newModel.Materials[materialIndex].Metalness = rawMaterial.metalness;
-            newModel.Materials[materialIndex].Roughness = rawMaterial.roughness;
-            newModel.Materials[materialIndex].Transparent = rawMaterial.transparent;
-            newModel.Materials[materialIndex].Alpha = rawMaterial.albedoColor.a;
-
-            loadTex(materialIndex, rawMaterial.albedoPath, 0);
-            newModel.Materials[materialIndex].AlbedoPath = rawMaterial.albedoPath;
-            loadTex(materialIndex, rawMaterial.normalPath, 2);
-            newModel.Materials[materialIndex].NormalPath = rawMaterial.normalPath;
-            loadTex(materialIndex, rawMaterial.occlusionPath, 5);
-            newModel.Materials[materialIndex].OcclusionPath = rawMaterial.occlusionPath;
-            loadTex(materialIndex, rawMaterial.emissivePath, 4);
-            newModel.Materials[materialIndex].EmissivePath = rawMaterial.emissivePath;
-            loadTex(materialIndex, rawMaterial.metallicRoughnessPath, 3);
-            newModel.Materials[materialIndex].MetallicRoughnessPath = rawMaterial.metallicRoughnessPath;
+            asset->m_Model.Materials.emplace_back();
+            asset->m_Materials.emplace_back();
         }
     }
 
-    for (int meshIndex = 0; meshIndex < (int)asset->m_PendingData.meshes.size(); ++meshIndex)
+    // Phase 2: Process ALL Meshes (Blocking for diagnostic phase)
+    while (pending.FinalizationProgress < (int)pending.meshes.size())
     {
-        const auto& rawMesh = asset->m_PendingData.meshes[meshIndex];
+        CH_PROFILE_SCOPE("ModelLoader::Finalize_Mesh");
+        const auto& rawMesh = pending.meshes[pending.FinalizationProgress];
         Mesh mesh;
         mesh.VertexCount = (uint32_t)rawMesh.vertices.size() / 3;
         mesh.TriangleCount = (uint32_t)rawMesh.indices.size() / 3;
-        mesh.MaterialIndex = (rawMesh.materialIndex >= 0 && rawMesh.materialIndex < (int)newModel.Materials.size())
-                                 ? rawMesh.materialIndex
-                                 : 0;
+        mesh.MaterialIndex = (rawMesh.materialIndex >= 0 && rawMesh.materialIndex < (int)asset->m_Materials.size()) 
+                                 ? rawMesh.materialIndex : 0;
+        mesh.MinBounds = rawMesh.MinBounds;
+        mesh.MaxBounds = rawMesh.MaxBounds;
 
         if (mesh.VertexCount > 0)
         {
             mesh.VAO = VertexArray::Create();
 
-            auto vboPos =
-                VertexBuffer::Create(rawMesh.vertices.data(), (uint32_t)rawMesh.vertices.size() * sizeof(float));
+            auto vboPos = VertexBuffer::Create(rawMesh.vertices.data(), (uint32_t)rawMesh.vertices.size() * sizeof(float));
             vboPos->SetLayout({{ShaderDataType::Float3, "a_Position"}});
             mesh.VAO->AddVertexBuffer(vboPos);
 
             if (!rawMesh.texcoords.empty())
             {
-                auto vboTex =
-                    VertexBuffer::Create(rawMesh.texcoords.data(), (uint32_t)rawMesh.texcoords.size() * sizeof(float));
+                auto vboTex = VertexBuffer::Create(rawMesh.texcoords.data(), (uint32_t)rawMesh.texcoords.size() * sizeof(float));
                 vboTex->SetLayout({{ShaderDataType::Float2, "a_TexCoord"}});
                 mesh.VAO->AddVertexBuffer(vboTex);
             }
 
             if (!rawMesh.normals.empty())
             {
-                auto vboNorm =
-                    VertexBuffer::Create(rawMesh.normals.data(), (uint32_t)rawMesh.normals.size() * sizeof(float));
+                auto vboNorm = VertexBuffer::Create(rawMesh.normals.data(), (uint32_t)rawMesh.normals.size() * sizeof(float));
                 vboNorm->SetLayout({{ShaderDataType::Float3, "a_Normal"}});
                 mesh.VAO->AddVertexBuffer(vboNorm);
             }
@@ -257,16 +203,14 @@ void ModelLoader::Finalize(std::shared_ptr<ModelAsset> asset)
                 jointsInt.reserve(rawMesh.joints.size());
                 for (auto jointId : rawMesh.joints) jointsInt.push_back(static_cast<int32_t>(jointId));
                 
-                auto vboJoints = VertexBuffer::Create((float*)jointsInt.data(),
-                                                      (uint32_t)jointsInt.size() * sizeof(int32_t));
+                auto vboJoints = VertexBuffer::Create((float*)jointsInt.data(), (uint32_t)jointsInt.size() * sizeof(int32_t));
                 vboJoints->SetLayout({{ShaderDataType::Int4, "a_JointIDs"}});
                 mesh.VAO->AddVertexBuffer(vboJoints);
             }
 
             if (!rawMesh.weights.empty())
             {
-                auto vboWeights = VertexBuffer::Create(rawMesh.weights.data(),
-                                                       (uint32_t)rawMesh.weights.size() * sizeof(float));
+                auto vboWeights = VertexBuffer::Create(rawMesh.weights.data(), (uint32_t)rawMesh.weights.size() * sizeof(float));
                 vboWeights->SetLayout({{ShaderDataType::Float4, "a_Weights"}});
                 mesh.VAO->AddVertexBuffer(vboWeights);
             }
@@ -276,51 +220,64 @@ void ModelLoader::Finalize(std::shared_ptr<ModelAsset> asset)
                 auto ibo = IndexBuffer::Create(rawMesh.indices.data(), (uint32_t)rawMesh.indices.size());
                 mesh.VAO->SetIndexBuffer(ibo);
             }
-
-            mesh.MinBounds = rawMesh.MinBounds;
-            mesh.MaxBounds = rawMesh.MaxBounds;
         }
-        newModel.Meshes.push_back(mesh);
-    }
 
-    BoundingBox totalBox = {{FLT_MAX, FLT_MAX, FLT_MAX}, {-FLT_MAX, -FLT_MAX, -FLT_MAX}};
-    bool anyMesh = false;
-    for (const auto& inst : asset->m_PendingData.instances)
-    {
-        if (inst.meshIndex < 0 || inst.meshIndex >= (int)newModel.Meshes.size()) continue;
-        const Mesh& mesh = newModel.Meshes[inst.meshIndex];
+        asset->m_Model.Meshes.push_back(mesh);
+        pending.FinalizationProgress++;
 
-        glm::vec3 corners[8] = {{mesh.MinBounds.x, mesh.MinBounds.y, mesh.MinBounds.z},
-                                {mesh.MaxBounds.x, mesh.MinBounds.y, mesh.MinBounds.z},
-                                {mesh.MinBounds.x, mesh.MaxBounds.y, mesh.MinBounds.z},
-                                {mesh.MaxBounds.x, mesh.MaxBounds.y, mesh.MinBounds.z},
-                                {mesh.MinBounds.x, mesh.MinBounds.y, mesh.MaxBounds.z},
-                                {mesh.MaxBounds.x, mesh.MinBounds.y, mesh.MaxBounds.z},
-                                {mesh.MinBounds.x, mesh.MaxBounds.y, mesh.MaxBounds.z},
-                                {mesh.MaxBounds.x, mesh.MaxBounds.y, mesh.MaxBounds.z}};
-
-        for (int cornerIndex = 0; cornerIndex < 8; ++cornerIndex)
+        // Budget check: exit early if this mesh upload took too long
+        if (std::chrono::steady_clock::now() >= budgetEnd)
         {
-            glm::vec4 transformed = inst.localTransform * glm::vec4(corners[cornerIndex], 1.0f);
-            totalBox.Min = glm::min(totalBox.Min, glm::vec3(transformed));
-            totalBox.Max = glm::max(totalBox.Max, glm::vec3(transformed));
+            return false;
         }
-        anyMesh = true;
     }
-    if (!anyMesh) totalBox = {{0, 0, 0}, {0, 0, 0}};
 
-    asset->m_Model = std::move(newModel);
-    asset->m_Materials = asset->m_Model.Materials;
-    asset->m_BoundingBox = totalBox;
-    asset->m_RawMeshes = std::move(asset->m_PendingData.meshes);
-    asset->m_Animations = std::move(asset->m_PendingData.animations);
-    asset->m_Instances = std::move(asset->m_PendingData.instances);
-    asset->m_OffsetMatrices = std::move(asset->m_PendingData.offsetMatrices);
-    asset->m_NodeNames = std::move(asset->m_PendingData.nodeNames);
-    asset->m_NodeParents = std::move(asset->m_PendingData.nodeParents);
+    // Phase 3: Post-processing (Bounding Box and State)
+    if (pending.FinalizationProgress >= (int)pending.meshes.size())
+    {
+        CH_PROFILE_SCOPE("ModelLoader::Finalize_Post");
+        
+        BoundingBox totalBox = {{FLT_MAX, FLT_MAX, FLT_MAX}, {-FLT_MAX, -FLT_MAX, -FLT_MAX}};
+        bool anyInstance = false;
+        for (const auto& inst : pending.instances)
+        {
+            if (inst.meshIndex < 0 || inst.meshIndex >= (int)asset->m_Model.Meshes.size()) continue;
+            const auto& mesh = asset->m_Model.Meshes[inst.meshIndex];
 
-    asset->m_PendingData = PendingModelData();
-    asset->m_HasPendingData = false;
-    asset->SetState(AssetState::Ready);
+            glm::vec3 corners[8] = {
+                {mesh.MinBounds.x, mesh.MinBounds.y, mesh.MinBounds.z},
+                {mesh.MaxBounds.x, mesh.MinBounds.y, mesh.MinBounds.z},
+                {mesh.MinBounds.x, mesh.MaxBounds.y, mesh.MinBounds.z},
+                {mesh.MaxBounds.x, mesh.MaxBounds.y, mesh.MinBounds.z},
+                {mesh.MinBounds.x, mesh.MinBounds.y, mesh.MaxBounds.z},
+                {mesh.MaxBounds.x, mesh.MinBounds.y, mesh.MaxBounds.z},
+                {mesh.MinBounds.x, mesh.MaxBounds.y, mesh.MaxBounds.z},
+                {mesh.MaxBounds.x, mesh.MaxBounds.y, mesh.MaxBounds.z}
+            };
+
+            for (int k = 0; k < 8; ++k)
+            {
+                glm::vec4 transformed = inst.localTransform * glm::vec4(corners[k], 1.0f);
+                totalBox.Min = glm::min(totalBox.Min, glm::vec3(transformed));
+                totalBox.Max = glm::max(totalBox.Max, glm::vec3(transformed));
+            }
+            anyInstance = true;
+        }
+        if (!anyInstance) totalBox = {{0, 0, 0}, {0, 0, 0}};
+
+        asset->m_BoundingBox = totalBox;
+        asset->m_RawMeshes = std::move(pending.meshes);
+        asset->m_Animations = std::move(pending.animations);
+        asset->m_Instances = std::move(pending.instances);
+        asset->m_OffsetMatrices = std::move(pending.offsetMatrices);
+        asset->m_NodeNames = std::move(pending.nodeNames);
+        asset->m_NodeParents = std::move(pending.nodeParents);
+
+        asset->m_HasPendingData = false;
+        asset->SetState(AssetState::Ready);
+        return true; 
+    }
+
+    return false;
 }
 } // namespace CHEngine

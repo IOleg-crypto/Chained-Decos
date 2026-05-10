@@ -5,8 +5,6 @@
 #include "engine/core/log.h"
 #include <filesystem>
 
-#ifdef CH_ENABLE_ASSERTS
-
 // Internal implementations
 #define CH_INTERNAL_ASSERT_IMPL(type, check, msg, ...)                                                                 \
     {                                                                                                                  \
@@ -30,9 +28,5 @@
 // Core API
 #define CH_ASSERT(...) CH_EXPAND_MACRO(CH_INTERNAL_ASSERT_GET_MACRO(__VA_ARGS__)(_, __VA_ARGS__))
 #define CH_CORE_ASSERT(...) CH_EXPAND_MACRO(CH_INTERNAL_ASSERT_GET_MACRO(__VA_ARGS__)(_CORE_, __VA_ARGS__))
-#else
-#define CH_ASSERT(...)
-#define CH_CORE_ASSERT(...)
-#endif
 
 #endif // CH_ASSERT_H

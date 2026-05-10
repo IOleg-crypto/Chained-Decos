@@ -27,8 +27,8 @@ public:
         // Serialize the entity before destroying
         YAML::Emitter out;
         out << YAML::BeginMap;
-        ComponentSerializer::Get().SerializeID(out, m_Entity);
-        ComponentSerializer::Get().SerializeAll(out, m_Entity);
+        ServiceLocator::Get<ComponentSerializer>().SerializeID(out, m_Entity);
+        ServiceLocator::Get<ComponentSerializer>().SerializeAll(out, m_Entity);
         out << YAML::EndMap;
         m_SerializedData = out.c_str();
 
@@ -47,7 +47,7 @@ public:
         }
 
         m_Entity = m_Scene->CreateEntityWithUUID(m_UUID, name);
-        ComponentSerializer::Get().DeserializeAll(m_Entity, node);
+        ServiceLocator::Get<ComponentSerializer>().DeserializeAll(m_Entity, node);
     }
 
     std::string GetName() const override

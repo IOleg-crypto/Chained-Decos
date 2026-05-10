@@ -6,6 +6,8 @@
 namespace CHEngine
 {
 
+void RegisterGlueScene() {}
+
 CH_SCRIPT_FUNC uint64_t Scene_FindEntityByTag(Coral::String tag)
 {
     auto* scene = GetActiveScene();
@@ -44,8 +46,17 @@ CH_SCRIPT_FUNC uint64_t Scene_GetPrimaryCameraEntity()
     {
         return 0;
     }
-    Entity entity = scene->GetPrimaryCameraEntity();
-    return entity ? (uint64_t)(uint32_t)entity : 0;
+    
+    auto& reg = scene->GetRegistry();
+    auto view = reg.view<CameraComponent>();
+    for (auto entity : view)
+    {
+        if (view.get<CameraComponent>(entity).Primary)
+        {
+            return (uint64_t)(uint32_t)entity;
+        }
+    }
+    return 0;
 }
 CH_ADD_INTERNAL_CALL(Scene, Scene_GetPrimaryCameraEntity_Ptr, Scene_GetPrimaryCameraEntity);
 

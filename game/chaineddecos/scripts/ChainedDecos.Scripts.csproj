@@ -13,13 +13,8 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
 
-  <!-- Game script source files (exclude the old CHEngine.cs engine API) -->
   <ItemGroup>
-    <Compile Include="../src/**/*.cs" />
-    <!-- Exclude the old monolithic API file – now provided by CHEngine.Managed -->
-    <Compile Remove="../src/CHEngine.cs" />
-    <Compile Remove="../src/obj/**" />
-    <Compile Remove="../src/bin/**" />
+    <Compile Include="src/**/*.cs" />
   </ItemGroup>
 
   <!-- Reference the engine's C# API library -->

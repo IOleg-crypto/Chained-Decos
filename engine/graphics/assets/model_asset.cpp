@@ -1,6 +1,6 @@
 #include "engine/graphics/assets/model_asset.h"
 #include "engine/graphics/loaders/model_loader.h"
-#include "engine/core/assets/asset_manager.h"
+#include "engine/assets/asset_manager.h"
 #include "engine/core/log.h"
 #include "engine/core/profiler.h"
 // #include "engine/graphics/assets/shader_asset.h"
@@ -56,7 +56,7 @@ std::vector<glm::mat4> ModelAsset::GetBoneMatrices(int animationIndex, int frame
 
 void ModelAsset::OnLoaded()
 {
-    ModelLoader::Finalize(std::static_pointer_cast<ModelAsset>(shared_from_this()));
+    // Finalization is now handled progressively by AssetManager calling ModelLoader::Finalize
 }
 
 uint32_t ModelAsset::GetEmbeddedTextureID(const std::string& path) const

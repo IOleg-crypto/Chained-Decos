@@ -3,14 +3,33 @@ VertexShader: "lighting.vs"
 FragmentShader: "lighting.fs"
 
 Uniforms:
-  - texture0
-  - colDiffuse
-  - useTexture
-  - shininess
-  - ambient
-  - uMode
-  - fogEnabled
-  - fogColor
-  - fogDensity
-  - fogStart
-  - fogEnd
+  - Name: "colDiffuse"
+    Type: "Color"
+    Default: [1.0, 1.0, 1.0, 1.0]
+  - Name: "useTexture"
+    Type: "Float"
+    Default: 0.0
+  - Name: "shininess"
+    Type: "Float"
+    Default: 32.0
+  - Name: "uMode"
+    Type: "Float"
+    Default: 0.0
+  - Name: "ambient"
+    Type: "Color"
+    Default: [0.1, 0.1, 0.1, 1.0]
+  - Name: "fogEnabled"
+    Type: "Float"
+    Default: 1.0
+  - Name: "fogColor"
+    Type: "Color"
+    Default: [0.5, 0.6, 0.7, 1.0]
+  - Name: "fogDensity"
+    Type: "Float"
+    Default: 0.015
+  - Name: "fogStart"
+    Type: "Float"
+    Default: 10.0
+  - Name: "fogEnd"
+    Type: "Float"
+    Default: 100.0

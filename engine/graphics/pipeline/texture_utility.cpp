@@ -2,13 +2,14 @@
 #include "engine/graphics/pipeline/texture_utility.h"
 #include "engine/graphics/api/texture.h"
 #include "engine/graphics/api/framebuffer.h"
+#include "engine/graphics/api/shader.h"
 #include "engine/graphics/pipeline/render_command.h"
 #include "engine/graphics/assets/model_asset.h"
 #include <glad/gl.h>
 
 namespace CHEngine
 {
-    std::shared_ptr<Texture> TextureUtility::GenTextureCubemap(uint32_t shaderId, uint32_t panoramaId, int size, const Mesh& cubeMesh)
+    std::shared_ptr<Texture> TextureUtility::GenTextureCubemap(const std::shared_ptr<Shader>& shader, uint32_t panoramaId, int size, const Mesh& cubeMesh)
     {
         auto cubemap = Texture::CreateCubemap(size, TextureFormat::RGBA16F);
         
@@ -31,13 +32,11 @@ namespace CHEngine
             glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
         };
 
-        // TODO: Shader abstraction needed here too for cleaner code
-        glUseProgram(shaderId);
-        glUniformMatrix4fv(glGetUniformLocation(shaderId, "projection"), 1, GL_FALSE, glm::value_ptr(captureProjection));
+        shader->Bind();
+        shader->SetMatrix("projection", captureProjection);
         
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, panoramaId);
-        glUniform1i(glGetUniformLocation(shaderId, "equirectangularMap"), 0);
+        RenderCommand::SetTexture(0, panoramaId);
+        shader->SetInt("equirectangularMap", 0);
 
         captureFBO->Bind();
         RenderCommand::SetViewport(0, 0, size, size);
@@ -46,9 +45,10 @@ namespace CHEngine
 
         for (unsigned int i = 0; i < 6; ++i)
         {
-            glUniformMatrix4fv(glGetUniformLocation(shaderId, "view"), 1, GL_FALSE, glm::value_ptr(captureViews[i]));
+            shader->SetMatrix("view", captureViews[i]);
             
             // Still need a way to attach cubemap face to FBO in abstraction
+            // For now, keep the raw GL call for the face attachment as it's very specific to this utility
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, cubemap->GetRendererID(), 0);
             
             RenderCommand::Clear({0, 0, 0, 255});

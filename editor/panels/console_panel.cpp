@@ -1,32 +1,25 @@
 #include "console_panel.h"
 #include "imgui.h"
+#include <algorithm>
+#include <cctype>
 
 namespace CHEngine
 {
-ConsolePanel* ConsolePanel::s_Instance = nullptr;
-std::deque<ConsoleLogEntry> ConsolePanel::s_Buffer;
-std::mutex ConsolePanel::s_BufferMutex;
-
 ConsolePanel::ConsolePanel()
 {
-    s_Instance = this;
     m_Name = "Console";
 
-    // Flush static buffer to this instance
-    std::lock_guard<std::mutex> lock(s_BufferMutex);
-    while (!s_Buffer.empty())
+    auto bufferedMessages = Log::ConsumeBufferedMessages();
+    for (auto& entry : bufferedMessages)
     {
-        m_Messages.push_back(std::move(s_Buffer.front()));
-        s_Buffer.pop_front();
+        m_Messages.push_back(std::move(entry));
     }
+
+    m_ScrollToBottom = !m_Messages.empty();
 }
 
 ConsolePanel::~ConsolePanel()
 {
-    if (s_Instance == this)
-    {
-        s_Instance = nullptr;
-    }
 }
 
 void ConsolePanel::OnImGuiRender(bool readOnly)
@@ -61,16 +54,36 @@ void ConsolePanel::OnImGuiRender(bool readOnly)
 
         ImGui::Separator();
 
+        auto bufferedMessages = Log::ConsumeBufferedMessages();
+        if (!bufferedMessages.empty())
+        {
+            std::lock_guard<std::mutex> lock(m_LogMutex);
+
+            for (auto& entry : bufferedMessages)
+            {
+                m_Messages.push_back(std::move(entry));
+            }
+
+            while (m_Messages.size() > MAX_MESSAGES)
+            {
+                m_Messages.pop_front();
+            }
+
+            m_ScrollToBottom = true;
+        }
+
         // Rebuild visible indices if needed
         {
             std::lock_guard<std::mutex> lock(m_LogMutex);
             m_VisibleIndices.clear();
             std::string filterStr = m_FilterBuffer;
-            std::transform(filterStr.begin(), filterStr.end(), filterStr.begin(), ::tolower);
+            std::transform(filterStr.begin(), filterStr.end(), filterStr.begin(), [](unsigned char ch) {
+                return static_cast<char>(std::tolower(ch));
+            });
 
             for (int i = 0; i < (int)m_Messages.size(); i++)
             {
-                if (m_LogLevel != (int)ConsoleLogLevel::None && (int)m_Messages[i].level < m_LogLevel)
+                if (m_LogLevel != (int)LogLevel::LogNone && (int)m_Messages[i].level < m_LogLevel)
                 {
                     continue;
                 }
@@ -78,7 +91,9 @@ void ConsolePanel::OnImGuiRender(bool readOnly)
                 if (!filterStr.empty())
                 {
                     std::string msgLower = m_Messages[i].message;
-                    std::transform(msgLower.begin(), msgLower.end(), msgLower.begin(), ::tolower);
+                    std::transform(msgLower.begin(), msgLower.end(), msgLower.begin(), [](unsigned char ch) {
+                        return static_cast<char>(std::tolower(ch));
+                    });
                     if (msgLower.find(filterStr) == std::string::npos)
                     {
                         continue;
@@ -108,19 +123,19 @@ void ConsolePanel::OnImGuiRender(bool readOnly)
                     ImVec4 color;
                     switch (msg.level)
                     {
-                    case ConsoleLogLevel::Trace:
+                    case LogLevel::LogTrace:
                         color = {0.7f, 0.7f, 0.7f, 1.0f};
                         break;
-                    case ConsoleLogLevel::Info:
+                    case LogLevel::LogInfo:
                         color = {1.0f, 1.0f, 1.0f, 1.0f};
                         break;
-                    case ConsoleLogLevel::Warn:
+                    case LogLevel::LogWarning:
                         color = {1.0f, 0.8f, 0.0f, 1.0f};
                         break;
-                    case ConsoleLogLevel::Error:
+                    case LogLevel::LogError:
                         color = {1.0f, 0.2f, 0.2f, 1.0f};
                         break;
-                    case ConsoleLogLevel::Fatal:
+                    case LogLevel::LogFatal:
                         color = {1.0f, 0.0f, 1.0f, 1.0f};
                         break;
                     default:
@@ -152,69 +167,11 @@ void ConsolePanel::OnImGuiRender(bool readOnly)
     ImGui::End();
     ImGui::PopStyleVar();
 }
-void ConsolePanel::Log(const std::string& message, ConsoleLogLevel level)
-{
-    std::lock_guard<std::mutex> lock(m_LogMutex);
-
-    // Форматуємо час (наприклад, "14:20:05")
-    std::string timeStr = GetCurrentTimestamp();
-
-    m_Messages.push_back({level, message, timeStr});
-
-    if (m_Messages.size() > MAX_MESSAGES)
-    {
-        m_Messages.pop_front();
-    }
-
-    m_ScrollToBottom = true; // Сигнал для OnImGuiRender
-}
 
 void ConsolePanel::Clear()
 {
     std::lock_guard<std::mutex> lock(m_LogMutex);
     m_Messages.clear();
-}
-
-void ConsolePanel::AddLog(const char* message, int level)
-{
-    if (s_Instance)
-    {
-        s_Instance->Log(message, (ConsoleLogLevel)level);
-    }
-    else
-    {
-        // Buffer logs until ConsolePanel is initialized
-        std::lock_guard<std::mutex> lock(s_BufferMutex);
-        if (s_Buffer.size() < MAX_MESSAGES)
-        {
-            s_Buffer.push_back({(ConsoleLogLevel)level, message, GetCurrentTimestamp()});
-        }
-    }
-}
-
-std::string ConsolePanel::GetCurrentTimestamp()
-{
-    using namespace std::chrono;
-
-    auto now = system_clock::now();
-    auto in_time_t = system_clock::to_time_t(now);
-
-    std::tm time_info;
-#if defined(_MSC_VER)
-    localtime_s(&time_info, &in_time_t);
-#elif defined(_WIN32)
-    std::tm* tm_ptr = std::localtime(&in_time_t);
-    if (tm_ptr)
-    {
-        time_info = *tm_ptr;
-    }
-#else
-    localtime_r(&in_time_t, &time_info);
-#endif
-
-    std::stringstream ss;
-    ss << "[" << std::put_time(&time_info, "%H:%M:%S") << "] ";
-    return ss.str();
 }
 
 } // namespace CHEngine

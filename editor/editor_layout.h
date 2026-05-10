@@ -2,8 +2,7 @@
 #define CH_EDITOR_LAYOUT_H
 
 #include "editor/editor_panels.h"
-#include "engine/core/events.h"
-#include <functional>
+#include <string>
 
 namespace CHEngine
 {
@@ -11,17 +10,22 @@ namespace CHEngine
 class EditorLayout
 {
 public:
-    void BeginWorkspace();
-    void EndWorkspace();
+    EditorLayout(EditorPanels& panels);
 
-    void DrawInterface();
     void ResetLayout();
+
+    void LoadPreset(const std::string& filepath);
+    void SaveCurrent(const std::string& filepath);
     void SaveDefaultLayout();
 
+    void OnImGuiRender();
+
 private:
-    void DrawProjectSelector();
+    EditorPanels& m_Panels;
+    uint32_t m_DockSpaceID = 0;
 };
 
 } // namespace CHEngine
 
 #endif // CH_EDITOR_LAYOUT_H
+

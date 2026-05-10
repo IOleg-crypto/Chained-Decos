@@ -26,28 +26,28 @@ namespace CHEngine
     {
         if (!s_Builders.empty()) return;
 
-        Register("Button", [](Entity e) { e.AddComponent<ButtonControl>(); });
-        Register("Panel", [](Entity e) { e.AddComponent<PanelControl>(); });
-        Register("Label", [](Entity e) { e.AddComponent<LabelControl>(); });
-        Register("Slider", [](Entity e) { e.AddComponent<SliderControl>(); });
-        Register("CheckBox", [](Entity e) { e.AddComponent<CheckboxControl>(); });
-        Register("InputText", [](Entity e) { e.AddComponent<InputTextControl>(); });
-        Register("ComboBox", [](Entity e) { e.AddComponent<ComboBoxControl>(); });
-        Register("ProgressBar", [](Entity e) { e.AddComponent<ProgressBarControl>(); });
-        Register("Image", [](Entity e) { e.AddComponent<ImageControl>(); });
-        Register("ImageButton", [](Entity e) { e.AddComponent<ImageButtonControl>(); });
-        Register("Separator", [](Entity e) { e.AddComponent<SeparatorControl>(); });
-        Register("RadioButton", [](Entity e) { e.AddComponent<RadioButtonControl>(); });
-        Register("ColorPicker", [](Entity e) { e.AddComponent<ColorPickerControl>(); });
-        Register("DragFloat", [](Entity e) { e.AddComponent<DragFloatControl>(); });
-        Register("DragInt", [](Entity e) { e.AddComponent<DragIntControl>(); });
-        Register("TreeNode", [](Entity e) { e.AddComponent<TreeNodeControl>(); });
-        Register("TabBar", [](Entity e) { e.AddComponent<TabBarControl>(); });
-        Register("TabItem", [](Entity e) { e.AddComponent<TabItemControl>(); });
-        Register("CollapsingHeader", [](Entity e) { e.AddComponent<CollapsingHeaderControl>(); });
-        Register("PlotLines", [](Entity e) { e.AddComponent<PlotLinesControl>(); });
-        Register("PlotHistogram", [](Entity e) { e.AddComponent<PlotHistogramControl>(); });
-        Register("VerticalLayoutGroup", [](Entity e) { e.AddComponent<VerticalLayoutGroup>(); });
+        Register("Button", [](Entity e) { e.AddComponent<WidgetComponent>().Data = ButtonData{}; });
+        Register("Panel", [](Entity e) { e.AddComponent<WidgetComponent>().Data = PanelData{}; });
+        Register("Label", [](Entity e) { e.AddComponent<WidgetComponent>().Data = LabelData{}; });
+        Register("Slider", [](Entity e) { e.AddComponent<WidgetComponent>().Data = SliderData{}; });
+        Register("CheckBox", [](Entity e) { e.AddComponent<WidgetComponent>().Data = CheckboxData{}; });
+        Register("InputText", [](Entity e) { e.AddComponent<WidgetComponent>().Data = InputTextData{}; });
+        Register("ComboBox", [](Entity e) { e.AddComponent<WidgetComponent>().Data = ComboBoxData{}; });
+        Register("ProgressBar", [](Entity e) { e.AddComponent<WidgetComponent>().Data = ProgressBarData{}; });
+        Register("Image", [](Entity e) { e.AddComponent<WidgetComponent>().Data = ImageData{}; });
+        Register("ImageButton", [](Entity e) { e.AddComponent<WidgetComponent>().Data = ImageButtonData{}; });
+        Register("Separator", [](Entity e) { e.AddComponent<WidgetComponent>().Data = SeparatorData{}; });
+        Register("RadioButton", [](Entity e) { e.AddComponent<WidgetComponent>().Data = RadioButtonData{}; });
+        Register("ColorPicker", [](Entity e) { e.AddComponent<WidgetComponent>().Data = ColorPickerData{}; });
+        Register("DragFloat", [](Entity e) { e.AddComponent<WidgetComponent>().Data = DragFloatData{}; });
+        Register("DragInt", [](Entity e) { e.AddComponent<WidgetComponent>().Data = DragIntData{}; });
+        Register("TreeNode", [](Entity e) { e.AddComponent<WidgetComponent>().Data = TreeNodeData{}; });
+        Register("TabBar", [](Entity e) { e.AddComponent<WidgetComponent>().Data = TabBarData{}; });
+        Register("TabItem", [](Entity e) { e.AddComponent<WidgetComponent>().Data = TabItemData{}; });
+        Register("CollapsingHeader", [](Entity e) { e.AddComponent<WidgetComponent>().Data = CollapsingHeaderData{}; });
+        Register("PlotLines", [](Entity e) { e.AddComponent<WidgetComponent>().Data = PlotLinesData{}; });
+        Register("PlotHistogram", [](Entity e) { e.AddComponent<WidgetComponent>().Data = PlotHistogramData{}; });
+        Register("VerticalLayoutGroup", [](Entity e) { e.AddComponent<WidgetComponent>().Data = VerticalLayoutGroupData{}; });
         Register("UIAction", [](Entity e) { e.AddComponent<UIActionComponent>(); });
     }
 }
