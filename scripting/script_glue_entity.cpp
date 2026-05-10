@@ -1,7 +1,12 @@
 #include "script_glue_internal.h"
 #include "script_internal_call_registry.h"
+#include "engine/core/service_locator.h"
+#include "engine/scene/components/component_utils.h"
+#include "engine/scene/component_registry.h"
 
 namespace CHEngine {
+
+    void RegisterGlueEntity() {}
 
     // ── Entity / Transform ────────────────────────────────────────────────
     CH_SCRIPT_FUNC void Entity_GetTranslation(uint64_t entityID, glm::vec3* outTranslation) {
@@ -14,7 +19,7 @@ namespace CHEngine {
     CH_SCRIPT_FUNC void Entity_SetTranslation(uint64_t entityID, glm::vec3* inTranslation) {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<TransformComponent>()) 
-            entity.GetComponent<TransformComponent>().SetTranslation(*inTranslation);
+            ComponentUtils::SetTranslation(entity.GetComponent<TransformComponent>(), *inTranslation);
     }
     CH_ADD_INTERNAL_CALL(TransformComponent, Transform_SetTranslation_Ptr, Entity_SetTranslation);
 
@@ -28,7 +33,7 @@ namespace CHEngine {
     CH_SCRIPT_FUNC void Entity_SetRotation(uint64_t entityID, glm::vec3* inRotation) {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<TransformComponent>()) 
-            entity.GetComponent<TransformComponent>().SetRotation(*inRotation);
+            ComponentUtils::SetRotation(entity.GetComponent<TransformComponent>(), *inRotation);
     }
     CH_ADD_INTERNAL_CALL(TransformComponent, Transform_SetRotation_Ptr, Entity_SetRotation);
 
@@ -42,7 +47,7 @@ namespace CHEngine {
     CH_SCRIPT_FUNC void Entity_SetScale(uint64_t entityID, glm::vec3* inScale) {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<TransformComponent>()) 
-            entity.GetComponent<TransformComponent>().SetScale(*inScale);
+            ComponentUtils::SetScale(entity.GetComponent<TransformComponent>(), *inScale);
     }
     CH_ADD_INTERNAL_CALL(TransformComponent, Transform_SetScale_Ptr, Entity_SetScale);
 
@@ -64,16 +69,16 @@ namespace CHEngine {
         if (!entity) return;
         
         std::string name = (std::string)componentName;
-        if (name == "TransformComponent") entity.AddComponent<TransformComponent>();
-        else if (name == "RigidBodyComponent") entity.AddComponent<RigidBodyComponent>();
-        else if (name == "ModelComponent") entity.AddComponent<ModelComponent>();
-        else if (name == "TagComponent") entity.AddComponent<TagComponent>();
-        else if (name == "AudioComponent") entity.AddComponent<AudioComponent>();
-        else if (name == "CameraComponent") entity.AddComponent<CameraComponent>();
-        else if (name == "ShaderComponent") entity.AddComponent<ShaderComponent>();
-        else if (name == "ManagedScriptComponent") entity.AddComponent<ManagedScriptComponent>();
-        else if (name == "SpriteComponent") entity.AddComponent<SpriteComponent>();
-        else if (name == "PlayerComponent") entity.AddComponent<PlayerComponent>();
+        
+        if (name == "MeshComponent") name = "ModelComponent";
+        if (name == "PhysicsComponent") name = "ColliderComponent";
+
+        for (const auto& [id, metadata] : ComponentRegistry::GetRegistry()) {
+            if (metadata.Name == name || metadata.SerializationKey == name) {
+                if (metadata.Add) metadata.Add(entity);
+                return;
+            }
+        }
     }
     CH_ADD_INTERNAL_CALL(Entity, Entity_AddComponent_Ptr, Entity_AddComponent);
 
@@ -115,42 +120,38 @@ namespace CHEngine {
         if (!entity) return false;
         
         std::string name = (std::string)componentName;
-        if (name == "TransformComponent") return entity.HasComponent<TransformComponent>();
-        if (name == "TagComponent")       return entity.HasComponent<TagComponent>();
-        if (name == "MeshComponent" || name == "ModelComponent") return entity.HasComponent<ModelComponent>();
-        if (name == "MaterialComponent")  return entity.HasComponent<MaterialComponent>();
-        if (name == "SpriteComponent")    return entity.HasComponent<SpriteComponent>();
-        if (name == "LightComponent")     return entity.HasComponent<LightComponent>();
-        if (name == "CameraComponent")    return entity.HasComponent<CameraComponent>();
-        if (name == "AudioComponent")     return entity.HasComponent<AudioComponent>();
-        if (name == "RigidBodyComponent") return entity.HasComponent<RigidBodyComponent>();
-        if (name == "PhysicsComponent" || name == "ColliderComponent") return entity.HasComponent<ColliderComponent>();
-        if (name == "AnimationComponent") return entity.HasComponent<AnimationComponent>();
-        if (name == "HierarchyComponent") return entity.HasComponent<HierarchyComponent>();
-        if (name == "IDComponent")        return entity.HasComponent<IDComponent>();
-        if (name == "ManagedScriptComponent") return entity.HasComponent<ManagedScriptComponent>();
-        if (name == "PlayerComponent")    return entity.HasComponent<PlayerComponent>();
-        if (name == "SpawnComponent")     return entity.HasComponent<SpawnComponent>();
-        if (name == "SceneTransitionComponent") return entity.HasComponent<SceneTransitionComponent>();
-        if (name == "ShaderComponent")   return entity.HasComponent<ShaderComponent>();
-        if (name == "ControlComponent")   return entity.HasComponent<ControlComponent>();
+        
+        if (name == "MeshComponent") name = "ModelComponent";
+        if (name == "PhysicsComponent") name = "ColliderComponent";
+        if (name == "AnimationComponent") return false; // Hardcoded fallback if required, though registry will just return false if omitted
+        
         if (name.find("Control") != std::string::npos || name.find("Group") != std::string::npos) {
-             if (name == "ButtonControl")      return entity.HasComponent<ButtonControl>();
-             if (name == "PanelControl")       return entity.HasComponent<PanelControl>();
-             if (name == "LabelControl")       return entity.HasComponent<LabelControl>();
-             if (name == "ImageControl")       return entity.HasComponent<ImageControl>();
-             if (name == "CheckboxControl")    return entity.HasComponent<CheckboxControl>();
-             if (name == "ComboBoxControl")    return entity.HasComponent<ComboBoxControl>();
-             if (name == "SliderControl")      return entity.HasComponent<SliderControl>();
-             if (name == "ProgressBarControl") return entity.HasComponent<ProgressBarControl>();
-             if (name == "InputTextControl")   return entity.HasComponent<InputTextControl>();
-             if (name == "ImageButtonControl") return entity.HasComponent<ImageButtonControl>();
-             if (name == "SeparatorControl")   return entity.HasComponent<SeparatorControl>();
-             if (name == "RadioButtonControl") return entity.HasComponent<RadioButtonControl>();
-             if (name == "ColorPickerControl") return entity.HasComponent<ColorPickerControl>();
-             if (name == "DragFloatControl")   return entity.HasComponent<DragFloatControl>();
-             if (name == "DragIntControl")     return entity.HasComponent<DragIntControl>();
-             if (name == "VerticalLayoutGroup") return entity.HasComponent<VerticalLayoutGroup>();
+            if (entity.HasComponent<WidgetComponent>()) {
+                auto& widget = entity.GetComponent<WidgetComponent>();
+                if (name == "ButtonControl" && std::holds_alternative<ButtonData>(widget.Data)) return true;
+                if (name == "PanelControl" && std::holds_alternative<PanelData>(widget.Data)) return true;
+                if (name == "LabelControl" && std::holds_alternative<LabelData>(widget.Data)) return true;
+                if (name == "ImageControl" && std::holds_alternative<ImageData>(widget.Data)) return true;
+                if (name == "CheckboxControl" && std::holds_alternative<CheckboxData>(widget.Data)) return true;
+                if (name == "ComboBoxControl" && std::holds_alternative<ComboBoxData>(widget.Data)) return true;
+                if (name == "SliderControl" && std::holds_alternative<SliderData>(widget.Data)) return true;
+                if (name == "ProgressBarControl" && std::holds_alternative<ProgressBarData>(widget.Data)) return true;
+                if (name == "InputTextControl" && std::holds_alternative<InputTextData>(widget.Data)) return true;
+                if (name == "ImageButtonControl" && std::holds_alternative<ImageButtonData>(widget.Data)) return true;
+                if (name == "SeparatorControl" && std::holds_alternative<SeparatorData>(widget.Data)) return true;
+                if (name == "RadioButtonControl" && std::holds_alternative<RadioButtonData>(widget.Data)) return true;
+                if (name == "ColorPickerControl" && std::holds_alternative<ColorPickerData>(widget.Data)) return true;
+                if (name == "DragFloatControl" && std::holds_alternative<DragFloatData>(widget.Data)) return true;
+                if (name == "DragIntControl" && std::holds_alternative<DragIntData>(widget.Data)) return true;
+                if (name == "VerticalLayoutGroup" && std::holds_alternative<VerticalLayoutGroupData>(widget.Data)) return true;
+            }
+            return false;
+        }
+
+        for (const auto& [id, metadata] : ComponentRegistry::GetRegistry()) {
+            if (metadata.Name == name || metadata.SerializationKey == name) {
+                if (metadata.Has) return metadata.Has(entity);
+            }
         }
 
         return false;
@@ -162,21 +163,17 @@ namespace CHEngine {
         if (!scene) return Coral::Array<uint64_t>::New(0);
         
         std::string name = (std::string)componentName;
-        std::vector<uint64_t> ids;
+        
+        if (name == "MeshComponent") name = "ModelComponent";
+        if (name == "PhysicsComponent") name = "ColliderComponent";
 
-        auto addToVec = [&](auto view) {
-            for (auto entity : view) ids.push_back((uint64_t)(uint32_t)entity);
-        };
+        for (const auto& [id, metadata] : ComponentRegistry::GetRegistry()) {
+            if (metadata.Name == name || metadata.SerializationKey == name) {
+                if (metadata.GetAll) return Coral::Array<uint64_t>::New(metadata.GetAll(scene));
+            }
+        }
 
-        if (name == "TransformComponent") addToVec(scene->GetRegistry().view<TransformComponent>());
-        else if (name == "RigidBodyComponent") addToVec(scene->GetRegistry().view<RigidBodyComponent>());
-        else if (name == "CameraComponent")    addToVec(scene->GetRegistry().view<CameraComponent>());
-        else if (name == "PlayerComponent")    addToVec(scene->GetRegistry().view<PlayerComponent>());
-        else if (name == "AudioComponent")     addToVec(scene->GetRegistry().view<AudioComponent>());
-        else if (name == "TagComponent")       addToVec(scene->GetRegistry().view<TagComponent>());
-        else if (name == "ShaderComponent")    addToVec(scene->GetRegistry().view<ShaderComponent>());
-
-        return Coral::Array<uint64_t>::New(ids);
+        return Coral::Array<uint64_t>::New(0);
     }
     CH_ADD_INTERNAL_CALL(Entity, Entity_FindAllWithComponent_Ptr, Entity_FindAllWithComponent);
 
@@ -185,12 +182,15 @@ namespace CHEngine {
         if (entity && entity.HasComponent<AudioComponent>()) {
             auto& audio = entity.GetComponent<AudioComponent>();
             if (audio.SoundHandle != 0) {
+                // Prevent duplicate instances — only play if not already active
+                if (audio.IsPlaying && ServiceLocator::Get<Audio>().IsPlaying(audio.SoundHandle)) return;
+                
                 glm::vec3 worldPos = {0,0,0};
                 if (entity.HasComponent<TransformComponent>()) {
                     auto& transform = entity.GetComponent<TransformComponent>();
                     worldPos = glm::vec3(transform.WorldTransform[3]);
                 }
-                Audio::Get().Play(audio.SoundHandle, audio.Volume, audio.Pitch, audio.Loop, audio.Spatialized, worldPos);
+                ServiceLocator::Get<Audio>().Play(audio.SoundHandle, audio.Volume, audio.Pitch, audio.Loop, audio.Spatialized, worldPos);
                 audio.IsPlaying = true;
             }
         }
@@ -202,7 +202,7 @@ namespace CHEngine {
         if (entity && entity.HasComponent<AudioComponent>()) {
             auto& audio = entity.GetComponent<AudioComponent>();
             if (audio.SoundHandle != 0 && audio.IsPlaying) {
-                Audio::Get().Stop(audio.SoundHandle);
+                ServiceLocator::Get<Audio>().Stop(audio.SoundHandle);
                 audio.IsPlaying = false;
             }
         }
@@ -220,16 +220,33 @@ namespace CHEngine {
     CH_SCRIPT_FUNC void Shader_SetFloat(uint64_t entityID, Coral::String inName, float inValue) {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<ShaderComponent>()) {
-            entity.GetComponent<ShaderComponent>().SetFloat((std::string)inName, inValue);
-            // CH_CORE_INFO("Shader_SetFloat: entity={}, name={}, value={}", entityID, (std::string)inName, inValue);
+            auto& shader = entity.GetComponent<ShaderComponent>();
+            std::string name = (std::string)inName;
+            
+            auto it = std::find_if(shader.Uniforms.begin(), shader.Uniforms.end(), [&](const auto& u) { return u.Name == name; });
+            if (it != shader.Uniforms.end()) {
+                it->Value[0] = inValue;
+            } else {
+                shader.Uniforms.push_back({name, 0, {inValue, 0, 0, 0}});
+            }
         }
     }
     CH_ADD_INTERNAL_CALL(ShaderComponent, Shader_SetFloat_Ptr, Shader_SetFloat);
 
     CH_SCRIPT_FUNC void Shader_SetVec3(uint64_t entityID, Coral::String inName, glm::vec3* inValue) {
         Entity entity = GetEntity(entityID);
-        if (entity && entity.HasComponent<ShaderComponent>()) {
-            entity.GetComponent<ShaderComponent>().SetVec3((std::string)inName, *inValue);
+        if (entity && entity.HasComponent<ShaderComponent>() && inValue) {
+            auto& shader = entity.GetComponent<ShaderComponent>();
+            std::string name = (std::string)inName;
+
+            auto it = std::find_if(shader.Uniforms.begin(), shader.Uniforms.end(), [&](const auto& u) { return u.Name == name; });
+            if (it != shader.Uniforms.end()) {
+                it->Value[0] = inValue->x;
+                it->Value[1] = inValue->y;
+                it->Value[2] = inValue->z;
+            } else {
+                shader.Uniforms.push_back({name, 2, {inValue->x, inValue->y, inValue->z, 0}});
+            }
         }
     }
     CH_ADD_INTERNAL_CALL(ShaderComponent, Shader_SetVec3_Ptr, Shader_SetVec3);

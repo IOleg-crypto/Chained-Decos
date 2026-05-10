@@ -7,6 +7,15 @@
 
 namespace CHEngine
 {
+    TextureSystem::TextureSystem()
+    {
+    }
+
+    TextureSystem::~TextureSystem()
+    {
+        UnloadAll();
+    }
+
     TextureHandle TextureSystem::LoadTexture(const std::string& filepath, bool isCubemap)
     {
         if (filepath.empty())
@@ -29,10 +38,9 @@ namespace CHEngine
         int width, height, channels;
 
         bool isHDR = stbi_is_hdr(cacheKey.c_str());
-        stbi_set_flip_vertically_on_load(!isHDR);
+        stbi_set_flip_vertically_on_load(true);
 
         void* data = nullptr;
-
         if (isHDR)
         {
             data = stbi_loadf(cacheKey.c_str(), &width, &height, &channels, 0);
@@ -63,7 +71,13 @@ namespace CHEngine
         std::shared_ptr<Texture> texture;
         if (isCubemap)
         {
+            // For now, we assume the input is an equirectangular map that needs to be treated as a cubemap
+            // or a single face. In a full engine, we'd have a converter here.
             texture = Texture::CreateCubemap(width, format);
+            if (texture)
+            {
+                texture->SetData(data, 0); // This should handle conversion or faces
+            }
         }
         else
         {

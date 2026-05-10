@@ -38,7 +38,8 @@ TEST(MaterialTest, StateModification)
 {
     MaterialInstance material;
     
-    material.AlbedoPath = "textures/test_albedo.png";
+    AssetHandle testHandle(12345);
+    material.AlbedoHandle = testHandle;
     material.OverrideAlbedo = true;
     
     material.Metalness = 0.8f;
@@ -47,7 +48,7 @@ TEST(MaterialTest, StateModification)
     material.Alpha = 0.5f;
 
     EXPECT_TRUE(material.OverrideAlbedo);
-    EXPECT_EQ(material.AlbedoPath, "textures/test_albedo.png");
+    EXPECT_EQ(material.AlbedoHandle, testHandle);
     EXPECT_FLOAT_EQ(material.Metalness, 0.8f);
     EXPECT_FLOAT_EQ(material.Roughness, 0.2f);
     EXPECT_TRUE(material.Transparent);

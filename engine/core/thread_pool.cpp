@@ -3,22 +3,18 @@
 
 namespace CHEngine
 {
-ThreadPool* ThreadPool::s_Instance = nullptr;
 
-void ThreadPool::Init()
+void ThreadPool::OnInit()
 {
-    if (s_Instance) return;
-    s_Instance = new ThreadPool();
+    StartWorkers();
 }
 
-void ThreadPool::Shutdown()
+void ThreadPool::OnShutdown()
 {
-    if (!s_Instance) return;
-    delete s_Instance;
-    s_Instance = nullptr;
+    StopWorkers();
 }
 
-ThreadPool::ThreadPool()
+void ThreadPool::StartWorkers()
 {
     size_t threads = std::thread::hardware_concurrency();
     if (threads == 0)
@@ -37,7 +33,7 @@ ThreadPool::ThreadPool()
     }
 }
 
-ThreadPool::~ThreadPool()
+void ThreadPool::StopWorkers()
 {
     {
         std::unique_lock<std::mutex> lock(m_QueueMutex);

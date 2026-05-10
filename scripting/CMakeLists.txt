@@ -1,4 +1,4 @@
-add_library(engine_scripting OBJECT
+add_library(engine_scripting ${SUBMODULE_LIB_TYPE}
     scriptengine.h
     scriptengine.cpp
     scriptengine_services.h
@@ -12,11 +12,11 @@ add_library(engine_scripting OBJECT
     script_glue_entity.cpp
     script_glue_camera.cpp
     script_glue_ui.cpp
-    script_glue_gameplay.cpp
+    script_glue_audio.cpp
 )
 
 target_include_directories(engine_scripting PUBLIC
-    ${ENGINE_INCLUDE_DIRS}
+    ${CMAKE_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
@@ -26,11 +26,17 @@ if(CH_BUILD_PRESET_NAMES_INCLUDE_DIR)
     )
 endif()
 
-# Note: Linkage is handled by the final 'engine' target for object libraries.
-# But we need PUBLIC linkage for dependencies that provide headers.
-target_link_libraries(engine_scripting PUBLIC 
-    EnTT
-    Coral.Native
+target_link_libraries(engine_scripting 
+PUBLIC 
+    engine_core
+    engine
+    engine_audio
+    engine_physics
+    ChainedEngine::External::YamlCpp
+    ChainedEngine::External::EnTT
+    ChainedEngine::External::GLM
+    ChainedEngine::External::Coral
+    ChainedEngine::External::Miniaudio
 )
 
 if(COMMAND apply_engine_optimizations)
@@ -50,7 +56,7 @@ find_program(DOTNET_EXECUTABLE dotnet)
 if(DOTNET_EXECUTABLE)
     set(MANAGED_PROJECT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/managed/CHEngine.Managed.csproj")
     set(MANAGED_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")
-    set(CORAL_MANAGED_DIR "${CMAKE_BINARY_DIR}/include/coral/cmake")
+    set(CORAL_MANAGED_DIR "${CMAKE_BINARY_DIR}/vendor/coral")
     
     # Generate ManagedDependencies.props to provide paths to the .csproj
     # Only regenerate if content changes using copy_if_different
@@ -88,21 +94,8 @@ if(DOTNET_EXECUTABLE)
     
     add_dependencies(engine_scripting CHEngine_Managed)
 
-    # Deploy Coral.Managed files
-    set(CORAL_FILES 
-        "Coral.Managed.dll" 
-        "Coral.Managed.runtimeconfig.json"
-        "Coral.Managed.deps.json"
-        "Coral.Managed.pdb"
-    )
-
     add_custom_command(TARGET CHEngine_Managed POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${CMAKE_BINARY_DIR}/include/coral/cmake/Coral.Managed.dll"
-            "${CMAKE_BINARY_DIR}/include/coral/cmake/Coral.Managed.runtimeconfig.json"
-            "${CMAKE_BINARY_DIR}/include/coral/cmake/Coral.Managed.deps.json"
-            "${CMAKE_BINARY_DIR}/include/coral/cmake/Coral.Managed.pdb"
-            "${CMAKE_BINARY_DIR}/bin/"
             "${CORAL_MANAGED_DIR}/Coral.Managed.dll"
             "${CORAL_MANAGED_DIR}/Coral.Managed.runtimeconfig.json"
             "${CORAL_MANAGED_DIR}/Coral.Managed.deps.json"

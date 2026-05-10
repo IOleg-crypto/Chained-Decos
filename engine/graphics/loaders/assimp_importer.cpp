@@ -228,7 +228,7 @@ PendingModelData AssimpImporter::Import(const std::filesystem::path& path, int s
 
         unsigned int flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_LimitBoneWeights |
                              aiProcess_JoinIdenticalVertices | aiProcess_SortByPType | aiProcess_CalcTangentSpace |
-                             aiProcess_SplitLargeMeshes | aiProcess_ImproveCacheLocality;
+                             aiProcess_ImproveCacheLocality | aiProcess_OptimizeMeshes;
 
         if (ext != ".gltf" && ext != ".glb")
         {
@@ -321,6 +321,7 @@ PendingModelData AssimpImporter::Execute()
     ProcessMaterials();
     DecodeEmbeddedTextures();
     ProcessAnimations();
+    MergeMeshesByMaterial();
 
     m_Data.isValid = true;
     return std::move(m_Data);
@@ -742,4 +743,131 @@ void AssimpImporter::ProcessAnimations()
     }
 }
 
+void AssimpImporter::MergeMeshesByMaterial()
+{
+    CH_PROFILE_FUNCTION();
+    if (m_Data.instances.empty() || m_Data.meshes.empty())
+    {
+        return;
+    }
+
+    struct InstanceGroup
+    {
+        std::vector<int> instanceIndices;
+    };
+    std::unordered_map<int, InstanceGroup> groups;
+    for (int i = 0; i < (int)m_Data.instances.size(); ++i)
+    {
+        int meshIdx = m_Data.instances[i].meshIndex;
+        if (meshIdx >= 0 && meshIdx < (int)m_Data.meshes.size())
+        {
+            groups[m_Data.meshes[meshIdx].materialIndex].instanceIndices.push_back(i);
+        }
+    }
+
+    CH_CORE_INFO("AssimpImporter: Merging {0} instances into {1} material groups", m_Data.instances.size(),
+                 groups.size());
+
+    std::vector<RawMesh> mergedMeshes;
+    std::vector<MeshInstance> mergedInstances;
+    mergedMeshes.reserve(groups.size());
+    mergedInstances.reserve(groups.size());
+
+    for (auto& [matIdx, group] : groups)
+    {
+        RawMesh merged;
+        merged.materialIndex = matIdx;
+
+        size_t totalVertices = 0;
+        size_t totalIndices = 0;
+        for (int instIdx : group.instanceIndices)
+        {
+            int srcIdx = m_Data.instances[instIdx].meshIndex;
+            totalVertices += m_Data.meshes[srcIdx].vertices.size();
+            totalIndices += m_Data.meshes[srcIdx].indices.size();
+        }
+
+        merged.vertices.reserve(totalVertices);
+        merged.texcoords.reserve(totalVertices / 3 * 2);
+        merged.normals.reserve(totalVertices);
+        merged.indices.reserve(totalIndices);
+
+        int firstMeshIdx = m_Data.instances[group.instanceIndices[0]].meshIndex;
+        bool hasSkins = !m_Data.meshes[firstMeshIdx].joints.empty();
+        if (hasSkins)
+        {
+            merged.joints.reserve(totalVertices / 3 * 4);
+            merged.weights.reserve(totalVertices / 3 * 4);
+        }
+
+        merged.MinBounds = {FLT_MAX, FLT_MAX, FLT_MAX};
+        merged.MaxBounds = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
+
+        for (int instIdx : group.instanceIndices)
+        {
+            const auto& inst = m_Data.instances[instIdx];
+            const auto& src = m_Data.meshes[inst.meshIndex];
+            uint32_t vertexOffset = (uint32_t)(merged.vertices.size() / 3);
+
+            glm::mat4 t = inst.localTransform;
+            glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(t)));
+
+            for (size_t v = 0; v < src.vertices.size(); v += 3)
+            {
+                if (!hasSkins)
+                {
+                    glm::vec4 pos = t * glm::vec4(src.vertices[v], src.vertices[v + 1], src.vertices[v + 2], 1.0f);
+                    merged.vertices.insert(merged.vertices.end(), {pos.x, pos.y, pos.z});
+                }
+                else
+                {
+                    merged.vertices.insert(merged.vertices.end(),
+                                           {src.vertices[v], src.vertices[v + 1], src.vertices[v + 2]});
+                }
+            }
+
+            merged.texcoords.insert(merged.texcoords.end(), src.texcoords.begin(), src.texcoords.end());
+
+            for (size_t n = 0; n < src.normals.size(); n += 3)
+            {
+                if (!hasSkins)
+                {
+                    glm::vec3 norm = glm::normalize(normalMatrix *
+                                                    glm::vec3(src.normals[n], src.normals[n + 1], src.normals[n + 2]));
+                    merged.normals.insert(merged.normals.end(), {norm.x, norm.y, norm.z});
+                }
+                else
+                {
+                    merged.normals.insert(merged.normals.end(),
+                                          {src.normals[n], src.normals[n + 1], src.normals[n + 2]});
+                }
+            }
+
+            for (uint32_t idx : src.indices)
+            {
+                merged.indices.push_back(idx + vertexOffset);
+            }
+
+            if (hasSkins && !src.joints.empty())
+            {
+                merged.joints.insert(merged.joints.end(), src.joints.begin(), src.joints.end());
+                merged.weights.insert(merged.weights.end(), src.weights.begin(), src.weights.end());
+            }
+
+            for (size_t v = 0; v < merged.vertices.size(); v += 3)
+            {
+                glm::vec3 p = {merged.vertices[v], merged.vertices[v + 1], merged.vertices[v + 2]};
+                merged.MinBounds = glm::min(merged.MinBounds, p);
+                merged.MaxBounds = glm::max(merged.MaxBounds, p);
+            }
+        }
+
+        int newMeshIdx = (int)mergedMeshes.size();
+        mergedMeshes.push_back(std::move(merged));
+        mergedInstances.push_back({newMeshIdx, glm::mat4(1.0f)});
+    }
+
+    m_Data.meshes = std::move(mergedMeshes);
+    m_Data.instances = std::move(mergedInstances);
+}
 } // namespace CHEngine

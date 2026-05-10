@@ -1,11 +1,13 @@
 #ifndef CH_COMPONENT_SERIALIZER_H
 #define CH_COMPONENT_SERIALIZER_H
-#include "engine/scene/scene.h"
+
+#include "engine/scene/component_registry.h"
 #include "engine/scene/serialization_utils.h"
-#include "engine/scene/hierarchy_serializer.h"
+#include "engine/core/engine_service.h"
+#include "engine/scene/scene.h"
 #include "entt/entt.hpp"
 #include <functional>
-#include <unordered_map>
+
 #include <vector>
 #include <yaml-cpp/yaml.h>
 
@@ -21,16 +23,17 @@ struct ComponentSerializerEntry
 };
 
 // Central registry for component serializers used by scene save/load/copy.
-class ComponentSerializer
+class ComponentSerializer : public EngineService
 {
 public:
     ComponentSerializer();
-    ~ComponentSerializer();
-    static void Init();
-    static void Shutdown();
+    virtual ~ComponentSerializer() override;
 
-    void InternalInit();
-    void InternalShutdown();
+public:
+    virtual void OnInit() override;
+    virtual void OnShutdown() override;
+
+protected:
 
 private:
     void RegisterCoreComponents();
@@ -47,12 +50,10 @@ public:
     void Register(const std::string& key, std::function<void(SerializationUtils::PropertyArchive&, T&)> schema);
 
     // Registers a component by calling T::Reflect or T::Serialize-style code.
-    template <typename T>
-    void Register(const std::string& key);
+    template <typename T> void Register(const std::string& key);
 
     // Registers a component using T::GetStaticName() as the key.
-    template <typename T>
-    void Register();
+    template <typename T> void Register();
 
     // Registers custom serialization logic for special cases.
     void RegisterCustom(const ComponentSerializerEntry& entry);
@@ -69,11 +70,9 @@ public:
     // Serializes the ID component separately.
     void SerializeID(YAML::Emitter& out, Entity entity);
 
-    static ComponentSerializer& Get();
 
 private:
     std::vector<ComponentSerializerEntry> m_Registry;
-    bool m_Initialized = false;
 };
 
 // Template implementation
@@ -119,11 +118,46 @@ void ComponentSerializer::Register(const std::string& key,
         }
     };
 
+    // Bridge to the new ComponentRegistry metadata system
+    if (!ComponentRegistry::Exists(entt::type_hash<T>::value()))
+    {
+        ComponentMetadata metadata;
+        metadata.Name = key; // Use serialization key as fallback name
+        metadata.SerializationKey = key;
+        metadata.Serialize = entry.Serialize;
+        metadata.Deserialize = entry.Deserialize;
+        metadata.Copy = entry.Copy;
+        metadata.Has = [](Entity e) { return e.HasComponent<T>(); };
+        metadata.GetAll = [](class Scene* s) { 
+            std::vector<uint64_t> ids;
+            for (auto ent : s->GetRegistry().view<T>()) ids.push_back((uint64_t)(uint32_t)ent);
+            return ids;
+        };
+        metadata.Add = [](Entity e) { if (!e.HasComponent<T>()) e.AddComponent<T>(); };
+        metadata.Remove = [](Entity e) { if (e.HasComponent<T>()) e.RemoveComponent<T>(); };
+        ComponentRegistry::Register(entt::type_hash<T>::value(), metadata);
+    }
+    else
+    {
+        auto& metadata = ComponentRegistry::GetMetadataMutable(entt::type_hash<T>::value());
+        metadata.SerializationKey = key;
+        metadata.Serialize = entry.Serialize;
+        metadata.Deserialize = entry.Deserialize;
+        metadata.Copy = entry.Copy;
+        metadata.Has = [](Entity e) { return e.HasComponent<T>(); };
+        metadata.GetAll = [](class Scene* s) { 
+            std::vector<uint64_t> ids;
+            for (auto ent : s->GetRegistry().view<T>()) ids.push_back((uint64_t)(uint32_t)ent);
+            return ids;
+        };
+        metadata.Add = [](Entity e) { if (!e.HasComponent<T>()) e.AddComponent<T>(); };
+        metadata.Remove = [](Entity e) { if (e.HasComponent<T>()) e.RemoveComponent<T>(); };
+    }
+
     RegisterCustom(entry);
 }
 
-template <typename T>
-void ComponentSerializer::Register(const std::string& key)
+template <typename T> void ComponentSerializer::Register(const std::string& key)
 {
     ComponentSerializerEntry entry;
     entry.Key = key;
@@ -142,7 +176,10 @@ void ComponentSerializer::Register(const std::string& key)
     entry.Deserialize = [key](Entity entity, YAML::Node node) {
         if (node[key])
         {
-            if (!entity.HasComponent<T>()) entity.AddComponent<T>();
+            if (!entity.HasComponent<T>())
+            {
+                entity.AddComponent<T>();
+            }
             entity.Patch<T>([&](auto& component) {
                 SerializationUtils::PropertyArchive archive(node[key]);
                 CHEngine::Properties props(archive);
@@ -158,11 +195,46 @@ void ComponentSerializer::Register(const std::string& key)
         }
     };
 
+    // Bridge to the new ComponentRegistry metadata system
+    if (!ComponentRegistry::Exists(entt::type_hash<T>::value()))
+    {
+        ComponentMetadata metadata;
+        metadata.Name = key; // Use serialization key as fallback name
+        metadata.SerializationKey = key;
+        metadata.Serialize = entry.Serialize;
+        metadata.Deserialize = entry.Deserialize;
+        metadata.Copy = entry.Copy;
+        metadata.Has = [](Entity e) { return e.HasComponent<T>(); };
+        metadata.GetAll = [](class Scene* s) { 
+            std::vector<uint64_t> ids;
+            for (auto ent : s->GetRegistry().view<T>()) ids.push_back((uint64_t)(uint32_t)ent);
+            return ids;
+        };
+        metadata.Add = [](Entity e) { if (!e.HasComponent<T>()) e.AddComponent<T>(); };
+        metadata.Remove = [](Entity e) { if (e.HasComponent<T>()) e.RemoveComponent<T>(); };
+        ComponentRegistry::Register(entt::type_hash<T>::value(), metadata);
+    }
+    else
+    {
+        auto& metadata = ComponentRegistry::GetMetadataMutable(entt::type_hash<T>::value());
+        metadata.SerializationKey = key;
+        metadata.Serialize = entry.Serialize;
+        metadata.Deserialize = entry.Deserialize;
+        metadata.Copy = entry.Copy;
+        metadata.Has = [](Entity e) { return e.HasComponent<T>(); };
+        metadata.GetAll = [](class Scene* s) { 
+            std::vector<uint64_t> ids;
+            for (auto ent : s->GetRegistry().view<T>()) ids.push_back((uint64_t)(uint32_t)ent);
+            return ids;
+        };
+        metadata.Add = [](Entity e) { if (!e.HasComponent<T>()) e.AddComponent<T>(); };
+        metadata.Remove = [](Entity e) { if (e.HasComponent<T>()) e.RemoveComponent<T>(); };
+    }
+
     RegisterCustom(entry);
 }
 
-template <typename T>
-void ComponentSerializer::Register()
+template <typename T> void ComponentSerializer::Register()
 {
     Register<T>(T::GetStaticName());
 }

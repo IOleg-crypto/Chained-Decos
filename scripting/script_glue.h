@@ -4,12 +4,10 @@
 #include <Coral/Assembly.hpp>
 
 namespace CHEngine {
-    struct ManagedScriptInstance;
-
     class ScriptGlue {
     public:
+        static void Initialize();
         static void RegisterInternalCalls(Coral::ManagedAssembly& assembly);
-        static void SetPendingScriptInstance(ManagedScriptInstance* instance);
     };
 }
 

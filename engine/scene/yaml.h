@@ -11,7 +11,9 @@
 #include <variant>
 
 #include "engine/core/ch_math.h"
+#include "engine/core/service_locator.h"
 #include "engine/scene/project.h"
+#include "engine/assets/asset_manager.h"
 #include "yaml-cpp/yaml.h"
 
 namespace YAML
@@ -404,6 +406,27 @@ inline YAML::Emitter& operator<<(YAML::Emitter& out, const CHEngine::RectTransfo
     return out;
 }
 
+inline YAML::Emitter& operator<<(YAML::Emitter& out, const CHEngine::AssetHandle& handle)
+{
+    out << (uint64_t)handle;
+    return out;
+}
+ 
+template <> struct convert<CHEngine::AssetHandle>
+{
+    static Node encode(const CHEngine::AssetHandle& rhs)
+    {
+        Node node;
+        node = (uint64_t)rhs;
+        return node;
+    }
+    static bool decode(const Node& node, CHEngine::AssetHandle& rhs)
+    {
+        rhs = node.as<uint64_t>();
+        return true;
+    }
+};
+ 
 // ---- MaterialInstance ----
 template <> struct convert<CHEngine::MaterialInstance>
 {
@@ -411,19 +434,19 @@ template <> struct convert<CHEngine::MaterialInstance>
     {
         Node node;
         node["AlbedoColor"] = rhs.AlbedoColor;
-        node["AlbedoPath"] = CHEngine::Project::GetRelativePath(rhs.AlbedoPath);
+        node["AlbedoHandle"] = (uint64_t)rhs.AlbedoHandle;
         node["OverrideAlbedo"] = rhs.OverrideAlbedo;
-        node["NormalMapPath"] = CHEngine::Project::GetRelativePath(rhs.NormalMapPath);
+        node["NormalHandle"] = (uint64_t)rhs.NormalHandle;
         node["OverrideNormal"] = rhs.OverrideNormal;
-        node["MetallicRoughnessPath"] = CHEngine::Project::GetRelativePath(rhs.MetallicRoughnessPath);
+        node["MetallicRoughnessHandle"] = (uint64_t)rhs.MetallicRoughnessHandle;
         node["OverrideMetallicRoughness"] = rhs.OverrideMetallicRoughness;
-        node["OcclusionMapPath"] = CHEngine::Project::GetRelativePath(rhs.OcclusionMapPath);
+        node["OcclusionHandle"] = (uint64_t)rhs.OcclusionHandle;
         node["OverrideOcclusion"] = rhs.OverrideOcclusion;
-        node["EmissivePath"] = CHEngine::Project::GetRelativePath(rhs.EmissivePath);
+        node["EmissiveHandle"] = (uint64_t)rhs.EmissiveHandle;
         node["EmissiveColor"] = rhs.EmissiveColor;
         node["EmissiveIntensity"] = rhs.EmissiveIntensity;
         node["OverrideEmissive"] = rhs.OverrideEmissive;
-        node["ShaderPath"] = CHEngine::Project::GetRelativePath(rhs.ShaderPath);
+        node["ShaderHandle"] = (uint64_t)rhs.ShaderHandle;
         node["OverrideShader"] = rhs.OverrideShader;
         node["Metalness"] = rhs.Metalness;
         node["Roughness"] = rhs.Roughness;
@@ -439,104 +462,88 @@ template <> struct convert<CHEngine::MaterialInstance>
             return false;
         }
         if (node["AlbedoColor"])
-        {
             rhs.AlbedoColor = node["AlbedoColor"].as<CHEngine::Color>();
-        }
-        if (node["AlbedoPath"])
-        {
-            rhs.AlbedoPath = node["AlbedoPath"].as<std::string>();
-        }
+        
+        if (node["AlbedoHandle"])
+            rhs.AlbedoHandle = node["AlbedoHandle"].as<uint64_t>();
+        else if (node["AlbedoPath"]) // Fallback for legacy
+            rhs.AlbedoHandle = CHEngine::ServiceLocator::Get<CHEngine::AssetManager>().ResolveToHandle(node["AlbedoPath"].as<std::string>());
+ 
         if (node["OverrideAlbedo"])
-        {
             rhs.OverrideAlbedo = node["OverrideAlbedo"].as<bool>();
-        }
-        if (node["NormalMapPath"])
-        {
-            rhs.NormalMapPath = node["NormalMapPath"].as<std::string>();
-        }
+ 
+        if (node["NormalHandle"])
+            rhs.NormalHandle = node["NormalHandle"].as<uint64_t>();
+        else if (node["NormalMapPath"])
+            rhs.NormalHandle = CHEngine::ServiceLocator::Get<CHEngine::AssetManager>().ResolveToHandle(node["NormalMapPath"].as<std::string>());
+            
         if (node["OverrideNormal"])
-        {
             rhs.OverrideNormal = node["OverrideNormal"].as<bool>();
-        }
-        if (node["MetallicRoughnessPath"])
-        {
-            rhs.MetallicRoughnessPath = node["MetallicRoughnessPath"].as<std::string>();
-        }
+ 
+        if (node["MetallicRoughnessHandle"])
+            rhs.MetallicRoughnessHandle = node["MetallicRoughnessHandle"].as<uint64_t>();
+        else if (node["MetallicRoughnessPath"])
+            rhs.MetallicRoughnessHandle = CHEngine::ServiceLocator::Get<CHEngine::AssetManager>().ResolveToHandle(node["MetallicRoughnessPath"].as<std::string>());
+ 
         if (node["OverrideMetallicRoughness"])
-        {
             rhs.OverrideMetallicRoughness = node["OverrideMetallicRoughness"].as<bool>();
-        }
-        if (node["OcclusionMapPath"])
-        {
-            rhs.OcclusionMapPath = node["OcclusionMapPath"].as<std::string>();
-        }
+ 
+        if (node["OcclusionHandle"])
+            rhs.OcclusionHandle = node["OcclusionHandle"].as<uint64_t>();
+        else if (node["OcclusionMapPath"])
+            rhs.OcclusionHandle = CHEngine::ServiceLocator::Get<CHEngine::AssetManager>().ResolveToHandle(node["OcclusionMapPath"].as<std::string>());
+ 
         if (node["OverrideOcclusion"])
-        {
             rhs.OverrideOcclusion = node["OverrideOcclusion"].as<bool>();
-        }
-        if (node["EmissivePath"])
-        {
-            rhs.EmissivePath = node["EmissivePath"].as<std::string>();
-        }
+ 
+        if (node["EmissiveHandle"])
+            rhs.EmissiveHandle = node["EmissiveHandle"].as<uint64_t>();
+        else if (node["EmissivePath"])
+            rhs.EmissiveHandle = CHEngine::ServiceLocator::Get<CHEngine::AssetManager>().ResolveToHandle(node["EmissivePath"].as<std::string>());
+ 
         if (node["EmissiveColor"])
-        {
             rhs.EmissiveColor = node["EmissiveColor"].as<CHEngine::Color>();
-        }
         if (node["EmissiveIntensity"])
-        {
             rhs.EmissiveIntensity = node["EmissiveIntensity"].as<float>();
-        }
         if (node["OverrideEmissive"])
-        {
             rhs.OverrideEmissive = node["OverrideEmissive"].as<bool>();
-        }
-        if (node["ShaderPath"])
-        {
-            rhs.ShaderPath = node["ShaderPath"].as<std::string>();
-        }
+ 
+        if (node["ShaderHandle"])
+            rhs.ShaderHandle = node["ShaderHandle"].as<uint64_t>();
+        else if (node["ShaderPath"])
+            rhs.ShaderHandle = CHEngine::ServiceLocator::Get<CHEngine::AssetManager>().ResolveToHandle(node["ShaderPath"].as<std::string>());
+ 
         if (node["OverrideShader"])
-        {
             rhs.OverrideShader = node["OverrideShader"].as<bool>();
-        }
         if (node["Metalness"])
-        {
             rhs.Metalness = node["Metalness"].as<float>();
-        }
         if (node["Roughness"])
-        {
             rhs.Roughness = node["Roughness"].as<float>();
-        }
         if (node["DoubleSided"])
-        {
             rhs.DoubleSided = node["DoubleSided"].as<bool>();
-        }
         if (node["Transparent"])
-        {
             rhs.Transparent = node["Transparent"].as<bool>();
-        }
         if (node["Alpha"])
-        {
             rhs.Alpha = node["Alpha"].as<float>();
-        }
         return true;
     }
 };
-
+ 
 inline YAML::Emitter& operator<<(YAML::Emitter& out, const CHEngine::MaterialInstance& m)
 {
-    out << YAML::BeginMap << YAML::Key << "AlbedoColor" << YAML::Value << m.AlbedoColor << YAML::Key << "AlbedoPath"
-        << YAML::Value << CHEngine::Project::GetRelativePath(m.AlbedoPath) << YAML::Key << "OverrideAlbedo"
-        << YAML::Value << m.OverrideAlbedo << YAML::Key << "NormalMapPath" << YAML::Value
-        << CHEngine::Project::GetRelativePath(m.NormalMapPath) << YAML::Key << "OverrideNormal" << YAML::Value
-        << m.OverrideNormal << YAML::Key << "MetallicRoughnessPath" << YAML::Value
-        << CHEngine::Project::GetRelativePath(m.MetallicRoughnessPath) << YAML::Key << "OverrideMetallicRoughness"
-        << YAML::Value << m.OverrideMetallicRoughness << YAML::Key << "OcclusionMapPath" << YAML::Value
-        << CHEngine::Project::GetRelativePath(m.OcclusionMapPath) << YAML::Key << "OverrideOcclusion" << YAML::Value
-        << m.OverrideOcclusion << YAML::Key << "EmissivePath" << YAML::Value
-        << CHEngine::Project::GetRelativePath(m.EmissivePath) << YAML::Key << "EmissiveColor" << YAML::Value
+    out << YAML::BeginMap << YAML::Key << "AlbedoColor" << YAML::Value << m.AlbedoColor << YAML::Key << "AlbedoHandle"
+        << YAML::Value << (uint64_t)m.AlbedoHandle << YAML::Key << "OverrideAlbedo"
+        << YAML::Value << m.OverrideAlbedo << YAML::Key << "NormalHandle" << YAML::Value
+        << (uint64_t)m.NormalHandle << YAML::Key << "OverrideNormal" << YAML::Value
+        << m.OverrideNormal << YAML::Key << "MetallicRoughnessHandle" << YAML::Value
+        << (uint64_t)m.MetallicRoughnessHandle << YAML::Key << "OverrideMetallicRoughness"
+        << YAML::Value << m.OverrideMetallicRoughness << YAML::Key << "OcclusionHandle" << YAML::Value
+        << (uint64_t)m.OcclusionHandle << YAML::Key << "OverrideOcclusion" << YAML::Value
+        << m.OverrideOcclusion << YAML::Key << "EmissiveHandle" << YAML::Value
+        << (uint64_t)m.EmissiveHandle << YAML::Key << "EmissiveColor" << YAML::Value
         << m.EmissiveColor << YAML::Key << "EmissiveIntensity" << YAML::Value << m.EmissiveIntensity << YAML::Key
-        << "OverrideEmissive" << YAML::Value << m.OverrideEmissive << YAML::Key << "ShaderPath" << YAML::Value
-        << CHEngine::Project::GetRelativePath(m.ShaderPath) << YAML::Key << "OverrideShader" << YAML::Value
+        << "OverrideEmissive" << YAML::Value << m.OverrideEmissive << YAML::Key << "ShaderHandle" << YAML::Value
+        << (uint64_t)m.ShaderHandle << YAML::Key << "OverrideShader" << YAML::Value
         << m.OverrideShader << YAML::Key << "Metalness" << YAML::Value << m.Metalness << YAML::Key << "Roughness"
         << YAML::Value << m.Roughness << YAML::Key << "DoubleSided" << YAML::Value << m.DoubleSided << YAML::Key
         << "Transparent" << YAML::Value << m.Transparent << YAML::Key << "Alpha" << YAML::Value << m.Alpha
@@ -634,6 +641,21 @@ inline YAML::Emitter& operator<<(YAML::Emitter& out, const CHEngine::ShaderUnifo
         << YAML::EndMap;
     return out;
 }
+
+// ---- std::variant converter ----
+template <typename... Ts> struct convert<std::variant<Ts...>>
+{
+    static Node encode(const std::variant<Ts...>& rhs)
+    {
+        return std::visit([](auto&& arg) { return Node(arg); }, rhs);
+    }
+    static bool decode(const Node& node, std::variant<Ts...>& rhs)
+    {
+        // Decoding requires context or a type hint. 
+        // For Chained Engine scripting, this is handled in scripting_serialization.h
+        return false;
+    }
+};
 
 } // namespace YAML
 

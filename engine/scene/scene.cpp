@@ -1,17 +1,19 @@
 #include "engine/scene/scene.h"
 #include "engine/core/profiler.h"
-#include "engine/physics/physics.h"
+#include "engine/core/service_locator.h"
 #include "engine/physics/default_physics_world.h"
+#include "engine/physics/physics.h"
 #include "engine/physics/physics_system.h"
 #include "engine/scene/component_serializer.h"
-#include "engine/core/service_locator.h"
+#include "engine/scene/scene_system_manager.h"
 #include "engine/scene/systems/animation_system.h"
 #include "engine/scene/systems/hierarchy_system.h"
 #include "engine/scene/systems/scene_audio_system.h"
-#include "engine/scene/ui_factory.h"
-#include "engine/scene/scene_system_manager.h"
 #include "engine/scene/systems/scene_systems_impl.h"
+#include "engine/scene/systems/asset_resolution_system.h"
+#include "engine/scene/ui_factory.h"
 #include "scene_scripting_manager.h"
+#include "scripting/scriptengine.h"
 #include <entt/entt.hpp>
 #include <glm/gtx/norm.hpp>
 
@@ -20,23 +22,13 @@ using namespace entt::literals;
 namespace CHEngine
 {
 // Scene implementation
-Scene::Scene()
+Scene::Scene(ScriptEngine* scriptEngine)
 {
     // Create registry
-    m_Registry = std::make_shared<entt::registry>();
-    m_ScriptingManager = std::make_unique<SceneScriptingManager>(this);
-    m_SystemManager = std::make_unique<SceneSystemManager>(this);
-
+    m_Registry = std::make_unique<entt::registry>();
     auto& reg = *m_Registry;
     reg.ctx().emplace<Scene*>(this);
     reg.ctx().emplace<EntityUUIDMap>();
-    reg.ctx().emplace<std::weak_ptr<entt::registry>>(m_Registry);
-
-    // Register default scene systems
-    m_SystemManager->AddSystem<HierarchySystemImpl>();
-    m_SystemManager->AddSystem<AnimationSystemImpl>();
-    m_SystemManager->AddSystem<PhysicsSystemImpl>();
-    m_SystemManager->AddSystem<AudioSystemImpl>();
 
     // UUID Mapping
     reg.on_construct<IDComponent>().connect<&Scene::OnIDConstruct>(this);
@@ -48,8 +40,19 @@ Scene::Scene()
     // Every scene must have its own environment to avoid skybox leaking/bugs
     m_Settings.Environment = std::make_shared<EnvironmentAsset>();
 
-    m_PhysicsWorld = std::make_unique<DefaultPhysicsWorld>();
-    
+    // Initialize managed systems
+    m_ScriptingManager = std::make_unique<SceneScriptingManager>(this, scriptEngine);
+    m_SystemManager = std::make_unique<SceneSystemManager>(this);
+
+    // Register Core ECS Systems
+    m_SystemManager->AddSystem<HierarchySystemImpl>();
+    m_SystemManager->AddSystem<AnimationSystemImpl>();
+    m_SystemManager->AddSystem<PhysicsSystemImpl>();
+    m_SystemManager->AddSystem<AudioSystemImpl>();
+    m_SystemManager->AddSystem<AssetResolutionSystem>();
+
+    m_SystemManager->InitObservers();
+
     UIFactory::Initialize();
 }
 
@@ -62,7 +65,8 @@ Scene::~Scene()
 
 std::shared_ptr<Scene> Scene::CreateDefault()
 {
-    auto scene = std::make_shared<Scene>();
+    // Use the active application's ScriptEngine or nullptr if not available
+    auto scene = std::make_shared<Scene>(nullptr);
 
     // Ensure every scene starts with a Main Camera
     Entity camera = scene->CreateEntity("Main Camera");
@@ -78,7 +82,7 @@ std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
     CH_PROFILE_FUNCTION();
     CH_CORE_INFO("Scene::Copy - Starting copy of scene '{}'", other->m_Settings.Name);
 
-    std::shared_ptr<Scene> newScene = std::make_shared<Scene>();
+    std::shared_ptr<Scene> newScene = std::make_shared<Scene>(other->GetScriptEngine());
 
     // 1. Copy Scene Settings
     newScene->m_Settings = other->m_Settings;
@@ -93,11 +97,21 @@ std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
     {
         CH_PROFILE_SCOPE("Scene::Copy::CopyEntities_Pass1");
         srcRegistry.view<IDComponent>().each([&](auto entityHandle, auto& id) {
-            Entity srcEntity = {entityHandle, other->m_Registry};
+            Entity srcEntity = {entityHandle, other->m_Registry.get()};
             Entity dstEntity = newScene->CreateEntityWithUUID(id.ID);
             entityMap[entityHandle] = (entt::entity)dstEntity;
 
-            ComponentSerializer::Get().CopyAll(srcEntity, dstEntity);
+            if (ServiceLocator::Has<ComponentSerializer>())
+            {
+                ServiceLocator::Get<ComponentSerializer>().CopyAll(srcEntity, dstEntity);
+
+                // Reset physics handles so the specialized PhysicsSystem::InitializeBodies 
+                // in the new scene can create fresh native bodies for the runtime world.
+                if (dstEntity.HasComponent<RigidBodyComponent>())
+                {
+                    dstEntity.GetComponent<RigidBodyComponent>().Handle = kInvalidPhysicsBody;
+                }
+            }
         });
     }
 
@@ -105,26 +119,42 @@ std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
     {
         CH_PROFILE_SCOPE("Scene::Copy::CopyEntities_Pass2");
         srcRegistry.view<HierarchyComponent>().each([&](auto entityHandle, auto& srcHC) {
+            if (!entityMap.contains(entityHandle))
+                return;
+
             entt::entity dstHandle = entityMap[entityHandle];
             auto& dstHC = dstRegistry.get_or_emplace<HierarchyComponent>(dstHandle);
-            
+
             // Remap parent
             if (srcHC.Parent != entt::null && entityMap.count(srcHC.Parent))
+            {
                 dstHC.Parent = entityMap[srcHC.Parent];
+                // Remove from roots if it has a parent
+                auto& roots = newScene->GetRootEntities();
+                auto it = std::find(roots.begin(), roots.end(), dstHandle);
+                if (it != roots.end())
+                    roots.erase(it);
+            }
             else
+            {
                 dstHC.Parent = entt::null;
+            }
 
             // Remap children
             dstHC.Children.clear();
             for (auto child : srcHC.Children)
             {
                 if (entityMap.count(child))
+                {
                     dstHC.Children.push_back(entityMap[child]);
+                }
             }
         });
-        
-        CH_CORE_INFO("Scene::Copy - Successfully copied {} entities with hierarchy", entityMap.size());
+
+        CH_CORE_INFO("Scene::Copy - Pass 2 complete. Roots count: {0}", newScene->GetRootEntities().size());
     }
+
+    CH_CORE_INFO("Scene::Copy - Finalizing copy ({} entities). Returning newScene pointer: {}", entityMap.size(), (void*)newScene.get());
     return newScene;
 }
 
@@ -143,7 +173,13 @@ void Scene::OnHierarchyDestroy(entt::registry& reg, entt::entity entity)
         }
     }
 
-    // Children are handled by recursive DestroyEntity call
+    // 2. Remove from roots if it was a root
+    auto& roots = reg.ctx().get<Scene*>()->GetRootEntities();
+    auto it = std::find(roots.begin(), roots.end(), entity);
+    if (it != roots.end())
+    {
+        roots.erase(it);
+    }
 }
 
 void Scene::OnEvent(Event& e)
@@ -158,14 +194,18 @@ void Scene::OnRenderUI()
 
 void Scene::OnRuntimeStart()
 {
+    CH_CORE_INFO("Scene::OnRuntimeStart - Starting activation for scene pointer: {}", (void*)this);
     Physics::ResetAccumulator(this);
     m_IsSimulationRunning = true;
 
+    CH_CORE_INFO("Scene::OnRuntimeStart - Initializing script and system managers...");
     m_ScriptingManager->OnRuntimeStart();
     m_SystemManager->OnRuntimeStart();
-    
+
     // Ensure all transforms are up to date before the first frame
+    CH_CORE_INFO("Scene::OnRuntimeStart - Updating hierarchy system...");
     HierarchySystem::Update(this);
+    CH_CORE_INFO("Scene::OnRuntimeStart - Activation complete.");
 }
 
 void Scene::OnRuntimeStop()
@@ -174,7 +214,6 @@ void Scene::OnRuntimeStop()
 
     m_ScriptingManager->OnRuntimeStop();
     m_SystemManager->OnRuntimeStop();
-    Physics::ClearContext(this);
 }
 
 void Scene::OnUpdateRuntime(Timestep timestep)
@@ -207,63 +246,9 @@ void Scene::OnViewportResize(uint32_t width, uint32_t height)
     }
 }
 
-std::optional<Camera3D> Scene::GetActiveCamera()
-{
-    auto& reg = GetRegistry();
-    auto view = reg.view<CameraComponent, TransformComponent>();
-    for (auto entity : view)
-    {
-        auto [camera, transform] = view.get<CameraComponent, TransformComponent>(entity);
-        if (camera.Primary)
-        {
-            Camera3D activeCamera;
+// Camera retrieval logic moved to SceneRenderer
 
-            // Use WorldTransform instead of local translation/rotation for parented cameras
-            const glm::mat4& worldTransform = transform.WorldTransform;
-
-            // Extract position from world transform
-            activeCamera.Position = glm::vec3(worldTransform * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-
-            // Calculate world forward and up vectors
-            glm::vec3 worldForward = glm::vec3(worldTransform * glm::vec4(0.0f, 0.0f, -1.0f, 1.0f));
-            glm::vec3 worldUp = glm::vec3(worldTransform * glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-
-            glm::vec3 forward = glm::normalize(worldForward - activeCamera.Position);
-
-            // Provide a safe fallback if forward is somehow zero
-            if (glm::length2(forward) < 0.0001f)
-            {
-                forward = glm::vec3(0.0f, 0.0f, -1.0f);
-            }
-
-            activeCamera.Target = activeCamera.Position + forward;
-            activeCamera.Up = glm::normalize(worldUp - activeCamera.Position);
-
-            // SceneCamera stores FOV in radians, raylib expects degrees for Camera3D
-            activeCamera.Fovy = glm::degrees(camera.Camera.GetPerspectiveVerticalFOV());
-            activeCamera.Projection = (int)camera.Camera.GetProjectionType();
-
-            return activeCamera;
-        }
-    }
-    return std::nullopt;
-}
-
-Entity Scene::GetPrimaryCameraEntity()
-{
-    auto& reg = GetRegistry();
-    auto view = reg.view<CameraComponent>();
-    for (auto entity : view)
-    {
-        auto& camera = view.get<CameraComponent>(entity);
-        if (camera.Primary)
-        {
-            return {entity, m_Registry};
-        }
-    }
-    return {};
-}
-
+// Primary camera entity retrieval moved to SceneRenderer helper logic
 
 void Scene::OnIDConstruct(entt::registry& reg, entt::entity entity)
 {
@@ -279,9 +264,9 @@ void Scene::OnIDDestroy(entt::registry& reg, entt::entity entity)
     mapStruct.Map.erase(id.ID);
 }
 
-std::shared_ptr<entt::registry> Scene::GetRegistryPtr()
+entt::registry* Scene::GetRegistryPtr()
 {
-    return m_Registry;
+    return m_Registry.get();
 }
 const entt::registry& Scene::GetRegistry() const
 {
@@ -303,8 +288,19 @@ bool Scene::IsSimulationRunning() const
 {
     return m_IsSimulationRunning;
 }
+
+ScriptEngine* Scene::GetScriptEngine() const
+{
+    return m_ScriptingManager ? m_ScriptingManager->GetScriptEngine() : nullptr;
+}
+
 void Scene::DestroyEntity(Entity entity)
 {
+    // Remove from root entities if it's there
+    auto it = std::find(m_RootEntities.begin(), m_RootEntities.end(), (entt::entity)entity);
+    if (it != m_RootEntities.end())
+        m_RootEntities.erase(it);
+
     entity.Destroy();
 }
 
@@ -315,13 +311,18 @@ Entity Scene::CopyEntity(entt::entity copyEntity)
 
 Entity Scene::CopyEntityInternal(entt::entity copyEntity, entt::entity parentEntity)
 {
-    Entity srcEntity(copyEntity, m_Registry);
+    Entity srcEntity(copyEntity, m_Registry.get());
     std::string copyName = srcEntity.GetName() + (parentEntity == entt::null ? "_copy" : "");
     Entity dstEntity = CreateEntity(copyName);
 
     // CopyAll overwrites TagComponent and IDComponent with the source's values.
     // We must restore the copy's unique identity afterwards.
-    ComponentSerializer::Get().CopyAll(srcEntity, dstEntity);
+    if (ServiceLocator::Has<ComponentSerializer>())
+    {
+        // srcEntity reference is stable, but its component pointers might dangle after dstEntity creation.
+        // ComponentSerializer::CopyAll uses Entity objects which perform re-fetches.
+        ServiceLocator::Get<ComponentSerializer>().CopyAll(srcEntity, dstEntity);
+    }
 
     // Restore the name (CopyAll overwrites it with source tag)
     dstEntity.GetComponent<TagComponent>().Tag = copyName;
@@ -329,13 +330,16 @@ Entity Scene::CopyEntityInternal(entt::entity copyEntity, entt::entity parentEnt
     // The IDComponent was copied verbatim from the source, so both entities now share
     // the same UUID. We must remove it and add a fresh one.
     dstEntity.RemoveComponent<IDComponent>();
-    dstEntity.AddComponent<IDComponent>(); 
+    dstEntity.AddComponent<IDComponent>();
 
     // Handle Hierarchy
     if (srcEntity.HasComponent<HierarchyComponent>())
     {
-        auto& srcHC = srcEntity.GetComponent<HierarchyComponent>();
-        
+        // CRITICAL: Copy srcHC to local variable. 
+        // Subsequent AddOrReplaceComponent or Children.push_back calls on parent/children
+        // will reallocate the HierarchyComponent pool, invalidating ANY reference.
+        auto srcHC = srcEntity.GetComponent<HierarchyComponent>();
+
         entt::entity targetParent = parentEntity;
         if (targetParent == entt::null && srcHC.Parent != entt::null)
         {
@@ -346,9 +350,9 @@ Entity Scene::CopyEntityInternal(entt::entity copyEntity, entt::entity parentEnt
         {
             auto& dstHC = dstEntity.AddOrReplaceComponent<HierarchyComponent>();
             dstHC.Parent = targetParent;
-            dstHC.Children.clear(); 
+            dstHC.Children.clear();
 
-            Entity parent(targetParent, m_Registry);
+            Entity parent(targetParent, m_Registry.get());
             if (parent.HasComponent<HierarchyComponent>())
             {
                 parent.GetComponent<HierarchyComponent>().Children.push_back(dstEntity);
@@ -363,9 +367,8 @@ Entity Scene::CopyEntityInternal(entt::entity copyEntity, entt::entity parentEnt
             }
         }
 
-        // Recursively copy all children
-        std::vector<entt::entity> childrenToCopy = srcHC.Children;
-        for (auto child : childrenToCopy)
+        // Recursively copy all children using the local copy of the children list
+        for (auto child : srcHC.Children)
         {
             CopyEntityInternal(child, dstEntity);
         }
@@ -378,7 +381,7 @@ Entity Scene::CreateUIEntity(const std::string& type, const std::string& name)
 {
     Entity entity = CreateEntity(name.empty() ? type : name);
     entity.AddComponent<ControlComponent>();
-    
+
     UIFactory::Create(type, entity);
 
     return entity;
@@ -386,19 +389,23 @@ Entity Scene::CreateUIEntity(const std::string& type, const std::string& name)
 
 Entity Scene::CreateEntityWithUUID(UUID uuid, const std::string& name)
 {
-    Entity entity(m_Registry->create(), m_Registry);
+    Entity entity(m_Registry->create(), m_Registry.get());
     entity.AddComponent<IDComponent>(uuid);
     entity.AddComponent<TagComponent>(name.empty() ? "Entity" : name);
     entity.AddComponent<TransformComponent>();
+    
+    m_RootEntities.push_back(entity);
     return entity;
 }
 
 Entity Scene::CreateEntity(const std::string& name)
 {
-    Entity entity(m_Registry->create(), m_Registry);
+    Entity entity(m_Registry->create(), m_Registry.get());
     entity.AddComponent<IDComponent>();
     entity.AddComponent<TagComponent>(name.empty() ? "Entity" : name);
     entity.AddComponent<TransformComponent>();
+    
+    m_RootEntities.push_back(entity);
     return entity;
 }
 
@@ -410,7 +417,7 @@ Entity Scene::FindEntityByTag(const std::string& tag)
         const auto& tagComp = view.get<TagComponent>(entity);
         if (tagComp.Tag == tag)
         {
-            return {entity, m_Registry};
+            return {entity, m_Registry.get()};
         }
     }
     return {};
@@ -421,7 +428,7 @@ Entity Scene::GetEntityByUUID(UUID uuid)
     auto* mapStruct = m_Registry->ctx().find<EntityUUIDMap>();
     if (mapStruct && mapStruct->Map.find(uuid) != mapStruct->Map.end())
     {
-        return {mapStruct->Map.at(uuid), m_Registry};
+        return {mapStruct->Map.at(uuid), m_Registry.get()};
     }
     return {};
 }

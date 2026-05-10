@@ -10,8 +10,10 @@ add_library(engine_scene ${SUBMODULE_LIB_TYPE}
         scene_camera.cpp
         editor_camera.cpp
         entity.cpp
+        component_registry.cpp
         scene_picking.cpp
         components/mesh_component.cpp
+        systems/asset_resolution_system.cpp
         systems/animation_system.cpp
         systems/hierarchy_system.cpp
         systems/scene_audio_system.cpp
@@ -37,7 +39,6 @@ add_library(engine_scene ${SUBMODULE_LIB_TYPE}
         components/audio_component.h
         components/camera_component.h
         components/control_component.h
-        components/game_components.h
         components/hierarchy_component.h
         components/id_component.h
         components/light_component.h
@@ -49,25 +50,27 @@ add_library(engine_scene ${SUBMODULE_LIB_TYPE}
         components/tag_component.h
         components/transform_component.h
         components/sprite_component.h
+        systems/asset_resolution_system.h
         entity.h
 )
 set_target_properties(engine_scene PROPERTIES UNITY_BUILD OFF)
 
 target_include_directories(engine_scene PUBLIC
-    ${ENGINE_INCLUDE_DIRS}
-    ${yaml-cpp_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/include/imgui
-    ${CMAKE_SOURCE_DIR}/include/imgui/backends
-    ${CMAKE_SOURCE_DIR}/include/entt/src
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(engine_scene PUBLIC 
+target_link_libraries(engine_scene 
+PUBLIC 
     engine_core
     engine_graphics
     engine_physics
     engine_audio
-    yaml-cpp
-    EnTT::EnTT
+    engine_scripting
+    ChainedEngine::External::YamlCpp
+    ChainedEngine::External::EnTT
+    ChainedEngine::External::GLM
+    ChainedEngine::External::ImGui
 )
 
 if(COMMAND apply_engine_optimizations)

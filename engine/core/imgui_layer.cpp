@@ -135,4 +135,21 @@ void ImGuiLayer::OnEvent(Event& e)
         e.Handled |= e.IsInCategory(EventCategoryKeyboard) & io.WantCaptureKeyboard;
     }
 }
+
+ImFont* ImGuiLayer::AddFontFromFile(const std::string& path, float size, const ImFontConfig* config, const ImWchar* ranges)
+{
+    if (!ImGui::GetCurrentContext())
+    {
+        CH_CORE_WARN("ImGuiLayer: Cannot add font without an active ImGui context.");
+        return nullptr;
+    }
+
+    ImGuiIO& io = ImGui::GetIO();
+    ImFont* font = io.Fonts->AddFontFromFileTTF(path.c_str(), size, config, ranges);
+    if (!font)
+    {
+        CH_CORE_ERROR("ImGuiLayer: Failed to load font from '{}'", path);
+    }
+    return font;
+}
 } // namespace CHEngine

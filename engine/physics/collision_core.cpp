@@ -1,8 +1,10 @@
 #include "collision_core.h"
 
+
 #include "bvh/bvh.h"
 #include "collision/collision.h"
 #include "physics.h"
+#include "engine/scene/components/component_utils.h"
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
@@ -130,26 +132,32 @@ CollisionCore::WorldAABB CollisionCore::GetWorldAABB(const TransformComponent& t
             if (bvh && !bvh->GetNodes().empty())
             {
                 const auto& root = bvh->GetNodes()[0];
-                const glm::vec3 corners[8] = {
-                    {root.Min.x, root.Min.y, root.Min.z}, {root.Max.x, root.Min.y, root.Min.z},
-                    {root.Min.x, root.Max.y, root.Min.z}, {root.Max.x, root.Max.y, root.Min.z},
-                    {root.Min.x, root.Min.y, root.Max.z}, {root.Max.x, root.Min.y, root.Max.z},
-                    {root.Min.x, root.Max.y, root.Max.z}, {root.Max.x, root.Max.y, root.Max.z}};
-
-                glm::vec3 worldMin = {FLT_MAX, FLT_MAX, FLT_MAX};
-                glm::vec3 worldMax = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
-                for (const auto& c : corners)
+                
+                // Safety check for root nodes that might be uninitialized or extreme
+                if (std::isfinite(root.AABBMin.x) && std::isfinite(root.AABBMax.x) &&
+                    root.AABBMax.x > root.AABBMin.x - 1000.0f && root.AABBMax.x < root.AABBMin.x + 1000.0f)
                 {
-                    glm::vec3 wp = glm::vec3(tc.WorldTransform * glm::vec4(c, 1.0f));
-                    worldMin = glm::min(worldMin, wp);
-                    worldMax = glm::max(worldMax, wp);
+                    const glm::vec3 corners[8] = {
+                        {root.AABBMin.x, root.AABBMin.y, root.AABBMin.z}, {root.AABBMax.x, root.AABBMin.y, root.AABBMin.z},
+                        {root.AABBMin.x, root.AABBMax.y, root.AABBMin.z}, {root.AABBMax.x, root.AABBMax.y, root.AABBMin.z},
+                        {root.AABBMin.x, root.AABBMin.y, root.AABBMax.z}, {root.AABBMax.x, root.AABBMin.y, root.AABBMax.z},
+                        {root.AABBMin.x, root.AABBMax.y, root.AABBMax.z}, {root.AABBMax.x, root.AABBMax.y, root.AABBMax.z}};
+
+                    glm::vec3 worldMin = {FLT_MAX, FLT_MAX, FLT_MAX};
+                    glm::vec3 worldMax = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
+                    for (const auto& c : corners)
+                    {
+                        glm::vec3 wp = glm::vec3(tc.WorldTransform * glm::vec4(c, 1.0f));
+                        worldMin = glm::min(worldMin, wp);
+                        worldMax = glm::max(worldMax, wp);
+                    }
+                    return {worldMin, worldMax};
                 }
-                return {worldMin, worldMax};
             }
         }
-        // Fallback if BVH not yet loaded
+        // Fallback if BVH not yet loaded or invalid: use transform center + small radius
         glm::vec3 center = glm::vec3(tc.WorldTransform[3]);
-        return {center - 1.0f, center + 1.0f};
+        return {center - 0.5f, center + 0.5f};
     }
 
     // Box (default): transform all 8 local corners to world space
@@ -274,17 +282,22 @@ void CollisionCore::ResolveBoxMesh(entt::registry& registry, entt::entity rbEnti
             normal = worldTriNormal;
         }
         
-        // Prevent tunneling by ensuring we always push out towards the triangle's front face
+        // Ensure we always push out towards the triangle's front face
         if (glm::dot(normal, worldTriNormal) < 0.0f) {
             normal = -normal;
         }
 
-        glm::vec3 localNormal = glm::vec3(glm::transpose(tc.WorldTransform) * glm::vec4(normal, 0.0f));
-        float exactRadius = glm::dot(rbc.Size * 0.5f, glm::abs(localNormal));
+        // Calculate world-space "radius" of the box along the normal axis.
+        // We project the world axes of the box (which include scale) onto the normal.
+        float worldRadius = 0.5f * (
+            std::abs(glm::dot(normal, glm::vec3(tc.WorldTransform[0]))) * rbc.Size.x +
+            std::abs(glm::dot(normal, glm::vec3(tc.WorldTransform[1]))) * rbc.Size.y +
+            std::abs(glm::dot(normal, glm::vec3(tc.WorldTransform[2]))) * rbc.Size.z
+        );
 
-        if (dist < exactRadius)
+        if (dist < worldRadius)
         {
-            float penetration = exactRadius - dist;
+            float penetration = worldRadius - dist;
             if (penetration > maxPenetration)
             {
                 maxPenetration = penetration;
@@ -673,29 +686,35 @@ void CollisionCore::SolveContacts(entt::registry& registry, std::vector<Contact>
     }
 }
 
+
 void CollisionCore::GenerateContacts(entt::registry& registry,
                                      const std::vector<entt::entity>& entities,
                                      std::vector<Contact>& contacts)
 {
-    auto colliders = registry.view<TransformComponent, ColliderComponent>();
-
+    auto allCollidersView = registry.view<TransformComponent, ColliderComponent>();
+    
+    // Query broadphase for each active rigid body
     for (auto rbEntity : entities)
     {
         if (!registry.all_of<TransformComponent, RigidBodyComponent, ColliderComponent>(rbEntity))
             continue;
 
-        auto& tc        = registry.get<TransformComponent>(rbEntity);
+        auto& tc = registry.get<TransformComponent>(rbEntity);
         auto& rbCollider = registry.get<ColliderComponent>(rbEntity);
-
         WorldAABB rbAABB = GetWorldAABB(tc, rbCollider);
-        rbAABB.Min -= 0.1f;
-        rbAABB.Max += 0.1f;
+        
+        for (auto otherEntity : allCollidersView)
+        {
+            if (rbEntity == otherEntity) continue;
+            
+            auto& otherTc = allCollidersView.get<TransformComponent>(otherEntity);
+            auto& otherCollider = allCollidersView.get<ColliderComponent>(otherEntity);
+            if (!otherCollider.Enabled) continue;
 
-        colliders.each([&](auto otherEntity, auto& otherTc, auto& otherCollider) {
-            if (rbEntity == otherEntity || !otherCollider.Enabled) return;
-
+            // Double check AABB exactly
             WorldAABB targetAABB = GetWorldAABB(otherTc, otherCollider);
-            if (!Collision::CheckAABB(rbAABB.Min, rbAABB.Max, targetAABB.Min, targetAABB.Max)) return;
+            if (!Collision::CheckAABB(rbAABB.Min - 0.1f, rbAABB.Max + 0.1f, targetAABB.Min, targetAABB.Max)) 
+                continue;
 
             if (otherCollider.Type == ColliderType::Box)
             {
@@ -713,7 +732,7 @@ void CollisionCore::GenerateContacts(entt::registry& registry,
             {
                 if (rbCollider.Type == ColliderType::Sphere) ResolveSphereSphere(registry, rbEntity, otherEntity, contacts);
             }
-        });
+        }
     }
 }
 
@@ -741,10 +760,14 @@ void CollisionCore::ResolveCollisions(entt::registry& registry, const std::vecto
         if (!tc) continue;
 
         auto* hc = registry.try_get<HierarchyComponent>(rbEntity);
-        if (!hc || hc->Parent == entt::null || !registry.valid(hc->Parent))
-            tc->WorldTransform = tc->GetTransform();
+        if (!hc || hc->Parent == entt::null || !registry.valid(hc->Parent) || !registry.all_of<TransformComponent>(hc->Parent))
+        {
+            tc->WorldTransform = ComponentUtils::GetTransform(*tc);
+        }
         else
-            tc->WorldTransform = registry.get<TransformComponent>(hc->Parent).WorldTransform * tc->GetTransform();
+        {
+            tc->WorldTransform = registry.get<TransformComponent>(hc->Parent).WorldTransform * ComponentUtils::GetTransform(*tc);
+        }
     }
 }
 

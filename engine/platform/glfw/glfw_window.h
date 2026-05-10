@@ -36,6 +36,8 @@ public:
     virtual int GetTargetFramesPerSecond() const override { return m_TargetFPS; }
     virtual void SetWindowIcon(const std::string& path) override;
 
+    virtual void SetEventCallback(const EventCallbackFn& callback) override { m_EventCallback = callback; }
+
     virtual void* GetNativeWindow() const override { return m_WindowHandle; }
 
 private:
@@ -50,6 +52,7 @@ private:
     bool m_IsFullscreen = false;
     int m_WindowedX = 0, m_WindowedY = 0, m_WindowedWidth = 0, m_WindowedHeight = 0;
     int m_TargetFPS = 60;
+    EventCallbackFn m_EventCallback;
 };
 
 } // namespace CHEngine

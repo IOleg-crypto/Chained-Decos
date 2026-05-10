@@ -3,6 +3,7 @@
 #include "engine/graphics/pipeline/ui_renderer.h"
 #include "engine/scene/components/control_component.h"
 #include "engine/scene/scene.h"
+#include "engine/core/service_locator.h"
 
 namespace CHEngine
 {
@@ -23,7 +24,7 @@ bool EditorUIManipulator::OnImGuiRender(Entity selectedEntity, ImVec2 viewportPo
     }
 
     auto& cc = selectedEntity.GetComponent<ControlComponent>();
-    UIRect rect = UIRenderer::Get().GetEntityRect(selectedEntity, viewportSize, viewportPos);
+    UIRect rect = ServiceLocator::Get<UIRenderer>().GetEntityRect(selectedEntity, viewportSize, viewportPos);
 
     float scaleFactor = 1.0f;
     auto* sceneCtx = selectedEntity.GetRegistry().ctx().find<Scene*>();

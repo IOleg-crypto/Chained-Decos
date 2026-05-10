@@ -5,6 +5,7 @@
 #include "engine/scene/yaml.h"
 #include "engine/core/reflection.h"
 #include "engine/scene/project.h"
+#include "engine/scene/scripting_serialization.h"
 #include <filesystem>
 
 namespace CHEngine::SerializationUtils

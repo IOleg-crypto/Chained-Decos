@@ -54,6 +54,7 @@ public:
 public:
     void DrawGizmoButtons();
     void DrawCameraSelector(class Scene* scene);
+    Ray GetMouseRay(const glm::vec2& mousePosition);
 
 private:
     std::shared_ptr<Framebuffer> m_ViewportFramebuffer;
@@ -66,18 +67,11 @@ private:
     EditorGizmo m_Gizmo;
     EditorUIManipulator m_UIManipulator;
     GizmoType m_CurrentTool = GizmoType::TRANSLATE;
-    Entity m_SelectedEntity;
     std::unique_ptr<class SceneRenderer> m_SceneRenderer;
-
-    // UI Interaction state
-    ImVec2 m_UIDragOffset = {0, 0};
-
-    // Viewport Camera State
-    uint64_t m_ViewportCameraEntityUUID = 0; // 0 = Editor Camera
 
 private:
     void HandleResize(const ImVec2& viewportSize, class Scene* activeScene);
-    void RenderViewportScene(class Scene* activeScene, const ImVec2& viewportSize);
+    void RenderViewportScene(class Scene* activeScene);
     void HandleDragDrop(class Scene* activeScene);
     void RenderOverlays(class Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos);
     void HandlePicking(class Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos);

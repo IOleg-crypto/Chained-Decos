@@ -7,7 +7,6 @@
 #include "components/audio_component.h"
 #include "components/camera_component.h"
 #include "components/control_component.h"
-#include "components/game_components.h"
 #include "components/hierarchy_component.h"
 #include "components/id_component.h"
 #include "components/light_component.h"

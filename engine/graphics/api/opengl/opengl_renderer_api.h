@@ -3,6 +3,8 @@
 
 #include "engine/graphics/api/renderer_api.h"
 
+#include <unordered_map>
+
 namespace CHEngine
 {
 
@@ -41,6 +43,22 @@ public:
 
 private:
     float m_ClearColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
+
+    struct RendererStateCache
+    {
+        uint32_t ActiveShader = 0;
+        std::unordered_map<uint32_t, uint32_t> BoundTextures; // Slot -> TextureID
+        
+        bool DepthTest = false;
+        bool DepthMask = true;
+        bool Blend = false;
+        CullMode Cull = CullMode::None;
+        PolygonMode PolyMode = PolygonMode::Fill;
+
+        DepthFunc DepthFunction = DepthFunc::Less;
+        BlendFactor SrcBlend = BlendFactor::One;
+        BlendFactor DstBlend = BlendFactor::Zero;
+    } m_StateCache;
 };
 
 } // namespace CHEngine

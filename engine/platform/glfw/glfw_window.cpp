@@ -2,10 +2,11 @@
 #include "engine/core/log.h"
 #include "engine/core/ch_assert.h"
 #include "engine/core/input.h"
+#include "engine/core/events.h"
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
-#include <stb/stb_image.h>
+#include <stb_image.h>
 
 #include <algorithm>
 #include <vector>
@@ -99,8 +100,20 @@ void GlfwWindow::Init(const WindowProperties& properties)
     glfwSetFramebufferSizeCallback(m_WindowHandle, [](GLFWwindow* window, int width, int height) {
         auto& glWindow = *(GlfwWindow*)glfwGetWindowUserPointer(window);
         glWindow.SetSizeDirect(width, height);
-        // Important: Viewport should be updated here or in the renderer
+        
+        WindowResizeEvent event(width, height);
+        if (glWindow.m_EventCallback)
+            glWindow.m_EventCallback(event);
+            
         glViewport(0, 0, width, height);
+    });
+
+    // Close Callback
+    glfwSetWindowCloseCallback(m_WindowHandle, [](GLFWwindow* window) {
+        auto& glWindow = *(GlfwWindow*)glfwGetWindowUserPointer(window);
+        WindowCloseEvent event;
+        if (glWindow.m_EventCallback)
+            glWindow.m_EventCallback(event);
     });
 
     
@@ -108,6 +121,21 @@ void GlfwWindow::Init(const WindowProperties& properties)
     // Scroll Callback for mouse wheel input
     glfwSetScrollCallback(m_WindowHandle, [](GLFWwindow* window, double xOffset, double yOffset) {
         Input::OnMouseScroll((float)xOffset, (float)yOffset);
+    });
+
+    // Key Callback
+    glfwSetKeyCallback(m_WindowHandle, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
+        Input::OnKey(key, action != GLFW_RELEASE);
+    });
+
+    // Mouse Button Callback
+    glfwSetMouseButtonCallback(m_WindowHandle, [](GLFWwindow* window, int button, int action, int mods) {
+        Input::OnMouseButton(button, action != GLFW_RELEASE);
+    });
+
+    // Cursor Position Callback
+    glfwSetCursorPosCallback(m_WindowHandle, [](GLFWwindow* window, double xpos, double ypos) {
+        Input::OnMouseMove((float)xpos, (float)ypos);
     });
     
     // Platform-neutral GLAD loading
@@ -138,7 +166,6 @@ void GlfwWindow::BeginFrame()
 void GlfwWindow::EndFrame()
 {
     glfwSwapBuffers(m_WindowHandle);
-    glfwPollEvents();
 }
 
 bool GlfwWindow::ShouldClose() const

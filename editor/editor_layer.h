@@ -9,7 +9,6 @@
 
 
 #include "editor_context.h"
-#include "launcher/editor_launcher.h"
 #include "editor_project_manager.h"
 #include "editor_scene_manager.h"
 #include "engine/core/application.h"
@@ -26,7 +25,7 @@
 namespace CHEngine
 {
 
-struct EditorLayerConfig
+struct EditorConfig
 {
     std::string LastProjectPath = "";
     std::string LastScenePath = "";
@@ -35,6 +34,8 @@ struct EditorLayerConfig
     float AutoSaveInterval = 300.0f;
     std::vector<std::string> RecentProjects; // Ordered list of recently opened project paths
 };
+
+class ProjectSelectorUI;
 
 // Owns the editor scene pair, viewport state, and project/scene transition flow.
 class EditorLayer : public Layer
@@ -50,15 +51,15 @@ public:
     virtual void OnImGuiRender() override;
     virtual void OnEvent(Event& e) override;
 
-    // Returns the viewport width currently tracked by the editor.
-    static float GetViewportWidth()
+    // Returns the view port width currently tracked by the editor.
+    float GetViewportWidth() const
     {
-        return s_Instance->m_ViewportSize.x;
+        return m_ViewportSize.x;
     }
-    // Returns the viewport height currently tracked by the editor.
-    static float GetViewportHeight()
+    // Returns the view port height currently tracked by the editor.
+    float GetViewportHeight() const
     {
-        return s_Instance->m_ViewportSize.y;
+        return m_ViewportSize.y;
     }
 
     // Resets the editor layout to the default dock structure.
@@ -68,13 +69,6 @@ public:
     {
         return EditorContext::GetSceneState();
     }
-
-    static EditorLayer& Get()
-    {
-        return *s_Instance;
-    }
-    // Draws the main editor docking root.
-    void DrawDockSpace();
 
     // File and project operations (delegated to ProjectManager).
     EditorProjectManager& GetProjectManager() { return *m_ProjectManager; }
@@ -88,13 +82,15 @@ private:
     void LoadEditorFonts();
     void DrawLoadingOverlay(const char* title, const char* status);
 
-public:
+private:
     static EditorLayer* s_Instance;
 public:
-    static CommandHistory& GetCommandHistory();
-    static CommandHistory& History()
+    static EditorLayer& Get() { return *s_Instance; }
+
+    CommandHistory& GetCommandHistory();
+    CommandHistory& History()
     {
-        return GetCommandHistory();
+        return m_CommandHistory;
     }
     EditorPanels& GetPanels()
     {
@@ -108,8 +104,8 @@ public:
 
     static void ReparentEntity(Entity child, Entity parent);
 
-    const ImVec2& GetViewportSize() const { return m_ViewportSize; }
-    void SetViewportSize(const ImVec2& size) { m_ViewportSize = size; }
+    ImVec2 GetViewportSize() const { return m_ViewportSize; }
+    void OnViewportResized(const ImVec2& size) { m_ViewportSize = size; }
     void SetLastScenePath(const std::string& path)
     {
         m_Config.LastScenePath = path;
@@ -119,11 +115,11 @@ public:
     void LoadConfig();
     // Saves the editor config to disk.
     void SaveConfig();
-    const EditorLayerConfig& GetConfig() const
+    const EditorConfig& GetConfig() const
     {
         return m_Config;
     }
-    EditorLayerConfig& GetConfig()
+    EditorConfig& GetConfig()
     {
         return m_Config;
     }
@@ -132,15 +128,17 @@ public:
     std::shared_ptr<Scene> GetActiveScene() const;
 
 private:
-    EditorLayerConfig m_Config;
+    EditorConfig m_Config;
 
 private:
     std::unique_ptr<EditorLayout> m_Layout;
     std::unique_ptr<EditorPanels> m_Panels;
     std::unique_ptr<EditorProjectManager> m_ProjectManager;
     std::unique_ptr<EditorSceneManager> m_SceneManager;
+    std::unique_ptr<ProjectSelectorUI> m_ProjectSelectorUI;
 
     CommandHistory m_CommandHistory;
+    std::string m_PendingSceneTransitionPath;
     ImVec2 m_ViewportSize = {1280, 720};
 };
 } // namespace CHEngine

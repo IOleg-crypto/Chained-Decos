@@ -1,6 +1,7 @@
 #include "engine/core/profiler.h"
 #include "physics.h"
-#include "engine/core/assets/asset_manager.h"
+#include "engine/assets/asset_manager.h"
+#include "engine/core/service_locator.h"
 #include "engine/core/log.h"
 #include "engine/graphics/assets/model_asset.h"
 #include "engine/physics/bvh/bvh_cache.h"
@@ -10,6 +11,7 @@
 #include "collision_core.h"
 #include "raycast_query.h"
 #include "dynamics.h"
+#include "engine/scene/components/component_utils.h"
 #include <utility>
 #include <vector>
 
@@ -188,7 +190,8 @@ void Physics::UpdateColliders(Scene* scene)
         {
             if (!registry.all_of<ModelComponent>(entity)) continue;
             auto& model = registry.get<ModelComponent>(entity);
-            auto asset = AssetManager::Get().Get<ModelAsset>(model.ModelPath);
+                auto handle = ServiceLocator::Get<AssetManager>().ResolveToHandle(model.ModelPath, ModelAsset::GetStaticType());
+                auto asset = ServiceLocator::Get<AssetManager>().Get<ModelAsset>(handle);
 
             if (asset && asset->GetState() == AssetState::Ready)
             {
@@ -201,7 +204,8 @@ void Physics::UpdateColliders(Scene* scene)
         {
             if (!registry.all_of<ModelComponent>(entity)) continue;
             auto& model = registry.get<ModelComponent>(entity);
-            auto asset = AssetManager::Get().Get<ModelAsset>(model.ModelPath);
+                auto handle = ServiceLocator::Get<AssetManager>().ResolveToHandle(model.ModelPath, ModelAsset::GetStaticType());
+                auto asset = ServiceLocator::Get<AssetManager>().Get<ModelAsset>(handle);
 
             if (asset && asset->GetState() == AssetState::Ready)
             {
@@ -218,11 +222,15 @@ void Physics::UpdateColliders(Scene* scene)
             
             if (!model.ModelPath.empty())
             {
-                auto asset = AssetManager::Get().Get<ModelAsset>(model.ModelPath);
+                    auto handle = ServiceLocator::Get<AssetManager>().ResolveToHandle(model.ModelPath, ModelAsset::GetStaticType());
+                auto asset = ServiceLocator::Get<AssetManager>().Get<ModelAsset>(handle);
                 if (asset && asset->GetState() == AssetState::Ready)
                 {
                     collider.ModelHandle = asset->GetID();
                     collider.ModelPath = model.ModelPath;
+                    
+                    // Pre-warm the BVH cache in editor mode so it's ready for Play Mode
+                    Physics::GetBVH(model.ModelPath);
                 }
             }
         }
@@ -244,6 +252,26 @@ void Physics::ResolveSimulation(Scene* scene, Timestep deltaTime)
     if (!rbEntities.empty())
     {
         Dynamics::Update(registry, rbEntities, deltaTime);
+        
+        // CRITICAL: Update WorldTransform for dynamic entities after movement so that
+        // CollisionCore::GenerateContacts uses up-to-date broadphase AABBs.
+        for (auto entity : rbEntities)
+        {
+            auto& tc = registry.get<TransformComponent>(entity);
+            auto* hc = registry.try_get<HierarchyComponent>(entity);
+            
+            if (!hc || hc->Parent == entt::null || !registry.valid(hc->Parent) || !registry.all_of<TransformComponent>(hc->Parent))
+            {
+                 tc.WorldTransform = ComponentUtils::GetTransform(tc);
+            }
+            else
+            {
+                 auto& parentTC = registry.get<TransformComponent>(hc->Parent);
+                 tc.WorldTransform = parentTC.WorldTransform * ComponentUtils::GetTransform(tc);
+            }
+            tc.InverseWorldTransform = glm::inverse(tc.WorldTransform);
+        }
+
         CollisionCore::ResolveCollisions(registry, rbEntities);
     }
 }

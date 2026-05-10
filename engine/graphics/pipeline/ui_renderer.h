@@ -2,6 +2,7 @@
 #define CH_UI_RENDERER_H
 
 #include "ui_font_registry.h"
+#include "engine/core/engine_service.h"
 #include "engine/scene/entity.h"
 #include "engine/scene/components.h"
 #include "imgui.h"
@@ -20,23 +21,18 @@ struct UIRect
 };
 
 // Singleton renderer for in-world UI canvases and project fonts.
-class UIRenderer
+class UIRenderer : public EngineService
 {
 public:
-    UIRenderer();
-    ~UIRenderer();
-
-    static bool IsInitialized();
-    static UIRenderer& Get();
-
-    void Initialize();
-    void Shutdown();
+    UIRenderer() =  default;
+    virtual ~UIRenderer() override = default;
 
     // Draws a UI canvas for the given scene.
     void DrawCanvas(Scene* scene, const ImVec2& referencePosition, const ImVec2& referenceSize, bool editMode = false);
+
     // Resets per-frame button press flags for all ButtonControl/ImageButtonControl components.
-    // Must be called once per frame before scripts run to prevent stale PressedThisFrame values.
     static void ResetButtonStates(Scene* scene);
+
     // Loads fonts required by the current project/UI theme.
     void LoadProjectFonts();
 
@@ -45,6 +41,10 @@ public:
 
     UIFontRegistry&       GetFontRegistry()       { return m_FontRegistry; }
     const UIFontRegistry& GetFontRegistry() const  { return m_FontRegistry; }
+
+protected:
+    virtual void OnInit() override;
+    virtual void OnShutdown() override;
 
 private:
     void   UpdateStyleAnimation(UIStyle& style, bool isHovered, bool isDown, float dt);

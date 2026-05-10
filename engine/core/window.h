@@ -1,35 +1,29 @@
 #ifndef CH_WINDOW_H
 #define CH_WINDOW_H
 
+#include "engine/core/events.h"
+#include <GLFW/glfw3.h>
 #include <memory>
 #include <string>
-#include <GLFW/glfw3.h>
 
 namespace CHEngine
 {
 // Window creation parameters and UI/runtime integration flags.
 struct WindowProperties
 {
-    std::string Title;
+    std::string Title = "Chained Engine";
     int Width = 1280;
     int Height = 720;
     bool VSync = true;
     bool Resizable = true;
     bool Fullscreen = false;
-    int TargetFramesPerSecond = 60;
+    int TargetFramesPerSecond = 60; // 60hz is default for all monitors
     std::string IconPath = "";
 
     // UI / Docking
     bool EnableViewports = true;
     bool EnableDocking = true;
     std::string ImGuiConfigurationPath = "imgui.ini";
-
-    WindowProperties(const std::string& title = "Chained Engine", int width = 1280, int height = 720)
-        : Title(title),
-          Width(width),
-          Height(height)
-    {
-    }
 };
 
 // Abstract native window interface used by the application and renderer.
@@ -60,6 +54,8 @@ public:
     virtual void SetWindowIcon(const std::string& path) = 0;
 
     virtual void* GetNativeWindow() const = 0;
+
+    virtual void SetEventCallback(const EventCallbackFn& callback) = 0;
 
     // Creates the platform-specific window implementation.
     static std::unique_ptr<Window> Create(const WindowProperties& properties = WindowProperties());

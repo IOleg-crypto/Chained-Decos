@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <vector>
 
+#include "script_glue.h"
 #include "build_preset_names.h"
 
 namespace CHEngine
@@ -331,6 +332,10 @@ bool ScriptHost::LoadAssembliesTransactional(const std::filesystem::path& appAss
 
     m_CoreAssembly = loadedCore;
     m_AppAssembly = loadedApp;
+
+    // Register internal calls (native function pointers) for both assemblies
+    ScriptGlue::RegisterInternalCalls(*m_CoreAssembly);
+    ScriptGlue::RegisterInternalCalls(*m_AppAssembly);
 
     CH_CORE_INFO("ScriptEngine: Loaded core assembly '{}'.", corePath.string());
     CH_CORE_INFO("ScriptEngine: Loaded app assembly '{}'.", appAssemblyPath.string());

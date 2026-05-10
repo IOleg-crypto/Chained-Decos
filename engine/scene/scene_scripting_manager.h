@@ -3,15 +3,16 @@
 
 #include "engine/core/events.h"
 #include "engine/core/timestep.h"
-#include "engine/scene/scene.h"
 
 namespace CHEngine
 {
+class Scene;
+class ScriptEngine;
 
 class SceneScriptingManager
 {
 public:
-    SceneScriptingManager(Scene* scene);
+    SceneScriptingManager(Scene* scene, ScriptEngine* scriptEngine);
     ~SceneScriptingManager();
 
     void OnRuntimeStart();
@@ -19,6 +20,8 @@ public:
     void OnUpdate(Timestep deltaTime);
     void OnEvent(Event& e);
     void OnRenderUI();
+    
+    ScriptEngine* GetScriptEngine() const { return m_ScriptEngine; }
 
     bool IsReloadInProgress() const { return m_ReloadInProgress; }
     void SetReloadInProgress(bool inProgress) { m_ReloadInProgress = inProgress; }
@@ -29,6 +32,7 @@ public:
 
 private:
     Scene* m_Scene = nullptr;
+    ScriptEngine* m_ScriptEngine = nullptr;
     bool m_ReloadInProgress = false;
 };
 

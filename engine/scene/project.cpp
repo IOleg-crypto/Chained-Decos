@@ -1,5 +1,6 @@
 #include "project.h"
-#include "engine/core/assets/asset_manager.h"
+#include "engine/assets/asset_manager.h"
+#include "engine/core/service_locator.h"
 #include "engine/graphics/assets/environment.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "imgui.h"
@@ -18,6 +19,35 @@ std::shared_ptr<Project> Project::New()
     return project;
 }
 
+void Project::DiscoverEngineRoot(const std::filesystem::path& startPath)
+{
+    if (!s_EngineRoot.empty() && std::filesystem::exists(s_EngineRoot / "resources"))
+    {
+        return;
+    }
+
+    // 1. Try development root macro
+#ifdef PROJECT_ROOT_DIR
+    if (std::filesystem::exists(std::filesystem::path(PROJECT_ROOT_DIR) / "resources"))
+    {
+        SetEngineRoot(PROJECT_ROOT_DIR);
+        return;
+    }
+#endif
+
+    // 2. Try traversing up from startPath
+    std::filesystem::path current = startPath.empty() ? std::filesystem::current_path() : startPath;
+    while (current.has_parent_path())
+    {
+        if (std::filesystem::exists(current / "resources"))
+        {
+            SetEngineRoot(current);
+            return;
+        }
+        current = current.parent_path();
+    }
+}
+
 std::shared_ptr<Project> Project::Load(const std::filesystem::path& path)
 {
     std::shared_ptr<Project> project = std::make_shared<Project>();
@@ -25,32 +55,8 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path& path)
     project->m_Config.ProjectDirectory = path.parent_path();
     // Do not set s_ActiveProject here, will be set in SetActive called later in the function
 
-    // Discover Engine Root if not set or invalid
-    if (s_EngineRoot.empty() || !std::filesystem::exists(s_EngineRoot / "resources"))
-    {
-        // 1. Try development root macro
-#ifdef PROJECT_ROOT_DIR
-        if (std::filesystem::exists(std::filesystem::path(PROJECT_ROOT_DIR) / "resources"))
-        {
-            s_EngineRoot = PROJECT_ROOT_DIR;
-        }
-#endif
-
-        // 2. Try traversing up from project file
-        if (s_EngineRoot.empty())
-        {
-            std::filesystem::path current = path.parent_path();
-            while (current.has_parent_path())
-            {
-                if (std::filesystem::exists(current / "resources"))
-                {
-                    s_EngineRoot = current;
-                    break;
-                }
-                current = current.parent_path();
-            }
-        }
-    }
+    // Discover Engine Root from project location if not already set
+    DiscoverEngineRoot(path.parent_path());
 
     ProjectSerializer serializer(project);
     if (serializer.Deserialize(path))
@@ -58,25 +64,25 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path& path)
         SetActive(project);
 
         // Load engine shaders now that paths are set correctly
-        if (Renderer::IsInitialized())
+        if (ServiceLocator::Has<Renderer>())
         {
-            Renderer::Get().LoadEngineResources();
+            ServiceLocator::Get<Renderer>().LoadEngineResources();
         }
 
         // Load environment if specified
         if (!project->m_Config.EnvironmentPath.empty())
         {
-            project->m_Environment =
-                AssetManager::Get().Get<EnvironmentAsset>(project->m_Config.EnvironmentPath.string());
+            auto handle = ServiceLocator::Get<AssetManager>().ResolveToHandle(project->m_Config.EnvironmentPath.string(), EnvironmentAsset::GetStaticType());
+            project->m_Environment = ServiceLocator::Get<AssetManager>().Get<EnvironmentAsset>(handle);
         }
 
         // --- Automated Shader Discovery ---
-        if (Renderer::IsInitialized())
+        if (ServiceLocator::Has<Renderer>())
         {
             auto shaderDir = project->m_Config.ProjectDirectory / project->m_Config.AssetDirectory / "shaders";
             if (std::filesystem::exists(shaderDir))
             {
-                auto& lib = Renderer::Get().GetShaderLibrary();
+                auto& lib = ServiceLocator::Get<Renderer>().GetShaderLibrary();
                 for (const auto& entry : std::filesystem::recursive_directory_iterator(shaderDir))
                 {
                     if (entry.path().extension() == ".chshader")
@@ -104,23 +110,33 @@ std::shared_ptr<Project> Project::Load(const std::filesystem::path& path)
 void Project::SetActive(std::shared_ptr<Project> project)
 {
     s_ActiveProject = project;
-    auto& assetManager = AssetManager::Get();
-    if (project)
+    if (ServiceLocator::Has<AssetManager>())
     {
-        assetManager.SetAssetDirectory(project->GetAssetDirectory());
-        assetManager.SetProjectDirectory(project->GetProjectDirectory());
-    }
-    else
-    {
-        assetManager.SetAssetDirectory("");
-        assetManager.SetProjectDirectory("");
+        auto& assetManager = ServiceLocator::Get<AssetManager>();
+
+        // Always sync engine root
+        assetManager.GetResolver()->SetEngineRoot(s_EngineRoot);
+
+        if (project)
+        {
+            assetManager.GetResolver()->SetAssetDirectory(project->GetAssetDirectory());
+            assetManager.GetResolver()->SetProjectDirectory(project->GetProjectDirectory());
+        }
+        else
+        {
+            assetManager.GetResolver()->SetAssetDirectory("");
+            assetManager.GetResolver()->SetProjectDirectory("");
+        }
     }
 }
 
 void Project::SetEngineRoot(const std::filesystem::path& path)
 {
     s_EngineRoot = path;
-    AssetManager::Get().SetEngineRoot(path);
+    if (ServiceLocator::Has<AssetManager>())
+    {
+        ServiceLocator::Get<AssetManager>().GetResolver()->SetEngineRoot(path);
+    }
 }
 
 std::filesystem::path Project::Discover(const std::filesystem::path& startPath, const std::string& hintName)

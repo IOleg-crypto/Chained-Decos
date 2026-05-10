@@ -8,6 +8,7 @@
 #include "engine/scene/scene_events.h"
 #include "engine/platform/utils/dialogs.h"
 #include "scripting/scriptengine.h"
+#include "engine/core/service_locator.h"
 #include <algorithm>
 
 namespace CHEngine
@@ -34,8 +35,8 @@ void EditorProjectManager::NewProject(const std::string& name, const std::string
     serializer.Serialize((std::filesystem::path(path) / (name + ".chproject")).string());
 
     // Load engine shaders and resources for the dynamic newly created project
-    Renderer::Get().LoadEngineResources();
-    UIRenderer::Get().LoadProjectFonts();
+    ServiceLocator::Get<Renderer>().LoadEngineResources();
+    ServiceLocator::Get<UIRenderer>().LoadProjectFonts();
 }
 
 void EditorProjectManager::OpenProject()
@@ -55,8 +56,8 @@ void EditorProjectManager::OpenProject(const std::filesystem::path& path)
         m_LastProjectPath = path.string();
 
         // Load engine shaders and resources
-        Renderer::Get().LoadEngineResources();
-        UIRenderer::Get().LoadProjectFonts();
+        ServiceLocator::Get<Renderer>().LoadEngineResources();
+        ServiceLocator::Get<UIRenderer>().LoadProjectFonts();
 
         ProjectOpenedEvent e(path.string());
         Application::Get().OnEvent(e);
@@ -103,7 +104,7 @@ bool EditorProjectManager::OnProjectOpened(ProjectOpenedEvent& e)
 
             if (std::filesystem::exists(dllPath))
             {
-                ScriptEngine::Get().LoadAppAssembly(dllPath.string());
+                ServiceLocator::Get<ScriptEngine>().LoadAppAssembly(dllPath.string());
                 CH_CORE_INFO("EditorProjectManager: Auto-loaded script assembly '{}'.", dllPath.string());
             }
             else
@@ -128,7 +129,7 @@ bool EditorProjectManager::OnProjectOpened(ProjectOpenedEvent& e)
             if (!project->GetConfig().StartScene.empty())
             {
                 sceneToLoad = project->GetConfig().ProjectDirectory / project->GetConfig().AssetDirectory /
-                              project->GetConfig().StartScene;
+                               project->GetConfig().StartScene;
             }
         }
 

@@ -2,7 +2,8 @@
 #define CH_THREAD_POOL_H
 
 #include <condition_variable>
-#include "engine/core/ch_assert.h"
+#include "engine/core/engine_service.h"
+#include "engine/core/service_locator.h"
 #include <functional>
 #include <future>
 #include <mutex>
@@ -12,21 +13,20 @@
 
 namespace CHEngine
 {
-// Modern C++20 thread pool for parallel task execution.
-class ThreadPool
+// Thread pool managing a fixed set of worker threads for parallel task execution.
+class ThreadPool : public EngineService
 {
 public:
-    // Accesses the global thread pool instance.
+    ThreadPool() = default;
+    ~ThreadPool() override = default;
+
+    // Returns the global ThreadPool instance via ServiceLocator.
     static ThreadPool& Get()
     {
-        CH_CORE_ASSERT(s_Instance, "ThreadPool not initialized!");
-        return *s_Instance;
+        return ServiceLocator::Get<ThreadPool>();
     }
 
-    static void Init();
-    static void Shutdown();
-
-    // Deleted constructors for singleton
+    // Deleted copy/move to maintain singleton semantics
     ThreadPool(const ThreadPool&) = delete;
     ThreadPool& operator=(const ThreadPool&) = delete;
 
@@ -61,14 +61,16 @@ public:
         m_Condition.notify_one();
     }
 
-private:
-    ThreadPool();
-    ~ThreadPool();
+protected:
+    void OnInit() override;
+    void OnShutdown() override;
 
+private:
+    void StartWorkers();
+    void StopWorkers();
     void WorkerThread(std::stop_token stopToken);
 
 private:
-    static ThreadPool* s_Instance;
     std::queue<std::function<void()>> m_Tasks;
     std::mutex m_QueueMutex;
     std::condition_variable_any m_Condition;

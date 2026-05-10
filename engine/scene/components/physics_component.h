@@ -72,7 +72,8 @@ struct ColliderComponent
             }
             else if (Type == ColliderType::Mesh)
             {
-                props.Handle("ModelHandle", ModelHandle);
+                if (props.GetMode() != CHEngine::ReflectionMode::UI)
+                    props.Handle("ModelHandle", ModelHandle);
                 if (props.File("ModelPath", ModelPath, "obj,gltf,glb"))
                 {
                     ModelHandle = AssetHandle(0);
@@ -95,28 +96,6 @@ struct RigidBodyComponent
 
     // Runtime handle
     PhysicsBodyHandle Handle = kInvalidPhysicsBody;
-
-    RigidBodyComponent() = default;
-    RigidBodyComponent(const RigidBodyComponent& other)
-        : Velocity(other.Velocity), UseGravity(other.UseGravity), 
-          IsGrounded(other.IsGrounded), IsKinematic(other.IsKinematic), 
-          Mass(other.Mass)
-    {
-        Handle = kInvalidPhysicsBody;
-    }
-    RigidBodyComponent& operator=(const RigidBodyComponent& other)
-    {
-        if (this != &other)
-        {
-            Velocity = other.Velocity;
-            UseGravity = other.UseGravity;
-            IsGrounded = other.IsGrounded;
-            IsKinematic = other.IsKinematic;
-            Mass = other.Mass;
-            Handle = kInvalidPhysicsBody;
-        }
-        return *this;
-    }
 
     CH_REFLECT_BEGIN(RigidBodyComponent)
         props.Header("Dynamics");

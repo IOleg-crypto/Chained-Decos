@@ -14,6 +14,8 @@ add_executable(EngineTests
     scene_serialization_tests.cpp
     material_tests.cpp
     audio_tests.cpp
+    bvh_tests.cpp
+    asset_type_safety_tests.cpp
     test_environment.cpp
 )
 
@@ -23,10 +25,6 @@ target_include_directories(EngineTests PRIVATE
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/editor
 )
-
-# Use centralized engine resources
-chained_add_engine_resources_copy()
-add_dependencies(EngineTests EngineResources)
 
 include(GoogleTest)
 gtest_discover_tests(EngineTests 

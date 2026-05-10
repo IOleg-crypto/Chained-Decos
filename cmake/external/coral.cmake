@@ -1,0 +1,17 @@
+# Coral dependency (Scripting host)
+if(EXISTS "${CMAKE_SOURCE_DIR}/include/coral/cmake/CMakeLists.txt")
+    add_subdirectory("${CMAKE_SOURCE_DIR}/include/coral/cmake" "${CMAKE_BINARY_DIR}/vendor/coral" EXCLUDE_FROM_ALL)
+    add_library(ChainedEngine::External::Coral ALIAS Coral.Native)
+    
+    # MinGW fixes for Coral
+    if(MINGW)
+        set(CORAL_FIX_DIR "${CMAKE_BINARY_DIR}/vendor/coral_fixes")
+        if(NOT EXISTS "${CORAL_FIX_DIR}")
+            file(MAKE_DIRECTORY "${CORAL_FIX_DIR}")
+        endif()
+        file(WRITE "${CORAL_FIX_DIR}/ShlObj_core.h" "#pragma once\n#include <shlobj.h>\n")
+        target_include_directories(Coral.Native PRIVATE "${CORAL_FIX_DIR}")
+    endif()
+else()
+    message(FATAL_ERROR "Coral submodule missing at ${CMAKE_SOURCE_DIR}/include/coral/cmake")
+endif()

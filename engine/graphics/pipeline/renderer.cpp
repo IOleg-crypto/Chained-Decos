@@ -4,8 +4,8 @@
 #include "engine/graphics/pipeline/renderer_types.h"
 #include "engine/graphics/pipeline/shader_library.h"
 
+#include "engine/assets/asset_manager.h"
 #include "engine/core/application.h"
-#include "engine/core/assets/asset_manager.h"
 #include "engine/core/log.h"
 #include "engine/core/service_locator.h"
 
@@ -30,56 +30,18 @@
 namespace CHEngine
 {
 
-Renderer& Renderer::Get()
+void Renderer::OnInit()
 {
-    return ServiceLocator::Get<Renderer>();
-}
-
-bool Renderer::IsInitialized()
-{
-    return ServiceLocator::Has<Renderer>();
-}
-
-void Renderer::Initialize()
-{
-    if (m_Initialized)
-    {
-        return;
-    }
-
     // Register Graphics loaders
-    auto& assetManager = AssetManager::Get();
+    auto& assetManager = ServiceLocator::Get<AssetManager>();
     assetManager.RegisterLoader(AssetType::Texture, std::make_unique<TextureLoader>());
     assetManager.RegisterLoader(AssetType::Model, std::make_unique<ModelLoader>());
     assetManager.RegisterLoader(AssetType::Shader, std::make_unique<ShaderLoader>());
     assetManager.RegisterLoader(AssetType::Environment, std::make_unique<EnvironmentLoader>());
 
-    InternalInit();
-}
-
-void Renderer::LoadEngineResources()
-{
-    auto& shaders = GetShaderLibrary();
-
-    auto loadShader = [&](const std::string& name, const std::string& path) { shaders.LoadOrGet(name, path); };
-
-    loadShader("Lighting", "engine/resources/shaders/lighting.chshader");
-    loadShader("Unlit", "engine/resources/shaders/unlit.chshader");
-
-    CH_CORE_INFO("[Renderer] LoadEngineResources done. {} shader(s) loaded.", shaders.GetNames().size());
-}
-
-void Renderer::InternalInit()
-{
-    if (m_Initialized)
-    {
-        return;
-    }
-
-    if (Application::Get().GetSpecification().Headless)
+    if (m_Headless)
     {
         CH_CORE_INFO("[Renderer] Headless mode enabled, skipping OpenGL initialization.");
-        m_Initialized = true;
         return;
     }
 
@@ -87,7 +49,6 @@ void Renderer::InternalInit()
 
     // Initialize SSBO for lights using abstraction
     m_Data->Lighting.LightSSBO = StorageBuffer::Create(sizeof(RenderLight) * LightingData::MaxLights);
-
     m_Data->Lighting.LightsDirty = true;
 
     // Initialize Engine static resources
@@ -105,39 +66,54 @@ void Renderer::InternalInit()
         m_Data->FullscreenQuadVAO->SetIndexBuffer(ibo);
     }
 
+    // Initialize UBOs
+    m_Data->CameraUBO = UniformBuffer::Create(sizeof(CameraData), 0);
+
     InitializeResources();
     InitializeSkybox();
 
-    m_Initialized = true;
     LoadEngineResources();
 }
 
-void Renderer::Shutdown()
+void Renderer::OnUpdate(Timestep ts)
 {
-    InternalShutdown();
+    UpdateTime(ts);
 }
 
-void Renderer::InternalShutdown()
+void Renderer::LoadEngineResources()
 {
-    if (!m_Initialized)
-    {
-        return;
-    }
+    auto& shaders = GetShaderLibrary();
 
+    auto loadShader = [&](const std::string& name, const std::string& path) { shaders.LoadOrGet(name, path); };
+
+    loadShader("Lighting", "engine/resources/shaders/lighting.chshader");
+    loadShader("Unlit", "engine/resources/shaders/unlit.chshader");
+
+    CH_CORE_INFO("[Renderer] LoadEngineResources done. {} shader(s) loaded.", shaders.GetNames().size());
+}
+
+void Renderer::OnShutdown()
+{
     CH_CORE_INFO("Shutting down Render System...");
 
-    if (Application::Get().GetSpecification().Headless)
+    if (m_Headless)
     {
-        m_Initialized = false;
         return;
     }
 
     CleanupResources();
     CleanupSkybox();
 
-    m_Data->Lighting.LightSSBO.reset();
+    if (m_Data->Lighting.LightSSBO)
+    {
+        m_Data->Lighting.LightSSBO.reset();
+    }
 
-    m_Initialized = false;
+    // Clear caches
+    m_Data->InstancedVAOCache.clear();
+    m_Data->InstanceBuffer.reset();
+    m_Data->LineVBO.reset();
+    m_Data->LineVAO.reset();
 }
 
 Renderer::Renderer()
@@ -165,43 +141,44 @@ void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
     auto lightingShaderAsset = m_Data->Shaders->Exists("Lighting") ? m_Data->Shaders->Get("Lighting") : nullptr;
     if (lightingShaderAsset && lightingShaderAsset->GetShader())
     {
-        lightingShaderAsset->GetShader()->Bind();
+        auto shader = lightingShaderAsset->GetShader();
+        shader->Bind();
 
         float time = m_Data->Time;
         float diagMode = m_Data->DiagnosticMode;
-        int lightCount = m_Data->LightCount;
-        float ambient = m_Data->Lighting.CurrentLighting.Ambient;
         float exposure = m_Data->Lighting.CurrentLighting.Exposure;
+        float ambient = m_Data->Lighting.CurrentLighting.Ambient;
+        float lightCount = (float)m_Data->LightCount;
         float gamma = m_Data->Lighting.CurrentLighting.Gamma;
 
-        lightingShaderAsset->GetShader()->SetVec3("viewPos", camera.Position);
-        lightingShaderAsset->GetShader()->SetFloat("uTime", time);
-        lightingShaderAsset->GetShader()->SetFloat("uMode", diagMode);
+        shader->SetVec3("viewPos", camera.Position);
+        shader->SetFloat("uTime", time);
+        shader->SetFloat("uMode", diagMode);
 
-        lightingShaderAsset->GetShader()->SetVec3("lightDir", m_Data->Lighting.CurrentLighting.Direction);
+        shader->SetVec3("lightDir", m_Data->Lighting.CurrentLighting.Direction);
 
         glm::vec4 lightColor = {m_Data->Lighting.CurrentLighting.LightColor.r / 255.0f,
                                 m_Data->Lighting.CurrentLighting.LightColor.g / 255.0f,
                                 m_Data->Lighting.CurrentLighting.LightColor.b / 255.0f,
                                 m_Data->Lighting.CurrentLighting.LightColor.a / 255.0f};
-        lightingShaderAsset->GetShader()->SetVec4("lightColor", lightColor);
+        shader->SetVec4("lightColor", lightColor);
 
-        lightingShaderAsset->GetShader()->SetFloat("ambient", ambient);
+        shader->SetFloat("ambient", ambient);
 
         glm::vec4 skyColor = lightColor;
         skyColor.w = ambient * 0.35f;
-        lightingShaderAsset->GetShader()->SetVec4("skyAmbientColor", skyColor);
+        shader->SetVec4("skyAmbientColor", skyColor);
 
-        lightingShaderAsset->GetShader()->SetInt("uLightCount", lightCount);
-        lightingShaderAsset->GetShader()->SetFloat("uExposure", exposure);
-        lightingShaderAsset->GetShader()->SetFloat("uGamma", gamma);
+        shader->SetInt("uLightCount", (int)lightCount);
+        shader->SetFloat("uExposure", exposure);
+        shader->SetFloat("uGamma", gamma);
 
         ApplyFogUniforms(lightingShaderAsset);
         if (m_Data->Lighting.LightSSBO)
         {
             m_Data->Lighting.LightSSBO->BindBase(0);
         }
-        m_Data->CurrentShaderId = lightingShaderAsset->GetShader()->GetRendererID();
+        m_Data->CurrentShaderId = shader->GetRendererID();
     }
 
     // --- Direct glm::mat4 Management (Pure OpenGL style) ---
@@ -209,10 +186,9 @@ void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
     m_Data->CurrentView = glm::lookAt(camera.Position, camera.Target, camera.Up);
 
     // 2. Calculate Projection Transform
-    int width = Application::Get().GetWindow().GetWidth();
-    int height = Application::Get().GetWindow().GetHeight();
+    int width = m_ViewportWidth;
+    int height = m_ViewportHeight;
     float aspect = (height > 0) ? (float)width / (float)height : 1.0f;
-
     if (camera.Projection == 0 /* CAMERA_PERSPECTIVE */)
     {
         m_Data->CurrentProj = glm::perspective(glm::radians(camera.Fovy), aspect, nearClip, farClip);
@@ -223,6 +199,13 @@ void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
         float right = top * aspect;
         m_Data->CurrentProj = glm::ortho(-right, right, -top, top, nearClip, farClip);
     }
+
+    // Upload to UBO
+    CHEngine::CameraData cameraData;
+    cameraData.ViewProjection = m_Data->CurrentProj * m_Data->CurrentView;
+    cameraData.Projection = m_Data->CurrentProj;
+    cameraData.View = m_Data->CurrentView;
+    m_Data->CameraUBO->SetData(&cameraData, sizeof(CHEngine::CameraData));
 }
 
 void Renderer::EndScene()
@@ -260,18 +243,19 @@ void Renderer::DrawMesh(const Mesh& mesh, const Material& material, const glm::m
         return;
     }
 
-    shaderAsset->GetShader()->Bind();
+    auto shader = shaderAsset->GetShader();
+    if (!shader)
+    {
+        return;
+    }
 
-    // Set matrices
-    shaderAsset->GetShader()->SetMatrix("matModel", transform);
-    shaderAsset->GetShader()->SetMatrix("matView", m_Data->CurrentView);
-    shaderAsset->GetShader()->SetMatrix("matProjection", m_Data->CurrentProj);
+    shader->Bind();
+
+    // Set model matrix
+    shader->SetMatrix("matModel", transform);
 
     glm::mat4 matNormal = glm::transpose(glm::inverse(transform));
-    shaderAsset->GetShader()->SetMatrix("matNormal", matNormal);
-
-    glm::mat4 mvp = m_Data->CurrentProj * m_Data->CurrentView * transform;
-    shaderAsset->GetShader()->SetMatrix("mvp", mvp);
+    shader->SetMatrix("matNormal", matNormal);
 
     // Bind VAO and Draw
     if (mesh.VAO)
@@ -312,29 +296,35 @@ void Renderer::DrawMeshInstanced(const Mesh& mesh, const Material& material, con
         return;
     }
 
-    shaderAsset->GetShader()->Bind();
+    auto shader = shaderAsset->GetShader();
+    if (!shader)
+    {
+        return;
+    }
+
+    shader->Bind();
 
     // Set up matrices
     glm::mat4 mvp = m_Data->CurrentProj * m_Data->CurrentView;
-    shaderAsset->GetShader()->SetMatrix("u_ViewProjection", mvp);
-    shaderAsset->GetShader()->SetMatrix("u_Transform", glm::mat4(1.0f));
+    shader->SetMatrix("u_ViewProjection", mvp);
+    shader->SetMatrix("u_Transform", glm::mat4(1.0f));
 
-    // Create instance buffer with all transforms
-    auto instanceVBO = VertexBuffer::Create(transforms.size() * sizeof(glm::mat4));
-    instanceVBO->SetData(transforms.data(), transforms.size() * sizeof(glm::mat4));
+    // 1. Manage/Reuse Instance Buffer
+    uint32_t dataSize = (uint32_t)(transforms.size() * sizeof(glm::mat4));
+    if (!m_Data->InstanceBuffer || m_Data->InstanceBufferCapacity < dataSize)
+    {
+        // Reallocate if needed (starting at 1024 instances or required size)
+        m_Data->InstanceBufferCapacity = std::max(dataSize, (uint32_t)(1024 * sizeof(glm::mat4)));
+        m_Data->InstanceBuffer = VertexBuffer::Create(m_Data->InstanceBufferCapacity);
+        m_Data->InstanceBuffer->SetLayout({{ShaderDataType::Mat4, "a_InstanceTransform", false, true}});
+        
+        // Clear VAO cache because the VBO handle changed
+        m_Data->InstancedVAOCache.clear();
+    }
+    m_Data->InstanceBuffer->SetData(transforms.data(), dataSize);
 
-    // Bind the mesh VAO
-    mesh.VAO->Bind();
-    instanceVBO->Bind();
-
-    // Set up instance vertex attributes for the model matrix (Mat4)
-    instanceVBO->SetLayout(BufferLayout({BufferElement(ShaderDataType::Mat4, "a_InstanceTransform", false, true)}));
-
-    // Cache the instanced VAO per mesh to avoid frame-by-frame creation
-    // For simplicity, we store it in a static map here, but in a real engine it should be in Mesh or a cache
-    static std::unordered_map<VertexArray*, std::shared_ptr<VertexArray>> s_InstancedVAOCache;
-
-    auto& instancedVAO = s_InstancedVAOCache[mesh.VAO.get()];
+    // 2. Get or Create Cached Instanced VAO
+    auto& instancedVAO = m_Data->InstancedVAOCache[mesh.VAO.get()];
     if (!instancedVAO)
     {
         instancedVAO = VertexArray::Create();
@@ -342,41 +332,21 @@ void Renderer::DrawMeshInstanced(const Mesh& mesh, const Material& material, con
         {
             instancedVAO->AddVertexBuffer(vbo);
         }
+        instancedVAO->AddVertexBuffer(m_Data->InstanceBuffer);
         instancedVAO->SetIndexBuffer(mesh.VAO->GetIndexBuffer());
     }
 
-    // We still need to add the NEW instance buffer every time because the transforms change
-    // But we should ideally only AddVertexBuffer ONCE and then just update its DATA.
-    // However, our current API creates a NEW VertexBuffer every time.
-    // Let's optimize: add the buffer if it's not the same one.
-    // For now, let's just make it work correctly without leaking or conflicting.
-
-    // TEMPORARY: Clear previous vertex buffers from the cache if we are going to add a new one
-    // Actually, AddVertexBuffer APPENDS. This is bad for a cache.
-    // Let's just create it every frame for now BUT ENSURE IT'S CLEAN.
-
-    auto tempVAO = VertexArray::Create();
-    for (const auto& vbo : mesh.VAO->GetVertexBuffers())
-    {
-        tempVAO->AddVertexBuffer(vbo);
-    }
-    tempVAO->AddVertexBuffer(instanceVBO);
-    tempVAO->SetIndexBuffer(mesh.VAO->GetIndexBuffer());
-
-    tempVAO->Bind();
-
-    // Draw with instances
+    // 3. Bind and Draw
+    instancedVAO->Bind();
     if (mesh.TriangleCount > 0)
     {
-        RenderCommand::DrawIndexedInstanced(tempVAO, (uint32_t)transforms.size(), mesh.TriangleCount * 3);
+        RenderCommand::DrawIndexedInstanced(instancedVAO, (uint32_t)transforms.size(), mesh.TriangleCount * 3);
     }
     else
     {
         RenderCommand::DrawArraysInstanced(mesh.VertexCount, (uint32_t)transforms.size());
     }
-
-    tempVAO->Unbind();
-    // instanceVBO is smart pointer, will be deleted automatically
+    instancedVAO->Unbind();
 }
 
 void Renderer::DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color)
@@ -395,17 +365,25 @@ void Renderer::DrawLine(const glm::vec3& start, const glm::vec3& end, const glm:
     shader->SetMatrix("u_Transform", glm::mat4(1.0f));
     shader->SetVec4("u_Color", color);
 
-    // Use a small buffer with abstraction
+    // Use a persistent buffer with abstraction
     float vertices[] = {start.x, start.y, start.z, end.x, end.y, end.z};
-    auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
-    vbo->SetLayout({{ShaderDataType::Float3, "vertexPosition"}});
+    
+    if (!m_Data->LineVBO)
+    {
+        m_Data->LineVBO = VertexBuffer::Create(sizeof(vertices));
+        m_Data->LineVBO->SetLayout({{ShaderDataType::Float3, "vertexPosition"}});
+    }
+    m_Data->LineVBO->SetData(vertices, sizeof(vertices));
 
-    auto vao = VertexArray::Create();
-    vao->AddVertexBuffer(vbo);
+    if (!m_Data->LineVAO)
+    {
+        m_Data->LineVAO = VertexArray::Create();
+        m_Data->LineVAO->AddVertexBuffer(m_Data->LineVBO);
+    }
 
-    vao->Bind();
-    RenderCommand::DrawLines(vao, 2);
-    vao->Unbind();
+    m_Data->LineVAO->Bind();
+    RenderCommand::DrawLines(m_Data->LineVAO, 2);
+    m_Data->LineVAO->Unbind();
 }
 
 void Renderer::DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& transform, bool useWireframe)
@@ -423,7 +401,7 @@ void Renderer::DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm:
     glm::mat4 vp = m_Data->CurrentProj * m_Data->CurrentView;
     shader->SetMatrix("u_ViewProj", vp);
     shader->SetMatrix("u_Transform", transform);
-    
+
     // Apply transparency for solid mode
     glm::vec4 finalColor = color;
     if (!useWireframe)
@@ -446,7 +424,7 @@ void Renderer::DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm:
     {
         RenderCommand::SetBlendMode(true);
         RenderCommand::SetBlendFunc(RendererAPI::BlendFactor::SrcAlpha, RendererAPI::BlendFactor::OneMinusSrcAlpha);
-        
+
         // Depth Test is now disabled globally for debug overlays in SceneRenderer::RenderDebug.
         // We do not enable it here.
 
@@ -465,7 +443,7 @@ void Renderer::DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm:
             RenderCommand::DrawLines(mesh.VAO, mesh.VertexCount);
         }
         mesh.VAO->Unbind();
-        
+
         RenderCommand::SetBlendMode(false);
     }
 
@@ -547,7 +525,7 @@ void Renderer::DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm
 }
 
 void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float exposure, float brightness,
-                          float contrast, const Camera3D& camera)
+                          float contrast, const Camera3D& camera, bool flipped)
 {
     if (textureId == 0)
     {
@@ -583,9 +561,8 @@ void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float 
     shaderAsset->GetShader()->SetFloat("u_Exposure", exposure);
     shaderAsset->GetShader()->SetFloat("u_Brightness", brightness);
     shaderAsset->GetShader()->SetFloat("u_Contrast", contrast);
-
     shaderAsset->GetShader()->SetInt("u_IsHDR", isHDR ? 1 : 0);
-    shaderAsset->GetShader()->SetInt("u_VFlipped", skyboxMode == 2 ? 0 : 1);
+    shaderAsset->GetShader()->SetInt("u_VFlipped", flipped ? 1 : 0);
 
     ApplyFogUniforms(shaderAsset);
 
@@ -795,7 +772,8 @@ void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextu
         shader->SetFloat("uExposure", m_Data->Lighting.CurrentLighting.Exposure);
         shader->SetFloat("uGamma", m_Data->Lighting.CurrentLighting.Gamma);
 
-        ApplyFogUniforms(AssetManager::Get().Get<ShaderAsset>(shaderAsset->GetPath()));
+        auto handle = ServiceLocator::Get<AssetManager>().ResolveToHandle(shaderAsset->GetPath(), ShaderAsset::GetStaticType());
+        ApplyFogUniforms(ServiceLocator::Get<AssetManager>().Get<ShaderAsset>(handle));
 
         // 2. Set Custom Uniforms (if any)
         for (const auto& u : uniforms)

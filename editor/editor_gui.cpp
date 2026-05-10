@@ -1,3 +1,4 @@
+#include "engine/core/application.h"
 #include "editor_gui.h"
 #include "editor/editor_layer.h"
 #include "editor/panels/panel.h"
@@ -10,6 +11,7 @@
 #include "scripting/scriptengine.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
+#include "engine/core/service_locator.h"
 #include "engine/platform/utils/dialogs.h"
 #include "engine/scene/scene_picking.h"
 #include "imgui.h"
@@ -151,12 +153,17 @@ void EditorGUI::DrawMenuBar(EditorPanels& panels)
         ImGui::Separator();
         if (ImGui::MenuItem(ICON_FA_ARROWS_ROTATE " Reload Shaders"))
         {
-            Renderer::Get().GetShaderLibrary().ReloadAll();
+            ServiceLocator::Get<Renderer>().GetShaderLibrary().ReloadAll();
         }
         if (ImGui::MenuItem(ICON_FA_FILE_CODE " Reload Scripts", "Ctrl+R"))
         {
-            auto& scriptEngine = ScriptEngine::Get();
-            scriptEngine.RequestAssemblyReload("EditorGUI");
+            auto project = Project::GetActive();
+            if (project)
+            {
+                std::filesystem::path assemblyPath = Project::GetAssetDirectory() / "bin" / (project->GetConfig().Scripting.ModuleName + ".dll");
+                auto& scriptEngine = ServiceLocator::Get<ScriptEngine>();
+                scriptEngine.RequestAssemblyReload(assemblyPath.string(), "EditorGUI");
+            }
         }
         ImGui::EndMenu();
     }
@@ -605,10 +612,4 @@ void EditorGUI::ApplyTheme()
     colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
     colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
 }
-
-Ray EditorGUI::GetMouseRay(const Camera3D& camera, const glm::vec2& mousePosition, const glm::vec2& viewportSize)
-{
-    return ScenePicker::CreateRayFromViewport(camera, mousePosition, viewportSize);
 }
-
-} // namespace CHEngine

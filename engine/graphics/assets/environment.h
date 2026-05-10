@@ -1,7 +1,7 @@
 #ifndef CH_ENVIRONMENT_H
 #define CH_ENVIRONMENT_H
 
-#include "engine/core/assets/asset.h"
+#include "engine/assets/asset.h"
 #include <glm/glm.hpp>
 #include <string>
 
@@ -15,6 +15,7 @@ struct SkyboxSettings
     float Exposure = 1.0f;
     float Brightness = 0.0f;
     float Contrast = 1.0f;
+    bool VFlipped = false;
 };
 
 struct FogSettings
@@ -48,6 +49,10 @@ class EnvironmentAsset : public Asset
 public:
     EnvironmentAsset()
         : Asset(GetStaticType())
+    {
+    }
+    EnvironmentAsset(AssetHandle handle)
+        : Asset(GetStaticType(), handle)
     {
     }
     virtual ~EnvironmentAsset() = default;

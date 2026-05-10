@@ -7,11 +7,12 @@
 
 namespace CHEngine
 {
+    class Shader;
     class TextureUtility
     {
     public:
         // Converts an equirectangular panorama to a cubemap
-        static std::shared_ptr<Texture> GenTextureCubemap(uint32_t shaderId, uint32_t panoramaId, int size, const Mesh& cubeMesh);
+        static std::shared_ptr<Texture> GenTextureCubemap(const std::shared_ptr<Shader>& shader, uint32_t panoramaId, int size, const Mesh& cubeMesh);
     };
 }
 
