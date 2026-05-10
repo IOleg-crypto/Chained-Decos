@@ -140,7 +140,6 @@ bool RenderButton(Entity entity, ButtonData& button, WidgetComponent& wc, const 
     wc.IsDown    = ImGui::IsItemActive();
     if (ImGui::IsItemClicked())
     {
-        CH_CORE_INFO("UI: Button '{}' clicked", button.Label);
         wc.PressedThisFrame = true;
     }
 

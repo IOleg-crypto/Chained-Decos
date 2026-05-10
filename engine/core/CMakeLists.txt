@@ -18,6 +18,8 @@ add_library(engine_core ${SUBMODULE_LIB_TYPE}
         layer.h
         layer_stack.h
         log.h
+        network_service.h
+        network_service.cpp
         profiler.h
         timestep.h
         uuid.h
@@ -52,6 +54,7 @@ PUBLIC
     ChainedEngine::External::Miniaudio
     ChainedEngine::External::Coral
     ChainedEngine::External::NFD
+    ChainedEngine::External::GNS
 )
 
 # We apply optimizations and precompiled headers specific to core

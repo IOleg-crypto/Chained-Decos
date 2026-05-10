@@ -7,6 +7,7 @@ namespace CHEngine {
     {
         RegisterGlueSystem();
         RegisterGlueInput();
+        RegisterGlueNetwork();
         RegisterGlueScene();
         RegisterGlueEntity();
         RegisterGlueCamera();

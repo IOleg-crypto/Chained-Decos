@@ -30,6 +30,7 @@ namespace CHEngine
 // Forward declarations for explicit glue registration (prevents linker stripping)
 void RegisterGlueSystem();
 void RegisterGlueInput();
+void RegisterGlueNetwork();
 void RegisterGlueScene();
 void RegisterGlueEntity();
 void RegisterGlueCamera();

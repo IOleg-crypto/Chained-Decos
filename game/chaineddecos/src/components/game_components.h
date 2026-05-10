@@ -148,6 +148,19 @@ struct SceneTransitionComponent
     CH_REFLECT_END()
 };
 
+struct NetworkIdentity
+{
+    uint64_t NetworkID = 0;
+    bool IsOwned = false;
+
+    NetworkIdentity() = default;
+
+    CH_REFLECT_BEGIN(NetworkIdentity)
+        props.Property("Network ID", NetworkID);
+        props.Property("Is Owned", IsOwned);
+    CH_REFLECT_END()
+};
+
 } // namespace CHEngine
 
 #endif // CH_GAME_COMPONENTS_H

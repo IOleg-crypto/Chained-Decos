@@ -28,6 +28,7 @@ target_link_libraries(engine PUBLIC
     engine_audio
     engine_assets
     engine_core
+    ChainedEngine::External::GNS
 )
 
 target_compile_definitions(engine PRIVATE CH_ENGINE_BUILD)
