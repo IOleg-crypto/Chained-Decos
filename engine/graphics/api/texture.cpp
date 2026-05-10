@@ -1,6 +1,7 @@
 #include "texture.h"
 #include "engine/graphics/api/renderer_api.h"
 #include "engine/graphics/api/opengl/opengl_texture.h"
+#include "engine/core/service_locator.h"
 #include "engine/graphics/texture_system.h"
 
 namespace CHEngine
@@ -28,8 +29,8 @@ std::shared_ptr<Texture> Texture::CreateCubemap(uint32_t size, TextureFormat for
 
 std::shared_ptr<Texture> Texture::CreateFromFile(const std::string& path)
 {
-    auto handle = TextureSystem::Get().LoadTexture(path);
-    return TextureSystem::Get().GetTexture(handle);
+    auto handle = ServiceLocator::Get<TextureSystem>().LoadTexture(path);
+    return ServiceLocator::Get<TextureSystem>().GetTexture(handle);
 }
 
 } // namespace CHEngine

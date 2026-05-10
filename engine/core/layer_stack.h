@@ -21,12 +21,6 @@ public:
     void PushLayer(std::unique_ptr<Layer> layer);
     void PushOverlay(std::unique_ptr<Layer> overlay);
 
-    // Backward-compatible API; takes ownership of raw pointer.
-    void PushLayer(Layer* layer);
-    void PushOverlay(Layer* overlay);
-    void PopLayer(Layer* layer);
-    void PopOverlay(Layer* overlay);
-
     bool HasLayer(const std::string& name) const
     {
         for (const auto& layer : m_Layers)

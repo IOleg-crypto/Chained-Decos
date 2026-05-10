@@ -7,7 +7,9 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <cstring>
 #include "engine/graphics/api/vertex_array.h"
+#include "engine/assets/asset.h"
 
 namespace CHEngine
 {
@@ -66,17 +68,17 @@ namespace CHEngine
         float Metalness = 0.0f;
         float Roughness = 0.5f;
 
+        AssetHandle AlbedoHandle = AssetHandle(0);
+        AssetHandle NormalHandle = AssetHandle(0);
+        AssetHandle MetallicRoughnessHandle = AssetHandle(0);
+        AssetHandle EmissiveHandle = AssetHandle(0);
+        AssetHandle OcclusionHandle = AssetHandle(0);
+ 
         uint32_t AlbedoMap = 0;
         uint32_t NormalMap = 0;
         uint32_t MetallicRoughnessMap = 0;
         uint32_t EmissiveMap = 0;
         uint32_t OcclusionMap = 0;
-
-        std::string AlbedoPath;
-        std::string NormalPath;
-        std::string MetallicRoughnessPath;
-        std::string EmissivePath;
-        std::string OcclusionPath;
 
         uint32_t ShaderID = 0;
         bool Transparent = false;

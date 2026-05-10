@@ -18,95 +18,11 @@ public abstract class Script
     /// <summary>True when the entity has the component.</summary>
     public bool HasComponent<T>() where T : Component, new() => Entity.HasComponent<T>();
 
-#pragma warning disable 0649
-    /// <summary>Native entry point for lifecycle pointers.</summary>
-    internal static unsafe delegate*<ulong, IntPtr, IntPtr, IntPtr, IntPtr, IntPtr, IntPtr, IntPtr, void> RegisterLifecyclePointers;
-#pragma warning restore 0649
-
-    // Explicit delegates for unmanaged function pointers (Marshal does not support generic Action<T>)
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate void OnCreateDelegate();
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate void OnStartDelegate();
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate void OnUpdateDelegate(float deltaTime);
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate void OnDestroyDelegate();
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate void OnGUIDelegate();
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate void OnCollisionEnterDelegate(ulong otherID);
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate void OnEventDelegate(int eventType);
-
-    // Keep delegates alive to prevent GC
-    private OnCreateDelegate? _onCreate;
-    private OnStartDelegate? _onStart;
-    private OnUpdateDelegate? _onUpdate;
-    private OnDestroyDelegate? _onDestroy;
-    private OnGUIDelegate?    _onGUI;
-    private OnCollisionEnterDelegate? _onCollisionEnter;
-    private OnEventDelegate? _onEvent;
-
-    /// <summary>Cached lifecycle methods for a script type.</summary>
-    internal class ScriptMethods
-    {
-        public System.Reflection.MethodInfo OnCreate;
-        public System.Reflection.MethodInfo OnStart;
-        public System.Reflection.MethodInfo OnUpdate;
-        public System.Reflection.MethodInfo OnDestroy;
-        public System.Reflection.MethodInfo OnGUI;
-        public System.Reflection.MethodInfo OnCollisionEnter;
-        public System.Reflection.MethodInfo OnEvent;
-    }
-
-    private static readonly System.Collections.Generic.Dictionary<Type, ScriptMethods> s_MethodCache = new();
-
-    /// <summary>Caches lifecycle delegates and passes them to native code.</summary>
+    /// <summary>Instantiates the native C++ entity handle.</summary>
     internal void __Init(ulong entityID)
     {
         Entity = new Entity(entityID);
-        
-        var scriptType = this.GetType();
-        
-        if (!s_MethodCache.TryGetValue(scriptType, out var scriptMethods))
-        {
-            scriptMethods = new ScriptMethods
-            {
-                OnCreate = scriptType.GetMethod("OnCreate", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)!,
-                OnStart = scriptType.GetMethod("OnStart", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)!,
-                OnUpdate = scriptType.GetMethod("OnUpdate", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)!,
-                OnDestroy = scriptType.GetMethod("OnDestroy", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)!,
-                OnGUI = scriptType.GetMethod("OnGUI", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)!,
-                OnCollisionEnter = scriptType.GetMethod("OnCollisionEnter", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)!,
-                OnEvent = scriptType.GetMethod("OnEvent", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)!
-            };
-            s_MethodCache[scriptType] = scriptMethods;
-        }
-
-        _onCreate  = (OnCreateDelegate)Delegate.CreateDelegate(typeof(OnCreateDelegate), this, scriptMethods.OnCreate);
-        _onStart   = (OnStartDelegate)Delegate.CreateDelegate(typeof(OnStartDelegate), this, scriptMethods.OnStart);
-        _onUpdate  = (OnUpdateDelegate)Delegate.CreateDelegate(typeof(OnUpdateDelegate), this, scriptMethods.OnUpdate);
-        _onDestroy = (OnDestroyDelegate)Delegate.CreateDelegate(typeof(OnDestroyDelegate), this, scriptMethods.OnDestroy);
-        _onGUI     = (OnGUIDelegate)Delegate.CreateDelegate(typeof(OnGUIDelegate), this, scriptMethods.OnGUI);
-        _onCollisionEnter = (OnCollisionEnterDelegate)Delegate.CreateDelegate(typeof(OnCollisionEnterDelegate), this, scriptMethods.OnCollisionEnter);
-        _onEvent = (scriptMethods.OnEvent.DeclaringType != typeof(Script)) 
-                   ? (OnEventDelegate)Delegate.CreateDelegate(typeof(OnEventDelegate), this, scriptMethods.OnEvent) 
-                   : null;
-
-        Log.Info($"[C# ScriptBase] __Init cached execution for Entity ID: {entityID}, Type: {scriptType.Name}");
-
-        unsafe
-        {
-            RegisterLifecyclePointers(entityID, 
-                Marshal.GetFunctionPointerForDelegate(_onCreate),
-                Marshal.GetFunctionPointerForDelegate(_onStart),
-                Marshal.GetFunctionPointerForDelegate(_onUpdate),
-                Marshal.GetFunctionPointerForDelegate(_onDestroy),
-                Marshal.GetFunctionPointerForDelegate(_onGUI),
-                Marshal.GetFunctionPointerForDelegate(_onCollisionEnter),
-                _onEvent != null ? Marshal.GetFunctionPointerForDelegate(_onEvent) : IntPtr.Zero);
-        }
+        Log.Info($"[C# ScriptBase] Initialized Entity ID: {entityID} for {GetType().Name}");
     }
 
     /// <summary>Called once after the script is instantiated and Entity is set.</summary>

@@ -26,6 +26,8 @@ namespace CHEngine
         void OnUpdate(Timestep ts);
         void OnUpdateEditor(Timestep ts);
 
+        void InitObservers();
+
     private:
         Scene* m_Scene;
         std::vector<std::unique_ptr<ISceneSystem>> m_Systems;

@@ -30,6 +30,7 @@ namespace CHEngine
         void ProcessMaterials();
         void DecodeEmbeddedTextures();
         void ProcessAnimations();
+        void MergeMeshesByMaterial();
 
     private:
         std::filesystem::path m_Path;

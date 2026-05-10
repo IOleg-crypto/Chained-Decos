@@ -2,6 +2,7 @@
 #define CH_CONTROL_COMPONENT_H
 
 #include "engine/core/reflection.h"
+#include <variant>
 
 namespace CHEngine
 {
@@ -119,32 +120,6 @@ struct RectTransform
     float Rotation = 0.0f;
     glm::vec2 Scale = {1.0f, 1.0f};
 
-    Rectangle CalculateRect(glm::vec2 viewportSize, glm::vec2 viewportOffset = {0.0f, 0.0f}) const
-    {
-        glm::vec2 clAnchMin = glm::clamp(AnchorMin, 0.0f, 1.0f);
-        glm::vec2 clAnchMax = glm::clamp(AnchorMax, 0.0f, 1.0f);
-
-        glm::vec2 anchorMinPos = {viewportSize.x * clAnchMin.x, viewportSize.y * clAnchMin.y};
-        glm::vec2 anchorMaxPos = {viewportSize.x * clAnchMax.x, viewportSize.y * clAnchMax.y};
-
-        glm::vec2 pMin = {anchorMinPos.x + OffsetMin.x, anchorMinPos.y + OffsetMin.y};
-        glm::vec2 pMax = {anchorMaxPos.x + OffsetMax.x, anchorMaxPos.y + OffsetMax.y};
-
-        return Rectangle{viewportOffset.x + pMin.x, viewportOffset.y + pMin.y, pMax.x - pMin.x, pMax.y - pMin.y};
-    }
-
-    glm::vec2 GetCenter(glm::vec2 viewportSize) const
-    {
-        Rectangle rect = CalculateRect(viewportSize);
-        return {rect.x + rect.width * 0.5f, rect.y + rect.height * 0.5f};
-    }
-
-    glm::vec2 GetSize(glm::vec2 viewportSize) const
-    {
-        Rectangle rect = CalculateRect(viewportSize);
-        return {rect.width, rect.height};
-    }
-
     CH_REFLECT_BEGIN(RectTransform)
         bool changed = false;
         bool isFill = (AnchorMin.x == 0.0f && AnchorMax.x == 1.0f && AnchorMin.y == 0.0f && AnchorMax.y == 1.0f);
@@ -216,100 +191,41 @@ struct ControlComponent
     CH_REFLECT_END()
 };
 
-struct ButtonControl
+struct ButtonData
 {
     std::string Label = "Button";
-    TextStyle Text;
-    UIStyle Style;
     bool IsInteractable = true;
-    bool PressedThisFrame = false;
-    bool IsHovered = false;
-    bool IsDown = false;
     bool AutoSize = false;
-
-    ButtonControl() = default;
-    ButtonControl(const std::string& label) : Label(label) {}
-
-    CH_REFLECT_BEGIN(ButtonControl)
-        props.Property("Label", Label);
-        props.Nested("Text Style", Text);
-        props.Nested("UI Style", Style);
-        props.Property("Interactable", IsInteractable);
-        props.Property("Auto Size", AutoSize);
-    CH_REFLECT_END()
 };
 
-struct PanelControl
+struct PanelData
 {
-    UIStyle Style;
     AssetHandle TextureHandle = 0;
     std::string TexturePath = "";
     bool FullScreen = false;
-
-    bool IsHovered = false;
-    bool IsDown = false;
-
-    CH_REFLECT_BEGIN(PanelControl)
-        props.Nested("UI Style", Style);
-        props.Handle("Texture Handle", TextureHandle);
-        props.File("Texture Path", TexturePath, "png,jpg,tga");
-        props.Property("Full Screen", FullScreen);
-    CH_REFLECT_END()
 };
 
-struct LabelControl
+struct LabelData
 {
     std::string Text = "Text Label";
-    TextStyle Style;
     bool AutoSize = false;
-
-    LabelControl() = default;
-    LabelControl(const std::string& text) : Text(text) {}
-
-    CH_REFLECT_BEGIN(LabelControl)
-        props.Property("Text", Text);
-        props.Nested("Style", Style);
-        props.Property("Auto Size", AutoSize);
-    CH_REFLECT_END()
 };
 
-struct SliderControl
+struct SliderData
 {
     std::string Label = "Slider";
-    TextStyle Text;
     float Value = 0.5f;
     float Min = 0.0f;
     float Max = 1.0f;
-    bool Changed = false;
-    UIStyle Style;
-
-    CH_REFLECT_BEGIN(SliderControl)
-        props.Property("Label", Label);
-        props.Nested("Text Style", Text);
-        props.Property("Value", Value, PropertyMeta(0.0f, 100.0f, 0.1f));
-        props.Property("Min", Min, PropertyMeta(-100.0f, 100.0f, 0.1f));
-        props.Property("Max", Max, PropertyMeta(-100.0f, 100.0f, 0.1f));
-        props.Nested("UI Style", Style);
-    CH_REFLECT_END()
 };
 
-struct CheckboxControl
+struct CheckboxData
 {
     std::string Label = "Checkbox";
-    TextStyle Text;
     bool Checked = false;
-    bool Changed = false;
-    UIStyle Style;
-
-    CH_REFLECT_BEGIN(CheckboxControl)
-        props.Property("Label", Label);
-        props.Nested("Text Style", Text);
-        props.Property("Checked", Checked);
-        props.Nested("UI Style", Style);
-    CH_REFLECT_END()
 };
 
-struct InputTextControl
+struct InputTextData
 {
     std::string Label = "Input";
     std::string Text = "";
@@ -318,79 +234,32 @@ struct InputTextControl
     bool Multiline = false;
     bool ReadOnly = false;
     bool Password = false;
-    bool Changed = false;
     std::vector<char> InputBuffer;
-    TextStyle Style;
-    UIStyle BoxStyle;
-
-    CH_REFLECT_BEGIN(InputTextControl)
-        props.Property("Label", Label);
-        props.Property("Text", Text);
-        props.Property("Placeholder", Placeholder);
-        props.Property("MaxLength", MaxLength);
-        props.Property("Multiline", Multiline);
-        props.Property("ReadOnly", ReadOnly);
-        props.Property("Password", Password);
-        props.Nested("Text Style", Style);
-        props.Nested("Box Style", BoxStyle);
-    CH_REFLECT_END()
 };
 
-struct ComboBoxControl
+struct ComboBoxData
 {
     std::string Label = "Combo";
     std::vector<std::string> Items = {"Option 1", "Option 2", "Option 3"};
     int SelectedIndex = 0;
-    bool Changed = false;
-    TextStyle Style;
-    UIStyle BoxStyle;
-
-    CH_REFLECT_BEGIN(ComboBoxControl)
-        props.Property("Label", Label);
-        props.Sequence("Items", Items);
-        props.Property("Selected Index", SelectedIndex);
-        props.Nested("Style", Style);
-        props.Nested("Box Style", BoxStyle);
-    CH_REFLECT_END()
 };
 
-struct ProgressBarControl
+struct ProgressBarData
 {
     float Progress = 0.5f;
     std::string OverlayText = "";
     bool ShowPercentage = true;
-    TextStyle Style;
-    UIStyle BarStyle;
-
-    CH_REFLECT_BEGIN(ProgressBarControl)
-        props.Property("Progress", Progress);
-        props.Property("Overlay Text", OverlayText);
-        props.Property("Show Percentage", ShowPercentage);
-        props.Nested("Style", Style);
-        props.Nested("Bar Style", BarStyle);
-    CH_REFLECT_END()
 };
 
-struct ImageControl
+struct ImageData
 {
     AssetHandle TextureHandle = 0;
     std::string TexturePath = "";
     Color TintColor = {255, 255, 255, 255};
     Color BorderColor = {0, 0, 0, 0};
-    UIStyle Style;
-
-    bool IsHovered = false;
-    bool IsDown = false;
-
-    CH_REFLECT_BEGIN(ImageControl)
-        props.File("Texture Path", TexturePath, "png,jpg,tga");
-        props.Property("Tint Color", TintColor);
-        props.Property("Border Color", BorderColor);
-        props.Nested("Style", Style);
-    CH_REFLECT_END()
 };
 
-struct ImageButtonControl
+struct ImageButtonData
 {
     AssetHandle TextureHandle = 0;
     std::string TexturePath = "";
@@ -398,67 +267,31 @@ struct ImageButtonControl
     Color TintColor = {255, 255, 255, 255};
     Color BackgroundColor = {0, 0, 0, 0};
     int FramePadding = -1;
-    bool PressedThisFrame = false;
-    UIStyle Style;
-
-    CH_REFLECT_BEGIN(ImageButtonControl)
-        props.File("Texture Path", TexturePath, "png,jpg,tga");
-        props.Property("Label", Label);
-        props.Property("Tint Color", TintColor);
-        props.Property("Background Color", BackgroundColor);
-        props.Property("Frame Padding", FramePadding);
-        props.Nested("Style", Style);
-    CH_REFLECT_END()
 };
 
-struct SeparatorControl
+struct SeparatorData
 {
     float Thickness = 1.0f;
     Color LineColor = {127, 127, 127, 255};
-
-    CH_REFLECT_BEGIN(SeparatorControl)
-        props.Property("Thickness", Thickness);
-        props.Property("Line Color", LineColor);
-    CH_REFLECT_END()
 };
 
-struct RadioButtonControl
+struct RadioButtonData
 {
     std::string Label = "RadioGroup";
     std::vector<std::string> Options = {"Option 1", "Option 2", "Option 3"};
     int SelectedIndex = 0;
-    bool Changed = false;
     bool Horizontal = false;
-    TextStyle Style;
-
-    CH_REFLECT_BEGIN(RadioButtonControl)
-        props.Property("Label", Label);
-        props.Sequence("Options", Options);
-        props.Property("Selected Index", SelectedIndex);
-        props.Property("Horizontal", Horizontal);
-        props.Nested("Style", Style);
-    CH_REFLECT_END()
 };
 
-struct ColorPickerControl
+struct ColorPickerData
 {
     std::string Label = "Color";
     Color SelectedColor = {255, 255, 255, 255};
     bool ShowAlpha = true;
     bool ShowPicker = true;
-    bool Changed = false;
-    UIStyle Style;
-
-    CH_REFLECT_BEGIN(ColorPickerControl)
-        props.Property("Label", Label);
-        props.Property("Color", SelectedColor);
-        props.Property("Show Alpha", ShowAlpha);
-        props.Property("Show Picker", ShowPicker);
-        props.Nested("Style", Style);
-    CH_REFLECT_END()
 };
 
-struct DragFloatControl
+struct DragFloatData
 {
     std::string Label = "DragFloat";
     float Value = 0.0f;
@@ -466,22 +299,9 @@ struct DragFloatControl
     float Min = 0.0f;
     float Max = 100.0f;
     std::string Format = "%.3f";
-    bool Changed = false;
-    TextStyle Style;
-    UIStyle BoxStyle;
-
-    CH_REFLECT_BEGIN(DragFloatControl)
-        props.Property("Label", Label);
-        props.Property("Value", Value);
-        props.Property("Speed", Speed);
-        props.Property("Min", Min);
-        props.Property("Max", Max);
-        props.Nested("Style", Style);
-        props.Nested("Box Style", BoxStyle);
-    CH_REFLECT_END()
 };
 
-struct DragIntControl
+struct DragIntData
 {
     std::string Label = "DragInt";
     int Value = 0;
@@ -489,84 +309,38 @@ struct DragIntControl
     int Min = 0;
     int Max = 100;
     std::string Format = "%d";
-    bool Changed = false;
-    TextStyle Style;
-    UIStyle BoxStyle;
-
-    CH_REFLECT_BEGIN(DragIntControl)
-        props.Property("Label", Label);
-        props.Property("Value", Value);
-        props.Property("Speed", Speed);
-        props.Property("Min", Min);
-        props.Property("Max", Max);
-        props.Nested("Style", Style);
-        props.Nested("Box Style", BoxStyle);
-    CH_REFLECT_END()
 };
 
-struct TreeNodeControl
+struct TreeNodeData
 {
     std::string Label = "TreeNode";
     bool IsOpen = false;
     bool DefaultOpen = false;
     bool IsLeaf = false;
-    TextStyle Style;
-
-    CH_REFLECT_BEGIN(TreeNodeControl)
-        props.Property("Label", Label);
-        props.Property("Is Open", IsOpen);
-        props.Property("Default Open", DefaultOpen);
-        props.Property("Is Leaf", IsLeaf);
-        props.Nested("Style", Style);
-    CH_REFLECT_END()
 };
 
-struct TabBarControl
+struct TabBarData
 {
     std::string Label = "TabBar";
     bool Reorderable = true;
     bool AutoSelectNewTabs = true;
-    UIStyle Style;
-
-    CH_REFLECT_BEGIN(TabBarControl)
-        props.Property("Label", Label);
-        props.Property("Reorderable", Reorderable);
-        props.Property("Auto Select New Tabs", AutoSelectNewTabs);
-        props.Nested("Style", Style);
-    CH_REFLECT_END()
 };
 
-struct TabItemControl
+struct TabItemData
 {
     std::string Label = "Tab";
     bool IsOpen = true;
     bool Selected = false;
-    TextStyle Style;
-
-    CH_REFLECT_BEGIN(TabItemControl)
-        props.Property("Label", Label);
-        props.Property("Is Open", IsOpen);
-        props.Property("Selected", Selected);
-        props.Nested("Style", Style);
-    CH_REFLECT_END()
 };
 
-struct CollapsingHeaderControl
+struct CollapsingHeaderData
 {
     std::string Label = "Header";
     bool IsOpen = false;
     bool DefaultOpen = false;
-    TextStyle Style;
-
-    CH_REFLECT_BEGIN(CollapsingHeaderControl)
-        props.Property("Label", Label);
-        props.Property("Is Open", IsOpen);
-        props.Property("Default Open", DefaultOpen);
-        props.Nested("Style", Style);
-    CH_REFLECT_END()
 };
 
-struct PlotLinesControl
+struct PlotLinesData
 {
     std::string Label = "Plot";
     std::vector<float> Values = {0.0f, 0.5f, 1.0f, 0.5f, 0.0f};
@@ -574,22 +348,9 @@ struct PlotLinesControl
     float ScaleMin = 0.0f;
     float ScaleMax = 1.0f;
     glm::vec2 GraphSize = {0, 80};
-    TextStyle Style;
-    UIStyle BoxStyle;
-
-    CH_REFLECT_BEGIN(PlotLinesControl)
-        props.Property("Label", Label);
-        props.Property("Values", Values);
-        props.Property("Overlay Text", OverlayText);
-        props.Property("Scale Min", ScaleMin);
-        props.Property("Scale Max", ScaleMax);
-        props.Property("Graph Size", GraphSize);
-        props.Nested("Style", Style);
-        props.Nested("Box Style", BoxStyle);
-    CH_REFLECT_END()
 };
 
-struct PlotHistogramControl
+struct PlotHistogramData
 {
     std::string Label = "Histogram";
     std::vector<float> Values = {0.2f, 0.5f, 0.8f, 0.4f, 0.6f};
@@ -597,29 +358,227 @@ struct PlotHistogramControl
     float ScaleMin = 0.0f;
     float ScaleMax = 1.0f;
     glm::vec2 GraphSize = {0, 80};
-    TextStyle Style;
-    UIStyle BoxStyle;
-
-    CH_REFLECT_BEGIN(PlotHistogramControl)
-        props.Property("Label", Label);
-        props.Property("Values", Values);
-        props.Property("Overlay Text", OverlayText);
-        props.Property("Scale Min", ScaleMin);
-        props.Property("Scale Max", ScaleMax);
-        props.Property("Graph Size", GraphSize);
-        props.Nested("Style", Style);
-        props.Nested("Box Style", BoxStyle);
-    CH_REFLECT_END()
 };
 
-struct VerticalLayoutGroup
+struct VerticalLayoutGroupData
 {
     float Spacing = 10.0f;
     glm::vec2 Padding = {10, 10};
+};
 
-    CH_REFLECT_BEGIN(VerticalLayoutGroup)
-        props.Property("Spacing", Spacing);
-        props.Property("Padding", Padding);
+using WidgetData = std::variant<
+    std::monostate,
+    ButtonData,
+    PanelData,
+    LabelData,
+    SliderData,
+    CheckboxData,
+    InputTextData,
+    ComboBoxData,
+    ProgressBarData,
+    ImageData,
+    ImageButtonData,
+    SeparatorData,
+    RadioButtonData,
+    ColorPickerData,
+    DragFloatData,
+    DragIntData,
+    TreeNodeData,
+    TabBarData,
+    TabItemData,
+    CollapsingHeaderData,
+    PlotLinesData,
+    PlotHistogramData,
+    VerticalLayoutGroupData
+>;
+
+struct WidgetComponent
+{
+    UIStyle BoxStyle;
+    TextStyle TextStyle;
+    WidgetData Data = std::monostate{};
+
+    bool IsHovered = false;
+    bool IsDown = false;
+    bool PressedThisFrame = false;
+    bool ValueChanged = false;
+
+    WidgetComponent() = default;
+
+
+    CH_REFLECT_BEGIN(WidgetComponent)
+        props.Nested("Box Style", BoxStyle);
+        props.Nested("Text Style", TextStyle);
+
+        int typeIndex = (int)Data.index();
+        const char* typeNames[] = {
+            "None", "Button", "Panel", "Label", "Slider", "Checkbox", "InputText",
+            "ComboBox", "ProgressBar", "Image", "ImageButton", "Separator",
+            "RadioButton", "ColorPicker", "DragFloat", "DragInt", "TreeNode",
+            "TabBar", "TabItem", "CollapsingHeader", "PlotLines", "PlotHistogram",
+            "VerticalLayoutGroup"
+        };
+
+        if (props.Enum("Widget Type", typeIndex, typeNames, sizeof(typeNames) / sizeof(const char*)))
+        {
+            switch (typeIndex)
+            {
+                case 0: Data = std::monostate{}; break;
+                case 1: Data = ButtonData{}; break;
+                case 2: Data = PanelData{}; break;
+                case 3: Data = LabelData{}; break;
+                case 4: Data = SliderData{}; break;
+                case 5: Data = CheckboxData{}; break;
+                case 6: Data = InputTextData{}; break;
+                case 7: Data = ComboBoxData{}; break;
+                case 8: Data = ProgressBarData{}; break;
+                case 9: Data = ImageData{}; break;
+                case 10: Data = ImageButtonData{}; break;
+                case 11: Data = SeparatorData{}; break;
+                case 12: Data = RadioButtonData{}; break;
+                case 13: Data = ColorPickerData{}; break;
+                case 14: Data = DragFloatData{}; break;
+                case 15: Data = DragIntData{}; break;
+                case 16: Data = TreeNodeData{}; break;
+                case 17: Data = TabBarData{}; break;
+                case 18: Data = TabItemData{}; break;
+                case 19: Data = CollapsingHeaderData{}; break;
+                case 20: Data = PlotLinesData{}; break;
+                case 21: Data = PlotHistogramData{}; break;
+                case 22: Data = VerticalLayoutGroupData{}; break;
+            }
+        }
+
+        std::visit([&](auto& arg) {
+            using T = std::decay_t<decltype(arg)>;
+            if constexpr (std::is_same_v<T, ButtonData>) {
+                props.Property("Label", arg.Label);
+                props.Property("Interactable", arg.IsInteractable);
+                props.Property("Auto Size", arg.AutoSize);
+            }
+            else if constexpr (std::is_same_v<T, PanelData>) {
+                if (props.GetMode() != CHEngine::ReflectionMode::UI)
+                    props.Handle("Texture Handle", arg.TextureHandle);
+                props.File("Texture Path", arg.TexturePath, "png,jpg,tga");
+                props.Property("Full Screen", arg.FullScreen);
+            }
+            else if constexpr (std::is_same_v<T, LabelData>) {
+                props.Property("Text", arg.Text);
+                props.Property("Auto Size", arg.AutoSize);
+            }
+            else if constexpr (std::is_same_v<T, SliderData>) {
+                props.Property("Label", arg.Label);
+                props.Property("Value", arg.Value, PropertyMeta(0.0f, 100.0f, 0.1f));
+                props.Property("Min", arg.Min, PropertyMeta(-100.0f, 100.0f, 0.1f));
+                props.Property("Max", arg.Max, PropertyMeta(-100.0f, 100.0f, 0.1f));
+            }
+            else if constexpr (std::is_same_v<T, CheckboxData>) {
+                props.Property("Label", arg.Label);
+                props.Property("Checked", arg.Checked);
+            }
+            else if constexpr (std::is_same_v<T, InputTextData>) {
+                props.Property("Label", arg.Label);
+                props.Property("Text", arg.Text);
+                props.Property("Placeholder", arg.Placeholder);
+                props.Property("MaxLength", arg.MaxLength);
+                props.Property("Multiline", arg.Multiline);
+                props.Property("ReadOnly", arg.ReadOnly);
+                props.Property("Password", arg.Password);
+            }
+            else if constexpr (std::is_same_v<T, ComboBoxData>) {
+                props.Property("Label", arg.Label);
+                props.Sequence("Items", arg.Items);
+                props.Property("Selected Index", arg.SelectedIndex);
+            }
+            else if constexpr (std::is_same_v<T, ProgressBarData>) {
+                props.Property("Progress", arg.Progress);
+                props.Property("Overlay Text", arg.OverlayText);
+                props.Property("Show Percentage", arg.ShowPercentage);
+            }
+            else if constexpr (std::is_same_v<T, ImageData>) {
+                props.File("Texture Path", arg.TexturePath, "png,jpg,tga");
+                props.Property("Tint Color", arg.TintColor);
+                props.Property("Border Color", arg.BorderColor);
+            }
+            else if constexpr (std::is_same_v<T, ImageButtonData>) {
+                props.File("Texture Path", arg.TexturePath, "png,jpg,tga");
+                props.Property("Label", arg.Label);
+                props.Property("Tint Color", arg.TintColor);
+                props.Property("Background Color", arg.BackgroundColor);
+                props.Property("Frame Padding", arg.FramePadding);
+            }
+            else if constexpr (std::is_same_v<T, SeparatorData>) {
+                props.Property("Thickness", arg.Thickness);
+                props.Property("Line Color", arg.LineColor);
+            }
+            else if constexpr (std::is_same_v<T, RadioButtonData>) {
+                props.Property("Label", arg.Label);
+                props.Sequence("Options", arg.Options);
+                props.Property("Selected Index", arg.SelectedIndex);
+                props.Property("Horizontal", arg.Horizontal);
+            }
+            else if constexpr (std::is_same_v<T, ColorPickerData>) {
+                props.Property("Label", arg.Label);
+                props.Property("Color", arg.SelectedColor);
+                props.Property("Show Alpha", arg.ShowAlpha);
+                props.Property("Show Picker", arg.ShowPicker);
+            }
+            else if constexpr (std::is_same_v<T, DragFloatData>) {
+                props.Property("Label", arg.Label);
+                props.Property("Value", arg.Value);
+                props.Property("Speed", arg.Speed);
+                props.Property("Min", arg.Min);
+                props.Property("Max", arg.Max);
+            }
+            else if constexpr (std::is_same_v<T, DragIntData>) {
+                props.Property("Label", arg.Label);
+                props.Property("Value", arg.Value);
+                props.Property("Speed", arg.Speed);
+                props.Property("Min", arg.Min);
+                props.Property("Max", arg.Max);
+            }
+            else if constexpr (std::is_same_v<T, TreeNodeData>) {
+                props.Property("Label", arg.Label);
+                props.Property("Is Open", arg.IsOpen);
+                props.Property("Default Open", arg.DefaultOpen);
+                props.Property("Is Leaf", arg.IsLeaf);
+            }
+            else if constexpr (std::is_same_v<T, TabBarData>) {
+                props.Property("Label", arg.Label);
+                props.Property("Reorderable", arg.Reorderable);
+                props.Property("Auto Select New Tabs", arg.AutoSelectNewTabs);
+            }
+            else if constexpr (std::is_same_v<T, TabItemData>) {
+                props.Property("Label", arg.Label);
+                props.Property("Is Open", arg.IsOpen);
+                props.Property("Selected", arg.Selected);
+            }
+            else if constexpr (std::is_same_v<T, CollapsingHeaderData>) {
+                props.Property("Label", arg.Label);
+                props.Property("Is Open", arg.IsOpen);
+                props.Property("Default Open", arg.DefaultOpen);
+            }
+            else if constexpr (std::is_same_v<T, PlotLinesData>) {
+                props.Property("Label", arg.Label);
+                props.Sequence("Values", arg.Values);
+                props.Property("Overlay Text", arg.OverlayText);
+                props.Property("Scale Min", arg.ScaleMin);
+                props.Property("Scale Max", arg.ScaleMax);
+                props.Property("Graph Size", arg.GraphSize);
+            }
+            else if constexpr (std::is_same_v<T, PlotHistogramData>) {
+                props.Property("Label", arg.Label);
+                props.Sequence("Values", arg.Values);
+                props.Property("Overlay Text", arg.OverlayText);
+                props.Property("Scale Min", arg.ScaleMin);
+                props.Property("Scale Max", arg.ScaleMax);
+                props.Property("Graph Size", arg.GraphSize);
+            }
+            else if constexpr (std::is_same_v<T, VerticalLayoutGroupData>) {
+                props.Property("Spacing", arg.Spacing);
+                props.Property("Padding", arg.Padding);
+            }
+        }, Data);
     CH_REFLECT_END()
 };
 

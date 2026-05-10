@@ -4,6 +4,7 @@
 #include <entt/entt.hpp>
 #include "engine/core/reflection.h"
 
+// Now useless
 namespace CHEngine
 {
 struct NavigationComponent

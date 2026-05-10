@@ -1,0 +1,8 @@
+# STB dependency (Header-only)
+if(EXISTS "${CMAKE_SOURCE_DIR}/include/stb")
+    add_library(engine_external_stb INTERFACE)
+    target_include_directories(engine_external_stb INTERFACE "${CMAKE_SOURCE_DIR}/include/stb")
+    add_library(ChainedEngine::External::STB ALIAS engine_external_stb)
+else()
+    message(FATAL_ERROR "STB submodule missing at ${CMAKE_SOURCE_DIR}/include/stb")
+endif()

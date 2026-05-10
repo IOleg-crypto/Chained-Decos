@@ -15,7 +15,7 @@ public:
     ~EditorCameraController() = default;
 
     // Drives the transform and camera component of the given entity
-    void OnUpdate(Entity cameraEntity, Timestep ts);
+    void OnUpdate(Entity cameraEntity, Timestep ts, const glm::vec2& viewportSize);
 
     EditorCamera& GetCamera() { return m_Camera; }
     float GetYaw() const { return m_Camera.GetYaw(); }

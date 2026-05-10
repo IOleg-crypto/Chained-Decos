@@ -22,7 +22,8 @@ struct SpawnComponent
     CH_REFLECT_BEGIN(SpawnComponent)
         props.Property("Active", IsActive);
         props.Property("ZoneSize", ZoneSize, PropertyMeta(0.1f, 100.0f, 0.1f));
-        props.Handle("TextureHandle", TextureHandle);
+        if (props.GetMode() != CHEngine::ReflectionMode::UI)
+            props.Handle("TextureHandle", TextureHandle);
         if (props.File("TexturePath", TexturePath, "png,jpg,bmp,tga"))
         {
             TextureHandle = AssetHandle(0);

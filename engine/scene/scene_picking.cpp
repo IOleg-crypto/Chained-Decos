@@ -1,5 +1,7 @@
 #include "scene_picking.h"
-#include "engine/core/assets/asset_manager.h"
+#include "engine/assets/asset_manager.h"
+#include "engine/scene/components/component_utils.h"
+#include "engine/core/service_locator.h"
 #include "engine/graphics/assets/model_asset.h"
 #include "engine/physics/bvh/bvh.h"
 #include "engine/physics/physics.h"
@@ -48,13 +50,14 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
             return;
         }
 
-        auto modelAsset = AssetManager::Get().Get<ModelAsset>(modelComp.ModelPath);
+        auto handle = ServiceLocator::Get<AssetManager>().ResolveToHandle(modelComp.ModelPath, ModelAsset::GetStaticType());
+        auto modelAsset = ServiceLocator::Get<AssetManager>().Get<ModelAsset>(handle);
         if (!modelAsset || !modelAsset->IsReady())
         {
             return;
         }
 
-        glm::mat4 modelTransform = tc.GetTransform();
+        glm::mat4 modelTransform = ComponentUtils::GetTransform(tc);
         glm::mat4 invTransform = glm::inverse(modelTransform);
 
         // Transform ray to local space

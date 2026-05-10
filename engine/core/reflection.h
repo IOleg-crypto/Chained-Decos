@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 #include "engine/core/base.h"
-#include "engine/core/assets/asset.h"
+#include "engine/assets/asset.h"
 #include <functional>
 #include <type_traits>
 

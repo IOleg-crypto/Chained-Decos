@@ -25,16 +25,16 @@ add_library(engine_physics ${SUBMODULE_LIB_TYPE}
 )
 
 target_include_directories(engine_physics PUBLIC
-    ${ENGINE_INCLUDE_DIRS}
-    ${assimp_SOURCE_DIR}/include
-    ${assimp_BINARY_DIR}/include
-    ${CMAKE_SOURCE_DIR}/include/entt/src
-    ${CMAKE_SOURCE_DIR}/include/glfw/include
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(engine_physics PUBLIC 
+target_link_libraries(engine_physics 
+PUBLIC 
     engine_core
-    EnTT::EnTT
+    ChainedEngine::External::EnTT
+    ChainedEngine::External::GLM
+    ChainedEngine::External::Assimp
 )
 
 if(MSVC)

@@ -1,41 +1,24 @@
 #include "ui_renderer.h"
-#include "engine/core/service_locator.h"
 #include "ui_widget_renderer.h"
 #include "engine/core/profiler.h"
-#include "engine/core/assets/asset_manager.h"
+#include "engine/assets/asset_manager.h"
+#include "engine/core/service_locator.h"
 #include "engine/graphics/loaders/font_loader.h"
+#include "engine/scene/components/component_utils.h"
 #include "engine/scene/scene.h"
 #include <algorithm>
 #include <map>
 
 namespace CHEngine
 {
-
-UIRenderer& UIRenderer::Get()
+void UIRenderer::OnInit()
 {
-    return ServiceLocator::Get<UIRenderer>();
-}
-
-bool UIRenderer::IsInitialized()
-{
-    return ServiceLocator::Has<UIRenderer>();
-}
-
-void UIRenderer::Initialize()
-{
-    if (m_Initialized)
-    {
-        return;
-    }
-
-    // Register Font loader
-    AssetManager::Get().RegisterLoader(AssetType::Font, std::make_unique<FontLoader>());
-
+    CH_CORE_INFO("[UI] Initializing UI Renderer...");
+    ServiceLocator::Get<AssetManager>().RegisterLoader(AssetType::Font, std::make_unique<FontLoader>());
     m_Initialized = true;
-    CH_CORE_INFO("Initializing UIRenderer...");
 }
 
-void UIRenderer::Shutdown()
+void UIRenderer::OnShutdown()
 {
     if (m_Initialized)
     {
@@ -44,13 +27,6 @@ void UIRenderer::Shutdown()
     }
 }
 
-UIRenderer::UIRenderer()
-{
-}
-
-UIRenderer::~UIRenderer()
-{
-}
 
 void UIRenderer::LoadProjectFonts()
 {
@@ -119,7 +95,7 @@ UIRect UIRenderer::CalculateEntityRect(Entity entity, const UIRect& canvasRect, 
             }
             else
             {
-                Entity parentEntity{parentID, entity.GetRegistry()};
+                Entity parentEntity{parentID, entity.GetRegistryPtr()};
                 if (parentEntity.HasComponent<ControlComponent>())
                 {
                     parentRect = CalculateEntityRect(parentEntity, canvasRect, cache);
@@ -129,24 +105,33 @@ UIRect UIRenderer::CalculateEntityRect(Entity entity, const UIRect& canvasRect, 
         }
     }
 
-    // AutoSize
-    if (entity.HasComponent<LabelControl>() && entity.GetComponent<LabelControl>().AutoSize)
+    if (entity.HasComponent<WidgetComponent>())
     {
-        auto& label  = entity.GetComponent<LabelControl>();
-        ImVec2 ts    = ImGui::CalcTextSize(label.Text.c_str());
-        control.Transform.OffsetMax = {control.Transform.OffsetMin.x + ts.x + 10.0f,
-                                       control.Transform.OffsetMin.y + ts.y + 4.0f};
-    }
-    else if (entity.HasComponent<ButtonControl>() && entity.GetComponent<ButtonControl>().AutoSize)
-    {
-        auto& btn  = entity.GetComponent<ButtonControl>();
-        ImVec2 ts  = ImGui::CalcTextSize(btn.Label.c_str());
-        float pad  = btn.Style.Padding * 2.0f;
-        control.Transform.OffsetMax = {control.Transform.OffsetMin.x + ts.x + pad + 10.0f,
-                                       control.Transform.OffsetMin.y + ts.y + pad + 4.0f};
+        auto& widget = entity.GetComponent<WidgetComponent>();
+        if (std::holds_alternative<LabelData>(widget.Data))
+        {
+            auto& label = std::get<LabelData>(widget.Data);
+            if (label.AutoSize)
+            {
+                ImVec2 ts = ImGui::CalcTextSize(label.Text.c_str());
+                control.Transform.OffsetMax = {control.Transform.OffsetMin.x + ts.x + 10.0f,
+                                               control.Transform.OffsetMin.y + ts.y + 4.0f};
+            }
+        }
+        else if (std::holds_alternative<ButtonData>(widget.Data))
+        {
+            auto& btn = std::get<ButtonData>(widget.Data);
+            if (btn.AutoSize)
+            {
+                ImVec2 ts = ImGui::CalcTextSize(btn.Label.c_str());
+                float pad = widget.BoxStyle.Padding * 2.0f;
+                control.Transform.OffsetMax = {control.Transform.OffsetMin.x + ts.x + pad + 10.0f,
+                                               control.Transform.OffsetMin.y + ts.y + pad + 4.0f};
+            }
+        }
     }
 
-    Rectangle r = control.Transform.CalculateRect({parentRect.width, parentRect.height}, {parentRect.x, parentRect.y});
+    Rectangle r = ComponentUtils::CalculateRect(control.Transform, {parentRect.width, parentRect.height}, {parentRect.x, parentRect.y});
     return {r.x, r.y, r.width, r.height};
 }
 
@@ -203,67 +188,82 @@ bool UIRenderer::RenderUIComponent(Entity entity, const ImVec2& screenPos, const
     bool handled = false;
     auto& reg    = entity.GetRegistry();
 
-    if (entity.HasComponent<PanelControl>())
-        UI::RenderPanel(entity.GetComponent<PanelControl>(), screenPos, size);
-
-    if (entity.HasComponent<LabelControl>())
-        UI::RenderLabel(entity.GetComponent<LabelControl>(), size);
-
-    if (entity.HasComponent<ButtonControl>())
-        handled |= UI::RenderButton(entity, entity.GetComponent<ButtonControl>(), size);
-
-    if (entity.HasComponent<SliderControl>())
-        handled |= UI::RenderSlider(entity.GetComponent<SliderControl>(), size);
-
-    if (entity.HasComponent<CheckboxControl>())
-        handled |= UI::RenderCheckbox(entity.GetComponent<CheckboxControl>());
-
-    if (entity.HasComponent<ImageControl>())
-        UI::RenderImage(entity.GetComponent<ImageControl>(), size);
-
-    if (entity.HasComponent<InputTextControl>())
-        handled |= UI::RenderInputText(entity, entity.GetComponent<InputTextControl>(), size);
-
-    if (entity.HasComponent<ProgressBarControl>())
-        UI::RenderProgressBar(entity.GetComponent<ProgressBarControl>(), size);
-
-    if (entity.HasComponent<ComboBoxControl>())
-        handled |= UI::RenderComboBox(entity.GetComponent<ComboBoxControl>(), size);
-
-    if (entity.HasComponent<ImageButtonControl>())
-        handled |= UI::RenderImageButton(entity.GetComponent<ImageButtonControl>(), size);
-
-    if (entity.HasComponent<RadioButtonControl>())
-        handled |= UI::RenderRadioButton(entity.GetComponent<RadioButtonControl>());
-
-    if (entity.HasComponent<ColorPickerControl>())
-        handled |= UI::RenderColorPicker(entity.GetComponent<ColorPickerControl>());
-
-    if (entity.HasComponent<SeparatorControl>())
-        UI::RenderSeparator(entity.GetComponent<SeparatorControl>());
-
-    if (entity.HasComponent<DragFloatControl>())
-        handled |= UI::RenderDragFloat(entity.GetComponent<DragFloatControl>(), size);
-
-    if (entity.HasComponent<DragIntControl>())
-        handled |= UI::RenderDragInt(entity.GetComponent<DragIntControl>(), size);
-
-    if (entity.HasComponent<TreeNodeControl>())
-        handled |= UI::RenderTreeNode(entity.GetComponent<TreeNodeControl>());
-
-    if (entity.HasComponent<CollapsingHeaderControl>())
-        handled |= UI::RenderCollapsingHeader(entity.GetComponent<CollapsingHeaderControl>());
-
-    if (entity.HasComponent<PlotLinesControl>())
-        handled |= UI::RenderPlotLines(entity.GetComponent<PlotLinesControl>());
-
-    if (entity.HasComponent<PlotHistogramControl>())
-        handled |= UI::RenderPlotHistogram(entity.GetComponent<PlotHistogramControl>());
-
-    if (entity.HasComponent<TabBarControl>())
+    if (entity.HasComponent<WidgetComponent>())
     {
-        UI::RenderTabBar(entity, entity.GetComponent<TabBarControl>(), reg);
-        handled = true;
+        auto& widget = entity.GetComponent<WidgetComponent>();
+        
+        UI::StyleCounts styleState = UI::PushUIStyle(widget.BoxStyle);
+        UI::PushTextStyle(widget.TextStyle, styleState);
+
+        std::visit([&](auto&& arg) {
+            using T = std::decay_t<decltype(arg)>;
+            if constexpr (std::is_same_v<T, std::monostate>) {
+                // Do nothing
+            }
+            else if constexpr (std::is_same_v<T, PanelData>) {
+                UI::RenderPanel(arg, widget, screenPos, size);
+            }
+            else if constexpr (std::is_same_v<T, LabelData>) {
+                UI::RenderLabel(arg, widget, size);
+            }
+            else if constexpr (std::is_same_v<T, ButtonData>) {
+                handled = UI::RenderButton(entity, arg, widget, size);
+            }
+            else if constexpr (std::is_same_v<T, SliderData>) {
+                handled = UI::RenderSlider(arg, widget, size);
+            }
+            else if constexpr (std::is_same_v<T, CheckboxData>) {
+                handled = UI::RenderCheckbox(arg, widget);
+            }
+            else if constexpr (std::is_same_v<T, ImageData>) {
+                UI::RenderImage(arg, widget, size);
+            }
+            else if constexpr (std::is_same_v<T, InputTextData>) {
+                handled = UI::RenderInputText(entity, arg, widget, size);
+            }
+            else if constexpr (std::is_same_v<T, ProgressBarData>) {
+                UI::RenderProgressBar(arg, widget, size);
+            }
+            else if constexpr (std::is_same_v<T, ComboBoxData>) {
+                handled = UI::RenderComboBox(arg, widget, size);
+            }
+            else if constexpr (std::is_same_v<T, ImageButtonData>) {
+                handled = UI::RenderImageButton(arg, widget, size);
+            }
+            else if constexpr (std::is_same_v<T, RadioButtonData>) {
+                handled = UI::RenderRadioButton(arg, widget);
+            }
+            else if constexpr (std::is_same_v<T, ColorPickerData>) {
+                handled = UI::RenderColorPicker(arg, widget);
+            }
+            else if constexpr (std::is_same_v<T, SeparatorData>) {
+                UI::RenderSeparator(arg);
+            }
+            else if constexpr (std::is_same_v<T, DragFloatData>) {
+                handled = UI::RenderDragFloat(arg, widget, size);
+            }
+            else if constexpr (std::is_same_v<T, DragIntData>) {
+                handled = UI::RenderDragInt(arg, widget, size);
+            }
+            else if constexpr (std::is_same_v<T, TreeNodeData>) {
+                handled = UI::RenderTreeNode(arg, widget);
+            }
+            else if constexpr (std::is_same_v<T, CollapsingHeaderData>) {
+                handled = UI::RenderCollapsingHeader(arg, widget);
+            }
+            else if constexpr (std::is_same_v<T, PlotLinesData>) {
+                handled = UI::RenderPlotLines(arg, widget);
+            }
+            else if constexpr (std::is_same_v<T, PlotHistogramData>) {
+                handled = UI::RenderPlotHistogram(arg, widget);
+            }
+            else if constexpr (std::is_same_v<T, TabBarData>) {
+                UI::RenderTabBar(entity, arg, widget, reg);
+                handled = true;
+            }
+        }, widget.Data);
+
+        UI::PopUIStyle(styleState);
     }
 
     return handled;
@@ -278,13 +278,9 @@ void UIRenderer::ResetButtonStates(Scene* scene)
     if (!scene) return;
     auto& registry = scene->GetRegistry();
 
-    auto buttonView = registry.view<ButtonControl>();
-    for (entt::entity id : buttonView)
-        buttonView.get<ButtonControl>(id).PressedThisFrame = false;
-
-    auto imageButtonView = registry.view<ImageButtonControl>();
-    for (entt::entity id : imageButtonView)
-        imageButtonView.get<ImageButtonControl>(id).PressedThisFrame = false;
+    auto view = registry.view<WidgetComponent>();
+    for (entt::entity id : view)
+        view.get<WidgetComponent>(id).PressedThisFrame = false;
 }
 
 // ---------------------------------------------------------------------------
@@ -302,11 +298,6 @@ void UIRenderer::DrawCanvas(Scene* scene, const ImVec2& referencePosition, const
     auto&  registry  = scene->GetRegistry();
 
     auto uiEntities = SortUIEntities(registry);
-    static bool s_LoggedOnce = false;
-    if (!s_LoggedOnce) {
-        CH_CORE_WARN("UIRenderer: Drawing canvas with {} UI entities.", uiEntities.size());
-        s_LoggedOnce = true;
-    }
 
     // Reset one-shot button press flags once per ImGui frame per registry.
     const int frameNumber = ImGui::GetFrameCount();
@@ -314,17 +305,9 @@ void UIRenderer::DrawCanvas(Scene* scene, const ImVec2& referencePosition, const
     static const entt::registry* s_LastResetRegistry = nullptr;
     if (s_LastResetFrame != frameNumber || s_LastResetRegistry != &registry)
     {
-        auto buttonView = registry.view<ButtonControl>();
-        for (entt::entity id : buttonView)
-        {
-            buttonView.get<ButtonControl>(id).PressedThisFrame = false;
-        }
-
-        auto imageButtonView = registry.view<ImageButtonControl>();
-        for (entt::entity id : imageButtonView)
-        {
-            imageButtonView.get<ImageButtonControl>(id).PressedThisFrame = false;
-        }
+        auto view = registry.view<WidgetComponent>();
+        for (entt::entity id : view)
+            view.get<WidgetComponent>(id).PressedThisFrame = false;
 
         s_LastResetFrame = frameNumber;
         s_LastResetRegistry = &registry;
@@ -361,17 +344,9 @@ void UIRenderer::DrawCanvas(Scene* scene, const ImVec2& referencePosition, const
         if (!control.IsActive) continue;
 
         // Animate interactable controls
-        if (entity.HasComponent<ButtonControl>()) {
-            auto& btn = entity.GetComponent<ButtonControl>();
-            UpdateStyleAnimation(btn.Style, btn.IsHovered, btn.IsDown, dt);
-        }
-        if (entity.HasComponent<ImageControl>()) {
-            auto& img = entity.GetComponent<ImageControl>();
-            UpdateStyleAnimation(img.Style, img.IsHovered, img.IsDown, dt);
-        }
-        if (entity.HasComponent<PanelControl>()) {
-            auto& panel = entity.GetComponent<PanelControl>();
-            UpdateStyleAnimation(panel.Style, panel.IsHovered, panel.IsDown, dt);
+        if (entity.HasComponent<WidgetComponent>()) {
+            auto& widget = entity.GetComponent<WidgetComponent>();
+            UpdateStyleAnimation(widget.BoxStyle, widget.IsHovered, widget.IsDown, dt);
         }
 
         UIRect rect = CalculateEntityRect(entity, canvasRect, rectCache);

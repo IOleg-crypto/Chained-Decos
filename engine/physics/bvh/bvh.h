@@ -12,29 +12,6 @@
 namespace CHEngine
 {
 
-struct BuildContext
-{
-    std::vector<CollisionTriangle>& AllTriangles;
-    std::vector<uint32_t> TriIndices;
-
-    BuildContext(std::vector<CollisionTriangle>& tris)
-        : AllTriangles(tris)
-    {
-        TriIndices.resize(tris.size());
-        for (uint32_t i = 0; i < tris.size(); ++i)
-        {
-            TriIndices[i] = i;
-        }
-    }
-};
-
-struct WorkItem
-{
-    uint32_t nodeIdx;
-    size_t triStart;
-    size_t triCount;
-};
-
 class BVH
 {
 public:
@@ -58,17 +35,13 @@ public:
 
     void QueryAABB(const BoundingBox& box, std::vector<const CollisionTriangle*>& outTriangles) const;
 
-    const std::vector<BVHNode>& GetNodes() const
-    {
-        return m_Nodes;
-    }
-    const std::vector<CollisionTriangle>& GetTriangles() const
-    {
-        return m_Triangles;
-    }
+    const std::vector<BVHNode>& GetNodes() const { return m_Nodes; }
+    const std::vector<CollisionTriangle>& GetTriangles() const { return m_Triangles; }
+    const std::vector<uint32_t>& GetPrimitiveIndices() const { return m_PrimitiveIndices; }
 
 private:
-    void BuildIterative(BuildContext& ctx, size_t totalTriCount);
+    void UpdateNodeBounds(uint32_t nodeIdx);
+    void Subdivide(uint32_t nodeIdx);
 
     static bool TestAxis(const glm::vec3& axis, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2,
                         const glm::vec3& boxCenter, const glm::vec3& boxHalfSize);
@@ -77,6 +50,8 @@ private:
 private:
     std::vector<BVHNode> m_Nodes;
     std::vector<CollisionTriangle> m_Triangles;
+    std::vector<uint32_t> m_PrimitiveIndices;
+    uint32_t m_NodesUsed = 0;
 };
 } // namespace CHEngine
 

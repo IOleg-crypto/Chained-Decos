@@ -2,18 +2,25 @@
 #define CH_SCENE_RENDERER_H
 
 #include "engine/graphics/pipeline/renderer.h"
-#include "engine/scene/scene.h"
+#include "engine/scene/scene_settings.h"
 #include "engine/core/profiler.h"
+#include "engine/scene/entity.h"
+#include "entt/entt.hpp"
 #include <unordered_map>
 #include <memory>
 #include <vector>
 #include <glm/glm.hpp>
+#include "engine/scene/components/mesh_component.h"
+#include "engine/scene/components/animation_component.h"
+#include "engine/scene/components/physics_component.h"
+#include "engine/scene/components/sprite_component.h"
+#include "engine/scene/components/primitive_component.h"
 
 namespace CHEngine
 {
 struct Frustum;
 
-enum class RenderPass
+enum class RenderPassStage
 {
     Opaque,
     Transparent,
@@ -49,36 +56,40 @@ public:
     ~SceneRenderer() = default;
 
     // Renders the scene using the supplied camera and options.
-    void RenderScene(Scene* scene, const Camera3D& camera, float nearClip, float farClip,
+    void RenderScene(entt::registry& registry, const SceneSettings& settings, const Camera3D& camera, float nearClip, float farClip,
                      const SceneRenderOptions& options);
+
+    // Architectural Helper: Retrieves the primary camera from scene entities.
+    static std::optional<Camera3D> GetActiveCamera(entt::registry& registry);
+    static Entity GetPrimaryCameraEntity(entt::registry& registry, entt::registry* registryPtr);
 
 private:
     struct AnimatedEntry
     {
-        std::shared_ptr<class ModelAsset>  asset;
+        class ModelAsset*                  asset;
         glm::mat4                          worldTransform;
         std::vector<MaterialSlot>          materials;
-        std::shared_ptr<class ShaderAsset> shaderOverride;
+        class ShaderAsset*                 shaderOverride;
         std::vector<ShaderUniform>         customUniforms;
         AnimationComponent                 animation;
     };
 
     struct RenderItem
     {
-        std::shared_ptr<ModelAsset> Asset;
+        ModelAsset*                  Asset;
         glm::mat4                    Transform;
-        std::vector<MaterialSlot>   Materials;
-        std::vector<glm::mat4>      BoneMatrices;
-        std::shared_ptr<ShaderAsset> ShaderOverride;
-        std::vector<ShaderUniform>  CustomUniforms;
-        float                       Distance = 0.0f;
+        std::vector<MaterialSlot>    Materials;
+        std::vector<glm::mat4>       BoneMatrices;
+        ShaderAsset*                 ShaderOverride;
+        std::vector<ShaderUniform>   CustomUniforms;
+        float                        Distance = 0.0f;
     };
 
     // Render passes
-    void RenderModels(Scene* scene, const Camera3D& camera, float nearClip, float farClip);
-    void RenderSprites(Scene* scene, const Camera3D& camera);
-    void RenderDebug(Scene* scene, const Camera3D& camera, const SceneRenderOptions& options);
-    void RenderEditorIcons(Scene* scene, const Camera3D& camera);
+    void RenderModels(entt::registry& registry, const SceneSettings& settings, const Camera3D& camera, float nearClip, float farClip);
+    void RenderSprites(entt::registry& registry, const Camera3D& camera);
+    void RenderDebug(entt::registry& registry, const SceneSettings& settings, const Camera3D& camera, const SceneRenderOptions& options);
+    void RenderEditorIcons(entt::registry& registry, const SceneSettings& settings, const Camera3D& camera);
 
     // Helpers
     void PrepareLights(entt::registry& registry, const Frustum& frustum);
@@ -87,16 +98,16 @@ private:
     
     void DrawAnimatedEntities(const std::vector<AnimatedEntry>& animatedEntries);
 
-    void DrawModel(const std::shared_ptr<ModelAsset>& modelAsset, const glm::mat4& transform,
+    void DrawModel(ModelAsset* modelAsset, const glm::mat4& transform,
                    const std::vector<MaterialSlot>& materialSlotOverrides = {},
                    const std::vector<glm::mat4>& boneMatrices = {},
-                   const std::shared_ptr<ShaderAsset>& shaderOverride = nullptr,
+                   ShaderAsset* shaderOverride = nullptr,
                    const std::vector<ShaderUniform>& shaderUniformOverrides = {},
-                   RenderPass pass = RenderPass::Both);
+                   RenderPassStage pass = RenderPassStage::Both);
 
     Material ResolveMaterialForMesh(int meshIndex, const Model& model,
                                    const std::vector<MaterialSlot>& materialSlotOverrides,
-                                   const std::shared_ptr<class ModelAsset>& modelAsset = nullptr);
+                                   ModelAsset* modelAsset = nullptr);
 
     void BindShaderUniforms(ShaderAsset* shader, const std::vector<glm::mat4>& boneMatrices,
                            const std::vector<ShaderUniform>& shaderUniformOverrides);

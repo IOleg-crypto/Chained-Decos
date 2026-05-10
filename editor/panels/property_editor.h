@@ -3,8 +3,8 @@
 
 #include <functional>
 #include <string>
-#include <unordered_map>
 
+#include "engine/scene/component_registry.h"
 #include "engine/scene/entity.h"
 
 namespace CHEngine
@@ -12,21 +12,9 @@ namespace CHEngine
 class PropertyEditor
 {
 public:
-    struct ComponentMetadata
-    {
-        std::string Name;
-        const char* Icon = nullptr;
-        std::function<void(Entity)> Draw;
-        std::function<bool(Entity)> Add;
-        bool Visible = true;
-        bool AllowAdd = true;
-        bool IsWidget = false;
-    };
-
     static void Init();
 
     // Registry API
-    static void RegisterComponent(entt::id_type typeId, const ComponentMetadata& metadata);
     static void DrawEntityProperties(Entity entity);
     static void DrawAddComponentPopup(Entity entity);
 
@@ -49,11 +37,8 @@ private:
                                        std::function<bool(T&, Entity)> drawer);
 
     // Final non-template drawing core
-    static void DrawComponentInternal(entt::id_type typeId, const std::string& name, const char* icon, Entity entity,
+    static void DrawComponentInternal(::entt::id_type typeId, const std::string& name, const char* icon, Entity entity,
                                       std::function<bool()> contentDrawer, std::function<void()> remover);
-
-private:
-    static std::unordered_map<entt::id_type, ComponentMetadata> s_ComponentRegistry;
 };
 
 } // namespace CHEngine

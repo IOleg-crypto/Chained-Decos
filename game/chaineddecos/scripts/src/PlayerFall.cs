@@ -124,13 +124,15 @@ public class PlayerFall : Script
             
             if (shouldPlay)
             {
+                // Start sound once — guard in C++ prevents duplicates
                 if (!m_Audio.IsPlaying) m_Audio.Play();
                 
-                // Boost audio volume as it was reported too quiet compared to shader intensity
+                // Dynamically update volume on the active instance (not creating a new one)
                 m_Audio.Volume = Mathf.Clamp(m_Intensity * 2.5f, 0.0f, 1.0f);
             }
-            else if (m_Audio.IsPlaying && m_Intensity < 0.001f)
+            else if (m_Audio.IsPlaying)
             {
+                // Fully stop the sound when intensity drops to zero
                 m_Audio.Volume = 0.0f;
                 m_Audio.Stop();
             }

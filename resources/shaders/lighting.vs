@@ -8,7 +8,8 @@ layout(location = 3) in ivec4 a_JointIDs;
 layout(location = 4) in vec4 a_Weights;
 
 // Input uniform values
-uniform mat4 mvp;
+#include "include/camera.glsl"
+
 uniform mat4 matModel;
 uniform mat4 matNormal;
 uniform mat4 boneMatrices[128];
@@ -53,5 +54,5 @@ void main()
     fragNormal = N;
     fragTBN = mat3(T, B, N);
 
-    gl_Position = mvp * vec4(vPos, 1.0);
+    gl_Position = u_ViewProjection * matModel * vec4(vPos, 1.0);
 }

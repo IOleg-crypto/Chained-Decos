@@ -7,8 +7,9 @@
 
 #include "runtime_layer.h"
 #include "engine/core/application.h"
-#include "engine/core/assets/asset_manager.h"
+#include "engine/assets/asset_manager.h"
 #include "engine/core/imgui_layer.h"
+#include "engine/core/service_locator.h"
 #include "engine/core/window.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
@@ -98,23 +99,28 @@ void RuntimeLayer::OnAttach()
         ImGui::SetCurrentContext(imguiLayer->GetContext());
     }
 
-    ImGuiIO& io = ImGui::GetIO();
-    io.FontDefault = io.Fonts->AddFontDefault();
-    CH_CORE_INFO("RuntimeLayer: Using built-in ImGui default font.");
+    auto* imguiLayer = Application::Get().GetImGuiLayer();
+    auto& io = ImGui::GetIO();
+    
+    // Add default font through DLL if needed, but usually redundant if Editor/Engine already did it
+    if (io.Fonts->Fonts.Size == 0)
+    {
+        io.Fonts->AddFontDefault();
+        CH_CORE_INFO("RuntimeLayer: Using built-in ImGui default font.");
+    }
 
     InitProject(m_ProjectPath);
 
-    if (ImFont* projectDefaultFont = UIRenderer::Get().GetFontRegistry().EnsureDefaultProjectFont(18.0f, false))
+    if (ImFont* projectDefaultFont = ServiceLocator::Get<UIRenderer>().GetFontRegistry().EnsureDefaultProjectFont(18.0f, false))
     {
         io.FontDefault = projectDefaultFont;
         CH_CORE_INFO("RuntimeLayer: Switched default UI font to project font.");
     }
 
-    // Materialize atlas data so default and preloaded scene fonts are available from frame 1.
-    unsigned char* pixels = nullptr;
-    int width = 0;
-    int height = 0;
-    io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
+    if (imguiLayer)
+    {
+        imguiLayer->RefreshFontAtlasTexture();
+    }
 
     // Ensure camera aspect ratio is correct on startup
     if (m_Scene)
@@ -139,9 +145,9 @@ void RuntimeLayer::OnDetach()
 void RuntimeLayer::OnUpdate(Timestep ts)
 {
     // Boost uploads during loading
-    if (ScriptEngine::IsInitializedGlobal())
+    if (ServiceLocator::Has<ScriptEngine>())
     {
-        auto& scriptEngine = ScriptEngine::Get();
+        auto& scriptEngine = ServiceLocator::Get<ScriptEngine>();
         // ... use scriptEngine if needed ...
     }
 
@@ -154,30 +160,6 @@ void RuntimeLayer::OnUpdate(Timestep ts)
         m_PendingScenePath.clear();
         LoadScene(path);
         return;
-    }
-
-    if (m_Scene && m_RuntimeStarted && !m_IsSceneLoading)
-    {
-        auto& registry = m_Scene->GetRegistry();
-        auto transitionView = registry.view<ButtonControl, SceneTransitionComponent>();
-        for (entt::entity id : transitionView)
-        {
-            auto& button = transitionView.get<ButtonControl>(id);
-            auto& transition = transitionView.get<SceneTransitionComponent>(id);
-            if (!button.PressedThisFrame || !button.IsInteractable)
-            {
-                continue;
-            }
-
-            if (transition.TargetScenePath.empty())
-            {
-                continue;
-            }
-
-            CH_CORE_INFO("RuntimeLayer: UI scene transition '{}' -> '{}'", button.Label, transition.TargetScenePath);
-            LoadScene(transition.TargetScenePath);
-            return;
-        }
     }
 
     if (m_Scene && m_IsSceneLoading)
@@ -217,7 +199,7 @@ void RuntimeLayer::OnRender(Timestep ts)
 
     if (!m_Scene)
     {
-        Renderer::Get().Clear({0.0f, 0.0f, 0.0f, 1.0f});
+        ServiceLocator::Get<Renderer>().Clear({0.0f, 0.0f, 0.0f, 1.0f});
         return;
     }
 
@@ -254,7 +236,7 @@ void RuntimeLayer::OnRender(Timestep ts)
         float nearClip = 0.01f;
         float farClip = 1000.0f;
 
-        Entity primaryCam = m_Scene->GetPrimaryCameraEntity();
+        Entity primaryCam = SceneRenderer::GetPrimaryCameraEntity(m_Scene->GetRegistry(), m_Scene->GetRegistryPtr());
         if (primaryCam && primaryCam.HasComponent<CameraComponent>())
         {
             auto& cameraComp = primaryCam.GetComponent<CameraComponent>().Camera;
@@ -266,11 +248,11 @@ void RuntimeLayer::OnRender(Timestep ts)
         options.ShowEditorIcons = false;
 
         m_HDRFramebuffer->Bind();
-        Renderer::Get().Clear(bgColor);
-        m_SceneRenderer->RenderScene(m_Scene.get(), camera.value(), nearClip, farClip, options);
+        ServiceLocator::Get<Renderer>().Clear(bgColor);
+        m_SceneRenderer->RenderScene(m_Scene->GetRegistry(), m_Scene->GetSettings(), camera.value(), nearClip, farClip, options);
         m_HDRFramebuffer->Unbind();
 
-        Renderer::Get().SetViewport(0, 0, (int)width, (int)height);
+        ServiceLocator::Get<Renderer>().SetViewport(0, 0, (int)width, (int)height);
         
         ShaderAsset* overrideShader = nullptr;
         std::vector<ShaderUniform> uniforms;
@@ -280,7 +262,8 @@ void RuntimeLayer::OnRender(Timestep ts)
             auto& sc = primaryCam.GetComponent<ShaderComponent>();
             if (sc.Enabled && !sc.ShaderPath.empty())
             {
-                auto asset = AssetManager::Get().Get<ShaderAsset>(sc.ShaderPath);
+                auto handle = ServiceLocator::Get<AssetManager>().ResolveToHandle(sc.ShaderPath, ShaderAsset::GetStaticType());
+                auto asset = ServiceLocator::Get<AssetManager>().Get<ShaderAsset>(handle);
                 if (asset)
                 {
                     overrideShader = asset.get();
@@ -289,7 +272,7 @@ void RuntimeLayer::OnRender(Timestep ts)
             }
         }
 
-        Renderer::Get().ApplyPostProcessing(m_HDRFramebuffer->GetColorAttachmentRendererID(),
+        ServiceLocator::Get<Renderer>().ApplyPostProcessing(m_HDRFramebuffer->GetColorAttachmentRendererID(),
                                             m_HDRFramebuffer->GetDepthAttachmentRendererID(), camera.value(),
                                             overrideShader, uniforms);
     }
@@ -302,7 +285,7 @@ void RuntimeLayer::OnRender(Timestep ts)
                          m_Scene ? m_Scene->GetSettings().ScenePath : "null");
             s_WarnedNoCamera = true;
         }
-        Renderer::Get().Clear(bgColor);
+        ServiceLocator::Get<Renderer>().Clear(bgColor);
     }
 }
 
@@ -341,7 +324,7 @@ void RuntimeLayer::OnImGuiRender()
                     ImVec2 canvasSize = ImGui::GetContentRegionAvail();
                     // CH_CORE_INFO("RuntimeLayer: Drawing UI canvas at ({}, {}) with size ({}, {})",
                     //  canvasPos.x, canvasPos.y, canvasSize.x, canvasSize.y);
-                    UIRenderer::Get().DrawCanvas(m_Scene.get(), canvasPos, canvasSize, false);
+                    ServiceLocator::Get<UIRenderer>().DrawCanvas(m_Scene.get(), canvasPos, canvasSize, false);
                     m_Scene->OnRenderUI();
                 }
                 ImGui::EndChild();
@@ -451,16 +434,17 @@ bool RuntimeLayer::InitProject(const std::string& projectPath)
     }
 
     auto project = Project::GetActive();
-
+    std::filesystem::path assemblyPath = Project::GetAssetDirectory() / "bin" / (project->GetConfig().Scripting.ModuleName + ".dll");
+    
     // Initialize Scripting for the loaded project
-    if (!ScriptEngine::Get().ReloadAssembly())
+    if (!ServiceLocator::Get<ScriptEngine>().ReloadAssembly(assemblyPath.string()))
     {
         CH_CORE_WARN(
             "RuntimeLayer: Script reload failed during project initialization. Runtime continues without scripts.");
     }
 
     // Discover project fonts once before any scene loads.
-    UIRenderer::Get().LoadProjectFonts();
+    ServiceLocator::Get<UIRenderer>().LoadProjectFonts();
 
     ApplyWindowConfiguration();
     SetupBrandingAndIcon();
@@ -502,7 +486,7 @@ bool RuntimeLayer::DiscoverAndLoadProject(const std::string& projectPath)
     CH_CORE_INFO("RuntimeLayer: Asset Directory: {}", Project::GetAssetDirectory().string());
 
     // CRITICAL: Load engine shaders and resources immediately after project is resolved
-    Renderer::Get().LoadEngineResources();
+    ServiceLocator::Get<Renderer>().LoadEngineResources();
 
     return true;
 }
@@ -575,7 +559,7 @@ void RuntimeLayer::SetupBrandingAndIcon()
     }
 
     std::filesystem::path iconPath = "";
-    std::string resolved = AssetManager::Get().ResolvePath(config.IconPath);
+    std::string resolved = ServiceLocator::Get<AssetManager>().ResolvePath(config.IconPath);
     if (!resolved.empty() && std::filesystem::exists(resolved))
     {
         iconPath = resolved;
@@ -693,94 +677,10 @@ std::vector<std::pair<std::string, float>> RuntimeLayer::CollectSceneFontRequest
     std::unordered_set<std::string> dedupe;
     auto& registry = m_Scene->GetRegistry();
 
-    auto buttonView = registry.view<ButtonControl>();
-    for (entt::entity id : buttonView)
+    auto view = registry.view<WidgetComponent>();
+    for (entt::entity id : view)
     {
-        AppendTextStyleFontRequest(buttonView.get<ButtonControl>(id).Text, requests, dedupe);
-    }
-
-    auto labelView = registry.view<LabelControl>();
-    for (entt::entity id : labelView)
-    {
-        AppendTextStyleFontRequest(labelView.get<LabelControl>(id).Style, requests, dedupe);
-    }
-
-    auto sliderView = registry.view<SliderControl>();
-    for (entt::entity id : sliderView)
-    {
-        AppendTextStyleFontRequest(sliderView.get<SliderControl>(id).Text, requests, dedupe);
-    }
-
-    auto checkboxView = registry.view<CheckboxControl>();
-    for (entt::entity id : checkboxView)
-    {
-        AppendTextStyleFontRequest(checkboxView.get<CheckboxControl>(id).Text, requests, dedupe);
-    }
-
-    auto inputTextView = registry.view<InputTextControl>();
-    for (entt::entity id : inputTextView)
-    {
-        AppendTextStyleFontRequest(inputTextView.get<InputTextControl>(id).Style, requests, dedupe);
-    }
-
-    auto comboView = registry.view<ComboBoxControl>();
-    for (entt::entity id : comboView)
-    {
-        AppendTextStyleFontRequest(comboView.get<ComboBoxControl>(id).Style, requests, dedupe);
-    }
-
-    auto progressView = registry.view<ProgressBarControl>();
-    for (entt::entity id : progressView)
-    {
-        AppendTextStyleFontRequest(progressView.get<ProgressBarControl>(id).Style, requests, dedupe);
-    }
-
-    auto radioView = registry.view<RadioButtonControl>();
-    for (entt::entity id : radioView)
-    {
-        AppendTextStyleFontRequest(radioView.get<RadioButtonControl>(id).Style, requests, dedupe);
-    }
-
-    auto dragFloatView = registry.view<DragFloatControl>();
-    for (entt::entity id : dragFloatView)
-    {
-        AppendTextStyleFontRequest(dragFloatView.get<DragFloatControl>(id).Style, requests, dedupe);
-    }
-
-    auto dragIntView = registry.view<DragIntControl>();
-    for (entt::entity id : dragIntView)
-    {
-        AppendTextStyleFontRequest(dragIntView.get<DragIntControl>(id).Style, requests, dedupe);
-    }
-
-    auto treeNodeView = registry.view<TreeNodeControl>();
-    for (entt::entity id : treeNodeView)
-    {
-        AppendTextStyleFontRequest(treeNodeView.get<TreeNodeControl>(id).Style, requests, dedupe);
-    }
-
-    auto tabItemView = registry.view<TabItemControl>();
-    for (entt::entity id : tabItemView)
-    {
-        AppendTextStyleFontRequest(tabItemView.get<TabItemControl>(id).Style, requests, dedupe);
-    }
-
-    auto collapsingHeaderView = registry.view<CollapsingHeaderControl>();
-    for (entt::entity id : collapsingHeaderView)
-    {
-        AppendTextStyleFontRequest(collapsingHeaderView.get<CollapsingHeaderControl>(id).Style, requests, dedupe);
-    }
-
-    auto plotLinesView = registry.view<PlotLinesControl>();
-    for (entt::entity id : plotLinesView)
-    {
-        AppendTextStyleFontRequest(plotLinesView.get<PlotLinesControl>(id).Style, requests, dedupe);
-    }
-
-    auto plotHistogramView = registry.view<PlotHistogramControl>();
-    for (entt::entity id : plotHistogramView)
-    {
-        AppendTextStyleFontRequest(plotHistogramView.get<PlotHistogramControl>(id).Style, requests, dedupe);
+        AppendTextStyleFontRequest(view.get<WidgetComponent>(id).TextStyle, requests, dedupe);
     }
 
     return requests;
@@ -794,7 +694,7 @@ void RuntimeLayer::PreloadSceneFonts(bool allowRuntimeMutation)
         return;
     }
 
-    const int loadedCount = UIRenderer::Get().GetFontRegistry().PreloadFonts(requests, allowRuntimeMutation);
+    const int loadedCount = ServiceLocator::Get<UIRenderer>().GetFontRegistry().PreloadFonts(requests, allowRuntimeMutation);
     if (loadedCount <= 0)
     {
         return;
@@ -846,16 +746,10 @@ bool RuntimeLayer::TransitionToScene(const std::filesystem::path& scenePath)
     // so without this, ExitScript or SceneScript would fire on the very first frame.
     {
         auto& registry = m_Scene->GetRegistry();
-        auto btnView = registry.view<ButtonControl>();
-        for (entt::entity id : btnView)
+        auto view = registry.view<WidgetComponent>();
+        for (entt::entity id : view)
         {
-            btnView.get<ButtonControl>(id).PressedThisFrame = false;
-        }
-
-        auto ibView = registry.view<ImageButtonControl>();
-        for (entt::entity id : ibView)
-        {
-            ibView.get<ImageButtonControl>(id).PressedThisFrame = false;
+            view.get<WidgetComponent>(id).PressedThisFrame = false;
         }
     }
 
@@ -875,7 +769,7 @@ std::optional<Camera3D> RuntimeLayer::GetActiveCamera()
 {
     if (m_Scene)
     {
-        return m_Scene->GetActiveCamera();
+        return SceneRenderer::GetActiveCamera(m_Scene->GetRegistry());
     }
     return std::nullopt;
 }
@@ -906,7 +800,7 @@ void RuntimeLayer::EnsureRuntimeFramebuffer(uint32_t width, uint32_t height)
 
 bool RuntimeLayer::IsSceneReadyToStart() const
 {
-    return !AssetManager::Get().HasBackgroundWork();
+    return !ServiceLocator::Get<AssetManager>().HasBackgroundWork();
 }
 
 void RuntimeLayer::DrawLoadingOverlay()
@@ -925,8 +819,8 @@ void RuntimeLayer::DrawLoadingOverlay()
 
     if (ImGui::Begin("##RuntimeLoadingOverlay", nullptr, flags))
     {
-        const size_t loadingCount = AssetManager::Get().GetLoadingAssetCount();
-        const size_t pendingFinalizeCount = AssetManager::Get().GetPendingFinalizeCount();
+        const size_t loadingCount = ServiceLocator::Get<AssetManager>().GetLoadingAssetCount();
+        const size_t pendingFinalizeCount = ServiceLocator::Get<AssetManager>().GetPendingFinalizeCount();
         const size_t totalPending = loadingCount + pendingFinalizeCount;
 
         int dotsCount = (static_cast<int>(ImGui::GetTime() * 2.5f) % 3) + 1;

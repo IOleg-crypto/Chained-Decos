@@ -1,7 +1,8 @@
 #include "bvh_cache.h"
 
 #include "bvh.h"
-#include "engine/core/assets/asset_manager.h"
+#include "engine/assets/asset_manager.h"
+#include "engine/core/service_locator.h"
 #include "engine/core/log.h"
 #include "engine/graphics/assets/model_asset.h"
 #include "engine/core/thread_pool.h"
@@ -45,7 +46,8 @@ std::shared_ptr<BVH> BVHCache::GetOrBuild(const std::string& path)
         return nullptr;
     }
 
-    auto asset = AssetManager::Get().Get<ModelAsset>(path);
+    auto handle = ServiceLocator::Get<AssetManager>().ResolveToHandle(path, ModelAsset::GetStaticType());
+    auto asset = ServiceLocator::Get<AssetManager>().Get<ModelAsset>(handle);
     if (!asset || asset->GetState() != AssetState::Ready)
     {
         return nullptr;

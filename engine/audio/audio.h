@@ -1,8 +1,9 @@
 #ifndef CH_AUDIO_H
 #define CH_AUDIO_H
 
+#include "engine/core/engine_service.h"
 #include "engine/core/timestep.h"
-#include "engine/core/uuid.h" // Assuming AssetHandle / UUID is here. If not, include where AssetHandle is.
+#include "engine/core/uuid.h"
 #include <glm/glm.hpp>
 #include <memory>
 #include <miniaudio.h>
@@ -18,65 +19,51 @@ using AudioHandle = UUID;
 struct SoundInstance
 {
     ma_sound Sound;
-    ma_audio_buffer Buffer;
     AudioHandle Handle;
 };
-struct AudioData
-{
-    std::vector<float> PCMData;
-    uint32_t Channels = 0;
-    uint32_t SampleRate = 0;
 
-    // For play usage inside Audio
-    const float* Data() const
-    {
-        return PCMData.data();
-    }
-    uint32_t Size() const
-    {
-        return (uint32_t)PCMData.size();
-    }
-};
-
-class Audio
+class Audio : public EngineService
 {
 public:
     Audio();
-    ~Audio();
 
-    static Audio& Get();
+    virtual ~Audio() override;
 
-    Audio(const Audio&) = delete;
-    Audio& operator=(const Audio&) = delete;
-
-    void Update(Timestep ts);
+public:
     void SetListenerPosition(const glm::vec3& position, const glm::vec3& forward, const glm::vec3& up);
 
-    // Loads audio from disk synchronously. Returns a Handle that is fast & safe to use.
+public:
     AudioHandle LoadSound(const std::string& filepath);
-    // Returns true if handle is valid and data is loaded. (0 is invalid handle in Hazel style)
     bool IsSoundLoaded(AudioHandle handle) const;
     bool IsPlaying(AudioHandle handle) const;
 
-    // Plays a sound.
     void Play(AudioHandle handle, float volume = 1.0f, float pitch = 1.0f, bool loop = false, bool spatial = false,
               const glm::vec3& pos = {0, 0, 0});
 
-    // Updates the position of all active spatialized sounds tracking this handle
     void SetInstancePosition(AudioHandle handle, const glm::vec3& pos);
+    void SetVolume(AudioHandle handle, float volume);
+    void SetPitch(AudioHandle handle, float pitch);
 
-    // Stops any active instance that was loaded from the given path.
     void Stop(const std::string& filepath);
     void Stop(AudioHandle handle);
-
     void StopAll();
+    void Update(Timestep ts);
+
+public:
+    ma_engine* GetEngine() const;
+
+protected:
+    virtual void OnInit() override;
+    virtual void OnUpdate(Timestep ts) override;
+    virtual void OnShutdown() override;
 
 private:
     ma_engine* m_Engine = nullptr;
 
     mutable std::mutex m_DataMutex;
-    std::unordered_map<AudioHandle, AudioData> m_AudioDataRegistry;
-    std::unordered_map<std::string, AudioHandle> m_PathRegistry;
+    std::vector<std::unique_ptr<SoundInstance>> m_ActiveSounds;
+    std::unordered_map<std::string, AudioHandle> m_PathToHandle;
+    std::unordered_map<AudioHandle, std::string> m_HandleToPath;
 };
 
 } // namespace CHEngine

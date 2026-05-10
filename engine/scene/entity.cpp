@@ -1,45 +1,12 @@
 #include "engine/scene/entity.h"
-#include "engine/core/uuid.h"
-#include "engine/scene/component_serializer.h"
 #include "engine/scene/components.h"
-#include <unordered_map>
 
 namespace CHEngine
 {
 
-Entity::Entity(entt::entity handle, entt::registry& registry)
-    : m_EntityHandle(handle)
-{
-    auto* weakRegistryPtr = registry.ctx().find<std::weak_ptr<entt::registry>>();
-    if (weakRegistryPtr)
-    {
-        m_Registry = weakRegistryPtr->lock();
-    }
-    else
-    {
-        // Fallback: Use a non-owning shared_ptr if we're initialized from a raw registry
-        // that doesn't have a shared context (e.g. in stack-allocated test registries).
-        m_Registry = std::shared_ptr<entt::registry>(&registry, [](entt::registry*) {});
-    }
-    CH_CORE_ASSERT(m_Registry, "Entity initialized with null registry!");
-}
-
 Entity::Entity(entt::entity handle, entt::registry* registry)
-    : m_EntityHandle(handle)
+    : m_EntityHandle(handle), m_Registry(registry)
 {
-    if (registry)
-    {
-        auto* weakRegistryPtr = registry->ctx().find<std::weak_ptr<entt::registry>>();
-        if (weakRegistryPtr)
-        {
-            m_Registry = weakRegistryPtr->lock();
-        }
-        else
-        {
-            // Fallback: Use a non-owning shared_ptr
-            m_Registry = std::shared_ptr<entt::registry>(registry, [](entt::registry*) {});
-        }
-    }
     CH_CORE_ASSERT(m_Registry, "Entity initialized with null registry!");
 }
 

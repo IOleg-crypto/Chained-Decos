@@ -1,26 +1,36 @@
-#include "editor_launcher.h"
+#include "editor_utils.h"
+
 #include "engine/core/base.h"
 #include "engine/core/profiler.h"
 #include "engine/scene/project.h"
 #include "engine/scene/project_serializer.h"
 #include "engine/scene/scene_serializer.h"
+
+#include <algorithm>
+#include <format>
+#include <vector>
+
 #if CH_PLATFORM_WINDOWS
 #include <windows.h>
 #include <shellapi.h>
 #endif
-#include <algorithm>
-#include <format>
 
 namespace CHEngine
 {
 
-void EditorLauncher::LaunchStandalone(std::shared_ptr<Project> project, std::shared_ptr<Scene> editorScene)
+// --- Internal Helper Declarations ---
+static std::filesystem::path FindRuntimeExecutable(const std::string& projectName, const std::string& configStr);
+static std::string ResolveLaunchVariables(std::string str, std::shared_ptr<Project> project);
+
+// --- Public Function Implementations ---
+
+void LaunchStandalone(std::shared_ptr<Project> project, std::shared_ptr<Scene> editorScene)
 {
     CH_PROFILE_FUNCTION();
 
     if (!project)
     {
-        CH_CORE_ERROR("EditorLauncher: No active project to launch!");
+        CH_CORE_ERROR("LaunchStandalone: No active project to launch!");
         return;
     }
 
@@ -43,7 +53,7 @@ void EditorLauncher::LaunchStandalone(std::shared_ptr<Project> project, std::sha
                 SceneSerializer serializer(editorScene.get());
                 if (!serializer.Serialize(editorScene->GetSettings().ScenePath))
                 {
-                    CH_CORE_ERROR("EditorLauncher: Failed to save current editor scene before launching.");
+                    CH_CORE_ERROR("LaunchStandalone: Failed to save current editor scene before launching.");
                     return;
                 }
             }
@@ -88,7 +98,7 @@ void EditorLauncher::LaunchStandalone(std::shared_ptr<Project> project, std::sha
     else
     {
         // Fallback to old heuristic if no profiles
-        CH_CORE_WARN("EditorLauncher: No active launch profile. Falling back to heuristic search.");
+        CH_CORE_WARN("LaunchStandalone: No active launch profile. Falling back to heuristic search.");
         std::string configStr = (config.BuildConfig == Configuration::Release) ? "Release" : "Debug";
         runtimePath = FindRuntimeExecutable(config.Name, configStr).string();
 
@@ -103,13 +113,13 @@ void EditorLauncher::LaunchStandalone(std::shared_ptr<Project> project, std::sha
 
     if (runtimePath.empty() || !std::filesystem::exists(runtimePath))
     {
-        CH_CORE_WARN("EditorLauncher: Profile binary not found at '{}'. Searching heuristic...", runtimePath);
+        CH_CORE_WARN("LaunchStandalone: Profile binary not found at '{}'. Searching heuristic...", runtimePath);
         std::string configStr = (config.BuildConfig == Configuration::Release) ? "Release" : "Debug";
         runtimePath = FindRuntimeExecutable(config.Name, configStr).string();
 
         if (runtimePath.empty())
         {
-            CH_CORE_ERROR("EditorLauncher: Runtime executable not found!");
+            CH_CORE_ERROR("LaunchStandalone: Runtime executable not found!");
             return;
         }
     }
@@ -122,22 +132,25 @@ void EditorLauncher::LaunchStandalone(std::shared_ptr<Project> project, std::sha
     std::string normalizedArgs = arguments;
     std::replace(normalizedArgs.begin(), normalizedArgs.end(), '/', '\\');
 
-    CH_CORE_INFO("EditorLauncher: Executing via ShellExecute: {} {}", normalizedRuntime, normalizedArgs);
+    CH_CORE_INFO("LaunchStandalone: Executing via ShellExecute: {} {}", normalizedRuntime, normalizedArgs);
 
     // Use ShellExecute instead of system to be truly non-blocking and avoid cmd window issues
-    HINSTANCE result = ShellExecuteA(NULL, "open", normalizedRuntime.c_str(), normalizedArgs.c_str(), NULL, SW_SHOW);
+    HINSTANCE result = ShellExecuteW(NULL, L"open", std::wstring(normalizedRuntime.begin(), normalizedRuntime.end()).c_str(),
+                                     std::wstring(normalizedArgs.begin(), normalizedArgs.end()).c_str(), NULL, SW_SHOW);
     if ((uintptr_t)result <= 32)
     {
-        CH_CORE_ERROR("EditorLauncher: ShellExecute failed with error code: {}", (uintptr_t)result);
+        CH_CORE_ERROR("LaunchStandalone: ShellExecute failed with error code: {}", (uintptr_t)result);
     }
 #else
     std::string command = std::format("\"{}\" {} &", runtimePath, arguments);
-    CH_CORE_INFO("EditorLauncher: Executing: {}", command);
+    CH_CORE_INFO("LaunchStandalone: Executing: {}", command);
     system(command.c_str());
 #endif
 }
 
-std::filesystem::path EditorLauncher::FindRuntimeExecutable(const std::string& projectName,
+// --- Internal Helper Implementations ---
+
+static std::filesystem::path FindRuntimeExecutable(const std::string& projectName,
                                                             const std::string& configStr)
 {
     CH_PROFILE_FUNCTION();
@@ -155,7 +168,7 @@ std::filesystem::path EditorLauncher::FindRuntimeExecutable(const std::string& p
 
     if (!std::filesystem::exists(root))
     {
-        CH_CORE_ERROR("EditorLauncher: Root path not found: {}", root.string());
+        CH_CORE_ERROR("FindRuntimeExecutable: Root path not found: {}", root.string());
         return {};
     }
 
@@ -196,13 +209,13 @@ std::filesystem::path EditorLauncher::FindRuntimeExecutable(const std::string& p
         std::filesystem::path p = root / sub / targetName;
         if (std::filesystem::exists(p))
         {
-            CH_CORE_INFO("EditorLauncher: Path found at: {}", p.string());
+            CH_CORE_INFO("FindRuntimeExecutable: Path found at: {}", p.string());
             return p;
         }
     }
 
     // 3. Fallback: careful recursive search excluding noisy folders
-    CH_CORE_INFO("EditorLauncher: Fast path failed, starting scoped recursive search...");
+    CH_CORE_INFO("FindRuntimeExecutable: Fast path failed, starting scoped recursive search...");
     try
     {
         for (auto it = std::filesystem::recursive_directory_iterator(root);
@@ -223,19 +236,19 @@ std::filesystem::path EditorLauncher::FindRuntimeExecutable(const std::string& p
 
             if (entry.is_regular_file() && filename == targetName)
             {
-                CH_CORE_INFO("EditorLauncher: Deep search found at: {}", entry.path().string());
+                CH_CORE_INFO("FindRuntimeExecutable: Deep search found at: {}", entry.path().string());
                 return entry.path();
             }
         }
     } catch (const std::exception& e)
     {
-        CH_CORE_WARN("EditorLauncher: Deep search error: {}", e.what());
+        CH_CORE_WARN("FindRuntimeExecutable: Deep search error: {}", e.what());
     }
 
     return {};
 }
 
-std::string EditorLauncher::ResolveLaunchVariables(std::string str, std::shared_ptr<Project> project)
+static std::string ResolveLaunchVariables(std::string str, std::shared_ptr<Project> project)
 {
     CH_PROFILE_FUNCTION();
 

@@ -17,7 +17,7 @@
 
 namespace CHEngine
 {
-class IPhysicsWorld;
+class ScriptEngine;
 class SceneScriptingManager;
 class SceneSystemManager;
 
@@ -25,7 +25,7 @@ class SceneSystemManager;
 class Scene
 {
 public:
-    Scene();
+    Scene(ScriptEngine* scriptEngine = nullptr);
     ~Scene();
 
 public:
@@ -57,46 +57,42 @@ public: // Life Cycle & Simulation
 
 public:
     bool IsSimulationRunning() const;
+    ScriptEngine* GetScriptEngine() const;
 
 public:
     SceneSettings& GetSettings();
     const SceneSettings& GetSettings() const;
 
+    std::vector<entt::entity>& GetRootEntities() { return m_RootEntities; }
+    const std::vector<entt::entity>& GetRootEntities() const { return m_RootEntities; }
+
 public: // Systems & Tools
     entt::registry& GetRegistry();
     const entt::registry& GetRegistry() const;
-    std::shared_ptr<entt::registry> GetRegistryPtr();
-
-    IPhysicsWorld& GetPhysicsWorld() { return *m_PhysicsWorld; }
-
-public:
-    std::optional<Camera3D> GetActiveCamera();
-    Entity GetPrimaryCameraEntity();
+    entt::registry* GetRegistryPtr();
 
 private:
-    Camera3D GetCameraFromEntity(entt::entity entityHandle);
-
-    SceneScriptingManager& GetScriptingManager() { return *m_ScriptingManager; }
-
-private:
-    std::shared_ptr<entt::registry> m_Registry;
+    std::unique_ptr<entt::registry> m_Registry;
     SceneSettings m_Settings;
     bool m_IsSimulationRunning = false;
     std::unique_ptr<SceneScriptingManager> m_ScriptingManager;
     std::unique_ptr<SceneSystemManager> m_SystemManager;
-    std::unique_ptr<IPhysicsWorld> m_PhysicsWorld;
 
-private:
     void OnIDConstruct(entt::registry& registry, entt::entity entity);
     void OnIDDestroy(entt::registry& registry, entt::entity entity);
     // Hierarchy handlers.
     void OnHierarchyDestroy(entt::registry& registry, entt::entity entity);
-    
+
     Entity CopyEntityInternal(entt::entity copyEntity, entt::entity parentEntity = entt::null);
 
     friend class Entity;
+    friend class HierarchySystem;
+    friend class SceneSerializer;
+
+    std::vector<entt::entity> m_RootEntities;
 };
 
 } // namespace CHEngine
 
 #endif // CH_SCENE_H
+

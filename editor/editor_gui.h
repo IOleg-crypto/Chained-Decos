@@ -52,8 +52,6 @@ public:
     static bool DrawVec4(const char* label, glm::vec4& values, float resetValue = 0.0f);
     // Applies the editor-wide ImGui style.
     static void ApplyTheme();
-    // Builds a world ray from screen-space mouse coordinates.
-    static Ray GetMouseRay(const struct Camera3D& camera, const glm::vec2& mousePosition, const glm::vec2& viewportSize);
 };
 
 } // namespace CHEngine

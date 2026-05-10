@@ -1,5 +1,8 @@
+set(STB_IMPL_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/stb_impl.cpp")
+file(WRITE "${STB_IMPL_SOURCE}" "#define STB_IMAGE_IMPLEMENTATION\n#include \"stb_image.h\"\n")
+
 add_library(engine_graphics ${SUBMODULE_LIB_TYPE}
-        stb_impl.cpp
+        ${STB_IMPL_SOURCE}
     # Pipeline
         pipeline/renderer.cpp
         pipeline/renderer_types.cpp
@@ -11,6 +14,7 @@ add_library(engine_graphics ${SUBMODULE_LIB_TYPE}
 
         pipeline/render_command.cpp
         pipeline/texture_utility.cpp
+
         texture_system.cpp
         pipeline/geometry_generator.cpp
         pipeline/renderer.h
@@ -21,6 +25,7 @@ add_library(engine_graphics ${SUBMODULE_LIB_TYPE}
         pipeline/shader_library.h
         pipeline/material.h
         pipeline/frustum.h
+
         pipeline/texture_utility.h
         texture_system.h
         pipeline/geometry_generator.h
@@ -80,33 +85,32 @@ add_library(engine_graphics ${SUBMODULE_LIB_TYPE}
         api/opengl/opengl_framebuffer.h
         api/opengl/opengl_shader.h
         api/opengl/opengl_shader.cpp
+        api/opengl/opengl_uniform_buffer.h
+        api/opengl/opengl_uniform_buffer.cpp
         api/opengl/opengl_storage_buffer.h
         api/opengl/opengl_storage_buffer.cpp
 )
 
 # Prevents multiple definition errors when using unity builds
-set_source_files_properties(stb_impl.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
+set_source_files_properties(${STB_IMPL_SOURCE} PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 
 target_include_directories(engine_graphics PUBLIC
-    ${ENGINE_INCLUDE_DIRS}
-    ${assimp_SOURCE_DIR}/include
-    ${assimp_BINARY_DIR}/include
-    ${yaml-cpp_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/include/imgui
-    ${CMAKE_SOURCE_DIR}/include/imgui/backends
-    ${CMAKE_SOURCE_DIR}/include/entt/src
-    ${CMAKE_SOURCE_DIR}/include/stb
-    ${imguizmo_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(engine_graphics PUBLIC 
+target_link_libraries(engine_graphics 
+PUBLIC 
     engine_core
-    imguilib 
-    assimp::assimp 
-    yaml-cpp
-    EnTT::EnTT
-    glfw
-    glad
+    engine_audio
+    ChainedEngine::External::YamlCpp
+    ChainedEngine::External::EnTT
+    ChainedEngine::External::GLM
+    ChainedEngine::External::STB
+    ChainedEngine::External::ImGui
+    ChainedEngine::External::GLFW
+    ChainedEngine::External::GLAD
+    ChainedEngine::External::Assimp
 )
 
 if(COMMAND apply_engine_optimizations)

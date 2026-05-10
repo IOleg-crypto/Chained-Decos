@@ -4,6 +4,8 @@
 namespace CHEngine
 {
 
+void RegisterGlueSystem() {}
+
 // ── Logging ──────────────────────────────────────────────────────────
 CH_SCRIPT_FUNC void Log_Info(Coral::String message)
 {
@@ -66,28 +68,6 @@ CH_SCRIPT_FUNC void Window_SetAntialiasing(bool enabled)
 }
 CH_ADD_INTERNAL_CALL(AppWindow, Window_SetAntialiasing_Ptr, Window_SetAntialiasing);
 
-ManagedScriptInstance* s_PendingScriptInstance = nullptr;
-
-void ScriptGlue::SetPendingScriptInstance(ManagedScriptInstance* instance)
-{
-    s_PendingScriptInstance = instance;
-}
-
-CH_SCRIPT_FUNC void RegisterLifecyclePointers(uint64_t entityID, void* onCreate, void* onStart, void* onUpdate,
-                                              void* onDestroy, void* onGUI, void* onCollisionEnter, void* onEvent)
-{
-    if (s_PendingScriptInstance)
-    {
-        s_PendingScriptInstance->OnCreate = (void (*)())onCreate;
-        s_PendingScriptInstance->OnStart = (void (*)())onStart;
-        s_PendingScriptInstance->OnUpdate = (void (*)(float))onUpdate;
-        s_PendingScriptInstance->OnDestroy = (void (*)())onDestroy;
-        s_PendingScriptInstance->OnGUI = (void (*)())onGUI;
-        s_PendingScriptInstance->OnCollisionEnter = (void (*)(uint64_t))onCollisionEnter;
-        s_PendingScriptInstance->OnEvent = (void (*)(int))onEvent;
-    }
-}
-CH_ADD_INTERNAL_CALL(Script, RegisterLifecyclePointers, RegisterLifecyclePointers);
 
 } // namespace CHEngine
 

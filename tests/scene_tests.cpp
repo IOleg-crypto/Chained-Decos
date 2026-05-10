@@ -1,11 +1,31 @@
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/component_serializer.h"
+#include "engine/core/service_locator.h"
 #include "gtest/gtest.h"
 
 using namespace CHEngine;
 
-TEST(SceneTest, CreateEntity)
+class SceneTest : public ::testing::Test
+{
+protected:
+    void SetUp() override
+    {
+        m_ComponentSerializer = std::make_shared<ComponentSerializer>();
+        m_ComponentSerializer->OnInit();
+        ServiceLocator::Register<ComponentSerializer>(m_ComponentSerializer.get());
+    }
+
+    void TearDown() override
+    {
+        ServiceLocator::Remove<ComponentSerializer>();
+        m_ComponentSerializer.reset();
+    }
+
+    std::shared_ptr<ComponentSerializer> m_ComponentSerializer;
+};
+
+TEST_F(SceneTest, CreateEntity)
 {
     Scene scene;
     Entity entity = scene.CreateEntity("Test Entity");
@@ -16,7 +36,7 @@ TEST(SceneTest, CreateEntity)
     EXPECT_EQ(entity.GetComponent<TagComponent>().Tag, "Test Entity");
 }
 
-TEST(SceneTest, DestroyEntity)
+TEST_F(SceneTest, DestroyEntity)
 {
     Scene scene;
     Entity entity = scene.CreateEntity("To Destroy");
@@ -26,7 +46,7 @@ TEST(SceneTest, DestroyEntity)
     EXPECT_FALSE(scene.GetRegistry().valid(handle));
 }
 
-TEST(SceneTest, ComponentOperations)
+TEST_F(SceneTest, ComponentOperations)
 {
     Scene scene;
     Entity entity = scene.CreateEntity();
@@ -44,7 +64,7 @@ TEST(SceneTest, ComponentOperations)
     EXPECT_FALSE(entity.HasComponent<CustomComponent>());
 }
 
-TEST(SceneTest, EntityRenaming)
+TEST_F(SceneTest, EntityRenaming)
 {
     Scene scene;
     Entity entity = scene.CreateEntity("Old Name");
@@ -56,7 +76,7 @@ TEST(SceneTest, EntityRenaming)
     EXPECT_EQ(entity.GetComponent<TagComponent>().Tag, "New Name");
 }
 
-TEST(SceneTest, FindEntityByTag)
+TEST_F(SceneTest, FindEntityByTag)
 {
     Scene scene;
     scene.CreateEntity("Entity A");
@@ -70,7 +90,7 @@ TEST(SceneTest, FindEntityByTag)
     EXPECT_FALSE(notFound);
 }
 
-TEST(SceneTest, GetEntityByUUID)
+TEST_F(SceneTest, GetEntityByUUID)
 {
     Scene scene;
     Entity entity = scene.CreateEntity("Tracked Entity");
@@ -85,9 +105,9 @@ TEST(SceneTest, GetEntityByUUID)
 }
 
 
-TEST(SceneTest, CopyEntity)
+TEST_F(SceneTest, CopyEntity)
 {
-    auto& serializer = ComponentSerializer::Get();
+    auto& serializer = ServiceLocator::Get<ComponentSerializer>();
     
     Scene scene;
     Entity src = scene.CreateEntity("Source");
@@ -101,7 +121,7 @@ TEST(SceneTest, CopyEntity)
     EXPECT_TRUE(dst.GetComponent<CameraComponent>().Primary);
 }
 
-TEST(SceneTest, CopyEntityResetsManagedScriptRuntimeState)
+TEST_F(SceneTest, CopyEntityResetsManagedScriptRuntimeState)
 {
     Scene scene;
     Entity src = scene.CreateEntity("Scripted");
@@ -112,12 +132,6 @@ TEST(SceneTest, CopyEntityResetsManagedScriptRuntimeState)
     // Use a dummy shared_ptr to simulate a live runtime instance (no real Coral object).
     script.Instance = std::make_shared<int>(1);
     script.NeedsStart = false;
-    script.OnCreate = reinterpret_cast<void (*)()>(0x1);
-    script.OnStart = reinterpret_cast<void (*)()>(0x2);
-    script.OnUpdate = reinterpret_cast<void (*)(float)>(0x3);
-    script.OnDestroy = reinterpret_cast<void (*)()>(0x4);
-    script.OnGUI = reinterpret_cast<void (*)()>(0x5);
-    script.OnCollisionEnter = reinterpret_cast<void (*)(uint64_t)>(0x6);
 
     Entity dst = scene.CopyEntity((entt::entity)src);
     ASSERT_TRUE(dst.HasComponent<ManagedScriptComponent>());
@@ -128,15 +142,9 @@ TEST(SceneTest, CopyEntityResetsManagedScriptRuntimeState)
     EXPECT_EQ(copiedScripts[0].Fields.size(), 0u);
     EXPECT_FALSE(copiedScripts[0].HasInstance());
     EXPECT_TRUE(copiedScripts[0].NeedsStart);
-    EXPECT_EQ(copiedScripts[0].OnCreate, nullptr);
-    EXPECT_EQ(copiedScripts[0].OnStart, nullptr);
-    EXPECT_EQ(copiedScripts[0].OnUpdate, nullptr);
-    EXPECT_EQ(copiedScripts[0].OnDestroy, nullptr);
-    EXPECT_EQ(copiedScripts[0].OnGUI, nullptr);
-    EXPECT_EQ(copiedScripts[0].OnCollisionEnter, nullptr);
 }
 
-TEST(SceneTest, DestructiveOperations)
+TEST_F(SceneTest, DestructiveOperations)
 {
     Scene scene;
     Entity entity1 = scene.CreateEntity("Entity 1");

@@ -1,7 +1,8 @@
 #include "shader_library.h"
 #include "engine/core/ch_assert.h"
 #include "engine/core/log.h"
-#include "engine/core/assets/asset_manager.h"
+#include "engine/assets/asset_manager.h"
+#include "engine/core/service_locator.h"
 #include "engine/scene/project.h"
 #include <filesystem>
 
@@ -21,7 +22,8 @@ void ShaderLibrary::Add(const std::shared_ptr<ShaderAsset>& shader)
 
 void ShaderLibrary::Load(const std::string& path)
 {
-    auto shader = AssetManager::Get().Get<ShaderAsset>(path);
+    auto handle = ServiceLocator::Get<AssetManager>().ResolveToHandle(path, ShaderAsset::GetStaticType());
+    auto shader = ServiceLocator::Get<AssetManager>().Get<ShaderAsset>(handle);
     if (shader)
     {
         Add(shader);
@@ -30,7 +32,8 @@ void ShaderLibrary::Load(const std::string& path)
 
 void ShaderLibrary::Load(const std::string& name, const std::string& path)
 {
-    auto shader = AssetManager::Get().Get<ShaderAsset>(path);
+    auto handle = ServiceLocator::Get<AssetManager>().ResolveToHandle(path, ShaderAsset::GetStaticType());
+    auto shader = ServiceLocator::Get<AssetManager>().Get<ShaderAsset>(handle);
     if (shader)
     {
         if (Exists(name))
@@ -51,7 +54,8 @@ std::shared_ptr<ShaderAsset> ShaderLibrary::LoadOrGet(const std::string& name, c
         return it->second;
     }
 
-    auto shader = AssetManager::Get().Get<ShaderAsset>(path);
+    auto handle = ServiceLocator::Get<AssetManager>().ResolveToHandle(path, ShaderAsset::GetStaticType());
+    auto shader = ServiceLocator::Get<AssetManager>().Get<ShaderAsset>(handle);
     if (shader)
     {
         m_Shaders[name] = shader;
@@ -108,7 +112,7 @@ void ShaderLibrary::ReloadAll()
         if (shader && !shader->GetPath().empty())
         {
             CH_CORE_TRACE("ShaderLibrary: Reloading shader '{}' from '{}'", name, shader->GetPath());
-            AssetManager::Get().Reload<ShaderAsset>(shader->GetPath());
+            ServiceLocator::Get<AssetManager>().Reload<ShaderAsset>(shader->GetPath());
         }
     }
 }

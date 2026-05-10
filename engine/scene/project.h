@@ -2,7 +2,6 @@
 #define CH_PROJECT_H
 
 #include "engine/core/base.h"
-#include "engine/core/assets/asset_manager.h"
 #include "engine/graphics/assets/environment.h"
 #include "engine/graphics/assets/texture_asset.h"
 #include <filesystem>
@@ -168,6 +167,8 @@ public:
     }
     // Sets the engine root used for resolving engine-relative paths.
     static void SetEngineRoot(const std::filesystem::path& path);
+    // Discovers the engine root by looking for the "resources" folder from the given path.
+    static void DiscoverEngineRoot(const std::filesystem::path& startPath = "");
 
     // Saves the active project to disk.
     static bool SaveActive(const std::filesystem::path& path);

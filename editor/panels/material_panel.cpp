@@ -5,6 +5,9 @@
 #include "property_editor.h"
 #include "ui_properties.h"
 #include "engine/graphics/texture_system.h"
+#include "engine/assets/asset_manager.h"
+#include "engine/core/service_locator.h"
+#include "engine/graphics/assets/texture_asset.h"
 
 namespace CHEngine
 {
@@ -14,11 +17,10 @@ MaterialPanel::MaterialPanel()
     m_Name = "Material Editor";
 }
 
-static uint32_t GetTextureID(const std::string& path)
+static uint32_t GetTextureID(AssetHandle handle)
 {
-    if (path.empty()) return 0;
-    auto textureHandle = TextureSystem::Get().LoadTexture(path);
-    return TextureSystem::Get().GetRendererID(textureHandle);
+    if (handle == 0) return 0;
+    return ServiceLocator::Get<TextureSystem>().GetRendererID(handle);
 }
 
 void MaterialPanel::DrawMaterialSlot(MaterialSlot& slot)
@@ -28,13 +30,33 @@ void MaterialPanel::DrawMaterialSlot(MaterialSlot& slot)
     if (ImGui::CollapsingHeader(ICON_FA_IMAGE " Albedo", ImGuiTreeNodeFlags_DefaultOpen))
     {
         EditorGUI::Property("Color", mat.AlbedoColor);
-        mat.OverrideAlbedo |= EditorGUI::FileProperty("Texture", mat.AlbedoPath, GetTextureID(mat.AlbedoPath), "png,jpg,tga");
+        std::string albedoPath = ServiceLocator::Get<AssetManager>().ResolvePath(ServiceLocator::Get<AssetManager>().GetAssetDirectory().string() + "/textures/..."); // This is tricky, UI needs a string.
+        // Actually, let's use a helper to get path from handle if possible, or just use handle directly in FileProperty if it supports it.
+        // For now, I'll use the AssetManager to get the path.
+        
+        std::string currentPath = "";
+        auto asset = ServiceLocator::Get<AssetManager>().Get<TextureAsset>(mat.AlbedoHandle);
+        if (asset) currentPath = asset->GetPath();
+
+        if (EditorGUI::FileProperty("Texture", currentPath, GetTextureID(mat.AlbedoHandle), "png,jpg,tga"))
+        {
+            mat.AlbedoHandle = ServiceLocator::Get<AssetManager>().ResolveToHandle(currentPath);
+            mat.OverrideAlbedo = true;
+        }
         ImGui::Checkbox("Override Albedo", &mat.OverrideAlbedo);
     }
 
     if (ImGui::CollapsingHeader(ICON_FA_WATER " Normals", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        mat.OverrideNormal |= EditorGUI::FileProperty("Normal Map", mat.NormalMapPath, GetTextureID(mat.NormalMapPath), "png,jpg,tga");
+        std::string normalPath = "";
+        auto normalAsset = ServiceLocator::Get<AssetManager>().Get<TextureAsset>(mat.NormalHandle);
+        if (normalAsset) normalPath = normalAsset->GetPath();
+
+        if (EditorGUI::FileProperty("Normal Map", normalPath, GetTextureID(mat.NormalHandle), "png,jpg,tga"))
+        {
+            mat.NormalHandle = ServiceLocator::Get<AssetManager>().ResolveToHandle(normalPath);
+            mat.OverrideNormal = true;
+        }
         ImGui::Checkbox("Override Normal", &mat.OverrideNormal);
     }
 
@@ -51,7 +73,15 @@ void MaterialPanel::DrawMaterialSlot(MaterialSlot& slot)
         
         ImGui::Columns(1);
         
-        mat.OverrideMetallicRoughness |= EditorGUI::FileProperty("PBR Map", mat.MetallicRoughnessPath, GetTextureID(mat.MetallicRoughnessPath), "png,jpg,tga");
+        std::string pbrPath = "";
+        auto pbrAsset = ServiceLocator::Get<AssetManager>().Get<TextureAsset>(mat.MetallicRoughnessHandle);
+        if (pbrAsset) pbrPath = pbrAsset->GetPath();
+
+        if (EditorGUI::FileProperty("PBR Map", pbrPath, GetTextureID(mat.MetallicRoughnessHandle), "png,jpg,tga"))
+        {
+            mat.MetallicRoughnessHandle = ServiceLocator::Get<AssetManager>().ResolveToHandle(pbrPath);
+            mat.OverrideMetallicRoughness = true;
+        }
         ImGui::Checkbox("Override PBR", &mat.OverrideMetallicRoughness);
     }
 
@@ -59,7 +89,15 @@ void MaterialPanel::DrawMaterialSlot(MaterialSlot& slot)
     {
         EditorGUI::Property("Emissive Color", mat.EmissiveColor);
         EditorGUI::Property("Intensity", mat.EmissiveIntensity);
-        mat.OverrideEmissive |= EditorGUI::FileProperty("Emissive Map", mat.EmissivePath, GetTextureID(mat.EmissivePath), "png,jpg,tga");
+        std::string emissivePath = "";
+        auto emissiveAsset = ServiceLocator::Get<AssetManager>().Get<TextureAsset>(mat.EmissiveHandle);
+        if (emissiveAsset) emissivePath = emissiveAsset->GetPath();
+
+        if (EditorGUI::FileProperty("Emissive Map", emissivePath, GetTextureID(mat.EmissiveHandle), "png,jpg,tga"))
+        {
+            mat.EmissiveHandle = ServiceLocator::Get<AssetManager>().ResolveToHandle(emissivePath);
+            mat.OverrideEmissive = true;
+        }
         ImGui::Checkbox("Override Emissive", &mat.OverrideEmissive);
     }
 
@@ -77,7 +115,7 @@ void MaterialPanel::OnImGuiRender(bool readOnly)
 
     ImGui::Begin(m_Name.c_str(), &m_IsOpen);
 
-    if (m_SelectedEntity && (!m_SelectedEntity.IsValid() || m_SelectedEntity.GetRegistry().ctx().get<Scene*>() != m_Context.get()))
+    if (m_SelectedEntity && (!m_SelectedEntity.IsValid() || &m_SelectedEntity.GetRegistry() != &m_Context->GetRegistry()))
     {
         m_SelectedEntity = {};
     }
@@ -156,8 +194,12 @@ void MaterialPanel::OnEvent(Event& e)
 
 void MaterialPanel::SetContext(const std::shared_ptr<Scene>& context)
 {
+    if (m_Context.get() != context.get())
+    {
+        m_SelectedEntity = {};
+        m_SelectedMaterialIndex = 0;
+    }
     Panel::SetContext(context);
-    m_SelectedEntity = {};
 }
 
 } // namespace CHEngine

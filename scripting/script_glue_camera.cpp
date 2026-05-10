@@ -1,7 +1,10 @@
 #include "script_glue_internal.h"
 #include "script_internal_call_registry.h"
+#include "engine/scene/components/component_utils.h"
 
 namespace CHEngine {
+
+    void RegisterGlueCamera() {}
 
     // ── Camera ────────────────────────────────────────────────────────────
     CH_SCRIPT_FUNC void Camera_GetForward(uint64_t entityID, glm::vec3* outForward) {
@@ -50,18 +53,25 @@ namespace CHEngine {
             
             glm::vec3 targetPos = glm::vec3(0.0f);
             if (target && target.HasComponent<TransformComponent>()) {
-                targetPos = target.GetComponent<TransformComponent>().Translation;
+                // Fix: Use WorldTransform instead of local translation to support parented players
+                const auto& targetTC = target.GetComponent<TransformComponent>();
+                targetPos = glm::vec3(targetTC.WorldTransform[3]);
             }
 
+            CH_CORE_TRACE("[ScriptGlue] Camera_SetOrbit: Entity={}, Yaw={}, Pitch={}, Distance={}", (uint32_t)entityID, yaw, pitch, distance);
+
             // Calculate rotation from orbit angles
+            // Convention: Yaw rotates around Y, Pitch rotates around X
             float yawRad = glm::radians(yaw);
             float pitchRad = glm::radians(pitch);
+            
+            // Standard orbital rotation: Pitch then Yaw
             glm::quat rotation = glm::quat(glm::vec3(pitchRad, yawRad, 0.0f));
             glm::vec3 offset = rotation * glm::vec3(0.0f, 0.0f, distance);
             
             glm::vec3 newPos = targetPos + offset;
-            tc.SetTranslation(newPos);
-            tc.SetRotationQuat(rotation);
+            ComponentUtils::SetTranslation(tc, newPos);
+            ComponentUtils::SetRotationQuat(tc, rotation);
         }
     }
     CH_ADD_INTERNAL_CALL(CameraComponent, Camera_SetOrbit_Ptr, Camera_SetOrbit);
@@ -74,8 +84,10 @@ namespace CHEngine {
 
     CH_SCRIPT_FUNC void Camera_SetPrimary(uint64_t entityID, bool primary) {
         Entity entity = GetEntity(entityID);
-        if (entity && entity.HasComponent<CameraComponent>()) 
+        if (entity && entity.HasComponent<CameraComponent>()) {
+            CH_CORE_TRACE("[ScriptGlue] Camera_SetPrimary: Entity={}, Primary={}", (uint32_t)entityID, primary);
             entity.GetComponent<CameraComponent>().Primary = primary;
+        }
     }
     CH_ADD_INTERNAL_CALL(CameraComponent, Camera_SetPrimary_Ptr, Camera_SetPrimary);
 

@@ -4,8 +4,7 @@
 
 layout(location = 0) in vec3 vertexPosition;
 
-layout(location = 0) uniform mat4 matView;
-layout(location = 1) uniform mat4 matProjection;
+#include "include/camera.glsl"
 
 layout(location = 0) out vec3 nearPoint;
 layout(location = 1) out vec3 farPoint;
@@ -21,9 +20,9 @@ vec3 UnprojectPoint(float x, float y, float z, mat4 view, mat4 projection) {
 
 void main() {
     vec3 p = vertexPosition;
-    nearPoint = UnprojectPoint(p.x, p.y, -1.0, matView, matProjection);
-    farPoint = UnprojectPoint(p.x, p.y, 1.0, matView, matProjection);
-    fragView = matView;
-    fragProj = matProjection;
+    nearPoint = UnprojectPoint(p.x, p.y, -1.0, u_View, u_Projection);
+    farPoint = UnprojectPoint(p.x, p.y, 1.0, u_View, u_Projection);
+    fragView = u_View;
+    fragProj = u_Projection;
     gl_Position = vec4(p, 1.0);
 }

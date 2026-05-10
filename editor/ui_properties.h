@@ -1,14 +1,18 @@
 #ifndef CH_UI_PROPERTIES_H
 #define CH_UI_PROPERTIES_H
 
+#include "IconsFontAwesome6.h"
 #include "editor_gui.h"
 #include "engine/core/reflection.h"
-#include "scripting/scriptengine.h"
-#include "IconsFontAwesome6.h"
 #include "imgui.h"
 #include "imgui_internal.h"
+#include "scripting/scriptengine.h"
+#include "engine/core/service_locator.h"
 
+#include <cstring>
+#include <functional>
 #include <algorithm>
+#include <vector>
 #include <string_view>
 
 namespace CHEngine
@@ -35,10 +39,19 @@ public:
             changed = EditorGUI::Property(name, value);
         }
 
-        if (changed) m_Changed = true;
-        if (ImGui::IsItemActivated()) m_Started = true;
-        if (ImGui::IsItemDeactivatedAfterEdit()) m_Finished = true;
-        
+        if (changed)
+        {
+            m_Changed = true;
+        }
+        if (ImGui::IsItemActivated())
+        {
+            m_Started = true;
+        }
+        if (ImGui::IsItemDeactivatedAfterEdit())
+        {
+            m_Finished = true;
+        }
+
         return changed;
     }
 
@@ -46,9 +59,18 @@ public:
     bool Property(const char* name, int& value, const char** names, int count)
     {
         bool changed = EditorGUI::Property(name, value, names, count);
-        if (changed) m_Changed = true;
-        if (ImGui::IsItemActivated()) m_Started = true;
-        if (ImGui::IsItemDeactivatedAfterEdit()) m_Finished = true;
+        if (changed)
+        {
+            m_Changed = true;
+        }
+        if (ImGui::IsItemActivated())
+        {
+            m_Started = true;
+        }
+        if (ImGui::IsItemDeactivatedAfterEdit())
+        {
+            m_Finished = true;
+        }
         return changed;
     }
 
@@ -56,15 +78,20 @@ public:
     template <typename T> bool Property(const char* name, T& value, const PropertyMeta& meta)
     {
         bool changed = false;
-        
+        const bool readOnly = meta.ReadOnly;
+
         // Use metadata hint to select widget
         if constexpr (std::is_same_v<T, float>)
         {
+            ImGui::BeginDisabled(readOnly);
             changed = EditorGUI::Property(name, value, meta.Speed, meta.MinValue, meta.MaxValue);
+            ImGui::EndDisabled();
         }
         else if constexpr (std::is_same_v<T, int>)
         {
+            ImGui::BeginDisabled(readOnly);
             changed = EditorGUI::Property(name, value, (int)meta.MinValue, (int)meta.MaxValue);
+            ImGui::EndDisabled();
         }
         else if constexpr (std::is_same_v<T, std::string>)
         {
@@ -73,7 +100,7 @@ public:
                 std::vector<std::string> options;
                 options.emplace_back("-- Select script --");
 
-                for (const auto& [scriptName, scriptType] : ScriptEngine::Get().GetScriptClasses())
+                for (const auto& [scriptName, scriptType] : ServiceLocator::Get<ScriptEngine>().GetScriptClasses())
                 {
                     (void)scriptType;
                     options.emplace_back(scriptName);
@@ -102,65 +129,138 @@ public:
                 }
 
                 EditorGUI::BeginProperty(name);
+                ImGui::BeginDisabled(readOnly);
                 if (ImGui::Combo("##prop", &currentIndex, optionNames.data(), (int)optionNames.size()))
                 {
-                    value = (currentIndex > 0 && currentIndex < (int)options.size()) ? options[currentIndex] : std::string();
+                    value = (currentIndex > 0 && currentIndex < (int)options.size()) ? options[currentIndex]
+                                                                                     : std::string();
                     changed = true;
                 }
+                ImGui::EndDisabled();
                 EditorGUI::EndProperty();
             }
             else
             {
+                ImGui::BeginDisabled(readOnly);
                 changed = EditorGUI::Property(name, value);
+                ImGui::EndDisabled();
             }
         }
         else
         {
             // Fall back to default for other types
+            ImGui::BeginDisabled(readOnly);
             changed = EditorGUI::Property(name, value);
+            ImGui::EndDisabled();
         }
 
-        if (changed) m_Changed = true;
-        if (ImGui::IsItemActivated()) m_Started = true;
-        if (ImGui::IsItemDeactivatedAfterEdit()) m_Finished = true;
+        if (!meta.Tooltip.empty() && ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("%s", meta.Tooltip.c_str());
+        }
+
+        if (changed)
+        {
+            m_Changed = true;
+        }
+        if (ImGui::IsItemActivated())
+        {
+            m_Started = true;
+        }
+        if (ImGui::IsItemDeactivatedAfterEdit())
+        {
+            m_Finished = true;
+        }
         return changed;
     }
 
     // Enum with metadata
     bool Property(const char* name, int& value, const char** names, int count, const PropertyMeta& meta)
     {
+        ImGui::BeginDisabled(meta.ReadOnly);
         bool changed = EditorGUI::Property(name, value, names, count);
-        if (changed) m_Changed = true;
-        if (ImGui::IsItemActivated()) m_Started = true;
-        if (ImGui::IsItemDeactivatedAfterEdit()) m_Finished = true;
+        ImGui::EndDisabled();
+
+        if (!meta.Tooltip.empty() && ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("%s", meta.Tooltip.c_str());
+        }
+
+        if (changed)
+        {
+            m_Changed = true;
+        }
+        if (ImGui::IsItemActivated())
+        {
+            m_Started = true;
+        }
+        if (ImGui::IsItemDeactivatedAfterEdit())
+        {
+            m_Finished = true;
+        }
         return changed;
     }
 
     // File with metadata
     bool File(const char* name, std::string& path, const char* extensions, const PropertyMeta& meta)
     {
+        ImGui::BeginDisabled(meta.ReadOnly);
         bool changed = EditorGUI::FileProperty(name, path, extensions);
-        if (changed) m_Changed = true;
-        if (ImGui::IsItemActivated()) m_Started = true;
-        if (ImGui::IsItemDeactivatedAfterEdit()) m_Finished = true;
+        ImGui::EndDisabled();
+
+        if (!meta.Tooltip.empty() && ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("%s", meta.Tooltip.c_str());
+        }
+
+        if (changed)
+        {
+            m_Changed = true;
+        }
+        if (ImGui::IsItemActivated())
+        {
+            m_Started = true;
+        }
+        if (ImGui::IsItemDeactivatedAfterEdit())
+        {
+            m_Finished = true;
+        }
         return changed;
     }
 
     bool Handle(const char* name, uint64_t& value)
     {
         bool changed = EditorGUI::Property(name, value);
-        if (changed) m_Changed = true;
-        if (ImGui::IsItemActivated()) m_Started = true;
-        if (ImGui::IsItemDeactivatedAfterEdit()) m_Finished = true;
+        if (changed)
+        {
+            m_Changed = true;
+        }
+        if (ImGui::IsItemActivated())
+        {
+            m_Started = true;
+        }
+        if (ImGui::IsItemDeactivatedAfterEdit())
+        {
+            m_Finished = true;
+        }
         return changed;
     }
 
     bool File(const char* name, std::string& path, const char* extensions = nullptr)
     {
         bool changed = EditorGUI::FileProperty(name, path, extensions);
-        if (changed) m_Changed = true;
-        if (ImGui::IsItemActivated()) m_Started = true;
-        if (ImGui::IsItemDeactivatedAfterEdit()) m_Finished = true;
+        if (changed)
+        {
+            m_Changed = true;
+        }
+        if (ImGui::IsItemActivated())
+        {
+            m_Started = true;
+        }
+        if (ImGui::IsItemDeactivatedAfterEdit())
+        {
+            m_Finished = true;
+        }
         return changed;
     }
 
@@ -185,8 +285,12 @@ public:
         }
 
         bool localChanged = false;
-        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth;
-        if (ImGui::GetCurrentTable() != nullptr) flags |= ImGuiTreeNodeFlags_SpanAllColumns;
+        ImGuiTreeNodeFlags flags =
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth;
+        if (ImGui::GetCurrentTable() != nullptr)
+        {
+            flags |= ImGuiTreeNodeFlags_SpanAllColumns;
+        }
 
         if (ImGui::TreeNodeEx(name, flags))
         {
@@ -208,18 +312,16 @@ public:
                     ImGui::PopID();
                     break;
                 }
-                
-                if (allowAddRemove) ImGui::SameLine();
-                
+
+                if (allowAddRemove)
+                {
+                    ImGui::SameLine();
+                }
+
                 if constexpr (requires(T t, Properties<UIProperties>& p) { t.Reflect(p); })
                 {
                     char label[32];
                     sprintf(label, "Item %d", (int)i);
-                    // Use a nested tree node for complex items
-                    // Use a nested tree node for complex items.
-                    // We must end the current property grid table before starting a new one for the nested object, 
-                    // or use a nested table if we want to stay in the current column.
-                    // Here we use a nested property grid for better layout of script fields.
                     if (ImGui::TreeNodeEx(label, ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth))
                     {
                         EditorGUI::BeginPropertyGrid();
@@ -247,8 +349,10 @@ public:
                 }
 
                 ImGui::PopID();
-                if constexpr (!requires(T t, Properties<UIProperties>& p) { t.Reflect(p); }) 
+                if constexpr (!requires(T t, Properties<UIProperties>& p) { t.Reflect(p); })
+                {
                     ImGui::Separator();
+                }
             }
 
             ImGui::Spacing();
@@ -272,14 +376,18 @@ public:
 
     template <typename T> bool Nested(const char* name, T& value)
     {
-        bool localChanged = false;
         if (ImGui::TreeNodeEx(name, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
         {
             Properties<UIProperties> itemProps(*this);
             value.Reflect(itemProps);
+            if (itemProps.HasChanged())
+            {
+                m_Changed = true;
+            }
             ImGui::TreePop();
+            return itemProps.HasChanged();
         }
-        return localChanged;
+        return false;
     }
 
     void Header(const char* label)
@@ -292,7 +400,6 @@ public:
         }
         ImGui::Spacing();
         ImGui::TextColored({0.2f, 0.7f, 0.9f, 1.0f}, "%s", label);
-        ImGui::Separator();
         if (ImGui::GetCurrentTable() != nullptr)
         {
             ImGui::TableNextRow();
@@ -314,16 +421,16 @@ public:
             ImGui::AlignTextToFramePadding();
         }
 
-        ImGuiTreeNodeFlags flags =
-            ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_AllowOverlap | ImGuiTreeNodeFlags_FramePadding | 
-            ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_SpanAllColumns;
+        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_AllowOverlap |
+                                   ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_SpanAvailWidth |
+                                   ImGuiTreeNodeFlags_SpanAllColumns;
         if (defaultOpen)
         {
             flags |= ImGuiTreeNodeFlags_DefaultOpen;
         }
 
         bool opened = ImGui::TreeNodeEx(label, flags);
-        
+
         if (ImGui::GetCurrentTable() != nullptr)
         {
             // Move to the next column to ensure the header row context is technically "complete"
@@ -339,8 +446,14 @@ public:
         ImGui::TreePop();
     }
 
-    bool HasFinished() const { return m_Started && m_Finished; }
-    bool HasStarted() const { return m_Started; }
+    bool HasFinished() const
+    {
+        return m_Started && m_Finished;
+    }
+    bool HasStarted() const
+    {
+        return m_Started;
+    }
 
     bool HasChanged() const
     {

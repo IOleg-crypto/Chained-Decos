@@ -18,6 +18,7 @@ struct SpriteComponent
     SpriteComponent() = default;
     SpriteComponent(const SpriteComponent&) = default;
 
+
     CH_REFLECT_BEGIN(SpriteComponent)
         props.Header("Asset");
         props.Handle("TextureHandle", TextureHandle);

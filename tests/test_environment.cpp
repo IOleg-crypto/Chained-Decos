@@ -12,7 +12,7 @@ public:
     TestApplication() : CHEngine::Application([](){
         CHEngine::ApplicationSpecification spec{"Engine Tests"};
         spec.Headless = true;
-        spec.EnableScripting = false;
+        spec.EnableScripting = true;  // Must be true for ScriptEngineTest to share the CoreCLR instance
         return spec;
     }()) {}
 };

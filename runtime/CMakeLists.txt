@@ -3,7 +3,7 @@ add_library(RuntimeCore STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/runtime_layer.cpp
 )
 
-target_link_libraries(RuntimeCore PUBLIC engine)
+target_link_libraries(RuntimeCore PUBLIC ChainedEngine::Framework)
 target_include_directories(RuntimeCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Set PCH for RuntimeCore
@@ -12,7 +12,7 @@ target_precompile_headers(RuntimeCore PRIVATE
     <vector>
     <memory>
     <filesystem>
-    "../engine/core/application.h"
+    "${CMAKE_SOURCE_DIR}/engine/core/application.h"
 )
 
 # Generic Runtime Executable
@@ -22,12 +22,8 @@ add_executable(ChainedRuntime
 
 target_link_libraries(ChainedRuntime PRIVATE
     RuntimeCore
-    engine
+    ChainedEngine::Framework
 )
-
-# Use centralized engine resources
-chained_add_engine_resources_copy()
-add_dependencies(ChainedRuntime EngineResources)
 
 apply_engine_optimizations(ChainedRuntime)
 
