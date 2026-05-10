@@ -11,6 +11,7 @@
 #include "engine/physics/physics_system.h"
 #include "engine/scene/component_serializer.h"
 #include "engine/scene/project.h"
+#include "engine/core/network_service.h"
 #include "scripting/scriptengine.h"
 #include <GLFW/glfw3.h>
 #include <filesystem>
@@ -22,6 +23,8 @@
 #include <unistd.h>
 #endif
 
+#include "engine/core/module_registry.h"
+
 namespace CHEngine
 {
 Application* Application::s_Instance = nullptr;
@@ -31,6 +34,9 @@ Application::Application(const ApplicationSpecification& spec)
 {
     CH_CORE_ASSERT(!s_Instance, "Application already exists!");
     s_Instance = this;
+
+    // Initialize all statically registered modules (Engine systems and Game logic)
+    ModuleRegistry::InitializeAll();
 
     if (!m_Specification.WorkingDirectory.empty())
     {
@@ -77,6 +83,10 @@ Application::Application(const ApplicationSpecification& spec)
     AddService<Audio>();
     AddService<PhysicsSystem>();
     AddService<UIRenderer>();
+    AddService<::CHEngine::NetworkService>();
+
+    // Initialize all modules (decodes, etc.)
+    ModuleRegistry::InitializeAll();
 
     // Orchestrate Service Bootup via Template Method
     for (auto& svc : m_Services)
@@ -136,6 +146,16 @@ void Application::Run()
             for (auto& svc : m_Services)
             {
                 svc->Tick(m_Timer.DeltaTime);
+            }
+
+            // Networking replication sweep
+            if (ServiceLocator::Has<NetworkService>())
+            {
+                auto& net = ServiceLocator::Get<NetworkService>();
+                if (net.IsActive() && net.IsServer())
+                {
+                    ReplicateEntities();
+                }
             }
 
             // Fixed Update (Physics/Logic)
@@ -247,4 +267,11 @@ std::filesystem::path Application::GetExecutableDirectory()
     return std::filesystem::current_path();
 #endif
 }
+    void Application::ReplicateEntities()
+    {
+        // For now, this is a placeholder. 
+        // Real implementation would iterate entities with NetworkIdentity and TransformComponent
+        // and broadcast their state.
+    }
+
 } // namespace CHEngine

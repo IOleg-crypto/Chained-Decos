@@ -101,6 +101,7 @@ public:
 private:
     bool OnWindowClose(WindowCloseEvent& e);
     bool OnWindowResize(WindowResizeEvent& e);
+    void ReplicateEntities();
 
 private:
     static Application* s_Instance;

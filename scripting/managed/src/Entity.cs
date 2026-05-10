@@ -25,9 +25,9 @@ public class Entity
     // Cache: avoids allocating a new stub on every GetComponent<T>() call
     private readonly Dictionary<System.Type, Component> _cache = new();
 
-    internal static unsafe delegate*<ulong, NativeString, bool> Entity_HasComponent_Ptr;
-    internal static unsafe delegate*<NativeString, NativeArray<ulong>> Entity_FindAllWithComponent_Ptr;
-    internal static unsafe delegate*<ulong, NativeString, void> Entity_AddComponent_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, NativeString, bool> Entity_HasComponent_Ptr;
+    internal static unsafe delegate* unmanaged<NativeString, NativeArray<ulong>> Entity_FindAllWithComponent_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, NativeString, void> Entity_AddComponent_Ptr;
 #pragma warning restore 0649
 
     /// <summary>Wraps a native entity ID.</summary>
@@ -94,12 +94,12 @@ public class Entity
 public class TransformComponent : Component
 {
 #pragma warning disable 0649
-    internal static unsafe delegate*<ulong, Vector3*, void> Transform_GetTranslation_Ptr;
-    internal static unsafe delegate*<ulong, Vector3*, void> Transform_SetTranslation_Ptr;
-    internal static unsafe delegate*<ulong, Vector3*, void> Transform_GetRotation_Ptr;
-    internal static unsafe delegate*<ulong, Vector3*, void> Transform_SetRotation_Ptr;
-    internal static unsafe delegate*<ulong, Vector3*, void> Transform_GetScale_Ptr;
-    internal static unsafe delegate*<ulong, Vector3*, void> Transform_SetScale_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, Vector3*, void> Transform_GetTranslation_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, Vector3*, void> Transform_SetTranslation_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, Vector3*, void> Transform_GetRotation_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, Vector3*, void> Transform_SetRotation_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, Vector3*, void> Transform_GetScale_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, Vector3*, void> Transform_SetScale_Ptr;
 #pragma warning restore 0649
 
     public Vector3 Translation
@@ -125,8 +125,8 @@ public class TransformComponent : Component
 public class ModelComponent : Component
 {
 #pragma warning disable 0649
-    internal static unsafe delegate*<ulong, NativeString> Model_GetModelPath_Ptr;
-    internal static unsafe delegate*<ulong, NativeString, void> Model_SetModelPath_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, NativeString> Model_GetModelPath_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, NativeString, void> Model_SetModelPath_Ptr;
 #pragma warning restore 0649
 
     public string ModelPath
@@ -140,11 +140,11 @@ public class ModelComponent : Component
 public class RigidBodyComponent : Component
 {
 #pragma warning disable 0649
-    internal static unsafe delegate*<ulong, Vector3*, void> RigidBody_GetVelocity_Ptr;
-    internal static unsafe delegate*<ulong, Vector3*, void> RigidBody_SetVelocity_Ptr;
-    internal static unsafe delegate*<ulong, bool> RigidBody_IsGrounded_Ptr;
-    internal static unsafe delegate*<ulong, bool> RigidBody_IsKinematic_Ptr;
-    internal static unsafe delegate*<ulong, bool, void> RigidBody_SetKinematic_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, Vector3*, void> RigidBody_GetVelocity_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, Vector3*, void> RigidBody_SetVelocity_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool> RigidBody_IsGrounded_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool> RigidBody_IsKinematic_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool, void> RigidBody_SetKinematic_Ptr;
 #pragma warning restore 0649
 
     public Vector3 Velocity
@@ -166,7 +166,7 @@ public class RigidBodyComponent : Component
 public class TagComponent : Component
 {
 #pragma warning disable 0649
-    internal static unsafe delegate*<ulong, NativeString> TagComponent_GetTag_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, NativeString> TagComponent_GetTag_Ptr;
 #pragma warning restore 0649
 
     private static unsafe string? GetTag_Native(ulong entityID)
@@ -181,16 +181,16 @@ public class TagComponent : Component
 public class CameraComponent : Component
 {
 #pragma warning disable 0649
-    internal static unsafe delegate*<ulong, Vector3*, void> Camera_GetForward_Ptr;
-    internal static unsafe delegate*<ulong, Vector3*, void> Camera_GetRight_Ptr;
-    internal static unsafe delegate*<ulong, float*, float*, float*, void> Camera_GetOrbit_Ptr;
-    internal static unsafe delegate*<ulong, float, float, float, void> Camera_SetOrbit_Ptr;
-    internal static unsafe delegate*<ulong, bool> Camera_GetPrimary_Ptr;
-    internal static unsafe delegate*<ulong, bool, void> Camera_SetPrimary_Ptr;
-    internal static unsafe delegate*<ulong, bool> Camera_GetIsOrbit_Ptr;
-    internal static unsafe delegate*<ulong, bool, void> Camera_SetIsOrbit_Ptr;
-    internal static unsafe delegate*<ulong, NativeString> Camera_GetTargetTag_Ptr;
-    internal static unsafe delegate*<ulong, NativeString, void> Camera_SetTargetTag_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, Vector3*, void> Camera_GetForward_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, Vector3*, void> Camera_GetRight_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, float*, float*, float*, void> Camera_GetOrbit_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, float, float, float, void> Camera_SetOrbit_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool> Camera_GetPrimary_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool, void> Camera_SetPrimary_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool> Camera_GetIsOrbit_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool, void> Camera_SetIsOrbit_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, NativeString> Camera_GetTargetTag_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, NativeString, void> Camera_SetTargetTag_Ptr;
 #pragma warning restore 0649
 
     private static void GetForward(ulong entityID, out Vector3 outForward)
@@ -252,12 +252,12 @@ public class CameraComponent : Component
 public class PlayerComponent : Component
 {
 #pragma warning disable 0649
-    internal static unsafe delegate*<ulong, float> PlayerComponent_GetMovementSpeed_Ptr;
-    internal static unsafe delegate*<ulong, float, void> PlayerComponent_SetMovementSpeed_Ptr;
-    internal static unsafe delegate*<ulong, float> PlayerComponent_GetJumpForce_Ptr;
-    internal static unsafe delegate*<ulong, float, void> PlayerComponent_SetJumpForce_Ptr;
-    internal static unsafe delegate*<ulong, float> PlayerComponent_GetLookSensitivity_Ptr;
-    internal static unsafe delegate*<ulong, float, void> PlayerComponent_SetLookSensitivity_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, float> PlayerComponent_GetMovementSpeed_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, float, void> PlayerComponent_SetMovementSpeed_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, float> PlayerComponent_GetJumpForce_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, float, void> PlayerComponent_SetJumpForce_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, float> PlayerComponent_GetLookSensitivity_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, float, void> PlayerComponent_SetLookSensitivity_Ptr;
 #pragma warning restore 0649
 
     public float MovementSpeed
@@ -283,12 +283,12 @@ public class PlayerComponent : Component
 public class AudioComponent : Component
 {
 #pragma warning disable 0649
-    internal static unsafe delegate*<ulong, float, void> AudioComponent_SetVolume_Ptr;
-    internal static unsafe delegate*<ulong, bool, void> AudioComponent_SetLoop_Ptr;
-    internal static unsafe delegate*<ulong, bool> AudioComponent_IsPlaying_Ptr;
-    internal static unsafe delegate*<ulong, NativeString> AudioComponent_GetSoundPath_Ptr;
-    internal static unsafe delegate*<ulong, void> AudioComponent_Play_Ptr;
-    internal static unsafe delegate*<ulong, void> AudioComponent_Stop_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, float, void> AudioComponent_SetVolume_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool, void> AudioComponent_SetLoop_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool> AudioComponent_IsPlaying_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, NativeString> AudioComponent_GetSoundPath_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, void> AudioComponent_Play_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, void> AudioComponent_Stop_Ptr;
 #pragma warning restore 0649
 
     private static unsafe void SetVolume(ulong entityID, float volume) => AudioComponent_SetVolume_Ptr(entityID, volume);
@@ -319,16 +319,16 @@ public class AudioComponent : Component
 public class SpriteComponent : Component
 {
 #pragma warning disable 0649
-    internal static unsafe delegate*<ulong, NativeString> SpriteComponent_GetTexturePath_Ptr;
-    internal static unsafe delegate*<ulong, NativeString, void> SpriteComponent_SetTexturePath_Ptr;
-    internal static unsafe delegate*<ulong, Vector4*, void> SpriteComponent_GetTint_Ptr;
-    internal static unsafe delegate*<ulong, Vector4, void> SpriteComponent_SetTint_Ptr;
-    internal static unsafe delegate*<ulong, bool> SpriteComponent_GetFlipX_Ptr;
-    internal static unsafe delegate*<ulong, bool, void> SpriteComponent_SetFlipX_Ptr;
-    internal static unsafe delegate*<ulong, bool> SpriteComponent_GetFlipY_Ptr;
-    internal static unsafe delegate*<ulong, bool, void> SpriteComponent_SetFlipY_Ptr;
-    internal static unsafe delegate*<ulong, int> SpriteComponent_GetZOrder_Ptr;
-    internal static unsafe delegate*<ulong, int, void> SpriteComponent_SetZOrder_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, NativeString> SpriteComponent_GetTexturePath_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, NativeString, void> SpriteComponent_SetTexturePath_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, Vector4*, void> SpriteComponent_GetTint_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, Vector4, void> SpriteComponent_SetTint_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool> SpriteComponent_GetFlipX_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool, void> SpriteComponent_SetFlipX_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool> SpriteComponent_GetFlipY_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool, void> SpriteComponent_SetFlipY_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, int> SpriteComponent_GetZOrder_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, int, void> SpriteComponent_SetZOrder_Ptr;
 #pragma warning restore 0649
 
     public string TexturePath
@@ -368,7 +368,7 @@ public class SpriteComponent : Component
 public class ButtonControl : Component
 {
 #pragma warning disable 0649
-    internal static unsafe delegate*<ulong, bool> ButtonControl_IsPressed_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool> ButtonControl_IsPressed_Ptr;
 #pragma warning restore 0649
 
     private static unsafe bool IsPressed_Native(ulong entityID) => ButtonControl_IsPressed_Ptr(entityID);
@@ -379,7 +379,7 @@ public class ButtonControl : Component
 public class CheckboxControl : Component
 {
 #pragma warning disable 0649
-    internal static unsafe delegate*<ulong, bool> CheckboxControl_GetChecked_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool> CheckboxControl_GetChecked_Ptr;
 #pragma warning restore 0649
 
     private static unsafe bool GetChecked(ulong entityID) => CheckboxControl_GetChecked_Ptr(entityID);
@@ -390,8 +390,8 @@ public class CheckboxControl : Component
 public class ComboBoxControl : Component
 {
 #pragma warning disable 0649
-    internal static unsafe delegate*<ulong, int> ComboBoxControl_GetSelectedIndex_Ptr;
-    internal static unsafe delegate*<ulong, int, NativeString> ComboBoxControl_GetItem_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, int> ComboBoxControl_GetSelectedIndex_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, int, NativeString> ComboBoxControl_GetItem_Ptr;
 #pragma warning restore 0649
 
     private static unsafe int GetSelectedIndex(ulong entityID) => ComboBoxControl_GetSelectedIndex_Ptr(entityID);
@@ -410,8 +410,8 @@ public class ComboBoxControl : Component
 public class SpawnComponent : Component
 {
 #pragma warning disable 0649
-    internal static unsafe delegate*<ulong, bool> SpawnComponent_IsActive_Ptr;
-    internal static unsafe delegate*<ulong, Vector3*, void> SpawnComponent_GetSpawnPoint_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool> SpawnComponent_IsActive_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, Vector3*, void> SpawnComponent_GetSpawnPoint_Ptr;
 #pragma warning restore 0649
 
     private static unsafe bool IsActive_Native(ulong entityID) => SpawnComponent_IsActive_Ptr(entityID);
@@ -431,7 +431,7 @@ public class SpawnComponent : Component
 public class SceneTransitionComponent : Component
 {
 #pragma warning disable 0649
-    internal static unsafe delegate*<ulong, NativeString> SceneTransitionComponent_GetTargetScene_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, NativeString> SceneTransitionComponent_GetTargetScene_Ptr;
 #pragma warning restore 0649
 
     private static unsafe string? GetTargetScene(ulong entityID)
@@ -445,12 +445,12 @@ public class SceneTransitionComponent : Component
 public class RPGStatsComponent : Component
 {
 #pragma warning disable 0649
-    internal static unsafe delegate*<ulong, int> RPGStatsComponent_GetLevel_Ptr;
-    internal static unsafe delegate*<ulong, int, void> RPGStatsComponent_SetLevel_Ptr;
-    internal static unsafe delegate*<ulong, float> RPGStatsComponent_GetHealth_Ptr;
-    internal static unsafe delegate*<ulong, float, void> RPGStatsComponent_SetHealth_Ptr;
-    internal static unsafe delegate*<ulong, int> RPGStatsComponent_GetGold_Ptr;
-    internal static unsafe delegate*<ulong, int, void> RPGStatsComponent_SetGold_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, int> RPGStatsComponent_GetLevel_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, int, void> RPGStatsComponent_SetLevel_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, float> RPGStatsComponent_GetHealth_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, float, void> RPGStatsComponent_SetHealth_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, int> RPGStatsComponent_GetGold_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, int, void> RPGStatsComponent_SetGold_Ptr;
 #pragma warning restore 0649
 
     public int Level { get { unsafe { return RPGStatsComponent_GetLevel_Ptr(Entity.ID); } } set { unsafe { RPGStatsComponent_SetLevel_Ptr(Entity.ID, value); } } }
@@ -462,8 +462,8 @@ public class RPGStatsComponent : Component
 public class SkillComponent : Component
 {
 #pragma warning disable 0649
-    internal static unsafe delegate*<ulong, bool> SkillComponent_IsUnlocked_Ptr;
-    internal static unsafe delegate*<ulong, bool, void> SkillComponent_SetUnlocked_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool> SkillComponent_IsUnlocked_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool, void> SkillComponent_SetUnlocked_Ptr;
 #pragma warning restore 0649
 
     public bool IsUnlocked { get { unsafe { return SkillComponent_IsUnlocked_Ptr(Entity.ID); } } set { unsafe { SkillComponent_SetUnlocked_Ptr(Entity.ID, value); } } }
@@ -478,10 +478,10 @@ public class InventoryComponent : Component
 public class ShaderComponent : Component
 {
 #pragma warning disable 0649
-    internal static unsafe delegate*<ulong, NativeString, float, void> Shader_SetFloat_Ptr;
-    internal static unsafe delegate*<ulong, NativeString, Vector3*, void> Shader_SetVec3_Ptr;
-    internal static unsafe delegate*<ulong, bool> Shader_GetEnabled_Ptr;
-    internal static unsafe delegate*<ulong, bool, void> Shader_SetEnabled_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, NativeString, float, void> Shader_SetFloat_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, NativeString, Vector3*, void> Shader_SetVec3_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool> Shader_GetEnabled_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool, void> Shader_SetEnabled_Ptr;
 #pragma warning restore 0649
 
     public bool Enabled
@@ -499,6 +499,18 @@ public class ShaderComponent : Component
     {
         unsafe { Shader_SetVec3_Ptr(Entity.ID, name, &value); }
     }
+}
+
+/// <summary>Network identity for tracking entities across clients.</summary>
+public class NetworkIdentity : Component
+{
+#pragma warning disable 0649
+    internal static unsafe delegate* unmanaged<ulong, ulong> NetworkIdentity_GetNetworkID_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool> NetworkIdentity_IsOwned_Ptr;
+#pragma warning restore 0649
+
+    public ulong NetworkID { get { unsafe { return NetworkIdentity_GetNetworkID_Ptr(Entity.ID); } } }
+    public bool IsOwned { get { unsafe { return NetworkIdentity_IsOwned_Ptr(Entity.ID); } } }
 }
 
 } // namespace CHEngine

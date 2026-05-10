@@ -23,6 +23,8 @@ include(imgui)
 include(assimp)
 include(coral)
 include(nfd)
+include(protobuf) # Required for GNS
+include(gamenetworkingsockets)
 
 # Tests
 if(BUILD_TESTS)

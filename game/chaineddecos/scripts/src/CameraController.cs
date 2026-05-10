@@ -6,6 +6,10 @@ namespace ChainedDecos.Scripts
 public class CameraController : Script
 {
     public float LookSensitivity = 0.5f;
+    public float Distance = 10.0f;
+    public float Pitch = 45.0f;
+    public float Yaw = 0.0f;
+    public string TargetTag = "Player";
 
     public override void OnUpdate(float deltaTime)
     {

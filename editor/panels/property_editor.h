@@ -31,6 +31,7 @@ public:
 private:
     // Internal template helpers (Implementations moved to .cpp or a separate _impl.h if needed elsewhere)
     template <typename T> static void DrawComponentReflection(const std::string& name, const char* icon, Entity entity);
+    static void DrawGenericReflection(const ComponentMetadata& metadata, Entity entity);
 
     template <typename T>
     static void DrawComponentContainer(const std::string& name, const char* icon, Entity entity,
