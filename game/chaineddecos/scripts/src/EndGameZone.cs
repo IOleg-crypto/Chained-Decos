@@ -11,6 +11,9 @@ namespace ChainedDecos.Scripts
         public int BonusGold = 120;
 
         private bool m_Triggered = false;
+        // Track IDs we've already logged as ignored, to prevent per-frame log spam
+        // (Physics engines often re-fire OnCollisionEnter each tick for persistent contacts)
+        private System.Collections.Generic.HashSet<ulong> m_IgnoredIds = new();
 
         public override void OnCollisionEnter(ulong otherID)
         {
@@ -30,7 +33,8 @@ namespace ChainedDecos.Scripts
 
             if (!hasPlayerComponent && !playerByTag)
             {
-                Log.Info($"EndGameZone: collision ignored (otherID={otherID}, tag='{otherTag}').");
+                if (m_IgnoredIds.Add(otherID)) // Add returns false if already present
+                    Log.Info($"EndGameZone: collision ignored (otherID={otherID}, tag='{otherTag}').");
                 return;
             }
 

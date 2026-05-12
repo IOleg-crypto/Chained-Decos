@@ -23,6 +23,7 @@ add_executable(ChainedRuntime
 target_link_libraries(ChainedRuntime PRIVATE
     RuntimeCore
     ChainedEngine::Framework
+    ChainedDecos
 )
 
 apply_engine_optimizations(ChainedRuntime)

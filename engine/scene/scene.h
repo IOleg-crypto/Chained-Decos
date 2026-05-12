@@ -14,6 +14,9 @@
 #include <optional>
 #include <unordered_map>
 #include <vector>
+#include <filesystem>
+
+#include "engine/scene/animation_graph_data.h"
 
 namespace CHEngine
 {
@@ -71,6 +74,11 @@ public: // Systems & Tools
     const entt::registry& GetRegistry() const;
     entt::registry* GetRegistryPtr();
 
+    // Scene-local graph cache API
+    // Returns pointer to cached AnimationGraphData owned by the scene, or nullptr on failure
+    AnimationGraphData* GetOrLoadGraph(const std::string& graphPath);
+    void ClearGraphCache();
+
 private:
     std::unique_ptr<entt::registry> m_Registry;
     SceneSettings m_Settings;
@@ -90,6 +98,13 @@ private:
     friend class SceneSerializer;
 
     std::vector<entt::entity> m_RootEntities;
+    
+    struct CachedGraph {
+        AnimationGraphData Data;
+        std::filesystem::file_time_type LastWriteTime;
+    };
+
+    std::unordered_map<std::string, CachedGraph> m_GraphCache;
 };
 
 } // namespace CHEngine

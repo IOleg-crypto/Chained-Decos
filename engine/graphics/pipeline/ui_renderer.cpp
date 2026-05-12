@@ -272,7 +272,7 @@ bool UIRenderer::RenderUIComponent(Entity entity, const ImVec2& screenPos, const
     }
     else
     {
-        // Quiet mode for missing widgets in final build
+        widgetFound = false;
     }
 
     return widgetFound;
@@ -392,9 +392,15 @@ void UIRenderer::DrawCanvas(Scene* scene, const ImVec2& referencePosition, const
 
             if (!RenderUIComponent(entity, screenPos, size, editMode))
             {
-                CH_CORE_WARN(
-                    "[UI] Entity '{}' has ControlComponent but RenderUIComponent returned false (monostate/none?)",
-                    entity.GetComponent<TagComponent>().Tag);
+                if (entity.HasComponent<WidgetComponent>())
+                {
+                    const auto& widget = entity.GetComponent<WidgetComponent>();
+                    if (std::holds_alternative<std::monostate>(widget.Data))
+                    {
+                        CH_CORE_WARN("[UI] Entity '{}' has WidgetComponent with empty WidgetData (monostate)",
+                                     entity.GetComponent<TagComponent>().Tag);
+                    }
+                }
             }
 
             if (editMode)

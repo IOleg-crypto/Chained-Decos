@@ -129,7 +129,8 @@ public:
     virtual bool Property(const char* name, glm::vec3& value, const PropertyMeta& meta = {}) override { return PropertyInternal(name, value); }
     virtual bool Property(const char* name, glm::vec4& value, const PropertyMeta& meta = {}) override { return PropertyInternal(name, value); }
     virtual bool Property(const char* name, Color& value, const PropertyMeta& meta = {}) override { return PropertyInternal(name, value); }
-    virtual bool Property(const char* name, int& value, const char** names, int count, const PropertyMeta& meta = {}) override { return PropertyInternal(name, value); }
+    virtual bool Property(const char* name, uint64_t& value, const PropertyMeta& meta = {}) override { return Handle(name, value, meta); }
+    virtual bool Enum(const char* name, int& value, const char** names, int count, const PropertyMeta& meta = {}) override { return PropertyInternal(name, value); }
     
     virtual bool Handle(const char* name, uint64_t& handle, const PropertyMeta& meta = {}) override 
     {
@@ -150,6 +151,52 @@ public:
     virtual void EndGroup() override {}
     virtual bool HasChanged() const override { return false; }
     virtual void SetChanged(bool changed) override {}
+
+    virtual void BeginSequence(const char* name, size_t& size) override
+    {
+        if (m_Mode == Serialize)
+        {
+            *m_Out << YAML::Key << name << YAML::Value << YAML::BeginSeq;
+        }
+        else
+        {
+            if (m_Node[name] && m_Node[name].IsSequence())
+            {
+                size = m_Node[name].size();
+                // To allow iterating over elements during deserialization, we might need state.
+                // However, Properties::Sequence current implementation uses m_Node[name][i] via recursive calls.
+                // For simplicity, we just stay with this.
+            }
+        }
+    }
+
+    virtual void EndSequence() override
+    {
+        if (m_Mode == Serialize)
+        {
+            *m_Out << YAML::EndSeq;
+        }
+    }
+
+    virtual bool Nested(const char* name, std::function<void(IPropertyArchive&)> callback) override
+    {
+        if (m_Mode == Serialize)
+        {
+            *m_Out << YAML::Key << name << YAML::Value << YAML::BeginMap;
+            PropertyArchive nestedArchive(*m_Out);
+            callback(static_cast<IPropertyArchive&>(nestedArchive));
+            *m_Out << YAML::EndMap;
+        }
+        else
+        {
+            if (m_Node[name])
+            {
+                PropertyArchive nestedArchive(m_Node[name]);
+                callback(static_cast<IPropertyArchive&>(nestedArchive));
+            }
+        }
+        return false;
+    }
 
     // Template methods for backward compatibility
     template <typename T> bool Property(const char* name, T& value) { return PropertyInternal(name, value); }

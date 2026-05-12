@@ -56,9 +56,11 @@ namespace CHEngine
         PropertyMeta& WithTooltip(const std::string& t) { Tooltip = t; return *this; }
     };
 
+    class IPropertyArchive;
+    template<typename T_Archive> class Properties;
+    
     /**
      * @brief Interface for any archive that can handle reflected properties.
-     * This allows type-erased reflection calls.
      */
     class IPropertyArchive
     {
@@ -72,8 +74,9 @@ namespace CHEngine
         virtual bool Property(const char* name, glm::vec2& value, const PropertyMeta& meta = {}) = 0;
         virtual bool Property(const char* name, glm::vec3& value, const PropertyMeta& meta = {}) = 0;
         virtual bool Property(const char* name, glm::vec4& value, const PropertyMeta& meta = {}) = 0;
+        virtual bool Property(const char* name, uint64_t& value, const PropertyMeta& meta = {}) = 0;
         virtual bool Property(const char* name, Color& value, const PropertyMeta& meta = {}) = 0;
-        virtual bool Property(const char* name, int& value, const char** names, int count, const PropertyMeta& meta = {}) = 0;
+        virtual bool Enum(const char* name, int& value, const char** names, int count, const PropertyMeta& meta = {}) = 0;
         virtual bool Handle(const char* name, uint64_t& value, const PropertyMeta& meta = {}) = 0;
         virtual bool File(const char* name, std::string& value, const char* extensions = nullptr, const PropertyMeta& meta = {}) = 0;
         virtual bool Action(const char* label, std::function<void()> func) = 0;
@@ -83,7 +86,12 @@ namespace CHEngine
         virtual void EndGroup() = 0;
         virtual bool HasChanged() const = 0;
         virtual void SetChanged(bool changed) = 0;
+        virtual void BeginSequence(const char* name, size_t& size) = 0;
+        virtual void EndSequence() = 0;
+        virtual bool Nested(const char* name, std::function<void(IPropertyArchive&)> callback) = 0;
     };
+
+    // Alias moved to end of file to resolve circular dependencies
 
     // The "Properties" class is the primary interface for reflection.
     // It is used by both Serializers (YAML) and Editor UI (ImGui).
@@ -116,14 +124,46 @@ namespace CHEngine
         template<typename T>
         bool Sequence(const char* name, std::vector<T>& values, bool allowAddRemove = true)
         {
-            // Note: Sequence might still need specialization for IPropertyArchive
-            return m_Archive.Sequence(name, values, allowAddRemove);
+            size_t size = values.size();
+            m_Archive.BeginSequence(name, size);
+            
+            if (GetMode() == ReflectionMode::Deserialize)
+            {
+                values.resize(size);
+            }
+
+            bool changed = false;
+            for (size_t i = 0; i < values.size(); ++i)
+            {
+                std::string label = "[" + std::to_string(i) + "]";
+                if constexpr (std::is_arithmetic_v<T> || std::is_same_v<T, std::string>)
+                {
+                    if (m_Archive.Property(label.c_str(), values[i])) changed = true;
+                }
+                else
+                {
+                    if (Nested(label.c_str(), values[i])) changed = true;
+                }
+            }
+
+            m_Archive.EndSequence();
+            return changed;
         }
 
         template<typename T>
         bool Nested(const char* name, T& value)
         {
-            return m_Archive.Nested(name, value);
+            if constexpr (std::is_base_of_v<IPropertyArchive, T_Archive>)
+            {
+                return m_Archive.Nested(name, [&](IPropertyArchive& archive) {
+                    Properties<IPropertyArchive> props(archive);
+                    value.Reflect(props);
+                });
+            }
+            else
+            {
+                return m_Archive.Nested(name, value);
+            }
         }
 
         template<typename T>
@@ -145,7 +185,7 @@ namespace CHEngine
         bool Enum(const char* name, T_Enum& value, const char** names, int count)
         {
             int temp = (int)value;
-            bool changed = m_Archive.Property(name, temp, names, count);
+            bool changed = m_Archive.Enum(name, temp, names, count);
             if (changed || m_Archive.GetReflectionMode() == ReflectionMode::Deserialize)
             {
                 value = (T_Enum)temp;
@@ -184,7 +224,7 @@ namespace CHEngine
         bool Enum(const char* name, T_Enum& value, const char** names, int count, const PropertyMeta& meta)
         {
             int temp = (int)value;
-            bool changed = m_Archive.Property(name, temp, names, count, meta);
+            bool changed = m_Archive.Enum(name, temp, names, count, meta);
             if (changed || m_Archive.GetReflectionMode() == ReflectionMode::Deserialize)
             {
                 value = (T_Enum)temp;

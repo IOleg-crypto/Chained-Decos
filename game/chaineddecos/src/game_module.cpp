@@ -8,15 +8,15 @@ namespace CHEngine
 {
     void RegisterGameScriptBindings();
 
-    CH_REGISTER_COMPONENT(SpawnComponent, "SpawnZone", ICON_FA_LOCATION_DOT);
-    CH_REGISTER_COMPONENT(PlayerComponent, "Player", ICON_FA_USER);
-    CH_REGISTER_COMPONENT(SceneTransitionComponent, "SceneTransition", ICON_FA_DOOR_OPEN);
-    CH_REGISTER_COMPONENT(RPGStatsComponent, "RPG Stats", ICON_FA_CHART_BAR);
-    CH_REGISTER_COMPONENT(SkillComponent, "Skill", ICON_FA_BOLT);
-    CH_REGISTER_COMPONENT(InventoryComponent, "Inventory", ICON_FA_BOXES_STACKED);
-
     void RegisterGameComponents()
     {
+        ComponentRegistry::RegisterReflective<SpawnComponent>("SpawnZone", ICON_FA_LOCATION_DOT);
+        ComponentRegistry::RegisterReflective<PlayerComponent>("Player", ICON_FA_USER);
+        ComponentRegistry::RegisterReflective<SceneTransitionComponent>("SceneTransition", ICON_FA_DOOR_OPEN);
+        ComponentRegistry::RegisterReflective<RPGStatsComponent>("RPG Stats", ICON_FA_CHART_BAR);
+        ComponentRegistry::RegisterReflective<SkillComponent>("Skill", ICON_FA_BOLT);
+        ComponentRegistry::RegisterReflective<InventoryComponent>("Inventory", ICON_FA_BOXES_STACKED);
+
         // Script bindings still manually registered for now
         RegisterGameScriptBindings();
     }

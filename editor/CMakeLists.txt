@@ -45,6 +45,10 @@ target_sources(editor_core PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/effects_panel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/material_panel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/material_panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/animation_graph_serializer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/animation_graph_serializer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/animation_graph_panel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/animation_graph_panel.cpp
 
     # Undo
     ${CMAKE_CURRENT_SOURCE_DIR}/undo/command_history.h
