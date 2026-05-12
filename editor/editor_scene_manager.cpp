@@ -41,6 +41,12 @@ void EditorSceneManager::OpenScene()
 
 void EditorSceneManager::OpenScene(const std::filesystem::path& path)
 {
+    CH_CORE_INFO("EditorSceneManager: Transition requested to '{}'", path.string());
+    if (m_IsSceneOpenLoading)
+    {
+        CH_CORE_WARN("EditorSceneManager: Transition to '{}' ignored - already loading '{}'", path.string(), m_PendingSceneOpenPath.string());
+        return;
+    }
     m_IsPlayModeSceneLoad = (EditorContext::GetSceneState() == SceneState::Play);
     StartSceneOpenTransition(path);
 }
@@ -322,6 +328,20 @@ void EditorSceneManager::UpdateSceneOpenTransition()
         m_LoadingStatus = "";
         m_IsPlayModeSceneLoad = false;
         CH_CORE_INFO("Editor: Scene transition complete.");
+    }
+    else if (m_IsSceneOpenLoading && m_SceneOpenSceneReady)
+    {
+        auto& am = ServiceLocator::Get<AssetManager>();
+        if (am.HasBackgroundWork())
+        {
+            static float logTimer = 0.0f;
+            logTimer += 0.016f; // approximate
+            if (logTimer > 1.0f)
+            {
+                CH_CORE_INFO("Editor: Transition to '{}' waiting for {} assets...", m_PendingSceneOpenPath.string(), am.GetPendingFinalizeCount());
+                logTimer = 0.0f;
+            }
+        }
     }
 }
 

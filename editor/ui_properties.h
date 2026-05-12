@@ -36,8 +36,9 @@ public:
     virtual bool Property(const char* name, glm::vec3& value, const PropertyMeta& meta = {}) override { return PropertyInternal(name, value, meta); }
     virtual bool Property(const char* name, glm::vec4& value, const PropertyMeta& meta = {}) override { return PropertyInternal(name, value, meta); }
     virtual bool Property(const char* name, Color& value, const PropertyMeta& meta = {}) override { return PropertyInternal(name, value, meta); }
-    virtual bool Property(const char* name, int& value, const char** names, int count, const PropertyMeta& meta = {}) override { return EnumPropertyInternal(name, value, names, count, meta); }
+    virtual bool Enum(const char* name, int& value, const char** names, int count, const PropertyMeta& meta = {}) override { return EnumPropertyInternal(name, value, names, count, meta); }
     
+    virtual bool Property(const char* name, uint64_t& value, const PropertyMeta& meta = {}) override { return Handle(name, value, meta); }
     virtual bool Handle(const char* name, uint64_t& value, const PropertyMeta& meta = {}) override { return HandleInternal(name, value); }
     virtual bool File(const char* name, std::string& value, const char* extensions = nullptr, const PropertyMeta& meta = {}) override { return FileInternal(name, value, extensions, meta); }
     virtual bool Action(const char* label, std::function<void()> func) override { return ActionInternal(label, func); }
@@ -123,17 +124,47 @@ public:
         return localChanged;
     }
 
-    template <typename T> bool Nested(const char* name, T& value)
+    virtual void BeginSequence(const char* name, size_t& size) override
+    {
+        if (ImGui::GetCurrentTable() != nullptr) {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::AlignTextToFramePadding();
+        }
+
+        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth;
+        if (ImGui::GetCurrentTable() != nullptr) flags |= ImGuiTreeNodeFlags_SpanAllColumns;
+
+        m_InSequence = ImGui::TreeNodeEx(name, flags);
+        if (m_InSequence && ImGui::GetCurrentTable() != nullptr) {
+            ImGui::TableSetColumnIndex(1);
+        }
+    }
+
+    virtual void EndSequence() override
+    {
+        if (m_InSequence) {
+            ImGui::TreePop();
+            m_InSequence = false;
+        }
+    }
+
+    virtual bool Nested(const char* name, std::function<void(IPropertyArchive&)> callback) override
     {
         if (ImGui::TreeNodeEx(name, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
-            Properties<UIProperties> itemProps(*this);
-            value.Reflect(itemProps);
-            if (itemProps.HasChanged()) m_Changed = true;
+            callback(*this);
             ImGui::TreePop();
-            return itemProps.HasChanged();
+            return true; // Simplified: assume changed if we opened and called callback
         }
         return false;
     }
+
+private:
+    bool m_InSequence = false;
+public:
+
+    // --- Legacy types or internal helpers if needed ---
+    // Note: Most templates are now handled by the base class Properties<T_Archive>.
 
 private:
     template<typename T> bool PropertyInternal(const char* name, T& value, const PropertyMeta& meta) {

@@ -419,7 +419,8 @@ struct WidgetComponent
             "VerticalLayoutGroup"
         };
 
-        if (props.Enum("Widget Type", typeIndex, typeNames, sizeof(typeNames) / sizeof(const char*)))
+        if (props.Enum("Widget Type", typeIndex, typeNames, sizeof(typeNames) / sizeof(const char*)) ||
+            props.GetMode() == CHEngine::ReflectionMode::Deserialize)
         {
             switch (typeIndex)
             {

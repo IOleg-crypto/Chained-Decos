@@ -27,16 +27,32 @@ Entities:
           Pivot: [0.5, 1]
           Rotation: 0
           Scale: [1, 1]
-    ImageControl:
-      ? TexturePath: D:\gitnext\Chained Decos\game\chaineddecos\assets\materials\unnamed_1.jpg
-        Size: [411.799988, 204.300003]
-        TintColor: [248, 248, 248, 255]
-        BorderColor: [169, 157, 157, 0]
-        UIStyle:
-          BGColor: [40, 40, 40, 255]
-          HoverColor: [60, 60, 60, 255]
-          PressedColor: [30, 30, 30, 255]
-          Rounding: 9.19999981
+    WidgetComponent:
+      Box Style:
+        BG Color: [40, 40, 40, 255]
+        Hover Color: [60, 60, 60, 255]
+        Pressed Color: [30, 30, 30, 255]
+        Rounding: 9.19999981
+        Border Size: 0
+        Border Color: [255, 255, 255, 255]
+        Gradient: false
+        Padding: 0
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.100000001
+      Text Style:
+        Font Name: Default
+        Font Size: 18
+        Text Color: [255, 255, 255, 255]
+        Shadow: false
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Widget Type: 9
+      Texture Path: D:\gitnext\Chained Decos\game\chaineddecos\assets\materials\unnamed_1.jpg
+      Tint Color: [248, 248, 248, 255]
+      Border Color: [169, 157, 157, 0]
   - Entity: 13765047633248252361
     TagComponent:
       ? Tag: start_game_menu_options
@@ -61,18 +77,32 @@ Entities:
     ManagedScriptComponent:
       Scripts:
         - ClassName: ChainedDecos.Scripts.SceneScript
-    ButtonControl:
-      ? Label: Options
-        TextStyle:
-          FontSize: 18
-          TextColor: [255, 255, 255, 255]
-          HAlign: 1
-          VAlign: 1
-        UIStyle:
-          BGColor: [40, 40, 40, 255]
-          HoverColor: [60, 60, 60, 255]
-          PressedColor: [30, 30, 30, 255]
-          Rounding: 4
+    WidgetComponent:
+      Box Style:
+        BG Color: [40, 40, 40, 255]
+        Hover Color: [60, 60, 60, 255]
+        Pressed Color: [30, 30, 30, 255]
+        Rounding: 4
+        Border Size: 0
+        Border Color: [255, 255, 255, 255]
+        Gradient: false
+        Padding: 4
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.100000001
+      Text Style:
+        Font Name: Default
+        Font Size: 18
+        Text Color: [255, 255, 255, 255]
+        Shadow: false
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Widget Type: 1
+      Label: Options
+      Interactable: true
+      Auto Size: false
   - Entity: 11188570711873615005
     TagComponent:
       ? Tag: start_button_start
@@ -97,18 +127,32 @@ Entities:
     ManagedScriptComponent:
       Scripts:
         - ClassName: ChainedDecos.Scripts.SceneScript
-    ButtonControl:
-      ? Label: Start
-        TextStyle:
-          FontSize: 18
-          TextColor: [255, 255, 255, 255]
-          HAlign: 1
-          VAlign: 1
-        UIStyle:
-          BGColor: [40, 40, 40, 255]
-          HoverColor: [60, 60, 60, 255]
-          PressedColor: [30, 30, 30, 255]
-          Rounding: 4
+    WidgetComponent:
+      Box Style:
+        BG Color: [40, 40, 40, 255]
+        Hover Color: [60, 60, 60, 255]
+        Pressed Color: [30, 30, 30, 255]
+        Rounding: 4
+        Border Size: 0
+        Border Color: [255, 255, 255, 255]
+        Gradient: false
+        Padding: 4
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.100000001
+      Text Style:
+        Font Name: Default
+        Font Size: 18
+        Text Color: [255, 255, 255, 255]
+        Shadow: false
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Widget Type: 1
+      Label: Start
+      Interactable: true
+      Auto Size: false
   - Entity: 12750009872668354234
     TagComponent:
       ? Tag: start_button_exit
@@ -127,18 +171,32 @@ Entities:
           Pivot: [0.5, 0.5]
           Rotation: 0
           Scale: [1, 1]
-    ButtonControl:
-      ? Label: Exit
-        TextStyle:
-          FontSize: 18
-          TextColor: [255, 255, 255, 255]
-          HAlign: 1
-          VAlign: 1
-        UIStyle:
-          BGColor: [40, 40, 40, 255]
-          HoverColor: [60, 60, 60, 255]
-          PressedColor: [30, 30, 30, 255]
-          Rounding: 4
+    WidgetComponent:
+      Box Style:
+        BG Color: [40, 40, 40, 255]
+        Hover Color: [60, 60, 60, 255]
+        Pressed Color: [30, 30, 30, 255]
+        Rounding: 4
+        Border Size: 0
+        Border Color: [255, 255, 255, 255]
+        Gradient: false
+        Padding: 4
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.100000001
+      Text Style:
+        Font Name: Default
+        Font Size: 18
+        Text Color: [255, 255, 255, 255]
+        Shadow: false
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Widget Type: 1
+      Label: Exit
+      Interactable: true
+      Auto Size: false
     ManagedScriptComponent:
       Scripts:
         - ClassName: ChainedDecos.Scripts.ExitScript
@@ -160,13 +218,31 @@ Entities:
           Pivot: [0, 0.5]
           Rotation: 0
           Scale: [1, 1]
-    LabelControl:
-      ? Text: The game is currently in development.
-        TextStyle:
-          FontSize: 18
-          TextColor: [255, 255, 255, 255]
-          HAlign: 1
-          VAlign: 1
+    WidgetComponent:
+      Box Style:
+        BG Color: [40, 40, 40, 255]
+        Hover Color: [60, 60, 60, 255]
+        Pressed Color: [30, 30, 30, 255]
+        Rounding: 4
+        Border Size: 0
+        Border Color: [255, 255, 255, 255]
+        Gradient: false
+        Padding: 4
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.100000001
+      Text Style:
+        Font Name: Default
+        Font Size: 18
+        Text Color: [255, 255, 255, 255]
+        Shadow: false
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Widget Type: 3
+      Text: The game is currently in development.
+      Auto Size: false
   - Entity: 6090748651460201744
     TagComponent:
       ? Tag: start_game_info_2
@@ -185,13 +261,31 @@ Entities:
           Pivot: [0, 0.5]
           Rotation: 0
           Scale: [1, 1]
-    LabelControl:
-      ? Text: Some functionality or aspects can be changed in final version.
-        TextStyle:
-          FontSize: 18
-          TextColor: [255, 255, 255, 255]
-          HAlign: 1
-          VAlign: 1
+    WidgetComponent:
+      Box Style:
+        BG Color: [40, 40, 40, 255]
+        Hover Color: [60, 60, 60, 255]
+        Pressed Color: [30, 30, 30, 255]
+        Rounding: 4
+        Border Size: 0
+        Border Color: [255, 255, 255, 255]
+        Gradient: false
+        Padding: 4
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.100000001
+      Text Style:
+        Font Name: Default
+        Font Size: 18
+        Text Color: [255, 255, 255, 255]
+        Shadow: false
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Widget Type: 3
+      Text: Some functionality or aspects can be changed in final version.
+      Auto Size: false
   - Entity: 15051911593141375302
     TagComponent:
       ? Tag: start_menu_game_info
@@ -216,15 +310,29 @@ Entities:
     ManagedScriptComponent:
       Scripts:
         - ClassName: ChainedDecos.Scripts.SceneScript
-    ButtonControl:
-      ? Label: Info
-        TextStyle:
-          FontSize: 18
-          TextColor: [255, 255, 255, 255]
-          HAlign: 1
-          VAlign: 1
-        UIStyle:
-          BGColor: [40, 40, 40, 255]
-          HoverColor: [60, 60, 60, 255]
-          PressedColor: [30, 30, 30, 255]
-          Rounding: 4
+    WidgetComponent:
+      Box Style:
+        BG Color: [40, 40, 40, 255]
+        Hover Color: [60, 60, 60, 255]
+        Pressed Color: [30, 30, 30, 255]
+        Rounding: 4
+        Border Size: 0
+        Border Color: [255, 255, 255, 255]
+        Gradient: false
+        Padding: 4
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.100000001
+      Text Style:
+        Font Name: Default
+        Font Size: 18
+        Text Color: [255, 255, 255, 255]
+        Shadow: false
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Widget Type: 1
+      Label: Info
+      Interactable: true
+      Auto Size: false

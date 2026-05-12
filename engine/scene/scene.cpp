@@ -11,6 +11,10 @@
 #include "engine/scene/systems/scene_audio_system.h"
 #include "engine/scene/systems/scene_systems_impl.h"
 #include "engine/scene/systems/asset_resolution_system.h"
+#include "engine/scene/systems/animation_graph_system.h"
+#include "engine/scene/animation_systems.h"
+#include <yaml-cpp/yaml.h>
+#include <filesystem>
 #include "engine/scene/ui_factory.h"
 #include "scene_scripting_manager.h"
 #include "scripting/scriptengine.h"
@@ -205,6 +209,21 @@ void Scene::OnRuntimeStart()
     // Ensure all transforms are up to date before the first frame
     CH_CORE_INFO("Scene::OnRuntimeStart - Updating hierarchy system...");
     HierarchySystem::Update(this);
+
+    // Initialize PlayOnStart animations
+    {
+        auto& registry = GetRegistry();
+        auto view = registry.view<AnimationComponent>();
+        for (auto entity : view)
+        {
+            auto& anim = view.get<AnimationComponent>(entity);
+            if (anim.PlayOnStart)
+            {
+                anim.IsPlaying = true;
+            }
+        }
+    }
+
     CH_CORE_INFO("Scene::OnRuntimeStart - Activation complete.");
 }
 
@@ -216,6 +235,65 @@ void Scene::OnRuntimeStop()
     m_SystemManager->OnRuntimeStop();
 }
 
+AnimationGraphData* Scene::GetOrLoadGraph(const std::string& graphPath)
+{
+    if (graphPath.empty())
+        return nullptr;
+
+    std::filesystem::path abs = graphPath;
+    if (abs.is_relative() && Project::GetActive())
+        abs = Project::GetActive()->GetProjectDirectory() / graphPath;
+
+    std::error_code ec;
+    if (!std::filesystem::exists(abs, ec) || ec)
+        return nullptr;
+
+    auto lastWrite = std::filesystem::last_write_time(abs, ec);
+    if (ec)
+        return nullptr;
+
+    auto it = m_GraphCache.find(graphPath);
+    if (it != m_GraphCache.end() && it->second.LastWriteTime >= lastWrite)
+        return &it->second.Data;
+
+    AnimationGraphData data;
+    try {
+        YAML::Node root = YAML::LoadFile(abs.string());
+        if (root["Nodes"]) {
+            for (auto node : root["Nodes"]) {
+                AnimationState state;
+                state.Name = node["Name"].as<std::string>();
+                state.AnimationPath = node["AnimationPath"].as<std::string>();
+                state.IsLooping = node["IsLooping"].as<bool>(true);
+                if (node["Transitions"]) {
+                    for (auto t : node["Transitions"]) state.Transitions.push_back(t.as<std::string>());
+                }
+                data.Nodes.push_back(std::move(state));
+            }
+        }
+        if (root["Links"]) {
+            for (auto link : root["Links"]) {
+                data.Links.push_back({
+                    link["FromState"].as<size_t>(),
+                    link["FromSlot"].as<size_t>(),
+                    link["ToState"].as<size_t>(),
+                    link["ToSlot"].as<size_t>()
+                });
+            }
+        }
+    }
+    catch (const std::exception& e) {
+        CH_CORE_ERROR("Scene::GetOrLoadGraph: failed loading {0}: {1}", abs.string(), e.what());
+        return nullptr;
+    }
+
+    CachedGraph cg;
+    cg.Data = std::move(data);
+    cg.LastWriteTime = lastWrite;
+    m_GraphCache[graphPath] = std::move(cg);
+    return &m_GraphCache[graphPath].Data;
+}
+
 void Scene::OnUpdateRuntime(Timestep timestep)
 {
     CH_PROFILE_FUNCTION();
@@ -223,6 +301,10 @@ void Scene::OnUpdateRuntime(Timestep timestep)
     m_ScriptingManager->OnUpdate(timestep);
 
     m_SystemManager->OnUpdate(timestep);
+
+    // Split animation responsibilities: playback and graph-driven state updates
+    AnimationSystems::UpdatePlayback(this, timestep);
+    AnimationSystems::UpdateGraphs(this, timestep);
 }
 
 void Scene::OnUpdateEditor(Timestep timestep)

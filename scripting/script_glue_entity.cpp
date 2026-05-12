@@ -3,6 +3,7 @@
 #include "engine/core/service_locator.h"
 #include "engine/scene/components/component_utils.h"
 #include "engine/scene/component_registry.h"
+#include "engine/scene/components/animation_graph_component.h"
 
 namespace CHEngine {
 
@@ -264,6 +265,15 @@ namespace CHEngine {
         }
     }
     CH_ADD_INTERNAL_CALL(ShaderComponent, Shader_SetEnabled_Ptr, Shader_SetEnabled);
+
+    CH_SCRIPT_FUNC void AnimationGraph_SetTrigger(uint64_t entityID, Coral::String inName) {
+        Entity entity = GetEntity(entityID);
+        if (entity && entity.HasComponent<AnimationGraphComponent>()) {
+            auto& graph = entity.GetComponent<AnimationGraphComponent>();
+            graph.Triggers[(std::string)inName] = true;
+        }
+    }
+    CH_ADD_INTERNAL_CALL(AnimationGraphComponent, AnimationGraph_SetTrigger_Ptr, AnimationGraph_SetTrigger);
 
 } // namespace CHEngine
 

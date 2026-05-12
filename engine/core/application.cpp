@@ -10,6 +10,7 @@
 #include "engine/graphics/texture_system.h"
 #include "engine/physics/physics_system.h"
 #include "engine/scene/component_serializer.h"
+#include "engine/scene/component_registry.h"
 #include "engine/scene/project.h"
 #include "engine/core/network_service.h"
 #include "scripting/scriptengine.h"
@@ -34,8 +35,10 @@ Application::Application(const ApplicationSpecification& spec)
 {
     CH_CORE_ASSERT(!s_Instance, "Application already exists!");
     s_Instance = this;
+    
+    ComponentRegistry::RegisterEngineComponents();
 
-    // Initialize all statically registered modules (Engine systems and Game logic)
+    // Initialize all statically registered modules
     ModuleRegistry::InitializeAll();
 
     if (!m_Specification.WorkingDirectory.empty())

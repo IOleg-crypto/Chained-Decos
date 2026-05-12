@@ -2,7 +2,7 @@
 set(IMGUI_DIR "${CMAKE_SOURCE_DIR}/include/imgui")
 set(IMGUIZMO_DIR "${CMAKE_SOURCE_DIR}/include/imguizmo")
 
-add_library(engine_external_imgui SHARED
+add_library(engine_external_imgui STATIC
     "${IMGUI_DIR}/imgui.cpp"
     "${IMGUI_DIR}/imgui_draw.cpp"
     "${IMGUI_DIR}/imgui_widgets.cpp"
@@ -12,6 +12,10 @@ add_library(engine_external_imgui SHARED
     "${IMGUI_DIR}/backends/imgui_impl_glfw.cpp"
     "${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp"
     "${IMGUIZMO_DIR}/ImGuizmo.cpp"
+    "${IMGUIZMO_DIR}/GraphEditor.cpp"
+    "${IMGUIZMO_DIR}/ImCurveEdit.cpp"
+    "${IMGUIZMO_DIR}/ImGradient.cpp"
+    "${IMGUIZMO_DIR}/ImSequencer.cpp"
 )
 
 target_include_directories(engine_external_imgui PUBLIC 
@@ -31,7 +35,6 @@ target_compile_definitions(engine_external_imgui PUBLIC
     IMGUI_DEFINE_MATH_OPERATORS 
     GLFW_INCLUDE_NONE 
     IMGUI_IMPL_OPENGL_LOADER_GLAD
-    IMGUI_SHARED_LIB # Our custom flag to trigger imconfig.h logic
 )
 
 set_target_properties(engine_external_imgui PROPERTIES UNITY_BUILD OFF)

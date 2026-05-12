@@ -38,6 +38,7 @@ namespace CHEngine
         std::function<void(Entity, Entity)> Copy;
         
         // Visibility and filters
+        std::string Category = "Other";
         bool Visible = true;
         bool AllowAdd = true;
         bool IsWidget = false;
@@ -56,6 +57,7 @@ namespace CHEngine
     {
     public:
         static void Register(entt::id_type typeId, const ComponentMetadata& metadata);
+        static void RegisterEngineComponents();
         
         static const std::unordered_map<entt::id_type, ComponentMetadata>& GetRegistry() { return s_Registry; }
         static bool Exists(entt::id_type typeId) { return s_Registry.contains(typeId); }
@@ -81,12 +83,13 @@ namespace CHEngine
          * Automatically generates UI and Serialization handlers.
          */
         template<typename T>
-        static void RegisterReflective(const std::string& name, const char* icon = nullptr)
+        static void RegisterReflective(const std::string& name, const char* icon = nullptr, const std::string& category = "Game")
         {
             ComponentMetadata metadata;
             metadata.Name = name;
             metadata.SerializationKey = name + "Component";
             metadata.Icon = icon;
+            metadata.Category = category;
             
             metadata.Has = [](Entity e) { return e.HasComponent<T>(); };
             metadata.GetAll = [](class Scene* s) { 
@@ -103,8 +106,18 @@ namespace CHEngine
 
             metadata.IsReflective = true;
             metadata.ReflectInternal = [](Entity e, void* archivePtr, int mode) {
-                if (e.HasComponent<T>()) {
-                    IPropertyArchive* archive = static_cast<IPropertyArchive*>(archivePtr);
+                IPropertyArchive* archive = static_cast<IPropertyArchive*>(archivePtr);
+                const ReflectionMode reflMode = static_cast<ReflectionMode>(mode);
+
+                if (reflMode == ReflectionMode::Deserialize)
+                {
+                    // Add component if it doesn't exist yet (it won't during scene loading)
+                    auto& comp = e.AddOrReplaceComponent<T>();
+                    GenericProperties props(*archive);
+                    comp.Reflect(props);
+                }
+                else if (e.HasComponent<T>())
+                {
                     GenericProperties props(*archive);
                     e.GetComponent<T>().Reflect(props);
                 }
