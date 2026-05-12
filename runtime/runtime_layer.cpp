@@ -723,7 +723,8 @@ bool RuntimeLayer::TransitionToScene(const std::filesystem::path& scenePath)
     m_IsSceneLoading = false;
     m_LoadingOverlayElapsed = 0.0f;
 
-    auto nextScene = std::make_shared<Scene>();
+    // Runtime scenes need the active ScriptEngine so ManagedScriptComponent instances can be created.
+    auto nextScene = std::make_shared<Scene>(&ServiceLocator::Get<ScriptEngine>());
     SceneSerializer serializer(nextScene.get());
     if (!serializer.Deserialize(scenePath.string()))
     {

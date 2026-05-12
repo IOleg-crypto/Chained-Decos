@@ -16,7 +16,10 @@ add_library(engine_scene ${SUBMODULE_LIB_TYPE}
         systems/asset_resolution_system.cpp
         systems/animation_system.cpp
         systems/hierarchy_system.cpp
+        animation_systems.cpp
         systems/scene_audio_system.cpp
+        systems/animation_graph_system.cpp
+
         scene_system_manager.cpp
         scene_scripting_manager.cpp
         ui_factory.cpp
@@ -50,7 +53,10 @@ add_library(engine_scene ${SUBMODULE_LIB_TYPE}
         components/tag_component.h
         components/transform_component.h
         components/sprite_component.h
+        components/animation_graph_component.h
+        systems/animation_graph_system.h
         systems/asset_resolution_system.h
+        animation_graph_data.h
         entity.h
 )
 set_target_properties(engine_scene PROPERTIES UNITY_BUILD OFF)

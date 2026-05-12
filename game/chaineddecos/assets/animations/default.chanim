@@ -1,0 +1,10 @@
+Nodes:
+  - Name: Anim_ghost
+    Clip: models_backup/mystery_skulls_ghost_lewis/scene.gltf
+    Loop: true
+    X: 58
+    Y: 106
+    Transitions:
+      []
+Links:
+  []

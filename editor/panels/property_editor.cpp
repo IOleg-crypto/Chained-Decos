@@ -93,22 +93,18 @@ void PropertyEditor::DrawComponentContainer(const std::string& name, const char*
 
 void PropertyEditor::DrawGenericReflection(const ComponentMetadata& metadata, Entity entity)
 {
-    std::string name = metadata.Name;
-    const char* icon = metadata.Icon;
-    entt::id_type id = 0; // Not strictly needed for generic drawer
-    
-    // We can't easily use DrawComponentContainer<T> here because we don't know T at compile time.
-    // However, we can use the type-erased ReflectInternal!
+    // Use a stable hash of the component name as the tree node ID
+    // to avoid ImGui ID collisions when multiple generic components are rendered
+    entt::id_type stableId = static_cast<entt::id_type>(std::hash<std::string>{}(metadata.Name));
     
     DrawComponentInternal(
-        0, name, icon, entity,
+        stableId, metadata.Name, metadata.Icon, entity,
         [&]() {
             UIProperties ui;
             metadata.ReflectInternal(entity, &ui, (int)ReflectionMode::UI);
             return ui.HasChanged();
         },
         [&]() {
-            // Generic remove (if we have metadata.Remove)
             if (metadata.Remove) metadata.Remove(entity);
         }
     );
@@ -122,6 +118,7 @@ template <typename T> void PropertyEditor::Register(const std::string& name, con
         ComponentMetadata metadata;
         metadata.Name = name;
         metadata.Icon = icon;
+        metadata.Category = "Engine";
         metadata.DrawUI = [name, icon](Entity e) { DrawComponentReflection<T>(name, icon, e); };
         metadata.Add = [](Entity e) {
             if (!e.HasComponent<T>())
@@ -162,6 +159,7 @@ void PropertyEditor::RegisterCustom(const std::string& name, std::function<bool(
         ComponentMetadata metadata;
         metadata.Name = name;
         metadata.Icon = icon;
+        metadata.Category = "Engine";
         metadata.DrawUI = [name, icon, drawer](Entity e) { DrawComponentContainer<T>(name, icon, e, drawer); };
         metadata.Add = [](Entity e) {
             if (!e.HasComponent<T>())
@@ -464,35 +462,40 @@ void PropertyEditor::DrawAddComponentPopup(CHEngine::Entity entity)
         auto* scene = entity.GetRegistry().ctx().find<Scene*>();
         bool is3DScene = scene && (*scene)->GetSettings().Mode == BackgroundMode::Environment3D;
 
+        // Group components by category
+        std::map<std::string, std::vector<const ComponentMetadata*>> categorized;
+
         for (auto& [id, metadata] : ComponentRegistry::GetRegistry())
         {
-            if (!metadata.AllowAdd)
-            {
-                continue;
-            }
-            if (metadata.IsWidget && !isUIEntity)
-            {
-                continue;
-            }
-            if (is3DScene && (metadata.IsWidget || id == entt::type_hash<ControlComponent>::value()))
-            {
-                continue;
-            }
+            if (!metadata.AllowAdd) continue;
+            if (metadata.IsWidget && !isUIEntity) continue;
+            if (is3DScene && (metadata.IsWidget || id == entt::type_hash<ControlComponent>::value())) continue;
 
             auto& registry = entity.GetRegistry();
             auto* storage = registry.storage(id);
-            if (storage && storage->contains(entity))
-            {
-                continue;
-            }
+            if (storage && storage->contains(entity)) continue;
 
-            std::string label = (metadata.Icon ? std::string(metadata.Icon) + " " : "") + metadata.Name;
-            if (ImGui::MenuItem(label.c_str()))
+            categorized[metadata.Category].push_back(&metadata);
+        }
+
+        // Render categorized menus
+        for (auto& [category, components] : categorized)
+        {
+            if (ImGui::BeginMenu(category.c_str()))
             {
-                metadata.Add(entity);
-                ImGui::CloseCurrentPopup();
+                for (const auto* metadata : components)
+                {
+                    std::string label = (metadata->Icon ? std::string(metadata->Icon) + " " : "") + metadata->Name;
+                    if (ImGui::MenuItem(label.c_str()))
+                    {
+                        metadata->Add(entity);
+                        ImGui::CloseCurrentPopup();
+                    }
+                }
+                ImGui::EndMenu();
             }
         }
+
         ImGui::EndPopup();
     }
 }

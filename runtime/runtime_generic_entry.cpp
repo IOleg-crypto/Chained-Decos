@@ -5,8 +5,15 @@
 
 namespace CHEngine
 {
+    // Forward declare the game's registration function
+    // This lives in the ChainedDecos static library
+    extern void RegisterGameComponents();
+
 Application* CreateApplication(ApplicationCommandLineArgs args)
 {
+    // Ensure game components are registered
+    RegisterGameComponents();
+
     ApplicationSpecification spec;
     spec.Name = "ChainedRuntime";
     spec.CommandLineArgs = args;
