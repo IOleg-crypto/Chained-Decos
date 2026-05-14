@@ -20,6 +20,7 @@ add_library(engine_graphics ${SUBMODULE_LIB_TYPE}
         pipeline/renderer.h
         pipeline/scene_renderer.h
         pipeline/ui_renderer.h
+        pipeline/ui_style.h
         pipeline/ui_widget_renderer.h
         pipeline/ui_font_registry.h
         pipeline/shader_library.h

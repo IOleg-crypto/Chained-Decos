@@ -31,8 +31,6 @@ protected:
 
 private:
     void UpdateColliders(Scene* scene);
-
-private:
 };
 
 } // namespace CHEngine

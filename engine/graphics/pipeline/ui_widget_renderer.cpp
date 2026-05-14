@@ -134,7 +134,8 @@ void RenderLabel(const LabelData& label, WidgetComponent& wc, const ImVec2& size
 bool RenderButton(Entity entity, ButtonData& button, WidgetComponent& wc, const ImVec2& size)
 {
     ImGui::PushID((int)entity);
-    ImGui::InvisibleButton(button.Label.c_str(), size);
+    const char* label = button.Label.empty() ? "##Button" : button.Label.c_str();
+    ImGui::InvisibleButton(label, size);
 
     wc.IsHovered = ImGui::IsItemHovered();
     wc.IsDown    = ImGui::IsItemActive();
@@ -176,13 +177,15 @@ bool RenderButton(Entity entity, ButtonData& button, WidgetComponent& wc, const 
 bool RenderSlider(SliderData& slider, WidgetComponent& wc, const ImVec2& size)
 {
     ImGui::SetNextItemWidth(size.x);
-    wc.ValueChanged = ImGui::SliderFloat(slider.Label.c_str(), &slider.Value, slider.Min, slider.Max);
+    const char* label = slider.Label.empty() ? "##Slider" : slider.Label.c_str();
+    wc.ValueChanged = ImGui::SliderFloat(label, &slider.Value, slider.Min, slider.Max);
     return ImGui::IsItemActive();
 }
 
 bool RenderCheckbox(CheckboxData& cb, WidgetComponent& wc)
 {
-    wc.ValueChanged = ImGui::Checkbox(cb.Label.c_str(), &cb.Checked);
+    const char* label = cb.Label.empty() ? "##Checkbox" : cb.Label.c_str();
+    wc.ValueChanged = ImGui::Checkbox(label, &cb.Checked);
     return ImGui::IsItemActive();
 }
 
@@ -251,13 +254,14 @@ bool RenderInputText(Entity entity, InputTextData& it, WidgetComponent& wc, cons
     }
 
     ImGuiInputTextFlags flags = (it.ReadOnly ? ImGuiInputTextFlags_ReadOnly : 0) | (it.Password ? ImGuiInputTextFlags_Password : 0);
+    const char* label = it.Label.empty() ? "##InputText" : it.Label.c_str();
     bool changed = false;
     if (it.Multiline)
-        changed = ImGui::InputTextMultiline(it.Label.c_str(), buf.data(), buf.size(), size, flags);
+        changed = ImGui::InputTextMultiline(label, buf.data(), buf.size(), size, flags);
     else
     {
         ImGui::SetNextItemWidth(size.x);
-        changed = ImGui::InputText(it.Label.c_str(), buf.data(), buf.size(), flags);
+        changed = ImGui::InputText(label, buf.data(), buf.size(), flags);
     }
     if (changed) { it.Text = buf.data(); wc.ValueChanged = true; }
 
@@ -276,13 +280,43 @@ void RenderProgressBar(const ProgressBarData& pb, WidgetComponent& wc, const ImV
 bool RenderComboBox(ComboBoxData& cb, WidgetComponent& wc, const ImVec2& size)
 {
     ImGui::SetNextItemWidth(size.x);
-    const char* preview = (cb.SelectedIndex >= 0 && cb.SelectedIndex < (int)cb.Items.size()) ? cb.Items[cb.SelectedIndex].c_str() : "";
-    if (ImGui::BeginCombo(cb.Label.c_str(), preview))
+    const char* label = cb.Label.empty() ? "##ComboBox" : cb.Label.c_str();
+
+    // Build preview from the selected item, skipping empty ones
+    const char* preview = "<empty>";
+    if (cb.SelectedIndex >= 0 && cb.SelectedIndex < (int)cb.Items.size() && !cb.Items[cb.SelectedIndex].empty())
+        preview = cb.Items[cb.SelectedIndex].c_str();
+
+    // Only show non-empty items; disable dropdown if there are none
+    int validCount = 0;
+    for (const auto& it : cb.Items)
+        if (!it.empty()) validCount++;
+
+    bool disabled = (validCount == 0);
+    if (disabled)
+        ImGui::BeginDisabled(true);
+
+    if (ImGui::BeginCombo(label, preview))
     {
         for (int i = 0; i < (int)cb.Items.size(); i++)
-            if (ImGui::Selectable(cb.Items[i].c_str(), i == cb.SelectedIndex)) { cb.SelectedIndex = i; wc.ValueChanged = true; }
+        {
+            if (cb.Items[i].empty()) continue;   // skip blanks — they would crash ImGui
+            ImGui::PushID(i);
+            bool selected = (i == cb.SelectedIndex);
+            if (ImGui::Selectable(cb.Items[i].c_str(), selected))
+            {
+                cb.SelectedIndex = i;
+                wc.ValueChanged = true;
+            }
+            if (selected)
+                ImGui::SetItemDefaultFocus();
+            ImGui::PopID();
+        }
         ImGui::EndCombo();
     }
+    if (disabled)
+        ImGui::EndDisabled();
+
     return ImGui::IsItemActive();
 }
 
@@ -301,7 +335,8 @@ bool RenderImageButton(ImageButtonData& ib, WidgetComponent& wc, const ImVec2& s
     if (!tex) return false;
 
     ImTextureID tid = (ImTextureID)(uintptr_t)tex->GetRendererID();
-    if (ImGui::ImageButton(ib.Label.c_str(), tid, size, {0,1}, {1,0}, ToImVec4(ib.BackgroundColor), ToImVec4(ib.TintColor)))
+    const char* label = ib.Label.empty() ? "##ImageButton" : ib.Label.c_str();
+    if (ImGui::ImageButton(label, tid, size, {0,1}, {1,0}, ToImVec4(ib.BackgroundColor), ToImVec4(ib.TintColor)))
         wc.PressedThisFrame = true;
     return ImGui::IsItemActive();
 }
@@ -310,7 +345,8 @@ bool RenderRadioButton(RadioButtonData& rb, WidgetComponent& wc)
 {
     for (int i = 0; i < (int)rb.Options.size(); i++)
     {
-        if (ImGui::RadioButton(rb.Options[i].c_str(), rb.SelectedIndex == i)) { rb.SelectedIndex = i; wc.ValueChanged = true; }
+        const char* label = rb.Options[i].empty() ? "##RadioButton" : rb.Options[i].c_str();
+        if (ImGui::RadioButton(label, rb.SelectedIndex == i)) { rb.SelectedIndex = i; wc.ValueChanged = true; }
         if (rb.Horizontal && i < (int)rb.Options.size() - 1) ImGui::SameLine();
     }
     return ImGui::IsItemActive();
@@ -319,7 +355,8 @@ bool RenderRadioButton(RadioButtonData& rb, WidgetComponent& wc)
 bool RenderColorPicker(ColorPickerData& cp, WidgetComponent& wc)
 {
     float col[4] = {cp.SelectedColor.r / 255.f, cp.SelectedColor.g / 255.f, cp.SelectedColor.b / 255.f, cp.SelectedColor.a / 255.f};
-    if (cp.ShowPicker ? ImGui::ColorPicker4(cp.Label.c_str(), col) : ImGui::ColorEdit4(cp.Label.c_str(), col))
+    const char* label = cp.Label.empty() ? "##ColorPicker" : cp.Label.c_str();
+    if (cp.ShowPicker ? ImGui::ColorPicker4(label, col) : ImGui::ColorEdit4(label, col))
     {
         cp.SelectedColor = {(uint8_t)(col[0]*255), (uint8_t)(col[1]*255), (uint8_t)(col[2]*255), (uint8_t)(col[3]*255)};
         wc.ValueChanged = true;
@@ -337,14 +374,16 @@ void RenderSeparator(const SeparatorData& sep)
 bool RenderDragFloat(DragFloatData& df, WidgetComponent& wc, const ImVec2& size)
 {
     ImGui::SetNextItemWidth(size.x);
-    wc.ValueChanged = ImGui::DragFloat(df.Label.c_str(), &df.Value, df.Speed, df.Min, df.Max, df.Format.c_str());
+    const char* label = df.Label.empty() ? "##DragFloat" : df.Label.c_str();
+    wc.ValueChanged = ImGui::DragFloat(label, &df.Value, df.Speed, df.Min, df.Max, df.Format.c_str());
     return ImGui::IsItemActive();
 }
 
 bool RenderDragInt(DragIntData& di, WidgetComponent& wc, const ImVec2& size)
 {
     ImGui::SetNextItemWidth(size.x);
-    wc.ValueChanged = ImGui::DragInt(di.Label.c_str(), &di.Value, di.Speed, di.Min, di.Max, di.Format.c_str());
+    const char* label = di.Label.empty() ? "##DragInt" : di.Label.c_str();
+    wc.ValueChanged = ImGui::DragInt(label, &di.Value, di.Speed, di.Min, di.Max, di.Format.c_str());
     return ImGui::IsItemActive();
 }
 
@@ -352,25 +391,29 @@ bool RenderTreeNode(TreeNodeData& tn, WidgetComponent& wc)
 {
     ImGuiTreeNodeFlags flags = (tn.DefaultOpen ? ImGuiTreeNodeFlags_DefaultOpen : 0) |
                                (tn.IsLeaf ? ImGuiTreeNodeFlags_Leaf : 0) | ImGuiTreeNodeFlags_SpanAvailWidth;
-    tn.IsOpen = ImGui::TreeNodeEx(tn.Label.c_str(), flags);
+    const char* label = tn.Label.empty() ? "##TreeNode" : tn.Label.c_str();
+    tn.IsOpen = ImGui::TreeNodeEx(label, flags);
     return ImGui::IsItemActive();
 }
 
 bool RenderCollapsingHeader(CollapsingHeaderData& ch, WidgetComponent& wc)
 {
-    ch.IsOpen = ImGui::CollapsingHeader(ch.Label.c_str(), ch.DefaultOpen ? ImGuiTreeNodeFlags_DefaultOpen : 0);
+    const char* label = ch.Label.empty() ? "##CollapsingHeader" : ch.Label.c_str();
+    ch.IsOpen = ImGui::CollapsingHeader(label, ch.DefaultOpen ? ImGuiTreeNodeFlags_DefaultOpen : 0);
     return ImGui::IsItemActive();
 }
 
 bool RenderPlotLines(const PlotLinesData& pl, WidgetComponent& wc)
 {
-    ImGui::PlotLines(pl.Label.c_str(), pl.Values.data(), (int)pl.Values.size(), 0, pl.OverlayText.c_str(), pl.ScaleMin, pl.ScaleMax, {pl.GraphSize.x, pl.GraphSize.y});
+    const char* label = pl.Label.empty() ? "##PlotLines" : pl.Label.c_str();
+    ImGui::PlotLines(label, pl.Values.data(), (int)pl.Values.size(), 0, pl.OverlayText.c_str(), pl.ScaleMin, pl.ScaleMax, {pl.GraphSize.x, pl.GraphSize.y});
     return ImGui::IsItemActive();
 }
 
 bool RenderPlotHistogram(const PlotHistogramData& ph, WidgetComponent& wc)
 {
-    ImGui::PlotHistogram(ph.Label.c_str(), ph.Values.data(), (int)ph.Values.size(), 0, ph.OverlayText.c_str(), ph.ScaleMin, ph.ScaleMax, {ph.GraphSize.x, ph.GraphSize.y});
+    const char* label = ph.Label.empty() ? "##PlotHistogram" : ph.Label.c_str();
+    ImGui::PlotHistogram(label, ph.Values.data(), (int)ph.Values.size(), 0, ph.OverlayText.c_str(), ph.ScaleMin, ph.ScaleMax, {ph.GraphSize.x, ph.GraphSize.y});
     return ImGui::IsItemActive();
 }
 
@@ -378,7 +421,8 @@ void RenderTabBar(Entity tabBarEntity, const TabBarData& tb, WidgetComponent& wc
 {
     ImGuiTabBarFlags flags = (tb.Reorderable ? ImGuiTabBarFlags_Reorderable : 0) |
                              (tb.AutoSelectNewTabs ? ImGuiTabBarFlags_AutoSelectNewTabs : 0);
-    if (!ImGui::BeginTabBar(tb.Label.c_str(), flags)) return;
+    const char* label = tb.Label.empty() ? "##TabBar" : tb.Label.c_str();
+    if (!ImGui::BeginTabBar(label, flags)) return;
 
     std::vector<entt::entity> tabItems;
     if (tabBarEntity.HasComponent<HierarchyComponent>())
@@ -410,6 +454,115 @@ void RenderTabBar(Entity tabBarEntity, const TabBarData& tb, WidgetComponent& wc
     }
 
     ImGui::EndTabBar();
+}
+
+bool Dispatcher::Render(Entity entity, WidgetComponent& widget, const ImVec2& screenPos, const ImVec2& size)
+{
+    StyleCounts styleState = PushUIStyle(widget.BoxStyle);
+    PushTextStyle(widget.TextStyle, styleState);
+
+    bool handled = false;
+    bool widgetFound = true;
+    auto& reg = entity.GetRegistry();
+
+    std::visit(
+        [&](auto&& arg) {
+            using T = std::decay_t<decltype(arg)>;
+            if constexpr (std::is_same_v<T, std::monostate>)
+            {
+                widgetFound = false;
+            }
+            else if constexpr (std::is_same_v<T, PanelData>)
+            {
+                RenderPanel(arg, widget, screenPos, size);
+            }
+            else if constexpr (std::is_same_v<T, LabelData>)
+            {
+                RenderLabel(arg, widget, size);
+            }
+            else if constexpr (std::is_same_v<T, ButtonData>)
+            {
+                handled = RenderButton(entity, arg, widget, size);
+            }
+            else if constexpr (std::is_same_v<T, SliderData>)
+            {
+                handled = RenderSlider(arg, widget, size);
+            }
+            else if constexpr (std::is_same_v<T, CheckboxData>)
+            {
+                handled = RenderCheckbox(arg, widget);
+            }
+            else if constexpr (std::is_same_v<T, ImageData>)
+            {
+                RenderImage(arg, widget, size);
+            }
+            else if constexpr (std::is_same_v<T, InputTextData>)
+            {
+                handled = RenderInputText(entity, arg, widget, size);
+            }
+            else if constexpr (std::is_same_v<T, ProgressBarData>)
+            {
+                RenderProgressBar(arg, widget, size);
+            }
+            else if constexpr (std::is_same_v<T, ComboBoxData>)
+            {
+                handled = RenderComboBox(arg, widget, size);
+            }
+            else if constexpr (std::is_same_v<T, ImageButtonData>)
+            {
+                handled = RenderImageButton(arg, widget, size);
+            }
+            else if constexpr (std::is_same_v<T, RadioButtonData>)
+            {
+                handled = RenderRadioButton(arg, widget);
+            }
+            else if constexpr (std::is_same_v<T, ColorPickerData>)
+            {
+                handled = RenderColorPicker(arg, widget);
+            }
+            else if constexpr (std::is_same_v<T, SeparatorData>)
+            {
+                RenderSeparator(arg);
+            }
+            else if constexpr (std::is_same_v<T, DragFloatData>)
+            {
+                handled = RenderDragFloat(arg, widget, size);
+            }
+            else if constexpr (std::is_same_v<T, DragIntData>)
+            {
+                handled = RenderDragInt(arg, widget, size);
+            }
+            else if constexpr (std::is_same_v<T, TreeNodeData>)
+            {
+                handled = RenderTreeNode(arg, widget);
+            }
+            else if constexpr (std::is_same_v<T, CollapsingHeaderData>)
+            {
+                handled = RenderCollapsingHeader(arg, widget);
+            }
+            else if constexpr (std::is_same_v<T, PlotLinesData>)
+            {
+                handled = RenderPlotLines(arg, widget);
+            }
+            else if constexpr (std::is_same_v<T, PlotHistogramData>)
+            {
+                handled = RenderPlotHistogram(arg, widget);
+            }
+            else if constexpr (std::is_same_v<T, TabBarData>)
+            {
+                RenderTabBar(entity, arg, widget, reg);
+                handled = true;
+            }
+            else if constexpr (std::is_same_v<T, TabItemData> || std::is_same_v<T, VerticalLayoutGroupData>)
+            {
+                // Structural widgets, handled by specialized logic
+                widgetFound = true;
+            }
+        },
+        widget.Data);
+
+    PopUIStyle(styleState);
+    return widgetFound;
 }
 
 } // namespace CHEngine::UI

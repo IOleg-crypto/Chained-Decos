@@ -3,6 +3,8 @@
 #include "engine/core/ch_assert.h"
 #include "engine/core/input.h"
 #include "engine/core/events.h"
+#include "engine/core/service_locator.h"
+#include "engine/graphics/pipeline/renderer.h"
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
@@ -106,6 +108,11 @@ void GlfwWindow::Init(const WindowProperties& properties)
             glWindow.m_EventCallback(event);
             
         glViewport(0, 0, width, height);
+        
+        if (width > 0 && height > 0 && ServiceLocator::Has<Renderer>())
+        {
+            ServiceLocator::Get<Renderer>().SetViewportSize(width, height);
+        }
     });
 
     // Close Callback

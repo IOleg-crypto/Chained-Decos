@@ -2,34 +2,12 @@
 #define CH_CONTROL_COMPONENT_H
 
 #include "engine/core/reflection.h"
+#include "engine/graphics/pipeline/ui_style.h"
 #include <variant>
 
 namespace CHEngine
 {
 
-// Typography & Visual Styles
-enum class HorizontalAlignment
-{
-    Left = 0, Center = 1, Right = 2
-};
-
-enum class VerticalAlignment
-{
-    Top = 0, Center = 1, Bottom = 2
-};
-
-enum class CanvasScaleMode : uint8_t
-{
-    ConstantPixelSize,
-    ScaleWithScreenSize,
-};
-
-struct CanvasSettings
-{
-    glm::vec2 ReferenceResolution = {1920.0f, 1080.0f};
-    CanvasScaleMode ScaleMode = CanvasScaleMode::ConstantPixelSize;
-    float MatchWidthOrHeight = 0.5f;
-};
 
 struct TextStyle
 {
@@ -45,20 +23,20 @@ struct TextStyle
     VerticalAlignment Vertical = VerticalAlignment::Center;
 
     CH_REFLECT_BEGIN(TextStyle)
-        props.Property("Font Name", FontName);
-        props.Property("Font Size", FontSize, PropertyMeta(6.0f, 128.0f, 1.0f));
-        props.Property("Text Color", TextColor);
-        props.Property("Shadow", Shadow);
+        CH_PROP_NAMED(props, "Font Name", FontName);
+        CH_PROP_META_NAMED(props, "Font Size", FontSize, PropertyMeta(6.0f, 128.0f, 1.0f));
+        CH_PROP_NAMED(props, "Text Color", TextColor);
+        CH_PROP_NAMED(props, "Shadow", Shadow);
         if (Shadow)
         {
-            props.Property("Shadow Offset", ShadowOffset, PropertyMeta(0.0f, 20.0f, 0.1f));
-            props.Property("Shadow Color", ShadowColor);
+            CH_PROP_META_NAMED(props, "Shadow Offset", ShadowOffset, PropertyMeta(0.0f, 20.0f, 0.1f));
+            CH_PROP_NAMED(props, "Shadow Color", ShadowColor);
         }
-        props.Property("Letter Spacing", LetterSpacing, PropertyMeta(0.5f, 4.0f, 0.1f));
-        props.Property("Line Height", LineHeight, PropertyMeta(0.5f, 3.0f, 0.1f));
+        CH_PROP_META_NAMED(props, "Letter Spacing", LetterSpacing, PropertyMeta(0.5f, 4.0f, 0.1f));
+        CH_PROP_META_NAMED(props, "Line Height", LineHeight, PropertyMeta(0.5f, 3.0f, 0.1f));
         // Alignments as ints for now
-        props.Property("H Align", (int&)Horizontal);
-        props.Property("V Align", (int&)Vertical);
+        CH_PROP_NAMED(props, "H Align", (int&)Horizontal);
+        CH_PROP_NAMED(props, "V Align", (int&)Vertical);
     CH_REFLECT_END()
 };
 
@@ -82,19 +60,19 @@ struct UIStyle
     float TransitionSpeed = 0.1f;
 
     CH_REFLECT_BEGIN(UIStyle)
-        props.Property("BG Color", BackgroundColor);
-        props.Property("Hover Color", HoverColor);
-        props.Property("Pressed Color", PressedColor);
-        props.Property("Rounding", Rounding, PropertyMeta(0.0f, 20.0f, 0.5f));
-        props.Property("Border Size", BorderSize, PropertyMeta(0.0f, 10.0f, 0.1f));
-        props.Property("Border Color", BorderColor);
-        props.Property("Gradient", UseGradient);
+        CH_PROP_NAMED(props, "BG Color", BackgroundColor);
+        CH_PROP_NAMED(props, "Hover Color", HoverColor);
+        CH_PROP_NAMED(props, "Pressed Color", PressedColor);
+        CH_PROP_META_NAMED(props, "Rounding", Rounding, PropertyMeta(0.0f, 20.0f, 0.5f));
+        CH_PROP_META_NAMED(props, "Border Size", BorderSize, PropertyMeta(0.0f, 10.0f, 0.1f));
+        CH_PROP_NAMED(props, "Border Color", BorderColor);
+        CH_PROP_NAMED(props, "Gradient", UseGradient);
         if (UseGradient)
-            props.Property("Gradient Color", GradientColor);
-        props.Property("Padding", Padding, PropertyMeta(0.0f, 50.0f, 1.0f));
-        props.Property("Hover Scale", HoverScale, PropertyMeta(0.8f, 1.5f, 0.05f));
-        props.Property("Pressed Scale", PressedScale, PropertyMeta(0.8f, 1.5f, 0.05f));
-        props.Property("Transition Speed", TransitionSpeed, PropertyMeta(0.01f, 1.0f, 0.01f));
+            CH_PROP_NAMED(props, "Gradient Color", GradientColor);
+        CH_PROP_META_NAMED(props, "Padding", Padding, PropertyMeta(0.0f, 50.0f, 1.0f));
+        CH_PROP_META_NAMED(props, "Hover Scale", HoverScale, PropertyMeta(0.8f, 1.5f, 0.05f));
+        CH_PROP_META_NAMED(props, "Pressed Scale", PressedScale, PropertyMeta(0.8f, 1.5f, 0.05f));
+        CH_PROP_META_NAMED(props, "Transition Speed", TransitionSpeed, PropertyMeta(0.01f, 1.0f, 0.01f));
     CH_REFLECT_END()
 
     // Runtime state (not serialized)
@@ -105,10 +83,6 @@ struct UIStyle
     } State;
 };
 
-struct Rectangle
-{
-    float x, y, width, height;
-};
 
 struct RectTransform
 {
@@ -124,20 +98,20 @@ struct RectTransform
         bool changed = false;
         bool isFill = (AnchorMin.x == 0.0f && AnchorMax.x == 1.0f && AnchorMin.y == 0.0f && AnchorMax.y == 1.0f);
         
-        if (props.BeginGroup("Simplified Layout", !isFill))
+        if (CH_BEGIN_GROUP(props, "Simplified Layout", !isFill))
         {
             if (isFill)
             {
-                props.Header("Fill Mode Active");
-                props.Property("Padding L/R", OffsetMin.x, PropertyMeta(-1000.0f, 1000.0f, 1.0f)); // Simplified view
-                props.Property("Padding T/B", OffsetMin.y, PropertyMeta(-1000.0f, 1000.0f, 1.0f));
+                CH_HEADER(props, "Fill Mode Active");
+                CH_PROP_META_NAMED(props, "Padding L/R", OffsetMin.x, PropertyMeta(-1000.0f, 1000.0f, 1.0f)); // Simplified view
+                CH_PROP_META_NAMED(props, "Padding T/B", OffsetMin.y, PropertyMeta(-1000.0f, 1000.0f, 1.0f));
             }
             else
             {
                 glm::vec2 pos = (OffsetMin + OffsetMax) * 0.5f;
                 glm::vec2 size = OffsetMax - OffsetMin;
                 
-                if (props.Property("Position", pos, PropertyMeta(-2000.0f, 2000.0f, 1.0f)))
+                if (CH_PROP_META_NAMED(props, "Position", pos, PropertyMeta(-2000.0f, 2000.0f, 1.0f)))
                 {
                     OffsetMin.x = pos.x - size.x * Pivot.x;
                     OffsetMin.y = pos.y - size.y * Pivot.y;
@@ -146,7 +120,7 @@ struct RectTransform
                     changed = true;
                 }
                 
-                if (props.Property("Size", size, PropertyMeta(1.0f, 2000.0f, 1.0f)))
+                if (CH_PROP_META_NAMED(props, "Size", size, PropertyMeta(1.0f, 2000.0f, 1.0f)))
                 {
                     OffsetMin.x = pos.x - size.x * Pivot.x;
                     OffsetMin.y = pos.y - size.y * Pivot.y;
@@ -155,19 +129,19 @@ struct RectTransform
                     changed = true;
                 }
             }
-            props.EndGroup();
+            CH_END_GROUP(props);
         }
 
-        if (props.BeginGroup("Advanced Settings", isFill))
+        if (CH_BEGIN_GROUP(props, "Advanced Settings", isFill))
         {
-            if (props.Property("Anchor Min", AnchorMin)) changed = true;
-            if (props.Property("Anchor Max", AnchorMax)) changed = true;
-            if (props.Property("Offset Min", OffsetMin, PropertyMeta(-2000.0f, 2000.0f, 1.0f))) changed = true;
-            if (props.Property("Offset Max", OffsetMax, PropertyMeta(-2000.0f, 2000.0f, 1.0f))) changed = true;
-            if (props.Property("Pivot", Pivot)) changed = true;
-            if (props.Property("Rotation", Rotation, PropertyMeta(-360.0f, 360.0f, 1.0f))) changed = true;
-            if (props.Property("Scale", Scale, PropertyMeta(0.1f, 10.0f, 0.1f))) changed = true;
-            props.EndGroup();
+            if (CH_PROP_NAMED(props, "Anchor Min", AnchorMin)) changed = true;
+            if (CH_PROP_NAMED(props, "Anchor Max", AnchorMax)) changed = true;
+            if (CH_PROP_META_NAMED(props, "Offset Min", OffsetMin, PropertyMeta(-2000.0f, 2000.0f, 1.0f))) changed = true;
+            if (CH_PROP_META_NAMED(props, "Offset Max", OffsetMax, PropertyMeta(-2000.0f, 2000.0f, 1.0f))) changed = true;
+            if (CH_PROP_NAMED(props, "Pivot", Pivot)) changed = true;
+            if (CH_PROP_META_NAMED(props, "Rotation", Rotation, PropertyMeta(-360.0f, 360.0f, 1.0f))) changed = true;
+            if (CH_PROP_META_NAMED(props, "Scale", Scale, PropertyMeta(0.1f, 10.0f, 0.1f))) changed = true;
+            CH_END_GROUP(props);
         }
         
         if (changed) props.SetChanged(true);
@@ -184,10 +158,10 @@ struct ControlComponent
     ControlComponent() = default;
 
     CH_REFLECT_BEGIN(ControlComponent)
-        props.Nested("Rect Transform", Transform);
-        props.Property("Z Order", ZOrder, PropertyMeta(-1000.0f, 1000.0f, 1.0f));
-        props.Property("Active", IsActive);
-        props.Property("Hidden", HiddenInHierarchy);
+        CH_NESTED_NAMED(props, "Rect Transform", Transform);
+        CH_PROP_META_NAMED(props, "Z Order", ZOrder, PropertyMeta(-1000.0f, 1000.0f, 1.0f));
+        CH_PROP_NAMED(props, "Active", IsActive);
+        CH_PROP_NAMED(props, "Hidden", HiddenInHierarchy);
     CH_REFLECT_END()
 };
 
@@ -407,8 +381,8 @@ struct WidgetComponent
 
 
     CH_REFLECT_BEGIN(WidgetComponent)
-        props.Nested("Box Style", BoxStyle);
-        props.Nested("Text Style", TextStyle);
+        CH_NESTED_NAMED(props, "Box Style", BoxStyle);
+        CH_NESTED_NAMED(props, "Text Style", TextStyle);
 
         int typeIndex = (int)Data.index();
         const char* typeNames[] = {
@@ -419,7 +393,7 @@ struct WidgetComponent
             "VerticalLayoutGroup"
         };
 
-        if (props.Enum("Widget Type", typeIndex, typeNames, sizeof(typeNames) / sizeof(const char*)) ||
+        if (CH_ENUM_NAMED(props, "Widget Type", typeIndex, typeNames) ||
             props.GetMode() == CHEngine::ReflectionMode::Deserialize)
         {
             switch (typeIndex)
@@ -453,131 +427,131 @@ struct WidgetComponent
         std::visit([&](auto& arg) {
             using T = std::decay_t<decltype(arg)>;
             if constexpr (std::is_same_v<T, ButtonData>) {
-                props.Property("Label", arg.Label);
-                props.Property("Interactable", arg.IsInteractable);
-                props.Property("Auto Size", arg.AutoSize);
+                CH_PROP_NAMED(props, "Label", arg.Label);
+                CH_PROP_NAMED(props, "Interactable", arg.IsInteractable);
+                CH_PROP_NAMED(props, "Auto Size", arg.AutoSize);
             }
             else if constexpr (std::is_same_v<T, PanelData>) {
                 if (props.GetMode() != CHEngine::ReflectionMode::UI)
-                    props.Handle("Texture Handle", arg.TextureHandle);
-                props.File("Texture Path", arg.TexturePath, "png,jpg,tga");
-                props.Property("Full Screen", arg.FullScreen);
+                    CH_HANDLE_NAMED(props, "Texture Handle", arg.TextureHandle);
+                CH_FILE_NAMED(props, "Texture Path", arg.TexturePath, "png,jpg,tga");
+                CH_PROP_NAMED(props, "Full Screen", arg.FullScreen);
             }
             else if constexpr (std::is_same_v<T, LabelData>) {
-                props.Property("Text", arg.Text);
-                props.Property("Auto Size", arg.AutoSize);
+                CH_PROP_NAMED(props, "Text", arg.Text);
+                CH_PROP_NAMED(props, "Auto Size", arg.AutoSize);
             }
             else if constexpr (std::is_same_v<T, SliderData>) {
-                props.Property("Label", arg.Label);
-                props.Property("Value", arg.Value, PropertyMeta(0.0f, 100.0f, 0.1f));
-                props.Property("Min", arg.Min, PropertyMeta(-100.0f, 100.0f, 0.1f));
-                props.Property("Max", arg.Max, PropertyMeta(-100.0f, 100.0f, 0.1f));
+                CH_PROP_NAMED(props, "Label", arg.Label);
+                CH_PROP_META_NAMED(props, "Value", arg.Value, PropertyMeta(0.0f, 100.0f, 0.1f));
+                CH_PROP_META_NAMED(props, "Min", arg.Min, PropertyMeta(-100.0f, 100.0f, 0.1f));
+                CH_PROP_META_NAMED(props, "Max", arg.Max, PropertyMeta(-100.0f, 100.0f, 0.1f));
             }
             else if constexpr (std::is_same_v<T, CheckboxData>) {
-                props.Property("Label", arg.Label);
-                props.Property("Checked", arg.Checked);
+                CH_PROP_NAMED(props, "Label", arg.Label);
+                CH_PROP_NAMED(props, "Checked", arg.Checked);
             }
             else if constexpr (std::is_same_v<T, InputTextData>) {
-                props.Property("Label", arg.Label);
-                props.Property("Text", arg.Text);
-                props.Property("Placeholder", arg.Placeholder);
-                props.Property("MaxLength", arg.MaxLength);
-                props.Property("Multiline", arg.Multiline);
-                props.Property("ReadOnly", arg.ReadOnly);
-                props.Property("Password", arg.Password);
+                CH_PROP_NAMED(props, "Label", arg.Label);
+                CH_PROP_NAMED(props, "Text", arg.Text);
+                CH_PROP_NAMED(props, "Placeholder", arg.Placeholder);
+                CH_PROP_NAMED(props, "MaxLength", arg.MaxLength);
+                CH_PROP_NAMED(props, "Multiline", arg.Multiline);
+                CH_PROP_NAMED(props, "ReadOnly", arg.ReadOnly);
+                CH_PROP_NAMED(props, "Password", arg.Password);
             }
             else if constexpr (std::is_same_v<T, ComboBoxData>) {
-                props.Property("Label", arg.Label);
-                props.Sequence("Items", arg.Items);
-                props.Property("Selected Index", arg.SelectedIndex);
+                CH_PROP_NAMED(props, "Label", arg.Label);
+                CH_SEQUENCE_NAMED(props, "Items", arg.Items);
+                CH_PROP_NAMED(props, "Selected Index", arg.SelectedIndex);
             }
             else if constexpr (std::is_same_v<T, ProgressBarData>) {
-                props.Property("Progress", arg.Progress);
-                props.Property("Overlay Text", arg.OverlayText);
-                props.Property("Show Percentage", arg.ShowPercentage);
+                CH_PROP_NAMED(props, "Progress", arg.Progress);
+                CH_PROP_NAMED(props, "Overlay Text", arg.OverlayText);
+                CH_PROP_NAMED(props, "Show Percentage", arg.ShowPercentage);
             }
             else if constexpr (std::is_same_v<T, ImageData>) {
-                props.File("Texture Path", arg.TexturePath, "png,jpg,tga");
-                props.Property("Tint Color", arg.TintColor);
-                props.Property("Border Color", arg.BorderColor);
+                CH_FILE_NAMED(props, "Texture Path", arg.TexturePath, "png,jpg,tga");
+                CH_PROP_NAMED(props, "Tint Color", arg.TintColor);
+                CH_PROP_NAMED(props, "Border Color", arg.BorderColor);
             }
             else if constexpr (std::is_same_v<T, ImageButtonData>) {
-                props.File("Texture Path", arg.TexturePath, "png,jpg,tga");
-                props.Property("Label", arg.Label);
-                props.Property("Tint Color", arg.TintColor);
-                props.Property("Background Color", arg.BackgroundColor);
-                props.Property("Frame Padding", arg.FramePadding);
+                CH_FILE_NAMED(props, "Texture Path", arg.TexturePath, "png,jpg,tga");
+                CH_PROP_NAMED(props, "Label", arg.Label);
+                CH_PROP_NAMED(props, "Tint Color", arg.TintColor);
+                CH_PROP_NAMED(props, "Background Color", arg.BackgroundColor);
+                CH_PROP_NAMED(props, "Frame Padding", arg.FramePadding);
             }
             else if constexpr (std::is_same_v<T, SeparatorData>) {
-                props.Property("Thickness", arg.Thickness);
-                props.Property("Line Color", arg.LineColor);
+                CH_PROP_NAMED(props, "Thickness", arg.Thickness);
+                CH_PROP_NAMED(props, "Line Color", arg.LineColor);
             }
             else if constexpr (std::is_same_v<T, RadioButtonData>) {
-                props.Property("Label", arg.Label);
-                props.Sequence("Options", arg.Options);
-                props.Property("Selected Index", arg.SelectedIndex);
-                props.Property("Horizontal", arg.Horizontal);
+                CH_PROP_NAMED(props, "Label", arg.Label);
+                CH_SEQUENCE_NAMED(props, "Options", arg.Options);
+                CH_PROP_NAMED(props, "Selected Index", arg.SelectedIndex);
+                CH_PROP_NAMED(props, "Horizontal", arg.Horizontal);
             }
             else if constexpr (std::is_same_v<T, ColorPickerData>) {
-                props.Property("Label", arg.Label);
-                props.Property("Color", arg.SelectedColor);
-                props.Property("Show Alpha", arg.ShowAlpha);
-                props.Property("Show Picker", arg.ShowPicker);
+                CH_PROP_NAMED(props, "Label", arg.Label);
+                CH_PROP_NAMED(props, "Color", arg.SelectedColor);
+                CH_PROP_NAMED(props, "Show Alpha", arg.ShowAlpha);
+                CH_PROP_NAMED(props, "Show Picker", arg.ShowPicker);
             }
             else if constexpr (std::is_same_v<T, DragFloatData>) {
-                props.Property("Label", arg.Label);
-                props.Property("Value", arg.Value);
-                props.Property("Speed", arg.Speed);
-                props.Property("Min", arg.Min);
-                props.Property("Max", arg.Max);
+                CH_PROP_NAMED(props, "Label", arg.Label);
+                CH_PROP_NAMED(props, "Value", arg.Value);
+                CH_PROP_NAMED(props, "Speed", arg.Speed);
+                CH_PROP_NAMED(props, "Min", arg.Min);
+                CH_PROP_NAMED(props, "Max", arg.Max);
             }
             else if constexpr (std::is_same_v<T, DragIntData>) {
-                props.Property("Label", arg.Label);
-                props.Property("Value", arg.Value);
-                props.Property("Speed", arg.Speed);
-                props.Property("Min", arg.Min);
-                props.Property("Max", arg.Max);
+                CH_PROP_NAMED(props, "Label", arg.Label);
+                CH_PROP_NAMED(props, "Value", arg.Value);
+                CH_PROP_NAMED(props, "Speed", arg.Speed);
+                CH_PROP_NAMED(props, "Min", arg.Min);
+                CH_PROP_NAMED(props, "Max", arg.Max);
             }
             else if constexpr (std::is_same_v<T, TreeNodeData>) {
-                props.Property("Label", arg.Label);
-                props.Property("Is Open", arg.IsOpen);
-                props.Property("Default Open", arg.DefaultOpen);
-                props.Property("Is Leaf", arg.IsLeaf);
+                CH_PROP_NAMED(props, "Label", arg.Label);
+                CH_PROP_NAMED(props, "Is Open", arg.IsOpen);
+                CH_PROP_NAMED(props, "Default Open", arg.DefaultOpen);
+                CH_PROP_NAMED(props, "Is Leaf", arg.IsLeaf);
             }
             else if constexpr (std::is_same_v<T, TabBarData>) {
-                props.Property("Label", arg.Label);
-                props.Property("Reorderable", arg.Reorderable);
-                props.Property("Auto Select New Tabs", arg.AutoSelectNewTabs);
+                CH_PROP_NAMED(props, "Label", arg.Label);
+                CH_PROP_NAMED(props, "Reorderable", arg.Reorderable);
+                CH_PROP_NAMED(props, "Auto Select New Tabs", arg.AutoSelectNewTabs);
             }
             else if constexpr (std::is_same_v<T, TabItemData>) {
-                props.Property("Label", arg.Label);
-                props.Property("Is Open", arg.IsOpen);
-                props.Property("Selected", arg.Selected);
+                CH_PROP_NAMED(props, "Label", arg.Label);
+                CH_PROP_NAMED(props, "Is Open", arg.IsOpen);
+                CH_PROP_NAMED(props, "Selected", arg.Selected);
             }
             else if constexpr (std::is_same_v<T, CollapsingHeaderData>) {
-                props.Property("Label", arg.Label);
-                props.Property("Is Open", arg.IsOpen);
-                props.Property("Default Open", arg.DefaultOpen);
+                CH_PROP_NAMED(props, "Label", arg.Label);
+                CH_PROP_NAMED(props, "Is Open", arg.IsOpen);
+                CH_PROP_NAMED(props, "Default Open", arg.DefaultOpen);
             }
             else if constexpr (std::is_same_v<T, PlotLinesData>) {
-                props.Property("Label", arg.Label);
-                props.Sequence("Values", arg.Values);
-                props.Property("Overlay Text", arg.OverlayText);
-                props.Property("Scale Min", arg.ScaleMin);
-                props.Property("Scale Max", arg.ScaleMax);
-                props.Property("Graph Size", arg.GraphSize);
+                CH_PROP_NAMED(props, "Label", arg.Label);
+                CH_SEQUENCE_NAMED(props, "Values", arg.Values);
+                CH_PROP_NAMED(props, "Overlay Text", arg.OverlayText);
+                CH_PROP_NAMED(props, "Scale Min", arg.ScaleMin);
+                CH_PROP_NAMED(props, "Scale Max", arg.ScaleMax);
+                CH_PROP_NAMED(props, "Graph Size", arg.GraphSize);
             }
             else if constexpr (std::is_same_v<T, PlotHistogramData>) {
-                props.Property("Label", arg.Label);
-                props.Sequence("Values", arg.Values);
-                props.Property("Overlay Text", arg.OverlayText);
-                props.Property("Scale Min", arg.ScaleMin);
-                props.Property("Scale Max", arg.ScaleMax);
-                props.Property("Graph Size", arg.GraphSize);
+                CH_PROP_NAMED(props, "Label", arg.Label);
+                CH_SEQUENCE_NAMED(props, "Values", arg.Values);
+                CH_PROP_NAMED(props, "Overlay Text", arg.OverlayText);
+                CH_PROP_NAMED(props, "Scale Min", arg.ScaleMin);
+                CH_PROP_NAMED(props, "Scale Max", arg.ScaleMax);
+                CH_PROP_NAMED(props, "Graph Size", arg.GraphSize);
             }
             else if constexpr (std::is_same_v<T, VerticalLayoutGroupData>) {
-                props.Property("Spacing", arg.Spacing);
-                props.Property("Padding", arg.Padding);
+                CH_PROP_NAMED(props, "Spacing", arg.Spacing);
+                CH_PROP_NAMED(props, "Padding", arg.Padding);
             }
         }, Data);
     CH_REFLECT_END()

@@ -43,6 +43,65 @@ CH_SCRIPT_FUNC int ComboBoxControl_GetSelectedIndex(uint64_t entityID)
 }
 CH_ADD_INTERNAL_CALL(ComboBoxControl, ComboBoxControl_GetSelectedIndex_Ptr, ComboBoxControl_GetSelectedIndex);
 
+CH_SCRIPT_FUNC void ComboBoxControl_SetSelectedIndex(uint64_t entityID, int index)
+{
+    Entity entity = GetEntity(entityID);
+    if (entity && entity.HasComponent<WidgetComponent>())
+    {
+        auto& widget = entity.GetComponent<WidgetComponent>();
+        if (std::holds_alternative<ComboBoxData>(widget.Data))
+        {
+            std::get<ComboBoxData>(widget.Data).SelectedIndex = index;
+        }
+    }
+}
+CH_ADD_INTERNAL_CALL(ComboBoxControl, ComboBoxControl_SetSelectedIndex_Ptr, ComboBoxControl_SetSelectedIndex);
+
+CH_SCRIPT_FUNC void ComboBoxControl_AddItem(uint64_t entityID, Coral::String item)
+{
+    Entity entity = GetEntity(entityID);
+    if (entity && entity.HasComponent<WidgetComponent>())
+    {
+        auto& widget = entity.GetComponent<WidgetComponent>();
+        if (std::holds_alternative<ComboBoxData>(widget.Data))
+        {
+            std::get<ComboBoxData>(widget.Data).Items.push_back((std::string)item);
+        }
+    }
+}
+CH_ADD_INTERNAL_CALL(ComboBoxControl, ComboBoxControl_AddItem_Ptr, ComboBoxControl_AddItem);
+
+CH_SCRIPT_FUNC void ComboBoxControl_ClearItems(uint64_t entityID)
+{
+    Entity entity = GetEntity(entityID);
+    if (entity && entity.HasComponent<WidgetComponent>())
+    {
+        auto& widget = entity.GetComponent<WidgetComponent>();
+        if (std::holds_alternative<ComboBoxData>(widget.Data))
+        {
+            auto& combo = std::get<ComboBoxData>(widget.Data);
+            combo.Items.clear();
+            combo.SelectedIndex = 0;
+        }
+    }
+}
+CH_ADD_INTERNAL_CALL(ComboBoxControl, ComboBoxControl_ClearItems_Ptr, ComboBoxControl_ClearItems);
+
+CH_SCRIPT_FUNC int ComboBoxControl_GetItemCount(uint64_t entityID)
+{
+    Entity entity = GetEntity(entityID);
+    if (entity && entity.HasComponent<WidgetComponent>())
+    {
+        auto& widget = entity.GetComponent<WidgetComponent>();
+        if (std::holds_alternative<ComboBoxData>(widget.Data))
+        {
+            return (int)std::get<ComboBoxData>(widget.Data).Items.size();
+        }
+    }
+    return 0;
+}
+CH_ADD_INTERNAL_CALL(ComboBoxControl, ComboBoxControl_GetItemCount_Ptr, ComboBoxControl_GetItemCount);
+
 CH_SCRIPT_FUNC Coral::String ComboBoxControl_GetItem(uint64_t entityID, int index)
 {
     Entity entity = GetEntity(entityID);

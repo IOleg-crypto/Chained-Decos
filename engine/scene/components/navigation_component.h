@@ -17,7 +17,7 @@ struct NavigationComponent
     bool IsDefaultFocus = false;
 
     CH_REFLECT_BEGIN(NavigationComponent)
-        props.Property("Is Default Focus", IsDefaultFocus);
+        CH_PROP_NAMED(props, "Is Default Focus", IsDefaultFocus);
         // Navigation targets (entt::entity) are usually handled by Entity picker in UI
     CH_REFLECT_END()
 };

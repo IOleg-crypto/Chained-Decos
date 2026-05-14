@@ -23,12 +23,12 @@ namespace CHEngine
 
         CH_REFLECT_BEGIN(UIActionComponent)
             if (props.GetMode() != CHEngine::ReflectionMode::UI){
-                props.Handle("Target Entity", TargetEntityID);
+                CH_HANDLE_NAMED(props, "Target Entity", TargetEntityID);
             }
-            props.Property("Parameter", ParameterName);
-            props.Property("Value", Value);
+            CH_PROP_NAMED(props, "Parameter", ParameterName);
+            CH_PROP(props, Value);
             const char* typeStrings[] = {"Set Parameter", "Trigger State"};
-            props.Enum("Type", Type, typeStrings, 2);
+            CH_ENUM_NAMED(props, "Type", Type, typeStrings);
         CH_REFLECT_END()
     };
 }

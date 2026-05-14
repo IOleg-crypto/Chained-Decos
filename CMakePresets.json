@@ -15,7 +15,6 @@
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "CMAKE_CXX_EXTENSIONS": "OFF",
         "BUILD_TESTS": "ON",
-        "BUILD_MAP_EDITOR": "ON",
         "DISABLE_ALL_WARNINGS": "ON",
         "CH_ENGINE_SHARED": "OFF",
         "CH_ACTIVE_GAME": "chaineddecos",
@@ -57,7 +56,6 @@
       "inherits": "ninja-base",
       "cacheVariables": {
         "ENABLE_UNITY_BUILD": "OFF",
-        "CMAKE_CXX_SCAN_FOR_MODULES": "OFF",
         "CMAKE_SUPPRESS_REGENERATION": "ON"
       },
       "condition": {
@@ -72,7 +70,6 @@
       "inherits": "ninja-base",
       "cacheVariables": {
         "ENABLE_UNITY_BUILD": "OFF",
-        "CMAKE_CXX_SCAN_FOR_MODULES": "OFF",
         "CMAKE_SUPPRESS_REGENERATION": "ON"
       },
       "condition": {

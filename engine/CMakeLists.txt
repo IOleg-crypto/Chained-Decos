@@ -1,5 +1,5 @@
 # SHARED for local development (hot-reload), STATIC for CI/distribution/stability
-set(CH_ENGINE_SHARED OFF CACHE BOOL "Build engine as shared library (DLL)" FORCE)
+option(CH_ENGINE_SHARED "Build engine as shared library (DLL)" OFF)
 if(CH_ENGINE_SHARED)
     set(ENGINE_LIB_TYPE SHARED)
 else()
@@ -30,6 +30,12 @@ target_link_libraries(engine PUBLIC
     engine_core
     ChainedEngine::External::GNS
 )
+
+if (NOT CH_ENGINE_SHARED)
+    # When building statically, we form a cycle so application.cpp can satisfy module requirements
+    target_link_libraries(engine_scripting PUBLIC engine)
+    target_link_libraries(engine_scene PUBLIC engine)
+endif()
 
 target_compile_definitions(engine PRIVATE CH_ENGINE_BUILD)
 target_compile_definitions(engine PUBLIC 

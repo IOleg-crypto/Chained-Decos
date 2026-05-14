@@ -17,7 +17,7 @@ struct TagComponent
     }
 
     CH_REFLECT_BEGIN(TagComponent)
-        props.Property("Tag", Tag);
+        CH_PROP(props, Tag);
     CH_REFLECT_END()
 };
 

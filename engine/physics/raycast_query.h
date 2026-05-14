@@ -1,7 +1,7 @@
 #ifndef CH_RAYCAST_QUERY_H
 #define CH_RAYCAST_QUERY_H
 
-#include "engine/core/ch_math.h"
+#include "engine/core/ch_structures.h"
 #include "raycast_result.h"
 #include <entt/entt.hpp>
 

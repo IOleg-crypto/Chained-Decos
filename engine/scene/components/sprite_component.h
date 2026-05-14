@@ -20,21 +20,21 @@ struct SpriteComponent
 
 
     CH_REFLECT_BEGIN(SpriteComponent)
-        props.Header("Asset");
-        props.Handle("TextureHandle", TextureHandle);
-        if (props.File("TexturePath", TexturePath, "png,jpg,bmp,tga"))
+        CH_HEADER(props, "Asset");
+        CH_HANDLE(props, TextureHandle);
+        if (CH_FILE(props, TexturePath, "png,jpg,bmp,tga"))
         {
             TextureHandle = AssetHandle(0);
         }
         
-        props.Header("Appearance");
-        if (props.BeginGroup("Transform"))
+        CH_HEADER(props, "Appearance");
+        if (CH_BEGIN_GROUP(props, "Transform", true))
         {
-            props.Property("Tint", Tint);
-            props.Property("FlipX", FlipX);
-            props.Property("FlipY", FlipY);
-            props.Property("ZOrder", ZOrder, PropertyMeta(-1000.0f, 1000.0f, 1.0f));
-            props.EndGroup();
+            CH_PROP(props, Tint);
+            CH_PROP(props, FlipX);
+            CH_PROP(props, FlipY);
+            CH_PROP_META(props, ZOrder, PropertyMeta(-1000.0f, 1000.0f, 1.0f));
+            CH_END_GROUP(props);
         }
     CH_REFLECT_END()
 };

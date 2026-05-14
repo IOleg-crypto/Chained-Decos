@@ -27,25 +27,25 @@ struct AudioComponent
 
     CH_REFLECT_BEGIN(AudioComponent)
         if (props.GetMode() != CHEngine::ReflectionMode::UI)
-            props.Handle("SoundHandle", SoundHandle);
-        if (props.File("SoundPath", SoundPath, "mp3,wav,ogg"))
+            CH_HANDLE(props, SoundHandle);
+        if (CH_FILE(props, SoundPath, "mp3,wav,ogg"))
         {
             // Path changed — invalidate the cached handle so SceneAudioSystem loads the new file.
             SoundHandle = AssetHandle(0);
             IsPlaying = false;
         }
-        props.Property("Volume", Volume, PropertyMeta(0.0f, 1.0f, 0.01f));
-        props.Property("Pitch", Pitch, PropertyMeta(0.5f, 2.0f, 0.05f));
-        props.Property("Loop", Loop);
-        props.Property("PlayOnStart", PlayOnStart);
-        props.Property("Spatialized", Spatialized);
+        CH_PROP_META(props, Volume, PropertyMeta(0.0f, 1.0f, 0.01f));
+        CH_PROP_META(props, Pitch, PropertyMeta(0.5f, 2.0f, 0.05f));
+        CH_PROP(props, Loop);
+        CH_PROP(props, PlayOnStart);
+        CH_PROP(props, Spatialized);
         // Always serialize spatial fields to preserve values on save/load.
         // Only skip display in UI mode.
         if (props.GetMode() != CHEngine::ReflectionMode::UI || Spatialized)
         {
-            props.Property("Position", Position);
-            props.Property("MinDistance", MinDistance, PropertyMeta(0.1f, 100.0f, 0.5f));
-            props.Property("MaxDistance", MaxDistance, PropertyMeta(0.1f, 500.0f, 1.0f));
+            CH_PROP(props, Position);
+            CH_PROP_META(props, MinDistance, PropertyMeta(0.1f, 100.0f, 0.5f));
+            CH_PROP_META(props, MaxDistance, PropertyMeta(0.1f, 500.0f, 1.0f));
         }
     CH_REFLECT_END()
 };

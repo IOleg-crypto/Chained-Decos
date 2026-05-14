@@ -434,8 +434,27 @@ bool RuntimeLayer::InitProject(const std::string& projectPath)
         moduleName += ".dll";
     }
 
+    // Attempt to resolve the assembly path, account for 'lib' prefix on MinGW
     std::filesystem::path assemblyPath = Project::GetAssetDirectory() / "bin" / moduleName;
-    
+    if (!std::filesystem::exists(assemblyPath))
+    {
+        std::filesystem::path libPath = Project::GetAssetDirectory() / "bin" / ("lib" + moduleName);
+        if (std::filesystem::exists(libPath)) assemblyPath = libPath;
+        else
+        {
+            // Try build output directory (standard bin/)
+            std::filesystem::path rootBin = Application::GetExecutableDirectory() / moduleName;
+            if (std::filesystem::exists(rootBin)) assemblyPath = rootBin;
+            else 
+            {
+                std::filesystem::path rootLibBin = Application::GetExecutableDirectory() / ("lib" + moduleName);
+                if (std::filesystem::exists(rootLibBin)) assemblyPath = rootLibBin;
+            }
+        }
+    }
+
+    CH_CORE_INFO("RuntimeLayer: Loading project assembly: {}", assemblyPath.string());
+
     // Initialize Scripting for the loaded project
     if (!ServiceLocator::Get<ScriptEngine>().ReloadAssembly(assemblyPath.string()))
     {

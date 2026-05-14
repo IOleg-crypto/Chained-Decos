@@ -30,17 +30,28 @@ namespace CHEngine
 {
 Application* Application::s_Instance = nullptr;
 
+std::filesystem::path Application::GetExecutableDirectory()
+{
+#if defined(CH_PLATFORM_WINDOWS)
+    wchar_t path[MAX_PATH];
+    GetModuleFileNameW(NULL, path, MAX_PATH);
+    return std::filesystem::path(path).parent_path();
+#elif defined(CH_PLATFORM_LINUX)
+    char path[1024];
+    ssize_t count = readlink("/proc/self/exe", path, sizeof(path));
+    return std::filesystem::path(std::string(path, (count > 0) ? count : 0)).parent_path();
+#else
+    return std::filesystem::current_path();
+#endif
+}
+
 Application::Application(const ApplicationSpecification& spec)
     : m_Specification(spec)
 {
     CH_CORE_ASSERT(!s_Instance, "Application already exists!");
     s_Instance = this;
     
-    ComponentRegistry::RegisterEngineComponents();
-
-    // Initialize all statically registered modules
-    ModuleRegistry::InitializeAll();
-
+    // --- 1. Basic Foundation ---
     if (!m_Specification.WorkingDirectory.empty())
     {
         std::filesystem::current_path(m_Specification.WorkingDirectory);
@@ -48,18 +59,22 @@ Application::Application(const ApplicationSpecification& spec)
 
     // Discover engine root early as it's needed for system resource loading
     Project::DiscoverEngineRoot(std::filesystem::current_path());
-
-    // 1. Boot Foundation (no GL)
+    
+    // Initialize external libraries and basic services
+    NFD_Init();
     AddService<ThreadPool>();
     AddService<ComponentSerializer>();
-    NFD_Init();
 
     auto resolver = std::make_shared<AssetPathResolver>();
     resolver->SetEngineRoot(Project::GetEngineRoot());
     auto registry = std::make_shared<AssetRegistry>();
     AddService<AssetManager>(resolver, registry);
 
-    // 2. Initialize Window and OpenGL Context
+    // --- 2. Component & Module Registration ---
+    ComponentRegistry::RegisterEngineComponents();
+    ModuleRegistry::InitializeAll(); // First pass for early modules
+
+    // --- 3. Window & Graphics Context ---
     if (!m_Specification.Headless)
     {
         WindowProperties props;
@@ -75,7 +90,7 @@ Application::Application(const ApplicationSpecification& spec)
         m_Window->SetEventCallback(CH_BIND_EVENT_FN(Application::OnEvent));
     }
 
-    // 3. Initialize Systems (Window/GL ready)
+    // --- 4. Render Systems ---
     auto& renderer = AddService<Renderer>();
     renderer.SetHeadless(m_Specification.Headless);
     if (m_Window)
@@ -83,21 +98,21 @@ Application::Application(const ApplicationSpecification& spec)
         renderer.SetViewportSize(m_Window->GetWidth(), m_Window->GetHeight());
     }
     AddService<TextureSystem>();
+    AddService<UIRenderer>();
+
+    // --- 5. High-level Game Systems ---
     AddService<Audio>();
     AddService<PhysicsSystem>();
-    AddService<UIRenderer>();
     AddService<::CHEngine::NetworkService>();
 
-    // Initialize all modules (decodes, etc.)
-    ModuleRegistry::InitializeAll();
-
-    // Orchestrate Service Bootup via Template Method
+    // Start services (Orchestrate via Template Method)
     for (auto& svc : m_Services)
     {
         svc->Start();
     }
 
-    // 4. Scripting — now a proper EngineService, added last so it shuts down first
+    // --- 6. Scripting & UI ---
+    // Added last so it can rely on all other systems and shut down first
     auto& scripting = AddService<ScriptEngine>(m_Specification.EnableScripting);
     scripting.Start();
 
@@ -143,7 +158,7 @@ void Application::Run()
         Input::Update();
         Input::PollEvents();
 
-        if (!m_Minimized)
+        if (m_Window && m_Window->GetWidth() > 0 && m_Window->GetHeight() > 0)
         {
             // Conductor Update: Standard Services
             for (auto& svc : m_Services)
@@ -202,6 +217,17 @@ void Application::Run()
         }
     }
 }
+void Application::OnEvent(Event& e)
+{
+    for (auto it = m_LayerStack->rbegin(); it != m_LayerStack->rend(); ++it)
+    {
+        if (e.Handled)
+        {
+            break;
+        }
+        (*it)->OnEvent(e);
+    }
+}
 
 void Application::PushLayer(std::unique_ptr<Layer> layer)
 {
@@ -217,59 +243,7 @@ void Application::PushOverlay(std::unique_ptr<Layer> overlay)
     raw->OnAttach();
 }
 
-void Application::OnEvent(Event& e)
-{
-    EventDispatcher dispatcher(e);
-    dispatcher.Dispatch<WindowCloseEvent>(CH_BIND_EVENT_FN(Application::OnWindowClose));
-    dispatcher.Dispatch<WindowResizeEvent>(CH_BIND_EVENT_FN(Application::OnWindowResize));
 
-    for (auto it = m_LayerStack->rbegin(); it != m_LayerStack->rend(); ++it)
-    {
-        if (e.Handled)
-        {
-            break;
-        }
-        (*it)->OnEvent(e);
-    }
-}
-
-bool Application::OnWindowClose(WindowCloseEvent& e)
-{
-    m_Running = false;
-    return true;
-}
-
-bool Application::OnWindowResize(WindowResizeEvent& e)
-{
-    if (e.GetWidth() == 0 || e.GetHeight() == 0)
-    {
-        m_Minimized = true;
-        return false;
-    }
-
-    m_Minimized = false;
-    m_Window->SetSizeDirect(e.GetWidth(), e.GetHeight());
-    if (ServiceLocator::Has<Renderer>())
-    {
-        ServiceLocator::Get<Renderer>().SetViewportSize(e.GetWidth(), e.GetHeight());
-    }
-    return false;
-}
-
-std::filesystem::path Application::GetExecutableDirectory()
-{
-#if defined(CH_PLATFORM_WINDOWS)
-    wchar_t path[MAX_PATH];
-    GetModuleFileNameW(NULL, path, MAX_PATH);
-    return std::filesystem::path(path).parent_path();
-#elif defined(CH_PLATFORM_LINUX)
-    char path[1024];
-    ssize_t count = readlink("/proc/self/exe", path, sizeof(path));
-    return std::filesystem::path(std::string(path, (count > 0) ? count : 0)).parent_path();
-#else
-    return std::filesystem::current_path();
-#endif
-}
     void Application::ReplicateEntities()
     {
         // For now, this is a placeholder. 

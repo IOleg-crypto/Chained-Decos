@@ -28,33 +28,33 @@ struct LightComponent
 
 
     CH_REFLECT_BEGIN(LightComponent)
-        props.Header("General");
+        CH_HEADER(props, "General");
         static const char* lightTypeStrings[] = { "Point", "Spot", "Directional" };
-        props.Enum("Type", Type, lightTypeStrings, 3);
-        props.Property("Color", LightColor);
-        props.Property("Intensity", Intensity, PropertyMeta(0.0f, 1000.0f, 1.0f));
+        CH_ENUM(props, Type, lightTypeStrings);
+        CH_PROP(props, LightColor);
+        CH_PROP_META(props, Intensity, PropertyMeta(0.0f, 1000.0f, 1.0f));
         
-        if (props.BeginGroup("Parameters"))
+        if (CH_BEGIN_GROUP(props, "Parameters", true))
         {
-            props.Property("Radius", Radius, PropertyMeta(1.0f, 1000.0f, 1.0f));
+            CH_PROP_META(props, Radius, PropertyMeta(1.0f, 1000.0f, 1.0f));
             
             // Always show Spot fields if the light is a Spot light.
             if (Type == LightType::Spot)
             {
-                props.Property("InnerCutoff", InnerCutoff, PropertyMeta(0.0f, 90.0f, 0.5f));
-                props.Property("OuterCutoff", OuterCutoff, PropertyMeta(0.0f, 90.0f, 0.5f));
+                CH_PROP_META(props, InnerCutoff, PropertyMeta(0.0f, 90.0f, 0.5f));
+                CH_PROP_META(props, OuterCutoff, PropertyMeta(0.0f, 90.0f, 0.5f));
             }
             else if (props.GetMode() != CHEngine::ReflectionMode::UI)
             {
                 // Still serialize them for other types to avoid data loss.
-                props.Property("InnerCutoff", InnerCutoff);
-                props.Property("OuterCutoff", OuterCutoff);
+                CH_PROP(props, InnerCutoff);
+                CH_PROP(props, OuterCutoff);
             }
-            props.EndGroup();
+            CH_END_GROUP(props);
         }
 
-        props.Separator();
-        props.Property("Shadows", Shadows);
+        CH_SEPARATOR(props);
+        CH_PROP(props, Shadows);
     CH_REFLECT_END()
 };
 } // namespace CHEngine
