@@ -10,10 +10,10 @@
 #include <string>
 #include <variant>
 
-#include "engine/core/ch_math.h"
+#include "engine/assets/asset_manager.h"
+#include "engine/core/ch_structures.h"
 #include "engine/core/service_locator.h"
 #include "engine/scene/project.h"
-#include "engine/assets/asset_manager.h"
 #include "yaml-cpp/yaml.h"
 
 namespace YAML
@@ -338,9 +338,9 @@ inline YAML::Emitter& operator<<(YAML::Emitter& out, const CHEngine::TextStyle& 
         << YAML::Value << s.FontSize << YAML::Key << "TextColor" << YAML::Value << s.TextColor << YAML::Key << "Shadow"
         << YAML::Value << s.Shadow << YAML::Key << "ShadowOffset" << YAML::Value << s.ShadowOffset << YAML::Key
         << "ShadowColor" << YAML::Value << s.ShadowColor << YAML::Key << "LetterSpacing" << YAML::Value
-        << s.LetterSpacing << YAML::Key << "LineHeight" << YAML::Value << s.LineHeight << YAML::Key
-        << "Horizontal" << YAML::Value << static_cast<int>(s.Horizontal) << YAML::Key
-        << "Vertical" << YAML::Value << static_cast<int>(s.Vertical) << YAML::EndMap;
+        << s.LetterSpacing << YAML::Key << "LineHeight" << YAML::Value << s.LineHeight << YAML::Key << "Horizontal"
+        << YAML::Value << static_cast<int>(s.Horizontal) << YAML::Key << "Vertical" << YAML::Value
+        << static_cast<int>(s.Vertical) << YAML::EndMap;
     return out;
 }
 
@@ -411,7 +411,7 @@ inline YAML::Emitter& operator<<(YAML::Emitter& out, const CHEngine::AssetHandle
     out << (uint64_t)handle;
     return out;
 }
- 
+
 template <> struct convert<CHEngine::AssetHandle>
 {
     static Node encode(const CHEngine::AssetHandle& rhs)
@@ -426,7 +426,7 @@ template <> struct convert<CHEngine::AssetHandle>
         return true;
     }
 };
- 
+
 // ---- MaterialInstance ----
 template <> struct convert<CHEngine::MaterialInstance>
 {
@@ -462,92 +462,147 @@ template <> struct convert<CHEngine::MaterialInstance>
             return false;
         }
         if (node["AlbedoColor"])
+        {
             rhs.AlbedoColor = node["AlbedoColor"].as<CHEngine::Color>();
-        
+        }
+
         if (node["AlbedoHandle"])
+        {
             rhs.AlbedoHandle = node["AlbedoHandle"].as<uint64_t>();
+        }
         else if (node["AlbedoPath"]) // Fallback for legacy
-            rhs.AlbedoHandle = CHEngine::ServiceLocator::Get<CHEngine::AssetManager>().ResolveToHandle(node["AlbedoPath"].as<std::string>());
- 
+        {
+            rhs.AlbedoHandle = CHEngine::ServiceLocator::Get<CHEngine::AssetManager>().ResolveToHandle(
+                node["AlbedoPath"].as<std::string>());
+        }
+
         if (node["OverrideAlbedo"])
+        {
             rhs.OverrideAlbedo = node["OverrideAlbedo"].as<bool>();
- 
+        }
+
         if (node["NormalHandle"])
+        {
             rhs.NormalHandle = node["NormalHandle"].as<uint64_t>();
+        }
         else if (node["NormalMapPath"])
-            rhs.NormalHandle = CHEngine::ServiceLocator::Get<CHEngine::AssetManager>().ResolveToHandle(node["NormalMapPath"].as<std::string>());
-            
+        {
+            rhs.NormalHandle = CHEngine::ServiceLocator::Get<CHEngine::AssetManager>().ResolveToHandle(
+                node["NormalMapPath"].as<std::string>());
+        }
+
         if (node["OverrideNormal"])
+        {
             rhs.OverrideNormal = node["OverrideNormal"].as<bool>();
- 
+        }
+
         if (node["MetallicRoughnessHandle"])
+        {
             rhs.MetallicRoughnessHandle = node["MetallicRoughnessHandle"].as<uint64_t>();
+        }
         else if (node["MetallicRoughnessPath"])
-            rhs.MetallicRoughnessHandle = CHEngine::ServiceLocator::Get<CHEngine::AssetManager>().ResolveToHandle(node["MetallicRoughnessPath"].as<std::string>());
- 
+        {
+            rhs.MetallicRoughnessHandle = CHEngine::ServiceLocator::Get<CHEngine::AssetManager>().ResolveToHandle(
+                node["MetallicRoughnessPath"].as<std::string>());
+        }
+
         if (node["OverrideMetallicRoughness"])
+        {
             rhs.OverrideMetallicRoughness = node["OverrideMetallicRoughness"].as<bool>();
- 
+        }
+
         if (node["OcclusionHandle"])
+        {
             rhs.OcclusionHandle = node["OcclusionHandle"].as<uint64_t>();
+        }
         else if (node["OcclusionMapPath"])
-            rhs.OcclusionHandle = CHEngine::ServiceLocator::Get<CHEngine::AssetManager>().ResolveToHandle(node["OcclusionMapPath"].as<std::string>());
- 
+        {
+            rhs.OcclusionHandle = CHEngine::ServiceLocator::Get<CHEngine::AssetManager>().ResolveToHandle(
+                node["OcclusionMapPath"].as<std::string>());
+        }
+
         if (node["OverrideOcclusion"])
+        {
             rhs.OverrideOcclusion = node["OverrideOcclusion"].as<bool>();
- 
+        }
+
         if (node["EmissiveHandle"])
+        {
             rhs.EmissiveHandle = node["EmissiveHandle"].as<uint64_t>();
+        }
         else if (node["EmissivePath"])
-            rhs.EmissiveHandle = CHEngine::ServiceLocator::Get<CHEngine::AssetManager>().ResolveToHandle(node["EmissivePath"].as<std::string>());
- 
+        {
+            rhs.EmissiveHandle = CHEngine::ServiceLocator::Get<CHEngine::AssetManager>().ResolveToHandle(
+                node["EmissivePath"].as<std::string>());
+        }
+
         if (node["EmissiveColor"])
+        {
             rhs.EmissiveColor = node["EmissiveColor"].as<CHEngine::Color>();
+        }
         if (node["EmissiveIntensity"])
+        {
             rhs.EmissiveIntensity = node["EmissiveIntensity"].as<float>();
+        }
         if (node["OverrideEmissive"])
+        {
             rhs.OverrideEmissive = node["OverrideEmissive"].as<bool>();
- 
+        }
+
         if (node["ShaderHandle"])
+        {
             rhs.ShaderHandle = node["ShaderHandle"].as<uint64_t>();
+        }
         else if (node["ShaderPath"])
-            rhs.ShaderHandle = CHEngine::ServiceLocator::Get<CHEngine::AssetManager>().ResolveToHandle(node["ShaderPath"].as<std::string>());
- 
+        {
+            rhs.ShaderHandle = CHEngine::ServiceLocator::Get<CHEngine::AssetManager>().ResolveToHandle(
+                node["ShaderPath"].as<std::string>());
+        }
+
         if (node["OverrideShader"])
+        {
             rhs.OverrideShader = node["OverrideShader"].as<bool>();
+        }
         if (node["Metalness"])
+        {
             rhs.Metalness = node["Metalness"].as<float>();
+        }
         if (node["Roughness"])
+        {
             rhs.Roughness = node["Roughness"].as<float>();
+        }
         if (node["DoubleSided"])
+        {
             rhs.DoubleSided = node["DoubleSided"].as<bool>();
+        }
         if (node["Transparent"])
+        {
             rhs.Transparent = node["Transparent"].as<bool>();
+        }
         if (node["Alpha"])
+        {
             rhs.Alpha = node["Alpha"].as<float>();
+        }
         return true;
     }
 };
- 
+
 inline YAML::Emitter& operator<<(YAML::Emitter& out, const CHEngine::MaterialInstance& m)
 {
     out << YAML::BeginMap << YAML::Key << "AlbedoColor" << YAML::Value << m.AlbedoColor << YAML::Key << "AlbedoHandle"
-        << YAML::Value << (uint64_t)m.AlbedoHandle << YAML::Key << "OverrideAlbedo"
-        << YAML::Value << m.OverrideAlbedo << YAML::Key << "NormalHandle" << YAML::Value
-        << (uint64_t)m.NormalHandle << YAML::Key << "OverrideNormal" << YAML::Value
-        << m.OverrideNormal << YAML::Key << "MetallicRoughnessHandle" << YAML::Value
-        << (uint64_t)m.MetallicRoughnessHandle << YAML::Key << "OverrideMetallicRoughness"
-        << YAML::Value << m.OverrideMetallicRoughness << YAML::Key << "OcclusionHandle" << YAML::Value
-        << (uint64_t)m.OcclusionHandle << YAML::Key << "OverrideOcclusion" << YAML::Value
-        << m.OverrideOcclusion << YAML::Key << "EmissiveHandle" << YAML::Value
-        << (uint64_t)m.EmissiveHandle << YAML::Key << "EmissiveColor" << YAML::Value
-        << m.EmissiveColor << YAML::Key << "EmissiveIntensity" << YAML::Value << m.EmissiveIntensity << YAML::Key
-        << "OverrideEmissive" << YAML::Value << m.OverrideEmissive << YAML::Key << "ShaderHandle" << YAML::Value
-        << (uint64_t)m.ShaderHandle << YAML::Key << "OverrideShader" << YAML::Value
-        << m.OverrideShader << YAML::Key << "Metalness" << YAML::Value << m.Metalness << YAML::Key << "Roughness"
-        << YAML::Value << m.Roughness << YAML::Key << "DoubleSided" << YAML::Value << m.DoubleSided << YAML::Key
-        << "Transparent" << YAML::Value << m.Transparent << YAML::Key << "Alpha" << YAML::Value << m.Alpha
-        << YAML::EndMap;
+        << YAML::Value << (uint64_t)m.AlbedoHandle << YAML::Key << "OverrideAlbedo" << YAML::Value << m.OverrideAlbedo
+        << YAML::Key << "NormalHandle" << YAML::Value << (uint64_t)m.NormalHandle << YAML::Key << "OverrideNormal"
+        << YAML::Value << m.OverrideNormal << YAML::Key << "MetallicRoughnessHandle" << YAML::Value
+        << (uint64_t)m.MetallicRoughnessHandle << YAML::Key << "OverrideMetallicRoughness" << YAML::Value
+        << m.OverrideMetallicRoughness << YAML::Key << "OcclusionHandle" << YAML::Value << (uint64_t)m.OcclusionHandle
+        << YAML::Key << "OverrideOcclusion" << YAML::Value << m.OverrideOcclusion << YAML::Key << "EmissiveHandle"
+        << YAML::Value << (uint64_t)m.EmissiveHandle << YAML::Key << "EmissiveColor" << YAML::Value << m.EmissiveColor
+        << YAML::Key << "EmissiveIntensity" << YAML::Value << m.EmissiveIntensity << YAML::Key << "OverrideEmissive"
+        << YAML::Value << m.OverrideEmissive << YAML::Key << "ShaderHandle" << YAML::Value << (uint64_t)m.ShaderHandle
+        << YAML::Key << "OverrideShader" << YAML::Value << m.OverrideShader << YAML::Key << "Metalness" << YAML::Value
+        << m.Metalness << YAML::Key << "Roughness" << YAML::Value << m.Roughness << YAML::Key << "DoubleSided"
+        << YAML::Value << m.DoubleSided << YAML::Key << "Transparent" << YAML::Value << m.Transparent << YAML::Key
+        << "Alpha" << YAML::Value << m.Alpha << YAML::EndMap;
     return out;
 }
 
@@ -651,7 +706,7 @@ template <typename... Ts> struct convert<std::variant<Ts...>>
     }
     static bool decode(const Node& node, std::variant<Ts...>& rhs)
     {
-        // Decoding requires context or a type hint. 
+        // Decoding requires context or a type hint.
         // For Chained Engine scripting, this is handled in scripting_serialization.h
         return false;
     }

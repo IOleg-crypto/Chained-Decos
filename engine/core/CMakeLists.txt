@@ -26,7 +26,7 @@ add_library(engine_core ${SUBMODULE_LIB_TYPE}
         window.h
         service_locator.h
         engine_service.h
-        ch_math.h
+        ch_structures.h
         key_codes.h
         mouse_codes.h
         reflection.h

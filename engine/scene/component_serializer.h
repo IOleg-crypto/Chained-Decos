@@ -1,10 +1,10 @@
 #ifndef CH_COMPONENT_SERIALIZER_H
 #define CH_COMPONENT_SERIALIZER_H
 
-#include "engine/scene/component_registry.h"
-#include "engine/scene/serialization_utils.h"
 #include "engine/core/engine_service.h"
+#include "engine/scene/component_registry.h"
 #include "engine/scene/scene.h"
+#include "engine/scene/serialization.h"
 #include "entt/entt.hpp"
 #include <functional>
 
@@ -28,7 +28,7 @@ public:
     // Registers a component via a PropertyArchive schema.
     // This path automatically creates serialization, deserialization, and copy logic.
     template <typename T>
-    void Register(const std::string& key, std::function<void(SerializationUtils::PropertyArchive&, T&)> schema);
+    void Register(const std::string& key, std::function<void(Serialization::PropertyArchive&, T&)> schema);
 
     // Registers a component by calling T::Reflect or T::Serialize-style code.
     template <typename T> void Register(const std::string& key);
@@ -47,14 +47,12 @@ public:
 
     // Serializes the ID component separately.
     void SerializeID(YAML::Emitter& out, Entity entity);
-
-
 };
 
 // Template implementation
 template <typename T>
 void ComponentSerializer::Register(const std::string& key,
-                                   std::function<void(SerializationUtils::PropertyArchive&, T&)> schema)
+                                   std::function<void(Serialization::PropertyArchive&, T&)> schema)
 {
     ComponentMetadata metadata;
     metadata.Name = key;
@@ -63,7 +61,7 @@ void ComponentSerializer::Register(const std::string& key,
         if (entity.HasComponent<T>())
         {
             out << YAML::Key << key << YAML::Value << YAML::BeginMap;
-            SerializationUtils::PropertyArchive archive(out);
+            Serialization::PropertyArchive archive(out);
             schema(archive, entity.GetComponent<T>());
             out << YAML::EndMap;
         }
@@ -77,7 +75,7 @@ void ComponentSerializer::Register(const std::string& key,
             }
 
             entity.Patch<T>([&](auto& component) {
-                SerializationUtils::PropertyArchive archive(node[key]);
+                Serialization::PropertyArchive archive(node[key]);
                 schema(archive, component);
             });
         }
@@ -91,11 +89,24 @@ void ComponentSerializer::Register(const std::string& key,
     metadata.Has = [](Entity e) { return e.HasComponent<T>(); };
     metadata.GetAll = [](class Scene* s) {
         std::vector<uint64_t> ids;
-        for (auto ent : s->GetRegistry().view<T>()) ids.push_back((uint64_t)(uint32_t)ent);
+        for (auto ent : s->GetRegistry().view<T>())
+        {
+            ids.push_back((uint64_t)(uint32_t)ent);
+        }
         return ids;
     };
-    metadata.Add = [](Entity e) { if (!e.HasComponent<T>()) e.AddComponent<T>(); };
-    metadata.Remove = [](Entity e) { if (e.HasComponent<T>()) e.RemoveComponent<T>(); };
+    metadata.Add = [](Entity e) {
+        if (!e.HasComponent<T>())
+        {
+            e.AddComponent<T>();
+        }
+    };
+    metadata.Remove = [](Entity e) {
+        if (e.HasComponent<T>())
+        {
+            e.RemoveComponent<T>();
+        }
+    };
 
     ComponentRegistry::Register(entt::type_hash<T>::value(), metadata);
 }
@@ -109,7 +120,7 @@ template <typename T> void ComponentSerializer::Register(const std::string& key)
         if (entity.HasComponent<T>())
         {
             out << YAML::Key << key << YAML::Value << YAML::BeginMap;
-            SerializationUtils::PropertyArchive archive(out);
+            Serialization::PropertyArchive archive(out);
             CHEngine::Properties props(archive);
             entity.GetComponent<T>().Reflect(props);
             out << YAML::EndMap;
@@ -123,7 +134,7 @@ template <typename T> void ComponentSerializer::Register(const std::string& key)
                 entity.AddComponent<T>();
             }
             entity.Patch<T>([&](auto& component) {
-                SerializationUtils::PropertyArchive archive(node[key]);
+                Serialization::PropertyArchive archive(node[key]);
                 CHEngine::Properties props(archive);
                 component.Reflect(props);
             });
@@ -138,11 +149,24 @@ template <typename T> void ComponentSerializer::Register(const std::string& key)
     metadata.Has = [](Entity e) { return e.HasComponent<T>(); };
     metadata.GetAll = [](class Scene* s) {
         std::vector<uint64_t> ids;
-        for (auto ent : s->GetRegistry().view<T>()) ids.push_back((uint64_t)(uint32_t)ent);
+        for (auto ent : s->GetRegistry().view<T>())
+        {
+            ids.push_back((uint64_t)(uint32_t)ent);
+        }
         return ids;
     };
-    metadata.Add = [](Entity e) { if (!e.HasComponent<T>()) e.AddComponent<T>(); };
-    metadata.Remove = [](Entity e) { if (e.HasComponent<T>()) e.RemoveComponent<T>(); };
+    metadata.Add = [](Entity e) {
+        if (!e.HasComponent<T>())
+        {
+            e.AddComponent<T>();
+        }
+    };
+    metadata.Remove = [](Entity e) {
+        if (e.HasComponent<T>())
+        {
+            e.RemoveComponent<T>();
+        }
+    };
 
     ComponentRegistry::Register(entt::type_hash<T>::value(), metadata);
 }

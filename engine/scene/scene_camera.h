@@ -117,35 +117,35 @@ public:
     CH_REFLECT_BEGIN(SceneCamera)
         ProjectionType type = GetProjectionType();
         static const char* projTypes[] = { "Perspective", "Orthographic" };
-        if (props.Enum("Projection", type, projTypes, 2) || props.GetMode() == ReflectionMode::Deserialize)
+        if (CH_ENUM_NAMED(props, "Projection", type, projTypes) || props.GetMode() == ReflectionMode::Deserialize)
             SetProjectionType(type);
 
         if (type == ProjectionType::Perspective)
         {
             float fov = glm::degrees(m_PerspectiveFOV);
-            if (props.Property("VerticalFOV", fov) || props.GetMode() == ReflectionMode::Deserialize)
+            if (CH_PROP_NAMED(props, "VerticalFOV", fov) || props.GetMode() == ReflectionMode::Deserialize)
                 SetPerspectiveVerticalFOV(glm::radians(fov));
             
             float nearClipValue = m_PerspectiveNear;
-            if (props.Property("Near", nearClipValue) || props.GetMode() == ReflectionMode::Deserialize)
+            if (CH_PROP_NAMED(props, "Near", nearClipValue) || props.GetMode() == ReflectionMode::Deserialize)
                 SetPerspectiveNearClip(nearClipValue);
             
             float farClipValue = m_PerspectiveFar;
-            if (props.Property("Far", farClipValue) || props.GetMode() == ReflectionMode::Deserialize)
+            if (CH_PROP_NAMED(props, "Far", farClipValue) || props.GetMode() == ReflectionMode::Deserialize)
                 SetPerspectiveFarClip(farClipValue);
         }
         else
         {
             float size = m_OrthographicSize;
-            if (props.Property("Size", size) || props.GetMode() == ReflectionMode::Deserialize)
+            if (CH_PROP_NAMED(props, "Size", size) || props.GetMode() == ReflectionMode::Deserialize)
                 SetOrthographicSize(size);
             
             float nearClipValue = m_OrthographicNear;
-            if (props.Property("Near", nearClipValue) || props.GetMode() == ReflectionMode::Deserialize)
+            if (CH_PROP_NAMED(props, "Near", nearClipValue) || props.GetMode() == ReflectionMode::Deserialize)
                 SetOrthographicNearClip(nearClipValue);
             
             float farClipValue = m_OrthographicFar;
-            if (props.Property("Far", farClipValue) || props.GetMode() == ReflectionMode::Deserialize)
+            if (CH_PROP_NAMED(props, "Far", farClipValue) || props.GetMode() == ReflectionMode::Deserialize)
                 SetOrthographicFarClip(farClipValue);
         }
     CH_REFLECT_END()

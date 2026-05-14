@@ -157,125 +157,11 @@ void UIRenderer::UpdateStyleAnimation(UIStyle& style, bool isHovered, bool isDow
 
 bool UIRenderer::RenderUIComponent(Entity entity, const ImVec2& screenPos, const ImVec2& size, bool editMode)
 {
-    bool handled = false;
-    bool widgetFound = false;
-    auto& reg = entity.GetRegistry();
+    if (!entity.HasComponent<WidgetComponent>())
+        return false;
 
-    if (entity.HasComponent<WidgetComponent>())
-    {
-        widgetFound = true;
-        auto& widget = entity.GetComponent<WidgetComponent>();
-
-        UI::StyleCounts styleState = UI::PushUIStyle(widget.BoxStyle);
-        UI::PushTextStyle(widget.TextStyle, styleState);
-
-        std::visit(
-            [&](auto&& arg) {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (std::is_same_v<T, std::monostate>)
-                {
-                    widgetFound = false;
-                }
-                else if constexpr (std::is_same_v<T, PanelData>)
-                {
-                    UI::RenderPanel(arg, widget, screenPos, size);
-                }
-                else if constexpr (std::is_same_v<T, LabelData>)
-                {
-                    UI::RenderLabel(arg, widget, size);
-                }
-                else if constexpr (std::is_same_v<T, ButtonData>)
-                {
-                    handled = UI::RenderButton(entity, arg, widget, size);
-                }
-                else if constexpr (std::is_same_v<T, SliderData>)
-                {
-                    handled = UI::RenderSlider(arg, widget, size);
-                }
-                else if constexpr (std::is_same_v<T, CheckboxData>)
-                {
-                    handled = UI::RenderCheckbox(arg, widget);
-                }
-                else if constexpr (std::is_same_v<T, ImageData>)
-                {
-                    UI::RenderImage(arg, widget, size);
-                }
-                else if constexpr (std::is_same_v<T, InputTextData>)
-                {
-                    handled = UI::RenderInputText(entity, arg, widget, size);
-                }
-                else if constexpr (std::is_same_v<T, ProgressBarData>)
-                {
-                    UI::RenderProgressBar(arg, widget, size);
-                }
-                else if constexpr (std::is_same_v<T, ComboBoxData>)
-                {
-                    handled = UI::RenderComboBox(arg, widget, size);
-                }
-                else if constexpr (std::is_same_v<T, ImageButtonData>)
-                {
-                    handled = UI::RenderImageButton(arg, widget, size);
-                }
-                else if constexpr (std::is_same_v<T, RadioButtonData>)
-                {
-                    handled = UI::RenderRadioButton(arg, widget);
-                }
-                else if constexpr (std::is_same_v<T, ColorPickerData>)
-                {
-                    handled = UI::RenderColorPicker(arg, widget);
-                }
-                else if constexpr (std::is_same_v<T, SeparatorData>)
-                {
-                    UI::RenderSeparator(arg);
-                }
-                else if constexpr (std::is_same_v<T, DragFloatData>)
-                {
-                    handled = UI::RenderDragFloat(arg, widget, size);
-                }
-                else if constexpr (std::is_same_v<T, DragIntData>)
-                {
-                    handled = UI::RenderDragInt(arg, widget, size);
-                }
-                else if constexpr (std::is_same_v<T, TreeNodeData>)
-                {
-                    handled = UI::RenderTreeNode(arg, widget);
-                }
-                else if constexpr (std::is_same_v<T, CollapsingHeaderData>)
-                {
-                    handled = UI::RenderCollapsingHeader(arg, widget);
-                }
-                else if constexpr (std::is_same_v<T, PlotLinesData>)
-                {
-                    handled = UI::RenderPlotLines(arg, widget);
-                }
-                else if constexpr (std::is_same_v<T, PlotHistogramData>)
-                {
-                    handled = UI::RenderPlotHistogram(arg, widget);
-                }
-                else if constexpr (std::is_same_v<T, TabBarData>)
-                {
-                    UI::RenderTabBar(entity, arg, widget, reg);
-                    handled = true;
-                }
-                else if constexpr (std::is_same_v<T, TabItemData>)
-                {
-                    widgetFound = true;
-                }
-                else if constexpr (std::is_same_v<T, VerticalLayoutGroupData>)
-                {
-                    widgetFound = true;
-                }
-            },
-            widget.Data);
-
-        UI::PopUIStyle(styleState);
-    }
-    else
-    {
-        widgetFound = false;
-    }
-
-    return widgetFound;
+    auto& widget = entity.GetComponent<WidgetComponent>();
+    return UI::Dispatcher::Render(entity, widget, screenPos, size);
 }
 
 void UIRenderer::ResetButtonStates(Scene* scene)
@@ -375,9 +261,10 @@ void UIRenderer::DrawCanvas(Scene* scene, const ImVec2& referencePosition, const
                 UIRect parentRect = rectCache[parentID];
                 if (parentRect.width > 1.0f && parentRect.height > 1.0f)
                 {
-                    ImVec2 clipMin = {parentRect.x * scaleFactor, parentRect.y * scaleFactor};
-                    ImVec2 clipMax = {(parentRect.x + parentRect.width) * scaleFactor,
-                                      (parentRect.y + parentRect.height) * scaleFactor};
+                    ImVec2 clipMin = {referencePosition.x + parentRect.x * scaleFactor, 
+                                      referencePosition.y + parentRect.y * scaleFactor};
+                    ImVec2 clipMax = {referencePosition.x + (parentRect.x + parentRect.width) * scaleFactor,
+                                      referencePosition.y + (parentRect.y + parentRect.height) * scaleFactor};
                     ImGui::PushClipRect(clipMin, clipMax, true);
                     needsClipPop = true;
                 }

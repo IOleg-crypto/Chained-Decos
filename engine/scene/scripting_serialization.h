@@ -52,16 +52,16 @@ template <> struct convert<CHEngine::ManagedScriptInstance>
             for (auto f : node["Fields"])
             {
                 CHEngine::ScriptField field;
-                if (f["Name"])
+                if (f.IsMap() && f["Name"])
                 {
                     field.Name = f["Name"].as<std::string>();
                 }
-                if (f["Type"])
+                if (f.IsMap() && f["Type"])
                 {
                     field.Type = (CHEngine::ScriptFieldType)f["Type"].as<int>();
                 }
 
-                if (f["Value"])
+                if (f.IsMap() && f["Value"])
                 {
                     switch (field.Type)
                     {

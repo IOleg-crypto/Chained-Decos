@@ -17,11 +17,12 @@ function(chained_add_csharp_scripts TARGET_NAME CSHARP_PROJECT_PATH)
     set(SCRIPT_DLL_PATH "${SCRIPT_OUTPUT_DIR}/${TARGET_NAME}.dll")
 
     add_custom_target(${SCRIPT_TARGET}
-        COMMAND dotnet build "${FULL_CSPROJ_PATH}"
-                -c $<IF:$<OR:$<CONFIG:Debug>,$<CONFIG:>>,Debug,Release> 
-                --output "${SCRIPT_OUTPUT_DIR}" 
-                -p:CoralManagedDir="${CORAL_MANAGED_DIR}"
-                -m # Use all CPU cores for dotnet build
+        COMMAND "${CH_PYTHON_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/build_scripts/build_managed.py" build-managed
+            --project "${FULL_CSPROJ_PATH}"
+            --configuration $<IF:$<OR:$<CONFIG:Debug>,$<CONFIG:>>,Debug,Release>
+            --output "${SCRIPT_OUTPUT_DIR}"
+            --coral-dir "${CORAL_MANAGED_DIR}"
+            --parallel
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
         COMMENT "Building C# Scripts for ${TARGET_NAME} (incremental)"
         VERBATIM

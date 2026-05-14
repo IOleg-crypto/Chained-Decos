@@ -99,8 +99,6 @@ public:
     }
 
 private:
-    bool OnWindowClose(WindowCloseEvent& e);
-    bool OnWindowResize(WindowResizeEvent& e);
     void ReplicateEntities();
 
 private:
@@ -122,7 +120,6 @@ private:
     } m_Timer;
 
     bool m_Running = false;
-    bool m_Minimized = false;
 };
 
 Application* CreateApplication(ApplicationCommandLineArgs args);

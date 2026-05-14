@@ -38,74 +38,28 @@ struct AnimationComponent
     {
     }
 
-    // Direct animation control
-    void Play(int index, bool loop = true)
-    {
-        if (CurrentAnimationIndex == index && IsPlaying && !Blending)
-            return;
-
-        CurrentAnimationIndex = index;
-        CurrentFrame = 0;
-        FrameTimeCounter = 0.0f;
-        IsLooping = loop;
-        IsPlaying = true;
-        Blending = false;
-        TargetAnimationIndex = -1;
-    }
-
-    void CrossFade(int index, float duration = 0.2f, bool loop = true)
-    {
-        if (CurrentAnimationIndex == index)
-            return;
-        if (Blending && TargetAnimationIndex == index)
-            return;
-
-        TargetAnimationIndex = index;
-        TargetFrame = 0;
-        BlendTimer = 0.0f;
-        BlendDuration = (duration > 0.0f) ? duration : 0.01f;
-        Blending = true;
-        IsLooping = loop;
-        IsPlaying = true;
-    }
-
-    void Stop()
-    {
-        IsPlaying = false;
-        Blending = false;
-    }
-
-    // Graph trigger interface
-    void TriggerTransition(const std::string& triggerName)
-    {
-        if (UseAnimationGraph && Triggers.count(triggerName))
-        {
-            Triggers[triggerName] = true;
-        }
-    }
-
     CH_REFLECT_BEGIN(AnimationComponent)
         // Startup
-        props.Property("Play On Start", PlayOnStart);
+        CH_PROP_NAMED(props, "Play On Start", PlayOnStart);
 
         // Basic playback
         {
             PropertyMeta meta;
             meta.ReadOnly = true;
-            props.Property("Animation Path", AnimationPath, meta);
+            CH_PROP_META_NAMED(props, "Animation Path", AnimationPath, meta);
         }
-        props.Property("Current Animation Index", CurrentAnimationIndex);
-        props.Property("Is Looping", IsLooping);
-        props.Property("Is Playing", IsPlaying);
-        props.Property("Blend Duration", BlendDuration, PropertyMeta(0.0f, 5.0f, 0.01f));
+        CH_PROP_NAMED(props, "Current Animation Index", CurrentAnimationIndex);
+        CH_PROP_NAMED(props, "Is Looping", IsLooping);
+        CH_PROP_NAMED(props, "Is Playing", IsPlaying);
+        CH_PROP_META_NAMED(props, "Blend Duration", BlendDuration, PropertyMeta(0.0f, 5.0f, 0.01f));
 
         // Graph settings
-        props.Property("Use Animation Graph", UseAnimationGraph);
-        props.File("Animation Graph File", GraphPath, "chanim");
+        CH_PROP_NAMED(props, "Use Animation Graph", UseAnimationGraph);
+        CH_FILE_NAMED(props, "Animation Graph File", GraphPath, "chanim");
         {
             PropertyMeta meta;
             meta.ReadOnly = true;
-            props.Property("Graph Current State", CurrentStateName, meta);
+            CH_PROP_META_NAMED(props, "Graph Current State", CurrentStateName, meta);
         }
     CH_REFLECT_END()
 };

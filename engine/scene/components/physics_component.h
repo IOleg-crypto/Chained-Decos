@@ -45,44 +45,44 @@ struct ColliderComponent
     ColliderComponent(const ColliderComponent&) = default;
 
     CH_REFLECT_BEGIN(ColliderComponent)
-        props.Header("Shape Selection");
-        if (props.BeginGroup("General"))
+        CH_HEADER(props, "Shape Selection");
+        if (CH_BEGIN_GROUP(props, "General", true))
         {
             const char* colliderTypes[] = {"Box", "Mesh", "Capsule", "Sphere"};
-            props.Property("Type", Type, colliderTypes, 4);
-            props.Property("Enabled", Enabled);
-            props.Property("Offset", Offset);
-            props.EndGroup();
+            CH_ENUM(props, Type, colliderTypes);
+            CH_PROP(props, Enabled);
+            CH_PROP(props, Offset);
+            CH_END_GROUP(props);
         }
         
-        if (props.BeginGroup("ShapeParameters"))
+        if (CH_BEGIN_GROUP(props, "ShapeParameters", true))
         {
             if (Type == ColliderType::Box)
             {
-                props.Property("Size", Size, PropertyMeta(0.01f, 100.0f, 0.1f));
+                CH_PROP_META(props, Size, PropertyMeta(0.01f, 100.0f, 0.1f));
             }
             else if (Type == ColliderType::Capsule)
             {
-                props.Property("Radius", Radius, PropertyMeta(0.01f, 50.0f, 0.1f));
-                props.Property("Height", Height, PropertyMeta(0.1f, 100.0f, 0.1f));
+                CH_PROP_META(props, Radius, PropertyMeta(0.01f, 50.0f, 0.1f));
+                CH_PROP_META(props, Height, PropertyMeta(0.1f, 100.0f, 0.1f));
             }
             else if (Type == ColliderType::Sphere)
             {
-                props.Property("Radius", Radius, PropertyMeta(0.01f, 50.0f, 0.1f));
+                CH_PROP_META(props, Radius, PropertyMeta(0.01f, 50.0f, 0.1f));
             }
             else if (Type == ColliderType::Mesh)
             {
                 if (props.GetMode() != CHEngine::ReflectionMode::UI)
-                    props.Handle("ModelHandle", ModelHandle);
-                if (props.File("ModelPath", ModelPath, "obj,gltf,glb"))
+                    CH_HANDLE(props, ModelHandle);
+                if (CH_FILE(props, ModelPath, "obj,gltf,glb"))
                 {
                     ModelHandle = AssetHandle(0);
                 }
             }
-            props.EndGroup();
+            CH_END_GROUP(props);
         }
         
-        props.Property("AutoCalculate", AutoCalculate, PropertyMeta().WithTooltip("Overwrite Offset/Size automatically from model mesh each frame"));
+        CH_PROP_META(props, AutoCalculate, PropertyMeta().WithTooltip("Overwrite Offset/Size automatically from model mesh each frame"));
     CH_REFLECT_END()
 };
 
@@ -98,16 +98,16 @@ struct RigidBodyComponent
     PhysicsBodyHandle Handle = kInvalidPhysicsBody;
 
     CH_REFLECT_BEGIN(RigidBodyComponent)
-        props.Header("Dynamics");
-        props.Property("Mass", Mass, PropertyMeta(0.01f, 100.0f, 0.1f));
-        props.Property("Velocity", Velocity);
+        CH_HEADER(props, "Dynamics");
+        CH_PROP_META(props, Mass, PropertyMeta(0.01f, 100.0f, 0.1f));
+        CH_PROP(props, Velocity);
         
-        if (props.BeginGroup("State"))
+        if (CH_BEGIN_GROUP(props, "State", true))
         {
-            props.Property("UseGravity", UseGravity);
-            props.Property("IsKinematic", IsKinematic);
-            props.Property("IsGrounded", IsGrounded);
-            props.EndGroup();
+            CH_PROP(props, UseGravity);
+            CH_PROP(props, IsKinematic);
+            CH_PROP(props, IsGrounded);
+            CH_END_GROUP(props);
         }
     CH_REFLECT_END()
 };

@@ -24,23 +24,23 @@ struct ScriptField
     std::variant<float, int, bool, std::string, glm::vec2, glm::vec3, glm::vec4, CHEngine::Color, uint64_t> Value;
 
     CH_REFLECT_BEGIN(ScriptField)
-        props.Property("Name", Name);
-        props.Property("Type", (int&)Type);
+        CH_PROP(props, Name);
+        CH_PROP_NAMED(props, "Type", (int&)Type);
         
         // Handle variant reflection
         std::visit([&](auto&& val) {
             using T = std::decay_t<decltype(val)>;
             if constexpr (std::is_same_v<T, CHEngine::Color>)
-                props.Color("Value", val);
+                CH_PROP_NAMED(props, "Value", val);
             else if constexpr (std::is_same_v<T, uint64_t>)
             {
                 if (props.GetMode() != CHEngine::ReflectionMode::UI)
-                    props.Handle("Value", val);
+                    CH_HANDLE_NAMED(props, "Value", val);
             }
             else if constexpr (std::is_same_v<T, float>)
-                props.Property("Value", val, PropertyMeta(-100.0f, 100.0f, 0.01f));
+                CH_PROP_META_NAMED(props, "Value", val, PropertyMeta(-100.0f, 100.0f, 0.01f));
             else
-                props.Property("Value", val);
+                CH_PROP_NAMED(props, "Value", val);
         }, Value);
     CH_REFLECT_END()
 };
@@ -73,7 +73,8 @@ struct ManagedScriptInstance
         {
             ClassName = other.ClassName;
             Fields = other.Fields;
-            ResetRuntimeState();
+            Instance.reset();
+            NeedsStart = true;
         }
         return *this;
     }
@@ -86,15 +87,12 @@ struct ManagedScriptInstance
     void* GetRaw() const { return Instance.get(); }
     bool HasInstance() const { return Instance != nullptr; }
 
-    void Destroy();
-    void ResetRuntimeState();
-
     CH_REFLECT_BEGIN(ManagedScriptInstance)
-        props.Property("ClassName", ClassName, PropertyMeta(PropertyMeta::WidgetHint::Enum));
+        CH_PROP_META_NAMED(props, "ClassName", ClassName, PropertyMeta(PropertyMeta::WidgetHint::Enum));
         for (auto& [name, field] : Fields)
         {
             std::visit([&](auto&& val) {
-                props.Property(name.c_str(), val);
+                CH_PROP_NAMED(props, name.c_str(), val);
             }, field.Value);
         }
     CH_REFLECT_END()
@@ -107,7 +105,7 @@ struct ManagedScriptComponent
     ManagedScriptComponent() = default;
 
     CH_REFLECT_BEGIN(ManagedScriptComponent)
-        props.Sequence("Scripts", Scripts);
+        CH_SEQUENCE_NAMED(props, "Scripts", Scripts);
     CH_REFLECT_END()
 };
 

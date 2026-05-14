@@ -1,9 +1,9 @@
 #ifndef CH_SCENE_PICKING_H
 #define CH_SCENE_PICKING_H
 
-#include "engine/scene/entity.h"
+#include "engine/core/ch_structures.h"
 #include "engine/graphics/api/camera_types.h"
-#include "engine/core/ch_math.h"
+#include "engine/scene/entity.h"
 
 namespace CHEngine
 {
@@ -24,7 +24,8 @@ public:
     static SceneRaycastResult Raycast(Scene* scene, const Ray& ray);
 
     // Creates a ray from viewport coordinates
-    static Ray CreateRayFromViewport(const CHEngine::Camera3D& camera, const glm::vec2& mousePosition, const glm::vec2& viewportSize);
+    static Ray CreateRayFromViewport(const CHEngine::Camera3D& camera, const glm::vec2& mousePosition,
+                                     const glm::vec2& viewportSize);
 };
 
 } // namespace CHEngine

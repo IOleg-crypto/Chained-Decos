@@ -47,11 +47,11 @@ struct PrimitiveComponent
     }
 
     CH_REFLECT_BEGIN(PrimitiveComponent)
-        props.Header("Shape Selection");
+        CH_HEADER(props, "Shape Selection");
         const char* primitiveTypes[] = {"None", "Cube",  "Sphere", "Plane",     "Cylinder",
                                         "Cone", "Torus", "Knot",   "Hemisphere"};
         
-        if (props.Enum("Primitive Type", Type, primitiveTypes, (int)CH_ARRAY_SIZE(primitiveTypes)))
+        if (CH_ENUM_NAMED(props, "Primitive Type", Type, primitiveTypes))
         {
             Dirty = true;
             Asset = nullptr;
@@ -59,25 +59,25 @@ struct PrimitiveComponent
 
         if (Type == PrimitiveType::None) return;
 
-        if (props.BeginGroup("Parameters"))
+        if (CH_BEGIN_GROUP(props, "Parameters", true))
         {
             if (Type == PrimitiveType::Cube || Type == PrimitiveType::Plane)
             {
-                props.Property("Dimensions", Dimensions, PropertyMeta(0.01f, 100.0f, 0.1f));
+                CH_PROP_META(props, Dimensions, PropertyMeta(0.01f, 100.0f, 0.1f));
             }
             else
             {
-                props.Property("Radius", Radius, PropertyMeta(0.01f, 50.0f, 0.1f));
+                CH_PROP_META(props, Radius, PropertyMeta(0.01f, 50.0f, 0.1f));
                 if (Type == PrimitiveType::Torus)
-                    props.Property("Inner Radius", InnerRadius, PropertyMeta(0.01f, 25.0f, 0.1f));
+                    CH_PROP_META_NAMED(props, "Inner Radius", InnerRadius, PropertyMeta(0.01f, 25.0f, 0.1f));
                 
                 if (Type == PrimitiveType::Cylinder || Type == PrimitiveType::Cone)
-                    props.Property("Height", Height, PropertyMeta(0.1f, 100.0f, 0.1f));
+                    CH_PROP_META(props, Height, PropertyMeta(0.1f, 100.0f, 0.1f));
 
-                props.Property("Slices", Slices, PropertyMeta(3.0f, 256.0f, 1.0f));
-                props.Property("Stacks", Stacks, PropertyMeta(3.0f, 256.0f, 1.0f));
+                CH_PROP_META(props, Slices, PropertyMeta(3.0f, 256.0f, 1.0f));
+                CH_PROP_META(props, Stacks, PropertyMeta(3.0f, 256.0f, 1.0f));
             }
-            props.EndGroup();
+            CH_END_GROUP(props);
         }
 
         if (props.GetMode() == ReflectionMode::Deserialize && props.HasChanged())

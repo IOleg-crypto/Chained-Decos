@@ -2,7 +2,7 @@
 #define CH_YAML_CONVERSIONS_H
 
 #include "engine/assets/asset.h"
-#include "engine/core/ch_math.h"
+#include "engine/core/ch_structures.h"
 #include <cstdint>
 #include <filesystem>
 #include <glm/glm.hpp>

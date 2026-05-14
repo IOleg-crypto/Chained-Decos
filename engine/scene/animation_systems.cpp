@@ -8,6 +8,48 @@
 namespace CHEngine {
 namespace AnimationSystems {
 
+void Play(AnimationComponent& anim, int index, bool loop)
+{
+    if (anim.CurrentAnimationIndex == index && anim.IsPlaying && !anim.Blending)
+        return;
+
+    anim.CurrentAnimationIndex = index;
+    anim.CurrentFrame = 0;
+    anim.FrameTimeCounter = 0.0f;
+    anim.IsLooping = loop;
+    anim.IsPlaying = true;
+    anim.Blending = false;
+    anim.TargetAnimationIndex = -1;
+}
+
+void CrossFade(AnimationComponent& anim, int index, float duration, bool loop)
+{
+    if (anim.CurrentAnimationIndex == index)
+        return;
+    if (anim.Blending && anim.TargetAnimationIndex == index)
+        return;
+
+    anim.TargetAnimationIndex = index;
+    anim.TargetFrame = 0;
+    anim.BlendTimer = 0.0f;
+    anim.BlendDuration = (duration > 0.0f) ? duration : 0.01f;
+    anim.Blending = true;
+    anim.IsLooping = loop;
+    anim.IsPlaying = true;
+}
+
+void Stop(AnimationComponent& anim)
+{
+    anim.IsPlaying = false;
+    anim.Blending = false;
+}
+
+void TriggerTransition(AnimationComponent& anim, const std::string& triggerName)
+{
+    if (anim.UseAnimationGraph && anim.Triggers.count(triggerName))
+        anim.Triggers[triggerName] = true;
+}
+
 void UpdatePlayback(Scene* scene, Timestep ts)
 {
     auto& registry = scene->GetRegistry();
@@ -78,7 +120,7 @@ void UpdateGraphs(Scene* scene, Timestep ts)
                     {
                         anim.AnimationPath = node.AnimationPath;
                         anim.IsLooping = node.IsLooping;
-                        anim.Play(0, node.IsLooping);
+                        Play(anim, 0, node.IsLooping);
                     }
                     break;
                 }

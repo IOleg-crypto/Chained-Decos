@@ -1,6 +1,7 @@
 #include "animation_graph_system.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/entity.h"
+#include "engine/scene/animation_systems.h"
 #include "engine/scene/components/animation_component.h"
 #include "engine/scene/animation_graph_data.h"
 #include "engine/core/log.h"
@@ -154,7 +155,7 @@ void AnimationGraphSystem::Update(Scene* scene, Timestep ts)
                     {
                         anim.AnimationPath = node.AnimationPath;
                         anim.IsLooping = node.IsLooping;
-                        anim.Play(0, node.IsLooping);
+                        AnimationSystems::Play(anim, 0, node.IsLooping);
                     }
                     break;
                 }
