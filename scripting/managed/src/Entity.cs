@@ -391,17 +391,28 @@ public class ComboBoxControl : Component
 {
 #pragma warning disable 0649
     internal static unsafe delegate* unmanaged<ulong, int> ComboBoxControl_GetSelectedIndex_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, int, void> ComboBoxControl_SetSelectedIndex_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, NativeString, void> ComboBoxControl_AddItem_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, void> ComboBoxControl_ClearItems_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, int> ComboBoxControl_GetItemCount_Ptr;
     internal static unsafe delegate* unmanaged<ulong, int, NativeString> ComboBoxControl_GetItem_Ptr;
 #pragma warning restore 0649
 
     private static unsafe int GetSelectedIndex(ulong entityID) => ComboBoxControl_GetSelectedIndex_Ptr(entityID);
+    private static unsafe void SetSelectedIndex(ulong entityID, int index) => ComboBoxControl_SetSelectedIndex_Ptr(entityID, index);
+    private static unsafe void AddItem(ulong entityID, string item) => ComboBoxControl_AddItem_Ptr(entityID, item);
+    private static unsafe void ClearItems(ulong entityID) => ComboBoxControl_ClearItems_Ptr(entityID);
+    private static unsafe int GetItemCount(ulong entityID) => ComboBoxControl_GetItemCount_Ptr(entityID);
     private static unsafe string? GetItem(ulong entityID, int index)
     {
         return ComboBoxControl_GetItem_Ptr(entityID, index);
     }
 
-    public int    SelectedIndex     => GetSelectedIndex(Entity.ID);
+    public int    SelectedIndex     { get => GetSelectedIndex(Entity.ID); set => SetSelectedIndex(Entity.ID, value); }
+    public int    ItemCount         => GetItemCount(Entity.ID);
     public string? GetItem(int index) => GetItem(Entity.ID, index);
+    public void   AddItem(string item) => AddItem(Entity.ID, item);
+    public void   ClearItems()         => ClearItems(Entity.ID);
 }
 
 // ── Gameplay Components ────────────────────────────────────────────────────────

@@ -18,10 +18,10 @@ struct AnimationGraphComponent {
     std::unordered_map<std::string, bool> Triggers;
 
     CH_REFLECT_BEGIN(AnimationGraphComponent)
-        props.File("Animation Graph", GraphPath, "chanim");
-        props.Property("Active", Active);
+        CH_FILE_NAMED(props, "Animation Graph", GraphPath, "chanim");
+        CH_PROP(props, Active);
         PropertyMeta meta; meta.ReadOnly = true;
-        props.Property("Current State", CurrentStateName, meta);
+        CH_PROP_META_NAMED(props, "Current State", CurrentStateName, meta);
     CH_REFLECT_END()
 };
 

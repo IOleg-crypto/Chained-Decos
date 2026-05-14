@@ -1,7 +1,7 @@
 #ifndef CH_RENDERER_API_H
 #define CH_RENDERER_API_H
 
-#include "engine/core/ch_math.h"
+#include "engine/core/ch_structures.h"
 #include <memory>
 
 namespace CHEngine
@@ -13,23 +13,43 @@ class RendererAPI
 public:
     enum class DepthFunc
     {
-        Never = 0, Less, Equal, LEqual, Greater, NotEqual, GEqual, Always
+        Never = 0,
+        Less,
+        Equal,
+        LEqual,
+        Greater,
+        NotEqual,
+        GEqual,
+        Always
     };
 
     enum class CullMode
     {
-        None = 0, Front, Back, FrontAndBack
+        None = 0,
+        Front,
+        Back,
+        FrontAndBack
     };
 
     enum class BlendFactor
     {
-        Zero = 0, One, SrcColor, OneMinusSrcColor, DstColor, OneMinusDstColor, 
-        SrcAlpha, OneMinusSrcAlpha, DstAlpha, OneMinusDstAlpha
+        Zero = 0,
+        One,
+        SrcColor,
+        OneMinusSrcColor,
+        DstColor,
+        OneMinusDstColor,
+        SrcAlpha,
+        OneMinusSrcAlpha,
+        DstAlpha,
+        OneMinusDstAlpha
     };
 
     enum class PolygonMode
     {
-        Fill = 0, Line, Point
+        Fill = 0,
+        Line,
+        Point
     };
 
     enum class API
@@ -47,11 +67,11 @@ public:
     virtual void SetViewport(int x, int y, int width, int height) = 0;
     virtual void SetClearColor(const Color& color) = 0;
     virtual void Clear() = 0;
-    
+
     virtual void SetDepthFunc(DepthFunc func) = 0;
     virtual void SetDepthTest(bool enabled) = 0;
     virtual void SetDepthMask(bool enabled) = 0;
-    
+
     virtual void SetCullMode(CullMode mode) = 0;
     virtual void SetBlendFunc(BlendFactor src, BlendFactor dst) = 0;
     virtual void SetBlendMode(bool enabled) = 0;
@@ -66,7 +86,8 @@ public:
     virtual void SetLineWidth(float width) = 0;
 
     virtual void DrawIndexed(const std::shared_ptr<VertexArray>& vertexArray, uint32_t indexCount = 0) = 0;
-    virtual void DrawIndexedInstanced(const std::shared_ptr<VertexArray>& vertexArray, uint32_t instanceCount, uint32_t indexCount = 0) = 0;
+    virtual void DrawIndexedInstanced(const std::shared_ptr<VertexArray>& vertexArray, uint32_t instanceCount,
+                                      uint32_t indexCount = 0) = 0;
     virtual void DrawIndexedLines(const std::shared_ptr<VertexArray>& vertexArray, uint32_t indexCount = 0) = 0;
     virtual void DrawLines(const std::shared_ptr<VertexArray>& vertexArray, uint32_t vertexCount) = 0;
     virtual void DrawArrays(uint32_t vertexCount) = 0;
@@ -74,7 +95,10 @@ public:
 
     virtual void SetTexture(uint32_t slot, uint32_t textureId, bool isCubemap = false) = 0;
 
-    static API GetAPI() { return s_API; }
+    static API GetAPI()
+    {
+        return s_API;
+    }
     static std::unique_ptr<RendererAPI> Create();
 
 private:

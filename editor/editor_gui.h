@@ -8,9 +8,8 @@
 
 #include "editor_layer.h"
 #include "editor_panels.h"
-#include "engine/core/ch_math.h"
+#include "engine/core/ch_structures.h"
 #include "engine/graphics/pipeline/renderer.h"
-
 
 namespace CHEngine
 {

@@ -29,13 +29,13 @@ struct TransformComponent
 
     CH_REFLECT_BEGIN(TransformComponent)
         // Position.
-        props.Property("Translation", Translation);
+        CH_PROP(props, Translation);
         
         // Rotation in radians.
-        props.Property("Rotation", Rotation, PropertyMeta(-3.14159f, 3.14159f, 0.01f));
+        CH_PROP_META(props, Rotation, PropertyMeta(-3.14159f, 3.14159f, 0.01f));
         
         // Scale.
-        props.Property("Scale", Scale, PropertyMeta(0.1f, 10.0f, 0.1f));
+        CH_PROP_META(props, Scale, PropertyMeta(0.1f, 10.0f, 0.1f));
 
         // Keep the quaternion in sync using an inline lambda or similar if we want to avoid member functions
         if (props.HasChanged() || props.GetMode() == ReflectionMode::Deserialize)

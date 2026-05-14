@@ -1,17 +1,16 @@
-#include "engine/scene/serialization_utils.h"
+#include "engine/scene/serialization.h"
 #include "gtest/gtest.h"
 #include <filesystem>
 
 using namespace CHEngine;
-using namespace CHEngine::SerializationUtils;
+using namespace CHEngine::Serialization;
 
 struct NestedData
 {
     float X = 0.0f;
     int Y = 0;
 
-    template<typename Archive>
-    void Reflect(CHEngine::Properties<Archive>& props)
+    template <typename Archive> void Reflect(CHEngine::Properties<Archive>& props)
     {
         props.Property("X", X);
         props.Property("Y", Y);
@@ -77,15 +76,15 @@ TEST(SerializationTest, PropertyArchiveNested)
 {
     YAML::Emitter out;
     PropertyArchive archive(out);
-    
+
     NestedData data;
     data.X = 10.5f;
     data.Y = 42;
-    
+
     archive.Nested("Settings", data);
-    
+
     YAML::Node inNode = YAML::Load(out.c_str());
     PropertyArchive in(inNode);
-    
+
     NestedData data2;
 }

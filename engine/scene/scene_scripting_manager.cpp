@@ -28,6 +28,19 @@ static inline Coral::ManagedObject* AsManagedObject(const ManagedScriptInstance&
     return static_cast<Coral::ManagedObject*>(script.GetRaw());
 }
 
+static void DestroyManagedScriptInstance(ManagedScriptInstance& script)
+{
+    if (script.HasInstance())
+    {
+        auto* obj = AsManagedObject(script);
+        if (obj->IsValid())
+            obj->InvokeMethod("OnDestroy");
+    }
+
+    script.Instance.reset();
+    script.NeedsStart = true;
+}
+
 static std::vector<SceneScriptingManager*> s_Managers;
 static std::mutex s_ManagersMutex;
 
@@ -138,7 +151,7 @@ void SceneScriptingManager::OnRuntimeStop()
         auto& msc = view.get<ManagedScriptComponent>(entity);
         for (auto& script : msc.Scripts)
         {
-            script.Destroy();
+            DestroyManagedScriptInstance(script);
         }
     }
 }
@@ -323,22 +336,6 @@ void SceneScriptingManager::OnRenderUI()
     }
 
     SetContextScene(nullptr);
-}
-
-void ManagedScriptInstance::Destroy()
-{
-    if (HasInstance())
-    {
-        auto* obj = static_cast<Coral::ManagedObject*>(GetRaw());
-        if (obj->IsValid()) obj->InvokeMethod("OnDestroy");
-    }
-    ResetRuntimeState();
-}
-
-void ManagedScriptInstance::ResetRuntimeState()
-{
-    Instance.reset(); // shared_ptr deleter handles Coral::ManagedObject cleanup
-    NeedsStart = true;
 }
 
 } // namespace CHEngine

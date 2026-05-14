@@ -1,9 +1,9 @@
 #ifndef CH_BASE_H
 #define CH_BASE_H
 
- #define GLM_ENABLE_EXPERIMENTAL
+#define GLM_ENABLE_EXPERIMENTAL
+#include "engine/core/ch_structures.h"
 #include "engine/core/log.h"
-#include "engine/core/ch_math.h"
 #include <memory>
 
 #include "engine/core/platform_detection.h"
@@ -30,7 +30,6 @@
 #define CH_DEBUGBREAK()
 #endif
 
-
 // Macro helpers
 #define CH_EXPAND_MACRO(x) x
 #define CH_STRINGIFY_MACRO(x) #x
@@ -39,8 +38,6 @@
 #define CH_ENABLE_ASSERTS
 #endif
 
-
-
 // Bit manipulation
 #define BIT(x) (1 << (x))
 
@@ -48,11 +45,9 @@
 #define CH_BIND_EVENT_FN(fn)                                                                                           \
     [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
 
-
 // --- Scripting & Reflection Macros ---
 #define CH_CLASS(...)
 #define CH_PROPERTY(...)
 #define CH_FUNCTION(...)
 
 #endif // CH_BASE_H
-

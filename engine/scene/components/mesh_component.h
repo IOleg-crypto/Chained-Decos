@@ -31,10 +31,10 @@ struct MaterialSlot
     }
 
     CH_REFLECT_BEGIN(MaterialSlot)
-        props.Property("Name", Name);
-        props.Property("Index", Index);
-        props.Property("Target", (int&)Target);
-        props.Nested("Material", Material);
+        CH_PROP(props, Name);
+        CH_PROP(props, Index);
+        CH_PROP_NAMED(props, "Target", (int&)Target);
+        CH_NESTED_NAMED(props, "Material", Material);
     CH_REFLECT_END()
 };
 
@@ -52,18 +52,15 @@ struct ModelComponent
     {
     }
     CH_REFLECT_BEGIN(ModelComponent)
-        props.Header("Model Asset");
+        CH_HEADER(props, "Model Asset");
         if (props.GetMode() != CHEngine::ReflectionMode::UI)
-            props.Handle("Handle", ModelHandle);
+            CH_HANDLE_NAMED(props, "Handle", ModelHandle);
         
-        if (props.File("ModelPath", ModelPath, "fbx,gltf,glb,obj"))
-        {
-            // Logic moved to AssetResolutionSystem
-        }
+        CH_FILE(props, ModelPath, "fbx,gltf,glb,obj");
 
         if (props.GetMode() != CHEngine::ReflectionMode::UI)
         {
-            props.Sequence("Materials", Materials);
+            CH_SEQUENCE_NAMED(props, "Materials", Materials);
         }
     CH_REFLECT_END()
 };
@@ -77,8 +74,8 @@ struct MaterialComponent
     MaterialComponent(const MaterialComponent&) = default;
 
     CH_REFLECT_BEGIN(MaterialComponent)
-        props.Header("Material Overrides");
-        props.Sequence("Slots", Materials);
+        CH_HEADER(props, "Material Overrides");
+        CH_SEQUENCE_NAMED(props, "Slots", Materials);
     CH_REFLECT_END()
 };
 

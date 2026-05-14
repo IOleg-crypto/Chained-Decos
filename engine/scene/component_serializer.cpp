@@ -1,12 +1,10 @@
 #include "component_serializer.h"
-#include "engine/scene/component_registry.h"
-#include "engine/scene/scripting_serialization.h"
-#include "engine/scene/hierarchy_serializer.h"
+#include "components/control_component.h"
 #include "components/id_component.h"
 #include "components/ui_action_component.h"
-#include "components/control_component.h"
-
-
+#include "engine/scene/component_registry.h"
+#include "engine/scene/hierarchy_serializer.h"
+#include "engine/scene/scripting_serialization.h"
 
 namespace CHEngine
 {
@@ -45,7 +43,9 @@ void ComponentSerializer::OnInit()
     metadata.Category = "Scripting";
     metadata.Serialize = [](YAML::Emitter& out, Entity entity) {
         if (!entity.HasComponent<ManagedScriptComponent>())
+        {
             return;
+        }
 
         auto& comp = entity.GetComponent<ManagedScriptComponent>();
         out << YAML::Key << "ManagedScriptComponent" << YAML::Value << YAML::BeginMap;
@@ -59,10 +59,14 @@ void ComponentSerializer::OnInit()
     };
     metadata.Deserialize = [](Entity entity, YAML::Node node) {
         if (!node["ManagedScriptComponent"])
+        {
             return;
+        }
 
         if (!entity.HasComponent<ManagedScriptComponent>())
+        {
             entity.AddComponent<ManagedScriptComponent>();
+        }
 
         auto& comp = entity.GetComponent<ManagedScriptComponent>();
         comp.Scripts.clear();
@@ -94,16 +98,22 @@ void ComponentSerializer::OnInit()
     metadata.GetAll = [](class Scene* s) {
         std::vector<uint64_t> ids;
         for (auto ent : s->GetRegistry().view<ManagedScriptComponent>())
+        {
             ids.push_back((uint64_t)(uint32_t)ent);
+        }
         return ids;
     };
     metadata.Add = [](Entity e) {
         if (!e.HasComponent<ManagedScriptComponent>())
+        {
             e.AddComponent<ManagedScriptComponent>();
+        }
     };
     metadata.Remove = [](Entity e) {
         if (e.HasComponent<ManagedScriptComponent>())
+        {
             e.RemoveComponent<ManagedScriptComponent>();
+        }
     };
 
     ComponentRegistry::Register(entt::type_hash<ManagedScriptComponent>::value(), metadata);
@@ -133,7 +143,6 @@ void ComponentSerializer::SerializeID(YAML::Emitter& out, Entity entity)
 
 // --- Registry Initialization ---
 
-
 void ComponentSerializer::SerializeAll(YAML::Emitter& out, Entity entity)
 {
     for (auto& [id, metadata] : ComponentRegistry::GetRegistry())
@@ -146,7 +155,7 @@ void ComponentSerializer::SerializeAll(YAML::Emitter& out, Entity entity)
         {
             // Wrap in a YAML key matching SerializationKey so DeserializeAll can find it
             out << YAML::Key << metadata.SerializationKey << YAML::Value << YAML::BeginMap;
-            SerializationUtils::PropertyArchive archive(out);
+            Serialization::PropertyArchive archive(out);
             metadata.ReflectInternal(entity, &archive, (int)ReflectionMode::Serialize);
             out << YAML::EndMap;
         }
@@ -168,12 +177,11 @@ void ComponentSerializer::DeserializeAll(Entity entity, YAML::Node node)
             // Only try if the node exists for this component
             if (node[metadata.SerializationKey])
             {
-                SerializationUtils::PropertyArchive archive(node[metadata.SerializationKey]);
+                Serialization::PropertyArchive archive(node[metadata.SerializationKey]);
                 metadata.ReflectInternal(entity, &archive, (int)ReflectionMode::Deserialize);
             }
         }
     }
-
 }
 
 void ComponentSerializer::CopyAll(Entity source, Entity destination)
@@ -185,7 +193,6 @@ void ComponentSerializer::CopyAll(Entity source, Entity destination)
             metadata.Copy(source, destination);
         }
     }
-
 }
 
 } // namespace CHEngine

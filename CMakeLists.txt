@@ -67,17 +67,18 @@ endif()
 # 3. Parallel build must be controlled by the build tool (cmake --build --parallel)
 # Never pass -j as a compiler flag, because compilers like gcc treat it as invalid.
 
-# 4. Unity builds in Release (combine multiple source files)
-# Trades disk space for faster compilation times
-if(CMAKE_BUILD_TYPE STREQUAL Release OR CMAKE_CONFIGURATION_TYPES)
-    set(CMAKE_UNITY_BUILD ON CACHE BOOL "Enable Unity builds" FORCE)
-    set(CMAKE_UNITY_BUILD_BATCH_SIZE 8 CACHE STRING "Unity build batch size")
-endif()
-
 # Dependencies
 include(cmake/CompilerSettings.cmake)
 include(cmake/Dependencies.cmake)
 include(cmake/ProjectHelpers.cmake)
+
+if(EXISTS "${CMAKE_SOURCE_DIR}/.venv/Scripts/python.exe")
+    set(CH_PYTHON_EXECUTABLE "${CMAKE_SOURCE_DIR}/.venv/Scripts/python.exe" CACHE FILEPATH "Python interpreter used for build helper scripts" FORCE)
+elseif(EXISTS "${CMAKE_SOURCE_DIR}/.venv/bin/python")
+    set(CH_PYTHON_EXECUTABLE "${CMAKE_SOURCE_DIR}/.venv/bin/python" CACHE FILEPATH "Python interpreter used for build helper scripts" FORCE)
+else()
+    find_program(CH_PYTHON_EXECUTABLE NAMES python3 python REQUIRED)
+endif()
 
 chained_generate_build_preset_header()
 
@@ -118,6 +119,6 @@ endif()
 
 # --- Post-Build Asset Sync via Python Script ---
 add_custom_target(SyncAssets ALL
-    COMMAND python "${CMAKE_SOURCE_DIR}/build_scripts/sync_assets.py" --root "${CMAKE_SOURCE_DIR}" --bin "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+    COMMAND "${CH_PYTHON_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/build_scripts/build_managed.py" sync-resources --root "${CMAKE_SOURCE_DIR}" --bin "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
     COMMENT "Syncing engine assets via Python script..."
 )

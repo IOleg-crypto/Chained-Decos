@@ -1,13 +1,13 @@
 #ifndef CH_PHYSICS_BVH_H
 #define CH_PHYSICS_BVH_H
 
-#include <vector>
-#include <memory>
 #include <glm/glm.hpp>
+#include <memory>
+#include <vector>
 
 #include "bvh_node.h"
+#include "engine/core/ch_structures.h"
 #include "engine/physics/collision/collision_triangle.h"
-#include "engine/core/ch_math.h"
 
 namespace CHEngine
 {
@@ -35,16 +35,25 @@ public:
 
     void QueryAABB(const BoundingBox& box, std::vector<const CollisionTriangle*>& outTriangles) const;
 
-    const std::vector<BVHNode>& GetNodes() const { return m_Nodes; }
-    const std::vector<CollisionTriangle>& GetTriangles() const { return m_Triangles; }
-    const std::vector<uint32_t>& GetPrimitiveIndices() const { return m_PrimitiveIndices; }
+    const std::vector<BVHNode>& GetNodes() const
+    {
+        return m_Nodes;
+    }
+    const std::vector<CollisionTriangle>& GetTriangles() const
+    {
+        return m_Triangles;
+    }
+    const std::vector<uint32_t>& GetPrimitiveIndices() const
+    {
+        return m_PrimitiveIndices;
+    }
 
 private:
     void UpdateNodeBounds(uint32_t nodeIdx);
     void Subdivide(uint32_t nodeIdx);
 
     static bool TestAxis(const glm::vec3& axis, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2,
-                        const glm::vec3& boxCenter, const glm::vec3& boxHalfSize);
+                         const glm::vec3& boxCenter, const glm::vec3& boxHalfSize);
     static bool TriangleIntersectAABB(const CollisionTriangle& tri, const BoundingBox& box);
 
 private:

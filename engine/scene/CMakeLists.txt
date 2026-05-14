@@ -12,7 +12,6 @@ add_library(engine_scene ${SUBMODULE_LIB_TYPE}
         entity.cpp
         component_registry.cpp
         scene_picking.cpp
-        components/mesh_component.cpp
         systems/asset_resolution_system.cpp
         systems/animation_system.cpp
         systems/hierarchy_system.cpp

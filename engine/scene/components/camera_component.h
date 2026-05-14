@@ -25,21 +25,21 @@ struct CameraComponent
     CameraComponent(const CameraComponent&) = default;
 
     CH_REFLECT_BEGIN(CameraComponent)
-        props.Header("General");
-        props.Property("Primary", Primary);
-        props.Property("FixedAspectRatio", FixedAspectRatio);
+        CH_HEADER(props, "General");
+        CH_PROP(props, Primary);
+        CH_PROP(props, FixedAspectRatio);
 
-        props.Nested("Projection", Camera);
+        CH_NESTED_NAMED(props, "Projection", Camera);
 
-        if (props.BeginGroup("OrbitController", IsOrbitCamera))
+        if (CH_BEGIN_GROUP(props, "OrbitController", IsOrbitCamera))
         {
-            props.Property("Enabled", IsOrbitCamera);
-            props.Property("TargetTag", TargetEntityTag);
-            props.Property("Distance", OrbitDistance, PropertyMeta(1.0f, 100.0f, 0.5f));
-            props.Property("Yaw", OrbitYaw, PropertyMeta(-360.0f, 360.0f, 1.0f));
-            props.Property("Pitch", OrbitPitch, PropertyMeta(-90.0f, 90.0f, 1.0f));
-            props.Property("Sensitivity", LookSensitivity, PropertyMeta(0.1f, 5.0f, 0.1f));
-            props.EndGroup();
+            CH_PROP(props, IsOrbitCamera);
+            CH_PROP(props, TargetEntityTag);
+            CH_PROP_META(props, OrbitDistance, PropertyMeta(1.0f, 100.0f, 0.5f));
+            CH_PROP_META(props, OrbitYaw, PropertyMeta(-360.0f, 360.0f, 1.0f));
+            CH_PROP_META(props, OrbitPitch, PropertyMeta(-90.0f, 90.0f, 1.0f));
+            CH_PROP_META(props, LookSensitivity, PropertyMeta(0.1f, 5.0f, 0.1f));
+            CH_END_GROUP(props);
         }
     CH_REFLECT_END()
 };

@@ -51,6 +51,12 @@ bool RenderPlotLines(const PlotLinesData& pl, WidgetComponent& wc);
 bool RenderPlotHistogram(const PlotHistogramData& ph, WidgetComponent& wc);
 void RenderTabBar  (Entity tabBarEntity, const TabBarData& tb, WidgetComponent& wc, entt::registry& registry);
 
+// Centralized dispatcher that handles styling and rendering for any widget type
+struct Dispatcher
+{
+    static bool Render(Entity entity, WidgetComponent& widget, const ImVec2& screenPos, const ImVec2& size);
+};
+
 } // namespace CHEngine::UI
 
 #endif // CH_UI_WIDGET_RENDERER_H

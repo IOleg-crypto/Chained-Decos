@@ -136,13 +136,31 @@ namespace CHEngine
             for (size_t i = 0; i < values.size(); ++i)
             {
                 std::string label = "[" + std::to_string(i) + "]";
-                if constexpr (std::is_arithmetic_v<T> || std::is_same_v<T, std::string>)
+                if (m_Archive.GetReflectionMode() == ReflectionMode::UI)
                 {
-                    if (m_Archive.Property(label.c_str(), values[i])) changed = true;
+                    if constexpr (std::is_arithmetic_v<T> || std::is_same_v<T, std::string> || is_variant_v<T>)
+                    {
+                        if (m_Archive.Property(label.c_str(), values[i])) changed = true;
+                    }
+                    else
+                    {
+                        if (Nested(label.c_str(), values[i])) changed = true;
+                    }
                 }
                 else
                 {
-                    if (Nested(label.c_str(), values[i])) changed = true;
+                    // For serialization/deserialization, we don't want keys for sequence items
+                    if constexpr (std::is_arithmetic_v<T> || std::is_same_v<T, std::string> || is_variant_v<T>)
+                    {
+                        if (m_Archive.Property(nullptr, values[i])) changed = true;
+                    }
+                    else
+                    {
+                        if (m_Archive.Nested(nullptr, [&](IPropertyArchive& archive) {
+                            Properties<IPropertyArchive> props(archive);
+                            values[i].Reflect(props);
+                        })) changed = true;
+                    }
                 }
             }
 
@@ -294,5 +312,26 @@ namespace CHEngine
 
     #define CH_REFLECT_END() \
         }
+
+    #define CH_HEADER(props, label) (props).Header(label)
+    #define CH_SEPARATOR(props) (props).Separator()
+    #define CH_PROP(props, field) (props).Property(#field, field)
+    #define CH_PROP_NAMED(props, label, field) (props).Property(label, field)
+    #define CH_PROP_META(props, field, meta) (props).Property(#field, field, meta)
+    #define CH_PROP_META_NAMED(props, label, field, meta) (props).Property(label, field, meta)
+    #define CH_ENUM(props, field, names) (props).Enum(#field, field, names, static_cast<int>(CH_ARRAY_SIZE(names)))
+    #define CH_ENUM_NAMED(props, label, field, names) (props).Enum(label, field, names, static_cast<int>(CH_ARRAY_SIZE(names)))
+    #define CH_HANDLE(props, field) (props).Handle(#field, field)
+    #define CH_HANDLE_NAMED(props, label, field) (props).Handle(label, field)
+    #define CH_FILE(props, field, extensions) (props).File(#field, field, extensions)
+    #define CH_FILE_NAMED(props, label, field, extensions) (props).File(label, field, extensions)
+    #define CH_SEQUENCE(props, field) (props).Sequence(#field, field)
+    #define CH_SEQUENCE_EX(props, field, allowAddRemove) (props).Sequence(#field, field, allowAddRemove)
+    #define CH_SEQUENCE_NAMED(props, label, field) (props).Sequence(label, field)
+    #define CH_NESTED(props, field) (props).Nested(#field, field)
+    #define CH_NESTED_NAMED(props, label, field) (props).Nested(label, field)
+    #define CH_ACTION(props, label, func) (props).Action(label, func)
+    #define CH_BEGIN_GROUP(props, label, defaultOpen) (props).BeginGroup(label, defaultOpen)
+    #define CH_END_GROUP(props) (props).EndGroup()
 }
 #endif // CH_REFLECTION_H

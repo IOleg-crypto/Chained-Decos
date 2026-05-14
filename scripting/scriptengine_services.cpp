@@ -439,7 +439,7 @@ void ScriptRegistry::Discover(Coral::ManagedAssembly& appAssembly, Coral::Manage
             shortIt->second.clear();
         }
 
-        CH_CORE_TRACE("ScriptEngine: Registered script '{}' (key: '{}')", fullName, key);
+        CH_CORE_INFO("ScriptEngine: Registered script '{}' (key: '{}')", fullName, key);
     }
 
     CH_CORE_INFO("ScriptEngine: {} script(s) registered ({} short-name keys).", m_ScriptClasses.size(),

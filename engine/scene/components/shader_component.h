@@ -21,25 +21,25 @@ struct ShaderComponent
     ShaderComponent(const ShaderComponent&) = default;
 
     CH_REFLECT_BEGIN(ShaderComponent)
-        props.Header("Shader Asset");
+        CH_HEADER(props, "Shader Asset");
         if (props.GetMode() != CHEngine::ReflectionMode::UI)
         {
-            props.Handle("ShaderHandle", ShaderHandle);
+            CH_HANDLE(props, ShaderHandle);
         }
 
-        if (props.File("ShaderPath", ShaderPath, "glsl,chshader"))
+        if (CH_FILE(props, ShaderPath, "glsl,chshader"))
         {
             ShaderHandle = AssetHandle(0);
         }
 
         if (props.GetMode() != CHEngine::ReflectionMode::UI)
         {
-            props.Sequence("Uniforms", Uniforms, false);
+            CH_SEQUENCE_EX(props, Uniforms, false);
         }
 
-        props.Action("Refresh Uniforms", [&]() { ShaderHandle = AssetHandle(0); });
-        props.Action("Clear Overrides", [&]() { Uniforms.clear(); ShaderHandle = AssetHandle(0); });
-        props.Sequence("Uniforms", Uniforms, false);
+        CH_ACTION(props, "Refresh Uniforms", [&]() { ShaderHandle = AssetHandle(0); });
+        CH_ACTION(props, "Clear Overrides", [&]() { Uniforms.clear(); ShaderHandle = AssetHandle(0); });
+        CH_SEQUENCE_EX(props, Uniforms, false);
     CH_REFLECT_END()
 };
 } // namespace CHEngine
