@@ -1,13 +1,14 @@
-#ifndef ch_structures_H
-#define ch_structures_H
+#ifndef CH_STRUCTURES_H
+#define CH_STRUCTURES_H
 
+#include "engine/core/base.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 
 namespace CHEngine
 {
-struct Color
+struct CH_API Color
 {
     unsigned char r, g, b, a;
 
@@ -48,17 +49,17 @@ struct Color
     }
 };
 
-struct BoundingBox
+struct CH_API BoundingBox
 {
     glm::vec3 Min;
     glm::vec3 Max;
 };
 
-struct Ray
+struct CH_API Ray
 {
     glm::vec3 position;
     glm::vec3 direction;
 };
 } // namespace CHEngine
 
-#endif // ch_structures_H
+#endif // CH_STRUCTURES_H

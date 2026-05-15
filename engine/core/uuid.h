@@ -1,6 +1,7 @@
 #ifndef CH_UUID_H
 #define CH_UUID_H
 
+#include "engine/core/base.h"
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -8,7 +9,7 @@
 
 namespace CHEngine
 {
-class UUID
+class CH_API UUID
 {
 public:
     UUID();

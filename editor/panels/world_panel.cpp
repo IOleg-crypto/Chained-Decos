@@ -4,10 +4,12 @@
 #include "engine/assets/asset_manager.h"
 #include "engine/core/service_locator.h"
 #include "engine/graphics/assets/environment.h"
-#include "engine/platform/utils/dialogs.h"
-#include "engine/scene/project.h"
+#include "engine/core/platform.h"
+#include <format>
 #include "scene/scene.h"
+#include "engine/scene/project.h"
 #include <filesystem>
+#include <fstream>
 
 
 namespace CHEngine
@@ -87,7 +89,7 @@ void WorldPanel::OnImGuiRender(bool readOnly)
             if (ImGui::Button(ICON_FA_FOLDER_OPEN "##BGSelect"))
             {
                 std::vector<FileDialogFilter> filters = {{"Textures", "png,jpg,tga,bmp"}};
-                auto result = Dialogs::OpenFile(filters);
+                auto result = CHEngine::Platform::OpenFile(filters);
                 if (result)
                 {
                     std::filesystem::path p = *result;
@@ -162,7 +164,7 @@ void WorldPanel::OnImGuiRender(bool readOnly)
         if (ImGui::Button(ICON_FA_FILE_IMPORT " Load Environment"))
         {
             std::vector<FileDialogFilter> filters = {{"Environment", "chenv"}};
-            auto result = Dialogs::OpenFile(filters);
+            auto result = CHEngine::Platform::OpenFile(filters);
             if (result)
             {
                 if (auto project = Project::GetActive())
@@ -177,7 +179,7 @@ void WorldPanel::OnImGuiRender(bool readOnly)
         if (ImGui::Button(ICON_FA_FILE_CIRCLE_PLUS " New"))
         {
             std::vector<FileDialogFilter> filters = {{"Environment", "chenv"}};
-            auto result = Dialogs::SaveFile(filters);
+            auto result = CHEngine::Platform::SaveFile(filters);
             if (result)
             {
                 auto newEnv = std::make_shared<EnvironmentAsset>();
@@ -353,7 +355,7 @@ void WorldPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, 
         if (ImGui::Button(ICON_FA_FOLDER_OPEN "##SkySelect"))
         {
             std::vector<FileDialogFilter> filters = {{"Textures/HDR", "png,jpg,hdr"}};
-            auto result = Dialogs::OpenFile(filters);
+            auto result = CHEngine::Platform::OpenFile(filters);
             if (result)
             {
                 std::filesystem::path p = *result;

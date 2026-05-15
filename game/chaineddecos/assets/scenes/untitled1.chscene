@@ -155,10 +155,11 @@ Entities:
       OrbitPitch: 13.4000015
       LookSensitivity: 0.899999976
       TargetEntityTag: Player
-      ProjectionType: 0
-      PerspectiveFOV: 1.04719758
-      PerspectiveNear: 0.100000001
-      PerspectiveFar: 1000
+      Projection:
+        Projection: 0
+        VerticalFOV: 60
+        Near: 0.1
+        Far: 1000
     ManagedScriptComponent:
       Scripts:
         - ClassName: chaineddecos.scripts.cameracontroller
@@ -178,7 +179,8 @@ Entities:
       OrbitPitch: 20
       LookSensitivity: 0.899999976
       TargetEntityTag: Player
-      ProjectionType: 0
-      PerspectiveFOV: 1.04719758
-      PerspectiveNear: 0.00999999978
-      PerspectiveFar: 1000
+      Projection:
+        Projection: 0
+        VerticalFOV: 60
+        Near: 0.01
+        Far: 1000

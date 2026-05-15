@@ -9,6 +9,12 @@ endif()
 # We use STATIC libraries for sub-modules to ensure binary stability and avoid DLL ABI issues in MinGW
 set(SUBMODULE_LIB_TYPE STATIC)
 
+# If building as a shared library, all internal static sub-modules need to be aware
+# they are part of a DLL build so they can dllexport their symbols.
+if(CH_ENGINE_SHARED)
+    add_compile_definitions(CH_DYNAMIC_LINK CH_ENGINE_BUILD)
+endif()
+
 add_subdirectory(core)
 add_subdirectory(assets)
 add_subdirectory(graphics)
@@ -38,12 +44,14 @@ if (NOT CH_ENGINE_SHARED)
 endif()
 
 target_compile_definitions(engine PRIVATE CH_ENGINE_BUILD)
-target_compile_definitions(engine PUBLIC 
-    CH_DYNAMIC_LINK
-)
 
-# MSVC needs exported symbols to generate the .lib import library
-set_target_properties(engine PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+if(CH_ENGINE_SHARED)
+    target_compile_definitions(engine PUBLIC 
+        CH_DYNAMIC_LINK
+    )
+endif()
+
+# MSVC doesn't need WINDOWS_EXPORT_ALL_SYMBOLS anymore since we use CH_API
 if(WIN32)
     set_target_properties(engine PROPERTIES PREFIX "")
 endif()

@@ -28,7 +28,7 @@ namespace CHEngine
     };
 
     // Widget rendering hints for UI properties
-    struct PropertyMeta
+    struct CH_API PropertyMeta
     {
         enum class WidgetHint
         {
@@ -62,7 +62,7 @@ namespace CHEngine
     /**
      * @brief Interface for any archive that can handle reflected properties.
      */
-    class IPropertyArchive
+    class CH_API IPropertyArchive
     {
     public:
         virtual ~IPropertyArchive() = default;

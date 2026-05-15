@@ -34,6 +34,29 @@ function(chained_add_csharp_scripts TARGET_NAME CSHARP_PROJECT_PATH)
     endif()
 endfunction()
 
+# Helper function to standardize engine sub-module creation
+function(chained_add_engine_module TARGET_NAME)
+    set(options)
+    set(oneValueArgs)
+    set(multiValueArgs SOURCES DEPENDS)
+    cmake_parse_arguments(MODULE "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    add_library(${TARGET_NAME} ${SUBMODULE_LIB_TYPE} ${MODULE_SOURCES})
+    
+    target_include_directories(${TARGET_NAME} PUBLIC
+        ${CMAKE_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+
+    if(MODULE_DEPENDS)
+        target_link_libraries(${TARGET_NAME} PUBLIC ${MODULE_DEPENDS})
+    endif()
+
+    if(COMMAND apply_engine_optimizations)
+        apply_engine_optimizations(${TARGET_NAME})
+    endif()
+endfunction()
+
 # Internal helper to apply common configuration to game-related targets
 macro(_chained_configure_game_target TGT)
     target_include_directories(${TGT} PUBLIC 
