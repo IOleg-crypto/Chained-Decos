@@ -18,12 +18,7 @@
 #include <filesystem>
 #include <nfd.h>
 
-#if defined(CH_PLATFORM_WINDOWS)
-#include <windows.h>
-#elif defined(CH_PLATFORM_LINUX)
-#include <unistd.h>
-#endif
-
+#include "engine/core/platform.h"
 #include "engine/core/module_registry.h"
 
 namespace CHEngine
@@ -32,17 +27,7 @@ Application* Application::s_Instance = nullptr;
 
 std::filesystem::path Application::GetExecutableDirectory()
 {
-#if defined(CH_PLATFORM_WINDOWS)
-    wchar_t path[MAX_PATH];
-    GetModuleFileNameW(NULL, path, MAX_PATH);
-    return std::filesystem::path(path).parent_path();
-#elif defined(CH_PLATFORM_LINUX)
-    char path[1024];
-    ssize_t count = readlink("/proc/self/exe", path, sizeof(path));
-    return std::filesystem::path(std::string(path, (count > 0) ? count : 0)).parent_path();
-#else
-    return std::filesystem::current_path();
-#endif
+    return CHEngine::Platform::GetExecutableDirectory();
 }
 
 Application::Application(const ApplicationSpecification& spec)
@@ -150,7 +135,7 @@ void Application::Run()
 {
     while (m_Running && (!m_Window || !m_Window->ShouldClose()))
     {
-        float time = (float)glfwGetTime();
+        float time = CHEngine::Platform::GetTime();
         m_Timer.DeltaTime = Timestep(time - m_Timer.LastFrameTime);
         m_Timer.LastFrameTime = time;
 

@@ -14,7 +14,7 @@
       "cacheVariables": {
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "CMAKE_CXX_EXTENSIONS": "OFF",
-        "BUILD_TESTS": "ON",
+        "BUILD_TESTS": "OFF",
         "DISABLE_ALL_WARNINGS": "ON",
         "CH_ENGINE_SHARED": "OFF",
         "CH_ACTIVE_GAME": "chaineddecos",
@@ -27,36 +27,16 @@
       "inherits": "base",
       "generator": "Ninja",
       "cacheVariables": {
+        "ENABLE_UNITY_BUILD": "OFF",
+        "CMAKE_SUPPRESS_REGENERATION": "ON"
+      }
+    },
+    {
+      "name": "windows-ninja-debug",
+      "displayName": "Windows Ninja Debug",
+      "inherits": "ninja-base",
+      "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
-      }
-    },
-    {
-      "name": "linux-gcc",
-      "displayName": "Linux GCC",
-      "inherits": "ninja-base",
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
-      }
-    },
-    {
-      "name": "linux-clang",
-      "displayName": "Linux Clang",
-      "inherits": "ninja-base",
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
-      }
-    },
-    {
-      "name": "windows-ninja",
-      "displayName": "Windows Ninja",
-      "inherits": "ninja-base",
-      "cacheVariables": {
-        "ENABLE_UNITY_BUILD": "OFF",
-        "CMAKE_SUPPRESS_REGENERATION": "ON"
       },
       "condition": {
         "type": "equals",
@@ -65,12 +45,11 @@
       }
     },
     {
-      "name": "windows-mingw-base",
-      "hidden": true,
+      "name": "windows-ninja-release",
+      "displayName": "Windows Ninja Release",
       "inherits": "ninja-base",
       "cacheVariables": {
-        "ENABLE_UNITY_BUILD": "OFF",
-        "CMAKE_SUPPRESS_REGENERATION": "ON"
+        "CMAKE_BUILD_TYPE": "Release"
       },
       "condition": {
         "type": "equals",
@@ -79,57 +58,31 @@
       }
     },
     {
-      "name": "windows-gcc",
-      "displayName": "Windows GCC (MSYS2)",
-      "inherits": "windows-mingw-base",
+      "name": "linux-ninja-debug",
+      "displayName": "Linux Ninja Debug",
+      "inherits": "ninja-base",
       "cacheVariables": {
-        "CMAKE_C_COMPILER": "gcc",
-        "CMAKE_CXX_COMPILER": "g++"
-      }
-    },
-    {
-      "name": "windows-clang",
-      "displayName": "Windows Clang (MSYS2)",
-      "inherits": "windows-mingw-base",
-      "cacheVariables": {
-        "CMAKE_C_COMPILER": "clang",
-        "CMAKE_CXX_COMPILER": "clang++"
-      }
-    },
-    {
-      "name": "windows-msvc",
-      "displayName": "Windows MSVC",
-      "inherits": "windows-ninja",
-      "cacheVariables": {
-        "CMAKE_C_COMPILER": "cl",
-        "CMAKE_CXX_COMPILER": "cl"
+        "CMAKE_BUILD_TYPE": "Debug"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
       }
     }
   ],
   "buildPresets": [
     {
-      "name": "linux-gcc",
-      "configurePreset": "linux-gcc"
+      "name": "windows-ninja-debug",
+      "configurePreset": "windows-ninja-debug"
     },
     {
-      "name": "linux-clang",
-      "configurePreset": "linux-clang"
+      "name": "windows-ninja-release",
+      "configurePreset": "windows-ninja-release"
     },
     {
-      "name": "windows-ninja",
-      "configurePreset": "windows-ninja"
-    },
-    {
-      "name": "windows-gcc",
-      "configurePreset": "windows-gcc"
-    },
-    {
-      "name": "windows-clang",
-      "configurePreset": "windows-clang"
-    },
-    {
-      "name": "windows-msvc",
-      "configurePreset": "windows-msvc"
+      "name": "linux-ninja-debug",
+      "configurePreset": "linux-ninja-debug"
     }
   ]
 }

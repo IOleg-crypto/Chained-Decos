@@ -25,7 +25,7 @@ class SceneScriptingManager;
 class SceneSystemManager;
 
 // Owns the scene registry, scene settings, and the runtime/editor update bridge.
-class Scene
+class CH_API Scene
 {
 public:
     Scene(ScriptEngine* scriptEngine = nullptr);

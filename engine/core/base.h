@@ -2,11 +2,26 @@
 #define CH_BASE_H
 
 #define GLM_ENABLE_EXPERIMENTAL
-#include "engine/core/ch_structures.h"
-#include "engine/core/log.h"
 #include <memory>
 
 #include "engine/core/platform_detection.h"
+
+// DLL Export/Import Macros
+#if CH_PLATFORM_WINDOWS
+    #if CH_DYNAMIC_LINK
+        #ifdef CH_ENGINE_BUILD
+            #define CH_API __declspec(dllexport)
+        #else
+            #define CH_API __declspec(dllimport)
+        #endif
+    #else
+        #define CH_API
+    #endif
+#elif CH_PLATFORM_LINUX
+    #define CH_API __attribute__((visibility("default")))
+#else
+    #define CH_API
+#endif
 
 // Debug/Release detection
 #ifdef _DEBUG
@@ -49,5 +64,9 @@
 #define CH_CLASS(...)
 #define CH_PROPERTY(...)
 #define CH_FUNCTION(...)
+
+// Core engine headers (depend on macros above)
+#include "engine/core/ch_structures.h"
+#include "engine/core/log.h"
 
 #endif // CH_BASE_H

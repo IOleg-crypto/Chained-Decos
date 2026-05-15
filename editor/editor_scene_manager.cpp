@@ -11,7 +11,8 @@
 #include "engine/core/key_codes.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/core/service_locator.h"
-#include "engine/platform/utils/dialogs.h"
+#include "engine/core/platform.h"
+#include <algorithm>
 #include "engine/scene/scene_events.h"
 
 namespace CHEngine
@@ -32,7 +33,7 @@ void EditorSceneManager::NewScene()
 void EditorSceneManager::OpenScene()
 {
     std::vector<FileDialogFilter> filters = {{"Chained Scene", "chscene"}};
-    auto result = Dialogs::OpenFile(filters);
+    auto result = CHEngine::Platform::OpenFile(filters);
     if (result)
     {
         OpenScene(*result);
@@ -70,7 +71,7 @@ void EditorSceneManager::SaveScene()
 void EditorSceneManager::SaveSceneAs()
 {
     std::vector<FileDialogFilter> filters = {{"Chained Scene", "chscene"}};
-    auto result = Dialogs::SaveFile(filters);
+    auto result = CHEngine::Platform::SaveFile(filters);
     if (result)
     {
         auto scene = GetActiveScene();

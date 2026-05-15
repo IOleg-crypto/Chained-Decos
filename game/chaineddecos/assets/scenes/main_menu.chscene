@@ -71,14 +71,11 @@ Entities:
   CameraComponent:
     Primary: true
     FixedAspectRatio: false
-    Camera:
-      ProjectionType: 0
-      PerspectiveFOV: 45
-      PerspectiveNear: 0.1
-      PerspectiveFar: 1000
-      OrthographicSize: 10
-      OrthographicNear: -1
-      OrthographicFar: 1
+    Projection:
+      Projection: 0
+      VerticalFOV: 45
+      Near: 0.1
+      Far: 1000
 - Entity: 17694975162465223617
   TagComponent:
     Tag: title_image

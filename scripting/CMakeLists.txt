@@ -1,46 +1,35 @@
-add_library(engine_scripting ${SUBMODULE_LIB_TYPE}
-    scriptengine.h
-    scriptengine.cpp
-    scriptengine_services.h
-    scriptengine_services.cpp
-    script_glue.h
-    script_glue.cpp
-    script_glue_internal.h
-    script_glue_system.cpp
-    script_glue_input.cpp
-    script_glue_network.cpp
-    script_glue_scene.cpp
-    script_glue_entity.cpp
-    script_glue_camera.cpp
-    script_glue_ui.cpp
-    script_glue_audio.cpp
-)
-
-target_include_directories(engine_scripting PUBLIC
-    ${CMAKE_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}
+chained_add_engine_module(engine_scripting
+    SOURCES
+        scriptengine.h
+        scriptengine.cpp
+        scriptengine_services.h
+        scriptengine_services.cpp
+        script_glue.h
+        script_glue.cpp
+        script_glue_internal.h
+        script_glue_system.cpp
+        script_glue_input.cpp
+        script_glue_network.cpp
+        script_glue_scene.cpp
+        script_glue_entity.cpp
+        script_glue_camera.cpp
+        script_glue_ui.cpp
+        script_glue_audio.cpp
+    DEPENDS
+        engine_core
+        engine_audio
+        engine_physics
+        ChainedEngine::External::YamlCpp
+        ChainedEngine::External::EnTT
+        ChainedEngine::External::GLM
+        ChainedEngine::External::Coral
+        ChainedEngine::External::Miniaudio
 )
 
 if(CH_BUILD_PRESET_NAMES_INCLUDE_DIR)
     target_include_directories(engine_scripting PRIVATE
         ${CH_BUILD_PRESET_NAMES_INCLUDE_DIR}
     )
-endif()
-
-target_link_libraries(engine_scripting 
-PUBLIC 
-    engine_core
-    engine_audio
-    engine_physics
-    ChainedEngine::External::YamlCpp
-    ChainedEngine::External::EnTT
-    ChainedEngine::External::GLM
-    ChainedEngine::External::Coral
-    ChainedEngine::External::Miniaudio
-)
-
-if(COMMAND apply_engine_optimizations)
-    apply_engine_optimizations(engine_scripting)
 endif()
 
 if(MSVC)

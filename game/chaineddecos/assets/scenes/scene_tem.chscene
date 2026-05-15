@@ -607,10 +607,8 @@ Entities:
   ManagedScriptComponent:
     Scripts:
     - ClassName: PlayerController
-    - ClassName: CameraController
     - ClassName: GameHUD
     - ClassName: SpawnZoneRespawn
-    - ClassName: PlayerController
 - Entity: 1283719283719287
   TagComponent:
     Tag: Entity
@@ -801,3 +799,30 @@ Entities:
       DoubleSided: false
       Transparent: false
       Alpha: 1
+- Entity: 1234567890987654321
+  TagComponent:
+    Tag: Main Camera
+  TransformComponent:
+    Translation:
+    - 0
+    - 10
+    - 20
+    Rotation:
+    - -30
+    - 0
+    - 0
+    Scale:
+    - 1
+    - 1
+    - 1
+  CameraComponent:
+    Primary: true
+    FixedAspectRatio: false
+    Projection:
+      Projection: 0
+      VerticalFOV: 45
+      Near: 0.1
+      Far: 1000
+  ManagedScriptComponent:
+    Scripts:
+    - ClassName: CameraController

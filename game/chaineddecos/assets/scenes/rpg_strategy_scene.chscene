@@ -1451,7 +1451,6 @@ Entities:
     ManagedScriptComponent:
       Scripts:
         - ClassName: chaineddecos.scripts.playercontroller
-        - ClassName: chaineddecos.scripts.cameracontroller
         - ClassName: chaineddecos.scripts.playerfall
         - ClassName: chaineddecos.scripts.debuginfoscript
         - ClassName: chaineddecos.scripts.gamehud

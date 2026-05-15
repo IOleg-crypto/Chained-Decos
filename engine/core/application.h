@@ -1,6 +1,7 @@
 #ifndef CH_APPLICATION_H
 #define CH_APPLICATION_H
 
+#include "engine/core/base.h"
 #include "engine/core/engine_service.h"
 #include "engine/core/events.h"
 #include "engine/core/layer_stack.h"
@@ -40,7 +41,7 @@ struct ApplicationSpecification
     std::string ImGuiConfigurationPath = "imgui.ini";
 };
 
-class Application
+class CH_API Application
 {
 public:
     Application(const ApplicationSpecification& specification);
