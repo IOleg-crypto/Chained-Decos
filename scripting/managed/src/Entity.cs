@@ -368,11 +368,13 @@ public class SpriteComponent : Component
 public class ButtonControl : Component
 {
 #pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, bool> ButtonControl_IsPressed_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool> ButtonControl_IsClicked_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool> ButtonControl_IsDown_Ptr;
 #pragma warning restore 0649
 
-    private static unsafe bool IsPressed_Native(ulong entityID) => ButtonControl_IsPressed_Ptr(entityID);
-    public bool IsPressed => IsPressed_Native(Entity.ID);
+    public bool IsClicked { get { unsafe { return ButtonControl_IsClicked_Ptr(Entity.ID); } } }
+    public bool IsDown    { get { unsafe { return ButtonControl_IsDown_Ptr(Entity.ID); } } }
+    public bool IsPressed => IsClicked; // Alias for backward compatibility
 }
 
 /// <summary>Checkbox wrapper.</summary>

@@ -40,6 +40,13 @@ ContentBrowserPanel::~ContentBrowserPanel()
 
 void ContentBrowserPanel::OnImGuiRender(bool readOnly)
 {
+    if (!m_NextDirectory.empty())
+    {
+        m_CurrentDirectory = m_NextDirectory;
+        m_NextDirectory.clear();
+        RefreshDirectory();
+    }
+
     if (!m_IsOpen)
     {
         return;
@@ -168,6 +175,13 @@ void ContentBrowserPanel::RenderGridView()
     }
 
     ImGui::Columns(columnCount, nullptr, false);
+
+    if (m_CurrentAssets.empty())
+    {
+        ImGui::TextDisabled("Empty directory or No assets found matching filters.");
+        ImGui::Columns(1);
+        return;
+    }
 
     int i = 0;
     for (auto& asset : m_CurrentAssets)
@@ -365,8 +379,7 @@ void ContentBrowserPanel::OnAssetDoubleClicked(AssetEntry& entry)
 {
     if (entry.isDirectory)
     {
-        m_CurrentDirectory = entry.path;
-        RefreshDirectory();
+        m_NextDirectory = entry.path;
     }
     else if (entry.type == EditorAssetType::Scene)
     {
@@ -442,6 +455,11 @@ void ContentBrowserPanel::ScanCurrentDirectory()
         }
 
         m_CurrentAssets.push_back(entry);
+    }
+
+    if (m_CurrentAssets.empty())
+    {
+        return;
     }
 
     // Sort: Directories first, then alphabetical

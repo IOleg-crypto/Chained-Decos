@@ -192,6 +192,11 @@ void UIRenderer::DrawCanvas(Scene* scene, const ImVec2& referencePosition, const
 
     auto uiEntities = SortUIEntities(registry);
 
+    if (m_InputCooldownFrames > 0)
+    {
+        m_InputCooldownFrames--;
+    }
+
     const int frameNumber = ImGui::GetFrameCount();
     static int s_LastResetFrame = -1;
     static void* s_LastResetRegistry = nullptr;

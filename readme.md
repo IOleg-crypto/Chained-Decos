@@ -59,9 +59,9 @@ Main capabilities:
 
 For a more detailed look at specific engine systems, please refer to the following guides:
 
-*   [**Engine Architecture**](docs/ARCHITECTURE.md): Bootstrapping, system initialization (SRP), and the main loop.
-*   [**Component Reference**](docs/COMPONENTS.md): Complete list of available ECS components and their roles.
-*   [**Scripting API Guide**](docs/SCRIPTING_API.md): Detailed reference for managed C# development.
+- [**Engine Architecture**](docs/ARCHITECTURE.md): Bootstrapping, system initialization (SRP), and the main loop.
+- [**Component Reference**](docs/COMPONENTS.md): Complete list of available ECS components and their roles.
+- [**Scripting API Guide**](docs/SCRIPTING_API.md): Detailed reference for managed C# development.
 
 ## Editor and Simulation Workflow
 
@@ -97,7 +97,7 @@ Chained Engine follows a layered architecture with a Hazel-inspired service/sing
 
 Core layers:
 
-- **Engine Core**: Rendering, scene, physics, audio, assets, platform abstractions.
+- **Engine Core**: Rendering, scene management, native logic systems (e.g., transitions, hierarchy), physics, audio, and platform abstractions.
 - **Bootstrapping**: `ProjectLauncher` utility that handles headless/runtime/editor initialization using a data-driven approach.
 - **Editor**: Content workflows, scene inspection/manipulation, panel-based tooling.
 - **Runtime**: Lightweight executable that loads and runs a project based on its `.chproject` metadata.
@@ -151,7 +151,17 @@ Want to start a new game from scratch? Here is how to hook it up:
        }
    }
    ```
-4. **Register it:** Open the *root* `CMakeLists.txt`, find the `if(CH_ACTIVE_GAME STREQUAL "...")` block, and add your new game to the list.
+### Project Configuration (`.chproject`)
+
+Each game has a metadata file that defines its entry scene and title:
+
+```yaml
+Project:
+  Name: Chained Decos
+  AssetDirectory: assets
+  ScriptsDirectory: scripts/bin
+  StartScene: scenes/start_menu.chscene
+```
 
 ## Project Structure
 
@@ -401,22 +411,21 @@ protected override void OnCollisionEnter(Entity other)
 
 ## In-Game UI
 
-While the Editor UI is drawn using ImGui, the gameplay (In-Game) UI meant for players is accessed through the managed scripting wrapper.
+While the Editor UI is drawn using ImGui, the gameplay (In-Game) UI meant for players can be handled in two ways:
 
-To draw simple HUDs or text menus:
-1. Override the `OnGUI` method in your C# script.
-2. Call static helpers from the `UI` class.
+1. **Automated Components (Recommended)**: Use `WidgetComponent` for visuals and `SceneTransitionComponent` for automated scene loading. This is handled natively by the engine and is the fastest way to build menus.
+2. **Managed Scripting (IMGUI-style)**: For custom logic, override the `OnGUI` method in your C# script and use the `UI` helper class.
 
 ```csharp
 protected override void OnGUI()
 {
-    // Draw some simple text on screen
+    // Draw simple HUD text
     UI.DrawText("Stamina: 100", new Vector2(10.0f, 10.0f), Color.White);
 
-    // Render a button and check if clicked
-    if (UI.DrawButton("Restart Parkour", new Vector2(100.0f, 200.0f)))
+    // Custom button logic (if not using SceneTransitionComponent)
+    if (UI.DrawButton("Reset Stats", new Vector2(100.0f, 200.0f)))
     {
-        // Restart logic here
+        // Custom logic here
     }
 }
 ```
@@ -434,7 +443,25 @@ Need performance that scripting can't provide, or want to create a brand new fou
    ```
 2. **Support Serialization:** If you want editors to save or load it with the level, update `scene_serializer.cpp` or `yaml_extensions` so YAML knows how to read/write it.
 3. **Expose It to the Editor:** Open `editor/editor_panels.cpp` and add the `ImGui` draw logic for `ParkourStateComponent`.
-4. **Register Loaders (if needed):** If your component needs a custom asset type, register its loader in the appropriate system (e.g., `Renderer::Init()` for graphics assets) to maintain Single Responsibility Principle compliance.
+### 4. Create a System
+Implement the logic that processes these components in a `SceneSystem`.
+
+```cpp
+class ParkourSystem : public SceneSystem {
+public:
+    void OnUpdate(Scene* scene, Timestep ts) override {
+        auto view = scene->GetRegistry().view<ParkourStateComponent, TransformComponent>();
+        for (auto entity : view) {
+            auto& [state, transform] = view.get<ParkourStateComponent, TransformComponent>(entity);
+            if (state.IsWallRunning) {
+                // Apply wallrun physics logic...
+            }
+        }
+    }
+};
+```
+
+5. **Register Loaders (if needed):** If your component needs a custom asset type, register its loader in the appropriate system (e.g., `Renderer::Init()` for graphics assets) to maintain Single Responsibility Principle compliance.
 
 ## Debugging and Profiling
 

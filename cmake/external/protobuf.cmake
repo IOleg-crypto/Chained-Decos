@@ -11,6 +11,14 @@ set(protobuf_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(protobuf_BUILD_PROTOC_BINARIES ON CACHE BOOL "" FORCE)
 set(protobuf_MSVC_STATIC_RUNTIME OFF CACHE BOOL "" FORCE)
 set(protobuf_WITH_ZLIB OFF CACHE BOOL "" FORCE)
+set(protobuf_BUILD_LIBPROTOC ON CACHE BOOL "" FORCE)
+
+# Fix for Clang on Windows: Protobuf incorrectly detects POSIX-like capabilities
+if(WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    message(STATUS "Protobuf: Applying Clang-on-Windows fix (disabling version scripts and forcing builtin atomics)")
+    set(protobuf_HAVE_LD_VERSION_SCRIPT OFF CACHE BOOL "" FORCE)
+    set(protobuf_HAVE_BUILTIN_ATOMICS ON CACHE BOOL "" FORCE)
+endif()
 
 FetchContent_Declare(
     protobuf

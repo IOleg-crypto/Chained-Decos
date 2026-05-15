@@ -39,6 +39,9 @@ public:
     // Computes the screen-space bounds for a UI entity.
     UIRect GetEntityRect(Scene* scene, Entity entity, const ImVec2& viewportSize, const ImVec2& viewportPos);
 
+    void ResetInputCooldown(int frames = 5) { m_InputCooldownFrames = frames; }
+    int  GetInputCooldown() const { return m_InputCooldownFrames; }
+
     UIFontRegistry&       GetFontRegistry()       { return m_FontRegistry; }
     const UIFontRegistry& GetFontRegistry() const  { return m_FontRegistry; }
 
@@ -55,6 +58,7 @@ private:
 
     UIFontRegistry    m_FontRegistry;
     bool m_Initialized = false;
+    int m_InputCooldownFrames = 0;
 };
 
 } // namespace CHEngine
