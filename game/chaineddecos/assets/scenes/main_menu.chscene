@@ -271,9 +271,6 @@ Entities:
     Label: Start Game
     Interactable: true
     Auto Size: false
-  ManagedScriptComponent:
-    Scripts:
-    - ClassName: ChainedDecos.Scripts.SceneScript
     - ClassName: ChainedDecos.Scripts.DebugInfoScript
 - Entity: 17229056952832949834
   TagComponent:
@@ -370,9 +367,6 @@ Entities:
     Label: Info
     Interactable: true
     Auto Size: false
-  ManagedScriptComponent:
-    Scripts:
-    - ClassName: ChainedDecos.Scripts.SceneScript
 - Entity: 10048507876963945433
   TagComponent:
     Tag: Options
@@ -468,9 +462,6 @@ Entities:
     Label: Options
     Interactable: true
     Auto Size: false
-  ManagedScriptComponent:
-    Scripts:
-    - ClassName: ChainedDecos.Scripts.SceneScript
 - Entity: 9971589997937633979
   TagComponent:
     Tag: Exit

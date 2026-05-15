@@ -16,6 +16,7 @@
 #include "components/primitive_component.h"
 #include "components/scripting_components.h"
 #include "components/shader_component.h"
+#include "components/scene_transition_component.h"
 #include "components/sprite_component.h"
 #include "components/tag_component.h"
 #include "components/transform_component.h"

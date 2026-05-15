@@ -16,6 +16,8 @@ chained_add_engine_module(engine_scene
         systems/asset_resolution_system.cpp
         systems/animation_system.cpp
         systems/hierarchy_system.cpp
+        systems/scene_transition_system.cpp
+        systems/scene_transition_system.h
         animation_systems.cpp
         systems/scene_audio_system.cpp
         systems/animation_graph_system.cpp
