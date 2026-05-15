@@ -36,6 +36,12 @@ DebugSettings:
   CollisionWireframeMode: 0
 Entities:
   - Entity: 15051911593141375302
+    ManagedScriptComponent:
+      Scripts:
+        []
+    Scene TransitionComponent:
+      Target Scene Path: scenes/info_scene.chscene
+      Triggered: false
     WidgetComponent:
       Box Style:
         BG Color: [40, 40, 40, 255]
@@ -62,12 +68,6 @@ Entities:
       Label: Info
       Interactable: true
       Auto Size: false
-    ManagedScriptComponent:
-      Scripts:
-        - ClassName: chaineddecos.scripts.scenescript
-    SceneTransitionComponent:
-      TargetScenePath: scenes/info_scene.chscene
-      Triggered: false
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -184,6 +184,9 @@ Entities:
       Active: true
       Hidden: false
   - Entity: 12750009872668354234
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: chaineddecos.scripts.exitscript
     WidgetComponent:
       Box Style:
         BG Color: [63, 40, 40, 255]
@@ -210,9 +213,6 @@ Entities:
       Label: Exit
       Interactable: true
       Auto Size: false
-    ManagedScriptComponent:
-      Scripts:
-        - ClassName: chaineddecos.scripts.exitscript
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -234,6 +234,12 @@ Entities:
       Active: true
       Hidden: false
   - Entity: 11188570711873615005
+    ManagedScriptComponent:
+      Scripts:
+        []
+    Scene TransitionComponent:
+      Target Scene Path: scenes/game_mode_selection.chscene
+      Triggered: false
     WidgetComponent:
       Box Style:
         BG Color: [40, 40, 40, 255]
@@ -260,12 +266,6 @@ Entities:
       Label: Start
       Interactable: true
       Auto Size: false
-    ManagedScriptComponent:
-      Scripts:
-        - ClassName: chaineddecos.scripts.scenescript
-    SceneTransitionComponent:
-      TargetScenePath: scenes/game_mode_selection.chscene
-      Triggered: true
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -287,6 +287,9 @@ Entities:
       Active: true
       Hidden: false
   - Entity: 13765047633248252361
+    Scene TransitionComponent:
+      Target Scene Path: scenes/video_scene.chscene
+      Triggered: false
     WidgetComponent:
       Box Style:
         BG Color: [40, 40, 40, 255]
@@ -313,12 +316,6 @@ Entities:
       Label: Options
       Interactable: true
       Auto Size: false
-    ManagedScriptComponent:
-      Scripts:
-        - ClassName: chaineddecos.scripts.scenescript
-    SceneTransitionComponent:
-      TargetScenePath: scenes/video_scene.chscene
-      Triggered: false
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]

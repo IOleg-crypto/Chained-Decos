@@ -3,7 +3,7 @@ Project:
   IconPath: resources/icons/chaineddecos.jpg
   StartScene: scenes/start_menu.chscene
   AssetDirectory: assets
-  ActiveScene: assets/scenes/video_scene.chscene
+  ActiveScene: scenes/test_platform_scene.chscene
   Environment: ""
   BuildScenes:
     - scenes/start_menu.chscene

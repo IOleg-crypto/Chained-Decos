@@ -22,6 +22,7 @@
 #include <glm/gtx/norm.hpp>
 
 using namespace entt::literals;
+#include "engine/scene/systems/scene_transition_system.h"
 
 namespace CHEngine
 {
@@ -54,6 +55,7 @@ Scene::Scene(ScriptEngine* scriptEngine)
     m_SystemManager->AddSystem<PhysicsSystemImpl>();
     m_SystemManager->AddSystem<AudioSystemImpl>();
     m_SystemManager->AddSystem<AssetResolutionSystem>();
+    m_SystemManager->AddSystem<SceneTransitionSystem>();
 
     m_SystemManager->InitObservers();
 
