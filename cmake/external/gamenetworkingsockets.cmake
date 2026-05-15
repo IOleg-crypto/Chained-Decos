@@ -40,8 +40,8 @@ if(EXISTS "${GNS_SOURCE_DIR}/CMakeLists.txt")
         add_library(ChainedEngine::External::GNS ALIAS ${GNS_TARGET})
         target_include_directories(${GNS_TARGET} INTERFACE "$<BUILD_INTERFACE:${GNS_SOURCE_DIR}/include>")
         
-        # MinGW fixes for winmm and timeBeginPeriod
-        if(MINGW)
+        # MinGW and Clang fixes for winmm and timeBeginPeriod
+        if(MINGW OR (WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
             target_link_libraries(${GNS_TARGET} PRIVATE winmm)
             target_compile_options(${GNS_TARGET} PRIVATE -include "${CMAKE_SOURCE_DIR}/include/mingw_compat.h")
         endif()

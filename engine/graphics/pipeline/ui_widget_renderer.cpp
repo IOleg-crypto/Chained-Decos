@@ -138,8 +138,8 @@ bool RenderButton(Entity entity, ButtonData& button, WidgetComponent& wc, const 
     ImGui::InvisibleButton(label, size);
 
     wc.IsHovered = ImGui::IsItemHovered();
-    wc.IsDown    = ImGui::IsItemActive();
-    if (ImGui::IsItemClicked())
+    wc.IsDown    = ImGui::IsItemActive() && ServiceLocator::Get<UIRenderer>().GetInputCooldown() == 0;
+    if (ImGui::IsItemClicked() && ServiceLocator::Get<UIRenderer>().GetInputCooldown() == 0)
     {
         wc.PressedThisFrame = true;
     }
@@ -337,7 +337,12 @@ bool RenderImageButton(ImageButtonData& ib, WidgetComponent& wc, const ImVec2& s
     ImTextureID tid = (ImTextureID)(uintptr_t)tex->GetRendererID();
     const char* label = ib.Label.empty() ? "##ImageButton" : ib.Label.c_str();
     if (ImGui::ImageButton(label, tid, size, {0,1}, {1,0}, ToImVec4(ib.BackgroundColor), ToImVec4(ib.TintColor)))
-        wc.PressedThisFrame = true;
+    {
+        if (ServiceLocator::Get<UIRenderer>().GetInputCooldown() == 0)
+        {
+            wc.PressedThisFrame = true;
+        }
+    }
     return ImGui::IsItemActive();
 }
 

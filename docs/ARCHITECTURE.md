@@ -4,10 +4,35 @@ This document describes the current runtime structure of Chained Engine, from ex
 
 ## 1. Bootstrapping Flow
 
-The engine uses a small `main` wrapper in `entry_point.h` and delegates application construction to a per-executable `CreateApplication` function. Editor and runtime each build their own `ApplicationSpecification`, then attach their primary layer.
+The engine uses a small `main` wrapper in `entry_point.h` and delegates application construction to a per-executable `CreateApplication` function.
 
-### Entry Point (`main`)
-`entry_point.h` defines the shared `RunEntryPoint` helper. The executable provides `CreateApplication`, which returns a configured `Application` instance.
+### Bootstrapping Diagram
+```mermaid
+graph TD
+    A[main entry_point.h] --> B[CreateApplication]
+    B --> C[ApplicationSpec]
+    C --> D[Initialize Core Services]
+    D --> E[LayerStack Update Loop]
+    E --> F[Shutdown]
+```
+
+### Entry Point Code Example
+```cpp
+// game/src/main.cpp
+#include "engine/core/application.h"
+#include "engine/core/entry_point.h"
+
+namespace CHEngine {
+    Application* CreateApplication(ApplicationCommandLineArgs args) {
+        ApplicationSpecification spec;
+        spec.Name = "Chained Game";
+        spec.WindowWidth = 1600;
+        spec.WindowHeight = 900;
+        
+        return new Application(spec);
+    }
+}
+```
 
 ### Project Selection and Discovery
 Startup usually follows this path:
@@ -51,3 +76,6 @@ The current shape works, but it has a few clear friction points:
 2. Runtime and editor logic both reach back into global state instead of depending on explicit interfaces.
 3. Entry-point setup and runtime project loading both interpret CLI and project configuration, which duplicates startup policy.
 4. `Application` owns too many unrelated concerns, so it is the main place where startup regressions accumulate.
+
+> [!NOTE]
+> Recent architectural improvements include the move of core gameplay logic (like Scene Transitions) into native C++ systems to reduce managed overhead and improve predictability.

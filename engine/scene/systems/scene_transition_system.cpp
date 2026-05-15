@@ -11,13 +11,13 @@ namespace CHEngine
     {
         auto& registry = scene->GetRegistry();
 
-        // 1. Process explicit triggers
+        // Check all entities that have a transition component
         auto view = registry.view<SceneTransitionComponent>();
         for (auto entity : view)
         {
             auto& transition = view.get<SceneTransitionComponent>(entity);
 
-            // 2. Automate UI actions: if it's a button and it's pressed, trigger the transition
+            // Automated UI handling: if it's a button and was clicked, set the trigger
             if (registry.all_of<WidgetComponent>(entity))
             {
                 auto& widget = registry.get<WidgetComponent>(entity);
@@ -27,12 +27,14 @@ namespace CHEngine
                 }
             }
 
+            // If triggered, send a global event to the editor/runtime to switch scenes
             if (transition.Triggered && !transition.TargetScenePath.empty())
             {
+                CH_INFO_ONCE("SceneTransitionSystem: Switching to scene {0}", transition.TargetScenePath);
                 SceneChangeRequestEvent ev(transition.TargetScenePath);
                 Application::Get().OnEvent(ev);
                 
-                // Clear trigger to avoid multiple events in one frame (though scene should change)
+                // Clear trigger to prevent looping (scene change is handled async by the layer)
                 transition.Triggered = false;
             }
         }

@@ -9,13 +9,21 @@ namespace CHEngine
 void RegisterGlueUI() {}
 
 // ── UI Controls ───────────────────────────────────────────────────────
-CH_SCRIPT_FUNC bool ButtonControl_IsPressed(uint64_t entityID)
+CH_SCRIPT_FUNC bool ButtonControl_IsClicked(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
     return entity && entity.HasComponent<WidgetComponent>() ? entity.GetComponent<WidgetComponent>().PressedThisFrame
                                                           : false;
 }
-CH_ADD_INTERNAL_CALL(ButtonControl, ButtonControl_IsPressed_Ptr, ButtonControl_IsPressed);
+CH_ADD_INTERNAL_CALL(ButtonControl, ButtonControl_IsClicked_Ptr, ButtonControl_IsClicked);
+
+CH_SCRIPT_FUNC bool ButtonControl_IsDown(uint64_t entityID)
+{
+    Entity entity = GetEntity(entityID);
+    return entity && entity.HasComponent<WidgetComponent>() ? entity.GetComponent<WidgetComponent>().IsDown
+                                                           : false;
+}
+CH_ADD_INTERNAL_CALL(ButtonControl, ButtonControl_IsDown_Ptr, ButtonControl_IsDown);
 
 CH_SCRIPT_FUNC bool CheckboxControl_GetChecked(uint64_t entityID)
 {

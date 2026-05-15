@@ -72,6 +72,7 @@ private:
     std::filesystem::path m_RenamingPath;
     char m_RenameBuffer[256] = "";
     std::filesystem::path m_PathToDelete;
+    std::filesystem::path m_NextDirectory;
 };
 } // namespace CHEngine
 
