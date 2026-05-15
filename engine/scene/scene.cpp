@@ -8,6 +8,7 @@
 #include "engine/scene/scene_system_manager.h"
 #include "engine/scene/systems/animation_system.h"
 #include "engine/scene/systems/hierarchy_system.h"
+#include "engine/graphics/pipeline/ui_renderer.h"
 #include "engine/scene/systems/scene_audio_system.h"
 #include "engine/scene/systems/scene_systems_impl.h"
 #include "engine/scene/systems/asset_resolution_system.h"
@@ -205,6 +206,7 @@ void Scene::OnRuntimeStart()
     m_IsSimulationRunning = true;
 
     CH_CORE_INFO("Scene::OnRuntimeStart - Initializing script and system managers...");
+    ServiceLocator::Get<UIRenderer>().ResetInputCooldown();
     m_ScriptingManager->OnRuntimeStart();
     m_SystemManager->OnRuntimeStart();
 
