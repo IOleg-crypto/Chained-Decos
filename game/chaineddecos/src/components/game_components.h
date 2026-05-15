@@ -131,23 +131,6 @@ struct InventoryComponent
     CH_REFLECT_END()
 };
 
-struct SceneTransitionComponent
-{
-    std::string TargetScenePath;
-    bool Triggered = false;
-
-    SceneTransitionComponent() = default;
-    SceneTransitionComponent(const std::string& path)
-        : TargetScenePath(path)
-    {
-    }
-
-    CH_REFLECT_BEGIN(SceneTransitionComponent)
-        props.File("TargetScenePath", TargetScenePath, "chscene");
-        props.Property("Triggered", Triggered);
-    CH_REFLECT_END()
-};
-
 struct NetworkIdentity
 {
     uint64_t NetworkID = 0;

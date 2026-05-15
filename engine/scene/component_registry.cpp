@@ -27,5 +27,7 @@ namespace CHEngine
         // Backward compatibility: old scene files used "FlowNavigatorComponent"
         ComponentRegistry::GetMetadataMutable(entt::type_hash<AnimationComponent>::value()).SerializationKey = "AnimationComponent";
         RegisterReflective<WidgetComponent>("Widget", ICON_FA_WINDOW_RESTORE, "UI");
+        RegisterReflective<SceneTransitionComponent>("Scene Transition", ICON_FA_DOOR_OPEN, "Logic");
     }
 }
+
