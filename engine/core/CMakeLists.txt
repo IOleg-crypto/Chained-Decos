@@ -1,4 +1,5 @@
-add_library(engine_core ${SUBMODULE_LIB_TYPE}
+chained_add_engine_module(engine_core
+    SOURCES
         layer_stack.cpp
         profiler.cpp
         uuid.cpp
@@ -7,6 +8,8 @@ add_library(engine_core ${SUBMODULE_LIB_TYPE}
         thread_pool.cpp
         service_locator.cpp
         application.h
+        platform.h
+        platform.cpp
         imgui_layer.h
         base.h
         ch_assert.h
@@ -31,33 +34,18 @@ add_library(engine_core ${SUBMODULE_LIB_TYPE}
         mouse_codes.h
         reflection.h
         yaml_conversions.h
-        ../platform/utils/dialogs.cpp
-        ../platform/utils/dialogs.h
         ../platform/glfw/glfw_window.cpp
         ../platform/glfw/glfw_window.h
+    DEPENDS
+        ChainedEngine::External::YamlCpp
+        ChainedEngine::External::EnTT
+        ChainedEngine::External::GLM
+        ChainedEngine::External::STB
+        ChainedEngine::External::GLFW
+        ChainedEngine::External::GLAD
+        ChainedEngine::External::ImGui
+        ChainedEngine::External::Miniaudio
+        ChainedEngine::External::Coral
+        ChainedEngine::External::NFD
+        ChainedEngine::External::GNS
 )
-
-target_include_directories(engine_core PUBLIC
-    ${CMAKE_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}
-)
-
-target_link_libraries(engine_core 
-PUBLIC 
-    ChainedEngine::External::YamlCpp
-    ChainedEngine::External::EnTT
-    ChainedEngine::External::GLM
-    ChainedEngine::External::STB
-    ChainedEngine::External::GLFW
-    ChainedEngine::External::GLAD
-    ChainedEngine::External::ImGui
-    ChainedEngine::External::Miniaudio
-    ChainedEngine::External::Coral
-    ChainedEngine::External::NFD
-    ChainedEngine::External::GNS
-)
-
-# We apply optimizations and precompiled headers specific to core
-if(COMMAND apply_engine_optimizations)
-    apply_engine_optimizations(engine_core)
-endif()

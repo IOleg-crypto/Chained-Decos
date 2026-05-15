@@ -1,18 +1,11 @@
-add_library(engine_audio ${SUBMODULE_LIB_TYPE}
+chained_add_engine_module(engine_audio
+    SOURCES
         audio.cpp
         audio.h
-)
-
-target_include_directories(engine_audio PUBLIC
-    ${CMAKE_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}
-)
-
-target_link_libraries(engine_audio 
-PUBLIC 
-    engine_core
-    ChainedEngine::External::GLM
-    ChainedEngine::External::Miniaudio
+    DEPENDS
+        engine_core
+        ChainedEngine::External::GLM
+        ChainedEngine::External::Miniaudio
 )
 
 if(WIN32)
@@ -23,8 +16,4 @@ if(MSVC)
     target_compile_options(engine_audio PRIVATE /bigobj)
 elseif(MINGW)
     target_compile_options(engine_audio PRIVATE -Wa,-mbig-obj)
-endif()
-
-if(COMMAND apply_engine_optimizations)
-    apply_engine_optimizations(engine_audio)
 endif()

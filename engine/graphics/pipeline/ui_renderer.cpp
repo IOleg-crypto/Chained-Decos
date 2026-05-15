@@ -194,9 +194,11 @@ void UIRenderer::DrawCanvas(Scene* scene, const ImVec2& referencePosition, const
 
     const int frameNumber = ImGui::GetFrameCount();
     static int s_LastResetFrame = -1;
-    static const entt::registry* s_LastResetRegistry = nullptr;
-    if (s_LastResetFrame != frameNumber || s_LastResetRegistry != &registry)
+    static void* s_LastResetRegistry = nullptr;
+    
+    if (s_LastResetFrame != frameNumber || s_LastResetRegistry != (void*)&registry)
     {
+        // Reset button states at the start of the frame for this registry
         auto view = registry.view<WidgetComponent>();
         for (entt::entity id : view)
         {
@@ -204,7 +206,7 @@ void UIRenderer::DrawCanvas(Scene* scene, const ImVec2& referencePosition, const
         }
 
         s_LastResetFrame = frameNumber;
-        s_LastResetRegistry = &registry;
+        s_LastResetRegistry = (void*)&registry;
     }
 
     const CanvasSettings& canvas = scene->GetSettings().Canvas;

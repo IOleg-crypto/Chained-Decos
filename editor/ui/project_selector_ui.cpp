@@ -6,12 +6,18 @@
 #include <filesystem>
 #include <string>
 
+#include "engine/graphics/texture_system.h"
+#include "engine/core/service_locator.h"
+
 namespace CHEngine
 {
 
 ProjectSelectorUI::ProjectSelectorUI(EditorProjectManager& projectManager)
     : m_ProjectManager(projectManager)
 {
+    auto& ts = ServiceLocator::Get<TextureSystem>();
+    m_NewProjectIconHandle = ts.LoadTexture("engine/resources/icons/newproject.jpg");
+    m_OpenProjectIconHandle = ts.LoadTexture("engine/resources/icons/folder.png");
 }
 
 void ProjectSelectorUI::OnImGuiRender()
@@ -47,145 +53,128 @@ void ProjectSelectorUI::OnImGuiRender()
     float sidebarWidth = 320.0f;
     
     // Sidebar
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.08f, 0.08f, 0.08f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.02f, 0.02f, 0.02f, 1.0f));
     ImGui::BeginChild("Sidebar", ImVec2(sidebarWidth, 0), false);
     
     // Banner / Logo Area
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.05f, 0.05f, 0.05f, 1.0f));
-    ImGui::BeginChild("Banner", ImVec2(0, 60), false);
     ImGui::Dummy(ImVec2(0, 15));
     ImGui::SetCursorPosX(20.0f);
-    ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]); // Large font if available
-    ImGui::TextColored(ImVec4(0.2f, 0.6f, 1.0f, 1.0f), ICON_FA_CIRCLE_NODES);
+    ImGui::SetWindowFontScale(1.5f);
+    ImGui::TextColored(ImVec4(0.2f, 0.7f, 1.0f, 1.0f), ICON_FA_LINK " Chained");
     ImGui::SameLine();
-    ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.9f, 1.0f), " Chained");
-    ImGui::SameLine();
-    ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), " Engine");
-    ImGui::PopFont();
-    ImGui::EndChild();
-    ImGui::PopStyleColor();
+    ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Engine");
+    ImGui::SetWindowFontScale(1.0f);
+    ImGui::Separator();
 
-    ImGui::Dummy(ImVec2(0, 20));
-    ImGui::SetCursorPosX(20.0f);
-    ImGui::TextDisabled("RECENT PROJECTS");
+    ImGui::Dummy(ImVec2(0, 15));
+    ImGui::TextDisabled("   RECENT PROJECTS");
     ImGui::Dummy(ImVec2(0, 10));
 
     const auto& config = EditorLayer::Get().GetConfig();
-    for (const auto& projectPath : config.RecentProjects)
+    if (config.RecentProjects.empty())
     {
-        std::filesystem::path path(projectPath);
-        std::string projectName = path.stem().string();
-        std::string projectDir = path.parent_path().string();
+        ImGui::TextDisabled("   No recent projects.");
+    }
+    else
+    {
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.05f, 0.5f));
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 5.0f);
 
-        ImGui::PushID(projectPath.c_str());
-        ImGui::SetCursorPosX(10.0f);
-        
-        bool clicked = false;
-        if (ImGui::BeginChild(projectPath.c_str(), ImVec2(sidebarWidth - 20, 55), false, ImGuiWindowFlags_NoScrollbar))
+        for (const auto& projectPath : config.RecentProjects)
         {
-            ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.2f, 0.3f, 0.6f, 1.0f));
-            if (ImGui::Selectable("##bg", false, ImGuiSelectableFlags_AllowOverlap, ImVec2(0, 55)))
-            {
-                clicked = true;
-            }
-            ImGui::PopStyleColor();
+            std::string fileName = std::filesystem::path(projectPath).filename().string();
+            std::string dirName  = std::filesystem::path(projectPath).parent_path().filename().string();
+
+            std::string label = ICON_FA_FOLDER_OPEN "  " + fileName + "\n      " + dirName;
             
-            ImGui::SetCursorPos(ImVec2(10, 8));
-            ImGui::Text("%s", projectName.c_str());
-            ImGui::SetCursorPos(ImVec2(10, 28));
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
-            ImGui::Text("%s", projectDir.c_str());
-            ImGui::PopStyleColor();
+            ImGui::SetCursorPosX(10.0f);
+            if (ImGui::Button(label.c_str(), ImVec2(sidebarWidth - 20, 50)))
+            {
+                m_ProjectManager.OpenProject(projectPath);
+            }
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("%s", projectPath.c_str());
+            }
+            ImGui::Dummy(ImVec2(0, 5));
         }
-        ImGui::EndChild();
-        ImGui::PopID();
 
-        if (clicked)
-        {
-            m_ProjectManager.OpenProject(projectPath);
-        }
-        
-        ImGui::Dummy(ImVec2(0, 5));
+        ImGui::PopStyleVar(2);
+        ImGui::PopStyleColor();
     }
     
     ImGui::EndChild();
-    ImGui::PopStyleColor();
+    ImGui::PopStyleColor(); // ChildBg Sidebar
 
     ImGui::SameLine();
 
     // Main Area
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.12f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.08f, 0.08f, 0.08f, 1.0f));
     ImGui::BeginChild("MainArea");
     
-    ImVec2 contentRegion = ImGui::GetContentRegionAvail();
-    
-    // Center the cards
-    float cardsTotalWidth = 540.0f; // 250*2 + 40 gap
-    float startX = (contentRegion.x - cardsTotalWidth) * 0.5f;
-    float startY = (contentRegion.y - 300.0f) * 0.45f;
-    
-    ImGui::SetCursorPos(ImVec2(startX, startY));
-    
-    auto DrawCard = [&](const char* icon, const char* title, const char* desc, ImVec4 accentColor) {
-        ImGui::BeginGroup();
-        
-        ImGuiWindow* window = ImGui::GetCurrentWindow();
-        ImVec2 p = ImGui::GetCursorScreenPos();
-        ImVec2 size(250, 300);
-        
-        bool hovered = ImGui::ItemHoverable(ImRect(p, ImVec2(p.x + size.x, p.y + size.y)), ImGui::GetID(title), ImGuiItemFlags_None);
-        bool pressed = hovered && ImGui::IsMouseClicked(0);
-        
-        // Background
-        ImU32 bgColor = ImGui::GetColorU32(hovered ? ImVec4(0.18f, 0.18f, 0.20f, 1.0f) : ImVec4(0.14f, 0.14f, 0.16f, 1.0f));
-        window->DrawList->AddRectFilled(p, ImVec2(p.x + size.x, p.y + size.y), bgColor, 12.0f);
-        if (hovered)
-            window->DrawList->AddRect(p, ImVec2(p.x + size.x, p.y + size.y), ImGui::GetColorU32(accentColor), 12.0f, 0, 2.0f);
-        
-        // Icon (Centered)
-        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 40);
-        ImGui::SetWindowFontScale(4.0f);
-        float iconWidth = ImGui::CalcTextSize(icon).x;
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (size.x - iconWidth) * 0.5f);
-        ImGui::TextColored(accentColor, "%s", icon);
-        ImGui::SetWindowFontScale(1.0f);
-        
-        // Title
-        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 40);
-        float titleWidth = ImGui::CalcTextSize(title).x;
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (size.x - titleWidth) * 0.5f);
-        ImGui::Text("%s", title);
-        
-        // Subtitle/Desc
-        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
-        ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + size.x - 20);
-        float descWidth = std::min(size.x - 40.0f, ImGui::CalcTextSize(desc).x);
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (size.x - descWidth) * 0.5f);
-        ImGui::TextWrapped("%s", desc);
-        ImGui::PopTextWrapPos();
-        ImGui::PopStyleColor();
-        
-        ImGui::Dummy(size);
-        ImGui::EndGroup();
-        
-        return pressed;
-    };
-    
-    if (DrawCard(ICON_FA_PLUS, "New Project", "Start a fresh journey with a dedicated project folder and optimized settings.", ImVec4(0.3f, 0.5f, 1.0f, 1.0f)))
+    float centerX = ImGui::GetContentRegionAvail().x * 0.5f;
+    float centerY = ImGui::GetContentRegionAvail().y * 0.5f;
+
+    ImGui::SetCursorPos(ImVec2(centerX - 350.0f, centerY - 150.0f));
+
+    // Large Card Style exactly as the user provided
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(20, 20));
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 12.0f);
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.12f, 0.12f, 0.13f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.18f, 0.18f, 0.19f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.9f, 0.9f, 1.0f));
+
+    auto& ts = ServiceLocator::Get<TextureSystem>();
+
+    ImGui::BeginGroup();
     {
-        showCreateDialog = true;
+        ImTextureID newProjTex = 0;
+        if (m_NewProjectIconHandle != 0)
+            newProjTex = (ImTextureID)(uintptr_t)ts.GetRendererID(m_NewProjectIconHandle);
+
+        if (ImGui::ImageButton("##NewProject", newProjTex, {300, 300}, {0, 1}, {1, 0}))
+        {
+            showCreateDialog = true;
+        }
     }
-    
+    ImGui::SetWindowFontScale(1.3f);
+    ImGui::Text("New Project");
+    ImGui::SetWindowFontScale(1.0f);
+    ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + 280);
+    ImGui::TextDisabled("Start a fresh journey with a dedicated");
+    ImGui::TextDisabled("project folder and optimized settings.");
+    ImGui::PopTextWrapPos();
+    ImGui::EndGroup();
+
     ImGui::SameLine(0, 40);
-    
-    if (DrawCard(ICON_FA_FOLDER_OPEN, "Open Project", "Browse and load an existing Chained Engine project (.chproject) file.", ImVec4(0.8f, 0.8f, 0.8f, 1.0f)))
+
+    ImGui::BeginGroup();
     {
-        m_ProjectManager.OpenProject();
+        ImTextureID openProjTex = 0;
+        if (m_OpenProjectIconHandle != 0)
+            openProjTex = (ImTextureID)(uintptr_t)ts.GetRendererID(m_OpenProjectIconHandle);
+
+        if (ImGui::ImageButton("##OpenProject", openProjTex, {300, 300}, {0, 1}, {1, 0}))
+        {
+            m_ProjectManager.OpenProject();
+        }
     }
+    ImGui::SetWindowFontScale(1.3f);
+    ImGui::Text("Open Project");
+    ImGui::SetWindowFontScale(1.0f);
+    ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + 280);
+    ImGui::TextDisabled("Browse and load an existing Chained");
+    ImGui::TextDisabled("Engine project (.chproject) file.");
+    ImGui::PopTextWrapPos();
+    ImGui::EndGroup();
+
+    ImGui::PopStyleColor(4);
+    ImGui::PopStyleVar(2);
     
     ImGui::EndChild();
-    ImGui::PopStyleColor();
+    ImGui::PopStyleColor(); // ChildBg MainArea
 
     if (showCreateDialog)
     {

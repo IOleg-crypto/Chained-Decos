@@ -1,4 +1,5 @@
-add_library(engine_scene ${SUBMODULE_LIB_TYPE}
+chained_add_engine_module(engine_scene
+    SOURCES
         yaml.h
         scene.cpp
         project.cpp
@@ -18,11 +19,9 @@ add_library(engine_scene ${SUBMODULE_LIB_TYPE}
         animation_systems.cpp
         systems/scene_audio_system.cpp
         systems/animation_graph_system.cpp
-
         scene_system_manager.cpp
         scene_scripting_manager.cpp
         ui_factory.cpp
-
         scene.h
         scene_events.h
         scene_scripting_manager.h
@@ -57,27 +56,16 @@ add_library(engine_scene ${SUBMODULE_LIB_TYPE}
         systems/asset_resolution_system.h
         animation_graph_data.h
         entity.h
+    DEPENDS
+        engine_core
+        engine_graphics
+        engine_physics
+        engine_audio
+        engine_scripting
+        ChainedEngine::External::YamlCpp
+        ChainedEngine::External::EnTT
+        ChainedEngine::External::GLM
+        ChainedEngine::External::ImGui
 )
+
 set_target_properties(engine_scene PROPERTIES UNITY_BUILD OFF)
-
-target_include_directories(engine_scene PUBLIC
-    ${CMAKE_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}
-)
-
-target_link_libraries(engine_scene 
-PUBLIC 
-    engine_core
-    engine_graphics
-    engine_physics
-    engine_audio
-    engine_scripting
-    ChainedEngine::External::YamlCpp
-    ChainedEngine::External::EnTT
-    ChainedEngine::External::GLM
-    ChainedEngine::External::ImGui
-)
-
-if(COMMAND apply_engine_optimizations)
-    apply_engine_optimizations(engine_scene)
-endif()

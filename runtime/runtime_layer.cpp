@@ -162,6 +162,7 @@ void RuntimeLayer::OnUpdate(Timestep ts)
 
         if (IsSceneReadyToStart() && m_LoadingOverlayElapsed >= m_LoadingOverlayMinDuration)
         {
+            ServiceLocator::Get<UIRenderer>().ResetButtonStates(m_Scene.get());
             m_Scene->OnRuntimeStart();
             m_RuntimeStarted = true;
             m_IsSceneLoading = false;

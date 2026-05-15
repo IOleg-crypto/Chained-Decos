@@ -1,7 +1,8 @@
 set(STB_IMPL_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/stb_impl.cpp")
 file(WRITE "${STB_IMPL_SOURCE}" "#define STB_IMAGE_IMPLEMENTATION\n#include \"stb_image.h\"\n")
 
-add_library(engine_graphics ${SUBMODULE_LIB_TYPE}
+chained_add_engine_module(engine_graphics
+    SOURCES
         ${STB_IMPL_SOURCE}
     # Pipeline
         pipeline/renderer.cpp
@@ -11,10 +12,8 @@ add_library(engine_graphics ${SUBMODULE_LIB_TYPE}
         pipeline/ui_font_registry.cpp
         pipeline/shader_library.cpp
         pipeline/scene_renderer.cpp
-
         pipeline/render_command.cpp
         pipeline/texture_utility.cpp
-
         texture_system.cpp
         pipeline/geometry_generator.cpp
         pipeline/renderer.h
@@ -26,11 +25,9 @@ add_library(engine_graphics ${SUBMODULE_LIB_TYPE}
         pipeline/shader_library.h
         pipeline/material.h
         pipeline/frustum.h
-
         pipeline/texture_utility.h
         texture_system.h
         pipeline/geometry_generator.h
-
     # Assets
         assets/shader_asset.cpp
         assets/model_asset.cpp
@@ -41,7 +38,6 @@ add_library(engine_graphics ${SUBMODULE_LIB_TYPE}
         assets/texture_asset.h
         assets/font_asset.h
         assets/environment.h
-
     # Loaders
         loaders/texture_loader.cpp
         loaders/model_loader.cpp
@@ -57,7 +53,6 @@ add_library(engine_graphics ${SUBMODULE_LIB_TYPE}
         loaders/shader_loader.h
         loaders/font_loader.h
         loaders/environment_loader.h
-
     # API & Backend
         api/renderer_api.cpp
         api/buffer.cpp
@@ -90,30 +85,18 @@ add_library(engine_graphics ${SUBMODULE_LIB_TYPE}
         api/opengl/opengl_uniform_buffer.cpp
         api/opengl/opengl_storage_buffer.h
         api/opengl/opengl_storage_buffer.cpp
+    DEPENDS
+        engine_core
+        engine_audio
+        ChainedEngine::External::YamlCpp
+        ChainedEngine::External::EnTT
+        ChainedEngine::External::GLM
+        ChainedEngine::External::STB
+        ChainedEngine::External::ImGui
+        ChainedEngine::External::GLFW
+        ChainedEngine::External::GLAD
+        ChainedEngine::External::Assimp
 )
 
 # Prevents multiple definition errors when using unity builds
 set_source_files_properties(${STB_IMPL_SOURCE} PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
-
-target_include_directories(engine_graphics PUBLIC
-    ${CMAKE_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}
-)
-
-target_link_libraries(engine_graphics 
-PUBLIC 
-    engine_core
-    engine_audio
-    ChainedEngine::External::YamlCpp
-    ChainedEngine::External::EnTT
-    ChainedEngine::External::GLM
-    ChainedEngine::External::STB
-    ChainedEngine::External::ImGui
-    ChainedEngine::External::GLFW
-    ChainedEngine::External::GLAD
-    ChainedEngine::External::Assimp
-)
-
-if(COMMAND apply_engine_optimizations)
-    apply_engine_optimizations(engine_graphics)
-endif()

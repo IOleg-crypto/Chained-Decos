@@ -6,7 +6,7 @@
 #include "engine/graphics/pipeline/ui_renderer.h"
 #include "engine/core/application.h"
 #include "engine/scene/scene_events.h"
-#include "engine/platform/utils/dialogs.h"
+#include "engine/core/platform.h"
 #include "scripting/scriptengine.h"
 #include "engine/core/service_locator.h"
 #include <algorithm>
@@ -42,7 +42,7 @@ void EditorProjectManager::NewProject(const std::string& name, const std::string
 void EditorProjectManager::OpenProject()
 {
     std::vector<FileDialogFilter> filters = {{"Chained Project", "chproject"}};
-    auto result = Dialogs::OpenFile(filters);
+    auto result = CHEngine::Platform::OpenFile(filters);
     if (result)
     {
         OpenProject(*result);

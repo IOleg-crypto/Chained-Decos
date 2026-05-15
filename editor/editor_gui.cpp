@@ -12,8 +12,8 @@
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "engine/core/service_locator.h"
-#include "engine/platform/utils/dialogs.h"
-#include "engine/scene/scene_picking.h"
+#include "engine/core/platform.h"
+#include "engine/scene/component_registry.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include <cstring>
@@ -69,7 +69,7 @@ void EditorGUI::DrawMenuBar(EditorPanels& panels)
         if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open Project", "Ctrl+O"))
         {
             std::vector<FileDialogFilter> filters = {{"Chained Scene", "chscene"}};
-            auto result = Dialogs::OpenFile(filters);
+            auto result = CHEngine::Platform::OpenFile(filters);
             if (result)
             {
                 EditorLayer::Get().GetSceneManager().OpenScene(*result);
@@ -339,7 +339,7 @@ bool EditorGUI::FileProperty(const char* label, std::string& value, const char* 
         {
             filters.push_back({"Files", filter});
         }
-        auto result = Dialogs::OpenFile(filters);
+        auto result =  CHEngine::Platform::OpenFile(filters);
         if (result)
         {
             value = Project::GetRelativePath(*result);
@@ -402,7 +402,7 @@ bool EditorGUI::FileProperty(const char* label, std::string& path, uint32_t text
         {
             filters.push_back({"Files", filter});
         }
-        auto result = Dialogs::OpenFile(filters);
+        auto result = CHEngine::Platform::OpenFile(filters);
         if (result)
         {
             path = Project::GetRelativePath(*result);

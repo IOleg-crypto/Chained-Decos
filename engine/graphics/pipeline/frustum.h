@@ -12,7 +12,7 @@ struct Frustum
     glm::vec4 Left, Right, Bottom, Top, Near, Far;
 };
 
-static Frustum FromMatrix(const glm::mat4& vp)
+inline Frustum FromMatrix(const glm::mat4& vp)
 {
     Frustum f;
     f.Left =

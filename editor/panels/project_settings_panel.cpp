@@ -3,9 +3,8 @@
 #include "editor_layer.h"
 #include "engine/scene/project_serializer.h"
 #include "imgui.h"
-#include "engine/platform/utils/dialogs.h"
+#include "engine/core/platform.h"
 #include "IconsFontAwesome6.h"
-#include <format>
 
 namespace CHEngine
 {
@@ -79,7 +78,7 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             if (ImGui::Button("...###IconBrowse"))
             {
                 std::vector<FileDialogFilter> filters = {{"Image Files", "png,jpg,jpeg"}};
-                auto result = Dialogs::OpenFile(filters);
+                auto result = CHEngine::Platform::OpenFile(filters);
                 if (result)
                 {
                     config.IconPath = Project::GetRelativePath(result->string());
@@ -127,7 +126,7 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             if (ImGui::Button("...###BinBrowse"))
             {
                 std::vector<FileDialogFilter> filters = {{"Runtime Executable", "exe"}};
-                auto result = Dialogs::OpenFile(filters);
+                auto result = CHEngine::Platform::OpenFile(filters);
                 if (result)
                 {
                     profile.BinaryPath = result->string();
@@ -163,7 +162,7 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             ImGui::SameLine();
             if (ImGui::Button("...###ModuleDirBrowse"))
             {
-                auto result = Dialogs::PickFolder();
+                auto result = CHEngine::Platform::PickFolder();
                 if (result)
                 {
                     config.Scripting.ModuleDirectory = Project::GetRelativePath(result->string());

@@ -13,8 +13,7 @@
 #include "engine/core/input.h"
 #include "engine/scene/scene_serializer.h"
 #include "engine/scene/prefab_serializer.h"
-#include "engine/platform/utils/dialogs.h"
-#include <functional>
+#include "engine/core/platform.h"
 #include <functional>
 #include <vector>
 
@@ -312,7 +311,7 @@ void SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity, bool readOnly)
         if (ImGui::MenuItem(ICON_FA_FILE_EXPORT " Save as Prefab..."))
         {
             std::vector<FileDialogFilter> filters = {{"Chained Prefab", "chprefab"}};
-            auto path = Dialogs::SaveFile(filters);
+            auto path = CHEngine::Platform::SaveFile(filters);
             if (path)
             {
                 if (path->extension().empty()) path->replace_extension(".chprefab");
@@ -348,7 +347,7 @@ void SceneHierarchyPanel::DrawContextMenu()
     if (ImGui::MenuItem(ICON_FA_FILE_IMPORT " Load Prefab..."))
     {
         std::vector<FileDialogFilter> filters = {{"Chained Prefab", "chprefab"}};
-        auto path = Dialogs::OpenFile(filters);
+        auto path = CHEngine::Platform::OpenFile(filters);
         if (path)
         {
             PrefabSerializer::Deserialize(m_Context.get(), path->string());
