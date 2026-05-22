@@ -255,7 +255,7 @@ void ViewportPanel::OnEvent(Event& e)
         if (entity && entity.HasComponent<TransformComponent>())
         {
             auto& transform = entity.GetComponent<TransformComponent>();
-            m_CameraController->GetCamera().SetFocalPoint(*reinterpret_cast<const glm::vec3*>(&transform.Translation));
+            m_CameraController->SetFocalPoint(*reinterpret_cast<const glm::vec3*>(&transform.Translation));
             return true;
         }
         return false;
@@ -272,19 +272,16 @@ Ray ViewportPanel::GetMouseRay(const glm::vec2& mousePosition)
     {
         camera = activeCameraOpt.value();
     }
-    else
-    {
         // Fallback to editor camera
-        auto& edCam = m_CameraController->GetCamera();
-        glm::vec3 pos = edCam.CalculatePosition();
+        auto& controller = *m_CameraController;
+        glm::vec3 pos = controller.CalculatePosition();
         camera.Position = {pos.x, pos.y, pos.z};
-        glm::vec3 fp = edCam.GetFocalPoint();
+        glm::vec3 fp = controller.GetFocalPoint();
         camera.Target = {fp.x, fp.y, fp.z};
-        glm::vec3 up = edCam.GetUpDirection();
+        glm::vec3 up = controller.GetUpDirection();
         camera.Up = {up.x, up.y, up.z};
-        camera.Fovy = glm::degrees(edCam.GetPerspectiveVerticalFOV());
+        camera.Fovy = glm::degrees(controller.GetCamera().GetPerspectiveVerticalFOV());
         camera.Projection = 0; // Perspective
-    }
 
     return ScenePicker::CreateRayFromViewport(camera, mousePosition, m_ViewportSize);
 }
@@ -306,7 +303,7 @@ void ViewportPanel::HandleResize(const ImVec2& viewportSize, Scene* activeScene)
             }
 
             EditorLayer::Get().OnViewportResized({ m_ViewportSize.x, m_ViewportSize.y });
-            m_CameraController->GetCamera().SetViewportSize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+            m_CameraController->SetViewportSize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 
             if (activeScene)
             {
@@ -333,21 +330,21 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
     float farClip = 10000.0f;
 
     // Default to Editor Camera
-    auto& edCam = m_CameraController->GetCamera();
-    glm::vec3 pos = edCam.CalculatePosition();
+    auto& controller = *m_CameraController;
+    glm::vec3 pos = controller.CalculatePosition();
     camera.Position = {pos.x, pos.y, pos.z};
 
-    glm::vec3 fp = edCam.GetFocalPoint();
+    glm::vec3 fp = controller.GetFocalPoint();
     camera.Target = {fp.x, fp.y, fp.z};
 
-    glm::vec3 up = edCam.GetUpDirection();
+    glm::vec3 up = controller.GetUpDirection();
     camera.Up = {up.x, up.y, up.z};
 
-    camera.Fovy = glm::degrees(edCam.GetPerspectiveVerticalFOV()); // Fovy in degrees
+    camera.Fovy = glm::degrees(controller.GetCamera().GetPerspectiveVerticalFOV()); // Fovy in degrees
     camera.Projection = 0;                                         // Perspective
 
-    nearClip = edCam.GetPerspectiveNearClip();
-    farClip = edCam.GetPerspectiveFarClip();
+    nearClip = controller.GetCamera().GetPerspectiveNearClip();
+    farClip = controller.GetCamera().GetPerspectiveFarClip();
 
     // If an entity camera is active during Play mode, override the viewport perspective
     if (cameraFound && EditorLayer::Get().GetSceneState() == SceneState::Play)
@@ -436,14 +433,14 @@ void ViewportPanel::RenderOverlays(Scene* activeScene, const ImVec2& viewportSiz
     else
     {
         // Fallback to editor camera for gizmos even if no scene camera
-        auto& edCam = m_CameraController->GetCamera();
-        glm::vec3 pos = edCam.CalculatePosition();
+        auto& controller = *m_CameraController;
+        glm::vec3 pos = controller.CalculatePosition();
         camera.Position = {pos.x, pos.y, pos.z};
-        glm::vec3 fp = edCam.GetFocalPoint();
+        glm::vec3 fp = controller.GetFocalPoint();
         camera.Target = {fp.x, fp.y, fp.z};
-        glm::vec3 up = edCam.GetUpDirection();
+        glm::vec3 up = controller.GetUpDirection();
         camera.Up = {up.x, up.y, up.z};
-        camera.Fovy = glm::degrees(edCam.GetPerspectiveVerticalFOV());
+        camera.Fovy = glm::degrees(controller.GetCamera().GetPerspectiveVerticalFOV());
         camera.Projection = 0;
     }
 

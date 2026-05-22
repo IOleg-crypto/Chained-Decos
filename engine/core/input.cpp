@@ -1,88 +1,108 @@
 #include "engine/core/input.h"
+#include "engine/core/ch_assert.h"
 #include <GLFW/glfw3.h>
+#include <cstring>
 
 namespace CHEngine
 {
-    bool Input::s_KeyStates[512] = { false };
-    bool Input::s_LastKeyStates[512] = { false };
-    bool Input::s_MouseStates[16] = { false };
-    bool Input::s_LastMouseStates[16] = { false };
+    Input* Input::s_Instance = nullptr;
 
-    glm::vec2 Input::s_MousePosition = { 0.0f, 0.0f };
-    glm::vec2 Input::s_LastMousePosition = { 0.0f, 0.0f };
-    float Input::s_MouseWheelDelta = 0.0f;
-    float Input::s_CurrentMouseWheelDelta = 0.0f;
-
-    void Input::Update()
+    Input::Input()
     {
-        for (int i = 0; i < 512; i++)
-            s_LastKeyStates[i] = s_KeyStates[i];
+        CH_CORE_ASSERT(!s_Instance, "Input already exists!");
+        s_Instance = this;
 
-        for (int i = 0; i < 16; i++)
-            s_LastMouseStates[i] = s_MouseStates[i];
-
-        s_LastMousePosition = s_MousePosition;
-        s_CurrentMouseWheelDelta = s_MouseWheelDelta;
-        s_MouseWheelDelta = 0.0f;
+        memset(m_KeyStates, 0, sizeof(m_KeyStates));
+        memset(m_LastKeyStates, 0, sizeof(m_LastKeyStates));
+        memset(m_MouseStates, 0, sizeof(m_MouseStates));
+        memset(m_LastMouseStates, 0, sizeof(m_LastMouseStates));
+        
+        m_MousePosition = { 0.0f, 0.0f };
+        m_LastMousePosition = { 0.0f, 0.0f };
+        m_MouseWheelDelta = 0.0f;
+        m_CurrentMouseWheelDelta = 0.0f;
     }
 
-    void Input::PollEvents()
+    Input::~Input()
     {
+        s_Instance = nullptr;
+    }
+
+    void Input::OnInit()
+    {
+    }
+
+    void Input::OnUpdate(Timestep ts)
+    {
+        for (int i = 0; i < 512; i++)
+            m_LastKeyStates[i] = m_KeyStates[i];
+
+        for (int i = 0; i < 16; i++)
+            m_LastMouseStates[i] = m_MouseStates[i];
+
+        m_LastMousePosition = m_MousePosition;
+        m_CurrentMouseWheelDelta = m_MouseWheelDelta;
+        m_MouseWheelDelta = 0.0f;
+        
         glfwPollEvents();
     }
 
-    bool Input::IsKeyPressed(KeyCode key)
+    void Input::OnShutdown()
     {
-        return s_KeyStates[(int)key] && !s_LastKeyStates[(int)key];
     }
 
-    bool Input::IsKeyDown(KeyCode key)
+    bool Input::IsKeyPressedImpl(KeyCode key) const
     {
-        return s_KeyStates[(int)key];
+        return m_KeyStates[(int)key] && !m_LastKeyStates[(int)key];
     }
 
-    bool Input::IsKeyReleased(KeyCode key)
+    bool Input::IsKeyDownImpl(KeyCode key) const
     {
-        return !s_KeyStates[(int)key] && s_LastKeyStates[(int)key];
+        return m_KeyStates[(int)key];
     }
 
-    bool Input::IsKeyUp(KeyCode key)
+    bool Input::IsKeyReleasedImpl(KeyCode key) const
     {
-        return !s_KeyStates[(int)key];
+        return !m_KeyStates[(int)key] && m_LastKeyStates[(int)key];
     }
 
-    bool Input::IsMouseButtonPressed(MouseCode button)
+    bool Input::IsKeyUpImpl(KeyCode key) const
     {
-        return s_MouseStates[(int)button] && !s_LastMouseStates[(int)button];
+        return !m_KeyStates[(int)key];
     }
 
-    bool Input::IsMouseButtonDown(MouseCode button)
+    bool Input::IsMouseButtonPressedImpl(MouseCode button) const
     {
-        return s_MouseStates[(int)button];
+        return m_MouseStates[(int)button] && !m_LastMouseStates[(int)button];
     }
 
-    bool Input::IsMouseButtonReleased(MouseCode button)
+    bool Input::IsMouseButtonDownImpl(MouseCode button) const
     {
-        return !s_MouseStates[(int)button] && s_LastMouseStates[(int)button];
+        return m_MouseStates[(int)button];
     }
 
-    bool Input::IsMouseButtonUp(MouseCode button)
+    bool Input::IsMouseButtonReleasedImpl(MouseCode button) const
     {
-        return !s_MouseStates[(int)button];
+        return !m_MouseStates[(int)button] && m_LastMouseStates[(int)button];
     }
 
-    glm::vec2 Input::GetMousePosition()
+    bool Input::IsMouseButtonUpImpl(MouseCode button) const
     {
-        return s_MousePosition;
+        return !m_MouseStates[(int)button];
     }
 
-    glm::vec2 Input::GetMouseDelta()
+    glm::vec2 Input::GetMousePositionImpl() const
     {
-        return s_MousePosition - s_LastMousePosition;
+        return m_MousePosition;
     }
 
-    float Input::GetMouseWheelMove()
+    glm::vec2 Input::GetMouseDeltaImpl() const
     {
-        return s_CurrentMouseWheelDelta;
+        return m_MousePosition - m_LastMousePosition;
+    }
+
+    float Input::GetMouseWheelMoveImpl() const
+    {
+        return m_CurrentMouseWheelDelta;
     }
 }

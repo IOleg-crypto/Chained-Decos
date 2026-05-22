@@ -75,18 +75,18 @@ bool ExistsNoThrow(const std::filesystem::path& path)
 
 namespace CHEngine
 {
-RuntimeLayer::RuntimeLayer(const std::string& projectPath)
-    : Layer("RuntimeLayer"),
+RuntimeSystem::RuntimeSystem(const std::string& projectPath)
+    :  ,
       m_ProjectPath(projectPath)
 {
     m_SceneRenderer = std::make_unique<SceneRenderer>();
 }
 
-RuntimeLayer::~RuntimeLayer()
+RuntimeSystem::~RuntimeSystem()
 {
 }
 
-void RuntimeLayer::OnAttach()
+void RuntimeSystem::OnInit()
 {
     if (auto* imguiLayer = Application::Get().GetImGuiLayer())
     {
@@ -100,7 +100,7 @@ void RuntimeLayer::OnAttach()
     if (io.Fonts->Fonts.Size == 0)
     {
         io.Fonts->AddFontDefault();
-        CH_CORE_INFO("RuntimeLayer: Using built-in ImGui default font.");
+        CH_CORE_INFO("RuntimeSystem: Using built-in ImGui default font.");
     }
 
     InitProject(m_ProjectPath);
@@ -108,7 +108,7 @@ void RuntimeLayer::OnAttach()
     if (ImFont* projectDefaultFont = ServiceLocator::Get<UIRenderer>().GetFontRegistry().EnsureDefaultProjectFont(18.0f, false))
     {
         io.FontDefault = projectDefaultFont;
-        CH_CORE_INFO("RuntimeLayer: Switched default UI font to project font.");
+        CH_CORE_INFO("RuntimeSystem: Switched default UI font to project font.");
     }
 
     if (imguiLayer)
@@ -125,7 +125,7 @@ void RuntimeLayer::OnAttach()
     }
 }
 
-void RuntimeLayer::OnDetach()
+void RuntimeSystem::OnShutdown()
 {
     StopCurrentScene();
 
@@ -136,7 +136,7 @@ void RuntimeLayer::OnDetach()
     m_LoadingOverlayElapsed = 0.0f;
 }
 
-void RuntimeLayer::OnUpdate(Timestep ts)
+void RuntimeSystem::OnUpdate(Timestep ts)
 {
     // Boost uploads during loading
     if (ServiceLocator::Has<ScriptEngine>())
@@ -166,7 +166,7 @@ void RuntimeLayer::OnUpdate(Timestep ts)
             m_Scene->OnRuntimeStart();
             m_RuntimeStarted = true;
             m_IsSceneLoading = false;
-            CH_CORE_INFO("RuntimeLayer: Scene assets are ready, entering runtime.");
+            CH_CORE_INFO("RuntimeSystem: Scene assets are ready, entering runtime.");
         }
     }
 
@@ -186,7 +186,7 @@ void RuntimeLayer::OnUpdate(Timestep ts)
     }
 }
 
-void RuntimeLayer::OnRender(Timestep ts)
+void RuntimeSystem::OnRender(Timestep ts)
 {
     Window& window = Application::Get().GetWindow();
     uint32_t width = (uint32_t)window.GetWidth();
@@ -226,7 +226,7 @@ void RuntimeLayer::OnRender(Timestep ts)
     auto camera = GetActiveCamera();
     if (camera)
     {
-        // CH_CORE_INFO("RuntimeLayer: Rendering scene with active camera at ({}, {}, {})", camera->Position.x,
+        // CH_CORE_INFO("RuntimeSystem: Rendering scene with active camera at ({}, {}, {})", camera->Position.x,
         //              camera->Position.y, camera->Position.z);
         float nearClip = 0.01f;
         float farClip = 1000.0f;
@@ -276,7 +276,7 @@ void RuntimeLayer::OnRender(Timestep ts)
         static bool s_WarnedNoCamera = false;
         if (!s_WarnedNoCamera)
         {
-            CH_CORE_WARN("RuntimeLayer: No active camera found in scene '{}'! Clearing to background color.",
+            CH_CORE_WARN("RuntimeSystem: No active camera found in scene '{}'! Clearing to background color.",
                          m_Scene ? m_Scene->GetSettings().ScenePath : "null");
             s_WarnedNoCamera = true;
         }
@@ -284,7 +284,7 @@ void RuntimeLayer::OnRender(Timestep ts)
     }
 }
 
-void RuntimeLayer::OnImGuiRender()
+void RuntimeSystem::OnImGuiRender()
 {
     if (m_Scene)
     {
@@ -317,7 +317,7 @@ void RuntimeLayer::OnImGuiRender()
                 {
                     ImVec2 canvasPos = ImGui::GetCursorScreenPos();
                     ImVec2 canvasSize = ImGui::GetContentRegionAvail();
-                    // CH_CORE_INFO("RuntimeLayer: Drawing UI canvas at ({}, {}) with size ({}, {})",
+                    // CH_CORE_INFO("RuntimeSystem: Drawing UI canvas at ({}, {}) with size ({}, {})",
                     //  canvasPos.x, canvasPos.y, canvasSize.x, canvasSize.y);
                     ServiceLocator::Get<UIRenderer>().DrawCanvas(m_Scene.get(), canvasPos, canvasSize, false);
                     m_Scene->OnRenderUI();
@@ -335,7 +335,7 @@ void RuntimeLayer::OnImGuiRender()
     }
 }
 
-void RuntimeLayer::OnEvent(Event& e)
+void RuntimeSystem::OnEvent(Event& e)
 {
     if (m_Scene && m_RuntimeStarted)
     {
@@ -366,12 +366,12 @@ void RuntimeLayer::OnEvent(Event& e)
 //-----------------------------------------------------------------------------
 // Purpose: Load a new scene from file
 //-----------------------------------------------------------------------------
-void RuntimeLayer::LoadScene(const std::string& path)
+void RuntimeSystem::LoadScene(const std::string& path)
 {
     const std::string normalizedPath = NormalizeScenePath(path);
     if (normalizedPath.empty())
     {
-        CH_CORE_WARN("RuntimeLayer: Ignoring empty scene path request.");
+        CH_CORE_WARN("RuntimeSystem: Ignoring empty scene path request.");
         return;
     }
 
@@ -387,7 +387,7 @@ void RuntimeLayer::LoadScene(const std::string& path)
         scenePath = std::filesystem::absolute(scenePath, ec);
         if (ec)
         {
-            CH_CORE_ERROR("RuntimeLayer: Failed to resolve absolute scene path '{}' ({})", normalizedPath,
+            CH_CORE_ERROR("RuntimeSystem: Failed to resolve absolute scene path '{}' ({})", normalizedPath,
                           ec.message());
             return;
         }
@@ -395,17 +395,17 @@ void RuntimeLayer::LoadScene(const std::string& path)
 
     if (!ExistsNoThrow(scenePath))
     {
-        CH_CORE_ERROR("RuntimeLayer: Scene file not found '{}'.", scenePath.string());
+        CH_CORE_ERROR("RuntimeSystem: Scene file not found '{}'.", scenePath.string());
         return;
     }
 
     if (!TransitionToScene(scenePath))
     {
-        CH_CORE_ERROR("RuntimeLayer: Failed to transition to scene '{}'.", scenePath.string());
+        CH_CORE_ERROR("RuntimeSystem: Failed to transition to scene '{}'.", scenePath.string());
     }
 }
 
-void RuntimeLayer::LoadScene(int index)
+void RuntimeSystem::LoadScene(int index)
 {
     auto project = Project::GetActive();
     if (!project)
@@ -421,7 +421,7 @@ void RuntimeLayer::LoadScene(int index)
     }
 }
 
-bool RuntimeLayer::InitProject(const std::string& projectPath)
+bool RuntimeSystem::InitProject(const std::string& projectPath)
 {
     if (!DiscoverAndLoadProject(projectPath))
     {
@@ -454,13 +454,13 @@ bool RuntimeLayer::InitProject(const std::string& projectPath)
         }
     }
 
-    CH_CORE_INFO("RuntimeLayer: Loading project assembly: {}", assemblyPath.string());
+    CH_CORE_INFO("RuntimeSystem: Loading project assembly: {}", assemblyPath.string());
 
     // Initialize Scripting for the loaded project
     if (!ServiceLocator::Get<ScriptEngine>().ReloadAssembly(assemblyPath.string()))
     {
         CH_CORE_WARN(
-            "RuntimeLayer: Script reload failed during project initialization (path: {}). Runtime continues without scripts.",
+            "RuntimeSystem: Script reload failed during project initialization (path: {}). Runtime continues without scripts.",
             assemblyPath.string());
     }
 
@@ -478,7 +478,7 @@ bool RuntimeLayer::InitProject(const std::string& projectPath)
     return true;
 }
 
-bool RuntimeLayer::DiscoverAndLoadProject(const std::string& projectPath)
+bool RuntimeSystem::DiscoverAndLoadProject(const std::string& projectPath)
 {
     std::filesystem::path discoveryPath = projectPath;
     if (discoveryPath.empty())
@@ -498,13 +498,13 @@ bool RuntimeLayer::DiscoverAndLoadProject(const std::string& projectPath)
     auto project = Project::Load(m_ProjectPath);
     if (!project)
     {
-        CH_CORE_ERROR("RuntimeLayer: Failed to load project file at '{}'", m_ProjectPath);
+        CH_CORE_ERROR("RuntimeSystem: Failed to load project file at '{}'", m_ProjectPath);
         return false;
     }
 
-    CH_CORE_INFO("RuntimeLayer: Project loaded: {}", project->GetConfig().Name);
-    CH_CORE_INFO("RuntimeLayer: Project Directory: {}", project->GetProjectDirectory().string());
-    CH_CORE_INFO("RuntimeLayer: Asset Directory: {}", Project::GetAssetDirectory().string());
+    CH_CORE_INFO("RuntimeSystem: Project loaded: {}", project->GetConfig().Name);
+    CH_CORE_INFO("RuntimeSystem: Project Directory: {}", project->GetProjectDirectory().string());
+    CH_CORE_INFO("RuntimeSystem: Asset Directory: {}", Project::GetAssetDirectory().string());
 
     // CRITICAL: Load engine shaders and resources immediately after project is resolved
     ServiceLocator::Get<Renderer>().LoadEngineResources();
@@ -512,7 +512,7 @@ bool RuntimeLayer::DiscoverAndLoadProject(const std::string& projectPath)
     return true;
 }
 
-void RuntimeLayer::ApplyWindowConfiguration()
+void RuntimeSystem::ApplyWindowConfiguration()
 {
     auto project = Project::GetActive();
     if (!project)
@@ -562,7 +562,7 @@ void RuntimeLayer::ApplyWindowConfiguration()
     window.SetFullscreen(fullscreen);
 }
 
-void RuntimeLayer::SetupBrandingAndIcon()
+void RuntimeSystem::SetupBrandingAndIcon()
 {
     auto project = Project::GetActive();
     if (!project)
@@ -592,16 +592,16 @@ void RuntimeLayer::SetupBrandingAndIcon()
 
     if (!iconPath.empty())
     {
-        CH_CORE_INFO("RuntimeLayer: Setting window icon: {}", iconPath.string());
+        CH_CORE_INFO("RuntimeSystem: Setting window icon: {}", iconPath.string());
         window.SetWindowIcon(iconPath.string());
     }
     else
     {
-        CH_CORE_WARN("RuntimeLayer: Failed to resolve window icon: {}", config.IconPath);
+        CH_CORE_WARN("RuntimeSystem: Failed to resolve window icon: {}", config.IconPath);
     }
 }
 
-void RuntimeLayer::LoadInitialScene()
+void RuntimeSystem::LoadInitialScene()
 {
     auto project = Project::GetActive();
     if (!project)
@@ -627,7 +627,7 @@ void RuntimeLayer::LoadInitialScene()
         sceneToLoad = config.ActiveScenePath.string();
     }
 
-    CH_CORE_INFO("RuntimeLayer: Initial scene to load: '{}'", sceneToLoad);
+    CH_CORE_INFO("RuntimeSystem: Initial scene to load: '{}'", sceneToLoad);
 
     if (sceneToLoad.empty())
     {
@@ -651,7 +651,7 @@ void RuntimeLayer::LoadInitialScene()
     }
 }
 
-std::string RuntimeLayer::NormalizeScenePath(const std::string& path) const
+std::string RuntimeSystem::NormalizeScenePath(const std::string& path) const
 {
     std::string normalized = TrimCopy(path);
     if (normalized.empty())
@@ -674,7 +674,7 @@ std::string RuntimeLayer::NormalizeScenePath(const std::string& path) const
     return normalized;
 }
 
-void RuntimeLayer::StopCurrentScene()
+void RuntimeSystem::StopCurrentScene()
 {
     if (!m_Scene)
     {
@@ -687,7 +687,7 @@ void RuntimeLayer::StopCurrentScene()
     }
 }
 
-std::vector<std::pair<std::string, float>> RuntimeLayer::CollectSceneFontRequests() const
+std::vector<std::pair<std::string, float>> RuntimeSystem::CollectSceneFontRequests() const
 {
     std::vector<std::pair<std::string, float>> requests;
     if (!m_Scene)
@@ -707,7 +707,7 @@ std::vector<std::pair<std::string, float>> RuntimeLayer::CollectSceneFontRequest
     return requests;
 }
 
-void RuntimeLayer::PreloadSceneFonts(bool allowRuntimeMutation)
+void RuntimeSystem::PreloadSceneFonts(bool allowRuntimeMutation)
 {
     auto requests = CollectSceneFontRequests();
     if (requests.empty())
@@ -721,7 +721,7 @@ void RuntimeLayer::PreloadSceneFonts(bool allowRuntimeMutation)
         return;
     }
 
-    CH_CORE_INFO("RuntimeLayer: Preloaded {} scene font tuple(s).", loadedCount);
+    CH_CORE_INFO("RuntimeSystem: Preloaded {} scene font tuple(s).", loadedCount);
 
     if (allowRuntimeMutation && ImGui::GetFrameCount() > 0)
     {
@@ -729,13 +729,13 @@ void RuntimeLayer::PreloadSceneFonts(bool allowRuntimeMutation)
         {
             if (!imguiLayer->RefreshFontAtlasTexture())
             {
-                CH_CORE_WARN("RuntimeLayer: Scene fonts were loaded, but font atlas refresh failed.");
+                CH_CORE_WARN("RuntimeSystem: Scene fonts were loaded, but font atlas refresh failed.");
             }
         }
     }
 }
 
-bool RuntimeLayer::TransitionToScene(const std::filesystem::path& scenePath)
+bool RuntimeSystem::TransitionToScene(const std::filesystem::path& scenePath)
 {
     StopCurrentScene();
 
@@ -779,15 +779,15 @@ bool RuntimeLayer::TransitionToScene(const std::filesystem::path& scenePath)
 
     m_IsBoostingUploads = true;
     m_BoostUploadsTimer = 5.0f;
-    CH_CORE_INFO("RuntimeLayer: Boosting asset uploads for scene loading...");
+    CH_CORE_INFO("RuntimeSystem: Boosting asset uploads for scene loading...");
 
     m_IsSceneLoading = true;
     m_LoadingOverlayElapsed = 0.0f;
-    CH_CORE_INFO("RuntimeLayer: Scene loaded, waiting for async assets before runtime start.");
+    CH_CORE_INFO("RuntimeSystem: Scene loaded, waiting for async assets before runtime start.");
     return true;
 }
 
-std::optional<Camera3D> RuntimeLayer::GetActiveCamera()
+std::optional<Camera3D> RuntimeSystem::GetActiveCamera()
 {
     if (m_Scene)
     {
@@ -796,7 +796,7 @@ std::optional<Camera3D> RuntimeLayer::GetActiveCamera()
     return std::nullopt;
 }
 
-void RuntimeLayer::EnsureRuntimeFramebuffer(uint32_t width, uint32_t height)
+void RuntimeSystem::EnsureRuntimeFramebuffer(uint32_t width, uint32_t height)
 {
     if (width == 0 || height == 0)
     {
@@ -820,12 +820,12 @@ void RuntimeLayer::EnsureRuntimeFramebuffer(uint32_t width, uint32_t height)
     }
 }
 
-bool RuntimeLayer::IsSceneReadyToStart() const
+bool RuntimeSystem::IsSceneReadyToStart() const
 {
     return !ServiceLocator::Get<AssetManager>().HasBackgroundWork();
 }
 
-void RuntimeLayer::DrawLoadingOverlay()
+void RuntimeSystem::DrawLoadingOverlay()
 {
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
