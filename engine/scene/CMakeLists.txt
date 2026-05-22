@@ -8,8 +8,8 @@ chained_add_engine_module(engine_scene
         component_serializer.cpp
         hierarchy_serializer.cpp
         prefab_serializer.cpp
+        camera.cpp
         scene_camera.cpp
-        editor_camera.cpp
         entity.cpp
         component_registry.cpp
         scene_picking.cpp
@@ -33,8 +33,8 @@ chained_add_engine_module(engine_scene
         component_serializer.h
         hierarchy_serializer.h
         prefab_serializer.h
+        camera.h
         scene_camera.h
-        editor_camera.h
         scene_picking.h
         scene_settings.h
         components.h

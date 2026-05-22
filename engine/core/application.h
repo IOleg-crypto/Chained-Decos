@@ -63,11 +63,6 @@ public:
         return *s_Instance;
     }
 
-    static Application* GetInstance()
-    {
-        return s_Instance;
-    }
-
     Window& GetWindow()
     {
         return *m_Window;

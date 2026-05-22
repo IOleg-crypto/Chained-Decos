@@ -21,6 +21,7 @@ add_subdirectory(graphics)
 add_subdirectory(physics)
 add_subdirectory(audio)
 add_subdirectory(scene)
+add_subdirectory(network)
 add_subdirectory(${CMAKE_SOURCE_DIR}/scripting ${CMAKE_BINARY_DIR}/scripting)
 
 # Create the final engine facade library that links all sub-modules together
@@ -34,6 +35,7 @@ target_link_libraries(engine PUBLIC
     engine_audio
     engine_assets
     engine_core
+    engine_network
     ChainedEngine::External::GNS
 )
 

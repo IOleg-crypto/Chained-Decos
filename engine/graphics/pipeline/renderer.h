@@ -71,6 +71,12 @@ struct SkyboxData
     unsigned int SourceTextureId = 0;
 };
 
+struct LineVertex
+{
+    glm::vec3 Position;
+    glm::vec4 Color;
+};
+
 // Mutable renderer state owned by the singleton renderer.
 struct RendererData
 {
@@ -107,6 +113,8 @@ struct RendererData
     // Line rendering cache
     std::shared_ptr<class VertexBuffer> LineVBO;
     std::shared_ptr<VertexArray> LineVAO;
+    std::vector<LineVertex> LineVertexBuffer;
+    uint32_t LineVBOSize = 0;
 };
 
 // Singleton renderer facade that owns GPU resources, frame state, and low-level draw calls.
@@ -168,7 +176,6 @@ protected:
     virtual void OnInit() override;
     virtual void OnUpdate(Timestep ts) override;
     virtual void OnShutdown() override;
-
 private:
     void ApplyFogUniforms(const std::shared_ptr<ShaderAsset>& shader);
     void InitializeSkybox();
