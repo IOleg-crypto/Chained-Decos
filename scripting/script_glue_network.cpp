@@ -1,6 +1,6 @@
 #include "scripting/script_glue_internal.h"
 #include "scripting/script_internal_call_registry.h"
-#include "engine/core/network_service.h"
+#include "engine/network/network_service.h"
 #include "engine/core/service_locator.h"
 
 namespace CHEngine {

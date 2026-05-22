@@ -12,7 +12,7 @@
 #include "engine/scene/component_serializer.h"
 #include "engine/scene/component_registry.h"
 #include "engine/scene/project.h"
-#include "engine/core/network_service.h"
+#include "engine/network/network_service.h"
 #include "scripting/scriptengine.h"
 #include <GLFW/glfw3.h>
 #include <filesystem>
@@ -48,6 +48,7 @@ Application::Application(const ApplicationSpecification& spec)
     // Initialize external libraries and basic services
     NFD_Init();
     AddService<ThreadPool>();
+    AddService<Input>();
     AddService<ComponentSerializer>();
 
     auto resolver = std::make_shared<AssetPathResolver>();
@@ -140,8 +141,6 @@ void Application::Run()
         m_Timer.LastFrameTime = time;
 
         // Start of frame: Prepare input state for transition detection, THEN poll new events
-        Input::Update();
-        Input::PollEvents();
 
         if (m_Window && m_Window->GetWidth() > 0 && m_Window->GetHeight() > 0)
         {

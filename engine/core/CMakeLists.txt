@@ -21,8 +21,6 @@ chained_add_engine_module(engine_core
         layer.h
         layer_stack.h
         log.h
-        network_service.h
-        network_service.cpp
         profiler.h
         timestep.h
         uuid.h
@@ -47,5 +45,4 @@ chained_add_engine_module(engine_core
         ChainedEngine::External::Miniaudio
         ChainedEngine::External::Coral
         ChainedEngine::External::NFD
-        ChainedEngine::External::GNS
 )

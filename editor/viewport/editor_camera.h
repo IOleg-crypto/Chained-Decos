@@ -2,8 +2,10 @@
 #define CH_EDITOR_CAMERA_H
 
 #include "engine/core/timestep.h"
+#include "engine/scene/camera.h"
 #include "engine/scene/entity.h"
-#include "engine/scene/editor_camera.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 namespace CHEngine
 {
@@ -14,22 +16,57 @@ public:
     EditorCameraController();
     ~EditorCameraController() = default;
 
-    // Drives the transform and camera component of the given entity
     void OnUpdate(Entity cameraEntity, Timestep ts, const glm::vec2& viewportSize);
 
-    EditorCamera& GetCamera() { return m_Camera; }
-    float GetYaw() const { return m_Camera.GetYaw(); }
-    float GetPitch() const { return m_Camera.GetPitch(); }
+    Camera& GetCamera() { return m_Camera; }
+    const Camera& GetCamera() const { return m_Camera; }
+
+    const glm::mat4& GetViewMatrix() const { return m_ViewMatrix; }
+    glm::mat4 GetViewProjection() const { return m_Camera.GetProjection() * m_ViewMatrix; }
+
+    void SetViewportSize(uint32_t width, uint32_t height) { m_ViewportWidth = width; m_ViewportHeight = height; m_Camera.SetViewportSize(width, height); }
+
+    glm::vec3 GetUpDirection() const;
+    glm::vec3 GetRightDirection() const;
+    glm::vec3 GetForwardDirection() const;
+    glm::vec3 CalculatePosition() const;
+    glm::quat GetOrientation() const;
+
+    float GetPitch() const { return m_Pitch; }
+    float GetYaw() const { return m_Yaw; }
+    void SetPitch(float pitch) { m_Pitch = pitch; UpdateView(); }
+    void SetYaw(float yaw) { m_Yaw = yaw; UpdateView(); }
+
+    glm::vec3 GetFocalPoint() const { return m_FocalPoint; }
+    void SetFocalPoint(const glm::vec3& focalPoint) { m_FocalPoint = focalPoint; UpdateView(); }
+
+    float GetDistance() const { return m_Distance; }
+    void SetDistance(float distance) { m_Distance = distance; UpdateView(); }
+
+    void MousePan(const glm::vec2& delta);
+    void MouseRotate(const glm::vec2& delta);
+    void MouseZoom(float delta);
 
 private:
+    void UpdateView();
+
+    std::pair<float, float> PanSpeed() const;
+    float RotationSpeed() const;
+    float ZoomSpeed() const;
+
+private:
+    Camera m_Camera;
+    glm::mat4 m_ViewMatrix = glm::mat4(1.0f);
+    
+    glm::vec3 m_FocalPoint = {0.0f, 0.0f, 0.0f};
+    float m_Distance = 10.0f;
+    float m_Pitch = 0.0f, m_Yaw = 0.0f;
+
+    uint32_t m_ViewportWidth = 1280, m_ViewportHeight = 720;
     float m_MoveSpeed = 10.0f;
     float m_BoostMultiplier = 5.0f;
-
-    EditorCamera m_Camera;
-    glm::vec2 m_InitialMousePosition = {0.0f, 0.0f};
 };
 
 } // namespace CHEngine
 
 #endif // CH_EDITOR_CAMERA_H
-
