@@ -316,17 +316,19 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
         // Transform AABB center+extents to world space for frustum culling
         glm::vec3 localCenter = (bbox.Max + bbox.Min) * 0.5f;
         glm::vec3 localExtents = (bbox.Max - bbox.Min) * 0.5f;
-        glm::vec3 worldCenter = glm::vec3(transform.WorldTransform * glm::vec4(localCenter, 1.0f));
+        
+        const glm::mat4& worldTransform = transform.WorldTransform;
+        glm::vec3 worldCenter = glm::vec3(worldTransform * glm::vec4(localCenter, 1.0f));
         glm::vec3 worldExtents = {
-            std::abs(transform.WorldTransform[0][0]) * localExtents.x +
-                std::abs(transform.WorldTransform[1][0]) * localExtents.y +
-                std::abs(transform.WorldTransform[2][0]) * localExtents.z,
-            std::abs(transform.WorldTransform[0][1]) * localExtents.x +
-                std::abs(transform.WorldTransform[1][1]) * localExtents.y +
-                std::abs(transform.WorldTransform[2][1]) * localExtents.z,
-            std::abs(transform.WorldTransform[0][2]) * localExtents.x +
-                std::abs(transform.WorldTransform[1][2]) * localExtents.y +
-                std::abs(transform.WorldTransform[2][2]) * localExtents.z,
+            std::abs(worldTransform[0][0]) * localExtents.x +
+                std::abs(worldTransform[1][0]) * localExtents.y +
+                std::abs(worldTransform[2][0]) * localExtents.z,
+            std::abs(worldTransform[0][1]) * localExtents.x +
+                std::abs(worldTransform[1][1]) * localExtents.y +
+                std::abs(worldTransform[2][1]) * localExtents.z,
+            std::abs(worldTransform[0][2]) * localExtents.x +
+                std::abs(worldTransform[1][2]) * localExtents.y +
+                std::abs(worldTransform[2][2]) * localExtents.z,
         };
         if (!IsBoxVisible(frustum, worldCenter, worldExtents))
         {

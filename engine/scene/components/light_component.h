@@ -2,7 +2,7 @@
 #define CH_LIGHT_COMPONENT_H
 
 
-#include "engine/core/reflection.h"
+#include "engine/core/reflection_rfl.h"
 
 namespace CHEngine
 {
@@ -23,40 +23,13 @@ struct LightComponent
     float OuterCutoff = 20.0f; // Spot light only (degrees)
     bool Shadows = false;      // Future proofing
 
-    LightComponent() = default;
-    LightComponent(const LightComponent&) = default;
 
 
-    CH_REFLECT_BEGIN(LightComponent)
-        CH_HEADER(props, "General");
-        static const char* lightTypeStrings[] = { "Point", "Spot", "Directional" };
-        CH_ENUM(props, Type, lightTypeStrings);
-        CH_PROP(props, LightColor);
-        CH_PROP_META(props, Intensity, PropertyMeta(0.0f, 1000.0f, 1.0f));
-        
-        if (CH_BEGIN_GROUP(props, "Parameters", true))
-        {
-            CH_PROP_META(props, Radius, PropertyMeta(1.0f, 1000.0f, 1.0f));
-            
-            // Always show Spot fields if the light is a Spot light.
-            if (Type == LightType::Spot)
-            {
-                CH_PROP_META(props, InnerCutoff, PropertyMeta(0.0f, 90.0f, 0.5f));
-                CH_PROP_META(props, OuterCutoff, PropertyMeta(0.0f, 90.0f, 0.5f));
-            }
-            else if (props.GetMode() != CHEngine::ReflectionMode::UI)
-            {
-                // Still serialize them for other types to avoid data loss.
-                CH_PROP(props, InnerCutoff);
-                CH_PROP(props, OuterCutoff);
-            }
-            CH_END_GROUP(props);
-        }
-
-        CH_SEPARATOR(props);
-        CH_PROP(props, Shadows);
-    CH_REFLECT_END()
+    static const char* GetStaticName() { return "LightComponent"; }
 };
+
+CH_MARK_RFL(LightComponent);
+
 } // namespace CHEngine
 
 #endif // CH_LIGHT_COMPONENT_H

@@ -6,35 +6,32 @@ chained_add_engine_module(engine_scene
         project_serializer.cpp
         scene_serializer.cpp
         component_serializer.cpp
+        managed_script_serializer.cpp
         hierarchy_serializer.cpp
         prefab_serializer.cpp
         camera.cpp
-        scene_camera.cpp
         entity.cpp
         component_registry.cpp
         scene_picking.cpp
-        systems/asset_resolution_system.cpp
-        systems/animation_system.cpp
+        systems/scene_resource_manager.cpp
         systems/hierarchy_system.cpp
         systems/scene_transition_system.cpp
         systems/scene_transition_system.h
         animation_systems.cpp
-        systems/scene_audio_system.cpp
-        systems/animation_graph_system.cpp
         scene_system_manager.cpp
         scene_scripting_manager.cpp
         ui_factory.cpp
-        scene.h
+       
         scene_events.h
         scene_scripting_manager.h
         project.h
         project_serializer.h
         scene_serializer.h
         component_serializer.h
+        managed_script_serializer.h
         hierarchy_serializer.h
         prefab_serializer.h
         camera.h
-        scene_camera.h
         scene_picking.h
         scene_settings.h
         components.h
@@ -53,10 +50,7 @@ chained_add_engine_module(engine_scene
         components/tag_component.h
         components/transform_component.h
         components/sprite_component.h
-        components/animation_graph_component.h
-        systems/animation_graph_system.h
-        systems/asset_resolution_system.h
-        animation_graph_data.h
+        systems/scene_resource_manager.h
         entity.h
     DEPENDS
         engine_core

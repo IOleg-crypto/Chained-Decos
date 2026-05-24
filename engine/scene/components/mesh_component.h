@@ -1,8 +1,9 @@
 #ifndef CH_MESH_COMPONENT_H
 #define CH_MESH_COMPONENT_H
 
-#include "engine/core/reflection.h"
-#include "engine/graphics/assets/model_asset.h"
+#include "engine/core/reflection_rfl.h"
+#include "engine/assets/asset.h"
+#include <string>
 #include "engine/graphics/pipeline/material.h"
 
 namespace CHEngine
@@ -23,20 +24,10 @@ struct MaterialSlot
     MaterialSlotTarget Target = MaterialSlotTarget::MaterialIndex;
     MaterialInstance Material;
 
-    MaterialSlot() = default;
-    MaterialSlot(const std::string& name, int index)
-        : Name(name),
-          Index(index)
-    {
-    }
 
-    CH_REFLECT_BEGIN(MaterialSlot)
-        CH_PROP(props, Name);
-        CH_PROP(props, Index);
-        CH_PROP_NAMED(props, "Target", (int&)Target);
-        CH_NESTED_NAMED(props, "Material", Material);
-    CH_REFLECT_END()
 };
+
+CH_MARK_RFL(MaterialSlot);
 
 struct ModelComponent
 {
@@ -45,39 +36,24 @@ struct ModelComponent
     std::vector<MaterialSlot> Materials;
     bool MaterialsInitialized = false;
 
-    ModelComponent() = default;
-    ModelComponent(const ModelComponent&) = default;
-    ModelComponent(AssetHandle handle)
-        : ModelHandle(handle)
-    {
-    }
-    CH_REFLECT_BEGIN(ModelComponent)
-        CH_HEADER(props, "Model Asset");
-        if (props.GetMode() != CHEngine::ReflectionMode::UI)
-            CH_HANDLE_NAMED(props, "Handle", ModelHandle);
-        
-        CH_FILE(props, ModelPath, "fbx,gltf,glb,obj");
 
-        if (props.GetMode() != CHEngine::ReflectionMode::UI)
-        {
-            CH_SEQUENCE_NAMED(props, "Materials", Materials);
-        }
-    CH_REFLECT_END()
+
+    static const char* GetStaticName() { return "ModelComponent"; }
 };
+
+CH_MARK_RFL(ModelComponent);
 
 struct MaterialComponent
 {
     std::vector<MaterialSlot> Materials;
     bool MaterialsInitialized = false;
 
-    MaterialComponent() = default;
-    MaterialComponent(const MaterialComponent&) = default;
 
-    CH_REFLECT_BEGIN(MaterialComponent)
-        CH_HEADER(props, "Material Overrides");
-        CH_SEQUENCE_NAMED(props, "Slots", Materials);
-    CH_REFLECT_END()
+
+    static const char* GetStaticName() { return "MaterialComponent"; }
 };
+
+CH_MARK_RFL(MaterialComponent);
 
 } // namespace CHEngine
 

@@ -1,7 +1,7 @@
 #ifndef CH_SCENE_TRANSITION_COMPONENT_H
 #define CH_SCENE_TRANSITION_COMPONENT_H
 
-#include "engine/core/reflection.h"
+#include "engine/core/reflection_rfl.h"
 #include <string>
 
 namespace CHEngine
@@ -13,17 +13,11 @@ namespace CHEngine
         std::string TargetScenePath; // The relative path to the .chscene file to load
         bool Triggered = false;      // Can be set manually or via automated UI events
 
-        SceneTransitionComponent() = default;
-        SceneTransitionComponent(const std::string& path)
-            : TargetScenePath(path)
-        {
-        }
-
-        CH_REFLECT_BEGIN(SceneTransitionComponent)
-            CH_FILE_NAMED(props, "Target Scene Path", TargetScenePath, "chscene");
-            CH_PROP(props, Triggered);
-        CH_REFLECT_END()
+        static const char* GetStaticName() { return "SceneTransitionComponent"; }
     };
+
+    CH_MARK_RFL(SceneTransitionComponent);
+
 }
 
 #endif // CH_SCENE_TRANSITION_COMPONENT_H

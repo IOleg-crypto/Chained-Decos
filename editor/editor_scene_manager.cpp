@@ -12,7 +12,6 @@
 #include "engine/assets/asset_manager.h"
 #include "engine/core/service_locator.h"
 #include "engine/core/platform.h"
-#include <algorithm>
 #include "engine/scene/scene_events.h"
 
 namespace CHEngine
@@ -422,7 +421,7 @@ bool EditorSceneManager::OnSceneOpened(SceneOpenedEvent& e)
     auto project = Project::GetActive();
     if (project && !e.GetPath().empty())
     {
-        project->SetActiveScenePath(std::filesystem::relative(e.GetPath(), project->GetProjectDirectory()));
+        project->GetConfig().ActiveScenePath = std::filesystem::relative(e.GetPath(), project->GetProjectDirectory());
         EditorLayer::Get().GetProjectManager().SaveProject();
 
         EditorLayer::Get().GetConfig().LastScenePath = e.GetPath();

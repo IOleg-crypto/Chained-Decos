@@ -7,30 +7,30 @@ namespace CHEngine
 
 void OpenGLRendererAPI::Init()
 {
-#ifdef CH_DEBUG
-    glEnable(GL_DEBUG_OUTPUT);
-    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-    glDebugMessageCallback(
-        [](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message,
-           const void* userParam) {
-            switch (severity)
-            {
-            case GL_DEBUG_SEVERITY_HIGH:
-                CH_CORE_ERROR("[OpenGL] {}", message);
-                return;
-            case GL_DEBUG_SEVERITY_MEDIUM:
-                CH_CORE_WARN("[OpenGL] {}", message);
-                return;
-            case GL_DEBUG_SEVERITY_LOW:
-                CH_CORE_INFO("[OpenGL] {}", message);
-                return;
-            case GL_DEBUG_SEVERITY_NOTIFICATION:
-                CH_CORE_TRACE("[OpenGL] {}", message);
-                return;
-            }
-        },
-        nullptr);
-#endif
+// #ifdef CH_DEBUG
+//     glEnable(GL_DEBUG_OUTPUT);
+//     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+//     glDebugMessageCallback(
+//         [](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message,
+//            const void* userParam) {
+//             switch (severity)
+//             {
+//             case GL_DEBUG_SEVERITY_HIGH:
+//                 CH_CORE_ERROR("[OpenGL] {}", message);
+//                 return;
+//             case GL_DEBUG_SEVERITY_MEDIUM:
+//                 CH_CORE_WARN("[OpenGL] {}", message);
+//                 return;
+//             case GL_DEBUG_SEVERITY_LOW:
+//                 CH_CORE_INFO("[OpenGL] {}", message);
+//                 return;
+//             case GL_DEBUG_SEVERITY_NOTIFICATION:
+//                 CH_CORE_TRACE("[OpenGL] {}", message);
+//                 return;
+//             }
+//         },
+//         nullptr);
+// #endif
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

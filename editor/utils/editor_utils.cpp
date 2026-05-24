@@ -64,7 +64,7 @@ void LaunchStandalone(std::shared_ptr<Project> project, std::shared_ptr<Scene> e
             }
 
             scenePath = std::filesystem::absolute(scenePath);
-            project->SetActiveScenePath(Project::GetRelativePath(scenePath));
+            project->GetConfig().ActiveScenePath = Project::GetRelativePath(scenePath);
             sceneArgument = std::format(" --scene \"{}\"", scenePath.string());
         }
     }

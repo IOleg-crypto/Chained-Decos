@@ -14,7 +14,13 @@ static void SerializeEntityRecursive(YAML::Emitter& out, Entity entity)
 {
     out << YAML::BeginMap;
     // We must manually serialize the ID component early or rely on ComponentSerializer
-    ServiceLocator::Get<ComponentSerializer>().SerializeAll(out, entity);
+    ComponentSerializer* serializer = nullptr;
+    if (entity.GetRegistry().ctx().contains<ComponentSerializer*>())
+        serializer = entity.GetRegistry().ctx().get<ComponentSerializer*>();
+    if (serializer)
+        serializer->SerializeAll(out, entity);
+    else if (ServiceLocator::Has<ComponentSerializer>())
+        ServiceLocator::Get<ComponentSerializer>().SerializeAll(out, entity);
     out << YAML::EndMap;
 
     if (entity.HasComponent<HierarchyComponent>())
@@ -95,7 +101,13 @@ Entity PrefabSerializer::Deserialize(Scene* scene, const std::string& filepath)
         if (idx >= createdEntities.size()) break;
         
         Entity entity = createdEntities[idx++];
-        ServiceLocator::Get<ComponentSerializer>().DeserializeAll(entity, entityNode);
+        ComponentSerializer* serializer = nullptr;
+        if (scene->GetRegistry().ctx().contains<ComponentSerializer*>())
+            serializer = scene->GetRegistry().ctx().get<ComponentSerializer*>();
+        if (serializer)
+            serializer->DeserializeAll(entity, entityNode);
+        else if (ServiceLocator::Has<ComponentSerializer>())
+            ServiceLocator::Get<ComponentSerializer>().DeserializeAll(entity, entityNode);
         
         HierarchyTask task;
         HierarchySerializer::DeserializeTask(entity, entityNode, task);

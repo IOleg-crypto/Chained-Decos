@@ -25,6 +25,7 @@ include(coral)
 include(nfd)
 include(protobuf) # Required for GNS
 include(gamenetworkingsockets)
+include(reflect-cpp)
 
 # Tests
 if(BUILD_TESTS)

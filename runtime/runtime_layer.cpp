@@ -75,18 +75,18 @@ bool ExistsNoThrow(const std::filesystem::path& path)
 
 namespace CHEngine
 {
-RuntimeSystem::RuntimeSystem(const std::string& projectPath)
-    :  ,
+RuntimeLayer::RuntimeLayer(const std::string& projectPath)
+    : Layer("RuntimeLayer"),
       m_ProjectPath(projectPath)
 {
     m_SceneRenderer = std::make_unique<SceneRenderer>();
 }
 
-RuntimeSystem::~RuntimeSystem()
+RuntimeLayer::~RuntimeLayer()
 {
 }
 
-void RuntimeSystem::OnInit()
+void RuntimeLayer::OnAttach()
 {
     if (auto* imguiLayer = Application::Get().GetImGuiLayer())
     {
@@ -125,7 +125,7 @@ void RuntimeSystem::OnInit()
     }
 }
 
-void RuntimeSystem::OnShutdown()
+void RuntimeLayer::OnDetach()
 {
     StopCurrentScene();
 
@@ -136,7 +136,7 @@ void RuntimeSystem::OnShutdown()
     m_LoadingOverlayElapsed = 0.0f;
 }
 
-void RuntimeSystem::OnUpdate(Timestep ts)
+void RuntimeLayer::OnUpdate(Timestep ts)
 {
     // Boost uploads during loading
     if (ServiceLocator::Has<ScriptEngine>())
@@ -186,7 +186,7 @@ void RuntimeSystem::OnUpdate(Timestep ts)
     }
 }
 
-void RuntimeSystem::OnRender(Timestep ts)
+void RuntimeLayer::OnRender(Timestep ts)
 {
     Window& window = Application::Get().GetWindow();
     uint32_t width = (uint32_t)window.GetWidth();
@@ -284,7 +284,7 @@ void RuntimeSystem::OnRender(Timestep ts)
     }
 }
 
-void RuntimeSystem::OnImGuiRender()
+void RuntimeLayer::OnImGuiRender()
 {
     if (m_Scene)
     {
@@ -335,7 +335,7 @@ void RuntimeSystem::OnImGuiRender()
     }
 }
 
-void RuntimeSystem::OnEvent(Event& e)
+void RuntimeLayer::OnEvent(Event& e)
 {
     if (m_Scene && m_RuntimeStarted)
     {
@@ -366,7 +366,7 @@ void RuntimeSystem::OnEvent(Event& e)
 //-----------------------------------------------------------------------------
 // Purpose: Load a new scene from file
 //-----------------------------------------------------------------------------
-void RuntimeSystem::LoadScene(const std::string& path)
+void RuntimeLayer::LoadScene(const std::string& path)
 {
     const std::string normalizedPath = NormalizeScenePath(path);
     if (normalizedPath.empty())
@@ -405,7 +405,7 @@ void RuntimeSystem::LoadScene(const std::string& path)
     }
 }
 
-void RuntimeSystem::LoadScene(int index)
+void RuntimeLayer::LoadScene(int index)
 {
     auto project = Project::GetActive();
     if (!project)
@@ -421,7 +421,7 @@ void RuntimeSystem::LoadScene(int index)
     }
 }
 
-bool RuntimeSystem::InitProject(const std::string& projectPath)
+bool RuntimeLayer::InitProject(const std::string& projectPath)
 {
     if (!DiscoverAndLoadProject(projectPath))
     {
@@ -478,7 +478,7 @@ bool RuntimeSystem::InitProject(const std::string& projectPath)
     return true;
 }
 
-bool RuntimeSystem::DiscoverAndLoadProject(const std::string& projectPath)
+bool RuntimeLayer::DiscoverAndLoadProject(const std::string& projectPath)
 {
     std::filesystem::path discoveryPath = projectPath;
     if (discoveryPath.empty())
@@ -512,7 +512,7 @@ bool RuntimeSystem::DiscoverAndLoadProject(const std::string& projectPath)
     return true;
 }
 
-void RuntimeSystem::ApplyWindowConfiguration()
+void RuntimeLayer::ApplyWindowConfiguration()
 {
     auto project = Project::GetActive();
     if (!project)
@@ -562,7 +562,7 @@ void RuntimeSystem::ApplyWindowConfiguration()
     window.SetFullscreen(fullscreen);
 }
 
-void RuntimeSystem::SetupBrandingAndIcon()
+void RuntimeLayer::SetupBrandingAndIcon()
 {
     auto project = Project::GetActive();
     if (!project)
@@ -601,7 +601,7 @@ void RuntimeSystem::SetupBrandingAndIcon()
     }
 }
 
-void RuntimeSystem::LoadInitialScene()
+void RuntimeLayer::LoadInitialScene()
 {
     auto project = Project::GetActive();
     if (!project)
@@ -651,7 +651,7 @@ void RuntimeSystem::LoadInitialScene()
     }
 }
 
-std::string RuntimeSystem::NormalizeScenePath(const std::string& path) const
+std::string RuntimeLayer::NormalizeScenePath(const std::string& path) const
 {
     std::string normalized = TrimCopy(path);
     if (normalized.empty())
@@ -674,7 +674,7 @@ std::string RuntimeSystem::NormalizeScenePath(const std::string& path) const
     return normalized;
 }
 
-void RuntimeSystem::StopCurrentScene()
+void RuntimeLayer::StopCurrentScene()
 {
     if (!m_Scene)
     {
@@ -687,7 +687,7 @@ void RuntimeSystem::StopCurrentScene()
     }
 }
 
-std::vector<std::pair<std::string, float>> RuntimeSystem::CollectSceneFontRequests() const
+std::vector<std::pair<std::string, float>> RuntimeLayer::CollectSceneFontRequests() const
 {
     std::vector<std::pair<std::string, float>> requests;
     if (!m_Scene)
@@ -707,7 +707,7 @@ std::vector<std::pair<std::string, float>> RuntimeSystem::CollectSceneFontReques
     return requests;
 }
 
-void RuntimeSystem::PreloadSceneFonts(bool allowRuntimeMutation)
+void RuntimeLayer::PreloadSceneFonts(bool allowRuntimeMutation)
 {
     auto requests = CollectSceneFontRequests();
     if (requests.empty())
@@ -735,7 +735,7 @@ void RuntimeSystem::PreloadSceneFonts(bool allowRuntimeMutation)
     }
 }
 
-bool RuntimeSystem::TransitionToScene(const std::filesystem::path& scenePath)
+bool RuntimeLayer::TransitionToScene(const std::filesystem::path& scenePath)
 {
     StopCurrentScene();
 
@@ -787,7 +787,7 @@ bool RuntimeSystem::TransitionToScene(const std::filesystem::path& scenePath)
     return true;
 }
 
-std::optional<Camera3D> RuntimeSystem::GetActiveCamera()
+std::optional<Camera3D> RuntimeLayer::GetActiveCamera()
 {
     if (m_Scene)
     {
@@ -796,7 +796,7 @@ std::optional<Camera3D> RuntimeSystem::GetActiveCamera()
     return std::nullopt;
 }
 
-void RuntimeSystem::EnsureRuntimeFramebuffer(uint32_t width, uint32_t height)
+void RuntimeLayer::EnsureRuntimeFramebuffer(uint32_t width, uint32_t height)
 {
     if (width == 0 || height == 0)
     {
@@ -820,12 +820,12 @@ void RuntimeSystem::EnsureRuntimeFramebuffer(uint32_t width, uint32_t height)
     }
 }
 
-bool RuntimeSystem::IsSceneReadyToStart() const
+bool RuntimeLayer::IsSceneReadyToStart() const
 {
     return !ServiceLocator::Get<AssetManager>().HasBackgroundWork();
 }
 
-void RuntimeSystem::DrawLoadingOverlay()
+void RuntimeLayer::DrawLoadingOverlay()
 {
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);

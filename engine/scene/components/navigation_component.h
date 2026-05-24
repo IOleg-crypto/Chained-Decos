@@ -2,25 +2,25 @@
 #define CH_NAVIGATION_COMPONENT_H
 
 #include <entt/entt.hpp>
-#include "engine/core/reflection.h"
+#include "engine/core/reflection_rfl.h"
 
 // Now useless
 namespace CHEngine
 {
 struct NavigationComponent
 {
-    entt::entity Up = entt::null;
-    entt::entity Down = entt::null;
-    entt::entity Left = entt::null;
-    entt::entity Right = entt::null;
+    entt::entity Up = ::entt::null;
+    entt::entity Down = ::entt::null;
+    entt::entity Left = ::entt::null;
+    entt::entity Right = ::entt::null;
 
     bool IsDefaultFocus = false;
 
-    CH_REFLECT_BEGIN(NavigationComponent)
-        CH_PROP_NAMED(props, "Is Default Focus", IsDefaultFocus);
-        // Navigation targets (entt::entity) are usually handled by Entity picker in UI
-    CH_REFLECT_END()
+    static const char* GetStaticName() { return "NavigationComponent"; }
 };
+
+CH_MARK_RFL(NavigationComponent);
+
 } // namespace CHEngine
 
 #endif // CH_NAVIGATION_COMPONENT_H

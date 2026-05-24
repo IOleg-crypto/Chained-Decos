@@ -19,13 +19,13 @@ namespace CHEngine
         void Unregister(AssetHandle handle);
         void Clear();
 
-        [[nodiscard]] std::shared_ptr<Asset> Get(AssetHandle handle) const;
-        [[nodiscard]] std::shared_ptr<Asset> Get(const std::string& resolvedPath) const;
+        std::shared_ptr<Asset> Get(AssetHandle handle) const;
+        std::shared_ptr<Asset> Get(const std::string& resolvedPath) const;
         
-        [[nodiscard]] bool Contains(AssetHandle handle) const;
-        [[nodiscard]] bool Contains(const std::string& resolvedPath) const;
+        bool Contains(AssetHandle handle) const;
+        bool Contains(const std::string& resolvedPath) const;
 
-        [[nodiscard]] AssetHandle GetHandle(const std::string& resolvedPath) const;
+        AssetHandle GetHandle(const std::string& resolvedPath) const;
 
     private:
         std::unordered_map<AssetHandle, std::shared_ptr<Asset>> m_AssetCache;

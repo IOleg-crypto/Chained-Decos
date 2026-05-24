@@ -108,7 +108,7 @@ void ComponentSerializer::Register(const std::string& key,
         }
     };
 
-    ComponentRegistry::Register(entt::type_hash<T>::value(), metadata);
+    ComponentRegistry::Register(::entt::type_hash<T>::value(), metadata);
 }
 
 template <typename T> void ComponentSerializer::Register(const std::string& key)
@@ -122,7 +122,10 @@ template <typename T> void ComponentSerializer::Register(const std::string& key)
             out << YAML::Key << key << YAML::Value << YAML::BeginMap;
             Serialization::PropertyArchive archive(out);
             CHEngine::Properties props(archive);
-            entity.GetComponent<T>().Reflect(props);
+            if constexpr (is_rfl_component<T>::value)
+                ReflectFromRfl(entity.GetComponent<T>(), props);
+            else
+                entity.GetComponent<T>().Reflect(props);
             out << YAML::EndMap;
         }
     };
@@ -136,7 +139,10 @@ template <typename T> void ComponentSerializer::Register(const std::string& key)
             entity.Patch<T>([&](auto& component) {
                 Serialization::PropertyArchive archive(node[key]);
                 CHEngine::Properties props(archive);
-                component.Reflect(props);
+                if constexpr (is_rfl_component<T>::value)
+                    ReflectFromRfl(component, props);
+                else
+                    component.Reflect(props);
             });
         }
     };
@@ -168,7 +174,7 @@ template <typename T> void ComponentSerializer::Register(const std::string& key)
         }
     };
 
-    ComponentRegistry::Register(entt::type_hash<T>::value(), metadata);
+    ComponentRegistry::Register(::entt::type_hash<T>::value(), metadata);
 }
 
 template <typename T> void ComponentSerializer::Register()

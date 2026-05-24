@@ -11,6 +11,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include "engine/core/reflection.h"
+#include "engine/core/reflection_rfl.h"
 
 namespace CHEngine
 {
@@ -114,12 +115,23 @@ namespace CHEngine
                     // Add component if it doesn't exist yet (it won't during scene loading)
                     auto& comp = e.AddOrReplaceComponent<T>();
                     GenericProperties props(*archive);
-                    comp.Reflect(props);
+                    if constexpr (is_rfl_component<T>::value){
+                        ReflectFromRfl(comp, props);
+                    }
+                    else{
+                        comp.Reflect(props);
+                    }
                 }
                 else if (e.HasComponent<T>())
                 {
                     GenericProperties props(*archive);
-                    e.GetComponent<T>().Reflect(props);
+                    auto& comp = e.GetComponent<T>();
+                    if constexpr (is_rfl_component<T>::value){
+                        ReflectFromRfl(comp, props);
+                    }
+                    else{
+                        comp.Reflect(props);
+                    }
                 }
             };
 

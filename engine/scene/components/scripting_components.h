@@ -1,6 +1,6 @@
 #ifndef CH_SCRIPTING_COMPONENTS_H
 #define CH_SCRIPTING_COMPONENTS_H   
-#include "engine/core/reflection.h"
+#include "engine/core/reflection_rfl.h"
 #include <vector>
 #include <string>
 #include <map>
@@ -22,28 +22,9 @@ struct ScriptField
     ScriptFieldType Type = ScriptFieldType::None;
     std::string Name;
     std::variant<float, int, bool, std::string, glm::vec2, glm::vec3, glm::vec4, CHEngine::Color, uint64_t> Value;
-
-    CH_REFLECT_BEGIN(ScriptField)
-        CH_PROP(props, Name);
-        CH_PROP_NAMED(props, "Type", (int&)Type);
-        
-        // Handle variant reflection
-        std::visit([&](auto&& val) {
-            using T = std::decay_t<decltype(val)>;
-            if constexpr (std::is_same_v<T, CHEngine::Color>)
-                CH_PROP_NAMED(props, "Value", val);
-            else if constexpr (std::is_same_v<T, uint64_t>)
-            {
-                if (props.GetMode() != CHEngine::ReflectionMode::UI)
-                    CH_HANDLE_NAMED(props, "Value", val);
-            }
-            else if constexpr (std::is_same_v<T, float>)
-                CH_PROP_META_NAMED(props, "Value", val, PropertyMeta(-100.0f, 100.0f, 0.01f));
-            else
-                CH_PROP_NAMED(props, "Value", val);
-        }, Value);
-    CH_REFLECT_END()
 };
+
+CH_MARK_RFL(ScriptField);
 
 // Represents a single C# script instance attached to an entity.
 // Instance is stored as shared_ptr<void> with a type-erasing custom deleter set by
@@ -58,56 +39,47 @@ struct ManagedScriptInstance
     std::shared_ptr<void> Instance;
     bool        NeedsStart   = true;
 
-    // Engine calls methods directly via Coral::ManagedObject::InvokeMethod.
-
-    ManagedScriptInstance() = default;
-    explicit ManagedScriptInstance(const std::string& className)
-        : ClassName(className) {}
-
-    // Copy only persisted data — runtime state is never copied.
-    ManagedScriptInstance(const ManagedScriptInstance& other)
-        : ClassName(other.ClassName), Fields(other.Fields) {}
-    ManagedScriptInstance& operator=(const ManagedScriptInstance& other)
+    ManagedScriptInstance ClonePersistent() const
     {
-        if (this != &other)
-        {
-            ClassName = other.ClassName;
-            Fields = other.Fields;
-            Instance.reset();
-            NeedsStart = true;
-        }
-        return *this;
+        ManagedScriptInstance copy;
+        copy.ClassName = ClassName;
+        copy.Fields = Fields;
+        return copy;
     }
 
-    // Move is allowed — transfers ownership of Instance.
-    ManagedScriptInstance(ManagedScriptInstance&&) = default;
-    ManagedScriptInstance& operator=(ManagedScriptInstance&&) = default;
+    void ResetRuntimeState()
+    {
+        Instance.reset();
+        NeedsStart = true;
+    }
 
     // Returns a raw (non-owning) pointer to the underlying object. Cast as needed.
     void* GetRaw() const { return Instance.get(); }
     bool HasInstance() const { return Instance != nullptr; }
-
-    CH_REFLECT_BEGIN(ManagedScriptInstance)
-        CH_PROP_META_NAMED(props, "ClassName", ClassName, PropertyMeta(PropertyMeta::WidgetHint::Enum));
-        for (auto& [name, field] : Fields)
-        {
-            std::visit([&](auto&& val) {
-                CH_PROP_NAMED(props, name.c_str(), val);
-            }, field.Value);
-        }
-    CH_REFLECT_END()
 };
+
+CH_MARK_RFL(ManagedScriptInstance);
 
 // ECS component that enables managed (C#) scripting for an entity.
 struct ManagedScriptComponent
 {
     std::vector<ManagedScriptInstance> Scripts;
-    ManagedScriptComponent() = default;
 
-    CH_REFLECT_BEGIN(ManagedScriptComponent)
-        CH_SEQUENCE_NAMED(props, "Scripts", Scripts);
-    CH_REFLECT_END()
+    ManagedScriptComponent ClonePersistent() const
+    {
+        ManagedScriptComponent copy;
+        copy.Scripts.reserve(Scripts.size());
+        for (const auto& script : Scripts)
+        {
+            copy.Scripts.push_back(script.ClonePersistent());
+        }
+        return copy;
+    }
+
+    static const char* GetStaticName() { return "ManagedScriptComponent"; }
 };
+
+CH_MARK_RFL(ManagedScriptComponent);
 
 } // namespace CHEngine
 
