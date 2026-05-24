@@ -21,27 +21,27 @@ public:
     void SetProjectDirectory(const std::filesystem::path& path);
     void SetAssetDirectory(const std::filesystem::path& path);
 
-    [[nodiscard]] const std::filesystem::path& GetEngineRoot() const
+    const std::filesystem::path& GetEngineRoot() const
     {
         return m_EngineRoot;
     }
-    [[nodiscard]] const std::filesystem::path& GetProjectDirectory() const
+    const std::filesystem::path& GetProjectDirectory() const
     {
         return m_ProjectDirectory;
     }
-    [[nodiscard]] const std::filesystem::path& GetAssetDirectory() const
+    const std::filesystem::path& GetAssetDirectory() const
     {
         return m_AssetDirectory;
     }
 
     // Resolves a path (e.g. "engine/shaders/lit.chshader") to an absolute filesystem path.
-    [[nodiscard]] std::string Resolve(const std::string& path) const;
+    std::string Resolve(const std::string& path) const;
 
     // Clears the resolution cache.
     void ClearCache();
 
 private:
-    [[nodiscard]] std::string InternalResolve(const std::string& path) const;
+    std::string InternalResolve(const std::string& path) const;
 
     std::filesystem::path m_EngineRoot;
     std::filesystem::path m_ProjectDirectory;

@@ -6,36 +6,36 @@ namespace CHEngine
 
 void Camera::SetPerspective(float verticalFov, float nearClip, float farClip)
 {
-    m_ProjectionType = ProjectionType::Perspective;
-    m_PerspectiveFOV = verticalFov;
-    m_PerspectiveNear = nearClip;
-    m_PerspectiveFar = farClip;
+    Type = ProjectionType::Perspective;
+    PerspectiveFOV = verticalFov;
+    PerspectiveNear = nearClip;
+    PerspectiveFar = farClip;
     RecalculateProjection();
 }
 
 void Camera::SetOrthographic(float size, float nearClip, float farClip)
 {
-    m_ProjectionType = ProjectionType::Orthographic;
-    m_OrthographicSize = size;
-    m_OrthographicNear = nearClip;
-    m_OrthographicFar = farClip;
+    Type = ProjectionType::Orthographic;
+    OrthographicSize = size;
+    OrthographicNear = nearClip;
+    OrthographicFar = farClip;
     RecalculateProjection();
 }
 
 void Camera::RecalculateProjection()
 {
-    if (m_ProjectionType == ProjectionType::Perspective)
+    if (Type == ProjectionType::Perspective)
     {
-        m_Projection = glm::perspective(m_PerspectiveFOV, m_AspectRatio, m_PerspectiveNear, m_PerspectiveFar);
+        ProjectionMatrix = glm::perspective(PerspectiveFOV, AspectRatio, PerspectiveNear, PerspectiveFar);
     }
     else
     {
-        float orthoLeft = -m_OrthographicSize * m_AspectRatio * 0.5f;
-        float orthoRight = m_OrthographicSize * m_AspectRatio * 0.5f;
-        float orthoBottom = -m_OrthographicSize * 0.5f;
-        float orthoTop = m_OrthographicSize * 0.5f;
+        float orthoLeft = -OrthographicSize * AspectRatio * 0.5f;
+        float orthoRight = OrthographicSize * AspectRatio * 0.5f;
+        float orthoBottom = -OrthographicSize * 0.5f;
+        float orthoTop = OrthographicSize * 0.5f;
 
-        m_Projection = glm::ortho(orthoLeft, orthoRight, orthoBottom, orthoTop, m_OrthographicNear, m_OrthographicFar);
+        ProjectionMatrix = glm::ortho(orthoLeft, orthoRight, orthoBottom, orthoTop, OrthographicNear, OrthographicFar);
     }
 }
 

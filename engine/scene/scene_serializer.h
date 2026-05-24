@@ -19,7 +19,7 @@ public:
     bool Deserialize(const std::string& filepath);
 
     // Returns the last serialization or deserialization error message.
-    [[nodiscard]] const std::string& GetLastError() const
+    const std::string& GetLastError() const
     {
         return m_LastError;
     }

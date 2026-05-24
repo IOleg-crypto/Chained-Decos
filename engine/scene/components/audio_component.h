@@ -2,6 +2,7 @@
 #define CH_AUDIO_COMPONENT_H
 
 #include "engine/core/reflection.h"
+#include "engine/core/reflection_rfl.h"
 #include "engine/assets/asset.h"
 #include <string>
 #include <glm/glm.hpp>
@@ -25,30 +26,10 @@ struct AudioComponent
     
     bool IsPlaying = false;
 
-    CH_REFLECT_BEGIN(AudioComponent)
-        if (props.GetMode() != CHEngine::ReflectionMode::UI)
-            CH_HANDLE(props, SoundHandle);
-        if (CH_FILE(props, SoundPath, "mp3,wav,ogg"))
-        {
-            // Path changed — invalidate the cached handle so SceneAudioSystem loads the new file.
-            SoundHandle = AssetHandle(0);
-            IsPlaying = false;
-        }
-        CH_PROP_META(props, Volume, PropertyMeta(0.0f, 1.0f, 0.01f));
-        CH_PROP_META(props, Pitch, PropertyMeta(0.5f, 2.0f, 0.05f));
-        CH_PROP(props, Loop);
-        CH_PROP(props, PlayOnStart);
-        CH_PROP(props, Spatialized);
-        // Always serialize spatial fields to preserve values on save/load.
-        // Only skip display in UI mode.
-        if (props.GetMode() != CHEngine::ReflectionMode::UI || Spatialized)
-        {
-            CH_PROP(props, Position);
-            CH_PROP_META(props, MinDistance, PropertyMeta(0.1f, 100.0f, 0.5f));
-            CH_PROP_META(props, MaxDistance, PropertyMeta(0.1f, 500.0f, 1.0f));
-        }
-    CH_REFLECT_END()
+    static const char* GetStaticName() { return "AudioComponent"; }
 };
+
+CH_MARK_RFL(AudioComponent);
 
 } // namespace CHEngine
 

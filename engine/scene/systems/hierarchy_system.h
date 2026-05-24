@@ -19,7 +19,7 @@ private:
     };
 
 public:
-    static void Update(Scene* scene);
+    void Update(Scene* scene);
 };
 } // namespace CHEngine
 

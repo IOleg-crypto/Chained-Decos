@@ -2,81 +2,81 @@
 #define CH_SCENE_SYSTEMS_IMPL_H
 
 #include "engine/core/service_locator.h"
+#include "engine/physics/default_physics_world.h"
+#include "engine/physics/physics.h"
 #include "engine/physics/physics_system.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_system.h"
-#include "engine/scene/systems/animation_system.h"
+#include "engine/scene/systems/scene_resource_manager.h"
 #include "engine/scene/systems/hierarchy_system.h"
-#include "engine/scene/systems/scene_audio_system.h"
-#include "engine/physics/default_physics_world.h"
-#include "engine/physics/physics.h"
+#include <memory>
 
 namespace CHEngine
 {
-class HierarchySystemImpl : public ISceneSystem
+class SceneRuntimeUpdater : public ISceneSystem
 {
 public:
-    void OnUpdate(Scene* scene, Timestep ts) override
+    SceneRuntimeUpdater()
+        : m_PhysicsWorld(std::make_unique<DefaultPhysicsWorld>())
     {
-        HierarchySystem::Update(scene);
     }
-    void OnUpdateEditor(Scene* scene, Timestep ts) override
-    {
-        HierarchySystem::Update(scene);
-    }
-};
 
-class AnimationSystemImpl : public ISceneSystem
-{
-public:
-    void OnUpdate(Scene* scene, Timestep ts) override
+    SceneRuntimeUpdater(PhysicsSystem& physics)
+        : m_PhysicsWorld(std::make_unique<DefaultPhysicsWorld>())
+        , m_PhysicsSystem(&physics)
     {
-        AnimationSystem::Update(scene, ts);
-    }
-};
-
-class PhysicsSystemImpl : public ISceneSystem
-{
-public:
-    PhysicsSystemImpl()
-    {
-        m_PhysicsWorld = std::make_unique<DefaultPhysicsWorld>();
     }
 
     void RegisterObservers(entt::registry& reg) override
     {
-        // Provide access to the physics world via registry context for other systems/helpers
         reg.ctx().emplace<IPhysicsWorld*>(m_PhysicsWorld.get());
     }
 
     void OnUpdate(Scene* scene, Timestep ts) override
     {
-        ServiceLocator::Get<PhysicsSystem>().Update(scene, ts, true);
+        // Get consolidated resource manager from registry context
+        SceneResourceManager* resMgr = nullptr;
+        if (scene->GetRegistry().ctx().contains<SceneResourceManager*>())
+            resMgr = scene->GetRegistry().ctx().get<SceneResourceManager*>();
+
+        m_HierarchySystem.Update(scene);
+        if (resMgr)
+            resMgr->OnUpdate(scene, ts);
+        if (m_PhysicsSystem) m_PhysicsSystem->Update(scene, ts, true);
     }
+
+    void OnRuntimeStart(Scene* scene) override
+    {
+        m_HierarchySystem.Update(scene);
+    }
+
     void OnUpdateEditor(Scene* scene, Timestep ts) override
     {
-        ServiceLocator::Get<PhysicsSystem>().Update(scene, ts, false);
+        SceneResourceManager* resMgr = nullptr;
+        if (scene->GetRegistry().ctx().contains<SceneResourceManager*>())
+            resMgr = scene->GetRegistry().ctx().get<SceneResourceManager*>();
+
+        m_HierarchySystem.Update(scene);
+        if (resMgr)
+            resMgr->OnUpdateEditor(scene, ts);
+        if (m_PhysicsSystem) m_PhysicsSystem->Update(scene, ts, false);
     }
+
     void OnRuntimeStop(Scene* scene) override
     {
+        SceneResourceManager* resMgr = nullptr;
+        if (scene->GetRegistry().ctx().contains<SceneResourceManager*>())
+            resMgr = scene->GetRegistry().ctx().get<SceneResourceManager*>();
+        if (resMgr)
+            resMgr->OnRuntimeStop(scene);
         Physics::ClearContext(scene);
     }
 
 private:
+    HierarchySystem m_HierarchySystem;
+    // Animation and audio are handled by SceneResourceManager now.
     std::unique_ptr<IPhysicsWorld> m_PhysicsWorld;
-};
-
-class AudioSystemImpl : public ISceneSystem
-{
-public:
-    void OnUpdate(Scene* scene, Timestep ts) override
-    {
-        SceneAudioSystem::Update(scene, ts);
-    }
-    void OnRuntimeStop(Scene* scene) override
-    {
-        SceneAudioSystem::OnRuntimeStop(scene);
-    }
+    PhysicsSystem* m_PhysicsSystem = nullptr;
 };
 } // namespace CHEngine
 

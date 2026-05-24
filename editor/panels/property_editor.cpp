@@ -1,4 +1,5 @@
 #include "property_editor.h"
+#include "engine/core/reflection_rfl.h"
 #include "engine/scene/component_registry.h"
 #include "IconsFontAwesome6.h"
 #include "editor/editor_layer.h"
@@ -43,7 +44,11 @@ void PropertyEditor::DrawComponentReflection(const std::string& name, const char
     DrawComponentContainer<T>(name, icon, entity, [&](T& comp, Entity ent) {
         UIProperties ui;
         Properties props(ui);
-        comp.Reflect(props);
+        
+        if constexpr (is_rfl_component<T>::value)
+            ReflectFromRfl(comp, props);
+        else
+            comp.Reflect(props);
 
         if (ui.HasStarted())
         {

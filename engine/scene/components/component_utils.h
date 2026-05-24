@@ -75,11 +75,14 @@ namespace CHEngine::ComponentUtils
 
     // --- Mesh & Material Logic ---
 
-    static inline void SyncMaterials(ModelComponent& mc, AssetHandle handle)
+    static inline void SyncMaterials(ModelComponent& mc, AssetHandle handle, AssetManager* assetManager = nullptr)
     {
         if (mc.MaterialsInitialized || handle == 0) return;
         
-        auto model = ServiceLocator::Get<AssetManager>().Get<ModelAsset>(handle);
+        if (!assetManager && ServiceLocator::Has<AssetManager>())
+            assetManager = &ServiceLocator::Get<AssetManager>();
+
+        auto model = assetManager ? assetManager->Get<ModelAsset>(handle) : nullptr;
         if (!model || !model->IsReady()) return;
 
         auto& modelMaterials = model->GetModel().Materials;
@@ -131,8 +134,12 @@ namespace CHEngine::ComponentUtils
             return;
         }
 
-        auto handle = ServiceLocator::Get<AssetManager>().ResolveToHandle(mc.ModelPath, ModelAsset::GetStaticType());
-        auto asset = ServiceLocator::Get<AssetManager>().Get<ModelAsset>(handle);
+        AssetManager* assetManager = nullptr;
+        if (ServiceLocator::Has<AssetManager>())
+            assetManager = &ServiceLocator::Get<AssetManager>();
+
+        auto handle = assetManager ? assetManager->ResolveToHandle(mc.ModelPath, ModelAsset::GetStaticType()) : AssetHandle(0);
+        auto asset = assetManager ? assetManager->Get<ModelAsset>(handle) : nullptr;
         if (asset)
         {
             AssetHandle newHandle = asset->GetID();
