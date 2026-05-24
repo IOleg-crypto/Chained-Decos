@@ -10,9 +10,7 @@ namespace AnimationSystems {
     void Play(AnimationComponent& anim, int index, bool loop = true);
     void CrossFade(AnimationComponent& anim, int index, float duration = 0.2f, bool loop = true);
     void Stop(AnimationComponent& anim);
-    void TriggerTransition(AnimationComponent& anim, const std::string& triggerName);
     void UpdatePlayback(Scene* scene, Timestep ts);
-    void UpdateGraphs(Scene* scene, Timestep ts);
 }
 }
 

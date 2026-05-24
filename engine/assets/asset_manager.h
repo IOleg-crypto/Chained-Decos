@@ -27,11 +27,11 @@ public:
 
     void RegisterLoader(AssetType type, std::shared_ptr<IAssetLoader> loader);
 
-    [[nodiscard]] std::shared_ptr<AssetPathResolver> GetResolver() const
+    std::shared_ptr<AssetPathResolver> GetResolver() const
     {
         return m_PathResolver;
     }
-    [[nodiscard]] std::shared_ptr<AssetRegistry> GetRegistry() const
+    std::shared_ptr<AssetRegistry> GetRegistry() const
     {
         return m_Registry;
     }
@@ -59,22 +59,22 @@ public:
         }
     }
 
-    [[nodiscard]] size_t GetPendingFinalizeCount() const;
-    [[nodiscard]] size_t GetLoadingAssetCount() const;
-    [[nodiscard]] bool HasBackgroundWork() const;
+    size_t GetPendingFinalizeCount() const;
+    size_t GetLoadingAssetCount() const;
+    bool HasBackgroundWork() const;
 
     AssetHandle ResolveToHandle(const std::string& path, AssetType type = AssetType::None);
     std::string ResolvePath(const std::string& path) const;
 
-    [[nodiscard]] std::filesystem::path GetAssetDirectory() const
+    std::filesystem::path GetAssetDirectory() const
     {
         return m_PathResolver->GetAssetDirectory();
     }
-    [[nodiscard]] std::filesystem::path GetProjectDirectory() const
+    std::filesystem::path GetProjectDirectory() const
     {
         return m_PathResolver->GetProjectDirectory();
     }
-    [[nodiscard]] std::filesystem::path GetEngineRoot() const
+    std::filesystem::path GetEngineRoot() const
     {
         return m_PathResolver->GetEngineRoot();
     }

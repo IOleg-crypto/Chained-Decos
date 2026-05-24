@@ -81,6 +81,7 @@ file(TO_CMAKE_PATH "${CMAKE_SOURCE_DIR}" PROJECT_ROOT_DIR_ESCAPED)
 target_include_directories(ChainedEngineFramework INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/include/reflect-cpp/include
 )
 
 target_link_libraries(ChainedEngineFramework INTERFACE
@@ -88,6 +89,7 @@ target_link_libraries(ChainedEngineFramework INTERFACE
     ChainedEngine::External::GLM
     ChainedEngine::External::EnTT
     ChainedEngine::External::YamlCpp
+    ChainedEngine::External::reflect-cpp
 )
 
 target_compile_definitions(ChainedEngineFramework INTERFACE

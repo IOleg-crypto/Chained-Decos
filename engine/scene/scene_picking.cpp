@@ -50,8 +50,14 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
             return;
         }
 
-        auto handle = ServiceLocator::Get<AssetManager>().ResolveToHandle(modelComp.ModelPath, ModelAsset::GetStaticType());
-        auto modelAsset = ServiceLocator::Get<AssetManager>().Get<ModelAsset>(handle);
+        AssetManager* assetManager = nullptr;
+        if (scene->GetRegistry().ctx().contains<AssetManager*>())
+            assetManager = scene->GetRegistry().ctx().get<AssetManager*>();
+        if (!assetManager && ServiceLocator::Has<AssetManager>())
+            assetManager = &ServiceLocator::Get<AssetManager>();
+
+        auto handle = assetManager ? assetManager->ResolveToHandle(modelComp.ModelPath, ModelAsset::GetStaticType()) : AssetHandle(0);
+        auto modelAsset = assetManager ? assetManager->Get<ModelAsset>(handle) : nullptr;
         if (!modelAsset || !modelAsset->IsReady())
         {
             return;

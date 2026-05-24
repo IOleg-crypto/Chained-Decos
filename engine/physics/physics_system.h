@@ -20,10 +20,6 @@ public:
     // Main synchronization and simulation loop
     void Update(Scene* scene, Timestep ts, bool runtime);
 
-    // Helper methods for synchronization
-    void SyncEngineToPhysics(Scene* scene);
-    void SyncPhysicsToEngine(Scene* scene);
-
 protected:
     virtual void OnInit() override;
     virtual void OnUpdate(Timestep ts) override;

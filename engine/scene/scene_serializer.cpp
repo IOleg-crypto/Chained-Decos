@@ -158,8 +158,12 @@ static void DeserializeEnvironmentSettings(const YAML::Node& data, SceneSettings
         std::string envPath = ReadYamlValue(data, "EnvironmentPath", std::string());
         if (Project::GetActive())
         {
-            auto handle = ServiceLocator::Get<AssetManager>().ResolveToHandle(envPath, EnvironmentAsset::GetStaticType());
-            auto sharedEnv = ServiceLocator::Get<AssetManager>().Get<EnvironmentAsset>(handle);
+            AssetManager* assetManager = nullptr;
+            if (Project::GetActive() && ServiceLocator::Has<AssetManager>())
+                assetManager = &ServiceLocator::Get<AssetManager>();
+            // SceneSerializer runs without a scene registry; rely on global AssetManager for now.
+            auto handle = assetManager ? assetManager->ResolveToHandle(envPath, EnvironmentAsset::GetStaticType()) : AssetHandle(0);
+            auto sharedEnv = assetManager ? assetManager->Get<EnvironmentAsset>(handle) : nullptr;
             if (sharedEnv)
             {
                 // Create a scene-specific instance to avoid modifying the shared asset cache
@@ -281,7 +285,13 @@ static void DeserializeEntities(Scene* scene, const YAML::Node& entities)
 
         Entity deserializedEntity = scene->CreateEntityWithUUID(uuid, name);
 
-        ServiceLocator::Get<ComponentSerializer>().DeserializeAll(deserializedEntity, entity);
+        ComponentSerializer* serializer = nullptr;
+        if (deserializedEntity.GetRegistry().ctx().contains<ComponentSerializer*>())
+            serializer = deserializedEntity.GetRegistry().ctx().get<ComponentSerializer*>();
+        if (serializer)
+            serializer->DeserializeAll(deserializedEntity, entity);
+        else if (ServiceLocator::Has<ComponentSerializer>())
+            ServiceLocator::Get<ComponentSerializer>().DeserializeAll(deserializedEntity, entity);
 
         HierarchyTask task;
         HierarchySerializer::DeserializeTask(deserializedEntity, entity, task);
@@ -330,8 +340,19 @@ static void SerializeEntity(YAML::Emitter& out, Entity entity)
 {
     out << YAML::BeginMap; // Entity
 
-    ServiceLocator::Get<ComponentSerializer>().SerializeID(out, entity);
-    ServiceLocator::Get<ComponentSerializer>().SerializeAll(out, entity);
+    ComponentSerializer* serializer = nullptr;
+    if (entity.GetRegistry().ctx().contains<ComponentSerializer*>())
+        serializer = entity.GetRegistry().ctx().get<ComponentSerializer*>();
+    if (serializer)
+    {
+        serializer->SerializeID(out, entity);
+        serializer->SerializeAll(out, entity);
+    }
+    else if (ServiceLocator::Has<ComponentSerializer>())
+    {
+        ServiceLocator::Get<ComponentSerializer>().SerializeID(out, entity);
+        ServiceLocator::Get<ComponentSerializer>().SerializeAll(out, entity);
+    }
 
     out << YAML::EndMap; // Entity
 }

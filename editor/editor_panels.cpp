@@ -8,7 +8,6 @@
 #include "panels/panel.h"
 #include "panels/profiler_panel.h"
 #include "panels/project_settings_panel.h"
-#include "panels/animation_graph_panel.h"
 #include "panels/scene_hierarchy_panel.h"
 #include "panels/viewport_panel.h"
 
@@ -27,7 +26,7 @@ void EditorPanels::Init()
     Register<MaterialPanel>();
     Register<ProfilerPanel>();
     Register<ProjectSettingsPanel>();
-    Register<AnimationGraphPanel>();
+    
 }
 
 void EditorPanels::OnUpdate(Timestep ts)

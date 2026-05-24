@@ -709,7 +709,7 @@ void CollisionCore::GenerateContacts(entt::registry& registry,
             
             auto& otherTc = allCollidersView.get<TransformComponent>(otherEntity);
             auto& otherCollider = allCollidersView.get<ColliderComponent>(otherEntity);
-            if (!otherCollider.Enabled) continue;
+            if (!otherCollider.Enabled) continue;    
 
             // Double check AABB exactly
             WorldAABB targetAABB = GetWorldAABB(otherTc, otherCollider);

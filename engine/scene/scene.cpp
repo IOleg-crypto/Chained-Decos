@@ -6,13 +6,11 @@
 #include "engine/physics/physics_system.h"
 #include "engine/scene/component_serializer.h"
 #include "engine/scene/scene_system_manager.h"
-#include "engine/scene/systems/animation_system.h"
+#include "engine/scene/systems/scene_resource_manager.h"
 #include "engine/scene/systems/hierarchy_system.h"
 #include "engine/graphics/pipeline/ui_renderer.h"
-#include "engine/scene/systems/scene_audio_system.h"
+#include "engine/audio/audio.h"
 #include "engine/scene/systems/scene_systems_impl.h"
-#include "engine/scene/systems/asset_resolution_system.h"
-#include "engine/scene/systems/animation_graph_system.h"
 #include "engine/scene/animation_systems.h"
 #include <yaml-cpp/yaml.h>
 #include <filesystem>
@@ -35,6 +33,16 @@ Scene::Scene(ScriptEngine* scriptEngine)
     auto& reg = *m_Registry;
     reg.ctx().emplace<Scene*>(this);
     reg.ctx().emplace<EntityUUIDMap>();
+    // Inject commonly used engine services into the registry context so scene systems
+    // and serializers can access them without using the global ServiceLocator.
+    if (ServiceLocator::Has<AssetManager>())
+        reg.ctx().emplace<AssetManager*>(&ServiceLocator::Get<AssetManager>());
+    if (ServiceLocator::Has<ComponentSerializer>())
+        reg.ctx().emplace<ComponentSerializer*>(&ServiceLocator::Get<ComponentSerializer>());
+    if (ServiceLocator::Has<UIRenderer>())
+        reg.ctx().emplace<UIRenderer*>(&ServiceLocator::Get<UIRenderer>());
+    if (ServiceLocator::Has<Audio>())
+        reg.ctx().emplace<Audio*>(&ServiceLocator::Get<Audio>());
 
     // UUID Mapping
     reg.on_construct<IDComponent>().connect<&Scene::OnIDConstruct>(this);
@@ -50,12 +58,10 @@ Scene::Scene(ScriptEngine* scriptEngine)
     m_ScriptingManager = std::make_unique<SceneScriptingManager>(this, scriptEngine);
     m_SystemManager = std::make_unique<SceneSystemManager>(this);
 
-    // Register Core ECS Systems
-    m_SystemManager->AddSystem<HierarchySystemImpl>();
-    m_SystemManager->AddSystem<AnimationSystemImpl>();
-    m_SystemManager->AddSystem<PhysicsSystemImpl>();
-    m_SystemManager->AddSystem<AudioSystemImpl>();
-    m_SystemManager->AddSystem<AssetResolutionSystem>();
+    // Register Core ECS Systems (inject PhysicsSystem dependency)
+    m_SystemManager->AddSystem<SceneRuntimeUpdater>(ServiceLocator::Get<PhysicsSystem>());
+    // Consolidated resource manager replaces the separate asset/animation/audio systems
+    m_SystemManager->AddSystem<SceneResourceManager>();
     m_SystemManager->AddSystem<SceneTransitionSystem>();
 
     m_SystemManager->InitObservers();
@@ -108,17 +114,19 @@ std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
             Entity dstEntity = newScene->CreateEntityWithUUID(id.ID);
             entityMap[entityHandle] = (entt::entity)dstEntity;
 
-            if (ServiceLocator::Has<ComponentSerializer>())
-            {
-                ServiceLocator::Get<ComponentSerializer>().CopyAll(srcEntity, dstEntity);
-
-                // Reset physics handles so the specialized PhysicsSystem::InitializeBodies 
-                // in the new scene can create fresh native bodies for the runtime world.
-                if (dstEntity.HasComponent<RigidBodyComponent>())
+                if (srcRegistry.ctx().contains<ComponentSerializer*>())
                 {
-                    dstEntity.GetComponent<RigidBodyComponent>().Handle = kInvalidPhysicsBody;
+                    auto serializer = srcRegistry.ctx().get<ComponentSerializer*>();
+                    if (serializer)
+                        serializer->CopyAll(srcEntity, dstEntity);
+
+                    // Reset physics handles so the specialized PhysicsSystem::InitializeBodies 
+                    // in the new scene can create fresh native bodies for the runtime world.
+                    if (dstEntity.HasComponent<RigidBodyComponent>())
+                    {
+                        dstEntity.GetComponent<RigidBodyComponent>().Handle = kInvalidPhysicsBody;
+                    }
                 }
-            }
         });
     }
 
@@ -206,13 +214,14 @@ void Scene::OnRuntimeStart()
     m_IsSimulationRunning = true;
 
     CH_CORE_INFO("Scene::OnRuntimeStart - Initializing script and system managers...");
-    ServiceLocator::Get<UIRenderer>().ResetInputCooldown();
+    if (GetRegistry().ctx().contains<UIRenderer*>())
+    {
+        auto ui = GetRegistry().ctx().get<UIRenderer*>();
+        if (ui)
+            ui->ResetInputCooldown();
+    }
     m_ScriptingManager->OnRuntimeStart();
     m_SystemManager->OnRuntimeStart();
-
-    // Ensure all transforms are up to date before the first frame
-    CH_CORE_INFO("Scene::OnRuntimeStart - Updating hierarchy system...");
-    HierarchySystem::Update(this);
 
     // Initialize PlayOnStart animations
     {
@@ -239,64 +248,7 @@ void Scene::OnRuntimeStop()
     m_SystemManager->OnRuntimeStop();
 }
 
-AnimationGraphData* Scene::GetOrLoadGraph(const std::string& graphPath)
-{
-    if (graphPath.empty())
-        return nullptr;
 
-    std::filesystem::path abs = graphPath;
-    if (abs.is_relative() && Project::GetActive())
-        abs = Project::GetActive()->GetProjectDirectory() / graphPath;
-
-    std::error_code ec;
-    if (!std::filesystem::exists(abs, ec) || ec)
-        return nullptr;
-
-    auto lastWrite = std::filesystem::last_write_time(abs, ec);
-    if (ec)
-        return nullptr;
-
-    auto it = m_GraphCache.find(graphPath);
-    if (it != m_GraphCache.end() && it->second.LastWriteTime >= lastWrite)
-        return &it->second.Data;
-
-    AnimationGraphData data;
-    try {
-        YAML::Node root = YAML::LoadFile(abs.string());
-        if (root["Nodes"]) {
-            for (auto node : root["Nodes"]) {
-                AnimationState state;
-                state.Name = node["Name"].as<std::string>();
-                state.AnimationPath = node["AnimationPath"].as<std::string>();
-                state.IsLooping = node["IsLooping"].as<bool>(true);
-                if (node["Transitions"]) {
-                    for (auto t : node["Transitions"]) state.Transitions.push_back(t.as<std::string>());
-                }
-                data.Nodes.push_back(std::move(state));
-            }
-        }
-        if (root["Links"]) {
-            for (auto link : root["Links"]) {
-                data.Links.push_back({
-                    link["FromState"].as<size_t>(),
-                    link["FromSlot"].as<size_t>(),
-                    link["ToState"].as<size_t>(),
-                    link["ToSlot"].as<size_t>()
-                });
-            }
-        }
-    }
-    catch (const std::exception& e) {
-        CH_CORE_ERROR("Scene::GetOrLoadGraph: failed loading {0}: {1}", abs.string(), e.what());
-        return nullptr;
-    }
-
-    CachedGraph cg;
-    cg.Data = std::move(data);
-    cg.LastWriteTime = lastWrite;
-    m_GraphCache[graphPath] = std::move(cg);
-    return &m_GraphCache[graphPath].Data;
-}
 
 void Scene::OnUpdateRuntime(Timestep timestep)
 {
@@ -306,9 +258,8 @@ void Scene::OnUpdateRuntime(Timestep timestep)
 
     m_SystemManager->OnUpdate(timestep);
 
-    // Split animation responsibilities: playback and graph-driven state updates
+    // Split animation responsibilities: playback
     AnimationSystems::UpdatePlayback(this, timestep);
-    AnimationSystems::UpdateGraphs(this, timestep);
 }
 
 void Scene::OnUpdateEditor(Timestep timestep)
@@ -403,11 +354,11 @@ Entity Scene::CopyEntityInternal(entt::entity copyEntity, entt::entity parentEnt
 
     // CopyAll overwrites TagComponent and IDComponent with the source's values.
     // We must restore the copy's unique identity afterwards.
-    if (ServiceLocator::Has<ComponentSerializer>())
+    if (GetRegistry().ctx().contains<ComponentSerializer*>())
     {
-        // srcEntity reference is stable, but its component pointers might dangle after dstEntity creation.
-        // ComponentSerializer::CopyAll uses Entity objects which perform re-fetches.
-        ServiceLocator::Get<ComponentSerializer>().CopyAll(srcEntity, dstEntity);
+        auto serializer = GetRegistry().ctx().get<ComponentSerializer*>();
+        if (serializer)
+            serializer->CopyAll(srcEntity, dstEntity);
     }
 
     // Restore the name (CopyAll overwrites it with source tag)

@@ -1,7 +1,7 @@
 #ifndef CH_MATERIAL_H
 #define CH_MATERIAL_H
 
-#include "engine/core/reflection.h"
+#include "engine/core/reflection_rfl.h"
 
 namespace CHEngine
 {
@@ -41,60 +41,9 @@ struct MaterialInstance
     bool DoubleSided = false;
     bool Transparent = false;
     float Alpha = 1.0f;
-
-    CH_REFLECT_BEGIN(MaterialInstance)
-        if (props.BeginGroup("Albedo"))
-        {
-            props.Property("AlbedoColor", AlbedoColor);
-            props.Handle("Albedo", AlbedoHandle);
-            props.Property("OverrideAlbedo", OverrideAlbedo);
-            props.EndGroup();
-        }
-
-        if (props.BeginGroup("PBR Maps"))
-        {
-            props.Handle("Normal", NormalHandle);
-            props.Property("OverrideNormal", OverrideNormal);
-            props.Handle("MetallicRoughness", MetallicRoughnessHandle);
-            props.Property("OverrideMetallicRoughness", OverrideMetallicRoughness);
-            props.Handle("Occlusion", OcclusionHandle);
-            props.Property("OverrideOcclusion", OverrideOcclusion);
-            props.EndGroup();
-        }
-
-        if (props.BeginGroup("Emissive"))
-        {
-            props.Property("EmissiveColor", EmissiveColor);
-            props.Property("EmissiveIntensity", EmissiveIntensity);
-            props.Handle("Emissive", EmissiveHandle);
-            props.Property("OverrideEmissive", OverrideEmissive);
-            props.EndGroup();
-        }
-
-        if (props.BeginGroup("Parameters"))
-        {
-            props.Property("Metalness", Metalness);
-            props.Property("Roughness", Roughness);
-            props.EndGroup();
-        }
-
-        if (props.BeginGroup("Rendering"))
-        {
-            props.Property("DoubleSided", DoubleSided);
-            props.Property("Transparent", Transparent);
-            if (Transparent)
-                props.Property("Alpha", Alpha);
-            props.EndGroup();
-        }
-
-        if (props.BeginGroup("Shader"))
-        {
-            props.Handle("Shader", ShaderHandle);
-            props.Property("Override", OverrideShader);
-            props.EndGroup();
-        }
-    CH_REFLECT_END()
 };
+
+CH_MARK_RFL(MaterialInstance);
 
 } // namespace CHEngine
 

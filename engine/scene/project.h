@@ -133,38 +133,26 @@ public:
     ~Project() = default;
 
     // Returns the active project configuration.
-    [[nodiscard]] const ProjectConfig& GetConfig() const
-    {
-        return m_Config;
-    }
+    const ProjectConfig& GetConfig() const { return m_Config; }
     // Returns the active project configuration for mutation.
-    [[nodiscard]] ProjectConfig& GetConfig()
-    {
-        return m_Config;
-    }
+    ProjectConfig& GetConfig() { return m_Config; }
 
     // Returns the process-wide active project, or null if none is loaded.
-    [[nodiscard]] static std::shared_ptr<Project> GetActive()
-    {
-        return s_ActiveProject;
-    }
+    static std::shared_ptr<Project> GetActive() { return s_ActiveProject; }
 
     // Sets the process-wide active project.
     static void SetActive(std::shared_ptr<Project> project);
 
     // Creates a new in-memory project with default settings.
-    [[nodiscard]] static std::shared_ptr<Project> New();
+    static std::shared_ptr<Project> New();
     // Loads a project from disk.
-    [[nodiscard]] static std::shared_ptr<Project> Load(const std::filesystem::path& path);
+    static std::shared_ptr<Project> Load(const std::filesystem::path& path);
     // Discovers a project file by walking from a starting directory.
-    [[nodiscard]] static std::filesystem::path Discover(const std::filesystem::path& startPath = "",
+    static std::filesystem::path Discover(const std::filesystem::path& startPath = "",
                                                          const std::string& hintName = "");
 
     // Returns the engine root used for resolving engine-relative paths.
-    [[nodiscard]] static std::filesystem::path GetEngineRoot()
-    {
-        return s_EngineRoot;
-    }
+    static std::filesystem::path GetEngineRoot() { return s_EngineRoot; }
     // Sets the engine root used for resolving engine-relative paths.
     static void SetEngineRoot(const std::filesystem::path& path);
     // Discovers the engine root by looking for the "resources" folder from the given path.
@@ -174,68 +162,35 @@ public:
     static bool SaveActive(const std::filesystem::path& path);
 
     // Returns the scenes that are available to the active project.
-    [[nodiscard]] static std::vector<std::string> GetAvailableScenes();
+    static std::vector<std::string> GetAvailableScenes();
 
     // Returns the active project's asset directory.
-    [[nodiscard]] static std::filesystem::path GetAssetDirectory()
-    {
-        if (s_ActiveProject)
-        {
-            return s_ActiveProject->m_Config.ProjectDirectory / s_ActiveProject->m_Config.AssetDirectory;
-        }
-        return "";
+    static std::filesystem::path GetAssetDirectory() {
+        return s_ActiveProject ? s_ActiveProject->m_Config.ProjectDirectory / s_ActiveProject->m_Config.AssetDirectory : "";
     }
 
     // Returns the active project's directory.
-    [[nodiscard]] static std::filesystem::path GetProjectDirectory()
-    {
-        if (s_ActiveProject)
-        {
-            return s_ActiveProject->m_Config.ProjectDirectory;
-        }
-        return "";
+    static std::filesystem::path GetProjectDirectory() {
+        return s_ActiveProject ? s_ActiveProject->m_Config.ProjectDirectory : "";
     }
 
-    [[nodiscard]] static std::filesystem::path GetAssetPath(const std::filesystem::path& relative)
-    {
-        return GetAssetDirectory() / relative;
-    }
+    static std::filesystem::path GetAssetPath(const std::filesystem::path& relative) { return GetAssetDirectory() / relative; }
 
     // Converts a path to a project-relative string when possible.
-    [[nodiscard]] static std::string GetRelativePath(const std::filesystem::path& path);
+    static std::string GetRelativePath(const std::filesystem::path& path);
     // Converts a path to an absolute path under the active project or engine root.
-    [[nodiscard]] static std::filesystem::path GetAbsolutePath(const std::filesystem::path& path);
+    static std::filesystem::path GetAbsolutePath(const std::filesystem::path& path);
 
     // Path utility helpers.
-    [[nodiscard]] static std::filesystem::path NormalizePath(const std::filesystem::path& path);
-    [[nodiscard]] static std::optional<std::string> TryMakeRelative(const std::filesystem::path& absolutePath,
+    static std::filesystem::path NormalizePath(const std::filesystem::path& path);
+    static std::optional<std::string> TryMakeRelative(const std::filesystem::path& absolutePath,
                                                                     const std::filesystem::path& basePath);
 
-    void SetActiveScenePath(const std::filesystem::path& path)
-    {
-        m_Config.ActiveScenePath = path;
-    }
-
-    void SetName(const std::string& name)
-    {
-        m_Config.Name = name;
-    }
-
-    void SetProjectDirectory(const std::filesystem::path& path)
-    {
-        m_Config.ProjectDirectory = path;
-    }
-
-    void SetEnvironment(const std::filesystem::path& path)
-    {
-        m_Config.EnvironmentPath = path;
-    }
+    // Environment can be set via GetConfig().EnvironmentPath directly or via this helper if needed,
+    // but usually GetConfig() is preferred.
 
     // Returns the environment asset associated with this project, if any.
-    std::shared_ptr<EnvironmentAsset> GetEnvironment() const
-    {
-        return m_Environment;
-    }
+    std::shared_ptr<EnvironmentAsset> GetEnvironment() const { return m_Environment; }
 
 
 private:

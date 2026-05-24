@@ -45,4 +45,7 @@ chained_add_engine_module(engine_core
         ChainedEngine::External::Miniaudio
         ChainedEngine::External::Coral
         ChainedEngine::External::NFD
+        ChainedEngine::External::reflect-cpp
 )
+
+target_include_directories(engine_core PUBLIC "${CMAKE_SOURCE_DIR}/include/reflect-cpp/include")
