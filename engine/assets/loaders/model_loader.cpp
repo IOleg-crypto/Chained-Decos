@@ -1,22 +1,31 @@
 #include "engine/graphics/loaders/model_loader.h"
 #include "engine/graphics/loaders/assimp_importer.h"
+#include "engine/graphics/loaders/fast_cache.h"
+#include "engine/graphics/assets/model_asset.h"
 #include "engine/graphics/assets/texture_asset.h"
-#include "engine/assets/asset_manager.h"
-#include "engine/core/service_locator.h"
+#include "engine/graphics/managers/texture_manager.h"
 #include "engine/core/log.h"
 #include "engine/core/profiler.h"
-#include "engine/scene/project.h"
-#include "engine/graphics/loaders/model_cache.h"
+#include "engine/project/project.h"
+#include "engine/core/thread_pool.h"
+#include "engine/core/service_registry.h"
 #include <glm/gtc/type_ptr.hpp>
+#include <chrono>
+#include <memory_resource>
+#include <string>
+#include <filesystem>
 
 namespace CHEngine
 {
-std::shared_ptr<Asset> ModelLoader::Create() const
+namespace ModelLoader
 {
-    return std::make_shared<ModelAsset>();
-}
+    namespace
+    {
+        PendingModelData LoadMeshDataFromDisk(const std::filesystem::path& path, int samplingFPS = 30, class ThreadPool* threadPool = nullptr);
+    }
 
-bool ModelLoader::Load(std::shared_ptr<Asset> asset, const LoadContext& ctx, std::string* outError)
+
+bool Load(std::shared_ptr<Asset> asset, const LoadContext& ctx, std::string* outError)
 {
     auto modelAsset = std::dynamic_pointer_cast<ModelAsset>(asset);
     if (!modelAsset)
@@ -35,7 +44,8 @@ bool ModelLoader::Load(std::shared_ptr<Asset> asset, const LoadContext& ctx, std
         return false;
     }
 
-    auto pendingData = LoadMeshDataFromDisk(ctx.ResolvedPath);
+    auto tp = ctx.Services ? ctx.Services->Get<ThreadPool>() : nullptr;
+    auto pendingData = LoadMeshDataFromDisk(ctx.ResolvedPath, 30, tp);
     if (pendingData.isValid)
     {
         modelAsset->SetPendingData(std::move(pendingData));
@@ -48,36 +58,41 @@ bool ModelLoader::Load(std::shared_ptr<Asset> asset, const LoadContext& ctx, std
     return false;
 }
 
-PendingModelData ModelLoader::LoadMeshDataFromDisk(const std::filesystem::path& path, int samplingFPS)
-{
-    if (ModelCache::IsCacheValid(path))
+    namespace
     {
-        PendingModelData data;
-        if (ModelCache::Load(ModelCache::GetCachePath(path), data))
+PendingModelData LoadMeshDataFromDisk(const std::filesystem::path& path, int samplingFPS, ThreadPool* threadPool)
+{
+    CH_PROFILE_FUNCTION();
+
+    std::filesystem::path cachePath = path;
+    cachePath.replace_extension(".chcache");
+
+    PendingModelData data;
+    if (std::filesystem::exists(cachePath))
+    {
+        if (FastCache::Load(cachePath, data))
         {
-            CH_CORE_INFO("ModelLoader: Loaded cached model data for '{}'", path.generic_string());
+            CH_CORE_INFO("ModelLoader: Loaded cached model data for '{0}'", path.string());
             return data;
         }
     }
 
-    auto data = AssimpImporter::Import(path, samplingFPS);
+    // Direct import from disk
+    data = AssimpImporter::Import(path, samplingFPS, threadPool);
     if (data.isValid)
     {
-        CH_CORE_INFO("ModelLoader: Saving model cache for '{}'", path.generic_string());
-        ModelCache::Save(ModelCache::GetCachePath(path), data);
+        CH_CORE_INFO("ModelLoader: Saving model cache for '{0}'", path.string());
+        FastCache::Save(cachePath, data);
     }
     return data;
 }
 
-Model ModelLoader::GenerateProceduralModel(const std::string& type, const ProceduralParameters& params)
-{
-    Model model;
-    return model;
-}
+    }
 
-bool ModelLoader::Finalize(std::shared_ptr<ModelAsset> asset, std::chrono::steady_clock::time_point budgetEnd)
+bool Finalize(std::shared_ptr<Asset> baseAsset, class AssetManager* assets, std::chrono::steady_clock::time_point budgetEnd)
 {
     CH_PROFILE_FUNCTION();
+    auto asset = std::dynamic_pointer_cast<ModelAsset>(baseAsset);
     if (!asset || !asset->m_HasPendingData) return true;
 
     auto& pending = asset->m_PendingData;
@@ -96,7 +111,7 @@ bool ModelLoader::Finalize(std::shared_ptr<ModelAsset> asset, std::chrono::stead
                 if (texture)
                 {
                     texture->SetData((void*)embedded.data.data(), 0);
-                    asset->m_EmbeddedTextures[path] = texture;
+                    asset->m_EmbeddedTextures.emplace(path, texture);
                 }
             }
         }
@@ -106,7 +121,6 @@ bool ModelLoader::Finalize(std::shared_ptr<ModelAsset> asset, std::chrono::stead
         asset->m_Model.Materials.clear();
         asset->m_Materials.clear();
         
-        auto& am = ServiceLocator::Get<AssetManager>();
         for (int i = 0; i < (int)pending.materials.size(); ++i)
         {
             const auto& raw = pending.materials[i];
@@ -119,32 +133,25 @@ bool ModelLoader::Finalize(std::shared_ptr<ModelAsset> asset, std::chrono::stead
             mat.Transparent = raw.transparent;
             mat.Alpha = raw.albedoColor.a;
             
-            // Lambda to resolve a texture directly by GPU ID if already ready,
-            // or return 0 and let BindMaterialUniforms fallback to handle later.
-            // For embedded textures (path starts with '*'), use direct GPU ID.
-            auto resolveHandleAndTriggerLoad = [&](const std::string& path) -> AssetHandle {
-                if (path.empty()) return AssetHandle(0);
-                if (path[0] == '*') return AssetHandle(0); // Embedded, no registry handle
-                // Always call with type to ensure the asset is queued for loading
-                return am.ResolveToHandle(path, TextureAsset::GetStaticType());
+            auto resolveHandleAndTriggerLoad = [&](const std::pmr::string& p) -> AssetHandle {
+                if (p.empty()) return AssetHandle(0);
+                if (p[0] == '*') return AssetHandle(0); 
+                return assets ? assets->ResolveToHandle(std::string(p.c_str()), AssetType::Texture) : AssetHandle(0);
             };
 
-            auto resolveEmbeddedTex = [&](const std::string& path) -> uint32_t {
-                if (path.empty() || path[0] != '*') return 0;
-                auto it = asset->m_EmbeddedTextures.find(path);
+            auto resolveEmbeddedTex = [&](const std::pmr::string& p) -> uint32_t {
+                if (p.empty() || p[0] != '*') return 0;
+                auto it = asset->m_EmbeddedTextures.find(p);
                 if (it == asset->m_EmbeddedTextures.end()) return 0;
                 return it->second ? it->second->GetRendererID() : 0;
             };
 
-            // Embedded textures: direct GPU ids (must be set immediately as they have no handle)
             mat.AlbedoMap = resolveEmbeddedTex(raw.albedoPath);
             mat.NormalMap = resolveEmbeddedTex(raw.normalPath);
             mat.MetallicRoughnessMap = resolveEmbeddedTex(raw.metallicRoughnessPath);
             mat.EmissiveMap = resolveEmbeddedTex(raw.emissivePath);
             mat.OcclusionMap = resolveEmbeddedTex(raw.occlusionPath);
 
-            // External textures: register into AssetManager for async loading.
-            // BindMaterialUniforms will lazily pick up the GPU ID each frame once ready.
             mat.AlbedoHandle = resolveHandleAndTriggerLoad(raw.albedoPath);
             mat.NormalHandle = resolveHandleAndTriggerLoad(raw.normalPath);
             mat.MetallicRoughnessHandle = resolveHandleAndTriggerLoad(raw.metallicRoughnessPath);
@@ -162,7 +169,7 @@ bool ModelLoader::Finalize(std::shared_ptr<ModelAsset> asset, std::chrono::stead
         }
     }
 
-    // Phase 2: Process ALL Meshes (Blocking for diagnostic phase)
+    // Phase 2: Process ALL Meshes
     while (pending.FinalizationProgress < (int)pending.meshes.size())
     {
         CH_PROFILE_SCOPE("ModelLoader::Finalize_Mesh");
@@ -197,6 +204,13 @@ bool ModelLoader::Finalize(std::shared_ptr<ModelAsset> asset, std::chrono::stead
                 mesh.VAO->AddVertexBuffer(vboNorm);
             }
 
+            if (!rawMesh.tangents.empty())
+            {
+                auto vboTang = VertexBuffer::Create(rawMesh.tangents.data(), (uint32_t)rawMesh.tangents.size() * sizeof(float));
+                vboTang->SetLayout({{ShaderDataType::Float3, "a_Tangent"}});
+                mesh.VAO->AddVertexBuffer(vboTang);
+            }
+
             if (!rawMesh.joints.empty())
             {
                 std::vector<int32_t> jointsInt;
@@ -225,14 +239,13 @@ bool ModelLoader::Finalize(std::shared_ptr<ModelAsset> asset, std::chrono::stead
         asset->m_Model.Meshes.push_back(mesh);
         pending.FinalizationProgress++;
 
-        // Budget check: exit early if this mesh upload took too long
         if (std::chrono::steady_clock::now() >= budgetEnd)
         {
             return false;
         }
     }
 
-    // Phase 3: Post-processing (Bounding Box and State)
+    // Phase 3: Post-processing
     if (pending.FinalizationProgress >= (int)pending.meshes.size())
     {
         CH_PROFILE_SCOPE("ModelLoader::Finalize_Post");
@@ -280,4 +293,5 @@ bool ModelLoader::Finalize(std::shared_ptr<ModelAsset> asset, std::chrono::stead
 
     return false;
 }
+} // namespace ModelLoader
 } // namespace CHEngine

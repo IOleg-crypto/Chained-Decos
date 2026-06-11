@@ -12,13 +12,14 @@ struct aiNode;
 
 namespace CHEngine
 {
+    class ThreadPool;
     class AssimpImporter
     {
     public:
-        static PendingModelData Import(const std::filesystem::path& path, int samplingFPS);
+        static PendingModelData Import(const std::filesystem::path& path, int samplingFPS, ThreadPool* threadPool = nullptr);
 
     private:
-        AssimpImporter(const std::filesystem::path& path, int samplingFPS, const aiScene* scene);
+        AssimpImporter(const std::filesystem::path& path, int samplingFPS, const aiScene* scene, ThreadPool* threadPool);
         ~AssimpImporter() = default;
 
         PendingModelData Execute();
@@ -37,6 +38,7 @@ namespace CHEngine
         std::filesystem::path m_ModelDir;
         int m_SamplingFPS = 30;
         const aiScene* m_Scene = nullptr;
+        ThreadPool* m_ThreadPool = nullptr;
         
         PendingModelData m_Data;
         std::unordered_map<std::string, int> m_NameToIndex;

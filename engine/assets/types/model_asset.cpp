@@ -1,12 +1,11 @@
 #include "engine/graphics/assets/model_asset.h"
 #include "engine/graphics/loaders/model_loader.h"
-#include "engine/assets/asset_manager.h"
 #include "engine/core/log.h"
 #include "engine/core/profiler.h"
 // #include "engine/graphics/assets/shader_asset.h"
 #include "engine/graphics/assets/texture_asset.h"
 // #include "engine/graphics/importers/mesh_importer.h"
-#include "engine/scene/project.h"
+#include "engine/project/project.h"
 // #include <algorithm>
 #include <cstring>
 // #include <filesystem>
@@ -17,7 +16,9 @@ namespace CHEngine
 {
 std::string ModelAsset::GetAnimationName(int index) const
 {
-    return (index >= 0 && index < (int)m_Animations.size()) ? m_Animations[index].name : "";
+    if (index >= 0 && index < (int)m_Animations.size())
+        return std::string(m_Animations[index].name.c_str());
+    return "";
 }
 
 std::vector<glm::mat4> ModelAsset::GetBoneMatrices(int animationIndex, int frame) const
@@ -56,12 +57,12 @@ std::vector<glm::mat4> ModelAsset::GetBoneMatrices(int animationIndex, int frame
 
 void ModelAsset::OnLoaded()
 {
-    // Finalization is now handled progressively by AssetManager calling ModelLoader::Finalize
+    // Finalization is handled by the model manager during its finalize pump.
 }
 
 uint32_t ModelAsset::GetEmbeddedTextureID(const std::string& path) const
 {
-    auto it = m_EmbeddedTextures.find(path);
+    auto it = m_EmbeddedTextures.find(std::pmr::string(path.c_str()));
     if (it != m_EmbeddedTextures.end() && it->second)
     {
         return it->second->GetRendererID();
