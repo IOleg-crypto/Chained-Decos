@@ -63,3 +63,9 @@
 [submodule "include/glfw"]
 	path = include/glfw
 	url = https://github.com/glfw/glfw.git
+[submodule "include/cereal"]
+	path = include/cereal
+	url = https://github.com/USCiLab/cereal.git
+[submodule "include/zstd"]
+	path = include/zstd
+	url = https://github.com/facebook/zstd.git

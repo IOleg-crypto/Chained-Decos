@@ -1,0 +1,8 @@
+//
+// Created by olegg on 02.06.2026.
+//
+
+#ifndef CHAINEDDECOS_EDITOR_ICONS_H
+#define CHAINEDDECOS_EDITOR_ICONS_H
+
+#endif //CHAINEDDECOS_EDITOR_ICONS_H

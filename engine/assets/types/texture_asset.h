@@ -23,7 +23,6 @@ public:
     }
     virtual ~TextureAsset() = default;
 
-    friend class TextureLoader;
 
     static AssetType GetStaticType()
     {
@@ -57,7 +56,7 @@ public:
 
     void Unload();
 
-private:
+public: // Internal data for loader
     std::shared_ptr<Texture> m_Texture;
     void* m_RawData = nullptr;
     int m_RawWidth = 0;
