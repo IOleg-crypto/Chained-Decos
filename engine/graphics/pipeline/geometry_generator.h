@@ -2,9 +2,21 @@
 #define CH_GEOMETRY_GENERATOR_H
 
 #include "engine/graphics/pipeline/renderer_types.h"
+#include "engine/graphics/api/model_data.h"
+#include <string>
 
-namespace CHEngine
+namespace Chained
 {
+    struct ProceduralParameters
+    {
+        float Radius = 0.5f;
+        float InnerRadius = 0.2f;
+        float Height = 1.0f;
+        int Slices = 16;
+        int Stacks = 16;
+        glm::vec3 Dimensions = {1.0f, 1.0f, 1.0f};
+    };
+
     class GeometryGenerator
     {
     public:
@@ -28,6 +40,9 @@ namespace CHEngine
 
          // Generate a cube mesh with given dimensions (for procedural cube generation)
         static Mesh GenerateCube(const glm::vec3& dimensions);
+
+        // Generate procedural model (composed of one or more meshes) using generic type strings
+        static Model GenerateProceduralModel(const std::string& type, const ProceduralParameters& params);
     };
 }
 

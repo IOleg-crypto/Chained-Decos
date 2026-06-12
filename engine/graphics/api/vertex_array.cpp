@@ -2,7 +2,7 @@
 #include "engine/graphics/api/renderer_api.h"
 #include "opengl/opengl_vertex_array.h"
 
-namespace CHEngine
+namespace Chained
 {
 
 std::shared_ptr<VertexArray> VertexArray::Create()
@@ -11,8 +11,9 @@ std::shared_ptr<VertexArray> VertexArray::Create()
     {
         case RendererAPI::API::None:    return nullptr;
         case RendererAPI::API::OpenGL:  return std::make_shared<OpenGLVertexArray>();
+        default : return nullptr;
     }
-    return nullptr;
+
 }
 
-} // namespace CHEngine
+} // namespace Chained

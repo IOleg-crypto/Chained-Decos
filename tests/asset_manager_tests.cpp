@@ -1,8 +1,8 @@
 #include "engine/core/base.h"
 #include "engine/assets/asset_manager.h"
-#include "engine/scene/project.h"
+#include "engine/core/application.h"
+#include "engine/project/project.h"
 #include "engine/core/uuid.h"
-#include "engine/core/service_locator.h"
 #include "engine/core/thread_pool.h"
 #include "gtest/gtest.h"
 
@@ -12,7 +12,7 @@
 #include <string>
 #include <thread>
 
-using namespace CHEngine;
+using namespace Chained;
 
 namespace
 {
@@ -95,18 +95,13 @@ class AssetManagerTest : public ::testing::Test
 protected:
     void SetUp() override
     {
-        auto resolver = std::make_shared<AssetPathResolver>();
-        auto registry = std::make_shared<AssetRegistry>();
-        m_AssetManager = std::make_shared<AssetManager>(resolver, registry);
-        ServiceLocator::Register<AssetManager>(m_AssetManager.get());
+        auto& registry = Application::Get().GetServiceRegistry();
+        m_PreviousAssetManager = registry.GetShared<AssetManager>();
 
-        // Ensure ThreadPool is registered for async tests
-        if (!ServiceLocator::Has<ThreadPool>())
-        {
-            m_OwnThreadPool = std::make_unique<ThreadPool>();
-            ServiceLocator::Register<ThreadPool>(m_OwnThreadPool.get());
-            m_OwnThreadPool->Start();
-        }
+        auto resolver = std::make_shared<AssetPathResolver>();
+        auto assetRegistry = std::make_shared<AssetRegistry>();
+        m_AssetManager = std::make_shared<AssetManager>(resolver, assetRegistry);
+        registry.RegisterInstance<AssetManager>(m_AssetManager);
 
         auto project = Project::New();
         auto currentPath = std::filesystem::current_path();
@@ -120,18 +115,17 @@ protected:
 
     void TearDown() override
     {
-        ServiceLocator::Remove<AssetManager>();
-        if (m_OwnThreadPool)
+        auto& registry = Application::Get().GetServiceRegistry();
+        if (m_PreviousAssetManager)
         {
-            m_OwnThreadPool->Stop();
-            ServiceLocator::Remove<ThreadPool>();
-            m_OwnThreadPool.reset();
+            registry.RegisterInstance<AssetManager>(m_PreviousAssetManager);
         }
         m_AssetManager.reset();
+        m_PreviousAssetManager.reset();
     }
 
     std::shared_ptr<AssetManager> m_AssetManager;
-    std::unique_ptr<ThreadPool> m_OwnThreadPool;
+    std::shared_ptr<AssetManager> m_PreviousAssetManager;
 
     CountingLoader* RegisterDummyLoader(bool shouldSucceed, bool asyncLoad = false)
     {
@@ -236,4 +230,43 @@ TEST_F(AssetManagerTest, AsyncLoadQueuesFinalizeAndCompletesOnUpdate)
     EXPECT_EQ(asset->GetState(), AssetState::Ready);
     EXPECT_EQ(asset->OnLoadedCount, 1);
     EXPECT_EQ(m_AssetManager->GetPendingFinalizeCount(), 0u);
+}
+
+TEST_F(AssetManagerTest, GetWithInvalidHandleReturnsNull)
+{
+    auto asset = m_AssetManager->Get<DummyAsset>(AssetHandle(0));
+    EXPECT_EQ(asset, nullptr);
+    
+    auto assetInvalid = m_AssetManager->Get<DummyAsset>(AssetHandle(123456789));
+    EXPECT_EQ(assetInvalid, nullptr);
+}
+
+TEST_F(AssetManagerTest, MultipleAsyncLoads)
+{
+    CountingLoader* loader = RegisterDummyLoader(true, true);
+    const int count = 5;
+    std::vector<std::shared_ptr<DummyAsset>> assets;
+    
+    for (int i = 0; i < count; ++i)
+    {
+        const std::string path = MakeUniqueAssetPath("multi_async");
+        auto handle = m_AssetManager->ResolveToHandle(path, DummyAsset::GetStaticType());
+        assets.push_back(m_AssetManager->Get<DummyAsset>(handle));
+    }
+    
+    // Wait for all to be in pending finalize
+    for (int attempt = 0; attempt < 2000 && m_AssetManager->GetPendingFinalizeCount() < count; ++attempt)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    
+    EXPECT_EQ(m_AssetManager->GetPendingFinalizeCount(), (size_t)count);
+    
+    m_AssetManager->OnUpdate(Timestep(0.016f));
+    
+    EXPECT_EQ(m_AssetManager->GetPendingFinalizeCount(), 0u);
+    for (auto& asset : assets)
+    {
+        EXPECT_EQ(asset->GetState(), AssetState::Ready);
+    }
 }

@@ -1,18 +1,16 @@
 #include "world_panel.h"
 #include "IconsFontAwesome6.h"
 #include "editor/editor_layer.h"
-#include "engine/assets/asset_manager.h"
-#include "engine/core/service_locator.h"
-#include "engine/graphics/assets/environment.h"
+#include "engine/assets/types/environment_asset.h"
 #include "engine/core/platform.h"
-#include <format>
 #include "scene/scene.h"
-#include "engine/scene/project.h"
+#include "engine/project/project.h"
+#include "engine/assets/asset_manager.h"
 #include <filesystem>
 #include <fstream>
 
 
-namespace CHEngine
+namespace Chained
 {
 
 WorldPanel::WorldPanel()
@@ -89,7 +87,7 @@ void WorldPanel::OnImGuiRender(bool readOnly)
             if (ImGui::Button(ICON_FA_FOLDER_OPEN "##BGSelect"))
             {
                 std::vector<FileDialogFilter> filters = {{"Textures", "png,jpg,tga,bmp"}};
-                auto result = CHEngine::Platform::OpenFile(filters);
+                auto result = Chained::Platform::OpenFile(filters);
                 if (result)
                 {
                     std::filesystem::path p = *result;
@@ -164,13 +162,13 @@ void WorldPanel::OnImGuiRender(bool readOnly)
         if (ImGui::Button(ICON_FA_FILE_IMPORT " Load Environment"))
         {
             std::vector<FileDialogFilter> filters = {{"Environment", "chenv"}};
-            auto result = CHEngine::Platform::OpenFile(filters);
+            auto result = Chained::Platform::OpenFile(filters);
             if (result)
             {
                 if (auto project = Project::GetActive())
                 {
-                    auto handle = ServiceLocator::Get<AssetManager>().ResolveToHandle(result->string(), EnvironmentAsset::GetStaticType());
-                    m_Context->GetSettings().Environment = ServiceLocator::Get<AssetManager>().Get<EnvironmentAsset>(handle);
+                    auto handle = AssetManager::Get().ResolveToHandle(result->string(), EnvironmentAsset::GetStaticType());
+                    m_Context->GetSettings().Environment = AssetManager::Get().GetAsset<EnvironmentAsset>(handle);
                 }
             }
         }
@@ -179,7 +177,7 @@ void WorldPanel::OnImGuiRender(bool readOnly)
         if (ImGui::Button(ICON_FA_FILE_CIRCLE_PLUS " New"))
         {
             std::vector<FileDialogFilter> filters = {{"Environment", "chenv"}};
-            auto result = CHEngine::Platform::SaveFile(filters);
+            auto result = Chained::Platform::SaveFile(filters);
             if (result)
             {
                 auto newEnv = std::make_shared<EnvironmentAsset>();
@@ -355,7 +353,7 @@ void WorldPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, 
         if (ImGui::Button(ICON_FA_FOLDER_OPEN "##SkySelect"))
         {
             std::vector<FileDialogFilter> filters = {{"Textures/HDR", "png,jpg,hdr"}};
-            auto result = CHEngine::Platform::OpenFile(filters);
+            auto result = Chained::Platform::OpenFile(filters);
             if (result)
             {
                 std::filesystem::path p = *result;
@@ -451,4 +449,4 @@ void WorldPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, 
     }
 }
 
-} // namespace CHEngine
+} // namespace Chained

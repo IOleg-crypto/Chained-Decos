@@ -6,6 +6,7 @@ layout(location = 1) in vec2 a_TexCoord;
 layout(location = 2) in vec3 a_Normal;
 layout(location = 3) in ivec4 a_JointIDs;
 layout(location = 4) in vec4 a_Weights;
+layout(location = 5) in vec3 a_Tangent;
 
 // Input uniform values
 #include "include/camera.glsl"
@@ -26,6 +27,7 @@ void main()
 {
     vec3 vPos = a_Position;
     vec3 vNormal = a_Normal;
+    vec3 vTangent = a_Tangent;
 
     if (useSkinning == 1)
     {
@@ -37,6 +39,7 @@ void main()
         
         vPos = (skinMat * vec4(vPos, 1.0)).xyz;
         vNormal = (skinMat * vec4(vNormal, 0.0)).xyz;
+        vTangent = (skinMat * vec4(vTangent, 0.0)).xyz;
     }
 
     // Send vertex attributes to fragment shader
@@ -45,10 +48,16 @@ void main()
     fragColor = vec4(1.0, 1.0, 1.0, 1.0); // Static color as fallback
 
     vec3 N = normalize(vec3(matNormal * vec4(vNormal, 0.0)));
+    vec3 T = normalize(vec3(matNormal * vec4(vTangent, 0.0)));
     
-    // Simple fallback TBN
-    vec3 up = abs(N.z) < 0.999 ? vec3(0, 0, 1) : vec3(1, 0, 0);
-    vec3 T = normalize(cross(up, N));
+    // Fallback if tangent is zero/invalid (Avoids NaN in TBN)
+    if (length(vTangent) < 0.01) {
+        vec3 up = abs(N.z) < 0.999 ? vec3(0, 0, 1) : vec3(1, 0, 0);
+        T = normalize(cross(up, N));
+    }
+
+    // Re-orthogonalize T with respect to N
+    T = normalize(T - dot(T, N) * N);
     vec3 B = cross(N, T);
     
     fragNormal = N;

@@ -3,7 +3,7 @@
 
 #include "panel.h"
 
-namespace CHEngine
+namespace Chained
 {
 class WorldPanel : public Panel
 {
@@ -16,6 +16,6 @@ public:
 private:
     void DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, bool readOnly);
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_WORLD_PANEL_H

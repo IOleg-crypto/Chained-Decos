@@ -15,37 +15,54 @@ if(CH_ENGINE_SHARED)
     add_compile_definitions(CH_DYNAMIC_LINK CH_ENGINE_BUILD)
 endif()
 
+add_subdirectory(foundation)
+add_subdirectory(reflection)
 add_subdirectory(core)
 add_subdirectory(assets)
 add_subdirectory(graphics)
 add_subdirectory(physics)
 add_subdirectory(audio)
 add_subdirectory(scene)
-add_subdirectory(network)
+add_subdirectory(project)
+add_subdirectory(serialization)
+#add_subdirectory(network)
 add_subdirectory(${CMAKE_SOURCE_DIR}/scripting ${CMAKE_BINARY_DIR}/scripting)
 
-# Create the final engine facade library that links all sub-modules together
-add_library(engine ${ENGINE_LIB_TYPE} core/application.cpp)
+# Create a high-level runtime module that owns the Application logic and initialization
+# This module depends on all other engine modules, but modules don't depend on it.
+chained_add_engine_module(engine_runtime
+    SOURCES
+        core/application.cpp
+    DEPENDS
+        engine_scripting
+        engine_scene
+        engine_serialization
+        engine_project
+        engine_graphics
+        engine_physics
+        engine_audio
+        engine_assets
+        engine_core
+)
+
+target_include_directories(engine_runtime PRIVATE ${CMAKE_SOURCE_DIR})
+
+# Create the final engine facade library that links everything together
+add_library(engine ${ENGINE_LIB_TYPE})
+# Add a dummy file to satisfy some compilers that don't like empty targets
+target_sources(engine PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/engine_dummy.cpp)
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/engine_dummy.cpp" "// dummy\n")
 
 target_link_libraries(engine PUBLIC
-    engine_scripting
-    engine_scene
-    engine_graphics
-    engine_physics
-    engine_audio
-    engine_assets
-    engine_core
-    engine_network
-    ChainedEngine::External::GNS
+    engine_runtime
 )
 
 if (NOT CH_ENGINE_SHARED)
-    # When building statically, we form a cycle so application.cpp can satisfy module requirements
-    target_link_libraries(engine_scripting PUBLIC engine)
-    target_link_libraries(engine_scene PUBLIC engine)
+    # Remove cyclical dependencies that were used to satisfy symbols
+    # Symbols should now be satisfied by linking order or static library grouping
 endif()
 
-target_compile_definitions(engine PRIVATE CH_ENGINE_BUILD)
+target_compile_definitions(engine PRIVATE CH_ENGINE_BUILD GLM_ENABLE_EXPERIMENTAL)
 
 if(CH_ENGINE_SHARED)
     target_compile_definitions(engine PUBLIC 
@@ -90,6 +107,7 @@ target_link_libraries(ChainedEngineFramework INTERFACE
     ChainedEngine::External::EnTT
     ChainedEngine::External::YamlCpp
     ChainedEngine::External::reflect-cpp
+    ChainedEngine::External::Cereal
 )
 
 target_compile_definitions(ChainedEngineFramework INTERFACE

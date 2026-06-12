@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-namespace CHEngine
+namespace Chained
 {
 
 class Scene;
@@ -17,6 +17,8 @@ class Scene;
 // Runtime scripting context (used by glue)
 void SetContextScene(Scene* scene);
 Scene* GetContextScene();
+
+
 
 // Owns the CoreCLR host and the current app/core assembly handles.
 class ScriptHost
@@ -59,8 +61,8 @@ private:
     bool RecreateAssemblyLoadContext(bool unloadCurrent);
     bool LoadAssembliesTransactional(const std::filesystem::path& appAssemblyPath);
 
-    static std::filesystem::path ResolveCoralDirectory();
-    static std::filesystem::path ResolveCoreAssemblyPath(const std::filesystem::path& coralDir);
+    std::filesystem::path ResolveCoralDirectory();
+    std::filesystem::path ResolveCoreAssemblyPath(const std::filesystem::path& coralDir);
 
 private:
     std::filesystem::path m_CoralDirectory;
@@ -91,7 +93,7 @@ private:
     std::unordered_set<std::string> m_MissingScriptsWarnings;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_SCRIPT_ENGINE_SERVICES_H
 

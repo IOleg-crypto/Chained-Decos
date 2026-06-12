@@ -2,7 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using Coral.Managed.Interop;
 
-namespace CHEngine
+namespace Chained
 {
     public static class Network
     {

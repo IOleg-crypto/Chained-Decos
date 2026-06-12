@@ -1,10 +1,11 @@
 #include "profiler_panel.h"
 #include "engine/core/profiler.h"
+#include "imgui.h"
 #include <format>
 #include <glad/gl.h>
-#include "imgui.h"
 
-namespace CHEngine
+
+namespace Chained
 {
 ProfilerPanel::ProfilerPanel()
 {
@@ -129,4 +130,4 @@ void ProfilerPanel::UpdateHistory()
     }
 }
 
-} // namespace CHEngine
+} // namespace Chained

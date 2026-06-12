@@ -3,7 +3,7 @@
 
 #include "engine/graphics/api/buffer.h"
 
-namespace CHEngine
+namespace Chained
 {
 
 class OpenGLVertexBuffer : public VertexBuffer
@@ -42,6 +42,6 @@ private:
     uint32_t m_Count;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_OPENGL_BUFFER_H

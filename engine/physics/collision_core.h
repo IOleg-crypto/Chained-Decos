@@ -6,8 +6,13 @@
 #include <glm/glm.hpp>
 #include <vector>
 
-namespace CHEngine
+namespace Chained
 {
+    struct Ray
+    {
+        glm::vec3 position;
+        glm::vec3 direction;
+    };
 // Narrow-phase collision response helpers for the physics step.
 class CollisionCore
 {
@@ -65,6 +70,6 @@ private:
     static void ResolveMeshMesh(entt::registry& registry, entt::entity rbEntity, entt::entity otherEntity,
                                 std::vector<Contact>& contacts);
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_COLLISION_CORE_H

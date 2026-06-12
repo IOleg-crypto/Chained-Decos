@@ -1,6 +1,6 @@
 #ifndef CH_SCRIPTING_COMPONENTS_H
 #define CH_SCRIPTING_COMPONENTS_H   
-#include "engine/core/reflection_rfl.h"
+#include "engine/reflection/reflection_rfl.h"
 #include <vector>
 #include <string>
 #include <map>
@@ -8,7 +8,7 @@
 #include <variant>
 #include <glm/glm.hpp>
 
-namespace CHEngine
+namespace Chained
 {
 
 enum class ScriptFieldType
@@ -21,7 +21,7 @@ struct ScriptField
 {
     ScriptFieldType Type = ScriptFieldType::None;
     std::string Name;
-    std::variant<float, int, bool, std::string, glm::vec2, glm::vec3, glm::vec4, CHEngine::Color, uint64_t> Value;
+    std::variant<float, int, bool, std::string, glm::vec2, glm::vec3, glm::vec4, Chained::Color, uint64_t> Value;
 };
 
 CH_MARK_RFL(ScriptField);
@@ -81,6 +81,6 @@ struct ManagedScriptComponent
 
 CH_MARK_RFL(ManagedScriptComponent);
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_SCRIPTING_COMPONENTS_H

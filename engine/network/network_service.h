@@ -1,21 +1,25 @@
 #ifndef CH_NETWORK_SERVICE_H
 #define CH_NETWORK_SERVICE_H
 
-#include "engine/core/engine_service.h"
 #include <cstdint>
 #include <vector>
 
-namespace CHEngine
+namespace Chained
 {
     /**
      * @brief Core engine service for multiplayer networking using SteamNetworkingSockets.
      * Uses opaque handles (uint32_t) to avoid header pollution in the public API.
      */
-    class NetworkService : public ::CHEngine::EngineService
+    class NetworkService
     {
     public:
+        static void Init();
+        static void Shutdown();
+        static NetworkService& Get();
+
+    private:
         NetworkService();
-        virtual ~NetworkService() override;
+        virtual ~NetworkService();
 
         // Startup/Shutdown
         bool Host(uint16_t port);
@@ -35,10 +39,7 @@ namespace CHEngine
         bool IsClient() const { return m_IsClient; }
         bool IsActive() const { return m_IsServer || m_IsClient; }
 
-    protected:
-        virtual void OnInit() override;
-        virtual void OnUpdate(Timestep ts) override;
-        virtual void OnShutdown() override;
+
 
     private:
         void InitializeSteamNetworking();

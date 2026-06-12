@@ -1,7 +1,7 @@
 #include "opengl_texture.h"
 #include <stb_image.h>
 
-namespace CHEngine
+namespace Chained
 {
 
 OpenGLTexture::OpenGLTexture(uint32_t width, uint32_t height, TextureFormat format)
@@ -80,4 +80,4 @@ void OpenGLTexture::Bind(uint32_t slot) const
     glBindTexture(m_Type == TextureType::Cubemap ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D, m_RendererID);
 }
 
-} // namespace CHEngine
+} // namespace Chained

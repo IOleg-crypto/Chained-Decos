@@ -1,7 +1,7 @@
 #include "opengl_vertex_array.h"
 #include <glad/gl.h>
 
-namespace CHEngine
+namespace Chained
 {
 
 static uint32_t ShaderDataTypeToOpenGLBaseType(ShaderDataType type)
@@ -121,4 +121,4 @@ void OpenGLVertexArray::SetIndexBuffer(const std::shared_ptr<IndexBuffer>& index
     m_IndexBuffer = indexBuffer;
 }
 
-} // namespace CHEngine
+} // namespace Chained

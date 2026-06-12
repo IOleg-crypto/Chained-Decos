@@ -2,24 +2,24 @@
 #define CH_ENTRY_POINT_H
 
 #include "engine/core/application.h"
+#include "engine/foundation/platform_detection.h"
 
-namespace CHEngine
-{
-Application* CreateApplication(ApplicationCommandLineArgs args);
+extern Chained::Application* Chained::CreateApplication(Chained::ApplicationCommandLineArgs args);
 
-inline int RunEntryPoint(int argc, char** argv)
+#if CH_PLATFORM_WINDOWS || CH_PLATFORM_LINUX
+int main(int argc, char** argv)
 {
-    ApplicationCommandLineArgs args;
+    Chained::ApplicationCommandLineArgs args;
     args.Count = argc;
     args.Args = argv;
 
-    auto app = CreateApplication(args);
+    auto app = Chained::CreateApplication(args);
     app->Run();
-
     delete app;
-
     return 0;
 }
-} // namespace CHEngine
+#else
+    #error "Unsupported platform for entry point!"
+#endif
 
 #endif // CH_ENTRY_POINT_H

@@ -7,7 +7,7 @@
 #include <memory>
 #include <string>
 
-namespace CHEngine
+namespace Chained
 {
 class CommandHistory
 {
@@ -48,6 +48,6 @@ private:
     std::deque<std::unique_ptr<IEditorCommand>> m_RedoStack;
     CommandEventCallback m_NotifyCallback;
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_COMMAND_HISTORY_H

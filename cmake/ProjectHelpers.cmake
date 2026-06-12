@@ -28,15 +28,15 @@ function(chained_add_csharp_scripts TARGET_NAME CSHARP_PROJECT_PATH)
         VERBATIM
     )
     
-    # Ensure scripts build AFTER CHEngine_Managed to avoid dotnet race condition
-    if(TARGET CHEngine_Managed)
-        add_dependencies(${SCRIPT_TARGET} CHEngine_Managed)
+    # Ensure scripts build AFTER Chained_Managed to avoid dotnet race condition
+    if(TARGET Chained_Managed)
+        add_dependencies(${SCRIPT_TARGET} Chained_Managed)
     endif()
 endfunction()
 
 # Helper function to standardize engine sub-module creation
 function(chained_add_engine_module TARGET_NAME)
-    set(options)
+    set(options NO_PCH)
     set(oneValueArgs)
     set(multiValueArgs SOURCES DEPENDS)
     cmake_parse_arguments(MODULE "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
@@ -44,8 +44,8 @@ function(chained_add_engine_module TARGET_NAME)
     add_library(${TARGET_NAME} ${SUBMODULE_LIB_TYPE} ${MODULE_SOURCES})
     
     target_include_directories(${TARGET_NAME} PUBLIC
-        ${CMAKE_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_SOURCE_DIR}
     )
 
     if(MODULE_DEPENDS)
@@ -53,7 +53,11 @@ function(chained_add_engine_module TARGET_NAME)
     endif()
 
     if(COMMAND apply_engine_optimizations)
-        apply_engine_optimizations(${TARGET_NAME})
+        if(MODULE_NO_PCH)
+            apply_engine_optimizations(${TARGET_NAME} NO_PCH)
+        else()
+            apply_engine_optimizations(${TARGET_NAME})
+        endif()
     endif()
 endfunction()
 
@@ -202,7 +206,7 @@ function(chained_generate_build_preset_header)
     set(CH_BUILD_PRESET_NAMES_HEADER "${GENERATED_HEADER}" PARENT_SCOPE)
     set(CH_BUILD_PRESET_NAMES_COUNT "${BUILD_PRESET_COUNT}" PARENT_SCOPE)
 
-    set(GENERATED_HEADER_CONTENT "#pragma once\n\n#include <array>\n\nnamespace CHEngine::detail\n{\ninline constexpr std::array<const char*, ${BUILD_PRESET_COUNT}> kBuildPresetNames = {\n${BUILD_PRESET_ENTRIES}};\n} // namespace CHEngine::detail\n")
+    set(GENERATED_HEADER_CONTENT "#pragma once\n\n#include <array>\n\nnamespace Chained::detail\n{\ninline constexpr std::array<const char*, ${BUILD_PRESET_COUNT}> kBuildPresetNames = {\n${BUILD_PRESET_ENTRIES}};\n} // namespace Chained::detail\n")
     
     # Write only if content changed to avoid unnecessary recompilation
     set(NEEDS_WRITE TRUE)

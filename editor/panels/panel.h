@@ -1,20 +1,24 @@
 #ifndef CH_PANEL_H
 #define CH_PANEL_H
 
-#include "engine/core/base.h"
+class EditorLayer;
+#include "engine/foundation/base.h"
 #include "engine/core/events.h"
-#include "engine/core/timestep.h"
+#include "engine/foundation/timestep.h"
 #include "engine/scene/scene.h"
-#include <vector>
-#include <memory>
 #include <algorithm>
+#include <memory>
+#include <vector>
 
-namespace CHEngine
+
+namespace Chained
 {
 // Base class for dockable editor panels with optional scene context.
 class Panel
 {
 public:
+    Panel() {
+    }
     virtual ~Panel() = default;
 
     // Draws the panel UI. readOnly is used when the panel should avoid editing.
@@ -72,7 +76,9 @@ public:
     void AddChild(const std::shared_ptr<Panel>& child)
     {
         if (child)
+        {
             m_Children.push_back(child);
+        }
     }
 
     void RemoveChild(const std::shared_ptr<Panel>& child)
@@ -87,8 +93,8 @@ public:
     void CleanupChildren()
     {
         m_Children.erase(std::remove_if(m_Children.begin(), m_Children.end(),
-            [](const std::shared_ptr<Panel>& panel) { return panel->m_PendingKill; }),
-            m_Children.end());
+                                        [](const std::shared_ptr<Panel>& panel) { return panel->m_PendingKill; }),
+                         m_Children.end());
     }
 
     bool& IsOpen()
@@ -104,24 +110,40 @@ public:
         return m_Name;
     }
 
-    bool IsVisible() const { return m_IsVisible; }
-    void SetVisible(bool visible) { m_IsVisible = visible; }
-    
-    bool IsPendingKill() const { return m_PendingKill; }
-    void MarkForDelete() { m_PendingKill = true; }
-    
-    const std::vector<std::shared_ptr<Panel>>& GetChildren() const { return m_Children; }
+    bool IsVisible() const
+    {
+        return m_IsVisible;
+    }
+    void SetVisible(bool visible)
+    {
+        m_IsVisible = visible;
+    }
+
+    bool IsPendingKill() const
+    {
+        return m_PendingKill;
+    }
+    void MarkForDelete()
+    {
+        m_PendingKill = true;
+    }
+
+    const std::vector<std::shared_ptr<Panel>>& GetChildren() const
+    {
+        return m_Children;
+    }
 
 protected:
+    
     std::string m_Name;
     std::shared_ptr<Scene> m_Context;
     bool m_IsOpen = true;
     bool m_ShowSettings = false;
-    
+
     bool m_IsVisible = true;
     bool m_PendingKill = false;
     std::vector<std::shared_ptr<Panel>> m_Children;
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_PANEL_H

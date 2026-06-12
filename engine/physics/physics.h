@@ -1,19 +1,23 @@
 #ifndef CH_PHYSICS_H
 #define CH_PHYSICS_H
 
-#include "engine/core/base.h"
-#include "engine/core/timestep.h"
-#include "entt/entt.hpp"
+#include "engine/foundation/base.h"
+#include "engine/foundation/timestep.h"
+#include "engine/physics/collision_core.h"
+#include "engine/physics/raycast_result.h"
+#include "engine/physics/physics_config.h"
+#include <entt/entt.hpp>
 #include <functional>
 #include <memory>
 #include <string>
 #include "raycast_result.h"
 
 // TODO : future refactor (when link Jolt physics)
-namespace CHEngine
+namespace Chained
 {
 class Scene;
 class BVH;
+class ModelAsset;
 
 // Per-scene physics state shared across simulation frames.
 struct PhysicsContext
@@ -24,20 +28,28 @@ struct PhysicsContext
     std::function<void(entt::entity, entt::entity)> CollisionCallback;
 };
 
-// Scene-scoped physics helpers, BVH cache access, and simulation entry points.
-class Physics
+class CH_API Physics
 {
 public: // Lifecycle
     // Initializes the global physics subsystem.
     static void Init();
     // Shuts the physics subsystem down and clears global state.
     static void Shutdown();
+    // Returns the singleton instance.
+    static Physics& Get();
     // Returns true once the physics subsystem has been initialized.
     static bool IsInitialized();
 
+    // Returns the active physics world implementation.
+    IPhysicsWorld* GetWorld();
+
+    // Initializes physics bodies for entities that haven't been created yet.
+    void InitializeBodies(Scene* scene);
+
 public: // BVH cache API
     // Returns the cached BVH for the given asset path, if one exists.
-    static std::shared_ptr<BVH> GetBVH(const std::string& path);
+    static std::shared_ptr<BVH> GetBVH(const std::shared_ptr<ModelAsset>& asset);
+    static std::shared_ptr<BVH> GetBVH(const std::string& modelPath);
     // Removes the cached BVH entry for the given asset path.
     static void InvalidateBVH(const std::string& path);
     // Replaces or inserts the cached BVH for the given asset path.
@@ -60,9 +72,16 @@ public: // Simulation & Queries
     static void SetCollisionCallback(Scene* scene, std::function<void(entt::entity, entt::entity)> callback);
 
 private: // Internal Helpers
+    Physics();
+    ~Physics();
+
     static void UpdateColliders(Scene* scene);
-    static void ResolveSimulation(Scene* scene, Timestep deltaTime);
+    static void ResolveSimulation(Scene* scene, Timestep deltaTime, float gravity);
+
+private:
+    std::unique_ptr<IPhysicsWorld> m_World;
+    static Physics* s_Instance;
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_PHYSICS_H

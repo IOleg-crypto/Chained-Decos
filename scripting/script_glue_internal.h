@@ -1,17 +1,8 @@
 #ifndef CH_SCRIPT_GLUE_INTERNAL_H
 #define CH_SCRIPT_GLUE_INTERNAL_H
 
-#include "engine/assets/asset_manager.h"
-#include "engine/audio/audio.h"
-#include "engine/audio/audio.h"
-#include "engine/core/application.h"
-#include "engine/core/input.h"
-#include "engine/core/log.h"
-#include "engine/scene/components.h"
 #include "engine/scene/entity.h"
-#include "engine/scene/project.h"
 #include "engine/scene/scene.h"
-#include "script_glue.h"
 #include "scriptengine.h"
 #include "scriptengine_services.h"
 #include <Coral/Array.hpp>
@@ -24,7 +15,7 @@
 // Macro to mark functions for InternalCall (formerly P/Invoke)
 #define CH_SCRIPT_FUNC static
 
-namespace CHEngine
+namespace Chained
 {
 
 // Forward declarations for explicit glue registration (prevents linker stripping)
@@ -54,6 +45,6 @@ inline Entity GetEntity(uint64_t entityID)
     return Entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
 }
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_SCRIPT_GLUE_INTERNAL_H

@@ -3,7 +3,7 @@
 #include "opengl/opengl_buffer.h"
 #include "opengl/opengl_uniform_buffer.h"
 
-namespace CHEngine
+namespace Chained
 {
 
 std::shared_ptr<VertexBuffer> VertexBuffer::Create(uint32_t size)
@@ -46,4 +46,4 @@ std::shared_ptr<UniformBuffer> UniformBuffer::Create(uint32_t size, uint32_t bin
     return nullptr;
 }
 
-} // namespace CHEngine
+} // namespace Chained

@@ -1,15 +1,14 @@
 #ifndef CH_PHYSICS_COMPONENTS_H
 #define CH_PHYSICS_COMPONENTS_H
 
-#include "engine/core/reflection_rfl.h"
+#include "engine/reflection/reflection_rfl.h"
+#include "engine/graphics/api/model_data.h"
 #include "engine/physics/iphysics_world.h"
 #include <glm/glm.hpp>
 #include <string>
 
-namespace CHEngine
+namespace Chained
 {
-
-enum class ColliderType { Box, Sphere, Capsule, Mesh };
 
 struct ColliderComponent
 {
@@ -34,9 +33,8 @@ struct ColliderComponent
     // Runtime state (not serialized - excluded by ReflectBridge)
     bool IsColliding = false;
 
-
-
     static const char* GetStaticName() { return "ColliderComponent"; }
+    static BoundingBox CalculateWorldAABB(const ColliderComponent& collider, const glm::mat4& worldTransform);
 };
 
 CH_MARK_RFL(ColliderComponent);
@@ -45,7 +43,7 @@ struct RigidBodyComponent
 {
     // Serialized fields
     enum class BodyType { Static, Dynamic, Kinematic };
-    BodyType Type = BodyType::Static;
+    BodyType Type = BodyType::Dynamic;
     float Mass = 1.0f;
     float LinearDamping = 0.01f;
     float AngularDamping = 0.05f;
@@ -65,6 +63,6 @@ struct RigidBodyComponent
 
 CH_MARK_RFL(RigidBodyComponent);
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_PHYSICS_COMPONENTS_H

@@ -1,6 +1,7 @@
 #include "collision_core.h"
 
 
+#include "engine/graphics/api/model_data.h"
 #include "bvh/bvh.h"
 #include "collision/collision.h"
 #include "physics.h"
@@ -10,7 +11,7 @@
 #include <cmath>
 #include <glm/glm.hpp>
 
-namespace CHEngine
+namespace Chained
 {
 glm::vec3 CollisionCore::ClosestPointOnSegment(glm::vec3 p, glm::vec3 a, glm::vec3 b)
 {
@@ -771,4 +772,4 @@ void CollisionCore::ResolveCollisions(entt::registry& registry, const std::vecto
     }
 }
 
-} // namespace CHEngine
+} // namespace Chained

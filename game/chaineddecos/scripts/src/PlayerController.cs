@@ -1,6 +1,6 @@
 using System;
 // Build trigger test 2
-using CHEngine;
+using Chained;
 
 namespace ChainedDecos.Scripts
 {

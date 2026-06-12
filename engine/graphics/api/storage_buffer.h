@@ -4,7 +4,7 @@
 #include <memory>
 #include <cstdint>
 
-namespace CHEngine
+namespace Chained
 {
     class StorageBuffer
     {

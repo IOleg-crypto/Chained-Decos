@@ -1,7 +1,7 @@
 #include "opengl_uniform_buffer.h"
 #include <glad/gl.h>
 
-namespace CHEngine
+namespace Chained
 {
 OpenGLUniformBuffer::OpenGLUniformBuffer(uint32_t size, uint32_t binding)
 {
@@ -21,4 +21,4 @@ void OpenGLUniformBuffer::SetData(const void* data, uint32_t size, uint32_t offs
     glBindBuffer(GL_UNIFORM_BUFFER, m_RendererID);
     glBufferSubData(GL_UNIFORM_BUFFER, offset, size, data);
 }
-} // namespace CHEngine
+} // namespace Chained

@@ -1,16 +1,17 @@
-#include "engine/scene/serialization.h"
+#include "engine/serialization/serialization.h"
+#include "engine/scene/components/mesh_component.h"
 #include "gtest/gtest.h"
 #include <filesystem>
 
-using namespace CHEngine;
-using namespace CHEngine::Serialization;
+using namespace Chained;
+using namespace Chained::Serialization;
 
 struct NestedData
 {
     float X = 0.0f;
     int Y = 0;
 
-    template <typename Archive> void Reflect(CHEngine::Properties<Archive>& props)
+    template <typename Archive> void Reflect(Chained::Properties<Archive>& props)
     {
         props.Property("X", X);
         props.Property("Y", Y);
@@ -59,32 +60,43 @@ TEST(SerializationTest, PropertyArchiveHandle)
     out << YAML::BeginMap;
     {
         PropertyArchive archive(out);
-        archive.Handle("MyID", id);
+        uint64_t handle = (uint64_t)id;
+        archive.Handle("MyID", handle);
     }
     out << YAML::EndMap;
 
     YAML::Node node = YAML::Load(out.c_str());
     EXPECT_EQ(node["MyID"].as<uint64_t>(), (uint64_t)id);
 
-    UUID id2(0);
+    uint64_t id2 = 0;
     PropertyArchive in(node);
     in.Handle("MyID", id2);
-    EXPECT_EQ((uint64_t)id2, (uint64_t)id);
+    EXPECT_EQ(id2, (uint64_t)id);
 }
 
 TEST(SerializationTest, PropertyArchiveNested)
 {
     YAML::Emitter out;
+    out << YAML::BeginMap;
     PropertyArchive archive(out);
+    Properties<PropertyArchive> props(archive);
 
     NestedData data;
     data.X = 10.5f;
     data.Y = 42;
 
-    archive.Nested("Settings", data);
+    props.Nested("Settings", data);
 
     YAML::Node inNode = YAML::Load(out.c_str());
     PropertyArchive in(inNode);
 
     NestedData data2;
+    Properties<PropertyArchive> inProps(in);
+    inProps.Nested("Settings", data2);
+
+    EXPECT_FLOAT_EQ(data2.X, 10.5f);
+    EXPECT_EQ(data2.Y, 42);
+
+    out << YAML::EndMap;
 }
+

@@ -7,7 +7,7 @@
 #include "engine/scene/component_registry.h"
 #include "engine/scene/entity.h"
 
-namespace CHEngine
+namespace Chained
 {
 class PropertyEditor
 {
@@ -26,9 +26,11 @@ public:
     static void RegisterCustom(const std::string& name, std::function<bool(T&, Entity)> drawer,
                                const char* icon = nullptr);
 
-    static void DrawEntityHeader(CHEngine::Entity entity);
+    static void DrawEntityHeader(Chained::Entity entity);
 
 private:
+    static class EditorLayer* s_EditorLayer;
+
     // Internal template helpers (Implementations moved to .cpp or a separate _impl.h if needed elsewhere)
     template <typename T> static void DrawComponentReflection(const std::string& name, const char* icon, Entity entity);
     static void DrawGenericReflection(const ComponentMetadata& metadata, Entity entity);
@@ -42,6 +44,6 @@ private:
                                       std::function<bool()> contentDrawer, std::function<void()> remover);
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_PROPERTY_EDITOR_H

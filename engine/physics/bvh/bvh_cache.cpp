@@ -1,14 +1,14 @@
 #include "bvh_cache.h"
 
 #include "bvh.h"
-#include "engine/assets/asset_manager.h"
-#include "engine/core/service_locator.h"
+#include "engine/assets/asset.h"
+#include "engine/assets/types/model_asset.h"
 #include "engine/core/log.h"
-#include "engine/graphics/assets/model_asset.h"
-#include "engine/core/thread_pool.h"
+#include "engine/foundation/thread_pool.h"
+
 #include <glm/glm.hpp>
 
-namespace CHEngine
+namespace Chained
 {
 void BVHCache::Init()
 {
@@ -39,19 +39,14 @@ bool BVHCache::IsInitialized() const
     return m_Initialized;
 }
 
-std::shared_ptr<BVH> BVHCache::GetOrBuild(const std::string& path)
+std::shared_ptr<BVH> BVHCache::GetOrBuild(const std::shared_ptr<ModelAsset>& asset)
 {
-    if (!m_Initialized || path.empty())
+    if (!m_Initialized || !asset || asset->GetState() != AssetState::Ready)
     {
         return nullptr;
     }
 
-    auto handle = ServiceLocator::Get<AssetManager>().ResolveToHandle(path, ModelAsset::GetStaticType());
-    auto asset = ServiceLocator::Get<AssetManager>().Get<ModelAsset>(handle);
-    if (!asset || asset->GetState() != AssetState::Ready)
-    {
-        return nullptr;
-    }
+    const std::string& path = asset->GetPath();
 
     {
         std::lock_guard<std::mutex> lock(m_Mutex);
@@ -73,17 +68,19 @@ std::shared_ptr<BVH> BVHCache::GetOrBuild(const std::string& path)
         ++m_Stats.Misses;
     }
 
-    ThreadPool::Get().QueueTask([this, path, asset]() {
-        auto built = BuildFromModelAsset(asset);
-        
-        std::lock_guard<std::mutex> lock(m_Mutex);
-        if (built)
-        {
-            m_ByPath[path] = built;
-            ++m_Stats.Builds;
-        }
-        m_InProgress.erase(path);
-    });
+    {
+        ThreadPool::QueueTask([this, path, asset]() {
+            auto built = BuildFromModelAsset(asset);
+            
+            std::lock_guard<std::mutex> lock(m_Mutex);
+            if (built)
+            {
+                m_ByPath[path] = built;
+                ++m_Stats.Builds;
+            }
+            m_InProgress.erase(path);
+        });
+    }
 
     return nullptr;
 }
@@ -187,4 +184,4 @@ std::shared_ptr<BVH> BVHCache::BuildFromModelAsset(const std::shared_ptr<ModelAs
 
     return BVH::Build(std::move(allTris));
 }
-} // namespace CHEngine
+} // namespace Chained

@@ -1,5 +1,5 @@
 #include "property_editor.h"
-#include "engine/core/reflection_rfl.h"
+#include "engine/reflection/reflection_rfl.h"
 #include "engine/scene/component_registry.h"
 #include "IconsFontAwesome6.h"
 #include "editor/editor_layer.h"
@@ -7,31 +7,25 @@
 #include "editor/undo/modify_component_command.h"
 #include "editor_gui.h"
 #include "engine/assets/asset_manager.h"
-#include "engine/graphics/assets/model_asset.h"
-#include "engine/graphics/assets/texture_asset.h"
+#include "engine/assets/types/model_asset.h"
+#include "engine/assets/types/texture_asset.h"
 #include "engine/physics/physics.h"
-#include "engine/scene/components.h"
-#include "engine/scene/project.h"
-#include "engine/scene/scene.h"
 #include "engine/scene/scene_settings.h"
 #include "imgui.h"
-#include "panel.h"
 #include "ui_properties.h" // Included here to break circular dependency
 #include <memory>
-
-#include "nfd.h"
 #include "scripting/scriptengine.h"
 #include <Coral/ManagedObject.hpp>
 
-#include "engine/core/service_locator.h"
-#include <algorithm>
-#include <iterator>
+#include "engine/core/application.h"
 #include <yaml-cpp/yaml.h>
 // Component Registry handles all dynamic component UI
 #include "engine/scene/component_registry.h"
 
-namespace CHEngine
+namespace Chained
 {
+
+EditorLayer* PropertyEditor::s_EditorLayer = nullptr;
 
 // --- Template Implementations (Moved from Header) ---
 
@@ -61,8 +55,11 @@ void PropertyEditor::DrawComponentReflection(const std::string& name, const char
             {
                 auto oldState = s_InitialStates[e];
                 auto newState = comp;
-                ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(
-                    std::make_unique<ModifyComponentCommand<T>>(entity, oldState, newState, "Modify " + name));
+                if (s_EditorLayer)
+                {
+                    s_EditorLayer->GetCommandHistory().PushCommand(
+                        std::make_unique<ModifyComponentCommand<T>>(entity, oldState, newState, "Modify " + name));
+                }
                 s_InitialStates.erase(e);
             }
         }
@@ -91,7 +88,10 @@ void PropertyEditor::DrawComponentContainer(const std::string& name, const char*
                 return false;
             },
             [&]() {
-                ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(entity));
+                    if (s_EditorLayer)
+                    {
+                        s_EditorLayer->GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(entity));
+                    }
             });
     }
 }
@@ -128,11 +128,17 @@ template <typename T> void PropertyEditor::Register(const std::string& name, con
         metadata.Add = [](Entity e) {
             if (!e.HasComponent<T>())
             {
-                ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<AddComponentCommand<T>>(e));
+                if (s_EditorLayer)
+                {
+                    s_EditorLayer->GetCommandHistory().PushCommand(std::make_unique<AddComponentCommand<T>>(e));
+                }
             }
         };
         metadata.Remove = [](Entity e) {
-            ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(e));
+            if (s_EditorLayer)
+            {
+                s_EditorLayer->GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(e));
+            }
         };
         metadata.SerializationKey = name + "Component"; // Default key convention
         ComponentRegistry::Register(typeId, metadata);
@@ -146,11 +152,13 @@ template <typename T> void PropertyEditor::Register(const std::string& name, con
         metadata.Add = [](Entity e) {
             if (!e.HasComponent<T>())
             {
-                ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<AddComponentCommand<T>>(e));
+                if (s_EditorLayer)
+                    s_EditorLayer->GetCommandHistory().PushCommand(std::make_unique<AddComponentCommand<T>>(e));
             }
         };
         metadata.Remove = [](Entity e) {
-            ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(e));
+            if (s_EditorLayer)
+                s_EditorLayer->GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(e));
         };
     }
 }
@@ -169,11 +177,17 @@ void PropertyEditor::RegisterCustom(const std::string& name, std::function<bool(
         metadata.Add = [](Entity e) {
             if (!e.HasComponent<T>())
             {
-                ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<AddComponentCommand<T>>(e));
+                if (s_EditorLayer)
+                {
+                    s_EditorLayer->GetCommandHistory().PushCommand(std::make_unique<AddComponentCommand<T>>(e));
+                }
             }
         };
         metadata.Remove = [](Entity e) {
-             ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(e));
+             if (s_EditorLayer)
+             {
+                 s_EditorLayer->GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(e));
+             }
         };
         ComponentRegistry::Register(typeId, metadata);
     }
@@ -186,11 +200,17 @@ void PropertyEditor::RegisterCustom(const std::string& name, std::function<bool(
         metadata.Add = [](Entity e) {
             if (!e.HasComponent<T>())
             {
-                ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<AddComponentCommand<T>>(e));
+                if (s_EditorLayer)
+                {
+                    s_EditorLayer->GetCommandHistory().PushCommand(std::make_unique<AddComponentCommand<T>>(e));
+                }
             }
         };
         metadata.Remove = [](Entity e) {
-             ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(e));
+             if (s_EditorLayer)
+             {
+                 s_EditorLayer->GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(e));
+             }
         };
     }
 }
@@ -199,6 +219,8 @@ void PropertyEditor::RegisterCustom(const std::string& name, std::function<bool(
 
 void PropertyEditor::Init()
 {
+    s_EditorLayer = &EditorLayer::Get();
+
     // --- Core Components ---
     Register<TransformComponent>("Transform", ICON_FA_ARROWS_UP_DOWN_LEFT_RIGHT);
     ComponentRegistry::SetAllowAdd(entt::type_hash<TransformComponent>::value(), false);
@@ -209,7 +231,6 @@ void PropertyEditor::Init()
     Register<RigidBodyComponent>("RigidBody", ICON_FA_CUBES);
     Register<ColliderComponent>("Collider", ICON_FA_SHIELD);
     Register<ModelComponent>("Model", ICON_FA_CUBE);
-    Register<MaterialComponent>("Materials", ICON_FA_DROPLET);
     Register<SpriteComponent>("Sprite", ICON_FA_IMAGE);
     Register<PrimitiveComponent>("Primitive", ICON_FA_SHAPES);
     Register<ShaderComponent>("Shader", ICON_FA_CODE);
@@ -286,7 +307,7 @@ void PropertyEditor::Init()
 
         if (ImGui::BeginPopup("AddScriptPopup"))
         {
-            for (const auto& [className, type] : ServiceLocator::Get<ScriptEngine>().GetScriptClasses())
+            for (const auto& [className, type] : ScriptEngine::Get().GetScriptClasses())
             {
                 // Extract short name for menu
                 size_t lastDot = className.find_last_of('.');
@@ -389,7 +410,7 @@ void PropertyEditor::DrawComponentInternal(::entt::id_type typeId, const std::st
     }
 }
 
-void PropertyEditor::DrawEntityProperties(CHEngine::Entity entity)
+void PropertyEditor::DrawEntityProperties(Chained::Entity entity)
 {
     auto& registry = entity.GetRegistry();
     bool isUI = entity.HasComponent<ControlComponent>();
@@ -423,7 +444,7 @@ void PropertyEditor::DrawEntityProperties(CHEngine::Entity entity)
     }
 }
 
-void PropertyEditor::DrawEntityHeader(CHEngine::Entity entity)
+void PropertyEditor::DrawEntityHeader(Chained::Entity entity)
 {
     if (entity.HasComponent<TagComponent>())
     {
@@ -459,7 +480,7 @@ void PropertyEditor::DrawEntityHeader(CHEngine::Entity entity)
     }
 }
 
-void PropertyEditor::DrawAddComponentPopup(CHEngine::Entity entity)
+void PropertyEditor::DrawAddComponentPopup(Chained::Entity entity)
 {
     if (ImGui::BeginPopup("AddComponent"))
     {
@@ -504,4 +525,4 @@ void PropertyEditor::DrawAddComponentPopup(CHEngine::Entity entity)
         ImGui::EndPopup();
     }
 }
-} // namespace CHEngine
+} // namespace Chained

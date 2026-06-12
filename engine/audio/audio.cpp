@@ -1,29 +1,37 @@
 #define MINIAUDIO_IMPLEMENTATION
+#include "miniaudio.h"
 #include "audio.h"
 #include "engine/core/log.h"
-#include "miniaudio.h"
-#include "engine/scene/project.h"
+#include "engine/project/project.h"
+#include "engine/foundation/engine_assert.h"
+
 #include <filesystem>
 
-namespace CHEngine
+namespace Chained
 {
+
+    void Audio::Init()
+    {
+        CH_ASSERT(!s_Instance);
+        s_Instance = new Audio();
+    }
+
+    void Audio::Shutdown()
+    {
+        if (s_Instance)
+        {
+            delete s_Instance;
+            s_Instance = nullptr;
+        }
+    }
+
+    Audio& Audio::Get()
+    {
+        CH_ASSERT(s_Instance);
+        return *s_Instance;
+    }
 
 Audio::Audio()
-{
-}
-
-Audio::~Audio()
-{
-    if (m_Engine)
-    {
-        StopAll();
-        ma_engine_uninit(m_Engine);
-        delete m_Engine;
-        m_Engine = nullptr;
-    }
-}
-
-void Audio::OnInit()
 {
     m_Engine = new ma_engine();
     ma_result result = ma_engine_init(NULL, m_Engine);
@@ -39,14 +47,17 @@ void Audio::OnInit()
     }
 }
 
-void Audio::OnUpdate(Timestep ts)
-{
-    Update(ts);
-}
 
-void Audio::OnShutdown()
+
+Audio::~Audio()
 {
-    StopAll();
+    if (m_Engine)
+    {
+        StopAll();
+        ma_engine_uninit(m_Engine);
+        delete m_Engine;
+        m_Engine = nullptr;
+    }
 }
 
 void Audio::Update(Timestep ts)
@@ -78,7 +89,14 @@ AudioHandle Audio::LoadSound(const std::string& filepath)
         return 0;
     }
 
-    std::filesystem::path resolvedPath = Project::GetAbsolutePath(filepath);
+    auto project = Project::GetActive();
+    std::filesystem::path resolvedPath;
+    if (project && std::filesystem::path(filepath).is_relative())
+        resolvedPath = project->GetConfig().ProjectDirectory / project->GetConfig().AssetDirectory / filepath;
+    else
+        resolvedPath = filepath;
+
+
     if (resolvedPath.empty() || !std::filesystem::exists(resolvedPath))
     {
         CH_CORE_ERROR("Audio System: File not found: {}", filepath);
@@ -250,7 +268,14 @@ void Audio::Stop(const std::string& filepath)
         return;
     }
 
-    std::filesystem::path resolvedPath = Project::GetAbsolutePath(filepath);
+    auto project = Project::GetActive();
+    std::filesystem::path resolvedPath;
+    if (project && std::filesystem::path(filepath).is_relative())
+        resolvedPath = project->GetConfig().ProjectDirectory / project->GetConfig().AssetDirectory / filepath;
+    else
+        resolvedPath = filepath;
+
+
     if (resolvedPath.empty())
     {
         return;
@@ -312,4 +337,4 @@ void Audio::StopAll()
 ma_engine* Audio::GetEngine() const {
     return m_Engine;
 }
-} // namespace CHEngine
+} // namespace Chained

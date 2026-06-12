@@ -22,7 +22,7 @@ graph TD
 #include "engine/core/application.h"
 #include "engine/core/entry_point.h"
 
-namespace CHEngine {
+namespace Chained {
     Application* CreateApplication(ApplicationCommandLineArgs args) {
         ApplicationSpecification spec;
         spec.Name = "Chained Game";

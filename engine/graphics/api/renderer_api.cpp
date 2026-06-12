@@ -1,7 +1,7 @@
 #include "engine/graphics/api/renderer_api.h"
 #include "opengl/opengl_renderer_api.h"
 
-namespace CHEngine
+namespace Chained
 {
 
 RendererAPI::API RendererAPI::s_API = RendererAPI::API::OpenGL;
@@ -19,4 +19,4 @@ std::unique_ptr<RendererAPI> RendererAPI::Create()
     }
 }
 
-} // namespace CHEngine
+} // namespace Chained

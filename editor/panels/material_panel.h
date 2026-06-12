@@ -1,11 +1,12 @@
 #ifndef CH_MATERIAL_PANEL_H
 #define CH_MATERIAL_PANEL_H
 
-#include "panel.h"
-#include "engine/scene/entity.h"
 #include "engine/scene/components/mesh_component.h"
+#include "engine/scene/entity.h"
+#include "panel.h"
 
-namespace CHEngine
+
+namespace Chained
 {
 class MaterialPanel : public Panel
 {
@@ -16,13 +17,14 @@ public:
     virtual void SetContext(const std::shared_ptr<Scene>& context) override;
 
 private:
-    void DrawMaterialSlot(MaterialSlot& slot);
+    void DrawMaterialSettings(Material& material);
+    uint32_t GetTextureID(AssetHandle handle);
 
 private:
     Entity m_SelectedEntity;
     int m_SelectedMeshIndex = -1;
     int m_SelectedMaterialIndex = 0;
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_MATERIAL_PANEL_H

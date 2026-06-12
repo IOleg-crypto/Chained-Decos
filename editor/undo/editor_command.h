@@ -3,7 +3,7 @@
 
 #include <string>
 
-namespace CHEngine
+namespace Chained
 {
 class IEditorCommand
 {
@@ -16,6 +16,6 @@ public:
 
     virtual std::string GetName() const = 0;
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_EDITOR_COMMAND_H

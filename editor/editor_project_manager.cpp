@@ -1,20 +1,20 @@
 #include "editor_project_manager.h"
 #include "editor_layer.h"
-#include "engine/scene/project.h"
-#include "engine/scene/project_serializer.h"
+#include "engine/project/project.h"
+#include "project/project_serializer.h"
 #include "engine/graphics/pipeline/renderer.h"
-#include "engine/graphics/pipeline/ui_renderer.h"
-#include "engine/core/application.h"
+#include "engine/graphics/ui/ui_renderer.h"
 #include "engine/scene/scene_events.h"
 #include "engine/core/platform.h"
 #include "scripting/scriptengine.h"
-#include "engine/core/service_locator.h"
 #include <algorithm>
+#include <string>
 
-namespace CHEngine
+namespace Chained
 {
 
-EditorProjectManager::EditorProjectManager()
+EditorProjectManager::EditorProjectManager(EditorLayer& owner)
+    : m_EditorLayer(owner)
 {
 }
 
@@ -26,23 +26,25 @@ void EditorProjectManager::NewProject()
 
 void EditorProjectManager::NewProject(const std::string& name, const std::string& path)
 {
-    Project::New();
-    auto project = Project::GetActive();
+    auto project = std::make_shared<Project>();
     project->GetConfig().Name = name;
     project->GetConfig().ProjectDirectory = path;
 
-    ProjectSerializer serializer(project);
-    serializer.Serialize((std::filesystem::path(path) / (name + ".chproject")).string());
+    m_EditorSettings = EditorSettings(); // Reset to defaults
 
+    EditorProjectSerializer::Serialize(project, m_EditorSettings, (std::filesystem::path(path) / (name + ".chproject")));
+
+    Project::SetActive(project);
+ 
     // Load engine shaders and resources for the dynamic newly created project
-    ServiceLocator::Get<Renderer>().LoadEngineResources();
-    ServiceLocator::Get<UIRenderer>().LoadProjectFonts();
+    Renderer::LoadEngineResources();
+    Renderer::GetUIRenderer()->LoadProjectFonts();
 }
 
 void EditorProjectManager::OpenProject()
 {
     std::vector<FileDialogFilter> filters = {{"Chained Project", "chproject"}};
-    auto result = CHEngine::Platform::OpenFile(filters);
+    auto result = Chained::Platform::OpenFile(filters);
     if (result)
     {
         OpenProject(*result);
@@ -51,15 +53,17 @@ void EditorProjectManager::OpenProject()
 
 void EditorProjectManager::OpenProject(const std::filesystem::path& path)
 {
-    if (Project::Load(path))
+    auto project = std::make_shared<Project>();
+    if (EditorProjectSerializer::Deserialize(project, m_EditorSettings, path))
     {
         m_LastProjectPath = path.string();
-
-        // Load engine shaders and resources
-        ServiceLocator::Get<Renderer>().LoadEngineResources();
-        ServiceLocator::Get<UIRenderer>().LoadProjectFonts();
-
-        ProjectOpenedEvent e(path.string());
+        Project::SetActive(project);
+ 
+         // Load engine shaders and resources
+        Renderer::LoadEngineResources();
+        Renderer::GetUIRenderer()->LoadProjectFonts();
+ 
+         ProjectOpenedEvent e(path.string());
         Application::Get().OnEvent(e);
     }
 }
@@ -69,9 +73,9 @@ void EditorProjectManager::SaveProject()
     auto project = Project::GetActive();
     if (!project) return;
     
-    ProjectSerializer serializer(project);
-    serializer.Serialize((project->GetConfig().ProjectDirectory / (project->GetConfig().Name + ".chproject")).string());
+    EditorProjectSerializer::Serialize(project, m_EditorSettings, (project->GetConfig().ProjectDirectory / (project->GetConfig().Name + ".chproject")));
 }
+
 
 bool EditorProjectManager::OnProjectOpened(ProjectOpenedEvent& e)
 {
@@ -81,14 +85,14 @@ bool EditorProjectManager::OnProjectOpened(ProjectOpenedEvent& e)
         m_LastProjectPath = e.GetPath();
 
         // Track in recent projects list (move to front, cap at 10)
-        auto& config = EditorLayer::Get().GetConfig();
+        auto& config = m_EditorLayer.GetConfig();
         auto& recents = config.RecentProjects;
         recents.erase(std::remove(recents.begin(), recents.end(), m_LastProjectPath), recents.end());
         recents.insert(recents.begin(), m_LastProjectPath);
         if (recents.size() > 10)
             recents.resize(10);
 
-        EditorLayer::Get().SaveConfig();
+        m_EditorLayer.SaveConfig();
 
         // Auto-load script assembly if configured
         auto& scripting = project->GetConfig().Scripting;
@@ -104,8 +108,8 @@ bool EditorProjectManager::OnProjectOpened(ProjectOpenedEvent& e)
 
             if (std::filesystem::exists(dllPath))
             {
-                ServiceLocator::Get<ScriptEngine>().LoadAppAssembly(dllPath.string());
-                CH_CORE_INFO("EditorProjectManager: Auto-loaded script assembly '{}'.", dllPath.string());
+                 ScriptEngine::Get().LoadAppAssembly(dllPath.string());
+                 CH_CORE_INFO("EditorProjectManager: Auto-loaded script assembly '{}'.", dllPath.string());
             }
             else
             {
@@ -137,11 +141,11 @@ bool EditorProjectManager::OnProjectOpened(ProjectOpenedEvent& e)
         if (!sceneToLoad.empty() && std::filesystem::exists(sceneToLoad))
         {
             CH_CORE_INFO("EditorProjectManager: Auto-loading scene: {}", sceneToLoad.string());
-            EditorLayer::Get().GetSceneManager().OpenScene(sceneToLoad);
+            m_EditorLayer.GetSceneManager().OpenScene(sceneToLoad);
         }
         return true;
     }
     return false;
 }
 
-} // namespace CHEngine
+} // namespace Chained

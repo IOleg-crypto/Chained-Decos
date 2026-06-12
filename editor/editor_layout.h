@@ -4,7 +4,7 @@
 #include "editor/editor_panels.h"
 #include <string>
 
-namespace CHEngine
+namespace Chained
 {
 
 class EditorLayout
@@ -25,7 +25,6 @@ private:
     uint32_t m_DockSpaceID = 0;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_EDITOR_LAYOUT_H
-

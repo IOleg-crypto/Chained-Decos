@@ -1,26 +1,24 @@
-#include "engine/core/application.h"
 #include "editor_gui.h"
+#include "IconsFontAwesome6.h"
 #include "editor/editor_layer.h"
 #include "editor/panels/panel.h"
 #include "editor/panels/viewport_panel.h"
 #include "editor_events.h"
 #include "engine/core/application.h"
+#include "engine/project/project.h"
 #include "engine/scene/components.h"
-#include "engine/scene/project.h"
-#include "IconsFontAwesome6.h"
 #include "scripting/scriptengine.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
-#include "engine/core/service_locator.h"
+#include "engine/core/application.h"
 #include "engine/core/platform.h"
 #include "engine/scene/component_registry.h"
-#include "imgui.h"
 #include "imgui_internal.h"
-#include <cstring>
+#include "scripting/scriptengine.h"
 #include <filesystem>
 #include <string>
 
-namespace CHEngine
+namespace Chained
 {
 // --- Internal Helpers ---
 
@@ -44,7 +42,7 @@ static void DrawPropertyLabel(const char* label)
 
 // --- Menu System Implementation ---
 
-void EditorGUI::DrawMenuBar(EditorPanels& panels)
+void EditorGUI::DrawMenuBar(EditorLayer& editorLayer, EditorPanels& panels)
 {
     if (!ImGui::BeginMenuBar())
     {
@@ -56,20 +54,13 @@ void EditorGUI::DrawMenuBar(EditorPanels& panels)
     {
         if (ImGui::MenuItem(ICON_FA_FILE " New Project", "Ctrl+Shift+N"))
         {
-            auto newScene = std::make_shared<Scene>();
-
-            // Ensure every scene starts with a Main Camera
-            Entity camera = newScene->CreateEntity("Main Camera");
-            auto& cc = camera.AddComponent<CameraComponent>();
-            cc.Primary = true;
-            camera.GetComponent<TransformComponent>().Translation = {0, 5, 10};
-
+            auto newScene = Scene::CreateDefault();
             EditorLayer::Get().GetSceneManager().SetScene(newScene);
         }
         if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open Project", "Ctrl+O"))
         {
             std::vector<FileDialogFilter> filters = {{"Chained Scene", "chscene"}};
-            auto result = CHEngine::Platform::OpenFile(filters);
+            auto result = Chained::Platform::OpenFile(filters);
             if (result)
             {
                 EditorLayer::Get().GetSceneManager().OpenScene(*result);
@@ -111,7 +102,7 @@ void EditorGUI::DrawMenuBar(EditorPanels& panels)
     // View Menu
     if (ImGui::BeginMenu("View"))
     {
-        panels.ForEach([](std::shared_ptr<Panel> panel) {
+        panels.ForEach([](const std::shared_ptr<Panel>& panel) {
             if (panel->GetName() != "Viewport" && panel->GetName() != "Project Browser")
             {
                 ImGui::MenuItem(panel->GetName().c_str(), nullptr, &panel->IsOpen());
@@ -120,7 +111,7 @@ void EditorGUI::DrawMenuBar(EditorPanels& panels)
         ImGui::Separator();
         if (ImGui::MenuItem(ICON_FA_EXPAND " Fullscreen", "F11"))
         {
-            Application::Get().GetWindow().ToggleFullscreen();
+            // Application::Get().GetWindow().SetFullscreen(true);
         }
         if (ImGui::MenuItem(ICON_FA_ARROWS_ROTATE " Reset Layout"))
         {
@@ -153,16 +144,16 @@ void EditorGUI::DrawMenuBar(EditorPanels& panels)
         ImGui::Separator();
         if (ImGui::MenuItem(ICON_FA_ARROWS_ROTATE " Reload Shaders"))
         {
-            ServiceLocator::Get<Renderer>().GetShaderLibrary().ReloadAll();
+            Renderer::GetShaderLibrary().ReloadAll();
         }
         if (ImGui::MenuItem(ICON_FA_FILE_CODE " Reload Scripts", "Ctrl+R"))
         {
             auto project = Project::GetActive();
             if (project)
             {
-                std::filesystem::path assemblyPath = Project::GetAssetDirectory() / "bin" / (project->GetConfig().Scripting.ModuleName + ".dll");
-                auto& scriptEngine = ServiceLocator::Get<ScriptEngine>();
-                scriptEngine.RequestAssemblyReload(assemblyPath.string(), "EditorGUI");
+                std::filesystem::path assemblyPath =
+                    Project::GetAssetDirectory() / "bin" / (project->GetConfig().Scripting.ModuleName + ".dll");
+                ScriptEngine::Get().RequestAssemblyReload(assemblyPath.string(), "EditorGUI");
             }
         }
         ImGui::EndMenu();
@@ -313,7 +304,7 @@ bool EditorGUI::FileProperty(const char* label, std::string& value, const char* 
     char buffer[256];
     memset(buffer, 0, sizeof(buffer));
     strncpy(buffer, displayPath.c_str(), sizeof(buffer) - 1);
-    
+
     bool changed = false;
     if (ImGui::InputText("##prop", buffer, sizeof(buffer)))
     {
@@ -339,7 +330,7 @@ bool EditorGUI::FileProperty(const char* label, std::string& value, const char* 
         {
             filters.push_back({"Files", filter});
         }
-        auto result =  CHEngine::Platform::OpenFile(filters);
+        auto result = Chained::Platform::OpenFile(filters);
         if (result)
         {
             value = Project::GetRelativePath(*result);
@@ -371,12 +362,12 @@ bool EditorGUI::FileProperty(const char* label, std::string& path, uint32_t text
     }
     ImGui::SameLine();
     ImGui::PushItemWidth(width - buttonSize - thumbnailSize - 10.0f);
-    
+
     std::string displayPath = Project::GetRelativePath(path);
     char buffer[256];
     memset(buffer, 0, sizeof(buffer));
     strncpy(buffer, displayPath.c_str(), sizeof(buffer) - 1);
-    
+
     bool changed = false;
     if (ImGui::InputText("##prop", buffer, sizeof(buffer)))
     {
@@ -402,7 +393,7 @@ bool EditorGUI::FileProperty(const char* label, std::string& path, uint32_t text
         {
             filters.push_back({"Files", filter});
         }
-        auto result = CHEngine::Platform::OpenFile(filters);
+        auto result = Chained::Platform::OpenFile(filters);
         if (result)
         {
             path = Project::GetRelativePath(*result);
@@ -612,4 +603,4 @@ void EditorGUI::ApplyTheme()
     colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
     colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
 }
-}
+} // namespace Chained

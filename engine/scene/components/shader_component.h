@@ -1,13 +1,11 @@
 #ifndef CH_SHADER_COMPONENT_H
 #define CH_SHADER_COMPONENT_H
 
-#include "engine/core/reflection_rfl.h"
+#include "engine/reflection/reflection_rfl.h"
 #include "engine/graphics/pipeline/renderer_types.h"
 
-namespace CHEngine
+namespace Chained
 {
-class AssetManager;
-
 struct ShaderComponent
 {
     AssetHandle ShaderHandle = AssetHandle(0);
@@ -20,6 +18,6 @@ struct ShaderComponent
 
 CH_MARK_RFL(ShaderComponent);
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_SHADER_COMPONENT_H

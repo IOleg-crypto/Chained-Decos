@@ -7,7 +7,7 @@
 // #include "engine/core/service_locator.h"
 // #include "tests/test_utils.h"
 
-// using namespace CHEngine;
+// using namespace Chained;
 
 // class AssetManagerTypeSafetyTest : public ::testing::Test
 // {
@@ -21,12 +21,12 @@
 //         m_AssetManager->RegisterLoader(AssetType::Texture, std::make_shared<TextureLoader>());
 //         m_AssetManager->RegisterLoader(AssetType::Model, std::make_shared<ModelLoader>());
         
-//         ServiceLocator::Register<AssetManager>(m_AssetManager.get());
+//         Application::Get().GetServiceRegistry().RegisterInstance<AssetManager>(m_AssetManager);
 //     }
 
 //     void TearDown() override
 //     {
-//         ServiceLocator::Unregister<AssetManager>();
+//         Application::Get().GetServiceRegistry().Unregister<AssetManager>();
 //     }
 
 //     std::shared_ptr<AssetManager> m_AssetManager;

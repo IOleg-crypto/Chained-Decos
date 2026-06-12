@@ -1,9 +1,11 @@
 #ifndef CH_RENDERER_H
 #define CH_RENDERER_H
 
-#include "engine/core/timestep.h"
-#include "engine/core/engine_service.h"
-#include "engine/graphics/assets/environment.h"
+#include "engine/foundation/base.h"
+
+#include "engine/foundation/timestep.h"
+#include "engine/assets/types/environment_asset.h"
+#include "engine/assets/types/shader_asset.h"
 #include "engine/graphics/pipeline/shader_library.h"
 #include "engine/graphics/api/camera_types.h"
 #include "engine/graphics/pipeline/renderer_types.h"
@@ -12,10 +14,14 @@
 #include <memory>
 #include <vector>
 #include <unordered_map>
+#include <string>
 
-namespace CHEngine
+namespace Chained
 {
     class Texture;
+    class TextureSystem;
+    class UIRenderer;
+
 
 // Packed light data uploaded to the renderer SSBO.
 struct RenderLight
@@ -31,27 +37,6 @@ struct RenderLight
     int enabled = 0;                            // 4 bytes
 };
 
-// Per-frame lighting state shared by scene rendering and post-processing.
-struct LightingData
-{
-    static constexpr int MaxLights = 256;
-    RenderLight Lights[MaxLights];
-    std::shared_ptr<StorageBuffer> LightSSBO;
-    bool LightsDirty = true;
-
-    LightingSettings CurrentLighting;
-    FogSettings CurrentFog;
-};
-
-// Shared mesh resources for primitive and debug rendering.
-struct StaticResources
-{
-    std::unique_ptr<Model> UnitCubeModel;
-    std::unique_ptr<Model> UnitSphereModel;
-    std::unique_ptr<Model> UnitCapsuleModel;
-    std::unique_ptr<Model> WireCubeModel;  // 12-edge wireframe cube for GL_LINES
-};
-
 // Data structures for Uniform Buffers (UBOs)
 struct CameraData
 {
@@ -60,41 +45,19 @@ struct CameraData
     glm::mat4 View;
 };
 
-// Cached skybox resources and the last uploaded environment texture.
-struct SkyboxData
-{
-    std::unique_ptr<Model> SkyboxCubeModel;
-    std::unique_ptr<Model> SkyboxSphereModel;
-
-    std::shared_ptr<Texture> CachedCubemap;
-    std::string CachedCubemapPath = "";
-    unsigned int SourceTextureId = 0;
-};
-
-struct LineVertex
-{
-    glm::vec3 Position;
-    glm::vec4 Color;
-};
-
-// Mutable renderer state owned by the singleton renderer.
 struct RendererData
 {
-    SkyboxData Skybox;
-    StaticResources Resources;
-    LightingData Lighting;
-
     std::unique_ptr<ShaderLibrary> Shaders;
 
-    std::shared_ptr<class UniformBuffer> CameraUBO;
-    std::shared_ptr<class UniformBuffer> GlobalUBO;
+    std::shared_ptr<UniformBuffer> CameraUBO;
+    std::shared_ptr<UniformBuffer> GlobalUBO;
 
     float DiagnosticMode = 0.0f;
     glm::vec3 CurrentCameraPosition = {0.0f, 0.0f, 0.0f};
     Timestep Time = 0.0f;
     int LightCount = 0;
     unsigned int CurrentShaderId = 0;
-    EnvironmentSettings CurrentEnv;
+    EnvironmentParameters CurrentEnv;
 
     glm::mat4 CurrentView = glm::mat4(1.0f);
     glm::mat4 CurrentProj = glm::mat4(1.0f);
@@ -104,90 +67,47 @@ struct RendererData
     std::shared_ptr<VertexArray> BillboardVAO;
     std::shared_ptr<VertexArray> SpriteVAO;
     std::shared_ptr<VertexArray> GridPlaneVAO;
-
-    // Instancing cache
-    std::shared_ptr<class VertexBuffer> InstanceBuffer;
-    uint32_t InstanceBufferCapacity = 0;
-    std::unordered_map<VertexArray*, std::shared_ptr<VertexArray>> InstancedVAOCache;
-
-    // Line rendering cache
-    std::shared_ptr<class VertexBuffer> LineVBO;
-    std::shared_ptr<VertexArray> LineVAO;
-    std::vector<LineVertex> LineVertexBuffer;
-    uint32_t LineVBOSize = 0;
 };
 
 // Singleton renderer facade that owns GPU resources, frame state, and low-level draw calls.
-class Renderer : public EngineService
+class Renderer
 {
 public:
-    Renderer();
-    virtual ~Renderer() override;
+    static Renderer& Get() { return *s_Instance; }
 
-    void LoadEngineResources();
+    static void Init(bool headless = false);
+    static void Shutdown();
 
-    void InitializeResources();
-    void CleanupResources();
+    static void LoadEngineResources();
 
-    void BeginScene(const Camera3D& camera, float nearClip = 0.01f, float farClip = 10000.0f);
-    void EndScene();
+    static void InitializeResources();
+    static void CleanupResources();
 
-    void Clear(const glm::vec4& color);
-    void SetViewport(int x, int y, int width, int height);
+    static void BeginScene(const Camera3D& camera, float nearClip = 0.01f, float farClip = 10000.0f);
+    static void EndScene();
 
-    // Low-level Draw calls
-    void DrawMesh(const Mesh& mesh, const Material& material, const glm::mat4& transform);
-    void DrawMeshInstanced(const Mesh& mesh, const Material& material, const std::vector<glm::mat4>& transforms);
-    void DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& transform, bool useWireframe = true);
+    static void Clear(const glm::vec4& color);
+    static void SetViewport(int x, int y, int width, int height);
+
+    static void SetDiagnosticMode(float mode);
+    static void UpdateTime(Timestep time);
+
+    static ShaderLibrary& GetShaderLibrary();
+    static RendererData& GetData();
+    static UIRenderer* GetUIRenderer();
+
+    static void SetHeadless(bool headless);
+    static void SetViewportSize(uint32_t width, uint32_t height);
     
-    void DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color);
-    void DrawGrid(int slices, float spacing);
-    void DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& color);
-    void DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float exposure, float brightness, float contrast, const Camera3D& camera, bool flipped = false);
-    void DrawBillboard(const Camera3D& camera, uint32_t textureId, const glm::vec3& position, float size, const glm::vec4& tint);
-    void DrawSprite(uint32_t textureId, const glm::mat4& transform, const glm::vec4& tint, bool flipX = false, bool flipY = false);
-    void DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, const glm::vec4& color, bool useWireframe = true);
-    void DrawCapsuleWires(const glm::mat4& transform, float radius, float height, const glm::vec4& color, bool useWireframe = true);
-    void DrawSphereWires(const glm::mat4& transform, float radius, const glm::vec4& color, bool useWireframe = true);
+    static uint32_t GetViewportWidth();
+    static uint32_t GetViewportHeight();
+    static bool IsHeadless();
 
-    void ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextureId, const Camera3D& camera,
-                             ShaderAsset* overrideShader = nullptr, const std::vector<ShaderUniform>& uniforms = {});
-
-    // Light management
-    void SetLight(int index, const RenderLight& light);
-    void SetLightCount(int count);
-    void ClearLights();
-    void ApplyEnvironment(const EnvironmentSettings& settings);
-    void SetMainLight(const LightingSettings& settings);
-    void SetDiagnosticMode(float mode);
-    void UpdateTime(Timestep time);
-
-    ShaderLibrary& GetShaderLibrary() { return *m_Data->Shaders; }
-    RendererData& GetData() { return *m_Data; }
-
-    void SetHeadless(bool headless) { m_Headless = headless; }
-    void SetViewportSize(uint32_t width, uint32_t height) { m_ViewportWidth = width; m_ViewportHeight = height; }
-    
-    uint32_t GetViewportWidth() const { return m_ViewportWidth; }
-    uint32_t GetViewportHeight() const { return m_ViewportHeight; }
-    bool IsHeadless() const { return m_Headless; }
-
-protected:
-    virtual void OnInit() override;
-    virtual void OnUpdate(Timestep ts) override;
-    virtual void OnShutdown() override;
-private:
-    void ApplyFogUniforms(const std::shared_ptr<ShaderAsset>& shader);
-    void InitializeSkybox();
-    void CleanupSkybox();
+    static void Update(Timestep ts);
 
 private:
-    std::unique_ptr<RendererData> m_Data;
-    bool m_Headless = false;
-    uint32_t m_ViewportWidth = 1280;
-    uint32_t m_ViewportHeight = 720;
-
+   static Renderer* s_Instance;
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_RENDERER_H

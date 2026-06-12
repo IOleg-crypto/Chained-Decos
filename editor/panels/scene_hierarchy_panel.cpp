@@ -1,7 +1,6 @@
 #include "scene_hierarchy_panel.h"
 #include "editor_layer.h"
 #include "engine/core/application.h"
-#include "engine/core/service_locator.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scene_events.h"
 #include "engine/scene/scene_settings.h"
@@ -11,39 +10,33 @@
 #include "undo/entity_commands.h"
 #include "editor_events.h"
 #include "engine/core/input.h"
-#include "engine/scene/scene_serializer.h"
-#include "engine/scene/prefab_serializer.h"
+#include "engine/serialization/scene_serializer.h"
+#include "engine/serialization/prefab_serializer.h"
 #include "engine/core/platform.h"
 #include <functional>
 #include <vector>
 
 namespace
 {
-    bool IsDescendant(CHEngine::Entity child, CHEngine::Entity possibleParent)
+    bool IsDescendant(Chained::Entity child, Chained::Entity possibleParent)
     {
         if (child == possibleParent) return true;
         
-        if (!possibleParent.HasComponent<CHEngine::HierarchyComponent>()) return false;
+        if (!possibleParent.HasComponent<Chained::HierarchyComponent>()) return false;
         
-        for (entt::entity c : possibleParent.GetComponent<CHEngine::HierarchyComponent>().Children)
+        for (entt::entity c : possibleParent.GetComponent<Chained::HierarchyComponent>().Children)
         {
-            if (IsDescendant(child, CHEngine::Entity(c, child.GetRegistryPtr()))) return true;
+            if (IsDescendant(child, Chained::Entity(c, child.GetRegistryPtr()))) return true;
         }
         return false;
     }
 }
 
-namespace CHEngine
+namespace Chained
 {
 SceneHierarchyPanel::SceneHierarchyPanel()
 {
     m_Name = "Scene Hierarchy";
-}
-
-SceneHierarchyPanel::SceneHierarchyPanel(const std::shared_ptr<Scene>& context)
-{
-    m_Name = "Scene Hierarchy";
-    SetContext(context);
 }
 
 void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
@@ -106,11 +99,11 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
         }
 
         // Focus Shortcut
-        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) && Input::IsKeyPressed(Key::F))
+        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) && Core::Input::IsKeyPressed(Key::F))
 
 
         {
-            Entity selected = EditorContext::GetSelectedEntity();
+            Entity selected = EditorLayer::Get().GetSelectedEntity();
             if (selected)
             {
                 ViewportFocusEntityEvent e(selected);
@@ -119,15 +112,15 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
         }
 
         // Duplicate Shortcut
-        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) && Input::IsKeyDown(Key::LeftControl) &&
-            Input::IsKeyPressed(Key::D))
+        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) && Core::Input::IsKeyDown(Key::LeftControl) &&
+            Core::Input::IsKeyPressed(Key::D))
 
 
         {
-            Entity selected = EditorContext::GetSelectedEntity();
+            Entity selected = EditorLayer::Get().GetSelectedEntity();
             if (selected)
             {
-                ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<DuplicateEntityCommand>(selected));
+                EditorLayer::Get().GetCommandHistory().PushCommand(std::make_unique<DuplicateEntityCommand>(selected));
             }
         }
 
@@ -148,7 +141,7 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
                 Entity sourceEntity = m_Context->GetEntityByUUID(droppedUUID);
                 if (sourceEntity)
                 {
-                    ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<ParentEntityCommand>(sourceEntity, Entity{}, m_Context.get()));
+                    EditorLayer::Get().GetCommandHistory().PushCommand(std::make_unique<ParentEntityCommand>(sourceEntity, Entity{}, m_Context.get()));
                 }
             }
             ImGui::EndDragDropTarget();
@@ -166,7 +159,7 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
             Entity entity(ent, &m_Context->GetRegistry());
             if (entity.IsValid())
             {
-                ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<DestroyEntityCommand>(entity));
+                EditorLayer::Get().GetCommandHistory().PushCommand(std::make_unique<DestroyEntityCommand>(entity));
             }
         }
         m_EntitiesToDestroyPending.clear();
@@ -222,7 +215,7 @@ void SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity, bool readOnly)
     auto& tag = entity.GetComponent<TagComponent>().Tag;
     std::string label = std::string(GetEntityIcon(entity)) + "  " + tag;
 
-    auto selectedEntity = ServiceLocator::Get<EditorLayer>().GetSelectedEntity();
+    auto selectedEntity = EditorLayer::Get().GetSelectedEntity();
     ImGuiTreeNodeFlags flags = ((selectedEntity == entity) ? ImGuiTreeNodeFlags_Selected : 0);
     flags |= ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
 
@@ -300,7 +293,7 @@ void SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity, bool readOnly)
         }
         if (ImGui::MenuItem(ICON_FA_COPY " Duplicate", "Ctrl+D"))
         {
-            ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<DuplicateEntityCommand>(entity));
+            EditorLayer::Get().GetCommandHistory().PushCommand(std::make_unique<DuplicateEntityCommand>(entity));
         }
         ImGui::Separator();
         if (ImGui::MenuItem(ICON_FA_TRASH " Delete Entity", "Del"))
@@ -311,7 +304,7 @@ void SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity, bool readOnly)
         if (ImGui::MenuItem(ICON_FA_FILE_EXPORT " Save as Prefab..."))
         {
             std::vector<FileDialogFilter> filters = {{"Chained Prefab", "chprefab"}};
-            auto path = CHEngine::Platform::SaveFile(filters);
+            auto path = Chained::Platform::SaveFile(filters);
             if (path)
             {
                 if (path->extension().empty()) path->replace_extension(".chprefab");
@@ -347,7 +340,7 @@ void SceneHierarchyPanel::DrawContextMenu()
     if (ImGui::MenuItem(ICON_FA_FILE_IMPORT " Load Prefab..."))
     {
         std::vector<FileDialogFilter> filters = {{"Chained Prefab", "chprefab"}};
-        auto path = CHEngine::Platform::OpenFile(filters);
+        auto path = Chained::Platform::OpenFile(filters);
         if (path)
         {
             PrefabSerializer::Deserialize(m_Context.get(), path->string());
@@ -400,7 +393,7 @@ void SceneHierarchyPanel::DrawContextMenu()
     if (ImGui::BeginMenu("3D Object"))
     {
         auto create = [this](const char* name, const char* mesh) {
-            ServiceLocator::Get<EditorLayer>().GetCommandHistory().PushCommand(
+            EditorLayer::Get().GetCommandHistory().PushCommand(
                 std::make_unique<CreateEntityCommand>(m_Context.get(), name, mesh));
         };
         if (ImGui::MenuItem("Cube"))
@@ -551,4 +544,4 @@ void SceneHierarchyPanel::DrawContextMenu()
         }
     }
 }
-} // namespace CHEngine
+} // namespace Chained

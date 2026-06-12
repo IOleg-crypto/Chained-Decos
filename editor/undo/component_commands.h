@@ -5,15 +5,14 @@
 #include "engine/scene/scene.h"
 #include <string>
 
-namespace CHEngine
+namespace Chained
 {
 
-template <typename T> 
-class AddComponentCommand : public IEditorCommand
+template <typename T> class AddComponentCommand : public IEditorCommand
 {
 public:
-    AddComponentCommand(Entity entity) 
-        : m_Entity(entity) 
+    AddComponentCommand(Entity entity)
+        : m_Entity(entity)
     {
     }
 
@@ -41,7 +40,10 @@ public:
 private:
     bool Validate()
     {
-        if (!m_Entity) return false;
+        if (!m_Entity)
+        {
+            return false;
+        }
         auto* registry = &m_Entity.GetRegistry();
         return registry->valid(static_cast<entt::entity>(m_Entity));
     }
@@ -49,12 +51,12 @@ private:
     Entity m_Entity;
 };
 
-template <typename T> 
-class RemoveComponentCommand : public IEditorCommand
+template <typename T> class RemoveComponentCommand : public IEditorCommand
 {
 public:
-    RemoveComponentCommand(Entity entity) 
-        : m_Entity(entity), m_ComponentState(entity.GetComponent<T>())
+    RemoveComponentCommand(Entity entity)
+        : m_Entity(entity),
+          m_ComponentState(entity.GetComponent<T>())
     {
     }
 
@@ -82,7 +84,10 @@ public:
 private:
     bool Validate()
     {
-        if (!m_Entity) return false;
+        if (!m_Entity)
+        {
+            return false;
+        }
         auto* registry = &m_Entity.GetRegistry();
         return registry->valid(static_cast<entt::entity>(m_Entity));
     }
@@ -91,6 +96,6 @@ private:
     T m_ComponentState;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_COMPONENT_COMMANDS_H

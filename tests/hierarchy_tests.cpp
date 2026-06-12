@@ -2,7 +2,7 @@
 #include "engine/scene/scene.h"
 #include "gtest/gtest.h"
 
-using namespace CHEngine;
+using namespace Chained;
 
 TEST(HierarchyTest, BasicParenting)
 {

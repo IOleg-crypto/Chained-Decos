@@ -1,7 +1,7 @@
 #include "opengl_buffer.h"
 #include <glad/gl.h>
 
-namespace CHEngine
+namespace Chained
 {
 
 // VertexBuffer ///////////////////////////////////////////////////////////
@@ -66,4 +66,4 @@ void OpenGLIndexBuffer::Unbind() const
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-} // namespace CHEngine
+} // namespace Chained

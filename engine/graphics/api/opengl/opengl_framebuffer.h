@@ -3,7 +3,7 @@
 
 #include "engine/graphics/api/framebuffer.h"
 
-namespace CHEngine
+namespace Chained
 {
 class OpenGLFramebuffer : public Framebuffer
 {

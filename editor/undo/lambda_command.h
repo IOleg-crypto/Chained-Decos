@@ -5,7 +5,7 @@
 #include <functional>
 #include <string>
 
-namespace CHEngine
+namespace Chained
 {
 
 class LambdaCommand : public IEditorCommand
@@ -45,6 +45,6 @@ private:
     ActionFn m_Undo;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_LAMBDA_COMMAND_H

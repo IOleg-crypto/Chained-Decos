@@ -5,7 +5,7 @@
 #include <memory>
 #include <cstdint>
 
-namespace CHEngine
+namespace Chained
 {
 enum class TextureFormat
 {
@@ -46,6 +46,6 @@ public:
     static std::shared_ptr<Texture> CreateFromFile(const std::string& path);
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_TEXTURE_H

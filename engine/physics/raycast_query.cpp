@@ -2,9 +2,9 @@
 
 #include "bvh/bvh.h"
 #include "engine/assets/asset_manager.h"
-#include "engine/graphics/assets/model_asset.h"
+#include "engine/assets/types/model_asset.h"
 #include "engine/scene/components.h"
-#include "engine/scene/project.h"
+#include "engine/project/project.h"
 #include "physics.h"
 #include <algorithm>
 #include <cfloat>
@@ -12,7 +12,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/intersect.hpp>
 
-namespace CHEngine
+namespace Chained
 {
 bool RaycastQuery::RayAABB(glm::vec3 origin, glm::vec3 dir, glm::vec3 min, glm::vec3 max, float& t, glm::vec3& normal)
 {
@@ -109,10 +109,6 @@ RaycastResult RaycastQuery::Raycast(entt::registry& registry, Ray ray)
                 continue;
             }
 
-            if (!Project::GetActive())
-            {
-                continue;
-            }
 
             auto bvh = Physics::GetBVH(modelComp->ModelPath);
             if (!bvh)
@@ -148,4 +144,4 @@ RaycastResult RaycastQuery::Raycast(entt::registry& registry, Ray ray)
 
     return result;
 }
-} // namespace CHEngine
+} // namespace Chained

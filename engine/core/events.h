@@ -6,7 +6,7 @@
 #include <deque>
 #include <memory>
 
-namespace CHEngine
+namespace Chained
 {
 enum class EventType
 {
@@ -207,6 +207,6 @@ public:
     EVENT_CLASS_CATEGORY(EventCategoryApplication)
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_EVENTS_H

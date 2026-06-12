@@ -4,13 +4,12 @@
 #include "panel.h"
 #include "unordered_set"
 
-namespace CHEngine
+namespace Chained
 {
 class SceneHierarchyPanel : public Panel
 {
 public:
     SceneHierarchyPanel();
-    SceneHierarchyPanel(const std::shared_ptr<Scene>& context);
 
     virtual void OnImGuiRender(bool readOnly = false) override;
 
@@ -30,6 +29,6 @@ private:
     Entity m_RenamingEntity;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_SCENE_HIERARCHY_PANEL_H

@@ -1,13 +1,13 @@
 #ifndef CH_AUDIO_COMPONENT_H
 #define CH_AUDIO_COMPONENT_H
 
-#include "engine/core/reflection.h"
-#include "engine/core/reflection_rfl.h"
+#include "engine/reflection/reflection.h"
+#include "engine/reflection/reflection_rfl.h"
 #include "engine/assets/asset.h"
 #include <string>
 #include <glm/glm.hpp>
 
-namespace CHEngine
+namespace Chained
 {
 struct AudioComponent
 {
@@ -31,6 +31,6 @@ struct AudioComponent
 
 CH_MARK_RFL(AudioComponent);
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_AUDIO_COMPONENT_H

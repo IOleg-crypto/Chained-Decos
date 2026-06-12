@@ -2,14 +2,13 @@
 #include "engine/scene/components/mesh_component.h"
 #include "engine/scene/scene_events.h"
 #include "imgui.h"
-#include "property_editor.h"
-#include "ui_properties.h"
-#include "engine/graphics/texture_system.h"
 #include "engine/assets/asset_manager.h"
-#include "engine/core/service_locator.h"
-#include "engine/graphics/assets/texture_asset.h"
+#include "engine/assets/types/texture_asset.h"
+#include "engine/assets/types/model_asset.h"
+#include "editor/editor_gui.h"
+#include "include/IconsFontAwesome6.h"
 
-namespace CHEngine
+namespace Chained
 {
 
 MaterialPanel::MaterialPanel()
@@ -17,47 +16,42 @@ MaterialPanel::MaterialPanel()
     m_Name = "Material Editor";
 }
 
-static uint32_t GetTextureID(AssetHandle handle)
+uint32_t MaterialPanel::GetTextureID(AssetHandle handle)
 {
     if (handle == 0) return 0;
-    return ServiceLocator::Get<TextureSystem>().GetRendererID(handle);
+    auto& am = AssetManager::Get();
+    auto asset = am.GetAsset<TextureAsset>(handle);
+    return asset ? asset->GetRendererID() : 0;
 }
 
-void MaterialPanel::DrawMaterialSlot(MaterialSlot& slot)
+void MaterialPanel::DrawMaterialSettings(Material& mat)
 {
-    MaterialInstance& mat = slot.Material;
-    
     if (ImGui::CollapsingHeader(ICON_FA_IMAGE " Albedo", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        EditorGUI::Property("Color", mat.AlbedoColor);
-        std::string albedoPath = ServiceLocator::Get<AssetManager>().ResolvePath(ServiceLocator::Get<AssetManager>().GetAssetDirectory().string() + "/textures/..."); // This is tricky, UI needs a string.
-        // Actually, let's use a helper to get path from handle if possible, or just use handle directly in FileProperty if it supports it.
-        // For now, I'll use the AssetManager to get the path.
+        ImGui::ColorEdit4("Color", glm::value_ptr(mat.AlbedoColor));
         
         std::string currentPath = "";
-        auto asset = ServiceLocator::Get<AssetManager>().Get<TextureAsset>(mat.AlbedoHandle);
+        auto asset = AssetManager::Get().GetAsset<TextureAsset>(mat.AlbedoHandle);
         if (asset) currentPath = asset->GetPath();
 
         if (EditorGUI::FileProperty("Texture", currentPath, GetTextureID(mat.AlbedoHandle), "png,jpg,tga"))
         {
-            mat.AlbedoHandle = ServiceLocator::Get<AssetManager>().ResolveToHandle(currentPath);
-            mat.OverrideAlbedo = true;
+        mat.AlbedoHandle = AssetManager::Get().ResolveToHandle(currentPath);
+            mat.AlbedoMap = 0; // Trigger reload in renderer
         }
-        ImGui::Checkbox("Override Albedo", &mat.OverrideAlbedo);
     }
 
     if (ImGui::CollapsingHeader(ICON_FA_WATER " Normals", ImGuiTreeNodeFlags_DefaultOpen))
     {
         std::string normalPath = "";
-        auto normalAsset = ServiceLocator::Get<AssetManager>().Get<TextureAsset>(mat.NormalHandle);
+        auto normalAsset = AssetManager::Get().GetAsset<TextureAsset>(mat.NormalHandle);
         if (normalAsset) normalPath = normalAsset->GetPath();
 
         if (EditorGUI::FileProperty("Normal Map", normalPath, GetTextureID(mat.NormalHandle), "png,jpg,tga"))
         {
-            mat.NormalHandle = ServiceLocator::Get<AssetManager>().ResolveToHandle(normalPath);
-            mat.OverrideNormal = true;
+            mat.NormalHandle = AssetManager::Get().ResolveToHandle(normalPath);
+            mat.NormalMap = 0;
         }
-        ImGui::Checkbox("Override Normal", &mat.OverrideNormal);
     }
 
     if (ImGui::CollapsingHeader(ICON_FA_CIRCLE_HALF_STROKE " PBR (Metal/Rough)", ImGuiTreeNodeFlags_DefaultOpen))
@@ -74,36 +68,34 @@ void MaterialPanel::DrawMaterialSlot(MaterialSlot& slot)
         ImGui::Columns(1);
         
         std::string pbrPath = "";
-        auto pbrAsset = ServiceLocator::Get<AssetManager>().Get<TextureAsset>(mat.MetallicRoughnessHandle);
+        auto pbrAsset = AssetManager::Get().GetAsset<TextureAsset>(mat.MetallicRoughnessHandle);
         if (pbrAsset) pbrPath = pbrAsset->GetPath();
 
         if (EditorGUI::FileProperty("PBR Map", pbrPath, GetTextureID(mat.MetallicRoughnessHandle), "png,jpg,tga"))
         {
-            mat.MetallicRoughnessHandle = ServiceLocator::Get<AssetManager>().ResolveToHandle(pbrPath);
-            mat.OverrideMetallicRoughness = true;
+            mat.MetallicRoughnessHandle = AssetManager::Get().ResolveToHandle(pbrPath);
+            mat.MetallicRoughnessMap = 0;
         }
-        ImGui::Checkbox("Override PBR", &mat.OverrideMetallicRoughness);
     }
 
     if (ImGui::CollapsingHeader(ICON_FA_SUN " Emissive", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        EditorGUI::Property("Emissive Color", mat.EmissiveColor);
-        EditorGUI::Property("Intensity", mat.EmissiveIntensity);
+        ImGui::ColorEdit4("Emissive Color", glm::value_ptr(mat.EmissiveColor));
+        ImGui::SliderFloat("Intensity", &mat.EmissiveIntensity, 0.0f, 10.0f);
+        
         std::string emissivePath = "";
-        auto emissiveAsset = ServiceLocator::Get<AssetManager>().Get<TextureAsset>(mat.EmissiveHandle);
+        auto emissiveAsset = AssetManager::Get().GetAsset<TextureAsset>(mat.EmissiveHandle);
         if (emissiveAsset) emissivePath = emissiveAsset->GetPath();
 
         if (EditorGUI::FileProperty("Emissive Map", emissivePath, GetTextureID(mat.EmissiveHandle), "png,jpg,tga"))
         {
-            mat.EmissiveHandle = ServiceLocator::Get<AssetManager>().ResolveToHandle(emissivePath);
-            mat.OverrideEmissive = true;
+            mat.EmissiveHandle = AssetManager::Get().ResolveToHandle(emissivePath);
+            mat.EmissiveMap = 0;
         }
-        ImGui::Checkbox("Override Emissive", &mat.OverrideEmissive);
     }
 
     if (ImGui::CollapsingHeader(ICON_FA_GEARS " Settings"))
     {
-        ImGui::Checkbox("Double Sided", &mat.DoubleSided);
         ImGui::Checkbox("Transparent", &mat.Transparent);
         ImGui::SliderFloat("Alpha", &mat.Alpha, 0.0f, 1.0f);
     }
@@ -124,50 +116,57 @@ void MaterialPanel::OnImGuiRender(bool readOnly)
     {
         ImGui::BeginDisabled(readOnly);
 
-        std::vector<MaterialSlot>* materials = nullptr;
-
-        if (m_SelectedEntity.HasComponent<MaterialComponent>())
-            materials = &m_SelectedEntity.GetComponent<MaterialComponent>().Materials;
-        else if (m_SelectedEntity.HasComponent<ModelComponent>())
-            materials = &m_SelectedEntity.GetComponent<ModelComponent>().Materials;
-
-        if (materials && !materials->empty())
+        if (m_SelectedEntity.HasComponent<ModelComponent>())
         {
-            // Material Selection Sidebar / List
-            ImGui::BeginChild("MaterialList", ImVec2(150, 0), true);
-            for (int i = 0; i < (int)materials->size(); i++)
-            {
-                std::string label = (*materials)[i].Name;
-                if (label.empty()) label = "Material " + std::to_string(i);
-                
-                if (ImGui::Selectable(label.c_str(), m_SelectedMaterialIndex == i))
-                    m_SelectedMaterialIndex = i;
-            }
-            ImGui::EndChild();
+            auto& modelComp = m_SelectedEntity.GetComponent<ModelComponent>();
+            auto modelAsset = AssetManager::Get().GetAsset<ModelAsset>(modelComp.ModelHandle);
             
-            ImGui::SameLine();
-            
-            // Material Properties
-            ImGui::BeginChild("MaterialProperties");
-            if (m_SelectedMaterialIndex < (int)materials->size())
+            if (modelAsset && modelAsset->IsReady())
             {
-                ImGui::TextColored({0.2f, 0.8f, 1.0f, 1.0f}, "Editing: %s", (*materials)[m_SelectedMaterialIndex].Name.c_str());
-                ImGui::Separator();
-                DrawMaterialSlot((*materials)[m_SelectedMaterialIndex]);
+                auto& materials = modelAsset->GetMaterials();
+                if (!materials.empty())
+                {
+                    // Material Selection Sidebar / List
+                    ImGui::BeginChild("MaterialList", ImVec2(150, 0), true);
+                    for (int i = 0; i < (int)materials.size(); i++)
+                    {
+                        std::string label = materials[i].Name;
+                        if (label.empty()) label = "Material " + std::to_string(i);
+                        
+                        if (ImGui::Selectable(label.c_str(), m_SelectedMaterialIndex == i))
+                            m_SelectedMaterialIndex = i;
+                    }
+                    ImGui::EndChild();
+                    
+                    ImGui::SameLine();
+                    
+                    // Material Properties
+                    ImGui::BeginChild("MaterialProperties");
+                    if (m_SelectedMaterialIndex < (int)materials.size())
+                    {
+                        ImGui::TextColored({0.2f, 0.8f, 1.0f, 1.0f}, "Editing Asset Material: %s", materials[m_SelectedMaterialIndex].Name.c_str());
+                        ImGui::Separator();
+                        DrawMaterialSettings(materials[m_SelectedMaterialIndex]);
+                    }
+                    else
+                    {
+                        m_SelectedMaterialIndex = 0;
+                    }
+                    ImGui::EndChild();
+                }
+                else
+                {
+                    ImGui::TextColored({0.8f, 0.8f, 0.2f, 1.0f}, ICON_FA_CIRCLE_INFO " No Materials found in model asset");
+                }
             }
             else
             {
-                m_SelectedMaterialIndex = 0;
+                ImGui::TextColored({0.8f, 0.8f, 0.2f, 1.0f}, ICON_FA_CIRCLE_INFO " Model asset not loaded or missing");
             }
-            ImGui::EndChild();
         }
         else
         {
-            ImGui::TextColored({0.8f, 0.8f, 0.2f, 1.0f}, ICON_FA_CIRCLE_INFO " No Materials found for this entity");
-            if (ImGui::Button(ICON_FA_PLUS " Add Materials Override Component"))
-            {
-                m_SelectedEntity.AddComponent<MaterialComponent>();
-            }
+            ImGui::TextColored({0.8f, 0.8f, 0.2f, 1.0f}, ICON_FA_CIRCLE_INFO " No ModelComponent found for this entity");
         }
 
         ImGui::EndDisabled();
@@ -202,4 +201,4 @@ void MaterialPanel::SetContext(const std::shared_ptr<Scene>& context)
     Panel::SetContext(context);
 }
 
-} // namespace CHEngine
+} // namespace Chained

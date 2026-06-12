@@ -7,9 +7,8 @@
 #include <memory>
 #include <vector>
 
-namespace CHEngine
+namespace Chained
 {
-
 class ShaderAsset : public Asset
 {
 public:
@@ -21,26 +20,41 @@ public:
         : Asset(GetStaticType(), handle)
     {
     }
-    virtual ~ShaderAsset() = default;
+    virtual ~ShaderAsset() override = default;
 
     static AssetType GetStaticType()
     {
         return AssetType::Shader;
     }
 
-    void OnLoaded() override {} // Shaders are usually loaded synchronously on GPU
+    size_t GetMemoryUsage() const override
+    {
+        // Shader sizing on RAM is minuscule compared to GPU
+        return sizeof(*this);
+    }
 
-    std::shared_ptr<Shader> GetShader() const { return m_Shader; }
-    void SetShader(const std::shared_ptr<Shader>& shader) { m_Shader = shader; }
+    std::shared_ptr<Shader> GetShader() const
+    {
+        return m_Shader;
+    }
+    void SetShader(const std::shared_ptr<Shader>& shader)
+    {
+        m_Shader = shader;
+    }
 
-    const std::vector<ShaderUniform>& GetUniforms() const { return m_Uniforms; }
-    void SetUniforms(const std::vector<ShaderUniform>& uniforms) { m_Uniforms = uniforms; }
+    const std::vector<ShaderUniform>& GetUniforms() const
+    {
+        return m_Uniforms;
+    }
+    void SetUniforms(const std::vector<ShaderUniform>& uniforms)
+    {
+        m_Uniforms = uniforms;
+    }
 
 private:
     std::shared_ptr<Shader> m_Shader;
     std::vector<ShaderUniform> m_Uniforms;
 };
-
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_SHADER_ASSET_H

@@ -2,7 +2,7 @@
 #include "engine/graphics/api/vertex_array.h"
 #include <glad/gl.h>
 
-namespace CHEngine
+namespace Chained
 {
 
 void OpenGLRendererAPI::Init()
@@ -259,4 +259,4 @@ bool OpenGLRendererAPI::IsCullFaceEnabled() const
     return glIsEnabled(GL_CULL_FACE);
 }
 
-} // namespace CHEngine
+} // namespace Chained

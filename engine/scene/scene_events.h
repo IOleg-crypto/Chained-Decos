@@ -5,7 +5,7 @@
 #include "entt/entt.hpp"
 #include <string>
 
-namespace CHEngine
+namespace Chained
 {
 
 // Project Events
@@ -145,6 +145,6 @@ private:
     std::string m_Path;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_SCENE_EVENTS_H

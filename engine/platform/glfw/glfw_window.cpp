@@ -1,9 +1,9 @@
 #include "glfw_window.h"
 #include "engine/core/log.h"
-#include "engine/core/ch_assert.h"
+#include "engine/foundation/engine_assert.h"
 #include "engine/core/input.h"
 #include "engine/core/events.h"
-#include "engine/core/service_locator.h"
+#include "engine/core/application.h"
 #include "engine/graphics/pipeline/renderer.h"
 
 #include <glad/gl.h>
@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <vector>
 
-namespace CHEngine
+namespace Chained
 {
 
 std::unique_ptr<Window> Window::Create(const WindowProperties& properties)
@@ -108,11 +108,6 @@ void GlfwWindow::Init(const WindowProperties& properties)
             glWindow.m_EventCallback(event);
             
         glViewport(0, 0, width, height);
-        
-        if (width > 0 && height > 0 && ServiceLocator::Has<Renderer>())
-        {
-            ServiceLocator::Get<Renderer>().SetViewportSize(width, height);
-        }
     });
 
     // Close Callback
@@ -127,22 +122,22 @@ void GlfwWindow::Init(const WindowProperties& properties)
 
     // Scroll Callback for mouse wheel input
     glfwSetScrollCallback(m_WindowHandle, [](GLFWwindow* window, double xOffset, double yOffset) {
-        Input::OnMouseScroll((float)xOffset, (float)yOffset);
+        Core::Input::OnMouseScroll((float)xOffset, (float)yOffset);
     });
 
     // Key Callback
     glfwSetKeyCallback(m_WindowHandle, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
-        Input::OnKey(key, action != GLFW_RELEASE);
+        Core::Input::OnKey(key, action != GLFW_RELEASE);
     });
 
     // Mouse Button Callback
     glfwSetMouseButtonCallback(m_WindowHandle, [](GLFWwindow* window, int button, int action, int mods) {
-        Input::OnMouseButton(button, action != GLFW_RELEASE);
+        Core::Input::OnMouseButton(button, action != GLFW_RELEASE);
     });
 
     // Cursor Position Callback
     glfwSetCursorPosCallback(m_WindowHandle, [](GLFWwindow* window, double xpos, double ypos) {
-        Input::OnMouseMove((float)xpos, (float)ypos);
+        Core::Input::OnMouseMove((float)xpos, (float)ypos);
     });
     
     // Platform-neutral GLAD loading
@@ -244,8 +239,8 @@ void GlfwWindow::SetWindowIcon(const std::string& path)
         CH_CORE_WARN("Failed to load window icon from {}", path);
     }
 
-    // Restore to typical OpenGL state just in case
-    stbi_set_flip_vertically_on_load(true);
+    // Restore to typical OpenGL state just in case (disabled to avoid global state issues)
+    // stbi_set_flip_vertically_on_load(true);
 }
 
 void GlfwWindow::SetVSync(bool enabled)
@@ -271,4 +266,4 @@ void GlfwWindow::SetTargetFramesPerSecond(int framesPerSecond)
     m_TargetFPS = framesPerSecond;
 }
 
-} // namespace CHEngine
+} // namespace Chained

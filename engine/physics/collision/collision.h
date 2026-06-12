@@ -3,7 +3,7 @@
 
 #include <glm/glm.hpp>
 
-namespace CHEngine
+namespace Chained
 {
 namespace Collision
 {
@@ -13,6 +13,6 @@ static bool CheckAABB(const glm::vec3& minA, const glm::vec3& maxA, const glm::v
            (minA.z <= maxB.z && maxA.z >= minB.z);
 }
 } // namespace Collision
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_COLLISION_H

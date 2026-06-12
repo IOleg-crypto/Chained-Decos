@@ -1,13 +1,13 @@
 #ifndef CH_PLATFORM_H
 #define CH_PLATFORM_H
 
-#include "engine/core/base.h"
+#include "engine/foundation/base.h"
 #include <filesystem>
 #include <string>
 #include <vector>
 #include <optional>
 
-namespace CHEngine
+namespace Chained
 {
     struct CH_API FileDialogFilter
     {
@@ -35,9 +35,6 @@ namespace CHEngine
 
         // Sleeps the current thread for the specified milliseconds.
         static void Sleep(uint32_t milliseconds);
-
-        // Sets the thread name for debugging.
-        static void SetThreadName(const std::string& name);
     };
 }
 

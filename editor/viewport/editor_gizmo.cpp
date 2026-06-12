@@ -3,16 +3,17 @@
 #include "editor_gui.h"
 #include "editor_layer.h"
 #include "engine/scene/components/component_utils.h"
+#include "engine/scene/components/hierarchy_component.h"
 #include "undo/modify_component_command.h"
 #include <cmath>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-namespace CHEngine
+namespace Chained
 {
 
 bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 viewportSize,
-                                  const CHEngine::Camera3D& camera)
+                                  const Chained::Camera3D& camera)
 {
     auto& layer = EditorLayer::Get();
     Scene* scene = layer.GetActiveScene().get();
@@ -30,10 +31,13 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
     }
 
     auto& transform = entity.GetComponent<TransformComponent>();
+    glm::mat4 modelMat = transform.WorldTransform;
 
     // 1. Setup ImGuizmo
     ImGuizmo::SetOrthographic(camera.Projection != 0);
-    ImGuizmo::SetDrawlist();
+    ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList()); // Explicitly use current window draw list
+
+    // Ensure we are using absolute screen coordinates for SetRect
     ImGuizmo::SetRect(viewportPos.x, viewportPos.y, viewportSize.x, viewportSize.y);
 
     // 2. Prepare View/Projection matrices
@@ -57,21 +61,20 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
     glm::mat4 projection;
 
     const float aspect = viewportSize.x / viewportSize.y;
-    constexpr float kNearClip = 0.01f;
-    constexpr float kFarClip = 100000.0f;
     if (camera.Projection == 0) // Perspective
     {
-        projection = glm::perspective(glm::radians(camera.Fovy), aspect, kNearClip, kFarClip);
+        projection = glm::perspective(glm::radians(camera.FovY), aspect, camera.NearClip, camera.FarClip);
     }
     else // Orthographic
     {
-        float top = camera.Fovy * 0.5f;
+        // Align with SceneRenderer: total height is camera.Fovy (which is OrthographicSize)
+        float top = camera.FovY * 0.5f;
         float right = top * aspect;
-        projection = glm::ortho(-right, right, -top, top, kNearClip, kFarClip);
+        projection = glm::ortho(-right, right, -top, top, camera.NearClip, camera.FarClip);
     }
 
-    // 3. Prepare Model matrix
-    glm::mat4 modelMat = ComponentUtils::GetTransform(transform);
+    // ImGuizmo uses a right-handed coordinate system by default, but it's good to be explicit
+    // if there was any handedness mismatch.
 
     // ImGuizmo::DrawGrid(glm::value_ptr(view), glm::value_ptr(projection), glm::value_ptr(modelMat), m_SnapValues[0]);
     //  4. Handle Snapping
@@ -94,8 +97,20 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
 
     if (manipulated || isUsingNow)
     {
+        glm::mat4 localMat = modelMat;
+        if (entity.HasComponent<HierarchyComponent>())
+        {
+            auto& hierarchy = entity.GetComponent<HierarchyComponent>();
+            if (hierarchy.Parent != entt::null && scene->GetRegistry().valid(hierarchy.Parent) &&
+                scene->GetRegistry().all_of<TransformComponent>(hierarchy.Parent))
+            {
+                const auto& parentTransform = scene->GetRegistry().get<TransformComponent>(hierarchy.Parent);
+                localMat = glm::inverse(parentTransform.WorldTransform) * modelMat;
+            }
+        }
+
         glm::vec3 translation, rotation, scale;
-        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(modelMat), glm::value_ptr(translation),
+        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(localMat), glm::value_ptr(translation),
                                               glm::value_ptr(rotation), glm::value_ptr(scale));
 
         ComponentUtils::SetTranslation(transform, translation);
@@ -121,4 +136,4 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
     return ImGuizmo::IsOver() || isUsingNow;
 }
 
-} // namespace CHEngine
+} // namespace Chained

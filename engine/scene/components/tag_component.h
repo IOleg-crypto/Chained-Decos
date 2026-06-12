@@ -1,9 +1,9 @@
 #ifndef CH_TAG_COMPONENT_H
 #define CH_TAG_COMPONENT_H
 
-#include "engine/core/reflection_rfl.h"
+#include "engine/reflection/reflection_rfl.h"
 
-namespace CHEngine
+namespace Chained
 {
 struct TagComponent
 {
@@ -13,6 +13,6 @@ struct TagComponent
 
 CH_MARK_RFL(TagComponent);
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_TAG_COMPONENT_H

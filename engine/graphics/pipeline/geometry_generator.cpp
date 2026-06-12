@@ -3,7 +3,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 
-namespace CHEngine
+namespace Chained
 {
     Mesh GeometryGenerator::GenerateUnitCube()
     {
@@ -119,13 +119,21 @@ namespace CHEngine
                 float sliceFraction = (float)sliceIndex / (float)slices;
                 float azimuthAngle = sliceFraction * 2.0f * glm::pi<float>();
 
-                float positionX = std::cos(azimuthAngle) * std::sin(polarAngle);
-                float positionY = std::cos(polarAngle);
-                float positionZ = std::sin(azimuthAngle) * std::sin(polarAngle);
+                float nx = std::cos(azimuthAngle) * std::sin(polarAngle);
+                float ny = std::cos(polarAngle);
+                float nz = std::sin(azimuthAngle) * std::sin(polarAngle);
 
-                vertices.push_back(positionX * radius);
-                vertices.push_back(positionY * radius);
-                vertices.push_back(positionZ * radius);
+                // Position
+                vertices.push_back(nx * radius);
+                vertices.push_back(ny * radius);
+                vertices.push_back(nz * radius);
+                // TexCoord
+                vertices.push_back(sliceFraction);
+                vertices.push_back(1.0f - stackFraction);
+                // Normal
+                vertices.push_back(nx);
+                vertices.push_back(ny);
+                vertices.push_back(nz);
             }
         }
 
@@ -141,7 +149,12 @@ namespace CHEngine
         }
 
         auto vbo = VertexBuffer::Create(vertices.data(), (uint32_t)vertices.size() * sizeof(float));
-        vbo->SetLayout({{ShaderDataType::Float3, "a_Position"}});
+        // Pos(3) + Tex(2) + Normal(3) = 8 floats per vertex
+        vbo->SetLayout({
+            {ShaderDataType::Float3, "a_Position"},
+            {ShaderDataType::Float2, "a_TexCoord"},
+            {ShaderDataType::Float3, "a_Normal"}
+        });
         auto vao = VertexArray::Create();
         vao->AddVertexBuffer(vbo);
         auto ebo = IndexBuffer::Create(indices.data(), (uint32_t)indices.size());
@@ -149,7 +162,7 @@ namespace CHEngine
 
         Mesh mesh;
         mesh.VAO = vao;
-        mesh.VertexCount = (uint32_t)vertices.size() / 3;
+        mesh.VertexCount = (uint32_t)vertices.size() / 8;
         mesh.TriangleCount = (uint32_t)indices.size() / 3;
         return mesh;
     }
@@ -180,15 +193,20 @@ namespace CHEngine
 
     Mesh GeometryGenerator::GenerateQuad(float size)
     {
+        // Pos(3), Tex(2), Normal(3)
         float vertices[] = {
-            -size, 0.0f, -size,
-             size, 0.0f, -size,
-             size, 0.0f,  size,
-            -size, 0.0f,  size
+            -size, 0.0f, -size,  0.0f, 0.0f,  0.0f, 1.0f, 0.0f,
+             size, 0.0f, -size,  1.0f, 0.0f,  0.0f, 1.0f, 0.0f,
+             size, 0.0f,  size,  1.0f, 1.0f,  0.0f, 1.0f, 0.0f,
+            -size, 0.0f,  size,  0.0f, 1.0f,  0.0f, 1.0f, 0.0f
         };
 
         auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
-        vbo->SetLayout({{ShaderDataType::Float3, "a_Position"}});
+        vbo->SetLayout({
+            {ShaderDataType::Float3, "a_Position"},
+            {ShaderDataType::Float2, "a_TexCoord"},
+            {ShaderDataType::Float3, "a_Normal"}
+        });
         auto vao = VertexArray::Create();
         vao->AddVertexBuffer(vbo);
 
@@ -201,32 +219,68 @@ namespace CHEngine
 
     Mesh GeometryGenerator::GenerateCube(const glm::vec3 &dimensions)
     {
-        float halfWidth = dimensions.x * 0.5f;
-        float halfHeight = dimensions.y * 0.5f;
-        float halfDepth = dimensions.z * 0.5f;
+        float w = dimensions.x * 0.5f;
+        float h = dimensions.y * 0.5f;
+        float d = dimensions.z * 0.5f;
 
+        // Front, Back, Top, Bottom, Right, Left faces
+        // 8 floats per vertex: Pos(3), Tex(2), Normal(3)
         float vertices[] = {
-            -halfWidth,-halfHeight, halfDepth,  halfWidth,-halfHeight, halfDepth,  halfWidth, halfHeight, halfDepth, -halfWidth, halfHeight, halfDepth,
-            -halfWidth,-halfHeight,-halfDepth, -halfWidth, halfHeight,-halfDepth,  halfWidth, halfHeight,-halfDepth,  halfWidth,-halfHeight,-halfDepth,
-            -halfWidth, halfHeight,-halfDepth, -halfWidth, halfHeight, halfDepth,  halfWidth, halfHeight, halfDepth,  halfWidth, halfHeight,-halfDepth,
-            -halfWidth,-halfHeight,-halfDepth,  halfWidth,-halfHeight,-halfDepth,  halfWidth,-halfHeight, halfDepth, -halfWidth,-halfHeight, halfDepth,
-             halfWidth,-halfHeight,-halfDepth,  halfWidth, halfHeight,-halfDepth,  halfWidth, halfHeight, halfDepth,  halfWidth,-halfHeight, halfDepth,
-            -halfWidth,-halfHeight,-halfDepth, -halfWidth,-halfHeight, halfDepth, -halfWidth, halfHeight, halfDepth, -halfWidth, halfHeight,-halfDepth
+            // Front
+            -w, -h,  d,  0.0f, 0.0f,  0.0f,  0.0f,  1.0f,
+             w, -h,  d,  1.0f, 0.0f,  0.0f,  0.0f,  1.0f,
+             w,  h,  d,  1.0f, 1.0f,  0.0f,  0.0f,  1.0f,
+            -w,  h,  d,  0.0f, 1.0f,  0.0f,  0.0f,  1.0f,
+            // Back
+             w, -h, -d,  0.0f, 0.0f,  0.0f,  0.0f, -1.0f,
+            -w, -h, -d,  1.0f, 0.0f,  0.0f,  0.0f, -1.0f,
+            -w,  h, -d,  1.0f, 1.0f,  0.0f,  0.0f, -1.0f,
+             w,  h, -d,  0.0f, 1.0f,  0.0f,  0.0f, -1.0f,
+            // Top
+            -w,  h,  d,  0.0f, 0.0f,  0.0f,  1.0f,  0.0f,
+             w,  h,  d,  1.0f, 0.0f,  0.0f,  1.0f,  0.0f,
+             w,  h, -d,  1.0f, 1.0f,  0.0f,  1.0f,  0.0f,
+            -w,  h, -d,  0.0f, 1.0f,  0.0f,  1.0f,  0.0f,
+            // Bottom
+            -w, -h, -d,  0.0f, 0.0f,  0.0f, -1.0f,  0.0f,
+             w, -h, -d,  1.0f, 0.0f,  0.0f, -1.0f,  0.0f,
+             w, -h,  d,  1.0f, 1.0f,  0.0f, -1.0f,  0.0f,
+            -w, -h,  d,  0.0f, 1.0f,  0.0f, -1.0f,  0.0f,
+            // Right
+             w, -h,  d,  0.0f, 0.0f,  1.0f,  0.0f,  0.0f,
+             w, -h, -d,  1.0f, 0.0f,  1.0f,  0.0f,  0.0f,
+             w,  h, -d,  1.0f, 1.0f,  1.0f,  0.0f,  0.0f,
+             w,  h,  d,  0.0f, 1.0f,  1.0f,  0.0f,  0.0f,
+            // Left
+            -w, -h, -d,  0.0f, 0.0f, -1.0f,  0.0f,  0.0f,
+            -w, -h,  d,  1.0f, 0.0f, -1.0f,  0.0f,  0.0f,
+            -w,  h,  d,  1.0f, 1.0f, -1.0f,  0.0f,  0.0f,
+            -w,  h, -d,  0.0f, 1.0f, -1.0f,  0.0f,  0.0f
+        };
+
+        uint32_t indices[] = {
+            0,  1,  2,  2,  3,  0,
+            4,  5,  6,  6,  7,  4,
+            8,  9,  10, 10, 11, 8,
+            12, 13, 14, 14, 15, 12,
+            16, 17, 18, 18, 19, 16,
+            20, 21, 22, 22, 23, 20
         };
 
         auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
-        vbo->SetLayout({{ShaderDataType::Float3, "a_Position"}});
+        vbo->SetLayout({
+            {ShaderDataType::Float3, "a_Position"},
+            {ShaderDataType::Float2, "a_TexCoord"},
+            {ShaderDataType::Float3, "a_Normal"}
+        });
         auto vao = VertexArray::Create();
         vao->AddVertexBuffer(vbo);
-        
-        uint32_t indices[36];
-        for (uint32_t index = 0; index < 36; ++index) indices[index] = index;
         auto ebo = IndexBuffer::Create(indices, 36);
         vao->SetIndexBuffer(ebo);
 
         Mesh mesh;
         mesh.VAO = vao;
-        mesh.VertexCount = 36;
+        mesh.VertexCount = 24;
         mesh.TriangleCount = 12;
         return mesh;
     }
@@ -297,5 +351,71 @@ namespace CHEngine
         mesh.VertexCount = (uint32_t)vertices.size() / 3;
         mesh.TriangleCount = (uint32_t)indices.size() / 3;
         return mesh;
+    }
+
+    Model GeometryGenerator::GenerateProceduralModel(const std::string& type, const ProceduralParameters& params)
+    {
+        Model model;
+
+        Mesh mesh;
+        bool generated = false;
+
+        if (type == ":cube:")
+        {
+            mesh = GenerateCube(params.Dimensions);
+            generated = true;
+        }
+        else if (type == ":sphere:")
+        {
+            mesh = GenerateSphere(params.Radius, params.Slices, params.Stacks);
+            mesh.MinBounds = { -params.Radius, -params.Radius, -params.Radius };
+            mesh.MaxBounds = {  params.Radius,  params.Radius,  params.Radius };
+            generated = true;
+        }
+        else if (type == ":plane:")
+        {
+            mesh = GenerateQuad(params.Dimensions.x * 0.5f);
+            mesh.MinBounds = { -params.Dimensions.x * 0.5f, 0.0f, -params.Dimensions.z * 0.5f };
+            mesh.MaxBounds = {  params.Dimensions.x * 0.5f, 0.0f,  params.Dimensions.z * 0.5f };
+            generated = true;
+        }
+        else if (type == ":cylinder:" || type == ":cone:" || type == ":hemisphere:")
+        {
+            // Approximate with capsule (no-skinning path), cylinder body
+            mesh = GenerateCapsule(params.Radius, params.Height, params.Slices, params.Stacks);
+            mesh.MinBounds = { -params.Radius, -params.Height * 0.5f, -params.Radius };
+            mesh.MaxBounds = {  params.Radius,  params.Height * 0.5f,  params.Radius };
+            generated = true;
+        }
+        else if (type == ":torus:" || type == ":knot:")
+        {
+            // Approximate with sphere until dedicated generators are added
+            mesh = GenerateSphere(params.Radius, params.Slices, params.Stacks);
+            mesh.MinBounds = { -params.Radius, -params.Radius, -params.Radius };
+            mesh.MaxBounds = {  params.Radius,  params.Radius,  params.Radius };
+            generated = true;
+        }
+
+        if (!generated)
+            return model;
+
+        // Ensure bounds are set for the cube (GenerateCube doesn't set them)
+        if (type == ":cube:")
+        {
+            mesh.MinBounds = -params.Dimensions * 0.5f;
+            mesh.MaxBounds =  params.Dimensions * 0.5f;
+        }
+
+        mesh.MaterialIndex = 0;
+        model.Meshes.push_back(std::move(mesh));
+
+        // Add default material
+        Material defaultMat;
+        defaultMat.AlbedoColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+        defaultMat.Roughness   = 0.5f;
+        defaultMat.Metalness   = 0.0f;
+        model.Materials.push_back(defaultMat);
+
+        return model;
     }
 }

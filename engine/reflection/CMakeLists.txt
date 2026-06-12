@@ -1,0 +1,9 @@
+chained_add_engine_module(engine_reflection
+    SOURCES
+        reflection.h
+        reflection_rfl.h
+    DEPENDS
+        engine_foundation
+        ChainedEngine::External::reflect-cpp
+        ChainedEngine::External::GLM
+)

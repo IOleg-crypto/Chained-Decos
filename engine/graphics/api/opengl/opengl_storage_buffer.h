@@ -3,7 +3,7 @@
 
 #include "engine/graphics/api/storage_buffer.h"
 
-namespace CHEngine
+namespace Chained
 {
     class OpenGLStorageBuffer : public StorageBuffer
     {

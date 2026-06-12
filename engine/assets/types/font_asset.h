@@ -5,11 +5,11 @@
 #include <cstdint>
 #include <string>
 
-namespace CHEngine
+namespace Chained
 {
 struct FontChar
 {
-    float x0, y0, x1, y1; // Texture coordinates
+    float x0, y0, x1, y1;
     float xoff, yoff, xadvance;
 };
 
@@ -18,7 +18,7 @@ struct Font
     uint32_t textureId = 0;
     int atlasWidth = 0;
     int atlasHeight = 0;
-    FontChar chars[128]; // ASCII for now
+    FontChar chars[128];
     float fontSize = 32.0f;
 };
 
@@ -33,15 +33,16 @@ public:
         : Asset(GetStaticType(), handle)
     {
     }
-    virtual ~FontAsset() = default;
+    virtual ~FontAsset() override = default;
 
     static AssetType GetStaticType()
     {
         return AssetType::Font;
     }
 
-    void OnLoaded() override
+    size_t GetMemoryUsage() const override
     {
+        return sizeof(*this) + (m_Font.atlasWidth * m_Font.atlasHeight);
     }
 
     const Font& GetFont() const
@@ -56,6 +57,6 @@ public:
 private:
     Font m_Font = {0};
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_FONT_ASSET_H

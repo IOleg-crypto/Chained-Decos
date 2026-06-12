@@ -2,9 +2,9 @@
 #define CH_FRAMEBUFFER_H
 
 #include <memory>
-#include <vector>
 
-namespace CHEngine
+
+namespace Chained
 {
 enum class FramebufferColorFormat
 {
@@ -40,6 +40,6 @@ public:
     static std::shared_ptr<Framebuffer> Create(const FramebufferSpecification& spec);
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_FRAMEBUFFER_H

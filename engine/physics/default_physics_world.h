@@ -5,7 +5,7 @@
 #include "raycast_result.h"
 #include <unordered_map>
 
-namespace CHEngine
+namespace Chained
 {
 
 struct DefaultPhysicsBody
@@ -43,6 +43,6 @@ private:
     PhysicsBodyHandle m_NextHandle = 1;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_DEFAULT_PHYSICS_WORLD_H

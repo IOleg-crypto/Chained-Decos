@@ -4,10 +4,10 @@
 #include "editor_command.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
-#include "engine/scene/component_serializer.h"
+#include "engine/serialization/component_serializer.h"
 #include <yaml-cpp/yaml.h>
 
-namespace CHEngine
+namespace Chained
 {
 class DestroyEntityCommand : public IEditorCommand
 {
@@ -21,14 +21,14 @@ public:
     void Execute() override
     {
         CH_CORE_INFO("Destroying entity via command: {}", m_Entity.GetComponent<TagComponent>().Tag);
-        
+
         m_UUID = m_Entity.GetUUID();
 
         // Serialize the entity before destroying
         YAML::Emitter out;
         out << YAML::BeginMap;
-        ServiceLocator::Get<ComponentSerializer>().SerializeID(out, m_Entity);
-        ServiceLocator::Get<ComponentSerializer>().SerializeAll(out, m_Entity);
+        ComponentSerializer::SerializeID(out, m_Entity);
+        ComponentSerializer::SerializeAll(out, m_Entity);
         out << YAML::EndMap;
         m_SerializedData = out.c_str();
 
@@ -39,15 +39,16 @@ public:
     {
         CH_CORE_INFO("Undoing DestroyEntity, restoring UUID: {}", m_UUID);
         YAML::Node node = YAML::Load(m_SerializedData);
-        
+
         std::string name = "Restored Entity";
         auto tagComponent = node["TagComponent"];
-        if (tagComponent && tagComponent["Tag"] && tagComponent["Tag"].IsScalar()) {
+        if (tagComponent && tagComponent["Tag"] && tagComponent["Tag"].IsScalar())
+        {
             name = tagComponent["Tag"].as<std::string>();
         }
 
         m_Entity = m_Scene->CreateEntityWithUUID(m_UUID, name);
-        ServiceLocator::Get<ComponentSerializer>().DeserializeAll(m_Entity, node);
+        ComponentSerializer::DeserializeAll(m_Entity, node);
     }
 
     std::string GetName() const override
@@ -113,7 +114,7 @@ public:
 
     void Execute() override
     {
-        m_DuplicateEntity = m_Scene->CopyEntity(m_SourceEntity);
+        m_DuplicateEntity = Entity(m_Scene->CopyEntity(m_SourceEntity), m_Scene->GetRegistryPtr());
     }
 
     void Undo() override
@@ -139,13 +140,17 @@ class ParentEntityCommand : public IEditorCommand
 {
 public:
     ParentEntityCommand(Entity entity, Entity newParent, Scene* scene)
-        : m_Entity(entity), m_NewParent(newParent), m_Scene(scene)
+        : m_Entity(entity),
+          m_NewParent(newParent),
+          m_Scene(scene)
     {
         if (m_Entity && m_Entity.HasComponent<HierarchyComponent>())
         {
             auto parentID = m_Entity.GetComponent<HierarchyComponent>().Parent;
             if (parentID != entt::null)
+            {
                 m_OldParent = Entity(parentID, m_Entity.GetRegistryPtr());
+            }
         }
     }
 
@@ -167,13 +172,18 @@ public:
 private:
     void SetParent(Entity child, Entity parent)
     {
-        if (!child) return;
-        
+        if (!child)
+        {
+            return;
+        }
+
         if (!child.HasComponent<HierarchyComponent>())
+        {
             child.AddComponent<HierarchyComponent>();
-        
+        }
+
         auto& hc = child.GetComponent<HierarchyComponent>();
-        
+
         // Remove from old parent
         if (hc.Parent != entt::null && m_Scene->GetRegistryPtr()->valid(hc.Parent))
         {
@@ -211,6 +221,6 @@ private:
     Scene* m_Scene;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_ENTITY_COMMANDS_H

@@ -1,12 +1,12 @@
 #ifndef CH_EDITOR_TYPES_H
 #define CH_EDITOR_TYPES_H
 
-#include "engine/scene/scene.h"
 #include "engine/graphics/pipeline/renderer.h"
+#include "engine/scene/scene.h"
 #include <cstdint>
 #include <string>
 
-namespace CHEngine
+namespace Chained
 {
 
 enum class SceneState : uint8_t
@@ -24,9 +24,9 @@ struct EditorState
     int LastHitMeshIndex = -1;
     DebugRenderFlags DebugRenderFlags;
     bool IsLoading = false;
-    std::string LoadingStatus = "";
+    std::string LoadingStatus;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_EDITOR_TYPES_H

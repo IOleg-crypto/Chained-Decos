@@ -1,6 +1,8 @@
 #include "network_service.h"
 #include "engine/core/log.h"
-#include "engine/core/service_locator.h"
+#include "engine/foundation/engine_assert.h"
+#include "engine/foundation/timestep.h"
+
 
 // Steam Networking Sockets Headers
 #include <steam/steamnetworkingsockets.h>
@@ -8,35 +10,40 @@
 #include <steam/isteamnetworkingutils.h>
 #include <algorithm>
 
-namespace CHEngine
+namespace Chained
 {
     NetworkService* NetworkService::s_Instance = nullptr;
 
+    void NetworkService::Init()
+    {
+        CH_ASSERT(!s_Instance);
+        s_Instance = new NetworkService();
+        s_Instance->InitializeSteamNetworking();
+    }
+
+    void NetworkService::Shutdown()
+    {
+        if (s_Instance)
+        {
+            s_Instance->Disconnect();
+            GameNetworkingSockets_Kill();
+            delete s_Instance;
+            s_Instance = nullptr;
+        }
+    }
+
+    NetworkService& NetworkService::Get()
+    {
+        CH_ASSERT(s_Instance);
+        return *s_Instance;
+    }
+
     NetworkService::NetworkService()
     {
-        CH_CORE_ASSERT(!s_Instance, "NetworkService already exists!");
-        s_Instance = this;
     }
 
     NetworkService::~NetworkService()
     {
-        s_Instance = nullptr;
-    }
-
-    void NetworkService::OnInit()
-    {
-        InitializeSteamNetworking();
-    }
-
-    void NetworkService::OnUpdate(Timestep ts)
-    {
-        Poll();
-    }
-
-    void NetworkService::OnShutdown()
-    {
-        Disconnect();
-        GameNetworkingSockets_Kill();
     }
 
     void NetworkService::InitializeSteamNetworking()
@@ -234,7 +241,7 @@ namespace CHEngine
                 
                 if (m_IsServer)
                 {
-                    auto it = std::find(m_ActiveConnections.begin(), m_ActiveConnections.end(), (uint32_t)pInfo->m_hConn);
+                    auto it = std::ranges::find(m_ActiveConnections, (uint32_t)pInfo->m_hConn);
                     if (it != m_ActiveConnections.end()) m_ActiveConnections.erase(it);
                 }
                 

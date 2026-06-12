@@ -1,7 +1,10 @@
 #include "script_glue_internal.h"
 #include "script_internal_call_registry.h"
+#include "engine/core/application.h"
+#include "engine/scene/scene.h"
+#include "scripting/scriptengine.h"
 
-namespace CHEngine
+namespace Chained
 {
 
 void RegisterGlueSystem() {}
@@ -69,5 +72,5 @@ CH_SCRIPT_FUNC void Window_SetAntialiasing(bool enabled)
 CH_ADD_INTERNAL_CALL(AppWindow, Window_SetAntialiasing_Ptr, Window_SetAntialiasing);
 
 
-} // namespace CHEngine
+} // namespace Chained
 

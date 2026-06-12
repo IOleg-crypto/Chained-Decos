@@ -29,6 +29,7 @@ def find_dotnet() -> Optional[str]:
         return dotnet
 
     common_locations = [
+        # Default path for dotnet in Linux and Windows
         Path("C:/Program Files/dotnet/dotnet.exe"),
         Path("C:/Program Files (x86)/dotnet/dotnet.exe"),
         Path("/usr/bin/dotnet"),
