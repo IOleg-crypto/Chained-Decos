@@ -4,7 +4,7 @@
 #include <glm/glm.hpp>
 
 // Not working , but in the future , i guess i do 2D Renderer
-namespace CHEngine
+namespace Chained
 {
 struct Camera2D
 {
@@ -21,9 +21,11 @@ struct Camera3D
     glm::vec3 Position = {0.0f, 0.0f, 0.0f};
     glm::vec3 Target = {0.0f, 0.0f, 0.0f};
     glm::vec3 Up = {0.0f, 1.0f, 0.0f};
-    float Fovy = 45.0f;
+    float FovY = 45.0f;
+    float NearClip = 0.01f;
+    float FarClip = 1000.0f;
     int Projection = 0; // 0 for Perspective, 1 for Orthographic
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_CAMERA_TYPES_H

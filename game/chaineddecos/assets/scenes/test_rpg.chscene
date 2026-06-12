@@ -3167,7 +3167,7 @@ Entities:
       Max Cooldown: 3
     ManagedScriptComponent:
       Scripts:
-        - ClassName: CHEngine.HeroSkill
+        - ClassName: Chained.HeroSkill
         - ClassName: chaineddecos.scripts.playercontroller
   - Entity: 7770000000000000001
     TagComponent:
@@ -3253,4 +3253,4 @@ Entities:
       Max Weight: 100
     ManagedScriptComponent:
       Scripts:
-        - ClassName: CHEngine.Hero
+        - ClassName: Chained.Hero

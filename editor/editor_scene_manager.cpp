@@ -2,37 +2,34 @@
 #include "editor_layer.h"
 #include "scripting/scriptengine.h"
 #include "engine/scene/scene.h"
-#include "engine/scene/project.h"
-#include "engine/scene/scene_serializer.h"
-#include "engine/scene/scene_scripting_manager.h"
-#include "engine/core/thread_pool.h"
+#include "engine/project/project.h"
+#include "engine/serialization/scene_serializer.h"
+#include "scripting/scene_scripting_manager.h"
 #include "engine/core/application.h"
 #include "engine/core/input.h"
 #include "engine/core/key_codes.h"
 #include "engine/assets/asset_manager.h"
-#include "engine/core/service_locator.h"
 #include "engine/core/platform.h"
 #include "engine/scene/scene_events.h"
+#include "engine/foundation/thread_pool.h"
 
-namespace CHEngine
+namespace Chained
 {
 
-EditorSceneManager::EditorSceneManager(ScriptEngine* scriptEngine)
-    : m_ScriptEngine(scriptEngine)
+EditorSceneManager::EditorSceneManager(EditorLayer& owner)
+    : m_EditorLayer(owner)
 {
 }
 
 void EditorSceneManager::NewScene()
 {
-    SetScene(Scene::CreateDefault()); // CreateDefault uses placeholder nullptr, we should pass engine if we want
-    // Actually, let's update CreateDefault to take it if we can.
-    SetScene(std::make_shared<Scene>(m_ScriptEngine));
+    SetScene(Scene::CreateDefault());
 }
 
 void EditorSceneManager::OpenScene()
 {
     std::vector<FileDialogFilter> filters = {{"Chained Scene", "chscene"}};
-    auto result = CHEngine::Platform::OpenFile(filters);
+    auto result = Chained::Platform::OpenFile(filters);
     if (result)
     {
         OpenScene(*result);
@@ -47,7 +44,7 @@ void EditorSceneManager::OpenScene(const std::filesystem::path& path)
         CH_CORE_WARN("EditorSceneManager: Transition to '{}' ignored - already loading '{}'", path.string(), m_PendingSceneOpenPath.string());
         return;
     }
-    m_IsPlayModeSceneLoad = (EditorContext::GetSceneState() == SceneState::Play);
+    m_IsPlayModeSceneLoad = (m_EditorLayer.GetSceneState() == SceneState::Play);
     StartSceneOpenTransition(path);
 }
 
@@ -70,7 +67,7 @@ void EditorSceneManager::SaveScene()
 void EditorSceneManager::SaveSceneAs()
 {
     std::vector<FileDialogFilter> filters = {{"Chained Scene", "chscene"}};
-    auto result = CHEngine::Platform::SaveFile(filters);
+    auto result = Chained::Platform::SaveFile(filters);
     if (result)
     {
         auto scene = GetActiveScene();
@@ -105,7 +102,7 @@ void EditorSceneManager::SetScene(std::shared_ptr<Scene> scene)
     CancelPlayModeTransition();
     CancelSceneOpenTransition();
     m_EditorScene = scene;
-    EditorContext::SetSelectedEntity({});
+    m_EditorLayer.SetSelectedEntity({});
 }
 
 void EditorSceneManager::SetSceneState(SceneState state)
@@ -113,7 +110,7 @@ void EditorSceneManager::SetSceneState(SceneState state)
     if (state == SceneState::Play)
     {
         if (m_PlayModeStartRequested || m_IsPlayModeLoading || m_IsSceneOpenLoading ||
-            EditorContext::GetSceneState() == SceneState::Play)
+            m_EditorLayer.GetSceneState() == SceneState::Play)
         {
             return;
         }
@@ -139,7 +136,7 @@ void EditorSceneManager::SetSceneState(SceneState state)
             CancelSceneOpenTransition();
         }
 
-        if (EditorContext::GetSceneState() == SceneState::Edit)
+        if (m_EditorLayer.GetSceneState() == SceneState::Edit)
         {
             return;
         }
@@ -152,13 +149,13 @@ void EditorSceneManager::SetSceneState(SceneState state)
             m_RuntimeScene.reset();
         }
 
-        EditorContext::SetSceneState(SceneState::Edit);
+        m_EditorLayer.SetSceneState(SceneState::Edit);
     }
 }
 
 std::shared_ptr<Scene> EditorSceneManager::GetActiveScene() const
 {
-    return (EditorContext::GetSceneState() == SceneState::Play) ? m_RuntimeScene : m_EditorScene;
+    return (m_EditorLayer.GetSceneState() == SceneState::Play) ? m_RuntimeScene : m_EditorScene;
 }
 
 void EditorSceneManager::OnUpdate(Timestep ts)
@@ -178,8 +175,8 @@ void EditorSceneManager::OnUpdate(Timestep ts)
         UpdateSceneOpenTransition();
     }
 
-    EditorContext::GetState().IsLoading = IsLoading();
-    EditorContext::GetState().LoadingStatus = m_LoadingStatus;
+    m_EditorLayer.GetEditorState().IsLoading = IsLoading();
+    m_EditorLayer.GetEditorState().LoadingStatus = m_LoadingStatus;
 }
 
 void EditorSceneManager::OnViewportResize(uint32_t width, uint32_t height)
@@ -203,9 +200,12 @@ void EditorSceneManager::StartSceneOpenTransition(const std::filesystem::path& p
     CancelPlayModeTransition();
 
     std::filesystem::path scenePath = path;
-    if (scenePath.is_relative() && Project::GetActive())
+    if (scenePath.is_relative())
     {
-        scenePath = Project::GetAssetPath(scenePath);
+        if (auto project = Project::GetActive())
+        {
+            scenePath = project->GetAssetPathForProject(scenePath);
+        }
     }
 
     m_PendingSceneOpenPath = scenePath;
@@ -214,7 +214,7 @@ void EditorSceneManager::StartSceneOpenTransition(const std::filesystem::path& p
 
     try
     {
-        m_SceneOpenFuture = ThreadPool::Get().Enqueue([scenePath, engine = m_ScriptEngine]() {
+        m_SceneOpenFuture = ThreadPool::Enqueue([this, scenePath, engine = &ScriptEngine::Get()]() -> std::shared_ptr<Scene> {
             auto newScene = std::make_shared<Scene>(engine);
             SceneSerializer serializer(newScene.get());
             if (!serializer.Deserialize(scenePath.string()))
@@ -285,11 +285,11 @@ void EditorSceneManager::UpdateSceneOpenTransition()
         }
     }
 
-    if (m_SceneOpenSceneReady && (m_EditorScene || m_RuntimeScene) && !ServiceLocator::Get<AssetManager>().HasBackgroundWork())
+    if (m_SceneOpenSceneReady && (m_EditorScene || m_RuntimeScene) && !AssetManager::Get().HasBackgroundWork())
     {
         auto targetScene = m_IsPlayModeSceneLoad ? m_RuntimeScene : m_EditorScene;
 
-        if (Project::GetActive() && Project::GetActive()->GetEnvironment())
+        if (auto project = Project::GetActive(); project && project->GetEnvironment())
         {
             // Only override if the loaded scene has no environment defined
             bool hasEnvironment = targetScene->GetSettings().Environment && 
@@ -299,7 +299,7 @@ void EditorSceneManager::UpdateSceneOpenTransition()
             if (!hasEnvironment)
             {
                 CH_CORE_INFO("Editor: Applying project environment to scene '{}'.", targetScene->GetSettings().ScenePath);
-                targetScene->GetSettings().Environment = Project::GetActive()->GetEnvironment();
+                targetScene->GetSettings().Environment = project->GetEnvironment();
             }
         }
 
@@ -314,7 +314,6 @@ void EditorSceneManager::UpdateSceneOpenTransition()
         {
             CH_CORE_INFO("Editor: Activating new editor scene '{}'.", m_PendingSceneOpenPath.string());
             SceneOpenedEvent e(m_PendingSceneOpenPath.string());
-            EditorLayer::Get().SetLastScenePath(m_PendingSceneOpenPath.string());
             Application::Get().OnEvent(e);
         }
 
@@ -322,7 +321,7 @@ void EditorSceneManager::UpdateSceneOpenTransition()
         m_SceneOpenSceneReady = false;
         m_SceneOpenFuture = {};
 
-        EditorContext::SetSelectedEntity({});
+        m_EditorLayer.SetSelectedEntity({});
         
         m_PendingSceneOpenPath.clear();
         m_LoadingStatus = "";
@@ -331,14 +330,13 @@ void EditorSceneManager::UpdateSceneOpenTransition()
     }
     else if (m_IsSceneOpenLoading && m_SceneOpenSceneReady)
     {
-        auto& am = ServiceLocator::Get<AssetManager>();
-        if (am.HasBackgroundWork())
+        if (AssetManager::Get().HasBackgroundWork())
         {
             static float logTimer = 0.0f;
             logTimer += 0.016f; // approximate
             if (logTimer > 1.0f)
             {
-                CH_CORE_INFO("Editor: Transition to '{}' waiting for {} assets...", m_PendingSceneOpenPath.string(), am.GetPendingFinalizeCount());
+                CH_CORE_INFO("Editor: Transition to '{}' waiting for {} assets...", m_PendingSceneOpenPath.string(), AssetManager::Get().GetPendingFinalizeCount());
                 logTimer = 0.0f;
             }
         }
@@ -394,9 +392,9 @@ void EditorSceneManager::UpdatePlayModeTransition()
 {
     if (!m_IsPlayModeLoading) return;
 
-    if (m_PlayModeSceneReady && m_RuntimeScene && !ServiceLocator::Get<AssetManager>().HasBackgroundWork())
+    if (m_PlayModeSceneReady && m_RuntimeScene && !AssetManager::Get().HasBackgroundWork())
     {
-        EditorContext::SetSceneState(SceneState::Play);
+        m_EditorLayer.SetSceneState(SceneState::Play);
         m_RuntimeScene->OnRuntimeStart();
 
         m_IsPlayModeLoading = false;
@@ -421,11 +419,11 @@ bool EditorSceneManager::OnSceneOpened(SceneOpenedEvent& e)
     auto project = Project::GetActive();
     if (project && !e.GetPath().empty())
     {
-        project->GetConfig().ActiveScenePath = std::filesystem::relative(e.GetPath(), project->GetProjectDirectory());
-        EditorLayer::Get().GetProjectManager().SaveProject();
+        project->GetConfig().ActiveScenePath = std::filesystem::relative(e.GetPath(), project->GetProjectDirectoryForProject());
+        m_EditorLayer.GetProjectManager().SaveProject();
 
-        EditorLayer::Get().GetConfig().LastScenePath = e.GetPath();
-        EditorLayer::Get().SaveConfig();
+        m_EditorLayer.GetConfig().LastScenePath = e.GetPath();
+        m_EditorLayer.SaveConfig();
         return true;
     }
     return false;
@@ -438,8 +436,8 @@ bool EditorSceneManager::OnKeyPressed(KeyPressedEvent& e)
         return false;
     }
 
-    bool ctrl = Input::IsKeyDown(Key::LeftControl) || Input::IsKeyDown(Key::RightControl);
-    bool shift = Input::IsKeyDown(Key::LeftShift) || Input::IsKeyDown(Key::RightShift);
+    bool ctrl = Core::Input::IsKeyDown(Key::LeftControl) || Core::Input::IsKeyDown(Key::RightControl);
+    bool shift = Core::Input::IsKeyDown(Key::LeftShift) || Core::Input::IsKeyDown(Key::RightShift);
 
     auto keyCode = e.GetKeyCode();
 
@@ -464,20 +462,20 @@ bool EditorSceneManager::OnKeyPressed(KeyPressedEvent& e)
             }
             return true;
         case Key::Z:
-            EditorLayer::Get().GetCommandHistory().Undo();
+            m_EditorLayer.GetCommandHistory().Undo();
             return true;
         case Key::Y:
-            EditorLayer::Get().GetCommandHistory().Redo();
+            m_EditorLayer.GetCommandHistory().Redo();
             return true;
         }
     }
 
     if (keyCode == Key::F5)
     {
-        EditorLayer::Get().LaunchStandalone();
+        m_EditorLayer.LaunchStandalone();
         return true;
     }
 
     return false;
 }
-} // namespace CHEngine
+} // namespace Chained

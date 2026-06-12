@@ -4,7 +4,7 @@
 #include "engine/graphics/api/shader.h"
 #include <unordered_map>
 
-namespace CHEngine {
+namespace Chained {
 
 class OpenGLShader : public Shader
 {
@@ -34,6 +34,6 @@ private:
     std::unordered_map<std::string, int> m_UniformCache;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_OPENGL_SHADER_H

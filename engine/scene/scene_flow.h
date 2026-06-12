@@ -5,7 +5,7 @@
 #include <vector>
 #include <map>
 
-namespace CHEngine {
+namespace Chained {
 
 struct SceneFlowLink {
     std::string TriggerName;
@@ -44,6 +44,6 @@ private:
     std::map<std::string, SceneFlowNode> m_Nodes;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_SCENE_FLOW_H

@@ -2,9 +2,9 @@
 #define CH_LIGHT_COMPONENT_H
 
 
-#include "engine/core/reflection_rfl.h"
+#include "engine/reflection/reflection_rfl.h"
 
-namespace CHEngine
+namespace Chained
 {
 enum class LightType
 {
@@ -30,6 +30,6 @@ struct LightComponent
 
 CH_MARK_RFL(LightComponent);
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_LIGHT_COMPONENT_H

@@ -7,7 +7,7 @@
 struct GLFWwindow;
 
 // GLFW-backed window implementation that owns the native window, callbacks, and display settings.
-namespace CHEngine
+namespace Chained
 {
 class GlfwWindow : public Window
 {
@@ -55,6 +55,6 @@ private:
     EventCallbackFn m_EventCallback;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_GLFW_WINDOW_H

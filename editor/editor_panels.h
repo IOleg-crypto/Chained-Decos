@@ -1,7 +1,7 @@
 #ifndef CH_EDITOR_PANELS_H
 #define CH_EDITOR_PANELS_H
 
-#include "engine/core/timestep.h"
+#include "engine/foundation/timestep.h"
 #include "panels/panel.h"
 #include <memory>
 #include <typeindex>
@@ -9,13 +9,16 @@
 #include <string>
 #include <vector>
 
-namespace CHEngine
+namespace Chained
 {
+
+
 
 class EditorPanels
 {
 public:
-    EditorPanels() = default;
+    EditorPanels(EditorLayer& editorLayer)
+        : m_EditorLayer(editorLayer) {}
     ~EditorPanels() = default;
 
 public:
@@ -65,17 +68,20 @@ public:
     void OnEvent(Event& e);
     void SetContext(const std::shared_ptr<Scene>& context);
 
+    EditorLayer& GetEditorLayer() { return m_EditorLayer; }
+
     std::vector<std::shared_ptr<Panel>>& GetPanels()
     {
         return m_RootPanels;
     }
 
 private:
+    EditorLayer& m_EditorLayer;
     std::unordered_map<std::type_index, std::shared_ptr<Panel>> m_PanelRegistry;
     std::unordered_map<std::string, std::shared_ptr<Panel>> m_PanelNameRegistry;
     std::vector<std::shared_ptr<Panel>> m_RootPanels;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_EDITOR_PANELS_H

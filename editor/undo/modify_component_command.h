@@ -5,7 +5,7 @@
 #include "engine/scene/scene.h"
 #include <string>
 
-namespace CHEngine
+namespace Chained
 {
 
 template <typename T> class ModifyComponentCommand : public IEditorCommand
@@ -58,6 +58,6 @@ private:
     std::string m_Name;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_MODIFY_COMPONENT_COMMAND_H

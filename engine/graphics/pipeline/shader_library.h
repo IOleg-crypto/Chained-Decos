@@ -1,25 +1,27 @@
 #ifndef CH_SHADER_LIBRARY_H
 #define CH_SHADER_LIBRARY_H
 
-#include "engine/graphics/assets/shader_asset.h"
+#include "engine/assets/types/shader_asset.h"
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-namespace CHEngine
+namespace Chained
 {
+
 // Named shader cache with load-on-demand and hot-reload support.
 class ShaderLibrary
 {
 public:
-    ShaderLibrary() = default;
+    ShaderLibrary();
     ~ShaderLibrary() = default;
 
     // Adds a shader under a unique library name; asserts if the name already exists.
     void Add(const std::string& name, const std::shared_ptr<ShaderAsset>& shader);
     // Adds a shader using the source file stem as the library key.
     void Add(const std::shared_ptr<ShaderAsset>& shader);
+
     // Loads a shader from disk and stores it under the source file stem.
     void Load(const std::string& path);
     // Loads a shader from disk and stores it under the provided name, replacing any existing entry.
@@ -50,6 +52,6 @@ public:
 private:
     std::unordered_map<std::string, std::shared_ptr<ShaderAsset>> m_Shaders;
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_SHADER_LIBRARY_H

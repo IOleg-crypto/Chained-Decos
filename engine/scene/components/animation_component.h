@@ -1,13 +1,13 @@
 #ifndef CH_ANIMATION_COMPONENT_H
 #define CH_ANIMATION_COMPONENT_H
 
-#include "engine/core/reflection.h"
-#include "engine/core/reflection_rfl.h"
+#include "engine/reflection/reflection.h"
+#include "engine/reflection/reflection_rfl.h"
 #include <string>
 #include <vector>
 #include <unordered_map>
 
-namespace CHEngine
+namespace Chained
 {
 struct AnimationComponent
 {
@@ -35,6 +35,6 @@ CH_MARK_RFL(AnimationComponent);
 
 
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_ANIMATION_COMPONENT_H

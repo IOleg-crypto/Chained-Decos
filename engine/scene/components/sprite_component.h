@@ -1,11 +1,12 @@
 #ifndef CH_SPRITE_COMPONENT_H
 #define CH_SPRITE_COMPONENT_H
 
-#include "engine/core/reflection.h"
-#include "engine/core/reflection_rfl.h"
-#include "engine/graphics/texture_system.h"
+#include "engine/assets/asset.h"
+#include "engine/reflection/reflection.h"
+#include "engine/reflection/reflection_rfl.h"
 
-namespace CHEngine
+
+namespace Chained
 {
 struct SpriteComponent
 {
@@ -16,10 +17,13 @@ struct SpriteComponent
     bool FlipY = false;
     int ZOrder = 0;
 
-    static const char* GetStaticName() { return "SpriteComponent"; }
+    static const char* GetStaticName()
+    {
+        return "SpriteComponent";
+    }
 };
 
 CH_MARK_RFL(SpriteComponent);
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_SPRITE_COMPONENT_H

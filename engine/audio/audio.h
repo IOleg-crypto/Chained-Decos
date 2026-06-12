@@ -1,9 +1,9 @@
 #ifndef CH_AUDIO_H
 #define CH_AUDIO_H
 
-#include "engine/core/engine_service.h"
-#include "engine/core/timestep.h"
-#include "engine/core/uuid.h"
+
+#include "engine/foundation/timestep.h"
+#include "engine/foundation/uuid.h"
 #include <glm/glm.hpp>
 #include <memory>
 #include <miniaudio.h>
@@ -12,7 +12,8 @@
 #include <unordered_map>
 #include <vector>
 
-namespace CHEngine
+
+namespace Chained
 {
 using AudioHandle = UUID;
 
@@ -22,13 +23,16 @@ struct SoundInstance
     AudioHandle Handle;
 };
 
-class Audio : public EngineService
+class Audio
 {
 public:
+    static void Init();
+    static void Shutdown();
+    static Audio& Get();
+
+private:
     Audio();
-
-    virtual ~Audio() override;
-
+    ~Audio();
 public:
     void SetListenerPosition(const glm::vec3& position, const glm::vec3& forward, const glm::vec3& up);
 
@@ -51,21 +55,18 @@ public:
 
 public:
     ma_engine* GetEngine() const;
-
-protected:
-    virtual void OnInit() override;
-    virtual void OnUpdate(Timestep ts) override;
-    virtual void OnShutdown() override;
-
 private:
     ma_engine* m_Engine = nullptr;
+private:
 
     mutable std::mutex m_DataMutex;
     std::vector<std::unique_ptr<SoundInstance>> m_ActiveSounds;
     std::unordered_map<std::string, AudioHandle> m_PathToHandle;
     std::unordered_map<AudioHandle, std::string> m_HandleToPath;
+
+    static inline Audio* s_Instance = nullptr;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_AUDIO_H

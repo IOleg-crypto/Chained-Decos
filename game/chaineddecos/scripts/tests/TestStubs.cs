@@ -1,4 +1,4 @@
-namespace CHEngine;
+namespace Chained;
 
 public static class Log
 {

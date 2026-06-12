@@ -1,21 +1,24 @@
 #include "editor_utils.h"
 
-#include "engine/core/base.h"
+#include "engine/foundation/base.h"
 #include "engine/core/profiler.h"
-#include "engine/scene/project.h"
-#include "engine/scene/project_serializer.h"
-#include "engine/scene/scene_serializer.h"
+#include "engine/project/project.h"
+#include "editor/project/project_serializer.h"
+#include "engine/serialization/scene_serializer.h"
 
 #include <algorithm>
 #include <format>
 #include <vector>
 
 #if CH_PLATFORM_WINDOWS
-#include <windows.h>
-#include <shellapi.h>
+    #ifndef WIN32_LEAN_AND_MEAN
+        #define WIN32_LEAN_AND_MEAN
+    #endif
+    #include <windows.h>
+    #include <shellapi.h>
 #endif
 
-namespace CHEngine
+namespace Chained
 {
 
 // --- Internal Helper Declarations ---
@@ -69,52 +72,26 @@ void LaunchStandalone(std::shared_ptr<Project> project, std::shared_ptr<Scene> e
         }
     }
 
-    // Save project specifically to persist active scene path
-    ProjectSerializer pSerializer(project);
-    pSerializer.Serialize((project->GetProjectDirectory() / (project->GetConfig().Name + ".chproject")).string());
+
 
     std::string runtimePath;
     std::string arguments;
 
-    if (!config.LaunchProfiles.empty() && config.ActiveLaunchProfileIndex >= 0 &&
-        config.ActiveLaunchProfileIndex < (int)config.LaunchProfiles.size())
+    std::string configStr = (config.BuildConfig == Configuration::Release) ? "Release" : "Debug";
+    runtimePath = FindRuntimeExecutable(config.Name, configStr).string();
+
+    std::filesystem::path projectFile =
+        project->GetProjectDirectoryForProject() / (project->GetConfig().Name + ".chproject");
+    arguments = std::format("\"{}\"", std::filesystem::absolute(projectFile).string());
+
+    if (!sceneArgument.empty())
     {
-        const auto& profile = config.LaunchProfiles[config.ActiveLaunchProfileIndex];
-        runtimePath = ResolveLaunchVariables(profile.BinaryPath, project);
-        arguments = ResolveLaunchVariables(profile.Arguments, project);
-
-        if (profile.UseDefaultArgs)
-        {
-            std::filesystem::path projectFile =
-                project->GetProjectDirectory() / (project->GetConfig().Name + ".chproject");
-            arguments += std::format(" \"{}\"", std::filesystem::absolute(projectFile).string());
-        }
-
-        if (!sceneArgument.empty())
-        {
-            arguments += sceneArgument;
-        }
-    }
-    else
-    {
-        // Fallback to old heuristic if no profiles
-        CH_CORE_WARN("LaunchStandalone: No active launch profile. Falling back to heuristic search.");
-        std::string configStr = (config.BuildConfig == Configuration::Release) ? "Release" : "Debug";
-        runtimePath = FindRuntimeExecutable(config.Name, configStr).string();
-
-        std::filesystem::path projectFile = project->GetProjectDirectory() / (project->GetConfig().Name + ".chproject");
-        arguments = std::format("\"{}\"", std::filesystem::absolute(projectFile).string());
-
-        if (!sceneArgument.empty())
-        {
-            arguments += sceneArgument;
-        }
+        arguments += sceneArgument;
     }
 
     if (runtimePath.empty() || !std::filesystem::exists(runtimePath))
     {
         CH_CORE_WARN("LaunchStandalone: Profile binary not found at '{}'. Searching heuristic...", runtimePath);
-        std::string configStr = (config.BuildConfig == Configuration::Release) ? "Release" : "Debug";
         runtimePath = FindRuntimeExecutable(config.Name, configStr).string();
 
         if (runtimePath.empty())
@@ -135,8 +112,9 @@ void LaunchStandalone(std::shared_ptr<Project> project, std::shared_ptr<Scene> e
     CH_CORE_INFO("LaunchStandalone: Executing via ShellExecute: {} {}", normalizedRuntime, normalizedArgs);
 
     // Use ShellExecute instead of system to be truly non-blocking and avoid cmd window issues
-    HINSTANCE result = ShellExecuteW(NULL, L"open", std::wstring(normalizedRuntime.begin(), normalizedRuntime.end()).c_str(),
-                                     std::wstring(normalizedArgs.begin(), normalizedArgs.end()).c_str(), NULL, SW_SHOW);
+    HINSTANCE result =
+        ShellExecuteW(NULL, L"open", std::wstring(normalizedRuntime.begin(), normalizedRuntime.end()).c_str(),
+                      std::wstring(normalizedArgs.begin(), normalizedArgs.end()).c_str(), NULL, SW_SHOW);
     if ((uintptr_t)result <= 32)
     {
         CH_CORE_ERROR("LaunchStandalone: ShellExecute failed with error code: {}", (uintptr_t)result);
@@ -150,8 +128,7 @@ void LaunchStandalone(std::shared_ptr<Project> project, std::shared_ptr<Scene> e
 
 // --- Internal Helper Implementations ---
 
-static std::filesystem::path FindRuntimeExecutable(const std::string& projectName,
-                                                            const std::string& configStr)
+static std::filesystem::path FindRuntimeExecutable(const std::string& projectName, const std::string& configStr)
 {
     CH_PROFILE_FUNCTION();
 
@@ -268,7 +245,8 @@ static std::string ResolveLaunchVariables(std::string str, std::shared_ptr<Proje
     }
 #endif
 
-    std::filesystem::path projectFile = project->GetProjectDirectory() / (project->GetConfig().Name + ".chproject");
+    std::filesystem::path projectFile =
+        project->GetProjectDirectoryForProject() / (project->GetConfig().Name + ".chproject");
     std::string projectPathStr = std::filesystem::absolute(projectFile).string();
 
     auto replaceAll = [&](const std::string& from, const std::string& to) {
@@ -308,4 +286,4 @@ static std::string ResolveLaunchVariables(std::string str, std::shared_ptr<Proje
     return str;
 }
 
-} // namespace CHEngine
+} // namespace Chained

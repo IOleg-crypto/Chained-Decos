@@ -3,9 +3,9 @@
 
 #include <string>
 #include <vector>
-#include <functional>
 
-namespace CHEngine
+
+namespace Chained
 {
     struct InternalCallMapping
     {
@@ -39,6 +39,6 @@ namespace CHEngine
 }
 
 #define CH_ADD_INTERNAL_CALL(className, methodName, funcPtr) \
-    static CHEngine::InternalCallRegister s_##methodName##_Registrar("CHEngine." #className, #methodName, (void*)funcPtr)
+    static Chained::InternalCallRegister s_##methodName##_Registrar("Chained." #className, #methodName, (void*)funcPtr)
 
 #endif // CH_SCRIPT_INTERNAL_CALL_REGISTRY_H

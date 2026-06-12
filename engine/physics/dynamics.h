@@ -4,17 +4,17 @@
 #include "entt/entt.hpp"
 #include <vector>
 
-namespace CHEngine
+namespace Chained
 {
 class Dynamics
 {
 public:
-    static void Update(::entt::registry& registry, const std::vector<entt::entity>& entities, float deltaTime);
+    static void Update(::entt::registry& registry, const std::vector<entt::entity>& entities, float deltaTime, float gravity);
 
 private:
     static void ApplyGravity(entt::registry& registry, entt::entity entity, float gravity, float deltaTime);
     static void IntegrateVelocity(entt::registry& registry, entt::entity entity, float deltaTime);
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_DYNAMICS_H

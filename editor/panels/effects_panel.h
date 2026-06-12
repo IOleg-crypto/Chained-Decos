@@ -3,7 +3,7 @@
 
 #include "panel.h"
 
-namespace CHEngine
+namespace Chained
 {
 class EffectsPanel : public Panel
 {
@@ -13,6 +13,6 @@ public:
 public:
     virtual void OnImGuiRender(bool readOnly = false) override;
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_EFFECTS_PANEL_H

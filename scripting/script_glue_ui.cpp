@@ -3,7 +3,7 @@
 #include <variant>
 #include <imgui_internal.h>
 
-namespace CHEngine
+namespace Chained
 {
 
 void RegisterGlueUI() {}
@@ -149,4 +149,4 @@ CH_SCRIPT_FUNC void UI_Text(Coral::String text)
 }
 CH_ADD_INTERNAL_CALL(UI, UI_Text_Ptr, UI_Text);
 
-} // namespace CHEngine
+} // namespace Chained

@@ -3,7 +3,7 @@
 #include "engine/core/mouse_codes.h"
 #include "gtest/gtest.h"
 
-using namespace CHEngine;
+using namespace Chained;
 
 TEST(EventSystemTest, KeyPressedEventCreation)
 {

@@ -1,5 +1,5 @@
 using System;
-using CHEngine;
+using Chained;
 
 namespace ChainedDecos.Scripts
 {

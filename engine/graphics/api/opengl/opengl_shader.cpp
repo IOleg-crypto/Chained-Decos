@@ -3,7 +3,7 @@
 #include <glad/gl.h>
 #include <glm/gtc/type_ptr.hpp>
 
-namespace CHEngine {
+namespace Chained {
 
 OpenGLShader::OpenGLShader(const std::string& vsSource, const std::string& fsSource)
 {
@@ -136,4 +136,4 @@ void OpenGLShader::SetMatrices(const std::string& name, const glm::mat4* values,
     if (location >= 0) glProgramUniformMatrix4fv(m_RendererID, location, count, GL_FALSE, glm::value_ptr(values[0]));
 }
 
-} // namespace CHEngine
+} // namespace Chained

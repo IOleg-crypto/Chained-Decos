@@ -2,7 +2,7 @@
 #include <mutex>
 #include <thread>
 
-namespace CHEngine
+namespace Chained
 {
 std::mutex Profiler::s_Mutex;
 ProfilerStats Profiler::s_Stats;
@@ -45,4 +45,4 @@ void Profiler::ResetFrameStats()
     s_Stats.TextureCount = 0;
 }
 
-} // namespace CHEngine
+} // namespace Chained

@@ -2,13 +2,21 @@ chained_add_engine_module(engine_assets
     SOURCES
         asset_manager.cpp
         asset_manager.h
-        asset_path_resolver.cpp
-        asset_path_resolver.h
         asset_registry.cpp
         asset_registry.h
+        asset_metadata.h
         asset.h
-        asset_loader.h
+        loaders/asset_importer.cpp
+        loaders/asset_importer.h
+        types/model_asset.h
+        types/model_asset.cpp
+        types/texture_asset.h
+
+        types/font_asset.h
+        types/shader_asset.h
+        types/environment_asset.h
     DEPENDS
         engine_core
+        engine_external_glad
         ChainedEngine::External::YamlCpp
 )

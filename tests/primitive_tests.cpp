@@ -1,7 +1,7 @@
 #include "engine/scene/components/primitive_component.h"
 #include "gtest/gtest.h"
 
-using namespace CHEngine;
+using namespace Chained;
 
 TEST(PrimitiveTest, Defaults)
 {

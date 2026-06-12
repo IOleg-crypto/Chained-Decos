@@ -3,7 +3,7 @@
 
 #include "engine/graphics/api/renderer_api.h"
 
-namespace CHEngine
+namespace Chained
 {
 // Thin static wrapper over the active RendererAPI.
 class RenderCommand
@@ -96,6 +96,6 @@ public:
 private:
     static std::unique_ptr<RendererAPI> s_RendererAPI;
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_RENDER_COMMAND_H

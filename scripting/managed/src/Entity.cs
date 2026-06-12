@@ -1,7 +1,7 @@
 using Coral.Managed.Interop;
 using System.Collections.Generic;
 
-namespace CHEngine
+namespace Chained
 {
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -10,7 +10,11 @@ namespace CHEngine
 /// <summary>Base class for managed component wrappers.</summary>
 public abstract class Component
 {
+    /// <summary>The entity this component belongs to.</summary>
     public Entity Entity { get; internal set; } = null!;
+    
+    /// <summary>Short-cut to the entity's transform.</summary>
+    public TransformComponent Transform => Entity.Transform;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -35,6 +39,9 @@ public class Entity
 
     /// <summary>True when the entity handle is valid.</summary>
     public bool IsValid => ID != 0;
+
+    /// <summary>Quick access to the TransformComponent.</summary>
+    public TransformComponent Transform => GetComponent<TransformComponent>()!;
 
     // ── Component access ──────────────────────────────────────────────────
 
@@ -526,4 +533,4 @@ public class NetworkIdentity : Component
     public bool IsOwned { get { unsafe { return NetworkIdentity_IsOwned_Ptr(Entity.ID); } } }
 }
 
-} // namespace CHEngine
+} // namespace Chained

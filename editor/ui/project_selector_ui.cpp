@@ -4,20 +4,18 @@
 #include "imgui_internal.h"
 #include "IconsFontAwesome6.h"
 #include <filesystem>
+#include "engine/assets/asset_manager.h"
+#include "engine/assets/types/texture_asset.h"
 #include <string>
 
-#include "engine/graphics/texture_system.h"
-#include "engine/core/service_locator.h"
-
-namespace CHEngine
+namespace Chained
 {
 
 ProjectSelectorUI::ProjectSelectorUI(EditorProjectManager& projectManager)
     : m_ProjectManager(projectManager)
 {
-    auto& ts = ServiceLocator::Get<TextureSystem>();
-    m_NewProjectIconHandle = ts.LoadTexture("engine/resources/icons/newproject.jpg");
-    m_OpenProjectIconHandle = ts.LoadTexture("engine/resources/icons/folder.png");
+    m_NewProjectIconHandle = AssetManager::Get().ImportAsset("engine/resources/icons/newproject.jpg");
+    m_OpenProjectIconHandle = AssetManager::Get().ImportAsset("engine/resources/icons/folder.png");
 }
 
 void ProjectSelectorUI::OnImGuiRender()
@@ -126,13 +124,13 @@ void ProjectSelectorUI::OnImGuiRender()
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.9f, 0.9f, 1.0f));
 
-    auto& ts = ServiceLocator::Get<TextureSystem>();
-
     ImGui::BeginGroup();
     {
         ImTextureID newProjTex = 0;
-        if (m_NewProjectIconHandle != 0)
-            newProjTex = (ImTextureID)(uintptr_t)ts.GetRendererID(m_NewProjectIconHandle);
+        if (m_NewProjectIconHandle != 0) {
+            auto tex = AssetManager::Get().GetAsset<TextureAsset>(m_NewProjectIconHandle);
+            if (tex) newProjTex = (ImTextureID)(uintptr_t)tex->GetRendererID();
+        }
 
         if (ImGui::ImageButton("##NewProject", newProjTex, {300, 300}, {0, 1}, {1, 0}))
         {
@@ -153,8 +151,10 @@ void ProjectSelectorUI::OnImGuiRender()
     ImGui::BeginGroup();
     {
         ImTextureID openProjTex = 0;
-        if (m_OpenProjectIconHandle != 0)
-            openProjTex = (ImTextureID)(uintptr_t)ts.GetRendererID(m_OpenProjectIconHandle);
+        if (m_OpenProjectIconHandle != 0) {
+            auto tex = AssetManager::Get().GetAsset<TextureAsset>(m_OpenProjectIconHandle);
+            if (tex) openProjTex = (ImTextureID)(uintptr_t)tex->GetRendererID();
+        }
 
         if (ImGui::ImageButton("##OpenProject", openProjTex, {300, 300}, {0, 1}, {1, 0}))
         {
@@ -217,4 +217,4 @@ void ProjectSelectorUI::OnImGuiRender()
     ImGui::PopStyleVar(3);
 }
 
-} // namespace CHEngine
+} // namespace Chained

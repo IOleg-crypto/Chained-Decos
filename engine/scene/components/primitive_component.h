@@ -1,9 +1,9 @@
 #ifndef CH_PRIMITIVE_COMPONENT_H
 #define CH_PRIMITIVE_COMPONENT_H
 
-#include "engine/core/reflection_rfl.h"
+#include "engine/reflection/reflection_rfl.h"
 
-namespace CHEngine
+namespace Chained
 {
 class ModelAsset;
 
@@ -41,6 +41,6 @@ struct PrimitiveComponent
 
 CH_MARK_RFL(PrimitiveComponent);
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_PRIMITIVE_COMPONENT_H

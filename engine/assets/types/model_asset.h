@@ -4,24 +4,16 @@
 #include "engine/assets/asset.h"
 #include "engine/graphics/api/model_data.h"
 #include "engine/graphics/pipeline/renderer_types.h"
+#include <memory_resource>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <memory_resource>
 
-namespace CHEngine
+namespace Chained
 {
 class Texture;
 
-    //
-    //
-    // struct CH_API Ray
-    // {
-    //     glm::vec3 position;
-    //     glm::vec3 direction;
-    // };
-
-class ModelAsset : public Asset, public std::enable_shared_from_this<ModelAsset>
+class ModelAsset : public Asset
 {
 public:
     ModelAsset()
@@ -33,7 +25,7 @@ public:
     {
     }
     virtual ~ModelAsset() = default;
-    
+
     friend class SceneRenderer;
 
     static AssetType GetStaticType()
@@ -41,17 +33,22 @@ public:
         return AssetType::Model;
     }
 
-    void OnLoaded() override;
+    void OnLoaded();
+
+    size_t GetMemoryUsage() const override
+    {
+        return 0; /* To be calculated properly */
+    }
 
     const Model& GetModel() const
     {
         return m_Model;
     }
-    const std::pmr::vector<RawAnimation>& GetAnimations() const
+    const std::vector<RawAnimation>& GetAnimations() const
     {
         return m_Animations;
     }
-    const std::pmr::vector<MeshInstance>& GetInstances() const
+    const std::vector<MeshInstance>& GetInstances() const
     {
         return m_Instances;
     }
@@ -60,16 +57,14 @@ public:
         return m_BoundingBox;
     }
 
-    const std::pmr::vector<RawMesh>& GetRawMeshes() const
+    const std::vector<RawMesh>& GetRawMeshes() const
     {
         return m_RawMeshes;
     }
 
     // Helpers
-    int GetAnimationCount() const
-    {
-        return (int)m_Animations.size();
-    }
+    int GetAnimationCount() const;
+
     std::string GetAnimationName(int index) const;
     std::vector<glm::mat4> GetBoneMatrices(int animationIndex, int frame) const;
 
@@ -92,32 +87,62 @@ private:
         m_PendingData = std::move(data);
         m_HasPendingData = true;
     }
-    
-    void SetModel(const Model& model) { m_Model = model; }
-    void SetAnimations(const std::pmr::vector<RawAnimation>& animations) { m_Animations = animations; }
-    void SetInstances(const std::pmr::vector<MeshInstance>& instances) { m_Instances = instances; }
-    void SetBoundingBox(const BoundingBox& bbox) { m_BoundingBox = bbox; }
-    void SetRawMeshes(const std::pmr::vector<RawMesh>& meshes) { m_RawMeshes = meshes; }
-    void SetOffsetMatrices(const std::pmr::vector<glm::mat4>& matrices) { m_OffsetMatrices = matrices; }
-    void SetNodeNames(const std::pmr::vector<std::pmr::string>& names) { m_NodeNames = names; }
-    void SetNodeParents(const std::pmr::vector<int>& parents) { m_NodeParents = parents; }
+
+    void SetModel(const Model& model)
+    {
+        m_Model = model;
+    }
+    void SetAnimations(const std::vector<RawAnimation>& animations)
+    {
+        m_Animations = animations;
+    }
+    void SetInstances(const std::vector<MeshInstance>& instances)
+    {
+        m_Instances = instances;
+    }
+    void SetBoundingBox(const BoundingBox& bbox)
+    {
+        m_BoundingBox = bbox;
+    }
+    void SetRawMeshes(const std::vector<RawMesh>& meshes)
+    {
+        m_RawMeshes = meshes;
+    }
+    void SetOffsetMatrices(const std::vector<glm::mat4>& matrices)
+    {
+        m_OffsetMatrices = matrices;
+    }
+    void SetNodeNames(const std::vector<std::string>& names)
+    {
+        m_NodeNames = names;
+    }
+    void SetNodeParents(const std::vector<int>& parents)
+    {
+        m_NodeParents = parents;
+    }
+
     Model m_Model;
-    std::pmr::vector<RawMesh> m_RawMeshes;
-    std::pmr::vector<RawAnimation> m_Animations;
-    std::pmr::vector<MeshInstance> m_Instances;
+    std::vector<RawMesh> m_RawMeshes;
+    std::vector<RawAnimation> m_Animations;
+    std::vector<MeshInstance> m_Instances;
     std::vector<Material> m_Materials;
     BoundingBox m_BoundingBox = {{0, 0, 0}, {0, 0, 0}};
 
 public: // Internal data for loader
-    std::pmr::vector<glm::mat4> m_OffsetMatrices;
-    std::pmr::vector<std::pmr::string> m_NodeNames;
-    std::pmr::vector<int> m_NodeParents;
+    std::vector<glm::mat4> m_OffsetMatrices;
+    std::vector<std::string> m_NodeNames;
+    std::vector<int> m_NodeParents;
 
     // Loading data
     PendingModelData m_PendingData;
-    std::pmr::unordered_map<std::pmr::string, std::shared_ptr<Texture>> m_EmbeddedTextures;
+    std::unordered_map<std::string, std::shared_ptr<Texture>> m_EmbeddedTextures;
     bool m_HasPendingData = false;
 };
-} // namespace CHEngine
+
+inline int ModelAsset::GetAnimationCount() const
+{
+    return (int)m_Animations.size();
+}
+} // namespace Chained
 
 #endif // CH_MODEL_ASSET_H

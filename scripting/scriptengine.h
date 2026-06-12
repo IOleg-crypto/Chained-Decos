@@ -2,30 +2,21 @@
 #define CH_SCRIPT_ENGINE_H
 
 #include "scriptengine_services.h"
-#include "engine/core/engine_service.h"
 #include <Coral/Assembly.hpp>
 #include <string>
 #include <unordered_map>
 
-namespace CHEngine
+namespace Chained
 {
 
 class Scene;
 
-// Engine service that owns the scripting host, type registry, and runtime state.
-// Lifecycle is controlled by the EngineService pattern (OnInit -> OnShutdown).
-class ScriptEngine : public EngineService
+class ScriptEngine
 {
 public:
-    explicit ScriptEngine(bool enableScripting = true);
-    ~ScriptEngine() override;
-
-    // Prevent copying to maintain ownership semantics
-    ScriptEngine(const ScriptEngine&) = delete;
-    ScriptEngine& operator=(const ScriptEngine&) = delete;
-
-    void Init();
-    void Deinit();
+    static void Init(bool enableScripting = true);
+    static void Shutdown();
+    static ScriptEngine& Get();
 
     // Load (or reload) the game script DLL and refresh the type registry.
     bool LoadAppAssembly(const std::string& filepath);
@@ -56,15 +47,24 @@ public:
         return m_Host.IsInitialized() && !m_Host.IsReloadInProgress();
     }
 
-protected:
-    void OnInit() override;
-    void OnShutdown() override;
-
 private:
+    explicit ScriptEngine(bool enableScripting = true);
+    virtual ~ScriptEngine();
+
+    // Prevent copying to maintain ownership semantics
+    ScriptEngine(const ScriptEngine&) = delete;
+    ScriptEngine& operator=(const ScriptEngine&) = delete;
+
+    void OnInit();
+    void OnShutdown();
+
+protected:
     ScriptHost m_Host;
     ScriptRegistry m_Registry;
     bool m_EnableScripting = true;
+
+    static ScriptEngine* s_Instance;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 #endif // CH_SCRIPT_ENGINE_H

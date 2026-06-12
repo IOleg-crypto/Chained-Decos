@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cctype>
 
-namespace CHEngine
+namespace Chained
 {
 ConsolePanel::ConsolePanel()
 {
@@ -77,9 +77,8 @@ void ConsolePanel::OnImGuiRender(bool readOnly)
             std::lock_guard<std::mutex> lock(m_LogMutex);
             m_VisibleIndices.clear();
             std::string filterStr = m_FilterBuffer;
-            std::transform(filterStr.begin(), filterStr.end(), filterStr.begin(), [](unsigned char ch) {
-                return static_cast<char>(std::tolower(ch));
-            });
+            std::transform(filterStr.begin(), filterStr.end(), filterStr.begin(),
+                           [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
 
             for (int i = 0; i < (int)m_Messages.size(); i++)
             {
@@ -91,9 +90,8 @@ void ConsolePanel::OnImGuiRender(bool readOnly)
                 if (!filterStr.empty())
                 {
                     std::string msgLower = m_Messages[i].message;
-                    std::transform(msgLower.begin(), msgLower.end(), msgLower.begin(), [](unsigned char ch) {
-                        return static_cast<char>(std::tolower(ch));
-                    });
+                    std::transform(msgLower.begin(), msgLower.end(), msgLower.begin(),
+                                   [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
                     if (msgLower.find(filterStr) == std::string::npos)
                     {
                         continue;
@@ -174,4 +172,4 @@ void ConsolePanel::Clear()
     m_Messages.clear();
 }
 
-} // namespace CHEngine
+} // namespace Chained

@@ -1,8 +1,8 @@
 #include "opengl_framebuffer.h"
-#include "engine/core/ch_assert.h"
+#include "engine/foundation/engine_assert.h"
 #include <glad/gl.h>
 
-namespace CHEngine
+namespace Chained
 {
 OpenGLFramebuffer::OpenGLFramebuffer(const FramebufferSpecification& spec)
     : m_Specification(spec)

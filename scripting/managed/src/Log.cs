@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Coral.Managed.Interop;
 
-namespace CHEngine
+namespace Chained
 {
 
 /// <summary>Logging helpers.</summary>
@@ -47,4 +47,4 @@ public static class Log
 }
 
 }
- // namespace CHEngine
+ // namespace Chained

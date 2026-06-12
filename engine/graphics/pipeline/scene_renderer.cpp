@@ -1,20 +1,17 @@
 #include "scene_renderer.h"
+#include "engine/assets/asset.h"
+#include "engine/assets/types/model_asset.h"
+#include "engine/assets/types/shader_asset.h"
+#include "engine/assets/types/texture_asset.h"
 #include "engine/assets/asset_manager.h"
-#include "engine/audio/audio.h"
-#include "engine/core/ch_assert.h"
-#include "engine/core/profiler.h"
-#include "engine/core/service_locator.h"
 #include "engine/graphics/api/renderer_api.h"
-#include "engine/graphics/assets/model_asset.h"
-#include "engine/graphics/assets/shader_asset.h"
-#include "engine/graphics/assets/texture_asset.h"
-#include "engine/graphics/loaders/model_loader.h"
+#include "engine/graphics/pipeline/geometry_generator.h"
 #include "engine/graphics/pipeline/frustum.h"
 #include "engine/graphics/pipeline/render_command.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/pipeline/texture_utility.h"
-#include "engine/graphics/texture_system.h"
-#include "engine/physics/physics.h"
+#include "engine/graphics/pipeline/renderer2d.h"
+#include "engine/graphics/pipeline/renderer3d.h"
 #include "engine/scene/components/animation_component.h"
 #include "engine/scene/components/camera_component.h"
 #include "engine/scene/components/light_component.h"
@@ -23,8 +20,8 @@
 #include "engine/scene/components/primitive_component.h"
 #include "engine/scene/components/shader_component.h"
 #include "engine/scene/components/sprite_component.h"
-#include "engine/scene/components/tag_component.h"
 #include "engine/scene/components/transform_component.h"
+#include "engine/scene/entity.h"
 #include "imgui.h"
 #include <GLFW/glfw3.h>
 #include <algorithm>
@@ -32,25 +29,40 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/quaternion.hpp>
-#include <unordered_set>
 
-#include "engine/scene/components/component_utils.h"
+#include "engine/graphics/pipeline/passes/geometry_pass.h"
+#include "engine/graphics/pipeline/passes/skybox_pass.h"
+#include "engine/graphics/pipeline/passes/shadow_pass.h"
+#include "engine/graphics/pipeline/passes/composite_pass.h"
 
-namespace CHEngine
+
+
+namespace Chained
 {
 
-glm::mat4 SceneRenderer::GetWorldTransform(entt::registry& registry, entt::entity entity)
+// --- Obsolete local utilities removed ---
+
+static glm::vec4 ColorToVec4(const Color& c)
 {
-    if (registry.all_of<TransformComponent>(entity))
-    {
-        return registry.get<TransformComponent>(entity).WorldTransform;
-    }
-    return glm::mat4(1.0f);
+    return { c.r / 255.0f, c.g / 255.0f, c.b / 255.0f, c.a / 255.0f };
 }
 
-glm::vec3 SceneRenderer::GetWorldPosition(entt::registry& registry, entt::entity entity)
+SceneRenderer::SceneRenderer()
 {
-    return glm::vec3(GetWorldTransform(registry, entity)[3]);
+    m_Lighting.LightSSBO = StorageBuffer::Create(sizeof(RenderLight) * LightingData::MaxLights);
+    m_Lighting.LightsDirty = true;
+
+    AddPass(std::make_unique<ShadowPass>());
+    AddPass(std::make_unique<SkyboxPass>());
+    AddPass(std::make_unique<GeometryPass>());
+    AddPass(std::make_unique<CompositePass>());
+
+}
+
+void SceneRenderer::AddPass(std::unique_ptr<IRenderPass> pass)
+{
+    pass->Init();
+    m_RenderPasses.push_back(std::move(pass));
 }
 
 std::optional<Camera3D> SceneRenderer::GetActiveCamera(entt::registry& reg)
@@ -85,7 +97,7 @@ std::optional<Camera3D> SceneRenderer::GetActiveCamera(entt::registry& reg)
             activeCamera.Up = glm::normalize(worldUp - activeCamera.Position);
 
             // SceneCamera stores FOV in radians, raylib expects degrees for Camera3D
-            activeCamera.Fovy = glm::degrees(camera.Camera.GetPerspectiveVerticalFOV());
+            activeCamera.FovY = glm::degrees(camera.Camera.GetPerspectiveVerticalFOV());
             activeCamera.Projection = (int)camera.Camera.GetProjectionType();
 
             return activeCamera;
@@ -122,162 +134,167 @@ void SceneRenderer::RenderScene(entt::registry& registry, const SceneSettings& s
 
     if (environment)
     {
-        ServiceLocator::Get<Renderer>().ApplyEnvironment(environment->GetSettings());
+        const auto& envSettings = environment->GetSettings();
+        m_Lighting.CurrentLighting = envSettings.Lighting;
+        m_Lighting.CurrentFog = envSettings.Fog;
+        m_CurrentEnv = envSettings;
     }
 
-    ServiceLocator::Get<Renderer>().UpdateTime(Timestep((float)glfwGetTime()));
+    Renderer::UpdateTime(Timestep((float)glfwGetTime()));
 
     m_CurrentStats = {};
     m_CurrentStats.EntityCount = (uint32_t)registry.storage<entt::entity>().size();
 
-    // Update Audio listener
-    if (ServiceLocator::Has<Audio>())
+
+    Renderer::BeginScene(camera, nearClip, farClip);
+
+    // Update Light SSBO
+    if (m_Lighting.LightsDirty && m_Lighting.LightSSBO)
     {
-        glm::vec3 forward = camera.Target - camera.Position;
-        if (glm::length2(forward) > 0.0001f)
-        {
-            ServiceLocator::Get<Audio>().SetListenerPosition(camera.Position, glm::normalize(forward), camera.Up);
-        }
+        m_Lighting.LightSSBO->SetData(m_Lighting.Lights, sizeof(RenderLight) * LightingData::MaxLights);
+        m_Lighting.LightsDirty = false;
+    }
+    if (m_Lighting.LightSSBO)
+    {
+        m_Lighting.LightSSBO->BindBase(0);
     }
 
-    ServiceLocator::Get<Renderer>().BeginScene(camera, nearClip, farClip);
-    {
-        if (environment)
-        {
-            const auto& envSettings = environment->GetSettings();
-            const auto& settings = envSettings.Skybox;
-            if (!settings.TexturePath.empty())
-            {
-                auto& am = ServiceLocator::Get<AssetManager>();
-                auto handle = am.ResolveToHandle(settings.TexturePath, TextureAsset::GetStaticType());
-                auto textureAsset = am.Get<TextureAsset>(handle);
-                if (textureAsset && textureAsset->IsReady() && textureAsset->GetTexture())
-                {
-                    int skyboxMode = std::clamp(settings.Mode, 0, 2);
-                    auto texture = textureAsset->GetTexture();
-                    uint32_t texId = texture->GetRendererID();
-                    auto& renderer = ServiceLocator::Get<Renderer>();
-                    auto& rd = renderer.GetData();
+    RenderContext ctx {
+        registry,
+        settings,
+        camera,
+        options,
+        nearClip,
+        farClip,
+        this
+    };
 
-                    if (skyboxMode == 2)
-                    {
-                        if (!rd.Skybox.CachedCubemap || rd.Skybox.CachedCubemapPath != settings.TexturePath)
-                        {
-                            auto genShader =
-                                rd.Shaders->LoadOrGet("CubemapGen", "engine/resources/shaders/cubemap.chshader");
-                            if (genShader && rd.Skybox.SkyboxCubeModel && !rd.Skybox.SkyboxCubeModel->Meshes.empty())
-                            {
-                                rd.Skybox.CachedCubemap = TextureUtility::GenTextureCubemap(
-                                    genShader->GetShader(), texId, 1024, rd.Skybox.SkyboxCubeModel->Meshes[0]);
-                                rd.Skybox.CachedCubemapPath = settings.TexturePath;
-                                rd.Skybox.SourceTextureId = texId;
-                            }
-                        }
-                        if (rd.Skybox.CachedCubemap)
-                        {
-                            texId = rd.Skybox.CachedCubemap->GetRendererID();
-                        }
-                    }
-                    renderer.DrawSkybox(texId, skyboxMode, textureAsset->IsHDR(), settings.Exposure,
-                                        settings.Brightness, settings.Contrast, camera, settings.VFlipped);
-                }
-            }
-        }
-
-        RenderModels(registry, settings, camera, nearClip, farClip);
-        RenderSprites(registry, camera);
-        RenderDebug(registry, settings, camera, options);
-        if (options.ShowEditorIcons)
-        {
-            RenderEditorIcons(registry, settings, camera);
-        }
-    }
-    ServiceLocator::Get<Renderer>().EndScene();
-
-    Profiler::UpdateStats(m_CurrentStats);
-}
-
-void SceneRenderer::RenderModels(entt::registry& registry, const SceneSettings& settings, const Camera3D& camera,
-                                 float nearClip, float farClip)
-{
-    Frustum frustum;
-    {
-        auto& renderer = ServiceLocator::Get<Renderer>();
-        float w = (float)renderer.GetViewportWidth();
-        float h = (float)renderer.GetViewportHeight();
-        float aspect = (h > 0) ? (float)w / (float)h : 1.0f;
-        glm::mat4 view = glm::lookAt(camera.Position, camera.Target, camera.Up);
-        glm::mat4 proj =
-            (camera.Projection == 0)
-                ? glm::perspective(glm::radians(camera.Fovy), aspect, nearClip, farClip)
-                : glm::ortho(-aspect * camera.Fovy, aspect * camera.Fovy, -camera.Fovy, camera.Fovy, nearClip, farClip);
-        frustum = FromMatrix(proj * view);
-    }
+    float w = (float)Renderer::GetViewportWidth();
+    float h = (float)Renderer::GetViewportHeight();
+    float aspect = (h > 0) ? (float)w / (float)h : 1.0f;
+    glm::mat4 view = glm::lookAt(camera.Position, camera.Target, camera.Up);
+    glm::mat4 proj =
+        (camera.Projection == 0)
+            ? glm::perspective(glm::radians(camera.FovY), aspect, nearClip, farClip)
+            : glm::ortho(-aspect * camera.FovY, aspect * camera.FovY, -camera.FovY, camera.FovY, nearClip, farClip);
+    Frustum frustum = FromMatrix(proj * view);
 
     PrepareLights(registry, frustum);
 
     m_OpaqueQueue.clear();
     m_TransparentQueue.clear();
 
-    RenderCommand::SetBlendMode(true);
-    RenderCommand::SetBlendFunc(RendererAPI::BlendFactor::SrcAlpha, RendererAPI::BlendFactor::OneMinusSrcAlpha);
-
     CollectAndRenderItems(registry, frustum, camera.Position);
 
-    // Sort transparent queue back-to-front
+    // Sort transparent queue back-to-front once for all passes
     std::sort(m_TransparentQueue.begin(), m_TransparentQueue.end(),
-              [](const RenderItem& a, const RenderItem& b) { return a.Distance > b.Distance; });
+              [](const auto& a, const auto& b) { return a.Distance > b.Distance; });
 
-    // 1. Opaque Pass
-    for (const auto& item : m_OpaqueQueue)
+    for (auto& pass : m_RenderPasses)
     {
-        DrawModel(item.Asset, item.Transform, item.Materials, item.BoneMatrices, item.ShaderOverride,
-                  item.CustomUniforms, RenderPassStage::Opaque);
+        pass->Execute(ctx);
     }
 
-    // 2. Transparent Pass
-    RenderCommand::DisableDepthMask();
-    for (const auto& item : m_TransparentQueue)
+    RenderSprites(registry, camera);
+    RenderDebug(registry, settings, camera, options);
+    if (options.ShowEditorIcons)
     {
-        DrawModel(item.Asset, item.Transform, item.Materials, item.BoneMatrices, item.ShaderOverride,
-                  item.CustomUniforms, RenderPassStage::Transparent);
+        RenderEditorIcons(registry, settings, camera);
     }
-    RenderCommand::EnableDepthMask();
-    RenderCommand::SetBlendMode(false);
+
+    Renderer::EndScene();
+
+
+    Profiler::UpdateStats(m_CurrentStats);
 }
+
+void SceneRenderer::RenderSprites(entt::registry& registry, const Camera3D& camera)
+{
+    CH_PROFILE_FUNCTION();
+    auto view = registry.view<TransformComponent, SpriteComponent>();
+
+    struct SpriteEntry
+    {
+        entt::entity Entity;
+        int ZOrder;
+    };
+
+    std::vector<SpriteEntry> sortedSprites;
+    for (auto entity : view)
+    {
+        sortedSprites.push_back(SpriteEntry{entity, registry.get<SpriteComponent>(entity).ZOrder});
+    }
+
+    std::sort(sortedSprites.begin(), sortedSprites.end(), [](const SpriteEntry& a, const SpriteEntry& b) {
+        if (a.ZOrder != b.ZOrder)
+        {
+            return a.ZOrder < b.ZOrder;
+        }
+        return a.Entity < b.Entity;
+    });
+
+    for (const auto& entry : sortedSprites)
+    {
+        auto& transform = registry.get<TransformComponent>(entry.Entity);
+        auto& sprite = registry.get<SpriteComponent>(entry.Entity);
+
+        if (sprite.TexturePath.empty())
+        {
+            continue;
+        }
+
+        auto handle = AssetManager::Get().ImportAsset(sprite.TexturePath);
+        auto textureAsset = AssetManager::Get().GetAsset<TextureAsset>(handle);
+        if (textureAsset && textureAsset->IsReady() && textureAsset->GetTexture())
+        {
+            Renderer2D::DrawSprite(textureAsset->GetTexture()->GetRendererID(), transform.WorldTransform, ColorToVec4(sprite.Tint), sprite.FlipX, sprite.FlipY);
+        }
+    }
+}
+
 
 void SceneRenderer::PrepareLights(entt::registry& registry, const Frustum& frustum)
 {
-    ServiceLocator::Get<Renderer>().ClearLights();
+    for (auto& l : m_Lighting.Lights) {
+        l.enabled = 0;
+    }
+    m_Lighting.LightCount = 0;
+    m_Lighting.LightsDirty = true;
+    
     int lightCount = 0;
     auto view = registry.view<LightComponent>();
     for (auto entity : view)
     {
         auto& light = view.get<LightComponent>(entity);
-        glm::vec3 worldPos = GetWorldPosition(registry, entity);
-        // Except frustum
+        glm::vec3 worldPos = Entity(entity, &registry).GetWorldPosition();
         if (light.Type != LightType::Directional && !IsSphereVisible(frustum, worldPos, light.Radius))
         {
             continue;
         }
 
         RenderLight rl;
-        rl.color = {light.LightColor.r / 255.0f, light.LightColor.g / 255.0f, light.LightColor.b / 255.0f,
-                    light.LightColor.a / 255.0f};
         rl.position = worldPos;
-        rl.intensity = (light.Intensity > 0.0f) ? light.Intensity : 0.0f;
+        rl.color = ColorToVec4(light.LightColor);
+        rl.intensity = light.Intensity;
         rl.radius = light.Radius;
         rl.type = (int)light.Type;
+        rl.direction = Entity(entity, &registry).GetForward();
+        rl.innerCutoff = light.InnerCutoff;
+        rl.outerCutoff = light.OuterCutoff;
         rl.enabled = 1;
-        ServiceLocator::Get<Renderer>().SetLight(lightCount++, rl);
+
+        if (lightCount >= LightingData::MaxLights) break;
+        
+        m_Lighting.Lights[lightCount++] = rl;
+        m_Lighting.LightsDirty = true;
     }
-    ServiceLocator::Get<Renderer>().SetLightCount(lightCount);
+    m_Lighting.LightCount = lightCount;
 }
 
 void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustum& frustum, const glm::vec3& cameraPos)
 {
     auto meshView = registry.view<TransformComponent, ModelComponent>();
-    auto& am = ServiceLocator::Get<AssetManager>();
+    auto* assets = &AssetManager::Get();
 
     for (auto entity : meshView)
     {
@@ -287,8 +304,8 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
             continue;
         }
 
-        auto handle = am.ResolveToHandle(mesh.ModelPath, ModelAsset::GetStaticType());
-        auto modelAsset = am.Get<ModelAsset>(handle);
+        auto handle = assets->ImportAsset(mesh.ModelPath);
+        auto modelAsset = assets->GetAsset<ModelAsset>(handle);
         if (!modelAsset)
         {
             continue;
@@ -342,16 +359,16 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
             auto& sc = registry.get<ShaderComponent>(entity);
             if (sc.Enabled && !sc.ShaderPath.empty())
             {
-                auto handle = am.ResolveToHandle(sc.ShaderPath, ShaderAsset::GetStaticType());
-                shaderOver = am.Get<ShaderAsset>(handle);
+                auto handle = assets ? assets->ImportAsset(sc.ShaderPath) : AssetHandle(0);
+                shaderOver = assets ? assets->GetAsset<ShaderAsset>(handle) : nullptr;
                 uniforms = sc.Uniforms;
             }
         }
 
-        std::vector<MaterialSlot> materials = mesh.Materials;
-        if (registry.all_of<MaterialComponent>(entity))
+        std::vector<Material> materials;
+        if (registry.all_of<ModelComponent>(entity)) // Default from asset if not overridden
         {
-            materials = registry.get<MaterialComponent>(entity).Materials;
+            materials = modelAsset->GetMaterials();
         }
 
         RenderItem item;
@@ -424,7 +441,7 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
                 p.Slices = primitive.Slices;
                 p.Stacks = primitive.Stacks;
                 p.Dimensions = primitive.Dimensions;
-                Model m = ModelLoader::GenerateProceduralModel(paths[idx], p);
+                Model m = GeometryGenerator::GenerateProceduralModel(paths[idx], p);
                 if (!m.Meshes.empty())
                 {
                     if (!primitive.Asset)
@@ -459,14 +476,15 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
             auto& sc = registry.get<ShaderComponent>(entity);
             if (sc.Enabled && !sc.ShaderPath.empty())
             {
-                auto handle = am.ResolveToHandle(sc.ShaderPath, ShaderAsset::GetStaticType());
-                shaderOver = am.Get<ShaderAsset>(handle);
+                auto handle = assets ? assets->ImportAsset(sc.ShaderPath) : AssetHandle(0);
+                shaderOver = assets ? assets->GetAsset<ShaderAsset>(handle) : nullptr;
                 uniforms = sc.Uniforms;
             }
         }
         RenderItem item;
         item.Asset = primitive.Asset.get();
         item.Transform = transform.WorldTransform;
+        item.Materials = primitive.Asset->GetMaterials();
         item.ShaderOverride = shaderOver.get();
         item.CustomUniforms = uniforms;
 
@@ -506,32 +524,33 @@ void SceneRenderer::DrawAnimatedEntities(const std::vector<AnimatedEntry>& anima
     for (const auto& entry : animatedEntries)
     {
         std::vector<glm::mat4> boneMatrices;
-        if (entry.animation.CurrentAnimationIndex >= 0 && entry.asset)
+        if (entry.Animation.CurrentAnimationIndex >= 0 && entry.Asset)
         {
             boneMatrices =
-                entry.asset->GetBoneMatrices(entry.animation.CurrentAnimationIndex, entry.animation.CurrentFrame);
+                entry.Asset->GetBoneMatrices(entry.Animation.CurrentAnimationIndex, entry.Animation.CurrentFrame);
         }
-        DrawModel(entry.asset, entry.worldTransform, entry.materials, boneMatrices, entry.shaderOverride,
-                  entry.customUniforms);
+        DrawModel(entry.Asset, entry.WorldTransform, boneMatrices, {}, entry.ShaderOverride,
+                  entry.CustomUniforms);
     }
 }
 
-void SceneRenderer::DrawModel(ModelAsset* modelAsset, const glm::mat4& transform,
-                              const std::vector<MaterialSlot>& materialSlotOverrides,
-                              const std::vector<glm::mat4>& boneMatrices, ShaderAsset* shaderOverride,
-                              const std::vector<ShaderUniform>& shaderUniformOverrides, RenderPassStage pass)
+void SceneRenderer::DrawModel(Chained::ModelAsset* modelAsset, const glm::mat4& transform,
+                               const std::vector<glm::mat4>& boneMatrices,
+                               const std::vector<Chained::Material>& materials,
+                               Chained::ShaderAsset* shaderOverride,
+                               const std::vector<Chained::ShaderUniform>& shaderUniformOverrides,
+                               Chained::RenderPassStage pass)
 {
-    if (!modelAsset || modelAsset->GetState() != AssetState::Ready)
+    if (!modelAsset || modelAsset->GetState() != Chained::AssetState::Ready)
     {
         return;
     }
 
-    auto& model = modelAsset->GetModel();
-    auto& renderer = ServiceLocator::Get<Renderer>();
-    auto activeShader = shaderOverride ? shaderOverride
-                                       : (renderer.GetShaderLibrary().Exists("Lighting")
-                                              ? renderer.GetShaderLibrary().Get("Lighting").get()
-                                              : nullptr);
+        auto& model = modelAsset->GetModel();
+        auto activeShader = shaderOverride ? shaderOverride
+                            : (Renderer::GetShaderLibrary().Exists("Lighting")
+                                ? Renderer::GetShaderLibrary().Get("Lighting").get()
+                                : nullptr);
 
     if (!activeShader || !activeShader->GetShader())
     {
@@ -560,7 +579,7 @@ void SceneRenderer::DrawModel(ModelAsset* modelAsset, const glm::mat4& transform
         m_CurrentStats.DrawCalls++;
         m_CurrentStats.MeshCount++;
 
-        Material material = ResolveMaterialForMesh(i, model, materialSlotOverrides, modelAsset);
+        Material material = ResolveMaterialForMesh(i, model, materials, modelAsset);
 
         bool isTransparent = material.Transparent || material.AlbedoColor.a < 0.99f;
         if (pass == RenderPassStage::Opaque && isTransparent)
@@ -573,7 +592,7 @@ void SceneRenderer::DrawModel(ModelAsset* modelAsset, const glm::mat4& transform
         }
 
         BindShaderUniforms(activeShader, boneMatrices, shaderUniformOverrides);
-        BindMaterialUniforms(activeShader, material, i, model, materialSlotOverrides);
+        BindMaterialUniforms(activeShader, material, i, model);
 
         uint32_t originalID = material.ShaderID;
         material.ShaderID = activeShader->GetShader()->GetRendererID();
@@ -582,18 +601,24 @@ void SceneRenderer::DrawModel(ModelAsset* modelAsset, const glm::mat4& transform
         activeShader->GetShader()->Bind();
         activeShader->GetShader()->SetInt("useSkinning", useSkinning ? 1 : 0);
 
-        renderer.DrawMesh(model.Meshes[i], material, useSkinning ? transform : transform * inst.localTransform);
+        Renderer3D::DrawMesh(model.Meshes[i], material, useSkinning ? transform : transform * inst.localTransform);
         material.ShaderID = originalID;
     }
 }
 
-Material SceneRenderer::ResolveMaterialForMesh(int meshIndex, const Model& model,
-                                               const std::vector<MaterialSlot>& materialSlotOverrides,
-                                               ModelAsset* modelAsset)
+Chained::Material SceneRenderer::ResolveMaterialForMesh(int meshIndex, const Chained::Model& model,
+                                               const std::vector<Chained::Material>& materials,
+                                               Chained::ModelAsset* modelAsset)
 {
     if (meshIndex < 0 || meshIndex >= (int)model.Meshes.size())
     {
-        return Material();
+        return {};
+    }
+
+    // Use overrides if available
+    if (meshIndex < (int)materials.size())
+    {
+        return materials[meshIndex];
     }
 
     int matIdx = model.Meshes[meshIndex].MaterialIndex;
@@ -603,59 +628,22 @@ Material SceneRenderer::ResolveMaterialForMesh(int meshIndex, const Model& model
     }
 
     Material material = model.Materials[matIdx];
-    for (const auto& slot : materialSlotOverrides)
-    {
-        bool match =
-            (slot.Target == MaterialSlotTarget::MeshIndex && slot.Index == meshIndex) ||
-            (slot.Target == MaterialSlotTarget::MaterialIndex && slot.Index == model.Meshes[meshIndex].MaterialIndex);
-        if (match)
-        {
-            material.AlbedoColor = {slot.Material.AlbedoColor.r / 255.0f, slot.Material.AlbedoColor.g / 255.0f,
-                                    slot.Material.AlbedoColor.b / 255.0f, slot.Material.AlbedoColor.a / 255.0f};
-            if (slot.Material.OverrideAlbedo && slot.Material.AlbedoHandle != AssetHandle(0))
-            {
-                material.AlbedoMap = 0;
-                material.AlbedoHandle = slot.Material.AlbedoHandle;
-            }
-            if (slot.Material.OverrideNormal && slot.Material.NormalHandle != AssetHandle(0))
-            {
-                material.NormalMap = 0;
-                material.NormalHandle = slot.Material.NormalHandle;
-            }
-            if (slot.Material.OverrideMetallicRoughness && slot.Material.MetallicRoughnessHandle != AssetHandle(0))
-            {
-                material.MetallicRoughnessMap = 0;
-                material.MetallicRoughnessHandle = slot.Material.MetallicRoughnessHandle;
-            }
-            if (slot.Material.OverrideOcclusion && slot.Material.OcclusionHandle != AssetHandle(0))
-            {
-                material.OcclusionMap = 0;
-                material.OcclusionHandle = slot.Material.OcclusionHandle;
-            }
-            if (slot.Material.OverrideEmissive && slot.Material.EmissiveHandle != AssetHandle(0))
-            {
-                material.EmissiveMap = 0;
-                material.EmissiveHandle = slot.Material.EmissiveHandle;
-            }
-            material.EmissiveIntensity = slot.Material.EmissiveIntensity;
-            material.Metalness = slot.Material.Metalness;
-            material.Roughness = slot.Material.Roughness;
-            material.Transparent = slot.Material.Transparent;
-            material.Alpha = slot.Material.Alpha;
-            break;
-        }
-    }
     return material;
 }
 
-void SceneRenderer::BindShaderUniforms(ShaderAsset* shaderAsset, const std::vector<glm::mat4>& boneMatrices,
-                                       const std::vector<ShaderUniform>& overrides)
+void SceneRenderer::BindShaderUniforms(Chained::ShaderAsset* shaderAsset, const std::vector<glm::mat4>& boneMatrices,
+                                        const std::vector<Chained::ShaderUniform>& shaderUniformOverrides)
 {
+    if (!shaderAsset || !shaderAsset->GetShader())
+    {
+        return;
+    }
+
     auto shader = shaderAsset->GetShader();
     shader->Bind();
 
-    auto& rd = ServiceLocator::Get<Renderer>().GetData();
-    const auto& lighting = rd.Lighting.CurrentLighting;
+    auto& rd = Renderer::GetData();
+    const auto& lighting = m_Lighting.CurrentLighting;
 
     glm::vec4 lightColor = {lighting.LightColor.r / 255.0f, lighting.LightColor.g / 255.0f,
                             lighting.LightColor.b / 255.0f, lighting.LightColor.a / 255.0f};
@@ -669,15 +657,26 @@ void SceneRenderer::BindShaderUniforms(ShaderAsset* shaderAsset, const std::vect
     shader->SetVec4("lightColor", lightColor);
     shader->SetFloat("ambient", lighting.Ambient);
     shader->SetVec4("skyAmbientColor", skyColor);
-    shader->SetInt("uLightCount", rd.LightCount);
+    shader->SetInt("uLightCount", m_Lighting.LightCount);
     shader->SetFloat("uExposure", lighting.Exposure);
     shader->SetFloat("uGamma", lighting.Gamma);
+
+    // Apply Fog
+    const auto& fog = m_Lighting.CurrentFog;
+    int fogEnabled = fog.Enabled ? 1 : 0;
+    glm::vec4 fogColor = {fog.FogColor.r / 255.0f, fog.FogColor.g / 255.0f, fog.FogColor.b / 255.0f, fog.FogColor.a / 255.0f};
+    shader->SetInt("fogEnabled", fogEnabled);
+    shader->SetVec4("fogColor", fogColor);
+    shader->SetFloat("fogDensity", fog.Density);
+    shader->SetFloat("fogStart", fog.Start);
+    shader->SetFloat("fogEnd", fog.End);
+    shader->SetInt("fogMode", (int)fog.Mode);
 
     if (!boneMatrices.empty())
     {
         shader->SetMatrices("boneMatrices", boneMatrices.data(), std::min((int)boneMatrices.size(), 128));
     }
-    for (const auto& u : overrides)
+    for (const auto& u : shaderUniformOverrides)
     {
         if (u.Type == 0)
         {
@@ -699,17 +698,17 @@ void SceneRenderer::BindShaderUniforms(ShaderAsset* shaderAsset, const std::vect
 }
 
 void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Material& material, int meshIndex,
-                                         const Model& model, const std::vector<MaterialSlot>& overrides)
+                                         const Model& model)
 {
     auto shader = shaderAsset->GetShader();
     shader->Bind();
 
-    auto resolveMap = [](uint32_t currentId, AssetHandle handle) -> uint32_t {
+    auto resolveMap = [this](uint32_t currentId, AssetHandle handle) -> uint32_t {
         if (currentId > 0)
         {
             return currentId;
         }
-        auto tex = ServiceLocator::Get<AssetManager>().Get<TextureAsset>(handle);
+        auto tex = AssetManager::Get().GetAsset<TextureAsset>(handle);
         if (tex && tex->IsReady() && tex->GetTexture())
         {
             return tex->GetTexture()->GetRendererID();
@@ -782,7 +781,7 @@ void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Materia
     }
 
     // 6. Emissive (texture5, Unit 5)
-    if (emissiveMap > 1)
+    if (emissiveMap > 0)
     {
         RenderCommand::SetTexture(5, emissiveMap);
         shader->SetInt("texture5", 5);
@@ -829,10 +828,7 @@ void SceneRenderer::RenderDebug(entt::registry& registry, const SceneSettings& s
         RenderCommand::SetPolygonMode(RendererAPI::PolygonMode::Fill);
     }
 
-    // if (options.DrawGrid && scene->GetSettings().Mode == BackgroundMode::Environment3D)
-    // {
-    //     Renderer::Get().DrawInfiniteGrid(camera, scene->GetSettings().Grid.Spacing, {0.8f, 0.8f, 0.8f, 1.0f});
-    // }
+
 
     if (options.ShowDebugColliders)
     {
@@ -842,11 +838,6 @@ void SceneRenderer::RenderDebug(entt::registry& registry, const SceneSettings& s
     if (options.ShowDebugCollisionModelBox)
     {
         DrawCollisionModelBoxDebug(registry);
-    }
-
-    if (options.ShowDebugSpawnZones)
-    {
-        DrawSpawnDebug(registry);
     }
 
     // Restore state
@@ -912,20 +903,18 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
 
                 if (collider.Type == ColliderType::Box)
                 {
-                    ServiceLocator::Get<Renderer>().DrawCubeWires(baseTransform, collider.Size * entityScale, color,
-                                                                  isWireframe);
+                    DebugRenderer::DrawCubeWires(baseTransform, collider.Size * entityScale, color, isWireframe);
                 }
                 else if (collider.Type == ColliderType::Sphere)
                 {
                     // For sphere, we use the maximum component of the entity scale for the overall radius multiplier
                     float maxScale = glm::max(entityScale.x, glm::max(entityScale.y, entityScale.z));
-                    ServiceLocator::Get<Renderer>().DrawSphereWires(baseTransform, collider.Radius * maxScale, color,
-                                                                    isWireframe);
+                    DebugRenderer::DrawSphereWires(baseTransform, collider.Radius * maxScale, color, isWireframe);
                 }
                 else if (collider.Type == ColliderType::Capsule)
                 {
                     float maxScale = glm::max(entityScale.x, glm::max(entityScale.y, entityScale.z));
-                    ServiceLocator::Get<Renderer>().DrawCapsuleWires(
+                    DebugRenderer::DrawCapsuleWires(
                         baseTransform, collider.Radius * maxScale, collider.Height * entityScale.y, color, isWireframe);
                 }
             }
@@ -937,9 +926,8 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
                 if (modelHandle == 0 && collider.AutoCalculate && registry.all_of<ModelComponent>(entity))
                 {
                     auto& mc = registry.get<ModelComponent>(entity);
-                    auto handle =
-                        ServiceLocator::Get<AssetManager>().ResolveToHandle(mc.ModelPath, ModelAsset::GetStaticType());
-                    auto asset = ServiceLocator::Get<AssetManager>().Get<ModelAsset>(handle);
+                    auto handle = AssetManager::Get().ImportAsset(mc.ModelPath);
+                    auto asset = AssetManager::Get().GetAsset<ModelAsset>(handle);
                     if (asset)
                     {
                         modelHandle = asset->GetID();
@@ -948,8 +936,8 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
 
                 if (modelHandle != 0)
                 {
-                    auto modelAsset = ServiceLocator::Get<AssetManager>().Get<ModelAsset>(modelHandle);
-                    if (modelAsset && modelAsset->IsReady())
+                    auto modelAsset = AssetManager::Get().GetAsset<ModelAsset>(modelHandle);
+                    if (modelAsset && modelAsset->GetState() == AssetState::Ready)
                     {
                         const auto& model = modelAsset->GetModel();
                         const auto& instances = modelAsset->GetInstances();
@@ -958,7 +946,7 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
                         {
                             if (inst.meshIndex >= 0 && inst.meshIndex < (int)model.Meshes.size())
                             {
-                                ServiceLocator::Get<Renderer>().DrawMeshWire(
+                                DebugRenderer::DrawMeshWire(
                                     model.Meshes[inst.meshIndex], color, transform.WorldTransform * inst.localTransform,
                                     isWireframe);
                             }
@@ -1005,7 +993,7 @@ void SceneRenderer::DrawCollisionModelBoxDebug(entt::registry& registry)
 
         if (collider.ModelHandle != 0)
         {
-            auto model = ServiceLocator::Get<AssetManager>().Get<ModelAsset>(collider.ModelHandle);
+            auto model = AssetManager::Get().GetAsset<ModelAsset>(collider.ModelHandle);
             if (model && model->IsReady())
             {
                 const BoundingBox& localBox = model->GetBoundingBox();
@@ -1015,177 +1003,35 @@ void SceneRenderer::DrawCollisionModelBoxDebug(entt::registry& registry)
                 // Note: transform.WorldTransform already includes entity scale,
                 // but the localBox is also scaled if the importer applied scale?
                 // Usually localBox is untransformed.
-                ServiceLocator::Get<Renderer>().DrawCubeWires(
+                DebugRenderer::DrawCubeWires(
                     transform.WorldTransform * glm::translate(glm::mat4(1.0f), center), size, color);
             }
         }
     }
 }
 
-void SceneRenderer::DrawSpawnDebug(entt::registry& registry)
-{
-    // Gameplay-specific debug rendering should be done via a custom debug renderer
-}
 
 void SceneRenderer::RenderEditorIcons(entt::registry& registry, const SceneSettings& settings, const Camera3D& camera)
 {
-    const glm::vec3 activeCameraPos = camera.Position;
-    auto& am = ServiceLocator::Get<AssetManager>();
-
-    auto tryLoadIcon = [&](const char* path, unsigned int& cachedId) {
-        if (cachedId != 0)
-        {
-            return;
-        }
-        auto handle = am.ResolveToHandle(path, TextureAsset::GetStaticType());
-        auto tex = am.Get<TextureAsset>(handle);
-        if (tex && tex->IsReady())
-        {
-            cachedId = tex->GetRendererID();
-        }
-    };
-
-    tryLoadIcon("engine/resources/icons/camera_icon.png", m_EditorResources.CameraIconId);
-    tryLoadIcon("engine/resources/icons/light_bulb.png", m_EditorResources.LightIconId);
-    tryLoadIcon("engine/resources/icons/leaf_icon.png", m_EditorResources.SpawnIconId);
-
-    auto iconSizeFromDistance = [&](const glm::vec3& worldPos, float minSize, float maxSize, float scale) {
-        const float distanceToCamera = glm::distance(worldPos, activeCameraPos);
-        return std::clamp(distanceToCamera * scale, minSize, maxSize);
-    };
-
-    // Camera icons
-    auto cameraView = registry.view<TransformComponent, CameraComponent>();
+    CH_PROFILE_FUNCTION();
+    
+    // We can use a simple constant set of icons or load them from the engine resources
+    // For now, let's just draw some billboards
+    
+    auto lightView = registry.view<LightComponent, TransformComponent>();
+    for (auto entity : lightView)
+    {
+        auto [light, transform] = lightView.get<LightComponent, TransformComponent>(entity);
+        Renderer2D::DrawBillboard(camera, 0, transform.WorldTransform[3], 0.5f, ColorToVec4(light.LightColor));
+    }
+    
+    auto cameraView = registry.view<CameraComponent, TransformComponent>();
     for (auto entity : cameraView)
     {
-        auto [transform, cameraComp] = cameraView.get<TransformComponent, CameraComponent>(entity);
-        const glm::vec3 iconPos = glm::vec3(transform.WorldTransform[3]);
-        if (glm::distance(iconPos, activeCameraPos) < 0.25f)
-        {
-            continue;
-        }
-
-        const float iconSize = iconSizeFromDistance(iconPos, 0.10f, 0.70f, 0.040f);
-        const glm::vec4 cameraTint = glm::vec4(0.65f, 0.95f, 1.0f, 0.95f);
-        if (m_EditorResources.CameraIconId != 0)
-        {
-            ServiceLocator::Get<Renderer>().DrawBillboard(camera, m_EditorResources.CameraIconId, iconPos, iconSize,
-                                                          cameraTint);
-        }
-    }
-
-    // Light icons
-    if (settings.DebugFlags.DrawLights)
-    {
-        auto lightView = registry.view<TransformComponent, LightComponent>();
-        for (auto entity : lightView)
-        {
-            auto [transform, light] = lightView.get<TransformComponent, LightComponent>(entity);
-            const glm::vec3 iconPos = glm::vec3(transform.WorldTransform[3]);
-            const float iconSize = iconSizeFromDistance(iconPos, 0.10f, 0.85f, 0.045f);
-
-            glm::vec4 lightTint = {light.LightColor.r / 255.0f, light.LightColor.g / 255.0f,
-                                   light.LightColor.b / 255.0f, 0.95f};
-
-            if (m_EditorResources.LightIconId != 0)
-            {
-                ServiceLocator::Get<Renderer>().DrawBillboard(camera, m_EditorResources.LightIconId, iconPos, iconSize,
-                                                              lightTint);
-                if (light.Type == LightType::Directional)
-                {
-                    glm::vec3 dir = glm::normalize(glm::vec3(transform.WorldTransform[2])) * 0.45f;
-                    ServiceLocator::Get<Renderer>().DrawLine(iconPos, iconPos + dir, lightTint);
-                }
-            }
-            else if (light.Type == LightType::Directional)
-            {
-                glm::vec3 dir = glm::normalize(glm::vec3(transform.WorldTransform[2])) * 0.5f;
-                ServiceLocator::Get<Renderer>().DrawLine(iconPos, iconPos + dir, lightTint);
-            }
-            else if (light.Type == LightType::Point)
-            {
-                ServiceLocator::Get<Renderer>().DrawSphereWires(transform.WorldTransform, light.Radius * 0.1f,
-                                                                lightTint);
-            }
-            else if (light.Type == LightType::Spot)
-            {
-                ServiceLocator::Get<Renderer>().DrawSphereWires(transform.WorldTransform, light.Radius * 0.05f,
-                                                                lightTint);
-            }
-        }
-    }
-
-    // Gameplay-specific icons should be handled by a custom icon renderer
-}
-
-BoundingBox SceneRenderer::CalculateColliderWorldAABB(const ColliderComponent& collider,
-                                                      const glm::mat4& worldTransform)
-{
-    glm::vec3 halfExtents = collider.Size * 0.5f;
-    glm::vec3 min = collider.Offset - halfExtents;
-    glm::vec3 max = collider.Offset + halfExtents;
-    glm::vec3 corners[8] = {{min.x, min.y, min.z}, {max.x, min.y, min.z}, {min.x, max.y, min.z}, {max.x, max.y, min.z},
-                            {min.x, min.y, max.z}, {max.x, min.y, max.z}, {min.x, max.y, max.z}, {max.x, max.y, max.z}};
-    BoundingBox result = {{FLT_MAX, FLT_MAX, FLT_MAX}, {-FLT_MAX, -FLT_MAX, -FLT_MAX}};
-    for (int i = 0; i < 8; i++)
-    {
-        glm::vec3 worldCorner = glm::vec3(worldTransform * glm::vec4(corners[i], 1.0f));
-        result.Min.x = (worldCorner.x < result.Min.x) ? worldCorner.x : result.Min.x;
-        result.Min.y = (worldCorner.y < result.Min.y) ? worldCorner.y : result.Min.y;
-        result.Min.z = (worldCorner.z < result.Min.z) ? worldCorner.z : result.Min.z;
-        result.Max.x = (worldCorner.x > result.Max.x) ? worldCorner.x : result.Max.x;
-        result.Max.y = (worldCorner.y > result.Max.y) ? worldCorner.y : result.Max.y;
-        result.Max.z = (worldCorner.z > result.Max.z) ? worldCorner.z : result.Max.z;
-    }
-    return result;
-}
-
-void SceneRenderer::RenderSprites(entt::registry& registry, const Camera3D& camera)
-{
-    CH_PROFILE_FUNCTION();
-    auto view = registry.view<TransformComponent, SpriteComponent>();
-
-    struct SpriteEntry
-    {
-        entt::entity Entity;
-        int ZOrder;
-    };
-
-    std::vector<SpriteEntry> sortedSprites;
-    for (auto entity : view)
-    {
-        sortedSprites.push_back(SpriteEntry{entity, registry.get<SpriteComponent>(entity).ZOrder});
-    }
-
-    std::sort(sortedSprites.begin(), sortedSprites.end(), [](const SpriteEntry& a, const SpriteEntry& b) {
-        if (a.ZOrder != b.ZOrder)
-        {
-            return a.ZOrder < b.ZOrder;
-        }
-        return a.Entity < b.Entity;
-    });
-
-    for (const auto& entry : sortedSprites)
-    {
-        auto& transform = registry.get<TransformComponent>(entry.Entity);
-        auto& sprite = registry.get<SpriteComponent>(entry.Entity);
-
-        if (sprite.TexturePath.empty())
-        {
-            continue;
-        }
-
-        auto textureId = ServiceLocator::Get<TextureSystem>().GetRendererID(
-            ServiceLocator::Get<TextureSystem>().LoadTexture(sprite.TexturePath));
-
-        if (textureId != 0)
-        {
-            ServiceLocator::Get<Renderer>().DrawSprite(
-                textureId, transform.WorldTransform,
-                {sprite.Tint.r / 255.0f, sprite.Tint.g / 255.0f, sprite.Tint.b / 255.0f, sprite.Tint.a / 255.0f},
-                sprite.FlipX, sprite.FlipY);
-        }
+        auto [cam, transform] = cameraView.get<CameraComponent, TransformComponent>(entity);
+        Renderer2D::DrawBillboard(camera, 0, transform.WorldTransform[3], 0.5f, glm::vec4(0.2f, 0.5f, 1.0f, 1.0f));
     }
 }
 
-} // namespace CHEngine
+
+} // namespace Chained

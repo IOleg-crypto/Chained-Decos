@@ -6,53 +6,31 @@ chained_add_engine_module(engine_graphics
         ${STB_IMPL_SOURCE}
     # Pipeline
         pipeline/renderer.cpp
-        pipeline/renderer_types.cpp
-        pipeline/ui_renderer.cpp
-        pipeline/ui_widget_renderer.cpp
-        pipeline/ui_font_registry.cpp
+        pipeline/renderer2d.cpp
+        pipeline/renderer3d.cpp
+        pipeline/debug_renderer.cpp
+        pipeline/renderer_types.h
         pipeline/shader_library.cpp
         pipeline/scene_renderer.cpp
+        pipeline/passes/geometry_pass.cpp
+        pipeline/passes/skybox_pass.cpp
+        pipeline/passes/shadow_pass.cpp
+        pipeline/passes/composite_pass.cpp
         pipeline/render_command.cpp
         pipeline/texture_utility.cpp
-        texture_system.cpp
         pipeline/geometry_generator.cpp
         pipeline/renderer.h
+        pipeline/renderer2d.h
+        pipeline/renderer3d.h
+        pipeline/debug_renderer.h
         pipeline/scene_renderer.h
-        pipeline/ui_renderer.h
-        pipeline/ui_style.h
-        pipeline/ui_widget_renderer.h
-        pipeline/ui_font_registry.h
+
         pipeline/shader_library.h
         pipeline/material.h
         pipeline/frustum.h
         pipeline/texture_utility.h
-        texture_system.h
         pipeline/geometry_generator.h
-    # Assets
-        assets/shader_asset.cpp
-        assets/model_asset.cpp
-        assets/texture_asset.cpp
-        assets/font_asset.cpp
-        assets/shader_asset.h
-        assets/model_asset.h
-        assets/texture_asset.h
-        assets/font_asset.h
-        assets/environment.h
-    # Loaders
-        loaders/texture_loader.cpp
-        loaders/model_loader.cpp
-        loaders/model_cache.cpp
-        loaders/assimp_importer.cpp
-        loaders/shader_loader.cpp
-        loaders/font_loader.cpp
-        loaders/environment_loader.cpp
-        loaders/texture_loader.h
-        loaders/model_loader.h
-        loaders/model_cache.h
-        loaders/assimp_importer.h
-        loaders/shader_loader.h
-        loaders/font_loader.h
-        loaders/environment_loader.h
+    # Loaders module moved to loaders/CMakeLists.txt
     # API & Backend
         api/renderer_api.cpp
         api/buffer.cpp
@@ -84,10 +62,30 @@ chained_add_engine_module(engine_graphics
         api/opengl/opengl_uniform_buffer.h
         api/opengl/opengl_uniform_buffer.cpp
         api/opengl/opengl_storage_buffer.h
+
         api/opengl/opengl_storage_buffer.cpp
+    # UI
+        ui/ui_renderer.cpp
+        ui/ui_widget_renderer.cpp
+        ui/ui_factory.cpp
+        ui/ui_font_registry.cpp
+        ui/ui_layout_system.cpp
+        ui/ui_animation_system.cpp
+        ui/ui_input_system.cpp
+        ui/ui_renderer.h
+        ui/ui_widget_renderer.h
+        ui/ui_factory.h
+        ui/ui_font_registry.h
+        ui/ui_layout_system.h
+        ui/ui_animation_system.h
+        ui/ui_input_system.h
+        ui/ui_style.h
+        ui/ui_types.h
+        ui/ui_data_components.h
     DEPENDS
         engine_core
         engine_audio
+        engine_assets
         ChainedEngine::External::YamlCpp
         ChainedEngine::External::EnTT
         ChainedEngine::External::GLM

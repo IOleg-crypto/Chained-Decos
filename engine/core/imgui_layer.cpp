@@ -3,15 +3,16 @@
 #include "engine/core/profiler.h"
 #include "window.h"
 
-#define IMGUI_DEFINE_MATH_OPERATORS
+
 #include "imgui.h"
 #include "ImGuizmo.h"
+#include "engine/core/application.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 
 #include <GLFW/glfw3.h>
 
-namespace CHEngine
+namespace Chained
 {
 void ImGuiLayer::SetContext(ImGuiContext* context)
 {
@@ -19,8 +20,7 @@ void ImGuiLayer::SetContext(ImGuiContext* context)
 }
 
 ImGuiLayer::ImGuiLayer()
-    : Layer("ImGuiLayer")
-{
+    : Layer("ImGuiLayer") {
 }
 
 ImGuiLayer::~ImGuiLayer()
@@ -36,9 +36,6 @@ void ImGuiLayer::OnAttach()
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
 
-    auto& app = Application::Get();
-    const auto& spec = app.GetSpecification();
-    io.IniFilename = spec.ImGuiConfigurationPath.c_str();
 
     // Docking and viewports are always enabled
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -54,8 +51,7 @@ void ImGuiLayer::OnAttach()
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
 
-    // Setup Platform/Renderer backends
-    GLFWwindow* window = (GLFWwindow*)app.GetWindow().GetNativeWindow();
+    GLFWwindow* window = (GLFWwindow*)Application::Get().GetWindow().GetNativeWindow();
     
     if (!window)
     {
@@ -91,8 +87,7 @@ void ImGuiLayer::End()
     CH_PROFILE_FUNCTION();
 
     ImGuiIO& io = ImGui::GetIO();
-    Application& app = Application::Get();
-    io.DisplaySize = ImVec2((float)app.GetWindow().GetWidth(), (float)app.GetWindow().GetHeight());
+    io.DisplaySize = ImVec2((float)Application::Get().GetWindow().GetWidth(), (float)Application::Get().GetWindow().GetHeight());
 
     // Rendering
     ImGui::Render();
@@ -152,4 +147,4 @@ ImFont* ImGuiLayer::AddFontFromFile(const std::string& path, float size, const I
     }
     return font;
 }
-} // namespace CHEngine
+} // namespace Chained

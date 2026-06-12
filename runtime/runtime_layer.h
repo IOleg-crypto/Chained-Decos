@@ -12,7 +12,7 @@
 #include <utility>
 #include <vector>
 
-namespace CHEngine
+namespace Chained
 {
 // Runs the game/runtime experience, including scene loading and the scene renderer.
 class RuntimeLayer : public Layer
@@ -66,6 +66,6 @@ private:
     std::string m_PendingScenePath;
     std::shared_ptr<Framebuffer> m_HDRFramebuffer;
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_RUNTIME_LAYER_H

@@ -1,7 +1,7 @@
 #include "engine/scene/entity.h"
 #include "engine/scene/components.h"
 
-namespace CHEngine
+namespace Chained
 {
 
 Entity::Entity(entt::entity handle, entt::registry* registry)
@@ -51,4 +51,33 @@ void Entity::Destroy()
     }
 }
 
-} // namespace CHEngine
+glm::mat4 Entity::GetWorldTransform()
+{
+    if (HasComponent<TransformComponent>())
+    {
+        return GetComponent<TransformComponent>().WorldTransform;
+    }
+    return glm::mat4(1.0f);
+}
+
+glm::vec3 Entity::GetWorldPosition()
+{
+    return glm::vec3(GetWorldTransform()[3]);
+}
+
+glm::vec3 Entity::GetForward()
+{
+    return glm::normalize(glm::vec3(GetWorldTransform() * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f)));
+}
+
+glm::vec3 Entity::GetUp()
+{
+    return glm::normalize(glm::vec3(GetWorldTransform() * glm::vec4(0.0f, 1.0f, 0.0f, 0.0f)));
+}
+
+glm::vec3 Entity::GetRight()
+{
+    return glm::normalize(glm::vec3(GetWorldTransform() * glm::vec4(1.0f, 0.0f, 0.0f, 0.0f)));
+}
+
+} // namespace Chained

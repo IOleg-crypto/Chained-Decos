@@ -5,9 +5,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
-#include "engine/core/reflection.h"
+#include "engine/reflection/reflection.h"
 
-namespace CHEngine
+namespace Chained
 {
 // Local transform state and cached world matrix.
 struct TransformComponent
@@ -46,6 +46,6 @@ struct TransformComponent
     CH_REFLECT_END()
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_TRANSFORM_COMPONENT_H

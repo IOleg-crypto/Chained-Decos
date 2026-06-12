@@ -1,8 +1,10 @@
 #include "script_glue_internal.h"
 #include "script_internal_call_registry.h"
-#include "engine/core/service_locator.h"
+#include "engine/scene/component_registry.h"
+#include "engine/audio/audio.h"
+#include "engine/project/project.h"
 
-namespace CHEngine {
+namespace Chained {
 
     void RegisterGlueAudio() {}
 
@@ -10,9 +12,11 @@ namespace CHEngine {
     CH_SCRIPT_FUNC void Audio_Play(Coral::String path, float volume, float pitch, bool loop) {
         if (Project::GetActive() != nullptr) {
             const std::string soundPath = (std::string)path;
-            AudioHandle handle = ServiceLocator::Get<Audio>().LoadSound(soundPath);
+            auto& audio = Audio::Get();
+
+            AudioHandle handle = audio.LoadSound(soundPath);
             if (handle != 0) {
-                ServiceLocator::Get<Audio>().Play(handle, volume, pitch, loop);
+                audio.Play(handle, volume, pitch, loop, false, glm::vec3(0));
 
                 if (Scene* scene = GetActiveScene()) {
                     auto& registry = scene->GetRegistry();
@@ -33,7 +37,8 @@ namespace CHEngine {
     CH_SCRIPT_FUNC void Audio_Stop(Coral::String path) {
         if (Project::GetActive() != nullptr) {
             const std::string soundPath = (std::string)path;
-            ServiceLocator::Get<Audio>().Stop(soundPath);
+            auto& audio = Audio::Get();
+            audio.Stop(soundPath);
 
             if (Scene* scene = GetActiveScene()) {
                 auto& registry = scene->GetRegistry();
@@ -51,7 +56,8 @@ namespace CHEngine {
 
     CH_SCRIPT_FUNC void Audio_StopAll() {
         if (Project::GetActive() != nullptr) {
-            ServiceLocator::Get<Audio>().StopAll();
+            auto& audio = Audio::Get();
+            audio.StopAll();
         }
     }
     CH_ADD_INTERNAL_CALL(Audio, Audio_StopAll_Ptr, Audio_StopAll);
@@ -63,7 +69,8 @@ namespace CHEngine {
             audio.Volume = volume;
             // Forward to active sound instance in real-time
             if (audio.IsPlaying && audio.SoundHandle != 0) {
-                ServiceLocator::Get<Audio>().SetVolume(audio.SoundHandle, volume);
+                auto& audioService = Audio::Get();
+                audioService.SetVolume(audio.SoundHandle, volume);
             }
         }
     }
@@ -81,7 +88,8 @@ namespace CHEngine {
             return false;
 
         auto& audio = entity.GetComponent<AudioComponent>();
-        return audio.IsPlaying && ServiceLocator::Get<Audio>().IsPlaying(audio.SoundHandle);
+        auto& audioService = Audio::Get();
+        return audio.IsPlaying && audioService.IsPlaying(audio.SoundHandle);
     }
     CH_ADD_INTERNAL_CALL(AudioComponent, AudioComponent_IsPlaying_Ptr, AudioComponent_IsPlaying);
 
@@ -161,4 +169,4 @@ namespace CHEngine {
     }
     CH_ADD_INTERNAL_CALL(SpriteComponent, SpriteComponent_SetZOrder_Ptr, SpriteComponent_SetZOrder);
 
-} // namespace CHEngine
+} // namespace Chained

@@ -8,10 +8,12 @@
 #include <unordered_map>
 #include <unordered_set>
 
-namespace CHEngine
+namespace Chained
 {
 class BVH;
 class ModelAsset;
+class AssetManager;
+
 
 class BVHCache
 {
@@ -27,7 +29,8 @@ public:
     void Shutdown();
     bool IsInitialized() const;
 
-    std::shared_ptr<BVH> GetOrBuild(const std::string& path);
+    std::shared_ptr<BVH> GetOrBuild(const std::shared_ptr<ModelAsset>& asset);
+
     void Put(const std::string& path, std::shared_ptr<BVH> bvh);
     void Invalidate(const std::string& path);
     void Clear();
@@ -44,6 +47,6 @@ private:
     Stats m_Stats{};
     bool m_Initialized = false;
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_PHYSICS_BVH_CACHE_H

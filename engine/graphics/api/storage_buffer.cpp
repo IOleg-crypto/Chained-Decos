@@ -2,7 +2,7 @@
 #include "engine/graphics/api/renderer_api.h"
 #include "opengl/opengl_storage_buffer.h"
 
-namespace CHEngine
+namespace Chained
 {
     std::shared_ptr<StorageBuffer> StorageBuffer::Create(uint32_t size)
     {
@@ -10,7 +10,8 @@ namespace CHEngine
         {
             case RendererAPI::API::None:    return nullptr;
             case RendererAPI::API::OpenGL:  return std::make_shared<OpenGLStorageBuffer>(size);
+                default : return nullptr;
         }
-        return nullptr;
+
     }
 }

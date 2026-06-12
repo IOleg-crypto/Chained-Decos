@@ -5,10 +5,9 @@
 
 #include <entt/entt.hpp>
 
-namespace CHEngine {
-namespace AnimationSystems {
+namespace Chained {
 
-void Play(AnimationComponent& anim, int index, bool loop)
+void AnimationManager::Play(AnimationComponent& anim, int index, bool loop)
 {
     if (anim.CurrentAnimationIndex == index && anim.IsPlaying && !anim.Blending)
         return;
@@ -22,7 +21,7 @@ void Play(AnimationComponent& anim, int index, bool loop)
     anim.TargetAnimationIndex = -1;
 }
 
-void CrossFade(AnimationComponent& anim, int index, float duration, bool loop)
+void AnimationManager::CrossFade(AnimationComponent& anim, int index, float duration, bool loop)
 {
     if (anim.CurrentAnimationIndex == index)
         return;
@@ -38,18 +37,13 @@ void CrossFade(AnimationComponent& anim, int index, float duration, bool loop)
     anim.IsPlaying = true;
 }
 
-void Stop(AnimationComponent& anim)
+void AnimationManager::Stop(AnimationComponent& anim)
 {
     anim.IsPlaying = false;
     anim.Blending = false;
 }
 
-void TriggerTransition(AnimationComponent& anim, const std::string& triggerName)
-{
-    // Animation graphs removed: no-op
-}
-
-void UpdatePlayback(Scene* scene, Timestep ts)
+void AnimationManager::UpdatePlayback(Scene* scene, Timestep ts)
 {
     auto& registry = scene->GetRegistry();
     auto view = registry.view<AnimationComponent>();
@@ -63,10 +57,4 @@ void UpdatePlayback(Scene* scene, Timestep ts)
     }
 }
 
-void UpdateGraphs(Scene* scene, Timestep ts)
-{
-    // Animation graphs removed: no-op
-}
-
-} // namespace AnimationSystems
-} // namespace CHEngine
+} // namespace Chained

@@ -5,7 +5,6 @@ chained_add_engine_module(engine_physics
         collision_core.cpp
         raycast_query.cpp
         default_physics_world.cpp
-        physics_system.cpp
         bvh/bvh_cache.cpp
         bvh/bvh.cpp
         collision/collision_triangle.cpp
@@ -15,18 +14,20 @@ chained_add_engine_module(engine_physics
         raycast_query.h
         iphysics_world.h
         default_physics_world.h
-        physics_system.h
         bvh/bvh_cache.h
         bvh/bvh.h
         bvh/bvh_node.h
         collision/collision.h
         collision/collision_triangle.h
         raycast_result.h
+        jolt_physics_world.h
+        jolt_physics_world.cpp
     DEPENDS
         engine_core
         ChainedEngine::External::EnTT
         ChainedEngine::External::GLM
         ChainedEngine::External::Assimp
+        Jolt
 )
 
 if(MSVC)

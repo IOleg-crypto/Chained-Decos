@@ -4,12 +4,11 @@
 #include "engine/scene/components/transform_component.h"
 #include "engine/scene/components/control_component.h"
 #include "engine/scene/components/mesh_component.h"
-#include "engine/graphics/assets/model_asset.h"
 #include "engine/assets/asset_manager.h"
-#include "engine/core/service_locator.h"
+#include "engine/assets/types/model_asset.h"
 #include <glm/gtx/quaternion.hpp>
 
-namespace CHEngine::ComponentUtils
+namespace Chained::ComponentUtils
 {
     // --- Transform Logic ---
 
@@ -73,58 +72,7 @@ namespace CHEngine::ComponentUtils
         return Rectangle{viewportOffset.x + pMin.x, viewportOffset.y + pMin.y, pMax.x - pMin.x, pMax.y - pMin.y};
     }
 
-    // --- Mesh & Material Logic ---
-
-    static inline void SyncMaterials(ModelComponent& mc, AssetHandle handle, AssetManager* assetManager = nullptr)
-    {
-        if (mc.MaterialsInitialized || handle == 0) return;
-        
-        if (!assetManager && ServiceLocator::Has<AssetManager>())
-            assetManager = &ServiceLocator::Get<AssetManager>();
-
-        auto model = assetManager ? assetManager->Get<ModelAsset>(handle) : nullptr;
-        if (!model || !model->IsReady()) return;
-
-        auto& modelMaterials = model->GetModel().Materials;
-        mc.Materials.clear();
-        for (size_t i = 0; i < modelMaterials.size(); i++)
-        {
-            const auto& mat = modelMaterials[i];
-            MaterialSlot slot;
-            slot.Name = mat.Name;
-            slot.Index = (int)i;
-            slot.Target = MaterialSlotTarget::MaterialIndex;
-            
-            slot.Material.AlbedoColor = { 
-                (unsigned char)glm::clamp(mat.AlbedoColor.r * 255.0f, 0.0f, 255.0f),
-                (unsigned char)glm::clamp(mat.AlbedoColor.g * 255.0f, 0.0f, 255.0f),
-                (unsigned char)glm::clamp(mat.AlbedoColor.b * 255.0f, 0.0f, 255.0f),
-                (unsigned char)glm::clamp(mat.AlbedoColor.a * 255.0f, 0.0f, 255.0f)
-            };
-            slot.Material.AlbedoHandle = mat.AlbedoHandle;
-            slot.Material.OverrideAlbedo = (mat.AlbedoHandle != AssetHandle(0));
-            slot.Material.NormalHandle = mat.NormalHandle;
-            slot.Material.OverrideNormal = (mat.NormalHandle != AssetHandle(0));
-            slot.Material.MetallicRoughnessHandle = mat.MetallicRoughnessHandle;
-            slot.Material.OverrideMetallicRoughness = (mat.MetallicRoughnessHandle != AssetHandle(0));
-            slot.Material.OcclusionHandle = mat.OcclusionHandle;
-            slot.Material.OverrideOcclusion = (mat.OcclusionHandle != AssetHandle(0));
-            slot.Material.EmissiveHandle = mat.EmissiveHandle;
-            slot.Material.OverrideEmissive = (mat.EmissiveHandle != AssetHandle(0));
-            slot.Material.EmissiveColor = {
-                (unsigned char)glm::clamp(mat.EmissiveColor.r * 255.0f, 0.0f, 255.0f),
-                (unsigned char)glm::clamp(mat.EmissiveColor.g * 255.0f, 0.0f, 255.0f),
-                (unsigned char)glm::clamp(mat.EmissiveColor.b * 255.0f, 0.0f, 255.0f),
-                (unsigned char)glm::clamp(mat.EmissiveColor.a * 255.0f, 0.0f, 255.0f)
-            };
-            slot.Material.EmissiveIntensity = mat.EmissiveIntensity;
-            slot.Material.Metalness = mat.Metalness;
-            slot.Material.Roughness = mat.Roughness;
-            
-            mc.Materials.push_back(slot);
-        }
-        mc.MaterialsInitialized = true;
-    }
+    // --- Mesh logic ---
 
     static inline void ResolveModelPath(ModelComponent& mc)
     {
@@ -134,41 +82,15 @@ namespace CHEngine::ComponentUtils
             return;
         }
 
-        AssetManager* assetManager = nullptr;
-        if (ServiceLocator::Has<AssetManager>())
-            assetManager = &ServiceLocator::Get<AssetManager>();
-
-        auto handle = assetManager ? assetManager->ResolveToHandle(mc.ModelPath, ModelAsset::GetStaticType()) : AssetHandle(0);
-        auto asset = assetManager ? assetManager->Get<ModelAsset>(handle) : nullptr;
+        auto handle = AssetManager::Get().ImportAsset(mc.ModelPath);
+        auto asset = AssetManager::Get().GetAsset<ModelAsset>(handle);
         if (asset)
         {
-            AssetHandle newHandle = asset->GetID();
-            
-            // Only sync materials if the model handle changed OR if materials were never initialized.
-            // We also check if mc.Materials is empty to handle potentially stale states after scene duplication.
-            if (newHandle != mc.ModelHandle || !mc.MaterialsInitialized || mc.Materials.empty())
-            {
-                bool isDeserializingWithMaterials = (mc.ModelHandle == AssetHandle(0) && !mc.Materials.empty());
-                
-                mc.ModelHandle = newHandle;
-                mc.MaterialsInitialized = false; 
-                
-                if (isDeserializingWithMaterials)
-                {
-                    // Booting from serialized scene where materials were already loaded from JSON
-                    mc.MaterialsInitialized = true;
-                }
-                else
-                {
-                    // Actual model swap or brand new model, parse default materials from FBX
-                    SyncMaterials(mc, mc.ModelHandle);
-                }
-            }
+            mc.ModelHandle = asset->GetID();
         }
         else
         {
             mc.ModelHandle = AssetHandle(0);
-            // We don't reset MaterialsInitialized here because the asset might just be currently loading.
         }
     }
 }

@@ -1,7 +1,7 @@
 #include "default_physics_world.h"
 #include "raycast_result.h"
 
-namespace CHEngine
+namespace Chained
 {
 
 DefaultPhysicsWorld::DefaultPhysicsWorld()
@@ -87,4 +87,4 @@ void DefaultPhysicsWorld::Step(float fixedDt)
     }
 }
 
-} // namespace CHEngine
+} // namespace Chained

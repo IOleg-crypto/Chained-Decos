@@ -3,7 +3,7 @@
 
 #include <Coral/Assembly.hpp>
 
-namespace CHEngine {
+namespace Chained {
     class ScriptGlue {
     public:
         static void Initialize();

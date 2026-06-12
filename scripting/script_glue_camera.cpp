@@ -2,7 +2,7 @@
 #include "script_internal_call_registry.h"
 #include "engine/scene/components/component_utils.h"
 
-namespace CHEngine {
+namespace Chained {
 
     void RegisterGlueCamera() {}
 
@@ -117,5 +117,5 @@ namespace CHEngine {
     }
     CH_ADD_INTERNAL_CALL(CameraComponent, Camera_SetTargetTag_Ptr, Camera_SetTargetTag);
 
-} // namespace CHEngine
+} // namespace Chained
 

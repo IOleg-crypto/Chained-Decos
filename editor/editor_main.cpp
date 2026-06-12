@@ -1,15 +1,14 @@
 #include "editor_layer.h"
 #include "engine/core/entry_point.h"
 
-namespace CHEngine
+namespace Chained
 {
-    // Forward declare the game's registration function
-    // This lives in the ChainedDecos static library
-    extern void RegisterGameComponents();
+// Forward declare the game's registration function
+// This lives in the ChainedDecos static library
+extern void RegisterGameComponents();
 
 Application* CreateApplication(ApplicationCommandLineArgs args)
 {
-    // Ensure game components are registered
     RegisterGameComponents();
 
     ApplicationSpecification spec;
@@ -23,13 +22,8 @@ Application* CreateApplication(ApplicationCommandLineArgs args)
 
     auto* app = new Application(spec);
 
-    app->PushLayer(std::make_unique<EditorLayer>());
+    app->PushLayer(std::make_unique<EditorLayer>(*app));
 
     return app;
 }
-} // namespace CHEngine
-
-int main(int argc, char** argv)
-{
-    return CHEngine::RunEntryPoint(argc, argv);
-}
+} // namespace Chained

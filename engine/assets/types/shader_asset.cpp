@@ -1,6 +1,6 @@
-#include "engine/graphics/assets/shader_asset.h"
+#include "shader_asset.h"
 
-namespace CHEngine
+namespace Chained
 {
-    // Implementation is now mostly in the header or handled by ShaderImporter
+// ShaderAsset now purely holds the API resource, loading logic is in ShaderImporter
 }

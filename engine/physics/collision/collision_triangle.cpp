@@ -1,8 +1,9 @@
 #include "collision_triangle.h"
+#include "engine/physics/collision_core.h"
 #include <cmath>
 #include <glm/glm.hpp>
 
-namespace CHEngine
+namespace Chained
 {
 CollisionTriangle::CollisionTriangle(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, int index)
     : v0(a),
@@ -45,4 +46,4 @@ bool CollisionTriangle::IntersectsRay(const Ray& ray, float& t, glm::vec3& norma
 
     return true;
 }
-} // namespace CHEngine
+} // namespace Chained

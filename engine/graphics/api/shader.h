@@ -1,11 +1,11 @@
 #ifndef CH_SHADER_H
 #define CH_SHADER_H
-#include "engine/core/ch_structures.h"
+#include "engine/foundation/color.h"
 #include <glm/glm.hpp>
 #include <memory>
 #include <string>
 
-namespace CHEngine
+namespace Chained
 {
 
 // Abstract GPU shader interface used by backends and higher-level render code.
@@ -32,5 +32,5 @@ public:
     static std::shared_ptr<Shader> Create(const std::string& vsSource, const std::string& fsSource);
 };
 
-} // namespace CHEngine
+} // namespace Chained
 #endif

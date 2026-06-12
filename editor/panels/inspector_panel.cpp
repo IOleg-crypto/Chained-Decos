@@ -2,15 +2,15 @@
 #include "IconsFontAwesome6.h"
 #include "editor_gui.h"
 #include "engine/assets/asset_manager.h"
-#include "engine/graphics/assets/model_asset.h"
+#include "engine/assets/types/model_asset.h"
 #include "engine/scene/components.h"
-#include "engine/scene/project.h"
+#include "engine/project/project.h"
 #include "engine/scene/scene_events.h"
 
 #include "imgui.h"
 #include "property_editor.h"
 
-namespace CHEngine
+namespace Chained
 {
 InspectorPanel::InspectorPanel()
 {
@@ -91,4 +91,4 @@ void InspectorPanel::SetSelectedMeshIndex(int index)
 {
     m_SelectedMeshIndex = index;
 }
-} // namespace CHEngine
+} // namespace Chained

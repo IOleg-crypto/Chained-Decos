@@ -1,22 +1,15 @@
 #include "dynamics.h"
 #include "engine/core/log.h"
 #include "engine/scene/components.h"
-#include "engine/scene/project.h"
+#include "engine/project/project.h"
 #include "engine/scene/scene.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-namespace CHEngine
+namespace Chained
 {
-void Dynamics::Update(::entt::registry& registry, const std::vector<entt::entity>& entities, float deltaTime)
+void Dynamics::Update(::entt::registry& registry, const std::vector<entt::entity>& entities, float deltaTime, float gravity)
 {
-
-    float gravity = 9.8f;
-    if (Project::GetActive())
-    {
-        gravity = Project::GetActive()->GetConfig().Physics.Gravity;
-    }
-
     for (auto entity : entities)
     {
         if (!registry.all_of<TransformComponent, RigidBodyComponent>(entity))
@@ -63,4 +56,4 @@ void Dynamics::IntegrateVelocity(entt::registry& registry, entt::entity entity, 
     entityTransform.IsDirty = true;
 }
 
-} // namespace CHEngine
+} // namespace Chained

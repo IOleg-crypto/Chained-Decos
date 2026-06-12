@@ -11,6 +11,11 @@ include(glm)
 include(entt)
 include(miniaudio)
 include(stb)
+include(cereal)
+include(zstd)
+include(spdlog)
+include(bs_thread_pool)
+include(jolt)
 
 # Platform & Graphics (independent)
 include(glfw)
@@ -23,8 +28,11 @@ include(imgui)
 include(assimp)
 include(coral)
 include(nfd)
-include(protobuf) # Required for GNS
-include(gamenetworkingsockets)
+# No time for networking right now
+
+#include(protobuf) # Required for GNS
+#include(gamenetworkingsockets)
+
 include(reflect-cpp)
 
 # Tests

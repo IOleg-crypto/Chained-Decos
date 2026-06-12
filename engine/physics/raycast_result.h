@@ -1,10 +1,10 @@
 #ifndef CH_RAYCAST_RESULT_H
 #define CH_RAYCAST_RESULT_H
 
-#include "engine/core/base.h"
+#include "engine/physics/physics_types.h"
 #include "entt/entt.hpp"
 
-namespace CHEngine
+namespace Chained
 {
 struct RaycastResult
 {
@@ -13,8 +13,9 @@ struct RaycastResult
     glm::vec3 Position = {0.0f, 0.0f, 0.0f};
     glm::vec3 Normal = {0.0f, 0.0f, 0.0f};
     entt::entity Entity = entt::null;
+    PhysicsBodyHandle BodyHandle = kInvalidPhysicsBody;
     int MeshIndex = -1;
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_RAYCAST_RESULT_H

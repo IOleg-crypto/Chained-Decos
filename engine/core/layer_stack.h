@@ -5,7 +5,7 @@
 #include <memory>
 #include <vector>
 
-namespace CHEngine
+namespace Chained
 {
 class LayerStack
 {
@@ -55,13 +55,10 @@ public:
     {
         return m_Layers;
     }
-
-    std::vector<Layer*> GetLayerPointersSnapshot() const;
-
 private:
     LayerStorage m_Layers;
     unsigned int m_LayerInsertIndex = 0;
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_LAYER_STACK_H

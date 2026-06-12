@@ -2,7 +2,7 @@
 #include "engine/graphics/api/renderer_api.h"
 #include "opengl/opengl_framebuffer.h"
 
-namespace CHEngine
+namespace Chained
 {
 std::shared_ptr<Framebuffer> Framebuffer::Create(const FramebufferSpecification& spec)
 {
@@ -10,8 +10,8 @@ std::shared_ptr<Framebuffer> Framebuffer::Create(const FramebufferSpecification&
     {
         case RendererAPI::API::None:    return nullptr;
         case RendererAPI::API::OpenGL:  return std::make_shared<OpenGLFramebuffer>(spec);
+        default : return nullptr;
     }
-    return nullptr;
 }
 
-} // namespace CHEngine
+} // namespace Chained

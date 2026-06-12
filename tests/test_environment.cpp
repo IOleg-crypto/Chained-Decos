@@ -6,11 +6,11 @@
 #include "engine/core/application.h"
 #include "engine/graphics/pipeline/renderer.h"
 
-class TestApplication : public CHEngine::Application
+class TestApplication : public Chained::Application
 {
 public:
-    TestApplication() : CHEngine::Application([](){
-        CHEngine::ApplicationSpecification spec{"Engine Tests"};
+    TestApplication() : Chained::Application([](){
+        Chained::ApplicationSpecification spec{"Engine Tests"};
         spec.Headless = true;
         spec.EnableScripting = true;  // Must be true for ScriptEngineTest to share the CoreCLR instance
         return spec;

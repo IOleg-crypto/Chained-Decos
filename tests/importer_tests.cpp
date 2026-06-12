@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <fstream>
 
-using namespace CHEngine;
+using namespace Chained;
 
 class ImporterTest : public ::testing::Test
 {

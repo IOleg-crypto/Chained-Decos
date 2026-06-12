@@ -1,11 +1,9 @@
 #include "components/game_components.h"
 #include "scripting/script_glue_internal.h"
 #include "scripting/script_internal_call_registry.h"
-#include "engine/core/service_locator.h"
+#include "engine/core/application.h"
 
-namespace CHEngine {
-
-    void RegisterGameScriptBindings() {}
+namespace Chained {
 
     // ── Spawn / Transition ────────────────────────────────────────────────
     CH_SCRIPT_FUNC bool SpawnComponent_IsActive(uint64_t entityID) {
@@ -135,4 +133,4 @@ namespace CHEngine {
     }
     CH_ADD_INTERNAL_CALL(NetworkIdentity, NetworkIdentity_IsOwned_Ptr, NetworkIdentity_IsOwned);
 
-} // namespace CHEngine
+} // namespace Chained

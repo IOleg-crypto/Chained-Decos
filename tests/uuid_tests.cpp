@@ -2,7 +2,7 @@
 #include "gtest/gtest.h"
 #include <unordered_set>
 
-using namespace CHEngine;
+using namespace Chained;
 
 TEST(UUIDTest, GenerationUniqueness)
 {

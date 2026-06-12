@@ -1,29 +1,27 @@
 
 #include "runtime_layer.h"
-#include "engine/core/application.h"
 #include "engine/assets/asset_manager.h"
+#include "engine/core/application.h"
 #include "engine/core/imgui_layer.h"
-#include "engine/core/service_locator.h"
 #include "engine/core/window.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
-#include "engine/graphics/pipeline/ui_renderer.h"
-#include "engine/scene/components.h"
-#include "engine/scene/project.h"
+#include "engine/graphics/ui/ui_renderer.h"
+#include "engine/project/project.h"
 #include "engine/scene/scene_events.h"
-#include "engine/scene/scene_serializer.h"
+#include "engine/serialization/scene_serializer.h"
 #include "imgui.h"
-#include "engine/scene/scene_scripting_manager.h"
+#include "scripting/scene_scripting_manager.h"
 #include "scripting/scriptengine.h"
 #include "scripting/scriptengine_services.h"
 #include <algorithm>
-#include <array>
 #include <cctype>
 #include <cmath>
 #include <filesystem>
 #include <unordered_set>
 
-namespace
+
+namespace Chained
 {
 std::string TrimCopy(const std::string& value)
 {
@@ -39,7 +37,7 @@ std::string TrimCopy(const std::string& value)
     return std::string(begin, end);
 }
 
-void AppendTextStyleFontRequest(const CHEngine::TextStyle& style, std::vector<std::pair<std::string, float>>& out,
+void AppendTextStyleFontRequest(const Chained::TextStyle& style, std::vector<std::pair<std::string, float>>& out,
                                 std::unordered_set<std::string>& dedupe)
 {
     std::string fontName = TrimCopy(style.FontName);
@@ -71,10 +69,7 @@ bool ExistsNoThrow(const std::filesystem::path& path)
     std::error_code ec;
     return std::filesystem::exists(path, ec) && !ec;
 }
-} // namespace
 
-namespace CHEngine
-{
 RuntimeLayer::RuntimeLayer(const std::string& projectPath)
     : Layer("RuntimeLayer"),
       m_ProjectPath(projectPath)
@@ -95,7 +90,7 @@ void RuntimeLayer::OnAttach()
 
     auto* imguiLayer = Application::Get().GetImGuiLayer();
     auto& io = ImGui::GetIO();
-    
+
     // Add default font through DLL if needed, but usually redundant if Editor/Engine already did it
     if (io.Fonts->Fonts.Size == 0)
     {
@@ -105,7 +100,8 @@ void RuntimeLayer::OnAttach()
 
     InitProject(m_ProjectPath);
 
-    if (ImFont* projectDefaultFont = ServiceLocator::Get<UIRenderer>().GetFontRegistry().EnsureDefaultProjectFont(18.0f, false))
+    if (ImFont* projectDefaultFont =
+            Renderer::GetUIRenderer()->GetFontRegistry().EnsureDefaultProjectFont(18.0f, false))
     {
         io.FontDefault = projectDefaultFont;
         CH_CORE_INFO("RuntimeSystem: Switched default UI font to project font.");
@@ -139,9 +135,9 @@ void RuntimeLayer::OnDetach()
 void RuntimeLayer::OnUpdate(Timestep ts)
 {
     // Boost uploads during loading
-    if (ServiceLocator::Has<ScriptEngine>())
+    if (ScriptEngine::Get().IsHostInitialized())
     {
-        auto& scriptEngine = ServiceLocator::Get<ScriptEngine>();
+        auto& scriptEngine = ScriptEngine::Get();
         // ... use scriptEngine if needed ...
     }
 
@@ -162,7 +158,7 @@ void RuntimeLayer::OnUpdate(Timestep ts)
 
         if (IsSceneReadyToStart() && m_LoadingOverlayElapsed >= m_LoadingOverlayMinDuration)
         {
-            ServiceLocator::Get<UIRenderer>().ResetButtonStates(m_Scene.get());
+            Renderer::GetUIRenderer()->ResetButtonStates(m_Scene.get());
             m_Scene->OnRuntimeStart();
             m_RuntimeStarted = true;
             m_IsSceneLoading = false;
@@ -194,7 +190,7 @@ void RuntimeLayer::OnRender(Timestep ts)
 
     if (!m_Scene)
     {
-        ServiceLocator::Get<Renderer>().Clear({0.0f, 0.0f, 0.0f, 1.0f});
+        Renderer::Clear({0.0f, 0.0f, 0.0f, 1.0f});
         return;
     }
 
@@ -206,12 +202,8 @@ void RuntimeLayer::OnRender(Timestep ts)
     EnsureRuntimeFramebuffer(width, height);
 
     const auto& settings = m_Scene->GetSettings();
-    glm::vec4 bgColor = {
-        settings.BackgroundColor.r / 255.0f,
-        settings.BackgroundColor.g / 255.0f,
-        settings.BackgroundColor.b / 255.0f,
-        settings.BackgroundColor.a / 255.0f
-    };
+    glm::vec4 bgColor = {settings.BackgroundColor.r / 255.0f, settings.BackgroundColor.g / 255.0f,
+                         settings.BackgroundColor.b / 255.0f, settings.BackgroundColor.a / 255.0f};
 
     if (settings.Environment && settings.Mode != BackgroundMode::Color)
     {
@@ -243,12 +235,13 @@ void RuntimeLayer::OnRender(Timestep ts)
         options.ShowEditorIcons = false;
 
         m_HDRFramebuffer->Bind();
-        ServiceLocator::Get<Renderer>().Clear(bgColor);
-        m_SceneRenderer->RenderScene(m_Scene->GetRegistry(), m_Scene->GetSettings(), camera.value(), nearClip, farClip, options);
+        Renderer::Clear(bgColor);
+        m_SceneRenderer->RenderScene(m_Scene->GetRegistry(), m_Scene->GetSettings(), camera.value(), nearClip, farClip,
+                                     options);
         m_HDRFramebuffer->Unbind();
 
-        ServiceLocator::Get<Renderer>().SetViewport(0, 0, (int)width, (int)height);
-        
+        Renderer::SetViewport(0, 0, (int)width, (int)height);
+
         ShaderAsset* overrideShader = nullptr;
         std::vector<ShaderUniform> uniforms;
 
@@ -257,8 +250,8 @@ void RuntimeLayer::OnRender(Timestep ts)
             auto& sc = primaryCam.GetComponent<ShaderComponent>();
             if (sc.Enabled && !sc.ShaderPath.empty())
             {
-                auto handle = ServiceLocator::Get<AssetManager>().ResolveToHandle(sc.ShaderPath, ShaderAsset::GetStaticType());
-                auto asset = ServiceLocator::Get<AssetManager>().Get<ShaderAsset>(handle);
+                auto handle = AssetManager::Get().ImportAsset(sc.ShaderPath);
+                auto asset = AssetManager::Get().GetAsset<ShaderAsset>(handle);
                 if (asset)
                 {
                     overrideShader = asset.get();
@@ -266,22 +259,16 @@ void RuntimeLayer::OnRender(Timestep ts)
                 }
             }
         }
+    }
 
-        ServiceLocator::Get<Renderer>().ApplyPostProcessing(m_HDRFramebuffer->GetColorAttachmentRendererID(),
-                                            m_HDRFramebuffer->GetDepthAttachmentRendererID(), camera.value(),
-                                            overrideShader, uniforms);
-    }
-    else
+    static bool s_WarnedNoCamera = false;
+    if (!s_WarnedNoCamera)
     {
-        static bool s_WarnedNoCamera = false;
-        if (!s_WarnedNoCamera)
-        {
-            CH_CORE_WARN("RuntimeSystem: No active camera found in scene '{}'! Clearing to background color.",
-                         m_Scene ? m_Scene->GetSettings().ScenePath : "null");
-            s_WarnedNoCamera = true;
-        }
-        ServiceLocator::Get<Renderer>().Clear(bgColor);
+        CH_CORE_WARN("RuntimeSystem: No active camera found in scene '{}'! Clearing to background color.",
+                     m_Scene ? m_Scene->GetSettings().ScenePath : "null");
+        s_WarnedNoCamera = true;
     }
+    Renderer::Clear(bgColor);
 }
 
 void RuntimeLayer::OnImGuiRender()
@@ -319,7 +306,7 @@ void RuntimeLayer::OnImGuiRender()
                     ImVec2 canvasSize = ImGui::GetContentRegionAvail();
                     // CH_CORE_INFO("RuntimeSystem: Drawing UI canvas at ({}, {}) with size ({}, {})",
                     //  canvasPos.x, canvasPos.y, canvasSize.x, canvasSize.y);
-                    ServiceLocator::Get<UIRenderer>().DrawCanvas(m_Scene.get(), canvasPos, canvasSize, false);
+                    Renderer::GetUIRenderer()->DrawCanvas(m_Scene.get(), canvasPos, canvasSize, false);
                     m_Scene->OnRenderUI();
                 }
                 ImGui::EndChild();
@@ -440,16 +427,25 @@ bool RuntimeLayer::InitProject(const std::string& projectPath)
     if (!std::filesystem::exists(assemblyPath))
     {
         std::filesystem::path libPath = Project::GetAssetDirectory() / "bin" / ("lib" + moduleName);
-        if (std::filesystem::exists(libPath)) assemblyPath = libPath;
+        if (std::filesystem::exists(libPath))
+        {
+            assemblyPath = libPath;
+        }
         else
         {
             // Try build output directory (standard bin/)
             std::filesystem::path rootBin = Application::GetExecutableDirectory() / moduleName;
-            if (std::filesystem::exists(rootBin)) assemblyPath = rootBin;
-            else 
+            if (std::filesystem::exists(rootBin))
+            {
+                assemblyPath = rootBin;
+            }
+            else
             {
                 std::filesystem::path rootLibBin = Application::GetExecutableDirectory() / ("lib" + moduleName);
-                if (std::filesystem::exists(rootLibBin)) assemblyPath = rootLibBin;
+                if (std::filesystem::exists(rootLibBin))
+                {
+                    assemblyPath = rootLibBin;
+                }
             }
         }
     }
@@ -457,15 +453,15 @@ bool RuntimeLayer::InitProject(const std::string& projectPath)
     CH_CORE_INFO("RuntimeSystem: Loading project assembly: {}", assemblyPath.string());
 
     // Initialize Scripting for the loaded project
-    if (!ServiceLocator::Get<ScriptEngine>().ReloadAssembly(assemblyPath.string()))
+    if (!ScriptEngine::Get().ReloadAssembly(assemblyPath.string()))
     {
-        CH_CORE_WARN(
-            "RuntimeSystem: Script reload failed during project initialization (path: {}). Runtime continues without scripts.",
-            assemblyPath.string());
+        CH_CORE_WARN("RuntimeSystem: Script reload failed during project initialization (path: {}). Runtime continues "
+                     "without scripts.",
+                     assemblyPath.string());
     }
 
     // Discover project fonts once before any scene loads.
-    ServiceLocator::Get<UIRenderer>().LoadProjectFonts();
+    Renderer::GetUIRenderer()->LoadProjectFonts();
 
     ApplyWindowConfiguration();
     SetupBrandingAndIcon();
@@ -488,7 +484,7 @@ bool RuntimeLayer::DiscoverAndLoadProject(const std::string& projectPath)
         discoveryPath = exePath.parent_path();
     }
 
-    m_ProjectPath = Project::Discover(discoveryPath, Application::Get().GetSpecification().Name).string();
+    m_ProjectPath = (discoveryPath / (Application::Get().GetSpecification().Name + ".chproject")).string();
 
     if (m_ProjectPath.empty())
     {
@@ -503,11 +499,11 @@ bool RuntimeLayer::DiscoverAndLoadProject(const std::string& projectPath)
     }
 
     CH_CORE_INFO("RuntimeSystem: Project loaded: {}", project->GetConfig().Name);
-    CH_CORE_INFO("RuntimeSystem: Project Directory: {}", project->GetProjectDirectory().string());
+    CH_CORE_INFO("RuntimeSystem: Project Directory: {}", project->GetProjectDirectoryForProject().string());
     CH_CORE_INFO("RuntimeSystem: Asset Directory: {}", Project::GetAssetDirectory().string());
 
     // CRITICAL: Load engine shaders and resources immediately after project is resolved
-    ServiceLocator::Get<Renderer>().LoadEngineResources();
+    Renderer::LoadEngineResources();
 
     return true;
 }
@@ -580,7 +576,7 @@ void RuntimeLayer::SetupBrandingAndIcon()
     }
 
     std::filesystem::path iconPath = "";
-    std::string resolved = ServiceLocator::Get<AssetManager>().ResolvePath(config.IconPath);
+    std::string resolved = config.IconPath;
     if (!resolved.empty() && std::filesystem::exists(resolved))
     {
         iconPath = resolved;
@@ -715,7 +711,7 @@ void RuntimeLayer::PreloadSceneFonts(bool allowRuntimeMutation)
         return;
     }
 
-    const int loadedCount = ServiceLocator::Get<UIRenderer>().GetFontRegistry().PreloadFonts(requests, allowRuntimeMutation);
+    const int loadedCount = Renderer::GetUIRenderer()->GetFontRegistry().PreloadFonts(requests, allowRuntimeMutation);
     if (loadedCount <= 0)
     {
         return;
@@ -744,12 +740,13 @@ bool RuntimeLayer::TransitionToScene(const std::filesystem::path& scenePath)
     m_LoadingOverlayElapsed = 0.0f;
 
     // Runtime scenes need the active ScriptEngine so ManagedScriptComponent instances can be created.
-    auto nextScene = std::make_shared<Scene>(&ServiceLocator::Get<ScriptEngine>());
+
+    auto nextScene = std::make_shared<Scene>(&ScriptEngine::Get());
     SceneSerializer serializer(nextScene.get());
     if (!serializer.Deserialize(scenePath.string()))
     {
         m_Scene = nullptr;
-        CHEngine::SetContextScene(nullptr);
+        Chained::SetContextScene(nullptr);
         return false;
     }
 
@@ -757,7 +754,7 @@ bool RuntimeLayer::TransitionToScene(const std::filesystem::path& scenePath)
     m_Scene->GetSettings().ScenePath = scenePath.string();
 
     // Keep current ScriptEngine behavior intact while runtime owns transition flow.
-    CHEngine::SetContextScene(m_Scene.get());
+    Chained::SetContextScene(m_Scene.get());
 
     Window& window = Application::Get().GetWindow();
     m_Scene->OnViewportResize(window.GetWidth(), window.GetHeight());
@@ -822,7 +819,7 @@ void RuntimeLayer::EnsureRuntimeFramebuffer(uint32_t width, uint32_t height)
 
 bool RuntimeLayer::IsSceneReadyToStart() const
 {
-    return !ServiceLocator::Get<AssetManager>().HasBackgroundWork();
+    return true;
 }
 
 void RuntimeLayer::DrawLoadingOverlay()
@@ -841,9 +838,7 @@ void RuntimeLayer::DrawLoadingOverlay()
 
     if (ImGui::Begin("##RuntimeLoadingOverlay", nullptr, flags))
     {
-        const size_t loadingCount = ServiceLocator::Get<AssetManager>().GetLoadingAssetCount();
-        const size_t pendingFinalizeCount = ServiceLocator::Get<AssetManager>().GetPendingFinalizeCount();
-        const size_t totalPending = loadingCount + pendingFinalizeCount;
+        const size_t totalPending = 0; // AssetManager loading counts not implemented in new API yet
 
         int dotsCount = (static_cast<int>(ImGui::GetTime() * 2.5f) % 3) + 1;
         std::string dots(static_cast<size_t>(dotsCount), '.');
@@ -870,4 +865,4 @@ void RuntimeLayer::DrawLoadingOverlay()
     ImGui::PopStyleColor();
     ImGui::PopStyleVar();
 }
-} // namespace CHEngine
+} // namespace Chained

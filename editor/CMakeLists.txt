@@ -4,15 +4,22 @@ add_library(editor_core STATIC)
 target_sources(editor_core PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_layer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_layer.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/editor_context.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/editor_context.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_panels.h
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_panels.cpp
+
+    # Project
+    ${CMAKE_CURRENT_SOURCE_DIR}/project/editor_settings.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/project/project_serializer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/project/project_serializer.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_project_manager.h
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_project_manager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_scene_manager.h
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_scene_manager.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scene_picking.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/scene_picking.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui_factory.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui_factory.cpp
 
     # Viewport
     ${CMAKE_CURRENT_SOURCE_DIR}/viewport/editor_gizmo.h
@@ -22,6 +29,9 @@ target_sources(editor_core PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/viewport/ui_manipulator.h
     ${CMAKE_CURRENT_SOURCE_DIR}/viewport/ui_manipulator.h
     ${CMAKE_CURRENT_SOURCE_DIR}/viewport/ui_manipulator.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_asset_types.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_action_commands.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_action_commands.cpp
 
     # Panels
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/scene_hierarchy_panel.h
@@ -32,6 +42,8 @@ target_sources(editor_core PRIVATE
     
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/content_browser_panel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/content_browser_panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/content_browser_provider.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/panels/content_browser_provider.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/console_panel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/console_panel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/panels/profiler_panel.h
@@ -82,7 +94,8 @@ target_include_directories(editor_core PUBLIC
 )
 
 # Define the Editor executable
-add_executable(ChainedEditor ${CMAKE_CURRENT_SOURCE_DIR}/editor_main.cpp)
+add_executable(ChainedEditor ${CMAKE_CURRENT_SOURCE_DIR}/editor_main.cpp
+        editor_icons.h)
 target_link_libraries(ChainedEditor PRIVATE editor_core ChainedDecos)
 target_include_directories(ChainedEditor PRIVATE 
     ${CMAKE_CURRENT_SOURCE_DIR}

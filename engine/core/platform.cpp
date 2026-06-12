@@ -1,6 +1,7 @@
 #include "platform.h"
-#include <GLFW/glfw3.h>
 #include <nfd.h>
+#include <chrono>
+#include <thread>
 
 #if defined(CH_PLATFORM_WINDOWS)
     #include <windows.h>
@@ -9,7 +10,7 @@
     #include <pthread.h>
 #endif
 
-namespace CHEngine
+namespace Chained
 {
     std::filesystem::path Platform::GetExecutableDirectory()
     {
@@ -28,26 +29,15 @@ namespace CHEngine
 
     float Platform::GetTime()
     {
-        return (float)glfwGetTime();
+        static auto s_StartTime = std::chrono::high_resolution_clock::now();
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<float> elapsed = currentTime - s_StartTime;
+        return elapsed.count();
     }
 
     void Platform::Sleep(uint32_t milliseconds)
     {
-#if defined(CH_PLATFORM_WINDOWS)
-        ::Sleep(milliseconds);
-#elif defined(CH_PLATFORM_LINUX)
-        usleep(milliseconds * 1000);
-#endif
-    }
-
-    void Platform::SetThreadName(const std::string& name)
-    {
-#if defined(CH_PLATFORM_WINDOWS)
-        std::wstring wname(name.begin(), name.end());
-        SetThreadDescription(GetCurrentThread(), wname.c_str());
-#elif defined(CH_PLATFORM_LINUX)
-        pthread_setname_np(pthread_self(), name.c_str());
-#endif
+        std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
     }
 
     std::optional<std::filesystem::path> Platform::OpenFile(const std::vector<FileDialogFilter>& filters)

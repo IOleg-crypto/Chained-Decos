@@ -66,7 +66,6 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         # Dead Code Elimination linkage and binary stripping for Release build
         add_link_options(
             $<$<CONFIG:Release>:-Wl,--gc-sections>
-            $<$<CONFIG:Release>:-s>
         )
 
         if(DISABLE_ALL_WARNINGS)
@@ -109,7 +108,6 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     # Dead Code Elimination linkage and binary stripping for Release build
     add_link_options(
         $<$<CONFIG:Release>:-Wl,--gc-sections>
-        $<$<CONFIG:Release>:-s>
     )
 
     if(DISABLE_ALL_WARNINGS)
@@ -142,7 +140,7 @@ if(WIN32)
 endif()
 
 # Optimized Build Settings
-option(ENABLE_UNITY_BUILD "Enable Unity Builds for faster compilation" ON)
+option(ENABLE_UNITY_BUILD "Enable Unity Builds for faster compilation" OFF)
 option(ENABLE_PCH "Enable Precompiled Headers for faster compilation" ON)
 option(ENABLE_LTO "Enable Link-Time Optimization (IPO) for Release configurations" ON)
 option(ENABLE_COVERAGE "Enable Code Coverage (GCC/Clang only)" OFF)
@@ -161,10 +159,17 @@ endif()
 
 # Function to apply common engine optimizations to a target
 function(apply_engine_optimizations target_name)
-    if(ENABLE_PCH)
+    set(NO_PCH OFF)
+    if(ARGC GREATER 1)
+        if("${ARGV1}" STREQUAL "NO_PCH")
+            set(NO_PCH ON)
+        endif()
+    endif()
+
+    if(ENABLE_PCH AND NOT NO_PCH)
         # Real PCH: faster local dev, but breaks sccache cache hit rates
         target_precompile_headers(${target_name} PUBLIC "${PROJECT_SOURCE_DIR}/engine/engine_pch.h")
-    else()
+    elseif(NOT NO_PCH)
         # Force-include: injects engine_pch.h into every TU via compiler flags.
         # This gives the same include coverage as PCH but without a .pch binary,
         # so ccache/sccache still achieves 100% hit rates in CI.

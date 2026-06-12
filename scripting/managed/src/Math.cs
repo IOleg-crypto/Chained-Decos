@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace CHEngine
+namespace Chained
 {
 
 // ── Math ─────────────────────────────────────────────────────────────────────
@@ -127,4 +127,4 @@ public enum MouseButton : int
     Middle = 2
 }
 
-} // namespace CHEngine
+} // namespace Chained

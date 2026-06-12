@@ -1,11 +1,10 @@
 #include "script_glue_internal.h"
 #include "script_internal_call_registry.h"
-#include "engine/core/service_locator.h"
 #include "engine/scene/components/component_utils.h"
 #include "engine/scene/component_registry.h"
- 
-
-namespace CHEngine {
+#include "engine/scene/component_registry.h"
+#include "engine/audio/audio.h"
+namespace Chained {
 
     void RegisterGlueEntity() {}
 
@@ -184,14 +183,14 @@ namespace CHEngine {
             auto& audio = entity.GetComponent<AudioComponent>();
             if (audio.SoundHandle != 0) {
                 // Prevent duplicate instances — only play if not already active
-                if (audio.IsPlaying && ServiceLocator::Get<Audio>().IsPlaying(audio.SoundHandle)) return;
-                
+                auto& audioService = Audio::Get();
+                audioService.SetInstancePosition(audio.SoundHandle, entity.GetComponent<TransformComponent>().WorldTransform[3]);
                 glm::vec3 worldPos = {0,0,0};
                 if (entity.HasComponent<TransformComponent>()) {
                     auto& transform = entity.GetComponent<TransformComponent>();
                     worldPos = glm::vec3(transform.WorldTransform[3]);
                 }
-                ServiceLocator::Get<Audio>().Play(audio.SoundHandle, audio.Volume, audio.Pitch, audio.Loop, audio.Spatialized, worldPos);
+                audioService.Play(audio.SoundHandle, audio.Volume, audio.Pitch, audio.Loop, audio.Spatialized, worldPos);
                 audio.IsPlaying = true;
             }
         }
@@ -203,7 +202,8 @@ namespace CHEngine {
         if (entity && entity.HasComponent<AudioComponent>()) {
             auto& audio = entity.GetComponent<AudioComponent>();
             if (audio.SoundHandle != 0 && audio.IsPlaying) {
-                ServiceLocator::Get<Audio>().Stop(audio.SoundHandle);
+                auto& audioService = Audio::Get();
+                audioService.Stop(audio.SoundHandle);
                 audio.IsPlaying = false;
             }
         }
@@ -268,5 +268,5 @@ namespace CHEngine {
 
     
 
-} // namespace CHEngine
+} // namespace Chained
 

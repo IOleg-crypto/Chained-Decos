@@ -14,7 +14,8 @@
       "cacheVariables": {
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "CMAKE_CXX_EXTENSIONS": "OFF",
-        "BUILD_TESTS": "OFF",
+        "BUILD_TESTS": "ON",
+        "CMAKE_SUPPRESS_DEVELOPER_WARNINGS": "ON",
         "DISABLE_ALL_WARNINGS": "ON",
         "CH_ENGINE_SHARED": "OFF",
         "CH_ACTIVE_GAME": "chaineddecos",
@@ -95,6 +96,8 @@
       "name": "windows-msvc",
       "displayName": "Windows Ninja MSVC Debug",
       "inherits": "ninja-base",
+      "architecture": { "value": "x64", "strategy": "external" },
+      "toolset": { "value": "host=x64", "strategy": "external" },
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_C_COMPILER": "cl",
@@ -110,6 +113,8 @@
       "name": "windows-msvc-release",
       "displayName": "Windows Ninja MSVC Release",
       "inherits": "ninja-base",
+      "architecture": { "value": "x64", "strategy": "external" },
+      "toolset": { "value": "host=x64", "strategy": "external" },
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_C_COMPILER": "cl",

@@ -4,7 +4,7 @@
 #include "engine/scene/scene.h"
 #include "gtest/gtest.h"
 
-using namespace CHEngine;
+using namespace Chained;
 
 TEST(PhysicsTest, AABBIntersection)
 {
@@ -109,4 +109,17 @@ TEST(PhysicsTest, ContextLifecycleResetAndClear)
     EXPECT_FLOAT_EQ(recreated.Accumulator, 0.0f);
     EXPECT_FALSE((bool)recreated.CollisionCallback);
     EXPECT_FALSE(callbackInvoked);
+}
+
+TEST(PhysicsTest, RuntimeStartInitializesRigidBodyHandles)
+{
+    auto scene = std::make_shared<Scene>();
+    auto entity = scene->CreateEntity("Physics Entity");
+    auto& rigidBody = entity.AddComponent<RigidBodyComponent>();
+
+    EXPECT_EQ(rigidBody.Handle, kInvalidPhysicsBody);
+
+    scene->OnRuntimeStart();
+
+    EXPECT_NE(rigidBody.Handle, kInvalidPhysicsBody);
 }

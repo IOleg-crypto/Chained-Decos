@@ -3,70 +3,96 @@
 
 #include "engine/assets/asset.h"
 #include "engine/graphics/api/texture.h"
-#include <memory>
 #include <cstdint>
+#include <memory>
 
-namespace CHEngine
+namespace Chained
 {
-
-
-class TextureAsset : public Asset, public std::enable_shared_from_this<TextureAsset>
+class TextureAsset : public Asset
 {
 public:
-    TextureAsset()
-        : Asset(GetStaticType())
+    TextureAsset(std::shared_ptr<Texture> texture = nullptr)
+        : Asset(GetStaticType()),
+          m_Texture(texture)
     {
+        if (m_Texture)
+        {
+            m_IsCubemap = m_Texture->GetType() == TextureType::Cubemap;
+            SetState(AssetState::Ready);
+        }
     }
-    TextureAsset(AssetHandle handle)
-        : Asset(GetStaticType(), handle)
-    {
-    }
-    virtual ~TextureAsset() = default;
 
+    TextureAsset(AssetHandle handle, std::shared_ptr<Texture> texture = nullptr)
+        : Asset(GetStaticType(), handle),
+          m_Texture(texture)
+    {
+        if (m_Texture)
+        {
+            m_IsCubemap = m_Texture->GetType() == TextureType::Cubemap;
+            SetState(AssetState::Ready);
+        }
+    }
+
+    virtual ~TextureAsset() = default;
 
     static AssetType GetStaticType()
     {
         return AssetType::Texture;
     }
 
-    void OnLoaded() override;
-
-    std::shared_ptr<Texture> GetTexture() const { return m_Texture; }
-    uint32_t GetWidth() const;
-    uint32_t GetHeight() const;
-    
-    // Direct GPU Texture API forwards
-    uint32_t GetRendererID() const { return m_Texture ? m_Texture->GetRendererID() : 0; }
-    void Bind(uint32_t slot = 0) const { if (m_Texture) m_Texture->Bind(slot); }
-
-    bool IsCubemap() const { return m_IsCubemap; }
-    bool IsHDR() const { return m_IsHDR; }
-
-    void SetRawData(void* data, int width, int height, int channels, bool isHDR)
+    std::shared_ptr<Texture> GetTexture() const
     {
-        m_RawData = data;
-        m_RawWidth = width;
-        m_RawHeight = height;
-        m_RawChannels = channels;
-        m_IsHDR = isHDR;
-        m_HasPendingImage = true;
+        return m_Texture;
     }
-    void SetIsCubemap(bool isCubemap) { m_IsCubemap = isCubemap; }
-    void SetIsHDR(bool isHDR) { m_IsHDR = isHDR; }
+    uint32_t GetWidth() const
+    {
+        return m_Texture ? m_Texture->GetWidth() : 0;
+    }
+    uint32_t GetHeight() const
+    {
+        return m_Texture ? m_Texture->GetHeight() : 0;
+    }
 
-    void Unload();
+    uint32_t GetRendererID() const
+    {
+        return m_Texture ? m_Texture->GetRendererID() : 0;
+    }
+    void Bind(uint32_t slot = 0) const
+    {
+        if (m_Texture)
+        {
+            m_Texture->Bind(slot);
+        }
+    }
 
-public: // Internal data for loader
+    bool IsCubemap() const
+    {
+        return m_IsCubemap;
+    }
+    bool IsHDR() const
+    {
+        return m_IsHDR;
+    }
+
+    void SetIsCubemap(bool isCubemap)
+    {
+        m_IsCubemap = isCubemap;
+    }
+    void SetIsHDR(bool isHDR)
+    {
+        m_IsHDR = isHDR;
+    }
+
+    size_t GetMemoryUsage() const override
+    {
+        return m_Texture ? (m_Texture->GetWidth() * m_Texture->GetHeight() * 4) : 0;
+    }
+
+private:
     std::shared_ptr<Texture> m_Texture;
-    void* m_RawData = nullptr;
-    int m_RawWidth = 0;
-    int m_RawHeight = 0;
-    int m_RawChannels = 0;
-    bool m_HasPendingImage = false;
     bool m_IsCubemap = false;
     bool m_IsHDR = false;
 };
-
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_TEXTURE_ASSET_H

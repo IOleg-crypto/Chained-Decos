@@ -2,9 +2,10 @@
 #define CH_PROJECT_SELECTOR_UI_H
 
 #include "editor/editor_project_manager.h"
+#include "engine/assets/asset_manager.h"
 #include <cstdint>
 
-namespace CHEngine
+namespace Chained
 {
 
 class ProjectSelectorUI
@@ -16,10 +17,11 @@ public:
 
 private:
     EditorProjectManager& m_ProjectManager;
+
     uint64_t m_NewProjectIconHandle = 0;
     uint64_t m_OpenProjectIconHandle = 0;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_PROJECT_SELECTOR_UI_H
