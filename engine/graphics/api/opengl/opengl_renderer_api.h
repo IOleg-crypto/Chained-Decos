@@ -5,7 +5,7 @@
 
 #include <unordered_map>
 
-namespace CHEngine
+namespace Chained
 {
 
 class OpenGLRendererAPI : public RendererAPI
@@ -61,6 +61,6 @@ private:
     } m_StateCache;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_OPENGL_RENDERER_API_H

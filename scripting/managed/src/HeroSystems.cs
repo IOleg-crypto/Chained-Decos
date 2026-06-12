@@ -1,6 +1,6 @@
 using System;
 
-namespace CHEngine
+namespace Chained
 {
     /// <summary>Skill tree branches.</summary>
     public enum SkillBranch

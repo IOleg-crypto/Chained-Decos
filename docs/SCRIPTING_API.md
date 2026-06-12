@@ -4,7 +4,7 @@ This document covers the managed API surface available to C# scripts in Chained 
 
 ## 1. Script Lifecycle
 
-All gameplay scripts must inherit from `CHEngine.Script`.
+All gameplay scripts must inherit from `Chained.Script`.
 
 ```csharp
 public class MyScript : Script

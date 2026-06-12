@@ -2,8 +2,8 @@
 #define CH_RENDERER_TYPES_H
 
 #include "engine/assets/asset.h"
-#include "engine/core/ch_structures.h"
-#include "engine/core/reflection.h"
+#include "engine/foundation/color.h"
+#include "engine/reflection/reflection.h"
 #include "engine/graphics/api/vertex_array.h"
 #include <cstring>
 #include <glm/glm.hpp>
@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-namespace CHEngine
+namespace Chained
 {
 struct ShaderUniform
 {
@@ -30,7 +30,7 @@ struct ShaderUniform
 
     if (Type == 4) // Color
     {
-        CHEngine::Color c = {(unsigned char)glm::clamp(Value[0] * 255.0f, 0.0f, 255.0f),
+        Chained::Color c = {(unsigned char)glm::clamp(Value[0] * 255.0f, 0.0f, 255.0f),
                              (unsigned char)glm::clamp(Value[1] * 255.0f, 0.0f, 255.0f),
                              (unsigned char)glm::clamp(Value[2] * 255.0f, 0.0f, 255.0f),
                              (unsigned char)glm::clamp(Value[3] * 255.0f, 0.0f, 255.0f)};
@@ -103,9 +103,8 @@ struct Model
     std::vector<Mesh> Meshes;
     std::vector<Material> Materials;
     glm::mat4 Transform = glm::mat4(1.0f);
-
-    static Model CreateFromFile(const std::string& path);
 };
-} // namespace CHEngine
+
+} // namespace Chained
 
 #endif // CH_RENDERER_TYPES_H

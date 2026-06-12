@@ -1,6 +1,6 @@
 //========= Copyright Chained Decos, All rights reserved. ============//
 using System;
-using CHEngine;
+using Chained;
 
 namespace ChainedDecos.Scripts
 {

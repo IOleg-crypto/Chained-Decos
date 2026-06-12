@@ -1,7 +1,7 @@
 #include "command_history.h"
 #include "engine/core/log.h"
 
-namespace CHEngine
+namespace Chained
 {
 CommandHistory::CommandHistory(size_t maxHistory)
     : m_MaxHistory(maxHistory)
@@ -89,4 +89,4 @@ void CommandHistory::Notify()
         m_NotifyCallback();
     }
 }
-} // namespace CHEngine
+} // namespace Chained

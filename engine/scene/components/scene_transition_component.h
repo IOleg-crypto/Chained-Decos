@@ -1,10 +1,10 @@
 #ifndef CH_SCENE_TRANSITION_COMPONENT_H
 #define CH_SCENE_TRANSITION_COMPONENT_H
 
-#include "engine/core/reflection_rfl.h"
+#include "engine/reflection/reflection_rfl.h"
 #include <string>
 
-namespace CHEngine
+namespace Chained
 {
     // Component attached to entities (usually buttons) that should trigger a scene load.
     // This allows us to handle transitions natively without C# script overhead.

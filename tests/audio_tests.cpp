@@ -1,7 +1,7 @@
 #include "engine/audio/audio.h"
 #include "gtest/gtest.h"
 
-using namespace CHEngine;
+using namespace Chained;
 
 TEST(AudioTest, EmptyBufferPlaybackIsNoOp)
 {

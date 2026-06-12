@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
-    <AssemblyName>CHEngine.Managed</AssemblyName>
-    <RootNamespace>CHEngine</RootNamespace>
+    <AssemblyName>Chained.Managed</AssemblyName>
+    <RootNamespace>Chained</RootNamespace>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

@@ -4,7 +4,7 @@
 #include "engine/core/events.h"
 #include "engine/scene/entity.h"
 
-namespace CHEngine
+namespace Chained
 {
 // Event to trigger an layout reset.
 class AppResetLayoutEvent : public Event
@@ -37,8 +37,14 @@ public:
 class ViewportFocusEntityEvent : public Event
 {
 public:
-    ViewportFocusEntityEvent(Entity entity) : m_Entity(entity) {}
-    Entity GetEntity() const { return m_Entity; }
+    ViewportFocusEntityEvent(Entity entity)
+        : m_Entity(entity)
+    {
+    }
+    Entity GetEntity() const
+    {
+        return m_Entity;
+    }
 
     EVENT_CLASS_TYPE(ViewportFocusEntity)
     EVENT_CLASS_CATEGORY(EventCategoryApplication)
@@ -63,6 +69,6 @@ public:
     EVENT_CLASS_CATEGORY(EventCategoryApplication)
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_EDITOR_EVENTS_H

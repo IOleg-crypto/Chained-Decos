@@ -3,7 +3,7 @@
 
 #include <glm/glm.hpp>
 
-namespace CHEngine
+namespace Chained
 {
 // Frustum plane: xyz = normal (normalized), w = distance from origin.
 // Point is inside if dot(normal, point) + w >= 0.
@@ -46,6 +46,6 @@ inline bool IsBoxVisible(Frustum frustum, const glm::vec3& center, const glm::ve
     return !outside(frustum.Left) && !outside(frustum.Right) && !outside(frustum.Bottom) && !outside(frustum.Top) &&
            !outside(frustum.Near) && !outside(frustum.Far);
 }
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_FRUSTUM_H

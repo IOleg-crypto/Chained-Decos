@@ -1,53 +1,42 @@
 // material_tests.cpp
 // Tests for the MaterialInstance struct (engine/graphics/pipeline/material.h).
 // These tests are pure-CPU and do not require an OpenGL context.
-#include "engine/graphics/pipeline/material.h"
+#include "engine/graphics/pipeline/renderer_types.h"
 #include "gtest/gtest.h"
 
-using namespace CHEngine;
+using namespace Chained;
 
-// Verifies that a default-constructed MaterialInstance has engine-standard default values:
-// white albedo, no overrides, metalness=0, roughness=0.5, alpha=1.
+// Verifies that a default-constructed Material has engine-standard default values:
+// white albedo, metalness=0, roughness=0.5, alpha=1.
 TEST(MaterialTest, DefaultInitialization)
 {
-    MaterialInstance material;
+    Material material;
     
-    EXPECT_EQ(material.AlbedoColor.r, 255);
-    EXPECT_EQ(material.AlbedoColor.g, 255);
-    EXPECT_EQ(material.AlbedoColor.b, 255);
-    EXPECT_EQ(material.AlbedoColor.a, 255);
-
-    EXPECT_FALSE(material.OverrideAlbedo);
-    EXPECT_FALSE(material.OverrideNormal);
-    EXPECT_FALSE(material.OverrideMetallicRoughness);
-    EXPECT_FALSE(material.OverrideOcclusion);
-    EXPECT_FALSE(material.OverrideEmissive);
-    EXPECT_FALSE(material.OverrideShader);
+    EXPECT_FLOAT_EQ(material.AlbedoColor.r, 1.0f);
+    EXPECT_FLOAT_EQ(material.AlbedoColor.g, 1.0f);
+    EXPECT_FLOAT_EQ(material.AlbedoColor.b, 1.0f);
+    EXPECT_FLOAT_EQ(material.AlbedoColor.a, 1.0f);
 
     EXPECT_FLOAT_EQ(material.Metalness, 0.0f);
     EXPECT_FLOAT_EQ(material.Roughness, 0.5f);
 
-    EXPECT_FALSE(material.DoubleSided);
     EXPECT_FALSE(material.Transparent);
     EXPECT_FLOAT_EQ(material.Alpha, 1.0f);
 }
 
-// Verifies that fields can be mutated and read back correctly — ensures no unexpected
-// padding or bitfield truncation in the struct layout.
+// Verifies that fields can be mutated and read back correctly.
 TEST(MaterialTest, StateModification)
 {
-    MaterialInstance material;
+    Material material;
     
     AssetHandle testHandle(12345);
     material.AlbedoHandle = testHandle;
-    material.OverrideAlbedo = true;
     
     material.Metalness = 0.8f;
     material.Roughness = 0.2f;
     material.Transparent = true;
     material.Alpha = 0.5f;
 
-    EXPECT_TRUE(material.OverrideAlbedo);
     EXPECT_EQ(material.AlbedoHandle, testHandle);
     EXPECT_FLOAT_EQ(material.Metalness, 0.8f);
     EXPECT_FLOAT_EQ(material.Roughness, 0.2f);

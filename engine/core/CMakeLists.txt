@@ -2,19 +2,13 @@ chained_add_engine_module(engine_core
     SOURCES
         layer_stack.cpp
         profiler.cpp
-        uuid.cpp
         input.cpp
         imgui_layer.cpp
-        thread_pool.cpp
-        service_locator.cpp
+
         application.h
         platform.h
         platform.cpp
         imgui_layer.h
-        base.h
-        ch_assert.h
-        platform_detection.h
-        thread_pool.h
         entry_point.h
         events.h
         input.h
@@ -22,19 +16,14 @@ chained_add_engine_module(engine_core
         layer_stack.h
         log.h
         profiler.h
-        timestep.h
-        uuid.h
         window.h
-        service_locator.h
-        engine_service.h
-        ch_structures.h
+
         key_codes.h
         mouse_codes.h
-        reflection.h
-        yaml_conversions.h
         ../platform/glfw/glfw_window.cpp
         ../platform/glfw/glfw_window.h
     DEPENDS
+        engine_reflection
         ChainedEngine::External::YamlCpp
         ChainedEngine::External::EnTT
         ChainedEngine::External::GLM
@@ -46,6 +35,14 @@ chained_add_engine_module(engine_core
         ChainedEngine::External::Coral
         ChainedEngine::External::NFD
         ChainedEngine::External::reflect-cpp
+        ChainedEngine::External::Cereal
+        ChainedEngine::External::spdlog
+        ChainedEngine::External::BSThreadPool
+        zstd::libzstd_static
 )
 
-target_include_directories(engine_core PUBLIC "${CMAKE_SOURCE_DIR}/include/reflect-cpp/include")
+target_include_directories(engine_core PUBLIC 
+    "${CMAKE_SOURCE_DIR}/include/reflect-cpp/include"
+    "${CMAKE_SOURCE_DIR}/include/cereal/include"
+    "${ZSTD_INCLUDE_DIR}"
+)

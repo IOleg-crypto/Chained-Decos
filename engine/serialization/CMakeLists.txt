@@ -1,0 +1,25 @@
+chained_add_engine_module(engine_serialization
+    SOURCES
+        scene_serializer.cpp
+        component_serializer.cpp
+        managed_script_serializer.cpp
+        hierarchy_serializer.cpp
+        prefab_serializer.cpp
+        scene_serializer.h
+        component_serializer.h
+        managed_script_serializer.h
+        hierarchy_serializer.h
+        prefab_serializer.h
+        scripting_serialization.h
+        serialization.h
+        yaml_conversions.h
+        yaml.h
+    DEPENDS
+        engine_reflection
+        engine_core
+        engine_project
+        engine_graphics
+        engine_physics
+        engine_audio
+        engine_scene
+)

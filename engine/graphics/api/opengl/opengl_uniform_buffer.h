@@ -3,7 +3,7 @@
 
 #include "engine/graphics/api/buffer.h"
 
-namespace CHEngine
+namespace Chained
 {
 class OpenGLUniformBuffer : public UniformBuffer
 {
@@ -16,6 +16,6 @@ public:
 private:
     uint32_t m_RendererID = 0;
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_OPENGL_UNIFORM_BUFFER_H

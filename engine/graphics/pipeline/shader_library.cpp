@@ -1,13 +1,15 @@
 #include "shader_library.h"
-#include "engine/core/ch_assert.h"
+#include "engine/foundation/engine_assert.h"
 #include "engine/core/log.h"
 #include "engine/assets/asset_manager.h"
-#include "engine/core/service_locator.h"
-#include "engine/scene/project.h"
 #include <filesystem>
 
-namespace CHEngine
+namespace Chained
 {
+ShaderLibrary::ShaderLibrary()
+{
+}
+
 void ShaderLibrary::Add(const std::string& name, const std::shared_ptr<ShaderAsset>& shader)
 {
     CH_CORE_ASSERT(!Exists(name), "Shader already exists in library!");
@@ -22,8 +24,8 @@ void ShaderLibrary::Add(const std::shared_ptr<ShaderAsset>& shader)
 
 void ShaderLibrary::Load(const std::string& path)
 {
-    auto handle = ServiceLocator::Get<AssetManager>().ResolveToHandle(path, ShaderAsset::GetStaticType());
-    auto shader = ServiceLocator::Get<AssetManager>().Get<ShaderAsset>(handle);
+    auto handle = AssetManager::Get().ImportAsset(path);
+    auto shader = GetById(handle);
     if (shader)
     {
         Add(shader);
@@ -32,8 +34,8 @@ void ShaderLibrary::Load(const std::string& path)
 
 void ShaderLibrary::Load(const std::string& name, const std::string& path)
 {
-    auto handle = ServiceLocator::Get<AssetManager>().ResolveToHandle(path, ShaderAsset::GetStaticType());
-    auto shader = ServiceLocator::Get<AssetManager>().Get<ShaderAsset>(handle);
+    auto handle = AssetManager::Get().ImportAsset(path);
+    auto shader = ShaderLibrary::GetById(handle);
     if (shader)
     {
         if (Exists(name))
@@ -54,8 +56,8 @@ std::shared_ptr<ShaderAsset> ShaderLibrary::LoadOrGet(const std::string& name, c
         return it->second;
     }
 
-    auto handle = ServiceLocator::Get<AssetManager>().ResolveToHandle(path, ShaderAsset::GetStaticType());
-    auto shader = ServiceLocator::Get<AssetManager>().Get<ShaderAsset>(handle);
+    auto handle = AssetManager::Get().ImportAsset(path);
+    auto shader = AssetManager::Get().GetAsset<ShaderAsset>(handle);
     if (shader)
     {
         m_Shaders[name] = shader;
@@ -106,14 +108,16 @@ std::vector<std::string> ShaderLibrary::GetNames() const
 void ShaderLibrary::ReloadAll()
 {
     CH_CORE_INFO("ShaderLibrary: Reloading all shaders...");
-    
+
     for (auto& [name, shader] : m_Shaders)
     {
         if (shader && !shader->GetPath().empty())
         {
             CH_CORE_TRACE("ShaderLibrary: Reloading shader '{}' from '{}'", name, shader->GetPath());
-            ServiceLocator::Get<AssetManager>().Reload<ShaderAsset>(shader->GetPath());
+            auto handle = AssetManager::Get().ImportAsset(shader->GetPath());
+            auto reloaded = AssetManager::Get().GetAsset<ShaderAsset>(handle);
+            if (reloaded) shader = reloaded;
         }
     }
 }
-} // namespace CHEngine
+} // namespace Chained

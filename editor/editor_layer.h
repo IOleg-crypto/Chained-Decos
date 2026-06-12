@@ -1,39 +1,39 @@
 #ifndef CH_EDITOR_LAYER_H
 #define CH_EDITOR_LAYER_H
 
-#include <filesystem>
 #include <memory>
-#include <future>
 #include <vector>
 #include <string>
-
-
-#include "editor_context.h"
+#include "engine/graphics/pipeline/renderer.h"
+#include "engine/scene/scene.h"
 #include "editor_project_manager.h"
 #include "editor_scene_manager.h"
 #include "engine/core/application.h"
-#include "engine/core/base.h"
 #include "engine/core/layer.h"
 #include "editor_layout.h"
 #include "editor_panels.h"
-#include "engine/graphics/pipeline/renderer.h"
-#include "engine/scene/scene.h"
-#include "engine/scene/scene_events.h"
 #include "imgui.h"
 #include "undo/command_history.h"
 
-namespace CHEngine
+namespace Chained {
+enum class SceneState : uint8_t { Edit = 0, Play = 1 };
+
+struct EditorState {
+    Entity SelectedEntity;
+    bool FullscreenGame = false;
+    bool StandaloneActive = false;
+    bool NeedsLayoutReset = false;
+    int LastHitMeshIndex = -1;
+    DebugRenderFlags DebugRenderFlags;
+    bool IsLoading = false;
+    std::string LoadingStatus = "";
+};
+} // namespace Chained
+
+
+namespace Chained
 {
 
-struct EditorConfig
-{
-    std::string LastProjectPath = "";
-    std::string LastScenePath = "";
-    bool LoadLastProjectOnStartup = true;
-    bool AutoSaveEnabled = true;
-    float AutoSaveInterval = 300.0f;
-    std::vector<std::string> RecentProjects; // Ordered list of recently opened project paths
-};
 
 class ProjectSelectorUI;
 
@@ -41,7 +41,9 @@ class ProjectSelectorUI;
 class EditorLayer : public Layer
 {
 public:
-    EditorLayer();
+    static EditorLayer& Get() { return *s_Instance; }
+
+    EditorLayer(Application& app);
     virtual ~EditorLayer();
 
     virtual void OnAttach() override;
@@ -65,41 +67,29 @@ public:
     // Resets the editor layout to the default dock structure.
     void ResetLayout();
     
-    SceneState GetSceneState() const
-    {
-        return EditorContext::GetSceneState();
-    }
-
-    // File and project operations (delegated to ProjectManager).
+    // Project/Scene operations.
+    EditorSceneManager& GetSceneManager() { return *m_SceneManager; }
     EditorProjectManager& GetProjectManager() { return *m_ProjectManager; }
 
-    // Scene operations (delegated to SceneManager).
-    EditorSceneManager& GetSceneManager() { return *m_SceneManager; }
-
     void LaunchStandalone();
+
+    SceneState GetSceneState() const { return m_SceneState; }
+    void SetSceneState(SceneState state) { m_SceneState = state; }
+
+    Entity GetSelectedEntity() const { return m_EditorState.SelectedEntity; }
+    void SetSelectedEntity(Entity entity) { m_EditorState.SelectedEntity = entity; }
+
+    DebugRenderFlags& GetDebugRenderFlags() { return m_EditorState.DebugRenderFlags; }
+    EditorState& GetEditorState() { return m_EditorState; }
 
 private:
     void LoadEditorFonts();
     void DrawLoadingOverlay(const char* title, const char* status);
-
-private:
-    static EditorLayer* s_Instance;
 public:
-    static EditorLayer& Get() { return *s_Instance; }
-
     CommandHistory& GetCommandHistory();
-    CommandHistory& History()
-    {
-        return m_CommandHistory;
-    }
     EditorPanels& GetPanels()
     {
         return *m_Panels;
-    }
-
-    Entity GetSelectedEntity() const
-    {
-        return EditorContext::GetSelectedEntity();
     }
 
     static void ReparentEntity(Entity child, Entity parent);
@@ -131,16 +121,19 @@ private:
     EditorConfig m_Config;
 
 private:
+    EditorState m_EditorState;
+    SceneState m_SceneState = SceneState::Edit;
     std::unique_ptr<EditorLayout> m_Layout;
     std::unique_ptr<EditorPanels> m_Panels;
     std::unique_ptr<EditorProjectManager> m_ProjectManager;
     std::unique_ptr<EditorSceneManager> m_SceneManager;
     std::unique_ptr<ProjectSelectorUI> m_ProjectSelectorUI;
-
     CommandHistory m_CommandHistory;
     std::string m_PendingSceneTransitionPath;
     ImVec2 m_ViewportSize = {1280, 720};
+    
+    static EditorLayer* s_Instance;
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_EDITOR_LAYER_H

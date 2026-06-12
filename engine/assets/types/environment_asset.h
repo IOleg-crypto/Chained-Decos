@@ -7,7 +7,7 @@
 
 #include "color.h"
 
-namespace CHEngine
+namespace Chained
 {
 
 struct Skybox
@@ -57,16 +57,16 @@ public:
         : Asset(GetStaticType(), handle)
     {
     }
-    virtual ~EnvironmentAsset() = default;
+    virtual ~EnvironmentAsset() override = default;
 
     static AssetType GetStaticType()
     {
         return AssetType::Environment;
     }
 
-    void OnLoaded() override
+    size_t GetMemoryUsage() const override
     {
-        CH_CORE_INFO("Initialized environment asset.");
+        return sizeof(*this) + m_Settings.Skybox.TexturePath.capacity();
     }
 
     const EnvironmentParameters& GetSettings() const
@@ -86,6 +86,6 @@ private:
     EnvironmentParameters m_Settings;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_ENVIRONMENT_H

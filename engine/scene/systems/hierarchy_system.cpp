@@ -1,19 +1,20 @@
 #include "hierarchy_system.h"
-#include "engine/scene/scene.h"
-#include "engine/scene/components/component_utils.h"
 #include "engine/core/profiler.h"
+#include "engine/scene/components/component_utils.h"
+#include "engine/scene/scene.h"
 
-namespace CHEngine
+
+namespace Chained
 {
-void HierarchySystem::Update(Scene* scene)
+
+void HierarchySystem::UpdateWorldTransforms(entt::registry& reg, const std::vector<entt::entity>& roots)
 {
     CH_PROFILE_FUNCTION();
-    auto& reg = scene->GetRegistry();
+
     std::vector<UpdateTask> stack;
-    auto& roots = scene->GetRootEntities();
     stack.reserve(roots.size());
 
-    // 1. Push cached root entities to stack
+    // 1. Push root entities to stack
     for (auto entity : roots)
     {
         if (reg.valid(entity) && reg.all_of<TransformComponent>(entity))
@@ -29,10 +30,10 @@ void HierarchySystem::Update(Scene* scene)
         stack.pop_back();
 
         auto& tc = reg.get<TransformComponent>(task.Entity);
-        
+
         // A node needs update if it is explicitly dirty OR its parent's world transform changed
         bool needsUpdate = task.ParentChanged || tc.IsDirty;
-        
+
         if (needsUpdate)
         {
             tc.WorldTransform = task.ParentTransform * ComponentUtils::GetTransform(tc);
@@ -53,4 +54,4 @@ void HierarchySystem::Update(Scene* scene)
         }
     }
 }
-} // namespace CHEngine
+} // namespace Chained

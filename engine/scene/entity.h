@@ -1,9 +1,9 @@
 #ifndef CH_ENTITY_H
 #define CH_ENTITY_H
 
-#include "engine/core/ch_assert.h"
-#include "engine/core/base.h"
-#include "engine/core/uuid.h"
+#include "engine/foundation/engine_assert.h"
+#include "engine/foundation/base.h"
+#include "engine/foundation/uuid.h"
 #include "engine/scene/components/id_component.h"
 #include "engine/scene/components/tag_component.h"
 #include "entt/entt.hpp"
@@ -12,7 +12,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace CHEngine
+namespace Chained
 {
 
 // Lightweight handle over an entt registry. Entity objects do not own the registry;
@@ -122,10 +122,16 @@ public:
         return GetComponent<TagComponent>().Tag;
     }
 
+    glm::mat4 GetWorldTransform();
+    glm::vec3 GetWorldPosition();
+    glm::vec3 GetForward();
+    glm::vec3 GetUp();
+    glm::vec3 GetRight();
+
 private:
     entt::entity m_EntityHandle{entt::null};
     entt::registry* m_Registry = nullptr;
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_ENTITY_H

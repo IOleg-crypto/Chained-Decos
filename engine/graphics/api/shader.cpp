@@ -1,9 +1,9 @@
 #include "shader.h"
 #include "renderer_api.h"
 #include "engine/graphics/api/opengl/opengl_shader.h"
-#include "engine/core/ch_assert.h"
+#include "engine/foundation/engine_assert.h"
 
-namespace CHEngine {
+namespace Chained {
 
 std::shared_ptr<Shader> Shader::Create(const std::string& vsSource, const std::string& fsSource)
 {
@@ -16,4 +16,4 @@ std::shared_ptr<Shader> Shader::Create(const std::string& vsSource, const std::s
     return nullptr;
 }
 
-} // namespace CHEngine
+} // namespace Chained

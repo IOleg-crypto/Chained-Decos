@@ -1,11 +1,12 @@
 #include "bvh.h"
+#include "engine/physics/collision_core.h"
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-namespace CHEngine
+namespace Chained
 {
 
 std::shared_ptr<BVH> BVH::Build(std::vector<CollisionTriangle>&& triangles)
@@ -448,4 +449,4 @@ bool BVH::TestAxis(const glm::vec3& axis, const glm::vec3& v0, const glm::vec3& 
     return !(triMin > boxMax || triMax < boxMin);
 }
 
-} // namespace CHEngine
+} // namespace Chained

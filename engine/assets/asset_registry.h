@@ -1,36 +1,28 @@
 #ifndef CH_ASSET_REGISTRY_H
 #define CH_ASSET_REGISTRY_H
 
-#include "engine/assets/asset.h"
+#include "engine/assets/asset_metadata.h"
 #include <unordered_map>
 #include <shared_mutex>
-#include <memory>
-#include <string>
 
-namespace CHEngine
+namespace Chained
 {
-    // Manages the cache of loaded assets and handle-to-path mappings.
     class AssetRegistry
     {
     public:
         AssetRegistry() = default;
 
-        void Register(const std::string& resolvedPath, std::shared_ptr<Asset> asset);
-        void Unregister(AssetHandle handle);
+        const AssetMetadata& GetMetadata(AssetHandle handle) const;
+        void SetMetadata(AssetHandle handle, const AssetMetadata& metadata);
+        bool Contains(AssetHandle handle) const;
+        void Remove(AssetHandle handle);
         void Clear();
 
-        std::shared_ptr<Asset> Get(AssetHandle handle) const;
-        std::shared_ptr<Asset> Get(const std::string& resolvedPath) const;
-        
-        bool Contains(AssetHandle handle) const;
-        bool Contains(const std::string& resolvedPath) const;
-
-        AssetHandle GetHandle(const std::string& resolvedPath) const;
+        const std::unordered_map<AssetHandle, AssetMetadata>& GetRegistryMap() const { return m_Registry; }
 
     private:
-        std::unordered_map<AssetHandle, std::shared_ptr<Asset>> m_AssetCache;
-        std::unordered_map<std::string, AssetHandle> m_PathToHandle;
-        mutable std::shared_mutex m_Mutex;
+        std::unordered_map<AssetHandle, AssetMetadata> m_Registry;
+        mutable std::shared_mutex m_RegistryLock;
     };
 }
 

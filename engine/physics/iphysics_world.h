@@ -4,18 +4,20 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include "raycast_result.h"
+#include "physics_types.h"
 
-namespace CHEngine
+namespace Chained
 {
-
-using PhysicsBodyHandle = uint64_t;
-constexpr PhysicsBodyHandle kInvalidPhysicsBody = 0;
 
 struct PhysicsBodyDesc
 {
     glm::vec3 Position = {0.0f, 0.0f, 0.0f};
     glm::quat Rotation = {1.0f, 0.0f, 0.0f, 0.0f};
     glm::vec3 InitialVelocity = {0.0f, 0.0f, 0.0f};
+    
+    ColliderType Shape = ColliderType::Box;
+    glm::vec3 Dimensions = {1.0f, 1.0f, 1.0f}; // For Sphere: x=radius. For Capsule: x=radius, y=height.
+    
     float Mass = 1.0f;
     bool IsKinematic = false;
     bool UseGravity = true;
@@ -40,6 +42,6 @@ public:
     virtual void Step(float fixedDt) = 0;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_IPHYSICS_WORLD_H

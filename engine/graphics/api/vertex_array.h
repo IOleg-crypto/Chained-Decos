@@ -5,7 +5,7 @@
 #include <memory>
 #include <vector>
 
-namespace CHEngine
+namespace Chained
 {
 
 class VertexArray
@@ -25,6 +25,6 @@ public:
     static std::shared_ptr<VertexArray> Create();
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_VERTEX_ARRAY_H

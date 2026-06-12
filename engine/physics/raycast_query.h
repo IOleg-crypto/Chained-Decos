@@ -1,11 +1,12 @@
 #ifndef CH_RAYCAST_QUERY_H
 #define CH_RAYCAST_QUERY_H
 
-#include "engine/core/ch_structures.h"
+#include "engine/foundation/color.h"
 #include "raycast_result.h"
+#include "collision_core.h"
 #include <entt/entt.hpp>
 
-namespace CHEngine
+namespace Chained
 {
 // Editor and gameplay raycasting helpers.
 class RaycastQuery
@@ -16,6 +17,6 @@ public:
 private:
     static bool RayAABB(glm::vec3 origin, glm::vec3 dir, glm::vec3 min, glm::vec3 max, float& t, glm::vec3& normal);
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_RAYCAST_QUERY_H

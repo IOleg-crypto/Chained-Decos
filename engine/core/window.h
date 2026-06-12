@@ -6,7 +6,7 @@
 #include <memory>
 #include <string>
 
-namespace CHEngine
+namespace Chained
 {
 // Window creation parameters and UI/runtime integration flags.
 struct WindowProperties
@@ -18,7 +18,7 @@ struct WindowProperties
     bool Resizable = true;
     bool Fullscreen = false;
     int TargetFramesPerSecond = 60; // 60hz is default for all monitors
-    std::string IconPath = "";
+    std::string IconPath;
 
     // UI / Docking
     bool EnableViewports = true;
@@ -60,6 +60,6 @@ public:
     // Creates the platform-specific window implementation.
     static std::unique_ptr<Window> Create(const WindowProperties& properties = WindowProperties());
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_WINDOW_H

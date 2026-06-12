@@ -19,8 +19,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        preset: [windows-gcc, windows-clang, windows-msvc]
-        build_type: [Debug, Release]
+        include:
+          - preset: windows-msvc
+            build_type: Debug
+            unity_build: OFF
+          - preset: windows-msvc
+            build_type: Release
+            unity_build: ON
+          - preset: windows-clang
+            build_type: Release
+            unity_build: ON
+          - preset: windows-gcc
+            build_type: Release
+            unity_build: ON
 
     steps:
       - name: Checkout
@@ -48,7 +59,7 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           variant: sccache
-          key: Windows-${{ matrix.preset }}-${{ matrix.build_type }}
+          key: Windows-${{ matrix.preset }}-${{ matrix.build_type }}-unity-${{ matrix.unity_build }}
           max-size: 5G
 
       - name: Setup Python
@@ -95,7 +106,7 @@ jobs:
             -DPython_EXECUTABLE="${PYTHON_EXE}" \
             -DPython3_EXECUTABLE="${PYTHON_EXE}" \
             -DCH_CI=ON \
-            -DENABLE_UNITY_BUILD=ON \
+            -DENABLE_UNITY_BUILD=${{ matrix.unity_build }} \
             -DENABLE_SANITIZERS=OFF \
             -DENABLE_LTO=OFF \
             -DENABLE_PCH=OFF \

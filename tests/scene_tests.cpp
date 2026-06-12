@@ -1,28 +1,13 @@
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
-#include "engine/scene/component_serializer.h"
-#include "engine/core/service_locator.h"
+#include "engine/serialization/component_serializer.h"
+#include "engine/core/application.h"
 #include "gtest/gtest.h"
 
-using namespace CHEngine;
+using namespace Chained;
 
 class SceneTest : public ::testing::Test
 {
-protected:
-    void SetUp() override
-    {
-        m_ComponentSerializer = std::make_shared<ComponentSerializer>();
-        m_ComponentSerializer->OnInit();
-        ServiceLocator::Register<ComponentSerializer>(m_ComponentSerializer.get());
-    }
-
-    void TearDown() override
-    {
-        ServiceLocator::Remove<ComponentSerializer>();
-        m_ComponentSerializer.reset();
-    }
-
-    std::shared_ptr<ComponentSerializer> m_ComponentSerializer;
 };
 
 TEST_F(SceneTest, CreateEntity)
@@ -107,7 +92,8 @@ TEST_F(SceneTest, GetEntityByUUID)
 
 TEST_F(SceneTest, CopyEntity)
 {
-    auto& serializer = ServiceLocator::Get<ComponentSerializer>();
+    auto* serializer = Application::Get().GetServiceRegistry().Get<ComponentSerializer>();
+    ASSERT_NE(serializer, nullptr);
     
     Scene scene;
     Entity src = scene.CreateEntity("Source");

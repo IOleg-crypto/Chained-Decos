@@ -1,12 +1,39 @@
 #include "scriptengine.h"
 #include "script_glue.h"
 #include "engine/core/log.h"
-#include "engine/core/ch_assert.h"
+#include "engine/foundation/engine_assert.h"
 #include <exception>
 #include <filesystem>
 
-namespace CHEngine
+namespace Chained
 {
+    ScriptEngine* ScriptEngine::s_Instance = nullptr;
+
+    void ScriptEngine::Init(bool enableScripting)
+    {
+        CH_ASSERT(!s_Instance);
+        s_Instance = new ScriptEngine(enableScripting);
+        if (enableScripting)
+        {
+            s_Instance->OnInit();
+        }
+    }
+
+    void ScriptEngine::Shutdown()
+    {
+        if (s_Instance)
+        {
+            s_Instance->OnShutdown();
+            delete s_Instance;
+            s_Instance = nullptr;
+        }
+    }
+
+    ScriptEngine& ScriptEngine::Get()
+    {
+        CH_ASSERT(s_Instance);
+        return *s_Instance;
+    }
 
 ScriptEngine::ScriptEngine(bool enableScripting)
     : m_EnableScripting(enableScripting)
@@ -16,19 +43,6 @@ ScriptEngine::ScriptEngine(bool enableScripting)
 ScriptEngine::~ScriptEngine() = default;
 
 void ScriptEngine::OnInit()
-{
-    if (m_EnableScripting)
-    {
-        Init();
-    }
-}
-
-void ScriptEngine::OnShutdown()
-{
-    Deinit();
-}
-
-void ScriptEngine::Init()
 {
     if (m_Host.IsInitialized())
     {
@@ -47,7 +61,7 @@ void ScriptEngine::Init()
     CH_CORE_INFO("ScriptEngine: CoreCLR initialized.");
 }
 
-void ScriptEngine::Deinit()
+void ScriptEngine::OnShutdown()
 {
     CH_CORE_INFO("ScriptEngine: Shutting down CoreCLR...");
     m_Host.Shutdown();
@@ -113,4 +127,4 @@ Coral::Type* ScriptEngine::GetScriptClass(const std::string& name)
     return m_Registry.GetScriptClass(name);
 }
 
-} // namespace CHEngine
+} // namespace Chained

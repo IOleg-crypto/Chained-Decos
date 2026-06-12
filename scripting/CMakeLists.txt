@@ -4,12 +4,14 @@ chained_add_engine_module(engine_scripting
         scriptengine.cpp
         scriptengine_services.h
         scriptengine_services.cpp
+        scene_scripting_manager.h
+        scene_scripting_manager.cpp
         script_glue.h
         script_glue.cpp
         script_glue_internal.h
         script_glue_system.cpp
         script_glue_input.cpp
-        script_glue_network.cpp
+        #script_glue_network.cpp
         script_glue_scene.cpp
         script_glue_entity.cpp
         script_glue_camera.cpp

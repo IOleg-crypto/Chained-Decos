@@ -34,7 +34,7 @@ if(CH_CI)
 endif()
 
 # Global library definitions
-add_compile_definitions(GLM_ENABLE_EXPERIMENTAL GLM_FORCE_DEPTH_ZERO_TO_ONE)
+add_compile_definitions(GLM_FORCE_DEPTH_ZERO_TO_ONE)
 
 # Warning Settings
 option(DISABLE_ALL_WARNINGS "Disable all compiler warnings" OFF)
@@ -67,18 +67,20 @@ endif()
 # 3. Parallel build must be controlled by the build tool (cmake --build --parallel)
 # Never pass -j as a compiler flag, because compilers like gcc treat it as invalid.
 
+# === DEPENDENCY CACHING ===
+# Cache FetchContent dependencies outside the build folder so they survive clean builds
+set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/vendor/fetch_deps" CACHE PATH "Directory for FetchContent dependencies")
+# Disable frequent git fetch/update checks to speed up CMake configure
+set(FETCHCONTENT_UPDATES_DISCONNECTED ON CACHE BOOL "Do not update FetchContent repos on every configure")
+
 # Dependencies
 include(cmake/CompilerSettings.cmake)
 include(cmake/Dependencies.cmake)
 include(cmake/ProjectHelpers.cmake)
 
-if(EXISTS "${CMAKE_SOURCE_DIR}/.venv/Scripts/python.exe")
-    set(CH_PYTHON_EXECUTABLE "${CMAKE_SOURCE_DIR}/.venv/Scripts/python.exe" CACHE FILEPATH "Python interpreter used for build helper scripts" FORCE)
-elseif(EXISTS "${CMAKE_SOURCE_DIR}/.venv/bin/python")
-    set(CH_PYTHON_EXECUTABLE "${CMAKE_SOURCE_DIR}/.venv/bin/python" CACHE FILEPATH "Python interpreter used for build helper scripts" FORCE)
-else()
-    find_program(CH_PYTHON_EXECUTABLE NAMES python3 python REQUIRED)
-endif()
+# Find Python interpreter
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+set(CH_PYTHON_EXECUTABLE "${Python3_EXECUTABLE}" CACHE FILEPATH "Python interpreter used for build helper scripts" FORCE)
 
 chained_generate_build_preset_header()
 
@@ -98,7 +100,8 @@ add_subdirectory(engine)
 
 # ── Build Game Projects ──────────────────────────────────────────────────────
 # Automatically find and include all projects in the game/ directory.
-file(GLOB GAME_PROJECT_LIST RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/game" "game/*")
+# CONFIGURE_DEPENDS ensures CMake re-runs when a new project is added/removed.
+file(GLOB GAME_PROJECT_LIST CONFIGURE_DEPENDS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/game" "game/*")
 foreach(GAME_PROJECT_DIR ${GAME_PROJECT_LIST})
     set(GAME_PATH "${CMAKE_CURRENT_SOURCE_DIR}/game/${GAME_PROJECT_DIR}")
     if(IS_DIRECTORY "${GAME_PATH}" AND EXISTS "${GAME_PATH}/CMakeLists.txt")
@@ -118,7 +121,7 @@ if(BUILD_TESTS)
 endif()
 
 # --- Post-Build Asset Sync via Python Script ---
-add_custom_target(SyncAssets ALL
+add_custom_target(sync_assets ALL
     COMMAND "${CH_PYTHON_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/build_scripts/build_managed.py" sync-resources --root "${CMAKE_SOURCE_DIR}" --bin "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
     COMMENT "Syncing engine assets via Python script..."
 )

@@ -1,19 +1,20 @@
 #include "editor_camera.h"
+#include "editor/editor_layer.h"
 #include "engine/core/input.h"
 #include "engine/scene/components/camera_component.h"
 #include "engine/scene/components/component_utils.h"
 #include "engine/scene/components/transform_component.h"
-#include "engine/scene/project.h"
+#include "engine/project/project.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
 
-namespace CHEngine
+namespace Chained
 {
 
 EditorCameraController::EditorCameraController()
 {
-    m_Camera.SetPerspective(glm::radians(45.0f), 0.1f, 1000.0f);
+    m_Camera.SetPerspective(glm::radians(45.0f), 0.1f, 10000.0f);
     UpdateView();
 }
 
@@ -21,25 +22,17 @@ void EditorCameraController::OnUpdate(Entity cameraEntity, Timestep ts, const gl
 {
     m_ViewportWidth = (uint32_t)viewportSize.x;
     m_ViewportHeight = (uint32_t)viewportSize.y;
-    m_Camera.SetViewportSize(m_ViewportWidth, m_ViewportHeight);
 
     float deltaTime = ts;
     float moveSpeed = m_MoveSpeed;
     float boostMultiplier = m_BoostMultiplier;
     float sensitivity = 1.0f;
 
-    if (auto project = Project::GetActive())
-    {
-        const auto& editorSettings = project->GetConfig().Editor;
-        moveSpeed = editorSettings.CameraMoveSpeed;
-        boostMultiplier = editorSettings.CameraBoostMultiplier;
-        sensitivity = editorSettings.CameraRotationSpeed;
-        if (sensitivity < 0.001f) sensitivity = 0.1f;
-    }
+
 
     bool hasEntity = cameraEntity && cameraEntity.HasComponent<TransformComponent>() && cameraEntity.HasComponent<CameraComponent>();
 
-    if (hasEntity && !Input::IsMouseButtonDown(Mouse::ButtonRight) && !Input::IsMouseButtonDown(Mouse::ButtonMiddle))
+    if (hasEntity && !Core::Input::IsMouseButtonDown(Mouse::ButtonRight) && !Core::Input::IsMouseButtonDown(Mouse::ButtonMiddle))
     {
         auto& tc = cameraEntity.GetComponent<TransformComponent>();
         if (std::isfinite(tc.Rotation.x) && std::isfinite(tc.Rotation.y))
@@ -53,14 +46,14 @@ void EditorCameraController::OnUpdate(Entity cameraEntity, Timestep ts, const gl
         }
     }
 
-    glm::vec2 delta = Input::GetMouseDelta();
+    glm::vec2 delta = Core::Input::GetMouseDelta();
 
-    if (Input::IsMouseButtonDown(Mouse::ButtonRight))
+    if (Core::Input::IsMouseButtonDown(Mouse::ButtonRight))
     {
         MouseRotate({delta.x * sensitivity, delta.y * sensitivity});
 
         float speed = moveSpeed * deltaTime;
-        if (Input::IsKeyDown(Key::LeftShift)) speed *= boostMultiplier;
+        if (Core::Input::IsKeyDown(Key::LeftShift)) speed *= boostMultiplier;
 
         glm::vec3 fwd = GetForwardDirection();
         glm::vec3 rgt = GetRightDirection();
@@ -68,36 +61,36 @@ void EditorCameraController::OnUpdate(Entity cameraEntity, Timestep ts, const gl
 
         glm::vec3 currentPos = CalculatePosition();
 
-        if (Input::IsKeyDown(Key::W)) currentPos += fwd * speed;
-        if (Input::IsKeyDown(Key::S)) currentPos -= fwd * speed;
-        if (Input::IsKeyDown(Key::D)) currentPos += rgt * speed;
-        if (Input::IsKeyDown(Key::A)) currentPos -= rgt * speed;
-        if (Input::IsKeyDown(Key::E)) currentPos += upg * speed;
-        if (Input::IsKeyDown(Key::Q)) currentPos -= upg * speed;
+        if (Core::Input::IsKeyDown(Key::W)) currentPos += fwd * speed;
+        if (Core::Input::IsKeyDown(Key::S)) currentPos -= fwd * speed;
+        if (Core::Input::IsKeyDown(Key::D)) currentPos += rgt * speed;
+        if (Core::Input::IsKeyDown(Key::A)) currentPos -= rgt * speed;
+        if (Core::Input::IsKeyDown(Key::E)) currentPos += upg * speed;
+        if (Core::Input::IsKeyDown(Key::Q)) currentPos -= upg * speed;
 
         m_FocalPoint = currentPos + (fwd * m_Distance);
         UpdateView();
     }
 
-    if (Input::IsMouseButtonDown(Mouse::ButtonMiddle))
+    if (Core::Input::IsMouseButtonDown(Mouse::ButtonMiddle))
     {
-        if (Input::IsKeyDown(Key::LeftShift)) MousePan(delta);
+        if (Core::Input::IsKeyDown(Key::LeftShift)) MousePan(delta);
         else MouseRotate({delta.x * sensitivity, delta.y * sensitivity});
     }
 
-    if (Input::IsKeyDown(Key::LeftAlt) && Input::IsMouseButtonDown(Mouse::ButtonLeft))
+    if (Core::Input::IsKeyDown(Key::LeftAlt) && Core::Input::IsMouseButtonDown(Mouse::ButtonLeft))
     {
         MouseRotate({delta.x * sensitivity, delta.y * sensitivity});
     }
 
-    float wheel = Input::GetMouseWheelMove();
+    float wheel = Core::Input::GetMouseWheelMove();
     if (wheel != 0) MouseZoom(wheel);
 
     if (hasEntity)
     {
         auto& tc = cameraEntity.GetComponent<TransformComponent>();
         ComponentUtils::SetRotation(tc, glm::vec3(m_Pitch, m_Yaw, 0.0f));
-        if (!Input::IsMouseButtonDown(Mouse::ButtonRight))
+        if (!Core::Input::IsMouseButtonDown(Mouse::ButtonRight))
         {
             ComponentUtils::SetTranslation(tc, CalculatePosition());
         }
@@ -165,4 +158,4 @@ float EditorCameraController::ZoomSpeed() const
     return speed;
 }
 
-} // namespace CHEngine
+} // namespace Chained

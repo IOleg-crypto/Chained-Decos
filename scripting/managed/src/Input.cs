@@ -1,6 +1,6 @@
 using Coral.Managed.Interop;
 
-namespace CHEngine
+namespace Chained
 {
 
 /// <summary>Input helpers.</summary>

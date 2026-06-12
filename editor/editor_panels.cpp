@@ -11,7 +11,7 @@
 #include "panels/scene_hierarchy_panel.h"
 #include "panels/viewport_panel.h"
 
-namespace CHEngine
+namespace Chained
 {
 
 void EditorPanels::Init()
@@ -89,4 +89,4 @@ void EditorPanels::SetContext(const std::shared_ptr<Scene>& context)
     }
 }
 
-} // namespace CHEngine
+} // namespace Chained

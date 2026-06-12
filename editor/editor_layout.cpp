@@ -1,12 +1,12 @@
 #include "editor_layout.h"
-#include "editor_context.h"
+
 #include "editor_gui.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include <filesystem>
 #include <fstream>
 
-namespace CHEngine
+namespace Chained
 {
 
 EditorLayout::EditorLayout(EditorPanels& panels)
@@ -95,13 +95,12 @@ void EditorLayout::OnImGuiRender()
         ImGui::DockSpace(m_DockSpaceID, ImVec2(0.0f, 0.0f), dockspace_flags);
     }
 
-    EditorGUI::DrawMenuBar(m_Panels);
+    EditorGUI::DrawMenuBar(EditorLayer::Get(), m_Panels);
 
-    bool readOnly = EditorContext::GetSceneState() == SceneState::Play;
+    bool readOnly = EditorLayer::Get().GetSceneState() == SceneState::Play;
     m_Panels.OnImGuiRender(readOnly);
 
     ImGui::End();
 }
 
-} // namespace CHEngine
-
+} // namespace Chained

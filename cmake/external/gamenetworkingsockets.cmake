@@ -6,6 +6,8 @@
 set(GNS_SOURCE_DIR "${PROJECT_SOURCE_DIR}/include/GameNetworkingSockets")
 
 if(EXISTS "${GNS_SOURCE_DIR}/CMakeLists.txt")
+    set(CH_GNS_BUILD_TESTS "${BUILD_TESTS}")
+
     # Configuration options for GNS
     set(BUILD_STATIC_LIB ON CACHE BOOL "" FORCE)
     set(BUILD_SHARED_LIB OFF CACHE BOOL "" FORCE)
@@ -46,6 +48,8 @@ if(EXISTS "${GNS_SOURCE_DIR}/CMakeLists.txt")
             target_compile_options(${GNS_TARGET} PRIVATE -include "${CMAKE_SOURCE_DIR}/include/mingw_compat.h")
         endif()
     endif()
+
+    set(BUILD_TESTS "${CH_GNS_BUILD_TESTS}" CACHE BOOL "" FORCE)
     
     message(STATUS "GameNetworkingSockets: Integrated from ${GNS_SOURCE_DIR}")
 else()

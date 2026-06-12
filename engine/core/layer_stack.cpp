@@ -1,7 +1,7 @@
 #include "layer_stack.h"
 #include <algorithm>
 
-namespace CHEngine
+namespace Chained
 {
 LayerStack::~LayerStack()
 {
@@ -32,14 +32,4 @@ void LayerStack::PushOverlay(std::unique_ptr<Layer> overlay)
     m_Layers.emplace_back(std::move(overlay));
 }
 
-std::vector<Layer*> LayerStack::GetLayerPointersSnapshot() const
-{
-    std::vector<Layer*> layers;
-    layers.reserve(m_Layers.size());
-    for (const auto& layer : m_Layers)
-    {
-        layers.emplace_back(layer.get());
-    }
-    return layers;
-}
-} // namespace CHEngine
+} // namespace Chained

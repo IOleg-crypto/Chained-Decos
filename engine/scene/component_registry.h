@@ -10,10 +10,10 @@
 #include <unordered_map>
 #include <yaml-cpp/yaml.h>
 
-#include "engine/core/reflection.h"
-#include "engine/core/reflection_rfl.h"
+#include "engine/reflection/reflection.h"
+#include "engine/reflection/reflection_rfl.h"
 
-namespace CHEngine
+namespace Chained
 {
     /**
      * @brief Metadata required for a component to be integrated into Editor and Serialization.
@@ -33,7 +33,7 @@ namespace CHEngine
         
         // Lifecycle callbacks
         std::function<bool(Entity)> Has;
-        std::function<std::vector<uint64_t>(class Scene*)> GetAll;
+        std::function<std::vector<uint64_t>(Scene*)> GetAll;
         std::function<void(Entity)> Add;
         std::function<void(Entity)> Remove;
         std::function<void(Entity, Entity)> Copy;
@@ -148,10 +148,10 @@ namespace CHEngine
      */
     #define CH_REGISTER_COMPONENT(type, name, icon) \
         static bool s_ComponentRegistered_##type = []() { \
-            ::CHEngine::ComponentRegistry::RegisterReflective<type>(name, icon); \
+            ::Chained::ComponentRegistry::RegisterReflective<type>(name, icon); \
             return true; \
         }()
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_COMPONENT_REGISTRY_H

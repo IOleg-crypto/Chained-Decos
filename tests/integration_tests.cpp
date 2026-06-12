@@ -6,11 +6,11 @@
 #include "engine/scene/entity.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_events.h"
-#include "engine/scene/scene_serializer.h"
+#include "engine/serialization/scene_serializer.h"
 #include "gtest/gtest.h"
 #include <memory>
 
-using namespace CHEngine;
+using namespace Chained;
 
 // --- Scene + Entity Integration ---
 

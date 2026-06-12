@@ -1,9 +1,12 @@
 #include "script_glue_internal.h"
 #include "script_internal_call_registry.h"
-#include "engine/scene/scene_events.h"
+#include "engine/core/log.h"
 #include "engine/core/application.h"
+#include "engine/assets/asset_manager.h"
+#include "engine/core/application.h"
+#include "engine/scene/scene_events.h"
 
-namespace CHEngine
+namespace Chained
 {
 
 void RegisterGlueScene() {}
@@ -26,7 +29,7 @@ CH_SCRIPT_FUNC uint64_t Scene_CopyEntity(uint64_t entityID)
     if (scene)
     {
         auto entity = scene->CopyEntity((entt::entity)(uint32_t)entityID);
-        return entity ? (uint64_t)(uint32_t)entity : 0;
+        return entity != entt::null ? (uint64_t)(uint32_t)entity : 0;
     }
     return 0;
 }
@@ -35,7 +38,7 @@ CH_ADD_INTERNAL_CALL(Scene, Scene_CopyEntity_Ptr, Scene_CopyEntity);
 CH_SCRIPT_FUNC void Scene_LoadScene(Coral::String path)
 {
     SceneChangeRequestEvent e((std::string)path);
-    Application::Get().OnEvent(e);
+        Application::Get().OnEvent(e);
 }
 CH_ADD_INTERNAL_CALL(Scene, Scene_LoadScene_Ptr, Scene_LoadScene);
 
@@ -60,5 +63,5 @@ CH_SCRIPT_FUNC uint64_t Scene_GetPrimaryCameraEntity()
 }
 CH_ADD_INTERNAL_CALL(Scene, Scene_GetPrimaryCameraEntity_Ptr, Scene_GetPrimaryCameraEntity);
 
-} // namespace CHEngine
+} // namespace Chained
 

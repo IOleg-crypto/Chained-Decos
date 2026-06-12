@@ -1,10 +1,10 @@
 #ifndef CH_RENDERER_API_H
 #define CH_RENDERER_API_H
 
-#include "engine/core/ch_structures.h"
+#include "engine/foundation/color.h"
 #include <memory>
 
-namespace CHEngine
+namespace Chained
 {
 class VertexArray;
 
@@ -105,6 +105,6 @@ private:
     static API s_API;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_RENDERER_API_H

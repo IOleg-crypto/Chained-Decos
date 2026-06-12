@@ -1,10 +1,11 @@
 #include "effects_panel.h"
 #include "editor/editor_layer.h"
+#include "engine/core/application.h"
 #include "engine/graphics/pipeline/renderer.h"
-#include "engine/core/service_locator.h"
 #include "scene/scene.h"
 
-namespace CHEngine
+
+namespace Chained
 {
 
 EffectsPanel::EffectsPanel()
@@ -35,7 +36,7 @@ void EffectsPanel::OnImGuiRender(bool readOnly)
         if (ImGui::Combo("Diagnostic Mode", &currentDiag, diagnosticModes, 4))
         {
             m_Context->GetSettings().DiagnosticMode = (float)currentDiag;
-            ServiceLocator::Get<Renderer>().SetDiagnosticMode((float)currentDiag);
+            Renderer::Get().SetDiagnosticMode((float)currentDiag);
         }
     }
 
@@ -65,4 +66,4 @@ void EffectsPanel::OnImGuiRender(bool readOnly)
     ImGui::End();
 }
 
-} // namespace CHEngine
+} // namespace Chained

@@ -3,7 +3,7 @@
 
 #include "panel.h"
 
-namespace CHEngine
+namespace Chained
 {
 class ProfilerPanel : public Panel
 {
@@ -18,6 +18,6 @@ private:
 private:
     std::vector<float> m_FrameTimeHistory;
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_PROFILER_PANEL_H

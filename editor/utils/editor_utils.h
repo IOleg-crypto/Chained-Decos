@@ -2,16 +2,17 @@
 #ifndef CH_EDITOR_UTILS_H
 #define CH_EDITOR_UTILS_H
 
-#include <memory>
 #include <filesystem>
+#include <memory>
 
-namespace CHEngine
+
+namespace Chained
 {
 class Project;
 class Scene;
 
 void LaunchStandalone(std::shared_ptr<Project> project, std::shared_ptr<Scene> editorScene);
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_EDITOR_UTILS_H

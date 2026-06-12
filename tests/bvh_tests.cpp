@@ -1,7 +1,7 @@
 #include "engine/physics/bvh/bvh.h"
 #include "gtest/gtest.h"
 
-using namespace CHEngine;
+using namespace Chained;
 
 TEST(BVHTest, SimpleTriangleRaycast)
 {

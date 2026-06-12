@@ -1,11 +1,11 @@
 #ifndef CH_UI_ACTION_COMPONENT_H
 #define CH_UI_ACTION_COMPONENT_H
 
-#include "engine/core/uuid.h"
-#include "engine/core/reflection_rfl.h"
+#include "engine/foundation/uuid.h"
+#include "engine/reflection/reflection_rfl.h"
 #include <string>
 
-namespace CHEngine
+namespace Chained
 {
     enum class UIActionType
     {

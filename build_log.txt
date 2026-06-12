@@ -1,0 +1,269 @@
+[0/2] Re-checking globbed directories...
+[1/124] Linking CXX static library lib\engine_project.lib
+[2/124] Syncing engine assets via Python script...
+Syncing engine resources to D:\gitnext\Chained Decos\build\windows-clang-release\bin\resources...
+Success: Assets synced!
+[3/124] Building CHEngine.Managed C# Library
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  CHEngine.Managed -> D:\gitnext\Chained Decos\build\windows-clang-release\bin\Chained.Managed.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.98
+[4/124] Scanning "D:/gitnext/Chained Decos/build/windows-clang-release/engine/engine_dummy.cpp" for CXX dependencies
+[5/124] Generating CXX dyndep file engine/CMakeFiles/engine.dir/CXX.dd
+[6/124] Scanning "D:/gitnext/Chained Decos/scripting/script_glue.cpp" for CXX dependencies
+[7/124] Scanning "D:/gitnext/Chained Decos/game/chaineddecos/src/game_module.cpp" for CXX dependencies
+[8/124] Scanning "D:/gitnext/Chained Decos/engine/serialization/hierarchy_serializer.cpp" for CXX dependencies
+[9/124] Scanning "D:/gitnext/Chained Decos/engine/serialization/scene_serializer.cpp" for CXX dependencies
+[10/124] Scanning "D:/gitnext/Chained Decos/editor/ui_factory.cpp" for CXX dependencies
+[11/124] Scanning "D:/gitnext/Chained Decos/engine/serialization/managed_script_serializer.cpp" for CXX dependencies
+[12/124] Scanning "D:/gitnext/Chained Decos/engine/serialization/component_serializer.cpp" for CXX dependencies
+[13/124] Scanning "D:/gitnext/Chained Decos/editor/editor_panels.cpp" for CXX dependencies
+[14/124] Scanning "D:/gitnext/Chained Decos/editor/editor_project_manager.cpp" for CXX dependencies
+[15/124] Scanning "D:/gitnext/Chained Decos/engine/serialization/prefab_serializer.cpp" for CXX dependencies
+[16/124] Scanning "D:/gitnext/Chained Decos/engine/core/application.cpp" for CXX dependencies
+[17/124] Scanning "D:/gitnext/Chained Decos/game/chaineddecos/src/game_script_bindings.cpp" for CXX dependencies
+[18/124] Scanning "D:/gitnext/Chained Decos/editor/editor_layer.cpp" for CXX dependencies
+[19/124] Scanning "D:/gitnext/Chained Decos/editor/scene_picking.cpp" for CXX dependencies
+[20/124] Scanning "D:/gitnext/Chained Decos/editor/editor_scene_manager.cpp" for CXX dependencies
+[21/124] Generating CXX dyndep file scripting/CMakeFiles/engine_scripting.dir/CXX.dd
+[22/114] Generating CXX dyndep file engine/serialization/CMakeFiles/engine_serialization.dir/CXX.dd
+[23/114] Generating CXX dyndep file engine/CMakeFiles/engine_runtime.dir/CXX.dd
+[24/114] Building CXX object engine/scene/CMakeFiles/engine_scene.dir/scene_camera.cpp.obj
+[25/114] Scanning "D:/gitnext/Chained Decos/editor/editor_action_commands.cpp" for CXX dependencies
+[26/114] Scanning "D:/gitnext/Chained Decos/editor/viewport/editor_gizmo.cpp" for CXX dependencies
+[27/114] Scanning "D:/gitnext/Chained Decos/editor/panels/content_browser_provider.cpp" for CXX dependencies
+[28/114] Scanning "D:/gitnext/Chained Decos/editor/viewport/editor_camera.cpp" for CXX dependencies
+[29/114] Scanning "D:/gitnext/Chained Decos/editor/viewport/ui_manipulator.cpp" for CXX dependencies
+[30/114] Scanning "D:/gitnext/Chained Decos/editor/panels/scene_hierarchy_panel.cpp" for CXX dependencies
+[31/114] Scanning "D:/gitnext/Chained Decos/editor/panels/profiler_panel.cpp" for CXX dependencies
+[32/114] Scanning "D:/gitnext/Chained Decos/editor/panels/console_panel.cpp" for CXX dependencies
+[33/114] Scanning "D:/gitnext/Chained Decos/editor/panels/project_settings_panel.cpp" for CXX dependencies
+[34/114] Scanning "D:/gitnext/Chained Decos/editor/panels/inspector_panel.cpp" for CXX dependencies
+[35/114] Scanning "D:/gitnext/Chained Decos/editor/panels/property_editor.cpp" for CXX dependencies
+[36/114] Scanning "D:/gitnext/Chained Decos/editor/panels/content_browser_panel.cpp" for CXX dependencies
+[37/114] Scanning "D:/gitnext/Chained Decos/editor/panels/viewport_panel.cpp" for CXX dependencies
+[38/114] Scanning "D:/gitnext/Chained Decos/editor/undo/command_history.cpp" for CXX dependencies
+[39/114] Scanning "D:/gitnext/Chained Decos/editor/panels/effects_panel.cpp" for CXX dependencies
+[40/114] Scanning "D:/gitnext/Chained Decos/editor/panels/material_panel.cpp" for CXX dependencies
+[41/114] Scanning "D:/gitnext/Chained Decos/editor/panels/world_panel.cpp" for CXX dependencies
+[42/114] Scanning "D:/gitnext/Chained Decos/editor/editor_layout.cpp" for CXX dependencies
+[43/114] Generating CXX dyndep file game/chaineddecos/CMakeFiles/ChainedDecos.dir/CXX.dd
+[44/114] Scanning "D:/gitnext/Chained Decos/editor/editor_gui.cpp" for CXX dependencies
+[45/114] Scanning "D:/gitnext/Chained Decos/runtime/runtime_layer.cpp" for CXX dependencies
+[46/114] Scanning "D:/gitnext/Chained Decos/editor/ui/project_selector_ui.cpp" for CXX dependencies
+[47/114] Generating CXX dyndep file runtime/CMakeFiles/RuntimeCore.dir/CXX.dd
+[48/114] Scanning "D:/gitnext/Chained Decos/editor/utils/editor_utils.cpp" for CXX dependencies
+[49/114] Generating CXX dyndep file editor/CMakeFiles/editor_core.dir/CXX.dd
+[50/114] Scanning "D:/gitnext/Chained Decos/editor/editor_main.cpp" for CXX dependencies
+[51/114] Scanning "D:/gitnext/Chained Decos/game/chaineddecos/src/game_module.cpp" for CXX dependencies
+[52/114] Scanning "D:/gitnext/Chained Decos/game/chaineddecos/src/game_script_bindings.cpp" for CXX dependencies
+[53/114] Generating CXX dyndep file game/chaineddecos/CMakeFiles/ChainedDecosModule.dir/CXX.dd
+[54/114] Building CXX object engine/CMakeFiles/engine.dir/engine_dummy.cpp.obj
+[55/114] Building CXX object engine/scene/CMakeFiles/engine_scene.dir/animation_systems.cpp.obj
+[56/114] Building CXX object scripting/CMakeFiles/engine_scripting.dir/script_glue.cpp.obj
+[57/114] Linking CXX static library lib\engine_scripting.lib
+[58/114] Building CXX object engine/serialization/CMakeFiles/engine_serialization.dir/managed_script_serializer.cpp.obj
+[59/114] Building CXX object engine/serialization/CMakeFiles/engine_serialization.dir/hierarchy_serializer.cpp.obj
+[60/114] Building CXX object engine/serialization/CMakeFiles/engine_serialization.dir/component_serializer.cpp.obj
+[61/114] Building CXX object runtime/CMakeFiles/ChainedRuntime.dir/cmake_pch.hxx.pch
+[62/114] Building CXX object engine/CMakeFiles/engine_runtime.dir/core/application.cpp.obj
+[63/114] Building CXX object engine/serialization/CMakeFiles/engine_serialization.dir/scene_serializer.cpp.obj
+[64/114] Building CXX object editor/CMakeFiles/editor_core.dir/editor_panels.cpp.obj
+[65/114] Building CXX object engine/scene/CMakeFiles/engine_scene.dir/systems/scene_resource_manager.cpp.obj
+[66/114] Building CXX object engine/serialization/CMakeFiles/engine_serialization.dir/prefab_serializer.cpp.obj
+[67/114] Scanning "D:/gitnext/Chained Decos/runtime/runtime_generic_entry.cpp" for CXX dependencies
+[68/114] Building CXX object editor/CMakeFiles/editor_core.dir/editor_layer.cpp.obj
+FAILED: [code=1] editor/CMakeFiles/editor_core.dir/editor_layer.cpp.obj 
+C:\ProgramData\chocolatey\bin\ccache.exe C:\LLVM\bin\clang++.exe -DGLAD_API_CALL_EXPORT -DGLFW_DLL -DGLFW_INCLUDE_NONE -DGLM_FORCE_DEPTH_ZERO_TO_ONE -DIMGUI_DEFINE_MATH_OPERATORS -DIMGUI_IMPL_OPENGL_LOADER_GLAD -DJPH_DEBUG_RENDERER -DJPH_PROFILE_ENABLED -DJPH_SHARED_LIBRARY -DJPH_USE_AVX -DJPH_USE_AVX2 -DJPH_USE_F16C -DJPH_USE_FMADD -DJPH_USE_LZCNT -DJPH_USE_SSE4_1 -DJPH_USE_SSE4_2 -DJPH_USE_TZCNT -DNDEBUG -DNFD_SHARED -DNOMINMAX -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DRFL_BUILD_SHARED -DSPDLOG_COMPILED_LIB -DSPDLOG_SHARED_LIB -DSPDLOG_USE_STD_FORMAT -DWIN32_LEAN_AND_MEAN -DYYJSON_IMPORTS -DZSTD_MULTITHREAD -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601 -I"D:/gitnext/Chained Decos/editor" -I"D:/gitnext/Chained Decos/engine" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/include/reflect-cpp/include" -I"D:/gitnext/Chained Decos/scripting" -I"D:/gitnext/Chained Decos/engine/core" -I"D:/gitnext/Chained Decos/include/cereal/include" -I"D:/gitnext/Chained Decos/include/zstd/lib" -I"D:/gitnext/Chained Decos/include/yaml-cpp/include" -I"D:/gitnext/Chained Decos/include/entt/src" -I"D:/gitnext/Chained Decos/include/glm" -I"D:/gitnext/Chained Decos/include/stb" -I"D:/gitnext/Chained Decos/include/glfw/include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/gladsources/engine_external_glad/include" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/imguizmo" -I"D:/gitnext/Chained Decos/include/imgui/backends" -I"D:/gitnext/Chained Decos/include/miniaudio" -I"D:/gitnext/Chained Decos/include/coral/cmake/../Coral.Native/Include" -I"D:/gitnext/Chained Decos/include/nfd/src/include" -I"D:/gitnext/Chained Decos/include/reflect-cpp/include/rfl/thirdparty" -I"D:/gitnext/Chained Decos/build/windows-clang-release/_deps/spdlog-src/include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/_deps/bs_thread_pool-src/include" -I"D:/gitnext/Chained Decos/include/zstd/build/cmake/../../lib" -I"D:/gitnext/Chained Decos/engine/audio" -I"D:/gitnext/Chained Decos/engine/physics" -I"D:/gitnext/Chained Decos/include/assimp/code/../include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/vendor/assimp/code/../include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/_deps/jolt-src/Build/.." -I"D:/gitnext/Chained Decos/engine/scene" -I"D:/gitnext/Chained Decos/engine/graphics" -I"D:/gitnext/Chained Decos/engine/assets" -I"D:/gitnext/Chained Decos/engine/project" -I"D:/gitnext/Chained Decos/engine/serialization" -O3 -DNDEBUG -std=c++23 -D_DLL -D_MT -Xclang --dependent-lib=msvcrt -flto=thin -O3 -DNDEBUG -ffunction-sections -fdata-sections -w -mavx2 -mbmi -mpopcnt -mlzcnt -mf16c -mfma -mfpmath=sse -Xclang -include-pch -Xclang "D:/gitnext/Chained Decos/build/windows-clang-release/editor/CMakeFiles/editor_core.dir/cmake_pch.hxx.pch" -Xclang -include -Xclang "D:/gitnext/Chained Decos/build/windows-clang-release/editor/CMakeFiles/editor_core.dir/cmake_pch.hxx" -MD -MT editor/CMakeFiles/editor_core.dir/editor_layer.cpp.obj -MF editor\CMakeFiles\editor_core.dir\editor_layer.cpp.obj.d @editor\CMakeFiles\editor_core.dir\editor_layer.cpp.obj.modmap -o editor/CMakeFiles/editor_core.dir/editor_layer.cpp.obj -c "D:/gitnext/Chained Decos/editor/editor_layer.cpp"
+D:/gitnext/Chained Decos/editor/editor_layer.cpp:57:63: error: no member named 'GetPendingFinalizeCount' in 'Chained::AssetManager'
+   57 |         uint32_t totalPending = (uint32_t)AssetManager::Get().GetPendingFinalizeCount();
+      |                                           ~~~~~~~~~~~~~~~~~~~ ^
+1 error generated.
+[69/114] Building CXX object engine/scene/CMakeFiles/engine_scene.dir/systems/hierarchy_system.cpp.obj
+[70/114] Building CXX object editor/CMakeFiles/editor_core.dir/editor_action_commands.cpp.obj
+[71/114] Building CXX object editor/CMakeFiles/editor_core.dir/editor_scene_manager.cpp.obj
+FAILED: [code=1] editor/CMakeFiles/editor_core.dir/editor_scene_manager.cpp.obj 
+C:\ProgramData\chocolatey\bin\ccache.exe C:\LLVM\bin\clang++.exe -DGLAD_API_CALL_EXPORT -DGLFW_DLL -DGLFW_INCLUDE_NONE -DGLM_FORCE_DEPTH_ZERO_TO_ONE -DIMGUI_DEFINE_MATH_OPERATORS -DIMGUI_IMPL_OPENGL_LOADER_GLAD -DJPH_DEBUG_RENDERER -DJPH_PROFILE_ENABLED -DJPH_SHARED_LIBRARY -DJPH_USE_AVX -DJPH_USE_AVX2 -DJPH_USE_F16C -DJPH_USE_FMADD -DJPH_USE_LZCNT -DJPH_USE_SSE4_1 -DJPH_USE_SSE4_2 -DJPH_USE_TZCNT -DNDEBUG -DNFD_SHARED -DNOMINMAX -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DRFL_BUILD_SHARED -DSPDLOG_COMPILED_LIB -DSPDLOG_SHARED_LIB -DSPDLOG_USE_STD_FORMAT -DWIN32_LEAN_AND_MEAN -DYYJSON_IMPORTS -DZSTD_MULTITHREAD -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601 -I"D:/gitnext/Chained Decos/editor" -I"D:/gitnext/Chained Decos/engine" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/include/reflect-cpp/include" -I"D:/gitnext/Chained Decos/scripting" -I"D:/gitnext/Chained Decos/engine/core" -I"D:/gitnext/Chained Decos/include/cereal/include" -I"D:/gitnext/Chained Decos/include/zstd/lib" -I"D:/gitnext/Chained Decos/include/yaml-cpp/include" -I"D:/gitnext/Chained Decos/include/entt/src" -I"D:/gitnext/Chained Decos/include/glm" -I"D:/gitnext/Chained Decos/include/stb" -I"D:/gitnext/Chained Decos/include/glfw/include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/gladsources/engine_external_glad/include" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/imguizmo" -I"D:/gitnext/Chained Decos/include/imgui/backends" -I"D:/gitnext/Chained Decos/include/miniaudio" -I"D:/gitnext/Chained Decos/include/coral/cmake/../Coral.Native/Include" -I"D:/gitnext/Chained Decos/include/nfd/src/include" -I"D:/gitnext/Chained Decos/include/reflect-cpp/include/rfl/thirdparty" -I"D:/gitnext/Chained Decos/build/windows-clang-release/_deps/spdlog-src/include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/_deps/bs_thread_pool-src/include" -I"D:/gitnext/Chained Decos/include/zstd/build/cmake/../../lib" -I"D:/gitnext/Chained Decos/engine/audio" -I"D:/gitnext/Chained Decos/engine/physics" -I"D:/gitnext/Chained Decos/include/assimp/code/../include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/vendor/assimp/code/../include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/_deps/jolt-src/Build/.." -I"D:/gitnext/Chained Decos/engine/scene" -I"D:/gitnext/Chained Decos/engine/graphics" -I"D:/gitnext/Chained Decos/engine/assets" -I"D:/gitnext/Chained Decos/engine/project" -I"D:/gitnext/Chained Decos/engine/serialization" -O3 -DNDEBUG -std=c++23 -D_DLL -D_MT -Xclang --dependent-lib=msvcrt -flto=thin -O3 -DNDEBUG -ffunction-sections -fdata-sections -w -mavx2 -mbmi -mpopcnt -mlzcnt -mf16c -mfma -mfpmath=sse -Xclang -include-pch -Xclang "D:/gitnext/Chained Decos/build/windows-clang-release/editor/CMakeFiles/editor_core.dir/cmake_pch.hxx.pch" -Xclang -include -Xclang "D:/gitnext/Chained Decos/build/windows-clang-release/editor/CMakeFiles/editor_core.dir/cmake_pch.hxx" -MD -MT editor/CMakeFiles/editor_core.dir/editor_scene_manager.cpp.obj -MF editor\CMakeFiles\editor_core.dir\editor_scene_manager.cpp.obj.d @editor\CMakeFiles\editor_core.dir\editor_scene_manager.cpp.obj.modmap -o editor/CMakeFiles/editor_core.dir/editor_scene_manager.cpp.obj -c "D:/gitnext/Chained Decos/editor/editor_scene_manager.cpp"
+D:/gitnext/Chained Decos/editor/editor_scene_manager.cpp:219:29: error: no member named 'GetThreadPool' in 'Chained::Application'; did you mean 'ThreadPool'?
+  219 |         m_SceneOpenFuture = Application::GetThreadPool().Enqueue([this, scenePath, engine = &ScriptEngine::Get()]() -> std::shared_ptr<Scene> {
+      |                             ^            ~~~~~~~~~~~~~
+D:/gitnext/Chained Decos\engine/core/thread_pool.h:10:7: note: 'ThreadPool' declared here
+   10 | class ThreadPool
+      |       ^
+D:/gitnext/Chained Decos/editor/editor_scene_manager.cpp:290:92: error: no member named 'HasBackgroundWork' in 'Chained::AssetManager'
+  290 |     if (m_SceneOpenSceneReady && (m_EditorScene || m_RuntimeScene) && !AssetManager::Get().HasBackgroundWork())
+      |                                                                        ~~~~~~~~~~~~~~~~~~~ ^
+D:/gitnext/Chained Decos/editor/editor_scene_manager.cpp:335:33: error: no member named 'HasBackgroundWork' in 'Chained::AssetManager'
+  335 |         if (AssetManager::Get().HasBackgroundWork())
+      |             ~~~~~~~~~~~~~~~~~~~ ^
+D:/gitnext/Chained Decos/editor/editor_scene_manager.cpp:341:138: error: no member named 'GetPendingFinalizeCount' in 'Chained::AssetManager'
+  341 |                 CH_CORE_INFO("Editor: Transition to '{}' waiting for {} assets...", m_PendingSceneOpenPath.string(), AssetManager::Get().GetPendingFinalizeCount());
+      |                                                                                                                      ~~~~~~~~~~~~~~~~~~~ ^
+D:\gitnext\Chained Decos\engine\core\log.h:102:67: note: expanded from macro 'CH_CORE_INFO'
+  102 | #define CH_CORE_INFO(...)   ::Chained::Log::GetCoreLogger()->info(__VA_ARGS__)
+      |                                                                   ^~~~~~~~~~~
+D:/gitnext/Chained Decos/editor/editor_scene_manager.cpp:397:72: error: no member named 'HasBackgroundWork' in 'Chained::AssetManager'
+  397 |     if (m_PlayModeSceneReady && m_RuntimeScene && !AssetManager::Get().HasBackgroundWork())
+      |                                                    ~~~~~~~~~~~~~~~~~~~ ^
+5 errors generated.
+[72/114] Building CXX object game/chaineddecos/CMakeFiles/ChainedDecos.dir/src/game_script_bindings.cpp.obj
+[73/114] Building CXX object editor/CMakeFiles/editor_core.dir/viewport/editor_gizmo.cpp.obj
+FAILED: [code=1] editor/CMakeFiles/editor_core.dir/viewport/editor_gizmo.cpp.obj 
+C:\ProgramData\chocolatey\bin\ccache.exe C:\LLVM\bin\clang++.exe -DGLAD_API_CALL_EXPORT -DGLFW_DLL -DGLFW_INCLUDE_NONE -DGLM_FORCE_DEPTH_ZERO_TO_ONE -DIMGUI_DEFINE_MATH_OPERATORS -DIMGUI_IMPL_OPENGL_LOADER_GLAD -DJPH_DEBUG_RENDERER -DJPH_PROFILE_ENABLED -DJPH_SHARED_LIBRARY -DJPH_USE_AVX -DJPH_USE_AVX2 -DJPH_USE_F16C -DJPH_USE_FMADD -DJPH_USE_LZCNT -DJPH_USE_SSE4_1 -DJPH_USE_SSE4_2 -DJPH_USE_TZCNT -DNDEBUG -DNFD_SHARED -DNOMINMAX -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DRFL_BUILD_SHARED -DSPDLOG_COMPILED_LIB -DSPDLOG_SHARED_LIB -DSPDLOG_USE_STD_FORMAT -DWIN32_LEAN_AND_MEAN -DYYJSON_IMPORTS -DZSTD_MULTITHREAD -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601 -I"D:/gitnext/Chained Decos/editor" -I"D:/gitnext/Chained Decos/engine" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/include/reflect-cpp/include" -I"D:/gitnext/Chained Decos/scripting" -I"D:/gitnext/Chained Decos/engine/core" -I"D:/gitnext/Chained Decos/include/cereal/include" -I"D:/gitnext/Chained Decos/include/zstd/lib" -I"D:/gitnext/Chained Decos/include/yaml-cpp/include" -I"D:/gitnext/Chained Decos/include/entt/src" -I"D:/gitnext/Chained Decos/include/glm" -I"D:/gitnext/Chained Decos/include/stb" -I"D:/gitnext/Chained Decos/include/glfw/include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/gladsources/engine_external_glad/include" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/imguizmo" -I"D:/gitnext/Chained Decos/include/imgui/backends" -I"D:/gitnext/Chained Decos/include/miniaudio" -I"D:/gitnext/Chained Decos/include/coral/cmake/../Coral.Native/Include" -I"D:/gitnext/Chained Decos/include/nfd/src/include" -I"D:/gitnext/Chained Decos/include/reflect-cpp/include/rfl/thirdparty" -I"D:/gitnext/Chained Decos/build/windows-clang-release/_deps/spdlog-src/include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/_deps/bs_thread_pool-src/include" -I"D:/gitnext/Chained Decos/include/zstd/build/cmake/../../lib" -I"D:/gitnext/Chained Decos/engine/audio" -I"D:/gitnext/Chained Decos/engine/physics" -I"D:/gitnext/Chained Decos/include/assimp/code/../include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/vendor/assimp/code/../include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/_deps/jolt-src/Build/.." -I"D:/gitnext/Chained Decos/engine/scene" -I"D:/gitnext/Chained Decos/engine/graphics" -I"D:/gitnext/Chained Decos/engine/assets" -I"D:/gitnext/Chained Decos/engine/project" -I"D:/gitnext/Chained Decos/engine/serialization" -O3 -DNDEBUG -std=c++23 -D_DLL -D_MT -Xclang --dependent-lib=msvcrt -flto=thin -O3 -DNDEBUG -ffunction-sections -fdata-sections -w -mavx2 -mbmi -mpopcnt -mlzcnt -mf16c -mfma -mfpmath=sse -Xclang -include-pch -Xclang "D:/gitnext/Chained Decos/build/windows-clang-release/editor/CMakeFiles/editor_core.dir/cmake_pch.hxx.pch" -Xclang -include -Xclang "D:/gitnext/Chained Decos/build/windows-clang-release/editor/CMakeFiles/editor_core.dir/cmake_pch.hxx" -MD -MT editor/CMakeFiles/editor_core.dir/viewport/editor_gizmo.cpp.obj -MF editor\CMakeFiles\editor_core.dir\viewport\editor_gizmo.cpp.obj.d @editor\CMakeFiles\editor_core.dir\viewport\editor_gizmo.cpp.obj.modmap -o editor/CMakeFiles/editor_core.dir/viewport/editor_gizmo.cpp.obj -c "D:/gitnext/Chained Decos/editor/viewport/editor_gizmo.cpp"
+D:/gitnext/Chained Decos/editor/viewport/editor_gizmo.cpp:18:32: error: no member named 'Get' in 'Chained::EditorLayer'
+   18 |     auto& layer = EditorLayer::Get();
+      |                                ^~~
+D:/gitnext/Chained Decos/editor/viewport/editor_gizmo.cpp:66:59: error: no member named 'Fovy' in 'Chained::Camera3D'
+   66 |         projection = glm::perspective(glm::radians(camera.Fovy), aspect, camera.NearClip, camera.FarClip);
+      |                                                    ~~~~~~ ^
+D:/gitnext/Chained Decos/editor/viewport/editor_gizmo.cpp:71:28: error: no member named 'Fovy' in 'Chained::Camera3D'
+   71 |         float top = camera.Fovy * 0.5f;
+      |                     ~~~~~~ ^
+D:/gitnext/Chained Decos/editor/viewport/editor_gizmo.cpp:130:26: error: no member named 'Get' in 'Chained::EditorLayer'
+  130 |             EditorLayer::Get().GetCommandHistory().PushCommand(
+      |                          ^~~
+4 errors generated.
+[74/114] Building CXX object editor/CMakeFiles/editor_core.dir/editor_project_manager.cpp.obj
+[75/114] Building CXX object game/chaineddecos/CMakeFiles/ChainedDecos.dir/src/game_module.cpp.obj
+[76/114] Building CXX object editor/CMakeFiles/editor_core.dir/scene_picking.cpp.obj
+[77/114] Building CXX object editor/CMakeFiles/editor_core.dir/panels/content_browser_provider.cpp.obj
+[78/114] Building CXX object editor/CMakeFiles/editor_core.dir/viewport/editor_camera.cpp.obj
+FAILED: [code=1] editor/CMakeFiles/editor_core.dir/viewport/editor_camera.cpp.obj 
+C:\ProgramData\chocolatey\bin\ccache.exe C:\LLVM\bin\clang++.exe -DGLAD_API_CALL_EXPORT -DGLFW_DLL -DGLFW_INCLUDE_NONE -DGLM_FORCE_DEPTH_ZERO_TO_ONE -DIMGUI_DEFINE_MATH_OPERATORS -DIMGUI_IMPL_OPENGL_LOADER_GLAD -DJPH_DEBUG_RENDERER -DJPH_PROFILE_ENABLED -DJPH_SHARED_LIBRARY -DJPH_USE_AVX -DJPH_USE_AVX2 -DJPH_USE_F16C -DJPH_USE_FMADD -DJPH_USE_LZCNT -DJPH_USE_SSE4_1 -DJPH_USE_SSE4_2 -DJPH_USE_TZCNT -DNDEBUG -DNFD_SHARED -DNOMINMAX -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DRFL_BUILD_SHARED -DSPDLOG_COMPILED_LIB -DSPDLOG_SHARED_LIB -DSPDLOG_USE_STD_FORMAT -DWIN32_LEAN_AND_MEAN -DYYJSON_IMPORTS -DZSTD_MULTITHREAD -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601 -I"D:/gitnext/Chained Decos/editor" -I"D:/gitnext/Chained Decos/engine" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/include/reflect-cpp/include" -I"D:/gitnext/Chained Decos/scripting" -I"D:/gitnext/Chained Decos/engine/core" -I"D:/gitnext/Chained Decos/include/cereal/include" -I"D:/gitnext/Chained Decos/include/zstd/lib" -I"D:/gitnext/Chained Decos/include/yaml-cpp/include" -I"D:/gitnext/Chained Decos/include/entt/src" -I"D:/gitnext/Chained Decos/include/glm" -I"D:/gitnext/Chained Decos/include/stb" -I"D:/gitnext/Chained Decos/include/glfw/include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/gladsources/engine_external_glad/include" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/imguizmo" -I"D:/gitnext/Chained Decos/include/imgui/backends" -I"D:/gitnext/Chained Decos/include/miniaudio" -I"D:/gitnext/Chained Decos/include/coral/cmake/../Coral.Native/Include" -I"D:/gitnext/Chained Decos/include/nfd/src/include" -I"D:/gitnext/Chained Decos/include/reflect-cpp/include/rfl/thirdparty" -I"D:/gitnext/Chained Decos/build/windows-clang-release/_deps/spdlog-src/include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/_deps/bs_thread_pool-src/include" -I"D:/gitnext/Chained Decos/include/zstd/build/cmake/../../lib" -I"D:/gitnext/Chained Decos/engine/audio" -I"D:/gitnext/Chained Decos/engine/physics" -I"D:/gitnext/Chained Decos/include/assimp/code/../include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/vendor/assimp/code/../include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/_deps/jolt-src/Build/.." -I"D:/gitnext/Chained Decos/engine/scene" -I"D:/gitnext/Chained Decos/engine/graphics" -I"D:/gitnext/Chained Decos/engine/assets" -I"D:/gitnext/Chained Decos/engine/project" -I"D:/gitnext/Chained Decos/engine/serialization" -O3 -DNDEBUG -std=c++23 -D_DLL -D_MT -Xclang --dependent-lib=msvcrt -flto=thin -O3 -DNDEBUG -ffunction-sections -fdata-sections -w -mavx2 -mbmi -mpopcnt -mlzcnt -mf16c -mfma -mfpmath=sse -Xclang -include-pch -Xclang "D:/gitnext/Chained Decos/build/windows-clang-release/editor/CMakeFiles/editor_core.dir/cmake_pch.hxx.pch" -Xclang -include -Xclang "D:/gitnext/Chained Decos/build/windows-clang-release/editor/CMakeFiles/editor_core.dir/cmake_pch.hxx" -MD -MT editor/CMakeFiles/editor_core.dir/viewport/editor_camera.cpp.obj -MF editor\CMakeFiles\editor_core.dir\viewport\editor_camera.cpp.obj.d @editor\CMakeFiles\editor_core.dir\viewport\editor_camera.cpp.obj.modmap -o editor/CMakeFiles/editor_core.dir/viewport/editor_camera.cpp.obj -c "D:/gitnext/Chained Decos/editor/viewport/editor_camera.cpp"
+In file included from D:/gitnext/Chained Decos/editor/viewport/editor_camera.cpp:1:
+D:/gitnext/Chained Decos/editor/viewport\editor_camera.h:19:19: error: unknown type name 'Entity'; did you mean 'entt::entity'?
+   19 |     void OnUpdate(Entity cameraEntity, Timestep ts, const glm::vec2& viewportSize);
+      |                   ^~~~~~
+      |                   entt::entity
+D:\gitnext\Chained Decos\include\entt\src\entt\entity\fwd.hpp:14:12: note: 'entt::entity' declared here
+   14 | enum class entity : id_type {};
+      |            ^
+D:/gitnext/Chained Decos/editor/viewport/editor_camera.cpp:20:39: error: unknown type name 'Entity'; did you mean 'entt::entity'?
+   20 | void EditorCameraController::OnUpdate(Entity cameraEntity, Timestep ts, const glm::vec2& viewportSize)
+      |                                       ^~~~~~
+      |                                       entt::entity
+D:\gitnext\Chained Decos\include\entt\src\entt\entity\fwd.hpp:14:12: note: 'entt::entity' declared here
+   14 | enum class entity : id_type {};
+      |            ^
+D:/gitnext/Chained Decos/editor/viewport/editor_camera.cpp:39:50: error: member reference base type 'entt::entity' is not a structure or union
+   39 |     bool hasEntity = cameraEntity && cameraEntity.HasComponent<TransformComponent>() && cameraEntity.HasComponent<CameraComponent>();
+      |                                      ~~~~~~~~~~~~^~~~~~~~~~~~~
+D:/gitnext/Chained Decos/editor/viewport/editor_camera.cpp:39:64: error: 'TransformComponent' does not refer to a value
+   39 |     bool hasEntity = cameraEntity && cameraEntity.HasComponent<TransformComponent>() && cameraEntity.HasComponent<CameraComponent>();
+      |                                                                ^
+D:/gitnext/Chained Decos\engine/scene/components/transform_component.h:13:8: note: declared here
+   13 | struct TransformComponent
+      |        ^
+D:/gitnext/Chained Decos/editor/viewport/editor_camera.cpp:39:84: error: expected expression
+   39 |     bool hasEntity = cameraEntity && cameraEntity.HasComponent<TransformComponent>() && cameraEntity.HasComponent<CameraComponent>();
+      |                                                                                    ^
+D:/gitnext/Chained Decos/editor/viewport/editor_camera.cpp:39:101: error: member reference base type 'entt::entity' is not a structure or union
+   39 |     bool hasEntity = cameraEntity && cameraEntity.HasComponent<TransformComponent>() && cameraEntity.HasComponent<CameraComponent>();
+      |                                                                                         ~~~~~~~~~~~~^~~~~~~~~~~~~
+D:/gitnext/Chained Decos/editor/viewport/editor_camera.cpp:39:115: error: 'CameraComponent' does not refer to a value
+   39 |     bool hasEntity = cameraEntity && cameraEntity.HasComponent<TransformComponent>() && cameraEntity.HasComponent<CameraComponent>();
+      |                                                                                                                   ^
+D:/gitnext/Chained Decos\engine/scene/components/camera_component.h:10:8: note: declared here
+   10 | struct CameraComponent
+      |        ^
+D:/gitnext/Chained Decos/editor/viewport/editor_camera.cpp:39:132: error: expected expression
+   39 |     bool hasEntity = cameraEntity && cameraEntity.HasComponent<TransformComponent>() && cameraEntity.HasComponent<CameraComponent>();
+      |                                                                                                                                    ^
+D:/gitnext/Chained Decos/editor/viewport/editor_camera.cpp:43:32: error: member reference base type 'entt::entity' is not a structure or union
+   43 |         auto& tc = cameraEntity.GetComponent<TransformComponent>();
+      |                    ~~~~~~~~~~~~^~~~~~~~~~~~~
+D:/gitnext/Chained Decos/editor/viewport/editor_camera.cpp:43:46: error: 'TransformComponent' does not refer to a value
+   43 |         auto& tc = cameraEntity.GetComponent<TransformComponent>();
+      |                                              ^
+D:/gitnext/Chained Decos\engine/scene/components/transform_component.h:13:8: note: declared here
+   13 | struct TransformComponent
+      |        ^
+D:/gitnext/Chained Decos/editor/viewport/editor_camera.cpp:43:66: error: expected expression
+   43 |         auto& tc = cameraEntity.GetComponent<TransformComponent>();
+      |                                                                  ^
+D:/gitnext/Chained Decos/editor/viewport/editor_camera.cpp:97:32: error: member reference base type 'entt::entity' is not a structure or union
+   97 |         auto& tc = cameraEntity.GetComponent<TransformComponent>();
+      |                    ~~~~~~~~~~~~^~~~~~~~~~~~~
+D:/gitnext/Chained Decos/editor/viewport/editor_camera.cpp:97:46: error: 'TransformComponent' does not refer to a value
+   97 |         auto& tc = cameraEntity.GetComponent<TransformComponent>();
+      |                                              ^
+D:/gitnext/Chained Decos\engine/scene/components/transform_component.h:13:8: note: declared here
+   13 | struct TransformComponent
+      |        ^
+D:/gitnext/Chained Decos/editor/viewport/editor_camera.cpp:97:66: error: expected expression
+   97 |         auto& tc = cameraEntity.GetComponent<TransformComponent>();
+      |                                                                  ^
+14 errors generated.
+[79/114] Building CXX object editor/CMakeFiles/editor_core.dir/ui_factory.cpp.obj
+[80/114] Building CXX object editor/CMakeFiles/editor_core.dir/viewport/ui_manipulator.cpp.obj
+FAILED: [code=1] editor/CMakeFiles/editor_core.dir/viewport/ui_manipulator.cpp.obj 
+C:\ProgramData\chocolatey\bin\ccache.exe C:\LLVM\bin\clang++.exe -DGLAD_API_CALL_EXPORT -DGLFW_DLL -DGLFW_INCLUDE_NONE -DGLM_FORCE_DEPTH_ZERO_TO_ONE -DIMGUI_DEFINE_MATH_OPERATORS -DIMGUI_IMPL_OPENGL_LOADER_GLAD -DJPH_DEBUG_RENDERER -DJPH_PROFILE_ENABLED -DJPH_SHARED_LIBRARY -DJPH_USE_AVX -DJPH_USE_AVX2 -DJPH_USE_F16C -DJPH_USE_FMADD -DJPH_USE_LZCNT -DJPH_USE_SSE4_1 -DJPH_USE_SSE4_2 -DJPH_USE_TZCNT -DNDEBUG -DNFD_SHARED -DNOMINMAX -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DRFL_BUILD_SHARED -DSPDLOG_COMPILED_LIB -DSPDLOG_SHARED_LIB -DSPDLOG_USE_STD_FORMAT -DWIN32_LEAN_AND_MEAN -DYYJSON_IMPORTS -DZSTD_MULTITHREAD -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601 -I"D:/gitnext/Chained Decos/editor" -I"D:/gitnext/Chained Decos/engine" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/include/reflect-cpp/include" -I"D:/gitnext/Chained Decos/scripting" -I"D:/gitnext/Chained Decos/engine/core" -I"D:/gitnext/Chained Decos/include/cereal/include" -I"D:/gitnext/Chained Decos/include/zstd/lib" -I"D:/gitnext/Chained Decos/include/yaml-cpp/include" -I"D:/gitnext/Chained Decos/include/entt/src" -I"D:/gitnext/Chained Decos/include/glm" -I"D:/gitnext/Chained Decos/include/stb" -I"D:/gitnext/Chained Decos/include/glfw/include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/gladsources/engine_external_glad/include" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/imguizmo" -I"D:/gitnext/Chained Decos/include/imgui/backends" -I"D:/gitnext/Chained Decos/include/miniaudio" -I"D:/gitnext/Chained Decos/include/coral/cmake/../Coral.Native/Include" -I"D:/gitnext/Chained Decos/include/nfd/src/include" -I"D:/gitnext/Chained Decos/include/reflect-cpp/include/rfl/thirdparty" -I"D:/gitnext/Chained Decos/build/windows-clang-release/_deps/spdlog-src/include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/_deps/bs_thread_pool-src/include" -I"D:/gitnext/Chained Decos/include/zstd/build/cmake/../../lib" -I"D:/gitnext/Chained Decos/engine/audio" -I"D:/gitnext/Chained Decos/engine/physics" -I"D:/gitnext/Chained Decos/include/assimp/code/../include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/vendor/assimp/code/../include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/_deps/jolt-src/Build/.." -I"D:/gitnext/Chained Decos/engine/scene" -I"D:/gitnext/Chained Decos/engine/graphics" -I"D:/gitnext/Chained Decos/engine/assets" -I"D:/gitnext/Chained Decos/engine/project" -I"D:/gitnext/Chained Decos/engine/serialization" -O3 -DNDEBUG -std=c++23 -D_DLL -D_MT -Xclang --dependent-lib=msvcrt -flto=thin -O3 -DNDEBUG -ffunction-sections -fdata-sections -w -mavx2 -mbmi -mpopcnt -mlzcnt -mf16c -mfma -mfpmath=sse -Xclang -include-pch -Xclang "D:/gitnext/Chained Decos/build/windows-clang-release/editor/CMakeFiles/editor_core.dir/cmake_pch.hxx.pch" -Xclang -include -Xclang "D:/gitnext/Chained Decos/build/windows-clang-release/editor/CMakeFiles/editor_core.dir/cmake_pch.hxx" -MD -MT editor/CMakeFiles/editor_core.dir/viewport/ui_manipulator.cpp.obj -MF editor\CMakeFiles\editor_core.dir\viewport\ui_manipulator.cpp.obj.d @editor\CMakeFiles\editor_core.dir\viewport\ui_manipulator.cpp.obj.modmap -o editor/CMakeFiles/editor_core.dir/viewport/ui_manipulator.cpp.obj -c "D:/gitnext/Chained Decos/editor/viewport/ui_manipulator.cpp"
+D:/gitnext/Chained Decos/editor/viewport/ui_manipulator.cpp:28:24: error: use of undeclared identifier 'Renderer'
+   28 |     auto* uiRenderer = Renderer::Get().GetUIRenderer();
+      |                        ^
+1 error generated.
+[81/114] Building CXX object editor/CMakeFiles/editor_core.dir/panels/content_browser_panel.cpp.obj
+FAILED: [code=1] editor/CMakeFiles/editor_core.dir/panels/content_browser_panel.cpp.obj 
+C:\ProgramData\chocolatey\bin\ccache.exe C:\LLVM\bin\clang++.exe -DGLAD_API_CALL_EXPORT -DGLFW_DLL -DGLFW_INCLUDE_NONE -DGLM_FORCE_DEPTH_ZERO_TO_ONE -DIMGUI_DEFINE_MATH_OPERATORS -DIMGUI_IMPL_OPENGL_LOADER_GLAD -DJPH_DEBUG_RENDERER -DJPH_PROFILE_ENABLED -DJPH_SHARED_LIBRARY -DJPH_USE_AVX -DJPH_USE_AVX2 -DJPH_USE_F16C -DJPH_USE_FMADD -DJPH_USE_LZCNT -DJPH_USE_SSE4_1 -DJPH_USE_SSE4_2 -DJPH_USE_TZCNT -DNDEBUG -DNFD_SHARED -DNOMINMAX -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DRFL_BUILD_SHARED -DSPDLOG_COMPILED_LIB -DSPDLOG_SHARED_LIB -DSPDLOG_USE_STD_FORMAT -DWIN32_LEAN_AND_MEAN -DYYJSON_IMPORTS -DZSTD_MULTITHREAD -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601 -I"D:/gitnext/Chained Decos/editor" -I"D:/gitnext/Chained Decos/engine" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/include/reflect-cpp/include" -I"D:/gitnext/Chained Decos/scripting" -I"D:/gitnext/Chained Decos/engine/core" -I"D:/gitnext/Chained Decos/include/cereal/include" -I"D:/gitnext/Chained Decos/include/zstd/lib" -I"D:/gitnext/Chained Decos/include/yaml-cpp/include" -I"D:/gitnext/Chained Decos/include/entt/src" -I"D:/gitnext/Chained Decos/include/glm" -I"D:/gitnext/Chained Decos/include/stb" -I"D:/gitnext/Chained Decos/include/glfw/include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/gladsources/engine_external_glad/include" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/imguizmo" -I"D:/gitnext/Chained Decos/include/imgui/backends" -I"D:/gitnext/Chained Decos/include/miniaudio" -I"D:/gitnext/Chained Decos/include/coral/cmake/../Coral.Native/Include" -I"D:/gitnext/Chained Decos/include/nfd/src/include" -I"D:/gitnext/Chained Decos/include/reflect-cpp/include/rfl/thirdparty" -I"D:/gitnext/Chained Decos/build/windows-clang-release/_deps/spdlog-src/include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/_deps/bs_thread_pool-src/include" -I"D:/gitnext/Chained Decos/include/zstd/build/cmake/../../lib" -I"D:/gitnext/Chained Decos/engine/audio" -I"D:/gitnext/Chained Decos/engine/physics" -I"D:/gitnext/Chained Decos/include/assimp/code/../include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/vendor/assimp/code/../include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/_deps/jolt-src/Build/.." -I"D:/gitnext/Chained Decos/engine/scene" -I"D:/gitnext/Chained Decos/engine/graphics" -I"D:/gitnext/Chained Decos/engine/assets" -I"D:/gitnext/Chained Decos/engine/project" -I"D:/gitnext/Chained Decos/engine/serialization" -O3 -DNDEBUG -std=c++23 -D_DLL -D_MT -Xclang --dependent-lib=msvcrt -flto=thin -O3 -DNDEBUG -ffunction-sections -fdata-sections -w -mavx2 -mbmi -mpopcnt -mlzcnt -mf16c -mfma -mfpmath=sse -Xclang -include-pch -Xclang "D:/gitnext/Chained Decos/build/windows-clang-release/editor/CMakeFiles/editor_core.dir/cmake_pch.hxx.pch" -Xclang -include -Xclang "D:/gitnext/Chained Decos/build/windows-clang-release/editor/CMakeFiles/editor_core.dir/cmake_pch.hxx" -MD -MT editor/CMakeFiles/editor_core.dir/panels/content_browser_panel.cpp.obj -MF editor\CMakeFiles\editor_core.dir\panels\content_browser_panel.cpp.obj.d @editor\CMakeFiles\editor_core.dir\panels\content_browser_panel.cpp.obj.modmap -o editor/CMakeFiles/editor_core.dir/panels/content_browser_panel.cpp.obj -c "D:/gitnext/Chained Decos/editor/panels/content_browser_panel.cpp"
+D:/gitnext/Chained Decos/editor/panels/content_browser_panel.cpp:302:25: error: no member named 'Get' in 'Chained::EditorContext'
+  302 |         m_EditorContext.Get<EditorLayer>().GetSceneManager().OpenScene(entry.path);
+      |         ~~~~~~~~~~~~~~~ ^
+D:/gitnext/Chained Decos/editor/panels/content_browser_panel.cpp:302:29: error: 'EditorLayer' does not refer to a value
+  302 |         m_EditorContext.Get<EditorLayer>().GetSceneManager().OpenScene(entry.path);
+      |                             ^
+D:/gitnext/Chained Decos\editor/editor_layer.h:41:7: note: declared here
+   41 | class EditorLayer : public Layer
+      |       ^
+D:/gitnext/Chained Decos/editor/panels/content_browser_panel.cpp:302:42: error: expected expression
+  302 |         m_EditorContext.Get<EditorLayer>().GetSceneManager().OpenScene(entry.path);
+      |                                          ^
+3 errors generated.
+[82/114] Building CXX object editor/CMakeFiles/editor_core.dir/panels/scene_hierarchy_panel.cpp.obj
+FAILED: [code=1] editor/CMakeFiles/editor_core.dir/panels/scene_hierarchy_panel.cpp.obj 
+C:\ProgramData\chocolatey\bin\ccache.exe C:\LLVM\bin\clang++.exe -DGLAD_API_CALL_EXPORT -DGLFW_DLL -DGLFW_INCLUDE_NONE -DGLM_FORCE_DEPTH_ZERO_TO_ONE -DIMGUI_DEFINE_MATH_OPERATORS -DIMGUI_IMPL_OPENGL_LOADER_GLAD -DJPH_DEBUG_RENDERER -DJPH_PROFILE_ENABLED -DJPH_SHARED_LIBRARY -DJPH_USE_AVX -DJPH_USE_AVX2 -DJPH_USE_F16C -DJPH_USE_FMADD -DJPH_USE_LZCNT -DJPH_USE_SSE4_1 -DJPH_USE_SSE4_2 -DJPH_USE_TZCNT -DNDEBUG -DNFD_SHARED -DNOMINMAX -DPROJECT_ROOT_DIR="\"D:/gitnext/Chained Decos\"" -DRFL_BUILD_SHARED -DSPDLOG_COMPILED_LIB -DSPDLOG_SHARED_LIB -DSPDLOG_USE_STD_FORMAT -DWIN32_LEAN_AND_MEAN -DYYJSON_IMPORTS -DZSTD_MULTITHREAD -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601 -I"D:/gitnext/Chained Decos/editor" -I"D:/gitnext/Chained Decos/engine" -I"D:/gitnext/Chained Decos" -I"D:/gitnext/Chained Decos/include/reflect-cpp/include" -I"D:/gitnext/Chained Decos/scripting" -I"D:/gitnext/Chained Decos/engine/core" -I"D:/gitnext/Chained Decos/include/cereal/include" -I"D:/gitnext/Chained Decos/include/zstd/lib" -I"D:/gitnext/Chained Decos/include/yaml-cpp/include" -I"D:/gitnext/Chained Decos/include/entt/src" -I"D:/gitnext/Chained Decos/include/glm" -I"D:/gitnext/Chained Decos/include/stb" -I"D:/gitnext/Chained Decos/include/glfw/include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/gladsources/engine_external_glad/include" -I"D:/gitnext/Chained Decos/include/imgui" -I"D:/gitnext/Chained Decos/include/imguizmo" -I"D:/gitnext/Chained Decos/include/imgui/backends" -I"D:/gitnext/Chained Decos/include/miniaudio" -I"D:/gitnext/Chained Decos/include/coral/cmake/../Coral.Native/Include" -I"D:/gitnext/Chained Decos/include/nfd/src/include" -I"D:/gitnext/Chained Decos/include/reflect-cpp/include/rfl/thirdparty" -I"D:/gitnext/Chained Decos/build/windows-clang-release/_deps/spdlog-src/include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/_deps/bs_thread_pool-src/include" -I"D:/gitnext/Chained Decos/include/zstd/build/cmake/../../lib" -I"D:/gitnext/Chained Decos/engine/audio" -I"D:/gitnext/Chained Decos/engine/physics" -I"D:/gitnext/Chained Decos/include/assimp/code/../include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/vendor/assimp/code/../include" -I"D:/gitnext/Chained Decos/build/windows-clang-release/_deps/jolt-src/Build/.." -I"D:/gitnext/Chained Decos/engine/scene" -I"D:/gitnext/Chained Decos/engine/graphics" -I"D:/gitnext/Chained Decos/engine/assets" -I"D:/gitnext/Chained Decos/engine/project" -I"D:/gitnext/Chained Decos/engine/serialization" -O3 -DNDEBUG -std=c++23 -D_DLL -D_MT -Xclang --dependent-lib=msvcrt -flto=thin -O3 -DNDEBUG -ffunction-sections -fdata-sections -w -mavx2 -mbmi -mpopcnt -mlzcnt -mf16c -mfma -mfpmath=sse -Xclang -include-pch -Xclang "D:/gitnext/Chained Decos/build/windows-clang-release/editor/CMakeFiles/editor_core.dir/cmake_pch.hxx.pch" -Xclang -include -Xclang "D:/gitnext/Chained Decos/build/windows-clang-release/editor/CMakeFiles/editor_core.dir/cmake_pch.hxx" -MD -MT editor/CMakeFiles/editor_core.dir/panels/scene_hierarchy_panel.cpp.obj -MF editor\CMakeFiles\editor_core.dir\panels\scene_hierarchy_panel.cpp.obj.d @editor\CMakeFiles\editor_core.dir\panels\scene_hierarchy_panel.cpp.obj.modmap -o editor/CMakeFiles/editor_core.dir/panels/scene_hierarchy_panel.cpp.obj -c "D:/gitnext/Chained Decos/editor/panels/scene_hierarchy_panel.cpp"
+In file included from D:/gitnext/Chained Decos/editor/panels/scene_hierarchy_panel.cpp:10:
+D:/gitnext/Chained Decos/editor\undo/entity_commands.h:117:27: error: no viable overloaded '='
+  117 |         m_DuplicateEntity = m_Scene->CopyEntity(m_SourceEntity);
+      |         ~~~~~~~~~~~~~~~~~ ^ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+D:/gitnext/Chained Decos\engine/scene/entity.h:25:7: note: candidate function (the implicit copy assignment operator) not viable: no known conversion from 'entt::entity' to 'const Entity' for 1st argument
+   25 | class Entity
+      |       ^~~~~~
+D:/gitnext/Chained Decos/editor/panels/scene_hierarchy_panel.cpp:124:30: error: call to non-static member function without an object argument
+  124 |                 EditorLayer::GetCommandHistory().PushCommand(std::make_unique<DuplicateEntityCommand>(selected));
+      |                 ~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~
+D:/gitnext/Chained Decos/editor/panels/scene_hierarchy_panel.cpp:297:29: error: no member named 'Get' in 'Chained::EditorContext'
+  297 |             m_EditorContext.Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<DuplicateEntityCommand>(entity));
+      |             ~~~~~~~~~~~~~~~ ^
+D:/gitnext/Chained Decos/editor/panels/scene_hierarchy_panel.cpp:297:33: error: 'EditorLayer' does not refer to a value
+  297 |             m_EditorContext.Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<DuplicateEntityCommand>(entity));
+      |                                 ^
+D:/gitnext/Chained Decos/editor\editor_layer.h:41:7: note: declared here
+   41 | class EditorLayer : public Layer
+      |       ^
+D:/gitnext/Chained Decos/editor/panels/scene_hierarchy_panel.cpp:297:46: error: expected expression
+  297 |             m_EditorContext.Get<EditorLayer>().GetCommandHistory().PushCommand(std::make_unique<DuplicateEntityCommand>(entity));
+      |                                              ^
+D:/gitnext/Chained Decos/editor/panels/scene_hierarchy_panel.cpp:397:29: error: no member named 'Get' in 'Chained::EditorContext'
+  397 |             m_EditorContext.Get<EditorLayer>().GetCommandHistory().PushCommand(
+      |             ~~~~~~~~~~~~~~~ ^
+D:/gitnext/Chained Decos/editor/panels/scene_hierarchy_panel.cpp:397:33: error: 'EditorLayer' does not refer to a value
+  397 |             m_EditorContext.Get<EditorLayer>().GetCommandHistory().PushCommand(
+      |                                 ^
+D:/gitnext/Chained Decos/editor\editor_layer.h:41:7: note: declared here
+   41 | class EditorLayer : public Layer
+      |       ^
+D:/gitnext/Chained Decos/editor/panels/scene_hierarchy_panel.cpp:397:46: error: expected expression
+  397 |             m_EditorContext.Get<EditorLayer>().GetCommandHistory().PushCommand(
+      |                                              ^
+8 errors generated.
+[83/114] Building CXX object editor/CMakeFiles/editor_core.dir/panels/console_panel.cpp.obj
+[84/114] Building CXX object editor/CMakeFiles/editor_core.dir/panels/profiler_panel.cpp.obj
+[85/114] Building CXX object editor/CMakeFiles/editor_core.dir/panels/inspector_panel.cpp.obj
+[86/114] Building CXX object runtime/CMakeFiles/RuntimeCore.dir/runtime_layer.cpp.obj
+[87/114] Building CXX object editor/CMakeFiles/editor_core.dir/panels/property_editor.cpp.obj
+ninja: build stopped: subcommand failed.

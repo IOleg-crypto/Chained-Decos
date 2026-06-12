@@ -1,11 +1,11 @@
 #include "ui_manipulator.h"
 #include "engine/core/log.h"
-#include "engine/graphics/pipeline/ui_renderer.h"
+#include "engine/graphics/ui/ui_renderer.h"
+#include "engine/graphics/pipeline/renderer.h"
 #include "engine/scene/components/control_component.h"
 #include "engine/scene/scene.h"
-#include "engine/core/service_locator.h"
 
-namespace CHEngine
+namespace Chained
 {
 
 static const float HANDLE_SIZE = 8.0f;
@@ -26,7 +26,9 @@ bool EditorUIManipulator::OnImGuiRender(Entity selectedEntity, ImVec2 viewportPo
     auto& cc = selectedEntity.GetComponent<ControlComponent>();
     auto* sceneCtx = selectedEntity.GetRegistry().ctx().find<Scene*>();
     Scene* scene = (sceneCtx && *sceneCtx) ? *sceneCtx : nullptr;
-    UIRect rect = ServiceLocator::Get<UIRenderer>().GetEntityRect(scene, selectedEntity, viewportSize, viewportPos);
+    auto* uiRenderer = Renderer::GetUIRenderer();
+    UIRect rect = (scene && uiRenderer) ? uiRenderer->GetEntityRect(scene, selectedEntity, viewportSize, viewportPos)
+                                        : UIRect{};
 
     float scaleFactor = 1.0f;
     if (sceneCtx && *sceneCtx)
@@ -163,4 +165,4 @@ void EditorUIManipulator::DrawHandle(ImDrawList* drawList, ImVec2 pos, UIHandleT
                       {pos.x + HANDLE_SIZE * 0.5f, pos.y + HANDLE_SIZE * 0.5f}, IM_COL32(0, 0, 0, 255));
 }
 
-} // namespace CHEngine
+} // namespace Chained

@@ -2,11 +2,11 @@
 #define CH_HIERARCHY_COMPONENT_H
 
 #include "entt/entt.hpp"
-#include "engine/core/reflection_rfl.h"
+#include "engine/reflection/reflection_rfl.h"
 #include <string>
 #include <vector>
 
-namespace CHEngine
+namespace Chained
 {
 struct HierarchyComponent
 {
@@ -25,6 +25,6 @@ struct NameComponent
 
 CH_MARK_RFL(NameComponent);
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_HIERARCHY_COMPONENT_H

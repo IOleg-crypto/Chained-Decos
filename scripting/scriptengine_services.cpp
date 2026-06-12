@@ -2,7 +2,8 @@
 
 #include "engine/core/application.h"
 #include "engine/core/log.h"
-#include "engine/scene/project.h"
+#include "scripting/scriptengine.h"
+#include "engine/project/project.h"
 #include <Coral/GC.hpp>
 #include <algorithm>
 #include <cctype>
@@ -10,10 +11,12 @@
 #include <filesystem>
 #include <vector>
 
+#include "scripting/scriptengine.h"
 #include "script_glue.h"
 #include "build_preset_names.h"
+#include <Coral/HostInstance.hpp>
 
-namespace CHEngine
+namespace Chained
 {
 
 namespace
@@ -92,12 +95,14 @@ std::filesystem::path ScriptHost::ResolveCoralDirectory()
     AppendBuildBinCandidates(candidateDirs, engineRoot);
 #endif
 
-    if (auto project = Project::GetActive())
-    {
-        const std::filesystem::path projectDir = project->GetConfig().ProjectDirectory;
-        candidateDirs.push_back(projectDir);
-        AppendBuildBinCandidates(candidateDirs, projectDir);
-    }
+
+        if (auto project = Project::GetActive())
+        {
+            const std::filesystem::path projectDir = project->GetConfig().ProjectDirectory;
+            candidateDirs.push_back(projectDir);
+            AppendBuildBinCandidates(candidateDirs, projectDir);
+        }
+
 
     std::vector<std::string> checkedPaths;
     for (const auto& candidateRaw : candidateDirs)
@@ -129,11 +134,11 @@ std::filesystem::path ScriptHost::ResolveCoreAssemblyPath(const std::filesystem:
 {
     std::vector<std::filesystem::path> coreCandidates;
     if (!coralDir.empty())
-        coreCandidates.push_back(coralDir / "CHEngine.Managed.dll");
+        coreCandidates.push_back(coralDir / "Chained.Managed.dll");
 
     const std::filesystem::path exeDir = Application::GetExecutableDirectory();
-    coreCandidates.push_back(exeDir / "CHEngine.Managed.dll");
-    coreCandidates.push_back(std::filesystem::current_path() / "CHEngine.Managed.dll");
+    coreCandidates.push_back(exeDir / "Chained.Managed.dll");
+    coreCandidates.push_back(std::filesystem::current_path() / "Chained.Managed.dll");
 
 #ifdef PROJECT_ROOT_DIR
     AppendBuildBinCandidates(coreCandidates, std::filesystem::path(PROJECT_ROOT_DIR));
@@ -150,7 +155,7 @@ std::filesystem::path ScriptHost::ResolveCoreAssemblyPath(const std::filesystem:
             return candidate;
     }
 
-    return std::filesystem::path("CHEngine.Managed.dll");
+    return std::filesystem::path("Chained.Managed.dll");
 }
 
 void ScriptHost::ClearLoadedAssemblyState()
@@ -341,7 +346,6 @@ bool ScriptHost::LoadAssembliesTransactional(const std::filesystem::path& appAss
     CH_CORE_INFO("ScriptEngine: Loaded app assembly '{}'.", appAssemblyPath.string());
     return true;
 }
-
 bool ScriptHost::LoadAppAssembly(const std::string& filepath)
 {
     if (!m_IsInitialized)
@@ -405,11 +409,11 @@ void ScriptRegistry::Discover(Coral::ManagedAssembly& appAssembly, Coral::Manage
 {
     Clear();
 
-    Coral::Type scriptBaseType = coreAssembly.GetLocalType("CHEngine.Script");
+    Coral::Type scriptBaseType = coreAssembly.GetLocalType("Chained.Script");
 
     if (!scriptBaseType)
     {
-        CH_CORE_ERROR("ScriptEngine: Could not find base class 'CHEngine.Script' in Core assembly! Type discovery aborted.");
+        CH_CORE_ERROR("ScriptEngine: Could not find base class 'Chained.Script' in Core assembly! Type discovery aborted.");
         return;
     }
 
@@ -487,4 +491,4 @@ Coral::Type* ScriptRegistry::GetScriptClass(const std::string& name)
     return nullptr;
 }
 
-} // namespace CHEngine
+} // namespace Chained

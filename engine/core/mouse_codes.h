@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-namespace CHEngine
+namespace Chained
 {
 	using MouseCode = uint16_t;
 

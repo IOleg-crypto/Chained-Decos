@@ -1,22 +1,28 @@
 #ifndef CH_EDITOR_SCENE_MANAGER_H
 #define CH_EDITOR_SCENE_MANAGER_H
 
-#include "editor_context.h"
+
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_events.h"
 #include <filesystem>
 #include <future>
 #include <memory>
 
-namespace CHEngine
+namespace Chained
 {
 
+enum class SceneState : uint8_t;
+
+class Application;
+class AssetManager;
+class EditorLayer;
 class ScriptEngine;
+class ThreadPool;
 
 class EditorSceneManager
 {
 public:
-    EditorSceneManager(ScriptEngine* scriptEngine);
+    EditorSceneManager(EditorLayer& owner);
     ~EditorSceneManager() = default;
 
     void NewScene();
@@ -54,6 +60,7 @@ private:
     void CancelPlayModeTransition();
 
 private:
+    EditorLayer& m_EditorLayer;
     std::shared_ptr<Scene> m_EditorScene;
     std::shared_ptr<Scene> m_RuntimeScene;
 
@@ -72,10 +79,8 @@ private:
 
     float m_AutoSaveTimer = 0.0f;
     float m_LastAutoSaveTime = 0.0f;
-
-    ScriptEngine* m_ScriptEngine = nullptr;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_EDITOR_SCENE_MANAGER_H

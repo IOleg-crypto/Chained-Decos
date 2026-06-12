@@ -1,7 +1,7 @@
 #include "render_command.h"
 #include <glad/gl.h>
 
-namespace CHEngine
+namespace Chained
 {
 
 std::unique_ptr<RendererAPI> RenderCommand::s_RendererAPI = RendererAPI::Create();
@@ -13,7 +13,8 @@ void RenderCommand::Initialize()
 
 void RenderCommand::Shutdown()
 {
-}
-    // These empty stubs were removed in favor of the full implementation in Renderer::DrawLine/DrawGrid
 
-} // namespace CHEngine
+}
+
+
+} // namespace Chained

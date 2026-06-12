@@ -1,13 +1,14 @@
 #ifndef CH_EDITOR_CAMERA_H
 #define CH_EDITOR_CAMERA_H
 
-#include "engine/core/timestep.h"
-#include "engine/scene/camera.h"
+#include "engine/foundation/timestep.h"
+#include "engine/scene/scene_camera.h"
 #include "engine/scene/entity.h"
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-namespace CHEngine
+namespace Chained
 {
 
 class EditorCameraController
@@ -18,13 +19,20 @@ public:
 
     void OnUpdate(Entity cameraEntity, Timestep ts, const glm::vec2& viewportSize);
 
-    Camera& GetCamera() { return m_Camera; }
-    const Camera& GetCamera() const { return m_Camera; }
+    SceneCamera& GetCamera() { return m_Camera; }
+    const SceneCamera& GetCamera() const { return m_Camera; }
 
     const glm::mat4& GetViewMatrix() const { return m_ViewMatrix; }
-    glm::mat4 GetViewProjection() const { return m_Camera.GetProjection() * m_ViewMatrix; }
+    glm::mat4 GetProjection() const {
+        if (m_ViewportHeight == 0) return glm::mat4(1.0f);
+        if (m_Camera.Type == ProjectionType::Perspective)
+            return glm::perspective(m_Camera.GetPerspectiveVerticalFOV(), (float)m_ViewportWidth / (float)m_ViewportHeight, m_Camera.GetPerspectiveNearClip(), m_Camera.GetPerspectiveFarClip());
+        else
+            return glm::ortho(-m_Camera.GetOrthographicSize() * m_ViewportWidth / m_ViewportHeight, m_Camera.GetOrthographicSize() * m_ViewportWidth / m_ViewportHeight, -m_Camera.GetOrthographicSize(), m_Camera.GetOrthographicSize(), m_Camera.GetOrthographicNearClip(), m_Camera.GetOrthographicFarClip());
+    }
+    glm::mat4 GetViewProjection() const { return GetProjection() * m_ViewMatrix; }
 
-    void SetViewportSize(uint32_t width, uint32_t height) { m_ViewportWidth = width; m_ViewportHeight = height; m_Camera.SetViewportSize(width, height); }
+    void SetViewportSize(uint32_t width, uint32_t height) { m_ViewportWidth = width; m_ViewportHeight = height; }
 
     glm::vec3 GetUpDirection() const;
     glm::vec3 GetRightDirection() const;
@@ -55,7 +63,7 @@ private:
     float ZoomSpeed() const;
 
 private:
-    Camera m_Camera;
+    SceneCamera m_Camera;
     glm::mat4 m_ViewMatrix = glm::mat4(1.0f);
     
     glm::vec3 m_FocalPoint = {0.0f, 0.0f, 0.0f};
@@ -67,6 +75,6 @@ private:
     float m_BoostMultiplier = 5.0f;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_EDITOR_CAMERA_H

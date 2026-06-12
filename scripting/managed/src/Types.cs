@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace CHEngine
+namespace Chained
 {
     [StructLayout(LayoutKind.Explicit, Size = 4)]
     public struct Bool32

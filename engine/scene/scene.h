@@ -1,28 +1,31 @@
 #ifndef CH_SCENE_H
 #define CH_SCENE_H
 
+#include <entt/entt.hpp>
+#include <memory>
+#include <vector>
+#include <string>
+#include <functional>
+#include <filesystem>
+
 #include "components.h"
-#include "engine/core/base.h"
-#include "engine/core/ch_assert.h"
+#include "scene_context.h"
+#include "engine/foundation/base.h"
 #include "engine/core/events.h"
-#include "engine/core/timestep.h"
+#include "engine/foundation/timestep.h"
 #include "engine/graphics/api/camera_types.h"
 #include "engine/scene/entity.h"
 #include "engine/scene/scene_settings.h"
-#include "entt/entt.hpp"
-#include <memory>
-#include <optional>
-#include <unordered_map>
-#include <vector>
-#include <filesystem>
 
- 
-
-namespace CHEngine
+namespace Chained
 {
+class Physics;
 class ScriptEngine;
 class SceneScriptingManager;
-class SceneSystemManager;
+class HierarchySystem;
+class SceneResourceManager;
+class AnimationManager;
+class Event;
 
 // Owns the scene registry, scene settings, and the runtime/editor update bridge.
 class CH_API Scene
@@ -30,6 +33,11 @@ class CH_API Scene
 public:
     Scene(ScriptEngine* scriptEngine = nullptr);
     ~Scene();
+
+    SceneContext& GetContext() { return m_Context; }
+
+    using EventCallbackFn = std::function<void(Event&)>;
+    void SetEventCallback(const EventCallbackFn& callback) { m_EventCallback = callback; }
 
 public:
     // Creates a new scene with default entities (e.g. Main Camera).
@@ -46,7 +54,7 @@ public:
     Entity CreateUIEntity(const std::string& type, const std::string& name = std::string());
 
 public:
-    Entity CopyEntity(entt::entity copyEntity);
+    entt::entity CopyEntity(entt::entity copyEntity);
     void DestroyEntity(Entity entity);
     Entity FindEntityByTag(const std::string& tag);
     Entity GetEntityByUUID(UUID uuid);
@@ -66,22 +74,26 @@ public:
     SceneSettings& GetSettings();
     const SceneSettings& GetSettings() const;
 
-    std::vector<entt::entity>& GetRootEntities() { return m_RootEntities; }
-    const std::vector<entt::entity>& GetRootEntities() const { return m_RootEntities; }
+    std::vector<entt::entity> GetRootEntities();
+    std::vector<entt::entity> GetRootEntities() const;
 
 public: // Systems & Tools
     entt::registry& GetRegistry();
     const entt::registry& GetRegistry() const;
     entt::registry* GetRegistryPtr();
 
-    
 
 private:
+    SceneContext m_Context;
     std::unique_ptr<entt::registry> m_Registry;
     SceneSettings m_Settings;
     bool m_IsSimulationRunning = false;
     std::unique_ptr<SceneScriptingManager> m_ScriptingManager;
-    std::unique_ptr<SceneSystemManager> m_SystemManager;
+    std::unique_ptr<HierarchySystem> m_HierarchySystem;
+    std::unique_ptr<SceneResourceManager> m_ResourceManager;
+    std::unique_ptr<AnimationManager> m_AnimationManager;
+    EventCallbackFn m_EventCallback;
+
 
     void OnIDConstruct(entt::registry& registry, entt::entity entity);
     void OnIDDestroy(entt::registry& registry, entt::entity entity);
@@ -93,13 +105,8 @@ private:
     friend class Entity;
     friend class HierarchySystem;
     friend class SceneSerializer;
-
-    std::vector<entt::entity> m_RootEntities;
-    
-    
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_SCENE_H
-

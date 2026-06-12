@@ -1,7 +1,7 @@
 #include "opengl_storage_buffer.h"
 #include <glad/gl.h>
 
-namespace CHEngine
+namespace Chained
 {
     OpenGLStorageBuffer::OpenGLStorageBuffer(uint32_t size)
     {

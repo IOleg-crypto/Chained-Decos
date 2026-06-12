@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <glm/glm.hpp>
 
-namespace CHEngine
+namespace Chained
 {
 struct alignas(32) BVHNode
 {
@@ -18,6 +18,6 @@ struct alignas(32) BVHNode
         return PrimCount > 0;
     }
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_BVH_NODE_H

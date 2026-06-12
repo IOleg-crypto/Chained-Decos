@@ -4,7 +4,7 @@
 #include "engine/core/layer.h"
 #include <imgui.h>
 
-namespace CHEngine
+namespace Chained
 {
 class ImGuiLayer : public Layer
 {
@@ -36,6 +36,6 @@ public:
 private:
     bool m_BlockEvents = true;
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_IMGUI_LAYER_H

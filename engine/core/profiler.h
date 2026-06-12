@@ -11,9 +11,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include "engine/core/base.h"
+#include "engine/foundation/base.h"
 
-namespace CHEngine
+namespace Chained
 {
 struct ProfileResult
 {
@@ -200,13 +200,13 @@ private:
     static std::vector<ProfileResult> s_LastFrameResults;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
-#define CH_PROFILE_BEGIN_SESSION(name, filepath) ::CHEngine::Instrumentor::Get().BeginSession(name, filepath)
-#define CH_PROFILE_END_SESSION() ::CHEngine::Instrumentor::Get().EndSession()
+#define CH_PROFILE_BEGIN_SESSION(name, filepath) ::Chained::Instrumentor::Get().BeginSession(name, filepath)
+#define CH_PROFILE_END_SESSION() ::Chained::Instrumentor::Get().EndSession()
 #define CH_PROFILE_CONCAT_IMPL(x, y) x##y
 #define CH_PROFILE_CONCAT(x, y) CH_PROFILE_CONCAT_IMPL(x, y)
-#define CH_PROFILE_SCOPE(name) ::CHEngine::InstrumentationTimer CH_PROFILE_CONCAT(timer, __LINE__)(name)
+#define CH_PROFILE_SCOPE(name) ::Chained::InstrumentationTimer CH_PROFILE_CONCAT(timer, __LINE__)(name)
 #define CH_PROFILE_FUNCTION() CH_PROFILE_SCOPE(__FUNCTION__)
 
 #endif // CH_PROFILER_H

@@ -1,59 +1,48 @@
 #include "content_browser_panel.h"
-
-#include "engine/core/base.h"
+#include "IconsFontAwesome6.h"
+#include "editor/editor_action_commands.h"
 #include "editor/editor_layer.h"
 #include "engine/core/log.h"
-#include "engine/scene/project.h"
+#include "engine/project/project.h"
 #include "engine/scene/scene_events.h"
-#include "IconsFontAwesome6.h"
-
 #include "imgui.h"
-#include <algorithm>
-#include <fstream>
-#include <unordered_map>
 
-namespace CHEngine
+namespace Chained
 {
+
 ContentBrowserPanel::ContentBrowserPanel()
 {
     m_Name = "Content Browser";
+    m_Provider = std::make_unique<ContentBrowserProvider>();
 
-    auto project = Project::GetActive();
-    if (project)
+    if (auto project = Project::GetActive())
     {
-        m_RootDirectory = Project::GetAssetDirectory();
+        m_Provider->SetRoot(project->GetAssetDirectoryForProject());
     }
     else
     {
-        // Fallback: use project root if project not loaded yet
-        m_RootDirectory = std::filesystem::current_path() / "assets";
+        m_Provider->SetRoot(std::filesystem::current_path() / "assets");
     }
-
-    m_CurrentDirectory = m_RootDirectory;
-    RefreshDirectory();
 }
 
-ContentBrowserPanel::~ContentBrowserPanel()
-{
-    // Unload textures if they were loaded
-}
+ContentBrowserPanel::~ContentBrowserPanel() = default;
 
 void ContentBrowserPanel::OnImGuiRender(bool readOnly)
 {
     if (!m_NextDirectory.empty())
     {
-        m_CurrentDirectory = m_NextDirectory;
+        m_Provider->Navigate(m_NextDirectory);
         m_NextDirectory.clear();
-        RefreshDirectory();
     }
 
     if (!m_IsOpen)
     {
         return;
     }
-    ImGui::Begin(m_Name.c_str(), &m_IsOpen);
 
+    ImGui::Begin(m_Name.c_str(), &m_IsOpen);
     ImGui::BeginDisabled(readOnly);
+
     RenderToolbar();
     ImGui::Separator();
     RenderGridView();
@@ -66,7 +55,10 @@ void ContentBrowserPanel::OnEvent(Event& e)
 {
     EventDispatcher dispatcher(e);
     dispatcher.Dispatch<ProjectOpenedEvent>([this](ProjectOpenedEvent& e) {
-        SetRootDirectory(Project::GetAssetDirectory());
+        if (auto project = Project::GetActive())
+        {
+            m_Provider->SetRoot(project->GetAssetDirectoryForProject());
+        }
         return false;
     });
 }
@@ -76,13 +68,11 @@ void ContentBrowserPanel::RenderToolbar()
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
     ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
 
-    // Navigation Buttons
-    if (m_CurrentDirectory != m_RootDirectory)
+    if (m_Provider->GetCurrentDirectory() != m_Provider->GetRootDirectory())
     {
         if (ImGui::Button(ICON_FA_ARROW_LEFT))
         {
-            m_CurrentDirectory = m_CurrentDirectory.parent_path();
-            RefreshDirectory();
+            m_Provider->GoUp();
         }
     }
     else
@@ -95,68 +85,54 @@ void ContentBrowserPanel::RenderToolbar()
     ImGui::SameLine();
     ImGui::SetNextItemWidth(200);
 
-    // Search Filter
     if (ImGui::InputTextWithHint("##Search", ICON_FA_MAGNIFYING_GLASS " Search...", m_FilterBuffer,
                                  sizeof(m_FilterBuffer)))
     {
-        RefreshDirectory();
+        m_Provider->SetFilter(m_FilterBuffer, m_FilterType);
     }
 
     ImGui::SameLine();
-
-    // Type Filter Dropdown
     ImGui::SetNextItemWidth(150);
     const char* filterNames[] = {"All Types", "Scenes", "Prefabs", "Models", "Textures", "Scripts", "Audio"};
     if (ImGui::BeginCombo("##TypeFilter", filterNames[m_FilterType]))
     {
         for (int i = 0; i < IM_ARRAYSIZE(filterNames); i++)
         {
-            bool isSelected = (m_FilterType == i);
-            if (ImGui::Selectable(filterNames[i], isSelected))
+            if (ImGui::Selectable(filterNames[i], m_FilterType == i))
             {
                 m_FilterType = i;
-                RefreshDirectory();
-            }
-            if (isSelected)
-            {
-                ImGui::SetItemDefaultFocus();
+                m_Provider->SetFilter(m_FilterBuffer, m_FilterType);
             }
         }
         ImGui::EndCombo();
     }
 
     ImGui::SameLine();
+    if (ImGui::Button("Assets"))
+    {
+        m_Provider->GoToRoot();
+    }
 
     // Breadcrumbs
     std::error_code ec;
-    auto relPath = std::filesystem::relative(m_CurrentDirectory, m_RootDirectory, ec);
-    
-    if (ImGui::Button("Assets"))
-    {
-        m_CurrentDirectory = m_RootDirectory;
-        RefreshDirectory();
-    }
-
+    auto relPath = std::filesystem::relative(m_Provider->GetCurrentDirectory(), m_Provider->GetRootDirectory(), ec);
     if (!ec && !relPath.empty() && relPath != ".")
     {
-        std::filesystem::path accumulated = m_RootDirectory;
+        std::filesystem::path accumulated = m_Provider->GetRootDirectory();
         for (const auto& part : relPath)
         {
             ImGui::SameLine();
             ImGui::Text("/");
             ImGui::SameLine();
-            
             accumulated /= part;
             if (ImGui::Button(part.string().c_str()))
             {
-                m_CurrentDirectory = accumulated;
-                RefreshDirectory();
+                m_Provider->Navigate(accumulated);
                 break;
             }
         }
     }
 
-    // Icon Scale Slider (Right aligned)
     ImGui::SameLine(ImGui::GetWindowWidth() - 160.0f);
     ImGui::SetNextItemWidth(150.0f);
     ImGui::SliderFloat("##IconScale", &m_IconScale, 0.5f, 2.0f, ICON_FA_IMAGE);
@@ -168,206 +144,145 @@ void ContentBrowserPanel::RenderGridView()
 {
     float cellSize = (m_ThumbnailSize * m_IconScale) + m_Padding;
     float panelWidth = ImGui::GetContentRegionAvail().x;
-    int columnCount = (int)(panelWidth / cellSize);
-    if (columnCount < 1)
-    {
-        columnCount = 1;
-    }
+    int columnCount = std::max(1, (int)(panelWidth / cellSize));
 
     ImGui::Columns(columnCount, nullptr, false);
 
-    if (m_CurrentAssets.empty())
+    const auto& assets = m_Provider->GetAssets();
+    if (assets.empty())
     {
         ImGui::TextDisabled("Empty directory or No assets found matching filters.");
         ImGui::Columns(1);
-        return;
     }
-
-    int i = 0;
-    for (auto& asset : m_CurrentAssets)
+    else
     {
-        ImGui::PushID(i++);
-
-        const char* icon = asset.isDirectory ? ICON_FA_FOLDER : ICON_FA_FILE;
-
-        // Custom Icons per type
-        if (!asset.isDirectory)
+        int i = 0;
+        for (const auto& asset : assets)
         {
-            switch (asset.type)
+            ImGui::PushID(i++);
+            const char* icon = asset.isDirectory ? ICON_FA_FOLDER : ICON_FA_FILE;
+            if (!asset.isDirectory)
             {
-            case EditorAssetType::Scene:
-                icon = ICON_FA_CUBES;
-                break;
-            case EditorAssetType::Prefab:
-                icon = ICON_FA_CUBE;
-                break;
-            case EditorAssetType::Model:
-                icon = ICON_FA_SHAPES;
-                break;
-            case EditorAssetType::Texture:
-                icon = ICON_FA_IMAGE;
-                break;
-            case EditorAssetType::Script:
-                icon = ICON_FA_FILE_CODE;
-                break;
-            case EditorAssetType::Audio:
-                icon = ICON_FA_MUSIC;
-                break;
-            default:
-                icon = ICON_FA_FILE;
-                break;
+                switch (asset.type)
+                {
+                case EditorAssetType::Scene:
+                    icon = ICON_FA_CUBES;
+                    break;
+                case EditorAssetType::Prefab:
+                    icon = ICON_FA_CUBE;
+                    break;
+                case EditorAssetType::Model:
+                    icon = ICON_FA_SHAPES;
+                    break;
+                case EditorAssetType::Texture:
+                    icon = ICON_FA_IMAGE;
+                    break;
+                case EditorAssetType::Script:
+                    icon = ICON_FA_FILE_CODE;
+                    break;
+                case EditorAssetType::Audio:
+                    icon = ICON_FA_MUSIC;
+                    break;
+                default:
+                    icon = ICON_FA_FILE;
+                    break;
+                }
             }
-        }
 
-        ImGui::BeginGroup();
-        
-        // Thumbnail/Icon
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-        float currentThumbnailSize = m_ThumbnailSize * m_IconScale;
-        
-        if (ImGui::Button(icon, {cellSize - m_Padding, currentThumbnailSize}))
-        {
-            // Clicked
-        }
-
-        if (ImGui::BeginPopupContextItem())
-        {
-            if (ImGui::MenuItem(ICON_FA_PEN " Rename"))
+            ImGui::BeginGroup();
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+            if (ImGui::Button(icon, {cellSize - m_Padding, m_ThumbnailSize * m_IconScale}))
             {
-                m_RenamingPath = asset.path;
-                strncpy(m_RenameBuffer, asset.name.c_str(), sizeof(m_RenameBuffer));
-                ImGui::OpenPopup("RenameAsset");
             }
-            if (ImGui::MenuItem(ICON_FA_TRASH " Delete"))
+
+            if (ImGui::BeginPopupContextItem())
             {
-                m_PathToDelete = asset.path;
-                ImGui::OpenPopup("DeleteAsset?");
+                if (ImGui::MenuItem(ICON_FA_PEN " Rename"))
+                {
+                    m_RenamingPath = asset.path;
+                    strncpy(m_RenameBuffer, asset.name.c_str(), sizeof(m_RenameBuffer));
+                    ImGui::OpenPopup("RenameAsset");
+                }
+                if (ImGui::MenuItem(ICON_FA_TRASH " Delete"))
+                {
+                    m_PathToDelete = asset.path;
+                    ImGui::OpenPopup("DeleteAsset?");
+                }
+                ImGui::EndPopup();
             }
-            ImGui::EndPopup();
-        }
 
-        if (ImGui::BeginPopupModal("RenameAsset", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-        {
-            ImGui::Text("Enter new name for %s:", m_RenamingPath.filename().string().c_str());
-            ImGui::InputText("##NewName", m_RenameBuffer, sizeof(m_RenameBuffer));
-            if (ImGui::Button("OK", {120, 0}))
+            // Popups
+            if (ImGui::BeginPopupModal("RenameAsset", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
             {
-                std::filesystem::path newPath = m_RenamingPath.parent_path() / m_RenameBuffer;
-                std::error_code ec;
-                std::filesystem::rename(m_RenamingPath, newPath, ec);
-                RefreshDirectory();
-                ImGui::CloseCurrentPopup();
+                ImGui::Text("Enter new name:");
+                ImGui::InputText("##NewName", m_RenameBuffer, sizeof(m_RenameBuffer));
+                if (ImGui::Button("OK", {120, 0}))
+                {
+                    EditorActionCommands::RenameAsset(m_RenamingPath, m_RenameBuffer);
+                    m_Provider->Refresh();
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Cancel", {120, 0}))
+                {
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::EndPopup();
             }
-            ImGui::SameLine();
-            if (ImGui::Button("Cancel", {120, 0})) { ImGui::CloseCurrentPopup(); }
-            ImGui::EndPopup();
-        }
 
-        if (ImGui::BeginPopupModal("DeleteAsset?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-        {
-            ImGui::Text("Are you sure you want to delete %s?\nThis operation cannot be undone!", m_PathToDelete.filename().string().c_str());
-            if (ImGui::Button("Delete", {120, 0}))
+            if (ImGui::BeginPopupModal("DeleteAsset?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
             {
-                std::error_code ec;
-                std::filesystem::remove_all(m_PathToDelete, ec);
-                RefreshDirectory();
-                ImGui::CloseCurrentPopup();
+                ImGui::Text("Delete %s?", m_PathToDelete.filename().string().c_str());
+                if (ImGui::Button("Delete", {120, 0}))
+                {
+                    EditorActionCommands::DeleteAsset(m_PathToDelete);
+                    m_Provider->Refresh();
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Cancel", {120, 0}))
+                {
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::EndPopup();
             }
-            ImGui::SameLine();
-            if (ImGui::Button("Cancel", {120, 0})) { ImGui::CloseCurrentPopup(); }
-            ImGui::EndPopup();
+
+            if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+            {
+                OnAssetDoubleClicked(asset);
+            }
+
+            if (ImGui::BeginDragDropSource())
+            {
+                std::string pathStr = asset.path.string();
+                ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", pathStr.c_str(), pathStr.size() + 1);
+                ImGui::Text("%s %s", icon, asset.name.c_str());
+                ImGui::EndDragDropSource();
+            }
+
+            ImGui::PopStyleColor();
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 2));
+            ImGui::SetNextItemWidth(cellSize - m_Padding);
+            ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + cellSize - m_Padding);
+            ImGui::TextUnformatted(asset.name.c_str());
+            ImGui::PopTextWrapPos();
+            ImGui::PopStyleVar();
+            ImGui::EndGroup();
+
+            ImGui::NextColumn();
+            ImGui::PopID();
         }
-
-        if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-        {
-            OnAssetDoubleClicked(asset);
-        }
-
-        if (ImGui::BeginDragDropSource())
-        {
-            std::string pathStr = asset.path.string();
-            ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", pathStr.c_str(), pathStr.size() + 1);
-            ImGui::Text("%s %s", icon, asset.name.c_str());
-            ImGui::EndDragDropSource();
-        }
-
-        ImGui::PopStyleColor();
-
-        // Metadata/Label
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 2));
-        
-        ImGui::SetNextItemWidth(cellSize - m_Padding);
-        ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + cellSize - m_Padding);
-        
-        float textWidth = ImGui::CalcTextSize(asset.name.c_str()).x;
-        if (textWidth < cellSize - m_Padding)
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (cellSize - m_Padding - textWidth) * 0.5f);
-            
-        ImGui::TextUnformatted(asset.name.c_str());
-        ImGui::PopTextWrapPos();
-        
-        // Type Label
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
-        const char* typeLabel = asset.isDirectory ? "FOLDER" : "FILE";
-        if (asset.type == EditorAssetType::Model) typeLabel = "MESH";
-        else if (asset.type == EditorAssetType::Scene) typeLabel = "SCENE";
-        else if (asset.type == EditorAssetType::Script) typeLabel = "SCRIPT";
-        
-        float typeLabelWidth = ImGui::CalcTextSize(typeLabel).x;
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (cellSize - m_Padding - typeLabelWidth) * 0.5f);
-        ImGui::TextDisabled("%s", typeLabel);
-        ImGui::PopStyleColor();
-        
-        ImGui::PopStyleVar();
-        ImGui::EndGroup();
-
-        ImGui::NextColumn();
-        ImGui::PopID();
+        ImGui::Columns(1);
     }
 
-    ImGui::Columns(1);
-
-    // Empty space context menu
     if (ImGui::BeginPopupContextWindow(0, 1 | ImGuiPopupFlags_NoOpenOverItems))
     {
         if (ImGui::BeginMenu(ICON_FA_PLUS " Create"))
         {
             if (ImGui::MenuItem(ICON_FA_FOLDER " New Folder"))
             {
-                std::filesystem::path newDir = m_CurrentDirectory / "New Folder";
-                int i = 1;
-                while (std::filesystem::exists(newDir))
-                    newDir = m_CurrentDirectory / ("New Folder " + std::to_string(i++));
-                std::filesystem::create_directory(newDir);
-                RefreshDirectory();
-            }
-            if (ImGui::MenuItem(ICON_FA_FILE_CODE " New C# Script"))
-            {
-                std::filesystem::path newScript = m_CurrentDirectory / "NewScript.cs";
-                int i = 1;
-                while (std::filesystem::exists(newScript))
-                    newScript = m_CurrentDirectory / ("NewScript" + std::to_string(i++) + ".cs");
-                
-                std::string className = newScript.stem().string();
-                std::string templateContent = 
-                    "using CHEngine;\n\n"
-                    "namespace ChainedDecos.Scripts\n"
-                    "{\n"
-                    "    public class " + className + " : Script\n"
-                    "    {\n"
-                    "        public override void OnCreate()\n"
-                    "        {\n"
-                    "        }\n\n"
-                    "        public override void OnUpdate(float deltaTime)\n"
-                    "        {\n"
-                    "        }\n"
-                    "    }\n"
-                    "}\n";
-                
-                std::ofstream ofs(newScript);
-                ofs << templateContent;
-                ofs.close();
-                RefreshDirectory();
+                EditorActionCommands::CreateFolder(m_Provider->GetCurrentDirectory());
+                m_Provider->Refresh();
             }
             ImGui::EndMenu();
         }
@@ -375,7 +290,7 @@ void ContentBrowserPanel::RenderGridView()
     }
 }
 
-void ContentBrowserPanel::OnAssetDoubleClicked(AssetEntry& entry)
+void ContentBrowserPanel::OnAssetDoubleClicked(const AssetEntry& entry)
 {
     if (entry.isDirectory)
     {
@@ -387,124 +302,14 @@ void ContentBrowserPanel::OnAssetDoubleClicked(AssetEntry& entry)
     }
 }
 
-void ContentBrowserPanel::RefreshDirectory()
+void ContentBrowserPanel::RefreshDirectory() const
 {
-    ScanCurrentDirectory();
+    m_Provider->Refresh();
 }
 
-void ContentBrowserPanel::ScanCurrentDirectory()
+void ContentBrowserPanel::SetRootDirectory(const std::filesystem::path& path) const
 {
-    m_CurrentAssets.clear();
-    std::error_code ec;
-
-    if (!std::filesystem::exists(m_CurrentDirectory, ec))
-    {
-        return;
-    }
-
-    std::string searchFilter = m_FilterBuffer;
-    // Case-insensitive search
-    std::transform(searchFilter.begin(), searchFilter.end(), searchFilter.begin(), ::tolower);
-
-    for (auto& p : std::filesystem::directory_iterator(m_CurrentDirectory, ec))
-    {
-        AssetEntry entry;
-        entry.name = p.path().filename().string();
-        entry.path = p.path();
-        entry.isDirectory = p.is_directory();
-        entry.type = DetermineAssetType(p.path());
-
-        // 1. Name Filter
-        std::string nameLower = entry.name;
-        std::transform(nameLower.begin(), nameLower.end(), nameLower.begin(), ::tolower);
-        if (!searchFilter.empty() && nameLower.find(searchFilter) == std::string::npos)
-        {
-            continue;
-        }
-
-        // 2. Type Filter (Directories always shown)
-        if (!entry.isDirectory && m_FilterType > 0)
-        {
-            // "All Types", "Scenes", "Prefabs", "Models", "Textures", "Scripts", "Audio"
-            bool match = false;
-            switch (m_FilterType)
-            {
-            case 1:
-                match = (entry.type == EditorAssetType::Scene);
-                break;
-            case 2:
-                match = (entry.type == EditorAssetType::Prefab);
-                break;
-            case 3:
-                match = (entry.type == EditorAssetType::Model);
-                break;
-            case 4:
-                match = (entry.type == EditorAssetType::Texture);
-                break;
-            case 5:
-                match = (entry.type == EditorAssetType::Script);
-                break;
-            case 6:
-                match = (entry.type == EditorAssetType::Audio);
-                break;
-            }
-            if (!match)
-            {
-                continue;
-            }
-        }
-
-        m_CurrentAssets.push_back(entry);
-    }
-
-    if (m_CurrentAssets.empty())
-    {
-        return;
-    }
-
-    // Sort: Directories first, then alphabetical
-    std::sort(m_CurrentAssets.begin(), m_CurrentAssets.end(), [](const AssetEntry& a, const AssetEntry& b) {
-        if (a.isDirectory != b.isDirectory)
-        {
-            return a.isDirectory > b.isDirectory;
-        }
-        return a.name < b.name;
-    });
+    m_Provider->SetRoot(path);
 }
 
-EditorAssetType ContentBrowserPanel::DetermineAssetType(const std::filesystem::path& path)
-{
-    if (std::filesystem::is_directory(path))
-    {
-        return EditorAssetType::Directory;
-    }
-
-    static const std::unordered_map<std::string, EditorAssetType> s_ExtensionMap = {
-        {".chscene", EditorAssetType::Scene},   {".chmap", EditorAssetType::Scene},
-        {".chprefab", EditorAssetType::Prefab}, {".h", EditorAssetType::Script},
-        {".cpp", EditorAssetType::Script},      {".obj", EditorAssetType::Model},
-        {".gltf", EditorAssetType::Model},      {".glb", EditorAssetType::Model},
-        {".png", EditorAssetType::Texture},     {".jpg", EditorAssetType::Texture},
-        {".tga", EditorAssetType::Texture},     {".wav", EditorAssetType::Audio},
-        {".ogg", EditorAssetType::Audio},       {".mp3", EditorAssetType::Audio}};
-
-    std::string ext = path.extension().string();
-    // ToLower extension
-    std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-
-    auto it = s_ExtensionMap.find(ext);
-    if (it != s_ExtensionMap.end())
-    {
-        return it->second;
-    }
-
-    return EditorAssetType::Other;
-}
-
-void ContentBrowserPanel::SetRootDirectory(const std::filesystem::path& path)
-{
-    m_RootDirectory = path;
-    m_CurrentDirectory = path;
-    RefreshDirectory();
-}
-} // namespace CHEngine
+} // namespace Chained

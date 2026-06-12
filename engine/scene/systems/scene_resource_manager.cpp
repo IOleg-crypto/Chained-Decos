@@ -1,57 +1,60 @@
 #include "scene_resource_manager.h"
+#include <entt/entt.hpp>
 #include "engine/scene/scene.h"
 #include "engine/scene/components/sprite_component.h"
 #include "engine/scene/components/shader_component.h"
 #include "engine/scene/components/mesh_component.h"
 #include "engine/scene/components/component_utils.h"
 #include "engine/assets/asset_manager.h"
-#include "engine/core/service_locator.h"
-#include "engine/graphics/assets/texture_asset.h"
-#include "engine/graphics/assets/shader_asset.h"
-#include "engine/graphics/assets/model_asset.h"
+#include "engine/assets/types/texture_asset.h"
+#include "engine/assets/types/shader_asset.h"
+#include "engine/assets/types/model_asset.h"
+#include "engine/physics/physics.h"
+#include "engine/physics/iphysics_world.h"
 #include "engine/audio/audio.h"
 #include "engine/core/profiler.h"
 #include <glm/gtx/norm.hpp>
 #include <cmath>
 
-namespace CHEngine
+namespace Chained
 {
+
+SceneResourceManager::SceneResourceManager()
+{
+}
 
 void SceneResourceManager::RegisterObservers(entt::registry& reg)
 {
-    reg.on_construct<SpriteComponent>().connect<&SceneResourceManager::OnSpriteChanged>(this);
-    reg.on_update<SpriteComponent>().connect<&SceneResourceManager::OnSpriteChanged>(this);
+    reg.on_construct<SpriteComponent>().connect<&SceneResourceManager::ResolveSprite>(*this);
+    reg.on_update<SpriteComponent>().connect<&SceneResourceManager::ResolveSprite>(*this);
 
-    reg.on_construct<ShaderComponent>().connect<&SceneResourceManager::OnShaderChanged>(this);
-    reg.on_update<ShaderComponent>().connect<&SceneResourceManager::OnShaderChanged>(this);
+    reg.on_construct<ShaderComponent>().connect<&SceneResourceManager::ResolveShader>(*this);
+    reg.on_update<ShaderComponent>().connect<&SceneResourceManager::ResolveShader>(*this);
 
-    reg.on_construct<ModelComponent>().connect<&SceneResourceManager::OnModelChanged>(this);
-    reg.on_update<ModelComponent>().connect<&SceneResourceManager::OnModelChanged>(this);
-
-    // Expose pointer to this manager via registry context for other systems/tools
-    if (!reg.ctx().contains<SceneResourceManager*>())
-        reg.ctx().emplace<SceneResourceManager*>(this);
+    reg.on_construct<ModelComponent>().connect<&SceneResourceManager::ResolveModel>(*this);
+    reg.on_update<ModelComponent>().connect<&SceneResourceManager::ResolveModel>(*this);
 }
 
-void SceneResourceManager::OnUpdate(Scene* scene, Timestep ts)
+void SceneResourceManager::Update(entt::registry& reg, Timestep ts)
 {
     CH_PROFILE_FUNCTION();
-    auto& reg = scene->GetRegistry();
+
+    // AssetManager handles finalization internally now
 
     // Asset resolution: re-attempt resolution for assets that weren't ready earlier
     reg.view<SpriteComponent>().each([&](auto entity, auto& sprite) {
         if (!sprite.TexturePath.empty() && sprite.TextureHandle == 0)
-            OnSpriteChanged(reg, entity);
+            ResolveSprite(reg, entity);
     });
 
     reg.view<ShaderComponent>().each([&](auto entity, auto& shader) {
         if (!shader.ShaderPath.empty() && shader.ShaderHandle == 0)
-            OnShaderChanged(reg, entity);
+            ResolveShader(reg, entity);
     });
 
     reg.view<ModelComponent>().each([&](auto entity, auto& model) {
-        if (!model.ModelPath.empty() && (model.ModelHandle == 0 || !model.MaterialsInitialized))
-            OnModelChanged(reg, entity);
+        if (!model.ModelPath.empty() && model.ModelHandle == 0)
+            ResolveModel(reg, entity);
     });
 
     // Animation updates
@@ -63,17 +66,10 @@ void SceneResourceManager::OnUpdate(Scene* scene, Timestep ts)
             continue;
 
         auto& model = animView.get<ModelComponent>(entity);
-        AssetManager* assetManager = nullptr;
-        if (reg.ctx().contains<AssetManager*>())
-            assetManager = reg.ctx().get<AssetManager*>();
-        if (!assetManager && ServiceLocator::Has<AssetManager>())
-            assetManager = &ServiceLocator::Get<AssetManager>();
 
-        if (!assetManager)
-            continue;
 
-        auto handle = assetManager->ResolveToHandle(model.ModelPath, ModelAsset::GetStaticType());
-        auto modelAsset = assetManager->Get<ModelAsset>(handle);
+        auto handle = AssetManager::Get().ImportAsset(model.ModelPath);
+        auto modelAsset = AssetManager::Get().GetAsset<ModelAsset>(handle);
         if (!modelAsset || modelAsset->GetAnimationCount() == 0)
             continue;
 
@@ -156,13 +152,7 @@ void SceneResourceManager::OnUpdate(Scene* scene, Timestep ts)
             glm::vec3 forward = rot * glm::vec3(0, 0, -1);
             glm::vec3 up = rot * glm::vec3(0, 1, 0);
 
-            Audio* audioSvc = nullptr;
-            if (reg.ctx().contains<Audio*>())
-                audioSvc = reg.ctx().get<Audio*>();
-            if (!audioSvc && ServiceLocator::Has<Audio>())
-                audioSvc = &ServiceLocator::Get<Audio>();
-            if (audioSvc)
-                audioSvc->SetListenerPosition(pos, forward, up);
+            Audio::Get().SetListenerPosition(pos, forward, up);
             break;
         }
     }
@@ -176,15 +166,10 @@ void SceneResourceManager::OnUpdate(Scene* scene, Timestep ts)
         // Ensure the audio is loaded
         if (!audio.SoundPath.empty())
         {
-            Audio* audioSvc = nullptr;
-            if (reg.ctx().contains<Audio*>())
-                audioSvc = reg.ctx().get<Audio*>();
-            if (!audioSvc && ServiceLocator::Has<Audio>())
-                audioSvc = &ServiceLocator::Get<Audio>();
-            if (audio.SoundHandle == 0 && audioSvc)
+            if (audio.SoundHandle == 0)
             {
-                if (!audioSvc->IsSoundLoaded(audio.SoundHandle))
-                    audio.SoundHandle = audioSvc->LoadSound(audio.SoundPath);
+                if (!Audio::Get().IsSoundLoaded(audio.SoundHandle))
+                    audio.SoundHandle = Audio::Get().LoadSound(audio.SoundPath);
             }
         }
 
@@ -194,26 +179,14 @@ void SceneResourceManager::OnUpdate(Scene* scene, Timestep ts)
             auto& transform = audioView.get<TransformComponent>(entity);
             glm::vec3 worldPos = glm::vec3(transform.WorldTransform[3]);
 
-            Audio* audioSvc = nullptr;
-            if (reg.ctx().contains<Audio*>())
-                audioSvc = reg.ctx().get<Audio*>();
-            if (!audioSvc && ServiceLocator::Has<Audio>())
-                audioSvc = &ServiceLocator::Get<Audio>();
-            if (audioSvc)
-                audioSvc->Play(audio.SoundHandle, audio.Volume, audio.Pitch, audio.Loop, audio.Spatialized, worldPos);
+            Audio::Get().Play(audio.SoundHandle, audio.Volume, audio.Pitch, audio.Loop, audio.Spatialized, worldPos);
             audio.IsPlaying = true;
         }
         else if (audio.IsPlaying && audio.Spatialized && audio.SoundHandle != 0)
         {
             auto& transform = audioView.get<TransformComponent>(entity);
             glm::vec3 worldPos = glm::vec3(transform.WorldTransform[3]);
-            Audio* audioSvc = nullptr;
-            if (reg.ctx().contains<Audio*>())
-                audioSvc = reg.ctx().get<Audio*>();
-            if (!audioSvc && ServiceLocator::Has<Audio>())
-                audioSvc = &ServiceLocator::Get<Audio>();
-            if (audioSvc)
-                audioSvc->SetInstancePosition(audio.SoundHandle, worldPos);
+            Audio::Get().SetInstancePosition(audio.SoundHandle, worldPos);
         }
     }
 }
@@ -221,21 +194,32 @@ void SceneResourceManager::OnUpdate(Scene* scene, Timestep ts)
 void SceneResourceManager::OnRuntimeStart(Scene* scene)
 {
     CH_PROFILE_FUNCTION();
+    CH_CORE_INFO("SceneResourceManager::OnRuntimeStart - Start");
+
+    auto& registry = scene->GetRegistry();
+    if (!registry.ctx().find<IPhysicsWorld*>())
+    {
+        CH_CORE_INFO("SceneResourceManager::OnRuntimeStart - Need Physics World");
+        auto& physics = Physics::Get();
+        CH_CORE_INFO("SceneResourceManager::OnRuntimeStart - Obtaining world pointer");
+            IPhysicsWorld* world = physics.GetWorld();
+            CH_CORE_INFO("SceneResourceManager::OnRuntimeStart - World pointer obtained: {}", (void*)world);
+        registry.ctx().emplace<IPhysicsWorld*>(world);
+    }
+
+    auto& physics = Physics::Get();
+    CH_CORE_INFO("SceneResourceManager::OnRuntimeStart - Initializing bodies");
+    physics.InitializeBodies(scene);
+    CH_CORE_INFO("SceneResourceManager::OnRuntimeStart - Done");
 }
 
 void SceneResourceManager::OnRuntimeStop(Scene* scene)
 {
     CH_PROFILE_FUNCTION();
+    auto& audioSvc = Audio::Get();
+    audioSvc.StopAll();
+
     auto& reg = scene->GetRegistry();
-
-    Audio* audioSvc = nullptr;
-    if (reg.ctx().contains<Audio*>())
-        audioSvc = reg.ctx().get<Audio*>();
-    if (!audioSvc && ServiceLocator::Has<Audio>())
-        audioSvc = &ServiceLocator::Get<Audio>();
-    if (audioSvc)
-        audioSvc->StopAll();
-
     auto view = reg.view<AudioComponent>();
     for (auto entity : view)
     {
@@ -244,28 +228,15 @@ void SceneResourceManager::OnRuntimeStop(Scene* scene)
     }
 }
 
-void SceneResourceManager::OnUpdateEditor(Scene* scene, Timestep ts)
-{
-    CH_PROFILE_FUNCTION();
-    // Reuse the same update path for assets + animation in editor
-    OnUpdate(scene, ts);
-}
-
-void SceneResourceManager::OnSpriteChanged(entt::registry& reg, entt::entity e)
+void SceneResourceManager::ResolveSprite(entt::registry& reg, entt::entity e)
 {
     auto& sprite = reg.get<SpriteComponent>(e);
     if (!sprite.TexturePath.empty() && sprite.TextureHandle == 0)
     {
-        AssetManager* assetManager = nullptr;
-        if (reg.ctx().contains<AssetManager*>())
-            assetManager = reg.ctx().get<AssetManager*>();
-        if (!assetManager && ServiceLocator::Has<AssetManager>())
-            assetManager = &ServiceLocator::Get<AssetManager>();
-
-        if (assetManager)
+        
         {
-            auto handle = assetManager->ResolveToHandle(sprite.TexturePath, TextureAsset::GetStaticType());
-            auto asset = assetManager->Get<TextureAsset>(handle);
+            auto handle = AssetManager::Get().ImportAsset(sprite.TexturePath);
+            auto asset = AssetManager::Get().GetAsset<TextureAsset>(handle);
             if (asset && asset->IsReady())
             {
                 sprite.TextureHandle = asset->GetID();
@@ -274,56 +245,35 @@ void SceneResourceManager::OnSpriteChanged(entt::registry& reg, entt::entity e)
     }
 }
 
-void SceneResourceManager::OnShaderChanged(entt::registry& reg, entt::entity e)
+void SceneResourceManager::ResolveShader(entt::registry& reg, entt::entity e)
 {
     auto& shader = reg.get<ShaderComponent>(e);
     if (shader.ShaderPath.empty() || shader.ShaderHandle != 0)
         return;
-
-    AssetManager* assetManager = nullptr;
-    if (reg.ctx().contains<AssetManager*>())
-        assetManager = reg.ctx().get<AssetManager*>();
-    if (!assetManager && ServiceLocator::Has<AssetManager>())
-        assetManager = &ServiceLocator::Get<AssetManager>();
-
-    if (!assetManager)
-        return;
-
-    auto handle = assetManager->ResolveToHandle(shader.ShaderPath, ShaderAsset::GetStaticType());
-    auto asset = assetManager->Get<ShaderAsset>(handle);
-    if (!asset || !asset->IsReady())
-        return;
-
-    shader.ShaderHandle = asset->GetID();
-    const auto& assetUniforms = asset->GetUniforms();
-    for (const auto& u : assetUniforms)
     {
-        auto it = std::find_if(shader.Uniforms.begin(), shader.Uniforms.end(),
-                               [&](const auto& current) { return current.Name == u.Name; });
-        if (it == shader.Uniforms.end())
-            shader.Uniforms.push_back(u);
+        auto handle = AssetManager::Get().ImportAsset(shader.ShaderPath);
+        auto asset = AssetManager::Get().GetAsset<ShaderAsset>(handle);
+        if (!asset || !asset->IsReady())
+            return;
+
+        shader.ShaderHandle = asset->GetID();
+        const auto& assetUniforms = asset->GetUniforms();
+        for (const auto& u : assetUniforms)
+        {
+            auto it = std::find_if(shader.Uniforms.begin(), shader.Uniforms.end(),
+                                   [&](const auto& current) { return current.Name == u.Name; });
+            if (it == shader.Uniforms.end())
+                shader.Uniforms.push_back(u);
+        }
     }
 }
 
-void SceneResourceManager::OnModelChanged(entt::registry& reg, entt::entity e)
+void SceneResourceManager::ResolveModel(entt::registry& reg, entt::entity e)
 {
     auto& model = reg.get<ModelComponent>(e);
-    AssetManager* assetManager = nullptr;
-    if (reg.ctx().contains<AssetManager*>())
-        assetManager = reg.ctx().get<AssetManager*>();
-    if (!assetManager && ServiceLocator::Has<AssetManager>())
-        assetManager = &ServiceLocator::Get<AssetManager>();
-
     ComponentUtils::ResolveModelPath(model);
-    if (assetManager)
-    {
-        ComponentUtils::SyncMaterials(model, model.ModelHandle, assetManager);
-    }
-    else
-    {
-        ComponentUtils::SyncMaterials(model, model.ModelHandle, nullptr);
-    }
 }
 
-} // namespace CHEngine
+
+} // namespace Chained
 

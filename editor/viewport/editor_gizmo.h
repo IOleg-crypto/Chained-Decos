@@ -6,7 +6,7 @@
 #include "imgui.h"
 #include "ImGuizmo.h"
 
-namespace CHEngine
+namespace Chained
 {
 
 enum class GizmoType
@@ -26,7 +26,7 @@ public:
 
     // Render and handle gizmo interaction
     // true if the gizmo is being used (captured mouse)
-    bool RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 viewportSize, const CHEngine::Camera3D& camera);
+    bool RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 viewportSize, const Chained::Camera3D& camera);
 
     bool IsHovered() const
     {
@@ -80,6 +80,6 @@ private:
     bool m_WasUsing = false;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_EDITOR_GIZMO_H

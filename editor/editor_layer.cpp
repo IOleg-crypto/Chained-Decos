@@ -9,11 +9,12 @@
 #include "IconsFontAwesome6.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/core/profiler.h"
-#include "engine/core/service_locator.h"
+#include "engine/core/application.h"
+#include "engine/foundation/thread_pool.h"
 #include "engine/graphics/pipeline/render_command.h"
-#include "engine/graphics/pipeline/ui_renderer.h"
+#include "engine/graphics/ui/ui_renderer.h"
 #include "engine/physics/physics.h"
-#include "engine/scene/project.h"
+#include "engine/project/project.h"
 #include "panels/property_editor.h"
 #include "panels/viewport_panel.h"
 #include "scripting/scriptengine.h"
@@ -22,8 +23,9 @@
 #include <ImGuizmo.h>
 #include <yaml-cpp/yaml.h>
 
-namespace CHEngine
+namespace Chained
 {
+
 EditorLayer* EditorLayer::s_Instance = nullptr;
 
 void EditorLayer::DrawLoadingOverlay(const char* title, const char* status)
@@ -43,10 +45,6 @@ void EditorLayer::DrawLoadingOverlay(const char* title, const char* status)
 
     if (ImGui::Begin("##EditorLoadingOverlay", nullptr, flags))
     {
-        auto& assetManager = ServiceLocator::Get<AssetManager>();
-        const size_t loadingCount = assetManager.GetLoadingAssetCount();
-        const size_t pendingFinalizeCount = assetManager.GetPendingFinalizeCount();
-        const size_t totalPending = loadingCount + pendingFinalizeCount;
 
         ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.45f);
 
@@ -58,6 +56,7 @@ void EditorLayer::DrawLoadingOverlay(const char* title, const char* status)
         ImGui::SetCursorPosX((ImGui::GetWindowWidth() - statusSize.x) * 0.5f);
         ImGui::TextUnformatted(status);
 
+        uint32_t totalPending = (uint32_t)AssetManager::Get().GetPendingFinalizeCount();
         std::string pendingLine = "Pending assets: " + std::to_string(totalPending);
         ImVec2 pendingSize = ImGui::CalcTextSize(pendingLine.c_str());
         ImGui::SetCursorPosX((ImGui::GetWindowWidth() - pendingSize.x) * 0.5f);
@@ -69,17 +68,21 @@ void EditorLayer::DrawLoadingOverlay(const char* title, const char* status)
     ImGui::PopStyleVar();
 }
 
-EditorLayer::EditorLayer()
+EditorLayer::EditorLayer(Application& app)
     : Layer("EditorLayer")
 {
-    CH_CORE_ASSERT(!s_Instance, "EditorLayer already exists!");
     s_Instance = this;
+    
 
-    EditorContext::Init();
+    // Default debug settings
+    GetDebugRenderFlags().DrawColliders = true;
+    GetDebugRenderFlags().DrawLights = true;
+    GetDebugRenderFlags().DrawSpawnZones = true;
 
-    m_ProjectManager = std::make_unique<EditorProjectManager>();
-    m_SceneManager = std::make_unique<EditorSceneManager>(&ServiceLocator::Get<ScriptEngine>());
-    m_Panels = std::make_unique<EditorPanels>();
+    m_ProjectManager = std::make_unique<EditorProjectManager>(*this);
+    m_SceneManager = std::make_unique<EditorSceneManager>(*this);
+    m_Panels = std::make_unique<EditorPanels>(*this);
+    
     m_Layout = std::make_unique<EditorLayout>(*m_Panels);
     m_ProjectSelectorUI = std::make_unique<ProjectSelectorUI>(*m_ProjectManager);
 
@@ -88,6 +91,8 @@ EditorLayer::EditorLayer()
 
 EditorLayer::~EditorLayer()
 {
+    SetSelectedEntity({});
+    s_Instance = nullptr;
 }
 
 void EditorLayer::LoadConfig()
@@ -171,10 +176,9 @@ void EditorLayer::SaveConfig()
 void EditorLayer::OnAttach()
 {
     // Ensure this module (EXE) uses the same ImGui context as the engine DLL
-    ImGui::SetCurrentContext(Application::Get().GetImGuiLayer()->GetContext());
+    auto& app = Application::Get();
+    ImGui::SetCurrentContext(app.GetImGuiLayer()->GetContext());
 
-    // Register this layer as a service for panels to access
-    ServiceLocator::Register<EditorLayer>(this);
 
     // SetTraceLogCallback removed - now using engine logging
 
@@ -210,14 +214,13 @@ void EditorLayer::OnAttach()
     if (iniPath && !std::filesystem::exists(iniPath))
     {
         CH_CORE_INFO("OnAttach: Layout file '{}' not found, will be reset on first frame", iniPath);
-        EditorContext::GetState().NeedsLayoutReset = true;
+        GetEditorState().NeedsLayoutReset = true;
     }
 
-    std::string iconPath =
-        ServiceLocator::Get<AssetManager>().ResolvePath("engine/resources/icons/chaineddecosmapeditor.jpg");
+    std::string iconPath = (AssetManager::Get().GetEngineRoot() / "resources/icons/chaineddecosmapeditor.jpg").string();
     if (std::filesystem::exists(iconPath))
     {
-        Application::Get().GetWindow().SetWindowIcon(iconPath);
+        app.GetWindow().SetWindowIcon(iconPath);
     }
     else
     {
@@ -237,10 +240,10 @@ void EditorLayer::LoadEditorFonts()
     }
 
     float fontSize = 16.0f;
-    auto& assetManager = ServiceLocator::Get<AssetManager>();
+    auto& assetManager = AssetManager::Get();
 
     // --- Default UI Font (Lato) ---
-    std::string fontPath = assetManager.ResolvePath("engine/resources/font/lato/lato-bold.ttf");
+    std::string fontPath = (AssetManager::Get().GetEngineRoot() / "resources/font/lato/lato-bold.ttf").string();
     if (std::filesystem::exists(fontPath))
     {
         imguiLayer->AddFontFromFile(fontPath, fontSize);
@@ -253,7 +256,7 @@ void EditorLayer::LoadEditorFonts()
     }
 
     // --- Icon Font (FontAwesome) ---
-    std::string faPath = assetManager.ResolvePath("engine/resources/font/fa-solid-900.ttf");
+    std::string faPath = (AssetManager::Get().GetEngineRoot() / "resources/font/fa-solid-900.ttf").string();
     if (std::filesystem::exists(faPath))
     {
         static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
@@ -270,7 +273,6 @@ void EditorLayer::LoadEditorFonts()
 void EditorLayer::OnDetach()
 {
     SaveConfig();
-    EditorContext::Shutdown();
 }
 
 void EditorLayer::OnUpdate(Timestep ts)
@@ -287,9 +289,9 @@ void EditorLayer::OnUpdate(Timestep ts)
 
     if (auto scene = GetActiveScene())
     {
-        if (EditorContext::GetSceneState() == SceneState::Play)
+        if (GetSceneState() == SceneState::Play)
         {
-            auto& scriptEngine = ServiceLocator::Get<ScriptEngine>();
+            auto& scriptEngine = ScriptEngine::Get();
 
             if (scriptEngine.CanExecuteFrameScripts())
             {
@@ -311,20 +313,20 @@ void EditorLayer::OnUpdate(Timestep ts)
             }
         }
 
-        if (Input::IsKeyPressed(Key::F5))
+        if (Core::Input::IsKeyPressed(Key::F5))
         {
             AppLaunchRuntimeEvent e;
             OnEvent(e);
         }
 
-        if (Input::IsKeyDown(Key::LeftControl) && Input::IsKeyPressed(Key::R))
+        if (Core::Input::IsKeyDown(Key::LeftControl) && Core::Input::IsKeyPressed(Key::R))
         {
             auto project = Project::GetActive();
             if (project)
             {
                 std::filesystem::path assemblyPath =
                     Project::GetAssetDirectory() / "bin" / (project->GetConfig().Scripting.ModuleName + ".dll");
-                auto& scriptEngine = ServiceLocator::Get<ScriptEngine>();
+                auto& scriptEngine = ScriptEngine::Get();
                 scriptEngine.RequestAssemblyReload(assemblyPath.string(), "EditorLayer");
             }
         }
@@ -347,15 +349,15 @@ void EditorLayer::OnImGuiRender()
     ImGuizmo::SetImGuiContext(ImGui::GetCurrentContext());
     ImGuizmo::BeginFrame();
 
-    if (EditorContext::GetState().NeedsLayoutReset)
+    if (GetEditorState().NeedsLayoutReset)
     {
         ResetLayout();
-        EditorContext::GetState().NeedsLayoutReset = false;
+        GetEditorState().NeedsLayoutReset = false;
     }
 
     bool hasProject = Project::GetActive() != nullptr;
 
-    if (hasProject && EditorContext::GetState().FullscreenGame)
+    if (hasProject && GetEditorState().FullscreenGame)
     {
         if (auto viewportPanel = m_Panels->Get<ViewportPanel>())
         {
@@ -371,9 +373,9 @@ void EditorLayer::OnImGuiRender()
         m_ProjectSelectorUI->OnImGuiRender();
     }
 
-    if (EditorContext::GetState().IsLoading)
+    if (GetEditorState().IsLoading)
     {
-        DrawLoadingOverlay("Editor Busy", EditorContext::GetState().LoadingStatus.c_str());
+        DrawLoadingOverlay("Editor Busy", GetEditorState().LoadingStatus.c_str());
     }
 }
 
@@ -456,8 +458,8 @@ void EditorLayer::OnEvent(Event& e)
 
     // 4. Selections/Picking
     dispatcher.Dispatch<EntitySelectedEvent>([this](auto& ev) {
-        EditorContext::SetSelectedEntity(Entity(ev.GetEntity(), &ev.GetScene()->GetRegistry()));
-        EditorContext::GetState().LastHitMeshIndex = ev.GetMeshIndex();
+        SetSelectedEntity(Entity(ev.GetEntity(), &ev.GetScene()->GetRegistry()));
+        GetEditorState().LastHitMeshIndex = ev.GetMeshIndex();
         return false;
     });
 
@@ -465,9 +467,9 @@ void EditorLayer::OnEvent(Event& e)
     if (e.GetEventType() == EventType::KeyPressed)
     {
         auto& ke = (KeyPressedEvent&)e;
-        if (ke.GetKeyCode() == Key::Escape && EditorContext::GetState().FullscreenGame)
+        if (ke.GetKeyCode() == Key::Escape && GetEditorState().FullscreenGame)
         {
-            EditorContext::GetState().FullscreenGame = false;
+            GetEditorState().FullscreenGame = false;
             e.Handled = true;
         }
     }
@@ -483,7 +485,7 @@ CommandHistory& EditorLayer::GetCommandHistory()
 void EditorLayer::LaunchStandalone()
 {
     CH_PROFILE_FUNCTION();
-    CHEngine::LaunchStandalone(Project::GetActive(), GetActiveScene());
+    Chained::LaunchStandalone(Project::GetActive(), GetActiveScene());
 }
 
 void EditorLayer::ReparentEntity(Entity child, Entity parent)
@@ -494,4 +496,4 @@ void EditorLayer::ReparentEntity(Entity child, Entity parent)
     }
 }
 
-} // namespace CHEngine
+} // namespace Chained

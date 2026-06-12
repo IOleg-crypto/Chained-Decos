@@ -1,38 +1,15 @@
 chained_add_engine_module(engine_scene
     SOURCES
-        yaml.h
         scene.cpp
-        project.cpp
-        project_serializer.cpp
-        scene_serializer.cpp
-        component_serializer.cpp
-        managed_script_serializer.cpp
-        hierarchy_serializer.cpp
-        prefab_serializer.cpp
-        camera.cpp
         entity.cpp
         component_registry.cpp
-        scene_picking.cpp
         systems/scene_resource_manager.cpp
         systems/hierarchy_system.cpp
-        systems/scene_transition_system.cpp
-        systems/scene_transition_system.h
         animation_systems.cpp
-        scene_system_manager.cpp
-        scene_scripting_manager.cpp
-        ui_factory.cpp
+        scene_camera.cpp
+        scene_camera.h
        
         scene_events.h
-        scene_scripting_manager.h
-        project.h
-        project_serializer.h
-        scene_serializer.h
-        component_serializer.h
-        managed_script_serializer.h
-        hierarchy_serializer.h
-        prefab_serializer.h
-        camera.h
-        scene_picking.h
         scene_settings.h
         components.h
         components/animation_component.h
@@ -53,12 +30,13 @@ chained_add_engine_module(engine_scene
         systems/scene_resource_manager.h
         entity.h
     DEPENDS
+        engine_reflection
         engine_core
         engine_graphics
+        engine_project
         engine_physics
         engine_audio
         engine_scripting
-        ChainedEngine::External::YamlCpp
         ChainedEngine::External::EnTT
         ChainedEngine::External::GLM
         ChainedEngine::External::ImGui

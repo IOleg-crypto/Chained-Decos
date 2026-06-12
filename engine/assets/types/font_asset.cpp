@@ -1,5 +1,6 @@
-#include "engine/graphics/assets/font_asset.h"
+#include "font_asset.h"
 
-namespace CHEngine
+namespace Chained
 {
+// FontAsset is a pure data container, loading logic moved to FontImporter
 }

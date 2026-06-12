@@ -143,7 +143,7 @@ Want to start a new game from scratch? Here is how to hook it up:
    #include "engine/core/entry_point.h"
    #include "engine/core/project_launcher.h"
 
-   namespace CHEngine {
+   namespace Chained {
        Application* CreateApplication(ApplicationCommandLineArgs args) {
            // Prepare runtime specifications from project data
            auto details = ProjectLauncher::PrepareRuntime(args);
@@ -321,7 +321,7 @@ Scripts live inside your game's source folder (e.g., [game/chaineddecos/src](gam
 
 ```csharp
 using System;
-using CHEngine;
+using Chained;
 
 namespace ChainedDecos
 {
@@ -366,7 +366,7 @@ Once you've written your magical gameplay code, how does the engine know about i
 If you are modifying the engine itself, you will find the native-to-managed bridge here:
 - **Native Host:** [scripting/scriptengine.h](scripting/scriptengine.h) initializes Coral and loads assemblies.
 - **Interops:** Native C++ calls are exposed to C# via `script_glue.cpp`.
-- **Discovery:** At startup, `ScriptTypeRegistry::Discover()` scans the game DLL for classes deriving from `CHEngine.Script`.
+- **Discovery:** At startup, `ScriptTypeRegistry::Discover()` scans the game DLL for classes deriving from `Chained.Script`.
 - **Lifecycle:** `SceneScripting` instantiates your script in C++, calls `__Init()` to cache delegates, and smoothly passes events from the C++ Scene to C#.
 
 ### Managed API Surface
@@ -396,7 +396,7 @@ To add physical behavior to an Entity in the Editor:
 1. Click **Add Component** and select **RigidBodyComponent**. This determines if the object falls (Dynamic) or stays still (Kinematic/Static).
 2. Add a physical shape like a **BoxColliderComponent** or **SphereColliderComponent**.
 
-If you are writing a C# script (inherited from `CHEngine.Script`), you can hook into these collisions directly:
+If you are writing a C# script (inherited from `Chained.Script`), you can hook into these collisions directly:
 
 ```csharp
 protected override void OnCollisionEnter(Entity other)

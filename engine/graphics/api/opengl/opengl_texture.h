@@ -4,7 +4,7 @@
 #include "engine/graphics/api/texture.h"
 #include <glad/gl.h>
 
-namespace CHEngine
+namespace Chained
 {
 
 class OpenGLTexture : public Texture
@@ -34,6 +34,6 @@ private:
     GLenum m_InternalFormat, m_DataFormat;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_OPENGL_TEXTURE_H

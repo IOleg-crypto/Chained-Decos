@@ -8,17 +8,17 @@
 
 #include "editor_layer.h"
 #include "editor_panels.h"
-#include "engine/core/ch_structures.h"
+#include "engine/foundation/color.h"
 #include "engine/graphics/pipeline/renderer.h"
 
-namespace CHEngine
+namespace Chained
 {
 // Immediate-mode GUI helpers shared by editor panels and property inspectors.
 class EditorGUI
 {
 public:
     // Draws the main editor menu bar for the provided panel set.
-    static void DrawMenuBar(EditorPanels& panels);
+    static void DrawMenuBar(EditorLayer& editorLayer, EditorPanels& panels);
 
     // Property layout helpers.
     static void BeginPropertyGrid();
@@ -31,7 +31,7 @@ public:
     static bool Property(const char* label, int& value, int min = 0, int max = 0);
     static bool Property(const char* label, float& value, float speed = 0.1f, float min = 0.0f, float max = 0.0f);
     static bool Property(const char* label, std::string& value, bool multiline = false);
-    static bool Property(const char* label, CHEngine::Color& value);
+    static bool Property(const char* label, Chained::Color& value);
     static bool Property(const char* label, glm::vec2& value, float speed = 0.1f, float min = 0.0f, float max = 0.0f);
     static bool Property(const char* label, glm::vec3& value, float speed = 0.1f, float min = 0.0f, float max = 0.0f);
     static bool Property(const char* label, glm::vec4& value, float speed = 0.1f, float min = 0.0f, float max = 0.0f);
@@ -53,6 +53,6 @@ public:
     static void ApplyTheme();
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_EDITOR_GUI_H

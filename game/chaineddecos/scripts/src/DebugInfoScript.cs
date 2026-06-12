@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using CHEngine;
+using Chained;
 
 namespace ChainedDecos.Scripts
 {

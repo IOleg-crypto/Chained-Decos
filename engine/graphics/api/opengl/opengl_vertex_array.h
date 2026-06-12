@@ -3,7 +3,7 @@
 
 #include "engine/graphics/api/vertex_array.h"
 
-namespace CHEngine
+namespace Chained
 {
 
 class OpenGLVertexArray : public VertexArray
@@ -28,6 +28,6 @@ private:
     std::shared_ptr<IndexBuffer> m_IndexBuffer;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_OPENGL_VERTEX_ARRAY_H

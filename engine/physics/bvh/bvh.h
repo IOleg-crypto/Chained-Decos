@@ -6,12 +6,12 @@
 #include <vector>
 
 #include "bvh_node.h"
-#include "engine/core/ch_structures.h"
 #include "engine/physics/collision/collision_triangle.h"
 
-namespace CHEngine
+namespace Chained
 {
-
+struct Ray;
+struct BoundingBox;
 class BVH
 {
 public:
@@ -62,6 +62,6 @@ private:
     std::vector<uint32_t> m_PrimitiveIndices;
     uint32_t m_NodesUsed = 0;
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_PHYSICS_BVH_H

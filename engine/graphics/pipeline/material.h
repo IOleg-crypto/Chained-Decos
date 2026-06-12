@@ -1,9 +1,9 @@
 #ifndef CH_MATERIAL_H
 #define CH_MATERIAL_H
 
-#include "engine/core/reflection_rfl.h"
+#include "engine/reflection/reflection_rfl.h"
 
-namespace CHEngine
+namespace Chained
 {
 // Editable material parameters and asset references used by the renderer and inspector.
 struct MaterialInstance
@@ -45,6 +45,6 @@ struct MaterialInstance
 
 CH_MARK_RFL(MaterialInstance);
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_MATERIAL_H

@@ -24,6 +24,10 @@ Project:
   Render:
     AmbientIntensity: 1
     DefaultExposure: 1.42999995
+    ShadowResolution: 2048
+    EnableSSAO: false
+    EnableBloom: true
+    AntiAliasingSamples: 4
   Texture:
     GenerateMipmaps: true
     Filter: 5
@@ -32,14 +36,19 @@ Project:
     Height: 1080
     VSync: false
     Resizable: true
+  Audio:
+    MasterVolume: 1
+    MusicVolume: 1
+    SFXVolume: 1
+  Runtime:
+    TargetFPS: 0
   Editor:
     CameraMoveSpeed: 64.9000015
+    ShowGrid: true
+    ShowGizmos: true
+    ShowSelectedWireframe: true
   Scripting:
     ModuleName: ChainedDecos.Scripts.dll
     ModuleDirectory: scripts/bin
     AutoLoad: true
-  LaunchProfiles:
-    - Name: Debug Runtime
-      BinaryPath: ${BUILD}/ChainedRuntime.exe
-      Arguments: --project "${PROJECT_FILE}"
   BuildConfig: 0

@@ -4,11 +4,30 @@
 #include "engine/graphics/api/framebuffer.h"
 #include "engine/graphics/api/shader.h"
 #include "engine/graphics/pipeline/render_command.h"
-#include "engine/graphics/assets/model_asset.h"
+#include "engine/assets/types/model_asset.h"
 #include <glad/gl.h>
 
-namespace CHEngine
+namespace Chained
 {
+    void TextureUtility::FlipImageVertically(void* data, int width, int height, int channels, bool isHDR)
+    {
+        if (!data || width <= 0 || height <= 0 || channels <= 0) return;
+
+        size_t pixelSize = isHDR ? sizeof(float) : sizeof(unsigned char);
+        size_t rowSize = (size_t)width * channels * pixelSize;
+        uint8_t* pData = (uint8_t*)data;
+        std::vector<uint8_t> rowBuffer(rowSize);
+
+        for (int i = 0; i < height / 2; ++i)
+        {
+            uint8_t* row1 = pData + (size_t)i * rowSize;
+            uint8_t* row2 = pData + (size_t)(height - 1 - i) * rowSize;
+            std::memcpy(rowBuffer.data(), row1, rowSize);
+            std::memcpy(row1, row2, rowSize);
+            std::memcpy(row2, rowBuffer.data(), rowSize);
+        }
+    }
+
     std::shared_ptr<Texture> TextureUtility::GenTextureCubemap(const std::shared_ptr<Shader>& shader, uint32_t panoramaId, int size, const Mesh& cubeMesh)
     {
         auto cubemap = Texture::CreateCubemap(size, TextureFormat::RGBA16F);

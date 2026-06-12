@@ -1,12 +1,13 @@
 #ifndef CH_SCENE_SETTINGS_H
 #define CH_SCENE_SETTINGS_H
 
-#include "engine/graphics/assets/environment.h"
+#include "engine/assets/types/environment_asset.h"
 #include "engine/scene/components/control_component.h"
+#include "engine/foundation/color.h"
 #include <memory>
 #include <string>
 
-namespace CHEngine
+namespace Chained
 {
 struct DebugRenderFlags
 {
@@ -50,6 +51,6 @@ struct SceneSettings
     float DiagnosticMode = 0.0f;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_SCENE_SETTINGS_H

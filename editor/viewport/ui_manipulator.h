@@ -4,8 +4,7 @@
 #include "engine/scene/scene.h"
 #include "imgui.h"
 
-
-namespace CHEngine
+namespace Chained
 {
 
 enum class UIHandleType
@@ -50,6 +49,6 @@ private:
     glm::vec2 m_StartOffsetMax;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_UI_MANIPULATOR_H

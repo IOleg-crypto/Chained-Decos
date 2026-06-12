@@ -1,20 +1,20 @@
 #ifndef CH_ASSET_MANAGER_H
 #define CH_ASSET_MANAGER_H
 
-#include "engine/assets/asset_loader.h"
-#include "engine/assets/asset_path_resolver.h"
+#include "engine/assets/asset.h"
 #include "engine/assets/asset_registry.h"
-#include "engine/core/engine_service.h"
-#include <deque>
+#include "engine/foundation/timestep.h"
+#include "engine/foundation/uuid.h"
+
 #include <filesystem>
 #include <memory>
 #include <mutex>
-#include <string>
 #include <unordered_map>
+#include <string_view>
 
-namespace CHEngine
+namespace Chained
 {
-class AssetManager : public EngineService
+class AssetManager
 {
 public:
     static constexpr std::string_view ProjectExtension = ".chproject";
@@ -22,82 +22,50 @@ public:
     static constexpr std::string_view PrefabExtension = ".chprefab";
 
 public:
-    AssetManager(std::shared_ptr<AssetPathResolver> resolver, std::shared_ptr<AssetRegistry> registry);
-    virtual ~AssetManager() override = default;
+    static void Init();
+    static void Shutdown();
+    static AssetManager& Get();
 
-    void RegisterLoader(AssetType type, std::shared_ptr<IAssetLoader> loader);
+    void SetEngineRoot(const std::filesystem::path& path);
+    void SetProjectDirectory(const std::filesystem::path& path);
+    void SetAssetDirectory(const std::filesystem::path& path);
 
-    std::shared_ptr<AssetPathResolver> GetResolver() const
-    {
-        return m_PathResolver;
-    }
-    std::shared_ptr<AssetRegistry> GetRegistry() const
-    {
-        return m_Registry;
-    }
-    template <typename T> std::shared_ptr<T> Get(AssetHandle handle)
-    {
-        auto asset = m_Registry->Get(handle);
-        if (asset && asset->GetType() == T::GetStaticType())
-        {
-            if (asset->GetState() != AssetState::None)
-            {
-                return std::static_pointer_cast<T>(asset);
-            }
-            return std::static_pointer_cast<T>(LoadAsset(asset->GetPath(), T::GetStaticType()));
-        }
-        return nullptr;
-    }
+    const std::filesystem::path& GetAssetDirectory() const { return m_AssetDirectory; }
+    const std::filesystem::path& GetProjectDirectory() const { return m_ProjectDirectory; }
+    const std::filesystem::path& GetEngineRoot() const { return m_EngineRoot; }
 
-    template <typename T> void Reload(const std::string& path)
+    const AssetMetadata& GetMetadata(AssetHandle handle) const;
+    void SetMetadata(AssetHandle handle, const AssetMetadata& metadata);
+    const AssetRegistry& GetRegistry() const { return m_Registry; }
+
+    AssetHandle ImportAsset(const std::filesystem::path& filepath);
+    
+    std::shared_ptr<Asset> GetAssetRaw(AssetHandle handle);
+
+    template <typename T>
+    std::shared_ptr<T> GetAsset(AssetHandle handle)
     {
-        std::string resolved = m_PathResolver->Resolve(path);
-        AssetHandle handle = m_Registry->GetHandle(resolved);
-        if (handle != AssetHandle(0))
-        {
-            ReloadAsset(handle, T::GetStaticType());
-        }
+        auto asset = GetAssetRaw(handle);
+        return std::static_pointer_cast<T>(asset);
     }
 
-    size_t GetPendingFinalizeCount() const;
-    size_t GetLoadingAssetCount() const;
-    bool HasBackgroundWork() const;
+    void Update(Timestep ts);
 
-    AssetHandle ResolveToHandle(const std::string& path, AssetType type = AssetType::None);
-    std::string ResolvePath(const std::string& path) const;
-
-    std::filesystem::path GetAssetDirectory() const
-    {
-        return m_PathResolver->GetAssetDirectory();
-    }
-    std::filesystem::path GetProjectDirectory() const
-    {
-        return m_PathResolver->GetProjectDirectory();
-    }
-    std::filesystem::path GetEngineRoot() const
-    {
-        return m_PathResolver->GetEngineRoot();
-    }
-
-public:
-    virtual void OnUpdate(Timestep ts) override;
-    virtual void OnShutdown() override;
-
-protected:
+    bool HasBackgroundWork() const { return false; }
+    uint32_t GetPendingFinalizeCount() const { return 0; }
+    AssetHandle ResolveToHandle(const std::filesystem::path& path, AssetType type = AssetType::None);
 
 private:
-    void ReloadAsset(AssetHandle handle, AssetType type);
-    std::shared_ptr<Asset> LoadAsset(const std::string& path, AssetType type);
+    std::unordered_map<AssetHandle, std::shared_ptr<Asset>> m_LoadedAssets;
+    AssetRegistry m_Registry;
+    mutable std::mutex m_AssetMutex;
 
-    std::shared_ptr<AssetPathResolver> m_PathResolver;
-    std::shared_ptr<AssetRegistry> m_Registry;
+    std::filesystem::path m_EngineRoot;
+    std::filesystem::path m_ProjectDirectory;
+    std::filesystem::path m_AssetDirectory;
 
-    std::unordered_map<AssetType, std::shared_ptr<IAssetLoader>> m_Loaders;
-
-    std::deque<std::shared_ptr<Asset>> m_PendingAssets;
-    mutable std::mutex m_PendingMutex;
-    mutable std::recursive_mutex m_AssetLock;
+    static AssetManager* s_Instance;
 };
-} // namespace CHEngine
+}
 
 #endif // CH_ASSET_MANAGER_H
