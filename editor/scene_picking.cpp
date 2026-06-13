@@ -1,7 +1,7 @@
 #include "scene_picking.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/scene/components/component_utils.h"
-#include "engine/core/application.h"
+#include "engine/runtime/application.h"
 #include "engine/assets/types/model_asset.h"
 #include "engine/physics/bvh/bvh.h"
 #include "engine/physics/physics.h"

@@ -1,3 +1,4 @@
+#include "engine/platform/utils/file_dialogs.h"
 #include "editor_scene_manager.h"
 #include "editor_layer.h"
 #include "scripting/scriptengine.h"
@@ -5,7 +6,7 @@
 #include "engine/project/project.h"
 #include "engine/serialization/scene_serializer.h"
 #include "scripting/scene_scripting_manager.h"
-#include "engine/core/application.h"
+#include "engine/runtime/application.h"
 #include "engine/core/input.h"
 #include "engine/core/key_codes.h"
 #include "engine/assets/asset_manager.h"
@@ -29,7 +30,7 @@ void EditorSceneManager::NewScene()
 void EditorSceneManager::OpenScene()
 {
     std::vector<FileDialogFilter> filters = {{"Chained Scene", "chscene"}};
-    auto result = Chained::Platform::OpenFile(filters);
+    auto result = Chained::FileDialogs::OpenFile(filters);
     if (result)
     {
         OpenScene(*result);
@@ -67,7 +68,7 @@ void EditorSceneManager::SaveScene()
 void EditorSceneManager::SaveSceneAs()
 {
     std::vector<FileDialogFilter> filters = {{"Chained Scene", "chscene"}};
-    auto result = Chained::Platform::SaveFile(filters);
+    auto result = Chained::FileDialogs::SaveFile(filters);
     if (result)
     {
         auto scene = GetActiveScene();
@@ -436,8 +437,8 @@ bool EditorSceneManager::OnKeyPressed(KeyPressedEvent& e)
         return false;
     }
 
-    bool ctrl = Core::Input::IsKeyDown(Key::LeftControl) || Core::Input::IsKeyDown(Key::RightControl);
-    bool shift = Core::Input::IsKeyDown(Key::LeftShift) || Core::Input::IsKeyDown(Key::RightShift);
+    bool ctrl = Core::Input::IsKeyDown(KeyCode::LeftControl) || Core::Input::IsKeyDown(KeyCode::RightControl);
+    bool shift = Core::Input::IsKeyDown(KeyCode::LeftShift) || Core::Input::IsKeyDown(KeyCode::RightShift);
 
     auto keyCode = e.GetKeyCode();
 
@@ -445,13 +446,13 @@ bool EditorSceneManager::OnKeyPressed(KeyPressedEvent& e)
     {
         switch (keyCode)
         {
-        case Key::N:
+        case KeyCode::N:
             NewScene();
             return true;
-        case Key::O:
+        case KeyCode::O:
             OpenScene();
             return true;
-        case Key::S:
+        case KeyCode::S:
             if (shift)
             {
                 SaveSceneAs();
@@ -461,16 +462,16 @@ bool EditorSceneManager::OnKeyPressed(KeyPressedEvent& e)
                 SaveScene();
             }
             return true;
-        case Key::Z:
+        case KeyCode::Z:
             m_EditorLayer.GetCommandHistory().Undo();
             return true;
-        case Key::Y:
+        case KeyCode::Y:
             m_EditorLayer.GetCommandHistory().Redo();
             return true;
         }
     }
 
-    if (keyCode == Key::F5)
+    if (keyCode == KeyCode::F5)
     {
         m_EditorLayer.LaunchStandalone();
         return true;

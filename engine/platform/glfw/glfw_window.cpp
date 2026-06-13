@@ -3,8 +3,10 @@
 #include "engine/foundation/engine_assert.h"
 #include "engine/core/input.h"
 #include "engine/core/events.h"
-#include "engine/core/application.h"
+#include "engine/runtime/application.h"
 #include "engine/graphics/pipeline/renderer.h"
+
+#include "glfw_input_mapper.h"
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
@@ -127,12 +129,12 @@ void GlfwWindow::Init(const WindowProperties& properties)
 
     // Key Callback
     glfwSetKeyCallback(m_WindowHandle, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
-        Core::Input::OnKey(key, action != GLFW_RELEASE);
+        Core::Input::OnKey(GlfwInputMapper::MapKey(key), action != GLFW_RELEASE);
     });
 
     // Mouse Button Callback
     glfwSetMouseButtonCallback(m_WindowHandle, [](GLFWwindow* window, int button, int action, int mods) {
-        Core::Input::OnMouseButton(button, action != GLFW_RELEASE);
+        Core::Input::OnMouseButton(GlfwInputMapper::MapMouseButton(button), action != GLFW_RELEASE);
     });
 
     // Cursor Position Callback

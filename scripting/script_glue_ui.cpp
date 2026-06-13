@@ -6,7 +6,7 @@
 namespace Chained
 {
 
-void RegisterGlueUI() {}
+
 
 // ── UI Controls ───────────────────────────────────────────────────────
 CH_SCRIPT_FUNC bool ButtonControl_IsClicked(uint64_t entityID)
@@ -15,7 +15,7 @@ CH_SCRIPT_FUNC bool ButtonControl_IsClicked(uint64_t entityID)
     return entity && entity.HasComponent<WidgetComponent>() ? entity.GetComponent<WidgetComponent>().PressedThisFrame
                                                           : false;
 }
-CH_ADD_INTERNAL_CALL(ButtonControl, ButtonControl_IsClicked_Ptr, ButtonControl_IsClicked);
+
 
 CH_SCRIPT_FUNC bool ButtonControl_IsDown(uint64_t entityID)
 {
@@ -23,7 +23,7 @@ CH_SCRIPT_FUNC bool ButtonControl_IsDown(uint64_t entityID)
     return entity && entity.HasComponent<WidgetComponent>() ? entity.GetComponent<WidgetComponent>().IsDown
                                                            : false;
 }
-CH_ADD_INTERNAL_CALL(ButtonControl, ButtonControl_IsDown_Ptr, ButtonControl_IsDown);
+
 
 CH_SCRIPT_FUNC bool CheckboxControl_GetChecked(uint64_t entityID)
 {
@@ -36,7 +36,7 @@ CH_SCRIPT_FUNC bool CheckboxControl_GetChecked(uint64_t entityID)
     }
     return false;
 }
-CH_ADD_INTERNAL_CALL(CheckboxControl, CheckboxControl_GetChecked_Ptr, CheckboxControl_GetChecked);
+
 
 CH_SCRIPT_FUNC int ComboBoxControl_GetSelectedIndex(uint64_t entityID)
 {
@@ -49,7 +49,7 @@ CH_SCRIPT_FUNC int ComboBoxControl_GetSelectedIndex(uint64_t entityID)
     }
     return 0;
 }
-CH_ADD_INTERNAL_CALL(ComboBoxControl, ComboBoxControl_GetSelectedIndex_Ptr, ComboBoxControl_GetSelectedIndex);
+
 
 CH_SCRIPT_FUNC void ComboBoxControl_SetSelectedIndex(uint64_t entityID, int index)
 {
@@ -63,7 +63,7 @@ CH_SCRIPT_FUNC void ComboBoxControl_SetSelectedIndex(uint64_t entityID, int inde
         }
     }
 }
-CH_ADD_INTERNAL_CALL(ComboBoxControl, ComboBoxControl_SetSelectedIndex_Ptr, ComboBoxControl_SetSelectedIndex);
+
 
 CH_SCRIPT_FUNC void ComboBoxControl_AddItem(uint64_t entityID, Coral::String item)
 {
@@ -77,7 +77,7 @@ CH_SCRIPT_FUNC void ComboBoxControl_AddItem(uint64_t entityID, Coral::String ite
         }
     }
 }
-CH_ADD_INTERNAL_CALL(ComboBoxControl, ComboBoxControl_AddItem_Ptr, ComboBoxControl_AddItem);
+
 
 CH_SCRIPT_FUNC void ComboBoxControl_ClearItems(uint64_t entityID)
 {
@@ -93,7 +93,7 @@ CH_SCRIPT_FUNC void ComboBoxControl_ClearItems(uint64_t entityID)
         }
     }
 }
-CH_ADD_INTERNAL_CALL(ComboBoxControl, ComboBoxControl_ClearItems_Ptr, ComboBoxControl_ClearItems);
+
 
 CH_SCRIPT_FUNC int ComboBoxControl_GetItemCount(uint64_t entityID)
 {
@@ -108,7 +108,7 @@ CH_SCRIPT_FUNC int ComboBoxControl_GetItemCount(uint64_t entityID)
     }
     return 0;
 }
-CH_ADD_INTERNAL_CALL(ComboBoxControl, ComboBoxControl_GetItemCount_Ptr, ComboBoxControl_GetItemCount);
+
 
 CH_SCRIPT_FUNC Coral::String ComboBoxControl_GetItem(uint64_t entityID, int index)
 {
@@ -127,7 +127,7 @@ CH_SCRIPT_FUNC Coral::String ComboBoxControl_GetItem(uint64_t entityID, int inde
     }
     return Coral::String::New("");
 }
-CH_ADD_INTERNAL_CALL(ComboBoxControl, ComboBoxControl_GetItem_Ptr, ComboBoxControl_GetItem);
+
 
 CH_SCRIPT_FUNC void UI_Text(Coral::String text)
 {
@@ -147,6 +147,18 @@ CH_SCRIPT_FUNC void UI_Text(Coral::String text)
         ImGui::GetForegroundDrawList()->AddText({ 10, 10 }, IM_COL32(255, 255, 0, 255), ((std::string)text).c_str());
     }
 }
-CH_ADD_INTERNAL_CALL(UI, UI_Text_Ptr, UI_Text);
 
+
+    void RegisterGlueUI(Coral::ManagedAssembly& assembly) {
+            assembly.AddInternalCall("Chained.ButtonControl", "ButtonControl_IsClicked_Ptr", (void*)ButtonControl_IsClicked);
+            assembly.AddInternalCall("Chained.ButtonControl", "ButtonControl_IsDown_Ptr", (void*)ButtonControl_IsDown);
+            assembly.AddInternalCall("Chained.CheckboxControl", "CheckboxControl_GetChecked_Ptr", (void*)CheckboxControl_GetChecked);
+            assembly.AddInternalCall("Chained.ComboBoxControl", "ComboBoxControl_GetSelectedIndex_Ptr", (void*)ComboBoxControl_GetSelectedIndex);
+            assembly.AddInternalCall("Chained.ComboBoxControl", "ComboBoxControl_SetSelectedIndex_Ptr", (void*)ComboBoxControl_SetSelectedIndex);
+            assembly.AddInternalCall("Chained.ComboBoxControl", "ComboBoxControl_AddItem_Ptr", (void*)ComboBoxControl_AddItem);
+            assembly.AddInternalCall("Chained.ComboBoxControl", "ComboBoxControl_ClearItems_Ptr", (void*)ComboBoxControl_ClearItems);
+            assembly.AddInternalCall("Chained.ComboBoxControl", "ComboBoxControl_GetItemCount_Ptr", (void*)ComboBoxControl_GetItemCount);
+            assembly.AddInternalCall("Chained.ComboBoxControl", "ComboBoxControl_GetItem_Ptr", (void*)ComboBoxControl_GetItem);
+            assembly.AddInternalCall("Chained.UI", "UI_Text_Ptr", (void*)UI_Text);
+        }
 } // namespace Chained

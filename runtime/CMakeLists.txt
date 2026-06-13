@@ -12,7 +12,7 @@ target_precompile_headers(RuntimeCore PRIVATE
     <vector>
     <memory>
     <filesystem>
-    "${CMAKE_SOURCE_DIR}/engine/core/application.h"
+    "${CMAKE_SOURCE_DIR}/engine/runtime/application.h"
 )
 
 # Generic Runtime Executable

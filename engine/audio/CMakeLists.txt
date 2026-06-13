@@ -4,8 +4,8 @@ chained_add_engine_module(engine_audio
         audio.h
     DEPENDS
         engine_core
-        ChainedEngine::External::GLM
-        ChainedEngine::External::Miniaudio
+        glm
+        engine_external_miniaudio
 )
 
 if(WIN32)

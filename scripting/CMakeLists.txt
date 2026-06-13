@@ -1,31 +1,16 @@
 chained_add_engine_module(engine_scripting
-    SOURCES
-        scriptengine.h
-        scriptengine.cpp
-        scriptengine_services.h
-        scriptengine_services.cpp
-        scene_scripting_manager.h
-        scene_scripting_manager.cpp
-        script_glue.h
-        script_glue.cpp
-        script_glue_internal.h
-        script_glue_system.cpp
-        script_glue_input.cpp
-        #script_glue_network.cpp
-        script_glue_scene.cpp
-        script_glue_entity.cpp
-        script_glue_camera.cpp
-        script_glue_ui.cpp
-        script_glue_audio.cpp
+    EXCLUDE_FILES
+        "script_glue_network.cpp"
     DEPENDS
         engine_core
         engine_audio
         engine_physics
-        ChainedEngine::External::YamlCpp
-        ChainedEngine::External::EnTT
-        ChainedEngine::External::GLM
-        ChainedEngine::External::Coral
-        ChainedEngine::External::Miniaudio
+        yaml-cpp
+        engine_external_entt
+        glm
+        Coral.Native
+        engine_external_miniaudio
+        engine_external_imgui
 )
 
 if(CH_BUILD_PRESET_NAMES_INCLUDE_DIR)
@@ -43,14 +28,14 @@ endif()
 # ── C# Managed API Build ──────────────────────────────────────────────────
 # This builds the core engine scripting API (.dll) which the game depends on.
 set(MANAGED_BUILD_SCRIPT "${CMAKE_SOURCE_DIR}/build_scripts/build_managed.py")
-set(MANAGED_PROJECT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/managed/CHEngine.Managed.csproj")
+set(MANAGED_PROJECT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/managed/Chained.Managed.csproj")
 set(MANAGED_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")
 set(CORAL_MANAGED_DIR "${CMAKE_BINARY_DIR}/vendor/coral")
 
 file(GLOB_RECURSE MANAGED_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/managed/src/*.cs")
 list(APPEND MANAGED_SOURCES "${MANAGED_PROJECT_PATH}")
 
-set(MANAGED_DLL_OUTPUT "${MANAGED_OUTPUT_DIR}/CHEngine.Managed.dll")
+set(MANAGED_DLL_OUTPUT "${MANAGED_OUTPUT_DIR}/Chained.Managed.dll")
 
 add_custom_command(
     OUTPUT "${MANAGED_DLL_OUTPUT}"
@@ -63,7 +48,7 @@ add_custom_command(
             --copy-coral
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/managed"
     DEPENDS ${MANAGED_SOURCES} "${MANAGED_BUILD_SCRIPT}"
-    COMMENT "Building CHEngine.Managed C# Library"
+    COMMENT "Building Chained.Managed C# Library"
     VERBATIM
 )
 

@@ -3,7 +3,7 @@
 
 #include "IconsFontAwesome6.h"
 #include "editor_gui.h"
-#include "engine/core/application.h"
+#include "engine/runtime/application.h"
 #include "engine/reflection/reflection.h"
 #include "imgui.h"
 #include "imgui_internal.h"

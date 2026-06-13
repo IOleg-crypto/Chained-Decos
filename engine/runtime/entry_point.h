@@ -1,12 +1,10 @@
 #ifndef CH_ENTRY_POINT_H
 #define CH_ENTRY_POINT_H
 
-#include "engine/core/application.h"
-#include "engine/foundation/platform_detection.h"
+#include "engine/runtime/application.h"
 
 extern Chained::Application* Chained::CreateApplication(Chained::ApplicationCommandLineArgs args);
 
-#if CH_PLATFORM_WINDOWS || CH_PLATFORM_LINUX
 int main(int argc, char** argv)
 {
     Chained::ApplicationCommandLineArgs args;
@@ -18,8 +16,5 @@ int main(int argc, char** argv)
     delete app;
     return 0;
 }
-#else
-    #error "Unsupported platform for entry point!"
-#endif
 
 #endif // CH_ENTRY_POINT_H

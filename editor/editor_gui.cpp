@@ -1,16 +1,17 @@
+#include "engine/platform/utils/file_dialogs.h"
 #include "editor_gui.h"
 #include "IconsFontAwesome6.h"
 #include "editor/editor_layer.h"
 #include "editor/panels/panel.h"
 #include "editor/panels/viewport_panel.h"
 #include "editor_events.h"
-#include "engine/core/application.h"
+#include "engine/runtime/application.h"
 #include "engine/project/project.h"
 #include "engine/scene/components.h"
 #include "scripting/scriptengine.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
-#include "engine/core/application.h"
+#include "engine/runtime/application.h"
 #include "engine/core/platform.h"
 #include "engine/scene/component_registry.h"
 #include "imgui_internal.h"
@@ -60,7 +61,7 @@ void EditorGUI::DrawMenuBar(EditorLayer& editorLayer, EditorPanels& panels)
         if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open Project", "Ctrl+O"))
         {
             std::vector<FileDialogFilter> filters = {{"Chained Scene", "chscene"}};
-            auto result = Chained::Platform::OpenFile(filters);
+            auto result = Chained::FileDialogs::OpenFile(filters);
             if (result)
             {
                 EditorLayer::Get().GetSceneManager().OpenScene(*result);
@@ -330,7 +331,7 @@ bool EditorGUI::FileProperty(const char* label, std::string& value, const char* 
         {
             filters.push_back({"Files", filter});
         }
-        auto result = Chained::Platform::OpenFile(filters);
+        auto result = Chained::FileDialogs::OpenFile(filters);
         if (result)
         {
             value = Project::GetRelativePath(*result);
@@ -393,7 +394,7 @@ bool EditorGUI::FileProperty(const char* label, std::string& path, uint32_t text
         {
             filters.push_back({"Files", filter});
         }
-        auto result = Chained::Platform::OpenFile(filters);
+        auto result = Chained::FileDialogs::OpenFile(filters);
         if (result)
         {
             path = Project::GetRelativePath(*result);

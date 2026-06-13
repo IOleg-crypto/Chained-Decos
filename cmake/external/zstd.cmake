@@ -12,5 +12,4 @@ set(ZSTD_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/zstd/lib CACHE PATH "Zs
 set(ZSTD_LIBRARY libzstd_static CACHE STRING "Zstd library target" FORCE)
 
 if(TARGET libzstd_static)
-    add_library(zstd::libzstd_static ALIAS libzstd_static)
 endif()

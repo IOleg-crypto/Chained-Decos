@@ -1,12 +1,11 @@
 #include "imgui_layer.h"
-#include "application.h"
 #include "engine/core/profiler.h"
-#include "window.h"
+#include "engine/core/window.h"
 
 
 #include "imgui.h"
 #include "ImGuizmo.h"
-#include "engine/core/application.h"
+#include "engine/runtime/application.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 
@@ -20,7 +19,7 @@ void ImGuiLayer::SetContext(ImGuiContext* context)
 }
 
 ImGuiLayer::ImGuiLayer()
-    : Layer("ImGuiLayer") {
+{
 }
 
 ImGuiLayer::~ImGuiLayer()
@@ -131,7 +130,7 @@ void ImGuiLayer::OnEvent(Event& e)
     }
 }
 
-ImFont* ImGuiLayer::AddFontFromFile(const std::string& path, float size, const ImFontConfig* config, const ImWchar* ranges)
+void* ImGuiLayer::AddFontFromFile(const std::string& path, float size, const void* config, const void* ranges)
 {
     if (!ImGui::GetCurrentContext())
     {
@@ -140,7 +139,7 @@ ImFont* ImGuiLayer::AddFontFromFile(const std::string& path, float size, const I
     }
 
     ImGuiIO& io = ImGui::GetIO();
-    ImFont* font = io.Fonts->AddFontFromFileTTF(path.c_str(), size, config, ranges);
+    ImFont* font = io.Fonts->AddFontFromFileTTF(path.c_str(), size, (const ImFontConfig*)config, (const ImWchar*)ranges);
     if (!font)
     {
         CH_CORE_ERROR("ImGuiLayer: Failed to load font from '{}'", path);

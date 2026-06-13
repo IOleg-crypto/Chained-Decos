@@ -2,5 +2,4 @@
 if(BUILD_TESTS AND EXISTS "${CMAKE_SOURCE_DIR}/include/googletest/CMakeLists.txt")
     set(gtest_force_shared_crt OFF CACHE BOOL "" FORCE)
     add_subdirectory("${CMAKE_SOURCE_DIR}/include/googletest" "${CMAKE_BINARY_DIR}/vendor/googletest" EXCLUDE_FROM_ALL)
-    add_library(ChainedEngine::External::GTest ALIAS gtest_main)
 endif()

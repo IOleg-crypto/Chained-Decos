@@ -1,6 +1,5 @@
 #include "profiler.h"
 #include <mutex>
-#include <thread>
 
 namespace Chained
 {

@@ -20,11 +20,9 @@ set(SPDLOG_USE_STD_FORMAT ON CACHE BOOL "" FORCE)
 
 FetchContent_MakeAvailable(spdlog)
 
-if(NOT TARGET ChainedEngine::External::spdlog)
+if(NOT TARGET spdlog)
     # Alias the underlying target directly
     if(TARGET spdlog)
-        add_library(ChainedEngine::External::spdlog ALIAS spdlog)
     else()
-        add_library(ChainedEngine::External::spdlog ALIAS spdlog::spdlog)
     endif()
 endif()

@@ -1,7 +1,6 @@
 # Coral dependency (Scripting host)
 if(EXISTS "${CMAKE_SOURCE_DIR}/include/coral/cmake/CMakeLists.txt")
     add_subdirectory("${CMAKE_SOURCE_DIR}/include/coral/cmake" "${CMAKE_BINARY_DIR}/vendor/coral" EXCLUDE_FROM_ALL)
-    add_library(ChainedEngine::External::Coral ALIAS Coral.Native)
     
     # MinGW fixes for Coral
     if(MINGW)

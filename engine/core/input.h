@@ -27,8 +27,8 @@ namespace Chained::Core::Input
     glm::vec2 GetMouseDelta();
     float GetMouseWheelMove();
 
-    void OnKey(int key, bool pressed);
-    void OnMouseButton(int button, bool pressed);
+    void OnKey(KeyCode key, bool pressed);
+    void OnMouseButton(MouseCode button, bool pressed);
     void OnMouseMove(float x, float y);
     void OnMouseScroll(float xOffset, float yOffset);
 }

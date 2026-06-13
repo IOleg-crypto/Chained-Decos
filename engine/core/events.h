@@ -5,6 +5,8 @@
 #include <string>
 #include <deque>
 #include <memory>
+#include "engine/core/key_codes.h"
+#include "engine/core/mouse_codes.h"
 
 namespace Chained
 {
@@ -103,17 +105,17 @@ using EventCallbackFn = std::function<void(Event&)>;
 class KeyEvent : public Event
 {
 public:
-    int GetKeyCode() const { return m_KeyCode; }
+    KeyCode GetKeyCode() const { return m_KeyCode; }
     EVENT_CLASS_CATEGORY(EventCategoryKeyboard | EventCategoryInput)
 protected:
-    KeyEvent(int keycode) : m_KeyCode(keycode) {}
-    int m_KeyCode;
+    KeyEvent(KeyCode keycode) : m_KeyCode(keycode) {}
+    KeyCode m_KeyCode;
 };
 
 class KeyPressedEvent : public KeyEvent
 {
 public:
-    KeyPressedEvent(int keycode, bool isRepeat = false) : KeyEvent(keycode), m_IsRepeat(isRepeat) {}
+    KeyPressedEvent(KeyCode keycode, bool isRepeat = false) : KeyEvent(keycode), m_IsRepeat(isRepeat) {}
     bool IsRepeat() const { return m_IsRepeat; }
     EVENT_CLASS_TYPE(KeyPressed)
 private:
@@ -123,14 +125,14 @@ private:
 class KeyReleasedEvent : public KeyEvent
 {
 public:
-    KeyReleasedEvent(int keycode) : KeyEvent(keycode) {}
+    KeyReleasedEvent(KeyCode keycode) : KeyEvent(keycode) {}
     EVENT_CLASS_TYPE(KeyReleased)
 };
 
 class KeyTypedEvent : public KeyEvent
 {
 public:
-    KeyTypedEvent(int keycode) : KeyEvent(keycode) {}
+    KeyTypedEvent(KeyCode keycode) : KeyEvent(keycode) {}
     EVENT_CLASS_TYPE(KeyTyped)
 };
 
@@ -163,26 +165,26 @@ class MouseButtonEvent : public Event
 {
 public:
     enum class Action { None = 0, Pressed, Released };
-    int GetMouseButton() const { return m_Button; }
+    MouseCode GetMouseButton() const { return m_Button; }
     Action GetAction() const { return m_Action; }
     EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput | EventCategoryMouseButton)
 protected:
-    MouseButtonEvent(int button, Action action) : m_Button(button), m_Action(action) {}
-    int m_Button;
+    MouseButtonEvent(MouseCode button, Action action) : m_Button(button), m_Action(action) {}
+    MouseCode m_Button;
     Action m_Action;
 };
 
 class MouseButtonPressedEvent : public MouseButtonEvent
 {
 public:
-    MouseButtonPressedEvent(int button) : MouseButtonEvent(button, Action::Pressed) {}
+    MouseButtonPressedEvent(MouseCode button) : MouseButtonEvent(button, Action::Pressed) {}
     EVENT_CLASS_TYPE(MouseButtonPressed)
 };
 
 class MouseButtonReleasedEvent : public MouseButtonEvent
 {
 public:
-    MouseButtonReleasedEvent(int button) : MouseButtonEvent(button, Action::Released) {}
+    MouseButtonReleasedEvent(MouseCode button) : MouseButtonEvent(button, Action::Released) {}
     EVENT_CLASS_TYPE(MouseButtonReleased)
 };
 

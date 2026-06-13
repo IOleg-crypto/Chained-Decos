@@ -5,92 +5,84 @@
 
 namespace Chained
 {
-	using KeyCode = uint16_t;
-
-	namespace Key
+	enum class KeyCode : uint16_t
 	{
-		enum : KeyCode
-		{
-			// Generic key codes (compatible with GLFW)
-			Null            = 0,        
-			// Alphanumeric keys
-			A               = 65,       // Key: A | a
-			B               = 66,       // Key: B | b
-			C               = 67,       // Key: C | c
-			D               = 68,       // Key: D | d
-			E               = 69,       // Key: E | e
-			F               = 70,       // Key: F | f
-			G               = 71,       // Key: G | g
-			H               = 72,       // Key: H | h
-			I               = 73,       // Key: I | i
-			J               = 74,       // Key: J | j
-			K               = 75,       // Key: K | k
-			L               = 76,       // Key: L | l
-			M               = 77,       // Key: M | m
-			N               = 78,       // Key: N | n
-			O               = 79,       // Key: O | o
-			P               = 80,       // Key: P | p
-			Q               = 81,       // Key: Q | q
-			R               = 82,       // Key: R | r
-			S               = 83,       // Key: S | s
-			T               = 84,       // Key: T | t
-			U               = 85,       // Key: U | u
-			V               = 86,       // Key: V | v
-			W               = 87,       // Key: W | w
-			X               = 88,       // Key: X | x
-			Y               = 89,       // Key: Y | y
-			Z               = 90,       // Key: Z | z
-			Space           = 32,       // Key: Space
-			Escape          = 256,      // Key: Esc
-			Enter           = 257,      // Key: Enter
-			Tab             = 258,      // Key: Tab
-			Backspace       = 259,      // Key: Backspace
-			Insert          = 260,      // Key: Ins
-			Delete          = 261,      // Key: Del
-			Right           = 262,      // Key: Cursor right
-			Left            = 263,      // Key: Cursor left
-			Down            = 264,      // Key: Cursor down
-			Up              = 265,      // Key: Cursor up
-			PageUp          = 266,      // Key: Page up
-			PageDown        = 267,      // Key: Page down
-			Home            = 268,      // Key: Home
-			End             = 269,      // Key: End
-			CapsLock        = 280,      // Key: Caps lock
-			ScrollLock      = 281,      // Key: Scroll lock
-			NumLock         = 282,      // Key: Num lock
-			PrintScreen     = 283,      // Key: Print screen
-			Pause           = 284,      // Key: Pause
-			F1              = 290,      // Key: F1
-			F2              = 291,      // Key: F2
-			F3              = 292,      // Key: F3
-			F4              = 293,      // Key: F4
-			F5              = 294,      // Key: F5
-			F6              = 295,      // Key: F6
-			F7              = 296,      // Key: F7
-			F8              = 297,      // Key: F8
-			F9              = 298,      // Key: F9
-			F10             = 299,      // Key: F10
-			F11             = 300,      // Key: F11
-			F12             = 301,      // Key: F12
-			LeftShift       = 340,      // Key: Shift left
-			LeftControl     = 341,      // Key: Control left
-			LeftAlt         = 342,      // Key: Alt left
-			RightShift      = 344,      // Key: Shift right
-			RightControl    = 345,      // Key: Control right
-			RightAlt        = 346,      // Key: Alt right
-			
-			D0              = 48,       // Key: 0
-			D1              = 49,       // Key: 1
-			D2              = 50,       // Key: 2
-			D3              = 51,       // Key: 3
-			D4              = 52,       // Key: 4
-			D5              = 53,       // Key: 5
-			D6              = 54,       // Key: 6
-			D7              = 55,       // Key: 7
-			D8              = 56,       // Key: 8
-			D9              = 57,       // Key: 9
-		};
-	}
+		Null            = 0,        
+		A               = 1,
+		B               = 2,
+		C               = 3,
+		D               = 4,
+		E               = 5,
+		F               = 6,
+		G               = 7,
+		H               = 8,
+		I               = 9,
+		J               = 10,
+		K               = 11,
+		L               = 12,
+		M               = 13,
+		N               = 14,
+		O               = 15,
+		P               = 16,
+		Q               = 17,
+		R               = 18,
+		S               = 19,
+		T               = 20,
+		U               = 21,
+		V               = 22,
+		W               = 23,
+		X               = 24,
+		Y               = 25,
+		Z               = 26,
+		Space           = 27,
+		Escape          = 28,
+		Enter           = 29,
+		Tab             = 30,
+		Backspace       = 31,
+		Insert          = 32,
+		Delete          = 33,
+		Right           = 34,
+		Left            = 35,
+		Down            = 36,
+		Up              = 37,
+		PageUp          = 38,
+		PageDown        = 39,
+		Home            = 40,
+		End             = 41,
+		CapsLock        = 42,
+		ScrollLock      = 43,
+		NumLock         = 44,
+		PrintScreen     = 45,
+		Pause           = 46,
+		F1              = 47,
+		F2              = 48,
+		F3              = 49,
+		F4              = 50,
+		F5              = 51,
+		F6              = 52,
+		F7              = 53,
+		F8              = 54,
+		F9              = 55,
+		F10             = 56,
+		F11             = 57,
+		F12             = 58,
+		LeftShift       = 59,
+		LeftControl     = 60,
+		LeftAlt         = 61,
+		RightShift      = 62,
+		RightControl    = 63,
+		RightAlt        = 64,
+		D0              = 65,
+		D1              = 66,
+		D2              = 67,
+		D3              = 68,
+		D4              = 69,
+		D5              = 70,
+		D6              = 71,
+		D7              = 72,
+		D8              = 73,
+		D9              = 74,
+	};
 }
 
 #endif // CH_KEY_CODES_H

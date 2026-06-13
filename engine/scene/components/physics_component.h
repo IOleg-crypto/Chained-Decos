@@ -4,6 +4,7 @@
 #include "engine/reflection/reflection_rfl.h"
 #include "engine/graphics/api/model_data.h"
 #include "engine/physics/iphysics_world.h"
+#include "engine/assets/asset.h"
 #include <glm/glm.hpp>
 #include <string>
 
