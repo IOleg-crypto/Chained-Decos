@@ -17,6 +17,7 @@ endif()
 
 add_subdirectory(foundation)
 add_subdirectory(reflection)
+add_subdirectory(imgui)
 add_subdirectory(core)
 add_subdirectory(assets)
 add_subdirectory(graphics)
@@ -25,27 +26,12 @@ add_subdirectory(audio)
 add_subdirectory(scene)
 add_subdirectory(project)
 add_subdirectory(serialization)
+
+add_subdirectory(platform/glfw)
+add_subdirectory(platform/utils)
 #add_subdirectory(network)
 add_subdirectory(${CMAKE_SOURCE_DIR}/scripting ${CMAKE_BINARY_DIR}/scripting)
-
-# Create a high-level runtime module that owns the Application logic and initialization
-# This module depends on all other engine modules, but modules don't depend on it.
-chained_add_engine_module(engine_runtime
-    SOURCES
-        core/application.cpp
-    DEPENDS
-        engine_scripting
-        engine_scene
-        engine_serialization
-        engine_project
-        engine_graphics
-        engine_physics
-        engine_audio
-        engine_assets
-        engine_core
-)
-
-target_include_directories(engine_runtime PRIVATE ${CMAKE_SOURCE_DIR})
+add_subdirectory(runtime)
 
 # Create the final engine facade library that links everything together
 add_library(engine ${ENGINE_LIB_TYPE})
@@ -56,11 +42,6 @@ file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/engine_dummy.cpp" "// dummy\n")
 target_link_libraries(engine PUBLIC
     engine_runtime
 )
-
-if (NOT CH_ENGINE_SHARED)
-    # Remove cyclical dependencies that were used to satisfy symbols
-    # Symbols should now be satisfied by linking order or static library grouping
-endif()
 
 target_compile_definitions(engine PRIVATE CH_ENGINE_BUILD GLM_ENABLE_EXPERIMENTAL)
 
@@ -103,11 +84,11 @@ target_include_directories(ChainedEngineFramework INTERFACE
 
 target_link_libraries(ChainedEngineFramework INTERFACE
     engine
-    ChainedEngine::External::GLM
-    ChainedEngine::External::EnTT
-    ChainedEngine::External::YamlCpp
-    ChainedEngine::External::reflect-cpp
-    ChainedEngine::External::Cereal
+    glm
+    engine_external_entt
+    yaml-cpp
+    reflectcpp
+    cereal
 )
 
 target_compile_definitions(ChainedEngineFramework INTERFACE

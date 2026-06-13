@@ -21,6 +21,7 @@ namespace Chained
         NetworkService();
         virtual ~NetworkService();
 
+    public:
         // Startup/Shutdown
         bool Host(uint16_t port);
         bool Connect(const char* address);

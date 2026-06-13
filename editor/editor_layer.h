@@ -8,7 +8,7 @@
 #include "engine/scene/scene.h"
 #include "editor_project_manager.h"
 #include "editor_scene_manager.h"
-#include "engine/core/application.h"
+#include "engine/runtime/application.h"
 #include "engine/core/layer.h"
 #include "editor_layout.h"
 #include "editor_panels.h"

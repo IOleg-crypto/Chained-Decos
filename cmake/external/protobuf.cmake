@@ -33,7 +33,6 @@ FetchContent_MakeAvailable(protobuf)
 # Ensure GNS can find the targets and variables it expects
 if(TARGET libprotobuf)
     if(NOT TARGET protobuf::libprotobuf)
-        add_library(protobuf::libprotobuf ALIAS libprotobuf)
     endif()
     
     # Set variables that FindProtobuf.cmake looks for
@@ -48,7 +47,6 @@ endif()
 
 if(TARGET protoc)
     if(NOT TARGET protobuf::protoc)
-        add_executable(protobuf::protoc ALIAS protoc)
     endif()
     set(Protobuf_PROTOC_EXECUTABLE protoc CACHE STRING "Protoc executable" FORCE)
 endif()

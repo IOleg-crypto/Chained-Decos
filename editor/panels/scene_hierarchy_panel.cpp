@@ -1,6 +1,7 @@
+#include "engine/platform/utils/file_dialogs.h"
 #include "scene_hierarchy_panel.h"
 #include "editor_layer.h"
-#include "engine/core/application.h"
+#include "engine/runtime/application.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scene_events.h"
 #include "engine/scene/scene_settings.h"
@@ -99,7 +100,7 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
         }
 
         // Focus Shortcut
-        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) && Core::Input::IsKeyPressed(Key::F))
+        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) && Core::Input::IsKeyPressed(KeyCode::F))
 
 
         {
@@ -112,8 +113,8 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
         }
 
         // Duplicate Shortcut
-        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) && Core::Input::IsKeyDown(Key::LeftControl) &&
-            Core::Input::IsKeyPressed(Key::D))
+        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) && Core::Input::IsKeyDown(KeyCode::LeftControl) &&
+            Core::Input::IsKeyPressed(KeyCode::D))
 
 
         {
@@ -304,7 +305,7 @@ void SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity, bool readOnly)
         if (ImGui::MenuItem(ICON_FA_FILE_EXPORT " Save as Prefab..."))
         {
             std::vector<FileDialogFilter> filters = {{"Chained Prefab", "chprefab"}};
-            auto path = Chained::Platform::SaveFile(filters);
+            auto path = Chained::FileDialogs::SaveFile(filters);
             if (path)
             {
                 if (path->extension().empty()) path->replace_extension(".chprefab");
@@ -340,7 +341,7 @@ void SceneHierarchyPanel::DrawContextMenu()
     if (ImGui::MenuItem(ICON_FA_FILE_IMPORT " Load Prefab..."))
     {
         std::vector<FileDialogFilter> filters = {{"Chained Prefab", "chprefab"}};
-        auto path = Chained::Platform::OpenFile(filters);
+        auto path = Chained::FileDialogs::OpenFile(filters);
         if (path)
         {
             PrefabSerializer::Deserialize(m_Context.get(), path->string());

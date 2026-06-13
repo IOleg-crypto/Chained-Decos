@@ -7,8 +7,8 @@ using namespace Chained;
 
 TEST(EventSystemTest, KeyPressedEventCreation)
 {
-    KeyPressedEvent event(Key::W, false);
-    EXPECT_EQ(event.GetKeyCode(), Key::W);
+    KeyPressedEvent event(KeyCode::W, false);
+    EXPECT_EQ(event.GetKeyCode(), KeyCode::W);
     EXPECT_FALSE(event.IsRepeat());
     EXPECT_EQ(event.GetEventType(), EventType::KeyPressed);
     EXPECT_TRUE(event.IsInCategory(EventCategoryKeyboard));
@@ -17,27 +17,27 @@ TEST(EventSystemTest, KeyPressedEventCreation)
 
 TEST(EventSystemTest, KeyReleasedEventCreation)
 {
-    KeyReleasedEvent event(Key::Space);
-    EXPECT_EQ(event.GetKeyCode(), Key::Space);
+    KeyReleasedEvent event(KeyCode::Space);
+    EXPECT_EQ(event.GetKeyCode(), KeyCode::Space);
     EXPECT_EQ(event.GetEventType(), EventType::KeyReleased);
 }
 
 TEST(EventSystemTest, MouseButtonEventCreation)
 {
-    MouseButtonPressedEvent pressEvent(Mouse::ButtonLeft);
-    EXPECT_EQ(pressEvent.GetMouseButton(), Mouse::ButtonLeft);
+    MouseButtonPressedEvent pressEvent(MouseCode::ButtonLeft);
+    EXPECT_EQ(pressEvent.GetMouseButton(), MouseCode::ButtonLeft);
     EXPECT_EQ(pressEvent.GetAction(), MouseButtonEvent::Action::Pressed);
     EXPECT_TRUE(pressEvent.IsInCategory(EventCategoryMouseButton));
     EXPECT_TRUE(pressEvent.IsInCategory(EventCategoryInput));
 
-    MouseButtonReleasedEvent releaseEvent(Mouse::ButtonRight);
-    EXPECT_EQ(releaseEvent.GetMouseButton(), Mouse::ButtonRight);
+    MouseButtonReleasedEvent releaseEvent(MouseCode::ButtonRight);
+    EXPECT_EQ(releaseEvent.GetMouseButton(), MouseCode::ButtonRight);
     EXPECT_EQ(releaseEvent.GetAction(), MouseButtonEvent::Action::Released);
 }
 
 TEST(EventSystemTest, EventDispatcherKeyPressed)
 {
-    KeyPressedEvent event(Key::W, false);
+    KeyPressedEvent event(KeyCode::W, false);
     bool handlerCalled = false;
     int receivedKey = -1;
 
@@ -50,13 +50,13 @@ TEST(EventSystemTest, EventDispatcherKeyPressed)
 
     EXPECT_TRUE(dispatched);
     EXPECT_TRUE(handlerCalled);
-    EXPECT_EQ(receivedKey, Key::W);
+    EXPECT_EQ(receivedKey, KeyCode::W);
     EXPECT_TRUE(event.Handled);
 }
 
 TEST(EventSystemTest, EventDispatcherWrongType)
 {
-    KeyPressedEvent event(Key::W, false);
+    KeyPressedEvent event(KeyCode::W, false);
     bool handlerCalled = false;
 
     EventDispatcher dispatcher(event);
@@ -72,7 +72,7 @@ TEST(EventSystemTest, EventDispatcherWrongType)
 
 TEST(EventSystemTest, EventDispatcherMultipleHandlers)
 {
-    KeyPressedEvent event(Key::Space, false);
+    KeyPressedEvent event(KeyCode::Space, false);
     int handlerCount = 0;
 
     EventDispatcher dispatcher(event);

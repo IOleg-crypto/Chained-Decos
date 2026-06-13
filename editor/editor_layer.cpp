@@ -3,13 +3,13 @@
 #include "editor_gui.h"
 #include "editor_layout.h"
 #include "editor_panels.h"
-#include "engine/core/imgui_layer.h"
+#include "engine/imgui/imgui_layer.h"
 #include "engine/core/input.h"
 
 #include "IconsFontAwesome6.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/core/profiler.h"
-#include "engine/core/application.h"
+#include "engine/runtime/application.h"
 #include "engine/foundation/thread_pool.h"
 #include "engine/graphics/pipeline/render_command.h"
 #include "engine/graphics/ui/ui_renderer.h"
@@ -177,7 +177,7 @@ void EditorLayer::OnAttach()
 {
     // Ensure this module (EXE) uses the same ImGui context as the engine DLL
     auto& app = Application::Get();
-    ImGui::SetCurrentContext(app.GetImGuiLayer()->GetContext());
+    ImGui::SetCurrentContext(static_cast<ImGuiContext*>(app.GetImGuiLayer()->GetContext()));
 
 
     // SetTraceLogCallback removed - now using engine logging
@@ -313,13 +313,13 @@ void EditorLayer::OnUpdate(Timestep ts)
             }
         }
 
-        if (Core::Input::IsKeyPressed(Key::F5))
+        if (Core::Input::IsKeyPressed(KeyCode::F5))
         {
             AppLaunchRuntimeEvent e;
             OnEvent(e);
         }
 
-        if (Core::Input::IsKeyDown(Key::LeftControl) && Core::Input::IsKeyPressed(Key::R))
+        if (Core::Input::IsKeyDown(KeyCode::LeftControl) && Core::Input::IsKeyPressed(KeyCode::R))
         {
             auto project = Project::GetActive();
             if (project)
@@ -467,7 +467,7 @@ void EditorLayer::OnEvent(Event& e)
     if (e.GetEventType() == EventType::KeyPressed)
     {
         auto& ke = (KeyPressedEvent&)e;
-        if (ke.GetKeyCode() == Key::Escape && GetEditorState().FullscreenGame)
+        if (ke.GetKeyCode() == KeyCode::Escape && GetEditorState().FullscreenGame)
         {
             GetEditorState().FullscreenGame = false;
             e.Handled = true;

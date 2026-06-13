@@ -6,16 +6,14 @@ chained_add_engine_module(engine_foundation
         engine_assert.h
         platform_detection.h
         thread_pool.h
-        thread_pool.cpp
         timestep.h
         uuid.h
         uuid.cpp
         zstd_compression.h
     DEPENDS
-        ChainedEngine::External::spdlog
-        ChainedEngine::External::GLM
-        ChainedEngine::External::BSThreadPool
-        zstd::libzstd_static
+        spdlog
+        glm
+        libzstd_static
 )
 
 if(CH_BUILD_PRESET_NAMES_INCLUDE_DIR)

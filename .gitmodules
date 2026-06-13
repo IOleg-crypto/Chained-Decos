@@ -14,6 +14,11 @@
 	url = https://github.com/google/googletest.git
 	branch = main
 
+[submodule "include/JoltPhysics"]
+    path = include/JoltPhysics
+    url = https://github.com/jrouwe/JoltPhysics.git
+    branch = master
+
 [submodule "include/entt"]
 	path = include/entt
 	url = https://github.com/skypjack/entt.git
@@ -69,3 +74,12 @@
 [submodule "include/zstd"]
 	path = include/zstd
 	url = https://github.com/facebook/zstd.git
+
+[submodule "include/spdlog"]
+    path = include/spdlog
+    url = https://github.com/gabime/spdlog.git
+
+[submodule "include/reflect-cpp"]
+    path = include/reflect-cpp
+    url = https://github.com/getml/reflect-cpp.git
+

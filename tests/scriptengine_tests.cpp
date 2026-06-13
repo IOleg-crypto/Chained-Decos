@@ -2,7 +2,7 @@
 #include "gtest/gtest.h"
 #include "scripting/scriptengine.h"
 #include "engine/assets/asset_manager.h"
-#include "engine/core/application.h"
+#include "engine/runtime/application.h"
 
 #include <filesystem>
 #include <vector>

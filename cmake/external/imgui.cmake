@@ -27,8 +27,8 @@ target_include_directories(engine_external_imgui PUBLIC
 # ImGui depends on GLFW and GLAD for its backends
 target_link_libraries(engine_external_imgui 
     PUBLIC 
-        ChainedEngine::External::GLFW 
-        ChainedEngine::External::GLAD
+        glfw 
+        engine_external_glad
 )
 
 target_compile_definitions(engine_external_imgui PUBLIC 
@@ -38,4 +38,3 @@ target_compile_definitions(engine_external_imgui PUBLIC
 )
 
 set_target_properties(engine_external_imgui PROPERTIES UNITY_BUILD OFF)
-add_library(ChainedEngine::External::ImGui ALIAS engine_external_imgui)

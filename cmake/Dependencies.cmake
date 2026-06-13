@@ -1,5 +1,5 @@
 # ============================================================================
-# Chained Engine - Dependencies (Modular Configuration)
+# Chained Engine - Dependencies Configuration
 # ============================================================================
 
 # Add external modules directory to search path
@@ -14,7 +14,6 @@ include(stb)
 include(cereal)
 include(zstd)
 include(spdlog)
-include(bs_thread_pool)
 include(jolt)
 
 # Platform & Graphics (independent)

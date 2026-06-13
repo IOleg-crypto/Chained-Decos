@@ -1,34 +1,4 @@
 chained_add_engine_module(engine_scene
-    SOURCES
-        scene.cpp
-        entity.cpp
-        component_registry.cpp
-        systems/scene_resource_manager.cpp
-        systems/hierarchy_system.cpp
-        animation_systems.cpp
-        scene_camera.cpp
-        scene_camera.h
-       
-        scene_events.h
-        scene_settings.h
-        components.h
-        components/animation_component.h
-        components/audio_component.h
-        components/camera_component.h
-        components/control_component.h
-        components/hierarchy_component.h
-        components/id_component.h
-        components/light_component.h
-        components/mesh_component.h
-        components/navigation_component.h
-        components/physics_component.h
-        components/scripting_components.h
-        components/shader_component.h
-        components/tag_component.h
-        components/transform_component.h
-        components/sprite_component.h
-        systems/scene_resource_manager.h
-        entity.h
     DEPENDS
         engine_reflection
         engine_core
@@ -37,9 +7,9 @@ chained_add_engine_module(engine_scene
         engine_physics
         engine_audio
         engine_scripting
-        ChainedEngine::External::EnTT
-        ChainedEngine::External::GLM
-        ChainedEngine::External::ImGui
+        engine_external_entt
+        glm
+        engine_external_imgui
 )
 
 set_target_properties(engine_scene PROPERTIES UNITY_BUILD OFF)

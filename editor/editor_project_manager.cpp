@@ -1,3 +1,4 @@
+#include "engine/platform/utils/file_dialogs.h"
 #include "editor_project_manager.h"
 #include "editor_layer.h"
 #include "engine/project/project.h"
@@ -44,7 +45,7 @@ void EditorProjectManager::NewProject(const std::string& name, const std::string
 void EditorProjectManager::OpenProject()
 {
     std::vector<FileDialogFilter> filters = {{"Chained Project", "chproject"}};
-    auto result = Chained::Platform::OpenFile(filters);
+    auto result = Chained::FileDialogs::OpenFile(filters);
     if (result)
     {
         OpenProject(*result);

@@ -1,7 +1,7 @@
 #include "components/game_components.h"
 #include "scripting/script_glue_internal.h"
 #include "scripting/script_internal_call_registry.h"
-#include "engine/core/application.h"
+#include "engine/runtime/application.h"
 
 namespace Chained {
 

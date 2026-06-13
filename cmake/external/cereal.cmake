@@ -8,7 +8,6 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/include/cereal/CMakeLists.txt")
     set(SKIP_PORTABILITY_TEST ON CACHE BOOL "" FORCE)
 
     add_subdirectory("${CMAKE_SOURCE_DIR}/include/cereal" "${CMAKE_BINARY_DIR}/vendor/cereal" EXCLUDE_FROM_ALL)
-    add_library(ChainedEngine::External::Cereal ALIAS cereal)
 else()
     message(FATAL_ERROR "cereal submodule missing at ${CMAKE_SOURCE_DIR}/include/cereal")
 endif()

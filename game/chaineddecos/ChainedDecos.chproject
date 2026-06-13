@@ -49,6 +49,6 @@ Project:
     ShowSelectedWireframe: true
   Scripting:
     ModuleName: ChainedDecos.Scripts.dll
-    ModuleDirectory: scripts/bin
+    ModuleDirectory: assets/bin
     AutoLoad: true
   BuildConfig: 0

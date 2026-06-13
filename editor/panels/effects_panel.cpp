@@ -1,6 +1,6 @@
 #include "effects_panel.h"
 #include "editor/editor_layer.h"
-#include "engine/core/application.h"
+#include "engine/runtime/application.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "scene/scene.h"
 

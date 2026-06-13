@@ -1,5 +1,5 @@
 #include "engine/assets/asset_manager.h"
-#include "engine/core/application.h"
+#include "engine/runtime/application.h"
 #include "engine/scene/scene.h"
 #include "engine/serialization/scene_serializer.h"
 #include "gtest/gtest.h"

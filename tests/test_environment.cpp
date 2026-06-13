@@ -3,7 +3,7 @@
 // then tears it down after all tests complete. This provides a valid engine context
 // (log system, event bus, etc.) without showing a window.
 #include "gtest/gtest.h"
-#include "engine/core/application.h"
+#include "engine/runtime/application.h"
 #include "engine/graphics/pipeline/renderer.h"
 
 class TestApplication : public Chained::Application

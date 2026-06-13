@@ -20,11 +20,9 @@ UUID::UUID(uint64_t uuid)
 UUID::UUID(const std::string& uuidStr)
 {
     auto [ptr, ec] = std::from_chars(uuidStr.data(), uuidStr.data() + uuidStr.size(), m_UUID);
-
-    // Якщо парсинг завершився помилкою (наприклад, рядок порожній або там текст)
     if (ec != std::errc{})
     {
-        m_UUID = 0; // Гарантовано і безпечно зануляємо хендл (Invalid ID)
+        m_UUID = 0;
     }
 }
 

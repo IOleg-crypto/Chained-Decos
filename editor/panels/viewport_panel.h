@@ -30,7 +30,7 @@ struct GizmoBtn
     GizmoType type;
     const char* icon;
     const char* tooltip;
-    int key;
+    Chained::KeyCode key;
 };
 
 class ViewportPanel : public Panel

@@ -4,7 +4,7 @@
 
 namespace Chained {
 
-    void RegisterGlueCamera() {}
+    
 
     // ── Camera ────────────────────────────────────────────────────────────
     CH_SCRIPT_FUNC void Camera_GetForward(uint64_t entityID, glm::vec3* outForward) {
@@ -15,7 +15,7 @@ namespace Chained {
             *outForward = rotation * glm::vec3(0.0f, 0.0f, -1.0f);
         }
     }
-    CH_ADD_INTERNAL_CALL(CameraComponent, Camera_GetForward_Ptr, Camera_GetForward);
+    
 
     CH_SCRIPT_FUNC void Camera_GetRight(uint64_t entityID, glm::vec3* outRight) {
         Entity entity = GetEntity(entityID);
@@ -25,7 +25,7 @@ namespace Chained {
             *outRight = rotation * glm::vec3(1.0f, 0.0f, 0.0f);
         }
     }
-    CH_ADD_INTERNAL_CALL(CameraComponent, Camera_GetRight_Ptr, Camera_GetRight);
+    
 
     CH_SCRIPT_FUNC void Camera_GetOrbit(uint64_t entityID, float* yaw, float* pitch, float* distance) {
         Entity entity = GetEntity(entityID);
@@ -36,7 +36,7 @@ namespace Chained {
             *distance = camera.OrbitDistance;
         }
     }
-    CH_ADD_INTERNAL_CALL(CameraComponent, Camera_GetOrbit_Ptr, Camera_GetOrbit);
+    
 
     CH_SCRIPT_FUNC void Camera_SetOrbit(uint64_t entityID, float yaw, float pitch, float distance) {
         Entity entity = GetEntity(entityID);
@@ -74,13 +74,13 @@ namespace Chained {
             ComponentUtils::SetRotationQuat(tc, rotation);
         }
     }
-    CH_ADD_INTERNAL_CALL(CameraComponent, Camera_SetOrbit_Ptr, Camera_SetOrbit);
+    
 
     CH_SCRIPT_FUNC bool Camera_GetPrimary(uint64_t entityID) {
         Entity entity = GetEntity(entityID);
         return entity && entity.HasComponent<CameraComponent>() ? entity.GetComponent<CameraComponent>().Primary : false;
     }
-    CH_ADD_INTERNAL_CALL(CameraComponent, Camera_GetPrimary_Ptr, Camera_GetPrimary);
+    
 
     CH_SCRIPT_FUNC void Camera_SetPrimary(uint64_t entityID, bool primary) {
         Entity entity = GetEntity(entityID);
@@ -89,33 +89,38 @@ namespace Chained {
             entity.GetComponent<CameraComponent>().Primary = primary;
         }
     }
-    CH_ADD_INTERNAL_CALL(CameraComponent, Camera_SetPrimary_Ptr, Camera_SetPrimary);
+    
 
     CH_SCRIPT_FUNC bool Camera_GetIsOrbit(uint64_t entityID) {
         Entity entity = GetEntity(entityID);
         return entity && entity.HasComponent<CameraComponent>() ? entity.GetComponent<CameraComponent>().IsOrbitCamera : false;
     }
-    CH_ADD_INTERNAL_CALL(CameraComponent, Camera_GetIsOrbit_Ptr, Camera_GetIsOrbit);
+    
 
     CH_SCRIPT_FUNC void Camera_SetIsOrbit(uint64_t entityID, bool isOrbit) {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<CameraComponent>()) 
             entity.GetComponent<CameraComponent>().IsOrbitCamera = isOrbit;
     }
-    CH_ADD_INTERNAL_CALL(CameraComponent, Camera_SetIsOrbit_Ptr, Camera_SetIsOrbit);
+    
 
     CH_SCRIPT_FUNC Coral::String Camera_GetTargetTag(uint64_t entityID) {
         Entity entity = GetEntity(entityID);
         return entity && entity.HasComponent<CameraComponent>() ? Coral::String::New(entity.GetComponent<CameraComponent>().TargetEntityTag) : Coral::String::New("");
     }
-    CH_ADD_INTERNAL_CALL(CameraComponent, Camera_GetTargetTag_Ptr, Camera_GetTargetTag);
+    
 
     CH_SCRIPT_FUNC void Camera_SetTargetTag(uint64_t entityID, Coral::String tag) {
         Entity entity = GetEntity(entityID);
         if (entity && entity.HasComponent<CameraComponent>()) 
             entity.GetComponent<CameraComponent>().TargetEntityTag = (std::string)tag;
     }
-    CH_ADD_INTERNAL_CALL(CameraComponent, Camera_SetTargetTag_Ptr, Camera_SetTargetTag);
+    
 
+    void RegisterGlueCamera(Coral::ManagedAssembly& assembly) {
+            assembly.AddInternalCall("Chained.CameraComponent", "Camera_GetForward_Ptr", (void*)Camera_GetForward);
+            assembly.AddInternalCall("Chained.CameraComponent", "Camera_GetRight_Ptr", (void*)Camera_GetRight);
+
+        }
 } // namespace Chained
 

@@ -39,7 +39,6 @@ if(EXISTS "${GNS_SOURCE_DIR}/CMakeLists.txt")
     endif()
 
     if(GNS_TARGET)
-        add_library(ChainedEngine::External::GNS ALIAS ${GNS_TARGET})
         target_include_directories(${GNS_TARGET} INTERFACE "$<BUILD_INTERFACE:${GNS_SOURCE_DIR}/include>")
         
         # MinGW and Clang fixes for winmm and timeBeginPeriod

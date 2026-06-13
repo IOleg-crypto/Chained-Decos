@@ -1,12 +1,12 @@
 #ifndef CH_IMGUI_LAYER_H
 #define CH_IMGUI_LAYER_H
 
-#include "engine/core/layer.h"
+#include "engine/core/imgui_interface.h"
 #include <imgui.h>
 
 namespace Chained
 {
-class ImGuiLayer : public Layer
+class ImGuiLayer : public IImGuiLayer
 {
 public:
     ImGuiLayer();
@@ -20,18 +20,18 @@ public:
     void End();
 
     // Recreate renderer device objects so newly added ImGui fonts become visible.
-    bool RefreshFontAtlasTexture();
+    bool RefreshFontAtlasTexture() override;
 
     // Centralized font loading in the DLL to avoid cross-module atlas corruption
-    ImFont* AddFontFromFile(const std::string& path, float size, const ImFontConfig* config = nullptr, const ImWchar* ranges = nullptr);
+    void* AddFontFromFile(const std::string& path, float size, const void* config = nullptr, const void* ranges = nullptr) override;
 
-    void BlockEvents(bool block)
+    void BlockEvents(bool block) override
     {
         m_BlockEvents = block;
     }
 
     static void SetContext(ImGuiContext* context);
-    ImGuiContext* GetContext() const { return ImGui::GetCurrentContext(); }
+    void* GetContext() const override { return ImGui::GetCurrentContext(); }
 
 private:
     bool m_BlockEvents = true;

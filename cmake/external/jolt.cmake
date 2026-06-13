@@ -14,11 +14,14 @@ set(INTERPROCEDURAL_OPTIMIZATION OFF CACHE BOOL "" FORCE)
 set(USE_SSE4_2 ON CACHE BOOL "" FORCE)
 set(USE_AVX2 ON CACHE BOOL "" FORCE)
 set(USE_WERROR OFF CACHE BOOL "" FORCE)
+set(TARGET_UNIT_TESTS OFF CACHE BOOL "" FORCE)
+set(TARGET_HELLO_WORLD OFF CACHE BOOL "" FORCE)
+set(TARGET_PERFORMANCE_TEST OFF CACHE BOOL "" FORCE)
+set(TARGET_VIEWER OFF CACHE BOOL "" FORCE)
 
 FetchContent_MakeAvailable(jolt)
 
 # Jolt doesn't provide a clean target for some configurations, 
 # so we might need to manually link if it fails.
 if(TARGET Jolt)
-    add_library(JoltPhysics::Jolt ALIAS Jolt)
 endif()
