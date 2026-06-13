@@ -1,7 +1,7 @@
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
 #include "engine/serialization/component_serializer.h"
-#include "engine/core/application.h"
+#include "engine/runtime/application.h"
 #include "gtest/gtest.h"
 
 using namespace Chained;

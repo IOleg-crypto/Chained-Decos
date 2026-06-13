@@ -24,9 +24,9 @@ chained_add_engine_module(engine_physics
         jolt_physics_world.cpp
     DEPENDS
         engine_core
-        ChainedEngine::External::EnTT
-        ChainedEngine::External::GLM
-        ChainedEngine::External::Assimp
+        engine_external_entt
+        glm
+        assimp
         Jolt
 )
 

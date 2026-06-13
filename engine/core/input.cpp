@@ -103,19 +103,21 @@ namespace Chained::Core::Input
         return s_CurrentMouseWheelDelta;
     }
 
-    void OnKey(int key, bool pressed)
+    void OnKey(KeyCode key, bool pressed)
     {
-        if (key >= 0 && key < 512)
+        int code = static_cast<int>(key);
+        if (code >= 0 && code < 512)
         {
-            s_KeyStates[key] = pressed;
+            s_KeyStates[code] = pressed;
         }
     }
 
-    void OnMouseButton(int button, bool pressed)
+    void OnMouseButton(MouseCode button, bool pressed)
     {
-        if (button >= 0 && button < 16)
+        int code = static_cast<int>(button);
+        if (code >= 0 && code < 16)
         {
-            s_MouseStates[button] = pressed;
+            s_MouseStates[code] = pressed;
         }
     }
 

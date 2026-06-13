@@ -1,8 +1,8 @@
 
 #include "runtime_layer.h"
 #include "engine/assets/asset_manager.h"
-#include "engine/core/application.h"
-#include "engine/core/imgui_layer.h"
+#include "engine/runtime/application.h"
+#include "engine/imgui/imgui_layer.h"
 #include "engine/core/window.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
@@ -85,7 +85,7 @@ void RuntimeLayer::OnAttach()
 {
     if (auto* imguiLayer = Application::Get().GetImGuiLayer())
     {
-        ImGui::SetCurrentContext(imguiLayer->GetContext());
+        ImGui::SetCurrentContext(static_cast<ImGuiContext*>(imguiLayer->GetContext()));
     }
 
     auto* imguiLayer = Application::Get().GetImGuiLayer();

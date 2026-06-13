@@ -43,7 +43,6 @@ public:
     static std::filesystem::path GetExecutableDirectory();
 
 private:
-    // Системи життєвого циклу програми
     ApplicationSpecification m_Specification;
     std::unique_ptr<Window> m_Window;
     std::unique_ptr<LayerStack> m_LayerStack;

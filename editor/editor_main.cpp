@@ -1,5 +1,5 @@
 #include "editor_layer.h"
-#include "engine/core/entry_point.h"
+#include "engine/runtime/entry_point.h"
 
 namespace Chained
 {

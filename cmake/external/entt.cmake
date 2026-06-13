@@ -2,7 +2,6 @@
 if(EXISTS "${CMAKE_SOURCE_DIR}/include/entt/src")
     add_library(engine_external_entt INTERFACE)
     target_include_directories(engine_external_entt INTERFACE "${CMAKE_SOURCE_DIR}/include/entt/src")
-    add_library(ChainedEngine::External::EnTT ALIAS engine_external_entt)
 else()
     message(FATAL_ERROR "EnTT submodule missing at ${CMAKE_SOURCE_DIR}/include/entt/src")
 endif()

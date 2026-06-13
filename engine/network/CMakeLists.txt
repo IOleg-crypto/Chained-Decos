@@ -4,5 +4,5 @@ chained_add_engine_module(engine_network
         network_service.cpp
     DEPENDS
         engine_core
-        ChainedEngine::External::GNS
+        ${GNS_TARGET}
 )

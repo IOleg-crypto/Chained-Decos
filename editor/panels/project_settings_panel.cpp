@@ -1,3 +1,4 @@
+#include "engine/platform/utils/file_dialogs.h"
 #include "project_settings_panel.h"
 #include "IconsFontAwesome6.h"
 #include "editor_layer.h"
@@ -75,7 +76,7 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             if (ImGui::Button("...###IconBrowse"))
             {
                 std::vector<FileDialogFilter> filters = {{"Image Files", "png,jpg,jpeg"}};
-                auto result = Chained::Platform::OpenFile(filters);
+                auto result = Chained::FileDialogs::OpenFile(filters);
                 if (result)
                 {
                     config.IconPath = project->GetRelativePathForProject(result->string());
@@ -125,7 +126,7 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             ImGui::SameLine();
             if (ImGui::Button("...###ModuleDirBrowse"))
             {
-                auto result = Chained::Platform::PickFolder();
+                auto result = Chained::FileDialogs::PickFolder();
                 if (result)
                 {
                     config.Scripting.ModuleDirectory = project->GetRelativePathForProject(result->string());

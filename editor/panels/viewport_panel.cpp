@@ -54,10 +54,10 @@ void ViewportPanel::ClearSceneBackground(Scene* scene)
 }
 
 static const GizmoBtn s_GizmoBtns[] = {
-    {GizmoType::NONE, ICON_FA_ARROW_POINTER "##Select", "Select (Q)", Chained::Key::Q},
-    {GizmoType::TRANSLATE, ICON_FA_UP_DOWN_LEFT_RIGHT "##Translate", "Translate (W)", Chained::Key::W},
-    {GizmoType::ROTATE, ICON_FA_ARROWS_ROTATE "##Rotate", "Rotate (E)", Chained::Key::E},
-    {GizmoType::SCALE, ICON_FA_UP_RIGHT_FROM_SQUARE "##Scale", "Scale (R)", Chained::Key::R}};
+    {GizmoType::NONE, ICON_FA_ARROW_POINTER "##Select", "Select (Q)", Chained::KeyCode::Q},
+    {GizmoType::TRANSLATE, ICON_FA_UP_DOWN_LEFT_RIGHT "##Translate", "Translate (W)", Chained::KeyCode::W},
+    {GizmoType::ROTATE, ICON_FA_ARROWS_ROTATE "##Rotate", "Rotate (E)", Chained::KeyCode::E},
+    {GizmoType::SCALE, ICON_FA_UP_RIGHT_FROM_SQUARE "##Scale", "Scale (R)", Chained::KeyCode::R}};
 
 void ViewportPanel::DrawCameraSelector(Scene* scene)
 {
@@ -231,7 +231,7 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
             }
         }
 
-        if (Chained::Core::Input::IsKeyDown(Chained::Key::LeftControl) && Chained::Core::Input::IsKeyPressed(Chained::Key::D))
+        if (Chained::Core::Input::IsKeyDown(Chained::KeyCode::LeftControl) && Chained::Core::Input::IsKeyPressed(Chained::KeyCode::D))
         {
             Entity selected = EditorLayer::Get().GetSelectedEntity();
             if (selected){
@@ -249,7 +249,7 @@ void ViewportPanel::OnUpdate(Timestep ts)
         auto activeScene = EditorLayer::Get().GetActiveScene();
         // Use m_Focused/m_Hovered that were set in the PREVIOUS frame's ImGuiRender.
         // Also allow update if right mouse is held (user clicked into viewport from outside).
-        bool mouseInViewport = m_Hovered || m_Focused || Chained::Core::Input::IsMouseButtonDown(Chained::Mouse::ButtonRight);
+        bool mouseInViewport = m_Hovered || m_Focused || Chained::Core::Input::IsMouseButtonDown(Chained::MouseCode::ButtonRight);
         if (activeScene && mouseInViewport)
         {
             Entity primaryCamera = SceneRenderer::GetPrimaryCameraEntity(activeScene->GetRegistry(), activeScene->GetRegistryPtr());

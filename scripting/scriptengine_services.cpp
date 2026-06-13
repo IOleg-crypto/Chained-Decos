@@ -1,6 +1,6 @@
 #include "scriptengine_services.h"
 
-#include "engine/core/application.h"
+#include "engine/runtime/application.h"
 #include "engine/core/log.h"
 #include "scripting/scriptengine.h"
 #include "engine/project/project.h"
@@ -338,9 +338,9 @@ bool ScriptHost::LoadAssembliesTransactional(const std::filesystem::path& appAss
     m_CoreAssembly = loadedCore;
     m_AppAssembly = loadedApp;
 
-    // Register internal calls (native function pointers) for both assemblies
-    ScriptGlue::RegisterInternalCalls(*m_CoreAssembly);
-    ScriptGlue::RegisterInternalCalls(*m_AppAssembly);
+    // Register internal calls (native function pointers)
+    if (m_CoreAssembly)
+        ScriptGlue::RegisterInternalCalls(*m_CoreAssembly);
 
     CH_CORE_INFO("ScriptEngine: Loaded core assembly '{}'.", corePath.string());
     CH_CORE_INFO("ScriptEngine: Loaded app assembly '{}'.", appAssemblyPath.string());

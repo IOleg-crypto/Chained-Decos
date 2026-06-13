@@ -1,5 +1,5 @@
-#include "engine/core/application.h"
-#include "engine/core/entry_point.h"
+#include "engine/runtime/application.h"
+#include "engine/runtime/entry_point.h"
 #include "engine/project/project.h"
 #include "runtime/runtime_layer.h"
 

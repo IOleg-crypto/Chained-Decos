@@ -449,19 +449,18 @@ void AssimpImporter::DecodeEmbeddedTextures()
     {
         return;
     }
-    auto* resource = m_Data.meshes.get_allocator().resource();
     std::vector<std::future<void>> futures;
     std::mutex mapMutex;
 
     for (unsigned int i = 0; i < m_Scene->mNumTextures; ++i)
     {
-        auto task = [this, i, resource, &mapMutex] {
-            EmbeddedTextureData etd(resource);
+        auto task = [this, i, &mapMutex] {
+            EmbeddedTextureData etd;
             if (DecodeEmbeddedTexture(m_Scene->mTextures[i], etd))
             {
                 auto name = std::to_string(i); // Спрощено назву ключа
                 std::lock_guard lock(mapMutex);
-                m_Data.embeddedTextures.emplace(std::pmr::string(name.c_str(), resource), std::move(etd));
+                m_Data.embeddedTextures.emplace(name, std::move(etd));
             }
         };
         if (m_Scene->mNumTextures > 1)
@@ -528,8 +527,8 @@ void AssimpImporter::ProcessAnimations()
                 double time = f * ticksPerFrame;
                 ra.framePoses[static_cast<size_t>(f) * ra.boneCount + boneIdx] = {
                     InterpolatePosition(time, channel, lastPosKey, bindPoses[boneIdx].translation),
-                    InterpolateScale(time, channel, lastSclKey, bindPoses[boneIdx].scale),
-                    InterpolateRotation(time, channel, lastRotKey, bindPoses[boneIdx].rotation)};
+                    InterpolateRotation(time, channel, lastRotKey, bindPoses[boneIdx].rotation),
+                    InterpolateScale(time, channel, lastSclKey, bindPoses[boneIdx].scale)};
             }
         }
     }
@@ -553,12 +552,14 @@ void AssimpImporter::MergeMeshesByMaterial()
         }
     }
 
-    std::pmr::vector<RawMesh> mergedMeshes(m_Data.meshes.get_allocator());
-    std::pmr::vector<MeshInstance> mergedInstances(m_Data.instances.get_allocator());
+    std::vector<RawMesh> mergedMeshes;
+    mergedMeshes.reserve(groups.size());
+    std::vector<MeshInstance> mergedInstances;
+    mergedInstances.reserve(groups.size());
 
     for (auto& [matIdx, instanceIndices] : groups)
     {
-        RawMesh merged(m_Data.meshes.get_allocator().resource());
+        RawMesh merged;
         merged.materialIndex = matIdx;
         merged.MinBounds = {FLT_MAX, FLT_MAX, FLT_MAX};
         merged.MaxBounds = {-FLT_MAX, -FLT_MAX, -FLT_MAX};

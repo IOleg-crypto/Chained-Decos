@@ -15,6 +15,16 @@ public abstract class Component
     
     /// <summary>Short-cut to the entity's transform.</summary>
     public TransformComponent Transform => Entity.Transform;
+
+    protected unsafe TField GetField<TComponent, TField>(string fieldName) where TComponent : Component
+    {
+        return Entity.GetField<TComponent, TField>(fieldName);
+    }
+
+    protected unsafe void SetField<TComponent, TField>(string fieldName, TField value) where TComponent : Component
+    {
+        Entity.SetField<TComponent, TField>(fieldName, value);
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -90,6 +100,48 @@ public class Entity
     /// <summary>Clears the component cache.</summary>
     public void InvalidateComponentCache() => _cache.Clear();
 
+    // ── Universal Reflection Property Access ────────────────────────────────
+
+    internal static unsafe delegate* unmanaged<ulong, NativeString, NativeString, void*, bool> Entity_GetComponentField_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, NativeString, NativeString, void*, bool> Entity_SetComponentField_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, NativeString, NativeString, NativeString> Entity_GetComponentFieldString_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, NativeString, NativeString, NativeString, bool> Entity_SetComponentFieldString_Ptr;
+
+    /// <summary>Reads a field dynamically using reflection-cpp from the engine.</summary>
+    public unsafe TField GetField<TComponent, TField>(string fieldName) where TComponent : Component
+    {
+        if (!IsValid) return default(TField)!;
+
+        // String needs special marshalling across Coral due to non-blittable memory boundaries
+        if (typeof(TField) == typeof(string))
+        {
+            string? s = Entity_GetComponentFieldString_Ptr(ID, typeof(TComponent).Name, fieldName);
+            return (TField)(object)(s ?? string.Empty);
+        }
+
+        TField result = default(TField)!;
+        void* ptr = System.Runtime.CompilerServices.Unsafe.AsPointer(ref result);
+        bool success = Entity_GetComponentField_Ptr(ID, typeof(TComponent).Name, fieldName, ptr);
+        return result;
+    }
+
+    /// <summary>Writes a field dynamically using reflection-cpp from the engine.</summary>
+    public unsafe void SetField<TComponent, TField>(string fieldName, TField value) where TComponent : Component
+    {
+        if (!IsValid) return;
+
+        if (typeof(TField) == typeof(string))
+        {
+            // Explicit type casting logic for Strings
+            string s = (string)(object)value!;
+            Entity_SetComponentFieldString_Ptr(ID, typeof(TComponent).Name, fieldName, s);
+            return;
+        }
+
+        void* ptr = System.Runtime.CompilerServices.Unsafe.AsPointer(ref value);
+        Entity_SetComponentField_Ptr(ID, typeof(TComponent).Name, fieldName, ptr);
+    }
+
     public override string ToString() => $"Entity({ID})";
 }
 
@@ -100,88 +152,97 @@ public class Entity
 /// <summary>Transform wrapper.</summary>
 public class TransformComponent : Component
 {
-#pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, Vector3*, void> Transform_GetTranslation_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, Vector3*, void> Transform_SetTranslation_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, Vector3*, void> Transform_GetRotation_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, Vector3*, void> Transform_SetRotation_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, Vector3*, void> Transform_GetScale_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, Vector3*, void> Transform_SetScale_Ptr;
-#pragma warning restore 0649
-
     public Vector3 Translation
     {
-        get { unsafe { Vector3 translation; Transform_GetTranslation_Ptr(Entity.ID, &translation); return translation; } }
-        set { unsafe { Transform_SetTranslation_Ptr(Entity.ID, &value); } }
+        get => GetField<TransformComponent, Vector3>("Translation");
+        set => SetField<TransformComponent, Vector3>("Translation", value);
     }
 
     public Vector3 Rotation
     {
-        get { unsafe { Vector3 rotation; Transform_GetRotation_Ptr(Entity.ID, &rotation); return rotation; } }
-        set { unsafe { Transform_SetRotation_Ptr(Entity.ID, &value); } }
+        get => GetField<TransformComponent, Vector3>("Rotation");
+        set => SetField<TransformComponent, Vector3>("Rotation", value);
     }
 
     public Vector3 Scale
     {
-        get { unsafe { Vector3 scale; Transform_GetScale_Ptr(Entity.ID, &scale); return scale; } }
-        set { unsafe { Transform_SetScale_Ptr(Entity.ID, &value); } }
+        get => GetField<TransformComponent, Vector3>("Scale");
+        set => SetField<TransformComponent, Vector3>("Scale", value);
     }
 }
 
 /// <summary>Model/Mesh wrapper.</summary>
 public class ModelComponent : Component
 {
-#pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, NativeString> Model_GetModelPath_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, NativeString, void> Model_SetModelPath_Ptr;
-#pragma warning restore 0649
-
     public string ModelPath
     {
-        get { unsafe { string? result = Model_GetModelPath_Ptr(Entity.ID); return result ?? string.Empty; } }
-        set { unsafe { Model_SetModelPath_Ptr(Entity.ID, value); } }
+        get => GetField<ModelComponent, string>("ModelPath");
+        set => SetField<ModelComponent, string>("ModelPath", value);
     }
 }
 
 /// <summary>Rigid-body wrapper.</summary>
 public class RigidBodyComponent : Component
 {
-#pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, Vector3*, void> RigidBody_GetVelocity_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, Vector3*, void> RigidBody_SetVelocity_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool> RigidBody_IsGrounded_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool> RigidBody_IsKinematic_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool, void> RigidBody_SetKinematic_Ptr;
-#pragma warning restore 0649
-
     public Vector3 Velocity
     {
-        get { unsafe { Vector3 velocity; RigidBody_GetVelocity_Ptr(Entity.ID, &velocity); return velocity; } }
-        set { unsafe { RigidBody_SetVelocity_Ptr(Entity.ID, &value); } }
+        get => GetField<RigidBodyComponent, Vector3>("Velocity");
+        set => SetField<RigidBodyComponent, Vector3>("Velocity", value);
     }
 
-    public bool IsGrounded { get { unsafe { return RigidBody_IsGrounded_Ptr(Entity.ID); } } }
+    public bool IsGrounded => GetField<RigidBodyComponent, bool>("IsGrounded");
 
     public bool IsKinematic
     {
-        get { unsafe { return RigidBody_IsKinematic_Ptr(Entity.ID); } }
-        set { unsafe { RigidBody_SetKinematic_Ptr(Entity.ID, value); } }
+        get => GetField<RigidBodyComponent, bool>("IsKinematic");
+        set => SetField<RigidBodyComponent, bool>("IsKinematic", value);
     }
 }
 
-/// <summary>Tag wrapper.</summary>
-public class TagComponent : Component
+/// <summary>Player settings wrapper — reads directly from the C++ PlayerComponent.</summary>
+public class PlayerComponent : Component
 {
-#pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, NativeString> TagComponent_GetTag_Ptr;
-#pragma warning restore 0649
-
-    private static unsafe string? GetTag_Native(ulong entityID)
+    public float MovementSpeed
     {
-        return TagComponent_GetTag_Ptr(entityID);
+        get => GetField<PlayerComponent, float>("MovementSpeed");
+        set => SetField<PlayerComponent, float>("MovementSpeed", value);
     }
 
-    public string Tag => GetTag_Native(Entity.ID) ?? string.Empty;
+    public float JumpForce
+    {
+        get => GetField<PlayerComponent, float>("JumpForce");
+        set => SetField<PlayerComponent, float>("JumpForce", value);
+    }
+
+    public float LookSensitivity
+    {
+        get => GetField<PlayerComponent, float>("LookSensitivity");
+        set => SetField<PlayerComponent, float>("LookSensitivity", value);
+    }
+}
+
+/// <summary>Audio wrapper.</summary>
+public class AudioComponent : Component
+{
+#pragma warning disable 0649
+    internal static unsafe delegate* unmanaged<ulong, void> AudioComponent_Play_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, void> AudioComponent_Stop_Ptr;
+#pragma warning restore 0649
+
+    public float Volume { get => GetField<AudioComponent, float>("Volume"); set => SetField<AudioComponent, float>("Volume", value); }
+    public bool  Loop   { get => GetField<AudioComponent, bool>("Loop"); set => SetField<AudioComponent, bool>("Loop", value); }
+    public bool  IsPlaying  => GetField<AudioComponent, bool>("IsPlaying");
+    public string SoundPath { get => GetField<AudioComponent, string>("SoundPath"); set => SetField<AudioComponent, string>("SoundPath", value); }
+
+    public void Play() 
+    {
+        unsafe { AudioComponent_Play_Ptr(Entity.ID); }
+    }
+
+    public void Stop()
+    {
+        unsafe { AudioComponent_Stop_Ptr(Entity.ID); }
+    }
 }
 
 /// <summary>Camera wrapper.</summary>
@@ -190,14 +251,6 @@ public class CameraComponent : Component
 #pragma warning disable 0649
     internal static unsafe delegate* unmanaged<ulong, Vector3*, void> Camera_GetForward_Ptr;
     internal static unsafe delegate* unmanaged<ulong, Vector3*, void> Camera_GetRight_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, float*, float*, float*, void> Camera_GetOrbit_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, float, float, float, void> Camera_SetOrbit_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool> Camera_GetPrimary_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool, void> Camera_SetPrimary_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool> Camera_GetIsOrbit_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool, void> Camera_SetIsOrbit_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, NativeString> Camera_GetTargetTag_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, NativeString, void> Camera_SetTargetTag_Ptr;
 #pragma warning restore 0649
 
     private static void GetForward(ulong entityID, out Vector3 outForward)
@@ -208,16 +261,6 @@ public class CameraComponent : Component
     private static void GetRight(ulong entityID, out Vector3 outRight)
     {
         unsafe { fixed (Vector3* p = &outRight) Camera_GetRight_Ptr(entityID, p); }
-    }
-
-    private static void GetOrbit(ulong entityID, out float yaw, out float pitch, out float distance)
-    {
-        unsafe { fixed (float* yawPtr = &yaw, pitchPtr = &pitch, distancePtr = &distance) Camera_GetOrbit_Ptr(entityID, yawPtr, pitchPtr, distancePtr); }
-    }
-
-    private static void SetOrbit(ulong entityID, float yaw, float pitch, float distance)
-    {
-        unsafe { Camera_SetOrbit_Ptr(entityID, yaw, pitch, distance); }
     }
 
     public Vector3 Forward
@@ -231,141 +274,71 @@ public class CameraComponent : Component
     }
 
     public void GetOrbit(out float yaw, out float pitch, out float distance)
-        => GetOrbit(Entity.ID, out yaw, out pitch, out distance);
+    {
+        yaw = GetField<CameraComponent, float>("OrbitYaw");
+        pitch = GetField<CameraComponent, float>("OrbitPitch");
+        distance = GetField<CameraComponent, float>("OrbitDistance");
+    }
 
     public void SetOrbit(float yaw, float pitch, float distance)
-        => SetOrbit(Entity.ID, yaw, pitch, distance);
+    {
+        SetField<CameraComponent, float>("OrbitYaw", yaw);
+        SetField<CameraComponent, float>("OrbitPitch", pitch);
+        SetField<CameraComponent, float>("OrbitDistance", distance);
+    }
 
     public bool Primary
     {
-        get { unsafe { return Camera_GetPrimary_Ptr(Entity.ID); } }
-        set { unsafe { Camera_SetPrimary_Ptr(Entity.ID, value); } }
+        get => GetField<CameraComponent, bool>("Primary");
+        set => SetField<CameraComponent, bool>("Primary", value);
     }
 
     public bool IsOrbitCamera
     {
-        get { unsafe { return Camera_GetIsOrbit_Ptr(Entity.ID); } }
-        set { unsafe { Camera_SetIsOrbit_Ptr(Entity.ID, value); } }
+        get => GetField<CameraComponent, bool>("IsOrbitCamera");
+        set => SetField<CameraComponent, bool>("IsOrbitCamera", value);
     }
 
     public string TargetEntityTag
     {
-        get { unsafe { string? result = Camera_GetTargetTag_Ptr(Entity.ID); return result ?? string.Empty; } }
-        set { unsafe { Camera_SetTargetTag_Ptr(Entity.ID, value); } }
+        get => GetField<CameraComponent, string>("TargetEntityTag");
+        set => SetField<CameraComponent, string>("TargetEntityTag", value);
     }
 }
 
-/// <summary>Player settings wrapper — reads directly from the C++ PlayerComponent.</summary>
-public class PlayerComponent : Component
-{
-#pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, float> PlayerComponent_GetMovementSpeed_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, float, void> PlayerComponent_SetMovementSpeed_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, float> PlayerComponent_GetJumpForce_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, float, void> PlayerComponent_SetJumpForce_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, float> PlayerComponent_GetLookSensitivity_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, float, void> PlayerComponent_SetLookSensitivity_Ptr;
-#pragma warning restore 0649
 
-    public float MovementSpeed
-    {
-        get { unsafe { return PlayerComponent_GetMovementSpeed_Ptr(Entity.ID); } }
-        set { unsafe { PlayerComponent_SetMovementSpeed_Ptr(Entity.ID, value); } }
-    }
-
-    public float JumpForce
-    {
-        get { unsafe { return PlayerComponent_GetJumpForce_Ptr(Entity.ID); } }
-        set { unsafe { PlayerComponent_SetJumpForce_Ptr(Entity.ID, value); } }
-    }
-
-    public float LookSensitivity
-    {
-        get { unsafe { return PlayerComponent_GetLookSensitivity_Ptr(Entity.ID); } }
-        set { unsafe { PlayerComponent_SetLookSensitivity_Ptr(Entity.ID, value); } }
-    }
-}
-
-/// <summary>Audio wrapper.</summary>
-public class AudioComponent : Component
-{
-#pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, float, void> AudioComponent_SetVolume_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool, void> AudioComponent_SetLoop_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool> AudioComponent_IsPlaying_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, NativeString> AudioComponent_GetSoundPath_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, void> AudioComponent_Play_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, void> AudioComponent_Stop_Ptr;
-#pragma warning restore 0649
-
-    private static unsafe void SetVolume(ulong entityID, float volume) => AudioComponent_SetVolume_Ptr(entityID, volume);
-    private static unsafe void SetLoop(ulong entityID, bool loop) => AudioComponent_SetLoop_Ptr(entityID, loop);
-    private static unsafe bool IsPlaying_Native(ulong entityID) => AudioComponent_IsPlaying_Ptr(entityID);
-    private static unsafe string? GetSoundPath(ulong entityID)
-    {
-        return AudioComponent_GetSoundPath_Ptr(entityID);
-    }
-
-    public float Volume { set => SetVolume(Entity.ID, value); }
-    public bool  Loop   { set => SetLoop(Entity.ID, value); }
-    public bool  IsPlaying  => IsPlaying_Native(Entity.ID);
-    public string SoundPath => GetSoundPath(Entity.ID) ?? string.Empty;
-
-    public void Play() 
-    {
-        unsafe { AudioComponent_Play_Ptr(Entity.ID); }
-    }
-
-    public void Stop()
-    {
-        unsafe { AudioComponent_Stop_Ptr(Entity.ID); }
-    }
-}
 
 /// <summary>2D Sprite wrapper.</summary>
 public class SpriteComponent : Component
 {
-#pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, NativeString> SpriteComponent_GetTexturePath_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, NativeString, void> SpriteComponent_SetTexturePath_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, Vector4*, void> SpriteComponent_GetTint_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, Vector4, void> SpriteComponent_SetTint_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool> SpriteComponent_GetFlipX_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool, void> SpriteComponent_SetFlipX_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool> SpriteComponent_GetFlipY_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool, void> SpriteComponent_SetFlipY_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, int> SpriteComponent_GetZOrder_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, int, void> SpriteComponent_SetZOrder_Ptr;
-#pragma warning restore 0649
-
     public string TexturePath
     {
-        get { unsafe { return SpriteComponent_GetTexturePath_Ptr(Entity.ID); } }
-        set { unsafe { SpriteComponent_SetTexturePath_Ptr(Entity.ID, value); } }
+        get => GetField<SpriteComponent, string>("TexturePath");
+        set => SetField<SpriteComponent, string>("TexturePath", value);
     }
 
     public Vector4 Tint
     {
-        get { unsafe { Vector4 v; SpriteComponent_GetTint_Ptr(Entity.ID, &v); return v; } }
-        set { unsafe { SpriteComponent_SetTint_Ptr(Entity.ID, value); } }
+        get => GetField<SpriteComponent, Vector4>("Tint");
+        set => SetField<SpriteComponent, Vector4>("Tint", value);
     }
 
     public bool FlipX
     {
-        get { unsafe { return SpriteComponent_GetFlipX_Ptr(Entity.ID); } }
-        set { unsafe { SpriteComponent_SetFlipX_Ptr(Entity.ID, value); } }
+        get => GetField<SpriteComponent, bool>("FlipX");
+        set => SetField<SpriteComponent, bool>("FlipX", value);
     }
 
     public bool FlipY
     {
-        get { unsafe { return SpriteComponent_GetFlipY_Ptr(Entity.ID); } }
-        set { unsafe { SpriteComponent_SetFlipY_Ptr(Entity.ID, value); } }
+        get => GetField<SpriteComponent, bool>("FlipY");
+        set => SetField<SpriteComponent, bool>("FlipY", value);
     }
 
     public int ZOrder
     {
-        get { unsafe { return SpriteComponent_GetZOrder_Ptr(Entity.ID); } }
-        set { unsafe { SpriteComponent_SetZOrder_Ptr(Entity.ID, value); } }
+        get => GetField<SpriteComponent, int>("ZOrder");
+        set => SetField<SpriteComponent, int>("ZOrder", value);
     }
 }
 
@@ -429,64 +402,28 @@ public class ComboBoxControl : Component
 /// <summary>Spawn point wrapper.</summary>
 public class SpawnComponent : Component
 {
-#pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, bool> SpawnComponent_IsActive_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, Vector3*, void> SpawnComponent_GetSpawnPoint_Ptr;
-#pragma warning restore 0649
-
-    private static unsafe bool IsActive_Native(ulong entityID) => SpawnComponent_IsActive_Ptr(entityID);
-    private static void GetSpawnPoint(ulong entityID, out Vector3 point)
-    {
-        unsafe { fixed (Vector3* p = &point) SpawnComponent_GetSpawnPoint_Ptr(entityID, p); }
-    }
-
-    public bool IsActive => IsActive_Native(Entity.ID);
-    public Vector3 SpawnPoint
-    {
-        get { GetSpawnPoint(Entity.ID, out Vector3 spawnPoint); return spawnPoint; }
-    }
+    public bool IsActive => GetField<SpawnComponent, bool>("IsActive");
+    public Vector3 SpawnPoint => GetField<SpawnComponent, Vector3>("SpawnPoint");
 }
 
 /// <summary>Scene transition wrapper.</summary>
 public class SceneTransitionComponent : Component
 {
-#pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, NativeString> SceneTransitionComponent_GetTargetScene_Ptr;
-#pragma warning restore 0649
-
-    private static unsafe string? GetTargetScene(ulong entityID)
-    {
-        return SceneTransitionComponent_GetTargetScene_Ptr(entityID);
-    }
-    public string? TargetScene => GetTargetScene(Entity.ID);
+    public string? TargetScene => GetField<SceneTransitionComponent, string>("TargetScene");
 }
 
 /// <summary>RPG stats wrapper.</summary>
 public class RPGStatsComponent : Component
 {
-#pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, int> RPGStatsComponent_GetLevel_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, int, void> RPGStatsComponent_SetLevel_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, float> RPGStatsComponent_GetHealth_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, float, void> RPGStatsComponent_SetHealth_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, int> RPGStatsComponent_GetGold_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, int, void> RPGStatsComponent_SetGold_Ptr;
-#pragma warning restore 0649
-
-    public int Level { get { unsafe { return RPGStatsComponent_GetLevel_Ptr(Entity.ID); } } set { unsafe { RPGStatsComponent_SetLevel_Ptr(Entity.ID, value); } } }
-    public float Health { get { unsafe { return RPGStatsComponent_GetHealth_Ptr(Entity.ID); } } set { unsafe { RPGStatsComponent_SetHealth_Ptr(Entity.ID, value); } } }
-    public int Gold { get { unsafe { return RPGStatsComponent_GetGold_Ptr(Entity.ID); } } set { unsafe { RPGStatsComponent_SetGold_Ptr(Entity.ID, value); } } }
+    public int Level { get => GetField<RPGStatsComponent, int>("Level"); set => SetField<RPGStatsComponent, int>("Level", value); }
+    public float Health { get => GetField<RPGStatsComponent, float>("Health"); set => SetField<RPGStatsComponent, float>("Health", value); }
+    public int Gold { get => GetField<RPGStatsComponent, int>("Gold"); set => SetField<RPGStatsComponent, int>("Gold", value); }
 }
 
 /// <summary>Skill wrapper.</summary>
 public class SkillComponent : Component
 {
-#pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, bool> SkillComponent_IsUnlocked_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool, void> SkillComponent_SetUnlocked_Ptr;
-#pragma warning restore 0649
-
-    public bool IsUnlocked { get { unsafe { return SkillComponent_IsUnlocked_Ptr(Entity.ID); } } set { unsafe { SkillComponent_SetUnlocked_Ptr(Entity.ID, value); } } }
+    public bool IsUnlocked { get => GetField<SkillComponent, bool>("IsUnlocked"); set => SetField<SkillComponent, bool>("IsUnlocked", value); }
 }
 
 /// <summary>Inventory wrapper.</summary>
@@ -500,14 +437,12 @@ public class ShaderComponent : Component
 #pragma warning disable 0649
     internal static unsafe delegate* unmanaged<ulong, NativeString, float, void> Shader_SetFloat_Ptr;
     internal static unsafe delegate* unmanaged<ulong, NativeString, Vector3*, void> Shader_SetVec3_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool> Shader_GetEnabled_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool, void> Shader_SetEnabled_Ptr;
 #pragma warning restore 0649
 
     public bool Enabled
     {
-        get { unsafe { return Shader_GetEnabled_Ptr(Entity.ID); } }
-        set { unsafe { Shader_SetEnabled_Ptr(Entity.ID, value); } }
+        get => GetField<ShaderComponent, bool>("Enabled");
+        set => SetField<ShaderComponent, bool>("Enabled", value);
     }
 
     public void SetFloat(string name, float value)
@@ -524,13 +459,8 @@ public class ShaderComponent : Component
 /// <summary>Network identity for tracking entities across clients.</summary>
 public class NetworkIdentity : Component
 {
-#pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, ulong> NetworkIdentity_GetNetworkID_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool> NetworkIdentity_IsOwned_Ptr;
-#pragma warning restore 0649
-
-    public ulong NetworkID { get { unsafe { return NetworkIdentity_GetNetworkID_Ptr(Entity.ID); } } }
-    public bool IsOwned { get { unsafe { return NetworkIdentity_IsOwned_Ptr(Entity.ID); } } }
+    public ulong NetworkID => GetField<NetworkIdentity, ulong>("NetworkID");
+    public bool IsOwned => GetField<NetworkIdentity, bool>("IsOwned");
 }
 
 } // namespace Chained

@@ -54,13 +54,28 @@ namespace Chained
         m_Registry.SetMetadata(handle, metadata);
     }
 
+    static AssetType DeduceAssetTypeFromExtension(const std::filesystem::path& path)
+    {
+        std::string ext = path.extension().string();
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+        
+        if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".tga" || ext == ".hdr") return AssetType::Texture;
+        if (ext == ".obj" || ext == ".gltf" || ext == ".glb" || ext == ".fbx") return AssetType::Model;
+        if (ext == ".ttf" || ext == ".otf") return AssetType::Font;
+        if (ext == ".chshader") return AssetType::Shader;
+        if (ext == ".chenv") return AssetType::Environment;
+        if (ext == ".wav" || ext == ".mp3" || ext == ".ogg") return AssetType::Audio;
+        
+        return AssetType::None;
+    }
+
     AssetHandle AssetManager::ImportAsset(const std::filesystem::path& filepath)
     {
         AssetHandle handle = UUID();
         AssetMetadata metadata;
         metadata.Handle = handle;
         metadata.FilePath = filepath;
-        // metadata.Type will be resolved automatically in future importer iterations
+        metadata.Type = DeduceAssetTypeFromExtension(filepath);
         
         m_Registry.SetMetadata(handle, metadata);
         return handle;

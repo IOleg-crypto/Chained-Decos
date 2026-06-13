@@ -83,10 +83,10 @@ target_sources(editor_core PRIVATE
 
 target_link_libraries(editor_core PUBLIC
     ChainedEngine::Framework
-    ChainedEngine::External::ImGui
-    ChainedEngine::External::NFD
-    ChainedEngine::External::Assimp
-    ChainedEngine::External::Coral
+    engine_external_imgui
+    nfd
+    assimp
+    Coral.Native
 )
 
 target_include_directories(editor_core PUBLIC 

@@ -49,6 +49,10 @@ namespace Chained
         // The void* is the archive pointer, and the second int is the reflection mode.
         // This allows the Editor or Serializer to pass their specific archives.
         std::function<void(Entity, void*, int)> ReflectInternal;
+        
+        // Dynamic access to fields via C++ reflect-cpp (C# Interop).
+        // Entity, fieldName, void* dataBuffer, bool isSet
+        std::function<bool(Entity, const std::string&, void*, bool)> GetSetField;
     };
 
     /**
@@ -133,6 +137,30 @@ namespace Chained
                         comp.Reflect(props);
                     }
                 }
+            };
+
+            metadata.GetSetField = [](Entity e, const std::string& fieldName, void* data, bool isSet) -> bool {
+                if constexpr (is_rfl_component<T>::value) {
+                    bool found = false;
+                    auto& comp = e.GetComponent<T>();
+                    rfl::to_view(comp).apply([&](auto... field_pack) {
+                        ([&](auto& field) {
+                            if (found) return;
+                            std::string name(field.name());
+                            if (name == fieldName) {
+                                using FieldType = std::decay_t<decltype(*field.get())>;
+                                if (isSet) {
+                                    *field.get() = *static_cast<FieldType*>(data);
+                                } else {
+                                    *static_cast<FieldType*>(data) = *field.get();
+                                }
+                                found = true;
+                            }
+                        }(field_pack), ...);
+                    });
+                    return found;
+                }
+                return false;
             };
 
             Register(entt::type_hash<T>::value(), metadata);
