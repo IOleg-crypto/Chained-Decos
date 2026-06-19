@@ -1,4 +1,5 @@
 #include "script_glue_internal.h"
+#include "engine/core/service_locator.h"
 #include "engine/audio/audio.h"
 #include "engine/project/project.h"
 
@@ -10,11 +11,11 @@ namespace Chained {
     CH_SCRIPT_FUNC void Audio_Play(Coral::String path, float volume, float pitch, bool loop) {
         if (Project::GetActive() != nullptr) {
             const std::string soundPath = (std::string)path;
-            auto& audio = Audio::Get();
+            auto* audio = ServiceLocator::Get<Audio>();
 
-            AudioHandle handle = audio.LoadSound(soundPath);
+            AudioHandle handle = audio->LoadSound(soundPath);
             if (handle != 0) {
-                audio.Play(handle, volume, pitch, loop, false, glm::vec3(0));
+                audio->Play(handle, volume, pitch, loop, false, glm::vec3(0));
 
                 if (Scene* scene = GetActiveScene()) {
                     auto& registry = scene->GetRegistry();
@@ -35,8 +36,8 @@ namespace Chained {
     CH_SCRIPT_FUNC void Audio_Stop(Coral::String path) {
         if (Project::GetActive() != nullptr) {
             const std::string soundPath = (std::string)path;
-            auto& audio = Audio::Get();
-            audio.Stop(soundPath);
+            auto* audio = ServiceLocator::Get<Audio>();
+            audio->Stop(soundPath);
 
             if (Scene* scene = GetActiveScene()) {
                 auto& registry = scene->GetRegistry();
@@ -54,8 +55,8 @@ namespace Chained {
 
     CH_SCRIPT_FUNC void Audio_StopAll() {
         if (Project::GetActive() != nullptr) {
-            auto& audio = Audio::Get();
-            audio.StopAll();
+            auto* audio = ServiceLocator::Get<Audio>();
+            audio->StopAll();
         }
     }
     
@@ -67,8 +68,8 @@ namespace Chained {
             audio.Volume = volume;
             // Forward to active sound instance in real-time
             if (audio.IsPlaying && audio.SoundHandle != 0) {
-                auto& audioService = Audio::Get();
-                audioService.SetVolume(audio.SoundHandle, volume);
+                auto* audioService = ServiceLocator::Get<Audio>();
+                audioService->SetVolume(audio.SoundHandle, volume);
             }
         }
     }
@@ -86,8 +87,8 @@ namespace Chained {
             return false;
 
         auto& audio = entity.GetComponent<AudioComponent>();
-        auto& audioService = Audio::Get();
-        return audio.IsPlaying && audioService.IsPlaying(audio.SoundHandle);
+        auto* audioService = ServiceLocator::Get<Audio>();
+        return audio.IsPlaying && audioService->IsPlaying(audio.SoundHandle);
     }
     
 
