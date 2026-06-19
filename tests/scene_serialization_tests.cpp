@@ -1,18 +1,18 @@
+#include "engine/app/application.h"
 #include "engine/assets/asset_manager.h"
-#include "engine/runtime/application.h"
 #include "engine/scene/scene.h"
 #include "engine/serialization/scene_serializer.h"
 #include "gtest/gtest.h"
 #include <filesystem>
 #include <fstream>
 
-using namespace Chained;
 
+using namespace Chained;
 
 class SceneSerializationDestructiveTest : public ::testing::Test
 {
 protected:
-    virtual void SetUp() 
+    virtual void SetUp()
     {
         std::filesystem::create_directories("test_assets");
     }

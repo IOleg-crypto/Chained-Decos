@@ -1,13 +1,14 @@
-#include "engine/runtime/application.h"
-#include "engine/runtime/entry_point.h"
+#include "engine/app/application.h"
 #include "engine/project/project.h"
+#include "engine/app/entry_point.h"
 #include "runtime/runtime_layer.h"
+
 
 namespace Chained
 {
-    // Forward declare the game's registration function
-    // This lives in the ChainedDecos static library
-    extern void RegisterGameComponents();
+// Forward declare the game's registration function
+// This lives in the ChainedDecos static library
+extern void RegisterGameComponents();
 
 Application* CreateApplication(ApplicationCommandLineArgs args)
 {
@@ -33,4 +34,3 @@ Application* CreateApplication(ApplicationCommandLineArgs args)
     return app;
 }
 } // namespace Chained
-

@@ -25,6 +25,20 @@ public abstract class Component
     {
         Entity.SetField<TComponent, TField>(fieldName, value);
     }
+
+    /// <summary>Invokes a native component method without parameters or return values.</summary>
+    protected void CallMethod(string methodName)
+    {
+        if (!Entity.IsValid) return;
+        unsafe { Entity.Entity_CallComponentMethod_Ptr(Entity.ID, GetType().Name, methodName); }
+    }
+
+    /// <summary>Invokes a native component method passing an argument pointer and/or receiving a result pointer.</summary>
+    protected unsafe bool CallMethodArgs(string methodName, void* argsPtr, void* resultPtr = null)
+    {
+        if (!Entity.IsValid) return false;
+        return Entity.Entity_CallComponentMethodArgs_Ptr(Entity.ID, GetType().Name, methodName, argsPtr, resultPtr);
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -39,10 +53,20 @@ public class Entity
     // Cache: avoids allocating a new stub on every GetComponent<T>() call
     private readonly Dictionary<System.Type, Component> _cache = new();
 
+    // Core entity lifecycle functions
     internal static unsafe delegate* unmanaged<ulong, NativeString, bool> Entity_HasComponent_Ptr;
     internal static unsafe delegate* unmanaged<NativeString, NativeArray<ulong>> Entity_FindAllWithComponent_Ptr;
     internal static unsafe delegate* unmanaged<ulong, NativeString, void> Entity_AddComponent_Ptr;
-#pragma warning restore 0649
+
+    // Universal Dynamic Reflection Functions (Fields and Properties)
+    internal static unsafe delegate* unmanaged<ulong, NativeString, NativeString, void*, bool> Entity_GetComponentField_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, NativeString, NativeString, void*, bool> Entity_SetComponentField_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, NativeString, NativeString, NativeString> Entity_GetComponentFieldString_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, NativeString, NativeString, NativeString, bool> Entity_SetComponentFieldString_Ptr;
+
+    // Universal Dynamic Reflection Functions (Methods)
+    internal static unsafe delegate* unmanaged<ulong, NativeString, NativeString, void> Entity_CallComponentMethod_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, NativeString, NativeString, void*, void*, bool> Entity_CallComponentMethodArgs_Ptr;
 
     /// <summary>Wraps a native entity ID.</summary>
     public Entity(ulong id) { ID = id; }
@@ -102,11 +126,6 @@ public class Entity
 
     // ── Universal Reflection Property Access ────────────────────────────────
 
-    internal static unsafe delegate* unmanaged<ulong, NativeString, NativeString, void*, bool> Entity_GetComponentField_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, NativeString, NativeString, void*, bool> Entity_SetComponentField_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, NativeString, NativeString, NativeString> Entity_GetComponentFieldString_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, NativeString, NativeString, NativeString, bool> Entity_SetComponentFieldString_Ptr;
-
     /// <summary>Reads a field dynamically using reflection-cpp from the engine.</summary>
     public unsafe TField GetField<TComponent, TField>(string fieldName) where TComponent : Component
     {
@@ -121,26 +140,27 @@ public class Entity
 
         TField result = default(TField)!;
         void* ptr = System.Runtime.CompilerServices.Unsafe.AsPointer(ref result);
-        bool success = Entity_GetComponentField_Ptr(ID, typeof(TComponent).Name, fieldName, ptr);
+        Entity_GetComponentField_Ptr(ID, typeof(TComponent).Name, fieldName, ptr);
         return result;
     }
 
     /// <summary>Writes a field dynamically using reflection-cpp from the engine.</summary>
     public unsafe void SetField<TComponent, TField>(string fieldName, TField value) where TComponent : Component
+{
+    if (!IsValid) return;
+
+    if (typeof(TField) == typeof(string))
     {
-        if (!IsValid) return;
-
-        if (typeof(TField) == typeof(string))
-        {
-            // Explicit type casting logic for Strings
-            string s = (string)(object)value!;
-            Entity_SetComponentFieldString_Ptr(ID, typeof(TComponent).Name, fieldName, s);
-            return;
-        }
-
-        void* ptr = System.Runtime.CompilerServices.Unsafe.AsPointer(ref value);
-        Entity_SetComponentField_Ptr(ID, typeof(TComponent).Name, fieldName, ptr);
+        string s = (string)(object)value!;
+        Entity_SetComponentFieldString_Ptr(ID, typeof(TComponent).Name, fieldName, s);
+        return;
     }
+
+    void* ptr = System.Runtime.CompilerServices.Unsafe.AsPointer(ref value);
+    
+    // ✅ ВИПРАВЛЕНО: Просто викликаємо вказівник на функцію, БЕЗ слова 'return'
+    Entity_SetComponentField_Ptr(ID, typeof(TComponent).Name, fieldName, ptr);
+}
 
     public override string ToString() => $"Entity({ID})";
 }
@@ -224,53 +244,36 @@ public class PlayerComponent : Component
 /// <summary>Audio wrapper.</summary>
 public class AudioComponent : Component
 {
-#pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, void> AudioComponent_Play_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, void> AudioComponent_Stop_Ptr;
-#pragma warning restore 0649
-
     public float Volume { get => GetField<AudioComponent, float>("Volume"); set => SetField<AudioComponent, float>("Volume", value); }
     public bool  Loop   { get => GetField<AudioComponent, bool>("Loop"); set => SetField<AudioComponent, bool>("Loop", value); }
     public bool  IsPlaying  => GetField<AudioComponent, bool>("IsPlaying");
     public string SoundPath { get => GetField<AudioComponent, string>("SoundPath"); set => SetField<AudioComponent, string>("SoundPath", value); }
 
-    public void Play() 
-    {
-        unsafe { AudioComponent_Play_Ptr(Entity.ID); }
-    }
-
-    public void Stop()
-    {
-        unsafe { AudioComponent_Stop_Ptr(Entity.ID); }
-    }
+    public void Play() => CallMethod("Play");
+    public void Stop() => CallMethod("Stop");
 }
 
 /// <summary>Camera wrapper.</summary>
 public class CameraComponent : Component
 {
-#pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, Vector3*, void> Camera_GetForward_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, Vector3*, void> Camera_GetRight_Ptr;
-#pragma warning restore 0649
-
-    private static void GetForward(ulong entityID, out Vector3 outForward)
-    {
-        unsafe { fixed (Vector3* p = &outForward) Camera_GetForward_Ptr(entityID, p); }
-    }
-
-    private static void GetRight(ulong entityID, out Vector3 outRight)
-    {
-        unsafe { fixed (Vector3* p = &outRight) Camera_GetRight_Ptr(entityID, p); }
-    }
-
     public Vector3 Forward
     {
-        get { GetForward(Entity.ID, out Vector3 forward); return forward; }
+        get
+        {
+            Vector3 forward = default;
+            unsafe { CallMethodArgs("GetForward", null, &forward); }
+            return forward;
+        }
     }
 
     public Vector3 Right
     {
-        get { GetRight(Entity.ID, out Vector3 right); return right; }
+        get
+        {
+            Vector3 right = default;
+            unsafe { CallMethodArgs("GetRight", null, &right); }
+            return right;
+        }
     }
 
     public void GetOrbit(out float yaw, out float pitch, out float distance)
@@ -305,8 +308,6 @@ public class CameraComponent : Component
         set => SetField<CameraComponent, string>("TargetEntityTag", value);
     }
 }
-
-
 
 /// <summary>2D Sprite wrapper.</summary>
 public class SpriteComponent : Component
@@ -347,54 +348,40 @@ public class SpriteComponent : Component
 /// <summary>Button control wrapper.</summary>
 public class ButtonControl : Component
 {
-#pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, bool> ButtonControl_IsClicked_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool> ButtonControl_IsDown_Ptr;
-#pragma warning restore 0649
-
-    public bool IsClicked { get { unsafe { return ButtonControl_IsClicked_Ptr(Entity.ID); } } }
-    public bool IsDown    { get { unsafe { return ButtonControl_IsDown_Ptr(Entity.ID); } } }
-    public bool IsPressed => IsClicked; // Alias for backward compatibility
+    public bool IsClicked => GetField<ButtonControl, bool>("IsClicked");
+    public bool IsDown    => GetField<ButtonControl, bool>("IsDown");
+    public bool IsPressed => IsClicked; 
 }
 
 /// <summary>Checkbox wrapper.</summary>
 public class CheckboxControl : Component
 {
-#pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, bool> CheckboxControl_GetChecked_Ptr;
-#pragma warning restore 0649
-
-    private static unsafe bool GetChecked(ulong entityID) => CheckboxControl_GetChecked_Ptr(entityID);
-    public bool IsChecked => GetChecked(Entity.ID);
+    public bool IsChecked => GetField<CheckboxControl, bool>("IsChecked");
 }
 
 /// <summary>Combo box wrapper.</summary>
 public class ComboBoxControl : Component
 {
-#pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, int> ComboBoxControl_GetSelectedIndex_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, int, void> ComboBoxControl_SetSelectedIndex_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, NativeString, void> ComboBoxControl_AddItem_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, void> ComboBoxControl_ClearItems_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, int> ComboBoxControl_GetItemCount_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, int, NativeString> ComboBoxControl_GetItem_Ptr;
-#pragma warning restore 0649
+    public int SelectedIndex 
+    { 
+        get => GetField<ComboBoxControl, int>("SelectedIndex"); 
+        set => SetField<ComboBoxControl, int>("SelectedIndex", value); 
+    }
+    
+    public int ItemCount => GetField<ComboBoxControl, int>("ItemCount");
 
-    private static unsafe int GetSelectedIndex(ulong entityID) => ComboBoxControl_GetSelectedIndex_Ptr(entityID);
-    private static unsafe void SetSelectedIndex(ulong entityID, int index) => ComboBoxControl_SetSelectedIndex_Ptr(entityID, index);
-    private static unsafe void AddItem(ulong entityID, string item) => ComboBoxControl_AddItem_Ptr(entityID, item);
-    private static unsafe void ClearItems(ulong entityID) => ComboBoxControl_ClearItems_Ptr(entityID);
-    private static unsafe int GetItemCount(ulong entityID) => ComboBoxControl_GetItemCount_Ptr(entityID);
-    private static unsafe string? GetItem(ulong entityID, int index)
+    public void ClearItems() => CallMethod("ClearItems");
+
+    public void AddItem(string item)
     {
-        return ComboBoxControl_GetItem_Ptr(entityID, index);
+        SetField<ComboBoxControl, string>("AddItemTrigger", item);
     }
 
-    public int    SelectedIndex     { get => GetSelectedIndex(Entity.ID); set => SetSelectedIndex(Entity.ID, value); }
-    public int    ItemCount         => GetItemCount(Entity.ID);
-    public string? GetItem(int index) => GetItem(Entity.ID, index);
-    public void   AddItem(string item) => AddItem(Entity.ID, item);
-    public void   ClearItems()         => ClearItems(Entity.ID);
+    public string? GetItem(int index)
+    {
+        SetField<ComboBoxControl, int>("RequestedItemIndex", index);
+        return GetField<ComboBoxControl, string>("RequestedItemString");
+    }
 }
 
 // ── Gameplay Components ────────────────────────────────────────────────────────
@@ -426,19 +413,9 @@ public class SkillComponent : Component
     public bool IsUnlocked { get => GetField<SkillComponent, bool>("IsUnlocked"); set => SetField<SkillComponent, bool>("IsUnlocked", value); }
 }
 
-/// <summary>Inventory wrapper.</summary>
-public class InventoryComponent : Component
-{
-}
-
 /// <summary>Shader control wrapper.</summary>
 public class ShaderComponent : Component
 {
-#pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, NativeString, float, void> Shader_SetFloat_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, NativeString, Vector3*, void> Shader_SetVec3_Ptr;
-#pragma warning restore 0649
-
     public bool Enabled
     {
         get => GetField<ShaderComponent, bool>("Enabled");
@@ -447,12 +424,14 @@ public class ShaderComponent : Component
 
     public void SetFloat(string name, float value)
     {
-        unsafe { Shader_SetFloat_Ptr(Entity.ID, name, value); }
+        // For dynamic/unstructured parameter systems, we pass data as fields 
+        // using the unique uniform parameter name directly.
+        SetField<ShaderComponent, float>(name, value);
     }
 
     public void SetVector3(string name, Vector3 value)
     {
-        unsafe { Shader_SetVec3_Ptr(Entity.ID, name, &value); }
+        SetField<ShaderComponent, Vector3>(name, value);
     }
 }
 

@@ -1,8 +1,9 @@
+#include "engine/app/application.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
 #include "engine/serialization/component_serializer.h"
-#include "engine/runtime/application.h"
 #include "gtest/gtest.h"
+
 
 using namespace Chained;
 
@@ -89,16 +90,15 @@ TEST_F(SceneTest, GetEntityByUUID)
     EXPECT_FALSE(notFound);
 }
 
-
 TEST_F(SceneTest, CopyEntity)
 {
     auto* serializer = Application::Get().GetServiceRegistry().Get<ComponentSerializer>();
     ASSERT_NE(serializer, nullptr);
-    
+
     Scene scene;
     Entity src = scene.CreateEntity("Source");
     src.AddComponent<CameraComponent>().Primary = true;
-    
+
     Entity dst = scene.CopyEntity((entt::entity)src);
     EXPECT_TRUE(dst);
     EXPECT_EQ(dst.GetName(), "Source_copy"); // Copy must have "_copy" suffix
@@ -135,7 +135,7 @@ TEST_F(SceneTest, DestructiveOperations)
     Scene scene;
     Entity entity1 = scene.CreateEntity("Entity 1");
     Entity entity2 = scene.CreateEntity("Entity 2");
-    
+
     entt::entity handle1 = entity1;
     entt::entity handle2 = entity2;
     UUID uuid1 = entity1.GetUUID();
@@ -168,13 +168,12 @@ TEST_F(SceneTest, DestructiveOperations)
     EXPECT_FALSE(entity2.HasComponent<LightComponent>());
 
     // 5. Destroying scene should clear remaining entities
-    // (We simulate this by verifying the registry count drops, though destruction of the Scene obj handles actual cleanup)
+    // (We simulate this by verifying the registry count drops, though destruction of the Scene obj handles actual
+    // cleanup)
     scene.DestroyEntity(entity2);
     EXPECT_FALSE(scene.GetRegistry().valid(handle2));
-    
+
     // 6. Test trying to destroy an invalid entity (should not crash)
     Entity invalidEntity; // Default constructor creates null entity
-    EXPECT_NO_THROW({
-        scene.DestroyEntity(invalidEntity);
-    });
+    EXPECT_NO_THROW({ scene.DestroyEntity(invalidEntity); });
 }

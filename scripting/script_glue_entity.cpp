@@ -183,14 +183,14 @@ namespace Chained {
             auto& audio = entity.GetComponent<AudioComponent>();
             if (audio.SoundHandle != 0) {
                 // Prevent duplicate instances — only play if not already active
-                auto& audioService = Audio::Get();
-                audioService.SetInstancePosition(audio.SoundHandle, entity.GetComponent<TransformComponent>().WorldTransform[3]);
+                auto audioService = ServiceLocator::Get<Audio>();
+                audioService->SetInstancePosition(audio.SoundHandle, entity.GetComponent<TransformComponent>().WorldTransform[3]);
                 glm::vec3 worldPos = {0,0,0};
                 if (entity.HasComponent<TransformComponent>()) {
                     auto& transform = entity.GetComponent<TransformComponent>();
                     worldPos = glm::vec3(transform.WorldTransform[3]);
                 }
-                audioService.Play(audio.SoundHandle, audio.Volume, audio.Pitch, audio.Loop, audio.Spatialized, worldPos);
+                audioService->Play(audio.SoundHandle, audio.Volume, audio.Pitch, audio.Loop, audio.Spatialized, worldPos);
                 audio.IsPlaying = true;
             }
         }
@@ -202,8 +202,8 @@ namespace Chained {
         if (entity && entity.HasComponent<AudioComponent>()) {
             auto& audio = entity.GetComponent<AudioComponent>();
             if (audio.SoundHandle != 0 && audio.IsPlaying) {
-                auto& audioService = Audio::Get();
-                audioService.Stop(audio.SoundHandle);
+                auto audioService = ServiceLocator::Get<Audio>();
+                audioService->Stop(audio.SoundHandle);
                 audio.IsPlaying = false;
             }
         }

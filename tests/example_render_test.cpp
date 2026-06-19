@@ -1,6 +1,6 @@
 // #include "gtest/gtest.h"
 // #include "engine/graphics/pipeline/renderer.h"
-// #include "engine/runtime/application.h"
+// #include "engine/app/application.h"
 
 // using namespace Chained;
 
@@ -20,7 +20,7 @@
 
 //     // Перевірка початкового стану
 //     EXPECT_EQ(renderer->GetData().LightCount, 0);
-    
+
 //     // Перевірка встановлення в'юпорту
 //     renderer->SetViewport(0, 0, 800, 600);
 //     EXPECT_EQ(renderer->GetViewportWidth(), 800);
@@ -35,5 +35,5 @@
 //     auto& shaderLib = renderer->GetShaderLibrary();
 //     // Перевіряємо, чи завантажені базові шейдери (якщо вони мають бути)
 //     // У headless режимі ресурси можуть не завантажуватися повністю, але бібліотека має існувати.
-//     EXPECT_TRUE(true); 
+//     EXPECT_TRUE(true);
 // }

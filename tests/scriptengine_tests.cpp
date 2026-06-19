@@ -1,8 +1,9 @@
-#include "engine/project/project.h"
-#include "gtest/gtest.h"
-#include "scripting/scriptengine.h"
+#include "engine/app/application.h"
 #include "engine/assets/asset_manager.h"
-#include "engine/runtime/application.h"
+#include "engine/project/project.h"
+#include "scripting/scriptengine.h"
+#include "gtest/gtest.h"
+
 
 #include <filesystem>
 #include <vector>

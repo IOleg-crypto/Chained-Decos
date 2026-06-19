@@ -1,10 +1,11 @@
-#include "engine/core/base.h"
+#include "engine/app/application.h"
 #include "engine/assets/asset_manager.h"
-#include "engine/runtime/application.h"
-#include "engine/project/project.h"
-#include "engine/core/uuid.h"
+#include "engine/core/base.h"
 #include "engine/core/thread_pool.h"
+#include "engine/core/uuid.h"
+#include "engine/project/project.h"
 #include "gtest/gtest.h"
+
 
 #include <atomic>
 #include <chrono>
@@ -43,8 +44,8 @@ class CountingLoader final : public IAssetLoader
 {
 public:
     explicit CountingLoader(bool shouldSucceed, bool asyncLoad = false)
-        : m_ShouldSucceed(shouldSucceed)
-        , m_AsyncLoad(asyncLoad)
+        : m_ShouldSucceed(shouldSucceed),
+          m_AsyncLoad(asyncLoad)
     {
     }
 
@@ -56,17 +57,23 @@ public:
     bool Load(std::shared_ptr<Asset> asset, const LoadContext& ctx, std::string* outError = nullptr) override
     {
         auto dummy = std::dynamic_pointer_cast<DummyAsset>(asset);
-        if (!dummy) return false;
+        if (!dummy)
+        {
+            return false;
+        }
 
         ++LoadCalls;
         if (!m_ShouldSucceed)
         {
-            if (outError) *outError = "CountingLoader: forced failure for test path '" + ctx.ResolvedPath + "'";
+            if (outError)
+            {
+                *outError = "CountingLoader: forced failure for test path '" + ctx.ResolvedPath + "'";
+            }
             return false;
         }
 
         dummy->SetPath(ctx.ResolvedPath);
-        dummy->LoadCount = 1; 
+        dummy->LoadCount = 1;
         dummy->LastLoadedPath = ctx.ResolvedPath;
         return true;
     }
@@ -236,7 +243,7 @@ TEST_F(AssetManagerTest, GetWithInvalidHandleReturnsNull)
 {
     auto asset = m_AssetManager->Get<DummyAsset>(AssetHandle(0));
     EXPECT_EQ(asset, nullptr);
-    
+
     auto assetInvalid = m_AssetManager->Get<DummyAsset>(AssetHandle(123456789));
     EXPECT_EQ(assetInvalid, nullptr);
 }
@@ -246,24 +253,24 @@ TEST_F(AssetManagerTest, MultipleAsyncLoads)
     CountingLoader* loader = RegisterDummyLoader(true, true);
     const int count = 5;
     std::vector<std::shared_ptr<DummyAsset>> assets;
-    
+
     for (int i = 0; i < count; ++i)
     {
         const std::string path = MakeUniqueAssetPath("multi_async");
         auto handle = m_AssetManager->ResolveToHandle(path, DummyAsset::GetStaticType());
         assets.push_back(m_AssetManager->Get<DummyAsset>(handle));
     }
-    
+
     // Wait for all to be in pending finalize
     for (int attempt = 0; attempt < 2000 && m_AssetManager->GetPendingFinalizeCount() < count; ++attempt)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
-    
+
     EXPECT_EQ(m_AssetManager->GetPendingFinalizeCount(), (size_t)count);
-    
+
     m_AssetManager->OnUpdate(Timestep(0.016f));
-    
+
     EXPECT_EQ(m_AssetManager->GetPendingFinalizeCount(), 0u);
     for (auto& asset : assets)
     {

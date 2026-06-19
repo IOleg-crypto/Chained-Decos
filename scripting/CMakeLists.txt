@@ -13,11 +13,7 @@ chained_add_engine_module(engine_scripting
         engine_external_imgui
 )
 
-if(CH_BUILD_PRESET_NAMES_INCLUDE_DIR)
-    target_include_directories(engine_scripting PRIVATE
-        ${CH_BUILD_PRESET_NAMES_INCLUDE_DIR}
-    )
-endif()
+
 
 if(MSVC)
     target_compile_options(engine_scripting PRIVATE /bigobj)
@@ -27,7 +23,7 @@ endif()
 
 # ── C# Managed API Build ──────────────────────────────────────────────────
 # This builds the core engine scripting API (.dll) which the game depends on.
-set(MANAGED_BUILD_SCRIPT "${CMAKE_SOURCE_DIR}/build_scripts/build_managed.py")
+set(MANAGED_BUILD_SCRIPT "${CMAKE_SOURCE_DIR}/tools/sync_resources.py")
 set(MANAGED_PROJECT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/managed/Chained.Managed.csproj")
 set(MANAGED_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")
 set(CORAL_MANAGED_DIR "${CMAKE_BINARY_DIR}/vendor/coral")

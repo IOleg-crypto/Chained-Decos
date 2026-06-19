@@ -1,10 +1,11 @@
 // renderer_tests.cpp
 // Tests for the main Renderer and Renderer2D singletons.
 // These tests require a valid OpenGL context and are skipped on CI.
+#include "engine/app/application.h"
 #include "engine/core/base.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "gtest/gtest.h"
-#include "engine/runtime/application.h"
+
 
 using namespace Chained;
 
@@ -48,11 +49,11 @@ TEST_F(RendererTest, SceneLifecycle)
     camera.Projection = 0; // Perspective
 
     renderer->BeginScene(camera, 0.1f, 1000.0f);
-    
+
     EXPECT_FLOAT_EQ(renderer->GetData().CurrentCameraPosition.x, 10.0f);
     EXPECT_FLOAT_EQ(renderer->GetData().CurrentCameraPosition.y, 5.0f);
     EXPECT_FLOAT_EQ(renderer->GetData().CurrentCameraPosition.z, 2.0f);
-    
+
     renderer->EndScene();
 }
 
@@ -90,7 +91,7 @@ TEST_F(RendererTest, DiagnosticMode)
 
     renderer->SetDiagnosticMode(2.0f);
     EXPECT_FLOAT_EQ(renderer->GetData().DiagnosticMode, 2.0f);
-    
+
     renderer->SetDiagnosticMode(0.0f);
     EXPECT_FLOAT_EQ(renderer->GetData().DiagnosticMode, 0.0f);
 }
