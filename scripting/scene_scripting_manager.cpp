@@ -2,6 +2,7 @@
 #include "engine/scene/components.h"
 #include "engine/physics/physics.h"
 #include "engine/core/profiler.h"
+#include "engine/core/service_locator.h"
 #include "scripting/script_glue.h"
 #include "scripting/scriptengine.h"
 #include "scripting/scriptengine_services.h"
@@ -71,7 +72,10 @@ void SceneScriptingManager::ResetAll()
 SceneScriptingManager::SceneScriptingManager(Scene* scene)
     : m_Scene(scene)
 {
-    auto& scriptEngine = ScriptEngine::Get();
+    // NOTE: Do NOT call ScriptEngine::Get() here — Scene can be constructed on a
+    // background thread (e.g. async scene loading), and touching the CLR from a
+    // non-main thread causes a fatal CLR error (0x80131506).
+    // m_ScriptEngine is resolved lazily on the first OnUpdate/OnRuntimeStart.
     SceneScriptingManager::Register(this);
 }
 
@@ -104,6 +108,12 @@ SceneScriptingManager::~SceneScriptingManager()
 
 void SceneScriptingManager::OnRuntimeStart()
 {
+    m_IsRuntimeActive = true;
+
+    // Lazy-resolve on main thread (safe for CLR)
+    if (!m_ScriptEngine)
+        m_ScriptEngine = ServiceLocator::Get<ScriptEngine>();
+
     CH_CORE_INFO("SceneScriptingManager::OnRuntimeStart - Entry");
     if (!m_Scene) { CH_CORE_ERROR("m_Scene is NULL!"); return; }
     
@@ -149,6 +159,7 @@ void SceneScriptingManager::OnRuntimeStart()
 
 void SceneScriptingManager::OnRuntimeStop()
 {
+    m_IsRuntimeActive = false;
     Physics::SetCollisionCallback(m_Scene, nullptr);
 
     auto& registry = m_Scene->GetRegistry();
@@ -166,6 +177,14 @@ void SceneScriptingManager::OnRuntimeStop()
 void SceneScriptingManager::OnUpdate(Timestep deltaTime)
 {
     CH_PROFILE_FUNCTION();
+
+    // Scripts only run in Play mode — never instantiate or tick in Edit mode.
+    if (!m_IsRuntimeActive)
+        return;
+
+    // Lazy-resolve on main thread (safe for CLR)
+    if (!m_ScriptEngine)
+        m_ScriptEngine = ServiceLocator::Get<ScriptEngine>();
 
     if (!m_ScriptEngine || !m_ScriptEngine->GetHost().IsInitialized() || m_ReloadInProgress)
     {

@@ -9,24 +9,19 @@ namespace Chained
 {
     ScriptEngine* ScriptEngine::s_Instance = nullptr;
 
-    void ScriptEngine::Init(bool enableScripting)
+    void ScriptEngine::Initialize()
     {
-        CH_ASSERT(!s_Instance);
-        s_Instance = new ScriptEngine(enableScripting);
-        if (enableScripting)
+        s_Instance = this;
+        if (m_EnableScripting)
         {
-            s_Instance->OnInit();
+            OnInit();
         }
     }
 
     void ScriptEngine::Shutdown()
     {
-        if (s_Instance)
-        {
-            s_Instance->OnShutdown();
-            delete s_Instance;
-            s_Instance = nullptr;
-        }
+        OnShutdown();
+        s_Instance = nullptr;
     }
 
     ScriptEngine& ScriptEngine::Get()

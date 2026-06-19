@@ -34,6 +34,7 @@ private:
     Scene* m_Scene = nullptr;
     ScriptEngine* m_ScriptEngine = nullptr;
     bool m_ReloadInProgress = false;
+    bool m_IsRuntimeActive = false;
 };
 
 } // namespace Chained
