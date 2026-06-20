@@ -1,4 +1,5 @@
 #include "editor_layer.h"
+#include "engine/core/service_locator.h"
 #include "editor_events.h"
 #include "editor_gui.h"
 #include "editor_layout.h"
@@ -56,7 +57,7 @@ void EditorLayer::DrawLoadingOverlay(const char* title, const char* status)
         ImGui::SetCursorPosX((ImGui::GetWindowWidth() - statusSize.x) * 0.5f);
         ImGui::TextUnformatted(status);
 
-        uint32_t totalPending = (uint32_t)AssetManager::Get().GetPendingFinalizeCount();
+        uint32_t totalPending = (uint32_t)ServiceLocator::Get<AssetManager>()->GetPendingFinalizeCount();
         std::string pendingLine = "Pending assets: " + std::to_string(totalPending);
         ImVec2 pendingSize = ImGui::CalcTextSize(pendingLine.c_str());
         ImGui::SetCursorPosX((ImGui::GetWindowWidth() - pendingSize.x) * 0.5f);
@@ -217,7 +218,7 @@ void EditorLayer::OnAttach()
         GetEditorState().NeedsLayoutReset = true;
     }
 
-    std::string iconPath = (AssetManager::Get().GetEngineRoot() / "resources/icons/chaineddecosmapeditor.jpg").string();
+    std::string iconPath = (ServiceLocator::Get<AssetManager>()->GetEngineRoot() / "resources/icons/chaineddecosmapeditor.jpg").string();
     if (std::filesystem::exists(iconPath))
     {
         app.GetWindow().SetWindowIcon(iconPath);
@@ -240,10 +241,10 @@ void EditorLayer::LoadEditorFonts()
     }
 
     float fontSize = 16.0f;
-    auto& assetManager = AssetManager::Get();
+    auto& assetManager = (*ServiceLocator::Get<AssetManager>());
 
     // --- Default UI Font (Lato) ---
-    std::string fontPath = (AssetManager::Get().GetEngineRoot() / "resources/font/lato/lato-bold.ttf").string();
+    std::string fontPath = (ServiceLocator::Get<AssetManager>()->GetEngineRoot() / "resources/font/lato/lato-bold.ttf").string();
     if (std::filesystem::exists(fontPath))
     {
         imguiLayer->AddFontFromFile(fontPath, fontSize);
@@ -256,7 +257,7 @@ void EditorLayer::LoadEditorFonts()
     }
 
     // --- Icon Font (FontAwesome) ---
-    std::string faPath = (AssetManager::Get().GetEngineRoot() / "resources/font/fa-solid-900.ttf").string();
+    std::string faPath = (ServiceLocator::Get<AssetManager>()->GetEngineRoot() / "resources/font/fa-solid-900.ttf").string();
     if (std::filesystem::exists(faPath))
     {
         static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};

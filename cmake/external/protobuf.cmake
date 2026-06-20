@@ -1,9 +1,6 @@
 # ============================================================================
-# Chained Engine - Protobuf Dependency (via FetchContent)
+# Chained Engine - Protobuf Dependency
 # ============================================================================
-include(FetchContent)
-
-set(PROTOBUF_VERSION "21.12") # Compatible with most GNS versions
 
 # Options for Protobuf build
 set(protobuf_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -20,15 +17,12 @@ if(WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(protobuf_HAVE_BUILTIN_ATOMICS ON CACHE BOOL "" FORCE)
 endif()
 
-FetchContent_Declare(
-    protobuf
-    GIT_REPOSITORY https://github.com/protocolbuffers/protobuf.git
-    GIT_TAG        v${PROTOBUF_VERSION}
-    GIT_SUBMODULES "" # Avoid heavy submodules if possible
-)
-
-message(STATUS "Protobuf: Fetching version ${PROTOBUF_VERSION}...")
-FetchContent_MakeAvailable(protobuf)
+if(EXISTS "${CMAKE_SOURCE_DIR}/thirdparty/protobuf/CMakeLists.txt")
+    add_subdirectory("${CMAKE_SOURCE_DIR}/thirdparty/protobuf" "${CMAKE_BINARY_DIR}/vendor/protobuf" EXCLUDE_FROM_ALL)
+    set(protobuf_SOURCE_DIR "${CMAKE_SOURCE_DIR}/thirdparty/protobuf")
+else()
+    message(FATAL_ERROR "Protobuf submodule missing at ${CMAKE_SOURCE_DIR}/thirdparty/protobuf")
+endif()
 
 # Ensure GNS can find the targets and variables it expects
 if(TARGET libprotobuf)

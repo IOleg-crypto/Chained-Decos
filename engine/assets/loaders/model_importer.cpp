@@ -1,4 +1,5 @@
 #include "asset_importer.h"
+#include "engine/core/service_locator.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/loaders/assimp_importer.h"
 
@@ -6,7 +7,7 @@ namespace Chained::AssetImporter
 {
 std::shared_ptr<ModelAsset> ImportModel(AssetHandle handle, const AssetMetadata& metadata)
 {
-    std::filesystem::path fullPath = AssetManager::Get().GetAssetDirectory() / metadata.FilePath;
+    std::filesystem::path fullPath = ServiceLocator::Get<AssetManager>()->GetAssetDirectory() / metadata.FilePath;
 
     // Use AssimpImporter to retrieve the data
     PendingModelData pendingData = AssimpImporter::Import(fullPath);

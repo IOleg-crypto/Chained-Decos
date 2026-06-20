@@ -1,4 +1,5 @@
 #include "scene_picking.h"
+#include "engine/core/service_locator.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/scene/components/component_utils.h"
 #include "engine/runtime/application.h"
@@ -50,7 +51,7 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
             return;
         }
 
-        AssetManager* assetManager = &AssetManager::Get();
+        AssetManager* assetManager = ServiceLocator::Get<AssetManager>();
 
         auto handle = assetManager ? assetManager->ImportAsset(modelComp.ModelPath) : AssetHandle(0);
         auto modelAsset = assetManager ? assetManager->GetAsset<ModelAsset>(handle) : nullptr;

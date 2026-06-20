@@ -1,4 +1,5 @@
 #include "engine/platform/utils/file_dialogs.h"
+#include "engine/core/service_locator.h"
 #include "editor_project_manager.h"
 #include "editor_layer.h"
 #include "engine/project/project.h"
@@ -6,8 +7,8 @@
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/ui/ui_renderer.h"
 #include "engine/scene/scene_events.h"
-#include "engine/core/platform.h"
 #include "scripting/scriptengine.h"
+#include "engine/assets/asset_manager.h"
 #include <algorithm>
 #include <string>
 
@@ -36,10 +37,9 @@ void EditorProjectManager::NewProject(const std::string& name, const std::string
     EditorProjectSerializer::Serialize(project, m_EditorSettings, (std::filesystem::path(path) / (name + ".chproject")));
 
     Project::SetActive(project);
- 
-    // Load engine shaders and resources for the dynamic newly created project
-    Renderer::LoadEngineResources();
-    Renderer::GetUIRenderer()->LoadProjectFonts();
+    
+    ProjectOpenedEvent e((std::filesystem::path(path) / (name + ".chproject")).string());
+    Application::Get().OnEvent(e);
 }
 
 void EditorProjectManager::OpenProject()
@@ -59,11 +59,8 @@ void EditorProjectManager::OpenProject(const std::filesystem::path& path)
     {
         m_LastProjectPath = path.string();
         Project::SetActive(project);
- 
-         // Load engine shaders and resources
-        Renderer::LoadEngineResources();
-        Renderer::GetUIRenderer()->LoadProjectFonts();
- 
+
+
          ProjectOpenedEvent e(path.string());
         Application::Get().OnEvent(e);
     }
@@ -83,6 +80,16 @@ bool EditorProjectManager::OnProjectOpened(ProjectOpenedEvent& e)
     auto project = Project::GetActive();
     if (project)
     {
+        std::filesystem::path resolvedPath = e.GetPath();
+        std::filesystem::path projDir = resolvedPath.extension() == ".chproject" ? resolvedPath.parent_path() : resolvedPath;
+
+        ServiceLocator::Get<AssetManager>()->SetProjectDirectory(projDir);
+        ServiceLocator::Get<AssetManager>()->SetAssetDirectory(projDir / "assets");
+ 
+         // Load engine shaders and resources
+        Renderer::LoadEngineResources();
+        Renderer::GetUIRenderer()->LoadProjectFonts();
+
         m_LastProjectPath = e.GetPath();
 
         // Track in recent projects list (move to front, cap at 10)

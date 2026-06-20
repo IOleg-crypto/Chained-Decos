@@ -7,7 +7,7 @@
 #include "engine/assets/types/environment_asset.h"
 #include "engine/assets/types/shader_asset.h"
 #include "engine/graphics/pipeline/shader_library.h"
-#include "engine/graphics/api/camera_types.h"
+#include "engine/scene/camera_types.h"
 #include "engine/graphics/pipeline/renderer_types.h"
 #include "engine/graphics/api/storage_buffer.h"
 #include <glm/glm.hpp>

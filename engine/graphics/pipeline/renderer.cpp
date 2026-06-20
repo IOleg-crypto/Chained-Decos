@@ -1,4 +1,5 @@
 #include <string>
+#include "engine/core/service_locator.h"
 #include <string_view>
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/pipeline/geometry_generator.h"
@@ -55,7 +56,7 @@ Renderer* Renderer::s_Instance = nullptr;
         Renderer2D::Init();
         Renderer3D::Init();
 
-        if (s_UI) s_UI->Init(&AssetManager::Get());
+        if (s_UI) s_UI->Init(ServiceLocator::Get<AssetManager>());
 
         LoadEngineResources();
     }
@@ -93,8 +94,8 @@ void Renderer::LoadEngineResources()
 
     auto loadShader = [&](const ::std::string& name, const ::std::string& path) { shaders.LoadOrGet(name, path); };
 
-    loadShader(::std::string("Lighting"), ::std::string("engine/resources/shaders/lighting.chshader"));
-    loadShader(::std::string("Unlit"), ::std::string("engine/resources/shaders/unlit.chshader"));
+    loadShader(::std::string("Lighting"), ::std::string("resources/shaders/lighting.chshader"));
+    loadShader(::std::string("Unlit"), ::std::string("resources/shaders/unlit.chshader"));
 
     CH_CORE_INFO("[Renderer] LoadEngineResources done. {} shader(s) loaded.", shaders.GetNames().size());
 }

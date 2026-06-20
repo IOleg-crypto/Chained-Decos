@@ -1,6 +1,6 @@
 # ImGui + ImGuizmo dependency
-set(IMGUI_DIR "${CMAKE_SOURCE_DIR}/include/imgui")
-set(IMGUIZMO_DIR "${CMAKE_SOURCE_DIR}/include/imguizmo")
+set(IMGUI_DIR "${CMAKE_SOURCE_DIR}/thirdparty/imgui")
+set(IMGUIZMO_DIR "${CMAKE_SOURCE_DIR}/thirdparty/imguizmo")
 
 add_library(engine_external_imgui STATIC
     "${IMGUI_DIR}/imgui.cpp"
