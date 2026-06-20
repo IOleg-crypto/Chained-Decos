@@ -1,10 +1,10 @@
 # GLFW dependency
-if(EXISTS "${CMAKE_SOURCE_DIR}/include/glfw/CMakeLists.txt")
+if(EXISTS "${CMAKE_SOURCE_DIR}/thirdparty/glfw/CMakeLists.txt")
     set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
     set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
     set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
-    add_subdirectory("${CMAKE_SOURCE_DIR}/include/glfw" "${CMAKE_BINARY_DIR}/vendor/glfw" EXCLUDE_FROM_ALL)
+    add_subdirectory("${CMAKE_SOURCE_DIR}/thirdparty/glfw" "${CMAKE_BINARY_DIR}/vendor/glfw" EXCLUDE_FROM_ALL)
 else()
-    message(FATAL_ERROR "GLFW submodule missing at ${CMAKE_SOURCE_DIR}/include/glfw")
+    message(FATAL_ERROR "GLFW submodule missing at ${CMAKE_SOURCE_DIR}/thirdparty/glfw")
 endif()

@@ -69,7 +69,7 @@ namespace Chained::DebugRenderer {
 void DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& transform, bool useWireframe)
 {
     auto& rd = Renderer::GetData();
-    auto debugShader = rd.Shaders->LoadOrGet("ColliderDebug", "engine/resources/shaders/collider_debug.chshader");
+    auto debugShader = rd.Shaders->LoadOrGet("ColliderDebug", "resources/shaders/collider_debug.chshader");
     if (!debugShader || !debugShader->GetShader())
     {
         return;

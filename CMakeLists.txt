@@ -120,8 +120,8 @@ if(BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
-# --- Post-Build Asset Sync via Python Script ---
-add_custom_target(sync_assets ALL
-    COMMAND "${CH_PYTHON_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/build_scripts/build_managed.py" sync-resources --root "${CMAKE_SOURCE_DIR}" --bin "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-    COMMENT "Syncing engine assets via Python script..."
+add_custom_target(sync-resources
+    COMMAND ${CH_PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/sync_resources.py
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMENT "Syncing resources"
 )

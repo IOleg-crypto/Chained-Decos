@@ -13,7 +13,7 @@
 #include "engine/foundation/base.h"
 #include "engine/core/events.h"
 #include "engine/foundation/timestep.h"
-#include "engine/graphics/api/camera_types.h"
+#include "engine/scene/camera_types.h"
 #include "engine/scene/entity.h"
 #include "engine/scene/scene_settings.h"
 

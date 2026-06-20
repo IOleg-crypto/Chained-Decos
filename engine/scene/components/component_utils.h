@@ -2,6 +2,7 @@
 #define CH_COMPONENT_UTILS_H
 
 #include "engine/scene/components/transform_component.h"
+#include "engine/core/service_locator.h"
 #include "engine/scene/components/control_component.h"
 #include "engine/scene/components/mesh_component.h"
 #include "engine/assets/asset_manager.h"
@@ -82,8 +83,8 @@ namespace Chained::ComponentUtils
             return;
         }
 
-        auto handle = AssetManager::Get().ImportAsset(mc.ModelPath);
-        auto asset = AssetManager::Get().GetAsset<ModelAsset>(handle);
+        auto handle = ServiceLocator::Get<AssetManager>()->ImportAsset(mc.ModelPath);
+        auto asset = ServiceLocator::Get<AssetManager>()->GetAsset<ModelAsset>(handle);
         if (asset)
         {
             mc.ModelHandle = asset->GetID();

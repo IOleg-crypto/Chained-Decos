@@ -1,4 +1,5 @@
 #include "engine/assets/asset_manager.h"
+#include "engine/core/service_locator.h"
 #include "engine/assets/loaders/asset_importer.h"
 #include "engine/core/log.h"
 #include "engine/serialization/yaml_conversions.h"
@@ -9,7 +10,7 @@ namespace Chained::AssetImporter
 {
 std::shared_ptr<EnvironmentAsset> ImportEnvironment(AssetHandle handle, const AssetMetadata& metadata)
 {
-    std::filesystem::path fullPath = AssetManager::Get().GetAssetDirectory() / metadata.FilePath;
+    std::filesystem::path fullPath = ServiceLocator::Get<AssetManager>()->GetAssetDirectory() / metadata.FilePath;
     std::ifstream stream(fullPath);
 
     if (!stream.is_open())

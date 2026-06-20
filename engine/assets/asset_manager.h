@@ -10,11 +10,14 @@
 #include <memory>
 #include <mutex>
 #include <unordered_map>
+#include <unordered_set>
+#include <unordered_set>
 #include <string_view>
+#include "engine/core/engine_module.h"
 
 namespace Chained
 {
-class AssetManager
+class AssetManager : public EngineModule
 {
 public:
     static constexpr std::string_view ProjectExtension = ".chproject";
@@ -22,9 +25,9 @@ public:
     static constexpr std::string_view PrefabExtension = ".chprefab";
 
 public:
-    static void Init();
-    static void Shutdown();
-    static AssetManager& Get();
+    virtual void Initialize() override;
+    virtual void Shutdown() override;
+    virtual void Update(Timestep ts) override;
 
     void SetEngineRoot(const std::filesystem::path& path);
     void SetProjectDirectory(const std::filesystem::path& path);
@@ -49,13 +52,13 @@ public:
         return std::static_pointer_cast<T>(asset);
     }
 
-    void Update(Timestep ts);
-
     bool HasBackgroundWork() const { return false; }
     uint32_t GetPendingFinalizeCount() const { return 0; }
     AssetHandle ResolveToHandle(const std::filesystem::path& path, AssetType type = AssetType::None);
 
 private:
+    std::filesystem::path ResolveFilePath(const std::filesystem::path& relativePath) const;
+
     std::unordered_map<AssetHandle, std::shared_ptr<Asset>> m_LoadedAssets;
     AssetRegistry m_Registry;
     mutable std::mutex m_AssetMutex;
@@ -63,6 +66,10 @@ private:
     std::filesystem::path m_EngineRoot;
     std::filesystem::path m_ProjectDirectory;
     std::filesystem::path m_AssetDirectory;
+
+    // Cache of paths that failed to resolve — prevents per-frame log spam.
+    // Invalidated when project/asset paths change.
+    std::unordered_set<std::string> m_FailedImports;
 
     static AssetManager* s_Instance;
 };

@@ -3,7 +3,7 @@
 # ============================================================================
 
 # Define the location of the library source
-set(GNS_SOURCE_DIR "${PROJECT_SOURCE_DIR}/include/GameNetworkingSockets")
+set(GNS_SOURCE_DIR "${PROJECT_SOURCE_DIR}/thirdparty/GameNetworkingSockets")
 
 if(EXISTS "${GNS_SOURCE_DIR}/CMakeLists.txt")
     set(CH_GNS_BUILD_TESTS "${BUILD_TESTS}")
@@ -44,7 +44,7 @@ if(EXISTS "${GNS_SOURCE_DIR}/CMakeLists.txt")
         # MinGW and Clang fixes for winmm and timeBeginPeriod
         if(MINGW OR (WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
             target_link_libraries(${GNS_TARGET} PRIVATE winmm)
-            target_compile_options(${GNS_TARGET} PRIVATE -include "${CMAKE_SOURCE_DIR}/include/mingw_compat.h")
+            target_compile_options(${GNS_TARGET} PRIVATE -include "${CMAKE_SOURCE_DIR}/thirdparty/mingw_compat.h")
         endif()
     endif()
 

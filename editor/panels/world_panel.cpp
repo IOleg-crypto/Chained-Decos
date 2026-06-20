@@ -1,4 +1,5 @@
 #include "engine/platform/utils/file_dialogs.h"
+#include "engine/core/service_locator.h"
 #include "world_panel.h"
 #include "IconsFontAwesome6.h"
 #include "editor/editor_layer.h"
@@ -168,8 +169,8 @@ void WorldPanel::OnImGuiRender(bool readOnly)
             {
                 if (auto project = Project::GetActive())
                 {
-                    auto handle = AssetManager::Get().ResolveToHandle(result->string(), EnvironmentAsset::GetStaticType());
-                    m_Context->GetSettings().Environment = AssetManager::Get().GetAsset<EnvironmentAsset>(handle);
+                    auto handle = ServiceLocator::Get<AssetManager>()->ResolveToHandle(result->string(), EnvironmentAsset::GetStaticType());
+                    m_Context->GetSettings().Environment = ServiceLocator::Get<AssetManager>()->GetAsset<EnvironmentAsset>(handle);
                 }
             }
         }

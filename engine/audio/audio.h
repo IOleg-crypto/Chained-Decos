@@ -11,6 +11,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include "engine/core/engine_module.h"
 
 
 namespace Chained
@@ -23,16 +24,16 @@ struct SoundInstance
     AudioHandle Handle;
 };
 
-class Audio
+class Audio : public EngineModule
 {
 public:
-    static void Init();
-    static void Shutdown();
-    static Audio& Get();
+    virtual void Initialize() override;
+    virtual void Update(Timestep ts) override;
+    virtual void Shutdown() override;
 
-private:
+public:
     Audio();
-    ~Audio();
+    virtual ~Audio() override;
 public:
     void SetListenerPosition(const glm::vec3& position, const glm::vec3& forward, const glm::vec3& up);
 
@@ -51,7 +52,6 @@ public:
     void Stop(const std::string& filepath);
     void Stop(AudioHandle handle);
     void StopAll();
-    void Update(Timestep ts);
 
 public:
     ma_engine* GetEngine() const;

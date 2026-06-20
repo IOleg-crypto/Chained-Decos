@@ -1,6 +1,10 @@
 #include "engine/runtime/application.h"
 #include "engine/core/platform.h"
 #include "engine/core/profiler.h"
+#include "engine/core/service_locator.h"
+#include "engine/assets/asset_manager.h"
+#include "engine/audio/audio.h"
+#include "engine/physics/physics.h"
 #include "engine/foundation/thread_pool.h"
 #include "engine/imgui/imgui_layer.h"
 
@@ -50,13 +54,16 @@ Application::Application(const ApplicationSpecification& spec)
     }
 
     // --- 2. Initialize Subsystems ---
-    AssetManager::Init();
-    // If testing on Github - set headless to true
+    ServiceLocator::Provide<AssetManager>(new AssetManager());
+    ServiceLocator::Provide<Audio>(new Audio());
+    ServiceLocator::Provide<Physics>(new Physics());
+    ServiceLocator::Provide<ScriptEngine>(new ScriptEngine(false));
+
+    ServiceLocator::Get<AssetManager>()->Initialize();
     Renderer::Init(m_Specification.Headless);
-    Audio::Init();
-    Physics::Init();
-    ScriptEngine::Init(false);
-    // NetworkService::Init();
+    ServiceLocator::Get<Audio>()->Initialize();
+    ServiceLocator::Get<Physics>()->Initialize();
+    ServiceLocator::Get<ScriptEngine>()->Initialize();
 
     if (m_Window)
     {
@@ -79,12 +86,12 @@ Application::~Application()
     m_LayerStack.reset();
 
     // Shutdown in reverse order
-    ScriptEngine::Shutdown();
-    Physics::Shutdown();
-    Audio::Shutdown();
+    ServiceLocator::Get<ScriptEngine>()->Shutdown();
+    ServiceLocator::Get<Physics>()->Shutdown();
+    ServiceLocator::Get<Audio>()->Shutdown();
     // NetworkService::Shutdown();
     Renderer::Shutdown();
-    AssetManager::Shutdown();
+    ServiceLocator::Get<AssetManager>()->Shutdown();
     ThreadPool::Shutdown();
 
     m_Window.reset();
@@ -101,9 +108,9 @@ void Application::Run()
 
         if (m_Window && m_Window->GetWidth() > 0 && m_Window->GetHeight() > 0)
         {
-            Audio::Get().Update(m_Timer.DeltaTime);
+            ServiceLocator::Get<Audio>()->Update(m_Timer.DeltaTime);
             // Process async asset loader queue and states
-            AssetManager::Get().Update(m_Timer.DeltaTime);
+            ServiceLocator::Get<AssetManager>()->Update(m_Timer.DeltaTime);
 
             // Fixed Update
             m_Timer.Accumulator += (float)m_Timer.DeltaTime;

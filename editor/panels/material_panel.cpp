@@ -1,4 +1,5 @@
 #include "material_panel.h"
+#include "engine/core/service_locator.h"
 #include "engine/scene/components/mesh_component.h"
 #include "engine/scene/scene_events.h"
 #include "imgui.h"
@@ -6,7 +7,7 @@
 #include "engine/assets/types/texture_asset.h"
 #include "engine/assets/types/model_asset.h"
 #include "editor/editor_gui.h"
-#include "include/IconsFontAwesome6.h"
+#include "IconsFontAwesome6.h"
 
 namespace Chained
 {
@@ -19,7 +20,7 @@ MaterialPanel::MaterialPanel()
 uint32_t MaterialPanel::GetTextureID(AssetHandle handle)
 {
     if (handle == 0) return 0;
-    auto& am = AssetManager::Get();
+    auto& am = (*ServiceLocator::Get<AssetManager>());
     auto asset = am.GetAsset<TextureAsset>(handle);
     return asset ? asset->GetRendererID() : 0;
 }
@@ -31,12 +32,12 @@ void MaterialPanel::DrawMaterialSettings(Material& mat)
         ImGui::ColorEdit4("Color", glm::value_ptr(mat.AlbedoColor));
         
         std::string currentPath = "";
-        auto asset = AssetManager::Get().GetAsset<TextureAsset>(mat.AlbedoHandle);
+        auto asset = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>(mat.AlbedoHandle);
         if (asset) currentPath = asset->GetPath();
 
         if (EditorGUI::FileProperty("Texture", currentPath, GetTextureID(mat.AlbedoHandle), "png,jpg,tga"))
         {
-        mat.AlbedoHandle = AssetManager::Get().ResolveToHandle(currentPath);
+        mat.AlbedoHandle = ServiceLocator::Get<AssetManager>()->ResolveToHandle(currentPath);
             mat.AlbedoMap = 0; // Trigger reload in renderer
         }
     }
@@ -44,12 +45,12 @@ void MaterialPanel::DrawMaterialSettings(Material& mat)
     if (ImGui::CollapsingHeader(ICON_FA_WATER " Normals", ImGuiTreeNodeFlags_DefaultOpen))
     {
         std::string normalPath = "";
-        auto normalAsset = AssetManager::Get().GetAsset<TextureAsset>(mat.NormalHandle);
+        auto normalAsset = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>(mat.NormalHandle);
         if (normalAsset) normalPath = normalAsset->GetPath();
 
         if (EditorGUI::FileProperty("Normal Map", normalPath, GetTextureID(mat.NormalHandle), "png,jpg,tga"))
         {
-            mat.NormalHandle = AssetManager::Get().ResolveToHandle(normalPath);
+            mat.NormalHandle = ServiceLocator::Get<AssetManager>()->ResolveToHandle(normalPath);
             mat.NormalMap = 0;
         }
     }
@@ -68,12 +69,12 @@ void MaterialPanel::DrawMaterialSettings(Material& mat)
         ImGui::Columns(1);
         
         std::string pbrPath = "";
-        auto pbrAsset = AssetManager::Get().GetAsset<TextureAsset>(mat.MetallicRoughnessHandle);
+        auto pbrAsset = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>(mat.MetallicRoughnessHandle);
         if (pbrAsset) pbrPath = pbrAsset->GetPath();
 
         if (EditorGUI::FileProperty("PBR Map", pbrPath, GetTextureID(mat.MetallicRoughnessHandle), "png,jpg,tga"))
         {
-            mat.MetallicRoughnessHandle = AssetManager::Get().ResolveToHandle(pbrPath);
+            mat.MetallicRoughnessHandle = ServiceLocator::Get<AssetManager>()->ResolveToHandle(pbrPath);
             mat.MetallicRoughnessMap = 0;
         }
     }
@@ -84,12 +85,12 @@ void MaterialPanel::DrawMaterialSettings(Material& mat)
         ImGui::SliderFloat("Intensity", &mat.EmissiveIntensity, 0.0f, 10.0f);
         
         std::string emissivePath = "";
-        auto emissiveAsset = AssetManager::Get().GetAsset<TextureAsset>(mat.EmissiveHandle);
+        auto emissiveAsset = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>(mat.EmissiveHandle);
         if (emissiveAsset) emissivePath = emissiveAsset->GetPath();
 
         if (EditorGUI::FileProperty("Emissive Map", emissivePath, GetTextureID(mat.EmissiveHandle), "png,jpg,tga"))
         {
-            mat.EmissiveHandle = AssetManager::Get().ResolveToHandle(emissivePath);
+            mat.EmissiveHandle = ServiceLocator::Get<AssetManager>()->ResolveToHandle(emissivePath);
             mat.EmissiveMap = 0;
         }
     }
@@ -119,7 +120,7 @@ void MaterialPanel::OnImGuiRender(bool readOnly)
         if (m_SelectedEntity.HasComponent<ModelComponent>())
         {
             auto& modelComp = m_SelectedEntity.GetComponent<ModelComponent>();
-            auto modelAsset = AssetManager::Get().GetAsset<ModelAsset>(modelComp.ModelHandle);
+            auto modelAsset = ServiceLocator::Get<AssetManager>()->GetAsset<ModelAsset>(modelComp.ModelHandle);
             
             if (modelAsset && modelAsset->IsReady())
             {

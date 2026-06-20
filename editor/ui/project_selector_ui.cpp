@@ -1,4 +1,5 @@
 #include "project_selector_ui.h"
+#include "engine/core/service_locator.h"
 #include "editor/editor_layer.h"
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -14,8 +15,8 @@ namespace Chained
 ProjectSelectorUI::ProjectSelectorUI(EditorProjectManager& projectManager)
     : m_ProjectManager(projectManager)
 {
-    m_NewProjectIconHandle = AssetManager::Get().ImportAsset("engine/resources/icons/newproject.jpg");
-    m_OpenProjectIconHandle = AssetManager::Get().ImportAsset("engine/resources/icons/folder.png");
+    m_NewProjectIconHandle = ServiceLocator::Get<AssetManager>()->ImportAsset("resources/icons/newproject.jpg");
+    m_OpenProjectIconHandle = ServiceLocator::Get<AssetManager>()->ImportAsset("resources/icons/folder.png");
 }
 
 void ProjectSelectorUI::OnImGuiRender()
@@ -128,7 +129,7 @@ void ProjectSelectorUI::OnImGuiRender()
     {
         ImTextureID newProjTex = 0;
         if (m_NewProjectIconHandle != 0) {
-            auto tex = AssetManager::Get().GetAsset<TextureAsset>(m_NewProjectIconHandle);
+            auto tex = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>(m_NewProjectIconHandle);
             if (tex) newProjTex = (ImTextureID)(uintptr_t)tex->GetRendererID();
         }
 
@@ -152,7 +153,7 @@ void ProjectSelectorUI::OnImGuiRender()
     {
         ImTextureID openProjTex = 0;
         if (m_OpenProjectIconHandle != 0) {
-            auto tex = AssetManager::Get().GetAsset<TextureAsset>(m_OpenProjectIconHandle);
+            auto tex = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>(m_OpenProjectIconHandle);
             if (tex) openProjTex = (ImTextureID)(uintptr_t)tex->GetRendererID();
         }
 

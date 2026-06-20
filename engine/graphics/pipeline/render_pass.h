@@ -1,7 +1,7 @@
 #pragma once
 
 #include "engine/foundation/base.h"
-#include "engine/graphics/api/camera_types.h"
+#include "engine/scene/camera_types.h"
 #include "engine/scene/scene_settings.h"
 #include <entt/entt.hpp>
 #include <string>

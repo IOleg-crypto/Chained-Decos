@@ -1,4 +1,5 @@
 #include "scene_renderer.h"
+#include "engine/core/service_locator.h"
 #include "engine/assets/asset.h"
 #include "engine/assets/types/model_asset.h"
 #include "engine/assets/types/shader_asset.h"
@@ -243,8 +244,8 @@ void SceneRenderer::RenderSprites(entt::registry& registry, const Camera3D& came
             continue;
         }
 
-        auto handle = AssetManager::Get().ImportAsset(sprite.TexturePath);
-        auto textureAsset = AssetManager::Get().GetAsset<TextureAsset>(handle);
+        auto handle = ServiceLocator::Get<AssetManager>()->ImportAsset(sprite.TexturePath);
+        auto textureAsset = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>(handle);
         if (textureAsset && textureAsset->IsReady() && textureAsset->GetTexture())
         {
             Renderer2D::DrawSprite(textureAsset->GetTexture()->GetRendererID(), transform.WorldTransform, ColorToVec4(sprite.Tint), sprite.FlipX, sprite.FlipY);
@@ -294,7 +295,7 @@ void SceneRenderer::PrepareLights(entt::registry& registry, const Frustum& frust
 void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustum& frustum, const glm::vec3& cameraPos)
 {
     auto meshView = registry.view<TransformComponent, ModelComponent>();
-    auto* assets = &AssetManager::Get();
+    auto* assets = ServiceLocator::Get<AssetManager>();
 
     for (auto entity : meshView)
     {
@@ -708,7 +709,7 @@ void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Materia
         {
             return currentId;
         }
-        auto tex = AssetManager::Get().GetAsset<TextureAsset>(handle);
+        auto tex = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>(handle);
         if (tex && tex->IsReady() && tex->GetTexture())
         {
             return tex->GetTexture()->GetRendererID();
@@ -926,8 +927,8 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
                 if (modelHandle == 0 && collider.AutoCalculate && registry.all_of<ModelComponent>(entity))
                 {
                     auto& mc = registry.get<ModelComponent>(entity);
-                    auto handle = AssetManager::Get().ImportAsset(mc.ModelPath);
-                    auto asset = AssetManager::Get().GetAsset<ModelAsset>(handle);
+                    auto handle = ServiceLocator::Get<AssetManager>()->ImportAsset(mc.ModelPath);
+                    auto asset = ServiceLocator::Get<AssetManager>()->GetAsset<ModelAsset>(handle);
                     if (asset)
                     {
                         modelHandle = asset->GetID();
@@ -936,7 +937,7 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
 
                 if (modelHandle != 0)
                 {
-                    auto modelAsset = AssetManager::Get().GetAsset<ModelAsset>(modelHandle);
+                    auto modelAsset = ServiceLocator::Get<AssetManager>()->GetAsset<ModelAsset>(modelHandle);
                     if (modelAsset && modelAsset->GetState() == AssetState::Ready)
                     {
                         const auto& model = modelAsset->GetModel();
@@ -993,7 +994,7 @@ void SceneRenderer::DrawCollisionModelBoxDebug(entt::registry& registry)
 
         if (collider.ModelHandle != 0)
         {
-            auto model = AssetManager::Get().GetAsset<ModelAsset>(collider.ModelHandle);
+            auto model = ServiceLocator::Get<AssetManager>()->GetAsset<ModelAsset>(collider.ModelHandle);
             if (model && model->IsReady())
             {
                 const BoundingBox& localBox = model->GetBoundingBox();

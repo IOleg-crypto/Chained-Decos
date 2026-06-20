@@ -1,5 +1,5 @@
 # Assimp dependency
-if(EXISTS "${CMAKE_SOURCE_DIR}/include/assimp/CMakeLists.txt")
+if(EXISTS "${CMAKE_SOURCE_DIR}/thirdparty/assimp/CMakeLists.txt")
     set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
     set(ASSIMP_NO_EXPORT ON CACHE BOOL "" FORCE)
     set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -14,7 +14,7 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/include/assimp/CMakeLists.txt")
     set(ASSIMP_BUILD_OBJ_IMPORTER ON CACHE INTERNAL "")
     set(ASSIMP_BUILD_FBX_IMPORTER ON CACHE INTERNAL "")
     
-    add_subdirectory("${CMAKE_SOURCE_DIR}/include/assimp" EXCLUDE_FROM_ALL)
+    add_subdirectory("${CMAKE_SOURCE_DIR}/thirdparty/assimp" EXCLUDE_FROM_ALL)
 else()
-    message(FATAL_ERROR "assimp submodule missing at ${CMAKE_SOURCE_DIR}/include/assimp")
+    message(FATAL_ERROR "assimp submodule missing at ${CMAKE_SOURCE_DIR}/thirdparty/assimp")
 endif()
