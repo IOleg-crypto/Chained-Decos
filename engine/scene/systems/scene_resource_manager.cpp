@@ -1,4 +1,5 @@
 #include "scene_resource_manager.h"
+#include "engine/core/service_locator.h"
 #include <entt/entt.hpp>
 #include "engine/scene/scene.h"
 #include "engine/scene/components/sprite_component.h"
@@ -68,8 +69,8 @@ void SceneResourceManager::Update(entt::registry& reg, Timestep ts)
         auto& model = animView.get<ModelComponent>(entity);
 
 
-        auto handle = AssetManager::Get().ImportAsset(model.ModelPath);
-        auto modelAsset = AssetManager::Get().GetAsset<ModelAsset>(handle);
+        auto handle = ServiceLocator::Get<AssetManager>()->ImportAsset(model.ModelPath);
+        auto modelAsset = ServiceLocator::Get<AssetManager>()->GetAsset<ModelAsset>(handle);
         if (!modelAsset || modelAsset->GetAnimationCount() == 0)
             continue;
 
@@ -152,7 +153,7 @@ void SceneResourceManager::Update(entt::registry& reg, Timestep ts)
             glm::vec3 forward = rot * glm::vec3(0, 0, -1);
             glm::vec3 up = rot * glm::vec3(0, 1, 0);
 
-            Audio::Get().SetListenerPosition(pos, forward, up);
+            ServiceLocator::Get<Audio>()->SetListenerPosition(pos, forward, up);
             break;
         }
     }
@@ -168,8 +169,8 @@ void SceneResourceManager::Update(entt::registry& reg, Timestep ts)
         {
             if (audio.SoundHandle == 0)
             {
-                if (!Audio::Get().IsSoundLoaded(audio.SoundHandle))
-                    audio.SoundHandle = Audio::Get().LoadSound(audio.SoundPath);
+                if (!ServiceLocator::Get<Audio>()->IsSoundLoaded(audio.SoundHandle))
+                    audio.SoundHandle = ServiceLocator::Get<Audio>()->LoadSound(audio.SoundPath);
             }
         }
 
@@ -179,14 +180,14 @@ void SceneResourceManager::Update(entt::registry& reg, Timestep ts)
             auto& transform = audioView.get<TransformComponent>(entity);
             glm::vec3 worldPos = glm::vec3(transform.WorldTransform[3]);
 
-            Audio::Get().Play(audio.SoundHandle, audio.Volume, audio.Pitch, audio.Loop, audio.Spatialized, worldPos);
+            ServiceLocator::Get<Audio>()->Play(audio.SoundHandle, audio.Volume, audio.Pitch, audio.Loop, audio.Spatialized, worldPos);
             audio.IsPlaying = true;
         }
         else if (audio.IsPlaying && audio.Spatialized && audio.SoundHandle != 0)
         {
             auto& transform = audioView.get<TransformComponent>(entity);
             glm::vec3 worldPos = glm::vec3(transform.WorldTransform[3]);
-            Audio::Get().SetInstancePosition(audio.SoundHandle, worldPos);
+            ServiceLocator::Get<Audio>()->SetInstancePosition(audio.SoundHandle, worldPos);
         }
     }
 }
@@ -200,14 +201,14 @@ void SceneResourceManager::OnRuntimeStart(Scene* scene)
     if (!registry.ctx().find<IPhysicsWorld*>())
     {
         CH_CORE_INFO("SceneResourceManager::OnRuntimeStart - Need Physics World");
-        auto& physics = Physics::Get();
+        auto& physics = (*ServiceLocator::Get<Physics>());
         CH_CORE_INFO("SceneResourceManager::OnRuntimeStart - Obtaining world pointer");
             IPhysicsWorld* world = physics.GetWorld();
             CH_CORE_INFO("SceneResourceManager::OnRuntimeStart - World pointer obtained: {}", (void*)world);
         registry.ctx().emplace<IPhysicsWorld*>(world);
     }
 
-    auto& physics = Physics::Get();
+    auto& physics = (*ServiceLocator::Get<Physics>());
     CH_CORE_INFO("SceneResourceManager::OnRuntimeStart - Initializing bodies");
     physics.InitializeBodies(scene);
     CH_CORE_INFO("SceneResourceManager::OnRuntimeStart - Done");
@@ -216,7 +217,7 @@ void SceneResourceManager::OnRuntimeStart(Scene* scene)
 void SceneResourceManager::OnRuntimeStop(Scene* scene)
 {
     CH_PROFILE_FUNCTION();
-    auto& audioSvc = Audio::Get();
+    auto& audioSvc = (*ServiceLocator::Get<Audio>());
     audioSvc.StopAll();
 
     auto& reg = scene->GetRegistry();
@@ -235,8 +236,8 @@ void SceneResourceManager::ResolveSprite(entt::registry& reg, entt::entity e)
     {
         
         {
-            auto handle = AssetManager::Get().ImportAsset(sprite.TexturePath);
-            auto asset = AssetManager::Get().GetAsset<TextureAsset>(handle);
+            auto handle = ServiceLocator::Get<AssetManager>()->ImportAsset(sprite.TexturePath);
+            auto asset = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>(handle);
             if (asset && asset->IsReady())
             {
                 sprite.TextureHandle = asset->GetID();
@@ -251,8 +252,8 @@ void SceneResourceManager::ResolveShader(entt::registry& reg, entt::entity e)
     if (shader.ShaderPath.empty() || shader.ShaderHandle != 0)
         return;
     {
-        auto handle = AssetManager::Get().ImportAsset(shader.ShaderPath);
-        auto asset = AssetManager::Get().GetAsset<ShaderAsset>(handle);
+        auto handle = ServiceLocator::Get<AssetManager>()->ImportAsset(shader.ShaderPath);
+        auto asset = ServiceLocator::Get<AssetManager>()->GetAsset<ShaderAsset>(handle);
         if (!asset || !asset->IsReady())
             return;
 

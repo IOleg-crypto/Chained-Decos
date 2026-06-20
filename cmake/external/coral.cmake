@@ -1,6 +1,6 @@
 # Coral dependency (Scripting host)
-if(EXISTS "${CMAKE_SOURCE_DIR}/include/coral/cmake/CMakeLists.txt")
-    add_subdirectory("${CMAKE_SOURCE_DIR}/include/coral/cmake" "${CMAKE_BINARY_DIR}/vendor/coral" EXCLUDE_FROM_ALL)
+if(EXISTS "${CMAKE_SOURCE_DIR}/thirdparty/coral/cmake/CMakeLists.txt")
+    add_subdirectory("${CMAKE_SOURCE_DIR}/thirdparty/coral/cmake" "${CMAKE_BINARY_DIR}/vendor/coral" EXCLUDE_FROM_ALL)
     
     # MinGW fixes for Coral
     if(MINGW)
@@ -12,5 +12,5 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/include/coral/cmake/CMakeLists.txt")
         target_include_directories(Coral.Native PRIVATE "${CORAL_FIX_DIR}")
     endif()
 else()
-    message(FATAL_ERROR "Coral submodule missing at ${CMAKE_SOURCE_DIR}/include/coral/cmake")
+    message(FATAL_ERROR "Coral submodule missing at ${CMAKE_SOURCE_DIR}/thirdparty/coral/cmake")
 endif()

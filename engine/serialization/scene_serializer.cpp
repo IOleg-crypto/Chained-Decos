@@ -1,4 +1,5 @@
 #include "scene_serializer.h"
+#include "engine/core/service_locator.h"
 #include "component_serializer.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/project/project.h"
@@ -168,8 +169,8 @@ static void DeserializeEnvironmentSettings(const YAML::Node& data, SceneSettings
         std::string envPath = ReadYamlValue(data, "EnvironmentPath", std::string());
         if (Project::GetActive())
         {
-            auto handle = AssetManager::Get().ImportAsset(envPath);
-            auto sharedEnv = AssetManager::Get().GetAsset<EnvironmentAsset>(handle);
+            auto handle = ServiceLocator::Get<AssetManager>()->ImportAsset(envPath);
+            auto sharedEnv = ServiceLocator::Get<AssetManager>()->GetAsset<EnvironmentAsset>(handle);
             if (sharedEnv)
             {
                 if (!settings.Environment)

@@ -1,4 +1,5 @@
 #include "viewport_panel.h"
+#include "engine/core/service_locator.h"
 
 
 #include "IconsFontAwesome6.h"
@@ -700,8 +701,8 @@ void ViewportPanel::RenderEditorIcons(entt::registry &registry, const SceneSetti
         {
             return;
         }
-        auto handle = AssetManager::Get().ResolveToHandle(path);
-        auto tex = AssetManager::Get().GetAsset<TextureAsset>(handle);
+        auto handle = ServiceLocator::Get<AssetManager>()->ResolveToHandle(path);
+        auto tex = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>(handle);
         if (tex && tex->IsReady())
         {
             cachedId = tex->GetRendererID();

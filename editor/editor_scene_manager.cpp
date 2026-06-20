@@ -1,4 +1,5 @@
 #include "engine/platform/utils/file_dialogs.h"
+#include "engine/core/service_locator.h"
 #include "editor_scene_manager.h"
 #include "editor_layer.h"
 #include "scripting/scriptengine.h"
@@ -286,7 +287,7 @@ void EditorSceneManager::UpdateSceneOpenTransition()
         }
     }
 
-    if (m_SceneOpenSceneReady && (m_EditorScene || m_RuntimeScene) && !AssetManager::Get().HasBackgroundWork())
+    if (m_SceneOpenSceneReady && (m_EditorScene || m_RuntimeScene) && !ServiceLocator::Get<AssetManager>()->HasBackgroundWork())
     {
         auto targetScene = m_IsPlayModeSceneLoad ? m_RuntimeScene : m_EditorScene;
 
@@ -331,13 +332,13 @@ void EditorSceneManager::UpdateSceneOpenTransition()
     }
     else if (m_IsSceneOpenLoading && m_SceneOpenSceneReady)
     {
-        if (AssetManager::Get().HasBackgroundWork())
+        if (ServiceLocator::Get<AssetManager>()->HasBackgroundWork())
         {
             static float logTimer = 0.0f;
             logTimer += 0.016f; // approximate
             if (logTimer > 1.0f)
             {
-                CH_CORE_INFO("Editor: Transition to '{}' waiting for {} assets...", m_PendingSceneOpenPath.string(), AssetManager::Get().GetPendingFinalizeCount());
+                CH_CORE_INFO("Editor: Transition to '{}' waiting for {} assets...", m_PendingSceneOpenPath.string(), ServiceLocator::Get<AssetManager>()->GetPendingFinalizeCount());
                 logTimer = 0.0f;
             }
         }
@@ -393,7 +394,7 @@ void EditorSceneManager::UpdatePlayModeTransition()
 {
     if (!m_IsPlayModeLoading) return;
 
-    if (m_PlayModeSceneReady && m_RuntimeScene && !AssetManager::Get().HasBackgroundWork())
+    if (m_PlayModeSceneReady && m_RuntimeScene && !ServiceLocator::Get<AssetManager>()->HasBackgroundWork())
     {
         m_EditorLayer.SetSceneState(SceneState::Play);
         m_RuntimeScene->OnRuntimeStart();

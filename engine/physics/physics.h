@@ -11,6 +11,7 @@
 #include <memory>
 #include <string>
 #include "raycast_result.h"
+#include "engine/core/engine_module.h"
 
 // TODO : future refactor (when link Jolt physics)
 namespace Chained
@@ -28,13 +29,18 @@ struct PhysicsContext
     std::function<void(entt::entity, entt::entity)> CollisionCallback;
 };
 
-class CH_API Physics
+class CH_API Physics : public EngineModule
 {
 public: // Lifecycle
     // Initializes the global physics subsystem.
-    static void Init();
+    virtual void Initialize() override;
+    virtual void Update(Timestep ts) override {}
+public:
+    Physics();
+    virtual ~Physics() override;
+
     // Shuts the physics subsystem down and clears global state.
-    static void Shutdown();
+    virtual void Shutdown() override;
     // Returns the singleton instance.
     static Physics& Get();
     // Returns true once the physics subsystem has been initialized.
@@ -72,9 +78,6 @@ public: // Simulation & Queries
     static void SetCollisionCallback(Scene* scene, std::function<void(entt::entity, entt::entity)> callback);
 
 private: // Internal Helpers
-    Physics();
-    ~Physics();
-
     static void UpdateColliders(Scene* scene);
     static void ResolveSimulation(Scene* scene, Timestep deltaTime, float gravity);
 

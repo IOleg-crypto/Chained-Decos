@@ -137,10 +137,10 @@ namespace Chained {
 
         auto shaderAsset =
             (skyboxMode == 2)
-                ? Renderer::GetShaderLibrary().LoadOrGet("SkyboxCubemap", "engine/resources/shaders/skybox_cubemap.chshader")
+                ? Renderer::GetShaderLibrary().LoadOrGet("SkyboxCubemap", "resources/shaders/skybox_cubemap.chshader")
                 : (skyboxMode == 1
-                       ? Renderer::GetShaderLibrary().LoadOrGet("SkyboxCross", "engine/resources/shaders/skybox_cross.chshader")
-                       : Renderer::GetShaderLibrary().LoadOrGet("Skybox", "engine/resources/shaders/skybox.chshader"));
+                       ? Renderer::GetShaderLibrary().LoadOrGet("SkyboxCross", "resources/shaders/skybox_cross.chshader")
+                       : Renderer::GetShaderLibrary().LoadOrGet("Skybox", "resources/shaders/skybox.chshader"));
         if (!shaderAsset || !shaderAsset->GetShader()) return;
 
         RenderCommand::SetDepthFunc(RendererAPI::DepthFunc::LEqual);

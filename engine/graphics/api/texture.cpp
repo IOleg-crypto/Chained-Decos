@@ -1,4 +1,5 @@
 #include "texture.h"
+#include "engine/core/service_locator.h"
 #include "engine/graphics/api/renderer_api.h"
 #include "engine/graphics/api/opengl/opengl_texture.h"
 #include "engine/assets/asset_manager.h"
@@ -30,8 +31,8 @@ std::shared_ptr<Texture> Texture::CreateCubemap(uint32_t size, TextureFormat for
 
 std::shared_ptr<Texture> Texture::CreateFromFile(const std::string& path)
 {
-    auto handle = AssetManager::Get().ImportAsset(path);
-    auto asset = AssetManager::Get().GetAsset<TextureAsset>(handle);
+    auto handle = ServiceLocator::Get<AssetManager>()->ImportAsset(path);
+    auto asset = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>(handle);
     return asset ? asset->GetTexture() : nullptr;
 }
 

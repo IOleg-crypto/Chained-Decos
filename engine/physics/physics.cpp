@@ -12,6 +12,7 @@
 #include "collision_core.h"
 #include "raycast_query.h"
 #include "dynamics.h"
+#include "engine/core/service_locator.h"
 
 // Jolt includes for global initialization
 #include <Jolt/Jolt.h>
@@ -35,15 +36,10 @@ BVHCache& Cache()
 
 Physics* Physics::s_Instance = nullptr;
 
-Physics::Physics()
-{
-}
+Physics::Physics() = default;
+Physics::~Physics() = default;
 
-Physics::~Physics()
-{
-}
-
-void Physics::Init()
+void Physics::Initialize()
 {
     if (s_Instance)
     {
@@ -78,11 +74,6 @@ void Physics::Shutdown()
     CH_CORE_INFO("Physics shutdown.");
 }
 
-Physics& Physics::Get()
-{
-    CH_ASSERT(s_Instance);
-    return *s_Instance;
-}
 
 bool Physics::IsInitialized()
 {
@@ -131,7 +122,7 @@ std::shared_ptr<BVH> Physics::GetBVH(const std::shared_ptr<ModelAsset>& asset)
 
 std::shared_ptr<BVH> Physics::GetBVH(const std::string& modelPath)
 {
-    auto& am = AssetManager::Get();
+    auto& am = (*ServiceLocator::Get<AssetManager>());
     auto handle = am.ResolveToHandle(modelPath, AssetType::Model);
     if (handle == AssetHandle(0)) return nullptr;
 
@@ -163,7 +154,7 @@ void Physics::Update(Scene* scene, Timestep deltaTime, bool runtime)
     while (ctx.Accumulator >= FixedTimestep)
     {
         // 2. Perform Physics Step (Jolt/Native)
-        if (auto world = Get().GetWorld())
+        if (auto world = ServiceLocator::Get<Physics>()->GetWorld())
         {
             world->Step(FixedTimestep);
         }
@@ -177,7 +168,7 @@ void Physics::Update(Scene* scene, Timestep deltaTime, bool runtime)
 
 RaycastResult Physics::Raycast(Scene* scene, Ray ray)
 {
-    if (auto world = Get().GetWorld())
+    if (auto world = ServiceLocator::Get<Physics>()->GetWorld())
     {
         return world->Raycast(ray.position, ray.direction, 1000.0f);
     }
@@ -211,7 +202,7 @@ void Physics::SetCollisionCallback(Scene* scene, std::function<void(entt::entity
 
 void Physics::UpdateColliders(Scene* scene)
 {
-    auto world = Get().GetWorld();
+    auto world = ServiceLocator::Get<Physics>()->GetWorld();
     auto& registry = scene->GetRegistry();
     auto view = registry.view<TransformComponent, RigidBodyComponent>();
     for (auto entity : view)

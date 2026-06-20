@@ -1,4 +1,5 @@
 #include "asset_importer.h"
+#include "engine/core/service_locator.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/graphics/api/texture.h"
 
@@ -6,7 +7,7 @@ namespace Chained::AssetImporter
 {
 std::shared_ptr<TextureAsset> ImportTexture(AssetHandle handle, const AssetMetadata& metadata)
 {
-    std::filesystem::path fullPath = AssetManager::Get().GetAssetDirectory() / metadata.FilePath;
+    std::filesystem::path fullPath = ServiceLocator::Get<AssetManager>()->GetAssetDirectory() / metadata.FilePath;
     std::string pathString = fullPath.string();
 
     // Use the graphics API factory to handle actual disk load logic (which may contain stb_image)

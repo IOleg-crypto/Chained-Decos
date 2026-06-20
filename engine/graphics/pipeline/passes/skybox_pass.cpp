@@ -1,4 +1,5 @@
 #include "skybox_pass.h"
+#include "engine/core/service_locator.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/pipeline/renderer3d.h"
@@ -25,8 +26,8 @@ namespace Chained {
             const auto& skySettings = envSettings.Skybox;
             if (!skySettings.TexturePath.empty())
             {
-                auto handle = AssetManager::Get().ImportAsset(skySettings.TexturePath);
-                auto textureAsset = AssetManager::Get().GetAsset<TextureAsset>(handle);
+                auto handle = ServiceLocator::Get<AssetManager>()->ImportAsset(skySettings.TexturePath);
+                auto textureAsset = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>(handle);
                 if (textureAsset && textureAsset->IsReady() && textureAsset->GetTexture())
                 {
                     int skyboxMode = std::clamp(skySettings.Mode, 0, 2);

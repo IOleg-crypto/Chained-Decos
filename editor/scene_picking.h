@@ -2,7 +2,7 @@
 #define CH_SCENE_PICKING_H
 
 #include "engine/foundation/color.h"
-#include "engine/graphics/api/camera_types.h"
+#include "engine/scene/camera_types.h"
 #include "engine/physics/collision_core.h"
 #include "engine/scene/entity.h"
 

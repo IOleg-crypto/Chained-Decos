@@ -10,7 +10,7 @@
 namespace Chained
 {
 
-    void Audio::Init()
+    void Audio::Initialize()
     {
         CH_ASSERT(!s_Instance);
         s_Instance = new Audio();
@@ -25,11 +25,6 @@ namespace Chained
         }
     }
 
-    Audio& Audio::Get()
-    {
-        CH_ASSERT(s_Instance);
-        return *s_Instance;
-    }
 
 Audio::Audio()
 {

@@ -1,7 +1,7 @@
 #ifndef CH_DEBUG_RENDERER_H
 #define CH_DEBUG_RENDERER_H
 
-#include "engine/graphics/api/camera_types.h"
+#include "engine/scene/camera_types.h"
 #include "engine/graphics/pipeline/renderer_types.h"
 #include "engine/scene/components/mesh_component.h"
 #include <glm/glm.hpp>
