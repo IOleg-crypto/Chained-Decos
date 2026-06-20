@@ -64,14 +64,6 @@ if(MSVC)
     add_link_options(/INCREMENTAL)
 endif()
 
-# 3. Parallel build must be controlled by the build tool (cmake --build --parallel)
-# Never pass -j as a compiler flag, because compilers like gcc treat it as invalid.
-
-# === DEPENDENCY CACHING ===
-# Cache FetchContent dependencies outside the build folder so they survive clean builds
-set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/vendor/fetch_deps" CACHE PATH "Directory for FetchContent dependencies")
-# Disable frequent git fetch/update checks to speed up CMake configure
-set(FETCHCONTENT_UPDATES_DISCONNECTED ON CACHE BOOL "Do not update FetchContent repos on every configure")
 
 # Dependencies
 include(cmake/CompilerSettings.cmake)

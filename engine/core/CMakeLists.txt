@@ -14,7 +14,7 @@ chained_add_engine_module(engine_core
 )
 
 target_include_directories(engine_core PUBLIC 
-    "${CMAKE_SOURCE_DIR}/include/reflect-cpp/include"
-    "${CMAKE_SOURCE_DIR}/include/cereal/include"
+    "${CMAKE_SOURCE_DIR}/thirdparty/reflect-cpp/include"
+    "${CMAKE_SOURCE_DIR}/thirdparty/cereal/include"
     "${ZSTD_INCLUDE_DIR}"
 )
