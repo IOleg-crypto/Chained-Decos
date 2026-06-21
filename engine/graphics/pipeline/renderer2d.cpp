@@ -6,6 +6,7 @@
 #include "engine/graphics/api/vertex_array.h"
 #include "engine/core/log.h"
 #include <glm/gtc/matrix_transform.hpp>
+#include "engine/core/service_locator.h"
 
 namespace Chained {
 
@@ -77,13 +78,13 @@ namespace Chained {
 
     void Renderer2D::DrawSprite(uint32_t textureId, const glm::mat4& transform, const glm::vec4& tint, bool flipX, bool flipY)
     {
-        auto unlitShaderAsset = Renderer::GetShaderLibrary().LoadOrGet("Unlit", "resources/shaders/unlit.chshader");
+        auto unlitShaderAsset = ServiceLocator::Get<Renderer>()->GetShaderLibrary().LoadOrGet("Unlit", "resources/shaders/unlit.chshader");
         if (!unlitShaderAsset || !unlitShaderAsset->GetShader() || textureId == 0) return;
 
         auto shader = unlitShaderAsset->GetShader();
         shader->Bind();
 
-        auto& rd = Renderer::GetData();
+        auto& rd = ServiceLocator::Get<Renderer>()->GetData();
         shader->SetMatrix("mvp", rd.CurrentProj * rd.CurrentView * transform);
         shader->SetMatrix("matModel", transform);
         shader->SetMatrix("matNormal", glm::transpose(glm::inverse(transform)));
@@ -111,13 +112,13 @@ namespace Chained {
 
     void Renderer2D::DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color)
     {
-        auto debugShader = Renderer::GetShaderLibrary().LoadOrGet("ColliderDebug", "resources/shaders/collider_debug.chshader");
+        auto debugShader = ServiceLocator::Get<Renderer>()->GetShaderLibrary().LoadOrGet("ColliderDebug", "resources/shaders/collider_debug.chshader");
         if (!debugShader || !debugShader->GetShader()) return;
 
         auto shader = debugShader->GetShader();
         shader->Bind();
 
-        glm::mat4 vp = Renderer::GetData().CurrentProj * Renderer::GetData().CurrentView;
+        glm::mat4 vp = ServiceLocator::Get<Renderer>()->GetData().CurrentProj * ServiceLocator::Get<Renderer>()->GetData().CurrentView;
         shader->SetMatrix("u_ViewProj", vp);
         shader->SetMatrix("u_Transform", glm::mat4(1.0f));
         shader->SetVec4("u_Color", color);
@@ -144,7 +145,7 @@ namespace Chained {
 
     void Renderer2D::DrawBillboard(const Camera3D& camera, uint32_t textureId, const glm::vec3& position, float size, const glm::vec4& tint)
     {
-        auto unlitShaderAsset = Renderer::GetShaderLibrary().LoadOrGet("Unlit", "resources/shaders/unlit.chshader");
+        auto unlitShaderAsset = ServiceLocator::Get<Renderer>()->GetShaderLibrary().LoadOrGet("Unlit", "resources/shaders/unlit.chshader");
         if (!unlitShaderAsset || !unlitShaderAsset->GetShader() || textureId == 0) return;
 
         auto shader = unlitShaderAsset->GetShader();
@@ -162,7 +163,7 @@ namespace Chained {
         model[2] = glm::vec4(look * size, 0.0f);
         model[3] = glm::vec4(position, 1.0f);
 
-        shader->SetMatrix("mvp", Renderer::GetData().CurrentProj * Renderer::GetData().CurrentView * model);
+        shader->SetMatrix("mvp", ServiceLocator::Get<Renderer>()->GetData().CurrentProj * ServiceLocator::Get<Renderer>()->GetData().CurrentView * model);
         shader->SetMatrix("matModel", model);
         shader->SetMatrix("matNormal", glm::transpose(glm::inverse(model)));
         shader->SetVec3("viewPos", camera.Position);

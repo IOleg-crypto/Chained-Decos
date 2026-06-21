@@ -11,33 +11,27 @@
 #include <memory>
 #include <type_traits>
 
+#include "engine/core/engine_module.h"
+
 namespace Chained
 {
-class ThreadPool
+class ThreadPool : public EngineModule
 {
 public:
-    static void Init()
+    void Initialize() override
     {
-        unsigned int threads = std::thread::hardware_concurrency();
-        if (threads == 0) threads = 1;
-        unsigned int workerCount = (threads > 1) ? (threads - 1) : 1;
-        s_Instance = new ThreadPool(workerCount);
     }
 
-    static void Shutdown()
+    void Shutdown() override
     {
-        if (s_Instance)
-        {
-            s_Instance->Stop();
-            delete s_Instance;
-        }
+        Stop();
     }
 
-    static ThreadPool& Get() { return *s_Instance; }
+    void Update(Timestep ts) override {}
 
     // Enqueues a task and returns a future for the result.
     template <class F, class... Args>
-    static auto Enqueue(F&& f, Args&&... args) -> std::future<typename std::invoke_result<F, Args...>::type>
+    auto Enqueue(F&& f, Args&&... args) -> std::future<typename std::invoke_result<F, Args...>::type>
     {
         using ReturnType = typename std::invoke_result<F, Args...>::type;
 
@@ -48,30 +42,30 @@ public:
 
         std::future<ReturnType> res = task->get_future();
         {
-            std::unique_lock<std::mutex> lock(s_Instance->m_QueueMutex);
+            std::unique_lock<std::mutex> lock(m_QueueMutex);
 
             // Не дозволяємо додавати завдання, якщо пул зупиняється
-            if (s_Instance->m_Stop)
+            if (m_Stop)
                 throw std::runtime_error("Enqueue on stopped ThreadPool");
 
-            s_Instance->m_Tasks.emplace([task]() { (*task)(); });
+            m_Tasks.emplace([task]() { (*task)(); });
         }
 
-        s_Instance->m_Condition.notify_one();
+        m_Condition.notify_one();
         return res;
     }
 
     // Queues a fire-and-forget task (без повернення результату).
-    static void QueueTask(std::function<void()> task)
+    void QueueTask(std::function<void()> task)
     {
         {
-            std::unique_lock<std::mutex> lock(s_Instance->m_QueueMutex);
-            if (s_Instance->m_Stop)
+            std::unique_lock<std::mutex> lock(m_QueueMutex);
+            if (m_Stop)
                 throw std::runtime_error("QueueTask on stopped ThreadPool");
 
-            s_Instance->m_Tasks.emplace(std::move(task));
+            m_Tasks.emplace(std::move(task));
         }
-        s_Instance->m_Condition.notify_one();
+        m_Condition.notify_one();
     }
 
 public:
@@ -144,12 +138,9 @@ private:
     // Черга завдань
     std::queue<std::function<void()>> m_Tasks;
 
-    // Синхронізація
     std::mutex m_QueueMutex;
     std::condition_variable m_Condition;
     bool m_Stop;
-private:
-    static inline ThreadPool* s_Instance = nullptr;
 };
 
 

@@ -4,6 +4,7 @@
 #include "engine/graphics/pipeline/geometry_generator.h"
 #include "engine/graphics/pipeline/render_command.h"
 #include "engine/assets/types/shader_asset.h"
+#include "engine/core/service_locator.h"
 #include "engine/graphics/api/buffer.h"
 #include "engine/graphics/api/vertex_array.h"
 #include "engine/core/log.h"
@@ -58,10 +59,10 @@ namespace Chained {
     void Renderer3D::DrawMesh(const Mesh& mesh, const Material& material, const glm::mat4& transform)
     {
         uint32_t shaderId = material.ShaderID;
-        if (shaderId == 0) shaderId = Renderer::GetData().CurrentShaderId;
+        if (shaderId == 0) shaderId = ServiceLocator::Get<Renderer>()->GetData().CurrentShaderId;
         if (shaderId == 0) return;
 
-        auto shaderAsset = Renderer::GetShaderLibrary().GetById(shaderId);
+        auto shaderAsset = ServiceLocator::Get<Renderer>()->GetShaderLibrary().GetById(shaderId);
         if (!shaderAsset || !shaderAsset->GetShader()) return;
 
         auto shader = shaderAsset->GetShader();
@@ -87,16 +88,16 @@ namespace Chained {
         if (transforms.empty() || !mesh.VAO) return;
 
         uint32_t shaderId = material.ShaderID;
-        if (shaderId == 0) shaderId = Renderer::GetData().CurrentShaderId;
+        if (shaderId == 0) shaderId = ServiceLocator::Get<Renderer>()->GetData().CurrentShaderId;
         if (shaderId == 0) return;
 
-        auto shaderAsset = Renderer::GetShaderLibrary().GetById(shaderId);
+        auto shaderAsset = ServiceLocator::Get<Renderer>()->GetShaderLibrary().GetById(shaderId);
         if (!shaderAsset || !shaderAsset->GetShader()) return;
 
         auto shader = shaderAsset->GetShader();
         shader->Bind();
 
-        glm::mat4 mvp = Renderer::GetData().CurrentProj * Renderer::GetData().CurrentView;
+        glm::mat4 mvp = ServiceLocator::Get<Renderer>()->GetData().CurrentProj * ServiceLocator::Get<Renderer>()->GetData().CurrentView;
         shader->SetMatrix("u_ViewProjection", mvp);
         shader->SetMatrix("u_Transform", glm::mat4(1.0f));
 
@@ -136,11 +137,11 @@ namespace Chained {
         int mode = (skyboxMode < 0) ? 0 : (skyboxMode > 2 ? 2 : skyboxMode);
 
         auto shaderAsset =
-            (skyboxMode == 2)
-                ? Renderer::GetShaderLibrary().LoadOrGet("SkyboxCubemap", "resources/shaders/skybox_cubemap.chshader")
-                : (skyboxMode == 1
-                       ? Renderer::GetShaderLibrary().LoadOrGet("SkyboxCross", "resources/shaders/skybox_cross.chshader")
-                       : Renderer::GetShaderLibrary().LoadOrGet("Skybox", "resources/shaders/skybox.chshader"));
+        (skyboxMode == 2)
+            ? ServiceLocator::Get<Renderer>()->GetShaderLibrary().LoadOrGet("SkyboxCubemap", "resources/shaders/skybox_cubemap.chshader")
+            : (skyboxMode == 1
+                   ? ServiceLocator::Get<Renderer>()->GetShaderLibrary().LoadOrGet("SkyboxCross", "resources/shaders/skybox_cross.chshader")
+                   : ServiceLocator::Get<Renderer>()->GetShaderLibrary().LoadOrGet("Skybox", "resources/shaders/skybox.chshader"));
         if (!shaderAsset || !shaderAsset->GetShader()) return;
 
         RenderCommand::SetDepthFunc(RendererAPI::DepthFunc::LEqual);
@@ -150,9 +151,9 @@ namespace Chained {
         auto shader = shaderAsset->GetShader();
         shader->Bind();
 
-        glm::mat4 view = glm::mat4(glm::mat3(Renderer::GetData().CurrentView));
+        glm::mat4 view = glm::mat4(glm::mat3(ServiceLocator::Get<Renderer>()->GetData().CurrentView));
         shader->SetMatrix("u_View", view);
-        shader->SetMatrix("u_Projection", Renderer::GetData().CurrentProj);
+        shader->SetMatrix("u_Projection", ServiceLocator::Get<Renderer>()->GetData().CurrentProj);
         shader->SetFloat("u_Exposure", exposure);
         shader->SetFloat("u_Brightness", brightness);
         shader->SetFloat("u_Contrast", contrast);

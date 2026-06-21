@@ -1,6 +1,5 @@
 #include "composite_pass.h"
-#include "engine/graphics/pipeline/render_command.h"
-#include "engine/graphics/pipeline/renderer.h"
+#include "engine/core/service_locator.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
 
 namespace Chained
@@ -19,9 +18,9 @@ void CompositePass::Execute(const RenderContext& ctx)
 
     // Upload fog uniforms to the lighting shader so subsequent draws
     // evaluate the same fog parameters as the main geometry pass.
-    if (!Renderer::GetShaderLibrary().Exists("Lighting")) return;
+    if (!ServiceLocator::Get<Renderer>()->GetShaderLibrary().Exists("Lighting")) return;
 
-    auto lightingAsset = Renderer::GetShaderLibrary().Get("Lighting");
+    auto lightingAsset = ServiceLocator::Get<Renderer>()->GetShaderLibrary().Get("Lighting");
     if (!lightingAsset) return;
 
     auto shader = lightingAsset->GetShader();

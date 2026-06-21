@@ -141,13 +141,13 @@ void SceneRenderer::RenderScene(entt::registry& registry, const SceneSettings& s
         m_CurrentEnv = envSettings;
     }
 
-    Renderer::UpdateTime(Timestep((float)glfwGetTime()));
+    ServiceLocator::Get<Renderer>()->UpdateTime(Timestep((float)glfwGetTime()));
 
     m_CurrentStats = {};
     m_CurrentStats.EntityCount = (uint32_t)registry.storage<entt::entity>().size();
 
 
-    Renderer::BeginScene(camera, nearClip, farClip);
+    ServiceLocator::Get<Renderer>()->BeginScene(camera, nearClip, farClip);
 
     // Update Light SSBO
     if (m_Lighting.LightsDirty && m_Lighting.LightSSBO)
@@ -197,7 +197,7 @@ void SceneRenderer::RenderScene(entt::registry& registry, const SceneSettings& s
         RenderEditorIcons(registry, settings, camera);
     }
 
-    Renderer::EndScene();
+    ServiceLocator::Get<Renderer>()->EndScene();
 
 
     Profiler::UpdateStats(m_CurrentStats);
@@ -543,8 +543,8 @@ void SceneRenderer::DrawModel(Chained::ModelAsset* modelAsset, const glm::mat4& 
 
         auto& model = modelAsset->GetModel();
         auto activeShader = shaderOverride ? shaderOverride
-                            : (Renderer::GetShaderLibrary().Exists("Lighting")
-                                ? Renderer::GetShaderLibrary().Get("Lighting").get()
+                            : (ServiceLocator::Get<Renderer>()->GetShaderLibrary().Exists("Lighting")
+                                ? ServiceLocator::Get<Renderer>()->GetShaderLibrary().Get("Lighting").get()
                                 : nullptr);
 
     if (!activeShader || !activeShader->GetShader())
@@ -637,7 +637,7 @@ void SceneRenderer::BindShaderUniforms(Chained::ShaderAsset* shaderAsset, const 
     auto shader = shaderAsset->GetShader();
     shader->Bind();
 
-    auto& rd = Renderer::GetData();
+    auto& rd = ServiceLocator::Get<Renderer>()->GetData();
     const auto& lighting = m_Lighting.CurrentLighting;
 
     glm::vec4 lightColor = {lighting.LightColor.r / 255.0f, lighting.LightColor.g / 255.0f,

@@ -5,6 +5,7 @@
 #include "engine/assets/types/model_asset.h"
 #include "engine/core/log.h"
 #include "engine/foundation/thread_pool.h"
+#include "engine/core/service_locator.h"
 
 #include <glm/glm.hpp>
 
@@ -69,7 +70,7 @@ std::shared_ptr<BVH> BVHCache::GetOrBuild(const std::shared_ptr<ModelAsset>& ass
     }
 
     {
-        ThreadPool::QueueTask([this, path, asset]() {
+        ServiceLocator::Get<ThreadPool>()->QueueTask([this, path, asset]() {
             auto built = BuildFromModelAsset(asset);
             
             std::lock_guard<std::mutex> lock(m_Mutex);
