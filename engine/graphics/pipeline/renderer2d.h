@@ -2,7 +2,7 @@
 #define CH_RENDERER2D_H
 
 #include "engine/foundation/base.h"
-#include "engine/scene/camera_types.h"
+#include "engine/graphics/camera_types.h"
 #include <glm/glm.hpp>
 #include <memory>
 #include <vector>

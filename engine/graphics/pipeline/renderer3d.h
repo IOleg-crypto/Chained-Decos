@@ -3,7 +3,7 @@
 
 #include "engine/foundation/base.h"
 #include "engine/graphics/pipeline/renderer_types.h"
-#include "engine/scene/camera_types.h"
+#include "engine/graphics/camera_types.h"
 #include <glm/glm.hpp>
 #include <memory>
 #include <vector>

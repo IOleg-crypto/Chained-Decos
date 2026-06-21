@@ -1,7 +1,7 @@
 #ifndef CH_CAMERA_COMPONENT_H
 #define CH_CAMERA_COMPONENT_H
 
-#include "engine/scene/scene_camera.h"
+#include "engine/scene/camera.h"
 #include "engine/reflection/reflection_rfl.h"
 #include <string>
 
@@ -9,7 +9,7 @@ namespace Chained
 {
 struct CameraComponent
 {
-    Chained::SceneCamera Camera;
+    Chained::Camera Camera;
     bool Primary = true;
     bool FixedAspectRatio = false;
 
