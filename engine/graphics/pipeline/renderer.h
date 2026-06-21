@@ -16,6 +16,8 @@
 #include <unordered_map>
 #include <string>
 
+#include "engine/core/engine_module.h"
+
 namespace Chained
 {
     class Texture;
@@ -70,43 +72,47 @@ struct RendererData
 };
 
 // Singleton renderer facade that owns GPU resources, frame state, and low-level draw calls.
-class Renderer
+class Renderer : public EngineModule
 {
 public:
-    static Renderer& Get() { return *s_Instance; }
+    Renderer(bool headless = false);
+    ~Renderer() override;
 
-    static void Init(bool headless = false);
-    static void Shutdown();
+    void Initialize() override;
+    void Shutdown() override;
+    void Update(Timestep ts) override;
 
-    static void LoadEngineResources();
+    void LoadEngineResources();
 
-    static void InitializeResources();
-    static void CleanupResources();
+    void InitializeResources();
+    void CleanupResources();
 
-    static void BeginScene(const Camera3D& camera, float nearClip = 0.01f, float farClip = 10000.0f);
-    static void EndScene();
+    void BeginScene(const Camera3D& camera, float nearClip = 0.01f, float farClip = 10000.0f);
+    void EndScene();
 
-    static void Clear(const glm::vec4& color);
-    static void SetViewport(int x, int y, int width, int height);
+    void Clear(const glm::vec4& color);
+    void SetViewport(int x, int y, int width, int height);
 
-    static void SetDiagnosticMode(float mode);
-    static void UpdateTime(Timestep time);
+    void SetDiagnosticMode(float mode);
+    void UpdateTime(Timestep time);
 
-    static ShaderLibrary& GetShaderLibrary();
-    static RendererData& GetData();
-    static UIRenderer* GetUIRenderer();
+    ShaderLibrary& GetShaderLibrary();
+    RendererData& GetData();
+    UIRenderer* GetUIRenderer();
 
-    static void SetHeadless(bool headless);
-    static void SetViewportSize(uint32_t width, uint32_t height);
+    void SetHeadless(bool headless);
+    void SetViewportSize(uint32_t width, uint32_t height);
     
-    static uint32_t GetViewportWidth();
-    static uint32_t GetViewportHeight();
-    static bool IsHeadless();
-
-    static void Update(Timestep ts);
+    uint32_t GetViewportWidth();
+    uint32_t GetViewportHeight();
+    bool IsHeadless();
 
 private:
-   static Renderer* s_Instance;
+    std::unique_ptr<RendererData> m_Data;
+    std::unique_ptr<UIRenderer> m_UI;
+    bool m_Headless = false;
+    uint32_t m_ViewportWidth = 1280;
+    uint32_t m_ViewportHeight = 720;
 };
 } // namespace Chained
 

@@ -33,7 +33,10 @@ Application::Application(const ApplicationSpecification& spec)
     s_Instance = this;
 
     Log::Init();
-    ThreadPool::Init();
+
+    unsigned int threads = std::thread::hardware_concurrency();
+    if (threads == 0) threads = 1;
+    unsigned int workerCount = (threads > 1) ? (threads - 1) : 1;
 
     if (!m_Specification.WorkingDirectory.empty())
     {
@@ -54,20 +57,21 @@ Application::Application(const ApplicationSpecification& spec)
     }
 
     // --- 2. Initialize Subsystems ---
+    ServiceLocator::Provide<ThreadPool>(new ThreadPool(workerCount));
     ServiceLocator::Provide<AssetManager>(new AssetManager());
     ServiceLocator::Provide<Audio>(new Audio());
     ServiceLocator::Provide<Physics>(new Physics());
     ServiceLocator::Provide<ScriptEngine>(new ScriptEngine(false));
 
     ServiceLocator::Get<AssetManager>()->Initialize();
-    Renderer::Init(m_Specification.Headless);
+    //Renderer::Init(m_Specification.Headless); Note: initialized via ServiceLocator below
     ServiceLocator::Get<Audio>()->Initialize();
     ServiceLocator::Get<Physics>()->Initialize();
     ServiceLocator::Get<ScriptEngine>()->Initialize();
 
     if (m_Window)
     {
-        Renderer::SetViewportSize(m_Window->GetWidth(), m_Window->GetHeight());
+        ServiceLocator::Get<Renderer>()->SetViewportSize(m_Window->GetWidth(), m_Window->GetHeight());
     }
 
     m_LayerStack = std::make_unique<LayerStack>();
@@ -90,9 +94,9 @@ Application::~Application()
     ServiceLocator::Get<Physics>()->Shutdown();
     ServiceLocator::Get<Audio>()->Shutdown();
     // NetworkService::Shutdown();
-    Renderer::Shutdown();
+    //Renderer::Shutdown();
     ServiceLocator::Get<AssetManager>()->Shutdown();
-    ThreadPool::Shutdown();
+    // NOTE: ThreadPool is now an EngineModule, so its Shutdown() is handled natively by ServiceLocator::Shutdown()
 
     m_Window.reset();
     s_Instance = nullptr;
@@ -162,7 +166,7 @@ void Application::OnEvent(Event& e)
     if (e.GetEventType() == EventType::WindowResize)
     {
         auto& re = (WindowResizeEvent&)e;
-        Renderer::SetViewportSize(re.GetWidth(), re.GetHeight());
+        ServiceLocator::Get<Renderer>()->SetViewportSize(re.GetWidth(), re.GetHeight());
     }
 
     for (auto it = m_LayerStack->rbegin(); it != m_LayerStack->rend(); ++it)

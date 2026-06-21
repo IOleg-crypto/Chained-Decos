@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <vector>
+#include "engine/core/engine_module.h"
 
 namespace Chained
 {
@@ -10,16 +11,16 @@ namespace Chained
      * @brief Core engine service for multiplayer networking using SteamNetworkingSockets.
      * Uses opaque handles (uint32_t) to avoid header pollution in the public API.
      */
-    class NetworkService
+    class NetworkService : public EngineModule
     {
     public:
-        static void Init();
-        static void Shutdown();
-        static NetworkService& Get();
+        void Initialize() override;
+        void Shutdown() override;
+        void Update(Timestep ts) override;
 
-    private:
+    public:
         NetworkService();
-        virtual ~NetworkService();
+        ~NetworkService() override;
 
     public:
         // Startup/Shutdown
@@ -60,8 +61,6 @@ namespace Chained
         bool m_IsClient = false;
         
         std::vector<std::vector<uint8_t>> m_MessageQueue;
-        
-        static NetworkService* s_Instance;
     };
 }
 

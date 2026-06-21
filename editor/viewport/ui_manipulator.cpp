@@ -4,6 +4,7 @@
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/scene/components/control_component.h"
 #include "engine/scene/scene.h"
+#include "engine/core/service_locator.h"
 
 namespace Chained
 {
@@ -26,7 +27,7 @@ bool EditorUIManipulator::OnImGuiRender(Entity selectedEntity, ImVec2 viewportPo
     auto& cc = selectedEntity.GetComponent<ControlComponent>();
     auto* sceneCtx = selectedEntity.GetRegistry().ctx().find<Scene*>();
     Scene* scene = (sceneCtx && *sceneCtx) ? *sceneCtx : nullptr;
-    auto* uiRenderer = Renderer::GetUIRenderer();
+    auto* uiRenderer = ServiceLocator::Get<Renderer>()->GetUIRenderer();
     UIRect rect = (scene && uiRenderer) ? uiRenderer->GetEntityRect(scene, selectedEntity, viewportSize, viewportPos)
                                         : UIRect{};
 

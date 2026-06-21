@@ -309,7 +309,7 @@ void ViewportPanel::HandleResize(const ImVec2& viewportSize, Scene* activeScene)
             m_HDRFramebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 
             // Keep Renderer in sync so frustum & projection use correct aspect ratio
-            Renderer::Get().SetViewportSize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+            ServiceLocator::Get<Renderer>()->SetViewportSize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 
             EditorLayer::Get().OnViewportResized({ m_ViewportSize.x, m_ViewportSize.y });
             m_CameraController->SetViewportSize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
@@ -470,13 +470,13 @@ void ViewportPanel::RenderOverlays(Scene* activeScene, const ImVec2& viewportSiz
 
     // 2. Game UI Overlay
     ImVec2 canvasOrigin = viewportScreenPos;
-    UIRenderer::Get().DrawCanvas(activeScene, canvasOrigin, viewportSize,
+    ServiceLocator::Get<UIRenderer>()->DrawCanvas(activeScene, canvasOrigin, viewportSize,
                                                 EditorLayer::Get().GetSceneState() == SceneState::Edit);
 
     // 3. Selection Highlight
     if (isUISelected && selectedEntity && EditorLayer::Get().GetSceneState() == SceneState::Edit)
     {
-        auto rect = UIRenderer::Get().GetEntityRect(activeScene, selectedEntity, viewportSize, viewportScreenPos);
+        auto rect = ServiceLocator::Get<UIRenderer>()->GetEntityRect(activeScene, selectedEntity, viewportSize, viewportScreenPos);
 
         ImVec2 p1 = ImVec2(rect.x, rect.y);
         ImVec2 p2 = ImVec2(p1.x + rect.width, p1.y + rect.height);
@@ -523,7 +523,7 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
             auto& cc = uiView.get<ControlComponent>(entityID);
             if (!cc.IsActive) continue;
 
-            auto rect = UIRenderer::Get().GetEntityRect(activeScene, entity, viewportSize, viewportScreenPos);
+            auto rect = ServiceLocator::Get<UIRenderer>()->GetEntityRect(activeScene, entity, viewportSize, viewportScreenPos);
             if (mousePos.x >= rect.x && mousePos.x <= rect.x + rect.width && mousePos.y >= rect.y && mousePos.y <= rect.y + rect.height)
             {
                 bestHit = entity;

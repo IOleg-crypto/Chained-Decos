@@ -87,8 +87,8 @@ bool EditorProjectManager::OnProjectOpened(ProjectOpenedEvent& e)
         ServiceLocator::Get<AssetManager>()->SetAssetDirectory(projDir / "assets");
  
          // Load engine shaders and resources
-        Renderer::LoadEngineResources();
-        Renderer::GetUIRenderer()->LoadProjectFonts();
+        ServiceLocator::Get<Renderer>()->LoadEngineResources();
+        ServiceLocator::Get<Renderer>()->GetUIRenderer()->LoadProjectFonts();
 
         m_LastProjectPath = e.GetPath();
 

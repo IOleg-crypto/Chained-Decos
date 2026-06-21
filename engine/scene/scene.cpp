@@ -7,7 +7,6 @@
 #include "engine/scene/animation_systems.h"
 #include "engine/scene/components/scene_transition_component.h"
 #include "engine/scene/components/control_component.h"
-#include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/ui/ui_renderer.h"
 #include <yaml-cpp/yaml.h>
 #include "engine/graphics/ui/ui_factory.h"
@@ -15,7 +14,9 @@
 #include "scripting/scriptengine.h"
 #include "engine/serialization/component_serializer.h"
 #include <entt/entt.hpp>
-#include "engine/project/project.h"
+#include "engine/core/service_locator.h"
+#include "engine/graphics/ui/ui_renderer.h"
+#include "engine/graphics/pipeline/renderer.h"
 
 using namespace entt::literals;
 
@@ -188,7 +189,7 @@ void Scene::OnRuntimeStart()
     m_IsSimulationRunning = true;
 
     CH_CORE_INFO("Scene::OnRuntimeStart - Initializing script and system managers...");
-    if (auto* uiRenderer = Renderer::GetUIRenderer())
+    if (auto* uiRenderer = ServiceLocator::Get<Renderer>()->GetUIRenderer())
         uiRenderer->ResetInputCooldown();
     
     if (m_ScriptingManager)
