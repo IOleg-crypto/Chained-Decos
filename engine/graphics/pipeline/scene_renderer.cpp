@@ -170,14 +170,8 @@ void SceneRenderer::RenderScene(entt::registry& registry, const SceneSettings& s
         this
     };
 
-    float w = (float)Renderer::GetViewportWidth();
-    float h = (float)Renderer::GetViewportHeight();
-    float aspect = (h > 0) ? (float)w / (float)h : 1.0f;
-    glm::mat4 view = glm::lookAt(camera.Position, camera.Target, camera.Up);
-    glm::mat4 proj =
-        (camera.Projection == 0)
-            ? glm::perspective(glm::radians(camera.FovY), aspect, nearClip, farClip)
-            : glm::ortho(-aspect * camera.FovY, aspect * camera.FovY, -camera.FovY, camera.FovY, nearClip, farClip);
+    glm::mat4 view = camera.ViewMatrix;
+    glm::mat4 proj = camera.ProjectionMatrix;
     Frustum frustum = FromMatrix(proj * view);
 
     PrepareLights(registry, frustum);

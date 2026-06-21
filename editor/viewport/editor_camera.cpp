@@ -14,7 +14,7 @@ namespace Chained
 
 EditorCameraController::EditorCameraController()
 {
-    m_Camera.SetPerspective(glm::radians(45.0f), 0.1f, 10000.0f);
+    SetPerspective(glm::radians(45.0f), 0.1f, 10000.0f);
     UpdateView();
 }
 

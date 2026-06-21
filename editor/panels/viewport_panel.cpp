@@ -292,7 +292,7 @@ Ray ViewportPanel::GetMouseRay(const glm::vec2& mousePosition)
         camera.Target = {fp.x, fp.y, fp.z};
         glm::vec3 up = controller.GetUpDirection();
         camera.Up = {up.x, up.y, up.z};
-        camera.FovY = glm::degrees(controller.GetCamera().GetPerspectiveVerticalFOV());
+        camera.FovY = glm::degrees(controller.GetPerspectiveVerticalFOV());
         camera.Projection = 0; // Perspective
 
     return ScenePicker::CreateRayFromViewport(camera, mousePosition, m_ViewportSize);
@@ -338,12 +338,12 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
 
     // Default to Editor Camera
     auto& controller = *m_CameraController;
-    auto& sourceCamera = controller.GetCamera();
+    auto& sourceCamera = controller;
     
-    float nearClip = (sourceCamera.GetProjectionType() == ProjectionType::Perspective) 
+    float nearClip = (sourceCamera.GetProjectionType() == Camera::ProjectionType::Perspective) 
         ? sourceCamera.GetPerspectiveNearClip() 
         : sourceCamera.GetOrthographicNearClip();
-    float farClip = (sourceCamera.GetProjectionType() == ProjectionType::Perspective) 
+    float farClip = (sourceCamera.GetProjectionType() == Camera::ProjectionType::Perspective) 
         ? sourceCamera.GetPerspectiveFarClip() 
         : sourceCamera.GetOrthographicFarClip();
     glm::vec3 pos = controller.CalculatePosition();
@@ -443,21 +443,21 @@ void ViewportPanel::RenderOverlays(Scene* activeScene, const ImVec2& viewportSiz
     else
     {
         auto& controller = *m_CameraController;
-        auto& sourceCamera = controller.GetCamera();
+        auto& sourceCamera = controller;
         glm::vec3 pos = controller.CalculatePosition();
         camera.Position = {pos.x, pos.y, pos.z};
         glm::vec3 fp = controller.GetFocalPoint();
         camera.Target = {fp.x, fp.y, fp.z};
         glm::vec3 up = controller.GetUpDirection();
         camera.Up = {up.x, up.y, up.z};
-        camera.FovY = (sourceCamera.GetProjectionType() == ProjectionType::Perspective)
+        camera.FovY = (sourceCamera.GetProjectionType() == Camera::ProjectionType::Perspective)
             ? glm::degrees(sourceCamera.GetPerspectiveVerticalFOV())
             : sourceCamera.GetOrthographicSize();
         camera.Projection = (int)sourceCamera.GetProjectionType();
-        camera.NearClip = (sourceCamera.GetProjectionType() == ProjectionType::Perspective)
+        camera.NearClip = (sourceCamera.GetProjectionType() == Camera::ProjectionType::Perspective)
             ? sourceCamera.GetPerspectiveNearClip()
             : sourceCamera.GetOrthographicNearClip();
-        camera.FarClip = (sourceCamera.GetProjectionType() == ProjectionType::Perspective)
+        camera.FarClip = (sourceCamera.GetProjectionType() == Camera::ProjectionType::Perspective)
             ? sourceCamera.GetPerspectiveFarClip()
             : sourceCamera.GetOrthographicFarClip();
     }

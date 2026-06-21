@@ -25,6 +25,10 @@ struct Camera3D
     float NearClip = 0.01f;
     float FarClip = 1000.0f;
     int Projection = 0; // 0 for Perspective, 1 for Orthographic
+    
+    // Explicit matrices to avoid double calculation in Renderers
+    glm::mat4 ProjectionMatrix = glm::mat4(1.0f);
+    glm::mat4 ViewMatrix = glm::mat4(1.0f);
 };
 } // namespace Chained
 
