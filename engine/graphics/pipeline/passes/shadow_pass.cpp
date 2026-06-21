@@ -1,10 +1,8 @@
 #include "shadow_pass.h"
-#include "engine/graphics/pipeline/render_command.h"
-#include "engine/graphics/pipeline/renderer.h"
+#include "engine/core/service_locator.h"
+#include "engine/scene/components.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
-#include "engine/scene/components/light_component.h"
-#include "engine/scene/components/transform_component.h"
-#include "engine/scene/entity.h"
+#include "engine/graphics/pipeline/render_command.h"
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace Chained
@@ -22,9 +20,9 @@ void ShadowPass::Init()
     m_ShadowMap  = Framebuffer::Create(spec);
 
     // Grab the depth-pass shader from the library if it exists.
-    if (Renderer::GetShaderLibrary().Exists("ShadowDepth"))
+    if (ServiceLocator::Get<Renderer>()->GetShaderLibrary().Exists("ShadowDepth"))
     {
-        m_DepthShaderAsset = Renderer::GetShaderLibrary().Get("ShadowDepth");
+        m_DepthShaderAsset = ServiceLocator::Get<Renderer>()->GetShaderLibrary().Get("ShadowDepth");
     }
 
     m_Initialized = true;

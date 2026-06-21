@@ -31,7 +31,10 @@ Application::Application(const ApplicationSpecification& spec)
     s_Instance = this;
 
     Log::Init();
-    ThreadPool::Init();
+
+    unsigned int threads = std::thread::hardware_concurrency();
+    if (threads == 0) threads = 1;
+    unsigned int workerCount = (threads > 1) ? (threads - 1) : 1;
 
     if (!m_Specification.WorkingDirectory.empty())
     {
@@ -51,6 +54,7 @@ Application::Application(const ApplicationSpecification& spec)
         m_Window->SetEventCallback(CH_BIND_EVENT_FN(Application::OnEvent));
     }
 
+    ServiceLocator::Provide<ThreadPool>(new ThreadPool(workerCount));
     ServiceLocator::Provide<AssetManager>(new AssetManager());
     ServiceLocator::Provide<Renderer>(new Renderer(m_Specification.Headless));
     ServiceLocator::Provide<Audio>(new Audio());
@@ -87,7 +91,7 @@ Application::~Application()
 {
     m_LayerStack.reset();
     ServiceLocator::Shutdown();
-    ThreadPool::Shutdown();
+    // NOTE: ThreadPool is now an EngineModule, so its Shutdown() is handled natively by ServiceLocator::Shutdown()
     m_Window.reset();
     s_Instance = nullptr;
 }

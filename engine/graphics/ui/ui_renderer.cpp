@@ -1,4 +1,5 @@
 #include "ui_renderer.h"
+#include "engine/core/service_locator.h"
 #include <algorithm>
 
 #include "engine/core/log.h"
@@ -13,21 +14,21 @@
 namespace Chained
 {
 
-UIRenderer* UIRenderer::s_Instance = nullptr;
-
 UIRenderer::UIRenderer()
 {
 }
 
-void UIRenderer::Init(AssetManager* assetManager)
+void UIRenderer::Initialize()
 {
-    s_Instance = this;
-    m_AssetManager = assetManager;
     CH_CORE_INFO("[UI] Initializing UI Renderer...");
     m_Initialized = true;
 }
 
 void UIRenderer::Shutdown()
+{
+}
+
+void UIRenderer::Update(Timestep ts)
 {
 }
 
@@ -73,7 +74,7 @@ bool UIRenderer::RenderUIComponent(Entity entity, const ImVec2& screenPos, const
         return false;
 
     auto& widget = entity.GetComponent<WidgetComponent>();
-    return Dispatcher::Render(m_FontRegistry, m_AssetManager, entity, widget, screenPos, size);
+    return Dispatcher::Render(m_FontRegistry, entity, widget, screenPos, size);
 }
 
 void UIRenderer::DrawCanvas(Scene* scene, const ImVec2& referencePosition, const ImVec2& referenceSize, bool editMode)

@@ -2,6 +2,7 @@
 #include "engine/core/log.h"
 #include "engine/core/profiler.h"
 #include "engine/foundation/thread_pool.h"
+#include "engine/core/service_locator.h"
 
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
@@ -361,7 +362,7 @@ void AssimpImporter::ProcessMeshes()
         futures.reserve(m_Scene->mNumMeshes);
         for (uint32_t m = 0; m < m_Scene->mNumMeshes; ++m)
         {
-            futures.push_back(ThreadPool::Enqueue([this, m]() { ProcessSingleMesh(m); }));
+            futures.push_back(ServiceLocator::Get<ThreadPool>()->Enqueue([this, m]() { ProcessSingleMesh(m); }));
         }
         for (auto& ft : futures)
         {
@@ -465,7 +466,7 @@ void AssimpImporter::DecodeEmbeddedTextures()
         };
         if (m_Scene->mNumTextures > 1)
         {
-            futures.push_back(ThreadPool::Enqueue(task));
+            futures.push_back(ServiceLocator::Get<ThreadPool>()->Enqueue(task));
         }
         else
         {

@@ -13,6 +13,7 @@
 #include <map>
 
 #include <vector>
+#include "engine/core/engine_module.h"
 
 namespace Chained
 {
@@ -20,19 +21,21 @@ class Scene;
 class AssetManager;
 
 // singleton renderer for in-world UI canvases and project fonts.
-class UIRenderer
+class UIRenderer : public EngineModule
 {
 public:
-    static UIRenderer& Get() { return *s_Instance; }
-
     UIRenderer();
-    virtual ~UIRenderer() = default;
+    ~UIRenderer() override = default;
+
+    void Initialize() override;
+    void Shutdown() override;
+    void Update(Timestep ts) override;
 
     // Draws a UI canvas for the given scene.
     void DrawCanvas(Scene* scene, const ImVec2& referencePosition, const ImVec2& referenceSize, bool editMode = false);
 
     // Resets per-frame button press flags for all ButtonControl/ImageButtonControl components.
-    static void ResetButtonStates(Scene* scene);
+    void ResetButtonStates(Scene* scene);
 
     // Loads fonts required by the current project/UI theme.
     void LoadProjectFonts();
@@ -46,13 +49,9 @@ public:
     UIFontRegistry&       GetFontRegistry()       { return m_FontRegistry; }
     const UIFontRegistry& GetFontRegistry() const  { return m_FontRegistry; }
 
-public:
-    void Init(AssetManager* assetManager);
-    void Shutdown();
-
 
 private:
-    bool   RenderUIComponent(Entity entity, const ImVec2& screenPos, const ImVec2& size, bool editMode);
+    bool RenderUIComponent(Entity entity, const ImVec2& screenPos, const ImVec2& size, bool editMode);
     std::vector<entt::entity> SortUIEntities(entt::registry& registry);
 
     UIFontRegistry    m_FontRegistry;
@@ -62,8 +61,6 @@ private:
 
     bool m_Initialized = false;
     int m_InputCooldownFrames = 0;
-    AssetManager* m_AssetManager = nullptr;
-    static UIRenderer* s_Instance;
 };
 
 } // namespace Chained

@@ -2,6 +2,7 @@
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/shader_asset.h"
 #include "engine/graphics/pipeline/render_command.h"
+#include "engine/core/service_locator.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/pipeline/geometry_generator.h"
 #include <glm/gtc/matrix_transform.hpp>
@@ -68,7 +69,7 @@ namespace Chained::DebugRenderer {
 
 void DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& transform, bool useWireframe)
 {
-    auto& rd = Renderer::GetData();
+    auto& rd = ServiceLocator::Get<Renderer>()->GetData();
     auto debugShader = rd.Shaders->LoadOrGet("ColliderDebug", "resources/shaders/collider_debug.chshader");
     if (!debugShader || !debugShader->GetShader())
     {
@@ -132,8 +133,8 @@ void DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& tra
 }
     void DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& color)
     {
-        auto& rd = Renderer::GetData();
-        auto& shaderLibrary = Renderer::GetShaderLibrary();
+        auto& rd = ServiceLocator::Get<Renderer>()->GetData();
+        auto& shaderLibrary = ServiceLocator::Get<Renderer>()->GetShaderLibrary();
         auto shaderAsset = shaderLibrary.LoadOrGet("Grid", "resources/shaders/grid.chshader");
         if (!shaderAsset || !shaderAsset->GetShader())
         {

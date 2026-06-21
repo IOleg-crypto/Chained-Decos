@@ -1,5 +1,6 @@
 #include "engine/platform/utils/file_dialogs.h"
 #include "editor_gui.h"
+#include "engine/core/service_locator.h"
 #include "IconsFontAwesome6.h"
 #include "editor/editor_layer.h"
 #include "editor/panels/panel.h"
@@ -145,7 +146,7 @@ void EditorGUI::DrawMenuBar(EditorLayer& editorLayer, EditorPanels& panels)
         ImGui::Separator();
         if (ImGui::MenuItem(ICON_FA_ARROWS_ROTATE " Reload Shaders"))
         {
-            Renderer::GetShaderLibrary().ReloadAll();
+            ServiceLocator::Get<Renderer>()->GetShaderLibrary().ReloadAll();
         }
         if (ImGui::MenuItem(ICON_FA_FILE_CODE " Reload Scripts", "Ctrl+R"))
         {

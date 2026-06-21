@@ -3,6 +3,7 @@
 #include "engine/runtime/application.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "scene/scene.h"
+#include "engine/core/service_locator.h"
 
 
 namespace Chained
@@ -36,7 +37,7 @@ void EffectsPanel::OnImGuiRender(bool readOnly)
         if (ImGui::Combo("Diagnostic Mode", &currentDiag, diagnosticModes, 4))
         {
             m_Context->GetSettings().DiagnosticMode = (float)currentDiag;
-            Renderer::Get().SetDiagnosticMode((float)currentDiag);
+            ServiceLocator::Get<Renderer>()->SetDiagnosticMode((float)currentDiag);
         }
     }
 

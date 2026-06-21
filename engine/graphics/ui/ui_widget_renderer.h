@@ -55,7 +55,7 @@ void RenderTabBar  (Entity tabBarEntity, TabBarData& tb, WidgetComponent& wc, en
 // Centralized dispatcher that handles styling and rendering for any widget type
 struct Dispatcher
 {
-    static bool Render(const UIFontRegistry& fontRegistry, AssetManager* assetManager,
+    static bool Render(const UIFontRegistry& fontRegistry,
                        Entity entity, WidgetComponent& widget, const ImVec2& screenPos, const ImVec2& size);
 };
 

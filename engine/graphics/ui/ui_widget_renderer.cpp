@@ -3,6 +3,7 @@
 #include "ui_font_registry.h"
 
 #include "engine/assets/asset_manager.h"
+#include "engine/core/service_locator.h"
 #include "engine/assets/types/texture_asset.h"
 
 namespace Chained
@@ -41,7 +42,7 @@ StyleCounts PushUIStyle(const UIStyle& style, bool interactable)
     return stylecount;
 }
 
-void PushTextStyle(const ::Chained::UIFontRegistry& fontRegistry, const TextStyle& text, StyleCounts& c)
+void PushTextStyle(const UIFontRegistry& fontRegistry, const TextStyle& text, StyleCounts& c)
 {
     ImGui::PushStyleColor(ImGuiCol_Text, ToImVec4(text.TextColor));
     c.colors++;
@@ -82,7 +83,7 @@ void PopUIStyle(const StyleCounts& c)
 // Widget rendering
 // ---------------------------------------------------------------------------
 
-void RenderPanel(AssetManager* assetManager, PanelData& panel, WidgetComponent& wc, const ImVec2& pos, const ImVec2& size)
+void RenderPanel(PanelData& panel, WidgetComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
     ImDrawList* dl   = ImGui::GetWindowDrawList();
     ImU32 bgColor    = ImGui::GetColorU32(ToImVec4(wc.BoxStyle.BackgroundColor));
@@ -91,9 +92,9 @@ void RenderPanel(AssetManager* assetManager, PanelData& panel, WidgetComponent& 
 
     AssetHandle textureHandle = (AssetHandle)panel.TextureHandle;
     
-    if (textureHandle != 0 && assetManager)
+    if (textureHandle != 0)
     {
-        auto textureAsset = assetManager->GetAsset<TextureAsset>(textureHandle);
+        auto textureAsset = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>(textureHandle);
         if (textureAsset && textureAsset->GetState() == AssetState::Ready)
         {
             auto texture = textureAsset->GetTexture();
@@ -134,14 +135,9 @@ bool RenderCheckbox(CheckboxData& cb, WidgetComponent& wc)
     return ImGui::Checkbox(cb.Label.c_str(), &cb.Checked);
 }
 
-void RenderImage(AssetManager* assetManager, const ImageData& image, const WidgetComponent& wc, const ImVec2& size)
+void RenderImage(const ImageData& image, const WidgetComponent& wc, const ImVec2& size)
 {
-    if (!assetManager)
-    {
-        return;
-    }
-
-    auto textureAsset = assetManager->GetAsset<TextureAsset>((AssetHandle)image.TextureHandle);
+    auto textureAsset = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>((AssetHandle)image.TextureHandle);
     if (textureAsset && textureAsset->GetState() == AssetState::Ready)
     {
         ImGui::Image((ImTextureID)(uintptr_t)textureAsset->GetTexture()->GetRendererID(), size);
@@ -185,14 +181,9 @@ bool RenderComboBox(ComboBoxData& cb, WidgetComponent& wc, const ImVec2& size)
     return changed;
 }
 
-bool RenderImageButton(AssetManager* assetManager, const ImageButtonData& ib, const WidgetComponent& wc, const ImVec2& size)
+bool RenderImageButton(const ImageButtonData& ib, const WidgetComponent& wc, const ImVec2& size)
 {
-    if (!assetManager)
-    {
-        return wc.PressedThisFrame;
-    }
-
-    auto textureAsset = assetManager->GetAsset<TextureAsset>((AssetHandle)ib.TextureHandle);
+    auto textureAsset = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>((AssetHandle)ib.TextureHandle);
     if (textureAsset && textureAsset->GetState() == AssetState::Ready)
     {
         ImGui::ImageButton("##ib", (ImTextureID)(uintptr_t)textureAsset->GetTexture()->GetRendererID(), size);
@@ -289,7 +280,7 @@ void RenderTabBar(Entity tabBarEntity, TabBarData& tb, WidgetComponent& wc, entt
     ImGui::EndTabBar();
 }
 
-bool Dispatcher::Render(const UIFontRegistry& fontRegistry, AssetManager* assetManager,
+bool Dispatcher::Render(const UIFontRegistry& fontRegistry,
                         Entity entity, WidgetComponent& widget, const ImVec2& screenPos, const ImVec2& size)
 {
     StyleCounts styleState = PushUIStyle(widget.BoxStyle);
@@ -302,15 +293,15 @@ bool Dispatcher::Render(const UIFontRegistry& fontRegistry, AssetManager* assetM
         [&](auto&& arg) {
             using T = std::decay_t<decltype(arg)>;
             if constexpr (std::is_same_v<T, ButtonData>)       handled = RenderButton(entity, arg, widget, size);
-            else if constexpr (std::is_same_v<T, PanelData>)   RenderPanel(assetManager, arg, widget, screenPos, size);
+            else if constexpr (std::is_same_v<T, PanelData>)   RenderPanel(arg, widget, screenPos, size);
             else if constexpr (std::is_same_v<T, LabelData>)   RenderLabel(arg, widget, size);
             else if constexpr (std::is_same_v<T, SliderData>)  changed = RenderSlider(arg, widget, size);
             else if constexpr (std::is_same_v<T, CheckboxData>) changed = RenderCheckbox(arg, widget);
-            else if constexpr (std::is_same_v<T, ImageData>)    RenderImage(assetManager, arg, widget, size);
+            else if constexpr (std::is_same_v<T, ImageData>)    RenderImage( arg, widget, size);
             else if constexpr (std::is_same_v<T, InputTextData>) changed = RenderInputText(entity, arg, widget, size);
             else if constexpr (std::is_same_v<T, ProgressBarData>) RenderProgressBar(arg, widget, size);
             else if constexpr (std::is_same_v<T, ComboBoxData>) changed = RenderComboBox(arg, widget, size);
-            else if constexpr (std::is_same_v<T, ImageButtonData>) changed = RenderImageButton(assetManager, arg, widget, size);
+            else if constexpr (std::is_same_v<T, ImageButtonData>) changed = RenderImageButton(arg, widget, size);
             else if constexpr (std::is_same_v<T, RadioButtonData>) changed = RenderRadioButton(arg, widget);
             else if constexpr (std::is_same_v<T, ColorPickerData>) changed = RenderColorPicker(arg, widget);
             else if constexpr (std::is_same_v<T, SeparatorData>)   RenderSeparator(arg);

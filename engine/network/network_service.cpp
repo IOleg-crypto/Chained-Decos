@@ -1,7 +1,9 @@
 #include "network_service.h"
 #include "engine/core/log.h"
 #include "engine/foundation/engine_assert.h"
+#include "engine/foundation/engine_assert.h"
 #include "engine/foundation/timestep.h"
+#include "engine/core/service_locator.h"
 
 
 // Steam Networking Sockets Headers
@@ -12,30 +14,20 @@
 
 namespace Chained
 {
-    NetworkService* NetworkService::s_Instance = nullptr;
-
-    void NetworkService::Init()
+    void NetworkService::Initialize()
     {
-        CH_ASSERT(!s_Instance);
-        s_Instance = new NetworkService();
-        s_Instance->InitializeSteamNetworking();
+        InitializeSteamNetworking();
     }
 
     void NetworkService::Shutdown()
     {
-        if (s_Instance)
-        {
-            s_Instance->Disconnect();
-            GameNetworkingSockets_Kill();
-            delete s_Instance;
-            s_Instance = nullptr;
-        }
+        Disconnect();
+        GameNetworkingSockets_Kill();
     }
 
-    NetworkService& NetworkService::Get()
+    void NetworkService::Update(Timestep ts)
     {
-        CH_ASSERT(s_Instance);
-        return *s_Instance;
+        Poll();
     }
 
     NetworkService::NetworkService()
@@ -209,9 +201,10 @@ namespace Chained
 
     void NetworkService::OnSteamNetConnectionStatusChangedInternal(void* pInfo)
     {
-        if (s_Instance)
+        auto* service = ServiceLocator::Get<NetworkService>();
+        if (service)
         {
-            s_Instance->HandleConnectionStatusChanged(pInfo);
+            service->HandleConnectionStatusChanged(pInfo);
         }
     }
 

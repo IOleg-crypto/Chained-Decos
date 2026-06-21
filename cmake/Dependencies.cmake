@@ -29,8 +29,8 @@ include(coral)
 include(nfd)
 # No time for networking right now
 
-#include(protobuf) # Required for GNS
-#include(gamenetworkingsockets)
+# include(protobuf) # Required for GNS
+# include(gamenetworkingsockets)
 
 include(reflect-cpp)
 
