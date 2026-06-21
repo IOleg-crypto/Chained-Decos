@@ -107,23 +107,11 @@ void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
     s_Data->CurrentCameraPosition = camera.Position;
 
     // --- Direct glm::mat4 Management (Pure OpenGL style) ---
-    // 1. Calculate View Transform
-    s_Data->CurrentView = glm::lookAt(camera.Position, camera.Target, camera.Up);
+    // Calculate View Transform
+    s_Data->CurrentView = camera.ViewMatrix;
 
-    // 2. Calculate Projection Transform
-    int width = s_ViewportWidth;
-    int height = s_ViewportHeight;
-    float aspect = (height > 0) ? (float)width / (float)height : 1.0f;
-    if (camera.Projection == 0 /* CAMERA_PERSPECTIVE */)
-    {
-        s_Data->CurrentProj = glm::perspective(glm::radians(camera.FovY), aspect, nearClip, farClip);
-    }
-    else
-    {
-        float top = camera.FovY / 2.0f;
-        float right = top * aspect;
-        s_Data->CurrentProj = glm::ortho(-right, right, -top, top, nearClip, farClip);
-    }
+    // Calculate Projection Transform
+    s_Data->CurrentProj = camera.ProjectionMatrix;
 
     // Upload to UBO
     Chained::CameraData cameraData;
