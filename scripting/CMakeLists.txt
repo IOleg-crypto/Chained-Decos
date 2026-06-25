@@ -1,19 +1,41 @@
 chained_add_engine_module(engine_scripting
-    EXCLUDE_FILES
-        "script_glue_network.cpp"
+    SOURCES
+        scriptengine.h
+        scriptengine.cpp
+        scriptengine_services.h
+        scriptengine_services.cpp
+        scene_scripting_manager.h
+        scene_scripting_manager.cpp
+        script_glue.h
+        script_glue.cpp
+        script_glue_internal.h
+        script_glue_system.cpp
+        script_glue_input.cpp
+        #script_glue_network.cpp
+        script_glue_scene.cpp
+        script_glue_entity.cpp
+        script_glue_camera.cpp
+        script_glue_ui.cpp
+        script_glue_audio.cpp
     DEPENDS
         engine_core
         engine_audio
         engine_physics
-        yaml-cpp
-        engine_external_entt
-        glm
+        engine_imgui
+        engine_graphics
         Coral.Native
-        engine_external_miniaudio
-        engine_external_imgui
 )
 
+target_include_directories(engine_scripting PRIVATE
+    ${CMAKE_SOURCE_DIR}/thirdparty/coral/Coral.Native/Include
+    ${CMAKE_SOURCE_DIR}/thirdparty/coral/NetCore
+)
 
+if(CH_BUILD_PRESET_NAMES_INCLUDE_DIR)
+    target_include_directories(engine_scripting PRIVATE
+        ${CH_BUILD_PRESET_NAMES_INCLUDE_DIR}
+    )
+endif()
 
 if(MSVC)
     target_compile_options(engine_scripting PRIVATE /bigobj)
@@ -22,29 +44,29 @@ elseif(MINGW)
 endif()
 
 # ── C# Managed API Build ──────────────────────────────────────────────────
-# This builds the core engine scripting API (.dll) which the game depends on.
-set(MANAGED_BUILD_SCRIPT "${CMAKE_SOURCE_DIR}/tools/sync_resources.py")
-set(MANAGED_PROJECT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/managed/Chained.Managed.csproj")
+# Builds the core engine scripting API (.dll) which the game depends on.
+set(MANAGED_PROJECT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/managed/CHEngine.Managed.csproj")
 set(MANAGED_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")
-set(CORAL_MANAGED_DIR "${CMAKE_BINARY_DIR}/vendor/coral")
+
+find_program(DOTNET_EXE NAMES dotnet)
+if(NOT DOTNET_EXE)
+    message(WARNING "dotnet not found - CHEngine.Managed.dll will not be built")
+endif()
 
 file(GLOB_RECURSE MANAGED_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/managed/src/*.cs")
 list(APPEND MANAGED_SOURCES "${MANAGED_PROJECT_PATH}")
 
-set(MANAGED_DLL_OUTPUT "${MANAGED_OUTPUT_DIR}/Chained.Managed.dll")
+set(MANAGED_DLL_OUTPUT "${MANAGED_OUTPUT_DIR}/CHEngine.Managed.dll")
 
 add_custom_command(
-    OUTPUT "${MANAGED_DLL_OUTPUT}"
-    COMMAND "${CH_PYTHON_EXECUTABLE}" "${MANAGED_BUILD_SCRIPT}" build-managed
-            --project "${MANAGED_PROJECT_PATH}"
+    OUTPUT  "${MANAGED_DLL_OUTPUT}"
+    COMMAND "${DOTNET_EXE}" build "${MANAGED_PROJECT_PATH}"
             --output "${MANAGED_OUTPUT_DIR}"
-            --coral-dir "${CORAL_MANAGED_DIR}"
             --configuration $<CONFIG>
-            --write-props
-            --copy-coral
+            --nologo
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/managed"
-    DEPENDS ${MANAGED_SOURCES} "${MANAGED_BUILD_SCRIPT}"
-    COMMENT "Building Chained.Managed C# Library"
+    DEPENDS ${MANAGED_SOURCES}
+    COMMENT "Building CHEngine.Managed C# Library"
     VERBATIM
 )
 

@@ -12,10 +12,10 @@ static Color LerpColor(Color c1, Color c2, float t)
 
 void UIAnimationSystem::Update(entt::registry& registry, float dt)
 {
-    auto view = registry.view<WidgetComponent>();
+    auto view = registry.view<UIControlComponent>();
     for (auto entity : view)
     {
-        auto& widget = view.get<WidgetComponent>(entity);
+        auto& widget = view.get<UIControlComponent>(entity);
         UpdateStyle(widget.BoxStyle, widget.IsHovered, widget.IsDown, dt);
     }
 }

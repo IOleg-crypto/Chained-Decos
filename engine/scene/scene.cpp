@@ -31,10 +31,6 @@ Scene::Scene(ScriptEngine* scriptEngine)
     auto& reg = *m_Registry;
     
     // Populate Context
-    m_Context.Registry = &reg;
-    m_Context.Scripting = scriptEngine;
-    // Note: Physics and Audio will be assigned by systems or during RuntimeStart
-
     reg.ctx().emplace<Scene*>(this);
     reg.ctx().emplace<EntityUUIDMap>();
 
@@ -63,9 +59,8 @@ Scene::~Scene()
 
 std::shared_ptr<Scene> Scene::CreateDefault()
 {
-    ScriptEngine* engine = &ScriptEngine::Get();
-        
-    auto scene = std::make_shared<Scene>(engine);
+     
+    auto scene = std::make_shared<Scene>();
 
     // Ensure every scene starts with a Main Camera
     Entity camera = scene->CreateEntity("Main Camera");
@@ -81,7 +76,7 @@ std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
     CH_PROFILE_FUNCTION();
     CH_CORE_INFO("Scene::Copy - Starting copy of scene '{}'", other->m_Settings.Name);
 
-    std::shared_ptr<Scene> newScene = std::make_shared<Scene>(other->GetScriptEngine());
+    std::shared_ptr<Scene> newScene = std::make_shared<Scene>();
 
     // 1. Copy Scene Settings
     newScene->m_Settings = other->m_Settings;
@@ -254,9 +249,9 @@ void Scene::OnUpdateRuntime(Timestep ts)
     for (auto entity : transitionView)
     {
         auto& transition = transitionView.get<SceneTransitionComponent>(entity);
-        if (m_Registry->all_of<WidgetComponent>(entity))
+        if (m_Registry->all_of<UIControlComponent>(entity))
         {
-            auto& widget = m_Registry->get<WidgetComponent>(entity);
+            auto& widget = m_Registry->get<UIControlComponent>(entity);
             if (widget.PressedThisFrame) transition.Triggered = true;
         }
 
@@ -384,11 +379,6 @@ std::vector<entt::entity> Chained::Scene::GetRootEntities() const
 bool Scene::IsSimulationRunning() const
 {
     return m_IsSimulationRunning;
-}
-
-ScriptEngine* Scene::GetScriptEngine() const
-{
-    return m_ScriptingManager ? m_ScriptingManager->GetScriptEngine() : nullptr;
 }
 
 void Scene::DestroyEntity(Entity entity)

@@ -1,4 +1,4 @@
-#include "ui_widget_renderer.h"
+#include "ui_control_renderer.h"
 #include "ui_renderer.h"
 #include "ui_font_registry.h"
 
@@ -13,7 +13,20 @@ namespace Chained
 // Style helpers
 // ---------------------------------------------------------------------------
 
-StyleCounts PushUIStyle(const UIStyle& style, bool interactable)
+struct StyleCounts
+{
+    int colors = 0;
+    int vars = 0;
+    int fonts = 0;
+    bool disabled = false;
+};
+
+inline ImVec4 ToImVec4(const Color& c)
+{
+    return ImVec4(c.r / 255.0f, c.g / 255.0f, c.b / 255.0f, c.a / 255.0f);
+}
+
+static StyleCounts PushUIStyle(const UIStyle& style, bool interactable)
 {
     StyleCounts stylecount;
 
@@ -80,10 +93,10 @@ void PopUIStyle(const StyleCounts& c)
 }
 
 // ---------------------------------------------------------------------------
-// Widget rendering
+// Explicit internal control rendering functions
 // ---------------------------------------------------------------------------
 
-void RenderPanel(PanelData& panel, WidgetComponent& wc, const ImVec2& pos, const ImVec2& size)
+static bool RenderPanel(PanelData& panel, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
     ImDrawList* dl   = ImGui::GetWindowDrawList();
     ImU32 bgColor    = ImGui::GetColorU32(ToImVec4(wc.BoxStyle.BackgroundColor));
@@ -111,40 +124,43 @@ void RenderPanel(PanelData& panel, WidgetComponent& wc, const ImVec2& pos, const
     {
         dl->AddRect(pos, pMax, borderCol, wc.BoxStyle.Rounding, 0, wc.BoxStyle.BorderSize);
     }
+    return false;
 }
 
-void RenderLabel(const LabelData& label, const WidgetComponent& wc, const ImVec2& size)
+static bool RenderLabel(const LabelData& label, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
     ImGui::Button(label.Text.c_str(), size);
+    return false;
 }
 
-bool RenderButton(Entity entity, const ButtonData& button, const WidgetComponent& wc, const ImVec2& size)
+static bool RenderButton(const ButtonData& button, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
     ImGui::Button(button.Label.c_str(), size);
     return wc.PressedThisFrame;
 }
 
-bool RenderSlider(SliderData& slider, WidgetComponent& wc, const ImVec2& size)
+static bool RenderSlider(SliderData& slider, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
     ImGui::SetNextItemWidth(size.x);
     return ImGui::SliderFloat("##slider", &slider.Value, slider.Min, slider.Max);
 }
 
-bool RenderCheckbox(CheckboxData& cb, WidgetComponent& wc)
+static bool RenderCheckbox(CheckboxData& cb, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
     return ImGui::Checkbox(cb.Label.c_str(), &cb.Checked);
 }
 
-void RenderImage(const ImageData& image, const WidgetComponent& wc, const ImVec2& size)
+static bool RenderImage(const ImageData& image, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
     auto textureAsset = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>((AssetHandle)image.TextureHandle);
     if (textureAsset && textureAsset->GetState() == AssetState::Ready)
     {
         ImGui::Image((ImTextureID)(uintptr_t)textureAsset->GetTexture()->GetRendererID(), size);
     }
+    return false;
 }
 
-bool RenderInputText(Entity entity, InputTextData& it, WidgetComponent& wc, const ImVec2& size)
+static bool RenderInputText(InputTextData& it, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
     ImGui::SetNextItemWidth(size.x);
     char buffer[1024];
@@ -157,12 +173,13 @@ bool RenderInputText(Entity entity, InputTextData& it, WidgetComponent& wc, cons
     return false;
 }
 
-void RenderProgressBar(const ProgressBarData& pb, const WidgetComponent& wc, const ImVec2& size)
+static bool RenderProgressBar(const ProgressBarData& pb, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
     ImGui::ProgressBar(pb.Progress, size);
+    return false;
 }
 
-bool RenderComboBox(ComboBoxData& cb, WidgetComponent& wc, const ImVec2& size)
+static bool RenderComboBox(ComboBoxData& cb, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
     ImGui::SetNextItemWidth(size.x);
     bool changed = false;
@@ -181,7 +198,7 @@ bool RenderComboBox(ComboBoxData& cb, WidgetComponent& wc, const ImVec2& size)
     return changed;
 }
 
-bool RenderImageButton(const ImageButtonData& ib, const WidgetComponent& wc, const ImVec2& size)
+static bool RenderImageButton(const ImageButtonData& ib, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
     auto textureAsset = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>((AssetHandle)ib.TextureHandle);
     if (textureAsset && textureAsset->GetState() == AssetState::Ready)
@@ -191,7 +208,7 @@ bool RenderImageButton(const ImageButtonData& ib, const WidgetComponent& wc, con
     return wc.PressedThisFrame;
 }
 
-bool RenderRadioButton(RadioButtonData& rb, WidgetComponent& wc)
+static bool RenderRadioButton(RadioButtonData& rb, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
     bool changed = false;
     for (int i = 0; i < (int)rb.Options.size(); i++)
@@ -206,7 +223,7 @@ bool RenderRadioButton(RadioButtonData& rb, WidgetComponent& wc)
     return changed;
 }
 
-bool RenderColorPicker(ColorPickerData& cp, WidgetComponent& wc)
+static bool RenderColorPicker(ColorPickerData& cp, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
     float col[4] = {cp.SelectedColor.r / 255.f, cp.SelectedColor.g / 255.f, cp.SelectedColor.b / 255.f, cp.SelectedColor.a / 255.f};
     bool changed = false;
@@ -220,24 +237,25 @@ bool RenderColorPicker(ColorPickerData& cp, WidgetComponent& wc)
     return changed;
 }
 
-void RenderSeparator(const SeparatorData& sep)
+static bool RenderSeparator(const SeparatorData& sep, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
     ImGui::Separator();
+    return false;
 }
 
-bool RenderDragFloat(DragFloatData& df, WidgetComponent& wc, const ImVec2& size)
+static bool RenderDragFloat(DragFloatData& df, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
     ImGui::SetNextItemWidth(size.x);
     return ImGui::DragFloat(df.Label.c_str(), &df.Value, df.Speed, df.Min, df.Max);
 }
 
-bool RenderDragInt(DragIntData& di, WidgetComponent& wc, const ImVec2& size)
+static bool RenderDragInt(DragIntData& di, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
     ImGui::SetNextItemWidth(size.x);
     return ImGui::DragInt(di.Label.c_str(), &di.Value, di.Speed, di.Min, di.Max);
 }
 
-bool RenderTreeNode(TreeNodeData& tn, WidgetComponent& wc)
+static bool RenderTreeNode(TreeNodeData& tn, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
     ImGuiTreeNodeFlags flags = 0;
     if (tn.DefaultOpen) flags |= ImGuiTreeNodeFlags_DefaultOpen;
@@ -245,80 +263,94 @@ bool RenderTreeNode(TreeNodeData& tn, WidgetComponent& wc)
     
     bool open = ImGui::TreeNodeEx(tn.Label.c_str(), flags);
     tn.IsOpen = open;
-    return open;
+    return false;
 }
 
-bool RenderCollapsingHeader(CollapsingHeaderData& ch, WidgetComponent& wc)
+static bool RenderCollapsingHeader(CollapsingHeaderData& ch, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
     ImGuiTreeNodeFlags flags = 0;
     if (ch.DefaultOpen) flags |= ImGuiTreeNodeFlags_DefaultOpen;
     
     bool open = ImGui::CollapsingHeader(ch.Label.c_str(), flags);
     ch.IsOpen = open;
-    return open;
+    return false;
 }
 
-bool RenderPlotLines(const PlotLinesData& pl, const WidgetComponent& wc)
+static bool RenderPlotLines(const PlotLinesData& pl, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
     ImGui::PlotLines(pl.Label.c_str(), pl.Values.data(), (int)pl.Values.size(), 0, pl.OverlayText.c_str(), pl.ScaleMin, pl.ScaleMax, ImVec2(pl.GraphSize.x, pl.GraphSize.y));
     return false;
 }
 
-bool PlotHistogram(const PlotHistogramData& ph, const WidgetComponent& wc)
+static bool RenderPlotHistogram(const PlotHistogramData& ph, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
     ImGui::PlotHistogram(ph.Label.c_str(), ph.Values.data(), (int)ph.Values.size(), 0, ph.OverlayText.c_str(), ph.ScaleMin, ph.ScaleMax, ImVec2(ph.GraphSize.x, ph.GraphSize.y));
     return false;
 }
 
-void RenderTabBar(Entity tabBarEntity, TabBarData& tb, WidgetComponent& wc, entt::registry& registry)
+static bool RenderTabBar(TabBarData& tb, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
     ImGuiTabBarFlags flags = 0;
     if (tb.Reorderable) flags |= ImGuiTabBarFlags_Reorderable;
     if (tb.AutoSelectNewTabs) flags |= ImGuiTabBarFlags_AutoSelectNewTabs;
 
-    if (!ImGui::BeginTabBar(tb.Label.c_str(), flags)) return;
+    if (!ImGui::BeginTabBar(tb.Label.c_str(), flags)) return false;
     ImGui::EndTabBar();
+    return false;
 }
 
-bool Dispatcher::Render(const UIFontRegistry& fontRegistry,
-                        Entity entity, WidgetComponent& widget, const ImVec2& screenPos, const ImVec2& size)
+static bool RenderVerticalLayoutGroup(const VerticalLayoutGroupData& vlg, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
-    StyleCounts styleState = PushUIStyle(widget.BoxStyle);
-    PushTextStyle(fontRegistry, widget.TextStyle, styleState);
+    return false; 
+}
 
-    bool handled = false;
+static bool RenderTabItem(const TabItemData& ti, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
+{
+    return false;  
+}
+
+// ---------------------------------------------------------------------------
+// Main Control Dispatcher
+// ---------------------------------------------------------------------------
+
+bool RenderControl(const UIFontRegistry& fontRegistry,
+                   Entity entity, UIControlComponent& control, const ImVec2& screenPos, const ImVec2& size)
+{
+    StyleCounts styleState = PushUIStyle(control.BoxStyle, true);
+    PushTextStyle(fontRegistry, control.TextStyle, styleState);
+
     bool changed = false;
 
-    std::visit(
-        [&](auto&& arg) {
-            using T = std::decay_t<decltype(arg)>;
-            if constexpr (std::is_same_v<T, ButtonData>)       handled = RenderButton(entity, arg, widget, size);
-            else if constexpr (std::is_same_v<T, PanelData>)   RenderPanel(arg, widget, screenPos, size);
-            else if constexpr (std::is_same_v<T, LabelData>)   RenderLabel(arg, widget, size);
-            else if constexpr (std::is_same_v<T, SliderData>)  changed = RenderSlider(arg, widget, size);
-            else if constexpr (std::is_same_v<T, CheckboxData>) changed = RenderCheckbox(arg, widget);
-            else if constexpr (std::is_same_v<T, ImageData>)    RenderImage( arg, widget, size);
-            else if constexpr (std::is_same_v<T, InputTextData>) changed = RenderInputText(entity, arg, widget, size);
-            else if constexpr (std::is_same_v<T, ProgressBarData>) RenderProgressBar(arg, widget, size);
-            else if constexpr (std::is_same_v<T, ComboBoxData>) changed = RenderComboBox(arg, widget, size);
-            else if constexpr (std::is_same_v<T, ImageButtonData>) changed = RenderImageButton(arg, widget, size);
-            else if constexpr (std::is_same_v<T, RadioButtonData>) changed = RenderRadioButton(arg, widget);
-            else if constexpr (std::is_same_v<T, ColorPickerData>) changed = RenderColorPicker(arg, widget);
-            else if constexpr (std::is_same_v<T, SeparatorData>)   RenderSeparator(arg);
-            else if constexpr (std::is_same_v<T, DragFloatData>)   changed = RenderDragFloat(arg, widget, size);
-            else if constexpr (std::is_same_v<T, DragIntData>)     changed = RenderDragInt(arg, widget, size);
-            else if constexpr (std::is_same_v<T, TreeNodeData>)    handled = RenderTreeNode(arg, widget);
-            else if constexpr (std::is_same_v<T, CollapsingHeaderData>) handled = RenderCollapsingHeader(arg, widget);
-            else if constexpr (std::is_same_v<T, TabBarData>)      RenderTabBar(entity, arg, widget, entity.GetRegistry());
-            else if constexpr (std::is_same_v<T, PlotLinesData>)   RenderPlotLines(arg, widget);
-            else if constexpr (std::is_same_v<T, PlotHistogramData>) PlotHistogram(arg, widget);
-        },
-        widget.Data);
+    // A simple, elegant pattern without overloading ambiguities
+    std::visit([&](auto&& arg) {
+        using T = std::decay_t<decltype(arg)>;
+        if constexpr (std::is_same_v<T, ButtonData>)            changed = RenderButton(arg, entity, control, screenPos, size);
+        else if constexpr (std::is_same_v<T, PanelData>)        changed = RenderPanel(arg, entity, control, screenPos, size);
+        else if constexpr (std::is_same_v<T, LabelData>)        changed = RenderLabel(arg, entity, control, screenPos, size);
+        else if constexpr (std::is_same_v<T, SliderData>)       changed = RenderSlider(arg, entity, control, screenPos, size);
+        else if constexpr (std::is_same_v<T, CheckboxData>)     changed = RenderCheckbox(arg, entity, control, screenPos, size);
+        else if constexpr (std::is_same_v<T, ImageData>)        changed = RenderImage(arg, entity, control, screenPos, size);
+        else if constexpr (std::is_same_v<T, InputTextData>)    changed = RenderInputText(arg, entity, control, screenPos, size);
+        else if constexpr (std::is_same_v<T, ProgressBarData>)  changed = RenderProgressBar(arg, entity, control, screenPos, size);
+        else if constexpr (std::is_same_v<T, ComboBoxData>)     changed = RenderComboBox(arg, entity, control, screenPos, size);
+        else if constexpr (std::is_same_v<T, ImageButtonData>)  changed = RenderImageButton(arg, entity, control, screenPos, size);
+        else if constexpr (std::is_same_v<T, RadioButtonData>)  changed = RenderRadioButton(arg, entity, control, screenPos, size);
+        else if constexpr (std::is_same_v<T, ColorPickerData>)  changed = RenderColorPicker(arg, entity, control, screenPos, size);
+        else if constexpr (std::is_same_v<T, SeparatorData>)    changed = RenderSeparator(arg, entity, control, screenPos, size);
+        else if constexpr (std::is_same_v<T, DragFloatData>)    changed = RenderDragFloat(arg, entity, control, screenPos, size);
+        else if constexpr (std::is_same_v<T, DragIntData>)      changed = RenderDragInt(arg, entity, control, screenPos, size);
+        else if constexpr (std::is_same_v<T, TreeNodeData>)     changed = RenderTreeNode(arg, entity, control, screenPos, size);
+        else if constexpr (std::is_same_v<T, CollapsingHeaderData>) changed = RenderCollapsingHeader(arg, entity, control, screenPos, size);
+        else if constexpr (std::is_same_v<T, PlotLinesData>)    changed = RenderPlotLines(arg, entity, control, screenPos, size);
+        else if constexpr (std::is_same_v<T, PlotHistogramData>) changed = RenderPlotHistogram(arg, entity, control, screenPos, size);
+        else if constexpr (std::is_same_v<T, TabBarData>)       changed = RenderTabBar(arg, entity, control, screenPos, size);
+        else if constexpr (std::is_same_v<T, VerticalLayoutGroupData>) changed = RenderVerticalLayoutGroup(arg, entity, control, screenPos, size);
+        else if constexpr (std::is_same_v<T, TabItemData>)      changed = RenderTabItem(arg, entity, control, screenPos, size);
+    }, control.Data);
 
-    widget.ValueChanged = changed;
+    control.ValueChanged = changed;
     PopUIStyle(styleState);
     return true;
 }
 
 } // namespace Chained
-

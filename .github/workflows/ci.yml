@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, opengl]
     paths:
       - "**/*.cpp"
       - "**/*.h"
@@ -13,7 +13,7 @@ on:
       - "cmake/*.cmake"
       - ".github/workflows/*.yml"
   pull_request:
-    branches: [main, develop, chained-gui, refactor-branch]
+    branches: [main, develop, chained-gui, refactor-branch, opengl]
     paths:
       - "**/*.cpp"
       - "**/*.h"

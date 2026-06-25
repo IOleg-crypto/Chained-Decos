@@ -38,8 +38,8 @@ namespace Chained
         RegisterReflective<SceneTransitionComponent>("Scene Transition", ICON_FA_DOOR_OPEN, "Logic");
         
         // UI
-        RegisterReflective<WidgetComponent>("Widget", ICON_FA_WINDOW_RESTORE, "UI");
-        RegisterReflective<ControlComponent>("Control", nullptr, "UI"); // added Control
+        RegisterReflective<UIControlComponent>("UI Control", ICON_FA_WINDOW_RESTORE, "UI");
+        RegisterReflective<ControlComponent>("Control", nullptr, "UI");
         RegisterReflective<UIActionComponent>("UI Action", nullptr, "UI"); // added UI Action
 
         // Backward compatibility: old scene files used "FlowNavigatorComponent" (example)
