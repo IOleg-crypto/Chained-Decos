@@ -216,8 +216,8 @@ void EditorSceneManager::StartSceneOpenTransition(const std::filesystem::path& p
 
     try
     {
-        m_SceneOpenFuture = ServiceLocator::Get<ThreadPool>()->Enqueue([this, scenePath, engine = &ScriptEngine::Get()]() -> std::shared_ptr<Scene> {
-            auto newScene = std::make_shared<Scene>(engine);
+        m_SceneOpenFuture = ServiceLocator::Get<ThreadPool>()->Enqueue([this, scenePath]() -> std::shared_ptr<Scene> {
+            auto newScene = std::make_shared<Scene>();
             SceneSerializer serializer(newScene.get());
             if (!serializer.Deserialize(scenePath.string()))
             {

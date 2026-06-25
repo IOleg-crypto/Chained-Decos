@@ -182,7 +182,7 @@ struct VerticalLayoutGroupData
     glm::vec2 Padding = {10, 10};
 };
 
-using WidgetData = std::variant<
+using ControlData = std::variant<
     std::monostate,
     ButtonData,
     PanelData,

@@ -116,7 +116,7 @@ bool EditorProjectManager::OnProjectOpened(ProjectOpenedEvent& e)
 
             if (std::filesystem::exists(dllPath))
             {
-                 ScriptEngine::Get().LoadAppAssembly(dllPath.string());
+                 ServiceLocator::Get<ScriptEngine>()->LoadAppAssembly(dllPath.string());
                  CH_CORE_INFO("EditorProjectManager: Auto-loaded script assembly '{}'.", dllPath.string());
             }
             else

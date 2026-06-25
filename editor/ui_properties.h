@@ -3,11 +3,11 @@
 
 #include "IconsFontAwesome6.h"
 #include "editor_gui.h"
-#include "engine/runtime/application.h"
 #include "engine/reflection/reflection.h"
+#include "engine/core/service_locator.h"
+#include "scripting/scriptengine.h"
 #include "imgui.h"
 #include "imgui_internal.h"
-#include "scripting/scriptengine.h"
 
 
 #include <algorithm>
@@ -27,7 +27,7 @@ public:
 
     virtual ReflectionMode GetReflectionMode() const override
     {
-        return ReflectionMode::UI;
+        return ReflectionMode::UI;  
     }
     virtual bool HasChanged() const override
     {
@@ -454,7 +454,7 @@ private:
         {
             std::vector<std::string> options;
             options.emplace_back("-- Select script --");
-            for (const auto& [scriptName, scriptType] : ScriptEngine::Get().GetScriptClasses())
+            for (const auto& [scriptName, scriptType] : ServiceLocator::Get<ScriptEngine>()->GetScriptClasses())
             {
                 options.emplace_back(scriptName);
             }

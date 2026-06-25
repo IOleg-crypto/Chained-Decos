@@ -25,7 +25,7 @@
         CH_INTERNAL_ASSERT_GET_MACRO_NAME(__VA_ARGS__, CH_INTERNAL_ASSERT_WITH_MSG, CH_INTERNAL_ASSERT_NO_MSG))
 
 // Core API
-#define CH_ASSERT(check, ...) { if (!(check)) { CH_ERROR("Assertion failed: {0}", __VA_ARGS__); CH_DEBUGBREAK(); } }
-#define CH_CORE_ASSERT(check, ...) { if (!(check)) { CH_CORE_ERROR("Assertion failed: {0}", __VA_ARGS__); CH_DEBUGBREAK(); } }
+#define CH_ASSERT(...) CH_EXPAND_MACRO( CH_INTERNAL_ASSERT_GET_MACRO(__VA_ARGS__)(_, __VA_ARGS__) )
+#define CH_CORE_ASSERT(...) CH_EXPAND_MACRO( CH_INTERNAL_ASSERT_GET_MACRO(__VA_ARGS__)(_CORE_, __VA_ARGS__) )
 
 #endif // CH_ASSERT_H

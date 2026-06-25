@@ -179,7 +179,6 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
     ImVec2 viewportScreenPos = ImGui::GetCursorScreenPos();
 
     auto activeScene = EditorLayer::Get().GetActiveScene();
-    auto& scriptEngine = ScriptEngine::Get();
 
     // 1. Initial State & Resizing
     HandleResize(viewportSize, activeScene.get());
@@ -640,7 +639,7 @@ void ViewportPanel::RenderToolbar(Scene* activeScene, const ImVec2& viewportSize
                     moduleName += ".dll";
                     
                 std::filesystem::path assemblyPath = Project::GetAssetDirectory() / "bin" / moduleName;
-                auto& scriptEngine = ScriptEngine::Get();
+                auto& scriptEngine = *ServiceLocator::Get<ScriptEngine>();
                 scriptEngine.RequestAssemblyReload(assemblyPath.string(), "ViewportPanel");
             }
         }

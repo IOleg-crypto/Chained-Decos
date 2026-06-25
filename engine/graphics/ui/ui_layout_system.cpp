@@ -83,9 +83,9 @@ UIRect UILayoutSystem::CalculateRecursive(Entity entity, const UIRect& canvasRec
     }
 
     // Auto-size logic for labels (moved from UIRenderer)
-    if (entity.HasComponent<WidgetComponent>())
+    if (entity.HasComponent<UIControlComponent>())
     {
-        auto& widget = entity.GetComponent<WidgetComponent>();
+        auto& widget = entity.GetComponent<UIControlComponent>();
         if (std::holds_alternative<LabelData>(widget.Data))
         {
             auto& label = std::get<LabelData>(widget.Data);

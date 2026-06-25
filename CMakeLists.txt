@@ -117,3 +117,5 @@ add_custom_target(sync-resources
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMENT "Syncing resources"
 )
+
+target_link_libraries(engine_core PRIVATE yaml-cpp)

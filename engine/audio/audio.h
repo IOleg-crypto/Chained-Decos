@@ -63,8 +63,6 @@ private:
     std::vector<std::unique_ptr<SoundInstance>> m_ActiveSounds;
     std::unordered_map<std::string, AudioHandle> m_PathToHandle;
     std::unordered_map<AudioHandle, std::string> m_HandleToPath;
-
-    static inline Audio* s_Instance = nullptr;
 };
 
 } // namespace Chained

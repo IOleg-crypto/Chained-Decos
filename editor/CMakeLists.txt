@@ -18,8 +18,6 @@ target_sources(editor_core PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/editor_scene_manager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/scene_picking.h
     ${CMAKE_CURRENT_SOURCE_DIR}/scene_picking.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/ui_factory.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/ui_factory.cpp
 
     # Viewport
     ${CMAKE_CURRENT_SOURCE_DIR}/viewport/editor_gizmo.h
@@ -87,6 +85,7 @@ target_link_libraries(editor_core PUBLIC
     nfd
     assimp
     Coral.Native
+    engine_core
 )
 
 target_include_directories(editor_core PUBLIC 

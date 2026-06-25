@@ -2,18 +2,19 @@
 
 #include "engine/app/application.h"
 #include "engine/core/log.h"
-#include "engine/project/project.h"
 #include "scripting/scriptengine.h"
+#include "engine/project/project.h"
 #include <Coral/GC.hpp>
 #include <algorithm>
 #include <cctype>
 #include <exception>
 #include <filesystem>
 #include <vector>
-#include "script_glue.h"
-#include "scripting/scriptengine.h"
-#include <Coral/HostInstance.hpp>
 
+#include "scripting/scriptengine.h"
+#include "script_glue.h"
+#include "build_preset_names.h"
+#include <Coral/HostInstance.hpp>
 
 namespace Chained
 {
@@ -24,8 +25,9 @@ constexpr const char* kGameScriptsAlcName = "GameScriptsALC";
 
 std::string ToLowerCopy(std::string value)
 {
-    std::transform(value.begin(), value.end(), value.begin(),
-                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    std::transform(value.begin(), value.end(), value.begin(), [](unsigned char c) {
+        return static_cast<char>(std::tolower(c));
+    });
     return value;
 }
 
@@ -33,9 +35,7 @@ std::string GetShortTypeName(const std::string& fullName)
 {
     const size_t lastDot = fullName.find_last_of('.');
     if (lastDot == std::string::npos || lastDot + 1 >= fullName.size())
-    {
         return fullName;
-    }
 
     return fullName.substr(lastDot + 1);
 }
@@ -43,23 +43,15 @@ std::string GetShortTypeName(const std::string& fullName)
 void AppendBuildBinCandidates(std::vector<std::filesystem::path>& out, const std::filesystem::path& root)
 {
     if (root.empty())
-    {
         return;
-    }
 
-    const std::filesystem::path buildDir = root / "build";
-    if (std::filesystem::exists(buildDir) && std::filesystem::is_directory(buildDir))
+    for (const char* preset : detail::kBuildPresetNames)
     {
-        for (const auto& entry : std::filesystem::directory_iterator(buildDir))
+        const std::filesystem::path binDir = root / "build" / preset / "bin";
+
+        if (std::find(out.begin(), out.end(), binDir) == out.end())
         {
-            if (entry.is_directory())
-            {
-                const std::filesystem::path binDir = entry.path() / "bin";
-                if (std::find(out.begin(), out.end(), binDir) == out.end())
-                {
-                    out.push_back(binDir);
-                }
-            }
+            out.push_back(binDir);
         }
     }
 }
@@ -103,31 +95,29 @@ std::filesystem::path ScriptHost::ResolveCoralDirectory()
     AppendBuildBinCandidates(candidateDirs, engineRoot);
 #endif
 
-    if (auto project = Project::GetActive())
-    {
-        const std::filesystem::path projectDir = project->GetConfig().ProjectDirectory;
-        candidateDirs.push_back(projectDir);
-        AppendBuildBinCandidates(candidateDirs, projectDir);
-    }
+
+        if (auto project = Project::GetActive())
+        {
+            const std::filesystem::path projectDir = project->GetConfig().ProjectDirectory;
+            candidateDirs.push_back(projectDir);
+            AppendBuildBinCandidates(candidateDirs, projectDir);
+        }
+
 
     std::vector<std::string> checkedPaths;
     for (const auto& candidateRaw : candidateDirs)
     {
         if (candidateRaw.empty())
-        {
             continue;
-        }
 
         std::error_code ec;
         const std::filesystem::path candidate = std::filesystem::absolute(candidateRaw, ec).lexically_normal();
-        const std::filesystem::path managedPath =
-            ec ? (candidateRaw / "Coral.Managed.dll") : (candidate / "Coral.Managed.dll");
+        const std::filesystem::path managedPath = ec ? (candidateRaw / "Coral.Managed.dll")
+                                                     : (candidate / "Coral.Managed.dll");
         checkedPaths.push_back(managedPath.string());
 
         if (std::filesystem::exists(managedPath))
-        {
             return ec ? candidateRaw : candidate;
-        }
     }
 
     const std::filesystem::path fallback = Application::GetExecutableDirectory();
@@ -144,9 +134,7 @@ std::filesystem::path ScriptHost::ResolveCoreAssemblyPath(const std::filesystem:
 {
     std::vector<std::filesystem::path> coreCandidates;
     if (!coralDir.empty())
-    {
         coreCandidates.push_back(coralDir / "Chained.Managed.dll");
-    }
 
     const std::filesystem::path exeDir = Application::GetExecutableDirectory();
     coreCandidates.push_back(exeDir / "Chained.Managed.dll");
@@ -164,9 +152,7 @@ std::filesystem::path ScriptHost::ResolveCoreAssemblyPath(const std::filesystem:
     for (const auto& candidate : coreCandidates)
     {
         if (!candidate.empty() && std::filesystem::exists(candidate))
-        {
             return candidate;
-        }
     }
 
     return std::filesystem::path("Chained.Managed.dll");
@@ -181,9 +167,7 @@ void ScriptHost::ClearLoadedAssemblyState()
 bool ScriptHost::Init()
 {
     if (m_IsInitialized)
-    {
         return true;
-    }
 
     Coral::HostSettings settings;
 
@@ -221,26 +205,17 @@ void ScriptHost::Shutdown()
 
     try
     {
-        // 1. Спочатку Обов'язково чистимо С++ реєстр типів,
-        // щоб видалити всі збережені Coral::Type ДО вивантаження контексту!
-        GetScriptRegistry().Clear();
-
-        ClearLoadedAssemblyState();
-
-        // 2. Просимо GC зібрати залишки об'єктів, поки контекст ще живий
-        Coral::GC::Collect();
-        Coral::GC::WaitForPendingFinalizers();
-
-        // 3. Тепер безпечно вивантажуємо сам контекст
         m_Host.UnloadAssemblyLoadContext(m_AppAssemblyContext);
-
-        // 4. Фінальна зачистка пам'яті
         Coral::GC::Collect();
         Coral::GC::WaitForPendingFinalizers();
-    } catch (const std::exception& e)
+        Coral::GC::Collect();
+        Coral::GC::Collect();
+    }
+    catch (const std::exception& e)
     {
         CH_CORE_WARN("ScriptEngine: Final scripting cleanup failed: {}", e.what());
-    } catch (...)
+    }
+    catch (...)
     {
         CH_CORE_WARN("ScriptEngine: Final scripting cleanup failed (unknown exception).");
     }
@@ -265,11 +240,13 @@ bool ScriptHost::RecreateAssemblyLoadContext(bool unloadCurrent)
         try
         {
             m_Host.UnloadAssemblyLoadContext(m_AppAssemblyContext);
-        } catch (const std::exception& e)
+        }
+        catch (const std::exception& e)
         {
             CH_CORE_ERROR("ScriptEngine: Failed to unload current ALC: {}", e.what());
             return false;
-        } catch (...)
+        }
+        catch (...)
         {
             CH_CORE_ERROR("ScriptEngine: Failed to unload current ALC (unknown exception).");
             return false;
@@ -280,11 +257,13 @@ bool ScriptHost::RecreateAssemblyLoadContext(bool unloadCurrent)
     {
         m_AppAssemblyContext = m_Host.CreateAssemblyLoadContext(kGameScriptsAlcName);
         return true;
-    } catch (const std::exception& e)
+    }
+    catch (const std::exception& e)
     {
         CH_CORE_ERROR("ScriptEngine: Failed to create ALC '{}': {}", kGameScriptsAlcName, e.what());
         return false;
-    } catch (...)
+    }
+    catch (...)
     {
         CH_CORE_ERROR("ScriptEngine: Failed to create ALC '{}' (unknown exception).", kGameScriptsAlcName);
         return false;
@@ -309,12 +288,14 @@ bool ScriptHost::LoadAssembliesTransactional(const std::filesystem::path& appAss
     try
     {
         loadedCore = &m_AppAssemblyContext.LoadAssembly(corePath.string());
-    } catch (const std::exception& e)
+    }
+    catch (const std::exception& e)
     {
         CH_CORE_ERROR("ScriptEngine: Exception loading core assembly '{}': {}", corePath.string(), e.what());
         rollback();
         return false;
-    } catch (...)
+    }
+    catch (...)
     {
         CH_CORE_ERROR("ScriptEngine: Unknown exception loading core assembly '{}'.", corePath.string());
         rollback();
@@ -332,12 +313,14 @@ bool ScriptHost::LoadAssembliesTransactional(const std::filesystem::path& appAss
     try
     {
         loadedApp = &m_AppAssemblyContext.LoadAssembly(appAssemblyPath.string());
-    } catch (const std::exception& e)
+    }
+    catch (const std::exception& e)
     {
         CH_CORE_ERROR("ScriptEngine: Exception loading app assembly '{}': {}", appAssemblyPath.string(), e.what());
         rollback();
         return false;
-    } catch (...)
+    }
+    catch (...)
     {
         CH_CORE_ERROR("ScriptEngine: Unknown exception loading app assembly '{}'.", appAssemblyPath.string());
         rollback();
@@ -355,11 +338,9 @@ bool ScriptHost::LoadAssembliesTransactional(const std::filesystem::path& appAss
     m_CoreAssembly = loadedCore;
     m_AppAssembly = loadedApp;
 
-    // Register internal calls (native function pointers)
-    if (m_CoreAssembly)
-    {
-        ScriptGlue::RegisterInternalCalls(*m_CoreAssembly);
-    }
+    // Register internal calls (native function pointers) for both assemblies
+    ScriptGlue::RegisterInternalCalls(*m_CoreAssembly);
+    ScriptGlue::RegisterInternalCalls(*m_AppAssembly);
 
     CH_CORE_INFO("ScriptEngine: Loaded core assembly '{}'.", corePath.string());
     CH_CORE_INFO("ScriptEngine: Loaded app assembly '{}'.", appAssemblyPath.string());
@@ -369,13 +350,8 @@ bool ScriptHost::LoadAppAssembly(const std::string& filepath)
 {
     if (!m_IsInitialized)
     {
-        // Lazy-init: initialize CLR on the first LoadAppAssembly call (always on main thread).
-        CH_CORE_INFO("ScriptEngine: Lazy-initializing CoreCLR before loading assembly...");
-        if (!Init())
-        {
-            CH_CORE_WARN("ScriptEngine::LoadAppAssembly - CLR initialization failed.");
-            return false;
-        }
+        CH_CORE_WARN("ScriptEngine::LoadAppAssembly called before Init().");
+        return false;
     }
 
     if (filepath.empty())
@@ -413,20 +389,12 @@ bool ScriptHost::ReloadAppAssembly(const std::string& filepath)
         return false;
     }
 
-    // 1. Перед перезавантаженням ОЧИЩАЄМО реєстр старій типів.
-    // Якщо цього не зробити, RecreateAssemblyLoadContext(true) вивантажить ALC,
-    // і всі Coral::Type всередині s_Registry перетворяться на "висячі" вказівники.
-    GetScriptRegistry().Clear();
-
     ClearLoadedAssemblyState();
-
-    // 2. Звільняємо старий контекст всередині .NET
     if (!RecreateAssemblyLoadContext(true))
     {
         return false;
     }
 
-    // 3. Завантажуємо нову збірку
     return LoadAssembliesTransactional(std::filesystem::path(filepath));
 }
 
@@ -445,8 +413,7 @@ void ScriptRegistry::Discover(Coral::ManagedAssembly& appAssembly, Coral::Manage
 
     if (!scriptBaseType)
     {
-        CH_CORE_ERROR(
-            "ScriptEngine: Could not find base class 'Chained.Script' in Core assembly! Type discovery aborted.");
+        CH_CORE_ERROR("ScriptEngine: Could not find base class 'Chained.Script' in Core assembly! Type discovery aborted.");
         return;
     }
 
@@ -459,14 +426,10 @@ void ScriptRegistry::Discover(Coral::ManagedAssembly& appAssembly, Coral::Manage
     for (auto& type : types)
     {
         if (*type == scriptBaseType)
-        {
             continue;
-        }
 
         if (!type->IsSubclassOf(scriptBaseType))
-        {
             continue;
-        }
 
         std::string fullName = (std::string)type->GetFullName();
         std::string key = ToLowerCopy(fullName);
@@ -493,9 +456,7 @@ Coral::Type* ScriptRegistry::GetScriptClass(const std::string& name)
 
     auto it = m_ScriptClasses.find(key);
     if (it != m_ScriptClasses.end())
-    {
         return &it->second;
-    }
 
     auto shortIt = m_ShortNameToFullName.find(key);
     if (shortIt != m_ShortNameToFullName.end())
@@ -508,9 +469,7 @@ Coral::Type* ScriptRegistry::GetScriptClass(const std::string& name)
 
         auto fullIt = m_ScriptClasses.find(shortIt->second);
         if (fullIt != m_ScriptClasses.end())
-        {
             return &fullIt->second;
-        }
     }
 
     for (auto& [storedKey, type] : m_ScriptClasses)
@@ -520,9 +479,7 @@ Coral::Type* ScriptRegistry::GetScriptClass(const std::string& name)
             const size_t suffixPos = storedKey.size() - key.size();
             const char dot = storedKey[suffixPos - 1];
             if (dot == '.' && storedKey.compare(suffixPos, key.size(), key) == 0)
-            {
                 return &type;
-            }
         }
     }
 

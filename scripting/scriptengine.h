@@ -1,36 +1,26 @@
 #ifndef CH_SCRIPT_ENGINE_H
 #define CH_SCRIPT_ENGINE_H
 
-#include "scriptengine_services.h"
 #include "engine/core/engine_module.h"
+#include "scriptengine_services.h"
 #include <Coral/Assembly.hpp>
 #include <string>
 #include <unordered_map>
 
+
 namespace Chained
 {
-
-class Scene;
 
 class ScriptEngine : public EngineModule
 {
 public:
-    explicit ScriptEngine(bool enableScripting = true);
+    ScriptEngine(bool enableScripting = true);
     virtual ~ScriptEngine() override;
 
-    ScriptEngine(const ScriptEngine&) = delete;
-    ScriptEngine& operator=(const ScriptEngine&) = delete;
+    void Initialize() override;
+    void Update(Timestep ts) override {}
+    void Shutdown() override;
 
-    // EngineModule lifecycle
-    virtual void Initialize() override;
-    virtual void Update(Timestep ts) override {}
-    virtual void Shutdown() override;
-
-    void OnInit();
-    void OnShutdown();
-
-    // Static accessor (backward compat)
-    static ScriptEngine& Get();
 
     bool LoadAppAssembly(const std::string& filepath);
     bool ReloadAssembly(const std::string& assemblyPath);
@@ -49,12 +39,14 @@ public:
     bool IsReloadInProgress() const { return m_Host.IsReloadInProgress(); }
     bool CanExecuteFrameScripts() const { return m_Host.IsInitialized() && !m_Host.IsReloadInProgress(); }
 
-protected:
+private:
+    ScriptEngine(const ScriptEngine&) = delete;
+    ScriptEngine& operator=(const ScriptEngine&) = delete;
+
+private:
     ScriptHost m_Host;
     ScriptRegistry m_Registry;
     bool m_EnableScripting = true;
-
-    static ScriptEngine* s_Instance;
 };
 
 } // namespace Chained

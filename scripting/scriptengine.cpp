@@ -7,59 +7,61 @@
 
 namespace Chained
 {
-    ScriptEngine* ScriptEngine::s_Instance = nullptr;
-
-    void ScriptEngine::Initialize()
-    {
-        s_Instance = this;
-        if (m_EnableScripting)
-        {
-            OnInit();
-        }
-    }
-
-    void ScriptEngine::Shutdown()
-    {
-        OnShutdown();
-        s_Instance = nullptr;
-    }
-
-    ScriptEngine& ScriptEngine::Get()
-    {
-        CH_ASSERT(s_Instance);
-        return *s_Instance;
-    }
 
 ScriptEngine::ScriptEngine(bool enableScripting)
     : m_EnableScripting(enableScripting)
 {
 }
 
-ScriptEngine::~ScriptEngine() = default;
-
-void ScriptEngine::OnInit()
+ScriptEngine::~ScriptEngine()
 {
+    // На випадок, якщо рушій не викликав Shutdown явно
+    if (m_Host.IsInitialized())
+    {
+        ScriptEngine::Shutdown();
+    }
+}
+
+void ScriptEngine::Initialize()
+{
+    if (!m_EnableScripting)
+    {
+        CH_CORE_INFO("ScriptEngine: Scripting is disabled via config.");
+        return;
+    }
+
     if (m_Host.IsInitialized())
     {
         return;
     }
 
-    CH_CORE_INFO("ScriptEngine: Initializing CoreCLR...");
+    CH_CORE_INFO("ScriptEngine: Initializing CoreCLR Host...");
 
     if (!m_Host.Init())
+    {
+        CH_CORE_ERROR("ScriptEngine: Failed to initialize ScriptHost.");
+        return;
+    }
+
+    // Ініціалізація С++ / C# Glue прошарку
+    ScriptGlue::Initialize();
+
+    CH_CORE_INFO("ScriptEngine: CoreCLR host and Glue system initialized successfully.");
+}
+
+void ScriptEngine::Shutdown()
+{
+    if (!m_Host.IsInitialized())
     {
         return;
     }
 
-    ScriptGlue::Initialize();
-
-    CH_CORE_INFO("ScriptEngine: CoreCLR initialized.");
-}
-
-void ScriptEngine::OnShutdown()
-{
     CH_CORE_INFO("ScriptEngine: Shutting down CoreCLR...");
+    
+    m_Registry.Clear();
     m_Host.Shutdown();
+    
+    CH_CORE_INFO("ScriptEngine: ScriptEngine cleanup complete.");
 }
 
 bool ScriptEngine::LoadAppAssembly(const std::string& path)

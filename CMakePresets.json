@@ -19,14 +19,15 @@
         "DISABLE_ALL_WARNINGS": "ON",
         "CH_ENGINE_SHARED": "OFF",
         "CH_ACTIVE_GAME": "chaineddecos",
-        "WINDOWS_SDK_VERSION": "10.0"
+        "WINDOWS_SDK_VERSION": "10.0",
+        "CMAKE_CONFIGURATION_TYPES": "Debug;Release;RelWithDebInfo"
       }
     },
     {
       "name": "ninja-base",
       "hidden": true,
       "inherits": "base",
-      "generator": "Ninja",
+      "generator": "Ninja Multi-Config",
       "cacheVariables": {
         "ENABLE_UNITY_BUILD": "OFF",
         "CMAKE_SUPPRESS_REGENERATION": "ON"
@@ -34,25 +35,9 @@
     },
     {
       "name": "windows-gcc",
-      "displayName": "Windows Ninja GCC Debug",
+      "displayName": "Windows Ninja GCC",
       "inherits": "ninja-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_C_COMPILER": "gcc",
-        "CMAKE_CXX_COMPILER": "g++"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Windows"
-      }
-    },
-    {
-      "name": "windows-gcc-release",
-      "displayName": "Windows Ninja GCC Release",
-      "inherits": "ninja-base",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_C_COMPILER": "gcc",
         "CMAKE_CXX_COMPILER": "g++"
       },
@@ -64,25 +49,9 @@
     },
     {
       "name": "windows-clang",
-      "displayName": "Windows Ninja Clang Debug",
+      "displayName": "Windows Ninja Clang",
       "inherits": "ninja-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_C_COMPILER": "clang",
-        "CMAKE_CXX_COMPILER": "clang++"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Windows"
-      }
-    },
-    {
-      "name": "windows-clang-release",
-      "displayName": "Windows Ninja Clang Release",
-      "inherits": "ninja-base",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_C_COMPILER": "clang",
         "CMAKE_CXX_COMPILER": "clang++"
       },
@@ -94,29 +63,11 @@
     },
     {
       "name": "windows-msvc",
-      "displayName": "Windows Ninja MSVC Debug",
+      "displayName": "Windows Ninja MSVC",
       "inherits": "ninja-base",
       "architecture": { "value": "x64", "strategy": "external" },
       "toolset": { "value": "host=x64", "strategy": "external" },
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_C_COMPILER": "cl",
-        "CMAKE_CXX_COMPILER": "cl"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Windows"
-      }
-    },
-    {
-      "name": "windows-msvc-release",
-      "displayName": "Windows Ninja MSVC Release",
-      "inherits": "ninja-base",
-      "architecture": { "value": "x64", "strategy": "external" },
-      "toolset": { "value": "host=x64", "strategy": "external" },
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_C_COMPILER": "cl",
         "CMAKE_CXX_COMPILER": "cl"
       },
@@ -128,25 +79,9 @@
     },
     {
       "name": "linux-gcc",
-      "displayName": "Linux Ninja GCC Debug",
+      "displayName": "Linux Ninja GCC",
       "inherits": "ninja-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_C_COMPILER": "gcc",
-        "CMAKE_CXX_COMPILER": "g++"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
-      }
-    },
-    {
-      "name": "linux-gcc-release",
-      "displayName": "Linux Ninja GCC Release",
-      "inherits": "ninja-base",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_C_COMPILER": "gcc",
         "CMAKE_CXX_COMPILER": "g++"
       },
@@ -158,25 +93,9 @@
     },
     {
       "name": "linux-clang",
-      "displayName": "Linux Ninja Clang Debug",
+      "displayName": "Linux Ninja Clang",
       "inherits": "ninja-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_C_COMPILER": "clang",
-        "CMAKE_CXX_COMPILER": "clang++"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
-      }
-    },
-    {
-      "name": "linux-clang-release",
-      "displayName": "Linux Ninja Clang Release",
-      "inherits": "ninja-base",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_C_COMPILER": "clang",
         "CMAKE_CXX_COMPILER": "clang++"
       },
@@ -188,15 +107,15 @@
     }
   ],
   "buildPresets": [
-    { "name": "windows-gcc", "configurePreset": "windows-gcc" },
-    { "name": "windows-gcc-release", "configurePreset": "windows-gcc-release" },
-    { "name": "windows-clang", "configurePreset": "windows-clang" },
-    { "name": "windows-clang-release", "configurePreset": "windows-clang-release" },
-    { "name": "windows-msvc", "configurePreset": "windows-msvc" },
-    { "name": "windows-msvc-release", "configurePreset": "windows-msvc-release" },
-    { "name": "linux-gcc", "configurePreset": "linux-gcc" },
-    { "name": "linux-gcc-release", "configurePreset": "linux-gcc-release" },
-    { "name": "linux-clang", "configurePreset": "linux-clang" },
-    { "name": "linux-clang-release", "configurePreset": "linux-clang-release" }
+    { "name": "windows-gcc-debug", "configurePreset": "windows-gcc", "configuration": "Debug" },
+    { "name": "windows-gcc-release", "configurePreset": "windows-gcc", "configuration": "Release" },
+    { "name": "windows-clang-debug", "configurePreset": "windows-clang", "configuration": "Debug" },
+    { "name": "windows-clang-release", "configurePreset": "windows-clang", "configuration": "Release" },
+    { "name": "windows-msvc-debug", "configurePreset": "windows-msvc", "configuration": "Debug" },
+    { "name": "windows-msvc-release", "configurePreset": "windows-msvc", "configuration": "Release" },
+    { "name": "linux-gcc-debug", "configurePreset": "linux-gcc", "configuration": "Debug" },
+    { "name": "linux-gcc-release", "configurePreset": "linux-gcc", "configuration": "Release" },
+    { "name": "linux-clang-debug", "configurePreset": "linux-clang", "configuration": "Debug" },
+    { "name": "linux-clang-release", "configurePreset": "linux-clang", "configuration": "Release" }
   ]
 }

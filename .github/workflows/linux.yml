@@ -79,22 +79,17 @@ jobs:
       - name: Preflight
         run: |
           set -euo pipefail
-          echo "Repository root: $PWD"
-          git submodule status --recursive
           cmake --version
           dotnet --info
-          echo "CC=${CC:-unset}"
-          echo "CXX=${CXX:-unset}"
           if [[ -n "${CC:-}" ]] && command -v "$CC" >/dev/null 2>&1; then
             "$CC" --version | head -n 1
-          fi
-          if [[ -n "${CXX:-}" ]] && command -v "$CXX" >/dev/null 2>&1; then
-            "$CXX" --version | head -n 1
           fi
 
       - name: Configure
         run: |
           set -euo pipefail
+          # Оскільки лінукс-матриця все одно ділить джоби на Debug/Release, 
+          # ми увімкнемо санітайзери глобально для Debug-джоби, хоча генератор Multi-Config.
           SANITIZERS_FLAG="OFF"
           if [[ "${{ matrix.build_type }}" == "Debug" ]]; then
             SANITIZERS_FLAG="ON"
@@ -102,8 +97,9 @@ jobs:
 
           mkdir -p "build/${{ matrix.preset }}"
           PYTHON_EXE=$(python3 -c "import sys; print(sys.executable)")
+          
+          # ВИДАЛЕНО: -DCMAKE_BUILD_TYPE (генератор мульти-конфіг його ігнорує)
           cmake --preset ${{ matrix.preset }} \
-            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
@@ -119,8 +115,9 @@ jobs:
       - name: Build
         run: |
           set -euo pipefail
-          cmake --build --preset ${{ matrix.preset }} \
-            2>&1 | tee "build/${{ matrix.preset }}/build.log"
+          # Передаємо --config для ідентифікації типу збірки
+          cmake --build "build/${{ matrix.preset }}" --config ${{ matrix.build_type }} \
+            2>&1 | tee "build/${{ matrix.preset }}/build_${{ matrix.build_type }}.log"
 
       - name: Test
         run: |
@@ -130,8 +127,9 @@ jobs:
           export GALLIUM_DRIVER=llvmpipe
           export MESA_GL_VERSION_OVERRIDE=4.5
           export LSAN_OPTIONS="suppressions=${{ github.workspace }}/.github/lsan.supp"
-          xvfb-run -a ctest --test-dir "$BUILD_DIR" -C "${{ matrix.build_type }}" --output-on-failure --timeout 300 --output-junit "$BUILD_DIR/junit.xml" \
-            2>&1 | tee "$BUILD_DIR/ctest.log"
+          
+          xvfb-run -a ctest --test-dir "$BUILD_DIR" -C "${{ matrix.build_type }}" --output-on-failure --timeout 300 --output-junit "$BUILD_DIR/junit_${{ matrix.build_type }}.xml" \
+            2>&1 | tee "$BUILD_DIR/ctest_${{ matrix.build_type }}.log"
 
       - name: Upload Artifacts
         if: always()
@@ -141,5 +139,5 @@ jobs:
           if-no-files-found: ignore
           path: |
             build/${{ matrix.preset }}/**/*.log
-            build/${{ matrix.preset }}/junit.xml
+            build/${{ matrix.preset }}/**/junit_*.xml
           retention-days: 7

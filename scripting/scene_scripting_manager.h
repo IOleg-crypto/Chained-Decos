@@ -20,8 +20,7 @@ public:
     void OnUpdate(Timestep deltaTime);
     void OnEvent(Event& e);
     void OnRenderUI();
-    
-    ScriptEngine* GetScriptEngine() const { return m_ScriptEngine; }
+
 
     bool IsReloadInProgress() const { return m_ReloadInProgress; }
     void SetReloadInProgress(bool inProgress) { m_ReloadInProgress = inProgress; }
@@ -32,9 +31,7 @@ public:
 
 private:
     Scene* m_Scene = nullptr;
-    ScriptEngine* m_ScriptEngine = nullptr;
     bool m_ReloadInProgress = false;
-    bool m_IsRuntimeActive = false;
 };
 
 } // namespace Chained

@@ -101,7 +101,7 @@ void RuntimeLayer::OnAttach()
     InitProject(m_ProjectPath);
 
     if (ImFont* projectDefaultFont =
-            Renderer::GetUIRenderer()->GetFontRegistry().EnsureDefaultProjectFont(18.0f, false))
+            ServiceLocator::Get<UIRenderer>()->GetFontRegistry().EnsureDefaultProjectFont(18.0f, false))
     {
         io.FontDefault = projectDefaultFont;
         CH_CORE_INFO("RuntimeSystem: Switched default UI font to project font.");
@@ -158,7 +158,7 @@ void RuntimeLayer::OnUpdate(Timestep ts)
 
         if (IsSceneReadyToStart() && m_LoadingOverlayElapsed >= m_LoadingOverlayMinDuration)
         {
-            Renderer::GetUIRenderer()->ResetButtonStates(m_Scene.get());
+            ServiceLocator::Get<UIRenderer>()->ResetButtonStates(m_Scene.get());
             m_Scene->OnRuntimeStart();
             m_RuntimeStarted = true;
             m_IsSceneLoading = false;
@@ -190,7 +190,7 @@ void RuntimeLayer::OnRender(Timestep ts)
 
     if (!m_Scene)
     {
-        Renderer::Clear({0.0f, 0.0f, 0.0f, 1.0f});
+        ServiceLocator::Get<Renderer>()->Clear({0.0f, 0.0f, 0.0f, 1.0f});
         return;
     }
 
@@ -235,12 +235,12 @@ void RuntimeLayer::OnRender(Timestep ts)
         options.ShowEditorIcons = false;
 
         m_HDRFramebuffer->Bind();
-        Renderer::Clear(bgColor);
+        ServiceLocator::Get<Renderer>()->Clear(bgColor);
         m_SceneRenderer->RenderScene(m_Scene->GetRegistry(), m_Scene->GetSettings(), camera.value(), nearClip, farClip,
                                      options);
         m_HDRFramebuffer->Unbind();
 
-        Renderer::SetViewport(0, 0, (int)width, (int)height);
+        ServiceLocator::Get<Renderer>()->SetViewport(0, 0, (int)width, (int)height);
 
         ShaderAsset* overrideShader = nullptr;
         std::vector<ShaderUniform> uniforms;
@@ -268,7 +268,7 @@ void RuntimeLayer::OnRender(Timestep ts)
                      m_Scene ? m_Scene->GetSettings().ScenePath : "null");
         s_WarnedNoCamera = true;
     }
-    Renderer::Clear(bgColor);
+    ServiceLocator::Get<Renderer>()->Clear(bgColor);
 }
 
 void RuntimeLayer::OnImGuiRender()
@@ -306,7 +306,7 @@ void RuntimeLayer::OnImGuiRender()
                     ImVec2 canvasSize = ImGui::GetContentRegionAvail();
                     // CH_CORE_INFO("RuntimeSystem: Drawing UI canvas at ({}, {}) with size ({}, {})",
                     //  canvasPos.x, canvasPos.y, canvasSize.x, canvasSize.y);
-                    Renderer::GetUIRenderer()->DrawCanvas(m_Scene.get(), canvasPos, canvasSize, false);
+                    ServiceLocator::Get<UIRenderer>()->DrawCanvas(m_Scene.get(), canvasPos, canvasSize, false);
                     m_Scene->OnRenderUI();
                 }
                 ImGui::EndChild();
@@ -461,7 +461,7 @@ bool RuntimeLayer::InitProject(const std::string& projectPath)
     }
 
     // Discover project fonts once before any scene loads.
-    Renderer::GetUIRenderer()->LoadProjectFonts();
+    ServiceLocator::Get<UIRenderer>()->LoadProjectFonts();
 
     ApplyWindowConfiguration();
     SetupBrandingAndIcon();
@@ -503,7 +503,7 @@ bool RuntimeLayer::DiscoverAndLoadProject(const std::string& projectPath)
     CH_CORE_INFO("RuntimeSystem: Asset Directory: {}", Project::GetAssetDirectory().string());
 
     // CRITICAL: Load engine shaders and resources immediately after project is resolved
-    Renderer::LoadEngineResources();
+    ServiceLocator::Get<Renderer>()->LoadEngineResources();
 
     return true;
 }
@@ -694,10 +694,10 @@ std::vector<std::pair<std::string, float>> RuntimeLayer::CollectSceneFontRequest
     std::unordered_set<std::string> dedupe;
     auto& registry = m_Scene->GetRegistry();
 
-    auto view = registry.view<WidgetComponent>();
+    auto view = registry.view<UIControlComponent>();
     for (entt::entity id : view)
     {
-        AppendTextStyleFontRequest(view.get<WidgetComponent>(id).TextStyle, requests, dedupe);
+        AppendTextStyleFontRequest(view.get<UIControlComponent>(id).TextStyle, requests, dedupe);
     }
 
     return requests;
@@ -711,7 +711,7 @@ void RuntimeLayer::PreloadSceneFonts(bool allowRuntimeMutation)
         return;
     }
 
-    const int loadedCount = Renderer::GetUIRenderer()->GetFontRegistry().PreloadFonts(requests, allowRuntimeMutation);
+    const int loadedCount = ServiceLocator::Get<UIRenderer>()->GetFontRegistry().PreloadFonts(requests, allowRuntimeMutation);
     if (loadedCount <= 0)
     {
         return;
@@ -765,10 +765,10 @@ bool RuntimeLayer::TransitionToScene(const std::filesystem::path& scenePath)
     // so without this, ExitScript or SceneScript would fire on the very first frame.
     {
         auto& registry = m_Scene->GetRegistry();
-        auto view = registry.view<WidgetComponent>();
+        auto view = registry.view<UIControlComponent>();
         for (entt::entity id : view)
         {
-            view.get<WidgetComponent>(id).PressedThisFrame = false;
+            view.get<UIControlComponent>(id).PressedThisFrame = false;
         }
     }
 

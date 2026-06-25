@@ -155,7 +155,7 @@ void EditorGUI::DrawMenuBar(EditorLayer& editorLayer, EditorPanels& panels)
             {
                 std::filesystem::path assemblyPath =
                     Project::GetAssetDirectory() / "bin" / (project->GetConfig().Scripting.ModuleName + ".dll");
-                ScriptEngine::Get().RequestAssemblyReload(assemblyPath.string(), "EditorGUI");
+                ServiceLocator::Get<ScriptEngine>()->RequestAssemblyReload(assemblyPath.string(), "EditorGUI");
             }
         }
         ImGui::EndMenu();

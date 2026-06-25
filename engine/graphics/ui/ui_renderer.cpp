@@ -8,7 +8,7 @@
 #include "engine/scene/components/hierarchy_component.h"
 #include "engine/scene/components/tag_component.h"
 #include "engine/scene/scene.h"
-#include "ui_widget_renderer.h"
+#include "ui_control_renderer.h"
 
 
 namespace Chained
@@ -49,10 +49,10 @@ void UIRenderer::ResetButtonStates(Scene* scene)
 {
     if (!scene) return;
     auto& registry = scene->GetRegistry();
-    auto view = registry.view<WidgetComponent>();
+    auto view = registry.view<UIControlComponent>();
     for (entt::entity id : view)
     {
-        view.get<WidgetComponent>(id).PressedThisFrame = false;
+        view.get<UIControlComponent>(id).PressedThisFrame = false;
     }
 }
 
@@ -70,11 +70,11 @@ std::vector<entt::entity> UIRenderer::SortUIEntities(entt::registry& registry)
 
 bool UIRenderer::RenderUIComponent(Entity entity, const ImVec2& screenPos, const ImVec2& size, bool editMode)
 {
-    if (!entity.HasComponent<WidgetComponent>())
+    if (!entity.HasComponent<UIControlComponent>())
         return false;
 
-    auto& widget = entity.GetComponent<WidgetComponent>();
-    return Dispatcher::Render(m_FontRegistry, entity, widget, screenPos, size);
+    auto& control = entity.GetComponent<UIControlComponent>();
+    return RenderControl(m_FontRegistry, entity, control, screenPos, size);
 }
 
 void UIRenderer::DrawCanvas(Scene* scene, const ImVec2& referencePosition, const ImVec2& referenceSize, bool editMode)
@@ -145,12 +145,12 @@ void UIRenderer::DrawCanvas(Scene* scene, const ImVec2& referencePosition, const
 
             if (!RenderUIComponent(entity, screenPos, size, editMode))
             {
-                if (entity.HasComponent<WidgetComponent>())
+                if (entity.HasComponent<UIControlComponent>())
                 {
-                    const auto& widget = entity.GetComponent<WidgetComponent>();
+                    const auto& widget = entity.GetComponent<UIControlComponent>();
                     if (std::holds_alternative<std::monostate>(widget.Data))
                     {
-                        CH_CORE_WARN("[UI] Entity '{}' has WidgetComponent with empty WidgetData",
+                        CH_CORE_WARN("[UI] Entity '{}' has UIControlComponent with empty ControlData",
                                      entity.GetComponent<TagComponent>().Tag);
                     }
                 }

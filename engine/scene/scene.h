@@ -9,7 +9,6 @@
 #include <filesystem>
 
 #include "components.h"
-#include "scene_context.h"
 #include "engine/foundation/base.h"
 #include "engine/core/events.h"
 #include "engine/foundation/timestep.h"
@@ -33,9 +32,7 @@ class CH_API Scene
 public:
     Scene(ScriptEngine* scriptEngine = nullptr);
     ~Scene();
-
-    SceneContext& GetContext() { return m_Context; }
-
+public:
     using EventCallbackFn = std::function<void(Event&)>;
     void SetEventCallback(const EventCallbackFn& callback) { m_EventCallback = callback; }
 
@@ -68,8 +65,6 @@ public: // Life Cycle & Simulation
 
 public:
     bool IsSimulationRunning() const;
-    ScriptEngine* GetScriptEngine() const;
-
 public:
     SceneSettings& GetSettings();
     const SceneSettings& GetSettings() const;
@@ -84,7 +79,7 @@ public: // Systems & Tools
 
 
 private:
-    SceneContext m_Context;
+
     std::unique_ptr<entt::registry> m_Registry;
     SceneSettings m_Settings;
     bool m_IsSimulationRunning = false;
