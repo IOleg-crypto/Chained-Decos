@@ -12,6 +12,7 @@
 #include "engine/core/profiler.h"
 #include "engine/runtime/application.h"
 #include "engine/foundation/thread_pool.h"
+#include "scripting/scriptengine.h"
 #include "engine/graphics/pipeline/render_command.h"
 #include "engine/graphics/ui/ui_renderer.h"
 #include "engine/physics/physics.h"
@@ -292,9 +293,9 @@ void EditorLayer::OnUpdate(Timestep ts)
     {
         if (GetSceneState() == SceneState::Play)
         {
-            auto& scriptEngine = ScriptEngine::Get();
+            auto& scriptEngine = *ServiceLocator::Get<ScriptEngine>();
 
-            if (scriptEngine.CanExecuteFrameScripts())
+            if (scriptEngine.GetHost().IsInitialized() && scriptEngine.CanExecuteFrameScripts())
             {
                 scene->OnUpdateRuntime(ts);
             }
@@ -327,7 +328,7 @@ void EditorLayer::OnUpdate(Timestep ts)
             {
                 std::filesystem::path assemblyPath =
                     Project::GetAssetDirectory() / "bin" / (project->GetConfig().Scripting.ModuleName + ".dll");
-                auto& scriptEngine = ScriptEngine::Get();
+                auto& scriptEngine = *ServiceLocator::Get<ScriptEngine>();
                 scriptEngine.RequestAssemblyReload(assemblyPath.string(), "EditorLayer");
             }
         }

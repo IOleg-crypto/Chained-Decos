@@ -11,7 +11,7 @@ void UIInputSystem::Update(entt::registry& registry, const UILayoutSystem& layou
     bool mouseDown = ImGui::IsMouseDown(0);
     bool mouseClicked = ImGui::IsMouseClicked(0);
 
-    auto view = registry.view<WidgetComponent, ControlComponent>();
+    auto view = registry.view<UIControlComponent, ControlComponent>();
     for (auto entityID : view)
     {
         auto& control = view.get<ControlComponent>(entityID);
@@ -20,7 +20,7 @@ void UIInputSystem::Update(entt::registry& registry, const UILayoutSystem& layou
             continue;
         }
 
-        auto& widget = view.get<WidgetComponent>(entityID);
+        auto& widget = view.get<UIControlComponent>(entityID);
         UIRect rect = layout.GetEntityRect(entityID);
 
         bool isOver = mousePos.x >= rect.x && mousePos.x <= rect.x + rect.width &&

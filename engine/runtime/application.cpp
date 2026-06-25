@@ -12,6 +12,7 @@
 #include "engine/assets/asset_manager.h"
 #include "engine/audio/audio.h"
 #include "engine/graphics/pipeline/renderer.h"
+#include "engine/graphics/ui/ui_renderer.h"
 #include "engine/network/network_service.h"
 #include "engine/physics/physics.h"
 #include "scripting/scriptengine.h"
@@ -60,14 +61,16 @@ Application::Application(const ApplicationSpecification& spec)
     ServiceLocator::Provide<ThreadPool>(new ThreadPool(workerCount));
     ServiceLocator::Provide<AssetManager>(new AssetManager());
     ServiceLocator::Provide<Audio>(new Audio());
+    ServiceLocator::Provide<Renderer>(new Renderer());
+    ServiceLocator::Provide<UIRenderer>(new UIRenderer());
     ServiceLocator::Provide<Physics>(new Physics());
-    ServiceLocator::Provide<ScriptEngine>(new ScriptEngine(false));
+    ServiceLocator::Provide<ScriptEngine>(new ScriptEngine(true));
 
     ServiceLocator::Get<AssetManager>()->Initialize();
-    //Renderer::Init(m_Specification.Headless); Note: initialized via ServiceLocator below
+    ServiceLocator::Get<Renderer>()->Initialize();
+    ServiceLocator::Get<UIRenderer>()->Initialize();
     ServiceLocator::Get<Audio>()->Initialize();
     ServiceLocator::Get<Physics>()->Initialize();
-    ServiceLocator::Get<ScriptEngine>()->Initialize();
 
     if (m_Window)
     {
@@ -93,8 +96,8 @@ Application::~Application()
     ServiceLocator::Get<ScriptEngine>()->Shutdown();
     ServiceLocator::Get<Physics>()->Shutdown();
     ServiceLocator::Get<Audio>()->Shutdown();
-    // NetworkService::Shutdown();
-    //Renderer::Shutdown();
+    ServiceLocator::Get<UIRenderer>()->Shutdown();
+    ServiceLocator::Get<Renderer>()->Shutdown();
     ServiceLocator::Get<AssetManager>()->Shutdown();
     // NOTE: ThreadPool is now an EngineModule, so its Shutdown() is handled natively by ServiceLocator::Shutdown()
 

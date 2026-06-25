@@ -4,7 +4,6 @@
 #include "engine/foundation/thread_pool.h"
 #include "engine/imgui/imgui_layer.h"
 
-#include "engine/core/window_events.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/core/service_locator.h"
 #include "engine/audio/audio.h"
@@ -83,7 +82,7 @@ Application::Application(const ApplicationSpecification& spec)
     {
         auto imguiLayer = std::make_unique<ImGuiLayer>();
         m_ImGuiLayer = imguiLayer.get();
-        PushOverlay(std::move(imguiLayer));
+        m_LayerStack->PushOverlay(std::move(imguiLayer));
     }
 }
 
@@ -169,18 +168,6 @@ void Application::OnEvent(Event& e)
     }
 }
 
-void Application::PushLayer(std::unique_ptr<Layer> layer)
-{
-    Layer* raw = layer.get();
-    m_LayerStack->PushLayer(std::move(layer));
-    raw->OnAttach();
-}
 
-void Application::PushOverlay(std::unique_ptr<Layer> overlay)
-{
-    Layer* raw = overlay.get();
-    m_LayerStack->PushOverlay(std::move(overlay));
-    raw->OnAttach();
-}
 
 } // namespace Chained

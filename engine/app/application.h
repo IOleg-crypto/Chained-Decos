@@ -32,9 +32,6 @@ public:
         m_Running = false;
     }
 
-    void PushLayer(std::unique_ptr<Layer> layer);
-    void PushOverlay(std::unique_ptr<Layer> overlay);
-
     void OnEvent(Event& e);
 
     Window& GetWindow()

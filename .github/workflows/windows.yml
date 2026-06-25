@@ -46,6 +46,7 @@ jobs:
         with:
           msystem: MINGW64
           update: false
+          path-type: inherit
           install: ${{ contains(matrix.preset, 'clang') && 'mingw-w64-x86_64-clang lld' || 'mingw-w64-x86_64-gcc' }}
 
       - name: Setup MSVC
@@ -81,8 +82,6 @@ jobs:
       - name: Preflight
         run: |
           set -euo pipefail
-          echo "Repository root: $PWD"
-          git submodule status --recursive
           cmake --version
           dotnet --info
           if [[ "${{ matrix.preset }}" == *"clang"* ]]; then
@@ -98,8 +97,8 @@ jobs:
           set -euo pipefail
           mkdir -p "build/${{ matrix.preset }}"
           PYTHON_EXE=$(python -c "import sys; print(sys.executable)")
+          
           cmake --preset ${{ matrix.preset }} \
-            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" \
             -DCMAKE_C_COMPILER_LAUNCHER=sccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
@@ -115,15 +114,16 @@ jobs:
       - name: Build
         run: |
           set -euo pipefail
-          cmake --build --preset ${{ matrix.preset }} \
-            2>&1 | tee "build/${{ matrix.preset }}/build.log"
+          # Збірка конкретної конфігурації з Multi-Config генератора
+          cmake --build "build/${{ matrix.preset }}" --config ${{ matrix.build_type }} \
+            2>&1 | tee "build/${{ matrix.preset }}/build_${{ matrix.build_type }}.log"
 
       - name: Test
         run: |
           set -euo pipefail
           BUILD_DIR="${{ github.workspace }}/build/${{ matrix.preset }}"
-          ctest --test-dir "$BUILD_DIR" -C "${{ matrix.build_type }}" --output-on-failure --timeout 300 --output-junit "$BUILD_DIR/junit.xml" \
-            2>&1 | tee "$BUILD_DIR/ctest.log"
+          ctest --test-dir "$BUILD_DIR" -C "${{ matrix.build_type }}" --parallel $(nproc) --output-on-failure --timeout 300 --output-junit "$BUILD_DIR/junit_${{ matrix.build_type }}.xml" \
+            2>&1 | tee "$BUILD_DIR/ctest_${{ matrix.build_type }}.log"
 
       - name: Upload Artifacts
         if: always()
@@ -133,5 +133,7 @@ jobs:
           if-no-files-found: ignore
           path: |
             build/${{ matrix.preset }}/**/*.log
-            build/${{ matrix.preset }}/junit.xml
+            build/${{ matrix.preset }}/**/junit_*.xml
+            build/${{ matrix.preset }}/${{ matrix.build_type }}/*.exe
+            build/${{ matrix.preset }}/${{ matrix.build_type }}/*.dll
           retention-days: 7

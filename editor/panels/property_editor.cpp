@@ -5,10 +5,9 @@
 #include "editor/editor_layer.h"
 #include "editor/undo/component_commands.h"
 #include "editor/undo/modify_component_command.h"
+#include "engine/core/service_locator.h"
 #include "editor_gui.h"
-#include "engine/assets/asset_manager.h"
-#include "engine/assets/types/model_asset.h"
-#include "engine/assets/types/texture_asset.h"
+
 #include "engine/physics/physics.h"
 #include "engine/scene/scene_settings.h"
 #include "imgui.h"
@@ -307,7 +306,7 @@ void PropertyEditor::Init()
 
         if (ImGui::BeginPopup("AddScriptPopup"))
         {
-            for (const auto& [className, type] : ScriptEngine::Get().GetScriptClasses())
+            for (const auto& [className, type] : ServiceLocator::Get<ScriptEngine>()->GetRegistry().GetScriptClasses())
             {
                 // Extract short name for menu
                 size_t lastDot = className.find_last_of('.');
@@ -334,7 +333,7 @@ void PropertyEditor::Init()
     Register<UIActionComponent>("UIAction", ICON_FA_BOLT);
 
     // --- UI Widgets ---
-    Register<WidgetComponent>("Widget", ICON_FA_SHAPES);
+    Register<UIControlComponent>("Widget", ICON_FA_SHAPES);
 
     // Mark only real UI widget types as IsWidget (these will be hidden in 3D scenes)
     auto markWidget = [&](entt::id_type id) {
@@ -348,7 +347,7 @@ void PropertyEditor::Init()
     markWidget(entt::type_hash<ControlComponent>::value());
     markWidget(entt::type_hash<NavigationComponent>::value());
     markWidget(entt::type_hash<UIActionComponent>::value());
-    markWidget(entt::type_hash<WidgetComponent>::value());
+    markWidget(entt::type_hash<UIControlComponent>::value());
     markWidget(entt::type_hash<SpriteComponent>::value());
 }
 

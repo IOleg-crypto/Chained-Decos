@@ -6,28 +6,33 @@
 #include "engine/foundation/engine_assert.h"
 
 #include <filesystem>
+#include <algorithm>
 
 namespace Chained
 {
 
-    void Audio::Initialize()
-    {
-        CH_ASSERT(!s_Instance);
-        s_Instance = new Audio();
-    }
-
-    void Audio::Shutdown()
-    {
-        if (s_Instance)
-        {
-            delete s_Instance;
-            s_Instance = nullptr;
-        }
-    }
-
-
 Audio::Audio()
+    : m_Engine(nullptr)
 {
+}
+
+Audio::~Audio()
+{
+    if (m_Engine)
+    {
+        CH_CORE_WARN("Audio System: Destructor called before explicit Shutdown(). Force shutting down.");
+        Audio::Shutdown();
+    }
+}
+
+void Audio::Initialize()
+{
+    if (m_Engine)
+    {
+        CH_CORE_WARN("Audio System: Already initialized.");
+        return;
+    }
+
     m_Engine = new ma_engine();
     ma_result result = ma_engine_init(NULL, m_Engine);
     if (result != MA_SUCCESS)
@@ -38,21 +43,24 @@ Audio::Audio()
     }
     else
     {
-        CH_CORE_INFO("Audio System: Initialized miniaudio engine.");
+        CH_CORE_INFO("Audio System: Initialized miniaudio engine successfully via EngineModule.");
     }
 }
 
-
-
-Audio::~Audio()
+void Audio::Shutdown()
 {
-    if (m_Engine)
+    if (!m_Engine)
     {
-        StopAll();
-        ma_engine_uninit(m_Engine);
-        delete m_Engine;
-        m_Engine = nullptr;
+        return;
     }
+
+    StopAll();
+
+    ma_engine_uninit(m_Engine);
+    delete m_Engine;
+    m_Engine = nullptr;
+
+    CH_CORE_INFO("Audio System: Shutdown complete.");
 }
 
 void Audio::Update(Timestep ts)
@@ -90,7 +98,6 @@ AudioHandle Audio::LoadSound(const std::string& filepath)
         resolvedPath = project->GetConfig().ProjectDirectory / project->GetConfig().AssetDirectory / filepath;
     else
         resolvedPath = filepath;
-
 
     if (resolvedPath.empty() || !std::filesystem::exists(resolvedPath))
     {
@@ -270,7 +277,6 @@ void Audio::Stop(const std::string& filepath)
     else
         resolvedPath = filepath;
 
-
     if (resolvedPath.empty())
     {
         return;
@@ -329,7 +335,9 @@ void Audio::StopAll()
     m_ActiveSounds.clear();
 }
 
-ma_engine* Audio::GetEngine() const {
+ma_engine* Audio::GetEngine() const 
+{
     return m_Engine;
 }
+
 } // namespace Chained

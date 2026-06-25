@@ -169,9 +169,9 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
 
 const char* SceneHierarchyPanel::GetEntityIcon(Entity entity)
 {
-    if (entity.HasComponent<WidgetComponent>())
+    if (entity.HasComponent<UIControlComponent>())
     {
-        auto& widget = entity.GetComponent<WidgetComponent>();
+        auto& widget = entity.GetComponent<UIControlComponent>();
         if (std::holds_alternative<ButtonData>(widget.Data)) return ICON_FA_ARROW_POINTER;
         if (std::holds_alternative<LabelData>(widget.Data)) return ICON_FA_FONT;
         if (std::holds_alternative<SliderData>(widget.Data)) return ICON_FA_SLIDERS;
