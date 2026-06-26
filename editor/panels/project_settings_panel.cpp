@@ -44,7 +44,7 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
         ImGui::SetColumnWidth(0, 180.0f);
 
         // Sidebar
-        for (int i = 0; i < (int)IM_ARRAYSIZE(categories); i++)
+        for (int i = 0; i < IM_ARRAYSIZE(categories); i++)
         {
             if (ImGui::Selectable(categories[i], selectedCategory == i))
             {

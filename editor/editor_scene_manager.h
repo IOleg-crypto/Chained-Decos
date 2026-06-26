@@ -4,6 +4,8 @@
 
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_events.h"
+#include "engine/core/key_codes.h"
+#include "engine/core/events/input_events.h"
 #include <filesystem>
 #include <future>
 #include <memory>
@@ -22,7 +24,7 @@ class ThreadPool;
 class EditorSceneManager
 {
 public:
-    EditorSceneManager(EditorLayer& owner);
+    EditorSceneManager();
     ~EditorSceneManager() = default;
 
     void NewScene();
@@ -32,7 +34,7 @@ public:
     void SaveSceneAs();
     void AutoSave(float interval, float ts);
 
-    void SetScene(std::shared_ptr<Scene> scene);
+    void SetScene(const std::shared_ptr<Scene> &scene);
     void SetSceneState(SceneState state);
     std::shared_ptr<Scene> GetActiveScene() const;
 
@@ -60,7 +62,6 @@ private:
     void CancelPlayModeTransition();
 
 private:
-    EditorLayer& m_EditorLayer;
     std::shared_ptr<Scene> m_EditorScene;
     std::shared_ptr<Scene> m_RuntimeScene;
 
@@ -75,7 +76,7 @@ private:
     bool m_PlayModeStartRequested = false;
     bool m_IsPlayModeSceneLoad = false;
 
-    std::string m_LoadingStatus = "";
+    std::string m_LoadingStatus;
 
     float m_AutoSaveTimer = 0.0f;
     float m_LastAutoSaveTime = 0.0f;

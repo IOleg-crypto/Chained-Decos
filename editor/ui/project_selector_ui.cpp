@@ -15,12 +15,29 @@ namespace Chained
 ProjectSelectorUI::ProjectSelectorUI(EditorProjectManager& projectManager)
     : m_ProjectManager(projectManager)
 {
-    m_NewProjectIconHandle = ServiceLocator::Get<AssetManager>()->ImportAsset("resources/icons/newproject.jpg");
-    m_OpenProjectIconHandle = ServiceLocator::Get<AssetManager>()->ImportAsset("resources/icons/folder.png");
+}
+
+void ProjectSelectorUI::LoadEditorIcons()
+{
+    if (m_IconsLoaded) return;
+
+    auto assetManager = ServiceLocator::Get<AssetManager>();
+    if (assetManager)
+    {
+        // Імпортуємо іконки. Переконайся, що шляхи відносні до робочої папки запуску (CWD) бінарника рушія
+        uint64_t newProjHandle = assetManager->ImportAsset("resources/icons/newproject.jpg");
+        uint64_t openProjHandle = assetManager->ImportAsset("resources/icons/folder.png");
+
+        m_NewProjectIcon = assetManager->GetAsset<TextureAsset>(newProjHandle);
+        m_OpenProjectIcon = assetManager->GetAsset<TextureAsset>(openProjHandle);
+        m_IconsLoaded = true;
+    }
 }
 
 void ProjectSelectorUI::OnImGuiRender()
 {
+    LoadEditorIcons();
+
     static bool showCreateDialog = false;
     static char projectNameBuffer[128] = "NewProject";
     static char projectLocationBuffer[256] = "";
@@ -91,6 +108,7 @@ void ProjectSelectorUI::OnImGuiRender()
             if (ImGui::Button(label.c_str(), ImVec2(sidebarWidth - 20, 50)))
             {
                 m_ProjectManager.OpenProject(projectPath);
+                break;
             }
             if (ImGui::IsItemHovered())
             {
@@ -117,7 +135,6 @@ void ProjectSelectorUI::OnImGuiRender()
 
     ImGui::SetCursorPos(ImVec2(centerX - 350.0f, centerY - 150.0f));
 
-    // Large Card Style exactly as the user provided
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(20, 20));
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 12.0f);
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.12f, 0.12f, 0.13f, 1.0f));
@@ -128,9 +145,8 @@ void ProjectSelectorUI::OnImGuiRender()
     ImGui::BeginGroup();
     {
         ImTextureID newProjTex = 0;
-        if (m_NewProjectIconHandle != 0) {
-            auto tex = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>(m_NewProjectIconHandle);
-            if (tex) newProjTex = (ImTextureID)(uintptr_t)tex->GetRendererID();
+        if (m_NewProjectIcon) {
+            newProjTex = (ImTextureID)(uintptr_t)m_NewProjectIcon->GetRendererID();
         }
 
         if (ImGui::ImageButton("##NewProject", newProjTex, {300, 300}, {0, 1}, {1, 0}))
@@ -152,9 +168,8 @@ void ProjectSelectorUI::OnImGuiRender()
     ImGui::BeginGroup();
     {
         ImTextureID openProjTex = 0;
-        if (m_OpenProjectIconHandle != 0) {
-            auto tex = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>(m_OpenProjectIconHandle);
-            if (tex) openProjTex = (ImTextureID)(uintptr_t)tex->GetRendererID();
+        if (m_OpenProjectIcon) {
+            openProjTex = (ImTextureID)(uintptr_t)m_OpenProjectIcon->GetRendererID();
         }
 
         if (ImGui::ImageButton("##OpenProject", openProjTex, {300, 300}, {0, 1}, {1, 0}))

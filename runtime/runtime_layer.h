@@ -18,15 +18,16 @@ namespace Chained
 class RuntimeLayer : public Layer
 {
 public:
-    RuntimeLayer(const std::string& projectPath = "");
-    virtual ~RuntimeLayer();
+    RuntimeLayer(const std::string& projectPath);
 
-    virtual void OnAttach() override;
-    virtual void OnDetach() override;
-    virtual void OnUpdate(Timestep ts) override;
-    virtual void OnRender(Timestep ts) override;
-    virtual void OnImGuiRender() override;
-    virtual void OnEvent(Event& e) override;
+    ~RuntimeLayer() override;
+
+    void OnAttach() override;
+    void OnDetach() override;
+    void OnUpdate(Timestep ts) override;
+    void OnRender(Timestep ts) override;
+    void OnImGuiRender() override;
+    void OnEvent(Event& e) override;
 
     // Loads a scene by project-relative or absolute path.
     void LoadScene(const std::string& path);

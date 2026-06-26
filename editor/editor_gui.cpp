@@ -6,13 +6,13 @@
 #include "editor/panels/panel.h"
 #include "editor/panels/viewport_panel.h"
 #include "editor_events.h"
-#include "engine/runtime/application.h"
+#include "engine/app/application.h"
 #include "engine/project/project.h"
 #include "engine/scene/components.h"
 #include "scripting/scriptengine.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
-#include "engine/runtime/application.h"
+#include "engine/app/application.h"
 #include "engine/core/platform.h"
 #include "engine/scene/component_registry.h"
 #include "imgui_internal.h"

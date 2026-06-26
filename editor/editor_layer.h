@@ -8,7 +8,7 @@
 #include "engine/scene/scene.h"
 #include "editor_project_manager.h"
 #include "editor_scene_manager.h"
-#include "engine/runtime/application.h"
+#include "engine/app/application.h"
 #include "engine/core/layer.h"
 #include "editor_layout.h"
 #include "editor_panels.h"
@@ -16,7 +16,8 @@
 #include "undo/command_history.h"
 
 namespace Chained {
-enum class SceneState : uint8_t { Edit = 0, Play = 1 };
+
+enum class SceneState : uint8_t { Edit = 0, Play = 1 , Simulate = 2};
 
 struct EditorState {
     Entity SelectedEntity;
@@ -26,7 +27,7 @@ struct EditorState {
     int LastHitMeshIndex = -1;
     DebugRenderFlags DebugRenderFlags;
     bool IsLoading = false;
-    std::string LoadingStatus = "";
+    std::string LoadingStatus ;
 };
 } // namespace Chained
 

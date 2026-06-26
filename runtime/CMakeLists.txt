@@ -24,6 +24,12 @@ target_link_libraries(ChainedRuntime PRIVATE
     RuntimeCore
     ChainedEngine::Framework
     ChainedDecos
+    engine_core
+    engine_graphics
+    engine_audio
+    engine_physics
+    engine_imgui
+    engine_scripting
 )
 
 apply_engine_optimizations(ChainedRuntime)

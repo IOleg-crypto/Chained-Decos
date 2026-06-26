@@ -15,9 +15,3 @@ chained_add_engine_module(engine_foundation
         glm
         libzstd_static
 )
-
-if(CH_BUILD_PRESET_NAMES_INCLUDE_DIR)
-    target_include_directories(engine_foundation PRIVATE
-        ${CH_BUILD_PRESET_NAMES_INCLUDE_DIR}
-    )
-endif()

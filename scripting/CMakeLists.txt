@@ -31,11 +31,6 @@ target_include_directories(engine_scripting PRIVATE
     ${CMAKE_SOURCE_DIR}/thirdparty/coral/NetCore
 )
 
-if(CH_BUILD_PRESET_NAMES_INCLUDE_DIR)
-    target_include_directories(engine_scripting PRIVATE
-        ${CH_BUILD_PRESET_NAMES_INCLUDE_DIR}
-    )
-endif()
 
 if(MSVC)
     target_compile_options(engine_scripting PRIVATE /bigobj)
@@ -43,37 +38,51 @@ elseif(MINGW)
     target_compile_options(engine_scripting PRIVATE -Wa,-mbig-obj)
 endif()
 
-# ── C# Managed API Build ──────────────────────────────────────────────────
-# Builds the core engine scripting API (.dll) which the game depends on.
-set(MANAGED_PROJECT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/managed/CHEngine.Managed.csproj")
-set(MANAGED_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")
+# ── Generate ManagedDependencies.props for C# build ───────────────────────────
+# This tells MSBuild where to find Coral.Managed.dll. The path changes per
+# build preset (windows-clang, windows-gcc, etc.), so we generate it from a
+# template at configure time using the correct CMAKE_BINARY_DIR.
+set(CORAL_MANAGED_DIR "${CMAKE_BINARY_DIR}/vendor/coral")
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/managed/ManagedDependencies.props.in"
+    "${CMAKE_CURRENT_SOURCE_DIR}/managed/ManagedDependencies.props"
+    @ONLY
+)
 
-find_program(DOTNET_EXE NAMES dotnet)
-if(NOT DOTNET_EXE)
-    message(WARNING "dotnet not found - CHEngine.Managed.dll will not be built")
-endif()
+set(MANAGED_PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/managed")
+set(MANAGED_PROJECT_PATH "${MANAGED_PROJECT_DIR}/CHEngine.Managed.csproj")
 
-file(GLOB_RECURSE MANAGED_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/managed/src/*.cs")
-list(APPEND MANAGED_SOURCES "${MANAGED_PROJECT_PATH}")
+set(MANAGED_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/$<CONFIG>")
+set(CORAL_MANAGED_DIR "${CMAKE_BINARY_DIR}/vendor/coral")
+
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+set(BUILD_HELPER_SCRIPT "${CMAKE_SOURCE_DIR}/tools/sync_resources.py") 
+
+file(GLOB_RECURSE MANAGED_SOURCES CONFIGURE_DEPENDS "${MANAGED_PROJECT_DIR}/src/*.cs")
 
 set(MANAGED_DLL_OUTPUT "${MANAGED_OUTPUT_DIR}/CHEngine.Managed.dll")
 
 add_custom_command(
     OUTPUT  "${MANAGED_DLL_OUTPUT}"
-    COMMAND "${DOTNET_EXE}" build "${MANAGED_PROJECT_PATH}"
+    COMMAND Python3::Interpreter "${BUILD_HELPER_SCRIPT}" build-managed
+            --project "${MANAGED_PROJECT_PATH}"
             --output "${MANAGED_OUTPUT_DIR}"
+            --coral-dir "${CORAL_MANAGED_DIR}"
             --configuration $<CONFIG>
-            --nologo
-    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/managed"
-    DEPENDS ${MANAGED_SOURCES}
+            --copy-coral   
+            --write-props  
+            --parallel     
+    WORKING_DIRECTORY "${MANAGED_PROJECT_DIR}"
+    DEPENDS ${MANAGED_SOURCES} "${MANAGED_PROJECT_PATH}"
     COMMENT "Building CHEngine.Managed C# Library"
     VERBATIM
 )
 
+# 3. Створення таргету та зв'язування залежностей
 add_custom_target(CHEngine_Managed ALL DEPENDS "${MANAGED_DLL_OUTPUT}")
 
-if(TARGET CoralManaged)
-    add_dependencies(CHEngine_Managed CoralManaged)
+if(TARGET Coral.Native)
+    add_dependencies(CHEngine_Managed Coral.Native)
 endif()
 
 add_dependencies(engine_scripting CHEngine_Managed)

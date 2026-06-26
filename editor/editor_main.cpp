@@ -1,5 +1,5 @@
 #include "editor_layer.h"
-#include "engine/runtime/entry_point.h"
+#include "engine/app/entry_point.h"
 
 namespace Chained
 {
@@ -19,6 +19,7 @@ Application* CreateApplication(ApplicationCommandLineArgs args)
     spec.WindowWidth = 1600;
     spec.WindowHeight = 900;
     spec.Headless = false;
+    spec.EnableScripting = false;
 
     auto* app = new Application(spec);
 

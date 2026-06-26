@@ -16,12 +16,12 @@ EditorLayout::EditorLayout(EditorPanels& panels)
 
 void EditorLayout::ResetLayout()
 {
-    LoadPreset("editor_default_layout.ini");
+    LoadPreset("imgui.ini");
 }
 
 void EditorLayout::SaveDefaultLayout()
 {
-    SaveCurrent("editor_default_layout.ini");
+    SaveCurrent("imgui.ini");
 }
 
 void EditorLayout::LoadPreset(const std::string& filepath)
