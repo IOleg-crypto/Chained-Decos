@@ -31,7 +31,7 @@ add_subdirectory(platform/glfw)
 add_subdirectory(platform/utils)
 #add_subdirectory(network)
 add_subdirectory(${CMAKE_SOURCE_DIR}/scripting ${CMAKE_BINARY_DIR}/scripting)
-add_subdirectory(runtime)
+add_subdirectory(app)
 
 # Create the final engine facade library that links everything together
 add_library(engine ${ENGINE_LIB_TYPE})
@@ -40,7 +40,7 @@ target_sources(engine PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/engine_dummy.cpp)
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/engine_dummy.cpp" "// dummy\n")
 
 target_link_libraries(engine PUBLIC
-    engine_runtime
+    engine_app
 )
 
 target_compile_definitions(engine PRIVATE CH_ENGINE_BUILD GLM_ENABLE_EXPERIMENTAL)

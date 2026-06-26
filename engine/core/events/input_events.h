@@ -1,9 +1,9 @@
 #ifndef CH_INPUT_EVENTS_H
 #define CH_INPUT_EVENTS_H
-
 #include "engine/core/key_codes.h"
 #include "engine/core/mouse_codes.h"
-#include "events.h"
+#include "engine/core/events/events.h"
+
 
 // --- Keyboard Events ---
 namespace Chained

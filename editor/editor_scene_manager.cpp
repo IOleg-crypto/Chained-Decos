@@ -7,19 +7,17 @@
 #include "engine/project/project.h"
 #include "engine/serialization/scene_serializer.h"
 #include "scripting/scene_scripting_manager.h"
-#include "engine/runtime/application.h"
+#include "engine/app/application.h"
 #include "engine/core/input.h"
 #include "engine/core/key_codes.h"
 #include "engine/assets/asset_manager.h"
-#include "engine/core/platform.h"
 #include "engine/scene/scene_events.h"
 #include "engine/foundation/thread_pool.h"
 
 namespace Chained
 {
 
-EditorSceneManager::EditorSceneManager(EditorLayer& owner)
-    : m_EditorLayer(owner)
+EditorSceneManager::EditorSceneManager()
 {
 }
 
@@ -46,7 +44,7 @@ void EditorSceneManager::OpenScene(const std::filesystem::path& path)
         CH_CORE_WARN("EditorSceneManager: Transition to '{}' ignored - already loading '{}'", path.string(), m_PendingSceneOpenPath.string());
         return;
     }
-    m_IsPlayModeSceneLoad = (m_EditorLayer.GetSceneState() == SceneState::Play);
+    m_IsPlayModeSceneLoad = EditorLayer::Get().GetSceneState() == SceneState::Play;
     StartSceneOpenTransition(path);
 }
 
@@ -99,12 +97,12 @@ void EditorSceneManager::AutoSave(float interval, float ts)
     CH_TRACE("Scene auto-saved to {0}", scene->GetSettings().ScenePath);
 }
 
-void EditorSceneManager::SetScene(std::shared_ptr<Scene> scene)
+void EditorSceneManager::SetScene(const std::shared_ptr<Scene> &scene)
 {
     CancelPlayModeTransition();
     CancelSceneOpenTransition();
     m_EditorScene = scene;
-    m_EditorLayer.SetSelectedEntity({});
+    EditorLayer::Get().SetSelectedEntity({});
 }
 
 void EditorSceneManager::SetSceneState(SceneState state)
@@ -112,7 +110,7 @@ void EditorSceneManager::SetSceneState(SceneState state)
     if (state == SceneState::Play)
     {
         if (m_PlayModeStartRequested || m_IsPlayModeLoading || m_IsSceneOpenLoading ||
-            m_EditorLayer.GetSceneState() == SceneState::Play)
+            EditorLayer::Get().GetSceneState() == SceneState::Play)
         {
             return;
         }
@@ -138,7 +136,7 @@ void EditorSceneManager::SetSceneState(SceneState state)
             CancelSceneOpenTransition();
         }
 
-        if (m_EditorLayer.GetSceneState() == SceneState::Edit)
+        if (EditorLayer::Get().GetSceneState() == SceneState::Edit)
         {
             return;
         }
@@ -151,13 +149,13 @@ void EditorSceneManager::SetSceneState(SceneState state)
             m_RuntimeScene.reset();
         }
 
-        m_EditorLayer.SetSceneState(SceneState::Edit);
+        EditorLayer::Get().SetSceneState(SceneState::Edit);
     }
 }
 
 std::shared_ptr<Scene> EditorSceneManager::GetActiveScene() const
 {
-    return (m_EditorLayer.GetSceneState() == SceneState::Play) ? m_RuntimeScene : m_EditorScene;
+    return (EditorLayer::Get().GetSceneState() == SceneState::Play) ? m_RuntimeScene : m_EditorScene;
 }
 
 void EditorSceneManager::OnUpdate(Timestep ts)
@@ -177,8 +175,8 @@ void EditorSceneManager::OnUpdate(Timestep ts)
         UpdateSceneOpenTransition();
     }
 
-    m_EditorLayer.GetEditorState().IsLoading = IsLoading();
-    m_EditorLayer.GetEditorState().LoadingStatus = m_LoadingStatus;
+    EditorLayer::Get().GetEditorState().IsLoading = IsLoading();
+    EditorLayer::Get().GetEditorState().LoadingStatus = m_LoadingStatus;
 }
 
 void EditorSceneManager::OnViewportResize(uint32_t width, uint32_t height)
@@ -323,7 +321,7 @@ void EditorSceneManager::UpdateSceneOpenTransition()
         m_SceneOpenSceneReady = false;
         m_SceneOpenFuture = {};
 
-        m_EditorLayer.SetSelectedEntity({});
+        EditorLayer::Get().SetSelectedEntity({});
         
         m_PendingSceneOpenPath.clear();
         m_LoadingStatus = "";
@@ -396,7 +394,7 @@ void EditorSceneManager::UpdatePlayModeTransition()
 
     if (m_PlayModeSceneReady && m_RuntimeScene && !ServiceLocator::Get<AssetManager>()->HasBackgroundWork())
     {
-        m_EditorLayer.SetSceneState(SceneState::Play);
+        EditorLayer::Get().SetSceneState(SceneState::Play);
         m_RuntimeScene->OnRuntimeStart();
 
         m_IsPlayModeLoading = false;
@@ -422,10 +420,10 @@ bool EditorSceneManager::OnSceneOpened(SceneOpenedEvent& e)
     if (project && !e.GetPath().empty())
     {
         project->GetConfig().ActiveScenePath = std::filesystem::relative(e.GetPath(), project->GetProjectDirectoryForProject());
-        m_EditorLayer.GetProjectManager().SaveProject();
+        EditorLayer::Get().GetProjectManager().SaveProject();
 
-        m_EditorLayer.GetConfig().LastScenePath = e.GetPath();
-        m_EditorLayer.SaveConfig();
+        EditorLayer::Get().GetConfig().LastScenePath = e.GetPath();
+        EditorLayer::Get().SaveConfig();
         return true;
     }
     return false;
@@ -464,17 +462,17 @@ bool EditorSceneManager::OnKeyPressed(KeyPressedEvent& e)
             }
             return true;
         case KeyCode::Z:
-            m_EditorLayer.GetCommandHistory().Undo();
+            EditorLayer::Get().GetCommandHistory().Undo();
             return true;
         case KeyCode::Y:
-            m_EditorLayer.GetCommandHistory().Redo();
+            EditorLayer::Get().GetCommandHistory().Redo();
             return true;
         }
     }
 
     if (keyCode == KeyCode::F5)
     {
-        m_EditorLayer.LaunchStandalone();
+        EditorLayer::Get().LaunchStandalone();
         return true;
     }
 

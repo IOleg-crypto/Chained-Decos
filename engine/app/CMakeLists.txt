@@ -1,6 +1,6 @@
 # Create a high-level runtime module that owns the Application logic and initialization
 # This module depends on all other engine modules, but modules don't depend on it.
-chained_add_engine_module(engine_runtime
+chained_add_engine_module(engine_app
     SOURCES
         application.cpp
         application.h
@@ -21,4 +21,4 @@ chained_add_engine_module(engine_runtime
         engine_platform_utils
 )
 
-target_include_directories(engine_runtime PRIVATE ${CMAKE_SOURCE_DIR})
+target_include_directories(engine_app PRIVATE ${CMAKE_SOURCE_DIR})

@@ -42,11 +42,10 @@ Physics::~Physics() = default;
 void Physics::Initialize()
 {
     if (s_Instance)
-    {
         return;
-    }
 
-    s_Instance = new Physics();
+    // s_Instance points to *this* object, managed by ServiceLocator.
+    s_Instance = this;
 
     // Global Jolt Initialization
     JPH::RegisterDefaultAllocator();
@@ -60,16 +59,14 @@ void Physics::Initialize()
 void Physics::Shutdown()
 {
     if (!s_Instance)
-    {
         return;
-    }
 
     Cache().Shutdown();
 
     delete JPH::Factory::sInstance;
     JPH::Factory::sInstance = nullptr;
 
-    delete s_Instance;
+    // Do NOT delete s_Instance — ServiceLocator owns the lifetime.
     s_Instance = nullptr;
     CH_CORE_INFO("Physics shutdown.");
 }

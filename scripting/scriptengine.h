@@ -14,7 +14,7 @@ namespace Chained
 class ScriptEngine : public EngineModule
 {
 public:
-    ScriptEngine(bool enableScripting = true);
+    ScriptEngine(bool enableScripting);
     virtual ~ScriptEngine() override;
 
     void Initialize() override;
@@ -46,7 +46,7 @@ private:
 private:
     ScriptHost m_Host;
     ScriptRegistry m_Registry;
-    bool m_EnableScripting = true;
+    bool m_EnableScripting;
 };
 
 } // namespace Chained

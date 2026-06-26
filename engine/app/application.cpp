@@ -3,11 +3,12 @@
 #include "engine/core/profiler.h"
 #include "engine/foundation/thread_pool.h"
 #include "engine/imgui/imgui_layer.h"
-
+#include "engine/core/events/window_events.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/core/service_locator.h"
 #include "engine/audio/audio.h"
 #include "engine/graphics/pipeline/renderer.h"
+#include "engine/graphics/ui/ui_renderer.h"
 #include "engine/physics/physics.h"
 #include "engine/core/platform.h"
 
@@ -56,9 +57,10 @@ Application::Application(const ApplicationSpecification& spec)
     ServiceLocator::Provide<ThreadPool>(new ThreadPool(workerCount));
     ServiceLocator::Provide<AssetManager>(new AssetManager());
     ServiceLocator::Provide<Renderer>(new Renderer(m_Specification.Headless));
+    ServiceLocator::Provide<UIRenderer>(new UIRenderer());
     ServiceLocator::Provide<Audio>(new Audio());
     ServiceLocator::Provide<Physics>(new Physics());
-    ServiceLocator::Provide<ScriptEngine>(new ScriptEngine(false));
+    ServiceLocator::Provide<ScriptEngine>(new ScriptEngine(m_Specification.EnableScripting));
 
     // Set engine root BEFORE Initialize() so AssetManager can use it during its init.
     if (!m_Specification.EngineRoot.empty())
@@ -82,7 +84,7 @@ Application::Application(const ApplicationSpecification& spec)
     {
         auto imguiLayer = std::make_unique<ImGuiLayer>();
         m_ImGuiLayer = imguiLayer.get();
-        m_LayerStack->PushOverlay(std::move(imguiLayer));
+        PushOverlay(std::move(imguiLayer));
     }
 }
 
@@ -169,5 +171,20 @@ void Application::OnEvent(Event& e)
 }
 
 
+
+
+void Application::PushLayer(std::unique_ptr<Layer> layer)
+{
+    Layer* raw = layer.get();
+    m_LayerStack->PushLayer(std::move(layer));
+    raw->OnAttach();
+}
+
+void Application::PushOverlay(std::unique_ptr<Layer> overlay)
+{
+    Layer* raw = overlay.get();
+    m_LayerStack->PushOverlay(std::move(overlay));
+    raw->OnAttach();
+}
 
 } // namespace Chained

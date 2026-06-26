@@ -16,7 +16,7 @@
 #include "scripting/scriptengine.h"
 #include <Coral/ManagedObject.hpp>
 
-#include "engine/runtime/application.h"
+#include "engine/app/application.h"
 #include <yaml-cpp/yaml.h>
 // Component Registry handles all dynamic component UI
 #include "engine/scene/component_registry.h"

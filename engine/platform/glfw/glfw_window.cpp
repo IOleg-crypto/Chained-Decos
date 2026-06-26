@@ -2,9 +2,11 @@
 #include "engine/core/log.h"
 #include "engine/foundation/engine_assert.h"
 #include "engine/core/input.h"
-#include "engine/core/events.h"
-#include "engine/runtime/application.h"
+#include "engine/core/events/events.h"
+#include "engine/app/application.h"
 #include "engine/graphics/pipeline/renderer.h"
+#include "engine/core/events/window_events.h"
+#include "engine/core/events/input_events.h"
 
 #include "glfw_input_mapper.h"
 
@@ -165,6 +167,7 @@ void GlfwWindow::Shutdown()
 
 void GlfwWindow::BeginFrame()
 {
+    glfwPollEvents();
 }
 
 void GlfwWindow::EndFrame()

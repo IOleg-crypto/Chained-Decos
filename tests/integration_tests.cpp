@@ -1,6 +1,6 @@
 // Integration tests — headless only, no GPU/OpenGL required
 #include "engine/core/base.h"
-#include "engine/core/events.h"
+#include "engine/core/events/events.h"
 #include "engine/core/uuid.h"
 #include "engine/scene/components.h"
 #include "engine/scene/entity.h"

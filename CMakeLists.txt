@@ -74,7 +74,6 @@ include(cmake/ProjectHelpers.cmake)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 set(CH_PYTHON_EXECUTABLE "${Python3_EXECUTABLE}" CACHE FILEPATH "Python interpreter used for build helper scripts" FORCE)
 
-chained_generate_build_preset_header()
 
 set(CH_ACTIVE_GAME "chaineddecos" CACHE STRING "Active game project to build")
 set_property(CACHE CH_ACTIVE_GAME PROPERTY STRINGS chaineddecos testproject)
@@ -112,10 +111,34 @@ if(BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
+
+# ── Resource Sync (Post-Build) ────────────────────────────────────────────────
+# Automatically copies <root>/resources/ → bin/<Config>/resources/ after each build.
+# $<TARGET_FILE_DIR:ChainedEditor> resolves to the correct per-Config directory
+# (e.g. build/windows-clang/bin/Debug) without any hardcoding.
+macro(ch_add_resource_sync TARGET)
+    add_custom_command(TARGET ${TARGET} POST_BUILD
+        COMMAND ${CH_PYTHON_EXECUTABLE}
+                "${CMAKE_CURRENT_SOURCE_DIR}/tools/sync_resources.py"
+                sync-resources
+                --root "${CMAKE_CURRENT_SOURCE_DIR}"
+                --bin  "$<TARGET_FILE_DIR:${TARGET}>"
+        COMMENT "Syncing resources for ${TARGET} ($<CONFIG>)"
+        VERBATIM
+    )
+endmacro()
+
+# Manual target kept for convenience: cmake --build . --target sync-resources
 add_custom_target(sync-resources
-    COMMAND ${CH_PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/sync_resources.py
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMENT "Syncing resources"
+    COMMAND ${CH_PYTHON_EXECUTABLE}
+            "${CMAKE_CURRENT_SOURCE_DIR}/tools/sync_resources.py"
+            sync-resources
+            --root "${CMAKE_CURRENT_SOURCE_DIR}"
+            --bin  "${CMAKE_BINARY_DIR}/bin"
+            --all-configs
+    COMMENT "Syncing resources to all configs"
+    VERBATIM
 )
+
 
 target_link_libraries(engine_core PRIVATE yaml-cpp)

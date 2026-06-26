@@ -107,6 +107,11 @@ if(COMMAND apply_engine_optimizations)
     apply_engine_optimizations(ChainedEditor)
 endif()
 
+# Automatically sync resources/ into the correct bin/<Config>/ directory after each build
+if(COMMAND ch_add_resource_sync)
+    ch_add_resource_sync(ChainedEditor)
+endif()
+
 # Installation
 install(TARGETS ChainedEditor editor_core
     RUNTIME DESTINATION bin COMPONENT Runtime

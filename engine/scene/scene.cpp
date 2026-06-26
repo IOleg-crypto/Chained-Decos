@@ -24,7 +24,7 @@ using namespace entt::literals;
 namespace Chained
 {
 // Scene implementation
-Scene::Scene(ScriptEngine* scriptEngine)
+Scene::Scene()
 {
     // Create registry
     m_Registry = std::make_unique<entt::registry>();

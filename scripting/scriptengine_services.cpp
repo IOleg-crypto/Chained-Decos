@@ -1,7 +1,7 @@
 #include "scriptengine_services.h"
 
-#include "engine/app/application.h"
 #include "engine/core/log.h"
+#include "engine/core/service_locator.h" // Потрібен для доступу до ScriptEngine
 #include "scripting/scriptengine.h"
 #include "engine/project/project.h"
 #include <Coral/GC.hpp>
@@ -13,8 +13,13 @@
 
 #include "scripting/scriptengine.h"
 #include "script_glue.h"
-#include "build_preset_names.h"
 #include <Coral/HostInstance.hpp>
+
+#ifdef _WIN32
+    #include <windows.h>
+#else
+    #include <unistd.h>
+#endif
 
 namespace Chained
 {
@@ -22,6 +27,24 @@ namespace Chained
 namespace
 {
 constexpr const char* kGameScriptsAlcName = "GameScriptsALC";
+
+// Визначаємо шлях до запущеного бінарника без залучення класу Application
+std::filesystem::path GetCurrentBinaryDirectory()
+{
+#ifdef _WIN32
+    wchar_t buffer[MAX_PATH];
+    GetModuleFileNameW(NULL, buffer, MAX_PATH);
+    return std::filesystem::path(buffer).parent_path();
+#else
+    char buffer[1024];
+    ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
+    if (len != -1) {
+        buffer[len] = '\0';
+        return std::filesystem::path(buffer).parent_path();
+    }
+    return std::filesystem::current_path();
+#endif
+}
 
 std::string ToLowerCopy(std::string value)
 {
@@ -40,36 +63,45 @@ std::string GetShortTypeName(const std::string& fullName)
     return fullName.substr(lastDot + 1);
 }
 
+// With Ninja Multi-Config, bins live in build/<preset>/bin/<Config>/.
+// We enumerate all subdirs of build/ at runtime instead of relying on a
+// CMake-generated header with preset names.
+static constexpr const char* kBuildConfigs[] = { "Debug", "Release", "RelWithDebInfo" };
+
 void AppendBuildBinCandidates(std::vector<std::filesystem::path>& out, const std::filesystem::path& root)
 {
     if (root.empty())
         return;
 
-    for (const char* preset : detail::kBuildPresetNames)
-    {
-        const std::filesystem::path binDir = root / "build" / preset / "bin";
+    const std::filesystem::path buildDir = root / "build";
+    std::error_code ec;
+    if (!std::filesystem::exists(buildDir, ec) || ec)
+        return;
 
-        if (std::find(out.begin(), out.end(), binDir) == out.end())
+    for (const auto& presetEntry : std::filesystem::directory_iterator(buildDir, ec))
+    {
+        if (ec || !presetEntry.is_directory())
+            continue;
+
+        // Ninja Multi-Config: build/<preset>/bin/<Config>/
+        for (const char* cfg : kBuildConfigs)
         {
-            out.push_back(binDir);
+            const std::filesystem::path candidate = presetEntry.path() / "bin" / cfg;
+            if (std::find(out.begin(), out.end(), candidate) == out.end())
+                out.push_back(candidate);
         }
+
+        // Also try flat build/<preset>/bin/ (single-config fallback)
+        const std::filesystem::path flat = presetEntry.path() / "bin";
+        if (std::find(out.begin(), out.end(), flat) == out.end())
+            out.push_back(flat);
     }
 }
+
 } // namespace
 
-static ScriptHost s_ScriptHost;
-static ScriptRegistry s_Registry;
+// Єдиний контекст, який нам потрібен для C# Glue (поточна активна сцена)
 static Scene* s_ContextScene = nullptr;
-
-ScriptHost& GetScriptHost()
-{
-    return s_ScriptHost;
-}
-
-ScriptRegistry& GetScriptRegistry()
-{
-    return s_Registry;
-}
 
 void SetContextScene(Scene* scene)
 {
@@ -81,12 +113,24 @@ Scene* GetContextScene()
     return s_ContextScene;
 }
 
-// ScriptRuntimeSession removed
+ScriptHost& GetScriptHost()
+{
+    auto scriptEngine = ServiceLocator::Get<ScriptEngine>();
+    CH_ASSERT(scriptEngine && "ScriptEngine module is not registered in ServiceLocator!");
+    return scriptEngine->GetHost();
+}
+
+ScriptRegistry& GetScriptRegistry()
+{
+    auto scriptEngine = ServiceLocator::Get<ScriptEngine>();
+    CH_ASSERT(scriptEngine && "ScriptEngine module is not registered in ServiceLocator!");
+    return scriptEngine->GetRegistry();
+}
 
 std::filesystem::path ScriptHost::ResolveCoralDirectory()
 {
     std::vector<std::filesystem::path> candidateDirs;
-    candidateDirs.push_back(Application::GetExecutableDirectory());
+    candidateDirs.push_back(GetCurrentBinaryDirectory());
     candidateDirs.push_back(std::filesystem::current_path());
 
 #ifdef PROJECT_ROOT_DIR
@@ -95,14 +139,12 @@ std::filesystem::path ScriptHost::ResolveCoralDirectory()
     AppendBuildBinCandidates(candidateDirs, engineRoot);
 #endif
 
-
-        if (auto project = Project::GetActive())
-        {
-            const std::filesystem::path projectDir = project->GetConfig().ProjectDirectory;
-            candidateDirs.push_back(projectDir);
-            AppendBuildBinCandidates(candidateDirs, projectDir);
-        }
-
+    if (auto project = Project::GetActive())
+    {
+        const std::filesystem::path projectDir = project->GetConfig().ProjectDirectory;
+        candidateDirs.push_back(projectDir);
+        AppendBuildBinCandidates(candidateDirs, projectDir);
+    }
 
     std::vector<std::string> checkedPaths;
     for (const auto& candidateRaw : candidateDirs)
@@ -120,9 +162,8 @@ std::filesystem::path ScriptHost::ResolveCoralDirectory()
             return ec ? candidateRaw : candidate;
     }
 
-    const std::filesystem::path fallback = Application::GetExecutableDirectory();
-    CH_CORE_WARN("ScriptEngine: Coral.Managed.dll not found in fallback candidates. Using executable directory: '{}'.",
-                 fallback.string());
+    const std::filesystem::path fallback = GetCurrentBinaryDirectory();
+    CH_CORE_WARN("ScriptEngine: Coral.Managed.dll not found. Using fallback directory: '{}'.", fallback.string());
     for (const auto& checked : checkedPaths)
     {
         CH_CORE_TRACE("ScriptEngine: Checked '{}'", checked);
@@ -136,7 +177,7 @@ std::filesystem::path ScriptHost::ResolveCoreAssemblyPath(const std::filesystem:
     if (!coralDir.empty())
         coreCandidates.push_back(coralDir / "Chained.Managed.dll");
 
-    const std::filesystem::path exeDir = Application::GetExecutableDirectory();
+    const std::filesystem::path exeDir = GetCurrentBinaryDirectory();
     coreCandidates.push_back(exeDir / "Chained.Managed.dll");
     coreCandidates.push_back(std::filesystem::current_path() / "Chained.Managed.dll");
 
@@ -338,7 +379,6 @@ bool ScriptHost::LoadAssembliesTransactional(const std::filesystem::path& appAss
     m_CoreAssembly = loadedCore;
     m_AppAssembly = loadedApp;
 
-    // Register internal calls (native function pointers) for both assemblies
     ScriptGlue::RegisterInternalCalls(*m_CoreAssembly);
     ScriptGlue::RegisterInternalCalls(*m_AppAssembly);
 
@@ -346,6 +386,7 @@ bool ScriptHost::LoadAssembliesTransactional(const std::filesystem::path& appAss
     CH_CORE_INFO("ScriptEngine: Loaded app assembly '{}'.", appAssemblyPath.string());
     return true;
 }
+
 bool ScriptHost::LoadAppAssembly(const std::string& filepath)
 {
     if (!m_IsInitialized)

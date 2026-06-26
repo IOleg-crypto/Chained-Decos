@@ -1,4 +1,3 @@
-
 #ifndef CH_SCRIPT_ENGINE_SERVICES_H
 #define CH_SCRIPT_ENGINE_SERVICES_H
 
@@ -17,8 +16,6 @@ class Scene;
 // Runtime scripting context (used by glue)
 void SetContextScene(Scene* scene);
 Scene* GetContextScene();
-
-
 
 // Owns the CoreCLR host and the current app/core assembly handles.
 class ScriptHost
@@ -93,7 +90,10 @@ private:
     std::unordered_set<std::string> m_MissingScriptsWarnings;
 };
 
+// ✅ Глобальні сервісні функції для зручного доступу (реалізовані через ServiceLocator)
+ScriptHost& GetScriptHost();
+ScriptRegistry& GetScriptRegistry();
+
 } // namespace Chained
 
 #endif // CH_SCRIPT_ENGINE_SERVICES_H
-

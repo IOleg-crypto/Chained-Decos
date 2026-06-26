@@ -29,7 +29,7 @@ Application* CreateApplication(ApplicationCommandLineArgs args)
     std::filesystem::path projectPath = Application::GetExecutableDirectory() / (spec.Name + ".chproject");
 
     auto* app = new Application(spec);
-    app->PushLayer(std::make_unique<RuntimeLayer>(projectPath.string()));
+    app->GetLayerStack().PushLayer(std::make_unique<RuntimeLayer>(projectPath.string()));
 
     return app;
 }

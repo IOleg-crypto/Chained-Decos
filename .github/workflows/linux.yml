@@ -74,7 +74,7 @@ jobs:
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: '10.0.x'
 
       - name: Preflight
         run: |
@@ -88,8 +88,6 @@ jobs:
       - name: Configure
         run: |
           set -euo pipefail
-          # Оскільки лінукс-матриця все одно ділить джоби на Debug/Release, 
-          # ми увімкнемо санітайзери глобально для Debug-джоби, хоча генератор Multi-Config.
           SANITIZERS_FLAG="OFF"
           if [[ "${{ matrix.build_type }}" == "Debug" ]]; then
             SANITIZERS_FLAG="ON"

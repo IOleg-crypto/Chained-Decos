@@ -1,7 +1,7 @@
 #ifndef CH_SCENE_SCRIPTING_MANAGER_H
 #define CH_SCENE_SCRIPTING_MANAGER_H
 
-#include "engine/core/events.h"
+#include "engine/core/events/events.h"
 #include "engine/foundation/timestep.h"
 
 namespace Chained

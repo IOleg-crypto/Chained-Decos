@@ -6,11 +6,11 @@
 #include "engine/foundation/timestep.h"
 #include "engine/foundation/uuid.h"
 
+#include <deque>
 #include <filesystem>
 #include <memory>
 #include <mutex>
 #include <unordered_map>
-#include <unordered_set>
 #include <unordered_set>
 #include <string_view>
 #include "engine/core/engine_module.h"
@@ -52,8 +52,8 @@ public:
         return std::static_pointer_cast<T>(asset);
     }
 
-    bool HasBackgroundWork() const { return false; }
-    uint32_t GetPendingFinalizeCount() const { return 0; }
+    bool HasBackgroundWork() const;
+    uint32_t GetPendingFinalizeCount() const;
     AssetHandle ResolveToHandle(const std::filesystem::path& path, AssetType type = AssetType::None);
 
 private:
@@ -63,15 +63,16 @@ private:
     AssetRegistry m_Registry;
     mutable std::mutex m_AssetMutex;
 
+    // Pending GPU finalization queue (filled by worker thread, drained by Update on main thread)
+    std::deque<std::shared_ptr<Asset>> m_PendingFinalize;
+    mutable std::mutex m_PendingMutex;
+
     std::filesystem::path m_EngineRoot;
     std::filesystem::path m_ProjectDirectory;
     std::filesystem::path m_AssetDirectory;
 
     // Cache of paths that failed to resolve — prevents per-frame log spam.
-    // Invalidated when project/asset paths change.
     std::unordered_set<std::string> m_FailedImports;
-
-    static AssetManager* s_Instance;
 };
 }
 

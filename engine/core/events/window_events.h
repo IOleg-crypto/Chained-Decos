@@ -1,7 +1,7 @@
 #ifndef CH_WINDOW_EVENTS_H
 #define CH_WINDOW_EVENTS_H
 
-#include "engine/core/events.h"
+#include "engine/core/events/events.h"
 
 namespace Chained
 {
