@@ -1,7 +1,7 @@
 #ifndef CH_SCENE_EVENTS_H
 #define CH_SCENE_EVENTS_H
 
-#include "engine/core/events.h"
+#include "engine/core/events/events.h"
 #include "entt/entt.hpp"
 #include <string>
 

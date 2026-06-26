@@ -15,8 +15,7 @@
 namespace Chained
 {
 
-EditorProjectManager::EditorProjectManager(EditorLayer& owner)
-    : m_EditorLayer(owner)
+EditorProjectManager::EditorProjectManager()
 {
 }
 
@@ -93,14 +92,14 @@ bool EditorProjectManager::OnProjectOpened(ProjectOpenedEvent& e)
         m_LastProjectPath = e.GetPath();
 
         // Track in recent projects list (move to front, cap at 10)
-        auto& config = m_EditorLayer.GetConfig();
+        auto& config = EditorLayer::Get().GetConfig();
         auto& recents = config.RecentProjects;
         recents.erase(std::remove(recents.begin(), recents.end(), m_LastProjectPath), recents.end());
         recents.insert(recents.begin(), m_LastProjectPath);
         if (recents.size() > 10)
             recents.resize(10);
 
-        m_EditorLayer.SaveConfig();
+        EditorLayer::Get().SaveConfig();
 
         // Auto-load script assembly if configured
         auto& scripting = project->GetConfig().Scripting;
@@ -116,7 +115,7 @@ bool EditorProjectManager::OnProjectOpened(ProjectOpenedEvent& e)
 
             if (std::filesystem::exists(dllPath))
             {
-                 ServiceLocator::Get<ScriptEngine>()->LoadAppAssembly(dllPath.string());
+                //  ServiceLocator::Get<ScriptEngine>()->LoadAppAssembly(dllPath.string());
                  CH_CORE_INFO("EditorProjectManager: Auto-loaded script assembly '{}'.", dllPath.string());
             }
             else
@@ -149,11 +148,18 @@ bool EditorProjectManager::OnProjectOpened(ProjectOpenedEvent& e)
         if (!sceneToLoad.empty() && std::filesystem::exists(sceneToLoad))
         {
             CH_CORE_INFO("EditorProjectManager: Auto-loading scene: {}", sceneToLoad.string());
-            m_EditorLayer.GetSceneManager().OpenScene(sceneToLoad);
+            EditorLayer::Get().GetSceneManager().OpenScene(sceneToLoad);
         }
         return true;
     }
     return false;
 }
 
+const std::string & EditorProjectManager::GetLastProjectPath() const {
+    return m_LastProjectPath;
+}
+
+void EditorProjectManager::SetLastProjectPath(const std::string &path) {
+    m_LastProjectPath = path;
+}
 } // namespace Chained

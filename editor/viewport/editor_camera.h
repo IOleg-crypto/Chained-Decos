@@ -5,7 +5,6 @@
 #include "engine/scene/camera.h"
 #include "engine/scene/entity.h"
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 
 namespace Chained

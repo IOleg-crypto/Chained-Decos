@@ -1,10 +1,8 @@
 #ifndef CH_EDITOR_PROJECT_MANAGER_H
 #define CH_EDITOR_PROJECT_MANAGER_H
 
-#include "editor_events.h"
-#include "project/editor_settings.h"
-#include "engine/foundation/base.h"
-#include "engine/scene/scene.h"
+
+#include "editor/project/editor_settings.h"
 #include "engine/scene/scene_events.h"
 #include <filesystem>
 #include <string>
@@ -12,17 +10,10 @@
 
 namespace Chained
 {
-
-class Application;
-class Renderer;
-class ScriptEngine;
-class UIRenderer;
-class EditorLayer;
-
 class EditorProjectManager
 {
 public:
-    EditorProjectManager(EditorLayer& owner);
+    EditorProjectManager();
     ~EditorProjectManager() = default;
 
 public:
@@ -34,21 +25,15 @@ public:
 
     bool OnProjectOpened(ProjectOpenedEvent& e);
 
-    const std::string& GetLastProjectPath() const
-    {
-        return m_LastProjectPath;
-    }
-    void SetLastProjectPath(const std::string& path)
-    {
-        m_LastProjectPath = path;
-    }
+    const std::string& GetLastProjectPath() const;
 
+    void SetLastProjectPath(const std::string& path);
+public:
     EditorSettings& GetEditorSettings() { return m_EditorSettings; }
     const EditorSettings& GetEditorSettings() const { return m_EditorSettings; }
 
 private:
     std::string m_LastProjectPath;
-    EditorLayer& m_EditorLayer;
     EditorSettings m_EditorSettings;
 };
 

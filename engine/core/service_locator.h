@@ -78,7 +78,23 @@ public:
         std::shared_lock<std::shared_mutex> lock(GetMutex());
         for (auto& module : GetModuleOrder())
         {
-            module->Initialize();
+            if (!module->IsEnabled())
+                continue;
+
+            try
+            {
+                module->Initialize();
+            }
+            catch (const std::exception& e)
+            {
+                CH_CORE_ERROR("ServiceLocator: Module initialization failed with exception: {}", e.what());
+                module->SetEnabled(false);
+            }
+            catch (...)
+            {
+                CH_CORE_ERROR("ServiceLocator: Module initialization failed with an unknown exception.");
+                module->SetEnabled(false);
+            }
         }
     }
 
@@ -87,7 +103,10 @@ public:
         std::shared_lock<std::shared_mutex> lock(GetMutex());
         for (auto& module : GetModuleOrder())
         {
-            module->Update(ts);
+            if (module->IsEnabled())
+            {
+                module->Update(ts);
+            }
         }
     }
 
@@ -99,7 +118,10 @@ public:
         auto& order = GetModuleOrder();
         for (auto it = order.rbegin(); it != order.rend(); ++it)
         {
-            (*it)->Shutdown();
+            if ((*it)->IsEnabled())
+            {
+                (*it)->Shutdown();
+            }
         }
 
         GetInternalMap().clear();
@@ -116,10 +138,35 @@ public:
 
         if (it != services.end())
         {
-            return static_cast<T*>(it->second.get());
+            T* svc = static_cast<T*>(it->second.get());
+            if (!svc->IsEnabled())
+            {
+                CH_CORE_WARN("ServiceLocator: Requested service '{}' is disabled!", typeid(T).name());
+                // Still returning it as old code expects a valid pointer, but consumers should check IsEnabled() (or we can return nullptr, but returning nullptr crashes unprotected callers). 
+                // Let's return it, but emit a warning.
+            }
+            return svc;
         }
 
         CH_CORE_ASSERT(false, "ServiceLocator: Requested service not found!");
+        return nullptr;
+    }
+
+    template <typename T> static T* TryGet()
+    {
+        static_assert(std::is_base_of_v<EngineModule, T>,
+                      "ServiceLocator: Requested type T must inherit from EngineModule!");
+
+        std::shared_lock<std::shared_mutex> lock(GetMutex());
+        auto& services = GetInternalMap();
+        auto it = services.find(typeid(T));
+
+        if (it != services.end())
+        {
+            T* svc = static_cast<T*>(it->second.get());
+            if (svc && svc->IsEnabled())
+                return svc;
+        }
         return nullptr;
     }
 

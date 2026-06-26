@@ -1,28 +1,17 @@
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/loaders/asset_importer.h"
+#include "engine/assets/types/texture_asset.h"
 #include "engine/core/log.h"
 
 namespace Chained
 {
-    AssetManager* AssetManager::s_Instance = nullptr;
-
     void AssetManager::Initialize()
     {
-        if (!s_Instance)
-        {
-            s_Instance = new AssetManager();
-        }
     }
 
     void AssetManager::Shutdown()
     {
-        if (s_Instance)
-        {
-            delete s_Instance;
-            s_Instance = nullptr;
-        }
     }
-
 
     void AssetManager::SetEngineRoot(const std::filesystem::path& path)
     {
@@ -108,12 +97,25 @@ namespace Chained
     {
         std::string key = filepath.string();
 
-        // Skip if we already know this path doesn't resolve
-        if (m_FailedImports.count(key))
-            return AssetHandle(0);
+        {
+            std::lock_guard<std::mutex> lock(m_AssetMutex);
+            // Skip if we already know this path doesn't resolve
+            if (m_FailedImports.count(key))
+                return AssetHandle(0);
 
-        // Resolve relative path through 3-tier search
+            // Check if already imported by key
+            for (const auto& [handle, metadata] : m_Registry.GetRegistryMap())
+            {
+                if (metadata.FilePath.string() == key)
+                    return handle;
+            }
+        }
+
+        // Resolve relative path through 3-tier search (no lock needed — reads only)
         std::filesystem::path resolved = ResolveFilePath(filepath);
+
+        std::lock_guard<std::mutex> lock(m_AssetMutex);
+
         if (resolved.empty())
         {
             CH_CORE_WARN("AssetManager: Cannot find file at path: {}", key);
@@ -121,8 +123,7 @@ namespace Chained
             return AssetHandle(0);
         }
 
-        // Check if already imported by resolved path
-        std::string resolvedKey = resolved.string();
+        // Double-check after re-acquiring lock (another thread might have imported meanwhile)
         for (const auto& [handle, metadata] : m_Registry.GetRegistryMap())
         {
             if (metadata.FilePath == resolved || metadata.FilePath.string() == key)
@@ -134,10 +135,11 @@ namespace Chained
         metadata.Handle = handle;
         metadata.FilePath = resolved;
         metadata.Type = DeduceAssetTypeFromExtension(filepath);
-        
+
         m_Registry.SetMetadata(handle, metadata);
         return handle;
     }
+
 
     std::shared_ptr<Asset> AssetManager::GetAssetRaw(AssetHandle handle)
     {
@@ -181,8 +183,17 @@ namespace Chained
 
         if (asset)
         {
-            std::lock_guard<std::mutex> lock(m_AssetMutex);
-            m_LoadedAssets[handle] = asset;
+            {
+                std::lock_guard<std::mutex> lock(m_AssetMutex);
+                m_LoadedAssets[handle] = asset;
+            }
+            // If asset has pending CPU data (e.g. texture decoded on worker thread),
+            // queue it for GPU finalization on the main thread via Update().
+            if (asset->GetState() == AssetState::Loading)
+            {
+                std::lock_guard<std::mutex> pendingLock(m_PendingMutex);
+                m_PendingFinalize.push_back(asset);
+            }
         }
         return asset;
     }
@@ -202,8 +213,48 @@ namespace Chained
         return ImportAsset(path);
     }
 
-    void AssetManager::Update(Timestep ts)
+    bool AssetManager::HasBackgroundWork() const
     {
-        // Thread pool asset sync logic can be handled here alongside pending assets
+        std::lock_guard<std::mutex> lock(m_PendingMutex);
+        return !m_PendingFinalize.empty();
+    }
+
+    uint32_t AssetManager::GetPendingFinalizeCount() const
+    {
+        std::lock_guard<std::mutex> lock(m_PendingMutex);
+        return static_cast<uint32_t>(m_PendingFinalize.size());
+    }
+
+    void AssetManager::Update(Timestep /*ts*/)
+    {
+        // Drain pending GPU finalization queue — MUST run on main thread.
+        // Budget: finalize up to 8 textures per frame to avoid hitching.
+        constexpr int kMaxPerFrame = 8;
+        int count = 0;
+
+        while (count < kMaxPerFrame)
+        {
+            std::shared_ptr<Asset> asset;
+            {
+                std::lock_guard<std::mutex> lock(m_PendingMutex);
+                if (m_PendingFinalize.empty()) break;
+                asset = m_PendingFinalize.front();
+                m_PendingFinalize.pop_front();
+            }
+
+            // Texture finalization (GPU upload)
+            if (auto texAsset = std::dynamic_pointer_cast<TextureAsset>(asset))
+            {
+                if (texAsset->HasPending())
+                    texAsset->Finalize();
+            }
+            else
+            {
+                // Generic: mark as ready if state is still Loading
+                if (asset->GetState() == AssetState::Loading)
+                    asset->SetState(AssetState::Ready);
+            }
+            ++count;
+        }
     }
 }

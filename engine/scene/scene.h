@@ -10,7 +10,7 @@
 
 #include "components.h"
 #include "engine/foundation/base.h"
-#include "engine/core/events.h"
+#include "engine/core/events/events.h"
 #include "engine/foundation/timestep.h"
 #include "engine/graphics/camera_types.h"
 #include "engine/scene/entity.h"
@@ -30,7 +30,7 @@ class Event;
 class CH_API Scene
 {
 public:
-    Scene(ScriptEngine* scriptEngine = nullptr);
+    Scene();
     ~Scene();
 public:
     using EventCallbackFn = std::function<void(Event&)>;

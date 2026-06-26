@@ -10,10 +10,13 @@
 #include "engine/imgui/imgui_layer.h"
 #include "engine/project/project.h"
 #include "engine/scene/scene_events.h"
+#include "engine/app/application.h"
+#include "engine/core/events/window_events.h"
 #include "engine/serialization/scene_serializer.h"
 #include "imgui.h"
 #include "scripting/scene_scripting_manager.h"
 #include "scripting/scriptengine.h"
+#include "engine/core/service_locator.h"
 #include "scripting/scriptengine_services.h"
 #include <algorithm>
 #include <cctype>
@@ -134,12 +137,12 @@ void RuntimeLayer::OnDetach()
 
 void RuntimeLayer::OnUpdate(Timestep ts)
 {
-    // Boost uploads during loading
-    if (ScriptEngine::Get().IsHostInitialized())
-    {
-        auto& scriptEngine = ScriptEngine::Get();
-        // ... use scriptEngine if needed ...
-    }
+    // // Boost uploads during loading
+    // if (ScriptEngine::Get().IsHostInitialized())
+    // {
+    //     auto& scriptEngine = ScriptEngine::Get();
+    //     // ... use scriptEngine if needed ...
+    // }
 
     // The scene transition and script logic will consume button states after this point.
     // UIRenderer::DrawCanvas will handle the per-frame reset during the render pass.
@@ -453,7 +456,7 @@ bool RuntimeLayer::InitProject(const std::string& projectPath)
     CH_CORE_INFO("RuntimeSystem: Loading project assembly: {}", assemblyPath.string());
 
     // Initialize Scripting for the loaded project
-    if (!ScriptEngine::Get().ReloadAssembly(assemblyPath.string()))
+    if (!ServiceLocator::Get<ScriptEngine>()->ReloadAssembly(assemblyPath.string()))
     {
         CH_CORE_WARN("RuntimeSystem: Script reload failed during project initialization (path: {}). Runtime continues "
                      "without scripts.",
@@ -741,7 +744,7 @@ bool RuntimeLayer::TransitionToScene(const std::filesystem::path& scenePath)
 
     // Runtime scenes need the active ScriptEngine so ManagedScriptComponent instances can be created.
 
-    auto nextScene = std::make_shared<Scene>(&ScriptEngine::Get());
+    auto nextScene = std::make_shared<Scene>();
     SceneSerializer serializer(nextScene.get());
     if (!serializer.Deserialize(scenePath.string()))
     {

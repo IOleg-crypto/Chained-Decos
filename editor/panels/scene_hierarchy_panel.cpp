@@ -1,7 +1,7 @@
 #include "engine/platform/utils/file_dialogs.h"
 #include "scene_hierarchy_panel.h"
 #include "editor_layer.h"
-#include "engine/runtime/application.h"
+#include "engine/app/application.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scene_events.h"
 #include "engine/scene/scene_settings.h"

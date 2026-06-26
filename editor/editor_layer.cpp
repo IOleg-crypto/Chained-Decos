@@ -10,7 +10,7 @@
 #include "IconsFontAwesome6.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/core/profiler.h"
-#include "engine/runtime/application.h"
+#include "engine/app/application.h"
 #include "engine/foundation/thread_pool.h"
 #include "scripting/scriptengine.h"
 #include "engine/graphics/pipeline/render_command.h"
@@ -81,8 +81,8 @@ EditorLayer::EditorLayer(Application& app)
     GetDebugRenderFlags().DrawLights = true;
     GetDebugRenderFlags().DrawSpawnZones = true;
 
-    m_ProjectManager = std::make_unique<EditorProjectManager>(*this);
-    m_SceneManager = std::make_unique<EditorSceneManager>(*this);
+    m_ProjectManager = std::make_unique<EditorProjectManager>();
+    m_SceneManager = std::make_unique<EditorSceneManager>();
     m_Panels = std::make_unique<EditorPanels>(*this);
     
     m_Layout = std::make_unique<EditorLayout>(*m_Panels);
@@ -230,7 +230,7 @@ void EditorLayer::OnAttach()
     }
     CH_CORE_INFO("EditorLayer Attached with modular panels.");
 
-    LoadEditorFonts();
+   LoadEditorFonts();
 }
 
 void EditorLayer::LoadEditorFonts()
@@ -238,6 +238,7 @@ void EditorLayer::LoadEditorFonts()
     auto* imguiLayer = Application::Get().GetImGuiLayer();
     if (!imguiLayer)
     {
+        CH_CORE_ERROR("EditorLayer: ImGuiLayer not found!");
         return;
     }
 
@@ -281,12 +282,18 @@ void EditorLayer::OnUpdate(Timestep ts)
 {
     CH_PROFILE_FUNCTION();
 
+    // 1. Спочатку завжди оновлюємо SceneManager (там крутяться потоки та future)
     m_SceneManager->OnUpdate(ts);
+
+    // 2. Якщо рушій зайнятий завантаженням сцени — блокуємо ігровий апдейт,
+    // щоб не смикати ресурси, які можуть видалятися чи перезаписуватись
+    if (m_SceneManager->IsLoading())
+    {
+        return; 
+    }
 
     // Sync context to panels
     m_Panels->SetContext(GetActiveScene());
-
-    // Update all panels (includes viewport camera controller)
     m_Panels->OnUpdate(ts);
 
     if (auto scene = GetActiveScene())
@@ -294,7 +301,6 @@ void EditorLayer::OnUpdate(Timestep ts)
         if (GetSceneState() == SceneState::Play)
         {
             auto& scriptEngine = *ServiceLocator::Get<ScriptEngine>();
-
             if (scriptEngine.GetHost().IsInitialized() && scriptEngine.CanExecuteFrameScripts())
             {
                 scene->OnUpdateRuntime(ts);
@@ -308,7 +314,6 @@ void EditorLayer::OnUpdate(Timestep ts)
         {
             scene->OnUpdateEditor(ts);
 
-            // Auto-save logic (delegated to SceneManager)
             if (m_Config.AutoSaveEnabled)
             {
                 m_SceneManager->AutoSave(m_Config.AutoSaveInterval, ts);

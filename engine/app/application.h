@@ -2,7 +2,7 @@
 #define CH_APPLICATION_H
 
 #include "application_types.h"
-#include "engine/core/events.h"
+#include "engine/core/events/events.h"
 #include "engine/core/layer_stack.h"
 #include "engine/core/window.h"
 #include "engine/foundation/base.h"
@@ -50,6 +50,8 @@ public:
     {
         return *m_LayerStack;
     }
+    void PushLayer(std::unique_ptr<Layer> layer);
+    void PushOverlay(std::unique_ptr<Layer> overlay);
     Timestep GetFrameTime() const
     {
         return m_Timer.DeltaTime;

@@ -31,7 +31,7 @@ public:
     static bool Property(const char* label, int& value, int min = 0, int max = 0);
     static bool Property(const char* label, float& value, float speed = 0.1f, float min = 0.0f, float max = 0.0f);
     static bool Property(const char* label, std::string& value, bool multiline = false);
-    static bool Property(const char* label, Chained::Color& value);
+    static bool Property(const char* label, Color& value);
     static bool Property(const char* label, glm::vec2& value, float speed = 0.1f, float min = 0.0f, float max = 0.0f);
     static bool Property(const char* label, glm::vec3& value, float speed = 0.1f, float min = 0.0f, float max = 0.0f);
     static bool Property(const char* label, glm::vec4& value, float speed = 0.1f, float min = 0.0f, float max = 0.0f);

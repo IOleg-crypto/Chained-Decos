@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "engine/core/events.h"
+#include "engine/core/events/events.h"
 
 using namespace Chained;
 

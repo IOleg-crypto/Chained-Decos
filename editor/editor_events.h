@@ -1,7 +1,7 @@
 #ifndef CH_EDITOR_EVENTS_H
 #define CH_EDITOR_EVENTS_H
 
-#include "engine/core/events.h"
+#include "engine/core/events/events.h"
 #include "engine/scene/entity.h"
 
 namespace Chained

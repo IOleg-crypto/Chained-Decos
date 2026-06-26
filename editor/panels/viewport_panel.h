@@ -6,12 +6,14 @@
 #include "viewport/editor_camera.h"
 #include "viewport/editor_gizmo.h"
 #include "viewport/ui_manipulator.h"
-#include "physics/collision_core.h" // Містить структуру Ray, яку ми обговорювали
-#include "editor_icons.h"           // Якщо це легка структура для текстур
+#include "physics/collision_core.h" 
+#include "editor_icons.h"           
 
 #include <memory>
 #include <glm/glm.hpp>
-#include <entt/entt.hpp> // Потрібно для entt::registry в методах
+#include <entt/entt.hpp> 
+#include "engine/core/key_codes.h"
+
 
 namespace Chained
 {
@@ -30,7 +32,7 @@ struct GizmoBtn
     GizmoType type;
     const char* icon;
     const char* tooltip;
-    Chained::KeyCode key;
+    KeyCode key;
 };
 
 class ViewportPanel : public Panel

@@ -12,10 +12,10 @@ class ContentBrowserPanel : public Panel
 {
 public:
     ContentBrowserPanel();
-    ~ContentBrowserPanel();
+    ~ContentBrowserPanel() override;
 
-    virtual void OnImGuiRender(bool readOnly = false) override;
-    virtual void OnEvent(Event& e) override;
+    void OnImGuiRender(bool readOnly = false) override;
+    void OnEvent(Event& e) override;
     void SetRootDirectory(const std::filesystem::path& path) const;
 
 private:
