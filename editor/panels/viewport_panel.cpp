@@ -197,7 +197,7 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
     RenderViewportScene(activeScene.get());
 
     // 3. UI Image & Interaction
-    uint32_t finalTextureID = m_ViewportFramebuffer->GetColorAttachmentRendererID();
+    uint32_t finalTextureID = m_HDRFramebuffer->GetColorAttachmentRendererID();
     
     // Capture the EXACT screen position where the image starts to prevent gizmo offset
     viewportScreenPos = ImGui::GetCursorScreenPos();
@@ -357,6 +357,9 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
     camera.Projection = (int)sourceCamera.GetProjectionType();
     camera.NearClip = nearClip;
     camera.FarClip = farClip;
+    camera.FovY = (sourceCamera.GetProjectionType() == Camera::ProjectionType::Perspective)
+        ? glm::degrees(sourceCamera.GetPerspectiveVerticalFOV())
+        : sourceCamera.GetOrthographicSize();
 
     // If an entity camera is active during Play mode, override the viewport perspective
     if (cameraFound && EditorLayer::Get().GetSceneState() == SceneState::Play)
@@ -364,6 +367,20 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
         camera = activeCameraOpt.value();
         nearClip = camera.NearClip;
         farClip = camera.FarClip;
+    }
+
+    // Calculate explicit matrices for SceneRenderer
+    camera.ViewMatrix = glm::lookAt(camera.Position, camera.Target, camera.Up);
+    
+    float aspect = (float)m_ViewportSize.x / std::max((float)m_ViewportSize.y, 1.0f);
+    if (camera.Projection == 0) // Perspective
+    {
+        camera.ProjectionMatrix = glm::perspective(glm::radians(camera.FovY), aspect, camera.NearClip, camera.FarClip);
+    }
+    else // Orthographic
+    {
+        float orthoSize = camera.FovY;
+        camera.ProjectionMatrix = glm::ortho(-aspect * orthoSize, aspect * orthoSize, -orthoSize, orthoSize, camera.NearClip, camera.FarClip);
     }
 
     SceneRenderOptions options;
