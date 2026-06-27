@@ -14,7 +14,8 @@
 #include "engine/scene/component_registry.h"
 
 #include "scripting/scriptengine.h"
-
+#include "engine/graphics/pipeline/renderer2d.h"
+#include "engine/graphics/pipeline/renderer3d.h"
 
 namespace Chained
 {
@@ -74,6 +75,9 @@ Application::Application(const ApplicationSpecification& spec)
     ServiceLocator::InitializeModule();
     ServiceLocator::Lock();
 
+    Renderer2D::Init();
+    Renderer3D::Init();
+
     if (m_Window)
     {
         ServiceLocator::Get<Renderer>()->SetViewportSize(m_Window->GetWidth(), m_Window->GetHeight());
@@ -92,6 +96,9 @@ Application::Application(const ApplicationSpecification& spec)
 
 Application::~Application()
 {
+    Renderer2D::Shutdown();
+    Renderer3D::Shutdown();
+
     m_LayerStack.reset();
     ServiceLocator::Shutdown();
     // NOTE: ThreadPool is now an EngineModule, so its Shutdown() is handled natively by ServiceLocator::Shutdown()

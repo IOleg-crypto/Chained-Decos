@@ -87,7 +87,7 @@ bool EditorProjectManager::OnProjectOpened(ProjectOpenedEvent& e)
  
          // Load engine shaders and resources
         ServiceLocator::Get<Renderer>()->LoadEngineResources();
-        ServiceLocator::Get<Renderer>()->GetUIRenderer()->LoadProjectFonts();
+        ServiceLocator::Get<UIRenderer>()->LoadProjectFonts();
 
         m_LastProjectPath = e.GetPath();
 

@@ -543,8 +543,8 @@ void SceneRenderer::DrawModel(Chained::ModelAsset* modelAsset, const glm::mat4& 
 
         auto& model = modelAsset->GetModel();
         auto activeShader = shaderOverride ? shaderOverride
-                            : (ServiceLocator::Get<Renderer>()->GetShaderLibrary().Exists("Lighting")
-                                ? ServiceLocator::Get<Renderer>()->GetShaderLibrary().Get("Lighting").get()
+                            : (ServiceLocator::Get<Renderer>()->GetShaderStorage().Exists("Lighting")
+                                ? ServiceLocator::Get<Renderer>()->GetShaderStorage().Get("Lighting").get()
                                 : nullptr);
 
     if (!activeShader || !activeShader->GetShader())

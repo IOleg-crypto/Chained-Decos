@@ -184,7 +184,7 @@ void Scene::OnRuntimeStart()
     m_IsSimulationRunning = true;
 
     CH_CORE_INFO("Scene::OnRuntimeStart - Initializing script and system managers...");
-    if (auto* uiRenderer = ServiceLocator::Get<Renderer>()->GetUIRenderer())
+    if (auto* uiRenderer = ServiceLocator::Get<UIRenderer>())
         uiRenderer->ResetInputCooldown();
     
     if (m_ScriptingManager)

@@ -134,7 +134,7 @@ void DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& tra
     void DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& color)
     {
         auto& rd = ServiceLocator::Get<Renderer>()->GetData();
-        auto& shaderLibrary = ServiceLocator::Get<Renderer>()->GetShaderLibrary();
+        auto& shaderLibrary = ServiceLocator::Get<Renderer>()->GetShaderStorage();
         auto shaderAsset = shaderLibrary.LoadOrGet("Grid", "resources/shaders/grid.chshader");
         if (!shaderAsset || !shaderAsset->GetShader())
         {

@@ -78,7 +78,7 @@ namespace Chained {
 
     void Renderer2D::DrawSprite(uint32_t textureId, const glm::mat4& transform, const glm::vec4& tint, bool flipX, bool flipY)
     {
-        auto unlitShaderAsset = ServiceLocator::Get<Renderer>()->GetShaderLibrary().LoadOrGet("Unlit", "resources/shaders/unlit.chshader");
+        auto unlitShaderAsset = ServiceLocator::Get<Renderer>()->GetShaderStorage().LoadOrGet("Unlit", "resources/shaders/unlit.chshader");
         if (!unlitShaderAsset || !unlitShaderAsset->GetShader() || textureId == 0) return;
 
         auto shader = unlitShaderAsset->GetShader();
@@ -112,7 +112,7 @@ namespace Chained {
 
     void Renderer2D::DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color)
     {
-        auto debugShader = ServiceLocator::Get<Renderer>()->GetShaderLibrary().LoadOrGet("ColliderDebug", "resources/shaders/collider_debug.chshader");
+        auto debugShader = ServiceLocator::Get<Renderer>()->GetShaderStorage().LoadOrGet("ColliderDebug", "resources/shaders/collider_debug.chshader");
         if (!debugShader || !debugShader->GetShader()) return;
 
         auto shader = debugShader->GetShader();
@@ -145,7 +145,7 @@ namespace Chained {
 
     void Renderer2D::DrawBillboard(const Camera3D& camera, uint32_t textureId, const glm::vec3& position, float size, const glm::vec4& tint)
     {
-        auto unlitShaderAsset = ServiceLocator::Get<Renderer>()->GetShaderLibrary().LoadOrGet("Unlit", "resources/shaders/unlit.chshader");
+        auto unlitShaderAsset = ServiceLocator::Get<Renderer>()->GetShaderStorage().LoadOrGet("Unlit", "resources/shaders/unlit.chshader");
         if (!unlitShaderAsset || !unlitShaderAsset->GetShader() || textureId == 0) return;
 
         auto shader = unlitShaderAsset->GetShader();

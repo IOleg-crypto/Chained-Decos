@@ -11,11 +11,11 @@ namespace Chained
 {
 
 // Named shader cache with load-on-demand and hot-reload support.
-class ShaderLibrary
+class ShaderStorage
 {
 public:
-    ShaderLibrary();
-    ~ShaderLibrary() = default;
+    ShaderStorage();
+    ~ShaderStorage() = default;
 
     // Adds a shader under a unique library name; asserts if the name already exists.
     void Add(const std::string& name, const std::shared_ptr<ShaderAsset>& shader);
