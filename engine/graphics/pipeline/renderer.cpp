@@ -2,7 +2,7 @@
 #include "engine/core/service_locator.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/pipeline/render_command.h"
-#include "engine/graphics/pipeline/shader_library.h"
+#include "engine/graphics/pipeline/shader_storage.h"
 
 #include "engine/assets/asset_manager.h"
 #include "engine/graphics/ui/ui_renderer.h"
@@ -32,26 +32,18 @@ namespace Chained
         }
 
         m_Data = std::make_unique<RendererData>();
-        m_Data->Shaders = std::make_unique<ShaderLibrary>();
-        m_UI = std::make_unique<UIRenderer>();
+        m_Data->Shaders = std::make_unique<ShaderStorage>();
 
         RenderCommand::Initialize();
 
-        Renderer2D::Init();
-        Renderer3D::Init();
-
-        if (m_UI) m_UI->Initialize();
+        m_Data->CameraUBO = UniformBuffer::Create(sizeof(CameraData), 0);
     }
 
     void Renderer::Shutdown()
     {
         CH_CORE_INFO("Shutting down Render System...");
-        
-        Renderer3D::Shutdown();
-        Renderer2D::Shutdown();
 
         m_Data.reset();
-        m_UI.reset();
     }
 
 void Renderer::Update(Timestep ts)
@@ -71,7 +63,7 @@ void Renderer::SetDiagnosticMode(float mode)
 
 void Renderer::LoadEngineResources()
 {
-    auto& shaders = GetShaderLibrary();
+    auto& shaders = GetShaderStorage();
 
     auto loadShader = [&](const ::std::string& name, const ::std::string& path) { shaders.LoadOrGet(name, path); };
 
@@ -128,9 +120,8 @@ void Renderer::SetViewport(int x, int y, int width, int height)
     RenderCommand::SetViewport(x, y, width, height);
 }
 
-ShaderLibrary& Renderer::GetShaderLibrary() { return *m_Data->Shaders; }
+ShaderStorage& Renderer::GetShaderStorage() { return *m_Data->Shaders; }
 RendererData& Renderer::GetData() { return *m_Data; }
-UIRenderer* Renderer::GetUIRenderer() { return m_UI.get(); }
 bool Renderer::IsHeadless() { return m_Headless; }
 uint32_t Renderer::GetViewportWidth() { return m_ViewportWidth; }
 uint32_t Renderer::GetViewportHeight() { return m_ViewportHeight; }

@@ -10,23 +10,6 @@
 
 namespace Chained {
 
-    struct Renderer3DData
-    {
-        std::shared_ptr<VertexBuffer> InstanceBuffer;
-        uint32_t InstanceBufferCapacity = 0;
-        std::unordered_map<VertexArray*, std::shared_ptr<VertexArray>> InstancedVAOCache;
-
-        std::unique_ptr<Model> UnitCubeModel;
-        std::unique_ptr<Model> UnitSphereModel;
-        std::unique_ptr<Model> UnitCapsuleModel;
-        std::unique_ptr<Model> WireCubeModel;
-
-        std::unique_ptr<Model> SkyboxCubeModel;
-        std::unique_ptr<Model> SkyboxSphereModel;
-    };
-
-    static Renderer3DData s_3DData;
-
     class CH_API Renderer3D {
     public:
         static void Init();

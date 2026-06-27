@@ -1,4 +1,4 @@
-#include "shader_library.h"
+#include "shader_storage.h"
 #include "engine/core/service_locator.h"
 #include "engine/foundation/engine_assert.h"
 #include "engine/core/log.h"
@@ -7,23 +7,23 @@
 
 namespace Chained
 {
-ShaderLibrary::ShaderLibrary()
+ShaderStorage::ShaderStorage()
 {
 }
 
-void ShaderLibrary::Add(const std::string& name, const std::shared_ptr<ShaderAsset>& shader)
+void ShaderStorage::Add(const std::string& name, const std::shared_ptr<ShaderAsset>& shader)
 {
     CH_CORE_ASSERT(!Exists(name), "Shader already exists in library!");
     m_Shaders[name] = shader;
 }
 
-void ShaderLibrary::Add(const std::shared_ptr<ShaderAsset>& shader)
+void ShaderStorage::Add(const std::shared_ptr<ShaderAsset>& shader)
 {
     std::filesystem::path path = shader->GetPath();
     Add(path.stem().string(), shader);
 }
 
-void ShaderLibrary::Load(const std::string& path)
+void ShaderStorage::Load(const std::string& path)
 {
     auto handle = ServiceLocator::Get<AssetManager>()->ImportAsset(path);
     auto shader = GetById(handle);
@@ -33,10 +33,10 @@ void ShaderLibrary::Load(const std::string& path)
     }
 }
 
-void ShaderLibrary::Load(const std::string& name, const std::string& path)
+void ShaderStorage::Load(const std::string& name, const std::string& path)
 {
     auto handle = ServiceLocator::Get<AssetManager>()->ImportAsset(path);
-    auto shader = ShaderLibrary::GetById(handle);
+    auto shader = ShaderStorage::GetById(handle);
     if (shader)
     {
         if (Exists(name))
@@ -50,7 +50,7 @@ void ShaderLibrary::Load(const std::string& name, const std::string& path)
     }
 }
 
-std::shared_ptr<ShaderAsset> ShaderLibrary::LoadOrGet(const std::string& name, const std::string& path)
+std::shared_ptr<ShaderAsset> ShaderStorage::LoadOrGet(const std::string& name, const std::string& path)
 {
     if (auto it = m_Shaders.find(name); it != m_Shaders.end())
     {
@@ -66,13 +66,13 @@ std::shared_ptr<ShaderAsset> ShaderLibrary::LoadOrGet(const std::string& name, c
     return shader;
 }
 
-std::shared_ptr<ShaderAsset> ShaderLibrary::Get(const std::string& name)
+std::shared_ptr<ShaderAsset> ShaderStorage::Get(const std::string& name)
 {
     CH_CORE_ASSERT(Exists(name), "Shader name not found!");
     return m_Shaders[name];
 }
 
-std::shared_ptr<Shader> ShaderLibrary::GetShader(const std::string& name)
+std::shared_ptr<Shader> ShaderStorage::GetShader(const std::string& name)
 {
     if (auto asset = Get(name))
     {
@@ -81,7 +81,7 @@ std::shared_ptr<Shader> ShaderLibrary::GetShader(const std::string& name)
     return nullptr;
 }
 
-std::shared_ptr<ShaderAsset> ShaderLibrary::GetById(uint32_t id) const
+std::shared_ptr<ShaderAsset> ShaderStorage::GetById(uint32_t id) const
 {
     for (const auto& [name, shader] : m_Shaders)
     {
@@ -91,12 +91,12 @@ std::shared_ptr<ShaderAsset> ShaderLibrary::GetById(uint32_t id) const
     return nullptr;
 }
 
-bool ShaderLibrary::Exists(const std::string& name) const
+bool ShaderStorage::Exists(const std::string& name) const
 {
     return m_Shaders.find(name) != m_Shaders.end();
 }
 
-std::vector<std::string> ShaderLibrary::GetNames() const
+std::vector<std::string> ShaderStorage::GetNames() const
 {
     std::vector<std::string> names;
     for (const auto& [name, shader] : m_Shaders)
@@ -106,15 +106,15 @@ std::vector<std::string> ShaderLibrary::GetNames() const
     return names;
 }
 
-void ShaderLibrary::ReloadAll()
+void ShaderStorage::ReloadAll()
 {
-    CH_CORE_INFO("ShaderLibrary: Reloading all shaders...");
+    CH_CORE_INFO("ShaderStorage: Reloading all shaders...");
 
     for (auto& [name, shader] : m_Shaders)
     {
         if (shader && !shader->GetPath().empty())
         {
-            CH_CORE_TRACE("ShaderLibrary: Reloading shader '{}' from '{}'", name, shader->GetPath());
+            CH_CORE_TRACE("ShaderStorage: Reloading shader '{}' from '{}'", name, shader->GetPath());
             auto handle = ServiceLocator::Get<AssetManager>()->ImportAsset(shader->GetPath());
             auto reloaded = ServiceLocator::Get<AssetManager>()->GetAsset<ShaderAsset>(handle);
             if (reloaded) shader = reloaded;
