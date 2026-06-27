@@ -12,6 +12,23 @@
 
 namespace Chained {
 
+    struct Renderer3DData
+    {
+        std::shared_ptr<VertexBuffer> InstanceBuffer;
+        uint32_t InstanceBufferCapacity = 0;
+        std::unordered_map<VertexArray*, std::shared_ptr<VertexArray>> InstancedVAOCache;
+
+        std::unique_ptr<Model> UnitCubeModel;
+        std::unique_ptr<Model> UnitSphereModel;
+        std::unique_ptr<Model> UnitCapsuleModel;
+        std::unique_ptr<Model> WireCubeModel;
+
+        std::unique_ptr<Model> SkyboxCubeModel;
+        std::unique_ptr<Model> SkyboxSphereModel;
+    };
+
+    static Renderer3DData s_3DData;
+
     void Renderer3D::Init()
     {
         s_3DData.SkyboxCubeModel = std::make_unique<Model>();
@@ -62,7 +79,7 @@ namespace Chained {
         if (shaderId == 0) shaderId = ServiceLocator::Get<Renderer>()->GetData().CurrentShaderId;
         if (shaderId == 0) return;
 
-        auto shaderAsset = ServiceLocator::Get<Renderer>()->GetShaderLibrary().GetById(shaderId);
+        auto shaderAsset = ServiceLocator::Get<Renderer>()->GetShaderStorage().GetById(shaderId);
         if (!shaderAsset || !shaderAsset->GetShader()) return;
 
         auto shader = shaderAsset->GetShader();
@@ -91,7 +108,7 @@ namespace Chained {
         if (shaderId == 0) shaderId = ServiceLocator::Get<Renderer>()->GetData().CurrentShaderId;
         if (shaderId == 0) return;
 
-        auto shaderAsset = ServiceLocator::Get<Renderer>()->GetShaderLibrary().GetById(shaderId);
+        auto shaderAsset = ServiceLocator::Get<Renderer>()->GetShaderStorage().GetById(shaderId);
         if (!shaderAsset || !shaderAsset->GetShader()) return;
 
         auto shader = shaderAsset->GetShader();
@@ -138,10 +155,10 @@ namespace Chained {
 
         auto shaderAsset =
         (skyboxMode == 2)
-            ? ServiceLocator::Get<Renderer>()->GetShaderLibrary().LoadOrGet("SkyboxCubemap", "resources/shaders/skybox_cubemap.chshader")
+            ? ServiceLocator::Get<Renderer>()->GetShaderStorage().LoadOrGet("SkyboxCubemap", "resources/shaders/skybox_cubemap.chshader")
             : (skyboxMode == 1
-                   ? ServiceLocator::Get<Renderer>()->GetShaderLibrary().LoadOrGet("SkyboxCross", "resources/shaders/skybox_cross.chshader")
-                   : ServiceLocator::Get<Renderer>()->GetShaderLibrary().LoadOrGet("Skybox", "resources/shaders/skybox.chshader"));
+                   ? ServiceLocator::Get<Renderer>()->GetShaderStorage().LoadOrGet("SkyboxCross", "resources/shaders/skybox_cross.chshader")
+                   : ServiceLocator::Get<Renderer>()->GetShaderStorage().LoadOrGet("Skybox", "resources/shaders/skybox.chshader"));
         if (!shaderAsset || !shaderAsset->GetShader()) return;
 
         RenderCommand::SetDepthFunc(RendererAPI::DepthFunc::LEqual);

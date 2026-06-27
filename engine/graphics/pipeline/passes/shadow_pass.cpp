@@ -20,9 +20,9 @@ void ShadowPass::Init()
     m_ShadowMap  = Framebuffer::Create(spec);
 
     // Grab the depth-pass shader from the library if it exists.
-    if (ServiceLocator::Get<Renderer>()->GetShaderLibrary().Exists("ShadowDepth"))
+    if (ServiceLocator::Get<Renderer>()->GetShaderStorage().Exists("ShadowDepth"))
     {
-        m_DepthShaderAsset = ServiceLocator::Get<Renderer>()->GetShaderLibrary().Get("ShadowDepth");
+        m_DepthShaderAsset = ServiceLocator::Get<Renderer>()->GetShaderStorage().Get("ShadowDepth");
     }
 
     m_Initialized = true;

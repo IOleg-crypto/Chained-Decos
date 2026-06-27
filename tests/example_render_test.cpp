@@ -27,12 +27,12 @@
 //     EXPECT_EQ(renderer->GetViewportHeight(), 600);
 // }
 
-// TEST_F(ExampleRenderTest, ShaderLibraryInitialization)
+// TEST_F(ExampleRenderTest, ShaderStorageInitialization)
 // {
 //     auto* renderer = Application::Get().GetServiceRegistry().Get<Renderer>();
 //     ASSERT_NE(renderer, nullptr);
 
-//     auto& shaderLib = renderer->GetShaderLibrary();
+//     auto& shaderLib = renderer->GetShaderStorage();
 //     // Перевіряємо, чи завантажені базові шейдери (якщо вони мають бути)
 //     // У headless режимі ресурси можуть не завантажуватися повністю, але бібліотека має існувати.
 //     EXPECT_TRUE(true);

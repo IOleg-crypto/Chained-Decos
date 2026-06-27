@@ -146,7 +146,7 @@ void EditorGUI::DrawMenuBar(EditorLayer& editorLayer, EditorPanels& panels)
         ImGui::Separator();
         if (ImGui::MenuItem(ICON_FA_ARROWS_ROTATE " Reload Shaders"))
         {
-            ServiceLocator::Get<Renderer>()->GetShaderLibrary().ReloadAll();
+            ServiceLocator::Get<Renderer>()->GetShaderStorage().ReloadAll();
         }
         if (ImGui::MenuItem(ICON_FA_FILE_CODE " Reload Scripts", "Ctrl+R"))
         {
