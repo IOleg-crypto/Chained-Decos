@@ -39,6 +39,8 @@ public:
     bool IsReloadInProgress() const { return m_Host.IsReloadInProgress(); }
     bool CanExecuteFrameScripts() const { return m_Host.IsInitialized() && !m_Host.IsReloadInProgress(); }
 
+    void SetEnabled(bool enable) { m_EnableScripting = enable; }
+
 private:
     ScriptEngine(const ScriptEngine&) = delete;
     ScriptEngine& operator=(const ScriptEngine&) = delete;

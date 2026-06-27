@@ -11,6 +11,7 @@
 #include "engine/graphics/ui/ui_renderer.h"
 #include "engine/physics/physics.h"
 #include "engine/core/platform.h"
+#include "engine/scene/component_registry.h"
 
 #include "scripting/scriptengine.h"
 
@@ -31,6 +32,7 @@ Application::Application(const ApplicationSpecification& spec)
     s_Instance = this;
 
     Log::Init();
+    ComponentRegistry::RegisterEngineComponents();
 
     unsigned int threads = std::thread::hardware_concurrency();
     if (threads == 0) threads = 1;

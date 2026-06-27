@@ -41,8 +41,6 @@ namespace Chained
         Renderer3D::Init();
 
         if (m_UI) m_UI->Initialize();
-
-        LoadEngineResources();
     }
 
     void Renderer::Shutdown()

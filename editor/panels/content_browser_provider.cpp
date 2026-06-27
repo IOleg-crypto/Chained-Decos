@@ -12,10 +12,7 @@ ContentBrowserProvider::ContentBrowserProvider()
 void ContentBrowserProvider::SetRoot(const std::filesystem::path& path)
 {
     m_RootDirectory = path;
-    if (m_CurrentDirectory.empty())
-    {
-        m_CurrentDirectory = path;
-    }
+    m_CurrentDirectory = path;
     Scan();
 }
 
