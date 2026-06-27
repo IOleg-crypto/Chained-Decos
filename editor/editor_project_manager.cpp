@@ -82,8 +82,8 @@ bool EditorProjectManager::OnProjectOpened(ProjectOpenedEvent& e)
         std::filesystem::path resolvedPath = e.GetPath();
         std::filesystem::path projDir = resolvedPath.extension() == ".chproject" ? resolvedPath.parent_path() : resolvedPath;
 
-        ServiceLocator::Get<AssetManager>()->SetProjectDirectory(projDir);
-        ServiceLocator::Get<AssetManager>()->SetAssetDirectory(projDir / "assets");
+        ServiceLocator::Get<AssetManager>()->SetProjectDirectory(project->GetProjectDirectoryForProject());
+        ServiceLocator::Get<AssetManager>()->SetAssetDirectory(project->GetAssetDirectoryForProject());
  
          // Load engine shaders and resources
         ServiceLocator::Get<Renderer>()->LoadEngineResources();
@@ -115,7 +115,9 @@ bool EditorProjectManager::OnProjectOpened(ProjectOpenedEvent& e)
 
             if (std::filesystem::exists(dllPath))
             {
-                //  ServiceLocator::Get<ScriptEngine>()->LoadAppAssembly(dllPath.string());
+                 ServiceLocator::Get<ScriptEngine>()->SetEnabled(true);
+                 ServiceLocator::Get<ScriptEngine>()->Initialize();
+                 ServiceLocator::Get<ScriptEngine>()->LoadAppAssembly(dllPath.string());
                  CH_CORE_INFO("EditorProjectManager: Auto-loaded script assembly '{}'.", dllPath.string());
             }
             else

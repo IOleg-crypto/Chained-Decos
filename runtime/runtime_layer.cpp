@@ -137,16 +137,6 @@ void RuntimeLayer::OnDetach()
 
 void RuntimeLayer::OnUpdate(Timestep ts)
 {
-    // // Boost uploads during loading
-    // if (ScriptEngine::Get().IsHostInitialized())
-    // {
-    //     auto& scriptEngine = ScriptEngine::Get();
-    //     // ... use scriptEngine if needed ...
-    // }
-
-    // The scene transition and script logic will consume button states after this point.
-    // UIRenderer::DrawCanvas will handle the per-frame reset during the render pass.
-
     if (!m_PendingScenePath.empty())
     {
         std::string path = std::move(m_PendingScenePath);
