@@ -19,7 +19,7 @@ Application* CreateApplication(ApplicationCommandLineArgs args)
     spec.WindowWidth = 1600;
     spec.WindowHeight = 900;
     spec.Headless = false;
-    spec.EnableScripting = false;
+    spec.EnableScripting = true;
 
     auto* app = new Application(spec);
 

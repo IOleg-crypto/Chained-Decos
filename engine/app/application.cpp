@@ -14,8 +14,6 @@
 #include "engine/scene/component_registry.h"
 
 #include "scripting/scriptengine.h"
-#include "engine/graphics/pipeline/renderer2d.h"
-#include "engine/graphics/pipeline/renderer3d.h"
 
 namespace Chained
 {
@@ -59,7 +57,7 @@ Application::Application(const ApplicationSpecification& spec)
 
     ServiceLocator::Provide<ThreadPool>(new ThreadPool(workerCount));
     ServiceLocator::Provide<AssetManager>(new AssetManager());
-    ServiceLocator::Provide<Renderer>(new Renderer(m_Specification.Headless));
+    ServiceLocator::Provide<Renderer>(new Renderer());
     ServiceLocator::Provide<UIRenderer>(new UIRenderer());
     ServiceLocator::Provide<Audio>(new Audio());
     ServiceLocator::Provide<Physics>(new Physics());
@@ -75,8 +73,6 @@ Application::Application(const ApplicationSpecification& spec)
     ServiceLocator::InitializeModule();
     ServiceLocator::Lock();
 
-    Renderer2D::Init();
-    Renderer3D::Init();
 
     if (m_Window)
     {
@@ -96,8 +92,7 @@ Application::Application(const ApplicationSpecification& spec)
 
 Application::~Application()
 {
-    Renderer2D::Shutdown();
-    Renderer3D::Shutdown();
+
 
     m_LayerStack.reset();
     ServiceLocator::Shutdown();

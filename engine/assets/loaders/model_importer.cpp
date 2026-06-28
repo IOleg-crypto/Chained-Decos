@@ -7,7 +7,9 @@ namespace Chained::AssetImporter
 {
 std::shared_ptr<ModelAsset> ImportModel(AssetHandle handle, const AssetMetadata& metadata)
 {
-    std::filesystem::path fullPath = ServiceLocator::Get<AssetManager>()->GetAssetDirectory() / metadata.FilePath;
+    // metadata.FilePath is already an absolute path (resolved by AssetManager::ImportAsset),
+    // so we use it directly to avoid double-path bugs like AssetDir/AssetDir/models/foo.glb.
+    std::filesystem::path fullPath = metadata.FilePath;
 
     // Use AssimpImporter to retrieve the data
     PendingModelData pendingData = AssimpImporter::Import(fullPath);

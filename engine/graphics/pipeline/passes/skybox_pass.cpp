@@ -2,7 +2,6 @@
 #include "engine/core/service_locator.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
 #include "engine/graphics/pipeline/renderer.h"
-#include "engine/graphics/pipeline/renderer3d.h"
 #include "engine/graphics/pipeline/texture_utility.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/texture_asset.h"
@@ -34,7 +33,7 @@ namespace Chained {
                     uint32_t texId = textureAsset->GetTexture()->GetRendererID();
 
                     // Logic mapped directly from old SceneRenderer implementation
-                    Renderer3D::DrawSkybox(texId, skyboxMode, textureAsset->IsHDR(), skySettings.Exposure,
+                    ServiceLocator::Get<Renderer>()->DrawSkybox(texId, skyboxMode, textureAsset->IsHDR(), skySettings.Exposure,
                                         skySettings.Brightness, skySettings.Contrast, ctx.Camera, skySettings.VFlipped);
                 }
             }
