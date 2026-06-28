@@ -18,6 +18,9 @@ namespace Chained
     class CH_API FileDialogs
     {
     public:
+        static void Init();
+        static void Shutdown();
+
         // Opens a file dialog and returns the selected path.
         static std::optional<std::filesystem::path> OpenFile(const std::vector<FileDialogFilter>& filters = {});
         

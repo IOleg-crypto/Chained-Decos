@@ -7,7 +7,7 @@
 #include "engine/imgui/imgui_layer.h"
 #include "engine/core/input.h"
 
-#include "IconsFontAwesome6.h"
+#include "thirdparty/IconsFontAwesome6.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/core/profiler.h"
 #include "engine/app/application.h"

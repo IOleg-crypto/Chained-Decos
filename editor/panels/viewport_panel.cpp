@@ -2,7 +2,7 @@
 #include "engine/core/service_locator.h"
 
 
-#include "IconsFontAwesome6.h"
+#include "thirdparty/IconsFontAwesome6.h"
 #include "engine/core/input.h"
 #include "engine/core/key_codes.h"
 #include "engine/graphics/api/framebuffer.h"
