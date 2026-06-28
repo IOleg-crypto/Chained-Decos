@@ -32,8 +32,10 @@ void SceneResourceManager::RegisterObservers(entt::registry& reg)
     reg.on_construct<ShaderComponent>().connect<&SceneResourceManager::ResolveShader>(*this);
     reg.on_update<ShaderComponent>().connect<&SceneResourceManager::ResolveShader>(*this);
 
-    reg.on_construct<ModelComponent>().connect<&SceneResourceManager::ResolveModel>(*this);
-    reg.on_update<ModelComponent>().connect<&SceneResourceManager::ResolveModel>(*this);
+    // NOTE: ModelComponent is intentionally NOT connected to on_construct/on_update.
+    // Scene loading happens on a background thread — calling AssimpImporter from there
+    // is unsafe (OpenGL VAO creation requires the main thread context).
+    // Model resolution is handled by the Update() loop which runs on the main thread.
 }
 
 void SceneResourceManager::Update(entt::registry& reg, Timestep ts)

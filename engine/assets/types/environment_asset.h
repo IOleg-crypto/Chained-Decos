@@ -20,7 +20,7 @@ struct Skybox
     bool VFlipped = false;
 };
 
-struct Fog
+struct FogSettings
 {
     bool Enabled = false;
     int Mode = 0; // 0: Linear, 1: Exp, 2: Exp2
@@ -30,7 +30,7 @@ struct Fog
     float End = 5000.0f;
 };
 
-struct Lighting
+struct LightingSettings
 {
     glm::vec3 Direction = {-1.0f, -1.0f, -1.0f};
     Color LightColor = {255, 255, 255, 255}; // WHITE
@@ -41,9 +41,9 @@ struct Lighting
 
 struct EnvironmentParameters
 {
-    Lighting Lighting;
+    LightingSettings Lighting;
     Skybox Skybox;
-    Fog Fog;
+    FogSettings Fog;
 };
 
 class EnvironmentAsset : public Asset

@@ -16,8 +16,6 @@
 #include "engine/graphics/pipeline/scene_renderer.h"
 #include "engine/graphics/ui/ui_renderer.h"
 #include "engine/graphics/pipeline/renderer.h"
-#include "engine/graphics/pipeline/renderer2d.h"
-#include "engine/graphics/pipeline/renderer3d.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/texture_asset.h"
 #include "engine/serialization/prefab_serializer.h"
@@ -749,7 +747,7 @@ void ViewportPanel::RenderEditorIcons(entt::registry &registry, const SceneSetti
         const glm::vec4 cameraTint = glm::vec4(0.65f, 0.95f, 1.0f, 0.95f);
         if (m_EditorIcons.CameraIconId != 0)
         {
-            Renderer2D::DrawBillboard(camera, m_EditorIcons.CameraIconId, iconPos, iconSize, cameraTint);
+            ServiceLocator::Get<Renderer>()->DrawBillboard(camera, m_EditorIcons.CameraIconId, iconPos, iconSize, cameraTint);
         }
     }
 
@@ -768,25 +766,25 @@ void ViewportPanel::RenderEditorIcons(entt::registry &registry, const SceneSetti
 
             if (m_EditorIcons.LightIconId != 0)
             {
-                Renderer2D::DrawBillboard(camera, m_EditorIcons.LightIconId, iconPos, iconSize, lightTint);
+                ServiceLocator::Get<Renderer>()->DrawBillboard(camera, m_EditorIcons.LightIconId, iconPos, iconSize, lightTint);
                 if (light.Type == LightType::Directional)
                 {
                     glm::vec3 dir = glm::normalize(glm::vec3(transform.WorldTransform[2])) * 0.45f;
-                    Renderer2D::DrawLine(iconPos, iconPos + dir, lightTint);
+                    ServiceLocator::Get<Renderer>()->DrawLine(iconPos, iconPos + dir, lightTint);
                 }
             }
             else if (light.Type == LightType::Directional)
             {
                 glm::vec3 dir = glm::normalize(glm::vec3(transform.WorldTransform[2])) * 0.5f;
-                Renderer2D::DrawLine(iconPos, iconPos + dir, lightTint);
+                ServiceLocator::Get<Renderer>()->DrawLine(iconPos, iconPos + dir, lightTint);
             }
             else if (light.Type == LightType::Point)
             {
-                Renderer3D::DrawSphereWires(transform.WorldTransform, light.Radius * 0.1f, lightTint);
+                ServiceLocator::Get<Renderer>()->DrawSphereWires(transform.WorldTransform, light.Radius * 0.1f, lightTint);
             }
             else if (light.Type == LightType::Spot)
             {
-                Renderer3D::DrawSphereWires(transform.WorldTransform, light.Radius * 0.05f, lightTint);
+                ServiceLocator::Get<Renderer>()->DrawSphereWires(transform.WorldTransform, light.Radius * 0.05f, lightTint);
             }
         }
     }

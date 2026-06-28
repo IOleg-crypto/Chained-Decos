@@ -18,9 +18,9 @@ void CompositePass::Execute(const RenderContext& ctx)
 
     // Upload fog uniforms to the lighting shader so subsequent draws
     // evaluate the same fog parameters as the main geometry pass.
-    if (!ServiceLocator::Get<Renderer>()->GetShaderStorage().Exists("Lighting")) return;
+    if (!ServiceLocator::Get<Renderer>()->GetShaderLibrary().Exists("Lighting")) return;
 
-    auto lightingAsset = ServiceLocator::Get<Renderer>()->GetShaderStorage().Get("Lighting");
+    auto lightingAsset = ServiceLocator::Get<Renderer>()->GetShaderLibrary().Get("Lighting");
     if (!lightingAsset) return;
 
     auto shader = lightingAsset->GetShader();

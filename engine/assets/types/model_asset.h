@@ -34,6 +34,8 @@ public:
     }
 
     void OnLoaded();
+    bool Finalize();
+    bool HasPending() const { return m_HasPendingData; }
 
     size_t GetMemoryUsage() const override
     {

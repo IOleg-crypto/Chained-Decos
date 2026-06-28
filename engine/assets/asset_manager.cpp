@@ -1,6 +1,7 @@
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/loaders/asset_importer.h"
 #include "engine/assets/types/texture_asset.h"
+#include "engine/assets/types/model_asset.h"
 #include "engine/core/log.h"
 
 namespace Chained
@@ -242,11 +243,16 @@ namespace Chained
                 m_PendingFinalize.pop_front();
             }
 
-            // Texture finalization (GPU upload)
+            // Finalization (GPU upload)
             if (auto texAsset = std::dynamic_pointer_cast<TextureAsset>(asset))
             {
                 if (texAsset->HasPending())
                     texAsset->Finalize();
+            }
+            else if (auto modAsset = std::dynamic_pointer_cast<ModelAsset>(asset))
+            {
+                if (modAsset->HasPending())
+                    modAsset->Finalize();
             }
             else
             {
