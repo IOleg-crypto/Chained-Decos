@@ -1,6 +1,6 @@
 #include "component_registry.h"
 #include "components.h"
-#include "IconsFontAwesome6.h"
+#include "thirdparty/IconsFontAwesome6.h"
 
 namespace Chained
 {
@@ -29,8 +29,8 @@ namespace Chained
         RegisterReflective<AudioComponent>("Audio", ICON_FA_VOLUME_HIGH, "Audio");
 
         // Physics
-        RegisterReflective<RigidBodyComponent>("Rigid Body", ICON_FA_WEIGHT_HANGING, "Physics");
-        RegisterReflective<ColliderComponent>("Collider", ICON_FA_SHIELD_HALVED, "Physics");
+        RegisterReflective<RigidBodyComponent>("Rigid Body", ICON_FA_CUBES, "Physics");
+        RegisterReflective<ColliderComponent>("Collider", ICON_FA_SHIELD, "Physics");
         RegisterReflective<PrimitiveComponent>("Primitive", nullptr, "Physics"); // added Primitive
 
         // Logic & Animation

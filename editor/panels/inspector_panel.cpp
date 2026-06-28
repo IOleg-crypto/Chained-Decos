@@ -1,5 +1,5 @@
 #include "inspector_panel.h"
-#include "IconsFontAwesome6.h"
+#include "thirdparty/IconsFontAwesome6.h"
 #include "editor_gui.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/model_asset.h"

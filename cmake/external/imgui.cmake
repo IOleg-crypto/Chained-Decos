@@ -31,6 +31,10 @@ target_link_libraries(engine_external_imgui
         engine_external_glad
 )
 
+if(UNIX AND NOT APPLE)
+    target_link_libraries(engine_external_imgui PUBLIC X11)
+endif()
+
 target_compile_definitions(engine_external_imgui PUBLIC 
     IMGUI_DEFINE_MATH_OPERATORS 
     GLFW_INCLUDE_NONE 

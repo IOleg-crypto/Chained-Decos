@@ -1,5 +1,3 @@
-#include "engine/assets/asset_manager.h"
-#include "engine/core/service_locator.h"
 #include "engine/assets/loaders/asset_importer.h"
 #include <fstream>
 #include <glad/gl.h>
@@ -11,7 +9,9 @@ namespace Chained::AssetImporter
 {
 std::shared_ptr<FontAsset> ImportFont(AssetHandle handle, const AssetMetadata& metadata)
 {
-    std::filesystem::path fullPath = ServiceLocator::Get<AssetManager>()->GetAssetDirectory() / metadata.FilePath;
+    // metadata.FilePath is already resolved to an absolute path by AssetManager::ImportAsset.
+    // Do NOT prepend AssetDirectory here — that would create a double-path bug.
+    std::filesystem::path fullPath = metadata.FilePath;
     std::ifstream file(fullPath, std::ios::binary | std::ios::ate);
 
     if (!file.is_open())

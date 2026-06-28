@@ -1,7 +1,7 @@
 #ifndef CH_UI_PROPERTIES_H
 #define CH_UI_PROPERTIES_H
 
-#include "IconsFontAwesome6.h"
+#include "thirdparty/IconsFontAwesome6.h"
 #include "editor_gui.h"
 #include "engine/reflection/reflection.h"
 #include "engine/core/service_locator.h"

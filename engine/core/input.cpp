@@ -1,4 +1,4 @@
-#include "Input.h"
+#include "input.h"
 #include <cstring>
 
 namespace Chained::Core::Input

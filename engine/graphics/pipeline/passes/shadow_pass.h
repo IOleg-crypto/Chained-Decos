@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SHADOW_PASS_H
+#define SHADOW_PASS_H
 
 #include "engine/graphics/pipeline/render_pass.h"
 #include "engine/graphics/api/framebuffer.h"
@@ -41,3 +42,4 @@ private:
 };
 
 } // namespace Chained
+#endif

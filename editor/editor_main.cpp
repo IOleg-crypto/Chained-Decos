@@ -1,5 +1,6 @@
 #include "editor_layer.h"
 #include "engine/app/entry_point.h"
+#include "engine/core/platform.h"
 
 namespace Chained
 {
@@ -20,6 +21,11 @@ Application* CreateApplication(ApplicationCommandLineArgs args)
     spec.WindowHeight = 900;
     spec.Headless = false;
     spec.EnableScripting = true;
+
+    // Set engine root to the executable directory so AssetManager can find
+    // resources/shaders, resources/icons, resources/font etc.
+    spec.EngineRoot = Platform::GetExecutableDirectory();
+    spec.WorkingDirectory = Platform::GetExecutableDirectory().string();
 
     auto* app = new Application(spec);
 

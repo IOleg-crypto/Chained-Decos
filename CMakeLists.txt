@@ -22,7 +22,9 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Generate compile_commands.json")
 set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
-
+if(UNIX AND NOT APPLE)
+    set(CMAKE_INSTALL_RPATH "$ORIGIN")
+endif()
 
 # Options
 option(BUILD_TESTS "Build unit tests" ON)
