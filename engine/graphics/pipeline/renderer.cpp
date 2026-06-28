@@ -757,8 +757,8 @@ void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextu
         shader->SetFloat("uGamma", m_Data->Lighting.CurrentLighting.Gamma);
 
         auto handle =
-            ServiceLocator::Get<AssetManager>()->ResolveToHandle(shaderAsset->GetPath(), ShaderAsset::GetStaticType());
-        ApplyFogUniforms(ServiceLocator::Get<AssetManager>()->GetAsset<ShaderAsset>(handle));
+            ServiceLocator::Get<AssetManager>()->ResolveToHandle(shaderAsset->GetPath());
+        ApplyFogUniforms(ServiceLocator::Get<AssetManager>()->Get<ShaderAsset>(handle));
 
         // 2. Set Custom Uniforms (if any)
         for (const auto& u : uniforms)
@@ -829,7 +829,7 @@ void Renderer::ClearLights()
     m_Data->Lighting.LightsDirty = true;
 }
 
-void Renderer::ApplyEnvironment(const EnvironmentParameters& settings)
+void Renderer::ApplyEnvironment(const EnvironmentSettings& settings)
 {
     m_Data->Lighting.CurrentLighting = settings.Lighting;
     m_Data->Lighting.CurrentFog = settings.Fog;

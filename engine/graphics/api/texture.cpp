@@ -1,10 +1,7 @@
-#include "texture.h"
-#include "engine/core/service_locator.h"
+#include "engine/graphics/api/texture.h"
 #include "engine/graphics/api/renderer_api.h"
 #include "engine/graphics/api/opengl/opengl_texture.h"
-#include "engine/assets/asset_manager.h"
-#include "engine/assets/types/texture_asset.h"
-
+#include "engine/graphics/pipeline/texture_system.h"
 
 namespace Chained
 {
@@ -31,9 +28,8 @@ std::shared_ptr<Texture> Texture::CreateCubemap(uint32_t size, TextureFormat for
 
 std::shared_ptr<Texture> Texture::CreateFromFile(const std::string& path)
 {
-    auto handle = ServiceLocator::Get<AssetManager>()->ImportAsset(path);
-    auto asset = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>(handle);
-    return asset ? asset->GetTexture() : nullptr;
+    auto handle = TextureSystem::Get().LoadTexture(path);
+    return TextureSystem::Get().GetTexture(handle);
 }
 
-} // namespace Chained
+} // namespace CHEngine

@@ -1,79 +1,111 @@
 #ifndef CH_ASSET_MANAGER_H
 #define CH_ASSET_MANAGER_H
 
-#include "engine/assets/asset.h"
-#include "engine/assets/asset_registry.h"
-#include "engine/foundation/timestep.h"
-#include "engine/foundation/uuid.h"
-
-#include <deque>
+#include "engine/assets/loaders/asset_loader.h"
+#include "engine/core/engine_module.h"
 #include <filesystem>
+#include <deque>
 #include <memory>
 #include <mutex>
+#include <string>
 #include <unordered_map>
-#include <unordered_set>
-#include <string_view>
-#include "engine/core/engine_module.h"
+#include <vector>
 
 namespace Chained
 {
+
 class AssetManager : public EngineModule
 {
 public:
-    static constexpr std::string_view ProjectExtension = ".chproject";
-    static constexpr std::string_view SceneExtension = ".chscene";
-    static constexpr std::string_view PrefabExtension = ".chprefab";
+    AssetManager();
+    ~AssetManager();
 
-public:
     virtual void Initialize() override;
     virtual void Shutdown() override;
     virtual void Update(Timestep ts) override;
 
-    void SetEngineRoot(const std::filesystem::path& path);
-    void SetProjectDirectory(const std::filesystem::path& path);
-    void SetAssetDirectory(const std::filesystem::path& path);
+    // Registers the loader for a specific asset type and transfers ownership.
+    void RegisterLoader(AssetType type, std::unique_ptr<IAssetLoader> loader);
 
-    const std::filesystem::path& GetAssetDirectory() const { return m_AssetDirectory; }
-    const std::filesystem::path& GetProjectDirectory() const { return m_ProjectDirectory; }
-    const std::filesystem::path& GetEngineRoot() const { return m_EngineRoot; }
+    void SetAssetDirectory(const std::filesystem::path& path) { m_AssetDirectory = path; }
+    void SetProjectDirectory(const std::filesystem::path& path) { m_ProjectDirectory = path; }
+    void SetEngineRoot(const std::filesystem::path& path) { m_EngineRoot = path; }
 
-    const AssetMetadata& GetMetadata(AssetHandle handle) const;
-    void SetMetadata(AssetHandle handle, const AssetMetadata& metadata);
-    const AssetRegistry& GetRegistry() const { return m_Registry; }
+    [[nodiscard]] const std::filesystem::path& GetAssetDirectory() const { return m_AssetDirectory; }
+    [[nodiscard]] const std::filesystem::path& GetProjectDirectory() const { return m_ProjectDirectory; }
+    [[nodiscard]] const std::filesystem::path& GetEngineRoot() const { return m_EngineRoot; }
 
-    AssetHandle ImportAsset(const std::filesystem::path& filepath);
-    
-    std::shared_ptr<Asset> GetAssetRaw(AssetHandle handle);
+    // Resolves a path through the project root and caches the resolved value.
+    [[nodiscard]] std::string ResolvePath(const std::string& path) const;
+    // Resolves a path to an already-loaded asset handle, or 0 when missing.
+    AssetHandle ResolveToHandle(const std::string& path) const;
 
-    template <typename T>
-    std::shared_ptr<T> GetAsset(AssetHandle handle)
+    // Get by path — returns a cached asset when available, otherwise loads it.
+    template <typename T> std::shared_ptr<T> Get(const std::string& path)
     {
-        auto asset = GetAssetRaw(handle);
-        return std::static_pointer_cast<T>(asset);
+        AssetHandle handle = ResolveToHandle(path);
+        if (handle != AssetHandle(0))
+        {
+            auto asset = GetAsset(handle, T::GetStaticType());
+            if (asset)
+            {
+                return std::static_pointer_cast<T>(asset);
+            }
+        }
+        // Not in cache — load it now
+        return Load<T>(path);
     }
 
-    bool HasBackgroundWork() const;
-    uint32_t GetPendingFinalizeCount() const;
-    AssetHandle ResolveToHandle(const std::filesystem::path& path, AssetType type = AssetType::None);
+    template <typename T> std::shared_ptr<T> Get(AssetHandle handle)
+    {
+        return std::static_pointer_cast<T>(GetAsset(handle, T::GetStaticType()));
+    }
+
+    // Explicit load — creates, loads and caches the asset, returning nullptr on failure.
+    template <typename T> std::shared_ptr<T> Load(const std::string& path)
+    {
+        return std::static_pointer_cast<T>(LoadAsset(path, T::GetStaticType()));
+    }
+
+    [[nodiscard]] size_t GetPendingFinalizeCount() const;
+    [[nodiscard]] size_t GetLoadingAssetCount() const;
+    [[nodiscard]] bool HasBackgroundWork() const;
+
+    // Finalizes completed async loads and calls OnLoaded() within a small per-frame budget.
+    void Update();
 
 private:
-    std::filesystem::path ResolveFilePath(const std::filesystem::path& relativePath) const;
+    void ReloadAsset(AssetHandle handle, AssetType type);
 
-    std::unordered_map<AssetHandle, std::shared_ptr<Asset>> m_LoadedAssets;
-    AssetRegistry m_Registry;
-    mutable std::mutex m_AssetMutex;
+public:
+    template <typename T> void Reload(const std::string& path)
+    {
+        AssetHandle handle = ResolveToHandle(path);
+        ReloadAsset(handle, T::GetStaticType());
+    }
 
-    // Pending GPU finalization queue (filled by worker thread, drained by Update on main thread)
-    std::deque<std::shared_ptr<Asset>> m_PendingFinalize;
+
+    std::shared_ptr<Asset> GetAsset(AssetHandle handle, AssetType type);
+    std::shared_ptr<Asset> LoadAsset(const std::string& path, AssetType type);
+public:
+
+    // Asset cache.
+    std::unordered_map<AssetHandle, std::shared_ptr<Asset>> m_AssetCache;
+    std::unordered_map<AssetType, std::unique_ptr<IAssetLoader>> m_Loaders;
+
+    // Path-to-handle mapping for quick lookup and a path resolution cache.
+    mutable std::unordered_map<std::string, AssetHandle> m_PathToHandle;
+    mutable std::unordered_map<std::string, std::string> m_PathCache;
+
+    // Async loading support.
+    std::deque<std::shared_ptr<Asset>> m_PendingAssets;
     mutable std::mutex m_PendingMutex;
+    mutable std::recursive_mutex m_AssetLock;
 
-    std::filesystem::path m_EngineRoot;
-    std::filesystem::path m_ProjectDirectory;
     std::filesystem::path m_AssetDirectory;
-
-    // Cache of paths that failed to resolve — prevents per-frame log spam.
-    std::unordered_set<std::string> m_FailedImports;
+    std::filesystem::path m_ProjectDirectory;
+    std::filesystem::path m_EngineRoot;
 };
-}
+} // namespace CHEngine
 
 #endif // CH_ASSET_MANAGER_H

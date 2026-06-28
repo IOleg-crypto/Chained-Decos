@@ -10,14 +10,13 @@
 namespace Chained
 {
 
-struct Skybox
+struct SkyboxSettings
 {
     std::string TexturePath;
     int Mode = 0; // 0: Equirectangular, 1: Cross (Horizontal), 2: Cubemap (GPU)
     float Exposure = 1.0f;
     float Brightness = 0.0f;
     float Contrast = 1.0f;
-    bool VFlipped = false;
 };
 
 struct FogSettings
@@ -39,10 +38,10 @@ struct LightingSettings
     float Gamma = 2.2f;
 };
 
-struct EnvironmentParameters
+struct EnvironmentSettings
 {
     LightingSettings Lighting;
-    Skybox Skybox;
+    SkyboxSettings Skybox;
     FogSettings Fog;
 };
 
@@ -53,37 +52,32 @@ public:
         : Asset(GetStaticType())
     {
     }
-    EnvironmentAsset(AssetHandle handle)
-        : Asset(GetStaticType(), handle)
-    {
-    }
-    virtual ~EnvironmentAsset() override = default;
+    virtual ~EnvironmentAsset() = default;
 
     static AssetType GetStaticType()
     {
         return AssetType::Environment;
     }
 
-    size_t GetMemoryUsage() const override
+    void OnLoaded() override
     {
-        return sizeof(*this) + m_Settings.Skybox.TexturePath.capacity();
     }
 
-    const EnvironmentParameters& GetSettings() const
+    const EnvironmentSettings& GetSettings() const
     {
         return m_Settings;
     }
-    EnvironmentParameters& GetSettings()
+    EnvironmentSettings& GetSettings()
     {
         return m_Settings;
     }
-    void SetSettings(const EnvironmentParameters& settings)
+    void SetSettings(const EnvironmentSettings& settings)
     {
         m_Settings = settings;
     }
 
 private:
-    EnvironmentParameters m_Settings;
+    EnvironmentSettings m_Settings;
 };
 
 } // namespace Chained

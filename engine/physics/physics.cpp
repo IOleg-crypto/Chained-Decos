@@ -120,10 +120,10 @@ std::shared_ptr<BVH> Physics::GetBVH(const std::shared_ptr<ModelAsset>& asset)
 std::shared_ptr<BVH> Physics::GetBVH(const std::string& modelPath)
 {
     auto& am = (*ServiceLocator::Get<AssetManager>());
-    auto handle = am.ResolveToHandle(modelPath, AssetType::Model);
+    auto handle = am.ResolveToHandle(modelPath);
     if (handle == AssetHandle(0)) return nullptr;
 
-    auto asset = am.GetAsset<ModelAsset>(handle);
+    auto asset = am.Get<ModelAsset>(handle);
     if (asset) return GetBVH(asset);
     return nullptr;
 }
