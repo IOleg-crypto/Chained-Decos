@@ -1,5 +1,5 @@
 #include "content_browser_panel.h"
-#include "IconsFontAwesome6.h"
+#include "thirdparty/IconsFontAwesome6.h"
 #include "editor/editor_action_commands.h"
 #include "editor/editor_layer.h"
 #include "engine/core/log.h"

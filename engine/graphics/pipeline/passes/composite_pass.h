@@ -1,4 +1,5 @@
-#pragma once
+#ifndef COMPOSITE_PASS_H
+#define COMPOSITE_PASS_H
 
 #include "engine/graphics/pipeline/render_pass.h"
 #include "engine/graphics/api/framebuffer.h"
@@ -33,3 +34,4 @@ private:
 };
 
 } // namespace Chained
+#endif

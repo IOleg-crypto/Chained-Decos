@@ -7,7 +7,7 @@
 #include "engine/assets/types/texture_asset.h"
 #include "engine/assets/types/model_asset.h"
 #include "editor/editor_gui.h"
-#include "IconsFontAwesome6.h"
+#include "thirdparty/IconsFontAwesome6.h"
 
 namespace Chained
 {

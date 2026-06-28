@@ -12,21 +12,34 @@ struct Frustum
     glm::vec4 Left, Right, Bottom, Top, Near, Far;
 };
 
+inline glm::vec4 NormalizePlane(const glm::vec4& p)
+{
+    float len = glm::length(glm::vec3(p));
+    // If length is 0 (shouldn't happen with valid VP matrix), avoid division by zero
+    if (len < 0.0001f) return p; 
+    return p / len;
+}
+
 inline Frustum FromMatrix(const glm::mat4& vp)
 {
     Frustum f;
     f.Left =
-        glm::normalize(glm::vec4{vp[0][3] + vp[0][0], vp[1][3] + vp[1][0], vp[2][3] + vp[2][0], vp[3][3] + vp[3][0]});
+        NormalizePlane(glm::vec4{vp[0][3] + vp[0][0], vp[1][3] + vp[1][0], vp[2][3] + vp[2][0], vp[3][3] + vp[3][0]});
     f.Right =
-        glm::normalize(glm::vec4{vp[0][3] - vp[0][0], vp[1][3] - vp[1][0], vp[2][3] - vp[2][0], vp[3][3] - vp[3][0]});
+        NormalizePlane(glm::vec4{vp[0][3] - vp[0][0], vp[1][3] - vp[1][0], vp[2][3] - vp[2][0], vp[3][3] - vp[3][0]});
     f.Bottom =
-        glm::normalize(glm::vec4{vp[0][3] + vp[0][1], vp[1][3] + vp[1][1], vp[2][3] + vp[2][1], vp[3][3] + vp[3][1]});
+        NormalizePlane(glm::vec4{vp[0][3] + vp[0][1], vp[1][3] + vp[1][1], vp[2][3] + vp[2][1], vp[3][3] + vp[3][1]});
     f.Top =
-        glm::normalize(glm::vec4{vp[0][3] - vp[0][1], vp[1][3] - vp[1][1], vp[2][3] - vp[2][1], vp[3][3] - vp[3][1]});
+        NormalizePlane(glm::vec4{vp[0][3] - vp[0][1], vp[1][3] - vp[1][1], vp[2][3] - vp[2][1], vp[3][3] - vp[3][1]});
+#ifdef GLM_FORCE_DEPTH_ZERO_TO_ONE
     f.Near =
-        glm::normalize(glm::vec4{vp[0][3] + vp[0][2], vp[1][3] + vp[1][2], vp[2][3] + vp[2][2], vp[3][3] + vp[3][2]});
+        NormalizePlane(glm::vec4{vp[0][2], vp[1][2], vp[2][2], vp[3][2]});
+#else
+    f.Near =
+        NormalizePlane(glm::vec4{vp[0][3] + vp[0][2], vp[1][3] + vp[1][2], vp[2][3] + vp[2][2], vp[3][3] + vp[3][2]});
+#endif
     f.Far =
-        glm::normalize(glm::vec4{vp[0][3] - vp[0][2], vp[1][3] - vp[1][2], vp[2][3] - vp[2][2], vp[3][3] - vp[3][2]});
+        NormalizePlane(glm::vec4{vp[0][3] - vp[0][2], vp[1][3] - vp[1][2], vp[2][3] - vp[2][2], vp[3][3] - vp[3][2]});
     return f;
 }
 

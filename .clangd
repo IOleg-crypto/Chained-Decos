@@ -1,8 +1,9 @@
 CompileFlags:
-  CompilationDatabase: build/windows-clang
+  // Don`t forget to change for your folder
+  CompilationDatabase: build/linux-clang
   Add:
     - -Wall
-    - -Wextra
+    - -Wextras
   Remove:
     - -fmodules-ts
     - -fmodule-mapper=*

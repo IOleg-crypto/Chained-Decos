@@ -3,7 +3,7 @@
 #include "editor/editor_layer.h"
 #include "imgui.h"
 #include "imgui_internal.h"
-#include "IconsFontAwesome6.h"
+#include "thirdparty/IconsFontAwesome6.h"
 #include <filesystem>
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/texture_asset.h"

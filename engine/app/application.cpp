@@ -12,6 +12,7 @@
 #include "engine/physics/physics.h"
 #include "engine/core/platform.h"
 #include "engine/scene/component_registry.h"
+#include "engine/platform/utils/file_dialogs.h"
 
 #include "scripting/scriptengine.h"
 
@@ -31,6 +32,7 @@ Application::Application(const ApplicationSpecification& spec)
     s_Instance = this;
 
     Log::Init();
+    FileDialogs::Init();
     ComponentRegistry::RegisterEngineComponents();
 
     unsigned int threads = std::thread::hardware_concurrency();
@@ -57,18 +59,20 @@ Application::Application(const ApplicationSpecification& spec)
 
     ServiceLocator::Provide<ThreadPool>(new ThreadPool(workerCount));
     ServiceLocator::Provide<AssetManager>(new AssetManager());
+
+    // Set engine root BEFORE any other modules (like Renderer) try to load assets!
+    if (!m_Specification.EngineRoot.empty())
+    {
+        ServiceLocator::Get<AssetManager>()->SetEngineRoot(m_Specification.EngineRoot);
+        CH_CORE_INFO("AssetManager: Engine root set to '{}'", m_Specification.EngineRoot.string());
+    }
+
     ServiceLocator::Provide<Renderer>(new Renderer());
     ServiceLocator::Provide<UIRenderer>(new UIRenderer());
     ServiceLocator::Provide<Audio>(new Audio());
     ServiceLocator::Provide<Physics>(new Physics());
     ServiceLocator::Provide<ScriptEngine>(new ScriptEngine(m_Specification.EnableScripting));
 
-    // Set engine root BEFORE Initialize() so AssetManager can use it during its init.
-    if (!m_Specification.EngineRoot.empty())
-    {
-        ServiceLocator::Get<AssetManager>()->SetEngineRoot(m_Specification.EngineRoot);
-        CH_CORE_INFO("AssetManager: Engine root set to '{}'", m_Specification.EngineRoot.string());
-    }
 
     ServiceLocator::InitializeModule();
     ServiceLocator::Lock();
@@ -96,6 +100,7 @@ Application::~Application()
 
     m_LayerStack.reset();
     ServiceLocator::Shutdown();
+    FileDialogs::Shutdown();
     // NOTE: ThreadPool is now an EngineModule, so its Shutdown() is handled natively by ServiceLocator::Shutdown()
     m_Window.reset();
     s_Instance = nullptr;

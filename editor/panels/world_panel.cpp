@@ -1,7 +1,7 @@
 #include "engine/platform/utils/file_dialogs.h"
 #include "engine/core/service_locator.h"
 #include "world_panel.h"
-#include "IconsFontAwesome6.h"
+#include "thirdparty/IconsFontAwesome6.h"
 #include "editor/editor_layer.h"
 #include "engine/assets/types/environment_asset.h"
 #include "engine/core/platform.h"

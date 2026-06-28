@@ -1,4 +1,5 @@
-#pragma once
+#ifndef GEOMETRY_PASS_H
+#define GEOMETRY_PASS_H
 
 #include "engine/graphics/pipeline/render_pass.h"
 
@@ -12,3 +13,4 @@ namespace Chained {
     };
 
 }
+#endif

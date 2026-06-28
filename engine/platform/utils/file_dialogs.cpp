@@ -3,6 +3,16 @@
 
 namespace Chained
 {
+    void FileDialogs::Init()
+    {
+        NFD_Init();
+    }
+
+    void FileDialogs::Shutdown()
+    {
+        NFD_Quit();
+    }
+
     std::optional<std::filesystem::path> FileDialogs::OpenFile(const std::vector<FileDialogFilter>& filters)
     {
         nfdu8char_t* outPath = nullptr;
