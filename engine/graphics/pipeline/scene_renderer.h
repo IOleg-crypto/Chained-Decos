@@ -106,7 +106,7 @@ public:
     std::vector<RenderItem>& GetOpaqueQueue() { return m_OpaqueQueue; }
     std::vector<RenderItem>& GetTransparentQueue() { return m_TransparentQueue; }
     LightingData& GetLighting() { return m_Lighting; }
-    EnvironmentParameters& GetEnvironment() { return m_CurrentEnv; }
+    EnvironmentSettings& GetEnvironment() { return m_CurrentEnv; }
     
     void RenderSprites(entt::registry& registry, const Camera3D& camera);
     void RenderDebug(entt::registry& registry, const SceneSettings& settings, const Camera3D& camera, const SceneRenderOptions& options);
@@ -122,7 +122,7 @@ private:
     std::vector<RenderItem> m_TransparentQueue;
     
     LightingData m_Lighting;
-    EnvironmentParameters m_CurrentEnv;
+    EnvironmentSettings m_CurrentEnv;
 
     // Skybox cache
     std::shared_ptr<Texture> m_CachedCubemap;

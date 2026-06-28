@@ -83,8 +83,8 @@ namespace Chained::ComponentUtils
             return;
         }
 
-        auto handle = ServiceLocator::Get<AssetManager>()->ImportAsset(mc.ModelPath);
-        auto asset = ServiceLocator::Get<AssetManager>()->GetAsset<ModelAsset>(handle);
+        auto handle = ServiceLocator::Get<AssetManager>()->LoadAsset(mc.ModelPath , ModelAsset::GetStaticType());
+        auto asset = ServiceLocator::Get<AssetManager>()->Get<ModelAsset>(handle);
         if (asset)
         {
             mc.ModelHandle = asset->GetID();

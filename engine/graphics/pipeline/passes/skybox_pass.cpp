@@ -6,6 +6,7 @@
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/texture_asset.h"
 #include "engine/assets/types/model_asset.h"
+#include "types/environment_asset.h"
 
 #include <algorithm>
 
@@ -25,7 +26,7 @@ namespace Chained {
             const auto& skySettings = envSettings.Skybox;
             if (!skySettings.TexturePath.empty())
             {
-                auto handle = ServiceLocator::Get<AssetManager>()->ImportAsset(skySettings.TexturePath);
+                auto handle = ServiceLocator::Get<AssetManager>()->LoadAsset(skySettings.TexturePath , EnvironmentAsset::GetStaticType());
                 auto textureAsset = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>(handle);
                 if (textureAsset && textureAsset->IsReady() && textureAsset->GetTexture())
                 {

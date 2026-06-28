@@ -95,7 +95,7 @@ struct RendererData
     Timestep Time = 0.0f;
     int LightCount = 0;
     unsigned int CurrentShaderId = 0;
-    EnvironmentParameters CurrentEnv;
+    EnvironmentSettings CurrentEnv;
 
     glm::mat4 CurrentView = glm::mat4(1.0f);
     glm::mat4 CurrentProj = glm::mat4(1.0f);
@@ -163,7 +163,7 @@ public:
     void SetLight(int index, const RenderLight& light);
     void SetLightCount(int count);
     void ClearLights();
-    void ApplyEnvironment(const EnvironmentParameters& settings);
+    void ApplyEnvironment(const EnvironmentSettings& settings);
     void SetMainLight(const LightingSettings& settings);
     void SetDiagnosticMode(float mode);
     void UpdateTime(Timestep time);

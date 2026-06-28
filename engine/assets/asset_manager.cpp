@@ -1,266 +1,393 @@
 #include "engine/assets/asset_manager.h"
-#include "engine/assets/loaders/asset_importer.h"
-#include "engine/assets/types/texture_asset.h"
-#include "engine/assets/types/model_asset.h"
-#include "engine/core/log.h"
+#include "engine/foundation/thread_pool.h"
+#include "engine/core/profiler.h"
+#include "engine/core/service_locator.h"
+
+#include <chrono>
 
 namespace Chained
 {
-    void AssetManager::Initialize()
+constexpr size_t kMaxAssetFinalizationsPerFrame = 16;
+constexpr auto kMaxAssetFinalizeBudget = std::chrono::milliseconds(2);
+
+AssetManager::AssetManager()
+{
+}
+
+AssetManager::~AssetManager()
+{
+    std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+    m_AssetCache.clear();
+    m_PathToHandle.clear();
+    m_PathCache.clear();
+    m_Loaders.clear();
+}
+
+
+void AssetManager::RegisterLoader(AssetType type, std::unique_ptr<IAssetLoader> loader)
+{
+    m_Loaders[type] = std::move(loader);
+}
+
+std::string AssetManager::ResolvePath(const std::string& path) const
+{
+    if (path.empty())
     {
+        return "";
     }
 
-    void AssetManager::Shutdown()
     {
-    }
-
-    void AssetManager::SetEngineRoot(const std::filesystem::path& path)
-    {
-        m_EngineRoot = path;
-        m_FailedImports.clear();
-        CH_CORE_INFO("AssetManager: Engine root set to '{}'", path.string());
-    }
-
-    void AssetManager::SetProjectDirectory(const std::filesystem::path& path)
-    {
-        m_ProjectDirectory = path;
-        m_FailedImports.clear();
-        CH_CORE_INFO("AssetManager: Project directory set to '{}'", path.string());
-    }
-
-    void AssetManager::SetAssetDirectory(const std::filesystem::path& path)
-    {
-        m_AssetDirectory = path;
-        m_FailedImports.clear();
-        CH_CORE_INFO("AssetManager: Asset directory set to '{}'", path.string());
-    }
-
-    std::filesystem::path AssetManager::ResolveFilePath(const std::filesystem::path& relativePath) const
-    {
-        // If it's already absolute and exists, use it directly
-        if (relativePath.is_absolute() && std::filesystem::exists(relativePath))
-            return relativePath;
-
-        // Tier 1: EngineRoot / relativePath
-        if (!m_EngineRoot.empty())
+        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+        if (auto it = m_PathCache.find(path); it != m_PathCache.end())
         {
-            auto p = m_EngineRoot / relativePath;
-            if (std::filesystem::exists(p)) return p;
+            return it->second;
+        }
+    }
+
+    std::filesystem::path inputPath(path);
+    std::filesystem::path resolvedPath;
+
+    if (inputPath.is_absolute())
+    {
+        resolvedPath = inputPath;
+    }
+    else
+    {
+        std::string pathStr = inputPath.generic_string();
+        bool isEngineResource = false;
+        if (pathStr.find("engine/") == 0)
+        {
+            pathStr = pathStr.substr(7);
+            isEngineResource = true;
         }
 
-        // Tier 2: AssetDirectory / relativePath
-        if (!m_AssetDirectory.empty())
+        if (isEngineResource)
         {
-            auto p = m_AssetDirectory / relativePath;
-            if (std::filesystem::exists(p)) return p;
-        }
-
-        // Tier 3: ProjectDirectory / relativePath
-        if (!m_ProjectDirectory.empty())
-        {
-            auto p = m_ProjectDirectory / relativePath;
-            if (std::filesystem::exists(p)) return p;
-        }
-
-        // Fallback: CWD-relative (original behavior)
-        if (std::filesystem::exists(relativePath))
-            return std::filesystem::absolute(relativePath);
-
-        return {}; // Not found
-    }
-
-    const AssetMetadata& AssetManager::GetMetadata(AssetHandle handle) const
-    {
-        return m_Registry.GetMetadata(handle);
-    }
-
-    void AssetManager::SetMetadata(AssetHandle handle, const AssetMetadata& metadata)
-    {
-        m_Registry.SetMetadata(handle, metadata);
-    }
-
-    static AssetType DeduceAssetTypeFromExtension(const std::filesystem::path& path)
-    {
-        std::string ext = path.extension().string();
-        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-        
-        if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".tga" || ext == ".hdr") return AssetType::Texture;
-        if (ext == ".obj" || ext == ".gltf" || ext == ".glb" || ext == ".fbx") return AssetType::Model;
-        if (ext == ".ttf" || ext == ".otf") return AssetType::Font;
-        if (ext == ".chshader") return AssetType::Shader;
-        if (ext == ".chenv") return AssetType::Environment;
-        if (ext == ".wav" || ext == ".mp3" || ext == ".ogg") return AssetType::Audio;
-        
-        return AssetType::None;
-    }
-
-    AssetHandle AssetManager::ImportAsset(const std::filesystem::path& filepath)
-    {
-        std::string key = filepath.string();
-
-        {
-            std::lock_guard<std::mutex> lock(m_AssetMutex);
-            // Skip if we already know this path doesn't resolve
-            if (m_FailedImports.count(key))
-                return AssetHandle(0);
-
-            // Check if already imported by key
-            for (const auto& [handle, metadata] : m_Registry.GetRegistryMap())
+            if (!m_EngineRoot.empty())
             {
-                if (metadata.FilePath.string() == key)
-                    return handle;
+                std::filesystem::path candidate = m_EngineRoot / pathStr;
+                if (std::filesystem::exists(candidate))
+                {
+                    resolvedPath = candidate;
+                }
+            }
+        }
+        else
+        {
+            // Try asset directory first
+            if (!m_AssetDirectory.empty())
+            {
+                std::filesystem::path candidate = m_AssetDirectory / pathStr;
+                if (std::filesystem::exists(candidate))
+                {
+                    resolvedPath = candidate;
+                }
+            }
+
+            // Try project root next
+            if (resolvedPath.empty() && !m_ProjectDirectory.empty())
+            {
+                std::filesystem::path candidate = m_ProjectDirectory / pathStr;
+                if (std::filesystem::exists(candidate))
+                {
+                    resolvedPath = candidate;
+                }
             }
         }
 
-        // Resolve relative path through 3-tier search (no lock needed — reads only)
-        std::filesystem::path resolved = ResolveFilePath(filepath);
-
-        std::lock_guard<std::mutex> lock(m_AssetMutex);
-
-        if (resolved.empty())
+        // Fallback
+        if (resolvedPath.empty())
         {
-            CH_CORE_WARN("AssetManager: Cannot find file at path: {}", key);
-            m_FailedImports.insert(key);
-            return AssetHandle(0);
-        }
-
-        // Double-check after re-acquiring lock (another thread might have imported meanwhile)
-        for (const auto& [handle, metadata] : m_Registry.GetRegistryMap())
-        {
-            if (metadata.FilePath == resolved || metadata.FilePath.string() == key)
-                return handle;
-        }
-
-        AssetHandle handle = UUID();
-        AssetMetadata metadata;
-        metadata.Handle = handle;
-        metadata.FilePath = resolved;
-        metadata.Type = DeduceAssetTypeFromExtension(filepath);
-
-        m_Registry.SetMetadata(handle, metadata);
-        return handle;
-    }
-
-
-    std::shared_ptr<Asset> AssetManager::GetAssetRaw(AssetHandle handle)
-    {
-        {
-            std::lock_guard<std::mutex> lock(m_AssetMutex);
-            auto it = m_LoadedAssets.find(handle);
-            if (it != m_LoadedAssets.end())
+            if (!isEngineResource && !m_AssetDirectory.empty())
             {
-                return it->second;
+                resolvedPath = m_AssetDirectory / pathStr;
+            }
+            else if (!m_EngineRoot.empty())
+            {
+                resolvedPath = m_EngineRoot / pathStr;
+            }
+            else
+            {
+                resolvedPath = m_ProjectDirectory / pathStr;
             }
         }
+    }
 
-        const AssetMetadata& metadata = m_Registry.GetMetadata(handle);
-        if (!metadata.IsValid())
+    // Normalize and convert to string
+    std::string resolved = std::filesystem::absolute(resolvedPath).lexically_normal().generic_string();
+
+    std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+    m_PathCache[path] = resolved;
+    return resolved;
+}
+
+AssetHandle AssetManager::ResolveToHandle(const std::string& path) const
+{
+    std::string resolved = ResolvePath(path);
+    std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+    if (auto it = m_PathToHandle.find(resolved); it != m_PathToHandle.end())
+    {
+        return it->second;
+    }
+    return AssetHandle(0);
+}
+
+std::shared_ptr<Asset> AssetManager::LoadAsset(const std::string& path, AssetType type)
+{
+    if (path.empty())
+    {
+        return nullptr;
+    }
+
+    std::string resolved = ResolvePath(path);
+
+    {
+        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+        if (auto it = m_PathToHandle.find(resolved); it != m_PathToHandle.end())
+        {
+            auto handle = it->second;
+            if (auto currentIt = m_AssetCache.find(handle); currentIt != m_AssetCache.end())
+            {
+                return currentIt->second;
+            }
+        }
+    }
+
+    IAssetLoader* loader = nullptr;
+    std::shared_ptr<Asset> asset;
+
+    {
+        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+        auto loaderIt = m_Loaders.find(type);
+        if (loaderIt == m_Loaders.end())
+        {
+            CH_CORE_ERROR("AssetManager: No loader registered for type {}", (int)type);
+            return nullptr;
+        }
+
+        asset = loaderIt->second->Create();
+        if (!asset)
         {
             return nullptr;
         }
 
-        std::shared_ptr<Asset> asset = nullptr;
+        loader = loaderIt->second.get();
+        AssetHandle newHandle = asset->GetID();
+        asset->SetPath(resolved);
+        asset->SetState(AssetState::Loading);
+        asset->ClearError();
+        m_AssetCache[newHandle] = asset;
+        m_PathToHandle[resolved] = newHandle;
+    }
 
-        switch (metadata.Type)
+    if (!loader->IsAsync())
+    {
+        try
         {
-            case AssetType::Texture:
-                asset = AssetImporter::ImportTexture(handle, metadata);
-                break;
-            case AssetType::Model:
-                asset = AssetImporter::ImportModel(handle, metadata);
-                break;
-            case AssetType::Font:
-                asset = AssetImporter::ImportFont(handle, metadata);
-                break;
-            case AssetType::Shader:
-                asset = AssetImporter::ImportShader(handle, metadata);
-                break;
-            case AssetType::Environment:
-                asset = AssetImporter::ImportEnvironment(handle, metadata);
-                break;
-            default:
-                break;
-        }
-
-        if (asset)
-        {
+            std::string loaderError;
+            if (!loader->Load(asset, resolved, &loaderError))
             {
-                std::lock_guard<std::mutex> lock(m_AssetMutex);
-                m_LoadedAssets[handle] = asset;
+                asset->Fail(loaderError.empty() ? ("AssetManager: Synchronous loader returned false for '" + resolved + "'")
+                                                : loaderError);
+                return asset;
             }
-            // If asset has pending CPU data (e.g. texture decoded on worker thread),
-            // queue it for GPU finalization on the main thread via Update().
-            if (asset->GetState() == AssetState::Loading)
-            {
-                std::lock_guard<std::mutex> pendingLock(m_PendingMutex);
-                m_PendingFinalize.push_back(asset);
-            }
+
+            asset->ClearError();
+            asset->OnLoaded();
+            asset->SetState(AssetState::Ready);
         }
-        return asset;
-    }
-
-    AssetHandle AssetManager::ResolveToHandle(const std::filesystem::path& path, AssetType type)
-    {
-        // Path deduplication lookup
-        for (const auto& [handle, metadata] : m_Registry.GetRegistryMap())
+        catch (const std::exception& e)
         {
-            if (metadata.FilePath == path)
-            {
-                return handle;
-            }
+            asset->Fail(std::string("AssetManager: Synchronous load failed for '") + resolved + "': " + e.what());
         }
-
-        // If not found, import it
-        return ImportAsset(path);
-    }
-
-    bool AssetManager::HasBackgroundWork() const
-    {
-        std::lock_guard<std::mutex> lock(m_PendingMutex);
-        return !m_PendingFinalize.empty();
-    }
-
-    uint32_t AssetManager::GetPendingFinalizeCount() const
-    {
-        std::lock_guard<std::mutex> lock(m_PendingMutex);
-        return static_cast<uint32_t>(m_PendingFinalize.size());
-    }
-
-    void AssetManager::Update(Timestep /*ts*/)
-    {
-        // Drain pending GPU finalization queue — MUST run on main thread.
-        // Budget: finalize up to 8 textures per frame to avoid hitching.
-        constexpr int kMaxPerFrame = 8;
-        int count = 0;
-
-        while (count < kMaxPerFrame)
+        catch (...)
         {
-            std::shared_ptr<Asset> asset;
+            asset->Fail(std::string("AssetManager: Synchronous load failed for '") + resolved + "' with an unknown exception");
+        }
+    }
+    else
+    {
+        ServiceLocator::Get<ThreadPool>()->QueueTask([this, asset, loader, resolved]() {
+            try
             {
+                std::string loaderError;
+                if (!loader->Load(asset, resolved, &loaderError))
+                {
+                    asset->Fail(loaderError.empty() ? ("AssetManager: Async loader returned false for '" + resolved + "'")
+                                                    : loaderError);
+                    return;
+                }
+
+                asset->ClearError();
                 std::lock_guard<std::mutex> lock(m_PendingMutex);
-                if (m_PendingFinalize.empty()) break;
-                asset = m_PendingFinalize.front();
-                m_PendingFinalize.pop_front();
+                m_PendingAssets.push_back(asset);
+            }
+            catch (const std::exception& e)
+            {
+                asset->Fail(std::string("AssetManager: Async load failed for '") + resolved + "': " + e.what());
+            }
+            catch (...)
+            {
+                asset->Fail(std::string("AssetManager: Async load failed for '") + resolved + "' with an unknown exception");
+            }
+        });
+    }
+
+    return asset;
+}
+
+std::shared_ptr<Asset> AssetManager::GetAsset(AssetHandle handle, AssetType type)
+{
+    (void)type;
+
+    if (handle != 0)
+    {
+        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+        if (auto it = m_AssetCache.find(handle); it != m_AssetCache.end())
+        {
+            return it->second;
+        }
+    }
+
+    return nullptr;
+}
+
+void AssetManager::Update()
+{
+    CH_PROFILE_FUNCTION();
+
+    const auto updateStart = std::chrono::steady_clock::now();
+    size_t finalizedCount = 0;
+
+    while (finalizedCount < kMaxAssetFinalizationsPerFrame)
+    {
+        std::shared_ptr<Asset> asset;
+        {
+            std::lock_guard<std::mutex> lock(m_PendingMutex);
+            if (m_PendingAssets.empty())
+            {
+                return;
             }
 
-            // Finalization (GPU upload)
-            if (auto texAsset = std::dynamic_pointer_cast<TextureAsset>(asset))
+            asset = std::move(m_PendingAssets.front());
+            m_PendingAssets.pop_front();
+        }
+
+        if (!asset)
+        {
+            continue;
+        }
+
+        try
+        {
+            asset->ClearError();
+            asset->OnLoaded();
+            if (asset->GetState() != AssetState::Failed)
             {
-                if (texAsset->HasPending())
-                    texAsset->Finalize();
+                asset->SetState(AssetState::Ready);
             }
-            else if (auto modAsset = std::dynamic_pointer_cast<ModelAsset>(asset))
-            {
-                if (modAsset->HasPending())
-                    modAsset->Finalize();
-            }
-            else
-            {
-                // Generic: mark as ready if state is still Loading
-                if (asset->GetState() == AssetState::Loading)
-                    asset->SetState(AssetState::Ready);
-            }
-            ++count;
+        }
+        catch (const std::exception& e)
+        {
+            asset->Fail(std::string("AssetManager: Finalization failed for '") + asset->GetPath() + "': " + e.what());
+        }
+        catch (...)
+        {
+            asset->Fail(std::string("AssetManager: Finalization failed for '") + asset->GetPath() + "' with an unknown exception");
+        }
+
+        ++finalizedCount;
+
+        if ((std::chrono::steady_clock::now() - updateStart) >= kMaxAssetFinalizeBudget)
+        {
+            break;
         }
     }
 }
+
+size_t AssetManager::GetPendingFinalizeCount() const
+{
+    std::lock_guard<std::mutex> lock(m_PendingMutex);
+    return m_PendingAssets.size();
+}
+
+size_t AssetManager::GetLoadingAssetCount() const
+{
+    std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+
+    size_t loadingCount = 0;
+    for (const auto& [handle, asset] : m_AssetCache)
+    {
+        (void)handle;
+        if (asset && asset->GetState() == AssetState::Loading)
+        {
+            ++loadingCount;
+        }
+    }
+
+    return loadingCount;
+}
+
+bool AssetManager::HasBackgroundWork() const
+{
+    return GetPendingFinalizeCount() > 0 || GetLoadingAssetCount() > 0;
+}
+
+void AssetManager::ReloadAsset(AssetHandle handle, AssetType type)
+{
+    std::shared_ptr<Asset> asset;
+    IAssetLoader* loader = nullptr;
+    std::string path;
+
+    {
+        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+
+        auto it = m_AssetCache.find(handle);
+        if (it == m_AssetCache.end())
+        {
+            return;
+        }
+
+        auto loaderIt = m_Loaders.find(type);
+        if (loaderIt == m_Loaders.end())
+        {
+            return;
+        }
+
+        asset = it->second;
+        loader = loaderIt->second.get();
+        path = asset->GetPath();
+        if (path.empty())
+        {
+            return;
+        }
+    }
+
+    std::string resolved = ResolvePath(path);
+    asset->SetState(AssetState::Loading);
+    asset->ClearError();
+
+    try
+    {
+        std::string loaderError;
+        if (!loader->Load(asset, resolved, &loaderError))
+        {
+            asset->Fail(loaderError.empty() ? ("AssetManager: Reload failed for '" + resolved + "'") : loaderError);
+            return;
+        }
+
+        asset->ClearError();
+        asset->OnLoaded();
+        asset->SetState(AssetState::Ready);
+    }
+    catch (const std::exception& e)
+    {
+        asset->Fail(std::string("AssetManager: Reload failed for '") + resolved + "': " + e.what());
+    }
+    catch (...)
+    {
+        asset->Fail(std::string("AssetManager: Reload failed for '") + resolved + "' with an unknown exception");
+    }
+}
+
+} // namespace CHEngine
