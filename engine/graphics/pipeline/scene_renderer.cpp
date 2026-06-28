@@ -1,27 +1,18 @@
 #include "scene_renderer.h"
-#include "engine/core/service_locator.h"
 #include "engine/assets/asset.h"
+#include "engine/assets/asset_manager.h"
 #include "engine/assets/types/model_asset.h"
 #include "engine/assets/types/shader_asset.h"
 #include "engine/assets/types/texture_asset.h"
-#include "engine/assets/asset_manager.h"
+#include "engine/core/service_locator.h"
 #include "engine/graphics/api/renderer_api.h"
-#include "engine/graphics/pipeline/geometry_generator.h"
+#include "engine/graphics/pipeline/debug_renderer.h"
 #include "engine/graphics/pipeline/frustum.h"
+#include "engine/graphics/pipeline/geometry_generator.h"
 #include "engine/graphics/pipeline/render_command.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/pipeline/texture_utility.h"
-#include "engine/graphics/pipeline/renderer2d.h"
-#include "engine/graphics/pipeline/renderer3d.h"
-#include "engine/scene/components/animation_component.h"
-#include "engine/scene/components/camera_component.h"
-#include "engine/scene/components/light_component.h"
-#include "engine/scene/components/mesh_component.h"
-#include "engine/scene/components/physics_component.h"
-#include "engine/scene/components/primitive_component.h"
-#include "engine/scene/components/shader_component.h"
-#include "engine/scene/components/sprite_component.h"
-#include "engine/scene/components/transform_component.h"
+#include "engine/scene/components.h"
 #include "engine/scene/entity.h"
 #include "imgui.h"
 #include <GLFW/glfw3.h>
@@ -31,12 +22,11 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/quaternion.hpp>
 
-#include "engine/graphics/pipeline/passes/geometry_pass.h"
-#include "engine/graphics/pipeline/passes/skybox_pass.h"
-#include "engine/graphics/pipeline/passes/shadow_pass.h"
+
 #include "engine/graphics/pipeline/passes/composite_pass.h"
-
-
+#include "engine/graphics/pipeline/passes/geometry_pass.h"
+#include "engine/graphics/pipeline/passes/shadow_pass.h"
+#include "engine/graphics/pipeline/passes/skybox_pass.h"
 
 namespace Chained
 {
@@ -45,7 +35,7 @@ namespace Chained
 
 static glm::vec4 ColorToVec4(const Color& c)
 {
-    return { c.r / 255.0f, c.g / 255.0f, c.b / 255.0f, c.a / 255.0f };
+    return {c.r / 255.0f, c.g / 255.0f, c.b / 255.0f, c.a / 255.0f};
 }
 
 SceneRenderer::SceneRenderer()
@@ -57,7 +47,6 @@ SceneRenderer::SceneRenderer()
     AddPass(std::make_unique<SkyboxPass>());
     AddPass(std::make_unique<GeometryPass>());
     AddPass(std::make_unique<CompositePass>());
-
 }
 
 void SceneRenderer::AddPass(std::unique_ptr<IRenderPass> pass)
@@ -146,10 +135,14 @@ void SceneRenderer::RenderScene(entt::registry& registry, const SceneSettings& s
     m_CurrentStats = {};
     m_CurrentStats.EntityCount = (uint32_t)registry.storage<entt::entity>().size();
 
-
     ServiceLocator::Get<Renderer>()->BeginScene(camera, nearClip, farClip);
 
-    // Update Light SSBO
+    glm::mat4 view = camera.ViewMatrix;
+    glm::mat4 proj = camera.ProjectionMatrix;
+    Frustum frustum = FromMatrix(proj * view);
+
+    PrepareLights(registry, frustum);
+
     if (m_Lighting.LightsDirty && m_Lighting.LightSSBO)
     {
         m_Lighting.LightSSBO->SetData(m_Lighting.Lights, sizeof(RenderLight) * LightingData::MaxLights);
@@ -160,27 +153,14 @@ void SceneRenderer::RenderScene(entt::registry& registry, const SceneSettings& s
         m_Lighting.LightSSBO->BindBase(0);
     }
 
-    RenderContext ctx {
-        registry,
-        settings,
-        camera,
-        options,
-        nearClip,
-        farClip,
-        this
-    };
-
-    glm::mat4 view = camera.ViewMatrix;
-    glm::mat4 proj = camera.ProjectionMatrix;
-    Frustum frustum = FromMatrix(proj * view);
-
-    PrepareLights(registry, frustum);
+    RenderContext ctx{registry, settings, camera, options, nearClip, farClip, this};
 
     m_OpaqueQueue.clear();
     m_TransparentQueue.clear();
 
     CollectAndRenderItems(registry, frustum, camera.Position);
 
+    // ... (решта коду залишається без змін)
     // Sort transparent queue back-to-front once for all passes
     std::sort(m_TransparentQueue.begin(), m_TransparentQueue.end(),
               [](const auto& a, const auto& b) { return a.Distance > b.Distance; });
@@ -198,7 +178,6 @@ void SceneRenderer::RenderScene(entt::registry& registry, const SceneSettings& s
     }
 
     ServiceLocator::Get<Renderer>()->EndScene();
-
 
     Profiler::UpdateStats(m_CurrentStats);
 }
@@ -242,20 +221,22 @@ void SceneRenderer::RenderSprites(entt::registry& registry, const Camera3D& came
         auto textureAsset = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>(handle);
         if (textureAsset && textureAsset->IsReady() && textureAsset->GetTexture())
         {
-            Renderer2D::DrawSprite(textureAsset->GetTexture()->GetRendererID(), transform.WorldTransform, ColorToVec4(sprite.Tint), sprite.FlipX, sprite.FlipY);
+            ServiceLocator::Get<Renderer>()->DrawSprite(textureAsset->GetTexture()->GetRendererID(),
+                                                        transform.WorldTransform, ColorToVec4(sprite.Tint),
+                                                        sprite.FlipX, sprite.FlipY);
         }
     }
 }
 
-
 void SceneRenderer::PrepareLights(entt::registry& registry, const Frustum& frustum)
 {
-    for (auto& l : m_Lighting.Lights) {
+    for (auto& l : m_Lighting.Lights)
+    {
         l.enabled = 0;
     }
     m_Lighting.LightCount = 0;
     m_Lighting.LightsDirty = true;
-    
+
     int lightCount = 0;
     auto view = registry.view<LightComponent>();
     for (auto entity : view)
@@ -278,8 +259,11 @@ void SceneRenderer::PrepareLights(entt::registry& registry, const Frustum& frust
         rl.outerCutoff = light.OuterCutoff;
         rl.enabled = 1;
 
-        if (lightCount >= LightingData::MaxLights) break;
-        
+        if (lightCount >= LightingData::MaxLights)
+        {
+            break;
+        }
+
         m_Lighting.Lights[lightCount++] = rl;
         m_Lighting.LightsDirty = true;
     }
@@ -291,28 +275,42 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
     auto meshView = registry.view<TransformComponent, ModelComponent>();
     auto* assets = ServiceLocator::Get<AssetManager>();
 
+    // --- Debug counters (one-shot per scene load) ---
+    static bool s_DebugLogged = false;
+    int dbg_total = 0, dbg_emptyPath = 0, dbg_nullAsset = 0, dbg_notReady = 0, dbg_culled = 0, dbg_queued = 0;
+
     for (auto entity : meshView)
     {
         auto [transform, mesh] = meshView.get<TransformComponent, ModelComponent>(entity);
+        dbg_total++;
         if (mesh.ModelPath.empty())
         {
+            dbg_emptyPath++;
             continue;
         }
+
+        CH_CORE_INFO("CollectAndRenderItems: Processing model: {}", mesh.ModelPath);
 
         auto handle = assets->ImportAsset(mesh.ModelPath);
         auto modelAsset = assets->GetAsset<ModelAsset>(handle);
         if (!modelAsset)
         {
+            dbg_nullAsset++;
             continue;
         }
+
+        CH_CORE_INFO("CollectAndRenderItems: Model asset acquired: {}", mesh.ModelPath);
 
         // Logic handled by AssetResolutionSystem
 
         AssetState state = modelAsset->GetState();
         if (state != AssetState::Ready)
         {
+            dbg_notReady++;
             continue;
         }
+
+        CH_CORE_INFO("CollectAndRenderItems: Model asset is ready.");
 
         BoundingBox bbox = modelAsset->GetBoundingBox();
         // Expand bounding box for animated entities to prevent aggressive culling
@@ -328,22 +326,20 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
         // Transform AABB center+extents to world space for frustum culling
         glm::vec3 localCenter = (bbox.Max + bbox.Min) * 0.5f;
         glm::vec3 localExtents = (bbox.Max - bbox.Min) * 0.5f;
-        
+
         const glm::mat4& worldTransform = transform.WorldTransform;
         glm::vec3 worldCenter = glm::vec3(worldTransform * glm::vec4(localCenter, 1.0f));
         glm::vec3 worldExtents = {
-            std::abs(worldTransform[0][0]) * localExtents.x +
-                std::abs(worldTransform[1][0]) * localExtents.y +
+            std::abs(worldTransform[0][0]) * localExtents.x + std::abs(worldTransform[1][0]) * localExtents.y +
                 std::abs(worldTransform[2][0]) * localExtents.z,
-            std::abs(worldTransform[0][1]) * localExtents.x +
-                std::abs(worldTransform[1][1]) * localExtents.y +
+            std::abs(worldTransform[0][1]) * localExtents.x + std::abs(worldTransform[1][1]) * localExtents.y +
                 std::abs(worldTransform[2][1]) * localExtents.z,
-            std::abs(worldTransform[0][2]) * localExtents.x +
-                std::abs(worldTransform[1][2]) * localExtents.y +
+            std::abs(worldTransform[0][2]) * localExtents.x + std::abs(worldTransform[1][2]) * localExtents.y +
                 std::abs(worldTransform[2][2]) * localExtents.z,
         };
         if (!IsBoxVisible(frustum, worldCenter, worldExtents))
         {
+            dbg_culled++;
             continue;
         }
 
@@ -382,6 +378,8 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
             }
         }
 
+        CH_CORE_INFO("CollectAndRenderItems: Checking transparent queues.");
+
         // Determine transparency and push to correct queue
         bool hasOpaque = false;
         bool hasTransparent = false;
@@ -411,7 +409,17 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
         if (hasOpaque)
         {
             m_OpaqueQueue.push_back(std::move(item));
+            dbg_queued++;
         }
+        CH_CORE_INFO("CollectAndRenderItems: Successfully queued model.");
+    }
+
+    if (!s_DebugLogged && dbg_total > 0)
+    {
+        s_DebugLogged = true;
+        CH_CORE_WARN(
+            "[SceneRenderer] CollectAndRenderItems: total={} emptyPath={} nullAsset={} notReady={} culled={} queued={}",
+            dbg_total, dbg_emptyPath, dbg_nullAsset, dbg_notReady, dbg_culled, dbg_queued);
     }
 
     auto primView = registry.view<TransformComponent, PrimitiveComponent>();
@@ -524,28 +532,27 @@ void SceneRenderer::DrawAnimatedEntities(const std::vector<AnimatedEntry>& anima
             boneMatrices =
                 entry.Asset->GetBoneMatrices(entry.Animation.CurrentAnimationIndex, entry.Animation.CurrentFrame);
         }
-        DrawModel(entry.Asset, entry.WorldTransform, boneMatrices, {}, entry.ShaderOverride,
-                  entry.CustomUniforms);
+        DrawModel(entry.Asset, entry.WorldTransform, boneMatrices, {}, entry.ShaderOverride, entry.CustomUniforms);
     }
 }
 
 void SceneRenderer::DrawModel(Chained::ModelAsset* modelAsset, const glm::mat4& transform,
-                               const std::vector<glm::mat4>& boneMatrices,
-                               const std::vector<Chained::Material>& materials,
-                               Chained::ShaderAsset* shaderOverride,
-                               const std::vector<Chained::ShaderUniform>& shaderUniformOverrides,
-                               Chained::RenderPassStage pass)
+                              const std::vector<glm::mat4>& boneMatrices,
+                              const std::vector<Chained::Material>& materials, Chained::ShaderAsset* shaderOverride,
+                              const std::vector<Chained::ShaderUniform>& shaderUniformOverrides,
+                              Chained::RenderPassStage pass)
 {
     if (!modelAsset || modelAsset->GetState() != Chained::AssetState::Ready)
     {
         return;
     }
 
-        auto& model = modelAsset->GetModel();
-        auto activeShader = shaderOverride ? shaderOverride
-                            : (ServiceLocator::Get<Renderer>()->GetShaderStorage().Exists("Lighting")
-                                ? ServiceLocator::Get<Renderer>()->GetShaderStorage().Get("Lighting").get()
-                                : nullptr);
+    auto& model = modelAsset->GetModel();
+    auto activeShader = shaderOverride
+                            ? shaderOverride
+                            : (ServiceLocator::Get<Renderer>()->GetShaderLibrary().Exists("Lighting")
+                                   ? ServiceLocator::Get<Renderer>()->GetShaderLibrary().Get("Lighting").get()
+                                   : nullptr);
 
     if (!activeShader || !activeShader->GetShader())
     {
@@ -596,14 +603,15 @@ void SceneRenderer::DrawModel(Chained::ModelAsset* modelAsset, const glm::mat4& 
         activeShader->GetShader()->Bind();
         activeShader->GetShader()->SetInt("useSkinning", useSkinning ? 1 : 0);
 
-        Renderer3D::DrawMesh(model.Meshes[i], material, useSkinning ? transform : transform * inst.localTransform);
+        ServiceLocator::Get<Renderer>()->DrawMesh(model.Meshes[i], material,
+                                                  useSkinning ? transform : transform * inst.localTransform);
         material.ShaderID = originalID;
     }
 }
 
 Chained::Material SceneRenderer::ResolveMaterialForMesh(int meshIndex, const Chained::Model& model,
-                                               const std::vector<Chained::Material>& materials,
-                                               Chained::ModelAsset* modelAsset)
+                                                        const std::vector<Chained::Material>& materials,
+                                                        Chained::ModelAsset* modelAsset)
 {
     if (meshIndex < 0 || meshIndex >= (int)model.Meshes.size())
     {
@@ -627,7 +635,7 @@ Chained::Material SceneRenderer::ResolveMaterialForMesh(int meshIndex, const Cha
 }
 
 void SceneRenderer::BindShaderUniforms(Chained::ShaderAsset* shaderAsset, const std::vector<glm::mat4>& boneMatrices,
-                                        const std::vector<Chained::ShaderUniform>& shaderUniformOverrides)
+                                       const std::vector<Chained::ShaderUniform>& shaderUniformOverrides)
 {
     if (!shaderAsset || !shaderAsset->GetShader())
     {
@@ -652,14 +660,15 @@ void SceneRenderer::BindShaderUniforms(Chained::ShaderAsset* shaderAsset, const 
     shader->SetVec4("lightColor", lightColor);
     shader->SetFloat("ambient", lighting.Ambient);
     shader->SetVec4("skyAmbientColor", skyColor);
-    shader->SetInt("uLightCount", m_Lighting.LightCount);
+    shader->SetInt("uLightCount", rd.LightCount);
     shader->SetFloat("uExposure", lighting.Exposure);
     shader->SetFloat("uGamma", lighting.Gamma);
 
     // Apply Fog
     const auto& fog = m_Lighting.CurrentFog;
     int fogEnabled = fog.Enabled ? 1 : 0;
-    glm::vec4 fogColor = {fog.FogColor.r / 255.0f, fog.FogColor.g / 255.0f, fog.FogColor.b / 255.0f, fog.FogColor.a / 255.0f};
+    glm::vec4 fogColor = {fog.FogColor.r / 255.0f, fog.FogColor.g / 255.0f, fog.FogColor.b / 255.0f,
+                          fog.FogColor.a / 255.0f};
     shader->SetInt("fogEnabled", fogEnabled);
     shader->SetVec4("fogColor", fogColor);
     shader->SetFloat("fogDensity", fog.Density);
@@ -823,8 +832,6 @@ void SceneRenderer::RenderDebug(entt::registry& registry, const SceneSettings& s
         RenderCommand::SetPolygonMode(RendererAPI::PolygonMode::Fill);
     }
 
-
-
     if (options.ShowDebugColliders)
     {
         DrawColliderDebug(registry, options);
@@ -898,18 +905,20 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
 
                 if (collider.Type == ColliderType::Box)
                 {
-                    DebugRenderer::DrawCubeWires(baseTransform, collider.Size * entityScale, color, isWireframe);
+                    ServiceLocator::Get<Renderer>()->DrawCubeWires(baseTransform, collider.Size * entityScale, color,
+                                                                   isWireframe);
                 }
                 else if (collider.Type == ColliderType::Sphere)
                 {
                     // For sphere, we use the maximum component of the entity scale for the overall radius multiplier
                     float maxScale = glm::max(entityScale.x, glm::max(entityScale.y, entityScale.z));
-                    DebugRenderer::DrawSphereWires(baseTransform, collider.Radius * maxScale, color, isWireframe);
+                    ServiceLocator::Get<Renderer>()->DrawSphereWires(baseTransform, collider.Radius * maxScale, color,
+                                                                     isWireframe);
                 }
                 else if (collider.Type == ColliderType::Capsule)
                 {
                     float maxScale = glm::max(entityScale.x, glm::max(entityScale.y, entityScale.z));
-                    DebugRenderer::DrawCapsuleWires(
+                    ServiceLocator::Get<Renderer>()->DrawCapsuleWires(
                         baseTransform, collider.Radius * maxScale, collider.Height * entityScale.y, color, isWireframe);
                 }
             }
@@ -941,9 +950,9 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
                         {
                             if (inst.meshIndex >= 0 && inst.meshIndex < (int)model.Meshes.size())
                             {
-                                DebugRenderer::DrawMeshWire(
-                                    model.Meshes[inst.meshIndex], color, transform.WorldTransform * inst.localTransform,
-                                    isWireframe);
+                                ServiceLocator::Get<Renderer>()->DrawMeshWire(model.Meshes[inst.meshIndex], color,
+                                                            transform.WorldTransform * inst.localTransform,
+                                                            isWireframe);
                             }
                         }
                     }
@@ -998,35 +1007,35 @@ void SceneRenderer::DrawCollisionModelBoxDebug(entt::registry& registry)
                 // Note: transform.WorldTransform already includes entity scale,
                 // but the localBox is also scaled if the importer applied scale?
                 // Usually localBox is untransformed.
-                DebugRenderer::DrawCubeWires(
-                    transform.WorldTransform * glm::translate(glm::mat4(1.0f), center), size, color);
+                ServiceLocator::Get<Renderer>()->DrawCubeWires(transform.WorldTransform * glm::translate(glm::mat4(1.0f), center), size,
+                                             color);
             }
         }
     }
 }
 
-
 void SceneRenderer::RenderEditorIcons(entt::registry& registry, const SceneSettings& settings, const Camera3D& camera)
 {
     CH_PROFILE_FUNCTION();
-    
+
     // We can use a simple constant set of icons or load them from the engine resources
     // For now, let's just draw some billboards
-    
+
     auto lightView = registry.view<LightComponent, TransformComponent>();
     for (auto entity : lightView)
     {
         auto [light, transform] = lightView.get<LightComponent, TransformComponent>(entity);
-        Renderer2D::DrawBillboard(camera, 0, transform.WorldTransform[3], 0.5f, ColorToVec4(light.LightColor));
+        ServiceLocator::Get<Renderer>()->DrawBillboard(camera, 0, transform.WorldTransform[3], 0.5f,
+                                                       ColorToVec4(light.LightColor));
     }
-    
+
     auto cameraView = registry.view<CameraComponent, TransformComponent>();
     for (auto entity : cameraView)
     {
         auto [cam, transform] = cameraView.get<CameraComponent, TransformComponent>(entity);
-        Renderer2D::DrawBillboard(camera, 0, transform.WorldTransform[3], 0.5f, glm::vec4(0.2f, 0.5f, 1.0f, 1.0f));
+        ServiceLocator::Get<Renderer>()->DrawBillboard(camera, 0, transform.WorldTransform[3], 0.5f,
+                                                       glm::vec4(0.2f, 0.5f, 1.0f, 1.0f));
     }
 }
-
 
 } // namespace Chained

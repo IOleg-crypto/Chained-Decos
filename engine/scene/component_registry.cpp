@@ -20,7 +20,7 @@ namespace Chained
         RegisterReflective<IDComponent>("ID", nullptr, "Core"); // added ID
         
         // Graphics
-        RegisterReflective<ModelComponent>("Mesh", ICON_FA_CUBE, "Graphics");
+        RegisterReflective<ModelComponent>("Model", ICON_FA_CUBE, "Graphics");
         RegisterReflective<LightComponent>("Light", ICON_FA_LIGHTBULB, "Graphics");
         RegisterReflective<SpriteComponent>("Sprite", ICON_FA_IMAGE, "Graphics");
         RegisterReflective<ShaderComponent>("Shader", nullptr, "Graphics"); // added Shader

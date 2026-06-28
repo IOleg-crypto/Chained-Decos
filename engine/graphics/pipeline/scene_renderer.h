@@ -1,19 +1,18 @@
 #ifndef CH_SCENE_RENDERER_H
 #define CH_SCENE_RENDERER_H
 
-#include "engine/graphics/pipeline/debug_renderer.h"
-#include "engine/graphics/pipeline/renderer.h"
-#include "engine/graphics/pipeline/renderer3d.h"
-#include "engine/graphics/pipeline/renderer2d.h"
+
 #include "engine/scene/scene_settings.h"
 #include "engine/core/profiler.h"
 #include "engine/scene/entity.h"
 #include "engine/graphics/pipeline/render_pass.h"
+#include "engine/graphics/pipeline/renderer.h"
 #include <entt/entt.hpp>
 #include <memory>
 #include <vector>
 #include <glm/glm.hpp>
 #include "engine/scene/components/mesh_component.h"
+#include "engine/graphics/api/texture.h"
 #include "engine/scene/components/animation_component.h"
 
 namespace Chained
@@ -29,17 +28,6 @@ enum class RenderPassStage
 };
 
 // Per-frame lighting state shared by scene rendering and post-processing.
-struct LightingData
-{
-    static constexpr int MaxLights = 256;
-    int LightCount = 0;
-    RenderLight Lights[MaxLights];
-    std::shared_ptr<StorageBuffer> LightSSBO;
-    bool LightsDirty = true;
-
-    Lighting CurrentLighting;
-    Fog CurrentFog;
-};
 
 // Per-render-pass toggles for runtime and editor scene rendering.
 struct SceneRenderOptions
