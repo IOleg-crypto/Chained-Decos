@@ -1,5 +1,4 @@
 CompileFlags:
-  // Don`t forget to change for your folder
   CompilationDatabase: build/linux-clang
   Add:
     - -Wall

@@ -65,7 +65,6 @@ static unsigned int FindKeyFrame(double time, const KeyType* keys, unsigned int 
     return 0;
 }
 
-// --- Математична інтерполяція компонентів трансформації ---
 static glm::vec3 InterpolatePosition(double time, const aiNodeAnim* channel, unsigned int& lastKey,
                                      const glm::vec3& defaultVal)
 {
@@ -154,7 +153,6 @@ static bool DecodeEmbeddedTexture(const aiTexture* texture, EmbeddedTextureData&
     return true;
 }
 
-// --- Точка входу клієнта ---
 PendingModelData AssimpImporter::Import(const std::filesystem::path& path, int samplingFPS)
 {
     CH_PROFILE_FUNCTION();
@@ -581,7 +579,7 @@ void AssimpImporter::MergeMeshesByMaterial()
 
                 merged.vertices.insert(merged.vertices.end(), {pos.x, pos.y, pos.z});
 
-                // Оптимізація: Габарити вираховуються на льоту всередині трансформації
+
                 merged.MinBounds = glm::min(merged.MinBounds, pos);
                 merged.MaxBounds = glm::max(merged.MaxBounds, pos);
             }

@@ -107,7 +107,7 @@ static bool RenderPanel(PanelData& panel, Entity entity, UIControlComponent& wc,
     
     if (textureHandle != 0)
     {
-        auto textureAsset = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>(textureHandle);
+        auto textureAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(textureHandle);
         if (textureAsset && textureAsset->GetState() == AssetState::Ready)
         {
             auto texture = textureAsset->GetTexture();
@@ -152,7 +152,7 @@ static bool RenderCheckbox(CheckboxData& cb, Entity entity, UIControlComponent& 
 
 static bool RenderImage(const ImageData& image, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
-    auto textureAsset = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>((AssetHandle)image.TextureHandle);
+    auto textureAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>((AssetHandle)image.TextureHandle);
     if (textureAsset && textureAsset->GetState() == AssetState::Ready)
     {
         ImGui::Image((ImTextureID)(uintptr_t)textureAsset->GetTexture()->GetRendererID(), size);
@@ -200,7 +200,7 @@ static bool RenderComboBox(ComboBoxData& cb, Entity entity, UIControlComponent& 
 
 static bool RenderImageButton(const ImageButtonData& ib, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
-    auto textureAsset = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>((AssetHandle)ib.TextureHandle);
+    auto textureAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>((AssetHandle)ib.TextureHandle);
     if (textureAsset && textureAsset->GetState() == AssetState::Ready)
     {
         ImGui::ImageButton("##ib", (ImTextureID)(uintptr_t)textureAsset->GetTexture()->GetRendererID(), size);

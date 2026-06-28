@@ -21,7 +21,7 @@ uint32_t MaterialPanel::GetTextureID(AssetHandle handle)
 {
     if (handle == 0) return 0;
     auto& am = (*ServiceLocator::Get<AssetManager>());
-    auto asset = am.GetAsset<TextureAsset>(handle);
+    auto asset = am.Get<TextureAsset>(handle);
     return asset ? asset->GetRendererID() : 0;
 }
 
@@ -32,7 +32,7 @@ void MaterialPanel::DrawMaterialSettings(Material& mat)
         ImGui::ColorEdit4("Color", glm::value_ptr(mat.AlbedoColor));
         
         std::string currentPath = "";
-        auto asset = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>(mat.AlbedoHandle);
+        auto asset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(mat.AlbedoHandle);
         if (asset) currentPath = asset->GetPath();
 
         if (EditorGUI::FileProperty("Texture", currentPath, GetTextureID(mat.AlbedoHandle), "png,jpg,tga"))
@@ -45,7 +45,7 @@ void MaterialPanel::DrawMaterialSettings(Material& mat)
     if (ImGui::CollapsingHeader(ICON_FA_WATER " Normals", ImGuiTreeNodeFlags_DefaultOpen))
     {
         std::string normalPath = "";
-        auto normalAsset = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>(mat.NormalHandle);
+        auto normalAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(mat.NormalHandle);
         if (normalAsset) normalPath = normalAsset->GetPath();
 
         if (EditorGUI::FileProperty("Normal Map", normalPath, GetTextureID(mat.NormalHandle), "png,jpg,tga"))
@@ -69,7 +69,7 @@ void MaterialPanel::DrawMaterialSettings(Material& mat)
         ImGui::Columns(1);
         
         std::string pbrPath = "";
-        auto pbrAsset = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>(mat.MetallicRoughnessHandle);
+        auto pbrAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(mat.MetallicRoughnessHandle);
         if (pbrAsset) pbrPath = pbrAsset->GetPath();
 
         if (EditorGUI::FileProperty("PBR Map", pbrPath, GetTextureID(mat.MetallicRoughnessHandle), "png,jpg,tga"))
@@ -85,7 +85,7 @@ void MaterialPanel::DrawMaterialSettings(Material& mat)
         ImGui::SliderFloat("Intensity", &mat.EmissiveIntensity, 0.0f, 10.0f);
         
         std::string emissivePath = "";
-        auto emissiveAsset = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>(mat.EmissiveHandle);
+        auto emissiveAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(mat.EmissiveHandle);
         if (emissiveAsset) emissivePath = emissiveAsset->GetPath();
 
         if (EditorGUI::FileProperty("Emissive Map", emissivePath, GetTextureID(mat.EmissiveHandle), "png,jpg,tga"))
@@ -120,7 +120,7 @@ void MaterialPanel::OnImGuiRender(bool readOnly)
         if (m_SelectedEntity.HasComponent<ModelComponent>())
         {
             auto& modelComp = m_SelectedEntity.GetComponent<ModelComponent>();
-            auto modelAsset = ServiceLocator::Get<AssetManager>()->GetAsset<ModelAsset>(modelComp.ModelHandle);
+            auto modelAsset = ServiceLocator::Get<AssetManager>()->Get<ModelAsset>(modelComp.ModelHandle);
             
             if (modelAsset && modelAsset->IsReady())
             {

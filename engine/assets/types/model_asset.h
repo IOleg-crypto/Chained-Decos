@@ -2,11 +2,12 @@
 #define CH_MODEL_ASSET_H
 
 #include "engine/assets/asset.h"
+#include "engine/foundation/base.h"
 #include "engine/graphics/api/model_data.h"
 #include "engine/graphics/pipeline/renderer_types.h"
-#include <memory_resource>
+#include <future>
+// #include <mutex>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 namespace Chained
@@ -20,27 +21,14 @@ public:
         : Asset(GetStaticType())
     {
     }
-    ModelAsset(AssetHandle handle)
-        : Asset(GetStaticType(), handle)
-    {
-    }
     virtual ~ModelAsset() = default;
-
-    friend class SceneRenderer;
 
     static AssetType GetStaticType()
     {
         return AssetType::Model;
     }
 
-    void OnLoaded();
-    bool Finalize();
-    bool HasPending() const { return m_HasPendingData; }
-
-    size_t GetMemoryUsage() const override
-    {
-        return 0; /* To be calculated properly */
-    }
+    void OnLoaded() override;
 
     const Model& GetModel() const
     {
@@ -65,29 +53,22 @@ public:
     }
 
     // Helpers
-    int GetAnimationCount() const;
-
-    std::string GetAnimationName(int index) const;
-    std::vector<glm::mat4> GetBoneMatrices(int animationIndex, int frame) const;
-
-    const std::vector<Material>& GetMaterials() const
+    int GetAnimationCount() const
     {
-        return m_Materials;
+        return (int)m_Animations.size();
     }
-
-    std::vector<Material>& GetMaterials()
-    {
-        return m_Materials;
-    }
-
-    // Get renderer ID for embedded texture (e.g., "*0", "*1").
-    uint32_t GetEmbeddedTextureID(const std::string& path) const;
-
-private:
     void SetPendingData(PendingModelData&& data)
     {
         m_PendingData = std::move(data);
         m_HasPendingData = true;
+    }
+    PendingModelData& GetPendingData()
+    {
+        return m_PendingData;
+    }
+    bool HasPendingData() const
+    {
+        return m_HasPendingData;
     }
 
     void SetModel(const Model& model)
@@ -122,7 +103,19 @@ private:
     {
         m_NodeParents = parents;
     }
+    std::string GetAnimationName(int index) const;
+    std::vector<glm::mat4> GetBoneMatrices(int animationIndex, int frame) const;
 
+    const std::vector<Material>& GetMaterials() const
+    {
+        return m_Materials;
+    }
+
+    // Get renderer ID for embedded texture (e.g., "*0", "*1").
+    // Returns 0 if the texture is not found or path is not an embedded texture marker.
+    uint32_t GetEmbeddedTextureID(const std::string& path) const;
+
+private:
     Model m_Model;
     std::vector<RawMesh> m_RawMeshes;
     std::vector<RawAnimation> m_Animations;
@@ -130,21 +123,16 @@ private:
     std::vector<Material> m_Materials;
     BoundingBox m_BoundingBox = {{0, 0, 0}, {0, 0, 0}};
 
-public: // Internal data for loader
+    // Skeleton data
     std::vector<glm::mat4> m_OffsetMatrices;
     std::vector<std::string> m_NodeNames;
     std::vector<int> m_NodeParents;
 
     // Loading data
     PendingModelData m_PendingData;
-    std::unordered_map<std::string, std::shared_ptr<Texture>> m_EmbeddedTextures;
+    std::vector<std::shared_ptr<Texture>> m_EmbeddedTextures;
     bool m_HasPendingData = false;
 };
-
-inline int ModelAsset::GetAnimationCount() const
-{
-    return (int)m_Animations.size();
-}
-} // namespace Chained
+} // namespace CHEngine
 
 #endif // CH_MODEL_ASSET_H

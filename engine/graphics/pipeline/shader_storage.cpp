@@ -1,16 +1,14 @@
-#include "shader_storage.h"
-#include "engine/core/service_locator.h"
+#include "engine/graphics/pipeline/shader_storage.h"
 #include "engine/foundation/engine_assert.h"
 #include "engine/core/log.h"
 #include "engine/assets/asset_manager.h"
+#include "engine/core/service_locator.h"
+#include "engine/project/project.h"
+#include "service_locator.h"
 #include <filesystem>
 
 namespace Chained
 {
-ShaderStorage::ShaderStorage()
-{
-}
-
 void ShaderStorage::Add(const std::string& name, const std::shared_ptr<ShaderAsset>& shader)
 {
     CH_CORE_ASSERT(!Exists(name), "Shader already exists in library!");
@@ -25,8 +23,7 @@ void ShaderStorage::Add(const std::shared_ptr<ShaderAsset>& shader)
 
 void ShaderStorage::Load(const std::string& path)
 {
-    auto handle = ServiceLocator::Get<AssetManager>()->ImportAsset(path);
-    auto shader = GetById(handle);
+    auto shader = ServiceLocator::Get<AssetManager>()->Get<ShaderAsset>(path);
     if (shader)
     {
         Add(shader);
@@ -35,8 +32,7 @@ void ShaderStorage::Load(const std::string& path)
 
 void ShaderStorage::Load(const std::string& name, const std::string& path)
 {
-    auto handle = ServiceLocator::Get<AssetManager>()->ImportAsset(path);
-    auto shader = ShaderStorage::GetById(handle);
+    auto shader = ServiceLocator::Get<AssetManager>()->Get<ShaderAsset>(path);
     if (shader)
     {
         if (Exists(name))
@@ -57,8 +53,7 @@ std::shared_ptr<ShaderAsset> ShaderStorage::LoadOrGet(const std::string& name, c
         return it->second;
     }
 
-    auto handle = ServiceLocator::Get<AssetManager>()->ImportAsset(path);
-    auto shader = ServiceLocator::Get<AssetManager>()->GetAsset<ShaderAsset>(handle);
+    auto shader = ServiceLocator::Get<AssetManager>()->Get<ShaderAsset>(path);
     if (shader)
     {
         m_Shaders[name] = shader;
@@ -109,16 +104,14 @@ std::vector<std::string> ShaderStorage::GetNames() const
 void ShaderStorage::ReloadAll()
 {
     CH_CORE_INFO("ShaderStorage: Reloading all shaders...");
-
+    
     for (auto& [name, shader] : m_Shaders)
     {
         if (shader && !shader->GetPath().empty())
         {
             CH_CORE_TRACE("ShaderStorage: Reloading shader '{}' from '{}'", name, shader->GetPath());
-            auto handle = ServiceLocator::Get<AssetManager>()->ImportAsset(shader->GetPath());
-            auto reloaded = ServiceLocator::Get<AssetManager>()->GetAsset<ShaderAsset>(handle);
-            if (reloaded) shader = reloaded;
+            ServiceLocator::Get<AssetManager>()->Reload<ShaderAsset>(shader->GetPath());
         }
     }
 }
-} // namespace Chained
+} // namespace CHEngine

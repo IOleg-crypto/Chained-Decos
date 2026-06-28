@@ -1,10 +1,11 @@
 #include "engine/assets/types/model_asset.h"
-#include "engine/assets/types/texture_asset.h"
-#include "engine/graphics/api/buffer.h"
-#include "engine/graphics/api/vertex_array.h"
-#include "engine/graphics/api/storage_buffer.h"
+#include "engine/assets/asset_manager.h"
 #include "engine/core/log.h"
+#include "engine/core/profiler.h"
+#include "engine/core/service_locator.h"
+#include "engine/assets/types/texture_asset.h"
 #include "engine/project/project.h"
+#include <cstring>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/quaternion.hpp>
 
@@ -12,30 +13,17 @@ namespace Chained
 {
 std::string ModelAsset::GetAnimationName(int index) const
 {
-    if (index >= 0 && index < (int)m_Animations.size())
-    {
-        return std::string(m_Animations[index].name.c_str());
-    }
-    return "";
+    return (index >= 0 && index < (int)m_Animations.size()) ? m_Animations[index].name : "";
 }
 
 std::vector<glm::mat4> ModelAsset::GetBoneMatrices(int animationIndex, int frame) const
 {
-    if (animationIndex < 0 || animationIndex >= m_Animations.size())
-    {
-        return {};
-    }
+    if (animationIndex < 0 || animationIndex >= m_Animations.size()) return {};
     const auto& anim = m_Animations[animationIndex];
-    if (frame < 0 || frame >= anim.frameCount)
-    {
-        return {};
-    }
+    if (frame < 0 || frame >= anim.frameCount) return {};
 
     int boneCount = anim.boneCount;
-    if (boneCount == 0)
-    {
-        return {};
-    }
+    if (boneCount == 0) return {};
 
     std::vector<glm::mat4> globalTransforms(boneCount);
     std::vector<glm::mat4> finalMatrices;
@@ -44,18 +32,15 @@ std::vector<glm::mat4> ModelAsset::GetBoneMatrices(int animationIndex, int frame
     for (int boneIndex = 0; boneIndex < boneCount; ++boneIndex)
     {
         const auto& pose = anim.framePoses[frame * boneCount + boneIndex];
-
-        glm::mat4 local = glm::translate(glm::mat4(1.0f), pose.translation) * glm::mat4_cast(pose.rotation) *
+        
+        glm::mat4 local = glm::translate(glm::mat4(1.0f), pose.translation) *
+                          glm::mat4_cast(pose.rotation) *
                           glm::scale(glm::mat4(1.0f), pose.scale);
 
         if (m_NodeParents[boneIndex] == -1)
-        {
             globalTransforms[boneIndex] = local;
-        }
         else
-        {
             globalTransforms[boneIndex] = globalTransforms[m_NodeParents[boneIndex]] * local;
-        }
 
         glm::mat4 offset = (boneIndex < (int)m_OffsetMatrices.size()) ? m_OffsetMatrices[boneIndex] : glm::mat4(1.0f);
         finalMatrices.push_back(globalTransforms[boneIndex] * offset);
@@ -64,9 +49,272 @@ std::vector<glm::mat4> ModelAsset::GetBoneMatrices(int animationIndex, int frame
     return finalMatrices;
 }
 
+
 void ModelAsset::OnLoaded()
 {
-    CH_CORE_INFO("Loaded Model asset");
+    CH_PROFILE_FUNCTION();
+
+    if (!m_HasPendingData || !m_PendingData.isValid)
+    {
+        return;
+    }
+
+    CH_CORE_INFO("ModelAsset: Uploading model to GPU: '{}' ({} meshes, {} materials)", GetPath(),
+                 static_cast<uint32_t>(m_PendingData.meshes.size()),
+                 static_cast<uint32_t>(m_PendingData.materials.size()));
+
+    Model newModel;
+    newModel.Materials.resize(m_PendingData.materials.empty() ? 1 : m_PendingData.materials.size());
+    m_EmbeddedTextures.clear();
+
+    auto project = Project::GetActive();
+
+    auto loadTex = [&](int matIdx, const std::string& path, int mapIndex) {
+        if (path.empty())
+        {
+            return;
+        }
+
+        if (path.front() == '*')
+        {
+            auto embeddedIt = m_PendingData.embeddedTextures.find(path);
+            if (embeddedIt == m_PendingData.embeddedTextures.end())
+            {
+                return;
+            }
+
+            const EmbeddedTextureData& embedded = embeddedIt->second;
+            if (embedded.data.empty() || embedded.width <= 0 || embedded.height <= 0 || embedded.isHDR)
+            {
+                return;
+            }
+
+            auto texture = Texture::Create((uint32_t)embedded.width, (uint32_t)embedded.height, TextureFormat::RGBA8);
+            if (!texture)
+            {
+                return;
+            }
+
+            texture->SetData((void*)embedded.data.data(), 0);
+            m_EmbeddedTextures.push_back(texture);
+
+            uint32_t texId = texture->GetRendererID();
+            switch (mapIndex)
+            {
+            case 0:
+                newModel.Materials[matIdx].AlbedoMap = texId;
+                break;
+            case 1:
+                newModel.Materials[matIdx].EmissiveMap = texId;
+                break;
+            case 2:
+                newModel.Materials[matIdx].NormalMap = texId;
+                break;
+            case 3:
+                newModel.Materials[matIdx].MetallicRoughnessMap = texId;
+                break;
+            case 4:
+                newModel.Materials[matIdx].EmissiveMap = texId;
+                break;
+            case 5:
+                newModel.Materials[matIdx].OcclusionMap = texId;
+                break;
+            }
+            return;
+        }
+
+        if (!project)
+        {
+            return;
+        }
+
+        auto tex = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(path);
+        if (!tex)
+        {
+            return;
+        }
+
+        uint32_t texId = 0;
+        if (tex->IsReady())
+        {
+            texId = tex->GetTexture()->GetRendererID();
+        }
+        else
+        {
+            // Optional: fallback texture ID here
+            texId = 0; 
+        }
+        switch (mapIndex)
+        {
+        case 0:
+            newModel.Materials[matIdx].AlbedoMap = texId;
+            break;
+        case 1:
+            newModel.Materials[matIdx].EmissiveMap = texId;
+            break;
+        case 2:
+            newModel.Materials[matIdx].NormalMap = texId;
+            break;
+        case 3:
+            newModel.Materials[matIdx].MetallicRoughnessMap = texId;
+            break;
+        case 4:
+            newModel.Materials[matIdx].EmissiveMap = texId;
+            break;
+        case 5:
+            newModel.Materials[matIdx].OcclusionMap = texId;
+            break;
+        }
+    };
+
+    for (int materialIndex = 0; materialIndex < (int)newModel.Materials.size(); ++materialIndex)
+    {
+        if (!m_PendingData.materials.empty())
+        {
+            const auto& rawMaterial = m_PendingData.materials[materialIndex];
+            newModel.Materials[materialIndex].AlbedoColor = rawMaterial.albedoColor;
+            newModel.Materials[materialIndex].EmissiveColor = rawMaterial.emissiveColor;
+            newModel.Materials[materialIndex].EmissiveIntensity = rawMaterial.emissiveIntensity;
+            newModel.Materials[materialIndex].Metalness = rawMaterial.metalness;
+            newModel.Materials[materialIndex].Roughness = rawMaterial.roughness;
+
+            loadTex(materialIndex, rawMaterial.albedoPath, 0);
+            newModel.Materials[materialIndex].albedoPath = rawMaterial.albedoPath;
+            
+            loadTex(materialIndex, rawMaterial.normalPath, 2);
+            newModel.Materials[materialIndex].normalPath = rawMaterial.normalPath;
+            
+            loadTex(materialIndex, rawMaterial.occlusionPath, 5);
+            newModel.Materials[materialIndex].occlusionPath = rawMaterial.occlusionPath;
+            
+            loadTex(materialIndex, rawMaterial.emissivePath, 4);
+            newModel.Materials[materialIndex].emissivePath = rawMaterial.emissivePath;
+            
+            loadTex(materialIndex, rawMaterial.metallicRoughnessPath, 3);
+            newModel.Materials[materialIndex].metallicRoughnessPath = rawMaterial.metallicRoughnessPath;
+        }
+    }
+
+    for (int meshIndex = 0; meshIndex < (int)m_PendingData.meshes.size(); ++meshIndex)
+    {
+        const auto& rawMesh = m_PendingData.meshes[meshIndex];
+        Mesh mesh;
+        mesh.VertexCount = (uint32_t)rawMesh.vertices.size() / 3;
+        mesh.TriangleCount = (uint32_t)rawMesh.indices.size() / 3;
+        mesh.MaterialIndex = (rawMesh.materialIndex >= 0 && rawMesh.materialIndex < (int)newModel.Materials.size())
+                                 ? rawMesh.materialIndex
+                                 : 0;
+
+        if (mesh.VertexCount > 0)
+        {
+            mesh.VAO = VertexArray::Create();
+
+            auto vboPos =
+                VertexBuffer::Create(rawMesh.vertices.data(), (uint32_t)rawMesh.vertices.size() * sizeof(float));
+            vboPos->SetLayout({{ShaderDataType::Float3, "a_Position"}});
+            mesh.VAO->AddVertexBuffer(vboPos);
+
+            if (!rawMesh.texcoords.empty())
+            {
+                auto vboTex =
+                    VertexBuffer::Create(rawMesh.texcoords.data(), (uint32_t)rawMesh.texcoords.size() * sizeof(float));
+                vboTex->SetLayout({{ShaderDataType::Float2, "a_TexCoord"}});
+                mesh.VAO->AddVertexBuffer(vboTex);
+            }
+
+            if (!rawMesh.normals.empty())
+            {
+                auto vboNorm =
+                    VertexBuffer::Create(rawMesh.normals.data(), (uint32_t)rawMesh.normals.size() * sizeof(float));
+                vboNorm->SetLayout({{ShaderDataType::Float3, "a_Normal"}});
+                mesh.VAO->AddVertexBuffer(vboNorm);
+            }
+
+            if (!rawMesh.joints.empty())
+            {
+                // Convert unsigned char joints to int32_t for ShaderDataType::Int4 (GL_INT) compatibility
+                std::vector<int32_t> jointsInt;
+                jointsInt.reserve(rawMesh.joints.size());
+                for (auto jointId : rawMesh.joints) jointsInt.push_back(static_cast<int32_t>(jointId));
+                
+                auto vboJoints = VertexBuffer::Create((float*)jointsInt.data(),
+                                                      (uint32_t)jointsInt.size() * sizeof(int32_t));
+                vboJoints->SetLayout({{ShaderDataType::Int4, "a_JointIDs"}});
+                mesh.VAO->AddVertexBuffer(vboJoints);
+            }
+
+            if (!rawMesh.weights.empty())
+            {
+                auto vboWeights = VertexBuffer::Create(rawMesh.weights.data(),
+                                                       (uint32_t)rawMesh.weights.size() * sizeof(float));
+                vboWeights->SetLayout({{ShaderDataType::Float4, "a_Weights"}});
+                mesh.VAO->AddVertexBuffer(vboWeights);
+            }
+
+            if (!rawMesh.indices.empty())
+            {
+                auto ibo = IndexBuffer::Create(rawMesh.indices.data(), (uint32_t)rawMesh.indices.size());
+                mesh.VAO->SetIndexBuffer(ibo);
+            }
+
+            mesh.MinBounds = {FLT_MAX, FLT_MAX, FLT_MAX};
+            mesh.MaxBounds = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
+            for (size_t vertexOffset = 0; vertexOffset < rawMesh.vertices.size(); vertexOffset += 3)
+            {
+                mesh.MinBounds =
+                    glm::min(mesh.MinBounds, {rawMesh.vertices[vertexOffset], rawMesh.vertices[vertexOffset + 1], rawMesh.vertices[vertexOffset + 2]});
+                mesh.MaxBounds =
+                    glm::max(mesh.MaxBounds, {rawMesh.vertices[vertexOffset], rawMesh.vertices[vertexOffset + 1], rawMesh.vertices[vertexOffset + 2]});
+            }
+        }
+        newModel.Meshes.push_back(mesh);
+    }
+
+    BoundingBox totalBox = {{FLT_MAX, FLT_MAX, FLT_MAX}, {-FLT_MAX, -FLT_MAX, -FLT_MAX}};
+    bool anyMesh = false;
+    for (const auto& inst : m_PendingData.instances)
+    {
+        if (inst.meshIndex < 0 || inst.meshIndex >= (int)newModel.Meshes.size())
+        {
+            continue;
+        }
+        const Mesh& mesh = newModel.Meshes[inst.meshIndex];
+
+        glm::vec3 corners[8] = {{mesh.MinBounds.x, mesh.MinBounds.y, mesh.MinBounds.z},
+                                {mesh.MaxBounds.x, mesh.MinBounds.y, mesh.MinBounds.z},
+                                {mesh.MinBounds.x, mesh.MaxBounds.y, mesh.MinBounds.z},
+                                {mesh.MaxBounds.x, mesh.MaxBounds.y, mesh.MinBounds.z},
+                                {mesh.MinBounds.x, mesh.MinBounds.y, mesh.MaxBounds.z},
+                                {mesh.MaxBounds.x, mesh.MinBounds.y, mesh.MaxBounds.z},
+                                {mesh.MinBounds.x, mesh.MaxBounds.y, mesh.MaxBounds.z},
+                                {mesh.MaxBounds.x, mesh.MaxBounds.y, mesh.MaxBounds.z}};
+
+        for (int cornerIndex = 0; cornerIndex < 8; ++cornerIndex)
+        {
+            glm::vec4 transformed = inst.localTransform * glm::vec4(corners[cornerIndex], 1.0f);
+            totalBox.Min = glm::min(totalBox.Min, glm::vec3(transformed));
+            totalBox.Max = glm::max(totalBox.Max, glm::vec3(transformed));
+        }
+        anyMesh = true;
+    }
+    if (!anyMesh)
+    {
+        totalBox = {{0, 0, 0}, {0, 0, 0}};
+    }
+
+    m_Model = std::move(newModel);
+    m_Materials = m_Model.Materials;
+    m_BoundingBox = totalBox;
+    m_RawMeshes = std::move(m_PendingData.meshes);
+    m_Animations = std::move(m_PendingData.animations);
+    m_Instances = std::move(m_PendingData.instances);
+    m_OffsetMatrices = std::move(m_PendingData.offsetMatrices);
+    m_NodeNames = std::move(m_PendingData.nodeNames);
+    m_NodeParents = std::move(m_PendingData.nodeParents);
+
+    m_PendingData = PendingModelData();
+    m_HasPendingData = false;
+    SetState(AssetState::Ready);
 }
 
 uint32_t ModelAsset::GetEmbeddedTextureID(const std::string& path) const
@@ -77,110 +325,7 @@ uint32_t ModelAsset::GetEmbeddedTextureID(const std::string& path) const
         return it->second->GetRendererID();
     }
     return 0;
+
 }
 
-bool ModelAsset::Finalize()
-{
-    if (!m_HasPendingData)
-        return m_Model.Meshes.size() > 0;
-
-    m_Model.Meshes.clear();
-    m_Model.Materials.clear();
-    
-    for (const auto& rawMat : m_PendingData.materials)
-    {
-        Material mat;
-        mat.AlbedoColor = rawMat.albedoColor;
-        // The texture paths should be resolved and stored as handles by a material system later.
-        mat.Roughness = rawMat.roughness;
-        mat.Metalness = rawMat.metalness;
-        m_Model.Materials.push_back(mat);
-    }
-
-    for (const auto& rawMesh : m_PendingData.meshes)
-    {
-        CH_CORE_INFO("Finalize: Processing Mesh");
-        Mesh mesh;
-        mesh.MaterialIndex = rawMesh.materialIndex;
-        mesh.VertexCount = (uint32_t)(rawMesh.vertices.size() / 3);
-        mesh.TriangleCount = (uint32_t)(rawMesh.indices.size() / 3);
-        mesh.MinBounds = rawMesh.MinBounds;
-        mesh.MaxBounds = rawMesh.MaxBounds;
-
-        CH_CORE_INFO("Finalize: Creating VAO");
-        mesh.VAO = VertexArray::Create();
-
-        CH_CORE_INFO("Finalize: Creating posVbo, count={}", rawMesh.vertices.size());
-        if (!rawMesh.vertices.empty()) 
-        {
-            auto posVbo = VertexBuffer::Create(rawMesh.vertices.data(), (uint32_t)(rawMesh.vertices.size() * sizeof(float)));
-            posVbo->SetLayout({{ShaderDataType::Float3, "a_Position"}});
-            mesh.VAO->AddVertexBuffer(posVbo);
-        }
-
-        CH_CORE_INFO("Finalize: Creating texVbo");
-        if (!rawMesh.texcoords.empty())
-        {
-            auto texVbo = VertexBuffer::Create(rawMesh.texcoords.data(), (uint32_t)(rawMesh.texcoords.size() * sizeof(float)));
-            texVbo->SetLayout({{ShaderDataType::Float2, "a_TexCoord"}});
-            mesh.VAO->AddVertexBuffer(texVbo);
-        }
-
-        if (!rawMesh.normals.empty())
-        {
-            auto normVbo = VertexBuffer::Create(rawMesh.normals.data(), (uint32_t)(rawMesh.normals.size() * sizeof(float)));
-            normVbo->SetLayout({{ShaderDataType::Float3, "a_Normal"}});
-            mesh.VAO->AddVertexBuffer(normVbo);
-        }
-
-        if (!rawMesh.tangents.empty())
-        {
-            auto tanVbo = VertexBuffer::Create(rawMesh.tangents.data(), (uint32_t)(rawMesh.tangents.size() * sizeof(float)));
-            tanVbo->SetLayout({{ShaderDataType::Float3, "a_Tangent"}});
-            mesh.VAO->AddVertexBuffer(tanVbo);
-        }
-
-        if (!rawMesh.joints.empty())
-        {
-            // joints is unsigned char. Cast to int or float buffer? 
-            // We should convert unsigned char array to float array for VBO upload, as VertexBuffer::Create expects float
-            std::vector<float> floatJoints(rawMesh.joints.begin(), rawMesh.joints.end());
-            auto jointsVbo = VertexBuffer::Create((const float*)floatJoints.data(), (uint32_t)(floatJoints.size() * sizeof(float)));
-            jointsVbo->SetLayout({{ShaderDataType::Float4, "a_Joints"}});
-            mesh.VAO->AddVertexBuffer(jointsVbo);
-        }
-
-        if (!rawMesh.weights.empty())
-        {
-            auto weightsVbo = VertexBuffer::Create((const float*)rawMesh.weights.data(), (uint32_t)(rawMesh.weights.size() * sizeof(float)));
-            weightsVbo->SetLayout({{ShaderDataType::Float4, "a_Weights"}});
-            mesh.VAO->AddVertexBuffer(weightsVbo);
-        }
-
-        CH_CORE_INFO("Finalize: Creating ebo");
-        if (!rawMesh.indices.empty()) 
-        {
-            auto ebo = IndexBuffer::Create((uint32_t*)rawMesh.indices.data(), (uint32_t)rawMesh.indices.size());
-            mesh.VAO->SetIndexBuffer(ebo);
-        }
-
-        m_Model.Meshes.push_back(mesh);
-    }
-
-    CH_CORE_INFO("Finalize: Finshing metadata");
-    m_Animations = m_PendingData.animations;
-    m_Instances = m_PendingData.instances;
-    m_NodeNames = m_PendingData.nodeNames;
-    m_NodeParents = m_PendingData.nodeParents;
-    m_OffsetMatrices = m_PendingData.offsetMatrices;
-
-    m_RawMeshes = std::move(m_PendingData.meshes);
-    m_PendingData = PendingModelData(); // clear memory
-    m_HasPendingData = false;
-
-    SetState(AssetState::Ready);
-    CH_CORE_INFO("ModelAsset::Finalize - Generated OpenGL buffers for ModelAsset");
-    return true;
-}
-
-} // namespace Chained
+} // namespace CHEngine
