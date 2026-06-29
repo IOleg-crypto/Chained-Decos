@@ -71,8 +71,8 @@ void SceneResourceManager::Update(entt::registry& reg, Timestep ts)
         auto& model = animView.get<ModelComponent>(entity);
 
 
-        auto handle = ServiceLocator::Get<AssetManager>()->ImportAsset(model.ModelPath);
-        auto modelAsset = ServiceLocator::Get<AssetManager>()->GetAsset<ModelAsset>(handle);
+        auto handle = ServiceLocator::Get<AssetManager>()->LoadAsset(model.ModelPath, ModelAsset::GetStaticType());
+        auto modelAsset = ServiceLocator::Get<AssetManager>()->Get<ModelAsset>(model.ModelPath);
         if (!modelAsset || modelAsset->GetAnimationCount() == 0)
             continue;
 
@@ -238,8 +238,8 @@ void SceneResourceManager::ResolveSprite(entt::registry& reg, entt::entity e)
     {
         
         {
-            auto handle = ServiceLocator::Get<AssetManager>()->ImportAsset(sprite.TexturePath);
-            auto asset = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>(handle);
+            auto handle = ServiceLocator::Get<AssetManager>()->LoadAsset(sprite.TexturePath, TextureAsset::GetStaticType());
+            auto asset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(sprite.TexturePath);
             if (asset && asset->IsReady())
             {
                 sprite.TextureHandle = asset->GetID();
@@ -254,20 +254,13 @@ void SceneResourceManager::ResolveShader(entt::registry& reg, entt::entity e)
     if (shader.ShaderPath.empty() || shader.ShaderHandle != 0)
         return;
     {
-        auto handle = ServiceLocator::Get<AssetManager>()->ImportAsset(shader.ShaderPath);
-        auto asset = ServiceLocator::Get<AssetManager>()->GetAsset<ShaderAsset>(handle);
+        auto handle = ServiceLocator::Get<AssetManager>()->LoadAsset(shader.ShaderPath, ShaderAsset::GetStaticType());
+        auto asset = ServiceLocator::Get<AssetManager>()->Get<ShaderAsset>(shader.ShaderPath);
         if (!asset || !asset->IsReady())
             return;
 
         shader.ShaderHandle = asset->GetID();
-        const auto& assetUniforms = asset->GetUniforms();
-        for (const auto& u : assetUniforms)
-        {
-            auto it = std::find_if(shader.Uniforms.begin(), shader.Uniforms.end(),
-                                   [&](const auto& current) { return current.Name == u.Name; });
-            if (it == shader.Uniforms.end())
-                shader.Uniforms.push_back(u);
-        }
+
     }
 }
 

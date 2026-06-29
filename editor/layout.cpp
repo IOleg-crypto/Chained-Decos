@@ -1,6 +1,6 @@
-#include "editor_layout.h"
+#include "layout.h"
 
-#include "editor_gui.h"
+#include "gui.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include <filesystem>

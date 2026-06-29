@@ -1,6 +1,6 @@
 #include "project_selector_ui.h"
 #include "engine/core/service_locator.h"
-#include "editor/editor_layer.h"
+#include "editor/layer.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "thirdparty/IconsFontAwesome6.h"
@@ -24,12 +24,11 @@ void ProjectSelectorUI::LoadEditorIcons()
     auto assetManager = ServiceLocator::Get<AssetManager>();
     if (assetManager)
     {
-        // Імпортуємо іконки. Переконайся, що шляхи відносні до робочої папки запуску (CWD) бінарника рушія
-        uint64_t newProjHandle = assetManager->ImportAsset("resources/icons/newproject.jpg");
-        uint64_t openProjHandle = assetManager->ImportAsset("resources/icons/folder.png");
+        auto newProjHandle = assetManager->LoadAsset("resources/icons/newproject.jpg" , TextureAsset::GetStaticType());
+        auto openProjHandle = assetManager->LoadAsset("resources/icons/folder.png", TextureAsset::GetStaticType());
 
-        m_NewProjectIcon = assetManager->GetAsset<TextureAsset>(newProjHandle);
-        m_OpenProjectIcon = assetManager->GetAsset<TextureAsset>(openProjHandle);
+        m_NewProjectIcon = assetManager->Get<TextureAsset>("resources/icons/newproject.jpg");
+        m_OpenProjectIcon = assetManager->Get<TextureAsset>("resources/icons/folder.png");
         m_IconsLoaded = true;
     }
 }
@@ -145,8 +144,8 @@ void ProjectSelectorUI::OnImGuiRender()
     ImGui::BeginGroup();
     {
         ImTextureID newProjTex = 0;
-        if (m_NewProjectIcon) {
-            newProjTex = (ImTextureID)(uintptr_t)m_NewProjectIcon->GetRendererID();
+        if (m_NewProjectIcon && m_NewProjectIcon->GetTexture()) {
+            newProjTex = (ImTextureID)(uintptr_t)m_NewProjectIcon->GetTexture()->GetRendererID();
         }
 
         if (ImGui::ImageButton("##NewProject", newProjTex, {300, 300}, {0, 1}, {1, 0}))
@@ -168,8 +167,8 @@ void ProjectSelectorUI::OnImGuiRender()
     ImGui::BeginGroup();
     {
         ImTextureID openProjTex = 0;
-        if (m_OpenProjectIcon) {
-            openProjTex = (ImTextureID)(uintptr_t)m_OpenProjectIcon->GetRendererID();
+        if (m_OpenProjectIcon && m_OpenProjectIcon->GetTexture()) {
+            openProjTex = (ImTextureID)(uintptr_t)m_OpenProjectIcon->GetTexture()->GetRendererID();
         }
 
         if (ImGui::ImageButton("##OpenProject", openProjTex, {300, 300}, {0, 1}, {1, 0}))

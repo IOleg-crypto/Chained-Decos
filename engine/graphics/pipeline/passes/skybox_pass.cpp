@@ -27,7 +27,7 @@ namespace Chained {
             if (!skySettings.TexturePath.empty())
             {
                 auto handle = ServiceLocator::Get<AssetManager>()->LoadAsset(skySettings.TexturePath , EnvironmentAsset::GetStaticType());
-                auto textureAsset = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>(handle);
+                auto textureAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(skySettings.TexturePath);
                 if (textureAsset && textureAsset->IsReady() && textureAsset->GetTexture())
                 {
                     int skyboxMode = std::clamp(skySettings.Mode, 0, 2);
@@ -35,7 +35,7 @@ namespace Chained {
 
                     // Logic mapped directly from old SceneRenderer implementation
                     ServiceLocator::Get<Renderer>()->DrawSkybox(texId, skyboxMode, textureAsset->IsHDR(), skySettings.Exposure,
-                                        skySettings.Brightness, skySettings.Contrast, ctx.Camera, skySettings.VFlipped);
+                                        skySettings.Brightness, skySettings.Contrast, ctx.Camera, true);
                 }
             }
         }

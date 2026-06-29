@@ -7,6 +7,9 @@
 #include <memory>
 #include <variant>
 #include <glm/glm.hpp>
+#include <algorithm>
+#include "engine/core/service_locator.h"
+#include "scripting/scriptengine.h"
 
 namespace Chained
 {
@@ -56,9 +59,27 @@ struct ManagedScriptInstance
     // Returns a raw (non-owning) pointer to the underlying object. Cast as needed.
     void* GetRaw() const { return Instance.get(); }
     bool HasInstance() const { return Instance != nullptr; }
+    
+    template<typename T_Archive>
+    void Reflect(::Chained::Properties<T_Archive>& props)
+    {
+        if (props.GetMode() == ::Chained::ReflectionMode::UI)
+        {
+            std::vector<std::string> options;
+            options.emplace_back("-- Select script --");
+            for (const auto& [scriptName, scriptType] : ::Chained::ServiceLocator::Get<::Chained::ScriptEngine>()->GetScriptClasses())
+            {
+                options.emplace_back(scriptName);
+            }
+            std::sort(options.begin() + 1, options.end());
+            props.StringEnum("ClassName", ClassName, options);
+        }
+        else
+        {
+            props.Property("ClassName", ClassName);
+        }
+    }
 };
-
-CH_MARK_RFL(ManagedScriptInstance);
 
 // ECS component that enables managed (C#) scripting for an entity.
 struct ManagedScriptComponent

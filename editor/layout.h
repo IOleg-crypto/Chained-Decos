@@ -1,7 +1,7 @@
 #ifndef CH_EDITOR_LAYOUT_H
 #define CH_EDITOR_LAYOUT_H
 
-#include "editor/editor_panels.h"
+#include "editor/panels.h"
 #include <string>
 
 namespace Chained

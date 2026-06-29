@@ -1,4 +1,4 @@
-#include "editor_panels.h"
+#include "panels.h"
 #include "panels/console_panel.h"
 #include "panels/content_browser_panel.h"
 #include "panels/world_panel.h"

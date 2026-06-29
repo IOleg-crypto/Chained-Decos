@@ -2,7 +2,7 @@
 #include "engine/core/service_locator.h"
 #include "world_panel.h"
 #include "thirdparty/IconsFontAwesome6.h"
-#include "editor/editor_layer.h"
+#include "editor/layer.h"
 #include "engine/assets/types/environment_asset.h"
 #include "engine/core/platform.h"
 #include "scene/scene.h"
@@ -169,8 +169,8 @@ void WorldPanel::OnImGuiRender(bool readOnly)
             {
                 if (auto project = Project::GetActive())
                 {
-                    auto handle = ServiceLocator::Get<AssetManager>()->ResolveToHandle(result->string(), EnvironmentAsset::GetStaticType());
-                    m_Context->GetSettings().Environment = ServiceLocator::Get<AssetManager>()->GetAsset<EnvironmentAsset>(handle);
+                    auto handle = ServiceLocator::Get<AssetManager>()->ResolveToHandle(result->string());
+                    m_Context->GetSettings().Environment = ServiceLocator::Get<AssetManager>()->Get<EnvironmentAsset>(result->string());
                 }
             }
         }

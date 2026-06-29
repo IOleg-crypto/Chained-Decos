@@ -6,12 +6,12 @@
 #include <string>
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/scene/scene.h"
-#include "editor_project_manager.h"
-#include "editor_scene_manager.h"
+#include "project_manager.h"
+#include "scene_manager.h"
 #include "engine/app/application.h"
 #include "engine/core/layer.h"
-#include "editor_layout.h"
-#include "editor_panels.h"
+#include "layout.h"
+#include "panels.h"
 #include "imgui.h"
 #include "undo/command_history.h"
 

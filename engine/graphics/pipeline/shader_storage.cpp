@@ -9,6 +9,10 @@
 
 namespace Chained
 {
+ShaderStorage::ShaderStorage()
+{
+}
+
 void ShaderStorage::Add(const std::string& name, const std::shared_ptr<ShaderAsset>& shader)
 {
     CH_CORE_ASSERT(!Exists(name), "Shader already exists in library!");
