@@ -12,6 +12,7 @@
 #include "engine/graphics/pipeline/render_command.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/pipeline/texture_utility.h"
+#include "engine/graphics/pipeline/texture_system.h"
 #include "engine/scene/components.h"
 #include "engine/scene/entity.h"
 #include "imgui.h"
@@ -218,7 +219,7 @@ void SceneRenderer::RenderSprites(entt::registry& registry, const Camera3D& came
         }
 
         auto handle = ServiceLocator::Get<AssetManager>()->LoadAsset(sprite.TexturePath, TextureAsset::GetStaticType());
-        auto textureAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(handle);
+        auto textureAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(sprite.TexturePath);
         if (textureAsset && textureAsset->IsReady() && textureAsset->GetTexture())
         {
             ServiceLocator::Get<Renderer>()->DrawSprite(textureAsset->GetTexture()->GetRendererID(),
@@ -291,8 +292,8 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
 
         CH_CORE_INFO("CollectAndRenderItems: Processing model: {}", mesh.ModelPath);
 
-        auto handle = assets->ImportAsset(mesh.ModelPath);
-        auto modelAsset = assets->GetAsset<ModelAsset>(handle);
+        auto handle = assets->LoadAsset(mesh.ModelPath, ModelAsset::GetStaticType());
+        auto modelAsset = assets->Get<ModelAsset>(mesh.ModelPath);
         if (!modelAsset)
         {
             dbg_nullAsset++;
@@ -350,8 +351,8 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
             auto& sc = registry.get<ShaderComponent>(entity);
             if (sc.Enabled && !sc.ShaderPath.empty())
             {
-                auto handle = assets ? assets->ImportAsset(sc.ShaderPath) : AssetHandle(0);
-                shaderOver = assets ? assets->GetAsset<ShaderAsset>(handle) : nullptr;
+                auto handle =  assets->LoadAsset(sc.ShaderPath, ShaderAsset::GetStaticType());
+                shaderOver = assets->Get<ShaderAsset>(sc.ShaderPath);
                 uniforms = sc.Uniforms;
             }
         }
@@ -479,8 +480,8 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
             auto& sc = registry.get<ShaderComponent>(entity);
             if (sc.Enabled && !sc.ShaderPath.empty())
             {
-                auto handle = assets ? assets->LoadAsset(sc.ShaderPath, ShaderAsset::GetStaticType()) : AssetHandle(0);
-                shaderOver = assets ? assets->Get<ShaderAsset>(handle) : nullptr;
+                auto handle = ServiceLocator::Get<AssetManager>()->LoadAsset(sc.ShaderPath, ShaderAsset::GetStaticType());
+                shaderOver = ServiceLocator::Get<AssetManager>()->Get<ShaderAsset>(sc.ShaderPath);
                 uniforms = sc.Uniforms;
             }
         }
@@ -707,24 +708,26 @@ void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Materia
     auto shader = shaderAsset->GetShader();
     shader->Bind();
 
-    auto resolveMap = [this](uint32_t currentId, AssetHandle handle) -> uint32_t {
+    auto resolveMap = [](uint32_t currentId, const std::string& path) -> uint32_t {
         if (currentId > 0)
         {
             return currentId;
         }
-        auto tex = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(handle);
-        if (tex && tex->IsReady() && tex->GetTexture())
+        // Embedded textures (path starts with '*') are never in the AssetManager.
+        // Their GPU ID is stored directly in AlbedoMap/NormalMap etc. by model_asset.cpp.
+        if (path.empty() || (!path.empty() && path.front() == '*'))
         {
-            return tex->GetTexture()->GetRendererID();
+            return 0;
         }
-        return 0;
+        auto textureHandle = TextureSystem::Get().LoadTexture(path);
+        return TextureSystem::Get().GetRendererID(textureHandle);
     };
 
-    uint32_t albedoMap = resolveMap(material.AlbedoMap, material.AlbedoHandle);
-    uint32_t normalMap = resolveMap(material.NormalMap, material.NormalHandle);
-    uint32_t metallicMap = resolveMap(material.MetallicRoughnessMap, material.MetallicRoughnessHandle);
-    uint32_t emissiveMap = resolveMap(material.EmissiveMap, material.EmissiveHandle);
-    uint32_t occlusionMap = resolveMap(material.OcclusionMap, material.OcclusionHandle);
+    uint32_t albedoMap = resolveMap(material.AlbedoMap, material.AlbedoPath);
+    uint32_t normalMap = resolveMap(material.NormalMap, material.NormalPath);
+    uint32_t metallicMap = resolveMap(material.MetallicRoughnessMap, material.MetallicRoughnessPath);
+    uint32_t emissiveMap = resolveMap(material.EmissiveMap, material.EmissivePath);
+    uint32_t occlusionMap = resolveMap(material.OcclusionMap, material.OcclusionPath);
 
     // 1. Albedo (texture0, Unit 0)
     if (albedoMap > 0)
@@ -931,7 +934,7 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
                 {
                     auto& mc = registry.get<ModelComponent>(entity);
                     auto handle = ServiceLocator::Get<AssetManager>()->LoadAsset(mc.ModelPath, ModelAsset::GetStaticType());
-                    auto asset = ServiceLocator::Get<AssetManager>()->Get<ModelAsset>(handle);
+                    auto asset = ServiceLocator::Get<AssetManager>()->Load<ModelAsset>(mc.ModelPath);
                     if (asset)
                     {
                         modelHandle = asset->GetID();

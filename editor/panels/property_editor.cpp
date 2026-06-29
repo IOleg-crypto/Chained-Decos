@@ -2,11 +2,11 @@
 #include "engine/reflection/reflection_rfl.h"
 #include "engine/scene/component_registry.h"
 #include "thirdparty/IconsFontAwesome6.h"
-#include "editor/editor_layer.h"
+#include "editor/layer.h"
 #include "editor/undo/component_commands.h"
 #include "editor/undo/modify_component_command.h"
 #include "engine/core/service_locator.h"
-#include "editor_gui.h"
+#include "gui.h"
 
 #include "engine/physics/physics.h"
 #include "engine/scene/scene_settings.h"

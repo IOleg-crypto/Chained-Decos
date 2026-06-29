@@ -87,6 +87,7 @@ namespace Chained
         virtual bool Property(const char* name, uint64_t& value, const PropertyMeta& meta = {}) = 0;
         virtual bool Property(const char* name, Color& value, const PropertyMeta& meta = {}) = 0;
         virtual bool Enum(const char* name, int& value, const char** names, int count, const PropertyMeta& meta = {}) = 0;
+        virtual bool StringEnum(const char* name, std::string& value, const std::vector<std::string>& options, const PropertyMeta& meta = {}) = 0;
         virtual bool Handle(const char* name, uint64_t& value, const PropertyMeta& meta = {}) = 0;
         virtual bool File(const char* name, std::string& value, const char* extensions = nullptr, const PropertyMeta& meta = {}) = 0;
         virtual bool Action(const char* label, std::function<void()> func) = 0;
@@ -268,6 +269,11 @@ namespace Chained
             return m_Archive.File(name, value, extensions);
         }
 
+        bool StringEnum(const char* name, std::string& value, const std::vector<std::string>& options, const PropertyMeta& meta = {})
+        {
+            return m_Archive.StringEnum(name, value, options, meta);
+        }
+
         // --- Property methods with metadata ---
         template<typename T>
         bool Property(const char* name, T& value, const PropertyMeta& meta)
@@ -387,6 +393,8 @@ namespace Chained
     #define CH_PROP_META_NAMED(props, label, field, meta) (props).Property(label, field, meta)
     #define CH_ENUM(props, field, names) (props).Enum(#field, field, names, static_cast<int>(CH_ARRAY_SIZE(names)))
     #define CH_ENUM_NAMED(props, label, field, names) (props).Enum(label, field, names, static_cast<int>(CH_ARRAY_SIZE(names)))
+    #define CH_STRING_ENUM(props, field, options) (props).StringEnum(#field, field, options)
+    #define CH_STRING_ENUM_NAMED(props, label, field, options) (props).StringEnum(label, field, options)
     #define CH_HANDLE(props, field) (props).Handle(#field, field)
     #define CH_HANDLE_NAMED(props, label, field) (props).Handle(label, field)
     #define CH_FILE(props, field, extensions) (props).File(#field, field, extensions)

@@ -179,19 +179,19 @@ void ModelAsset::OnLoaded()
             newModel.Materials[materialIndex].Roughness = rawMaterial.roughness;
 
             loadTex(materialIndex, rawMaterial.albedoPath, 0);
-            newModel.Materials[materialIndex].albedoPath = rawMaterial.albedoPath;
+            newModel.Materials[materialIndex].AlbedoPath = rawMaterial.albedoPath;
             
             loadTex(materialIndex, rawMaterial.normalPath, 2);
-            newModel.Materials[materialIndex].normalPath = rawMaterial.normalPath;
+            newModel.Materials[materialIndex].NormalPath = rawMaterial.normalPath;
             
             loadTex(materialIndex, rawMaterial.occlusionPath, 5);
-            newModel.Materials[materialIndex].occlusionPath = rawMaterial.occlusionPath;
+            newModel.Materials[materialIndex].OcclusionPath = rawMaterial.occlusionPath;
             
             loadTex(materialIndex, rawMaterial.emissivePath, 4);
-            newModel.Materials[materialIndex].emissivePath = rawMaterial.emissivePath;
+            newModel.Materials[materialIndex].EmissivePath = rawMaterial.emissivePath;
             
             loadTex(materialIndex, rawMaterial.metallicRoughnessPath, 3);
-            newModel.Materials[materialIndex].metallicRoughnessPath = rawMaterial.metallicRoughnessPath;
+            newModel.Materials[materialIndex].MetallicRoughnessPath = rawMaterial.metallicRoughnessPath;
         }
     }
 
@@ -319,13 +319,24 @@ void ModelAsset::OnLoaded()
 
 uint32_t ModelAsset::GetEmbeddedTextureID(const std::string& path) const
 {
-    auto it = m_EmbeddedTextures.find(path);
-    if (it != m_EmbeddedTextures.end() && it->second)
+    if (path.empty() || path.front() != '*')
     {
-        return it->second->GetRendererID();
+        return 0;
+    }
+    try
+    {
+        size_t index = std::stoul(path.substr(1));
+        if (index < m_EmbeddedTextures.size() && m_EmbeddedTextures[index])
+        {
+            return m_EmbeddedTextures[index]->GetRendererID();
+        }
+    }
+    catch (const std::exception&)
+    {
+        CH_CORE_ERROR("No found Embedded texture ID");
+        return 0;
     }
     return 0;
-
 }
 
 } // namespace CHEngine

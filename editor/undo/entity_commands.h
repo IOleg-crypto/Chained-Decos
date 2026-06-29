@@ -1,7 +1,7 @@
 #ifndef CH_ENTITY_COMMANDS_H
 #define CH_ENTITY_COMMANDS_H
 
-#include "editor_command.h"
+#include "command.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
 #include "engine/serialization/component_serializer.h"

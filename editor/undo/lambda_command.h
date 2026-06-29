@@ -1,7 +1,7 @@
 #ifndef CH_LAMBDA_COMMAND_H
 #define CH_LAMBDA_COMMAND_H
 
-#include "editor_command.h"
+#include "command.h"
 #include <functional>
 #include <string>
 

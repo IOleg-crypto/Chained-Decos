@@ -114,6 +114,8 @@ void Application::Run()
         m_Timer.DeltaTime = Timestep(time - m_Timer.LastFrameTime);
         m_Timer.LastFrameTime = time;
 
+        Profiler::BeginFrame();
+
         if (m_Window && m_Window->GetWidth() > 0 && m_Window->GetHeight() > 0)
         {
             ServiceLocator::Get<Audio>()->Update(m_Timer.DeltaTime);
@@ -137,7 +139,6 @@ void Application::Run()
             }
 
             // Рендеринг кадру
-            Profiler::BeginFrame();
             m_Window->BeginFrame();
 
             for (auto& layer : *m_LayerStack)
@@ -156,8 +157,9 @@ void Application::Run()
             }
 
             m_Window->EndFrame();
-            Profiler::EndFrame();
         }
+        
+        Profiler::EndFrame();
     }
 }
 

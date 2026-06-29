@@ -2,7 +2,7 @@
 #define CH_COMMAND_HISTORY_H
 
 #include "deque"
-#include "editor_command.h"
+#include "command.h"
 #include <functional>
 #include <memory>
 #include <string>

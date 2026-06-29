@@ -6,8 +6,8 @@
 #include <string>
 #include <vector>
 
-#include "editor_layer.h"
-#include "editor_panels.h"
+#include "layer.h"
+#include "panels.h"
 #include "engine/foundation/color.h"
 #include "engine/graphics/pipeline/renderer.h"
 

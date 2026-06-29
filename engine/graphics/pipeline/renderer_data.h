@@ -43,7 +43,7 @@ namespace Chained
         Timestep Time = 0.0f;
         int LightCount = 0;
         unsigned int CurrentShaderId = 0;
-        EnvironmentParameters CurrentEnv;
+        EnvironmentSettings CurrentEnv;
 
         glm::mat4 CurrentView = glm::mat4(1.0f);
         glm::mat4 CurrentProj = glm::mat4(1.0f);

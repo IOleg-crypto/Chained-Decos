@@ -3,11 +3,11 @@
 
 #include "panel.h"
 #include "engine/foundation/timestep.h"
-#include "viewport/editor_camera.h"
-#include "viewport/editor_gizmo.h"
+#include "viewport/camera.h"
+#include "viewport/gizmo.h"
 #include "viewport/ui_manipulator.h"
 #include "physics/collision_core.h" 
-#include "editor_icons.h"           
+#include "icons.h"           
 
 #include <memory>
 #include <glm/glm.hpp>

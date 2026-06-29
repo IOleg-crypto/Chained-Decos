@@ -1,7 +1,7 @@
 #ifndef CH_CONTENT_BROWSER_PROVIDER_H
 #define CH_CONTENT_BROWSER_PROVIDER_H
 
-#include "editor/editor_asset_types.h"
+#include "editor/asset_types.h"
 #include <filesystem>
 #include <string>
 #include <vector>
