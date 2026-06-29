@@ -1,7 +1,7 @@
 #ifndef CH_COMPONENT_COMMANDS_H
 #define CH_COMPONENT_COMMANDS_H
 
-#include "editor_command.h"
+#include "command.h"
 #include "engine/scene/scene.h"
 #include <string>
 

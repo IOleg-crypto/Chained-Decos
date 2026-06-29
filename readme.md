@@ -1,3 +1,4 @@
+
 # Chained Decos
 
 ## A 3D Parkour Game Built on Chained Engine
@@ -52,7 +53,7 @@ Main capabilities:
 - ECS-driven scene model using EnTT.
 - YAML-based project and scene serialization with deep configuration support.
 - Editor workflow with hierarchy/inspector/panels and in-editor play mode.
-- Flexible bootstrapping via `ProjectLauncher` for Headless, Runtime, and Editor modes.
+- Flexible bootstrapping via custom Entry Points for Headless, Runtime, and Editor modes.
 - Managed C# gameplay scripting through Coral (.NET/CoreCLR host).
 
 ## Developer Resources (Deep Dives)
@@ -98,7 +99,7 @@ Chained Engine follows a layered architecture with a Hazel-inspired service/sing
 Core layers:
 
 - **Engine Core**: Rendering, scene management, native logic systems (e.g., transitions, hierarchy), physics, audio, and platform abstractions.
-- **Bootstrapping**: `ProjectLauncher` utility that handles headless/runtime/editor initialization using a data-driven approach.
+- **Bootstrapping**: Entry points that handle headless/runtime/editor initialization.
 - **Editor**: Content workflows, scene inspection/manipulation, panel-based tooling.
 - **Runtime**: Lightweight executable that loads and runs a project based on its `.chproject` metadata.
 - **Scripting Bridge**: C++/C# interop through Coral.Native and managed assemblies.
@@ -119,7 +120,7 @@ To keep compile times fast, only one game project is generated in the build grap
 **How to switch:**
 1. **Command Line:** Run CMake with `-DCH_ACTIVE_GAME=...`.
    ```bash
-   cmake -S . -B build/windows-ninja -DCH_ACTIVE_GAME=testproject
+   cmake -S . -B build/windows-clang -DCH_ACTIVE_GAME=testproject
    ```
 2. **VS Code:** Open the Command Palette (`Ctrl+Shift+P`), choose `CMake: Edit CMake Cache (UI)`, find `CH_ACTIVE_GAME`, change it, and save.
 
@@ -137,17 +138,21 @@ Want to start a new game from scratch? Here is how to hook it up:
        CSHARP_PROJECT "scripts/MyGame.Scripts.csproj" # Omit if you don't use C# yet
    )
    ```
-3. **Add the entry point:** Create `game/mygame/src/main.cpp`. The engine uses a modular `ProjectLauncher` to bootstrap the application:
+3. **Add the entry point:** Create `game/mygame/src/main.cpp`. The engine uses a modular `Application` to bootstrap the application:
    ```cpp
-   #include "engine/core/application.h"
-   #include "engine/core/entry_point.h"
-   #include "engine/core/project_launcher.h"
+   #include "engine/app/application.h"
+   #include "engine/app/entry_point.h"
 
    namespace Chained {
+       extern void RegisterGameComponents();
+
        Application* CreateApplication(ApplicationCommandLineArgs args) {
-           // Prepare runtime specifications from project data
-           auto details = ProjectLauncher::PrepareRuntime(args);
-           return new Application(details.Spec);
+           RegisterGameComponents();
+           ApplicationSpecification spec;
+           spec.Name = "MyGame";
+           spec.CommandLineArgs = args;
+           spec.Headless = false;
+           return new Application(spec);
        }
    }
    ```
@@ -172,7 +177,7 @@ Project:
 - game/chaineddecos/: main game project, gameplay scripts under src/, and managed scripts/tests under scripts/.
 - game/testproject/: alternate standalone game project used for project switching and smaller experiments.
 - tests/: native C++ test target (EngineTests).
-- include/: third-party dependencies as git submodules.
+- thirdparty/: third-party dependencies as git submodules.
 
 ## Dependencies
 

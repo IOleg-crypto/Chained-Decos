@@ -169,8 +169,8 @@ static void DeserializeEnvironmentSettings(const YAML::Node& data, SceneSettings
         std::string envPath = ReadYamlValue(data, "EnvironmentPath", std::string());
         if (Project::GetActive())
         {
-            auto handle = ServiceLocator::Get<AssetManager>()->ImportAsset(envPath);
-            auto sharedEnv = ServiceLocator::Get<AssetManager>()->GetAsset<EnvironmentAsset>(handle);
+            auto handle = ServiceLocator::Get<AssetManager>()->LoadAsset(envPath , EnvironmentAsset::GetStaticType());
+            auto sharedEnv = ServiceLocator::Get<AssetManager>()->Get<EnvironmentAsset>(envPath);
             if (sharedEnv)
             {
                 if (!settings.Environment)

@@ -1,7 +1,7 @@
 #ifndef CH_PROJECT_SELECTOR_UI_H
 #define CH_PROJECT_SELECTOR_UI_H
 
-#include "editor/editor_project_manager.h"
+#include "editor/project_manager.h"
 #include <cstdint>
 #include <memory>
 

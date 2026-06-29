@@ -1,16 +1,15 @@
 #include "viewport_panel.h"
 #include "engine/core/service_locator.h"
-
-
+#include "engine/graphics/pipeline/texture_system.h"
 #include "thirdparty/IconsFontAwesome6.h"
 #include "engine/core/input.h"
 #include "engine/core/key_codes.h"
 #include "engine/graphics/api/framebuffer.h"
-#include "editor/editor_layer.h"
+#include "editor/layer.h"
 #include "editor/viewport/ui_manipulator.h"
-#include "editor_events.h"
-#include "editor_layer.h"
-#include "editor/editor_layer.h"
+#include "events.h"
+#include "layer.h"
+#include "editor/layer.h"
 #include "engine/core/events/events.h"
 #include "engine/graphics/pipeline/render_command.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
@@ -715,12 +714,9 @@ void ViewportPanel::RenderEditorIcons(entt::registry &registry, const SceneSetti
         {
             return;
         }
-        auto handle = ServiceLocator::Get<AssetManager>()->ResolveToHandle(path);
-        auto tex = ServiceLocator::Get<AssetManager>()->GetAsset<TextureAsset>(handle);
-        if (tex && tex->IsReady())
-        {
-            cachedId = tex->GetRendererID();
-        }
+
+        auto textureHandle = TextureSystem::Get().LoadTexture(path);
+        cachedId = TextureSystem::Get().GetRendererID(textureHandle);
     };
 
     tryLoadIcon("engine/resources/icons/camera_icon.png", m_EditorIcons.CameraIconId);

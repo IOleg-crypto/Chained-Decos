@@ -2,10 +2,8 @@
 #define CH_UI_PROPERTIES_H
 
 #include "thirdparty/IconsFontAwesome6.h"
-#include "editor_gui.h"
+#include "gui.h"
 #include "engine/reflection/reflection.h"
-#include "engine/core/service_locator.h"
-#include "scripting/scriptengine.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 
@@ -72,44 +70,26 @@ public:
         return PropertyInternal(name, value, meta);
     }
     virtual bool Enum(const char* name, int& value, const char** names, int count,
+                      const PropertyMeta& meta = {}) override;
+
+    virtual bool StringEnum(const char* name, std::string& value, const std::vector<std::string>& options,
                       const PropertyMeta& meta = {}) override
     {
-        return EnumPropertyInternal(name, value, names, count, meta);
+        return StringEnumInternal(name, value, options, meta);
     }
 
     virtual bool Property(const char* name, uint64_t& value, const PropertyMeta& meta = {}) override
     {
         return Handle(name, value, meta);
     }
-    virtual bool Handle(const char* name, uint64_t& value, const PropertyMeta& meta = {}) override
-    {
-        return HandleInternal(name, value);
-    }
+    virtual bool Handle(const char* name, uint64_t& value, const PropertyMeta& meta = {}) override;
     virtual bool File(const char* name, std::string& value, const char* extensions = nullptr,
-                      const PropertyMeta& meta = {}) override
-    {
-        return FileInternal(name, value, extensions, meta);
-    }
-    virtual bool Action(const char* label, std::function<void()> func) override
-    {
-        return ActionInternal(label, func);
-    }
-    virtual void Header(const char* label) override
-    {
-        HeaderInternal(label);
-    }
-    virtual void Separator() override
-    {
-        SeparatorInternal();
-    }
-    virtual bool BeginGroup(const char* label, bool defaultOpen = true) override
-    {
-        return BeginGroupInternal(label, defaultOpen);
-    }
-    virtual void EndGroup() override
-    {
-        EndGroupInternal();
-    }
+                      const PropertyMeta& meta = {}) override;
+    virtual bool Action(const char* label, std::function<void()> func) override;
+    virtual void Header(const char* label) override;
+    virtual void Separator() override;
+    virtual bool BeginGroup(const char* label, bool defaultOpen = true) override;
+    virtual void EndGroup() override;
 
     bool HasFinished() const
     {
@@ -344,156 +324,17 @@ private:
         return changed;
     }
 
-    bool EnumPropertyInternal(const char* name, int& value, const char** names, int count, const PropertyMeta& meta)
-    {
-        ImGui::BeginDisabled(meta.ReadOnly);
-        bool changed = EditorGUI::Property(name, value, names, count);
-        ImGui::EndDisabled();
-        if (!meta.Tooltip.empty() && ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("%s", meta.Tooltip.c_str());
-        }
-        UpdateState(changed);
-        return changed;
-    }
-
-    bool HandleInternal(const char* name, uint64_t& value)
-    {
-        bool changed = EditorGUI::Property(name, value);
-        UpdateState(changed);
-        return changed;
-    }
-    bool FileInternal(const char* name, std::string& path, const char* extensions, const PropertyMeta& meta)
-    {
-        ImGui::BeginDisabled(meta.ReadOnly);
-        bool changed = EditorGUI::FileProperty(name, path, extensions);
-        ImGui::EndDisabled();
-        if (!meta.Tooltip.empty() && ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("%s", meta.Tooltip.c_str());
-        }
-        UpdateState(changed);
-        return changed;
-    }
-    bool ActionInternal(const char* label, std::function<void()> func)
-    {
-        if (EditorGUI::ActionButton(nullptr, label))
-        {
-            func();
-            m_Changed = true;
-            return true;
-        }
-        return false;
-    }
-    void HeaderInternal(const char* label)
-    {
-        if (ImGui::GetCurrentTable() != nullptr)
-        {
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::AlignTextToFramePadding();
-        }
-        ImGui::Spacing();
-        ImGui::TextColored({0.2f, 0.7f, 0.9f, 1.0f}, "%s", label);
-        if (ImGui::GetCurrentTable() != nullptr)
-        {
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-        }
-    }
-    void SeparatorInternal()
-    {
-        ImGui::Separator();
-    }
-    bool BeginGroupInternal(const char* label, bool defaultOpen = true)
-    {
-        if (ImGui::GetCurrentTable() != nullptr)
-        {
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::AlignTextToFramePadding();
-        }
-        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_AllowOverlap |
-                                   ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_SpanAvailWidth |
-                                   ImGuiTreeNodeFlags_SpanAllColumns;
-        if (defaultOpen)
-        {
-            flags |= ImGuiTreeNodeFlags_DefaultOpen;
-        }
-        bool opened = ImGui::TreeNodeEx(label, flags);
-        if (ImGui::GetCurrentTable() != nullptr)
-        {
-            ImGui::TableSetColumnIndex(1);
-        }
-        return opened;
-    }
-    void EndGroupInternal()
-    {
-        ImGui::TreePop();
-    }
-
-    void UpdateState(bool changed)
-    {
-        if (changed)
-        {
-            m_Changed = true;
-        }
-        if (ImGui::IsItemActivated())
-        {
-            m_Started = true;
-        }
-        if (ImGui::IsItemDeactivatedAfterEdit())
-        {
-            m_Finished = true;
-        }
-    }
-
-    bool StringProperty(const char* name, std::string& value, const PropertyMeta& meta)
-    {
-        if (meta.Hint == PropertyMeta::WidgetHint::Enum && std::string_view(name) == "ClassName")
-        {
-            std::vector<std::string> options;
-            options.emplace_back("-- Select script --");
-            for (const auto& [scriptName, scriptType] : ServiceLocator::Get<ScriptEngine>()->GetScriptClasses())
-            {
-                options.emplace_back(scriptName);
-            }
-            if (options.size() > 2)
-            {
-                std::sort(options.begin() + 1, options.end());
-            }
-
-            int currentIndex = 0;
-            for (size_t i = 1; i < options.size(); ++i)
-            {
-                if (options[i] == value)
-                {
-                    currentIndex = (int)i;
-                    break;
-                }
-            }
-
-            std::vector<const char*> optionNames;
-            for (const auto& option : options)
-            {
-                optionNames.push_back(option.c_str());
-            }
-
-            EditorGUI::BeginPropertyGrid();
-            EditorGUI::BeginProperty(name);
-            bool changed = false;
-            if (ImGui::Combo("##prop", &currentIndex, optionNames.data(), (int)optionNames.size()))
-            {
-                value =
-                    (currentIndex > 0 && currentIndex < (int)options.size()) ? options[currentIndex] : std::string();
-                changed = true;
-            }
-            EditorGUI::EndProperty();
-            EditorGUI::EndPropertyGrid();
-            return changed;
-        }
-        return EditorGUI::Property(name, value);
-    }
+    bool EnumPropertyInternal(const char* name, int& value, const char** names, int count, const PropertyMeta& meta);
+    bool StringEnumInternal(const char* name, std::string& value, const std::vector<std::string>& options, const PropertyMeta& meta);
+    bool HandleInternal(const char* name, uint64_t& value);
+    bool FileInternal(const char* name, std::string& path, const char* extensions, const PropertyMeta& meta);
+    bool ActionInternal(const char* label, std::function<void()> func);
+    void HeaderInternal(const char* label);
+    void SeparatorInternal();
+    bool BeginGroupInternal(const char* label, bool defaultOpen = true);
+    void EndGroupInternal();
+    void UpdateState(bool changed);
+    bool StringProperty(const char* name, std::string& value, const PropertyMeta& meta);
 
     bool m_Changed = false;
     bool m_Started = false;

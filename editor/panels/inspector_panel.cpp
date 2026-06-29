@@ -1,6 +1,6 @@
 #include "inspector_panel.h"
 #include "thirdparty/IconsFontAwesome6.h"
-#include "editor_gui.h"
+#include "gui.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/model_asset.h"
 #include "engine/scene/components.h"

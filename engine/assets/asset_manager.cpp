@@ -3,7 +3,12 @@
 #include "engine/core/profiler.h"
 #include "engine/core/service_locator.h"
 
+#include "engine/assets/loaders/font_loader.h"
+#include "engine/assets/loaders/model_loader.h"
 #include <chrono>
+#include "engine/assets/loaders/texture_loader.h"
+#include "engine/assets/loaders/environment_loader.h"
+#include "engine/assets/loaders/shader_loader.h"
 
 namespace Chained
 {
@@ -12,6 +17,25 @@ constexpr auto kMaxAssetFinalizeBudget = std::chrono::milliseconds(2);
 
 AssetManager::AssetManager()
 {
+}
+
+
+void AssetManager::Initialize()
+{
+    RegisterLoader(AssetType::Model, std::make_unique<ModelLoader>());
+    RegisterLoader(AssetType::Texture, std::make_unique<TextureLoader>());
+    RegisterLoader(AssetType::Shader, std::make_unique<ShaderLoader>());
+    RegisterLoader(AssetType::Environment, std::make_unique<EnvironmentLoader>());
+    RegisterLoader(AssetType::Font, std::make_unique<FontLoader>());
+}
+
+void AssetManager::Shutdown()
+{
+}
+
+void AssetManager::Update(Timestep ts)
+{
+    Update();
 }
 
 AssetManager::~AssetManager()

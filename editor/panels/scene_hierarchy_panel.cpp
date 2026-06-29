@@ -1,6 +1,6 @@
 #include "engine/platform/utils/file_dialogs.h"
 #include "scene_hierarchy_panel.h"
-#include "editor_layer.h"
+#include "layer.h"
 #include "engine/app/application.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scene_events.h"
@@ -9,7 +9,7 @@
 
 #include "imgui.h"
 #include "undo/entity_commands.h"
-#include "editor_events.h"
+#include "events.h"
 #include "engine/core/input.h"
 #include "engine/serialization/scene_serializer.h"
 #include "engine/serialization/prefab_serializer.h"

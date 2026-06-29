@@ -2,10 +2,9 @@
 #define CH_ENVIRONMENT_H
 
 #include "engine/assets/asset.h"
+#include "engine/foundation/color.h"
 #include <glm/glm.hpp>
 #include <string>
-
-#include "color.h"
 
 namespace Chained
 {
@@ -61,6 +60,7 @@ public:
 
     void OnLoaded() override
     {
+        CH_INFO("Environment asset loaded: {}", GetPath());
     }
 
     const EnvironmentSettings& GetSettings() const

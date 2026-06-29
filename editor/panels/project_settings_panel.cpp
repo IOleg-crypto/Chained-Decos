@@ -1,10 +1,10 @@
 #include "engine/platform/utils/file_dialogs.h"
 #include "project_settings_panel.h"
 #include "thirdparty/IconsFontAwesome6.h"
-#include "editor_layer.h"
+#include "layer.h"
 #include "engine/core/platform.h"
 #include "engine/project/project.h"
-#include "editor_project_manager.h"
+#include "project_manager.h"
 #include "project/project_serializer.h"
 #include "imgui.h"
 

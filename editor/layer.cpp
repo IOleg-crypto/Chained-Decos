@@ -1,9 +1,9 @@
-#include "editor_layer.h"
+#include "layer.h"
 #include "engine/core/service_locator.h"
-#include "editor_events.h"
-#include "editor_gui.h"
-#include "editor_layout.h"
-#include "editor_panels.h"
+#include "events.h"
+#include "gui.h"
+#include "layout.h"
+#include "panels.h"
 #include "engine/imgui/imgui_layer.h"
 #include "engine/core/input.h"
 
@@ -20,7 +20,7 @@
 #include "panels/property_editor.h"
 #include "panels/viewport_panel.h"
 #include "scripting/scriptengine.h"
-#include "utils/editor_utils.h"
+#include "utils/utils.h"
 #include "ui/project_selector_ui.h"
 #include <ImGuizmo.h>
 #include <yaml-cpp/yaml.h>
