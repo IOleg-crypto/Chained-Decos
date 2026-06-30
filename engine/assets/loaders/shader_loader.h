@@ -10,18 +10,15 @@
 namespace Chained
 {
 
-class ShaderLoader : public IAssetLoader
+namespace ShaderLoader
 {
-public:
-    std::shared_ptr<Asset> Create() override;
-        bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError = nullptr) override;
-    bool IsAsync() const override { return false; }
+    std::shared_ptr<Asset> Create();
+    bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError = nullptr);
 
-private:
     std::shared_ptr<Shader> LoadShaderFromPath(const std::string& path);
     std::shared_ptr<Shader> LoadShaderFromPaths(const std::string& vsPath, const std::string& fsPath);
     std::string ProcessShaderSource(const std::string& path, std::vector<std::string>& includedFiles);
-};
-} // namespace CHEngine
+} // namespace ShaderLoader
+} // namespace Chained
 
 #endif // CH_SHADER_LOADER_H
