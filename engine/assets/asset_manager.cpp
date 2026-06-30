@@ -22,11 +22,11 @@ AssetManager::AssetManager()
 
 void AssetManager::Initialize()
 {
-    RegisterLoader(AssetType::Model, std::make_unique<ModelLoader>());
-    RegisterLoader(AssetType::Texture, std::make_unique<TextureLoader>());
-    RegisterLoader(AssetType::Shader, std::make_unique<ShaderLoader>());
-    RegisterLoader(AssetType::Environment, std::make_unique<EnvironmentLoader>());
-    RegisterLoader(AssetType::Font, std::make_unique<FontLoader>());
+    RegisterLoader(AssetType::Model, AssetLoader{ModelLoader::Create, ModelLoader::Load, true});
+    RegisterLoader(AssetType::Texture, AssetLoader{TextureLoader::Create, TextureLoader::Load, true});
+    RegisterLoader(AssetType::Shader, AssetLoader{ShaderLoader::Create, ShaderLoader::Load, false});
+    RegisterLoader(AssetType::Environment, AssetLoader{EnvironmentLoader::Create, EnvironmentLoader::Load, true});
+    RegisterLoader(AssetType::Font, AssetLoader{FontLoader::Create, FontLoader::Load, false});
 }
 
 void AssetManager::Shutdown()
@@ -48,7 +48,7 @@ AssetManager::~AssetManager()
 }
 
 
-void AssetManager::RegisterLoader(AssetType type, std::unique_ptr<IAssetLoader> loader)
+void AssetManager::RegisterLoader(AssetType type, AssetLoader loader)
 {
     m_Loaders[type] = std::move(loader);
 }
@@ -177,7 +177,7 @@ std::shared_ptr<Asset> AssetManager::LoadAsset(const std::string& path, AssetTyp
         }
     }
 
-    IAssetLoader* loader = nullptr;
+    AssetLoader* loader = nullptr;
     std::shared_ptr<Asset> asset;
 
     {
@@ -189,13 +189,13 @@ std::shared_ptr<Asset> AssetManager::LoadAsset(const std::string& path, AssetTyp
             return nullptr;
         }
 
-        asset = loaderIt->second->Create();
+        asset = loaderIt->second.Create();
         if (!asset)
         {
             return nullptr;
         }
 
-        loader = loaderIt->second.get();
+        loader = &loaderIt->second;
         AssetHandle newHandle = asset->GetID();
         asset->SetPath(resolved);
         asset->SetState(AssetState::Loading);
@@ -204,7 +204,7 @@ std::shared_ptr<Asset> AssetManager::LoadAsset(const std::string& path, AssetTyp
         m_PathToHandle[resolved] = newHandle;
     }
 
-    if (!loader->IsAsync())
+    if (!loader->IsAsync)
     {
         try
         {
@@ -360,7 +360,7 @@ bool AssetManager::HasBackgroundWork() const
 void AssetManager::ReloadAsset(AssetHandle handle, AssetType type)
 {
     std::shared_ptr<Asset> asset;
-    IAssetLoader* loader = nullptr;
+    AssetLoader* loader = nullptr;
     std::string path;
 
     {
@@ -379,7 +379,7 @@ void AssetManager::ReloadAsset(AssetHandle handle, AssetType type)
         }
 
         asset = it->second;
-        loader = loaderIt->second.get();
+        loader = &loaderIt->second;
         path = asset->GetPath();
         if (path.empty())
         {

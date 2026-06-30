@@ -164,6 +164,11 @@ public:
         return PropertyInternal(name, value);
     }
 
+    virtual bool StringEnum(const char* name, std::string& value, const std::vector<std::string>& options, const PropertyMeta& meta = {}) override
+    {
+        return PropertyInternal(name, value);
+    }
+
     virtual bool Handle(const char* name, uint64_t& handle, const PropertyMeta& meta = {}) override
     {
         if (m_Mode == ReflectionMode::Serialize)

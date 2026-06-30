@@ -1,5 +1,6 @@
 #include "engine/assets/loaders/environment_loader.h"
 #include "engine/core/log.h"
+#include "engine/assets/types/environment_asset.h"
 #include "engine/serialization/yaml.h"
 #include "engine/foundation/color.h"
 #include "yaml-cpp/yaml.h"

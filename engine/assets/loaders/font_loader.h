@@ -1,20 +1,17 @@
 #ifndef CH_FONT_LOADER_H
 #define CH_FONT_LOADER_H
 
-#include "engine/assets/loaders/asset_loader.h"
-#include "engine/assets/types/font_asset.h"
+#include "engine/assets/asset.h"
 #include <memory>
 #include <string>
 
 namespace Chained
 {
-class FontLoader : public IAssetLoader
+namespace FontLoader
 {
-public:
-    std::shared_ptr<Asset> Create() override;
-        bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError = nullptr) override;
-    bool IsAsync() const override { return false; }
-};
-} // namespace CHEngine
+    std::shared_ptr<Asset> Create();
+    bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError = nullptr);
+} // namespace FontLoader
+} // namespace Chained
 
 #endif // CH_FONT_LOADER_H

@@ -1,5 +1,6 @@
 #include "engine/assets/loaders/texture_loader.h"
 #include "engine/core/log.h"
+#include "engine/assets/types/texture_asset.h"
 
 #include "stb_image.h"
 #include <filesystem>

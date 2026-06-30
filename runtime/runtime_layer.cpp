@@ -243,8 +243,7 @@ void RuntimeLayer::OnRender(Timestep ts)
             auto& sc = primaryCam.GetComponent<ShaderComponent>();
             if (sc.Enabled && !sc.ShaderPath.empty())
             {
-                auto handle = ServiceLocator::Get<AssetManager>()->ImportAsset(sc.ShaderPath);
-                auto asset = ServiceLocator::Get<AssetManager>()->GetAsset<ShaderAsset>(handle);
+                auto asset = ServiceLocator::Get<AssetManager>()->Get<ShaderAsset>(sc.ShaderPath);
                 if (asset)
                 {
                     overrideShader = asset.get();

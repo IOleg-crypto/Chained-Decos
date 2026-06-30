@@ -1,6 +1,7 @@
 #define STB_TRUETYPE_IMPLEMENTATION
 #include <stb_truetype.h>
 #include "engine/assets/loaders/font_loader.h"
+#include "engine/assets/types/font_asset.h"
 #include "engine/core/log.h"
 #include <fstream>
 #include <vector>

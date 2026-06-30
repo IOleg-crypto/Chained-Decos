@@ -70,7 +70,10 @@ public:
         return PropertyInternal(name, value, meta);
     }
     virtual bool Enum(const char* name, int& value, const char** names, int count,
-                      const PropertyMeta& meta = {}) override;
+                      const PropertyMeta& meta = {}) override
+    {
+        return EnumPropertyInternal(name, value, names, count, meta);
+    }
 
     virtual bool StringEnum(const char* name, std::string& value, const std::vector<std::string>& options,
                       const PropertyMeta& meta = {}) override
@@ -82,14 +85,35 @@ public:
     {
         return Handle(name, value, meta);
     }
-    virtual bool Handle(const char* name, uint64_t& value, const PropertyMeta& meta = {}) override;
+    virtual bool Handle(const char* name, uint64_t& value, const PropertyMeta& meta = {}) override
+    {
+        return HandleInternal(name, value);
+    }
     virtual bool File(const char* name, std::string& value, const char* extensions = nullptr,
-                      const PropertyMeta& meta = {}) override;
-    virtual bool Action(const char* label, std::function<void()> func) override;
-    virtual void Header(const char* label) override;
-    virtual void Separator() override;
-    virtual bool BeginGroup(const char* label, bool defaultOpen = true) override;
-    virtual void EndGroup() override;
+                      const PropertyMeta& meta = {}) override
+    {
+        return FileInternal(name, value, extensions, meta);
+    }
+    virtual bool Action(const char* label, std::function<void()> func) override
+    {
+        return ActionInternal(label, func);
+    }
+    virtual void Header(const char* label) override
+    {
+        HeaderInternal(label);
+    }
+    virtual void Separator() override
+    {
+        SeparatorInternal();
+    }
+    virtual bool BeginGroup(const char* label, bool defaultOpen = true) override
+    {
+        return BeginGroupInternal(label, defaultOpen);
+    }
+    virtual void EndGroup() override
+    {
+        EndGroupInternal();
+    }
 
     bool HasFinished() const
     {

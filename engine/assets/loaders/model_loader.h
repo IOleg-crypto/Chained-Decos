@@ -20,18 +20,15 @@ struct ProceduralParameters
     glm::vec3 Dimensions = {1.0f, 1.0f, 1.0f};
 };
 
-class ModelLoader : public IAssetLoader
+namespace ModelLoader
 {
-public:
-    std::shared_ptr<Asset> Create() override;
-        bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError = nullptr) override;
-    bool IsAsync() const override { return true; }
+    std::shared_ptr<Asset> Create();
+    bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError = nullptr);
 
-    static Model GenerateProceduralModel(const std::string& type, const ProceduralParameters& params = ProceduralParameters());
+    Model GenerateProceduralModel(const std::string& type, const ProceduralParameters& params = ProceduralParameters());
 
-private:
-    static PendingModelData LoadMeshDataFromDisk(const std::filesystem::path& path, int samplingFPS = 30);
-};
+    PendingModelData LoadMeshDataFromDisk(const std::filesystem::path& path, int samplingFPS = 30);
+} // namespace ModelLoader
 } // namespace Chained
 
 #endif // CH_MODEL_LOADER_H

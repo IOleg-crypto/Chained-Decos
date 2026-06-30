@@ -290,8 +290,6 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
             continue;
         }
 
-        CH_CORE_INFO("CollectAndRenderItems: Processing model: {}", mesh.ModelPath);
-
         auto handle = assets->LoadAsset(mesh.ModelPath, ModelAsset::GetStaticType());
         auto modelAsset = assets->Get<ModelAsset>(mesh.ModelPath);
         if (!modelAsset)
@@ -299,8 +297,6 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
             dbg_nullAsset++;
             continue;
         }
-
-        CH_CORE_INFO("CollectAndRenderItems: Model asset acquired: {}", mesh.ModelPath);
 
         // Logic handled by AssetResolutionSystem
 
@@ -310,8 +306,6 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
             dbg_notReady++;
             continue;
         }
-
-        CH_CORE_INFO("CollectAndRenderItems: Model asset is ready.");
 
         BoundingBox bbox = modelAsset->GetBoundingBox();
         // Expand bounding box for animated entities to prevent aggressive culling
@@ -379,8 +373,6 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
             }
         }
 
-        CH_CORE_INFO("CollectAndRenderItems: Checking transparent queues.");
-
         // Determine transparency and push to correct queue
         bool hasOpaque = false;
         bool hasTransparent = false;
@@ -412,7 +404,6 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
             m_OpaqueQueue.push_back(std::move(item));
             dbg_queued++;
         }
-        CH_CORE_INFO("CollectAndRenderItems: Successfully queued model.");
     }
 
     if (!s_DebugLogged && dbg_total > 0)
