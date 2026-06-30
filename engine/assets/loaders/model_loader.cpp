@@ -1,5 +1,6 @@
 #include "engine/assets/loaders/model_loader.h"
 #include "engine/assets/loaders/assimp_importer.h"
+#include "engine/assets/types/model_asset.h"
 
 namespace Chained
 {

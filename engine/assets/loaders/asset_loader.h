@@ -4,24 +4,22 @@
 #include "engine/assets/asset.h"
 #include <memory>
 #include <string>
+#include <functional>
 
 namespace Chained
 {
-// Base interface for asset loaders. Each asset type provides its own loader.
-class IAssetLoader
+// Functional struct for asset loaders. Each asset type provides its own functions.
+struct AssetLoader
 {
-public:
-    virtual ~IAssetLoader() = default;
-
     // Creates a new, empty asset of the specific type.
-    virtual std::shared_ptr<Asset> Create() = 0;
+    std::function<std::shared_ptr<Asset>()> Create;
 
     // Loads the asset data from the given path.
     // For asynchronous loaders, this is called on a background thread.
-    virtual bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError = nullptr) = 0;
+    std::function<bool(std::shared_ptr<Asset>, const std::string&, std::string*)> Load;
 
-    virtual bool IsAsync() const { return false;}
+    bool IsAsync = false;
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_ASSET_LOADER_H

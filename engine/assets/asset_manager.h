@@ -24,8 +24,8 @@ public:
     virtual void Shutdown() override;
     virtual void Update(Timestep ts) override;
 
-    // Registers the loader for a specific asset type and transfers ownership.
-    void RegisterLoader(AssetType type, std::unique_ptr<IAssetLoader> loader);
+    // Registers the loader for a specific asset type.
+    void RegisterLoader(AssetType type, AssetLoader loader);
 
     void SetAssetDirectory(const std::filesystem::path& path) { m_AssetDirectory = path; }
     void SetProjectDirectory(const std::filesystem::path& path) { m_ProjectDirectory = path; }
@@ -91,7 +91,7 @@ public:
 
     // Asset cache.
     std::unordered_map<AssetHandle, std::shared_ptr<Asset>> m_AssetCache;
-    std::unordered_map<AssetType, std::unique_ptr<IAssetLoader>> m_Loaders;
+    std::unordered_map<AssetType, AssetLoader> m_Loaders;
 
     // Path-to-handle mapping for quick lookup and a path resolution cache.
     mutable std::unordered_map<std::string, AssetHandle> m_PathToHandle;
