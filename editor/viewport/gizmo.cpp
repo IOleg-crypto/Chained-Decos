@@ -1,11 +1,9 @@
-#include "gizmo.h"
-
+#include "editor/viewport/gizmo.h"
 #include "gui.h"
 #include "layer.h"
 #include "engine/scene/components/component_utils.h"
 #include "engine/scene/components/hierarchy_component.h"
 #include "undo/modify_component_command.h"
-#include <cmath>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -35,7 +33,7 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
 
     // 1. Setup ImGuizmo
     ImGuizmo::SetOrthographic(camera.Projection != 0);
-    ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList()); // Explicitly use current window draw list
+    ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList()); 
 
     // Ensure we are using absolute screen coordinates for SetRect
     ImGuizmo::SetRect(viewportPos.x, viewportPos.y, viewportSize.x, viewportSize.y);
@@ -67,20 +65,37 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
     }
     else // Orthographic
     {
-        // Align with SceneRenderer: total height is camera.Fovy (which is OrthographicSize)
         float top = camera.FovY * 0.5f;
         float right = top * aspect;
         projection = glm::ortho(-right, right, -top, top, camera.NearClip, camera.FarClip);
     }
 
-    // ImGuizmo uses a right-handed coordinate system by default, but it's good to be explicit
-    // if there was any handedness mismatch.
+    // 3. Handle Snapping (Фікс підготовки масиву під конкретний GizmoType)
+    float currentSnapValues[3] = { 0.0f, 0.0f, 0.0f };
+    if (m_SnappingEnabled)
+    {
+        if (type == GizmoType::TRANSLATE)
+        {
+            currentSnapValues[0] = m_TranslationSnap;
+            currentSnapValues[1] = m_TranslationSnap;
+            currentSnapValues[2] = m_TranslationSnap;
+        }
+        else if (type == GizmoType::ROTATE)
+        {
+            // ImGuizmo очікує лише перший float для кута обертання в градусах
+            currentSnapValues[0] = m_RotationSnap; 
+        }
+        else if (type == GizmoType::SCALE)
+        {
+            currentSnapValues[0] = m_ScaleSnap;
+            currentSnapValues[1] = m_ScaleSnap;
+            currentSnapValues[2] = m_ScaleSnap;
+        }
+    }
+    
+    float* snap = m_SnappingEnabled ? currentSnapValues : nullptr;
 
-    // ImGuizmo::DrawGrid(glm::value_ptr(view), glm::value_ptr(projection), glm::value_ptr(modelMat), m_SnapValues[0]);
-    //  4. Handle Snapping
-    float* snap = m_SnappingEnabled ? m_SnapValues : nullptr;
-
-    // 5. Manipulation
+    // 4. Manipulation
     ImGuizmo::MODE mode = m_IsLocalSpace ? ImGuizmo::LOCAL : ImGuizmo::WORLD;
 
     const bool wasUsing = m_WasUsing;
@@ -114,7 +129,7 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
                                               glm::value_ptr(rotation), glm::value_ptr(scale));
 
         ComponentUtils::SetTranslation(transform, translation);
-        ComponentUtils::SetRotation(transform, glm::radians(rotation));
+        ComponentUtils::SetRotation(transform, glm::radians(rotation)); // Конвертуємо градуси ImGuizmo в радіани
         ComponentUtils::SetScale(transform, scale);
     }
     else if (m_WasUsing && !isUsingNow)

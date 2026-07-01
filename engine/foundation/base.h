@@ -6,8 +6,6 @@
 #include <string>
 #include <vector>
 
-
-#include "engine/core/log.h"
 #include "engine/foundation/platform_detection.h"
 
 // DLL Export/Import Macros

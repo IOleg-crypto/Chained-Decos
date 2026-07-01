@@ -15,7 +15,6 @@ ScriptEngine::ScriptEngine(bool enableScripting)
 
 ScriptEngine::~ScriptEngine()
 {
-    // На випадок, якщо рушій не викликав Shutdown явно
     if (m_Host.IsInitialized())
     {
         ScriptEngine::Shutdown();

@@ -1,6 +1,7 @@
 #ifndef CH_MATERIAL_H
 #define CH_MATERIAL_H
 
+#include "asset.h"
 #include "engine/reflection/reflection_rfl.h"
 
 namespace Chained
@@ -9,7 +10,7 @@ namespace Chained
 struct MaterialInstance
 {
     // Albedo/Base Color
-    Color AlbedoColor = { 255, 255, 255, 255 };
+    Color AlbedoColor = {255, 255, 255, 255};
     AssetHandle AlbedoHandle = AssetHandle(0);
     bool OverrideAlbedo = false;
 
@@ -25,7 +26,7 @@ struct MaterialInstance
 
     // Optional Emissive
     AssetHandle EmissiveHandle = AssetHandle(0);
-    Color EmissiveColor = { 0, 0, 0, 255 };
+    Color EmissiveColor = {0, 0, 0, 255};
     float EmissiveIntensity = 0.0f;
     bool OverrideEmissive = false;
 

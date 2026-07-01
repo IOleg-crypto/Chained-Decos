@@ -26,7 +26,7 @@ namespace Chained {
             const auto& skySettings = envSettings.Skybox;
             if (!skySettings.TexturePath.empty())
             {
-                auto handle = ServiceLocator::Get<AssetManager>()->LoadAsset(skySettings.TexturePath , EnvironmentAsset::GetStaticType());
+                auto handle = ServiceLocator::Get<AssetManager>()->LoadAsset(skySettings.TexturePath, TextureAsset::GetStaticType());
                 auto textureAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(skySettings.TexturePath);
                 if (textureAsset && textureAsset->IsReady() && textureAsset->GetTexture())
                 {

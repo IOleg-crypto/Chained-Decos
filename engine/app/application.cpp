@@ -15,6 +15,7 @@
 #include "engine/platform/utils/file_dialogs.h"
 
 #include "scripting/scriptengine.h"
+#include "engine/core/input.h"
 
 namespace Chained
 {
@@ -32,6 +33,7 @@ Application::Application(const ApplicationSpecification& spec)
     s_Instance = this;
 
     Log::Init();
+    Core::Input::Init();
     FileDialogs::Init();
     ComponentRegistry::RegisterEngineComponents();
 
@@ -97,10 +99,10 @@ Application::Application(const ApplicationSpecification& spec)
 Application::~Application()
 {
 
-
     m_LayerStack.reset();
     ServiceLocator::Shutdown();
     FileDialogs::Shutdown();
+    Core::Input::Shutdown();
     // NOTE: ThreadPool is now an EngineModule, so its Shutdown() is handled natively by ServiceLocator::Shutdown()
     m_Window.reset();
     s_Instance = nullptr;
@@ -118,10 +120,14 @@ void Application::Run()
 
         if (m_Window && m_Window->GetWidth() > 0 && m_Window->GetHeight() > 0)
         {
+            // 1. Process OS Events & Input (Architectural fix: always poll BEFORE logic!)
+            m_Window->BeginFrame();
+
+            // 2. Systems Update
             ServiceLocator::Get<Audio>()->Update(m_Timer.DeltaTime);
             ServiceLocator::Get<AssetManager>()->Update(m_Timer.DeltaTime);
 
-            // Fixed Update
+            // 3. Fixed Update
             m_Timer.Accumulator += (float)m_Timer.DeltaTime;
             while (m_Timer.Accumulator >= m_Timer.FixedStepCount)
             {
@@ -133,13 +139,16 @@ void Application::Run()
                 m_Timer.Accumulator -= m_Timer.FixedStepCount;
             }
 
+            // 4. Logic Update
             for (auto& layer : *m_LayerStack)
             {
                 layer->OnUpdate(m_Timer.DeltaTime);
             }
 
-            // Рендеринг кадру
-            m_Window->BeginFrame();
+            // 5. Input Backup
+            Core::Input::Update(m_Timer.DeltaTime);
+
+            // 6. Rendering
 
             for (auto& layer : *m_LayerStack)
             {

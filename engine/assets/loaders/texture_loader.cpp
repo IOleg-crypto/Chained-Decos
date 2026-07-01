@@ -29,9 +29,6 @@ namespace Chained
         std::string ext = std::filesystem::path(resolvedPath).extension().string();
         std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
         
-        // Handle HDR khusus (procedural or direct load on main thread can be handled here if needed)
-        // For now, we follow the logic from the previous Importer
-        
         int width, height, channels;
 
         bool isHDR = stbi_is_hdr(resolvedPath.c_str());

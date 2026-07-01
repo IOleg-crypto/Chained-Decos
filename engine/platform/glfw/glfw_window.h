@@ -35,6 +35,7 @@ public:
     virtual void SetTargetFramesPerSecond(int framesPerSecond) override;
     virtual int GetTargetFramesPerSecond() const override { return m_TargetFPS; }
     virtual void SetWindowIcon(const std::string& path) override;
+    virtual void SetCursorMode(CursorMode mode) override;
 
     virtual void SetEventCallback(const EventCallbackFn& callback) override { m_EventCallback = callback; }
 

@@ -1,5 +1,6 @@
 #include "uuid.h"
 #include <random>
+#include <charconv>
 
 namespace Chained
 {

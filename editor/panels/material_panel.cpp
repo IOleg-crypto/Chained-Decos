@@ -4,7 +4,7 @@
 #include "imgui.h"
 #include "property_editor.h"
 #include "ui_properties.h"
-#include "engine/graphics/pipeline/texture_system.h"
+#include "engine/assets/types/texture_asset.h"
 #include "engine/core/service_locator.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/model_asset.h"
@@ -20,8 +20,12 @@ MaterialPanel::MaterialPanel()
 static uint32_t GetTextureID(const std::string& path)
 {
     if (path.empty()) return 0;
-    auto textureHandle = TextureSystem::Get().LoadTexture(path);
-    return TextureSystem::Get().GetRendererID(textureHandle);
+    auto texAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(path);
+    if (texAsset && texAsset->GetTexture())
+    {
+        return texAsset->GetTexture()->GetRendererID();
+    }
+    return 0;
 }
 
 void MaterialPanel::DrawMaterialSlot(Material& mat)
