@@ -12,7 +12,7 @@
 #include "engine/graphics/pipeline/render_command.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/pipeline/texture_utility.h"
-#include "engine/graphics/pipeline/texture_system.h"
+// removed texture_system.h
 #include "engine/scene/components.h"
 #include "engine/scene/entity.h"
 #include "imgui.h"
@@ -610,20 +610,32 @@ Chained::Material SceneRenderer::ResolveMaterialForMesh(int meshIndex, const Cha
         return {};
     }
 
-    // Use overrides if available
-    if (meshIndex < (int)materials.size())
+    // 1. Пріоритет №1: Використовуємо локальні оверрайди матеріалів (наприклад, змінені в інспекторі редактора)
+    if (meshIndex < (int)materials.size() && !materials[meshIndex].Name.empty())
     {
         return materials[meshIndex];
     }
 
     int matIdx = model.Meshes[meshIndex].MaterialIndex;
+
+    // 2. ГОЛОВНИЙ ФІКС: Якщо асет моделі вже завантажився, беремо ОНОВЛЕНІ матеріали прямо з нього.
+    // Це гарантує, що ми отримаємо свіжі AlbedoPath та готові GPU ID, навіть якщо компонент кешував модель завчасно.
+    if (modelAsset && modelAsset->IsReady()) // або перевірка на !modelAsset->GetMaterials().empty()
+    {
+        const auto& assetMaterials = modelAsset->GetMaterials();
+        if (matIdx >= 0 && matIdx < (int)assetMaterials.size())
+        {
+            return assetMaterials[matIdx];
+        }
+    }
+
+    // 3. Фолбек: якщо асет ще не готовий або nullptr, повертаємо те, що було в статичній копії моделі
     if (matIdx < 0 || matIdx >= (int)model.Materials.size())
     {
         return Material();
     }
 
-    Material material = model.Materials[matIdx];
-    return material;
+    return model.Materials[matIdx];
 }
 
 void SceneRenderer::BindShaderUniforms(Chained::ShaderAsset* shaderAsset, const std::vector<glm::mat4>& boneMatrices,
@@ -693,34 +705,32 @@ void SceneRenderer::BindShaderUniforms(Chained::ShaderAsset* shaderAsset, const 
     }
 }
 
-void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Material& material, int meshIndex,
-                                         const Model& model)
+void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Material& material, int meshIndex, const Model& model)
 {
     auto shader = shaderAsset->GetShader();
     shader->Bind();
 
+    // Ламбду виносимо або залишаємо без змін, але в ідеалі — перенести цей резолв 
+    // в AssetResolutionSystem, щоб у кадрі були лише чисті ID.
     auto resolveMap = [](uint32_t currentId, const std::string& path) -> uint32_t {
-        if (currentId > 0)
+        if (currentId > 0) return currentId;
+        if (path.empty() || path.front() == '*') return 0;
+
+        auto texAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(path);
+        if (texAsset && texAsset->GetTexture())
         {
-            return currentId;
+            return texAsset->GetTexture()->GetRendererID();
         }
-        // Embedded textures (path starts with '*') are never in the AssetManager.
-        // Their GPU ID is stored directly in AlbedoMap/NormalMap etc. by model_asset.cpp.
-        if (path.empty() || (!path.empty() && path.front() == '*'))
-        {
-            return 0;
-        }
-        auto textureHandle = TextureSystem::Get().LoadTexture(path);
-        return TextureSystem::Get().GetRendererID(textureHandle);
+        return 0;
     };
 
-    uint32_t albedoMap = resolveMap(material.AlbedoMap, material.AlbedoPath);
-    uint32_t normalMap = resolveMap(material.NormalMap, material.NormalPath);
-    uint32_t metallicMap = resolveMap(material.MetallicRoughnessMap, material.MetallicRoughnessPath);
-    uint32_t emissiveMap = resolveMap(material.EmissiveMap, material.EmissivePath);
+    uint32_t albedoMap    = resolveMap(material.AlbedoMap, material.AlbedoPath);
+    uint32_t normalMap    = resolveMap(material.NormalMap, material.NormalPath);
+    uint32_t metallicMap  = resolveMap(material.MetallicRoughnessMap, material.MetallicRoughnessPath);
+    uint32_t emissiveMap  = resolveMap(material.EmissiveMap, material.EmissivePath);
     uint32_t occlusionMap = resolveMap(material.OcclusionMap, material.OcclusionPath);
 
-    // 1. Albedo (texture0, Unit 0)
+    // 1. Albedo (Texture Unit 0)
     if (albedoMap > 0)
     {
         RenderCommand::SetTexture(0, albedoMap);
@@ -733,13 +743,14 @@ void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Materia
     }
     shader->SetVec4("colDiffuse", material.AlbedoColor);
 
-    // 2. Metallic (texture1, Unit 1)
+    // 2. Metallic-Roughness Packed Map (Texture Unit 1)
+    // У glTF Metallic (B) та Roughness (G) зазвичай живуть в одній текстурі.
     if (metallicMap > 0)
     {
         RenderCommand::SetTexture(1, metallicMap);
         shader->SetInt("texture1", 1);
         shader->SetInt("useMetallicMap", 1);
-        shader->SetInt("useRoughnessMap", 1); // GLTF packed map
+        shader->SetInt("useRoughnessMap", 1);
     }
     else
     {
@@ -747,7 +758,7 @@ void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Materia
         shader->SetInt("useRoughnessMap", 0);
     }
 
-    // 3. Normal (texture2, Unit 2)
+    // 3. Normal Map (Texture Unit 2)
     if (normalMap > 0)
     {
         RenderCommand::SetTexture(2, normalMap);
@@ -759,14 +770,7 @@ void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Materia
         shader->SetInt("useNormalMap", 0);
     }
 
-    // 4. Roughness (texture3, Unit 3) - Often same as metallicMap in GLTF
-    if (metallicMap > 0)
-    {
-        RenderCommand::SetTexture(3, metallicMap);
-        shader->SetInt("texture3", 3);
-    }
-
-    // 5. Occlusion (texture4, Unit 4)
+    // 4. Occlusion Map (Texture Unit 4)
     if (occlusionMap > 0)
     {
         RenderCommand::SetTexture(4, occlusionMap);
@@ -778,7 +782,7 @@ void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Materia
         shader->SetInt("useOcclusionMap", 0);
     }
 
-    // 6. Emissive (texture5, Unit 5)
+    // 5. Emissive Map (Texture Unit 5)
     if (emissiveMap > 0)
     {
         RenderCommand::SetTexture(5, emissiveMap);
@@ -790,6 +794,7 @@ void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Materia
         shader->SetInt("useEmissiveTexture", 0);
     }
 
+    // Базові PBR параметри матеріалу
     shader->SetFloat("metalness", material.Metalness);
     shader->SetFloat("roughness", material.Roughness);
     shader->SetVec4("colEmissive", material.EmissiveColor);
@@ -866,106 +871,64 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
                 continue;
             }
 
-            glm::vec4 color = collider.IsColliding ? glm::vec4(1, 0, 0, 0.6f) : glm::vec4(0, 1, 0, 0.6f);
+            glm::vec4 color = collider.IsColliding ? glm::vec4(1.0f, 0.0f, 0.0f, 0.6f) : glm::vec4(0.0f, 1.0f, 0.0f, 0.6f);
             if (isWireframe)
             {
-                color.a = 1.0f; // Ensure wires are fully opaque
+                color.a = 1.0f; // Робимо лінійну сітку повністю непрозорою
             }
 
             if (collider.Type == ColliderType::Box || collider.Type == ColliderType::Sphere ||
                 collider.Type == ColliderType::Capsule)
             {
-                // Extract scale from WorldTransform column lengths
+                // Екстракція масштабу з матриці трансформації
                 glm::vec3 entityScale(glm::length(glm::vec3(transform.WorldTransform[0])),
                                       glm::length(glm::vec3(transform.WorldTransform[1])),
                                       glm::length(glm::vec3(transform.WorldTransform[2])));
 
-                // Build a rotation-only transform (remove scale from matrix)
+                // Очищаємо масштаб з матриці, залишаючи лише ротацію та позицію
                 glm::mat4 rotTrans = transform.WorldTransform;
-                if (entityScale.x > 0.0001f)
-                {
-                    rotTrans[0] = glm::vec4(glm::vec3(rotTrans[0]) / entityScale.x, 0.0f);
-                }
-                if (entityScale.y > 0.0001f)
-                {
-                    rotTrans[1] = glm::vec4(glm::vec3(rotTrans[1]) / entityScale.y, 0.0f);
-                }
-                if (entityScale.z > 0.0001f)
-                {
-                    rotTrans[2] = glm::vec4(glm::vec3(rotTrans[2]) / entityScale.z, 0.0f);
-                }
+                if (entityScale.x > 0.0001f) rotTrans[0] = glm::vec4(glm::vec3(rotTrans[0]) / entityScale.x, 0.0f);
+                if (entityScale.y > 0.0001f) rotTrans[1] = glm::vec4(glm::vec3(rotTrans[1]) / entityScale.y, 0.0f);
+                if (entityScale.z > 0.0001f) rotTrans[2] = glm::vec4(glm::vec3(rotTrans[2]) / entityScale.z, 0.0f);
 
                 glm::mat4 baseTransform = rotTrans * glm::translate(glm::mat4(1.0f), collider.Offset);
 
                 if (collider.Type == ColliderType::Box)
                 {
-                    ServiceLocator::Get<Renderer>()->DrawCubeWires(baseTransform, collider.Size * entityScale, color,
-                                                                   isWireframe);
+                    DebugRenderer::DrawCubeWires(baseTransform, collider.Size * entityScale, color, isWireframe);
                 }
                 else if (collider.Type == ColliderType::Sphere)
                 {
-                    // For sphere, we use the maximum component of the entity scale for the overall radius multiplier
                     float maxScale = glm::max(entityScale.x, glm::max(entityScale.y, entityScale.z));
-                    ServiceLocator::Get<Renderer>()->DrawSphereWires(baseTransform, collider.Radius * maxScale, color,
-                                                                     isWireframe);
+                    DebugRenderer::DrawSphereWires(baseTransform, collider.Radius * maxScale, color, isWireframe);
                 }
                 else if (collider.Type == ColliderType::Capsule)
                 {
-                    float maxScale = glm::max(entityScale.x, glm::max(entityScale.y, entityScale.z));
-                    ServiceLocator::Get<Renderer>()->DrawCapsuleWires(
-                        baseTransform, collider.Radius * maxScale, collider.Height * entityScale.y, color, isWireframe);
-                }
-            }
-            else if (collider.Type == ColliderType::Mesh)
-            {
-                AssetHandle modelHandle = collider.ModelHandle;
-
-                // Fallback to visual mesh if AutoCalculate is enable and handle is 0
-                if (modelHandle == 0 && collider.AutoCalculate && registry.all_of<ModelComponent>(entity))
-                {
-                    auto& mc = registry.get<ModelComponent>(entity);
-                    auto handle = ServiceLocator::Get<AssetManager>()->LoadAsset(mc.ModelPath, ModelAsset::GetStaticType());
-                    auto asset = ServiceLocator::Get<AssetManager>()->Load<ModelAsset>(mc.ModelPath);
-                    if (asset)
-                    {
-                        modelHandle = asset->GetID();
-                    }
-                }
-
-                if (modelHandle != 0)
-                {
-                    auto modelAsset = ServiceLocator::Get<AssetManager>()->Get<ModelAsset>(modelHandle);
-                    if (modelAsset && modelAsset->GetState() == AssetState::Ready)
-                    {
-                        const auto& model = modelAsset->GetModel();
-                        const auto& instances = modelAsset->GetInstances();
-
-                        for (const auto& inst : instances)
-                        {
-                            if (inst.meshIndex >= 0 && inst.meshIndex < (int)model.Meshes.size())
-                            {
-                                ServiceLocator::Get<Renderer>()->DrawMeshWire(model.Meshes[inst.meshIndex], color,
-                                                            transform.WorldTransform * inst.localTransform,
-                                                            isWireframe);
-                            }
-                        }
-                    }
+                    // Для капсули: радіус зазвичай масштабується за макс. горизонтальним вектором, 
+                    // а висота — за вертикальним (Y)
+                    float radiusScale = glm::max(entityScale.x, entityScale.z);
+                    DebugRenderer::DrawCapsuleWires(baseTransform, collider.Radius * radiusScale, collider.Height * entityScale.y, color, isWireframe);
                 }
             }
         }
     };
 
-    // First draw solid geometries
+    // Перший прохід — заповнені меші (якщо увімкнено)
     if (drawSolid)
     {
+        RenderCommand::SetPolygonMode(RendererAPI::PolygonMode::Fill);
         drawPass(false);
     }
 
-    // Then draw wireframe overlays on top
+    // Другий прохід — дротяна сітка поверх (якщо увімкнено)
     if (drawWire)
     {
+        RenderCommand::SetPolygonMode(RendererAPI::PolygonMode::Line);
         drawPass(true);
     }
+
+    // Обов'язково повертаємо дефолтний стан для стандартного рендерингу сцени
+    RenderCommand::SetPolygonMode(RendererAPI::PolygonMode::Fill);
 }
 
 void SceneRenderer::DrawCollisionModelBoxDebug(entt::registry& registry)
@@ -1001,7 +964,7 @@ void SceneRenderer::DrawCollisionModelBoxDebug(entt::registry& registry)
                 // Note: transform.WorldTransform already includes entity scale,
                 // but the localBox is also scaled if the importer applied scale?
                 // Usually localBox is untransformed.
-                ServiceLocator::Get<Renderer>()->DrawCubeWires(transform.WorldTransform * glm::translate(glm::mat4(1.0f), center), size,
+                DebugRenderer::DrawCubeWires(transform.WorldTransform * glm::translate(glm::mat4(1.0f), center), size,
                                              color);
             }
         }

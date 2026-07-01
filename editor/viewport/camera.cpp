@@ -1,13 +1,16 @@
 #include "camera.h"
 #include "editor/layer.h"
+#include "engine/app/application.h"
 #include "engine/core/input.h"
 #include "engine/scene/components/camera_component.h"
 #include "engine/scene/components/component_utils.h"
 #include "engine/scene/components/transform_component.h"
-#include "engine/project/project.h"
+
 
 #define GLM_ENABLE_EXPERIMENTAL
+#include <algorithm>
 #include <glm/gtx/quaternion.hpp>
+
 
 namespace Chained
 {
@@ -26,34 +29,45 @@ void EditorCameraController::OnUpdate(Entity cameraEntity, Timestep ts, const gl
     float deltaTime = ts;
     float moveSpeed = m_MoveSpeed;
     float boostMultiplier = m_BoostMultiplier;
-    float sensitivity = 1.0f;
 
+    bool hasEntity =
+        cameraEntity && cameraEntity.HasComponent<TransformComponent>() && cameraEntity.HasComponent<CameraComponent>();
 
-
-    bool hasEntity = cameraEntity && cameraEntity.HasComponent<TransformComponent>() && cameraEntity.HasComponent<CameraComponent>();
-
-    if (hasEntity && !Core::Input::IsMouseButtonDown(MouseCode::ButtonRight) && !Core::Input::IsMouseButtonDown(MouseCode::ButtonMiddle))
+    if (hasEntity && !Core::Input::IsMouseButtonDown(MouseCode::ButtonRight) &&
+        !Core::Input::IsMouseButtonDown(MouseCode::ButtonMiddle))
     {
         auto& tc = cameraEntity.GetComponent<TransformComponent>();
         if (std::isfinite(tc.Rotation.x) && std::isfinite(tc.Rotation.y))
         {
-             if (fabsf(tc.Rotation.x - m_Pitch) > 0.01f || fabsf(tc.Rotation.y - m_Yaw) > 0.01f)
-             {
-                 m_Pitch = tc.Rotation.x;
-                 m_Yaw = tc.Rotation.y;
-                 UpdateView();
-             }
+            if (fabsf(tc.Rotation.x - m_Pitch) > 0.01f || fabsf(tc.Rotation.y - m_Yaw) > 0.01f)
+            {
+                m_Pitch = tc.Rotation.x;
+                m_Yaw = tc.Rotation.y;
+                UpdateView();
+            }
         }
     }
 
-    glm::vec2 delta = Core::Input::GetMouseDelta();
+    // if (Core::Input::IsMouseButtonPressed(MouseCode::ButtonRight))
+    // {
+    //     Application::Get().GetWindow().SetCursorMode(CursorMode::Locked);
+    // }
+    // else if (Core::Input::IsMouseButtonReleased(MouseCode::ButtonRight))
+    // {
+    //     Application::Get().GetWindow().SetCursorMode(CursorMode::Normal);
+    // }
+
+    glm::vec2 delta = Core::Input::GetMouseDelta() * 0.003f;
 
     if (Core::Input::IsMouseButtonDown(MouseCode::ButtonRight))
     {
-        MouseRotate({delta.x * sensitivity, delta.y * sensitivity});
+        MouseRotate(delta);
 
         float speed = moveSpeed * deltaTime;
-        if (Core::Input::IsKeyDown(KeyCode::LeftShift)) speed *= boostMultiplier;
+        if (Core::Input::IsKeyDown(KeyCode::LeftShift))
+        {
+            speed *= boostMultiplier;
+        }
 
         glm::vec3 fwd = GetForwardDirection();
         glm::vec3 rgt = GetRightDirection();
@@ -61,12 +75,30 @@ void EditorCameraController::OnUpdate(Entity cameraEntity, Timestep ts, const gl
 
         glm::vec3 currentPos = CalculatePosition();
 
-        if (Core::Input::IsKeyDown(KeyCode::W)) currentPos += fwd * speed;
-        if (Core::Input::IsKeyDown(KeyCode::S)) currentPos -= fwd * speed;
-        if (Core::Input::IsKeyDown(KeyCode::D)) currentPos += rgt * speed;
-        if (Core::Input::IsKeyDown(KeyCode::A)) currentPos -= rgt * speed;
-        if (Core::Input::IsKeyDown(KeyCode::E)) currentPos += upg * speed;
-        if (Core::Input::IsKeyDown(KeyCode::Q)) currentPos -= upg * speed;
+        if (Core::Input::IsKeyDown(KeyCode::W))
+        {
+            currentPos += fwd * speed;
+        }
+        if (Core::Input::IsKeyDown(KeyCode::S))
+        {
+            currentPos -= fwd * speed;
+        }
+        if (Core::Input::IsKeyDown(KeyCode::D))
+        {
+            currentPos += rgt * speed;
+        }
+        if (Core::Input::IsKeyDown(KeyCode::A))
+        {
+            currentPos -= rgt * speed;
+        }
+        if (Core::Input::IsKeyDown(KeyCode::E))
+        {
+            currentPos += upg * speed;
+        }
+        if (Core::Input::IsKeyDown(KeyCode::Q))
+        {
+            currentPos -= upg * speed;
+        }
 
         m_FocalPoint = currentPos + (fwd * m_Distance);
         UpdateView();
@@ -74,26 +106,32 @@ void EditorCameraController::OnUpdate(Entity cameraEntity, Timestep ts, const gl
 
     if (Core::Input::IsMouseButtonDown(MouseCode::ButtonMiddle))
     {
-        if (Core::Input::IsKeyDown(KeyCode::LeftShift)) MousePan(delta);
-        else MouseRotate({delta.x * sensitivity, delta.y * sensitivity});
+        if (Core::Input::IsKeyDown(KeyCode::LeftShift))
+        {
+            MousePan(delta);
+        }
+        else
+        {
+            MouseRotate(delta);
+        }
     }
 
     if (Core::Input::IsKeyDown(KeyCode::LeftAlt) && Core::Input::IsMouseButtonDown(MouseCode::ButtonLeft))
     {
-        MouseRotate({delta.x * sensitivity, delta.y * sensitivity});
+        MouseRotate(delta);
     }
 
     float wheel = Core::Input::GetMouseWheelMove();
-    if (wheel != 0) MouseZoom(wheel);
+    if (wheel != 0)
+    {
+        MouseZoom(wheel);
+    }
 
     if (hasEntity)
     {
         auto& tc = cameraEntity.GetComponent<TransformComponent>();
         ComponentUtils::SetRotation(tc, glm::vec3(m_Pitch, m_Yaw, 0.0f));
-        if (!Core::Input::IsMouseButtonDown(MouseCode::ButtonRight))
-        {
-            ComponentUtils::SetTranslation(tc, CalculatePosition());
-        }
+        ComponentUtils::SetTranslation(tc, CalculatePosition());
     }
 }
 
@@ -132,11 +170,26 @@ void EditorCameraController::MouseZoom(float delta)
     UpdateView();
 }
 
-glm::vec3 EditorCameraController::GetUpDirection() const { return glm::rotate(GetOrientation(), glm::vec3(0.0f, 1.0f, 0.0f)); }
-glm::vec3 EditorCameraController::GetRightDirection() const { return glm::rotate(GetOrientation(), glm::vec3(1.0f, 0.0f, 0.0f)); }
-glm::vec3 EditorCameraController::GetForwardDirection() const { return glm::rotate(GetOrientation(), glm::vec3(0.0f, 0.0f, -1.0f)); }
-glm::vec3 EditorCameraController::CalculatePosition() const { return m_FocalPoint - GetForwardDirection() * m_Distance; }
-glm::quat EditorCameraController::GetOrientation() const { return glm::quat(glm::vec3(-m_Pitch, -m_Yaw, 0.0f)); }
+glm::vec3 EditorCameraController::GetUpDirection() const
+{
+    return glm::rotate(GetOrientation(), glm::vec3(0.0f, 1.0f, 0.0f));
+}
+glm::vec3 EditorCameraController::GetRightDirection() const
+{
+    return glm::rotate(GetOrientation(), glm::vec3(1.0f, 0.0f, 0.0f));
+}
+glm::vec3 EditorCameraController::GetForwardDirection() const
+{
+    return glm::rotate(GetOrientation(), glm::vec3(0.0f, 0.0f, -1.0f));
+}
+glm::vec3 EditorCameraController::CalculatePosition() const
+{
+    return m_FocalPoint - GetForwardDirection() * m_Distance;
+}
+glm::quat EditorCameraController::GetOrientation() const
+{
+    return glm::quat(glm::vec3(-m_Pitch, -m_Yaw, 0.0f));
+}
 
 std::pair<float, float> EditorCameraController::PanSpeed() const
 {
@@ -147,15 +200,18 @@ std::pair<float, float> EditorCameraController::PanSpeed() const
     return {xFactor, yFactor};
 }
 
-float EditorCameraController::RotationSpeed() const { return 0.8f; }
+float EditorCameraController::RotationSpeed() const
+{
+    return 1.0f;
+}
 
 float EditorCameraController::ZoomSpeed() const
 {
     float distance = m_Distance * 0.2f;
     distance = std::max(distance, 0.0f);
     float speed = distance * distance;
-    speed = std::min(speed, 100.0f);
-    return speed;
+
+    return std::clamp(speed, 0.1f, 100.0f);
 }
 
 } // namespace Chained

@@ -1,6 +1,6 @@
 #include "viewport_panel.h"
 #include "engine/core/service_locator.h"
-#include "engine/graphics/pipeline/texture_system.h"
+#include "engine/assets/types/texture_asset.h"
 #include "thirdparty/IconsFontAwesome6.h"
 #include "engine/core/input.h"
 #include "engine/core/key_codes.h"
@@ -15,6 +15,7 @@
 #include "engine/graphics/pipeline/scene_renderer.h"
 #include "engine/graphics/ui/ui_renderer.h"
 #include "engine/graphics/pipeline/renderer.h"
+#include "engine/graphics/pipeline/debug_renderer.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/texture_asset.h"
 #include "engine/serialization/prefab_serializer.h"
@@ -396,10 +397,10 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
     m_ViewportFramebuffer->Bind();
     RenderCommand::Clear({0, 0, 0, 255}); 
 
-    // Renderer::Get().ApplyPostProcessing(
-    //     m_HDRFramebuffer->GetColorAttachmentRendererID(),
-    //     m_HDRFramebuffer->GetDepthAttachmentRendererID(), camera,
-    //     nullptr, {});
+    ServiceLocator::Get<Renderer>()->ApplyPostProcessing(
+        m_HDRFramebuffer->GetColorAttachmentRendererID(),
+        m_HDRFramebuffer->GetDepthAttachmentRendererID(), camera,
+        nullptr, {});
 
  
     m_ViewportFramebuffer->Unbind();
@@ -715,8 +716,11 @@ void ViewportPanel::RenderEditorIcons(entt::registry &registry, const SceneSetti
             return;
         }
 
-        auto textureHandle = TextureSystem::Get().LoadTexture(path);
-        cachedId = TextureSystem::Get().GetRendererID(textureHandle);
+        auto texAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(path);
+        if (texAsset && texAsset->GetTexture())
+        {
+            cachedId = texAsset->GetTexture()->GetRendererID();
+        }
     };
 
     tryLoadIcon("engine/resources/icons/camera_icon.png", m_EditorIcons.CameraIconId);
@@ -766,21 +770,21 @@ void ViewportPanel::RenderEditorIcons(entt::registry &registry, const SceneSetti
                 if (light.Type == LightType::Directional)
                 {
                     glm::vec3 dir = glm::normalize(glm::vec3(transform.WorldTransform[2])) * 0.45f;
-                    ServiceLocator::Get<Renderer>()->DrawLine(iconPos, iconPos + dir, lightTint);
+                    DebugRenderer::DrawLine(iconPos, iconPos + dir, lightTint);
                 }
             }
             else if (light.Type == LightType::Directional)
             {
                 glm::vec3 dir = glm::normalize(glm::vec3(transform.WorldTransform[2])) * 0.5f;
-                ServiceLocator::Get<Renderer>()->DrawLine(iconPos, iconPos + dir, lightTint);
+                DebugRenderer::DrawLine(iconPos, iconPos + dir, lightTint);
             }
             else if (light.Type == LightType::Point)
             {
-                ServiceLocator::Get<Renderer>()->DrawSphereWires(transform.WorldTransform, light.Radius * 0.1f, lightTint);
+                DebugRenderer::DrawSphereWires(transform.WorldTransform, light.Radius * 0.1f, lightTint);
             }
             else if (light.Type == LightType::Spot)
             {
-                ServiceLocator::Get<Renderer>()->DrawSphereWires(transform.WorldTransform, light.Radius * 0.05f, lightTint);
+                DebugRenderer::DrawSphereWires(transform.WorldTransform, light.Radius * 0.05f, lightTint);
             }
         }
     }

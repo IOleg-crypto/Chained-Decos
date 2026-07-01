@@ -1,13 +1,14 @@
 #include "engine/assets/types/model_asset.h"
 #include "engine/assets/asset_manager.h"
+#include "engine/assets/types/texture_asset.h"
 #include "engine/core/log.h"
 #include "engine/core/profiler.h"
 #include "engine/core/service_locator.h"
-#include "engine/assets/types/texture_asset.h"
 #include "engine/project/project.h"
 #include <cstring>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/quaternion.hpp>
+
 
 namespace Chained
 {
@@ -18,12 +19,21 @@ std::string ModelAsset::GetAnimationName(int index) const
 
 std::vector<glm::mat4> ModelAsset::GetBoneMatrices(int animationIndex, int frame) const
 {
-    if (animationIndex < 0 || animationIndex >= m_Animations.size()) return {};
+    if (animationIndex < 0 || animationIndex >= (int)m_Animations.size())
+    {
+        return {};
+    }
     const auto& anim = m_Animations[animationIndex];
-    if (frame < 0 || frame >= anim.frameCount) return {};
+    if (frame < 0 || frame >= anim.frameCount)
+    {
+        return {};
+    }
 
     int boneCount = anim.boneCount;
-    if (boneCount == 0) return {};
+    if (boneCount == 0)
+    {
+        return {};
+    }
 
     std::vector<glm::mat4> globalTransforms(boneCount);
     std::vector<glm::mat4> finalMatrices;
@@ -32,15 +42,18 @@ std::vector<glm::mat4> ModelAsset::GetBoneMatrices(int animationIndex, int frame
     for (int boneIndex = 0; boneIndex < boneCount; ++boneIndex)
     {
         const auto& pose = anim.framePoses[frame * boneCount + boneIndex];
-        
-        glm::mat4 local = glm::translate(glm::mat4(1.0f), pose.translation) *
-                          glm::mat4_cast(pose.rotation) *
+
+        glm::mat4 local = glm::translate(glm::mat4(1.0f), pose.translation) * glm::mat4_cast(pose.rotation) *
                           glm::scale(glm::mat4(1.0f), pose.scale);
 
         if (m_NodeParents[boneIndex] == -1)
+        {
             globalTransforms[boneIndex] = local;
+        }
         else
+        {
             globalTransforms[boneIndex] = globalTransforms[m_NodeParents[boneIndex]] * local;
+        }
 
         glm::mat4 offset = (boneIndex < (int)m_OffsetMatrices.size()) ? m_OffsetMatrices[boneIndex] : glm::mat4(1.0f);
         finalMatrices.push_back(globalTransforms[boneIndex] * offset);
@@ -48,7 +61,6 @@ std::vector<glm::mat4> ModelAsset::GetBoneMatrices(int animationIndex, int frame
 
     return finalMatrices;
 }
-
 
 void ModelAsset::OnLoaded()
 {
@@ -65,7 +77,63 @@ void ModelAsset::OnLoaded()
 
     Model newModel;
     newModel.Materials.resize(m_PendingData.materials.empty() ? 1 : m_PendingData.materials.size());
+
+    // Очищаємо старі текстури
     m_EmbeddedTextures.clear();
+
+    // БЕЗПЕКА: Щоб індексація за рядком на кшталт "*3" працювала у векторі,
+    // спочатку створимо і завантажимо ВСІ вбудовані текстури в правильні слоти.
+    if (!m_PendingData.embeddedTextures.empty())
+    {
+        size_t maxTexIndex = 0;
+        for (const auto& [name, data] : m_PendingData.embeddedTextures)
+        {
+            if (name.front() == '*')
+            {
+                try
+                {
+                    size_t idx = std::stoul(name.substr(1));
+                    if (idx > maxTexIndex)
+                    {
+                        maxTexIndex = idx;
+                    }
+                } catch (...)
+                {
+                }
+            }
+        }
+        m_EmbeddedTextures.resize(maxTexIndex + 1);
+
+        // Створюємо OpenGL/Vulkan текстури для кожного вбудованого ресурсу
+        for (const auto& [name, embedded] : m_PendingData.embeddedTextures)
+        {
+            if (name.front() != '*')
+            {
+                continue;
+            }
+
+            try
+            {
+                size_t idx = std::stoul(name.substr(1));
+
+                if (embedded.data.empty() || embedded.width <= 0 || embedded.height <= 0 || embedded.isHDR)
+                {
+                    continue;
+                }
+
+                auto texture =
+                    Texture::Create((uint32_t)embedded.width, (uint32_t)embedded.height, TextureFormat::RGBA8);
+                if (texture)
+                {
+                    texture->SetData((void*)embedded.data.data(), 0);
+                    m_EmbeddedTextures[idx] = texture; // Кладемо строго під своїм індексом Ассімпа!
+                }
+            } catch (...)
+            {
+                CH_CORE_ERROR("ModelAsset: Failed to process embedded texture key: {0}", name);
+            }
+        }
+    }
 
     auto project = Project::GetActive();
 
@@ -75,54 +143,45 @@ void ModelAsset::OnLoaded()
             return;
         }
 
+        // Якщо це вбудована текстура
         if (path.front() == '*')
         {
-            auto embeddedIt = m_PendingData.embeddedTextures.find(path);
-            if (embeddedIt == m_PendingData.embeddedTextures.end())
+            try
             {
-                return;
-            }
-
-            const EmbeddedTextureData& embedded = embeddedIt->second;
-            if (embedded.data.empty() || embedded.width <= 0 || embedded.height <= 0 || embedded.isHDR)
+                size_t texIdx = std::stoul(path.substr(1));
+                if (texIdx < m_EmbeddedTextures.size() && m_EmbeddedTextures[texIdx])
+                {
+                    uint32_t texId = m_EmbeddedTextures[texIdx]->GetRendererID();
+                    switch (mapIndex)
+                    {
+                    case 0:
+                        newModel.Materials[matIdx].AlbedoMap = texId;
+                        break;
+                    case 1:
+                        newModel.Materials[matIdx].EmissiveMap = texId;
+                        break; // Для підтримки обох індексів
+                    case 2:
+                        newModel.Materials[matIdx].NormalMap = texId;
+                        break;
+                    case 3:
+                        newModel.Materials[matIdx].MetallicRoughnessMap = texId;
+                        break;
+                    case 4:
+                        newModel.Materials[matIdx].EmissiveMap = texId;
+                        break;
+                    case 5:
+                        newModel.Materials[matIdx].OcclusionMap = texId;
+                        break;
+                    }
+                }
+            } catch (...)
             {
-                return;
-            }
-
-            auto texture = Texture::Create((uint32_t)embedded.width, (uint32_t)embedded.height, TextureFormat::RGBA8);
-            if (!texture)
-            {
-                return;
-            }
-
-            texture->SetData((void*)embedded.data.data(), 0);
-            m_EmbeddedTextures.push_back(texture);
-
-            uint32_t texId = texture->GetRendererID();
-            switch (mapIndex)
-            {
-            case 0:
-                newModel.Materials[matIdx].AlbedoMap = texId;
-                break;
-            case 1:
-                newModel.Materials[matIdx].EmissiveMap = texId;
-                break;
-            case 2:
-                newModel.Materials[matIdx].NormalMap = texId;
-                break;
-            case 3:
-                newModel.Materials[matIdx].MetallicRoughnessMap = texId;
-                break;
-            case 4:
-                newModel.Materials[matIdx].EmissiveMap = texId;
-                break;
-            case 5:
-                newModel.Materials[matIdx].OcclusionMap = texId;
-                break;
+                CH_CORE_ERROR("ModelAsset: Invalid embedded texture path reference: {0}", path);
             }
             return;
         }
 
+        // Якщо це зовнішня текстура з диску
         if (!project)
         {
             return;
@@ -135,15 +194,11 @@ void ModelAsset::OnLoaded()
         }
 
         uint32_t texId = 0;
-        if (tex->IsReady())
+        if (tex->IsReady() && tex->GetTexture())
         {
             texId = tex->GetTexture()->GetRendererID();
         }
-        else
-        {
-            // Optional: fallback texture ID here
-            texId = 0; 
-        }
+
         switch (mapIndex)
         {
         case 0:
@@ -167,6 +222,7 @@ void ModelAsset::OnLoaded()
         }
     };
 
+    // Заповнюємо дані матеріалів
     for (int materialIndex = 0; materialIndex < (int)newModel.Materials.size(); ++materialIndex)
     {
         if (!m_PendingData.materials.empty())
@@ -180,21 +236,22 @@ void ModelAsset::OnLoaded()
 
             loadTex(materialIndex, rawMaterial.albedoPath, 0);
             newModel.Materials[materialIndex].AlbedoPath = rawMaterial.albedoPath;
-            
+
             loadTex(materialIndex, rawMaterial.normalPath, 2);
             newModel.Materials[materialIndex].NormalPath = rawMaterial.normalPath;
-            
+
             loadTex(materialIndex, rawMaterial.occlusionPath, 5);
             newModel.Materials[materialIndex].OcclusionPath = rawMaterial.occlusionPath;
-            
+
             loadTex(materialIndex, rawMaterial.emissivePath, 4);
             newModel.Materials[materialIndex].EmissivePath = rawMaterial.emissivePath;
-            
+
             loadTex(materialIndex, rawMaterial.metallicRoughnessPath, 3);
             newModel.Materials[materialIndex].MetallicRoughnessPath = rawMaterial.metallicRoughnessPath;
         }
     }
 
+    // Завантажуємо меші на GPU
     for (int meshIndex = 0; meshIndex < (int)m_PendingData.meshes.size(); ++meshIndex)
     {
         const auto& rawMesh = m_PendingData.meshes[meshIndex];
@@ -232,21 +289,23 @@ void ModelAsset::OnLoaded()
 
             if (!rawMesh.joints.empty())
             {
-                // Convert unsigned char joints to int32_t for ShaderDataType::Int4 (GL_INT) compatibility
                 std::vector<int32_t> jointsInt;
                 jointsInt.reserve(rawMesh.joints.size());
-                for (auto jointId : rawMesh.joints) jointsInt.push_back(static_cast<int32_t>(jointId));
-                
-                auto vboJoints = VertexBuffer::Create((float*)jointsInt.data(),
-                                                      (uint32_t)jointsInt.size() * sizeof(int32_t));
+                for (auto jointId : rawMesh.joints)
+                {
+                    jointsInt.push_back(static_cast<int32_t>(jointId));
+                }
+
+                auto vboJoints =
+                    VertexBuffer::Create((float*)jointsInt.data(), (uint32_t)jointsInt.size() * sizeof(int32_t));
                 vboJoints->SetLayout({{ShaderDataType::Int4, "a_JointIDs"}});
                 mesh.VAO->AddVertexBuffer(vboJoints);
             }
 
             if (!rawMesh.weights.empty())
             {
-                auto vboWeights = VertexBuffer::Create(rawMesh.weights.data(),
-                                                       (uint32_t)rawMesh.weights.size() * sizeof(float));
+                auto vboWeights =
+                    VertexBuffer::Create(rawMesh.weights.data(), (uint32_t)rawMesh.weights.size() * sizeof(float));
                 vboWeights->SetLayout({{ShaderDataType::Float4, "a_Weights"}});
                 mesh.VAO->AddVertexBuffer(vboWeights);
             }
@@ -262,14 +321,17 @@ void ModelAsset::OnLoaded()
             for (size_t vertexOffset = 0; vertexOffset < rawMesh.vertices.size(); vertexOffset += 3)
             {
                 mesh.MinBounds =
-                    glm::min(mesh.MinBounds, {rawMesh.vertices[vertexOffset], rawMesh.vertices[vertexOffset + 1], rawMesh.vertices[vertexOffset + 2]});
+                    glm::min(mesh.MinBounds, {rawMesh.vertices[vertexOffset], rawMesh.vertices[vertexOffset + 1],
+                                              rawMesh.vertices[vertexOffset + 2]});
                 mesh.MaxBounds =
-                    glm::max(mesh.MaxBounds, {rawMesh.vertices[vertexOffset], rawMesh.vertices[vertexOffset + 1], rawMesh.vertices[vertexOffset + 2]});
+                    glm::max(mesh.MaxBounds, {rawMesh.vertices[vertexOffset], rawMesh.vertices[vertexOffset + 1],
+                                              rawMesh.vertices[vertexOffset + 2]});
             }
         }
         newModel.Meshes.push_back(mesh);
     }
 
+    // Розрахунок BoundingBox
     BoundingBox totalBox = {{FLT_MAX, FLT_MAX, FLT_MAX}, {-FLT_MAX, -FLT_MAX, -FLT_MAX}};
     bool anyMesh = false;
     for (const auto& inst : m_PendingData.instances)
@@ -278,8 +340,8 @@ void ModelAsset::OnLoaded()
         {
             continue;
         }
-        const Mesh& mesh = newModel.Meshes[inst.meshIndex];
 
+        const Mesh& mesh = newModel.Meshes[inst.meshIndex];
         glm::vec3 corners[8] = {{mesh.MinBounds.x, mesh.MinBounds.y, mesh.MinBounds.z},
                                 {mesh.MaxBounds.x, mesh.MinBounds.y, mesh.MinBounds.z},
                                 {mesh.MinBounds.x, mesh.MaxBounds.y, mesh.MinBounds.z},
@@ -297,6 +359,7 @@ void ModelAsset::OnLoaded()
         }
         anyMesh = true;
     }
+
     if (!anyMesh)
     {
         totalBox = {{0, 0, 0}, {0, 0, 0}};
@@ -330,13 +393,12 @@ uint32_t ModelAsset::GetEmbeddedTextureID(const std::string& path) const
         {
             return m_EmbeddedTextures[index]->GetRendererID();
         }
-    }
-    catch (const std::exception&)
+    } catch (const std::exception&)
     {
-        CH_CORE_ERROR("No found Embedded texture ID");
+        CH_CORE_ERROR("ModelAsset: Embedded texture ID not found for path '{0}'", path);
         return 0;
     }
     return 0;
 }
 
-} // namespace CHEngine
+} // namespace Chained

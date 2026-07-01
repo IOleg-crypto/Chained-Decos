@@ -8,6 +8,13 @@
 
 namespace Chained
 {
+enum class CursorMode
+{
+    Normal = 0,
+    Hidden = 1,
+    Locked = 2
+};
+
 // Window creation parameters and UI/runtime integration flags.
 struct WindowProperties
 {
@@ -52,6 +59,7 @@ public:
     virtual void SetTargetFramesPerSecond(int framesPerSecond) = 0;
     virtual int GetTargetFramesPerSecond() const = 0;
     virtual void SetWindowIcon(const std::string& path) = 0;
+    virtual void SetCursorMode(CursorMode mode) = 0;
 
     virtual void* GetNativeWindow() const = 0;
 

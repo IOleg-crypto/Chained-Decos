@@ -9,7 +9,6 @@
 #include "engine/core/log.h"
 #include "engine/core/service_locator.h"
 
-
 #include "engine/graphics/api/buffer.h"
 #include "engine/graphics/api/framebuffer.h"
 #include "engine/graphics/api/storage_buffer.h"
@@ -43,9 +42,13 @@ void Renderer::Initialize()
     // Initialize Engine static resources
     if (!m_Data->FullscreenQuadVAO)
     {
-        float vertices[] = {-1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f,  -1.0f, 0.0f, 1.0f, 0.0f,
-                            1.0f,  1.0f,  0.0f, 1.0f, 1.0f, -1.0f, 1.0f,  0.0f, 0.0f, 1.0f};
-        uint32_t indices[] = {0, 1, 2, 2, 3, 0};
+        float vertices[] = {
+            -1.0f, -1.0f,  0.0f,  0.0f, 0.0f,
+             1.0f, -1.0f,  0.0f,  1.0f, 0.0f,
+             1.0f,  1.0f,  0.0f,  1.0f, 1.0f,
+            -1.0f,  1.0f,  0.0f,  0.0f, 1.0f
+        };
+        uint32_t indices[] = { 0, 1, 2, 2, 3, 0 };
 
         m_Data->FullscreenQuadVAO = VertexArray::Create();
         auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
@@ -70,8 +73,8 @@ void Renderer::LoadEngineResources()
 
     auto loadShader = [&](const std::string& name, const std::string& path) { shaders.LoadOrGet(name, path); };
 
-    loadShader("Lighting", "resources/shaders/lighting.chshader");
-    loadShader("Unlit", "resources/shaders/unlit.chshader");
+    loadShader("Lighting", "engine/resources/shaders/lighting.chshader");
+    loadShader("Unlit", "engine/resources/shaders/unlit.chshader");
 
     CH_CORE_INFO("[Renderer] LoadEngineResources done. {} shader(s) loaded.", shaders.GetNames().size());
 }
@@ -92,6 +95,12 @@ void Renderer::Shutdown()
     {
         m_Data->Lighting.LightSSBO.reset();
     }
+
+    // Explicitly reset remaining GPU assets to avoid context termination crashes
+    m_Data->FullscreenQuadVAO.reset();
+    m_Data->CameraUBO.reset();
+    m_Data->BillboardVAO.reset();
+    m_Data->SpriteVAO.reset();
 
     // Clear caches
     m_Data->InstancedVAOCache.clear();
@@ -128,7 +137,7 @@ void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
         auto shader = lightingShaderAsset->GetShader();
         shader->Bind();
 
-        float time = m_Data->Time;
+        float time = (float)m_Data->Time.GetSeconds();
         float diagMode = m_Data->DiagnosticMode;
         float exposure = m_Data->Lighting.CurrentLighting.Exposure;
         float ambient = m_Data->Lighting.CurrentLighting.Ambient;
@@ -333,181 +342,6 @@ void Renderer::DrawMeshInstanced(const Mesh& mesh, const Material& material, con
     instancedVAO->Unbind();
 }
 
-void Renderer::DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color)
-{
-    auto debugShader = m_Data->Shaders->LoadOrGet("ColliderDebug", "resources/shaders/collider_debug.chshader");
-    if (!debugShader || !debugShader->GetShader())
-    {
-        return;
-    }
-
-    auto shader = debugShader->GetShader();
-    shader->Bind();
-
-    glm::mat4 vp = m_Data->CurrentProj * m_Data->CurrentView;
-    shader->SetMatrix("u_ViewProj", vp);
-    shader->SetMatrix("u_Transform", glm::mat4(1.0f));
-    shader->SetVec4("u_Color", color);
-
-    // Use a persistent buffer with abstraction
-    float vertices[] = {start.x, start.y, start.z, end.x, end.y, end.z};
-
-    if (!m_Data->LineVBO)
-    {
-        m_Data->LineVBO = VertexBuffer::Create(sizeof(vertices));
-        m_Data->LineVBO->SetLayout({{ShaderDataType::Float3, "vertexPosition"}});
-    }
-    m_Data->LineVBO->SetData(vertices, sizeof(vertices));
-
-    if (!m_Data->LineVAO)
-    {
-        m_Data->LineVAO = VertexArray::Create();
-        m_Data->LineVAO->AddVertexBuffer(m_Data->LineVBO);
-    }
-
-    m_Data->LineVAO->Bind();
-    RenderCommand::DrawLines(m_Data->LineVAO, 2);
-    m_Data->LineVAO->Unbind();
-}
-
-void Renderer::DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& transform, bool useWireframe)
-{
-    auto debugShader = m_Data->Shaders->LoadOrGet("ColliderDebug", "resources/shaders/collider_debug.chshader");
-    if (!debugShader || !debugShader->GetShader())
-    {
-        return;
-    }
-
-    auto shader = debugShader->GetShader();
-    shader->Bind();
-
-    // Set matrices and color with correct uniform names for ColliderDebug
-    glm::mat4 vp = m_Data->CurrentProj * m_Data->CurrentView;
-    shader->SetMatrix("u_ViewProj", vp);
-    shader->SetMatrix("u_Transform", transform);
-
-    // Apply transparency for solid mode
-    glm::vec4 finalColor = color;
-    if (!useWireframe)
-    {
-        finalColor.a *= 0.35f; // More subtle transparency
-    }
-    shader->SetVec4("u_Color", finalColor);
-
-    if (useWireframe)
-    {
-        RenderCommand::SetPolygonMode(RendererAPI::PolygonMode::Line);
-    }
-    else
-    {
-        RenderCommand::SetPolygonMode(RendererAPI::PolygonMode::Fill);
-    }
-
-    // Render mesh geometry
-    if (mesh.VAO)
-    {
-        RenderCommand::SetBlendMode(true);
-        RenderCommand::SetBlendFunc(RendererAPI::BlendFactor::SrcAlpha, RendererAPI::BlendFactor::OneMinusSrcAlpha);
-
-        // Depth Test is now disabled globally for debug overlays in SceneRenderer::RenderDebug.
-        // We do not enable it here.
-
-        // DrawMesh helper now handles Binding inside DrawIndexed/DrawArrays
-        mesh.VAO->Bind();
-        if (mesh.TriangleCount > 0)
-        {
-            RenderCommand::DrawIndexed(mesh.VAO, mesh.TriangleCount * 3);
-        }
-        else if (mesh.VAO->GetIndexBuffer() != nullptr)
-        {
-            RenderCommand::DrawIndexedLines(mesh.VAO, mesh.VAO->GetIndexBuffer()->GetCount());
-        }
-        else
-        {
-            RenderCommand::DrawLines(mesh.VAO, mesh.VertexCount);
-        }
-        mesh.VAO->Unbind();
-
-        RenderCommand::SetBlendMode(false);
-    }
-
-    RenderCommand::SetPolygonMode(RendererAPI::PolygonMode::Fill);
-}
-
-void Renderer::DrawGrid(int slices, float spacing)
-{
-    // Draw grid manually using DrawLine
-    float halfSize = (slices * spacing) / 2.0f;
-    glm::vec4 color = {0.5f, 0.5f, 0.5f, 1.0f};
-
-    for (int i = 0; i <= slices; i++)
-    {
-        float pos = -halfSize + (i * spacing);
-        DrawLine({pos, 0, -halfSize}, {pos, 0, halfSize}, color);
-        DrawLine({-halfSize, 0, pos}, {halfSize, 0, pos}, color);
-    }
-}
-
-void Renderer::DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& color)
-{
-    auto& shaders = GetShaderLibrary();
-    auto shaderAsset = shaders.LoadOrGet("Grid", "resources/shaders/grid.chshader");
-    if (!shaderAsset || !shaderAsset->GetShader())
-    {
-        return;
-    }
-
-    shaderAsset->GetShader()->Bind();
-
-    glm::mat4 mvp = m_Data->CurrentProj * m_Data->CurrentView;
-    shaderAsset->GetShader()->SetMatrix("u_ViewProjection", mvp);
-
-    // Position the plane slightly below Y=0 to prevent Z-fighting
-    glm::vec3 planePos = {camera.Position.x, -0.005f, camera.Position.z};
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), planePos);
-    shaderAsset->GetShader()->SetMatrix("matModel", model);
-
-    shaderAsset->GetShader()->SetVec3("cameraPos", camera.Position);
-
-    glm::vec4 col = color;
-    shaderAsset->GetShader()->SetVec4("gridColor", col);
-    shaderAsset->GetShader()->SetFloat("gridSize", spacing);
-    shaderAsset->GetShader()->SetFloat("uTime", m_Data->Time);
-
-    RenderCommand::SetBlendMode(true);
-    RenderCommand::SetBlendFunc(RendererAPI::BlendFactor::SrcAlpha, RendererAPI::BlendFactor::OneMinusSrcAlpha);
-
-    // Disable depth test for the infinite grid or it will be occluded by the floor
-    RenderCommand::DisableDepthTest();
-
-    // Use shared mesh from GeometryGenerator
-    if (!m_Data->GridPlaneVAO)
-    {
-        float vertices[] = {-0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.5f,  -0.5f, 0.0f, 1.0f, 0.0f,
-                            0.5f,  0.5f,  0.0f, 1.0f, 1.0f, -0.5f, 0.5f,  0.0f, 0.0f, 1.0f};
-        uint32_t indices[] = {0, 1, 2, 2, 3, 0};
-
-        auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
-        vbo->SetLayout({{ShaderDataType::Float3, "a_Position"}, {ShaderDataType::Float2, "a_TexCoord"}});
-
-        m_Data->GridPlaneVAO = VertexArray::Create();
-        m_Data->GridPlaneVAO->AddVertexBuffer(vbo);
-        auto ibo = IndexBuffer::Create(indices, 6);
-        m_Data->GridPlaneVAO->SetIndexBuffer(ibo);
-
-        // Scale the grid plane vbo if needed, or just use a large transform.
-        // The original used GenerateQuad(15000.0f), so we scale here.
-    }
-
-    glm::mat4 scale = glm::scale(model, glm::vec3(15000.0f, 1.0f, 15000.0f));
-    shaderAsset->GetShader()->SetMatrix("matModel", scale);
-
-    m_Data->GridPlaneVAO->Bind();
-    RenderCommand::DrawIndexed(m_Data->GridPlaneVAO, 6);
-    m_Data->GridPlaneVAO->Unbind();
-    RenderCommand::EnableDepthTest();
-}
-
 void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float exposure, float brightness,
                           float contrast, const Camera3D& camera, bool flipped)
 {
@@ -520,10 +354,10 @@ void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float 
 
     auto shaderAsset =
         (skyboxMode == 2)
-            ? m_Data->Shaders->LoadOrGet("SkyboxCubemap", "resources/shaders/skybox_cubemap.chshader")
+            ? m_Data->Shaders->LoadOrGet("SkyboxCubemap", "engine/resources/shaders/skybox_cubemap.chshader")
             : (skyboxMode == 1
-                   ? m_Data->Shaders->LoadOrGet("SkyboxCross", "resources/shaders/skybox_cross.chshader")
-                   : m_Data->Shaders->LoadOrGet("Skybox", "resources/shaders/skybox.chshader"));
+                   ? m_Data->Shaders->LoadOrGet("SkyboxCross", "engine/resources/shaders/skybox_cross.chshader")
+                   : m_Data->Shaders->LoadOrGet("Skybox", "engine/resources/shaders/skybox.chshader"));
     if (!shaderAsset || !shaderAsset->GetShader())
     {
         return;
@@ -577,7 +411,7 @@ void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float 
             mesh.VAO->Unbind();
         }
     }
-    if (skyboxMode == 0)
+    else if (skyboxMode == 0)
     {
         RenderCommand::SetTexture(0, textureId);
         shaderAsset->GetShader()->SetInt("u_Panorama", 0);
@@ -600,7 +434,7 @@ void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float 
 void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const glm::vec3& position, float size,
                              const glm::vec4& tint)
 {
-    auto unlitShaderAsset = m_Data->Shaders->LoadOrGet("Unlit", "resources/shaders/unlit.chshader");
+    auto unlitShaderAsset = m_Data->Shaders->LoadOrGet("Unlit", "engine/resources/shaders/unlit.chshader");
     if (!unlitShaderAsset || !unlitShaderAsset->GetShader() || textureId == 0)
     {
         return;
@@ -648,14 +482,13 @@ void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const g
     RenderCommand::SetBlendFunc(RendererAPI::BlendFactor::SrcAlpha, RendererAPI::BlendFactor::OneMinusSrcAlpha);
     RenderCommand::SetCullMode(RendererAPI::CullMode::None);
 
-    RenderCommand::SetBlendFunc(RendererAPI::BlendFactor::SrcAlpha, RendererAPI::BlendFactor::OneMinusSrcAlpha);
-    RenderCommand::SetCullMode(RendererAPI::CullMode::None);
-
     if (!m_Data->BillboardVAO)
     {
         float vertices[] = {
-            -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.5f,  -0.5f, 0.0f, 1.0f, 0.0f,
-            0.5f,  0.5f,  0.0f, 1.0f, 1.0f, -0.5f, 0.5f,  0.0f, 0.0f, 1.0f,
+            -0.5f, -0.5f, 0.0f,  0.0f, 0.0f,
+             0.5f, -0.5f, 0.0f,  1.0f, 0.0f,
+             0.5f,  0.5f, 0.0f,  1.0f, 1.0f,
+            -0.5f,  0.5f, 0.0f,  0.0f, 1.0f,
         };
         uint32_t indices[] = {0, 1, 2, 2, 3, 0};
 
@@ -676,52 +509,21 @@ void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const g
     RenderCommand::SetBlendMode(blendWasEnabled);
 }
 
-void Renderer::DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, const glm::vec4& color,
-                             bool useWireframe)
-{
-    glm::mat4 model = transform * glm::scale(glm::mat4(1.0f), size);
-    if (useWireframe && m_Data->Resources.WireCubeModel && !m_Data->Resources.WireCubeModel->Meshes.empty())
-    {
-        DrawMeshWire(m_Data->Resources.WireCubeModel->Meshes[0], color, model, true);
-    }
-    else if (m_Data->Resources.UnitCubeModel && !m_Data->Resources.UnitCubeModel->Meshes.empty())
-    {
-        DrawMeshWire(m_Data->Resources.UnitCubeModel->Meshes[0], color, model, useWireframe);
-    }
-}
-
-void Renderer::DrawCapsuleWires(const glm::mat4& transform, float radius, float height, const glm::vec4& color,
-                                bool useWireframe)
-{
-    glm::mat4 model = transform * glm::scale(glm::mat4(1.0f), glm::vec3(radius, height, radius));
-    if (m_Data->Resources.UnitCapsuleModel)
-    {
-        for (auto& mesh : m_Data->Resources.UnitCapsuleModel->Meshes)
-        {
-            DrawMeshWire(mesh, color, model, useWireframe);
-        }
-    }
-}
-
-void Renderer::DrawSphereWires(const glm::mat4& transform, float radius, const glm::vec4& color, bool useWireframe)
-{
-    glm::mat4 model = transform * glm::scale(glm::mat4(1.0f), glm::vec3(radius));
-    if (m_Data->Resources.UnitSphereModel)
-    {
-        for (auto& mesh : m_Data->Resources.UnitSphereModel->Meshes)
-        {
-            DrawMeshWire(mesh, color, model, useWireframe);
-        }
-    }
-}
-
 void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextureId, const Camera3D& camera,
                                    ShaderAsset* overrideShader, const std::vector<ShaderUniform>& uniforms)
 {
-    auto shaderAsset = overrideShader;
-    if (!shaderAsset)
+    std::shared_ptr<ShaderAsset> shaderAsset = nullptr;
+    
+    if (overrideShader)
     {
-        shaderAsset = m_Data->Shaders->LoadOrGet("PostProcess", "resources/shaders/post_process.chshader").get();
+        // Safe and localized asset resolution only when an override occurs
+        auto handle = ServiceLocator::Get<AssetManager>()->ResolveToHandle(overrideShader->GetPath());
+        shaderAsset = ServiceLocator::Get<AssetManager>()->Get<ShaderAsset>(handle);
+    }
+    else
+    {
+        // Cached lookup preventing frame bottlenecks
+        shaderAsset = m_Data->Shaders->LoadOrGet("PostProcess", "engine/resources/shaders/post_process.chshader");
     }
 
     if (shaderAsset && shaderAsset->GetShader())
@@ -750,15 +552,15 @@ void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextu
         shader->SetMatrix("matInverseViewProj", invViewProj);
         shader->SetVec3("viewPos", camera.Position);
 
-        shader->SetFloat("uTimeF", (float)m_Data->Time.GetSeconds());
-        shader->SetFloat("uTime", (float)m_Data->Time.GetSeconds()); // system uniform
-        shader->SetFloat("time", (float)m_Data->Time.GetSeconds());  // alias for custom shaders
+        float currentSeconds = (float)m_Data->Time.GetSeconds();
+        shader->SetFloat("uTimeF", currentSeconds);
+        shader->SetFloat("uTime", currentSeconds); 
+        shader->SetFloat("time", currentSeconds);  
         shader->SetFloat("uExposure", m_Data->Lighting.CurrentLighting.Exposure);
         shader->SetFloat("uGamma", m_Data->Lighting.CurrentLighting.Gamma);
 
-        auto handle =
-            ServiceLocator::Get<AssetManager>()->ResolveToHandle(shaderAsset->GetPath());
-        ApplyFogUniforms(ServiceLocator::Get<AssetManager>()->Get<ShaderAsset>(handle));
+        // Perfectly resolved matching types
+        ApplyFogUniforms(shaderAsset);
 
         // 2. Set Custom Uniforms (if any)
         for (const auto& u : uniforms)
@@ -900,7 +702,6 @@ void Renderer::CleanupSkybox()
 {
     m_Data->Skybox.SkyboxCubeModel.reset();
     m_Data->Skybox.SkyboxSphereModel.reset();
-
     m_Data->Skybox.CachedCubemap.reset();
 }
 
@@ -919,7 +720,7 @@ void Renderer::DrawSprite(uint32_t textureId, const glm::mat4& transform, const 
         return;
     }
 
-    auto shaderAsset = m_Data->Shaders->LoadOrGet("Sprite", "resources/shaders/sprite.chshader");
+    auto shaderAsset = m_Data->Shaders->LoadOrGet("Sprite", "engine/resources/shaders/sprite.chshader");
     if (!shaderAsset || !shaderAsset->GetShader())
     {
         return;
@@ -943,8 +744,10 @@ void Renderer::DrawSprite(uint32_t textureId, const glm::mat4& transform, const 
     if (!m_Data->SpriteVAO)
     {
         float vertices[] = {
-            -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.5f,  -0.5f, 0.0f, 1.0f, 0.0f,
-            0.5f,  0.5f,  0.0f, 1.0f, 1.0f, -0.5f, 0.5f,  0.0f, 0.0f, 1.0f,
+            -0.5f, -0.5f, 0.0f,  0.0f, 0.0f,
+             0.5f, -0.5f, 0.0f,  1.0f, 0.0f,
+             0.5f,  0.5f, 0.0f,  1.0f, 1.0f,
+            -0.5f,  0.5f, 0.0f,  0.0f, 1.0f,
         };
         uint32_t indices[] = {0, 1, 2, 2, 3, 0};
 
