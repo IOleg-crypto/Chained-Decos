@@ -1,6 +1,6 @@
 #version 430 core
 
-// Input vertex attributes with explicit locations matching engine's upload order
+// Вхідні атрибути вершин (відповідають порядку завантаження в рушії)
 layout(location = 0) in vec3 a_Position;
 layout(location = 1) in vec2 a_TexCoord;
 layout(location = 2) in vec3 a_Normal;
@@ -8,7 +8,6 @@ layout(location = 3) in ivec4 a_JointIDs;
 layout(location = 4) in vec4 a_Weights;
 layout(location = 5) in vec3 a_Tangent;
 
-// Input uniform values
 #include "include/camera.glsl"
 
 uniform mat4 matModel;
@@ -16,7 +15,7 @@ uniform mat4 matNormal;
 uniform mat4 boneMatrices[128];
 uniform int useSkinning;
 
-// Output vertex attributes (to fragment shader)
+// Вихідні атрибути для фрагментного шейдера
 out vec3 fragPosition;
 out vec2 fragTexCoord;
 out vec4 fragColor;
@@ -29,6 +28,7 @@ void main()
     vec3 vNormal = a_Normal;
     vec3 vTangent = a_Tangent;
 
+    // Розрахунок скінінгу (скелетної анімації)
     if (useSkinning == 1)
     {
         mat4 skinMat = 
@@ -42,21 +42,29 @@ void main()
         vTangent = (skinMat * vec4(vTangent, 0.0)).xyz;
     }
 
-    // Send vertex attributes to fragment shader
+    // Трансформація позиції у світовий простір
     fragPosition = vec3(matModel * vec4(vPos, 1.0));
     fragTexCoord = a_TexCoord;
-    fragColor = vec4(1.0, 1.0, 1.0, 1.0); // Static color as fallback
-
-    vec3 N = normalize(vec3(matNormal * vec4(vNormal, 0.0)));
-    vec3 T = normalize(vec3(matNormal * vec4(vTangent, 0.0)));
     
-    // Fallback if tangent is zero/invalid (Avoids NaN in TBN)
-    if (length(vTangent) < 0.01) {
-        vec3 up = abs(N.z) < 0.999 ? vec3(0, 0, 1) : vec3(1, 0, 0);
+    // Скидаємо в 0, оскільки вхідного атрибута кольору вершин немає
+    fragColor = vec4(0.0, 0.0, 0.0, 0.0); 
+
+    // Безпечний розрахунок нормалі
+    vec3 N = normalize(vec3(matNormal * vec4(vNormal, 0.0)));
+    vec3 T;
+    
+    // ФІКС NaN: Спочатку перевіряємо довжину тангенса, а потім нормалізуємо
+    if (length(vTangent) < 0.01) 
+    {
+        vec3 up = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
         T = normalize(cross(up, N));
+    } 
+    else 
+    {
+        T = normalize(vec3(matNormal * vec4(vTangent, 0.0)));
     }
 
-    // Re-orthogonalize T with respect to N
+    // Ортогоналізація за методом Грама-Шмідта
     T = normalize(T - dot(T, N) * N);
     vec3 B = cross(N, T);
     

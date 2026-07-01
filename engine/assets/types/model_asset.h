@@ -52,6 +52,11 @@ public:
         return m_RawMeshes;
     }
 
+    const std::vector<Material>& GetMaterials() const
+    {
+        return m_Materials;
+    }
+
     // Helpers
     int GetAnimationCount() const
     {
@@ -106,10 +111,7 @@ public:
     std::string GetAnimationName(int index) const;
     std::vector<glm::mat4> GetBoneMatrices(int animationIndex, int frame) const;
 
-    const std::vector<Material>& GetMaterials() const
-    {
-        return m_Materials;
-    }
+
 
     // Get renderer ID for embedded texture (e.g., "*0", "*1").
     // Returns 0 if the texture is not found or path is not an embedded texture marker.

@@ -28,51 +28,32 @@ public:
     // true if the gizmo is being used (captured mouse)
     bool RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 viewportSize, const Chained::Camera3D& camera);
 
-    bool IsHovered() const
-    {
-        return ImGuizmo::IsOver();
-    }
-    bool IsDragging() const
-    {
-        return ImGuizmo::IsUsing();
-    }
+    bool IsHovered() const { return ImGuizmo::IsOver(); }
+    bool IsDragging() const { return ImGuizmo::IsUsing(); }
 
     // Snapping
-    void SetSnapping(bool enabled)
-    {
-        m_SnappingEnabled = enabled;
-    }
-    void SetGridSize(float size)
-    {
-        m_SnapValues[0] = m_SnapValues[1] = m_SnapValues[2] = size;
-    }
-    void SetRotationStep(float step)
-    {
-        m_SnapValues[0] = m_SnapValues[1] = m_SnapValues[2] = step;
-    }
+    void SetSnapping(bool enabled) { m_SnappingEnabled = enabled; }
+    bool IsSnappingEnabled() const { return m_SnappingEnabled; }
 
-    bool IsSnappingEnabled() const
-    {
-        return m_SnappingEnabled;
-    }
-    float GetGridSize() const
-    {
-        return m_SnapValues[0];
-    }
+    void SetGridSize(float size)      { m_TranslationSnap = size; }
+    void SetRotationStep(float step)  { m_RotationSnap = step; }
+    void SetScaleStep(float step)     { m_ScaleSnap = step; }
 
-    void SetLocalSpace(bool local)
-    {
-        m_IsLocalSpace = local;
-    }
-    bool IsLocalSpace() const
-    {
-        return m_IsLocalSpace;
-    }
+    float GetGridSize() const     { return m_TranslationSnap; }
+    float GetRotationStep() const { return m_RotationSnap; }
+    float GetScaleStep() const    { return m_ScaleSnap; }
+
+    void SetLocalSpace(bool local) { m_IsLocalSpace = local; }
+    bool IsLocalSpace() const      { return m_IsLocalSpace; }
 
 private:
-    // Snapping
     bool m_SnappingEnabled = false;
-    float m_SnapValues[3] = {1.0f, 1.0f, 1.0f};
+    
+    // Фікс: Роздільне зберігання кроків прив'язки для різних операцій
+    float m_TranslationSnap = 1.0f;
+    float m_RotationSnap = 45.0f;
+    float m_ScaleSnap = 0.1f;
+    
     bool m_IsLocalSpace = false;
 
     // Undo state

@@ -15,8 +15,8 @@ Lighting:
 Skybox:
   TexturePath: skyboxes/qwantani_dusk_2_puresky_8k.hdr
   Mode: 0
-  Exposure: 1.00999999
-  Brightness: -0.699999988
+  Exposure: 0.939999998
+  Brightness: -0.49000001
   Contrast: 0.449999988
 Fog:
   Enabled: false
@@ -35,7 +35,9 @@ DebugSettings:
   DrawSpawnZones: true
   CollisionWireframeMode: 0
 Entities:
-  - Entity: 9393782307517162306
+  - Entity: 2097429790798434379
+    TagComponent:
+      Tag: island_minigames
     ColliderComponent:
       Type: 3
       Size: [1.56521797, 1.00000179, 1.90062201]
@@ -48,28 +50,28 @@ Entities:
       Enabled: 1
       AutoCalculate: 1
       ModelPath: models/minigames/hub_for_minigames_server.glb
+    ModelComponent:
+      ModelPath: models/minigames/hub_for_minigames_server.glb
     TransformComponent:
       Translation: [-118.395287, 12.3910465, 826.530884]
       Rotation: [0, -0, 0]
       Scale: [673.435242, 411.5466, 440.887085]
     IDComponent:
       {}
+  - Entity: 12983271005568837707
     TagComponent:
-      Tag: island_minigames
+      Tag: buildings_6_pack
     ModelComponent:
-      ModelPath: models/minigames/hub_for_minigames_server.glb
-  - Entity: 6516797172325941388
+      ModelPath: models_backup/building/scene.gltf
     TransformComponent:
       Translation: [23.264637, -27.1361389, -506.157532]
       Rotation: [0, -0, 0]
       Scale: [342.240997, 325.262634, 245.059052]
     IDComponent:
       {}
+  - Entity: 9352125810392015378
     TagComponent:
-      Tag: buildings_6_pack
-    ModelComponent:
-      ModelPath: models_backup/building/scene.gltf
-  - Entity: 6064633921243342758
+      Tag: Entity_copy
     ColliderComponent:
       Type: 0
       Size: [34.1756821, 8.59185219, 22.6057091]
@@ -82,17 +84,17 @@ Entities:
       Enabled: 1
       AutoCalculate: 0
       ModelPath: models/stairs.glb
+    ModelComponent:
+      ModelPath: models/stairs.glb
     TransformComponent:
       Translation: [46.4636726, -2.98017597, 14.336463]
       Rotation: [-3.14153385, -0.624083161, -3.1415863]
       Scale: [2.29999304, 2.70000005, 0.979451716]
     IDComponent:
       {}
+  - Entity: 1268284819123322215
     TagComponent:
-      Tag: Entity_copy
-    ModelComponent:
-      ModelPath: models/stairs.glb
-  - Entity: 1295158128682646344
+      Tag: rail#3d_copy
     ColliderComponent:
       Type: 0
       Size: [2.48870611, 13.512085, 4.18936396]
@@ -105,17 +107,17 @@ Entities:
       Enabled: 1
       AutoCalculate: 0
       ModelPath: models/toy_train/train_vagon.glb
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
     TransformComponent:
       Translation: [89.7119217, 34.3363914, -15.4183016]
       Rotation: [-1.96055889, -0.999783337, -2.69811749]
       Scale: [2.81780839, 1.8383373, 2.52324486]
     IDComponent:
       {}
+  - Entity: 14748494643542916616
     TagComponent:
       Tag: rail#3d_copy
-    ModelComponent:
-      ModelPath: models/toy_train/train_vagon.glb
-  - Entity: 217210127212770073
     ColliderComponent:
       Type: 0
       Size: [2.48870611, 4.18936205, 13.512085]
@@ -128,17 +130,17 @@ Entities:
       Enabled: 1
       AutoCalculate: 0
       ModelPath: ""
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
     TransformComponent:
       Translation: [160.559677, 34.3363914, -15.4183016]
       Rotation: [-2.88122821, -1.07542729, -1.95391703]
       Scale: [2.81780005, 1.83833647, 2.52321053]
     IDComponent:
       {}
+  - Entity: 17913152295091900668
     TagComponent:
       Tag: rail#3d_copy
-    ModelComponent:
-      ModelPath: models/toy_train/train_vagon.glb
-  - Entity: 11053255314081653602
     ColliderComponent:
       Type: 0
       Size: [2.48870611, 4.18936205, 13.512085]
@@ -151,17 +153,17 @@ Entities:
       Enabled: 1
       AutoCalculate: 0
       ModelPath: ""
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
     TransformComponent:
       Translation: [195.275909, 34.3363914, -15.4183016]
       Rotation: [-2.1531477, -1.10677683, -2.63240695]
       Scale: [2.81779408, 1.83833039, 2.52320075]
     IDComponent:
       {}
+  - Entity: 13708768427021353393
     TagComponent:
       Tag: rail#3d_copy
-    ModelComponent:
-      ModelPath: models/toy_train/train_vagon.glb
-  - Entity: 2562263663181998965
     ColliderComponent:
       Type: 0
       Size: [2.48870611, 4.18936205, 13.512085]
@@ -174,17 +176,17 @@ Entities:
       Enabled: 1
       AutoCalculate: 0
       ModelPath: ""
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
     TransformComponent:
       Translation: [232.729095, 34.3363914, -15.4183016]
       Rotation: [3.1402328, -1.54398417, -1.52254927]
       Scale: [2.81773686, 1.83830583, 2.52309632]
     IDComponent:
       {}
+  - Entity: 7315905339482664008
     TagComponent:
       Tag: rail#3d_copy
-    ModelComponent:
-      ModelPath: models/toy_train/train_vagon.glb
-  - Entity: 5967097730784712040
     ColliderComponent:
       Type: 0
       Size: [2.48870611, 4.18936205, 13.512085]
@@ -197,17 +199,17 @@ Entities:
       Enabled: 1
       AutoCalculate: 0
       ModelPath: ""
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
     TransformComponent:
       Translation: [269.359863, 34.3363914, -15.4183016]
       Rotation: [3.14023447, -1.543975, -1.55569565]
       Scale: [2.81769967, 1.83829546, 2.52312875]
     IDComponent:
       {}
+  - Entity: 16887213080574808249
     TagComponent:
       Tag: rail#3d_copy
-    ModelComponent:
-      ModelPath: models/toy_train/train_vagon.glb
-  - Entity: 7772933172421174645
     ColliderComponent:
       Type: 0
       Size: [2.48870611, 4.18936205, 13.512085]
@@ -220,17 +222,17 @@ Entities:
       Enabled: 1
       AutoCalculate: 0
       ModelPath: ""
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
     TransformComponent:
       Translation: [304.469788, 34.3363914, -15.4183016]
       Rotation: [3.14017534, -1.54393637, -1.68613875]
       Scale: [2.81769824, 1.83826065, 2.52310705]
     IDComponent:
       {}
+  - Entity: 11171042996421796708
     TagComponent:
       Tag: rail#3d_copy
-    ModelComponent:
-      ModelPath: models/toy_train/train_vagon.glb
-  - Entity: 8791625222606561716
     ColliderComponent:
       Type: 0
       Size: [2.48870611, 4.18936205, 13.512085]
@@ -243,17 +245,17 @@ Entities:
       Enabled: 1
       AutoCalculate: 0
       ModelPath: ""
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
     TransformComponent:
       Translation: [340.353027, 34.3363914, -15.4183016]
       Rotation: [3.14018416, -1.54396355, -1.52885783]
       Scale: [2.81768346, 1.83830261, 2.52313828]
     IDComponent:
       {}
+  - Entity: 12437031094572341383
     TagComponent:
       Tag: rail#3d_copy
-    ModelComponent:
-      ModelPath: models/toy_train/train_vagon.glb
-  - Entity: 8982711742810159238
     ColliderComponent:
       Type: 0
       Size: [2.48870611, 4.18936205, 13.512085]
@@ -266,17 +268,17 @@ Entities:
       Enabled: 1
       AutoCalculate: 0
       ModelPath: ""
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
     TransformComponent:
       Translation: [369.179901, 34.9479713, -15.4183016]
       Rotation: [3.14019299, -1.54396594, -1.55295646]
       Scale: [2.81770563, 1.83824468, 2.52313542]
     IDComponent:
       {}
+  - Entity: 11156387348726069444
     TagComponent:
-      Tag: rail#3d_copy
-    ModelComponent:
-      ModelPath: models/toy_train/train_vagon.glb
-  - Entity: 1283719283719285
+      Tag: Arena
     ColliderComponent:
       Type: 0
       Size: [86.6819458, 89.0095215, 94.478302]
@@ -289,30 +291,17 @@ Entities:
       Enabled: 1
       AutoCalculate: 0
       ModelPath: models/arena.glb
+    ModelComponent:
+      ModelPath: models/arena.glb
     TransformComponent:
       Translation: [-1.52065945, -4.32776833, -35.4009895]
       Rotation: [-0.0117500396, 0.038041085, -0.00385748385]
       Scale: [0.99993974, 0.999890089, 0.999929249]
     IDComponent:
       {}
+  - Entity: 17285604839321065668
     TagComponent:
-      Tag: Arena
-    ModelComponent:
-      ModelPath: models/arena.glb
-  - Entity: 10653066213482940164
-    AnimationComponent:
-      AnimationPath: ""
-      CurrentAnimationIndex: 1
-      TargetAnimationIndex: 2
-      FrameTimeCounter: 0.0256224722
-      BlendTimer: 0
-      BlendDuration: 0.25
-      CurrentFrame: 175
-      TargetFrame: 0
-      IsLooping: 1
-      IsPlaying: 1
-      Blending: 0
-      PlayOnStart: 1
+      Tag: ghost
     ColliderComponent:
       Type: 0
       Size: [1.71000004, 2.50999999, 0.5]
@@ -325,23 +314,28 @@ Entities:
       Enabled: 1
       AutoCalculate: 0
       ModelPath: ""
+    ModelComponent:
+      ModelPath: models_backup/mystery_skulls_ghost_lewis/scene.gltf
     TransformComponent:
       Translation: [60.8389587, 103.205635, 4.72679806]
       Rotation: [0.0431710109, -0.0900942832, 0.0843906254]
       Scale: [26.4252377, 28.1725788, 26.7647877]
     IDComponent:
       {}
-    TagComponent:
-      Tag: ghost
-    ModelComponent:
-      ModelPath: models_backup/mystery_skulls_ghost_lewis/scene.gltf
-  - Entity: 5150207293164281694
-    TransformComponent:
-      Translation: [-8.65654373, -3.53163362, -3.54849458]
-      Rotation: [38092.1719, 4258.81787, 0]
-      Scale: [1, 1, 1]
-    IDComponent:
-      {}
+    AnimationComponent:
+      AnimationPath: ""
+      CurrentAnimationIndex: 1
+      TargetAnimationIndex: 2
+      FrameTimeCounter: 0.0260682665
+      BlendTimer: 0
+      BlendDuration: 0.25
+      CurrentFrame: 3711
+      TargetFrame: 0
+      IsLooping: 1
+      IsPlaying: 1
+      Blending: 0
+      PlayOnStart: 1
+  - Entity: 15993099811554731267
     TagComponent:
       Tag: SceneCamera
     CameraComponent:
@@ -353,7 +347,15 @@ Entities:
       OrbitYaw: 0
       OrbitPitch: 20
       LookSensitivity: 0.899999976
-  - Entity: 1326311650816898569
+    TransformComponent:
+      Translation: [244.07959, 91.1956558, 66.2207947]
+      Rotation: [38091.8633, 4258.65674, 0]
+      Scale: [1, 1, 1]
+    IDComponent:
+      {}
+  - Entity: 12008845289981672545
+    TagComponent:
+      Tag: Player
     ColliderComponent:
       Type: 2
       Size: [11.8782139, 9.71583557, 23.8095398]
@@ -366,16 +368,14 @@ Entities:
       Enabled: 1
       AutoCalculate: 1
       ModelPath: models/pilot/wizard_tower_animated.glb
+    ModelComponent:
+      ModelPath: models/pilot/wizard_tower_animated.glb
     TransformComponent:
       Translation: [-314.16098, 315.470001, 100]
       Rotation: [0, 1.36135685, 0]
       Scale: [0.999901831, 1, 0.999901831]
     IDComponent:
       {}
-    TagComponent:
-      Tag: Player
-    ModelComponent:
-      ModelPath: models/pilot/wizard_tower_animated.glb
     ShaderComponent:
       ShaderPath: shaders/screen_falling.chshader
       Uniforms:
@@ -397,7 +397,9 @@ Entities:
       MinDistance: 1
       MaxDistance: 100
       IsPlaying: 1
-  - Entity: 2241149956455545874
+  - Entity: 11575268689961247448
+    TagComponent:
+      Tag: rail#3d_copy
     ColliderComponent:
       Type: 0
       Size: [2.48870611, 4.18936205, 13.512085]
@@ -410,22 +412,22 @@ Entities:
       Enabled: 1
       AutoCalculate: 0
       ModelPath: models/toy_train/train_vagon.glb
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
     TransformComponent:
       Translation: [55.4628983, 34.3363914, -15.9756889]
       Rotation: [-0.0299999993, 0.0617705695, -1.59763551]
       Scale: [2.81781125, 1.83835185, 2.52317905]
     IDComponent:
       {}
-    TagComponent:
-      Tag: rail#3d_copy
-    ModelComponent:
-      ModelPath: models/toy_train/train_vagon.glb
     ShaderComponent:
       ShaderPath: ""
       Uniforms:
         []
       Enabled: 1
-  - Entity: 6428169142076434776
+  - Entity: 11227313687813704002
+    TagComponent:
+      Tag: Entity
     ColliderComponent:
       Type: 0
       Size: [34.1756821, 8.59185219, 22.6057091]
@@ -438,23 +440,15 @@ Entities:
       Enabled: 1
       AutoCalculate: 0
       ModelPath: models/stairs.glb
+    ModelComponent:
+      ModelPath: models/stairs.glb
     TransformComponent:
       Translation: [411.734222, 21.1899738, 188.952682]
       Rotation: [3.63230574e-05, -1.51887417, -1.12990801e-05]
       Scale: [0.999889433, 1, 0.979455113]
     IDComponent:
       {}
-    TagComponent:
-      Tag: Entity
-    ModelComponent:
-      ModelPath: models/stairs.glb
-  - Entity: 5796298439135209667
-    TransformComponent:
-      Translation: [-23.4434929, 153.125137, 133.087753]
-      Rotation: [0.195989281, 0.729820967, 0]
-      Scale: [1, 1, 1]
-    IDComponent:
-      {}
+  - Entity: 10265760835908358037
     TagComponent:
       Tag: Camera
     CameraComponent:
@@ -466,6 +460,12 @@ Entities:
       OrbitYaw: 0
       OrbitPitch: 20
       LookSensitivity: 0.899999976
+    TransformComponent:
+      Translation: [268.889648, 119.459389, 106.589882]
+      Rotation: [-0.0140102524, -7.23220205, 0]
+      Scale: [1, 1, 1]
+    IDComponent:
+      {}
     ShaderComponent:
       ShaderPath: shaders/screen_falling.chshader
       Uniforms:
@@ -476,7 +476,9 @@ Entities:
           Type: 0
           Value: 0
       Enabled: 1
-  - Entity: 7094686869644715316
+  - Entity: 4529970241074785559
+    TagComponent:
+      Tag: arena_two
     ColliderComponent:
       Type: 0
       Size: [91.2528992, 16.8988438, 12.8652821]
@@ -489,28 +491,28 @@ Entities:
       Enabled: 1
       AutoCalculate: 0
       ModelPath: models/container_ship/scene.gltf
+    ModelComponent:
+      ModelPath: models/container_ship/scene.gltf
     TransformComponent:
       Translation: [-949.601318, 51.8037796, 331.382965]
       Rotation: [2.86779284, 1.33893979, 2.90103149]
       Scale: [20.9453583, 17.1169147, 17.6528664]
     IDComponent:
       {}
+  - Entity: 1280749962842611905
     TagComponent:
-      Tag: arena_two
+      Tag: Empty Entity
     ModelComponent:
-      ModelPath: models/container_ship/scene.gltf
-  - Entity: 10680602693042542455
+      ModelPath: models/pilot/animated_civilian_helicopter/scene.gltf
     TransformComponent:
       Translation: [-216.192169, -6.67572021e-06, 0]
       Rotation: [0.0617936067, 0.0883244723, -0.0563300997]
       Scale: [46.0502167, 47.251339, 53.7656708]
     IDComponent:
       {}
+  - Entity: 1153316532846989095
     TagComponent:
-      Tag: Empty Entity
-    ModelComponent:
-      ModelPath: models/pilot/animated_civilian_helicopter/scene.gltf
-  - Entity: 193077798077705471
+      Tag: rail#3d
     ColliderComponent:
       Type: 0
       Size: [2.48870611, 13.512085, 4.18936396]
@@ -523,26 +525,26 @@ Entities:
       Enabled: 1
       AutoCalculate: 0
       ModelPath: models/toy_train/train_vagon.glb
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
     TransformComponent:
       Translation: [124.947281, 34.3363914, -15.4183016]
       Rotation: [3.14005208, -1.54395568, -1.59915721]
       Scale: [2.81767035, 1.83825684, 2.5230813]
     IDComponent:
       {}
+  - Entity: 7484758950847886520
     TagComponent:
-      Tag: rail#3d
-    ModelComponent:
-      ModelPath: models/toy_train/train_vagon.glb
-  - Entity: 2383946809372162777
+      Tag: train_vagons
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     IDComponent:
       {}
+  - Entity: 1826186618415128802
     TagComponent:
-      Tag: train_vagons
-  - Entity: 18441510849027507452
+      Tag: anim_mode#2
     ColliderComponent:
       Type: 0
       Size: [20.2556896, 277.196045, 14.2480259]
@@ -555,17 +557,17 @@ Entities:
       Enabled: 1
       AutoCalculate: 0
       ModelPath: models/bridge.glb
+    ModelComponent:
+      ModelPath: models/bridge.glb
     TransformComponent:
       Translation: [424.876801, 17.5073452, 22.4167747]
       Rotation: [-1.59236383, 0.0545778424, 0.0118380291]
       Scale: [3.91607928, 1.36125302, 0.999930322]
     IDComponent:
       {}
+  - Entity: 18207601312825430842
     TagComponent:
-      Tag: anim_mode#2
-    ModelComponent:
-      ModelPath: models/bridge.glb
-  - Entity: 9582408851066360367
+      Tag: anim_mode#4_copy
     ColliderComponent:
       Type: 0
       Size: [20.2556896, 277.196045, 14.2480259]
@@ -577,6 +579,8 @@ Entities:
       IsTrigger: 0
       Enabled: 1
       AutoCalculate: 0
+      ModelPath: models/bridge.glb
+    ModelComponent:
       ModelPath: models/bridge.glb
     TransformComponent:
       Translation: [456.769592, 92.3261108, 838.863159]
@@ -584,11 +588,9 @@ Entities:
       Scale: [3.9020257, 1.0000428, 1.00002801]
     IDComponent:
       {}
+  - Entity: 13530173699716301111
     TagComponent:
-      Tag: anim_mode#4_copy
-    ModelComponent:
-      ModelPath: models/bridge.glb
-  - Entity: 11499449198343814881
+      Tag: anim_mode#3
     ColliderComponent:
       Type: 0
       Size: [20.2556896, 277.196045, 14.2480259]
@@ -601,17 +603,17 @@ Entities:
       Enabled: 1
       AutoCalculate: 0
       ModelPath: models/bridge.glb
+    ModelComponent:
+      ModelPath: models/bridge.glb
     TransformComponent:
       Translation: [440.960266, 32.5502625, 581.221497]
       Rotation: [-1.59236383, 0.0545774586, 0.0118376566]
       Scale: [3.71524119, 0.999961555, 0.999930501]
     IDComponent:
       {}
+  - Entity: 3294734744250291226
     TagComponent:
-      Tag: anim_mode#3
-    ModelComponent:
-      ModelPath: models/bridge.glb
-  - Entity: 1996324266450563914
+      Tag: wooden_bridge
     ColliderComponent:
       Type: 0
       Size: [9.28319931, 7.15296078, 23.5704517]
@@ -624,17 +626,17 @@ Entities:
       Enabled: 1
       AutoCalculate: 1
       ModelPath: models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb.glb
+    ModelComponent:
+      ModelPath: models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb.glb
     TransformComponent:
       Translation: [226.774567, 10.7833824, 119.315414]
       Rotation: [-6.31075409e-07, 1.2072463, -6.78071274e-07]
       Scale: [7.04011488, 8.74738693, 19.0374851]
     IDComponent:
       {}
+  - Entity: 11370842856199644180
     TagComponent:
-      Tag: wooden_bridge
-    ModelComponent:
-      ModelPath: models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb.glb
-  - Entity: 3962667947486927982
+      Tag: anim_mode
     ColliderComponent:
       Type: 0
       Size: [20.2556896, 277.196045, 14.2480259]
@@ -647,17 +649,17 @@ Entities:
       Enabled: 1
       AutoCalculate: 0
       ModelPath: models/bridge.glb
+    ModelComponent:
+      ModelPath: models/bridge.glb
     TransformComponent:
       Translation: [428.76062, 30.1878853, 305.481506]
       Rotation: [-1.59236383, 0.0545773432, 0.0118377451]
       Scale: [3.51185107, 0.999961615, 0.999930501]
     IDComponent:
       {}
+  - Entity: 2132712784193717256
     TagComponent:
-      Tag: anim_mode
-    ModelComponent:
-      ModelPath: models/bridge.glb
-  - Entity: 11859063027363205809
+      Tag: rail#3d_copy_copy
     ColliderComponent:
       Type: 0
       Size: [2.48870611, 4.18936205, 13.512085]
@@ -670,17 +672,17 @@ Entities:
       Enabled: 1
       AutoCalculate: 0
       ModelPath: ""
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
     TransformComponent:
       Translation: [394.406952, 36.0981331, -15.4183016]
       Rotation: [3.13979626, -1.54386234, -1.49447083]
       Scale: [2.81729794, 1.83831346, 2.52311802]
     IDComponent:
       {}
+  - Entity: 14455785832855142197
     TagComponent:
-      Tag: rail#3d_copy_copy
-    ModelComponent:
-      ModelPath: models/toy_train/train_vagon.glb
-  - Entity: 7107305315600848246
+      Tag: SpawnPoint
     ColliderComponent:
       Type: 0
       Size: [-6.4000001, -3.5999999, 7.30000019]
@@ -699,20 +701,20 @@ Entities:
       Scale: [1, 1, 1]
     IDComponent:
       {}
+  - Entity: 16866179712373659594
     TagComponent:
-      Tag: SpawnPoint
-  - Entity: 13419404670353191655
+      Tag: toy_train_platform
+    ModelComponent:
+      ModelPath: models/toy_train/wooden_train.glb
     TransformComponent:
       Translation: [-3565.1311, -45.4531631, 621.43158]
       Rotation: [0.18592523, -1.13752759, -0.188373342]
       Scale: [1.00000036, 0.999993503, 0.99999553]
     IDComponent:
       {}
+  - Entity: 1277165113498326663
     TagComponent:
-      Tag: toy_train_platform
-    ModelComponent:
-      ModelPath: models/toy_train/wooden_train.glb
-  - Entity: 1077756965852254433
+      Tag: Static Collider
     ColliderComponent:
       Type: 3
       Size: [382.088318, 47.5412979, 382.088318]
@@ -725,13 +727,11 @@ Entities:
       Enabled: 1
       AutoCalculate: 1
       ModelPath: models/stone_floor.glb
+    ModelComponent:
+      ModelPath: models/stone_floor.glb
     TransformComponent:
       Translation: [-231.075317, -62.7547264, 67.6377563]
       Rotation: [0, -0, 0]
       Scale: [1, 1, 1]
     IDComponent:
       {}
-    TagComponent:
-      Tag: Static Collider
-    ModelComponent:
-      ModelPath: models/stone_floor.glb

@@ -21,15 +21,15 @@ Application* CreateApplication(ApplicationCommandLineArgs args)
     spec.WorkingDirectory = Application::GetExecutableDirectory().string();
 
     // Runtime defaults (can be overridden by project config when supported)
-    spec.WindowWidth = 1280;
-    spec.WindowHeight = 720;
+    spec.WindowWidth = 0;
+    spec.WindowHeight = 0;
     spec.Headless = false;
     spec.EnableScripting = true;
 
     std::filesystem::path projectPath = Application::GetExecutableDirectory() / (spec.Name + ".chproject");
 
     auto* app = new Application(spec);
-    app->GetLayerStack().PushLayer(std::make_unique<RuntimeLayer>(projectPath.string()));
+    app->PushLayer(std::make_unique<RuntimeLayer>(projectPath.string()));
 
     return app;
 }

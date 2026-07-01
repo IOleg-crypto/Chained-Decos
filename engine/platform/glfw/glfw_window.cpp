@@ -271,4 +271,20 @@ void GlfwWindow::SetTargetFramesPerSecond(int framesPerSecond)
     m_TargetFPS = framesPerSecond;
 }
 
+void GlfwWindow::SetCursorMode(CursorMode mode)
+{
+    switch (mode)
+    {
+        case CursorMode::Normal:
+            glfwSetInputMode(m_WindowHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            break;
+        case CursorMode::Hidden:
+            glfwSetInputMode(m_WindowHandle, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+            break;
+        case CursorMode::Locked:
+            glfwSetInputMode(m_WindowHandle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            break;
+    }
+}
+
 } // namespace Chained

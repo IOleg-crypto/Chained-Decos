@@ -15,9 +15,7 @@ namespace Chained
 constexpr size_t kMaxAssetFinalizationsPerFrame = 16;
 constexpr auto kMaxAssetFinalizeBudget = std::chrono::milliseconds(2);
 
-AssetManager::AssetManager()
-{
-}
+AssetManager::AssetManager() = default;
 
 
 void AssetManager::Initialize()
@@ -31,6 +29,11 @@ void AssetManager::Initialize()
 
 void AssetManager::Shutdown()
 {
+    while (HasBackgroundWork())
+    {
+        Update();
+        std::this_thread::yield();
+    }
 }
 
 void AssetManager::Update(Timestep ts)

@@ -1,6 +1,12 @@
 #include "engine/assets/loaders/model_loader.h"
 #include "engine/assets/loaders/assimp_importer.h"
+#include "engine/assets/loaders/assimp_importer.h"
 #include "engine/assets/types/model_asset.h"
+#include <cereal/archives/binary.hpp>
+#include <cereal/types/string.hpp>
+#include <cereal/types/vector.hpp>
+#include <cereal/types/unordered_map.hpp>
+#include <fstream>
 
 namespace Chained
 {
@@ -40,7 +46,45 @@ bool ModelLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolved
 
 PendingModelData ModelLoader::LoadMeshDataFromDisk(const std::filesystem::path& path, int samplingFPS)
 {
-    return AssimpImporter::Import(path, samplingFPS);
+    std::filesystem::path chassetPath = path;
+    chassetPath.replace_extension(".chasset");
+
+    if (std::filesystem::exists(chassetPath) && std::filesystem::exists(path))
+    {
+        if (std::filesystem::last_write_time(chassetPath) >= std::filesystem::last_write_time(path))
+        {
+            try
+            {
+                std::ifstream is(chassetPath, std::ios::binary);
+                cereal::BinaryInputArchive archive(is);
+                PendingModelData data;
+                archive(data);
+                return data;
+            }
+            catch(const std::exception& e)
+            {
+                CH_CORE_WARN("Failed to load .chasset ({}), falling back to Assimp: {}", chassetPath.string(), e.what());
+            }
+        }
+    }
+
+    PendingModelData data = AssimpImporter::Import(path, samplingFPS);
+
+    if (data.isValid && !path.string().starts_with(":"))
+    {
+        try
+        {
+            std::ofstream os(chassetPath, std::ios::binary);
+            cereal::BinaryOutputArchive archive(os);
+            archive(data);
+        }
+        catch (const std::exception& e)
+        {
+            CH_CORE_WARN("Failed to serialize .chasset for {}: {}", chassetPath.string(), e.what());
+        }
+    }
+
+    return data;
 }
 
 Model ModelLoader::GenerateProceduralModel(const std::string& type, const ProceduralParameters& params)
