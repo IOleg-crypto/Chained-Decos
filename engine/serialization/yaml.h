@@ -13,7 +13,7 @@
 
 namespace YAML
 {
-    // --- ВНУТРІШНІ ХЕЛПЕРИ ДЛЯ СКОРОЧЕННЯ БОЙЛЕРПЛЕЙТУ ---
+    
     template<typename T>
     inline void DecodeField(const Node& node, const std::string& key, T& target)
     {
@@ -137,7 +137,7 @@ namespace YAML
                 return true;
             }
             if (node.IsMap()) {
-                // Лямбда для безпечного регістронезалежного читання каналів
+                
                 auto getChannel = [&](const char* k1, const char* k2) {
                     auto n = node[k1] ? node[k1] : node[k2];
                     return n ? static_cast<unsigned char>(n.as<int>()) : 255;
@@ -200,7 +200,7 @@ namespace YAML
             DecodeField(node, "LetterSpacing", rhs.LetterSpacing);
             DecodeField(node, "LineHeight", rhs.LineHeight);
 
-            // Підтримка старих та нових назв енумів
+            
             DecodeEnum<int>(node, "Horizontal", rhs.Horizontal);
             DecodeEnum<int>(node, "HorizontalAlignment", rhs.Horizontal);
             DecodeEnum<int>(node, "Vertical", rhs.Vertical);
@@ -284,7 +284,7 @@ namespace YAML
     };
 
     // ==========================================
-    // EMITTER OPERATORS (Вирівняні для читабельності)
+    
     // ==========================================
 
     inline Emitter& operator<<(Emitter& out, const Chained::Color& c) {

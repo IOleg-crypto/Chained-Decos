@@ -89,5 +89,5 @@ build_error.txt
 
 # Engine Cache
 *.chcache
-
+*.chasset
 *.pdf

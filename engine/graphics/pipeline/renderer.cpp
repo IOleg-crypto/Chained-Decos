@@ -71,10 +71,11 @@ void Renderer::LoadEngineResources()
 {
     auto& shaders = GetShaderLibrary();
 
-    auto loadShader = [&](const std::string& name, const std::string& path) { shaders.LoadOrGet(name, path); };
-
-    loadShader("Lighting", "engine/resources/shaders/lighting.chshader");
-    loadShader("Unlit", "engine/resources/shaders/unlit.chshader");
+    shaders.LoadConfig("engine/resources/config/shaders.yaml");
+    
+    // Eager load common shaders if needed, or let them lazy load
+    shaders.LoadOrGet("Lighting");
+    shaders.LoadOrGet("Unlit");
 
     CH_CORE_INFO("[Renderer] LoadEngineResources done. {} shader(s) loaded.", shaders.GetNames().size());
 }
@@ -117,6 +118,7 @@ Renderer::Renderer()
 
 Renderer::~Renderer()
 {
+    Shutdown();
 }
 
 void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
@@ -354,10 +356,10 @@ void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float 
 
     auto shaderAsset =
         (skyboxMode == 2)
-            ? m_Data->Shaders->LoadOrGet("SkyboxCubemap", "engine/resources/shaders/skybox_cubemap.chshader")
+            ? m_Data->Shaders->LoadOrGet("SkyboxCubemap")
             : (skyboxMode == 1
-                   ? m_Data->Shaders->LoadOrGet("SkyboxCross", "engine/resources/shaders/skybox_cross.chshader")
-                   : m_Data->Shaders->LoadOrGet("Skybox", "engine/resources/shaders/skybox.chshader"));
+                   ? m_Data->Shaders->LoadOrGet("SkyboxCross")
+                   : m_Data->Shaders->LoadOrGet("Skybox"));
     if (!shaderAsset || !shaderAsset->GetShader())
     {
         return;
@@ -434,7 +436,7 @@ void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float 
 void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const glm::vec3& position, float size,
                              const glm::vec4& tint)
 {
-    auto unlitShaderAsset = m_Data->Shaders->LoadOrGet("Unlit", "engine/resources/shaders/unlit.chshader");
+    auto unlitShaderAsset = m_Data->Shaders->LoadOrGet("Unlit");
     if (!unlitShaderAsset || !unlitShaderAsset->GetShader() || textureId == 0)
     {
         return;
@@ -523,7 +525,7 @@ void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextu
     else
     {
         // Cached lookup preventing frame bottlenecks
-        shaderAsset = m_Data->Shaders->LoadOrGet("PostProcess", "engine/resources/shaders/post_process.chshader");
+        shaderAsset = m_Data->Shaders->LoadOrGet("PostProcess");
     }
 
     if (shaderAsset && shaderAsset->GetShader())
@@ -720,7 +722,7 @@ void Renderer::DrawSprite(uint32_t textureId, const glm::mat4& transform, const 
         return;
     }
 
-    auto shaderAsset = m_Data->Shaders->LoadOrGet("Sprite", "engine/resources/shaders/sprite.chshader");
+    auto shaderAsset = m_Data->Shaders->LoadOrGet("Sprite");
     if (!shaderAsset || !shaderAsset->GetShader())
     {
         return;

@@ -1,7 +1,7 @@
 #include "scriptengine_services.h"
 
 #include "engine/core/log.h"
-#include "engine/core/service_locator.h" // Потрібен для доступу до ScriptEngine
+#include "engine/core/service_locator.h" 
 #include "scripting/scriptengine.h"
 #include "engine/project/project.h"
 #include <Coral/GC.hpp>
@@ -28,7 +28,7 @@ namespace
 {
 constexpr const char* kGameScriptsAlcName = "GameScriptsALC";
 
-// Визначаємо шлях до запущеного бінарника без залучення класу Application
+
 std::filesystem::path GetCurrentBinaryDirectory()
 {
 #ifdef _WIN32
@@ -100,7 +100,7 @@ void AppendBuildBinCandidates(std::vector<std::filesystem::path>& out, const std
 
 } // namespace
 
-// Єдиний контекст, який нам потрібен для C# Glue (поточна активна сцена)
+
 static Scene* s_ContextScene = nullptr;
 
 void SetContextScene(Scene* scene)

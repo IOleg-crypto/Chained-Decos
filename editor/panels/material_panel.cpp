@@ -1,5 +1,5 @@
 #include "material_panel.h"
-#include "engine/scene/components/mesh_component.h"
+#include "engine/scene/components/model_component.h"
 #include "engine/scene/scene_events.h"
 #include "imgui.h"
 #include "property_editor.h"

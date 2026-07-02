@@ -55,19 +55,19 @@ public:
     Ray GetMouseRay(const glm::vec2& mousePosition);
 
 private:
-    // UI та Стан в'юпорту
+    
     glm::vec2 m_ViewportSize = {0, 0};
     bool m_Focused = false;
     bool m_Hovered = false;
     GizmoType m_CurrentTool = GizmoType::TRANSLATE;
 
-    // Системи керування камерою та маніпуляціями
+    
     std::unique_ptr<EditorCameraController> m_CameraController;
     EditorGizmo m_Gizmo;
     EditorUIManipulator m_UIManipulator;
     EditorIcons m_EditorIcons;
 
-    // Буфери для рендерингу (залишаємо share_ptr, але класи задекларовані вище)
+    
     std::shared_ptr<Framebuffer> m_ViewportFramebuffer;
     std::shared_ptr<Framebuffer> m_HDRFramebuffer;
 
@@ -84,7 +84,7 @@ private:
     void RenderToolbar(Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos);
     void RenderLaunchHUD(const ImVec2& viewportSize, const ImVec2& viewportScreenPos);
 
-    // Метод малювання іконок, який ми успішно забрали з SceneRenderer
+    
     void RenderEditorIcons(entt::registry& registry, const SceneSettings& settings, const Camera3D& camera);
     void ClearSceneBackground(Scene* scene);
 };

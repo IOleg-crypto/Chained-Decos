@@ -78,11 +78,8 @@ void ModelAsset::OnLoaded()
     Model newModel;
     newModel.Materials.resize(m_PendingData.materials.empty() ? 1 : m_PendingData.materials.size());
 
-    // Очищаємо старі текстури
-    m_EmbeddedTextures.clear();
 
-    // БЕЗПЕКА: Щоб індексація за рядком на кшталт "*3" працювала у векторі,
-    // спочатку створимо і завантажимо ВСІ вбудовані текстури в правильні слоти.
+    m_EmbeddedTextures.clear();
     if (!m_PendingData.embeddedTextures.empty())
     {
         size_t maxTexIndex = 0;
@@ -104,7 +101,6 @@ void ModelAsset::OnLoaded()
         }
         m_EmbeddedTextures.resize(maxTexIndex + 1);
 
-        // Створюємо OpenGL/Vulkan текстури для кожного вбудованого ресурсу
         for (const auto& [name, embedded] : m_PendingData.embeddedTextures)
         {
             if (name.front() != '*')
@@ -126,7 +122,7 @@ void ModelAsset::OnLoaded()
                 if (texture)
                 {
                     texture->SetData((void*)embedded.data.data(), 0);
-                    m_EmbeddedTextures[idx] = texture; // Кладемо строго під своїм індексом Ассімпа!
+                    m_EmbeddedTextures[idx] = texture; 
                 }
             } catch (...)
             {
@@ -143,7 +139,7 @@ void ModelAsset::OnLoaded()
             return;
         }
 
-        // Якщо це вбудована текстура
+        
         if (path.front() == '*')
         {
             try
@@ -159,7 +155,7 @@ void ModelAsset::OnLoaded()
                         break;
                     case 1:
                         newModel.Materials[matIdx].EmissiveMap = texId;
-                        break; // Для підтримки обох індексів
+                        break; 
                     case 2:
                         newModel.Materials[matIdx].NormalMap = texId;
                         break;
@@ -181,7 +177,7 @@ void ModelAsset::OnLoaded()
             return;
         }
 
-        // Якщо це зовнішня текстура з диску
+        
         if (!project)
         {
             return;
@@ -222,7 +218,7 @@ void ModelAsset::OnLoaded()
         }
     };
 
-    // Заповнюємо дані матеріалів
+    
     for (int materialIndex = 0; materialIndex < (int)newModel.Materials.size(); ++materialIndex)
     {
         if (!m_PendingData.materials.empty())
@@ -251,7 +247,7 @@ void ModelAsset::OnLoaded()
         }
     }
 
-    // Завантажуємо меші на GPU
+    
     for (int meshIndex = 0; meshIndex < (int)m_PendingData.meshes.size(); ++meshIndex)
     {
         const auto& rawMesh = m_PendingData.meshes[meshIndex];
@@ -331,7 +327,7 @@ void ModelAsset::OnLoaded()
         newModel.Meshes.push_back(mesh);
     }
 
-    // Розрахунок BoundingBox
+    
     BoundingBox totalBox = {{FLT_MAX, FLT_MAX, FLT_MAX}, {-FLT_MAX, -FLT_MAX, -FLT_MAX}};
     bool anyMesh = false;
     for (const auto& inst : m_PendingData.instances)

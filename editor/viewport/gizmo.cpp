@@ -70,7 +70,7 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
         projection = glm::ortho(-right, right, -top, top, camera.NearClip, camera.FarClip);
     }
 
-    // 3. Handle Snapping (Фікс підготовки масиву під конкретний GizmoType)
+    
     float currentSnapValues[3] = { 0.0f, 0.0f, 0.0f };
     if (m_SnappingEnabled)
     {
@@ -82,7 +82,7 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
         }
         else if (type == GizmoType::ROTATE)
         {
-            // ImGuizmo очікує лише перший float для кута обертання в градусах
+            
             currentSnapValues[0] = m_RotationSnap; 
         }
         else if (type == GizmoType::SCALE)
@@ -129,7 +129,7 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
                                               glm::value_ptr(rotation), glm::value_ptr(scale));
 
         ComponentUtils::SetTranslation(transform, translation);
-        ComponentUtils::SetRotation(transform, glm::radians(rotation)); // Конвертуємо градуси ImGuizmo в радіани
+        ComponentUtils::SetRotation(transform, glm::radians(rotation)); 
         ComponentUtils::SetScale(transform, scale);
     }
     else if (m_WasUsing && !isUsingNow)

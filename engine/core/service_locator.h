@@ -6,7 +6,7 @@
 #include "engine/foundation/base.h"
 #include <memory>
 #include <shared_mutex>
-#include <type_traits> // Обов'язково для compile-time перевірок
+#include <type_traits> 
 #include <typeindex>
 #include <unordered_map>
 

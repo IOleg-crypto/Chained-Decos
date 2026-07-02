@@ -114,7 +114,6 @@ jobs:
       - name: Build
         run: |
           set -euo pipefail
-          # Збірка конкретної конфігурації з Multi-Config генератора
           cmake --build "build/${{ matrix.preset }}" --config ${{ matrix.build_type }} \
             2>&1 | tee "build/${{ matrix.preset }}/build_${{ matrix.build_type }}.log"
 

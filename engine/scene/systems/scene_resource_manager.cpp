@@ -4,7 +4,7 @@
 #include "engine/scene/scene.h"
 #include "engine/scene/components/sprite_component.h"
 #include "engine/scene/components/shader_component.h"
-#include "engine/scene/components/mesh_component.h"
+#include "engine/scene/components/model_component.h"
 #include "engine/scene/components/component_utils.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/texture_asset.h"

@@ -4,7 +4,7 @@ layout(location = 0) in vec3 a_Position;
 
 out vec3 v_Position;
 
-#include "include/camera.glsl"
+#include "../include/camera.glsl"
 
 void main()
 {

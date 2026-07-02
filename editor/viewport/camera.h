@@ -46,6 +46,11 @@ public:
     float GetDistance() const { return m_Distance; }
     void SetDistance(float distance) { m_Distance = distance; UpdateView(); }
 
+    void SetMoveSpeed(float speed) { m_MoveSpeed = speed; }
+    void SetBoostMultiplier(float multiplier) { m_BoostMultiplier = multiplier; }
+    float GetBoostMultiplier() {return m_BoostMultiplier;};
+    float GetMoveSpeed() {return m_MoveSpeed;};
+
     void MousePan(const glm::vec2& delta);
     void MouseRotate(const glm::vec2& delta);
     void MouseZoom(float delta);

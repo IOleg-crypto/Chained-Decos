@@ -5,14 +5,14 @@ using Chained;
 namespace ChainedDecos.Scripts
 {
     // =========================================================================
-    // 1. OBSERVER (Спостерігач) - Моніторинг статусу героя
+    
     // =========================================================================
     public interface IHeroObserver
     {
         void OnHeroStatChanged(string stat, float value);
     }
 
-    // "Консольний інтерфейс" (Concrete Observer), який тепер виводить дані на екран
+    
     public class HeroHUD : IHeroObserver
     {
         public List<string> Notifications { get; } = new List<string>();
@@ -24,7 +24,7 @@ namespace ChainedDecos.Scripts
             
             Notifications.Add(msg);
             if (Notifications.Count > 5) 
-                Notifications.RemoveAt(0); // Зберігаємо лише 5 останніх повідомлень
+                Notifications.RemoveAt(0); 
         }
 
         public void DrawLogs()
@@ -39,7 +39,7 @@ namespace ChainedDecos.Scripts
     }
 
     // =========================================================================
-    // 2. STATE (Стан) - Управління поведінкою в різних режимах
+    
     // =========================================================================
     public interface IHeroState
     {
@@ -47,17 +47,17 @@ namespace ChainedDecos.Scripts
         string GetName();
     }
 
-    // Стан спокою
+    
     public class IdleState : IHeroState
     {
         public string GetName() => "Idle";
         public void UpdateState(HeroBehavioralContext context, float deltaTime)
         {
-            // Поступове відновлення енергії (умовно)
+            
         }
     }
 
-    // Стан тренування
+    
     public class TrainingState : IHeroState
     {
         private float _timer = 0;
@@ -65,7 +65,7 @@ namespace ChainedDecos.Scripts
         public void UpdateState(HeroBehavioralContext context, float deltaTime)
         {
             _timer += deltaTime;
-            if (_timer >= 2.0f) // Кожні 2 секунди тренування +10 XP
+            if (_timer >= 2.0f) 
             {
                 context.AddXP(10);
                 _timer = 0;
@@ -73,7 +73,7 @@ namespace ChainedDecos.Scripts
         }
     }
 
-    // Стан бою (Новий)
+    
     public class CombatState : IHeroState
     {
         private float _timer = 0;
@@ -82,7 +82,7 @@ namespace ChainedDecos.Scripts
         public void UpdateState(HeroBehavioralContext context, float deltaTime)
         {
             _timer += deltaTime;
-            if (_timer >= 1.5f) // У бою досвід росте швидше, але нищиться екіпіровка (втрата золота)
+            if (_timer >= 1.5f) 
             {
                 context.AddXP(25);
                 context.Gold -= 5;
@@ -93,7 +93,7 @@ namespace ChainedDecos.Scripts
     }
 
     // =========================================================================
-    // 3. COMMAND (Команда) - Виконання та скасування (Undo) дій
+    
     // =========================================================================
     public interface IGameCommand
     {
@@ -101,7 +101,7 @@ namespace ChainedDecos.Scripts
         void Undo();
     }
 
-    // Команда покупки
+    
     public class PurchaseCommand : IGameCommand
     {
         private HeroBehavioralContext _context;
@@ -131,7 +131,7 @@ namespace ChainedDecos.Scripts
         }
     }
 
-    // Команда лікування (Нова)
+    
     public class HealCommand : IGameCommand
     {
         private HeroBehavioralContext _context;
@@ -156,7 +156,7 @@ namespace ChainedDecos.Scripts
     }
 
     // =========================================================================
-    // КОНТЕКСТ ГЕРОЯ (Subject for Observer, Context for State)
+    
     // =========================================================================
     public class HeroBehavioralContext
     {
@@ -210,7 +210,7 @@ namespace ChainedDecos.Scripts
             UI.Text("Controls: Cmd -> B(Buy) / H(Heal) / U(Undo) | Other -> G(+Gold)");
             UI.Text("---------------------------------");
 
-            // Виклик відображення для Observer, якщо він підтримує GUI
+            
             foreach (var obs in _observers)
             {
                 if (obs is HeroHUD hud)
@@ -236,7 +236,7 @@ namespace ChainedDecos.Scripts
             Log.Info("=== BEHAVIORAL PATTERNS SYSTEM READY ===");
             _hero = new HeroBehavioralContext();
             
-            // Підключаємо спостерігача
+            
             _hero.AddObserver(new HeroHUD());
         }
 
@@ -244,24 +244,24 @@ namespace ChainedDecos.Scripts
         {
             _hero?.Update(deltaTime);
 
-            // 1. Тест Станів
+            
             if (Input.IsKeyPressed(Key.T)) _hero?.SetState(new TrainingState());
             if (Input.IsKeyPressed(Key.I)) _hero?.SetState(new IdleState());
-            if (Input.IsKeyPressed(Key.C)) _hero?.SetState(new CombatState()); // Новий стан
+            if (Input.IsKeyPressed(Key.C)) _hero?.SetState(new CombatState()); 
 
-            // 2. Тест Команд
+            
             if (Input.IsKeyPressed(Key.B)) 
                 _hero?.ExecuteCommand(new PurchaseCommand(_hero, "Mystic Scroll", 150));
             if (Input.IsKeyPressed(Key.H)) 
-                _hero?.ExecuteCommand(new HealCommand(_hero)); // Нова команда
+                _hero?.ExecuteCommand(new HealCommand(_hero)); 
 
-            // 3. Тест Undo
+            
             if (Input.IsKeyPressed(Key.U)) // Undo
             {
                 _hero?.UndoLastAction();
             }
 
-            // 4. Додаткове золото для тесту
+            
             if (Input.IsKeyPressed(Key.G))
             {
                 if (_hero != null)

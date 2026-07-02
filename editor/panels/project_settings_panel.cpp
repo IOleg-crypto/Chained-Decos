@@ -1,12 +1,14 @@
-#include "engine/platform/utils/file_dialogs.h"
 #include "project_settings_panel.h"
-#include "thirdparty/IconsFontAwesome6.h"
-#include "layer.h"
 #include "engine/core/platform.h"
+#include "engine/platform/utils/file_dialogs.h"
 #include "engine/project/project.h"
-#include "project_manager.h"
-#include "project/project_serializer.h"
 #include "imgui.h"
+#include "layer.h"
+#include "project/project_serializer.h"
+#include "project_manager.h"
+#include "thirdparty/IconsFontAwesome6.h"
+#include <misc/cpp/imgui_stdlib.h>
+#include <filesystem>
 
 namespace Chained
 {
@@ -33,42 +35,65 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
     if (ImGui::Begin("Project Settings", &m_IsOpen))
     {
         auto& config = project->GetConfig();
+        auto& editorSettings = EditorLayer::Get().GetProjectManager().GetEditorSettings();
+        auto& editorConfig = EditorLayer::Get().GetConfig();
 
         static int selectedCategory = 0;
-        const char* categories[] = {ICON_FA_GEARS " General",    ICON_FA_CODE " Scripting",
-                                    ICON_FA_CUBES " Physics",    ICON_FA_WINDOW_RESTORE " Window",
-                                    ICON_FA_CAMERA " Editor",    ICON_FA_MOUNTAIN_SUN " Rendering",
-                                    ICON_FA_VOLUME_HIGH " Audio"};
+        const char* categories[] = {
+            ICON_FA_GEARS " General",
+            ICON_FA_CODE " Scripting",
+            ICON_FA_CUBES " Physics",
+            ICON_FA_WINDOW_RESTORE " Window",
+            ICON_FA_CAMERA " Editor",
+            ICON_FA_MOUNTAIN_SUN " Rendering",
+            ICON_FA_VOLUME_HIGH " Audio",
+            ICON_FA_CAMERA " Camera (Edit Mode)"
+        };
 
+        // Two-column layout: sidebar left, content right
         ImGui::Columns(2, "ProjectSettingsColumns", true);
-        ImGui::SetColumnWidth(0, 180.0f);
 
-        // Sidebar
+        static bool widthSet = false;
+        if (!widthSet)
+        {
+            ImGui::SetColumnWidth(0, 200.0f);
+            widthSet = true;
+        }
+
+        // --- Left sidebar ---
+        ImGui::BeginChild("SettingsSidebar", ImVec2(0, 0), ImGuiChildFlags_NavFlattened);
         for (int i = 0; i < IM_ARRAYSIZE(categories); i++)
         {
-            if (ImGui::Selectable(categories[i], selectedCategory == i))
+            if (ImGui::Selectable(categories[i], selectedCategory == i, ImGuiSelectableFlags_DontClosePopups))
             {
                 selectedCategory = i;
             }
         }
+        ImGui::EndChild();
 
         ImGui::NextColumn();
 
-        // Content
+        // --- Right content panel ---
+        ImGui::BeginChild("SettingsContent", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()),
+                          ImGuiChildFlags_NavFlattened);
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
+
         if (selectedCategory == 0) // General
         {
             ImGui::TextDisabled("General Settings");
+            ImGui::Separator();
+            ImGui::Spacing();
+
             char nameBuf[256];
-            strncpy(nameBuf, config.Name.c_str(), 255);
-            if (ImGui::InputText("Project Name", nameBuf, 255))
+            snprintf(nameBuf, sizeof(nameBuf), "%s", config.Name.c_str());
+            if (ImGui::InputText("Project Name", nameBuf, sizeof(nameBuf)))
             {
                 config.Name = nameBuf;
             }
 
             char iconBuf[512];
-            strncpy(iconBuf, config.IconPath.c_str(), 511);
-            iconBuf[511] = '\0';
-            if (ImGui::InputText("Icon Path", iconBuf, 511))
+            snprintf(iconBuf, sizeof(iconBuf), "%s", config.IconPath.c_str());
+            if (ImGui::InputText("Icon Path", iconBuf, sizeof(iconBuf)))
             {
                 config.IconPath = iconBuf;
             }
@@ -102,24 +127,23 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
                 }
                 ImGui::EndCombo();
             }
-
-            // (Launch profiles removed from engine config)
         }
         else if (selectedCategory == 1) // Scripting
         {
             ImGui::TextDisabled("Scripting Settings");
+            ImGui::Separator();
+            ImGui::Spacing();
+
             char moduleNameBuf[256];
-            strncpy(moduleNameBuf, config.Scripting.ModuleName.c_str(), 255);
-            moduleNameBuf[255] = '\0';
-            if (ImGui::InputText("Module Name", moduleNameBuf, 255))
+            snprintf(moduleNameBuf, sizeof(moduleNameBuf), "%s", config.Scripting.ModuleName.c_str());
+            if (ImGui::InputText("Module Name", moduleNameBuf, sizeof(moduleNameBuf)))
             {
                 config.Scripting.ModuleName = moduleNameBuf;
             }
 
             char moduleDirBuf[512];
-            strncpy(moduleDirBuf, config.Scripting.ModuleDirectory.string().c_str(), 511);
-            moduleDirBuf[511] = '\0';
-            if (ImGui::InputText("Module Directory", moduleDirBuf, 511))
+            snprintf(moduleDirBuf, sizeof(moduleDirBuf), "%s", config.Scripting.ModuleDirectory.string().c_str());
+            if (ImGui::InputText("Module Directory", moduleDirBuf, sizeof(moduleDirBuf)))
             {
                 config.Scripting.ModuleDirectory = moduleDirBuf;
             }
@@ -138,12 +162,18 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
         else if (selectedCategory == 2) // Physics
         {
             ImGui::TextDisabled("Physics Settings");
+            ImGui::Separator();
+            ImGui::Spacing();
+
             ImGui::DragFloat("World Gravity", &config.Physics.Gravity, 0.1f);
             ImGui::DragFloat("Fixed Timestep", &config.Physics.FixedTimestep, 0.001f, 0.001f, 0.1f, "%.4f");
         }
         else if (selectedCategory == 3) // Window
         {
             ImGui::TextDisabled("Window Settings");
+            ImGui::Separator();
+            ImGui::Spacing();
+
             ImGui::DragInt("Width", &config.Window.Width, 1, 800, 3840);
             ImGui::DragInt("Height", &config.Window.Height, 1, 600, 2160);
             ImGui::Checkbox("VSync", &config.Window.VSync);
@@ -151,26 +181,25 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
         }
         else if (selectedCategory == 4) // Editor
         {
-            ImGui::TextDisabled("Editor Settings");
-            auto& editorSettings = EditorLayer::Get().GetProjectManager().GetEditorSettings();
-            
-            ImGui::DragFloat("Camera Speed", &editorSettings.CameraMoveSpeed, 0.1f, 0.1f, 100.0f);
-
-            ImGui::Separator();
             ImGui::TextDisabled("Visual Feedback");
+            ImGui::Separator();
+            ImGui::Spacing();
+
             ImGui::Checkbox("Show Grid", &editorSettings.ShowGrid);
             ImGui::Checkbox("Show Gizmos", &editorSettings.ShowGizmos);
             ImGui::Checkbox("Show Selected Wireframe", &editorSettings.ShowSelectedWireframe);
 
             ImGui::Separator();
             ImGui::TextDisabled("Auto-Save Settings");
-            auto& editorConfig = EditorLayer::Get().GetConfig();
             ImGui::Checkbox("Enable Auto-Save", &editorConfig.AutoSaveEnabled);
             ImGui::DragFloat("Auto-Save Interval (s)", &editorConfig.AutoSaveInterval, 1.0f, 10.0f, 3600.0f);
         }
         else if (selectedCategory == 5) // Rendering
         {
             ImGui::TextDisabled("Rendering Settings");
+            ImGui::Separator();
+            ImGui::Spacing();
+
             ImGui::DragFloat("Ambient Intensity", &config.Render.AmbientIntensity, 0.01f, 0.0f, 1.0f);
             ImGui::DragFloat("Default Exposure", &config.Render.DefaultExposure, 0.01f, 0.0f, 10.0f);
 
@@ -269,22 +298,53 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
                 config.Texture.Filter = (TextureFilter)currentFilter;
             }
         }
-        else if (selectedCategory == 6) // Audio (Added case)
+        else if (selectedCategory == 6) // Audio
         {
             ImGui::TextDisabled("Audio Settings");
+            ImGui::Separator();
+            ImGui::Spacing();
+
             ImGui::SliderFloat("Master Volume", &config.Audio.MasterVolume, 0.0f, 1.0f);
             ImGui::SliderFloat("Music Volume", &config.Audio.MusicVolume, 0.0f, 1.0f);
             ImGui::SliderFloat("SFX Volume", &config.Audio.SFXVolume, 0.0f, 1.0f);
         }
+        else if (selectedCategory == 7) // Camera Settings (Edit Mode)
+        {
+            ImGui::TextDisabled("Camera Settings");
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            // Move speed — stored directly in EditorSettings, applied by ViewportPanel every frame
+            if (ImGui::SliderFloat("Move Speed", &editorSettings.CameraMoveSpeed, 0.1f, 100.0f, "%.1f"))
+            {
+                // ViewportPanel picks up the new value each OnUpdate tick
+            }
+
+            // Boost multiplier (Shift held while flying)
+            if (ImGui::SliderFloat("Boost Multiplier", &editorSettings.CameraBoostMultiplier, 1.0f, 10.0f, "%.1f"))
+            {
+                // ViewportPanel picks up the new value each OnUpdate tick
+            }
+
+            ImGui::Separator();
+            ImGui::Checkbox("Disable Camera Zoom", &editorSettings.DisableCameraZoom);
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Prevent mouse wheel from zooming the editor camera");
+        }
+
+        ImGui::PopStyleVar();
+        ImGui::EndChild();
 
         ImGui::Columns(1);
         ImGui::Separator();
+
+        float buttonWidth = ImGui::CalcTextSize("Save Project Settings").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - buttonWidth);
 
         if (ImGui::Button("Save Project Settings"))
         {
             std::filesystem::path path =
                 project->GetProjectDirectoryForProject() / (project->GetConfig().Name + ".chproject");
-            auto& editorSettings = EditorLayer::Get().GetProjectManager().GetEditorSettings();
             EditorProjectSerializer::Serialize(project, editorSettings, path);
         }
     }

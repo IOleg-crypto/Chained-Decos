@@ -162,7 +162,7 @@ namespace Chained {
         void DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& color)
         {
             auto& rd = ServiceLocator::Get<Renderer>()->GetData();
-            auto shaderAsset = rd.Shaders->LoadOrGet("Grid", "engine/resources/shaders/grid.chshader");
+            auto shaderAsset = rd.Shaders->LoadOrGet("Grid");
             if (!shaderAsset || !shaderAsset->GetShader())
             {
                 return;

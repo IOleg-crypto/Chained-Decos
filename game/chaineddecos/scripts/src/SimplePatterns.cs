@@ -3,7 +3,7 @@ using Chained;
 
 namespace ChainedDecos.Scripts
 {
-    // Singleton: Тільки один екземпляр на всю гру
+    
     public class GameController : Script
     {
         public static GameController? Instance;
@@ -22,7 +22,7 @@ namespace ChainedDecos.Scripts
         }
     }
 
-    // Abstract Factory: Швидке створення однотипних об'єктів різних стилів
+    
     public abstract class ParkourStyleFactory
     {
         public abstract string GetObstacleName();
@@ -38,7 +38,7 @@ namespace ChainedDecos.Scripts
         public override string GetObstacleName() => "Wood Log";
     }
 
-    // Prototype: Копіювання об'єкта (наприклад, ворога або предмета) через один метод
+    
     public class SimpleUnit
     {
         public string Name;
@@ -51,7 +51,7 @@ namespace ChainedDecos.Scripts
         public void Show() => Log.Info($"Unit: {Name}, HP: {HP}");
     }
 
-    // Головний скрипт для використання всіх шаблонів
+    
     public class PatternUsage : Script
     {
         private ParkourStyleFactory style = new UrbanStyle();

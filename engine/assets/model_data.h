@@ -150,6 +150,7 @@ struct BoneInfoData
     }
 };
 
+
 // CPU-side data for async loading (loaded in worker thread)
 struct PendingModelData
 {
@@ -157,11 +158,11 @@ struct PendingModelData
     std::vector<RawMesh> meshes;
     std::vector<RawMaterial> materials;
     std::unordered_map<std::string, EmbeddedTextureData> embeddedTextures;
-
+    
     // Skeletal / Hierarchy data (Original data for animations only)
     std::vector<BoneInfoData> bones;
     std::vector<TransformData> bindPose;
-
+    
     // Flattened render data
     std::vector<MeshInstance> instances;
     
@@ -176,7 +177,7 @@ struct PendingModelData
     std::vector<RawAnimation> animations;
     int FinalizationProgress = 0; // Index of the next mesh to be finalized
     bool isValid = false;
-
+    
     template<class Archive>
     void serialize(Archive& archive) {
         archive(fullPath, meshes, materials, embeddedTextures, bones, bindPose, instances, nodeNames, nodeCount, nodeParents, nodeLocalTransforms, globalBindPoses, offsetMatrices, animations, isValid);

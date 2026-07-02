@@ -22,6 +22,16 @@ struct CameraComponent
     float LookSensitivity = 0.9f;
 
     static const char* GetStaticName() { return "CameraComponent"; }
+
+    
+    struct UI
+    {
+        UIMeta TargetEntityTag = {.Tooltip = "Тег сутності для слідування (Orbit Camera)"};
+        UIMeta OrbitDistance = {.Min = 1.0f, .Max = 500.0f, .Speed = 0.5f};
+        UIMeta OrbitYaw = {.Speed = 1.0f};
+        UIMeta OrbitPitch = {.Min = -89.0f, .Max = 89.0f, .Speed = 1.0f};
+        UIMeta LookSensitivity = {.Min = 0.1f, .Max = 10.0f, .Speed = 0.05f};
+    };
 };
 
 CH_MARK_RFL(CameraComponent);

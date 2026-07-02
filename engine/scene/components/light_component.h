@@ -26,6 +26,17 @@ struct LightComponent
 
 
     static const char* GetStaticName() { return "LightComponent"; }
+
+    
+    struct UI
+    {
+        UIMeta Type = {.Hint = PropertyMeta::WidgetHint::Checkbox};
+        UIMeta LightColor = {.Hint = PropertyMeta::WidgetHint::ColorPicker};
+        UIMeta Intensity = {.Min = 0.0f, .Max = 10000.0f, .Speed = 5.0f};
+        UIMeta Radius = {.Min = 0.0f, .Max = 1000.0f, .Speed = 1.0f};
+        UIMeta InnerCutoff = {.Min = 0.0f, .Max = 90.0f, .Speed = 0.5f};
+        UIMeta OuterCutoff = {.Min = 0.0f, .Max = 90.0f, .Speed = 0.5f};
+    };
 };
 
 CH_MARK_RFL(LightComponent);

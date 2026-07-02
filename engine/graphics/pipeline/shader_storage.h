@@ -46,10 +46,17 @@ public:
     // Returns a snapshot of the current shader names.
     std::vector<std::string> GetNames() const;
 
+    // Returns the cached shader if present; otherwise looks up the path in the loaded config and loads it.
+    std::shared_ptr<ShaderAsset> LoadOrGet(const std::string& name);
+
     // Reloads every cached shader that still has a valid source path.
     void ReloadAll();
 
+    // Load a YAML configuration file mapping shader names to paths.
+    void LoadConfig(const std::string& configPath);
+
 private:
+    std::unordered_map<std::string, std::string> m_ShaderPaths;
     std::unordered_map<std::string, std::shared_ptr<ShaderAsset>> m_Shaders;
 };
 } // namespace Chained

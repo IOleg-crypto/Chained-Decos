@@ -49,7 +49,7 @@ public:
 private:
     bool m_SnappingEnabled = false;
     
-    // Фікс: Роздільне зберігання кроків прив'язки для різних операцій
+    
     float m_TranslationSnap = 1.0f;
     float m_RotationSnap = 45.0f;
     float m_ScaleSnap = 0.1f;
