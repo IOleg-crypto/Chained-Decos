@@ -70,7 +70,7 @@ namespace ChainedDecos.Scripts
         }
     }
 
-    // --- 3. ABSTRACT FACTORY (Абстрактна фабрика) ---
+    
     // Interface for creating game configurations depending on extension/style.
     // Binds logic with system settings (AppWindow) and scenes.
     public interface IGameConfigFactory

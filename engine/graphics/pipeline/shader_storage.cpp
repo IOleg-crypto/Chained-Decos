@@ -6,6 +6,7 @@
 #include "engine/project/project.h"
 #include "service_locator.h"
 #include <filesystem>
+#include <yaml-cpp/yaml.h>
 
 namespace Chained
 {
@@ -63,6 +64,43 @@ std::shared_ptr<ShaderAsset> ShaderStorage::LoadOrGet(const std::string& name, c
         m_Shaders[name] = shader;
     }
     return shader;
+}
+
+std::shared_ptr<ShaderAsset> ShaderStorage::LoadOrGet(const std::string& name)
+{
+    if (auto it = m_Shaders.find(name); it != m_Shaders.end())
+    {
+        return it->second;
+    }
+
+    if (auto pathIt = m_ShaderPaths.find(name); pathIt != m_ShaderPaths.end())
+    {
+        return LoadOrGet(name, pathIt->second);
+    }
+
+    CH_CORE_ERROR("ShaderStorage: Could not find path for shader '{}' in configuration!", name);
+    return nullptr;
+}
+
+void ShaderStorage::LoadConfig(const std::string& configPath)
+{
+    std::string resolvedPath = ServiceLocator::Get<AssetManager>()->ResolvePath(configPath);
+    try
+    {
+        YAML::Node config = YAML::LoadFile(resolvedPath);
+        if (config["Shaders"])
+        {
+            for (auto it = config["Shaders"].begin(); it != config["Shaders"].end(); ++it)
+            {
+                m_ShaderPaths[it->first.as<std::string>()] = it->second.as<std::string>();
+            }
+            CH_CORE_INFO("ShaderStorage: Loaded {} shader paths from config.", m_ShaderPaths.size());
+        }
+    }
+    catch (const YAML::Exception& e)
+    {
+        CH_CORE_ERROR("ShaderStorage: Failed to load config file '{}': {}", configPath, e.what());
+    }
 }
 
 std::shared_ptr<ShaderAsset> ShaderStorage::Get(const std::string& name)

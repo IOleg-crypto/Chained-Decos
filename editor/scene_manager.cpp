@@ -1,18 +1,18 @@
-#include "engine/platform/utils/file_dialogs.h"
-#include "engine/core/service_locator.h"
 #include "scene_manager.h"
-#include "layer.h"
-#include "scripting/scriptengine.h"
-#include "engine/scene/scene.h"
-#include "engine/project/project.h"
-#include "engine/serialization/scene_serializer.h"
-#include "scripting/scene_scripting_manager.h"
 #include "engine/app/application.h"
+#include "engine/assets/asset_manager.h"
 #include "engine/core/input.h"
 #include "engine/core/key_codes.h"
-#include "engine/assets/asset_manager.h"
-#include "engine/scene/scene_events.h"
+#include "engine/core/service_locator.h"
 #include "engine/foundation/thread_pool.h"
+#include "engine/platform/utils/file_dialogs.h"
+#include "engine/project/project.h"
+#include "engine/scene/scene.h"
+#include "engine/scene/scene_events.h"
+#include "engine/serialization/scene_serializer.h"
+#include "layer.h"
+#include "scripting/scene_scripting_manager.h"
+#include "scripting/scriptengine.h"
 
 namespace Chained
 {
@@ -41,7 +41,8 @@ void EditorSceneManager::OpenScene(const std::filesystem::path& path)
     CH_CORE_INFO("EditorSceneManager: Transition requested to '{}'", path.string());
     if (m_IsSceneOpenLoading)
     {
-        CH_CORE_WARN("EditorSceneManager: Transition to '{}' ignored - already loading '{}'", path.string(), m_PendingSceneOpenPath.string());
+        CH_CORE_WARN("EditorSceneManager: Transition to '{}' ignored - already loading '{}'", path.string(),
+                     m_PendingSceneOpenPath.string());
         return;
     }
     m_IsPlayModeSceneLoad = EditorLayer::Get().GetSceneState() == SceneState::Play;
@@ -51,7 +52,10 @@ void EditorSceneManager::OpenScene(const std::filesystem::path& path)
 void EditorSceneManager::SaveScene()
 {
     auto scene = GetActiveScene();
-    if (!scene) return;
+    if (!scene)
+    {
+        return;
+    }
 
     if (scene->GetSettings().ScenePath.empty())
     {
@@ -71,7 +75,10 @@ void EditorSceneManager::SaveSceneAs()
     if (result)
     {
         auto scene = GetActiveScene();
-        if (!scene) return;
+        if (!scene)
+        {
+            return;
+        }
 
         scene->GetSettings().ScenePath = result->string();
         SceneSerializer serializer(scene.get());
@@ -89,7 +96,9 @@ void EditorSceneManager::AutoSave(float interval, float ts)
 
     m_AutoSaveTimer += ts;
     if (m_AutoSaveTimer < interval)
+    {
         return;
+    }
 
     m_AutoSaveTimer = 0.0f;
     SceneSerializer serializer(scene.get());
@@ -97,7 +106,7 @@ void EditorSceneManager::AutoSave(float interval, float ts)
     CH_TRACE("Scene auto-saved to {0}", scene->GetSettings().ScenePath);
 }
 
-void EditorSceneManager::SetScene(const std::shared_ptr<Scene> &scene)
+void EditorSceneManager::SetScene(const std::shared_ptr<Scene>& scene)
 {
     CancelPlayModeTransition();
     CancelSceneOpenTransition();
@@ -194,10 +203,22 @@ void EditorSceneManager::OnViewportResize(uint32_t width, uint32_t height)
 
 void EditorSceneManager::StartSceneOpenTransition(const std::filesystem::path& path)
 {
-    if (path.empty()) return;
-    if (m_IsSceneOpenLoading) return;
+    if (path.empty())
+    {
+        return;
+    }
+    if (m_IsSceneOpenLoading)
+    {
+        return;
+    }
 
     CancelPlayModeTransition();
+
+    if (m_IsSceneOpenLoading)
+    {
+        CH_CORE_WARN("EditorSceneManager: StartSceneOpenTransition aborted, already loading.");
+        return;
+    }
 
     std::filesystem::path scenePath = path;
     if (scenePath.is_relative())
@@ -235,7 +256,10 @@ void EditorSceneManager::StartSceneOpenTransition(const std::filesystem::path& p
 
 void EditorSceneManager::UpdateSceneOpenTransition()
 {
-    if (!m_IsSceneOpenLoading) return;
+    if (!m_IsSceneOpenLoading)
+    {
+        return;
+    }
 
     if (!m_SceneOpenSceneReady)
     {
@@ -248,14 +272,16 @@ void EditorSceneManager::UpdateSceneOpenTransition()
                 {
                     if (m_RuntimeScene)
                     {
-                        CH_CORE_INFO("Editor: Stopping current runtime scene to load '{}'.", m_PendingSceneOpenPath.string());
+                        CH_CORE_INFO("Editor: Stopping current runtime scene to load '{}'.",
+                                     m_PendingSceneOpenPath.string());
                         m_RuntimeScene->OnRuntimeStop();
                     }
 
                     m_RuntimeScene = m_SceneOpenFuture.get();
                     if (!m_RuntimeScene)
                     {
-                        CH_CORE_ERROR("Editor: Runtime Scene load returned null for '{}'.", m_PendingSceneOpenPath.string());
+                        CH_CORE_ERROR("Editor: Runtime Scene load returned null for '{}'.",
+                                      m_PendingSceneOpenPath.string());
                         CancelSceneOpenTransition();
                         return;
                     }
@@ -285,36 +311,46 @@ void EditorSceneManager::UpdateSceneOpenTransition()
         }
     }
 
-    if (m_SceneOpenSceneReady && (m_EditorScene || m_RuntimeScene) && !ServiceLocator::Get<AssetManager>()->HasBackgroundWork())
+    if (m_SceneOpenSceneReady && (m_EditorScene || m_RuntimeScene) &&
+        !ServiceLocator::Get<AssetManager>()->HasBackgroundWork())
     {
         auto targetScene = m_IsPlayModeSceneLoad ? m_RuntimeScene : m_EditorScene;
 
         if (auto project = Project::GetActive(); project && project->GetEnvironment())
         {
             // Only override if the loaded scene has no environment defined
-            bool hasEnvironment = targetScene->GetSettings().Environment && 
-                                 (!targetScene->GetSettings().Environment->GetPath().empty() ||
-                                  (!targetScene->GetSettings().Environment->GetSettings().Skybox.TexturePath.empty()));
-            
+            bool hasEnvironment = targetScene->GetSettings().Environment &&
+                                  (!targetScene->GetSettings().Environment->GetPath().empty() ||
+                                   (!targetScene->GetSettings().Environment->GetSettings().Skybox.TexturePath.empty()));
+
             if (!hasEnvironment)
             {
-                CH_CORE_INFO("Editor: Applying project environment to scene '{}'.", targetScene->GetSettings().ScenePath);
+                CH_CORE_INFO("Editor: Applying project environment to scene '{}'.",
+                             targetScene->GetSettings().ScenePath);
                 targetScene->GetSettings().Environment = project->GetEnvironment();
             }
         }
 
         targetScene->GetSettings().ScenePath = m_PendingSceneOpenPath.string();
-        
+
         if (m_IsPlayModeSceneLoad)
         {
+            CH_CORE_INFO("Editor: Stopping current runtime scene to load '{}'.", m_PendingSceneOpenPath.string());
+            m_RuntimeScene->OnRuntimeStop();
+
+            m_RuntimeScene = m_SceneOpenFuture.get();
+            if (!m_RuntimeScene)
+            {
+                CH_CORE_ERROR("Editor: Runtime Scene load returned null for '{}'.", m_PendingSceneOpenPath.string());
+                CancelSceneOpenTransition();
+                return;
+            }
+
+            
+            Chained::SetContextScene(m_RuntimeScene.get());
+
             CH_CORE_INFO("Editor: Activating new runtime scene '{}'.", m_PendingSceneOpenPath.string());
             m_RuntimeScene->OnRuntimeStart();
-        }
-        else
-        {
-            CH_CORE_INFO("Editor: Activating new editor scene '{}'.", m_PendingSceneOpenPath.string());
-            SceneOpenedEvent e(m_PendingSceneOpenPath.string());
-            Application::Get().OnEvent(e);
         }
 
         m_IsSceneOpenLoading = false;
@@ -322,7 +358,7 @@ void EditorSceneManager::UpdateSceneOpenTransition()
         m_SceneOpenFuture = {};
 
         EditorLayer::Get().SetSelectedEntity({});
-        
+
         m_PendingSceneOpenPath.clear();
         m_LoadingStatus = "";
         m_IsPlayModeSceneLoad = false;
@@ -336,7 +372,8 @@ void EditorSceneManager::UpdateSceneOpenTransition()
             logTimer += 0.016f; // approximate
             if (logTimer > 1.0f)
             {
-                CH_CORE_INFO("Editor: Transition to '{}' waiting for {} assets...", m_PendingSceneOpenPath.string(), ServiceLocator::Get<AssetManager>()->GetPendingFinalizeCount());
+                CH_CORE_INFO("Editor: Transition to '{}' waiting for {} assets...", m_PendingSceneOpenPath.string(),
+                             ServiceLocator::Get<AssetManager>()->GetPendingFinalizeCount());
                 logTimer = 0.0f;
             }
         }
@@ -366,7 +403,8 @@ void EditorSceneManager::StartPlayModeTransition()
     m_LoadingStatus = "Preparing Play Mode...";
 
     CH_CORE_INFO("Editor: Copying scene for play mode on main thread.");
-    try {
+    try
+    {
         m_RuntimeScene = Scene::Copy(m_EditorScene);
         if (m_RuntimeScene)
         {
@@ -379,10 +417,12 @@ void EditorSceneManager::StartPlayModeTransition()
             CH_CORE_ERROR("Editor: Failed to copy scene for play mode - result was null.");
             CancelPlayModeTransition();
         }
-    } catch (const std::exception& e) {
+    } catch (const std::exception& e)
+    {
         CH_CORE_ERROR("Editor: Exception copying scene: {}", e.what());
         CancelPlayModeTransition();
-    } catch (...) {
+    } catch (...)
+    {
         CH_CORE_ERROR("Editor: Unknown exception copying scene.");
         CancelPlayModeTransition();
     }
@@ -390,17 +430,26 @@ void EditorSceneManager::StartPlayModeTransition()
 
 void EditorSceneManager::UpdatePlayModeTransition()
 {
-    if (!m_IsPlayModeLoading) return;
-
-    if (m_PlayModeSceneReady && m_RuntimeScene && !ServiceLocator::Get<AssetManager>()->HasBackgroundWork())
+    if (!m_IsPlayModeLoading)
     {
+        return;
+    }
+
+    if (m_PlayModeSceneReady && m_RuntimeScene)
+    {
+        m_RuntimeScene->OnViewportResize((uint32_t)EditorLayer::Get().GetViewportSize().x,
+                                         (uint32_t)EditorLayer::Get().GetViewportSize().y);
+
+        
+        Chained::SetContextScene(m_RuntimeScene.get());
+
         EditorLayer::Get().SetSceneState(SceneState::Play);
         m_RuntimeScene->OnRuntimeStart();
 
         m_IsPlayModeLoading = false;
         m_PlayModeSceneReady = false;
         m_LoadingStatus = "";
-        CH_CORE_INFO("Editor: Play Mode Started");
+        CH_CORE_INFO("Editor: Play Mode Started Successfully");
     }
 }
 
@@ -419,7 +468,8 @@ bool EditorSceneManager::OnSceneOpened(SceneOpenedEvent& e)
     auto project = Project::GetActive();
     if (project && !e.GetPath().empty())
     {
-        project->GetConfig().ActiveScenePath = std::filesystem::relative(e.GetPath(), project->GetProjectDirectoryForProject());
+        project->GetConfig().ActiveScenePath =
+            std::filesystem::relative(e.GetPath(), project->GetProjectDirectoryForProject());
         EditorLayer::Get().GetProjectManager().SaveProject();
 
         EditorLayer::Get().GetConfig().LastScenePath = e.GetPath();
@@ -446,26 +496,42 @@ bool EditorSceneManager::OnKeyPressed(KeyPressedEvent& e)
         switch (keyCode)
         {
         case KeyCode::N:
-            NewScene();
+            if (EditorLayer::Get().GetSceneState() != SceneState::Play)
+            {
+                NewScene();
+            }
             return true;
         case KeyCode::O:
-            OpenScene();
+            if (EditorLayer::Get().GetSceneState() != SceneState::Play)
+            {
+                OpenScene();
+            }
             return true;
         case KeyCode::S:
-            if (shift)
+            if (EditorLayer::Get().GetSceneState() != SceneState::Play)
             {
-                SaveSceneAs();
-            }
-            else
-            {
-                SaveScene();
+                if (shift)
+                {
+                    SaveSceneAs();
+                }
+                else
+                {
+                    SaveScene();
+                }
             }
             return true;
+        
         case KeyCode::Z:
-            EditorLayer::Get().GetCommandHistory().Undo();
+            if (EditorLayer::Get().GetSceneState() != SceneState::Play)
+            {
+                EditorLayer::Get().GetCommandHistory().Undo();
+            }
             return true;
         case KeyCode::Y:
-            EditorLayer::Get().GetCommandHistory().Redo();
+            if (EditorLayer::Get().GetSceneState() != SceneState::Play)
+            {
+                EditorLayer::Get().GetCommandHistory().Redo();
+            }
             return true;
         }
     }

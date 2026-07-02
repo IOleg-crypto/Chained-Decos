@@ -1,6 +1,7 @@
 #include "engine/assets/loaders/model_loader.h"
 #include "engine/assets/loaders/assimp_importer.h"
-#include "engine/assets/loaders/assimp_importer.h"
+#include "engine/assets/model_data.h"
+
 #include "engine/assets/types/model_asset.h"
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/string.hpp>
@@ -57,13 +58,31 @@ PendingModelData ModelLoader::LoadMeshDataFromDisk(const std::filesystem::path& 
             {
                 std::ifstream is(chassetPath, std::ios::binary);
                 cereal::BinaryInputArchive archive(is);
-                PendingModelData data;
-                archive(data);
-                return data;
+                
+                ChainedAssetHeader header;
+                archive(header);
+
+                ChainedAssetHeader currentHeader; 
+                
+                if (header.magic != currentHeader.magic)
+                {
+                    CH_CORE_WARN("Invalid .chasset file format (magic mismatch) for: {}", chassetPath.string());
+                    
+                }
+                else if (header.dataStructSize != currentHeader.dataStructSize)
+                {
+                    CH_CORE_WARN("Engine data structure changed! .chasset is outdated for: {}", chassetPath.string());
+                }
+                else
+                {
+                    PendingModelData data;
+                    archive(data);
+                    return data;
+                }
             }
             catch(const std::exception& e)
             {
-                CH_CORE_WARN("Failed to load .chasset ({}), falling back to Assimp: {}", chassetPath.string(), e.what());
+                CH_CORE_WARN("Failed to deserialize .chasset ({}), falling back to Assimp: {}", chassetPath.string(), e.what());
             }
         }
     }
@@ -76,6 +95,12 @@ PendingModelData ModelLoader::LoadMeshDataFromDisk(const std::filesystem::path& 
         {
             std::ofstream os(chassetPath, std::ios::binary);
             cereal::BinaryOutputArchive archive(os);
+            
+        
+            ChainedAssetHeader header;
+            archive(header);
+            
+            
             archive(data);
         }
         catch (const std::exception& e)

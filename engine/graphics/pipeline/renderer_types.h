@@ -30,7 +30,7 @@ struct ShaderUniform
 
     if (Type == 4) // Color
     {
-        Chained::Color c = {(unsigned char)glm::clamp(Value[0] * 255.0f, 0.0f, 255.0f),
+        Color c = {(unsigned char)glm::clamp(Value[0] * 255.0f, 0.0f, 255.0f),
                              (unsigned char)glm::clamp(Value[1] * 255.0f, 0.0f, 255.0f),
                              (unsigned char)glm::clamp(Value[2] * 255.0f, 0.0f, 255.0f),
                              (unsigned char)glm::clamp(Value[3] * 255.0f, 0.0f, 255.0f)};

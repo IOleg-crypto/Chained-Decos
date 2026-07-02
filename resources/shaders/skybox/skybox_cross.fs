@@ -1,6 +1,6 @@
 #version 450 core
 
-#include "include/color_space.glsl"
+#include "../include/color_space.glsl"
 
 in vec3 v_Position;
 

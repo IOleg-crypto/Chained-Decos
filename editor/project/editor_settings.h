@@ -12,6 +12,7 @@ namespace Chained
         float CameraMoveSpeed = 10.0f;
         float CameraRotationSpeed = 0.1f;
         float CameraBoostMultiplier = 5.0f;
+        bool DisableCameraZoom = false;
         bool ShowGrid = true;
         bool ShowGizmos = true;
         bool ShowSelectedWireframe = true;

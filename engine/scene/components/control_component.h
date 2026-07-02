@@ -19,6 +19,18 @@ struct RectTransform
     glm::vec2 Scale = {1.0f, 1.0f};
 
     static const char* GetStaticName() { return "RectTransform"; }
+
+    
+    struct UI
+    {
+        UIMeta AnchorMin = {.Speed = 0.01f};
+        UIMeta AnchorMax = {.Speed = 0.01f};
+        UIMeta OffsetMin = {.Speed = 1.0f};
+        UIMeta OffsetMax = {.Speed = 1.0f};
+        UIMeta Pivot = {.Speed = 0.01f};
+        UIMeta Rotation = {.Speed = 0.5f};
+        UIMeta Scale = {.Speed = 0.05f};
+    };
 };
 
 CH_MARK_RFL(RectTransform);
@@ -31,6 +43,12 @@ struct ControlComponent
     bool HiddenInHierarchy = false;
 
     static const char* GetStaticName() { return "ControlComponent"; }
+
+    
+    struct UI
+    {
+        UIMeta ZOrder = {.Speed = 1.0f};
+    };
 };
 
 CH_MARK_RFL(ControlComponent);

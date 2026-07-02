@@ -1,36 +1,31 @@
 #include "engine/scene/scene.h"
 #include "engine/core/profiler.h"
-#include "engine/physics/physics.h"
-#include "engine/scene/systems/scene_resource_manager.h"
-#include "engine/scene/systems/hierarchy_system.h"
-#include "engine/scene/scene_events.h"
-#include "engine/scene/animation_systems.h"
-#include "engine/scene/components/scene_transition_component.h"
-#include "engine/scene/components/control_component.h"
-#include "engine/graphics/ui/ui_renderer.h"
-#include <yaml-cpp/yaml.h>
+#include "engine/core/service_locator.h"
+#include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/ui/ui_factory.h"
+#include "engine/graphics/ui/ui_renderer.h"
+#include "engine/physics/physics.h"
+#include "engine/scene/animation_systems.h"
+#include "engine/scene/components/control_component.h"
+#include "engine/scene/components/scene_transition_component.h"
+#include "engine/scene/scene_events.h"
+#include "engine/scene/systems/hierarchy_system.h"
+#include "engine/scene/systems/scene_resource_manager.h"
+#include "engine/serialization/component_serializer.h"
 #include "scene_scripting_manager.h"
 #include "scripting/scriptengine.h"
-#include "engine/serialization/component_serializer.h"
 #include <entt/entt.hpp>
-#include "engine/core/service_locator.h"
-#include "engine/graphics/ui/ui_renderer.h"
-#include "engine/graphics/pipeline/renderer.h"
+#include <yaml-cpp/yaml.h>
 
 using namespace entt::literals;
 
-
 namespace Chained
 {
-// Scene implementation
 Scene::Scene()
 {
-    // Create registry
     m_Registry = std::make_unique<entt::registry>();
     auto& reg = *m_Registry;
-    
-    // Populate Context
+
     reg.ctx().emplace<Scene*>(this);
     reg.ctx().emplace<EntityUUIDMap>();
 
@@ -38,18 +33,20 @@ Scene::Scene()
     m_ResourceManager = std::make_unique<SceneResourceManager>();
     m_AnimationManager = std::make_unique<AnimationManager>();
 
-    // Register Resource Observers
-    if (m_ResourceManager)
-        m_ResourceManager->RegisterObservers(reg);
-
-    // Every scene must have its own environment to avoid skybox leaking/bugs
-    m_Settings.Environment = std::make_shared<EnvironmentAsset>();
-
-    m_ScriptingManager = std::make_unique<SceneScriptingManager>(this);
     
+    reg.on_construct<IDComponent>().connect<&Scene::OnIDConstruct>(this);
+    reg.on_destroy<IDComponent>().connect<&Scene::OnIDDestroy>(this);
+
+    if (m_ResourceManager)
+    {
+        m_ResourceManager->RegisterObservers(reg);
+    }
+
+    m_Settings.Environment = std::make_shared<EnvironmentAsset>();
+    m_ScriptingManager = std::make_unique<SceneScriptingManager>(this);
+
     UIFactory::Initialize();
 }
-
 Scene::~Scene()
 {
     Physics::ClearContext(this);
@@ -59,7 +56,6 @@ Scene::~Scene()
 
 std::shared_ptr<Scene> Scene::CreateDefault()
 {
-     
     auto scene = std::make_shared<Scene>();
 
     // Ensure every scene starts with a Main Camera
@@ -97,33 +93,31 @@ std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
             Entity dstEntity = newScene->CreateEntityWithUUID(id.ID);
             entityMap[entityHandle] = (entt::entity)dstEntity;
 
-                if (srcRegistry.ctx().contains<ComponentSerializer*>())
-                {
-                    auto serializer = srcRegistry.ctx().get<ComponentSerializer*>();
-                    if (serializer)
-                        serializer->CopyAll(srcEntity, dstEntity);
+            
+            
+            ComponentSerializer::CopyAll(srcEntity, dstEntity);
 
-                    // Reset physics handles so the specialized PhysicsSystem::InitializeBodies 
-                    // in the new scene can create fresh native bodies for the runtime world.
-                    if (dstEntity.HasComponent<RigidBodyComponent>())
-                    {
-                        dstEntity.GetComponent<RigidBodyComponent>().Handle = kInvalidPhysicsBody;
-                    }
-                }
+            // Reset physics handles so the specialized PhysicsSystem::InitializeBodies
+            // in the new scene can create fresh native bodies for the runtime world.
+            if (dstEntity.HasComponent<RigidBodyComponent>())
+            {
+                dstEntity.GetComponent<RigidBodyComponent>().Handle = kInvalidPhysicsBody;
+            }
         }
     }
 
-    // Second pass: Copy and remap Hierarchy
+    
     {
         CH_PROFILE_SCOPE("Scene::Copy::CopyEntities_Pass2");
         srcRegistry.view<HierarchyComponent>().each([&](auto entityHandle, auto& srcHC) {
             if (!entityMap.contains(entityHandle))
+            {
                 return;
+            }
 
             entt::entity dstHandle = entityMap[entityHandle];
             auto& dstHC = dstRegistry.get_or_emplace<HierarchyComponent>(dstHandle);
 
-            // Remap parent
             if (srcHC.Parent != entt::null && entityMap.count(srcHC.Parent))
             {
                 dstHC.Parent = entityMap[srcHC.Parent];
@@ -133,7 +127,6 @@ std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
                 dstHC.Parent = entt::null;
             }
 
-            // Remap children
             dstHC.Children.clear();
             for (auto child : srcHC.Children)
             {
@@ -143,11 +136,8 @@ std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
                 }
             }
         });
-
-        CH_CORE_INFO("Scene::Copy - Pass 2 complete.");
     }
 
-    CH_CORE_INFO("Scene::Copy - Finalizing copy ({} entities). Returning newScene pointer: {}", entityMap.size(), (void*)newScene.get());
     return newScene;
 }
 
@@ -183,66 +173,88 @@ void Scene::OnRuntimeStart()
     Physics::ResetAccumulator(this);
     m_IsSimulationRunning = true;
 
-    CH_CORE_INFO("Scene::OnRuntimeStart - Initializing script and system managers...");
-    if (auto* uiRenderer = ServiceLocator::Get<UIRenderer>())
-        uiRenderer->ResetInputCooldown();
     
+    SetContextScene(this);
+
+    if (auto* uiRenderer = ServiceLocator::Get<UIRenderer>())
+    {
+        uiRenderer->ResetInputCooldown();
+    }
+
     if (m_ScriptingManager)
+    {
         m_ScriptingManager->OnRuntimeStart();
+    }
     else
+    {
         CH_CORE_ERROR("Scene::OnRuntimeStart - m_ScriptingManager is NULL!");
+    }
 
     if (m_ResourceManager)
-        m_ResourceManager->OnRuntimeStart(this);
-
-    // Initialize PlayOnStart animations
     {
-        auto& registry = GetRegistry();
-        auto view = registry.view<AnimationComponent>();
-        for (auto entity : view)
+        m_ResourceManager->OnRuntimeStart(this);
+    }
+
+    
+    auto& registry = GetRegistry();
+    auto view = registry.view<AnimationComponent>();
+    for (auto entity : view)
+    {
+        auto& anim = view.get<AnimationComponent>(entity);
+        if (anim.PlayOnStart)
         {
-            auto& anim = view.get<AnimationComponent>(entity);
-            if (anim.PlayOnStart)
-            {
-                anim.IsPlaying = true;
-            }
+            anim.IsPlaying = true;
         }
     }
 
     CH_CORE_INFO("Scene::OnRuntimeStart - Activation complete.");
 }
-
 void Scene::OnRuntimeStop()
 {
     m_IsSimulationRunning = false;
 
-    m_ScriptingManager->OnRuntimeStop();
-    
+    if (m_ScriptingManager)
+    {
+        m_ScriptingManager->OnRuntimeStop();
+    }
+
     if (m_ResourceManager)
+    {
         m_ResourceManager->OnRuntimeStop(this);
+    }
+
+    SetContextScene(nullptr); 
 }
 
 void Scene::OnUpdateRuntime(Timestep ts)
 {
     CH_PROFILE_FUNCTION();
- 
+
     if (m_ScriptingManager)
+    {
         m_ScriptingManager->OnUpdate(ts);
- 
+    }
+
     // 1. Hierarchy Update
     if (m_HierarchySystem)
+    {
         m_HierarchySystem->UpdateWorldTransforms(*m_Registry, GetRootEntities());
+    }
 
     // 2. Resource & Asset Resolution
     if (m_ResourceManager)
+    {
         m_ResourceManager->Update(*m_Registry, ts);
+    }
 
     // 3. Physics Simulation
     Physics::Update(this, ts, true);
 
     // 4. Animation Playback
     if (m_AnimationManager)
+    {
         m_AnimationManager->UpdatePlayback(this, ts);
+    }
 
     // 5. Scene Transitions
     auto transitionView = m_Registry->view<SceneTransitionComponent>();
@@ -252,17 +264,24 @@ void Scene::OnUpdateRuntime(Timestep ts)
         if (m_Registry->all_of<UIControlComponent>(entity))
         {
             auto& widget = m_Registry->get<UIControlComponent>(entity);
-            if (widget.PressedThisFrame) transition.Triggered = true;
+            if (widget.PressedThisFrame)
+            {
+                transition.Triggered = true;
+            }
         }
 
         if (transition.Triggered && !transition.TargetScenePath.empty())
         {
             SceneChangeRequestEvent ev(transition.TargetScenePath);
             if (m_EventCallback)
+            {
                 m_EventCallback(ev);
+            }
             else
+            {
                 CH_CORE_WARN("Scene transition triggered but no EventCallback bound!");
-            
+            }
+
             transition.Triggered = false;
         }
     }
@@ -277,7 +296,9 @@ void Scene::OnUpdateEditor(Timestep timestep)
 
     // 2. Resource & Asset Resolution (Editor needs this for lazy loading too)
     if (m_ResourceManager)
+    {
         m_ResourceManager->Update(*m_Registry, timestep);
+    }
 }
 
 void Scene::OnViewportResize(uint32_t width, uint32_t height)
@@ -289,14 +310,11 @@ void Scene::OnViewportResize(uint32_t width, uint32_t height)
         auto& cameraComponent = view.get<CameraComponent>(entity);
         if (!cameraComponent.FixedAspectRatio)
         {
-            // cameraComponent.Camera.SetViewportSize(width, height); // No explicit SetViewportSize, let rendering handle aspect ratio
+            cameraComponent.Camera.SetViewportSize(
+                width, height); // No explicit SetViewportSize, let rendering handle aspect ratio
         }
     }
 }
-
-// Camera retrieval logic moved to SceneRenderer
-
-// Primary camera entity retrieval moved to SceneRenderer helper logic
 
 void Scene::OnIDConstruct(entt::registry& reg, entt::entity entity)
 {
@@ -345,7 +363,9 @@ std::vector<entt::entity> Chained::Scene::GetRootEntities()
         {
             auto& hc = reg.template get<HierarchyComponent>(entity);
             if (hc.Parent == entt::null)
+            {
                 roots.push_back(entity);
+            }
         }
         else
         {
@@ -367,7 +387,9 @@ std::vector<entt::entity> Chained::Scene::GetRootEntities() const
         {
             auto& hc = reg.template get<HierarchyComponent>(entity);
             if (hc.Parent == entt::null)
+            {
                 roots.push_back(entity);
+            }
         }
         else
         {
@@ -376,6 +398,7 @@ std::vector<entt::entity> Chained::Scene::GetRootEntities() const
     }
     return roots;
 }
+
 bool Scene::IsSimulationRunning() const
 {
     return m_IsSimulationRunning;
@@ -397,14 +420,10 @@ Entity Scene::CopyEntityInternal(entt::entity copyEntity, entt::entity parentEnt
     std::string copyName = srcEntity.GetName() + (parentEntity == entt::null ? "_copy" : "");
     Entity dstEntity = CreateEntity(copyName);
 
-    // CopyAll overwrites TagComponent and IDComponent with the source's values.
-    // We must restore the copy's unique identity afterwards.
-    if (GetRegistry().ctx().contains<ComponentSerializer*>())
-    {
-        auto serializer = GetRegistry().ctx().get<ComponentSerializer*>();
-        if (serializer)
-            serializer->CopyAll(srcEntity, dstEntity);
-    }
+    
+    
+    
+    ComponentSerializer::CopyAll(srcEntity, dstEntity);
 
     // Restore the name (CopyAll overwrites it with source tag)
     dstEntity.GetComponent<TagComponent>().Tag = copyName;
@@ -414,10 +433,16 @@ Entity Scene::CopyEntityInternal(entt::entity copyEntity, entt::entity parentEnt
     dstEntity.RemoveComponent<IDComponent>();
     dstEntity.AddComponent<IDComponent>();
 
+    
+    if (dstEntity.HasComponent<RigidBodyComponent>())
+    {
+        dstEntity.GetComponent<RigidBodyComponent>().Handle = kInvalidPhysicsBody;
+    }
+
     // Handle Hierarchy
     if (srcEntity.HasComponent<HierarchyComponent>())
     {
-        // CRITICAL: Copy srcHC to local variable. 
+        // CRITICAL: Copy srcHC to local variable.
         // Subsequent AddOrReplaceComponent or Children.push_back calls on parent/children
         // will reallocate the HierarchyComponent pool, invalidating ANY reference.
         auto srcHC = srcEntity.GetComponent<HierarchyComponent>();
@@ -475,7 +500,7 @@ Entity Scene::CreateEntityWithUUID(UUID uuid, const std::string& name)
     entity.AddComponent<IDComponent>(uuid);
     entity.AddComponent<TagComponent>(name.empty() ? "Entity" : name);
     entity.AddComponent<TransformComponent>();
-    
+
     return entity;
 }
 
@@ -485,7 +510,7 @@ Entity Scene::CreateEntity(const std::string& name)
     entity.AddComponent<IDComponent>();
     entity.AddComponent<TagComponent>(name.empty() ? "Entity" : name);
     entity.AddComponent<TransformComponent>();
-    
+
     return entity;
 }
 

@@ -15,7 +15,7 @@ namespace Chained
         virtual ~Camera() = default;
 
         const glm::mat4& GetProjection() const { return m_Projection; }
-        
+
         void SetPerspective(float verticalFov, float nearClip, float farClip);
         void SetOrthographic(float size, float nearClip, float farClip);
         void SetViewportSize(uint32_t width, uint32_t height);

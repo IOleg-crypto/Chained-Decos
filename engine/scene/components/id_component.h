@@ -9,6 +9,14 @@ namespace Chained
 struct IDComponent
 {
     UUID ID;
+
+    static const char* GetStaticName() { return "IDComponent"; }
+
+    
+    struct UI
+    {
+        UIMeta ID = {.Tooltip = "Унікальний ідентифікатор сутності (UUID)"};
+    };
 };
 CH_MARK_RFL(IDComponent);
 } // namespace Chained

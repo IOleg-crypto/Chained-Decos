@@ -1,10 +1,9 @@
 #include "engine/serialization/serialization.h"
-#include "engine/scene/components/mesh_component.h"
+#include "engine/scene/components/model_component.h"
 #include "gtest/gtest.h"
 #include <filesystem>
 
 using namespace Chained;
-using namespace Chained::Serialization;
 
 struct NestedData
 {

@@ -1,15 +1,16 @@
 #ifndef CH_SCRIPTING_COMPONENTS_H
-#define CH_SCRIPTING_COMPONENTS_H   
+#define CH_SCRIPTING_COMPONENTS_H
+#include "engine/core/service_locator.h"
 #include "engine/reflection/reflection_rfl.h"
-#include <vector>
-#include <string>
+#include "scripting/scriptengine.h"
+#include <algorithm>
+#include <glm/glm.hpp>
 #include <map>
 #include <memory>
+#include <string>
 #include <variant>
-#include <glm/glm.hpp>
-#include <algorithm>
-#include "engine/core/service_locator.h"
-#include "scripting/scriptengine.h"
+#include <vector>
+
 
 namespace Chained
 {
@@ -17,7 +18,15 @@ namespace Chained
 enum class ScriptFieldType
 {
     None = 0,
-    Float, Int, Bool, String, Vec2, Vec3, Vec4, Color, Entity
+    Float,
+    Int,
+    Bool,
+    String,
+    Vec2,
+    Vec3,
+    Vec4,
+    Color,
+    Entity
 };
 
 struct ScriptField
@@ -40,7 +49,7 @@ struct ManagedScriptInstance
     // Owning smart pointer to the backing Coral::ManagedObject.
     // The deleter is injected by SceneScriptingManager to avoid including Coral headers here.
     std::shared_ptr<void> Instance;
-    bool        NeedsStart   = true;
+    bool NeedsStart = true;
 
     ManagedScriptInstance ClonePersistent() const
     {
@@ -57,17 +66,23 @@ struct ManagedScriptInstance
     }
 
     // Returns a raw (non-owning) pointer to the underlying object. Cast as needed.
-    void* GetRaw() const { return Instance.get(); }
-    bool HasInstance() const { return Instance != nullptr; }
-    
-    template<typename T_Archive>
-    void Reflect(::Chained::Properties<T_Archive>& props)
+    void* GetRaw() const
+    {
+        return Instance.get();
+    }
+    bool HasInstance() const
+    {
+        return Instance != nullptr;
+    }
+
+    template <typename T_Archive> void Reflect(::Chained::Properties<T_Archive>& props)
     {
         if (props.GetMode() == ::Chained::ReflectionMode::UI)
         {
             std::vector<std::string> options;
             options.emplace_back("-- Select script --");
-            for (const auto& [scriptName, scriptType] : ::Chained::ServiceLocator::Get<::Chained::ScriptEngine>()->GetScriptClasses())
+            for (const auto& [scriptName, scriptType] :
+                 ::Chained::ServiceLocator::Get<::Chained::ScriptEngine>()->GetScriptClasses())
             {
                 options.emplace_back(scriptName);
             }
@@ -97,11 +112,12 @@ struct ManagedScriptComponent
         return copy;
     }
 
-    static const char* GetStaticName() { return "ManagedScriptComponent"; }
+    static const char* GetStaticName()
+    {
+        return "ManagedScriptComponent";
+    }
 };
-
-CH_MARK_RFL(ManagedScriptComponent);
-
+CH_MARK_RFL(ManagedScriptComponent)
 } // namespace Chained
 
 #endif // CH_SCRIPTING_COMPONENTS_H

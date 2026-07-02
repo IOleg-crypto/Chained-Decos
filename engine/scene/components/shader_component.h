@@ -14,6 +14,13 @@ struct ShaderComponent
     bool Enabled = true;
 
     static const char* GetStaticName() { return "ShaderComponent"; }
+
+    
+    struct UI
+    {
+        UIMeta ShaderPath = {.Hint = PropertyMeta::WidgetHint::FilePicker, .Extensions = ".glsl,.vs,.fs,.vert,.frag"};
+        UIMeta Enabled = {.Tooltip = "Увімкнути використання цього кастомного шейдера"};
+    };
 };
 
 CH_MARK_RFL(ShaderComponent);

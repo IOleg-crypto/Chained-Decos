@@ -1,16 +1,15 @@
-#include "engine/platform/utils/file_dialogs.h"
-#include "engine/core/service_locator.h"
 #include "world_panel.h"
-#include "thirdparty/IconsFontAwesome6.h"
 #include "editor/layer.h"
+#include "engine/assets/asset_manager.h"
 #include "engine/assets/types/environment_asset.h"
 #include "engine/core/platform.h"
-#include "scene/scene.h"
+#include "engine/core/service_locator.h"
+#include "engine/platform/utils/file_dialogs.h"
 #include "engine/project/project.h"
-#include "engine/assets/asset_manager.h"
+#include "scene/scene.h"
+#include "thirdparty/IconsFontAwesome6.h"
 #include <filesystem>
 #include <fstream>
-
 
 namespace Chained
 {
@@ -170,7 +169,8 @@ void WorldPanel::OnImGuiRender(bool readOnly)
                 if (auto project = Project::GetActive())
                 {
                     auto handle = ServiceLocator::Get<AssetManager>()->ResolveToHandle(result->string());
-                    m_Context->GetSettings().Environment = ServiceLocator::Get<AssetManager>()->Get<EnvironmentAsset>(result->string());
+                    m_Context->GetSettings().Environment =
+                        ServiceLocator::Get<AssetManager>()->Get<EnvironmentAsset>(result->string());
                 }
             }
         }
@@ -240,6 +240,7 @@ void WorldPanel::OnImGuiRender(bool readOnly)
                 out << YAML::Key << "Density" << YAML::Value << settings.Fog.Density;
                 out << YAML::Key << "Start" << YAML::Value << settings.Fog.Start;
                 out << YAML::Key << "End" << YAML::Value << settings.Fog.End;
+                out << YAML::Key << "HeightFalloff" << YAML::Value << settings.Fog.HeightFalloff;
                 out << YAML::EndMap;
 
                 out << YAML::EndMap;
@@ -438,9 +439,10 @@ void WorldPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, 
         ImGui::SetNextItemWidth(-1);
         ImGui::Combo("##FogMode", &fog.Mode, fogModes, 3);
 
-        drawDragFloat("Density", &fog.Density, 0.0001f, 0.0f, 0.1f, "%.4f");
+        drawDragFloat("Density", &fog.Density, 0.0001f, 0.0f, 10.f, "%.4f");
         drawDragFloat("Start", &fog.Start, 1.0f, 0.0f, 10000.0f);
         drawDragFloat("End", &fog.End, 1.0f, 0.0f, 10000.0f);
+        drawDragFloat("Height Falloff", &fog.HeightFalloff, 0.01f, 0.0f, 1.0f, "%.2f");
 
         if (readOnly)
         {

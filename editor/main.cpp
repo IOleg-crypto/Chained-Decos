@@ -1,6 +1,7 @@
-#include "layer.h"
 #include "engine/app/entry_point.h"
 #include "engine/core/platform.h"
+#include "layer.h"
+
 
 namespace Chained
 {
@@ -17,10 +18,10 @@ Application* CreateApplication(ApplicationCommandLineArgs args)
     spec.CommandLineArgs = args;
 
     // Default editor window settings
-    spec.WindowWidth = 1600;
-    spec.WindowHeight = 900;
+    spec.WindowWidth = 0;
+    spec.WindowHeight = 0;
     spec.Headless = false;
-    spec.EnableScripting = true;
+    spec.EnableScripting = false;
 
     // Set engine root to the executable directory so AssetManager can find
     // resources/shaders, resources/icons, resources/font etc.

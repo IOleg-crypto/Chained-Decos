@@ -14,6 +14,12 @@ namespace Chained
         bool Triggered = false;      // Can be set manually or via automated UI events
 
         static const char* GetStaticName() { return "SceneTransitionComponent"; }
+
+        
+        struct UI
+        {
+            UIMeta TargetScenePath = {.Hint = PropertyMeta::WidgetHint::FilePicker, .Extensions = ".chscene"};
+        };
     };
 
     CH_MARK_RFL(SceneTransitionComponent);

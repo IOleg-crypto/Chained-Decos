@@ -25,6 +25,7 @@ function(chained_add_csharp_scripts TARGET_NAME CSHARP_PROJECT_PATH)
             --parallel
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
         COMMENT "Building C# Scripts for ${TARGET_NAME} (incremental)"
+        BYPRODUCTS "${SCRIPT_DLL_PATH}"
         VERBATIM
     )
     
@@ -41,7 +42,7 @@ function(chained_add_engine_module TARGET_NAME)
     set(multiValueArgs SOURCES DEPENDS EXCLUDE_DIRS EXCLUDE_FILES)
     cmake_parse_arguments(MODULE "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-    file(GLOB_RECURSE AUTO_SOURCES CONFIGURE_DEPENDS "*.cpp" "*.h" "*.c" "*.hh" "*.hpp")
+    file(GLOB_RECURSE AUTO_SOURCES "*.cpp" "*.h" "*.c" "*.hh" "*.hpp")
     if(MODULE_EXCLUDE_DIRS)
         foreach(EXCLUDE_DIR ${MODULE_EXCLUDE_DIRS})
             list(FILTER AUTO_SOURCES EXCLUDE REGEX "${EXCLUDE_DIR}/.*")

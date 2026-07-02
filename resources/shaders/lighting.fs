@@ -6,6 +6,11 @@
 #include "include/lighting_spot.glsl"
 #include "include/fog.glsl"
 #include "include/color_space.glsl"
+#include "include/material_pbr.glsl"
+#include "include/albedo_sampling.glsl"
+#include "include/normal_sampling.glsl"
+#include "include/tonemap.glsl"
+#include "include/debug_modes.glsl"
 
 in vec3 fragPosition;
 in vec2 fragTexCoord;
@@ -17,86 +22,89 @@ out vec4 finalColor;
 
 void main()
 {
-    // 1. Base color
-    vec4 baseColor = colDiffuse;
+    // ════════════════════════════════════════════════════════════════
     
-    // Vertex color contribution (if non-zero)
-    if (length(fragColor.rgb) > 0.01) 
-    {
-        baseColor *= fragColor;
-    }
-    
-    // Albedo texture (in sRGB space from file — convert to linear)
-    if (useTexture == 1) 
-    {
-        vec4 sampled = texture(texture0, fragTexCoord);
-        baseColor.rgb *= ToLinear(sampled.rgb); 
-        baseColor.a   *= sampled.a;
-    }
+    // ════════════════════════════════════════════════════════════════
+    vec4 baseColor = SampleAlbedo(fragTexCoord, fragColor, useTexture);
     
     // Alpha discard (Cutout)
-    if (baseColor.a < 0.1) discard;
-    
+    if (ShouldDiscardPixel(baseColor.a, 0.1)) 
+        discard;
+
     int mode = int(uMode + 0.5);
-    if (mode == 2) baseColor = vec4(0.5, 0.5, 0.5, 1.0); // Neutral grey for Lighting-only
     
-    // Albedo/Unlit mode — apply fog and exit before lighting
-    if (mode == 3) 
+    // ════════════════════════════════════════════════════════════════
+    
+    // ════════════════════════════════════════════════════════════════
+    if (mode == DEBUG_MODE_UNLIT_ALBEDO) 
     { 
-        finalColor = ApplyFog(baseColor, fragPosition, viewPos, uTime); 
+        vec3 unlitLinear = ApplyLinearFog(baseColor.rgb, fragPosition, viewPos, lightDir, lightColor.rgb);
+        finalColor = vec4(ToSRGB(unlitLinear), baseColor.a); 
         return; 
     }
     
-    // Normal calculation
-    vec3 normal = normalize(fragNormal);
-    if (useNormalMap == 1) {
-        vec3 mapNormal = texture(texture2, fragTexCoord).rgb;
-        mapNormal = normalize(mapNormal * 2.0 - 1.0);
-        normal = normalize(fragTBN * mapNormal);
+    // ════════════════════════════════════════════════════════════════
+    
+    // ════════════════════════════════════════════════════════════════
+    vec3 normal = CalculateNormal(fragNormal, fragTBN, fragTexCoord, useNormalMap);
+    
+    
+    if (mode == DEBUG_MODE_NORMALS) 
+    { 
+        finalColor = DebugNormals(normal, 1.0); 
+        return; 
     }
+
+    // ════════════════════════════════════════════════════════════════
     
-    if (mode == 1) { finalColor = vec4(normal * 0.5 + 0.5, 1.0); return; }
-
-    // PBR parameters (Blinn-Phong approximation)
-    float m = metalness;
-    float r = roughness;
-    float occ = 1.0;
-
-    if (useMetallicMap == 1) m *= texture(texture1, fragTexCoord).b; 
-    if (useRoughnessMap == 1) r *= texture(texture3, fragTexCoord).g; 
-    if (useOcclusionMap == 1) occ = texture(texture4, fragTexCoord).r;
-
-    m = clamp(m, 0.0, 1.0);
-    r = clamp(r, 0.04, 1.0);
-
-    float s = (1.0 - r) * 128.0;
-    if (s < 1.0) s = 1.0;
+    // ════════════════════════════════════════════════════════════════
+    float metalness, roughness, occlusion;
+    CalculateMaterialProperties(fragTexCoord, metalness, roughness, occlusion);
     
-    vec3 specColor = mix(vec3(0.04), baseColor.rgb, m);
-    vec3 diffColor = baseColor.rgb * (1.0 - m);
+    float shininess;
+    vec3 specColor, diffColor;
+    CalculateSpecularProperties(metalness, roughness, baseColor.rgb, shininess, specColor, diffColor);
+    
+    // ════════════════════════════════════════════════════════════════
+    
+    // ════════════════════════════════════════════════════════════════
+    if (mode == DEBUG_MODE_LIGHTING_ONLY) 
+    {
+        baseColor = vec4(0.5, 0.5, 0.5, 1.0);
+    }
+    else if (mode == DEBUG_MODE_METALNESS || mode == DEBUG_MODE_ROUGHNESS || mode == DEBUG_MODE_OCCLUSION)
+    {
+        vec4 debugColor = ApplyDebugMode(mode, normal, baseColor.rgb, metalness, roughness, occlusion, baseColor.a);
+        finalColor = debugColor;
+        return;
+    }
 
-    // Ambient
+    // ════════════════════════════════════════════════════════════════
+    
+    // ════════════════════════════════════════════════════════════════
     vec3 viewDir = normalize(viewPos - fragPosition);
     vec3 skyAmbient = skyAmbientColor.rgb * skyAmbientColor.a; 
     vec3 finalAmbient = diffColor * (ambient + skyAmbient);
-    vec3 lighting = finalAmbient * occ;
+    vec3 accumulatedLighting = finalAmbient * occlusion;
 
-    // Directional light
-    lighting += CalcDirectionalLight(lightDir, lightColor, normal, viewDir, diffColor, specColor, s);
+    
+    accumulatedLighting += CalcDirectionalLight(lightDir, lightColor, normal, viewDir, diffColor, specColor, shininess);
 
-    // Dynamic lights from SSBO
+    
     int lightCount = clamp(uLightCount, 0, MAX_LIGHTS);
     for (int i = 0; i < lightCount; i++)
     {
         if (lights[i].enabled == 0) continue;
         
         if (lights[i].type == 0) // Point Light
-            lighting += CalcPointLight(lights[i], normal, fragPosition, viewDir, diffColor, specColor, s);
+            accumulatedLighting += CalcPointLight(lights[i], normal, fragPosition, viewDir, diffColor, specColor, shininess);
         else if (lights[i].type == 1) // Spot Light
-            lighting += CalcSpotLight(lights[i], normal, fragPosition, viewDir, diffColor, specColor, s);
+            accumulatedLighting += CalcSpotLight(lights[i], normal, fragPosition, viewDir, diffColor, specColor, shininess);
     }
 
-    // Emissive (already stored in linear — direct multiplication is correct)
+    // ════════════════════════════════════════════════════════════════
+    
+    // ════════════════════════════════════════════════════════════════
     vec3 emissiveComp = colEmissive.rgb;
     if (useEmissiveTexture == 1) 
     {
@@ -104,17 +112,19 @@ void main()
     }
     emissiveComp *= emissiveIntensity;
 
-    // Combine in linear space
-    vec3 outLinear = lighting + emissiveComp;
+    // ════════════════════════════════════════════════════════════════
+    
+    // ════════════════════════════════════════════════════════════════
+    vec3 outLinear = accumulatedLighting + emissiveComp;
+    outLinear = ApplyLinearFog(outLinear, fragPosition, viewPos, lightDir, lightColor.rgb);
 
-    // Exposure tone-mapping in linear space
-    outLinear = vec3(1.0) - exp(-outLinear * uExposure);
+    // ════════════════════════════════════════════════════════════════
+    
+    // ════════════════════════════════════════════════════════════════
+    vec3 outSRGB = FinalizeColor(outLinear, uExposure, 2.2);
 
-    // Gamma correction (linear → sRGB)
-    vec3 outSRGB = ToSRGB(outLinear);
-
-    vec4 result = vec4(outSRGB, (mode == 2) ? 1.0 : baseColor.a);
-
-    // Apply world fog
-    finalColor = ApplyFog(result, fragPosition, viewPos, uTime);
+    // ════════════════════════════════════════════════════════════════
+    
+    // ════════════════════════════════════════════════════════════════
+    finalColor = vec4(outSRGB, (mode == DEBUG_MODE_LIGHTING_ONLY) ? 1.0 : baseColor.a);
 }

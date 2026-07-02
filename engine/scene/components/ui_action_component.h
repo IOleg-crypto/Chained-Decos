@@ -21,6 +21,15 @@ namespace Chained
         UIActionType Type = UIActionType::SetParameter;
 
         static const char* GetStaticName() { return "UIActionComponent"; }
+
+        
+        struct UI
+        {
+            UIMeta Type = {.Hint = PropertyMeta::WidgetHint::Enum};
+            UIMeta TargetEntityID = {.Tooltip = "ID цільової сутності"};
+            UIMeta ParameterName = {.Tooltip = "Ім'я параметра для встановлення"};
+            UIMeta Value = {.Speed = 0.1f, .Tooltip = "Значення параметра"};
+        };
     };
 
     CH_MARK_RFL(UIActionComponent);

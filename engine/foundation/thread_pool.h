@@ -35,7 +35,7 @@ public:
     {
         using ReturnType = typename std::invoke_result<F, Args...>::type;
 
-        // Пакуємо завдання у shared_ptr, щоб його можна було скопіювати всередину std::function
+        
         auto task = std::make_shared<std::packaged_task<ReturnType()>>(
             std::bind(std::forward<F>(f), std::forward<Args>(args)...)
         );
@@ -44,7 +44,7 @@ public:
         {
             std::unique_lock<std::mutex> lock(m_QueueMutex);
 
-            // Не дозволяємо додавати завдання, якщо пул зупиняється
+            
             if (m_Stop)
                 throw std::runtime_error("Enqueue on stopped ThreadPool");
 
@@ -55,7 +55,7 @@ public:
         return res;
     }
 
-    // Queues a fire-and-forget task (без повернення результату).
+    
     void QueueTask(std::function<void()> task)
     {
         {
@@ -81,21 +81,21 @@ public:
                     {
                         std::unique_lock<std::mutex> lock(this->m_QueueMutex);
 
-                        // Чекаємо, поки з'явиться завдання АБО пул почнуть зупиняти
+                        
                         this->m_Condition.wait(lock, [this]() {
                             return this->m_Stop || !this->m_Tasks.empty();
                         });
 
-                        // Якщо пул зупиняють і завдань більше немає — виходимо з потоку
+                        
                         if (this->m_Stop && this->m_Tasks.empty())
                             return;
 
-                        // Забираємо завдання з черги
+                        
                         task = std::move(this->m_Tasks.front());
                         this->m_Tasks.pop();
                     }
 
-                    // Виконуємо завдання поза м'ютексом, щоб не блокувати інші потоки
+                    
                     task();
                 }
             });
@@ -119,10 +119,10 @@ private:
             m_Stop = true;
         }
 
-        // Будимо всі потоки, щоб вони побачили m_Stop == true і завершили роботу
+        
         m_Condition.notify_all();
 
-        // Чекаємо завершення всіх потоків (join)
+        
         for (std::thread& worker : m_Workers)
         {
             if (worker.joinable())
@@ -132,10 +132,10 @@ private:
     }
 
 private:
-    // Потоки-воркери
+    
     std::vector<std::thread> m_Workers;
 
-    // Черга завдань
+    
     std::queue<std::function<void()>> m_Tasks;
 
     std::mutex m_QueueMutex;

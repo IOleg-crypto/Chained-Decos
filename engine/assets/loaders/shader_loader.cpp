@@ -89,17 +89,20 @@ namespace Chained
     {
         std::filesystem::path fullPath = std::filesystem::absolute(path);
 
+        
         for (const auto& included : includedFiles)
         {
             if (included == fullPath.string())
             {
-                return "";
+                CH_CORE_WARN("ShaderPreprocessor: Circular include detected: {}", path);
+                return ""; 
             }
         }
         includedFiles.push_back(fullPath.string());
 
         if (!std::filesystem::exists(fullPath))
         {
+            
             CH_CORE_ERROR("ShaderPreprocessor: File not found: {}", path);
             return "";
         }
@@ -107,6 +110,7 @@ namespace Chained
         std::ifstream file(fullPath);
         if (!file.is_open())
         {
+            CH_CORE_ERROR("ShaderPreprocessor: Cannot open file: {}", path);
             return "";
         }
 
@@ -121,7 +125,14 @@ namespace Chained
             {
                 std::string includeFile = match[1].str();
                 std::filesystem::path includePath = fullPath.parent_path() / includeFile;
-                ss << ProcessShaderSource(includePath.string(), includedFiles) << "\n";
+                
+                
+                std::string includedSource = ProcessShaderSource(includePath.string(), includedFiles);
+                if (includedSource.empty() && std::filesystem::exists(includePath))
+                {
+                    CH_CORE_WARN("ShaderPreprocessor: Failed to process include: {}", includeFile);
+                }
+                ss << includedSource << "\n";
             }
             else
             {
