@@ -204,6 +204,8 @@ bool EditorProjectSerializer::Deserialize(const std::shared_ptr<Project>& projec
     if (projectNode["Editor"])
     {
         outEditorSettings.CameraMoveSpeed = projectNode["Editor"]["CameraMoveSpeed"].as<float>();
+        if (projectNode["Editor"]["CameraBoostMultiplier"])
+            outEditorSettings.CameraBoostMultiplier = projectNode["Editor"]["CameraBoostMultiplier"].as<float>();
         if (projectNode["Editor"]["ShowGrid"]) outEditorSettings.ShowGrid = projectNode["Editor"]["ShowGrid"].as<bool>();
         if (projectNode["Editor"]["ShowGizmos"]) outEditorSettings.ShowGizmos = projectNode["Editor"]["ShowGizmos"].as<bool>();
         if (projectNode["Editor"]["ShowSelectedWireframe"]) outEditorSettings.ShowSelectedWireframe = projectNode["Editor"]["ShowSelectedWireframe"].as<bool>();

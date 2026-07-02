@@ -326,6 +326,7 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
 
     if (!activeScene)
     {
+        m_HDRFramebuffer->Unbind();
         return;
     }
 
@@ -333,33 +334,31 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
     bool cameraFound = activeCameraOpt.has_value();
     Chained::Camera3D camera;
 
-    // Default to Editor Camera
-    auto& controller = *m_CameraController;
-    auto& sourceCamera = controller;
     
-    float nearClip = (sourceCamera.GetProjectionType() == Camera::ProjectionType::Perspective) 
-        ? sourceCamera.GetPerspectiveNearClip() 
-        : sourceCamera.GetOrthographicNearClip();
-    float farClip = (sourceCamera.GetProjectionType() == Camera::ProjectionType::Perspective) 
-        ? sourceCamera.GetPerspectiveFarClip() 
-        : sourceCamera.GetOrthographicFarClip();
+    auto& controller = *m_CameraController;
+    
+    float nearClip = (controller.GetProjectionType() == Camera::ProjectionType::Perspective) 
+        ? controller.GetPerspectiveNearClip() 
+        : controller.GetOrthographicNearClip();
+    float farClip = (controller.GetProjectionType() == Camera::ProjectionType::Perspective) 
+        ? controller.GetPerspectiveFarClip() 
+        : controller.GetOrthographicFarClip();
+        
     glm::vec3 pos = controller.CalculatePosition();
-    camera.Position = {pos.x, pos.y, pos.z};
-
     glm::vec3 fp = controller.GetFocalPoint();
-    camera.Target = {fp.x, fp.y, fp.z};
-
     glm::vec3 up = controller.GetUpDirection();
-    camera.Up = {up.x, up.y, up.z};
 
-    camera.Projection = (int)sourceCamera.GetProjectionType();
+    camera.Position = {pos.x, pos.y, pos.z};
+    camera.Target = {fp.x, fp.y, fp.z};
+    camera.Up = {up.x, up.y, up.z};
+    camera.Projection = (int)controller.GetProjectionType();
     camera.NearClip = nearClip;
     camera.FarClip = farClip;
-    camera.FovY = (sourceCamera.GetProjectionType() == Camera::ProjectionType::Perspective)
-        ? glm::degrees(sourceCamera.GetPerspectiveVerticalFOV())
-        : sourceCamera.GetOrthographicSize();
+    camera.FovY = (controller.GetProjectionType() == Camera::ProjectionType::Perspective)
+        ? glm::degrees(controller.GetPerspectiveVerticalFOV())
+        : controller.GetOrthographicSize();
 
-    // If an entity camera is active during Play mode, override the viewport perspective
+    
     if (cameraFound && EditorLayer::Get().GetSceneState() == SceneState::Play)
     {
         camera = activeCameraOpt.value();
@@ -367,8 +366,19 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
         farClip = camera.FarClip;
     }
 
-    // Calculate explicit matrices for SceneRenderer
-    camera.ViewMatrix = glm::lookAt(camera.Position, camera.Target, camera.Up);
+    
+    
+    if (glm::distance(glm::vec3(camera.Position), glm::vec3(camera.Target)) < 0.001f)
+    {
+        camera.Position.z += 1.0f; 
+    }
+
+    
+    camera.ViewMatrix = glm::lookAt(
+        glm::vec3(camera.Position), 
+        glm::vec3(camera.Target), 
+        glm::vec3(camera.Up)
+    );
     
     float aspect = (float)m_ViewportSize.x / std::max((float)m_ViewportSize.y, 1.0f);
     if (camera.Projection == 0) // Perspective
@@ -381,6 +391,7 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
         camera.ProjectionMatrix = glm::ortho(-aspect * orthoSize, aspect * orthoSize, -orthoSize, orthoSize, camera.NearClip, camera.FarClip);
     }
 
+    
     SceneRenderOptions options;
     auto& currentDebugFlags = activeScene->GetSettings().DebugFlags;
     options.DrawGrid = currentDebugFlags.DrawGrid;
@@ -388,21 +399,24 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
     options.ShowDebugCollisionModelBox = currentDebugFlags.DrawCollisionModelBox;
     options.ShowDebugSpawnZones = currentDebugFlags.DrawSpawnZones;
     options.SetCollisionWireframeMode = currentDebugFlags.SetCollisionWireframeMode;
-    options.ShowEditorIcons = true;
+    options.ShowEditorIcons = (EditorLayer::Get().GetSceneState() == SceneState::Edit); 
 
+    
     m_SceneRenderer->RenderScene(activeScene->GetRegistry(), activeScene->GetSettings(), camera, nearClip, farClip, options);
     m_HDRFramebuffer->Unbind();
  
-    // 3. Application of Post-processing
+    
     m_ViewportFramebuffer->Bind();
     RenderCommand::Clear({0, 0, 0, 255}); 
 
     ServiceLocator::Get<Renderer>()->ApplyPostProcessing(
         m_HDRFramebuffer->GetColorAttachmentRendererID(),
-        m_HDRFramebuffer->GetDepthAttachmentRendererID(), camera,
-        nullptr, {});
+        m_HDRFramebuffer->GetDepthAttachmentRendererID(), 
+        camera,
+        nullptr, 
+        {}
+    );
 
- 
     m_ViewportFramebuffer->Unbind();
 }
 

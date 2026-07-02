@@ -93,8 +93,7 @@ add_subdirectory(engine)
 
 # ── Build Game Projects ──────────────────────────────────────────────────────
 # Automatically find and include all projects in the game/ directory.
-# CONFIGURE_DEPENDS ensures CMake re-runs when a new project is added/removed.
-file(GLOB GAME_PROJECT_LIST CONFIGURE_DEPENDS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/game" "game/*")
+file(GLOB GAME_PROJECT_LIST RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/game" "game/*")
 foreach(GAME_PROJECT_DIR ${GAME_PROJECT_LIST})
     set(GAME_PATH "${CMAKE_CURRENT_SOURCE_DIR}/game/${GAME_PROJECT_DIR}")
     if(IS_DIRECTORY "${GAME_PATH}" AND EXISTS "${GAME_PATH}/CMakeLists.txt")

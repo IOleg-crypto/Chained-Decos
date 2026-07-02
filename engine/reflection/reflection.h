@@ -53,6 +53,7 @@ namespace Chained
         float Speed = 0.1f;
         std::string Tooltip;
         bool ReadOnly = false;
+        bool Transient = false;
 
         // Convenience constructors
         PropertyMeta() = default;
@@ -230,7 +231,7 @@ namespace Chained
                 }
                 return changed;
             }
-            else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T> && !std::is_same_v<T, uint64_t>)
+            else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T> && !std::is_same_v<T, uint64_t> && !std::is_same_v<T, bool>)
             {
                 uint64_t temp = static_cast<uint64_t>(value);
                 bool changed = m_Archive.Property(name, temp);
@@ -294,7 +295,7 @@ namespace Chained
                 }
                 return changed;
             }
-            else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T> && !std::is_same_v<T, uint64_t>)
+            else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T> && !std::is_same_v<T, uint64_t> && !std::is_same_v<T, bool>)
             {
                 uint64_t temp = static_cast<uint64_t>(value);
                 bool changed = m_Archive.Property(name, temp, meta);

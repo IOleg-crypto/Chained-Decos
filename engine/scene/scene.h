@@ -88,18 +88,12 @@ private:
     std::unique_ptr<SceneResourceManager> m_ResourceManager;
     std::unique_ptr<AnimationManager> m_AnimationManager;
     EventCallbackFn m_EventCallback;
-
-
+private:
     void OnIDConstruct(entt::registry& registry, entt::entity entity);
     void OnIDDestroy(entt::registry& registry, entt::entity entity);
     // Hierarchy handlers.
     void OnHierarchyDestroy(entt::registry& registry, entt::entity entity);
-
     Entity CopyEntityInternal(entt::entity copyEntity, entt::entity parentEntity = entt::null);
-
-    friend class Entity;
-    friend class HierarchySystem;
-    friend class SceneSerializer;
 };
 
 } // namespace Chained

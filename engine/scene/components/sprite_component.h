@@ -21,6 +21,14 @@ struct SpriteComponent
     {
         return "SpriteComponent";
     }
+
+    
+    struct UI
+    {
+        UIMeta TexturePath = {.Hint = PropertyMeta::WidgetHint::FilePicker, .Extensions = ".png,.jpg,.jpeg,.tga,.bmp"};
+        UIMeta Tint = {.Hint = PropertyMeta::WidgetHint::ColorPicker};
+        UIMeta ZOrder = {.Speed = 1.0f};
+    };
 };
 
 CH_MARK_RFL(SpriteComponent);

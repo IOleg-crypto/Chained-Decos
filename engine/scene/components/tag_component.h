@@ -9,6 +9,12 @@ struct TagComponent
 {
     std::string Tag;
     static const char* GetStaticName() { return "TagComponent"; }
+
+    
+    struct UI
+    {
+        UIMeta Tag = {.Tooltip = "Користувацький тег для пошуку та фільтрації сутності"};
+    };
 };
 
 CH_MARK_RFL(TagComponent);

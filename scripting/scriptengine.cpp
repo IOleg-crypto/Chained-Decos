@@ -1,7 +1,7 @@
 #include "scriptengine.h"
-#include "script_glue.h"
 #include "engine/core/log.h"
 #include "engine/foundation/engine_assert.h"
+#include "script_glue.h"
 #include <exception>
 #include <filesystem>
 
@@ -42,7 +42,7 @@ void ScriptEngine::Initialize()
         return;
     }
 
-    // Ініціалізація С++ / C# Glue прошарку
+    
     ScriptGlue::Initialize();
 
     CH_CORE_INFO("ScriptEngine: CoreCLR host and Glue system initialized successfully.");
@@ -56,23 +56,17 @@ void ScriptEngine::Shutdown()
     }
 
     CH_CORE_INFO("ScriptEngine: Shutting down CoreCLR...");
-    
+
     m_Registry.Clear();
     m_Host.Shutdown();
-    
+
     CH_CORE_INFO("ScriptEngine: ScriptEngine cleanup complete.");
 }
 
 bool ScriptEngine::LoadAppAssembly(const std::string& path)
 {
-    if (path.empty())
+    if (path.empty() || !std::filesystem::exists(path))
     {
-        return false;
-    }
-
-    if (!std::filesystem::exists(path))
-    {
-        CH_CORE_ERROR("ScriptEngine: Assembly file not found: {}", path);
         return false;
     }
 
@@ -81,6 +75,9 @@ bool ScriptEngine::LoadAppAssembly(const std::string& path)
     bool success = m_Host.LoadAppAssembly(path);
     if (success)
     {
+        
+        ScriptGlue::RegisterInternalCalls(*m_Host.GetAppAssembly());
+
         m_Registry.Clear();
         m_Registry.Discover(*m_Host.GetAppAssembly(), *m_Host.GetCoreAssembly());
     }
@@ -89,15 +86,8 @@ bool ScriptEngine::LoadAppAssembly(const std::string& path)
 
 bool ScriptEngine::ReloadAssembly(const std::string& assemblyPath)
 {
-    if (assemblyPath.empty())
+    if (assemblyPath.empty() || !std::filesystem::exists(assemblyPath))
     {
-        CH_CORE_ERROR("ScriptEngine: Cannot reload assembly with an empty path.");
-        return false;
-    }
-
-    if (!std::filesystem::exists(assemblyPath))
-    {
-        CH_CORE_ERROR("ScriptEngine: Reload failed. Assembly not found at {}", assemblyPath);
         return false;
     }
 
@@ -106,6 +96,9 @@ bool ScriptEngine::ReloadAssembly(const std::string& assemblyPath)
     bool success = m_Host.ReloadAppAssembly(assemblyPath);
     if (success)
     {
+        
+        ScriptGlue::RegisterInternalCalls(*m_Host.GetAppAssembly());
+
         m_Registry.Clear();
         m_Registry.Discover(*m_Host.GetAppAssembly(), *m_Host.GetCoreAssembly());
     }

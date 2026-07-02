@@ -3,7 +3,7 @@
 
 #include "engine/graphics/camera_types.h"
 #include "engine/graphics/pipeline/renderer_types.h"
-#include "engine/scene/components/mesh_component.h"
+#include "engine/scene/components/model_component.h"
 #include <glm/glm.hpp>
 #include <vector>
 

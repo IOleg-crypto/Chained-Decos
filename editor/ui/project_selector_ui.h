@@ -8,7 +8,7 @@
 
 namespace Chained
 {
-class TextureAsset; // Вперед-оголошення
+class TextureAsset; 
 
 class ProjectSelectorUI
 {
@@ -20,12 +20,12 @@ public:
 private:
     EditorProjectManager& m_ProjectManager;
 
-    // Зберігаємо вказівники на текстури, щоб не залежати від геймплейних UUID проєкту
+    
     std::shared_ptr<TextureAsset> m_NewProjectIcon = nullptr;
     std::shared_ptr<TextureAsset> m_OpenProjectIcon = nullptr;
     bool m_IconsLoaded = false;
 
-    void LoadEditorIcons(); // Метод для безпечного завантаження іконок UI
+    void LoadEditorIcons(); 
 };
 
 } // namespace Chained

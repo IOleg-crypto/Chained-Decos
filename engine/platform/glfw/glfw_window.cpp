@@ -1,12 +1,9 @@
 #include "glfw_window.h"
 #include "engine/core/log.h"
 #include "engine/foundation/engine_assert.h"
+#include "engine/foundation/platform_detection.h"
 #include "engine/core/input.h"
-#include "engine/core/events/events.h"
-#include "engine/app/application.h"
-#include "engine/graphics/pipeline/renderer.h"
 #include "engine/core/events/window_events.h"
-#include "engine/core/events/input_events.h"
 
 #include "glfw_input_mapper.h"
 
@@ -14,8 +11,6 @@
 #include <GLFW/glfw3.h>
 #include <stb_image.h>
 
-#include <algorithm>
-#include <vector>
 
 namespace Chained
 {
@@ -81,7 +76,7 @@ void GlfwWindow::Init(const WindowProperties& properties)
 
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-#ifdef __APPLE__
+#ifdef CH_PLATFORM_MACOS
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);

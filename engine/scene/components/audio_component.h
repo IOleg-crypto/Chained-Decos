@@ -1,11 +1,12 @@
 #ifndef CH_AUDIO_COMPONENT_H
 #define CH_AUDIO_COMPONENT_H
 
+#include "engine/assets/asset.h"
 #include "engine/reflection/reflection.h"
 #include "engine/reflection/reflection_rfl.h"
-#include "engine/assets/asset.h"
-#include <string>
 #include <glm/glm.hpp>
+#include <string>
+
 
 namespace Chained
 {
@@ -23,10 +24,25 @@ struct AudioComponent
     float MaxDistance = 100.0f;
 
     // Runtime
-    
     bool IsPlaying = false;
 
-    static const char* GetStaticName() { return "AudioComponent"; }
+    static const char* GetStaticName()
+    {
+        return "AudioComponent";
+    }
+
+    
+    struct UI
+    {
+        UIMeta SoundPath = {.Hint = PropertyMeta::WidgetHint::FilePicker, .Extensions = ".wav,.mp3,.ogg"};
+        UIMeta Volume = {.Min = 0.0f, .Max = 2.0f, .Speed = 0.01f, .Tooltip = "Гучність аудіо-джерела"};
+        UIMeta Pitch = {
+            .Min = 0.1f, .Max = 3.0f, .Speed = 0.01f, .Tooltip = "Швидкість/Тональність відтворення"};
+        UIMeta MinDistance = {
+            .Min = 0.0f, .Max = 50.0f, .Speed = 0.5f, .Tooltip = "Радіус, де звук починає затухати"};
+        UIMeta MaxDistance = {
+            .Min = 1.0f, .Max = 1000.0f, .Speed = 5.0f, .Tooltip = "Максимальна дистанція чутності 3D звуку"};
+    };
 };
 
 CH_MARK_RFL(AudioComponent);

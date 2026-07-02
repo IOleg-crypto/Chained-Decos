@@ -161,7 +161,7 @@ void SceneRenderer::RenderScene(entt::registry& registry, const SceneSettings& s
 
     CollectAndRenderItems(registry, frustum, camera.Position);
 
-    // ... (решта коду залишається без змін)
+    
     // Sort transparent queue back-to-front once for all passes
     std::sort(m_TransparentQueue.begin(), m_TransparentQueue.end(),
               [](const auto& a, const auto& b) { return a.Distance > b.Distance; });
@@ -610,7 +610,7 @@ Chained::Material SceneRenderer::ResolveMaterialForMesh(int meshIndex, const Cha
         return {};
     }
 
-    // 1. Пріоритет №1: Використовуємо локальні оверрайди матеріалів (наприклад, змінені в інспекторі редактора)
+    
     if (meshIndex < (int)materials.size() && !materials[meshIndex].Name.empty())
     {
         return materials[meshIndex];
@@ -618,9 +618,9 @@ Chained::Material SceneRenderer::ResolveMaterialForMesh(int meshIndex, const Cha
 
     int matIdx = model.Meshes[meshIndex].MaterialIndex;
 
-    // 2. ГОЛОВНИЙ ФІКС: Якщо асет моделі вже завантажився, беремо ОНОВЛЕНІ матеріали прямо з нього.
-    // Це гарантує, що ми отримаємо свіжі AlbedoPath та готові GPU ID, навіть якщо компонент кешував модель завчасно.
-    if (modelAsset && modelAsset->IsReady()) // або перевірка на !modelAsset->GetMaterials().empty()
+    
+    
+    if (modelAsset && modelAsset->IsReady()) 
     {
         const auto& assetMaterials = modelAsset->GetMaterials();
         if (matIdx >= 0 && matIdx < (int)assetMaterials.size())
@@ -629,7 +629,7 @@ Chained::Material SceneRenderer::ResolveMaterialForMesh(int meshIndex, const Cha
         }
     }
 
-    // 3. Фолбек: якщо асет ще не готовий або nullptr, повертаємо те, що було в статичній копії моделі
+    
     if (matIdx < 0 || matIdx >= (int)model.Materials.size())
     {
         return Material();
@@ -678,6 +678,7 @@ void SceneRenderer::BindShaderUniforms(Chained::ShaderAsset* shaderAsset, const 
     shader->SetFloat("fogDensity", fog.Density);
     shader->SetFloat("fogStart", fog.Start);
     shader->SetFloat("fogEnd", fog.End);
+    shader->SetFloat("fogHeightFalloff", fog.HeightFalloff);
     shader->SetInt("fogMode", (int)fog.Mode);
 
     if (!boneMatrices.empty())
@@ -710,8 +711,8 @@ void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Materia
     auto shader = shaderAsset->GetShader();
     shader->Bind();
 
-    // Ламбду виносимо або залишаємо без змін, але в ідеалі — перенести цей резолв 
-    // в AssetResolutionSystem, щоб у кадрі були лише чисті ID.
+    
+    
     auto resolveMap = [](uint32_t currentId, const std::string& path) -> uint32_t {
         if (currentId > 0) return currentId;
         if (path.empty() || path.front() == '*') return 0;
@@ -744,7 +745,7 @@ void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Materia
     shader->SetVec4("colDiffuse", material.AlbedoColor);
 
     // 2. Metallic-Roughness Packed Map (Texture Unit 1)
-    // У glTF Metallic (B) та Roughness (G) зазвичай живуть в одній текстурі.
+    
     if (metallicMap > 0)
     {
         RenderCommand::SetTexture(1, metallicMap);
@@ -794,7 +795,7 @@ void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Materia
         shader->SetInt("useEmissiveTexture", 0);
     }
 
-    // Базові PBR параметри матеріалу
+    
     shader->SetFloat("metalness", material.Metalness);
     shader->SetFloat("roughness", material.Roughness);
     shader->SetVec4("colEmissive", material.EmissiveColor);
@@ -874,18 +875,18 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
             glm::vec4 color = collider.IsColliding ? glm::vec4(1.0f, 0.0f, 0.0f, 0.6f) : glm::vec4(0.0f, 1.0f, 0.0f, 0.6f);
             if (isWireframe)
             {
-                color.a = 1.0f; // Робимо лінійну сітку повністю непрозорою
+                color.a = 1.0f; 
             }
 
             if (collider.Type == ColliderType::Box || collider.Type == ColliderType::Sphere ||
                 collider.Type == ColliderType::Capsule)
             {
-                // Екстракція масштабу з матриці трансформації
+                
                 glm::vec3 entityScale(glm::length(glm::vec3(transform.WorldTransform[0])),
                                       glm::length(glm::vec3(transform.WorldTransform[1])),
                                       glm::length(glm::vec3(transform.WorldTransform[2])));
 
-                // Очищаємо масштаб з матриці, залишаючи лише ротацію та позицію
+                
                 glm::mat4 rotTrans = transform.WorldTransform;
                 if (entityScale.x > 0.0001f) rotTrans[0] = glm::vec4(glm::vec3(rotTrans[0]) / entityScale.x, 0.0f);
                 if (entityScale.y > 0.0001f) rotTrans[1] = glm::vec4(glm::vec3(rotTrans[1]) / entityScale.y, 0.0f);
@@ -904,8 +905,8 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
                 }
                 else if (collider.Type == ColliderType::Capsule)
                 {
-                    // Для капсули: радіус зазвичай масштабується за макс. горизонтальним вектором, 
-                    // а висота — за вертикальним (Y)
+                    
+                    
                     float radiusScale = glm::max(entityScale.x, entityScale.z);
                     DebugRenderer::DrawCapsuleWires(baseTransform, collider.Radius * radiusScale, collider.Height * entityScale.y, color, isWireframe);
                 }
@@ -913,21 +914,21 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
         }
     };
 
-    // Перший прохід — заповнені меші (якщо увімкнено)
+    
     if (drawSolid)
     {
         RenderCommand::SetPolygonMode(RendererAPI::PolygonMode::Fill);
         drawPass(false);
     }
 
-    // Другий прохід — дротяна сітка поверх (якщо увімкнено)
+    
     if (drawWire)
     {
         RenderCommand::SetPolygonMode(RendererAPI::PolygonMode::Line);
         drawPass(true);
     }
 
-    // Обов'язково повертаємо дефолтний стан для стандартного рендерингу сцени
+    
     RenderCommand::SetPolygonMode(RendererAPI::PolygonMode::Fill);
 }
 

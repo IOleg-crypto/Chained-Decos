@@ -11,7 +11,8 @@
 #include <memory>
 #include <vector>
 #include <glm/glm.hpp>
-#include "engine/scene/components/mesh_component.h"
+#include "engine/scene/components/model_component.h"
+#include "engine/assets/types/model_asset.h"
 #include "engine/graphics/api/texture.h"
 #include "engine/scene/components/animation_component.h"
 

@@ -7,6 +7,7 @@
 #include "engine/assets/types/environment_asset.h"
 #include "scene.h"
 #include "engine/serialization/hierarchy_serializer.h"
+#include "engine/serialization/managed_script_serializer.h"
 #include <fstream>
 #include <set>
 #include <sstream>

@@ -12,6 +12,7 @@ public:
 
 public:
     virtual void OnImGuiRender(bool readOnly = false) override;
+
 };
 } // namespace Chained
 

@@ -2,39 +2,22 @@
 #define CH_EDITOR_LAYER_H
 
 #include <memory>
-#include <vector>
 #include <string>
-#include "engine/graphics/pipeline/renderer.h"
 #include "engine/scene/scene.h"
-#include "project_manager.h"
-#include "scene_manager.h"
+#include "editor/project_manager.h"
+#include "editor/types.h"
+#include "editor/scene_manager.h"
 #include "engine/app/application.h"
 #include "engine/core/layer.h"
-#include "layout.h"
-#include "panels.h"
+#include "editor/layout.h"
+#include "editor/panels.h"
 #include "imgui.h"
-#include "undo/command_history.h"
+#include "editor/undo/command_history.h"
 
-namespace Chained {
-
-enum class SceneState : uint8_t { Edit = 0, Play = 1 , Simulate = 2};
-
-struct EditorState {
-    Entity SelectedEntity;
-    bool FullscreenGame = false;
-    bool StandaloneActive = false;
-    bool NeedsLayoutReset = false;
-    int LastHitMeshIndex = -1;
-    DebugRenderFlags DebugRenderFlags;
-    bool IsLoading = false;
-    std::string LoadingStatus ;
-};
-} // namespace Chained
 
 
 namespace Chained
 {
-
 
 class ProjectSelectorUI;
 

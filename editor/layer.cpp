@@ -1,18 +1,17 @@
 #include "layer.h"
+#include "engine/core/input.h"
 #include "engine/core/service_locator.h"
+#include "engine/imgui/imgui_layer.h"
 #include "events.h"
 #include "gui.h"
 #include "layout.h"
 #include "panels.h"
-#include "engine/imgui/imgui_layer.h"
-#include "engine/core/input.h"
 
-#include "thirdparty/IconsFontAwesome6.h"
+
+#include "engine/app/application.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/core/profiler.h"
-#include "engine/app/application.h"
 #include "engine/foundation/thread_pool.h"
-#include "scripting/scriptengine.h"
 #include "engine/graphics/pipeline/render_command.h"
 #include "engine/graphics/ui/ui_renderer.h"
 #include "engine/physics/physics.h"
@@ -20,10 +19,12 @@
 #include "panels/property_editor.h"
 #include "panels/viewport_panel.h"
 #include "scripting/scriptengine.h"
-#include "utils/utils.h"
+#include "thirdparty/IconsFontAwesome6.h"
 #include "ui/project_selector_ui.h"
+#include "utils/utils.h"
 #include <ImGuizmo.h>
 #include <yaml-cpp/yaml.h>
+
 
 namespace Chained
 {
@@ -47,7 +48,6 @@ void EditorLayer::DrawLoadingOverlay(const char* title, const char* status)
 
     if (ImGui::Begin("##EditorLoadingOverlay", nullptr, flags))
     {
-
         ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.45f);
 
         ImVec2 titleSize = ImGui::CalcTextSize(title);
@@ -58,11 +58,14 @@ void EditorLayer::DrawLoadingOverlay(const char* title, const char* status)
         ImGui::SetCursorPosX((ImGui::GetWindowWidth() - statusSize.x) * 0.5f);
         ImGui::TextUnformatted(status);
 
+        
         uint32_t totalPending = (uint32_t)ServiceLocator::Get<AssetManager>()->GetPendingFinalizeCount();
-        std::string pendingLine = "Pending assets: " + std::to_string(totalPending);
-        ImVec2 pendingSize = ImGui::CalcTextSize(pendingLine.c_str());
+        char pendingBuffer[64];
+        snprintf(pendingBuffer, sizeof(pendingBuffer), "Pending assets: %u", totalPending);
+
+        ImVec2 pendingSize = ImGui::CalcTextSize(pendingBuffer);
         ImGui::SetCursorPosX((ImGui::GetWindowWidth() - pendingSize.x) * 0.5f);
-        ImGui::TextUnformatted(pendingLine.c_str());
+        ImGui::TextUnformatted(pendingBuffer);
     }
 
     ImGui::End();
@@ -74,7 +77,6 @@ EditorLayer::EditorLayer(Application& app)
     : Layer("EditorLayer")
 {
     s_Instance = this;
-    
 
     // Default debug settings
     GetDebugRenderFlags().DrawColliders = true;
@@ -84,7 +86,7 @@ EditorLayer::EditorLayer(Application& app)
     m_ProjectManager = std::make_unique<EditorProjectManager>();
     m_SceneManager = std::make_unique<EditorSceneManager>();
     m_Panels = std::make_unique<EditorPanels>(*this);
-    
+
     m_Layout = std::make_unique<EditorLayout>(*m_Panels);
     m_ProjectSelectorUI = std::make_unique<ProjectSelectorUI>(*m_ProjectManager);
 
@@ -181,7 +183,6 @@ void EditorLayer::OnAttach()
     auto& app = Application::Get();
     ImGui::SetCurrentContext(static_cast<ImGuiContext*>(app.GetImGuiLayer()->GetContext()));
 
-
     // SetTraceLogCallback removed - now using engine logging
 
     EditorGUI::ApplyTheme();
@@ -219,7 +220,8 @@ void EditorLayer::OnAttach()
         GetEditorState().NeedsLayoutReset = true;
     }
 
-    std::string iconPath = (ServiceLocator::Get<AssetManager>()->GetEngineRoot() / "resources/icons/chaineddecosmapeditor.jpg").string();
+    std::string iconPath =
+        (ServiceLocator::Get<AssetManager>()->GetEngineRoot() / "resources/icons/chaineddecosmapeditor.jpg").string();
     if (std::filesystem::exists(iconPath))
     {
         app.GetWindow().SetWindowIcon(iconPath);
@@ -230,7 +232,7 @@ void EditorLayer::OnAttach()
     }
     CH_CORE_INFO("EditorLayer Attached with modular panels.");
 
-   LoadEditorFonts();
+    LoadEditorFonts();
 }
 
 void EditorLayer::LoadEditorFonts()
@@ -246,7 +248,8 @@ void EditorLayer::LoadEditorFonts()
     auto& assetManager = (*ServiceLocator::Get<AssetManager>());
 
     // --- Default UI Font (Lato) ---
-    std::string fontPath = (ServiceLocator::Get<AssetManager>()->GetEngineRoot() / "resources/font/lato/lato-bold.ttf").string();
+    std::string fontPath =
+        (ServiceLocator::Get<AssetManager>()->GetEngineRoot() / "resources/font/lato/lato-bold.ttf").string();
     if (std::filesystem::exists(fontPath))
     {
         imguiLayer->AddFontFromFile(fontPath, fontSize);
@@ -259,7 +262,8 @@ void EditorLayer::LoadEditorFonts()
     }
 
     // --- Icon Font (FontAwesome) ---
-    std::string faPath = (ServiceLocator::Get<AssetManager>()->GetEngineRoot() / "resources/font/fa-solid-900.ttf").string();
+    std::string faPath =
+        (ServiceLocator::Get<AssetManager>()->GetEngineRoot() / "resources/font/fa-solid-900.ttf").string();
     if (std::filesystem::exists(faPath))
     {
         static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
@@ -282,19 +286,18 @@ void EditorLayer::OnUpdate(Timestep ts)
 {
     CH_PROFILE_FUNCTION();
 
-    // 1. Спочатку завжди оновлюємо SceneManager (там крутяться потоки та future)
+    
     m_SceneManager->OnUpdate(ts);
 
-    // 2. Якщо рушій зайнятий завантаженням сцени — блокуємо ігровий апдейт,
-    // щоб не смикати ресурси, які можуть видалятися чи перезаписуватись
-    if (m_SceneManager->IsLoading())
-    {
-        return; 
-    }
-
-    // Sync context to panels
+    
     m_Panels->SetContext(GetActiveScene());
     m_Panels->OnUpdate(ts);
+
+    
+    if (m_SceneManager->IsLoading())
+    {
+        return;
+    }
 
     if (auto scene = GetActiveScene())
     {
@@ -430,11 +433,18 @@ void EditorLayer::OnEvent(Event& e)
 
     // 3. Command/Undo
     dispatcher.Dispatch<UndoEvent>([this](auto& e) {
-        m_CommandHistory.Undo();
+        if (GetSceneState() != SceneState::Play)
+        {
+            m_CommandHistory.Undo();
+        }
         return true;
     });
+
     dispatcher.Dispatch<RedoEvent>([this](auto& e) {
-        m_CommandHistory.Redo();
+        if (GetSceneState() != SceneState::Play)
+        {
+            m_CommandHistory.Redo();
+        }
         return true;
     });
 

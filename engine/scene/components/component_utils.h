@@ -4,7 +4,7 @@
 #include "engine/scene/components/transform_component.h"
 #include "engine/core/service_locator.h"
 #include "engine/scene/components/control_component.h"
-#include "engine/scene/components/mesh_component.h"
+#include "engine/scene/components/model_component.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/model_asset.h"
 #include <glm/gtx/quaternion.hpp>

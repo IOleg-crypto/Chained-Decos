@@ -1,65 +1,147 @@
 // ============================================================
-//  fog.glsl  –  World-space fog include
-//
-//  Usage: ApplyFog(color, fragPos, viewPos, time)
-//    color   – vec4 already-lit fragment color
-//    fragPos – vec3 fragment position in WORLD space
-//    viewPos – vec3 camera position in WORLD space
-//    time    – float uTime (seconds), used by animated modes
-//
-//  Fog modes (set via fogMode uniform):
-//    0 – Linear       : lerps from fogStart to fogEnd
-//    1 – Exponential  : classic exp fog
-//    2 – Exp Squared  : denser / more realistic exp fog
+
+
 // ============================================================
 
-// --- Uniforms exposed to the renderer ---
 uniform int   fogEnabled;
-uniform int   fogMode;      // 0=Linear, 1=Exp, 2=Exp2
-uniform vec4  fogColor;
-uniform float fogDensity;
-uniform float fogStart;
-uniform float fogEnd;
+uniform int   fogMode;
+uniform vec4  fogColor;         
+uniform float fogDensity;       
+uniform float fogStart;         
+uniform float fogEnd;           
+uniform float fogHeightFalloff; 
 
-// --- Single entry point ---
-vec4 ApplyFog(vec4 color, vec3 fragPos, vec3 viewPos, float time)
+// ════════════════════════════════════════════════════════════════
+
+// ════════════════════════════════════════════════════════════════
+
+
+
+float GetHeightFogFactor(float worldHeight)
 {
-    // Early-out: fog is disabled
-    if (fogEnabled == 0) return color;
+    
+    
+    return exp(-worldHeight * fogHeightFalloff);
+}
 
-    // 1. Distance from camera to fragment (both in World Space)
-    float dist = length(viewPos - fragPos);
 
-    // 2. Compute fogFactor (0 = no fog, 1 = full fog)
-    float fogFactor = 0.0;
+float LinearFog(float distance)
+{
+    float range = fogEnd - fogStart;
+    return clamp((distance - fogStart) / max(0.0001, range), 0.0, 1.0);
+}
 
-    if (fogMode == 0) // ── Linear ─────────────────────────────
+
+float ExponentialFog(float distance)
+{
+    float d = max(0.0, distance - fogStart);
+    return 1.0 - exp(-d * fogDensity);
+}
+
+
+float ExponentialSquaredFog(float distance)
+{
+    float d = max(0.0, distance - fogStart) * fogDensity;
+    return 1.0 - exp(-(d * d));
+}
+
+
+float CombinedFog(float distance, float heightFactor)
+{
+    
+    float distanceFog = 0.0;
+    if (fogMode == 0) // Linear
     {
-        // fogFactor = (dist - start) / (end - start)
-        float range = fogEnd - fogStart;
-        if (range <= 0.0)
-            fogFactor = (dist > fogStart) ? 1.0 : 0.0;
-        else
-            fogFactor = (dist - fogStart) / range;
+        distanceFog = LinearFog(distance);
     }
-    else if (fogMode == 1) // ── Exponential ────────────────────
+    else if (fogMode == 1) // Exponential
     {
-        // fogFactor = 1 - e^(-dist * density)
-        // Add max(0, dist - fogStart) so fog doesn't start directly at the camera
-        float d = max(0.0, dist - fogStart);
-        fogFactor = 1.0 - exp(-(d * fogDensity));
+        distanceFog = ExponentialFog(distance);
     }
-    else if (fogMode == 2) // ── Exponential Squared ────────────
+    else if (fogMode == 2) // Exponential Squared
     {
-        // fogFactor = 1 - e^(-(dist * density)^2)
-        float d = max(0.0, dist - fogStart) * fogDensity;
-        fogFactor = 1.0 - exp(-(d * d));
+        distanceFog = ExponentialSquaredFog(distance);
     }
+    
+    
+    return mix(distanceFog, 0.0, heightFactor);
+}
 
-    // 3. Clamp to [0, 1]
+
+
+vec3 ComputeFogScattering(vec3 viewDir, vec3 lightDir, vec3 lightColor, float sunIntensity)
+{
+    
+    float cosTheta = -dot(viewDir, normalize(lightDir));
+    
+    
+    
+    float phaseRayleigh = 0.75 * (1.0 + cosTheta * cosTheta);
+    
+    
+    float forwardScatter = pow(max(0.0, cosTheta), 8.0) * sunIntensity;
+    
+    
+    return lightColor * (phaseRayleigh * 0.3 + forwardScatter * 0.7);
+}
+
+
+
+float HorizonFogBoost(vec3 viewDir)
+{
+    
+    float upness = abs(viewDir.y);
+    
+    return 1.0 + (1.0 - upness) * 0.5;
+}
+
+// ════════════════════════════════════════════════════════════════
+
+// ════════════════════════════════════════════════════════════════
+
+vec3 ApplyLinearFog(vec3 surfaceColor, vec3 fragPos, vec3 viewPos, vec3 lightDir, vec3 lightColor)
+{
+    if (fogEnabled == 0) 
+        return surfaceColor;
+
+    
+    vec3 viewDir = normalize(viewPos - fragPos);
+    float distance = length(viewPos - fragPos);
+    
+    
+    
+    float worldHeight = fragPos.y;
+    float heightFactor = GetHeightFogFactor(worldHeight);
+    
+    
+    float fogFactor = CombinedFog(distance, heightFactor);
+    
+    
+    float horizonBoost = HorizonFogBoost(viewDir);
+    fogFactor *= horizonBoost;
+    
     fogFactor = clamp(fogFactor, 0.0, 1.0);
 
-    // 4. Mix object color with fog color
-    //    mix(a, b, t) = a*(1-t) + b*t
-    return mix(color, fogColor, fogFactor);
+    
+    vec3 baseFogLinear = pow(fogColor.rgb, vec3(2.2));
+
+    
+    
+    float sunIntensity = 2.0; 
+    vec3 scatteredLight = ComputeFogScattering(viewDir, lightDir, lightColor, sunIntensity);
+    
+    
+    vec3 finalFogColor = baseFogLinear + scatteredLight * 0.3;
+
+    
+    return mix(surfaceColor, finalFogColor, fogFactor);
+}
+
+// ════════════════════════════════════════════════════════════════
+
+// ════════════════════════════════════════════════════════════════
+vec4 ApplyFog(vec4 surfaceColor, vec3 fragPos, vec3 viewPos, float uTime)
+{
+    vec3 fogRGB = ApplyLinearFog(surfaceColor.rgb, fragPos, viewPos, vec3(0.0, -1.0, 0.0), vec3(0.5));
+    return vec4(fogRGB, surfaceColor.a);
 }

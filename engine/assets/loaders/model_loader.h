@@ -20,6 +20,17 @@ struct ProceduralParameters
     glm::vec3 Dimensions = {1.0f, 1.0f, 1.0f};
 };
 
+struct ChainedAssetHeader
+{
+    uint32_t magic = 0x43484153; 
+    uint32_t dataStructSize = sizeof(PendingModelData); 
+
+    template<class Archive>
+    void serialize(Archive& archive) {
+        archive(magic, dataStructSize);
+    }
+};
+
 namespace ModelLoader
 {
     std::shared_ptr<Asset> Create();

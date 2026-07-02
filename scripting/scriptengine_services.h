@@ -90,7 +90,7 @@ private:
     std::unordered_set<std::string> m_MissingScriptsWarnings;
 };
 
-// ✅ Глобальні сервісні функції для зручного доступу (реалізовані через ServiceLocator)
+
 ScriptHost& GetScriptHost();
 ScriptRegistry& GetScriptRegistry();
 

@@ -37,6 +37,18 @@ struct PrimitiveComponent
     std::shared_ptr<ModelAsset> Asset;
 
     static const char* GetStaticName() { return "PrimitiveComponent"; }
+
+    
+    struct UI
+    {
+        UIMeta Type = {.Hint = PropertyMeta::WidgetHint::Enum};
+        UIMeta Radius = {.Min = 0.01f, .Max = 1000.0f, .Speed = 0.05f};
+        UIMeta InnerRadius = {.Min = 0.01f, .Max = 1000.0f, .Speed = 0.05f};
+        UIMeta Height = {.Min = 0.01f, .Max = 1000.0f, .Speed = 0.05f};
+        UIMeta Slices = {.Min = 3.0f, .Max = 256.0f, .Speed = 1.0f};
+        UIMeta Stacks = {.Min = 2.0f, .Max = 256.0f, .Speed = 1.0f};
+        UIMeta Dimensions = {.Speed = 0.1f};
+    };
 };
 
 CH_MARK_RFL(PrimitiveComponent);

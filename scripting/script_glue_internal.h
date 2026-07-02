@@ -34,7 +34,7 @@ inline Scene* GetActiveScene()
     return GetContextScene();
 }
 
-// Internal helper to get entity safely
+// Internal helper to get entity safely with full validation
 inline Entity GetEntity(uint64_t entityID)
 {
     Scene* scene = GetActiveScene();
@@ -42,7 +42,13 @@ inline Entity GetEntity(uint64_t entityID)
     {
         return {};
     }
-    return Entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
+    Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
+    // Validate entity still exists in registry (not just handle is non-null)
+    if (entity && entity.IsValid())
+    {
+        return entity;
+    }
+    return {};
 }
 
 } // namespace Chained

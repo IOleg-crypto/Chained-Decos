@@ -1,0 +1,10 @@
+Shaders:
+  Lighting: "engine/resources/shaders/lighting.chshader"
+  Unlit: "engine/resources/shaders/unlit.chshader"
+  Sprite: "engine/resources/shaders/sprite.chshader"
+  Skybox: "engine/resources/shaders/skybox/skybox.chshader"
+  SkyboxCross: "engine/resources/shaders/skybox/skybox_cross.chshader"
+  SkyboxCubemap: "engine/resources/shaders/skybox/skybox_cubemap.chshader"
+  ColliderDebug: "engine/resources/shaders/collider_debug.chshader"
+  Grid: "engine/resources/shaders/grid.chshader"
+  PostProcess: "engine/resources/shaders/post_process.chshader"

@@ -105,6 +105,7 @@ namespace Chained
                 settings.Fog.Density = fogNode["Density"].as<float>();
                 settings.Fog.Start = fogNode["Start"].as<float>();
                 settings.Fog.End = fogNode["End"].as<float>();
+                if (fogNode["HeightFalloff"]) settings.Fog.HeightFalloff = fogNode["HeightFalloff"].as<float>();
             }
 
             envAsset->SetSettings(settings);

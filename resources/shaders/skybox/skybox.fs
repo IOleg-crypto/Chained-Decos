@@ -1,14 +1,18 @@
 #version 450 core
-#include "include/color_space.glsl"
+#include "../include/color_space.glsl"
 
 in vec3 v_Position;
 
-uniform samplerCube u_Cubemap;
+layout(binding = 0) uniform sampler2D u_Panorama;
 
 uniform int u_IsHDR;
 uniform float u_Exposure;
 uniform float u_Brightness;
 uniform float u_Contrast;
+uniform int u_VFlipped;
+uniform vec3 u_SunDir;
+uniform int u_SunEnabled;
+uniform float u_SunIntensity;
 
 // Fog uniforms
 uniform int fogEnabled;
@@ -17,25 +21,34 @@ uniform float fogDensity;
 
 layout(location = 0) out vec4 finalColor;
 
+vec2 SampleSpherical(vec3 dir)
+{
+    const vec2 invAtan = vec2(0.1591, 0.3183);
+    vec2 uv = vec2(atan(dir.z, dir.x), asin(dir.y));
+    uv *= invAtan;
+    return uv + 0.5;
+}
+
 void main()
 {
     vec3 direction = normalize(v_Position);
-    
-    // Sample the environment cubemap
-    vec3 color = texture(u_Cubemap, direction).rgb;
+    vec2 uv = SampleSpherical(direction);
+    if (u_VFlipped == 1) uv.y = 1.0 - uv.y;
 
-    // 1. Convert to Linear if LDR
+    // Sample the panorama
+    vec3 color = texture(u_Panorama, uv).rgb;
+
+    // Convert to Linear if LDR (PNG/JPG)
     if (u_IsHDR == 0) color = pow(color, vec3(2.2));
 
-    // 2. Exposure & Color Correction
+    // 1. Exposure & Color Correction
     color *= u_Exposure;
     color = color + u_Brightness;
     color = (color - 0.5) * u_Contrast + 0.5;
-
+    
     // Output straight to HDR buffer (tonemapping is in post-process)
     vec4 background = vec4(max(color, vec3(0.0)), 1.0);
 
-    // 4. Unified Horizon & Ground Fog
     if (fogEnabled == 1) {
         float verticalFactor = clamp(1.0 - (direction.y + 0.05) * 10.0, 0.0, 1.0);
         float fogFactor = pow(verticalFactor, 2.0); 
