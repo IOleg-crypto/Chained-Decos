@@ -22,13 +22,12 @@ namespace Chained
 
         static const char* GetStaticName() { return "UIActionComponent"; }
 
-        
         struct UI
         {
             UIMeta Type = {.Hint = PropertyMeta::WidgetHint::Enum};
-            UIMeta TargetEntityID = {.Tooltip = "ID цільової сутності"};
-            UIMeta ParameterName = {.Tooltip = "Ім'я параметра для встановлення"};
-            UIMeta Value = {.Speed = 0.1f, .Tooltip = "Значення параметра"};
+            UIMeta TargetEntityID = {.Tooltip = "ID of the target entity"};
+            UIMeta ParameterName = {.Tooltip = "Name of the parameter to set"};
+            UIMeta Value = {.Speed = 0.1f, .Tooltip = "Value of the parameter"};
         };
     };
 

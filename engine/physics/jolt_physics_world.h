@@ -34,6 +34,8 @@ public:
     virtual RaycastResult Raycast(const glm::vec3& origin, const glm::vec3& direction, float maxDistance) override;
 
     virtual void Step(float fixedDt) override;
+    
+    virtual void SetGravity(float gravity) override;
 
 private:
     JPH::PhysicsSystem m_PhysicsSystem;

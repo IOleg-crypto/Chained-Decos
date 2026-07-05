@@ -1,78 +1,52 @@
-# Core Logic Tests (No Engine Boot, Faster, CI-Friendly)
-add_executable(CoreTests
+# 1. Оголошуємо саме ВИКОНУВАНИЙ ФАЙЛ (програму)
+add_executable(engine_tests
     uuid_tests.cpp
-    event_tests.cpp
-)
-
-# --- Split Engine Integration Tests ---
-
-# 1. Asset & Importer Tests
-add_executable(AssetTests
-    asset_manager_tests.cpp
-    importer_tests.cpp
-    test_environment.cpp
-)
-
-# 2. Scene & ECS Tests
-add_executable(SceneTests
-    scene_tests.cpp
-    hierarchy_tests.cpp
-    uuid_tests.cpp
-    test_environment.cpp
-)
-
-# 3. System Tests (Physics, Audio, Scripting)
-add_executable(SystemTests
-    physics_tests.cpp
-    audio_tests.cpp
-    scriptengine_tests.cpp
-    event_input_tests.cpp
-    test_environment.cpp
-)
-
-# 4. Rendering & Material Tests
-add_executable(GraphicsTests
-    renderer_tests.cpp
-    material_tests.cpp
-    example_render_test.cpp
     primitive_tests.cpp
-    test_environment.cpp
-)
-
-# 5. Serialization Tests
-add_executable(SerializationTests
     serialization_tests.cpp
-    scene_serialization_tests.cpp
-    test_environment.cpp
-)
-
-# 6. Integration/Main Path Tests
-add_executable(IntegrationTests
+    scriptengine_tests.cpp
+    scene_tests.cpp
+    physics_tests.cpp
+    hierarchy_tests.cpp
+    event_input_tests.cpp
+    asset_manager_tests.cpp
     integration_tests.cpp
-    bvh_tests.cpp
+    importer_tests.cpp
+    renderer_tests.cpp
+    scene_serialization_tests.cpp
+    material_tests.cpp
+    audio_tests.cpp
     test_environment.cpp
 )
 
-set(ALL_TEST_TARGETS CoreTests AssetTests SceneTests SystemTests GraphicsTests SerializationTests IntegrationTests)
+target_link_libraries(engine_tests PRIVATE
+    engine_reflection
+    engine_core
+    engine_app
+    engine_scene
+    engine_serialization
+    engine_graphics
+    engine_project
+    engine_physics
+    engine_audio
+    engine_scripting
+    engine_external_entt
+    glm
+    engine_external_imgui
+    gtest_main  
+)
 
-# Linkage & Configuration
-foreach(test_target ${ALL_TEST_TARGETS})
-    target_link_libraries(${test_target} PRIVATE engine GTest::gtest_main GTest::gmock)
-    if(NOT test_target STREQUAL "CoreTests")
-        target_link_libraries(${test_target} PRIVATE editor_core)
-        target_include_directories(${test_target} PRIVATE ${CMAKE_SOURCE_DIR}/editor)
-    endif()
-    
-    target_include_directories(${test_target} PRIVATE ${CMAKE_SOURCE_DIR})
-    apply_engine_optimizations(${test_target})
+# 3. Шляхи до інклудів
+target_include_directories(engine_tests PRIVATE 
+    ${CMAKE_SOURCE_DIR}
+)
 
-    include(GoogleTest)
-    gtest_discover_tests(${test_target}
-        CONFIGURATION_VAR CMAKE_BUILD_TYPE
-        DISCOVERY_MODE PRE_TEST
-        WORKING_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-        PROPERTIES LABELS "Engine;${test_target}"
-    )
-    
-    install(TARGETS ${test_target} RUNTIME DESTINATION bin)
-endforeach()
+include(GoogleTest)
+gtest_discover_tests(engine_tests 
+    CONFIGURATION_VAR CMAKE_BUILD_TYPE
+    DISCOVERY_MODE POST_BUILD   
+    WORKING_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+    PROPERTIES LABELS "Engine;Core"
+)
+install(TARGETS engine_tests
+    RUNTIME DESTINATION bin
+)

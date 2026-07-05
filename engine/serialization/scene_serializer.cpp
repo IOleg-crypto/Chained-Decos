@@ -292,6 +292,15 @@ static void DeserializeEntities(Scene* scene, const YAML::Node& entities)
 
         ComponentSerializer::DeserializeAll(deserializedEntity, entity);
 
+        if (deserializedEntity.HasComponent<TransformComponent>())
+        {
+            auto& tc = deserializedEntity.GetComponent<TransformComponent>();
+            tc.RotationQuat = glm::quat(tc.Rotation);
+            tc.PrevRotationQuat = tc.RotationQuat;
+            tc.PrevTranslation = tc.Translation;
+            tc.PrevScale = tc.Scale;
+        }
+
         HierarchyTask task;
         HierarchySerializer::DeserializeTask(deserializedEntity, entity, task);
         if (task.entity)

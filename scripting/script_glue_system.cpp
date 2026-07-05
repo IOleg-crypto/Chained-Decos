@@ -1,76 +1,58 @@
-#include "script_glue_internal.h"
-#include "script_internal_call_registry.h"
-#include "engine/app/application.h"
-#include "engine/scene/scene.h"
-#include "scripting/scriptengine.h"
+#include "script_glue_system.h" 
 
-namespace Chained
+namespace Chained {
+void Log_Info(const char16_t* message)
 {
-
-void RegisterGlueSystem() {}
-
-// ── Logging ──────────────────────────────────────────────────────────
-CH_SCRIPT_FUNC void Log_Info(Coral::String message)
-{
-    CH_CORE_INFO("[C#] {}", (std::string)message);
+    CH_CORE_INFO("[C#] {}", ch_log_u16(message));
 }
-CH_ADD_INTERNAL_CALL(Log, Log_Info_Ptr, Log_Info);
-
-CH_SCRIPT_FUNC void Log_Warn(Coral::String message)
+void Log_Warn(const char16_t* message)
 {
-    CH_CORE_WARN("[C#] {}", (std::string)message);
+    CH_CORE_WARN("[C#] {}", ch_log_u16(message));
 }
-CH_ADD_INTERNAL_CALL(Log, Log_Warn_Ptr, Log_Warn);
-
-CH_SCRIPT_FUNC void Log_Error(Coral::String message)
+void Log_Error(const char16_t* message)
 {
-    CH_CORE_ERROR("[C#] {}", (std::string)message);
+    CH_CORE_ERROR("[C#] {}", ch_log_u16(message));
 }
-CH_ADD_INTERNAL_CALL(Log, Log_Error_Ptr, Log_Error);
-
-// ── Application / Window ─────────────────────────────────────────────
-CH_SCRIPT_FUNC void Application_Close()
+void Application_Close()
 {
     Application::Get().Close();
 }
-CH_ADD_INTERNAL_CALL(Application, Application_Close_Ptr, Application_Close);
-
-CH_SCRIPT_FUNC int Application_GetFPS()
+int Application_GetFPS()
 {
     return (int)(1.0f / Application::Get().GetFrameTime());
 }
-CH_ADD_INTERNAL_CALL(Application, Application_GetFPS_Ptr, Application_GetFPS);
-
-CH_SCRIPT_FUNC float Application_GetFrameTime()
+float Application_GetFrameTime()
 {
     return Application::Get().GetFrameTime();
 }
-CH_ADD_INTERNAL_CALL(Application, Application_GetFrameTime_Ptr, Application_GetFrameTime);
-
-CH_SCRIPT_FUNC void Window_SetSize(int w, int h)
+void Window_SetSize(int w, int h)
 {
     Application::Get().GetWindow().SetSize(w, h);
 }
-CH_ADD_INTERNAL_CALL(AppWindow, Window_SetSize_Ptr, Window_SetSize);
-
-CH_SCRIPT_FUNC void Window_SetFullscreen(bool enabled)
+void Window_SetFullscreen(bool enabled)
 {
     Application::Get().GetWindow().SetFullscreen(enabled);
 }
-CH_ADD_INTERNAL_CALL(AppWindow, Window_SetFullscreen_Ptr, Window_SetFullscreen);
-
-CH_SCRIPT_FUNC void Window_SetVSync(bool enabled)
+void Window_SetVSync(bool enabled)
 {
     Application::Get().GetWindow().SetVSync(enabled);
 }
-CH_ADD_INTERNAL_CALL(AppWindow, Window_SetVSync_Ptr, Window_SetVSync);
-
-CH_SCRIPT_FUNC void Window_SetAntialiasing(bool enabled)
+void Window_SetAntialiasing(bool enabled)
 {
     Application::Get().GetWindow().SetAntialiasing(enabled);
 }
-CH_ADD_INTERNAL_CALL(AppWindow, Window_SetAntialiasing_Ptr, Window_SetAntialiasing);
 
-
-} // namespace Chained
-
+void RegisterGlueSystem()
+{
+    CH_ADD_INTERNAL_CALL("System", Log_Info, Log_Info);
+    CH_ADD_INTERNAL_CALL("System", Log_Warn, Log_Warn);
+    CH_ADD_INTERNAL_CALL("System", Log_Error, Log_Error);
+    CH_ADD_INTERNAL_CALL("System", Application_Close, Application_Close);
+    CH_ADD_INTERNAL_CALL("System", Application_GetFPS, Application_GetFPS);
+    CH_ADD_INTERNAL_CALL("System", Application_GetFrameTime, Application_GetFrameTime);
+    CH_ADD_INTERNAL_CALL("System", Window_SetSize, Window_SetSize);
+    CH_ADD_INTERNAL_CALL("System", Window_SetFullscreen, Window_SetFullscreen);
+    CH_ADD_INTERNAL_CALL("System", Window_SetVSync, Window_SetVSync);
+    CH_ADD_INTERNAL_CALL("System", Window_SetAntialiasing, Window_SetAntialiasing);
+}
+}

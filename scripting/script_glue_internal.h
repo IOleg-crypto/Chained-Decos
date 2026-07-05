@@ -9,48 +9,27 @@
 #include <Coral/String.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include <glm/gtx/quaternion.hpp>
 #include <imgui.h>
 
-// Macro to mark functions for InternalCall (formerly P/Invoke)
-#define CH_SCRIPT_FUNC static
+#define CH_SCRIPT_FUNC extern "C"
 
 namespace Chained
 {
 
-// Forward declarations for explicit glue registration (prevents linker stripping)
-void RegisterGlueSystem();
-void RegisterGlueInput();
-void RegisterGlueNetwork();
-void RegisterGlueScene();
-void RegisterGlueEntity();
-void RegisterGlueCamera();
-void RegisterGlueUI();
-void RegisterGlueAudio();
+extern void RegisterGlueSystem();
+extern void RegisterGlueInput();
+extern void RegisterGlueNetwork();
+extern void RegisterGlueScene();
+extern void RegisterGlueEntity();
+extern void RegisterGlueCamera();
+extern void RegisterGlueUI();
+extern void RegisterGlueAudio();
 
-// Internal helper to get active scene safely
-inline Scene* GetActiveScene()
-{
-    return GetContextScene();
-}
+extern Scene* GetContextScene(); 
 
-// Internal helper to get entity safely with full validation
-inline Entity GetEntity(uint64_t entityID)
-{
-    Scene* scene = GetActiveScene();
-    if (!scene)
-    {
-        return {};
-    }
-    Entity entity((entt::entity)(uint32_t)entityID, &scene->GetRegistry());
-    // Validate entity still exists in registry (not just handle is non-null)
-    if (entity && entity.IsValid())
-    {
-        return entity;
-    }
-    return {};
-}
+extern Scene* GetActiveScene();
 
+Entity GetEntity(uint64_t entityID);
 } // namespace Chained
 
 #endif // CH_SCRIPT_GLUE_INTERNAL_H

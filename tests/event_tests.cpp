@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 #include "engine/core/events/events.h"
+#include "engine/core/events/window_events.h"
+#include "engine/core/events/input_events.h"
 
 using namespace Chained;
 

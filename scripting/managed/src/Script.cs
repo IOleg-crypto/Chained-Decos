@@ -22,7 +22,7 @@ public abstract class Script
     internal void __Init(ulong entityID)
     {
         Entity = new Entity(entityID);
-        Log.Info($"[C# ScriptBase] Initialized Entity ID: {entityID} for {GetType().Name}");
+        // Do not call Log.Info here, as the pointer struct may not be fully initialized or marshaled yet.
     }
 
     /// <summary>Called once after the script is instantiated and Entity is set.</summary>

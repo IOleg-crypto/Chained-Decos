@@ -15,11 +15,25 @@ struct ShaderComponent
 
     static const char* GetStaticName() { return "ShaderComponent"; }
 
-    
+    // Declarative UI layout metadata for compile-time reflection
     struct UI
     {
-        UIMeta ShaderPath = {.Hint = PropertyMeta::WidgetHint::FilePicker, .Extensions = ".glsl,.vs,.fs,.vert,.frag"};
-        UIMeta Enabled = {.Tooltip = "Увімкнути використання цього кастомного шейдера"};
+        UIMeta ShaderPath = {
+            .Hint = PropertyMeta::WidgetHint::FilePicker, 
+            .Extensions = ".glsl,.vs,.fs,.vert,.frag",
+            .Tooltip = "Path to the source GLSL shader file (vertex, fragment, or unified code)"
+        };
+        
+        UIMeta Enabled = {
+            .Tooltip = "Toggle whether this custom shader is active and applied during rendering"
+        };
+
+        // Runtime/Internal state shown in the UI for debugging purposes
+        UIMeta ShaderHandle = {
+            .ReadOnly = true, 
+            .Transient = true, 
+            .Tooltip = "Internal engine asset handle assigned to the compiled shader program"
+        };
     };
 };
 

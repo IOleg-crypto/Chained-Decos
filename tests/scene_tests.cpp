@@ -1,4 +1,5 @@
 #include "engine/app/application.h"
+#include "engine/core/service_locator.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
 #include "engine/serialization/component_serializer.h"
@@ -92,14 +93,14 @@ TEST_F(SceneTest, GetEntityByUUID)
 
 TEST_F(SceneTest, CopyEntity)
 {
-    auto* serializer = Application::Get().GetServiceRegistry().Get<ComponentSerializer>();
+    auto* serializer = ServiceLocator::Get<ComponentSerializer>();
     ASSERT_NE(serializer, nullptr);
 
     Scene scene;
     Entity src = scene.CreateEntity("Source");
     src.AddComponent<CameraComponent>().Primary = true;
 
-    Entity dst = scene.CopyEntity((entt::entity)src);
+    Entity dst = {scene.CopyEntity(src), scene.GetRegistryPtr()};
     EXPECT_TRUE(dst);
     EXPECT_EQ(dst.GetName(), "Source_copy"); // Copy must have "_copy" suffix
     EXPECT_NE(src.GetUUID(), dst.GetUUID()); // Different UUID
@@ -119,7 +120,7 @@ TEST_F(SceneTest, CopyEntityResetsManagedScriptRuntimeState)
     script.Instance = std::make_shared<int>(1);
     script.NeedsStart = false;
 
-    Entity dst = scene.CopyEntity((entt::entity)src);
+    Entity dst = {scene.CopyEntity(src), scene.GetRegistryPtr()};
     ASSERT_TRUE(dst.HasComponent<ManagedScriptComponent>());
 
     const auto& copiedScripts = dst.GetComponent<ManagedScriptComponent>().Scripts;

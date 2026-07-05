@@ -18,7 +18,7 @@ struct HierarchyComponent
     
     struct UI
     {
-        UIMeta Parent = {.Tooltip = "ID батьківської сутності (entt::entity)"};
+        UIMeta Parent = {.Tooltip = "ID of the parent entity (entt::entity)"};
         // Children typically not edited directly via properties, but let's leave it without UIMeta or add a simple one
     };
 };
@@ -34,7 +34,7 @@ struct NameComponent
     
     struct UI
     {
-        UIMeta Name = {.Tooltip = "Ім'я сутності в ієрархії"};
+        UIMeta Name = {.Tooltip = "Name of the entity in the hierarchy"};
     };
 };
 

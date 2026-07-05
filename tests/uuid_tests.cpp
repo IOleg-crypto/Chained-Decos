@@ -1,4 +1,4 @@
-#include "engine/core/uuid.h"
+#include "engine/foundation/uuid.h"
 #include "gtest/gtest.h"
 #include <unordered_set>
 

@@ -13,8 +13,9 @@ namespace Chained
         public static implicit operator bool(Bool32 InBool32) => InBool32.Value > 0;
     }
 
+    
     [StructLayout(LayoutKind.Explicit, Size = 16)]
-    public struct NativeString : IDisposable
+    public struct ChainedString : IDisposable
     {
         [FieldOffset(0)] internal IntPtr m_NativeString;
         [FieldOffset(8)] private Bool32 m_IsDisposed;
@@ -34,9 +35,9 @@ namespace Chained
         }
 
         public override string? ToString() => Marshal.PtrToStringAuto(m_NativeString);
-        public static NativeString Null() => new NativeString() { m_NativeString = IntPtr.Zero };
-        public static implicit operator NativeString(string? InString) => new() { m_NativeString = Marshal.StringToCoTaskMemAuto(InString) };
-        public static implicit operator string?(NativeString InString) => Marshal.PtrToStringAuto(InString.m_NativeString);
+        public static ChainedString Null() => new ChainedString() { m_NativeString = IntPtr.Zero };
+        public static implicit operator ChainedString(string? InString) => new() { m_NativeString = Marshal.StringToCoTaskMemAuto(InString) };
+        public static implicit operator string?(ChainedString InString) => Marshal.PtrToStringAuto(InString.m_NativeString);
     }
 
     [StructLayout(LayoutKind.Sequential, Size = 32, Pack = 8)]

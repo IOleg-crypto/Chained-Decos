@@ -48,8 +48,10 @@ public:
 
     void SetMoveSpeed(float speed) { m_MoveSpeed = speed; }
     void SetBoostMultiplier(float multiplier) { m_BoostMultiplier = multiplier; }
-    float GetBoostMultiplier() {return m_BoostMultiplier;};
-    float GetMoveSpeed() {return m_MoveSpeed;};
+    void SetDisableZoom(bool disable) { m_DisableZoom = disable; }
+    float GetBoostMultiplier() const { return m_BoostMultiplier; }
+    float GetMoveSpeed() const { return m_MoveSpeed; }
+    bool GetDisableZoom() const { return m_DisableZoom; }
 
     void MousePan(const glm::vec2& delta);
     void MouseRotate(const glm::vec2& delta);
@@ -72,6 +74,7 @@ private:
     uint32_t m_ViewportWidth = 1280, m_ViewportHeight = 720;
     float m_MoveSpeed = 10.0f;
     float m_BoostMultiplier = 5.0f;
+    bool m_DisableZoom = false;
 };
 
 } // namespace Chained

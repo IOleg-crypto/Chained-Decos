@@ -2,7 +2,8 @@
 // Tests for the main Renderer and Renderer2D singletons.
 // These tests require a valid OpenGL context and are skipped on CI.
 #include "engine/app/application.h"
-#include "engine/core/base.h"
+#include "engine/core/service_locator.h"
+#include "engine/foundation/base.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "gtest/gtest.h"
 
@@ -14,14 +15,14 @@ class RendererTest : public ::testing::Test
 protected:
     Renderer* GetRenderer()
     {
-        return Application::Get().GetServiceRegistry().Get<Renderer>();
+        return ServiceLocator::Get<Renderer>();
     }
 };
 
 // Verifies that the Renderer singleton can be initialized and shut down without errors.
 TEST_F(RendererTest, RendererInitialization)
 {
-    EXPECT_TRUE(Application::Get().GetServiceRegistry().Has<Renderer>());
+    EXPECT_TRUE(ServiceLocator::Has<Renderer>());
 }
 
 // Verifies viewport size management
@@ -45,7 +46,7 @@ TEST_F(RendererTest, SceneLifecycle)
     camera.Position = {10.0f, 5.0f, 2.0f};
     camera.Target = {0.0f, 0.0f, 0.0f};
     camera.Up = {0.0f, 1.0f, 0.0f};
-    camera.Fovy = 45.0f;
+    camera.FovY = 45.0f;
     camera.Projection = 0; // Perspective
 
     renderer->BeginScene(camera, 0.1f, 1000.0f);

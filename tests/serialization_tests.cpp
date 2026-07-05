@@ -4,6 +4,7 @@
 #include <filesystem>
 
 using namespace Chained;
+using namespace Chained::Serialization;
 
 struct NestedData
 {
