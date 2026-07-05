@@ -1,57 +1,46 @@
-#include "script_glue_internal.h"
-#include "script_internal_call_registry.h"
-#include <variant>
-#include <imgui_internal.h>
+#include "script_glue_ui.h"
 
-namespace Chained
-{
-
-void RegisterGlueUI() {}
-
-// ── UI Controls ───────────────────────────────────────────────────────
-CH_SCRIPT_FUNC bool ButtonControl_IsClicked(uint64_t entityID)
+namespace Chained {
+bool ButtonControl_IsClicked(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
-    return entity && entity.HasComponent<UIControlComponent>() ? entity.GetComponent<UIControlComponent>().PressedThisFrame
-                                                              : false;
+    return entity && entity.HasComponent<UIControlComponent>()
+               ? entity.GetComponent<UIControlComponent>().PressedThisFrame
+               : false;
 }
-CH_ADD_INTERNAL_CALL(ButtonControl, ButtonControl_IsClicked_Ptr, ButtonControl_IsClicked);
-
-CH_SCRIPT_FUNC bool ButtonControl_IsDown(uint64_t entityID)
+bool ButtonControl_IsDown(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
     return entity && entity.HasComponent<UIControlComponent>() ? entity.GetComponent<UIControlComponent>().IsDown
-                                                             : false;
+                                                               : false;
 }
-CH_ADD_INTERNAL_CALL(ButtonControl, ButtonControl_IsDown_Ptr, ButtonControl_IsDown);
-
-CH_SCRIPT_FUNC bool CheckboxControl_GetChecked(uint64_t entityID)
+bool CheckboxControl_GetChecked(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<UIControlComponent>())
     {
         auto& widget = entity.GetComponent<UIControlComponent>();
         if (std::holds_alternative<CheckboxData>(widget.Data))
+        {
             return std::get<CheckboxData>(widget.Data).Checked;
+        }
     }
     return false;
 }
-CH_ADD_INTERNAL_CALL(CheckboxControl, CheckboxControl_GetChecked_Ptr, CheckboxControl_GetChecked);
-
-CH_SCRIPT_FUNC int ComboBoxControl_GetSelectedIndex(uint64_t entityID)
+int ComboBoxControl_GetSelectedIndex(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<UIControlComponent>())
     {
         auto& widget = entity.GetComponent<UIControlComponent>();
         if (std::holds_alternative<ComboBoxData>(widget.Data))
+        {
             return std::get<ComboBoxData>(widget.Data).SelectedIndex;
+        }
     }
     return 0;
 }
-CH_ADD_INTERNAL_CALL(ComboBoxControl, ComboBoxControl_GetSelectedIndex_Ptr, ComboBoxControl_GetSelectedIndex);
-
-CH_SCRIPT_FUNC void ComboBoxControl_SetSelectedIndex(uint64_t entityID, int index)
+void ComboBoxControl_SetSelectedIndex(uint64_t entityID, int index)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<UIControlComponent>())
@@ -63,9 +52,7 @@ CH_SCRIPT_FUNC void ComboBoxControl_SetSelectedIndex(uint64_t entityID, int inde
         }
     }
 }
-CH_ADD_INTERNAL_CALL(ComboBoxControl, ComboBoxControl_SetSelectedIndex_Ptr, ComboBoxControl_SetSelectedIndex);
-
-CH_SCRIPT_FUNC void ComboBoxControl_AddItem(uint64_t entityID, Coral::String item)
+void ComboBoxControl_AddItem(uint64_t entityID, Coral::String item)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<UIControlComponent>())
@@ -77,9 +64,7 @@ CH_SCRIPT_FUNC void ComboBoxControl_AddItem(uint64_t entityID, Coral::String ite
         }
     }
 }
-CH_ADD_INTERNAL_CALL(ComboBoxControl, ComboBoxControl_AddItem_Ptr, ComboBoxControl_AddItem);
-
-CH_SCRIPT_FUNC void ComboBoxControl_ClearItems(uint64_t entityID)
+void ComboBoxControl_ClearItems(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<UIControlComponent>())
@@ -93,9 +78,7 @@ CH_SCRIPT_FUNC void ComboBoxControl_ClearItems(uint64_t entityID)
         }
     }
 }
-CH_ADD_INTERNAL_CALL(ComboBoxControl, ComboBoxControl_ClearItems_Ptr, ComboBoxControl_ClearItems);
-
-CH_SCRIPT_FUNC int ComboBoxControl_GetItemCount(uint64_t entityID)
+int ComboBoxControl_GetItemCount(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<UIControlComponent>())
@@ -108,9 +91,7 @@ CH_SCRIPT_FUNC int ComboBoxControl_GetItemCount(uint64_t entityID)
     }
     return 0;
 }
-CH_ADD_INTERNAL_CALL(ComboBoxControl, ComboBoxControl_GetItemCount_Ptr, ComboBoxControl_GetItemCount);
-
-CH_SCRIPT_FUNC Coral::String ComboBoxControl_GetItem(uint64_t entityID, int index)
+Coral::String ComboBoxControl_GetItem(uint64_t entityID, int index)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<UIControlComponent>())
@@ -127,12 +108,12 @@ CH_SCRIPT_FUNC Coral::String ComboBoxControl_GetItem(uint64_t entityID, int inde
     }
     return Coral::String::New("");
 }
-CH_ADD_INTERNAL_CALL(ComboBoxControl, ComboBoxControl_GetItem_Ptr, ComboBoxControl_GetItem);
-
-CH_SCRIPT_FUNC void UI_Text(Coral::String text)
+void UI_Text(Coral::String text)
 {
     if (ImGui::GetCurrentContext() == nullptr || !ImGui::GetCurrentContext()->WithinFrameScope)
+    {
         return;
+    }
 
     CH_CORE_INFO("[UI] UI_Text called from script: '{}'", ((std::string)text));
 
@@ -143,9 +124,21 @@ CH_SCRIPT_FUNC void UI_Text(Coral::String text)
     }
     else
     {
-        ImGui::GetForegroundDrawList()->AddText({ 10, 10 }, IM_COL32(255, 255, 0, 255), ((std::string)text).c_str());
+        ImGui::GetForegroundDrawList()->AddText({10, 10}, IM_COL32(255, 255, 0, 255), ((std::string)text).c_str());
     }
 }
-CH_ADD_INTERNAL_CALL(UI, UI_Text_Ptr, UI_Text);
 
-} // namespace Chained
+void RegisterGlueUI()
+{
+    CH_ADD_INTERNAL_CALL("UI", ButtonControl_IsClicked, ButtonControl_IsClicked);
+    CH_ADD_INTERNAL_CALL("UI", ButtonControl_IsDown, ButtonControl_IsDown);
+    CH_ADD_INTERNAL_CALL("UI", CheckboxControl_GetChecked, CheckboxControl_GetChecked);
+    CH_ADD_INTERNAL_CALL("UI", ComboBoxControl_GetSelectedIndex, ComboBoxControl_GetSelectedIndex);
+    CH_ADD_INTERNAL_CALL("UI", ComboBoxControl_SetSelectedIndex, ComboBoxControl_SetSelectedIndex);
+    CH_ADD_INTERNAL_CALL("UI", ComboBoxControl_AddItem, ComboBoxControl_AddItem);
+    CH_ADD_INTERNAL_CALL("UI", ComboBoxControl_ClearItems, ComboBoxControl_ClearItems);
+    CH_ADD_INTERNAL_CALL("UI", ComboBoxControl_GetItemCount, ComboBoxControl_GetItemCount);
+    CH_ADD_INTERNAL_CALL("UI", ComboBoxControl_GetItem, ComboBoxControl_GetItem);
+    CH_ADD_INTERNAL_CALL("UI", UI_Text, UI_Text);
+}
+}

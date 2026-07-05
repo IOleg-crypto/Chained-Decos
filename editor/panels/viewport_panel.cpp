@@ -250,6 +250,11 @@ void ViewportPanel::OnUpdate(Timestep ts)
         bool mouseInViewport = m_Hovered || m_Focused || Chained::Core::Input::IsMouseButtonDown(Chained::MouseCode::ButtonRight);
         if (activeScene && mouseInViewport)
         {
+            auto& editorSettings = EditorLayer::Get().GetProjectManager().GetEditorSettings();
+            m_CameraController->SetMoveSpeed(editorSettings.CameraMoveSpeed);
+            m_CameraController->SetBoostMultiplier(editorSettings.CameraBoostMultiplier);
+            m_CameraController->SetDisableZoom(editorSettings.DisableCameraZoom);
+
             Entity primaryCamera = SceneRenderer::GetPrimaryCameraEntity(activeScene->GetRegistry(), activeScene->GetRegistryPtr());
             m_CameraController->OnUpdate(primaryCamera, ts, m_ViewportSize);
         }
@@ -636,8 +641,10 @@ void ViewportPanel::RenderToolbar(Scene* activeScene, const ImVec2& viewportSize
         ImGui::SameLine(0, 15);
 
         // Playback Tools
+        // Playback Tools
         SceneState sceneState = EditorLayer::Get().GetSceneState();
         bool isPlaying = (sceneState == SceneState::Play);
+        bool isSimulating = (sceneState == SceneState::Simulate);
         ImGui::SameLine(0, 10);
 
         if (isPlaying) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 1.0f, 0.3f, 1.0f));
@@ -655,6 +662,26 @@ void ViewportPanel::RenderToolbar(Scene* activeScene, const ImVec2& viewportSize
             }
         }
         if (isPlaying) ImGui::PopStyleColor();
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip(isPlaying ? "Stop" : "Play (Run Physics & Scripts)");
+
+        ImGui::SameLine(0, 5);
+
+        if (isSimulating) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.64f, 0.0f, 1.0f)); // Orange for simulate
+        if (ImGui::Button(isSimulating ? ICON_FA_STOP : ICON_FA_GEARS, ImVec2(28, 28)))
+        {
+            if (isSimulating)
+            {
+                SceneStopEvent e;
+                EditorLayer::Get().OnEvent(e);
+            }
+            else
+            {
+                SceneSimulateEvent e;
+                EditorLayer::Get().OnEvent(e);
+            }
+        }
+        if (isSimulating) ImGui::PopStyleColor();
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip(isSimulating ? "Stop Simulation" : "Simulate (Run Physics Only)");
 
         ImGui::SameLine(0, 5);
         // Reload Scripts (Ctrl+R)

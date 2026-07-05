@@ -33,7 +33,6 @@ Scene::Scene()
     m_ResourceManager = std::make_unique<SceneResourceManager>();
     m_AnimationManager = std::make_unique<AnimationManager>();
 
-    
     reg.on_construct<IDComponent>().connect<&Scene::OnIDConstruct>(this);
     reg.on_destroy<IDComponent>().connect<&Scene::OnIDDestroy>(this);
 
@@ -49,7 +48,7 @@ Scene::Scene()
 }
 Scene::~Scene()
 {
-    Physics::ClearContext(this);
+    ServiceLocator::Get<Physics>()->ClearContext(this);
     // Clean up active signals
     GetRegistry().clear();
 }
@@ -93,8 +92,6 @@ std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
             Entity dstEntity = newScene->CreateEntityWithUUID(id.ID);
             entityMap[entityHandle] = (entt::entity)dstEntity;
 
-            
-            
             ComponentSerializer::CopyAll(srcEntity, dstEntity);
 
             // Reset physics handles so the specialized PhysicsSystem::InitializeBodies
@@ -106,7 +103,6 @@ std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
         }
     }
 
-    
     {
         CH_PROFILE_SCOPE("Scene::Copy::CopyEntities_Pass2");
         srcRegistry.view<HierarchyComponent>().each([&](auto entityHandle, auto& srcHC) {
@@ -170,10 +166,11 @@ void Scene::OnRenderUI()
 void Scene::OnRuntimeStart()
 {
     CH_CORE_INFO("Scene::OnRuntimeStart - Starting activation for scene pointer: {}", (void*)this);
-    Physics::ResetAccumulator(this);
+    ServiceLocator::Get<Physics>()->ResetWorld();
+    ServiceLocator::Get<Physics>()->ResetAccumulator(this);
+    ServiceLocator::Get<Physics>()->InitializeBodies(this);
     m_IsSimulationRunning = true;
 
-    
     SetContextScene(this);
 
     if (auto* uiRenderer = ServiceLocator::Get<UIRenderer>())
@@ -195,7 +192,6 @@ void Scene::OnRuntimeStart()
         m_ResourceManager->OnRuntimeStart(this);
     }
 
-    
     auto& registry = GetRegistry();
     auto view = registry.view<AnimationComponent>();
     for (auto entity : view)
@@ -223,7 +219,7 @@ void Scene::OnRuntimeStop()
         m_ResourceManager->OnRuntimeStop(this);
     }
 
-    SetContextScene(nullptr); 
+    SetContextScene(nullptr);
 }
 
 void Scene::OnUpdateRuntime(Timestep ts)
@@ -248,7 +244,7 @@ void Scene::OnUpdateRuntime(Timestep ts)
     }
 
     // 3. Physics Simulation
-    Physics::Update(this, ts, true);
+    ServiceLocator::Get<Physics>()->Update(this, ts, true);
 
     // 4. Animation Playback
     if (m_AnimationManager)
@@ -287,6 +283,32 @@ void Scene::OnUpdateRuntime(Timestep ts)
     }
 }
 
+void Scene::OnUpdateSimulation(Timestep ts)
+{
+    CH_PROFILE_FUNCTION();
+
+    // 1. Hierarchy Update
+    if (m_HierarchySystem)
+    {
+        m_HierarchySystem->UpdateWorldTransforms(*m_Registry, GetRootEntities());
+    }
+
+    // 2. Resource & Asset Resolution
+    if (m_ResourceManager)
+    {
+        m_ResourceManager->Update(*m_Registry, ts);
+    }
+
+    // 3. Physics Simulation
+    ServiceLocator::Get<Physics>()->Update(this, ts, true);
+
+    // 4. Animation Playback
+    if (m_AnimationManager)
+    {
+        m_AnimationManager->UpdatePlayback(this, ts);
+    }
+}
+
 void Scene::OnUpdateEditor(Timestep timestep)
 {
     CH_PROFILE_FUNCTION();
@@ -294,7 +316,15 @@ void Scene::OnUpdateEditor(Timestep timestep)
     // 1. Hierarchy Update
     m_HierarchySystem->UpdateWorldTransforms(*m_Registry, GetRootEntities());
 
-    // 2. Resource & Asset Resolution (Editor needs this for lazy loading too)
+    
+    auto physics = ServiceLocator::Get<Physics>();
+    if (physics)
+    {
+        
+        physics->Update(this, timestep, false); 
+    }
+
+    // 3. Resource & Asset Resolution
     if (m_ResourceManager)
     {
         m_ResourceManager->Update(*m_Registry, timestep);
@@ -420,9 +450,6 @@ Entity Scene::CopyEntityInternal(entt::entity copyEntity, entt::entity parentEnt
     std::string copyName = srcEntity.GetName() + (parentEntity == entt::null ? "_copy" : "");
     Entity dstEntity = CreateEntity(copyName);
 
-    
-    
-    
     ComponentSerializer::CopyAll(srcEntity, dstEntity);
 
     // Restore the name (CopyAll overwrites it with source tag)
@@ -433,7 +460,6 @@ Entity Scene::CopyEntityInternal(entt::entity copyEntity, entt::entity parentEnt
     dstEntity.RemoveComponent<IDComponent>();
     dstEntity.AddComponent<IDComponent>();
 
-    
     if (dstEntity.HasComponent<RigidBodyComponent>())
     {
         dstEntity.GetComponent<RigidBodyComponent>().Handle = kInvalidPhysicsBody;

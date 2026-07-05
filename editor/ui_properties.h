@@ -336,7 +336,10 @@ private:
         }
         else
         {
-            changed = EditorGUI::Property(name, value);
+            if constexpr (requires { EditorGUI::Property(name, value); })
+            {
+                changed = EditorGUI::Property(name, value);
+            }
         }
         ImGui::EndDisabled();
 

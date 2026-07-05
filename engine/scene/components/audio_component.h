@@ -35,13 +35,13 @@ struct AudioComponent
     struct UI
     {
         UIMeta SoundPath = {.Hint = PropertyMeta::WidgetHint::FilePicker, .Extensions = ".wav,.mp3,.ogg"};
-        UIMeta Volume = {.Min = 0.0f, .Max = 2.0f, .Speed = 0.01f, .Tooltip = "Гучність аудіо-джерела"};
+        UIMeta Volume = {.Min = 0.0f, .Max = 2.0f, .Speed = 0.01f, .Tooltip = "Volume of the audio source"};
         UIMeta Pitch = {
-            .Min = 0.1f, .Max = 3.0f, .Speed = 0.01f, .Tooltip = "Швидкість/Тональність відтворення"};
+            .Min = 0.1f, .Max = 3.0f, .Speed = 0.01f, .Tooltip = "Playback speed/pitch of the audio source"};
         UIMeta MinDistance = {
-            .Min = 0.0f, .Max = 50.0f, .Speed = 0.5f, .Tooltip = "Радіус, де звук починає затухати"};
+            .Min = 0.0f, .Max = 50.0f, .Speed = 0.5f, .Tooltip = "Radius where the sound starts to fade"};
         UIMeta MaxDistance = {
-            .Min = 1.0f, .Max = 1000.0f, .Speed = 5.0f, .Tooltip = "Максимальна дистанція чутності 3D звуку"};
+            .Min = 1.0f, .Max = 1000.0f, .Speed = 5.0f, .Tooltip = "Maximum distance for 3D sound visibility"};
     };
 };
 

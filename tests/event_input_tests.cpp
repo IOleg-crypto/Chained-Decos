@@ -1,4 +1,6 @@
 #include "engine/core/events/events.h"
+#include "engine/core/events/input_events.h"
+#include "engine/core/events/window_events.h"
 #include "engine/core/key_codes.h"
 #include "engine/core/mouse_codes.h"
 #include "gtest/gtest.h"
@@ -44,13 +46,13 @@ TEST(EventSystemTest, EventDispatcherKeyPressed)
     EventDispatcher dispatcher(event);
     const bool dispatched = dispatcher.Dispatch<KeyPressedEvent>([&](KeyPressedEvent& e) {
         handlerCalled = true;
-        receivedKey = e.GetKeyCode();
+        receivedKey = (int)e.GetKeyCode();
         return true;
     });
 
     EXPECT_TRUE(dispatched);
     EXPECT_TRUE(handlerCalled);
-    EXPECT_EQ(receivedKey, KeyCode::W);
+    EXPECT_EQ(receivedKey, (int)KeyCode::W);
     EXPECT_TRUE(event.Handled);
 }
 

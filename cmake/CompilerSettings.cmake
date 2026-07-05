@@ -1,5 +1,23 @@
 # Chained Engine - Compiler Settings
 # Extracted from root CMakeLists.txt for modularity
+
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_C_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+# Standardize output directories for all targets (Set BEFORE including dependencies)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Generate compile_commands.json")
+set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
+if(UNIX AND NOT APPLE)
+    set(CMAKE_INSTALL_RPATH "$ORIGIN")
+endif()
+
 set(CMAKE_DEBUG_POSTFIX "")
 
 # Compiler-specific settings
@@ -144,6 +162,11 @@ option(ENABLE_UNITY_BUILD "Enable Unity Builds for faster compilation" OFF)
 option(ENABLE_PCH "Enable Precompiled Headers for faster compilation" ON)
 option(ENABLE_LTO "Enable Link-Time Optimization (IPO) for Release configurations" ON)
 option(ENABLE_COVERAGE "Enable Code Coverage (GCC/Clang only)" OFF)
+# Warning Settings
+option(DISABLE_ALL_WARNINGS "Disable all compiler warnings" OFF)
+option(ENABLE_WARNINGS "Enable compiler warnings" OFF)
+option(WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
+
 
 if(ENABLE_COVERAGE)
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")

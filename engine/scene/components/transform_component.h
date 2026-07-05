@@ -1,11 +1,12 @@
 #ifndef CH_TRANSFORM_COMPONENT_H
 #define CH_TRANSFORM_COMPONENT_H
 
+#include "engine/reflection/reflection_rfl.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
-#include "engine/reflection/reflection.h"
+
 
 namespace Chained
 {
@@ -13,7 +14,7 @@ namespace Chained
 struct TransformComponent
 {
     glm::vec3 Translation = {0.0f, 0.0f, 0.0f};
-    glm::vec3 Rotation = {0.0f, 0.0f, 0.0f}; // Euler angles in radians.
+    glm::vec3 Rotation = {0.0f, 0.0f, 0.0f};           // Euler angles in radians.
     glm::quat RotationQuat = {1.0f, 0.0f, 0.0f, 0.0f}; // GLM uses w, x, y, z.
     glm::vec3 Scale = {1.0f, 1.0f, 1.0f};
 
@@ -27,24 +28,35 @@ struct TransformComponent
     glm::quat PrevRotationQuat = {1.0f, 0.0f, 0.0f, 0.0f};
     glm::vec3 PrevScale = {1, 1, 1};
 
-    CH_REFLECT_BEGIN(TransformComponent)
-        // Position.
-        CH_PROP(props, Translation);
-        
-        // Rotation in radians.
-        CH_PROP_META(props, Rotation, PropertyMeta(-3.14159f, 3.14159f, 0.01f));
-        
-        // Scale.
-        CH_PROP_META(props, Scale, PropertyMeta(0.1f, 10.0f, 0.1f));
+    static const char* GetStaticName()
+    {
+        return "TransformComponent";
+    }
 
-        // Keep the quaternion in sync using an inline lambda or similar if we want to avoid member functions
-        if (props.HasChanged() || props.GetMode() == ReflectionMode::Deserialize)
-        {
-             RotationQuat = glm::quat(Rotation);
-             IsDirty = true;
-        }
-    CH_REFLECT_END()
+    // Declarative UI layout layout metadata for compile-time reflection
+    struct UI
+    {
+        UIMeta Translation = {.Tooltip = "Local position of the entity in world or parent space"};
+        UIMeta Rotation = {
+            .Min = -3.14159f, .Max = 3.14159f, .Speed = 0.01f, .Tooltip = "Local rotation angles specified in radians"};
+        UIMeta Scale = {
+            .Min = 0.1f, .Max = 10.0f, .Speed = 0.1f, .Tooltip = "Local scale multipliers along X, Y, and Z axes"};
+
+        // Runtime states excluded from serialization but visible as read-only in UI for debugging
+        UIMeta IsDirty = {.ReadOnly = true,
+                          .Transient = true,
+                          .Tooltip = "Internal dirty flag indicating matrix needs recalculation"};
+        UIMeta PrevTranslation = {.ReadOnly = true,
+                                  .Transient = true,
+                                  .Tooltip =
+                                      "Translation state from the previous frame used for rendering interpolation"};
+        UIMeta PrevScale = {.ReadOnly = true,
+                            .Transient = true,
+                            .Tooltip = "Scale state from the previous frame used for rendering interpolation"};
+    };
 };
+
+CH_MARK_RFL(TransformComponent);
 
 } // namespace Chained
 

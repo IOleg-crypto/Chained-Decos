@@ -1,50 +1,68 @@
+using System;
 using System.Collections.Generic;
-using Coral.Managed.Interop;
 
 namespace Chained
 {
-
-/// <summary>Logging helpers.</summary>
-public static class Log
-{
-    private static List<string> s_History = new List<string>();
-    public static IReadOnlyList<string> History => s_History;
-
-#pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<NativeString, void> Log_Info_Ptr;
-    internal static unsafe delegate* unmanaged<NativeString, void> Log_Warn_Ptr;
-    internal static unsafe delegate* unmanaged<NativeString, void> Log_Error_Ptr;
-#pragma warning restore 0649
-
-    /// <summary>Logs an info message.</summary>
-    public static unsafe void Info(string message) 
+    public static class Log
     {
-        AddToHistory("[INFO] " + message);
-        Log_Info_Ptr(message);
-    }
-    
-    /// <summary>Logs a warning.</summary>
-    public static unsafe void Warn(string message) 
-    {
-        AddToHistory("[WARN] " + message);
-        Log_Warn_Ptr(message);
-    }
-    
-    /// <summary>Logs an error.</summary>
-    public static unsafe void Error(string message) 
-    {
-        AddToHistory("[ERROR] " + message);
-        Log_Error_Ptr(message);
-    }
+        private static List<string> s_History = new List<string>();
+        public static IReadOnlyList<string> History => s_History;
 
-    private static void AddToHistory(string formatted)
-    {
-        s_History.Add(formatted);
-        if (s_History.Count > 15) s_History.RemoveAt(0);
-    }
+        internal static unsafe delegate* unmanaged<char*, void> Log_Info_Ptr;
+        internal static unsafe delegate* unmanaged<char*, void> Log_Warn_Ptr;
+        internal static unsafe delegate* unmanaged<char*, void> Log_Error_Ptr;
 
-    public static void ClearHistory() => s_History.Clear();
+        public static unsafe void Info(string message) 
+        {
+            if (message == null) return;
+            AddToHistory("[INFO] " + message);
+
+            if (Log_Info_Ptr != null)
+            {
+                
+                
+                fixed (char* ptr = message)
+                {
+                    Log_Info_Ptr(ptr);
+                }
+            }
+            else
+            {
+                Console.WriteLine("[INFO] " + message);
+            }
+        }
+
+        public static unsafe void Warn(string message) 
+        {
+            if (message == null) return;
+            AddToHistory("[WARN] " + message);
+
+            if (Log_Warn_Ptr != null)
+            {
+                fixed (char* ptr = message) Log_Warn_Ptr(ptr);
+            }
+            else Console.WriteLine("[WARN] " + message);
+        }
+
+        public static unsafe void Error(string message) 
+        {
+            if (message == null) return;
+            AddToHistory("[ERROR] " + message);
+
+            if (Log_Error_Ptr != null)
+            {
+                fixed (char* ptr = message) Log_Error_Ptr(ptr);
+            }
+            else Console.WriteLine("[ERROR] " + message);
+        }
+
+        private static void AddToHistory(string formatted)
+        {
+            if (s_History == null) s_History = new List<string>();
+            s_History.Add(formatted);
+            if (s_History.Count > 15) s_History.RemoveAt(0);
+        }
+
+        public static void ClearHistory() => s_History?.Clear();
+    }
 }
-
-}
- // namespace Chained

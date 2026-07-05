@@ -1,27 +1,14 @@
 chained_add_engine_module(engine_physics
     SOURCES
         physics.cpp
-        dynamics.cpp
-        collision_core.cpp
         raycast_query.cpp
-        default_physics_world.cpp
-        bvh/bvh_cache.cpp
-        bvh/bvh.cpp
-        collision/collision_triangle.cpp
-        physics.h
-        dynamics.h
-        collision_core.h
-        raycast_query.h
-        iphysics_world.h
-        default_physics_world.h
-        bvh/bvh_cache.h
-        bvh/bvh.h
-        bvh/bvh_node.h
-        collision/collision.h
-        collision/collision_triangle.h
-        raycast_result.h
-        jolt_physics_world.h
         jolt_physics_world.cpp
+        physics.h
+        raycast_query.h
+        raycast_result.h
+        iphysics_world.h
+        physics_types.h
+        jolt_physics_world.h
     DEPENDS
         engine_core
         engine_external_entt

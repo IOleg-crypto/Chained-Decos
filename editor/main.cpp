@@ -2,7 +2,6 @@
 #include "engine/core/platform.h"
 #include "layer.h"
 
-
 namespace Chained
 {
 // Forward declare the game's registration function
@@ -21,7 +20,7 @@ Application* CreateApplication(ApplicationCommandLineArgs args)
     spec.WindowWidth = 0;
     spec.WindowHeight = 0;
     spec.Headless = false;
-    spec.EnableScripting = false;
+    spec.EnableScripting = true;
 
     // Set engine root to the executable directory so AssetManager can find
     // resources/shaders, resources/icons, resources/font etc.

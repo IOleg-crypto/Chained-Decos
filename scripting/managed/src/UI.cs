@@ -1,12 +1,12 @@
 using Coral.Managed.Interop;
 
-namespace Chained
+namespace CHEngine
 {
     /// <summary>UI helpers.</summary>
     public static class UI
     {
 #pragma warning disable 0649
-        internal static unsafe delegate* unmanaged<NativeString, void> UI_Text_Ptr;
+        internal static unsafe delegate*<NativeString, void> UI_Text_Ptr;
 #pragma warning restore 0649
 
         /// <summary>Draws UI text.</summary>

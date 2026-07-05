@@ -69,8 +69,11 @@ Application::Application(const ApplicationSpecification& spec)
         CH_CORE_INFO("AssetManager: Engine root set to '{}'", m_Specification.EngineRoot.string());
     }
 
-    ServiceLocator::Provide<Renderer>(new Renderer());
-    ServiceLocator::Provide<UIRenderer>(new UIRenderer());
+    if (!m_Specification.Headless)
+    {
+        ServiceLocator::Provide<Renderer>(new Renderer());
+        ServiceLocator::Provide<UIRenderer>(new UIRenderer());
+    }
     ServiceLocator::Provide<Audio>(new Audio());
     ServiceLocator::Provide<Physics>(new Physics());
     ServiceLocator::Provide<ScriptEngine>(new ScriptEngine(m_Specification.EnableScripting));

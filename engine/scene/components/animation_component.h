@@ -3,14 +3,11 @@
 
 #include "engine/reflection/reflection.h"
 #include "engine/reflection/reflection_rfl.h"
-#include <string>
 
 namespace Chained
 {
 struct AnimationComponent
 {
-    
-    std::string AnimationPath;
     float BlendDuration = 0.25f;
     bool IsLooping = true;
     bool PlayOnStart = true;
@@ -33,25 +30,22 @@ struct AnimationComponent
     
     struct UI
     {
-        
-        UIMeta AnimationPath = {.Hint = PropertyMeta::WidgetHint::FilePicker, .Extensions = ".gltf,.fbx,.anim"};
-
-        
+           
         UIMeta BlendDuration = {
-            .Min = 0.0f, .Max = 2.0f, .Speed = 0.05f, .Tooltip = "Час плавної зміни анімацій (в секундах)"};
+            .Min = 0.0f, .Max = 2.0f, .Speed = 0.05f, .Tooltip = "Time to blend between animations (in seconds)"};
 
         
-        UIMeta IsLooping = {.Tooltip = "Чи буде анімація зациклюватися"};
-        UIMeta PlayOnStart = {.Tooltip = "Чи буде анімація відтворюватися при старті сцени"};
+        UIMeta IsLooping = {.Tooltip = "Whether the animation will loop"};
+        UIMeta PlayOnStart = {.Tooltip = "Whether the animation will play at the start of the scene"};
         
         
-        UIMeta CurrentAnimationIndex = {.ReadOnly = true, .Transient = true};
+        UIMeta CurrentAnimationIndex = {.ReadOnly = false, .Transient = true};
         UIMeta TargetAnimationIndex = {.ReadOnly = true, .Transient = true};
         UIMeta FrameTimeCounter = {.ReadOnly = true, .Transient = true};
         UIMeta BlendTimer = {.ReadOnly = true, .Transient = true};
         UIMeta CurrentFrame = {.ReadOnly = true, .Transient = true};
         UIMeta TargetFrame = {.ReadOnly = true, .Transient = true};
-        UIMeta IsPlaying = {.ReadOnly = true, .Transient = true};
+        UIMeta IsPlaying = {.ReadOnly = false, .Transient = true , .Hint = PropertyMeta::WidgetHint::Checkbox};
         UIMeta Blending = {.ReadOnly = true, .Transient = true};
     };
 };

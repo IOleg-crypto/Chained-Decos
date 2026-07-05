@@ -122,7 +122,7 @@ void EditorCameraController::OnUpdate(Entity cameraEntity, Timestep ts, const gl
     }
 
     float wheel = Core::Input::GetMouseWheelMove();
-    if (wheel != 0)
+    if (wheel != 0 && !m_DisableZoom)
     {
         MouseZoom(wheel);
     }

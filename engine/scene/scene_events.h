@@ -116,6 +116,14 @@ public:
     EVENT_CLASS_CATEGORY(EventCategoryApplication)
 };
 
+class SceneSimulateEvent : public Event
+{
+public:
+    SceneSimulateEvent() = default;
+    EVENT_CLASS_TYPE(SceneSimulate)
+    EVENT_CLASS_CATEGORY(EventCategoryApplication)
+};
+
 
 class SceneStopEvent : public Event
 {

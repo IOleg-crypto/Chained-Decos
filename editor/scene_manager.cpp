@@ -116,10 +116,11 @@ void EditorSceneManager::SetScene(const std::shared_ptr<Scene>& scene)
 
 void EditorSceneManager::SetSceneState(SceneState state)
 {
-    if (state == SceneState::Play)
+    if (state == SceneState::Play || state == SceneState::Simulate)
     {
         if (m_PlayModeStartRequested || m_IsPlayModeLoading || m_IsSceneOpenLoading ||
-            EditorLayer::Get().GetSceneState() == SceneState::Play)
+            EditorLayer::Get().GetSceneState() == SceneState::Play ||
+            EditorLayer::Get().GetSceneState() == SceneState::Simulate)
         {
             return;
         }
@@ -131,7 +132,7 @@ void EditorSceneManager::SetSceneState(SceneState state)
         }
 
         m_PlayModeStartRequested = true;
-        CH_CORE_INFO("Editor: Play mode requested.");
+        CH_CORE_INFO("Editor: {} mode requested.", state == SceneState::Play ? "Play" : "Simulate");
     }
     else
     {
@@ -164,7 +165,8 @@ void EditorSceneManager::SetSceneState(SceneState state)
 
 std::shared_ptr<Scene> EditorSceneManager::GetActiveScene() const
 {
-    return (EditorLayer::Get().GetSceneState() == SceneState::Play) ? m_RuntimeScene : m_EditorScene;
+    return (EditorLayer::Get().GetSceneState() == SceneState::Play || 
+            EditorLayer::Get().GetSceneState() == SceneState::Simulate) ? m_RuntimeScene : m_EditorScene;
 }
 
 void EditorSceneManager::OnUpdate(Timestep ts)
