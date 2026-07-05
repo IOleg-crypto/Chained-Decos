@@ -176,6 +176,7 @@ template <typename T, typename T_Archive> void ReflectFromRfl(T& component, Chai
                            std::is_same_v<FieldType, bool> || std::is_same_v<FieldType, glm::vec2> ||
                            std::is_same_v<FieldType, glm::vec3> || std::is_same_v<FieldType, glm::vec4> ||
                            std::is_same_v<FieldType, Chained::Color> || std::is_same_v<FieldType, uint64_t> ||
+                           is_variant_v<FieldType> ||
                            (std::is_integral_v<FieldType> && std::is_unsigned_v<FieldType>))
         {
             props.Property(name_cstr, *field.get(), meta);

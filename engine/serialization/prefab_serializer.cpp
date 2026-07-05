@@ -96,6 +96,15 @@ Entity PrefabSerializer::Deserialize(Scene* scene, const std::string& filepath)
         Entity entity = createdEntities[idx++];
         ComponentSerializer::DeserializeAll(entity, entityNode);
         
+        if (entity.HasComponent<TransformComponent>())
+        {
+            auto& tc = entity.GetComponent<TransformComponent>();
+            tc.RotationQuat = glm::quat(tc.Rotation);
+            tc.PrevRotationQuat = tc.RotationQuat;
+            tc.PrevTranslation = tc.Translation;
+            tc.PrevScale = tc.Scale;
+        }
+
         HierarchyTask task;
         HierarchySerializer::DeserializeTask(entity, entityNode, task);
         if (task.parent != 0 || !task.children.empty())

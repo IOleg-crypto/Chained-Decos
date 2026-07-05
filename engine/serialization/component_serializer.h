@@ -10,10 +10,12 @@
 #include <vector>
 #include <yaml-cpp/yaml.h>
 
+#include "engine/core/engine_module.h"
+
 namespace Chained
 {
 // Central helper for component serialization used by scene save/load/copy.
-class ComponentSerializer
+class ComponentSerializer : public EngineModule
 {
 public:
     // Serializes all registered components owned by an entity.

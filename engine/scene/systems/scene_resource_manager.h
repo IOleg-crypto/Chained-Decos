@@ -33,8 +33,11 @@ public:
     void OnRuntimeStart(Scene* scene);
     void OnRuntimeStop(Scene* scene);
 
-protected:
-
+    /**
+     * @brief Callback invoked when a RigidBodyComponent is constructed.
+     * Used to initialize physics bodies immediately during runtime.
+     */
+    void OnRigidBodyConstruct(entt::registry& reg, entt::entity e);
 
 public:
     // Asset resolution methods

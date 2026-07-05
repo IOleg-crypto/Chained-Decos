@@ -13,7 +13,7 @@ struct TagComponent
     
     struct UI
     {
-        UIMeta Tag = {.Tooltip = "Користувацький тег для пошуку та фільтрації сутності"};
+        UIMeta Tag = {.Tooltip = "Custom tag for entity lookup and filtering"};
     };
 };
 

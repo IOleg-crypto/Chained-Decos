@@ -313,6 +313,10 @@ void EditorLayer::OnUpdate(Timestep ts)
                 scene->OnUpdateEditor(ts);
             }
         }
+        else if (GetSceneState() == SceneState::Simulate)
+        {
+            scene->OnUpdateSimulation(ts);
+        }
         else
         {
             scene->OnUpdateEditor(ts);
@@ -419,6 +423,10 @@ void EditorLayer::OnEvent(Event& e)
         m_SceneManager->SetSceneState(SceneState::Play);
         return true;
     });
+    dispatcher.Dispatch<SceneSimulateEvent>([this](auto& e) {
+        m_SceneManager->SetSceneState(SceneState::Simulate);
+        return true;
+    });
     dispatcher.Dispatch<SceneStopEvent>([this](auto& e) {
         m_SceneManager->SetSceneState(SceneState::Edit);
         return true;
@@ -433,7 +441,7 @@ void EditorLayer::OnEvent(Event& e)
 
     // 3. Command/Undo
     dispatcher.Dispatch<UndoEvent>([this](auto& e) {
-        if (GetSceneState() != SceneState::Play)
+        if (GetSceneState() != SceneState::Play && GetSceneState() != SceneState::Simulate)
         {
             m_CommandHistory.Undo();
         }
@@ -441,7 +449,7 @@ void EditorLayer::OnEvent(Event& e)
     });
 
     dispatcher.Dispatch<RedoEvent>([this](auto& e) {
-        if (GetSceneState() != SceneState::Play)
+        if (GetSceneState() != SceneState::Play && GetSceneState() != SceneState::Simulate)
         {
             m_CommandHistory.Redo();
         }

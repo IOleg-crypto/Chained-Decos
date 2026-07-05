@@ -9,22 +9,7 @@ endif()
 
 project(ChainedDecos LANGUAGES CXX C)
 
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_C_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_C_STANDARD_REQUIRED ON)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# Standardize output directories for all targets (Set BEFORE including dependencies)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Generate compile_commands.json")
-set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
-if(UNIX AND NOT APPLE)
-    set(CMAKE_INSTALL_RPATH "$ORIGIN")
-endif()
 
 # Options
 option(BUILD_TESTS "Build unit tests" ON)
@@ -38,13 +23,8 @@ endif()
 # Global library definitions
 add_compile_definitions(GLM_FORCE_DEPTH_ZERO_TO_ONE)
 
-# Warning Settings
-option(DISABLE_ALL_WARNINGS "Disable all compiler warnings" OFF)
-option(ENABLE_WARNINGS "Enable compiler warnings" OFF)
-option(WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
 
 # Optional: ccache support for faster rebuilds
-# Install ccache: choco install ccache (Windows) or apt install ccache (Linux)
 option(USE_CCACHE "Use ccache if available" ON)
 if(USE_CCACHE)
     find_program(CCACHE_PROGRAM ccache)
@@ -57,15 +37,11 @@ if(USE_CCACHE)
     endif()
 endif()
 
-# === BUILD OPTIMIZATION: Prevent unnecessary recompilation ===
-# 1. Don't regenerate build files if nothing changed
+# === BUILD OPTIMIZATION ===
 set(CMAKE_SUPPRESS_REGENERATION OFF)
-
-# 2. Incremental linking (faster linking)
 if(MSVC)
     add_link_options(/INCREMENTAL)
 endif()
-
 
 # Dependencies
 include(cmake/CompilerSettings.cmake)
@@ -76,11 +52,9 @@ include(cmake/ProjectHelpers.cmake)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 set(CH_PYTHON_EXECUTABLE "${Python3_EXECUTABLE}" CACHE FILEPATH "Python interpreter used for build helper scripts" FORCE)
 
-
 set(CH_ACTIVE_GAME "chaineddecos" CACHE STRING "Active game project to build")
 set_property(CACHE CH_ACTIVE_GAME PROPERTY STRINGS chaineddecos testproject)
 
-# Useful definitions
 if(UNIX AND NOT APPLE)
     add_compile_definitions(_GNU_SOURCE)
 endif()
@@ -89,15 +63,14 @@ if(MINGW)
     add_compile_options(-Wa,-mbig-obj)
 endif()
 
+
 add_subdirectory(engine)
 
 # ── Build Game Projects ──────────────────────────────────────────────────────
-# Automatically find and include all projects in the game/ directory.
 file(GLOB GAME_PROJECT_LIST RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/game" "game/*")
 foreach(GAME_PROJECT_DIR ${GAME_PROJECT_LIST})
     set(GAME_PATH "${CMAKE_CURRENT_SOURCE_DIR}/game/${GAME_PROJECT_DIR}")
     if(IS_DIRECTORY "${GAME_PATH}" AND EXISTS "${GAME_PATH}/CMakeLists.txt")
-        # If CH_ACTIVE_GAME is defined, only add the specific one to save config time
         if(NOT CH_ACTIVE_GAME OR CH_ACTIVE_GAME STREQUAL GAME_PROJECT_DIR)
             add_subdirectory("game/${GAME_PROJECT_DIR}")
         endif()
@@ -107,16 +80,10 @@ endforeach()
 add_subdirectory(editor)
 add_subdirectory(runtime)
 
-if(BUILD_TESTS)
-    enable_testing()
-    add_subdirectory(tests)
-endif()
+enable_testing()
+add_subdirectory(tests)
 
-
-# ── Resource Sync (Post-Build) ────────────────────────────────────────────────
-# Automatically copies <root>/resources/ → bin/<Config>/resources/ after each build.
-# $<TARGET_FILE_DIR:ChainedEditor> resolves to the correct per-Config directory
-# (e.g. build/windows-clang/bin/Debug) without any hardcoding.
+# ── Resource Sync Macros & Targets ───────────────────────────────────────────
 macro(ch_add_resource_sync TARGET)
     add_custom_command(TARGET ${TARGET} POST_BUILD
         COMMAND ${CH_PYTHON_EXECUTABLE}
@@ -129,7 +96,6 @@ macro(ch_add_resource_sync TARGET)
     )
 endmacro()
 
-# Manual target kept for convenience: cmake --build . --target sync-resources
 add_custom_target(sync-resources
     COMMAND ${CH_PYTHON_EXECUTABLE}
             "${CMAKE_CURRENT_SOURCE_DIR}/tools/sync_resources.py"
@@ -140,6 +106,3 @@ add_custom_target(sync-resources
     COMMENT "Syncing resources to all configs"
     VERBATIM
 )
-
-
-target_link_libraries(engine_core PRIVATE yaml-cpp)

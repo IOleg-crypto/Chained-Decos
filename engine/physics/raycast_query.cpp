@@ -1,142 +1,125 @@
 #include "raycast_query.h"
 
-#include "bvh/bvh.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/model_asset.h"
+#include "engine/core/service_locator.h"
+#include "engine/physics/physics.h"
 #include "engine/scene/components.h"
-#include "engine/project/project.h"
-#include "physics.h"
+#include "engine/scene/components/component_utils.h"
 #include <algorithm>
 #include <cfloat>
-#include "engine/scene/components/component_utils.h"
 #include <glm/glm.hpp>
-#include <glm/gtx/intersect.hpp>
 
-namespace Chained
-{
-bool RaycastQuery::RayAABB(glm::vec3 origin, glm::vec3 dir, glm::vec3 min, glm::vec3 max, float& t, glm::vec3& normal)
-{
-    // Slab test for a ray against an axis-aligned box.
+namespace Chained {
+
+bool RaycastQuery::RayAABB(glm::vec3 origin, glm::vec3 dir, glm::vec3 min, glm::vec3 max, float &t, glm::vec3 &normal) {
     glm::vec3 invDir = 1.0f / dir;
-
     glm::vec3 t0 = (min - origin) * invDir;
     glm::vec3 t1 = (max - origin) * invDir;
 
     glm::vec3 tMin = glm::min(t0, t1);
     glm::vec3 tMax = glm::max(t0, t1);
 
-    float minVal = std::max(std::max(tMin.x, tMin.y), tMin.z);
-    float maxVal = std::min(std::min(tMax.x, tMax.y), tMax.z);
+    float nearT = std::max({tMin.x, tMin.y, tMin.z});
+    float farT = std::min({tMax.x, tMax.y, tMax.z});
 
-    if (maxVal >= std::max(0.0f, minVal))
-    {
-        t = minVal;
-        if (minVal == tMin.x)
-        {
-            normal = {(float)(dir.x > 0 ? -1 : 1), 0, 0};
-        }
-        else if (minVal == tMin.y)
-        {
-            normal = {0, (float)(dir.y > 0 ? -1 : 1), 0};
-        }
-        else
-        {
-            normal = {0, 0, (float)(dir.z > 0 ? -1 : 1)};
-        }
-        return true;
+    if (farT < std::max(0.0f, nearT)) {
+        return false;
     }
-    return false;
+
+    t = nearT;
+
+    
+    if (nearT == tMin.x) {
+        normal = {dir.x > 0 ? -1.f : 1.f, 0, 0};
+    } else if (nearT == tMin.y) {
+        normal = {0, dir.y > 0 ? -1.f : 1.f, 0};
+    } else {
+        normal = {0, 0, dir.z > 0 ? -1.f : 1.f};
+    }
+
+    return true;
 }
 
-RaycastResult RaycastQuery::Raycast(entt::registry& registry, Ray ray)
-{
+RaycastResult RaycastQuery::Raycast(entt::registry &registry, Ray ray) {
     RaycastResult result;
     result.Hit = false;
     result.Distance = FLT_MAX;
     result.Entity = entt::null;
 
-    glm::vec3 rayOrigin = ray.position;
-    glm::vec3 rayDir = glm::normalize(ray.direction);
+    const glm::vec3 rayOrigin = ray.position;
+    const glm::vec3 rayDir = glm::normalize(ray.direction);
 
-    // Test every enabled collider in local space, then compare results in world space.
     auto view = registry.view<TransformComponent, ColliderComponent>();
-    for (auto entity : view)
-    {
-        auto& entityTransform = view.get<TransformComponent>(entity);
-        auto& colliderComp = view.get<ColliderComponent>(entity);
+    for (auto entity : view) {
+        auto &tc = view.get<TransformComponent>(entity);
+        auto &collider = view.get<ColliderComponent>(entity);
 
-        if (!colliderComp.Enabled)
-        {
+        if (!collider.Enabled) {
             continue;
         }
 
-        glm::mat4 modelMatrix = ComponentUtils::GetTransform(entityTransform);
+        
+        glm::mat4 modelMatrix = ComponentUtils::GetTransform(tc);
         glm::mat4 invMatrix = glm::inverse(modelMatrix);
 
         glm::vec3 localOrigin = glm::vec3(invMatrix * glm::vec4(rayOrigin, 1.0f));
         glm::vec3 localDir = glm::normalize(glm::vec3(invMatrix * glm::vec4(rayDir, 0.0f)));
 
-        if (colliderComp.Type == ColliderType::Box)
-        {
+        
+        if (collider.Type == ColliderType::Box) {
             float t = 0;
             glm::vec3 localNormal = {0, 0, 0};
-            glm::vec3 boxMin = colliderComp.Offset;
-            glm::vec3 boxMax = colliderComp.Offset + colliderComp.Size;
 
-            if (RayAABB(localOrigin, localDir, boxMin, boxMax, t, localNormal))
-            {
-                glm::vec3 hitPosLocal = localOrigin + localDir * t;
-                glm::vec3 hitPosWorld = glm::vec3(modelMatrix * glm::vec4(hitPosLocal, 1.0f));
-                float distWorld = glm::distance(rayOrigin, hitPosWorld);
+            
+            glm::vec3 halfSize = collider.Size * 0.5f;
+            glm::vec3 boxMin = collider.Offset - halfSize;
+            glm::vec3 boxMax = collider.Offset + halfSize;
 
-                if (distWorld < result.Distance)
-                {
-                    result.Hit = true;
-                    result.Distance = distWorld;
-                    result.Position = hitPosWorld;
+            if (!RayAABB(localOrigin, localDir, boxMin, boxMax, t, localNormal)) {
+                continue;
+            }
 
-                    glm::vec3 normalWorld = glm::normalize(glm::vec3(modelMatrix * glm::vec4(localNormal, 0.0f)));
-                    result.Normal = normalWorld;
-                    result.Entity = entity;
-                }
+            
+            glm::vec3 hitWorld = glm::vec3(modelMatrix * glm::vec4(localOrigin + localDir * t, 1.0f));
+            float dist = glm::distance(rayOrigin, hitWorld);
+
+            if (dist < result.Distance) {
+                result.Hit = true;
+                result.Distance = dist;
+                result.Position = hitWorld;
+                result.Normal = glm::normalize(glm::vec3(modelMatrix * glm::vec4(localNormal, 0.0f)));
+                result.Entity = entity;
             }
         }
-        else if (colliderComp.Type == ColliderType::Mesh)
-        {
-            auto modelComp = registry.try_get<ModelComponent>(entity);
-            if (!modelComp || modelComp->ModelPath.empty())
-            {
-                continue;
-            }
+        
+        else if (collider.Type == ColliderType::Sphere) {
+            
+            glm::vec3 oc = localOrigin - collider.Offset;
+            float b = glm::dot(oc, localDir);
+            float c = glm::dot(oc, oc) - (collider.Radius * collider.Radius);
+            float discriminant = b * b - c;
 
-
-            auto bvh = Physics::GetBVH(modelComp->ModelPath);
-            if (!bvh)
-            {
-                continue;
-            }
-
-            Ray localRay = {localOrigin, localDir};
-            float tLocal = FLT_MAX;
-            glm::vec3 localNormal = {0, 0, 0};
-            int localMeshIndex = -1;
-
-            if (bvh->Raycast(localRay, tLocal, localNormal, localMeshIndex))
-            {
-                glm::vec3 hitPosLocal = localOrigin + localDir * tLocal;
-                glm::vec3 hitPosWorld = glm::vec3(modelMatrix * glm::vec4(hitPosLocal, 1.0f));
-                float distWorld = glm::distance(rayOrigin, hitPosWorld);
-
-                if (distWorld < result.Distance)
+            if (discriminant >= 0.0f) {
+                float t = -b - std::sqrt(discriminant);
+                if (t < 0.0f) 
                 {
-                    result.Hit = true;
-                    result.Distance = distWorld;
-                    result.Position = hitPosWorld;
+                    t = -b + std::sqrt(discriminant);
+                }
 
-                    glm::vec3 normalWorld = glm::normalize(glm::vec3(modelMatrix * glm::vec4(localNormal, 0.0f)));
-                    result.Normal = normalWorld;
-                    result.Entity = entity;
-                    result.MeshIndex = localMeshIndex;
+                if (t >= 0.0f) {
+                    glm::vec3 hitWorld = glm::vec3(modelMatrix * glm::vec4(localOrigin + localDir * t, 1.0f));
+                    float dist = glm::distance(rayOrigin, hitWorld);
+
+                    if (dist < result.Distance) {
+                        glm::vec3 localNormal = glm::normalize((localOrigin + localDir * t) - collider.Offset);
+
+                        result.Hit = true;
+                        result.Distance = dist;
+                        result.Position = hitWorld;
+                        result.Normal = glm::normalize(glm::vec3(modelMatrix * glm::vec4(localNormal, 0.0f)));
+                        result.Entity = entity;
+                    }
                 }
             }
         }
@@ -144,4 +127,5 @@ RaycastResult RaycastQuery::Raycast(entt::registry& registry, Ray ray)
 
     return result;
 }
+
 } // namespace Chained

@@ -1,4 +1,5 @@
 #include "engine/app/application.h"
+#include "engine/core/service_locator.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/project/project.h"
 #include "scripting/scriptengine.h"
@@ -54,11 +55,11 @@ class ScriptEngineTest : public ::testing::Test
 protected:
     void SetUp() override
     {
-        if (!Application::Get().GetServiceRegistry().Has<ScriptEngine>())
+        if (!ServiceLocator::Has<ScriptEngine>())
         {
-            GTEST_SKIP() << "Skipping ScriptEngine tests: ScriptEngine not registered in ServiceRegistry.";
+            GTEST_SKIP() << "Skipping ScriptEngine tests: ScriptEngine not registered in ServiceLocator.";
         }
-        if (!Application::Get().GetServiceRegistry().Get<ScriptEngine>()->IsHostInitialized())
+        if (!ServiceLocator::Get<ScriptEngine>()->IsHostInitialized())
         {
             GTEST_SKIP() << "Skipping ScriptEngine tests: CoreCLR host initialization failed in this environment.";
         }
@@ -67,7 +68,7 @@ protected:
 
 TEST_F(ScriptEngineTest, ReloadWithoutActiveProjectReturnsFalseAndClearsFlag)
 {
-    auto* scriptEngine = Application::Get().GetServiceRegistry().Get<ScriptEngine>();
+    auto* scriptEngine = ServiceLocator::Get<ScriptEngine>();
     ASSERT_NE(scriptEngine, nullptr);
     EXPECT_FALSE(scriptEngine->IsReloadInProgress());
     EXPECT_FALSE(scriptEngine->ReloadAssembly(""));
@@ -76,12 +77,12 @@ TEST_F(ScriptEngineTest, ReloadWithoutActiveProjectReturnsFalseAndClearsFlag)
 
 TEST_F(ScriptEngineTest, ReloadWithMissingModuleReturnsFalseAndClearsFlag)
 {
-    auto project = Project::New();
+    auto project = std::make_shared<Project>();
     project->GetConfig().ProjectDirectory = std::filesystem::current_path();
     project->GetConfig().Scripting.ModuleName = "DefinitelyMissingModule";
     project->GetConfig().Scripting.ModuleDirectory = "missing_modules";
 
-    auto* scriptEngine = Application::Get().GetServiceRegistry().Get<ScriptEngine>();
+    auto* scriptEngine = ServiceLocator::Get<ScriptEngine>();
     ASSERT_NE(scriptEngine, nullptr);
     EXPECT_FALSE(scriptEngine->ReloadAssembly("missing_modules/DefinitelyMissingModule.dll"));
     EXPECT_FALSE(scriptEngine->IsReloadInProgress());
@@ -89,7 +90,7 @@ TEST_F(ScriptEngineTest, ReloadWithMissingModuleReturnsFalseAndClearsFlag)
 
 TEST_F(ScriptEngineTest, LoadAppAssemblyRejectsMissingPath)
 {
-    auto* scriptEngine = Application::Get().GetServiceRegistry().Get<ScriptEngine>();
+    auto* scriptEngine = ServiceLocator::Get<ScriptEngine>();
     ASSERT_NE(scriptEngine, nullptr);
     EXPECT_FALSE(scriptEngine->LoadAppAssembly("D:/definitely_missing/ChainedDecos.Scripts.dll"));
     EXPECT_TRUE(scriptEngine->GetScriptClasses().empty());
@@ -103,12 +104,12 @@ TEST_F(ScriptEngineTest, ReloadWithValidProjectLoadsScriptTypes)
         GTEST_SKIP() << "Skipping ScriptEngine reload success test: no managed assembly candidates found.";
     }
 
-    auto* scriptEngine = Application::Get().GetServiceRegistry().Get<ScriptEngine>();
+    auto* scriptEngine = ServiceLocator::Get<ScriptEngine>();
     ASSERT_NE(scriptEngine, nullptr);
     bool reloaded = false;
     for (const auto& assemblyPath : candidates)
     {
-        auto project = Project::New();
+        auto project = std::make_shared<Project>();
         project->GetConfig().ProjectDirectory = assemblyPath.parent_path();
         project->GetConfig().Scripting.ModuleName = assemblyPath.stem().string();
         project->GetConfig().Scripting.ModuleDirectory = assemblyPath.parent_path();

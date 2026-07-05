@@ -6,16 +6,22 @@ chained_add_engine_module(engine_scripting
         scriptengine_services.cpp
         scene_scripting_manager.h
         scene_scripting_manager.cpp
-        script_glue.h
-        script_glue.cpp
         script_glue_internal.h
+        script_glue_internal.cpp
+        script_glue_system.h
         script_glue_system.cpp
+        script_glue_input.h
         script_glue_input.cpp
         #script_glue_network.cpp
+        script_glue_scene.h
         script_glue_scene.cpp
+        script_glue_entity.h
         script_glue_entity.cpp
+        script_glue_camera.h
         script_glue_camera.cpp
+        script_glue_ui.h
         script_glue_ui.cpp
+        script_glue_audio.h
         script_glue_audio.cpp
     DEPENDS
         engine_core
@@ -38,6 +44,7 @@ elseif(MINGW)
     target_compile_options(engine_scripting PRIVATE -Wa,-mbig-obj)
 endif()
 
+
 # ── Generate ManagedDependencies.props for C# build ───────────────────────────
 # This tells MSBuild where to find Coral.Managed.dll. The path changes per
 # build preset (windows-clang, windows-gcc, etc.), so we generate it from a
@@ -50,7 +57,7 @@ configure_file(
 )
 
 set(MANAGED_PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/managed")
-set(MANAGED_PROJECT_PATH "${MANAGED_PROJECT_DIR}/CHEngine.Managed.csproj")
+set(MANAGED_PROJECT_PATH "${MANAGED_PROJECT_DIR}/Chained.Managed.csproj")
 
 set(MANAGED_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/$<CONFIG>")
 set(CORAL_MANAGED_DIR "${CMAKE_BINARY_DIR}/vendor/coral")
@@ -60,7 +67,7 @@ set(BUILD_HELPER_SCRIPT "${CMAKE_SOURCE_DIR}/tools/sync_resources.py")
 
 file(GLOB_RECURSE MANAGED_SOURCES "${MANAGED_PROJECT_DIR}/src/*.cs")
 
-set(MANAGED_DLL_OUTPUT "${MANAGED_OUTPUT_DIR}/CHEngine.Managed.dll")
+set(MANAGED_DLL_OUTPUT "${MANAGED_OUTPUT_DIR}/Chained.Managed.dll")
 
 add_custom_command(
     OUTPUT  "${MANAGED_DLL_OUTPUT}"
@@ -74,15 +81,15 @@ add_custom_command(
             --parallel     
     WORKING_DIRECTORY "${MANAGED_PROJECT_DIR}"
     DEPENDS ${MANAGED_SOURCES} "${MANAGED_PROJECT_PATH}"
-    COMMENT "Building CHEngine.Managed C# Library"
+    COMMENT "Building Chained.Managed C# Library"
     VERBATIM
 )
 
 # 3. Створення таргету та зв'язування залежностей
-add_custom_target(CHEngine_Managed ALL DEPENDS "${MANAGED_DLL_OUTPUT}")
+add_custom_target(Chained_Managed ALL DEPENDS "${MANAGED_DLL_OUTPUT}")
 
 if(TARGET Coral.Native)
-    add_dependencies(CHEngine_Managed Coral.Native)
+    add_dependencies(Chained_Managed Coral.Native)
 endif()
 
-add_dependencies(engine_scripting CHEngine_Managed)
+add_dependencies(engine_scripting Chained_Managed)

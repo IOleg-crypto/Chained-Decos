@@ -15,7 +15,7 @@ namespace Chained
         KeyPressed, KeyReleased, KeyTyped,
         MouseButtonPressed, MouseButtonReleased, MouseMoved, MouseScrolled,
         ProjectCreated, ProjectOpened, SceneOpened, SceneSaved,
-        ScenePlay, SceneStop, SceneChangeRequest, EntitySelected,
+        ScenePlay, SceneSimulate, SceneStop, SceneChangeRequest, EntitySelected,
         AppLaunchRuntime, AppResetLayout, AppSaveLayout, ViewportFocusEntity,
         ButtonPressed, Undo, Redo
     };

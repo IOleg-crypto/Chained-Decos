@@ -1,7 +1,6 @@
 #include "scriptengine.h"
 #include "engine/core/log.h"
 #include "engine/foundation/engine_assert.h"
-#include "script_glue.h"
 #include <exception>
 #include <filesystem>
 
@@ -42,9 +41,6 @@ void ScriptEngine::Initialize()
         return;
     }
 
-    
-    ScriptGlue::Initialize();
-
     CH_CORE_INFO("ScriptEngine: CoreCLR host and Glue system initialized successfully.");
 }
 
@@ -75,9 +71,7 @@ bool ScriptEngine::LoadAppAssembly(const std::string& path)
     bool success = m_Host.LoadAppAssembly(path);
     if (success)
     {
-        
-        ScriptGlue::RegisterInternalCalls(*m_Host.GetAppAssembly());
-
+        // InternalCalls are already registered to CoreAssembly inside LoadAssembliesTransactional
         m_Registry.Clear();
         m_Registry.Discover(*m_Host.GetAppAssembly(), *m_Host.GetCoreAssembly());
     }
@@ -96,9 +90,7 @@ bool ScriptEngine::ReloadAssembly(const std::string& assemblyPath)
     bool success = m_Host.ReloadAppAssembly(assemblyPath);
     if (success)
     {
-        
-        ScriptGlue::RegisterInternalCalls(*m_Host.GetAppAssembly());
-
+        // InternalCalls are already registered to CoreAssembly inside LoadAssembliesTransactional
         m_Registry.Clear();
         m_Registry.Discover(*m_Host.GetAppAssembly(), *m_Host.GetCoreAssembly());
     }

@@ -3,24 +3,19 @@
 #include "engine/graphics/pipeline/render_command.h"
 #include "engine/graphics/pipeline/renderer_types.h"
 #include "engine/graphics/pipeline/shader_storage.h"
-
-#include "engine/app/application.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/core/log.h"
 #include "engine/core/service_locator.h"
-
 #include "engine/graphics/api/buffer.h"
-#include "engine/graphics/api/framebuffer.h"
 #include "engine/graphics/api/storage_buffer.h"
 #include "engine/graphics/api/vertex_array.h"
-
 #include "engine/assets/types/environment_asset.h"
 #include "engine/assets/types/shader_asset.h"
-#include "engine/assets/types/texture_asset.h"
-
 #include <algorithm>
 #include <glm/gtc/type_ptr.hpp>
+#include <variant> // Added for type-safe variant visitation
 #include <vector>
+
 
 namespace Chained
 {
@@ -42,13 +37,9 @@ void Renderer::Initialize()
     // Initialize Engine static resources
     if (!m_Data->FullscreenQuadVAO)
     {
-        float vertices[] = {
-            -1.0f, -1.0f,  0.0f,  0.0f, 0.0f,
-             1.0f, -1.0f,  0.0f,  1.0f, 0.0f,
-             1.0f,  1.0f,  0.0f,  1.0f, 1.0f,
-            -1.0f,  1.0f,  0.0f,  0.0f, 1.0f
-        };
-        uint32_t indices[] = { 0, 1, 2, 2, 3, 0 };
+        float vertices[] = {-1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f,  -1.0f, 0.0f, 1.0f, 0.0f,
+                            1.0f,  1.0f,  0.0f, 1.0f, 1.0f, -1.0f, 1.0f,  0.0f, 0.0f, 1.0f};
+        uint32_t indices[] = {0, 1, 2, 2, 3, 0};
 
         m_Data->FullscreenQuadVAO = VertexArray::Create();
         auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
@@ -72,7 +63,7 @@ void Renderer::LoadEngineResources()
     auto& shaders = GetShaderLibrary();
 
     shaders.LoadConfig("engine/resources/config/shaders.yaml");
-    
+
     // Eager load common shaders if needed, or let them lazy load
     shaders.LoadOrGet("Lighting");
     shaders.LoadOrGet("Unlit");
@@ -116,10 +107,7 @@ Renderer::Renderer()
     m_Data->Shaders = std::make_unique<ShaderStorage>();
 }
 
-Renderer::~Renderer()
-{
-    Shutdown();
-}
+Renderer::~Renderer() = default;
 
 void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
 {
@@ -354,12 +342,9 @@ void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float 
 
     skyboxMode = std::clamp(skyboxMode, 0, 2);
 
-    auto shaderAsset =
-        (skyboxMode == 2)
-            ? m_Data->Shaders->LoadOrGet("SkyboxCubemap")
-            : (skyboxMode == 1
-                   ? m_Data->Shaders->LoadOrGet("SkyboxCross")
-                   : m_Data->Shaders->LoadOrGet("Skybox"));
+    auto shaderAsset = (skyboxMode == 2) ? m_Data->Shaders->LoadOrGet("SkyboxCubemap")
+                                         : (skyboxMode == 1 ? m_Data->Shaders->LoadOrGet("SkyboxCross")
+                                                            : m_Data->Shaders->LoadOrGet("Skybox"));
     if (!shaderAsset || !shaderAsset->GetShader())
     {
         return;
@@ -482,15 +467,13 @@ void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const g
 
     RenderCommand::SetBlendMode(true);
     RenderCommand::SetBlendFunc(RendererAPI::BlendFactor::SrcAlpha, RendererAPI::BlendFactor::OneMinusSrcAlpha);
-    RenderCommand::SetCullMode(RendererAPI::CullMode::None);
+    RenderCommand::SetCullMode(RendererAPI::CullMode::None); // Using abstraction layer safe call
 
     if (!m_Data->BillboardVAO)
     {
         float vertices[] = {
-            -0.5f, -0.5f, 0.0f,  0.0f, 0.0f,
-             0.5f, -0.5f, 0.0f,  1.0f, 0.0f,
-             0.5f,  0.5f, 0.0f,  1.0f, 1.0f,
-            -0.5f,  0.5f, 0.0f,  0.0f, 1.0f,
+            -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.5f,  -0.5f, 0.0f, 1.0f, 0.0f,
+            0.5f,  0.5f,  0.0f, 1.0f, 1.0f, -0.5f, 0.5f,  0.0f, 0.0f, 1.0f,
         };
         uint32_t indices[] = {0, 1, 2, 2, 3, 0};
 
@@ -515,16 +498,14 @@ void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextu
                                    ShaderAsset* overrideShader, const std::vector<ShaderUniform>& uniforms)
 {
     std::shared_ptr<ShaderAsset> shaderAsset = nullptr;
-    
+
     if (overrideShader)
     {
-        // Safe and localized asset resolution only when an override occurs
         auto handle = ServiceLocator::Get<AssetManager>()->ResolveToHandle(overrideShader->GetPath());
         shaderAsset = ServiceLocator::Get<AssetManager>()->Get<ShaderAsset>(handle);
     }
     else
     {
-        // Cached lookup preventing frame bottlenecks
         shaderAsset = m_Data->Shaders->LoadOrGet("PostProcess");
     }
 
@@ -533,12 +514,16 @@ void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextu
         auto shader = shaderAsset->GetShader();
         shader->Bind();
 
+        // Safe extraction of diagnostic float values from variant
         float diagIntensity = 0.0f;
         for (const auto& u : uniforms)
         {
             if (u.Name == "uIntensity")
             {
-                diagIntensity = u.Value[0];
+                if (auto* fVal = std::get_if<float>(&u.Value))
+                {
+                    diagIntensity = *fVal;
+                }
             }
         }
         if (diagIntensity > 0.001f)
@@ -556,35 +541,43 @@ void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextu
 
         float currentSeconds = (float)m_Data->Time.GetSeconds();
         shader->SetFloat("uTimeF", currentSeconds);
-        shader->SetFloat("uTime", currentSeconds); 
-        shader->SetFloat("time", currentSeconds);  
+        shader->SetFloat("uTime", currentSeconds);
+        shader->SetFloat("time", currentSeconds);
         shader->SetFloat("uExposure", m_Data->Lighting.CurrentLighting.Exposure);
         shader->SetFloat("uGamma", m_Data->Lighting.CurrentLighting.Gamma);
 
-        // Perfectly resolved matching types
         ApplyFogUniforms(shaderAsset);
 
-        // 2. Set Custom Uniforms (if any)
+        // 2. Set Custom Uniforms using type-safe std::visit
         for (const auto& u : uniforms)
         {
-            switch (u.Type)
-            {
-            case 0:
-                shader->SetFloat(u.Name, u.Value[0]);
-                break;
-            case 1:
-                shader->SetVec2(u.Name, *(glm::vec2*)u.Value);
-                break;
-            case 2:
-                shader->SetVec3(u.Name, *(glm::vec3*)u.Value);
-                break;
-            case 3:
-                shader->SetVec4(u.Name, *(glm::vec4*)u.Value);
-                break;
-            case 4:
-                shader->SetVec4(u.Name, *(glm::vec4*)u.Value);
-                break; // Color is Vec4
-            }
+            std::visit(
+                [&](auto&& arg) {
+                    using T = std::decay_t<decltype(arg)>;
+                    if constexpr (std::is_same_v<T, float>)
+                    {
+                        shader->SetFloat(u.Name, arg);
+                    }
+                    else if constexpr (std::is_same_v<T, glm::vec2>)
+                    {
+                        shader->SetVec2(u.Name, arg);
+                    }
+                    else if constexpr (std::is_same_v<T, glm::vec3>)
+                    {
+                        shader->SetVec3(u.Name, arg);
+                    }
+                    else if constexpr (std::is_same_v<T, glm::vec4>)
+                    {
+                        shader->SetVec4(u.Name, arg);
+                    }
+                    else if constexpr (std::is_same_v<T, Color>)
+                    {
+                        // Clean on-the-fly normalization for Color structures
+                        glm::vec4 colorVec = {arg.r / 255.0f, arg.g / 255.0f, arg.b / 255.0f, arg.a / 255.0f};
+                        shader->SetVec4(u.Name, colorVec);
+                    }
+                },
+                u.Value);
         }
 
         // 3. Bind Textures
@@ -746,10 +739,8 @@ void Renderer::DrawSprite(uint32_t textureId, const glm::mat4& transform, const 
     if (!m_Data->SpriteVAO)
     {
         float vertices[] = {
-            -0.5f, -0.5f, 0.0f,  0.0f, 0.0f,
-             0.5f, -0.5f, 0.0f,  1.0f, 0.0f,
-             0.5f,  0.5f, 0.0f,  1.0f, 1.0f,
-            -0.5f,  0.5f, 0.0f,  0.0f, 1.0f,
+            -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.5f,  -0.5f, 0.0f, 1.0f, 0.0f,
+            0.5f,  0.5f,  0.0f, 1.0f, 1.0f, -0.5f, 0.5f,  0.0f, 0.0f, 1.0f,
         };
         uint32_t indices[] = {0, 1, 2, 2, 3, 0};
 

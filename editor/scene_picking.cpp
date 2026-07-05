@@ -1,19 +1,42 @@
 #include "scene_picking.h"
-#include "engine/core/service_locator.h"
-#include "engine/assets/asset_manager.h"
-#include "engine/scene/components/component_utils.h"
 #include "engine/app/application.h"
+#include "engine/assets/asset_manager.h"
 #include "engine/assets/types/model_asset.h"
-#include "engine/physics/bvh/bvh.h"
+#include "engine/core/service_locator.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/components.h"
+#include "engine/scene/components/component_utils.h"
 #include "engine/scene/scene.h"
+#include <algorithm>
 #include <float.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+
 namespace Chained
 {
+
+
+static bool RayAABBInternal(const glm::vec3& origin, const glm::vec3& dir, const glm::vec3& min, const glm::vec3& max,
+                            float& t)
+{
+    glm::vec3 invDir = 1.0f / (dir + glm::vec3(1e-8f)); 
+    glm::vec3 t0 = (min - origin) * invDir;
+    glm::vec3 t1 = (max - origin) * invDir;
+
+    glm::vec3 tMin = glm::min(t0, t1);
+    glm::vec3 tMax = glm::max(t0, t1);
+
+    float nearT = std::max({tMin.x, tMin.y, tMin.z});
+    float farT = std::min({tMax.x, tMax.y, tMax.z});
+
+    if (farT < std::max(0.0f, nearT))
+    {
+        return false;
+    }
+    t = nearT;
+    return true;
+}
 
 SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
 {
@@ -26,8 +49,8 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
         return finalResult;
     }
 
-    // 1. Physics Picking
-    RaycastResult physicsResult = Physics::Raycast(scene, ray);
+    
+    RaycastResult physicsResult = ServiceLocator::Get<Physics>()->Raycast(scene, ray);
     if (physicsResult.Hit)
     {
         finalResult.Hit = true;
@@ -37,10 +60,10 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
         finalResult.Normal = physicsResult.Normal;
     }
 
-    // 2. Visual Picking Fallback
+    
     auto modelView = scene->GetRegistry().view<TransformComponent, ModelComponent>();
-    modelView.each([&](entt::entity entityID, TransformComponent& tc, ModelComponent& modelComp)
-    {
+    modelView.each([&](entt::entity entityID, TransformComponent& tc, ModelComponent& modelComp) {
+        
         if (finalResult.Hit && (entt::entity)finalResult.HitEntity == entityID)
         {
             return;
@@ -52,8 +75,6 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
         }
 
         AssetManager* assetManager = ServiceLocator::Get<AssetManager>();
-
-        auto handle = assetManager->LoadAsset(modelComp.ModelPath, ModelAsset::GetStaticType());;
         auto modelAsset = assetManager->Get<ModelAsset>(modelComp.ModelPath);
         if (!modelAsset || !modelAsset->IsReady())
         {
@@ -63,59 +84,114 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
         glm::mat4 modelTransform = ComponentUtils::GetTransform(tc);
         glm::mat4 invTransform = glm::inverse(modelTransform);
 
-        // Transform ray to local space
+        
         Ray localRay;
         localRay.position = glm::vec3(invTransform * glm::vec4(ray.position, 1.0f));
         glm::vec3 localTarget = glm::vec3(invTransform * glm::vec4(ray.position + ray.direction, 1.0f));
         localRay.direction = glm::normalize(localTarget - localRay.position);
 
+        
+        
+        float aabbT = 0.0f;
+        glm::vec3 modelMin = modelAsset->GetBoundingBox().Min;
+        glm::vec3 modelMax = modelAsset->GetBoundingBox().Max;
+
+        
+        if (modelMin != modelMax)
+        {
+            if (!RayAABBInternal(localRay.position, localRay.direction, modelMin, modelMax, aabbT))
+            {
+                return; 
+            }
+        }
+
         float t_local = FLT_MAX;
         glm::vec3 localNormal = {0, 0, 0};
-        int localMeshIndex = -1;
-
         bool hit = false;
-        auto bvh = Physics::GetBVH(modelComp.ModelPath);
 
-        if (bvh)
+        const auto& instances = modelAsset->GetInstances();
+        const auto& rawMeshes = modelAsset->GetRawMeshes();
+
+        
+        for (const auto& inst : instances)
         {
-            hit = bvh->Raycast(localRay, t_local, localNormal, localMeshIndex);
-        }
-        else
-        {
-            const auto& rawMeshes = modelAsset->GetRawMeshes();
-            for (const auto& raw : rawMeshes)
+            if (inst.meshIndex < 0 || inst.meshIndex >= (int)rawMeshes.size())
             {
-                if (raw.indices.size() < 3)
+                continue;
+            }
+
+            const RawMesh& raw = rawMeshes[inst.meshIndex];
+            if (raw.indices.size() < 3)
+            {
+                continue;
+            }
+
+            
+            glm::mat4 invLocalInst = glm::inverse(inst.localTransform);
+            glm::vec3 meshSpaceOrigin = glm::vec3(invLocalInst * glm::vec4(localRay.position, 1.0f));
+            glm::vec3 meshSpaceDir = glm::normalize(glm::vec3(invLocalInst * glm::vec4(localRay.direction, 0.0f)));
+
+            for (size_t i = 0; i + 2 < raw.indices.size(); i += 3)
+            {
+                uint32_t i0 = raw.indices[i];
+                uint32_t i1 = raw.indices[i + 1];
+                uint32_t i2 = raw.indices[i + 2];
+
+                size_t v0Idx = (size_t)i0 * 3;
+                size_t v1Idx = (size_t)i1 * 3;
+                size_t v2Idx = (size_t)i2 * 3;
+
+                if (v0Idx + 2 >= raw.vertices.size() || v1Idx + 2 >= raw.vertices.size() ||
+                    v2Idx + 2 >= raw.vertices.size())
                 {
                     continue;
                 }
 
-                for (size_t i = 0; i + 2 < raw.indices.size(); i += 3)
+                glm::vec3 v0 = {raw.vertices[v0Idx], raw.vertices[v0Idx + 1], raw.vertices[v0Idx + 2]};
+                glm::vec3 v1 = {raw.vertices[v1Idx], raw.vertices[v1Idx + 1], raw.vertices[v1Idx + 2]};
+                glm::vec3 v2 = {raw.vertices[v2Idx], raw.vertices[v2Idx + 1], raw.vertices[v2Idx + 2]};
+
+                
+                glm::vec3 e1 = v1 - v0, e2 = v2 - v0;
+                glm::vec3 h = glm::cross(meshSpaceDir, e2);
+                float a = glm::dot(e1, h);
+                if (std::abs(a) < 1e-7f)
                 {
-                    uint32_t i0 = raw.indices[i];
-                    uint32_t i1 = raw.indices[i + 1];
-                    uint32_t i2 = raw.indices[i + 2];
+                    continue;
+                }
+                float f = 1.0f / a;
+                glm::vec3 s = meshSpaceOrigin - v0;
+                float u = f * glm::dot(s, h);
+                if (u < 0.0f || u > 1.0f)
+                {
+                    continue;
+                }
+                glm::vec3 q = glm::cross(s, e1);
+                float v = f * glm::dot(meshSpaceDir, q);
+                if (v < 0.0f || u + v > 1.0f)
+                {
+                    continue;
+                }
 
-                    size_t v0Idx = (size_t)i0 * 3;
-                    size_t v1Idx = (size_t)i1 * 3;
-                    size_t v2Idx = (size_t)i2 * 3;
-                    if (v0Idx + 2 >= raw.vertices.size() || v1Idx + 2 >= raw.vertices.size() || v2Idx + 2 >= raw.vertices.size())
+                float triT = f * glm::dot(e2, q);
+                if (triT > 0.0f)
+                {
+                    
+                    glm::vec3 hitMeshSpace = meshSpaceOrigin + meshSpaceDir * triT;
+                    glm::vec3 hitLocalSpace = glm::vec3(inst.localTransform * glm::vec4(hitMeshSpace, 1.0f));
+
+                    
+                    float currentLocalT = glm::distance(localRay.position, hitLocalSpace);
+
+                    if (currentLocalT < t_local)
                     {
-                        continue;
-                    }
-
-                    glm::vec3 v0 = {raw.vertices[v0Idx], raw.vertices[v0Idx + 1], raw.vertices[v0Idx + 2]};
-                    glm::vec3 v1 = {raw.vertices[v1Idx], raw.vertices[v1Idx + 1], raw.vertices[v1Idx + 2]};
-                    glm::vec3 v2 = {raw.vertices[v2Idx], raw.vertices[v2Idx + 1], raw.vertices[v2Idx + 2]};
-
-                    CollisionTriangle tri(v0, v1, v2, 0);
-                    float triT = FLT_MAX;
-                    glm::vec3 triNormal;
-                    if (tri.IntersectsRay(localRay, triT, triNormal) && triT < t_local)
-                    {
-                        t_local = triT;
+                        t_local = currentLocalT;
                         hit = true;
-                        localNormal = triNormal;
+
+                        
+                        glm::vec3 meshNormal = glm::normalize(glm::cross(e1, e2));
+                        localNormal =
+                            glm::normalize(glm::vec3(glm::transpose(invLocalInst) * glm::vec4(meshNormal, 0.0f)));
                     }
                 }
             }
@@ -137,7 +213,7 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
                     glm::normalize(glm::vec3(glm::transpose(invTransform) * glm::vec4(localNormal, 0.0f)));
             }
         }
-        });
+    });
 
     return finalResult;
 }

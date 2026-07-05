@@ -1,9 +1,12 @@
 #include "scriptengine_services.h"
+#include "script_internal_call_registry.h"
 
 #include "engine/core/log.h"
-#include "engine/core/service_locator.h" 
-#include "scripting/scriptengine.h"
+#include "engine/core/service_locator.h"
 #include "engine/project/project.h"
+#include "scripting/scriptengine.h"
+#include "script_glue.h"
+#include "script_interop_pointers.h"
 #include <Coral/GC.hpp>
 #include <algorithm>
 #include <cctype>
@@ -11,14 +14,14 @@
 #include <filesystem>
 #include <vector>
 
+
 #include "scripting/scriptengine.h"
-#include "script_glue.h"
 #include <Coral/HostInstance.hpp>
 
-#ifdef _WIN32
-    #include <windows.h>
+#ifdef CH_PLATFORM_WINDOWS
+#include <windows.h>
 #else
-    #include <unistd.h>
+#include <unistd.h>
 #endif
 
 namespace Chained
@@ -27,7 +30,6 @@ namespace Chained
 namespace
 {
 constexpr const char* kGameScriptsAlcName = "GameScriptsALC";
-
 
 std::filesystem::path GetCurrentBinaryDirectory()
 {
@@ -38,7 +40,8 @@ std::filesystem::path GetCurrentBinaryDirectory()
 #else
     char buffer[1024];
     ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
-    if (len != -1) {
+    if (len != -1)
+    {
         buffer[len] = '\0';
         return std::filesystem::path(buffer).parent_path();
     }
@@ -48,9 +51,8 @@ std::filesystem::path GetCurrentBinaryDirectory()
 
 std::string ToLowerCopy(std::string value)
 {
-    std::transform(value.begin(), value.end(), value.begin(), [](unsigned char c) {
-        return static_cast<char>(std::tolower(c));
-    });
+    std::transform(value.begin(), value.end(), value.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
     return value;
 }
 
@@ -58,7 +60,9 @@ std::string GetShortTypeName(const std::string& fullName)
 {
     const size_t lastDot = fullName.find_last_of('.');
     if (lastDot == std::string::npos || lastDot + 1 >= fullName.size())
+    {
         return fullName;
+    }
 
     return fullName.substr(lastDot + 1);
 }
@@ -66,42 +70,52 @@ std::string GetShortTypeName(const std::string& fullName)
 // With Ninja Multi-Config, bins live in build/<preset>/bin/<Config>/.
 // We enumerate all subdirs of build/ at runtime instead of relying on a
 // CMake-generated header with preset names.
-static constexpr const char* kBuildConfigs[] = { "Debug", "Release", "RelWithDebInfo" };
+static constexpr const char* kBuildConfigs[] = {"Debug", "Release", "RelWithDebInfo"};
 
 void AppendBuildBinCandidates(std::vector<std::filesystem::path>& out, const std::filesystem::path& root)
 {
     if (root.empty())
+    {
         return;
+    }
 
     const std::filesystem::path buildDir = root / "build";
     std::error_code ec;
     if (!std::filesystem::exists(buildDir, ec) || ec)
+    {
         return;
+    }
 
     for (const auto& presetEntry : std::filesystem::directory_iterator(buildDir, ec))
     {
         if (ec || !presetEntry.is_directory())
+        {
             continue;
+        }
 
         // Ninja Multi-Config: build/<preset>/bin/<Config>/
         for (const char* cfg : kBuildConfigs)
         {
             const std::filesystem::path candidate = presetEntry.path() / "bin" / cfg;
             if (std::find(out.begin(), out.end(), candidate) == out.end())
+            {
                 out.push_back(candidate);
+            }
         }
 
         // Also try flat build/<preset>/bin/ (single-config fallback)
         const std::filesystem::path flat = presetEntry.path() / "bin";
         if (std::find(out.begin(), out.end(), flat) == out.end())
+        {
             out.push_back(flat);
+        }
     }
 }
 
 } // namespace
 
-
 static Scene* s_ContextScene = nullptr;
+ChainedManagedPointers g_ManagedPointers{};
 
 void SetContextScene(Scene* scene)
 {
@@ -150,16 +164,20 @@ std::filesystem::path ScriptHost::ResolveCoralDirectory()
     for (const auto& candidateRaw : candidateDirs)
     {
         if (candidateRaw.empty())
+        {
             continue;
+        }
 
         std::error_code ec;
         const std::filesystem::path candidate = std::filesystem::absolute(candidateRaw, ec).lexically_normal();
-        const std::filesystem::path managedPath = ec ? (candidateRaw / "Coral.Managed.dll")
-                                                     : (candidate / "Coral.Managed.dll");
+        const std::filesystem::path managedPath =
+            ec ? (candidateRaw / "Coral.Managed.dll") : (candidate / "Coral.Managed.dll");
         checkedPaths.push_back(managedPath.string());
 
         if (std::filesystem::exists(managedPath))
+        {
             return ec ? candidateRaw : candidate;
+        }
     }
 
     const std::filesystem::path fallback = GetCurrentBinaryDirectory();
@@ -175,7 +193,9 @@ std::filesystem::path ScriptHost::ResolveCoreAssemblyPath(const std::filesystem:
 {
     std::vector<std::filesystem::path> coreCandidates;
     if (!coralDir.empty())
+    {
         coreCandidates.push_back(coralDir / "Chained.Managed.dll");
+    }
 
     const std::filesystem::path exeDir = GetCurrentBinaryDirectory();
     coreCandidates.push_back(exeDir / "Chained.Managed.dll");
@@ -193,7 +213,9 @@ std::filesystem::path ScriptHost::ResolveCoreAssemblyPath(const std::filesystem:
     for (const auto& candidate : coreCandidates)
     {
         if (!candidate.empty() && std::filesystem::exists(candidate))
+        {
             return candidate;
+        }
     }
 
     return std::filesystem::path("Chained.Managed.dll");
@@ -208,13 +230,37 @@ void ScriptHost::ClearLoadedAssemblyState()
 bool ScriptHost::Init()
 {
     if (m_IsInitialized)
+    {
         return true;
+    }
 
     Coral::HostSettings settings;
 
     m_CoralDirectory = ResolveCoralDirectory();
     settings.CoralDirectory = m_CoralDirectory.string();
     CH_CORE_INFO("ScriptEngine: Using Coral directory '{}'.", m_CoralDirectory.string());
+
+    settings.MessageCallback = [](std::string_view message, Coral::MessageLevel level) {
+        switch (level)
+        {
+        case Coral::MessageLevel::Info:
+            CH_CORE_INFO("[Coral] {}", message);
+            break;
+        case Coral::MessageLevel::Warning:
+            CH_CORE_WARN("[Coral] {}", message);
+            break;
+        case Coral::MessageLevel::Error:
+            CH_CORE_ERROR("[Coral] {}", message);
+            break;
+        default:
+            CH_CORE_TRACE("[Coral](Trace): {}", message);
+            break;
+        }
+    };
+
+    settings.ExceptionCallback = [](std::string_view message) {
+        CH_CORE_ERROR("[Coral] Unhandled Exception: {}", message);
+    };
 
     auto status = m_Host.Initialize(settings);
     if (status != Coral::CoralInitStatus::Success)
@@ -251,12 +297,10 @@ void ScriptHost::Shutdown()
         Coral::GC::WaitForPendingFinalizers();
         Coral::GC::Collect();
         Coral::GC::Collect();
-    }
-    catch (const std::exception& e)
+    } catch (const std::exception& e)
     {
         CH_CORE_WARN("ScriptEngine: Final scripting cleanup failed: {}", e.what());
-    }
-    catch (...)
+    } catch (...)
     {
         CH_CORE_WARN("ScriptEngine: Final scripting cleanup failed (unknown exception).");
     }
@@ -281,13 +325,11 @@ bool ScriptHost::RecreateAssemblyLoadContext(bool unloadCurrent)
         try
         {
             m_Host.UnloadAssemblyLoadContext(m_AppAssemblyContext);
-        }
-        catch (const std::exception& e)
+        } catch (const std::exception& e)
         {
             CH_CORE_ERROR("ScriptEngine: Failed to unload current ALC: {}", e.what());
             return false;
-        }
-        catch (...)
+        } catch (...)
         {
             CH_CORE_ERROR("ScriptEngine: Failed to unload current ALC (unknown exception).");
             return false;
@@ -298,13 +340,11 @@ bool ScriptHost::RecreateAssemblyLoadContext(bool unloadCurrent)
     {
         m_AppAssemblyContext = m_Host.CreateAssemblyLoadContext(kGameScriptsAlcName);
         return true;
-    }
-    catch (const std::exception& e)
+    } catch (const std::exception& e)
     {
         CH_CORE_ERROR("ScriptEngine: Failed to create ALC '{}': {}", kGameScriptsAlcName, e.what());
         return false;
-    }
-    catch (...)
+    } catch (...)
     {
         CH_CORE_ERROR("ScriptEngine: Failed to create ALC '{}' (unknown exception).", kGameScriptsAlcName);
         return false;
@@ -329,14 +369,12 @@ bool ScriptHost::LoadAssembliesTransactional(const std::filesystem::path& appAss
     try
     {
         loadedCore = &m_AppAssemblyContext.LoadAssembly(corePath.string());
-    }
-    catch (const std::exception& e)
+    } catch (const std::exception& e)
     {
         CH_CORE_ERROR("ScriptEngine: Exception loading core assembly '{}': {}", corePath.string(), e.what());
         rollback();
         return false;
-    }
-    catch (...)
+    } catch (...)
     {
         CH_CORE_ERROR("ScriptEngine: Unknown exception loading core assembly '{}'.", corePath.string());
         rollback();
@@ -354,14 +392,12 @@ bool ScriptHost::LoadAssembliesTransactional(const std::filesystem::path& appAss
     try
     {
         loadedApp = &m_AppAssemblyContext.LoadAssembly(appAssemblyPath.string());
-    }
-    catch (const std::exception& e)
+    } catch (const std::exception& e)
     {
         CH_CORE_ERROR("ScriptEngine: Exception loading app assembly '{}': {}", appAssemblyPath.string(), e.what());
         rollback();
         return false;
-    }
-    catch (...)
+    } catch (...)
     {
         CH_CORE_ERROR("ScriptEngine: Unknown exception loading app assembly '{}'.", appAssemblyPath.string());
         rollback();
@@ -381,6 +417,17 @@ bool ScriptHost::LoadAssembliesTransactional(const std::filesystem::path& appAss
 
     ScriptGlue::RegisterInternalCalls(*m_CoreAssembly);
     ScriptGlue::RegisterInternalCalls(*m_AppAssembly);
+    ScriptGlue::Initialize();
+
+    Coral::Type interopType = m_CoreAssembly->GetLocalType("Chained.Interop");
+    if (interopType) {
+        interopType.InvokeStaticMethod("InitInterop");
+        CH_CORE_INFO("ScriptEngine: Initialized bypass pointer interop.");
+    } else {
+        CH_CORE_ERROR("ScriptEngine: Could not find Chained.Interop to initialize bypass pointers!");
+    }
+
+    CH_CORE_INFO("ScriptEngine: Uploaded {} internal calls.", Chained::InternalCallRegistry::GetMappings().size());
 
     CH_CORE_INFO("ScriptEngine: Loaded core assembly '{}'.", corePath.string());
     CH_CORE_INFO("ScriptEngine: Loaded app assembly '{}'.", appAssemblyPath.string());
@@ -454,7 +501,8 @@ void ScriptRegistry::Discover(Coral::ManagedAssembly& appAssembly, Coral::Manage
 
     if (!scriptBaseType)
     {
-        CH_CORE_ERROR("ScriptEngine: Could not find base class 'Chained.Script' in Core assembly! Type discovery aborted.");
+        CH_CORE_ERROR(
+            "ScriptEngine: Could not find base class 'Chained.Script' in Core assembly! Type discovery aborted.");
         return;
     }
 
@@ -467,10 +515,14 @@ void ScriptRegistry::Discover(Coral::ManagedAssembly& appAssembly, Coral::Manage
     for (auto& type : types)
     {
         if (*type == scriptBaseType)
+        {
             continue;
+        }
 
         if (!type->IsSubclassOf(scriptBaseType))
+        {
             continue;
+        }
 
         std::string fullName = (std::string)type->GetFullName();
         std::string key = ToLowerCopy(fullName);
@@ -497,7 +549,9 @@ Coral::Type* ScriptRegistry::GetScriptClass(const std::string& name)
 
     auto it = m_ScriptClasses.find(key);
     if (it != m_ScriptClasses.end())
+    {
         return &it->second;
+    }
 
     auto shortIt = m_ShortNameToFullName.find(key);
     if (shortIt != m_ShortNameToFullName.end())
@@ -510,7 +564,9 @@ Coral::Type* ScriptRegistry::GetScriptClass(const std::string& name)
 
         auto fullIt = m_ScriptClasses.find(shortIt->second);
         if (fullIt != m_ScriptClasses.end())
+        {
             return &fullIt->second;
+        }
     }
 
     for (auto& [storedKey, type] : m_ScriptClasses)
@@ -520,7 +576,9 @@ Coral::Type* ScriptRegistry::GetScriptClass(const std::string& name)
             const size_t suffixPos = storedKey.size() - key.size();
             const char dot = storedKey[suffixPos - 1];
             if (dot == '.' && storedKey.compare(suffixPos, key.size(), key) == 0)
+            {
                 return &type;
+            }
         }
     }
 

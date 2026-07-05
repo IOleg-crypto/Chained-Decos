@@ -1,5 +1,7 @@
-using Coral.Managed.Interop;
+using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using Coral.Managed.Interop;
 
 namespace Chained
 {
@@ -29,9 +31,10 @@ public class Entity
     // Cache: avoids allocating a new stub on every GetComponent<T>() call
     private readonly Dictionary<System.Type, Component> _cache = new();
 
-    internal static unsafe delegate* unmanaged<ulong, NativeString, bool> Entity_HasComponent_Ptr;
-    internal static unsafe delegate* unmanaged<NativeString, NativeArray<ulong>> Entity_FindAllWithComponent_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, NativeString, void> Entity_AddComponent_Ptr;
+#pragma warning disable 0649
+    internal static unsafe delegate* unmanaged<ulong, char*, bool> Entity_HasComponent_Ptr;
+    internal static unsafe delegate* unmanaged<char*, ulong*, int, int> Entity_FindAllWithComponent_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, char*, void> Entity_AddComponent_Ptr;
 #pragma warning restore 0649
 
     /// <summary>Wraps a native entity ID.</summary>
@@ -46,7 +49,11 @@ public class Entity
     // ── Component access ──────────────────────────────────────────────────
 
     private static unsafe bool HasComponent_Native(ulong entityID, string componentName)
-        => Entity_HasComponent_Ptr(entityID, componentName);
+    {
+        if (Entity_HasComponent_Ptr == null) return false;
+        fixed (char* ptr = componentName)
+            return Entity_HasComponent_Ptr(entityID, ptr);
+    }
 
     /// <summary>True when the component exists.</summary>
     public bool HasComponent<T>() where T : Component, new()
@@ -73,18 +80,28 @@ public class Entity
     public T AddComponent<T>() where T : Component, new()
     {
         if (!IsValid) throw new System.Exception("Cannot add component to invalid entity.");
-        
-        unsafe { Entity_AddComponent_Ptr(ID, typeof(T).Name); }
-        
+        string name = typeof(T).Name;
+        unsafe { fixed (char* ptr = name) Entity_AddComponent_Ptr(ID, ptr); }
         T component = new T() { Entity = this };
         _cache[typeof(T)] = component;
         return component;
     }
 
     /// <summary>Returns all entity IDs with the component.</summary>
-    public static ulong[] FindAllWithComponent<T>() where T : Component, new()
+    public static unsafe ulong[] FindAllWithComponent<T>() where T : Component, new()
     {
-        unsafe { return Entity_FindAllWithComponent_Ptr(typeof(T).Name).ToArray(); }
+        if (Entity_FindAllWithComponent_Ptr == null) return Array.Empty<ulong>();
+        string name = typeof(T).Name;
+        {
+            fixed (char* ptr = name)
+            {
+                ulong* buf = stackalloc ulong[512];
+                int count = Entity_FindAllWithComponent_Ptr(ptr, buf, 512);
+                ulong[] result = new ulong[count];
+                for (int i = 0; i < count; i++) result[i] = buf[i];
+                return result;
+            }
+        }
     }
 
     /// <summary>Clears the component cache.</summary>
@@ -132,14 +149,14 @@ public class TransformComponent : Component
 public class ModelComponent : Component
 {
 #pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, NativeString> Model_GetModelPath_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, NativeString, void> Model_SetModelPath_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, ChainedString> Model_GetModelPath_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, char*, void> Model_SetModelPath_Ptr;
 #pragma warning restore 0649
 
     public string ModelPath
     {
         get { unsafe { string? result = Model_GetModelPath_Ptr(Entity.ID); return result ?? string.Empty; } }
-        set { unsafe { Model_SetModelPath_Ptr(Entity.ID, value); } }
+        set { unsafe { if (Model_SetModelPath_Ptr != null) fixed (char* ptr = value) Model_SetModelPath_Ptr(Entity.ID, ptr); } }
     }
 }
 
@@ -173,15 +190,11 @@ public class RigidBodyComponent : Component
 public class TagComponent : Component
 {
 #pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, NativeString> TagComponent_GetTag_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, ChainedString> TagComponent_GetTag_Ptr;
 #pragma warning restore 0649
 
-    private static unsafe string? GetTag_Native(ulong entityID)
-    {
-        return TagComponent_GetTag_Ptr(entityID);
-    }
-
-    public string Tag => GetTag_Native(Entity.ID) ?? string.Empty;
+    private static unsafe string GetTag_Native(ulong entityID) => (string?)TagComponent_GetTag_Ptr(entityID) ?? string.Empty;
+    public string Tag => GetTag_Native(Entity.ID);
 }
 
 /// <summary>Camera wrapper.</summary>
@@ -196,8 +209,8 @@ public class CameraComponent : Component
     internal static unsafe delegate* unmanaged<ulong, bool, void> Camera_SetPrimary_Ptr;
     internal static unsafe delegate* unmanaged<ulong, bool> Camera_GetIsOrbit_Ptr;
     internal static unsafe delegate* unmanaged<ulong, bool, void> Camera_SetIsOrbit_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, NativeString> Camera_GetTargetTag_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, NativeString, void> Camera_SetTargetTag_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, ChainedString> Camera_GetTargetTag_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, char*, void> Camera_SetTargetTag_Ptr;
 #pragma warning restore 0649
 
     private static void GetForward(ulong entityID, out Vector3 outForward)
@@ -250,41 +263,12 @@ public class CameraComponent : Component
 
     public string TargetEntityTag
     {
-        get { unsafe { string? result = Camera_GetTargetTag_Ptr(Entity.ID); return result ?? string.Empty; } }
-        set { unsafe { Camera_SetTargetTag_Ptr(Entity.ID, value); } }
+        get { unsafe { return (string?)Camera_GetTargetTag_Ptr(Entity.ID) ?? string.Empty; } }
+        set { unsafe { if (Camera_SetTargetTag_Ptr != null) fixed (char* ptr = value) Camera_SetTargetTag_Ptr(Entity.ID, ptr); } }
     }
 }
 
-/// <summary>Player settings wrapper — reads directly from the C++ PlayerComponent.</summary>
-public class PlayerComponent : Component
-{
-#pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, float> PlayerComponent_GetMovementSpeed_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, float, void> PlayerComponent_SetMovementSpeed_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, float> PlayerComponent_GetJumpForce_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, float, void> PlayerComponent_SetJumpForce_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, float> PlayerComponent_GetLookSensitivity_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, float, void> PlayerComponent_SetLookSensitivity_Ptr;
-#pragma warning restore 0649
 
-    public float MovementSpeed
-    {
-        get { unsafe { return PlayerComponent_GetMovementSpeed_Ptr(Entity.ID); } }
-        set { unsafe { PlayerComponent_SetMovementSpeed_Ptr(Entity.ID, value); } }
-    }
-
-    public float JumpForce
-    {
-        get { unsafe { return PlayerComponent_GetJumpForce_Ptr(Entity.ID); } }
-        set { unsafe { PlayerComponent_SetJumpForce_Ptr(Entity.ID, value); } }
-    }
-
-    public float LookSensitivity
-    {
-        get { unsafe { return PlayerComponent_GetLookSensitivity_Ptr(Entity.ID); } }
-        set { unsafe { PlayerComponent_SetLookSensitivity_Ptr(Entity.ID, value); } }
-    }
-}
 
 /// <summary>Audio wrapper.</summary>
 public class AudioComponent : Component
@@ -293,7 +277,7 @@ public class AudioComponent : Component
     internal static unsafe delegate* unmanaged<ulong, float, void> AudioComponent_SetVolume_Ptr;
     internal static unsafe delegate* unmanaged<ulong, bool, void> AudioComponent_SetLoop_Ptr;
     internal static unsafe delegate* unmanaged<ulong, bool> AudioComponent_IsPlaying_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, NativeString> AudioComponent_GetSoundPath_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, ChainedString> AudioComponent_GetSoundPath_Ptr;
     internal static unsafe delegate* unmanaged<ulong, void> AudioComponent_Play_Ptr;
     internal static unsafe delegate* unmanaged<ulong, void> AudioComponent_Stop_Ptr;
 #pragma warning restore 0649
@@ -301,10 +285,7 @@ public class AudioComponent : Component
     private static unsafe void SetVolume(ulong entityID, float volume) => AudioComponent_SetVolume_Ptr(entityID, volume);
     private static unsafe void SetLoop(ulong entityID, bool loop) => AudioComponent_SetLoop_Ptr(entityID, loop);
     private static unsafe bool IsPlaying_Native(ulong entityID) => AudioComponent_IsPlaying_Ptr(entityID);
-    private static unsafe string? GetSoundPath(ulong entityID)
-    {
-        return AudioComponent_GetSoundPath_Ptr(entityID);
-    }
+    private static unsafe string GetSoundPath(ulong entityID) => (string?)AudioComponent_GetSoundPath_Ptr(entityID) ?? string.Empty;
 
     public float Volume { set => SetVolume(Entity.ID, value); }
     public bool  Loop   { set => SetLoop(Entity.ID, value); }
@@ -326,8 +307,8 @@ public class AudioComponent : Component
 public class SpriteComponent : Component
 {
 #pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, NativeString> SpriteComponent_GetTexturePath_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, NativeString, void> SpriteComponent_SetTexturePath_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, ChainedString> SpriteComponent_GetTexturePath_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, char*, void> SpriteComponent_SetTexturePath_Ptr;
     internal static unsafe delegate* unmanaged<ulong, Vector4*, void> SpriteComponent_GetTint_Ptr;
     internal static unsafe delegate* unmanaged<ulong, Vector4, void> SpriteComponent_SetTint_Ptr;
     internal static unsafe delegate* unmanaged<ulong, bool> SpriteComponent_GetFlipX_Ptr;
@@ -340,8 +321,8 @@ public class SpriteComponent : Component
 
     public string TexturePath
     {
-        get { unsafe { return SpriteComponent_GetTexturePath_Ptr(Entity.ID); } }
-        set { unsafe { SpriteComponent_SetTexturePath_Ptr(Entity.ID, value); } }
+        get { unsafe { return (string?)SpriteComponent_GetTexturePath_Ptr(Entity.ID) ?? string.Empty; } }
+        set { unsafe { if (SpriteComponent_SetTexturePath_Ptr != null) fixed (char* ptr = value) SpriteComponent_SetTexturePath_Ptr(Entity.ID, ptr); } }
     }
 
     public Vector4 Tint
@@ -401,21 +382,19 @@ public class ComboBoxControl : Component
 #pragma warning disable 0649
     internal static unsafe delegate* unmanaged<ulong, int> ComboBoxControl_GetSelectedIndex_Ptr;
     internal static unsafe delegate* unmanaged<ulong, int, void> ComboBoxControl_SetSelectedIndex_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, NativeString, void> ComboBoxControl_AddItem_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, char*, void> ComboBoxControl_AddItem_Ptr;
     internal static unsafe delegate* unmanaged<ulong, void> ComboBoxControl_ClearItems_Ptr;
     internal static unsafe delegate* unmanaged<ulong, int> ComboBoxControl_GetItemCount_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, int, NativeString> ComboBoxControl_GetItem_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, int, ChainedString> ComboBoxControl_GetItem_Ptr;
 #pragma warning restore 0649
 
     private static unsafe int GetSelectedIndex(ulong entityID) => ComboBoxControl_GetSelectedIndex_Ptr(entityID);
     private static unsafe void SetSelectedIndex(ulong entityID, int index) => ComboBoxControl_SetSelectedIndex_Ptr(entityID, index);
-    private static unsafe void AddItem(ulong entityID, string item) => ComboBoxControl_AddItem_Ptr(entityID, item);
+    private static unsafe void AddItem(ulong entityID, string item)
+    { if (ComboBoxControl_AddItem_Ptr != null) fixed (char* ptr = item) ComboBoxControl_AddItem_Ptr(entityID, ptr); }
     private static unsafe void ClearItems(ulong entityID) => ComboBoxControl_ClearItems_Ptr(entityID);
     private static unsafe int GetItemCount(ulong entityID) => ComboBoxControl_GetItemCount_Ptr(entityID);
-    private static unsafe string? GetItem(ulong entityID, int index)
-    {
-        return ComboBoxControl_GetItem_Ptr(entityID, index);
-    }
+    private static unsafe string GetItem(ulong entityID, int index) => (string?)ComboBoxControl_GetItem_Ptr(entityID, index) ?? string.Empty;
 
     public int    SelectedIndex     { get => GetSelectedIndex(Entity.ID); set => SetSelectedIndex(Entity.ID, value); }
     public int    ItemCount         => GetItemCount(Entity.ID);
@@ -424,82 +403,14 @@ public class ComboBoxControl : Component
     public void   ClearItems()         => ClearItems(Entity.ID);
 }
 
-// ── Gameplay Components ────────────────────────────────────────────────────────
 
-/// <summary>Spawn point wrapper.</summary>
-public class SpawnComponent : Component
-{
-#pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, bool> SpawnComponent_IsActive_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, Vector3*, void> SpawnComponent_GetSpawnPoint_Ptr;
-#pragma warning restore 0649
-
-    private static unsafe bool IsActive_Native(ulong entityID) => SpawnComponent_IsActive_Ptr(entityID);
-    private static void GetSpawnPoint(ulong entityID, out Vector3 point)
-    {
-        unsafe { fixed (Vector3* p = &point) SpawnComponent_GetSpawnPoint_Ptr(entityID, p); }
-    }
-
-    public bool IsActive => IsActive_Native(Entity.ID);
-    public Vector3 SpawnPoint
-    {
-        get { GetSpawnPoint(Entity.ID, out Vector3 spawnPoint); return spawnPoint; }
-    }
-}
-
-/// <summary>Scene transition wrapper.</summary>
-public class SceneTransitionComponent : Component
-{
-#pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, NativeString> SceneTransitionComponent_GetTargetScene_Ptr;
-#pragma warning restore 0649
-
-    private static unsafe string? GetTargetScene(ulong entityID)
-    {
-        return SceneTransitionComponent_GetTargetScene_Ptr(entityID);
-    }
-    public string? TargetScene => GetTargetScene(Entity.ID);
-}
-
-/// <summary>RPG stats wrapper.</summary>
-public class RPGStatsComponent : Component
-{
-#pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, int> RPGStatsComponent_GetLevel_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, int, void> RPGStatsComponent_SetLevel_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, float> RPGStatsComponent_GetHealth_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, float, void> RPGStatsComponent_SetHealth_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, int> RPGStatsComponent_GetGold_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, int, void> RPGStatsComponent_SetGold_Ptr;
-#pragma warning restore 0649
-
-    public int Level { get { unsafe { return RPGStatsComponent_GetLevel_Ptr(Entity.ID); } } set { unsafe { RPGStatsComponent_SetLevel_Ptr(Entity.ID, value); } } }
-    public float Health { get { unsafe { return RPGStatsComponent_GetHealth_Ptr(Entity.ID); } } set { unsafe { RPGStatsComponent_SetHealth_Ptr(Entity.ID, value); } } }
-    public int Gold { get { unsafe { return RPGStatsComponent_GetGold_Ptr(Entity.ID); } } set { unsafe { RPGStatsComponent_SetGold_Ptr(Entity.ID, value); } } }
-}
-
-/// <summary>Skill wrapper.</summary>
-public class SkillComponent : Component
-{
-#pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, bool> SkillComponent_IsUnlocked_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool, void> SkillComponent_SetUnlocked_Ptr;
-#pragma warning restore 0649
-
-    public bool IsUnlocked { get { unsafe { return SkillComponent_IsUnlocked_Ptr(Entity.ID); } } set { unsafe { SkillComponent_SetUnlocked_Ptr(Entity.ID, value); } } }
-}
-
-/// <summary>Inventory wrapper.</summary>
-public class InventoryComponent : Component
-{
-}
 
 /// <summary>Shader control wrapper.</summary>
 public class ShaderComponent : Component
 {
 #pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, NativeString, float, void> Shader_SetFloat_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, NativeString, Vector3*, void> Shader_SetVec3_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, char*, float, void> Shader_SetFloat_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, char*, Vector3*, void> Shader_SetVec3_Ptr;
     internal static unsafe delegate* unmanaged<ulong, bool> Shader_GetEnabled_Ptr;
     internal static unsafe delegate* unmanaged<ulong, bool, void> Shader_SetEnabled_Ptr;
 #pragma warning restore 0649
@@ -510,14 +421,48 @@ public class ShaderComponent : Component
         set { unsafe { Shader_SetEnabled_Ptr(Entity.ID, value); } }
     }
 
-    public void SetFloat(string name, float value)
+    public unsafe void SetFloat(string name, float value)
     {
-        unsafe { Shader_SetFloat_Ptr(Entity.ID, name, value); }
+        if (Shader_SetFloat_Ptr == null) return;
+        fixed (char* ptr = name) Shader_SetFloat_Ptr(Entity.ID, ptr, value);
     }
 
-    public void SetVector3(string name, Vector3 value)
+    public unsafe void SetVector3(string vname, Vector3 value)
     {
-        unsafe { Shader_SetVec3_Ptr(Entity.ID, name, &value); }
+        if (Shader_SetVec3_Ptr == null) return;
+        Vector3 v = value;
+        fixed (char* ptr = vname) Shader_SetVec3_Ptr(Entity.ID, ptr, &v);
+    }
+}
+
+/// <summary>Player component wrapper.</summary>
+public class PlayerComponent : Component
+{
+#pragma warning disable 0649
+    internal static unsafe delegate* unmanaged<ulong, float> PlayerComponent_GetMovementSpeed_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, float, void> PlayerComponent_SetMovementSpeed_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, float> PlayerComponent_GetJumpForce_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, float, void> PlayerComponent_SetJumpForce_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, float> PlayerComponent_GetLookSensitivity_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, float, void> PlayerComponent_SetLookSensitivity_Ptr;
+#pragma warning restore 0649
+
+    public float MovementSpeed
+    {
+        get { unsafe { return PlayerComponent_GetMovementSpeed_Ptr == null ? 0 : PlayerComponent_GetMovementSpeed_Ptr(Entity.ID); } }
+        set { unsafe { if (PlayerComponent_SetMovementSpeed_Ptr != null) PlayerComponent_SetMovementSpeed_Ptr(Entity.ID, value); } }
+    }
+
+    public float JumpForce
+    {
+        get { unsafe { return PlayerComponent_GetJumpForce_Ptr == null ? 0 : PlayerComponent_GetJumpForce_Ptr(Entity.ID); } }
+        set { unsafe { if (PlayerComponent_SetJumpForce_Ptr != null) PlayerComponent_SetJumpForce_Ptr(Entity.ID, value); } }
+    }
+
+    public float LookSensitivity
+    {
+        get { unsafe { return PlayerComponent_GetLookSensitivity_Ptr == null ? 0 : PlayerComponent_GetLookSensitivity_Ptr(Entity.ID); } }
+        set { unsafe { if (PlayerComponent_SetLookSensitivity_Ptr != null) PlayerComponent_SetLookSensitivity_Ptr(Entity.ID, value); } }
     }
 }
 

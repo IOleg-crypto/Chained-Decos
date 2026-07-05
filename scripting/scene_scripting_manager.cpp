@@ -5,7 +5,9 @@
 #include "engine/scene/scene.h"
 #include "scripting/scriptengine.h"
 #include "scripting/scriptengine_services.h"
-#include <Coral/ManagedObject.hpp>
+#include "scripting/script_interop_pointers.h"
+#include <Coral/String.hpp>
+#include <Coral/Type.hpp>
 #include <memory>
 
 namespace Chained
@@ -13,34 +15,12 @@ namespace Chained
 
 namespace
 {
-// Custom deleter that properly shuts down a Coral::ManagedObject before freeing it.
-// Used as the deleter for shared_ptr<void> so Coral headers are not needed in scripting_components.h.
-void CoralObjectDeleter(void* ptr)
+// Dummy deleter for instances since we no longer track ManagedObject wrapper natively
+void DummyDeleter(void* ptr)
 {
-    delete static_cast<Coral::ManagedObject*>(ptr);
+    delete static_cast<int*>(ptr);
 }
 } // namespace
-
-// Helper to cast the type-erased shared_ptr back to the concrete Coral type.
-static inline Coral::ManagedObject* AsManagedObject(const ManagedScriptInstance& script)
-{
-    return static_cast<Coral::ManagedObject*>(script.GetRaw());
-}
-
-static void DestroyManagedScriptInstance(ManagedScriptInstance& script)
-{
-    if (script.HasInstance())
-    {
-        auto* obj = AsManagedObject(script);
-        if (obj->IsValid())
-        {
-            obj->InvokeMethod("OnDestroy");
-        }
-    }
-
-    script.Instance.reset();
-    script.NeedsStart = true;
-}
 
 static std::vector<SceneScriptingManager*> s_Managers;
 static std::mutex s_ManagersMutex;
@@ -66,7 +46,7 @@ void SceneScriptingManager::ResetAll()
     std::lock_guard<std::mutex> lock(s_ManagersMutex);
     for (auto* manager : s_Managers)
     {
-        manager->OnRuntimeStop(); // This will Destroy() all instances
+        manager->OnRuntimeStop();
     }
 }
 
@@ -82,25 +62,21 @@ SceneScriptingManager::~SceneScriptingManager()
 
     if (m_Scene)
     {
-        
-        Physics::SetCollisionCallback(m_Scene, nullptr);
+        ServiceLocator::Get<Physics>()->SetCollisionCallback(m_Scene, nullptr);
 
         if (m_Scene->IsSimulationRunning())
         {
-            auto& registry = m_Scene->GetRegistry();
-            auto view = registry.view<ManagedScriptComponent>();
-            for (auto entity : view)
+            auto engine = ServiceLocator::Get<ScriptEngine>();
+            if (engine && engine->GetHost().IsInitialized())
             {
-                auto& msc = registry.get<Chained::ManagedScriptComponent>(entity);
-                for (auto& script : msc.Scripts)
+                auto* coreAssembly = engine->GetHost().GetCoreAssembly();
+                if (coreAssembly)
                 {
-                    if (script.HasInstance())
+                    Coral::Type scriptEngineType = coreAssembly->GetLocalType("Chained.ScriptEngine");
+                    if (scriptEngineType)
                     {
-                        auto* obj = AsManagedObject(script);
-                        if (obj && obj->IsValid())
-                        {
-                            obj->InvokeMethod("OnDestroy");
-                        }
+                        if (g_ManagedPointers.ScriptEngine_ClearAll)
+                            g_ManagedPointers.ScriptEngine_ClearAll();
                     }
                 }
             }
@@ -110,15 +86,12 @@ SceneScriptingManager::~SceneScriptingManager()
 
 void SceneScriptingManager::OnRuntimeStart()
 {
-    CH_CORE_INFO("SceneScriptingManager::OnRuntimeStart - Entry");
+    CH_CORE_INFO("SceneScriptingManager::OnRuntimeStart - C# ScriptEngine based (Delegated)");
     if (!m_Scene)
     {
-        CH_CORE_ERROR("m_Scene is NULL!");
         return;
     }
 
-    
-    
     auto& registry = m_Scene->GetRegistry();
     auto view = registry.view<ManagedScriptComponent>();
     for (auto entity : view)
@@ -126,66 +99,57 @@ void SceneScriptingManager::OnRuntimeStart()
         auto& msc = registry.get<Chained::ManagedScriptComponent>(entity);
         for (auto& script : msc.Scripts)
         {
-            
             script.Instance.reset();
             script.NeedsStart = true;
         }
     }
 
-    
     entt::registry* registryPtr = m_Scene->GetRegistryPtr();
-    CH_CORE_INFO("SceneScriptingManager::OnRuntimeStart - Setting collision callback");
-    Physics::SetCollisionCallback(m_Scene, [registryPtr](entt::entity a, entt::entity b) {
+    ServiceLocator::Get<Physics>()->SetCollisionCallback(m_Scene, [registryPtr](entt::entity a, entt::entity b) {
         if (!registryPtr)
         {
             return;
         }
 
-        auto& registry = *registryPtr;
-        if (!registry.valid(a) || !registry.valid(b))
+        auto engine = ServiceLocator::Get<ScriptEngine>();
+        if (!engine || !engine->GetHost().IsInitialized())
         {
             return;
         }
 
-        // Dispatch to object A
-        if (registry.all_of<ManagedScriptComponent>(a))
+        auto* coreAssembly = engine->GetHost().GetCoreAssembly();
+        if (!coreAssembly)
         {
-            auto& msc = registry.get<ManagedScriptComponent>(a);
-            for (auto& script : msc.Scripts)
-            {
-                if (script.HasInstance())
-                {
-                    auto* obj = AsManagedObject(script);
-                    if (obj->IsValid())
-                    {
-                        obj->InvokeMethod("OnCollisionEnter", (uint64_t)(uint32_t)b);
-                    }
-                }
-            }
+            return;
         }
 
-        // Dispatch to object B
-        if (registry.all_of<ManagedScriptComponent>(b))
+        Coral::Type scriptEngineType = coreAssembly->GetLocalType("Chained.ScriptEngine");
+        if (scriptEngineType)
         {
-            auto& msc = registry.get<ManagedScriptComponent>(b);
-            for (auto& script : msc.Scripts)
-            {
-                if (script.HasInstance())
-                {
-                    auto* obj = AsManagedObject(script);
-                    if (obj->IsValid())
-                    {
-                        obj->InvokeMethod("OnCollisionEnter", (uint64_t)(uint32_t)a);
-                    }
-                }
-            }
+            if (g_ManagedPointers.ScriptEngine_OnCollisionEnter)
+                g_ManagedPointers.ScriptEngine_OnCollisionEnter((uint64_t)(uint32_t)a, (uint64_t)(uint32_t)b);
         }
     });
 }
 
 void SceneScriptingManager::OnRuntimeStop()
 {
-    Physics::SetCollisionCallback(m_Scene, nullptr);
+    ServiceLocator::Get<Physics>()->SetCollisionCallback(m_Scene, nullptr);
+
+    auto engine = ServiceLocator::Get<ScriptEngine>();
+    if (engine && engine->GetHost().IsInitialized() && !m_ReloadInProgress)
+    {
+        auto* coreAssembly = engine->GetHost().GetCoreAssembly();
+        if (coreAssembly)
+        {
+            Coral::Type scriptEngineType = coreAssembly->GetLocalType("Chained.ScriptEngine");
+            if (scriptEngineType)
+            {
+                if (g_ManagedPointers.ScriptEngine_ClearAll)
+                    g_ManagedPointers.ScriptEngine_ClearAll();
+            }
+        }
+    }
 
     auto& registry = m_Scene->GetRegistry();
     auto view = registry.view<ManagedScriptComponent>();
@@ -194,7 +158,8 @@ void SceneScriptingManager::OnRuntimeStop()
         auto& msc = registry.get<Chained::ManagedScriptComponent>(entity);
         for (auto& script : msc.Scripts)
         {
-            DestroyManagedScriptInstance(script);
+            script.Instance.reset();
+            script.NeedsStart = true;
         }
     }
 }
@@ -203,125 +168,101 @@ void SceneScriptingManager::OnUpdate(Timestep deltaTime)
 {
     CH_PROFILE_FUNCTION();
 
-    
     if (!m_Scene || !m_Scene->IsSimulationRunning())
     {
         return;
     }
 
-    if (!ServiceLocator::Get<ScriptEngine>()->GetHost().IsInitialized() || m_ReloadInProgress)
+    auto engine = ServiceLocator::Get<ScriptEngine>();
+    if (!engine->GetHost().IsInitialized() || m_ReloadInProgress)
     {
         return;
     }
 
-    
     SetContextScene(m_Scene);
 
-    auto& registry = m_Scene->GetRegistry();
+    auto* coreAssembly = engine->GetHost().GetCoreAssembly();
+    if (!coreAssembly)
+    {
+        SetContextScene(nullptr);
+        return;
+    }
 
-    
-    std::vector<entt::entity> entities;
+    Coral::Type scriptEngineType = coreAssembly->GetLocalType("Chained.ScriptEngine");
+    if (!scriptEngineType)
+    {
+        SetContextScene(nullptr);
+        return;
+    }
+
+    auto& registry = m_Scene->GetRegistry();
     auto view = registry.view<ManagedScriptComponent>();
     for (auto entity : view)
     {
-        entities.push_back(entity);
-    }
-
-    for (auto entity : entities)
-    {
-        if (!registry.valid(entity) || !registry.all_of<ManagedScriptComponent>(entity))
+        auto& msc = registry.get<Chained::ManagedScriptComponent>(entity);
+        for (auto& script : msc.Scripts)
         {
-            continue;
-        }
-
-        size_t scriptCount = registry.get<ManagedScriptComponent>(entity).Scripts.size();
-        for (size_t i = 0; i < scriptCount; ++i)
-        {
-            auto& msc = registry.get<ManagedScriptComponent>(entity);
-            auto& script = msc.Scripts[i];
-
-            
             if (!script.HasInstance() && !script.ClassName.empty())
             {
-                auto* type = ServiceLocator::Get<ScriptEngine>()->GetRegistry().GetScriptClass(script.ClassName);
-                if (type)
-                {
-                    try
-                    {
-                        CH_CORE_INFO("ScriptEngine: Instantiating '{}' for Runtime Entity ID: {}", script.ClassName,
-                                     (uint32_t)entity);
-
-                        auto* obj = new Coral::ManagedObject(type->CreateInstance());
-                        auto sharedObj = std::shared_ptr<void>(obj, CoralObjectDeleter);
-
-                        ManagedScriptInstance stableInstance = script;
-                        stableInstance.Instance = sharedObj;
-
-                        
-                        obj->InvokeMethod("__Init", (uint64_t)(uint32_t)entity);
-
-                        
-                        auto& finalScript = registry.get<ManagedScriptComponent>(entity).Scripts[i];
-
-                        finalScript.Instance = std::move(stableInstance.Instance);
-                        finalScript.NeedsStart = true;
-
-                        auto* finalObj = AsManagedObject(finalScript);
-                        if (!finalObj)
-                        {
-                            continue;
-                        }
-
-                        
-                        for (const auto& [fieldName, field] : finalScript.Fields)
-                        {
-                            try
-                            {
-                                std::visit([&](auto&& val) { finalObj->SetFieldValue(fieldName, val); }, field.Value);
-                            } catch (const std::exception& e)
-                            {
-                                CH_CORE_WARN("ScriptEngine: Field sync skip '{}': {}", fieldName, e.what());
-                            }
-                        }
-
-                        finalObj->InvokeMethod("OnCreate");
-                    } catch (const std::exception& e)
-                    {
-                        CH_CORE_ERROR("ScriptEngine: Exception instantiating '{}': {}", script.ClassName, e.what());
-                        registry.get<ManagedScriptComponent>(entity).Scripts[i].Instance.reset();
-                    }
-                }
-            }
-
-            
-            auto& scriptLifecycle = registry.get<ManagedScriptComponent>(entity).Scripts[i];
-            if (scriptLifecycle.HasInstance())
-            {
-                auto* obj = AsManagedObject(scriptLifecycle);
-                if (!obj->IsValid())
-                {
-                    continue;
-                }
-
                 try
                 {
-                    if (scriptLifecycle.NeedsStart)
+                    CH_CORE_INFO("C++ calling InstantiateScript for {}", script.ClassName);
+                    Coral::String classNameStr = Coral::String::New(script.ClassName);
+                    if (g_ManagedPointers.ScriptEngine_InstantiateScript)
+                        g_ManagedPointers.ScriptEngine_InstantiateScript((uint64_t)(uint32_t)entity, (const char16_t*)classNameStr.Data());
+                    Coral::String::Free(classNameStr);
+                    CH_CORE_INFO("C++ calling InstantiateScript SUCCESS");
+
+                    for (const auto& [fieldName, field] : script.Fields)
                     {
-                        obj->InvokeMethod("OnStart");
-                        scriptLifecycle.NeedsStart = false;
+                        CH_CORE_INFO("C++ setting field {}", fieldName);
+                        Coral::String fNameStr = Coral::String::New(fieldName);
+                        Coral::String cNameStr = Coral::String::New(script.ClassName);
+                        if (field.Type == ScriptFieldType::Float)
+                        {
+                            scriptEngineType.InvokeStaticMethod("SetFieldFloat", (uint64_t)(uint32_t)entity, cNameStr,
+                                                                fNameStr, std::get<float>(field.Value));
+                        }
+                        else if (field.Type == ScriptFieldType::Int)
+                        {
+                            scriptEngineType.InvokeStaticMethod("SetFieldInt", (uint64_t)(uint32_t)entity, cNameStr,
+                                                                fNameStr, std::get<int>(field.Value));
+                        }
+                        else if (field.Type == ScriptFieldType::Bool)
+                        {
+                            scriptEngineType.InvokeStaticMethod("SetFieldBool", (uint64_t)(uint32_t)entity, cNameStr,
+                                                                fNameStr, std::get<bool>(field.Value));
+                        }
+                        else if (field.Type == ScriptFieldType::String)
+                        {
+                            Coral::String vStr = Coral::String::New(std::get<std::string>(field.Value));
+                            scriptEngineType.InvokeStaticMethod("SetFieldString", (uint64_t)(uint32_t)entity, cNameStr,
+                                                                fNameStr, vStr);
+                            Coral::String::Free(vStr);
+                        }
+                        Coral::String::Free(cNameStr);
+                        Coral::String::Free(fNameStr);
                     }
 
-                    obj->InvokeMethod("OnUpdate", (float)deltaTime);
+                    // Mark instantiated on C++ side
+                    script.Instance = std::shared_ptr<void>(new int(1), DummyDeleter);
+                    script.NeedsStart = false; // Start is called natively on the C# side
                 } catch (const std::exception& e)
                 {
-                    CH_CORE_ERROR("ScriptEngine: Exception in OnUpdate for '{}': {}", scriptLifecycle.ClassName,
-                                  e.what());
+                    CH_CORE_ERROR("ScriptEngine: Exception instantiating '{}': {}", script.ClassName, e.what());
                 }
             }
         }
     }
 
-    SetContextScene(nullptr);
+    try
+    {
+        if (g_ManagedPointers.ScriptEngine_OnUpdate)
+            g_ManagedPointers.ScriptEngine_OnUpdate((float)deltaTime);
+    } catch (const std::exception& e)
+    {
+        CH_CORE_ERROR("ScriptEngine: Exception in OnUpdate Loop: {}", e.what());
+    }
 }
 
 void SceneScriptingManager::OnEvent(Event& e)
@@ -331,61 +272,56 @@ void SceneScriptingManager::OnEvent(Event& e)
         return;
     }
 
-    SetContextScene(m_Scene);
-    auto& registry = m_Scene->GetRegistry();
-
-    auto view = registry.view<ManagedScriptComponent>();
-    for (auto entity : view)
+    auto engine = ServiceLocator::Get<ScriptEngine>();
+    if (!engine->GetHost().IsInitialized())
     {
-        auto& msc = registry.get<Chained::ManagedScriptComponent>(entity);
-        for (auto& script : msc.Scripts)
-        {
-            if (script.HasInstance())
-            {
-                auto* obj = AsManagedObject(script);
-                if (obj->IsValid())
-                {
-
-                    obj->InvokeMethod("OnEvent", (int)e.GetEventType());
-                }
-            }
-        }
+        return;
     }
-    SetContextScene(nullptr);
-}
 
-void SceneScriptingManager::OnRenderUI()
-{
-    if (!ServiceLocator::Get<ScriptEngine>()->GetHost().IsInitialized() || m_ReloadInProgress)
+    auto* coreAssembly = engine->GetHost().GetCoreAssembly();
+    if (!coreAssembly)
     {
         return;
     }
 
     SetContextScene(m_Scene);
 
-    auto& registry = m_Scene->GetRegistry();
-    auto view = registry.view<ManagedScriptComponent>();
-
-    for (auto entity : view)
+    Coral::Type scriptEngineType = coreAssembly->GetLocalType("Chained.ScriptEngine");
+    if (scriptEngineType)
     {
-        auto& msc = registry.get<Chained::ManagedScriptComponent>(entity);
-        for (auto& script : msc.Scripts)
-        {
-            if (script.HasInstance())
-            {
-                auto* obj = AsManagedObject(script);
-                if (obj->IsValid())
-                {
-                    try
-                    {
-                        obj->InvokeMethod("OnGUI");
-                    } catch (const std::exception& e)
-                    {
-                        CH_CORE_ERROR("ScriptEngine: Exception in OnGUI for '{}': {}", script.ClassName, e.what());
-                    }
-                }
-            }
-        }
+        if (g_ManagedPointers.ScriptEngine_OnEvent)
+            g_ManagedPointers.ScriptEngine_OnEvent((int)e.GetEventType());
+    }
+
+    SetContextScene(nullptr);
+}
+
+void SceneScriptingManager::OnRenderUI()
+{
+    if (m_ReloadInProgress)
+    {
+        return;
+    }
+
+    auto engine = ServiceLocator::Get<ScriptEngine>();
+    if (!engine || !engine->GetHost().IsInitialized())
+    {
+        return;
+    }
+
+    auto* coreAssembly = engine->GetHost().GetCoreAssembly();
+    if (!coreAssembly)
+    {
+        return;
+    }
+
+    SetContextScene(m_Scene);
+
+    Coral::Type scriptEngineType = coreAssembly->GetLocalType("Chained.ScriptEngine");
+    if (scriptEngineType)
+    {
+        if (g_ManagedPointers.ScriptEngine_OnRenderUI)
+            g_ManagedPointers.ScriptEngine_OnRenderUI();
     }
 
     SetContextScene(nullptr);

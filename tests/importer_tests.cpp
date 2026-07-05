@@ -1,4 +1,4 @@
-#include "engine/graphics/loaders/assimp_importer.h"
+#include "engine/assets/loaders/assimp_importer.h"
 #include "gtest/gtest.h"
 #include <filesystem>
 #include <fstream>

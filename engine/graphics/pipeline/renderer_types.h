@@ -3,63 +3,42 @@
 
 #include "engine/assets/asset.h"
 #include "engine/foundation/color.h"
-#include "engine/reflection/reflection.h"
 #include "engine/graphics/api/vertex_array.h"
+#include "engine/reflection/reflection_rfl.h" // Switched to your new reflection header
 #include <cstring>
 #include <glm/glm.hpp>
 #include <memory>
 #include <string>
 #include <vector>
+#include <variant>
 
 namespace Chained
 {
+
+enum class ShaderUniformType : int
+{
+    Float = 0,
+    Vec2,
+    Vec3,
+    Vec4,
+    Color
+};
+
 struct ShaderUniform
 {
     std::string Name;
-    int Type; // 0: Float, 1: Vec2, 2: Vec3, 3: Vec4, 4: Color
-    float Value[4] = {0, 0, 0, 0};
+    std::variant<float, glm::vec2, glm::vec3, glm::vec4, Color> Value = 0.0f;
 
-    CH_REFLECT_BEGIN(ShaderUniform)
-    props.Property("Name", Name);
-    static const char* types[] = {"Float", "Vec2", "Vec3", "Vec4", "Color"};
-    if (props.Enum("Type", Type, types, 5))
-    {
-        // Zero out values when type changes to avoid mess
-        memset(Value, 0, sizeof(Value));
-    }
+    static const char* GetStaticName() { return "ShaderUniform"; }
 
-    if (Type == 4) // Color
+    struct UI
     {
-        Color c = {(unsigned char)glm::clamp(Value[0] * 255.0f, 0.0f, 255.0f),
-                             (unsigned char)glm::clamp(Value[1] * 255.0f, 0.0f, 255.0f),
-                             (unsigned char)glm::clamp(Value[2] * 255.0f, 0.0f, 255.0f),
-                             (unsigned char)glm::clamp(Value[3] * 255.0f, 0.0f, 255.0f)};
-        if (props.Property("Value", c))
-        {
-            Value[0] = c.r / 255.0f;
-            Value[1] = c.g / 255.0f;
-            Value[2] = c.b / 255.0f;
-            Value[3] = c.a / 255.0f;
-        }
-    }
-    else if (Type == 1) // Vec2
-    {
-        props.Property("Value", *(glm::vec2*)Value);
-    }
-    else if (Type == 2) // Vec3
-    {
-        props.Property("Value", *(glm::vec3*)Value);
-    }
-    else if (Type == 3) // Vec4
-    {
-        props.Property("Value", *(glm::vec4*)Value);
-    }
-    else // Float
-    {
-        props.Property("Value", Value[0]);
-    }
-    CH_REFLECT_END()
+        UIMeta Name  = { .Tooltip = "The uniform variable name defined inside the GLSL shader" };
+        UIMeta Value = { .Tooltip = "The modern variant value matching the uniform's data type" };
+    };
 };
+CH_MARK_RFL(ShaderUniform);
+
 struct Material
 {
     glm::vec4 AlbedoColor = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -83,9 +62,22 @@ struct Material
     uint32_t ShaderID = 0;
     bool Transparent = false;
     float Alpha = 1.0f;
-
     std::string Name;
+
+    static const char* GetStaticName() { return "Material"; }
+
+    struct UI
+    {
+        UIMeta AlbedoColor      = { .Tooltip = "Base diffuse surface color" };
+        UIMeta EmissiveColor    = { .Tooltip = "Color emitted by the material surface" };
+        UIMeta EmissiveIntensity = { .Tooltip = "Brightness multiplier for the emissive color" };
+        UIMeta Metalness        = { .Tooltip = "How close the surface reflects like a metal (0.0 to 1.0)" };
+        UIMeta Roughness        = { .Tooltip = "Microfacet roughness from smooth/glossy to diffuse (0.0 to 1.0)" };
+        UIMeta Transparent      = { .Tooltip = "Enables alpha blending layers for this material" };
+        UIMeta Alpha            = { .Tooltip = "Global opacity multiplier" };
+    };
 };
+CH_MARK_RFL(Material);
 
 struct Mesh
 {
