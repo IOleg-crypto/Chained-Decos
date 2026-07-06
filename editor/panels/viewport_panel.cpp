@@ -693,6 +693,8 @@ void ViewportPanel::RenderToolbar(Scene* activeScene, const ImVec2& viewportSize
                 std::string moduleName = project->GetConfig().Scripting.ModuleName;
                 if (moduleName.find(".dll") == std::string::npos)
                     moduleName += ".dll";
+                if(moduleName.find(".so") == std::string::npos)
+                    moduleName += ".so";
                     
                 std::filesystem::path assemblyPath = Project::GetAssetDirectory() / "bin" / moduleName;
                 auto& scriptEngine = *ServiceLocator::Get<ScriptEngine>();

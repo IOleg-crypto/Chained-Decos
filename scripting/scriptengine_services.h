@@ -11,13 +11,6 @@
 namespace Chained
 {
 
-class Scene;
-
-// Runtime scripting context (used by glue)
-void SetContextScene(Scene* scene);
-Scene* GetContextScene();
-
-// Owns the CoreCLR host and the current app/core assembly handles.
 class ScriptHost
 {
 public:
@@ -58,9 +51,6 @@ private:
     bool RecreateAssemblyLoadContext(bool unloadCurrent);
     bool LoadAssembliesTransactional(const std::filesystem::path& appAssemblyPath);
 
-    std::filesystem::path ResolveCoralDirectory();
-    std::filesystem::path ResolveCoreAssemblyPath(const std::filesystem::path& coralDir);
-
 private:
     std::filesystem::path m_CoralDirectory;
     Coral::HostInstance m_Host;
@@ -71,7 +61,7 @@ private:
     bool m_ReloadInProgress = false;
 };
 
-// Caches discovered script types and resolves short names to full names.
+
 class ScriptRegistry
 {
 public:
@@ -89,7 +79,6 @@ private:
     std::unordered_map<std::string, std::string> m_ShortNameToFullName;
     std::unordered_set<std::string> m_MissingScriptsWarnings;
 };
-
 
 ScriptHost& GetScriptHost();
 ScriptRegistry& GetScriptRegistry();

@@ -1,56 +1,34 @@
----
-BasedOnStyle: Microsoft
-Language: Cpp
-Standard: Latest
+BasedOnStyle: LLVM
 IndentWidth: 4
-TabWidth: 4
-UseTab: Never
 ColumnLimit: 120
+UseTab: Never
 
-# Дужки залишаються на тому ж рядку (як у класах та функціях на скрині)
+# Disallow single-line statements
+AllowShortIfStatementsOnASingleLine: false
+AllowShortBlocksOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+InsertBraces: true
+
+# Brace wrapping style (Allman-like, consistent with the project)
 BreakBeforeBraces: Custom
 BraceWrapping:
-  AfterClass: false
-  AfterControlStatement: Never
-  AfterEnum: false
-  AfterFunction: false
-  AfterNamespace: false
-  AfterObjCDeclaration: false
-  AfterStruct: false
-  AfterUnion: false
-  BeforeCatch: false
-  BeforeElse: false
-  BeforeLambdaBody: false
-  BeforeWhile: false
+  AfterClass: true
+  AfterControlStatement: Always
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: true
+  AfterUnion: true
+  BeforeElse: true
   IndentBraces: false
-  SplitEmptyFunction: false
-  SplitEmptyRecord: false
-  SplitEmptyNamespace: false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
 
-# На скриншоті public/private мають такий же відступ, як і весь клас (не зміщені ліворуч)
-AccessModifierOffset: 0
-
-# Вирівнювання амперсандів та зірочок (як у `&anim` та `*scene`)
-PointerAlignment: Right
-ReferenceAlignment: Right
-DerivePointerAlignment: false
-
-# Короткі однорядкові функції (наприклад, `void Shutdown() {}`) залишаємо в один рядок
-AllowShortFunctionsOnASingleLine: Empty
-AllowShortBlocksOnASingleLine: Empty
-AllowShortIfStatementsOnASingleLine: false
-AllowShortLoopsOnASingleLine: false
-AllowShortLambdasOnASingleLine: All
-
-# Чистота рядків
-MaxEmptyLinesToKeep: 1
-KeepEmptyLinesAtTheStartOfBlocks: false
-
-# Форматування списків параметрів (якщо не влазять в 120 символів, акуратно переносимо)
-AlignAfterOpenBracket: Align
-BinPackArguments: false
-BinPackParameters: false
-
-# Автоматичне виправлення коментарів закриття неймспейсів (на скрині: // namespace Chained)
+# Other common settings
+PointerAlignment: Left
+AccessModifierOffset: -4
+PackConstructorInitializers: Never
 FixNamespaceComments: true
-SortIncludes: CaseSensitive
+SortIncludes: true

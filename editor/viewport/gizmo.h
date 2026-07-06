@@ -2,6 +2,8 @@
 #define CH_EDITOR_GIZMO_H
 
 #include "engine/scene/scene.h"
+#include "engine/scene/components.h"
+#include "engine/graphics/camera_types.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
 #include "ImGuizmo.h"
@@ -26,7 +28,7 @@ public:
 
     // Render and handle gizmo interaction
     // true if the gizmo is being used (captured mouse)
-    bool RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 viewportSize, const Chained::Camera3D& camera);
+    bool RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 viewportSize, const Camera3D& camera);
 
     bool IsHovered() const { return ImGuizmo::IsOver(); }
     bool IsDragging() const { return ImGuizmo::IsUsing(); }

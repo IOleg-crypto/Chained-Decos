@@ -9,38 +9,6 @@ namespace Chained
 
 void RegisterGlueEntity();
 
-// Helper: convert UTF-16 C# string to std::string
-static std::string ch_u16_to_string(const char16_t* ptr)
-{
-    if (!ptr)
-    {
-        return {};
-    }
-    std::u16string u16(ptr);
-    std::string result;
-    result.reserve(u16.size());
-    for (char16_t c : u16)
-    {
-        result += (c < 0x80) ? (char)c : '?';
-    }
-    return result;
-}
-
-// Helper: copy std::string to UTF-16 buffer
-static void ch_string_to_u16(const std::string& src, char16_t* buf, int bufSize)
-{
-    if (!buf || bufSize <= 0)
-    {
-        return;
-    }
-    int n = std::min((int)src.size(), bufSize - 1);
-    for (int i = 0; i < n; ++i)
-    {
-        buf[i] = (char16_t)(unsigned char)src[i];
-    }
-    buf[n] = 0;
-}
-
 // ── Entity / Transform ────────────────────────────────────────────────
 CH_SCRIPT_FUNC void Transform_GetTranslation(uint64_t entityID, glm::vec3* outTranslation);
 
@@ -55,7 +23,7 @@ CH_SCRIPT_FUNC void Transform_GetScale(uint64_t entityID, glm::vec3* outScale);
 CH_SCRIPT_FUNC void Transform_SetScale(uint64_t entityID, glm::vec3* inScale);
 
 // ── Model Component ───────────────────────────────────────────────────
-CH_SCRIPT_FUNC Coral::String Model_GetModelPath(uint64_t entityID);
+CH_SCRIPT_FUNC const char16_t* Model_GetModelPath(uint64_t entityID);
 
 CH_SCRIPT_FUNC void Model_SetModelPath(uint64_t entityID, const char16_t* inPath);
 
@@ -83,7 +51,7 @@ CH_SCRIPT_FUNC void AudioComponent_Play(uint64_t entityID);
 CH_SCRIPT_FUNC void AudioComponent_Stop(uint64_t entityID);
 
 // ── Tag Component ─────────────────────────────────────────────────────
-CH_SCRIPT_FUNC Coral::String TagComponent_GetTag(uint64_t entityID);
+CH_SCRIPT_FUNC const char16_t* TagComponent_GetTag(uint64_t entityID);
 
 // ── Shader Component ──────────────────────────────────────────────────
 CH_SCRIPT_FUNC void Shader_SetFloat(uint64_t entityID, const char16_t* inName, float inValue);

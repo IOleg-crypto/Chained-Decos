@@ -23,8 +23,6 @@ class ScenePicker
 {
 public:
     static SceneRaycastResult Raycast(Scene* scene, const Ray& ray);
-
-    // Creates a ray from viewport coordinates
     static Ray CreateRayFromViewport(const Chained::Camera3D& camera, const glm::vec2& mousePosition,
                                      const glm::vec2& viewportSize);
 };

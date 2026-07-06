@@ -3,12 +3,12 @@
 #include "engine/core/log.h"
 #include "engine/scene/scene_events.h"
 #include "script_internal_call_registry.h"
-
+#include "engine/scene/components.h"
 namespace Chained {
-CH_SCRIPT_FUNC uint64_t Scene_FindEntityByTag(Coral::String tag) {
+CH_SCRIPT_FUNC uint64_t Scene_FindEntityByTag(const char16_t* tag) {
     auto *scene = GetActiveScene();
-    if (scene) {
-        auto entity = scene->FindEntityByTag((std::string)tag);
+    if (scene && tag) {
+        auto entity = scene->FindEntityByTag(ch_u16_to_string(tag));
         return entity ? (uint64_t)(uint32_t)entity : 0;
     }
     return 0;
@@ -23,8 +23,9 @@ CH_SCRIPT_FUNC uint64_t Scene_CopyEntity(uint64_t entityID) {
     return 0;
 }
 
-CH_SCRIPT_FUNC void Scene_LoadScene(Coral::String path) {
-    SceneChangeRequestEvent e((std::string)path);
+CH_SCRIPT_FUNC void Scene_LoadScene(const char16_t* path) {
+    if (!path) return;
+    SceneChangeRequestEvent e(ch_u16_to_string(path));
     Application::Get().OnEvent(e);
 }
 

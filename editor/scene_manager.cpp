@@ -1,5 +1,7 @@
 #include "scene_manager.h"
 #include "engine/app/application.h"
+#include "scripting/scriptengine_services.h"
+#include "scriptengine.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/core/input.h"
 #include "engine/core/key_codes.h"
@@ -12,7 +14,6 @@
 #include "engine/serialization/scene_serializer.h"
 #include "layer.h"
 #include "scripting/scene_scripting_manager.h"
-#include "scripting/scriptengine.h"
 
 namespace Chained
 {
@@ -45,7 +46,9 @@ void EditorSceneManager::OpenScene(const std::filesystem::path& path)
                      m_PendingSceneOpenPath.string());
         return;
     }
-    m_IsPlayModeSceneLoad = EditorLayer::Get().GetSceneState() == SceneState::Play;
+    
+    // Питаємо стан безпосередньо у менеджера (а отже, у сцени)
+    m_IsPlayModeSceneLoad = GetSceneState() == SceneState::Play;
     StartSceneOpenTransition(path);
 }
 
@@ -110,17 +113,40 @@ void EditorSceneManager::SetScene(const std::shared_ptr<Scene>& scene)
 {
     CancelPlayModeTransition();
     CancelSceneOpenTransition();
+    
     m_EditorScene = scene;
+    if (m_EditorScene)
+    {
+        m_EditorScene->SetSceneState(SceneState::Edit);
+    }
+    
     EditorLayer::Get().SetSelectedEntity({});
+}
+
+SceneState EditorSceneManager::GetSceneState() const
+{
+    auto activeScene = GetActiveScene();
+    return activeScene ? activeScene->GetSceneState() : SceneState::Edit;
+}
+
+std::shared_ptr<Scene> EditorSceneManager::GetActiveScene() const
+{
+    // Якщо рантайм сцена існує — значить ми в Play/Simulate режимі
+    if (m_RuntimeScene)
+    {
+        return m_RuntimeScene;
+    }
+    return m_EditorScene;
 }
 
 void EditorSceneManager::SetSceneState(SceneState state)
 {
+    SceneState currentState = GetSceneState();
+
     if (state == SceneState::Play || state == SceneState::Simulate)
     {
         if (m_PlayModeStartRequested || m_IsPlayModeLoading || m_IsSceneOpenLoading ||
-            EditorLayer::Get().GetSceneState() == SceneState::Play ||
-            EditorLayer::Get().GetSceneState() == SceneState::Simulate)
+            currentState == SceneState::Play || currentState == SceneState::Simulate)
         {
             return;
         }
@@ -132,9 +158,10 @@ void EditorSceneManager::SetSceneState(SceneState state)
         }
 
         m_PlayModeStartRequested = true;
+        m_TargetState = state; // Запам'ятовуємо ціль для транзиту
         CH_CORE_INFO("Editor: {} mode requested.", state == SceneState::Play ? "Play" : "Simulate");
     }
-    else
+    else // Повернення в SceneState::Edit (Stop)
     {
         if (m_PlayModeStartRequested || m_IsPlayModeLoading)
         {
@@ -146,7 +173,7 @@ void EditorSceneManager::SetSceneState(SceneState state)
             CancelSceneOpenTransition();
         }
 
-        if (EditorLayer::Get().GetSceneState() == SceneState::Edit)
+        if (currentState == SceneState::Edit)
         {
             return;
         }
@@ -159,14 +186,13 @@ void EditorSceneManager::SetSceneState(SceneState state)
             m_RuntimeScene.reset();
         }
 
-        EditorLayer::Get().SetSceneState(SceneState::Edit);
-    }
-}
+        if (m_EditorScene)
+        {
+            m_EditorScene->SetSceneState(SceneState::Edit);
+        }
 
-std::shared_ptr<Scene> EditorSceneManager::GetActiveScene() const
-{
-    return (EditorLayer::Get().GetSceneState() == SceneState::Play || 
-            EditorLayer::Get().GetSceneState() == SceneState::Simulate) ? m_RuntimeScene : m_EditorScene;
+        EditorLayer::Get().SetSelectedEntity({});
+    }
 }
 
 void EditorSceneManager::OnUpdate(Timestep ts)
@@ -205,22 +231,12 @@ void EditorSceneManager::OnViewportResize(uint32_t width, uint32_t height)
 
 void EditorSceneManager::StartSceneOpenTransition(const std::filesystem::path& path)
 {
-    if (path.empty())
-    {
-        return;
-    }
-    if (m_IsSceneOpenLoading)
+    if (path.empty() || m_IsSceneOpenLoading)
     {
         return;
     }
 
     CancelPlayModeTransition();
-
-    if (m_IsSceneOpenLoading)
-    {
-        CH_CORE_WARN("EditorSceneManager: StartSceneOpenTransition aborted, already loading.");
-        return;
-    }
 
     std::filesystem::path scenePath = path;
     if (scenePath.is_relative())
@@ -249,7 +265,8 @@ void EditorSceneManager::StartSceneOpenTransition(const std::filesystem::path& p
 
         m_IsSceneOpenLoading = true;
         CH_CORE_INFO("Editor: Loading scene '{}' on a worker thread.", scenePath.string());
-    } catch (const std::exception& e)
+    } 
+    catch (const std::exception& e)
     {
         CH_CORE_ERROR("Editor: Failed to start scene load: {}", e.what());
         CancelSceneOpenTransition();
@@ -299,12 +316,14 @@ void EditorSceneManager::UpdateSceneOpenTransition()
                     }
                 }
                 m_SceneOpenSceneReady = true;
-            } catch (const std::exception& e)
+            } 
+            catch (const std::exception& e)
             {
                 CH_CORE_ERROR("Editor: Scene load failed with exception: {}", e.what());
                 CancelSceneOpenTransition();
                 return;
-            } catch (...)
+            } 
+            catch (...)
             {
                 CH_CORE_ERROR("Editor: Scene load failed with unknown exception.");
                 CancelSceneOpenTransition();
@@ -320,7 +339,6 @@ void EditorSceneManager::UpdateSceneOpenTransition()
 
         if (auto project = Project::GetActive(); project && project->GetEnvironment())
         {
-            // Only override if the loaded scene has no environment defined
             bool hasEnvironment = targetScene->GetSettings().Environment &&
                                   (!targetScene->GetSettings().Environment->GetPath().empty() ||
                                    (!targetScene->GetSettings().Environment->GetSettings().Skybox.TexturePath.empty()));
@@ -337,22 +355,19 @@ void EditorSceneManager::UpdateSceneOpenTransition()
 
         if (m_IsPlayModeSceneLoad)
         {
-            CH_CORE_INFO("Editor: Stopping current runtime scene to load '{}'.", m_PendingSceneOpenPath.string());
-            m_RuntimeScene->OnRuntimeStop();
-
-            m_RuntimeScene = m_SceneOpenFuture.get();
-            if (!m_RuntimeScene)
-            {
-                CH_CORE_ERROR("Editor: Runtime Scene load returned null for '{}'.", m_PendingSceneOpenPath.string());
-                CancelSceneOpenTransition();
-                return;
-            }
-
-            
-            Chained::SetContextScene(m_RuntimeScene.get());
+            m_RuntimeScene->SetSceneState(SceneState::Play);
+            ServiceLocator::Get<ScriptEngine>()->SetContextScene(m_RuntimeScene.get());
 
             CH_CORE_INFO("Editor: Activating new runtime scene '{}'.", m_PendingSceneOpenPath.string());
             m_RuntimeScene->OnRuntimeStart();
+        }
+        else
+        {
+            m_EditorScene->SetSceneState(SceneState::Edit);
+            
+            // Диспетчеризуємо івент відкриття сцени
+            SceneOpenedEvent e(m_PendingSceneOpenPath);
+            OnSceneOpened(e);
         }
 
         m_IsSceneOpenLoading = false;
@@ -371,7 +386,7 @@ void EditorSceneManager::UpdateSceneOpenTransition()
         if (ServiceLocator::Get<AssetManager>()->HasBackgroundWork())
         {
             static float logTimer = 0.0f;
-            logTimer += 0.016f; // approximate
+            logTimer += 0.016f; 
             if (logTimer > 1.0f)
             {
                 CH_CORE_INFO("Editor: Transition to '{}' waiting for {} assets...", m_PendingSceneOpenPath.string(),
@@ -412,18 +427,20 @@ void EditorSceneManager::StartPlayModeTransition()
         {
             CH_CORE_INFO("Editor: Scene copy successful. Resulting pointer: {}", (void*)m_RuntimeScene.get());
             m_PlayModeSceneReady = true;
-            m_IsPlayModeLoading = true; // Still mark as loading to tick UpdatePlayModeTransition once if needed
+            m_IsPlayModeLoading = true; 
         }
         else
         {
             CH_CORE_ERROR("Editor: Failed to copy scene for play mode - result was null.");
             CancelPlayModeTransition();
         }
-    } catch (const std::exception& e)
+    } 
+    catch (const std::exception& e)
     {
         CH_CORE_ERROR("Editor: Exception copying scene: {}", e.what());
         CancelPlayModeTransition();
-    } catch (...)
+    } 
+    catch (...)
     {
         CH_CORE_ERROR("Editor: Unknown exception copying scene.");
         CancelPlayModeTransition();
@@ -442,11 +459,20 @@ void EditorSceneManager::UpdatePlayModeTransition()
         m_RuntimeScene->OnViewportResize((uint32_t)EditorLayer::Get().GetViewportSize().x,
                                          (uint32_t)EditorLayer::Get().GetViewportSize().y);
 
-        
-        Chained::SetContextScene(m_RuntimeScene.get());
+        // Конфігуруємо стан безпосередньо у клонованій рантайм-сцені
+        m_RuntimeScene->SetSceneState(m_TargetState);
 
-        EditorLayer::Get().SetSceneState(SceneState::Play);
-        m_RuntimeScene->OnRuntimeStart();
+        ServiceLocator::Get<ScriptEngine>()->SetContextScene(m_RuntimeScene.get());
+
+        if (m_TargetState == SceneState::Play)
+        {
+            m_RuntimeScene->OnRuntimeStart();
+        }
+        else if (m_TargetState == SceneState::Simulate)
+        {
+             // Якщо у сцени є окремий старт симуляції (наприклад, суто фізика без скриптів)
+             m_RuntimeScene->OnSimulationStart(); 
+        }
 
         m_IsPlayModeLoading = false;
         m_PlayModeSceneReady = false;
@@ -466,7 +492,6 @@ void EditorSceneManager::CancelPlayModeTransition()
 
 bool EditorSceneManager::OnSceneOpened(SceneOpenedEvent& e)
 {
-    // Sync project path
     auto project = Project::GetActive();
     if (project && !e.GetPath().empty())
     {
@@ -498,19 +523,19 @@ bool EditorSceneManager::OnKeyPressed(KeyPressedEvent& e)
         switch (keyCode)
         {
         case KeyCode::N:
-            if (EditorLayer::Get().GetSceneState() != SceneState::Play)
+            if (GetSceneState() != SceneState::Play)
             {
                 NewScene();
             }
             return true;
         case KeyCode::O:
-            if (EditorLayer::Get().GetSceneState() != SceneState::Play)
+            if (GetSceneState() != SceneState::Play)
             {
                 OpenScene();
             }
             return true;
         case KeyCode::S:
-            if (EditorLayer::Get().GetSceneState() != SceneState::Play)
+            if (GetSceneState() != SceneState::Play)
             {
                 if (shift)
                 {
@@ -524,13 +549,13 @@ bool EditorSceneManager::OnKeyPressed(KeyPressedEvent& e)
             return true;
         
         case KeyCode::Z:
-            if (EditorLayer::Get().GetSceneState() != SceneState::Play)
+            if (GetSceneState() != SceneState::Play)
             {
                 EditorLayer::Get().GetCommandHistory().Undo();
             }
             return true;
         case KeyCode::Y:
-            if (EditorLayer::Get().GetSceneState() != SceneState::Play)
+            if (GetSceneState() != SceneState::Play)
             {
                 EditorLayer::Get().GetCommandHistory().Redo();
             }
@@ -546,4 +571,5 @@ bool EditorSceneManager::OnKeyPressed(KeyPressedEvent& e)
 
     return false;
 }
+
 } // namespace Chained

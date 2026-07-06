@@ -8,7 +8,7 @@ namespace Chained
     {
 #pragma warning disable 0649
     internal static unsafe delegate* unmanaged<ushort, bool> Network_Host_Ptr;
-    internal static unsafe delegate* unmanaged<ChainedString, bool> Network_Connect_Ptr;
+    internal static unsafe delegate* unmanaged<char*, bool> Network_Connect_Ptr;
     internal static unsafe delegate* unmanaged<void> Network_Disconnect_Ptr;
     internal static unsafe delegate* unmanaged<bool> Network_IsActive_Ptr;
     internal static unsafe delegate* unmanaged<bool> Network_IsServer_Ptr;
@@ -18,7 +18,7 @@ namespace Chained
 #pragma warning restore 0649
 
         public static unsafe bool Host(ushort port) => Network_Host_Ptr(port);
-        public static unsafe bool Connect(string address) => Network_Connect_Ptr(address);
+        public static unsafe bool Connect(string address) { fixed (char* ptr = address) return Network_Connect_Ptr(ptr); }
         public static unsafe void Disconnect() => Network_Disconnect_Ptr();
         public static unsafe bool IsActive() => Network_IsActive_Ptr();
         public static unsafe bool IsServer() => Network_IsServer_Ptr();

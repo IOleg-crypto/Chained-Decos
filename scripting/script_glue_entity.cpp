@@ -55,11 +55,14 @@ void Transform_SetScale(uint64_t entityID, glm::vec3* inScale)
         ComponentUtils::SetScale(entity.GetComponent<TransformComponent>(), *inScale);
     }
 }
-Coral::String Model_GetModelPath(uint64_t entityID)
+static thread_local std::u16string s_ModelTagBuffer;
+
+const char16_t* Model_GetModelPath(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
-    return Coral::String::New(
-        entity && entity.HasComponent<ModelComponent>() ? entity.GetComponent<ModelComponent>().ModelPath : "");
+    std::string path = entity && entity.HasComponent<ModelComponent>() ? entity.GetComponent<ModelComponent>().ModelPath : "";
+    s_ModelTagBuffer = ch_utf8_to_u16(path);
+    return s_ModelTagBuffer.c_str();
 }
 void Model_SetModelPath(uint64_t entityID, const char16_t* inPath)
 {
@@ -207,11 +210,12 @@ void AudioComponent_Stop(uint64_t entityID)
         }
     }
 }
-Coral::String TagComponent_GetTag(uint64_t entityID)
+const char16_t* TagComponent_GetTag(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
     std::string tag = entity && entity.HasComponent<TagComponent>() ? entity.GetComponent<TagComponent>().Tag : "";
-    return Coral::String::New(tag);
+    s_ModelTagBuffer = ch_utf8_to_u16(tag);
+    return s_ModelTagBuffer.c_str();
 }
 void Shader_SetFloat(uint64_t entityID, const char16_t* inName, float inValue)
 {

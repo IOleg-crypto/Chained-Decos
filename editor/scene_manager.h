@@ -1,25 +1,17 @@
 #ifndef CH_EDITOR_SCENE_MANAGER_H
 #define CH_EDITOR_SCENE_MANAGER_H
 
-
+#include "engine/core/events/input_events.h"
+#include "engine/core/key_codes.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_events.h"
-#include "engine/core/key_codes.h"
-#include "engine/core/events/input_events.h"
 #include <filesystem>
 #include <future>
 #include <memory>
 
 namespace Chained
 {
-
-enum class SceneState : uint8_t;
-
-class Application;
-class AssetManager;
 class EditorLayer;
-class ScriptEngine;
-class ThreadPool;
 
 class EditorSceneManager
 {
@@ -34,7 +26,7 @@ public:
     void SaveSceneAs();
     void AutoSave(float interval, float ts);
 
-    void SetScene(const std::shared_ptr<Scene> &scene);
+    void SetScene(const std::shared_ptr<Scene>& scene);
     void SetSceneState(SceneState state);
     std::shared_ptr<Scene> GetActiveScene() const;
 
@@ -53,7 +45,7 @@ public:
         return m_LoadingStatus;
     }
 
-private:
+public:
     void StartSceneOpenTransition(const std::filesystem::path& path);
     void UpdateSceneOpenTransition();
     void CancelSceneOpenTransition();

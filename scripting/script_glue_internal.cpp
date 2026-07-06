@@ -1,8 +1,10 @@
 #include "script_glue_internal.h"
+#include "engine/core/service_locator.h"
+#include "scriptengine.h"
 
 Chained::Scene* Chained::GetActiveScene()
 {
-    return GetContextScene();
+    return ServiceLocator::Get<ScriptEngine>()->GetContextScene();
 }
 
 Chained::Entity Chained::GetEntity(uint64_t entityID)

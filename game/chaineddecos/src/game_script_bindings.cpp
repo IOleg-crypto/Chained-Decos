@@ -2,6 +2,7 @@
 #include "scripting/script_glue_internal.h"
 #include "scripting/script_internal_call_registry.h"
 #include "scripting/script_glue_entity.h"
+#include "engine/scene/components.h"
 #include "engine/app/application.h"
 
 namespace Chained {
