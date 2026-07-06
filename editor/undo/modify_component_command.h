@@ -2,6 +2,7 @@
 #define CH_MODIFY_COMPONENT_COMMAND_H
 
 #include "command.h"
+#include "entity_validate.h"
 #include "engine/scene/scene.h"
 #include <string>
 
@@ -21,7 +22,7 @@ public:
 
     void Execute() override
     {
-        if (Validate())
+        if (ValidateEntity(m_Entity) && m_Entity.HasComponent<T>())
         {
             m_Entity.GetComponent<T>() = m_NewState;
         }
@@ -29,7 +30,7 @@ public:
 
     void Undo() override
     {
-        if (Validate())
+        if (ValidateEntity(m_Entity) && m_Entity.HasComponent<T>())
         {
             m_Entity.GetComponent<T>() = m_OldState;
         }
@@ -38,17 +39,6 @@ public:
     std::string GetName() const override
     {
         return m_Name.empty() ? "Modify Component" : m_Name;
-    }
-
-private:
-    bool Validate()
-    {
-        if (!m_Entity)
-        {
-            return false;
-        }
-        auto* registry = &m_Entity.GetRegistry();
-        return registry->valid(static_cast<entt::entity>(m_Entity)) && m_Entity.HasComponent<T>();
     }
 
 private:

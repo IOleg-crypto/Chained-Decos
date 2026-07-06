@@ -117,7 +117,7 @@ void EditorSceneManager::SetScene(const std::shared_ptr<Scene>& scene)
     m_EditorScene = scene;
     if (m_EditorScene)
     {
-        m_EditorScene->SetSceneState(SceneState::Edit);
+        m_EditorScene->TransitionToState(SceneState::Edit);
     }
     
     EditorLayer::Get().SetSelectedEntity({});
@@ -188,7 +188,7 @@ void EditorSceneManager::SetSceneState(SceneState state)
 
         if (m_EditorScene)
         {
-            m_EditorScene->SetSceneState(SceneState::Edit);
+            m_EditorScene->TransitionToState(SceneState::Edit);
         }
 
         EditorLayer::Get().SetSelectedEntity({});
@@ -355,18 +355,17 @@ void EditorSceneManager::UpdateSceneOpenTransition()
 
         if (m_IsPlayModeSceneLoad)
         {
-            m_RuntimeScene->SetSceneState(SceneState::Play);
-            ServiceLocator::Get<ScriptEngine>()->SetContextScene(m_RuntimeScene.get());
+            // TransitionToState вже викликає OnRuntimeStart() через OnStateEnter
+            m_RuntimeScene->TransitionToState(SceneState::Play);
 
             CH_CORE_INFO("Editor: Activating new runtime scene '{}'.", m_PendingSceneOpenPath.string());
-            m_RuntimeScene->OnRuntimeStart();
         }
         else
         {
-            m_EditorScene->SetSceneState(SceneState::Edit);
+            m_EditorScene->TransitionToState(SceneState::Edit);
             
             // Диспетчеризуємо івент відкриття сцени
-            SceneOpenedEvent e(m_PendingSceneOpenPath);
+            SceneOpenedEvent e(m_PendingSceneOpenPath.string());
             OnSceneOpened(e);
         }
 
@@ -459,20 +458,9 @@ void EditorSceneManager::UpdatePlayModeTransition()
         m_RuntimeScene->OnViewportResize((uint32_t)EditorLayer::Get().GetViewportSize().x,
                                          (uint32_t)EditorLayer::Get().GetViewportSize().y);
 
-        // Конфігуруємо стан безпосередньо у клонованій рантайм-сцені
-        m_RuntimeScene->SetSceneState(m_TargetState);
-
-        ServiceLocator::Get<ScriptEngine>()->SetContextScene(m_RuntimeScene.get());
-
-        if (m_TargetState == SceneState::Play)
-        {
-            m_RuntimeScene->OnRuntimeStart();
-        }
-        else if (m_TargetState == SceneState::Simulate)
-        {
-             // Якщо у сцени є окремий старт симуляції (наприклад, суто фізика без скриптів)
-             m_RuntimeScene->OnSimulationStart(); 
-        }
+        // Конфігуруємо стан безпосередньо у клонованій рантайм-сцені.
+        // TransitionToState вже викликає OnRuntimeStart() через OnStateEnter.
+        m_RuntimeScene->TransitionToState(m_TargetState);
 
         m_IsPlayModeLoading = false;
         m_PlayModeSceneReady = false;

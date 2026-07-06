@@ -2,7 +2,6 @@
 #include "editor/layer.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/environment_asset.h"
-#include "engine/core/platform.h"
 #include "engine/core/service_locator.h"
 #include "engine/platform/utils/file_dialogs.h"
 #include "engine/project/project.h"
@@ -13,6 +12,18 @@
 
 namespace Chained
 {
+
+static bool DrawDragFloat(const char* label, float* value, float speed = 0.1f, float min = 0.0f,
+                           float max = 0.0f, const char* format = "%.3f")
+{
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("%s", label);
+    ImGui::SameLine(100);
+    ImGui::SetNextItemWidth(-1);
+    std::string id = "##";
+    id += label;
+    return ImGui::DragFloat(id.c_str(), value, speed, min, max, format);
+}
 
 WorldPanel::WorldPanel()
 {
@@ -278,17 +289,6 @@ void WorldPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, 
             ImGui::BeginDisabled();
         }
 
-        auto drawDragFloat = [&](const char* label, float* value, float speed, float min, float max,
-                                 const char* format = "%.3f") {
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("%s", label);
-            ImGui::SameLine(100);
-            ImGui::SetNextItemWidth(-1);
-            std::string id = "##";
-            id += label;
-            return ImGui::DragFloat(id.c_str(), value, speed, min, max, format);
-        };
-
         ImGui::AlignTextToFramePadding();
         ImGui::Text("Direction");
         ImGui::SameLine(100);
@@ -307,9 +307,9 @@ void WorldPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, 
                                             (uint8_t)(color[2] * 255), (uint8_t)(color[3] * 255)};
         }
 
-        drawDragFloat("Ambient", &settings.Lighting.Ambient, 0.005f, 0.0f, 2.0f);
-        drawDragFloat("Exposure", &settings.Lighting.Exposure, 0.01f, 0.0f, 10.0f);
-        drawDragFloat("Gamma", &settings.Lighting.Gamma, 0.01f, 1.0f, 4.0f);
+        DrawDragFloat("Ambient", &settings.Lighting.Ambient, 0.005f, 0.0f, 2.0f);
+        DrawDragFloat("Exposure", &settings.Lighting.Exposure, 0.01f, 0.0f, 10.0f);
+        DrawDragFloat("Gamma", &settings.Lighting.Gamma, 0.01f, 1.0f, 4.0f);
 
         if (readOnly)
         {
@@ -327,17 +327,6 @@ void WorldPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, 
         {
             ImGui::BeginDisabled();
         }
-
-        auto drawDragFloat = [&](const char* label, float* value, float speed, float min, float max,
-                                 const char* format = "%.3f") {
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("%s", label);
-            ImGui::SameLine(100);
-            ImGui::SetNextItemWidth(-1);
-            std::string id = "##";
-            id += label;
-            return ImGui::DragFloat(id.c_str(), value, speed, min, max, format);
-        };
 
         char buffer[256];
         memset(buffer, 0, sizeof(buffer));
@@ -382,9 +371,9 @@ void WorldPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, 
             ImGui::SetTooltip("Sphere: Equirectangular\nCross: Horizontal Cross\nCubemap: GPU Generated");
         }
 
-        drawDragFloat("Exposure", &settings.Skybox.Exposure, 0.01f, 0.0f, 10.0f);
-        drawDragFloat("Brightness", &settings.Skybox.Brightness, 0.01f, -2.0f, 2.0f);
-        drawDragFloat("Contrast", &settings.Skybox.Contrast, 0.01f, 0.0f, 5.0f);
+        DrawDragFloat("Exposure", &settings.Skybox.Exposure, 0.01f, 0.0f, 10.0f);
+        DrawDragFloat("Brightness", &settings.Skybox.Brightness, 0.01f, -2.0f, 2.0f);
+        DrawDragFloat("Contrast", &settings.Skybox.Contrast, 0.01f, 0.0f, 5.0f);
 
         if (readOnly)
         {
@@ -402,17 +391,6 @@ void WorldPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, 
         {
             ImGui::BeginDisabled();
         }
-
-        auto drawDragFloat = [&](const char* label, float* value, float speed, float min, float max,
-                                 const char* format = "%.3f") {
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("%s", label);
-            ImGui::SameLine(100);
-            ImGui::SetNextItemWidth(-1);
-            std::string id = "##";
-            id += label;
-            return ImGui::DragFloat(id.c_str(), value, speed, min, max, format);
-        };
 
         auto& fog = settings.Fog;
         ImGui::AlignTextToFramePadding();
@@ -439,10 +417,10 @@ void WorldPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, 
         ImGui::SetNextItemWidth(-1);
         ImGui::Combo("##FogMode", &fog.Mode, fogModes, 3);
 
-        drawDragFloat("Density", &fog.Density, 0.0001f, 0.0f, 10.f, "%.4f");
-        drawDragFloat("Start", &fog.Start, 1.0f, 0.0f, 10000.0f);
-        drawDragFloat("End", &fog.End, 1.0f, 0.0f, 10000.0f);
-        drawDragFloat("Height Falloff", &fog.HeightFalloff, 0.01f, 0.0f, 1.0f, "%.2f");
+        DrawDragFloat("Density", &fog.Density, 0.0001f, 0.0f, 10.f, "%.4f");
+        DrawDragFloat("Start", &fog.Start, 1.0f, 0.0f, 10000.0f);
+        DrawDragFloat("End", &fog.End, 1.0f, 0.0f, 10000.0f);
+        DrawDragFloat("Height Falloff", &fog.HeightFalloff, 0.01f, 0.0f, 1.0f, "%.2f");
 
         if (readOnly)
         {

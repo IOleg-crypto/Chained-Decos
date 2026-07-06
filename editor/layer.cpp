@@ -26,9 +26,6 @@
 
 namespace Chained
 {
-
-EditorLayer* EditorLayer::s_Instance = nullptr;
-
 void EditorLayer::DrawLoadingOverlay(const char* title, const char* status)
 {
     ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -70,7 +67,7 @@ void EditorLayer::DrawLoadingOverlay(const char* title, const char* status)
     ImGui::PopStyleVar();
 }
 
-EditorLayer::EditorLayer(Application& app)
+EditorLayer::EditorLayer()
     : Layer("EditorLayer")
 {
     s_Instance = this;
@@ -301,7 +298,7 @@ void EditorLayer::OnUpdate(Timestep ts)
     if (auto scene = GetActiveScene())
     {
         // Якщо сцена в режимі Play, просимо ScriptEngine виконати скрипти
-        if (scene->GetState() == SceneState::Play)
+        if (scene->GetSceneState() == SceneState::Play)
         {
             auto& scriptEngine = *ServiceLocator::Get<ScriptEngine>();
             if (scriptEngine.GetHost().IsInitialized() && scriptEngine.CanExecuteFrameScripts())
@@ -309,7 +306,7 @@ void EditorLayer::OnUpdate(Timestep ts)
                 scene->OnUpdateRuntime(ts);
             }
         }
-        else if (scene->GetState() == SceneState::Simulate)
+        else if (scene->GetSceneState() == SceneState::Simulate)
         {
             scene->OnUpdateSimulation(ts);
         }
@@ -399,7 +396,7 @@ void EditorLayer::OnEvent(Event& e)
     // 1. Scene Management
     dispatcher.Dispatch<SceneOpenedEvent>([this](auto& e) { return m_SceneManager->OnSceneOpened(e); });
     dispatcher.Dispatch<ScenePlayEvent>([this](auto& e) {
-        m_SceneManager->StartPlayModeTransition();
+        m_SceneManager->SetSceneState(SceneState::Play);
         return true;
     });
     dispatcher.Dispatch<SceneSimulateEvent>([this](auto& e) {
@@ -407,7 +404,7 @@ void EditorLayer::OnEvent(Event& e)
         return true;
     });
     dispatcher.Dispatch<SceneStopEvent>([this](auto& e) {
-        m_SceneManager->CancelPlayModeTransition();
+        m_SceneManager->SetSceneState(SceneState::Edit);
         return true;
     });
 

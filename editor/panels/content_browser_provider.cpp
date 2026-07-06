@@ -132,8 +132,9 @@ EditorAssetType ContentBrowserProvider::DetermineAssetType(const std::filesystem
 
     static const std::unordered_map<std::string, EditorAssetType> s_ExtensionMap = {
         {".chscene", EditorAssetType::Scene},   {".chmap", EditorAssetType::Scene},
-        {".chprefab", EditorAssetType::Prefab}, {".h", EditorAssetType::Script},
-        {".cpp", EditorAssetType::Script},      {".obj", EditorAssetType::Model},
+        {".chprefab", EditorAssetType::Prefab},         {".h", EditorAssetType::Script},
+        {".cpp", EditorAssetType::Script},
+        {".cs", EditorAssetType::Script},      {".obj", EditorAssetType::Model},
         {".gltf", EditorAssetType::Model},      {".glb", EditorAssetType::Model},
         {".png", EditorAssetType::Texture},     {".jpg", EditorAssetType::Texture},
         {".tga", EditorAssetType::Texture},     {".wav", EditorAssetType::Audio},
