@@ -2,6 +2,7 @@
 #define CH_COMPONENT_COMMANDS_H
 
 #include "command.h"
+#include "entity_validate.h"
 #include "engine/scene/scene.h"
 #include <string>
 
@@ -18,7 +19,7 @@ public:
 
     void Execute() override
     {
-        if (Validate() && !m_Entity.HasComponent<T>())
+        if (ValidateEntity(m_Entity) && !m_Entity.HasComponent<T>())
         {
             m_Entity.AddComponent<T>();
         }
@@ -26,7 +27,7 @@ public:
 
     void Undo() override
     {
-        if (Validate() && m_Entity.HasComponent<T>())
+        if (ValidateEntity(m_Entity) && m_Entity.HasComponent<T>())
         {
             m_Entity.RemoveComponent<T>();
         }
@@ -38,16 +39,6 @@ public:
     }
 
 private:
-    bool Validate()
-    {
-        if (!m_Entity)
-        {
-            return false;
-        }
-        auto* registry = &m_Entity.GetRegistry();
-        return registry->valid(static_cast<entt::entity>(m_Entity));
-    }
-
     Entity m_Entity;
 };
 
@@ -62,7 +53,7 @@ public:
 
     void Execute() override
     {
-        if (Validate() && m_Entity.HasComponent<T>())
+        if (ValidateEntity(m_Entity) && m_Entity.HasComponent<T>())
         {
             m_Entity.RemoveComponent<T>();
         }
@@ -70,7 +61,7 @@ public:
 
     void Undo() override
     {
-        if (Validate() && !m_Entity.HasComponent<T>())
+        if (ValidateEntity(m_Entity) && !m_Entity.HasComponent<T>())
         {
             m_Entity.AddComponent<T>(m_ComponentState);
         }
@@ -82,16 +73,6 @@ public:
     }
 
 private:
-    bool Validate()
-    {
-        if (!m_Entity)
-        {
-            return false;
-        }
-        auto* registry = &m_Entity.GetRegistry();
-        return registry->valid(static_cast<entt::entity>(m_Entity));
-    }
-
     Entity m_Entity;
     T m_ComponentState;
 };

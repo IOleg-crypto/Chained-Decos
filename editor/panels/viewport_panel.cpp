@@ -8,8 +8,6 @@
 #include "editor/layer.h"
 #include "editor/viewport/ui_manipulator.h"
 #include "events.h"
-#include "layer.h"
-#include "editor/layer.h"
 #include "engine/core/events/events.h"
 #include "engine/graphics/pipeline/render_command.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
@@ -30,6 +28,29 @@
 
 namespace Chained
 {
+
+static Camera3D MakeCameraFromController(EditorCameraController& controller)
+{
+    Camera3D camera;
+    glm::vec3 pos = controller.CalculatePosition();
+    glm::vec3 fp = controller.GetFocalPoint();
+    glm::vec3 up = controller.GetUpDirection();
+    camera.Position = {pos.x, pos.y, pos.z};
+    camera.Target = {fp.x, fp.y, fp.z};
+    camera.Up = {up.x, up.y, up.z};
+    camera.Projection = (int)controller.GetProjectionType();
+    camera.NearClip = (controller.GetProjectionType() == Camera::ProjectionType::Perspective)
+        ? controller.GetPerspectiveNearClip()
+        : controller.GetOrthographicNearClip();
+    camera.FarClip = (controller.GetProjectionType() == Camera::ProjectionType::Perspective)
+        ? controller.GetPerspectiveFarClip()
+        : controller.GetOrthographicFarClip();
+    camera.FovY = (controller.GetProjectionType() == Camera::ProjectionType::Perspective)
+        ? glm::degrees(controller.GetPerspectiveVerticalFOV())
+        : controller.GetOrthographicSize();
+    return camera;
+}
+
 void ViewportPanel::ClearSceneBackground(Scene* scene)
 {
     auto mode = scene->GetSettings().Mode;
@@ -241,8 +262,9 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
 
 void ViewportPanel::OnUpdate(Timestep ts)
 {
-    // Only update editor camera in Edit mode
-    if (EditorLayer::Get().GetSceneState() == SceneState::Edit)
+    // Update editor camera in Edit and Simulate modes (not during Play)
+    SceneState state = EditorLayer::Get().GetSceneState();
+    if (state == SceneState::Edit || state == SceneState::Simulate)
     {
         auto activeScene = EditorLayer::Get().GetActiveScene();
         // Use m_Focused/m_Hovered that were set in the PREVIOUS frame's ImGuiRender.
@@ -280,22 +302,16 @@ Ray ViewportPanel::GetMouseRay(const glm::vec2& mousePosition)
 {
     auto activeScene = EditorLayer::Get().GetActiveScene();
     auto activeCameraOpt = SceneRenderer::GetActiveCamera(activeScene->GetRegistry());
-    Camera3D camera;
 
+    Camera3D camera;
     if (activeCameraOpt.has_value() && EditorLayer::Get().GetSceneState() == SceneState::Play)
     {
         camera = activeCameraOpt.value();
     }
-        // Fallback to editor camera
-        auto& controller = *m_CameraController;
-        glm::vec3 pos = controller.CalculatePosition();
-        camera.Position = {pos.x, pos.y, pos.z};
-        glm::vec3 fp = controller.GetFocalPoint();
-        camera.Target = {fp.x, fp.y, fp.z};
-        glm::vec3 up = controller.GetUpDirection();
-        camera.Up = {up.x, up.y, up.z};
-        camera.FovY = glm::degrees(controller.GetPerspectiveVerticalFOV());
-        camera.Projection = 0; // Perspective
+    else
+    {
+        camera = MakeCameraFromController(*m_CameraController);
+    }
 
     return ScenePicker::CreateRayFromViewport(camera, mousePosition, m_ViewportSize);
 }
@@ -337,42 +353,15 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
 
     auto activeCameraOpt = SceneRenderer::GetActiveCamera(activeScene->GetRegistry());
     bool cameraFound = activeCameraOpt.has_value();
-    Chained::Camera3D camera;
+    auto camera = MakeCameraFromController(*m_CameraController);
 
-    
-    auto& controller = *m_CameraController;
-    
-    float nearClip = (controller.GetProjectionType() == Camera::ProjectionType::Perspective) 
-        ? controller.GetPerspectiveNearClip() 
-        : controller.GetOrthographicNearClip();
-    float farClip = (controller.GetProjectionType() == Camera::ProjectionType::Perspective) 
-        ? controller.GetPerspectiveFarClip() 
-        : controller.GetOrthographicFarClip();
-        
-    glm::vec3 pos = controller.CalculatePosition();
-    glm::vec3 fp = controller.GetFocalPoint();
-    glm::vec3 up = controller.GetUpDirection();
-
-    camera.Position = {pos.x, pos.y, pos.z};
-    camera.Target = {fp.x, fp.y, fp.z};
-    camera.Up = {up.x, up.y, up.z};
-    camera.Projection = (int)controller.GetProjectionType();
-    camera.NearClip = nearClip;
-    camera.FarClip = farClip;
-    camera.FovY = (controller.GetProjectionType() == Camera::ProjectionType::Perspective)
-        ? glm::degrees(controller.GetPerspectiveVerticalFOV())
-        : controller.GetOrthographicSize();
-
-    
     if (cameraFound && EditorLayer::Get().GetSceneState() == SceneState::Play)
     {
         camera = activeCameraOpt.value();
-        nearClip = camera.NearClip;
-        farClip = camera.FarClip;
     }
 
     
-    
+
     if (glm::distance(glm::vec3(camera.Position), glm::vec3(camera.Target)) < 0.001f)
     {
         camera.Position.z += 1.0f; 
@@ -404,10 +393,10 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
     options.ShowDebugCollisionModelBox = currentDebugFlags.DrawCollisionModelBox;
     options.ShowDebugSpawnZones = currentDebugFlags.DrawSpawnZones;
     options.SetCollisionWireframeMode = currentDebugFlags.SetCollisionWireframeMode;
-    options.ShowEditorIcons = (EditorLayer::Get().GetSceneState() == SceneState::Edit); 
+    options.ShowEditorIcons = (EditorLayer::Get().GetSceneState() != SceneState::Play); 
 
     
-    m_SceneRenderer->RenderScene(activeScene->GetRegistry(), activeScene->GetSettings(), camera, nearClip, farClip, options);
+    m_SceneRenderer->RenderScene(activeScene->GetRegistry(), activeScene->GetSettings(), camera, camera.NearClip, camera.FarClip, options);
     m_HDRFramebuffer->Unbind();
  
     
@@ -466,34 +455,8 @@ void ViewportPanel::RenderOverlays(Scene* activeScene, const ImVec2& viewportSiz
     auto selectedEntity = EditorLayer::Get().GetSelectedEntity();
     bool isUISelected = selectedEntity && selectedEntity.HasComponent<ControlComponent>();
     auto activeCameraOpt = SceneRenderer::GetActiveCamera(activeScene->GetRegistry());
-    Chained::Camera3D camera;
     bool useActiveCamera = activeCameraOpt.has_value() && EditorLayer::Get().GetSceneState() == SceneState::Play;
-
-    if (useActiveCamera)
-    {
-        camera = activeCameraOpt.value();
-    }
-    else
-    {
-        auto& controller = *m_CameraController;
-        auto& sourceCamera = controller;
-        glm::vec3 pos = controller.CalculatePosition();
-        camera.Position = {pos.x, pos.y, pos.z};
-        glm::vec3 fp = controller.GetFocalPoint();
-        camera.Target = {fp.x, fp.y, fp.z};
-        glm::vec3 up = controller.GetUpDirection();
-        camera.Up = {up.x, up.y, up.z};
-        camera.FovY = (sourceCamera.GetProjectionType() == Camera::ProjectionType::Perspective)
-            ? glm::degrees(sourceCamera.GetPerspectiveVerticalFOV())
-            : sourceCamera.GetOrthographicSize();
-        camera.Projection = (int)sourceCamera.GetProjectionType();
-        camera.NearClip = (sourceCamera.GetProjectionType() == Camera::ProjectionType::Perspective)
-            ? sourceCamera.GetPerspectiveNearClip()
-            : sourceCamera.GetOrthographicNearClip();
-        camera.FarClip = (sourceCamera.GetProjectionType() == Camera::ProjectionType::Perspective)
-            ? sourceCamera.GetPerspectiveFarClip()
-            : sourceCamera.GetOrthographicFarClip();
-    }
+    auto camera = useActiveCamera ? activeCameraOpt.value() : MakeCameraFromController(*m_CameraController);
 
     ImGui::SetCursorScreenPos(viewportScreenPos);
 
@@ -539,7 +502,7 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
     bool isGizmoHovered = m_Gizmo.IsHovered();
     SceneState sceneState = EditorLayer::Get().GetSceneState();
 
-    if (sceneState == SceneState::Edit && isUIChildHovered && isClicked && !isGizmoDragging && !isGizmoHovered && !isDragging)
+    if ((sceneState == SceneState::Edit || sceneState == SceneState::Simulate) && isUIChildHovered && isClicked && !isGizmoDragging && !isGizmoHovered && !isDragging)
     {
         ImVec2 mousePos = ImGui::GetMousePos();
         ImVec2 localMouseImGui = {mousePos.x - viewportScreenPos.x, mousePos.y - viewportScreenPos.y};

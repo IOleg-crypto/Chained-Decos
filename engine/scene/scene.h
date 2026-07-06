@@ -12,7 +12,7 @@
 #include "engine/foundation/timestep.h"
 #include "engine/scene/entity.h"
 #include "engine/scene/scene_settings.h"
-#include "engine/scene/scene_state.h" // <--- Підключаємо наш enum SceneState
+#include "engine/scene/scene_state.h" 
 
 namespace Chained
 {

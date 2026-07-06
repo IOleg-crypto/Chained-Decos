@@ -5,6 +5,11 @@
 
 namespace Chained
 {
+
+class Entity;
+
+inline bool ValidateEntity(Entity& entity);
+
 class IEditorCommand
 {
 public:

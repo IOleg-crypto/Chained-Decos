@@ -186,11 +186,29 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
         joltTris.reserve(desc.Triangles.size());
         for (const auto& t : desc.Triangles)
         {
-            joltTris.push_back(JPH::Triangle(JPH::Float3(t.V0.x, t.V0.y, t.V0.z), JPH::Float3(t.V1.x, t.V1.y, t.V1.z),
-                                             JPH::Float3(t.V2.x, t.V2.y, t.V2.z)));
+            JPH::Triangle tri(JPH::Float3(t.V0.x, t.V0.y, t.V0.z), JPH::Float3(t.V1.x, t.V1.y, t.V1.z),
+                              JPH::Float3(t.V2.x, t.V2.y, t.V2.z));
+            JPH::Vec3 v0 = JPH::Vec3::sLoadFloat3Unsafe(tri.mV[0]);
+            JPH::Vec3 v1 = JPH::Vec3::sLoadFloat3Unsafe(tri.mV[1]);
+            JPH::Vec3 v2 = JPH::Vec3::sLoadFloat3Unsafe(tri.mV[2]);
+            JPH::Vec3 e1 = v1 - v0;
+            JPH::Vec3 e2 = v2 - v0;
+            if (e1.Cross(e2).LengthSq() < 1e-20f)
+            {
+                continue;
+            }
+            joltTris.push_back(tri);
+        }
+
+        if (joltTris.empty())
+        {
+            CH_CORE_WARN("Physics: All mesh triangles degenerate — falling back to unit box.");
+            shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
+            break;
         }
 
         JPH::MeshShapeSettings s(std::move(joltTris));
+        s.mBuildQuality = JPH::MeshShapeSettings::EBuildQuality::FavorBuildSpeed;
         auto result = s.Create();
         if (result.HasError())
         {
