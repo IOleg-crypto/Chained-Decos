@@ -179,19 +179,19 @@ void SceneScriptingManager::OnUpdate(Timestep deltaTime)
         return;
     }
 
-    SetContextScene(m_Scene);
+    ServiceLocator::Get<ScriptEngine>()->SetContextScene(m_Scene);
 
     auto* coreAssembly = engine->GetHost().GetCoreAssembly();
     if (!coreAssembly)
     {
-        SetContextScene(nullptr);
+        ServiceLocator::Get<ScriptEngine>()->SetContextScene(nullptr);
         return;
     }
 
     Coral::Type scriptEngineType = coreAssembly->GetLocalType("Chained.ScriptEngine");
     if (!scriptEngineType)
     {
-        SetContextScene(nullptr);
+        ServiceLocator::Get<ScriptEngine>()->SetContextScene(nullptr);
         return;
     }
 
@@ -207,10 +207,9 @@ void SceneScriptingManager::OnUpdate(Timestep deltaTime)
                 try
                 {
                     CH_CORE_INFO("C++ calling InstantiateScript for {}", script.ClassName);
-                    Coral::String classNameStr = Coral::String::New(script.ClassName);
+                    std::u16string classNameStr = ch_utf8_to_u16(script.ClassName);
                     if (g_ManagedPointers.ScriptEngine_InstantiateScript)
-                        g_ManagedPointers.ScriptEngine_InstantiateScript((uint64_t)(uint32_t)entity, (const char16_t*)classNameStr.Data());
-                    Coral::String::Free(classNameStr);
+                        g_ManagedPointers.ScriptEngine_InstantiateScript((uint64_t)(uint32_t)entity, classNameStr.c_str());
                     CH_CORE_INFO("C++ calling InstantiateScript SUCCESS");
 
                     for (const auto& [fieldName, field] : script.Fields)
@@ -284,7 +283,7 @@ void SceneScriptingManager::OnEvent(Event& e)
         return;
     }
 
-    SetContextScene(m_Scene);
+    ServiceLocator::Get<ScriptEngine>()->SetContextScene(m_Scene);
 
     Coral::Type scriptEngineType = coreAssembly->GetLocalType("Chained.ScriptEngine");
     if (scriptEngineType)
@@ -293,7 +292,7 @@ void SceneScriptingManager::OnEvent(Event& e)
             g_ManagedPointers.ScriptEngine_OnEvent((int)e.GetEventType());
     }
 
-    SetContextScene(nullptr);
+    ServiceLocator::Get<ScriptEngine>()->SetContextScene(nullptr);
 }
 
 void SceneScriptingManager::OnRenderUI()
@@ -315,7 +314,7 @@ void SceneScriptingManager::OnRenderUI()
         return;
     }
 
-    SetContextScene(m_Scene);
+    ServiceLocator::Get<ScriptEngine>()->SetContextScene(m_Scene);
 
     Coral::Type scriptEngineType = coreAssembly->GetLocalType("Chained.ScriptEngine");
     if (scriptEngineType)
@@ -324,7 +323,7 @@ void SceneScriptingManager::OnRenderUI()
             g_ManagedPointers.ScriptEngine_OnRenderUI();
     }
 
-    SetContextScene(nullptr);
+    ServiceLocator::Get<ScriptEngine>()->SetContextScene(nullptr);
 }
 
 } // namespace Chained

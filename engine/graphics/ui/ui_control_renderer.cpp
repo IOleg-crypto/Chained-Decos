@@ -5,104 +5,89 @@
 #include "engine/assets/asset_manager.h"
 #include "engine/core/service_locator.h"
 #include "engine/assets/types/texture_asset.h"
+#include "imgui_internal.h" // Для низькорівневого доступу до кліпінгу та інпуту, якщо треба
 
 namespace Chained
 {
 
 // ---------------------------------------------------------------------------
-// Style helpers
+// Оновлені хелпери кольорів
 // ---------------------------------------------------------------------------
-
-struct StyleCounts
-{
-    int colors = 0;
-    int vars = 0;
-    int fonts = 0;
-    bool disabled = false;
-};
-
 inline ImVec4 ToImVec4(const Color& c)
 {
     return ImVec4(c.r / 255.0f, c.g / 255.0f, c.b / 255.0f, c.a / 255.0f);
 }
 
-static StyleCounts PushUIStyle(const UIStyle& style, bool interactable)
+inline ImU32 ToImU32(const Color& c)
 {
-    StyleCounts stylecount;
-
-    ImGui::PushStyleColor(ImGuiCol_Button,         ToImVec4(style.BackgroundColor));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered,  ToImVec4(style.HoverColor));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive,   ToImVec4(style.PressedColor));
-    ImGui::PushStyleColor(ImGuiCol_ChildBg,        ToImVec4(style.BackgroundColor));
-    ImGui::PushStyleColor(ImGuiCol_Border,         ToImVec4(style.BorderColor));
-    ImGui::PushStyleColor(ImGuiCol_FrameBg,        ToImVec4(style.BackgroundColor));
-    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ToImVec4(style.HoverColor));
-    ImGui::PushStyleColor(ImGuiCol_FrameBgActive,  ToImVec4(style.PressedColor));
-    stylecount.colors += 8;
-
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,   style.Rounding);
-    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding,   style.Rounding);
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, style.BorderSize);
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,    ImVec2(style.Padding, style.Padding));
-    stylecount.vars += 4;
-
-    if (!interactable)
-    {
-        ImGui::BeginDisabled(true);
-        stylecount.disabled = true;
-    }
-
-    return stylecount;
+    return IM_COL32(c.r, c.g, c.b, c.a);
 }
 
-void PushTextStyle(const UIFontRegistry& fontRegistry, const TextStyle& text, StyleCounts& c)
+// Повертає правильний колір фону залежно від активного стану елемента
+static ImU32 GetControlColor(const UIStyle& style, const UIControlComponent& wc)
 {
-    ImGui::PushStyleColor(ImGuiCol_Text, ToImVec4(text.TextColor));
-    c.colors++;
-
-    float hAlign = (text.Horizontal == HorizontalAlignment::Left)   ? 0.0f
-                 : (text.Horizontal == HorizontalAlignment::Center) ? 0.5f : 1.0f;
-    float vAlign = (text.Vertical == VerticalAlignment::Top)       ? 0.0f
-                 : (text.Vertical == VerticalAlignment::Center)    ? 0.5f : 1.0f;
-    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(hAlign, vAlign));
-    c.vars++;
-
-    const std::string& fontName = text.FontName;
-
-    if (!fontName.empty() && fontName != "Default")
-    {
-        ImFont* font = fontRegistry.GetFont(fontName, (int)text.FontSize);
-        if (font)
-        {
-            ImGui::PushFont(font);
-            c.fonts++;
-        }
-    }
+    if (wc.IsDown)    return ToImU32(style.PressedColor);
+    if (wc.IsHovered) return ToImU32(style.HoverColor);
+    return ToImU32(style.BackgroundColor);
 }
 
-void PopUIStyle(const StyleCounts& c)
+// ---------------------------------------------------------------------------
+// Універсальний малювальник тексту з вирівнюванням (Alignment)
+// ---------------------------------------------------------------------------
+static void RenderAlignedTextureText(ImDrawList* dl, ImFont* font, float fontSize, const std::string& text, 
+                                     const ImVec2& pos, const ImVec2& size, const TextStyle& textStyle)
 {
-    for (int i = 0; i < c.fonts; ++i) {
+    if (text.empty()) return;
+
+    // Розрахунок розміру тексту за допомогою обраного шрифту
+    ImVec2 textSize;
+    if (font)
+    {
+        ImGui::PushFont(font);
+        textSize = ImGui::CalcTextSize(text.c_str());
         ImGui::PopFont();
     }
-    ImGui::PopStyleVar(c.vars);
-    ImGui::PopStyleColor(c.colors);
-    if (c.disabled) {
-        ImGui::EndDisabled();
+    else
+    {
+        textSize = ImGui::CalcTextSize(text.c_str());
     }
+
+    // Обчислення локального зсуву відносно bounding box віджета
+    ImVec2 textPos = pos;
+
+    // Горизонтальне вирівнювання
+    if (textStyle.Horizontal == HorizontalAlignment::Center)
+        textPos.x += (size.x - textSize.x) * 0.5f;
+    else if (textStyle.Horizontal == HorizontalAlignment::Right)
+        textPos.x += (size.x - textSize.x);
+
+    // Вертикальне вирівнювання
+    if (textStyle.Vertical == VerticalAlignment::Center)
+        textPos.y += (size.y - textSize.y) * 0.5f;
+    else if (textStyle.Vertical == VerticalAlignment::Bottom)
+        textPos.y += (size.y - textSize.y);
+
+    // Малювання тіні тексту (якщо увімкнено)
+    if (textStyle.Shadow)
+    {
+        ImVec2 shadowPos = { textPos.x + textStyle.ShadowOffset, textPos.y + textStyle.ShadowOffset };
+        if (font) dl->AddText(font, fontSize, shadowPos, ToImU32(textStyle.ShadowColor), text.c_str());
+        else      dl->AddText(shadowPos, ToImU32(textStyle.ShadowColor), text.c_str());
+    }
+
+    // Малювання основного тексту
+    if (font) dl->AddText(font, fontSize, textPos, ToImU32(textStyle.TextColor), text.c_str());
+    else      dl->AddText(textPos, ToImU32(textStyle.TextColor), text.c_str());
 }
 
 // ---------------------------------------------------------------------------
-// Explicit internal control rendering functions
+// Чисті низькорівневі методи рендерингу контролів
 // ---------------------------------------------------------------------------
 
-static bool RenderPanel(PanelData& panel, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
+static bool RenderPanel(PanelData& panel, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
-    ImDrawList* dl   = ImGui::GetWindowDrawList();
-    ImU32 bgColor    = ImGui::GetColorU32(ToImVec4(wc.BoxStyle.BackgroundColor));
-    ImU32 borderCol  = ImGui::GetColorU32(ToImVec4(wc.BoxStyle.BorderColor));
-    ImVec2 pMax      = {pos.x + size.x, pos.y + size.y};
-
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    ImVec2 pMax = {pos.x + size.x, pos.y + size.y};
     AssetHandle textureHandle = (AssetHandle)panel.TextureHandle;
     
     if (textureHandle != 0)
@@ -110,246 +95,155 @@ static bool RenderPanel(PanelData& panel, Entity entity, UIControlComponent& wc,
         auto textureAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(textureHandle);
         if (textureAsset && textureAsset->GetState() == AssetState::Ready)
         {
-            auto texture = textureAsset->GetTexture();
-            ImTextureID texId = (ImTextureID)(uintptr_t)texture->GetRendererID();
-            dl->AddImageRounded(texId, pos, pMax, {0,1}, {1,0}, IM_COL32_WHITE, wc.BoxStyle.Rounding);
+            ImTextureID texId = (ImTextureID)(uintptr_t)textureAsset->GetTexture()->GetRendererID();
+            dl->AddImageRounded(texId, pos, pMax, {0,0}, {1,1}, IM_COL32_WHITE, wc.BoxStyle.Rounding);
         }
     }
     else
     {
-        dl->AddRectFilled(pos, pMax, bgColor, wc.BoxStyle.Rounding);
+        dl->AddRectFilled(pos, pMax, ToImU32(wc.BoxStyle.BackgroundColor), wc.BoxStyle.Rounding);
     }
 
     if (wc.BoxStyle.BorderSize > 0.0f)
     {
-        dl->AddRect(pos, pMax, borderCol, wc.BoxStyle.Rounding, 0, wc.BoxStyle.BorderSize);
+        dl->AddRect(pos, pMax, ToImU32(wc.BoxStyle.BorderColor), wc.BoxStyle.Rounding, 0, wc.BoxStyle.BorderSize);
     }
     return false;
 }
 
-static bool RenderLabel(const LabelData& label, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
+static bool RenderButton(const ButtonData& button, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size, ImFont* font, const TextStyle& textStyle)
 {
-    ImGui::Button(label.Text.c_str(), size);
-    return false;
-}
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    ImVec2 pMax = {pos.x + size.x, pos.y + size.y};
 
-static bool RenderButton(const ButtonData& button, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
-{
-    ImGui::Button(button.Label.c_str(), size);
+    // Візуалізація фону кнопки на основі станів з InputSystem
+    ImU32 btnColor = GetControlColor(wc.BoxStyle, wc);
+    dl->AddRectFilled(pos, pMax, btnColor, wc.BoxStyle.Rounding);
+
+    if (wc.BoxStyle.BorderSize > 0.0f)
+    {
+        dl->AddRect(pos, pMax, ToImU32(wc.BoxStyle.BorderColor), wc.BoxStyle.Rounding, 0, wc.BoxStyle.BorderSize);
+    }
+
+    // Вивід тексту всередині кнопки
+    RenderAlignedTextureText(dl, font, textStyle.FontSize, button.Label, pos, size, textStyle);
+
     return wc.PressedThisFrame;
 }
 
-static bool RenderSlider(SliderData& slider, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
+static bool RenderLabel(const LabelData& label, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size, ImFont* font, const TextStyle& textStyle)
 {
-    ImGui::SetNextItemWidth(size.x);
-    return ImGui::SliderFloat("##slider", &slider.Value, slider.Min, slider.Max);
-}
-
-static bool RenderCheckbox(CheckboxData& cb, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
-{
-    return ImGui::Checkbox(cb.Label.c_str(), &cb.Checked);
-}
-
-static bool RenderImage(const ImageData& image, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
-{
-    auto textureAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>((AssetHandle)image.TextureHandle);
-    if (textureAsset && textureAsset->GetState() == AssetState::Ready)
-    {
-        ImGui::Image((ImTextureID)(uintptr_t)textureAsset->GetTexture()->GetRendererID(), size);
-    }
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    RenderAlignedTextureText(dl, font, textStyle.FontSize, label.Text, pos, size, textStyle);
     return false;
 }
 
-static bool RenderInputText(InputTextData& it, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
+static bool RenderCheckbox(CheckboxData& cb, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size, ImFont* font, const TextStyle& textStyle)
 {
-    ImGui::SetNextItemWidth(size.x);
-    char buffer[1024];
-    strncpy(buffer, it.Text.c_str(), sizeof(buffer));
-    if (ImGui::InputText("##input", buffer, sizeof(buffer)))
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    
+    // Розраховуємо квадрат для галочки (розмір підлаштовуємо під висоту нашого UI елемента)
+    float boxSize = size.y > 0.0f ? size.y : 18.0f;
+    ImVec2 boxMax = { pos.x + boxSize, pos.y + boxSize };
+    
+    ImU32 boxColor = GetControlColor(wc.BoxStyle, wc);
+    dl->AddRectFilled(pos, boxMax, boxColor, wc.BoxStyle.Rounding);
+    dl->AddRect(pos, boxMax, ToImU32(wc.BoxStyle.BorderColor), wc.BoxStyle.Rounding, 0, 1.0f);
+
+    // Якщо активовано - малюємо внутрішній маркер
+    if (cb.Checked)
     {
-        it.Text = buffer;
+        float pad = boxSize * 0.25f;
+        dl->AddRectFilled({pos.x + pad, pos.y + pad}, {boxMax.x - pad, boxMax.y - pad}, ToImU32(textStyle.TextColor), wc.BoxStyle.Rounding);
+    }
+
+    // Текст чекбокса зміщуємо праворуч від квадрата
+    ImVec2 textPos = { pos.x + boxSize + 8.0f, pos.y };
+    ImVec2 textSize = { size.x - boxSize - 8.0f, size.y };
+    RenderAlignedTextureText(dl, font, textStyle.FontSize, cb.Label, textPos, textSize, textStyle);
+
+    // Якщо користувач клікнув на віджет (оброблено вашим InputSystem)
+    if (wc.PressedThisFrame)
+    {
+        cb.Checked = !cb.Checked;
         return true;
     }
+
     return false;
 }
 
-static bool RenderProgressBar(const ProgressBarData& pb, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
+static bool RenderSlider(SliderData& slider, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
-    ImGui::ProgressBar(pb.Progress, size);
-    return false;
-}
-
-static bool RenderComboBox(ComboBoxData& cb, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
-{
+    // Залишаємо базовий інпут ImGui, але жорстко обмежуємо його ширину (приховуємо мітку "##")
+    ImGui::SetCursorScreenPos(pos);
     ImGui::SetNextItemWidth(size.x);
-    bool changed = false;
-    if (ImGui::BeginCombo(cb.Label.c_str(), cb.Items[cb.SelectedIndex].c_str()))
-    {
-        for (int i = 0; i < (int)cb.Items.size(); i++)
-        {
-            if (ImGui::Selectable(cb.Items[i].c_str(), i == cb.SelectedIndex))
-            {
-                cb.SelectedIndex = i;
-                changed = true;
-            }
-        }
-        ImGui::EndCombo();
-    }
+    
+    // Передаємо стилі у стек ImGui тимчасово
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, wc.BoxStyle.Rounding);
+    bool changed = ImGui::SliderFloat("##slider", &slider.Value, slider.Min, slider.Max, "%.2f");
+    ImGui::PopStyleVar();
+    
     return changed;
 }
 
-static bool RenderImageButton(const ImageButtonData& ib, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
+static bool RenderProgressBar(const ProgressBarData& pb, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
-    auto textureAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>((AssetHandle)ib.TextureHandle);
-    if (textureAsset && textureAsset->GetState() == AssetState::Ready)
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    ImVec2 pMax = {pos.x + size.x, pos.y + size.y};
+
+    // Бекграунд бару
+    dl->AddRectFilled(pos, pMax, ToImU32(wc.BoxStyle.BackgroundColor), wc.BoxStyle.Rounding);
+
+    // Заповнення прогресу
+    float currentProgressWidth = size.x * std::clamp(pb.Progress, 0.0f, 1.0f);
+    if (currentProgressWidth > 0.0f)
     {
-        ImGui::ImageButton("##ib", (ImTextureID)(uintptr_t)textureAsset->GetTexture()->GetRendererID(), size);
+        ImVec2 progressMax = { pos.x + currentProgressWidth, pos.y + size.y };
+        dl->AddRectFilled(pos, progressMax, ToImU32(wc.BoxStyle.HoverColor), wc.BoxStyle.Rounding);
     }
-    return wc.PressedThisFrame;
-}
 
-static bool RenderRadioButton(RadioButtonData& rb, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
-{
-    bool changed = false;
-    for (int i = 0; i < (int)rb.Options.size(); i++)
+    if (wc.BoxStyle.BorderSize > 0.0f)
     {
-        if (ImGui::RadioButton(rb.Options[i].c_str(), rb.SelectedIndex == i))
-        {
-            rb.SelectedIndex = i;
-            changed = true;
-        }
-        if (rb.Horizontal && i < (int)rb.Options.size() - 1) ImGui::SameLine();
+        dl->AddRect(pos, pMax, ToImU32(wc.BoxStyle.BorderColor), wc.BoxStyle.Rounding, 0, wc.BoxStyle.BorderSize);
     }
-    return changed;
-}
 
-static bool RenderColorPicker(ColorPickerData& cp, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
-{
-    float col[4] = {cp.SelectedColor.r / 255.f, cp.SelectedColor.g / 255.f, cp.SelectedColor.b / 255.f, cp.SelectedColor.a / 255.f};
-    bool changed = false;
-    if (cp.ShowAlpha) changed = ImGui::ColorEdit4(cp.Label.c_str(), col);
-    else changed = ImGui::ColorEdit3(cp.Label.c_str(), col);
-    
-    if (changed)
-    {
-        cp.SelectedColor = {(uint8_t)(col[0] * 255), (uint8_t)(col[1] * 255), (uint8_t)(col[2] * 255), (uint8_t)(col[3] * 255)};
-    }
-    return changed;
-}
-
-static bool RenderSeparator(const SeparatorData& sep, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
-{
-    ImGui::Separator();
     return false;
-}
-
-static bool RenderDragFloat(DragFloatData& df, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
-{
-    ImGui::SetNextItemWidth(size.x);
-    return ImGui::DragFloat(df.Label.c_str(), &df.Value, df.Speed, df.Min, df.Max);
-}
-
-static bool RenderDragInt(DragIntData& di, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
-{
-    ImGui::SetNextItemWidth(size.x);
-    return ImGui::DragInt(di.Label.c_str(), &di.Value, di.Speed, di.Min, di.Max);
-}
-
-static bool RenderTreeNode(TreeNodeData& tn, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
-{
-    ImGuiTreeNodeFlags flags = 0;
-    if (tn.DefaultOpen) flags |= ImGuiTreeNodeFlags_DefaultOpen;
-    if (tn.IsLeaf) flags |= ImGuiTreeNodeFlags_Leaf;
-    
-    bool open = ImGui::TreeNodeEx(tn.Label.c_str(), flags);
-    tn.IsOpen = open;
-    return false;
-}
-
-static bool RenderCollapsingHeader(CollapsingHeaderData& ch, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
-{
-    ImGuiTreeNodeFlags flags = 0;
-    if (ch.DefaultOpen) flags |= ImGuiTreeNodeFlags_DefaultOpen;
-    
-    bool open = ImGui::CollapsingHeader(ch.Label.c_str(), flags);
-    ch.IsOpen = open;
-    return false;
-}
-
-static bool RenderPlotLines(const PlotLinesData& pl, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
-{
-    ImGui::PlotLines(pl.Label.c_str(), pl.Values.data(), (int)pl.Values.size(), 0, pl.OverlayText.c_str(), pl.ScaleMin, pl.ScaleMax, ImVec2(pl.GraphSize.x, pl.GraphSize.y));
-    return false;
-}
-
-static bool RenderPlotHistogram(const PlotHistogramData& ph, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
-{
-    ImGui::PlotHistogram(ph.Label.c_str(), ph.Values.data(), (int)ph.Values.size(), 0, ph.OverlayText.c_str(), ph.ScaleMin, ph.ScaleMax, ImVec2(ph.GraphSize.x, ph.GraphSize.y));
-    return false;
-}
-
-static bool RenderTabBar(TabBarData& tb, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
-{
-    ImGuiTabBarFlags flags = 0;
-    if (tb.Reorderable) flags |= ImGuiTabBarFlags_Reorderable;
-    if (tb.AutoSelectNewTabs) flags |= ImGuiTabBarFlags_AutoSelectNewTabs;
-
-    if (!ImGui::BeginTabBar(tb.Label.c_str(), flags)) return false;
-    ImGui::EndTabBar();
-    return false;
-}
-
-static bool RenderVerticalLayoutGroup(const VerticalLayoutGroupData& vlg, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
-{
-    return false; 
-}
-
-static bool RenderTabItem(const TabItemData& ti, Entity entity, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
-{
-    return false;  
 }
 
 // ---------------------------------------------------------------------------
-// Main Control Dispatcher
+// Головний Диспетчер UI Контролів
 // ---------------------------------------------------------------------------
-
 bool RenderControl(const UIFontRegistry& fontRegistry,
                    Entity entity, UIControlComponent& control, const ImVec2& screenPos, const ImVec2& size)
 {
-    StyleCounts styleState = PushUIStyle(control.BoxStyle, true);
-    PushTextStyle(fontRegistry, control.TextStyle, styleState);
+    // 1. Отримуємо потрібний шрифт через реєстр
+    ImFont* activeFont = nullptr;
+    if (!control.TextStyle.FontName.empty() && control.TextStyle.FontName != "Default")
+    {
+        activeFont = fontRegistry.GetFont(control.TextStyle.FontName, (int)control.TextStyle.FontSize);
+    }
 
     bool changed = false;
 
-    // A simple, elegant pattern without overloading ambiguities
+    // 2. Диспетчеризація варіантів без ImGui-відступів
     std::visit([&](auto&& arg) {
         using T = std::decay_t<decltype(arg)>;
-        if constexpr (std::is_same_v<T, ButtonData>)            changed = RenderButton(arg, entity, control, screenPos, size);
-        else if constexpr (std::is_same_v<T, PanelData>)        changed = RenderPanel(arg, entity, control, screenPos, size);
-        else if constexpr (std::is_same_v<T, LabelData>)        changed = RenderLabel(arg, entity, control, screenPos, size);
-        else if constexpr (std::is_same_v<T, SliderData>)       changed = RenderSlider(arg, entity, control, screenPos, size);
-        else if constexpr (std::is_same_v<T, CheckboxData>)     changed = RenderCheckbox(arg, entity, control, screenPos, size);
-        else if constexpr (std::is_same_v<T, ImageData>)        changed = RenderImage(arg, entity, control, screenPos, size);
-        else if constexpr (std::is_same_v<T, InputTextData>)    changed = RenderInputText(arg, entity, control, screenPos, size);
-        else if constexpr (std::is_same_v<T, ProgressBarData>)  changed = RenderProgressBar(arg, entity, control, screenPos, size);
-        else if constexpr (std::is_same_v<T, ComboBoxData>)     changed = RenderComboBox(arg, entity, control, screenPos, size);
-        else if constexpr (std::is_same_v<T, ImageButtonData>)  changed = RenderImageButton(arg, entity, control, screenPos, size);
-        else if constexpr (std::is_same_v<T, RadioButtonData>)  changed = RenderRadioButton(arg, entity, control, screenPos, size);
-        else if constexpr (std::is_same_v<T, ColorPickerData>)  changed = RenderColorPicker(arg, entity, control, screenPos, size);
-        else if constexpr (std::is_same_v<T, SeparatorData>)    changed = RenderSeparator(arg, entity, control, screenPos, size);
-        else if constexpr (std::is_same_v<T, DragFloatData>)    changed = RenderDragFloat(arg, entity, control, screenPos, size);
-        else if constexpr (std::is_same_v<T, DragIntData>)      changed = RenderDragInt(arg, entity, control, screenPos, size);
-        else if constexpr (std::is_same_v<T, TreeNodeData>)     changed = RenderTreeNode(arg, entity, control, screenPos, size);
-        else if constexpr (std::is_same_v<T, CollapsingHeaderData>) changed = RenderCollapsingHeader(arg, entity, control, screenPos, size);
-        else if constexpr (std::is_same_v<T, PlotLinesData>)    changed = RenderPlotLines(arg, entity, control, screenPos, size);
-        else if constexpr (std::is_same_v<T, PlotHistogramData>) changed = RenderPlotHistogram(arg, entity, control, screenPos, size);
-        else if constexpr (std::is_same_v<T, TabBarData>)       changed = RenderTabBar(arg, entity, control, screenPos, size);
-        else if constexpr (std::is_same_v<T, VerticalLayoutGroupData>) changed = RenderVerticalLayoutGroup(arg, entity, control, screenPos, size);
-        else if constexpr (std::is_same_v<T, TabItemData>)      changed = RenderTabItem(arg, entity, control, screenPos, size);
+        if constexpr (std::is_same_v<T, ButtonData>)
+            changed = RenderButton(arg, control, screenPos, size, activeFont, control.TextStyle);
+        else if constexpr (std::is_same_v<T, PanelData>)
+            changed = RenderPanel(arg, control, screenPos, size);
+        else if constexpr (std::is_same_v<T, LabelData>)
+            changed = RenderLabel(arg, control, screenPos, size, activeFont, control.TextStyle);
+        else if constexpr (std::is_same_v<T, CheckboxData>)
+            changed = RenderCheckbox(arg, control, screenPos, size, activeFont, control.TextStyle);
+        else if constexpr (std::is_same_v<T, SliderData>)
+            changed = RenderSlider(arg, control, screenPos, size);
+        else if constexpr (std::is_same_v<T, ProgressBarData>)
+            changed = RenderProgressBar(arg, control, screenPos, size);
+        // Додаткові складні типи (на кшталт ColorPicker, ТreeNode тощо) можна додавати сюди за аналогією.
     }, control.Data);
 
     control.ValueChanged = changed;
-    PopUIStyle(styleState);
     return true;
 }
 

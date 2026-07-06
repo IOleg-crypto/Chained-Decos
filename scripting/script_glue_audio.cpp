@@ -1,10 +1,13 @@
 #include "script_glue_audio.h"
+#include "engine/scene/components.h"
 namespace Chained {
-void Audio_Play(Coral::String path, float volume, float pitch, bool loop)
+static thread_local std::u16string s_AudioTagBuffer;
+
+void Audio_Play(const char16_t* path, float volume, float pitch, bool loop)
 {
-    if (Project::GetActive() != nullptr)
+    if (Project::GetActive() != nullptr && path)
     {
-        const std::string soundPath = (std::string)path;
+        const std::string soundPath = ch_u16_to_string(path);
         auto* audioService = ServiceLocator::Get<Audio>();
 
         AudioHandle handle = audioService->LoadSound(soundPath);
@@ -29,11 +32,11 @@ void Audio_Play(Coral::String path, float volume, float pitch, bool loop)
         }
     }
 }
-void Audio_Stop(Coral::String path)
+void Audio_Stop(const char16_t* path)
 {
-    if (Project::GetActive() != nullptr)
+    if (Project::GetActive() != nullptr && path)
     {
-        const std::string soundPath = (std::string)path;
+        const std::string soundPath = ch_u16_to_string(path);
         ServiceLocator::Get<Audio>()->Stop(soundPath);
 
         if (Scene* scene = GetActiveScene())
@@ -90,27 +93,27 @@ bool AudioComponent_IsPlaying(uint64_t entityID)
     auto& audio = entity.GetComponent<AudioComponent>();
     return audio.IsPlaying && ServiceLocator::Get<Audio>()->IsPlaying(audio.SoundHandle);
 }
-Coral::String AudioComponent_GetSoundPath(uint64_t entityID)
+const char16_t* AudioComponent_GetSoundPath(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
-    return entity && entity.HasComponent<AudioComponent>()
-               ? Coral::String::New(entity.GetComponent<AudioComponent>().SoundPath)
-               : Coral::String::New("");
+    std::string path = entity && entity.HasComponent<AudioComponent>() ? entity.GetComponent<AudioComponent>().SoundPath : "";
+    s_AudioTagBuffer = ch_utf8_to_u16(path);
+    return s_AudioTagBuffer.c_str();
 }
-Coral::String SpriteComponent_GetTexturePath(uint64_t entityID)
+const char16_t* SpriteComponent_GetTexturePath(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
-    return entity && entity.HasComponent<SpriteComponent>()
-               ? Coral::String::New(entity.GetComponent<SpriteComponent>().TexturePath)
-               : Coral::String::New("");
+    std::string path = entity && entity.HasComponent<SpriteComponent>() ? entity.GetComponent<SpriteComponent>().TexturePath : "";
+    s_AudioTagBuffer = ch_utf8_to_u16(path);
+    return s_AudioTagBuffer.c_str();
 }
-void SpriteComponent_SetTexturePath(uint64_t entityID, Coral::String path)
+void SpriteComponent_SetTexturePath(uint64_t entityID, const char16_t* path)
 {
     Entity entity = GetEntity(entityID);
-    if (entity && entity.HasComponent<SpriteComponent>())
+    if (entity && entity.HasComponent<SpriteComponent>() && path)
     {
         auto& comp = entity.GetComponent<SpriteComponent>();
-        comp.TexturePath = (std::string)path;
+        comp.TexturePath = ch_u16_to_string(path);
         comp.TextureHandle = 0;
     }
 }

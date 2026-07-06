@@ -13,34 +13,7 @@ namespace Chained
         public static implicit operator bool(Bool32 InBool32) => InBool32.Value > 0;
     }
 
-    
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
-    public struct ChainedString : IDisposable
-    {
-        [FieldOffset(0)] internal IntPtr m_NativeString;
-        [FieldOffset(8)] private Bool32 m_IsDisposed;
-
-        public void Dispose()
-        {
-            if (!m_IsDisposed)
-            {
-                if (m_NativeString != IntPtr.Zero)
-                {
-                    Marshal.FreeCoTaskMem(m_NativeString);
-                    m_NativeString = IntPtr.Zero;
-                }
-                m_IsDisposed = true;
-            }
-            GC.SuppressFinalize(this);
-        }
-
-        public override string? ToString() => Marshal.PtrToStringAuto(m_NativeString);
-        public static ChainedString Null() => new ChainedString() { m_NativeString = IntPtr.Zero };
-        public static implicit operator ChainedString(string? InString) => new() { m_NativeString = Marshal.StringToCoTaskMemAuto(InString) };
-        public static implicit operator string?(ChainedString InString) => Marshal.PtrToStringAuto(InString.m_NativeString);
-    }
-
-    [StructLayout(LayoutKind.Sequential, Size = 32, Pack = 8)]
+        [StructLayout(LayoutKind.Sequential, Size = 32, Pack = 8)]
     public struct NativeArray<T> : IDisposable where T : unmanaged
     {
         private IntPtr m_NativeArray;

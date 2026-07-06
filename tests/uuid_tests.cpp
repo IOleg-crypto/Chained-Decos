@@ -41,11 +41,12 @@ TEST(UUIDTest, StringConversion)
 
 TEST(UUIDTest, InvalidStringConversion)
 {
-    // Test with invalid string, it should hopefully generate a valid new ID or handle it gracefully
-    // depending on implementation. If not implemented safely, it might crash, but let's test it.
+    // Test with invalid string, it should hopefully generate a valid new ID or
+    // handle it gracefully depending on implementation. If not implemented
+    // safely, it might crash, but let's test it.
     UUID idFromString("invalid-uuid-string");
     // Usually it just hashes the string or returns 0.
-    EXPECT_EQ((uint64_t)idFromString, 0); 
+    EXPECT_EQ((uint64_t)idFromString, 0);
 }
 
 TEST(UUIDTest, Hashability)

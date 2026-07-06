@@ -8,14 +8,6 @@
 
 namespace Chained
 {
-
-enum class SceneState : uint8_t
-{
-    Edit = 0,
-    Play = 1,
-    Simulate = 2
-};
-
 struct EditorState
 {
     Entity SelectedEntity;

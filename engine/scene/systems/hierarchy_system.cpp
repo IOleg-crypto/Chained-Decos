@@ -1,5 +1,6 @@
 #include "hierarchy_system.h"
 #include "engine/core/profiler.h"
+#include "engine/scene/components.h"
 #include "engine/scene/components/component_utils.h"
 #include "engine/scene/scene.h"
 
