@@ -14,4 +14,4 @@ struct EditorIcons
 };
 
 
-#endif CH_EDITOR_ICONS_H
+#endif // CH_EDITOR_ICONS_H

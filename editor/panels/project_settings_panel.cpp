@@ -47,7 +47,9 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             ICON_FA_CAMERA " Editor",
             ICON_FA_MOUNTAIN_SUN " Rendering",
             ICON_FA_VOLUME_HIGH " Audio",
-            ICON_FA_CAMERA " Camera (Edit Mode)"
+            ICON_FA_CAMERA " Camera (Edit Mode)",
+            ICON_FA_CUBE " Mesh",
+            ICON_FA_PLAY " Runtime"
         };
 
         // Two-column layout: sidebar left, content right
@@ -330,6 +332,46 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             ImGui::Checkbox("Disable Camera Zoom", &editorSettings.DisableCameraZoom);
             if (ImGui::IsItemHovered())
                 ImGui::SetTooltip("Prevent mouse wheel from zooming the editor camera");
+        }
+        else if (selectedCategory == 8) // Mesh
+        {
+            ImGui::TextDisabled("Mesh Import Settings");
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            ImGui::Checkbox("Import Materials", &config.Mesh.ImportMaterials);
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Automatically import materials when loading meshes");
+
+            ImGui::Checkbox("Calculate Tangents", &config.Mesh.CalculateTangents);
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Calculate tangent vectors for normal mapping");
+
+            ImGui::Checkbox("Flip UVs", &config.Mesh.FlipUVs);
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Flip texture UV coordinates vertically on import");
+        }
+        else if (selectedCategory == 9) // Runtime
+        {
+            ImGui::TextDisabled("Runtime Settings");
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            ImGui::Checkbox("Fullscreen", &config.Runtime.Fullscreen);
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Start the game in fullscreen mode");
+
+            ImGui::Checkbox("Show Stats Overlay", &config.Runtime.ShowStats);
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Display FPS and performance stats in the runtime window");
+
+            ImGui::Checkbox("Enable Console", &config.Runtime.EnableConsole);
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Enable the in-game developer console");
+
+            ImGui::DragInt("Target FPS", &config.Runtime.TargetFPS, 1, 0, 240);
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("0 = Uncapped framerate");
         }
 
         ImGui::PopStyleVar();

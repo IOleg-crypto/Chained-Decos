@@ -29,7 +29,7 @@ Application* CreateApplication(ApplicationCommandLineArgs args)
 
     auto* app = new Application(spec);
 
-    app->PushLayer(std::make_unique<EditorLayer>(*app));
+    app->PushLayer(std::make_unique<EditorLayer>());
 
     return app;
 }

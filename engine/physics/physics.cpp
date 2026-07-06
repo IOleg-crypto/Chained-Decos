@@ -8,7 +8,6 @@
 #include "iphysics_world.h"
 #include "jolt_physics_world.h"
 
-#include <Jolt/Physics/Collision/Shape/MeshShape.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 
 #include <Jolt/Core/Factory.h>
@@ -352,27 +351,14 @@ void Physics::ApplyAutoCalculate(entt::entity entity, entt::registry& registry, 
         return;
     }
 
-    // ── Hand triangles to Jolt, build a temporary MeshShape, ask its AABB ───
-    JPH::TriangleList joltTris;
-    joltTris.reserve(triangles.size());
+    // ── Compute AABB directly from triangles (no MeshShape needed) ────────────
+    glm::vec3 bMin(std::numeric_limits<float>::max());
+    glm::vec3 bMax(std::numeric_limits<float>::lowest());
     for (const auto& t : triangles)
     {
-        joltTris.push_back(JPH::Triangle(JPH::Float3(t.V0.x, t.V0.y, t.V0.z),
-                                         JPH::Float3(t.V1.x, t.V1.y, t.V1.z),
-                                         JPH::Float3(t.V2.x, t.V2.y, t.V2.z)));
+        bMin = glm::min(bMin, glm::min(t.V0, glm::min(t.V1, t.V2)));
+        bMax = glm::max(bMax, glm::max(t.V0, glm::max(t.V1, t.V2)));
     }
-
-    JPH::MeshShapeSettings settings(std::move(joltTris));
-    auto result = settings.Create();
-    if (result.HasError())
-    {
-        CH_CORE_WARN("Physics::ApplyAutoCalculate: MeshShape build failed for '{}': {}", modelPath,
-                     result.GetError().c_str());
-        return;
-    }
-
-    JPH::ShapeRefC shape = result.Get();
-    JPH::AABox aabb = shape->GetLocalBounds();
 
     // ── Convert Jolt AABB → collider fields ──────────────────────────────────
     // BuildMeshTriangles already multiplied vertices by `scale`, so the AABB is
@@ -382,9 +368,6 @@ void Physics::ApplyAutoCalculate(entt::entity entity, entt::registry& registry, 
     //   Mesh:   desc.Offset = collider->Offset * transform.Scale
     // To avoid double-scaling we divide back by scale before storing.
     glm::vec3 safeScale = glm::max(scale, glm::vec3(1e-5f));
-
-    glm::vec3 bMin(aabb.mMin.GetX(), aabb.mMin.GetY(), aabb.mMin.GetZ());
-    glm::vec3 bMax(aabb.mMax.GetX(), aabb.mMax.GetY(), aabb.mMax.GetZ());
 
     // Unscaled (local-space) values:
     glm::vec3 unscaledSize   = (bMax - bMin) / safeScale;

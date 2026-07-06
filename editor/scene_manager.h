@@ -28,6 +28,7 @@ public:
 
     void SetScene(const std::shared_ptr<Scene>& scene);
     void SetSceneState(SceneState state);
+    SceneState GetSceneState() const;
     std::shared_ptr<Scene> GetActiveScene() const;
 
     void OnUpdate(Timestep ts);
@@ -67,6 +68,7 @@ private:
     bool m_SceneOpenSceneReady = false;
     bool m_PlayModeStartRequested = false;
     bool m_IsPlayModeSceneLoad = false;
+    SceneState m_TargetState = SceneState::Edit;
 
     std::string m_LoadingStatus;
 

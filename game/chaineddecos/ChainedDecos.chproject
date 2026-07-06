@@ -31,6 +31,10 @@ Project:
   Texture:
     GenerateMipmaps: true
     Filter: 5
+  Mesh:
+    ImportMaterials: true
+    CalculateTangents: true
+    FlipUVs: true
   Window:
     Width: 1920
     Height: 1080
@@ -41,9 +45,15 @@ Project:
     MusicVolume: 1
     SFXVolume: 1
   Runtime:
+    Fullscreen: false
+    ShowStats: true
+    EnableConsole: false
     TargetFPS: 0
   Editor:
     CameraMoveSpeed: 64.9000015
+    CameraRotationSpeed: 0.100000001
+    CameraBoostMultiplier: 5
+    DisableCameraZoom: false
     ShowGrid: true
     ShowGizmos: true
     ShowSelectedWireframe: true

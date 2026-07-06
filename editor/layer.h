@@ -3,6 +3,8 @@
 
 #include <memory>
 #include <string>
+#include "imgui.h"
+
 #include "engine/scene/scene.h"
 #include "editor/project_manager.h"
 #include "editor/types.h"
@@ -11,7 +13,6 @@
 #include "engine/core/layer.h"
 #include "editor/layout.h"
 #include "editor/panels.h"
-#include "imgui.h"
 #include "editor/undo/command_history.h"
 
 namespace Chained
@@ -24,7 +25,7 @@ class EditorLayer : public Layer
 public:
     static EditorLayer& Get() { return *s_Instance; }
 
-    EditorLayer(Application& app);
+    EditorLayer();
     virtual ~EditorLayer();
 
     virtual void OnAttach() override;
@@ -50,8 +51,7 @@ public:
     DebugRenderFlags& GetDebugRenderFlags() { return m_EditorState.DebugRenderFlags; }
     EditorState& GetEditorState() { return m_EditorState; }
     
-    // Проксі-методи до менеджера сцен, щоб не ламати сумісність у рушії
-    SceneState GetSceneState() const { return m_SceneManager->GetActiveScene()->GetSceneState(); }
+    SceneState GetSceneState() const { return m_SceneManager->GetSceneState(); }
     void SetSceneState(SceneState state) { m_SceneManager->SetSceneState(state); }
 
 private:
@@ -89,7 +89,7 @@ private:
     std::string m_PendingSceneTransitionPath;
     ImVec2 m_ViewportSize = {1280, 720};
     
-    static EditorLayer* s_Instance;
+    static inline EditorLayer* s_Instance = nullptr;
 };
 } // namespace Chained
 

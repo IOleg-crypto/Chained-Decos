@@ -91,14 +91,24 @@ void LaunchStandalone(std::shared_ptr<Project> project, std::shared_ptr<Scene> e
 
     if (runtimePath.empty() || !std::filesystem::exists(runtimePath))
     {
-        CH_CORE_WARN("LaunchStandalone: Profile binary not found at '{}'. Searching heuristic...", runtimePath);
+        CH_CORE_WARN("LaunchStandalone: Runtime binary not found at '{}'. Searching heuristic...", runtimePath);
         runtimePath = FindRuntimeExecutable(config.Name, configStr).string();
 
-        if (runtimePath.empty())
+        if (runtimePath.empty() || !std::filesystem::exists(runtimePath))
         {
-            CH_CORE_ERROR("LaunchStandalone: Runtime executable not found!");
+            CH_CORE_ERROR("LaunchStandalone: Runtime executable 'ChainedRuntime.exe' not found!");
+            CH_CORE_ERROR("  Searched in: current directory, build/, bin/, out/, cmake-build-*/");
+            CH_CORE_ERROR("  Project: '{}' | Config: {}", config.Name, configStr);
+            CH_CORE_ERROR("  Try building the runtime target first: cmake --build --preset <preset> --target ChainedRuntime");
             return;
         }
+    }
+
+    if (!std::filesystem::exists(projectFile))
+    {
+        CH_CORE_ERROR("LaunchStandalone: Project file not found: {}", std::filesystem::absolute(projectFile).string());
+        CH_CORE_ERROR("  Project name: '{}' | Directory: {}", config.Name, project->GetProjectDirectoryForProject().string());
+        return;
     }
 
 #if CH_PLATFORM_WINDOWS
@@ -117,7 +127,11 @@ void LaunchStandalone(std::shared_ptr<Project> project, std::shared_ptr<Scene> e
                       std::wstring(normalizedArgs.begin(), normalizedArgs.end()).c_str(), NULL, SW_SHOW);
     if ((uintptr_t)result <= 32)
     {
-        CH_CORE_ERROR("LaunchStandalone: ShellExecute failed with error code: {}", (uintptr_t)result);
+        DWORD err = GetLastError();
+        CH_CORE_ERROR("LaunchStandalone: ShellExecute failed with code {} (Win32 error: {})", (uintptr_t)result, err);
+        CH_CORE_ERROR("  Runtime: {}", normalizedRuntime);
+        CH_CORE_ERROR("  Arguments: {}", normalizedArgs);
+        CH_CORE_ERROR("  Common causes: file not found, missing DLLs, insufficient permissions");
     }
 #else
     std::string command = std::format("\"{}\" {} &", runtimePath, arguments);

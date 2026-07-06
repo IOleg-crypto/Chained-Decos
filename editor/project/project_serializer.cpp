@@ -57,6 +57,12 @@ bool EditorProjectSerializer::Serialize(const std::shared_ptr<Project>& project,
         out << YAML::Key << "Filter" << YAML::Value << (int)config.Texture.Filter;
         out << YAML::EndMap;
 
+        out << YAML::Key << "Mesh" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "ImportMaterials" << YAML::Value << config.Mesh.ImportMaterials;
+        out << YAML::Key << "CalculateTangents" << YAML::Value << config.Mesh.CalculateTangents;
+        out << YAML::Key << "FlipUVs" << YAML::Value << config.Mesh.FlipUVs;
+        out << YAML::EndMap;
+
         out << YAML::Key << "Window" << YAML::Value << YAML::BeginMap;
         out << YAML::Key << "Width" << YAML::Value << config.Window.Width;
         out << YAML::Key << "Height" << YAML::Value << config.Window.Height;
@@ -71,11 +77,17 @@ bool EditorProjectSerializer::Serialize(const std::shared_ptr<Project>& project,
         out << YAML::EndMap;
 
         out << YAML::Key << "Runtime" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "Fullscreen" << YAML::Value << config.Runtime.Fullscreen;
+        out << YAML::Key << "ShowStats" << YAML::Value << config.Runtime.ShowStats;
+        out << YAML::Key << "EnableConsole" << YAML::Value << config.Runtime.EnableConsole;
         out << YAML::Key << "TargetFPS" << YAML::Value << config.Runtime.TargetFPS;
         out << YAML::EndMap;
 
         out << YAML::Key << "Editor" << YAML::Value << YAML::BeginMap;
         out << YAML::Key << "CameraMoveSpeed" << YAML::Value << editorSettings.CameraMoveSpeed;
+        out << YAML::Key << "CameraRotationSpeed" << YAML::Value << editorSettings.CameraRotationSpeed;
+        out << YAML::Key << "CameraBoostMultiplier" << YAML::Value << editorSettings.CameraBoostMultiplier;
+        out << YAML::Key << "DisableCameraZoom" << YAML::Value << editorSettings.DisableCameraZoom;
         out << YAML::Key << "ShowGrid" << YAML::Value << editorSettings.ShowGrid;
         out << YAML::Key << "ShowGizmos" << YAML::Value << editorSettings.ShowGizmos;
         out << YAML::Key << "ShowSelectedWireframe" << YAML::Value << editorSettings.ShowSelectedWireframe;
@@ -181,6 +193,13 @@ bool EditorProjectSerializer::Deserialize(const std::shared_ptr<Project>& projec
         }
     }
 
+    if (projectNode["Mesh"])
+    {
+        if (projectNode["Mesh"]["ImportMaterials"]) config.Mesh.ImportMaterials = projectNode["Mesh"]["ImportMaterials"].as<bool>();
+        if (projectNode["Mesh"]["CalculateTangents"]) config.Mesh.CalculateTangents = projectNode["Mesh"]["CalculateTangents"].as<bool>();
+        if (projectNode["Mesh"]["FlipUVs"]) config.Mesh.FlipUVs = projectNode["Mesh"]["FlipUVs"].as<bool>();
+    }
+
     if (projectNode["Window"])
     {
         config.Window.Width = projectNode["Window"]["Width"].as<int>();
@@ -198,14 +217,18 @@ bool EditorProjectSerializer::Deserialize(const std::shared_ptr<Project>& projec
 
     if (projectNode["Runtime"])
     {
+        if (projectNode["Runtime"]["Fullscreen"]) config.Runtime.Fullscreen = projectNode["Runtime"]["Fullscreen"].as<bool>();
+        if (projectNode["Runtime"]["ShowStats"]) config.Runtime.ShowStats = projectNode["Runtime"]["ShowStats"].as<bool>();
+        if (projectNode["Runtime"]["EnableConsole"]) config.Runtime.EnableConsole = projectNode["Runtime"]["EnableConsole"].as<bool>();
         if (projectNode["Runtime"]["TargetFPS"]) config.Runtime.TargetFPS = projectNode["Runtime"]["TargetFPS"].as<int>();
     }
 
     if (projectNode["Editor"])
     {
-        outEditorSettings.CameraMoveSpeed = projectNode["Editor"]["CameraMoveSpeed"].as<float>();
-        if (projectNode["Editor"]["CameraBoostMultiplier"])
-            outEditorSettings.CameraBoostMultiplier = projectNode["Editor"]["CameraBoostMultiplier"].as<float>();
+        if (projectNode["Editor"]["CameraMoveSpeed"]) outEditorSettings.CameraMoveSpeed = projectNode["Editor"]["CameraMoveSpeed"].as<float>();
+        if (projectNode["Editor"]["CameraRotationSpeed"]) outEditorSettings.CameraRotationSpeed = projectNode["Editor"]["CameraRotationSpeed"].as<float>();
+        if (projectNode["Editor"]["CameraBoostMultiplier"]) outEditorSettings.CameraBoostMultiplier = projectNode["Editor"]["CameraBoostMultiplier"].as<float>();
+        if (projectNode["Editor"]["DisableCameraZoom"]) outEditorSettings.DisableCameraZoom = projectNode["Editor"]["DisableCameraZoom"].as<bool>();
         if (projectNode["Editor"]["ShowGrid"]) outEditorSettings.ShowGrid = projectNode["Editor"]["ShowGrid"].as<bool>();
         if (projectNode["Editor"]["ShowGizmos"]) outEditorSettings.ShowGizmos = projectNode["Editor"]["ShowGizmos"].as<bool>();
         if (projectNode["Editor"]["ShowSelectedWireframe"]) outEditorSettings.ShowSelectedWireframe = projectNode["Editor"]["ShowSelectedWireframe"].as<bool>();
