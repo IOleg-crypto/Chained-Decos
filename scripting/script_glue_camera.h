@@ -24,9 +24,9 @@ namespace Chained {
 
     CH_SCRIPT_FUNC void Camera_SetIsOrbit(uint64_t entityID, bool isOrbit);
 
-    CH_SCRIPT_FUNC Coral::String Camera_GetTargetTag(uint64_t entityID);
+    CH_SCRIPT_FUNC const char16_t* Camera_GetTargetTag(uint64_t entityID);
 
-    CH_SCRIPT_FUNC void Camera_SetTargetTag(uint64_t entityID, Coral::String tag);
+    CH_SCRIPT_FUNC void Camera_SetTargetTag(uint64_t entityID, const char16_t* tag);
 
 } // namespace Chained
 #endif

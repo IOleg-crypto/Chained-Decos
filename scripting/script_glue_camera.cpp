@@ -1,4 +1,5 @@
 #include "script_glue_camera.h"
+#include "engine/scene/components.h"
 
 namespace Chained {
 void Camera_GetForward(uint64_t entityID, glm::vec3* outForward)
@@ -94,19 +95,21 @@ void Camera_SetIsOrbit(uint64_t entityID, bool isOrbit)
         entity.GetComponent<CameraComponent>().IsOrbitCamera = isOrbit;
     }
 }
-Coral::String Camera_GetTargetTag(uint64_t entityID)
+static thread_local std::u16string s_CameraTagBuffer;
+
+const char16_t* Camera_GetTargetTag(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
-    return entity && entity.HasComponent<CameraComponent>()
-               ? Coral::String::New(entity.GetComponent<CameraComponent>().TargetEntityTag)
-               : Coral::String::New("");
+    std::string tag = entity && entity.HasComponent<CameraComponent>() ? entity.GetComponent<CameraComponent>().TargetEntityTag : "";
+    s_CameraTagBuffer = ch_utf8_to_u16(tag);
+    return s_CameraTagBuffer.c_str();
 }
-void Camera_SetTargetTag(uint64_t entityID, Coral::String tag)
+void Camera_SetTargetTag(uint64_t entityID, const char16_t* tag)
 {
     Entity entity = GetEntity(entityID);
-    if (entity && entity.HasComponent<CameraComponent>())
+    if (entity && entity.HasComponent<CameraComponent>() && tag)
     {
-        entity.GetComponent<CameraComponent>().TargetEntityTag = (std::string)tag;
+        entity.GetComponent<CameraComponent>().TargetEntityTag = ch_u16_to_string(tag);
     }
 }
 

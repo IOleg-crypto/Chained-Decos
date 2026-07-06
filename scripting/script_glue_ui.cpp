@@ -52,15 +52,15 @@ void ComboBoxControl_SetSelectedIndex(uint64_t entityID, int index)
         }
     }
 }
-void ComboBoxControl_AddItem(uint64_t entityID, Coral::String item)
+void ComboBoxControl_AddItem(uint64_t entityID, const char16_t* item)
 {
     Entity entity = GetEntity(entityID);
-    if (entity && entity.HasComponent<UIControlComponent>())
+    if (entity && entity.HasComponent<UIControlComponent>() && item)
     {
         auto& widget = entity.GetComponent<UIControlComponent>();
         if (std::holds_alternative<ComboBoxData>(widget.Data))
         {
-            std::get<ComboBoxData>(widget.Data).Items.push_back((std::string)item);
+            std::get<ComboBoxData>(widget.Data).Items.push_back(ch_u16_to_string(item));
         }
     }
 }
@@ -91,7 +91,9 @@ int ComboBoxControl_GetItemCount(uint64_t entityID)
     }
     return 0;
 }
-Coral::String ComboBoxControl_GetItem(uint64_t entityID, int index)
+static thread_local std::u16string s_UITagBuffer;
+
+const char16_t* ComboBoxControl_GetItem(uint64_t entityID, int index)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<UIControlComponent>())
@@ -102,29 +104,31 @@ Coral::String ComboBoxControl_GetItem(uint64_t entityID, int index)
             auto& combo = std::get<ComboBoxData>(widget.Data);
             if (index >= 0 && index < (int)combo.Items.size())
             {
-                return Coral::String::New(combo.Items[index]);
+                s_UITagBuffer = ch_utf8_to_u16(combo.Items[index]);
+                return s_UITagBuffer.c_str();
             }
         }
     }
-    return Coral::String::New("");
+    return nullptr;
 }
-void UI_Text(Coral::String text)
+void UI_Text(const char16_t* text)
 {
-    if (ImGui::GetCurrentContext() == nullptr || !ImGui::GetCurrentContext()->WithinFrameScope)
+    if (ImGui::GetCurrentContext() == nullptr || !ImGui::GetCurrentContext()->WithinFrameScope || !text)
     {
         return;
     }
 
-    CH_CORE_INFO("[UI] UI_Text called from script: '{}'", ((std::string)text));
+    std::string strText = ch_u16_to_string(text);
+    CH_CORE_INFO("[UI] UI_Text called from script: '{}'", strText);
 
     auto window = ImGui::GetCurrentContext()->CurrentWindow;
     if (window && !window->SkipItems)
     {
-        ImGui::Text("%s", ((std::string)text).c_str());
+        ImGui::Text("%s", strText.c_str());
     }
     else
     {
-        ImGui::GetForegroundDrawList()->AddText({10, 10}, IM_COL32(255, 255, 0, 255), ((std::string)text).c_str());
+        ImGui::GetForegroundDrawList()->AddText({10, 10}, IM_COL32(255, 255, 0, 255), strText.c_str());
     }
 }
 

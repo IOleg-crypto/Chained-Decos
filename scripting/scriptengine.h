@@ -3,6 +3,7 @@
 
 #include "engine/core/engine_module.h"
 #include "scriptengine_services.h"
+#include "engine/scene/scene.h"
 #include <Coral/Assembly.hpp>
 #include <string>
 #include <unordered_map>
@@ -41,14 +42,18 @@ public:
 
     void SetEnabled(bool enable) { m_EnableScripting = enable; }
 
+    Scene* GetContextScene() const { return m_CurrentScene; }
+    void SetContextScene(Scene* scene) { m_CurrentScene = scene; }
 private:
     ScriptEngine(const ScriptEngine&) = delete;
     ScriptEngine& operator=(const ScriptEngine&) = delete;
 
+    
 private:
     ScriptHost m_Host;
     ScriptRegistry m_Registry;
     bool m_EnableScripting;
+    Scene* m_CurrentScene = nullptr;
 };
 
 } // namespace Chained

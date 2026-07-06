@@ -149,13 +149,13 @@ public class TransformComponent : Component
 public class ModelComponent : Component
 {
 #pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, ChainedString> Model_GetModelPath_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, char*> Model_GetModelPath_Ptr;
     internal static unsafe delegate* unmanaged<ulong, char*, void> Model_SetModelPath_Ptr;
 #pragma warning restore 0649
 
     public string ModelPath
     {
-        get { unsafe { string? result = Model_GetModelPath_Ptr(Entity.ID); return result ?? string.Empty; } }
+        get { unsafe { string? result = Marshal.PtrToStringUni(new IntPtr(Model_GetModelPath_Ptr(Entity.ID))); return result ?? string.Empty; } }
         set { unsafe { if (Model_SetModelPath_Ptr != null) fixed (char* ptr = value) Model_SetModelPath_Ptr(Entity.ID, ptr); } }
     }
 }
@@ -190,10 +190,10 @@ public class RigidBodyComponent : Component
 public class TagComponent : Component
 {
 #pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, ChainedString> TagComponent_GetTag_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, char*> TagComponent_GetTag_Ptr;
 #pragma warning restore 0649
 
-    private static unsafe string GetTag_Native(ulong entityID) => (string?)TagComponent_GetTag_Ptr(entityID) ?? string.Empty;
+    private static unsafe string GetTag_Native(ulong entityID) => Marshal.PtrToStringUni(new IntPtr(TagComponent_GetTag_Ptr(entityID))) ?? string.Empty;
     public string Tag => GetTag_Native(Entity.ID);
 }
 
@@ -209,7 +209,7 @@ public class CameraComponent : Component
     internal static unsafe delegate* unmanaged<ulong, bool, void> Camera_SetPrimary_Ptr;
     internal static unsafe delegate* unmanaged<ulong, bool> Camera_GetIsOrbit_Ptr;
     internal static unsafe delegate* unmanaged<ulong, bool, void> Camera_SetIsOrbit_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, ChainedString> Camera_GetTargetTag_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, char*> Camera_GetTargetTag_Ptr;
     internal static unsafe delegate* unmanaged<ulong, char*, void> Camera_SetTargetTag_Ptr;
 #pragma warning restore 0649
 
@@ -263,7 +263,7 @@ public class CameraComponent : Component
 
     public string TargetEntityTag
     {
-        get { unsafe { return (string?)Camera_GetTargetTag_Ptr(Entity.ID) ?? string.Empty; } }
+        get { unsafe { return Marshal.PtrToStringUni(new IntPtr(Camera_GetTargetTag_Ptr(Entity.ID))) ?? string.Empty; } }
         set { unsafe { if (Camera_SetTargetTag_Ptr != null) fixed (char* ptr = value) Camera_SetTargetTag_Ptr(Entity.ID, ptr); } }
     }
 }
@@ -277,7 +277,7 @@ public class AudioComponent : Component
     internal static unsafe delegate* unmanaged<ulong, float, void> AudioComponent_SetVolume_Ptr;
     internal static unsafe delegate* unmanaged<ulong, bool, void> AudioComponent_SetLoop_Ptr;
     internal static unsafe delegate* unmanaged<ulong, bool> AudioComponent_IsPlaying_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, ChainedString> AudioComponent_GetSoundPath_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, char*> AudioComponent_GetSoundPath_Ptr;
     internal static unsafe delegate* unmanaged<ulong, void> AudioComponent_Play_Ptr;
     internal static unsafe delegate* unmanaged<ulong, void> AudioComponent_Stop_Ptr;
 #pragma warning restore 0649
@@ -285,7 +285,7 @@ public class AudioComponent : Component
     private static unsafe void SetVolume(ulong entityID, float volume) => AudioComponent_SetVolume_Ptr(entityID, volume);
     private static unsafe void SetLoop(ulong entityID, bool loop) => AudioComponent_SetLoop_Ptr(entityID, loop);
     private static unsafe bool IsPlaying_Native(ulong entityID) => AudioComponent_IsPlaying_Ptr(entityID);
-    private static unsafe string GetSoundPath(ulong entityID) => (string?)AudioComponent_GetSoundPath_Ptr(entityID) ?? string.Empty;
+    private static unsafe string GetSoundPath(ulong entityID) => Marshal.PtrToStringUni(new IntPtr(AudioComponent_GetSoundPath_Ptr(entityID))) ?? string.Empty;
 
     public float Volume { set => SetVolume(Entity.ID, value); }
     public bool  Loop   { set => SetLoop(Entity.ID, value); }
@@ -307,7 +307,7 @@ public class AudioComponent : Component
 public class SpriteComponent : Component
 {
 #pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, ChainedString> SpriteComponent_GetTexturePath_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, char*> SpriteComponent_GetTexturePath_Ptr;
     internal static unsafe delegate* unmanaged<ulong, char*, void> SpriteComponent_SetTexturePath_Ptr;
     internal static unsafe delegate* unmanaged<ulong, Vector4*, void> SpriteComponent_GetTint_Ptr;
     internal static unsafe delegate* unmanaged<ulong, Vector4, void> SpriteComponent_SetTint_Ptr;
@@ -321,7 +321,7 @@ public class SpriteComponent : Component
 
     public string TexturePath
     {
-        get { unsafe { return (string?)SpriteComponent_GetTexturePath_Ptr(Entity.ID) ?? string.Empty; } }
+        get { unsafe { return Marshal.PtrToStringUni(new IntPtr(SpriteComponent_GetTexturePath_Ptr(Entity.ID))) ?? string.Empty; } }
         set { unsafe { if (SpriteComponent_SetTexturePath_Ptr != null) fixed (char* ptr = value) SpriteComponent_SetTexturePath_Ptr(Entity.ID, ptr); } }
     }
 
@@ -385,7 +385,7 @@ public class ComboBoxControl : Component
     internal static unsafe delegate* unmanaged<ulong, char*, void> ComboBoxControl_AddItem_Ptr;
     internal static unsafe delegate* unmanaged<ulong, void> ComboBoxControl_ClearItems_Ptr;
     internal static unsafe delegate* unmanaged<ulong, int> ComboBoxControl_GetItemCount_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, int, ChainedString> ComboBoxControl_GetItem_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, int, char*> ComboBoxControl_GetItem_Ptr;
 #pragma warning restore 0649
 
     private static unsafe int GetSelectedIndex(ulong entityID) => ComboBoxControl_GetSelectedIndex_Ptr(entityID);
@@ -394,7 +394,7 @@ public class ComboBoxControl : Component
     { if (ComboBoxControl_AddItem_Ptr != null) fixed (char* ptr = item) ComboBoxControl_AddItem_Ptr(entityID, ptr); }
     private static unsafe void ClearItems(ulong entityID) => ComboBoxControl_ClearItems_Ptr(entityID);
     private static unsafe int GetItemCount(ulong entityID) => ComboBoxControl_GetItemCount_Ptr(entityID);
-    private static unsafe string GetItem(ulong entityID, int index) => (string?)ComboBoxControl_GetItem_Ptr(entityID, index) ?? string.Empty;
+    private static unsafe string GetItem(ulong entityID, int index) => Marshal.PtrToStringUni(new IntPtr(ComboBoxControl_GetItem_Ptr(entityID, index))) ?? string.Empty;
 
     public int    SelectedIndex     { get => GetSelectedIndex(Entity.ID); set => SetSelectedIndex(Entity.ID, value); }
     public int    ItemCount         => GetItemCount(Entity.ID);

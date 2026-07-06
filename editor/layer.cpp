@@ -7,7 +7,6 @@
 #include "layout.h"
 #include "panels.h"
 
-
 #include "engine/app/application.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/core/profiler.h"
@@ -24,7 +23,6 @@
 #include "utils/utils.h"
 #include <ImGuizmo.h>
 #include <yaml-cpp/yaml.h>
-
 
 namespace Chained
 {
@@ -58,7 +56,6 @@ void EditorLayer::DrawLoadingOverlay(const char* title, const char* status)
         ImGui::SetCursorPosX((ImGui::GetWindowWidth() - statusSize.x) * 0.5f);
         ImGui::TextUnformatted(status);
 
-        
         uint32_t totalPending = (uint32_t)ServiceLocator::Get<AssetManager>()->GetPendingFinalizeCount();
         char pendingBuffer[64];
         snprintf(pendingBuffer, sizeof(pendingBuffer), "Pending assets: %u", totalPending);
@@ -286,34 +283,33 @@ void EditorLayer::OnUpdate(Timestep ts)
 {
     CH_PROFILE_FUNCTION();
 
-    
+    // 1. Менеджер сцен оновлює внутрішні транзити та поточну активну сцену
     m_SceneManager->OnUpdate(ts);
 
-    
+    // 2. Оновлюємо панелі
     m_Panels->SetContext(GetActiveScene());
     m_Panels->OnUpdate(ts);
 
-    
+    // 3. Якщо йде завантаження — нічого більше не чіпаємо
     if (m_SceneManager->IsLoading())
     {
         return;
     }
 
+    // 4. Оновлення логіки (Play/Simulate/Edit) тепер лежить на плечах сцени
+    // Ми просто викликаємо OnUpdate на активній сцені
     if (auto scene = GetActiveScene())
     {
-        if (GetSceneState() == SceneState::Play)
+        // Якщо сцена в режимі Play, просимо ScriptEngine виконати скрипти
+        if (scene->GetState() == SceneState::Play)
         {
             auto& scriptEngine = *ServiceLocator::Get<ScriptEngine>();
             if (scriptEngine.GetHost().IsInitialized() && scriptEngine.CanExecuteFrameScripts())
             {
                 scene->OnUpdateRuntime(ts);
             }
-            else
-            {
-                scene->OnUpdateEditor(ts);
-            }
         }
-        else if (GetSceneState() == SceneState::Simulate)
+        else if (scene->GetState() == SceneState::Simulate)
         {
             scene->OnUpdateSimulation(ts);
         }
@@ -326,30 +322,13 @@ void EditorLayer::OnUpdate(Timestep ts)
                 m_SceneManager->AutoSave(m_Config.AutoSaveInterval, ts);
             }
         }
-
-        if (Core::Input::IsKeyPressed(KeyCode::F5))
-        {
-            AppLaunchRuntimeEvent e;
-            OnEvent(e);
-        }
-
-        if (Core::Input::IsKeyDown(KeyCode::LeftControl) && Core::Input::IsKeyPressed(KeyCode::R))
-        {
-            auto project = Project::GetActive();
-            if (project)
-            {
-                std::filesystem::path assemblyPath =
-                    Project::GetAssetDirectory() / "bin" / (project->GetConfig().Scripting.ModuleName + ".dll");
-                auto& scriptEngine = *ServiceLocator::Get<ScriptEngine>();
-                scriptEngine.RequestAssemblyReload(assemblyPath.string(), "EditorLayer");
-            }
-        }
     }
 
-    if (!m_PendingSceneTransitionPath.empty())
+    // Input shortcuts
+    if (Core::Input::IsKeyPressed(KeyCode::F5))
     {
-        m_SceneManager->OpenScene(m_PendingSceneTransitionPath);
-        m_PendingSceneTransitionPath.clear();
+        AppLaunchRuntimeEvent e;
+        OnEvent(e);
     }
 }
 
@@ -420,7 +399,7 @@ void EditorLayer::OnEvent(Event& e)
     // 1. Scene Management
     dispatcher.Dispatch<SceneOpenedEvent>([this](auto& e) { return m_SceneManager->OnSceneOpened(e); });
     dispatcher.Dispatch<ScenePlayEvent>([this](auto& e) {
-        m_SceneManager->SetSceneState(SceneState::Play);
+        m_SceneManager->StartPlayModeTransition();
         return true;
     });
     dispatcher.Dispatch<SceneSimulateEvent>([this](auto& e) {
@@ -428,7 +407,7 @@ void EditorLayer::OnEvent(Event& e)
         return true;
     });
     dispatcher.Dispatch<SceneStopEvent>([this](auto& e) {
-        m_SceneManager->SetSceneState(SceneState::Edit);
+        m_SceneManager->CancelPlayModeTransition();
         return true;
     });
 
@@ -510,7 +489,7 @@ CommandHistory& EditorLayer::GetCommandHistory()
 void EditorLayer::LaunchStandalone()
 {
     CH_PROFILE_FUNCTION();
-    Chained::LaunchStandalone(Project::GetActive(), GetActiveScene());
+    Chained::LaunchStandalone(Project::GetActive(), nullptr);
 }
 
 void EditorLayer::ReparentEntity(Entity child, Entity parent)
