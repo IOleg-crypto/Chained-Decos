@@ -4,7 +4,7 @@
 #include "command.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
-#include "engine/serialization/component_serializer.h"
+#include "engine/scene/component_serializer.h"
 #include <yaml-cpp/yaml.h>
 
 namespace Chained

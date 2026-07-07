@@ -6,21 +6,19 @@
 #include "engine/core/input.h"
 #include "engine/core/key_codes.h"
 #include "engine/core/service_locator.h"
-#include "engine/foundation/thread_pool.h"
-#include "engine/platform/utils/file_dialogs.h"
+#include "engine/common/thread_pool.h"
+#include "engine/platform/dialogs/file_dialogs.h"
 #include "engine/project/project.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_events.h"
-#include "engine/serialization/scene_serializer.h"
+#include "engine/scene/scene_serializer.h"
 #include "layer.h"
 #include "scripting/scene_scripting_manager.h"
 
 namespace Chained
 {
 
-EditorSceneManager::EditorSceneManager()
-{
-}
+EditorSceneManager::EditorSceneManager() =  default;
 
 void EditorSceneManager::NewScene()
 {
@@ -47,7 +45,7 @@ void EditorSceneManager::OpenScene(const std::filesystem::path& path)
         return;
     }
     
-    // Питаємо стан безпосередньо у менеджера (а отже, у сцени)
+    // Query state directly from the manager (i.e. from the scene)
     m_IsPlayModeSceneLoad = GetSceneState() == SceneState::Play;
     StartSceneOpenTransition(path);
 }
@@ -131,7 +129,7 @@ SceneState EditorSceneManager::GetSceneState() const
 
 std::shared_ptr<Scene> EditorSceneManager::GetActiveScene() const
 {
-    // Якщо рантайм сцена існує — значить ми в Play/Simulate режимі
+    // If the runtime scene exists — we are in Play/Simulate mode
     if (m_RuntimeScene)
     {
         return m_RuntimeScene;
@@ -158,10 +156,10 @@ void EditorSceneManager::SetSceneState(SceneState state)
         }
 
         m_PlayModeStartRequested = true;
-        m_TargetState = state; // Запам'ятовуємо ціль для транзиту
+        m_TargetState = state; // Store target for transition
         CH_CORE_INFO("Editor: {} mode requested.", state == SceneState::Play ? "Play" : "Simulate");
     }
-    else // Повернення в SceneState::Edit (Stop)
+    else // Returning to SceneState::Edit (Stop)
     {
         if (m_PlayModeStartRequested || m_IsPlayModeLoading)
         {
@@ -355,7 +353,7 @@ void EditorSceneManager::UpdateSceneOpenTransition()
 
         if (m_IsPlayModeSceneLoad)
         {
-            // TransitionToState вже викликає OnRuntimeStart() через OnStateEnter
+            // TransitionToState already calls OnRuntimeStart() via OnStateEnter
             m_RuntimeScene->TransitionToState(SceneState::Play);
 
             CH_CORE_INFO("Editor: Activating new runtime scene '{}'.", m_PendingSceneOpenPath.string());
@@ -364,7 +362,7 @@ void EditorSceneManager::UpdateSceneOpenTransition()
         {
             m_EditorScene->TransitionToState(SceneState::Edit);
             
-            // Диспетчеризуємо івент відкриття сцени
+            // Dispatch the scene-opened event
             SceneOpenedEvent e(m_PendingSceneOpenPath.string());
             OnSceneOpened(e);
         }
@@ -458,8 +456,8 @@ void EditorSceneManager::UpdatePlayModeTransition()
         m_RuntimeScene->OnViewportResize((uint32_t)EditorLayer::Get().GetViewportSize().x,
                                          (uint32_t)EditorLayer::Get().GetViewportSize().y);
 
-        // Конфігуруємо стан безпосередньо у клонованій рантайм-сцені.
-        // TransitionToState вже викликає OnRuntimeStart() через OnStateEnter.
+        // Configure state directly on the cloned runtime scene.
+        // TransitionToState already calls OnRuntimeStart() via OnStateEnter.
         m_RuntimeScene->TransitionToState(m_TargetState);
 
         m_IsPlayModeLoading = false;

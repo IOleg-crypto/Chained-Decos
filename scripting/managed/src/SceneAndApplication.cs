@@ -181,4 +181,22 @@ namespace Chained
             Window_SetAntialiasing_Ptr(enabled);
         }
     }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    //  Physics — static API for physics settings
+    // ─────────────────────────────────────────────────────────────────────────────
+    /// <summary>Physics configuration helpers.</summary>
+    public static class Physics
+    {
+#pragma warning disable 0649
+        internal static unsafe delegate* unmanaged<float> Physics_GetGravity_Ptr;
+#pragma warning restore 0649
+
+        /// <summary>Returns the world gravity from the project configuration (units/s^2).</summary>
+        public static unsafe float GetGravity()
+        {
+            if (Physics_GetGravity_Ptr == null) return 20.0f;
+            return Physics_GetGravity_Ptr();
+        }
+    }
 }

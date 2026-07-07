@@ -1,7 +1,6 @@
 #ifndef SCRIPT_GLUE_SCENE_H
 #define SCRIPT_GLUE_SCENE_H
 #include "script_glue_internal.h"
-#include "script_internal_call_registry.h"
 #include "engine/core/log.h"
 #include "engine/app/application.h"
 #include "engine/assets/asset_manager.h"

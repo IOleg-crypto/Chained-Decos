@@ -11,36 +11,36 @@ public class CameraController : Script
     public float Yaw = 0.0f;
     public string TargetTag = "Player";
 
-    public override void OnUpdate(float deltaTime)
+    public override void OnCreate()
     {
         CameraComponent? camera = Entity.GetComponent<CameraComponent>();
         if (camera == null)
         {
-            Log.Error($"[CameraController] FAILED: Attached to Entity '{Entity}' which has NO CameraComponent. CameraController must be on the Camera entity!");
+            Log.Error($"[CameraController] FAILED: Entity '{Entity}' has no CameraComponent!");
             return;
         }
 
-        // Auto-configure if needed
+        // One-time setup: make this the primary orbit camera
         if (!camera.Primary)
         {
-             Log.Warn($"[CameraController] Camera on '{Entity}' was not Primary. Setting it to Primary now.");
-             camera.Primary = true;
+            Log.Warn($"[CameraController] Setting '{Entity}' as Primary camera.");
+            camera.Primary = true;
         }
+
+        camera.IsOrbitCamera = true;
+        camera.TargetEntityTag = "Player";
+        camera.SetOrbit(Yaw, Pitch, Distance);
+    }
+
+    public override void OnUpdate(float deltaTime)
+    {
+        CameraComponent? camera = Entity.GetComponent<CameraComponent>();
+        if (camera == null)
+            return;
 
         Entity? player = Scene.FindEntityByTag("Player");
         if (player == null)
-        {
-            Log.Warn("[CameraController] Player entity (tagged 'Player') not found. Camera will not orbit correctly.");
             return;
-        }
-        
-        // Ensure orbit is enabled
-        if (!camera.IsOrbitCamera || camera.TargetEntityTag != "Player")
-        {
-            Log.Info("[CameraController] Correcting Camera orbit settings...");
-            camera.IsOrbitCamera = true;
-            camera.TargetEntityTag = "Player";
-        }
 
         camera.GetOrbit(out float yaw, out float pitch, out float distance);
 

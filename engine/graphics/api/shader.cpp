@@ -1,7 +1,7 @@
 #include "shader.h"
 #include "renderer_api.h"
 #include "engine/graphics/api/opengl/opengl_shader.h"
-#include "engine/foundation/engine_assert.h"
+#include "engine/common/engine_assert.h"
 
 namespace Chained {
 

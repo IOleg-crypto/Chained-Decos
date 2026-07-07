@@ -8,6 +8,7 @@ chained_add_engine_module(engine_graphics
         loaders
     DEPENDS
         engine_core
+        engine_project
         engine_audio
         engine_assets
         yaml-cpp
@@ -15,7 +16,6 @@ chained_add_engine_module(engine_graphics
         glm
         engine_external_stb
         engine_external_imgui
-        glfw
         engine_external_glad
         assimp
 )

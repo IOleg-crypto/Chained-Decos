@@ -1,0 +1,17 @@
+chained_add_engine_module(engine_common
+    NO_PCH
+    SOURCES
+        base.h
+        color.h
+        engine_assert.h
+        platform_detection.h
+        thread_pool.h
+        timestep.h
+        uuid.h
+        uuid.cpp
+        zstd_compression.h
+    DEPENDS
+        spdlog
+        glm
+        libzstd_static
+)

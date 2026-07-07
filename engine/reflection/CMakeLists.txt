@@ -3,7 +3,7 @@ chained_add_engine_module(engine_reflection
         reflection.h
         reflection_rfl.h
     DEPENDS
-        engine_foundation
+        engine_common
         reflectcpp
         glm
 )

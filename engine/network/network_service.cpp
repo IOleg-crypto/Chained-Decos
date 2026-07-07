@@ -1,8 +1,8 @@
 #include "network_service.h"
 #include "engine/core/log.h"
-#include "engine/foundation/engine_assert.h"
-#include "engine/foundation/engine_assert.h"
-#include "engine/foundation/timestep.h"
+#include "engine/common/engine_assert.h"
+#include "engine/common/engine_assert.h"
+#include "engine/common/timestep.h"
 #include "engine/core/service_locator.h"
 
 

@@ -94,46 +94,29 @@ public:
     }
 };
 
-class ContactListenerImpl : public JPH::ContactListener
-{
-public:
-    JPH::ValidateResult OnContactValidate(const JPH::Body&, const JPH::Body&, JPH::RVec3Arg,
-                                          const JPH::CollideShapeResult&) override
-    {
-        return JPH::ValidateResult::AcceptAllContactsForThisBodyPair;
-    }
-    void OnContactAdded(const JPH::Body&, const JPH::Body&, const JPH::ContactManifold&, JPH::ContactSettings&) override
-    {
-    }
-    void OnContactPersisted(const JPH::Body&, const JPH::Body&, const JPH::ContactManifold&,
-                            JPH::ContactSettings&) override
-    {
-    }
-    void OnContactRemoved(const JPH::SubShapeIDPair&) override
-    {
-    }
-};
-
 // ─────────────────────────────────────────────────────────────────────────────
 // File-scope singletons — survive JoltPhysicsWorld::ResetWorld() rebuilds
 // ─────────────────────────────────────────────────────────────────────────────
 static BPLayerInterfaceImpl s_BPLayerInterface;
 static ObjectVsBroadPhaseLayerFilterImpl s_ObjVsBPFilter;
 static ObjectLayerPairFilterImpl s_ObjVsObjFilter;
-static ContactListenerImpl s_ContactListener;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // JoltPhysicsWorld
 // ─────────────────────────────────────────────────────────────────────────────
+// Creates Jolt subsystems: 32 MB temp allocator, thread pool job system,
+// physics system with broad-phase/narrow-phase layers, and contact listener.
+// Default gravity is set to -9.81 (will be overridden by Physics::ResetWorld).
 JoltPhysicsWorld::JoltPhysicsWorld()
 {
     m_TempAllocator = new JPH::TempAllocatorImpl(32 * 1024 * 1024);
     m_JobSystem = new JPH::JobSystemThreadPool(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers,
                                                (int)std::thread::hardware_concurrency() - 1);
 
-    // Use file-scope singletons so they survive world recreation
     m_PhysicsSystem.Init(65536, 0, 65536, 65536, s_BPLayerInterface, s_ObjVsBPFilter, s_ObjVsObjFilter);
-    m_PhysicsSystem.SetContactListener(&s_ContactListener);
+
+    m_ContactListener.SetGroundedTracker(&m_GroundedBodies);
+    m_PhysicsSystem.SetContactListener(&m_ContactListener);
 
     // Set gravity
     m_PhysicsSystem.SetGravity(JPH::Vec3(0.0f, -9.81f, 0.0f));
@@ -147,6 +130,8 @@ JoltPhysicsWorld::~JoltPhysicsWorld()
     delete m_TempAllocator;
 }
 
+// Creates a Jolt body from a PhysicsBodyDesc.
+// Flow: build shape → apply offset → determine motion type → set body properties → create and activate.
 PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
 {
     JPH::BodyInterface& bi = m_PhysicsSystem.GetBodyInterface();
@@ -247,7 +232,7 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
     JPH::EMotionType motionType;
     JPH::ObjectLayer objectLayer;
 
-    if (desc.IsStatic || desc.Shape == ColliderType::Mesh)
+    if (desc.IsStatic)
     {
         motionType = JPH::EMotionType::Static;
         objectLayer = Layers::NON_MOVING;
@@ -345,14 +330,85 @@ RaycastResult JoltPhysicsWorld::Raycast(const glm::vec3& origin, const glm::vec3
     return RaycastResult{false};
 }
 
+// Advances the simulation by fixedDt seconds with 1 collision detection pass.
 void JoltPhysicsWorld::Step(float fixedDt)
 {
     m_PhysicsSystem.Update(fixedDt, 1, m_TempAllocator, m_JobSystem);
 }
 
+// Sets the world gravity vector. Positive values are converted to negative Y
+// (i.e. SetGravity(20) → JPH::Vec3(0, -20, 0)).
 void JoltPhysicsWorld::SetGravity(float gravity)
 {
     m_PhysicsSystem.SetGravity(JPH::Vec3(0.0f, -gravity, 0.0f));
+}
+
+// Returns true if the body has at least one ground contact.
+// Ground contacts are determined by the ContactListenerImpl which checks
+// whether the contact normal Y component exceeds kGroundNormalThreshold.
+bool JoltPhysicsWorld::IsBodyGrounded(PhysicsBodyHandle handle) const
+{
+    return m_GroundedBodies.find(static_cast<uint32_t>(handle)) != m_GroundedBodies.end();
+}
+
+// Clears the grounded-state set. Called before each Step() so the set is
+// rebuilt from fresh contact callbacks during the step.
+void JoltPhysicsWorld::ClearGroundedState()
+{
+    m_GroundedBodies.clear();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ContactListenerImpl — JoltPhysicsWorld member
+// ─────────────────────────────────────────────────────────────────────────────
+
+JPH::ValidateResult JoltPhysicsWorld::ContactListenerImpl::OnContactValidate(
+    const JPH::Body&, const JPH::Body&, JPH::RVec3Arg, const JPH::CollideShapeResult&)
+{
+    return JPH::ValidateResult::AcceptAllContactsForThisBodyPair;
+}
+
+void JoltPhysicsWorld::ContactListenerImpl::OnContactAdded(
+    const JPH::Body& inBody1, const JPH::Body& inBody2,
+    const JPH::ContactManifold& inManifold, JPH::ContactSettings&)
+{
+    if (!m_Tracker)
+        return;
+
+    // A contact is considered "ground" when its world-space normal points upward
+    // (positive Y).  Jolt reports the normal pointing from body2 → body1, so we
+    // check both orientations: if Y ≥ threshold the *first* body is grounded,
+    // otherwise the *second* body is grounded.
+    constexpr float kGroundNormalThreshold = 0.5f;
+    float ny = inManifold.mWorldSpaceNormal.GetY();
+
+    uint32_t id1 = inBody1.GetID().GetIndexAndSequenceNumber();
+    uint32_t id2 = inBody2.GetID().GetIndexAndSequenceNumber();
+
+    if (ny >= kGroundNormalThreshold)
+        m_Tracker->insert(id1);
+    else if (ny <= -kGroundNormalThreshold)
+        m_Tracker->insert(id2);
+}
+
+void JoltPhysicsWorld::ContactListenerImpl::OnContactPersisted(
+    const JPH::Body& inBody1, const JPH::Body& inBody2,
+    const JPH::ContactManifold& inManifold, JPH::ContactSettings& inSettings)
+{
+    // Same logic as OnContactAdded — a persistent ground contact keeps the body grounded.
+    OnContactAdded(inBody1, inBody2, inManifold, inSettings);
+}
+
+void JoltPhysicsWorld::ContactListenerImpl::OnContactRemoved(const JPH::SubShapeIDPair& inPair)
+{
+    if (!m_Tracker)
+        return;
+
+    // When a contact is removed we cannot immediately clear grounded state because
+    // the body may still have other ground contacts.  Instead we do nothing here and
+    // let the set be rebuilt from scratch each physics step (see Physics::UpdateColliders
+    // which clears + repopulates through the contact callbacks during the next Step).
+    // This is simple and avoids complex reference-counting.
 }
 
 } // namespace Chained

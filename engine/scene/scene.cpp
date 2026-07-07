@@ -11,7 +11,7 @@
 #include "engine/scene/scene_events.h"
 #include "engine/scene/systems/hierarchy_system.h"
 #include "engine/scene/systems/scene_resource_manager.h"
-#include "engine/serialization/component_serializer.h"
+#include "engine/scene/component_serializer.h"
 #include "scene_scripting_manager.h"
 #include "scripting/scriptengine.h"
 #include <entt/entt.hpp>
@@ -49,7 +49,13 @@ Scene::Scene()
 
 Scene::~Scene()
 {
-    ServiceLocator::Get<Physics>()->ClearContext(this);
+    if (ServiceLocator::IsAvailable())
+    {
+        if (auto* physics = ServiceLocator::Get<Physics>())
+        {
+            physics->ClearContext(this);
+        }
+    }
     GetRegistry().clear();
 }
 
@@ -149,7 +155,7 @@ void Scene::OnHierarchyDestroy(entt::registry& reg, entt::entity entity)
 
 void Scene::OnEvent(Event& e)
 {
-    // Скрипти отримують події тільки під час повноцінної гри
+    // Scripts receive events only during full gameplay
     if (m_State == SceneState::Play)
     {
         m_ScriptingManager->OnEvent(e);
@@ -168,7 +174,7 @@ void Scene::OnRuntimeStart()
 {
     CH_CORE_INFO("Scene::OnRuntimeStart - Starting activation for state: {}", (int)m_State);
     
-    // Спільна ініціалізація для фізики (потрібна і для Play, і для Simulate)
+    // Shared physics initialization (needed for both Play and Simulate)
     ServiceLocator::Get<Physics>()->ResetWorld();
     ServiceLocator::Get<Physics>()->ResetAccumulator(this);
     ServiceLocator::Get<Physics>()->InitializeBodies(this);
@@ -180,7 +186,7 @@ void Scene::OnRuntimeStart()
         uiRenderer->ResetInputCooldown();
     }
 
-    // Запускаємо скрипти тільки якщо ми в стані повноцінної гри
+    // Start scripts only when in full gameplay state
     if (m_State == SceneState::Play)
     {
         if (m_ScriptingManager)
@@ -198,7 +204,7 @@ void Scene::OnRuntimeStart()
         m_ResourceManager->OnRuntimeStart(this);
     }
 
-    // Запуск анімацій
+    // Start animations
     auto& registry = GetRegistry();
     auto view = registry.view<AnimationComponent>();
     for (auto entity : view)

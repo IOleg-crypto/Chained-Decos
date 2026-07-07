@@ -5,6 +5,7 @@
 #include "engine/scene/scene.h"
 #include "scripting/scriptengine.h"
 #include "scripting/scriptengine_services.h"
+#include "scripting/script_glue_internal.h"
 #include "scripting/script_interop_pointers.h"
 #include <Coral/String.hpp>
 #include <Coral/Type.hpp>
@@ -60,23 +61,23 @@ SceneScriptingManager::~SceneScriptingManager()
 {
     SceneScriptingManager::Unregister(this);
 
-    if (m_Scene)
+    if (m_Scene && ServiceLocator::IsAvailable())
     {
-        ServiceLocator::Get<Physics>()->SetCollisionCallback(m_Scene, nullptr);
+        if (auto* physics = ServiceLocator::Get<Physics>())
+            physics->SetCollisionCallback(m_Scene, nullptr);
 
         if (m_Scene->IsSimulationRunning())
         {
-            auto engine = ServiceLocator::Get<ScriptEngine>();
-            if (engine && engine->GetHost().IsInitialized())
+            if (auto* engine = ServiceLocator::Get<ScriptEngine>())
             {
-                auto* coreAssembly = engine->GetHost().GetCoreAssembly();
-                if (coreAssembly)
+                if (engine->GetHost().IsInitialized())
                 {
-                    Coral::Type scriptEngineType = coreAssembly->GetLocalType("Chained.ScriptEngine");
-                    if (scriptEngineType)
+                    auto* coreAssembly = engine->GetHost().GetCoreAssembly();
+                    if (coreAssembly)
                     {
-                        if (g_ManagedPointers.ScriptEngine_ClearAll)
-                            g_ManagedPointers.ScriptEngine_ClearAll();
+                        Coral::Type scriptEngineType = coreAssembly->GetLocalType("Chained.ScriptEngine");
+                        if (scriptEngineType && ManagedCallbacks_::ClearAll)
+                            ManagedCallbacks_::ClearAll();
                     }
                 }
             }
@@ -126,8 +127,8 @@ void SceneScriptingManager::OnRuntimeStart()
         Coral::Type scriptEngineType = coreAssembly->GetLocalType("Chained.ScriptEngine");
         if (scriptEngineType)
         {
-            if (g_ManagedPointers.ScriptEngine_OnCollisionEnter)
-                g_ManagedPointers.ScriptEngine_OnCollisionEnter((uint64_t)(uint32_t)a, (uint64_t)(uint32_t)b);
+            if (ManagedCallbacks_::OnCollisionEnter)
+                ManagedCallbacks_::OnCollisionEnter((uint64_t)(uint32_t)a, (uint64_t)(uint32_t)b);
         }
     });
 }
@@ -145,8 +146,8 @@ void SceneScriptingManager::OnRuntimeStop()
             Coral::Type scriptEngineType = coreAssembly->GetLocalType("Chained.ScriptEngine");
             if (scriptEngineType)
             {
-                if (g_ManagedPointers.ScriptEngine_ClearAll)
-                    g_ManagedPointers.ScriptEngine_ClearAll();
+                if (ManagedCallbacks_::ClearAll)
+                    ManagedCallbacks_::ClearAll();
             }
         }
     }
@@ -208,8 +209,8 @@ void SceneScriptingManager::OnUpdate(Timestep deltaTime)
                 {
                     CH_CORE_INFO("C++ calling InstantiateScript for {}", script.ClassName);
                     std::u16string classNameStr = ch_utf8_to_u16(script.ClassName);
-                    if (g_ManagedPointers.ScriptEngine_InstantiateScript)
-                        g_ManagedPointers.ScriptEngine_InstantiateScript((uint64_t)(uint32_t)entity, classNameStr.c_str());
+                    if (ManagedCallbacks_::InstantiateScript)
+                        ManagedCallbacks_::InstantiateScript((uint64_t)(uint32_t)entity, classNameStr.c_str());
                     CH_CORE_INFO("C++ calling InstantiateScript SUCCESS");
 
                     for (const auto& [fieldName, field] : script.Fields)
@@ -256,8 +257,8 @@ void SceneScriptingManager::OnUpdate(Timestep deltaTime)
 
     try
     {
-        if (g_ManagedPointers.ScriptEngine_OnUpdate)
-            g_ManagedPointers.ScriptEngine_OnUpdate((float)deltaTime);
+        if (ManagedCallbacks_::OnUpdate)
+            ManagedCallbacks_::OnUpdate((float)deltaTime);
     } catch (const std::exception& e)
     {
         CH_CORE_ERROR("ScriptEngine: Exception in OnUpdate Loop: {}", e.what());
@@ -288,8 +289,8 @@ void SceneScriptingManager::OnEvent(Event& e)
     Coral::Type scriptEngineType = coreAssembly->GetLocalType("Chained.ScriptEngine");
     if (scriptEngineType)
     {
-        if (g_ManagedPointers.ScriptEngine_OnEvent)
-            g_ManagedPointers.ScriptEngine_OnEvent((int)e.GetEventType());
+        if (ManagedCallbacks_::OnEvent)
+            ManagedCallbacks_::OnEvent((int)e.GetEventType());
     }
 
     ServiceLocator::Get<ScriptEngine>()->SetContextScene(nullptr);
@@ -319,8 +320,8 @@ void SceneScriptingManager::OnRenderUI()
     Coral::Type scriptEngineType = coreAssembly->GetLocalType("Chained.ScriptEngine");
     if (scriptEngineType)
     {
-        if (g_ManagedPointers.ScriptEngine_OnRenderUI)
-            g_ManagedPointers.ScriptEngine_OnRenderUI();
+        if (ManagedCallbacks_::OnRenderUI)
+            ManagedCallbacks_::OnRenderUI();
     }
 
     ServiceLocator::Get<ScriptEngine>()->SetContextScene(nullptr);

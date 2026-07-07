@@ -1,10 +1,10 @@
 #include "utils.h"
 
-#include "engine/foundation/base.h"
+#include "engine/common/base.h"
 #include "engine/core/profiler.h"
 #include "engine/project/project.h"
 #include "editor/project/project_serializer.h"
-#include "engine/serialization/scene_serializer.h"
+#include "engine/scene/scene_serializer.h"
 
 #include <algorithm>
 #include <format>
@@ -96,10 +96,10 @@ void LaunchStandalone(std::shared_ptr<Project> project, std::shared_ptr<Scene> e
 
         if (runtimePath.empty() || !std::filesystem::exists(runtimePath))
         {
-            CH_CORE_ERROR("LaunchStandalone: Runtime executable 'ChainedRuntime.exe' not found!");
+            CH_CORE_ERROR("LaunchStandalone: Runtime executable not found! Searched for '{}.exe' and 'ChainedRuntime.exe'.", config.Name);
             CH_CORE_ERROR("  Searched in: current directory, build/, bin/, out/, cmake-build-*/");
             CH_CORE_ERROR("  Project: '{}' | Config: {}", config.Name, configStr);
-            CH_CORE_ERROR("  Try building the runtime target first: cmake --build --preset <preset> --target ChainedRuntime");
+            CH_CORE_ERROR("  Try building the game target first: cmake --build --preset <preset> --target {}Exe", config.Name);
             return;
         }
     }
@@ -164,46 +164,60 @@ static std::filesystem::path FindRuntimeExecutable(const std::string& projectNam
     }
 
 #if CH_PLATFORM_WINDOWS
-    const std::string targetName = "ChainedRuntime.exe";
+    const std::string perGameName = projectName + ".exe";
+    const std::string fallbackName = "ChainedRuntime.exe";
 #else
-    const std::string targetName = "ChainedRuntime";
+    const std::string perGameName = projectName;
+    const std::string fallbackName = "ChainedRuntime";
 #endif
 
-    // 1. Check current working directory
-    std::filesystem::path currentBin = std::filesystem::current_path() / targetName;
-    if (std::filesystem::exists(currentBin))
-    {
-        return currentBin;
-    }
+    // Helper lambda: search for a specific executable name in known locations
+    auto searchFor = [&](const std::string& targetName) -> std::filesystem::path {
+        // 1. Check current working directory
+        std::filesystem::path currentBin = std::filesystem::current_path() / targetName;
+        if (std::filesystem::exists(currentBin))
+            return currentBin;
 
-    // 2. Fast common output locations
-    std::vector<std::string> searchSubdirs = {"build/bin", "bin", "out/bin", "cmake-build-debug/bin",
-                                              "cmake-build-release/bin"};
+        // 2. Fast common output locations
+        std::vector<std::string> searchSubdirs = {"build/bin", "bin", "out/bin", "cmake-build-debug/bin",
+                                                  "cmake-build-release/bin"};
 
-    // Auto-discover build folders in project root
-    if (std::filesystem::exists(root / "build"))
-    {
-        for (const auto& entry : std::filesystem::directory_iterator(root / "build"))
+        if (std::filesystem::exists(root / "build"))
         {
-            if (entry.is_directory())
+            for (const auto& entry : std::filesystem::directory_iterator(root / "build"))
             {
-                if (std::filesystem::exists(entry.path() / "bin" / targetName))
+                if (entry.is_directory())
                 {
-                    searchSubdirs.push_back("build/" + entry.path().filename().string() + "/bin");
+                    if (std::filesystem::exists(entry.path() / "bin" / targetName))
+                    {
+                        searchSubdirs.push_back("build/" + entry.path().filename().string() + "/bin");
+                    }
                 }
             }
         }
-    }
 
-    for (const auto& sub : searchSubdirs)
-    {
-        std::filesystem::path p = root / sub / targetName;
-        if (std::filesystem::exists(p))
+        for (const auto& sub : searchSubdirs)
         {
-            CH_CORE_INFO("FindRuntimeExecutable: Path found at: {}", p.string());
-            return p;
+            std::filesystem::path p = root / sub / targetName;
+            if (std::filesystem::exists(p))
+            {
+                CH_CORE_INFO("FindRuntimeExecutable: Found '{}' at: {}", targetName, p.string());
+                return p;
+            }
         }
-    }
+
+        return {};
+    };
+
+    // 1. First try per-game executable (e.g. ChainedDecos.exe)
+    auto result = searchFor(perGameName);
+    if (!result.empty())
+        return result;
+
+    // 2. Fallback to generic ChainedRuntime.exe
+    result = searchFor(fallbackName);
+    if (!result.empty())
+        return result;
 
     // 3. Fallback: careful recursive search excluding noisy folders
     CH_CORE_INFO("FindRuntimeExecutable: Fast path failed, starting scoped recursive search...");
@@ -225,7 +239,7 @@ static std::filesystem::path FindRuntimeExecutable(const std::string& projectNam
                 }
             }
 
-            if (entry.is_regular_file() && filename == targetName)
+            if (entry.is_regular_file() && (filename == perGameName || filename == fallbackName))
             {
                 CH_CORE_INFO("FindRuntimeExecutable: Deep search found at: {}", entry.path().string());
                 return entry.path();

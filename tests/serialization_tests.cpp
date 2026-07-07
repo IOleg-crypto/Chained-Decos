@@ -1,4 +1,4 @@
-#include "engine/serialization/serialization.h"
+#include "engine/scene/serialization.h"
 #include "engine/scene/components/model_component.h"
 #include "gtest/gtest.h"
 #include <filesystem>

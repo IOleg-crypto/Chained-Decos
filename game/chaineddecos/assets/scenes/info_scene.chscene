@@ -72,19 +72,19 @@ Entities:
     TagComponent:
       Tag: back_button
     ControlComponent:
-      Rect Transform:
+      Transform:
         Position: [-571.321289, 312.388367]
         Size: [245.918732, 80.5326843]
-        Anchor Min: [0.5, 0.5]
-        Anchor Max: [0.5, 0.5]
-        Offset Min: [-694.28064, 272.122009]
-        Offset Max: [-448.361908, 352.654694]
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-694.28064, 272.122009]
+        OffsetMax: [-448.361908, 352.654694]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
-      Z Order: 0
-      Active: true
-      Hidden: false
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
   - Entity: 2005
     WidgetComponent:
       Box Style:
@@ -118,19 +118,19 @@ Entities:
     TagComponent:
       Tag: info_text_4
     ControlComponent:
-      Rect Transform:
+      Transform:
         Position: [-26.5849457, -50.6350212]
         Size: [386.973297, 85.3969803]
-        Anchor Min: [0.5, 0.5]
-        Anchor Max: [0.5, 0.5]
-        Offset Min: [-220.071594, -93.3335114]
-        Offset Max: [166.901703, -7.93653107]
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-220.071594, -93.3335114]
+        OffsetMax: [166.901703, -7.93653107]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
-      Z Order: 0
-      Active: true
-      Hidden: false
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
   - Entity: 2004
     WidgetComponent:
       Box Style:
@@ -164,19 +164,19 @@ Entities:
     TagComponent:
       Tag: info_text_3
     ControlComponent:
-      Rect Transform:
+      Transform:
         Position: [-31.8438187, -211.002258]
         Size: [408.050293, 67.5622864]
-        Anchor Min: [0.5, 0.5]
-        Anchor Max: [0.5, 0.5]
-        Offset Min: [-235.868973, -244.783401]
-        Offset Max: [172.181335, -177.221115]
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-235.868973, -244.783401]
+        OffsetMax: [172.181335, -177.221115]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
-      Z Order: 0
-      Active: true
-      Hidden: false
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
   - Entity: 2001
     WidgetComponent:
       Box Style:
@@ -210,19 +210,19 @@ Entities:
     TagComponent:
       Tag: title_info
     ControlComponent:
-      Rect Transform:
+      Transform:
         Position: [-616.812073, -385.069275]
         Size: [414.535522, 75.6689148]
-        Anchor Min: [0.5, 0.5]
-        Anchor Max: [0.5, 0.5]
-        Offset Min: [-824.079834, -422.903748]
-        Offset Max: [-409.544312, -347.234833]
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-824.079834, -422.903748]
+        OffsetMax: [-409.544312, -347.234833]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
-      Z Order: 0
-      Active: true
-      Hidden: false
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
   - Entity: 2002
     WidgetComponent:
       Box Style:
@@ -256,16 +256,16 @@ Entities:
     TagComponent:
       Tag: info_project
     ControlComponent:
-      Rect Transform:
+      Transform:
         Position: [-31.6659088, -132.238693]
         Size: [374.510468, 86.5034485]
-        Anchor Min: [0.5, 0.5]
-        Anchor Max: [0.5, 0.5]
-        Offset Min: [-218.921143, -175.490417]
-        Offset Max: [155.589325, -88.986969]
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-218.921143, -175.490417]
+        OffsetMax: [155.589325, -88.986969]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
-      Z Order: 0
-      Active: true
-      Hidden: false
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false

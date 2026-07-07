@@ -39,13 +39,13 @@ struct AnimationComponent
         UIMeta PlayOnStart = {.Tooltip = "Whether the animation will play at the start of the scene"};
         
         
-        UIMeta CurrentAnimationIndex = {.ReadOnly = false, .Transient = true};
+        UIMeta CurrentAnimationIndex = {.Hint = PropertyMeta::WidgetHint::Checkbox, .ReadOnly = false, .Transient = true};
         UIMeta TargetAnimationIndex = {.ReadOnly = true, .Transient = true};
         UIMeta FrameTimeCounter = {.ReadOnly = true, .Transient = true};
         UIMeta BlendTimer = {.ReadOnly = true, .Transient = true};
         UIMeta CurrentFrame = {.ReadOnly = true, .Transient = true};
         UIMeta TargetFrame = {.ReadOnly = true, .Transient = true};
-        UIMeta IsPlaying = {.ReadOnly = false, .Transient = true , .Hint = PropertyMeta::WidgetHint::Checkbox};
+        UIMeta IsPlaying = {.Hint = PropertyMeta::WidgetHint::Checkbox, .ReadOnly = false, .Transient = true};
         UIMeta Blending = {.ReadOnly = true, .Transient = true};
     };
 };

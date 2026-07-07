@@ -2,7 +2,7 @@
 #define CH_RENDERER_TYPES_H
 
 #include "engine/assets/asset.h"
-#include "engine/foundation/color.h"
+#include "engine/common/color.h"
 #include "engine/graphics/api/vertex_array.h"
 #include "engine/reflection/reflection_rfl.h" // Switched to your new reflection header
 #include <cstring>

@@ -1,9 +1,9 @@
 #ifndef CH_ENTITY_H
 #define CH_ENTITY_H
 
-#include "engine/foundation/engine_assert.h"
-#include "engine/foundation/base.h"
-#include "engine/foundation/uuid.h"
+#include "engine/common/engine_assert.h"
+#include "engine/common/base.h"
+#include "engine/common/uuid.h"
 #include "engine/scene/components/id_component.h"
 #include "engine/scene/components/tag_component.h"
 #include "entt/entt.hpp"

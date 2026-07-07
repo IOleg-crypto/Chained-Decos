@@ -20,8 +20,8 @@ struct ShaderComponent
     {
         UIMeta ShaderPath = {
             .Hint = PropertyMeta::WidgetHint::FilePicker, 
-            .Extensions = ".glsl,.vs,.fs,.vert,.frag",
-            .Tooltip = "Path to the source GLSL shader file (vertex, fragment, or unified code)"
+            .Tooltip = "Path to the source GLSL shader file (vertex, fragment, or unified code)",
+            .Extensions = ".glsl,.vs,.fs,.vert,.frag"
         };
         
         UIMeta Enabled = {

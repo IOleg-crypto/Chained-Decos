@@ -1,6 +1,6 @@
 #ifndef CH_SHADER_H
 #define CH_SHADER_H
-#include "engine/foundation/color.h"
+#include "engine/common/color.h"
 #include <glm/glm.hpp>
 #include <memory>
 #include <string>

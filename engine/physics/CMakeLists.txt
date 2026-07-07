@@ -11,6 +11,7 @@ chained_add_engine_module(engine_physics
         jolt_physics_world.h
     DEPENDS
         engine_core
+        engine_project
         engine_external_entt
         glm
         assimp

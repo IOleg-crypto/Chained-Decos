@@ -58,6 +58,6 @@ private:
     bool m_IsHDR = false;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_TEXTURE_ASSET_H

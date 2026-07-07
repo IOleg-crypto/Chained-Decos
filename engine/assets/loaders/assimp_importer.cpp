@@ -1,7 +1,7 @@
 #include "engine/assets/loaders/assimp_importer.h"
 #include "engine/core/log.h"
 #include "engine/core/profiler.h"
-#include "engine/foundation/thread_pool.h"
+#include "engine/common/thread_pool.h"
 #include <algorithm>
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
@@ -718,6 +718,8 @@ void AssimpImporter::ProcessAnimations()
             }
         }
 
+        std::vector<std::future<void>> animFutures;
+        animFutures.reserve(anim->mNumChannels);
         for (unsigned int c = 0; c < anim->mNumChannels; ++c)
         {
             aiNodeAnim* channel = anim->mChannels[c];
@@ -728,20 +730,20 @@ void AssimpImporter::ProcessAnimations()
             }
 
             const int boneIdx = boneIt->second;
-            unsigned int lastPosKey = 0, lastRotKey = 0, lastSclKey = 0;
-
-            for (int f = 0; f < ra.frameCount; ++f)
-            {
-                double time = (double)f * ticksPerFrame;
-
-                glm::vec3 pos = InterpolatePosition(time, channel, lastPosKey, bindPoses[boneIdx].translation);
-                glm::quat rot = InterpolateRotation(time, channel, lastRotKey, bindPoses[boneIdx].rotation);
-                glm::vec3 scale = InterpolateScale(time, channel, lastSclKey, bindPoses[boneIdx].scale);
-
-                ra.framePoses[f * ra.boneCount + boneIdx] = {pos, rot, scale};
-            }
+            animFutures.push_back(ServiceLocator::Get<ThreadPool>()->Enqueue([&ra, channel, boneIdx, &bindPoses, ticksPerFrame]() {
+                unsigned int lastPosKey = 0, lastRotKey = 0, lastSclKey = 0;
+                for (int f = 0; f < ra.frameCount; ++f)
+                {
+                    double time = (double)f * ticksPerFrame;
+                    glm::vec3 pos = InterpolatePosition(time, channel, lastPosKey, bindPoses[boneIdx].translation);
+                    glm::quat rot = InterpolateRotation(time, channel, lastRotKey, bindPoses[boneIdx].rotation);
+                    glm::vec3 scale = InterpolateScale(time, channel, lastSclKey, bindPoses[boneIdx].scale);
+                    ra.framePoses[f * ra.boneCount + boneIdx] = {pos, rot, scale};
+                }
+            }));
         }
-        CH_CORE_INFO("AssimpImporter: Loaded animation '{}' ({} frames, {} fps)", ra.name, ra.frameCount, ra.frameRate);
+        for (auto& f : animFutures) f.get();
+        CH_CORE_INFO("AssimpImporter: Loaded animation '{}' ({} frames, {} fps, {} channels)", ra.name, ra.frameCount, ra.frameRate, anim->mNumChannels);
     }
 }
 
@@ -856,11 +858,33 @@ void AssimpImporter::MergeMeshesByMaterial()
                 merged.weights.insert(merged.weights.end(), src.weights.begin(), src.weights.end());
             }
 
-            for (size_t v = 0; v < merged.vertices.size(); v += 3)
+            if (!hasSkins)
             {
-                glm::vec3 p = {merged.vertices[v], merged.vertices[v + 1], merged.vertices[v + 2]};
-                merged.MinBounds = glm::min(merged.MinBounds, p);
-                merged.MaxBounds = glm::max(merged.MaxBounds, p);
+                glm::vec3 corners[8] = {
+                    {src.MinBounds.x, src.MinBounds.y, src.MinBounds.z},
+                    {src.MaxBounds.x, src.MinBounds.y, src.MinBounds.z},
+                    {src.MinBounds.x, src.MaxBounds.y, src.MinBounds.z},
+                    {src.MaxBounds.x, src.MaxBounds.y, src.MinBounds.z},
+                    {src.MinBounds.x, src.MinBounds.y, src.MaxBounds.z},
+                    {src.MaxBounds.x, src.MinBounds.y, src.MaxBounds.z},
+                    {src.MinBounds.x, src.MaxBounds.y, src.MaxBounds.z},
+                    {src.MaxBounds.x, src.MaxBounds.y, src.MaxBounds.z}
+                };
+                for (auto& c : corners)
+                {
+                    glm::vec3 tp = glm::vec3(t * glm::vec4(c, 1.0f));
+                    merged.MinBounds = glm::min(merged.MinBounds, tp);
+                    merged.MaxBounds = glm::max(merged.MaxBounds, tp);
+                }
+            }
+            else
+            {
+                for (size_t v = 0; v < src.vertices.size(); v += 3)
+                {
+                    glm::vec3 p = {src.vertices[v], src.vertices[v + 1], src.vertices[v + 2]};
+                    merged.MinBounds = glm::min(merged.MinBounds, p);
+                    merged.MaxBounds = glm::max(merged.MaxBounds, p);
+                }
             }
         }
 
@@ -872,4 +896,4 @@ void AssimpImporter::MergeMeshesByMaterial()
     m_Data.meshes = std::move(mergedMeshes);
     m_Data.instances = std::move(mergedInstances);
 }
-} // namespace CHEngine
+} // namespace Chained

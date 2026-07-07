@@ -3,7 +3,7 @@
 #include "audio.h"
 #include "engine/core/log.h"
 #include "engine/project/project.h"
-#include "engine/foundation/engine_assert.h"
+#include "engine/common/engine_assert.h"
 
 #include <filesystem>
 #include <algorithm>

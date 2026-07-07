@@ -2,7 +2,7 @@
 #define CH_VIEWPORT_PANEL_H
 
 #include "panel.h"
-#include "engine/foundation/timestep.h"
+#include "engine/common/timestep.h"
 #include "viewport/camera.h"
 #include "viewport/gizmo.h"
 #include "viewport/ui_manipulator.h"
@@ -81,7 +81,6 @@ private:
     void RenderOverlays(Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos);
     void HandlePicking(Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos);
     void RenderToolbar(Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos);
-    void RenderLaunchHUD(const ImVec2& viewportSize, const ImVec2& viewportScreenPos);
 
     
     void RenderEditorIcons(entt::registry& registry, const SceneSettings& settings, const Camera3D& camera);

@@ -38,4 +38,4 @@ std::shared_ptr<Texture> Texture::CreateFromFile(const std::string& path)
     return nullptr;
 }
 
-} // namespace CHEngine
+} // namespace Chained

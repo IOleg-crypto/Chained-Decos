@@ -5,7 +5,7 @@
 #include <vector>
 #include <memory>
 #include <initializer_list>
-#include "engine/foundation/engine_assert.h"
+#include "engine/common/engine_assert.h"
 
 namespace Chained
 {

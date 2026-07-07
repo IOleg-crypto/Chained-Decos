@@ -33,6 +33,14 @@ namespace Chained::Core::Input
     {
     }
 
+    void ResetAll()
+    {
+        std::memset(s_KeyStates, 0, sizeof(s_KeyStates));
+        std::memset(s_LastKeyStates, 0, sizeof(s_LastKeyStates));
+        std::memset(s_MouseStates, 0, sizeof(s_MouseStates));
+        std::memset(s_LastMouseStates, 0, sizeof(s_LastMouseStates));
+    }
+
     void Update(Timestep ts)
     {
         std::memcpy(s_LastKeyStates, s_KeyStates, sizeof(s_KeyStates));

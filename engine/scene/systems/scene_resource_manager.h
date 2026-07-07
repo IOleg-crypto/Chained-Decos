@@ -2,7 +2,7 @@
 #define CH_SCENE_RESOURCE_MANAGER_H
 
 
-#include "engine/foundation/timestep.h"
+#include "engine/common/timestep.h"
 #include <entt/entt.hpp>
 
 namespace Chained

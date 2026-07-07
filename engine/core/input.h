@@ -1,8 +1,8 @@
 #ifndef CH_INPUT_H
 #define CH_INPUT_H
 
-#include "engine/foundation/base.h"
-#include "engine/foundation/timestep.h"
+#include "engine/common/base.h"
+#include "engine/common/timestep.h"
 #include "key_codes.h"
 #include "mouse_codes.h"
 #include <glm/vec2.hpp>
@@ -12,6 +12,7 @@ namespace Chained::Core::Input
     void Init();
     void Shutdown();
     void Update(Timestep ts);
+    void ResetAll();
 
     bool IsKeyPressed(KeyCode key);
     bool IsKeyDown(KeyCode key);

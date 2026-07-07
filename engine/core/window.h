@@ -2,7 +2,6 @@
 #define CH_WINDOW_H
 
 #include "engine/core/events/events.h"
-#include <GLFW/glfw3.h>
 #include <memory>
 #include <string>
 

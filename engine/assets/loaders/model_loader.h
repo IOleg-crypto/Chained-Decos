@@ -23,11 +23,16 @@ struct ProceduralParameters
 struct ChainedAssetHeader
 {
     uint32_t magic = 0x43484153; 
-    uint32_t dataStructSize = sizeof(PendingModelData); 
+    uint32_t version = 1;
+    uint32_t dataStructSize = sizeof(PendingModelData);
+    uint64_t sourceHash = 0;
+    bool compressed = false;
+    uint64_t compressedSize = 0;
+    uint64_t uncompressedSize = 0;
 
     template<class Archive>
     void serialize(Archive& archive) {
-        archive(magic, dataStructSize);
+        archive(magic, version, dataStructSize, sourceHash, compressed, compressedSize, uncompressedSize);
     }
 };
 

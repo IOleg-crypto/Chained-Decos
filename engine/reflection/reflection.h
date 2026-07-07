@@ -1,18 +1,14 @@
 #ifndef CH_REFLECTION_H
 #define CH_REFLECTION_H
 
-#include "engine/foundation/base.h"
-#include "engine/foundation/color.h"
-#include "engine/foundation/uuid.h"
+#include "engine/common/base.h"
+#include "engine/common/color.h"
+#include "engine/common/uuid.h"
 #include <functional>
 #include <glm/glm.hpp>
 #include <string>
 #include <type_traits>
 #include <vector>
-
-
-#define CH_ARRAY_SIZE(arr) (sizeof(arr) / sizeof(arr[0]))
-
 #include <type_traits>
 #include <variant>
 
@@ -148,14 +144,7 @@ public:
 
     bool Color(const char* name, Chained::Color& value)
     {
-        if constexpr (std::is_base_of_v<IPropertyArchive, T_Archive>)
-        {
-            return m_Archive.Property(name, value);
-        }
-        else
-        {
-            return m_Archive.Property(name, value);
-        }
+        return m_Archive.Property(name, value);
     }
 
     bool Handle(const char* name, uint64_t& value)
@@ -250,17 +239,10 @@ public:
 
     template <typename T> bool Nested(const char* name, T& value)
     {
-        if constexpr (std::is_base_of_v<IPropertyArchive, T_Archive>)
-        {
-            return m_Archive.Nested(name, [&](IPropertyArchive& archive) {
-                Properties<IPropertyArchive> props(archive);
-                value.Reflect(props);
-            });
-        }
-        else
-        {
-            return m_Archive.Nested(name, value);
-        }
+        return m_Archive.Nested(name, [&](IPropertyArchive& archive) {
+            Properties<IPropertyArchive> props(archive);
+            value.Reflect(props);
+        });
     }
 
     template <typename T> bool Property(const char* name, T& value)
@@ -440,37 +422,5 @@ private:
  */
 using GenericProperties = Properties<IPropertyArchive>;
 
-// --- Reflection Macros --- OLD
-
-// #define CH_REFLECT_BEGIN(Type) \
-    //     static const char* GetStaticName() { return #Type; } \
-    //     template<typename T_Archive> \
-    //     void Reflect(::Chained::Properties<T_Archive>& props) {
-
-// #define CH_REFLECT_END() \
-    //     }
-
-// #define CH_HEADER(props, label) (props).Header(label)
-// #define CH_SEPARATOR(props) (props).Separator()
-// #define CH_PROP(props, field) (props).Property(#field, field)
-// #define CH_PROP_NAMED(props, label, field) (props).Property(label, field)
-// #define CH_PROP_META(props, field, meta) (props).Property(#field, field, meta)
-// #define CH_PROP_META_NAMED(props, label, field, meta) (props).Property(label, field, meta)
-// #define CH_ENUM(props, field, names) (props).Enum(#field, field, names, static_cast<int>(CH_ARRAY_SIZE(names)))
-// #define CH_ENUM_NAMED(props, label, field, names) (props).Enum(label, field, names,
-// static_cast<int>(CH_ARRAY_SIZE(names))) #define CH_STRING_ENUM(props, field, options) (props).StringEnum(#field,
-// field, options) #define CH_STRING_ENUM_NAMED(props, label, field, options) (props).StringEnum(label, field, options)
-// #define CH_HANDLE(props, field) (props).Handle(#field, field)
-// #define CH_HANDLE_NAMED(props, label, field) (props).Handle(label, field)
-// #define CH_FILE(props, field, extensions) (props).File(#field, field, extensions)
-// #define CH_FILE_NAMED(props, label, field, extensions) (props).File(label, field, extensions)
-// #define CH_SEQUENCE(props, field) (props).Sequence(#field, field)
-// #define CH_SEQUENCE_EX(props, field, allowAddRemove) (props).Sequence(#field, field, allowAddRemove)
-// #define CH_SEQUENCE_NAMED(props, label, field) (props).Sequence(label, field)
-// #define CH_NESTED(props, field) (props).Nested(#field, field)
-// #define CH_NESTED_NAMED(props, label, field) (props).Nested(label, field)
-// #define CH_ACTION(props, label, func) (props).Action(label, func)
-// #define CH_BEGIN_GROUP(props, label, defaultOpen) (props).BeginGroup(label, defaultOpen)
-// #define CH_END_GROUP(props) (props).EndGroup()
 } // namespace Chained
 #endif // CH_REFLECTION_H

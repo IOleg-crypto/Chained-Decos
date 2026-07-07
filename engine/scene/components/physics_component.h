@@ -42,7 +42,7 @@ struct ColliderComponent
 
     struct UI
     {
-        UIMeta Type = {.Tooltip = "Geometric shape of the collider", .Hint = PropertyMeta::WidgetHint::Enum};
+        UIMeta Type = {.Hint = PropertyMeta::WidgetHint::Enum, .Tooltip = "Geometric shape of the collider"};
         UIMeta Size = {.Speed = 0.05f, .Tooltip = "Dimensions of the Box collider"};
         UIMeta Offset = {.Speed = 0.05f,
                          .Tooltip = "Offset of the collider's center relative to the entity's local origin"};
@@ -56,8 +56,8 @@ struct ColliderComponent
                 "If enabled, the collider only registers intersections but does not block physical body movement"};
         UIMeta AutoCalculate = {.Tooltip = "Automatically calculate collider dimensions based on the ModelComponent"};
         UIMeta ModelPath = {.Hint = PropertyMeta::WidgetHint::FilePicker,
-                            .Extensions = ".glb,.gltf,.obj",
-                            .Tooltip = "Path to the 3D model for the Mesh collider"};
+                            .Tooltip = "Path to the 3D model for the Mesh collider",
+                            .Extensions = ".glb,.gltf,.obj"};
     };
 };
 
@@ -78,7 +78,6 @@ struct RigidBodyComponent
     float AngularDamping = 0.05f;
     bool UseGravity = true;
     bool IsFixedRotation = false;
-    bool IsKinematic = false;
 
     // Runtime state (not serialized - excluded by ReflectBridge)
     PhysicsBodyHandle Handle = kInvalidPhysicsBody;
@@ -93,9 +92,9 @@ struct RigidBodyComponent
     struct UI
     {
         UIMeta Type = {
+            .Hint = PropertyMeta::WidgetHint::Enum,
             .Tooltip =
-                "Body behavior mode: Static (immovable), Dynamic (full physics), Kinematic (controlled by code)",
-            .Hint = PropertyMeta::WidgetHint::Enum};
+                "Body behavior mode: Static (immovable), Dynamic (full physics), Kinematic (controlled by code)"};
         UIMeta Mass = {.Min = 0.0f, .Max = 100000.0f, .Speed = 0.1f, .Tooltip = "Mass of the physical object"};
         UIMeta LinearDamping = {.Min = 0.0f,
                                 .Max = 1.0f,
@@ -107,7 +106,6 @@ struct RigidBodyComponent
                                  .Tooltip = "Air resistance for object rotation (angular damping)"};
         UIMeta UseGravity = {.Tooltip = "Whether global scene gravity affects this body"};
         UIMeta IsFixedRotation = {.Tooltip = "Blocks any rotation of the object caused by physical forces"};
-        UIMeta IsKinematic = {.Tooltip = "Duplicate kinematic status flag for internal calculations"};
     };
 };
 

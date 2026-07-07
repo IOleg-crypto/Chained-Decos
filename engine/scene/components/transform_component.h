@@ -42,17 +42,10 @@ struct TransformComponent
         UIMeta Scale = {
             .Min = 0.1f, .Max = 10.0f, .Speed = 0.1f, .Tooltip = "Local scale multipliers along X, Y, and Z axes"};
 
-        // Runtime states excluded from serialization but visible as read-only in UI for debugging
-        UIMeta IsDirty = {.ReadOnly = true,
-                          .Transient = true,
-                          .Tooltip = "Internal dirty flag indicating matrix needs recalculation"};
-        UIMeta PrevTranslation = {.ReadOnly = true,
-                                  .Transient = true,
-                                  .Tooltip =
-                                      "Translation state from the previous frame used for rendering interpolation"};
-        UIMeta PrevScale = {.ReadOnly = true,
-                            .Transient = true,
-                            .Tooltip = "Scale state from the previous frame used for rendering interpolation"};
+        UIMeta IsDirty = {.ReadOnly = true, .Transient = true};
+        UIMeta PrevTranslation = {.ReadOnly = true, .Transient = true};
+        UIMeta PrevRotationQuat = {.ReadOnly = true, .Transient = true};
+        UIMeta PrevScale = {.ReadOnly = true, .Transient = true};
     };
 };
 

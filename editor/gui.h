@@ -8,7 +8,7 @@
 
 #include "layer.h"
 #include "panels.h"
-#include "engine/foundation/color.h"
+#include "engine/common/color.h"
 #include "engine/graphics/pipeline/renderer.h"
 
 namespace Chained

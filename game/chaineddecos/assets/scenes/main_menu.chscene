@@ -100,16 +100,16 @@ Entities:
       Size:
       - 100
       - 40
-      Anchor Min:
+      AnchorMin:
       - 0.5
       - 0.5
-      Anchor Max:
+      AnchorMax:
       - 0.5
       - 0.5
-      Offset Min:
+      OffsetMin:
       - -50
       - -20
-      Offset Max:
+      OffsetMax:
       - 50
       - 20
       Pivot:
@@ -203,16 +203,16 @@ Entities:
       Size:
       - 100
       - 40
-      Anchor Min:
+      AnchorMin:
       - 0.5
       - 0.5
-      Anchor Max:
+      AnchorMax:
       - 0.5
       - 0.5
-      Offset Min:
+      OffsetMin:
       - -50
       - -20
-      Offset Max:
+      OffsetMax:
       - 50
       - 20
       Pivot:
@@ -299,16 +299,16 @@ Entities:
       Size:
       - 100
       - 40
-      Anchor Min:
+      AnchorMin:
       - 0.5
       - 0.5
-      Anchor Max:
+      AnchorMax:
       - 0.5
       - 0.5
-      Offset Min:
+      OffsetMin:
       - -50
       - -20
-      Offset Max:
+      OffsetMax:
       - 50
       - 20
       Pivot:
@@ -394,16 +394,16 @@ Entities:
       Size:
       - 100
       - 40
-      Anchor Min:
+      AnchorMin:
       - 0.5
       - 0.5
-      Anchor Max:
+      AnchorMax:
       - 0.5
       - 0.5
-      Offset Min:
+      OffsetMin:
       - -50
       - -20
-      Offset Max:
+      OffsetMax:
       - 50
       - 20
       Pivot:
@@ -486,16 +486,16 @@ Entities:
       Size:
       - 100
       - 40
-      Anchor Min:
+      AnchorMin:
       - 0.5
       - 0.5
-      Anchor Max:
+      AnchorMax:
       - 0.5
       - 0.5
-      Offset Min:
+      OffsetMin:
       - -50
       - -20
-      Offset Max:
+      OffsetMax:
       - 50
       - 20
       Pivot:
@@ -581,16 +581,16 @@ Entities:
       Size:
       - 100
       - 40
-      Anchor Min:
+      AnchorMin:
       - 0.5
       - 0.5
-      Anchor Max:
+      AnchorMax:
       - 0.5
       - 0.5
-      Offset Min:
+      OffsetMin:
       - -50
       - -20
-      Offset Max:
+      OffsetMax:
       - 50
       - 20
       Pivot:
@@ -672,16 +672,16 @@ Entities:
       Size:
       - 100
       - 40
-      Anchor Min:
+      AnchorMin:
       - 0.5
       - 0.5
-      Anchor Max:
+      AnchorMax:
       - 0.5
       - 0.5
-      Offset Min:
+      OffsetMin:
       - -50
       - -20
-      Offset Max:
+      OffsetMax:
       - 50
       - 20
       Pivot:

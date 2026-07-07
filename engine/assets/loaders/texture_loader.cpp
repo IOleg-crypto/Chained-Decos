@@ -71,4 +71,4 @@ namespace Chained
         texAsset->SetPendingImage(rawImage);
         return true;
     }
-} // namespace CHEngine
+} // namespace Chained

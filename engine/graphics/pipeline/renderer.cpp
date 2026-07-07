@@ -66,6 +66,7 @@ void Renderer::LoadEngineResources()
 
     // Eager load common shaders if needed, or let them lazy load
     shaders.LoadOrGet("Lighting");
+    shaders.LoadOrGet("Skinned");
     shaders.LoadOrGet("Unlit");
 
     CH_CORE_INFO("[Renderer] LoadEngineResources done. {} shader(s) loaded.", shaders.GetNames().size());
@@ -87,18 +88,21 @@ void Renderer::Shutdown()
     {
         m_Data->Lighting.LightSSBO.reset();
     }
+    if (m_Data->Shaders) m_Data->Shaders.reset();
+    if (m_Data->GlobalUBO) m_Data->GlobalUBO.reset();
+    if (m_Data->GridPlaneVAO) m_Data->GridPlaneVAO.reset();
 
-    // Explicitly reset remaining GPU assets to avoid context termination crashes
     m_Data->FullscreenQuadVAO.reset();
     m_Data->CameraUBO.reset();
     m_Data->BillboardVAO.reset();
     m_Data->SpriteVAO.reset();
 
-    // Clear caches
     m_Data->InstancedVAOCache.clear();
     m_Data->InstanceBuffer.reset();
     m_Data->LineVBO.reset();
     m_Data->LineVAO.reset();
+
+    RenderCommand::Shutdown();
 }
 
 Renderer::Renderer()
@@ -457,7 +461,6 @@ void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const g
     shader->SetInt("useTexture", 1);
     shader->SetInt("useEmissiveTexture", 0);
     shader->SetFloat("emissiveIntensity", 0.0f);
-    shader->SetInt("useSkinning", 0);
 
     RenderCommand::SetTexture(0, textureId);
     shader->SetInt("texture0", 0);

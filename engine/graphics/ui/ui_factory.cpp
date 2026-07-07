@@ -2,6 +2,7 @@
 #include "engine/scene/components/control_component.h"
 #include "engine/scene/components/ui_action_component.h"
 #include "engine/scene/components.h" // For ControlData types
+#include "engine/core/log.h"
 
 namespace Chained
 {
@@ -20,6 +21,7 @@ bool UIFactory::Create(const std::string& type, Entity entity)
         it->second(entity);
         return true;
     }
+    CH_CORE_WARN("[UIFactory] Unknown UI type '{}' for entity — UIControlComponent::Data will be empty", type);
     return false;
 }
 

@@ -1,5 +1,5 @@
 #include "engine/graphics/pipeline/shader_storage.h"
-#include "engine/foundation/engine_assert.h"
+#include "engine/common/engine_assert.h"
 #include "engine/core/log.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/core/service_locator.h"
@@ -105,8 +105,13 @@ void ShaderStorage::LoadConfig(const std::string& configPath)
 
 std::shared_ptr<ShaderAsset> ShaderStorage::Get(const std::string& name)
 {
-    CH_CORE_ASSERT(Exists(name), "Shader name not found!");
-    return m_Shaders[name];
+    auto it = m_Shaders.find(name);
+    if (it != m_Shaders.end())
+    {
+        return it->second;
+    }
+    CH_CORE_ASSERT(false, "Shader name not found!");
+    return nullptr;
 }
 
 std::shared_ptr<Shader> ShaderStorage::GetShader(const std::string& name)
@@ -156,4 +161,4 @@ void ShaderStorage::ReloadAll()
         }
     }
 }
-} // namespace CHEngine
+} // namespace Chained

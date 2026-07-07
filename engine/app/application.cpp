@@ -1,7 +1,7 @@
 #include "engine/app/application.h"
 #include "engine/core/platform.h"
 #include "engine/core/profiler.h"
-#include "engine/foundation/thread_pool.h"
+#include "engine/common/thread_pool.h"
 #include "engine/imgui/imgui_layer.h"
 #include "engine/core/events/window_events.h"
 #include "engine/assets/asset_manager.h"
@@ -12,7 +12,8 @@
 #include "engine/physics/physics.h"
 #include "engine/core/platform.h"
 #include "engine/scene/component_registry.h"
-#include "engine/platform/utils/file_dialogs.h"
+#include "engine/platform/dialogs/file_dialogs.h"
+#include "engine/project/project.h"
 
 #include "scripting/scriptengine.h"
 #include "engine/core/input.h"
@@ -78,7 +79,6 @@ Application::Application(const ApplicationSpecification& spec)
     ServiceLocator::Provide<Physics>(new Physics());
     ServiceLocator::Provide<ScriptEngine>(new ScriptEngine(m_Specification.EnableScripting));
 
-
     ServiceLocator::InitializeModule();
     ServiceLocator::Lock();
 
@@ -103,6 +103,12 @@ Application::~Application()
 {
 
     m_LayerStack.reset();
+
+    // WARNING: OpenGL resources held by the Project (like Environment maps)
+    // MUST be released before the OpenGL context is destroyed (via m_Window.reset()).
+    // Setting Active Project to nullptr invokes destructors cleanly.
+    Project::SetActive(nullptr);
+
     ServiceLocator::Shutdown();
     FileDialogs::Shutdown();
     Core::Input::Shutdown();

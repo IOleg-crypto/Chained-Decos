@@ -5,13 +5,14 @@
 #include "engine/assets/asset_manager.h"
 #include "engine/core/service_locator.h"
 #include "engine/assets/types/texture_asset.h"
-#include "imgui_internal.h" // Для низькорівневого доступу до кліпінгу та інпуту, якщо треба
+#include "engine/scene/components/tag_component.h"
+#include "imgui_internal.h" // For low-level access to clipping and input if needed
 
 namespace Chained
 {
 
 // ---------------------------------------------------------------------------
-// Оновлені хелпери кольорів
+// Color conversion helpers
 // ---------------------------------------------------------------------------
 inline ImVec4 ToImVec4(const Color& c)
 {
@@ -23,7 +24,7 @@ inline ImU32 ToImU32(const Color& c)
     return IM_COL32(c.r, c.g, c.b, c.a);
 }
 
-// Повертає правильний колір фону залежно від активного стану елемента
+// Returns the correct background color based on the active control state
 static ImU32 GetControlColor(const UIStyle& style, const UIControlComponent& wc)
 {
     if (wc.IsDown)    return ToImU32(style.PressedColor);
@@ -32,14 +33,14 @@ static ImU32 GetControlColor(const UIStyle& style, const UIControlComponent& wc)
 }
 
 // ---------------------------------------------------------------------------
-// Універсальний малювальник тексту з вирівнюванням (Alignment)
+// Universal aligned text renderer
 // ---------------------------------------------------------------------------
 static void RenderAlignedTextureText(ImDrawList* dl, ImFont* font, float fontSize, const std::string& text, 
                                      const ImVec2& pos, const ImVec2& size, const TextStyle& textStyle)
 {
     if (text.empty()) return;
 
-    // Розрахунок розміру тексту за допомогою обраного шрифту
+    // Measure text size using the selected font
     ImVec2 textSize;
     if (font)
     {
@@ -52,22 +53,22 @@ static void RenderAlignedTextureText(ImDrawList* dl, ImFont* font, float fontSiz
         textSize = ImGui::CalcTextSize(text.c_str());
     }
 
-    // Обчислення локального зсуву відносно bounding box віджета
+    // Compute local offset relative to the widget bounding box
     ImVec2 textPos = pos;
 
-    // Горизонтальне вирівнювання
+    // Horizontal alignment
     if (textStyle.Horizontal == HorizontalAlignment::Center)
         textPos.x += (size.x - textSize.x) * 0.5f;
     else if (textStyle.Horizontal == HorizontalAlignment::Right)
         textPos.x += (size.x - textSize.x);
 
-    // Вертикальне вирівнювання
+    // Vertical alignment
     if (textStyle.Vertical == VerticalAlignment::Center)
         textPos.y += (size.y - textSize.y) * 0.5f;
     else if (textStyle.Vertical == VerticalAlignment::Bottom)
         textPos.y += (size.y - textSize.y);
 
-    // Малювання тіні тексту (якщо увімкнено)
+    // Draw text shadow (if enabled)
     if (textStyle.Shadow)
     {
         ImVec2 shadowPos = { textPos.x + textStyle.ShadowOffset, textPos.y + textStyle.ShadowOffset };
@@ -75,13 +76,13 @@ static void RenderAlignedTextureText(ImDrawList* dl, ImFont* font, float fontSiz
         else      dl->AddText(shadowPos, ToImU32(textStyle.ShadowColor), text.c_str());
     }
 
-    // Малювання основного тексту
+    // Draw main text
     if (font) dl->AddText(font, fontSize, textPos, ToImU32(textStyle.TextColor), text.c_str());
     else      dl->AddText(textPos, ToImU32(textStyle.TextColor), text.c_str());
 }
 
 // ---------------------------------------------------------------------------
-// Чисті низькорівневі методи рендерингу контролів
+// Low-level control rendering methods
 // ---------------------------------------------------------------------------
 
 static bool RenderPanel(PanelData& panel, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
@@ -116,7 +117,7 @@ static bool RenderButton(const ButtonData& button, UIControlComponent& wc, const
     ImDrawList* dl = ImGui::GetWindowDrawList();
     ImVec2 pMax = {pos.x + size.x, pos.y + size.y};
 
-    // Візуалізація фону кнопки на основі станів з InputSystem
+    // Render button background based on InputSystem state
     ImU32 btnColor = GetControlColor(wc.BoxStyle, wc);
     dl->AddRectFilled(pos, pMax, btnColor, wc.BoxStyle.Rounding);
 
@@ -125,7 +126,7 @@ static bool RenderButton(const ButtonData& button, UIControlComponent& wc, const
         dl->AddRect(pos, pMax, ToImU32(wc.BoxStyle.BorderColor), wc.BoxStyle.Rounding, 0, wc.BoxStyle.BorderSize);
     }
 
-    // Вивід тексту всередині кнопки
+    // Draw text inside the button
     RenderAlignedTextureText(dl, font, textStyle.FontSize, button.Label, pos, size, textStyle);
 
     return wc.PressedThisFrame;
@@ -142,7 +143,7 @@ static bool RenderCheckbox(CheckboxData& cb, UIControlComponent& wc, const ImVec
 {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     
-    // Розраховуємо квадрат для галочки (розмір підлаштовуємо під висоту нашого UI елемента)
+    // Compute checkbox square (sized to match UI element height)
     float boxSize = size.y > 0.0f ? size.y : 18.0f;
     ImVec2 boxMax = { pos.x + boxSize, pos.y + boxSize };
     
@@ -150,19 +151,19 @@ static bool RenderCheckbox(CheckboxData& cb, UIControlComponent& wc, const ImVec
     dl->AddRectFilled(pos, boxMax, boxColor, wc.BoxStyle.Rounding);
     dl->AddRect(pos, boxMax, ToImU32(wc.BoxStyle.BorderColor), wc.BoxStyle.Rounding, 0, 1.0f);
 
-    // Якщо активовано - малюємо внутрішній маркер
+    // If checked — draw inner marker
     if (cb.Checked)
     {
         float pad = boxSize * 0.25f;
         dl->AddRectFilled({pos.x + pad, pos.y + pad}, {boxMax.x - pad, boxMax.y - pad}, ToImU32(textStyle.TextColor), wc.BoxStyle.Rounding);
     }
 
-    // Текст чекбокса зміщуємо праворуч від квадрата
+    // Offset checkbox text to the right of the square
     ImVec2 textPos = { pos.x + boxSize + 8.0f, pos.y };
     ImVec2 textSize = { size.x - boxSize - 8.0f, size.y };
     RenderAlignedTextureText(dl, font, textStyle.FontSize, cb.Label, textPos, textSize, textStyle);
 
-    // Якщо користувач клікнув на віджет (оброблено вашим InputSystem)
+    // If user clicked the widget (handled by InputSystem)
     if (wc.PressedThisFrame)
     {
         cb.Checked = !cb.Checked;
@@ -174,11 +175,11 @@ static bool RenderCheckbox(CheckboxData& cb, UIControlComponent& wc, const ImVec
 
 static bool RenderSlider(SliderData& slider, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
 {
-    // Залишаємо базовий інпут ImGui, але жорстко обмежуємо його ширину (приховуємо мітку "##")
+    // Keep default ImGui input but hard-cap its width (hide the "##" label)
     ImGui::SetCursorScreenPos(pos);
     ImGui::SetNextItemWidth(size.x);
     
-    // Передаємо стилі у стек ImGui тимчасово
+    // Push style vars to ImGui stack temporarily
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, wc.BoxStyle.Rounding);
     bool changed = ImGui::SliderFloat("##slider", &slider.Value, slider.Min, slider.Max, "%.2f");
     ImGui::PopStyleVar();
@@ -191,10 +192,10 @@ static bool RenderProgressBar(const ProgressBarData& pb, UIControlComponent& wc,
     ImDrawList* dl = ImGui::GetWindowDrawList();
     ImVec2 pMax = {pos.x + size.x, pos.y + size.y};
 
-    // Бекграунд бару
+    // Bar background
     dl->AddRectFilled(pos, pMax, ToImU32(wc.BoxStyle.BackgroundColor), wc.BoxStyle.Rounding);
 
-    // Заповнення прогресу
+    // Progress fill
     float currentProgressWidth = size.x * std::clamp(pb.Progress, 0.0f, 1.0f);
     if (currentProgressWidth > 0.0f)
     {
@@ -211,12 +212,16 @@ static bool RenderProgressBar(const ProgressBarData& pb, UIControlComponent& wc,
 }
 
 // ---------------------------------------------------------------------------
-// Головний Диспетчер UI Контролів
+// Main UI Control Dispatcher
 // ---------------------------------------------------------------------------
 bool RenderControl(const UIFontRegistry& fontRegistry,
                    Entity entity, UIControlComponent& control, const ImVec2& screenPos, const ImVec2& size)
 {
-    // 1. Отримуємо потрібний шрифт через реєстр
+    // 1. Early return for empty control data
+    if (std::holds_alternative<std::monostate>(control.Data))
+        return false;
+
+    // 2. Resolve the active font from the registry
     ImFont* activeFont = nullptr;
     if (!control.TextStyle.FontName.empty() && control.TextStyle.FontName != "Default")
     {
@@ -225,7 +230,7 @@ bool RenderControl(const UIFontRegistry& fontRegistry,
 
     bool changed = false;
 
-    // 2. Диспетчеризація варіантів без ImGui-відступів
+    // 3. Dispatch variant without ImGui spacing
     std::visit([&](auto&& arg) {
         using T = std::decay_t<decltype(arg)>;
         if constexpr (std::is_same_v<T, ButtonData>)
@@ -240,7 +245,19 @@ bool RenderControl(const UIFontRegistry& fontRegistry,
             changed = RenderSlider(arg, control, screenPos, size);
         else if constexpr (std::is_same_v<T, ProgressBarData>)
             changed = RenderProgressBar(arg, control, screenPos, size);
-        // Додаткові складні типи (на кшталт ColorPicker, ТreeNode тощо) можна додавати сюди за аналогією.
+        else
+        {
+            // Fallback: draw a bordered rectangle with type name for unhandled UI types
+            ImDrawList* dl = ImGui::GetWindowDrawList();
+            dl->AddRect(screenPos, ImVec2(screenPos.x + size.x, screenPos.y + size.y),
+                        IM_COL32(100, 100, 100, 255), 0.0f, 0, 1.0f);
+            // Show type info if available
+            if (entity.HasComponent<TagComponent>())
+            {
+                const char* label = entity.GetComponent<TagComponent>().Tag.c_str();
+                dl->AddText(ImVec2(screenPos.x + 4, screenPos.y + 2), IM_COL32(180, 180, 180, 255), label);
+            }
+        }
     }, control.Data);
 
     control.ValueChanged = changed;

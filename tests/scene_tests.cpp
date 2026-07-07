@@ -2,7 +2,7 @@
 #include "engine/core/service_locator.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
-#include "engine/serialization/component_serializer.h"
+#include "engine/scene/component_serializer.h"
 #include "gtest/gtest.h"
 
 

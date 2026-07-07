@@ -13,7 +13,7 @@ void RenderCommand::Initialize()
 
 void RenderCommand::Shutdown()
 {
-
+    s_RendererAPI.reset();
 }
 
 

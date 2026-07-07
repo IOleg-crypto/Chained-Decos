@@ -6,7 +6,7 @@
 #include <filesystem>
 
 
-namespace CHEngine
+namespace Chained
 {
     class ProjectManager
     {

@@ -16,7 +16,7 @@
 #include "engine/graphics/pipeline/debug_renderer.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/texture_asset.h"
-#include "engine/serialization/prefab_serializer.h"
+#include "engine/scene/prefab_serializer.h"
 #include "engine/project/project.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_events.h"
@@ -234,7 +234,6 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
 
     // 7. Toolbars
     RenderToolbar(activeScene.get(), viewportSize, viewportScreenPos);
-    RenderLaunchHUD(viewportSize, viewportScreenPos);
 
     ImGui::End();
     ImGui::PopStyleVar();
@@ -267,9 +266,9 @@ void ViewportPanel::OnUpdate(Timestep ts)
     if (state == SceneState::Edit || state == SceneState::Simulate)
     {
         auto activeScene = EditorLayer::Get().GetActiveScene();
-        // Use m_Focused/m_Hovered that were set in the PREVIOUS frame's ImGuiRender.
+        // Use m_Hovered that was set in the PREVIOUS frame's ImGuiRender.
         // Also allow update if right mouse is held (user clicked into viewport from outside).
-        bool mouseInViewport = m_Hovered || m_Focused || Chained::Core::Input::IsMouseButtonDown(Chained::MouseCode::ButtonRight);
+        bool mouseInViewport = m_Hovered || Chained::Core::Input::IsMouseButtonDown(Chained::MouseCode::ButtonRight);
         if (activeScene && mouseInViewport)
         {
             auto& editorSettings = EditorLayer::Get().GetProjectManager().GetEditorSettings();
@@ -393,10 +392,17 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
     options.ShowDebugCollisionModelBox = currentDebugFlags.DrawCollisionModelBox;
     options.ShowDebugSpawnZones = currentDebugFlags.DrawSpawnZones;
     options.SetCollisionWireframeMode = currentDebugFlags.SetCollisionWireframeMode;
-    options.ShowEditorIcons = (EditorLayer::Get().GetSceneState() != SceneState::Play); 
+    options.ShowEditorIcons = false; // Stub in SceneRenderer uses ID 0; we render icons ourselves below
 
     
     m_SceneRenderer->RenderScene(activeScene->GetRegistry(), activeScene->GetSettings(), camera, camera.NearClip, camera.FarClip, options);
+
+    // Render proper editor icons (camera, light, spawn) with loaded textures
+    if (EditorLayer::Get().GetSceneState() != SceneState::Play)
+    {
+        RenderEditorIcons(activeScene->GetRegistry(), activeScene->GetSettings(), camera);
+    }
+
     m_HDRFramebuffer->Unbind();
  
     
@@ -666,46 +672,17 @@ void ViewportPanel::RenderToolbar(Scene* activeScene, const ImVec2& viewportSize
         }
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Reload Scripts (Ctrl+R)");
 
-        ImGui::SameLine(0, 15);
-        ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
-        ImGui::SameLine(0, 15);
+    ImGui::SameLine(0, 15);
+    ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+    ImGui::SameLine(0, 15);
 
-        // Run scene in new window (for play mode testing)
-        if (ImGui::Button(ICON_FA_WINDOW_MAXIMIZE "##RunSceneInNewWindow", ImVec2(28, 28)))
-        {
-            AppLaunchRuntimeEvent e;
-            Application::Get().OnEvent(e);
-        }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Run Scene in New Window (Shift+F5)");
-
-        // Camera Info
-        Entity primaryCam = SceneRenderer::GetPrimaryCameraEntity(activeScene->GetRegistry(), activeScene->GetRegistryPtr());
-        if (primaryCam) ImGui::TextDisabled(ICON_FA_CAMERA " %s", primaryCam.GetComponent<TagComponent>().Tag.c_str());
-        else ImGui::TextColored({1, 0, 0, 1}, ICON_FA_CIRCLE_EXCLAMATION " No Primary Camera");
-    }
-    ImGui::EndChild();
-    ImGui::PopStyleVar(2);
-    ImGui::PopStyleColor();
-}
-
-void ViewportPanel::RenderLaunchHUD(const ImVec2& viewportSize, const ImVec2& viewportScreenPos)
-{
-    ImGui::SetCursorScreenPos({viewportScreenPos.x + viewportSize.x - 110.0f, viewportScreenPos.y + 10.0f});
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.12f, 0.8f));
-    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5, 5));
-
-    if (ImGui::BeginChild("##LaunchHUD", ImVec2(100, 40), true,
-                          ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
+    // Run scene in new window (for play mode testing)
+    if (ImGui::Button(ICON_FA_WINDOW_MAXIMIZE "##RunSceneInNewWindow", ImVec2(28, 28)))
     {
-        ImGui::SetCursorPosY(6);
-        ImGui::Indent(5);
-        if (ImGui::Button(ICON_FA_ROCKET " Launch", ImVec2(90, 28)))
-        {
-            AppLaunchRuntimeEvent e;
-            Application::Get().OnEvent(e);
-        }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Build & Run Standalone project (F5)");
+        AppLaunchRuntimeEvent e;
+        Application::Get().OnEvent(e);
+    }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Run Scene in New Window (Shift+F5)");
     }
     ImGui::EndChild();
     ImGui::PopStyleVar(2);

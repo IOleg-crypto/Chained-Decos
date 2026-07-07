@@ -3,7 +3,7 @@
 // These tests require a valid OpenGL context and are skipped on CI.
 #include "engine/app/application.h"
 #include "engine/core/service_locator.h"
-#include "engine/foundation/base.h"
+#include "engine/common/base.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "gtest/gtest.h"
 

@@ -1,5 +1,5 @@
 #include "engine/assets/asset_manager.h"
-#include "engine/foundation/thread_pool.h"
+#include "engine/common/thread_pool.h"
 #include "engine/core/profiler.h"
 #include "engine/core/service_locator.h"
 
@@ -12,8 +12,8 @@
 
 namespace Chained
 {
-constexpr size_t kMaxAssetFinalizationsPerFrame = 16;
-constexpr auto kMaxAssetFinalizeBudget = std::chrono::milliseconds(2);
+constexpr size_t kMaxAssetFinalizationsPerFrame = 32;
+constexpr auto kMaxAssetFinalizeBudget = std::chrono::milliseconds(5);
 
 AssetManager::AssetManager() = default;
 
@@ -33,6 +33,10 @@ void AssetManager::Shutdown()
     {
         Update();
         std::this_thread::yield();
+    }
+    if (auto* tp = ServiceLocator::Get<ThreadPool>())
+    {
+        tp->WaitIdle();
     }
 }
 
@@ -417,4 +421,4 @@ void AssetManager::ReloadAsset(AssetHandle handle, AssetType type)
     }
 }
 
-} // namespace CHEngine
+} // namespace Chained

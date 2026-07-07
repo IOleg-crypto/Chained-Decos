@@ -3,6 +3,8 @@
 
 namespace Chained
 {
+    // Computes the world-space AABB of a box collider by transforming all 8
+    // corner vertices through the world matrix and taking the min/max.
     BoundingBox ColliderComponent::CalculateWorldAABB(const ColliderComponent& collider, const glm::mat4& worldTransform)
     {
         glm::vec3 halfExtents = collider.Size * 0.5f;

@@ -67,7 +67,7 @@ void ShadowPass::Execute(const RenderContext& ctx)
     {
         ctx.Renderer->DrawModel(item.Asset, item.Transform,
                                 item.BoneMatrices, item.Materials,
-                                nullptr, {}, RenderPassStage::Opaque);
+                                m_DepthShaderAsset.get(), {}, RenderPassStage::Opaque);
     }
 
     m_ShadowMap->Unbind();

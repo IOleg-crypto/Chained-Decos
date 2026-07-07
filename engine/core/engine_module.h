@@ -1,8 +1,8 @@
 #ifndef CH_ENGINE_MODULE_H
 #define CH_ENGINE_MODULE_H
 
-#include "engine/foundation/base.h"
-#include "engine/foundation/timestep.h"
+#include "engine/common/base.h"
+#include "engine/common/timestep.h"
 
 namespace Chained {
 class CH_API EngineModule {
