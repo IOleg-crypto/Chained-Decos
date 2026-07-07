@@ -2,8 +2,8 @@
 #define CH_SERVICE_LOCATOR_H
 
 #include "engine/core/engine_module.h"
-#include "engine/foundation/engine_assert.h"
-#include "engine/foundation/base.h"
+#include "engine/common/engine_assert.h"
+#include "engine/common/base.h"
 #include <memory>
 #include <shared_mutex>
 #include <type_traits> 
@@ -112,11 +112,14 @@ public:
 
     static void Shutdown()
     {
-        std::unique_lock<std::shared_mutex> lock(GetMutex());
-        s_IsLocked = false;
+        std::vector<std::shared_ptr<EngineModule>> modulesToShutdown;
+        {
+            std::unique_lock<std::shared_mutex> lock(GetMutex());
+            s_IsLocked = false;
+            modulesToShutdown = GetModuleOrder();
+        }
 
-        auto& order = GetModuleOrder();
-        for (auto it = order.rbegin(); it != order.rend(); ++it)
+        for (auto it = modulesToShutdown.rbegin(); it != modulesToShutdown.rend(); ++it)
         {
             if ((*it)->IsEnabled())
             {
@@ -124,8 +127,16 @@ public:
             }
         }
 
-        GetInternalMap().clear();
-        order.clear();
+        {
+            std::unique_lock<std::shared_mutex> lock(GetMutex());
+            GetInternalMap().clear();
+            GetModuleOrder().clear();
+        }
+    }
+    static bool IsAvailable()
+    {
+        std::shared_lock<std::shared_mutex> lock(GetMutex());
+        return !GetInternalMap().empty();
     }
     template <typename T> static T* Get()
     {

@@ -28,9 +28,7 @@ void UIRenderer::LoadProjectFonts() {
 }
 
 UIRect UIRenderer::GetEntityRect(Scene *scene, Entity entity, const ImVec2 &viewportSize, const ImVec2 &viewportPos) {
-    // Оскільки оператор приведення або метод доступу до дескриптора в Entity не явний,
-    // для внутрішніх розрахунків ми створюємо/використовуємо сутність через оператор приведення,
-    // або якщо в Entity є implicit cast до entt::entity, використовуємо його:
+    // Entity may not have an explicit handle accessor, so we use the implicit cast to entt::entity
     return m_LayoutSystem.GetEntityRect((entt::entity)entity);
 }
 
@@ -49,7 +47,7 @@ std::vector<entt::entity> UIRenderer::SortUIEntities(entt::registry &registry) {
     auto view = registry.view<ControlComponent>();
     std::vector<entt::entity> sorted(view.begin(), view.end());
 
-    // Сортування за Z-порядком для правильної послідовності відрисування (back-to-front)
+    // Sort by Z-order for correct back-to-front rendering sequence
     std::sort(sorted.begin(), sorted.end(), [&](entt::entity a, entt::entity b) {
         return view.get<ControlComponent>(a).ZOrder < view.get<ControlComponent>(b).ZOrder;
     });
@@ -62,7 +60,7 @@ bool UIRenderer::RenderUIComponent(Entity entity, const ImVec2 &screenPos, const
         return false;
 
     auto &control = entity.GetComponent<UIControlComponent>();
-    // Виклик низькорівневого рендерера на базі ImDrawList
+    // Delegate to the low-level ImDrawList-based control renderer
     return RenderControl(m_FontRegistry, entity, control, screenPos, size);
 }
 
@@ -75,7 +73,7 @@ void UIRenderer::DrawCanvas(Scene *scene, const ImVec2 &referencePosition, const
 
     auto &registry = scene->GetRegistry();
 
-    // 1. Оновлення та синхронізація внутрішніх UI систем
+    // 1. Update and synchronize internal UI systems
     m_LayoutSystem.Update(scene, refSize, referencePosition);
 
     if (m_InputCooldownFrames > 0)
@@ -84,7 +82,7 @@ void UIRenderer::DrawCanvas(Scene *scene, const ImVec2 &referencePosition, const
     m_InputSystem.Update(registry, m_LayoutSystem, m_InputCooldownFrames);
     m_AnimationSystem.Update(registry, ImGui::GetIO().DeltaTime);
 
-    // 2. Рендеринг елементів
+    // 2. Render UI elements
     auto uiEntities = SortUIEntities(registry);
 
     ImVec2 canvasClipMin = referencePosition;
@@ -92,21 +90,21 @@ void UIRenderer::DrawCanvas(Scene *scene, const ImVec2 &referencePosition, const
     ImGui::PushClipRect(canvasClipMin, canvasClipMax, true);
 
     for (entt::entity id : uiEntities) {
-        // ФІКС 1: Передаємо вказівник на entt::registry, як того вимагає конструктор у вашому entity.cpp
+        // FIX 1: Pass entt::registry pointer as required by the Entity constructor
         Entity entity(id, scene->GetRegistryPtr());
 
         auto &control = registry.get<ControlComponent>(id);
         if (!control.IsActive)
             continue;
 
-        // ФІКС 2: Замість entity.GetHandle() використовуємо локальний `id`, який вже є типу entt::entity
+        // FIX 2: Use local id directly instead of entity.GetHandle()
         UIRect rect = m_LayoutSystem.GetEntityRect(id);
         ImVec2 screenPos = {rect.x, rect.y};
         ImVec2 size = {rect.width, rect.height};
 
         bool needsClipPop = false;
 
-        // Безпечне отримання ієрархії батьківського елемента для відсікання (Scissor Test)
+        // Safely retrieve parent hierarchy for scissor clipping
         if (entity.HasComponent<HierarchyComponent>()) {
             auto &hierarchy = entity.GetComponent<HierarchyComponent>();
             auto parentID = hierarchy.Parent;
@@ -127,7 +125,7 @@ void UIRenderer::DrawCanvas(Scene *scene, const ImVec2 &referencePosition, const
             ImGui::BeginGroup();
             ImGui::PushID((int)id);
 
-            // Спроба відрисувати компонент контролю
+            // Attempt to render the control component
             if (!RenderUIComponent(entity, screenPos, size, editMode)) {
                 if (entity.HasComponent<UIControlComponent>()) {
                     auto &widget = entity.GetComponent<UIControlComponent>();
@@ -138,7 +136,7 @@ void UIRenderer::DrawCanvas(Scene *scene, const ImVec2 &referencePosition, const
                 }
             }
 
-            // В режимі редагування перекриваємо зону невидимою кнопкою, щоб не спрацьовувала логіка гри
+            // In edit mode, overlay with an invisible button to prevent game logic from firing
             if (editMode) {
                 ImGui::SetCursorScreenPos(screenPos);
                 ImGui::InvisibleButton("##DragZone", size);

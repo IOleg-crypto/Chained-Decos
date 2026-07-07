@@ -2,7 +2,7 @@
 #define CH_RENDERER_H
 
 #include "engine/core/engine_module.h"
-#include "engine/foundation/timestep.h"
+#include "engine/common/timestep.h"
 #include "engine/graphics/camera_types.h"
 #include "engine/graphics/api/storage_buffer.h"
 #include "engine/assets/types/environment_asset.h"
@@ -208,6 +208,6 @@ private:
     uint32_t m_ViewportWidth = 1280;
     uint32_t m_ViewportHeight = 720;
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_RENDERER_H

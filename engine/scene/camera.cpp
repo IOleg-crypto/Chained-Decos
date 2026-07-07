@@ -3,6 +3,7 @@
 
 namespace Chained {
 
+    // Builds a perspective projection matrix from vertical FOV, aspect ratio, and clip planes.
     void Camera::SetPerspective(float verticalFov, float nearClip, float farClip) {
         m_ProjectionType = ProjectionType::Perspective;
         m_PerspectiveFOV = verticalFov;
@@ -11,6 +12,7 @@ namespace Chained {
         RecalculateProjection();
     }
 
+    // Builds an orthographic projection matrix from view half-height, aspect ratio, and clip planes.
     void Camera::SetOrthographic(float size, float nearClip, float farClip) {
         m_ProjectionType = ProjectionType::Orthographic;
         m_OrthographicSize = size;
@@ -25,6 +27,8 @@ namespace Chained {
         RecalculateProjection();
     }
 
+    // Recalculates the projection matrix based on the current projection type,
+    // aspect ratio, FOV (perspective), or half-height (orthographic).
     void Camera::RecalculateProjection() {
         if (m_ProjectionType == ProjectionType::Perspective) {
             m_Projection = glm::perspective(m_PerspectiveFOV, m_AspectRatio, m_PerspectiveNear, m_PerspectiveFar);
@@ -37,6 +41,8 @@ namespace Chained {
         }
     }
 
+    // Extracts a Camera3D struct from the camera component and its world transform.
+    // Used by the rendering pipeline to get view/projection matrices and position.
     Camera3D Camera::GetCamera3D(const glm::mat4& transform) const {
         Camera3D c;
         c.Position = transform[3];

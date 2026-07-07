@@ -18,8 +18,9 @@
 
 #include "engine/app/application.h"
 #include <yaml-cpp/yaml.h>
-// Component Registry handles all dynamic component UI
 #include "engine/scene/component_registry.h"
+#include "engine/assets/asset_manager.h"
+#include "engine/assets/types/model_asset.h"
 
 namespace Chained
 {
@@ -117,101 +118,57 @@ void PropertyEditor::DrawGenericReflection(const ComponentMetadata& metadata, En
 template <typename T> void PropertyEditor::Register(const std::string& name, const char* icon)
 {
     auto typeId = entt::type_hash<T>::value();
-    if (!ComponentRegistry::Exists(typeId))
-    {
-        ComponentMetadata metadata;
-        metadata.Name = name;
-        metadata.Icon = icon;
-        metadata.Category = "Engine";
-        metadata.DrawUI = [name, icon](Entity e) { DrawComponentReflection<T>(name, icon, e); };
-        metadata.Add = [](Entity e) {
-            if (!e.HasComponent<T>())
-            {
-                if (s_EditorLayer)
-                {
-                    s_EditorLayer->GetCommandHistory().PushCommand(std::make_unique<AddComponentCommand<T>>(e));
-                }
-            }
-        };
-        metadata.Remove = [](Entity e) {
-            if (s_EditorLayer)
-            {
-                s_EditorLayer->GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(e));
-            }
-        };
-        metadata.SerializationKey = name + "Component"; // Default key convention
-        ComponentRegistry::Register(typeId, metadata);
-    }
-    else
-    {
-        auto& metadata = ComponentRegistry::GetMetadataMutable(typeId);
-        metadata.Name = name;
-        metadata.Icon = icon;
-        metadata.DrawUI = [name, icon](Entity e) { DrawComponentReflection<T>(name, icon, e); };
-        metadata.Add = [](Entity e) {
-            if (!e.HasComponent<T>())
-            {
-                if (s_EditorLayer)
-                    s_EditorLayer->GetCommandHistory().PushCommand(std::make_unique<AddComponentCommand<T>>(e));
-            }
-        };
-        metadata.Remove = [](Entity e) {
-            if (s_EditorLayer)
-                s_EditorLayer->GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(e));
-        };
-    }
+    auto& metadata = ComponentRegistry::Exists(typeId)
+        ? ComponentRegistry::GetMetadataMutable(typeId)
+        : ([&]() -> ComponentMetadata& {
+            ComponentMetadata fresh;
+            fresh.Name = name;
+            fresh.Icon = icon;
+            fresh.Category = "Engine";
+            fresh.SerializationKey = name + "Component";
+            ComponentRegistry::Register(typeId, fresh);
+            return ComponentRegistry::GetMetadataMutable(typeId);
+          })();
+
+    metadata.Name = name;
+    metadata.Icon = icon;
+    metadata.DrawUI = [name, icon](Entity e) { DrawComponentReflection<T>(name, icon, e); };
+    metadata.Add = [](Entity e) {
+        if (!e.HasComponent<T>() && s_EditorLayer)
+            s_EditorLayer->GetCommandHistory().PushCommand(std::make_unique<AddComponentCommand<T>>(e));
+    };
+    metadata.Remove = [](Entity e) {
+        if (s_EditorLayer)
+            s_EditorLayer->GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(e));
+    };
 }
 
 template <typename T>
 void PropertyEditor::RegisterCustom(const std::string& name, std::function<bool(T&, Entity)> drawer, const char* icon)
 {
     auto typeId = entt::type_hash<T>::value();
-    if (!ComponentRegistry::Exists(typeId))
-    {
-        ComponentMetadata metadata;
-        metadata.Name = name;
-        metadata.Icon = icon;
-        metadata.Category = "Engine";
-        metadata.DrawUI = [name, icon, drawer](Entity e) { DrawComponentContainer<T>(name, icon, e, drawer); };
-        metadata.Add = [](Entity e) {
-            if (!e.HasComponent<T>())
-            {
-                if (s_EditorLayer)
-                {
-                    s_EditorLayer->GetCommandHistory().PushCommand(std::make_unique<AddComponentCommand<T>>(e));
-                }
-            }
-        };
-        metadata.Remove = [](Entity e) {
-             if (s_EditorLayer)
-             {
-                 s_EditorLayer->GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(e));
-             }
-        };
-        ComponentRegistry::Register(typeId, metadata);
-    }
-    else
-    {
-        auto& metadata = ComponentRegistry::GetMetadataMutable(typeId);
-        metadata.Name = name;
-        metadata.Icon = icon;
-        metadata.DrawUI = [name, icon, drawer](Entity e) { DrawComponentContainer<T>(name, icon, e, drawer); };
-        metadata.Add = [](Entity e) {
-            if (!e.HasComponent<T>())
-            {
-                if (s_EditorLayer)
-                {
-                    s_EditorLayer->GetCommandHistory().PushCommand(std::make_unique<AddComponentCommand<T>>(e));
-                }
-            }
-        };
-        metadata.Remove = [](Entity e) {
-             if (s_EditorLayer)
-             {
-                 s_EditorLayer->GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(e));
-             }
-        };
-    }
+    auto& metadata = ComponentRegistry::Exists(typeId)
+        ? ComponentRegistry::GetMetadataMutable(typeId)
+        : ([&]() -> ComponentMetadata& {
+            ComponentMetadata fresh;
+            fresh.Name = name;
+            fresh.Icon = icon;
+            fresh.Category = "Engine";
+            ComponentRegistry::Register(typeId, fresh);
+            return ComponentRegistry::GetMetadataMutable(typeId);
+          })();
+
+    metadata.Name = name;
+    metadata.Icon = icon;
+    metadata.DrawUI = [name, icon, drawer](Entity e) { DrawComponentContainer<T>(name, icon, e, drawer); };
+    metadata.Add = [](Entity e) {
+        if (!e.HasComponent<T>() && s_EditorLayer)
+            s_EditorLayer->GetCommandHistory().PushCommand(std::make_unique<AddComponentCommand<T>>(e));
+    };
+    metadata.Remove = [](Entity e) {
+        if (s_EditorLayer)
+            s_EditorLayer->GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(e));
+    };
 }
 
 // --- Implementation ---
@@ -226,14 +183,142 @@ void PropertyEditor::Init()
 
     Register<TagComponent>("Tag", ICON_FA_TAG);
     Register<CameraComponent>("Camera", ICON_FA_VIDEO);
-    Register<LightComponent>("Light", ICON_FA_LIGHTBULB);
+    RegisterCustom<LightComponent>("Light", [&](LightComponent& comp, Entity entity) {
+        bool changed = false;
+        UIProperties ui;
+        Properties props(ui);
+
+        int typeIdx = static_cast<int>(comp.Type);
+        static const char* lightTypes[] = {"Point", "Spot", "Directional"};
+        if (ui.Enum("Type", typeIdx, lightTypes, 3))
+        {
+            comp.Type = static_cast<LightType>(typeIdx);
+            changed = true;
+        }
+        if (ui.Property("Color", comp.LightColor)) changed = true;
+        if (ui.Property("Intensity", comp.Intensity, PropertyMeta(0.0f, 10000.0f, 5.0f))) changed = true;
+        if (ui.Property("Range", comp.Radius, PropertyMeta(0.0f, 1000.0f, 1.0f))) changed = true;
+
+        if (comp.Type == LightType::Spot)
+        {
+            if (ui.Property("Inner Cutoff", comp.InnerCutoff, PropertyMeta(0.0f, 90.0f, 0.5f))) changed = true;
+            if (ui.Property("Outer Cutoff", comp.OuterCutoff, PropertyMeta(0.0f, 90.0f, 0.5f))) changed = true;
+        }
+
+        if (ui.Property("Cast Shadows", comp.Shadows)) changed = true;
+
+        return changed;
+    }, ICON_FA_LIGHTBULB);
     Register<RigidBodyComponent>("RigidBody", ICON_FA_CUBES);
-    Register<ColliderComponent>("Collider", ICON_FA_SHIELD);
+    RegisterCustom<ColliderComponent>("Collider", [&](ColliderComponent& comp, Entity entity) {
+        bool changed = false;
+        UIProperties ui;
+        Properties props(ui);
+
+        int typeIdx = static_cast<int>(comp.Type);
+        static const char* colliderTypes[] = {"Box", "Sphere", "Capsule", "Mesh"};
+        if (ui.Enum("Type", typeIdx, colliderTypes, 4))
+        {
+            comp.Type = static_cast<ColliderType>(typeIdx);
+            changed = true;
+        }
+
+        if (comp.Type == ColliderType::Box)
+        {
+            if (ui.Property("Size", comp.Size, PropertyMeta(0.01f, 100.0f, 0.05f))) changed = true;
+        }
+        else if (comp.Type == ColliderType::Sphere || comp.Type == ColliderType::Capsule)
+        {
+            if (ui.Property("Radius", comp.Radius, PropertyMeta(0.0f, 500.0f, 0.05f))) changed = true;
+        }
+        if (comp.Type == ColliderType::Capsule)
+        {
+            if (ui.Property("Height", comp.Height, PropertyMeta(0.0f, 500.0f, 0.05f))) changed = true;
+        }
+
+        if (ui.Property("Offset", comp.Offset, PropertyMeta(-10.0f, 10.0f, 0.05f))) changed = true;
+
+        if (comp.Type == ColliderType::Mesh)
+        {
+            if (ui.Property("Auto Calculate", comp.AutoCalculate)) changed = true;
+            if (!comp.AutoCalculate)
+            {
+                if (ui.File("Model Path", comp.ModelPath, ".glb,.gltf,.obj")) changed = true;
+            }
+        }
+
+        if (ui.Property("Friction", comp.Friction, PropertyMeta(0.0f, 1.0f, 0.01f))) changed = true;
+        if (ui.Property("Restitution", comp.Restitution, PropertyMeta(0.0f, 1.0f, 0.01f))) changed = true;
+        if (ui.Property("Is Trigger", comp.IsTrigger)) changed = true;
+        if (ui.Property("Enabled", comp.Enabled)) changed = true;
+
+        return changed;
+    }, ICON_FA_SHIELD);
     Register<ModelComponent>("Model", ICON_FA_CUBE);
     Register<SpriteComponent>("Sprite", ICON_FA_IMAGE);
     Register<PrimitiveComponent>("Primitive", ICON_FA_SHAPES);
     Register<ShaderComponent>("Shader", ICON_FA_CODE);
-    Register<AnimationComponent>("Animation", ICON_FA_FILM);
+    RegisterCustom<AnimationComponent>("Animation", [&](AnimationComponent& comp, Entity entity) {
+        bool changed = false;
+        UIProperties ui;
+        Properties props(ui);
+        
+        if (ui.Property("Blend Duration", comp.BlendDuration, PropertyMeta(0.0f, 2.0f, 0.01f))) changed = true;
+        if (ui.Property("Is Looping", comp.IsLooping)) changed = true;
+        if (ui.Property("Play On Start", comp.PlayOnStart)) changed = true;
+        if (ui.Property("Is Playing", comp.IsPlaying)) changed = true;
+
+        if (entity.HasComponent<ModelComponent>())
+        {
+            auto& mc = entity.GetComponent<ModelComponent>();
+            auto* am = ServiceLocator::Get<AssetManager>();
+            if (mc.ModelHandle != 0 && am)
+            {
+                if (auto asset = am->Get<ModelAsset>(mc.ModelHandle))
+                {
+                    if (asset->GetAnimationCount() > 0)
+                    {
+                        std::vector<std::string> animNames;
+                        std::vector<const char*> cStrs;
+                        for (int i = 0; i < asset->GetAnimationCount(); i++)
+                        {
+                            std::string name = asset->GetAnimationName(i);
+                            if (name.empty()) name = "Animation " + std::to_string(i);
+                            animNames.push_back(name);
+                        }
+                        for (auto& s : animNames) cStrs.push_back(s.c_str());
+
+                        int currentIdx = comp.CurrentAnimationIndex;
+                        if (ui.Enum("Current Animation", currentIdx, cStrs.data(), (int)cStrs.size()))
+                        {
+                            comp.CurrentAnimationIndex = currentIdx;
+                            comp.TargetAnimationIndex = currentIdx; 
+                            changed = true;
+                        }
+
+                        if (comp.CurrentAnimationIndex >= 0 && comp.CurrentAnimationIndex < (int)animNames.size())
+                        {
+                            ImGui::TableNextRow();
+                            ImGui::TableSetColumnIndex(0);
+                            ImGui::Text("Name");
+                            ImGui::TableSetColumnIndex(1);
+                            ImGui::TextDisabled("%s", animNames[comp.CurrentAnimationIndex].c_str());
+                        }
+                    }
+                    else
+                    {
+                        ImGui::TextDisabled("No animations in model.");
+                    }
+                }
+            }
+        }
+        else
+        {
+            ImGui::TextDisabled("Requires ModelComponent");
+        }
+
+        return changed;
+    }, ICON_FA_FILM);
     Register<AudioComponent>("Audio", ICON_FA_VOLUME_HIGH);
 
     // --- Scripting ---
@@ -333,7 +418,90 @@ void PropertyEditor::Init()
     Register<UIActionComponent>("UIAction", ICON_FA_BOLT);
 
     // --- UI Widgets ---
-    Register<UIControlComponent>("Widget", ICON_FA_SHAPES);
+    RegisterCustom<UIControlComponent>("Widget", [](UIControlComponent& comp, Entity entity) {
+        bool changed = false;
+        UIProperties ui;
+
+        // Box Style
+        ui.Header("Box Style");
+        if (ui.Property("BG Color",        comp.BoxStyle.BackgroundColor)) changed = true;
+        if (ui.Property("Hover Color",     comp.BoxStyle.HoverColor))      changed = true;
+        if (ui.Property("Pressed Color",   comp.BoxStyle.PressedColor))    changed = true;
+        if (ui.Property("Border Color",    comp.BoxStyle.BorderColor))     changed = true;
+        if (ui.Property("Rounding",        comp.BoxStyle.Rounding,        PropertyMeta(0.0f, 32.0f, 0.5f))) changed = true;
+        if (ui.Property("Border Size",     comp.BoxStyle.BorderSize,      PropertyMeta(0.0f, 10.0f, 0.1f))) changed = true;
+        if (ui.Property("Padding",         comp.BoxStyle.Padding,         PropertyMeta(0.0f, 64.0f, 0.5f))) changed = true;
+        if (ui.Property("Hover Scale",     comp.BoxStyle.HoverScale,      PropertyMeta(0.5f, 3.0f,  0.01f))) changed = true;
+        if (ui.Property("Pressed Scale",   comp.BoxStyle.PressedScale,    PropertyMeta(0.5f, 3.0f,  0.01f))) changed = true;
+        if (ui.Property("Transition Speed",comp.BoxStyle.TransitionSpeed, PropertyMeta(0.0f, 2.0f,  0.01f))) changed = true;
+        if (ui.Property("Gradient",        comp.BoxStyle.UseGradient))    changed = true;
+
+        ui.Separator();
+        // Text Style
+        ui.Header("Text Style");
+        if (ui.Property("Font Name",       comp.TextStyle.FontName))      changed = true;
+        if (ui.Property("Font Size",       comp.TextStyle.FontSize,       PropertyMeta(4.0f, 256.0f, 0.5f))) changed = true;
+        if (ui.Property("Text Color",      comp.TextStyle.TextColor))     changed = true;
+        if (ui.Property("Shadow",          comp.TextStyle.Shadow))        changed = true;
+        if (ui.Property("Letter Spacing",  comp.TextStyle.LetterSpacing,  PropertyMeta(0.0f, 10.0f, 0.05f))) changed = true;
+        if (ui.Property("Line Height",     comp.TextStyle.LineHeight,     PropertyMeta(0.0f, 5.0f,  0.05f))) changed = true;
+
+        ui.Separator();
+        // Widget-type specific
+        std::visit([&](auto&& data) {
+            using T = std::decay_t<decltype(data)>;
+            if constexpr (std::is_same_v<T, ButtonData>) {
+                if (ui.Property("Label",        data.Label))        changed = true;
+                if (ui.Property("Interactable", data.IsInteractable)) changed = true;
+                if (ui.Property("Auto Size",    data.AutoSize))      changed = true;
+            } else if constexpr (std::is_same_v<T, LabelData>) {
+                if (ui.Property("Text",         data.Text))         changed = true;
+                if (ui.Property("Auto Size",    data.AutoSize))     changed = true;
+            } else if constexpr (std::is_same_v<T, CheckboxData>) {
+                if (ui.Property("Label",        data.Label))        changed = true;
+                if (ui.Property("Checked",      data.Checked))      changed = true;
+            } else if constexpr (std::is_same_v<T, SliderData>) {
+                if (ui.Property("Label",        data.Label))        changed = true;
+                if (ui.Property("Value",        data.Value,         PropertyMeta(data.Min, data.Max, 0.01f))) changed = true;
+                if (ui.Property("Min",          data.Min))          changed = true;
+                if (ui.Property("Max",          data.Max))          changed = true;
+            } else if constexpr (std::is_same_v<T, ProgressBarData>) {
+                if (ui.Property("Progress",     data.Progress,      PropertyMeta(0.0f, 1.0f, 0.01f))) changed = true;
+                if (ui.Property("Overlay Text", data.OverlayText))  changed = true;
+                if (ui.Property("Show %",       data.ShowPercentage)) changed = true;
+            } else if constexpr (std::is_same_v<T, ImageData>) {
+                if (ui.File("Texture Path",     data.TexturePath, ".png,.jpg,.jpeg,.bmp,.tga")) changed = true;
+                if (ui.Property("Tint Color",   data.TintColor))    changed = true;
+                if (ui.Property("Border Color", data.BorderColor))  changed = true;
+            } else if constexpr (std::is_same_v<T, PanelData>) {
+                if (ui.File("Texture Path",     data.TexturePath, ".png,.jpg,.jpeg"))  changed = true;
+                if (ui.Property("Full Screen",  data.FullScreen))   changed = true;
+            } else if constexpr (std::is_same_v<T, ComboBoxData>) {
+                if (ui.Property("Label",        data.Label))        changed = true;
+                if (ui.Property("Selected",     data.SelectedIndex, PropertyMeta(0, (int)data.Items.size()-1, 1))) changed = true;
+                // Items list
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::TextUnformatted("Items");
+                ImGui::TableSetColumnIndex(1);
+                int removeIdx = -1;
+                for (int i = 0; i < (int)data.Items.size(); i++) {
+                    ImGui::PushID(i);
+                    char buf[256]; strncpy(buf, data.Items[i].c_str(), sizeof(buf)-1); buf[sizeof(buf)-1]=0;
+                    if (ImGui::InputText("##item", buf, sizeof(buf))) {
+                        data.Items[i] = buf; changed = true;
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::SmallButton(ICON_FA_TRASH)) { removeIdx = i; changed = true; }
+                    ImGui::PopID();
+                }
+                if (removeIdx >= 0) data.Items.erase(data.Items.begin() + removeIdx);
+                if (ImGui::SmallButton(ICON_FA_PLUS " Add Item")) { data.Items.push_back(""); changed = true; }
+            }
+        }, comp.Data);
+
+        return changed;
+    }, ICON_FA_SHAPES);
 
     // Mark only real UI widget types as IsWidget (these will be hidden in 3D scenes)
     auto markWidget = [&](entt::id_type id) {

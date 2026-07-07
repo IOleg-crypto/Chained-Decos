@@ -1,6 +1,6 @@
 #ifndef CH_ANIMATION_SYSTEMS_H
 #define CH_ANIMATION_SYSTEMS_H
-#include "engine/foundation/timestep.h"
+#include "engine/common/timestep.h"
 #include <string>
 
 namespace Chained {

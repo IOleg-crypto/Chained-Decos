@@ -7,8 +7,6 @@
 namespace Chained
 {
 
-void RegisterGlueEntity();
-
 // ── Entity / Transform ────────────────────────────────────────────────
 CH_SCRIPT_FUNC void Transform_GetTranslation(uint64_t entityID, glm::vec3* outTranslation);
 
@@ -62,5 +60,29 @@ CH_SCRIPT_FUNC bool Shader_GetEnabled(uint64_t entityID);
 
 CH_SCRIPT_FUNC void Shader_SetEnabled(uint64_t entityID, bool enabled);
 
+// ── PlayerComponent ───────────────────────────────────────────────────
+CH_SCRIPT_FUNC float PlayerComponent_GetMovementSpeed(uint64_t entityID);
+
+CH_SCRIPT_FUNC void PlayerComponent_SetMovementSpeed(uint64_t entityID, float value);
+
+CH_SCRIPT_FUNC float PlayerComponent_GetJumpForce(uint64_t entityID);
+
+CH_SCRIPT_FUNC void PlayerComponent_SetJumpForce(uint64_t entityID, float value);
+
+CH_SCRIPT_FUNC float PlayerComponent_GetLookSensitivity(uint64_t entityID);
+
+CH_SCRIPT_FUNC void PlayerComponent_SetLookSensitivity(uint64_t entityID, float value);
+
+// ── SpawnComponent ────────────────────────────────────────────────────
+CH_SCRIPT_FUNC bool SpawnComponent_IsActive(uint64_t entityID);
+
+CH_SCRIPT_FUNC void SpawnComponent_GetSpawnPoint(uint64_t entityID, glm::vec3* outPoint);
+
+// ── AnimationComponent ──────────────────────────────────────────────────
+CH_SCRIPT_FUNC int AnimationComponent_GetCurrentAnimationIndex(uint64_t entityID);
+CH_SCRIPT_FUNC void AnimationComponent_SetCurrentAnimationIndex(uint64_t entityID, int index);
+CH_SCRIPT_FUNC uint32_t AnimationComponent_GetIsPlaying(uint64_t entityID);
+CH_SCRIPT_FUNC void AnimationComponent_SetIsPlaying(uint64_t entityID, uint32_t isPlaying);
+
 } // namespace Chained
-#endif
+#endif

@@ -402,9 +402,6 @@ Entities:
       Scripts:
         - ClassName: chaineddecos.scripts.playercontroller
           Fields:
-            - Name: Gravity
-              Type: 1
-              Value: 9.80000019
             - Name: JumpForce
               Type: 1
               Value: 32.5

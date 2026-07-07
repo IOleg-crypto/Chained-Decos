@@ -60,8 +60,15 @@ public:
     virtual RaycastResult Raycast(const glm::vec3& origin, const glm::vec3& direction, float maxDistance) = 0;
 
     virtual void Step(float fixedDt) = 0;
-    
+
     virtual void SetGravity(float gravity) = 0;
+
+    /// Returns true if the body identified by @p handle is currently resting on a surface
+    /// whose contact normal points upward (i.e. the body is "grounded").
+    virtual bool IsBodyGrounded(PhysicsBodyHandle handle) const = 0;
+
+    /// Clears the grounded-state tracker so it can be rebuilt from contacts during the next Step().
+    virtual void ClearGroundedState() = 0;
 };
 
 } // namespace Chained

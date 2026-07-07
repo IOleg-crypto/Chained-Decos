@@ -1,7 +1,7 @@
 #ifndef CH_ASSET_H
 #define CH_ASSET_H
 
-#include "engine/foundation/uuid.h"
+#include "engine/common/uuid.h"
 #include <cstdio>
 #include <string>
 #include <atomic>
@@ -140,6 +140,6 @@ protected:
     std::atomic<AssetState> m_State = AssetState::None;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_ASSET_H

@@ -4,6 +4,7 @@ chained_add_engine_module(engine_audio
         audio.h
     DEPENDS
         engine_core
+        engine_project
         glm
         engine_external_miniaudio
 )

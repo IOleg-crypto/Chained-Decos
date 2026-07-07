@@ -1,12 +1,10 @@
 #ifndef SCRIPT_GLUE_CAMERA_H
 #define SCRIPT_GLUE_CAMERA_H
 #include "script_glue_internal.h"
-#include "script_internal_call_registry.h"
 #include "engine/scene/components/component_utils.h"
 
 namespace Chained {
 
-    void RegisterGlueCamera();
     // ── Camera ────────────────────────────────────────────────────────────
     CH_SCRIPT_FUNC void Camera_GetForward(uint64_t entityID, glm::vec3* outForward);
 

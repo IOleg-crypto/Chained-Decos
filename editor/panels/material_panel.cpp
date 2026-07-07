@@ -94,7 +94,7 @@ void MaterialPanel::OnImGuiRender(bool readOnly)
             auto asset = ServiceLocator::Get<AssetManager>()->Get<ModelAsset>(mc.ModelPath);
             if (asset)
             {
-                materials = const_cast<std::vector<Material>*>(&asset->GetMaterials());
+                materials = &asset->GetMaterials();
             }
         }
 
@@ -157,8 +157,11 @@ void MaterialPanel::OnEvent(Event& e)
 
 void MaterialPanel::SetContext(const std::shared_ptr<Scene>& context)
 {
-    Panel::SetContext(context);
-    m_SelectedEntity = {};
+    if (m_Context != context)
+    {
+        Panel::SetContext(context);
+        m_SelectedEntity = {};
+    }
 }
 
 } // namespace Chained

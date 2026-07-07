@@ -3,14 +3,29 @@
 #include "engine/assets/model_data.h"
 
 #include "engine/assets/types/model_asset.h"
+#include "engine/common/zstd_compression.h"
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
 #include <cereal/types/unordered_map.hpp>
 #include <fstream>
+#include <numeric>
 
 namespace Chained
 {
+static uint64_t ComputeFileHash(const std::filesystem::path& path)
+{
+    std::ifstream file(path, std::ios::binary | std::ios::ate);
+    if (!file.is_open()) return 0;
+    auto size = file.tellg();
+    if (size <= 0) return 0;
+    file.seekg(0, std::ios::beg);
+    std::vector<char> buffer(static_cast<size_t>(size));
+    if (!file.read(buffer.data(), size)) return 0;
+    return std::accumulate(buffer.begin(), buffer.end(), UINT64_C(14695981039346656037),
+        [](uint64_t hash, char c) { return (hash ^ static_cast<uint64_t>(static_cast<unsigned char>(c))) * 1099511628211ULL; });
+}
+
 std::shared_ptr<Asset> ModelLoader::Create()
 {
     return std::make_shared<ModelAsset>();
@@ -20,11 +35,8 @@ bool ModelLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolved
 {
     auto modelAsset = std::static_pointer_cast<ModelAsset>(asset);
 
-    // Handle procedural models
     if (resolvedPath.starts_with(":"))
     {
-        // Placeholder: GenerateProceduralModel was removed from ModelLoader in favor of AssimpImporter
-        // If you need it, move it to AssimpImporter or keep a simplified version here
         if (outError)
         {
             *outError = "ModelLoader: procedural model paths are not supported: " + resolvedPath;
@@ -67,17 +79,53 @@ PendingModelData ModelLoader::LoadMeshDataFromDisk(const std::filesystem::path& 
                 if (header.magic != currentHeader.magic)
                 {
                     CH_CORE_WARN("Invalid .chasset file format (magic mismatch) for: {}", chassetPath.string());
-                    
                 }
-                else if (header.dataStructSize != currentHeader.dataStructSize)
+                else if (header.version != currentHeader.version)
                 {
                     CH_CORE_WARN("Engine data structure changed! .chasset is outdated for: {}", chassetPath.string());
                 }
                 else
                 {
-                    PendingModelData data;
-                    archive(data);
-                    return data;
+                    uint64_t currentHash = ComputeFileHash(path);
+                    if (header.sourceHash != 0 && currentHash != 0 && header.sourceHash != currentHash)
+                    {
+                        CH_CORE_WARN("Source file changed since .chasset was created, re-importing: {}", path.string());
+                    }
+                    else
+                    {
+                        PendingModelData data;
+                        if (header.compressed)
+                        {
+                            std::vector<char> compressedData(
+                                static_cast<size_t>(header.compressedSize));
+                            is.read(compressedData.data(),
+                                static_cast<std::streamsize>(header.compressedSize));
+
+                            auto decompressed = Zstd::Decompress(
+                                compressedData.data(), compressedData.size(),
+                                header.uncompressedSize);
+
+                            if (decompressed.empty())
+                            {
+                                CH_CORE_WARN("Failed to decompress .chasset, falling back to Assimp: {}",
+                                    chassetPath.string());
+                            }
+                            else
+                            {
+                                std::istringstream dis(
+                                    std::string(decompressed.begin(), decompressed.end()),
+                                    std::ios::binary);
+                                cereal::BinaryInputArchive decompressedArchive(dis);
+                                decompressedArchive(data);
+                                return data;
+                            }
+                        }
+                        else
+                        {
+                            archive(data);
+                            return data;
+                        }
+                    }
                 }
             }
             catch(const std::exception& e)
@@ -93,15 +141,42 @@ PendingModelData ModelLoader::LoadMeshDataFromDisk(const std::filesystem::path& 
     {
         try
         {
+            std::ostringstream dataStream(std::ios::binary);
+            {
+                cereal::BinaryOutputArchive dataArchive(dataStream);
+                dataArchive(data);
+            }
+
+            std::string serializedData = dataStream.str();
+            uint64_t sourceHash = ComputeFileHash(path);
+
+            auto compressed = Zstd::Compress(serializedData.data(), serializedData.size(), 3);
+
+            ChainedAssetHeader header;
+            header.sourceHash = sourceHash;
+            header.compressed = !compressed.empty();
+            header.compressedSize = compressed.size();
+            header.uncompressedSize = serializedData.size();
+
             std::ofstream os(chassetPath, std::ios::binary);
             cereal::BinaryOutputArchive archive(os);
-            
-        
-            ChainedAssetHeader header;
             archive(header);
-            
-            
-            archive(data);
+
+            if (header.compressed)
+            {
+                os.write(reinterpret_cast<const char*>(compressed.data()),
+                    static_cast<std::streamsize>(compressed.size()));
+            }
+            else
+            {
+                os.write(serializedData.data(),
+                    static_cast<std::streamsize>(serializedData.size()));
+            }
+
+            CH_CORE_INFO("ModelAsset: Saved .chasset '{}' (compressed: {}, ratio: {:.1f}%)",
+                chassetPath.filename().string(),
+                header.compressed ? "yes" : "no",
+                header.compressed ? (100.0 * compressed.size() / serializedData.size()) : 100.0);
         }
         catch (const std::exception& e)
         {
@@ -168,4 +243,4 @@ Model ModelLoader::GenerateProceduralModel(const std::string& type, const Proced
 
     return model;
 }
-} // namespace CHEngine
+} // namespace Chained

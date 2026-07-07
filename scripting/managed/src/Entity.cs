@@ -352,32 +352,151 @@ public class SpriteComponent : Component
 
 // ── UI Controls ───────────────────────────────────────────────────────────────
 
+/// <summary>Base UI widget wrapper.</summary>
+public class WidgetControl : Component
+{
+#pragma warning disable 0649
+    internal static unsafe delegate* unmanaged<ulong, bool> WidgetControl_GetActive_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool, void> WidgetControl_SetActive_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, char*> WidgetControl_GetTextColor_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, int, int, int, int, void> WidgetControl_SetTextColorRGBA_Ptr;
+#pragma warning restore 0649
+
+    public bool IsActive
+    {
+        get { unsafe { return WidgetControl_GetActive_Ptr(Entity.ID); } }
+        set { unsafe { WidgetControl_SetActive_Ptr(Entity.ID, value); } }
+    }
+
+    public void SetTextColor(int r, int g, int b, int a = 255)
+    {
+        unsafe { WidgetControl_SetTextColorRGBA_Ptr(Entity.ID, r, g, b, a); }
+    }
+
+    public string TextColorRGBA
+    {
+        get { unsafe { return Marshal.PtrToStringUni(new IntPtr(WidgetControl_GetTextColor_Ptr(Entity.ID))) ?? string.Empty; } }
+    }
+}
+
 /// <summary>Button control wrapper.</summary>
-public class ButtonControl : Component
+public class ButtonControl : WidgetControl
 {
 #pragma warning disable 0649
     internal static unsafe delegate* unmanaged<ulong, bool> ButtonControl_IsClicked_Ptr;
     internal static unsafe delegate* unmanaged<ulong, bool> ButtonControl_IsDown_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, char*> ButtonControl_GetLabel_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, char*, void> ButtonControl_SetLabel_Ptr;
 #pragma warning restore 0649
 
     public bool IsClicked { get { unsafe { return ButtonControl_IsClicked_Ptr(Entity.ID); } } }
     public bool IsDown    { get { unsafe { return ButtonControl_IsDown_Ptr(Entity.ID); } } }
     public bool IsPressed => IsClicked; // Alias for backward compatibility
+
+    public string Label
+    {
+        get { unsafe { return Marshal.PtrToStringUni(new IntPtr(ButtonControl_GetLabel_Ptr(Entity.ID))) ?? string.Empty; } }
+        set { unsafe { fixed (char* ptr = value) ButtonControl_SetLabel_Ptr(Entity.ID, ptr); } }
+    }
+}
+
+/// <summary>Label control wrapper.</summary>
+public class LabelControl : WidgetControl
+{
+#pragma warning disable 0649
+    internal static unsafe delegate* unmanaged<ulong, char*> LabelControl_GetText_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, char*, void> LabelControl_SetText_Ptr;
+#pragma warning restore 0649
+
+    public string Text
+    {
+        get { unsafe { return Marshal.PtrToStringUni(new IntPtr(LabelControl_GetText_Ptr(Entity.ID))) ?? string.Empty; } }
+        set { unsafe { fixed (char* ptr = value) LabelControl_SetText_Ptr(Entity.ID, ptr); } }
+    }
 }
 
 /// <summary>Checkbox wrapper.</summary>
-public class CheckboxControl : Component
+public class CheckboxControl : WidgetControl
 {
 #pragma warning disable 0649
     internal static unsafe delegate* unmanaged<ulong, bool> CheckboxControl_GetChecked_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool, void> CheckboxControl_SetChecked_Ptr;
 #pragma warning restore 0649
 
-    private static unsafe bool GetChecked(ulong entityID) => CheckboxControl_GetChecked_Ptr(entityID);
-    public bool IsChecked => GetChecked(Entity.ID);
+    public bool IsChecked
+    {
+        get { unsafe { return CheckboxControl_GetChecked_Ptr(Entity.ID); } }
+        set { unsafe { CheckboxControl_SetChecked_Ptr(Entity.ID, value); } }
+    }
+}
+
+/// <summary>Slider control wrapper.</summary>
+public class SliderControl : WidgetControl
+{
+#pragma warning disable 0649
+    internal static unsafe delegate* unmanaged<ulong, char*> SliderControl_GetLabel_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, char*, void> SliderControl_SetLabel_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, float> SliderControl_GetValue_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, float, void> SliderControl_SetValue_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, float> SliderControl_GetMin_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, float, void> SliderControl_SetMin_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, float> SliderControl_GetMax_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, float, void> SliderControl_SetMax_Ptr;
+#pragma warning restore 0649
+
+    public string Label
+    {
+        get { unsafe { return Marshal.PtrToStringUni(new IntPtr(SliderControl_GetLabel_Ptr(Entity.ID))) ?? string.Empty; } }
+        set { unsafe { fixed (char* ptr = value) SliderControl_SetLabel_Ptr(Entity.ID, ptr); } }
+    }
+    public float Value
+    {
+        get { unsafe { return SliderControl_GetValue_Ptr(Entity.ID); } }
+        set { unsafe { SliderControl_SetValue_Ptr(Entity.ID, value); } }
+    }
+    public float Min
+    {
+        get { unsafe { return SliderControl_GetMin_Ptr(Entity.ID); } }
+        set { unsafe { SliderControl_SetMin_Ptr(Entity.ID, value); } }
+    }
+    public float Max
+    {
+        get { unsafe { return SliderControl_GetMax_Ptr(Entity.ID); } }
+        set { unsafe { SliderControl_SetMax_Ptr(Entity.ID, value); } }
+    }
+}
+
+/// <summary>Progress bar wrapper.</summary>
+public class ProgressBarControl : WidgetControl
+{
+#pragma warning disable 0649
+    internal static unsafe delegate* unmanaged<ulong, float> ProgressBarControl_GetProgress_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, float, void> ProgressBarControl_SetProgress_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, char*> ProgressBarControl_GetOverlayText_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, char*, void> ProgressBarControl_SetOverlayText_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool> ProgressBarControl_GetShowPercentage_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool, void> ProgressBarControl_SetShowPercentage_Ptr;
+#pragma warning restore 0649
+
+    public float Progress
+    {
+        get { unsafe { return ProgressBarControl_GetProgress_Ptr(Entity.ID); } }
+        set { unsafe { ProgressBarControl_SetProgress_Ptr(Entity.ID, value); } }
+    }
+    public string OverlayText
+    {
+        get { unsafe { return Marshal.PtrToStringUni(new IntPtr(ProgressBarControl_GetOverlayText_Ptr(Entity.ID))) ?? string.Empty; } }
+        set { unsafe { fixed (char* ptr = value) ProgressBarControl_SetOverlayText_Ptr(Entity.ID, ptr); } }
+    }
+    public bool ShowPercentage
+    {
+        get { unsafe { return ProgressBarControl_GetShowPercentage_Ptr(Entity.ID); } }
+        set { unsafe { ProgressBarControl_SetShowPercentage_Ptr(Entity.ID, value); } }
+    }
 }
 
 /// <summary>Combo box wrapper.</summary>
-public class ComboBoxControl : Component
+public class ComboBoxControl : WidgetControl
 {
 #pragma warning disable 0649
     internal static unsafe delegate* unmanaged<ulong, int> ComboBoxControl_GetSelectedIndex_Ptr;
@@ -466,16 +585,32 @@ public class PlayerComponent : Component
     }
 }
 
-/// <summary>Network identity for tracking entities across clients.</summary>
-public class NetworkIdentity : Component
+/// <summary>Spawn point component.</summary>
+public class SpawnComponent : Component
 {
 #pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, ulong> NetworkIdentity_GetNetworkID_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool> NetworkIdentity_IsOwned_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, bool> SpawnComponent_IsActive_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, Vector3*, void> SpawnComponent_GetSpawnPoint_Ptr;
 #pragma warning restore 0649
 
-    public ulong NetworkID { get { unsafe { return NetworkIdentity_GetNetworkID_Ptr(Entity.ID); } } }
-    public bool IsOwned { get { unsafe { return NetworkIdentity_IsOwned_Ptr(Entity.ID); } } }
+    public bool IsActive
+    {
+        get { unsafe { return SpawnComponent_IsActive_Ptr != null && SpawnComponent_IsActive_Ptr(Entity.ID); } }
+    }
+
+    public Vector3 SpawnPoint
+    {
+        get
+        {
+            unsafe
+            {
+                if (SpawnComponent_GetSpawnPoint_Ptr == null) return Vector3.Zero;
+                Vector3 point;
+                SpawnComponent_GetSpawnPoint_Ptr(Entity.ID, &point);
+                return point;
+            }
+        }
+    }
 }
 
 } // namespace Chained

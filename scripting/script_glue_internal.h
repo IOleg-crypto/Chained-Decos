@@ -5,8 +5,6 @@
 #include "engine/scene/scene.h"
 #include "scriptengine.h"
 #include "scriptengine_services.h"
-#include <Coral/Array.hpp>
-#include <Coral/String.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <imgui.h>
@@ -34,18 +32,7 @@ static inline std::u16string ch_utf8_to_u16(const std::string& str)
     return result;
 }
 
-extern void RegisterGlueSystem();
-extern void RegisterGlueInput();
-extern void RegisterGlueNetwork();
-extern void RegisterGlueScene();
-extern void RegisterGlueEntity();
-extern void RegisterGlueCamera();
-extern void RegisterGlueUI();
-extern void RegisterGlueAudio();
-
-extern Scene* GetContextScene(); 
-
-extern Scene* GetActiveScene();
+Scene* GetActiveScene();
 
 Entity GetEntity(uint64_t entityID);
 } // namespace Chained

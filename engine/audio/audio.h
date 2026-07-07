@@ -2,8 +2,8 @@
 #define CH_AUDIO_H
 
 
-#include "engine/foundation/timestep.h"
-#include "engine/foundation/uuid.h"
+#include "engine/common/timestep.h"
+#include "engine/common/uuid.h"
 #include <glm/glm.hpp>
 #include <memory>
 #include <miniaudio.h>

@@ -1,4 +1,4 @@
-#include "engine/platform/utils/file_dialogs.h"
+#include "engine/platform/dialogs/file_dialogs.h"
 #include "engine/core/service_locator.h"
 #include "project_manager.h"
 #include "layer.h"

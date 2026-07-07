@@ -24,6 +24,6 @@ private:
     int m_SelectedMeshIndex = -1;
     int m_SelectedMaterialIndex = 0;
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_MATERIAL_PANEL_H

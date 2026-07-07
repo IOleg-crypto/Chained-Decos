@@ -7,6 +7,7 @@ namespace Chained
 {
 namespace Collision
 {
+/// Returns true if two axis-aligned bounding boxes overlap on all three axes.
 static bool CheckAABB(const glm::vec3& minA, const glm::vec3& maxA, const glm::vec3& minB, const glm::vec3& maxB)
 {
     return (minA.x <= maxB.x && maxA.x >= minB.x) && (minA.y <= maxB.y && maxA.y >= minB.y) &&

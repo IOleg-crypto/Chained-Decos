@@ -10,6 +10,7 @@ namespace Chained
 ProfilerPanel::ProfilerPanel()
 {
     m_Name = "Profiler";
+    m_IsOpen = false;
     m_FrameTimeHistory.reserve(100);
     for (int i = 0; i < 100; i++)
     {

@@ -13,14 +13,19 @@ Application* CreateApplication(ApplicationCommandLineArgs args)
     RegisterGameComponents();
 
     ApplicationSpecification spec;
-    spec.Name = "ChainedEditor";
+#if CH_PLATFORM_BACKEND_SDL3
+    spec.Name = "ChainedEditor | Backend: SDL3";
+#else
+    spec.Name = "ChainedEditor | Backend: GLFW";
+#endif
     spec.CommandLineArgs = args;
 
     // Default editor window settings
-    spec.WindowWidth = 0;
-    spec.WindowHeight = 0;
+    spec.WindowWidth = 1600;
+    spec.WindowHeight = 900;
     spec.Headless = false;
     spec.EnableScripting = true;
+    spec.Fullscreen = false;
 
     // Set engine root to the executable directory so AssetManager can find
     // resources/shaders, resources/icons, resources/font etc.

@@ -5,8 +5,8 @@
 #include "engine/core/events/events.h"
 #include "engine/core/layer_stack.h"
 #include "engine/core/window.h"
-#include "engine/foundation/base.h"
-#include "engine/foundation/timestep.h"
+#include "engine/common/base.h"
+#include "engine/common/timestep.h"
 #include <filesystem>
 #include <memory>
 

@@ -31,6 +31,6 @@ private:
     std::shared_ptr<Shader> m_Shader;
 };
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_SHADER_ASSET_H

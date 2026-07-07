@@ -2,9 +2,9 @@
 #define CH_PANEL_H
 
 class EditorLayer;
-#include "engine/foundation/base.h"
+#include "engine/common/base.h"
 #include "engine/core/events/events.h"
-#include "engine/foundation/timestep.h"
+#include "engine/common/timestep.h"
 #include "engine/scene/scene.h"
 #include <algorithm>
 #include <memory>

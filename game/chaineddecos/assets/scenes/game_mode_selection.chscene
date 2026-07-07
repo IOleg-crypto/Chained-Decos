@@ -72,19 +72,19 @@ Entities:
     TagComponent:
       Tag: back_button
     ControlComponent:
-      Rect Transform:
+      Transform:
         Position: [-539.809082, 478.698639]
         Size: [99.9998474, 40.000061]
-        Anchor Min: [0.5, 0.5]
-        Anchor Max: [0.5, 0.5]
-        Offset Min: [-589.809021, 458.698608]
-        Offset Max: [-489.809174, 498.698669]
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-589.809021, 458.698608]
+        OffsetMax: [-489.809174, 498.698669]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
-      Z Order: 0
-      Active: true
-      Hidden: false
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
   - Entity: 1003
     WidgetComponent:
       Box Style:
@@ -119,19 +119,19 @@ Entities:
     TagComponent:
       Tag: btn_multiplayer
     ControlComponent:
-      Rect Transform:
+      Transform:
         Position: [-299.441284, -81.4806061]
         Size: [100.000061, 40.0000267]
-        Anchor Min: [0.5, 0.5]
-        Anchor Max: [0.5, 0.5]
-        Offset Min: [-349.441315, -101.480621]
-        Offset Max: [-249.441254, -61.4805946]
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-349.441315, -101.480621]
+        OffsetMax: [-249.441254, -61.4805946]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
-      Z Order: 0
-      Active: true
-      Hidden: false
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
   - Entity: 1002
     Scene TransitionComponent:
       Target Scene Path: scenes/map_selection.chscene
@@ -169,19 +169,19 @@ Entities:
     TagComponent:
       Tag: btn_singleplayer
     ControlComponent:
-      Rect Transform:
+      Transform:
         Position: [-303.515259, -175.18335]
         Size: [100, 40]
-        Anchor Min: [0.5, 0.5]
-        Anchor Max: [0.5, 0.5]
-        Offset Min: [-353.515259, -195.18335]
-        Offset Max: [-253.515259, -155.18335]
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-353.515259, -195.18335]
+        OffsetMax: [-253.515259, -155.18335]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
-      Z Order: 0
-      Active: true
-      Hidden: false
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
   - Entity: 1001
     WidgetComponent:
       Box Style:
@@ -215,16 +215,16 @@ Entities:
     TagComponent:
       Tag: title_game_mode
     ControlComponent:
-      Rect Transform:
+      Transform:
         Position: [-541.66272, -385.66098]
         Size: [99.9997864, 40.000061]
-        Anchor Min: [0.5, 0.5]
-        Anchor Max: [0.5, 0.5]
-        Offset Min: [-591.662598, -405.661011]
-        Offset Max: [-491.662811, -365.66095]
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-591.662598, -405.661011]
+        OffsetMax: [-491.662811, -365.66095]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
-      Z Order: 0
-      Active: true
-      Hidden: false
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false

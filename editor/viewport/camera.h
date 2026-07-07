@@ -1,7 +1,7 @@
 #ifndef CH_EDITOR_CAMERA_H
 #define CH_EDITOR_CAMERA_H
 
-#include "engine/foundation/timestep.h"
+#include "engine/common/timestep.h"
 #include "engine/scene/camera.h"
 #include "engine/scene/entity.h"
 #include <glm/glm.hpp>

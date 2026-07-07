@@ -328,7 +328,7 @@ void SceneResourceManager::OnRigidBodyConstruct(entt::registry& reg, entt::entit
     PhysicsBodyDesc desc;
     desc.Position = transform.Translation;
     desc.Rotation = transform.RotationQuat;
-    desc.IsKinematic = rb.IsKinematic;
+    desc.IsKinematic = (rb.Type == RigidBodyComponent::BodyType::Kinematic);
     desc.IsStatic = (rb.Type == RigidBodyComponent::BodyType::Static);
     desc.Mass = rb.Mass;
     desc.LinearDamping = rb.LinearDamping;

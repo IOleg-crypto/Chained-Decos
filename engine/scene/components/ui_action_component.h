@@ -1,7 +1,7 @@
 #ifndef CH_UI_ACTION_COMPONENT_H
 #define CH_UI_ACTION_COMPONENT_H
 
-#include "engine/foundation/uuid.h"
+#include "engine/common/uuid.h"
 #include "engine/reflection/reflection_rfl.h"
 #include <string>
 

@@ -7,13 +7,17 @@ namespace ChainedDecos.Scripts
 public class PlayerController : Script
 {
     public float MovementSpeed = 15.0f;
-    public float JumpForce    = 10.0f;
+    public float JumpForce    = 15.0f;
     public float Gravity      = 20.0f;   // Units per second^2 (should match physics config)
     public string MenuScene   = "scenes/start_menu.chscene";
 
     public override void OnCreate()
     {
         Log.Info("C# PlayerController initialized!");
+
+        // Read gravity from the engine's project configuration so it always
+        // matches the value set in Project Settings → Physics → World Gravity.
+        Gravity = Physics.GetGravity();
 
         // Read settings from the C++ PlayerComponent if the entity has one.
         // This allows tweaking values from the Inspector without modifying the script.
@@ -35,8 +39,8 @@ public class PlayerController : Script
             return;
         }
 
-        float currentSpeed = MovementSpeed * HeroProgression.MoveSpeedMultiplier;
-        float effectiveJumpForce = JumpForce * HeroProgression.JumpMultiplier;
+        float currentSpeed = MovementSpeed;
+        float effectiveJumpForce = JumpForce;
 
         if (Input.IsKeyDown(Key.LeftShift))
             currentSpeed *= 2.0f;
@@ -59,14 +63,20 @@ public class PlayerController : Script
 
         // --- Input ---
         Vector3 movementDir = Vector3.Zero;
-        if (Input.IsKeyDown(Key.W)) movementDir += forward;
-        if (Input.IsKeyDown(Key.S)) movementDir -= forward;
-        if (Input.IsKeyDown(Key.A)) movementDir -= right;
-        if (Input.IsKeyDown(Key.D)) movementDir += right;
+        bool wDown = Input.IsKeyDown(Key.W);
+        bool sDown = Input.IsKeyDown(Key.S);
+        bool aDown = Input.IsKeyDown(Key.A);
+        bool dDown = Input.IsKeyDown(Key.D);
+        if (wDown) movementDir += forward;
+        if (sDown) movementDir -= forward;
+        if (aDown) movementDir -= right;
+        if (dDown) movementDir += right;
+
+        Log.Info($"[Diag] cam={camEntity != null} fwd={forward.X},{forward.Y},{forward.Z} right={right.X},{right.Y},{right.Z} W={wDown} S={sDown} A={aDown} D={dDown} mdir={movementDir.X},{movementDir.Y},{movementDir.Z}");
 
         RigidBodyComponent?  rb        = Entity.GetComponent<RigidBodyComponent>();
         TransformComponent?  transform = Entity.GetComponent<TransformComponent>();
-        if (rb == null || transform == null) return;
+        if (rb == null || transform == null) { Log.Info("[Diag] rb or transform NULL, returning"); return; }
 
         bool isKinematic = rb.IsKinematic;
         Vector3 velocity = rb.Velocity;

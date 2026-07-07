@@ -1,4 +1,4 @@
-#include "engine/platform/utils/file_dialogs.h"
+#include "engine/platform/dialogs/file_dialogs.h"
 #include "scene_hierarchy_panel.h"
 #include "layer.h"
 #include "engine/app/application.h"
@@ -11,8 +11,8 @@
 #include "undo/entity_commands.h"
 #include "events.h"
 #include "engine/core/input.h"
-#include "engine/serialization/scene_serializer.h"
-#include "engine/serialization/prefab_serializer.h"
+#include "engine/scene/scene_serializer.h"
+#include "engine/scene/prefab_serializer.h"
 #include "engine/core/platform.h"
 #include <functional>
 #include <vector>
@@ -169,6 +169,7 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
 
 const char* SceneHierarchyPanel::GetEntityIcon(Entity entity)
 {
+    // Priority 1: UIControlComponent — detect widget subtype
     if (entity.HasComponent<UIControlComponent>())
     {
         auto& widget = entity.GetComponent<UIControlComponent>();
@@ -177,28 +178,35 @@ const char* SceneHierarchyPanel::GetEntityIcon(Entity entity)
         if (std::holds_alternative<SliderData>(widget.Data)) return ICON_FA_SLIDERS;
         if (std::holds_alternative<CheckboxData>(widget.Data)) return ICON_FA_SQUARE_CHECK;
         if (std::holds_alternative<ImageData>(widget.Data) || std::holds_alternative<ImageButtonData>(widget.Data)) return ICON_FA_IMAGE;
-        
-        return ICON_FA_WINDOW_MAXIMIZE; // Default for other widgets
+        return ICON_FA_WINDOW_MAXIMIZE;
     }
-    if (entity.HasComponent<ControlComponent>())
+
+    // Priority 2+: Use ComponentRegistry icon lookup
+    auto& registry = entity.GetRegistry();
+    auto& compRegistry = ComponentRegistry::GetRegistry();
+
+    // Check components in a fixed priority order for consistent icon display
+    static const entt::id_type priorityOrder[] = {
+        entt::type_hash<ControlComponent>::value(),
+        entt::type_hash<LightComponent>::value(),
+        entt::type_hash<CameraComponent>::value(),
+        entt::type_hash<AudioComponent>::value(),
+        entt::type_hash<ManagedScriptComponent>::value(),
+        entt::type_hash<ModelComponent>::value(),
+        entt::type_hash<PrimitiveComponent>::value(),
+        entt::type_hash<RigidBodyComponent>::value(),
+        entt::type_hash<ColliderComponent>::value(),
+        entt::type_hash<AnimationComponent>::value(),
+    };
+
+    for (auto typeId : priorityOrder)
     {
-        return ICON_FA_SHAPES;
-    }
-    if (entity.HasComponent<LightComponent>())
-    {
-        return ICON_FA_LIGHTBULB;
-    }
-    if (entity.HasComponent<CameraComponent>())
-    {
-        return ICON_FA_VIDEO;
-    }
-    if (entity.HasComponent<AudioComponent>())
-    {
-        return ICON_FA_VOLUME_HIGH;
-    }
-    if (entity.HasComponent<ManagedScriptComponent>())
-    {
-        return ICON_FA_CODE;
+        if (compRegistry.contains(typeId))
+        {
+            auto& meta = compRegistry.at(typeId);
+            if (meta.Icon && meta.Has && meta.Has(entity))
+                return meta.Icon;
+        }
     }
 
     return ICON_FA_CUBE;
@@ -350,197 +358,102 @@ void SceneHierarchyPanel::DrawContextMenu()
 
     ImGui::Separator();
 
-    if (ImGui::BeginMenu("Create"))
+    // --- Quick Create: Lights & Camera ---
+    struct QuickCreateEntry { const char* label; const char* icon; std::function<void()> action; };
+    static const QuickCreateEntry quickCreates[] = {
+        {"Camera", ICON_FA_VIDEO, [this]() {
+            auto e = m_Context->CreateEntity("Camera");
+            e.AddComponent<CameraComponent>();
+        }},
+        {"Point Light", ICON_FA_LIGHTBULB, [this]() {
+            auto e = m_Context->CreateEntity("Point Light");
+            e.AddComponent<LightComponent>().Type = LightType::Point;
+        }},
+        {"Spot Light", ICON_FA_LIGHTBULB, [this]() {
+            auto e = m_Context->CreateEntity("Spot Light");
+            e.AddComponent<LightComponent>().Type = LightType::Spot;
+        }},
+        {"Directional Light", ICON_FA_LIGHTBULB, [this]() {
+            auto e = m_Context->CreateEntity("Directional Light");
+            e.AddComponent<LightComponent>().Type = LightType::Directional;
+        }},
+    };
+    for (auto& entry : quickCreates)
     {
-        if (ImGui::MenuItem("Static Box Collider"))
-        {
-            auto entity = m_Context->CreateEntity("Static Collider");
-            auto& collider = entity.AddComponent<ColliderComponent>();
-            collider.Type = ColliderType::Box;
-            collider.AutoCalculate = false;
-            collider.Size = {1.0f, 1.0f, 1.0f};
-            collider.Offset = {0.0f, 0.0f, 0.0f};
-        }
-        ImGui::EndMenu();
+        std::string label = entry.icon ? std::string(entry.icon) + " " + entry.label : entry.label;
+        if (ImGui::MenuItem(label.c_str()))
+            entry.action();
     }
 
-    if (ImGui::MenuItem("Camera"))
-    {
-        auto entity = m_Context->CreateEntity("Camera");
-        entity.AddComponent<CameraComponent>();
-    }
+    ImGui::Separator();
 
-    if (ImGui::MenuItem("Point Light"))
-    {
-        auto entity = m_Context->CreateEntity("Point Light");
-        auto& light = entity.AddComponent<LightComponent>();
-        light.Type = LightType::Point;
-    }
-
-    if (ImGui::MenuItem("Spot Light"))
-    {
-        auto entity = m_Context->CreateEntity("Spot Light");
-        auto& light = entity.AddComponent<LightComponent>();
-        light.Type = LightType::Spot;
-    }
-
-    if (ImGui::MenuItem("Directional Light"))
-    {
-        auto entity = m_Context->CreateEntity("Directional Light");
-        auto& light = entity.AddComponent<LightComponent>();
-        light.Type = LightType::Directional;
-    }
-
+    // --- 3D Object Submenu ---
+    struct PrimitiveEntry { const char* label; const char* mesh; };
+    static const PrimitiveEntry primitives[] = {
+        {"Cube", ":cube:"}, {"Sphere", ":sphere:"}, {"Cylinder", ":cylinder:"},
+        {"Cone", ":cone:"}, {"Torus", ":torus:"}, {"Knot", ":knot:"}, {"Plane", ":plane:"},
+    };
     if (ImGui::BeginMenu("3D Object"))
     {
-        auto create = [this](const char* name, const char* mesh) {
-            EditorLayer::Get().GetCommandHistory().PushCommand(
-                std::make_unique<CreateEntityCommand>(m_Context.get(), name, mesh));
-        };
-        if (ImGui::MenuItem("Cube"))
+        for (auto& p : primitives)
         {
-            create("Cube", ":cube:");
-        }
-        if (ImGui::MenuItem("Sphere"))
-        {
-            create("Sphere", ":sphere:");
-        }
-        if (ImGui::MenuItem("Cylinder"))
-        {
-            create("Cylinder", ":cylinder:");
-        }
-        if (ImGui::MenuItem("Cone"))
-        {
-            create("Cone", ":cone:");
-        }
-        if (ImGui::MenuItem("Torus"))
-        {
-            create("Torus", ":torus:");
-        }
-        if (ImGui::MenuItem("Knot"))
-        {
-            create("Knot", ":knot:");
-        }
-        if (ImGui::MenuItem("Plane"))
-        {
-            create("Plane", ":plane:");
+            if (ImGui::MenuItem(p.label))
+            {
+                EditorLayer::Get().GetCommandHistory().PushCommand(
+                    std::make_unique<CreateEntityCommand>(m_Context.get(), p.label, p.mesh));
+            }
         }
         ImGui::EndMenu();
     }
 
+    // --- UI Widget Submenus ---
     if (m_Context->GetSettings().Mode != BackgroundMode::Environment3D)
     {
+        struct WidgetEntry { const char* label; const char* typeName; };
+        struct WidgetCategory { const char* label; const WidgetEntry* entries; int count; };
+
+        static const WidgetEntry basicWidgets[] = {
+            {"Panel", "Panel"}, {"Button", "Button"}, {"Label", "Label"},
+            {"Slider", "Slider"}, {"Checkbox", "CheckBox"}, {"InputText", "InputText"},
+            {"ComboBox", "ComboBox"}, {"ProgressBar", "ProgressBar"},
+        };
+        static const WidgetEntry visualWidgets[] = {
+            {"Image", "Image"}, {"Image Button", "ImageButton"}, {"Separator", "Separator"},
+        };
+        static const WidgetEntry inputWidgets[] = {
+            {"RadioButton", "RadioButton"}, {"ColorPicker", "ColorPicker"},
+            {"Drag Float", "DragFloat"}, {"Drag Int", "DragInt"},
+        };
+        static const WidgetEntry structuralWidgets[] = {
+            {"Tree Node", "TreeNode"}, {"Tab Bar", "TabBar"},
+            {"Tab Item", "TabItem"}, {"Collapsing Header", "CollapsingHeader"},
+        };
+        static const WidgetEntry chartWidgets[] = {
+            {"Plot Lines", "PlotLines"}, {"Plot Histogram", "PlotHistogram"},
+        };
+
+        static const WidgetCategory widgetCategories[] = {
+            {"Basic", basicWidgets, (int)std::size(basicWidgets)},
+            {"Visual", visualWidgets, (int)std::size(visualWidgets)},
+            {"Input", inputWidgets, (int)std::size(inputWidgets)},
+            {"Structural", structuralWidgets, (int)std::size(structuralWidgets)},
+            {"Charts", chartWidgets, (int)std::size(chartWidgets)},
+        };
+
         if (ImGui::BeginMenu("Control"))
         {
-        if (ImGui::BeginMenu("Basic"))
-        {
-            if (ImGui::MenuItem("Panel"))
+            for (auto& cat : widgetCategories)
             {
-                m_Context->CreateUIEntity("Panel");
+                if (ImGui::BeginMenu(cat.label))
+                {
+                    for (int i = 0; i < cat.count; ++i)
+                    {
+                        if (ImGui::MenuItem(cat.entries[i].label))
+                            m_Context->CreateUIEntity(cat.entries[i].typeName);
+                    }
+                    ImGui::EndMenu();
+                }
             }
-            if (ImGui::MenuItem("Button"))
-            {
-                m_Context->CreateUIEntity("Button");
-            }
-            if (ImGui::MenuItem("Label"))
-            {
-                m_Context->CreateUIEntity("Label");
-            }
-            if (ImGui::MenuItem("Slider"))
-            {
-                m_Context->CreateUIEntity("Slider");
-            }
-            if (ImGui::MenuItem("Checkbox"))
-            {
-                m_Context->CreateUIEntity("CheckBox");
-            }
-            if (ImGui::MenuItem("InputText"))
-            {
-                m_Context->CreateUIEntity("InputText");
-            }
-            if (ImGui::MenuItem("ComboBox"))
-            {
-                m_Context->CreateUIEntity("ComboBox");
-            }
-            if (ImGui::MenuItem("ProgressBar"))
-            {
-                m_Context->CreateUIEntity("ProgressBar");
-            }
-            ImGui::EndMenu();
-        }
-
-        if (ImGui::BeginMenu("Visual"))
-        {
-            if (ImGui::MenuItem("Image"))
-            {
-                m_Context->CreateUIEntity("Image");
-            }
-            if (ImGui::MenuItem("Image Button"))
-            {
-                m_Context->CreateUIEntity("ImageButton");
-            }
-            if (ImGui::MenuItem("Separator"))
-            {
-                m_Context->CreateUIEntity("Separator");
-            }
-            ImGui::EndMenu();
-        }
-
-        if (ImGui::BeginMenu("Input"))
-        {
-            if (ImGui::MenuItem("RadioButton"))
-            {
-                m_Context->CreateUIEntity("RadioButton");
-            }
-            if (ImGui::MenuItem("ColorPicker"))
-            {
-                m_Context->CreateUIEntity("ColorPicker");
-            }
-            if (ImGui::MenuItem("Drag Float"))
-            {
-                m_Context->CreateUIEntity("DragFloat");
-            }
-            if (ImGui::MenuItem("Drag Int"))
-            {
-                m_Context->CreateUIEntity("DragInt");
-            }
-            ImGui::EndMenu();
-        }
-
-        if (ImGui::BeginMenu("Structural"))
-        {
-            if (ImGui::MenuItem("Tree Node"))
-            {
-                m_Context->CreateUIEntity("TreeNode");
-            }
-            if (ImGui::MenuItem("Tab Bar"))
-            {
-                m_Context->CreateUIEntity("TabBar");
-            }
-            if (ImGui::MenuItem("Tab Item"))
-            {
-                m_Context->CreateUIEntity("TabItem");
-            }
-            if (ImGui::MenuItem("Collapsing Header"))
-            {
-                m_Context->CreateUIEntity("CollapsingHeader");
-            }
-            ImGui::EndMenu();
-        }
-
-        if (ImGui::BeginMenu("Charts"))
-        {
-            if (ImGui::MenuItem("Plot Lines"))
-            {
-                m_Context->CreateUIEntity("PlotLines");
-            }
-            if (ImGui::MenuItem("Plot Histogram"))
-            {
-                m_Context->CreateUIEntity("PlotHistogram");
-            }
-            ImGui::EndMenu();
-        }
-
             ImGui::EndMenu();
         }
     }

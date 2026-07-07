@@ -9,7 +9,6 @@ chained_add_engine_module(engine_app
     DEPENDS
         engine_scripting
         engine_scene
-        engine_serialization
         engine_project
         engine_graphics
         engine_physics
@@ -17,8 +16,7 @@ chained_add_engine_module(engine_app
         engine_assets
         engine_core
         engine_imgui
-        engine_platform_glfw
-        engine_platform_utils
+        engine_platform
 )
 
 target_include_directories(engine_app PRIVATE ${CMAKE_SOURCE_DIR})

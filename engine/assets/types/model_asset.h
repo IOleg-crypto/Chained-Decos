@@ -2,7 +2,7 @@
 #define CH_MODEL_ASSET_H
 
 #include "engine/assets/asset.h"
-#include "engine/foundation/base.h"
+#include "engine/common/base.h"
 #include "engine/graphics/api/model_data.h"
 #include "engine/graphics/pipeline/renderer_types.h"
 #include <future>
@@ -53,6 +53,10 @@ public:
     }
 
     const std::vector<Material>& GetMaterials() const
+    {
+        return m_Materials;
+    }
+    std::vector<Material>& GetMaterials()
     {
         return m_Materials;
     }
@@ -135,6 +139,6 @@ private:
     std::vector<std::shared_ptr<Texture>> m_EmbeddedTextures;
     bool m_HasPendingData = false;
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_MODEL_ASSET_H

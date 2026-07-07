@@ -10,7 +10,7 @@
 #include "engine/app/application.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/core/profiler.h"
-#include "engine/foundation/thread_pool.h"
+#include "engine/common/thread_pool.h"
 #include "engine/graphics/pipeline/render_command.h"
 #include "engine/graphics/ui/ui_renderer.h"
 #include "engine/physics/physics.h"
@@ -273,6 +273,13 @@ void EditorLayer::LoadEditorFonts()
 
 void EditorLayer::OnDetach()
 {
+    if (auto scene = GetActiveScene())
+    {
+        if (scene->GetSceneState() != SceneState::Edit)
+        {
+            scene->OnRuntimeStop();
+        }
+    }
     SaveConfig();
 }
 
@@ -280,24 +287,24 @@ void EditorLayer::OnUpdate(Timestep ts)
 {
     CH_PROFILE_FUNCTION();
 
-    // 1. Менеджер сцен оновлює внутрішні транзити та поточну активну сцену
+    // 1. Scene manager updates internal transitions and the current active scene
     m_SceneManager->OnUpdate(ts);
 
-    // 2. Оновлюємо панелі
+    // 2. Update panels
     m_Panels->SetContext(GetActiveScene());
     m_Panels->OnUpdate(ts);
 
-    // 3. Якщо йде завантаження — нічого більше не чіпаємо
+    // 3. If loading — skip everything else
     if (m_SceneManager->IsLoading())
     {
         return;
     }
 
-    // 4. Оновлення логіки (Play/Simulate/Edit) тепер лежить на плечах сцени
-    // Ми просто викликаємо OnUpdate на активній сцені
+    // 4. Logic update (Play/Simulate/Edit) is now handled by the scene
+    // We just call OnUpdate on the active scene
     if (auto scene = GetActiveScene())
     {
-        // Якщо сцена в режимі Play, просимо ScriptEngine виконати скрипти
+        // If scene is in Play mode, ask ScriptEngine to execute scripts
         if (scene->GetSceneState() == SceneState::Play)
         {
             auto& scriptEngine = *ServiceLocator::Get<ScriptEngine>();
@@ -471,6 +478,11 @@ void EditorLayer::OnEvent(Event& e)
         if (ke.GetKeyCode() == KeyCode::Escape && GetEditorState().FullscreenGame)
         {
             GetEditorState().FullscreenGame = false;
+            e.Handled = true;
+        }
+        else if (ke.GetKeyCode() == KeyCode::F11)
+        {
+            Application::Get().GetWindow().ToggleFullscreen();
             e.Handled = true;
         }
     }

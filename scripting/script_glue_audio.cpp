@@ -174,25 +174,4 @@ void SpriteComponent_SetZOrder(uint64_t entityID, int z)
         entity.GetComponent<SpriteComponent>().ZOrder = z;
     }
 }
-
-void RegisterGlueAudio()
-{
-    CH_ADD_INTERNAL_CALL("Audio", Audio_Play, Audio_Play);
-    CH_ADD_INTERNAL_CALL("Audio", Audio_Stop, Audio_Stop);
-    CH_ADD_INTERNAL_CALL("Audio", Audio_StopAll, Audio_StopAll);
-    CH_ADD_INTERNAL_CALL("Audio", AudioComponent_SetVolume, AudioComponent_SetVolume);
-    CH_ADD_INTERNAL_CALL("Audio", AudioComponent_SetLoop, AudioComponent_SetLoop);
-    CH_ADD_INTERNAL_CALL("Audio", AudioComponent_IsPlaying, AudioComponent_IsPlaying);
-    CH_ADD_INTERNAL_CALL("Audio", AudioComponent_GetSoundPath, AudioComponent_GetSoundPath);
-    CH_ADD_INTERNAL_CALL("Audio", SpriteComponent_GetTexturePath, SpriteComponent_GetTexturePath);
-    CH_ADD_INTERNAL_CALL("Audio", SpriteComponent_SetTexturePath, SpriteComponent_SetTexturePath);
-    CH_ADD_INTERNAL_CALL("Audio", SpriteComponent_GetTint, SpriteComponent_GetTint);
-    CH_ADD_INTERNAL_CALL("Audio", SpriteComponent_SetTint, SpriteComponent_SetTint);
-    CH_ADD_INTERNAL_CALL("Audio", SpriteComponent_GetFlipX, SpriteComponent_GetFlipX);
-    CH_ADD_INTERNAL_CALL("Audio", SpriteComponent_SetFlipX, SpriteComponent_SetFlipX);
-    CH_ADD_INTERNAL_CALL("Audio", SpriteComponent_GetFlipY, SpriteComponent_GetFlipY);
-    CH_ADD_INTERNAL_CALL("Audio", SpriteComponent_SetFlipY, SpriteComponent_SetFlipY);
-    CH_ADD_INTERNAL_CALL("Audio", SpriteComponent_GetZOrder, SpriteComponent_GetZOrder);
-    CH_ADD_INTERNAL_CALL("Audio", SpriteComponent_SetZOrder, SpriteComponent_SetZOrder);
-}
-}
+} // namespace Chained

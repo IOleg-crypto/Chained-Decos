@@ -7,6 +7,8 @@
 
 namespace Chained {
 
+// Starts playback of an animation clip by index, resetting frame state.
+// If the same clip is already playing and not blending, this is a no-op.
 void AnimationManager::Play(AnimationComponent& anim, int index, bool loop)
 {
     if (anim.CurrentAnimationIndex == index && anim.IsPlaying && !anim.Blending)
@@ -21,6 +23,9 @@ void AnimationManager::Play(AnimationComponent& anim, int index, bool loop)
     anim.TargetAnimationIndex = -1;
 }
 
+// Initiates a cross-fade transition from the current animation to a target clip.
+// The blend is performed over the specified duration; after completion the target
+// becomes the current animation.
 void AnimationManager::CrossFade(AnimationComponent& anim, int index, float duration, bool loop)
 {
     if (anim.CurrentAnimationIndex == index)
@@ -37,12 +42,15 @@ void AnimationManager::CrossFade(AnimationComponent& anim, int index, float dura
     anim.IsPlaying = true;
 }
 
+// Stops the current animation and clears any active blend.
 void AnimationManager::Stop(AnimationComponent& anim)
 {
     anim.IsPlaying = false;
     anim.Blending = false;
 }
 
+// Advances frame timers for all playing AnimationComponents in the scene.
+// Frame advancement is a placeholder — real clip data drives actual frame changes.
 void AnimationManager::UpdatePlayback(Scene* scene, Timestep ts)
 {
     auto& registry = scene->GetRegistry();
