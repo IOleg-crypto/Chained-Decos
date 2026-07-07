@@ -2,7 +2,7 @@
 #define CH_ENVIRONMENT_H
 
 #include "engine/assets/asset.h"
-#include "engine/foundation/color.h"
+#include "engine/common/color.h"
 #include <glm/glm.hpp>
 #include <string>
 

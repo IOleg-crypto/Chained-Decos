@@ -1,7 +1,7 @@
 #ifndef CH_SCENE_PICKING_H
 #define CH_SCENE_PICKING_H
 
-#include "engine/foundation/color.h"
+#include "engine/common/color.h"
 #include "engine/physics/raycast_result.h"
 #include "engine/graphics/camera_types.h"
 #include "engine/scene/entity.h"

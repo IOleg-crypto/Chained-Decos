@@ -10,7 +10,7 @@
 #include <string_view>
 #include <type_traits>
 
-#include "engine/foundation/uuid.h"
+#include "engine/common/uuid.h"
 #include "engine/reflection/reflection.h"
 
 namespace Chained

@@ -23,7 +23,6 @@ target_link_libraries(engine_tests PRIVATE
     engine_core
     engine_app
     engine_scene
-    engine_serialization
     engine_graphics
     engine_project
     engine_physics

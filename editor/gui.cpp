@@ -1,4 +1,4 @@
-#include "engine/platform/utils/file_dialogs.h"
+#include "engine/platform/dialogs/file_dialogs.h"
 #include "gui.h"
 #include "engine/core/service_locator.h"
 #include "thirdparty/IconsFontAwesome6.h"
@@ -113,7 +113,7 @@ void EditorGUI::DrawMenuBar(EditorLayer& editorLayer, EditorPanels& panels)
         ImGui::Separator();
         if (ImGui::MenuItem(ICON_FA_EXPAND " Fullscreen", "F11"))
         {
-            // Application::Get().GetWindow().SetFullscreen(true);
+            Application::Get().GetWindow().ToggleFullscreen();
         }
         if (ImGui::MenuItem(ICON_FA_ARROWS_ROTATE " Reset Layout"))
         {

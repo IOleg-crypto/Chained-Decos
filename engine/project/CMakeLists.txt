@@ -4,6 +4,4 @@ chained_add_engine_module(engine_project
         project.h
     DEPENDS
         engine_core
-        engine_assets
-        engine_graphics
 )

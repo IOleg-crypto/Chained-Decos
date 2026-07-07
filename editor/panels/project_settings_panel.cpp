@@ -1,6 +1,6 @@
 #include "project_settings_panel.h"
 #include "engine/core/platform.h"
-#include "engine/platform/utils/file_dialogs.h"
+#include "engine/platform/dialogs/file_dialogs.h"
 #include "engine/project/project.h"
 #include "imgui.h"
 #include "layer.h"

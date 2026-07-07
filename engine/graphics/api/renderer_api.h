@@ -1,7 +1,7 @@
 #ifndef CH_RENDERER_API_H
 #define CH_RENDERER_API_H
 
-#include "engine/foundation/color.h"
+#include "engine/common/color.h"
 #include <memory>
 
 namespace Chained

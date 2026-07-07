@@ -2,8 +2,8 @@
 #include "engine/app/application.h"
 #include "engine/core/log.h"
 #include "engine/scene/scene_events.h"
-#include "script_internal_call_registry.h"
 #include "engine/scene/components.h"
+
 namespace Chained {
 CH_SCRIPT_FUNC uint64_t Scene_FindEntityByTag(const char16_t* tag) {
     auto *scene = GetActiveScene();
@@ -45,10 +45,4 @@ CH_SCRIPT_FUNC uint64_t Scene_GetPrimaryCameraEntity() {
     return 0;
 }
 
-void RegisterGlueScene() {
-    CH_ADD_INTERNAL_CALL("Scene", Scene_FindEntityByTag, Scene_FindEntityByTag);
-    CH_ADD_INTERNAL_CALL("Scene", Scene_CopyEntity, Scene_CopyEntity);
-    CH_ADD_INTERNAL_CALL("Scene", Scene_LoadScene, Scene_LoadScene);
-    CH_ADD_INTERNAL_CALL("Scene", Scene_GetPrimaryCameraEntity, Scene_GetPrimaryCameraEntity);
-}
 } // namespace Chained

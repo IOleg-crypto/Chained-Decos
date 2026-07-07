@@ -1,5 +1,5 @@
 #include "opengl_framebuffer.h"
-#include "engine/foundation/engine_assert.h"
+#include "engine/common/engine_assert.h"
 #include <glad/gl.h>
 
 namespace Chained

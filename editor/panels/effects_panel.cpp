@@ -11,6 +11,7 @@ namespace Chained
 EffectsPanel::EffectsPanel()
 {
     m_Name = "Effects & Debug";
+    m_IsOpen = false;
 }
 
 void EffectsPanel::OnImGuiRender(bool readOnly)

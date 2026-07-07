@@ -17,7 +17,7 @@ function(chained_add_csharp_scripts TARGET_NAME CSHARP_PROJECT_PATH)
     set(SCRIPT_DLL_PATH "${SCRIPT_OUTPUT_DIR}/${TARGET_NAME}.dll")
 
     add_custom_target(${SCRIPT_TARGET}
-        COMMAND "${CH_PYTHON_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/build_scripts/build_managed.py" build-managed
+        COMMAND "${CH_PYTHON_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/tools/sync_resources.py" build-managed
             --project "${FULL_CSPROJ_PATH}"
             --configuration $<IF:$<OR:$<CONFIG:Debug>,$<CONFIG:>>,Debug,Release>
             --output "${SCRIPT_OUTPUT_DIR}"
@@ -42,7 +42,7 @@ function(chained_add_engine_module TARGET_NAME)
     set(multiValueArgs SOURCES DEPENDS EXCLUDE_DIRS EXCLUDE_FILES)
     cmake_parse_arguments(MODULE "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-    file(GLOB_RECURSE AUTO_SOURCES "*.cpp" "*.h" "*.c" "*.hh" "*.hpp")
+    file(GLOB_RECURSE AUTO_SOURCES CONFIGURE_DEPENDS "*.cpp" "*.h" "*.c" "*.hh" "*.hpp")
     if(MODULE_EXCLUDE_DIRS)
         foreach(EXCLUDE_DIR ${MODULE_EXCLUDE_DIRS})
             list(FILTER AUTO_SOURCES EXCLUDE REGEX "${EXCLUDE_DIR}/.*")
@@ -177,6 +177,18 @@ function(chained_add_game TARGET_NAME)
     endif()
 
     message(STATUS "Configured Project: ${GAME_PROJECT_GAME} (Output=${TARGET_NAME})")
+endfunction()
+
+# Copy engine resources (shaders, fonts, icons, config) to a target's output directory
+function(ch_add_resource_sync TARGET)
+    set(RESOURCES_SRC "${CMAKE_SOURCE_DIR}/resources")
+    set(RESOURCES_DST "$<TARGET_FILE_DIR:${TARGET}>/resources")
+
+    add_custom_command(TARGET ${TARGET} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${RESOURCES_DST}"
+        COMMAND ${CMAKE_COMMAND} -DSOURCE="${RESOURCES_SRC}" -DDEST="${RESOURCES_DST}" -P "${CMAKE_SOURCE_DIR}/cmake/CopyIfDifferent.cmake"
+        COMMENT "Syncing engine resources to ${RESOURCES_DST}..."
+    )
 endfunction()
 
 

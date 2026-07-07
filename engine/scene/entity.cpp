@@ -15,6 +15,9 @@ bool Entity::IsValid() const
     return m_EntityHandle != entt::null && m_Registry != nullptr && m_Registry->valid(m_EntityHandle);
 }
 
+// BFS-based recursive destroy: collects all descendants via the hierarchy,
+// then destroys them in reverse order (children before parents) to avoid
+// dangling parent references.
 void Entity::Destroy()
 {
     if (!IsValid())
@@ -22,6 +25,7 @@ void Entity::Destroy()
         return;
     }
 
+    // BFS to collect all entities in the subtree
     std::vector<entt::entity> entitiesToDestroy;
     entitiesToDestroy.push_back(m_EntityHandle);
 
@@ -42,6 +46,7 @@ void Entity::Destroy()
         }
     }
 
+    // Destroy in reverse order: children first, then parents
     for (auto it = entitiesToDestroy.rbegin(); it != entitiesToDestroy.rend(); ++it)
     {
         if (m_Registry->valid(*it))

@@ -142,4 +142,4 @@ namespace Chained
 
         return ss.str();
     }
-} // namespace CHEngine
+} // namespace Chained

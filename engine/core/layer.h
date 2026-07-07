@@ -2,9 +2,9 @@
 #define CH_LAYER_H
 
 #include <string>
-#include "engine/foundation/base.h"
+#include "engine/common/base.h"
 #include "engine/core/events/events.h"
-#include "engine/foundation/timestep.h"
+#include "engine/common/timestep.h"
 
 namespace Chained
 {

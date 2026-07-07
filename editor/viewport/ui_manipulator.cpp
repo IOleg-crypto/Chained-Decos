@@ -61,8 +61,10 @@ bool EditorUIManipulator::OnImGuiRender(Entity selectedEntity, ImVec2 viewportPo
     ImVec2 mousePos = ImGui::GetMousePos();
     UIHandleType hoveredHandle = UIHandleType::None;
 
+    bool isHoveredWindow = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem | ImGuiHoveredFlags_AllowWhenBlockedByPopup);
+
     auto ProcessHandle = [&](UIHandleType type, ImVec2 pos, UIHandleType& hovered) {
-        bool hoveredItem = (mousePos.x >= pos.x - HANDLE_SIZE && mousePos.x <= pos.x + HANDLE_SIZE &&
+        bool hoveredItem = (isHoveredWindow && mousePos.x >= pos.x - HANDLE_SIZE && mousePos.x <= pos.x + HANDLE_SIZE &&
                             mousePos.y >= pos.y - HANDLE_SIZE && mousePos.y <= pos.y + HANDLE_SIZE);
         DrawHandle(drawList, pos, type, hoveredItem || (m_ActiveHandle == type));
         if (hoveredItem && !IsActive())
@@ -91,7 +93,8 @@ bool EditorUIManipulator::OnImGuiRender(Entity selectedEntity, ImVec2 viewportPo
             m_StartOffsetMin = cc.Transform.OffsetMin;
             m_StartOffsetMax = cc.Transform.OffsetMax;
         }
-        else if (ImGui::IsMouseHoveringRect(p1, p2))
+        else if (isHoveredWindow && mousePos.x >= p1.x && mousePos.x <= p2.x &&
+                 mousePos.y >= p1.y && mousePos.y <= p2.y)
         {
             m_Dragging = true;
             m_StartMousePos = mousePos;

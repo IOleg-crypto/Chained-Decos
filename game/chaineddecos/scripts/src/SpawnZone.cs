@@ -13,7 +13,7 @@ namespace ChainedDecos.Scripts
                 Respawn();
             }
 
-            if (Input.IsKeyPressed((Key)70)) // KEY_F
+            if (Input.IsKeyPressed(Key.F)) // KEY_F
             {
                 Respawn();
             }

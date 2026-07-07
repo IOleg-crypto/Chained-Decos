@@ -27,15 +27,17 @@ void CompositePass::Execute(const RenderContext& ctx)
     if (!shader)  return;
 
     shader->Bind();
-    shader->SetInt ("u_FogEnabled",  env.Fog.Enabled ? 1 : 0);
-    shader->SetVec4("u_FogColor",
+    shader->SetInt ("fogEnabled",   env.Fog.Enabled ? 1 : 0);
+    shader->SetVec4("fogColor",
         { env.Fog.FogColor.r / 255.0f,
           env.Fog.FogColor.g / 255.0f,
           env.Fog.FogColor.b / 255.0f,
           env.Fog.FogColor.a / 255.0f });
-    shader->SetFloat("u_FogDensity", env.Fog.Density);
-    shader->SetFloat("u_FogStart",   env.Fog.Start);
-    shader->SetFloat("u_FogEnd",     env.Fog.End);
+    shader->SetFloat("fogDensity",  env.Fog.Density);
+    shader->SetFloat("fogStart",    env.Fog.Start);
+    shader->SetFloat("fogEnd",      env.Fog.End);
+    shader->SetInt  ("fogMode",     (int)env.Fog.Mode);
+    shader->SetFloat("fogHeightFalloff", env.Fog.HeightFalloff);
 
     // Future: full-screen HDR blit with tone-mapping when m_HDRTarget is set.
 }

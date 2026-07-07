@@ -78,7 +78,6 @@ foreach(GAME_PROJECT_DIR ${GAME_PROJECT_LIST})
 endforeach()
 
 add_subdirectory(editor)
-add_subdirectory(runtime)
 
 enable_testing()
 add_subdirectory(tests)
@@ -87,9 +86,9 @@ add_subdirectory(tests)
 macro(ch_add_resource_sync TARGET)
     add_custom_command(TARGET ${TARGET} POST_BUILD
         COMMAND ${CH_PYTHON_EXECUTABLE}
-                "${CMAKE_CURRENT_SOURCE_DIR}/tools/sync_resources.py"
+                "${CMAKE_SOURCE_DIR}/tools/sync_resources.py"
                 sync-resources
-                --root "${CMAKE_CURRENT_SOURCE_DIR}"
+                --root "${CMAKE_SOURCE_DIR}"
                 --bin  "$<TARGET_FILE_DIR:${TARGET}>"
         COMMENT "Syncing resources for ${TARGET} ($<CONFIG>)"
         VERBATIM
@@ -98,9 +97,9 @@ endmacro()
 
 add_custom_target(sync-resources
     COMMAND ${CH_PYTHON_EXECUTABLE}
-            "${CMAKE_CURRENT_SOURCE_DIR}/tools/sync_resources.py"
+            "${CMAKE_SOURCE_DIR}/tools/sync_resources.py"
             sync-resources
-            --root "${CMAKE_CURRENT_SOURCE_DIR}"
+            --root "${CMAKE_SOURCE_DIR}"
             --bin  "${CMAKE_BINARY_DIR}/bin"
             --all-configs
     COMMENT "Syncing resources to all configs"

@@ -40,10 +40,6 @@ namespace ChainedDecos.Scripts
 
             m_Triggered = true;
 
-            HeroProgression.CompleteLevel(LevelId);
-            HeroProgression.AddExperience(BonusExperience, "endgame bonus");
-            HeroProgression.AddGold(BonusGold, "endgame bonus");
-
             Log.Info($"EndGameZone: player detected (otherID={otherID}, tag='{otherTag}'). Loading {TargetScene}");
             Scene.LoadScene(TargetScene);
         }
@@ -59,9 +55,6 @@ namespace ChainedDecos.Scripts
             if (Input.IsKeyPressed(Key.F9))
             {
                 m_Triggered = true;
-                HeroProgression.CompleteLevel(LevelId + "_debug");
-                HeroProgression.AddExperience(BonusExperience, "endgame debug bonus");
-                HeroProgression.AddGold(BonusGold, "endgame debug bonus");
                 Log.Info($"EndGameZone: F9 debug trigger -> Loading {TargetScene}");
                 Scene.LoadScene(TargetScene);
             }

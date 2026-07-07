@@ -1,8 +1,4 @@
 #include "project.h"
-#include "engine/app/application.h"
-#include "engine/assets/types/environment_asset.h"
-#include "engine/graphics/pipeline/renderer.h"
-#include "imgui.h"
 #include "yaml-cpp/yaml.h"
 #include <fstream>
 #include <sstream>
@@ -12,6 +8,8 @@ namespace Chained
 {
 
 std::shared_ptr<Project> Project::s_ActiveProject = nullptr;
+
+Project::~Project() = default;
 
 
 

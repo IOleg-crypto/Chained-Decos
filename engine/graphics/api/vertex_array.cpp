@@ -13,7 +13,6 @@ std::shared_ptr<VertexArray> VertexArray::Create()
         case RendererAPI::API::OpenGL:  return std::make_shared<OpenGLVertexArray>();
         default : return nullptr;
     }
-
 }
 
 } // namespace Chained

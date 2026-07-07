@@ -1,6 +1,6 @@
 #include "scriptengine.h"
 #include "engine/core/log.h"
-#include "engine/foundation/engine_assert.h"
+#include "engine/common/engine_assert.h"
 #include <exception>
 #include <filesystem>
 

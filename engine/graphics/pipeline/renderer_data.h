@@ -1,7 +1,7 @@
 #ifndef CH_RENDERER_DATA_H
 #define CH_RENDERER_DATA_H
 
-#include "engine/foundation/timestep.h"
+#include "engine/common/timestep.h"
 #include "engine/assets/types/environment_asset.h"
 #include "engine/graphics/pipeline/shader_storage.h"
 #include "engine/graphics/api/storage_buffer.h"

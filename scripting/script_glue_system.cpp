@@ -1,4 +1,5 @@
-#include "script_glue_system.h" 
+#include "script_glue_system.h"
+#include "engine/project/project.h"
 
 namespace Chained {
 void Log_Info(const char16_t* message)
@@ -42,17 +43,11 @@ void Window_SetAntialiasing(bool enabled)
     Application::Get().GetWindow().SetAntialiasing(enabled);
 }
 
-void RegisterGlueSystem()
+float Physics_GetGravity()
 {
-    CH_ADD_INTERNAL_CALL("System", Log_Info, Log_Info);
-    CH_ADD_INTERNAL_CALL("System", Log_Warn, Log_Warn);
-    CH_ADD_INTERNAL_CALL("System", Log_Error, Log_Error);
-    CH_ADD_INTERNAL_CALL("System", Application_Close, Application_Close);
-    CH_ADD_INTERNAL_CALL("System", Application_GetFPS, Application_GetFPS);
-    CH_ADD_INTERNAL_CALL("System", Application_GetFrameTime, Application_GetFrameTime);
-    CH_ADD_INTERNAL_CALL("System", Window_SetSize, Window_SetSize);
-    CH_ADD_INTERNAL_CALL("System", Window_SetFullscreen, Window_SetFullscreen);
-    CH_ADD_INTERNAL_CALL("System", Window_SetVSync, Window_SetVSync);
-    CH_ADD_INTERNAL_CALL("System", Window_SetAntialiasing, Window_SetAntialiasing);
+    if (auto project = Project::GetActive())
+        return project->GetConfig().Physics.Gravity;
+    return 20.0f;
 }
-}
+
+} // namespace Chained

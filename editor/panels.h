@@ -1,7 +1,7 @@
 #ifndef CH_EDITOR_PANELS_H
 #define CH_EDITOR_PANELS_H
 
-#include "engine/foundation/timestep.h"
+#include "engine/common/timestep.h"
 #include "panels/panel.h"
 #include <memory>
 #include <typeindex>

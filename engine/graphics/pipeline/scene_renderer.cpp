@@ -16,7 +16,7 @@
 #include "engine/scene/components.h"
 #include "engine/scene/entity.h"
 #include "imgui.h"
-#include <GLFW/glfw3.h>
+#include "engine/core/platform.h"
 #include <algorithm>
 #include <cmath>
 #include <glm/gtc/matrix_transform.hpp>
@@ -86,9 +86,46 @@ std::optional<Camera3D> SceneRenderer::GetActiveCamera(entt::registry& reg)
             activeCamera.Target = activeCamera.Position + forward;
             activeCamera.Up = glm::normalize(worldUp - activeCamera.Position);
 
-            // SceneCamera stores FOV in radians, raylib expects degrees for Camera3D
-            activeCamera.FovY = glm::degrees(camera.Camera.GetPerspectiveVerticalFOV());
             activeCamera.Projection = (int)camera.Camera.GetProjectionType();
+
+            // Branch for perspective vs orthographic clip planes and FOV/size
+            if (camera.Camera.GetProjectionType() == Camera::ProjectionType::Perspective)
+            {
+                activeCamera.FovY = glm::degrees(camera.Camera.GetPerspectiveVerticalFOV());
+                activeCamera.NearClip = camera.Camera.GetPerspectiveNearClip();
+                activeCamera.FarClip = camera.Camera.GetPerspectiveFarClip();
+            }
+            else
+            {
+                activeCamera.FovY = camera.Camera.GetOrthographicSize();
+                activeCamera.NearClip = camera.Camera.GetOrthographicNearClip();
+                activeCamera.FarClip = camera.Camera.GetOrthographicFarClip();
+            }
+
+            // Compute ViewMatrix
+            activeCamera.ViewMatrix = glm::lookAt(activeCamera.Position, activeCamera.Target, activeCamera.Up);
+
+            // Compute ProjectionMatrix using viewport aspect ratio
+            auto* renderer = ServiceLocator::TryGet<Renderer>();
+            float aspect = 1.0f;
+            if (renderer)
+            {
+                uint32_t vw = renderer->GetViewportWidth();
+                uint32_t vh = renderer->GetViewportHeight();
+                if (vh > 0) aspect = static_cast<float>(vw) / static_cast<float>(vh);
+            }
+            if (activeCamera.Projection == 0) // Perspective
+            {
+                activeCamera.ProjectionMatrix = glm::perspective(
+                    glm::radians(activeCamera.FovY), aspect, activeCamera.NearClip, activeCamera.FarClip);
+            }
+            else // Orthographic
+            {
+                float orthoSize = activeCamera.FovY;
+                activeCamera.ProjectionMatrix = glm::ortho(
+                    -aspect * orthoSize, aspect * orthoSize, -orthoSize, orthoSize,
+                    activeCamera.NearClip, activeCamera.FarClip);
+            }
 
             return activeCamera;
         }
@@ -130,7 +167,7 @@ void SceneRenderer::RenderScene(entt::registry& registry, const SceneSettings& s
         m_CurrentEnv = envSettings;
     }
 
-    ServiceLocator::Get<Renderer>()->UpdateTime(Timestep((float)glfwGetTime()));
+    ServiceLocator::Get<Renderer>()->UpdateTime(Timestep(Platform::GetTime()));
 
     m_CurrentStats = {};
     m_CurrentStats.EntityCount = (uint32_t)registry.storage<entt::entity>().size();
@@ -454,9 +491,20 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
             continue;
         }
         const BoundingBox primBBox = primitive.Asset->GetBoundingBox();
-        glm::vec3 primCenter = (primBBox.Max + primBBox.Min) * 0.5f;
-        glm::vec3 primExtents = (primBBox.Max - primBBox.Min) * 0.5f;
-        // Get from frustum file
+        glm::vec3 primLocalCenter = (primBBox.Max + primBBox.Min) * 0.5f;
+        glm::vec3 primLocalExtents = (primBBox.Max - primBBox.Min) * 0.5f;
+
+        // Transform AABB center+extents to world space for frustum culling
+        const glm::mat4& primWorldTransform = transform.WorldTransform;
+        glm::vec3 primCenter = glm::vec3(primWorldTransform * glm::vec4(primLocalCenter, 1.0f));
+        glm::vec3 primExtents = {
+            std::abs(primWorldTransform[0][0]) * primLocalExtents.x + std::abs(primWorldTransform[1][0]) * primLocalExtents.y +
+                std::abs(primWorldTransform[2][0]) * primLocalExtents.z,
+            std::abs(primWorldTransform[0][1]) * primLocalExtents.x + std::abs(primWorldTransform[1][1]) * primLocalExtents.y +
+                std::abs(primWorldTransform[2][1]) * primLocalExtents.z,
+            std::abs(primWorldTransform[0][2]) * primLocalExtents.x + std::abs(primWorldTransform[1][2]) * primLocalExtents.y +
+                std::abs(primWorldTransform[2][2]) * primLocalExtents.z,
+        };
         if (!IsBoxVisible(frustum, primCenter, primExtents))
         {
             continue;
@@ -539,10 +587,11 @@ void SceneRenderer::DrawModel(Chained::ModelAsset* modelAsset, const glm::mat4& 
     }
 
     auto& model = modelAsset->GetModel();
+    std::string fallbackName = boneMatrices.empty() ? "Lighting" : "Skinned";
     auto activeShader = shaderOverride
                             ? shaderOverride
-                            : (ServiceLocator::Get<Renderer>()->GetShaderLibrary().Exists("Lighting")
-                                   ? ServiceLocator::Get<Renderer>()->GetShaderLibrary().Get("Lighting").get()
+                            : (ServiceLocator::Get<Renderer>()->GetShaderLibrary().Exists(fallbackName)
+                                   ? ServiceLocator::Get<Renderer>()->GetShaderLibrary().Get(fallbackName).get()
                                    : nullptr);
 
     if (!activeShader || !activeShader->GetShader())
@@ -590,12 +639,9 @@ void SceneRenderer::DrawModel(Chained::ModelAsset* modelAsset, const glm::mat4& 
         uint32_t originalID = material.ShaderID;
         material.ShaderID = activeShader->GetShader()->GetRendererID();
 
-        bool useSkinning = !boneMatrices.empty();
         activeShader->GetShader()->Bind();
-        activeShader->GetShader()->SetInt("useSkinning", useSkinning ? 1 : 0);
-
         ServiceLocator::Get<Renderer>()->DrawMesh(model.Meshes[i], material,
-                                                  useSkinning ? transform : transform * inst.localTransform);
+                                                  transform * inst.localTransform);
         material.ShaderID = originalID;
     }
 }

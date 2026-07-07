@@ -1,6 +1,6 @@
 #include "project_serializer.h"
 #include "engine/core/log.h"
-#include "engine/serialization/serialization.h"
+#include "engine/scene/serialization.h"
 #include "editor_settings.h"
 #include <fstream>
 #include <sstream>

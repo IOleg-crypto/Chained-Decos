@@ -4,7 +4,10 @@
 #include "engine/scene/components.h"
 #include "engine/scene/components/component_utils.h"
 #include "engine/scene/entity.h"
-#include "script_internal_call_registry.h"
+#include "game/chaineddecos/src/components/game_components.h"
+#include "engine/physics/physics.h"
+#include "engine/core/service_locator.h"
+
 namespace Chained
 {
 void Transform_GetTranslation(uint64_t entityID, glm::vec3* outTranslation)
@@ -143,7 +146,17 @@ void RigidBody_GetVelocity(uint64_t entityID, glm::vec3* outVelocity)
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<RigidBodyComponent>() && outVelocity)
     {
-        *outVelocity = entity.GetComponent<RigidBodyComponent>().Velocity;
+        auto& rb = entity.GetComponent<RigidBodyComponent>();
+        if (rb.Handle != kInvalidPhysicsBody)
+        {
+            auto* physics = ServiceLocator::Get<Physics>();
+            if (physics && physics->GetWorld())
+            {
+                *outVelocity = physics->GetWorld()->GetVelocity(rb.Handle);
+                return;
+            }
+        }
+        *outVelocity = rb.Velocity;
     }
 }
 void RigidBody_SetVelocity(uint64_t entityID, glm::vec3* inVelocity)
@@ -151,7 +164,16 @@ void RigidBody_SetVelocity(uint64_t entityID, glm::vec3* inVelocity)
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<RigidBodyComponent>() && inVelocity)
     {
-        entity.GetComponent<RigidBodyComponent>().Velocity = *inVelocity;
+        auto& rb = entity.GetComponent<RigidBodyComponent>();
+        rb.Velocity = *inVelocity;
+        if (rb.Handle != kInvalidPhysicsBody)
+        {
+            auto* physics = ServiceLocator::Get<Physics>();
+            if (physics && physics->GetWorld())
+            {
+                physics->GetWorld()->SetVelocity(rb.Handle, *inVelocity);
+            }
+        }
     }
 }
 bool RigidBody_IsGrounded(uint64_t entityID)
@@ -163,15 +185,18 @@ bool RigidBody_IsGrounded(uint64_t entityID)
 bool RigidBody_IsKinematic(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
-    return entity && entity.HasComponent<RigidBodyComponent>() ? entity.GetComponent<RigidBodyComponent>().IsKinematic
-                                                               : false;
+    return entity && entity.HasComponent<RigidBodyComponent>()
+               ? (entity.GetComponent<RigidBodyComponent>().Type == RigidBodyComponent::BodyType::Kinematic)
+               : false;
 }
 void RigidBody_SetKinematic(uint64_t entityID, bool isKinematic)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<RigidBodyComponent>())
     {
-        entity.GetComponent<RigidBodyComponent>().IsKinematic = isKinematic;
+        entity.GetComponent<RigidBodyComponent>().Type = isKinematic
+            ? RigidBodyComponent::BodyType::Kinematic
+            : RigidBodyComponent::BodyType::Dynamic;
     }
 }
 void AudioComponent_Play(uint64_t entityID)
@@ -385,42 +410,82 @@ bool Entity_HasComponent(uint64_t entityID, const char16_t* componentName)
     return false;
 }
 
-void RegisterGlueEntity()
+// ── PlayerComponent ───────────────────────────────────────────────────
+float PlayerComponent_GetMovementSpeed(uint64_t entityID)
 {
-    // === Entity Core ===
-    CH_ADD_INTERNAL_CALL("Entity", Entity_AddComponent, Entity_AddComponent);
-    CH_ADD_INTERNAL_CALL("Entity", Entity_HasComponent, Entity_HasComponent);
-    CH_ADD_INTERNAL_CALL("Entity", Entity_FindAllWithComponent, Entity_FindAllWithComponent);
-    CH_ADD_INTERNAL_CALL("Entity", TagComponent_GetTag, TagComponent_GetTag);
-
-    // === Transform Component ===
-    CH_ADD_INTERNAL_CALL("Transform", Transform_GetTranslation, Transform_GetTranslation);
-    CH_ADD_INTERNAL_CALL("Transform", Transform_SetTranslation, Transform_SetTranslation);
-    CH_ADD_INTERNAL_CALL("Transform", Transform_GetRotation, Transform_GetRotation);
-    CH_ADD_INTERNAL_CALL("Transform", Transform_SetRotation, Transform_SetRotation);
-    CH_ADD_INTERNAL_CALL("Transform", Transform_GetScale, Transform_GetScale);
-    CH_ADD_INTERNAL_CALL("Transform", Transform_SetScale, Transform_SetScale);
-
-    // === Model Component ===
-    CH_ADD_INTERNAL_CALL("Model", Model_GetModelPath, Model_GetModelPath);
-    CH_ADD_INTERNAL_CALL("Model", Model_SetModelPath, Model_SetModelPath);
-
-    // === RigidBody Component ===
-    CH_ADD_INTERNAL_CALL("RigidBody", RigidBody_GetVelocity, RigidBody_GetVelocity);
-    CH_ADD_INTERNAL_CALL("RigidBody", RigidBody_SetVelocity, RigidBody_SetVelocity);
-    CH_ADD_INTERNAL_CALL("RigidBody", RigidBody_IsGrounded, RigidBody_IsGrounded);
-    CH_ADD_INTERNAL_CALL("RigidBody", RigidBody_IsKinematic, RigidBody_IsKinematic);
-    CH_ADD_INTERNAL_CALL("RigidBody", RigidBody_SetKinematic, RigidBody_SetKinematic);
-
-    // === Audio Component ===
-    CH_ADD_INTERNAL_CALL("AudioComponent", AudioComponent_Play, AudioComponent_Play);
-    CH_ADD_INTERNAL_CALL("AudioComponent", AudioComponent_Stop, AudioComponent_Stop);
-
-    // === Shader Component ===
-    CH_ADD_INTERNAL_CALL("Shader", Shader_SetFloat, Shader_SetFloat);
-    CH_ADD_INTERNAL_CALL("Shader", Shader_SetVec3, Shader_SetVec3);
-    CH_ADD_INTERNAL_CALL("Shader", Shader_GetEnabled, Shader_GetEnabled);
-    CH_ADD_INTERNAL_CALL("Shader", Shader_SetEnabled, Shader_SetEnabled);
+    Entity entity = GetEntity(entityID);
+    return entity && entity.HasComponent<Chained::PlayerComponent>() ? entity.GetComponent<Chained::PlayerComponent>().MovementSpeed : 0.0f;
 }
+void PlayerComponent_SetMovementSpeed(uint64_t entityID, float value)
+{
+    Entity entity = GetEntity(entityID);
+    if (entity && entity.HasComponent<Chained::PlayerComponent>())
+        entity.GetComponent<Chained::PlayerComponent>().MovementSpeed = value;
 }
-// namespace Chained
+float PlayerComponent_GetJumpForce(uint64_t entityID)
+{
+    Entity entity = GetEntity(entityID);
+    return entity && entity.HasComponent<Chained::PlayerComponent>() ? entity.GetComponent<Chained::PlayerComponent>().JumpForce : 0.0f;
+}
+void PlayerComponent_SetJumpForce(uint64_t entityID, float value)
+{
+    Entity entity = GetEntity(entityID);
+    if (entity && entity.HasComponent<Chained::PlayerComponent>())
+        entity.GetComponent<Chained::PlayerComponent>().JumpForce = value;
+}
+float PlayerComponent_GetLookSensitivity(uint64_t entityID)
+{
+    Entity entity = GetEntity(entityID);
+    return entity && entity.HasComponent<Chained::PlayerComponent>() ? entity.GetComponent<Chained::PlayerComponent>().LookSensitivity : 0.0f;
+}
+void PlayerComponent_SetLookSensitivity(uint64_t entityID, float value)
+{
+    Entity entity = GetEntity(entityID);
+    if (entity && entity.HasComponent<Chained::PlayerComponent>())
+        entity.GetComponent<Chained::PlayerComponent>().LookSensitivity = value;
+}
+
+// ── SpawnComponent ────────────────────────────────────────────────────
+bool SpawnComponent_IsActive(uint64_t entityID)
+{
+    Entity entity = GetEntity(entityID);
+    return entity && entity.HasComponent<Chained::SpawnComponent>() ? entity.GetComponent<Chained::SpawnComponent>().IsActive : false;
+}
+void SpawnComponent_GetSpawnPoint(uint64_t entityID, glm::vec3* outPoint)
+{
+    Entity entity = GetEntity(entityID);
+    if (entity && entity.HasComponent<Chained::SpawnComponent>() && outPoint)
+        *outPoint = entity.GetComponent<Chained::SpawnComponent>().SpawnPoint;
+}
+
+// ── AnimationComponent ──────────────────────────────────────────────────
+int AnimationComponent_GetCurrentAnimationIndex(uint64_t entityID)
+{
+    Entity entity = GetEntity(entityID);
+    return entity && entity.HasComponent<AnimationComponent>() ? entity.GetComponent<AnimationComponent>().CurrentAnimationIndex : -1;
+}
+void AnimationComponent_SetCurrentAnimationIndex(uint64_t entityID, int index)
+{
+    Entity entity = GetEntity(entityID);
+    if (entity && entity.HasComponent<AnimationComponent>())
+    {
+        auto& anim = entity.GetComponent<AnimationComponent>();
+        anim.CurrentAnimationIndex = index;
+        anim.TargetAnimationIndex = index;
+    }
+}
+uint32_t AnimationComponent_GetIsPlaying(uint64_t entityID)
+{
+    Entity entity = GetEntity(entityID);
+    return entity && entity.HasComponent<AnimationComponent>() ? (entity.GetComponent<AnimationComponent>().IsPlaying ? 1 : 0) : 0;
+}
+void AnimationComponent_SetIsPlaying(uint64_t entityID, uint32_t isPlaying)
+{
+    Entity entity = GetEntity(entityID);
+    if (entity && entity.HasComponent<AnimationComponent>())
+    {
+        entity.GetComponent<AnimationComponent>().IsPlaying = isPlaying != 0;
+    }
+}
+
+} // namespace Chained

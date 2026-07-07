@@ -72,19 +72,19 @@ Entities:
     TagComponent:
       Tag: back_button
     ControlComponent:
-      Rect Transform:
+      Transform:
         Position: [-615.581421, 400.477661]
         Size: [100, 40]
-        Anchor Min: [0.5, 0.5]
-        Anchor Max: [0.5, 0.5]
-        Offset Min: [-665.581421, 380.477661]
-        Offset Max: [-565.581421, 420.477661]
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-665.581421, 380.477661]
+        OffsetMax: [-565.581421, 420.477661]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
-      Z Order: 0
-      Active: true
-      Hidden: false
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
   - Entity: 3003
     Scene TransitionComponent:
       Target Scene Path: scenes/test_platform_scene.chscene
@@ -122,19 +122,19 @@ Entities:
     TagComponent:
       Tag: btn_map_bravo
     ControlComponent:
-      Rect Transform:
+      Transform:
         Position: [-350.636536, 37.5994301]
         Size: [336.089447, 87.2178879]
-        Anchor Min: [0.5, 0.5]
-        Anchor Max: [0.5, 0.5]
-        Offset Min: [-518.681274, -6.00951385]
-        Offset Max: [-182.591827, 81.208374]
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-518.681274, -6.00951385]
+        OffsetMax: [-182.591827, 81.208374]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
-      Z Order: 0
-      Active: true
-      Hidden: false
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
   - Entity: 3002
     Scene TransitionComponent:
       Target Scene Path: scenes/rpg_strategy_scene.chscene
@@ -172,19 +172,19 @@ Entities:
     TagComponent:
       Tag: btn_map_alpha
     ControlComponent:
-      Rect Transform:
+      Transform:
         Position: [-345.390137, -106.677452]
         Size: [350.079956, 88.9666901]
-        Anchor Min: [0.5, 0.5]
-        Anchor Max: [0.5, 0.5]
-        Offset Min: [-520.430115, -151.160797]
-        Offset Max: [-170.350159, -62.1941071]
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-520.430115, -151.160797]
+        OffsetMax: [-170.350159, -62.1941071]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
-      Z Order: 0
-      Active: true
-      Hidden: false
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
   - Entity: 3001
     WidgetComponent:
       Box Style:
@@ -218,16 +218,16 @@ Entities:
     TagComponent:
       Tag: title_map_selection
     ControlComponent:
-      Rect Transform:
+      Transform:
         Position: [-532.665405, -365.501465]
         Size: [283.32016, 39.9999695]
-        Anchor Min: [0.5, 0.5]
-        Anchor Max: [0.5, 0.5]
-        Offset Min: [-674.3255, -385.501434]
-        Offset Max: [-391.005341, -345.501465]
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-674.3255, -385.501434]
+        OffsetMax: [-391.005341, -345.501465]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
-      Z Order: 0
-      Active: true
-      Hidden: false
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false

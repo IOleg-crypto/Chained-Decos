@@ -12,10 +12,14 @@
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Body/BodyActivationListener.h>
+#include <Jolt/Physics/Collision/ContactListener.h>
+#include <unordered_set>
 
 namespace Chained
 {
 
+// Jolt Physics backend. Wraps JPH::PhysicsSystem and provides body management,
+// raycasting, gravity control, and ground detection via contact callbacks.
 class JoltPhysicsWorld : public IPhysicsWorld
 {
 public:
@@ -27,20 +31,56 @@ public:
 
     virtual void SetTransform(PhysicsBodyHandle handle, const glm::vec3& pos, const glm::quat& rot) override;
     virtual void GetTransform(PhysicsBodyHandle handle, glm::vec3& pos, glm::quat& rot) override;
-    
+
     virtual void SetVelocity(PhysicsBodyHandle handle, const glm::vec3& velocity) override;
     virtual glm::vec3 GetVelocity(PhysicsBodyHandle handle) const override;
 
     virtual RaycastResult Raycast(const glm::vec3& origin, const glm::vec3& direction, float maxDistance) override;
 
     virtual void Step(float fixedDt) override;
-    
+
     virtual void SetGravity(float gravity) override;
 
+    virtual bool IsBodyGrounded(PhysicsBodyHandle handle) const override;
+
+    /// Clear all grounded state (call before/after world reset).
+    virtual void ClearGroundedState() override;
+
 private:
+    // ── Jolt subsystems ──────────────────────────────────────────────────────
     JPH::PhysicsSystem m_PhysicsSystem;
     JPH::TempAllocatorImpl* m_TempAllocator = nullptr;
     JPH::JobSystemThreadPool* m_JobSystem = nullptr;
+
+    // ── Ground detection ──────────────────────────────────────────────────────
+    // Set of Jolt body IDs (packed as uint32) that have at least one ground
+    // contact — i.e. a contact whose normal Y component is positive (pointing
+    // upward relative to the body being checked).
+    std::unordered_set<uint32_t> m_GroundedBodies;
+
+    // Contact listener that populates m_GroundedBodies.
+    class ContactListenerImpl : public JPH::ContactListener
+    {
+    public:
+        JPH::ValidateResult OnContactValidate(const JPH::Body&, const JPH::Body&,
+                                              JPH::RVec3Arg,
+                                              const JPH::CollideShapeResult&) override;
+        void OnContactAdded(const JPH::Body& inBody1, const JPH::Body& inBody2,
+                            const JPH::ContactManifold& inManifold,
+                            JPH::ContactSettings& inSettings) override;
+        void OnContactPersisted(const JPH::Body& inBody1, const JPH::Body& inBody2,
+                                const JPH::ContactManifold& inManifold,
+                                JPH::ContactSettings& inSettings) override;
+        void OnContactRemoved(const JPH::SubShapeIDPair& inPair) override;
+
+        /// Set the tracker that receives ground-contact updates.
+        void SetGroundedTracker(std::unordered_set<uint32_t>* tracker) { m_Tracker = tracker; }
+
+    private:
+        std::unordered_set<uint32_t>* m_Tracker = nullptr;
+    };
+
+    ContactListenerImpl m_ContactListener;
 };
 
 } // namespace Chained

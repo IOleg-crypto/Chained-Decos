@@ -23,6 +23,8 @@ namespace Chained
 Physics::Physics() = default;
 Physics::~Physics() = default;
 
+// Registers Jolt's default allocator, factory, and type information.
+// Must be called once before any Jolt objects are created.
 void Physics::Initialize()
 {
     JPH::RegisterDefaultAllocator();
@@ -48,6 +50,8 @@ IPhysicsWorld* Physics::GetWorld()
     return m_World.get();
 }
 
+// Destroys the current Jolt world and creates a fresh one.
+// Gravity is read from the active project configuration and applied immediately.
 void Physics::ResetWorld()
 {
     m_World.reset();
@@ -62,6 +66,9 @@ void Physics::ResetWorld()
     CH_CORE_INFO("Physics: World reset — fresh Jolt world created.");
 }
 
+// Iterates all entities with TransformComponent + RigidBodyComponent.
+// For each entity that doesn't yet have a Jolt body handle, builds a
+// PhysicsBodyDesc from the component data and creates the Jolt body.
 void Physics::InitializeBodies(Scene* scene)
 {
     auto world = GetWorld();
@@ -90,11 +97,11 @@ void Physics::InitializeBodies(Scene* scene)
         desc.LinearDamping = rb.LinearDamping;
         desc.AngularDamping = rb.AngularDamping;
         desc.UseGravity = rb.UseGravity;
-        desc.IsKinematic = rb.IsKinematic;
+        desc.IsKinematic = (rb.Type == RigidBodyComponent::BodyType::Kinematic);
         desc.IsStatic = (rb.Type == RigidBodyComponent::BodyType::Static);
         desc.IsFixedRotation = rb.IsFixedRotation;
         desc.InitialVelocity = rb.Velocity;
-        desc.UserData = static_cast<uint64_t>(entity); 
+        desc.UserData = static_cast<uint64_t>(entity);
 
         auto* collider = registry.try_get<ColliderComponent>(entity);
         if (collider && collider->Enabled)
@@ -123,7 +130,6 @@ void Physics::InitializeBodies(Scene* scene)
                 desc.Dimensions.y = collider->Height * 0.5f;
                 break;
             case ColliderType::Mesh:
-                desc.IsStatic = true;
                 desc.Offset = collider->Offset * transform.Scale;
                 BuildMeshTriangles(collider->ModelPath, transform.Scale, desc.Triangles);
                 break;
@@ -209,6 +215,9 @@ void Physics::BuildMeshTriangles(const std::string& modelPath, const glm::vec3& 
     CH_CORE_INFO("Physics: Built mesh collider from '{}' ({} triangles).", modelPath, outTriangles.size());
 }
 
+// Fixed-timestep accumulator loop with a safety cap.
+// Accumulates frame time and runs up to kMaxStepsPerFrame physics sub-steps.
+// If the accumulator overflows (e.g. after a debug pause), excess time is discarded.
 void Physics::Update(Scene* scene, Timestep deltaTime, bool runtime)
 {
     if (!runtime)
@@ -219,7 +228,12 @@ void Physics::Update(Scene* scene, Timestep deltaTime, bool runtime)
     PhysicsContext& ctx = GetContext(scene);
     ctx.Accumulator += deltaTime;
 
-    const float kFixedDt = 1.0f / 60.0f;
+    float kFixedDt = 1.0f / 60.0f;
+    if (auto project = Project::GetActive())
+    {
+        kFixedDt = project->GetConfig().Physics.FixedTimestep;
+    }
+    const int kMaxStepsPerFrame = 8;
     bool stepped = false;
 
     auto world = GetWorld();
@@ -228,12 +242,18 @@ void Physics::Update(Scene* scene, Timestep deltaTime, bool runtime)
         return;
     }
 
-    while (ctx.Accumulator >= kFixedDt)
+    int steps = 0;
+    while (ctx.Accumulator >= kFixedDt && steps < kMaxStepsPerFrame)
     {
+        world->ClearGroundedState();
         world->Step(kFixedDt);
         ctx.Accumulator -= kFixedDt;
-        std::printf("Accumulator step passed\n");
         stepped = true;
+        steps++;
+    }
+    if (ctx.Accumulator >= kFixedDt)
+    {
+        ctx.Accumulator = 0.0f;
     }
 
     if (stepped)
@@ -266,6 +286,8 @@ void Physics::ResetAccumulator(Scene* scene)
     GetContext(scene).Accumulator = 0.0f;
 }
 
+// Destroys all Jolt bodies in the world and clears the per-scene physics context.
+// Called when a scene is stopped or destroyed.
 void Physics::ClearContext(Scene* scene)
 {
     auto world = GetWorld();
@@ -291,6 +313,10 @@ void Physics::SetCollisionCallback(Scene* scene, std::function<void(entt::entity
     GetContext(scene).CollisionCallback = callback;
 }
 
+// After each physics step, read back the computed position, rotation, velocity,
+// and grounded state from Jolt for all Dynamic bodies.
+// Static and Kinematic bodies are skipped: Static never moves, and Kinematic
+// bodies are driven by scripts (their transform is not read from Jolt).
 void Physics::UpdateColliders(Scene* scene)
 {
     auto world = GetWorld();
@@ -306,7 +332,8 @@ void Physics::UpdateColliders(Scene* scene)
         {
             continue;
         }
-        if (rb.Type == RigidBodyComponent::BodyType::Static)
+        if (rb.Type == RigidBodyComponent::BodyType::Static ||
+            rb.Type == RigidBodyComponent::BodyType::Kinematic)
         {
             continue;
         }
@@ -319,11 +346,14 @@ void Physics::UpdateColliders(Scene* scene)
         transform.RotationQuat = rot;
         transform.Rotation = glm::eulerAngles(rot);
         transform.IsDirty = true;
+
+        rb.Velocity = world->GetVelocity(rb.Handle);
+        rb.IsGrounded = world->IsBodyGrounded(rb.Handle);
     }
 }
 
 void Physics::ApplyAutoCalculate(entt::entity entity, entt::registry& registry, ColliderComponent& collider,
-                                  const glm::vec3& scale)
+                                 const glm::vec3& scale)
 {
     // Determine which model to use: prefer collider's own ModelPath, fall back to ModelComponent
     std::string modelPath = collider.ModelPath;
@@ -370,10 +400,10 @@ void Physics::ApplyAutoCalculate(entt::entity entity, entt::registry& registry, 
     glm::vec3 safeScale = glm::max(scale, glm::vec3(1e-5f));
 
     // Unscaled (local-space) values:
-    glm::vec3 unscaledSize   = (bMax - bMin) / safeScale;
+    glm::vec3 unscaledSize = (bMax - bMin) / safeScale;
     glm::vec3 unscaledCenter = ((bMax + bMin) * 0.5f) / safeScale;
 
-    collider.Size   = unscaledSize;
+    collider.Size = unscaledSize;
     collider.Radius = glm::compMax(unscaledSize) * 0.5f;
     collider.Height = unscaledSize.y;
 
@@ -386,10 +416,8 @@ void Physics::ApplyAutoCalculate(entt::entity entity, entt::registry& registry, 
 
     CH_CORE_INFO("Physics::ApplyAutoCalculate: entity={} model='{}' → Size=({:.2f},{:.2f},{:.2f}) "
                  "Offset=({:.2f},{:.2f},{:.2f}) Radius={:.2f} Height={:.2f}",
-                 (uint32_t)entity, modelPath,
-                 collider.Size.x, collider.Size.y, collider.Size.z,
-                 collider.Offset.x, collider.Offset.y, collider.Offset.z,
-                 collider.Radius, collider.Height);
+                 (uint32_t)entity, modelPath, collider.Size.x, collider.Size.y, collider.Size.z, collider.Offset.x,
+                 collider.Offset.y, collider.Offset.z, collider.Radius, collider.Height);
 }
 
 } // namespace Chained

@@ -1,15 +1,12 @@
 #ifndef SCRIPT_GLUE_SYSTEM_H
 #define SCRIPT_GLUE_SYSTEM_H
 #include "script_glue_internal.h"
-#include "script_internal_call_registry.h"
 #include "engine/app/application.h"
 #include "engine/scene/scene.h"
 #include "scripting/scriptengine.h"
 
 namespace Chained
 {
-
-void RegisterGlueSystem();
 
 // ── Logging ──────────────────────────────────────────────────────────
 static std::string ch_log_u16(const char16_t* ptr)
@@ -44,6 +41,9 @@ CH_SCRIPT_FUNC void Window_SetFullscreen(bool enabled);
 CH_SCRIPT_FUNC void Window_SetVSync(bool enabled);
 
 CH_SCRIPT_FUNC void Window_SetAntialiasing(bool enabled);
+
+// ── Physics ────────────────────────────────────────────────────────
+CH_SCRIPT_FUNC float Physics_GetGravity();
 
 } // namespace Chained
 #endif

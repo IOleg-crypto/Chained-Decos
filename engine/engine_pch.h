@@ -30,9 +30,9 @@
 #endif
 
 // 3. Core Engine Headers (Essential for all files)
-#include "engine/foundation/base.h"
+#include "engine/common/base.h"
 #include "engine/core/log.h"
-#include "engine/foundation/color.h"
+#include "engine/common/color.h"
 
 // 4. Vendor libraries
 #include <entt/entt.hpp>

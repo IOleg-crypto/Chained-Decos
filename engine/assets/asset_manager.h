@@ -105,6 +105,6 @@ public:
     std::filesystem::path m_ProjectDirectory;
     std::filesystem::path m_EngineRoot;
 };
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_ASSET_MANAGER_H

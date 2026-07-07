@@ -6,8 +6,10 @@
 #include "engine/graphics/pipeline/renderer_types.h"
 #include <memory>
 
-namespace Chained {
-namespace TextureUtility {
+namespace Chained
+{
+namespace TextureUtility
+{
 // Flips image data vertically in memory. Thread-safe if data is unique.
 void FlipImageVertically(void* data, int width, int height, int channels, bool isHDR);
 // Converts an equirectangular panorama to a cubemap

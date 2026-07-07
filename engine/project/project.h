@@ -1,9 +1,6 @@
 #ifndef CH_PROJECT_H
 #define CH_PROJECT_H
 
-
-#include "engine/assets/types/environment_asset.h"
-#include "engine/assets/types/texture_asset.h"
 #include <filesystem>
 #include <memory>
 #include <optional>
@@ -11,7 +8,7 @@
 
 namespace Chained
 {
-
+class EnvironmentAsset;
 
 struct PhysicsSettings
 {
@@ -127,7 +124,7 @@ class Project
 {
 public:
     Project() = default;
-    ~Project() = default;
+    ~Project();
 
     static std::shared_ptr<Project> Load(const std::filesystem::path& filepath);
     static std::shared_ptr<Project> GetActive();

@@ -1,5 +1,4 @@
 #include "scriptengine_services.h"
-#include "script_internal_call_registry.h"
 
 #include "engine/core/log.h"
 #include "engine/core/service_locator.h"
@@ -84,7 +83,7 @@ void AppendBuildBinCandidates(std::vector<std::filesystem::path> &out, const std
             }
         }
 
-        // Також пробуємо пласку структуру: build/<preset>/bin/ (single-config fallback)
+        // Also try flat structure: build/<preset>/bin/ (single-config fallback)
         const std::filesystem::path flat = presetEntry.path() / "bin";
         if (std::find(out.begin(), out.end(), flat) == out.end()) {
             out.push_back(flat);
@@ -162,8 +161,6 @@ std::filesystem::path ResolveCoreAssemblyPath(const std::filesystem::path &coral
 }
 
 } // namespace
-
-ChainedManagedPointers g_ManagedPointers{};
 
 ScriptHost &GetScriptHost() {
     auto scriptEngine = ServiceLocator::Get<ScriptEngine>();
@@ -344,18 +341,16 @@ bool ScriptHost::LoadAssembliesTransactional(const std::filesystem::path &appAss
     m_AppAssembly = loadedApp;
 
     ScriptGlue::RegisterInternalCalls(*m_CoreAssembly);
-    ScriptGlue::RegisterInternalCalls(*m_AppAssembly);
-    ScriptGlue::Initialize();
+    // Internal calls are registered only on the core assembly —
+    // Coral resolves them from there for the app assembly via type forwarding.
 
     Coral::Type interopType = m_CoreAssembly->GetLocalType("Chained.Interop");
     if (interopType) {
-        interopType.InvokeStaticMethod("InitInterop");
-        CH_CORE_INFO("ScriptEngine: Initialized bypass pointer interop.");
+        interopType.InvokeStaticMethod("RegisterCallbacks");
+        CH_CORE_INFO("ScriptEngine: Registered managed callbacks via Coral AddInternalCall.");
     } else {
-        CH_CORE_ERROR("ScriptEngine: Could not find Chained.Interop to initialize bypass pointers!");
+        CH_CORE_ERROR("ScriptEngine: Could not find Chained.Interop to register callbacks!");
     }
-
-    CH_CORE_INFO("ScriptEngine: Uploaded {} internal calls.", Chained::InternalCallRegistry::GetMappings().size());
 
     CH_CORE_INFO("ScriptEngine: Loaded core assembly '{}'.", corePath.string());
     CH_CORE_INFO("ScriptEngine: Loaded app assembly '{}'.", appAssemblyPath.string());
@@ -397,7 +392,7 @@ bool ScriptHost::ReloadAppAssembly(const std::string &filepath) {
         return false;
     }
 
-    // Захисний крок: Очищаємо старі Coral::Type з реєстратури перед вивантаженням контексту
+    // Safety step: Clear stale Coral::Type entries from the registry before unloading the context
     GetScriptRegistry().Clear();
 
     ClearLoadedAssemblyState();

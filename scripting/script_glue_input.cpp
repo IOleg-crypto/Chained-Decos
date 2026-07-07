@@ -1,4 +1,5 @@
 #include "script_glue_input.h"
+#include "engine/core/log.h"
 
 namespace Chained
 {
@@ -11,36 +12,28 @@ float Input_GetMouseWheelMove()
 {
     return Core::Input::GetMouseWheelMove();
 }
-bool Input_IsMouseButtonPressed(int button)
+uint32_t Input_IsMouseButtonPressed(int button)
 {
-    return Core::Input::IsMouseButtonPressed(static_cast<MouseCode>(button));
+    return Core::Input::IsMouseButtonPressed(static_cast<MouseCode>(button)) ? 1 : 0;
 }
-bool Input_IsMouseButtonDown(int button)
+uint32_t Input_IsMouseButtonDown(int button)
 {
-    return Core::Input::IsMouseButtonDown(static_cast<MouseCode>(button));
+    return Core::Input::IsMouseButtonDown(static_cast<MouseCode>(button)) ? 1 : 0;
 }
-bool Input_IsKeyReleased(int keyCode)
+uint32_t Input_IsKeyReleased(int keyCode)
 {
-    return Core::Input::IsKeyReleased(static_cast<KeyCode>(keyCode));
+    return Core::Input::IsKeyReleased(static_cast<KeyCode>(keyCode)) ? 1 : 0;
 }
-bool Input_IsKeyPressed(int keyCode)
+uint32_t Input_IsKeyPressed(int keyCode)
 {
-    return Core::Input::IsKeyPressed(static_cast<KeyCode>(keyCode));
+    return Core::Input::IsKeyPressed(static_cast<KeyCode>(keyCode)) ? 1 : 0;
 }
-bool Input_IsKeyDown(int keyCode)
+uint32_t Input_IsKeyDown(int keyCode)
 {
-    return Core::Input::IsKeyDown(static_cast<KeyCode>(keyCode));
+    bool result = Core::Input::IsKeyDown(static_cast<KeyCode>(keyCode));
+    if (keyCode == 23) // W key
+        CH_CORE_TRACE("[Diag Input_IsKeyDown] keyCode={} result={}", keyCode, result);
+    return result ? 1 : 0;
 }
 
-void RegisterGlueInput()
-{
-    CH_ADD_INTERNAL_CALL("Input", Input_GetMouseDelta, Input_GetMouseDelta);
-    CH_ADD_INTERNAL_CALL("Input", Input_GetMouseWheelMove, Input_GetMouseWheelMove);
-    CH_ADD_INTERNAL_CALL("Input", Input_IsMouseButtonPressed, Input_IsMouseButtonPressed);
-    CH_ADD_INTERNAL_CALL("Input", Input_IsMouseButtonDown, Input_IsMouseButtonDown);
-    CH_ADD_INTERNAL_CALL("Input", Input_IsKeyReleased, Input_IsKeyReleased);
-    CH_ADD_INTERNAL_CALL("Input", Input_IsKeyPressed, Input_IsKeyPressed);
-    CH_ADD_INTERNAL_CALL("Input", Input_IsKeyDown, Input_IsKeyDown);
-}
-
-}
+} // namespace Chained

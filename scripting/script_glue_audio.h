@@ -1,15 +1,12 @@
 #ifndef SCRIPT_GLUE_AUDIO_H
 #define SCRIPT_GLUE_AUDIO_H
 #include "script_glue_internal.h"
-#include "script_internal_call_registry.h"
 #include "engine/scene/component_registry.h"
 #include "engine/audio/audio.h"
 #include "engine/core/service_locator.h"
 #include "engine/project/project.h"
 
 namespace Chained {
-
-    void RegisterGlueAudio();
 
     // ── Audio ─────────────────────────────────────────────────────────────
     CH_SCRIPT_FUNC void Audio_Play(const char16_t* path, float volume, float pitch, bool loop);

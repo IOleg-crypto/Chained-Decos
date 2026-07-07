@@ -8,7 +8,7 @@ chained_add_game(TestProjectGame
 add_custom_command(TARGET TestProjectGameGameTarget POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     "${CMAKE_SOURCE_DIR}/resources"
-    "$<TARGET_FILE_DIR:ChainedRuntime>/resources"
+    "$<TARGET_FILE_DIR:TestProjectGameExe>/resources"
     COMMENT "Copying engine resources..."
 )
 
@@ -16,6 +16,6 @@ add_custom_command(TARGET TestProjectGameGameTarget POST_BUILD
 add_custom_command(TARGET TestProjectGameGameTarget POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     "${CMAKE_CURRENT_SOURCE_DIR}/assets"
-    "$<TARGET_FILE_DIR:ChainedRuntime>/assets"
+    "$<TARGET_FILE_DIR:TestProjectGameExe>/assets"
     COMMENT "Copying test project assets..."
 )

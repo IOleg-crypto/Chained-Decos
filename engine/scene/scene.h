@@ -8,8 +8,8 @@
 #include <vector>
 
 #include "engine/core/events/events.h"
-#include "engine/foundation/base.h"
-#include "engine/foundation/timestep.h"
+#include "engine/common/base.h"
+#include "engine/common/timestep.h"
 #include "engine/scene/entity.h"
 #include "engine/scene/scene_settings.h"
 #include "engine/scene/scene_state.h" 
@@ -47,14 +47,14 @@ public:
     virtual void OnEvent(Event& e);
     virtual void OnRenderUI();
 
-public: // Керування станом сцени (State Management)
+public: // Scene State Management
     void TransitionToState(SceneState newState);
     SceneState GetSceneState() const
     {
         return m_State;
     }
 
-    // Єдина точка оновлення сцени (викликає потрібний під-апдейт залежно від m_State)
+    // Single update entry point (dispatches the appropriate sub-update based on m_State)
     void OnUpdate(Timestep timestep);
     void OnViewportResize(uint32_t width, uint32_t height);
 
@@ -87,7 +87,7 @@ public: // Systems & Tools
     void OnUpdateEditor(Timestep timestep);
     void OnUpdateRuntime(Timestep timestep);
 
-private: // Внутрішні методи життєвого циклу станів
+private: // Internal state lifecycle methods
     void OnStateEnter(SceneState state);
     void OnStateExit(SceneState state);
 

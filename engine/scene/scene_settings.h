@@ -3,7 +3,7 @@
 
 #include "engine/assets/types/environment_asset.h"
 #include "engine/scene/components/control_component.h"
-#include "engine/foundation/color.h"
+#include "engine/common/color.h"
 #include <memory>
 #include <string>
 
