@@ -211,6 +211,70 @@ static bool RenderProgressBar(const ProgressBarData& pb, UIControlComponent& wc,
     return false;
 }
 
+static bool RenderImage(const ImageData& img, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
+{
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    ImVec2 pMax = {pos.x + size.x, pos.y + size.y};
+    AssetHandle textureHandle = (AssetHandle)img.TextureHandle;
+    
+    if (textureHandle != 0)
+    {
+        auto textureAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(textureHandle);
+        if (textureAsset && textureAsset->GetState() == AssetState::Ready)
+        {
+            ImTextureID texId = (ImTextureID)(uintptr_t)textureAsset->GetTexture()->GetRendererID();
+            dl->AddImageRounded(texId, pos, pMax, {0,0}, {1,1}, ToImU32(img.TintColor), wc.BoxStyle.Rounding);
+        }
+        else
+        {
+            dl->AddRectFilled(pos, pMax, IM_COL32(255, 0, 255, 128), wc.BoxStyle.Rounding);
+        }
+    }
+    else
+    {
+        dl->AddRectFilled(pos, pMax, IM_COL32(100, 100, 100, 128), wc.BoxStyle.Rounding);
+    }
+
+    if (wc.BoxStyle.BorderSize > 0.0f)
+        dl->AddRect(pos, pMax, ToImU32(wc.BoxStyle.BorderColor), wc.BoxStyle.Rounding, 0, wc.BoxStyle.BorderSize);
+
+    return false;
+}
+
+static bool RenderImageButton(const ImageButtonData& imgBtn, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size, ImFont* font, const TextStyle& textStyle)
+{
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    ImVec2 pMax = {pos.x + size.x, pos.y + size.y};
+    
+    // Background
+    ImU32 btnColor = GetControlColor(wc.BoxStyle, wc);
+    dl->AddRectFilled(pos, pMax, btnColor, wc.BoxStyle.Rounding);
+
+    // Padding for image
+    float pad = imgBtn.FramePadding >= 0.0f ? imgBtn.FramePadding : 4.0f;
+    ImVec2 imgPos = { pos.x + pad, pos.y + pad };
+    ImVec2 imgMax = { pMax.x - pad, pMax.y - pad };
+
+    AssetHandle textureHandle = (AssetHandle)imgBtn.TextureHandle;
+    if (textureHandle != 0)
+    {
+        auto textureAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(textureHandle);
+        if (textureAsset && textureAsset->GetState() == AssetState::Ready)
+        {
+            ImTextureID texId = (ImTextureID)(uintptr_t)textureAsset->GetTexture()->GetRendererID();
+            dl->AddImageRounded(texId, imgPos, imgMax, {0,0}, {1,1}, ToImU32(imgBtn.TintColor), wc.BoxStyle.Rounding);
+        }
+    }
+    
+    if (!imgBtn.Label.empty())
+        RenderAlignedTextureText(dl, font, textStyle.FontSize, imgBtn.Label, pos, size, textStyle);
+
+    if (wc.BoxStyle.BorderSize > 0.0f)
+        dl->AddRect(pos, pMax, ToImU32(wc.BoxStyle.BorderColor), wc.BoxStyle.Rounding, 0, wc.BoxStyle.BorderSize);
+
+    return wc.PressedThisFrame;
+}
+
 // ---------------------------------------------------------------------------
 // Main UI Control Dispatcher
 // ---------------------------------------------------------------------------
@@ -245,6 +309,10 @@ bool RenderControl(const UIFontRegistry& fontRegistry,
             changed = RenderSlider(arg, control, screenPos, size);
         else if constexpr (std::is_same_v<T, ProgressBarData>)
             changed = RenderProgressBar(arg, control, screenPos, size);
+        else if constexpr (std::is_same_v<T, ImageData>)
+            changed = RenderImage(arg, control, screenPos, size);
+        else if constexpr (std::is_same_v<T, ImageButtonData>)
+            changed = RenderImageButton(arg, control, screenPos, size, activeFont, control.TextStyle);
         else
         {
             // Fallback: draw a bordered rectangle with type name for unhandled UI types

@@ -2,11 +2,11 @@
 #include "engine/core/profiler.h"
 #include "engine/core/window.h"
 
-
-#include "imgui.h"
 #include "ImGuizmo.h"
-#include "engine/app/application.h"
 #include "backends/imgui_impl_opengl3.h"
+#include "engine/app/application.h"
+#include "imgui.h"
+
 
 #ifdef CH_PLATFORM_BACKEND_GLFW
 #include "backends/imgui_impl_glfw.h"
@@ -39,7 +39,6 @@ void ImGuiLayer::OnAttach()
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
-
 
     // Docking and viewports are always enabled
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -108,7 +107,8 @@ void ImGuiLayer::End()
     CH_PROFILE_FUNCTION();
 
     ImGuiIO& io = ImGui::GetIO();
-    io.DisplaySize = ImVec2((float)Application::Get().GetWindow().GetWidth(), (float)Application::Get().GetWindow().GetHeight());
+    io.DisplaySize =
+        ImVec2((float)Application::Get().GetWindow().GetWidth(), (float)Application::Get().GetWindow().GetHeight());
 
     // Rendering
     ImGui::Render();
@@ -166,7 +166,8 @@ void* ImGuiLayer::AddFontFromFile(const std::string& path, float size, const voi
     }
 
     ImGuiIO& io = ImGui::GetIO();
-    ImFont* font = io.Fonts->AddFontFromFileTTF(path.c_str(), size, (const ImFontConfig*)config, (const ImWchar*)ranges);
+    ImFont* font =
+        io.Fonts->AddFontFromFileTTF(path.c_str(), size, (const ImFontConfig*)config, (const ImWchar*)ranges);
     if (!font)
     {
         CH_CORE_ERROR("ImGuiLayer: Failed to load font from '{}'", path);
