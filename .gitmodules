@@ -85,3 +85,7 @@
 [submodule "thirdparty/reflect-cpp"]
     path = thirdparty/reflect-cpp
     url = https://github.com/getml/reflect-cpp.git
+
+[submodule "thirdparty/SDL"]
+    path = thirdparty/SDL
+    url = https://github.com/libsdl-org/SDL.git

@@ -4,8 +4,6 @@ chained_add_engine_module(engine_scene
         component_serializer.h
         hierarchy_serializer.cpp
         hierarchy_serializer.h
-        managed_script_serializer.cpp
-        managed_script_serializer.h
         prefab_serializer.cpp
         prefab_serializer.h
         scene_serializer.cpp

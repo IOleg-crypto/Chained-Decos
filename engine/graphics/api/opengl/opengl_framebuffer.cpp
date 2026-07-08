@@ -26,6 +26,11 @@ void OpenGLFramebuffer::Invalidate()
         glDeleteTextures(1, &m_DepthAttachment);
     }
 
+    if (m_Specification.Width == 0 || m_Specification.Height == 0)
+    {
+        return;
+    }
+
     glGenFramebuffers(1, &m_RendererID);
     glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
 
@@ -70,6 +75,10 @@ void OpenGLFramebuffer::Unbind()
 
 void OpenGLFramebuffer::Resize(uint32_t width, uint32_t height)
 {
+    if (width == 0 || height == 0 || width > 8192 || height > 8192)
+    {
+        return;
+    }
     m_Specification.Width = width;
     m_Specification.Height = height;
     glBindFramebuffer(GL_FRAMEBUFFER, 0); // Ensure FBO is not active before recreating

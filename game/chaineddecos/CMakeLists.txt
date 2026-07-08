@@ -6,7 +6,7 @@ set(GAME_SOURCES
 
 chained_add_game(ChainedDecos
     PROJECT_GAME ChainedDecos
-    CSHARP_PROJECT "scripts/ChainedDecos.Scripts.csproj"
+    CSHARP_PROJECT "assets/scripts/ChainedDecos.Scripts.csproj"
     SOURCES ${GAME_SOURCES}
 )
 
@@ -18,6 +18,14 @@ add_custom_command(TARGET ChainedDecosGameTarget POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "${GAME_ASSET_DST_DIR}"
     COMMAND ${CMAKE_COMMAND} -DSOURCE="${GAME_ASSET_SRC_DIR}" -DDEST="${GAME_ASSET_DST_DIR}" -P "${CMAKE_SOURCE_DIR}/cmake/CopyIfDifferent.cmake"
     COMMENT "Syncing game assets from ${GAME_ASSET_SRC_DIR} to ${GAME_ASSET_DST_DIR}..."
+)
+
+# Copy project file next to the executable so RuntimeLayer can find it
+add_custom_command(TARGET ChainedDecosGameTarget POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/ChainedDecos.chproject"
+        "$<TARGET_FILE_DIR:ChainedDecosExe>/Chained Decos.chproject"
+    COMMENT "Copying ChainedDecos.chproject to output directory..."
 )
 
 # Sync engine resources (shaders, fonts, icons, config) to game output

@@ -23,6 +23,7 @@ public:
 private:
     EditorPanels& m_Panels;
     uint32_t m_DockSpaceID = 0;
+    bool m_NeedsRebuild = true;
 };
 
 } // namespace Chained

@@ -4,7 +4,6 @@
 #include "components/ui_action_component.h"
 #include "engine/scene/component_registry.h"
 #include "engine/scene/hierarchy_serializer.h"
-#include "managed_script_serializer.h"
 
 namespace Chained
 {
