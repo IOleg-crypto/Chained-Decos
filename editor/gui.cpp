@@ -166,9 +166,12 @@ void EditorGUI::DrawMenuBar(EditorLayer& editorLayer, EditorPanels& panels)
 
 void EditorGUI::BeginPropertyGrid()
 {
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 4));
-    ImGui::BeginTable("PropertyGrid", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchSame);
-    ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, 140.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 6)); // A bit more vertical breathing room
+    ImGui::BeginTable("PropertyGrid", 2, 
+        ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchSame);
+    
+    // Set left column to be roughly 40% of the width or 120px
+    ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, 120.0f);
     ImGui::TableSetupColumn("Control", ImGuiTableColumnFlags_WidthStretch);
 }
 

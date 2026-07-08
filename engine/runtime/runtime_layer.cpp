@@ -623,6 +623,10 @@ bool RuntimeLayer::TransitionToScene(const std::filesystem::path &scenePath) {
     m_Scene = nextScene;
     m_Scene->GetSettings().ScenePath = scenePath.string();
 
+    // Bind the event callback so SceneTransitionComponents can dispatch SceneChangeRequestEvent
+    // back to RuntimeLayer::OnEvent, which handles the actual scene loading.
+    m_Scene->SetEventCallback([this](Event& e) { OnEvent(e); });
+
     // Keep current ScriptEngine behavior intact while runtime owns transition flow.
     ServiceLocator::Get<ScriptEngine>()->SetContextScene(m_Scene.get());
 
