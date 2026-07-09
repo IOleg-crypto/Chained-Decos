@@ -35,12 +35,9 @@ DebugSettings:
   DrawSpawnZones: true
   CollisionWireframeMode: 0
 Entities:
-  - Entity: 15051911593141375302
+  - Entity: 12474124473589011166
     TagComponent:
-      Tag: start_menu_game_info
-    ManagedScriptComponent:
-      Scripts:
-        []
+      Tag: start_game_menu_options
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -48,7 +45,7 @@ Entities:
     IDComponent:
       {}
     Scene TransitionComponent:
-      TargetScenePath: ""
+      TargetScenePath: scenes/video_scene.chscene
       Triggered: false
     WidgetComponent:
       Box Style:
@@ -65,7 +62,7 @@ Entities:
         Transition Speed: 0.100000001
       Text Style:
         Font Name: Default
-        Font Size: 18
+        Font Size: 24
         Text Color: [255, 255, 255, 255]
         Shadow: false
         Letter Spacing: 1
@@ -73,24 +70,80 @@ Entities:
         H Align: 1
         V Align: 1
       Widget Type: 1
-      Label: Info
+      Label: Options
       Interactable: true
       Auto Size: false
     ControlComponent:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-150, -270]
-        OffsetMax: [150, -170]
+        OffsetMin: [-150, 10]
+        OffsetMax: [150, 70]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-  - Entity: 6090748651460201744
+  - Entity: 3763233706546183978
     TagComponent:
-      Tag: start_game_title
+      Tag: start_button_start
+    ManagedScriptComponent:
+      Scripts:
+        []
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    IDComponent:
+      {}
+    Scene TransitionComponent:
+      TargetScenePath: scenes/runtimescene.chscene
+      Triggered: false
+    WidgetComponent:
+      Box Style:
+        BG Color: [40, 40, 40, 255]
+        Hover Color: [60, 60, 60, 255]
+        Pressed Color: [30, 30, 30, 255]
+        Rounding: 4
+        Border Size: 0
+        Border Color: [255, 255, 255, 255]
+        Gradient: false
+        Padding: 4
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.100000001
+      Text Style:
+        Font Name: Default
+        Font Size: 24
+        Text Color: [255, 255, 255, 255]
+        Shadow: false
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Widget Type: 1
+      Label: Start
+      Interactable: true
+      Auto Size: false
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-146.299194, -271.931244]
+        OffsetMax: [153.700806, -211.931244]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+  - Entity: 2921789327621534954
+    TagComponent:
+      Tag: start_button_exit
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: ChainedDecos.Scripts.ExitScript
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -112,30 +165,30 @@ Entities:
         Transition Speed: 0.100000001
       Text Style:
         Font Name: Default
-        Font Size: 18
+        Font Size: 24
         Text Color: [255, 255, 255, 255]
         Shadow: false
         Letter Spacing: 1
         Line Height: 1.20000005
         H Align: 1
         V Align: 1
-      Widget Type: 9
-      Texture Path: materials/b500c85b-07cb-4818-8010-b2c2eaee3e9a.jpg
-      Tint Color: [255, 255, 255, 255]
-      Border Color: [0, 0, 0, 0]
+      Widget Type: 1
+      Label: Exit
+      Interactable: true
+      Auto Size: false
     ControlComponent:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-300, 200]
-        OffsetMax: [300, 400]
+        OffsetMin: [-151.850403, 121.694069]
+        OffsetMax: [148.149597, 181.694061]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-  - Entity: 15500646445384167357
+  - Entity: 1367986810168948344
     TagComponent:
       Tag: start_game_info
     TransformComponent:
@@ -173,20 +226,17 @@ Entities:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-200, 450]
-        OffsetMax: [200, 500]
+        OffsetMin: [-200, -450]
+        OffsetMax: [200, -400]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-  - Entity: 12750009872668354234
+  - Entity: 5180225373734027148
     TagComponent:
-      Tag: start_button_exit
-    ManagedScriptComponent:
-      Scripts:
-        - ClassName: chaineddecos.scripts.exitscript
+      Tag: start_game_title
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -195,45 +245,45 @@ Entities:
       {}
     WidgetComponent:
       Box Style:
-        BG Color: [63, 40, 40, 255]
-        Hover Color: [77, 60, 60, 255]
-        Pressed Color: [53, 30, 30, 255]
-        Rounding: 0
+        BG Color: [0, 0, 0, 0]
+        Hover Color: [0, 0, 0, 0]
+        Pressed Color: [0, 0, 0, 0]
+        Rounding: 4
         Border Size: 0
         Border Color: [255, 255, 255, 255]
         Gradient: false
-        Padding: 0
-        Hover Scale: 1.24699998
+        Padding: 4
+        Hover Scale: 1
         Pressed Scale: 1
         Transition Speed: 0.100000001
       Text Style:
         Font Name: Default
-        Font Size: 72.2519989
+        Font Size: 18
         Text Color: [255, 255, 255, 255]
         Shadow: false
         Letter Spacing: 1
         Line Height: 1.20000005
         H Align: 1
         V Align: 1
-      Widget Type: 1
-      Label: Exit
-      Interactable: true
-      Auto Size: false
+      Widget Type: 9
+      Texture Path: materials/b500c85b-07cb-4818-8010-b2c2eaee3e9a.jpg
+      Tint Color: [255, 255, 255, 255]
+      Border Color: [0, 0, 0, 0]
     ControlComponent:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-150, -160]
-        OffsetMax: [150, -60]
+        OffsetMin: [-300, 250]
+        OffsetMax: [300, 450]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-  - Entity: 11188570711873615005
+  - Entity: 5358892974848406094
     TagComponent:
-      Tag: start_button_start
+      Tag: start_menu_game_info
     ManagedScriptComponent:
       Scripts:
         []
@@ -244,7 +294,7 @@ Entities:
     IDComponent:
       {}
     Scene TransitionComponent:
-      TargetScenePath: ""
+      TargetScenePath: scenes/info_scene.chscene
       Triggered: false
     WidgetComponent:
       Box Style:
@@ -261,7 +311,7 @@ Entities:
         Transition Speed: 0.100000001
       Text Style:
         Font Name: Default
-        Font Size: 18
+        Font Size: 24
         Text Color: [255, 255, 255, 255]
         Shadow: false
         Letter Spacing: 1
@@ -269,65 +319,15 @@ Entities:
         H Align: 1
         V Align: 1
       Widget Type: 1
-      Label: Start
+      Label: Info
       Interactable: true
       Auto Size: false
     ControlComponent:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-150, 60]
-        OffsetMax: [150, 160]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      ZOrder: 0
-      IsActive: true
-      HiddenInHierarchy: false
-  - Entity: 13765047633248252361
-    TagComponent:
-      Tag: start_game_menu_options
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    IDComponent:
-      {}
-    Scene TransitionComponent:
-      TargetScenePath: scenes/video_scene.chscene
-      Triggered: true
-    WidgetComponent:
-      Box Style:
-        BG Color: [40, 40, 40, 255]
-        Hover Color: [60, 60, 60, 255]
-        Pressed Color: [30, 30, 30, 255]
-        Rounding: 4
-        Border Size: 0
-        Border Color: [255, 255, 255, 255]
-        Gradient: false
-        Padding: 4
-        Hover Scale: 1
-        Pressed Scale: 1
-        Transition Speed: 0.100000001
-      Text Style:
-        Font Name: Default
-        Font Size: 18
-        Text Color: [255, 255, 255, 255]
-        Shadow: false
-        Letter Spacing: 1
-        Line Height: 1.20000005
-        H Align: 1
-        V Align: 1
-      Widget Type: 1
-      Label: Options
-      Interactable: true
-      Auto Size: false
-    ControlComponent:
-      Transform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [-150, -50]
-        OffsetMax: [150, 50]
+        OffsetMin: [-150, -180]
+        OffsetMax: [150, -120]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]

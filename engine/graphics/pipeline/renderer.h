@@ -1,18 +1,17 @@
 #ifndef CH_RENDERER_H
 #define CH_RENDERER_H
 
-#include "engine/core/engine_module.h"
-#include "engine/common/timestep.h"
-#include "engine/graphics/camera_types.h"
-#include "engine/graphics/api/storage_buffer.h"
 #include "engine/assets/types/environment_asset.h"
+#include "engine/common/timestep.h"
+#include "engine/core/engine_module.h"
+#include "engine/graphics/api/storage_buffer.h"
+#include "engine/graphics/camera_types.h"
 #include "engine/graphics/pipeline/renderer_types.h"
 #include "engine/graphics/pipeline/shader_storage.h"
 #include <glm/glm.hpp>
 #include <memory>
 #include <unordered_map>
 #include <vector>
-
 
 namespace Chained
 {
@@ -31,7 +30,6 @@ struct RenderLight
     int type = 0;                               // 4 bytes
     int enabled = 0;                            // 4 bytes
 };
-
 
 // Shared mesh resources for primitive and debug rendering.
 struct StaticResources
@@ -88,7 +86,7 @@ struct RendererData
     std::unique_ptr<ShaderStorage> Shaders;
 
     std::shared_ptr<UniformBuffer> CameraUBO;
-    std::shared_ptr< UniformBuffer> GlobalUBO;
+    std::shared_ptr<UniformBuffer> GlobalUBO;
 
     float DiagnosticMode = 0.0f;
     glm::vec3 CurrentCameraPosition = {0.0f, 0.0f, 0.0f};
@@ -102,8 +100,7 @@ struct RendererData
 
     // Engine static resources
     std::shared_ptr<VertexArray> FullscreenQuadVAO;
-    std::shared_ptr<VertexArray> BillboardVAO;
-    std::shared_ptr<VertexArray> SpriteVAO;
+    std::shared_ptr<VertexArray> QuadVAO;
     std::shared_ptr<VertexArray> GridPlaneVAO;
 
     // Instancing cache
@@ -118,26 +115,41 @@ struct RendererData
     uint32_t LineVBOSize = 0;
 };
 
-// Singleton renderer facade that owns GPU resources, frame state, and low-level draw calls.
+/// @brief Singleton renderer facade that owns GPU resources, frame state, and low-level draw calls.
+///
+/// Manages the OpenGL rendering pipeline: shader compilation, uniform buffer management,
+/// draw call batching, skybox rendering, and post-processing. Accessed globally via ServiceLocator.
 class CH_API Renderer : public EngineModule
 {
 public:
     Renderer();
     virtual ~Renderer() override;
 
+    /// @brief Load engine-level shaders and static resources (unit meshes, fullscreen quad).
+    /// Called once after the renderer is registered in ServiceLocator.
     void LoadEngineResources();
 
     void InitializeResources();
     void CleanupResources();
 
-    void BeginScene(const Camera3D& camera, float nearClip = 0.01f, float farClip = 10000.0f);
+    /// @brief Begin a new render frame with the given camera.
+    /// Uploads camera matrices to the UBO and prepares internal state for draw calls.
+    /// @param camera The camera to render from.
+    /// @param nearClip Near clipping plane distance.
+    /// @param farClip Far clipping plane distance.
+    void BeginScene(const Camera3D& camera, float nearClip = 0.01f, float farClip);
+
+    /// @brief Flush pending draw calls and finalize the frame.
     void EndScene();
 
     void Clear(const glm::vec4& color);
     void SetViewport(int x, int y, int width, int height);
 
     // Low-level Draw calls
+    /// @brief Submit a single mesh for rendering with the given material and transform.
     void DrawMesh(const Mesh& mesh, const Material& material, const glm::mat4& transform);
+
+    /// @brief Submit multiple instances of the same mesh in a single draw call.
     void DrawMeshInstanced(const Mesh& mesh, const Material& material, const std::vector<glm::mat4>& transforms);
 
     void DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float exposure, float brightness, float contrast,
@@ -146,7 +158,6 @@ public:
                        const glm::vec4& tint);
     void DrawSprite(uint32_t textureId, const glm::mat4& transform, const glm::vec4& tint, bool flipX = false,
                     bool flipY = false);
-
 
     void ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextureId, const Camera3D& camera,
                              ShaderAsset* overrideShader = nullptr, const std::vector<ShaderUniform>& uniforms = {});
@@ -198,9 +209,12 @@ protected:
     virtual void Update(Timestep ts) override;
 
 private:
-    void ApplyFogUniforms(const std::shared_ptr<ShaderAsset>& shader);
+    void ApplyFogUniforms(ShaderAsset* shaderAsset);
     void InitializeSkybox();
     void CleanupSkybox();
+
+public:
+    void SetLightingUniforms(ShaderAsset* shaderAsset);
 
 private:
     std::unique_ptr<RendererData> m_Data;

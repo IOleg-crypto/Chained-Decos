@@ -174,7 +174,7 @@ Project:
 - editor/: ChainedEditor application and editor panels/tools.
 - runtime/: ChainedRuntime application and runtime layer.
 - scripting/: script host, glue bindings, and managed build integration.
-- game/chaineddecos/: main game project, gameplay scripts under src/, and managed scripts/tests under scripts/.
+- game/chaineddecos/: main game project and gameplay scripts under src/.
 - game/testproject/: alternate standalone game project used for project switching and smaller experiments.
 - tests/: native C++ test target (EngineTests).
 - thirdparty/: third-party dependencies as git submodules.
@@ -501,27 +501,17 @@ ctest --test-dir build/windows-clang --output-on-failure
 ctest --test-dir build/linux-clang --output-on-failure
 ```
 
-Managed gameplay tests (xUnit):
-
-```bash
-dotnet restore ./game/chaineddecos/scripts/tests/ChainedDecos.Scripts.Tests.csproj
-dotnet test ./game/chaineddecos/scripts/tests/ChainedDecos.Scripts.Tests.csproj -c Release --no-restore
-```
-
 ## CI/CD
 
 CI workflow (.github/workflows/ci.yml):
 
 - Dispatches native builds to `.github/workflows/linux.yml` and `.github/workflows/windows.yml`.
-- Dispatches managed tests to `.github/workflows/managed.yml`.
 - Runs CTest for native tests.
-- Runs managed script tests with .NET 9.0.x.
 - Uses software rendering setup for Linux test execution (xvfb + Mesa environment variables).
 
 Deploy workflow (.github/workflows/deploy-sdk.yml):
 
 - Triggered by v* tags or manual dispatch.
-- Runs managed tests.
 - Builds and packages ChainedEditor and ChainedRuntime artifacts for Linux/Windows.
 
 ## Troubleshooting

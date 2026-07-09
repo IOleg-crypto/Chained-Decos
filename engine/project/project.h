@@ -118,16 +118,27 @@ struct ProjectConfig
     Configuration BuildConfig = Configuration::Debug;
 };
 
-// Owns the active project configuration and environment asset, plus path helpers
-// rooted at the process-wide active project.
+/// @brief Owns the active project configuration and environment asset, plus path helpers
+/// rooted at the process-wide active project.
+///
+/// Projects define the game's settings, asset directories, and scene list.
+/// A single project is active at any time (set via SetActive). Static methods
+/// operate on the active project; instance methods operate on a specific project.
 class Project
 {
 public:
     Project() = default;
     ~Project();
 
+    /// @brief Load a project from a .chproject YAML file.
+    /// @param filepath Path to the .chproject file.
+    /// @return The loaded project, or nullptr on failure.
     static std::shared_ptr<Project> Load(const std::filesystem::path& filepath);
+
+    /// @brief Get the currently active project.
     static std::shared_ptr<Project> GetActive();
+
+    /// @brief Set the active project (called by RuntimeLayer or Editor after loading).
     static void SetActive(std::shared_ptr<Project> project);
 
     // Returns the active project configuration.

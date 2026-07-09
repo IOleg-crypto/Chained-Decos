@@ -1,3 +1,7 @@
+// scene.cpp
+// Chained Engine — ECS scene management and update pipeline.
+// Coordinates entity lifecycle, hierarchy, scripting, physics, animation, and scene transitions.
+
 #include "engine/scene/scene.h"
 #include "engine/core/profiler.h"
 #include "engine/core/service_locator.h"
