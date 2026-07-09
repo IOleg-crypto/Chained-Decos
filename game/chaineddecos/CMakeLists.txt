@@ -24,7 +24,7 @@ add_custom_command(TARGET ChainedDecosGameTarget POST_BUILD
 add_custom_command(TARGET ChainedDecosGameTarget POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/ChainedDecos.chproject"
-        "$<TARGET_FILE_DIR:ChainedDecosExe>/Chained Decos.chproject"
+        "$<TARGET_FILE_DIR:ChainedDecosExe>/ChainedDecos.chproject"
     COMMENT "Copying ChainedDecos.chproject to output directory..."
 )
 

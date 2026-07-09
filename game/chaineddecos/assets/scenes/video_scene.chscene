@@ -35,12 +35,101 @@ DebugSettings:
   DrawSpawnZones: true
   CollisionWireframeMode: 0
 Entities:
-  - Entity: 1004
+  - Entity: 17615517667390034193
     TagComponent:
-      Tag: btn_apply_settings
-    ManagedScriptComponent:
-      Scripts:
-        - ClassName: ChainedDecos.Scripts.SettingsScript
+      Tag: title_menu_video
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    IDComponent:
+      {}
+    WidgetComponent:
+      Box Style:
+        BG Color: [0, 0, 0, 0]
+        Hover Color: [0, 0, 0, 0]
+        Pressed Color: [0, 0, 0, 0]
+        Rounding: 4
+        Border Size: 0
+        Border Color: [255, 255, 255, 255]
+        Gradient: false
+        Padding: 4
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.100000001
+      Text Style:
+        Font Name: Default
+        Font Size: 37.5800018
+        Text Color: [255, 255, 255, 255]
+        Shadow: false
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Widget Type: 3
+      Text: Video Settings
+      Auto Size: false
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-200, 230]
+        OffsetMax: [200, 290]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+  - Entity: 16516555726583183032
+    TagComponent:
+      Tag: option_fullscreen
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    IDComponent:
+      {}
+    WidgetComponent:
+      Box Style:
+        BG Color: [40, 40, 40, 255]
+        Hover Color: [60, 60, 60, 255]
+        Pressed Color: [30, 30, 30, 255]
+        Rounding: 4
+        Border Size: 0
+        Border Color: [255, 255, 255, 255]
+        Gradient: false
+        Padding: 4
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.100000001
+      Text Style:
+        Font Name: Default
+        Font Size: 18
+        Text Color: [255, 252, 252, 255]
+        Shadow: false
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Widget Type: 6
+      Label: Fullscreen
+      Checked: false
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-150, 180]
+        OffsetMax: [150, 210]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+  - Entity: 1001
+    TagComponent:
+      Tag: option_vsync
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -69,73 +158,15 @@ Entities:
         Line Height: 1.20000005
         H Align: 1
         V Align: 1
-      Widget Type: 1
-      Label: Apply
-      Interactable: true
-      Auto Size: false
+      Widget Type: 6
+      Label: VSync
+      Checked: false
     ControlComponent:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-150, -250]
-        OffsetMax: [-10, -200]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      ZOrder: 0
-      IsActive: true
-      HiddenInHierarchy: false
-  - Entity: 18170181542896433609
-    TagComponent:
-      Tag: back_button
-    ManagedScriptComponent:
-      Scripts:
-        - ClassName: ChainedDecos.Scripts.LoadSceneButton
-          Fields:
-            - Name: TargetScene
-              Type: 4
-              Value: scenes/start_menu.chscene
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    IDComponent:
-      {}
-    Scene TransitionComponent:
-      TargetScenePath: ""
-      Triggered: false
-    WidgetComponent:
-      Box Style:
-        BG Color: [40, 40, 40, 255]
-        Hover Color: [60, 60, 60, 255]
-        Pressed Color: [30, 30, 30, 255]
-        Rounding: 4
-        Border Size: 0
-        Border Color: [255, 255, 255, 255]
-        Gradient: false
-        Padding: 15.4379997
-        Hover Scale: 1.05900002
-        Pressed Scale: 1
-        Transition Speed: 0.100000001
-      Text Style:
-        Font Name: Default
-        Font Size: 37.9350014
-        Text Color: [255, 255, 255, 255]
-        Shadow: false
-        Letter Spacing: 1
-        Line Height: 1.20000005
-        H Align: 1
-        V Align: 1
-      Widget Type: 1
-      Label: Back
-      Interactable: true
-      Auto Size: false
-    ControlComponent:
-      Transform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [10, -250]
-        OffsetMax: [150, -200]
+        OffsetMin: [-150, 140]
+        OffsetMax: [150, 170]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -173,169 +204,15 @@ Entities:
         Line Height: 1.20000005
         H Align: 1
         V Align: 1
-      Widget Type: 5
+      Widget Type: 6
       Label: Anti-aliasing
-      Value: 0.5
-      Min: 0
-      Max: 1
-    ControlComponent:
-      Transform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [-150, 50]
-        OffsetMax: [50, 100]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      ZOrder: 0
-      IsActive: true
-      HiddenInHierarchy: false
-  - Entity: 1001
-    TagComponent:
-      Tag: option_vsync
-    ManagedScriptComponent:
-      Scripts:
-        - ClassName: ChainedDecos.Scripts.SettingsScript
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    IDComponent:
-      {}
-    WidgetComponent:
-      Box Style:
-        BG Color: [40, 40, 40, 255]
-        Hover Color: [60, 60, 60, 255]
-        Pressed Color: [30, 30, 30, 255]
-        Rounding: 4
-        Border Size: 0
-        Border Color: [255, 255, 255, 255]
-        Gradient: false
-        Padding: 4
-        Hover Scale: 1
-        Pressed Scale: 1
-        Transition Speed: 0.100000001
-      Text Style:
-        Font Name: Default
-        Font Size: 18
-        Text Color: [255, 255, 255, 255]
-        Shadow: false
-        Letter Spacing: 1
-        Line Height: 1.20000005
-        H Align: 1
-        V Align: 1
-      Widget Type: 5
-      Label: VSync
-      Value: 0.720000029
-      Min: 0
-      Max: 1
+      Checked: false
     ControlComponent:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
         OffsetMin: [-150, 100]
-        OffsetMax: [50, 150]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      ZOrder: 0
-      IsActive: true
-      HiddenInHierarchy: false
-  - Entity: 16516555726583183032
-    TagComponent:
-      Tag: option_fullscreen
-    ManagedScriptComponent:
-      Scripts:
-        - ClassName: ChainedDecos.Scripts.SettingsScript
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    IDComponent:
-      {}
-    WidgetComponent:
-      Box Style:
-        BG Color: [40, 40, 40, 255]
-        Hover Color: [60, 60, 60, 255]
-        Pressed Color: [30, 30, 30, 255]
-        Rounding: 4
-        Border Size: 0
-        Border Color: [255, 255, 255, 255]
-        Gradient: false
-        Padding: 4
-        Hover Scale: 1
-        Pressed Scale: 1
-        Transition Speed: 0.100000001
-      Text Style:
-        Font Name: Default
-        Font Size: 18
-        Text Color: [255, 252, 252, 255]
-        Shadow: false
-        Letter Spacing: 1
-        Line Height: 1.20000005
-        H Align: 1
-        V Align: 1
-      Widget Type: 5
-      Label: Fullscreen
-      Value: 0.5
-      Min: 0
-      Max: 1
-    ControlComponent:
-      Transform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [-150, 150]
-        OffsetMax: [50, 200]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      ZOrder: 0
-      IsActive: true
-      HiddenInHierarchy: false
-  - Entity: 2001
-    TagComponent:
-      Tag: fps_limit
-    ManagedScriptComponent:
-      Scripts:
-        - ClassName: ChainedDecos.Scripts.SettingsScript
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    IDComponent:
-      {}
-    WidgetComponent:
-      Box Style:
-        BG Color: [40, 40, 40, 255]
-        Hover Color: [60, 60, 60, 255]
-        Pressed Color: [30, 30, 30, 255]
-        Rounding: 4
-        Border Size: 0
-        Border Color: [255, 255, 255, 255]
-        Gradient: false
-        Padding: 4
-        Hover Scale: 1
-        Pressed Scale: 1
-        Transition Speed: 0.100000001
-      Text Style:
-        Font Name: Default
-        Font Size: 18
-        Text Color: [255, 255, 255, 255]
-        Shadow: false
-        Letter Spacing: 1
-        Line Height: 1.20000005
-        H Align: 1
-        V Align: 1
-      Widget Type: 7
-      Progress: 0.5
-      Overlay Text: ""
-      Show Percentage: true
-    ControlComponent:
-      Transform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [-150, -150]
-        OffsetMax: [150, -100]
+        OffsetMax: [150, 130]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -345,9 +222,6 @@ Entities:
   - Entity: 17129118224082506760
     TagComponent:
       Tag: resolution
-    ManagedScriptComponent:
-      Scripts:
-        - ClassName: ChainedDecos.Scripts.SettingsScript
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -376,25 +250,30 @@ Entities:
         Line Height: 1.20000005
         H Align: 1
         V Align: 1
-      Widget Type: 7
-      Progress: 0.5
-      Overlay Text: ""
-      Show Percentage: true
+      Widget Type: 10
+      Label: Resolution
+      Items:
+        - "1920x1080"
+        - "1280x720"
+        - "1600x900"
+        - "2560x1440"
+        - "3840x2160"
+      Selected Index: 0
     ControlComponent:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-676.066467, -50]
-        OffsetMax: [-497.9599, 0]
+        OffsetMin: [-150, 50]
+        OffsetMax: [150, 80]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-  - Entity: 17615517667390034193
+  - Entity: 2001
     TagComponent:
-      Tag: title_menu_video
+      Tag: fps_limit
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -416,22 +295,128 @@ Entities:
         Transition Speed: 0.100000001
       Text Style:
         Font Name: Default
-        Font Size: 37.5800018
+        Font Size: 18
         Text Color: [255, 255, 255, 255]
         Shadow: false
         Letter Spacing: 1
         Line Height: 1.20000005
         H Align: 1
         V Align: 1
-      Widget Type: 3
-      Text: Video Settings
+      Widget Type: 5
+      Label: Volume
+      Value: 0.5
+      Min: 0
+      Max: 1
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-150, 0]
+        OffsetMax: [150, 30]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+  - Entity: 1004
+    TagComponent:
+      Tag: btn_apply_settings
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: ChainedDecos.Scripts.SettingsScript
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    IDComponent:
+      {}
+    WidgetComponent:
+      Box Style:
+        BG Color: [40, 40, 40, 255]
+        Hover Color: [60, 60, 60, 255]
+        Pressed Color: [30, 30, 30, 255]
+        Rounding: 4
+        Border Size: 0
+        Border Color: [255, 255, 255, 255]
+        Gradient: false
+        Padding: 4
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.100000001
+      Text Style:
+        Font Name: Default
+        Font Size: 22
+        Text Color: [255, 255, 255, 255]
+        Shadow: false
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Widget Type: 1
+      Label: Apply
+      Interactable: true
       Auto Size: false
     ControlComponent:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-693.174316, -308.143677]
-        OffsetMax: [-463.744202, -259.467285]
+        OffsetMin: [-150, -70]
+        OffsetMax: [-20, -30]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+  - Entity: 18170181542896433609
+    TagComponent:
+      Tag: back_button
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: ChainedDecos.Scripts.LoadSceneButton
+          Fields:
+            - Name: TargetScene
+              Type: 4
+              Value: scenes/start_menu.chscene
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    IDComponent:
+      {}
+    WidgetComponent:
+      Box Style:
+        BG Color: [40, 40, 40, 255]
+        Hover Color: [60, 60, 60, 255]
+        Pressed Color: [30, 30, 30, 255]
+        Rounding: 4
+        Border Size: 0
+        Border Color: [255, 255, 255, 255]
+        Gradient: false
+        Padding: 4
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.100000001
+      Text Style:
+        Font Name: Default
+        Font Size: 22
+        Text Color: [255, 255, 255, 255]
+        Shadow: false
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Widget Type: 1
+      Label: Back
+      Interactable: true
+      Auto Size: false
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [20, -70]
+        OffsetMax: [150, -30]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]

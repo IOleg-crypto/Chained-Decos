@@ -11,7 +11,7 @@ Application* CreateApplication(ApplicationCommandLineArgs args)
     RegisterGameComponents();
 
     ApplicationSpecification spec;
-    spec.Name = "Chained Decos";
+    spec.Name = "ChainedDecos";
     spec.CommandLineArgs = args;
     spec.EnableScripting = true;
     spec.EngineRoot = Platform::GetExecutableDirectory();

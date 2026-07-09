@@ -1,3 +1,6 @@
+// runtime_layer.cpp
+// Chained Engine — Runtime layer for standalone game execution.
+// Handles project loading, scene transitions, scripting lifecycle, and the main runtime loop.
 
 #include "runtime_layer.h"
 #include "engine/app/application.h"
@@ -15,7 +18,6 @@
 #include "imgui.h"
 #include "scripting/scene_scripting_manager.h"
 #include "scripting/scriptengine.h"
-#include "scripting/scriptengine_services.h"
 #include <algorithm>
 #include <cctype>
 #include <cmath>
@@ -127,6 +129,9 @@ void RuntimeLayer::OnUpdate(Timestep ts) {
         m_LoadingOverlayElapsed += (float)ts;
 
         if (IsSceneReadyToStart() && m_LoadingOverlayElapsed >= m_LoadingOverlayMinDuration) {
+            // Clear stale button press flags from the previous scene before starting runtime.
+            // Without this, a button press that triggered the scene change would still be "pressed"
+            // on the first frame of the new scene, causing immediate unintended transitions.
             ServiceLocator::Get<UIRenderer>()->ResetButtonStates(m_Scene.get());
             m_Scene->OnRuntimeStart();
             m_RuntimeStarted = true;
@@ -352,7 +357,8 @@ bool RuntimeLayer::InitProject(const std::string &projectPath) {
         moduleName += ".dll";
     }
 
-    // Attempt to resolve the assembly path, account for 'lib' prefix on MinGW
+    // Attempt to resolve the assembly path. MinGW prefixes shared libraries with "lib",
+    // so we check both "ModuleName.dll" and "libModuleName.dll" across multiple directories.
     std::filesystem::path assemblyPath = Project::GetAssetDirectory() / "bin" / moduleName;
     if (!std::filesystem::exists(assemblyPath)) {
         std::filesystem::path libPath = Project::GetAssetDirectory() / "bin" / ("lib" + moduleName);
@@ -701,7 +707,8 @@ void RuntimeLayer::DrawLoadingOverlay() {
     ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.02f, 0.02f, 0.02f, 0.92f));
 
     if (ImGui::Begin("##RuntimeLoadingOverlay", nullptr, flags)) {
-        const size_t totalPending = 0; // AssetManager loading counts not implemented in new API yet
+        // TODO: Implement AssetManager loading count tracking for progress bar display
+        const size_t totalPending = 0;
 
         int dotsCount = (static_cast<int>(ImGui::GetTime() * 2.5f) % 3) + 1;
         std::string dots(static_cast<size_t>(dotsCount), '.');

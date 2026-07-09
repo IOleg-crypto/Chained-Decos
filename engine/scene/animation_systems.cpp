@@ -50,7 +50,7 @@ void AnimationManager::Stop(AnimationComponent& anim)
 }
 
 // Advances frame timers for all playing AnimationComponents in the scene.
-// Frame advancement is a placeholder — real clip data drives actual frame changes.
+// TODO: Replace placeholder frame advancement with real clip-based keyframe interpolation.
 void AnimationManager::UpdatePlayback(Scene* scene, Timestep ts)
 {
     auto& registry = scene->GetRegistry();

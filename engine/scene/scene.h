@@ -24,7 +24,11 @@ class SceneResourceManager;
 class AnimationManager;
 class Event;
 
-// Owns the scene registry, scene settings, and manages its own execution state lifecycle.
+/// @brief Owns the scene registry, scene settings, and manages its own execution state lifecycle.
+///
+/// Scenes are the primary container for ECS entities and systems. They manage
+/// state transitions between Edit, Runtime, and Simulation modes, and coordinate
+/// script execution, physics, animation, and scene transitions.
 class CH_API Scene
 {
 public:
@@ -39,22 +43,25 @@ public:
     }
 
 public:
-    // Creates a new scene with default entities (e.g. Main Camera).
+    /// @brief Create a new scene with default entities (Main Camera).
     static std::shared_ptr<Scene> CreateDefault();
-    // Creates a deep copy of another scene.
+
+    /// @brief Deep-copy another scene, duplicating all entities and components.
     static std::shared_ptr<Scene> Copy(std::shared_ptr<Scene> other);
 
     virtual void OnEvent(Event& e);
     virtual void OnRenderUI();
 
 public: // Scene State Management
+    /// @brief Transition the scene to a new state (Edit, Runtime, Simulation).
+    /// Calls OnStateExit for the current state and OnStateEnter for the new one.
     void TransitionToState(SceneState newState);
     SceneState GetSceneState() const
     {
         return m_State;
     }
 
-    // Single update entry point (dispatches the appropriate sub-update based on m_State)
+    /// @brief Single update entry point — dispatches to the correct sub-update based on current state.
     void OnUpdate(Timestep timestep);
     void OnViewportResize(uint32_t width, uint32_t height);
 
@@ -85,6 +92,8 @@ public: // Systems & Tools
     void OnRuntimeStart();
     void OnUpdateSimulation(Timestep timestep);
     void OnUpdateEditor(Timestep timestep);
+
+    /// @brief Runtime update — runs scripts, physics, animations, and scene transitions.
     void OnUpdateRuntime(Timestep timestep);
 
 private: // Internal state lifecycle methods
