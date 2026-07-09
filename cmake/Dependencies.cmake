@@ -36,3 +36,19 @@ include(external_gtest)
 # include(gamenetworkingsockets)
 
 include(reflect-cpp)
+
+# Disable unity builds for third-party libraries to avoid symbol redefinitions
+# (e.g., zstd cover.h has no include guard, causing redefinition under unity build)
+foreach(_ext_target
+    libzstd_static yaml-cpp
+    glm entt cereal stb spdlog miniaudio
+    imgui imguizmo
+    glfw glad
+    Jolt
+    nfd
+    GTest gmock
+)
+    if(TARGET ${_ext_target})
+        set_target_properties(${_ext_target} PROPERTIES UNITY_BUILD OFF)
+    endif()
+endforeach()

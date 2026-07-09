@@ -137,7 +137,7 @@ public:
     /// @param camera The camera to render from.
     /// @param nearClip Near clipping plane distance.
     /// @param farClip Far clipping plane distance.
-    void BeginScene(const Camera3D& camera, float nearClip = 0.01f, float farClip);
+    void BeginScene(const Camera3D& camera, float nearClip = 0.01f, float farClip = 10000.0f);
 
     /// @brief Flush pending draw calls and finalize the frame.
     void EndScene();
