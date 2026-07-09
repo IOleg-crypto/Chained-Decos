@@ -1,3 +1,7 @@
+// project.cpp
+// Chained Engine — Project configuration loading, path resolution, and environment management.
+// Handles .chproject YAML deserialization and cross-platform path normalization.
+
 #include "project.h"
 #include "yaml-cpp/yaml.h"
 #include <fstream>

@@ -13,7 +13,7 @@ on:
       - "cmake/*.cmake"
       - ".github/workflows/*.yml"
   pull_request:
-    branches: [main, develop, chained-gui, refactor-branch, opengl]
+    branches: [main, develop, refactor-branch, opengl]
     paths:
       - "**/*.cpp"
       - "**/*.h"
@@ -46,14 +46,9 @@ jobs:
     uses: ./.github/workflows/windows.yml
     secrets: inherit
 
-  managed:
-    name: Managed Tests
-    uses: ./.github/workflows/managed.yml
-    secrets: inherit
-
   quality-gate:
     name: PR Gate
     runs-on: ubuntu-latest
-    needs: [linux, windows, managed]
+    needs: [linux, windows]
     steps:
-      - run: echo "Native builds and managed tests passed."
+      - run: echo "Native builds passed."

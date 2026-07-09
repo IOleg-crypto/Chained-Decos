@@ -1,3 +1,7 @@
+// ui_input_system.cpp
+// Chained Engine — UI input processing for widget interaction.
+// Maps ImGui click/hover state to UIControlComponent flags each frame.
+
 #include "ui_input_system.h"
 #include "engine/scene/components/control_component.h"
 #include "imgui.h"
@@ -28,9 +32,10 @@ void UIInputSystem::Update(entt::registry& registry, const UILayoutSystem& layou
 
         widget.IsHovered = isOver;
         widget.IsDown = isOver && mouseDown && inputCooldown == 0;
-        
-        // Reset PressedThisFrame is handled by UIRenderer per frame, 
-        // but let's be explicit here if it's the start of the frame.
+
+        // Reset each frame so a stale click cannot re-fire across frames.
+        widget.PressedThisFrame = false;
+
         if (isOver && mouseClicked && inputCooldown == 0)
         {
             widget.PressedThisFrame = true;

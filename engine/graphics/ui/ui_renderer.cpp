@@ -1,3 +1,7 @@
+// ui_renderer.cpp
+// Chained Engine — ImGui-based UI rendering for in-game widgets and HUD.
+// Draws WidgetComponent hierarchy, handles Z-order sorting, scissor clipping, and font management.
+
 #include "ui_renderer.h"
 #include "engine/core/service_locator.h"
 #include <algorithm>

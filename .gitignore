@@ -91,3 +91,18 @@ build_error.txt
 *.chcache
 *.chasset
 *.pdf
+
+.opencode
+
+# CMake install directory
+install/
+
+# Deploy packaging
+package/
+
+# Test results
+*.trx
+
+# Zip archives (SDK builds)
+*.zip
+*.tar.gz
