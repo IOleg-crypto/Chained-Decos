@@ -10,36 +10,36 @@
 namespace Chained
 {
 
-enum class ShaderDataType
+enum class VertexAttributeType
 {
     None = 0, Float, Float2, Float3, Float4, Mat3, Mat4, Int, Int2, Int3, Int4, Bool
 };
 
-    constexpr uint32_t ShaderDataTypeSize(ShaderDataType type)
+    constexpr uint32_t VertexAttributeTypeSize(VertexAttributeType type)
     {
         switch (type)
         {
-            case ShaderDataType::Float:    return 4;
-            case ShaderDataType::Float2:   return 4 * 2;
-            case ShaderDataType::Float3:   return 4 * 3;
-            case ShaderDataType::Float4:   return 4 * 4;
-            case ShaderDataType::Mat3:     return 4 * 3 * 3; 
-            case ShaderDataType::Mat4:     return 4 * 4 * 4;
-            case ShaderDataType::Int:      return 4;
-            case ShaderDataType::Int2:     return 4 * 2;
-            case ShaderDataType::Int3:     return 4 * 3;
-            case ShaderDataType::Int4:     return 4 * 4;
-            case ShaderDataType::Bool:     return 1;
+            case VertexAttributeType::Float:    return 4;
+            case VertexAttributeType::Float2:   return 4 * 2;
+            case VertexAttributeType::Float3:   return 4 * 3;
+            case VertexAttributeType::Float4:   return 4 * 4;
+            case VertexAttributeType::Mat3:     return 4 * 3 * 3; 
+            case VertexAttributeType::Mat4:     return 4 * 4 * 4;
+            case VertexAttributeType::Int:      return 4;
+            case VertexAttributeType::Int2:     return 4 * 2;
+            case VertexAttributeType::Int3:     return 4 * 3;
+            case VertexAttributeType::Int4:     return 4 * 4;
+            case VertexAttributeType::Bool:     return 1;
         }
 
-        CH_CORE_ASSERT(false, "Unknown ShaderDataType!");
+        CH_CORE_ASSERT(false, "Unknown VertexAttributeType!");
         return 0;
     }
 
 struct BufferElement
 {
     std::string Name;
-    ShaderDataType Type;
+    VertexAttributeType Type;
     uint32_t Size;
     size_t Offset;
     bool Normalized;
@@ -47,8 +47,8 @@ struct BufferElement
 
     BufferElement() = default;
 
-    BufferElement(ShaderDataType type, const std::string& name, bool normalized = false, bool instanced = false)
-        : Name(name), Type(type), Size(ShaderDataTypeSize(type)), Offset(0), Normalized(normalized), Instanced(instanced)
+    BufferElement(VertexAttributeType type, const std::string& name, bool normalized = false, bool instanced = false)
+        : Name(name), Type(type), Size(VertexAttributeTypeSize(type)), Offset(0), Normalized(normalized), Instanced(instanced)
     {
     }
 
@@ -56,20 +56,20 @@ struct BufferElement
     {
         switch (Type)
         {
-            case ShaderDataType::Float:   return 1;
-            case ShaderDataType::Float2:  return 2;
-            case ShaderDataType::Float3:  return 3;
-            case ShaderDataType::Float4:  return 4;
-            case ShaderDataType::Mat3:    return 3; // 3* float3
-            case ShaderDataType::Mat4:    return 4; // 4* float4
-            case ShaderDataType::Int:     return 1;
-            case ShaderDataType::Int2:    return 2;
-            case ShaderDataType::Int3:    return 3;
-            case ShaderDataType::Int4:    return 4;
-            case ShaderDataType::Bool:    return 1;
+            case VertexAttributeType::Float:   return 1;
+            case VertexAttributeType::Float2:  return 2;
+            case VertexAttributeType::Float3:  return 3;
+            case VertexAttributeType::Float4:  return 4;
+            case VertexAttributeType::Mat3:    return 3; // 3* float3
+            case VertexAttributeType::Mat4:    return 4; // 4* float4
+            case VertexAttributeType::Int:     return 1;
+            case VertexAttributeType::Int2:    return 2;
+            case VertexAttributeType::Int3:    return 3;
+            case VertexAttributeType::Int4:    return 4;
+            case VertexAttributeType::Bool:    return 1;
         }
 
-        CH_CORE_ASSERT(false, "Unknown ShaderDataType!");
+        CH_CORE_ASSERT(false, "Unknown VertexAttributeType!");
         return 0;
     }
 };

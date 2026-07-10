@@ -5,6 +5,7 @@
 #include "engine/common/color.h"
 #include "engine/graphics/api/vertex_array.h"
 #include "engine/reflection/reflection_rfl.h" // Switched to your new reflection header
+#include "engine/graphics/api/texture.h"
 #include <cstring>
 #include <glm/glm.hpp>
 #include <memory>
@@ -47,11 +48,11 @@ struct Material
     float Metalness = 0.0f;
     float Roughness = 0.5f;
 
-    uint32_t AlbedoMap = 0;
-    uint32_t NormalMap = 0;
-    uint32_t MetallicRoughnessMap = 0;
-    uint32_t EmissiveMap = 0;
-    uint32_t OcclusionMap = 0;
+    std::shared_ptr<Texture> AlbedoMap;
+    std::shared_ptr<Texture> NormalMap;
+    std::shared_ptr<Texture> MetallicRoughnessMap;
+    std::shared_ptr<Texture> EmissiveMap;
+    std::shared_ptr<Texture> OcclusionMap;
 
     std::string AlbedoPath;
     std::string NormalPath;

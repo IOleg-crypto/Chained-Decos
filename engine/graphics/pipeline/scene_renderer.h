@@ -39,7 +39,6 @@ struct SceneRenderOptions
     bool ShowDebugCollisionModelBox = false;
     bool ShowDebugSpawnZones= false;
     bool DrawGrid= false;
-    bool ShowEditorIcons= true;
     int SetCollisionWireframeMode = 0;
 };
 
@@ -72,6 +71,7 @@ public:
     ~SceneRenderer() = default;
 
     // Renders the scene using the supplied camera and options.
+    // Internally manages Renderer::BeginScene/EndScene — callers should NOT call them separately.
     void RenderScene(entt::registry& registry, const SceneSettings& settings, const Camera3D& camera, float nearClip, float farClip,
                      const SceneRenderOptions& options);
 
@@ -106,12 +106,10 @@ public:
     // Expose internals for passes
     std::vector<RenderItem>& GetOpaqueQueue() { return m_OpaqueQueue; }
     std::vector<RenderItem>& GetTransparentQueue() { return m_TransparentQueue; }
-    LightingData& GetLighting() { return m_Lighting; }
     EnvironmentSettings& GetEnvironment() { return m_CurrentEnv; }
     
     void RenderSprites(entt::registry& registry, const Camera3D& camera);
     void RenderDebug(entt::registry& registry, const SceneSettings& settings, const Camera3D& camera, const SceneRenderOptions& options);
-    void RenderEditorIcons(entt::registry& registry, const SceneSettings& settings, const Camera3D& camera);
     void DrawColliderDebug(entt::registry& registry, const SceneRenderOptions& options);
     void DrawCollisionModelBoxDebug(entt::registry& registry);
 
@@ -122,7 +120,6 @@ private:
     std::vector<RenderItem> m_OpaqueQueue;
     std::vector<RenderItem> m_TransparentQueue;
     
-    LightingData m_Lighting;
     EnvironmentSettings m_CurrentEnv;
 
     // Skybox cache

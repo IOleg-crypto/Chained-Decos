@@ -2,7 +2,9 @@
 #include "engine/core/service_locator.h"
 #include "engine/scene/components.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
-#include "engine/graphics/pipeline/render_command.h"
+#include "engine/graphics/api/graphics_device.h"
+#include "engine/project/project.h"
+#include <glad/gl.h>
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace Chained
@@ -11,13 +13,6 @@ namespace Chained
 void ShadowPass::Init()
 {
     if (m_Initialized) return;
-
-    // Create a depth-only framebuffer for the shadow map.
-    FramebufferSpecification spec;
-    spec.Width   = ShadowMapSize;
-    spec.Height  = ShadowMapSize;
-    spec.Samples = 1;
-    m_ShadowMap  = Framebuffer::Create(spec);
 
     // Grab the depth-pass shader from the library if it exists.
     if (ServiceLocator::Get<Renderer>()->GetShaderLibrary().Exists("ShadowDepth"))
@@ -30,18 +25,43 @@ void ShadowPass::Init()
 
 void ShadowPass::Execute(const RenderContext& ctx)
 {
-    if (!m_ShadowMap) return;
-
-    // Build light-space matrix from the primary directional light direction, or use fallback.
+    // Check if any directional light has shadows enabled
+    m_HasShadows = false;
     glm::vec3 lightDir = glm::normalize(glm::vec3(-0.5f, -1.0f, -0.5f));
+
     ctx.Registry.view<LightComponent>().each([&](LightComponent& lc) {
-        if (lc.Type == LightType::Directional)
+        if (lc.Type == LightType::Directional && lc.Shadows)
         {
+            m_HasShadows = true;
             const auto& ld = ctx.Renderer->GetEnvironment().Lighting;
             lightDir = glm::normalize(glm::vec3(ld.Direction));
         }
     });
 
+    if (!m_HasShadows) return;
+    if (!m_DepthShaderAsset || !m_DepthShaderAsset->GetShader()) return;
+
+    // Read shadow resolution from project settings
+    uint32_t shadowRes = 2048;
+    auto project = Project::GetActive();
+    if (project)
+    {
+        shadowRes = (uint32_t)project->GetConfig().Render.ShadowResolution;
+        if (shadowRes == 0) shadowRes = 2048;
+    }
+    m_ShadowMapSize = shadowRes;
+
+    // Recreate shadow map FBO if size changed
+    if (!m_ShadowMap || m_ShadowMap->GetSpecification().Width != shadowRes)
+    {
+        FramebufferSpecification spec;
+        spec.Width   = shadowRes;
+        spec.Height  = shadowRes;
+        spec.Samples = 1;
+        m_ShadowMap  = Framebuffer::Create(spec);
+    }
+
+    // Build light-space matrix
     constexpr float orthoSize = 50.0f;
     constexpr float nearPlane = 1.0f;
     constexpr float farPlane  = 200.0f;
@@ -51,16 +71,21 @@ void ShadowPass::Execute(const RenderContext& ctx)
     glm::mat4 lightView        = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     m_LightSpaceMatrix         = lightProjection * lightView;
 
-    // Skip draw calls if no depth shader is loaded yet.
-    if (!m_DepthShaderAsset || !m_DepthShaderAsset->GetShader()) return;
-
     auto* shader = m_DepthShaderAsset->GetShader().get();
     shader->Bind();
     shader->SetMatrix("u_LightSpaceMatrix", m_LightSpaceMatrix);
 
+    // Save current FBO binding
+    GLint previousFBO = 0;
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &previousFBO);
+
     m_ShadowMap->Bind();
-    RenderCommand::SetViewport(0, 0, ShadowMapSize, ShadowMapSize);
-    RenderCommand::Clear({0, 0, 0, 255});
+    GraphicsDevice::Get().SetViewport(0, 0, shadowRes, shadowRes);
+    GraphicsDevice::Get().Clear({0, 0, 0, 255});
+
+    // Depth bias to prevent shadow acne (surface-shadow self-intersection)
+    glEnable(GL_POLYGON_OFFSET_FILL);
+    glPolygonOffset(2.0f, 1.0f);
 
     // Render all opaque items into the depth buffer using the depth shader.
     for (const auto& item : ctx.Renderer->GetOpaqueQueue())
@@ -70,7 +95,11 @@ void ShadowPass::Execute(const RenderContext& ctx)
                                 m_DepthShaderAsset.get(), {}, RenderPassStage::Opaque);
     }
 
+    glDisable(GL_POLYGON_OFFSET_FILL);
+
+    // Restore previous FBO binding
     m_ShadowMap->Unbind();
+    glBindFramebuffer(GL_FRAMEBUFFER, previousFBO);
 }
 
 void ShadowPass::Shutdown()

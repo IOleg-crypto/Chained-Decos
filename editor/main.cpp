@@ -13,11 +13,7 @@ Application* CreateApplication(ApplicationCommandLineArgs args)
     RegisterGameComponents();
 
     ApplicationSpecification spec;
-#if CH_PLATFORM_BACKEND_SDL3
-    spec.Name = "ChainedEditor | Backend: SDL3";
-#else
-    spec.Name = "ChainedEditor | Backend: GLFW";
-#endif
+    spec.Name = "ChainedEditor";
     spec.CommandLineArgs = args;
 
     // Default editor window settings

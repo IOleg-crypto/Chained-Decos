@@ -1,7 +1,7 @@
 #include "geometry_pass.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
 #include "engine/graphics/pipeline/frustum.h"
-#include "engine/graphics/pipeline/render_command.h"
+#include "engine/graphics/api/graphics_device.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <algorithm>
 
@@ -11,8 +11,8 @@ namespace Chained {
     {
         auto& renderer = *ctx.Renderer;
 
-        RenderCommand::SetBlendMode(true);
-        RenderCommand::SetBlendFunc(RendererAPI::BlendFactor::SrcAlpha, RendererAPI::BlendFactor::OneMinusSrcAlpha);
+        GraphicsDevice::Get().SetBlendEnabled(true);
+        GraphicsDevice::Get().SetBlendFunc(GraphicsDevice::BlendFactor::SrcAlpha, GraphicsDevice::BlendFactor::OneMinusSrcAlpha);
 
         // 1. Opaque Pass
         for (const auto& item : renderer.GetOpaqueQueue())
@@ -22,14 +22,14 @@ namespace Chained {
         }
 
         // 2. Transparent Pass
-        RenderCommand::DisableDepthMask();
+        GraphicsDevice::Get().DisableDepthMask();
         for (const auto& item : renderer.GetTransparentQueue())
         {
             renderer.DrawModel(item.Asset, item.Transform, item.BoneMatrices, item.Materials, item.ShaderOverride,
                       item.CustomUniforms, RenderPassStage::Transparent);
         }
-        RenderCommand::EnableDepthMask();
-        RenderCommand::SetBlendMode(false);
+        GraphicsDevice::Get().EnableDepthMask();
+        GraphicsDevice::Get().SetBlendEnabled(false);
     }
 
 }

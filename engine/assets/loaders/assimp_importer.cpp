@@ -6,7 +6,6 @@
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
-#include <atomic>
 #include "engine/core/service_locator.h"
 #include <cmath>
 #include <cstring>
@@ -18,10 +17,6 @@
 
 namespace Chained
 {
-static bool IsSupportedAssimpExtension(const std::string& ext)
-{
-    return ext == ".gltf" || ext == ".glb" || ext == ".obj";
-}
 
 static bool DecodeEmbeddedTexture(const aiTexture* texture, EmbeddedTextureData& out)
 {
@@ -219,13 +214,6 @@ PendingModelData AssimpImporter::Import(const std::filesystem::path& path, int s
 
         std::string ext = path.extension().string();
         std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return (char)std::tolower(c); });
-        if (!IsSupportedAssimpExtension(ext))
-        {
-            CH_CORE_ERROR(
-                "Assimp Model Load Failed: {} | Error: unsupported format '{}'. Supported formats: glTF/GLB, OBJ",
-                path.filename().string(), ext);
-            return data;
-        }
 
         unsigned int flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_LimitBoneWeights |
                              aiProcess_JoinIdenticalVertices | aiProcess_SortByPType | aiProcess_CalcTangentSpace |
@@ -852,10 +840,19 @@ void AssimpImporter::MergeMeshesByMaterial()
                 merged.indices.push_back(idx + vertexOffset);
             }
 
-            if (hasSkins && !src.joints.empty())
+            if (hasSkins)
             {
-                merged.joints.insert(merged.joints.end(), src.joints.begin(), src.joints.end());
-                merged.weights.insert(merged.weights.end(), src.weights.begin(), src.weights.end());
+                if (!src.joints.empty())
+                {
+                    merged.joints.insert(merged.joints.end(), src.joints.begin(), src.joints.end());
+                    merged.weights.insert(merged.weights.end(), src.weights.begin(), src.weights.end());
+                }
+                else
+                {
+                    size_t padSize = (src.vertices.size() / 3) * 4;
+                    merged.joints.insert(merged.joints.end(), padSize, (unsigned char)0);
+                    merged.weights.insert(merged.weights.end(), padSize, 0.0f);
+                }
             }
 
             if (!hasSkins)

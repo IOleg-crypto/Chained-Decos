@@ -12,6 +12,7 @@ namespace Chained
     namespace DebugRenderer
     {
         void DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color);
+        void Flush();
         void DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& transform, bool useWireframe = true);
         void DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, const glm::vec4& color, bool useWireframe = true);
         void DrawCapsuleWires(const glm::mat4& transform, float radius, float height, const glm::vec4& color, bool useWireframe = true);

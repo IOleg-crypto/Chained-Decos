@@ -55,7 +55,7 @@ Scene::~Scene()
 {
     if (ServiceLocator::IsAvailable())
     {
-        if (auto* physics = ServiceLocator::Get<Physics>())
+        if (auto* physics = ServiceLocator::TryGet<Physics>())
         {
             physics->ClearContext(this);
         }
@@ -185,7 +185,7 @@ void Scene::OnRuntimeStart()
 
     ServiceLocator::Get<ScriptEngine>()->SetContextScene(this);
 
-    if (auto* uiRenderer = ServiceLocator::Get<UIRenderer>())
+    if (auto* uiRenderer = ServiceLocator::TryGet<UIRenderer>())
     {
         uiRenderer->ResetInputCooldown();
     }

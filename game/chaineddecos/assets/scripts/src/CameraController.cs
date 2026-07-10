@@ -13,17 +13,25 @@ public class CameraController : Script
 
     public override void OnCreate()
     {
-        CameraComponent? camera = Entity.GetComponent<CameraComponent>();
+        // Find the main camera entity (SceneCamera), not 'this' entity
+        Entity? camEntity = Scene.GetMainCamera();
+        if (camEntity == null)
+        {
+            Log.Error($"[CameraController] FAILED: No main camera found in scene!");
+            return;
+        }
+
+        CameraComponent? camera = camEntity.GetComponent<CameraComponent>();
         if (camera == null)
         {
-            Log.Error($"[CameraController] FAILED: Entity '{Entity}' has no CameraComponent!");
+            Log.Error($"[CameraController] FAILED: Entity '{camEntity}' has no CameraComponent!");
             return;
         }
 
         // One-time setup: make this the primary orbit camera
         if (!camera.Primary)
         {
-            Log.Warn($"[CameraController] Setting '{Entity}' as Primary camera.");
+            Log.Warn($"[CameraController] Setting '{camEntity}' as Primary camera.");
             camera.Primary = true;
         }
 
@@ -34,7 +42,11 @@ public class CameraController : Script
 
     public override void OnUpdate(float deltaTime)
     {
-        CameraComponent? camera = Entity.GetComponent<CameraComponent>();
+        Entity? camEntity = Scene.GetMainCamera();
+        if (camEntity == null)
+            return;
+
+        CameraComponent? camera = camEntity.GetComponent<CameraComponent>();
         if (camera == null)
             return;
 

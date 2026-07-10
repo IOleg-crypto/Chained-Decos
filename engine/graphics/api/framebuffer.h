@@ -14,7 +14,8 @@ enum class FramebufferColorFormat
 
 struct FramebufferSpecification
 {
-    uint32_t Width, Height;
+    uint32_t Width = 0;
+    uint32_t Height = 0;
     uint32_t Samples = 1;
     bool SwapChainTarget = false;
     FramebufferColorFormat ColorFormat = FramebufferColorFormat::RGBA8;
@@ -36,6 +37,8 @@ public:
     virtual const FramebufferSpecification& GetSpecification() const = 0;
 
     virtual void* GetNativeFramebuffer() = 0;
+
+    virtual bool IsValid() const = 0;
 
     static std::shared_ptr<Framebuffer> Create(const FramebufferSpecification& spec);
 };

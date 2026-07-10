@@ -96,7 +96,7 @@ static bool RenderPanel(PanelData& panel, UIControlComponent& wc, const ImVec2& 
         auto textureAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(textureHandle);
         if (textureAsset && textureAsset->GetState() == AssetState::Ready)
         {
-            ImTextureID texId = (ImTextureID)(uintptr_t)textureAsset->GetTexture()->GetRendererID();
+            ImTextureID texId = (ImTextureID)(uintptr_t)textureAsset->GetTexture()->GetNativeHandle();
             dl->AddImageRounded(texId, pos, pMax, {0,0}, {1,1}, IM_COL32_WHITE, wc.BoxStyle.Rounding);
         }
     }
@@ -222,7 +222,7 @@ static bool RenderImage(const ImageData& img, UIControlComponent& wc, const ImVe
         auto textureAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(textureHandle);
         if (textureAsset && textureAsset->GetState() == AssetState::Ready)
         {
-            ImTextureID texId = (ImTextureID)(uintptr_t)textureAsset->GetTexture()->GetRendererID();
+            ImTextureID texId = (ImTextureID)(uintptr_t)textureAsset->GetTexture()->GetNativeHandle();
             dl->AddImageRounded(texId, pos, pMax, {0,0}, {1,1}, ToImU32(img.TintColor), wc.BoxStyle.Rounding);
         }
         else
@@ -261,7 +261,7 @@ static bool RenderImageButton(const ImageButtonData& imgBtn, UIControlComponent&
         auto textureAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(textureHandle);
         if (textureAsset && textureAsset->GetState() == AssetState::Ready)
         {
-            ImTextureID texId = (ImTextureID)(uintptr_t)textureAsset->GetTexture()->GetRendererID();
+            ImTextureID texId = (ImTextureID)(uintptr_t)textureAsset->GetTexture()->GetNativeHandle();
             dl->AddImageRounded(texId, imgPos, imgMax, {0,0}, {1,1}, ToImU32(imgBtn.TintColor), wc.BoxStyle.Rounding);
         }
     }
@@ -273,6 +273,32 @@ static bool RenderImageButton(const ImageButtonData& imgBtn, UIControlComponent&
         dl->AddRect(pos, pMax, ToImU32(wc.BoxStyle.BorderColor), wc.BoxStyle.Rounding, 0, wc.BoxStyle.BorderSize);
 
     return wc.PressedThisFrame;
+}
+
+static bool RenderComboBox(ComboBoxData& combo, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size, ImFont* font, const TextStyle& textStyle)
+{
+    ImGui::SetCursorScreenPos(pos);
+    ImGui::SetNextItemWidth(size.x);
+
+    const char* preview = (combo.SelectedIndex >= 0 && combo.SelectedIndex < (int)combo.Items.size())
+        ? combo.Items[combo.SelectedIndex].c_str() : "Select...";
+
+    bool changed = false;
+    if (ImGui::BeginCombo("##combo", preview))
+    {
+        for (int i = 0; i < (int)combo.Items.size(); i++)
+        {
+            bool isSelected = (combo.SelectedIndex == i);
+            if (ImGui::Selectable(combo.Items[i].c_str(), isSelected))
+            {
+                combo.SelectedIndex = i;
+                changed = true;
+            }
+            if (isSelected) ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+    return changed;
 }
 
 // ---------------------------------------------------------------------------
@@ -313,6 +339,8 @@ bool RenderControl(const UIFontRegistry& fontRegistry,
             changed = RenderImage(arg, control, screenPos, size);
         else if constexpr (std::is_same_v<T, ImageButtonData>)
             changed = RenderImageButton(arg, control, screenPos, size, activeFont, control.TextStyle);
+        else if constexpr (std::is_same_v<T, ComboBoxData>)
+            changed = RenderComboBox(arg, control, screenPos, size, activeFont, control.TextStyle);
         else
         {
             // Fallback: draw a bordered rectangle with type name for unhandled UI types

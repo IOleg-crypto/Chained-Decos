@@ -5,17 +5,26 @@ namespace ChainedDecos.Scripts
 {
     public class MainMenuScript : Script
     {
-        public string TargetScene = "scenes/untitled100.chscene";
+        public string TargetScene = "";
+
+        public override void OnCreate()
+        {
+            Log.Info($"MainMenuScript: Initialized, TargetScene={TargetScene}");
+        }
 
         public override void OnUpdate(float deltaTime)
         {
-            if (Entity.HasComponent<ButtonControl>())
+            ButtonControl? btn = Entity.GetComponent<ButtonControl>();
+            if (btn != null && btn.IsPressed)
             {
-                ButtonControl? btn = Entity.GetComponent<ButtonControl>();
-                if (btn?.IsPressed ?? false)
+                if (!string.IsNullOrEmpty(TargetScene))
                 {
-                    Log.Info("Starting game, loading scene: " + TargetScene);
+                    Log.Info($"MainMenuScript: Loading scene: {TargetScene}");
                     Scene.LoadScene(TargetScene);
+                }
+                else
+                {
+                    Log.Warn("MainMenuScript: TargetScene is empty!");
                 }
             }
         }

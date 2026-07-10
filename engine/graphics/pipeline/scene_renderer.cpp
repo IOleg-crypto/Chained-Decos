@@ -5,11 +5,11 @@
 #include "engine/assets/types/shader_asset.h"
 #include "engine/assets/types/texture_asset.h"
 #include "engine/core/service_locator.h"
-#include "engine/graphics/api/renderer_api.h"
+#include "engine/graphics/api/graphics_device.h"
 #include "engine/graphics/pipeline/debug_renderer.h"
 #include "engine/graphics/pipeline/frustum.h"
 #include "engine/graphics/pipeline/geometry_generator.h"
-#include "engine/graphics/pipeline/render_command.h"
+#include "engine/graphics/api/graphics_device.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/pipeline/texture_utility.h"
 // removed texture_system.h
@@ -40,9 +40,6 @@ static glm::vec4 ColorToVec4(const Color& c)
 
 SceneRenderer::SceneRenderer()
 {
-    m_Lighting.LightSSBO = StorageBuffer::Create(sizeof(RenderLight) * LightingData::MaxLights);
-    m_Lighting.LightsDirty = true;
-
     AddPass(std::make_unique<ShadowPass>());
     AddPass(std::make_unique<SkyboxPass>());
     AddPass(std::make_unique<GeometryPass>());
@@ -86,21 +83,16 @@ std::optional<Camera3D> SceneRenderer::GetActiveCamera(entt::registry& reg)
             activeCamera.Target = activeCamera.Position + forward;
             activeCamera.Up = glm::normalize(worldUp - activeCamera.Position);
 
-            activeCamera.Projection = (int)camera.Camera.GetProjectionType();
+            activeCamera.Projection = camera.Camera.GetProjectionType();
 
-            // Branch for perspective vs orthographic clip planes and FOV/size
-            if (camera.Camera.GetProjectionType() == Camera::ProjectionType::Perspective)
-            {
-                activeCamera.FovY = glm::degrees(camera.Camera.GetPerspectiveVerticalFOV());
-                activeCamera.NearClip = camera.Camera.GetPerspectiveNearClip();
-                activeCamera.FarClip = camera.Camera.GetPerspectiveFarClip();
-            }
-            else
-            {
-                activeCamera.FovY = camera.Camera.GetOrthographicSize();
-                activeCamera.NearClip = camera.Camera.GetOrthographicNearClip();
-                activeCamera.FarClip = camera.Camera.GetOrthographicFarClip();
-            }
+            activeCamera.FovDegrees = glm::degrees(camera.Camera.GetPerspectiveVerticalFOV());
+            activeCamera.OrthographicSize = camera.Camera.GetOrthographicSize();
+            activeCamera.NearClip = (camera.Camera.GetProjectionType() == Camera::ProjectionType::Perspective)
+                ? camera.Camera.GetPerspectiveNearClip()
+                : camera.Camera.GetOrthographicNearClip();
+            activeCamera.FarClip = (camera.Camera.GetProjectionType() == Camera::ProjectionType::Perspective)
+                ? camera.Camera.GetPerspectiveFarClip()
+                : camera.Camera.GetOrthographicFarClip();
 
             // Compute ViewMatrix
             activeCamera.ViewMatrix = glm::lookAt(activeCamera.Position, activeCamera.Target, activeCamera.Up);
@@ -114,14 +106,14 @@ std::optional<Camera3D> SceneRenderer::GetActiveCamera(entt::registry& reg)
                 uint32_t vh = renderer->GetViewportHeight();
                 if (vh > 0) aspect = static_cast<float>(vw) / static_cast<float>(vh);
             }
-            if (activeCamera.Projection == 0) // Perspective
+            if (activeCamera.Projection == ProjectionType::Perspective)
             {
                 activeCamera.ProjectionMatrix = glm::perspective(
-                    glm::radians(activeCamera.FovY), aspect, activeCamera.NearClip, activeCamera.FarClip);
+                    glm::radians(activeCamera.FovDegrees), aspect, activeCamera.NearClip, activeCamera.FarClip);
             }
-            else // Orthographic
+            else
             {
-                float orthoSize = activeCamera.FovY;
+                float orthoSize = activeCamera.OrthographicSize;
                 activeCamera.ProjectionMatrix = glm::ortho(
                     -aspect * orthoSize, aspect * orthoSize, -orthoSize, orthoSize,
                     activeCamera.NearClip, activeCamera.FarClip);
@@ -151,7 +143,7 @@ void SceneRenderer::RenderScene(entt::registry& registry, const SceneSettings& s
 {
     CH_PROFILE_FUNCTION();
 
-    RenderCommand::EnableDepthTest();
+    GraphicsDevice::Get().EnableDepthTest();
 
     auto environment = settings.Environment;
     if (!environment)
@@ -162,8 +154,9 @@ void SceneRenderer::RenderScene(entt::registry& registry, const SceneSettings& s
     if (environment)
     {
         const auto& envSettings = environment->GetSettings();
-        m_Lighting.CurrentLighting = envSettings.Lighting;
-        m_Lighting.CurrentFog = envSettings.Fog;
+        auto& rendererLighting = ServiceLocator::Get<Renderer>()->GetData().Lighting;
+        rendererLighting.CurrentLighting = envSettings.Lighting;
+        rendererLighting.CurrentFog = envSettings.Fog;
         m_CurrentEnv = envSettings;
     }
 
@@ -172,23 +165,15 @@ void SceneRenderer::RenderScene(entt::registry& registry, const SceneSettings& s
     m_CurrentStats = {};
     m_CurrentStats.EntityCount = (uint32_t)registry.storage<entt::entity>().size();
 
-    ServiceLocator::Get<Renderer>()->BeginScene(camera, nearClip, farClip);
-
     glm::mat4 view = camera.ViewMatrix;
     glm::mat4 proj = camera.ProjectionMatrix;
     Frustum frustum = FromMatrix(proj * view);
 
+    // PrepareLights BEFORE BeginScene so the SSBO contains current-frame data
+    // (BeginScene uploads the SSBO to the GPU).
     PrepareLights(registry, frustum);
 
-    if (m_Lighting.LightsDirty && m_Lighting.LightSSBO)
-    {
-        m_Lighting.LightSSBO->SetData(m_Lighting.Lights, sizeof(RenderLight) * LightingData::MaxLights);
-        m_Lighting.LightsDirty = false;
-    }
-    if (m_Lighting.LightSSBO)
-    {
-        m_Lighting.LightSSBO->BindBase(0);
-    }
+    ServiceLocator::Get<Renderer>()->BeginScene(camera, nearClip, farClip);
 
     RenderContext ctx{registry, settings, camera, options, nearClip, farClip, this};
 
@@ -204,14 +189,27 @@ void SceneRenderer::RenderScene(entt::registry& registry, const SceneSettings& s
     for (auto& pass : m_RenderPasses)
     {
         pass->Execute(ctx);
+
+        // After ShadowPass: propagate shadow state to the Renderer so geometry shaders can sample the shadow map
+        if (pass->GetName() == "ShadowPass")
+        {
+            auto* shadowPass = static_cast<ShadowPass*>(pass.get());
+            auto& rendererData = ServiceLocator::Get<Renderer>()->GetData();
+            rendererData.ShadowsEnabled = shadowPass->HasShadows();
+            rendererData.LightSpaceMatrix = shadowPass->GetLightSpaceMatrix();
+            if (shadowPass->HasShadows() && shadowPass->GetShadowMap())
+            {
+                rendererData.ShadowMapTextureID = shadowPass->GetShadowMap()->GetDepthAttachmentRendererID();
+            }
+            else
+            {
+                rendererData.ShadowMapTextureID = 0;
+            }
+        }
     }
 
     RenderSprites(registry, camera);
     RenderDebug(registry, settings, camera, options);
-    if (options.ShowEditorIcons)
-    {
-        RenderEditorIcons(registry, settings, camera);
-    }
 
     ServiceLocator::Get<Renderer>()->EndScene();
 
@@ -257,7 +255,7 @@ void SceneRenderer::RenderSprites(entt::registry& registry, const Camera3D& came
         auto textureAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(sprite.TexturePath);
         if (textureAsset && textureAsset->IsReady() && textureAsset->GetTexture())
         {
-            ServiceLocator::Get<Renderer>()->DrawSprite(textureAsset->GetTexture()->GetRendererID(),
+            ServiceLocator::Get<Renderer>()->DrawSprite(textureAsset->GetTexture()->GetNativeHandle(),
                                                         transform.WorldTransform, ColorToVec4(sprite.Tint),
                                                         sprite.FlipX, sprite.FlipY);
         }
@@ -266,12 +264,14 @@ void SceneRenderer::RenderSprites(entt::registry& registry, const Camera3D& came
 
 void SceneRenderer::PrepareLights(entt::registry& registry, const Frustum& frustum)
 {
-    for (auto& l : m_Lighting.Lights)
+    auto& lighting = ServiceLocator::Get<Renderer>()->GetData().Lighting;
+
+    for (auto& l : lighting.Lights)
     {
         l.enabled = 0;
     }
-    m_Lighting.LightCount = 0;
-    m_Lighting.LightsDirty = true;
+    lighting.LightCount = 0;
+    lighting.LightsDirty = true;
 
     int lightCount = 0;
     auto view = registry.view<LightComponent>();
@@ -300,10 +300,10 @@ void SceneRenderer::PrepareLights(entt::registry& registry, const Frustum& frust
             break;
         }
 
-        m_Lighting.Lights[lightCount++] = rl;
-        m_Lighting.LightsDirty = true;
+        lighting.Lights[lightCount++] = rl;
+        lighting.LightsDirty = true;
     }
-    m_Lighting.LightCount = lightCount;
+    lighting.LightCount = lightCount;
 }
 
 void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustum& frustum, const glm::vec3& cameraPos)
@@ -637,7 +637,7 @@ void SceneRenderer::DrawModel(Chained::ModelAsset* modelAsset, const glm::mat4& 
         BindMaterialUniforms(activeShader, material, i, model);
 
         uint32_t originalID = material.ShaderID;
-        material.ShaderID = activeShader->GetShader()->GetRendererID();
+        material.ShaderID = activeShader->GetShader()->GetNativeHandle();
 
         activeShader->GetShader()->Bind();
         ServiceLocator::Get<Renderer>()->DrawMesh(model.Meshes[i], material,
@@ -690,39 +690,8 @@ void SceneRenderer::BindShaderUniforms(Chained::ShaderAsset* shaderAsset, const 
     auto shader = shaderAsset->GetShader();
     shader->Bind();
 
-    auto& rd = ServiceLocator::Get<Renderer>()->GetData();
-    const auto& lighting = m_Lighting.CurrentLighting;
-
-    glm::vec4 lightColor = {lighting.LightColor.r / 255.0f, lighting.LightColor.g / 255.0f,
-                            lighting.LightColor.b / 255.0f, lighting.LightColor.a / 255.0f};
-    glm::vec4 skyColor = lightColor;
-    skyColor.w = lighting.Ambient * 0.35f;
-
-    shader->SetVec3("viewPos", rd.CurrentCameraPosition);
-
-    
-    shader->SetFloat("uTime", static_cast<float>(rd.Time));
-    shader->SetFloat("uMode", rd.DiagnosticMode);
-    shader->SetVec3("lightDir", lighting.Direction);
-    shader->SetVec4("lightColor", lightColor);
-    shader->SetFloat("ambient", lighting.Ambient);
-    shader->SetVec4("skyAmbientColor", skyColor);
-    shader->SetInt("uLightCount", rd.LightCount);
-    shader->SetFloat("uExposure", lighting.Exposure);
-    shader->SetFloat("uGamma", lighting.Gamma);
-
-    // Apply Fog
-    const auto& fog = m_Lighting.CurrentFog;
-    int fogEnabled = fog.Enabled ? 1 : 0;
-    glm::vec4 fogColor = {fog.FogColor.r / 255.0f, fog.FogColor.g / 255.0f, fog.FogColor.b / 255.0f,
-                          fog.FogColor.a / 255.0f};
-    shader->SetInt("fogEnabled", fogEnabled);
-    shader->SetVec4("fogColor", fogColor);
-    shader->SetFloat("fogDensity", fog.Density);
-    shader->SetFloat("fogStart", fog.Start);
-    shader->SetFloat("fogEnd", fog.End);
-    shader->SetFloat("fogHeightFalloff", fog.HeightFalloff);
-    shader->SetInt("fogMode", (int)fog.Mode);
+    // Use shared lighting uniforms from Renderer
+    ServiceLocator::Get<Renderer>()->SetLightingUniforms(shaderAsset);
 
     if (!boneMatrices.empty())
     {
@@ -768,10 +737,10 @@ void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Materia
     auto shader = shaderAsset->GetShader();
     shader->Bind();
 
-    auto resolveMap = [](uint32_t currentId, const std::string& path) -> uint32_t {
-        if (currentId > 0)
+    auto resolveMap = [](const std::shared_ptr<Texture>& currentTex, const std::string& path) -> uint32_t {
+        if (currentTex)
         {
-            return currentId;
+            return currentTex->GetNativeHandle();
         }
         if (path.empty() || path.front() == '*')
         {
@@ -781,7 +750,7 @@ void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Materia
         auto texAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(path);
         if (texAsset && texAsset->GetTexture())
         {
-            return texAsset->GetTexture()->GetRendererID();
+            return texAsset->GetTexture()->GetNativeHandle();
         }
         return 0;
     };
@@ -795,7 +764,7 @@ void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Materia
     // 1. Albedo (Texture Unit 0)
     if (albedoMap > 0)
     {
-        RenderCommand::SetTexture(0, albedoMap);
+        GraphicsDevice::Get().SetTexture(0, albedoMap);
         shader->SetInt("texture0", 0);
         shader->SetInt("useTexture", 1);
     }
@@ -809,7 +778,7 @@ void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Materia
 
     if (metallicMap > 0)
     {
-        RenderCommand::SetTexture(1, metallicMap);
+        GraphicsDevice::Get().SetTexture(1, metallicMap);
         shader->SetInt("texture1", 1);
         shader->SetInt("useMetallicMap", 1);
         shader->SetInt("useRoughnessMap", 1);
@@ -823,7 +792,7 @@ void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Materia
     // 3. Normal Map (Texture Unit 2)
     if (normalMap > 0)
     {
-        RenderCommand::SetTexture(2, normalMap);
+        GraphicsDevice::Get().SetTexture(2, normalMap);
         shader->SetInt("texture2", 2);
         shader->SetInt("useNormalMap", 1);
     }
@@ -835,7 +804,7 @@ void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Materia
     // 4. Occlusion Map (Texture Unit 4)
     if (occlusionMap > 0)
     {
-        RenderCommand::SetTexture(4, occlusionMap);
+        GraphicsDevice::Get().SetTexture(4, occlusionMap);
         shader->SetInt("texture4", 4);
         shader->SetInt("useOcclusionMap", 1);
     }
@@ -847,7 +816,7 @@ void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Materia
     // 5. Emissive Map (Texture Unit 5)
     if (emissiveMap > 0)
     {
-        RenderCommand::SetTexture(5, emissiveMap);
+        GraphicsDevice::Get().SetTexture(5, emissiveMap);
         shader->SetInt("texture5", 5);
         shader->SetInt("useEmissiveTexture", 1);
     }
@@ -872,24 +841,24 @@ void SceneRenderer::RenderDebug(entt::registry& registry, const SceneSettings& s
     }
 
     // Save current state
-    bool depthTestEnabled = RenderCommand::IsDepthTestEnabled();
-    bool blendEnabled = RenderCommand::IsBlendEnabled();
+    auto guard = PipelineStateGuard::Capture();
+    guard.WithDepthTest().WithBlend().WithPolygonMode();
 
     // Setup for debug drawing
-    RenderCommand::DisableDepthTest();
-    RenderCommand::SetBlendMode(true);
-    RenderCommand::SetBlendFunc(RendererAPI::BlendFactor::SrcAlpha, RendererAPI::BlendFactor::OneMinusSrcAlpha);
+    GraphicsDevice::Get().DisableDepthTest();
+    GraphicsDevice::Get().SetBlendEnabled(true);
+    GraphicsDevice::Get().SetBlendFunc(GraphicsDevice::BlendFactor::SrcAlpha, GraphicsDevice::BlendFactor::OneMinusSrcAlpha);
 
     // Polygon offset no longer needed since depth test is OFF
-    RenderCommand::SetPolygonOffset(false, 0.0f, 0.0f);
+    GraphicsDevice::Get().SetPolygonOffset(false, 0.0f, 0.0f);
 
     if (options.SetCollisionWireframeMode == 1)
     {
-        RenderCommand::SetPolygonMode(RendererAPI::PolygonMode::Line);
+        GraphicsDevice::Get().SetPolygonMode(GraphicsDevice::PolygonMode::Line);
     }
     else
     {
-        RenderCommand::SetPolygonMode(RendererAPI::PolygonMode::Fill);
+        GraphicsDevice::Get().SetPolygonMode(GraphicsDevice::PolygonMode::Fill);
     }
 
     if (options.ShowDebugColliders)
@@ -902,18 +871,7 @@ void SceneRenderer::RenderDebug(entt::registry& registry, const SceneSettings& s
         DrawCollisionModelBoxDebug(registry);
     }
 
-    // Restore state
-    if (depthTestEnabled)
-    {
-        RenderCommand::EnableDepthTest();
-    }
-    else
-    {
-        RenderCommand::DisableDepthTest();
-    }
-
-    RenderCommand::SetBlendMode(blendEnabled);
-    RenderCommand::SetPolygonOffset(false);
+    DebugRenderer::Flush();
 }
 
 void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRenderOptions& options)
@@ -1002,17 +960,17 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
 
     if (drawSolid)
     {
-        RenderCommand::SetPolygonMode(RendererAPI::PolygonMode::Fill);
+        GraphicsDevice::Get().SetPolygonMode(GraphicsDevice::PolygonMode::Fill);
         drawPass(false);
     }
 
     if (drawWire)
     {
-        RenderCommand::SetPolygonMode(RendererAPI::PolygonMode::Line);
+        GraphicsDevice::Get().SetPolygonMode(GraphicsDevice::PolygonMode::Line);
         drawPass(true);
     }
 
-    RenderCommand::SetPolygonMode(RendererAPI::PolygonMode::Fill);
+    GraphicsDevice::Get().SetPolygonMode(GraphicsDevice::PolygonMode::Fill);
 }
 
 void SceneRenderer::DrawCollisionModelBoxDebug(entt::registry& registry)
@@ -1052,30 +1010,6 @@ void SceneRenderer::DrawCollisionModelBoxDebug(entt::registry& registry)
                                              color);
             }
         }
-    }
-}
-
-void SceneRenderer::RenderEditorIcons(entt::registry& registry, const SceneSettings& settings, const Camera3D& camera)
-{
-    CH_PROFILE_FUNCTION();
-
-    // We can use a simple constant set of icons or load them from the engine resources
-    // For now, let's just draw some billboards
-
-    auto lightView = registry.view<LightComponent, TransformComponent>();
-    for (auto entity : lightView)
-    {
-        auto [light, transform] = lightView.get<LightComponent, TransformComponent>(entity);
-        ServiceLocator::Get<Renderer>()->DrawBillboard(camera, 0, transform.WorldTransform[3], 0.5f,
-                                                       ColorToVec4(light.LightColor));
-    }
-
-    auto cameraView = registry.view<CameraComponent, TransformComponent>();
-    for (auto entity : cameraView)
-    {
-        auto [cam, transform] = cameraView.get<CameraComponent, TransformComponent>(entity);
-        ServiceLocator::Get<Renderer>()->DrawBillboard(camera, 0, transform.WorldTransform[3], 0.5f,
-                                                       glm::vec4(0.2f, 0.5f, 1.0f, 1.0f));
     }
 }
 

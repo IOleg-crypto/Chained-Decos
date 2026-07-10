@@ -10,12 +10,14 @@ layout(location = 5) in vec3 a_Tangent;
 
 uniform mat4 matModel;
 uniform mat4 matNormal;
+uniform mat4 u_LightSpaceMatrix;
 
 out vec3 fragPosition;
 out vec2 fragTexCoord;
 out vec4 fragColor;
 out vec3 fragNormal;
 out mat3 fragTBN;
+out vec4 fragPosLightSpace;
 
 void main()
 {
@@ -28,7 +30,7 @@ void main()
     fragTexCoord = a_TexCoord;
     
     
-    fragColor = vec4(0.0, 0.0, 0.0, 0.0); 
+    fragColor = vec4(1.0, 1.0, 1.0, 1.0);
 
     
     vec3 N = normalize(vec3(matNormal * vec4(vNormal, 0.0)));
@@ -51,6 +53,9 @@ void main()
     
     fragNormal = N;
     fragTBN = mat3(T, B, N);
+
+    // Shadow: transform vertex to light clip space for depth comparison
+    fragPosLightSpace = u_LightSpaceMatrix * vec4(fragPosition, 1.0);
 
     gl_Position = u_ViewProjection * matModel * vec4(vPos, 1.0);
 }

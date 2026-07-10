@@ -127,7 +127,7 @@ std::shared_ptr<ShaderAsset> ShaderStorage::GetById(uint32_t id) const
 {
     for (const auto& [name, shader] : m_Shaders)
     {
-        if (shader->GetShader() && shader->GetShader()->GetRendererID() == id)
+        if (shader->GetShader() && shader->GetShader()->GetNativeHandle() == id)
             return shader;
     }
     return nullptr;

@@ -5,7 +5,7 @@
 #include "engine/graphics/api/buffer.h"
 #include "engine/graphics/api/vertex_array.h"
 #include "engine/graphics/pipeline/geometry_generator.h"
-#include "engine/graphics/pipeline/render_command.h"
+#include "engine/graphics/api/graphics_device.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -16,9 +16,22 @@ namespace DebugRenderer
 void DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color)
 {
     auto& rd = ServiceLocator::Get<Renderer>()->GetData();
+    rd.LineVertexBuffer.push_back({start, color});
+    rd.LineVertexBuffer.push_back({end, color});
+}
+
+void Flush()
+{
+    auto& rd = ServiceLocator::Get<Renderer>()->GetData();
+    if (rd.LineVertexBuffer.empty())
+    {
+        return;
+    }
+
     auto debugShader = rd.Shaders->LoadOrGet("ColliderDebug");
     if (!debugShader || !debugShader->GetShader())
     {
+        rd.LineVertexBuffer.clear();
         return;
     }
 
@@ -28,26 +41,24 @@ void DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& col
     glm::mat4 vp = rd.CurrentProj * rd.CurrentView;
     shader->SetMatrix("u_ViewProj", vp);
     shader->SetMatrix("u_Transform", glm::mat4(1.0f));
-    shader->SetVec4("u_Color", color);
+    shader->SetVec4("u_Color", glm::vec4(1.0f)); // color is per-vertex
 
-    float vertices[] = {start.x, start.y, start.z, end.x, end.y, end.z};
+    uint32_t dataSize = (uint32_t)(rd.LineVertexBuffer.size() * sizeof(LineVertex));
 
-    if (!rd.LineVBO)
+    if (!rd.LineVBO || rd.LineVBOSize < dataSize)
     {
-        rd.LineVBO = VertexBuffer::Create(sizeof(vertices));
-        rd.LineVBO->SetLayout({{ShaderDataType::Float3, "vertexPosition"}});
-    }
-    rd.LineVBO->SetData(vertices, sizeof(vertices));
-
-    if (!rd.LineVAO)
-    {
+        rd.LineVBOSize = std::max(dataSize, (uint32_t)(1024 * sizeof(LineVertex)));
+        rd.LineVBO = VertexBuffer::Create(rd.LineVBOSize);
+        rd.LineVBO->SetLayout({{VertexAttributeType::Float3, "vertexPosition"}, {VertexAttributeType::Float4, "vertexColor"}});
         rd.LineVAO = VertexArray::Create();
         rd.LineVAO->AddVertexBuffer(rd.LineVBO);
     }
 
-    rd.LineVAO->Bind();
-    RenderCommand::DrawLines(rd.LineVAO, 2);
-    rd.LineVAO->Unbind();
+    rd.LineVBO->SetData(rd.LineVertexBuffer.data(), dataSize);
+
+    GraphicsDevice::Get().DrawLines(rd.LineVAO, (uint32_t)rd.LineVertexBuffer.size());
+
+    rd.LineVertexBuffer.clear();
 }
 
 void DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& transform, bool useWireframe)
@@ -73,39 +84,35 @@ void DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& tra
     }
     shader->SetVec4("u_Color", finalColor);
 
-    if (useWireframe)
-    {
-        RenderCommand::SetPolygonMode(RendererAPI::PolygonMode::Line);
-    }
-    else
-    {
-        RenderCommand::SetPolygonMode(RendererAPI::PolygonMode::Fill);
-    }
-
     if (mesh.VAO)
     {
-        RenderCommand::SetBlendMode(true);
-        RenderCommand::SetBlendFunc(RendererAPI::BlendFactor::SrcAlpha, RendererAPI::BlendFactor::OneMinusSrcAlpha);
+        auto guard = PipelineStateGuard::Capture();
+        guard.WithBlend().WithPolygonMode();
+        GraphicsDevice::Get().SetBlendEnabled(true);
+        GraphicsDevice::Get().SetBlendFunc(GraphicsDevice::BlendFactor::SrcAlpha, GraphicsDevice::BlendFactor::OneMinusSrcAlpha);
 
-        mesh.VAO->Bind();
-        if (mesh.TriangleCount > 0)
+        if (useWireframe)
         {
-            RenderCommand::DrawIndexed(mesh.VAO, mesh.TriangleCount * 3);
-        }
-        else if (mesh.VAO->GetIndexBuffer() != nullptr)
-        {
-            RenderCommand::DrawIndexedLines(mesh.VAO, mesh.VAO->GetIndexBuffer()->GetCount());
+            GraphicsDevice::Get().SetPolygonMode(GraphicsDevice::PolygonMode::Line);
         }
         else
         {
-            RenderCommand::DrawLines(mesh.VAO, mesh.VertexCount);
+            GraphicsDevice::Get().SetPolygonMode(GraphicsDevice::PolygonMode::Fill);
         }
-        mesh.VAO->Unbind();
 
-        RenderCommand::SetBlendMode(false);
+        if (mesh.TriangleCount > 0)
+        {
+            GraphicsDevice::Get().DrawIndexed(mesh.VAO, mesh.TriangleCount * 3);
+        }
+        else if (mesh.VAO->GetIndexBuffer() != nullptr)
+        {
+            GraphicsDevice::Get().DrawIndexedLines(mesh.VAO, mesh.VAO->GetIndexBuffer()->GetCount());
+        }
+        else
+        {
+            GraphicsDevice::Get().DrawLines(mesh.VAO, mesh.VertexCount);
+        }
     }
-
-    RenderCommand::SetPolygonMode(RendererAPI::PolygonMode::Fill);
 }
 
 void DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, const glm::vec4& color, bool useWireframe)
@@ -186,9 +193,11 @@ void DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& co
     shaderAsset->GetShader()->SetFloat("gridSize", spacing);
     shaderAsset->GetShader()->SetFloat("uTime", rd.Time);
 
-    RenderCommand::SetBlendMode(true);
-    RenderCommand::SetBlendFunc(RendererAPI::BlendFactor::SrcAlpha, RendererAPI::BlendFactor::OneMinusSrcAlpha);
-    RenderCommand::DisableDepthTest();
+    auto guard = PipelineStateGuard::Capture();
+    guard.WithDepthTest().WithBlend();
+    GraphicsDevice::Get().SetBlendEnabled(true);
+    GraphicsDevice::Get().SetBlendFunc(GraphicsDevice::BlendFactor::SrcAlpha, GraphicsDevice::BlendFactor::OneMinusSrcAlpha);
+    GraphicsDevice::Get().DisableDepthTest();
 
     if (!rd.GridPlaneVAO)
     {
@@ -197,7 +206,7 @@ void DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& co
         uint32_t indices[] = {0, 1, 2, 2, 3, 0};
 
         auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
-        vbo->SetLayout({{ShaderDataType::Float3, "a_Position"}, {ShaderDataType::Float2, "a_TexCoord"}});
+        vbo->SetLayout({{VertexAttributeType::Float3, "a_Position"}, {VertexAttributeType::Float2, "a_TexCoord"}});
 
         rd.GridPlaneVAO = VertexArray::Create();
         rd.GridPlaneVAO->AddVertexBuffer(vbo);
@@ -208,10 +217,7 @@ void DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& co
     glm::mat4 scale = glm::scale(model, glm::vec3(15000.0f, 1.0f, 15000.0f));
     shaderAsset->GetShader()->SetMatrix("matModel", scale);
 
-    rd.GridPlaneVAO->Bind();
-    RenderCommand::DrawIndexed(rd.GridPlaneVAO, 6);
-    rd.GridPlaneVAO->Unbind();
-    RenderCommand::EnableDepthTest();
+    GraphicsDevice::Get().DrawIndexed(rd.GridPlaneVAO, 6);
 }
 } // namespace DebugRenderer
 } // namespace Chained

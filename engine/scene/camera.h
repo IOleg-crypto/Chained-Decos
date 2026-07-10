@@ -9,7 +9,7 @@ namespace Chained
     class Camera
     {
     public:
-        enum class ProjectionType { Perspective = 0, Orthographic = 1 };
+        using ProjectionType = Chained::ProjectionType;
 
         Camera() { RecalculateProjection(); }
         virtual ~Camera() = default;
@@ -38,6 +38,7 @@ namespace Chained
         void SetOrthographicFarClip(float farClip) { m_OrthographicFar = farClip; RecalculateProjection(); }
 
         Camera3D GetCamera3D(const glm::mat4& transform) const;
+        Camera2D GetCamera2D(const glm::mat4& transform) const;
 
     protected:
         void RecalculateProjection();

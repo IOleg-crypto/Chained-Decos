@@ -10,9 +10,12 @@
 #include <Jolt/Physics/PhysicsSettings.h>
 #include <Jolt/Physics/PhysicsSystem.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
+#include <Jolt/Physics/Collision/Shape/MeshShape.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Body/BodyActivationListener.h>
 #include <Jolt/Physics/Collision/ContactListener.h>
+#include <string>
+#include <unordered_map>
 #include <unordered_set>
 
 namespace Chained
@@ -46,6 +49,9 @@ public:
     /// Clear all grounded state (call before/after world reset).
     virtual void ClearGroundedState() override;
 
+    /// Clear the cached mesh shapes (call on world reset).
+    void ClearShapeCache();
+
 private:
     // ── Jolt subsystems ──────────────────────────────────────────────────────
     JPH::PhysicsSystem m_PhysicsSystem;
@@ -57,6 +63,11 @@ private:
     // contact — i.e. a contact whose normal Y component is positive (pointing
     // upward relative to the body being checked).
     std::unordered_set<uint32_t> m_GroundedBodies;
+
+    // ── Mesh shape cache ─────────────────────────────────────────────────────
+    // Built MeshShapes are cached per triangle fingerprint (model path + scale)
+    // so that multiple bodies using the same mesh share a single BVH build.
+    std::unordered_map<std::string, JPH::RefConst<JPH::Shape>> m_MeshShapeCache;
 
     // Contact listener that populates m_GroundedBodies.
     class ContactListenerImpl : public JPH::ContactListener

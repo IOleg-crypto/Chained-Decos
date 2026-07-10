@@ -11,7 +11,7 @@
 #include "engine/assets/asset_manager.h"
 #include "engine/core/profiler.h"
 #include "engine/common/thread_pool.h"
-#include "engine/graphics/pipeline/render_command.h"
+#include "engine/graphics/api/graphics_device.h"
 #include "engine/graphics/ui/ui_renderer.h"
 #include "engine/physics/physics.h"
 #include "engine/project/project.h"
@@ -287,6 +287,16 @@ void EditorLayer::OnUpdate(Timestep ts)
 {
     CH_PROFILE_FUNCTION();
 
+    if (!m_PendingSceneTransitionPath.empty())
+    {
+        m_SceneManager->OpenScene(m_PendingSceneTransitionPath);
+        
+        // Ensure play mode continues after scene load
+        m_SceneManager->SetSceneState(SceneState::Play);
+        
+        m_PendingSceneTransitionPath.clear();
+    }
+
     // 1. Scene manager updates internal transitions and the current active scene
     m_SceneManager->OnUpdate(ts);
 
@@ -338,7 +348,7 @@ void EditorLayer::OnUpdate(Timestep ts)
 
 void EditorLayer::OnRender(Timestep ts)
 {
-    RenderCommand::Clear({25, 25, 25, 255});
+    GraphicsDevice::Get().Clear({25, 25, 25, 255});
 }
 
 void EditorLayer::OnImGuiRender()

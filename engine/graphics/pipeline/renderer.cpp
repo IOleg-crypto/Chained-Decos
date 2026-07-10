@@ -1,6 +1,6 @@
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/pipeline/geometry_generator.h"
-#include "engine/graphics/pipeline/render_command.h"
+#include "engine/graphics/api/graphics_device.h"
 #include "engine/graphics/pipeline/renderer_types.h"
 #include "engine/graphics/pipeline/shader_storage.h"
 #include "engine/assets/asset_manager.h"
@@ -28,7 +28,8 @@ void Renderer::Initialize()
         return;
     }
 
-    RenderCommand::Initialize();
+    GraphicsDevice::Set(GraphicsDevice::Create());
+    GraphicsDevice::Get().Initialize();
 
     // Initialize SSBO for lights using abstraction
     m_Data->Lighting.LightSSBO = StorageBuffer::Create(sizeof(RenderLight) * LightingData::MaxLights);
@@ -43,7 +44,7 @@ void Renderer::Initialize()
 
         m_Data->FullscreenQuadVAO = VertexArray::Create();
         auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
-        vbo->SetLayout({{ShaderDataType::Float3, "vertexPosition"}, {ShaderDataType::Float2, "vertexTexCoord"}});
+        vbo->SetLayout({{VertexAttributeType::Float3, "vertexPosition"}, {VertexAttributeType::Float2, "vertexTexCoord"}});
         m_Data->FullscreenQuadVAO->AddVertexBuffer(vbo);
         auto ibo = IndexBuffer::Create(indices, 6);
         m_Data->FullscreenQuadVAO->SetIndexBuffer(ibo);
@@ -68,6 +69,7 @@ void Renderer::LoadEngineResources()
     shaders.LoadOrGet("Lighting");
     shaders.LoadOrGet("Skinned");
     shaders.LoadOrGet("Unlit");
+    shaders.LoadOrGet("Billboard");
 
     CH_CORE_INFO("[Renderer] LoadEngineResources done. {} shader(s) loaded.", shaders.GetNames().size());
 }
@@ -102,7 +104,7 @@ void Renderer::Shutdown()
     m_Data->LineVBO.reset();
     m_Data->LineVAO.reset();
 
-    RenderCommand::Shutdown();
+    GraphicsDevice::Get().Shutdown();
 }
 
 Renderer::Renderer()
@@ -135,7 +137,7 @@ void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
         float diagMode = m_Data->DiagnosticMode;
         float exposure = m_Data->Lighting.CurrentLighting.Exposure;
         float ambient = m_Data->Lighting.CurrentLighting.Ambient;
-        float lightCount = (float)m_Data->LightCount;
+        float lightCount = (float)m_Data->Lighting.LightCount;
         float gamma = m_Data->Lighting.CurrentLighting.Gamma;
 
         shader->SetVec3("viewPos", camera.Position);
@@ -160,12 +162,12 @@ void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
         shader->SetFloat("uExposure", exposure);
         shader->SetFloat("uGamma", gamma);
 
-        ApplyFogUniforms(lightingShaderAsset);
+        ApplyFogUniforms(lightingShaderAsset.get());
         if (m_Data->Lighting.LightSSBO)
         {
             m_Data->Lighting.LightSSBO->BindBase(0);
         }
-        m_Data->CurrentShaderId = shader->GetRendererID();
+        m_Data->CurrentShaderId = shader->GetNativeHandle();
     }
 
     // --- Direct glm::mat4 Management (Pure OpenGL style) ---
@@ -176,13 +178,13 @@ void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
     int width = m_ViewportWidth;
     int height = m_ViewportHeight;
     float aspect = (height > 0) ? (float)width / (float)height : 1.0f;
-    if (camera.Projection == 0 /* CAMERA_PERSPECTIVE */)
+    if (camera.Projection == ProjectionType::Perspective)
     {
-        m_Data->CurrentProj = glm::perspective(glm::radians(camera.FovY), aspect, nearClip, farClip);
+        m_Data->CurrentProj = glm::perspective(glm::radians(camera.FovDegrees), aspect, nearClip, farClip);
     }
     else
     {
-        float top = camera.FovY / 2.0f;
+        float top = camera.FovDegrees / 2.0f;
         float right = top * aspect;
         m_Data->CurrentProj = glm::ortho(-right, right, -top, top, nearClip, farClip);
     }
@@ -204,12 +206,12 @@ void Renderer::Clear(const glm::vec4& color)
 {
     Color chColor((unsigned char)(color.r * 255), (unsigned char)(color.g * 255), (unsigned char)(color.b * 255),
                   (unsigned char)(color.a * 255));
-    RenderCommand::Clear(chColor);
+    GraphicsDevice::Get().Clear(chColor);
 }
 
 void Renderer::SetViewport(int x, int y, int width, int height)
 {
-    RenderCommand::SetViewport(x, y, width, height);
+    GraphicsDevice::Get().SetViewport(x, y, width, height);
 }
 
 void Renderer::DrawMesh(const Mesh& mesh, const Material& material, const glm::mat4& transform)
@@ -250,11 +252,11 @@ void Renderer::DrawMesh(const Mesh& mesh, const Material& material, const glm::m
         mesh.VAO->Bind();
         if (mesh.TriangleCount > 0)
         {
-            RenderCommand::DrawIndexed(mesh.VAO, mesh.TriangleCount * 3);
+            GraphicsDevice::Get().DrawIndexed(mesh.VAO, mesh.TriangleCount * 3);
         }
         else
         {
-            RenderCommand::DrawArrays(mesh.VertexCount);
+            GraphicsDevice::Get().DrawArrays(mesh.VertexCount);
         }
         mesh.VAO->Unbind();
     }
@@ -303,7 +305,7 @@ void Renderer::DrawMeshInstanced(const Mesh& mesh, const Material& material, con
         // Reallocate if needed (starting at 1024 instances or required size)
         m_Data->InstanceBufferCapacity = std::max(dataSize, (uint32_t)(1024 * sizeof(glm::mat4)));
         m_Data->InstanceBuffer = VertexBuffer::Create(m_Data->InstanceBufferCapacity);
-        m_Data->InstanceBuffer->SetLayout({{ShaderDataType::Mat4, "a_InstanceTransform", false, true}});
+        m_Data->InstanceBuffer->SetLayout({{VertexAttributeType::Mat4, "a_InstanceTransform", false, true}});
 
         // Clear VAO cache because the VBO handle changed
         m_Data->InstancedVAOCache.clear();
@@ -327,11 +329,11 @@ void Renderer::DrawMeshInstanced(const Mesh& mesh, const Material& material, con
     instancedVAO->Bind();
     if (mesh.TriangleCount > 0)
     {
-        RenderCommand::DrawIndexedInstanced(instancedVAO, (uint32_t)transforms.size(), mesh.TriangleCount * 3);
+        GraphicsDevice::Get().DrawIndexedInstanced(instancedVAO, (uint32_t)transforms.size(), mesh.TriangleCount * 3);
     }
     else
     {
-        RenderCommand::DrawArraysInstanced(mesh.VertexCount, (uint32_t)transforms.size());
+        GraphicsDevice::Get().DrawArraysInstanced(mesh.VertexCount, (uint32_t)transforms.size());
     }
     instancedVAO->Unbind();
 }
@@ -355,9 +357,9 @@ void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float 
     }
 
     // 1. Prepare Render State
-    RenderCommand::SetDepthFunc(RendererAPI::DepthFunc::LEqual);
-    RenderCommand::SetCullMode(RendererAPI::CullMode::None);
-    RenderCommand::DisableDepthMask();
+    GraphicsDevice::Get().SetDepthFunc(GraphicsDevice::DepthFunc::LEqual);
+    GraphicsDevice::Get().SetCullMode(GraphicsDevice::CullMode::None);
+    GraphicsDevice::Get().DisableDepthMask();
 
     // 2. Setup Uniforms
     shaderAsset->GetShader()->Bind();
@@ -373,65 +375,65 @@ void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float 
     shaderAsset->GetShader()->SetInt("u_IsHDR", isHDR ? 1 : 0);
     shaderAsset->GetShader()->SetInt("u_VFlipped", flipped ? 1 : 0);
 
-    ApplyFogUniforms(shaderAsset);
+    ApplyFogUniforms(shaderAsset.get());
 
     // 3. Bind Textures and Draw Mesh
     if (skyboxMode == 2)
     {
-        RenderCommand::SetTexture(0, textureId, true);
+        GraphicsDevice::Get().SetTexture(0, textureId, true);
         shaderAsset->GetShader()->SetInt("u_Cubemap", 0);
 
         if (m_Data->Skybox.SkyboxCubeModel && !m_Data->Skybox.SkyboxCubeModel->Meshes.empty())
         {
             auto& mesh = m_Data->Skybox.SkyboxCubeModel->Meshes[0];
             mesh.VAO->Bind();
-            RenderCommand::DrawIndexed(mesh.VAO, 36);
+            GraphicsDevice::Get().DrawIndexed(mesh.VAO, 36);
             mesh.VAO->Unbind();
         }
     }
     else if (skyboxMode == 1)
     {
-        RenderCommand::SetTexture(0, textureId);
+        GraphicsDevice::Get().SetTexture(0, textureId);
         shaderAsset->GetShader()->SetInt("u_CrossMap", 0);
 
         if (m_Data->Skybox.SkyboxCubeModel && !m_Data->Skybox.SkyboxCubeModel->Meshes.empty())
         {
             auto& mesh = m_Data->Skybox.SkyboxCubeModel->Meshes[0];
             mesh.VAO->Bind();
-            RenderCommand::DrawIndexed(mesh.VAO, 36);
+            GraphicsDevice::Get().DrawIndexed(mesh.VAO, 36);
             mesh.VAO->Unbind();
         }
     }
     else if (skyboxMode == 0)
     {
-        RenderCommand::SetTexture(0, textureId);
+        GraphicsDevice::Get().SetTexture(0, textureId);
         shaderAsset->GetShader()->SetInt("u_Panorama", 0);
 
         if (m_Data->Skybox.SkyboxSphereModel && !m_Data->Skybox.SkyboxSphereModel->Meshes.empty())
         {
             auto& mesh = m_Data->Skybox.SkyboxSphereModel->Meshes[0];
             mesh.VAO->Bind();
-            RenderCommand::DrawIndexed(mesh.VAO, mesh.TriangleCount * 3);
+            GraphicsDevice::Get().DrawIndexed(mesh.VAO, mesh.TriangleCount * 3);
             mesh.VAO->Unbind();
         }
     }
 
     // 4. Restore Render State
-    RenderCommand::SetDepthFunc(RendererAPI::DepthFunc::Less);
-    RenderCommand::SetCullMode(RendererAPI::CullMode::Back);
-    RenderCommand::EnableDepthMask();
+    GraphicsDevice::Get().SetDepthFunc(GraphicsDevice::DepthFunc::Less);
+    GraphicsDevice::Get().SetCullMode(GraphicsDevice::CullMode::Back);
+    GraphicsDevice::Get().EnableDepthMask();
 }
 
 void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const glm::vec3& position, float size,
                              const glm::vec4& tint)
 {
-    auto unlitShaderAsset = m_Data->Shaders->LoadOrGet("Unlit");
-    if (!unlitShaderAsset || !unlitShaderAsset->GetShader() || textureId == 0)
+    auto billboardShaderAsset = m_Data->Shaders->LoadOrGet("Billboard");
+    if (!billboardShaderAsset || !billboardShaderAsset->GetShader() || textureId == 0)
     {
         return;
     }
 
-    auto shader = unlitShaderAsset->GetShader();
+    auto shader = billboardShaderAsset->GetShader();
     shader->Bind();
 
     glm::vec3 look = glm::normalize(camera.Position - position);
@@ -453,35 +455,31 @@ void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const g
     model[3] = glm::vec4(position, 1.0f);
 
     shader->SetMatrix("mvp", m_Data->CurrentProj * m_Data->CurrentView * model);
-    shader->SetMatrix("matModel", model);
-    shader->SetMatrix("matNormal", glm::transpose(glm::inverse(model)));
-    shader->SetVec3("viewPos", camera.Position);
     shader->SetVec4("colDiffuse", tint);
-    shader->SetVec4("colEmissive", glm::vec4(0.0f));
-    shader->SetInt("useTexture", 1);
-    shader->SetInt("useEmissiveTexture", 0);
-    shader->SetFloat("emissiveIntensity", 0.0f);
 
-    RenderCommand::SetTexture(0, textureId);
+    GraphicsDevice::Get().SetTexture(0, textureId);
     shader->SetInt("texture0", 0);
 
-    const bool blendWasEnabled = RenderCommand::IsBlendEnabled();
-    const bool cullWasEnabled = RenderCommand::IsCullFaceEnabled();
+    const bool blendWasEnabled = GraphicsDevice::Get().IsBlendEnabled();
+    const bool cullWasEnabled = GraphicsDevice::Get().IsCullFaceEnabled();
 
-    RenderCommand::SetBlendMode(true);
-    RenderCommand::SetBlendFunc(RendererAPI::BlendFactor::SrcAlpha, RendererAPI::BlendFactor::OneMinusSrcAlpha);
-    RenderCommand::SetCullMode(RendererAPI::CullMode::None); // Using abstraction layer safe call
+    GraphicsDevice::Get().SetBlendEnabled(true);
+    GraphicsDevice::Get().SetBlendFunc(GraphicsDevice::BlendFactor::SrcAlpha, GraphicsDevice::BlendFactor::OneMinusSrcAlpha);
+    GraphicsDevice::Get().SetCullMode(GraphicsDevice::CullMode::None); // Using abstraction layer safe call
 
     if (!m_Data->BillboardVAO)
     {
         float vertices[] = {
-            -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.5f,  -0.5f, 0.0f, 1.0f, 0.0f,
-            0.5f,  0.5f,  0.0f, 1.0f, 1.0f, -0.5f, 0.5f,  0.0f, 0.0f, 1.0f,
+            // x,     y,     z,     u,    v,    nx,   ny,   nz
+            -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+             0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+             0.5f,  0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+            -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
         };
         uint32_t indices[] = {0, 1, 2, 2, 3, 0};
 
         auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
-        vbo->SetLayout({{ShaderDataType::Float3, "a_Position"}, {ShaderDataType::Float2, "a_TexCoord"}});
+        vbo->SetLayout({{VertexAttributeType::Float3, "a_Position"}, {VertexAttributeType::Float2, "a_TexCoord"}, {VertexAttributeType::Float3, "a_Normal"}});
 
         m_Data->BillboardVAO = VertexArray::Create();
         m_Data->BillboardVAO->AddVertexBuffer(vbo);
@@ -490,11 +488,11 @@ void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const g
     }
 
     m_Data->BillboardVAO->Bind();
-    RenderCommand::DrawIndexed(m_Data->BillboardVAO, 6);
+    GraphicsDevice::Get().DrawIndexed(m_Data->BillboardVAO, 6);
     m_Data->BillboardVAO->Unbind();
 
-    RenderCommand::SetCullMode(cullWasEnabled ? RendererAPI::CullMode::Back : RendererAPI::CullMode::None);
-    RenderCommand::SetBlendMode(blendWasEnabled);
+    GraphicsDevice::Get().SetCullMode(cullWasEnabled ? GraphicsDevice::CullMode::Back : GraphicsDevice::CullMode::None);
+    GraphicsDevice::Get().SetBlendEnabled(blendWasEnabled);
 }
 
 void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextureId, const Camera3D& camera,
@@ -549,7 +547,7 @@ void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextu
         shader->SetFloat("uExposure", m_Data->Lighting.CurrentLighting.Exposure);
         shader->SetFloat("uGamma", m_Data->Lighting.CurrentLighting.Gamma);
 
-        ApplyFogUniforms(shaderAsset);
+        ApplyFogUniforms(shaderAsset.get());
 
         // 2. Set Custom Uniforms using type-safe std::visit
         for (const auto& u : uniforms)
@@ -584,24 +582,24 @@ void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextu
         }
 
         // 3. Bind Textures
-        RenderCommand::SetTexture(0, screenTextureId);
+        GraphicsDevice::Get().SetTexture(0, screenTextureId);
         shader->SetInt("texture0", 0);
 
-        RenderCommand::SetTexture(1, depthTextureId);
+        GraphicsDevice::Get().SetTexture(1, depthTextureId);
         shader->SetInt("texture1", 1);
 
-        RenderCommand::DisableDepthTest();
+        GraphicsDevice::Get().DisableDepthTest();
 
         if (m_Data->FullscreenQuadVAO)
         {
             m_Data->FullscreenQuadVAO->Bind();
-            RenderCommand::DrawIndexed(m_Data->FullscreenQuadVAO, 6);
+            GraphicsDevice::Get().DrawIndexed(m_Data->FullscreenQuadVAO, 6);
             m_Data->FullscreenQuadVAO->Unbind();
         }
 
-        RenderCommand::SetBlendMode(false);
-        RenderCommand::EnableDepthTest();
-        RenderCommand::SetCullMode(RendererAPI::CullMode::Back);
+        GraphicsDevice::Get().SetBlendEnabled(false);
+        GraphicsDevice::Get().EnableDepthTest();
+        GraphicsDevice::Get().SetCullMode(GraphicsDevice::CullMode::Back);
     }
 }
 
@@ -616,7 +614,7 @@ void Renderer::SetLight(int index, const RenderLight& light)
 
 void Renderer::SetLightCount(int count)
 {
-    m_Data->LightCount = count;
+    m_Data->Lighting.LightCount = count;
 }
 
 void Renderer::ClearLights()
@@ -625,7 +623,7 @@ void Renderer::ClearLights()
     {
         m_Data->Lighting.Lights[i].enabled = 0;
     }
-    m_Data->LightCount = 0;
+    m_Data->Lighting.LightCount = 0;
     m_Data->Lighting.LightsDirty = true;
 }
 
@@ -656,7 +654,48 @@ void Renderer::Update(Timestep ts)
     UpdateTime(ts);
 }
 
-void Renderer::ApplyFogUniforms(const std::shared_ptr<ShaderAsset>& shader)
+void Renderer::SetLightingUniforms(ShaderAsset* shaderAsset)
+{
+    if (!shaderAsset || !shaderAsset->GetShader())
+        return;
+
+    const auto& lighting = m_Data->Lighting.CurrentLighting;
+    auto shader = shaderAsset->GetShader();
+    shader->Bind();
+
+    glm::vec4 lightColor = {lighting.LightColor.r / 255.0f, lighting.LightColor.g / 255.0f,
+                            lighting.LightColor.b / 255.0f, lighting.LightColor.a / 255.0f};
+    glm::vec4 skyColor = lightColor;
+    skyColor.w = lighting.Ambient * 0.35f;
+
+    shader->SetVec3("viewPos", m_Data->CurrentCameraPosition);
+    shader->SetFloat("uTime", static_cast<float>(m_Data->Time));
+    shader->SetFloat("uMode", m_Data->DiagnosticMode);
+    shader->SetVec3("lightDir", lighting.Direction);
+    shader->SetVec4("lightColor", lightColor);
+    shader->SetFloat("ambient", lighting.Ambient);
+    shader->SetVec4("skyAmbientColor", skyColor);
+        shader->SetInt("uLightCount", m_Data->Lighting.LightCount);
+    shader->SetFloat("uExposure", lighting.Exposure);
+    shader->SetFloat("uGamma", lighting.Gamma);
+
+    if (m_Data->Lighting.LightSSBO)
+        m_Data->Lighting.LightSSBO->BindBase(0);
+
+    // Shadow uniforms
+    shader->SetInt("u_ShadowsEnabled", m_Data->ShadowsEnabled ? 1 : 0);
+    shader->SetMatrix("u_LightSpaceMatrix", m_Data->LightSpaceMatrix);
+    shader->SetFloat("u_ShadowBias", m_Data->ShadowBias);
+    if (m_Data->ShadowsEnabled && m_Data->ShadowMapTextureID > 0)
+    {
+        GraphicsDevice::Get().SetTexture(6, m_Data->ShadowMapTextureID);
+        shader->SetInt("u_ShadowMap", 6);
+    }
+
+    ApplyFogUniforms(shaderAsset);
+}
+
+void Renderer::ApplyFogUniforms(ShaderAsset* shader)
 {
     const auto& fog = m_Data->Lighting.CurrentFog;
     int enabled = fog.Enabled ? 1 : 0;
@@ -670,6 +709,7 @@ void Renderer::ApplyFogUniforms(const std::shared_ptr<ShaderAsset>& shader)
     shader->GetShader()->SetFloat("fogStart", fog.Start);
     shader->GetShader()->SetFloat("fogEnd", fog.End);
     shader->GetShader()->SetInt("fogMode", mode);
+    shader->GetShader()->SetFloat("fogHeightFalloff", fog.HeightFalloff);
 }
 
 void Renderer::InitializeSkybox()
@@ -732,23 +772,26 @@ void Renderer::DrawSprite(uint32_t textureId, const glm::mat4& transform, const 
     shader->SetVec4("u_Tint", tint);
     shader->SetVec2("u_Flip", glm::vec2(flipX ? 1.0f : 0.0f, flipY ? 1.0f : 0.0f));
 
-    const bool blendWasEnabled = RenderCommand::IsBlendEnabled();
-    const bool cullWasEnabled = RenderCommand::IsCullFaceEnabled();
+    const bool blendWasEnabled = GraphicsDevice::Get().IsBlendEnabled();
+    const bool cullWasEnabled = GraphicsDevice::Get().IsCullFaceEnabled();
 
-    RenderCommand::SetBlendMode(true);
-    RenderCommand::SetBlendFunc(RendererAPI::BlendFactor::SrcAlpha, RendererAPI::BlendFactor::OneMinusSrcAlpha);
-    RenderCommand::SetCullMode(RendererAPI::CullMode::None);
+    GraphicsDevice::Get().SetBlendEnabled(true);
+    GraphicsDevice::Get().SetBlendFunc(GraphicsDevice::BlendFactor::SrcAlpha, GraphicsDevice::BlendFactor::OneMinusSrcAlpha);
+    GraphicsDevice::Get().SetCullMode(GraphicsDevice::CullMode::None);
 
     if (!m_Data->SpriteVAO)
     {
         float vertices[] = {
-            -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.5f,  -0.5f, 0.0f, 1.0f, 0.0f,
-            0.5f,  0.5f,  0.0f, 1.0f, 1.0f, -0.5f, 0.5f,  0.0f, 0.0f, 1.0f,
+            // x,     y,     z,     u,    v,    nx,   ny,   nz
+            -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+             0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+             0.5f,  0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+            -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
         };
         uint32_t indices[] = {0, 1, 2, 2, 3, 0};
 
         auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
-        vbo->SetLayout({{ShaderDataType::Float3, "a_Position"}, {ShaderDataType::Float2, "a_TexCoord"}});
+        vbo->SetLayout({{VertexAttributeType::Float3, "a_Position"}, {VertexAttributeType::Float2, "a_TexCoord"}, {VertexAttributeType::Float3, "a_Normal"}});
 
         m_Data->SpriteVAO = VertexArray::Create();
         m_Data->SpriteVAO->AddVertexBuffer(vbo);
@@ -759,12 +802,12 @@ void Renderer::DrawSprite(uint32_t textureId, const glm::mat4& transform, const 
     if (m_Data->SpriteVAO)
     {
         m_Data->SpriteVAO->Bind();
-        RenderCommand::DrawIndexed(m_Data->SpriteVAO, 6);
+        GraphicsDevice::Get().DrawIndexed(m_Data->SpriteVAO, 6);
         m_Data->SpriteVAO->Unbind();
     }
 
-    RenderCommand::SetCullMode(cullWasEnabled ? RendererAPI::CullMode::Back : RendererAPI::CullMode::None);
-    RenderCommand::SetBlendMode(blendWasEnabled);
+    GraphicsDevice::Get().SetCullMode(cullWasEnabled ? GraphicsDevice::CullMode::Back : GraphicsDevice::CullMode::None);
+    GraphicsDevice::Get().SetBlendEnabled(blendWasEnabled);
 }
 
 } // namespace Chained

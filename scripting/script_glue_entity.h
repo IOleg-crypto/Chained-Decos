@@ -77,6 +77,8 @@ CH_SCRIPT_FUNC void PlayerComponent_SetLookSensitivity(uint64_t entityID, float 
 CH_SCRIPT_FUNC bool SpawnComponent_IsActive(uint64_t entityID);
 
 CH_SCRIPT_FUNC void SpawnComponent_GetSpawnPoint(uint64_t entityID, glm::vec3* outPoint);
+CH_SCRIPT_FUNC bool SpawnComponent_GetRenderSpawnZoneInScene(uint64_t entityID);
+CH_SCRIPT_FUNC void SpawnComponent_GetZoneSize(uint64_t entityID, glm::vec3* outSize);
 
 // ── AnimationComponent ──────────────────────────────────────────────────
 CH_SCRIPT_FUNC int AnimationComponent_GetCurrentAnimationIndex(uint64_t entityID);

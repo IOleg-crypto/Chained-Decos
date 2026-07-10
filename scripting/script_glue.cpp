@@ -145,8 +145,10 @@ void ScriptGlue::RegisterInternalCalls(Coral::ManagedAssembly& assembly)
     assembly.AddInternalCall("Chained.ComboBoxControl", "ComboBoxControl_GetItem_Ptr",           (void*)&ComboBoxControl_GetItem);
 
     // ── SpawnComponent ────────────────────────────────────────────────
-    assembly.AddInternalCall("Chained.SpawnComponent", "SpawnComponent_IsActive_Ptr",      (void*)&SpawnComponent_IsActive);
-    assembly.AddInternalCall("Chained.SpawnComponent", "SpawnComponent_GetSpawnPoint_Ptr",  (void*)&SpawnComponent_GetSpawnPoint);
+    assembly.AddInternalCall("Chained.SpawnComponent", "SpawnComponent_IsActive_Ptr",                    (void*)&SpawnComponent_IsActive);
+    assembly.AddInternalCall("Chained.SpawnComponent", "SpawnComponent_GetSpawnPoint_Ptr",              (void*)&SpawnComponent_GetSpawnPoint);
+    assembly.AddInternalCall("Chained.SpawnComponent", "SpawnComponent_GetRenderSpawnZoneInScene_Ptr",  (void*)&SpawnComponent_GetRenderSpawnZoneInScene);
+    assembly.AddInternalCall("Chained.SpawnComponent", "SpawnComponent_GetZoneSize_Ptr",               (void*)&SpawnComponent_GetZoneSize);
 
     // ── Shader ────────────────────────────────────────────────────────
     assembly.AddInternalCall("Chained.ShaderComponent", "Shader_SetFloat_Ptr",  (void*)&Shader_SetFloat);

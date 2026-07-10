@@ -1,15 +1,15 @@
 #include "engine/graphics/api/storage_buffer.h"
-#include "engine/graphics/api/renderer_api.h"
-#include "opengl/opengl_storage_buffer.h"
+#include "engine/graphics/api/graphics_device.h"
+#include "opengl/gl_storage_buffer.h"
 
 namespace Chained
 {
     std::shared_ptr<StorageBuffer> StorageBuffer::Create(uint32_t size)
     {
-        switch (RendererAPI::GetAPI())
+        switch (GraphicsDevice::GetAPI())
         {
-            case RendererAPI::API::None:    return nullptr;
-            case RendererAPI::API::OpenGL:  return std::make_shared<OpenGLStorageBuffer>(size);
+            case GraphicsDevice::API::None:    return nullptr;
+            case GraphicsDevice::API::OpenGL:  return std::make_shared<GLStorageBuffer>(size);
                 default : return nullptr;
         }
 

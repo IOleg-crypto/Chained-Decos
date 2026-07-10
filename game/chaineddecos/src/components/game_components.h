@@ -17,7 +17,6 @@ struct SpawnComponent
     glm::vec3 ZoneSize = {1.0f, 1.0f, 1.0f};
     bool RenderSpawnZoneInScene = true;
     glm::vec3 SpawnPoint = {0.0f, 0.0f, 0.0f};
-    std::string TexturePath;
 
     static const char* GetStaticName()
     {
@@ -30,7 +29,6 @@ struct SpawnComponent
         UIMeta ZoneSize = {.Tooltip = "Size of the generation zone (X, Y, Z)"};
         UIMeta RenderSpawnZoneInScene = {.Tooltip = "Render the zone boundaries in the viewport"};
         UIMeta SpawnPoint = {.Tooltip = "Local or world spawn point position"};
-        UIMeta TexturePath = {.Tooltip = "Path to the texture asset (supports png, jpg, bmp, tga)"};
     };
 };
 CH_MARK_RFL(SpawnComponent);
