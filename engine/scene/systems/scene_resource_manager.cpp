@@ -232,9 +232,6 @@ void SceneResourceManager::OnRuntimeStart(Scene* scene)
         registry.ctx().emplace<IPhysicsWorld*>(world);
     }
 
-    auto& physics = (*ServiceLocator::Get<Physics>());
-    CH_CORE_INFO("SceneResourceManager::OnRuntimeStart - Initializing bodies");
-    physics.InitializeBodies(scene);
     CH_CORE_INFO("SceneResourceManager::OnRuntimeStart - Done");
 }
 

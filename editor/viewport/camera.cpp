@@ -33,7 +33,10 @@ void EditorCameraController::OnUpdate(Entity cameraEntity, Timestep ts, const gl
     bool hasEntity =
         cameraEntity && cameraEntity.HasComponent<TransformComponent>() && cameraEntity.HasComponent<CameraComponent>();
 
-    if (hasEntity && !Core::Input::IsMouseButtonDown(MouseCode::ButtonRight) &&
+    // In Play mode: sync editor camera FROM TransformComponent (e.g. scripts or inspector changes).
+    // In Edit mode: skip — the editor camera is authoritative, TransformComponent write-back happens below.
+    if (hasEntity && EditorLayer::Get().GetSceneState() == SceneState::Play &&
+        !Core::Input::IsMouseButtonDown(MouseCode::ButtonRight) &&
         !Core::Input::IsMouseButtonDown(MouseCode::ButtonMiddle))
     {
         auto& tc = cameraEntity.GetComponent<TransformComponent>();
@@ -127,6 +130,8 @@ void EditorCameraController::OnUpdate(Entity cameraEntity, Timestep ts, const gl
         MouseZoom(wheel);
     }
 
+    // Write back rotation and position to the entity's TransformComponent in both
+    // Play and Edit modes so the inspector stays in sync with the editor camera.
     if (hasEntity)
     {
         auto& tc = cameraEntity.GetComponent<TransformComponent>();

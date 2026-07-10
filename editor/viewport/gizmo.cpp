@@ -32,7 +32,7 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
     glm::mat4 modelMat = transform.WorldTransform;
 
     // 1. Setup ImGuizmo
-    ImGuizmo::SetOrthographic(camera.Projection != 0);
+    ImGuizmo::SetOrthographic(camera.Projection != ProjectionType::Perspective);
     ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList()); 
 
     // Ensure we are using absolute screen coordinates for SetRect
@@ -59,13 +59,13 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
     glm::mat4 projection;
 
     const float aspect = viewportSize.x / viewportSize.y;
-    if (camera.Projection == 0) // Perspective
+    if (camera.Projection == ProjectionType::Perspective)
     {
-        projection = glm::perspective(glm::radians(camera.FovY), aspect, camera.NearClip, camera.FarClip);
+        projection = glm::perspective(glm::radians(camera.FovDegrees), aspect, camera.NearClip, camera.FarClip);
     }
-    else // Orthographic
+    else
     {
-        float top = camera.FovY * 0.5f;
+        float top = camera.OrthographicSize * 0.5f;
         float right = top * aspect;
         projection = glm::ortho(-right, right, -top, top, camera.NearClip, camera.FarClip);
     }

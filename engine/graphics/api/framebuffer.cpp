@@ -1,15 +1,15 @@
 #include "engine/graphics/api/framebuffer.h"
-#include "engine/graphics/api/renderer_api.h"
-#include "opengl/opengl_framebuffer.h"
+#include "engine/graphics/api/graphics_device.h"
+#include "opengl/gl_framebuffer.h"
 
 namespace Chained
 {
 std::shared_ptr<Framebuffer> Framebuffer::Create(const FramebufferSpecification& spec)
 {
-    switch (RendererAPI::GetAPI())
+    switch (GraphicsDevice::GetAPI())
     {
-        case RendererAPI::API::None:    return nullptr;
-        case RendererAPI::API::OpenGL:  return std::make_shared<OpenGLFramebuffer>(spec);
+        case GraphicsDevice::API::None:    return nullptr;
+        case GraphicsDevice::API::OpenGL:  return std::make_shared<GLFramebuffer>(spec);
         default : return nullptr;
     }
 }

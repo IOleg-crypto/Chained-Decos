@@ -91,9 +91,14 @@ struct RendererData
     float DiagnosticMode = 0.0f;
     glm::vec3 CurrentCameraPosition = {0.0f, 0.0f, 0.0f};
     Timestep Time = 0.0f;
-    int LightCount = 0;
     unsigned int CurrentShaderId = 0;
     EnvironmentSettings CurrentEnv;
+
+    // Shadow state (set by SceneRenderer after ShadowPass)
+    bool ShadowsEnabled = false;
+    uint32_t ShadowMapTextureID = 0;
+    glm::mat4 LightSpaceMatrix = glm::mat4(1.0f);
+    float ShadowBias = 0.005f;
 
     glm::mat4 CurrentView = glm::mat4(1.0f);
     glm::mat4 CurrentProj = glm::mat4(1.0f);
@@ -102,6 +107,8 @@ struct RendererData
     std::shared_ptr<VertexArray> FullscreenQuadVAO;
     std::shared_ptr<VertexArray> QuadVAO;
     std::shared_ptr<VertexArray> GridPlaneVAO;
+    std::shared_ptr<VertexArray> BillboardVAO;
+    std::shared_ptr<VertexArray> SpriteVAO;
 
     // Instancing cache
     std::shared_ptr<class VertexBuffer> InstanceBuffer;

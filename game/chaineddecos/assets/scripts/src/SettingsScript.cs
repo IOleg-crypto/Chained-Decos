@@ -3,91 +3,84 @@ using Chained;
 
 namespace ChainedDecos.Scripts
 {
-public class SettingsScript : Script
-{
-    public override void OnCreate()
+    public class SettingsScript : Script
     {
-        Log.Info("settings_script: Initialized");
-    }
-
-    public override void OnUpdate(float deltaTime)
-    {
-        ButtonControl? btn = Entity.GetComponent<ButtonControl>();
-        if (btn?.IsPressed ?? false)
+        public override void OnCreate()
         {
-            Log.Info("settings_script: Button pressed, applying settings...");
-            ApplySettings();
+            Log.Info("SettingsScript: Initialized");
         }
-    }
 
-    private void ApplySettings()
-    {
-        Log.Info("settings_script: Applying Settings...");
-
-        Entity? resEnt = Scene.FindEntityByTag("resolution");
-        Entity? fullEnt = Scene.FindEntityByTag("option_fullscreen");
-        Entity? vsyncEnt = Scene.FindEntityByTag("option_vsync");
-        Entity? aaEnt = Scene.FindEntityByTag("option_aa");
-
-        // 1. Resolution
-        if (resEnt != null)
+        public override void OnUpdate(float deltaTime)
         {
-            ComboBoxControl? combo = resEnt.GetComponent<ComboBoxControl>();
-            if (combo != null)
+            ButtonControl? btn = Entity.GetComponent<ButtonControl>();
+            if (btn?.IsPressed ?? false)
             {
-                int index = combo.SelectedIndex;
-                string? resStr = combo.GetItem(index);
-                if (!string.IsNullOrEmpty(resStr))
+                Log.Info("SettingsScript: Apply button pressed, applying settings...");
+                ApplySettings();
+            }
+        }
+
+        private void ApplySettings()
+        {
+            // 1. Resolution (ComboBox)
+            Entity? resEnt = Scene.FindEntityByTag("resolution");
+            if (resEnt != null)
+            {
+                ComboBoxControl? combo = resEnt.GetComponent<ComboBoxControl>();
+                if (combo != null)
                 {
-                    string[] parts = resStr.Split('x');
-                    if (parts.Length == 2)
+                    string? resStr = combo.GetItem(combo.SelectedIndex);
+                    if (!string.IsNullOrEmpty(resStr))
                     {
-                        int w = int.Parse(parts[0]);
-                        int h = int.Parse(parts[1]);
-                        AppWindow.SetSize(w, h);
-                        Log.Info($"settings_script: Set Resolution to {w}x{h}");
+                        string[] parts = resStr.Split('x');
+                        if (parts.Length == 2)
+                        {
+                            int w = int.Parse(parts[0]);
+                            int h = int.Parse(parts[1]);
+                            AppWindow.SetSize(w, h);
+                            Log.Info($"SettingsScript: Set Resolution to {w}x{h}");
+                        }
                     }
                 }
             }
-        }
 
-        // 2. Fullscreen
-        if (fullEnt != null)
-        {
-            CheckboxControl? check = fullEnt.GetComponent<CheckboxControl>();
-            if (check != null)
+            // 2. Fullscreen (Checkbox)
+            Entity? fullEnt = Scene.FindEntityByTag("option_fullscreen");
+            if (fullEnt != null)
             {
-                bool enabled = check.IsChecked;
-                AppWindow.SetFullscreen(enabled);
-                Log.Info($"settings_script: Set Fullscreen to {enabled}");
+                CheckboxControl? check = fullEnt.GetComponent<CheckboxControl>();
+                if (check != null)
+                {
+                    AppWindow.SetFullscreen(check.IsChecked);
+                    Log.Info($"SettingsScript: Set Fullscreen to {check.IsChecked}");
+                }
             }
-        }
 
-        // 3. VSync
-        if (vsyncEnt != null)
-        {
-            CheckboxControl? check = vsyncEnt.GetComponent<CheckboxControl>();
-            if (check != null)
+            // 3. VSync (Checkbox)
+            Entity? vsyncEnt = Scene.FindEntityByTag("option_vsync");
+            if (vsyncEnt != null)
             {
-                bool enabled = check.IsChecked;
-                AppWindow.SetVSync(enabled);
-                Log.Info($"settings_script: Set VSync to {enabled}");
+                CheckboxControl? check = vsyncEnt.GetComponent<CheckboxControl>();
+                if (check != null)
+                {
+                    AppWindow.SetVSync(check.IsChecked);
+                    Log.Info($"SettingsScript: Set VSync to {check.IsChecked}");
+                }
             }
-        }
 
-        // 4. Anti-aliasing
-        if (aaEnt != null)
-        {
-            CheckboxControl? check = aaEnt.GetComponent<CheckboxControl>();
-            if (check != null)
+            // 4. Anti-aliasing (Checkbox)
+            Entity? aaEnt = Scene.FindEntityByTag("option_aa");
+            if (aaEnt != null)
             {
-                bool enabled = check.IsChecked;
-                AppWindow.SetAntialiasing(enabled);
-                Log.Info($"settings_script: Set Anti-aliasing to {enabled}");
+                CheckboxControl? check = aaEnt.GetComponent<CheckboxControl>();
+                if (check != null)
+                {
+                    AppWindow.SetAntialiasing(check.IsChecked);
+                    Log.Info($"SettingsScript: Set Anti-aliasing to {check.IsChecked}");
+                }
             }
-        }
 
-        Log.Info("settings_script: Settings Applied Successfully!");
+            Log.Info("SettingsScript: Settings Applied Successfully!");
+        }
     }
-}
 }

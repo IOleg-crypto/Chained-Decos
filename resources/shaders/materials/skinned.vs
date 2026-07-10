@@ -12,6 +12,7 @@ layout(location = 5) in vec3 a_Tangent;
 uniform mat4 matModel;
 uniform mat4 matNormal;
 uniform mat4 boneMatrices[128];
+uniform mat4 u_LightSpaceMatrix;
 
 
 out vec3 fragPosition;
@@ -19,6 +20,7 @@ out vec2 fragTexCoord;
 out vec4 fragColor;
 out vec3 fragNormal;
 out mat3 fragTBN;
+out vec4 fragPosLightSpace;
 
 void main()
 {
@@ -59,6 +61,8 @@ void main()
     
     fragNormal = N;
     fragTBN = mat3(T, B, N);
+
+    fragPosLightSpace = u_LightSpaceMatrix * vec4(fragPosition, 1.0);
 
     gl_Position = u_ViewProjection * matModel * vec4(vPos, 1.0);
 }

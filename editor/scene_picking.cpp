@@ -225,14 +225,14 @@ Ray ScenePicker::CreateRayFromViewport(const Chained::Camera3D& camera, const gl
     float ndc_y = 1.0f - (2.0f * mousePosition.y) / viewportSize.y;
 
     glm::mat4 projection;
-    if (camera.Projection == 0) // Perspective
+    if (camera.Projection == ProjectionType::Perspective)
     {
-        projection = glm::perspective(glm::radians(camera.FovY), viewportSize.x / viewportSize.y, 0.01f, 1000.0f);
+        projection = glm::perspective(glm::radians(camera.FovDegrees), viewportSize.x / viewportSize.y, 0.01f, 1000.0f);
     }
     else
     {
         float aspect = viewportSize.x / viewportSize.y;
-        float h = camera.FovY * 0.5f;
+        float h = camera.OrthographicSize * 0.5f;
         float w = h * aspect;
         projection = glm::ortho(-w, w, -h, h, 0.01f, 1000.0f);
     }

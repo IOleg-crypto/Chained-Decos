@@ -197,7 +197,6 @@ void RuntimeLayer::OnRender(Timestep ts) {
         }
 
         SceneRenderOptions options;
-        options.ShowEditorIcons = false;
 
         m_HDRFramebuffer->Bind();
         ServiceLocator::Get<Renderer>()->Clear(bgColor);

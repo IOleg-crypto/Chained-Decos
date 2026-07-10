@@ -457,6 +457,17 @@ void SpawnComponent_GetSpawnPoint(uint64_t entityID, glm::vec3* outPoint)
     if (entity && entity.HasComponent<Chained::SpawnComponent>() && outPoint)
         *outPoint = entity.GetComponent<Chained::SpawnComponent>().SpawnPoint;
 }
+bool SpawnComponent_GetRenderSpawnZoneInScene(uint64_t entityID)
+{
+    Entity entity = GetEntity(entityID);
+    return entity && entity.HasComponent<Chained::SpawnComponent>() ? entity.GetComponent<Chained::SpawnComponent>().RenderSpawnZoneInScene : false;
+}
+void SpawnComponent_GetZoneSize(uint64_t entityID, glm::vec3* outSize)
+{
+    Entity entity = GetEntity(entityID);
+    if (entity && entity.HasComponent<Chained::SpawnComponent>() && outSize)
+        *outSize = entity.GetComponent<Chained::SpawnComponent>().ZoneSize;
+}
 
 // ── AnimationComponent ──────────────────────────────────────────────────
 int AnimationComponent_GetCurrentAnimationIndex(uint64_t entityID)

@@ -16,8 +16,6 @@ namespace Chained
 class ShadowPass : public IRenderPass
 {
 public:
-    static constexpr uint32_t ShadowMapSize = 2048;
-
     void Init()     override;
     void Execute(const RenderContext& ctx) override;
     void Shutdown() override;
@@ -31,12 +29,15 @@ public:
     // Other passes can call this to bind the shadow depth attachment.
     std::shared_ptr<Framebuffer> GetShadowMap() const { return m_ShadowMap; }
     const glm::mat4& GetLightSpaceMatrix()      const { return m_LightSpaceMatrix; }
+    uint32_t GetShadowMapSize() const { return m_ShadowMapSize; }
+    bool HasShadows() const { return m_HasShadows; }
 
 private:
     std::shared_ptr<Framebuffer>  m_ShadowMap;
     std::shared_ptr<ShaderAsset>  m_DepthShaderAsset;
     glm::mat4                     m_LightSpaceMatrix { 1.0f };
-
+    uint32_t                      m_ShadowMapSize = 2048;
+    bool                          m_HasShadows = false;
 
     bool m_Initialized = false;
 };

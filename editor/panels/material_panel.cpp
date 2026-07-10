@@ -23,7 +23,7 @@ static uint32_t GetTextureID(const std::string& path)
     auto texAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(path);
     if (texAsset && texAsset->GetTexture())
     {
-        return texAsset->GetTexture()->GetRendererID();
+        return texAsset->GetTexture()->GetNativeHandle();
     }
     return 0;
 }

@@ -59,11 +59,15 @@ public:
         
         s_CoreLogger = std::make_shared<spdlog::logger>("CORE", sinks.begin(), sinks.end());
         s_CoreLogger->set_level(spdlog::level::trace);
-        s_CoreLogger->flush_on(spdlog::level::trace);
+        // Flush only on warnings+ — flushing the console sink on every trace/info
+        // message forces a synchronous stdout flush each frame, which stalls the
+        // editor badly when per-frame logs are active. spdlog still flushes
+        // periodically on its own.
+        s_CoreLogger->flush_on(spdlog::level::warn);
 
         s_ClientLogger = std::make_shared<spdlog::logger>("CLIENT", sinks.begin(), sinks.end());
         s_ClientLogger->set_level(spdlog::level::trace);
-        s_ClientLogger->flush_on(spdlog::level::trace);
+        s_ClientLogger->flush_on(spdlog::level::warn);
     }
 
     static void SetLogLevel(LogLevel level)

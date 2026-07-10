@@ -31,7 +31,7 @@ namespace Chained {
                 if (textureAsset && textureAsset->IsReady() && textureAsset->GetTexture())
                 {
                     int skyboxMode = std::clamp(skySettings.Mode, 0, 2);
-                    uint32_t texId = textureAsset->GetTexture()->GetRendererID();
+                    uint32_t texId = textureAsset->GetTexture()->GetNativeHandle();
 
                     // Logic mapped directly from old SceneRenderer implementation
                     ServiceLocator::Get<Renderer>()->DrawSkybox(texId, skyboxMode, textureAsset->IsHDR(), skySettings.Exposure,

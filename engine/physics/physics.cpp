@@ -54,6 +54,10 @@ IPhysicsWorld* Physics::GetWorld()
 // Gravity is read from the active project configuration and applied immediately.
 void Physics::ResetWorld()
 {
+    if (m_World)
+    {
+        static_cast<JoltPhysicsWorld*>(m_World.get())->ClearShapeCache();
+    }
     m_World.reset();
     m_World = std::make_unique<JoltPhysicsWorld>();
 
@@ -132,6 +136,8 @@ void Physics::InitializeBodies(Scene* scene)
             case ColliderType::Mesh:
                 desc.Offset = collider->Offset * transform.Scale;
                 BuildMeshTriangles(collider->ModelPath, transform.Scale, desc.Triangles);
+                desc.CacheKey = collider->ModelPath + "|" + std::to_string(transform.Scale.x) + "," +
+                                std::to_string(transform.Scale.y) + "," + std::to_string(transform.Scale.z);
                 break;
             }
         }
@@ -355,7 +361,6 @@ void Physics::UpdateColliders(Scene* scene)
 void Physics::ApplyAutoCalculate(entt::entity entity, entt::registry& registry, ColliderComponent& collider,
                                  const glm::vec3& scale)
 {
-    // Determine which model to use: prefer collider's own ModelPath, fall back to ModelComponent
     std::string modelPath = collider.ModelPath;
     if (modelPath.empty())
     {
@@ -371,47 +376,38 @@ void Physics::ApplyAutoCalculate(entt::entity entity, entt::registry& registry, 
         return;
     }
 
-    // ── Build raw triangles (same path as mesh collider) ─────────────────────
-    std::vector<PhysicsTriangle> triangles;
-    BuildMeshTriangles(modelPath, scale, triangles);
-
-    if (triangles.empty())
+    auto* am = ServiceLocator::Get<AssetManager>();
+    auto handle = am->ResolveToHandle(modelPath);
+    if (handle == AssetHandle(0))
     {
-        CH_CORE_WARN("Physics::ApplyAutoCalculate: model '{}' produced no triangles — skipping.", modelPath);
+        CH_CORE_WARN("Physics::ApplyAutoCalculate: model '{}' not loaded.", modelPath);
         return;
     }
 
-    // ── Compute AABB directly from triangles (no MeshShape needed) ────────────
-    glm::vec3 bMin(std::numeric_limits<float>::max());
-    glm::vec3 bMax(std::numeric_limits<float>::lowest());
-    for (const auto& t : triangles)
+    auto asset = am->Get<ModelAsset>(handle);
+    if (!asset || asset->GetState() != AssetState::Ready)
     {
-        bMin = glm::min(bMin, glm::min(t.V0, glm::min(t.V1, t.V2)));
-        bMax = glm::max(bMax, glm::max(t.V0, glm::max(t.V1, t.V2)));
+        CH_CORE_WARN("Physics::ApplyAutoCalculate: model '{}' not ready.", modelPath);
+        return;
     }
 
-    // ── Convert Jolt AABB → collider fields ──────────────────────────────────
-    // BuildMeshTriangles already multiplied vertices by `scale`, so the AABB is
-    // in SCALED space.  However, InitializeBodies will scale the values again:
-    //   Box:    desc.Dimensions = collider->Size * transform.Scale * 0.5f
-    //   Sphere: desc.Dimensions.x = collider->Radius * compMax(scale)
-    //   Mesh:   desc.Offset = collider->Offset * transform.Scale
-    // To avoid double-scaling we divide back by scale before storing.
-    glm::vec3 safeScale = glm::max(scale, glm::vec3(1e-5f));
+    // Use pre-computed AABB — no triangle iteration needed
+    const auto& bbox = asset->GetBoundingBox();
+    glm::vec3 bMin = bbox.Min * scale;
+    glm::vec3 bMax = bbox.Max * scale;
 
-    // Unscaled (local-space) values:
-    glm::vec3 unscaledSize = (bMax - bMin) / safeScale;
-    glm::vec3 unscaledCenter = ((bMax + bMin) * 0.5f) / safeScale;
+    glm::vec3 size = bMax - bMin;
+    glm::vec3 center = (bMax + bMin) * 0.5f;
 
-    collider.Size = unscaledSize;
-    collider.Radius = glm::compMax(unscaledSize) * 0.5f;
-    collider.Height = unscaledSize.y;
+    collider.Size = size;
+    collider.Radius = glm::compMax(size) * 0.5f;
+    collider.Height = size.y;
 
     // For Mesh colliders do NOT touch Offset — the triangle data already encodes
     // the full geometry in local space; setting Offset here would double-shift it.
     if (collider.Type != ColliderType::Mesh)
     {
-        collider.Offset = unscaledCenter;
+        collider.Offset = center;
     }
 
     CH_CORE_INFO("Physics::ApplyAutoCalculate: entity={} model='{}' → Size=({:.2f},{:.2f},{:.2f}) "
