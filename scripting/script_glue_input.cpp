@@ -30,10 +30,7 @@ uint32_t Input_IsKeyPressed(int keyCode)
 }
 uint32_t Input_IsKeyDown(int keyCode)
 {
-    bool result = Core::Input::IsKeyDown(static_cast<KeyCode>(keyCode));
-    if (keyCode == 23) // W key
-        CH_CORE_TRACE("[Diag Input_IsKeyDown] keyCode={} result={}", keyCode, result);
-    return result ? 1 : 0;
+    return Core::Input::IsKeyDown(static_cast<KeyCode>(keyCode)) ? 1 : 0;
 }
 
 } // namespace Chained

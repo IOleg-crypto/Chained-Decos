@@ -3,7 +3,6 @@
 
 namespace Chained {
 
-    // Builds a perspective projection matrix from vertical FOV, aspect ratio, and clip planes.
     void Camera::SetPerspective(float verticalFov, float nearClip, float farClip) {
         m_ProjectionType = ProjectionType::Perspective;
         m_PerspectiveFOV = verticalFov;
@@ -12,7 +11,6 @@ namespace Chained {
         RecalculateProjection();
     }
 
-    // Builds an orthographic projection matrix from view half-height, aspect ratio, and clip planes.
     void Camera::SetOrthographic(float size, float nearClip, float farClip) {
         m_ProjectionType = ProjectionType::Orthographic;
         m_OrthographicSize = size;
@@ -27,8 +25,6 @@ namespace Chained {
         RecalculateProjection();
     }
 
-    // Recalculates the projection matrix based on the current projection type,
-    // aspect ratio, FOV (perspective), or half-height (orthographic).
     void Camera::RecalculateProjection() {
         if (m_ProjectionType == ProjectionType::Perspective) {
             m_Projection = glm::perspective(m_PerspectiveFOV, m_AspectRatio, m_PerspectiveNear, m_PerspectiveFar);
@@ -41,20 +37,32 @@ namespace Chained {
         }
     }
 
-    // Extracts a Camera3D struct from the camera component and its world transform.
-    // Used by the rendering pipeline to get view/projection matrices and position.
     Camera3D Camera::GetCamera3D(const glm::mat4& transform) const {
         Camera3D c;
         c.Position = transform[3];
         glm::vec3 forward = -glm::vec3(transform[2]);
         c.Target = c.Position + forward;
         c.Up = glm::vec3(transform[1]);
-        c.Projection = (int)m_ProjectionType;
-        c.FovY = glm::degrees(m_PerspectiveFOV);
+        c.Projection = m_ProjectionType;
+        c.FovDegrees = glm::degrees(m_PerspectiveFOV);
+        c.OrthographicSize = m_OrthographicSize;
         c.NearClip = (m_ProjectionType == ProjectionType::Perspective) ? m_PerspectiveNear : m_OrthographicNear;
         c.FarClip = (m_ProjectionType == ProjectionType::Perspective) ? m_PerspectiveFar : m_OrthographicFar;
         c.ProjectionMatrix = m_Projection;
         c.ViewMatrix = glm::inverse(transform);
+        return c;
+    }
+
+    Camera2D Camera::GetCamera2D(const glm::mat4& transform) const {
+        Camera2D c;
+        c.Position = glm::vec2(transform[3]);
+        c.Rotation = glm::degrees(glm::atan(transform[0][1], transform[0][0]));
+        c.Zoom = 1.0f / m_OrthographicSize;
+        c.NearClip = m_OrthographicNear;
+        c.FarClip = m_OrthographicFar;
+
+        c.ViewMatrix = glm::inverse(transform);
+        c.ProjectionMatrix = m_Projection;
         return c;
     }
 }

@@ -147,26 +147,26 @@ void ModelAsset::OnLoaded()
                 size_t texIdx = std::stoul(path.substr(1));
                 if (texIdx < m_EmbeddedTextures.size() && m_EmbeddedTextures[texIdx])
                 {
-                    uint32_t texId = m_EmbeddedTextures[texIdx]->GetRendererID();
+                    std::shared_ptr<Texture> tex = m_EmbeddedTextures[texIdx];
                     switch (mapIndex)
                     {
                     case 0:
-                        newModel.Materials[matIdx].AlbedoMap = texId;
+                        newModel.Materials[matIdx].AlbedoMap = tex;
                         break;
                     case 1:
-                        newModel.Materials[matIdx].EmissiveMap = texId;
+                        newModel.Materials[matIdx].EmissiveMap = tex;
                         break; 
                     case 2:
-                        newModel.Materials[matIdx].NormalMap = texId;
+                        newModel.Materials[matIdx].NormalMap = tex;
                         break;
                     case 3:
-                        newModel.Materials[matIdx].MetallicRoughnessMap = texId;
+                        newModel.Materials[matIdx].MetallicRoughnessMap = tex;
                         break;
                     case 4:
-                        newModel.Materials[matIdx].EmissiveMap = texId;
+                        newModel.Materials[matIdx].EmissiveMap = tex;
                         break;
                     case 5:
-                        newModel.Materials[matIdx].OcclusionMap = texId;
+                        newModel.Materials[matIdx].OcclusionMap = tex;
                         break;
                     }
                 }
@@ -189,31 +189,31 @@ void ModelAsset::OnLoaded()
             return;
         }
 
-        uint32_t texId = 0;
+        std::shared_ptr<Texture> texPtr;
         if (tex->IsReady() && tex->GetTexture())
         {
-            texId = tex->GetTexture()->GetRendererID();
+            texPtr = tex->GetTexture();
         }
 
         switch (mapIndex)
         {
         case 0:
-            newModel.Materials[matIdx].AlbedoMap = texId;
+            newModel.Materials[matIdx].AlbedoMap = texPtr;
             break;
         case 1:
-            newModel.Materials[matIdx].EmissiveMap = texId;
+            newModel.Materials[matIdx].EmissiveMap = texPtr;
             break;
         case 2:
-            newModel.Materials[matIdx].NormalMap = texId;
+            newModel.Materials[matIdx].NormalMap = texPtr;
             break;
         case 3:
-            newModel.Materials[matIdx].MetallicRoughnessMap = texId;
+            newModel.Materials[matIdx].MetallicRoughnessMap = texPtr;
             break;
         case 4:
-            newModel.Materials[matIdx].EmissiveMap = texId;
+            newModel.Materials[matIdx].EmissiveMap = texPtr;
             break;
         case 5:
-            newModel.Materials[matIdx].OcclusionMap = texId;
+            newModel.Materials[matIdx].OcclusionMap = texPtr;
             break;
         }
     };
@@ -264,14 +264,14 @@ void ModelAsset::OnLoaded()
 
             auto vboPos =
                 VertexBuffer::Create(rawMesh.vertices.data(), (uint32_t)rawMesh.vertices.size() * sizeof(float));
-            vboPos->SetLayout({{ShaderDataType::Float3, "a_Position"}});
+            vboPos->SetLayout({{VertexAttributeType::Float3, "a_Position"}});
             mesh.VAO->AddVertexBuffer(vboPos);
 
             if (!rawMesh.texcoords.empty())
             {
                 auto vboTex =
                     VertexBuffer::Create(rawMesh.texcoords.data(), (uint32_t)rawMesh.texcoords.size() * sizeof(float));
-                vboTex->SetLayout({{ShaderDataType::Float2, "a_TexCoord"}});
+                vboTex->SetLayout({{VertexAttributeType::Float2, "a_TexCoord"}});
                 mesh.VAO->AddVertexBuffer(vboTex);
             }
 
@@ -279,7 +279,7 @@ void ModelAsset::OnLoaded()
             {
                 auto vboNorm =
                     VertexBuffer::Create(rawMesh.normals.data(), (uint32_t)rawMesh.normals.size() * sizeof(float));
-                vboNorm->SetLayout({{ShaderDataType::Float3, "a_Normal"}});
+                vboNorm->SetLayout({{VertexAttributeType::Float3, "a_Normal"}});
                 mesh.VAO->AddVertexBuffer(vboNorm);
             }
 
@@ -294,7 +294,7 @@ void ModelAsset::OnLoaded()
 
                 auto vboJoints =
                     VertexBuffer::Create((float*)jointsInt.data(), (uint32_t)jointsInt.size() * sizeof(int32_t));
-                vboJoints->SetLayout({{ShaderDataType::Int4, "a_JointIDs"}});
+                vboJoints->SetLayout({{VertexAttributeType::Int4, "a_JointIDs"}});
                 mesh.VAO->AddVertexBuffer(vboJoints);
             }
 
@@ -302,7 +302,7 @@ void ModelAsset::OnLoaded()
             {
                 auto vboWeights =
                     VertexBuffer::Create(rawMesh.weights.data(), (uint32_t)rawMesh.weights.size() * sizeof(float));
-                vboWeights->SetLayout({{ShaderDataType::Float4, "a_Weights"}});
+                vboWeights->SetLayout({{VertexAttributeType::Float4, "a_Weights"}});
                 mesh.VAO->AddVertexBuffer(vboWeights);
             }
 
@@ -387,7 +387,7 @@ uint32_t ModelAsset::GetEmbeddedTextureID(const std::string& path) const
         size_t index = std::stoul(path.substr(1));
         if (index < m_EmbeddedTextures.size() && m_EmbeddedTextures[index])
         {
-            return m_EmbeddedTextures[index]->GetRendererID();
+            return m_EmbeddedTextures[index]->GetNativeHandle();
         }
     } catch (const std::exception&)
     {

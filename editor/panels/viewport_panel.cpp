@@ -9,7 +9,7 @@
 #include "editor/viewport/ui_manipulator.h"
 #include "events.h"
 #include "engine/core/events/events.h"
-#include "engine/graphics/pipeline/render_command.h"
+#include "engine/graphics/api/graphics_device.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
 #include "engine/graphics/ui/ui_renderer.h"
 #include "engine/graphics/pipeline/renderer.h"
@@ -38,16 +38,15 @@ static Camera3D MakeCameraFromController(EditorCameraController& controller)
     camera.Position = {pos.x, pos.y, pos.z};
     camera.Target = {fp.x, fp.y, fp.z};
     camera.Up = {up.x, up.y, up.z};
-    camera.Projection = (int)controller.GetProjectionType();
+    camera.Projection = controller.GetProjectionType();
+    camera.FovDegrees = glm::degrees(controller.GetPerspectiveVerticalFOV());
+    camera.OrthographicSize = controller.GetOrthographicSize();
     camera.NearClip = (controller.GetProjectionType() == Camera::ProjectionType::Perspective)
         ? controller.GetPerspectiveNearClip()
         : controller.GetOrthographicNearClip();
     camera.FarClip = (controller.GetProjectionType() == Camera::ProjectionType::Perspective)
         ? controller.GetPerspectiveFarClip()
         : controller.GetOrthographicFarClip();
-    camera.FovY = (controller.GetProjectionType() == Camera::ProjectionType::Perspective)
-        ? glm::degrees(controller.GetPerspectiveVerticalFOV())
-        : controller.GetOrthographicSize();
     return camera;
 }
 
@@ -56,7 +55,7 @@ void ViewportPanel::ClearSceneBackground(Scene* scene)
     auto mode = scene->GetSettings().Mode;
     if (mode == BackgroundMode::Color)
     {
-        RenderCommand::Clear(scene->GetSettings().BackgroundColor);
+        GraphicsDevice::Get().Clear(scene->GetSettings().BackgroundColor);
     }
     else if (mode == BackgroundMode::Texture)
     {
@@ -64,12 +63,12 @@ void ViewportPanel::ClearSceneBackground(Scene* scene)
         if (!path.empty())
         {
             // Fallback for now
-            RenderCommand::Clear(scene->GetSettings().BackgroundColor);
+            GraphicsDevice::Get().Clear(scene->GetSettings().BackgroundColor);
         }
     }
     else if (mode == BackgroundMode::Environment3D)
     {
-        RenderCommand::Clear({0, 0, 0, 255});
+        GraphicsDevice::Get().Clear({0, 0, 0, 255});
     }
 }
 
@@ -191,13 +190,20 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
 {
     if (!m_IsOpen) return;
 
+    auto activeScene = EditorLayer::Get().GetActiveScene();
+
+    std::string sceneName = "None";
+    if (activeScene && !activeScene->GetSettings().Name.empty())
+    {
+        sceneName = activeScene->GetSettings().Name;
+    }
+    std::string title = m_Name + " [" + sceneName + "]###" + m_Name;
+
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
-    ImGui::Begin(m_Name.c_str(), &m_IsOpen);
+    ImGui::Begin(title.c_str(), &m_IsOpen);
 
     ImVec2 viewportSize = ImGui::GetContentRegionAvail();
     ImVec2 viewportScreenPos = ImGui::GetCursorScreenPos();
-
-    auto activeScene = EditorLayer::Get().GetActiveScene();
 
     // 1. Initial State & Resizing
     HandleResize(viewportSize, activeScene.get());
@@ -216,7 +222,13 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
     RenderViewportScene(activeScene.get());
 
     // 3. UI Image & Interaction
-    uint32_t finalTextureID = m_HDRFramebuffer->GetColorAttachmentRendererID();
+    if (!m_ViewportFramebuffer || !m_ViewportFramebuffer->IsValid())
+    {
+        ImGui::End();
+        ImGui::PopStyleVar();
+        return;
+    }
+    uint32_t finalTextureID = m_ViewportFramebuffer->GetColorAttachmentRendererID();
     
     // Capture the EXACT screen position where the image starts to prevent gizmo offset
     viewportScreenPos = ImGui::GetCursorScreenPos();
@@ -322,8 +334,10 @@ void ViewportPanel::HandleResize(const ImVec2& viewportSize, Scene* activeScene)
         m_ViewportSize = { viewportSize.x, viewportSize.y };
         if (m_ViewportSize.x > 0 && m_ViewportSize.y > 0)
         {
-            m_ViewportFramebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
-            m_HDRFramebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+            if (m_ViewportFramebuffer)
+                m_ViewportFramebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+            if (m_HDRFramebuffer)
+                m_HDRFramebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 
             // Keep Renderer in sync so frustum & projection use correct aspect ratio
             ServiceLocator::Get<Renderer>()->SetViewportSize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
@@ -337,10 +351,34 @@ void ViewportPanel::HandleResize(const ImVec2& viewportSize, Scene* activeScene)
             }
         }
     }
+
+    // Recreate FBOs if they became invalid (e.g. after context loss or bad resize)
+    if (m_ViewportSize.x > 0 && m_ViewportSize.y > 0)
+    {
+        if (!m_ViewportFramebuffer || !m_ViewportFramebuffer->IsValid())
+        {
+            FramebufferSpecification spec;
+            spec.Width = (uint32_t)m_ViewportSize.x;
+            spec.Height = (uint32_t)m_ViewportSize.y;
+            spec.ColorFormat = FramebufferColorFormat::RGBA8;
+            m_ViewportFramebuffer = Framebuffer::Create(spec);
+        }
+        if (!m_HDRFramebuffer || !m_HDRFramebuffer->IsValid())
+        {
+            FramebufferSpecification hdrSpec;
+            hdrSpec.Width = (uint32_t)m_ViewportSize.x;
+            hdrSpec.Height = (uint32_t)m_ViewportSize.y;
+            hdrSpec.ColorFormat = FramebufferColorFormat::RGBA16F;
+            m_HDRFramebuffer = Framebuffer::Create(hdrSpec);
+        }
+    }
 }
 
 void ViewportPanel::RenderViewportScene(Scene* activeScene)
 {
+    if (!m_HDRFramebuffer || !m_HDRFramebuffer->IsValid())
+        return;
+
     m_HDRFramebuffer->Bind();
     ClearSceneBackground(activeScene);
 
@@ -374,13 +412,13 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
     );
     
     float aspect = (float)m_ViewportSize.x / std::max((float)m_ViewportSize.y, 1.0f);
-    if (camera.Projection == 0) // Perspective
+    if (camera.Projection == ProjectionType::Perspective)
     {
-        camera.ProjectionMatrix = glm::perspective(glm::radians(camera.FovY), aspect, camera.NearClip, camera.FarClip);
+        camera.ProjectionMatrix = glm::perspective(glm::radians(camera.FovDegrees), aspect, camera.NearClip, camera.FarClip);
     }
     else // Orthographic
     {
-        float orthoSize = camera.FovY;
+        float orthoSize = camera.OrthographicSize;
         camera.ProjectionMatrix = glm::ortho(-aspect * orthoSize, aspect * orthoSize, -orthoSize, orthoSize, camera.NearClip, camera.FarClip);
     }
 
@@ -392,22 +430,22 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
     options.ShowDebugCollisionModelBox = currentDebugFlags.DrawCollisionModelBox;
     options.ShowDebugSpawnZones = currentDebugFlags.DrawSpawnZones;
     options.SetCollisionWireframeMode = currentDebugFlags.SetCollisionWireframeMode;
-    options.ShowEditorIcons = false; // Stub in SceneRenderer uses ID 0; we render icons ourselves below
-
-    
     m_SceneRenderer->RenderScene(activeScene->GetRegistry(), activeScene->GetSettings(), camera, camera.NearClip, camera.FarClip, options);
 
     // Render proper editor icons (camera, light, spawn) with loaded textures
     if (EditorLayer::Get().GetSceneState() != SceneState::Play)
     {
         RenderEditorIcons(activeScene->GetRegistry(), activeScene->GetSettings(), camera);
+        //ServiceLocator<Renderer>()->GetSceneManager()->RenderEditorIcons(activeScene->GetRegistry(), activeScene->GetSettings(), camera);
     }
 
     m_HDRFramebuffer->Unbind();
- 
-    
+
+    if (!m_ViewportFramebuffer || !m_ViewportFramebuffer->IsValid())
+        return;
+
     m_ViewportFramebuffer->Bind();
-    RenderCommand::Clear({0, 0, 0, 255}); 
+    GraphicsDevice::Get().Clear({0, 0, 0, 255}); 
 
     ServiceLocator::Get<Renderer>()->ApplyPostProcessing(
         m_HDRFramebuffer->GetColorAttachmentRendererID(),
@@ -691,28 +729,29 @@ void ViewportPanel::RenderToolbar(Scene* activeScene, const ImVec2& viewportSize
 
 void ViewportPanel::RenderEditorIcons(entt::registry &registry, const SceneSettings &settings, const Camera3D &camera) {
     const glm::vec3 activeCameraPos = camera.Position;
-    auto* textures = m_TextureManager;
 
-    auto tryLoadIcon = [&](const char* path, unsigned int& cachedId) {
-        if (cachedId != 0)
+    auto tryLoadIcon = [&](const char* path, std::shared_ptr<TextureAsset>& cachedIcon) {
+        if (cachedIcon)
         {
             return;
         }
 
-        auto texAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(path);
-        if (texAsset && texAsset->GetTexture())
-        {
-            cachedId = texAsset->GetTexture()->GetRendererID();
-        }
+        cachedIcon = ServiceLocator::Get<AssetManager>()->Load<TextureAsset>(path);
     };
 
-    tryLoadIcon("engine/resources/icons/camera_icon.png", m_EditorIcons.CameraIconId);
-    tryLoadIcon("engine/resources/icons/light_bulb.png", m_EditorIcons.LightIconId);
-    tryLoadIcon("engine/resources/icons/leaf_icon.png", m_EditorIcons.SpawnIconId);
+    tryLoadIcon("engine/resources/icons/camera_icon.png", m_EditorIcons.CameraIcon);
+    tryLoadIcon("engine/resources/icons/light_bulb.png", m_EditorIcons.LightIcon);
+    tryLoadIcon("engine/resources/icons/leaf_icon.png", m_EditorIcons.SpawnIcon);
 
     auto iconSizeFromDistance = [&](const glm::vec3& worldPos, float minSize, float maxSize, float scale) {
         const float distanceToCamera = glm::distance(worldPos, activeCameraPos);
         return std::clamp(distanceToCamera * scale, minSize, maxSize);
+    };
+
+    auto getIconHandle = [](const std::shared_ptr<TextureAsset>& icon) -> uint32_t {
+        if (icon && icon->GetTexture())
+            return icon->GetTexture()->GetNativeHandle();
+        return 0;
     };
 
     // Camera icons
@@ -728,9 +767,10 @@ void ViewportPanel::RenderEditorIcons(entt::registry &registry, const SceneSetti
 
         const float iconSize = iconSizeFromDistance(iconPos, 0.10f, 0.70f, 0.040f);
         const glm::vec4 cameraTint = glm::vec4(0.65f, 0.95f, 1.0f, 0.95f);
-        if (m_EditorIcons.CameraIconId != 0)
+        uint32_t handle = getIconHandle(m_EditorIcons.CameraIcon);
+        if (handle != 0)
         {
-            ServiceLocator::Get<Renderer>()->DrawBillboard(camera, m_EditorIcons.CameraIconId, iconPos, iconSize, cameraTint);
+            ServiceLocator::Get<Renderer>()->DrawBillboard(camera, handle, iconPos, iconSize, cameraTint);
         }
     }
 
@@ -747,9 +787,10 @@ void ViewportPanel::RenderEditorIcons(entt::registry &registry, const SceneSetti
             glm::vec4 lightTint = {light.LightColor.r / 255.0f, light.LightColor.g / 255.0f,
                                    light.LightColor.b / 255.0f, 0.95f};
 
-            if (m_EditorIcons.LightIconId != 0)
+            uint32_t handle = getIconHandle(m_EditorIcons.LightIcon);
+            if (handle != 0)
             {
-                ServiceLocator::Get<Renderer>()->DrawBillboard(camera, m_EditorIcons.LightIconId, iconPos, iconSize, lightTint);
+                ServiceLocator::Get<Renderer>()->DrawBillboard(camera, handle, iconPos, iconSize, lightTint);
                 if (light.Type == LightType::Directional)
                 {
                     glm::vec3 dir = glm::normalize(glm::vec3(transform.WorldTransform[2])) * 0.45f;

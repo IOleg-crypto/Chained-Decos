@@ -52,7 +52,7 @@ namespace Chained
         };
 
         auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
-        vbo->SetLayout({{ShaderDataType::Float3, "a_Position"}});
+        vbo->SetLayout({{VertexAttributeType::Float3, "a_Position"}});
         auto vao = VertexArray::Create();
         vao->AddVertexBuffer(vbo);
         
@@ -93,7 +93,7 @@ namespace Chained
         };
 
         auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
-        vbo->SetLayout({{ShaderDataType::Float3, "a_Position"}});
+        vbo->SetLayout({{VertexAttributeType::Float3, "a_Position"}});
         auto vao = VertexArray::Create();
         vao->AddVertexBuffer(vbo);
         auto ebo = IndexBuffer::Create(indices, 24);
@@ -151,9 +151,9 @@ namespace Chained
         auto vbo = VertexBuffer::Create(vertices.data(), (uint32_t)vertices.size() * sizeof(float));
         // Pos(3) + Tex(2) + Normal(3) = 8 floats per vertex
         vbo->SetLayout({
-            {ShaderDataType::Float3, "a_Position"},
-            {ShaderDataType::Float2, "a_TexCoord"},
-            {ShaderDataType::Float3, "a_Normal"}
+            {VertexAttributeType::Float3, "a_Position"},
+            {VertexAttributeType::Float2, "a_TexCoord"},
+            {VertexAttributeType::Float3, "a_Normal"}
         });
         auto vao = VertexArray::Create();
         vao->AddVertexBuffer(vbo);
@@ -180,7 +180,7 @@ namespace Chained
         }
 
         auto vbo = VertexBuffer::Create(vertices.data(), (uint32_t)vertices.size() * sizeof(float));
-        vbo->SetLayout({{ShaderDataType::Float3, "a_Position"}});
+        vbo->SetLayout({{VertexAttributeType::Float3, "a_Position"}});
         auto vao = VertexArray::Create();
         vao->AddVertexBuffer(vbo);
 
@@ -203,9 +203,9 @@ namespace Chained
 
         auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
         vbo->SetLayout({
-            {ShaderDataType::Float3, "a_Position"},
-            {ShaderDataType::Float2, "a_TexCoord"},
-            {ShaderDataType::Float3, "a_Normal"}
+            {VertexAttributeType::Float3, "a_Position"},
+            {VertexAttributeType::Float2, "a_TexCoord"},
+            {VertexAttributeType::Float3, "a_Normal"}
         });
         auto vao = VertexArray::Create();
         vao->AddVertexBuffer(vbo);
@@ -269,9 +269,9 @@ namespace Chained
 
         auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
         vbo->SetLayout({
-            {ShaderDataType::Float3, "a_Position"},
-            {ShaderDataType::Float2, "a_TexCoord"},
-            {ShaderDataType::Float3, "a_Normal"}
+            {VertexAttributeType::Float3, "a_Position"},
+            {VertexAttributeType::Float2, "a_TexCoord"},
+            {VertexAttributeType::Float3, "a_Normal"}
         });
         auto vao = VertexArray::Create();
         vao->AddVertexBuffer(vbo);
@@ -340,7 +340,7 @@ namespace Chained
         }
 
         auto vbo = VertexBuffer::Create(vertices.data(), (uint32_t)vertices.size() * sizeof(float));
-        vbo->SetLayout({{ShaderDataType::Float3, "a_Position"}});
+        vbo->SetLayout({{VertexAttributeType::Float3, "a_Position"}});
         auto vao = VertexArray::Create();
         vao->AddVertexBuffer(vbo);
         auto ebo = IndexBuffer::Create(indices.data(), (uint32_t)indices.size());

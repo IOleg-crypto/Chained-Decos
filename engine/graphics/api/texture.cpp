@@ -1,6 +1,6 @@
 #include "engine/graphics/api/texture.h"
-#include "engine/graphics/api/renderer_api.h"
-#include "engine/graphics/api/opengl/opengl_texture.h"
+#include "engine/graphics/api/graphics_device.h"
+#include "engine/graphics/api/opengl/gl_texture.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/texture_asset.h"
 #include "engine/core/service_locator.h"
@@ -10,20 +10,20 @@ namespace Chained
 
 std::shared_ptr<Texture> Texture::Create(uint32_t width, uint32_t height, TextureFormat format)
 {
-    switch (RendererAPI::GetAPI())
+    switch (GraphicsDevice::GetAPI())
     {
-        case RendererAPI::API::None:    return nullptr;
-        case RendererAPI::API::OpenGL:  return std::make_shared<OpenGLTexture>(width, height, format);
+        case GraphicsDevice::API::None:    return nullptr;
+        case GraphicsDevice::API::OpenGL:  return std::make_shared<GLTexture>(width, height, format);
     }
     return nullptr;
 }
 
 std::shared_ptr<Texture> Texture::CreateCubemap(uint32_t size, TextureFormat format)
 {
-    switch (RendererAPI::GetAPI())
+    switch (GraphicsDevice::GetAPI())
     {
-        case RendererAPI::API::None:    return nullptr;
-        case RendererAPI::API::OpenGL:  return std::make_shared<OpenGLTexture>(size, format);
+        case GraphicsDevice::API::None:    return nullptr;
+        case GraphicsDevice::API::OpenGL:  return std::make_shared<GLTexture>(size, format);
     }
     return nullptr;
 }

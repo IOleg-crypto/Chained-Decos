@@ -8,13 +8,8 @@
 #include "imgui.h"
 
 
-#ifdef CH_PLATFORM_BACKEND_GLFW
 #include "backends/imgui_impl_glfw.h"
 #include <GLFW/glfw3.h>
-#elif defined(CH_PLATFORM_BACKEND_SDL3)
-#include "backends/imgui_impl_sdl3.h"
-#include <SDL3/SDL.h>
-#endif
 
 namespace Chained
 {
@@ -54,7 +49,6 @@ void ImGuiLayer::OnAttach()
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
 
-#ifdef CH_PLATFORM_BACKEND_GLFW
     GLFWwindow* window = (GLFWwindow*)Application::Get().GetWindow().GetNativeWindow();
     if (!window)
     {
@@ -62,15 +56,6 @@ void ImGuiLayer::OnAttach()
         return;
     }
     ImGui_ImplGlfw_InitForOpenGL(window, false);
-#elif defined(CH_PLATFORM_BACKEND_SDL3)
-    SDL_Window* window = (SDL_Window*)Application::Get().GetWindow().GetNativeWindow();
-    if (!window)
-    {
-        CH_CORE_ERROR("ImGuiLayer: Failed to get native window handle!");
-        return;
-    }
-    ImGui_ImplSDL3_InitForOpenGL(window, SDL_GL_GetCurrentContext());
-#endif
     ImGui_ImplOpenGL3_Init("#version 430");
 }
 
@@ -80,11 +65,7 @@ void ImGuiLayer::OnDetach()
 
     ImGui::DestroyPlatformWindows();
     ImGui_ImplOpenGL3_Shutdown();
-#ifdef CH_PLATFORM_BACKEND_GLFW
     ImGui_ImplGlfw_Shutdown();
-#elif defined(CH_PLATFORM_BACKEND_SDL3)
-    ImGui_ImplSDL3_Shutdown();
-#endif
     ImGui::DestroyContext();
 }
 
@@ -93,11 +74,7 @@ void ImGuiLayer::Begin()
     CH_PROFILE_FUNCTION();
 
     ImGui_ImplOpenGL3_NewFrame();
-#ifdef CH_PLATFORM_BACKEND_GLFW
     ImGui_ImplGlfw_NewFrame();
-#elif defined(CH_PLATFORM_BACKEND_SDL3)
-    ImGui_ImplSDL3_NewFrame();
-#endif
     ImGui::NewFrame();
     ImGuizmo::BeginFrame();
 }
@@ -116,15 +93,10 @@ void ImGuiLayer::End()
 
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
-#ifdef CH_PLATFORM_BACKEND_GLFW
         GLFWwindow* backup_current_context = glfwGetCurrentContext();
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
         glfwMakeContextCurrent(backup_current_context);
-#elif defined(CH_PLATFORM_BACKEND_SDL3)
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
-#endif
     }
 }
 

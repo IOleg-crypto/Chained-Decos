@@ -72,11 +72,9 @@ public class PlayerController : Script
         if (aDown) movementDir -= right;
         if (dDown) movementDir += right;
 
-        Log.Info($"[Diag] cam={camEntity != null} fwd={forward.X},{forward.Y},{forward.Z} right={right.X},{right.Y},{right.Z} W={wDown} S={sDown} A={aDown} D={dDown} mdir={movementDir.X},{movementDir.Y},{movementDir.Z}");
-
         RigidBodyComponent?  rb        = Entity.GetComponent<RigidBodyComponent>();
         TransformComponent?  transform = Entity.GetComponent<TransformComponent>();
-        if (rb == null || transform == null) { Log.Info("[Diag] rb or transform NULL, returning"); return; }
+        if (rb == null || transform == null) { return; }
 
         bool isKinematic = rb.IsKinematic;
         Vector3 velocity = rb.Velocity;

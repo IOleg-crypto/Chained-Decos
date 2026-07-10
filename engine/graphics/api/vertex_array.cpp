@@ -1,16 +1,16 @@
 #include "engine/graphics/api/vertex_array.h"
-#include "engine/graphics/api/renderer_api.h"
-#include "opengl/opengl_vertex_array.h"
+#include "engine/graphics/api/graphics_device.h"
+#include "opengl/gl_vertex_array.h"
 
 namespace Chained
 {
 
 std::shared_ptr<VertexArray> VertexArray::Create()
 {
-    switch (RendererAPI::GetAPI())
+    switch (GraphicsDevice::GetAPI())
     {
-        case RendererAPI::API::None:    return nullptr;
-        case RendererAPI::API::OpenGL:  return std::make_shared<OpenGLVertexArray>();
+        case GraphicsDevice::API::None:    return nullptr;
+        case GraphicsDevice::API::OpenGL:  return std::make_shared<GLVertexArray>();
         default : return nullptr;
     }
 }

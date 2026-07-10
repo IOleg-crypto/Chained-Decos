@@ -230,7 +230,7 @@ Model ModelLoader::GenerateProceduralModel(const std::string& type, const Proced
         mesh.VAO = VertexArray::Create();
         auto vb = VertexBuffer::Create(raw.vertices.data(), (uint32_t)(raw.vertices.size() * sizeof(float)));
         vb->SetLayout({
-            { ShaderDataType::Float3, "a_Position" }
+            { VertexAttributeType::Float3, "a_Position" }
         });
         mesh.VAO->AddVertexBuffer(vb);
 

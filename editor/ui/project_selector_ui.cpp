@@ -145,7 +145,7 @@ void ProjectSelectorUI::OnImGuiRender()
     {
         ImTextureID newProjTex = 0;
         if (m_NewProjectIcon && m_NewProjectIcon->GetTexture()) {
-            newProjTex = (ImTextureID)(uintptr_t)m_NewProjectIcon->GetTexture()->GetRendererID();
+            newProjTex = (ImTextureID)(uintptr_t)m_NewProjectIcon->GetTexture()->GetNativeHandle();
         }
 
         if (ImGui::ImageButton("##NewProject", newProjTex, {300, 300}, {0, 1}, {1, 0}))
@@ -168,7 +168,7 @@ void ProjectSelectorUI::OnImGuiRender()
     {
         ImTextureID openProjTex = 0;
         if (m_OpenProjectIcon && m_OpenProjectIcon->GetTexture()) {
-            openProjTex = (ImTextureID)(uintptr_t)m_OpenProjectIcon->GetTexture()->GetRendererID();
+            openProjTex = (ImTextureID)(uintptr_t)m_OpenProjectIcon->GetTexture()->GetNativeHandle();
         }
 
         if (ImGui::ImageButton("##OpenProject", openProjTex, {300, 300}, {0, 1}, {1, 0}))
@@ -195,8 +195,11 @@ void ProjectSelectorUI::OnImGuiRender()
     {
         ImGui::OpenPopup("Create New Project");
         
-        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        ImVec2 mainAreaCenter = ImVec2(
+            sidebarWidth + (viewport->WorkSize.x - sidebarWidth) * 0.5f,
+            viewport->WorkSize.y * 0.5f
+        );
+        ImGui::SetNextWindowPos(mainAreaCenter, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
         
         if (ImGui::BeginPopupModal("Create New Project", &showCreateDialog, ImGuiWindowFlags_AlwaysAutoResize))
         {

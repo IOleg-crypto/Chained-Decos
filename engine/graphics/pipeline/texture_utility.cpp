@@ -3,7 +3,7 @@
 #include "engine/graphics/api/texture.h"
 #include "engine/graphics/api/framebuffer.h"
 #include "engine/graphics/api/shader.h"
-#include "engine/graphics/pipeline/render_command.h"
+#include "engine/graphics/api/graphics_device.h"
 #include "engine/assets/types/model_asset.h"
 #include <glad/gl.h>
 
@@ -32,8 +32,8 @@ namespace Chained
     {
         auto cubemap = Texture::CreateCubemap(size, TextureFormat::RGBA16F);
         
-        GLint viewport[4];
-        glGetIntegerv(GL_VIEWPORT, viewport);
+        int viewport[4];
+        GraphicsDevice::Get().GetViewport(&viewport[0], &viewport[1], &viewport[2], &viewport[3]);
         
         auto spec = FramebufferSpecification();
         spec.Width = size;
@@ -54,13 +54,13 @@ namespace Chained
         shader->Bind();
         shader->SetMatrix("projection", captureProjection);
         
-        RenderCommand::SetTexture(0, panoramaId);
+        GraphicsDevice::Get().SetTexture(0, panoramaId);
         shader->SetInt("equirectangularMap", 0);
 
         captureFBO->Bind();
-        RenderCommand::SetViewport(0, 0, size, size);
-        RenderCommand::SetCullMode(RendererAPI::CullMode::None);
-        RenderCommand::DisableDepthTest();
+        GraphicsDevice::Get().SetViewport(0, 0, size, size);
+        GraphicsDevice::Get().SetCullMode(GraphicsDevice::CullMode::None);
+        GraphicsDevice::Get().DisableDepthTest();
 
         for (unsigned int i = 0; i < 6; ++i)
         {
@@ -68,16 +68,16 @@ namespace Chained
             
             // Still need a way to attach cubemap face to FBO in abstraction
             // For now, keep the raw GL call for the face attachment as it's very specific to this utility
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, cubemap->GetRendererID(), 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, cubemap->GetNativeHandle(), 0);
             
-            RenderCommand::Clear({0, 0, 0, 255});
+            GraphicsDevice::Get().Clear({0, 0, 0, 255});
             
             cubeMesh.VAO->Bind();
-            RenderCommand::DrawIndexed(cubeMesh.VAO, 36);
+            GraphicsDevice::Get().DrawIndexed(cubeMesh.VAO, 36);
         }
         
         captureFBO->Unbind();
-        RenderCommand::SetViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+        GraphicsDevice::Get().SetViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
         
         return cubemap;
     }

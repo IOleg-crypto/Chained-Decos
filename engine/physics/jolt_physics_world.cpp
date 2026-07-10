@@ -126,8 +126,14 @@ JoltPhysicsWorld::JoltPhysicsWorld()
 
 JoltPhysicsWorld::~JoltPhysicsWorld()
 {
+    m_MeshShapeCache.clear();
     delete m_JobSystem;
     delete m_TempAllocator;
+}
+
+void JoltPhysicsWorld::ClearShapeCache()
+{
+    m_MeshShapeCache.clear();
 }
 
 // Creates a Jolt body from a PhysicsBodyDesc.
@@ -167,6 +173,17 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
             break;
         }
 
+        // Check mesh shape cache first
+        if (!desc.CacheKey.empty())
+        {
+            auto it = m_MeshShapeCache.find(desc.CacheKey);
+            if (it != m_MeshShapeCache.end())
+            {
+                shape = it->second;
+                break;
+            }
+        }
+
         JPH::TriangleList joltTris;
         joltTris.reserve(desc.Triangles.size());
         for (const auto& t : desc.Triangles)
@@ -203,6 +220,11 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
         else
         {
             shape = result.Get();
+            // Cache the built shape for reuse
+            if (!desc.CacheKey.empty())
+            {
+                m_MeshShapeCache[desc.CacheKey] = shape;
+            }
         }
         break;
     }

@@ -23,6 +23,7 @@ namespace Chained
         WidgetType_ProgressBar = 7,
         WidgetType_Panel = 8,
         WidgetType_Image = 9,
+        WidgetType_ComboBox = 10,
     };
 
     static void RegisterManagedScriptComponentMetadata()
@@ -341,6 +342,14 @@ namespace Chained
                         out << YAML::Key << "Tint Color" << YAML::Value << d.TintColor;
                         out << YAML::Key << "Border Color" << YAML::Value << d.BorderColor;
                     },
+                    [&](ComboBoxData& d) {
+                        out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_ComboBox;
+                        out << YAML::Key << "Label" << YAML::Value << d.Label;
+                        out << YAML::Key << "Items" << YAML::Value << YAML::BeginSeq;
+                        for (auto& item : d.Items) out << item;
+                        out << YAML::EndSeq;
+                        out << YAML::Key << "Selected Index" << YAML::Value << d.SelectedIndex;
+                    },
                     [&](auto&) {
                         out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_None;
                     }
@@ -438,6 +447,14 @@ namespace Chained
                         if (w["Texture Path"]) d.TexturePath = w["Texture Path"].as<std::string>();
                         if (w["Tint Color"]) d.TintColor = w["Tint Color"].as<Color>();
                         if (w["Border Color"]) d.BorderColor = w["Border Color"].as<Color>();
+                        comp.Data = d;
+                        break;
+                    }
+                    case WidgetType_ComboBox: {
+                        ComboBoxData d;
+                        if (w["Label"]) d.Label = w["Label"].as<std::string>();
+                        if (w["Items"]) for (auto item : w["Items"]) d.Items.push_back(item.as<std::string>());
+                        if (w["Selected Index"]) d.SelectedIndex = w["Selected Index"].as<int>();
                         comp.Data = d;
                         break;
                     }

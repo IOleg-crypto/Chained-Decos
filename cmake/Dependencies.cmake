@@ -20,7 +20,6 @@ include(jolt)
 # Platform & Graphics (independent)
 include(glfw)
 include(glad)
-include(sdl3)
 
 # UI (depends on GLFW and GLAD)
 include(imgui)
