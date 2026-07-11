@@ -49,7 +49,7 @@ Entities:
         BG Color: [0, 0, 0, 0]
         Hover Color: [0, 0, 0, 0]
         Pressed Color: [0, 0, 0, 0]
-        Rounding: 4
+        Rounding: 0
         Border Size: 0
         Border Color: [255, 255, 255, 255]
         Gradient: false
@@ -59,10 +59,10 @@ Entities:
         Transition Speed: 0.100000001
       Text Style:
         Font Name: Default
-        Font Size: 37.5800018
-        Text Color: [255, 255, 255, 255]
-        Shadow: false
-        Letter Spacing: 1
+        Font Size: 44
+        Text Color: [110, 231, 211, 255]
+        Shadow: true
+        Letter Spacing: 2
         Line Height: 1.20000005
         H Align: 1
         V Align: 1
@@ -73,8 +73,8 @@ Entities:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-200, 230]
-        OffsetMax: [200, 290]
+        OffsetMin: [-260, 230]
+        OffsetMax: [260, 290]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -92,21 +92,21 @@ Entities:
       {}
     WidgetComponent:
       Box Style:
-        BG Color: [40, 40, 40, 255]
-        Hover Color: [60, 60, 60, 255]
-        Pressed Color: [30, 30, 30, 255]
-        Rounding: 4
-        Border Size: 0
-        Border Color: [255, 255, 255, 255]
+        BG Color: [30, 33, 40, 255]
+        Hover Color: [42, 46, 56, 255]
+        Pressed Color: [24, 26, 32, 255]
+        Rounding: 8
+        Border Size: 1
+        Border Color: [255, 255, 255, 22]
         Gradient: false
         Padding: 4
         Hover Scale: 1
         Pressed Scale: 1
-        Transition Speed: 0.100000001
+        Transition Speed: 0.150000006
       Text Style:
         Font Name: Default
         Font Size: 18
-        Text Color: [255, 252, 252, 255]
+        Text Color: [235, 238, 242, 255]
         Shadow: false
         Letter Spacing: 1
         Line Height: 1.20000005
@@ -119,8 +119,8 @@ Entities:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-150, 180]
-        OffsetMax: [150, 210]
+        OffsetMin: [-180, 180]
+        OffsetMax: [180, 214]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -138,21 +138,21 @@ Entities:
       {}
     WidgetComponent:
       Box Style:
-        BG Color: [40, 40, 40, 255]
-        Hover Color: [60, 60, 60, 255]
-        Pressed Color: [30, 30, 30, 255]
-        Rounding: 4
-        Border Size: 0
-        Border Color: [255, 255, 255, 255]
+        BG Color: [30, 33, 40, 255]
+        Hover Color: [42, 46, 56, 255]
+        Pressed Color: [24, 26, 32, 255]
+        Rounding: 8
+        Border Size: 1
+        Border Color: [255, 255, 255, 22]
         Gradient: false
         Padding: 4
         Hover Scale: 1
         Pressed Scale: 1
-        Transition Speed: 0.100000001
+        Transition Speed: 0.150000006
       Text Style:
         Font Name: Default
         Font Size: 18
-        Text Color: [255, 255, 255, 255]
+        Text Color: [235, 238, 242, 255]
         Shadow: false
         Letter Spacing: 1
         Line Height: 1.20000005
@@ -165,8 +165,8 @@ Entities:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-150, 140]
-        OffsetMax: [150, 170]
+        OffsetMin: [-180, 138]
+        OffsetMax: [180, 172]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -184,21 +184,21 @@ Entities:
       {}
     WidgetComponent:
       Box Style:
-        BG Color: [40, 40, 40, 255]
-        Hover Color: [60, 60, 60, 255]
-        Pressed Color: [30, 30, 30, 255]
-        Rounding: 4
-        Border Size: 0
-        Border Color: [255, 255, 255, 255]
+        BG Color: [30, 33, 40, 255]
+        Hover Color: [42, 46, 56, 255]
+        Pressed Color: [24, 26, 32, 255]
+        Rounding: 8
+        Border Size: 1
+        Border Color: [255, 255, 255, 22]
         Gradient: false
         Padding: 4
         Hover Scale: 1
         Pressed Scale: 1
-        Transition Speed: 0.100000001
+        Transition Speed: 0.150000006
       Text Style:
         Font Name: Default
         Font Size: 18
-        Text Color: [255, 255, 255, 255]
+        Text Color: [235, 238, 242, 255]
         Shadow: false
         Letter Spacing: 1
         Line Height: 1.20000005
@@ -211,8 +211,8 @@ Entities:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-150, 100]
-        OffsetMax: [150, 130]
+        OffsetMin: [-180, 96]
+        OffsetMax: [180, 130]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -230,21 +230,21 @@ Entities:
       {}
     WidgetComponent:
       Box Style:
-        BG Color: [40, 40, 40, 255]
-        Hover Color: [60, 60, 60, 255]
-        Pressed Color: [30, 30, 30, 255]
-        Rounding: 4
-        Border Size: 0
-        Border Color: [255, 255, 255, 255]
+        BG Color: [30, 33, 40, 255]
+        Hover Color: [42, 46, 56, 255]
+        Pressed Color: [24, 26, 32, 255]
+        Rounding: 8
+        Border Size: 1
+        Border Color: [255, 255, 255, 22]
         Gradient: false
         Padding: 4
         Hover Scale: 1
         Pressed Scale: 1
-        Transition Speed: 0.100000001
+        Transition Speed: 0.150000006
       Text Style:
         Font Name: Default
         Font Size: 18
-        Text Color: [255, 255, 255, 255]
+        Text Color: [235, 238, 242, 255]
         Shadow: false
         Letter Spacing: 1
         Line Height: 1.20000005
@@ -263,8 +263,8 @@ Entities:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-150, 50]
-        OffsetMax: [150, 80]
+        OffsetMin: [-180, 46]
+        OffsetMax: [180, 80]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -282,21 +282,21 @@ Entities:
       {}
     WidgetComponent:
       Box Style:
-        BG Color: [40, 40, 40, 255]
-        Hover Color: [60, 60, 60, 255]
-        Pressed Color: [30, 30, 30, 255]
-        Rounding: 4
-        Border Size: 0
-        Border Color: [255, 255, 255, 255]
+        BG Color: [30, 33, 40, 255]
+        Hover Color: [42, 46, 56, 255]
+        Pressed Color: [24, 26, 32, 255]
+        Rounding: 8
+        Border Size: 1
+        Border Color: [255, 255, 255, 22]
         Gradient: false
         Padding: 4
         Hover Scale: 1
         Pressed Scale: 1
-        Transition Speed: 0.100000001
+        Transition Speed: 0.150000006
       Text Style:
         Font Name: Default
         Font Size: 18
-        Text Color: [255, 255, 255, 255]
+        Text Color: [235, 238, 242, 255]
         Shadow: false
         Letter Spacing: 1
         Line Height: 1.20000005
@@ -311,8 +311,8 @@ Entities:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-150, 0]
-        OffsetMax: [150, 30]
+        OffsetMin: [-180, -4]
+        OffsetMax: [180, 30]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -333,23 +333,23 @@ Entities:
       {}
     WidgetComponent:
       Box Style:
-        BG Color: [40, 40, 40, 255]
-        Hover Color: [60, 60, 60, 255]
-        Pressed Color: [30, 30, 30, 255]
-        Rounding: 4
+        BG Color: [56, 178, 166, 255]
+        Hover Color: [82, 204, 191, 255]
+        Pressed Color: [40, 130, 122, 255]
+        Rounding: 8
         Border Size: 0
         Border Color: [255, 255, 255, 255]
         Gradient: false
         Padding: 4
-        Hover Scale: 1
-        Pressed Scale: 1
-        Transition Speed: 0.100000001
+        Hover Scale: 1.03000009
+        Pressed Scale: 0.970000029
+        Transition Speed: 0.150000006
       Text Style:
         Font Name: Default
-        Font Size: 22
-        Text Color: [255, 255, 255, 255]
+        Font Size: 20
+        Text Color: [15, 24, 26, 255]
         Shadow: false
-        Letter Spacing: 1
+        Letter Spacing: 1.20000005
         Line Height: 1.20000005
         H Align: 1
         V Align: 1
@@ -361,8 +361,8 @@ Entities:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-150, -70]
-        OffsetMax: [-20, -30]
+        OffsetMin: [-180, -84]
+        OffsetMax: [-22, -34]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -387,23 +387,23 @@ Entities:
       {}
     WidgetComponent:
       Box Style:
-        BG Color: [40, 40, 40, 255]
-        Hover Color: [60, 60, 60, 255]
-        Pressed Color: [30, 30, 30, 255]
-        Rounding: 4
-        Border Size: 0
-        Border Color: [255, 255, 255, 255]
+        BG Color: [30, 33, 40, 255]
+        Hover Color: [56, 178, 166, 255]
+        Pressed Color: [40, 130, 122, 255]
+        Rounding: 8
+        Border Size: 1
+        Border Color: [255, 255, 255, 28]
         Gradient: false
         Padding: 4
-        Hover Scale: 1
-        Pressed Scale: 1
-        Transition Speed: 0.100000001
+        Hover Scale: 1.03000009
+        Pressed Scale: 0.970000029
+        Transition Speed: 0.150000006
       Text Style:
         Font Name: Default
-        Font Size: 22
-        Text Color: [255, 255, 255, 255]
+        Font Size: 20
+        Text Color: [235, 238, 242, 255]
         Shadow: false
-        Letter Spacing: 1
+        Letter Spacing: 1.20000005
         Line Height: 1.20000005
         H Align: 1
         V Align: 1
@@ -415,8 +415,8 @@ Entities:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [20, -70]
-        OffsetMax: [150, -30]
+        OffsetMin: [22, -84]
+        OffsetMax: [180, -34]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]

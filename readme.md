@@ -196,7 +196,7 @@ git submodule update --init --recursive
 | CMake | 3.31+ | Required by top-level CMake configuration. |
 | Compiler | C++23 | Clang 18+, MSVC (VS2022), or MSYS2/MinGW-w64 Clang on Windows. |
 | Ninja | Latest | Recommended for fast parallel builds. |
-| .NET SDK | 9.0.x | Required for managed scripting/test workflows. |
+| .NET SDK | 10.0.x | Required for managed scripting/test workflows. |
 | Graphics Driver | OpenGL 4.3+ | Needed for editor/runtime rendering. |
 
 Linux packages used by CI (Ubuntu reference):
@@ -268,7 +268,7 @@ Notes:
 - If you use Clang on Windows and see Intellisense errors in VS Code, ensure that `.vscode/settings.json` points to the correct build directory for `clangd`:
   ```json
   "clangd.arguments": [
-      "--compile-commands-dir=${workspaceFolder}/build/windows-ninja"
+      "--compile-commands-dir=${workspaceFolder}/build/windows-clang"
   ]
   ```
 
@@ -526,7 +526,7 @@ Generator switch conflicts:
 
 Managed build not available:
 
-- Ensure dotnet SDK 9.0.x is installed and available in PATH.
+- Ensure dotnet SDK 10.0.x is installed and available in PATH.
 
 Headless Linux test issues:
 
