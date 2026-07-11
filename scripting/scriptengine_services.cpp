@@ -16,7 +16,7 @@
 
 #include <Coral/HostInstance.hpp>
 
-#ifdef CH_PLATFORM_WINDOWS
+#if CH_PLATFORM_WINDOWS
 #include <windows.h>
 #else
 #include <unistd.h>

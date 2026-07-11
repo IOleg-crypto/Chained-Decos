@@ -78,7 +78,7 @@ void GlfwWindow::Init(const WindowProperties& properties)
 
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-#ifdef CH_PLATFORM_MACOS
+#if CH_PLATFORM_MACOS
     // macOS підтримує OpenGL максимум до версії 4.1 Core
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);

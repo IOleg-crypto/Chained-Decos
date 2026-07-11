@@ -41,21 +41,21 @@ Entities:
       Triggered: false
     WidgetComponent:
       Box Style:
-        BG Color: [40, 40, 40, 255]
-        Hover Color: [60, 60, 60, 255]
-        Pressed Color: [30, 30, 30, 255]
-        Rounding: 4
-        Border Size: 0
-        Border Color: [255, 255, 255, 255]
+        BG Color: [30, 33, 40, 255]
+        Hover Color: [56, 178, 166, 255]
+        Pressed Color: [40, 130, 122, 255]
+        Rounding: 8
+        Border Size: 1
+        Border Color: [255, 255, 255, 28]
         Gradient: false
         Padding: 4
-        Hover Scale: 1
-        Pressed Scale: 1
-        Transition Speed: 0.100000001
+        Hover Scale: 1.03000009
+        Pressed Scale: 0.970000029
+        Transition Speed: 0.150000006
       Text Style:
         Font Name: Default
         Font Size: 18
-        Text Color: [255, 255, 255, 255]
+        Text Color: [235, 238, 242, 255]
         Shadow: false
         Letter Spacing: 1
         Line Height: 1.20000005
@@ -88,10 +88,10 @@ Entities:
   - Entity: 2005
     WidgetComponent:
       Box Style:
-        BG Color: [40, 40, 40, 255]
-        Hover Color: [60, 60, 60, 255]
-        Pressed Color: [30, 30, 30, 255]
-        Rounding: 4
+        BG Color: [0, 0, 0, 0]
+        Hover Color: [0, 0, 0, 0]
+        Pressed Color: [0, 0, 0, 0]
+        Rounding: 0
         Border Size: 0
         Border Color: [255, 255, 255, 255]
         Gradient: false
@@ -101,8 +101,8 @@ Entities:
         Transition Speed: 0.100000001
       Text Style:
         Font Name: Default
-        Font Size: 18
-        Text Color: [255, 255, 255, 255]
+        Font Size: 20
+        Text Color: [200, 204, 212, 255]
         Shadow: false
         Letter Spacing: 1
         Line Height: 1.20000005
@@ -134,10 +134,10 @@ Entities:
   - Entity: 2004
     WidgetComponent:
       Box Style:
-        BG Color: [40, 40, 40, 255]
-        Hover Color: [60, 60, 60, 255]
-        Pressed Color: [30, 30, 30, 255]
-        Rounding: 4
+        BG Color: [0, 0, 0, 0]
+        Hover Color: [0, 0, 0, 0]
+        Pressed Color: [0, 0, 0, 0]
+        Rounding: 0
         Border Size: 0
         Border Color: [255, 255, 255, 255]
         Gradient: false
@@ -147,8 +147,8 @@ Entities:
         Transition Speed: 0.100000001
       Text Style:
         Font Name: Default
-        Font Size: 18
-        Text Color: [255, 255, 255, 255]
+        Font Size: 20
+        Text Color: [200, 204, 212, 255]
         Shadow: false
         Letter Spacing: 1
         Line Height: 1.20000005
@@ -180,10 +180,10 @@ Entities:
   - Entity: 2001
     WidgetComponent:
       Box Style:
-        BG Color: [40, 40, 40, 255]
-        Hover Color: [60, 60, 60, 255]
-        Pressed Color: [30, 30, 30, 255]
-        Rounding: 4
+        BG Color: [0, 0, 0, 0]
+        Hover Color: [0, 0, 0, 0]
+        Pressed Color: [0, 0, 0, 0]
+        Rounding: 0
         Border Size: 0
         Border Color: [255, 255, 255, 255]
         Gradient: false
@@ -193,10 +193,10 @@ Entities:
         Transition Speed: 0.100000001
       Text Style:
         Font Name: Default
-        Font Size: 18
-        Text Color: [255, 255, 255, 255]
-        Shadow: false
-        Letter Spacing: 1
+        Font Size: 44
+        Text Color: [110, 231, 211, 255]
+        Shadow: true
+        Letter Spacing: 2
         Line Height: 1.20000005
         H Align: 1
         V Align: 1
@@ -226,10 +226,10 @@ Entities:
   - Entity: 2002
     WidgetComponent:
       Box Style:
-        BG Color: [40, 40, 40, 255]
-        Hover Color: [60, 60, 60, 255]
-        Pressed Color: [30, 30, 30, 255]
-        Rounding: 4
+        BG Color: [0, 0, 0, 0]
+        Hover Color: [0, 0, 0, 0]
+        Pressed Color: [0, 0, 0, 0]
+        Rounding: 0
         Border Size: 0
         Border Color: [255, 255, 255, 255]
         Gradient: false
@@ -239,10 +239,10 @@ Entities:
         Transition Speed: 0.100000001
       Text Style:
         Font Name: Default
-        Font Size: 21.7250004
-        Text Color: [255, 255, 255, 255]
+        Font Size: 22
+        Text Color: [235, 238, 242, 255]
         Shadow: false
-        Letter Spacing: 1.26699996
+        Letter Spacing: 1.20000005
         Line Height: 1.28600001
         H Align: 1
         V Align: 1
