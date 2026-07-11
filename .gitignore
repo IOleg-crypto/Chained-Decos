@@ -93,7 +93,8 @@ build_error.txt
 *.pdf
 
 .opencode
-
+.claude
+CLAUDE.md
 # CMake install directory
 install/
 
@@ -106,3 +107,4 @@ package/
 # Zip archives (SDK builds)
 *.zip
 *.tar.gz
+

@@ -26,8 +26,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: false
           fetch-depth: 1
+
+      - name: Write submodule SHA manifest
+        run: git submodule status | tee submodule-shas.txt
+
+      - name: Cache submodules
+        uses: actions/cache@v4
+        with:
+          path: |
+            .git/modules
+            thirdparty
+          key: submodules-${{ runner.os }}-${{ hashFiles('submodule-shas.txt') }}
+          restore-keys: |
+            submodules-${{ runner.os }}-
+
+      - name: Init submodules
+        run: git submodule update --init --recursive --depth 1
 
       - name: Get CMake and Ninja
         uses: lukka/get-cmake@latest
@@ -69,6 +85,8 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+          cache: true
+          cache-dependency-path: '**/*.csproj'
 
       - name: Preflight
         run: |

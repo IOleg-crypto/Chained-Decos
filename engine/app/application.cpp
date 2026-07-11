@@ -127,16 +127,20 @@ void Application::Run()
 
         Profiler::BeginFrame();
 
+        // Опитування подій ОС має відбуватись щокадру незалежно від розміру вікна,
+        // інакше згорнуте вікно (width/height == 0) ніколи не отримає подію відновлення з таскбару.
+        if (m_Window)
+        {
+            m_Window->BeginFrame();
+        }
+
         if (m_Window && m_Window->GetWidth() > 0 && m_Window->GetHeight() > 0)
         {
-            // 1. Process OS Events & Input (Architectural fix: always poll BEFORE logic!)
-            m_Window->BeginFrame();
-
-            // 2. Systems Update
+            // 1. Systems Update
             ServiceLocator::Get<Audio>()->Update(m_Timer.DeltaTime);
             ServiceLocator::Get<AssetManager>()->Update(m_Timer.DeltaTime);
 
-            // 3. Fixed Update
+            // 2. Fixed Update
             m_Timer.Accumulator += (float)m_Timer.DeltaTime;
             while (m_Timer.Accumulator >= m_Timer.FixedStepCount)
             {
@@ -148,16 +152,16 @@ void Application::Run()
                 m_Timer.Accumulator -= m_Timer.FixedStepCount;
             }
 
-            // 4. Logic Update
+            // 3. Logic Update
             for (auto& layer : *m_LayerStack)
             {
                 layer->OnUpdate(m_Timer.DeltaTime);
             }
 
-            // 5. Input Backup
+            // 4. Input Backup
             Core::Input::Update(m_Timer.DeltaTime);
 
-            // 6. Rendering
+            // 5. Rendering
 
             for (auto& layer : *m_LayerStack)
             {
