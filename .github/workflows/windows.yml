@@ -29,9 +29,6 @@ jobs:
           - preset: windows-clang
             build_type: Release
             unity_build: ON
-          - preset: windows-gcc
-            build_type: Release
-            unity_build: ON
 
     steps:
       - name: Checkout
@@ -41,13 +38,13 @@ jobs:
           fetch-depth: 1
 
       - name: Setup MSYS2
-        if: contains(matrix.preset, 'gcc') || contains(matrix.preset, 'clang')
+        if: contains(matrix.preset, 'clang') && !contains(matrix.preset, 'msvc')
         uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
           update: false
           path-type: inherit
-          install: ${{ contains(matrix.preset, 'clang') && 'mingw-w64-x86_64-clang lld' || 'mingw-w64-x86_64-gcc' }}
+          install: mingw-w64-x86_64-clang lld
 
       - name: Setup MSVC
         if: contains(matrix.preset, 'msvc')
@@ -88,8 +85,6 @@ jobs:
             clang --version | head -n 1
           elif [[ "${{ matrix.preset }}" == *"msvc"* ]]; then
             cl || true
-          else
-            gcc --version | head -n 1
           fi
 
       - name: Cache build directory

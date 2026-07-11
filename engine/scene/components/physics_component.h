@@ -38,7 +38,6 @@ struct ColliderComponent
     {
         return "ColliderComponent";
     }
-    static BoundingBox CalculateWorldAABB(const ColliderComponent& collider, const glm::mat4& worldTransform);
 
     struct UI
     {
