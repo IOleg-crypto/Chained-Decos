@@ -12,7 +12,6 @@
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/PhysicsSettings.h>
 #include <Jolt/RegisterTypes.h>
-#include <thread>
 
 namespace Chained
 {
@@ -35,9 +34,9 @@ public:
         switch (a)
         {
         case Layers::NON_MOVING:
-            return b == Layers::MOVING; 
+            return b == Layers::MOVING;
         case Layers::MOVING:
-            return true;                
+            return true;
         default:
             return false;
         }
@@ -85,9 +84,9 @@ public:
         switch (layer)
         {
         case Layers::NON_MOVING:
-            return bpLayer == BroadPhaseLayers::MOVING; 
+            return bpLayer == BroadPhaseLayers::MOVING;
         case Layers::MOVING:
-            return true;                                
+            return true;
         default:
             return false;
         }
@@ -104,9 +103,6 @@ static ObjectLayerPairFilterImpl s_ObjVsObjFilter;
 // ─────────────────────────────────────────────────────────────────────────────
 // JoltPhysicsWorld
 // ─────────────────────────────────────────────────────────────────────────────
-// Creates Jolt subsystems: 32 MB temp allocator, thread pool job system,
-// physics system with broad-phase/narrow-phase layers, and contact listener.
-// Default gravity is set to -9.81 (will be overridden by Physics::ResetWorld).
 JoltPhysicsWorld::JoltPhysicsWorld()
 {
     m_TempAllocator = new JPH::TempAllocatorImpl(32 * 1024 * 1024);
@@ -115,13 +111,12 @@ JoltPhysicsWorld::JoltPhysicsWorld()
 
     m_PhysicsSystem.Init(65536, 0, 65536, 65536, s_BPLayerInterface, s_ObjVsBPFilter, s_ObjVsObjFilter);
 
+    m_PhysicsSystem.SetGravity(JPH::Vec3(0.0f, -9.81f, 0.0f));
+
     m_ContactListener.SetGroundedTracker(&m_GroundedBodies);
     m_PhysicsSystem.SetContactListener(&m_ContactListener);
 
-    // Set gravity
-    m_PhysicsSystem.SetGravity(JPH::Vec3(0.0f, -9.81f, 0.0f));
-
-    CH_CORE_INFO("Jolt Physics World Initialized.");
+    CH_CORE_INFO("Jolt Physics World Initialized with ContactListener.");
 }
 
 JoltPhysicsWorld::~JoltPhysicsWorld()
@@ -136,8 +131,6 @@ void JoltPhysicsWorld::ClearShapeCache()
     m_MeshShapeCache.clear();
 }
 
-// Creates a Jolt body from a PhysicsBodyDesc.
-// Flow: build shape → apply offset → determine motion type → set body properties → create and activate.
 PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
 {
     JPH::BodyInterface& bi = m_PhysicsSystem.GetBodyInterface();
@@ -148,19 +141,16 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
     switch (desc.Shape)
     {
     case ColliderType::Box: {
-        // Dimensions = half-extents
         JPH::BoxShapeSettings s(JPH::Vec3(desc.Dimensions.x, desc.Dimensions.y, desc.Dimensions.z));
         shape = s.Create().Get();
         break;
     }
     case ColliderType::Sphere: {
-        // Dimensions.x = radius
         JPH::SphereShapeSettings s(desc.Dimensions.x);
         shape = s.Create().Get();
         break;
     }
     case ColliderType::Capsule: {
-        // Dimensions.x = radius, Dimensions.y = half-height
         JPH::CapsuleShapeSettings s(desc.Dimensions.y, desc.Dimensions.x);
         shape = s.Create().Get();
         break;
@@ -173,7 +163,6 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
             break;
         }
 
-        // Check mesh shape cache first
         if (!desc.CacheKey.empty())
         {
             auto it = m_MeshShapeCache.find(desc.CacheKey);
@@ -220,7 +209,6 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
         else
         {
             shape = result.Get();
-            // Cache the built shape for reuse
             if (!desc.CacheKey.empty())
             {
                 m_MeshShapeCache[desc.CacheKey] = shape;
@@ -238,11 +226,8 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
     // ── 1b. Apply Offset if present ──────────────────────────────────────────
     if (desc.Offset != glm::vec3(0.0f))
     {
-        JPH::RotatedTranslatedShapeSettings offsetSettings(
-            JPH::Vec3(desc.Offset.x, desc.Offset.y, desc.Offset.z),
-            JPH::Quat::sIdentity(),
-            shape
-        );
+        JPH::RotatedTranslatedShapeSettings offsetSettings(JPH::Vec3(desc.Offset.x, desc.Offset.y, desc.Offset.z),
+                                                           JPH::Quat::sIdentity(), shape);
         auto offsetResult = offsetSettings.Create();
         if (!offsetResult.HasError())
         {
@@ -280,7 +265,15 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
     settings.mLinearDamping = desc.LinearDamping;
     settings.mAngularDamping = desc.AngularDamping;
     settings.mAllowSleeping = true;
-    settings.mGravityFactor = desc.UseGravity ? 1.0f : 0.0f;
+
+    if (desc.IsKinematic)
+    {
+        settings.mGravityFactor = 0.0f;
+    }
+    else
+    {
+        settings.mGravityFactor = desc.UseGravity ? 1.0f : 0.0f;
+    }
 
     if (desc.IsFixedRotation)
     {
@@ -288,8 +281,7 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
             JPH::EAllowedDOFs::TranslationX | JPH::EAllowedDOFs::TranslationY | JPH::EAllowedDOFs::TranslationZ;
     }
 
-    
-    settings.mUserData = desc.UserData; 
+    settings.mUserData = desc.UserData;
 
     JPH::Body* body = bi.CreateBody(settings);
     bi.AddBody(body->GetID(), JPH::EActivation::Activate);
@@ -352,85 +344,72 @@ RaycastResult JoltPhysicsWorld::Raycast(const glm::vec3& origin, const glm::vec3
     return RaycastResult{false};
 }
 
-// Advances the simulation by fixedDt seconds with 1 collision detection pass.
 void JoltPhysicsWorld::Step(float fixedDt)
 {
     m_PhysicsSystem.Update(fixedDt, 1, m_TempAllocator, m_JobSystem);
 }
 
-// Sets the world gravity vector. Positive values are converted to negative Y
-// (i.e. SetGravity(20) → JPH::Vec3(0, -20, 0)).
 void JoltPhysicsWorld::SetGravity(float gravity)
 {
     m_PhysicsSystem.SetGravity(JPH::Vec3(0.0f, -gravity, 0.0f));
 }
 
-// Returns true if the body has at least one ground contact.
-// Ground contacts are determined by the ContactListenerImpl which checks
-// whether the contact normal Y component exceeds kGroundNormalThreshold.
+// ─────────────────────────────────────────────────────────────────────────────
+// Ground detection via contact callbacks (O(1) lookup)
+// ─────────────────────────────────────────────────────────────────────────────
 bool JoltPhysicsWorld::IsBodyGrounded(PhysicsBodyHandle handle) const
 {
-    return m_GroundedBodies.find(static_cast<uint32_t>(handle)) != m_GroundedBodies.end();
+    if (handle == 0)
+        return false;
+    return m_GroundedBodies.count(static_cast<uint32_t>(handle)) > 0;
 }
 
-// Clears the grounded-state set. Called before each Step() so the set is
-// rebuilt from fresh contact callbacks during the step.
 void JoltPhysicsWorld::ClearGroundedState()
 {
     m_GroundedBodies.clear();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ContactListenerImpl — JoltPhysicsWorld member
+// ContactListenerImpl
 // ─────────────────────────────────────────────────────────────────────────────
-
 JPH::ValidateResult JoltPhysicsWorld::ContactListenerImpl::OnContactValidate(
     const JPH::Body&, const JPH::Body&, JPH::RVec3Arg, const JPH::CollideShapeResult&)
 {
     return JPH::ValidateResult::AcceptAllContactsForThisBodyPair;
 }
 
-void JoltPhysicsWorld::ContactListenerImpl::OnContactAdded(
-    const JPH::Body& inBody1, const JPH::Body& inBody2,
-    const JPH::ContactManifold& inManifold, JPH::ContactSettings&)
+static void RegisterGroundContact(std::unordered_set<uint32_t>* tracker,
+                                   const JPH::Body& body1, const JPH::Body& body2,
+                                   const JPH::ContactManifold& manifold)
 {
-    if (!m_Tracker)
-        return;
+    if (!tracker) return;
+    // Normal points from body2 to body1; upward contact means body1 is on top of body2.
+    JPH::Vec3 normal = manifold.mWorldSpaceNormal;
+    // If the normal Y > 0.5 → body2 is the ground under body1
+    if (normal.GetY() > 0.5f)
+        tracker->insert(body1.GetID().GetIndexAndSequenceNumber());
+    // If normal Y < -0.5 → body1 is the ground under body2
+    else if (normal.GetY() < -0.5f)
+        tracker->insert(body2.GetID().GetIndexAndSequenceNumber());
+}
 
-    // A contact is considered "ground" when its world-space normal points upward
-    // (positive Y).  Jolt reports the normal pointing from body2 → body1, so we
-    // check both orientations: if Y ≥ threshold the *first* body is grounded,
-    // otherwise the *second* body is grounded.
-    constexpr float kGroundNormalThreshold = 0.5f;
-    float ny = inManifold.mWorldSpaceNormal.GetY();
-
-    uint32_t id1 = inBody1.GetID().GetIndexAndSequenceNumber();
-    uint32_t id2 = inBody2.GetID().GetIndexAndSequenceNumber();
-
-    if (ny >= kGroundNormalThreshold)
-        m_Tracker->insert(id1);
-    else if (ny <= -kGroundNormalThreshold)
-        m_Tracker->insert(id2);
+void JoltPhysicsWorld::ContactListenerImpl::OnContactAdded(
+    const JPH::Body& body1, const JPH::Body& body2,
+    const JPH::ContactManifold& manifold, JPH::ContactSettings&)
+{
+    RegisterGroundContact(m_Tracker, body1, body2, manifold);
 }
 
 void JoltPhysicsWorld::ContactListenerImpl::OnContactPersisted(
-    const JPH::Body& inBody1, const JPH::Body& inBody2,
-    const JPH::ContactManifold& inManifold, JPH::ContactSettings& inSettings)
+    const JPH::Body& body1, const JPH::Body& body2,
+    const JPH::ContactManifold& manifold, JPH::ContactSettings&)
 {
-    // Same logic as OnContactAdded — a persistent ground contact keeps the body grounded.
-    OnContactAdded(inBody1, inBody2, inManifold, inSettings);
+    RegisterGroundContact(m_Tracker, body1, body2, manifold);
 }
 
-void JoltPhysicsWorld::ContactListenerImpl::OnContactRemoved(const JPH::SubShapeIDPair& inPair)
+void JoltPhysicsWorld::ContactListenerImpl::OnContactRemoved(const JPH::SubShapeIDPair&)
 {
-    if (!m_Tracker)
-        return;
-
-    // When a contact is removed we cannot immediately clear grounded state because
-    // the body may still have other ground contacts.  Instead we do nothing here and
-    // let the set be rebuilt from scratch each physics step (see Physics::UpdateColliders
-    // which clears + repopulates through the contact callbacks during the next Step).
-    // This is simple and avoids complex reference-counting.
+    // Grounded set is rebuilt each frame by ClearGroundedState() + step contacts.
 }
 
 } // namespace Chained

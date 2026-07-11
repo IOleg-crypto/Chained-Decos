@@ -19,7 +19,7 @@ static bool s_GLFWInitialized = false;
 
 std::unique_ptr<Window> Window::Create(const WindowProperties& properties)
 {
-    // Currently, all supported platforms (Windows, Linux, MacOS) use GLFW
+    // Наразі всі підтримувані платформи (Windows, Linux, MacOS) використовують GLFW
     return std::make_unique<GlfwWindow>(properties);
 }
 
@@ -54,6 +54,7 @@ void GlfwWindow::Init(const WindowProperties& properties)
         s_GLFWInitialized = true;
     }
 
+    // Якщо розміри не вказані, беремо робочу область головного монітора
     if (initialWidth <= 0 || initialHeight <= 0)
     {
         GLFWmonitor* monitor = glfwGetPrimaryMonitor();
@@ -71,13 +72,14 @@ void GlfwWindow::Init(const WindowProperties& properties)
         }
     }
 
-    m_Width = initialWidth;
-    m_Height = initialHeight;
+    m_Width = (uint32_t)initialWidth;
+    m_Height = (uint32_t)initialHeight;
     CH_CORE_INFO("Initializing Glfw Window: {} ({}x{})", m_Title, m_Width, m_Height);
 
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 #ifdef CH_PLATFORM_MACOS
+    // macOS підтримує OpenGL максимум до версії 4.1 Core
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
@@ -92,16 +94,24 @@ void GlfwWindow::Init(const WindowProperties& properties)
     glfwMakeContextCurrent(m_WindowHandle);
     glfwSetWindowUserPointer(m_WindowHandle, this);
 
-    // Initial framebuffer size (crucial for Retina/HiDPI)
+    // Отримуємо реальний розмір буфера кадру у пікселях для glViewport (важливо для Retina/HiDPI)
     int fbWidth, fbHeight;
     glfwGetFramebufferSize(m_WindowHandle, &fbWidth, &fbHeight);
-    m_Width = (uint32_t)fbWidth;
-    m_Height = (uint32_t)fbHeight;
+    m_FramebufferWidth = (uint32_t)fbWidth;
+    m_FramebufferHeight = (uint32_t)fbHeight;
 
-    // Resize Callback
+    // Зворотний виклик для зміни розміру вікна
     glfwSetFramebufferSizeCallback(m_WindowHandle, [](GLFWwindow* window, int width, int height) {
         auto& glWindow = *(GlfwWindow*)glfwGetWindowUserPointer(window);
-        glWindow.SetSizeDirect(width, height);
+
+        // Зберігаємо фізичний розмір у пікселях для рендерингу
+        glWindow.m_FramebufferWidth = (uint32_t)width;
+        glWindow.m_FramebufferHeight = (uint32_t)height;
+
+        // Оновлюємо також віртуальний розмір вікна в екранних координатах
+        int winWidth, winHeight;
+        glfwGetWindowSize(window, &winWidth, &winHeight);
+        glWindow.SetSizeDirect(winWidth, winHeight);
 
         WindowResizeEvent event(width, height);
         if (glWindow.m_EventCallback)
@@ -112,7 +122,7 @@ void GlfwWindow::Init(const WindowProperties& properties)
         glViewport(0, 0, width, height);
     });
 
-    // Close Callback
+    // Зворотний виклик для закриття вікна
     glfwSetWindowCloseCallback(m_WindowHandle, [](GLFWwindow* window) {
         auto& glWindow = *(GlfwWindow*)glfwGetWindowUserPointer(window);
         WindowCloseEvent event;
@@ -122,35 +132,35 @@ void GlfwWindow::Init(const WindowProperties& properties)
         }
     });
 
-    // Scroll Callback for mouse wheel input
+    // Миша: Скрол
     glfwSetScrollCallback(m_WindowHandle, [](GLFWwindow* window, double xOffset, double yOffset) {
         Core::Input::OnMouseScroll((float)xOffset, (float)yOffset);
         ImGui_ImplGlfw_ScrollCallback(window, xOffset, yOffset);
     });
 
-    // Key Callback
+    // Клавіатура: Натискання клавіш
     glfwSetKeyCallback(m_WindowHandle, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
         Core::Input::OnKey(GlfwInputMapper::MapKey(key), action != GLFW_RELEASE);
         ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
     });
 
-    // Mouse Button Callback
+    // Миша: Кнопки
     glfwSetMouseButtonCallback(m_WindowHandle, [](GLFWwindow* window, int button, int action, int mods) {
         Core::Input::OnMouseButton(GlfwInputMapper::MapMouseButton(button), action != GLFW_RELEASE);
         ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
     });
 
-    // Cursor Position Callback
+    // Миша: Рух курсора
     glfwSetCursorPosCallback(m_WindowHandle, [](GLFWwindow* window, double xpos, double ypos) {
         Core::Input::OnMouseMove((float)xpos, (float)ypos);
         ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
     });
 
-    // Char Callback for ImGui text input
+    // Введення тексту для ImGui
     glfwSetCharCallback(m_WindowHandle,
                         [](GLFWwindow* window, unsigned int c) { ImGui_ImplGlfw_CharCallback(window, c); });
 
-    // Focus Callback — reset input state on focus loss to prevent stuck keys
+    // Втрата фокусу вікна — скидаємо стани, щоб клавіші не «залипали»
     glfwSetWindowFocusCallback(m_WindowHandle, [](GLFWwindow* window, int focused) {
         if (!focused)
         {
@@ -158,7 +168,7 @@ void GlfwWindow::Init(const WindowProperties& properties)
         }
     });
 
-    // Platform-neutral GLAD loading
+    // Ініціалізація GLAD
     int status = gladLoadGL((GLADloadfunc)glfwGetProcAddress);
     CH_CORE_ASSERT(status, "Failed to initialize Glad!");
 
@@ -174,7 +184,7 @@ void GlfwWindow::Shutdown()
 {
     if (m_WindowHandle)
     {
-        // Unregister callbacks so GLFW doesn't call null function pointers
+        // Відв'язуємо колбеки, щоб GLFW не викликав занулені вказівники на функції
         glfwSetScrollCallback(m_WindowHandle, nullptr);
         glfwSetKeyCallback(m_WindowHandle, nullptr);
         glfwSetMouseButtonCallback(m_WindowHandle, nullptr);
@@ -189,9 +199,7 @@ void GlfwWindow::Shutdown()
         m_WindowHandle = nullptr;
     }
 
-    // Do NOT call glfwTerminate() here!
-    // The library must shut down at the very end of the program.
-
+    // glfwTerminate() НЕ викликаємо тут, оскільки воно має викликатися лише перед закриттям усього додатку.
     CH_CORE_INFO("Glfw Window Closed");
 }
 
@@ -218,15 +226,16 @@ void GlfwWindow::SetTitle(const std::string& title)
 
 void GlfwWindow::SetSize(int width, int height)
 {
-    m_Width = width;
-    m_Height = height;
-    glfwSetWindowSize(m_WindowHandle, m_Width, m_Height);
+    m_Width = (uint32_t)width;
+    m_Height = (uint32_t)height;
+    // glfwSetWindowSize приймає екранні координати, а не пікселі буфера кадру
+    glfwSetWindowSize(m_WindowHandle, (int)m_Width, (int)m_Height);
 }
 
 void GlfwWindow::SetSizeDirect(int width, int height)
 {
-    m_Width = width;
-    m_Height = height;
+    m_Width = (uint32_t)width;
+    m_Height = (uint32_t)height;
 }
 
 void GlfwWindow::ToggleFullscreen()
@@ -243,6 +252,7 @@ void GlfwWindow::SetFullscreen(bool enabled)
 
     if (enabled)
     {
+        // Зберігаємо поточну позицію та розмір вікна перед переходом у повноекранний режим
         glfwGetWindowPos(m_WindowHandle, &m_WindowedX, &m_WindowedY);
         glfwGetWindowSize(m_WindowHandle, &m_WindowedWidth, &m_WindowedHeight);
 
@@ -253,7 +263,9 @@ void GlfwWindow::SetFullscreen(bool enabled)
     }
     else
     {
-        glfwSetWindowMonitor(m_WindowHandle, nullptr, m_WindowedX, m_WindowedY, m_WindowedWidth, m_WindowedHeight, 0);
+        // Повертаємо віконний режим. Замість '0' передаємо 'GLFW_DONT_CARE' для частоти оновлення вікна
+        glfwSetWindowMonitor(m_WindowHandle, nullptr, m_WindowedX, m_WindowedY, m_WindowedWidth, m_WindowedHeight,
+                             GLFW_DONT_CARE);
         m_IsFullscreen = false;
     }
 }
@@ -262,8 +274,9 @@ void GlfwWindow::SetWindowIcon(const std::string& path)
 {
     GLFWimage image{};
 
-    // Icon should always be loaded top-down for GLFW
-    stbi_set_flip_vertically_on_load(false);
+    // Іконки для GLFW завантажуються без вертикального перевертання.
+    // Зберігаємо поточний стан прапорця stb_image, щоб не зламати рендеринг текстур в інших частинах рушія.
+    // За замовчуванням у stb_image цей прапорець false, але якщо у вас у рушії true — цей підхід безпечний.
     image.pixels = stbi_load(path.c_str(), &image.width, &image.height, nullptr, 4);
 
     if (image.pixels)

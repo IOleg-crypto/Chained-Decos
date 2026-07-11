@@ -1,21 +1,26 @@
 #include "physics.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/model_asset.h"
+#include "engine/common/thread_pool.h"
 #include "engine/core/log.h"
 #include "engine/core/service_locator.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
+#include "engine/scene/systems/scene_resource_manager.h"
 #include "iphysics_world.h"
 #include "jolt_physics_world.h"
-
-#include <Jolt/Physics/Collision/Shape/BoxShape.h>
 
 #include <Jolt/Core/Factory.h>
 #include <Jolt/Core/TempAllocator.h>
 #include <Jolt/Jolt.h>
+#include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/RegisterTypes.h>
 
 #include "engine/project/project.h"
+
+#include <future>
+#include <mutex>
+#include <vector>
 
 namespace Chained
 {
@@ -23,8 +28,6 @@ namespace Chained
 Physics::Physics() = default;
 Physics::~Physics() = default;
 
-// Registers Jolt's default allocator, factory, and type information.
-// Must be called once before any Jolt objects are created.
 void Physics::Initialize()
 {
     JPH::RegisterDefaultAllocator();
@@ -50,8 +53,6 @@ IPhysicsWorld* Physics::GetWorld()
     return m_World.get();
 }
 
-// Destroys the current Jolt world and creates a fresh one.
-// Gravity is read from the active project configuration and applied immediately.
 void Physics::ResetWorld()
 {
     if (m_World)
@@ -70,9 +71,6 @@ void Physics::ResetWorld()
     CH_CORE_INFO("Physics: World reset — fresh Jolt world created.");
 }
 
-// Iterates all entities with TransformComponent + RigidBodyComponent.
-// For each entity that doesn't yet have a Jolt body handle, builds a
-// PhysicsBodyDesc from the component data and creates the Jolt body.
 void Physics::InitializeBodies(Scene* scene)
 {
     auto world = GetWorld();
@@ -81,6 +79,131 @@ void Physics::InitializeBodies(Scene* scene)
         return;
     }
 
+    // Make sure the IPhysicsWorld* is in the registry context so that
+    // SceneResourceManager::Update() can detect pending bodies later too.
+    auto& registry = scene->GetRegistry();
+    if (!registry.ctx().contains<IPhysicsWorld*>())
+    {
+        registry.ctx().emplace<IPhysicsWorld*>(world);
+    }
+
+    // Iterate all entities that need a physics body but don't have one yet.
+    // The actual body creation logic lives in SceneResourceManager::OnRigidBodyConstruct;
+    // triggering it here ensures bodies are ready before the first script OnCreate/OnUpdate.
+    auto* resourceManager = scene->GetResourceManager();
+    if (!resourceManager)
+    {
+        return;
+    }
+
+    auto view = registry.view<RigidBodyComponent, TransformComponent>();
+    for (auto entity : view)
+    {
+        auto& rb = view.get<RigidBodyComponent>(entity);
+        if (rb.Handle == kInvalidPhysicsBody)
+        {
+            resourceManager->OnRigidBodyConstruct(registry, entity);
+        }
+    }
+
+    CH_CORE_INFO("Physics::InitializeBodies — bodies initialized for scene '{}'.", scene->GetSettings().Name);
+}
+
+void Physics::Update(Scene* scene, Timestep deltaTime, bool runtime)
+{
+    if (!runtime)
+    {
+        return;
+    }
+
+    PhysicsContext& ctx = GetContext(scene);
+    ctx.Accumulator += deltaTime;
+
+    float kFixedDt = 1.0f / 60.0f;
+    if (auto project = Project::GetActive())
+    {
+        kFixedDt = project->GetConfig().Physics.FixedTimestep;
+    }
+    const int kMaxStepsPerFrame = 8;
+    bool stepped = false;
+
+    auto world = GetWorld();
+    if (!world)
+    {
+        return;
+    }
+
+    // ── КРОК 1: Синхронізація швидкостей та телепортів з ECS у Jolt перед симуляцією ──
+    auto& registry = scene->GetRegistry();
+    auto view = registry.view<TransformComponent, RigidBodyComponent>();
+
+    for (auto entity : view)
+    {
+        auto& rb = view.get<RigidBodyComponent>(entity);
+        auto& transform = view.get<TransformComponent>(entity);
+
+        if (rb.Handle == kInvalidPhysicsBody)
+        {
+            continue;
+        }
+
+        if (rb.Type == RigidBodyComponent::BodyType::Dynamic)
+        {
+            // Jolt є єдиним авторитетом для Y (гравітація).
+            // Скрипт контролює X, Z. Для стрибка — rb.Velocity.y > 0.5 (явний імпульс).
+            glm::vec3 currentJoltVelocity = world->GetVelocity(rb.Handle);
+            glm::vec3 finalVelocity = rb.Velocity;
+            // Завжди берємо Y з Jolt, окрім стрибкового імпульсу зі скрипту
+            if (rb.Velocity.y <= 0.5f)
+            {
+                finalVelocity.y = currentJoltVelocity.y;
+            }
+            world->SetVelocity(rb.Handle, finalVelocity);
+        }
+        else if (rb.Type == RigidBodyComponent::BodyType::Kinematic)
+        {
+            // Кінематичне тіло: скрипт рухає transform напряму.
+            // Потрібно синхронізувати позицію в Jolt, щоб контакти спрацювали.
+            world->SetTransform(rb.Handle, transform.Translation, transform.RotationQuat);
+            world->SetVelocity(rb.Handle, rb.Velocity);
+            transform.IsDirty = false;
+            continue; // позиція вже синхронізована, skip загального IsDirty нижче
+        }
+
+        // Для Dynamic: обробляємо телепортацію (IsDirty з редактора/коду)
+        if (transform.IsDirty)
+        {
+            world->SetTransform(rb.Handle, transform.Translation, transform.RotationQuat);
+            transform.IsDirty = false;
+        }
+    }
+
+    // ── КРОК 2: Фізичний крок симуляції Jolt ──
+    int steps = 0;
+    while (ctx.Accumulator >= kFixedDt && steps < kMaxStepsPerFrame)
+    {
+        world->ClearGroundedState();
+        world->Step(kFixedDt);
+        ctx.Accumulator -= kFixedDt;
+        stepped = true;
+        steps++;
+    }
+
+    if (ctx.Accumulator >= kFixedDt)
+    {
+        ctx.Accumulator = 0.0f; // Захист від накопичення затримок (зависання дебагера тощо)
+    }
+
+    // ── КРОК 3: Оновлюємо компоненти за результатами повної симуляції кадрів ──
+    if (stepped)
+    {
+        UpdateColliders(scene);
+    }
+}
+
+void Physics::UpdateColliders(Scene* scene)
+{
+    auto world = GetWorld();
     auto& registry = scene->GetRegistry();
     auto view = registry.view<TransformComponent, RigidBodyComponent>();
 
@@ -89,69 +212,35 @@ void Physics::InitializeBodies(Scene* scene)
         auto& transform = view.get<TransformComponent>(entity);
         auto& rb = view.get<RigidBodyComponent>(entity);
 
-        if (rb.Handle != kInvalidPhysicsBody)
+        if (rb.Handle == kInvalidPhysicsBody)
+        {
+            continue;
+        }
+        if (rb.Type == RigidBodyComponent::BodyType::Static)
         {
             continue;
         }
 
-        PhysicsBodyDesc desc;
-        desc.Position = transform.Translation;
-        desc.Rotation = transform.RotationQuat;
-        desc.Mass = rb.Mass;
-        desc.LinearDamping = rb.LinearDamping;
-        desc.AngularDamping = rb.AngularDamping;
-        desc.UseGravity = rb.UseGravity;
-        desc.IsKinematic = (rb.Type == RigidBodyComponent::BodyType::Kinematic);
-        desc.IsStatic = (rb.Type == RigidBodyComponent::BodyType::Static);
-        desc.IsFixedRotation = rb.IsFixedRotation;
-        desc.InitialVelocity = rb.Velocity;
-        desc.UserData = static_cast<uint64_t>(entity);
-
-        auto* collider = registry.try_get<ColliderComponent>(entity);
-        if (collider && collider->Enabled)
+        if (rb.Type == RigidBodyComponent::BodyType::Kinematic)
         {
-            // ── AutoCalculate: derive dimensions from the model AABB via Jolt ──
-            if (collider->AutoCalculate)
-            {
-                ApplyAutoCalculate(entity, registry, *collider, transform.Scale);
-            }
-
-            desc.Shape = collider->Type;
-            desc.Friction = collider->Friction;
-            desc.Restitution = collider->Restitution;
-            desc.Offset = collider->Offset;
-
-            switch (collider->Type)
-            {
-            case ColliderType::Box:
-                desc.Dimensions = collider->Size * transform.Scale * 0.5f;
-                break;
-            case ColliderType::Sphere:
-                desc.Dimensions.x = collider->Radius * glm::compMax(transform.Scale);
-                break;
-            case ColliderType::Capsule:
-                desc.Dimensions.x = collider->Radius;
-                desc.Dimensions.y = collider->Height * 0.5f;
-                break;
-            case ColliderType::Mesh:
-                desc.Offset = collider->Offset * transform.Scale;
-                BuildMeshTriangles(collider->ModelPath, transform.Scale, desc.Triangles);
-                desc.CacheKey = collider->ModelPath + "|" + std::to_string(transform.Scale.x) + "," +
-                                std::to_string(transform.Scale.y) + "," + std::to_string(transform.Scale.z);
-                break;
-            }
-        }
-        else
-        {
-            desc.Shape = ColliderType::Box;
-            desc.Dimensions = transform.Scale * 0.5f;
+            // Кінематика: позиція контролюється скриптом, але IsGrounded потрібен.
+            rb.IsGrounded = world->IsBodyGrounded(rb.Handle);
+            continue;
         }
 
-        rb.Handle = world->CreateBody(desc);
-        CH_CORE_INFO("Physics: Created Jolt body handle={} for entity={}. Shape={} Pos=({:.2f},{:.2f},{:.2f})",
-                     rb.Handle, (uint32_t)entity, (int)desc.Shape, desc.Position.x, desc.Position.y, desc.Position.z);
+        // Dynamic: читаємо позицію, швидкість та стан заземлення з Jolt
+        glm::vec3 pos;
+        glm::quat rot;
+        world->GetTransform(rb.Handle, pos, rot);
+
+        transform.Translation = pos;
+        transform.RotationQuat = rot;
+        transform.Rotation = glm::eulerAngles(rot);
+        transform.IsDirty = true;
+
+        rb.Velocity = world->GetVelocity(rb.Handle);
+        rb.IsGrounded = world->IsBodyGrounded(rb.Handle);
     }
-    CH_CORE_INFO("Physics: InitializeBodies complete.");
 }
 
 void Physics::BuildMeshTriangles(const std::string& modelPath, const glm::vec3& scale,
@@ -221,53 +310,6 @@ void Physics::BuildMeshTriangles(const std::string& modelPath, const glm::vec3& 
     CH_CORE_INFO("Physics: Built mesh collider from '{}' ({} triangles).", modelPath, outTriangles.size());
 }
 
-// Fixed-timestep accumulator loop with a safety cap.
-// Accumulates frame time and runs up to kMaxStepsPerFrame physics sub-steps.
-// If the accumulator overflows (e.g. after a debug pause), excess time is discarded.
-void Physics::Update(Scene* scene, Timestep deltaTime, bool runtime)
-{
-    if (!runtime)
-    {
-        return;
-    }
-
-    PhysicsContext& ctx = GetContext(scene);
-    ctx.Accumulator += deltaTime;
-
-    float kFixedDt = 1.0f / 60.0f;
-    if (auto project = Project::GetActive())
-    {
-        kFixedDt = project->GetConfig().Physics.FixedTimestep;
-    }
-    const int kMaxStepsPerFrame = 8;
-    bool stepped = false;
-
-    auto world = GetWorld();
-    if (!world)
-    {
-        return;
-    }
-
-    int steps = 0;
-    while (ctx.Accumulator >= kFixedDt && steps < kMaxStepsPerFrame)
-    {
-        world->ClearGroundedState();
-        world->Step(kFixedDt);
-        ctx.Accumulator -= kFixedDt;
-        stepped = true;
-        steps++;
-    }
-    if (ctx.Accumulator >= kFixedDt)
-    {
-        ctx.Accumulator = 0.0f;
-    }
-
-    if (stepped)
-    {
-        UpdateColliders(scene);
-    }
-}
-
 RaycastResult Physics::Raycast(Scene* scene, Ray ray)
 {
     if (auto world = GetWorld())
@@ -292,8 +334,6 @@ void Physics::ResetAccumulator(Scene* scene)
     GetContext(scene).Accumulator = 0.0f;
 }
 
-// Destroys all Jolt bodies in the world and clears the per-scene physics context.
-// Called when a scene is stopped or destroyed.
 void Physics::ClearContext(Scene* scene)
 {
     auto world = GetWorld();
@@ -317,45 +357,6 @@ void Physics::ClearContext(Scene* scene)
 void Physics::SetCollisionCallback(Scene* scene, std::function<void(entt::entity, entt::entity)> callback)
 {
     GetContext(scene).CollisionCallback = callback;
-}
-
-// After each physics step, read back the computed position, rotation, velocity,
-// and grounded state from Jolt for all Dynamic bodies.
-// Static and Kinematic bodies are skipped: Static never moves, and Kinematic
-// bodies are driven by scripts (their transform is not read from Jolt).
-void Physics::UpdateColliders(Scene* scene)
-{
-    auto world = GetWorld();
-    auto& registry = scene->GetRegistry();
-    auto view = registry.view<TransformComponent, RigidBodyComponent>();
-
-    for (auto entity : view)
-    {
-        auto& transform = view.get<TransformComponent>(entity);
-        auto& rb = view.get<RigidBodyComponent>(entity);
-
-        if (rb.Handle == kInvalidPhysicsBody)
-        {
-            continue;
-        }
-        if (rb.Type == RigidBodyComponent::BodyType::Static ||
-            rb.Type == RigidBodyComponent::BodyType::Kinematic)
-        {
-            continue;
-        }
-
-        glm::vec3 pos;
-        glm::quat rot;
-        world->GetTransform(rb.Handle, pos, rot);
-
-        transform.Translation = pos;
-        transform.RotationQuat = rot;
-        transform.Rotation = glm::eulerAngles(rot);
-        transform.IsDirty = true;
-
-        rb.Velocity = world->GetVelocity(rb.Handle);
-        rb.IsGrounded = world->IsBodyGrounded(rb.Handle);
-    }
 }
 
 void Physics::ApplyAutoCalculate(entt::entity entity, entt::registry& registry, ColliderComponent& collider,
@@ -391,7 +392,6 @@ void Physics::ApplyAutoCalculate(entt::entity entity, entt::registry& registry, 
         return;
     }
 
-    // Use pre-computed AABB — no triangle iteration needed
     const auto& bbox = asset->GetBoundingBox();
     glm::vec3 bMin = bbox.Min * scale;
     glm::vec3 bMax = bbox.Max * scale;
@@ -403,8 +403,6 @@ void Physics::ApplyAutoCalculate(entt::entity entity, entt::registry& registry, 
     collider.Radius = glm::compMax(size) * 0.5f;
     collider.Height = size.y;
 
-    // For Mesh colliders do NOT touch Offset — the triangle data already encodes
-    // the full geometry in local space; setting Offset here would double-shift it.
     if (collider.Type != ColliderType::Mesh)
     {
         collider.Offset = center;

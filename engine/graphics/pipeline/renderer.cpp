@@ -126,48 +126,11 @@ void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
         m_Data->Lighting.LightsDirty = false;
     }
 
-    // Bind lighting uniforms to the default lighting shader if it exists
+    // Track the default lighting shader handle for DrawMesh fallback
     auto lightingShaderAsset = m_Data->Shaders->Exists("Lighting") ? m_Data->Shaders->Get("Lighting") : nullptr;
     if (lightingShaderAsset && lightingShaderAsset->GetShader())
     {
-        auto shader = lightingShaderAsset->GetShader();
-        shader->Bind();
-
-        float time = (float)m_Data->Time.GetSeconds();
-        float diagMode = m_Data->DiagnosticMode;
-        float exposure = m_Data->Lighting.CurrentLighting.Exposure;
-        float ambient = m_Data->Lighting.CurrentLighting.Ambient;
-        float lightCount = (float)m_Data->Lighting.LightCount;
-        float gamma = m_Data->Lighting.CurrentLighting.Gamma;
-
-        shader->SetVec3("viewPos", camera.Position);
-        shader->SetFloat("uTime", time);
-        shader->SetFloat("uMode", diagMode);
-
-        shader->SetVec3("lightDir", m_Data->Lighting.CurrentLighting.Direction);
-
-        glm::vec4 lightColor = {m_Data->Lighting.CurrentLighting.LightColor.r / 255.0f,
-                                m_Data->Lighting.CurrentLighting.LightColor.g / 255.0f,
-                                m_Data->Lighting.CurrentLighting.LightColor.b / 255.0f,
-                                m_Data->Lighting.CurrentLighting.LightColor.a / 255.0f};
-        shader->SetVec4("lightColor", lightColor);
-
-        shader->SetFloat("ambient", ambient);
-
-        glm::vec4 skyColor = lightColor;
-        skyColor.w = ambient * 0.35f;
-        shader->SetVec4("skyAmbientColor", skyColor);
-
-        shader->SetInt("uLightCount", (int)lightCount);
-        shader->SetFloat("uExposure", exposure);
-        shader->SetFloat("uGamma", gamma);
-
-        ApplyFogUniforms(lightingShaderAsset.get());
-        if (m_Data->Lighting.LightSSBO)
-        {
-            m_Data->Lighting.LightSSBO->BindBase(0);
-        }
-        m_Data->CurrentShaderId = shader->GetNativeHandle();
+        m_Data->CurrentShaderId = lightingShaderAsset->GetShader()->GetNativeHandle();
     }
 
     // --- Direct glm::mat4 Management (Pure OpenGL style) ---
@@ -597,7 +560,6 @@ void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextu
             m_Data->FullscreenQuadVAO->Unbind();
         }
 
-        GraphicsDevice::Get().SetBlendEnabled(false);
         GraphicsDevice::Get().EnableDepthTest();
         GraphicsDevice::Get().SetCullMode(GraphicsDevice::CullMode::Back);
     }
@@ -671,7 +633,10 @@ void Renderer::SetLightingUniforms(ShaderAsset* shaderAsset)
     shader->SetVec3("viewPos", m_Data->CurrentCameraPosition);
     shader->SetFloat("uTime", static_cast<float>(m_Data->Time));
     shader->SetFloat("uMode", m_Data->DiagnosticMode);
-    shader->SetVec3("lightDir", lighting.Direction);
+    glm::vec3 lightDirNorm = glm::length(lighting.Direction) > 0.0001f
+                                 ? glm::normalize(lighting.Direction)
+                                 : glm::vec3(0.0f, -1.0f, 0.0f);
+    shader->SetVec3("lightDir", lightDirNorm);
     shader->SetVec4("lightColor", lightColor);
     shader->SetFloat("ambient", lighting.Ambient);
     shader->SetVec4("skyAmbientColor", skyColor);

@@ -3,8 +3,10 @@
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/environment_asset.h"
 #include "engine/core/service_locator.h"
+#include "engine/physics/physics.h"
 #include "engine/platform/dialogs/file_dialogs.h"
 #include "engine/project/project.h"
+#include "editor/project/project_serializer.h"
 #include "scene/scene.h"
 #include "thirdparty/IconsFontAwesome6.h"
 #include <filesystem>
@@ -23,6 +25,17 @@ static bool DrawDragFloat(const char* label, float* value, float speed = 0.1f, f
     std::string id = "##";
     id += label;
     return ImGui::DragFloat(id.c_str(), value, speed, min, max, format);
+}
+
+static void SaveProjectConfig()
+{
+    if (auto project = Project::GetActive())
+    {
+        auto& editorSettings = EditorLayer::Get().GetProjectManager().GetEditorSettings();
+        std::filesystem::path path =
+            project->GetProjectDirectoryForProject() / (project->GetConfig().Name + ".chproject");
+        EditorProjectSerializer::Serialize(project, editorSettings, path);
+    }
 }
 
 WorldPanel::WorldPanel()
@@ -141,6 +154,23 @@ void WorldPanel::OnImGuiRender(bool readOnly)
             ImGui::SetNextItemWidth(-1);
             ImGui::DragFloat("##Gravity", &settings.Gravity, 0.1f);
 
+            if (ImGui::IsItemDeactivatedAfterEdit())
+            {
+                // Apply gravity to the running physics world immediately
+                SceneState state = EditorLayer::Get().GetSceneState();
+                if (state == SceneState::Play || state == SceneState::Simulate)
+                {
+                    if (auto* physics = ServiceLocator::TryGet<Physics>())
+                    {
+                        if (auto* world = physics->GetWorld())
+                        {
+                            world->SetGravity(settings.Gravity);
+                        }
+                    }
+                }
+                SaveProjectConfig();
+            }
+
             float fps = 1.0f / settings.FixedTimestep;
             ImGui::AlignTextToFramePadding();
             ImGui::Text("Fixed FPS");
@@ -149,6 +179,11 @@ void WorldPanel::OnImGuiRender(bool readOnly)
             if (ImGui::DragFloat("##FixedFPS", &fps, 1.0f, 10.0f, 240.0f))
             {
                 settings.FixedTimestep = 1.0f / fps;
+            }
+
+            if (ImGui::IsItemDeactivatedAfterEdit())
+            {
+                SaveProjectConfig();
             }
         }
         else
