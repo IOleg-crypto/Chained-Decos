@@ -17,7 +17,7 @@ Project:
     - scenes/scene_tem.chscene
     - scenes/test_platform_scene.chscene
   Physics:
-    Gravity: 20
+    Gravity: 17.2999992
     FixedTimestep: 0.00416666688
   Animation:
     TargetFPS: 60

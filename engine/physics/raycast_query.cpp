@@ -1,9 +1,5 @@
 #include "raycast_query.h"
 
-#include "engine/assets/asset_manager.h"
-#include "engine/assets/types/model_asset.h"
-#include "engine/core/service_locator.h"
-#include "engine/physics/physics.h"
 #include "engine/scene/components.h"
 #include "engine/scene/components/component_utils.h"
 #include <algorithm>

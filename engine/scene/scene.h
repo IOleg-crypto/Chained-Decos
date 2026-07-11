@@ -88,6 +88,8 @@ public: // Systems & Tools
     const entt::registry& GetRegistry() const;
     entt::registry* GetRegistryPtr();
 
+    SceneResourceManager* GetResourceManager() { return m_ResourceManager.get(); }
+
     void OnRuntimeStop();
     void OnRuntimeStart();
     void OnUpdateSimulation(Timestep timestep);
