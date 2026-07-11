@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        preset: [linux-gcc, linux-clang]
+        preset: [linux-clang]
         build_type: [Debug, Release]
 
     steps:
@@ -60,16 +60,10 @@ jobs:
 
       - name: Setup Linux Compilers
         run: |
-          if [[ "${{ matrix.preset }}" == *"gcc"* ]]; then
-            sudo apt-get install -y gcc-14 g++-14
-            echo "CC=gcc-14" >> $GITHUB_ENV
-            echo "CXX=g++-14" >> $GITHUB_ENV
-          elif [[ "${{ matrix.preset }}" == *"clang"* ]]; then
-            sudo apt-get install -y clang-18 clang++-18 libc++-18-dev libc++abi-18-dev lld-18 llvm-18
-            echo "CC=clang-18" >> $GITHUB_ENV
-            echo "CXX=clang++-18" >> $GITHUB_ENV
-            echo "LDFLAGS=-fuse-ld=mold" >> $GITHUB_ENV
-          fi
+          sudo apt-get install -y clang-18 clang++-18 libc++-18-dev libc++abi-18-dev lld-18 llvm-18
+          echo "CC=clang-18" >> $GITHUB_ENV
+          echo "CXX=clang++-18" >> $GITHUB_ENV
+          echo "LDFLAGS=-fuse-ld=mold" >> $GITHUB_ENV
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
@@ -104,7 +98,6 @@ jobs:
           mkdir -p "build/${{ matrix.preset }}"
           PYTHON_EXE=$(python3 -c "import sys; print(sys.executable)")
           
-          # ВИДАЛЕНО: -DCMAKE_BUILD_TYPE (генератор мульти-конфіг його ігнорує)
           cmake --preset ${{ matrix.preset }} \
             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
@@ -121,7 +114,6 @@ jobs:
       - name: Build
         run: |
           set -euo pipefail
-          # Передаємо --config для ідентифікації типу збірки
           cmake --build "build/${{ matrix.preset }}" --config ${{ matrix.build_type }} \
             2>&1 | tee "build/${{ matrix.preset }}/build_${{ matrix.build_type }}.log"
 
