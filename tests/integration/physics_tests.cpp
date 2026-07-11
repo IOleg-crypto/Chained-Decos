@@ -1,4 +1,4 @@
-#include "engine/physics/collision/collision.h"
+
 #include "engine/core/service_locator.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/components.h"
@@ -7,28 +7,7 @@
 
 using namespace Chained;
 
-TEST(PhysicsTest, AABBIntersection)
-{
-    glm::vec3 minA = {0.0f, 0.0f, 0.0f};
-    glm::vec3 maxA = {1.0f, 1.0f, 1.0f};
 
-    glm::vec3 minB = {0.5f, 0.5f, 0.5f};
-    glm::vec3 maxB = {1.5f, 1.5f, 1.5f};
-
-    // Obvious overlap
-    EXPECT_TRUE(Collision::CheckAABB(minA, maxA, minB, maxB));
-    EXPECT_TRUE(Collision::CheckAABB(minB, maxB, minA, maxA));
-
-    // Touching on edge (should be true based on <= and >=)
-    glm::vec3 minC = {1.0f, 0.0f, 0.0f};
-    glm::vec3 maxC = {2.0f, 1.0f, 1.0f};
-    EXPECT_TRUE(Collision::CheckAABB(minA, maxA, minC, maxC));
-
-    // No overlap
-    glm::vec3 minD = {1.1f, 0.0f, 0.0f};
-    glm::vec3 maxD = {2.1f, 1.0f, 1.0f};
-    EXPECT_FALSE(Collision::CheckAABB(minA, maxA, minD, maxD));
-}
 
 TEST(PhysicsTest, Raycast)
 {

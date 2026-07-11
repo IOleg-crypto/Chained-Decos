@@ -34,20 +34,6 @@
       }
     },
     {
-      "name": "windows-gcc",
-      "displayName": "Windows Ninja GCC",
-      "inherits": "ninja-base",
-      "cacheVariables": {
-        "CMAKE_C_COMPILER": "gcc",
-        "CMAKE_CXX_COMPILER": "g++"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Windows"
-      }
-    },
-    {
       "name": "windows-clang",
       "displayName": "Windows Ninja Clang",
       "inherits": "ninja-base",
@@ -78,20 +64,6 @@
       }
     },
     {
-      "name": "linux-gcc",
-      "displayName": "Linux Ninja GCC",
-      "inherits": "ninja-base",
-      "cacheVariables": {
-        "CMAKE_C_COMPILER": "gcc",
-        "CMAKE_CXX_COMPILER": "g++"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
-      }
-    },
-    {
       "name": "linux-clang",
       "displayName": "Linux Ninja Clang",
       "inherits": "ninja-base",
@@ -107,14 +79,10 @@
     }
   ],
   "buildPresets": [
-    { "name": "windows-gcc-debug", "configurePreset": "windows-gcc", "configuration": "Debug" },
-    { "name": "windows-gcc-release", "configurePreset": "windows-gcc", "configuration": "Release" },
     { "name": "windows-clang-debug", "configurePreset": "windows-clang", "configuration": "Debug" },
     { "name": "windows-clang-release", "configurePreset": "windows-clang", "configuration": "Release" },
     { "name": "windows-msvc-debug", "configurePreset": "windows-msvc", "configuration": "Debug" },
     { "name": "windows-msvc-release", "configurePreset": "windows-msvc", "configuration": "Release" },
-    { "name": "linux-gcc-debug", "configurePreset": "linux-gcc", "configuration": "Debug" },
-    { "name": "linux-gcc-release", "configurePreset": "linux-gcc", "configuration": "Release" },
     { "name": "linux-clang-debug", "configurePreset": "linux-clang", "configuration": "Debug" },
     { "name": "linux-clang-release", "configurePreset": "linux-clang", "configuration": "Release" }
   ]

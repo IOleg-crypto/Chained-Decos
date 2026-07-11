@@ -194,7 +194,7 @@ git submodule update --init --recursive
 | Tool | Version | Notes |
 | :--- | :--- | :--- |
 | CMake | 3.31+ | Required by top-level CMake configuration. |
-| Compiler | C++23 | GCC 14+, Clang 18+, or MSYS2/MinGW-w64 GCC and Clang on Windows. |
+| Compiler | C++23 | Clang 18+, MSVC (VS2022), or MSYS2/MinGW-w64 Clang on Windows. |
 | Ninja | Latest | Recommended for fast parallel builds. |
 | .NET SDK | 9.0.x | Required for managed scripting/test workflows. |
 | Graphics Driver | OpenGL 4.3+ | Needed for editor/runtime rendering. |
@@ -223,23 +223,22 @@ git submodule update --init --recursive
 1. Configure (examples):
 
 ```bash
-# Linux (Ninja)
+# Linux
 cmake --preset linux-clang
-
-# Windows (MSYS2 GCC)
-cmake --preset windows-gcc
 
 # Windows (MSYS2 Clang)
 cmake --preset windows-clang
+
+# Windows (MSVC)
+cmake --preset windows-msvc
 ```
 
 1. Build:
 
 ```bash
-# Ninja presets
 cmake --build --preset linux-clang --parallel
-cmake --build --preset windows-gcc --parallel
 cmake --build --preset windows-clang --parallel
+cmake --build --preset windows-msvc --parallel
 ```
 
 1. Run editor:
@@ -248,18 +247,17 @@ cmake --build --preset windows-clang --parallel
 # Linux
 ./build/linux-clang/bin/ChainedEditor
 
-# Windows
-.\build\windows-gcc\bin\ChainedEditor.exe
+# Windows (Clang)
+.\build\windows-clang\bin\ChainedEditor.exe
 ```
 
 ## Build
 
 CMake presets defined in CMakePresets.json:
 
-- linux-gcc
 - linux-clang
-- windows-gcc
 - windows-clang
+- windows-msvc
 
 Notes:
 
@@ -285,7 +283,7 @@ Editor:
 ./build/linux-clang/bin/ChainedEditor
 
 # Windows
-.\build\windows-gcc\bin\ChainedEditor.exe
+.\build\windows-clang\bin\ChainedEditor.exe
 ```
 
 Runtime:
@@ -299,7 +297,7 @@ Runtime:
 ./build/linux-clang/bin/ChainedRuntime --project path/to/project.chproject --name "My Runtime" --width 1600 --height 900
 
 # Windows example
-.\build\windows-gcc\bin\ChainedRuntime.exe --project path\to\project.chproject --name "My Runtime" --width 1600 --height 900
+.\build\windows-clang\bin\ChainedRuntime.exe --project path\to\project.chproject --name "My Runtime" --width 1600 --height 900
 ```
 
 Runtime CLI flags currently supported:
@@ -483,19 +481,19 @@ Native tests (GoogleTest + CTest):
 
 ```bash
 # Build native test target
-cmake --build --preset windows-gcc --target EngineTests --parallel
-
-# Windows Clang variant
 cmake --build --preset windows-clang --target EngineTests --parallel
+
+# Windows MSVC variant
+cmake --build --preset windows-msvc --target EngineTests --parallel
 
 # Linux variant
 cmake --build --preset linux-clang --target EngineTests --parallel
 
 # Run native tests
-ctest --test-dir build/windows-gcc --output-on-failure
-
-# Windows Clang variant
 ctest --test-dir build/windows-clang --output-on-failure
+
+# Windows MSVC variant
+ctest --test-dir build/windows-msvc --output-on-failure
 
 # Linux variant
 ctest --test-dir build/linux-clang --output-on-failure
