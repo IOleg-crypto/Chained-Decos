@@ -16,13 +16,14 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/thirdparty/assimp/CMakeLists.txt")
     
     add_subdirectory("${CMAKE_SOURCE_DIR}/thirdparty/assimp" EXCLUDE_FROM_ALL)
 
-    # CRITICAL: Assimp's bundled glib (contrib/glib/*.c) declares C-style symbols
-    # (gp_state, gp_error, etc.) that conflict with system GLib headers when Unity
-    # Build merges all translation units into one. Disable Unity Build for assimp
-    # to avoid ODR violations and 'conflicting types' errors in CI.
-    if(TARGET assimp)
-        set_target_properties(assimp PROPERTIES UNITY_BUILD OFF)
-    endif()
+    # CRITICAL: Assimp's bundled zlib (contrib/zlib/*.c) has headers without include
+    # guards (gzguts.h), causing 'typedef redefinition' errors when Unity Build merges
+    # translation units. Disable Unity Build for both assimp and its internal zlibstatic.
+    foreach(_assimp_target assimp zlibstatic)
+        if(TARGET ${_assimp_target})
+            set_target_properties(${_assimp_target} PROPERTIES UNITY_BUILD OFF)
+        endif()
+    endforeach()
 else()
     message(FATAL_ERROR "assimp submodule missing at ${CMAKE_SOURCE_DIR}/thirdparty/assimp")
 endif()
