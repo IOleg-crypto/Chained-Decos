@@ -1,6 +1,12 @@
 # Coral dependency (Scripting host)
 if(EXISTS "${CMAKE_SOURCE_DIR}/thirdparty/coral/cmake/CMakeLists.txt")
     add_subdirectory("${CMAKE_SOURCE_DIR}/thirdparty/coral/cmake" "${CMAKE_BINARY_DIR}/vendor/coral" EXCLUDE_FROM_ALL)
+
+    set_target_properties(Coral.Native PROPERTIES
+        CXX_STANDARD 20
+        CXX_STANDARD_REQUIRED ON
+        CXX_EXTENSIONS OFF 
+    )
     
     # MinGW fixes for Coral
     if(MINGW)
