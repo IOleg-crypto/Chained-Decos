@@ -15,6 +15,14 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/thirdparty/assimp/CMakeLists.txt")
     set(ASSIMP_BUILD_FBX_IMPORTER ON CACHE INTERNAL "")
     
     add_subdirectory("${CMAKE_SOURCE_DIR}/thirdparty/assimp" EXCLUDE_FROM_ALL)
+
+    # CRITICAL: Assimp's bundled glib (contrib/glib/*.c) declares C-style symbols
+    # (gp_state, gp_error, etc.) that conflict with system GLib headers when Unity
+    # Build merges all translation units into one. Disable Unity Build for assimp
+    # to avoid ODR violations and 'conflicting types' errors in CI.
+    if(TARGET assimp)
+        set_target_properties(assimp PROPERTIES UNITY_BUILD OFF)
+    endif()
 else()
     message(FATAL_ERROR "assimp submodule missing at ${CMAKE_SOURCE_DIR}/thirdparty/assimp")
 endif()

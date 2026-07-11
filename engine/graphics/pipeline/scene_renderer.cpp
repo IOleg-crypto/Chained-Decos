@@ -145,11 +145,7 @@ void SceneRenderer::RenderScene(entt::registry& registry, const SceneSettings& s
 
     GraphicsDevice::Get().EnableDepthTest();
 
-    auto environment = settings.Environment;
-    if (!environment)
-    {
-        environment = options.EnvironmentOverride;
-    }
+    auto environment = options.EnvironmentOverride ? options.EnvironmentOverride : settings.Environment;
 
     if (environment)
     {
@@ -311,8 +307,7 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
     auto meshView = registry.view<TransformComponent, ModelComponent>();
     auto* assets = ServiceLocator::Get<AssetManager>();
 
-    // --- Debug counters (one-shot per scene load) ---
-    static bool s_DebugLogged = false;
+    // --- Debug counters (one per RenderScene call) ---
     int dbg_total = 0, dbg_emptyPath = 0, dbg_nullAsset = 0, dbg_notReady = 0, dbg_culled = 0, dbg_queued = 0;
 
     for (auto entity : meshView)
@@ -441,9 +436,8 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
         }
     }
 
-    if (!s_DebugLogged && dbg_total > 0)
+    if (dbg_nullAsset > 0 || dbg_notReady > 0)
     {
-        s_DebugLogged = true;
         CH_CORE_WARN(
             "[SceneRenderer] CollectAndRenderItems: total={} emptyPath={} nullAsset={} notReady={} culled={} queued={}",
             dbg_total, dbg_emptyPath, dbg_nullAsset, dbg_notReady, dbg_culled, dbg_queued);

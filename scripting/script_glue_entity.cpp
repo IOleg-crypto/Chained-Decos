@@ -171,7 +171,18 @@ void RigidBody_SetVelocity(uint64_t entityID, glm::vec3* inVelocity)
             auto* physics = ServiceLocator::Get<Physics>();
             if (physics && physics->GetWorld())
             {
-                physics->GetWorld()->SetVelocity(rb.Handle, *inVelocity);
+                glm::vec3 toSet = *inVelocity;
+                if (rb.Type == RigidBodyComponent::BodyType::Dynamic)
+                {
+                    // Для Dynamic тіл Jolt є авторитетом по Y (гравітація).
+                    // Скрипт може лише задати стрибковий імпульс (Y > 0.5).
+                    // В усіх інших випадках зберігаємо поточний Jolt Y.
+                    if (toSet.y <= 0.5f)
+                    {
+                        toSet.y = physics->GetWorld()->GetVelocity(rb.Handle).y;
+                    }
+                }
+                physics->GetWorld()->SetVelocity(rb.Handle, toSet);
             }
         }
     }
