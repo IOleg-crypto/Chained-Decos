@@ -29,6 +29,9 @@ jobs:
           - preset: windows-clang
             build_type: Release
             unity_build: ON
+          - preset: windows-clang
+            build_type: Debug
+            unity_build: OFF
 
     steps:
       - name: Checkout
