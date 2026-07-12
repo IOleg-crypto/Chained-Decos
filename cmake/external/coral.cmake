@@ -19,14 +19,32 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/thirdparty/coral/cmake/CMakeLists.txt")
         target_compile_options(Coral.Native PRIVATE /wd4267 /wd4244 /wd4018)
     endif()
 
-    # MinGW fixes for Coral
-    if(MINGW)
+    if(WIN32)
         set(CORAL_FIX_DIR "${CMAKE_BINARY_DIR}/vendor/coral_fixes")
         if(NOT EXISTS "${CORAL_FIX_DIR}")
             file(MAKE_DIRECTORY "${CORAL_FIX_DIR}")
         endif()
-        file(WRITE "${CORAL_FIX_DIR}/ShlObj_core.h" "#pragma once\n#include <shlobj.h>\n")
-        target_include_directories(Coral.Native PRIVATE "${CORAL_FIX_DIR}")
+        
+        # MinGW fixes for Coral
+        if(MINGW)
+            file(WRITE "${CORAL_FIX_DIR}/ShlObj_core.h" "#pragma once\n#include <shlobj.h>\n")
+            target_include_directories(Coral.Native PRIVATE "${CORAL_FIX_DIR}")
+        endif()
+
+        # CI environment LLVM Clang / Windows SDK fix for missing CoTaskMemAlloc
+        file(WRITE "${CORAL_FIX_DIR}/CombaseFix.hpp"
+            "#pragma once\n"
+            "#ifdef _WIN32\n"
+            "#include <windows.h>\n"
+            "#include <objbase.h>\n"
+            "#include <combaseapi.h>\n"
+            "#endif\n"
+        )
+        if(MSVC)
+            target_compile_options(Coral.Native PRIVATE "/FI${CORAL_FIX_DIR}/CombaseFix.hpp")
+        else()
+            target_compile_options(Coral.Native PRIVATE "-include" "${CORAL_FIX_DIR}/CombaseFix.hpp")
+        endif()
     endif()
 else()
     message(FATAL_ERROR "Coral submodule missing at ${CMAKE_SOURCE_DIR}/thirdparty/coral/cmake")
