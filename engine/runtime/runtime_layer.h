@@ -4,6 +4,7 @@
 #include "engine/core/layer.h"
 #include "engine/graphics/api/framebuffer.h"
 #include "engine/scene/scene.h"
+#include "engine/scene/scene_context.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
 #include <filesystem>
 #include <memory>
@@ -54,6 +55,9 @@ private:
 private:
     std::shared_ptr<Scene> m_Scene;
     std::unique_ptr<SceneRenderer> m_SceneRenderer;
+    // Resolved once in the constructor (ServiceLocator is already locked by then —
+    // see Application::Application) and reused for the layer's whole lifetime.
+    SceneContext m_Context;
 private:
 
     std::string m_ProjectPath;

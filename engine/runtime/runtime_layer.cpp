@@ -12,6 +12,7 @@
 #include "engine/graphics/pipeline/scene_renderer.h"
 #include "engine/graphics/ui/ui_renderer.h"
 #include "engine/imgui/imgui_layer.h"
+#include "engine/physics/physics.h"
 #include "engine/project/project.h"
 #include "engine/scene/scene_events.h"
 #include "engine/scene/scene_serializer.h"
@@ -69,6 +70,13 @@ bool ExistsNoThrow(const std::filesystem::path &path) {
 
 RuntimeLayer::RuntimeLayer(const std::string &projectPath) : Layer("RuntimeLayer"), m_ProjectPath(projectPath) {
     m_SceneRenderer = std::make_unique<SceneRenderer>();
+
+    // Safe here: Application's constructor already calls ServiceLocator::Lock() before
+    // any layer is constructed (layers are pushed from CreateApplication after `new
+    // Application(spec)` returns). Resolved once, reused for the layer's whole lifetime.
+    m_Context.PhysicsSystem = ServiceLocator::Get<Physics>();
+    m_Context.Scripting = ServiceLocator::Get<ScriptEngine>();
+    m_Context.UI = ServiceLocator::TryGet<UIRenderer>(); // null in headless mode
 }
 
 RuntimeLayer::~RuntimeLayer() {}
@@ -133,7 +141,7 @@ void RuntimeLayer::OnUpdate(Timestep ts) {
             // Without this, a button press that triggered the scene change would still be "pressed"
             // on the first frame of the new scene, causing immediate unintended transitions.
             ServiceLocator::Get<UIRenderer>()->ResetButtonStates(m_Scene.get());
-            m_Scene->OnRuntimeStart();
+            m_Scene->OnRuntimeStart(m_Context);
             m_RuntimeStarted = true;
             m_IsSceneLoading = false;
             CH_CORE_INFO("RuntimeSystem: Scene assets are ready, entering runtime.");
@@ -141,7 +149,7 @@ void RuntimeLayer::OnUpdate(Timestep ts) {
     }
 
     if (m_Scene && m_RuntimeStarted) {
-        m_Scene->OnUpdateRuntime(ts);
+        m_Scene->OnUpdateRuntime(ts, m_Context);
     }
 
     if (m_IsBoostingUploads) {
@@ -589,7 +597,7 @@ void RuntimeLayer::StopCurrentScene() {
     }
 
     if (m_RuntimeStarted) {
-        m_Scene->OnRuntimeStop();
+        m_Scene->OnRuntimeStop(m_Context);
     }
 }
 
@@ -661,7 +669,7 @@ bool RuntimeLayer::TransitionToScene(const std::filesystem::path &scenePath) {
     ServiceLocator::Get<ScriptEngine>()->SetContextScene(m_Scene.get());
     
     // CRITICAL: Standalone runtime must operate in Play mode for scripts to initialize properly!
-    m_Scene->TransitionToState(SceneState::Play);
+    m_Scene->TransitionToState(SceneState::Play, m_Context);
 
     Window &window = Application::Get().GetWindow();
     m_Scene->OnViewportResize(window.GetWidth(), window.GetHeight());

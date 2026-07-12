@@ -88,21 +88,15 @@ void Physics::InitializeBodies(Scene* scene)
     }
 
     // Iterate all entities that need a physics body but don't have one yet.
-    // The actual body creation logic lives in SceneResourceManager::OnRigidBodyConstruct;
+    // The actual body creation logic lives in SceneResources::OnRigidBodyConstruct;
     // triggering it here ensures bodies are ready before the first script OnCreate/OnUpdate.
-    auto* resourceManager = scene->GetResourceManager();
-    if (!resourceManager)
-    {
-        return;
-    }
-
     auto view = registry.view<RigidBodyComponent, TransformComponent>();
     for (auto entity : view)
     {
         auto& rb = view.get<RigidBodyComponent>(entity);
         if (rb.Handle == kInvalidPhysicsBody)
         {
-            resourceManager->OnRigidBodyConstruct(registry, entity);
+            SceneResources::OnRigidBodyConstruct(registry, entity);
         }
     }
 

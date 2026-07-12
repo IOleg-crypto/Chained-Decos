@@ -2,13 +2,12 @@
 #include "engine/core/profiler.h"
 #include "engine/scene/components.h"
 #include "engine/scene/components/component_utils.h"
-#include "engine/scene/scene.h"
 
 
-namespace Chained
+namespace Chained::Hierarchy
 {
 
-void HierarchySystem::UpdateWorldTransforms(entt::registry& reg, const std::vector<entt::entity>& roots)
+void UpdateWorldTransforms(entt::registry& reg, const std::vector<entt::entity>& roots)
 {
     CH_PROFILE_FUNCTION();
 
@@ -55,4 +54,5 @@ void HierarchySystem::UpdateWorldTransforms(entt::registry& reg, const std::vect
         }
     }
 }
-} // namespace Chained
+
+} // namespace Chained::Hierarchy

@@ -32,9 +32,9 @@ public:
     static bool Property(const char* label, float& value, float speed = 0.1f, float min = 0.0f, float max = 0.0f);
     static bool Property(const char* label, std::string& value, bool multiline = false);
     static bool Property(const char* label, Color& value);
-    static bool Property(const char* label, glm::vec2& value, float speed = 0.1f, float min = 0.0f, float max = 0.0f);
-    static bool Property(const char* label, glm::vec3& value, float speed = 0.1f, float min = 0.0f, float max = 0.0f);
-    static bool Property(const char* label, glm::vec4& value, float speed = 0.1f, float min = 0.0f, float max = 0.0f);
+    static bool Property(const char* label, glm::vec2& value);
+    static bool Property(const char* label, glm::vec3& value);
+    static bool Property(const char* label, glm::vec4& value);
     static bool Property(const char* label, uint64_t& value);
 
     static bool Property(const char* label, int& value, const char** items, int itemCount);
@@ -51,6 +51,17 @@ public:
     static bool DrawVec4(const char* label, glm::vec4& values, float resetValue = 0.0f);
     // Applies the editor-wide ImGui style.
     static void ApplyTheme();
+
+private:
+    template <typename F>
+    static bool PropertyWidget(const char* label, F&& widgetFn);
+
+    static bool FilePropertyImpl(const char* label, std::string& value,
+        const char* filter, std::function<void()> thumbnailFn);
+
+    template <int N>
+    static bool DrawVecImpl(const char* label, float* values, float resetValue,
+        const ImVec4* colors, const char* componentLabels[N]);
 };
 
 } // namespace Chained

@@ -4,7 +4,12 @@
 #include "engine/core/events/input_events.h"
 #include "engine/core/key_codes.h"
 #include "engine/scene/scene.h"
+#include "engine/scene/scene_context.h"
 #include "engine/scene/scene_events.h"
+#include "editor/undo/command_history.h"
+#include "editor/types.h"
+#include "editor/project/editor_settings.h"
+#include <imgui.h>
 #include <filesystem>
 #include <future>
 #include <memory>
@@ -12,11 +17,14 @@
 namespace Chained
 {
 class EditorLayer;
+class EditorProjectManager;
 
 class EditorSceneManager
 {
 public:
-    EditorSceneManager();
+    EditorSceneManager(CommandHistory& cmd, EditorProjectManager& proj,
+                       EditorConfig& config, ImVec2& viewportSize, EditorState& state,
+                       const SceneContext& sceneContext);
     ~EditorSceneManager() = default;
 
     void NewScene();
@@ -74,6 +82,16 @@ private:
 
     float m_AutoSaveTimer = 0.0f;
     float m_LastAutoSaveTime = 0.0f;
+
+    // Dependencies
+    CommandHistory& m_CommandHistory;
+    EditorProjectManager& m_ProjectManager;
+    EditorConfig& m_Config;
+    ImVec2& m_ViewportSize;
+    EditorState& m_EditorState;
+
+    // Resolved once by EditorLayer and handed down — see SceneContext for why.
+    SceneContext m_Context;
 };
 
 } // namespace Chained

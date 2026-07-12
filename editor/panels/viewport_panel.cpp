@@ -5,6 +5,7 @@
 #include "engine/core/input.h"
 #include "engine/core/key_codes.h"
 #include "engine/graphics/api/framebuffer.h"
+#include "editor/editor_colors.h"
 #include "editor/layer.h"
 #include "editor/viewport/ui_manipulator.h"
 #include "events.h"
@@ -85,7 +86,7 @@ void ViewportPanel::DrawCameraSelector(Scene* scene)
         return;
     }
 
-    ImGui::PushStyleColor(ImGuiCol_Button, {0.1f, 0.1f, 0.12f, 0.0f});
+    ImGui::PushStyleColor(ImGuiCol_Button, EditorColors::FloatingToolbarBg);
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 4.0f);
 
     auto view = scene->GetRegistry().view<CameraComponent>();
@@ -125,14 +126,14 @@ void ViewportPanel::DrawCameraSelector(Scene* scene)
 
 void ViewportPanel::DrawGizmoButtons()
 {
-    ImGui::PushStyleColor(ImGuiCol_Button, {0.1f, 0.1f, 0.1f, 0.0f}); // Transparent buttons in toolbar
+    ImGui::PushStyleColor(ImGuiCol_Button, EditorColors::TransparentButton); // Transparent buttons in toolbar
 
     for (const auto& btn : s_GizmoBtns)
     {
         bool selected = (m_CurrentTool == btn.type);
         if (selected)
         {
-            ImGui::PushStyleColor(ImGuiCol_Button, {0.9f, 0.45f, 0.0f, 1.0f});
+            ImGui::PushStyleColor(ImGuiCol_Button, EditorColors::ActiveToolOrange);
         }
 
         if (ImGui::Button(btn.icon, {28, 28}))
@@ -154,7 +155,9 @@ void ViewportPanel::DrawGizmoButtons()
     ImGui::PopStyleColor();
 }
 
-ViewportPanel::ViewportPanel() {
+ViewportPanel::ViewportPanel(CommandHistory& cmd, EditorSceneManager& sceneMgr, EditorProjectManager& projMgr, EditorState& state, ImVec2& editorViewportSize)
+    : m_CommandHistory(cmd), m_SceneManager(sceneMgr), m_ProjectManager(projMgr), m_EditorState(state), m_EditorViewportSize(editorViewportSize)
+{
     m_Name = "Viewport";
 
     FramebufferSpecification spec;
@@ -190,7 +193,7 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
 {
     if (!m_IsOpen) return;
 
-    auto activeScene = EditorLayer::Get().GetActiveScene();
+    auto activeScene = m_SceneManager.GetActiveScene();
 
     std::string sceneName = "None";
     if (activeScene && !activeScene->GetSettings().Name.empty())
@@ -260,10 +263,10 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
 
         if (Chained::Core::Input::IsKeyDown(Chained::KeyCode::LeftControl) && Chained::Core::Input::IsKeyPressed(Chained::KeyCode::D))
         {
-            Entity selected = EditorLayer::Get().GetSelectedEntity();
+            Entity selected = m_EditorState.SelectedEntity;
             if (selected)
             {
-                EditorLayer::Get().GetCommandHistory().PushCommand(std::make_unique<DuplicateEntityCommand>(selected));
+                m_CommandHistory.PushCommand(std::make_unique<DuplicateEntityCommand>(selected));
             }
         }
     }
@@ -275,16 +278,16 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
 void ViewportPanel::OnUpdate(Timestep ts)
 {
     // Update editor camera in Edit and Simulate modes (not during Play)
-    SceneState state = EditorLayer::Get().GetSceneState();
+    SceneState state = m_SceneManager.GetSceneState();
     if (state == SceneState::Edit || state == SceneState::Simulate)
     {
-        auto activeScene = EditorLayer::Get().GetActiveScene();
+    auto activeScene = m_SceneManager.GetActiveScene();
         // Use m_Hovered that was set in the PREVIOUS frame's ImGuiRender.
         // Also allow update if right mouse is held (user clicked into viewport from outside).
         bool mouseInViewport = m_Hovered || Chained::Core::Input::IsMouseButtonDown(Chained::MouseCode::ButtonRight);
         if (activeScene && mouseInViewport)
         {
-            auto& editorSettings = EditorLayer::Get().GetProjectManager().GetEditorSettings();
+            auto& editorSettings = m_ProjectManager.GetEditorSettings();
             m_CameraController->SetMoveSpeed(editorSettings.CameraMoveSpeed);
             m_CameraController->SetBoostMultiplier(editorSettings.CameraBoostMultiplier);
             m_CameraController->SetDisableZoom(editorSettings.DisableCameraZoom);
@@ -312,11 +315,11 @@ void ViewportPanel::OnEvent(Event& e)
 
 Ray ViewportPanel::GetMouseRay(const glm::vec2& mousePosition)
 {
-    auto activeScene = EditorLayer::Get().GetActiveScene();
+    auto activeScene = m_SceneManager.GetActiveScene();
     auto activeCameraOpt = SceneRenderer::GetActiveCamera(activeScene->GetRegistry());
 
     Camera3D camera;
-    if (activeCameraOpt.has_value() && EditorLayer::Get().GetSceneState() == SceneState::Play)
+    if (activeCameraOpt.has_value() && m_SceneManager.GetSceneState() == SceneState::Play)
     {
         camera = activeCameraOpt.value();
     }
@@ -343,7 +346,7 @@ void ViewportPanel::HandleResize(const ImVec2& viewportSize, Scene* activeScene)
             // Keep Renderer in sync so frustum & projection use correct aspect ratio
             ServiceLocator::Get<Renderer>()->SetViewportSize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 
-            EditorLayer::Get().OnViewportResized({ m_ViewportSize.x, m_ViewportSize.y });
+            m_EditorViewportSize = { m_ViewportSize.x, m_ViewportSize.y };
             m_CameraController->SetViewportSize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 
             if (activeScene)
@@ -393,7 +396,7 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
     bool cameraFound = activeCameraOpt.has_value();
     auto camera = MakeCameraFromController(*m_CameraController);
 
-    if (cameraFound && EditorLayer::Get().GetSceneState() == SceneState::Play)
+    if (cameraFound && m_SceneManager.GetSceneState() == SceneState::Play)
     {
         camera = activeCameraOpt.value();
     }
@@ -434,7 +437,7 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
     m_SceneRenderer->RenderScene(activeScene->GetRegistry(), activeScene->GetSettings(), camera, camera.NearClip, camera.FarClip, options);
 
     // Render proper editor icons (camera, light, spawn) with loaded textures
-    if (EditorLayer::Get().GetSceneState() != SceneState::Play)
+    if (m_SceneManager.GetSceneState() != SceneState::Play)
     {
         RenderEditorIcons(activeScene->GetRegistry(), activeScene->GetSettings(), camera);
         //ServiceLocator<Renderer>()->GetSceneManager()->RenderEditorIcons(activeScene->GetRegistry(), activeScene->GetSettings(), camera);
@@ -472,7 +475,7 @@ void ViewportPanel::HandleDragDrop(Scene* activeScene)
 
             if (ext == ".chscene")
             {
-                EditorLayer::Get().GetSceneManager().OpenScene(filepath);
+                m_SceneManager.OpenScene(filepath);
             }
             else if (ext == ".chprefab")
             {
@@ -486,9 +489,11 @@ void ViewportPanel::HandleDragDrop(Scene* activeScene)
                 // Use relative path if possible to satisfy portability
                 modelcomp.ModelPath = Project::GetRelativePath(filepath);
 
-                // Select the new entity
+                // Select the new entity. Dispatch through the app so Inspector/Material
+                // panels (which subscribe to EntitySelectedEvent) also refresh — the event
+                // handler in EditorLayer::OnEvent updates m_EditorState.SelectedEntity for us.
                 EntitySelectedEvent e((entt::entity)entity, activeScene);
-                EditorLayer::Get().OnEvent(e);
+                Application::Get().OnEvent(e);
             }
         }
         ImGui::EndDragDropTarget();
@@ -497,10 +502,10 @@ void ViewportPanel::HandleDragDrop(Scene* activeScene)
 
 void ViewportPanel::RenderOverlays(Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos)
 {
-    auto selectedEntity = EditorLayer::Get().GetSelectedEntity();
+    auto selectedEntity = m_EditorState.SelectedEntity;
     bool isUISelected = selectedEntity && selectedEntity.HasComponent<ControlComponent>();
     auto activeCameraOpt = SceneRenderer::GetActiveCamera(activeScene->GetRegistry());
-    bool useActiveCamera = activeCameraOpt.has_value() && EditorLayer::Get().GetSceneState() == SceneState::Play;
+    bool useActiveCamera = activeCameraOpt.has_value() && m_SceneManager.GetSceneState() == SceneState::Play;
     auto camera = useActiveCamera ? activeCameraOpt.value() : MakeCameraFromController(*m_CameraController);
 
     ImGui::SetCursorScreenPos(viewportScreenPos);
@@ -512,10 +517,10 @@ void ViewportPanel::RenderOverlays(Scene* activeScene, const ImVec2& viewportSiz
     // 2. Game UI Overlay
     ImVec2 canvasOrigin = viewportScreenPos;
     ServiceLocator::Get<UIRenderer>()->DrawCanvas(activeScene, canvasOrigin, viewportSize,
-                                                EditorLayer::Get().GetSceneState() == SceneState::Edit);
+                                                m_SceneManager.GetSceneState() == SceneState::Edit);
 
     // 3. Selection Highlight
-    if (isUISelected && selectedEntity && EditorLayer::Get().GetSceneState() == SceneState::Edit)
+    if (isUISelected && selectedEntity && m_SceneManager.GetSceneState() == SceneState::Edit)
     {
         auto rect = ServiceLocator::Get<UIRenderer>()->GetEntityRect(activeScene, selectedEntity, viewportSize, viewportScreenPos);
 
@@ -544,7 +549,7 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
     bool isDragging = m_UIManipulator.IsActive();
     bool isGizmoDragging = m_Gizmo.IsDragging();
     bool isGizmoHovered = m_Gizmo.IsHovered();
-    SceneState sceneState = EditorLayer::Get().GetSceneState();
+    SceneState sceneState = m_SceneManager.GetSceneState();
 
     if ((sceneState == SceneState::Edit || sceneState == SceneState::Simulate) && isUIChildHovered && isClicked && !isGizmoDragging && !isGizmoHovered && !isDragging)
     {
@@ -571,7 +576,7 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
         }
 
         // 3D Picking
-        if (!bestHit && activeCameraOpt.has_value())
+        if (!bestHit)
         {
             SceneRaycastResult result = ScenePicker::Raycast(activeScene, ray);
             if (result.Hit)
@@ -582,8 +587,11 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
 
         if (bestHit)
         {
+            // Dispatch via Application so Inspector / MaterialPanel (which listen for
+            // EntitySelectedEvent in their OnEvent handlers) refresh too. EditorLayer's
+            // own handler is what writes m_EditorState.SelectedEntity — don't do it twice.
             EntitySelectedEvent e((entt::entity)bestHit, activeScene);
-            EditorLayer::Get().OnEvent(e);
+            Application::Get().OnEvent(e);
         }
         else
         {
@@ -596,7 +604,7 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
             if (mouseInViewport)
             {
                 EntitySelectedEvent e(entt::null, activeScene);
-                EditorLayer::Get().OnEvent(e);
+                Application::Get().OnEvent(e);
             }
         }
     }
@@ -606,7 +614,7 @@ void ViewportPanel::RenderToolbar(Scene* activeScene, const ImVec2& viewportSize
 {
     ImVec2 toolbarPos = {viewportScreenPos.x + 10.0f, viewportScreenPos.y + 10.0f};
     ImGui::SetNextWindowPos(toolbarPos);
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.12f, 0.8f));
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, EditorColors::ToolbarBg);
     ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5, 5));
 
@@ -625,7 +633,7 @@ void ViewportPanel::RenderToolbar(Scene* activeScene, const ImVec2& viewportSize
 
         // Snapping toggle
         bool snapping = m_Gizmo.IsSnappingEnabled();
-        if (snapping) ImGui::PushStyleColor(ImGuiCol_Text, {0.3f, 0.8f, 1.0f, 1.0f});
+        if (snapping) ImGui::PushStyleColor(ImGuiCol_Text, EditorColors::ActiveSnapBlue);
         if (ImGui::Button(ICON_FA_MAGNET "##SnapToggle", {28, 28})) m_Gizmo.SetSnapping(!snapping);
         if (snapping) ImGui::PopStyleColor();
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Enable Grid Snapping");
@@ -649,43 +657,39 @@ void ViewportPanel::RenderToolbar(Scene* activeScene, const ImVec2& viewportSize
 
         // Playback Tools
         // Playback Tools
-        SceneState sceneState = EditorLayer::Get().GetSceneState();
+        SceneState sceneState = m_SceneManager.GetSceneState();
         bool isPlaying = (sceneState == SceneState::Play);
         bool isSimulating = (sceneState == SceneState::Simulate);
         ImGui::SameLine(0, 10);
 
-        if (isPlaying) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 1.0f, 0.3f, 1.0f));
+        if (isPlaying) ImGui::PushStyleColor(ImGuiCol_Text, EditorColors::PlayGreen);
         if (ImGui::Button(isPlaying ? ICON_FA_STOP : ICON_FA_PLAY, ImVec2(28, 28)))
         {
-            if (isPlaying)
-            {
-                SceneStopEvent e;
-                EditorLayer::Get().OnEvent(e);
-            }
-            else
-            {
-                ScenePlayEvent e;
-                EditorLayer::Get().OnEvent(e);
-            }
+        if (isPlaying)
+        {
+            m_SceneManager.SetSceneState(SceneState::Edit);
+        }
+        else
+        {
+            m_SceneManager.SetSceneState(SceneState::Play);
+        }
         }
         if (isPlaying) ImGui::PopStyleColor();
         if (ImGui::IsItemHovered()) ImGui::SetTooltip(isPlaying ? "Stop" : "Play (Run Physics & Scripts)");
 
         ImGui::SameLine(0, 5);
 
-        if (isSimulating) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.64f, 0.0f, 1.0f)); // Orange for simulate
+        if (isSimulating) ImGui::PushStyleColor(ImGuiCol_Text, EditorColors::SimulateOrange); // Orange for simulate
         if (ImGui::Button(isSimulating ? ICON_FA_STOP : ICON_FA_GEARS, ImVec2(28, 28)))
         {
-            if (isSimulating)
-            {
-                SceneStopEvent e;
-                EditorLayer::Get().OnEvent(e);
-            }
-            else
-            {
-                SceneSimulateEvent e;
-                EditorLayer::Get().OnEvent(e);
-            }
+        if (isSimulating)
+        {
+            m_SceneManager.SetSceneState(SceneState::Edit);
+        }
+        else
+        {
+            m_SceneManager.SetSceneState(SceneState::Simulate);
+        }
         }
         if (isSimulating) ImGui::PopStyleColor();
         if (ImGui::IsItemHovered()) ImGui::SetTooltip(isSimulating ? "Stop Simulation" : "Simulate (Run Physics Only)");

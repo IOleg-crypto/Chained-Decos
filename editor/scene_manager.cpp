@@ -19,7 +19,13 @@
 namespace Chained
 {
 
-EditorSceneManager::EditorSceneManager() =  default;
+EditorSceneManager::EditorSceneManager(CommandHistory& cmd, EditorProjectManager& proj,
+                                       EditorConfig& config, ImVec2& viewportSize, EditorState& state,
+                                       const SceneContext& sceneContext)
+    : m_CommandHistory(cmd), m_ProjectManager(proj), m_Config(config),
+      m_ViewportSize(viewportSize), m_EditorState(state), m_Context(sceneContext)
+{
+}
 
 void EditorSceneManager::NewScene()
 {
@@ -116,10 +122,10 @@ void EditorSceneManager::SetScene(const std::shared_ptr<Scene>& scene)
     m_EditorScene = scene;
     if (m_EditorScene)
     {
-        m_EditorScene->TransitionToState(SceneState::Edit);
+        m_EditorScene->TransitionToState(SceneState::Edit, m_Context);
     }
     
-    EditorLayer::Get().SetSelectedEntity({});
+    m_EditorState.SelectedEntity = {};
 }
 
 SceneState EditorSceneManager::GetSceneState() const
@@ -181,16 +187,16 @@ void EditorSceneManager::SetSceneState(SceneState state)
         if (m_RuntimeScene)
         {
             CH_CORE_INFO("Editor: Cleaning up runtime scene...");
-            m_RuntimeScene->OnRuntimeStop();
+            m_RuntimeScene->OnRuntimeStop(m_Context);
             m_RuntimeScene.reset();
         }
 
         if (m_EditorScene)
         {
-            m_EditorScene->TransitionToState(SceneState::Edit);
+            m_EditorScene->TransitionToState(SceneState::Edit, m_Context);
         }
 
-        EditorLayer::Get().SetSelectedEntity({});
+        m_EditorState.SelectedEntity = {};
     }
 }
 
@@ -210,9 +216,6 @@ void EditorSceneManager::OnUpdate(Timestep ts)
     {
         UpdateSceneOpenTransition();
     }
-
-    EditorLayer::Get().GetEditorState().IsLoading = IsLoading();
-    EditorLayer::Get().GetEditorState().LoadingStatus = m_LoadingStatus;
 }
 
 void EditorSceneManager::OnViewportResize(uint32_t width, uint32_t height)
@@ -292,7 +295,7 @@ void EditorSceneManager::UpdateSceneOpenTransition()
                     {
                         CH_CORE_INFO("Editor: Stopping current runtime scene to load '{}'.",
                                      m_PendingSceneOpenPath.string());
-                        m_RuntimeScene->OnRuntimeStop();
+                        m_RuntimeScene->OnRuntimeStop(m_Context);
                     }
 
                     m_RuntimeScene = m_SceneOpenFuture.get();
@@ -355,14 +358,14 @@ void EditorSceneManager::UpdateSceneOpenTransition()
         if (m_IsPlayModeSceneLoad)
         {
             // TransitionToState already calls OnRuntimeStart() via OnStateEnter
-            m_RuntimeScene->TransitionToState(SceneState::Play);
+            m_RuntimeScene->TransitionToState(SceneState::Play, m_Context);
 
             CH_CORE_INFO("Editor: Activating new runtime scene '{}'.", m_PendingSceneOpenPath.string());
         }
         else
         {
-            m_EditorScene->TransitionToState(SceneState::Edit);
-            
+            m_EditorScene->TransitionToState(SceneState::Edit, m_Context);
+
             // Dispatch the scene-opened event
             SceneOpenedEvent e(m_PendingSceneOpenPath.string());
             OnSceneOpened(e);
@@ -372,7 +375,7 @@ void EditorSceneManager::UpdateSceneOpenTransition()
         m_SceneOpenSceneReady = false;
         m_SceneOpenFuture = {};
 
-        EditorLayer::Get().SetSelectedEntity({});
+        m_EditorState.SelectedEntity = {};
 
         m_PendingSceneOpenPath.clear();
         m_LoadingStatus = "";
@@ -454,12 +457,12 @@ void EditorSceneManager::UpdatePlayModeTransition()
 
     if (m_PlayModeSceneReady && m_RuntimeScene)
     {
-        m_RuntimeScene->OnViewportResize((uint32_t)EditorLayer::Get().GetViewportSize().x,
-                                         (uint32_t)EditorLayer::Get().GetViewportSize().y);
+        m_RuntimeScene->OnViewportResize((uint32_t)m_ViewportSize.x,
+                                         (uint32_t)m_ViewportSize.y);
 
         // Configure state directly on the cloned runtime scene.
         // TransitionToState already calls OnRuntimeStart() via OnStateEnter.
-        m_RuntimeScene->TransitionToState(m_TargetState);
+        m_RuntimeScene->TransitionToState(m_TargetState, m_Context);
 
         m_IsPlayModeLoading = false;
         m_PlayModeSceneReady = false;
@@ -484,9 +487,9 @@ bool EditorSceneManager::OnSceneOpened(SceneOpenedEvent& e)
     {
         project->GetConfig().ActiveScenePath =
             std::filesystem::relative(e.GetPath(), project->GetProjectDirectoryForProject());
-        EditorLayer::Get().GetProjectManager().SaveProject();
+        m_ProjectManager.SaveProject();
 
-        EditorLayer::Get().GetConfig().LastScenePath = e.GetPath();
+        m_Config.LastScenePath = e.GetPath();
         EditorLayer::Get().SaveConfig();
         return true;
     }
@@ -538,13 +541,13 @@ bool EditorSceneManager::OnKeyPressed(KeyPressedEvent& e)
         case KeyCode::Z:
             if (GetSceneState() != SceneState::Play)
             {
-                EditorLayer::Get().GetCommandHistory().Undo();
+                m_CommandHistory.Undo();
             }
             return true;
         case KeyCode::Y:
             if (GetSceneState() != SceneState::Play)
             {
-                EditorLayer::Get().GetCommandHistory().Redo();
+                m_CommandHistory.Redo();
             }
             return true;
         }
@@ -552,7 +555,7 @@ bool EditorSceneManager::OnKeyPressed(KeyPressedEvent& e)
 
     if (keyCode == KeyCode::F5)
     {
-        EditorLayer::Get().GetProjectManager().LaunchStandalone(EditorLayer::Get().GetActiveScene());
+        m_ProjectManager.LaunchStandalone(EditorSceneManager::GetActiveScene());
         return true;
     }
 

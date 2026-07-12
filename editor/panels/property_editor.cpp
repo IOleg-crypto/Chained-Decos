@@ -115,7 +115,10 @@ void PropertyEditor::DrawGenericReflection(const ComponentMetadata& metadata, En
     );
 }
 
-template <typename T> void PropertyEditor::Register(const std::string& name, const char* icon)
+template <typename T>
+void PropertyEditor::RegisterComponentImpl(
+    const std::string& name, const char* icon,
+    std::function<void(Entity)> drawUI)
 {
     auto typeId = entt::type_hash<T>::value();
     auto& metadata = ComponentRegistry::Exists(typeId)
@@ -132,43 +135,32 @@ template <typename T> void PropertyEditor::Register(const std::string& name, con
 
     metadata.Name = name;
     metadata.Icon = icon;
-    metadata.DrawUI = [name, icon](Entity e) { DrawComponentReflection<T>(name, icon, e); };
+    metadata.DrawUI = drawUI;
     metadata.Add = [](Entity e) {
         if (!e.HasComponent<T>() && s_EditorLayer)
-            s_EditorLayer->GetCommandHistory().PushCommand(std::make_unique<AddComponentCommand<T>>(e));
+            s_EditorLayer->GetCommandHistory().PushCommand(
+                std::make_unique<AddComponentCommand<T>>(e));
     };
     metadata.Remove = [](Entity e) {
         if (s_EditorLayer)
-            s_EditorLayer->GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(e));
+            s_EditorLayer->GetCommandHistory().PushCommand(
+                std::make_unique<RemoveComponentCommand<T>>(e));
     };
 }
 
 template <typename T>
-void PropertyEditor::RegisterCustom(const std::string& name, std::function<bool(T&, Entity)> drawer, const char* icon)
+void PropertyEditor::Register(const std::string& name, const char* icon)
 {
-    auto typeId = entt::type_hash<T>::value();
-    auto& metadata = ComponentRegistry::Exists(typeId)
-        ? ComponentRegistry::GetMetadataMutable(typeId)
-        : ([&]() -> ComponentMetadata& {
-            ComponentMetadata fresh;
-            fresh.Name = name;
-            fresh.Icon = icon;
-            fresh.Category = "Engine";
-            ComponentRegistry::Register(typeId, fresh);
-            return ComponentRegistry::GetMetadataMutable(typeId);
-          })();
+    RegisterComponentImpl<T>(name, icon,
+        [name, icon](Entity e) { DrawComponentReflection<T>(name, icon, e); });
+}
 
-    metadata.Name = name;
-    metadata.Icon = icon;
-    metadata.DrawUI = [name, icon, drawer](Entity e) { DrawComponentContainer<T>(name, icon, e, drawer); };
-    metadata.Add = [](Entity e) {
-        if (!e.HasComponent<T>() && s_EditorLayer)
-            s_EditorLayer->GetCommandHistory().PushCommand(std::make_unique<AddComponentCommand<T>>(e));
-    };
-    metadata.Remove = [](Entity e) {
-        if (s_EditorLayer)
-            s_EditorLayer->GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(e));
-    };
+template <typename T>
+void PropertyEditor::RegisterCustom(const std::string& name,
+    std::function<bool(T&, Entity)> drawer, const char* icon)
+{
+    RegisterComponentImpl<T>(name, icon,
+        [name, icon, drawer](Entity e) { DrawComponentContainer<T>(name, icon, e, drawer); });
 }
 
 // --- Implementation ---
@@ -178,11 +170,7 @@ void PropertyEditor::Init()
     s_EditorLayer = &EditorLayer::Get();
 
     // --- Core Components ---
-    Register<TransformComponent>("Transform", ICON_FA_ARROWS_UP_DOWN_LEFT_RIGHT);
     ComponentRegistry::SetAllowAdd(entt::type_hash<TransformComponent>::value(), false);
-
-    Register<TagComponent>("Tag", ICON_FA_TAG);
-    Register<CameraComponent>("Camera", ICON_FA_VIDEO);
     RegisterCustom<LightComponent>("Light", [&](LightComponent& comp, Entity entity) {
         bool changed = false;
         UIProperties ui;
@@ -209,7 +197,6 @@ void PropertyEditor::Init()
 
         return changed;
     }, ICON_FA_LIGHTBULB);
-    Register<RigidBodyComponent>("RigidBody", ICON_FA_CUBES);
     RegisterCustom<ColliderComponent>("Collider", [&](ColliderComponent& comp, Entity entity) {
         bool changed = false;
         UIProperties ui;
@@ -254,10 +241,6 @@ void PropertyEditor::Init()
 
         return changed;
     }, ICON_FA_SHIELD);
-    Register<ModelComponent>("Model", ICON_FA_CUBE);
-    Register<SpriteComponent>("Sprite", ICON_FA_IMAGE);
-    Register<PrimitiveComponent>("Primitive", ICON_FA_SHAPES);
-    Register<ShaderComponent>("Shader", ICON_FA_CODE);
     RegisterCustom<AnimationComponent>("Animation", [&](AnimationComponent& comp, Entity entity) {
         bool changed = false;
         UIProperties ui;
@@ -319,7 +302,6 @@ void PropertyEditor::Init()
 
         return changed;
     }, ICON_FA_FILM);
-    Register<AudioComponent>("Audio", ICON_FA_VOLUME_HIGH);
 
     // --- Scripting ---
     RegisterCustom<ManagedScriptComponent>("Scripts", [](ManagedScriptComponent& comp, Entity entity) {
@@ -412,10 +394,6 @@ void PropertyEditor::Init()
     }, ICON_FA_FILE_CODE);
 
     // --- UI Components ---
-
-    Register<ControlComponent>("RectTransform", ICON_FA_VECTOR_SQUARE);
-    Register<NavigationComponent>("Navigation", ICON_FA_ARROWS_TO_DOT);
-    Register<UIActionComponent>("UIAction", ICON_FA_BOLT);
 
     // --- UI Widgets ---
     RegisterCustom<UIControlComponent>("Widget", [](UIControlComponent& comp, Entity entity) {
@@ -513,7 +491,6 @@ void PropertyEditor::Init()
         }
     };
     markWidget(entt::type_hash<ControlComponent>::value());
-    markWidget(entt::type_hash<NavigationComponent>::value());
     markWidget(entt::type_hash<UIActionComponent>::value());
     markWidget(entt::type_hash<UIControlComponent>::value());
     markWidget(entt::type_hash<SpriteComponent>::value());

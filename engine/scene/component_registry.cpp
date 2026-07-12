@@ -237,12 +237,14 @@ namespace Chained
         RegisterReflective<TagComponent>("Tag", ICON_FA_TAG, "Core");
         RegisterReflective<CameraComponent>("Camera", ICON_FA_VIDEO, "Core");
         RegisterReflective<IDComponent>("ID", nullptr, "Core");
+        RegisterReflective<NameComponent>("Name", nullptr, "Core");
+        RegisterReflective<HierarchyComponent>("Hierarchy", nullptr, "Core");
         
         // Graphics
-        RegisterReflective<ModelComponent>("Model", ICON_FA_CUBE, "Graphics");
-        RegisterReflective<LightComponent>("Light", ICON_FA_LIGHTBULB, "Graphics");
-        RegisterReflective<SpriteComponent>("Sprite", ICON_FA_IMAGE, "Graphics");
-        RegisterReflective<ShaderComponent>("Shader", nullptr, "Graphics");
+        RegisterReflective<ModelComponent>("Model", ICON_FA_CUBE, "Rendering");
+        RegisterReflective<LightComponent>("Light", ICON_FA_LIGHTBULB, "Rendering");
+        RegisterReflective<SpriteComponent>("Sprite", ICON_FA_IMAGE, "Rendering");
+        RegisterReflective<ShaderComponent>("Shader", nullptr, "Rendering");
 
         // Audio
         RegisterReflective<AudioComponent>("Audio", ICON_FA_VOLUME_HIGH, "Audio");
@@ -253,8 +255,10 @@ namespace Chained
         RegisterReflective<PrimitiveComponent>("Primitive", nullptr, "Physics");
 
         // Logic & Animation
-        RegisterReflective<AnimationComponent>("Animation", ICON_FA_FILM, "Logic");
-        RegisterReflective<SceneTransitionComponent>("Scene Transition", ICON_FA_DOOR_OPEN, "Logic");
+        RegisterReflective<AnimationComponent>("Animation", ICON_FA_FILM, "Animation");
+        RegisterReflective<SceneTransitionComponent>("Scene Transition", ICON_FA_DOOR_OPEN, "Gameplay");
+
+        // Scripting
         RegisterManagedScriptComponentMetadata();
         
         // UI — custom serializer (bypasses broken variant reflection)
@@ -752,9 +756,6 @@ namespace Chained
 
         RegisterReflective<ControlComponent>("Control", nullptr, "UI");
         RegisterReflective<UIActionComponent>("UI Action", nullptr, "UI");
-
-        // Scripting
-        RegisterManagedScriptComponentMetadata();
     }
 }
 

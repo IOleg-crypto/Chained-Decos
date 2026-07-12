@@ -1,7 +1,6 @@
 #ifndef CH_PANEL_H
 #define CH_PANEL_H
 
-class EditorLayer;
 #include "engine/common/base.h"
 #include "engine/core/events/events.h"
 #include "engine/common/timestep.h"

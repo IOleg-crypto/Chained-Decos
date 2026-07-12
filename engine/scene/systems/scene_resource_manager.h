@@ -9,14 +9,8 @@ namespace Chained
 {
 class Scene;
 
-class SceneResourceManager 
+namespace SceneResources
 {
-
-public:
-    SceneResourceManager();
-    ~SceneResourceManager() = default;
-
-
     /**
      * @brief Registers observers for sprite, shader, and model components to resolve assets.
      */
@@ -39,12 +33,11 @@ public:
      */
     void OnRigidBodyConstruct(entt::registry& reg, entt::entity e);
 
-public:
     // Asset resolution methods
     void ResolveSprite(entt::registry& reg, entt::entity e);
     void ResolveShader(entt::registry& reg, entt::entity e);
     void ResolveModel(entt::registry& reg, entt::entity e);
-};
+}
 
 } // namespace Chained
 

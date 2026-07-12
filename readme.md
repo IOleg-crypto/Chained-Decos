@@ -437,34 +437,74 @@ protected override void OnGUI()
 
 Need performance that scripting can't provide, or want to create a brand new foundational Component? Here is the flow for a native ECS update:
 
-1. **Define the Data:** Add a fast `struct` in `engine/scene/components.h`. We use `EnTT`, so components are simple structs. 
-   ```cpp
-   struct ParkourStateComponent {
-       float Stamina = 100.0f;
-       bool  IsWallRunning = false;
-   };
-   ```
-2. **Support Serialization:** If you want editors to save or load it with the level, update `scene_serializer.cpp` or `yaml_extensions` so YAML knows how to read/write it.
-3. **Expose It to the Editor:** Open `editor/editor_panels.cpp` and add the `ImGui` draw logic for `ParkourStateComponent`.
-### 4. Create a System
-Implement the logic that processes these components in a `SceneSystem`.
+### 1. Define the Component
+Add a fast `struct` in `engine/scene/components/`. We use `EnTT`, so components are simple structs. 
 
 ```cpp
-class ParkourSystem : public SceneSystem {
-public:
-    void OnUpdate(Scene* scene, Timestep ts) override {
-        auto view = scene->GetRegistry().view<ParkourStateComponent, TransformComponent>();
-        for (auto entity : view) {
-            auto& [state, transform] = view.get<ParkourStateComponent, TransformComponent>(entity);
-            if (state.IsWallRunning) {
-                // Apply wallrun physics logic...
-            }
-        }
-    }
+// engine/scene/components/parkour_component.h
+#pragma once
+#include "engine/reflection/reflection_rfl.h"
+
+namespace Chained
+{
+struct ParkourComponent
+{
+    float Stamina = 100.0f;
+    bool  IsWallRunning = false;
+
+    static const char* GetStaticName() { return "ParkourComponent"; }
+
+    struct UI
+    {
+        UIMeta Stamina = {.Min = 0.0f, .Max = 100.0f, .Speed = 1.0f};
+        UIMeta IsWallRunning = {.ReadOnly = true, .Transient = true};
+    };
 };
+CH_MARK_RFL(ParkourComponent);
+} // namespace Chained
 ```
 
-5. **Register Loaders (if needed):** If your component needs a custom asset type, register its loader in the appropriate system (e.g., `Renderer::Init()` for graphics assets) to maintain Single Responsibility Principle compliance.
+### 2. Register the Component
+Add one line in `engine/scene/component_registry.cpp` inside `RegisterEngineComponents()`:
+
+```cpp
+RegisterReflective<ParkourComponent>("Parkour", nullptr, "Gameplay");
+```
+
+Serialization and the editor inspector work automatically through the reflection system.
+
+### 3. Create a System
+Implement the logic as a free function in a namespace:
+
+```cpp
+// engine/scene/systems/parkour_system.h
+namespace Chained::Parkour {
+    void Update(entt::registry& reg, Timestep ts);
+}
+
+// engine/scene/systems/parkour_system.cpp
+void Parkour::Update(entt::registry& reg, Timestep ts) {
+    auto view = reg.view<ParkourComponent, TransformComponent>();
+    for (auto entity : view) {
+        auto& [parkour, transform] = view.get<ParkourComponent, TransformComponent>(entity);
+        if (parkour.IsWallRunning) {
+            // Apply wallrun physics logic...
+        }
+    }
+}
+```
+
+### 4. Hook into the Scene
+Add one call in `engine/scene/scene.cpp` in the appropriate update method:
+
+```cpp
+#include "engine/scene/systems/parkour_system.h"
+
+void Scene::OnUpdateRuntime(Timestep ts) {
+    // ...existing systems...
+    Parkour::Update(*m_Registry, ts);
+}
+```
 
 ## Debugging and Profiling
 

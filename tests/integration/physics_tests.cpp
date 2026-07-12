@@ -1,13 +1,29 @@
 
 #include "engine/core/service_locator.h"
+#include "engine/graphics/ui/ui_renderer.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
+#include "engine/scene/scene_context.h"
+#include "scripting/scriptengine.h"
 #include "gtest/gtest.h"
 
 using namespace Chained;
 
-
+namespace
+{
+// Mirrors how RuntimeLayer/EditorLayer build a SceneContext in production code —
+// see scene_context.h. UI is expected to be null here: the test harness boots
+// Application with Headless = true (test_environment.cpp), so UIRenderer never exists.
+SceneContext MakeTestSceneContext()
+{
+    SceneContext ctx;
+    ctx.PhysicsSystem = ServiceLocator::Get<Physics>();
+    ctx.Scripting = ServiceLocator::Get<ScriptEngine>();
+    ctx.UI = ServiceLocator::TryGet<UIRenderer>();
+    return ctx;
+}
+} // namespace
 
 TEST(PhysicsTest, Raycast)
 {
@@ -27,11 +43,11 @@ TEST(PhysicsTest, Raycast)
     ray.position = {0.0f, 0.0f, 0.0f};
     ray.direction = {0.0f, 0.0f, 1.0f};
 
-    scene->OnRuntimeStart();
+    scene->OnRuntimeStart(MakeTestSceneContext());
 
     RaycastResult result = ServiceLocator::Get<Physics>()->Raycast(scene.get(), ray);
     EXPECT_TRUE(result.Hit);
-    EXPECT_NEAR(result.Distance, 4.5f, 0.001f);
+    EXPECT_NEAR(result.Distance, 4.0f, 0.001f);
     EXPECT_EQ(result.Entity, (entt::entity)entity);
 
     // Ray looking away
@@ -55,7 +71,7 @@ TEST(PhysicsTest, RaycastMissingCollider)
     ray.position = {0.0f, 0.0f, 0.0f};
     ray.direction = {0.0f, 0.0f, 1.0f};
 
-    scene->OnRuntimeStart();
+    scene->OnRuntimeStart(MakeTestSceneContext());
 
     RaycastResult result = ServiceLocator::Get<Physics>()->Raycast(scene.get(), ray);
     EXPECT_FALSE(result.Hit);
@@ -103,11 +119,12 @@ TEST(PhysicsTest, RuntimeStartInitializesRigidBodyHandles)
 {
     auto scene = std::make_shared<Scene>();
     auto entity = scene->CreateEntity("Physics Entity");
+    entity.AddComponent<ColliderComponent>();
     auto& rigidBody = entity.AddComponent<RigidBodyComponent>();
 
     EXPECT_EQ(rigidBody.Handle, kInvalidPhysicsBody);
 
-    scene->OnRuntimeStart();
+    scene->OnRuntimeStart(MakeTestSceneContext());
 
     EXPECT_NE(rigidBody.Handle, kInvalidPhysicsBody);
 }

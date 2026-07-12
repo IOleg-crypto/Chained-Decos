@@ -1,4 +1,5 @@
 #include "layer.h"
+#include "editor_colors.h"
 #include "engine/core/input.h"
 #include "engine/core/service_locator.h"
 #include "engine/imgui/imgui_layer.h"
@@ -39,7 +40,7 @@ void EditorLayer::DrawLoadingOverlay(const char* title, const char* status)
                              ImGuiWindowFlags_NoInputs;
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.02f, 0.02f, 0.02f, 0.92f));
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, EditorColors::LoadingOverlayBg);
 
     if (ImGui::Begin("##EditorLoadingOverlay", nullptr, flags))
     {
@@ -72,13 +73,21 @@ EditorLayer::EditorLayer()
 {
     s_Instance = this;
 
+    // Safe here: Application's constructor already calls ServiceLocator::Lock() before
+    // any layer is constructed (layers are pushed from CreateApplication after `new
+    // Application(spec)` returns). Resolved once, reused for the layer's whole lifetime.
+    m_Context.PhysicsSystem = ServiceLocator::Get<Physics>();
+    m_Context.Scripting = ServiceLocator::Get<ScriptEngine>();
+    m_Context.UI = ServiceLocator::TryGet<UIRenderer>(); // null in headless mode
+
     // Default debug settings
     GetDebugRenderFlags().DrawColliders = true;
     GetDebugRenderFlags().DrawLights = true;
     GetDebugRenderFlags().DrawSpawnZones = true;
 
     m_ProjectManager = std::make_unique<EditorProjectManager>();
-    m_SceneManager = std::make_unique<EditorSceneManager>();
+    m_SceneManager = std::make_unique<EditorSceneManager>(
+        m_CommandHistory, *m_ProjectManager, m_Config, m_ViewportSize, m_EditorState, m_Context);
     m_Panels = std::make_unique<EditorPanels>(*this);
 
     m_Layout = std::make_unique<EditorLayout>(*m_Panels);
@@ -277,7 +286,7 @@ void EditorLayer::OnDetach()
     {
         if (scene->GetSceneState() != SceneState::Edit)
         {
-            scene->OnRuntimeStop();
+            scene->OnRuntimeStop(m_Context);
         }
     }
     SaveConfig();
@@ -320,16 +329,16 @@ void EditorLayer::OnUpdate(Timestep ts)
             auto& scriptEngine = *ServiceLocator::Get<ScriptEngine>();
             if (scriptEngine.GetHost().IsInitialized() && scriptEngine.CanExecuteFrameScripts())
             {
-                scene->OnUpdateRuntime(ts);
+                scene->OnUpdateRuntime(ts, m_Context);
             }
         }
         else if (scene->GetSceneState() == SceneState::Simulate)
         {
-            scene->OnUpdateSimulation(ts);
+            scene->OnUpdateSimulation(ts, m_Context);
         }
         else
         {
-            scene->OnUpdateEditor(ts);
+            scene->OnUpdateEditor(ts, m_Context);
 
             if (m_Config.AutoSaveEnabled)
             {
@@ -380,9 +389,9 @@ void EditorLayer::OnImGuiRender()
         m_ProjectSelectorUI->OnImGuiRender();
     }
 
-    if (GetEditorState().IsLoading)
+    if (m_SceneManager->IsLoading())
     {
-        DrawLoadingOverlay("Editor Busy", GetEditorState().LoadingStatus.c_str());
+        DrawLoadingOverlay("Editor Busy", m_SceneManager->GetLoadingStatus().c_str());
     }
 }
 

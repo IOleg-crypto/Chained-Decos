@@ -5,11 +5,11 @@
 
 #include <entt/entt.hpp>
 
-namespace Chained {
+namespace Chained::Animation {
 
 // Starts playback of an animation clip by index, resetting frame state.
 // If the same clip is already playing and not blending, this is a no-op.
-void AnimationManager::Play(AnimationComponent& anim, int index, bool loop)
+void Play(AnimationComponent& anim, int index, bool loop)
 {
     if (anim.CurrentAnimationIndex == index && anim.IsPlaying && !anim.Blending)
         return;
@@ -26,7 +26,7 @@ void AnimationManager::Play(AnimationComponent& anim, int index, bool loop)
 // Initiates a cross-fade transition from the current animation to a target clip.
 // The blend is performed over the specified duration; after completion the target
 // becomes the current animation.
-void AnimationManager::CrossFade(AnimationComponent& anim, int index, float duration, bool loop)
+void CrossFade(AnimationComponent& anim, int index, float duration, bool loop)
 {
     if (anim.CurrentAnimationIndex == index)
         return;
@@ -43,7 +43,7 @@ void AnimationManager::CrossFade(AnimationComponent& anim, int index, float dura
 }
 
 // Stops the current animation and clears any active blend.
-void AnimationManager::Stop(AnimationComponent& anim)
+void Stop(AnimationComponent& anim)
 {
     anim.IsPlaying = false;
     anim.Blending = false;
@@ -51,7 +51,7 @@ void AnimationManager::Stop(AnimationComponent& anim)
 
 // Advances frame timers for all playing AnimationComponents in the scene.
 // TODO: Replace placeholder frame advancement with real clip-based keyframe interpolation.
-void AnimationManager::UpdatePlayback(Scene* scene, Timestep ts)
+void UpdatePlayback(Scene* scene, Timestep ts)
 {
     auto& registry = scene->GetRegistry();
     auto view = registry.view<AnimationComponent>();
@@ -65,4 +65,4 @@ void AnimationManager::UpdatePlayback(Scene* scene, Timestep ts)
     }
 }
 
-} // namespace Chained
+} // namespace Chained::Animation

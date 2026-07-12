@@ -1,6 +1,7 @@
 #ifndef CH_CONTROL_COMPONENT_H
 #define CH_CONTROL_COMPONENT_H
 
+#include "engine/common/color.h"
 #include "engine/graphics/ui/ui_data_components.h"
 #include "engine/graphics/ui/ui_style.h"
 #include "engine/reflection/reflection_rfl.h"
@@ -113,5 +114,6 @@ struct UIControlComponent
 CH_MARK_RFL(UIControlComponent);
 
 } // namespace Chained
+
 
 #endif // CH_CONTROL_COMPONENT_H

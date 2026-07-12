@@ -1,4 +1,5 @@
 #include "panels.h"
+#include "layer.h"
 #include "panels/console_panel.h"
 #include "panels/content_browser_panel.h"
 #include "panels/world_panel.h"
@@ -16,8 +17,15 @@ namespace Chained
 
 void EditorPanels::Init()
 {
-    Register<ViewportPanel>();
-    Register<SceneHierarchyPanel>();
+    Register<ViewportPanel>(
+        m_EditorLayer.GetCommandHistory(),
+        m_EditorLayer.GetSceneManager(),
+        m_EditorLayer.GetProjectManager(),
+        m_EditorLayer.GetEditorState(),
+        m_EditorLayer.GetViewportSizeRef());
+    Register<SceneHierarchyPanel>(
+        m_EditorLayer.GetCommandHistory(),
+        m_EditorLayer.GetEditorState());
     Register<InspectorPanel>();
     Register<ContentBrowserPanel>();
     Register<ConsolePanel>();

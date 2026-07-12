@@ -43,28 +43,55 @@ void GLFramebuffer::Invalidate()
     glGenFramebuffers(1, &m_RendererID);
     glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
 
-    // Color Attachment
-    glGenTextures(1, &m_ColorAttachment);
-    glBindTexture(GL_TEXTURE_2D, m_ColorAttachment);
-    GLenum internalFormat = GL_RGBA8;
-    GLenum dataType = GL_UNSIGNED_BYTE;
-    if (m_Specification.ColorFormat == FramebufferColorFormat::RGBA16F)
+    if (m_Specification.DepthOnly)
     {
-        internalFormat = GL_RGBA16F;
-        dataType = GL_FLOAT;
+        // ── Depth-only path (shadow map) ────────────────────────────────
+        // No color attachment; depth is written to a sampable 2D texture.
+        glGenTextures(1, &m_DepthAttachment);
+        glBindTexture(GL_TEXTURE_2D, m_DepthAttachment);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F,
+                     m_Specification.Width, m_Specification.Height,
+                     0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        // Clamp-to-border with depth=1 so fragments outside the light frustum are NOT in shadow.
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        float border[] = {1.0f, 1.0f, 1.0f, 1.0f};
+        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
+
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_DepthAttachment, 0);
+
+        // No color buffer
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
     }
+    else
+    {
+        // ── Standard color + depth path ─────────────────────────────────
+        // Color Attachment
+        glGenTextures(1, &m_ColorAttachment);
+        glBindTexture(GL_TEXTURE_2D, m_ColorAttachment);
+        GLenum internalFormat = GL_RGBA8;
+        GLenum dataType = GL_UNSIGNED_BYTE;
+        if (m_Specification.ColorFormat == FramebufferColorFormat::RGBA16F)
+        {
+            internalFormat = GL_RGBA16F;
+            dataType = GL_FLOAT;
+        }
 
-    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, m_Specification.Width, m_Specification.Height, 0, GL_RGBA,
-                 dataType, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_ColorAttachment, 0);
+        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, m_Specification.Width, m_Specification.Height, 0, GL_RGBA,
+                     dataType, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_ColorAttachment, 0);
 
-    // Depth Attachment
-    glGenTextures(1, &m_DepthAttachment);
-    glBindTexture(GL_TEXTURE_2D, m_DepthAttachment);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, m_Specification.Width, m_Specification.Height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_DepthAttachment, 0);
+        // Depth Attachment
+        glGenTextures(1, &m_DepthAttachment);
+        glBindTexture(GL_TEXTURE_2D, m_DepthAttachment);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, m_Specification.Width, m_Specification.Height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_DepthAttachment, 0);
+    }
 
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE)
