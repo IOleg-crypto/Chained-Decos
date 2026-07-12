@@ -90,9 +90,6 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-          cache: true
-          cache-dependency-path: '**/*.csproj'
-          cache-packages-path: ${{ github.workspace }}/.nuget/packages
 
       - name: Preflight
         run: |
