@@ -251,8 +251,6 @@ void RuntimeLayer::OnImGuiRender() {
 
         if (ImGui::Begin("RuntimeUI", nullptr, flags)) {
             if (m_RuntimeStarted) {
-                ImGui::SetCursorPos({10, 10});
-                ImGui::TextColored({1, 1, 0, 1}, "DEBUG: STANDALONE UI IS ACTIVE");
                 ImVec2 childSize = ImGui::GetContentRegionAvail();
                 if (ImGui::BeginChild("##RuntimeUICanvas",
                                       childSize,
@@ -426,8 +424,35 @@ bool RuntimeLayer::DiscoverAndLoadProject(const std::string &projectPath) {
     CH_CORE_INFO("RuntimeSystem: Project Directory: {}", project->GetProjectDirectoryForProject().string());
     CH_CORE_INFO("RuntimeSystem: Asset Directory: {}", Project::GetAssetDirectory().string());
 
+    ServiceLocator::Get<AssetManager>()->SetProjectDirectory(project->GetProjectDirectoryForProject());
+    ServiceLocator::Get<AssetManager>()->SetAssetDirectory(Project::GetAssetDirectory());
+
     // CRITICAL: Load engine shaders and resources immediately after project is resolved
     ServiceLocator::Get<Renderer>()->LoadEngineResources();
+
+    auto& scripting = project->GetConfig().Scripting;
+    if (scripting.AutoLoad && !scripting.ModuleName.empty())
+    {
+        std::string dllName = scripting.ModuleName;
+        if (dllName.find(".dll") == std::string::npos)
+            dllName += ".dll";
+
+        std::filesystem::path dllPath = scripting.ModuleDirectory / dllName;
+        if (dllPath.is_relative())
+            dllPath = project->GetConfig().ProjectDirectory / dllPath;
+
+        if (std::filesystem::exists(dllPath))
+        {
+             ServiceLocator::Get<ScriptEngine>()->SetEnabled(true);
+             ServiceLocator::Get<ScriptEngine>()->Initialize();
+             ServiceLocator::Get<ScriptEngine>()->LoadAppAssembly(dllPath.string());
+             CH_CORE_INFO("RuntimeSystem: Auto-loaded script assembly '{}'.", dllPath.string());
+        }
+        else
+        {
+            CH_CORE_WARN("RuntimeSystem: Script assembly not found at '{}'.", dllPath.string());
+        }
+    }
 
     return true;
 }
@@ -634,6 +659,9 @@ bool RuntimeLayer::TransitionToScene(const std::filesystem::path &scenePath) {
 
     // Keep current ScriptEngine behavior intact while runtime owns transition flow.
     ServiceLocator::Get<ScriptEngine>()->SetContextScene(m_Scene.get());
+    
+    // CRITICAL: Standalone runtime must operate in Play mode for scripts to initialize properly!
+    m_Scene->TransitionToState(SceneState::Play);
 
     Window &window = Application::Get().GetWindow();
     m_Scene->OnViewportResize(window.GetWidth(), window.GetHeight());
@@ -689,7 +717,10 @@ void RuntimeLayer::EnsureRuntimeFramebuffer(uint32_t width, uint32_t height) {
 }
 
 bool RuntimeLayer::IsSceneReadyToStart() const {
-    return true;
+    auto* assetManager = ServiceLocator::Get<AssetManager>();
+    if (!assetManager)
+        return true;
+    return !assetManager->HasBackgroundWork();
 }
 
 void RuntimeLayer::DrawLoadingOverlay() {
@@ -706,8 +737,7 @@ void RuntimeLayer::DrawLoadingOverlay() {
     ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.02f, 0.02f, 0.02f, 0.92f));
 
     if (ImGui::Begin("##RuntimeLoadingOverlay", nullptr, flags)) {
-        // TODO: Implement AssetManager loading count tracking for progress bar display
-        const size_t totalPending = 0;
+        const size_t totalPending = ServiceLocator::Get<AssetManager>()->GetLoadingAssetCount();
 
         int dotsCount = (static_cast<int>(ImGui::GetTime() * 2.5f) % 3) + 1;
         std::string dots(static_cast<size_t>(dotsCount), '.');

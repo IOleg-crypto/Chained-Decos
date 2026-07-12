@@ -215,8 +215,8 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         return;
     }
 
-    m_Focused = ImGui::IsWindowFocused();
-    m_Hovered = ImGui::IsWindowHovered();
+    m_Focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
+    m_Hovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows);
 
     // 2. Rendering
     RenderViewportScene(activeScene.get());
@@ -247,15 +247,12 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
     // 7. Toolbars
     RenderToolbar(activeScene.get(), viewportSize, viewportScreenPos);
 
-    ImGui::End();
-    ImGui::PopStyleVar();
-
-    // Shortcuts & Keyboard Input
-    if (ImGui::IsWindowFocused() || ImGui::IsWindowHovered())
+    // Shortcuts & Keyboard Input — must be before ImGui::End() so IsWindowFocused works
+    if (m_Focused || m_Hovered)
     {
         for (const auto& btn : s_GizmoBtns)
         {
-            if (Chained::Core::Input::IsKeyPressed(btn.key))    
+            if (Chained::Core::Input::IsKeyPressed(btn.key))
             {
                 m_CurrentTool = btn.type;
             }
@@ -264,11 +261,15 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         if (Chained::Core::Input::IsKeyDown(Chained::KeyCode::LeftControl) && Chained::Core::Input::IsKeyPressed(Chained::KeyCode::D))
         {
             Entity selected = EditorLayer::Get().GetSelectedEntity();
-            if (selected){
+            if (selected)
+            {
                 EditorLayer::Get().GetCommandHistory().PushCommand(std::make_unique<DuplicateEntityCommand>(selected));
             }
         }
     }
+
+    ImGui::End();
+    ImGui::PopStyleVar();
 }
 
 void ViewportPanel::OnUpdate(Timestep ts)
@@ -538,7 +539,6 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
 {
     // Object picking logic
     auto activeCameraOpt = SceneRenderer::GetActiveCamera(activeScene->GetRegistry());
-    ImGuiContext& g = *GImGui;
     bool isUIChildHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByPopup);
     bool isClicked = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
     bool isDragging = m_UIManipulator.IsActive();

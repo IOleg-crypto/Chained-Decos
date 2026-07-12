@@ -65,19 +65,21 @@ UIRect UILayoutSystem::CalculateRecursive(Entity entity, const UIRect& canvasRec
         return m_RectCache[id];
     }
 
+    // Insert sentinel before recursing to break any parent↔child cycles.
+    m_RectCache[id] = {0, 0, canvasRect.width, canvasRect.height};
+
     auto& control = entity.GetComponent<ControlComponent>();
-    UIRect parentRect = {0, 0, canvasRect.width, canvasRect.height}; // Local space of canvas
+    UIRect parentRect = {0, 0, canvasRect.width, canvasRect.height};
 
     if (entity.HasComponent<HierarchyComponent>())
     {
         auto parentID = entity.GetComponent<HierarchyComponent>().Parent;
-        if (parentID != entt::null)
+        if (parentID != entt::null && entity.GetRegistryPtr()->valid(parentID))
         {
             Entity parent(parentID, entity.GetRegistryPtr());
             if (parent.HasComponent<ControlComponent>())
             {
                 parentRect = CalculateRecursive(parent, canvasRect);
-                // Parent rect is in virtual canvas space, need to extract local size and pos
             }
         }
     }
