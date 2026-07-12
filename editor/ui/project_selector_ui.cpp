@@ -1,4 +1,5 @@
 #include "project_selector_ui.h"
+#include "editor/editor_colors.h"
 #include "editor/layer.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/texture_asset.h"
@@ -72,7 +73,7 @@ void ProjectSelectorUI::OnImGuiRender()
     float sidebarWidth = 320.0f;
 
     // Sidebar
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.02f, 0.02f, 0.02f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, EditorColors::DarkPanelBg);
     ImGui::BeginChild("Sidebar", ImVec2(sidebarWidth, 0), false);
 
     // Banner / Logo Area
@@ -96,7 +97,7 @@ void ProjectSelectorUI::OnImGuiRender()
     }
     else
     {
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_Button, EditorColors::SidebarBg);
         ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.05f, 0.5f));
         ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 5.0f);
 
@@ -130,7 +131,7 @@ void ProjectSelectorUI::OnImGuiRender()
     ImGui::SameLine();
 
     // Main Area
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.08f, 0.08f, 0.08f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, EditorColors::SubCardBg);
     ImGui::BeginChild("MainArea");
 
     float centerX = ImGui::GetContentRegionAvail().x * 0.5f;
@@ -140,10 +141,10 @@ void ProjectSelectorUI::OnImGuiRender()
 
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(20, 20));
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 12.0f);
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.12f, 0.12f, 0.13f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.18f, 0.18f, 0.19f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.9f, 0.9f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_Button, EditorColors::ProjectCardBg);
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, EditorColors::ProjectCardHover);
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, EditorColors::ProjectCardActive);
+    ImGui::PushStyleColor(ImGuiCol_Text, EditorColors::BrightText);
 
     ImGui::BeginGroup();
     {
@@ -240,9 +241,9 @@ void ProjectSelectorUI::OnImGuiRender()
             ImGui::SetNextItemWidth(360);
             ImGui::InputText("##ProjectLocation", projectLocationBuffer, sizeof(projectLocationBuffer));
             ImGui::SameLine(0, 8);
-            ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.18f, 0.18f, 0.20f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.26f, 0.26f, 0.28f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.14f, 0.14f, 0.16f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_Button,        EditorColors::ProjectCardBorder);
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, EditorColors::ProjectCardBorderHover);
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive,  EditorColors::ProjectCardBorderActive);
             if (ImGui::Button(ICON_FA_FOLDER_OPEN "  Browse", ImVec2(64, 0)))
             {
                 auto picked = FileDialogs::PickFolder();
@@ -260,11 +261,11 @@ void ProjectSelectorUI::OnImGuiRender()
             std::filesystem::path previewPath =
                 std::filesystem::path(projectLocationBuffer) / projectNameBuffer;
 
-            ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.06f, 0.06f, 0.07f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ChildBg, EditorColors::SubCardBg);
             ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 4.0f);
             ImGui::BeginChild("##preview", ImVec2(432, 36), false);
             ImGui::SetCursorPos(ImVec2(10, 10));
-            ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), ICON_FA_CIRCLE_INFO "  ");
+            ImGui::TextColored(EditorColors::MutedText, ICON_FA_CIRCLE_INFO "  ");
             ImGui::SameLine(0, 0);
             ImGui::TextDisabled("%s", previewPath.string().c_str());
             ImGui::EndChild();
@@ -279,9 +280,9 @@ void ProjectSelectorUI::OnImGuiRender()
             float btnWidth = 110.0f;
             ImGui::SetCursorPosX(432 + 24 - btnWidth * 2 - 8);
 
-            ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.14f, 0.14f, 0.16f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.22f, 0.22f, 0.24f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.10f, 0.10f, 0.12f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_Button,        EditorColors::SubCardBorder);
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, EditorColors::SubCardBorderHover);
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive,  EditorColors::SubCardBorderActive);
             if (ImGui::Button("Cancel", ImVec2(btnWidth, 28)))
             {
                 showCreateDialog = false;
@@ -292,9 +293,9 @@ void ProjectSelectorUI::OnImGuiRender()
             ImGui::SameLine(0, 8);
 
             ImGui::BeginDisabled(nameEmpty);
-            ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.13f, 0.45f, 0.80f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.20f, 0.55f, 0.92f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.10f, 0.38f, 0.70f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_Button,        EditorColors::PrimaryButton);
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, EditorColors::PrimaryButtonHover);
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive,  EditorColors::PrimaryButtonActive);
             ImGui::PushStyleColor(ImGuiCol_Text,          ImVec4(1.0f,  1.0f,  1.0f,  1.0f));
             if (ImGui::Button(ICON_FA_FOLDER "  Create", ImVec2(btnWidth, 28)))
             {

@@ -18,6 +18,7 @@ struct FramebufferSpecification
     uint32_t Height = 0;
     uint32_t Samples = 1;
     bool SwapChainTarget = false;
+    bool DepthOnly = false;  // When true: creates a pure depth texture (no color attachment). Used for shadow maps.
     FramebufferColorFormat ColorFormat = FramebufferColorFormat::RGBA8;
 };
 

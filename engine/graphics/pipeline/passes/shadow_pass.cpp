@@ -25,20 +25,29 @@ void ShadowPass::Init()
 
 void ShadowPass::Execute(const RenderContext& ctx)
 {
-    // Check if any directional light has shadows enabled
-    m_HasShadows = false;
-    glm::vec3 lightDir = glm::normalize(glm::vec3(-0.5f, -1.0f, -0.5f));
+    // Always cast shadows from the global environment directional light.
+    // A LightComponent with Shadows=true is only needed when entity-based directional lights exist.
+    const auto& ld = ctx.Renderer->GetEnvironment().Lighting;
+    glm::vec3 lightDir = glm::length(glm::vec3(ld.Direction)) > 0.0001f
+                             ? glm::normalize(glm::vec3(ld.Direction))
+                             : glm::normalize(glm::vec3(0.3f, -0.7f, 0.3f));
 
+    // If entity-based directional lights exist but none have Shadows enabled, skip.
+    bool hasAnyDirLight = false, entityShadowEnabled = false;
     ctx.Registry.view<LightComponent>().each([&](LightComponent& lc) {
-        if (lc.Type == LightType::Directional && lc.Shadows)
+        if (lc.Type == LightType::Directional)
         {
-            m_HasShadows = true;
-            const auto& ld = ctx.Renderer->GetEnvironment().Lighting;
-            lightDir = glm::normalize(glm::vec3(ld.Direction));
+            hasAnyDirLight = true;
+            if (lc.Shadows) entityShadowEnabled = true;
         }
     });
+    if (hasAnyDirLight && !entityShadowEnabled)
+    {
+        m_HasShadows = false;
+        return;
+    }
 
-    if (!m_HasShadows) return;
+    m_HasShadows = true;
     if (!m_DepthShaderAsset || !m_DepthShaderAsset->GetShader()) return;
 
     // Read shadow resolution from project settings
@@ -51,25 +60,31 @@ void ShadowPass::Execute(const RenderContext& ctx)
     }
     m_ShadowMapSize = shadowRes;
 
-    // Recreate shadow map FBO if size changed
+    // Recreate shadow map FBO if size changed (depth-only)
     if (!m_ShadowMap || m_ShadowMap->GetSpecification().Width != shadowRes)
     {
         FramebufferSpecification spec;
-        spec.Width   = shadowRes;
-        spec.Height  = shadowRes;
-        spec.Samples = 1;
-        m_ShadowMap  = Framebuffer::Create(spec);
+        spec.Width     = shadowRes;
+        spec.Height    = shadowRes;
+        spec.Samples   = 1;
+        spec.DepthOnly = true;  // Pure depth texture — no color attachment
+        m_ShadowMap    = Framebuffer::Create(spec);
     }
 
+    if (!m_ShadowMap || !m_ShadowMap->IsValid()) return;
+
     // Build light-space matrix
-    constexpr float orthoSize = 50.0f;
+    constexpr float orthoSize = 80.0f;
     constexpr float nearPlane = 1.0f;
-    constexpr float farPlane  = 200.0f;
+    constexpr float farPlane  = 300.0f;
 
     glm::mat4 lightProjection  = glm::ortho(-orthoSize, orthoSize, -orthoSize, orthoSize, nearPlane, farPlane);
     glm::vec3 lightPos         = -lightDir * (farPlane * 0.5f);
     glm::mat4 lightView        = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     m_LightSpaceMatrix         = lightProjection * lightView;
+
+    // Set shadow bias on renderer
+    ServiceLocator::Get<Renderer>()->GetData().ShadowBias = 0.003f;
 
     auto* shader = m_DepthShaderAsset->GetShader().get();
     shader->Bind();
@@ -81,7 +96,7 @@ void ShadowPass::Execute(const RenderContext& ctx)
 
     m_ShadowMap->Bind();
     GraphicsDevice::Get().SetViewport(0, 0, shadowRes, shadowRes);
-    GraphicsDevice::Get().Clear({0, 0, 0, 255});
+    glClear(GL_DEPTH_BUFFER_BIT);
 
     // Depth bias to prevent shadow acne (surface-shadow self-intersection)
     glEnable(GL_POLYGON_OFFSET_FILL);

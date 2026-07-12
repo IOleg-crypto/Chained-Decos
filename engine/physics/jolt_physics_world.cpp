@@ -339,6 +339,7 @@ RaycastResult JoltPhysicsWorld::Raycast(const glm::vec3& origin, const glm::vec3
         out.Distance = result.mFraction * maxDistance;
         out.Position = {hitPos.GetX(), hitPos.GetY(), hitPos.GetZ()};
         out.BodyHandle = (PhysicsBodyHandle)result.mBodyID.GetIndexAndSequenceNumber();
+        out.Entity = (entt::entity)m_PhysicsSystem.GetBodyInterface().GetUserData(result.mBodyID);
         return out;
     }
     return RaycastResult{false};

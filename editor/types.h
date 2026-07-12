@@ -16,8 +16,6 @@ struct EditorState
     bool NeedsLayoutReset = false;
     int LastHitMeshIndex = -1;
     DebugRenderFlags DebugRenderFlags;
-    bool IsLoading = false;
-    std::string LoadingStatus;
 };
 
 } // namespace Chained

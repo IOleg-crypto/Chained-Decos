@@ -68,7 +68,13 @@ void main()
 
     vec3 viewDir = normalize(viewPos - fragPosition);
     vec3 skyAmbient = skyAmbientColor.rgb * skyAmbientColor.a;
-    vec3 accumulatedLighting = diffColor * (ambient + skyAmbient) * occlusion;
+
+    // Minimum ambient floor — ensures unlit sides are never pitch-black even when
+    // the scene has no environment or Ambient is set to 0 in World Settings.
+    const float MIN_AMBIENT = 0.08;
+    float effectiveAmbient = max(ambient, MIN_AMBIENT);
+
+    vec3 accumulatedLighting = diffColor * (effectiveAmbient + skyAmbient) * occlusion;
 
     vec3 dirLight = CalcDirectionalLight(lightDir, lightColor, normal, viewDir, diffColor, specColor, shininess);
     float shadow = ShadowCalculationPCF(fragPosLightSpace);

@@ -10,7 +10,6 @@
 #include "scripting/scriptengine.h"
 #include "engine/assets/asset_manager.h"
 #include <algorithm>
-#include <algorithm>
 #include <string>
 #include <format>
 #include "engine/scene/scene_serializer.h"
@@ -27,10 +26,8 @@
 namespace Chained
 {
 
-static std::filesystem::path FindRuntimeExecutable(const std::string& projectName, const std::string& configStr)
+static std::filesystem::path FindProjectRoot()
 {
-    CH_PROFILE_FUNCTION();
-
     std::filesystem::path root;
 #ifdef PROJECT_ROOT_DIR
     root = PROJECT_ROOT_DIR;
@@ -41,6 +38,21 @@ static std::filesystem::path FindRuntimeExecutable(const std::string& projectNam
         root = root.parent_path();
     }
 #endif
+    return root;
+}
+
+static const std::vector<std::string>& GetSearchSubdirs()
+{
+    static const std::vector<std::string> subdirs = {
+        "build/bin", "bin", "out/bin", "cmake-build-debug/bin", "cmake-build-release/bin"};
+    return subdirs;
+}
+
+static std::filesystem::path FindRuntimeExecutable(const std::string& projectName, const std::string& configStr)
+{
+    CH_PROFILE_FUNCTION();
+
+    std::filesystem::path root = FindProjectRoot();
 
     if (!std::filesystem::exists(root))
     {
@@ -61,8 +73,7 @@ static std::filesystem::path FindRuntimeExecutable(const std::string& projectNam
         if (std::filesystem::exists(currentBin))
             return currentBin;
 
-        std::vector<std::string> searchSubdirs = {"build/bin", "bin", "out/bin", "cmake-build-debug/bin",
-                                                  "cmake-build-release/bin"};
+        auto searchSubdirs = GetSearchSubdirs();
 
         if (std::filesystem::exists(root / "build"))
         {
@@ -132,16 +143,7 @@ static std::string ResolveLaunchVariables(std::string str, std::shared_ptr<Proje
     CH_PROFILE_FUNCTION();
     if (!project) return str;
 
-    std::filesystem::path root;
-#ifdef PROJECT_ROOT_DIR
-    root = PROJECT_ROOT_DIR;
-#else
-    root = std::filesystem::current_path();
-    while (root.has_parent_path() && !std::filesystem::exists(root / "CMakeLists.txt"))
-    {
-        root = root.parent_path();
-    }
-#endif
+    std::filesystem::path root = FindProjectRoot();
 
     std::filesystem::path projectFile =
         project->GetProjectDirectoryForProject() / (project->GetConfig().Name + ".chproject");
@@ -166,9 +168,7 @@ static std::string ResolveLaunchVariables(std::string str, std::shared_ptr<Proje
 
         if (buildPath.empty())
         {
-            std::vector<std::string> searchSubdirs = {"build/bin", "bin", "out/bin", "cmake-build-debug/bin",
-                                                      "cmake-build-release/bin"};
-            for (const auto& sub : searchSubdirs)
+            for (const auto& sub : GetSearchSubdirs())
             {
                 if (std::filesystem::exists(root / sub))
                 {

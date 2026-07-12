@@ -4,6 +4,7 @@
 #include "engine/scene/components/component_utils.h"
 #include "engine/scene/components/hierarchy_component.h"
 #include "undo/modify_component_command.h"
+#include "imgui_internal.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -31,10 +32,10 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
     auto& transform = entity.GetComponent<TransformComponent>();
     glm::mat4 modelMat = transform.WorldTransform;
 
-    // 1. Setup ImGuizmo
-    // Use the foreground drawlist so the gizmo renders above the toolbar overlay and all child windows.
+    // Setup ImGuizmo
     ImGuizmo::SetOrthographic(camera.Projection != ProjectionType::Perspective);
     ImGuizmo::SetDrawlist(ImGui::GetForegroundDrawList());
+    ImGuizmo::SetAlternativeWindow(ImGui::GetCurrentWindow());
 
     // Ensure we are using absolute screen coordinates for SetRect
     ImGuizmo::SetRect(viewportPos.x, viewportPos.y, viewportSize.x, viewportSize.y);

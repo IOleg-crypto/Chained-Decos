@@ -21,4 +21,7 @@ CH_MARK_RFL(TagComponent);
 
 } // namespace Chained
 
+// TagComponent uses manual registration in RegisterEngineComponents()
+// due to circular include dependency (entity.h -> tag_component.h -> component_registry.h)
+
 #endif // CH_TAG_COMPONENT_H

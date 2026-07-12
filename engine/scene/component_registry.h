@@ -172,11 +172,13 @@ namespace Chained
 
     /**
      * @brief Macro for automatic static registration of components.
-     * Use this in your component's .cpp file.
+     * Use this in your component's header file, after the closing namespace brace.
      */
-    #define CH_REGISTER_COMPONENT(type, name, icon) \
-        static bool s_ComponentRegistered_##type = []() { \
-            ::Chained::ComponentRegistry::RegisterReflective<type>(name, icon); \
+    #define CH_CONCAT_(a, b) a##b
+    #define CH_CONCAT(a, b) CH_CONCAT_(a, b)
+    #define CH_REGISTER_COMPONENT(type, name, icon, category) \
+        static bool CH_CONCAT(s_CompReg_, __LINE__) = []() { \
+            ::Chained::ComponentRegistry::RegisterReflective<type>(name, icon, category); \
             return true; \
         }()
 

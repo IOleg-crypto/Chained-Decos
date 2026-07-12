@@ -21,4 +21,7 @@ struct IDComponent
 CH_MARK_RFL(IDComponent);
 } // namespace Chained
 
+// IDComponent uses manual registration in RegisterEngineComponents()
+// due to circular include dependency (entity.h -> id_component.h -> component_registry.h)
+
 #endif // CH_ID_COMPONENT_H

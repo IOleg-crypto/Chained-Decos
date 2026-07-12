@@ -13,33 +13,29 @@
 #include "engine/scene/components/shader_component.h"
 #include "engine/scene/components/sprite_component.h"
 #include "engine/scene/scene.h"
+#include "engine/scene/scene_context.h"
 #include <cmath>
 #include <entt/entt.hpp>
 #include <glm/gtx/norm.hpp>
 
-namespace Chained
+namespace Chained::SceneResources
 {
 
-SceneResourceManager::SceneResourceManager()
+void RegisterObservers(entt::registry& reg)
 {
-}
+    reg.on_construct<SpriteComponent>().connect<&ResolveSprite>();
+    reg.on_update<SpriteComponent>().connect<&ResolveSprite>();
 
-void SceneResourceManager::RegisterObservers(entt::registry& reg)
-{
-    reg.on_construct<SpriteComponent>().connect<&SceneResourceManager::ResolveSprite>(*this);
-    reg.on_update<SpriteComponent>().connect<&SceneResourceManager::ResolveSprite>(*this);
-
-    reg.on_construct<ShaderComponent>().connect<&SceneResourceManager::ResolveShader>(*this);
-    reg.on_update<ShaderComponent>().connect<&SceneResourceManager::ResolveShader>(*this);
+    reg.on_construct<ShaderComponent>().connect<&ResolveShader>();
+    reg.on_update<ShaderComponent>().connect<&ResolveShader>();
 }
 
 // NOTE: ModelComponent is intentionally NOT connected to on_construct/on_update.
 // Scene loading happens on a background thread — calling AssimpImporter from there
 // is unsafe (OpenGL VAO creation requires the main thread context).
 // Model resolution is handled by the Update() loop which runs on the main thread.
-} // namespace Chained
 
-void SceneResourceManager::Update(entt::registry& reg, Timestep ts)
+void Update(entt::registry& reg, Timestep ts)
 {
     CH_PROFILE_FUNCTION();
 
@@ -216,26 +212,28 @@ void SceneResourceManager::Update(entt::registry& reg, Timestep ts)
     }
 }
 
-void SceneResourceManager::OnRuntimeStart(Scene* scene)
+void OnRuntimeStart(Scene* scene)
 {
     CH_PROFILE_FUNCTION();
-    CH_CORE_INFO("SceneResourceManager::OnRuntimeStart - Start");
+    CH_CORE_INFO("SceneResources::OnRuntimeStart - Start");
 
     auto& registry = scene->GetRegistry();
     if (!registry.ctx().find<IPhysicsWorld*>())
     {
-        CH_CORE_INFO("SceneResourceManager::OnRuntimeStart - Need Physics World");
-        auto& physics = (*ServiceLocator::Get<Physics>());
-        CH_CORE_INFO("SceneResourceManager::OnRuntimeStart - Obtaining world pointer");
+        CH_CORE_INFO("SceneResources::OnRuntimeStart - Need Physics World");
+        // Read from the registry-scoped SceneContext, which Scene::OnRuntimeStart caches
+        // just before calling here — see scene_context.h for why (EnTT callback signatures).
+        auto& physics = (*registry.ctx().get<SceneContext>().PhysicsSystem);
+        CH_CORE_INFO("SceneResources::OnRuntimeStart - Obtaining world pointer");
         IPhysicsWorld* world = physics.GetWorld();
-        CH_CORE_INFO("SceneResourceManager::OnRuntimeStart - World pointer obtained: {}", (void*)world);
+        CH_CORE_INFO("SceneResources::OnRuntimeStart - World pointer obtained: {}", (void*)world);
         registry.ctx().emplace<IPhysicsWorld*>(world);
     }
 
-    CH_CORE_INFO("SceneResourceManager::OnRuntimeStart - Done");
+    CH_CORE_INFO("SceneResources::OnRuntimeStart - Done");
 }
 
-void SceneResourceManager::OnRuntimeStop(Scene* scene)
+void OnRuntimeStop(Scene* scene)
 {
     CH_PROFILE_FUNCTION();
     auto& audioSvc = (*ServiceLocator::Get<Audio>());
@@ -250,7 +248,7 @@ void SceneResourceManager::OnRuntimeStop(Scene* scene)
     }
 }
 
-void SceneResourceManager::ResolveSprite(entt::registry& reg, entt::entity e)
+void ResolveSprite(entt::registry& reg, entt::entity e)
 {
     auto& sprite = reg.get<SpriteComponent>(e);
     if (!sprite.TexturePath.empty() && sprite.TextureHandle == 0)
@@ -268,7 +266,7 @@ void SceneResourceManager::ResolveSprite(entt::registry& reg, entt::entity e)
     }
 }
 
-void SceneResourceManager::ResolveShader(entt::registry& reg, entt::entity e)
+void ResolveShader(entt::registry& reg, entt::entity e)
 {
     auto& shader = reg.get<ShaderComponent>(e);
     if (shader.ShaderPath.empty() || shader.ShaderHandle != 0)
@@ -287,20 +285,22 @@ void SceneResourceManager::ResolveShader(entt::registry& reg, entt::entity e)
     }
 }
 
-void SceneResourceManager::ResolveModel(entt::registry& reg, entt::entity e)
+void ResolveModel(entt::registry& reg, entt::entity e)
 {
     auto& model = reg.get<ModelComponent>(e);
     ComponentUtils::ResolveModelPath(model);
 }
 
-void SceneResourceManager::OnRigidBodyConstruct(entt::registry& reg, entt::entity e)
+void OnRigidBodyConstruct(entt::registry& reg, entt::entity e)
 {
     if (!reg.ctx().contains<IPhysicsWorld*>())
     {
         return;
     }
 
-    auto world = ServiceLocator::Get<Physics>()->GetWorld();
+    // IPhysicsWorld* is only ever cached above once Scene::OnRuntimeStart has run,
+    // and that same call also caches SceneContext — see scene_context.h.
+    auto world = reg.ctx().get<SceneContext>().PhysicsSystem->GetWorld();
     if (!world)
     {
         return;
@@ -443,3 +443,5 @@ void SceneResourceManager::OnRigidBodyConstruct(entt::registry& reg, entt::entit
     }
     rb.Handle = world->CreateBody(desc);
 }
+
+} // namespace Chained::SceneResources

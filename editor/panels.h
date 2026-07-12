@@ -12,6 +12,8 @@
 namespace Chained
 {
 
+class EditorLayer;
+
 
 
 class EditorPanels

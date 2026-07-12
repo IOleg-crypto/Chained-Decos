@@ -6,13 +6,12 @@
 #include "viewport/camera.h"
 #include "viewport/gizmo.h"
 #include "viewport/ui_manipulator.h"
-#include "icons.h"           
+#include "icons.h"
 
 #include <memory>
 #include <glm/glm.hpp>
-#include <entt/entt.hpp> 
+#include <entt/entt.hpp>
 #include "engine/core/key_codes.h"
-
 
 namespace Chained
 {
@@ -21,10 +20,13 @@ class Framebuffer;
 class Scene;
 class SceneRenderer;
 class Renderer;
-class TextureManager;
 struct SceneSettings;
 struct Camera3D;
 class Event;
+class CommandHistory;
+class EditorSceneManager;
+class EditorProjectManager;
+struct EditorState;
 
 struct GizmoBtn
 {
@@ -37,7 +39,7 @@ struct GizmoBtn
 class ViewportPanel : public Panel
 {
 public:
-    ViewportPanel();
+    ViewportPanel(CommandHistory& cmd, EditorSceneManager& sceneMgr, EditorProjectManager& projMgr, EditorState& state, ImVec2& editorViewportSize);
     ~ViewportPanel() override;
 
     void OnImGuiRender(bool readOnly = false) override;
@@ -72,7 +74,13 @@ private:
 
     // Engine subsystem pointers are now accessed via static APIs (Renderer::Get(), etc.)
     SceneRenderer* m_SceneRenderer = nullptr;
-    TextureManager* m_TextureManager = nullptr;
+
+    // Dependencies
+    CommandHistory& m_CommandHistory;
+    EditorSceneManager& m_SceneManager;
+    EditorProjectManager& m_ProjectManager;
+    EditorState& m_EditorState;
+    ImVec2& m_EditorViewportSize;
 
 private:
     void HandleResize(const ImVec2& viewportSize, Scene* activeScene);
