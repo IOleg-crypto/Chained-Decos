@@ -27,6 +27,9 @@ endif()
 # Global library definitions
 add_compile_definitions(GLM_FORCE_DEPTH_ZERO_TO_ONE)
 
+# Enable logging only in Debug and RelWithDebInfo configurations
+add_compile_definitions($<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:CH_ENABLE_LOGGING>)
+
 
 # Optional: ccache support for faster rebuilds
 option(USE_CCACHE "Use ccache if available" ON)

@@ -15,6 +15,7 @@
 #include "layer.h"
 #include "scripting/scene_scripting_manager.h"
 
+
 namespace Chained
 {
 
@@ -551,7 +552,7 @@ bool EditorSceneManager::OnKeyPressed(KeyPressedEvent& e)
 
     if (keyCode == KeyCode::F5)
     {
-        EditorLayer::Get().LaunchStandalone();
+        EditorLayer::Get().GetProjectManager().LaunchStandalone(EditorLayer::Get().GetActiveScene());
         return true;
     }
 

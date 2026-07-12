@@ -20,7 +20,7 @@
 #include "scripting/scriptengine.h"
 #include "thirdparty/IconsFontAwesome6.h"
 #include "ui/project_selector_ui.h"
-#include "utils/utils.h"
+
 #include <ImGuizmo.h>
 #include <yaml-cpp/yaml.h>
 
@@ -353,8 +353,8 @@ void EditorLayer::OnRender(Timestep ts)
 
 void EditorLayer::OnImGuiRender()
 {
+    // ImGuizmo context sync only — BeginFrame() is already called in ImGuiLayer::Begin()
     ImGuizmo::SetImGuiContext(ImGui::GetCurrentContext());
-    ImGuizmo::BeginFrame();
 
     if (GetEditorState().NeedsLayoutReset)
     {
@@ -428,7 +428,7 @@ void EditorLayer::OnEvent(Event& e)
     // 2. Project Management
     dispatcher.Dispatch<ProjectOpenedEvent>([this](auto& e) { return m_ProjectManager->OnProjectOpened(e); });
     dispatcher.Dispatch<AppLaunchRuntimeEvent>([this](auto& e) {
-        LaunchStandalone();
+        EditorLayer::Get().GetProjectManager().LaunchStandalone(GetActiveScene());
         return true;
     });
 
@@ -503,13 +503,6 @@ CommandHistory& EditorLayer::GetCommandHistory()
     return m_CommandHistory;
 }
 
-// File and project operations are now handled by EditorProjectManager.
-
-void EditorLayer::LaunchStandalone()
-{
-    CH_PROFILE_FUNCTION();
-    Chained::LaunchStandalone(Project::GetActive(), nullptr);
-}
 
 void EditorLayer::ReparentEntity(Entity child, Entity parent)
 {

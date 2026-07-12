@@ -22,6 +22,7 @@ public:
     void OpenProject();
     void OpenProject(const std::filesystem::path& path);
     void SaveProject();
+    void LaunchStandalone(std::shared_ptr<Scene> editorScene);
 
     bool OnProjectOpened(ProjectOpenedEvent& e);
 

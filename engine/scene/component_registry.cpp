@@ -24,6 +24,20 @@ namespace Chained
         WidgetType_Panel = 8,
         WidgetType_Image = 9,
         WidgetType_ComboBox = 10,
+        WidgetType_ImageButton = 11,
+        WidgetType_InputText = 12,
+        WidgetType_Separator = 13,
+        WidgetType_RadioButton = 14,
+        WidgetType_ColorPicker = 15,
+        WidgetType_DragFloat = 16,
+        WidgetType_DragInt = 17,
+        WidgetType_TreeNode = 18,
+        WidgetType_TabBar = 19,
+        WidgetType_TabItem = 20,
+        WidgetType_CollapsingHeader = 21,
+        WidgetType_PlotLines = 22,
+        WidgetType_PlotHistogram = 23,
+        WidgetType_VerticalLayoutGroup = 24,
     };
 
     static void RegisterManagedScriptComponentMetadata()
@@ -350,6 +364,113 @@ namespace Chained
                         out << YAML::EndSeq;
                         out << YAML::Key << "Selected Index" << YAML::Value << d.SelectedIndex;
                     },
+                    [&](ImageButtonData& d) {
+                        out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_ImageButton;
+                        out << YAML::Key << "Texture Path" << YAML::Value << d.TexturePath;
+                        out << YAML::Key << "Label" << YAML::Value << d.Label;
+                        out << YAML::Key << "Tint Color" << YAML::Value << d.TintColor;
+                        out << YAML::Key << "Background Color" << YAML::Value << d.BackgroundColor;
+                        out << YAML::Key << "Frame Padding" << YAML::Value << d.FramePadding;
+                    },
+                    [&](InputTextData& d) {
+                        out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_InputText;
+                        out << YAML::Key << "Label" << YAML::Value << d.Label;
+                        out << YAML::Key << "Text" << YAML::Value << d.Text;
+                        out << YAML::Key << "Placeholder" << YAML::Value << d.Placeholder;
+                        out << YAML::Key << "Max Length" << YAML::Value << d.MaxLength;
+                        out << YAML::Key << "Multiline" << YAML::Value << d.Multiline;
+                        out << YAML::Key << "Read Only" << YAML::Value << d.ReadOnly;
+                        out << YAML::Key << "Password" << YAML::Value << d.Password;
+                    },
+                    [&](SeparatorData& d) {
+                        out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_Separator;
+                        out << YAML::Key << "Thickness" << YAML::Value << d.Thickness;
+                        out << YAML::Key << "Line Color" << YAML::Value << d.LineColor;
+                    },
+                    [&](RadioButtonData& d) {
+                        out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_RadioButton;
+                        out << YAML::Key << "Label" << YAML::Value << d.Label;
+                        out << YAML::Key << "Options" << YAML::Value << YAML::BeginSeq;
+                        for (auto& opt : d.Options) out << opt;
+                        out << YAML::EndSeq;
+                        out << YAML::Key << "Selected Index" << YAML::Value << d.SelectedIndex;
+                        out << YAML::Key << "Horizontal" << YAML::Value << d.Horizontal;
+                    },
+                    [&](ColorPickerData& d) {
+                        out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_ColorPicker;
+                        out << YAML::Key << "Label" << YAML::Value << d.Label;
+                        out << YAML::Key << "Selected Color" << YAML::Value << d.SelectedColor;
+                        out << YAML::Key << "Show Alpha" << YAML::Value << d.ShowAlpha;
+                        out << YAML::Key << "Show Picker" << YAML::Value << d.ShowPicker;
+                    },
+                    [&](DragFloatData& d) {
+                        out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_DragFloat;
+                        out << YAML::Key << "Label" << YAML::Value << d.Label;
+                        out << YAML::Key << "Value" << YAML::Value << d.Value;
+                        out << YAML::Key << "Speed" << YAML::Value << d.Speed;
+                        out << YAML::Key << "Min" << YAML::Value << d.Min;
+                        out << YAML::Key << "Max" << YAML::Value << d.Max;
+                        out << YAML::Key << "Format" << YAML::Value << d.Format;
+                    },
+                    [&](DragIntData& d) {
+                        out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_DragInt;
+                        out << YAML::Key << "Label" << YAML::Value << d.Label;
+                        out << YAML::Key << "Value" << YAML::Value << d.Value;
+                        out << YAML::Key << "Speed" << YAML::Value << d.Speed;
+                        out << YAML::Key << "Min" << YAML::Value << d.Min;
+                        out << YAML::Key << "Max" << YAML::Value << d.Max;
+                        out << YAML::Key << "Format" << YAML::Value << d.Format;
+                    },
+                    [&](TreeNodeData& d) {
+                        out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_TreeNode;
+                        out << YAML::Key << "Label" << YAML::Value << d.Label;
+                        out << YAML::Key << "Is Open" << YAML::Value << d.IsOpen;
+                        out << YAML::Key << "Default Open" << YAML::Value << d.DefaultOpen;
+                        out << YAML::Key << "Is Leaf" << YAML::Value << d.IsLeaf;
+                    },
+                    [&](TabBarData& d) {
+                        out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_TabBar;
+                        out << YAML::Key << "Label" << YAML::Value << d.Label;
+                        out << YAML::Key << "Reorderable" << YAML::Value << d.Reorderable;
+                        out << YAML::Key << "Auto Select New Tabs" << YAML::Value << d.AutoSelectNewTabs;
+                    },
+                    [&](TabItemData& d) {
+                        out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_TabItem;
+                        out << YAML::Key << "Label" << YAML::Value << d.Label;
+                        out << YAML::Key << "Is Open" << YAML::Value << d.IsOpen;
+                        out << YAML::Key << "Selected" << YAML::Value << d.Selected;
+                    },
+                    [&](CollapsingHeaderData& d) {
+                        out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_CollapsingHeader;
+                        out << YAML::Key << "Label" << YAML::Value << d.Label;
+                        out << YAML::Key << "Is Open" << YAML::Value << d.IsOpen;
+                        out << YAML::Key << "Default Open" << YAML::Value << d.DefaultOpen;
+                    },
+                    [&](PlotLinesData& d) {
+                        out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_PlotLines;
+                        out << YAML::Key << "Label" << YAML::Value << d.Label;
+                        out << YAML::Key << "Values" << YAML::Value << YAML::BeginSeq;
+                        for (auto v : d.Values) out << v;
+                        out << YAML::EndSeq;
+                        out << YAML::Key << "Overlay Text" << YAML::Value << d.OverlayText;
+                        out << YAML::Key << "Scale Min" << YAML::Value << d.ScaleMin;
+                        out << YAML::Key << "Scale Max" << YAML::Value << d.ScaleMax;
+                    },
+                    [&](PlotHistogramData& d) {
+                        out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_PlotHistogram;
+                        out << YAML::Key << "Label" << YAML::Value << d.Label;
+                        out << YAML::Key << "Values" << YAML::Value << YAML::BeginSeq;
+                        for (auto v : d.Values) out << v;
+                        out << YAML::EndSeq;
+                        out << YAML::Key << "Overlay Text" << YAML::Value << d.OverlayText;
+                        out << YAML::Key << "Scale Min" << YAML::Value << d.ScaleMin;
+                        out << YAML::Key << "Scale Max" << YAML::Value << d.ScaleMax;
+                    },
+                    [&](VerticalLayoutGroupData& d) {
+                        out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_VerticalLayoutGroup;
+                        out << YAML::Key << "Spacing" << YAML::Value << d.Spacing;
+                        out << YAML::Key << "Padding" << YAML::Value << d.Padding;
+                    },
                     [&](auto&) {
                         out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_None;
                     }
@@ -455,6 +576,135 @@ namespace Chained
                         if (w["Label"]) d.Label = w["Label"].as<std::string>();
                         if (w["Items"]) for (auto item : w["Items"]) d.Items.push_back(item.as<std::string>());
                         if (w["Selected Index"]) d.SelectedIndex = w["Selected Index"].as<int>();
+                        comp.Data = d;
+                        break;
+                    }
+                    case WidgetType_ImageButton: {
+                        ImageButtonData d;
+                        if (w["Texture Path"]) d.TexturePath = w["Texture Path"].as<std::string>();
+                        if (w["Label"]) d.Label = w["Label"].as<std::string>();
+                        if (w["Tint Color"]) d.TintColor = w["Tint Color"].as<Color>();
+                        if (w["Background Color"]) d.BackgroundColor = w["Background Color"].as<Color>();
+                        if (w["Frame Padding"]) d.FramePadding = w["Frame Padding"].as<int>();
+                        comp.Data = d;
+                        break;
+                    }
+                    case WidgetType_InputText: {
+                        InputTextData d;
+                        if (w["Label"]) d.Label = w["Label"].as<std::string>();
+                        if (w["Text"]) d.Text = w["Text"].as<std::string>();
+                        if (w["Placeholder"]) d.Placeholder = w["Placeholder"].as<std::string>();
+                        if (w["Max Length"]) d.MaxLength = w["Max Length"].as<int>();
+                        if (w["Multiline"]) d.Multiline = w["Multiline"].as<bool>();
+                        if (w["Read Only"]) d.ReadOnly = w["Read Only"].as<bool>();
+                        if (w["Password"]) d.Password = w["Password"].as<bool>();
+                        comp.Data = d;
+                        break;
+                    }
+                    case WidgetType_Separator: {
+                        SeparatorData d;
+                        if (w["Thickness"]) d.Thickness = w["Thickness"].as<float>();
+                        if (w["Line Color"]) d.LineColor = w["Line Color"].as<Color>();
+                        comp.Data = d;
+                        break;
+                    }
+                    case WidgetType_RadioButton: {
+                        RadioButtonData d;
+                        if (w["Label"]) d.Label = w["Label"].as<std::string>();
+                        if (w["Options"]) for (auto opt : w["Options"]) d.Options.push_back(opt.as<std::string>());
+                        if (w["Selected Index"]) d.SelectedIndex = w["Selected Index"].as<int>();
+                        if (w["Horizontal"]) d.Horizontal = w["Horizontal"].as<bool>();
+                        comp.Data = d;
+                        break;
+                    }
+                    case WidgetType_ColorPicker: {
+                        ColorPickerData d;
+                        if (w["Label"]) d.Label = w["Label"].as<std::string>();
+                        if (w["Selected Color"]) d.SelectedColor = w["Selected Color"].as<Color>();
+                        if (w["Show Alpha"]) d.ShowAlpha = w["Show Alpha"].as<bool>();
+                        if (w["Show Picker"]) d.ShowPicker = w["Show Picker"].as<bool>();
+                        comp.Data = d;
+                        break;
+                    }
+                    case WidgetType_DragFloat: {
+                        DragFloatData d;
+                        if (w["Label"]) d.Label = w["Label"].as<std::string>();
+                        if (w["Value"]) d.Value = w["Value"].as<float>();
+                        if (w["Speed"]) d.Speed = w["Speed"].as<float>();
+                        if (w["Min"]) d.Min = w["Min"].as<float>();
+                        if (w["Max"]) d.Max = w["Max"].as<float>();
+                        if (w["Format"]) d.Format = w["Format"].as<std::string>();
+                        comp.Data = d;
+                        break;
+                    }
+                    case WidgetType_DragInt: {
+                        DragIntData d;
+                        if (w["Label"]) d.Label = w["Label"].as<std::string>();
+                        if (w["Value"]) d.Value = w["Value"].as<int>();
+                        if (w["Speed"]) d.Speed = w["Speed"].as<float>();
+                        if (w["Min"]) d.Min = w["Min"].as<int>();
+                        if (w["Max"]) d.Max = w["Max"].as<int>();
+                        if (w["Format"]) d.Format = w["Format"].as<std::string>();
+                        comp.Data = d;
+                        break;
+                    }
+                    case WidgetType_TreeNode: {
+                        TreeNodeData d;
+                        if (w["Label"]) d.Label = w["Label"].as<std::string>();
+                        if (w["Is Open"]) d.IsOpen = w["Is Open"].as<bool>();
+                        if (w["Default Open"]) d.DefaultOpen = w["Default Open"].as<bool>();
+                        if (w["Is Leaf"]) d.IsLeaf = w["Is Leaf"].as<bool>();
+                        comp.Data = d;
+                        break;
+                    }
+                    case WidgetType_TabBar: {
+                        TabBarData d;
+                        if (w["Label"]) d.Label = w["Label"].as<std::string>();
+                        if (w["Reorderable"]) d.Reorderable = w["Reorderable"].as<bool>();
+                        if (w["Auto Select New Tabs"]) d.AutoSelectNewTabs = w["Auto Select New Tabs"].as<bool>();
+                        comp.Data = d;
+                        break;
+                    }
+                    case WidgetType_TabItem: {
+                        TabItemData d;
+                        if (w["Label"]) d.Label = w["Label"].as<std::string>();
+                        if (w["Is Open"]) d.IsOpen = w["Is Open"].as<bool>();
+                        if (w["Selected"]) d.Selected = w["Selected"].as<bool>();
+                        comp.Data = d;
+                        break;
+                    }
+                    case WidgetType_CollapsingHeader: {
+                        CollapsingHeaderData d;
+                        if (w["Label"]) d.Label = w["Label"].as<std::string>();
+                        if (w["Is Open"]) d.IsOpen = w["Is Open"].as<bool>();
+                        if (w["Default Open"]) d.DefaultOpen = w["Default Open"].as<bool>();
+                        comp.Data = d;
+                        break;
+                    }
+                    case WidgetType_PlotLines: {
+                        PlotLinesData d;
+                        if (w["Label"]) d.Label = w["Label"].as<std::string>();
+                        if (w["Values"]) for (auto v : w["Values"]) d.Values.push_back(v.as<float>());
+                        if (w["Overlay Text"]) d.OverlayText = w["Overlay Text"].as<std::string>();
+                        if (w["Scale Min"]) d.ScaleMin = w["Scale Min"].as<float>();
+                        if (w["Scale Max"]) d.ScaleMax = w["Scale Max"].as<float>();
+                        comp.Data = d;
+                        break;
+                    }
+                    case WidgetType_PlotHistogram: {
+                        PlotHistogramData d;
+                        if (w["Label"]) d.Label = w["Label"].as<std::string>();
+                        if (w["Values"]) for (auto v : w["Values"]) d.Values.push_back(v.as<float>());
+                        if (w["Overlay Text"]) d.OverlayText = w["Overlay Text"].as<std::string>();
+                        if (w["Scale Min"]) d.ScaleMin = w["Scale Min"].as<float>();
+                        if (w["Scale Max"]) d.ScaleMax = w["Scale Max"].as<float>();
+                        comp.Data = d;
+                        break;
+                    }
+                    case WidgetType_VerticalLayoutGroup: {
+                        VerticalLayoutGroupData d;
+                        if (w["Spacing"]) d.Spacing = w["Spacing"].as<float>();
+                        if (w["Padding"]) d.Padding = w["Padding"].as<glm::vec2>();
                         comp.Data = d;
                         break;
                     }

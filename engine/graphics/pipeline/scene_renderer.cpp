@@ -382,10 +382,7 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
         }
 
         std::vector<Material> materials;
-        if (registry.all_of<ModelComponent>(entity)) // Default from asset if not overridden
-        {
-            materials = modelAsset->GetMaterials();
-        }
+        // materials = component.Materials; // TODO: Implement component-level material overrides
 
         RenderItem item;
         item.Asset = modelAsset.get();
@@ -434,13 +431,6 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
             m_OpaqueQueue.push_back(std::move(item));
             dbg_queued++;
         }
-    }
-
-    if (dbg_nullAsset > 0 || dbg_notReady > 0)
-    {
-        CH_CORE_WARN(
-            "[SceneRenderer] CollectAndRenderItems: total={} emptyPath={} nullAsset={} notReady={} culled={} queued={}",
-            dbg_total, dbg_emptyPath, dbg_nullAsset, dbg_notReady, dbg_culled, dbg_queued);
     }
 
     auto primView = registry.view<TransformComponent, PrimitiveComponent>();
@@ -517,10 +507,13 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
                 uniforms = sc.Uniforms;
             }
         }
+        std::vector<Material> materials;
+        // materials = component.Materials; // TODO: Implement component-level material overrides
+
         RenderItem item;
         item.Asset = primitive.Asset.get();
         item.Transform = transform.WorldTransform;
-        item.Materials = primitive.Asset->GetMaterials();
+        item.Materials = materials;
         item.ShaderOverride = shaderOver.get();
         item.CustomUniforms = uniforms;
 
@@ -649,12 +642,12 @@ Chained::Material SceneRenderer::ResolveMaterialForMesh(int meshIndex, const Cha
         return {};
     }
 
-    if (meshIndex < (int)materials.size() && !materials[meshIndex].Name.empty())
-    {
-        return materials[meshIndex];
-    }
-
     int matIdx = model.Meshes[meshIndex].MaterialIndex;
+
+    if (matIdx >= 0 && matIdx < (int)materials.size() && !materials[matIdx].Name.empty())
+    {
+        return materials[matIdx];
+    }
 
     if (modelAsset && modelAsset->IsReady())
     {

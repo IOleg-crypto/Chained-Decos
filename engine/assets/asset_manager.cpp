@@ -6,6 +6,7 @@
 #include "engine/assets/loaders/font_loader.h"
 #include "engine/assets/loaders/model_loader.h"
 #include <chrono>
+#include <filesystem>
 #include "engine/assets/loaders/texture_loader.h"
 #include "engine/assets/loaders/environment_loader.h"
 #include "engine/assets/loaders/shader_loader.h"
@@ -42,7 +43,80 @@ void AssetManager::Shutdown()
 
 void AssetManager::Update(Timestep ts)
 {
+    if (m_HotReloadInterval > 0.0f)
+    {
+        m_HotReloadAccumulator += ts.GetSeconds();
+        if (m_HotReloadAccumulator >= m_HotReloadInterval)
+        {
+            m_HotReloadAccumulator = 0.0f;
+            CheckModelHotReload();
+        }
+    }
+
     Update();
+}
+
+void AssetManager::CheckModelHotReload()
+{
+    CH_PROFILE_FUNCTION();
+
+    std::vector<std::pair<AssetHandle, std::string>> toReload;
+
+    {
+        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+        for (const auto& [handle, asset] : m_AssetCache)
+        {
+            if (!asset || asset->GetType() != AssetType::Model)
+            {
+                continue;
+            }
+            if (asset->GetState() == AssetState::Loading)
+            {
+                continue;
+            }
+
+            const std::string& path = asset->GetPath();
+            if (path.empty())
+            {
+                continue;
+            }
+
+            std::filesystem::path sourcePath(path);
+            std::filesystem::path chassetPath = sourcePath;
+            chassetPath.replace_extension(".chasset");
+
+            std::error_code ec;
+
+            // Source must exist
+            if (!std::filesystem::exists(sourcePath, ec) || ec)
+            {
+                continue;
+            }
+
+            // No .chasset yet — will be generated on next load, no reload needed now
+            if (!std::filesystem::exists(chassetPath, ec) || ec)
+            {
+                continue;
+            }
+
+            auto sourceTime  = std::filesystem::last_write_time(sourcePath, ec);
+            if (ec) continue;
+            auto chassetTime = std::filesystem::last_write_time(chassetPath, ec);
+            if (ec) continue;
+
+            // Source is newer than cache → stale
+            if (sourceTime > chassetTime)
+            {
+                toReload.emplace_back(handle, sourcePath.filename().string());
+            }
+        }
+    }
+
+    for (const auto& [handle, name] : toReload)
+    {
+        CH_CORE_INFO("AssetManager: Hot-reloading stale model '{}' (.chasset outdated)", name);
+        ReloadAsset(handle, AssetType::Model);
+    }
 }
 
 AssetManager::~AssetManager()
@@ -165,7 +239,7 @@ AssetHandle AssetManager::ResolveToHandle(const std::string& path) const
 
 std::shared_ptr<Asset> AssetManager::LoadAsset(const std::string& path, AssetType type)
 {
-    if (path.empty())
+    if (path.empty() || path.front() == '*')
     {
         return nullptr;
     }

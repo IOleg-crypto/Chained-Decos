@@ -84,10 +84,19 @@ PendingModelData ModelLoader::LoadMeshDataFromDisk(const std::filesystem::path& 
                 {
                     CH_CORE_WARN("Engine data structure changed! .chasset is outdated for: {}", chassetPath.string());
                 }
+                else if (header.dataStructSize != sizeof(PendingModelData))
+                {
+                    CH_CORE_WARN(".chasset struct size mismatch (got {}, expected {}), re-importing: {}",
+                        header.dataStructSize, sizeof(PendingModelData), chassetPath.string());
+                }
                 else
                 {
                     uint64_t currentHash = ComputeFileHash(path);
-                    if (header.sourceHash != 0 && currentHash != 0 && header.sourceHash != currentHash)
+                    if (currentHash == 0)
+                    {
+                        CH_CORE_WARN("Could not hash source file (locked?), skipping cache: {}", path.string());
+                    }
+                    else if (header.sourceHash != currentHash)
                     {
                         CH_CORE_WARN("Source file changed since .chasset was created, re-importing: {}", path.string());
                     }

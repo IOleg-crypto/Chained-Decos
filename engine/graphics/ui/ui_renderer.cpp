@@ -113,7 +113,7 @@ void UIRenderer::DrawCanvas(Scene *scene, const ImVec2 &referencePosition, const
             auto &hierarchy = entity.GetComponent<HierarchyComponent>();
             auto parentID = hierarchy.Parent;
 
-            if (parentID != entt::null) {
+            if (parentID != entt::null && registry.valid(parentID)) {
                 UIRect parentRect = m_LayoutSystem.GetEntityRect(parentID);
                 if (parentRect.width > 1.0f && parentRect.height > 1.0f) {
                     ImGui::PushClipRect({parentRect.x, parentRect.y},

@@ -32,8 +32,9 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
     glm::mat4 modelMat = transform.WorldTransform;
 
     // 1. Setup ImGuizmo
+    // Use the foreground drawlist so the gizmo renders above the toolbar overlay and all child windows.
     ImGuizmo::SetOrthographic(camera.Projection != ProjectionType::Perspective);
-    ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList()); 
+    ImGuizmo::SetDrawlist(ImGui::GetForegroundDrawList());
 
     // Ensure we are using absolute screen coordinates for SetRect
     ImGuizmo::SetRect(viewportPos.x, viewportPos.y, viewportSize.x, viewportSize.y);

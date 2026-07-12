@@ -1,7 +1,7 @@
 # Chained Engine - Compiler Settings
 # Extracted from root CMakeLists.txt for modularity
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -21,132 +21,15 @@ endif()
 set(CMAKE_DEBUG_POSTFIX "")
 
 # Compiler-specific settings
-if(MSVC)
-    # MSVC-specific settings
-    add_compile_options(
-        $<$<CONFIG:Debug>:/Od>
-        $<$<CONFIG:Release>:/O2> $<$<CONFIG:Release>:/DNDEBUG>
-        /Zi /EHsc
-        /MP                  # Multi-processor compilation
-        /Zc:preprocessor     # Modern preprocessor
-        /Gm-                 # Disable minimal rebuild (it's slower)
-        /utf-8               # Use UTF-8 character set
-        /bigobj              # Allow large object files (required for many modules)
-        
-        # Dead Code Elimination: Function-Level Linking
-        $<$<CONFIG:Release>:/Gy>
-    )
-
-    
-    
-    # Strip unused functions in Release
-    add_link_options($<$<CONFIG:Release>:/OPT:REF> $<$<CONFIG:Release>:/OPT:ICF>)
-    
-    # Speed up Debugging: use FASTLINK
-    add_link_options($<$<CONFIG:Debug>:/DEBUG:FASTLINK>)
-
-    if(DISABLE_ALL_WARNINGS)
-        add_compile_options(/W0)
-    elseif(ENABLE_WARNINGS)
-        add_compile_options(/W4 /permissive-)
-        if(WARNINGS_AS_ERRORS)
-            add_compile_options(/WX)
-        endif()
-    else()
-        add_compile_options(/W1)
-    endif()
-
-    if(ENABLE_SANITIZERS)
-        add_compile_options(/fsanitize=address)
-    endif()
-
-    # Level 2 Security Hardening
-    add_compile_options(/guard:cf /GS)
-    add_link_options(/DYNAMICBASE /NXCOMPAT /guard:cf)
-
+if(MSVC AND NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    # MSVC (Standardcl.exe)
+    include(${CMAKE_CURRENT_LIST_DIR}/compilers/CompilerMSVC.cmake)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # Clang settings (includes AppleClang and clang-cl)
-    if(MSVC)
-        # clang-cl behaves like MSVC
-        add_compile_options(/Zc:preprocessor /utf-8 /bigobj)
-    else()
-        add_compile_options(
-            $<$<CONFIG:Debug>:-O0> $<$<CONFIG:Debug>:-g>
-            $<$<CONFIG:Release>:-O3> $<$<CONFIG:Release>:-DNDEBUG>
-            $<$<CONFIG:Release>:-ffunction-sections>
-            $<$<CONFIG:Release>:-fdata-sections>
-        )
-
-        if(MINGW)
-            add_compile_options(-Wa,-mbig-obj)
-        endif()
-
-        # Dead Code Elimination linkage and binary stripping for Release build
-        add_link_options(
-            $<$<CONFIG:Release>:-Wl,--gc-sections>
-        )
-
-        if(DISABLE_ALL_WARNINGS)
-            add_compile_options(-w)
-        elseif(ENABLE_WARNINGS)
-            add_compile_options(-Wall -Wextra -Wpedantic -Wshadow -Wmost -Wno-missing-braces -Wno-missing-field-initializers -Wno-attributes)
-            if(WARNINGS_AS_ERRORS)
-                add_compile_options(-Werror)
-            endif()
-        else()
-            add_compile_options(-Wno-all)
-        endif()
-    endif()
-
-    if(ENABLE_SANITIZERS)
-        add_compile_options(-fsanitize=address -fsanitize=undefined)
-        add_link_options(-fsanitize=address -fsanitize=undefined)
-    endif()
-
-    if(NOT WIN32)
-        add_link_options(-Wl,-z,relro -Wl,-z,now)
-    endif()
-
+    include(${CMAKE_CURRENT_LIST_DIR}/compilers/CompilerClang.cmake)
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     # GCC settings
-    add_compile_options(
-        $<$<CONFIG:Debug>:-O0> $<$<CONFIG:Debug>:-g>
-        $<$<CONFIG:Release>:-O3> $<$<CONFIG:Release>:-DNDEBUG>
-        $<$<CONFIG:Release>:-ffunction-sections>
-        $<$<CONFIG:Release>:-fdata-sections>
-    )
-
-    if(MINGW)
-        add_compile_options(-Wa,-mbig-obj)
-    endif()
-
-    # Suppress overly strict C++23 template body checks for third-party headers (GLM)
-    add_compile_options(-Wno-template-body)
-
-    # Dead Code Elimination linkage and binary stripping for Release build
-    add_link_options(
-        $<$<CONFIG:Release>:-Wl,--gc-sections>
-    )
-
-    if(DISABLE_ALL_WARNINGS)
-        add_compile_options(-w)
-    elseif(ENABLE_WARNINGS)
-        add_compile_options(-Wall -Wextra -Wpedantic -Wshadow -Wno-missing-field-initializers -Wno-attributes)
-        if(WARNINGS_AS_ERRORS)
-            add_compile_options(-Werror)
-        endif()
-    else()
-        add_compile_options(-Wno-all)
-    endif()
-
-    if(ENABLE_SANITIZERS)
-        add_compile_options(-fsanitize=address -fsanitize=undefined)
-        add_link_options(-fsanitize=address -fsanitize=undefined)
-    endif()
-
-    if(NOT WIN32)
-        add_link_options(-Wl,-z,relro -Wl,-z,now)
-    endif()
+    include(${CMAKE_CURRENT_LIST_DIR}/compilers/CompilerGCC.cmake)
 endif()
 
 # Platform-specific settings
