@@ -1,0 +1,11 @@
+Model Information:
+* title:	MOST (bridge)
+* source:	https://sketchfab.com/3d-models/most-bridge-beabe372cec941c697ffad61abdcd82b
+* author:	Nikitos & 3130 (https://sketchfab.com/vrcityphoto)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "MOST (bridge)" (https://sketchfab.com/3d-models/most-bridge-beabe372cec941c697ffad61abdcd82b) by Nikitos & 3130 (https://sketchfab.com/vrcityphoto) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
