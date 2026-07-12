@@ -42,4 +42,6 @@ CH_MARK_RFL(NameComponent);
 
 } // namespace Chained
 
+// HierarchyComponent and NameComponent use manual registration in RegisterEngineComponents()
+
 #endif // CH_HIERARCHY_COMPONENT_H

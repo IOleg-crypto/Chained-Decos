@@ -88,9 +88,6 @@ bool EditorProjectSerializer::Serialize(const std::shared_ptr<Project>& project,
         out << YAML::Key << "CameraRotationSpeed" << YAML::Value << editorSettings.CameraRotationSpeed;
         out << YAML::Key << "CameraBoostMultiplier" << YAML::Value << editorSettings.CameraBoostMultiplier;
         out << YAML::Key << "DisableCameraZoom" << YAML::Value << editorSettings.DisableCameraZoom;
-        out << YAML::Key << "ShowGrid" << YAML::Value << editorSettings.ShowGrid;
-        out << YAML::Key << "ShowGizmos" << YAML::Value << editorSettings.ShowGizmos;
-        out << YAML::Key << "ShowSelectedWireframe" << YAML::Value << editorSettings.ShowSelectedWireframe;
         out << YAML::EndMap;
 
         out << YAML::Key << "Scripting" << YAML::Value << YAML::BeginMap;
@@ -229,9 +226,6 @@ bool EditorProjectSerializer::Deserialize(const std::shared_ptr<Project>& projec
         if (projectNode["Editor"]["CameraRotationSpeed"]) outEditorSettings.CameraRotationSpeed = projectNode["Editor"]["CameraRotationSpeed"].as<float>();
         if (projectNode["Editor"]["CameraBoostMultiplier"]) outEditorSettings.CameraBoostMultiplier = projectNode["Editor"]["CameraBoostMultiplier"].as<float>();
         if (projectNode["Editor"]["DisableCameraZoom"]) outEditorSettings.DisableCameraZoom = projectNode["Editor"]["DisableCameraZoom"].as<bool>();
-        if (projectNode["Editor"]["ShowGrid"]) outEditorSettings.ShowGrid = projectNode["Editor"]["ShowGrid"].as<bool>();
-        if (projectNode["Editor"]["ShowGizmos"]) outEditorSettings.ShowGizmos = projectNode["Editor"]["ShowGizmos"].as<bool>();
-        if (projectNode["Editor"]["ShowSelectedWireframe"]) outEditorSettings.ShowSelectedWireframe = projectNode["Editor"]["ShowSelectedWireframe"].as<bool>();
     }
 
     if (projectNode["Scripting"])

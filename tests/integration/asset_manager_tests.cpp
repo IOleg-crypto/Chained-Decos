@@ -113,10 +113,8 @@ TEST_F(AssetManagerTest, GetCachesAssetAndLoadsOnlyOnce)
     CountingLoaderData* loader = RegisterDummyLoader(true);
     const std::string path = MakeUniqueAssetPath("cache");
 
-    auto handleFirst = m_AssetManager->ResolveToHandle(path);
-    auto first = m_AssetManager->Get<DummyAsset>(handleFirst);
-    auto handleSecond = m_AssetManager->ResolveToHandle(path);
-    auto second = m_AssetManager->Get<DummyAsset>(handleSecond);
+    auto first = m_AssetManager->Get<DummyAsset>(path);
+    auto second = m_AssetManager->Get<DummyAsset>(path);
 
     ASSERT_NE(first, nullptr);
     ASSERT_NE(second, nullptr);
@@ -132,8 +130,8 @@ TEST_F(AssetManagerTest, ResolveToHandleReturnsValidHandleAfterLoad)
     RegisterDummyLoader(true);
     const std::string path = MakeUniqueAssetPath("handle");
 
+    auto loaded = m_AssetManager->Get<DummyAsset>(path);
     auto loadedHandle = m_AssetManager->ResolveToHandle(path);
-    auto loaded = m_AssetManager->Get<DummyAsset>(loadedHandle);
     ASSERT_NE(loaded, nullptr);
 
     AssetHandle handle = m_AssetManager->ResolveToHandle(path);
@@ -149,8 +147,7 @@ TEST_F(AssetManagerTest, ReloadInvokesLoaderAgainForExistingAsset)
     CountingLoaderData* loader = RegisterDummyLoader(true);
     const std::string path = MakeUniqueAssetPath("reload");
 
-    auto handle = m_AssetManager->ResolveToHandle(path);
-    auto asset = m_AssetManager->Get<DummyAsset>(handle);
+    auto asset = m_AssetManager->Get<DummyAsset>(path);
     ASSERT_NE(asset, nullptr);
     ASSERT_EQ(loader->LoadCalls, 1);
 
@@ -166,8 +163,7 @@ TEST_F(AssetManagerTest, FailedLoadMarksAssetAsFailed)
     CountingLoaderData* loader = RegisterDummyLoader(false);
     const std::string path = MakeUniqueAssetPath("failed");
 
-    auto handle = m_AssetManager->ResolveToHandle(path);
-    auto asset = m_AssetManager->Get<DummyAsset>(handle);
+    auto asset = m_AssetManager->Get<DummyAsset>(path);
 
     ASSERT_NE(asset, nullptr);
     EXPECT_EQ(loader->LoadCalls, 1);
@@ -180,8 +176,7 @@ TEST_F(AssetManagerTest, AsyncLoadQueuesFinalizeAndCompletesOnUpdate)
     CountingLoaderData* loader = RegisterDummyLoader(true, true);
     const std::string path = MakeUniqueAssetPath("async");
 
-    auto handle = m_AssetManager->ResolveToHandle(path);
-    auto asset = m_AssetManager->Get<DummyAsset>(handle);
+    auto asset = m_AssetManager->Get<DummyAsset>(path);
     ASSERT_NE(asset, nullptr);
 
     for (int attempt = 0; attempt < 1000 && m_AssetManager->GetPendingFinalizeCount() == 0; ++attempt)
@@ -217,8 +212,7 @@ TEST_F(AssetManagerTest, MultipleAsyncLoads)
     for (int i = 0; i < count; ++i)
     {
         const std::string path = MakeUniqueAssetPath("multi_async");
-        auto handle = m_AssetManager->ResolveToHandle(path);
-        assets.push_back(m_AssetManager->Get<DummyAsset>(handle));
+        assets.push_back(m_AssetManager->Get<DummyAsset>(path));
     }
 
     // Wait for all to be in pending finalize

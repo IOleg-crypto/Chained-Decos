@@ -3,10 +3,10 @@
 
 #include "entt/entt.hpp"
 #include <glm/glm.hpp>
+#include <vector>
 
 namespace Chained
 {
-class Scene;
 
 struct UpdateTask
 {
@@ -15,21 +15,15 @@ struct UpdateTask
     bool ParentChanged;
 };
 
-class HierarchySystem
+namespace Hierarchy
 {
-public:
-    HierarchySystem() = default;
-    virtual ~HierarchySystem() = default;
-
     /**
      * @brief Updates the world-space transforms for all entities in the hierarchy.
      * Uses an iterative DFS approach with dirty-flag propagation.
      */
     void UpdateWorldTransforms(entt::registry& reg, const std::vector<entt::entity>& roots);
+}
 
-public:
-    void Shutdown() {}
-};
 } // namespace Chained
 
 #endif // CH_HIERARCHY_SYSTEM_H

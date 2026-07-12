@@ -54,9 +54,6 @@ Project:
     CameraRotationSpeed: 0.100000001
     CameraBoostMultiplier: 5
     DisableCameraZoom: false
-    ShowGrid: true
-    ShowGizmos: true
-    ShowSelectedWireframe: true
   Scripting:
     ModuleName: ChainedDecos.Scripts.dll
     ModuleDirectory: assets/bin

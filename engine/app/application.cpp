@@ -10,7 +10,6 @@
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/ui/ui_renderer.h"
 #include "engine/physics/physics.h"
-#include "engine/core/platform.h"
 #include "engine/scene/component_registry.h"
 #include "engine/platform/dialogs/file_dialogs.h"
 #include "engine/project/project.h"
@@ -203,18 +202,13 @@ void Application::OnEvent(Event& e)
     }
 }
 
-
-
-
-void Application::PushLayer(std::unique_ptr<Layer> layer)
-{
+void Application::PushLayer(std::unique_ptr<Layer> layer) const {
     Layer* raw = layer.get();
     m_LayerStack->PushLayer(std::move(layer));
     raw->OnAttach();
 }
 
-void Application::PushOverlay(std::unique_ptr<Layer> overlay)
-{
+void Application::PushOverlay(std::unique_ptr<Layer> overlay) const {
     Layer* raw = overlay.get();
     m_LayerStack->PushOverlay(std::move(overlay));
     raw->OnAttach();

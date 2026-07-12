@@ -6,6 +6,7 @@
 #include "imgui.h"
 
 #include "engine/scene/scene.h"
+#include "engine/scene/scene_context.h"
 #include "editor/project_manager.h"
 #include "editor/types.h"
 #include "editor/scene_manager.h"
@@ -64,6 +65,7 @@ public:
     static void ReparentEntity(Entity child, Entity parent);
 
     ImVec2 GetViewportSize() const { return m_ViewportSize; }
+    ImVec2& GetViewportSizeRef() { return m_ViewportSize; }
     void OnViewportResized(const ImVec2& size) { m_ViewportSize = size; }
     void SetLastScenePath(const std::string& path) { m_Config.LastScenePath = path; }
 
@@ -75,9 +77,13 @@ public:
     std::shared_ptr<Scene> GetActiveScene() const;
 
 private:
+    // Resolved once in the constructor (ServiceLocator is already locked by then —
+    // see Application::Application) and reused for the layer's whole lifetime.
+    SceneContext m_Context;
+
     EditorConfig m_Config;
     EditorState m_EditorState;
-    
+
     std::unique_ptr<EditorLayout> m_Layout;
     std::unique_ptr<EditorPanels> m_Panels;
     std::unique_ptr<EditorProjectManager> m_ProjectManager;

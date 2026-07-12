@@ -38,10 +38,26 @@ namespace Chained
             string className = (classNamePtr != null) ? new string(classNamePtr) : string.Empty;
             if (!s_ScriptTypes.TryGetValue(className, out Type? type))
             {
-                foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                // Search only within the active AssemblyLoadContext to avoid resolving 
+                // stale types from old, unloaded contexts pending garbage collection.
+                var activeALC = System.Runtime.Loader.AssemblyLoadContext.GetLoadContext(typeof(ScriptEngine).Assembly);
+                if (activeALC != null)
                 {
-                    type = assembly.GetType(className, false, true);
-                    if (type != null) break;
+                    foreach (var assembly in activeALC.Assemblies)
+                    {
+                        type = assembly.GetType(className, false, true);
+                        if (type != null) break;
+                    }
+                }
+                
+                // Fallback for default context (e.g. system types)
+                if (type == null)
+                {
+                    foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                    {
+                        type = assembly.GetType(className, false, true);
+                        if (type != null) break;
+                    }
                 }
 
                 if (type == null)

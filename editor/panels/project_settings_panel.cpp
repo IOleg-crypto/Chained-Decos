@@ -183,15 +183,6 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
         }
         else if (selectedCategory == 4) // Editor
         {
-            ImGui::TextDisabled("Visual Feedback");
-            ImGui::Separator();
-            ImGui::Spacing();
-
-            ImGui::Checkbox("Show Grid", &editorSettings.ShowGrid);
-            ImGui::Checkbox("Show Gizmos", &editorSettings.ShowGizmos);
-            ImGui::Checkbox("Show Selected Wireframe", &editorSettings.ShowSelectedWireframe);
-
-            ImGui::Separator();
             ImGui::TextDisabled("Auto-Save Settings");
             ImGui::Checkbox("Enable Auto-Save", &editorConfig.AutoSaveEnabled);
             ImGui::DragFloat("Auto-Save Interval (s)", &editorConfig.AutoSaveInterval, 1.0f, 10.0f, 3600.0f);

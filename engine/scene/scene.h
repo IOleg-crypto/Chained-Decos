@@ -11,17 +11,15 @@
 #include "engine/common/base.h"
 #include "engine/common/timestep.h"
 #include "engine/scene/entity.h"
+#include "engine/scene/scene_context.h"
 #include "engine/scene/scene_settings.h"
-#include "engine/scene/scene_state.h" 
+#include "engine/scene/scene_state.h"
 
 namespace Chained
 {
 class Physics;
 class ScriptEngine;
 class SceneScriptingManager;
-class HierarchySystem;
-class SceneResourceManager;
-class AnimationManager;
 class Event;
 
 /// @brief Owns the scene registry, scene settings, and manages its own execution state lifecycle.
@@ -55,14 +53,14 @@ public:
 public: // Scene State Management
     /// @brief Transition the scene to a new state (Edit, Runtime, Simulation).
     /// Calls OnStateExit for the current state and OnStateEnter for the new one.
-    void TransitionToState(SceneState newState);
+    void TransitionToState(SceneState newState, const SceneContext& ctx);
     SceneState GetSceneState() const
     {
         return m_State;
     }
 
     /// @brief Single update entry point — dispatches to the correct sub-update based on current state.
-    void OnUpdate(Timestep timestep);
+    void OnUpdate(Timestep timestep, const SceneContext& ctx);
     void OnViewportResize(uint32_t width, uint32_t height);
 
 public: // Entity Management
@@ -88,19 +86,17 @@ public: // Systems & Tools
     const entt::registry& GetRegistry() const;
     entt::registry* GetRegistryPtr();
 
-    SceneResourceManager* GetResourceManager() { return m_ResourceManager.get(); }
-
-    void OnRuntimeStop();
-    void OnRuntimeStart();
-    void OnUpdateSimulation(Timestep timestep);
-    void OnUpdateEditor(Timestep timestep);
+    void OnRuntimeStop(const SceneContext& ctx);
+    void OnRuntimeStart(const SceneContext& ctx);
+    void OnUpdateSimulation(Timestep timestep, const SceneContext& ctx);
+    void OnUpdateEditor(Timestep timestep, const SceneContext& ctx);
 
     /// @brief Runtime update — runs scripts, physics, animations, and scene transitions.
-    void OnUpdateRuntime(Timestep timestep);
+    void OnUpdateRuntime(Timestep timestep, const SceneContext& ctx);
 
 private: // Internal state lifecycle methods
-    void OnStateEnter(SceneState state);
-    void OnStateExit(SceneState state);
+    void OnStateEnter(SceneState state, const SceneContext& ctx);
+    void OnStateExit(SceneState state, const SceneContext& ctx);
 
 private:
     SceneState m_State = SceneState::Edit;
@@ -109,9 +105,6 @@ private:
     SceneSettings m_Settings;
 
     std::unique_ptr<SceneScriptingManager> m_ScriptingManager;
-    std::unique_ptr<HierarchySystem> m_HierarchySystem;
-    std::unique_ptr<SceneResourceManager> m_ResourceManager;
-    std::unique_ptr<AnimationManager> m_AnimationManager;
     EventCallbackFn m_EventCallback;
 
 private:

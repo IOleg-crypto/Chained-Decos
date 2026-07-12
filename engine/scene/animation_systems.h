@@ -6,20 +6,13 @@
 namespace Chained {
 class Scene;
 struct AnimationComponent;
-class AnimationManager {
-    public:
-    AnimationManager() = default;
-    virtual ~AnimationManager() = default;
 
-    void Play(AnimationComponent &anim, int index, bool loop = true);
-    void CrossFade(AnimationComponent &anim, int index, float duration = 0.2f, bool loop = true);
-    void Stop(AnimationComponent &anim);
-
-    void UpdatePlayback(Scene *scene, Timestep ts);
-
-    public:
-    void Shutdown() {}
-};
+namespace Animation {
+    void Play(AnimationComponent& anim, int index, bool loop = true);
+    void CrossFade(AnimationComponent& anim, int index, float duration = 0.2f, bool loop = true);
+    void Stop(AnimationComponent& anim);
+    void UpdatePlayback(Scene* scene, Timestep ts);
+}
 } // namespace Chained
 
 #endif // CH_ANIMATION_SYSTEMS_H

@@ -50,8 +50,8 @@ public:
     {
         return *m_LayerStack;
     }
-    void PushLayer(std::unique_ptr<Layer> layer);
-    void PushOverlay(std::unique_ptr<Layer> overlay);
+    void PushLayer(std::unique_ptr<Layer> layer) const;
+    void PushOverlay(std::unique_ptr<Layer> overlay) const;
     Timestep GetFrameTime() const
     {
         return m_Timer.DeltaTime;
