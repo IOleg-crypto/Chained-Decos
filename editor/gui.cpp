@@ -1,5 +1,6 @@
 #include "engine/platform/dialogs/file_dialogs.h"
 #include "gui.h"
+#include "editor/project/project_exporter.h"
 #include "engine/core/service_locator.h"
 #include "thirdparty/IconsFontAwesome6.h"
 #include "editor/layer.h"
@@ -23,6 +24,15 @@
 namespace Chained
 {
 // --- Internal Helpers ---
+
+// State for the Export popup (static, ephemeral)
+static struct ExportState
+{
+    bool        Open       = false;
+    bool        Success    = false;
+    std::string Message;
+    std::string OutDir;
+} s_ExportState;
 
 static void DrawPropertyLabel(const char* label)
 {
@@ -143,6 +153,20 @@ void EditorGUI::DrawMenuBar(EditorLayer& editorLayer, EditorPanels& panels)
             AppLaunchRuntimeEvent e;
             Application::Get().OnEvent(e);
         }
+        if (ImGui::MenuItem(ICON_FA_FILE_EXPORT " Export Project..."))
+        {
+            auto outDir = FileDialogs::PickFolder();
+            if (outDir)
+            {
+                auto result = ProjectExporter::ExportTo(*outDir);
+                s_ExportState.Open    = true;
+                s_ExportState.Success = result.Success;
+                s_ExportState.Message = result.Success
+                    ? "Export complete!"
+                    : ("Export failed: " + result.Error);
+                s_ExportState.OutDir  = result.OutDir.string();
+            }
+        }
         ImGui::Separator();
         if (ImGui::MenuItem(ICON_FA_ARROWS_ROTATE " Reload Shaders"))
         {
@@ -159,6 +183,40 @@ void EditorGUI::DrawMenuBar(EditorLayer& editorLayer, EditorPanels& panels)
             }
         }
         ImGui::EndMenu();
+    }
+
+    // ── Export result popup ───────────────────────────────────────────────────
+    if (s_ExportState.Open)
+    {
+        ImGui::OpenPopup("Export Result");
+        s_ExportState.Open = false;
+    }
+    if (ImGui::BeginPopupModal("Export Result", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        if (s_ExportState.Success)
+        {
+            ImGui::TextColored(ImVec4(0.3f, 0.9f, 0.3f, 1.0f), ICON_FA_CIRCLE_INFO " Success");
+        }
+        else
+        {
+            ImGui::TextColored(ImVec4(0.9f, 0.3f, 0.3f, 1.0f), ICON_FA_CIRCLE_EXCLAMATION " Failed");
+        }
+        ImGui::Spacing();
+        ImGui::TextWrapped("%s", s_ExportState.Message.c_str());
+        if (!s_ExportState.OutDir.empty())
+        {
+            ImGui::Spacing();
+            ImGui::Text("Output: ");
+            ImGui::SameLine();
+            ImGui::TextDisabled("%s", s_ExportState.OutDir.c_str());
+        }
+        ImGui::Spacing();
+        ImGui::Separator();
+        if (ImGui::Button("OK", ImVec2(120.f, 0.f)))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
     }
 
     ImGui::EndMenuBar();
