@@ -21,12 +21,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - preset: windows-msvc
-            build_type: Debug
-            unity_build: ON
-          - preset: windows-msvc
-            build_type: Release
-            unity_build: ON
           - preset: windows-clang
             build_type: Release
             unity_build: ON
