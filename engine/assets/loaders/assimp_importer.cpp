@@ -374,6 +374,14 @@ void AssimpImporter::ProcessSingleMesh(uint32_t m)
     {
         rm.normals.reserve((size_t)am->mNumVertices * 3);
     }
+    if (am->mTangents)
+    {
+        rm.tangents.reserve((size_t)am->mNumVertices * 3);
+    }
+    if (am->mColors[0])
+    {
+        rm.colors.reserve((size_t)am->mNumVertices * 4);
+    }
     rm.indices.reserve((size_t)am->mNumFaces * 3);
 
     for (unsigned int v = 0; v < am->mNumVertices; ++v)
@@ -386,6 +394,19 @@ void AssimpImporter::ProcessSingleMesh(uint32_t m)
         if (am->mNormals)
         {
             rm.normals.insert(rm.normals.end(), {am->mNormals[v].x, am->mNormals[v].y, am->mNormals[v].z});
+        }
+        if (am->mTangents)
+        {
+            rm.tangents.insert(rm.tangents.end(), {am->mTangents[v].x, am->mTangents[v].y, am->mTangents[v].z});
+        }
+        if (am->mColors[0])
+        {
+            rm.colors.insert(rm.colors.end(), {
+                (unsigned char)(am->mColors[0][v].r * 255.0f),
+                (unsigned char)(am->mColors[0][v].g * 255.0f),
+                (unsigned char)(am->mColors[0][v].b * 255.0f),
+                (unsigned char)(am->mColors[0][v].a * 255.0f)
+            });
         }
     }
 
@@ -579,11 +600,23 @@ void AssimpImporter::ProcessMaterials()
         }
 
         rm.normalPath = getTex(aiTextureType_NORMALS);
+        if (rm.normalPath.empty())
+        {
+            rm.normalPath = getTex(aiTextureType_HEIGHT);
+        }
+
+        rm.emissivePath = getTex(aiTextureType_EMISSIVE);
 
         rm.metallicRoughnessPath = getTex(aiTextureType_METALNESS);
         if (rm.metallicRoughnessPath.empty())
         {
             rm.metallicRoughnessPath = getTex(aiTextureType_UNKNOWN);
+        }
+
+        rm.occlusionPath = getTex(aiTextureType_LIGHTMAP);
+        if (rm.occlusionPath.empty())
+        {
+            rm.occlusionPath = getTex(aiTextureType_AMBIENT_OCCLUSION);
         }
 
         int blendMode = 0;
@@ -782,6 +815,8 @@ void AssimpImporter::MergeMeshesByMaterial()
         merged.vertices.reserve(totalVertices);
         merged.texcoords.reserve(totalVertices / 3 * 2);
         merged.normals.reserve(totalVertices);
+        merged.tangents.reserve(totalVertices);
+        merged.colors.reserve(totalVertices / 3 * 4);
         merged.indices.reserve(totalIndices);
 
         int firstMeshIdx = m_Data.instances[group.instanceIndices[0]].meshIndex;
@@ -819,6 +854,7 @@ void AssimpImporter::MergeMeshesByMaterial()
             }
 
             merged.texcoords.insert(merged.texcoords.end(), src.texcoords.begin(), src.texcoords.end());
+            merged.colors.insert(merged.colors.end(), src.colors.begin(), src.colors.end());
 
             for (size_t n = 0; n < src.normals.size(); n += 3)
             {
@@ -832,6 +868,21 @@ void AssimpImporter::MergeMeshesByMaterial()
                 {
                     merged.normals.insert(merged.normals.end(),
                                           {src.normals[n], src.normals[n + 1], src.normals[n + 2]});
+                }
+            }
+
+            for (size_t t = 0; t < src.tangents.size(); t += 3)
+            {
+                if (!hasSkins)
+                {
+                    glm::vec3 tan = glm::normalize(normalMatrix *
+                                                   glm::vec3(src.tangents[t], src.tangents[t + 1], src.tangents[t + 2]));
+                    merged.tangents.insert(merged.tangents.end(), {tan.x, tan.y, tan.z});
+                }
+                else
+                {
+                    merged.tangents.insert(merged.tangents.end(),
+                                           {src.tangents[t], src.tangents[t + 1], src.tangents[t + 2]});
                 }
             }
 

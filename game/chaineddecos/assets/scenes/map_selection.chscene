@@ -35,55 +35,9 @@ DebugSettings:
   DrawSpawnZones: true
   CollisionWireframeMode: 0
 Entities:
-  - Entity: 3001
+  - Entity: 17250625338590050243
     TagComponent:
-      Tag: title_map_selection
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    IDComponent:
-      {}
-    WidgetComponent:
-      Box Style:
-        BG Color: [0, 0, 0, 0]
-        Hover Color: [0, 0, 0, 0]
-        Pressed Color: [0, 0, 0, 0]
-        Rounding: 0
-        Border Size: 0
-        Border Color: [255, 255, 255, 255]
-        Gradient: false
-        Padding: 4
-        Hover Scale: 1
-        Pressed Scale: 1
-        Transition Speed: 0.100000001
-      Text Style:
-        Font Name: Default
-        Font Size: 40
-        Text Color: [110, 231, 211, 255]
-        Shadow: true
-        Letter Spacing: 2
-        Line Height: 1.20000005
-        H Align: 1
-        V Align: 1
-      Widget Type: 3
-      Text: Select Map
-      Auto Size: false
-    ControlComponent:
-      Transform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [-674.3255, -385.501434]
-        OffsetMax: [-391.005341, -345.501465]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      ZOrder: 0
-      IsActive: true
-      HiddenInHierarchy: false
-  - Entity: 3002
-    TagComponent:
-      Tag: btn_map_alpha
+      Tag: back_button
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -98,7 +52,7 @@ Entities:
         BG Color: [30, 33, 40, 255]
         Hover Color: [56, 178, 166, 255]
         Pressed Color: [40, 130, 122, 255]
-        Rounding: 10
+        Rounding: 8
         Border Size: 1
         Border Color: [255, 255, 255, 28]
         Gradient: false
@@ -108,30 +62,30 @@ Entities:
         Transition Speed: 0.150000006
       Text Style:
         Font Name: Default
-        Font Size: 22
+        Font Size: 18
         Text Color: [235, 238, 242, 255]
         Shadow: false
-        Letter Spacing: 1.20000005
+        Letter Spacing: 1
         Line Height: 1.20000005
         H Align: 1
         V Align: 1
       Widget Type: 1
-      Label: Laboratory Alpha
+      Label: Back
       Interactable: true
       Auto Size: false
     ControlComponent:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-520.430115, -151.160797]
-        OffsetMax: [-170.350159, -62.1941071]
+        OffsetMin: [-665.581421, 380.477661]
+        OffsetMax: [-565.581421, 420.477661]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-  - Entity: 3003
+  - Entity: 15799784606898686376
     TagComponent:
       Tag: btn_map_bravo
     TransformComponent:
@@ -181,9 +135,9 @@ Entities:
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-  - Entity: 3004
+  - Entity: 14078549875669586548
     TagComponent:
-      Tag: back_button
+      Tag: btn_map_alpha
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -198,7 +152,7 @@ Entities:
         BG Color: [30, 33, 40, 255]
         Hover Color: [56, 178, 166, 255]
         Pressed Color: [40, 130, 122, 255]
-        Rounding: 8
+        Rounding: 10
         Border Size: 1
         Border Color: [255, 255, 255, 28]
         Gradient: false
@@ -208,23 +162,69 @@ Entities:
         Transition Speed: 0.150000006
       Text Style:
         Font Name: Default
-        Font Size: 18
+        Font Size: 22
         Text Color: [235, 238, 242, 255]
         Shadow: false
-        Letter Spacing: 1
+        Letter Spacing: 1.20000005
         Line Height: 1.20000005
         H Align: 1
         V Align: 1
       Widget Type: 1
-      Label: Back
+      Label: Laboratory Alpha
       Interactable: true
       Auto Size: false
     ControlComponent:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-665.581421, 380.477661]
-        OffsetMax: [-565.581421, 420.477661]
+        OffsetMin: [-520.430115, -151.160797]
+        OffsetMax: [-170.350159, -62.1941071]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+  - Entity: 4128968418240395316
+    TagComponent:
+      Tag: title_map_selection
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    IDComponent:
+      {}
+    WidgetComponent:
+      Box Style:
+        BG Color: [0, 0, 0, 0]
+        Hover Color: [0, 0, 0, 0]
+        Pressed Color: [0, 0, 0, 0]
+        Rounding: 0
+        Border Size: 0
+        Border Color: [255, 255, 255, 255]
+        Gradient: false
+        Padding: 4
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.100000001
+      Text Style:
+        Font Name: Default
+        Font Size: 40
+        Text Color: [110, 231, 211, 255]
+        Shadow: true
+        Letter Spacing: 2
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Widget Type: 3
+      Text: Select Map
+      Auto Size: false
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-674.3255, -385.501434]
+        OffsetMax: [-391.005341, -345.501465]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]

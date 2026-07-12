@@ -43,7 +43,6 @@ public:
     EditorSceneManager& GetSceneManager() { return *m_SceneManager; }
     EditorProjectManager& GetProjectManager() { return *m_ProjectManager; }
     
-    void LaunchStandalone();
 
     Entity GetSelectedEntity() const { return m_EditorState.SelectedEntity; }
     void SetSelectedEntity(Entity entity) { m_EditorState.SelectedEntity = entity; }

@@ -1,12 +1,13 @@
 #include "project_selector_ui.h"
-#include "engine/core/service_locator.h"
 #include "editor/layer.h"
+#include "engine/assets/asset_manager.h"
+#include "engine/assets/types/texture_asset.h"
+#include "engine/core/service_locator.h"
+#include "engine/platform/dialogs/file_dialogs.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "thirdparty/IconsFontAwesome6.h"
 #include <filesystem>
-#include "engine/assets/asset_manager.h"
-#include "engine/assets/types/texture_asset.h"
 #include <string>
 
 namespace Chained
@@ -19,12 +20,15 @@ ProjectSelectorUI::ProjectSelectorUI(EditorProjectManager& projectManager)
 
 void ProjectSelectorUI::LoadEditorIcons()
 {
-    if (m_IconsLoaded) return;
+    if (m_IconsLoaded)
+    {
+        return;
+    }
 
     auto assetManager = ServiceLocator::Get<AssetManager>();
     if (assetManager)
     {
-        auto newProjHandle = assetManager->LoadAsset("resources/icons/newproject.jpg" , TextureAsset::GetStaticType());
+        auto newProjHandle = assetManager->LoadAsset("resources/icons/newproject.jpg", TextureAsset::GetStaticType());
         auto openProjHandle = assetManager->LoadAsset("resources/icons/folder.png", TextureAsset::GetStaticType());
 
         m_NewProjectIcon = assetManager->Get<TextureAsset>("resources/icons/newproject.jpg");
@@ -66,11 +70,11 @@ void ProjectSelectorUI::OnImGuiRender()
     ImGui::Begin("Project Selector", nullptr, windowFlags);
 
     float sidebarWidth = 320.0f;
-    
+
     // Sidebar
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.02f, 0.02f, 0.02f, 1.0f));
     ImGui::BeginChild("Sidebar", ImVec2(sidebarWidth, 0), false);
-    
+
     // Banner / Logo Area
     ImGui::Dummy(ImVec2(0, 15));
     ImGui::SetCursorPosX(20.0f);
@@ -99,10 +103,10 @@ void ProjectSelectorUI::OnImGuiRender()
         for (const auto& projectPath : config.RecentProjects)
         {
             std::string fileName = std::filesystem::path(projectPath).filename().string();
-            std::string dirName  = std::filesystem::path(projectPath).parent_path().filename().string();
+            std::string dirName = std::filesystem::path(projectPath).parent_path().filename().string();
 
             std::string label = ICON_FA_FOLDER_OPEN "  " + fileName + "\n      " + dirName;
-            
+
             ImGui::SetCursorPosX(10.0f);
             if (ImGui::Button(label.c_str(), ImVec2(sidebarWidth - 20, 50)))
             {
@@ -119,7 +123,7 @@ void ProjectSelectorUI::OnImGuiRender()
         ImGui::PopStyleVar(2);
         ImGui::PopStyleColor();
     }
-    
+
     ImGui::EndChild();
     ImGui::PopStyleColor(); // ChildBg Sidebar
 
@@ -128,7 +132,7 @@ void ProjectSelectorUI::OnImGuiRender()
     // Main Area
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.08f, 0.08f, 0.08f, 1.0f));
     ImGui::BeginChild("MainArea");
-    
+
     float centerX = ImGui::GetContentRegionAvail().x * 0.5f;
     float centerY = ImGui::GetContentRegionAvail().y * 0.5f;
 
@@ -144,7 +148,8 @@ void ProjectSelectorUI::OnImGuiRender()
     ImGui::BeginGroup();
     {
         ImTextureID newProjTex = 0;
-        if (m_NewProjectIcon && m_NewProjectIcon->GetTexture()) {
+        if (m_NewProjectIcon && m_NewProjectIcon->GetTexture())
+        {
             newProjTex = (ImTextureID)(uintptr_t)m_NewProjectIcon->GetTexture()->GetNativeHandle();
         }
 
@@ -167,7 +172,8 @@ void ProjectSelectorUI::OnImGuiRender()
     ImGui::BeginGroup();
     {
         ImTextureID openProjTex = 0;
-        if (m_OpenProjectIcon && m_OpenProjectIcon->GetTexture()) {
+        if (m_OpenProjectIcon && m_OpenProjectIcon->GetTexture())
+        {
             openProjTex = (ImTextureID)(uintptr_t)m_OpenProjectIcon->GetTexture()->GetNativeHandle();
         }
 
@@ -187,48 +193,121 @@ void ProjectSelectorUI::OnImGuiRender()
 
     ImGui::PopStyleColor(4);
     ImGui::PopStyleVar(2);
-    
+
     ImGui::EndChild();
     ImGui::PopStyleColor(); // ChildBg MainArea
 
     if (showCreateDialog)
     {
         ImGui::OpenPopup("Create New Project");
-        
-        ImVec2 mainAreaCenter = ImVec2(
-            sidebarWidth + (viewport->WorkSize.x - sidebarWidth) * 0.5f,
-            viewport->WorkSize.y * 0.5f
-        );
+
+        ImVec2 mainAreaCenter =
+            ImVec2(sidebarWidth + (viewport->WorkSize.x - sidebarWidth) * 0.5f, viewport->WorkSize.y * 0.5f);
         ImGui::SetNextWindowPos(mainAreaCenter, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-        
-        if (ImGui::BeginPopupModal("Create New Project", &showCreateDialog, ImGuiWindowFlags_AlwaysAutoResize))
+        ImGui::SetNextWindowSize(ImVec2(480, 0), ImGuiCond_Appearing);
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(24, 20));
+        if (ImGui::BeginPopupModal("Create New Project", &showCreateDialog, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar))
         {
-            ImGui::Text("Project Name:");
+            // --- Header ---
+            ImGui::SetWindowFontScale(1.2f);
+            ImGui::TextColored(ImVec4(0.2f, 0.7f, 1.0f, 1.0f), ICON_FA_FILE "  New Project");
+            ImGui::SetWindowFontScale(1.0f);
+            ImGui::Dummy(ImVec2(0, 4));
+            ImGui::Separator();
+            ImGui::Dummy(ImVec2(0, 8));
+
+            // --- Project Name ---
+            ImGui::TextDisabled("PROJECT NAME");
+            ImGui::SetNextItemWidth(432);
             ImGui::InputText("##ProjectName", projectNameBuffer, sizeof(projectNameBuffer));
 
-            ImGui::Text("Location:");
+            bool nameEmpty = (projectNameBuffer[0] == '\0');
+            if (nameEmpty)
+            {
+                ImGui::TextColored(ImVec4(1.0f, 0.45f, 0.45f, 1.0f),
+                    ICON_FA_CIRCLE_EXCLAMATION "  Name cannot be empty");
+            }
+            else
+            {
+                ImGui::Dummy(ImVec2(0, ImGui::GetTextLineHeight()));
+            }
+
+            ImGui::Dummy(ImVec2(0, 6));
+
+            // --- Location ---
+            ImGui::TextDisabled("LOCATION");
+            ImGui::SetNextItemWidth(360);
             ImGui::InputText("##ProjectLocation", projectLocationBuffer, sizeof(projectLocationBuffer));
+            ImGui::SameLine(0, 8);
+            ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.18f, 0.18f, 0.20f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.26f, 0.26f, 0.28f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.14f, 0.14f, 0.16f, 1.0f));
+            if (ImGui::Button(ICON_FA_FOLDER_OPEN "  Browse", ImVec2(64, 0)))
+            {
+                auto picked = FileDialogs::PickFolder();
+                if (picked)
+                {
+                    std::string s = picked->string();
+                    strncpy(projectLocationBuffer, s.c_str(), sizeof(projectLocationBuffer) - 1);
+                    projectLocationBuffer[sizeof(projectLocationBuffer) - 1] = '\0';
+                }
+            }
+            ImGui::PopStyleColor(3);
 
+            // --- Path preview box ---
             ImGui::Dummy(ImVec2(0, 10));
+            std::filesystem::path previewPath =
+                std::filesystem::path(projectLocationBuffer) / projectNameBuffer;
 
-            if (ImGui::Button("Create", ImVec2(120, 0)))
+            ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.06f, 0.06f, 0.07f, 1.0f));
+            ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 4.0f);
+            ImGui::BeginChild("##preview", ImVec2(432, 36), false);
+            ImGui::SetCursorPos(ImVec2(10, 10));
+            ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), ICON_FA_CIRCLE_INFO "  ");
+            ImGui::SameLine(0, 0);
+            ImGui::TextDisabled("%s", previewPath.string().c_str());
+            ImGui::EndChild();
+            ImGui::PopStyleVar();
+            ImGui::PopStyleColor();
+
+            // --- Buttons ---
+            ImGui::Dummy(ImVec2(0, 12));
+            ImGui::Separator();
+            ImGui::Dummy(ImVec2(0, 8));
+
+            float btnWidth = 110.0f;
+            ImGui::SetCursorPosX(432 + 24 - btnWidth * 2 - 8);
+
+            ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.14f, 0.14f, 0.16f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.22f, 0.22f, 0.24f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.10f, 0.10f, 0.12f, 1.0f));
+            if (ImGui::Button("Cancel", ImVec2(btnWidth, 28)))
             {
-                std::filesystem::path fullPath = std::filesystem::path(projectLocationBuffer) / projectNameBuffer;
-                m_ProjectManager.NewProject(projectNameBuffer, fullPath.string());
                 showCreateDialog = false;
                 ImGui::CloseCurrentPopup();
             }
-            
-            ImGui::SetItemDefaultFocus();
-            ImGui::SameLine();
-            
-            if (ImGui::Button("Cancel", ImVec2(120, 0)))
+            ImGui::PopStyleColor(3);
+
+            ImGui::SameLine(0, 8);
+
+            ImGui::BeginDisabled(nameEmpty);
+            ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.13f, 0.45f, 0.80f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.20f, 0.55f, 0.92f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.10f, 0.38f, 0.70f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_Text,          ImVec4(1.0f,  1.0f,  1.0f,  1.0f));
+            if (ImGui::Button(ICON_FA_FOLDER "  Create", ImVec2(btnWidth, 28)))
             {
+                m_ProjectManager.NewProject(projectNameBuffer, previewPath.string());
                 showCreateDialog = false;
                 ImGui::CloseCurrentPopup();
             }
+            ImGui::PopStyleColor(4);
+            ImGui::EndDisabled();
+
             ImGui::EndPopup();
         }
+        ImGui::PopStyleVar();
     }
 
     ImGui::End();

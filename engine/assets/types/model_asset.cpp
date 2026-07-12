@@ -231,19 +231,24 @@ void ModelAsset::OnLoaded()
             newModel.Materials[materialIndex].Roughness = rawMaterial.roughness;
 
             loadTex(materialIndex, rawMaterial.albedoPath, 0);
-            newModel.Materials[materialIndex].AlbedoPath = rawMaterial.albedoPath;
+            if (!rawMaterial.albedoPath.empty() && rawMaterial.albedoPath.front() != '*')
+                newModel.Materials[materialIndex].AlbedoPath = rawMaterial.albedoPath;
 
             loadTex(materialIndex, rawMaterial.normalPath, 2);
-            newModel.Materials[materialIndex].NormalPath = rawMaterial.normalPath;
+            if (!rawMaterial.normalPath.empty() && rawMaterial.normalPath.front() != '*')
+                newModel.Materials[materialIndex].NormalPath = rawMaterial.normalPath;
 
             loadTex(materialIndex, rawMaterial.occlusionPath, 5);
-            newModel.Materials[materialIndex].OcclusionPath = rawMaterial.occlusionPath;
+            if (!rawMaterial.occlusionPath.empty() && rawMaterial.occlusionPath.front() != '*')
+                newModel.Materials[materialIndex].OcclusionPath = rawMaterial.occlusionPath;
 
             loadTex(materialIndex, rawMaterial.emissivePath, 4);
-            newModel.Materials[materialIndex].EmissivePath = rawMaterial.emissivePath;
+            if (!rawMaterial.emissivePath.empty() && rawMaterial.emissivePath.front() != '*')
+                newModel.Materials[materialIndex].EmissivePath = rawMaterial.emissivePath;
 
             loadTex(materialIndex, rawMaterial.metallicRoughnessPath, 3);
-            newModel.Materials[materialIndex].MetallicRoughnessPath = rawMaterial.metallicRoughnessPath;
+            if (!rawMaterial.metallicRoughnessPath.empty() && rawMaterial.metallicRoughnessPath.front() != '*')
+                newModel.Materials[materialIndex].MetallicRoughnessPath = rawMaterial.metallicRoughnessPath;
         }
     }
 

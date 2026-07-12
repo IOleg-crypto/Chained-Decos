@@ -135,21 +135,25 @@ std::filesystem::path ResolveCoralDirectory() {
 
 std::filesystem::path ResolveCoreAssemblyPath(const std::filesystem::path &coralDir) {
     std::vector<std::filesystem::path> coreCandidates;
+    
+    if (auto project = Project::GetActive()) {
+        coreCandidates.push_back(project->GetConfig().Scripting.ModuleDirectory / "Chained.Managed.dll");
+        AppendBuildBinCandidates(coreCandidates, project->GetConfig().ProjectDirectory);
+    }
+    
+    const std::filesystem::path exeDir = GetCurrentBinaryDirectory();
+    coreCandidates.push_back(exeDir / "scripts" / "ChainedDecos" / "Chained.Managed.dll");
+
     if (!coralDir.empty()) {
         coreCandidates.push_back(coralDir / "Chained.Managed.dll");
     }
 
-    const std::filesystem::path exeDir = GetCurrentBinaryDirectory();
     coreCandidates.push_back(exeDir / "Chained.Managed.dll");
     coreCandidates.push_back(std::filesystem::current_path() / "Chained.Managed.dll");
 
 #ifdef PROJECT_ROOT_DIR
     AppendBuildBinCandidates(coreCandidates, std::filesystem::path(PROJECT_ROOT_DIR));
 #endif
-
-    if (auto project = Project::GetActive()) {
-        AppendBuildBinCandidates(coreCandidates, project->GetConfig().ProjectDirectory);
-    }
 
     for (const auto &candidate : coreCandidates) {
         if (!candidate.empty() && std::filesystem::exists(candidate)) {

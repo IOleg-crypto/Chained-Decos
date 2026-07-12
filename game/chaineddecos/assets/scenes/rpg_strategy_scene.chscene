@@ -35,28 +35,121 @@ DebugSettings:
   DrawSpawnZones: true
   CollisionWireframeMode: 2
 Entities:
-  - Entity: 271546339544314742
+  - Entity: 8094850797995738111
     TagComponent:
-      Tag: island_minigames
+      Tag: toy_train_platform
+    ModelComponent:
+      ModelPath: models/toy_train/wooden_train.glb
+    TransformComponent:
+      Translation: [-3565.1311, -45.4531631, 621.43158]
+      Rotation: [0.18592523, -1.13752759, -0.188373342]
+      Scale: [1.00000036, 0.999993503, 0.99999553]
+    IDComponent:
+      {}
+    AnimationComponent:
+      BlendDuration: 0.25
+      IsLooping: true
+      PlayOnStart: true
+  - Entity: 7474373979259171868
+    TagComponent:
+      Tag: SpawnPoint
     ColliderComponent:
-      Type: 3
-      Size: [1.56521797, 1.00000179, 1.90062201]
+      Type: 0
+      Size: [-6.4000001, -3.5999999, 7.30000019]
+      Offset: [2.79999995, 0, 0]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: false
+      ModelPath: D:/gitnext/Chained Decos/game/chaineddecos/іВВВВВВВВВВВВВВВВВВВВВВІІІІІІІІІІІІІІІФФФФФФФФВІІІІФ
+      IsColliding: false
+    SpawnZoneComponent:
+      IsActive: true
+      ZoneSize: [1, 1, 1]
+      RenderSpawnZoneInScene: true
+      SpawnPoint: [0, 0, 0]
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: chaineddecos.scripts.spawnzone
+    TransformComponent:
+      Translation: [-321.279785, 312.607849, 1022.75677]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    IDComponent:
+      {}
+  - Entity: 11074956156452824131
+    TagComponent:
+      Tag: rail#3d_copy_copy
+    ColliderComponent:
+      Type: 0
+      Size: [2.48870611, 4.18936205, 13.512085]
+      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: false
+      ModelPath: ""
+      IsColliding: false
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
+    TransformComponent:
+      Translation: [394.406952, 36.0981331, -15.4183016]
+      Rotation: [0.04082435, 1.53854108, 9.24113579e-07]
+      Scale: [2.81729794, 1.83831227, 2.52311134]
+    IDComponent:
+      {}
+  - Entity: 2131246112884471108
+    TagComponent:
+      Tag: anim_mode
+    ColliderComponent:
+      Type: 0
+      Size: [20.2556896, 277.196045, 14.2480259]
       Offset: [0, 0, 0]
-      Radius: 0.950311005
+      Radius: 0.5
       Height: 1
       Friction: 0.5
       Restitution: 0
       IsTrigger: false
       Enabled: true
       AutoCalculate: true
-      ModelPath: models/minigames/hub_for_minigames_server.glb
+      ModelPath: models/bridge.glb
       IsColliding: false
     ModelComponent:
-      ModelPath: models/minigames/hub_for_minigames_server.glb
+      ModelPath: models/bridge.glb
     TransformComponent:
-      Translation: [-118.395287, 12.3910465, 826.530884]
-      Rotation: [0, -0, 0]
-      Scale: [673.435242, 411.5466, 440.887085]
+      Translation: [428.76062, 30.1878853, 305.481506]
+      Rotation: [-1.84119403, -0, 0]
+      Scale: [3.51185083, 0.99995327, 0.99992317]
+    IDComponent:
+      {}
+  - Entity: 6546235726119476708
+    TagComponent:
+      Tag: wooden_bridge
+    ColliderComponent:
+      Type: 3
+      Size: [9.28319931, 7.15296078, 23.5704517]
+      Offset: [0, 0, 0]
+      Radius: 11.7852259
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      ModelPath: models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb.glb
+      IsColliding: false
+    ModelComponent:
+      ModelPath: models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb.glb
+    TransformComponent:
+      Translation: [226.774567, 10.7833824, 119.315414]
+      Rotation: [0, 1.06864882, 0]
+      Scale: [7.04011631, 8.74738693, 19.0374699]
     IDComponent:
       {}
     Rigid BodyComponent:
@@ -69,264 +162,13 @@ Entities:
       Handle: 0
       Velocity: [0, 0, 0]
       IsGrounded: false
-  - Entity: 7500845235778505941
+  - Entity: 9371890495891447120
     TagComponent:
-      Tag: buildings_6_pack
-    ModelComponent:
-      ModelPath: models_backup/building/scene.gltf
-    TransformComponent:
-      Translation: [23.264637, -27.1361389, -506.157532]
-      Rotation: [0, -0, 0]
-      Scale: [342.240997, 325.262634, 245.059052]
-    IDComponent:
-      {}
-  - Entity: 9019366695041291745
-    TagComponent:
-      Tag: Entity_copy
-    ColliderComponent:
-      Type: 0
-      Size: [34.1756821, 8.59185219, 22.6057091]
-      Offset: [-14.1946049, -9.53674316e-07, -8.94524384]
-      Radius: 0.5
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: false
-      ModelPath: models/stairs.glb
-      IsColliding: false
-    ModelComponent:
-      ModelPath: models/stairs.glb
-    TransformComponent:
-      Translation: [46.4636726, -2.98017597, 14.336463]
-      Rotation: [0, -0, 0]
-      Scale: [2.29999304, 2.70000005, 0.979451716]
-    IDComponent:
-      {}
-  - Entity: 8626025050183885403
-    TagComponent:
-      Tag: rail#3d_copy
-    ColliderComponent:
-      Type: 0
-      Size: [2.3900001, 6.01000023, 12.9899998]
-      Offset: [2.26999998, -0.0299999993, -4.18938494]
-      Radius: 0.5
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: true
-      ModelPath: models/toy_train/train_vagon.glb
-      IsColliding: false
-    ModelComponent:
-      ModelPath: models/toy_train/train_vagon.glb
-    TransformComponent:
-      Translation: [89.7119217, 34.3363914, -8.52000618]
-      Rotation: [-3.14159083, 1.42225266, -3.14159083]
-      Scale: [2.81781149, 1.8383373, 2.5232451]
-    IDComponent:
-      {}
-  - Entity: 3493400305159775653
-    TagComponent:
-      Tag: rail#3d_copy
-    ColliderComponent:
-      Type: 0
-      Size: [2.48870611, 4.18936205, 13.512085]
-      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
-      Radius: 0.5
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: false
-      ModelPath: ""
-      IsColliding: false
-    ModelComponent:
-      ModelPath: models/toy_train/train_vagon.glb
-    TransformComponent:
-      Translation: [160.559677, 34.3363914, -15.4183016]
-      Rotation: [-3.1415906, 1.3848865, -3.1415906]
-      Scale: [2.81779981, 1.83833647, 2.52321267]
-    IDComponent:
-      {}
-  - Entity: 17537637401545717505
-    TagComponent:
-      Tag: rail#3d_copy
-    ColliderComponent:
-      Type: 0
-      Size: [2.48870611, 4.18936205, 13.512085]
-      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
-      Radius: 0.5
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: false
-      ModelPath: ""
-      IsColliding: false
-    ModelComponent:
-      ModelPath: models/toy_train/train_vagon.glb
-    TransformComponent:
-      Translation: [195.275909, 34.3363914, -15.4183016]
-      Rotation: [-5.00722963e-05, 1.52510715, -5.01285613e-05]
-      Scale: [2.81781769, 1.83833349, 2.52321935]
-    IDComponent:
-      {}
-  - Entity: 16914625993172963705
-    TagComponent:
-      Tag: rail#3d_copy
-    ColliderComponent:
-      Type: 0
-      Size: [2.48870611, 4.18936205, 13.512085]
-      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
-      Radius: 0.5
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: false
-      ModelPath: ""
-      IsColliding: false
-    ModelComponent:
-      ModelPath: models/toy_train/train_vagon.glb
-    TransformComponent:
-      Translation: [232.729095, 34.3363914, -15.4183016]
-      Rotation: [-3.14158916, 1.47876322, -3.14158916]
-      Scale: [2.81773591, 1.83830583, 2.52309585]
-    IDComponent:
-      {}
-  - Entity: 7246590676454584175
-    TagComponent:
-      Tag: rail#3d_copy
-    ColliderComponent:
-      Type: 0
-      Size: [2.48870611, 4.18936205, 13.512085]
-      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
-      Radius: 0.5
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: false
-      ModelPath: ""
-      IsColliding: false
-    ModelComponent:
-      ModelPath: models/toy_train/train_vagon.glb
-    TransformComponent:
-      Translation: [269.359863, 34.3363914, -15.4183016]
-      Rotation: [-3.14157701, 1.51824713, -3.14157701]
-      Scale: [2.81769633, 1.83829546, 2.52312613]
-    IDComponent:
-      {}
-  - Entity: 2794360951797551174
-    TagComponent:
-      Tag: rail#3d_copy
-    ColliderComponent:
-      Type: 0
-      Size: [2.48870611, 4.18936205, 13.512085]
-      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
-      Radius: 0.5
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: false
-      ModelPath: ""
-      IsColliding: false
-    ModelComponent:
-      ModelPath: models/toy_train/train_vagon.glb
-    TransformComponent:
-      Translation: [304.469788, 34.3363914, -15.4183016]
-      Rotation: [-3.14159083, 1.48598051, -3.14159083]
-      Scale: [2.81769323, 1.83826065, 2.52310586]
-    IDComponent:
-      {}
-  - Entity: 2179754394440438006
-    TagComponent:
-      Tag: rail#3d_copy
-    ColliderComponent:
-      Type: 0
-      Size: [2.48870611, 4.18936205, 13.512085]
-      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
-      Radius: 0.5
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: false
-      ModelPath: ""
-      IsColliding: false
-    ModelComponent:
-      ModelPath: models/toy_train/train_vagon.glb
-    TransformComponent:
-      Translation: [340.353027, 34.3363914, -15.4183016]
-      Rotation: [-2.64324285e-06, 1.51514268, -2.64865866e-06]
-      Scale: [2.8176837, 1.83830261, 2.52313876]
-    IDComponent:
-      {}
-  - Entity: 2050188234822744101
-    TagComponent:
-      Tag: rail#3d_copy
-    ColliderComponent:
-      Type: 0
-      Size: [2.48870611, 4.18936205, 13.512085]
-      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
-      Radius: 0.5
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: false
-      ModelPath: ""
-      IsColliding: false
-    ModelComponent:
-      ModelPath: models/toy_train/train_vagon.glb
-    TransformComponent:
-      Translation: [369.179901, 34.9479713, -15.4183016]
-      Rotation: [-3.14159083, 1.49346161, -3.14159083]
-      Scale: [2.81770754, 1.83824468, 2.52313972]
-    IDComponent:
-      {}
-  - Entity: 6354618372129378187
-    TagComponent:
-      Tag: Arena
+      Tag: anim_mode#3
     ColliderComponent:
       Type: 3
-      Size: [86.6819458, 89.0095215, 94.478302]
-      Offset: [-43.8236694, -46.1545258, -25.5901108]
-      Radius: 0.5
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: true
-      ModelPath: models/arena.glb
-      IsColliding: false
-    ModelComponent:
-      ModelPath: models/arena.glb
-    TransformComponent:
-      Translation: [-1.52065945, -4.32776833, -35.4009895]
-      Rotation: [-0.0117500396, 0.038041085, -0.00385748385]
-      Scale: [0.99993974, 0.999890089, 0.999929249]
-    IDComponent:
-      {}
-  - Entity: 6595486378780465951
-    TagComponent:
-      Tag: ghost
-    ColliderComponent:
-      Type: 0
-      Size: [1.71000004, 2.50999999, 0.5]
-      Offset: [-0.604161263, 27.9200001, -2.00118709]
+      Size: [23.1599998, 279.299988, 21.0499992]
+      Offset: [0, 0, 0]
       Radius: 0.5
       Height: 1
       Friction: 0.5
@@ -334,43 +176,243 @@ Entities:
       IsTrigger: true
       Enabled: true
       AutoCalculate: true
-      ModelPath: D:/gitnext/Chained Decos/game/chaineddecos/assets/models_backup/mystery_skulls_ghost_lewis/scene.gltf
+      ModelPath: models/bridge.glb
       IsColliding: false
     ModelComponent:
-      ModelPath: models_backup/mystery_skulls_ghost_lewis/scene.gltf
+      ModelPath: models/bridge.glb
     TransformComponent:
-      Translation: [60.8389587, 103.205635, 4.72679806]
-      Rotation: [0.0431710109, -0.0900942832, 0.0843906254]
-      Scale: [26.4252377, 28.1725788, 26.7647877]
+      Translation: [440.960266, 32.5502625, 581.221497]
+      Rotation: [-1.48049641, -0, 0]
+      Scale: [3.71524119, 0.99993968, 0.999904871]
+    IDComponent:
+      {}
+  - Entity: 7143576225750709819
+    TagComponent:
+      Tag: anim_mode#4_copy
+    ColliderComponent:
+      Type: 3
+      Size: [20.2556896, 277.196045, 14.2480259]
+      Offset: [0, 0, 0]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: false
+      ModelPath: models/bridge.glb
+      IsColliding: false
+    ModelComponent:
+      ModelPath: models/bridge.glb
+    TransformComponent:
+      Translation: [456.769592, 92.3261108, 838.863159]
+      Rotation: [-2.07865191, -0, 0]
+      Scale: [3.9020257, 0.99999398, 0.999984682]
+    IDComponent:
+      {}
+  - Entity: 12092665030382711856
+    TagComponent:
+      Tag: anim_mode#2
+    ColliderComponent:
+      Type: 3
+      Size: [20.2556896, 277.196045, 14.2480259]
+      Offset: [0, 0, 0]
+      Radius: 138.598022
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: true
+      Enabled: true
+      AutoCalculate: true
+      ModelPath: models/bridge.glb
+      IsColliding: false
+    ModelComponent:
+      ModelPath: models/bridge.glb
+    TransformComponent:
+      Translation: [424.876801, 17.2099991, 22.4167747]
+      Rotation: [-1.61778486, -0.127626747, -0.0149760507]
+      Scale: [3.91608334, 1.36131144, 0.999961495]
+    IDComponent:
+      {}
+  - Entity: 17951584022293283448
+    TagComponent:
+      Tag: train_vagons
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    IDComponent:
+      {}
+  - Entity: 12543031294026101777
+    TagComponent:
+      Tag: rail#3d
+    ColliderComponent:
+      Type: 0
+      Size: [2.48870611, 13.512085, 4.18936396]
+      Offset: [1.16999996, 0.0700000003, -4.18938494]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: false
+      ModelPath: models/toy_train/train_vagon.glb
+      IsColliding: false
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
+    TransformComponent:
+      Translation: [124.947281, 34.3363914, -15.4183016]
+      Rotation: [0, 1.46746063, 0]
+      Scale: [2.81766772, 1.83825684, 2.5230844]
+    IDComponent:
+      {}
+  - Entity: 17230755638366862556
+    TagComponent:
+      Tag: Empty Entity
+    ModelComponent:
+      ModelPath: models/pilot/animated_civilian_helicopter/scene.gltf
+    TransformComponent:
+      Translation: [-216.192169, -6.67572021e-06, 0]
+      Rotation: [0.0617936067, 0.0883244723, -0.0563300997]
+      Scale: [46.0502167, 47.251339, 53.7656708]
     IDComponent:
       {}
     AnimationComponent:
-      BlendDuration: 0
+      BlendDuration: 0.25
       IsLooping: true
       PlayOnStart: true
-  - Entity: 5366943084978456718
+  - Entity: 3634598938849261505
     TagComponent:
-      Tag: SceneCamera
+      Tag: arena_two
+    ColliderComponent:
+      Type: 0
+      Size: [91.2528992, 16.8988438, 12.8652821]
+      Offset: [0, 0, 0]
+      Radius: 0.5
+      Height: 1.95000005
+      Friction: 0.5
+      Restitution: 0.209999993
+      IsTrigger: true
+      Enabled: true
+      AutoCalculate: true
+      ModelPath: models/container_ship/scene.gltf
+      IsColliding: false
+    ModelComponent:
+      ModelPath: models/container_ship/scene.gltf
+    TransformComponent:
+      Translation: [-949.601318, 51.8037796, 331.382965]
+      Rotation: [-3.14158845, -1.50888491, -3.14156556]
+      Scale: [20.9452457, 17.1169147, 17.6528263]
+    IDComponent:
+      {}
+    Rigid BodyComponent:
+      Type: 0
+      Mass: 1
+      LinearDamping: 0.00999999978
+      AngularDamping: 0.0500000007
+      UseGravity: true
+      IsFixedRotation: false
+      Handle: 0
+      Velocity: [0, 0, 0]
+      IsGrounded: false
+  - Entity: 12980906024649145891
+    TagComponent:
+      Tag: Camera
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: chaineddecos.scripts.cameracontroller
     CameraComponent:
-      Primary: false
+      Primary: true
       FixedAspectRatio: false
       IsOrbitCamera: false
       TargetEntityTag: Player
-      OrbitDistance: 10
+      OrbitDistance: 41.4000015
       OrbitYaw: 0
       OrbitPitch: 20
       LookSensitivity: 0.899999976
       nearClip: 0.100000001
-      farClip: 1000
+      farClip: 100000
       verticalFov: 60
       orthographicSize: 10
     TransformComponent:
-      Translation: [-6.77746725, 4.27760601, -5.98063564]
-      Rotation: [38095.3945, 4262.29346, 0]
+      Translation: [0, 0, 10]
+      Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     IDComponent:
       {}
-  - Entity: 6538274712732403678
+    ShaderComponent:
+      ShaderPath: shaders/screen_falling.chshader
+      Uniforms:
+        - Name: uIntensity
+          Value: 0
+        - Name: color
+          Value: 0
+      Enabled: true
+  - Entity: 14625707305015540010
+    TagComponent:
+      Tag: floor_lol
+    ColliderComponent:
+      Type: 3
+      Size: [449.48999, 114.440002, 440.48999]
+      Offset: [0, 0, 0]
+      Radius: 191.044159
+      Height: 12.9499998
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      ModelPath: models/stone_floor.glb
+      IsColliding: false
+    ModelComponent:
+      ModelPath: models/stone_floor.glb
+    TransformComponent:
+      Translation: [-231.075317, -62.7547264, 67.6377563]
+      Rotation: [0, -0, 0]
+      Scale: [2.702842, 1, 4.74170446]
+    IDComponent:
+      {}
+    Rigid BodyComponent:
+      Type: 0
+      Mass: 1
+      LinearDamping: 0.00999999978
+      AngularDamping: 0.0500000007
+      UseGravity: true
+      IsFixedRotation: false
+      Handle: 0
+      Velocity: [0, 0, 0]
+      IsGrounded: false
+  - Entity: 5467791229487413290
+    TagComponent:
+      Tag: rail#3d_copy
+    ColliderComponent:
+      Type: 0
+      Size: [2.48870611, 4.18936205, 13.512085]
+      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: false
+      ModelPath: models/toy_train/train_vagon.glb
+      IsColliding: false
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
+    TransformComponent:
+      Translation: [55.4628983, 34.3363914, -15.9756889]
+      Rotation: [0, 1.55682349, 0]
+      Scale: [2.81781912, 1.83835185, 2.52317667]
+    IDComponent:
+      {}
+    ShaderComponent:
+      ShaderPath: ""
+      Uniforms:
+        []
+      Enabled: true
+  - Entity: 529973540280015106
     TagComponent:
       Tag: Player
     ColliderComponent:
@@ -424,297 +466,63 @@ Entities:
       Handle: 0
       Velocity: [0, 0, 0]
       IsGrounded: false
-  - Entity: 4523123908496728924
+  - Entity: 99598264625684227
     TagComponent:
-      Tag: rail#3d_copy
-    ColliderComponent:
-      Type: 0
-      Size: [2.48870611, 4.18936205, 13.512085]
-      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
-      Radius: 0.5
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: false
-      ModelPath: models/toy_train/train_vagon.glb
-      IsColliding: false
-    ModelComponent:
-      ModelPath: models/toy_train/train_vagon.glb
-    TransformComponent:
-      Translation: [55.4628983, 34.3363914, -15.9756889]
-      Rotation: [0, 1.55682349, 0]
-      Scale: [2.81781912, 1.83835185, 2.52317667]
-    IDComponent:
-      {}
-    ShaderComponent:
-      ShaderPath: ""
-      Uniforms:
-        []
-      Enabled: true
-  - Entity: 16281240254532224140
-    TagComponent:
-      Tag: floor_lol
-    ColliderComponent:
-      Type: 3
-      Size: [449.48999, 114.440002, 440.48999]
-      Offset: [0, 0, 0]
-      Radius: 191.044159
-      Height: 12.9499998
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: true
-      ModelPath: models/stone_floor.glb
-      IsColliding: false
-    ModelComponent:
-      ModelPath: models/stone_floor.glb
-    TransformComponent:
-      Translation: [-231.075317, -62.7547264, 67.6377563]
-      Rotation: [0, -0, 0]
-      Scale: [2.702842, 1, 4.74170446]
-    IDComponent:
-      {}
-    Rigid BodyComponent:
-      Type: 0
-      Mass: 1
-      LinearDamping: 0.00999999978
-      AngularDamping: 0.0500000007
-      UseGravity: true
-      IsFixedRotation: false
-      Handle: 0
-      Velocity: [0, 0, 0]
-      IsGrounded: false
-  - Entity: 1189060257589347554
-    TagComponent:
-      Tag: Camera
-    ManagedScriptComponent:
-      Scripts:
-        - ClassName: chaineddecos.scripts.cameracontroller
+      Tag: SceneCamera
     CameraComponent:
-      Primary: true
+      Primary: false
       FixedAspectRatio: false
       IsOrbitCamera: false
       TargetEntityTag: Player
-      OrbitDistance: 41.4000015
+      OrbitDistance: 10
       OrbitYaw: 0
       OrbitPitch: 20
       LookSensitivity: 0.899999976
       nearClip: 0.100000001
-      farClip: 100000
+      farClip: 1000
       verticalFov: 60
       orthographicSize: 10
     TransformComponent:
-      Translation: [0, 0, 10]
-      Rotation: [0, 0, 0]
+      Translation: [-6.77746725, 4.27760601, -5.98063564]
+      Rotation: [38095.3945, 4262.29346, 0]
       Scale: [1, 1, 1]
     IDComponent:
       {}
-    ShaderComponent:
-      ShaderPath: shaders/screen_falling.chshader
-      Uniforms:
-        - Name: uIntensity
-          Value: 0
-        - Name: color
-          Value: 0
-      Enabled: true
-  - Entity: 17591360760765477950
+  - Entity: 17997149680689185062
     TagComponent:
-      Tag: arena_two
+      Tag: ghost
     ColliderComponent:
       Type: 0
-      Size: [91.2528992, 16.8988438, 12.8652821]
-      Offset: [0, 0, 0]
+      Size: [1.71000004, 2.50999999, 0.5]
+      Offset: [-0.604161263, 27.9200001, -2.00118709]
       Radius: 0.5
-      Height: 1.95000005
+      Height: 1
       Friction: 0.5
-      Restitution: 0.209999993
+      Restitution: 0
       IsTrigger: true
       Enabled: true
       AutoCalculate: true
-      ModelPath: models/container_ship/scene.gltf
+      ModelPath: D:/gitnext/Chained Decos/game/chaineddecos/assets/models_backup/mystery_skulls_ghost_lewis/scene.gltf
       IsColliding: false
     ModelComponent:
-      ModelPath: models/container_ship/scene.gltf
+      ModelPath: models_backup/mystery_skulls_ghost_lewis/scene.gltf
     TransformComponent:
-      Translation: [-949.601318, 51.8037796, 331.382965]
-      Rotation: [-3.14158845, -1.50888491, -3.14156556]
-      Scale: [20.9452457, 17.1169147, 17.6528263]
-    IDComponent:
-      {}
-    Rigid BodyComponent:
-      Type: 0
-      Mass: 1
-      LinearDamping: 0.00999999978
-      AngularDamping: 0.0500000007
-      UseGravity: true
-      IsFixedRotation: false
-      Handle: 0
-      Velocity: [0, 0, 0]
-      IsGrounded: false
-  - Entity: 15554118335044970785
-    TagComponent:
-      Tag: Empty Entity
-    ModelComponent:
-      ModelPath: models/pilot/animated_civilian_helicopter/scene.gltf
-    TransformComponent:
-      Translation: [-216.192169, -6.67572021e-06, 0]
-      Rotation: [0.0617936067, 0.0883244723, -0.0563300997]
-      Scale: [46.0502167, 47.251339, 53.7656708]
+      Translation: [60.8389587, 103.205635, 4.72679806]
+      Rotation: [0.0431710109, -0.0900942832, 0.0843906254]
+      Scale: [26.4252377, 28.1725788, 26.7647877]
     IDComponent:
       {}
     AnimationComponent:
-      BlendDuration: 0.25
+      BlendDuration: 0
       IsLooping: true
       PlayOnStart: true
-  - Entity: 11880729667102448766
+  - Entity: 17320673369500747576
     TagComponent:
-      Tag: rail#3d
-    ColliderComponent:
-      Type: 0
-      Size: [2.48870611, 13.512085, 4.18936396]
-      Offset: [1.16999996, 0.0700000003, -4.18938494]
-      Radius: 0.5
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: false
-      ModelPath: models/toy_train/train_vagon.glb
-      IsColliding: false
-    ModelComponent:
-      ModelPath: models/toy_train/train_vagon.glb
-    TransformComponent:
-      Translation: [124.947281, 34.3363914, -15.4183016]
-      Rotation: [0, 1.46746063, 0]
-      Scale: [2.81766772, 1.83825684, 2.5230844]
-    IDComponent:
-      {}
-  - Entity: 17863774743938195217
-    TagComponent:
-      Tag: train_vagons
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    IDComponent:
-      {}
-  - Entity: 12100463053982287883
-    TagComponent:
-      Tag: anim_mode#2
+      Tag: Arena
     ColliderComponent:
       Type: 3
-      Size: [20.2556896, 277.196045, 14.2480259]
-      Offset: [0, 0, 0]
-      Radius: 138.598022
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: true
-      Enabled: true
-      AutoCalculate: true
-      ModelPath: models/bridge.glb
-      IsColliding: false
-    ModelComponent:
-      ModelPath: models/bridge.glb
-    TransformComponent:
-      Translation: [424.876801, 17.2099991, 22.4167747]
-      Rotation: [-1.61778486, -0.127626747, -0.0149760507]
-      Scale: [3.91608334, 1.36131144, 0.999961495]
-    IDComponent:
-      {}
-  - Entity: 13107322689356311122
-    TagComponent:
-      Tag: anim_mode#4_copy
-    ColliderComponent:
-      Type: 3
-      Size: [20.2556896, 277.196045, 14.2480259]
-      Offset: [0, 0, 0]
-      Radius: 0.5
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: false
-      ModelPath: models/bridge.glb
-      IsColliding: false
-    ModelComponent:
-      ModelPath: models/bridge.glb
-    TransformComponent:
-      Translation: [456.769592, 92.3261108, 838.863159]
-      Rotation: [-2.07865191, -0, 0]
-      Scale: [3.9020257, 0.99999398, 0.999984682]
-    IDComponent:
-      {}
-  - Entity: 13668587866904683880
-    TagComponent:
-      Tag: anim_mode#3
-    ColliderComponent:
-      Type: 3
-      Size: [23.1599998, 279.299988, 21.0499992]
-      Offset: [0, 0, 0]
-      Radius: 0.5
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: true
-      Enabled: true
-      AutoCalculate: true
-      ModelPath: models/bridge.glb
-      IsColliding: false
-    ModelComponent:
-      ModelPath: models/bridge.glb
-    TransformComponent:
-      Translation: [440.960266, 32.5502625, 581.221497]
-      Rotation: [-1.48049641, -0, 0]
-      Scale: [3.71524119, 0.99993968, 0.999904871]
-    IDComponent:
-      {}
-  - Entity: 16016665831763520832
-    TagComponent:
-      Tag: wooden_bridge
-    ColliderComponent:
-      Type: 3
-      Size: [9.28319931, 7.15296078, 23.5704517]
-      Offset: [0, 0, 0]
-      Radius: 11.7852259
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: true
-      ModelPath: models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb.glb
-      IsColliding: false
-    ModelComponent:
-      ModelPath: models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb.glb
-    TransformComponent:
-      Translation: [226.774567, 10.7833824, 119.315414]
-      Rotation: [0, 1.06864882, 0]
-      Scale: [7.04011631, 8.74738693, 19.0374699]
-    IDComponent:
-      {}
-    Rigid BodyComponent:
-      Type: 0
-      Mass: 1
-      LinearDamping: 0.00999999978
-      AngularDamping: 0.0500000007
-      UseGravity: true
-      IsFixedRotation: false
-      Handle: 0
-      Velocity: [0, 0, 0]
-      IsGrounded: false
-  - Entity: 15499622214897601871
-    TagComponent:
-      Tag: anim_mode
-    ColliderComponent:
-      Type: 0
-      Size: [20.2556896, 277.196045, 14.2480259]
-      Offset: [0, 0, 0]
+      Size: [86.6819458, 89.0095215, 94.478302]
+      Offset: [-43.8236694, -46.1545258, -25.5901108]
       Radius: 0.5
       Height: 1
       Friction: 0.5
@@ -722,19 +530,19 @@ Entities:
       IsTrigger: false
       Enabled: true
       AutoCalculate: true
-      ModelPath: models/bridge.glb
+      ModelPath: models/arena.glb
       IsColliding: false
     ModelComponent:
-      ModelPath: models/bridge.glb
+      ModelPath: models/arena.glb
     TransformComponent:
-      Translation: [428.76062, 30.1878853, 305.481506]
-      Rotation: [-1.84119403, -0, 0]
-      Scale: [3.51185083, 0.99995327, 0.99992317]
+      Translation: [-1.52065945, -4.32776833, -35.4009895]
+      Rotation: [-0.0117500396, 0.038041085, -0.00385748385]
+      Scale: [0.99993974, 0.999890089, 0.999929249]
     IDComponent:
       {}
-  - Entity: 11832955433805993164
+  - Entity: 7092845307831943586
     TagComponent:
-      Tag: rail#3d_copy_copy
+      Tag: rail#3d_copy
     ColliderComponent:
       Type: 0
       Size: [2.48870611, 4.18936205, 13.512085]
@@ -751,18 +559,18 @@ Entities:
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
     TransformComponent:
-      Translation: [394.406952, 36.0981331, -15.4183016]
-      Rotation: [0.04082435, 1.53854108, 9.24113579e-07]
-      Scale: [2.81729794, 1.83831227, 2.52311134]
+      Translation: [369.179901, 34.9479713, -15.4183016]
+      Rotation: [-3.14159083, 1.49346161, -3.14159083]
+      Scale: [2.81770754, 1.83824468, 2.52313972]
     IDComponent:
       {}
-  - Entity: 855991151295534509
+  - Entity: 731954680232947064
     TagComponent:
-      Tag: SpawnPoint
+      Tag: rail#3d_copy
     ColliderComponent:
       Type: 0
-      Size: [-6.4000001, -3.5999999, 7.30000019]
-      Offset: [2.79999995, 0, 0]
+      Size: [2.48870611, 4.18936205, 13.512085]
+      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
       Radius: 0.5
       Height: 1
       Friction: 0.5
@@ -770,34 +578,226 @@ Entities:
       IsTrigger: false
       Enabled: true
       AutoCalculate: false
-      ModelPath: D:/gitnext/Chained Decos/game/chaineddecos/іВВВВВВВВВВВВВВВВВВВВВВІІІІІІІІІІІІІІІФФФФФФФФВІІІІФ
+      ModelPath: ""
       IsColliding: false
-    SpawnZoneComponent:
-      IsActive: true
-      ZoneSize: [1, 1, 1]
-      RenderSpawnZoneInScene: true
-      SpawnPoint: [0, 0, 0]
-    ManagedScriptComponent:
-      Scripts:
-        - ClassName: chaineddecos.scripts.spawnzone
-    TransformComponent:
-      Translation: [-321.279785, 312.607849, 1022.75677]
-      Rotation: [0, -0, 0]
-      Scale: [1, 1, 1]
-    IDComponent:
-      {}
-  - Entity: 14502516555908121422
-    TagComponent:
-      Tag: toy_train_platform
     ModelComponent:
-      ModelPath: models/toy_train/wooden_train.glb
+      ModelPath: models/toy_train/train_vagon.glb
     TransformComponent:
-      Translation: [-3565.1311, -45.4531631, 621.43158]
-      Rotation: [0.18592523, -1.13752759, -0.188373342]
-      Scale: [1.00000036, 0.999993503, 0.99999553]
+      Translation: [340.353027, 34.3363914, -15.4183016]
+      Rotation: [-2.64324285e-06, 1.51514268, -2.64865866e-06]
+      Scale: [2.8176837, 1.83830261, 2.52313876]
     IDComponent:
       {}
-    AnimationComponent:
-      BlendDuration: 0.25
-      IsLooping: true
-      PlayOnStart: true
+  - Entity: 10572517192068355823
+    TagComponent:
+      Tag: rail#3d_copy
+    ColliderComponent:
+      Type: 0
+      Size: [2.48870611, 4.18936205, 13.512085]
+      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: false
+      ModelPath: ""
+      IsColliding: false
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
+    TransformComponent:
+      Translation: [304.469788, 34.3363914, -15.4183016]
+      Rotation: [-3.14159083, 1.48598051, -3.14159083]
+      Scale: [2.81769323, 1.83826065, 2.52310586]
+    IDComponent:
+      {}
+  - Entity: 792754527145484937
+    TagComponent:
+      Tag: rail#3d_copy
+    ColliderComponent:
+      Type: 0
+      Size: [2.48870611, 4.18936205, 13.512085]
+      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: false
+      ModelPath: ""
+      IsColliding: false
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
+    TransformComponent:
+      Translation: [269.359863, 34.3363914, -15.4183016]
+      Rotation: [-3.14157701, 1.51824713, -3.14157701]
+      Scale: [2.81769633, 1.83829546, 2.52312613]
+    IDComponent:
+      {}
+  - Entity: 4282530056548686273
+    TagComponent:
+      Tag: rail#3d_copy
+    ColliderComponent:
+      Type: 0
+      Size: [2.48870611, 4.18936205, 13.512085]
+      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: false
+      ModelPath: ""
+      IsColliding: false
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
+    TransformComponent:
+      Translation: [232.729095, 34.3363914, -15.4183016]
+      Rotation: [-3.14158916, 1.47876322, -3.14158916]
+      Scale: [2.81773591, 1.83830583, 2.52309585]
+    IDComponent:
+      {}
+  - Entity: 14509016597367096038
+    TagComponent:
+      Tag: rail#3d_copy
+    ColliderComponent:
+      Type: 0
+      Size: [2.48870611, 4.18936205, 13.512085]
+      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: false
+      ModelPath: ""
+      IsColliding: false
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
+    TransformComponent:
+      Translation: [195.275909, 34.3363914, -15.4183016]
+      Rotation: [-5.00722963e-05, 1.52510715, -5.01285613e-05]
+      Scale: [2.81781769, 1.83833349, 2.52321935]
+    IDComponent:
+      {}
+  - Entity: 13212216223060777110
+    TagComponent:
+      Tag: rail#3d_copy
+    ColliderComponent:
+      Type: 0
+      Size: [2.48870611, 4.18936205, 13.512085]
+      Offset: [-1.23305595, 2.20000002e-05, -6.83498478]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: false
+      ModelPath: ""
+      IsColliding: false
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
+    TransformComponent:
+      Translation: [160.559677, 34.3363914, -15.4183016]
+      Rotation: [-3.1415906, 1.3848865, -3.1415906]
+      Scale: [2.81779981, 1.83833647, 2.52321267]
+    IDComponent:
+      {}
+  - Entity: 10024358156090832936
+    TagComponent:
+      Tag: rail#3d_copy
+    ColliderComponent:
+      Type: 0
+      Size: [2.3900001, 6.01000023, 12.9899998]
+      Offset: [2.26999998, -0.0299999993, -4.18938494]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      ModelPath: models/toy_train/train_vagon.glb
+      IsColliding: false
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
+    TransformComponent:
+      Translation: [89.7119217, 34.3363914, -8.52000618]
+      Rotation: [-3.14159083, 1.42225266, -3.14159083]
+      Scale: [2.81781149, 1.8383373, 2.5232451]
+    IDComponent:
+      {}
+  - Entity: 8108014122305963208
+    TagComponent:
+      Tag: Entity_copy
+    ColliderComponent:
+      Type: 0
+      Size: [34.1756821, 8.59185219, 22.6057091]
+      Offset: [-14.1946049, -9.53674316e-07, -8.94524384]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: false
+      ModelPath: models/stairs.glb
+      IsColliding: false
+    ModelComponent:
+      ModelPath: models/stairs.glb
+    TransformComponent:
+      Translation: [46.4636726, -2.98017597, 14.336463]
+      Rotation: [0, -0, 0]
+      Scale: [2.29999304, 2.70000005, 0.979451716]
+    IDComponent:
+      {}
+  - Entity: 11315575198000459426
+    TagComponent:
+      Tag: buildings_6_pack
+    ModelComponent:
+      ModelPath: models_backup/building/scene.gltf
+    TransformComponent:
+      Translation: [23.264637, -27.1361389, -506.157532]
+      Rotation: [0, -0, 0]
+      Scale: [342.240997, 325.262634, 245.059052]
+    IDComponent:
+      {}
+  - Entity: 1931949806517272852
+    TagComponent:
+      Tag: island_minigames
+    ColliderComponent:
+      Type: 3
+      Size: [1.56521797, 1.00000179, 1.90062201]
+      Offset: [0, 0, 0]
+      Radius: 0.950311005
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      ModelPath: models/minigames/hub_for_minigames_server.glb
+      IsColliding: false
+    ModelComponent:
+      ModelPath: models/minigames/hub_for_minigames_server.glb
+    TransformComponent:
+      Translation: [-118.395287, 12.3910465, 826.530884]
+      Rotation: [0, -0, 0]
+      Scale: [673.435242, 411.5466, 440.887085]
+    IDComponent:
+      {}
+    Rigid BodyComponent:
+      Type: 0
+      Mass: 1
+      LinearDamping: 0.00999999978
+      AngularDamping: 0.0500000007
+      UseGravity: true
+      IsFixedRotation: false
+      Handle: 0
+      Velocity: [0, 0, 0]
+      IsGrounded: false

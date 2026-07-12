@@ -73,8 +73,13 @@ public:
     // Finalizes completed async loads and calls OnLoaded() within a small per-frame budget.
     void Update();
 
+    // Interval (seconds) between .chasset staleness checks. 0 = disabled.
+    void SetHotReloadInterval(float seconds) { m_HotReloadInterval = seconds; }
+    float GetHotReloadInterval() const { return m_HotReloadInterval; }
+
 private:
     void ReloadAsset(AssetHandle handle, AssetType type);
+    void CheckModelHotReload();
 
 public:
     template <typename T> void Reload(const std::string& path)
@@ -104,6 +109,9 @@ public:
     std::filesystem::path m_AssetDirectory;
     std::filesystem::path m_ProjectDirectory;
     std::filesystem::path m_EngineRoot;
+
+    float m_HotReloadInterval = 3.0f;
+    float m_HotReloadAccumulator = 0.0f;
 };
 } // namespace Chained
 

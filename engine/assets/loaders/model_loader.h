@@ -23,7 +23,7 @@ struct ProceduralParameters
 struct ChainedAssetHeader
 {
     uint32_t magic = 0x43484153; 
-    uint32_t version = 1;
+    uint32_t version = 2; 
     uint32_t dataStructSize = sizeof(PendingModelData);
     uint64_t sourceHash = 0;
     bool compressed = false;

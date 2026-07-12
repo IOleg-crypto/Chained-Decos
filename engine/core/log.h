@@ -102,6 +102,7 @@ private:
 } // namespace Chained
 
 // Core logging macros
+#ifdef CH_ENABLE_LOGGING
 #define CH_CORE_TRACE(...)  ::Chained::Log::GetCoreLogger()->trace(__VA_ARGS__)
 #define CH_CORE_INFO(...)   ::Chained::Log::GetCoreLogger()->info(__VA_ARGS__)
 #define CH_CORE_WARN(...)   ::Chained::Log::GetCoreLogger()->warn(__VA_ARGS__)
@@ -114,6 +115,21 @@ private:
 #define CH_WARN(...)   ::Chained::Log::GetClientLogger()->warn(__VA_ARGS__)
 #define CH_ERROR(...)  ::Chained::Log::GetClientLogger()->error(__VA_ARGS__)
 #define CH_FATAL(...)  ::Chained::Log::GetClientLogger()->critical(__VA_ARGS__)
+#else
+// Core logging macros
+#define CH_CORE_TRACE(...)
+#define CH_CORE_INFO(...)
+#define CH_CORE_WARN(...)
+#define CH_CORE_ERROR(...)
+#define CH_CORE_FATAL(...)
+
+// Client logging macros
+#define CH_TRACE(...)
+#define CH_INFO(...)
+#define CH_WARN(...)
+#define CH_ERROR(...)
+#define CH_FATAL(...)
+#endif
 
 #endif // CH_LOG_H
 
