@@ -1,0 +1,11 @@
+Model Information:
+* title:	The house lost at sea
+* source:	https://sketchfab.com/3d-models/the-house-lost-at-sea-bdf8ea72acd946798e250067e576c70d
+* author:	Michel Donze (https://sketchfab.com/mdonze)
+
+Model License:
+* license type:	CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0/)
+* requirements:	Author must be credited. No commercial use.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "The house lost at sea" (https://sketchfab.com/3d-models/the-house-lost-at-sea-bdf8ea72acd946798e250067e576c70d) by Michel Donze (https://sketchfab.com/mdonze) licensed under CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0/)
