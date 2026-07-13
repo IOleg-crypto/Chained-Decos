@@ -24,6 +24,22 @@ target_include_directories(zlibstatic INTERFACE
 unset(_zlibstatic_source_dir)
 unset(_zlibstatic_binary_dir)
 
+# --- Hack: pre-create zstd / ZLIB aliases so upstream pak_archive/external ---
+# never reaches its find_package() fallback (which requires a system/vcpkg install). ---
+# This mirrors the logic in our local patch but lives in OUR cmake wrapper so
+# the upstream submodule file stays untouched.
+if(NOT TARGET zstd::libzstd_static AND NOT TARGET zstd::libzstd_shared)
+    if(TARGET libzstd_shared)
+        add_library(zstd::libzstd_shared ALIAS libzstd_shared)
+    elseif(TARGET libzstd_static)
+        add_library(zstd::libzstd_static ALIAS libzstd_static)
+    endif()
+endif()
+
+if(NOT TARGET ZLIB::ZLIB)
+    add_library(ZLIB::ZLIB ALIAS zlibstatic)
+endif()
+
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/pak_archive/lib EXCLUDE_FROM_ALL)
 
 if(TARGET libgpak)
